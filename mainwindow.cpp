@@ -2025,7 +2025,7 @@ void MainWindow::makeFixedTabsScrollable()
     scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     scroll->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-    scroll->setViewportMargins(0, 0, 0, 0);
+
     scroll->setFocusPolicy(Qt::NoFocus);
     scroll->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
