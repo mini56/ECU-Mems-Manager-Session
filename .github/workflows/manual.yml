@@ -1,0 +1,57 @@
+name: Build ECU Mems Manager (Windows)  
+  
+on:  
+  push:  
+    branches: ["main", "master"]  
+  pull_request:  
+    branches: ["main", "master"]  
+  
+jobs:  
+  build-windows:  
+    name: Build Windows (MinGW)  
+    runs-on: windows-latest  
+  
+    steps:  
+      - name: Checkout repository  
+        uses: actions/checkout@v4  
+  
+      - name: Installer Python  
+        uses: actions/setup-python@v5  
+        with:  
+          python-version: '3.11'  
+  
+      - name: Installer aqtinstall  
+        run: pip install aqtinstall  
+  
+      - name: Installer Qt 5.15.2 MinGW 32 bits  
+        run: |  
+          aqt install-qt windows desktop 5.15.2 win32_mingw81 -m qtcharts -O C:\Qt  
+          aqt install-tool windows desktop tools_mingw qt.tools.win32_mingw810 -O C:\Qt  
+  
+      - name: Ajouter MinGW et Qt au PATH  
+        run: |  
+          echo "C:\Qt\Tools\mingw810_32\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append  
+          echo "C:\Qt\5.15.2\mingw81_32\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append  
+  
+      - name: Generer l'import lib librosco  
+        run: |  
+          cd prebuilt-librosco  
+          gendef librosco.dll  
+          dlltool -d librosco.def -l librosco.dll.a  
+  
+      - name: Configure CMake  
+        run: cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/mingw81_32;${{ github.workspace }}/prebuilt-librosco"  
+  
+      - name: Build Application  
+        run: cmake --build build  
+  
+      - name: Deploy Qt DLLs and librosco  
+        run: |  
+          windeployqt build/ecu_mems_manager.exe  
+          Copy-Item -Path "${{ github.workspace }}/prebuilt-librosco/librosco.dll" -Destination "build/" -ErrorAction SilentlyContinue  
+  
+      - name: Upload Artifact  
+        uses: actions/upload-artifact@v4  
+        with:  
+          name: ECU-Mems-Manager-Windows  
+          path: build/
