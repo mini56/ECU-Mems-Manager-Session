@@ -1,1 +1,3 @@
-# ECU-Mems-Manager-v1.0.0-ROSCO-Session
+# ECU Mems Manager
+
+Alpha2 base.
