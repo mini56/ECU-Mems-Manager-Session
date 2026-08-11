@@ -59,7 +59,8 @@ set(SOURCES
     mainwindow.cpp
     aboutbox.cpp
     optionsdialog.cpp
-    summarytab.cpp  
+    summarytab.cpp
+    diagnosticpanel.cpp  
     analysistab.cpp
     
     # ECU Manager

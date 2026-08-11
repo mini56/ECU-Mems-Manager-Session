@@ -35,11 +35,29 @@
 MainWindow::MainWindow(QWidget* parent):QMainWindow(parent),
 m_ui(new Ui::MainWindow),
 m_memsThread(0),
-m_mems(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerDialog(0), m_actuatorTestsEnabled(false), m_adjustmentsEnabled(false), m_actuatorsOffEnabled(false), m_protocolOutput(nullptr), m_protocolModeLabel(nullptr)
+m_mems(0), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerDialog(0), m_actuatorTestsEnabled(false), m_adjustmentsEnabled(false), m_actuatorsOffEnabled(false), m_protocolOutput(nullptr), m_protocolModeLabel(nullptr)
 
 {
   buildSpeedAndTempUnitTables();
   m_ui->setupUi(this);
+
+  // Le .ui historique fixe Tab_main à 1300x3441. Cette taille empêchait
+  // Qt de réduire correctement la fenêtre sur un écran 1300x768.
+  // On remet le bandeau de connexion et les onglets dans un vrai layout
+  // extensible ; le défilement est ensuite assuré page par page.
+  QWidget *central = m_ui->centralWidget;
+  QWidget *connectionBar = central ? central->findChild<QWidget*>(QStringLiteral("layoutWidget_7")) : nullptr;
+  if (central && !central->layout())
+  {
+    QVBoxLayout *centralLayout = new QVBoxLayout(central);
+    centralLayout->setContentsMargins(0, 0, 0, 0);
+    centralLayout->setSpacing(0);
+    if (connectionBar)
+      centralLayout->addWidget(connectionBar);
+    centralLayout->addWidget(m_ui->Tab_main, 1);
+  }
+  setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  resize(1300, 690);
   qApp->processEvents();
   this->setWindowTitle(PROJECTNAME + QString(" ") +
       QString::number(VER_MAJOR) + "." +
@@ -210,6 +228,11 @@ m_mems(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerDialog(0), m_actuatorTe
   protocolLayout->addWidget(m_protocolOutput, 1);
 
   m_ui->Tab_main->addTab(protocolTab, QStringLiteral("ECU / ROSCO"));
+
+  // Le diagnostic automatique reste volontairement juste à côté de
+  // l'onglet ECU / ROSCO : ce sont les deux fonctions avancées du logiciel.
+  m_diagnosticPanel = new DiagnosticPanel(this);
+  m_ui->Tab_main->addTab(m_diagnosticPanel, QStringLiteral("Diagnostic automatique"));
 
   // Adaptation automatique des pages fixes aux différentes résolutions.
   makeFixedTabsScrollable();
@@ -657,6 +680,8 @@ void MainWindow::onEcuIdReceived(uint8_t* id)
 
   sprintf(idString, "ID ECU : %02X %02X %02X %02X", id[0], id[1], id[2], id[3]);
   m_ui->m_ecuIdLabel->setText(QString(idString));
+  if (m_diagnosticPanel && id)
+    m_diagnosticPanel->setEcuId(QByteArray(reinterpret_cast<const char*>(id), 4));
 }
 
 /**
@@ -791,6 +816,7 @@ void MainWindow::onDataReady()
 {
   mems_data* data = m_mems->getData();
   m_summaryTab->updateData(data);
+  if (m_diagnosticPanel) m_diagnosticPanel->updateData(data);
   int corrected_iac = (data->iac_position > IAC_MAXIMUM) ? IAC_MAXIMUM : data->iac_position;
 /*   float corrected_throttle = ((data->throttle_pot * 0.02) > 5.0) ? 5.0 : data->throttle_pot; */
 
@@ -1958,107 +1984,38 @@ void MainWindow::makeFixedTabsScrollable()
   for (int i = 0; i < tabs->count(); ++i)
   {
     QWidget *page = tabs->widget(i);
-    if (!page || page->layout())
+    if (!page || page->property("wrappedInScrollArea").toBool())
       continue;
 
     const QString title = tabs->tabText(i);
     const QIcon icon = tabs->tabIcon(i);
-    const QSize pageSize = page->size().expandedTo(QSize(1, 1));
-    const QList<QWidget*> children = page->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
 
-    QScrollArea *scroll = new QScrollArea(page);
+    // Conserve la taille de conception : les pages historiques du projet
+    // font souvent plus de 3000 px de haut. C'est cette taille qui doit
+    // devenir la zone défilable, et non la fenêtre principale.
+    QSize contentSize = page->size().expandedTo(page->sizeHint())
+                                    .expandedTo(page->minimumSizeHint());
+    if (contentSize.width() < 900) contentSize.setWidth(900);
+    if (contentSize.height() < 600) contentSize.setHeight(600);
+
+    tabs->removeTab(i);
+
+    QScrollArea *scroll = new QScrollArea(tabs);
     scroll->setObjectName(QStringLiteral("scrollArea_%1").arg(page->objectName()));
     scroll->setFrameShape(QFrame::NoFrame);
     scroll->setWidgetResizable(false);
     scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    scroll->setAlignment(Qt::AlignLeft | Qt::AlignTop);
     scroll->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    QWidget *content = new QWidget;
-    content->setObjectName(QStringLiteral("scrollContent_%1").arg(page->objectName()));
+    page->setProperty("wrappedInScrollArea", true);
+    page->setParent(scroll);
+    page->setMinimumSize(contentSize);
+    page->resize(contentSize);
+    scroll->setWidget(page);
 
-    int right = 0;
-    int bottom = 0;
-    for (QWidget *child : children)
-    {
-      if (!child)
-        continue;
-      const QRect r = child->geometry();
-      right = qMax(right, r.right() + 1);
-      bottom = qMax(bottom, r.bottom() + 1);
-      child->setParent(content);
-      child->show();
-    }
-
-    QSize contentSize(qMax(pageSize.width(), right), qMax(pageSize.height(), bottom));
-    content->setFixedSize(contentSize);
-    scroll->setWidget(content);
-
-    QVBoxLayout *pageLayout = new QVBoxLayout(page);
-    pageLayout->setContentsMargins(0, 0, 0, 0);
-    pageLayout->setSpacing(0);
-    pageLayout->addWidget(scroll);
-
-    tabs->removeTab(i);
-    tabs->insertTab(i, page, icon, title);
+    tabs->insertTab(i, scroll, icon, title);
   }
 }
-
-void MainWindow::onProtocolResponse(quint8 command, QByteArray response)
-{
-  if (!m_protocolOutput)
-    return;
-
-  QString hex = response.toHex(' ').toUpper();
-  QString line = QStringLiteral("[%1] TX %2  RX %3")
-      .arg(QDateTime::currentDateTime().toString(QStringLiteral("HH:mm:ss.zzz")))
-      .arg(QString("%1").arg(command, 2, 16, QLatin1Char('0')).toUpper())
-      .arg(hex.isEmpty() ? QStringLiteral("<aucune réponse>") : hex);
-
-  m_protocolOutput->append(line);
-
-  if (command == 0xD1 && !response.isEmpty())
-  {
-    QByteArray printable;
-    for (char c : response)
-    {
-      unsigned char u = static_cast<unsigned char>(c);
-      if (u >= 0x20 && u <= 0x7E)
-        printable.append(c);
-      else
-        printable.append('.');
-    }
-    m_protocolOutput->append(
-        QStringLiteral("D1 texte : ") + QString::fromLatin1(printable));
-  }
-
-  if (command == 0xD2 && response.size() >= 3)
-  {
-    const quint8 a = static_cast<quint8>(response.at(1));
-    const quint8 b = static_cast<quint8>(response.at(2));
-    QString meaning = QStringLiteral("réponse brute");
-    if (a == 0x02 && b == 0x01)
-      meaning = QStringLiteral("état 02/01 (signification conservée brute)");
-    else if (a == 0x00 && b == 0x01)
-      meaning = QStringLiteral("état 00/01 (signification conservée brute)");
-    else if (a == 0x01 && b == 0x01)
-      meaning = QStringLiteral("état 01/01 (signification conservée brute)");
-    m_protocolOutput->append(QStringLiteral("D2 : ") + meaning);
-  }
-
-  if (command == 0xF0 && response.size() >= 2)
-  {
-    const quint8 mode = static_cast<quint8>(response.at(1));
-    QString label = QStringLiteral("Mode brut 0x%1")
-        .arg(mode, 2, 16, QLatin1Char('0')).toUpper();
-    m_protocolModeLabel->setText(QStringLiteral("Mode : ") + label);
-  }
-
-  if (command >= 0xF2 && command <= 0xF5)
-  {
-    m_protocolOutput->append(
-        QStringLiteral("Commande de session envoyée. Lecture F0 recommandée pour vérifier l'état."));
-  }
-}
-
 

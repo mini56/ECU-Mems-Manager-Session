@@ -18,6 +18,7 @@
 #include <analogwidgets/manometer900.h>
 #include <qledindicator/qledindicator.h>
 #include "summarytab.h"
+#include "diagnosticpanel.h"
 #include "optionsdialog.h"
 #include "memsinterface.h"
 #include "memslogic.h"
@@ -164,6 +165,7 @@ private:
      */
     ECUManager *m_ecuManager;
     SummaryTab *m_summaryTab;
+    DiagnosticPanel *m_diagnosticPanel;
     OptionsDialog *m_options;
     QMessageBox *m_pleaseWaitBox;
     HelpViewer *m_helpViewerDialog;
