@@ -194,6 +194,7 @@ private:
 
     void buildSpeedAndTempUnitTables();
     void setupWidgets();
+    void makeFixedTabsScrollable();
 
     int convertTemperature(int tempF);
     int convertLambda(int scaleMems);

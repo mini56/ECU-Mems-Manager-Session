@@ -28,6 +28,9 @@
 #include <QPushButton>
 #include <QTextStream>
 #include <QRegularExpression>
+#include <QScrollArea>
+#include <QStyle>
+#include <QFrame>
 
 MainWindow::MainWindow(QWidget* parent):QMainWindow(parent),
 m_ui(new Ui::MainWindow),
@@ -207,58 +210,13 @@ m_mems(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerDialog(0), m_actuatorTe
   protocolLayout->addWidget(m_protocolOutput, 1);
 
   m_ui->Tab_main->addTab(protocolTab, QStringLiteral("ECU / ROSCO"));
+
+  // Adaptation automatique des pages fixes aux différentes résolutions.
+  makeFixedTabsScrollable();
 }
 
 
-void MainWindow::onProtocolResponse(quint8 command, QByteArray response)
-{
-  if (!m_protocolOutput)
-    return;
 
-  const QString hex = response.toHex(' ').toUpper();
-  const QString line = QStringLiteral("[%1] TX %2  RX %3")
-      .arg(QDateTime::currentDateTime().toString(QStringLiteral("HH:mm:ss.zzz")))
-      .arg(QStringLiteral("%1").arg(command, 2, 16, QLatin1Char('0')).toUpper())
-      .arg(hex.isEmpty() ? QStringLiteral("<aucune réponse>") : hex);
-
-  m_protocolOutput->append(line);
-
-  if (command == 0xD1 && !response.isEmpty())
-  {
-    QByteArray printable;
-    for (char c : response)
-    {
-      const unsigned char u = static_cast<unsigned char>(c);
-      printable.append((u >= 0x20 && u <= 0x7E) ? c : '.');
-    }
-    m_protocolOutput->append(
-        QStringLiteral("D1 texte : ") + QString::fromLatin1(printable));
-  }
-
-  if (command == 0xD2 && response.size() >= 3)
-  {
-    const quint8 a = static_cast<quint8>(response.at(1));
-    const quint8 b = static_cast<quint8>(response.at(2));
-    m_protocolOutput->append(
-        QStringLiteral("D2 état brut : %1 %2")
-        .arg(a, 2, 16, QLatin1Char('0'))
-        .arg(b, 2, 16, QLatin1Char('0')).toUpper());
-  }
-
-  if (command == 0xF0 && response.size() >= 2)
-  {
-    const quint8 mode = static_cast<quint8>(response.at(1));
-    m_protocolModeLabel->setText(
-        QStringLiteral("Mode : valeur brute 0x%1")
-        .arg(mode, 2, 16, QLatin1Char('0')).toUpper());
-  }
-
-  if (command >= 0xF2 && command <= 0xF5)
-  {
-    m_protocolOutput->append(
-        QStringLiteral("Session : commande envoyée. Utiliser F0 pour vérifier l'état."));
-  }
-}
 
 MainWindow::~MainWindow()
 {
@@ -1991,6 +1949,61 @@ void MainWindow::on_m_AllActuatorsOffButton_clicked()
 	setActuatorsOffEnabled(false);
 	emit AllActuators_Off();
 }
+void MainWindow::makeFixedTabsScrollable()
+{
+  if (!m_ui || !m_ui->Tab_main)
+    return;
+
+  QTabWidget *tabs = m_ui->Tab_main;
+  for (int i = 0; i < tabs->count(); ++i)
+  {
+    QWidget *page = tabs->widget(i);
+    if (!page || page->layout())
+      continue;
+
+    const QString title = tabs->tabText(i);
+    const QIcon icon = tabs->tabIcon(i);
+    const QSize pageSize = page->size().expandedTo(QSize(1, 1));
+    const QList<QWidget*> children = page->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
+
+    QScrollArea *scroll = new QScrollArea(page);
+    scroll->setObjectName(QStringLiteral("scrollArea_%1").arg(page->objectName()));
+    scroll->setFrameShape(QFrame::NoFrame);
+    scroll->setWidgetResizable(false);
+    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    scroll->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+    QWidget *content = new QWidget;
+    content->setObjectName(QStringLiteral("scrollContent_%1").arg(page->objectName()));
+
+    int right = 0;
+    int bottom = 0;
+    for (QWidget *child : children)
+    {
+      if (!child)
+        continue;
+      const QRect r = child->geometry();
+      right = qMax(right, r.right() + 1);
+      bottom = qMax(bottom, r.bottom() + 1);
+      child->setParent(content);
+      child->show();
+    }
+
+    QSize contentSize(qMax(pageSize.width(), right), qMax(pageSize.height(), bottom));
+    content->setFixedSize(contentSize);
+    scroll->setWidget(content);
+
+    QVBoxLayout *pageLayout = new QVBoxLayout(page);
+    pageLayout->setContentsMargins(0, 0, 0, 0);
+    pageLayout->setSpacing(0);
+    pageLayout->addWidget(scroll);
+
+    tabs->removeTab(i);
+    tabs->insertTab(i, page, icon, title);
+  }
+}
+
 void MainWindow::onProtocolResponse(quint8 command, QByteArray response)
 {
   if (!m_protocolOutput)
