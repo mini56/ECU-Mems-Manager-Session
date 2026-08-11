@@ -78,6 +78,7 @@ public slots:
 	void on_m_IACPlusButton_clicked();
 	void on_m_AllActuatorsOffButton_clicked();
 	void on_interactive_push_button_clicked();
+    void onProtocolCommandRequested(quint8 command); 
 signals:
     void dataReady();
     void connected();
