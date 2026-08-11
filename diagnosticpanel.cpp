@@ -202,6 +202,21 @@ void DiagnosticPanel::rebuild(const mems_data &d)
     addCheck(QStringLiteral("Temps bobine"), QStringLiteral("%1 ms  | batterie %2 V").arg(coilTime, 0, 'f', 2).arg(battery, 0, 'f', 1),
              coilState, coilAdvice);
 
+    // Décodage du champ 7D14-15. La correction de -3 n'est pas une constante :
+    // elle correspond au réglage actuel « Position ralenti chaud » (idle_hot - 35).
+    const int raw7d1415 = (static_cast<int>(d.idle_error2) << 8) | static_cast<int>(d.uk10);
+    const int hotIdleCorrection = static_cast<int>(d.idle_hot) - 35;
+    const int hotIdleErrorCorrected = (raw7d1415 - 32768) + hotIdleCorrection;
+    const bool hotIdleErrorOk = qAbs(hotIdleErrorCorrected) <= 15;
+    addCheck(QStringLiteral("Erreur ralenti à chaud"),
+             QStringLiteral("%1 ECU | brut 7D14-15=%2 | correction=%3")
+                 .arg(hotIdleErrorCorrected).arg(raw7d1415).arg(hotIdleCorrection),
+             stateFor(hotIdleErrorOk, true),
+             QStringLiteral("Décodage : (7D14-15 brut - 32768) + correction Position ralenti chaud. "
+                            "La correction suit le réglage de l'onglet Réglages ; elle n'est pas codée en dur. "
+                            "Valeur indicative cohérente si elle reste proche de zéro."));
+    if (!hotIdleErrorOk) ++warnings;
+
     const bool iacSuspicious = (d.iac_position == 0 && d.idle_error >= 50 && d.idle_switch == 0 && d.uk3 != 0);
     addCheck(QStringLiteral("Commande de ralenti IAC"),
              QStringLiteral("position=%1  erreur=%2").arg(d.iac_position).arg(d.idle_error),
@@ -258,7 +273,12 @@ QString DiagnosticPanel::buildReport() const
     text += QStringLiteral("Date : %1\n").arg(QDateTime::currentDateTime().toString(QStringLiteral("dd/MM/yyyy hh:mm:ss")));
     if (!m_ecuId.isEmpty()) text += QStringLiteral("Identification : %1\n").arg(QString::fromLatin1(m_ecuId.toHex(' ').toUpper()));
     text += QStringLiteral("DTC : %1 %2 %3\n").arg(hexByte(d.dtc0), hexByte(d.dtc1), hexByte(d.dtc2));
+    const int raw7d1415 = (static_cast<int>(d.idle_error2) << 8) | static_cast<int>(d.uk10);
+    const int hotIdleCorrection = static_cast<int>(d.idle_hot) - 35;
+    const int hotIdleErrorCorrected = (raw7d1415 - 32768) + hotIdleCorrection;
     text += QStringLiteral("Temps bobine=%1 ms\n").arg(d.coil_time, 0, 'f', 2);
+    text += QStringLiteral("7D14-15 brut=%1 | correction ralenti chaud=%2 | erreur ralenti chaud corrigée=%3 ECU\n")
+        .arg(raw7d1415).arg(hotIdleCorrection).arg(hotIdleErrorCorrected);
     text += QStringLiteral("RPM=%1 | MAP=%2 kPa | batterie=%3 V | TPS=%4 | IAC=%5 | erreur ralenti=%6\n")
         .arg(d.engine_rpm).arg(d.map_kpa).arg(d.battery_voltage / 10.0, 0, 'f', 1)
         .arg(d.throttle_pot).arg(d.iac_position).arg(d.idle_error);

@@ -45,7 +45,7 @@ private:
         m_rowUk6, m_rowAirFuelRatio, m_rowDtc2, m_rowLambdaVoltage, m_rowLambdaFrequency,
         m_rowLambdaDutycycle, m_rowLambdaStatus, m_rowClosedLoop, m_rowLongTermFuelTrim,
         m_rowShortTermFuelTrim, m_rowCarbonCanisterDutycycle, m_rowDtc3, m_rowIdleBasePos,
-        m_rowUk7, m_rowDtc4, m_rowIgnitionAdvance2, m_rowIdleSpeedOffset, m_rowIdleError2,
+        m_rowUk7, m_rowDtc4, m_rowIgnitionAdvance2, m_rowIdleSpeedOffset, m_rowIdleErrorHotCorrected,
         m_rowUk10, m_rowDtc5, m_rowUk11, m_rowUk12, m_rowUk13, m_rowUk14, m_rowUk15, m_rowUk16,
         m_rowUk1A, m_rowUk1B, m_rowUk1C, m_rowDtc0, m_rowDtc1;
 };

@@ -291,6 +291,11 @@ void MainWindow::buildSpeedAndTempUnitTables()
  */
 void MainWindow::setupWidgets()
 {
+  // Largeur compacte des boutons de connexion : texte + 15 px de marge de chaque côté.
+  const int connectButtonWidth = m_ui->m_connectButton->fontMetrics().horizontalAdvance(m_ui->m_connectButton->text()) + 30;
+  const int disconnectButtonWidth = m_ui->m_disconnectButton->fontMetrics().horizontalAdvance(m_ui->m_disconnectButton->text()) + 30;
+  m_ui->m_connectButton->setFixedWidth(connectButtonWidth);
+  m_ui->m_disconnectButton->setFixedWidth(disconnectButtonWidth);
   // set menu and button icons
   m_ui->m_exitAction->setIcon(style()->standardIcon(QStyle::SP_DialogCloseButton));
   m_ui->m_editSettingsAction->setIcon(style()->standardIcon(QStyle::SP_ComputerIcon));
@@ -306,9 +311,11 @@ void MainWindow::setupWidgets()
   m_ui->m_optionsMenu->addAction(alwaysOnTopAction);
   connect(alwaysOnTopAction, SIGNAL(toggled(bool)), this, SLOT(onToggleAlwaysOnTop(bool)));
 
-  // Ajout du bouton "Vue instantanée" dans la barre du haut, après Erreurs ECU
+  // Ajout du bouton "Vue instantanée" dans la barre de statut ECU, après Erreurs ECU.
   QPushButton *snapshotButton = new QPushButton("Vue instantanée", this);
-  m_ui->comunicationlayout->addWidget(snapshotButton);
+  if (m_ui->ecuStatusLayout) {
+    m_ui->ecuStatusLayout->addWidget(snapshotButton);
+  }
   connect(snapshotButton, SIGNAL(clicked()), this, SLOT(onSnapshotClicked()));
 
   // Ajout de l'onglet "toutes les mesures" (reconstruit : son contenu
@@ -316,15 +323,13 @@ void MainWindow::setupWidgets()
   m_summaryTab = new SummaryTab(this);
   m_ui->Tab_main->insertTab(2, m_summaryTab, "Toutes les mesures");
 
-  // L'ancien onglet "toutes les mesures" du .ui fait doublon avec
-  // le nouvel onglet "Toutes les mesures". Il reste dans le projet pour
-  // compatibilité mais est désactivé pour éviter toute confusion.
+  // L’ancienne vue « toutes les mesures » est supprimée : seule « Toutes les mesures » reste accessible.
   const int duplicateSummaryIndex = m_ui->Tab_main->indexOf(m_ui->summary_tab);
   if (duplicateSummaryIndex >= 0)
   {
-    m_ui->Tab_main->setTabEnabled(duplicateSummaryIndex, false);
-    m_ui->Tab_main->setTabToolTip(duplicateSummaryIndex,
-                                  QStringLiteral("Ancienne vue désactivée : utilisez « Toutes les mesures »."));
+    QWidget *oldSummaryTab = m_ui->Tab_main->widget(duplicateSummaryIndex);
+    m_ui->Tab_main->removeTab(duplicateSummaryIndex);
+    if (oldSummaryTab) { delete oldSummaryTab; }
   }
 
   // Ajout de l'onglet "Analyse" (lecture de fichiers CSV enregistrés)
@@ -1133,7 +1138,12 @@ void MainWindow::onDataReady()
  m_ui->m_7D_13->setText(QString::number(data->idle_speed_offset));
  m_ui->r_7D_13->setText(QString::number((data->idle_speed_offset - 128) * 25) + " RPM");
  // m_ui->m_7D_14->setText(QString::number(data->idle_error2));
- m_ui->m_7D_15->setText(QString::number(((uint16_t)data->idle_error2 << 8 ) | data->uk10));
+ const int raw7d1415 = (static_cast<int>(data->idle_error2) << 8) | static_cast<int>(data->uk10);
+ const int idleHotCorrection = static_cast<int>(data->idle_hot) - 35;
+ const int idleErrorHotCorrected = (raw7d1415 - 32768) + idleHotCorrection;
+ m_ui->m_7D_15->setText(QString::number(idleErrorHotCorrected));
+ m_ui->m_7D_15->setToolTip(QStringLiteral("7D14-15 brut = %1 ; correction ralenti chaud = %2 ; valeur corrigée = %3. Formule : (brut - 32768) + correction.")
+                             .arg(raw7d1415).arg(idleHotCorrection).arg(idleErrorHotCorrected));
  m_ui->m_7D_16->setText(QString::number(data->dtc5));
      if ((data->dtc5)!= 255)
     {m_ui->r_7D_16->setText("DÉFAUTS");}

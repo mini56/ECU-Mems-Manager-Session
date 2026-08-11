@@ -52,7 +52,8 @@ static QString friendlyColumnName(const QString &rawName)
     names["7dx11_dtc4"] = "DTC 4";
     names["7dx12_ignition_advance2"] = "Avance à l'allumage 2";
     names["7dx13_idle_speed_offset"] = "Décalage régime de ralenti";
-    names["7dx14_idle_error2"] = "Erreur de ralenti 2";
+    names["7dx14-15_idle_error_hot_corrected"] = "Erreur de ralenti à chaud (corrigée)";
+    names["7dx14-15_raw"] = "Trame 7D14-15 brute";
     names["7dx16_dtc5"] = "DTC 5";
   }
 

@@ -9,16 +9,19 @@ SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)
   m_rowCount = 0;
   m_rowsPerTable = 19;
 
-  m_table0 = new QTableWidget(0, 2, this);
-  m_table1 = new QTableWidget(0, 2, this);
-  m_table2 = new QTableWidget(0, 2, this);
+  m_table0 = new QTableWidget(0, 3, this);
+  m_table1 = new QTableWidget(0, 3, this);
+  m_table2 = new QTableWidget(0, 3, this);
 
   QTableWidget *tables[3] = { m_table0, m_table1, m_table2 };
   for (int i = 0; i < 3; i++)
   {
-    tables[i]->setHorizontalHeaderLabels(QStringList() << "Paramètre" << "Valeur");
+    tables[i]->setHorizontalHeaderLabels(QStringList() << "Paramètre" << "" << "Valeur");
     tables[i]->horizontalHeader()->setStretchLastSection(true);
-    tables[i]->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    tables[i]->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+    tables[i]->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
+    tables[i]->setColumnWidth(1, 34);
+    tables[i]->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
     tables[i]->verticalHeader()->setVisible(false);
     tables[i]->setEditTriggers(QTableWidget::NoEditTriggers);
     tables[i]->setSelectionMode(QTableWidget::NoSelection);
@@ -68,8 +71,8 @@ SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)
   m_rowDtc4                  = addRow("DTC 4");
   m_rowIgnitionAdvance2      = addRow("Avance à l'allumage 2");
   m_rowIdleSpeedOffset       = addRow("Décalage régime de ralenti");
-  m_rowIdleError2            = addRow("Erreur de ralenti 2");
-  m_rowUk10                  = addRow("Non documenté 10");
+  m_rowIdleErrorHotCorrected = addRow("Erreur de ralenti à chaud (corrigée)");
+  m_rowUk10                  = addRow("Trame 7D14-15 brute");
   m_rowDtc5                  = addRow("DTC 5");
   m_rowUk11                  = addRow("Non documenté 11");
   m_rowUk12                  = addRow("Non documenté 12");
@@ -129,6 +132,11 @@ SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)
   setTooltip(m_rowIdleError,
     "C'est l'écart actuel entre le régime de ralenti visé par l'ECU MEMS et le régime moteur réel. Une valeur "
     "supérieure à 100 tr/min indique que l'ECU ne maîtrise pas le ralenti, signe possible d'un défaut.");
+  setTooltip(m_rowIdleErrorHotCorrected,
+    "Décodage du champ 7D14-15 : la valeur brute 16 bits est centrée sur 32768, puis la correction de position "
+    "du ralenti chaud configurée dans l'onglet Réglages est appliquée. La formule est : "
+    "(valeur brute - 32768) + correction ralenti chaud. La correction n'est pas une constante : elle suit le réglage "
+    "actuel de l'utilisateur.");
   setTooltip(m_rowIgnitionAdvanceOffset,
     "Affiche le décalage d'avance de service actuellement utilisé par l'ECU MEMS. C'est un réglage spécial pour les "
     "pays utilisant un carburant à faible indice d'octane, configurable dans l'onglet Réglages.");
@@ -172,10 +180,15 @@ int SummaryTab::addRow(const QString &label)
   labelItem->setFlags(labelItem->flags() & ~Qt::ItemIsEditable);
   table->setItem(row, 0, labelItem);
 
+  QTableWidgetItem *infoItem = new QTableWidgetItem("");
+  infoItem->setFlags(infoItem->flags() & ~Qt::ItemIsEditable);
+  infoItem->setTextAlignment(Qt::AlignCenter);
+  table->setItem(row, 1, infoItem);
+
   QTableWidgetItem *valueItem = new QTableWidgetItem("--");
   valueItem->setFlags(valueItem->flags() & ~Qt::ItemIsEditable);
   valueItem->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
-  table->setItem(row, 1, valueItem);
+  table->setItem(row, 2, valueItem);
 
   int index = m_rowCount;
   m_rowCount++;
@@ -193,8 +206,9 @@ void SummaryTab::setTooltip(int globalRow, const QString &text)
   {
     table->item(localRow, 0)->setToolTip(text);
     table->item(localRow, 1)->setToolTip(text);
-    // Icône "bulle" pour signaler visuellement qu'une info-bulle existe
-    table->item(localRow, 0)->setText(TOOLTIP_ICON + table->item(localRow, 0)->text());
+    table->item(localRow, 2)->setToolTip(text);
+    // La bulle est dans sa propre colonne pour séparer clairement paramètre / aide / valeur.
+    table->item(localRow, 1)->setText(TOOLTIP_ICON);
   }
 }
 
@@ -207,7 +221,7 @@ void SummaryTab::setValue(int globalRow, const QString &text)
   QTableWidget *table = (tableIdx == 0) ? m_table0 : (tableIdx == 1) ? m_table1 : m_table2;
   if (localRow >= 0 && localRow < table->rowCount())
   {
-    table->item(localRow, 1)->setText(text);
+    table->item(localRow, 2)->setText(text);
   }
 }
 
@@ -257,8 +271,11 @@ void SummaryTab::updateData(mems_data *data)
   setValue(m_rowDtc4, QString::number(data->dtc4));
   setValue(m_rowIgnitionAdvance2, QString::number(data->ignition_advance2));
   setValue(m_rowIdleSpeedOffset, QString::number(data->idle_speed_offset));
-  setValue(m_rowIdleError2, QString::number(data->idle_error2));
-  setValue(m_rowUk10, QString::number(data->uk10));
+  const int raw7d1415 = (static_cast<int>(data->idle_error2) << 8) | static_cast<int>(data->uk10);
+  const int idleHotCorrection = static_cast<int>(data->idle_hot) - 35;
+  const int idleErrorHotCorrected = (raw7d1415 - 32768) + idleHotCorrection;
+  setValue(m_rowIdleErrorHotCorrected, QString::number(idleErrorHotCorrected));
+  setValue(m_rowUk10, QString::number(raw7d1415));
   setValue(m_rowDtc5, QString::number(data->dtc5));
   setValue(m_rowUk11, QString::number(data->uk11));
   setValue(m_rowUk12, QString::number(data->uk12));

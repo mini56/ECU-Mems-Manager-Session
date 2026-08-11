@@ -95,8 +95,8 @@ bool Logger::openLog(QString fileName)
                           "7dx11_dtc4,"
                           "7dx12_ignition_advance2,"
                           "7dx13_idle_speed_offset,"
-                          "7dx14_idle_error2,"
-                          "7dx14-15_uk10,"
+                          "7dx14-15_idle_error_hot_corrected,"
+                          "7dx14-15_raw,"
                           "7dx16_dtc5,"
                           "7dx17_uk11,"
                           "7dx18_uk12,"
@@ -216,7 +216,8 @@ void Logger::logData()
       data->dtc4<< "," <<
       data->ignition_advance2<< "," <<
       data->idle_speed_offset<< "," <<
-      data->idle_error2<< "," <<
+      (((((uint16_t)data->idle_error2 << 8 ) | data->uk10) - 32768) +
+       (static_cast<int>(data->idle_hot) - 35))<< "," <<
       (((uint16_t)data->idle_error2 << 8 ) | data->uk10)<< "," <<
       data->dtc5<< "," <<
       data->uk11<< "," <<
