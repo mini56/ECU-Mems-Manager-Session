@@ -2013,8 +2013,8 @@ void MainWindow::makeFixedTabsScrollable()
     // devenir la zone défilable, et non la fenêtre principale.
     QSize contentSize = page->size().expandedTo(page->sizeHint())
                                     .expandedTo(page->minimumSizeHint());
-    if (contentSize.width() < 1200) contentSize.setWidth(1200);
-    if (contentSize.height() < 600) contentSize.setHeight(600);
+    if (contentSize.width() < 1300) contentSize.setWidth(1300);
+    if (contentSize.height() < 768) contentSize.setHeight(768);
 
     tabs->removeTab(i);
 
