@@ -234,6 +234,13 @@ m_mems(0), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerD
   m_diagnosticPanel = new DiagnosticPanel(this);
   m_ui->Tab_main->addTab(m_diagnosticPanel, QStringLiteral("Diagnostic automatique"));
 
+  // Navigation des onglets : sur les écrans étroits, Qt affiche des
+  // boutons de défilement plutôt que de couper les onglets sur les côtés.
+  QTabBar *mainTabBar = m_ui->Tab_main->tabBar();
+  mainTabBar->setUsesScrollButtons(true);
+  mainTabBar->setElideMode(Qt::ElideRight);
+  mainTabBar->setExpanding(false);
+
   // Adaptation automatique des pages fixes aux différentes résolutions.
   makeFixedTabsScrollable();
 }
@@ -308,6 +315,17 @@ void MainWindow::setupWidgets()
   // d'origine était resté commenté dans le fichier .ui, le rendant vide)
   m_summaryTab = new SummaryTab(this);
   m_ui->Tab_main->insertTab(2, m_summaryTab, "Toutes les mesures");
+
+  // L'ancien onglet "toutes les mesures" du .ui fait doublon avec
+  // le nouvel onglet "Toutes les mesures". Il reste dans le projet pour
+  // compatibilité mais est désactivé pour éviter toute confusion.
+  const int duplicateSummaryIndex = m_ui->Tab_main->indexOf(m_ui->summary_tab);
+  if (duplicateSummaryIndex >= 0)
+  {
+    m_ui->Tab_main->setTabEnabled(duplicateSummaryIndex, false);
+    m_ui->Tab_main->setTabToolTip(duplicateSummaryIndex,
+                                  QStringLiteral("Ancienne vue désactivée : utilisez « Toutes les mesures »."));
+  }
 
   // Ajout de l'onglet "Analyse" (lecture de fichiers CSV enregistrés)
   AnalysisTab *analysisTab = new AnalysisTab(this);
@@ -2007,6 +2025,8 @@ void MainWindow::makeFixedTabsScrollable()
     scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     scroll->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+    scroll->setViewportMargins(0, 0, 0, 0);
+    scroll->setFocusPolicy(Qt::NoFocus);
     scroll->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     page->setProperty("wrappedInScrollArea", true);

@@ -436,7 +436,7 @@ AnalysisTab::AnalysisTab(QWidget *parent) : QWidget(parent), m_overlayMode(false
   leftPanel->setMinimumWidth(300);
   QVBoxLayout *leftLayout = new QVBoxLayout(leftPanel);
 
-  m_loadButton = new QPushButton("Charger un fichier CSV...", leftPanel);
+  m_loadButton = new QPushButton("Charger un fichier CSV / TXT...", leftPanel);
   connect(m_loadButton, SIGNAL(clicked()), this, SLOT(onLoadFileClicked()));
   leftLayout->addWidget(m_loadButton);
 
@@ -496,7 +496,7 @@ AnalysisTab::AnalysisTab(QWidget *parent) : QWidget(parent), m_overlayMode(false
 void AnalysisTab::onLoadFileClicked()
 {
   QString path = QFileDialog::getOpenFileName(this, "Charger un fichier journal",
-                                                "logs", "Fichiers CSV (*.csv);;Tous les fichiers (*.*)");
+                                                "logs", "Fichiers journal (*.csv *.txt);;Fichiers CSV (*.csv);;Fichiers texte (*.txt);;Tous les fichiers (*.*)");
   if (path.isEmpty()) return;
   loadFile(path);
 }

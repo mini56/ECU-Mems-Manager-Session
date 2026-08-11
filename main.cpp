@@ -41,21 +41,27 @@ QSplashScreen *createStartupSplash()
     painter.setFont(titleFont);
     painter.drawText(QRect(24, 22, 472, 40), Qt::AlignLeft | Qt::AlignVCenter,
                      QStringLiteral("ECU MEMS Manager"));
+    // Cadre noir fin autour de l'écran de démarrage.
+    painter.setPen(QPen(Qt::black, 1));
+    painter.drawRect(pixmap.rect().adjusted(1, 1, -2, -2));
+
     QFont subFont = painter.font();
     subFont.setBold(false);
     subFont.setPointSize(10);
     painter.setFont(subFont);
-    painter.drawText(QRect(24, 62, 472, 28), Qt::AlignLeft | Qt::AlignVCenter,
+    painter.drawText(QRect(24, 62, 472, 24), Qt::AlignLeft | Qt::AlignVCenter,
                      QStringLiteral("Initialisation du diagnostic ECU"));
+    painter.drawText(QRect(24, 84, 472, 22), Qt::AlignLeft | Qt::AlignVCenter,
+                     QStringLiteral("Version %1").arg(QStringLiteral(APP_VERSION)));
     painter.end();
 
     QSplashScreen *splash = new QSplashScreen(pixmap, Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint);
     QProgressBar *progress = new QProgressBar(splash);
-    progress->setGeometry(24, 126, 472, 18);
+    progress->setGeometry(24, 136, 472, 18);
     progress->setRange(0, 100);
     progress->setValue(0);
     QLabel *status = new QLabel(QStringLiteral("Initialisation..."), splash);
-    status->setGeometry(24, 98, 472, 22);
+    status->setGeometry(24, 110, 472, 22);
     g_startupProgress = progress;
     g_startupStatus = status;
     g_startupSplash = splash;
@@ -68,7 +74,7 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
 
     QApplication::setApplicationName("ECU Mems Manager");
-    QApplication::setApplicationVersion("1.0.1");
+    QApplication::setApplicationVersion(QStringLiteral(APP_VERSION));
     QApplication::setOrganizationName("ECU Mems Manager");
 
     QSplashScreen *splash = createStartupSplash();

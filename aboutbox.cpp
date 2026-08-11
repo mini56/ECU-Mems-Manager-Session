@@ -8,7 +8,7 @@ void AboutBox::showAbout(QWidget* parent) {
         "À propos de ECU Mems Manager",
         QString::fromUtf8(
             "<h2>ECU Mems Manager</h2>"
-            "<p>Version 0.9.0</p>"
+            "<p>Version " APP_VERSION "</p>"
             "<p><b>Compatible avec :</b></p>"
             "<ul>"
             "<li>Rover MEMS 1.2</li>"

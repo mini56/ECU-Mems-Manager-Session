@@ -10,11 +10,12 @@ add_definitions(-DPROJECTNAME="${PROJECTNAME}")
 
 set(VER_MAJOR 1)
 set(VER_MINOR 0)
-set(VER_PATCH 1)
+set(VER_PATCH 4)
+set(APP_VERSION "${VER_MAJOR}.${VER_MINOR}.${VER_PATCH}")
 
 add_compile_definitions(
     APP_NAME="ECU Mems Manager"
-    APP_VERSION="1.0.1"
+    APP_VERSION="${APP_VERSION}"
 )
 
 add_definitions(

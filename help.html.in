@@ -83,7 +83,7 @@
 <table width="100%" cellpadding="18" cellspacing="0" style="background-color:#1f66e6; margin-bottom:22px;">
 <tr><td align="center">
 <span style="color:#ffffff; font-size:20pt; font-weight:bold;">@PROJECTNAME@</span><br/>
-<span style="color:#ffffff; font-size:12pt;">Notice d'utilisation compl&egrave;te &mdash; version fran&ccedil;aise</span><br/>
+<span style="color:#ffffff; font-size:12pt;">Notice d'utilisation compl&egrave;te &mdash; version @APP_VERSION@</span><br/>
 <span style="color:#dbe8ff; font-size:9.5pt;">Logiciel de diagnostic pour calculateurs Rover MEMS &mdash; Mini SPi / MPi</span>
 </td></tr>
 </table>
@@ -104,6 +104,20 @@
 <p>12. Glossaire</p>
 <p>13. Circuit de dépression (durites) — Mini 1.3 SPI, point de panne fréquent</p>
 <p>14. Véhicules compatibles avec MEMS-Scan 0.5.2</p>
+<p>15. Onglet ECU / ROSCO</p>
+<p>16. Onglet Diagnostic automatique</p>
+<p>17. Défilement et adaptation aux écrans</p>
+<h2 id="nouveaux-outils-ecu-mems-manager">Nouveaux outils ECU MEMS Manager</h2>
+<h3>Onglet « Toutes les mesures »</h3>
+<p>L'onglet <strong>« Toutes les mesures »</strong> est la vue complète actuelle des paramètres disponibles. Une ancienne vue interne intitulée « toutes les mesures » est conservée dans le projet pour compatibilité mais désactivée dans l'interface afin d'éviter un doublon.</p>
+<h3>Onglet « ECU / ROSCO »</h3>
+<p>Cet onglet permet d'explorer les échanges de session ROSCO avec l'ECU. Il propose notamment les commandes de lecture D0, D1, D2 et F0, les commandes de changement de session F2 à F5, l'affichage TX/RX en hexadécimal, l'horodatage et certains décodages de réponses. La commande D3 de recodage ECU reste volontairement bloquée tant que sa procédure d'écriture n'est pas suffisamment établie.</p>
+<h3>Onglet « Diagnostic automatique »</h3>
+<p>Cet onglet analyse les valeurs reçues par l'ECU MEMS et présente les contrôles sous forme de tableau avec état et interprétation. Il permet également de capturer une référence, de comparer les valeurs et d'exporter un rapport. Le contrôle du temps de charge de la bobine utilise une plage de <strong>1,9 à 3,1 ms</strong> lorsque la tension batterie est proche de 14 V ; une valeur supérieure à 3,1 ms conduit à recommander le contrôle du circuit primaire de la bobine, de la bobine et de son câblage.</p>
+<h3>Chargement des fichiers d'analyse</h3>
+<p>L'onglet Analyse accepte les fichiers <strong>CSV et TXT</strong> provenant des journaux de diagnostic.</p>
+<h3>Défilement sur les petits écrans</h3>
+<p>Les pages historiques de grande hauteur sont placées dans des zones défilables. La fenêtre principale suit désormais la taille réellement disponible et la barre des onglets utilise des boutons de défilement lorsque tous les onglets ne peuvent pas tenir sur une seule ligne. Cela permet notamment d'utiliser le logiciel sur un écran de 1300×768 sans perdre le bas des pages ni les onglets sur les côtés.</p>
 <h1 id="présentation-générale-et-sécurité">1. Présentation générale et sécurité</h1>
 <p>MEMS-Scan est un logiciel de diagnostic gratuit/communautaire pour les calculateurs Rover MEMS (Modular Engine Management System) équipant les Mini SPI (injection monopoint) et MPI (injection multipoint). Il dialogue avec l’ECU via le protocole propriétaire ROSCO (Rover Service Communications).</p>
 <p>La fenêtre principale comprend en permanence :</p>
