@@ -1,0 +1,25 @@
+ECU MEMS Manager 1.0.1
+
+- Barres de défilement automatiques sur les pages fixes pour s'adapter aux différentes résolutions.
+- Taille de fenêtre de départ adaptée à l'écran disponible.
+- Écran de démarrage restauré avec barre de progression pendant l'initialisation et la détection des ports série.
+
+ECU MEMS Manager 1.0.0
+========================
+
+Nouveauté principale : panneau « ECU / ROSCO ».
+
+Fonctions ajoutées :
+- Lecture directe des commandes ROSCO D0, D1, D2 et F0.
+- Lecture de l'identifiant étendu D1 avec affichage HEX et texte ASCII.
+- Lecture du statut sécurité D2 en conservant la réponse brute.
+- Lecture de l'état de session F0.
+- Commandes de changement de session F2/F3/F4/F5, sur action explicite de l'utilisateur.
+- Journal horodaté TX/RX des commandes de session.
+- D3 (recodage ECU) n'est volontairement pas exposé : sa sémantique d'écriture n'est pas suffisamment établie pour une commande automatique sûre.
+
+Important :
+- Cette version n'ajoute pas de doublons des fonctions déjà présentes dans MEMS-Scan FR.
+- Les réponses D1/D2/F0 sont affichées d'abord sous forme brute afin de ne pas transformer des valeurs encore incertaines en diagnostics affirmatifs.
+- La communication directe du panneau passe par la connexion ROSCO existante.
+- Le projet utilise Qt 5 et doit être compilé avec le même environnement que la version actuelle.
