@@ -2019,3 +2019,58 @@ void MainWindow::makeFixedTabsScrollable()
   }
 }
 
+void MainWindow::onProtocolResponse(quint8 command, QByteArray response)
+{
+  // Réponse ROSCO reçue depuis MEMSInterface.
+  // Cette méthode doit rester exactement compatible avec la déclaration
+  // du slot dans mainwindow.h : QByteArray est passé par valeur.
+  if (!m_protocolOutput)
+    return;
+
+  const QString commandText = QStringLiteral("%1").arg(command, 2, 16, QLatin1Char('0')).toUpper();
+  const QString rxHex = response.isEmpty()
+      ? QStringLiteral("<aucune réponse>")
+      : response.toHex(' ').toUpper();
+
+  QString line = QDateTime::currentDateTime().toString(QStringLiteral("HH:mm:ss.zzz"));
+  line += QStringLiteral("  TX: %1    RX: %2") .arg(commandText, rxHex);
+
+  // Décodages utiles pour les commandes de session.
+  if (command == 0xF0 && !response.isEmpty())
+  {
+    const quint8 status = static_cast<quint8>(response.at(0));
+    QString mode = QStringLiteral("inconnu");
+    if (status == 0x14)
+      mode = QStringLiteral("3");
+    else if (status == 0x1E)
+      mode = QStringLiteral("4");
+    else if (status == 0x50)
+      mode = QStringLiteral("5 / 6");
+
+    if (m_protocolModeLabel)
+      m_protocolModeLabel->setText(QStringLiteral("Mode : %1  (F0 = %2)").arg(mode, rxHex));
+    line += QStringLiteral("    [Mode diagnostic : %1]").arg(mode);
+  }
+  else if (command == 0xD1 && !response.isEmpty())
+  {
+    QByteArray printable;
+    for (char c : response)
+    {
+      const unsigned char u = static_cast<unsigned char>(c);
+      printable.append((u >= 0x20 && u <= 0x7E) ? c : '.');
+    }
+    line += QStringLiteral("    [ASCII : %1]").arg(QString::fromLatin1(printable));
+  }
+  else if (command == 0xD2 && !response.isEmpty())
+  {
+    line += QStringLiteral("    [Statut sécurité reçu]");
+  }
+  else if (command == 0xD0 && !response.isEmpty())
+  {
+    line += QStringLiteral("    [Identification ECU reçue]");
+  }
+
+  m_protocolOutput->append(line);
+  m_protocolOutput->ensureCursorVisible();
+}
+
