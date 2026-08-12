@@ -4143,10 +4143,16 @@ p, li { white-space: pre-wrap; }
     <layout class="QHBoxLayout" name="horizontalLayoutecuconnect">
      <item>
       <widget class="QPushButton" name="m_connectButton">
-       <property name="text">
-        <string>Connecter</string>
-       </property>
-      </widget>
+ <property name="minimumSize">
+  <size>
+   <width>120</width>
+   <height>35</height>
+  </size>
+ </property>
+ <property name="text">
+  <string>Connecter</string>
+ </property>
+</widget>
      </item>
      <item>
       <layout class="QHBoxLayout" name="comunicationlayout">
@@ -4167,13 +4173,19 @@ p, li { white-space: pre-wrap; }
      </item>
     <item>
       <widget class="QPushButton" name="m_disconnectButton">
-       <property name="disabled">
-        <bool>true</bool>
-       </property>
-       <property name="text">
-        <string>Déconnecter</string>
-       </property>
-      </widget>
+ <property name="disabled">
+  <bool>true</bool>
+ </property>
+ <property name="minimumSize">
+  <size>
+   <width>120</width>
+   <height>35</height>
+  </size>
+ </property>
+ <property name="text">
+  <string>Déconnecter</string>
+ </property>
+</widget>
      </item>
      <item>
       <widget class="Line" name="m_vline0">
