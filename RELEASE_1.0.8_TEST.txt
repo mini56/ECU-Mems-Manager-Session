@@ -1,0 +1,24 @@
+ECU MEMS Manager 1.0.8 - version de test
+
+Base : v1.0.5 fonctionnelle.
+
+Modifications principales :
+- Français / Anglais avec choix mémorisé dans Options.
+- Thème sombre : compteurs à cadran sombre, graduations/aiguille/textes clairs, rouge conservé.
+- Toutes les mesures : Valeur reçue ECU + Valeur interprétée.
+- Contraste corrigé des lignes alternées en thème sombre.
+- Raccourci Bureau avec icône KEY.ico issue de KEY.PNG.
+- Création immédiate du raccourci après validation dans Options.
+- Vérification/recréation du raccourci au démarrage lorsqu'il est activé.
+- Aperçu au démarrage.
+- Boutons Connecter / Déconnecter élargis.
+- Voyants de communication rapprochés.
+- Coupure contact/perte de communication : sortie propre de la boucle de lecture et reconnexion silencieuse.
+
+Contrôles effectués :
+- XML UI/QRC/TS validé.
+- CMake configuré avec branches Linux et Windows simulées.
+- Parenthèses/accolades des sources modifiées contrôlées.
+- Déclaration onProtocolCommandRequested(quint8 command) conservée.
+
+La compilation Qt réelle reste à valider par GitHub Actions, Qt n'étant pas installé dans l'environnement de contrôle local.

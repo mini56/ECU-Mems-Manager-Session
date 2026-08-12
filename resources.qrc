@@ -4,5 +4,6 @@
     </qresource>
     <qresource prefix="/help">
         <file>help.html</file>
+        <file>help_en.html</file>
     </qresource>
 </RCC>

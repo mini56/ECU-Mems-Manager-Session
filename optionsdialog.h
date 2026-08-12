@@ -29,6 +29,8 @@ public:
 	LambdaScale getLambdaScale() { return m_lambdaScale; }
     QString getTheme() { return m_theme; }
     bool getThemeChanged() { return m_themeChanged; }
+    QString getLanguage() const { return m_language; }
+    bool getLanguageChanged() const { return m_languageChanged; }
 
 protected:
     void accept();
@@ -47,6 +49,10 @@ private:
     QLabel *m_themeLabel;
     QComboBox *m_themeBox;
 
+    QLabel *m_languageLabel;
+    QComboBox *m_languageBox;
+    QCheckBox *m_desktopShortcutBox;
+
     QFrame *m_horizontalLineA;
 
     QCheckBox *m_refreshFuelMapCheckbox;
@@ -59,6 +65,9 @@ private:
 	LambdaScale m_lambdaScale;
     QString m_theme;
     bool m_themeChanged;
+    QString m_language;
+    bool m_languageChanged;
+    bool m_desktopShortcut;
 
     bool m_serialDeviceChanged;
 
@@ -69,6 +78,8 @@ private:
     const QString m_settingTemperatureUnits;
 	const QString m_settingLambdaScale;
     const QString m_settingTheme;
+    const QString m_settingLanguage;
+    const QString m_settingDesktopShortcut;
 
     void setupWidgets();
     void readSettings();

@@ -1,5 +1,4 @@
 #include "diagnosticpanel.h"
-#include "database/DatabaseManager.h"
 
 #include <QDateTime>
 #include <QFile>
@@ -10,6 +9,7 @@
 #include <QHeaderView>
 #include <QLabel>
 #include <QMessageBox>
+#include <QObject>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QTableWidget>
@@ -19,7 +19,7 @@
 namespace {
 QString stateFor(bool ok, bool warn = false)
 {
-    return ok ? QStringLiteral("OK") : (warn ? QStringLiteral("SURVEILLER") : QStringLiteral("ANOMALIE"));
+    return ok ? QObject::tr("OK") : (warn ? QObject::tr("SURVEILLER") : QObject::tr("ANOMALIE"));
 }
 }
 
@@ -28,8 +28,8 @@ DiagnosticPanel::DiagnosticPanel(QWidget *parent) : QWidget(parent)
     QVBoxLayout *root = new QVBoxLayout(this);
 
     QHBoxLayout *top = new QHBoxLayout;
-    m_status = new QLabel(QStringLiteral("En attente de données ECU"), this);
-    m_score = new QLabel(QStringLiteral("Diagnostic : --"), this);
+    m_status = new QLabel(tr("En attente de données ECU"), this);
+    m_score = new QLabel(tr("Diagnostic : --"), this);
     QFont scoreFont = m_score->font();
     scoreFont.setBold(true);
     scoreFont.setPointSize(scoreFont.pointSize() + 2);
@@ -39,9 +39,9 @@ DiagnosticPanel::DiagnosticPanel(QWidget *parent) : QWidget(parent)
     root->addLayout(top);
 
     QHBoxLayout *buttons = new QHBoxLayout;
-    m_capture = new QPushButton(QStringLiteral("Capturer comme référence"), this);
-    m_clear = new QPushButton(QStringLiteral("Effacer référence"), this);
-    m_export = new QPushButton(QStringLiteral("Exporter le rapport"), this);
+    m_capture = new QPushButton(tr("Capturer comme référence"), this);
+    m_clear = new QPushButton(tr("Effacer référence"), this);
+    m_export = new QPushButton(tr("Exporter le rapport"), this);
     buttons->addWidget(m_capture);
     buttons->addWidget(m_clear);
     buttons->addStretch();
@@ -50,8 +50,8 @@ DiagnosticPanel::DiagnosticPanel(QWidget *parent) : QWidget(parent)
 
     m_checks = new QTableWidget(0, 4, this);
     m_checks->setHorizontalHeaderLabels(QStringList()
-        << QStringLiteral("Contrôle") << QStringLiteral("Valeur")
-        << QStringLiteral("État") << QStringLiteral("Interprétation / action"));
+        << tr("Contrôle") << tr("Valeur")
+        << tr("État") << tr("Interprétation / action"));
     m_checks->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
     m_checks->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
     m_checks->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
@@ -59,7 +59,7 @@ DiagnosticPanel::DiagnosticPanel(QWidget *parent) : QWidget(parent)
     m_checks->verticalHeader()->setVisible(false);
     root->addWidget(m_checks, 3);
 
-    QGroupBox *reportBox = new QGroupBox(QStringLiteral("Rapport automatique"), this);
+    QGroupBox *reportBox = new QGroupBox(tr("Rapport automatique"), this);
     QVBoxLayout *reportLayout = new QVBoxLayout(reportBox);
     m_report = new QPlainTextEdit(reportBox);
     m_report->setReadOnly(true);
@@ -79,13 +79,8 @@ QString DiagnosticPanel::hexByte(quint8 v)
 void DiagnosticPanel::setEcuId(const QByteArray &id)
 {
     m_ecuId = id;
-    if (m_haveData) rebuild(m_last);
-}
-
-void DiagnosticPanel::setDatabase(DatabaseManager *database)
-{
-    m_database = database;
-    if (m_haveData) rebuild(m_last);
+    if (m_haveData)
+        rebuild(m_last);
 }
 
 void DiagnosticPanel::updateData(const mems_data *data)
@@ -115,128 +110,97 @@ void DiagnosticPanel::rebuild(const mems_data &d)
     int warnings = 0;
 
     const bool hasDtc = (d.dtc0 != 0 || d.dtc1 != 0 || d.dtc2 != 0);
-    addCheck(QStringLiteral("Défauts ECU"),
-             QStringLiteral("DTC0=%1  DTC1=%2  DTC2=%3").arg(hexByte(d.dtc0), hexByte(d.dtc1), hexByte(d.dtc2)),
-             hasDtc ? QStringLiteral("ANOMALIE") : QStringLiteral("OK"),
-             hasDtc ? QStringLiteral("Lire les bits concernés avant tout effacement.")
-                    : QStringLiteral("Aucun bit défaut actif dans les trames 0x7D/0x80."));
+    addCheck(tr("Défauts ECU"),
+             tr("DTC0=%1  DTC1=%2  DTC2=%3").arg(hexByte(d.dtc0), hexByte(d.dtc1), hexByte(d.dtc2)),
+             hasDtc ? tr("ANOMALIE") : tr("OK"),
+             hasDtc ? tr("Lire les bits concernés avant tout effacement.")
+                    : tr("Aucun bit défaut actif dans les trames 0x7D/0x80."));
     if (hasDtc) ++issues;
 
-    double batteryMin = 11.5;
-    double batteryMax = 15.2;
-    if (m_database && m_database->isOpen()) {
-        const QVariantMap p = m_database->getParameterByName(QStringLiteral("battery_voltage"));
-        if (!p.isEmpty()) {
-            batteryMin = p.value(QStringLiteral("minimum")).toDouble();
-            batteryMax = p.value(QStringLiteral("maximum")).toDouble();
-        }
-    }
     const double battery = d.battery_voltage / 10.0;
-    const bool batteryOk = battery >= batteryMin && battery <= batteryMax;
-    addCheck(QStringLiteral("Tension batterie"), QStringLiteral("%1 V").arg(battery, 0, 'f', 1),
+    const bool batteryOk = battery >= 11.5 && battery <= 15.2;
+    addCheck(tr("Tension batterie"), tr("%1 V").arg(battery, 0, 'f', 1),
              stateFor(batteryOk, true),
-             battery < batteryMin ? QStringLiteral("Tension basse : contrôler batterie, masses et alimentation ECU.")
-                            : (battery > batteryMax ? QStringLiteral("Tension élevée : contrôler charge/régulateur.")
-                                              : QStringLiteral("Plage cohérente pour un contrôle en cours de fonctionnement.")));
+             battery < 11.5 ? tr("Tension basse : contrôler batterie, masses et alimentation ECU.")
+                            : (battery > 15.2 ? tr("Tension élevée : contrôler charge/régulateur.")
+                                              : tr("Plage cohérente pour un contrôle en cours de fonctionnement.")));
     if (!batteryOk) ++warnings;
 
     const double coolant = d.coolant_temp;
     const bool coolantPlausible = coolant > 0 && coolant < 250;
-    addCheck(QStringLiteral("Température LDR brute"), QString::number(coolant),
+    addCheck(tr("Température LDR brute"), QString::number(coolant),
              stateFor(coolantPlausible, true),
-             coolantPlausible ? QStringLiteral("Valeur exploitable ; interpréter selon l'échelle MEMS du calculateur.")
-                              : QStringLiteral("Valeur hors plage plausible : contrôler la sonde et son circuit."));
+             coolantPlausible ? tr("Valeur exploitable ; interpréter selon l'échelle MEMS du calculateur.")
+                              : tr("Valeur hors plage plausible : contrôler la sonde et son circuit."));
     if (!coolantPlausible) ++issues;
 
     const bool rpmPlausible = d.engine_rpm <= 8000;
-    addCheck(QStringLiteral("Régime moteur"), QStringLiteral("%1 tr/min").arg(d.engine_rpm),
+    addCheck(tr("Régime moteur"), tr("%1 tr/min").arg(d.engine_rpm),
              stateFor(rpmPlausible, true),
-             rpmPlausible ? QStringLiteral("Trame régime cohérente.")
-                          : QStringLiteral("Valeur régime anormale : contrôler signal régime / câblage."));
+             rpmPlausible ? tr("Trame régime cohérente.")
+                          : tr("Valeur régime anormale : contrôler signal régime / câblage."));
     if (!rpmPlausible) ++issues;
 
     const bool mapPlausible = d.map_kpa <= 160;
-    addCheck(QStringLiteral("MAP"), QStringLiteral("%1 kPa").arg(d.map_kpa),
+    addCheck(tr("MAP"), tr("%1 kPa").arg(d.map_kpa),
              stateFor(mapPlausible, true),
-             mapPlausible ? QStringLiteral("Valeur dans la plage décodée par MEMS.")
-                          : QStringLiteral("Valeur hors plage décodée : contrôler mesure MAP."));
+             mapPlausible ? tr("Valeur dans la plage décodée par MEMS.")
+                          : tr("Valeur hors plage décodée : contrôler mesure MAP."));
     if (!mapPlausible) ++issues;
 
     const bool tpsPlausible = d.throttle_pot <= 255;
-    addCheck(QStringLiteral("TPS"), QStringLiteral("%1 / 255").arg(d.throttle_pot),
+    addCheck(tr("TPS"), QStringLiteral("%1 / 255").arg(d.throttle_pot),
              stateFor(tpsPlausible),
              (d.dtc1 & 0x80) || (d.dtc2 & 0x01)
-                 ? QStringLiteral("Un défaut TPS/alimentation TPS est signalé : contrôler alimentation, masse et progression du capteur.")
-                 : QStringLiteral("Aucun défaut TPS connu actif dans les bits surveillés."));
+                 ? tr("Un défaut TPS/alimentation TPS est signalé : contrôler alimentation, masse et progression du capteur.")
+                 : tr("Aucun défaut TPS connu actif dans les bits surveillés."));
     if ((d.dtc1 & 0x80) || (d.dtc2 & 0x01)) ++issues;
 
     const bool lambdaFault = (d.dtc2 & 0x04) || (d.dtc2 & 0x08);
-    addCheck(QStringLiteral("Lambda"),
-             QStringLiteral("U=%1  freq=%2  duty=%3  status=%4")
+    addCheck(tr("Lambda"),
+             tr("U=%1  freq=%2  duty=%3  status=%4")
                  .arg(d.lambda_voltage).arg(d.lambda_sensor_frequency)
                  .arg(d.lambda_sensor_dutycycle).arg(d.lambda_sensor_status),
-             lambdaFault ? QStringLiteral("ANOMALIE") : QStringLiteral("INFORMATION"),
-             lambdaFault ? QStringLiteral("Défaut circuit/alimentation lambda : contrôler chauffage, alimentation et câblage.")
-                         : (d.closed_loop ? QStringLiteral("Boucle fermée active : les corrections lambda sont en cours d'utilisation.")
-                                          : QStringLiteral("Boucle fermée inactive à cet instant ; interpréter avec température et conditions moteur.")));
+             lambdaFault ? tr("ANOMALIE") : tr("INFORMATION"),
+             lambdaFault ? tr("Défaut circuit/alimentation lambda : contrôler chauffage, alimentation et câblage.")
+                         : (d.closed_loop ? tr("Boucle fermée active : les corrections lambda sont en cours d'utilisation.")
+                                          : tr("Boucle fermée inactive à cet instant ; interpréter avec température et conditions moteur.")));
     if (lambdaFault) ++issues;
 
     const int fuelTrim = int(d.short_term_fuel_trim) - 100;
     const bool trimWatch = qAbs(fuelTrim) > 20 || qAbs(int(d.long_term_fuel_trim) - 100) > 20;
-    addCheck(QStringLiteral("Corrections carburant"),
-             QStringLiteral("court terme=%1  long terme=%2")
+    addCheck(tr("Corrections carburant"),
+             tr("court terme=%1  long terme=%2")
                  .arg(fuelTrim).arg(int(d.long_term_fuel_trim) - 100),
              stateFor(!trimWatch, true),
-             trimWatch ? QStringLiteral("Correction importante : rechercher prise d'air, pression/carburant, injection ou mesure lambda avant de modifier les réglages.")
-                       : QStringLiteral("Corrections sans écart important selon ce critère indicatif."));
+             trimWatch ? tr("Correction importante : rechercher prise d'air, pression/carburant, injection ou mesure lambda avant de modifier les réglages.")
+                       : tr("Corrections sans écart important selon ce critère indicatif."));
     if (trimWatch) ++warnings;
 
     // Temps de charge de la bobine : contrôle spécifique demandé pour
     // une tension batterie proche de 14 V. Hors de cette tension, le
     // logiciel affiche la mesure mais ne porte pas de jugement automatique.
-    double coilMin = 1.9;
-    double coilMax = 3.1;
-    double gateMin = 13.5;
-    double gateMax = 14.5;
-    if (m_database && m_database->isOpen()) {
-        const QVariantMap p = m_database->getParameterByName(QStringLiteral("coil_time"));
-        if (!p.isEmpty()) {
-            coilMin = p.value(QStringLiteral("nominal_min")).toDouble();
-            coilMax = p.value(QStringLiteral("nominal_max")).toDouble();
-        }
-        const QVariantMap batteryParam = m_database->getParameterByName(QStringLiteral("battery_voltage"));
-        if (!batteryParam.isEmpty()) {
-            gateMin = batteryParam.value(QStringLiteral("nominal_min")).toDouble();
-            gateMax = batteryParam.value(QStringLiteral("nominal_max")).toDouble();
-        }
-        const QVariantList rules = m_database->getDiagnosticRules(QStringLiteral("coil_time"));
-        if (!rules.isEmpty()) {
-            const QVariantMap r = rules.first().toMap();
-            coilMin = r.value(QStringLiteral("value1")).toDouble();
-            coilMax = r.value(QStringLiteral("value2")).toDouble();
-        }
-    }
     const double coilTime = d.coil_time;
-    const bool batteryNear14 = battery >= gateMin && battery <= gateMax;
-    const bool coilOk = coilTime >= coilMin && coilTime <= coilMax;
+    const bool batteryNear14 = battery >= 13.5 && battery <= 14.5;
+    const bool coilOk = coilTime >= 1.9 && coilTime <= 3.1;
     QString coilState;
     QString coilAdvice;
     if (!batteryNear14) {
-        coilState = QStringLiteral("NON ÉVALUÉ");
-        coilAdvice = QStringLiteral("Mesure affichée. Le contrôle de la plage définie dans la base est appliqué automatiquement uniquement avec une tension batterie proche de 14 V.");
+        coilState = tr("NON ÉVALUÉ");
+        coilAdvice = tr("Mesure affichée. Le contrôle 1,9–3,1 ms est appliqué automatiquement uniquement avec une tension batterie proche de 14 V.");
     } else if (coilOk) {
-        coilState = QStringLiteral("OK");
-        coilAdvice = QStringLiteral("Temps de charge dans la plage %1–%2 ms à environ 14 V.").arg(coilMin, 0, 'f', 1).arg(coilMax, 0, 'f', 1);
+        coilState = tr("OK");
+        coilAdvice = tr("Temps de charge dans la plage 1,9–3,1 ms à environ 14 V.");
     } else if (coilTime > 3.1) {
-        coilState = QStringLiteral("ANOMALIE");
-        coilAdvice = QStringLiteral("Temps de charge trop élevé à environ 14 V : contrôler en priorité le circuit primaire de la bobine, la bobine et son câblage.");
+        coilState = tr("ANOMALIE");
+        coilAdvice = tr("Temps de charge trop élevé à environ 14 V : contrôler en priorité le circuit primaire de la bobine, la bobine et son câblage.");
         ++issues;
     } else {
-        coilState = QStringLiteral("SURVEILLER");
-        coilAdvice = QStringLiteral("Temps de charge inférieur à 1,9 ms à environ 14 V : contrôler la mesure, l'alimentation et le circuit de commande avant conclusion.");
+        coilState = tr("SURVEILLER");
+        coilAdvice = tr("Temps de charge inférieur à 1,9 ms à environ 14 V : contrôler la mesure, l'alimentation et le circuit de commande avant conclusion.");
         ++warnings;
     }
-    addCheck(QStringLiteral("Temps bobine"), QStringLiteral("%1 ms  | batterie %2 V").arg(coilTime, 0, 'f', 2).arg(battery, 0, 'f', 1),
+    addCheck(tr("Temps bobine"), tr("%1 ms  | batterie %2 V").arg(coilTime, 0, 'f', 2).arg(battery, 0, 'f', 1),
              coilState, coilAdvice);
 
     // Décodage du champ 7D14-15. La correction de -3 n'est pas une constante :
@@ -244,24 +208,9 @@ void DiagnosticPanel::rebuild(const mems_data &d)
     const int raw7d1415 = (static_cast<int>(d.idle_error2) << 8) | static_cast<int>(d.uk10);
     const int hotIdleCorrection = static_cast<int>(d.idle_hot) - 35;
     const int hotIdleErrorCorrected = (raw7d1415 - 32768) + hotIdleCorrection;
-    double hotIdleMin = -15.0;
-    double hotIdleMax = 15.0;
-    if (m_database && m_database->isOpen()) {
-        const QVariantMap p = m_database->getParameterByName(QStringLiteral("idle_error_hot_corrected"));
-        if (!p.isEmpty()) {
-            hotIdleMin = p.value(QStringLiteral("nominal_min")).toDouble();
-            hotIdleMax = p.value(QStringLiteral("nominal_max")).toDouble();
-        }
-        const QVariantList rules = m_database->getDiagnosticRules(QStringLiteral("idle_error_hot"));
-        if (!rules.isEmpty()) {
-            const QVariantMap r = rules.first().toMap();
-            hotIdleMin = r.value(QStringLiteral("value1")).toDouble();
-            hotIdleMax = r.value(QStringLiteral("value2")).toDouble();
-        }
-    }
-    const bool hotIdleErrorOk = hotIdleErrorCorrected >= hotIdleMin && hotIdleErrorCorrected <= hotIdleMax;
-    addCheck(QStringLiteral("Erreur ralenti à chaud"),
-             QStringLiteral("%1 ECU | brut 7D14-15=%2 | correction=%3")
+    const bool hotIdleErrorOk = qAbs(hotIdleErrorCorrected) <= 15;
+    addCheck(tr("Erreur ralenti à chaud"),
+             tr("%1 ECU | brut 7D14-15=%2 | correction=%3")
                  .arg(hotIdleErrorCorrected).arg(raw7d1415).arg(hotIdleCorrection),
              stateFor(hotIdleErrorOk, true),
              QStringLiteral("Décodage : (7D14-15 brut - 32768) + correction Position ralenti chaud. "
@@ -270,41 +219,41 @@ void DiagnosticPanel::rebuild(const mems_data &d)
     if (!hotIdleErrorOk) ++warnings;
 
     const bool iacSuspicious = (d.iac_position == 0 && d.idle_error >= 50 && d.idle_switch == 0 && d.uk3 != 0);
-    addCheck(QStringLiteral("Commande de ralenti IAC"),
-             QStringLiteral("position=%1  erreur=%2").arg(d.iac_position).arg(d.idle_error),
-             iacSuspicious ? QStringLiteral("ANOMALIE") : QStringLiteral("OK"),
-             iacSuspicious ? QStringLiteral("IAC en butée avec erreur de ralenti : contrôler moteur pas-à-pas, butée, prise d'air et réglage mécanique.")
-                           : QStringLiteral("Aucune combinaison critique IAC/erreur détectée."));
+    addCheck(tr("Commande de ralenti IAC"),
+             tr("position=%1  erreur=%2").arg(d.iac_position).arg(d.idle_error),
+             iacSuspicious ? tr("ANOMALIE") : tr("OK"),
+             iacSuspicious ? tr("IAC en butée avec erreur de ralenti : contrôler moteur pas-à-pas, butée, prise d'air et réglage mécanique.")
+                           : tr("Aucune combinaison critique IAC/erreur détectée."));
     if (iacSuspicious) ++issues;
 
     if (m_reference.valid) {
         const int rpmDelta = int(d.engine_rpm) - int(m_reference.data.engine_rpm);
         const int mapDelta = int(d.map_kpa) - int(m_reference.data.map_kpa);
         const int tpsDelta = int(d.throttle_pot) - int(m_reference.data.throttle_pot);
-        addCheck(QStringLiteral("Comparaison référence"),
-                 QStringLiteral("ΔRPM=%1  ΔMAP=%2 kPa  ΔTPS=%3").arg(rpmDelta).arg(mapDelta).arg(tpsDelta),
-                 QStringLiteral("INFO"),
-                 QStringLiteral("Référence capturée le %1. Cette comparaison sert à repérer une dérive ; elle ne constitue pas une spécification constructeur.").arg(m_reference.timestamp));
+        addCheck(tr("Comparaison référence"),
+                 tr("ΔRPM=%1  ΔMAP=%2 kPa  ΔTPS=%3").arg(rpmDelta).arg(mapDelta).arg(tpsDelta),
+                 tr("INFO"),
+                 tr("Référence capturée le %1. Cette comparaison sert à repérer une dérive ; elle ne constitue pas une spécification constructeur.").arg(m_reference.timestamp));
     }
 
     const int total = issues * 2 + warnings;
-    const QString level = issues == 0 ? (warnings == 0 ? QStringLiteral("NORMAL") : QStringLiteral("SURVEILLER"))
-                                      : QStringLiteral("ANOMALIE À INVESTIGUER");
-    m_score->setText(QStringLiteral("Diagnostic : %1  |  %2 anomalie(s), %3 avertissement(s)").arg(level).arg(issues).arg(warnings));
-    m_status->setText(QStringLiteral("Dernière analyse : %1  |  score interne=%2")
-                      .arg(QDateTime::currentDateTime().toString(QStringLiteral("dd/MM/yyyy hh:mm:ss"))).arg(total));
+    const QString level = issues == 0 ? (warnings == 0 ? tr("NORMAL") : tr("SURVEILLER"))
+                                      : tr("ANOMALIE À INVESTIGUER");
+    m_score->setText(tr("Diagnostic : %1  |  %2 anomalie(s), %3 avertissement(s)").arg(level).arg(issues).arg(warnings));
+    m_status->setText(tr("Dernière analyse : %1  |  score interne=%2")
+                      .arg(QDateTime::currentDateTime().toString("dd/MM/yyyy hh:mm:ss")).arg(total));
     m_report->setPlainText(buildReport());
 }
 
 void DiagnosticPanel::captureReference()
 {
     if (!m_haveData) {
-        QMessageBox::information(this, QStringLiteral("Diagnostic"), QStringLiteral("Aucune donnée ECU disponible."));
+        QMessageBox::information(this, tr("Diagnostic"), tr("Aucune donnée ECU disponible."));
         return;
     }
     m_reference.valid = true;
     m_reference.data = m_last;
-    m_reference.timestamp = QDateTime::currentDateTime().toString(QStringLiteral("dd/MM/yyyy hh:mm:ss"));
+    m_reference.timestamp = QDateTime::currentDateTime().toString("dd/MM/yyyy hh:mm:ss");
     rebuild(m_last);
 }
 
@@ -317,56 +266,44 @@ void DiagnosticPanel::clearReference()
 QString DiagnosticPanel::buildReport() const
 {
     if (!m_haveData)
-        return QStringLiteral("Aucune donnée ECU disponible.");
+        return tr("Aucune donnée ECU disponible.");
 
     const mems_data &d = m_last;
     QString text;
-    text += QStringLiteral("ECU MEMS MANAGER - RAPPORT DE DIAGNOSTIC\n");
-    text += QStringLiteral("Date : %1\n").arg(QDateTime::currentDateTime().toString(QStringLiteral("dd/MM/yyyy hh:mm:ss")));
-    if (!m_ecuId.isEmpty()) text += QStringLiteral("Identification : %1\n").arg(QString::fromLatin1(m_ecuId.toHex(' ').toUpper()));
-    text += QStringLiteral("DTC : %1 %2 %3\n").arg(hexByte(d.dtc0), hexByte(d.dtc1), hexByte(d.dtc2));
-    if (m_database && m_database->isOpen()) {
-        text += QStringLiteral("Base de connaissances : connectée\n");
-        text += QStringLiteral("Paramètres connus : %1 | règles de diagnostic : %2\n")
-            .arg(m_database->getParameters().size())
-            .arg(m_database->getDiagnosticRules().size());
-        const QVariantMap p = m_database->getParameterByName(QStringLiteral("idle_error_hot_corrected"));
-        if (!p.isEmpty()) {
-            text += QStringLiteral("7D14-15 : %1 | unité=%2\n")
-                .arg(p.value(QStringLiteral("description")).toString())
-                .arg(p.value(QStringLiteral("unit")).toString());
-        }
-    }
+    text += tr("ECU MEMS MANAGER - RAPPORT DE DIAGNOSTIC\n");
+    text += tr("Date : %1\n").arg(QDateTime::currentDateTime().toString("dd/MM/yyyy hh:mm:ss"));
+    if (!m_ecuId.isEmpty()) text += tr("Identification : %1\n").arg(QString::fromLatin1(m_ecuId.toHex(' ').toUpper()));
+    text += tr("DTC : %1 %2 %3\n").arg(hexByte(d.dtc0), hexByte(d.dtc1), hexByte(d.dtc2));
     const int raw7d1415 = (static_cast<int>(d.idle_error2) << 8) | static_cast<int>(d.uk10);
     const int hotIdleCorrection = static_cast<int>(d.idle_hot) - 35;
     const int hotIdleErrorCorrected = (raw7d1415 - 32768) + hotIdleCorrection;
-    text += QStringLiteral("Temps bobine=%1 ms\n").arg(d.coil_time, 0, 'f', 2);
-    text += QStringLiteral("7D14-15 brut=%1 | correction ralenti chaud=%2 | erreur ralenti chaud corrigée=%3 ECU\n")
+    text += tr("Temps bobine=%1 ms\n").arg(d.coil_time, 0, 'f', 2);
+    text += tr("7D14-15 brut=%1 | correction ralenti chaud=%2 | erreur ralenti chaud corrigée=%3 ECU\n")
         .arg(raw7d1415).arg(hotIdleCorrection).arg(hotIdleErrorCorrected);
-    text += QStringLiteral("RPM=%1 | MAP=%2 kPa | batterie=%3 V | TPS=%4 | IAC=%5 | erreur ralenti=%6\n")
+    text += tr("RPM=%1 | MAP=%2 kPa | batterie=%3 V | TPS=%4 | IAC=%5 | erreur ralenti=%6\n")
         .arg(d.engine_rpm).arg(d.map_kpa).arg(d.battery_voltage / 10.0, 0, 'f', 1)
         .arg(d.throttle_pot).arg(d.iac_position).arg(d.idle_error);
-    text += QStringLiteral("LDR brut=%1 | air admission brut=%2 | lambda=%3 | boucle fermee=%4\n")
-        .arg(d.coolant_temp).arg(d.intake_air_temp).arg(d.lambda_voltage).arg(d.closed_loop ? QStringLiteral("oui") : QStringLiteral("non"));
+    text += tr("LDR brut=%1 | air admission brut=%2 | lambda=%3 | boucle fermee=%4\n")
+        .arg(d.coolant_temp).arg(d.intake_air_temp).arg(d.lambda_voltage).arg(d.closed_loop ? tr("oui") : tr("non"));
     if (m_reference.valid)
-        text += QStringLiteral("Référence : %1\n").arg(m_reference.timestamp);
-    text += QStringLiteral("\nLes états et conseils de ce rapport sont des contrôles de cohérence et ne remplacent pas les spécifications constructeur.\n");
+        text += tr("Référence : %1\n").arg(m_reference.timestamp);
+    text += tr("\nLes états et conseils de ce rapport sont des contrôles de cohérence et ne remplacent pas les spécifications constructeur.\n");
     return text;
 }
 
 void DiagnosticPanel::exportReport()
 {
     if (!m_haveData) {
-        QMessageBox::information(this, QStringLiteral("Diagnostic"), QStringLiteral("Aucune donnée à exporter."));
+        QMessageBox::information(this, tr("Diagnostic"), tr("Aucune donnée à exporter."));
         return;
     }
-    const QString fileName = QFileDialog::getSaveFileName(this, QStringLiteral("Exporter le rapport"),
+    const QString fileName = QFileDialog::getSaveFileName(this, tr("Exporter le rapport"),
         QStringLiteral("diagnostic_mems_%1.txt").arg(QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMdd_hhmmss"))),
-        QStringLiteral("Rapport texte (*.txt)"));
+        tr("Rapport texte (*.txt)"));
     if (fileName.isEmpty()) return;
     QFile file(fileName);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QMessageBox::warning(this, QStringLiteral("Diagnostic"), QStringLiteral("Impossible d'écrire le rapport."));
+        QMessageBox::warning(this, tr("Diagnostic"), tr("Impossible d'écrire le rapport."));
         return;
     }
     file.write(m_report->toPlainText().toUtf8());

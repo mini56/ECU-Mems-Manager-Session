@@ -229,22 +229,19 @@ void MEMSInterface::runServiceLoop()
     else
     {
       emit readError();
-
-      // Important : read() peut échouer lorsque le contact de la voiture
-      // est coupé. L'ancien code conservait « connected == true » et
-      // continuait donc à boucler indéfiniment. On vérifie immédiatement
-      // l'état réel de la connexion afin de sortir proprement.
-      connected = mems_is_connected(&m_memsinfo);
-      if (!connected)
-        break;
+      // Une coupure du contact ou une perte série ne doit pas laisser
+      // la boucle tourner indéfiniment. La déconnexion ci-dessous
+      // libère proprement la session ; l'UI pourra retenter sans alerte.
+      break;
     }
     QCoreApplication::processEvents();
   }
   m_serviceLoopRunning = false;
 
   if (connected)
+  {
     mems_disconnect(&m_memsinfo);
-
+  }
   emit disconnected();
 
   if (m_shutdownThread)

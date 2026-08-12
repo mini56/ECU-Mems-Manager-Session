@@ -1,0 +1,14 @@
+ECU MEMS Manager - travail multilingue
+Base: version 1.0.5 fonctionnelle
+Cible: 1.0.8
+Langues: Français / Anglais
+- choix de langue dans Options
+- préférence persistante
+- chargement traduction avant création interface
+- redémarrage contrôlé lors du changement de langue
+- UI Qt + chaînes C++ rendues traduisibles
+- aide FR et EN distincte
+- catalogues TS FR/EN
+- génération QM intégrée à CMake/GitHub Actions
+- déclaration memsinterface onProtocolCommandRequested conservée
+ZIP NON CRÉÉ à la demande de l'utilisateur.

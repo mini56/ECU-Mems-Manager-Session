@@ -1,4 +1,7 @@
 #include <QApplication>
+#include <QLocale>
+#include <QSettings>
+#include <QTranslator>
 #include <QMessageBox>
 #include <QSplashScreen>
 #include <QProgressBar>
@@ -10,8 +13,8 @@
 #include "splashprogress.h"
 
 #include "mainwindow.h"
+#include "desktopshortcut.h"
 #include "database/DatabaseManager.h"
-#include "database/DatabaseSeed.h"
 
 namespace
 {
@@ -26,7 +29,7 @@ void updateStartupProgress(int percent)
     percent = qBound(0, percent, 100);
     g_startupProgress->setValue(percent);
     if (g_startupStatus)
-        g_startupStatus->setText(QStringLiteral("Détection des ports série : %1 %").arg(percent));
+        g_startupStatus->setText(QObject::tr("Détection des ports série : %1 %").arg(percent));
     qApp->processEvents();
 }
 
@@ -51,9 +54,9 @@ QSplashScreen *createStartupSplash()
     subFont.setPointSize(10);
     painter.setFont(subFont);
     painter.drawText(QRect(24, 62, 472, 24), Qt::AlignLeft | Qt::AlignVCenter,
-                     QStringLiteral("Initialisation du diagnostic ECU"));
+                     QObject::tr("Initialisation du diagnostic ECU"));
     painter.drawText(QRect(24, 84, 472, 22), Qt::AlignLeft | Qt::AlignVCenter,
-                     QStringLiteral("Version %1").arg(QStringLiteral(APP_VERSION)));
+                     QObject::tr("Version %1").arg(QStringLiteral(APP_VERSION)));
     painter.end();
 
     QSplashScreen *splash = new QSplashScreen(pixmap, Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint);
@@ -61,7 +64,7 @@ QSplashScreen *createStartupSplash()
     progress->setGeometry(24, 136, 472, 18);
     progress->setRange(0, 100);
     progress->setValue(0);
-    QLabel *status = new QLabel(QStringLiteral("Initialisation..."), splash);
+    QLabel *status = new QLabel(QObject::tr("Initialisation..."), splash);
     status->setGeometry(24, 110, 472, 22);
     g_startupProgress = progress;
     g_startupStatus = status;
@@ -77,6 +80,21 @@ int main(int argc, char *argv[])
     QApplication::setApplicationName("ECU Mems Manager");
     QApplication::setApplicationVersion(QStringLiteral(APP_VERSION));
     QApplication::setOrganizationName("ECU Mems Manager");
+
+    // Load the persisted UI language before creating any widgets.
+    QSettings languageSettings(QSettings::IniFormat, QSettings::UserScope, PROJECTNAME);
+    languageSettings.beginGroup("Settings");
+    const QString language = languageSettings.value("Language", "fr").toString();
+    languageSettings.endGroup();
+
+    QTranslator translator;
+    const QString translationPath = QCoreApplication::applicationDirPath()
+                                  + "/translations/ECUMemsManager_" + language + ".qm";
+    if (translator.load(translationPath))
+        app.installTranslator(&translator);
+
+    // Vérifie le raccourci Bureau demandé dans Options.
+    DesktopShortcut::ensureIfEnabled();
 
     QSplashScreen *splash = createStartupSplash();
     splash->show();
@@ -95,7 +113,7 @@ int main(int argc, char *argv[])
      */
     DatabaseManager database;
     if (g_startupStatus)
-        g_startupStatus->setText(QStringLiteral("Initialisation de la base de données..."));
+        g_startupStatus->setText(QObject::tr("Initialisation de la base de données..."));
     app.processEvents();
 
     if (!database.open())
@@ -115,17 +133,11 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    if (!DatabaseSeed::populate(database))
-    {
-    qWarning() << "Le chargement de la base de connaissances SQLite a échoué."
-               << "L'application continue avec la base ouverte.";
-    }
-
     if (g_startupStatus)
-        g_startupStatus->setText(QStringLiteral("Chargement de l'interface..."));
+        g_startupStatus->setText(QObject::tr("Chargement de l'interface..."));
     updateStartupProgress(100);
 
-    MainWindow window(&database);
+    MainWindow window;
 
     QScreen *screen = QGuiApplication::primaryScreen();
     if (screen)

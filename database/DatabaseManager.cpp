@@ -373,39 +373,6 @@ QVariantList DatabaseManager::getParametersForEcu(int ecuId) const
     );
 }
 
-
-QVariantMap DatabaseManager::getParameterByName(const QString &name) const
-{
-    return queryOne("SELECT * FROM parameter WHERE name = ?", QVariantList() << name);
-}
-
-int DatabaseManager::addDiagnosticRule(
-    const QString &key, const QString &parameterName, const QString &ruleType,
-    double value1, double value2, const QString &severity,
-    const QString &message, const QString &advice, const QString &source)
-{
-    if (!isOpen()) return -1;
-    QSqlQuery query(m_database);
-    query.prepare("INSERT OR REPLACE INTO diagnostic_rule "
-                  "(rule_key, parameter_name, rule_type, value1, value2, severity, message, advice, source) "
-                  "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    query.addBindValue(key); query.addBindValue(parameterName); query.addBindValue(ruleType);
-    query.addBindValue(value1); query.addBindValue(value2); query.addBindValue(severity);
-    query.addBindValue(message); query.addBindValue(advice); query.addBindValue(source);
-    return query.exec() ? query.lastInsertId().toInt() : -1;
-}
-
-QVariantList DatabaseManager::getDiagnosticRules(const QString &key) const
-{
-    if (key.isEmpty()) return queryList("SELECT * FROM diagnostic_rule ORDER BY rule_key");
-    return queryList("SELECT * FROM diagnostic_rule WHERE rule_key = ? ORDER BY id", QVariantList() << key);
-}
-
-QVariantList DatabaseManager::getDtcRulesForByteBit(int byteIndex, int bitIndex) const
-{
-    return queryList("SELECT * FROM dtc WHERE byte = ? AND bit = ? ORDER BY code", QVariantList() << byteIndex << bitIndex);
-}
-
 bool DatabaseManager::linkEcuParameter(
     int ecuId,
     int parameterId,
@@ -619,8 +586,7 @@ bool DatabaseManager::createTables()
         && createParameterTable()
         && createActuatorTable()
         && createEcuParameterTable()
-        && createEcuActuatorTable()
-        && createDiagnosticRuleTable();
+        && createEcuActuatorTable();
 }
 
 bool DatabaseManager::createMetaTable()
@@ -703,8 +669,6 @@ bool DatabaseManager::createDtcTable()
         "id INTEGER PRIMARY KEY AUTOINCREMENT,"
         "ecu_id INTEGER,"
         "code TEXT NOT NULL,"
-        "byte INTEGER,"
-        "bit INTEGER,"
         "description TEXT,"
         "system TEXT,"
         "severity INTEGER DEFAULT 0,"
@@ -788,27 +752,6 @@ bool DatabaseManager::createEcuActuatorTable()
         "PRIMARY KEY(ecu_id, actuator_id),"
         "FOREIGN KEY(ecu_id) REFERENCES ecu(id),"
         "FOREIGN KEY(actuator_id) REFERENCES actuator(id)"
-        ")"
-    );
-}
-
-
-bool DatabaseManager::createDiagnosticRuleTable()
-{
-    QSqlQuery query(m_database);
-    return query.exec(
-        "CREATE TABLE IF NOT EXISTS diagnostic_rule ("
-        "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-        "rule_key TEXT NOT NULL,"
-        "parameter_name TEXT,"
-        "rule_type TEXT NOT NULL,"
-        "value1 REAL,"
-        "value2 REAL,"
-        "severity TEXT,"
-        "message TEXT,"
-        "advice TEXT,"
-        "source TEXT,"
-        "UNIQUE(rule_key, parameter_name, rule_type)"
         ")"
     );
 }

@@ -10,7 +10,7 @@ add_definitions(-DPROJECTNAME="${PROJECTNAME}")
 
 set(VER_MAJOR 1)
 set(VER_MINOR 0)
-set(VER_PATCH 7)
+set(VER_PATCH 8)
 set(APP_VERSION "${VER_MAJOR}.${VER_MINOR}.${VER_PATCH}")
 
 add_compile_definitions(
@@ -30,7 +30,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt5 REQUIRED COMPONENTS Widgets SerialPort Charts Sql)
+find_package(Qt5 REQUIRED COMPONENTS Widgets SerialPort Charts Sql LinguistTools)
 
 # Dossiers du projet
 include_directories(
@@ -45,6 +45,10 @@ include_directories(
 configure_file(
     "${CMAKE_SOURCE_DIR}/help.html.in"
     "${CMAKE_SOURCE_DIR}/help.html"
+)
+configure_file(
+    "${CMAKE_SOURCE_DIR}/help_en.html.in"
+    "${CMAKE_SOURCE_DIR}/help_en.html"
 )
 
 # Sources
@@ -94,6 +98,35 @@ set(SOURCES
 
 # Exécutable
 add_executable(${PNAME} ${SOURCES})
+
+
+
+# Gestion du raccourci Windows sur le Bureau
+target_sources(${PNAME} PRIVATE
+    ${CMAKE_SOURCE_DIR}/desktopshortcut.cpp
+    ${CMAKE_SOURCE_DIR}/desktopshortcut.h
+)
+if(WIN32)
+    target_link_libraries(${PNAME} PRIVATE ole32 shell32 uuid)
+    add_custom_command(TARGET ${PNAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CMAKE_SOURCE_DIR}/key.ico"
+                "$<TARGET_FILE_DIR:${PNAME}>/key.ico"
+    )
+endif()
+
+# Traductions Français / Anglais
+set(TS_FILES
+    ${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_fr.ts
+    ${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_en.ts
+)
+qt5_add_translation(QM_FILES ${TS_FILES})
+add_custom_target(translations ALL DEPENDS ${QM_FILES})
+add_dependencies(${PNAME} translations)
+add_custom_command(TARGET ${PNAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PNAME}>/translations"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${QM_FILES} "$<TARGET_FILE_DIR:${PNAME}>/translations"
+)
 
 # Compatibilité MSVC / Qt 5.15
 if(MSVC)

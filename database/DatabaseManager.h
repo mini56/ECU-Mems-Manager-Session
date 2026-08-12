@@ -89,19 +89,6 @@ public:
 
     QVariantList getParameters() const;
     QVariantList getParametersForEcu(int ecuId) const;
-    QVariantMap getParameterByName(const QString &name) const;
-
-    int addDiagnosticRule(const QString &key,
-                          const QString &parameterName,
-                          const QString &ruleType,
-                          double value1,
-                          double value2,
-                          const QString &severity,
-                          const QString &message,
-                          const QString &advice,
-                          const QString &source);
-    QVariantList getDiagnosticRules(const QString &key = QString()) const;
-    QVariantList getDtcRulesForByteBit(int byteIndex, int bitIndex) const;
 
     bool linkEcuParameter(int ecuId,
                           int parameterId,
@@ -140,7 +127,6 @@ private:
     bool createActuatorTable();
     bool createEcuParameterTable();
     bool createEcuActuatorTable();
-    bool createDiagnosticRuleTable();
 
     QString defaultDatabasePath() const;
 

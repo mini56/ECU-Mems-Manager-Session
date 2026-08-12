@@ -16,45 +16,45 @@ static QString friendlyColumnName(const QString &rawName)
   static QMap<QString, QString> names;
   if (names.isEmpty())
   {
-    names["80x01-02_engine-rpm"] = "Régime moteur (tr/min)";
-    names["80x03_coolant_temp"] = "Température liquide refroid. (°C)";
-    names["80x04_ambient_temp"] = "Température ambiante (°C)";
-    names["80x05_intake_air_temp"] = "Température air admission (°C)";
-    names["80x06_fuel_temp"] = "Température carburant (°C)";
-    names["80x07_map_kpa"] = "Pression collecteur (kPa)";
-    names["80x08_battery_voltage"] = "Tension batterie (V)";
-    names["80x09_throttle_pot"] = "Position papillon (%)";
-    names["80x0A_idle_switch"] = "Contact ralenti";
-    names["80x0C_park_neutral_switch"] = "Contact point mort";
-    names["80x0D-0E_fault_codes"] = "Codes défaut (brut)";
-    names["80x0F_idle_set_point"] = "Consigne de ralenti";
-    names["80x10_idle_hot"] = "Ralenti chaud";
-    names["80x12_iac_position"] = "Position moteur pas-à-pas (%)";
-    names["80x13-14_idle_error"] = "Erreur de ralenti";
-    names["80x15_ignition_advance_offset"] = "Décalage d'avance";
-    names["80x16_ignition_advance"] = "Avance à l'allumage (°)";
-    names["80x17-18_coil_time"] = "Temps bobine (ms)";
-    names["80x19_crankshaft_position_sensor"] = "Capteur position vilebrequin";
-    names["7dx01_ignition_switch"] = "Contact allumage";
-    names["7dx02_throttle_angle"] = "Angle papillon (°)";
-    names["7dx04_air_fuel_ratio"] = "Ratio air/carburant";
-    names["7dx05_dtc2"] = "DTC 2";
-    names["7dx06_lambda_voltage"] = "Tension sonde lambda (mV)";
-    names["7dx07_lambda_sensor_frequency"] = "Fréquence lambda";
-    names["7dx08_lambda_sensor_dutycycle"] = "Cycle lambda (%)";
-    names["7dx09_lambda_sensor_status"] = "État lambda";
-    names["7dx0A_closed_loop"] = "Boucle fermée";
-    names["7dx0B_long_term_fuel_trim"] = "Correction carburant long terme (%)";
-    names["7dx0C_short_term_fuel_trim"] = "Correction carburant court terme (%)";
-    names["7dx0D_carbon_canister_dutycycle"] = "Cycle purge canister (%)";
-    names["7dx0E_dtc3"] = "DTC 3";
-    names["7dx0F_idle_base_pos"] = "Position de base ralenti";
-    names["7dx11_dtc4"] = "DTC 4";
-    names["7dx12_ignition_advance2"] = "Avance à l'allumage 2";
-    names["7dx13_idle_speed_offset"] = "Décalage régime de ralenti";
-    names["7dx14-15_idle_error_hot_corrected"] = "Erreur de ralenti à chaud (corrigée)";
-    names["7dx14-15_raw"] = "Trame 7D14-15 brute";
-    names["7dx16_dtc5"] = "DTC 5";
+    names["80x01-02_engine-rpm"] = QObject::tr("Régime moteur (tr/min)");
+    names["80x03_coolant_temp"] = QObject::tr("Température liquide refroid. (°C)");
+    names["80x04_ambient_temp"] = QObject::tr("Température ambiante (°C)");
+    names["80x05_intake_air_temp"] = QObject::tr("Température air admission (°C)");
+    names["80x06_fuel_temp"] = QObject::tr("Température carburant (°C)");
+    names["80x07_map_kpa"] = QObject::tr("Pression collecteur (kPa)");
+    names["80x08_battery_voltage"] = QObject::tr("Tension batterie (V)");
+    names["80x09_throttle_pot"] = QObject::tr("Position papillon (%)");
+    names["80x0A_idle_switch"] = QObject::tr("Contact ralenti");
+    names["80x0C_park_neutral_switch"] = QObject::tr("Contact point mort");
+    names["80x0D-0E_fault_codes"] = QObject::tr("Codes défaut (brut)");
+    names["80x0F_idle_set_point"] = QObject::tr("Consigne de ralenti");
+    names["80x10_idle_hot"] = QObject::tr("Ralenti chaud");
+    names["80x12_iac_position"] = QObject::tr("Position moteur pas-à-pas (%)");
+    names["80x13-14_idle_error"] = QObject::tr("Erreur de ralenti");
+    names["80x15_ignition_advance_offset"] = QObject::tr("Décalage d'avance");
+    names["80x16_ignition_advance"] = QObject::tr("Avance à l'allumage (°)");
+    names["80x17-18_coil_time"] = QObject::tr("Temps bobine (ms)");
+    names["80x19_crankshaft_position_sensor"] = QObject::tr("Capteur position vilebrequin");
+    names["7dx01_ignition_switch"] = QObject::tr("Contact allumage");
+    names["7dx02_throttle_angle"] = QObject::tr("Angle papillon (°)");
+    names["7dx04_air_fuel_ratio"] = QObject::tr("Ratio air/carburant");
+    names["7dx05_dtc2"] = QObject::tr("DTC 2");
+    names["7dx06_lambda_voltage"] = QObject::tr("Tension sonde lambda (mV)");
+    names["7dx07_lambda_sensor_frequency"] = QObject::tr("Fréquence lambda");
+    names["7dx08_lambda_sensor_dutycycle"] = QObject::tr("Cycle lambda (%)");
+    names["7dx09_lambda_sensor_status"] = QObject::tr("État lambda");
+    names["7dx0A_closed_loop"] = QObject::tr("Boucle fermée");
+    names["7dx0B_long_term_fuel_trim"] = QObject::tr("Correction carburant long terme (%)");
+    names["7dx0C_short_term_fuel_trim"] = QObject::tr("Correction carburant court terme (%)");
+    names["7dx0D_carbon_canister_dutycycle"] = QObject::tr("Cycle purge canister (%)");
+    names["7dx0E_dtc3"] = QObject::tr("DTC 3");
+    names["7dx0F_idle_base_pos"] = QObject::tr("Position de base ralenti");
+    names["7dx11_dtc4"] = QObject::tr("DTC 4");
+    names["7dx12_ignition_advance2"] = QObject::tr("Avance à l'allumage 2");
+    names["7dx13_idle_speed_offset"] = QObject::tr("Décalage régime de ralenti");
+    names["7dx14-15_idle_error_hot_corrected"] = QObject::tr("Erreur de ralenti à chaud (corrigée)");
+    names["7dx14-15_raw"] = QObject::tr("Trame 7D14-15 brute");
+    names["7dx16_dtc5"] = QObject::tr("DTC 5");
   }
 
   if (names.contains(rawName))
@@ -63,7 +63,7 @@ static QString friendlyColumnName(const QString &rawName)
   }
   if (rawName.contains("_uk") || rawName.contains("uk1") || rawName.contains("uk2"))
   {
-    return "Non documenté (" + rawName + ")";
+    return tr("Non documenté (%1)").arg(rawName);
   }
   return rawName;
 }
@@ -134,7 +134,7 @@ void SingleChartWidget::paintEvent(QPaintEvent *event)
   if (m_time.count() < 2 || m_values.count() < 2)
   {
     painter.setPen(QColor("#9aa0ab"));
-    painter.drawText(plotRect, Qt::AlignCenter, "Pas de données");
+    painter.drawText(plotRect, Qt::AlignCenter, tr("Pas de données"));
     return;
   }
 
@@ -365,7 +365,7 @@ void ChartWidget::paintEvent(QPaintEvent *event)
   {
     painter.setPen(QColor("#8a93a6"));
     painter.drawText(rect(), Qt::AlignCenter,
-                      "Cochez une ou plusieurs voies dans la liste à gauche pour les afficher");
+                      tr("Cochez une ou plusieurs voies dans la liste à gauche pour les afficher"));
   }
 
   painter.setPen(QColor("#8a93a6"));
@@ -512,7 +512,7 @@ void AnalysisTab::parseCsv(const QString &path)
   QFile file(path);
   if (!file.open(QFile::ReadOnly | QFile::Text))
   {
-    QMessageBox::warning(this, "Erreur", "Impossible d'ouvrir le fichier :\n" + path, QMessageBox::Ok);
+    QMessageBox::warning(this, tr("Erreur"), "Impossible d'ouvrir le fichier :\n" + path, QMessageBox::Ok);
     return;
   }
 
@@ -521,7 +521,7 @@ void AnalysisTab::parseCsv(const QString &path)
 
   if (stream.atEnd())
   {
-    QMessageBox::warning(this, "Erreur", "Fichier CSV vide ou incomplet.", QMessageBox::Ok);
+    QMessageBox::warning(this, tr("Erreur"), "Fichier CSV vide ou incomplet.", QMessageBox::Ok);
     return;
   }
   QString headerLine = stream.readLine();
@@ -534,7 +534,7 @@ void AnalysisTab::parseCsv(const QString &path)
   int columnCount = headers.count() - 1;
   if (columnCount <= 0)
   {
-    QMessageBox::warning(this, "Erreur", "Format de fichier CSV non reconnu.", QMessageBox::Ok);
+    QMessageBox::warning(this, tr("Erreur"), "Format de fichier CSV non reconnu.", QMessageBox::Ok);
     return;
   }
 
@@ -587,7 +587,7 @@ void AnalysisTab::parseCsv(const QString &path)
 
   if (lineCount == 0)
   {
-    QMessageBox::warning(this, "Erreur", "Aucune donnée exploitable dans ce fichier.", QMessageBox::Ok);
+    QMessageBox::warning(this, tr("Erreur"), "Aucune donnée exploitable dans ce fichier.", QMessageBox::Ok);
     return;
   }
 
@@ -715,14 +715,14 @@ void AnalysisTab::onOverlayToggled(bool checked)
   m_overlayMode = checked;
   if (checked)
   {
-    m_overlayButton->setText("Revenir à l'affichage empilé");
+    m_overlayButton->setText(tr("Revenir à l'affichage empilé"));
     m_stackScrollArea->hide();
     m_overlayChart->show();
     rebuildOverlayChart();
   }
   else
   {
-    m_overlayButton->setText("Superposer toutes les courbes sélectionnées");
+    m_overlayButton->setText(tr("Superposer toutes les courbes sélectionnées"));
     m_overlayChart->hide();
     m_stackScrollArea->show();
     updateChartVisibility();

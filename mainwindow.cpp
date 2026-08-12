@@ -1,6 +1,7 @@
 #include <cmath>
 #include <QCloseEvent>
 #include <QMessageBox>
+#include <QProcess>
 #include <QList>
 #include <QDateTime>
 #include <QDir>
@@ -13,7 +14,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "styles.h"
-#include "database/DatabaseManager.h"
 #include "analysistab.h"
 #include "summarytab.h"
 #include <qapplication.h>
@@ -33,11 +33,10 @@
 #include <QStyle>
 #include <QFrame>
 
-MainWindow::MainWindow(DatabaseManager *database, QWidget* parent):QMainWindow(parent),
+MainWindow::MainWindow(QWidget* parent):QMainWindow(parent),
 m_ui(new Ui::MainWindow),
 m_memsThread(0),
-
-m_mems(0), m_database(database), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerDialog(0), m_closingForShutdown(false), m_notConnectedAlertShown(false), m_actuatorTestsEnabled(false), m_adjustmentsEnabled(false), m_actuatorsOffEnabled(false), m_protocolOutput(nullptr), m_protocolModeLabel(nullptr)
+m_mems(0), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerDialog(0), m_actuatorTestsEnabled(false), m_adjustmentsEnabled(false), m_actuatorsOffEnabled(false), m_protocolOutput(nullptr), m_protocolModeLabel(nullptr)
 
 {
   buildSpeedAndTempUnitTables();
@@ -48,7 +47,7 @@ m_mems(0), m_database(database), m_diagnosticPanel(0), m_options(0), m_pleaseWai
   // On remet le bandeau de connexion et les onglets dans un vrai layout
   // extensible ; le défilement est ensuite assuré page par page.
   QWidget *central = m_ui->centralWidget;
-  QWidget *connectionBar = central ? central->findChild<QWidget*>(QStringLiteral("layoutWidget_7")) : nullptr;
+  QWidget *connectionBar = central ? central->findChild<QWidget*>("layoutWidget_7") : nullptr;
   if (central && !central->layout())
   {
     QVBoxLayout *centralLayout = new QVBoxLayout(central);
@@ -68,7 +67,7 @@ m_mems(0), m_database(database), m_diagnosticPanel(0), m_options(0), m_pleaseWai
 
   m_options = new OptionsDialog(this->windowTitle(), this);
   qApp->processEvents();
-  qApp->setStyleSheet(m_options->getTheme() == "Sombre" ? STYLE_DARK : STYLE_LIGHT);
+  qApp->setStyleSheet(m_options->getTheme() == "dark" ? STYLE_DARK : STYLE_LIGHT);
 
   m_mems = new MEMSInterface(m_options->getSerialDeviceName());
   qApp->processEvents();
@@ -169,22 +168,22 @@ m_mems(0), m_database(database), m_diagnosticPanel(0), m_options(0), m_pleaseWai
   QWidget *protocolTab = new QWidget(this);
   QVBoxLayout *protocolLayout = new QVBoxLayout(protocolTab);
 
-  QGroupBox *sessionBox = new QGroupBox(QStringLiteral("Session ECU / ROSCO"), protocolTab);
+  QGroupBox *sessionBox = new QGroupBox(tr("Session ECU / ROSCO"), protocolTab);
   QGridLayout *sessionGrid = new QGridLayout(sessionBox);
 
   QLabel *sessionInfo = new QLabel(
-      QStringLiteral("Lecture : D0 / D1 / D2 / F0    |    Session : F2 / F3 / F4 / F5"),
+      tr("Lecture : D0 / D1 / D2 / F0    |    Session : F2 / F3 / F4 / F5"),
       sessionBox);
   sessionGrid->addWidget(sessionInfo, 0, 0, 1, 4);
 
-  m_protocolModeLabel = new QLabel(QStringLiteral("Mode : inconnu"), sessionBox);
+  m_protocolModeLabel = new QLabel(tr("Mode : inconnu"), sessionBox);
   sessionGrid->addWidget(m_protocolModeLabel, 1, 0, 1, 4);
 
   const QList<QPair<QString, quint8> > readCommands = {
-      qMakePair(QStringLiteral("D0  • Identification"), quint8(0xD0)),
-      qMakePair(QStringLiteral("D1  • Identifiant étendu"), quint8(0xD1)),
-      qMakePair(QStringLiteral("D2  • Statut sécurité"), quint8(0xD2)),
-      qMakePair(QStringLiteral("F0  • État session"), quint8(0xF0))
+      qMakePair(tr("D0  • Identification"), quint8(0xD0)),
+      qMakePair(tr("D1  • Identifiant étendu"), quint8(0xD1)),
+      qMakePair(tr("D2  • Statut sécurité"), quint8(0xD2)),
+      qMakePair(tr("F0  • État session"), quint8(0xF0))
   };
 
   int col = 0;
@@ -205,10 +204,10 @@ m_mems(0), m_database(database), m_diagnosticPanel(0), m_options(0), m_pleaseWai
   sessionGrid->addWidget(modeWarning, 3, 0, 1, 4);
 
   const QList<QPair<QString, quint8> > modeCommands = {
-      qMakePair(QStringLiteral("F2  → mode 6"), quint8(0xF2)),
-      qMakePair(QStringLiteral("F3  → mode 4"), quint8(0xF3)),
-      qMakePair(QStringLiteral("F4  → session normale"), quint8(0xF4)),
-      qMakePair(QStringLiteral("F5  → mode 3"), quint8(0xF5))
+      qMakePair(tr("F2  → mode 6"), quint8(0xF2)),
+      qMakePair(tr("F3  → mode 4"), quint8(0xF3)),
+      qMakePair(tr("F4  → session normale"), quint8(0xF4)),
+      qMakePair(tr("F5  → mode 3"), quint8(0xF5))
   };
 
   col = 0;
@@ -226,16 +225,15 @@ m_mems(0), m_database(database), m_diagnosticPanel(0), m_options(0), m_pleaseWai
   m_protocolOutput = new QTextEdit(protocolTab);
   m_protocolOutput->setReadOnly(true);
   m_protocolOutput->setPlaceholderText(
-      QStringLiteral("Les réponses ROSCO apparaîtront ici en hexadécimal."));
+      tr("Les réponses ROSCO apparaîtront ici en hexadécimal."));
   protocolLayout->addWidget(m_protocolOutput, 1);
 
-  m_ui->Tab_main->addTab(protocolTab, QStringLiteral("ECU / ROSCO"));
+  m_ui->Tab_main->addTab(protocolTab, tr("ECU / ROSCO"));
 
   // Le diagnostic automatique reste volontairement juste à côté de
   // l'onglet ECU / ROSCO : ce sont les deux fonctions avancées du logiciel.
   m_diagnosticPanel = new DiagnosticPanel(this);
-  m_diagnosticPanel->setDatabase(m_database);
-  m_ui->Tab_main->addTab(m_diagnosticPanel, QStringLiteral("Diagnostic automatique"));
+  m_ui->Tab_main->addTab(m_diagnosticPanel, tr("Diagnostic automatique"));
 
   // Navigation des onglets : sur les écrans étroits, Qt affiche des
   // boutons de défilement plutôt que de couper les onglets sur les côtés.
@@ -294,18 +292,11 @@ void MainWindow::buildSpeedAndTempUnitTables()
  */
 void MainWindow::setupWidgets()
 {
-  // Largeur suffisante pour afficher intégralement « Connecter » et « Déconnecter ».
-  const int connectionButtonWidth = 135;
-  m_ui->m_connectButton->setMinimumWidth(connectionButtonWidth);
-  m_ui->m_disconnectButton->setMinimumWidth(connectionButtonWidth);
-
-  // Voyants de communication rapprochés sans modifier leur fonctionnement.
-  QHBoxLayout *communicationLayout =
-      m_ui->m_commsGoodLed->parentWidget()
-          ? qobject_cast<QHBoxLayout *>(m_ui->m_commsGoodLed->parentWidget()->layout())
-          : nullptr;
-  if (communicationLayout)
-    communicationLayout->setSpacing(3);
+  // Largeur compacte des boutons de connexion : texte + 15 px de marge de chaque côté.
+  const int connectButtonWidth = m_ui->m_connectButton->fontMetrics().horizontalAdvance(m_ui->m_connectButton->text()) + 30;
+  const int disconnectButtonWidth = m_ui->m_disconnectButton->fontMetrics().horizontalAdvance(m_ui->m_disconnectButton->text()) + 30;
+  m_ui->m_connectButton->setFixedWidth(connectButtonWidth);
+  m_ui->m_disconnectButton->setFixedWidth(disconnectButtonWidth);
   // set menu and button icons
   m_ui->m_exitAction->setIcon(style()->standardIcon(QStyle::SP_DialogCloseButton));
   m_ui->m_editSettingsAction->setIcon(style()->standardIcon(QStyle::SP_ComputerIcon));
@@ -322,7 +313,7 @@ void MainWindow::setupWidgets()
   connect(alwaysOnTopAction, SIGNAL(toggled(bool)), this, SLOT(onToggleAlwaysOnTop(bool)));
 
   // Ajout du bouton "Vue instantanée" dans la barre de statut ECU, après Erreurs ECU.
-  QPushButton *snapshotButton = new QPushButton("Vue instantanée", this);
+  QPushButton *snapshotButton = new QPushButton(tr("Vue instantanée"), this);
   if (m_ui->ecuStatusLayout) {
     m_ui->ecuStatusLayout->addWidget(snapshotButton);
   }
@@ -334,7 +325,7 @@ void MainWindow::setupWidgets()
   m_ui->Tab_main->insertTab(2, m_summaryTab, "Toutes les mesures");
 
   // L’ancienne vue « toutes les mesures » est supprimée : seule « Toutes les mesures » reste accessible.
-  const int duplicateSummaryIndex = m_ui->Tab_main->indexOf(m_ui->raw);
+  const int duplicateSummaryIndex = m_ui->Tab_main->indexOf(m_ui->summary_tab);
   if (duplicateSummaryIndex >= 0)
   {
     QWidget *oldSummaryTab = m_ui->Tab_main->widget(duplicateSummaryIndex);
@@ -344,7 +335,7 @@ void MainWindow::setupWidgets()
 
   // Ajout de l'onglet "Analyse" (lecture de fichiers CSV enregistrés)
   AnalysisTab *analysisTab = new AnalysisTab(this);
-  m_ui->Tab_main->addTab(analysisTab, "Analyse");
+  m_ui->Tab_main->addTab(analysisTab, tr("Analyse"));
 
   // connect menu item signals
   connect(m_ui->m_exitAction, SIGNAL(triggered()), this, SLOT(onExitSelected()));
@@ -1093,9 +1084,9 @@ void MainWindow::onDataReady()
 
  m_ui->m_7D_01->setText(QString::number(data->ignition_switch));
  if ((data->ignition_switch)!= 0)
-    {m_ui->r_7D_01->setText("On");}
+    {m_ui->r_7D_01->setText(tr("On"));}
     else
-    {m_ui->r_7D_01->setText("Off");}
+    {m_ui->r_7D_01->setText(tr("Off"));}
  m_ui->m_7D_02->setText(QString::number(data->throttle_angle));
  m_ui->r_7D_02->setText(QString::number(data->throttle_angle * 6 / 10) + "°");
  m_ui->m_7D_03->setText(QString::number(data->uk6));
@@ -1103,23 +1094,23 @@ void MainWindow::onDataReady()
  m_ui->r_7D_04->setText(QString::number(data->air_fuel_ratio / 10.0) + " AFR");
  m_ui->m_7D_05->setText(QString::number(data->dtc2));
    if ((data->dtc2)!= 0)
-    {m_ui->r_7D_05->setText("DÉFAUTS");}
+    {m_ui->r_7D_05->setText(tr("DÉFAUTS"));}
     else
-    {m_ui->r_7D_05->setText("aucun défaut");} 
+    {m_ui->r_7D_05->setText(tr("aucun défaut"));} 
  m_ui->m_7D_06->setText(QString::number(data->lambda_voltage));
  m_ui->r_7D_06->setText(QString::number(data->lambda_voltage * 5) + " mV" );
  m_ui->m_7D_07->setText(QString::number(data->lambda_sensor_frequency));
  m_ui->m_7D_08->setText(QString::number(data->lambda_sensor_dutycycle));
  m_ui->m_7D_09->setText(QString::number(data->lambda_sensor_status));
  if ((data->lambda_sensor_status)!= 1)
-    {m_ui->r_7D_09->setText("CAPTEUR DÉFECTUEUX");}
+    {m_ui->r_7D_09->setText(tr("CAPTEUR DÉFECTUEUX"));}
     else
-    {m_ui->r_7D_09->setText("Capteur OK");} 
+    {m_ui->r_7D_09->setText(tr("Capteur OK"));} 
  m_ui->m_7D_0A->setText(QString::number(data->closed_loop));
  if ((data->closed_loop)!= 0)
-    {m_ui->r_7D_0A->setText("Boucle fermée");}
+    {m_ui->r_7D_0A->setText(tr("Boucle fermée"));}
     else
-    {m_ui->r_7D_0A->setText("Boucle ouverte");} 
+    {m_ui->r_7D_0A->setText(tr("Boucle ouverte"));} 
  m_ui->m_7D_0B->setText(QString::number(data->long_term_fuel_trim));
  m_ui->r_7D_0B->setText(QString::number(data->long_term_fuel_trim - 128));
  m_ui->m_7D_0C->setText(QString::number(data->short_term_fuel_trim));
@@ -1128,21 +1119,21 @@ void MainWindow::onDataReady()
  m_ui->r_7D_0D->setText(QString::number(data->carbon_canister_dutycycle) + "%");
  m_ui->m_7D_0E->setText(QString::number(data->dtc3));
     if ((data->dtc3)!= 255)
-    {m_ui->r_7D_0E->setText("DÉFAUTS");}
+    {m_ui->r_7D_0E->setText(tr("DÉFAUTS"));}
     else
-    {m_ui->r_7D_0E->setText("aucun défaut");}  
+    {m_ui->r_7D_0E->setText(tr("aucun défaut"));}  
  m_ui->m_7D_0F->setText(QString::number(data->idle_base_pos));
  m_ui->r_7D_0F->setText("");
  m_ui->m_7D_10->setText(QString::number(data->uk7));
      if ((data->uk7)!= 255)
-    {m_ui->r_7D_10->setText("DÉFAUTS");}
+    {m_ui->r_7D_10->setText(tr("DÉFAUTS"));}
     else
-    {m_ui->r_7D_10->setText("aucun défaut");} 
+    {m_ui->r_7D_10->setText(tr("aucun défaut"));} 
  m_ui->m_7D_11->setText(QString::number(data->dtc4));
     if ((data->dtc4)!= 255)
-    {m_ui->r_7D_11->setText("DÉFAUTS");}
+    {m_ui->r_7D_11->setText(tr("DÉFAUTS"));}
     else
-    {m_ui->r_7D_11->setText("aucun défaut");} 
+    {m_ui->r_7D_11->setText(tr("aucun défaut"));} 
  m_ui->m_7D_12->setText(QString::number(data->ignition_advance2));
  m_ui->r_7D_12->setText(QString::number(data->ignition_advance2 - 48));
  m_ui->m_7D_13->setText(QString::number(data->idle_speed_offset));
@@ -1152,13 +1143,13 @@ void MainWindow::onDataReady()
  const int idleHotCorrection = static_cast<int>(data->idle_hot) - 35;
  const int idleErrorHotCorrected = (raw7d1415 - 32768) + idleHotCorrection;
  m_ui->m_7D_15->setText(QString::number(idleErrorHotCorrected));
- m_ui->m_7D_15->setToolTip(QStringLiteral("7D14-15 brut = %1 ; correction ralenti chaud = %2 ; valeur corrigée = %3. Formule : (brut - 32768) + correction.")
+ m_ui->m_7D_15->setToolTip(tr("7D14-15 brut = %1 ; correction ralenti chaud = %2 ; valeur corrigée = %3. Formule : (brut - 32768) + correction.")
                              .arg(raw7d1415).arg(idleHotCorrection).arg(idleErrorHotCorrected));
  m_ui->m_7D_16->setText(QString::number(data->dtc5));
      if ((data->dtc5)!= 255)
-    {m_ui->r_7D_16->setText("DÉFAUTS");}
+    {m_ui->r_7D_16->setText(tr("DÉFAUTS"));}
     else
-    {m_ui->r_7D_16->setText("aucun défaut");} 
+    {m_ui->r_7D_16->setText(tr("aucun défaut"));} 
  m_ui->m_7D_17->setText(QString::number(data->uk11));
  m_ui->m_7D_18->setText(QString::number(data->uk12));
  m_ui->m_7D_19->setText(QString::number(data->uk13));
@@ -1187,29 +1178,29 @@ void MainWindow::onDataReady()
  m_ui->r_80_09->setText(QString::number(data->throttle_pot * 0.02) + " V");
  m_ui->m_80_0A->setText(QString::number(data->idle_switch));
   if ((data->idle_switch)!= 0)
-    {m_ui->r_80_0A->setText("Off");}
+    {m_ui->r_80_0A->setText(tr("Off"));}
     else
-    {m_ui->r_80_0A->setText("On");}
+    {m_ui->r_80_0A->setText(tr("On"));}
  m_ui->m_80_0B->setText(QString::number(data->uk1));
   if ((data->uk1)!= 0)
-    {m_ui->r_80_0B->setText("On");}
+    {m_ui->r_80_0B->setText(tr("On"));}
     else
-    {m_ui->r_80_0B->setText("Off");}
+    {m_ui->r_80_0B->setText(tr("Off"));}
  m_ui->m_80_0C->setText(QString::number(data->park_neutral_switch));
   if ((data->park_neutral_switch)!= 0)
-    {m_ui->r_80_0C->setText("On");}
+    {m_ui->r_80_0C->setText(tr("On"));}
     else
-    {m_ui->r_80_0C->setText("Off");} 
+    {m_ui->r_80_0C->setText(tr("Off"));} 
  m_ui->m_80_0D->setText(QString::number(data->dtc0));
   if ((data->dtc0)!= 0)
-    {m_ui->r_80_0D->setText("DÉFAUTS");}
+    {m_ui->r_80_0D->setText(tr("DÉFAUTS"));}
     else
-    {m_ui->r_80_0D->setText("aucun défaut");}  
+    {m_ui->r_80_0D->setText(tr("aucun défaut"));}  
  m_ui->m_80_0E->setText(QString::number(data->dtc1));
   if ((data->dtc1)!= 0)
-    {m_ui->r_80_0E->setText("DÉFAUTS");}
+    {m_ui->r_80_0E->setText(tr("DÉFAUTS"));}
     else
-    {m_ui->r_80_0E->setText("aucun défaut");}  
+    {m_ui->r_80_0E->setText(tr("aucun défaut"));}  
  m_ui->m_80_0F->setText(QString::number(data->idle_set_point));
  m_ui->m_80_10->setText(QString::number(data->idle_hot));
  m_ui->r_80_10->setText(QString::number(data->idle_hot - 35));
@@ -1225,9 +1216,9 @@ void MainWindow::onDataReady()
  m_ui->r_80_17->setText(QString::number(data->coil_time * 0.002) + " ms");
  m_ui->m_80_19->setText(QString::number(data->uk3));
   if ((data->uk3)!= 0)
-    {m_ui->r_80_19->setText("signal");}
+    {m_ui->r_80_19->setText(tr("signal"));}
     else
-    {m_ui->r_80_19->setText("NO SIGNAL");}  
+    {m_ui->r_80_19->setText(tr("NO SIGNAL"));}  
  m_ui->m_80_1A->setText(QString::number(data->uk4));
  m_ui->m_80_1B->setText(QString::number(data->uk5));
 
@@ -1246,7 +1237,16 @@ void MainWindow::onEditOptionsClicked()
   {
     if (m_options->getThemeChanged())
     {
-      qApp->setStyleSheet(m_options->getTheme() == "Sombre" ? STYLE_DARK : STYLE_LIGHT);
+      qApp->setStyleSheet(m_options->getTheme() == "dark" ? STYLE_DARK : STYLE_LIGHT);
+    }
+
+    if (m_options->getLanguageChanged())
+    {
+      QMessageBox::information(this, tr("Langue"),
+                               tr("La langue a été modifiée. Le logiciel va redémarrer pour appliquer la traduction complète."));
+      QProcess::startDetached(QCoreApplication::applicationFilePath(), QCoreApplication::arguments());
+      qApp->quit();
+      return;
     }
 
     TemperatureUnits tempUnits = m_options->getTemperatureUnits();
@@ -1299,10 +1299,12 @@ void MainWindow::onEditOptionsClicked()
  */
 void MainWindow::closeEvent(QCloseEvent* event)
 {
-  m_closingForShutdown = true;
+  m_closing = true;
   m_autoReconnectEnabled = false;
+  m_silentReconnect = false;
   if (m_reconnectTimer)
     m_reconnectTimer->stop();
+
   m_logger->closeLog();
 
   if ((m_memsThread != 0) && m_memsThread->isRunning())
@@ -1342,7 +1344,6 @@ void MainWindow::clearRecordedAnomalies()
 void MainWindow::onConnect()
 {
   m_reconnectTimer->stop();
-  m_notConnectedAlertShown = false;
   m_ui->m_connectButton->setEnabled(false);
   m_ui->m_disconnectButton->setEnabled(true);
   m_ui->m_commsGoodLed->setChecked(false);
@@ -1361,13 +1362,12 @@ void MainWindow::onConnect()
  */
 void MainWindow::onDisconnect()
 {
-  m_notConnectedAlertShown = false;
   m_ui->m_connectButton->setEnabled(true);
   m_ui->m_disconnectButton->setEnabled(false);
   m_ui->m_engine_error->setChecked(false);
   m_ui->m_commsGoodLed->setChecked(false);
   m_ui->m_commsBadLed->setChecked(false);
-  m_ui->m_ecuIdLabel->setText("ID ECU :");
+  m_ui->m_ecuIdLabel->setText(tr("ID ECU :"));
   m_ui->m_mapGauge->setValue(0.0);
   m_ui->m_revCounter->setValue(0.0);
   m_ui->m_waterTempGauge->setValue(m_ui->m_waterTempGauge->minimum());
@@ -1452,9 +1452,12 @@ void MainWindow::onReadError()
  */
 void MainWindow::onReconnectAttempt()
 {
-  if (m_autoReconnectEnabled)
+  if (m_autoReconnectEnabled && !m_closing)
   {
     onConnectClicked();
+    // Les échecs de reconnexion automatiques ne doivent pas ouvrir
+    // une boîte de dialogue en boucle lorsque le contact est coupé.
+    m_silentReconnect = true;
   }
   else
   {
@@ -1501,11 +1504,11 @@ void MainWindow::onSnapshotClicked()
   QPixmap snapshot = this->grab();
   if (snapshot.save(fullPath, "PNG"))
   {
-    statusBar()->showMessage("Capture enregistrée : captures/" + fileName, 4000);
+    statusBar()->showMessage(tr("Capture enregistrée : captures/") + fileName, 4000);
   }
   else
   {
-    QMessageBox::warning(this, "Erreur", "Échec de l'enregistrement de la capture d'écran.", QMessageBox::Ok);
+    QMessageBox::warning(this, tr("Erreur"), "Échec de l'enregistrement de la capture d'écran.", QMessageBox::Ok);
   }
 }
 
@@ -1515,6 +1518,7 @@ void MainWindow::onSnapshotClicked()
  */
 void MainWindow::onReadSuccess()
 {
+  m_silentReconnect = false;
   m_ui->m_commsGoodLed->setChecked(true);
   m_ui->m_commsBadLed->setChecked(false);
   m_ui->m_connectButton->setEnabled(false);
@@ -1536,7 +1540,7 @@ void MainWindow::onStartLogging()
   }
   else
   {
-    QMessageBox::warning(this, "Erreur", "Échec de l'ouverture du fichier journal (" + m_logger->getLogPath() + ")", QMessageBox::Ok);
+    QMessageBox::warning(this, tr("Erreur"), "Échec de l'ouverture du fichier journal (" + m_logger->getLogPath() + ")", QMessageBox::Ok);
   }
 }
 
@@ -1577,17 +1581,26 @@ void MainWindow::onHelpContentsClicked()
  */
 void MainWindow::onFailedToConnect(QString dev)
 {
+  if (m_closing)
+    return;
+
+  if (m_silentReconnect)
+  {
+    m_silentReconnect = false;
+    return;
+  }
+
   if (dev.isEmpty() || dev.isNull())
   {
-    QMessageBox::warning(this, "Erreur",
-                         QString("Erreur de connexion à l'ECU. Aucun port série spécifié.\n\n") +
-                         QString("Choisissez un périphérique série via \"Modifier les paramètres\" dans le menu \"Options\"."),
+    QMessageBox::warning(this, tr("Erreur"),
+                         tr("Erreur de connexion à l'ECU. Aucun port série spécifié.\n\n") +
+                         tr("Choisissez un périphérique série via \"Modifier les paramètres\" dans le menu \"Options\"."),
                          QMessageBox::Ok);
   }
   else
   {
-    QMessageBox::warning(this, "Erreur",
-                         "Erreur de connexion à l'ECU sur le port " + dev + ".\nVérifiez le câblage et que l'ECU est alimenté.",
+    QMessageBox::warning(this, tr("Erreur"),
+                         tr("Erreur de connexion à l'ECU sur le port %1.\nVérifiez le câblage et que l'ECU est alimenté.").arg(dev),
                          QMessageBox::Ok);
   }
 }
@@ -1598,18 +1611,16 @@ void MainWindow::onFailedToConnect(QString dev)
  */
 void MainWindow::onNotConnected()
 {
-  // Une perte de contact peut provoquer plusieurs appels asynchrones.
-  // Une seule alerte est autorisée jusqu'à la prochaine connexion.
-  if (m_closingForShutdown || m_notConnectedAlertShown)
+  if (m_closing || m_silentReconnect)
     return;
 
-  m_notConnectedAlertShown = true;
-
   if (m_pleaseWaitBox != 0)
+  {
     m_pleaseWaitBox->hide();
+  }
 
-  QMessageBox::warning(this, "Erreur",
-                       "Il faut d'abord que le logiciel soit connecté à l'ECU (bouton \"Connecter\").",
+  QMessageBox::warning(this, tr("Erreur"),
+                       tr("Il faut d'abord que le logiciel soit connecté à l'ECU (bouton \"Connecter\")."),
                        QMessageBox::Ok);
 }
 
@@ -1765,33 +1776,33 @@ void MainWindow::onMoveIACComplete()
 
 void MainWindow::onCommandError()
 {
-  QMessageBox::warning(this, "Erreur", "Erreur lors de l'envoi de la commande.", QMessageBox::Ok);
+  QMessageBox::warning(this, tr("Erreur"), "Erreur lors de l'envoi de la commande.", QMessageBox::Ok);
 }
 
 void MainWindow::onFaultCodeClearComplete()
 {
-  QMessageBox::information(this, "Terminé", "Codes défaut effacés avec succès.", QMessageBox::Ok);
+  QMessageBox::information(this, tr("Terminé"), "Codes défaut effacés avec succès.", QMessageBox::Ok);
 }
 
 void MainWindow::onAdjustmentsResetComplete()
 {
-  QMessageBox::information(this, "Terminé", "Réglages réinitialisés avec succès.", QMessageBox::Ok);
+  QMessageBox::information(this, tr("Terminé"), "Réglages réinitialisés avec succès.", QMessageBox::Ok);
 }
 
 void MainWindow::onConfirmResetAdjustments()
 {
-  if(QMessageBox::warning(this, "Vous allez perdre tous les réglages !", "<p>Ceci va réinitialiser tous les réglages aux valeurs d'usine.</p><p><b>Continuez à vos risques et périls !</b></p><i>Êtes-vous sûr de vouloir continuer ?</i>", QMessageBox::Ok | QMessageBox::Cancel) == QMessageBox::Ok)
+  if(QMessageBox::warning(this, tr("Vous allez perdre tous les réglages !"), "<p>Ceci va réinitialiser tous les réglages aux valeurs d'usine.</p><p><b>Continuez à vos risques et périls !</b></p><i>Êtes-vous sûr de vouloir continuer ?</i>", QMessageBox::Ok | QMessageBox::Cancel) == QMessageBox::Ok)
 	 {emit ResetAdjustmentsRequested();}	
 }
 
 void MainWindow::onECUResetComplete()
 {
-  QMessageBox::information(this, "Terminé", "ECU réinitialisé avec succès.", QMessageBox::Ok);
+  QMessageBox::information(this, tr("Terminé"), "ECU réinitialisé avec succès.", QMessageBox::Ok);
 }
 
 void MainWindow::onConfirmResetECU()
 {
-  if(QMessageBox::warning(this, "Vous allez perdre toutes les données !", "<p>Ceci va complètement réinitialiser l'ECU.</p><p><b>Continuez à vos risques et périls !</b></p><i>Êtes-vous sûr de vouloir continuer ?</i>", QMessageBox::Ok | QMessageBox::Cancel) == QMessageBox::Ok)
+  if(QMessageBox::warning(this, tr("Vous allez perdre toutes les données !"), "<p>Ceci va complètement réinitialiser l'ECU.</p><p><b>Continuez à vos risques et périls !</b></p><i>Êtes-vous sûr de vouloir continuer ?</i>", QMessageBox::Ok | QMessageBox::Cancel) == QMessageBox::Ok)
 	 {emit ResetECURequested();}	
 }
 
@@ -1894,7 +1905,7 @@ void MainWindow::on_m_O2Heater_TestButton_clicked()
 
 void MainWindow::on_m_O2Heater_OnButton_clicked()
 {
-    if(QMessageBox::warning(this, "ATTENTION : RISQUE D'ENDOMMAGER LA SONDE", "<p>Un chauffage prolongé peut surchauffer et endommager la sonde lambda. </p><p>Il est aussi déconseillé de démarrer le moteur avant que la sonde ait suffisamment refroidi.</p><p><b>Continuez à vos risques et périls !</b></p><i>Êtes-vous sûr de vouloir continuer ?</i>", QMessageBox::Ok | QMessageBox::Cancel) == QMessageBox::Ok)
+    if(QMessageBox::warning(this, tr("ATTENTION : RISQUE D'ENDOMMAGER LA SONDE"), "<p>Un chauffage prolongé peut surchauffer et endommager la sonde lambda. </p><p>Il est aussi déconseillé de démarrer le moteur avant que la sonde ait suffisamment refroidi.</p><p><b>Continuez à vos risques et périls !</b></p><i>Êtes-vous sûr de vouloir continuer ?</i>", QMessageBox::Ok | QMessageBox::Cancel) == QMessageBox::Ok)
 	 {
 		m_ui->m_O2Heater_TestButton->setEnabled(false);
 		m_ui->m_O2Heater_OnButton->setEnabled(false);
@@ -2050,7 +2061,7 @@ void MainWindow::makeFixedTabsScrollable()
     tabs->removeTab(i);
 
     QScrollArea *scroll = new QScrollArea(tabs);
-    scroll->setObjectName(QStringLiteral("scrollArea_%1").arg(page->objectName()));
+    scroll->setObjectName(tr("scrollArea_%1").arg(page->objectName()));
     scroll->setFrameShape(QFrame::NoFrame);
     scroll->setWidgetResizable(false);
     scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
@@ -2080,17 +2091,17 @@ void MainWindow::onProtocolResponse(quint8 command, QByteArray response)
 
   const QString commandText = QStringLiteral("%1").arg(command, 2, 16, QLatin1Char('0')).toUpper();
   const QString rxHex = response.isEmpty()
-      ? QStringLiteral("<aucune réponse>")
+      ? tr("<aucune réponse>")
       : response.toHex(' ').toUpper();
 
-  QString line = QDateTime::currentDateTime().toString(QStringLiteral("HH:mm:ss.zzz"));
-  line += QStringLiteral("  TX: %1    RX: %2") .arg(commandText, rxHex);
+  QString line = QDateTime::currentDateTime().toString("HH:mm:ss.zzz");
+  line += tr("  TX: %1    RX: %2") .arg(commandText, rxHex);
 
   // Décodages utiles pour les commandes de session.
   if (command == 0xF0 && !response.isEmpty())
   {
     const quint8 status = static_cast<quint8>(response.at(0));
-    QString mode = QStringLiteral("inconnu");
+    QString mode = tr("inconnu");
     if (status == 0x14)
       mode = QStringLiteral("3");
     else if (status == 0x1E)
@@ -2099,8 +2110,8 @@ void MainWindow::onProtocolResponse(quint8 command, QByteArray response)
       mode = QStringLiteral("5 / 6");
 
     if (m_protocolModeLabel)
-      m_protocolModeLabel->setText(QStringLiteral("Mode : %1  (F0 = %2)").arg(mode, rxHex));
-    line += QStringLiteral("    [Mode diagnostic : %1]").arg(mode);
+      m_protocolModeLabel->setText(tr("Mode : %1  (F0 = %2)").arg(mode, rxHex));
+    line += tr("    [Mode diagnostic : %1]").arg(mode);
   }
   else if (command == 0xD1 && !response.isEmpty())
   {
@@ -2110,15 +2121,15 @@ void MainWindow::onProtocolResponse(quint8 command, QByteArray response)
       const unsigned char u = static_cast<unsigned char>(c);
       printable.append((u >= 0x20 && u <= 0x7E) ? c : '.');
     }
-    line += QStringLiteral("    [ASCII : %1]").arg(QString::fromLatin1(printable));
+    line += tr("    [ASCII : %1]").arg(QString::fromLatin1(printable));
   }
   else if (command == 0xD2 && !response.isEmpty())
   {
-    line += QStringLiteral("    [Statut sécurité reçu]");
+    line += tr("    [Statut sécurité reçu]");
   }
   else if (command == 0xD0 && !response.isEmpty())
   {
-    line += QStringLiteral("    [Identification ECU reçue]");
+    line += tr("    [Identification ECU reçue]");
   }
 
   m_protocolOutput->append(line);

@@ -5,8 +5,6 @@
 #include <QString>
 #include "rosco.h"
 
-class DatabaseManager;
-
 class QLabel;
 class QPushButton;
 class QTableWidget;
@@ -19,7 +17,6 @@ public:
     explicit DiagnosticPanel(QWidget *parent = nullptr);
     void updateData(const mems_data *data);
     void setEcuId(const QByteArray &id);
-    void setDatabase(DatabaseManager *database);
 
 private slots:
     void captureReference();
@@ -44,7 +41,6 @@ private:
     mems_data m_last{};
     bool m_haveData = false;
     QByteArray m_ecuId;
-    DatabaseManager *m_database = nullptr;
 
     void rebuild(const mems_data &d);
     void addCheck(const QString &name, const QString &value,

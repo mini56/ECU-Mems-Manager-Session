@@ -67,20 +67,21 @@ void ManoMeter100::initCoordinateSystem(QPainter & painter)
 
 void ManoMeter100::paintBackground(QPainter & painter)
 {
+    const bool darkTheme = palette().window().color().lightness() < 128;
 	static const int scaleTriangle[6] = { -6,141,6,141,0,129 };
 	initCoordinateSystem(painter);
 
         // Painting the shield envelope. A white shield with black scales
-        QPen Pen(QColor(0,0,0)); Pen.setWidth(4);
+        QPen Pen(darkTheme ? QColor(230,232,238) : QColor(0,0,0)); Pen.setWidth(4);
         painter.setPen(Pen);
 
         QRadialGradient back1(QPointF(0.0,0.0),180.0,QPointF(-35.0,145.0));
-	back1.setColorAt(0.0,QColor(250,250,250));
-	back1.setColorAt(1.0,QColor(20,20,20));
+	back1.setColorAt(0.0, darkTheme ? QColor(45,49,58) : QColor(250,250,250));
+	back1.setColorAt(1.0, darkTheme ? QColor(8,10,14) : QColor(20,20,20));
 
 	QRadialGradient back2(QPointF(0.0,0.0),225.0,QPointF(76.5,135.0));
-	back2.setColorAt(0.0,QColor(10,10,10));
-	back2.setColorAt(1.0,QColor(250,250,250));
+	back2.setColorAt(0.0, darkTheme ? QColor(5,7,10) : QColor(10,10,10));
+	back2.setColorAt(1.0, darkTheme ? QColor(55,60,70) : QColor(250,250,250));
 
 	painter.setBrush(QBrush(back1));
 	painter.drawEllipse(-162,-162,324,324);
@@ -90,8 +91,8 @@ void ManoMeter100::paintBackground(QPainter & painter)
 
         QRadialGradient shield(QPointF(0,0),182,QPointF(-12.0,-15.0));
 	shield.setColorAt(0.0,Qt::white);
-	shield.setColorAt(0.5,QColor(240,240,240));
-	shield.setColorAt(1.0,QColor(215,215,215));
+	shield.setColorAt(0.5, darkTheme ? QColor(34,38,46) : QColor(240,240,240));
+	shield.setColorAt(1.0, darkTheme ? QColor(17,20,26) : QColor(215,215,215));
 
 
 	// internal scale circle 
@@ -122,7 +123,7 @@ void ManoMeter100::paintBackground(QPainter & painter)
 
  	// Drawing a dash scale
 	painter.save();
-        painter.setBrush(QBrush(Qt::black));
+        painter.setBrush(QBrush(darkTheme ? QColor(230,232,238) : QColor(0,0,0)));
   	int line_length=10;
 	for (int i=0;i<41;i++)
 	{
@@ -147,7 +148,7 @@ void ManoMeter100::paintBackground(QPainter & painter)
 
 	if (true || digitOffset())
         {
-          painter.setPen(Qt::black);
+          painter.setPen(darkTheme ? QColor(230,232,238) : QColor(0,0,0));
           painter.rotate(-60.0);
 	  painter.setFont(digitFont());
 	  for (int i=0;i<11;i++)
@@ -170,6 +171,7 @@ void ManoMeter100::paintBackground(QPainter & painter)
 
 void ManoMeter100::paintEvent(QPaintEvent * )
 {
+    const bool darkTheme = palette().window().color().lightness() < 128;
 	drawBackground();
 	QPainter painter(this);
         initCoordinateSystem(painter);
@@ -190,7 +192,7 @@ void ManoMeter100::paintEvent(QPaintEvent * )
 	painter.save();
 	painter.rotate(60.0);
 	painter.setPen(Qt::NoPen);
-	painter.setBrush(QBrush(Qt::black));
+	painter.setBrush(QBrush(darkTheme ? QColor(230,232,238) : QColor(0,0,0)));
    	painter.rotate(  ((  value()-m_min) * 240.0) / static_cast<double> (m_max - m_min) );
 
 	painter.drawPath(hand_path);
@@ -204,6 +206,9 @@ void ManoMeter100::paintEvent(QPaintEvent * )
         if (valueOffset())
         {
 
+	  // Le cadran reste clair dans les deux thèmes : la valeur doit donc
+	  // toujours être dessinée en noir, sauf en zone critique (rouge).
+	  painter.setPen(darkTheme ? QColor(230,232,238) : QColor(0,0,0));
 	  if (value() >= critical() ) painter.setPen(Qt::red);
 	  painter.setFont(valueFont());
           QString Str = prefix() + QString("%1").arg(value()) + suffix();
