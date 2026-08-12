@@ -36,8 +36,8 @@
 MainWindow::MainWindow(DatabaseManager *database, QWidget* parent):QMainWindow(parent),
 m_ui(new Ui::MainWindow),
 m_memsThread(0),
-m_mems(0),
-m_database(database), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerDialog(0), m_closingForShutdown(false), m_notConnectedAlertShown(false), m_actuatorTestsEnabled(false), m_adjustmentsEnabled(false), m_actuatorsOffEnabled(false), m_protocolOutput(nullptr), m_protocolModeLabel(nullptr)
+
+m_mems(0), m_database(database), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerDialog(0), m_closingForShutdown(false), m_notConnectedAlertShown(false), m_actuatorTestsEnabled(false), m_adjustmentsEnabled(false), m_actuatorsOffEnabled(false), m_protocolOutput(nullptr), m_protocolModeLabel(nullptr)
 
 {
   buildSpeedAndTempUnitTables();
