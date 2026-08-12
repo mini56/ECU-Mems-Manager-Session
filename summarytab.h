@@ -28,7 +28,7 @@ public:
 
 private:
     int addRow(const QString &label);
-    void setValue(int row, const QString &text);
+    void setValue(int row, const QString &rawText, const QString &interpretedText);
     void setTooltip(int row, const QString &text);
 
     QTableWidget *m_table0;

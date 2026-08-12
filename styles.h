@@ -124,9 +124,18 @@ QStatusBar {
 }
 QTableWidget, QTableView {
     background-color: #ffffff;
+    alternate-background-color: #f4f6fa;
+    color: #1f2430;
     gridline-color: #eceef2;
     border: 1px solid #dcdfe4;
     border-radius: 6px;
+}
+QTableWidget::item, QTableView::item {
+    color: #1f2430;
+}
+QTableWidget::item:selected, QTableView::item:selected {
+    background-color: #2f6fed;
+    color: #ffffff;
 }
 QHeaderView::section {
     background-color: #eceef2;
@@ -290,10 +299,18 @@ QStatusBar {
 }
 QTableWidget, QTableView {
     background-color: #262a33;
+    alternate-background-color: #20242c;
     color: #e6e8ee;
     gridline-color: #363b47;
     border: 1px solid #363b47;
     border-radius: 6px;
+}
+QTableWidget::item, QTableView::item {
+    color: #e6e8ee;
+}
+QTableWidget::item:selected, QTableView::item:selected {
+    background-color: #3d7bff;
+    color: #ffffff;
 }
 QHeaderView::section {
     background-color: #2b2f39;
