@@ -277,7 +277,7 @@ QString DiagnosticPanel::buildReport() const
     const int raw7d1415 = (static_cast<int>(d.idle_error2) << 8) | static_cast<int>(d.uk10);
     const int hotIdleCorrection = static_cast<int>(d.idle_hot) - 35;
     const int hotIdleErrorCorrected = (raw7d1415 - 32768) + hotIdleCorrection;
-    text += tr("Temps bobine=%1 ms\n").arg(d.coil_time, 0, 'f', 2);
+    text += tr("Temps bobine=%1 ms\n").arg(static_cast<double>(d.coil_time), 0, 'f', 2);
     text += tr("7D14-15 brut=%1 | correction ralenti chaud=%2 | erreur ralenti chaud corrigée=%3 ECU\n")
         .arg(raw7d1415).arg(hotIdleCorrection).arg(hotIdleErrorCorrected);
     text += tr("RPM=%1 | MAP=%2 kPa | batterie=%3 V | TPS=%4 | IAC=%5 | erreur ralenti=%6\n")

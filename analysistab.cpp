@@ -8,6 +8,7 @@
 #include <QScrollBar>
 #include <QFontMetrics>
 #include <QMap>
+#include <QObject>
 
 // Correspondance entre les noms techniques des colonnes du CSV et des
 // libellés clairs en français, affichés dans la liste des voies.
@@ -63,7 +64,7 @@ static QString friendlyColumnName(const QString &rawName)
   }
   if (rawName.contains("_uk") || rawName.contains("uk1") || rawName.contains("uk2"))
   {
-    return tr("Non documenté (%1)").arg(rawName);
+    return QObject::tr("Non documenté (%1)").arg(rawName);
   }
   return rawName;
 }
