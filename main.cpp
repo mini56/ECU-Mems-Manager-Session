@@ -10,6 +10,11 @@
 #include <QFont>
 #include <QScreen>
 #include <QGuiApplication>
+#include <QDialog>
+#include <QVBoxLayout>
+#include <QGridLayout>
+#include <QPushButton>
+#include <QIcon>
 #include "splashprogress.h"
 
 #include "mainwindow.h"
@@ -31,6 +36,58 @@ void updateStartupProgress(int percent)
     if (g_startupStatus)
         g_startupStatus->setText(QObject::tr("Détection des ports série : %1 %").arg(percent));
     qApp->processEvents();
+}
+
+QString chooseInitialLanguage()
+{
+    QDialog dialog;
+    dialog.setWindowTitle(QStringLiteral("ECU MEMS Manager - Language"));
+    dialog.setModal(true);
+    dialog.setMinimumWidth(430);
+
+    QVBoxLayout *layout = new QVBoxLayout(&dialog);
+    QLabel *title = new QLabel(
+        QStringLiteral("<b>Choisissez votre langue / Choose your language</b>"), &dialog);
+    title->setAlignment(Qt::AlignCenter);
+    layout->addWidget(title);
+
+    QLabel *info = new QLabel(
+        QStringLiteral("La langue pourra être modifiée ensuite dans Options.\\n"
+                       "The language can be changed later in Options."), &dialog);
+    info->setAlignment(Qt::AlignCenter);
+    layout->addWidget(info);
+
+    QGridLayout *grid = new QGridLayout();
+    struct LanguageChoice { const char *code; const char *name; const char *icon; };
+    const LanguageChoice choices[] = {
+        {"fr", "Français",  ":/flags/fr.png"},
+        {"en", "English",   ":/flags/en.png"},
+        {"es", "Español",   ":/flags/es.png"},
+        {"it", "Italiano",  ":/flags/it.png"},
+        {"pt", "Português", ":/flags/pt.png"},
+        {"de", "Deutsch",   ":/flags/de.png"}
+    };
+
+    QString selected;
+    for (int i = 0; i < 6; ++i)
+    {
+        QPushButton *button = new QPushButton(
+            QIcon(QString::fromLatin1(choices[i].icon)),
+            QString::fromUtf8(choices[i].name), &dialog);
+        button->setIconSize(QSize(48, 32));
+        button->setMinimumSize(180, 52);
+        const QString code = QString::fromLatin1(choices[i].code);
+        QObject::connect(button, &QPushButton::clicked, &dialog, [&dialog, &selected, code]() {
+            selected = code;
+            dialog.accept();
+        });
+        grid->addWidget(button, i / 2, i % 2);
+    }
+    layout->addLayout(grid);
+
+    if (dialog.exec() != QDialog::Accepted || selected.isEmpty())
+        return QStringLiteral("fr");
+    return selected;
 }
 
 QSplashScreen *createStartupSplash()
@@ -81,11 +138,22 @@ int main(int argc, char *argv[])
     QApplication::setApplicationVersion(QStringLiteral(APP_VERSION));
     QApplication::setOrganizationName("ECU Mems Manager");
 
-    // Load the persisted UI language before creating any widgets.
+    // Au tout premier démarrage, demander la langue avant de créer les widgets.
     QSettings languageSettings(QSettings::IniFormat, QSettings::UserScope, PROJECTNAME);
     languageSettings.beginGroup("Settings");
-    const QString language = languageSettings.value("Language", "fr").toString();
+    const bool languageConfigured = languageSettings.value("LanguageConfigured", false).toBool();
+    QString language = languageSettings.value("Language", "fr").toString();
     languageSettings.endGroup();
+
+    if (!languageConfigured)
+    {
+        language = chooseInitialLanguage();
+        languageSettings.beginGroup("Settings");
+        languageSettings.setValue("Language", language);
+        languageSettings.setValue("LanguageConfigured", true);
+        languageSettings.endGroup();
+        languageSettings.sync();
+    }
 
     QTranslator translator;
     const QString translationPath = QCoreApplication::applicationDirPath()

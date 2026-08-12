@@ -119,10 +119,14 @@ if(WIN32)
     )
 endif()
 
-# Traductions Français / Anglais
+# Traductions multilingues
 set(TS_FILES
     ${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_fr.ts
     ${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_en.ts
+    ${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_es.ts
+    ${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_it.ts
+    ${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_pt.ts
+    ${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_de.ts
 )
 qt5_add_translation(QM_FILES ${TS_FILES})
 add_custom_target(translations ALL DEPENDS ${QM_FILES})

@@ -22,7 +22,7 @@ HelpViewer::HelpViewer(const QString title, QWidget * parent):QDialog(parent), m
   settings.beginGroup("Settings");
   const QString language = settings.value("Language", "fr").toString();
   settings.endGroup();
-  QFile helpFile(language == "en" ? ":/help/help_en.html" : ":/help/help.html");
+  QFile helpFile(language == "fr" ? ":/help/help.html" : ":/help/help_en.html");
 
   helpFile.open(QFile::ReadOnly);
   QString fileText = helpFile.readAll();

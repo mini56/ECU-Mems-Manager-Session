@@ -2,6 +2,7 @@
 #include "optionsdialog.h"
 #include "serialdevenumerator.h"
 #include "desktopshortcut.h"
+#include <QIcon>
 
 /**
  * Constructor; sets up the options-dialog UI and sets settings-file field names.
@@ -61,9 +62,16 @@ void OptionsDialog::setupWidgets()
 
   m_languageLabel = new QLabel(tr("Langue :"), this);
   m_languageBox = new QComboBox(this);
-  m_languageBox->addItem(tr("Français"), "fr");
-  m_languageBox->addItem(tr("Anglais"), "en");
-  m_languageBox->setCurrentIndex(m_language == "en" ? 1 : 0);
+  // Les noms des langues restent dans leur langue native afin d'être toujours identifiables.
+  m_languageBox->addItem(QIcon(":/flags/fr.png"), QStringLiteral("Français"), "fr");
+  m_languageBox->addItem(QIcon(":/flags/en.png"), QStringLiteral("English"), "en");
+  m_languageBox->addItem(QIcon(":/flags/es.png"), QStringLiteral("Español"), "es");
+  m_languageBox->addItem(QIcon(":/flags/it.png"), QStringLiteral("Italiano"), "it");
+  m_languageBox->addItem(QIcon(":/flags/pt.png"), QStringLiteral("Português"), "pt");
+  m_languageBox->addItem(QIcon(":/flags/de.png"), QStringLiteral("Deutsch"), "de");
+  int languageIndex = m_languageBox->findData(m_language);
+  if (languageIndex < 0) languageIndex = 0;
+  m_languageBox->setCurrentIndex(languageIndex);
 
   m_desktopShortcutBox = new QCheckBox(
       tr("Créer et maintenir un raccourci sur le Bureau"), this);
@@ -179,6 +187,7 @@ void OptionsDialog::writeSettings()
   // settings.setValue(m_settingLambdaScale, m_lambdaScale);
   settings.setValue(m_settingTheme, m_theme);
   settings.setValue(m_settingLanguage, m_language);
+  settings.setValue("LanguageConfigured", true);
   settings.setValue(m_settingDesktopShortcut, m_desktopShortcut);
 
   settings.endGroup();

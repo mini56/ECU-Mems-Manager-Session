@@ -1,0 +1,23 @@
+ECU MEMS Manager v1.0.8 TEST9 - 6 langues
+
+Base : TEST8 validée.
+
+Ajouts :
+- Premier démarrage : fenêtre de choix de langue avec 6 drapeaux embarqués.
+- Français, English, Español, Italiano, Português, Deutsch.
+- Le choix est mémorisé et la fenêtre n'est affichée qu'une fois.
+- Options > Langue propose les 6 langues avec leurs drapeaux.
+- 4 nouveaux catalogues Qt : es, it, pt, de.
+- 623 entrées terminées dans chacun des 6 catalogues.
+- Les drapeaux sont inclus dans resources.qrc : aucun emoji/drapeau Windows requis.
+- Les langues autres que FR utilisent provisoirement l'aide anglaise pour éviter l'affichage d'une aide française.
+- Aucun changement de la communication ECU.
+
+Contrôles statiques :
+- XML UI/QRC/TS valide.
+- 0 traduction marquée unfinished / 0 entrée vide.
+- Sources C++ modifiées : délimiteurs vérifiés.
+- onProtocolCommandRequested(quint8 command) conservé.
+
+NOTE TEST :
+Cette archive est destinée d'abord au test de compilation GitHub Actions et au contrôle visuel des nouvelles langues.
