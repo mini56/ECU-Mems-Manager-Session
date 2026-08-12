@@ -472,7 +472,7 @@ The statuses and guidance in this report are consistency checks and do not repla
   </message>
   <message>
    <source>Valeur régime anormale : contrôler signal régime / câblage.</source>
-   <translation>Abnormal engine-speed value: check engine-speed signal / wiring.</translation>
+   <translation>Abnormal engine-speed value: check engine-speed signal and wiring.</translation>
   </message>
   <message>
    <source>court terme=%1  long terme=%2</source>

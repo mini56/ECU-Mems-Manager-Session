@@ -1,0 +1,13 @@
+ECU MEMS Manager v1.0.8 TEST7
+
+Base : TEST6 / TEST5B compilable.
+
+Corrections :
+- hauteur minimale 32 px pour les boutons des onglets Settings/Réglages et Actuators/Actionneurs ;
+- évite le texte verticalement rogné par le padding du thème clair/sombre ;
+- nouvelle passe sur les traductions anglaises restantes et les traductions mixtes ;
+- aucune modification du protocole ou de la communication ECU.
+
+Fichiers modifiés :
+- mainwindow.cpp
+- translations/ECUMemsManager_en.ts

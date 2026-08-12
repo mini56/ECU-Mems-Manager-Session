@@ -306,6 +306,16 @@ void MainWindow::setupWidgets()
   for (QLabel *label : actuatorLabels)
     label->setMinimumHeight(qMax(label->minimumHeight(), label->fontMetrics().height() + 6));
 
+  // Hauteur confortable des boutons des onglets Réglages et Actionneurs.
+  // Le thème ajoute un padding vertical : 32 px évite que le texte soit rogné.
+  const QList<QPushButton*> settingsButtons = m_ui->emission_tab->findChildren<QPushButton*>();
+  for (QPushButton *button : settingsButtons)
+    button->setMinimumHeight(qMax(button->minimumHeight(), 32));
+
+  const QList<QPushButton*> actuatorButtons = m_ui->actuators->findChildren<QPushButton*>();
+  for (QPushButton *button : actuatorButtons)
+    button->setMinimumHeight(qMax(button->minimumHeight(), 32));
+
   // Largeur confortable dans les deux langues.
   const int connectButtonWidth = qMax(120, m_ui->m_connectButton->fontMetrics().horizontalAdvance(m_ui->m_connectButton->text()) + 30);
   const int disconnectButtonWidth = qMax(120, m_ui->m_disconnectButton->fontMetrics().horizontalAdvance(m_ui->m_disconnectButton->text()) + 30);
