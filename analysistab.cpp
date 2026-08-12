@@ -442,14 +442,14 @@ AnalysisTab::AnalysisTab(QWidget *parent) : QWidget(parent), m_overlayMode(false
   connect(m_loadButton, SIGNAL(clicked()), this, SLOT(onLoadFileClicked()));
   leftLayout->addWidget(m_loadButton);
 
-  m_fileLabel = new QLabel("Aucun fichier chargé", leftPanel);
+  m_fileLabel = new QLabel(tr("Aucun fichier chargé"), leftPanel);
   m_fileLabel->setWordWrap(true);
   m_fileLabel->setStyleSheet("color: #565d6b; font-style: italic;");
   leftLayout->addWidget(m_fileLabel);
 
   QHBoxLayout *selectRow = new QHBoxLayout();
   m_selectAllButton = new QPushButton("Tout cocher", leftPanel);
-  m_selectNoneButton = new QPushButton("Tout décocher", leftPanel);
+  m_selectNoneButton = new QPushButton(tr("Tout décocher"), leftPanel);
   connect(m_selectAllButton, SIGNAL(clicked()), this, SLOT(onSelectAllClicked()));
   connect(m_selectNoneButton, SIGNAL(clicked()), this, SLOT(onSelectNoneClicked()));
   selectRow->addWidget(m_selectAllButton);
@@ -458,7 +458,7 @@ AnalysisTab::AnalysisTab(QWidget *parent) : QWidget(parent), m_overlayMode(false
 
   // Bouton de superposition : sous les deux boutons ci-dessus, largeur fixe
   // pour qu'il ne change pas de taille selon le texte affiché
-  m_overlayButton = new QPushButton("Superposer toutes\nles courbes sélectionnées", leftPanel);
+  m_overlayButton = new QPushButton(tr("Superposer toutes\nles courbes sélectionnées"), leftPanel);
   m_overlayButton->setCheckable(true);
   m_overlayButton->setMinimumWidth(290);
   m_overlayButton->setFixedWidth(290);
@@ -513,7 +513,7 @@ void AnalysisTab::parseCsv(const QString &path)
   QFile file(path);
   if (!file.open(QFile::ReadOnly | QFile::Text))
   {
-    QMessageBox::warning(this, tr("Erreur"), "Impossible d'ouvrir le fichier :\n" + path, QMessageBox::Ok);
+    QMessageBox::warning(this, tr("Erreur"), tr("Impossible d'ouvrir le fichier :\n%1").arg(path), QMessageBox::Ok);
     return;
   }
 
@@ -522,7 +522,7 @@ void AnalysisTab::parseCsv(const QString &path)
 
   if (stream.atEnd())
   {
-    QMessageBox::warning(this, tr("Erreur"), "Fichier CSV vide ou incomplet.", QMessageBox::Ok);
+    QMessageBox::warning(this, tr("Erreur"), tr("Fichier CSV vide ou incomplet."), QMessageBox::Ok);
     return;
   }
   QString headerLine = stream.readLine();
@@ -535,7 +535,7 @@ void AnalysisTab::parseCsv(const QString &path)
   int columnCount = headers.count() - 1;
   if (columnCount <= 0)
   {
-    QMessageBox::warning(this, tr("Erreur"), "Format de fichier CSV non reconnu.", QMessageBox::Ok);
+    QMessageBox::warning(this, tr("Erreur"), tr("Format de fichier CSV non reconnu."), QMessageBox::Ok);
     return;
   }
 
@@ -588,7 +588,7 @@ void AnalysisTab::parseCsv(const QString &path)
 
   if (lineCount == 0)
   {
-    QMessageBox::warning(this, tr("Erreur"), "Aucune donnée exploitable dans ce fichier.", QMessageBox::Ok);
+    QMessageBox::warning(this, tr("Erreur"), tr("Aucune donnée exploitable dans ce fichier."), QMessageBox::Ok);
     return;
   }
 
@@ -623,8 +623,8 @@ void AnalysisTab::rebuildCheckboxes()
       "QCheckBox::indicator:hover { border: 2px solid %1; }"
       ).arg(c.name()));
 
-    if (m_columnNames[i].contains("Régime moteur") || m_columnNames[i].contains("liquide refroid") ||
-        m_columnNames[i].contains("Tension batterie"))
+    if (m_columnNames[i].contains(tr("Régime moteur")) || m_columnNames[i].contains(tr("liquide refroid")) ||
+        m_columnNames[i].contains(tr("Tension batterie")))
     {
       cb->setChecked(true);
     }

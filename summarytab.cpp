@@ -1,7 +1,7 @@
 #include "summarytab.h"
 #include <QHeaderView>
+#include <QIcon>
 
-static const QString TOOLTIP_ICON = QString::fromUtf8("\xF0\x9F\x92\xAC ");
 
 SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)
 {
@@ -91,82 +91,82 @@ SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)
   // dans le logiciel (onglets Aperçu et Réglages). Les lignes concernées
   // sont repérables par l'icône en forme de bulle devant leur nom.
   setTooltip(m_rowCoolantTemp,
-    "Affiche la température du liquide de refroidissement mesurée par l'ECU. Si le capteur est en circuit ouvert, "
+    tr("Affiche la température du liquide de refroidissement mesurée par l'ECU. Si le capteur est en circuit ouvert, "
     "une valeur par défaut d'environ 60°C sera affichée. Pendant la montée en température, la valeur doit augmenter "
     "progressivement de la température ambiante à environ 90°C. Un capteur défectueux peut causer un démarrage "
-    "difficile, un ralenti trop élevé, une surconsommation et des ventilateurs tournant en continu.");
+    "difficile, un ralenti trop élevé, une surconsommation et des ventilateurs tournant en continu."));
   setTooltip(m_rowAmbientTemp,
-    "Affiche la température mesurée par l'ECU via la sonde de température d'air ambiant (si équipée). Si le capteur "
+    tr("Affiche la température mesurée par l'ECU via la sonde de température d'air ambiant (si équipée). Si le capteur "
     "est en circuit ouvert, une valeur par défaut fixe sera affichée. Ce capteur sert à l'ECU pour mesurer la "
     "température dans le compartiment moteur, généralement pour piloter un ventilateur supplémentaire. Sur les ECU "
-    "MEMS qui ne supportent pas ce capteur, la valeur affichera N/S.");
+    "MEMS qui ne supportent pas ce capteur, la valeur affichera N/S."));
   setTooltip(m_rowIntakeAirTemp,
-    "Affiche la température mesurée par l'ECU via la sonde de température d'air admission (si équipée). Si le "
+    tr("Affiche la température mesurée par l'ECU via la sonde de température d'air admission (si équipée). Si le "
     "capteur est en circuit ouvert, une valeur par défaut fixe sera affichée. Cette température sert à l'ECU pour "
-    "retarder l'allumage afin d'éviter le cliquetis et ajuster la richesse à chaud.");
+    "retarder l'allumage afin d'éviter le cliquetis et ajuster la richesse à chaud."));
   setTooltip(m_rowMapKpa,
-    "Affiche la pression mesurée par le capteur de pression d'air interne du MEMS. Cette valeur doit indiquer la "
+    tr("Affiche la pression mesurée par le capteur de pression d'air interne du MEMS. Cette valeur doit indiquer la "
     "pression atmosphérique de 100 kPa moteur à l'arrêt, et une valeur plus basse entre 25 et 40 kPa au ralenti. Des "
     "valeurs très élevées peuvent indiquer un problème du capteur interne au MEMS, ou plus probablement une durite "
-    "de dépression bouchée ou débranchée.");
+    "de dépression bouchée ou débranchée."));
   setTooltip(m_rowBatteryVoltage,
-    "Affiche la tension d'alimentation du véhicule mesurée en interne par l'ECU. De grands écarts sur cette mesure "
-    "peuvent entraîner des difficultés de démarrage et des erreurs de CO au ralenti.");
+    tr("Affiche la tension d'alimentation du véhicule mesurée en interne par l'ECU. De grands écarts sur cette mesure "
+    "peuvent entraîner des difficultés de démarrage et des erreurs de CO au ralenti."));
   setTooltip(m_rowThrottlePot,
-    "Affiche la position du papillon obtenue par l'ECU MEMS via le potentiomètre de papillon. Cette valeur doit "
-    "passer d'une valeur basse à une valeur haute lorsque la pédale d'accélérateur est enfoncée.");
+    tr("Affiche la position du papillon obtenue par l'ECU MEMS via le potentiomètre de papillon. Cette valeur doit "
+    "passer d'une valeur basse à une valeur haute lorsque la pédale d'accélérateur est enfoncée."));
   setTooltip(m_rowIdleSwitch,
-    "Affiche l'état du contacteur papillon (si équipé). Si le contact indique 'ON' alors que le papillon est fermé, "
+    tr("Affiche l'état du contacteur papillon (si équipé). Si le contact indique 'ON' alors que le papillon est fermé, "
     "le véhicule ne tournera pas correctement au ralenti et la position papillon fermé devra peut-être être "
     "réinitialisée (enfoncer/relâcher complètement l'accélérateur 5 fois en 10 secondes après la mise du contact, "
-    "puis attendre 20 secondes).");
+    "puis attendre 20 secondes)."));
   setTooltip(m_rowParkNeutralSwitch,
-    "Affiche l'état du contacteur point mort/parking mesuré par l'ECU MEMS. Ce contacteur améliore la régulation du "
-    "ralenti sur les véhicules à boîte automatique ou CVT. Ne fonctionne pas sur les véhicules à boîte manuelle.");
+    tr("Affiche l'état du contacteur point mort/parking mesuré par l'ECU MEMS. Ce contacteur améliore la régulation du "
+    "ralenti sur les véhicules à boîte automatique ou CVT. Ne fonctionne pas sur les véhicules à boîte manuelle."));
   setTooltip(m_rowIdleSpeedOffset,
-    "Si un décalage de service du ralenti a été configuré dans cet ECU, l'écart par rapport au ralenti normal est "
-    "affiché ici. Normalement, seules deux valeurs sont possibles : 0 tr/min ou 49 tr/min.");
+    tr("Si un décalage de service du ralenti a été configuré dans cet ECU, l'écart par rapport au ralenti normal est "
+    "affiché ici. Normalement, seules deux valeurs sont possibles : 0 tr/min ou 49 tr/min."));
   setTooltip(m_rowIacPosition,
-    "C'est le nombre de pas du moteur pas-à-pas depuis la fermeture complète (0) que l'ECU a appris comme position "
+    tr("C'est le nombre de pas du moteur pas-à-pas depuis la fermeture complète (0) que l'ECU a appris comme position "
     "correcte pour maintenir le régime de ralenti visé, moteur bien chaud. Si cette valeur sort de la plage 10-50 "
-    "pas, c'est le signe possible d'un défaut ou d'un mauvais réglage.");
+    "pas, c'est le signe possible d'un défaut ou d'un mauvais réglage."));
   setTooltip(m_rowIdleError,
-    "C'est l'écart actuel entre le régime de ralenti visé par l'ECU MEMS et le régime moteur réel. Une valeur "
-    "supérieure à 100 tr/min indique que l'ECU ne maîtrise pas le ralenti, signe possible d'un défaut.");
+    tr("C'est l'écart actuel entre le régime de ralenti visé par l'ECU MEMS et le régime moteur réel. Une valeur "
+    "supérieure à 100 tr/min indique que l'ECU ne maîtrise pas le ralenti, signe possible d'un défaut."));
   setTooltip(m_rowIdleErrorHotCorrected,
-    "Décodage du champ 7D14-15 : la valeur brute 16 bits est centrée sur 32768, puis la correction de position "
+    tr("Décodage du champ 7D14-15 : la valeur brute 16 bits est centrée sur 32768, puis la correction de position "
     "du ralenti chaud configurée dans l'onglet Réglages est appliquée. La formule est : "
     "(valeur brute - 32768) + correction ralenti chaud. La correction n'est pas une constante : elle suit le réglage "
-    "actuel de l'utilisateur.");
+    "actuel de l'utilisateur."));
   setTooltip(m_rowIgnitionAdvanceOffset,
-    "Affiche le décalage d'avance de service actuellement utilisé par l'ECU MEMS. C'est un réglage spécial pour les "
-    "pays utilisant un carburant à faible indice d'octane, configurable dans l'onglet Réglages.");
+    tr("Affiche le décalage d'avance de service actuellement utilisé par l'ECU MEMS. C'est un réglage spécial pour les "
+    "pays utilisant un carburant à faible indice d'octane, configurable dans l'onglet Réglages."));
   setTooltip(m_rowCoilTime,
-    "C'est le temps de charge de la bobine d'allumage jusqu'à son courant nominal, mesuré par l'ECU MEMS. Avec une "
+    tr("C'est le temps de charge de la bobine d'allumage jusqu'à son courant nominal, mesuré par l'ECU MEMS. Avec une "
     "tension batterie d'environ 14V, cette valeur doit être d'environ 2-3ms. Une valeur élevée peut indiquer un "
-    "problème du circuit primaire de la bobine.");
+    "problème du circuit primaire de la bobine."));
   setTooltip(m_rowThrottleAngle,
-    "Affiche la position du papillon obtenue par l'ECU MEMS via le potentiomètre de papillon. Cette valeur doit "
-    "passer d'une valeur basse à une valeur haute lorsque la pédale d'accélérateur est enfoncée.");
+    tr("Affiche la position du papillon obtenue par l'ECU MEMS via le potentiomètre de papillon. Cette valeur doit "
+    "passer d'une valeur basse à une valeur haute lorsque la pédale d'accélérateur est enfoncée."));
   setTooltip(m_rowLambdaVoltage,
-    "Affiche la tension de la sonde à oxygène lue par l'ECU MEMS. Moteur bien chaud, en conditions normales de "
-    "ralenti ou de conduite, cette tension oscille rapidement entre 0,0-0,2V et 0,7-1,0V.");
+    tr("Affiche la tension de la sonde à oxygène lue par l'ECU MEMS. Moteur bien chaud, en conditions normales de "
+    "ralenti ou de conduite, cette tension oscille rapidement entre 0,0-0,2V et 0,7-1,0V."));
   setTooltip(m_rowLambdaStatus,
-    "Affiche l'état du diagnostic interne MEMS sur la sonde à oxygène et son câblage. La valeur ON indique aucun "
-    "défaut, OFF indique un problème possible.");
+    tr("Affiche l'état du diagnostic interne MEMS sur la sonde à oxygène et son câblage. La valeur ON indique aucun "
+    "défaut, OFF indique un problème possible."));
   setTooltip(m_rowClosedLoop,
-    "Affiche si l'injection est régulée par rétroaction des sondes à oxygène. Sur un véhicule bien chaud, l'état de "
-    "boucle doit indiquer boucle fermée dans la plupart des conditions de conduite et de ralenti.");
+    tr("Affiche si l'injection est régulée par rétroaction des sondes à oxygène. Sur un véhicule bien chaud, l'état de "
+    "boucle doit indiquer boucle fermée dans la plupart des conditions de conduite et de ralenti."));
   setTooltip(m_rowLongTermFuelTrim,
-    "Affiche la correction carburant actuelle par rétroaction, en pourcentage par rapport à la valeur cartographiée. "
+    tr("Affiche la correction carburant actuelle par rétroaction, en pourcentage par rapport à la valeur cartographiée. "
     "Des valeurs élevées (ex. 120%) indiquent une compensation d'un mélange trop pauvre, des valeurs basses (ex. "
-    "80%) une compensation d'un mélange trop riche.");
+    "80%) une compensation d'un mélange trop riche."));
   setTooltip(m_rowShortTermFuelTrim,
-    "La correction carburant court terme n'est active qu'en boucle fermée. Des valeurs jusqu'à 10% sont normales, "
-    "occasionnellement jusqu'à 15%. Des valeurs supérieures à 15% sont anormales.");
+    tr("La correction carburant court terme n'est active qu'en boucle fermée. Des valeurs jusqu'à 10% sont normales, "
+    "occasionnellement jusqu'à 15%. Des valeurs supérieures à 15% sont anormales."));
   setTooltip(m_rowIgnitionAdvance2,
-    "Fonction intégrée à l'ECU MEMS pour pallier certaines situations pendant la vie du véhicule (carburant à "
-    "faible indice d'octane, usure moteur), en avançant légèrement l'allumage au ralenti.");
+    tr("Fonction intégrée à l'ECU MEMS pour pallier certaines situations pendant la vie du véhicule (carburant à "
+    "faible indice d'octane, usure moteur), en avançant légèrement l'allumage au ralenti."));
 }
 
 int SummaryTab::addRow(const QString &name)
@@ -199,7 +199,8 @@ void SummaryTab::setTooltip(int globalRow, const QString &text)
     table->item(localRow, 2)->setToolTip(text);
     table->item(localRow, 3)->setToolTip(text);
     // La bulle est dans sa propre colonne pour séparer clairement paramètre / aide / valeur.
-    table->item(localRow, 1)->setText(TOOLTIP_ICON);
+    table->item(localRow, 1)->setText("");
+    table->item(localRow, 1)->setIcon(QIcon(":/icons/helpbubble.png"));
   }
 }
 

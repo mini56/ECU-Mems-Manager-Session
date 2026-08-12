@@ -1,3 +1,4 @@
+#include <QApplication>
 /***************************************************************************
  *   Copyright (C) 2006-2008 by Tomasz Ziobrowski                          *
  *   http://www.3electrons.com                                             *
@@ -67,7 +68,7 @@ void ManoMeter::initCoordinateSystem(QPainter & painter)
 
 void ManoMeter::paintBackground(QPainter & painter)
 {
-    const bool darkTheme = palette().window().color().lightness() < 128;
+    const bool darkTheme = qApp && qApp->property("ecuDarkTheme").toBool();
 	static const int scaleTriangle[6] = { -6,141,6,141,0,129 };
 	initCoordinateSystem(painter);
 
@@ -90,7 +91,7 @@ void ManoMeter::paintBackground(QPainter & painter)
         painter.drawEllipse(-152,-152,304,304);
 
         QRadialGradient shield(QPointF(0,0),182,QPointF(-12.0,-15.0));
-	shield.setColorAt(0.0,Qt::white);
+	shield.setColorAt(0.0, darkTheme ? QColor(22,25,31) : QColor(255,255,255));
 	shield.setColorAt(0.5, darkTheme ? QColor(34,38,46) : QColor(240,240,240));
 	shield.setColorAt(1.0, darkTheme ? QColor(17,20,26) : QColor(215,215,215));
 
@@ -171,7 +172,7 @@ void ManoMeter::paintBackground(QPainter & painter)
 
 void ManoMeter::paintEvent(QPaintEvent * )
 {
-    const bool darkTheme = palette().window().color().lightness() < 128;
+    const bool darkTheme = qApp && qApp->property("ecuDarkTheme").toBool();
 	drawBackground();
 	QPainter painter(this);
         initCoordinateSystem(painter);

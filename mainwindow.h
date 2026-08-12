@@ -223,6 +223,7 @@ private slots:
     void onToggleAlwaysOnTop(bool checked);
 
     void onSnapshotClicked();
+    void onViewCapturesClicked();
 
     void onStartLogging();
     void onStopLogging();

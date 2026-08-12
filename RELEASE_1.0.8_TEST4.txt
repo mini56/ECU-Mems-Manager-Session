@@ -1,0 +1,27 @@
+ECU MEMS Manager v1.0.8 TEST4
+Base validated: v1.0.8 TEST3 (compiles and ECU connection confirmed).
+
+Corrections in TEST4:
+- Light/dark gauge theme separated by an explicit application theme flag.
+- Light theme restores the original light gauge appearance.
+- Dark theme uses dark gauge faces, light needles/scales/text and preserves red/green functional zones.
+- White central halo removed in dark mode.
+- Alternating table rows remain readable in dark mode.
+- Overview, Settings and Errors content centered in the 1300 px historical page width.
+- Overview forced as startup tab after all dynamic tabs and scroll wrappers are created.
+- Settings note "Régime jusqu'à 2000..." made taller.
+- Left/right visual margins added to the top status/connection areas.
+- New "Voir les captures / View captures" button.
+- Integrated capture viewer: preview, open/enlarge, delete with confirmation.
+- French/English catalogs rebuilt and expanded; UI titles, labels, comments/tooltips and dynamic messages covered.
+- English help replaced by a fully English page instead of mixed-language content.
+- Fixed embedded speech-bubble icon with three dots used for hover comments, independent of Windows/PC.
+- All measurements keeps separate ECU received and interpreted values.
+
+Static checks:
+- mainwindow.ui/resources.qrc/TS XML parsed successfully.
+- C++ delimiter balance checked.
+- Active m_ui references checked against mainwindow.ui.
+- memsinterface declaration onProtocolCommandRequested(quint8 command) preserved.
+
+No ECU communication logic was intentionally changed in TEST4.

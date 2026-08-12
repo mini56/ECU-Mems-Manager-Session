@@ -213,9 +213,9 @@ void DiagnosticPanel::rebuild(const mems_data &d)
              tr("%1 ECU | brut 7D14-15=%2 | correction=%3")
                  .arg(hotIdleErrorCorrected).arg(raw7d1415).arg(hotIdleCorrection),
              stateFor(hotIdleErrorOk, true),
-             QStringLiteral("Décodage : (7D14-15 brut - 32768) + correction Position ralenti chaud. "
-                            "La correction suit le réglage de l'onglet Réglages ; elle n'est pas codée en dur. "
-                            "Valeur indicative cohérente si elle reste proche de zéro."));
+             tr("Décodage : (7D14-15 brut - 32768) + correction Position ralenti chaud. "
+       "La correction suit le réglage de l'onglet Réglages ; elle n'est pas codée en dur. "
+       "Valeur indicative cohérente si elle reste proche de zéro."));
     if (!hotIdleErrorOk) ++warnings;
 
     const bool iacSuspicious = (d.iac_position == 0 && d.idle_error >= 50 && d.idle_switch == 0 && d.uk3 != 0);

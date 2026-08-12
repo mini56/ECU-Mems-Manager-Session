@@ -14,6 +14,9 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "styles.h"
+#include "captureviewer.h"
+#include "tooltipbubblemanager.h"
+#include "analogwidgets/widgetwithbackground.h"
 #include "analysistab.h"
 #include "summarytab.h"
 #include <qapplication.h>
@@ -67,7 +70,11 @@ m_mems(0), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerD
 
   m_options = new OptionsDialog(this->windowTitle(), this);
   qApp->processEvents();
+  qApp->setProperty("ecuDarkTheme", m_options->getTheme() == "dark");
   qApp->setStyleSheet(m_options->getTheme() == "dark" ? STYLE_DARK : STYLE_LIGHT);
+  const QList<WidgetWithBackground*> startupMeters = findChildren<WidgetWithBackground*>();
+  for (WidgetWithBackground *meter : startupMeters)
+    meter->updateWithBackground();
 
   m_mems = new MEMSInterface(m_options->getSerialDeviceName());
   qApp->processEvents();
@@ -197,8 +204,8 @@ m_mems(0), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerD
   }
 
   QLabel *modeWarning = new QLabel(
-      QStringLiteral("Changement de mode : la commande est envoyée uniquement sur demande. "
-                     "D3 (recodage) reste volontairement bloquée."),
+      tr("Changement de mode : la commande est envoyée uniquement sur demande. "
+         "D3 (recodage) reste volontairement bloquée."),
       sessionBox);
   modeWarning->setWordWrap(true);
   sessionGrid->addWidget(modeWarning, 3, 0, 1, 4);
@@ -244,6 +251,8 @@ m_mems(0), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerD
 
   // Adaptation automatique des pages fixes aux différentes résolutions.
   makeFixedTabsScrollable();
+  m_ui->Tab_main->setCurrentIndex(0); // Toujours démarrer sur Aperçu
+  TooltipBubbleManager::install(this);
 }
 
 
@@ -292,11 +301,13 @@ void MainWindow::buildSpeedAndTempUnitTables()
  */
 void MainWindow::setupWidgets()
 {
-  // Largeur compacte des boutons de connexion : texte + 15 px de marge de chaque côté.
-  const int connectButtonWidth = m_ui->m_connectButton->fontMetrics().horizontalAdvance(m_ui->m_connectButton->text()) + 30;
-  const int disconnectButtonWidth = m_ui->m_disconnectButton->fontMetrics().horizontalAdvance(m_ui->m_disconnectButton->text()) + 30;
+  // Largeur confortable dans les deux langues.
+  const int connectButtonWidth = qMax(120, m_ui->m_connectButton->fontMetrics().horizontalAdvance(m_ui->m_connectButton->text()) + 30);
+  const int disconnectButtonWidth = qMax(120, m_ui->m_disconnectButton->fontMetrics().horizontalAdvance(m_ui->m_disconnectButton->text()) + 30);
   m_ui->m_connectButton->setFixedWidth(connectButtonWidth);
   m_ui->m_disconnectButton->setFixedWidth(disconnectButtonWidth);
+  if (m_ui->horizontalLayoutecuconnect)
+    m_ui->horizontalLayoutecuconnect->setContentsMargins(10, 0, 0, 0);
   // set menu and button icons
   m_ui->m_exitAction->setIcon(style()->standardIcon(QStyle::SP_DialogCloseButton));
   m_ui->m_editSettingsAction->setIcon(style()->standardIcon(QStyle::SP_ComputerIcon));
@@ -306,7 +317,7 @@ void MainWindow::setupWidgets()
   m_ui->m_stopLoggingButton->setIcon(style()->standardIcon(QStyle::SP_MediaStop));
 
   // Ajout de l'option "Toujours au premier plan" dans le menu Options
-  QAction *alwaysOnTopAction = new QAction("Toujours au premier plan", this);
+  QAction *alwaysOnTopAction = new QAction(tr("Toujours au premier plan"), this);
   alwaysOnTopAction->setCheckable(true);
   alwaysOnTopAction->setChecked(false);
   m_ui->m_optionsMenu->addAction(alwaysOnTopAction);
@@ -314,10 +325,14 @@ void MainWindow::setupWidgets()
 
   // Ajout du bouton "Vue instantanée" dans la barre de statut ECU, après Erreurs ECU.
   QPushButton *snapshotButton = new QPushButton(tr("Vue instantanée"), this);
+  QPushButton *viewCapturesButton = new QPushButton(tr("Voir les captures"), this);
   if (m_ui->ecuStatusLayout) {
+    m_ui->ecuStatusLayout->setContentsMargins(10, 0, 10, 0);
     m_ui->ecuStatusLayout->addWidget(snapshotButton);
+    m_ui->ecuStatusLayout->addWidget(viewCapturesButton);
   }
   connect(snapshotButton, SIGNAL(clicked()), this, SLOT(onSnapshotClicked()));
+  connect(viewCapturesButton, SIGNAL(clicked()), this, SLOT(onViewCapturesClicked()));
 
   // Ajout de l'onglet "toutes les mesures" (reconstruit : son contenu
   // d'origine était resté commenté dans le fichier .ui, le rendant vide)
@@ -1229,7 +1244,11 @@ void MainWindow::onEditOptionsClicked()
   {
     if (m_options->getThemeChanged())
     {
+      qApp->setProperty("ecuDarkTheme", m_options->getTheme() == "dark");
       qApp->setStyleSheet(m_options->getTheme() == "dark" ? STYLE_DARK : STYLE_LIGHT);
+      const QList<WidgetWithBackground*> meters = findChildren<WidgetWithBackground*>();
+      for (WidgetWithBackground *meter : meters)
+        meter->updateWithBackground();
     }
 
     if (m_options->getLanguageChanged())
@@ -1500,9 +1519,16 @@ void MainWindow::onSnapshotClicked()
   }
   else
   {
-    QMessageBox::warning(this, tr("Erreur"), "Échec de l'enregistrement de la capture d'écran.", QMessageBox::Ok);
+    QMessageBox::warning(this, tr("Erreur"), tr("Échec de l'enregistrement de la capture d'écran."), QMessageBox::Ok);
   }
 }
+
+void MainWindow::onViewCapturesClicked()
+{
+  CaptureViewer viewer(this);
+  viewer.exec();
+}
+
 
 /**
  * Responds to the "read success" signal from the worker thread by turning
@@ -1532,7 +1558,7 @@ void MainWindow::onStartLogging()
   }
   else
   {
-    QMessageBox::warning(this, tr("Erreur"), "Échec de l'ouverture du fichier journal (" + m_logger->getLogPath() + ")", QMessageBox::Ok);
+    QMessageBox::warning(this, tr("Erreur"), tr("Échec de l'ouverture du fichier journal (%1)").arg(m_logger->getLogPath()), QMessageBox::Ok);
   }
 }
 

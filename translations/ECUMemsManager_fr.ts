@@ -3,6 +3,14 @@
 <context>
 <name>AnalysisTab</name>
 <message>
+<source>Aucun fichier chargé</source>
+<translation>Aucun fichier chargé</translation>
+</message>
+<message>
+<source>Aucune donnée exploitable dans ce fichier.</source>
+<translation>Aucune donnée exploitable dans ce fichier.</translation>
+</message>
+<message>
 <source>Cochez une ou plusieurs voies dans la liste à gauche pour les afficher</source>
 <translation>Cochez une ou plusieurs voies dans la liste à gauche pour les afficher</translation>
 </message>
@@ -11,8 +19,18 @@
 <translation>Erreur</translation>
 </message>
 <message>
-<source>Non documenté (%1)</source>
-<translation>Non documenté (%1)</translation>
+<source>Fichier CSV vide ou incomplet.</source>
+<translation>Fichier CSV vide ou incomplet.</translation>
+</message>
+<message>
+<source>Format de fichier CSV non reconnu.</source>
+<translation>Format de fichier CSV non reconnu.</translation>
+</message>
+<message>
+<source>Impossible d'ouvrir le fichier :
+%1</source>
+<translation>Impossible d'ouvrir le fichier :
+%1</translation>
 </message>
 <message>
 <source>Pas de données</source>
@@ -23,12 +41,89 @@
 <translation>Revenir à l'affichage empilé</translation>
 </message>
 <message>
+<source>Régime moteur</source>
+<translation>Régime moteur</translation>
+</message>
+<message>
+<source>Superposer toutes
+les courbes sélectionnées</source>
+<translation>Superposer toutes
+les courbes sélectionnées</translation>
+</message>
+<message>
 <source>Superposer toutes les courbes sélectionnées</source>
 <translation>Superposer toutes les courbes sélectionnées</translation>
+</message>
+<message>
+<source>Tension batterie</source>
+<translation>Tension batterie</translation>
+</message>
+<message>
+<source>Tout décocher</source>
+<translation>Tout décocher</translation>
+</message>
+<message>
+<source>liquide refroid</source>
+<translation>liquide refroid</translation>
+</message>
+</context>
+<context>
+<name>CaptureViewer</name>
+<message>
+<source>Aucune capture enregistrée.</source>
+<translation>Aucune capture enregistrée.</translation>
+</message>
+<message>
+<source>Erreur</source>
+<translation>Erreur</translation>
+</message>
+<message>
+<source>Fermer</source>
+<translation>Fermer</translation>
+</message>
+<message>
+<source>Impossible de lire cette capture.</source>
+<translation>Impossible de lire cette capture.</translation>
+</message>
+<message>
+<source>Impossible de supprimer cette capture.</source>
+<translation>Impossible de supprimer cette capture.</translation>
+</message>
+<message>
+<source>Ouvrir / Agrandir</source>
+<translation>Ouvrir / Agrandir</translation>
+</message>
+<message>
+<source>Supprimer</source>
+<translation>Supprimer</translation>
+</message>
+<message>
+<source>Supprimer définitivement la capture sélectionnée ?</source>
+<translation>Supprimer définitivement la capture sélectionnée ?</translation>
+</message>
+<message>
+<source>Supprimer la capture</source>
+<translation>Supprimer la capture</translation>
+</message>
+<message>
+<source>Sélectionnez une capture.</source>
+<translation>Sélectionnez une capture.</translation>
+</message>
+<message>
+<source>Voir les captures</source>
+<translation>Voir les captures</translation>
 </message>
 </context>
 <context>
 <name>DiagnosticPanel</name>
+<message>
+<source>
+Les états et conseils de ce rapport sont des contrôles de cohérence et ne remplacent pas les spécifications constructeur.
+</source>
+<translation>
+Les états et conseils de ce rapport sont des contrôles de cohérence et ne remplacent pas les spécifications constructeur.
+</translation>
+</message>
 <message>
 <source>%1 ECU | brut 7D14-15=%2 | correction=%3</source>
 <translation>%1 ECU | brut 7D14-15=%2 | correction=%3</translation>
@@ -50,8 +145,10 @@
 <translation>%1 tr/min</translation>
 </message>
 <message>
-<source>7D14-15 brut=%1 | correction ralenti chaud=%2 | erreur ralenti chaud corrigée=%3 ECU\n</source>
-<translation>7D14-15 brut=%1 | correction ralenti chaud=%2 | erreur ralenti chaud corrigée=%3 ECU\n</translation>
+<source>7D14-15 brut=%1 | correction ralenti chaud=%2 | erreur ralenti chaud corrigée=%3 ECU
+</source>
+<translation>7D14-15 brut=%1 | correction ralenti chaud=%2 | erreur ralenti chaud corrigée=%3 ECU
+</translation>
 </message>
 <message>
 <source>ANOMALIE</source>
@@ -118,16 +215,20 @@
 <translation>Corrections sans écart important selon ce critère indicatif.</translation>
 </message>
 <message>
-<source>DTC : %1 %2 %3\n</source>
-<translation>DTC : %1 %2 %3\n</translation>
+<source>DTC : %1 %2 %3
+</source>
+<translation>DTC : %1 %2 %3
+</translation>
 </message>
 <message>
 <source>DTC0=%1  DTC1=%2  DTC2=%3</source>
 <translation>DTC0=%1  DTC1=%2  DTC2=%3</translation>
 </message>
 <message>
-<source>Date : %1\n</source>
-<translation>Date : %1\n</translation>
+<source>Date : %1
+</source>
+<translation>Date : %1
+</translation>
 </message>
 <message>
 <source>Dernière analyse : %1  |  score interne=%2</source>
@@ -146,6 +247,10 @@
 <translation>Diagnostic : --</translation>
 </message>
 <message>
+<source>Décodage : (7D14-15 brut - 32768) + correction Position ralenti chaud. La correction suit le réglage de l'onglet Réglages ; elle n'est pas codée en dur. Valeur indicative cohérente si elle reste proche de zéro.</source>
+<translation>Décodage : (7D14-15 brut - 32768) + correction Position ralenti chaud. La correction suit le réglage de l'onglet Réglages ; elle n'est pas codée en dur. Valeur indicative cohérente si elle reste proche de zéro.</translation>
+</message>
+<message>
 <source>Défaut circuit/alimentation lambda : contrôler chauffage, alimentation et câblage.</source>
 <translation>Défaut circuit/alimentation lambda : contrôler chauffage, alimentation et câblage.</translation>
 </message>
@@ -154,8 +259,10 @@
 <translation>Défauts ECU</translation>
 </message>
 <message>
-<source>ECU MEMS MANAGER - RAPPORT DE DIAGNOSTIC\n</source>
-<translation>ECU MEMS MANAGER - RAPPORT DE DIAGNOSTIC\n</translation>
+<source>ECU MEMS MANAGER - RAPPORT DE DIAGNOSTIC
+</source>
+<translation>ECU MEMS MANAGER - RAPPORT DE DIAGNOSTIC
+</translation>
 </message>
 <message>
 <source>Effacer référence</source>
@@ -186,8 +293,10 @@
 <translation>INFORMATION</translation>
 </message>
 <message>
-<source>Identification : %1\n</source>
-<translation>Identification : %1\n</translation>
+<source>Identification : %1
+</source>
+<translation>Identification : %1
+</translation>
 </message>
 <message>
 <source>Impossible d'écrire le rapport.</source>
@@ -198,8 +307,10 @@
 <translation>Interprétation / action</translation>
 </message>
 <message>
-<source>LDR brut=%1 | air admission brut=%2 | lambda=%3 | boucle fermee=%4\n</source>
-<translation>LDR brut=%1 | air admission brut=%2 | lambda=%3 | boucle fermee=%4\n</translation>
+<source>LDR brut=%1 | air admission brut=%2 | lambda=%3 | boucle fermee=%4
+</source>
+<translation>LDR brut=%1 | air admission brut=%2 | lambda=%3 | boucle fermee=%4
+</translation>
 </message>
 <message>
 <source>Lambda</source>
@@ -234,8 +345,10 @@
 <translation>Plage cohérente pour un contrôle en cours de fonctionnement.</translation>
 </message>
 <message>
-<source>RPM=%1 | MAP=%2 kPa | batterie=%3 V | TPS=%4 | IAC=%5 | erreur ralenti=%6\n</source>
-<translation>RPM=%1 | MAP=%2 kPa | batterie=%3 V | TPS=%4 | IAC=%5 | erreur ralenti=%6\n</translation>
+<source>RPM=%1 | MAP=%2 kPa | batterie=%3 V | TPS=%4 | IAC=%5 | erreur ralenti=%6
+</source>
+<translation>RPM=%1 | MAP=%2 kPa | batterie=%3 V | TPS=%4 | IAC=%5 | erreur ralenti=%6
+</translation>
 </message>
 <message>
 <source>Rapport automatique</source>
@@ -246,8 +359,10 @@
 <translation>Rapport texte (*.txt)</translation>
 </message>
 <message>
-<source>Référence : %1\n</source>
-<translation>Référence : %1\n</translation>
+<source>Référence : %1
+</source>
+<translation>Référence : %1
+</translation>
 </message>
 <message>
 <source>Référence capturée le %1. Cette comparaison sert à repérer une dérive ; elle ne constitue pas une spécification constructeur.</source>
@@ -270,8 +385,10 @@
 <translation>Temps bobine</translation>
 </message>
 <message>
-<source>Temps bobine=%1 ms\n</source>
-<translation>Temps bobine=%1 ms\n</translation>
+<source>Temps bobine=%1 ms
+</source>
+<translation>Temps bobine=%1 ms
+</translation>
 </message>
 <message>
 <source>Temps de charge dans la plage 1,9–3,1 ms à environ 14 V.</source>
@@ -338,16 +455,8 @@
 <translation>Valeur régime anormale : contrôler signal régime / câblage.</translation>
 </message>
 <message>
-<source>\nLes états et conseils de ce rapport sont des contrôles de cohérence et ne remplacent pas les spécifications constructeur.\n</source>
-<translation>\nLes états et conseils de ce rapport sont des contrôles de cohérence et ne remplacent pas les spécifications constructeur.\n</translation>
-</message>
-<message>
 <source>court terme=%1  long terme=%2</source>
 <translation>court terme=%1  long terme=%2</translation>
-</message>
-<message>
-<source>diagnostic_mems_%1.txt</source>
-<translation>diagnostic_mems_%1.txt</translation>
 </message>
 <message>
 <source>non</source>
@@ -627,10 +736,6 @@
 <translation>0</translation>
 </message>
 <message>
-<source>0.0V</source>
-<translation>0.0V</translation>
-</message>
-<message>
 <source>01 - Capteur température liquide refroidissement</source>
 <translation>01 - Capteur température liquide refroidissement</translation>
 </message>
@@ -751,10 +856,6 @@
 <translation>0x13-14</translation>
 </message>
 <message>
-<source>0x14</source>
-<translation>0x14</translation>
-</message>
-<message>
 <source>0x14-15</source>
 <translation>0x14-15</translation>
 </message>
@@ -871,24 +972,8 @@
 <translation>7D14-15 brut = %1 ; correction ralenti chaud = %2 ; valeur corrigée = %3. Formule : (brut - 32768) + correction.</translation>
 </message>
 <message>
-<source>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd"&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name="qrichtext" content="1" /&gt;&lt;style type="text/css"&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:7pt; font-weight:600; font-style:normal;"&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;span style=" font-size:10pt; color:#ff0000;"&gt;Ne tester les actionneurs que moteur à l'arrêt !&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-<translation>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd"&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name="qrichtext" content="1" /&gt;&lt;style type="text/css"&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:7pt; font-weight:600; font-style:normal;"&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;span style=" font-size:10pt; color:#ff0000;"&gt;Ne tester les actionneurs que moteur à l'arrêt !&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
-</message>
-<message>
 <source>&lt;aucune réponse&gt;</source>
 <translation>&lt;aucune réponse&gt;</translation>
-</message>
-<message>
-<source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align="justify"&gt;&lt;span style=" font-size:11pt;"&gt;Paramètres&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-<translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align="justify"&gt;&lt;span style=" font-size:11pt;"&gt;Paramètres&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
 </message>
 <message>
 <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt; 0-200 mV : mélange pauvre&lt;/p&gt;&lt;p&gt;700-900 mV : mélange riche &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
@@ -905,10 +990,6 @@ p, li { white-space: pre-wrap; }
 <message>
 <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Ouvrez le mode interactif en tapant &amp;quot;readmems com3 interactive&amp;quot; ou en mode PowerShell &amp;quot;.readmems com3 interactive&amp;quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
 <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Ouvrez le mode interactif en tapant &amp;quot;readmems com3 interactive&amp;quot; ou en mode PowerShell &amp;quot;.readmems com3 interactive&amp;quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
-</message>
-<message>
-<source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Pendant que le moteur tourne, vous pouvez modifier différents réglages,&lt;/p&gt;&lt;p align="justify"&gt;faites attention à ne pas trop changer à la fois. Votre moteur&lt;/p&gt;&lt;p align="justify"&gt;pourrait caler et vous pourriez ne plus rien pouvoir réinitialiser !&lt;/p&gt;&lt;p align="justify"&gt;&lt;span style=" color:#ff5500;"&gt;Pour l'usage de ces boutons, consultez ce site&lt;/span&gt;&lt;/p&gt;&lt;p align="justify"&gt;&lt;a href="https://blackbox-solutions.com/help/SM002.html"&gt;&lt;span style=" text-decoration: underline; color:#0000ff;"&gt;définitions mems&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p align="justify"&gt;www.blackbox-solutions.com/shop/help/SM002.html&lt;br/&gt;&lt;/p&gt;&lt;p align="justify"&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-<translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Pendant que le moteur tourne, vous pouvez modifier différents réglages,&lt;/p&gt;&lt;p align="justify"&gt;faites attention à ne pas trop changer à la fois. Votre moteur&lt;/p&gt;&lt;p align="justify"&gt;pourrait caler et vous pourriez ne plus rien pouvoir réinitialiser !&lt;/p&gt;&lt;p align="justify"&gt;&lt;span style=" color:#ff5500;"&gt;Pour l'usage de ces boutons, consultez ce site&lt;/span&gt;&lt;/p&gt;&lt;p align="justify"&gt;&lt;a href="https://blackbox-solutions.com/help/SM002.html"&gt;&lt;span style=" text-decoration: underline; color:#0000ff;"&gt;définitions mems&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p align="justify"&gt;www.blackbox-solutions.com/shop/help/SM002.html&lt;br/&gt;&lt;/p&gt;&lt;p align="justify"&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
 </message>
 <message>
 <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sélectionnez la position voulue par pas de 25% puis activez &amp;quot;Déplacer le moteur de régulation d'air ralenti&amp;quot;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
@@ -963,10 +1044,6 @@ p, li { white-space: pre-wrap; }
 <translation>Avance à l'allumage</translation>
 </message>
 <message>
-<source>Avance à l'allumage 💬</source>
-<translation>Avance à l'allumage 💬</translation>
-</message>
-<message>
 <source>Avancer (?)</source>
 <translation>Avancer (?)</translation>
 </message>
@@ -1015,6 +1092,10 @@ p, li { white-space: pre-wrap; }
 <translation>Ces anomalies sont soit reconnues par MEMS mais non enregistrées, soit non reconnues/acquittées par MEMS.</translation>
 </message>
 <message>
+<source>Changement de mode : la commande est envoyée uniquement sur demande. D3 (recodage) reste volontairement bloquée.</source>
+<translation>Changement de mode : la commande est envoyée uniquement sur demande. D3 (recodage) reste volontairement bloquée.</translation>
+</message>
+<message>
 <source>Chauffage sonde O2/lambda</source>
 <translation>Chauffage sonde O2/lambda</translation>
 </message>
@@ -1059,20 +1140,16 @@ p, li { white-space: pre-wrap; }
 <translation>Contrôle d'air de &amp;ralenti...</translation>
 </message>
 <message>
+<source>Correction carburant</source>
+<translation>Correction carburant</translation>
+</message>
+<message>
 <source>Correction carburant court terme</source>
 <translation>Correction carburant court terme</translation>
 </message>
 <message>
 <source>Correction carburant long terme</source>
 <translation>Correction carburant long terme</translation>
-</message>
-<message>
-<source>Correction carburant 💬</source>
-<translation>Correction carburant 💬</translation>
-</message>
-<message>
-<source>Court terme :</source>
-<translation>Court terme :</translation>
 </message>
 <message>
 <source>Cycle lambda</source>
@@ -1183,16 +1260,18 @@ p, li { white-space: pre-wrap; }
 <translation>Erreur</translation>
 </message>
 <message>
-<source>Erreur de connexion à l'ECU sur le port %1.\nVérifiez le câblage et que l'ECU est alimenté.</source>
-<translation>Erreur de connexion à l'ECU sur le port %1.\nVérifiez le câblage et que l'ECU est alimenté.</translation>
+<source>Erreur de connexion à l'ECU sur le port %1.
+Vérifiez le câblage et que l'ECU est alimenté.</source>
+<translation>Erreur de connexion à l'ECU sur le port %1.
+Vérifiez le câblage et que l'ECU est alimenté.</translation>
 </message>
 <message>
-<source>Erreur de connexion à l'ECU. Aucun port série spécifié.\n\n</source>
-<translation>Erreur de connexion à l'ECU. Aucun port série spécifié.\n\n</translation>
-</message>
-<message>
-<source>Erreur de ralenti</source>
-<translation>Erreur de ralenti</translation>
+<source>Erreur de connexion à l'ECU. Aucun port série spécifié.
+
+</source>
+<translation>Erreur de connexion à l'ECU. Aucun port série spécifié.
+
+</translation>
 </message>
 <message>
 <source>Erreur signal lambda</source>
@@ -1399,10 +1478,6 @@ p, li { white-space: pre-wrap; }
 <translation>Position de base ralenti</translation>
 </message>
 <message>
-<source>Position de base ralenti :</source>
-<translation>Position de base ralenti :</translation>
-</message>
-<message>
 <source>Position mini du moteur pas-à-pas atteinte</source>
 <translation>Position mini du moteur pas-à-pas atteinte</translation>
 </message>
@@ -1419,12 +1494,8 @@ p, li { white-space: pre-wrap; }
 <translation>Position papillon</translation>
 </message>
 <message>
-<source>Position papillon :</source>
-<translation>Position papillon :</translation>
-</message>
-<message>
-<source>Position ralenti chaud 💬</source>
-<translation>Position ralenti chaud 💬</translation>
+<source>Position ralenti chaud</source>
+<translation>Position ralenti chaud</translation>
 </message>
 <message>
 <source>Pour éviter d'endommager la sonde lambda, le temps de chauffe est limité. ATTENTION : après le chauffage, il est fortement conseillé de NE PAS démarrer le moteur avant que la sonde ait suffisamment refroidi</source>
@@ -1433,10 +1504,6 @@ p, li { white-space: pre-wrap; }
 <message>
 <source>Pression collecteur</source>
 <translation>Pression collecteur</translation>
-</message>
-<message>
-<source>QUITTER</source>
-<translation>QUITTER</translation>
 </message>
 <message>
 <source>Ralenti chaud / décroissance ralenti</source>
@@ -1459,8 +1526,8 @@ p, li { white-space: pre-wrap; }
 <translation>Réchauffeur collecteur</translation>
 </message>
 <message>
-<source>Régime de ralenti 💬</source>
-<translation>Régime de ralenti 💬</translation>
+<source>Régime de ralenti</source>
+<translation>Régime de ralenti</translation>
 </message>
 <message>
 <source>Régime jusqu'à 2000 tr/min pour réglage fin du ralenti</source>
@@ -1567,8 +1634,16 @@ p, li { white-space: pre-wrap; }
 <translation>Tester les actionneurs :</translation>
 </message>
 <message>
+<source>Toujours au premier plan</source>
+<translation>Toujours au premier plan</translation>
+</message>
+<message>
 <source>Toutes les données</source>
 <translation>Toutes les données</translation>
+</message>
+<message>
+<source>Toutes les mesures</source>
+<translation>Toutes les mesures</translation>
 </message>
 <message>
 <source>Ventilateur 1</source>
@@ -1581,6 +1656,10 @@ p, li { white-space: pre-wrap; }
 <message>
 <source>Ventilateur 3</source>
 <translation>Ventilateur 3</translation>
+</message>
+<message>
+<source>Voir les captures</source>
+<translation>Voir les captures</translation>
 </message>
 <message>
 <source>Vous allez perdre tous les réglages !</source>
@@ -1707,6 +1786,14 @@ p, li { white-space: pre-wrap; }
 <translation>Écart régime de ralenti</translation>
 </message>
 <message>
+<source>Échec de l'enregistrement de la capture d'écran.</source>
+<translation>Échec de l'enregistrement de la capture d'écran.</translation>
+</message>
+<message>
+<source>Échec de l'ouverture du fichier journal (%1)</source>
+<translation>Échec de l'ouverture du fichier journal (%1)</translation>
+</message>
+<message>
 <source>Électrovanne purge canister</source>
 <translation>Électrovanne purge canister</translation>
 </message>
@@ -1769,6 +1856,10 @@ p, li { white-space: pre-wrap; }
 <message>
 <source>Langue :</source>
 <translation>Langue :</translation>
+</message>
+<message>
+<source>Le raccourci est créé immédiatement après validation. S'il est supprimé, le logiciel le recréera automatiquement au prochain démarrage.</source>
+<translation>Le raccourci est créé immédiatement après validation. S'il est supprimé, le logiciel le recréera automatiquement au prochain démarrage.</translation>
 </message>
 <message>
 <source>Nom du périphérique série :</source>
@@ -1918,6 +2009,10 @@ p, li { white-space: pre-wrap; }
 <translation>Initialisation...</translation>
 </message>
 <message>
+<source>Non documenté (%1)</source>
+<translation>Non documenté (%1)</translation>
+</message>
+<message>
 <source>OK</source>
 <translation>OK</translation>
 </message>
@@ -2012,6 +2107,58 @@ p, li { white-space: pre-wrap; }
 <context>
 <name>SummaryTab</name>
 <message>
+<source>Affiche l'état du contacteur papillon (si équipé). Si le contact indique 'ON' alors que le papillon est fermé, le véhicule ne tournera pas correctement au ralenti et la position papillon fermé devra peut-être être réinitialisée (enfoncer/relâcher complètement l'accélérateur 5 fois en 10 secondes après la mise du contact, puis attendre 20 secondes).</source>
+<translation>Affiche l'état du contacteur papillon (si équipé). Si le contact indique 'ON' alors que le papillon est fermé, le véhicule ne tournera pas correctement au ralenti et la position papillon fermé devra peut-être être réinitialisée (enfoncer/relâcher complètement l'accélérateur 5 fois en 10 secondes après la mise du contact, puis attendre 20 secondes).</translation>
+</message>
+<message>
+<source>Affiche l'état du contacteur point mort/parking mesuré par l'ECU MEMS. Ce contacteur améliore la régulation du ralenti sur les véhicules à boîte automatique ou CVT. Ne fonctionne pas sur les véhicules à boîte manuelle.</source>
+<translation>Affiche l'état du contacteur point mort/parking mesuré par l'ECU MEMS. Ce contacteur améliore la régulation du ralenti sur les véhicules à boîte automatique ou CVT. Ne fonctionne pas sur les véhicules à boîte manuelle.</translation>
+</message>
+<message>
+<source>Affiche l'état du diagnostic interne MEMS sur la sonde à oxygène et son câblage. La valeur ON indique aucun défaut, OFF indique un problème possible.</source>
+<translation>Affiche l'état du diagnostic interne MEMS sur la sonde à oxygène et son câblage. La valeur ON indique aucun défaut, OFF indique un problème possible.</translation>
+</message>
+<message>
+<source>Affiche la correction carburant actuelle par rétroaction, en pourcentage par rapport à la valeur cartographiée. Des valeurs élevées (ex. 120%) indiquent une compensation d'un mélange trop pauvre, des valeurs basses (ex. 80%) une compensation d'un mélange trop riche.</source>
+<translation>Affiche la correction carburant actuelle par rétroaction, en pourcentage par rapport à la valeur cartographiée. Des valeurs élevées (ex. 120%) indiquent une compensation d'un mélange trop pauvre, des valeurs basses (ex. 80%) une compensation d'un mélange trop riche.</translation>
+</message>
+<message>
+<source>Affiche la position du papillon obtenue par l'ECU MEMS via le potentiomètre de papillon. Cette valeur doit passer d'une valeur basse à une valeur haute lorsque la pédale d'accélérateur est enfoncée.</source>
+<translation>Affiche la position du papillon obtenue par l'ECU MEMS via le potentiomètre de papillon. Cette valeur doit passer d'une valeur basse à une valeur haute lorsque la pédale d'accélérateur est enfoncée.</translation>
+</message>
+<message>
+<source>Affiche la pression mesurée par le capteur de pression d'air interne du MEMS. Cette valeur doit indiquer la pression atmosphérique de 100 kPa moteur à l'arrêt, et une valeur plus basse entre 25 et 40 kPa au ralenti. Des valeurs très élevées peuvent indiquer un problème du capteur interne au MEMS, ou plus probablement une durite de dépression bouchée ou débranchée.</source>
+<translation>Affiche la pression mesurée par le capteur de pression d'air interne du MEMS. Cette valeur doit indiquer la pression atmosphérique de 100 kPa moteur à l'arrêt, et une valeur plus basse entre 25 et 40 kPa au ralenti. Des valeurs très élevées peuvent indiquer un problème du capteur interne au MEMS, ou plus probablement une durite de dépression bouchée ou débranchée.</translation>
+</message>
+<message>
+<source>Affiche la température du liquide de refroidissement mesurée par l'ECU. Si le capteur est en circuit ouvert, une valeur par défaut d'environ 60°C sera affichée. Pendant la montée en température, la valeur doit augmenter progressivement de la température ambiante à environ 90°C. Un capteur défectueux peut causer un démarrage difficile, un ralenti trop élevé, une surconsommation et des ventilateurs tournant en continu.</source>
+<translation>Affiche la température du liquide de refroidissement mesurée par l'ECU. Si le capteur est en circuit ouvert, une valeur par défaut d'environ 60°C sera affichée. Pendant la montée en température, la valeur doit augmenter progressivement de la température ambiante à environ 90°C. Un capteur défectueux peut causer un démarrage difficile, un ralenti trop élevé, une surconsommation et des ventilateurs tournant en continu.</translation>
+</message>
+<message>
+<source>Affiche la température mesurée par l'ECU via la sonde de température d'air admission (si équipée). Si le capteur est en circuit ouvert, une valeur par défaut fixe sera affichée. Cette température sert à l'ECU pour retarder l'allumage afin d'éviter le cliquetis et ajuster la richesse à chaud.</source>
+<translation>Affiche la température mesurée par l'ECU via la sonde de température d'air admission (si équipée). Si le capteur est en circuit ouvert, une valeur par défaut fixe sera affichée. Cette température sert à l'ECU pour retarder l'allumage afin d'éviter le cliquetis et ajuster la richesse à chaud.</translation>
+</message>
+<message>
+<source>Affiche la température mesurée par l'ECU via la sonde de température d'air ambiant (si équipée). Si le capteur est en circuit ouvert, une valeur par défaut fixe sera affichée. Ce capteur sert à l'ECU pour mesurer la température dans le compartiment moteur, généralement pour piloter un ventilateur supplémentaire. Sur les ECU MEMS qui ne supportent pas ce capteur, la valeur affichera N/S.</source>
+<translation>Affiche la température mesurée par l'ECU via la sonde de température d'air ambiant (si équipée). Si le capteur est en circuit ouvert, une valeur par défaut fixe sera affichée. Ce capteur sert à l'ECU pour mesurer la température dans le compartiment moteur, généralement pour piloter un ventilateur supplémentaire. Sur les ECU MEMS qui ne supportent pas ce capteur, la valeur affichera N/S.</translation>
+</message>
+<message>
+<source>Affiche la tension d'alimentation du véhicule mesurée en interne par l'ECU. De grands écarts sur cette mesure peuvent entraîner des difficultés de démarrage et des erreurs de CO au ralenti.</source>
+<translation>Affiche la tension d'alimentation du véhicule mesurée en interne par l'ECU. De grands écarts sur cette mesure peuvent entraîner des difficultés de démarrage et des erreurs de CO au ralenti.</translation>
+</message>
+<message>
+<source>Affiche la tension de la sonde à oxygène lue par l'ECU MEMS. Moteur bien chaud, en conditions normales de ralenti ou de conduite, cette tension oscille rapidement entre 0,0-0,2V et 0,7-1,0V.</source>
+<translation>Affiche la tension de la sonde à oxygène lue par l'ECU MEMS. Moteur bien chaud, en conditions normales de ralenti ou de conduite, cette tension oscille rapidement entre 0,0-0,2V et 0,7-1,0V.</translation>
+</message>
+<message>
+<source>Affiche le décalage d'avance de service actuellement utilisé par l'ECU MEMS. C'est un réglage spécial pour les pays utilisant un carburant à faible indice d'octane, configurable dans l'onglet Réglages.</source>
+<translation>Affiche le décalage d'avance de service actuellement utilisé par l'ECU MEMS. C'est un réglage spécial pour les pays utilisant un carburant à faible indice d'octane, configurable dans l'onglet Réglages.</translation>
+</message>
+<message>
+<source>Affiche si l'injection est régulée par rétroaction des sondes à oxygène. Sur un véhicule bien chaud, l'état de boucle doit indiquer boucle fermée dans la plupart des conditions de conduite et de ralenti.</source>
+<translation>Affiche si l'injection est régulée par rétroaction des sondes à oxygène. Sur un véhicule bien chaud, l'état de boucle doit indiquer boucle fermée dans la plupart des conditions de conduite et de ralenti.</translation>
+</message>
+<message>
 <source>Angle papillon (°)</source>
 <translation>Angle papillon (°)</translation>
 </message>
@@ -2030,6 +2177,18 @@ p, li { white-space: pre-wrap; }
 <message>
 <source>Boucle ouverte</source>
 <translation>Boucle ouverte</translation>
+</message>
+<message>
+<source>C'est l'écart actuel entre le régime de ralenti visé par l'ECU MEMS et le régime moteur réel. Une valeur supérieure à 100 tr/min indique que l'ECU ne maîtrise pas le ralenti, signe possible d'un défaut.</source>
+<translation>C'est l'écart actuel entre le régime de ralenti visé par l'ECU MEMS et le régime moteur réel. Une valeur supérieure à 100 tr/min indique que l'ECU ne maîtrise pas le ralenti, signe possible d'un défaut.</translation>
+</message>
+<message>
+<source>C'est le nombre de pas du moteur pas-à-pas depuis la fermeture complète (0) que l'ECU a appris comme position correcte pour maintenir le régime de ralenti visé, moteur bien chaud. Si cette valeur sort de la plage 10-50 pas, c'est le signe possible d'un défaut ou d'un mauvais réglage.</source>
+<translation>C'est le nombre de pas du moteur pas-à-pas depuis la fermeture complète (0) que l'ECU a appris comme position correcte pour maintenir le régime de ralenti visé, moteur bien chaud. Si cette valeur sort de la plage 10-50 pas, c'est le signe possible d'un défaut ou d'un mauvais réglage.</translation>
+</message>
+<message>
+<source>C'est le temps de charge de la bobine d'allumage jusqu'à son courant nominal, mesuré par l'ECU MEMS. Avec une tension batterie d'environ 14V, cette valeur doit être d'environ 2-3ms. Une valeur élevée peut indiquer un problème du circuit primaire de la bobine.</source>
+<translation>C'est le temps de charge de la bobine d'allumage jusqu'à son courant nominal, mesuré par l'ECU MEMS. Avec une tension batterie d'environ 14V, cette valeur doit être d'environ 2-3ms. Une valeur élevée peut indiquer un problème du circuit primaire de la bobine.</translation>
 </message>
 <message>
 <source>CAPTEUR DÉFECTUEUX</source>
@@ -2112,6 +2271,10 @@ p, li { white-space: pre-wrap; }
 <translation>Décalage régime de ralenti</translation>
 </message>
 <message>
+<source>Décodage du champ 7D14-15 : la valeur brute 16 bits est centrée sur 32768, puis la correction de position du ralenti chaud configurée dans l'onglet Réglages est appliquée. La formule est : (valeur brute - 32768) + correction ralenti chaud. La correction n'est pas une constante : elle suit le réglage actuel de l'utilisateur.</source>
+<translation>Décodage du champ 7D14-15 : la valeur brute 16 bits est centrée sur 32768, puis la correction de position du ralenti chaud configurée dans l'onglet Réglages est appliquée. La formule est : (valeur brute - 32768) + correction ralenti chaud. La correction n'est pas une constante : elle suit le réglage actuel de l'utilisateur.</translation>
+</message>
+<message>
 <source>Erreur de ralenti</source>
 <translation>Erreur de ralenti</translation>
 </message>
@@ -2120,8 +2283,16 @@ p, li { white-space: pre-wrap; }
 <translation>Erreur de ralenti à chaud (corrigée)</translation>
 </message>
 <message>
+<source>Fonction intégrée à l'ECU MEMS pour pallier certaines situations pendant la vie du véhicule (carburant à faible indice d'octane, usure moteur), en avançant légèrement l'allumage au ralenti.</source>
+<translation>Fonction intégrée à l'ECU MEMS pour pallier certaines situations pendant la vie du véhicule (carburant à faible indice d'octane, usure moteur), en avançant légèrement l'allumage au ralenti.</translation>
+</message>
+<message>
 <source>Fréquence lambda</source>
 <translation>Fréquence lambda</translation>
+</message>
+<message>
+<source>La correction carburant court terme n'est active qu'en boucle fermée. Des valeurs jusqu'à 10% sont normales, occasionnellement jusqu'à 15%. Des valeurs supérieures à 15% sont anormales.</source>
+<translation>La correction carburant court terme n'est active qu'en boucle fermée. Des valeurs jusqu'à 10% sont normales, occasionnellement jusqu'à 15%. Des valeurs supérieures à 15% sont anormales.</translation>
 </message>
 <message>
 <source>NO SIGNAL</source>
@@ -2230,6 +2401,10 @@ p, li { white-space: pre-wrap; }
 <message>
 <source>Régime moteur (tr/min)</source>
 <translation>Régime moteur (tr/min)</translation>
+</message>
+<message>
+<source>Si un décalage de service du ralenti a été configuré dans cet ECU, l'écart par rapport au ralenti normal est affiché ici. Normalement, seules deux valeurs sont possibles : 0 tr/min ou 49 tr/min.</source>
+<translation>Si un décalage de service du ralenti a été configuré dans cet ECU, l'écart par rapport au ralenti normal est affiché ici. Normalement, seules deux valeurs sont possibles : 0 tr/min ou 49 tr/min.</translation>
 </message>
 <message>
 <source>Temps bobine (ms)</source>

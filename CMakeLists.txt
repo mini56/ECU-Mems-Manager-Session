@@ -67,6 +67,10 @@ set(SOURCES
     summarytab.cpp
     diagnosticpanel.cpp  
     analysistab.cpp
+    captureviewer.cpp
+    captureviewer.h
+    tooltipbubblemanager.cpp
+    tooltipbubblemanager.h
     
     # ECU Manager
     scr/ecu/ecumanager.cpp
