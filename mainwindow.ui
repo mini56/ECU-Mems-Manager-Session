@@ -4145,7 +4145,7 @@ p, li { white-space: pre-wrap; }
       <widget class="QPushButton" name="m_connectButton">
  <property name="minimumSize">
   <size>
-   <width>160</width>
+   <width>240</width>
    <height>25</height>
   </size>
  </property>
@@ -4178,7 +4178,7 @@ p, li { white-space: pre-wrap; }
  </property>
  <property name="minimumSize">
   <size>
-   <width>160</width>
+   <width>240</width>
    <height>25</height>
   </size>
  </property>
