@@ -2,6 +2,7 @@
 
 #include <QEvent>
 #include <QLabel>
+#include <QMargins>
 #include <QPixmap>
 #include <QWidget>
 
@@ -42,6 +43,15 @@ void TooltipBubbleManager::ensureBubble(QWidget *widget)
     {
         if (bubble) bubble->hide();
         return;
+    }
+
+    // Reserve space for the embedded help bubble in text labels.
+    // This prevents long translations from running underneath the icon.
+    if (QLabel *textLabel = qobject_cast<QLabel*>(widget))
+    {
+        const QMargins m = textLabel->contentsMargins();
+        if (m.right() < 24)
+            textLabel->setContentsMargins(m.left(), m.top(), 24, m.bottom());
     }
 
     if (!bubble)

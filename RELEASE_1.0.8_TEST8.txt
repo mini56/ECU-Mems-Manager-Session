@@ -1,0 +1,16 @@
+ECU MEMS Manager v1.0.8 TEST8
+
+Corrections de mise en page multilingue :
+- Settings : suppression de la hauteur 32 px qui provoquait le chevauchement ; boutons fixés à 28 px.
+- Actuators : lignes uniformisées, libellés centrés verticalement, zone du QGridLayout agrandie.
+- Reset all actuators : ligne désormais entièrement visible.
+- Bulles d'aide : 24 px réservés à droite des QLabel pour éviter que la bulle masque la fin du texte.
+- ECU / ROSCO : F4 -> normal session en anglais.
+- Retard (?) conservé en anglais.
+- Aucun changement de la communication ECU.
+
+Contrôles statiques :
+- XML UI / traductions / ressources validé.
+- Références m_ui vérifiées.
+- Parenthèses/accolades des sources modifiées vérifiées.
+- onProtocolCommandRequested(quint8 command) conservé.

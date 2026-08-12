@@ -1323,7 +1323,7 @@ Check the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>F4  → session normale</source>
-   <translation>F4  → session normale</translation>
+   <translation>F4  → normal session</translation>
   </message>
   <message>
    <source>F5  → mode 3</source>
