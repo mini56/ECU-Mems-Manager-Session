@@ -302,7 +302,7 @@ void MainWindow::buildSpeedAndTempUnitTables()
 void MainWindow::setupWidgets()
 {
   // Avoid clipped descenders (g/p/q/y) in actuator labels.
-  const QList<QLabel*> actuatorLabels = m_ui->actuators_tab->findChildren<QLabel*>();
+  const QList<QLabel*> actuatorLabels = m_ui->actuators->findChildren<QLabel*>();
   for (QLabel *label : actuatorLabels)
     label->setMinimumHeight(qMax(label->minimumHeight(), label->fontMetrics().height() + 6));
 
