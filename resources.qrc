@@ -5,12 +5,12 @@
         <file>helpbubble.png</file>
     </qresource>
     <qresource prefix="/flags">
-        <file>flags/fr.png</file>
-        <file>flags/en.png</file>
-        <file>flags/es.png</file>
-        <file>flags/it.png</file>
-        <file>flags/pt.png</file>
-        <file>flags/de.png</file>
+        <file alias="fr.png">flags/fr.png</file>
+        <file alias="en.png">flags/en.png</file>
+        <file alias="es.png">flags/es.png</file>
+        <file alias="it.png">flags/it.png</file>
+        <file alias="pt.png">flags/pt.png</file>
+        <file alias="de.png">flags/de.png</file>
     </qresource>
     <qresource prefix="/help">
         <file>help.html</file>
