@@ -438,7 +438,7 @@ AnalysisTab::AnalysisTab(QWidget *parent) : QWidget(parent), m_overlayMode(false
   leftPanel->setMinimumWidth(300);
   QVBoxLayout *leftLayout = new QVBoxLayout(leftPanel);
 
-  m_loadButton = new QPushButton("Charger un fichier CSV / TXT...", leftPanel);
+  m_loadButton = new QPushButton(tr("Charger un fichier CSV / TXT..."), leftPanel);
   connect(m_loadButton, SIGNAL(clicked()), this, SLOT(onLoadFileClicked()));
   leftLayout->addWidget(m_loadButton);
 
@@ -448,7 +448,7 @@ AnalysisTab::AnalysisTab(QWidget *parent) : QWidget(parent), m_overlayMode(false
   leftLayout->addWidget(m_fileLabel);
 
   QHBoxLayout *selectRow = new QHBoxLayout();
-  m_selectAllButton = new QPushButton("Tout cocher", leftPanel);
+  m_selectAllButton = new QPushButton(tr("Tout cocher"), leftPanel);
   m_selectNoneButton = new QPushButton(tr("Tout décocher"), leftPanel);
   connect(m_selectAllButton, SIGNAL(clicked()), this, SLOT(onSelectAllClicked()));
   connect(m_selectNoneButton, SIGNAL(clicked()), this, SLOT(onSelectNoneClicked()));
@@ -466,7 +466,7 @@ AnalysisTab::AnalysisTab(QWidget *parent) : QWidget(parent), m_overlayMode(false
   connect(m_overlayButton, SIGNAL(toggled(bool)), this, SLOT(onOverlayToggled(bool)));
   leftLayout->addWidget(m_overlayButton);
 
-  QLabel *voiesLabel = new QLabel("Voies disponibles :", leftPanel);
+  QLabel *voiesLabel = new QLabel(tr("Voies disponibles :"), leftPanel);
   voiesLabel->setStyleSheet("font-weight: 600; margin-top: 6px;");
   leftLayout->addWidget(voiesLabel);
 
@@ -497,8 +497,8 @@ AnalysisTab::AnalysisTab(QWidget *parent) : QWidget(parent), m_overlayMode(false
 
 void AnalysisTab::onLoadFileClicked()
 {
-  QString path = QFileDialog::getOpenFileName(this, "Charger un fichier journal",
-                                                "logs", "Fichiers journal (*.csv *.txt);;Fichiers CSV (*.csv);;Fichiers texte (*.txt);;Tous les fichiers (*.*)");
+  QString path = QFileDialog::getOpenFileName(this, tr("Charger un fichier journal"),
+                                                "logs", tr("Fichiers journal (*.csv *.txt);;Fichiers CSV (*.csv);;Fichiers texte (*.txt);;Tous les fichiers (*.*)"));
   if (path.isEmpty()) return;
   loadFile(path);
 }

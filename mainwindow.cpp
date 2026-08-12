@@ -301,6 +301,11 @@ void MainWindow::buildSpeedAndTempUnitTables()
  */
 void MainWindow::setupWidgets()
 {
+  // Avoid clipped descenders (g/p/q/y) in actuator labels.
+  const QList<QLabel*> actuatorLabels = m_ui->actuators_tab->findChildren<QLabel*>();
+  for (QLabel *label : actuatorLabels)
+    label->setMinimumHeight(qMax(label->minimumHeight(), label->fontMetrics().height() + 6));
+
   // Largeur confortable dans les deux langues.
   const int connectButtonWidth = qMax(120, m_ui->m_connectButton->fontMetrics().horizontalAdvance(m_ui->m_connectButton->text()) + 30);
   const int disconnectButtonWidth = qMax(120, m_ui->m_disconnectButton->fontMetrics().horizontalAdvance(m_ui->m_disconnectButton->text()) + 30);

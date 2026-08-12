@@ -1,0 +1,14 @@
+ECU MEMS Manager v1.0.8 TEST5 - translation/layout update
+Base: v1.0.8 TEST4 validated by user (GitHub Actions build OK, ECU connection OK, theme/captures OK).
+
+Changes:
+- Corrected English translations seen in Overview, Settings, Errors, Actuators, All data, Interactive mode and Analysis.
+- Removed mixed French/English word-by-word translations identified in TEST4.
+- Corrected "Toutes les meones" to "All measurements".
+- Analysis dynamic controls now use Qt tr() so they switch language.
+- All measurements headers shortened to Parameter | [help] | ECU received | Interpreted.
+- Help-bubble column reduced and value columns fixed narrower to give Parameter more room.
+- Actuator labels get extra minimum height to avoid clipped descenders.
+- French catalog kept complete for newly translatable dynamic strings.
+- ECU communication code intentionally unchanged.
+- Required memsinterface declaration preserved.

@@ -17,12 +17,14 @@ SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)
   for (int i = 0; i < 3; i++)
   {
     tables[i]->setHorizontalHeaderLabels(QStringList()
-        << tr("Paramètre") << "" << tr("Valeur reçue ECU") << tr("Valeur interprétée"));
+        << tr("Paramètre") << "" << tr("Reçu ECU") << tr("Interprété"));
     tables[i]->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
     tables[i]->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
-    tables[i]->setColumnWidth(1, 34);
-    tables[i]->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
-    tables[i]->horizontalHeader()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
+    tables[i]->setColumnWidth(1, 24);
+    tables[i]->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Fixed);
+    tables[i]->setColumnWidth(2, 105);
+    tables[i]->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Fixed);
+    tables[i]->setColumnWidth(3, 105);
     tables[i]->verticalHeader()->setVisible(false);
     tables[i]->setEditTriggers(QTableWidget::NoEditTriggers);
     tables[i]->setSelectionMode(QTableWidget::NoSelection);
