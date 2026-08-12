@@ -327,7 +327,7 @@ void MainWindow::setupWidgets()
   m_ui->Tab_main->insertTab(2, m_summaryTab, "Toutes les mesures");
 
   // L’ancienne vue « toutes les mesures » est supprimée : seule « Toutes les mesures » reste accessible.
-  const int duplicateSummaryIndex = m_ui->Tab_main->indexOf(m_ui->summary_tab);
+  const int duplicateSummaryIndex = m_ui->Tab_main->indexOf(m_ui->raw);
   if (duplicateSummaryIndex >= 0)
   {
     QWidget *oldSummaryTab = m_ui->Tab_main->widget(duplicateSummaryIndex);
