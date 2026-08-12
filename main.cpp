@@ -117,12 +117,8 @@ int main(int argc, char *argv[])
 
     if (!DatabaseSeed::populate(database))
     {
-        QMessageBox::critical(nullptr, QObject::tr("Erreur base de données"),
-                              QObject::tr("La base SQLite est ouverte mais son chargement de connaissances a échoué."));
-        g_splashProgressCallback = nullptr;
-        splash->close();
-        delete splash;
-        return 1;
+    qWarning() << "Le chargement de la base de connaissances SQLite a échoué."
+               << "L'application continue avec la base ouverte.";
     }
 
     if (g_startupStatus)
