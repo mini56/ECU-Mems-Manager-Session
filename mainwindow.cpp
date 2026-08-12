@@ -322,16 +322,8 @@ void MainWindow::setupWidgets()
   // Ajout de l'onglet "toutes les mesures" (reconstruit : son contenu
   // d'origine était resté commenté dans le fichier .ui, le rendant vide)
   m_summaryTab = new SummaryTab(this);
-  m_ui->Tab_main->insertTab(2, m_summaryTab, "Toutes les mesures");
+  m_ui->Tab_main->insertTab(2, m_summaryTab, tr("Toutes les mesures"));
 
-  // L’ancienne vue « toutes les mesures » est supprimée : seule « Toutes les mesures » reste accessible.
-  const int duplicateSummaryIndex = m_ui->Tab_main->indexOf(m_ui->summary_tab);
-  if (duplicateSummaryIndex >= 0)
-  {
-    QWidget *oldSummaryTab = m_ui->Tab_main->widget(duplicateSummaryIndex);
-    m_ui->Tab_main->removeTab(duplicateSummaryIndex);
-    if (oldSummaryTab) { delete oldSummaryTab; }
-  }
 
   // Ajout de l'onglet "Analyse" (lecture de fichiers CSV enregistrés)
   AnalysisTab *analysisTab = new AnalysisTab(this);
