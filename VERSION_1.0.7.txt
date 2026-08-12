@@ -1,0 +1,10 @@
+ECU MEMS Manager 1.0.7
+
+Corrections :
+- Version projet portée à 1.0.7.
+- Arrêt propre du polling lorsque le contact ECU est coupé et que la communication disparaît.
+- Protection contre les alertes « non connecté » répétitives.
+- Les alertes sont supprimées pendant la fermeture du programme afin de permettre une fermeture normale.
+- Boutons Connecter / Déconnecter élargis pour afficher entièrement leur texte.
+- Voyants rouge/vert de communication rapprochés.
+- Onglet Aperçu sélectionné au démarrage.

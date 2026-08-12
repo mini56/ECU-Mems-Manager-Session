@@ -37,7 +37,7 @@ MainWindow::MainWindow(DatabaseManager *database, QWidget* parent):QMainWindow(p
 m_ui(new Ui::MainWindow),
 m_memsThread(0),
 m_mems(0),
-m_database(database), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerDialog(0), m_actuatorTestsEnabled(false), m_adjustmentsEnabled(false), m_actuatorsOffEnabled(false), m_protocolOutput(nullptr), m_protocolModeLabel(nullptr)
+m_database(database), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerDialog(0), m_closingForShutdown(false), m_notConnectedAlertShown(false), m_actuatorTestsEnabled(false), m_adjustmentsEnabled(false), m_actuatorsOffEnabled(false), m_protocolOutput(nullptr), m_protocolModeLabel(nullptr)
 
 {
   buildSpeedAndTempUnitTables();
@@ -294,11 +294,18 @@ void MainWindow::buildSpeedAndTempUnitTables()
  */
 void MainWindow::setupWidgets()
 {
-  // Largeur compacte des boutons de connexion : texte + 15 px de marge de chaque côté.
-  const int connectButtonWidth = m_ui->m_connectButton->fontMetrics().horizontalAdvance(m_ui->m_connectButton->text()) + 30;
-  const int disconnectButtonWidth = m_ui->m_disconnectButton->fontMetrics().horizontalAdvance(m_ui->m_disconnectButton->text()) + 30;
-  m_ui->m_connectButton->setFixedWidth(connectButtonWidth);
-  m_ui->m_disconnectButton->setFixedWidth(disconnectButtonWidth);
+  // Largeur suffisante pour afficher intégralement « Connecter » et « Déconnecter ».
+  const int connectionButtonWidth = 135;
+  m_ui->m_connectButton->setMinimumWidth(connectionButtonWidth);
+  m_ui->m_disconnectButton->setMinimumWidth(connectionButtonWidth);
+
+  // Voyants de communication rapprochés sans modifier leur fonctionnement.
+  QHBoxLayout *communicationLayout =
+      m_ui->m_commsGoodLed->parentWidget()
+          ? qobject_cast<QHBoxLayout *>(m_ui->m_commsGoodLed->parentWidget()->layout())
+          : nullptr;
+  if (communicationLayout)
+    communicationLayout->setSpacing(3);
   // set menu and button icons
   m_ui->m_exitAction->setIcon(style()->standardIcon(QStyle::SP_DialogCloseButton));
   m_ui->m_editSettingsAction->setIcon(style()->standardIcon(QStyle::SP_ComputerIcon));
@@ -1292,6 +1299,10 @@ void MainWindow::onEditOptionsClicked()
  */
 void MainWindow::closeEvent(QCloseEvent* event)
 {
+  m_closingForShutdown = true;
+  m_autoReconnectEnabled = false;
+  if (m_reconnectTimer)
+    m_reconnectTimer->stop();
   m_logger->closeLog();
 
   if ((m_memsThread != 0) && m_memsThread->isRunning())
@@ -1331,6 +1342,7 @@ void MainWindow::clearRecordedAnomalies()
 void MainWindow::onConnect()
 {
   m_reconnectTimer->stop();
+  m_notConnectedAlertShown = false;
   m_ui->m_connectButton->setEnabled(false);
   m_ui->m_disconnectButton->setEnabled(true);
   m_ui->m_commsGoodLed->setChecked(false);
@@ -1349,6 +1361,7 @@ void MainWindow::onConnect()
  */
 void MainWindow::onDisconnect()
 {
+  m_notConnectedAlertShown = false;
   m_ui->m_connectButton->setEnabled(true);
   m_ui->m_disconnectButton->setEnabled(false);
   m_ui->m_engine_error->setChecked(false);
@@ -1585,10 +1598,15 @@ void MainWindow::onFailedToConnect(QString dev)
  */
 void MainWindow::onNotConnected()
 {
+  // Une perte de contact peut provoquer plusieurs appels asynchrones.
+  // Une seule alerte est autorisée jusqu'à la prochaine connexion.
+  if (m_closingForShutdown || m_notConnectedAlertShown)
+    return;
+
+  m_notConnectedAlertShown = true;
+
   if (m_pleaseWaitBox != 0)
-  {
     m_pleaseWaitBox->hide();
-  }
 
   QMessageBox::warning(this, "Erreur",
                        "Il faut d'abord que le logiciel soit connecté à l'ECU (bouton \"Connecter\").",

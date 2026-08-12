@@ -177,6 +177,8 @@ private:
 
     QTimer *m_reconnectTimer;
     bool m_autoReconnectEnabled;
+    bool m_closingForShutdown;
+    bool m_notConnectedAlertShown;
 
     quint32 m_prevFaultMask;
     bool m_prevFaultMaskValid;

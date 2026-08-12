@@ -1,4 +1,4 @@
-ECU MEMS Manager v1.0.6
+ECU MEMS Manager v1.0.7
 
 Objet : activation réelle de la base de connaissances SQLite.
 
