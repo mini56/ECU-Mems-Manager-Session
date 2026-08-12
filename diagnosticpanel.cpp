@@ -1,4 +1,5 @@
 #include "diagnosticpanel.h"
+#include "database/DatabaseManager.h"
 
 #include <QDateTime>
 #include <QFile>
@@ -78,8 +79,13 @@ QString DiagnosticPanel::hexByte(quint8 v)
 void DiagnosticPanel::setEcuId(const QByteArray &id)
 {
     m_ecuId = id;
-    if (m_haveData)
-        rebuild(m_last);
+    if (m_haveData) rebuild(m_last);
+}
+
+void DiagnosticPanel::setDatabase(DatabaseManager *database)
+{
+    m_database = database;
+    if (m_haveData) rebuild(m_last);
 }
 
 void DiagnosticPanel::updateData(const mems_data *data)
@@ -116,12 +122,21 @@ void DiagnosticPanel::rebuild(const mems_data &d)
                     : QStringLiteral("Aucun bit défaut actif dans les trames 0x7D/0x80."));
     if (hasDtc) ++issues;
 
+    double batteryMin = 11.5;
+    double batteryMax = 15.2;
+    if (m_database && m_database->isOpen()) {
+        const QVariantMap p = m_database->getParameterByName(QStringLiteral("battery_voltage"));
+        if (!p.isEmpty()) {
+            batteryMin = p.value(QStringLiteral("minimum")).toDouble();
+            batteryMax = p.value(QStringLiteral("maximum")).toDouble();
+        }
+    }
     const double battery = d.battery_voltage / 10.0;
-    const bool batteryOk = battery >= 11.5 && battery <= 15.2;
+    const bool batteryOk = battery >= batteryMin && battery <= batteryMax;
     addCheck(QStringLiteral("Tension batterie"), QStringLiteral("%1 V").arg(battery, 0, 'f', 1),
              stateFor(batteryOk, true),
-             battery < 11.5 ? QStringLiteral("Tension basse : contrôler batterie, masses et alimentation ECU.")
-                            : (battery > 15.2 ? QStringLiteral("Tension élevée : contrôler charge/régulateur.")
+             battery < batteryMin ? QStringLiteral("Tension basse : contrôler batterie, masses et alimentation ECU.")
+                            : (battery > batteryMax ? QStringLiteral("Tension élevée : contrôler charge/régulateur.")
                                               : QStringLiteral("Plage cohérente pour un contrôle en cours de fonctionnement.")));
     if (!batteryOk) ++warnings;
 
@@ -179,17 +194,39 @@ void DiagnosticPanel::rebuild(const mems_data &d)
     // Temps de charge de la bobine : contrôle spécifique demandé pour
     // une tension batterie proche de 14 V. Hors de cette tension, le
     // logiciel affiche la mesure mais ne porte pas de jugement automatique.
+    double coilMin = 1.9;
+    double coilMax = 3.1;
+    double gateMin = 13.5;
+    double gateMax = 14.5;
+    if (m_database && m_database->isOpen()) {
+        const QVariantMap p = m_database->getParameterByName(QStringLiteral("coil_time"));
+        if (!p.isEmpty()) {
+            coilMin = p.value(QStringLiteral("nominal_min")).toDouble();
+            coilMax = p.value(QStringLiteral("nominal_max")).toDouble();
+        }
+        const QVariantMap batteryParam = m_database->getParameterByName(QStringLiteral("battery_voltage"));
+        if (!batteryParam.isEmpty()) {
+            gateMin = batteryParam.value(QStringLiteral("nominal_min")).toDouble();
+            gateMax = batteryParam.value(QStringLiteral("nominal_max")).toDouble();
+        }
+        const QVariantList rules = m_database->getDiagnosticRules(QStringLiteral("coil_time"));
+        if (!rules.isEmpty()) {
+            const QVariantMap r = rules.first().toMap();
+            coilMin = r.value(QStringLiteral("value1")).toDouble();
+            coilMax = r.value(QStringLiteral("value2")).toDouble();
+        }
+    }
     const double coilTime = d.coil_time;
-    const bool batteryNear14 = battery >= 13.5 && battery <= 14.5;
-    const bool coilOk = coilTime >= 1.9 && coilTime <= 3.1;
+    const bool batteryNear14 = battery >= gateMin && battery <= gateMax;
+    const bool coilOk = coilTime >= coilMin && coilTime <= coilMax;
     QString coilState;
     QString coilAdvice;
     if (!batteryNear14) {
         coilState = QStringLiteral("NON ÉVALUÉ");
-        coilAdvice = QStringLiteral("Mesure affichée. Le contrôle 1,9–3,1 ms est appliqué automatiquement uniquement avec une tension batterie proche de 14 V.");
+        coilAdvice = QStringLiteral("Mesure affichée. Le contrôle de la plage définie dans la base est appliqué automatiquement uniquement avec une tension batterie proche de 14 V.");
     } else if (coilOk) {
         coilState = QStringLiteral("OK");
-        coilAdvice = QStringLiteral("Temps de charge dans la plage 1,9–3,1 ms à environ 14 V.");
+        coilAdvice = QStringLiteral("Temps de charge dans la plage %1–%2 ms à environ 14 V.").arg(coilMin, 0, 'f', 1).arg(coilMax, 0, 'f', 1);
     } else if (coilTime > 3.1) {
         coilState = QStringLiteral("ANOMALIE");
         coilAdvice = QStringLiteral("Temps de charge trop élevé à environ 14 V : contrôler en priorité le circuit primaire de la bobine, la bobine et son câblage.");
@@ -207,7 +244,22 @@ void DiagnosticPanel::rebuild(const mems_data &d)
     const int raw7d1415 = (static_cast<int>(d.idle_error2) << 8) | static_cast<int>(d.uk10);
     const int hotIdleCorrection = static_cast<int>(d.idle_hot) - 35;
     const int hotIdleErrorCorrected = (raw7d1415 - 32768) + hotIdleCorrection;
-    const bool hotIdleErrorOk = qAbs(hotIdleErrorCorrected) <= 15;
+    double hotIdleMin = -15.0;
+    double hotIdleMax = 15.0;
+    if (m_database && m_database->isOpen()) {
+        const QVariantMap p = m_database->getParameterByName(QStringLiteral("idle_error_hot_corrected"));
+        if (!p.isEmpty()) {
+            hotIdleMin = p.value(QStringLiteral("nominal_min")).toDouble();
+            hotIdleMax = p.value(QStringLiteral("nominal_max")).toDouble();
+        }
+        const QVariantList rules = m_database->getDiagnosticRules(QStringLiteral("idle_error_hot"));
+        if (!rules.isEmpty()) {
+            const QVariantMap r = rules.first().toMap();
+            hotIdleMin = r.value(QStringLiteral("value1")).toDouble();
+            hotIdleMax = r.value(QStringLiteral("value2")).toDouble();
+        }
+    }
+    const bool hotIdleErrorOk = hotIdleErrorCorrected >= hotIdleMin && hotIdleErrorCorrected <= hotIdleMax;
     addCheck(QStringLiteral("Erreur ralenti à chaud"),
              QStringLiteral("%1 ECU | brut 7D14-15=%2 | correction=%3")
                  .arg(hotIdleErrorCorrected).arg(raw7d1415).arg(hotIdleCorrection),
@@ -273,6 +325,18 @@ QString DiagnosticPanel::buildReport() const
     text += QStringLiteral("Date : %1\n").arg(QDateTime::currentDateTime().toString(QStringLiteral("dd/MM/yyyy hh:mm:ss")));
     if (!m_ecuId.isEmpty()) text += QStringLiteral("Identification : %1\n").arg(QString::fromLatin1(m_ecuId.toHex(' ').toUpper()));
     text += QStringLiteral("DTC : %1 %2 %3\n").arg(hexByte(d.dtc0), hexByte(d.dtc1), hexByte(d.dtc2));
+    if (m_database && m_database->isOpen()) {
+        text += QStringLiteral("Base de connaissances : connectée\n");
+        text += QStringLiteral("Paramètres connus : %1 | règles de diagnostic : %2\n")
+            .arg(m_database->getParameters().size())
+            .arg(m_database->getDiagnosticRules().size());
+        const QVariantMap p = m_database->getParameterByName(QStringLiteral("idle_error_hot_corrected"));
+        if (!p.isEmpty()) {
+            text += QStringLiteral("7D14-15 : %1 | unité=%2\n")
+                .arg(p.value(QStringLiteral("description")).toString())
+                .arg(p.value(QStringLiteral("unit")).toString());
+        }
+    }
     const int raw7d1415 = (static_cast<int>(d.idle_error2) << 8) | static_cast<int>(d.uk10);
     const int hotIdleCorrection = static_cast<int>(d.idle_hot) - 35;
     const int hotIdleErrorCorrected = (raw7d1415 - 32768) + hotIdleCorrection;

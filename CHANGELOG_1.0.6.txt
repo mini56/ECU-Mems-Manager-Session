@@ -1,0 +1,17 @@
+ECU MEMS Manager v1.0.6
+
+Objet : activation réelle de la base de connaissances SQLite.
+
+- La base SQLite est maintenant chargée et alimentée au démarrage.
+- Les paramètres de diagnostic (batterie, temps bobine, erreur ralenti chaud 7D14-15, régime, MAP, trims) sont enregistrés dans la base.
+- Les règles de diagnostic utilisées par le panneau Diagnostic automatique sont enregistrées dans la base.
+- Les seuils du temps bobine et de l'erreur ralenti chaud sont lus depuis la base au lieu d'être uniquement codés dans le panneau.
+- La plage de validation du temps bobine reste 1,9 à 3,1 ms lorsque la tension batterie est proche de 14 V ; la plage de tension de déclenchement est elle-même lue depuis la définition batterie.
+- Le décodage 7D14-15 conserve la valeur brute et utilise la correction réelle de Position ralenti chaud ; aucune correction -3 n'est codée en dur.
+- Le rapport du Diagnostic automatique indique que la base de connaissances est active et affiche les informations du paramètre 7D14-15.
+- La structure schema.sql est synchronisée avec la structure SQLite réellement créée par DatabaseManager et inclut diagnostic_rule.
+- La version du projet passe à 1.0.6.
+- L'aide est complétée sur l'utilisation de la base de connaissances et du décodage 7D14-15.
+- La déclaration obligatoire void onProtocolCommandRequested(quint8 command); est conservée dans memsinterface.h.
+
+Important : aucune nouvelle commande ECU d'écriture ou de recodage n'est activée par cette évolution.

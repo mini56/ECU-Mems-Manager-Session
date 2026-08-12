@@ -11,6 +11,7 @@
 
 #include "mainwindow.h"
 #include "database/DatabaseManager.h"
+#include "database/DatabaseSeed.h"
 
 namespace
 {
@@ -114,11 +115,21 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    if (!DatabaseSeed::populate(database))
+    {
+        QMessageBox::critical(nullptr, QObject::tr("Erreur base de données"),
+                              QObject::tr("La base SQLite est ouverte mais son chargement de connaissances a échoué."));
+        g_splashProgressCallback = nullptr;
+        splash->close();
+        delete splash;
+        return 1;
+    }
+
     if (g_startupStatus)
         g_startupStatus->setText(QStringLiteral("Chargement de l'interface..."));
     updateStartupProgress(100);
 
-    MainWindow window;
+    MainWindow window(&database);
 
     QScreen *screen = QGuiApplication::primaryScreen();
     if (screen)

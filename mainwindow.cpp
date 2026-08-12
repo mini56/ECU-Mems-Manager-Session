@@ -13,6 +13,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "styles.h"
+#include "database/DatabaseManager.h"
 #include "analysistab.h"
 #include "summarytab.h"
 #include <qapplication.h>
@@ -32,10 +33,11 @@
 #include <QStyle>
 #include <QFrame>
 
-MainWindow::MainWindow(QWidget* parent):QMainWindow(parent),
+MainWindow::MainWindow(DatabaseManager *database, QWidget* parent):QMainWindow(parent),
 m_ui(new Ui::MainWindow),
 m_memsThread(0),
-m_mems(0), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerDialog(0), m_actuatorTestsEnabled(false), m_adjustmentsEnabled(false), m_actuatorsOffEnabled(false), m_protocolOutput(nullptr), m_protocolModeLabel(nullptr)
+m_mems(0),
+m_database(database), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerDialog(0), m_actuatorTestsEnabled(false), m_adjustmentsEnabled(false), m_actuatorsOffEnabled(false), m_protocolOutput(nullptr), m_protocolModeLabel(nullptr)
 
 {
   buildSpeedAndTempUnitTables();
@@ -232,6 +234,7 @@ m_mems(0), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerD
   // Le diagnostic automatique reste volontairement juste à côté de
   // l'onglet ECU / ROSCO : ce sont les deux fonctions avancées du logiciel.
   m_diagnosticPanel = new DiagnosticPanel(this);
+  m_diagnosticPanel->setDatabase(m_database);
   m_ui->Tab_main->addTab(m_diagnosticPanel, QStringLiteral("Diagnostic automatique"));
 
   // Navigation des onglets : sur les écrans étroits, Qt affiche des
@@ -322,6 +325,15 @@ void MainWindow::setupWidgets()
   // d'origine était resté commenté dans le fichier .ui, le rendant vide)
   m_summaryTab = new SummaryTab(this);
   m_ui->Tab_main->insertTab(2, m_summaryTab, "Toutes les mesures");
+
+  // L’ancienne vue « toutes les mesures » est supprimée : seule « Toutes les mesures » reste accessible.
+  const int duplicateSummaryIndex = m_ui->Tab_main->indexOf(m_ui->summary_tab);
+  if (duplicateSummaryIndex >= 0)
+  {
+    QWidget *oldSummaryTab = m_ui->Tab_main->widget(duplicateSummaryIndex);
+    m_ui->Tab_main->removeTab(duplicateSummaryIndex);
+    if (oldSummaryTab) { delete oldSummaryTab; }
+  }
 
   // Ajout de l'onglet "Analyse" (lecture de fichiers CSV enregistrés)
   AnalysisTab *analysisTab = new AnalysisTab(this);

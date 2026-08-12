@@ -28,6 +28,8 @@
 #include "helpviewer.h"
 #include "scr/ecu/ecumanager.h"
 
+class DatabaseManager;
+
 namespace Ui
 {
 class MainWindow;
@@ -42,7 +44,7 @@ private:
     QThread *m_logicThread;
 
 public:
-    explicit MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(DatabaseManager *database = nullptr, QWidget *parent = nullptr);
     ~MainWindow();
 
 public slots:
@@ -166,6 +168,7 @@ private:
     ECUManager *m_ecuManager;
     SummaryTab *m_summaryTab;
     DiagnosticPanel *m_diagnosticPanel;
+    DatabaseManager *m_database;
     OptionsDialog *m_options;
     QMessageBox *m_pleaseWaitBox;
     HelpViewer *m_helpViewerDialog;

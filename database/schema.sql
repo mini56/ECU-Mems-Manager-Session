@@ -1,84 +1,10 @@
-CREATE TABLE ecu (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    family TEXT NOT NULL,
-    version TEXT NOT NULL,
-    manufacturer TEXT,
-    hardware_reference TEXT,
-    software_reference TEXT,
-    firmware_version TEXT,
-    protocol TEXT,
-    connector TEXT,
-    notes TEXT
-);
-
-CREATE TABLE vehicle (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    make TEXT,
-    model TEXT,
-    engine TEXT,
-    displacement INTEGER,
-    year_from INTEGER,
-    year_to INTEGER,
-    catalyst INTEGER,
-    ecu_id INTEGER
-);
-
-CREATE TABLE connector (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    ecu_id INTEGER,
-    pin INTEGER,
-    signal TEXT,
-    description TEXT
-);
-
-CREATE TABLE pid (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    frame TEXT,
-    offset INTEGER,
-    name TEXT,
-    description TEXT,
-    unit TEXT,
-    formula TEXT,
-    minimum REAL,
-    maximum REAL
-);
-
-CREATE TABLE dtc (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    code TEXT,
-    byte INTEGER,
-    bit INTEGER,
-    label TEXT,
-    description TEXT,
-    causes TEXT,
-    solution TEXT
-);
-
-CREATE TABLE actuator (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    command TEXT,
-    description TEXT
-);
-
-CREATE TABLE adaptation (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    description TEXT
-);
-
-CREATE TABLE rom (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    ecu_id INTEGER,
-    checksum TEXT,
-    size INTEGER,
-    filename TEXT
-);
-
-CREATE TABLE calibration (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    rom_id INTEGER,
-    name TEXT,
-    address INTEGER,
-    size INTEGER
-);
+CREATE TABLE IF NOT EXISTS meta (id INTEGER PRIMARY KEY CHECK(id = 1), application_name TEXT NOT NULL, database_version INTEGER NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS ecu (id INTEGER PRIMARY KEY AUTOINCREMENT, manufacturer TEXT, family TEXT NOT NULL, model TEXT, mems_version TEXT NOT NULL, protocol TEXT, part_number TEXT, description TEXT, notes TEXT, UNIQUE(mems_version, part_number));
+CREATE TABLE IF NOT EXISTS vehicle (id INTEGER PRIMARY KEY AUTOINCREMENT, make TEXT NOT NULL, model TEXT NOT NULL, variant TEXT, year_from INTEGER, year_to INTEGER, engine TEXT, displacement TEXT, fuel_system TEXT, notes TEXT);
+CREATE TABLE IF NOT EXISTS ecu_vehicle (ecu_id INTEGER NOT NULL, vehicle_id INTEGER NOT NULL, notes TEXT, PRIMARY KEY(ecu_id, vehicle_id), FOREIGN KEY(ecu_id) REFERENCES ecu(id), FOREIGN KEY(vehicle_id) REFERENCES vehicle(id));
+CREATE TABLE IF NOT EXISTS dtc (id INTEGER PRIMARY KEY AUTOINCREMENT, ecu_id INTEGER, code TEXT NOT NULL, byte INTEGER, bit INTEGER, description TEXT, label TEXT, system TEXT, severity INTEGER DEFAULT 0, possible_causes TEXT, diagnostic_procedure TEXT, repair_notes TEXT, causes TEXT, solution TEXT, UNIQUE(ecu_id, code));
+CREATE TABLE IF NOT EXISTS parameter (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, display_name TEXT, unit TEXT, data_type TEXT, description TEXT, minimum REAL, maximum REAL, nominal_min REAL, nominal_max REAL);
+CREATE TABLE IF NOT EXISTS actuator (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, display_name TEXT, description TEXT, test_available INTEGER NOT NULL DEFAULT 0, on_available INTEGER NOT NULL DEFAULT 0, off_available INTEGER NOT NULL DEFAULT 0);
+CREATE TABLE IF NOT EXISTS ecu_parameter (ecu_id INTEGER NOT NULL, parameter_id INTEGER NOT NULL, address INTEGER, scale REAL DEFAULT 1.0, offset REAL DEFAULT 0.0, minimum REAL, maximum REAL, notes TEXT, PRIMARY KEY(ecu_id, parameter_id), FOREIGN KEY(ecu_id) REFERENCES ecu(id), FOREIGN KEY(parameter_id) REFERENCES parameter(id));
+CREATE TABLE IF NOT EXISTS ecu_actuator (ecu_id INTEGER NOT NULL, actuator_id INTEGER NOT NULL, command_code INTEGER, notes TEXT, PRIMARY KEY(ecu_id, actuator_id), FOREIGN KEY(ecu_id) REFERENCES ecu(id), FOREIGN KEY(actuator_id) REFERENCES actuator(id));
+CREATE TABLE IF NOT EXISTS diagnostic_rule (id INTEGER PRIMARY KEY AUTOINCREMENT, rule_key TEXT NOT NULL, parameter_name TEXT, rule_type TEXT NOT NULL, value1 REAL, value2 REAL, severity TEXT, message TEXT, advice TEXT, source TEXT, UNIQUE(rule_key, parameter_name, rule_type));

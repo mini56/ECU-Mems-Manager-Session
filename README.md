@@ -1,4 +1,4 @@
-ECU MEMS Manager 1.0.5
+ECU MEMS Manager 1.0.6
 
 - Barres de défilement automatiques sur les pages fixes pour s'adapter aux différentes résolutions.
 - Taille de fenêtre de départ adaptée à l'écran disponible.

@@ -10,7 +10,7 @@ add_definitions(-DPROJECTNAME="${PROJECTNAME}")
 
 set(VER_MAJOR 1)
 set(VER_MINOR 0)
-set(VER_PATCH 5)
+set(VER_PATCH 6)
 set(APP_VERSION "${VER_MAJOR}.${VER_MINOR}.${VER_PATCH}")
 
 add_compile_definitions(
