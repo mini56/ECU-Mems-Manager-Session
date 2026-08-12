@@ -1,0 +1,20 @@
+ECU MEMS Manager v1.0.8 TEST6 - correction traduction EN
+
+Base: TEST5B (compile).
+
+Correction principale:
+- Les chaînes provenant de mainwindow.ui sont désormais présentes dans le catalogue anglais avec leur texte source EXACT, y compris les espaces initiaux/finals utilisés dans certains labels historiques.
+- Cela corrige les textes qui restaient en français dans Overview, Settings, Errors, Actuators et All data.
+- Correction des traductions mixtes français/anglais restantes.
+
+Exemples corrigés:
+- Température d'air -> Intake air temperature
+- Avance à l'allumage -> Ignition advance
+- Réchauffeur collecteur -> Manifold heater
+- Pompe à carburant -> Fuel pump
+- Signal régime et capteur PMH -> Engine-speed signal and crankshaft sensor
+- Pression admission turbo élevée -> High boost pressure
+- Ralenti chaud / décroissance ralenti -> Hot idle / idle decay
+- boutons de réglage -> Richer / Leaner / Faster / Slower / Advance / Retard
+
+Aucune modification de la communication ECU.

@@ -167,7 +167,7 @@ The statuses and guidance in this report are consistency checks and do not repla
   <message>
    <source>7D14-15 brut=%1 | correction ralenti chaud=%2 | erreur ralenti chaud corrigée=%3 ECU
 </source>
-   <translation>7D14-15 brut=%1 | correction idle chaud=%2 | error idle chaud corrigée=%3 ECU
+   <translation>raw 7D14-15=%1 | hot-idle correction=%2 | corrected hot-idle error=%3 ECU
 </translation>
   </message>
   <message>
@@ -176,7 +176,7 @@ The statuses and guidance in this report are consistency checks and do not repla
   </message>
   <message>
    <source>ANOMALIE À INVESTIGUER</source>
-   <translation>anomaly À INVESTIGUER</translation>
+   <translation>ANOMALY TO INVESTIGATE</translation>
   </message>
   <message>
    <source>Aucun bit défaut actif dans les trames 0x7D/0x80.</source>
@@ -294,7 +294,7 @@ The statuses and guidance in this report are consistency checks and do not repla
   </message>
   <message>
    <source>Erreur ralenti à chaud</source>
-   <translation>Error idle à hot</translation>
+   <translation>Hot idle error</translation>
   </message>
   <message>
    <source>Exporter le rapport</source>
@@ -402,7 +402,7 @@ The statuses and guidance in this report are consistency checks and do not repla
   </message>
   <message>
    <source>Temps bobine</source>
-   <translation>Time coil</translation>
+   <translation>Coil charge time</translation>
   </message>
   <message>
    <source>Temps bobine=%1 ms
@@ -590,7 +590,7 @@ The statuses and guidance in this report are consistency checks and do not repla
   </message>
   <message>
    <source>Pression collecteur (MAP) :</source>
-   <translation>Pressure manifold (MAP) :</translation>
+   <translation>Manifold pressure (MAP):</translation>
   </message>
   <message>
    <source>Relais PTC</source>
@@ -598,7 +598,7 @@ The statuses and guidance in this report are consistency checks and do not repla
   </message>
   <message>
    <source>Relais climatisation</source>
-   <translation>Relais climatisation</translation>
+   <translation>A/C relay</translation>
   </message>
   <message>
    <source>Régime (tr/min) :</source>
@@ -669,11 +669,11 @@ The statuses and guidance in this report are consistency checks and do not repla
   </message>
   <message>
    <source>"0x0F" réinitialisera les changements de la page émissions</source>
-   <translation>"0x0F" will reset changes made on the emissions page</translation>
+   <translation>"0x0F" resets changes made on the emissions page.</translation>
   </message>
   <message>
    <source>&amp;Aide</source>
-   <translation>&amp;Aide</translation>
+   <translation>&amp;Help</translation>
   </message>
   <message>
    <source>&amp;Enregistrer image ROM...</source>
@@ -681,7 +681,7 @@ The statuses and guidance in this report are consistency checks and do not repla
   </message>
   <message>
    <source>&amp;Fichier</source>
-   <translation>&amp;file</translation>
+   <translation>&amp;File</translation>
   </message>
   <message>
    <source>&amp;Modifier les paramètres...</source>
@@ -741,7 +741,7 @@ The statuses and guidance in this report are consistency checks and do not repla
   </message>
   <message>
    <source>--- tr/min</source>
-   <translation>--- tr/min</translation>
+   <translation>--- rpm</translation>
   </message>
   <message>
    <source>--- °</source>
@@ -769,7 +769,7 @@ The statuses and guidance in this report are consistency checks and do not repla
   </message>
   <message>
    <source>04 - Pression admission turbo élevée</source>
-   <translation>04 - Pressure intake turbo élevée</translation>
+   <translation>04 - High boost pressure</translation>
   </message>
   <message>
    <source>05 - Capteur température air ambiant</source>
@@ -949,7 +949,7 @@ The statuses and guidance in this report are consistency checks and do not repla
   </message>
   <message>
    <source>15 - Électrovanne de suralimentation</source>
-   <translation>15 - Boost valve</translation>
+   <translation>15 - Boost control valve</translation>
   </message>
   <message>
    <source>16 - Circuit capteur position papillon</source>
@@ -973,7 +973,7 @@ The statuses and guidance in this report are consistency checks and do not repla
   </message>
   <message>
    <source>21 - Synchro vilebrequin</source>
-   <translation>21 - Synchro vilebrequin</translation>
+   <translation>21 - Crankshaft synchronization</translation>
   </message>
   <message>
    <source>22 - Commande ventilateur 1</source>
@@ -1017,7 +1017,7 @@ The statuses and guidance in this report are consistency checks and do not repla
   </message>
   <message>
    <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;moteur arrêté	&amp;lt;&amp;gt; ~ 100 kPa&lt;/p&gt;&lt;p&gt;moteur au ralenti 	&amp;lt;&amp;gt; ~ 25-40 kPa&lt;/p&gt;&lt;p&gt;en cas d'écart, vérifier les durites&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-   <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;engine stopped &amp;lt;&amp;gt; ~100 kPa&lt;/p&gt;&lt;p&gt;engine idling &amp;lt;&amp;gt; ~25-40 kPa&lt;/p&gt;&lt;p&gt;if values differ, check the vacuum hoses&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+   <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Engine stopped: ~100 kPa&lt;/p&gt;&lt;p&gt;Engine idling: ~25-40 kPa&lt;/p&gt;&lt;p&gt;If the value is abnormal, check the vacuum hoses.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
   </message>
   <message>
    <source>ATTENTION : RISQUE D'ENDOMMAGER LA SONDE</source>
@@ -1045,7 +1045,7 @@ The statuses and guidance in this report are consistency checks and do not repla
   </message>
   <message>
    <source>Angle papillon</source>
-   <translation>Angle throttle</translation>
+   <translation>Throttle angle</translation>
   </message>
   <message>
    <source>Anomalies :</source>
@@ -1061,11 +1061,11 @@ The statuses and guidance in this report are consistency checks and do not repla
   </message>
   <message>
    <source>Avance à l'allumage</source>
-   <translation>Advance à l'ignition</translation>
+   <translation>Ignition advance</translation>
   </message>
   <message>
    <source>Avancer (?)</source>
-   <translation>Avancer (?)</translation>
+   <translation>Advance (?)</translation>
   </message>
   <message>
    <source>Bobine d'allumage</source>
@@ -1105,7 +1105,7 @@ The statuses and guidance in this report are consistency checks and do not repla
   </message>
   <message>
    <source>Ceci ne fonctionne qu'en dehors de mems-rosco</source>
-   <translation>This only works outside mems-rosco</translation>
+   <translation>This only works outside mems-rosco.</translation>
   </message>
   <message>
    <source>Ces anomalies sont soit reconnues par MEMS mais non enregistrées, soit non reconnues/acquittées par MEMS.</source>
@@ -1125,7 +1125,7 @@ The statuses and guidance in this report are consistency checks and do not repla
   </message>
   <message>
    <source>Communications :</source>
-   <translation>Communications :</translation>
+   <translation>Communications:</translation>
   </message>
   <message>
    <source>Compteur Jack au maximum (&gt;255 réinitialisations)</source>
@@ -1145,7 +1145,7 @@ The statuses and guidance in this report are consistency checks and do not repla
   </message>
   <message>
    <source>Contact climatisation</source>
-   <translation>Switch climatisation</translation>
+   <translation>A/C switch</translation>
   </message>
   <message>
    <source>Contact point mort</source>
@@ -1157,23 +1157,23 @@ The statuses and guidance in this report are consistency checks and do not repla
   </message>
   <message>
    <source>Contrôle d'air de &amp;ralenti...</source>
-   <translation>Check d'air de &amp;idle...</translation>
+   <translation>&amp;Idle air control...</translation>
   </message>
   <message>
    <source>Correction carburant</source>
-   <translation>Correction fuel</translation>
+   <translation>Fuel trim</translation>
   </message>
   <message>
    <source>Correction carburant court terme</source>
-   <translation>Trim fuel short-term</translation>
+   <translation>Short-term fuel trim</translation>
   </message>
   <message>
    <source>Correction carburant long terme</source>
-   <translation>Trim fuel long-term</translation>
+   <translation>Long-term fuel trim</translation>
   </message>
   <message>
    <source>Cycle lambda</source>
-   <translation>Duty cycle lambda</translation>
+   <translation>Lambda duty cycle</translation>
   </message>
   <message>
    <source>D0  • Identification</source>
@@ -1265,15 +1265,15 @@ The statuses and guidance in this report are consistency checks and do not repla
   </message>
   <message>
    <source>En direct</source>
-   <translation>En direct</translation>
+   <translation>Live</translation>
   </message>
   <message>
    <source>Enreg.</source>
-   <translation>Enreg.</translation>
+   <translation>Recorded</translation>
   </message>
   <message>
    <source>Enregistrement</source>
-   <translation>Recording</translation>
+   <translation>Record</translation>
   </message>
   <message>
    <source>Erreur</source>
@@ -1295,7 +1295,7 @@ Check the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>Erreur signal lambda</source>
-   <translation>Error signal lambda</translation>
+   <translation>Lambda signal error</translation>
   </message>
   <message>
    <source>Erreurs</source>
@@ -1303,7 +1303,7 @@ Check the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>Erreurs ECU :</source>
-   <translation>Errors ECU :</translation>
+   <translation>ECU errors:</translation>
   </message>
   <message>
    <source>Erreurs enregistrées :</source>
@@ -1359,7 +1359,7 @@ Check the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>Indicateur de boucle</source>
-   <translation>Loop indicator</translation>
+   <translation>Loop status</translation>
   </message>
   <message>
    <source>Injecteur</source>
@@ -1395,11 +1395,11 @@ Check the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>Long terme :</source>
-   <translation>long-term :</translation>
+   <translation>Long term:</translation>
   </message>
   <message>
    <source>MEMS ajustera cette valeur avec le temps, donc tout réglage n'a d'effet que jusqu'à ce que MEMS réapprenne la valeur optimale</source>
-   <translation>MEMS will adjust this value over time, so any adjustment only remains effective until MEMS relearns the optimum value.</translation>
+   <translation>MEMS adjusts this value over time, so any manual adjustment remains effective only until MEMS relearns the optimum value.</translation>
   </message>
   <message>
    <source>MainWindow</source>
@@ -1415,7 +1415,7 @@ Check the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>Moins</source>
-   <translation>Moins</translation>
+   <translation>Less</translation>
   </message>
   <message>
    <source>NO SIGNAL</source>
@@ -1431,7 +1431,7 @@ Check the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>N° compteur Jack</source>
-   <translation>N° compteur Jack</translation>
+   <translation>Jack counter</translation>
   </message>
   <message>
    <source>Off</source>
@@ -1451,7 +1451,7 @@ Check the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>Ouvrez une invite de commandes ou PowerShell et déplacez-vous dans le dossier où se trouve readmems. Ex. c:\mems-roscobin.</source>
-   <translation>Open a Command Prompt or PowerShell and change to the folder containing readmems, e.g. c:\mems-roscobin.</translation>
+   <translation>Open Command Prompt or PowerShell and change to the folder containing readmems, e.g. c:\mems-roscobin.</translation>
   </message>
   <message>
    <source>Peut indiquer que l'ECU a du mal à maintenir un ralenti suffisamment bas. Vérifiez le réglage du câble d'accélérateur et les fuites d'air à l'admission.</source>
@@ -1463,23 +1463,23 @@ Check the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>Plus</source>
-   <translation>Plus</translation>
+   <translation>More</translation>
   </message>
   <message>
    <source>Plus lent</source>
-   <translation>Plus lent</translation>
+   <translation>Slower</translation>
   </message>
   <message>
    <source>Plus pauvre</source>
-   <translation>Plus pauvre</translation>
+   <translation>Leaner</translation>
   </message>
   <message>
    <source>Plus rapide</source>
-   <translation>Plus rapide</translation>
+   <translation>Faster</translation>
   </message>
   <message>
    <source>Plus riche</source>
-   <translation>Plus riche</translation>
+   <translation>Richer</translation>
   </message>
   <message>
    <source>Pompe à carburant</source>
@@ -1511,7 +1511,7 @@ Check the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>Position papillon</source>
-   <translation>Position throttle</translation>
+   <translation>Throttle position</translation>
   </message>
   <message>
    <source>Position ralenti chaud</source>
@@ -1523,11 +1523,11 @@ Check the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>Pression collecteur</source>
-   <translation>Pressure manifold</translation>
+   <translation>Manifold pressure</translation>
   </message>
   <message>
    <source>Ralenti chaud / décroissance ralenti</source>
-   <translation>idle hot / décroissance idle</translation>
+   <translation>Hot idle / idle decay</translation>
   </message>
   <message>
    <source>Ratio air/carburant</source>
@@ -1535,7 +1535,7 @@ Check the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>Retarder (?)</source>
-   <translation>Retarder (?)</translation>
+   <translation>Retard (?)</translation>
   </message>
   <message>
    <source>Reçu</source>
@@ -1587,15 +1587,15 @@ Check the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>Si votre moteur n'est pas régulé par une sonde lambda, c'est ici que vous pouvez ajuster les émissions au ralenti. Les moteurs régulés par une sonde lambda ajusteront cette valeur automatiquement avec le temps</source>
-   <translation>If your engine is not lambda-controlled, this is where idle emissions can be adjusted. Lambda-controlled engines will automatically adjust this value over time.</translation>
+   <translation>If your engine is not lambda-controlled, this setting adjusts idle emissions. Lambda-controlled engines will automatically adapt this value over time.</translation>
   </message>
   <message>
    <source>Signal lambda anormalement bas</source>
-   <translation>Abnormally low lambda signal</translation>
+   <translation>Lambda signal abnormally low</translation>
   </message>
   <message>
    <source>Signal lambda anormalement élevé</source>
-   <translation>Abnormally high lambda signal</translation>
+   <translation>Lambda signal abnormally high</translation>
   </message>
   <message>
    <source>Signal régime et capteur PMH</source>
@@ -1607,23 +1607,23 @@ Check the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>Temps bobine</source>
-   <translation>Time coil</translation>
+   <translation>Coil charge time</translation>
   </message>
   <message>
    <source>Température air d'admission</source>
-   <translation>Temperature air d'intake</translation>
+   <translation>Intake air temperature</translation>
   </message>
   <message>
    <source>Température ambiante</source>
-   <translation>Temperature ambient</translation>
+   <translation>Ambient temperature</translation>
   </message>
   <message>
    <source>Température carburant</source>
-   <translation>Temperature fuel</translation>
+   <translation>Fuel temperature</translation>
   </message>
   <message>
    <source>Température d'air</source>
-   <translation>Temperature d'air</translation>
+   <translation>Intake air temperature</translation>
   </message>
   <message>
    <source>Température liquide de refroidissement</source>
@@ -1631,7 +1631,7 @@ Check the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>Température moteur</source>
-   <translation>Temperature engine</translation>
+   <translation>Coolant temperature</translation>
   </message>
   <message>
    <source>Tension batterie</source>
@@ -1639,7 +1639,7 @@ Check the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>Tension sonde lambda</source>
-   <translation>Voltage sensor lambda</translation>
+   <translation>Lambda sensor voltage</translation>
   </message>
   <message>
    <source>Terminé</source>
@@ -1647,7 +1647,7 @@ Check the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>Tester</source>
-   <translation>Tester</translation>
+   <translation>Test</translation>
   </message>
   <message>
    <source>Tester les actionneurs :</source>
@@ -1707,7 +1707,7 @@ Check the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>avance</source>
-   <translation>avance</translation>
+   <translation>advance</translation>
   </message>
   <message>
    <source>com est le port où votre interface est connectée !</source>
@@ -1771,7 +1771,7 @@ Check the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>ok / pas ok</source>
-   <translation>ok / pas ok</translation>
+   <translation>OK / not OK</translation>
   </message>
   <message>
    <source>scrollArea_%1</source>
@@ -1783,7 +1783,7 @@ Check the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>signal oui/non</source>
-   <translation>yes/no signal</translation>
+   <translation>signal yes/no</translation>
   </message>
   <message>
    <source>tous les actionneurs désactivés / réinitialisés</source>
@@ -1791,7 +1791,7 @@ Check the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>tr/min</source>
-   <translation>tr/min</translation>
+   <translation>rpm</translation>
   </message>
   <message>
    <source>À &amp;propos</source>
@@ -1829,7 +1829,7 @@ Check the wiring and make sure the ECU is powered.</translation>
    <source>Étincelle</source>
    <translation>Spark</translation>
   </message>
- </context>
+ <message><source>L'erreur de ralenti est l'écart entre le régime moteur actuel et le régime de ralenti visé. Valeurs affichées uniquement quand le contact ralenti est actif ; la valeur max. affichée est 200 tr/min. </source><translation>Idle error is the difference between current engine speed and the ECU target idle speed. Values are displayed only when the idle switch is active; the maximum displayed value is 200 rpm.</translation></message><message><source>La correction carburant court terme n'est active qu'en boucle fermée. Des valeurs jusqu'à 10% sont normales, occasionnellement jusqu'à 15%. Des valeurs supérieures à 15% sont anormales. </source><translation>Short-term fuel trim is active only in closed loop. Values up to 10% are normal and occasionally up to 15%. Values above 15% are abnormal.</translation></message><message><source>  Régime jusqu'à 2000 tr/min pour réglage fin du ralenti</source><translation>Engine speed up to 2000 rpm for fine idle adjustment</translation></message><message><source>03 - </source><translation>03 -</translation></message><message><source>08 - </source><translation>08 -</translation></message><message><source>11 - </source><translation>11 -</translation></message><message><source>17 - </source><translation>17 -</translation></message><message><source>18 - </source><translation>18 -</translation></message><message><source>19 - </source><translation>19 -</translation></message><message><source> Signal régime et capteur PMH</source><translation>Engine-speed signal and crankshaft sensor</translation></message><message><source> Anomalies :</source><translation>Anomalies:</translation></message><message><source> Erreur signal lambda</source><translation>Lambda signal error</translation></message><message><source> Signal lambda anormalement élevé</source><translation>Lambda signal abnormally high</translation></message><message><source> Signal lambda anormalement bas</source><translation>Lambda signal abnormally low</translation></message><message><source> Position mini du moteur pas-à-pas atteinte</source><translation>Stepper motor minimum position reached</translation></message><message><source> Compteur Jack au maximum (&gt;255 réinitialisations)</source><translation>Jack counter at maximum (&gt;255 resets)</translation></message><message><source>Réchauffeur collecteur </source><translation>Manifold heater</translation></message><message><source>Pompe à carburant </source><translation>Fuel pump</translation></message><message><source>Chauffage sonde O2/lambda </source><translation>O2/lambda sensor heater</translation></message><message><source>Électrovanne purge canister </source><translation>Canister purge valve</translation></message><message><source>Embrayage climatisation </source><translation>A/C clutch</translation></message><message><source>Électrovanne suralimentation </source><translation>Boost control valve</translation></message><message><source>Ventilateur 1 </source><translation>Fan 1</translation></message><message><source>Ventilateur 2 </source><translation>Fan 2</translation></message><message><source>Ventilateur 3 </source><translation>Fan 3</translation></message><message><source>Bobine d'allumage </source><translation>Ignition coil</translation></message><message><source>Réinitialiser tous les actionneurs </source><translation>Reset all actuators</translation></message><message><source>Mode interactif</source><translation>Interactive mode</translation></message></context>
  <context>
   <name>ManoMeter</name>
   <message>
