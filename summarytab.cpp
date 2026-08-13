@@ -19,7 +19,7 @@ SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)
   for (int i = 0; i < 3; i++)
   {
     tables[i]->setHorizontalHeaderLabels(QStringList()
-        << tr("Paramètre") << "" << tr("Reçu ECU") << tr("Interprété"));
+        << I18n::text(6600) /* EN: Parameter */ << "" << I18n::text(6601) /* EN: ECU received */ << I18n::text(6602) /* EN: Interpreted */);
     tables[i]->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
     tables[i]->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
     tables[i]->setColumnWidth(1, 24);
@@ -34,62 +34,62 @@ SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)
     layout->addWidget(tables[i]);
   }
 
-  m_rowEngineRpm             = addRow(tr("Régime moteur (tr/min)"));
-  m_rowCoolantTemp           = addRow(tr("Température liquide refroid. (°C)"));
-  m_rowAmbientTemp           = addRow(tr("Température ambiante (°C)"));
-  m_rowIntakeAirTemp         = addRow(tr("Température air admission (°C)"));
-  m_rowFuelTemp              = addRow(tr("Température carburant (°C)"));
-  m_rowMapKpa                = addRow(tr("Pression collecteur (kPa)"));
-  m_rowBatteryVoltage        = addRow(tr("Tension batterie (V)"));
-  m_rowThrottlePot           = addRow(tr("Position papillon (%)"));
-  m_rowIdleSwitch            = addRow(tr("Contact ralenti"));
-  m_rowUk1                   = addRow(tr("Non documenté 1"));
-  m_rowParkNeutralSwitch     = addRow(tr("Contact point mort"));
-  m_rowFaultCodes            = addRow(tr("Codes défaut (brut)"));
-  m_rowIdleSetPoint          = addRow(tr("Consigne de ralenti"));
-  m_rowIdleHot               = addRow(tr("Ralenti chaud"));
-  m_rowUk2                   = addRow(tr("Non documenté 2"));
-  m_rowIacPosition           = addRow(tr("Position moteur pas-à-pas (%)"));
-  m_rowIdleError             = addRow(tr("Erreur de ralenti"));
-  m_rowIgnitionAdvanceOffset = addRow(tr("Décalage d'avance"));
-  m_rowIgnitionAdvance       = addRow(tr("Avance à l'allumage (°)"));
-  m_rowCoilTime              = addRow(tr("Temps bobine (ms)"));
-  m_rowUk3                   = addRow(tr("Non documenté 3"));
-  m_rowUk4                   = addRow(tr("Non documenté 4"));
-  m_rowUk5                   = addRow(tr("Non documenté 5"));
-  m_rowIgnitionSwitch        = addRow(tr("Contact allumage"));
-  m_rowThrottleAngle         = addRow(tr("Angle papillon (°)"));
-  m_rowUk6                   = addRow(tr("Non documenté 6"));
-  m_rowAirFuelRatio          = addRow(tr("Ratio air/carburant"));
-  m_rowDtc2                  = addRow(tr("DTC 2"));
-  m_rowLambdaVoltage         = addRow(tr("Tension sonde lambda (mV)"));
-  m_rowLambdaFrequency       = addRow(tr("Fréquence lambda"));
-  m_rowLambdaDutycycle       = addRow(tr("Cycle lambda (%)"));
-  m_rowLambdaStatus          = addRow(tr("État lambda"));
-  m_rowClosedLoop            = addRow(tr("Boucle fermée"));
-  m_rowLongTermFuelTrim      = addRow(tr("Correction carburant long terme (%)"));
-  m_rowShortTermFuelTrim     = addRow(tr("Correction carburant court terme (%)"));
-  m_rowCarbonCanisterDutycycle = addRow(tr("Cycle purge canister (%)"));
-  m_rowDtc3                  = addRow(tr("DTC 3"));
-  m_rowIdleBasePos           = addRow(tr("Position de base ralenti"));
-  m_rowUk7                   = addRow(tr("Non documenté 7"));
-  m_rowDtc4                  = addRow(tr("DTC 4"));
-  m_rowIgnitionAdvance2      = addRow(tr("Avance à l'allumage 2"));
-  m_rowIdleSpeedOffset       = addRow(tr("Décalage régime de ralenti"));
-  m_rowIdleErrorHotCorrected = addRow(tr("Erreur de ralenti à chaud (corrigée)"));
-  m_rowUk10                  = addRow(tr("Trame 7D14-15 brute"));
-  m_rowDtc5                  = addRow(tr("DTC 5"));
-  m_rowUk11                  = addRow(tr("Non documenté 11"));
-  m_rowUk12                  = addRow(tr("Non documenté 12"));
-  m_rowUk13                  = addRow(tr("Non documenté 13"));
-  m_rowUk14                  = addRow(tr("Non documenté 14"));
-  m_rowUk15                  = addRow(tr("Non documenté 15"));
-  m_rowUk16                  = addRow(tr("Non documenté 16"));
-  m_rowUk1A                  = addRow(tr("Non documenté 1A"));
-  m_rowUk1B                  = addRow(tr("Non documenté 1B"));
-  m_rowUk1C                  = addRow(tr("Non documenté 1C"));
-  m_rowDtc0                  = addRow(tr("DTC 0"));
-  m_rowDtc1                  = addRow(tr("DTC 1"));
+  m_rowEngineRpm             = addRow(I18n::text(6603) /* EN: Engine speed (rpm) */);
+  m_rowCoolantTemp           = addRow(I18n::text(6604) /* EN: Coolant temperature (°C) */);
+  m_rowAmbientTemp           = addRow(I18n::text(6605) /* EN: Ambient temperature (°C) */);
+  m_rowIntakeAirTemp         = addRow(I18n::text(6606) /* EN: Intake air temperature (°C) */);
+  m_rowFuelTemp              = addRow(I18n::text(6607) /* EN: Fuel temperature (°C) */);
+  m_rowMapKpa                = addRow(I18n::text(6608) /* EN: Manifold pressure (kPa) */);
+  m_rowBatteryVoltage        = addRow(I18n::text(6609) /* EN: Battery voltage (V) */);
+  m_rowThrottlePot           = addRow(I18n::text(6610) /* EN: Throttle position (%) */);
+  m_rowIdleSwitch            = addRow(I18n::text(6611) /* EN: Idle switch */);
+  m_rowUk1                   = addRow(I18n::text(6612) /* EN: Undocumented 1 */);
+  m_rowParkNeutralSwitch     = addRow(I18n::text(6613) /* EN: Park/neutral switch */);
+  m_rowFaultCodes            = addRow(I18n::text(6614) /* EN: Fault codes (raw) */);
+  m_rowIdleSetPoint          = addRow(I18n::text(6615) /* EN: Idle set point */);
+  m_rowIdleHot               = addRow(I18n::text(6616) /* EN: Hot idle */);
+  m_rowUk2                   = addRow(I18n::text(6617) /* EN: Undocumented 2 */);
+  m_rowIacPosition           = addRow(I18n::text(6618) /* EN: Stepper motor position (%) */);
+  m_rowIdleError             = addRow(I18n::text(6619) /* EN: Idle error */);
+  m_rowIgnitionAdvanceOffset = addRow(I18n::text(6620) /* EN: Ignition advance offset */);
+  m_rowIgnitionAdvance       = addRow(I18n::text(6621) /* EN: Ignition advance (°) */);
+  m_rowCoilTime              = addRow(I18n::text(6622) /* EN: Coil time (ms) */);
+  m_rowUk3                   = addRow(I18n::text(6623) /* EN: Undocumented 3 */);
+  m_rowUk4                   = addRow(I18n::text(6624) /* EN: Undocumented 4 */);
+  m_rowUk5                   = addRow(I18n::text(6625) /* EN: Undocumented 5 */);
+  m_rowIgnitionSwitch        = addRow(I18n::text(6626) /* EN: Ignition switch */);
+  m_rowThrottleAngle         = addRow(I18n::text(6627) /* EN: Throttle angle (°) */);
+  m_rowUk6                   = addRow(I18n::text(6628) /* EN: Undocumented 6 */);
+  m_rowAirFuelRatio          = addRow(I18n::text(6629) /* EN: Air/fuel ratio */);
+  m_rowDtc2                  = addRow(I18n::text(6630) /* EN: DTC 2 */);
+  m_rowLambdaVoltage         = addRow(I18n::text(6631) /* EN: Lambda sensor voltage (mV) */);
+  m_rowLambdaFrequency       = addRow(I18n::text(6632) /* EN: Lambda frequency */);
+  m_rowLambdaDutycycle       = addRow(I18n::text(6633) /* EN: Lambda duty cycle (%) */);
+  m_rowLambdaStatus          = addRow(I18n::text(6634) /* EN: Lambda status */);
+  m_rowClosedLoop            = addRow(I18n::text(6635) /* EN: Closed loop */);
+  m_rowLongTermFuelTrim      = addRow(I18n::text(6636) /* EN: Long-term fuel trim (%) */);
+  m_rowShortTermFuelTrim     = addRow(I18n::text(6637) /* EN: Short-term fuel trim (%) */);
+  m_rowCarbonCanisterDutycycle = addRow(I18n::text(6638) /* EN: Canister purge duty cycle (%) */);
+  m_rowDtc3                  = addRow(I18n::text(6639) /* EN: DTC 3 */);
+  m_rowIdleBasePos           = addRow(I18n::text(6640) /* EN: Idle base position */);
+  m_rowUk7                   = addRow(I18n::text(6641) /* EN: Undocumented 7 */);
+  m_rowDtc4                  = addRow(I18n::text(6642) /* EN: DTC 4 */);
+  m_rowIgnitionAdvance2      = addRow(I18n::text(6643) /* EN: Ignition advance 2 */);
+  m_rowIdleSpeedOffset       = addRow(I18n::text(6644) /* EN: Idle speed offset */);
+  m_rowIdleErrorHotCorrected = addRow(I18n::text(6645) /* EN: Hot idle error (corrected) */);
+  m_rowUk10                  = addRow(I18n::text(6646) /* EN: Raw 7D14-15 frame */);
+  m_rowDtc5                  = addRow(I18n::text(6647) /* EN: DTC 5 */);
+  m_rowUk11                  = addRow(I18n::text(6648) /* EN: Undocumented 11 */);
+  m_rowUk12                  = addRow(I18n::text(6649) /* EN: Undocumented 12 */);
+  m_rowUk13                  = addRow(I18n::text(6650) /* EN: Undocumented 13 */);
+  m_rowUk14                  = addRow(I18n::text(6651) /* EN: Undocumented 14 */);
+  m_rowUk15                  = addRow(I18n::text(6652) /* EN: Undocumented 15 */);
+  m_rowUk16                  = addRow(I18n::text(6653) /* EN: Undocumented 16 */);
+  m_rowUk1A                  = addRow(I18n::text(6654) /* EN: Undocumented 1A */);
+  m_rowUk1B                  = addRow(I18n::text(6655) /* EN: Undocumented 1B */);
+  m_rowUk1C                  = addRow(I18n::text(6656) /* EN: Undocumented 1C */);
+  m_rowDtc0                  = addRow(I18n::text(6657) /* EN: DTC 0 */);
+  m_rowDtc1                  = addRow(I18n::text(6658) /* EN: DTC 1 */);
 
   // Info-bulles explicatives, reprises des textes déjà présents ailleurs
   // dans le logiciel (onglets Aperçu et Réglages). Les lignes concernées
@@ -261,14 +261,14 @@ void SummaryTab::updateData(mems_data *data)
 
   setValue(m_rowIdleSwitch,
            QString::number(data->idle_switch),
-           data->idle_switch ? tr("Off") : tr("On"));
+           data->idle_switch ? I18n::text(6659) /* EN: Off */ : I18n::text(6660) /* EN: On */);
 
   setValue(m_rowUk1, QString::number(data->uk1),
-           data->uk1 ? tr("On") : tr("Off"));
+           data->uk1 ? I18n::text(6661) /* EN: On */ : I18n::text(6662) /* EN: Off */);
 
   setValue(m_rowParkNeutralSwitch,
            QString::number(data->park_neutral_switch),
-           data->park_neutral_switch ? tr("On") : tr("Off"));
+           data->park_neutral_switch ? I18n::text(6663) /* EN: On */ : I18n::text(6664) /* EN: Off */);
 
   setValue(m_rowFaultCodes,
            QString::number(data->fault_codes),
@@ -305,13 +305,13 @@ void SummaryTab::updateData(mems_data *data)
            QString::number(data->coil_time * 0.002, 'f', 3) + " ms");
 
   setValue(m_rowUk3, QString::number(data->uk3),
-           data->uk3 ? tr("signal") : tr("NO SIGNAL"));
+           data->uk3 ? I18n::text(6665) /* EN: signal */ : I18n::text(6666) /* EN: NO SIGNAL */);
   setValue(m_rowUk4, QString::number(data->uk4), QString::number(data->uk4));
   setValue(m_rowUk5, QString::number(data->uk5), QString::number(data->uk5));
 
   setValue(m_rowIgnitionSwitch,
            QString::number(data->ignition_switch),
-           data->ignition_switch ? tr("On") : tr("Off"));
+           data->ignition_switch ? I18n::text(6667) /* EN: On */ : I18n::text(6668) /* EN: Off */);
 
   setValue(m_rowThrottleAngle,
            QString::number(data->throttle_angle),
@@ -325,7 +325,7 @@ void SummaryTab::updateData(mems_data *data)
 
   setValue(m_rowDtc2,
            QString::number(data->dtc2),
-           data->dtc2 != 0 ? tr("DÉFAUTS") : tr("aucun défaut"));
+           data->dtc2 != 0 ? I18n::text(6669) /* EN: FAULTS */ : I18n::text(6670) /* EN: no fault */);
 
   setValue(m_rowLambdaVoltage,
            QString::number(data->lambda_voltage),
@@ -341,11 +341,11 @@ void SummaryTab::updateData(mems_data *data)
 
   setValue(m_rowLambdaStatus,
            QString::number(data->lambda_sensor_status),
-           data->lambda_sensor_status == 1 ? tr("Capteur OK") : tr("CAPTEUR DÉFECTUEUX"));
+           data->lambda_sensor_status == 1 ? I18n::text(6671) /* EN: Sensor OK */ : I18n::text(6672) /* EN: SENSOR FAULT */);
 
   setValue(m_rowClosedLoop,
            QString::number(data->closed_loop),
-           data->closed_loop ? tr("Boucle fermée") : tr("Boucle ouverte"));
+           data->closed_loop ? I18n::text(6673) /* EN: Closed loop */ : I18n::text(6674) /* EN: Open loop */);
 
   setValue(m_rowLongTermFuelTrim,
            QString::number(data->long_term_fuel_trim),
@@ -361,7 +361,7 @@ void SummaryTab::updateData(mems_data *data)
 
   setValue(m_rowDtc3,
            QString::number(data->dtc3),
-           data->dtc3 != 255 ? tr("DÉFAUTS") : tr("aucun défaut"));
+           data->dtc3 != 255 ? I18n::text(6675) /* EN: FAULTS */ : I18n::text(6676) /* EN: no fault */);
 
   setValue(m_rowIdleBasePos,
            QString::number(data->idle_base_pos),
@@ -369,11 +369,11 @@ void SummaryTab::updateData(mems_data *data)
 
   setValue(m_rowUk7,
            QString::number(data->uk7),
-           data->uk7 != 255 ? tr("DÉFAUTS") : tr("aucun défaut"));
+           data->uk7 != 255 ? I18n::text(6677) /* EN: FAULTS */ : I18n::text(6678) /* EN: no fault */);
 
   setValue(m_rowDtc4,
            QString::number(data->dtc4),
-           data->dtc4 != 255 ? tr("DÉFAUTS") : tr("aucun défaut"));
+           data->dtc4 != 255 ? I18n::text(6679) /* EN: FAULTS */ : I18n::text(6680) /* EN: no fault */);
 
   setValue(m_rowIgnitionAdvance2,
            QString::number(data->ignition_advance2),
@@ -400,7 +400,7 @@ void SummaryTab::updateData(mems_data *data)
 
   setValue(m_rowDtc5,
            QString::number(data->dtc5),
-           data->dtc5 != 255 ? tr("DÉFAUTS") : tr("aucun défaut"));
+           data->dtc5 != 255 ? I18n::text(6681) /* EN: FAULTS */ : I18n::text(6682) /* EN: no fault */);
 
   setValue(m_rowUk11, QString::number(data->uk11), QString::number(data->uk11));
   setValue(m_rowUk12, QString::number(data->uk12), QString::number(data->uk12));
@@ -414,8 +414,8 @@ void SummaryTab::updateData(mems_data *data)
 
   setValue(m_rowDtc0,
            QString::number(data->dtc0),
-           data->dtc0 != 0 ? tr("DÉFAUTS") : tr("aucun défaut"));
+           data->dtc0 != 0 ? I18n::text(6683) /* EN: FAULTS */ : I18n::text(6684) /* EN: no fault */);
   setValue(m_rowDtc1,
            QString::number(data->dtc1),
-           data->dtc1 != 0 ? tr("DÉFAUTS") : tr("aucun défaut"));
+           data->dtc1 != 0 ? I18n::text(6685) /* EN: FAULTS */ : I18n::text(6686) /* EN: no fault */);
 }
