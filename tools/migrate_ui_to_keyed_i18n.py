@@ -1,22 +1,34 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import json,re
+import json,re,xml.etree.ElementTree as ET
 ROOT=Path(__file__).resolve().parents[1]; TR=ROOT/'translations'
-def read_json(p): return json.loads(p.read_text(encoding='utf-8')) if p.exists() else {}
-p=ROOT/'analysistab.cpp'
-source=p.read_text(encoding='utf-8')
-# Migrate the 40 friendlyColumnName strings in source order only.
-start=source.index('static QString friendlyColumnName')
-end=source.index('//=============================================================================',start)
-block=source[start:end]
-pat=re.compile(r'I18n::text\("(?:\\.|[^"\\])*"\)')
-matches=list(pat.finditer(block))
-if len(matches)!=40: raise SystemExit(f'Analysis label count unexpected: {len(matches)}')
-en=read_json(TR/'en_analysis.json'); idx=[0]
+
+def text(el): return '' if el is None else ''.join(el.itertext())
+def load_ts(lang):
+    root=ET.parse(TR/f'ECUMemsManager_{lang}.ts').getroot(); out={}
+    for ctx in root.findall('context'):
+        for msg in ctx.findall('message'):
+            src=text(msg.find('source')); val=text(msg.find('translation')) or src
+            if src: out[src]=val
+    return out
+
+en_ts=load_ts('en'); fr_ts=load_ts('fr')
+p=ROOT/'summarytab.cpp'; source=p.read_text(encoding='utf-8')
+pat=re.compile(r'\b(?:tr|I18n::text)\(\s*"((?:\\.|[^"\\])*)"\s*\)')
+matches=list(pat.finditer(source))
+if not matches: raise SystemExit('No simple SummaryTab strings found')
+if len(matches)>190: raise SystemExit(f'Too many SummaryTab strings: {len(matches)}')
+out_en={}; out_fr={}; idx=[0]
+def decode(raw):
+    return raw.replace('\\n','\n').replace('\\"','"').replace('\\\\','\\')
 def repl(m):
- idx[0]+=1; key=6399+idx[0]; label=en.get(str(key),'')
- return f'I18n::text({key}) /* EN: {label} */'
-block=pat.sub(repl,block)
-source=source[:start]+block+source[end:]
+    idx[0]+=1; key=6599+idx[0]; src=decode(m.group(1))
+    en=en_ts.get(src,src); fr=fr_ts.get(src,src)
+    out_en[str(key)]=en; out_fr[str(key)]=fr
+    safe=en.replace('*/','* /').replace('\n',' ')
+    return f'I18n::text({key}) /* EN: {safe} */'
+source=pat.sub(repl,source)
 p.write_text(source,encoding='utf-8')
-print('Analysis labels migrated: 40')
+(TR/'en_summary.json').write_text(json.dumps(out_en,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+(TR/'fr_summary.json').write_text(json.dumps(out_fr,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+print(f'SummaryTab migrated: {idx[0]} strings, keys 6600-{6599+idx[0]}')
