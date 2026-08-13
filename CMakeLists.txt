@@ -42,9 +42,7 @@ configure_file("${CMAKE_SOURCE_DIR}/help.html.in" "${CMAKE_SOURCE_DIR}/help.html
 configure_file("${CMAKE_SOURCE_DIR}/help_en.html.in" "${CMAKE_SOURCE_DIR}/help_en.html")
 
 set(SOURCES
-    main.cpp
-    i18n.cpp
-    i18n.h
+    main_keyed.cpp
     i18n.cpp
     i18n.h
     memsinterface.cpp
@@ -94,17 +92,15 @@ if(WIN32)
     )
 endif()
 
-# Dictionnaires multilingues charges directement par l'application.
-# Aucun .qm et aucune traduction n'est generee pendant la compilation.
+# Runtime language files. EN/FR numeric dictionaries are the new system.
+# Legacy TS files remain temporarily only while the remaining UI is migrated.
 add_custom_command(TARGET ${PNAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PNAME}>/translations"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/translations/en.json"
+        "${CMAKE_SOURCE_DIR}/translations/fr.json"
         "${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_fr.ts"
         "${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_en.ts"
-        "${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_es.ts"
-        "${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_it.ts"
-        "${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_pt.ts"
-        "${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_de.ts"
         "$<TARGET_FILE_DIR:${PNAME}>/translations"
 )
 
@@ -136,7 +132,7 @@ else()
     set(CMAKE_INSTALL_PREFIX "/usr")
     set(EXE_FILE "${CMAKE_CURRENT_BINARY_DIR}/${PNAME}")
     install(FILES ${EXE_FILE} DESTINATION "bin" PERMISSIONS OWNER_READ OWNER_EXECUTE OWNER_WRITE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-    install(DIRECTORY DESTINATION "share/doc/${PNAME}" DIRECTORY_PERMISSIONS OWNER_READ OWNER_EXECUTE OWNER_WRITE GROUP_READ GROUP_EXECUTE WORLD_READ GROUP_EXECUTE)
+    install(DIRECTORY DESTINATION "share/doc/${PNAME}" DIRECTORY_PERMISSIONS OWNER_READ OWNER_EXECUTE OWNER_WRITE GROUP_READ OWNER_EXECUTE GROUP_EXECUTE WORLD_READ GROUP_EXECUTE)
     install(FILES "${CMAKE_SOURCE_DIR}/README" "${CMAKE_SOURCE_DIR}/LICENSE" DESTINATION "share/doc/${PNAME}" PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
     if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
         set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE amd64)
