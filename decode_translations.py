@@ -1,26 +1,25 @@
 #!/usr/bin/env python3
+"""Build-time validation for the four additional translation catalogs.
+
+The catalogs are stored directly in translations/.  No packed/base64 bundle is
+used anymore: this script only checks that all four files exist and are valid
+Qt TS XML before CMake runs lrelease.
+"""
 from pathlib import Path
-import base64
-import io
-import lzma
-import tarfile
+import xml.etree.ElementTree as ET
 
 root = Path(__file__).resolve().parent
-bundle = root / "translations_packed" / "translations_bundle.tar.xz.b64"
 outdir = root / "translations"
-outdir.mkdir(exist_ok=True)
 
-raw = lzma.decompress(base64.b64decode(bundle.read_text(encoding="ascii")))
-with tarfile.open(fileobj=io.BytesIO(raw), mode="r:") as archive:
-    members = {m.name: m for m in archive.getmembers() if m.isfile()}
-    for lang in ("es", "it", "pt", "de"):
-        name = f"ECUMemsManager_{lang}.ts"
-        member = members.get(name)
-        if member is None:
-            raise SystemExit(f"Missing translation in bundle: {name}")
-        src = archive.extractfile(member)
-        if src is None:
-            raise SystemExit(f"Unable to read translation: {name}")
-        data = src.read()
-        (outdir / name).write_bytes(data)
-        print(f"Generated {name}: {len(data)} bytes")
+for lang in ("es", "it", "pt", "de"):
+    path = outdir / f"ECUMemsManager_{lang}.ts"
+    if not path.is_file():
+        raise SystemExit(f"Missing translation catalog: {path}")
+    try:
+        tree = ET.parse(path)
+    except ET.ParseError as exc:
+        raise SystemExit(f"Invalid TS XML {path.name}: {exc}") from exc
+    messages = tree.findall(".//message")
+    if not messages:
+        raise SystemExit(f"Empty translation catalog: {path.name}")
+    print(f"Validated {path.name}: {len(messages)} messages")
