@@ -15,6 +15,8 @@
 #include <QPushButton>
 #include <QUrl>
 #include <QVBoxLayout>
+#include "i18n.h"
+#define tr I18n::text
 
 CaptureViewer::CaptureViewer(QWidget *parent) : QDialog(parent)
 {

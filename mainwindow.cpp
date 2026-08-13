@@ -35,6 +35,8 @@
 #include <QScrollArea>
 #include <QStyle>
 #include <QFrame>
+#include "i18n.h"
+#define tr I18n::text
 
 MainWindow::MainWindow(QWidget* parent):QMainWindow(parent),
 m_ui(new Ui::MainWindow),

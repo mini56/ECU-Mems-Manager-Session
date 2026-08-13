@@ -3,6 +3,8 @@
 #include <QSettings>
 #include <QTextDocument>
 #include <QDesktopServices>
+#include "i18n.h"
+#define tr I18n::text
 
 HelpViewer::HelpViewer(const QString title, QWidget * parent):QDialog(parent), m_vbox(0), m_viewer(0), m_closeButton(0)
 {

@@ -9,6 +9,8 @@
 #include <QFontMetrics>
 #include <QMap>
 #include <QObject>
+#include "i18n.h"
+#define tr I18n::text
 
 // Correspondance entre les noms techniques des colonnes du CSV et des
 // libellés clairs en français, affichés dans la liste des voies.
@@ -17,45 +19,45 @@ static QString friendlyColumnName(const QString &rawName)
   static QMap<QString, QString> names;
   if (names.isEmpty())
   {
-    names["80x01-02_engine-rpm"] = QObject::tr("Régime moteur (tr/min)");
-    names["80x03_coolant_temp"] = QObject::tr("Température liquide refroid. (°C)");
-    names["80x04_ambient_temp"] = QObject::tr("Température ambiante (°C)");
-    names["80x05_intake_air_temp"] = QObject::tr("Température air admission (°C)");
-    names["80x06_fuel_temp"] = QObject::tr("Température carburant (°C)");
-    names["80x07_map_kpa"] = QObject::tr("Pression collecteur (kPa)");
-    names["80x08_battery_voltage"] = QObject::tr("Tension batterie (V)");
-    names["80x09_throttle_pot"] = QObject::tr("Position papillon (%)");
-    names["80x0A_idle_switch"] = QObject::tr("Contact ralenti");
-    names["80x0C_park_neutral_switch"] = QObject::tr("Contact point mort");
-    names["80x0D-0E_fault_codes"] = QObject::tr("Codes défaut (brut)");
-    names["80x0F_idle_set_point"] = QObject::tr("Consigne de ralenti");
-    names["80x10_idle_hot"] = QObject::tr("Ralenti chaud");
-    names["80x12_iac_position"] = QObject::tr("Position moteur pas-à-pas (%)");
-    names["80x13-14_idle_error"] = QObject::tr("Erreur de ralenti");
-    names["80x15_ignition_advance_offset"] = QObject::tr("Décalage d'avance");
-    names["80x16_ignition_advance"] = QObject::tr("Avance à l'allumage (°)");
-    names["80x17-18_coil_time"] = QObject::tr("Temps bobine (ms)");
-    names["80x19_crankshaft_position_sensor"] = QObject::tr("Capteur position vilebrequin");
-    names["7dx01_ignition_switch"] = QObject::tr("Contact allumage");
-    names["7dx02_throttle_angle"] = QObject::tr("Angle papillon (°)");
-    names["7dx04_air_fuel_ratio"] = QObject::tr("Ratio air/carburant");
-    names["7dx05_dtc2"] = QObject::tr("DTC 2");
-    names["7dx06_lambda_voltage"] = QObject::tr("Tension sonde lambda (mV)");
-    names["7dx07_lambda_sensor_frequency"] = QObject::tr("Fréquence lambda");
-    names["7dx08_lambda_sensor_dutycycle"] = QObject::tr("Cycle lambda (%)");
-    names["7dx09_lambda_sensor_status"] = QObject::tr("État lambda");
-    names["7dx0A_closed_loop"] = QObject::tr("Boucle fermée");
-    names["7dx0B_long_term_fuel_trim"] = QObject::tr("Correction carburant long terme (%)");
-    names["7dx0C_short_term_fuel_trim"] = QObject::tr("Correction carburant court terme (%)");
-    names["7dx0D_carbon_canister_dutycycle"] = QObject::tr("Cycle purge canister (%)");
-    names["7dx0E_dtc3"] = QObject::tr("DTC 3");
-    names["7dx0F_idle_base_pos"] = QObject::tr("Position de base ralenti");
-    names["7dx11_dtc4"] = QObject::tr("DTC 4");
-    names["7dx12_ignition_advance2"] = QObject::tr("Avance à l'allumage 2");
-    names["7dx13_idle_speed_offset"] = QObject::tr("Décalage régime de ralenti");
-    names["7dx14-15_idle_error_hot_corrected"] = QObject::tr("Erreur de ralenti à chaud (corrigée)");
-    names["7dx14-15_raw"] = QObject::tr("Trame 7D14-15 brute");
-    names["7dx16_dtc5"] = QObject::tr("DTC 5");
+    names["80x01-02_engine-rpm"] = I18n::text("Régime moteur (tr/min)");
+    names["80x03_coolant_temp"] = I18n::text("Température liquide refroid. (°C)");
+    names["80x04_ambient_temp"] = I18n::text("Température ambiante (°C)");
+    names["80x05_intake_air_temp"] = I18n::text("Température air admission (°C)");
+    names["80x06_fuel_temp"] = I18n::text("Température carburant (°C)");
+    names["80x07_map_kpa"] = I18n::text("Pression collecteur (kPa)");
+    names["80x08_battery_voltage"] = I18n::text("Tension batterie (V)");
+    names["80x09_throttle_pot"] = I18n::text("Position papillon (%)");
+    names["80x0A_idle_switch"] = I18n::text("Contact ralenti");
+    names["80x0C_park_neutral_switch"] = I18n::text("Contact point mort");
+    names["80x0D-0E_fault_codes"] = I18n::text("Codes défaut (brut)");
+    names["80x0F_idle_set_point"] = I18n::text("Consigne de ralenti");
+    names["80x10_idle_hot"] = I18n::text("Ralenti chaud");
+    names["80x12_iac_position"] = I18n::text("Position moteur pas-à-pas (%)");
+    names["80x13-14_idle_error"] = I18n::text("Erreur de ralenti");
+    names["80x15_ignition_advance_offset"] = I18n::text("Décalage d'avance");
+    names["80x16_ignition_advance"] = I18n::text("Avance à l'allumage (°)");
+    names["80x17-18_coil_time"] = I18n::text("Temps bobine (ms)");
+    names["80x19_crankshaft_position_sensor"] = I18n::text("Capteur position vilebrequin");
+    names["7dx01_ignition_switch"] = I18n::text("Contact allumage");
+    names["7dx02_throttle_angle"] = I18n::text("Angle papillon (°)");
+    names["7dx04_air_fuel_ratio"] = I18n::text("Ratio air/carburant");
+    names["7dx05_dtc2"] = I18n::text("DTC 2");
+    names["7dx06_lambda_voltage"] = I18n::text("Tension sonde lambda (mV)");
+    names["7dx07_lambda_sensor_frequency"] = I18n::text("Fréquence lambda");
+    names["7dx08_lambda_sensor_dutycycle"] = I18n::text("Cycle lambda (%)");
+    names["7dx09_lambda_sensor_status"] = I18n::text("État lambda");
+    names["7dx0A_closed_loop"] = I18n::text("Boucle fermée");
+    names["7dx0B_long_term_fuel_trim"] = I18n::text("Correction carburant long terme (%)");
+    names["7dx0C_short_term_fuel_trim"] = I18n::text("Correction carburant court terme (%)");
+    names["7dx0D_carbon_canister_dutycycle"] = I18n::text("Cycle purge canister (%)");
+    names["7dx0E_dtc3"] = I18n::text("DTC 3");
+    names["7dx0F_idle_base_pos"] = I18n::text("Position de base ralenti");
+    names["7dx11_dtc4"] = I18n::text("DTC 4");
+    names["7dx12_ignition_advance2"] = I18n::text("Avance à l'allumage 2");
+    names["7dx13_idle_speed_offset"] = I18n::text("Décalage régime de ralenti");
+    names["7dx14-15_idle_error_hot_corrected"] = I18n::text("Erreur de ralenti à chaud (corrigée)");
+    names["7dx14-15_raw"] = I18n::text("Trame 7D14-15 brute");
+    names["7dx16_dtc5"] = I18n::text("DTC 5");
   }
 
   if (names.contains(rawName))
@@ -64,7 +66,7 @@ static QString friendlyColumnName(const QString &rawName)
   }
   if (rawName.contains("_uk") || rawName.contains("uk1") || rawName.contains("uk2"))
   {
-    return QObject::tr("Non documenté (%1)").arg(rawName);
+    return I18n::text("Non documenté (%1)").arg(rawName);
   }
   return rawName;
 }

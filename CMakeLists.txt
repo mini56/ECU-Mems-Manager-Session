@@ -28,7 +28,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt5 REQUIRED COMPONENTS Widgets SerialPort Charts Sql LinguistTools)
+find_package(Qt5 REQUIRED COMPONENTS Widgets SerialPort Charts Sql)
 
 include_directories(
     "${CMAKE_SOURCE_DIR}"
@@ -43,6 +43,8 @@ configure_file("${CMAKE_SOURCE_DIR}/help_en.html.in" "${CMAKE_SOURCE_DIR}/help_e
 
 set(SOURCES
     main.cpp
+    i18n.cpp
+    i18n.h
     memsinterface.cpp
     memslogic.cpp
     database/DatabaseSeed.cpp
@@ -90,34 +92,18 @@ if(WIN32)
     )
 endif()
 
-# Traductions multilingues : une seule passe déterministe avant lrelease.
-# Les .ts de translations/ sont la seule source et les .qm finaux restent
-# uniquement dans le sous-dossier translations/ de l'application.
-find_package(Python3 REQUIRED COMPONENTS Interpreter)
-execute_process(
-    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/translations/build_catalogs.py
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    RESULT_VARIABLE TRANSLATION_BUILD_RESULT
-)
-if(NOT TRANSLATION_BUILD_RESULT EQUAL 0)
-    message(FATAL_ERROR "Impossible de préparer les catalogues de traduction")
-endif()
-
-set(TS_FILES
-    ${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_fr.ts
-    ${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_en.ts
-    ${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_es.ts
-    ${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_it.ts
-    ${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_pt.ts
-    ${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_de.ts
-)
-qt5_add_translation(QM_FILES ${TS_FILES})
-add_custom_target(translations ALL DEPENDS ${QM_FILES})
-add_dependencies(${PNAME} translations)
+# Dictionnaires multilingues charges directement par l'application.
+# Aucun .qm et aucune traduction n'est generee pendant la compilation.
 add_custom_command(TARGET ${PNAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PNAME}>/translations"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${QM_FILES} "$<TARGET_FILE_DIR:${PNAME}>/translations"
-    COMMAND ${CMAKE_COMMAND} -E rm -f ${QM_FILES}
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_fr.ts"
+        "${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_en.ts"
+        "${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_es.ts"
+        "${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_it.ts"
+        "${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_pt.ts"
+        "${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_de.ts"
+        "$<TARGET_FILE_DIR:${PNAME}>/translations"
 )
 
 if(MSVC)

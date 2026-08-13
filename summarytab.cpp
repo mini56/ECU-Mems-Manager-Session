@@ -1,6 +1,8 @@
 #include "summarytab.h"
 #include <QHeaderView>
 #include <QIcon>
+#include "i18n.h"
+#define tr I18n::text
 
 
 SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)

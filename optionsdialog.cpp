@@ -3,6 +3,8 @@
 #include "serialdevenumerator.h"
 #include "desktopshortcut.h"
 #include <QIcon>
+#include "i18n.h"
+#define tr I18n::text
 
 /**
  * Constructor; sets up the options-dialog UI and sets settings-file field names.

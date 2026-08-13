@@ -15,11 +15,13 @@
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QVBoxLayout>
+#include "i18n.h"
+#define tr I18n::text
 
 namespace {
 QString stateFor(bool ok, bool warn = false)
 {
-    return ok ? QObject::tr("OK") : (warn ? QObject::tr("SURVEILLER") : QObject::tr("ANOMALIE"));
+    return ok ? I18n::text("OK") : (warn ? I18n::text("SURVEILLER") : I18n::text("ANOMALIE"));
 }
 }
 
