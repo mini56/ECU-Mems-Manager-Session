@@ -23,7 +23,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string comment="EN: MainWindow">@0100</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <widget class="QTabWidget" name="Tab_main">
@@ -47,7 +47,7 @@
     </property>
     <widget class="QWidget" name="overview_tab">
      <attribute name="title">
-      <string>Aperçu</string>
+      <string comment="EN: Overview">@1001</string>
      </attribute>
      <widget class="ManoMeter100" name="m_idle_position" native="true">
       <property name="geometry">
@@ -69,7 +69,7 @@
        </rect>
       </property>
      </widget>
-    <widget class="ManoMeter" name="m_ignition_advance" native="true">
+     <widget class="ManoMeter" name="m_ignition_advance" native="true">
       <property name="geometry">
        <rect>
         <x>1050</x>
@@ -79,7 +79,7 @@
        </rect>
       </property>
      </widget>
-    <widget class="ManoMeter" name="m_short_term_correction" native="true">
+     <widget class="ManoMeter" name="m_short_term_correction" native="true">
       <property name="geometry">
        <rect>
         <x>800</x>
@@ -88,7 +88,7 @@
         <height>200</height>
        </rect>
       </property>
-     </widget>     
+     </widget>
      <widget class="ManoMeter100" name="m_throttle_pos" native="true">
       <property name="geometry">
        <rect>
@@ -109,7 +109,7 @@
        </rect>
       </property>
       <property name="toolTip">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt; 0-200 mV : mélange pauvre&lt;/p&gt;&lt;p&gt;700-900 mV : mélange riche &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <string comment="EN: &lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0-200 mV: lean mixture&lt;/p&gt;&lt;p&gt;700-900 mV: rich mixture&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;">@1002</string>
       </property>
      </widget>
      <widget class="QLabel" name="m_throttle_pos_label">
@@ -128,7 +128,7 @@
        </sizepolicy>
       </property>
       <property name="text">
-       <string>Position papillon</string>
+       <string comment="EN: Throttle position">@1003</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
@@ -150,13 +150,13 @@
        </sizepolicy>
       </property>
       <property name="text">
-       <string>Correction carburant court terme</string>
+       <string comment="EN: Short-term fuel trim">@1004</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
       </property>
-     </widget>     
-          <widget class="QLabel" name="m_idlebypass_pos_label">
+     </widget>
+     <widget class="QLabel" name="m_idlebypass_pos_label">
       <property name="geometry">
        <rect>
         <x>800</x>
@@ -172,13 +172,13 @@
        </sizepolicy>
       </property>
       <property name="text">
-       <string>Régulation d'air du ralenti</string>
+       <string comment="EN: Idle air control">@1005</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
       </property>
      </widget>
-          <widget class="QLabel" name="m_battery_voltage_label">
+     <widget class="QLabel" name="m_battery_voltage_label">
       <property name="geometry">
        <rect>
         <x>1050</x>
@@ -194,13 +194,13 @@
        </sizepolicy>
       </property>
       <property name="text">
-       <string>Tension batterie</string>
+       <string comment="EN: Battery voltage">@1006</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
       </property>
-           </widget>
-          <widget class="QLabel" name="m_ignition_advance_label">
+     </widget>
+     <widget class="QLabel" name="m_ignition_advance_label">
       <property name="geometry">
        <rect>
         <x>1050</x>
@@ -216,7 +216,7 @@
        </sizepolicy>
       </property>
       <property name="text">
-       <string>Avance à l'allumage</string>
+       <string comment="EN: Ignition advance">@1007</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
@@ -238,14 +238,12 @@
        </sizepolicy>
       </property>
       <property name="text">
-       <string>Tension sonde lambda</string>
+       <string comment="EN: Lambda sensor voltage">@1008</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
       </property>
      </widget>
-    
-     
      <widget class="QLabel" name="m_closed_loop_label">
       <property name="geometry">
        <rect>
@@ -256,7 +254,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>Boucle fermée</string>
+       <string comment="EN: Closed loop">@1009</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
@@ -272,7 +270,6 @@
        </rect>
       </property>
      </widget>
-
      <widget class="ManoMeter" name="m_revCounter" native="true">
       <property name="geometry">
        <rect>
@@ -293,15 +290,9 @@
        </rect>
       </property>
       <property name="toolTip">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;moteur arrêté	&amp;lt;&amp;gt; ~ 100 kPa&lt;/p&gt;&lt;p&gt;moteur au ralenti 	&amp;lt;&amp;gt; ~ 25-40 kPa&lt;/p&gt;&lt;p&gt;en cas d'écart, vérifier les durites&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <string comment="EN: &lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Engine stopped: ~100 kPa&lt;/p&gt;&lt;p&gt;Engine idling: ~25-40 kPa&lt;/p&gt;&lt;p&gt;If the value is abnormal, check the vacuum hoses.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;">@1010</string>
       </property>
      </widget>
-     
-     
-     
-     
-     
-     
      <widget class="QLabel" name="m_revCounterLabel">
       <property name="geometry">
        <rect>
@@ -318,7 +309,7 @@
        </sizepolicy>
       </property>
       <property name="text">
-       <string>Régime moteur</string>
+       <string comment="EN: Engine speed">@1011</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
@@ -340,13 +331,13 @@
        </sizepolicy>
       </property>
       <property name="text">
-       <string>Pression collecteur</string>
+       <string comment="EN: Manifold pressure">@1012</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
       </property>
      </widget>
-          <widget class="QLabel" name="m_idleSwitchLabel">
+     <widget class="QLabel" name="m_idleSwitchLabel">
       <property name="geometry">
        <rect>
         <x>650</x>
@@ -362,13 +353,13 @@
        </sizepolicy>
       </property>
       <property name="text">
-       <string>Contact ralenti</string>
+       <string comment="EN: Idle switch">@1013</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
       </property>
      </widget>
-      <widget class="QLedIndicator" name="m_idleSwitchLed" native="true">
+     <widget class="QLedIndicator" name="m_idleSwitchLed" native="true">
       <property name="geometry">
        <rect>
         <x>762</x>
@@ -391,7 +382,7 @@
        <item row="0" column="1">
         <widget class="QLabel" name="m_logFileNameLabel">
          <property name="text">
-          <string>Nom du fichier :</string>
+          <string comment="EN: File name:">@1014</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignLeft</set>
@@ -407,7 +398,7 @@
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Enregistrement</string>
+          <string comment="EN: Record">@1015</string>
          </property>
         </widget>
        </item>
@@ -417,7 +408,7 @@
           <bool>true</bool>
          </property>
          <property name="text">
-          <string>Arrêter</string>
+          <string comment="EN: Stop">@1016</string>
          </property>
         </widget>
        </item>
@@ -459,7 +450,7 @@
        </sizepolicy>
       </property>
       <property name="text">
-       <string>Température moteur</string>
+       <string comment="EN: Coolant temperature">@1017</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
@@ -481,7 +472,7 @@
        </sizepolicy>
       </property>
       <property name="text">
-       <string>Température d'air</string>
+       <string comment="EN: Intake air temperature">@1018</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
@@ -497,12 +488,12 @@
        </rect>
       </property>
       <property name="text">
-       <string>Long terme :</string>
+       <string comment="EN: Long term:">@1019</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignLeft</set>
       </property>
-         </widget>
+     </widget>
      <widget class="QLabel" name="m_long_trim">
       <property name="geometry">
        <rect>
@@ -513,21 +504,12 @@
        </rect>
       </property>
       <property name="text">
-       <string>--</string>
+       <string comment="EN: --">@1020</string>
       </property>
-	 </widget>
-	  
+     </widget>
      <zorder>m_idle_position</zorder>
-     
-     
-     
-     
-     
-     
      <zorder>m_ignition_advance</zorder>
      <zorder>layoutWidget</zorder>
-
-     
      <zorder>m_closed_loop_label</zorder>
      <zorder>m_idleSwitchLed</zorder>
      <zorder>m_closedLoopLed</zorder>
@@ -546,14 +528,10 @@
      <zorder>m_long_trim_label</zorder>
      <zorder>m_long_trim</zorder>
     </widget>
-	
     <widget class="QWidget" name="emission_tab">
      <attribute name="title">
-      <string>Réglages</string>
+      <string comment="EN: Settings">@2001</string>
      </attribute>
-	
-	
-	 
      <widget class="Line" name="m_hline1_3">
       <property name="geometry">
        <rect>
@@ -567,7 +545,6 @@
        <enum>Qt::Horizontal</enum>
       </property>
      </widget>
-
      <widget class="QPushButton" name="m_fuel_trim_plusButton">
       <property name="enabled">
        <bool>false</bool>
@@ -581,7 +558,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>Plus riche</string>
+       <string comment="EN: Richer">@2002</string>
       </property>
      </widget>
      <widget class="QPushButton" name="m_fuel_trim_minusButton">
@@ -597,7 +574,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>Plus pauvre</string>
+       <string comment="EN: Leaner">@2003</string>
       </property>
      </widget>
      <widget class="QPushButton" name="m_idle_decay_plusButton">
@@ -613,7 +590,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>Plus</string>
+       <string comment="EN: More">@2004</string>
       </property>
      </widget>
      <widget class="QPushButton" name="m_idle_decay_minusButton">
@@ -629,7 +606,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>Moins</string>
+       <string comment="EN: Less">@2005</string>
       </property>
      </widget>
      <widget class="QPushButton" name="m_idle_speed_plusButton">
@@ -645,7 +622,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>Plus rapide</string>
+       <string comment="EN: Faster">@2006</string>
       </property>
      </widget>
      <widget class="QPushButton" name="m_idle_speed_minusButton">
@@ -661,7 +638,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>Plus lent</string>
+       <string comment="EN: Slower">@2007</string>
       </property>
      </widget>
      <widget class="QPushButton" name="m_ignition_advance_minusButton">
@@ -675,9 +652,9 @@
         <width>100</width>
         <height>27</height>
        </rect>
-      </property>	
+      </property>
       <property name="text">
-       <string>Avancer (?)</string>
+       <string comment="EN: Advance (?)">@2008</string>
       </property>
      </widget>
      <widget class="QPushButton" name="m_ignition_advance_plusButton">
@@ -693,7 +670,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>Retarder (?)</string>
+       <string comment="EN: Retard (?)">@2009</string>
       </property>
      </widget>
      <widget class="ManoMeter" name="m_revCounter_exhaust" native="true">
@@ -706,7 +683,7 @@
        </rect>
       </property>
      </widget>
-	 <widget class="ManoMeter" name="e_idle_error" native="true">
+     <widget class="ManoMeter" name="e_idle_error" native="true">
       <property name="geometry">
        <rect>
         <x>290</x>
@@ -715,11 +692,11 @@
         <height>200</height>
        </rect>
       </property>
-	  <property name="toolTip">
-		  <string>L'erreur de ralenti est l'écart entre le régime moteur actuel et le régime de ralenti visé. Valeurs affichées uniquement quand le contact ralenti est actif ; la valeur max. affichée est 200 tr/min. </string>
-		 </property>
+      <property name="toolTip">
+       <string comment="EN: Idle error is the difference between current engine speed and the ECU target idle speed. Values are displayed only when the idle switch is active; the maximum displayed value is 200 rpm.">@2010</string>
+      </property>
      </widget>
-	 <widget class="ManoMeter" name="e_ignition_advance" native="true">
+     <widget class="ManoMeter" name="e_ignition_advance" native="true">
       <property name="geometry">
        <rect>
         <x>170</x>
@@ -729,7 +706,7 @@
        </rect>
       </property>
      </widget>
-	 <widget class="ManoMeter" name="e_short_term_fuel_trim" native="true">
+     <widget class="ManoMeter" name="e_short_term_fuel_trim" native="true">
       <property name="geometry">
        <rect>
         <x>810</x>
@@ -738,11 +715,11 @@
         <height>200</height>
        </rect>
       </property>
-	  <property name="toolTip">
-		  <string>La correction carburant court terme n'est active qu'en boucle fermée. Des valeurs jusqu'à 10% sont normales, occasionnellement jusqu'à 15%. Des valeurs supérieures à 15% sont anormales. </string>
-		 </property>
+      <property name="toolTip">
+       <string comment="EN: Short-term fuel trim is active only in closed loop. Values up to 10% are normal and occasionally up to 15%. Values above 15% are abnormal.">@2011</string>
+      </property>
      </widget>
-	 <widget class="ManoMeter900" name="e_lambda" native="true">
+     <widget class="ManoMeter900" name="e_lambda" native="true">
       <property name="geometry">
        <rect>
         <x>930</x>
@@ -752,7 +729,6 @@
        </rect>
       </property>
      </widget>
-
      <widget class="QLabel" name="label_45">
       <property name="geometry">
        <rect>
@@ -763,13 +739,13 @@
        </rect>
       </property>
       <property name="text">
-       <string>erreur</string>
+       <string comment="EN: error">@2012</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
       </property>
      </widget>
-	 <widget class="QLabel" name="label_52">
+     <widget class="QLabel" name="label_52">
       <property name="geometry">
        <rect>
         <x>170</x>
@@ -779,13 +755,13 @@
        </rect>
       </property>
       <property name="text">
-       <string>avance</string>
+       <string comment="EN: advance">@2013</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
       </property>
      </widget>
-	 <widget class="QLabel" name="label_51">
+     <widget class="QLabel" name="label_51">
       <property name="geometry">
        <rect>
         <x>810</x>
@@ -795,7 +771,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>STFT</string>
+       <string comment="EN: STFT">@6001</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
@@ -821,10 +797,10 @@
        </rect>
       </property>
       <property name="text">
-       <string>Boucle fermée</string>
+       <string comment="EN: Closed loop">@2014</string>
       </property>
      </widget>
-	 <widget class="QLedIndicator" name="idleswitch_led" native="true">
+     <widget class="QLedIndicator" name="idleswitch_led" native="true">
       <property name="geometry">
        <rect>
         <x>427</x>
@@ -844,10 +820,9 @@
        </rect>
       </property>
       <property name="text">
-       <string>Contact ralenti</string>
+       <string comment="EN: Idle switch">@2015</string>
       </property>
      </widget>
-
      <widget class="QLabel" name="emission_lambda_voltage">
       <property name="geometry">
        <rect>
@@ -858,13 +833,13 @@
        </rect>
       </property>
       <property name="text">
-       <string>lambda</string>
+       <string comment="EN: lambda">@2016</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
       </property>
      </widget>
-	 <widget class="QLabel" name="m_revCounterLabel_2">
+     <widget class="QLabel" name="m_revCounterLabel_2">
       <property name="geometry">
        <rect>
         <x>490</x>
@@ -880,13 +855,12 @@
        </sizepolicy>
       </property>
       <property name="text">
-       <string>Régime moteur</string>
+       <string comment="EN: Engine speed">@2017</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
       </property>
      </widget>
-
      <widget class="QLCDNumber" name="e_FuelTrim_lcd">
       <property name="geometry">
        <rect>
@@ -906,7 +880,7 @@
       <property name="smallDecimalPoint">
        <bool>false</bool>
       </property>
-     </widget> 
+     </widget>
      <widget class="QLCDNumber" name="e_IdleDecay_lcd">
       <property name="geometry">
        <rect>
@@ -926,7 +900,7 @@
       <property name="smallDecimalPoint">
        <bool>false</bool>
       </property>
-      </widget> 
+     </widget>
      <widget class="QLCDNumber" name="e_IdleSpeed_lcd">
       <property name="geometry">
        <rect>
@@ -946,7 +920,7 @@
       <property name="smallDecimalPoint">
        <bool>false</bool>
       </property>
-      </widget> 
+     </widget>
      <widget class="QLCDNumber" name="e_IgnitionAdvance_lcd">
       <property name="geometry">
        <rect>
@@ -977,14 +951,14 @@
        </rect>
       </property>
       <property name="text">
-       <string>Régime de ralenti</string>
+       <string comment="EN: Idle speed">@2018</string>
       </property>
-        <property name="alignment">
+      <property name="alignment">
        <set>Qt::AlignCenter</set>
       </property>
-	  <property name="toolTip">
-		 <string>Vous pouvez régler le régime de ralenti par pas de 50 tr/min. Ceci affecte le ralenti à froid comme à chaud. '0' est la valeur par défaut MEMS (pour un moteur A+ SPi chaud, c'est 850 tr/min)</string>
-	  </property>
+      <property name="toolTip">
+       <string comment="EN: You can adjust idle speed in 50 rpm steps. This affects both cold and hot idle. '0' is the MEMS default value (850 rpm for a warm A+ SPi engine).">@2019</string>
+      </property>
      </widget>
      <widget class="QLabel" name="emi_shorttermftrim">
       <property name="geometry">
@@ -996,14 +970,14 @@
        </rect>
       </property>
       <property name="text">
-       <string>Correction carburant</string>
+       <string comment="EN: Fuel trim">@2020</string>
       </property>
-        <property name="alignment">
+      <property name="alignment">
        <set>Qt::AlignCenter</set>
       </property>
-	  <property name="toolTip">
-		 <string>Si votre moteur n'est pas régulé par une sonde lambda, c'est ici que vous pouvez ajuster les émissions au ralenti. Les moteurs régulés par une sonde lambda ajusteront cette valeur automatiquement avec le temps</string>
-	  </property>
+      <property name="toolTip">
+       <string comment="EN: If your engine is not lambda-controlled, this setting adjusts idle emissions. Lambda-controlled engines will automatically adapt this value over time.">@2021</string>
+      </property>
      </widget>
      <widget class="QLabel" name="emi_idledecay">
       <property name="geometry">
@@ -1015,14 +989,14 @@
        </rect>
       </property>
       <property name="text">
-       <string>Position ralenti chaud</string>
+       <string comment="EN: Hot idle position">@2022</string>
       </property>
-        <property name="alignment">
+      <property name="alignment">
        <set>Qt::AlignCenter</set>
       </property>
-	  <property name="toolTip">
-		 <string>MEMS ajustera cette valeur avec le temps, donc tout réglage n'a d'effet que jusqu'à ce que MEMS réapprenne la valeur optimale</string>
-	  </property>
+      <property name="toolTip">
+       <string comment="EN: MEMS adjusts this value over time, so any manual adjustment remains effective only until MEMS relearns the optimum value.">@2023</string>
+      </property>
      </widget>
      <widget class="QLabel" name="emi_ignadvance">
       <property name="geometry">
@@ -1034,14 +1008,14 @@
        </rect>
       </property>
       <property name="text">
-       <string>Avance à l'allumage</string>
+       <string comment="EN: Ignition advance">@2024</string>
       </property>
-        <property name="alignment">
+      <property name="alignment">
        <set>Qt::AlignCenter</set>
       </property>
-	  <property name="toolTip">
-		 <string>À l'origine, MEMS était livré avec différentes courbes d'avance pour s'adapter aux différences de qualité de carburant selon les pays (91 ou 95 RON).&lt;p&gt;ATTENTION : ne modifiez ces réglages que si vous savez ce que vous faites, une avance excessive peut détruire un moteur !!!&lt;p&gt;Remarque : ces réglages n'affectent pas l'avance à l'allumage au ralenti</string>
-	  </property>
+      <property name="toolTip">
+       <string comment="EN: MEMS originally used different ignition maps to suit fuel-quality differences between countries (91 or 95 RON).&lt;p&gt;WARNING: only change these settings if you know what you are doing; excessive advance can destroy an engine!&lt;p&gt;Note: these settings do not affect ignition advance at idle.">@2025</string>
+      </property>
      </widget>
      <widget class="QLineEdit" name="lineEdit_3">
       <property name="geometry">
@@ -1053,10 +1027,10 @@
        </rect>
       </property>
       <property name="text">
-       <string>  Régime jusqu'à 2000 tr/min pour réglage fin du ralenti</string>
+       <string comment="EN: Engine speed up to 2000 rpm for fine idle adjustment">@2026</string>
       </property>
      </widget>
-	 <widget class="QPushButton" name="m_resetECUButton">
+     <widget class="QPushButton" name="m_resetECUButton">
       <property name="enabled">
        <bool>false</bool>
       </property>
@@ -1068,12 +1042,11 @@
         <height>28</height>
        </rect>
       </property>
-
       <property name="text">
-       <string>Réinitialiser l'ECU</string>
+       <string comment="EN: Reset ECU">@2027</string>
       </property>
      </widget>
-	 <widget class="QPushButton" name="m_resetAdjustmentsButton">
+     <widget class="QPushButton" name="m_resetAdjustmentsButton">
       <property name="enabled">
        <bool>false</bool>
       </property>
@@ -1085,20 +1058,16 @@
         <height>28</height>
        </rect>
       </property>
-
       <property name="text">
-       <string>Réinitialiser les réglages</string>
+       <string comment="EN: Reset settings">@2028</string>
       </property>
      </widget>
     </widget>
-	
-    
-	<widget class="QWidget" name="errors">
+    <widget class="QWidget" name="errors">
      <attribute name="title">
-      <string>Erreurs</string>
+      <string comment="EN: Errors">@3001</string>
      </attribute>
-	 
-	 <widget class="QWidget" name="layoutWidget_3">
+     <widget class="QWidget" name="layoutWidget_3">
       <property name="geometry">
        <rect>
         <x>50</x>
@@ -1107,301 +1076,270 @@
         <height>560</height>
        </rect>
       </property>
-	  
       <layout class="QGridLayout" name="m_faultCodesLayout" columnstretch="0,1,20,0,1,20,0,1,20" rowstretch="0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,100">
-
-	   <item row="0" column="1" colspan="8">
+       <item row="0" column="1" colspan="8">
         <widget class="QLabel" name="m_faultCodesLabel">
          <property name="text">
-          <string>Erreurs enregistrées :</string>
+          <string comment="EN: Stored errors:">@3002</string>
          </property>
-		 <property name="alignment">
+         <property name="alignment">
           <set>Qt::AlignLeading|Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
-	   
-	   <item row="1" column="1">
+       <item row="1" column="1">
         <widget class="QLedIndicator" name="m_faultLedCTS" native="true" />
        </item>
-	   <item row="1" column="2">
+       <item row="1" column="2">
         <widget class="QLabel" name="m_faultCode01Label">
          <property name="text">
-          <string>01 - Capteur température liquide refroidissement</string>
+          <string comment="EN: 01 - Coolant temperature sensor">@3003</string>
          </property>
         </widget>
        </item>
-	   
-	   <item row="2" column="1">
+       <item row="2" column="1">
         <widget class="QLedIndicator" name="m_faultLedATS" native="true" />
        </item>
-	   <item row="2" column="2">
+       <item row="2" column="2">
         <widget class="QLabel" name="m_faultCode02Label">
          <property name="text">
-          <string>02 - Capteur température d'air admission</string>
+          <string comment="EN: 02 - Intake air temperature sensor">@3004</string>
          </property>
         </widget>
        </item>
-	   
-	   <item row="3" column="1">
+       <item row="3" column="1">
         <widget class="QLedIndicator" name="m_faultLed03" native="true" />
        </item>
-	   <item row="3" column="2">
+       <item row="3" column="2">
         <widget class="QLabel" name="m_faultCode03Label">
          <property name="text">
-          <string>03 - </string>
+          <string comment="EN: 03 -">@3005</string>
          </property>
         </widget>
        </item>
-	   
-	   <item row="4" column="1">
+       <item row="4" column="1">
         <widget class="QLedIndicator" name="m_faultLed04" native="true" />
        </item>
-	   <item row="4" column="2">
+       <item row="4" column="2">
         <widget class="QLabel" name="m_faultCode04Label">
          <property name="text">
-          <string>04 - Pression admission turbo élevée</string>
+          <string comment="EN: 04 - High boost pressure">@3006</string>
          </property>
         </widget>
        </item>
-	   
-	   <item row="5" column="1">
+       <item row="5" column="1">
         <widget class="QLedIndicator" name="m_faultLed05" native="true" />
        </item>
-	   <item row="5" column="2">
+       <item row="5" column="2">
         <widget class="QLabel" name="m_faultCode05Label">
          <property name="text">
-          <string>05 - Capteur température air ambiant</string>
+          <string comment="EN: 05 - Ambient air temperature sensor">@3007</string>
          </property>
         </widget>
        </item>
-	   
-	   <item row="6" column="1">
+       <item row="6" column="1">
         <widget class="QLedIndicator" name="m_faultLedFTS" native="true" />
        </item>
-	   <item row="6" column="2">
+       <item row="6" column="2">
         <widget class="QLabel" name="m_faultCode06Label">
          <property name="text">
-          <string>06 - Capteur température carburant</string>
+          <string comment="EN: 06 - Fuel temperature sensor">@3008</string>
          </property>
         </widget>
        </item>
-	   
-	   <item row="7" column="1">
+       <item row="7" column="1">
         <widget class="QLedIndicator" name="m_faultLed07" native="true" />
        </item>
-	   <item row="7" column="2">
+       <item row="7" column="2">
         <widget class="QLabel" name="m_faultCode07Label">
          <property name="text">
-          <string>07 - Cliquetis détecté</string>
+          <string comment="EN: 07 - Knock detected">@3009</string>
          </property>
         </widget>
        </item>
-	   
-	   <item row="8" column="1">
+       <item row="8" column="1">
         <widget class="QLedIndicator" name="m_faultLed08" native="true" />
        </item>
-	   <item row="8" column="2">
+       <item row="8" column="2">
         <widget class="QLabel" name="m_faultCode08Label">
          <property name="text">
-          <string>08 - </string>
+          <string comment="EN: 08 -">@3010</string>
          </property>
         </widget>
        </item>
-	   
-	   <item row="1" column="4">
+       <item row="1" column="4">
         <widget class="QLedIndicator" name="m_faultLed09" native="true" />
        </item>
-	   <item row="1" column="5">
+       <item row="1" column="5">
         <widget class="QLabel" name="m_faultCode09Label">
          <property name="text">
-          <string>09 - Jauge de température</string>
+          <string comment="EN: 09 - Temperature gauge">@3011</string>
          </property>
         </widget>
        </item>
-
-	   <item row="2" column="4">
+       <item row="2" column="4">
         <widget class="QLedIndicator" name="m_faultLedFuelPump" native="true" />
        </item>
-	   <item row="2" column="5">
+       <item row="2" column="5">
         <widget class="QLabel" name="m_faultCode10Label">
          <property name="text">
-          <string>10 - Circuit pompe à carburant</string>
+          <string comment="EN: 10 - Fuel pump circuit">@3012</string>
          </property>
         </widget>
        </item>
-
-	   <item row="3" column="4">
+       <item row="3" column="4">
         <widget class="QLedIndicator" name="m_faultLedFuelPumpSupply" native="true" />
        </item>
-	   <item row="3" column="5">
+       <item row="3" column="5">
         <widget class="QLabel" name="m_faultCode11Label">
          <property name="text">
-          <string>11 - </string>
+          <string comment="EN: 11 -">@3013</string>
          </property>
         </widget>
        </item>
-	   
-	   <item row="4" column="4">
+       <item row="4" column="4">
         <widget class="QLedIndicator" name="m_faultLed12" native="true" />
        </item>
-	   <item row="4" column="5">
+       <item row="4" column="5">
         <widget class="QLabel" name="m_faultCode12Label">
          <property name="text">
-          <string>12 - Commande embrayage climatisation</string>
+          <string comment="EN: 12 - A/C clutch control">@3014</string>
          </property>
         </widget>
        </item>
-	   
-	   <item row="5" column="4">
+       <item row="5" column="4">
         <widget class="QLedIndicator" name="m_faultLedPurge" native="true" />
        </item>
-	   <item row="5" column="5">
+       <item row="5" column="5">
         <widget class="QLabel" name="m_faultCode13Label">
          <property name="text">
-          <string>13 - Électrovanne de purge</string>
+          <string comment="EN: 13 - Purge valve">@3015</string>
          </property>
         </widget>
-       </item>	   
-
+       </item>
        <item row="6" column="4">
         <widget class="QLedIndicator" name="m_faultLedMap" native="true" />
        </item>
-	   <item row="6" column="5">
+       <item row="6" column="5">
         <widget class="QLabel" name="m_faultCode14Label">
          <property name="text">
-          <string>14 - Capteur MAP</string>
+          <string comment="EN: 14 - MAP sensor">@3016</string>
          </property>
         </widget>
        </item>
-	   
-	   <item row="7" column="4">
+       <item row="7" column="4">
         <widget class="QLedIndicator" name="m_faultLed15" native="true" />
        </item>
-	   <item row="7" column="5">
+       <item row="7" column="5">
         <widget class="QLabel" name="m_faultCode15Label">
          <property name="text">
-          <string>15 - Électrovanne de suralimentation</string>
+          <string comment="EN: 15 - Boost control valve">@3017</string>
          </property>
         </widget>
        </item>
-
        <item row="8" column="4">
         <widget class="QLedIndicator" name="m_faultLedTps" native="true" />
        </item>
-	   <item row="8" column="5">
+       <item row="8" column="5">
         <widget class="QLabel" name="m_faultCode16Label">
          <property name="text">
-          <string>16 - Circuit capteur position papillon</string>
+          <string comment="EN: 16 - Throttle position sensor circuit">@3018</string>
          </property>
         </widget>
        </item>
-
        <item row="1" column="7">
         <widget class="QLedIndicator" name="m_faultLedTpsSupply" native="true" />
        </item>
-	   <item row="1" column="8">
+       <item row="1" column="8">
         <widget class="QLabel" name="m_faultCode17Label">
          <property name="text">
-          <string>17 - </string>
+          <string comment="EN: 17 -">@3019</string>
          </property>
         </widget>
        </item>
-	   
-	   <item row="2" column="7">
+       <item row="2" column="7">
         <widget class="QLedIndicator" name="m_faultLed18" native="true" />
        </item>
-	   <item row="2" column="8">
+       <item row="2" column="8">
         <widget class="QLabel" name="m_faultCode18Label">
          <property name="text">
-          <string>18 - </string>
+          <string comment="EN: 18 -">@3020</string>
          </property>
         </widget>
        </item>
-
        <item row="3" column="7">
         <widget class="QLedIndicator" name="m_faultLedLambdaCircuit" native="true" />
        </item>
-	   <item row="3" column="8">
+       <item row="3" column="8">
         <widget class="QLabel" name="m_faultCode19Label">
          <property name="text">
-          <string>19 - </string>
+          <string comment="EN: 19 -">@3021</string>
          </property>
         </widget>
        </item>
-	   
        <item row="4" column="7">
         <widget class="QLedIndicator" name="m_faultLedLambdaSupply" native="true" />
        </item>
-	   <item row="4" column="8">
+       <item row="4" column="8">
         <widget class="QLabel" name="m_faultCode20Label">
          <property name="text">
-          <string>20 - Tension alim. chauffage sonde lambda</string>
+          <string comment="EN: 20 - Lambda sensor heater supply voltage">@3022</string>
          </property>
         </widget>
        </item>
-	   
-	   <item row="5" column="7">
+       <item row="5" column="7">
         <widget class="QLedIndicator" name="m_faultLed21" native="true" />
        </item>
-	   <item row="5" column="8">
+       <item row="5" column="8">
         <widget class="QLabel" name="m_faultCode21Label">
          <property name="text">
-          <string>21 - Synchro vilebrequin</string>
+          <string comment="EN: 21 - Crankshaft synchronization">@3023</string>
          </property>
         </widget>
        </item>
-	   
-	   <item row="6" column="7">
+       <item row="6" column="7">
         <widget class="QLedIndicator" name="m_faultLed22" native="true" />
        </item>
-	   <item row="6" column="8">
+       <item row="6" column="8">
         <widget class="QLabel" name="m_faultCode22Label">
          <property name="text">
-          <string>22 - Commande ventilateur 1</string>
+          <string comment="EN: 22 - Fan 1 control">@3024</string>
          </property>
         </widget>
        </item>
-	   
-	   <item row="7" column="7">
+       <item row="7" column="7">
         <widget class="QLedIndicator" name="m_faultLed23" native="true" />
        </item>
-	   <item row="7" column="8">
+       <item row="7" column="8">
         <widget class="QLabel" name="m_faultCode23Label">
          <property name="text">
-          <string>23 - Commande antidémarrage</string>
+          <string comment="EN: 23 - Immobilizer command">@3025</string>
          </property>
         </widget>
        </item>
-	   
-	   <item row="8" column="7">
+       <item row="8" column="7">
         <widget class="QLedIndicator" name="m_faultLed24" native="true" />
        </item>
-	   <item row="8" column="8">
+       <item row="8" column="8">
         <widget class="QLabel" name="m_faultCode24Label">
          <property name="text">
-          <string>24 - Commande ventilateur 2</string>
+          <string comment="EN: 24 - Fan 2 control">@3026</string>
          </property>
         </widget>
        </item>
-	   
        <item row="13" column="1" colspan="8">
         <widget class="QPushButton" name="m_clearFaultsButton">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Effacer les codes défaut</string>
+          <string comment="EN: Clear fault codes">@3027</string>
          </property>
         </widget>
        </item>
-	   
-
- 
       </layout>
-     </widget> 
-
-	 <widget class="QWidget" name="layoutWidget_9">
+     </widget>
+     <widget class="QWidget" name="layoutWidget_9">
       <property name="geometry">
        <rect>
         <x>50</x>
@@ -1410,156 +1348,140 @@
         <height>300</height>
        </rect>
       </property>
-	  
       <layout class="QGridLayout" name="m_faultCodesLayout2" rowstretch="0,1,0,0,0,0,0,0,0,0,0,0,0,0,100">
-
-	   <item row="0" column="1">
+       <item row="0" column="1">
         <widget class="QLedIndicator" name="m_RPMSensor" native="true" />
        </item>
-	   <item row="0" column="2" colspan="2">
+       <item row="0" column="2" colspan="2">
         <widget class="QLabel" name="m_RPMSensorLabel">
          <property name="text">
-          <string> Signal régime et capteur PMH</string>
+          <string comment="EN: Engine-speed signal and crankshaft sensor">@3028</string>
          </property>
-		 <property name="toolTip">
-		  <string>Le voyant doit devenir vert dès que le volant moteur tourne</string>
-		 </property>
+         <property name="toolTip">
+          <string comment="EN: The indicator should turn green as soon as the flywheel rotates.">@3029</string>
+         </property>
         </widget>
        </item>
-	   
-	   <item row="1" column="3">
+       <item row="1" column="3">
         <widget class="QLabel" name="m_empty3">
          <property name="text">
           <string />
          </property>
         </widget>
        </item>
-	   
-	   <item row="2" column="1">
+       <item row="2" column="1">
         <widget class="QLabel" name="m_faultCodesLabel2">
          <property name="text">
-          <string>En direct</string>
+          <string comment="EN: Live">@3030</string>
          </property>
-		 </widget>
-		</item>
-		<item row="2" column="2">
+        </widget>
+       </item>
+       <item row="2" column="2">
         <widget class="QLabel" name="m_faultCodesLabel3">
          <property name="text">
-          <string>Enreg.</string>
+          <string comment="EN: Recorded">@3031</string>
          </property>
-		 </widget>
-		</item>
-	   <item row="2" column="3">
+        </widget>
+       </item>
+       <item row="2" column="3">
         <widget class="QLabel" name="m_faultCodesLabel4">
          <property name="text">
-          <string> Anomalies :</string>
+          <string comment="EN: Anomalies:">@3032</string>
          </property>
-		 <property name="toolTip">
-		  <string>Ces anomalies sont soit reconnues par MEMS mais non enregistrées, soit non reconnues/acquittées par MEMS.</string>
-		 </property>
+         <property name="toolTip">
+          <string comment="EN: These anomalies are either recognized by MEMS but not stored, or not recognized/acknowledged by MEMS.">@3033</string>
+         </property>
         </widget>
        </item>
-	   
-	   <item row="3" column="1">
+       <item row="3" column="1">
         <widget class="QLedIndicator" name="m_LambdaSensor" native="true" />
        </item>
-	   <item row="3" column="3">
+       <item row="3" column="3">
         <widget class="QLabel" name="m_LambdaSensorLabel">
          <property name="text">
-          <string> Erreur signal lambda</string>
+          <string comment="EN: Lambda signal error">@3034</string>
          </property>
-		 <property name="toolTip">
-		  <string>Tel que détecté par l'ECU ; "État lambda"</string>
-		 </property>
+         <property name="toolTip">
+          <string comment="EN: As detected by the ECU; &quot;Lambda status&quot;.">@3035</string>
+         </property>
         </widget>
        </item>
-	   
-	   <item row="4" column="1">
+       <item row="4" column="1">
         <widget class="QLedIndicator" name="m_LambdaMax" native="true" />
        </item>
-	   <item row="4" column="2">
+       <item row="4" column="2">
         <widget class="QLedIndicator" name="m_LambdaMaxOnce" native="true" />
        </item>
-	   <item row="4" column="3">
+       <item row="4" column="3">
         <widget class="QLabel" name="m_LambdaMaxLabel">
          <property name="text">
-          <string> Signal lambda anormalement élevé</string>
+          <string comment="EN: Lambda signal abnormally high">@3036</string>
          </property>
-		 <property name="toolTip">
-		  <string>Peut indiquer une sonde lambda usée, ou des fils de signal mal blindés (notamment contre l'alternateur ou les câbles d'allumage haute tension)</string>
-		 </property>
+         <property name="toolTip">
+          <string comment="EN: May indicate a worn lambda sensor or poorly shielded signal wires (especially against the alternator or high-voltage ignition leads).">@3037</string>
+         </property>
         </widget>
        </item>
-	   
-	   <item row="5" column="1">
+       <item row="5" column="1">
         <widget class="QLedIndicator" name="m_LambdaMin" native="true" />
        </item>
-	   <item row="5" column="2">
+       <item row="5" column="2">
         <widget class="QLedIndicator" name="m_LambdaMinOnce" native="true" />
        </item>
-	   <item row="5" column="3">
+       <item row="5" column="3">
         <widget class="QLabel" name="m_LambdaMinLabel">
          <property name="text">
-          <string> Signal lambda anormalement bas</string>
+          <string comment="EN: Lambda signal abnormally low">@3038</string>
          </property>
-		 
-		  
-		 
         </widget>
        </item>
-	   
-	   <item row="6" column="1">
+       <item row="6" column="1">
         <widget class="QLedIndicator" name="m_IACMin" native="true" />
        </item>
-	   <item row="6" column="2">
+       <item row="6" column="2">
         <widget class="QLedIndicator" name="m_IACMinOnce" native="true" />
        </item>
-	   <item row="6" column="3">
+       <item row="6" column="3">
         <widget class="QLabel" name="m_IACMinLabel">
          <property name="text">
-          <string> Position mini du moteur pas-à-pas atteinte</string>
+          <string comment="EN: Stepper motor minimum position reached">@3039</string>
          </property>
-		 <property name="toolTip">
-		  <string>Peut indiquer que l'ECU a du mal à maintenir un ralenti suffisamment bas. Vérifiez le réglage du câble d'accélérateur et les fuites d'air à l'admission.</string>
-		 </property>
+         <property name="toolTip">
+          <string comment="EN: May indicate that the ECU is struggling to maintain a sufficiently low idle. Check throttle-cable adjustment and intake air leaks.">@3040</string>
+         </property>
         </widget>
        </item>
-	   
-	   <item row="7" column="1">
+       <item row="7" column="1">
         <widget class="QLedIndicator" name="m_JackCount" native="true" />
        </item>
-	   <item row="7" column="3">
+       <item row="7" column="3">
         <widget class="QLabel" name="m_JackCountLabel">
          <property name="text">
-          <string> Compteur Jack au maximum (&gt;255 réinitialisations)</string>
+          <string comment="EN: Jack counter at maximum (&gt;255 resets)">@3041</string>
          </property>
-		 <property name="toolTip">
-		  <string>Ne peut être remis à 0 qu'en réinitialisant complètement l'ECU. Surveillez ensuite le "N° compteur Jack" dans l'onglet "toutes les mesures"</string>
-		 </property>
+         <property name="toolTip">
+          <string comment="EN: Can only be reset to 0 by fully resetting the ECU. Then monitor the &quot;Jack counter&quot; in the &quot;All measurements&quot; tab.">@3042</string>
+         </property>
         </widget>
        </item>
-	   
-	   <item row="13" column="1" colspan="3">
+       <item row="13" column="1" colspan="3">
         <widget class="QPushButton" name="m_clearRecordedAnomalies">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Effacer les anomalies enregistrées</string>
+          <string comment="EN: Clear stored anomalies">@3043</string>
          </property>
         </widget>
        </item>
-	   
-	  </layout>
-	 </widget> 
-	</widget>
-	
-	<widget class="QWidget" name="actuators">
+      </layout>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="actuators">
      <attribute name="title">
-      <string>Actionneurs</string>
+      <string comment="EN: Actuators">@4001</string>
      </attribute>
-	
-	 <widget class="QWidget" name="layoutWidget_4">
+     <widget class="QWidget" name="layoutWidget_4">
       <property name="geometry">
        <rect>
         <x>15</x>
@@ -1571,22 +1493,21 @@
       <layout class="QGridLayout" name="actuators_layout1" columnstretch="3,1,1,1" rowstretch="0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0">
        <item row="1" column="0" colspan="4">
         <widget class="QLabel" name="m_testActuatorLabel">
-		 <property name="text">
-          <string>Tester les actionneurs :</string>
+         <property name="text">
+          <string comment="EN: Test actuators:">@4002</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignLeading|Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
-	   
-	   <item row="2" column="0">
+       <item row="2" column="0">
         <widget class="QLabel" name="m_PTCRelay">
          <property name="alignment">
           <set>Qt::AlignLeading|Qt::AlignRight</set>
          </property>
-		 <property name="text">
-          <string>Réchauffeur collecteur </string>
+         <property name="text">
+          <string comment="EN: Manifold heater">@4003</string>
          </property>
         </widget>
        </item>
@@ -1596,38 +1517,37 @@
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Tester</string>
+          <string comment="EN: Test">@4004</string>
          </property>
         </widget>
        </item>
-	   <item row="2" column="2">
+       <item row="2" column="2">
         <widget class="QPushButton" name="m_onPTCRelayButton">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Activé</string>
+          <string comment="EN: Enabled">@4005</string>
          </property>
         </widget>
        </item>
-	   <item row="2" column="3">
+       <item row="2" column="3">
         <widget class="QPushButton" name="m_offPTCRelayButton">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Désactivé</string>
+          <string comment="EN: Disabled">@4006</string>
          </property>
         </widget>
        </item>
-	   
-	   <item row="3" column="0">
+       <item row="3" column="0">
         <widget class="QLabel" name="m_FuelPumpRelay">
-		<property name="alignment">
+         <property name="alignment">
           <set>Qt::AlignLeading|Qt::AlignRight</set>
          </property>
          <property name="text">
-          <string>Pompe à carburant </string>
+          <string comment="EN: Fuel pump">@4007</string>
          </property>
         </widget>
        </item>
@@ -1637,38 +1557,37 @@
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Tester</string>
+          <string comment="EN: Test">@4008</string>
          </property>
         </widget>
        </item>
-	   <item row="3" column="2">
+       <item row="3" column="2">
         <widget class="QPushButton" name="m_testFuelPumpOnButton">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Activé</string>
+          <string comment="EN: Enabled">@4009</string>
          </property>
         </widget>
        </item>
-	   <item row="3" column="3">
+       <item row="3" column="3">
         <widget class="QPushButton" name="m_testFuelPumpOffButton">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Désactivé</string>
+          <string comment="EN: Disabled">@4010</string>
          </property>
         </widget>
        </item>
-	   
        <item row="4" column="0">
         <widget class="QLabel" name="m_O2Heater">
-		<property name="alignment">
+         <property name="alignment">
           <set>Qt::AlignLeading|Qt::AlignRight</set>
          </property>
          <property name="text">
-          <string>Chauffage sonde O2/lambda </string>
+          <string comment="EN: O2/lambda sensor heater">@4011</string>
          </property>
         </widget>
        </item>
@@ -1678,21 +1597,21 @@
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Tester</string>
+          <string comment="EN: Test">@4012</string>
          </property>
         </widget>
-       </item>	   
+       </item>
        <item row="4" column="2">
         <widget class="QPushButton" name="m_O2Heater_OnButton">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Activé</string>
+          <string comment="EN: Enabled">@4013</string>
          </property>
-		 <property name="toolTip">
-		  <string>Pour éviter d'endommager la sonde lambda, le temps de chauffe est limité. ATTENTION : après le chauffage, il est fortement conseillé de NE PAS démarrer le moteur avant que la sonde ait suffisamment refroidi</string>
-		 </property>
+         <property name="toolTip">
+          <string comment="EN: To avoid damaging the lambda sensor, heating time is limited. WARNING: after heating, it is strongly recommended NOT to start the engine until the sensor has cooled sufficiently.">@4014</string>
+         </property>
         </widget>
        </item>
        <item row="4" column="3">
@@ -1701,110 +1620,107 @@
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Désactivé</string>
+          <string comment="EN: Disabled">@4015</string>
          </property>
         </widget>
        </item>
-	   
-	   <item row="5" column="0">
+       <item row="5" column="0">
         <widget class="QLabel" name="m_Purge_Valve">
-		<property name="alignment">
+         <property name="alignment">
           <set>Qt::AlignLeading|Qt::AlignRight</set>
          </property>
          <property name="text">
-          <string>Électrovanne purge canister </string>
+          <string comment="EN: Canister purge valve">@4016</string>
          </property>
         </widget>
        </item>
-	   <item row="5" column="1">
+       <item row="5" column="1">
         <widget class="QPushButton" name="m_Purge_Valve_TestButton">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Tester</string>
+          <string comment="EN: Test">@4017</string>
          </property>
         </widget>
        </item>
-	   <item row="5" column="2">
+       <item row="5" column="2">
         <widget class="QPushButton" name="m_Purge_Valve_OnButton">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Ouvert</string>
+          <string comment="EN: Open">@4018</string>
          </property>
         </widget>
        </item>
-	   <item row="5" column="3">
+       <item row="5" column="3">
         <widget class="QPushButton" name="m_Purge_Valve_OffButton">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Fermer</string>
+          <string comment="EN: Close">@4019</string>
          </property>
         </widget>
        </item>
-	   
-	   <item row="6" column="0">
+       <item row="6" column="0">
         <widget class="QLabel" name="m_ACRelay">
-		<property name="alignment">
+         <property name="alignment">
           <set>Qt::AlignLeading|Qt::AlignRight</set>
          </property>
          <property name="text">
-          <string>Embrayage climatisation </string>
+          <string comment="EN: A/C clutch">@4020</string>
          </property>
         </widget>
        </item>
-	   <item row="6" column="1">
+       <item row="6" column="1">
         <widget class="QPushButton" name="m_testACRelayButton">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Tester</string>
+          <string comment="EN: Test">@4021</string>
          </property>
         </widget>
        </item>
-	   <item row="6" column="2">
+       <item row="6" column="2">
         <widget class="QPushButton" name="m_onACRelayButton">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Activé</string>
+          <string comment="EN: Enabled">@4022</string>
          </property>
         </widget>
        </item>
-	   <item row="6" column="3">
+       <item row="6" column="3">
         <widget class="QPushButton" name="m_offACRelayButton">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Désactivé</string>
+          <string comment="EN: Disabled">@4023</string>
          </property>
         </widget>
        </item>
-	   
-	   <item row="7" column="0">
+       <item row="7" column="0">
         <widget class="QLabel" name="m_Boost_Valve">
-		<property name="alignment">
+         <property name="alignment">
           <set>Qt::AlignLeading|Qt::AlignRight</set>
          </property>
          <property name="text">
-          <string>Électrovanne suralimentation </string>
+          <string comment="EN: Boost control valve">@4024</string>
          </property>
         </widget>
        </item>
-	   <item row="7" column="1">
+       <item row="7" column="1">
         <widget class="QPushButton" name="m_Boost_Valve_TestButton">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Tester</string>
+          <string comment="EN: Test">@4025</string>
          </property>
         </widget>
        </item>
@@ -1814,38 +1730,37 @@
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Activé</string>
+          <string comment="EN: Enabled">@4026</string>
          </property>
         </widget>
        </item>
-	   <item row="7" column="3">
+       <item row="7" column="3">
         <widget class="QPushButton" name="m_Boost_Valve_OffButton">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Désactivé</string>
+          <string comment="EN: Disabled">@4027</string>
          </property>
         </widget>
        </item>
-	   
-	   <item row="8" column="0">
+       <item row="8" column="0">
         <widget class="QLabel" name="m_Fan1">
-		<property name="alignment">
+         <property name="alignment">
           <set>Qt::AlignLeading|Qt::AlignRight</set>
          </property>
          <property name="text">
-          <string>Ventilateur 1 </string>
+          <string comment="EN: Fan 1">@4028</string>
          </property>
         </widget>
        </item>
-	   <item row="8" column="1">
+       <item row="8" column="1">
         <widget class="QPushButton" name="m_Fan1_TestButton">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Tester</string>
+          <string comment="EN: Test">@4029</string>
          </property>
         </widget>
        </item>
@@ -1855,38 +1770,37 @@
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Activé</string>
+          <string comment="EN: Enabled">@4030</string>
          </property>
         </widget>
        </item>
-	   <item row="8" column="3">
+       <item row="8" column="3">
         <widget class="QPushButton" name="m_Fan1_OffButton">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Désactivé</string>
+          <string comment="EN: Disabled">@4031</string>
          </property>
         </widget>
        </item>
-	   
-	   <item row="9" column="0">
+       <item row="9" column="0">
         <widget class="QLabel" name="m_Fan2">
-		<property name="alignment">
+         <property name="alignment">
           <set>Qt::AlignLeading|Qt::AlignRight</set>
          </property>
          <property name="text">
-          <string>Ventilateur 2 </string>
+          <string comment="EN: Fan 2">@4032</string>
          </property>
         </widget>
        </item>
-	   <item row="9" column="1">
+       <item row="9" column="1">
         <widget class="QPushButton" name="m_Fan2_TestButton">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Tester</string>
+          <string comment="EN: Test">@4033</string>
          </property>
         </widget>
        </item>
@@ -1896,38 +1810,37 @@
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Activé</string>
+          <string comment="EN: Enabled">@4034</string>
          </property>
         </widget>
        </item>
-	    <item row="9" column="3">
+       <item row="9" column="3">
         <widget class="QPushButton" name="m_Fan2_OffButton">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Désactivé</string>
+          <string comment="EN: Disabled">@4035</string>
          </property>
         </widget>
        </item>
-	   
-	   <item row="10" column="0">
+       <item row="10" column="0">
         <widget class="QLabel" name="m_Fan3">
-		<property name="alignment">
+         <property name="alignment">
           <set>Qt::AlignLeading|Qt::AlignRight</set>
          </property>
          <property name="text">
-          <string>Ventilateur 3 </string>
+          <string comment="EN: Fan 3">@4036</string>
          </property>
         </widget>
        </item>
-	   <item row="10" column="1">
+       <item row="10" column="1">
         <widget class="QPushButton" name="m_Fan3_TestButton">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Tester</string>
+          <string comment="EN: Test">@4037</string>
          </property>
         </widget>
        </item>
@@ -1937,98 +1850,94 @@
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Activé</string>
+          <string comment="EN: Enabled">@4038</string>
          </property>
         </widget>
        </item>
-	   <item row="10" column="3">
+       <item row="10" column="3">
         <widget class="QPushButton" name="m_Fan3_OffButton">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Désactivé</string>
+          <string comment="EN: Disabled">@4039</string>
          </property>
         </widget>
        </item>
-	   
-	   <item row="11" column="0">
+       <item row="11" column="0">
         <widget class="QLabel" name="m_empty1">
         </widget>
        </item>
-	   
-	   <item row="12" column="0">
+       <item row="12" column="0">
         <widget class="QLabel" name="m_FuelInjector">
-		<property name="alignment">
+         <property name="alignment">
           <set>Qt::AlignLeading|Qt::AlignRight</set>
          </property>
          <property name="text">
-          <string>Injecteur</string>
+          <string comment="EN: Injector">@4040</string>
          </property>
         </widget>
        </item>
-	   <item row="12" column="1">
+       <item row="12" column="1">
         <widget class="QPushButton" name="m_testFuelInjectorButton">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Déclencher</string>
+          <string comment="EN: Trigger">@4041</string>
          </property>
         </widget>
        </item>
-	   
-	   <item row="13" column="0">
+       <item row="13" column="0">
         <widget class="QLabel" name="m_IgnitionCoil">
-		<property name="alignment">
+         <property name="alignment">
           <set>Qt::AlignLeading|Qt::AlignRight</set>
          </property>
          <property name="text">
-          <string>Bobine d'allumage </string>
+          <string comment="EN: Ignition coil">@4042</string>
          </property>
         </widget>
-       </item> 
+       </item>
        <item row="13" column="1">
         <widget class="QPushButton" name="m_testIgnitionCoilButton">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Étincelle</string>
+          <string comment="EN: Spark">@4043</string>
          </property>
         </widget>
        </item>
-	   
-	   <item row="14" column="0">
+       <item row="14" column="0">
         <widget class="QLabel" name="m_empty2">
         </widget>
        </item>
-	   
-	   <item row="15" column="0">
+       <item row="15" column="0">
         <widget class="QLabel" name="m_ResetActuators">
-		<property name="alignment">
+         <property name="alignment">
           <set>Qt::AlignLeading|Qt::AlignRight</set>
          </property>
          <property name="text">
-          <string>Réinitialiser tous les actionneurs </string>
+          <string comment="EN: Reset all actuators">@4044</string>
          </property>
         </widget>
-       </item> 
-	   <item row="15" column="1" colspan="3">
+       </item>
+       <item row="15" column="1" colspan="3">
         <widget class="QPushButton" name="m_AllActuatorsOffButton">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>tous les actionneurs désactivés / réinitialisés</string>
+          <string comment="EN: all actuators disabled / reset">@4045</string>
          </property>
         </widget>
        </item>
-	  
-      <property name="verticalSpacing"><number>4</number></property></layout>
+       <property name="verticalSpacing">
+        <number>4</number>
+       </property>
+      </layout>
      </widget>
-
-	 <widget class="QLabel" name="label">
+     <widget class="QLabel" name="label">
       <property name="geometry">
        <rect>
         <x>585</x>
@@ -2038,11 +1947,10 @@
        </rect>
       </property>
       <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sélectionnez la position voulue par pas de 25% puis activez &amp;quot;Déplacer le moteur de régulation d'air ralenti&amp;quot;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <string comment="EN: &lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select the required position in 25% steps, then activate &amp;quot;Move idle air control motor&amp;quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;">@4046</string>
       </property>
      </widget>
-	 
-	 <widget class="QPushButton" name="m_moveIACButton">
+     <widget class="QPushButton" name="m_moveIACButton">
       <property name="enabled">
        <bool>false</bool>
       </property>
@@ -2055,11 +1963,10 @@
        </rect>
       </property>
       <property name="text">
-       <string>Déplacer le moteur de régulation d'air ralenti</string>
+       <string comment="EN: Move idle air control motor">@4047</string>
       </property>
      </widget>
-	 
-	 <widget class="QPushButton" name="m_IACMinusButton">
+     <widget class="QPushButton" name="m_IACMinusButton">
       <property name="enabled">
        <bool>false</bool>
       </property>
@@ -2072,11 +1979,10 @@
        </rect>
       </property>
       <property name="text">
-       <string>-</string>
+       <string comment="EN: -">@4048</string>
       </property>
      </widget>
-	 
-	 <widget class="QPushButton" name="m_IACPlusButton">
+     <widget class="QPushButton" name="m_IACPlusButton">
       <property name="enabled">
        <bool>false</bool>
       </property>
@@ -2089,14 +1995,13 @@
        </rect>
       </property>
       <property name="text">
-       <string>+</string>
+       <string comment="EN: +">@4049</string>
       </property>
      </widget>
-	 
-	 <widget class="QWidget" name="layoutWidget_5">
+     <widget class="QWidget" name="layoutWidget_5">
       <property name="geometry">
        <rect>
-        <x>690</x> 
+        <x>690</x>
         <y>60</y>
         <width>500</width>
         <height>30</height>
@@ -2106,7 +2011,7 @@
        <item>
         <widget class="QLabel" name="m_idleBypassLabel_2">
          <property name="text">
-          <string>Position moteur pas-à-pas ralenti :</string>
+          <string comment="EN: Idle stepper motor position:">@4050</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -2116,7 +2021,7 @@
        <item>
         <widget class="QLabel" name="m_iacPositionSteps_2">
          <property name="text">
-          <string>0</string>
+          <string comment="EN: 0">@4051</string>
          </property>
         </widget>
        </item>
@@ -2127,26 +2032,25 @@
          </property>
         </widget>
        </item>
-	  </layout>
-	 </widget>
-	   
-	 <widget class="QWidget" name="layoutWidget_6">
+      </layout>
+     </widget>
+     <widget class="QWidget" name="layoutWidget_6">
       <property name="geometry">
        <rect>
-        <x>733</x> 
+        <x>733</x>
         <y>100</y>
         <width>395</width>
         <height>30</height>
        </rect>
       </property>
-	  <layout class="QHBoxLayout" name="idle_bypass_layout2">
-		<item>
+      <layout class="QHBoxLayout" name="idle_bypass_layout2">
+       <item>
         <widget class="QLabel" name="m_iacSliderClosedLabel">
          <property name="text">
-          <string>Fermé</string>
+          <string comment="EN: Closed">@4052</string>
          </property>
         </widget>
-		</item>
+       </item>
        <item>
         <widget class="QSlider" name="m_iacPositionSlider">
          <property name="maximum">
@@ -2172,13 +2076,12 @@
        <item>
         <widget class="QLabel" name="m_iacSliderOpenLabel">
          <property name="text">
-          <string>Ouvert</string>
+          <string comment="EN: Open">@4053</string>
          </property>
         </widget>
        </item>
       </layout>
      </widget>
-	 
      <widget class="Line" name="m_vline3">
       <property name="geometry">
        <rect>
@@ -2192,15 +2095,18 @@
        <enum>Qt::Vertical</enum>
       </property>
      </widget>
-	 
-	<property name="minimumSize"><size><width>0</width><height>560</height></size></property></widget>
-	
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>560</height>
+      </size>
+     </property>
+    </widget>
     <widget class="QWidget" name="raw">
      <attribute name="title">
-      <string>Toutes les données</string>
+      <string comment="EN: All data">@5001</string>
      </attribute>
-
-    <widget class="QWidget" name="raw_1">
+     <widget class="QWidget" name="raw_1">
       <property name="geometry">
        <rect>
         <x>20</x>
@@ -2209,840 +2115,787 @@
         <height>576</height>
        </rect>
       </property>
-
       <layout class="QGridLayout" name="HF_table">
-
        <item row="0" column="0">
         <widget class="QLabel" name="header_1">
          <property name="text">
-          <string>Pos. (7D)</string>
+          <string comment="EN: Pos. (7D)">@5002</string>
          </property>
         </widget>
        </item>
-        <item row="0" column="1">
+       <item row="0" column="1">
         <widget class="QLabel" name="header_2">
          <property name="text">
-          <string>Description</string>
+          <string comment="EN: Description">@5003</string>
          </property>
         </widget>
        </item>
-        <item row="0" column="2">
+       <item row="0" column="2">
         <widget class="QLabel" name="header_3">
          <property name="text">
-          <string>Reçu</string>
+          <string comment="EN: Received">@5004</string>
          </property>
         </widget>
        </item>
-        <item row="0" column="3">
+       <item row="0" column="3">
         <widget class="QLabel" name="header_4">
          <property name="text">
-          <string>Calculé</string>
+          <string comment="EN: Calculated">@5005</string>
          </property>
         </widget>
        </item>
-
        <item row="1" column="0">
         <widget class="QLabel" name="x01">
          <property name="text">
-          <string>0x01</string>
+          <string comment="EN: 0x01">@5006</string>
          </property>
         </widget>
        </item>
        <item row="1" column="1">
         <widget class="QLabel" name="label_0x01">
          <property name="text">
-          <string>Contact allumage</string>
+          <string comment="EN: Ignition switch">@5007</string>
          </property>
         </widget>
        </item>
        <item row="1" column="2">
         <widget class="QLabel" name="m_7D_01">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5008</string>
+         </property>
         </widget>
        </item>
-	   <item row="1" column="3">
+       <item row="1" column="3">
         <widget class="QLabel" name="r_7D_01">
-		<property name="text">
-		<string>Activé / Désactivé</string>
-		</property>
+         <property name="text">
+          <string comment="EN: Enabled / Disabled">@5009</string>
+         </property>
         </widget>
        </item>
-
        <item row="2" column="0">
         <widget class="QLabel" name="x02">
          <property name="text">
-          <string>0x02</string>
+          <string comment="EN: 0x02">@5010</string>
          </property>
         </widget>
        </item>
        <item row="2" column="1">
         <widget class="QLabel" name="label_0x02">
          <property name="text">
-          <string>Angle papillon</string>
+          <string comment="EN: Throttle angle">@5011</string>
          </property>
         </widget>
        </item>
        <item row="2" column="2">
         <widget class="QLabel" name="m_7D_02">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5012</string>
+         </property>
         </widget>
        </item>
-	   <item row="2" column="3">
+       <item row="2" column="3">
         <widget class="QLabel" name="r_7D_02">
-		<property name="text">
-		<string>--- °</string>
-		</property>
+         <property name="text">
+          <string comment="EN: --- °">@5013</string>
+         </property>
         </widget>
        </item>
-
        <item row="3" column="0">
         <widget class="QLabel" name="x03">
          <property name="text">
-          <string>0x03</string>
+          <string comment="EN: 0x03">@5014</string>
          </property>
         </widget>
        </item>
        <item row="3" column="1">
         <widget class="QLabel" name="label_0x03">
          <property name="text">
-          <string>Inconnu</string>
+          <string comment="EN: Unknown">@5015</string>
          </property>
         </widget>
        </item>
        <item row="3" column="2">
         <widget class="QLabel" name="m_7D_03">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5016</string>
+         </property>
         </widget>
        </item>
-
        <item row="4" column="0">
         <widget class="QLabel" name="x04">
          <property name="text">
-          <string>0x04</string>
+          <string comment="EN: 0x04">@5017</string>
          </property>
         </widget>
        </item>
        <item row="4" column="1">
         <widget class="QLabel" name="label_0x04">
          <property name="text">
-          <string>Ratio air/carburant</string>
+          <string comment="EN: Air/fuel ratio">@5018</string>
          </property>
         </widget>
        </item>
        <item row="4" column="2">
         <widget class="QLabel" name="m_7D_04">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5019</string>
+         </property>
         </widget>
        </item>
-	    <item row="4" column="3">
+       <item row="4" column="3">
         <widget class="QLabel" name="r_7D_04">
-		<property name="text">
-		<string>--- AFR</string>
-		</property>
+         <property name="text">
+          <string comment="EN: --- AFR">@5020</string>
+         </property>
         </widget>
-       </item> 
-
-        <item row="5" column="0">
+       </item>
+       <item row="5" column="0">
         <widget class="QLabel" name="x05">
          <property name="text">
-          <string>0x05</string>
+          <string comment="EN: 0x05">@5021</string>
          </property>
         </widget>
        </item>
        <item row="5" column="1">
         <widget class="QLabel" name="label_0x05">
          <property name="text">
-          <string>DTC 2</string>
+          <string comment="EN: DTC 2">@5022</string>
          </property>
         </widget>
        </item>
        <item row="5" column="2">
         <widget class="QLabel" name="m_7D_05">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5023</string>
+         </property>
         </widget>
        </item>
-		<item row="5" column="3">
+       <item row="5" column="3">
         <widget class="QLabel" name="r_7D_05">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5024</string>
+         </property>
         </widget>
-       </item> 	   
-
-        <item row="6" column="0">
+       </item>
+       <item row="6" column="0">
         <widget class="QLabel" name="x06">
          <property name="text">
-          <string>0x06</string>
+          <string comment="EN: 0x06">@5025</string>
          </property>
         </widget>
        </item>
        <item row="6" column="1">
         <widget class="QLabel" name="label_0x06">
          <property name="text">
-          <string>Tension sonde lambda</string>
+          <string comment="EN: Lambda sensor voltage">@5026</string>
          </property>
         </widget>
        </item>
        <item row="6" column="2">
         <widget class="QLabel" name="m_7D_06">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5027</string>
+         </property>
         </widget>
        </item>
-	    <item row="6" column="3">
+       <item row="6" column="3">
         <widget class="QLabel" name="r_7D_06">
-		<property name="text">
-		<string>--- mV</string>
-		</property>
+         <property name="text">
+          <string comment="EN: --- mV">@5028</string>
+         </property>
         </widget>
-       </item> 
-
-        <item row="7" column="0">
+       </item>
+       <item row="7" column="0">
         <widget class="QLabel" name="x07">
          <property name="text">
-          <string>0x07</string>
+          <string comment="EN: 0x07">@5029</string>
          </property>
         </widget>
        </item>
        <item row="7" column="1">
         <widget class="QLabel" name="label_0x07">
          <property name="text">
-          <string>Fréquence lambda</string>
+          <string comment="EN: Lambda frequency">@5030</string>
          </property>
         </widget>
        </item>
        <item row="7" column="2">
         <widget class="QLabel" name="m_7D_07">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5031</string>
+         </property>
         </widget>
-       </item> 
-
-        <item row="8" column="0">
+       </item>
+       <item row="8" column="0">
         <widget class="QLabel" name="x08">
          <property name="text">
-          <string>0x08</string>
+          <string comment="EN: 0x08">@5032</string>
          </property>
         </widget>
        </item>
        <item row="8" column="1">
         <widget class="QLabel" name="label_0x08">
          <property name="text">
-          <string>Cycle lambda</string>
+          <string comment="EN: Lambda duty cycle">@5033</string>
          </property>
         </widget>
        </item>
        <item row="8" column="2">
         <widget class="QLabel" name="m_7D_08">
-        <property name="text">
-		<string>---</string>
-		</property>
-		</widget>
-       </item> 
-
-        <item row="9" column="0">
+         <property name="text">
+          <string comment="EN: ---">@5034</string>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="0">
         <widget class="QLabel" name="x09">
          <property name="text">
-          <string>0x09</string>
+          <string comment="EN: 0x09">@5035</string>
          </property>
         </widget>
        </item>
        <item row="9" column="1">
         <widget class="QLabel" name="label_0x09">
          <property name="text">
-          <string>État lambda</string>
+          <string comment="EN: Lambda status">@5036</string>
          </property>
         </widget>
        </item>
        <item row="9" column="2">
         <widget class="QLabel" name="m_7D_09">
-        <property name="text">
-		<string>---</string>
-		</property>
-		</widget>
-       </item>
-		<item row="9" column="3">
-        <widget class="QLabel" name="r_7D_09">
-		<property name="text">
-		<string>ok / pas ok</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5037</string>
+         </property>
         </widget>
        </item>
-
-        <item row="10" column="0">
+       <item row="9" column="3">
+        <widget class="QLabel" name="r_7D_09">
+         <property name="text">
+          <string comment="EN: OK / not OK">@5038</string>
+         </property>
+        </widget>
+       </item>
+       <item row="10" column="0">
         <widget class="QLabel" name="x0A">
          <property name="text">
-          <string>0x0A</string>
+          <string comment="EN: 0x0A">@5039</string>
          </property>
         </widget>
        </item>
        <item row="10" column="1">
         <widget class="QLabel" name="label_0x0A">
          <property name="text">
-          <string>Indicateur de boucle</string>
+          <string comment="EN: Loop status">@5040</string>
          </property>
         </widget>
        </item>
        <item row="10" column="2">
         <widget class="QLabel" name="m_7D_0A">
-        <property name="text">
-		<string>---</string>
-		</property>
-		</widget>
-       </item>
-		<item row="10" column="3">
-        <widget class="QLabel" name="r_7D_0A">
-		<property name="text">
-		<string>Ouverte / Fermée</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5041</string>
+         </property>
         </widget>
-       </item>	   
-
-        <item row="11" column="0">
+       </item>
+       <item row="10" column="3">
+        <widget class="QLabel" name="r_7D_0A">
+         <property name="text">
+          <string comment="EN: Open / Closed">@5042</string>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="0">
         <widget class="QLabel" name="x0B">
          <property name="text">
-          <string>0x0B</string>
+          <string comment="EN: 0x0B">@5043</string>
          </property>
         </widget>
        </item>
        <item row="11" column="1">
         <widget class="QLabel" name="label_0x0B">
          <property name="text">
-          <string>Correction carburant long terme</string>
+          <string comment="EN: Long-term fuel trim">@5044</string>
          </property>
         </widget>
        </item>
        <item row="11" column="2">
         <widget class="QLabel" name="m_7D_0B">
-        <property name="text">
-		<string>---</string>
-		</property>
-		</widget>
-       </item>
-	   <item row="11" column="3">
-        <widget class="QLabel" name="r_7D_0B">
-		<property name="text">
-		<string>--- %</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5045</string>
+         </property>
         </widget>
        </item>
-
-        <item row="12" column="0">
+       <item row="11" column="3">
+        <widget class="QLabel" name="r_7D_0B">
+         <property name="text">
+          <string comment="EN: --- %">@5046</string>
+         </property>
+        </widget>
+       </item>
+       <item row="12" column="0">
         <widget class="QLabel" name="x0C">
          <property name="text">
-          <string>0x0C</string>
+          <string comment="EN: 0x0C">@5047</string>
          </property>
         </widget>
        </item>
        <item row="12" column="1">
         <widget class="QLabel" name="label_0x0C">
          <property name="text">
-          <string>Correction carburant court terme</string>
+          <string comment="EN: Short-term fuel trim">@5048</string>
          </property>
         </widget>
        </item>
        <item row="12" column="2">
         <widget class="QLabel" name="m_7D_0C">
-        <property name="text">
-		<string>---</string>
-		</property>
-		</widget>
-       </item>
-	   <item row="12" column="3">
-        <widget class="QLabel" name="r_7D_0C">
-		<property name="text">
-		<string>--- %</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5049</string>
+         </property>
         </widget>
        </item>
-
-        <item row="13" column="0">
+       <item row="12" column="3">
+        <widget class="QLabel" name="r_7D_0C">
+         <property name="text">
+          <string comment="EN: --- %">@5050</string>
+         </property>
+        </widget>
+       </item>
+       <item row="13" column="0">
         <widget class="QLabel" name="x0D">
          <property name="text">
-          <string>0x0D</string>
+          <string comment="EN: 0x0D">@5051</string>
          </property>
         </widget>
        </item>
        <item row="13" column="1">
         <widget class="QLabel" name="label_0x0D">
          <property name="text">
-          <string>Électrovanne purge canister</string>
+          <string comment="EN: Canister purge valve">@5052</string>
          </property>
         </widget>
        </item>
        <item row="13" column="2">
         <widget class="QLabel" name="m_7D_0D">
-        <property name="text">
-		<string>---</string>
-		</property>
-		</widget>
-       </item>
-	   <item row="13" column="3">
-        <widget class="QLabel" name="r_7D_0D">
-		<property name="text">
-		<string>--- %</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5053</string>
+         </property>
         </widget>
        </item>
-
-        <item row="14" column="0">
+       <item row="13" column="3">
+        <widget class="QLabel" name="r_7D_0D">
+         <property name="text">
+          <string comment="EN: --- %">@5054</string>
+         </property>
+        </widget>
+       </item>
+       <item row="14" column="0">
         <widget class="QLabel" name="x0E">
          <property name="text">
-          <string>0x0E</string>
+          <string comment="EN: 0x0E">@5055</string>
          </property>
         </widget>
        </item>
        <item row="14" column="1">
         <widget class="QLabel" name="label_0x0E">
          <property name="text">
-          <string>DTC 3</string>
+          <string comment="EN: DTC 3">@5056</string>
          </property>
         </widget>
        </item>
        <item row="14" column="2">
         <widget class="QLabel" name="m_7D_0E">
-        <property name="text">
-		<string>---</string>
-		</property>
-		</widget>
-       </item>
-		<item row="14" column="3">
-        <widget class="QLabel" name="r_7D_0E">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5057</string>
+         </property>
         </widget>
-       </item> 
-
-        <item row="15" column="0">
+       </item>
+       <item row="14" column="3">
+        <widget class="QLabel" name="r_7D_0E">
+         <property name="text">
+          <string comment="EN: ---">@5058</string>
+         </property>
+        </widget>
+       </item>
+       <item row="15" column="0">
         <widget class="QLabel" name="x0F">
          <property name="text">
-          <string>0x0F</string>
+          <string comment="EN: 0x0F">@5059</string>
          </property>
         </widget>
        </item>
        <item row="15" column="1">
         <widget class="QLabel" name="label_0x0F">
          <property name="text">
-          <string>Position de base ralenti</string>
+          <string comment="EN: Idle base position">@5060</string>
          </property>
         </widget>
        </item>
        <item row="15" column="2">
         <widget class="QLabel" name="m_7D_0F">
-        <property name="text">
-		<string>---</string>
-		</property>
-		</widget>
-       </item>
-	   <item row="15" column="3">
-        <widget class="QLabel" name="r_7D_0F">
-		<property name="text">
-		<string />
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5061</string>
+         </property>
         </widget>
        </item>
-
-        <item row="16" column="0">
+       <item row="15" column="3">
+        <widget class="QLabel" name="r_7D_0F">
+         <property name="text">
+          <string />
+         </property>
+        </widget>
+       </item>
+       <item row="16" column="0">
         <widget class="QLabel" name="x10">
          <property name="text">
-          <string>0x10</string>
+          <string comment="EN: 0x10">@5062</string>
          </property>
         </widget>
        </item>
        <item row="16" column="1">
         <widget class="QLabel" name="label_0x10">
          <property name="text">
-          <string>Inconnu / DTC ?</string>
+          <string comment="EN: Unknown / DTC?">@5063</string>
          </property>
         </widget>
        </item>
        <item row="16" column="2">
         <widget class="QLabel" name="m_7D_10">
-        <property name="text">
-		<string>---</string>
-		</property>
-		</widget>
+         <property name="text">
+          <string comment="EN: ---">@5064</string>
+         </property>
+        </widget>
        </item>
-	   <item row="16" column="3">
+       <item row="16" column="3">
         <widget class="QLabel" name="r_7D_10">
-        <property name="text">
-		<string>---</string>
-		</property>
-		</widget>
+         <property name="text">
+          <string comment="EN: ---">@5065</string>
+         </property>
+        </widget>
        </item>
-
-        <item row="17" column="0">
+       <item row="17" column="0">
         <widget class="QLabel" name="x11">
          <property name="text">
-          <string>0x11</string>
+          <string comment="EN: 0x11">@5066</string>
          </property>
         </widget>
        </item>
        <item row="17" column="1">
         <widget class="QLabel" name="label_0x11">
          <property name="text">
-          <string>DTC 4</string>
+          <string comment="EN: DTC 4">@5067</string>
          </property>
         </widget>
        </item>
        <item row="17" column="2">
         <widget class="QLabel" name="m_7D_11">
-        <property name="text">
-		<string>---</string>
-		</property>
-		</widget>
+         <property name="text">
+          <string comment="EN: ---">@5068</string>
+         </property>
+        </widget>
        </item>
-	   <item row="17" column="3">
+       <item row="17" column="3">
         <widget class="QLabel" name="r_7D_11">
-        <property name="text">
-		<string>---</string>
-		</property>
-		</widget>
+         <property name="text">
+          <string comment="EN: ---">@5069</string>
+         </property>
+        </widget>
        </item>
-
-        <item row="18" column="0">
+       <item row="18" column="0">
         <widget class="QLabel" name="x12">
          <property name="text">
-          <string>0x12</string>
+          <string comment="EN: 0x12">@5070</string>
          </property>
         </widget>
        </item>
        <item row="18" column="1">
         <widget class="QLabel" name="label_0x12">
          <property name="text">
-          <string>Décalage d'avance</string>
+          <string comment="EN: Ignition advance offset">@5071</string>
          </property>
         </widget>
        </item>
        <item row="18" column="2">
         <widget class="QLabel" name="m_7D_12">
-        <property name="text">
-		<string>---</string>
-		</property>
-		</widget>
-       </item>
-	   <item row="18" column="3">
-        <widget class="QLabel" name="r_7D_12">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5072</string>
+         </property>
         </widget>
        </item>
-
-        <item row="19" column="0">
+       <item row="18" column="3">
+        <widget class="QLabel" name="r_7D_12">
+         <property name="text">
+          <string comment="EN: ---">@5073</string>
+         </property>
+        </widget>
+       </item>
+       <item row="19" column="0">
         <widget class="QLabel" name="x13">
          <property name="text">
-          <string>0x13</string>
+          <string comment="EN: 0x13">@5074</string>
          </property>
         </widget>
        </item>
        <item row="19" column="1">
         <widget class="QLabel" name="label_0x13">
          <property name="text">
-          <string>Décalage régime de ralenti</string>
+          <string comment="EN: Idle speed offset">@5075</string>
          </property>
         </widget>
        </item>
        <item row="19" column="2">
         <widget class="QLabel" name="m_7D_13">
-        <property name="text">
-		<string>---</string>
-		</property>
-		</widget>
-       </item>
-	   <item row="19" column="3">
-        <widget class="QLabel" name="r_7D_13">
-		<property name="text">
-		<string>--- tr/min</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5076</string>
+         </property>
         </widget>
        </item>
-
-        
-        
-         
-          
-         
-        
-       
-       
-        
-         
-          
-         
-        
-       
-       
-        
-		
-       
-
-        <item row="21" column="0">
+       <item row="19" column="3">
+        <widget class="QLabel" name="r_7D_13">
+         <property name="text">
+          <string comment="EN: --- rpm">@5077</string>
+         </property>
+        </widget>
+       </item>
+       <item row="21" column="0">
         <widget class="QLabel" name="x15">
          <property name="text">
-          <string>0x14-15</string>
+          <string comment="EN: 0x14-15">@5078</string>
          </property>
         </widget>
        </item>
        <item row="21" column="1">
         <widget class="QLabel" name="label_0x15">
          <property name="text">
-          <string>Inconnu</string>
+          <string comment="EN: Unknown">@5079</string>
          </property>
         </widget>
        </item>
        <item row="21" column="2">
         <widget class="QLabel" name="m_7D_15">
-        <property name="text">
-		<string>---</string>
-		</property>
-		</widget>
+         <property name="text">
+          <string comment="EN: ---">@5080</string>
+         </property>
+        </widget>
        </item>
-
-        <item row="22" column="0">
+       <item row="22" column="0">
         <widget class="QLabel" name="x16">
          <property name="text">
-          <string>0x16</string>
+          <string comment="EN: 0x16">@5081</string>
          </property>
         </widget>
        </item>
        <item row="22" column="1">
         <widget class="QLabel" name="label_0x16">
          <property name="text">
-          <string>DTC 5</string>
+          <string comment="EN: DTC 5">@5082</string>
          </property>
         </widget>
        </item>
        <item row="22" column="2">
         <widget class="QLabel" name="m_7D_16">
-        <property name="text">
-		<string>---</string>
-		</property>
-		</widget>
+         <property name="text">
+          <string comment="EN: ---">@5083</string>
+         </property>
+        </widget>
        </item>
-	   <item row="22" column="3">
+       <item row="22" column="3">
         <widget class="QLabel" name="r_7D_16">
-        <property name="text">
-		<string>---</string>
-		</property>
-		</widget>
+         <property name="text">
+          <string comment="EN: ---">@5084</string>
+         </property>
+        </widget>
        </item>
-
        <item row="23" column="0">
         <widget class="QLabel" name="x17">
          <property name="text">
-          <string>0x17</string>
+          <string comment="EN: 0x17">@5085</string>
          </property>
         </widget>
        </item>
        <item row="23" column="1">
         <widget class="QLabel" name="label_0x17">
          <property name="text">
-          <string>Inconnu</string>
+          <string comment="EN: Unknown">@5086</string>
          </property>
         </widget>
        </item>
        <item row="23" column="2">
         <widget class="QLabel" name="m_7D_17">
-        <property name="text">
-		<string>---</string>
-		</property>
-		</widget>
+         <property name="text">
+          <string comment="EN: ---">@5087</string>
+         </property>
+        </widget>
        </item>
-
        <item row="24" column="0">
         <widget class="QLabel" name="x18">
          <property name="text">
-          <string>0x18</string>
+          <string comment="EN: 0x18">@5088</string>
          </property>
         </widget>
        </item>
        <item row="24" column="1">
         <widget class="QLabel" name="label_0x18">
          <property name="text">
-          <string>Inconnu</string>
+          <string comment="EN: Unknown">@5089</string>
          </property>
         </widget>
        </item>
        <item row="24" column="2">
         <widget class="QLabel" name="m_7D_18">
-        <property name="text">
-		<string>---</string>
-		</property>
-		</widget>
+         <property name="text">
+          <string comment="EN: ---">@5090</string>
+         </property>
+        </widget>
        </item>
-
        <item row="25" column="0">
         <widget class="QLabel" name="x19">
          <property name="text">
-          <string>0x19</string>
+          <string comment="EN: 0x19">@5091</string>
          </property>
         </widget>
        </item>
        <item row="25" column="1">
         <widget class="QLabel" name="label_0x19">
          <property name="text">
-          <string>Inconnu</string>
+          <string comment="EN: Unknown">@5092</string>
          </property>
         </widget>
        </item>
        <item row="25" column="2">
         <widget class="QLabel" name="m_7D_19">
-        <property name="text">
-		<string>---</string>
-		</property>
-		</widget>
+         <property name="text">
+          <string comment="EN: ---">@5093</string>
+         </property>
+        </widget>
        </item>
-
        <item row="26" column="0">
         <widget class="QLabel" name="x1A">
          <property name="text">
-          <string>0x1A</string>
+          <string comment="EN: 0x1A">@5094</string>
          </property>
         </widget>
        </item>
        <item row="26" column="1">
         <widget class="QLabel" name="label_0x1A">
          <property name="text">
-          <string>Inconnu</string>
+          <string comment="EN: Unknown">@5095</string>
          </property>
         </widget>
        </item>
        <item row="26" column="2">
         <widget class="QLabel" name="m_7D_1A">
-        <property name="text">
-		<string>---</string>
-		</property>
-		</widget>
+         <property name="text">
+          <string comment="EN: ---">@5096</string>
+         </property>
+        </widget>
        </item>
-
        <item row="27" column="0">
         <widget class="QLabel" name="x1B">
          <property name="text">
-          <string>0x1B</string>
+          <string comment="EN: 0x1B">@5097</string>
          </property>
         </widget>
        </item>
        <item row="27" column="1">
         <widget class="QLabel" name="label_0x1B">
          <property name="text">
-          <string>Inconnu</string>
+          <string comment="EN: Unknown">@5098</string>
          </property>
         </widget>
        </item>
        <item row="27" column="2">
         <widget class="QLabel" name="m_7D_1B">
-        <property name="text">
-		<string>---</string>
-		</property>
-		</widget>
+         <property name="text">
+          <string comment="EN: ---">@5099</string>
+         </property>
+        </widget>
        </item>
-
        <item row="28" column="0">
         <widget class="QLabel" name="x1C">
          <property name="text">
-          <string>0x1C</string>
+          <string comment="EN: 0x1C">@5100</string>
          </property>
         </widget>
        </item>
        <item row="28" column="1">
         <widget class="QLabel" name="label_0x1C">
          <property name="text">
-          <string>Inconnu</string>
+          <string comment="EN: Unknown">@5101</string>
          </property>
         </widget>
        </item>
        <item row="28" column="2">
         <widget class="QLabel" name="m_7D_1C">
-        <property name="text">
-		<string>---</string>
-		</property>
-		</widget>
+         <property name="text">
+          <string comment="EN: ---">@5102</string>
+         </property>
+        </widget>
        </item>
-
        <item row="29" column="0">
         <widget class="QLabel" name="x1D">
          <property name="text">
-          <string>0x1D</string>
+          <string comment="EN: 0x1D">@5103</string>
          </property>
         </widget>
        </item>
        <item row="29" column="1">
         <widget class="QLabel" name="label_0x1D">
          <property name="text">
-          <string>Inconnu</string>
+          <string comment="EN: Unknown">@5104</string>
          </property>
         </widget>
        </item>
        <item row="29" column="2">
         <widget class="QLabel" name="m_7D_1D">
-        <property name="text">
-		<string>---</string>
-		</property>
-		</widget>
+         <property name="text">
+          <string comment="EN: ---">@5105</string>
+         </property>
+        </widget>
        </item>
-
        <item row="30" column="0">
         <widget class="QLabel" name="x1E">
          <property name="text">
-          <string>0x1E</string>
+          <string comment="EN: 0x1E">@5106</string>
          </property>
         </widget>
        </item>
        <item row="30" column="1">
         <widget class="QLabel" name="label_0x1E">
          <property name="text">
-          <string>Inconnu</string>
+          <string comment="EN: Unknown">@5107</string>
          </property>
         </widget>
        </item>
        <item row="30" column="2">
         <widget class="QLabel" name="m_7D_1E">
-        <property name="text">
-		<string>---</string>
-		</property>
-		</widget>
+         <property name="text">
+          <string comment="EN: ---">@5108</string>
+         </property>
+        </widget>
        </item>
-
        <item row="31" column="0">
         <widget class="QLabel" name="x1F">
          <property name="text">
-          <string>0x1F</string>
+          <string comment="EN: 0x1F">@5109</string>
          </property>
         </widget>
        </item>
        <item row="31" column="1">
         <widget class="QLabel" name="label_0x1F">
          <property name="text">
-          <string>N° compteur Jack</string>
+          <string comment="EN: Jack counter">@5110</string>
          </property>
         </widget>
        </item>
        <item row="31" column="2">
         <widget class="QLabel" name="m_7D_1F">
-        <property name="text">
-		<string>---</string>
-		</property>
-		</widget>
+         <property name="text">
+          <string comment="EN: ---">@5111</string>
+         </property>
+        </widget>
        </item>
-
       </layout>
      </widget>
-
-    <widget class="QWidget" name="raw_2">
+     <widget class="QWidget" name="raw_2">
       <property name="geometry">
        <rect>
         <x>620</x>
@@ -3051,708 +2904,678 @@
         <height>504</height>
        </rect>
       </property>
-
       <layout class="QGridLayout" name="HF_table_2">
-
        <item row="0" column="0">
         <widget class="QLabel" name="header_5">
          <property name="text">
-          <string>Pos. (80)</string>
+          <string comment="EN: Pos. (80)">@5112</string>
          </property>
         </widget>
        </item>
-        <item row="0" column="1">
+       <item row="0" column="1">
         <widget class="QLabel" name="header_6">
          <property name="text">
-          <string>Description</string>
+          <string comment="EN: Description">@5113</string>
          </property>
         </widget>
        </item>
-        <item row="0" column="2">
+       <item row="0" column="2">
         <widget class="QLabel" name="header_7">
          <property name="text">
-          <string>Reçu</string>
+          <string comment="EN: Received">@5114</string>
          </property>
         </widget>
        </item>
-        <item row="0" column="3">
+       <item row="0" column="3">
         <widget class="QLabel" name="header_8">
          <property name="text">
-          <string>Calculé</string>
+          <string comment="EN: Calculated">@5115</string>
          </property>
         </widget>
        </item>
-
        <item row="1" column="0">
         <widget class="QLabel" name="Ax01">
          <property name="text">
-          <string>0x01-02</string>
+          <string comment="EN: 0x01-02">@5116</string>
          </property>
         </widget>
        </item>
        <item row="1" column="1">
         <widget class="QLabel" name="label_80x01">
          <property name="text">
-          <string>tr/min</string>
+          <string comment="EN: rpm">@5117</string>
          </property>
         </widget>
        </item>
        <item row="1" column="2">
         <widget class="QLabel" name="m_80_01">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5118</string>
+         </property>
         </widget>
        </item>
-	   <item row="1" column="3">
+       <item row="1" column="3">
         <widget class="QLabel" name="r_80_01">
-		<property name="text">
-		<string>--- V</string>
-		</property>
+         <property name="text">
+          <string comment="EN: --- V">@5119</string>
+         </property>
         </widget>
-       </item> 
-
+       </item>
        <item row="3" column="0">
         <widget class="QLabel" name="Ax03">
          <property name="text">
-          <string>0x03</string>
+          <string comment="EN: 0x03">@5120</string>
          </property>
         </widget>
        </item>
        <item row="3" column="1">
         <widget class="QLabel" name="label_80x03">
          <property name="text">
-          <string>Température liquide de refroidissement</string>
+          <string comment="EN: Coolant temperature">@5121</string>
          </property>
         </widget>
        </item>
        <item row="3" column="2">
         <widget class="QLabel" name="m_80_03">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5122</string>
+         </property>
         </widget>
        </item>
-	   <item row="3" column="3">
+       <item row="3" column="3">
         <widget class="QLabel" name="r_80_03">
-		<property name="text">
-		<string>--- °C</string>
-		</property>
+         <property name="text">
+          <string comment="EN: --- °C">@5123</string>
+         </property>
         </widget>
-       </item> 
-
+       </item>
        <item row="4" column="0">
         <widget class="QLabel" name="Ax04">
          <property name="text">
-          <string>0x04</string>
+          <string comment="EN: 0x04">@5124</string>
          </property>
         </widget>
        </item>
        <item row="4" column="1">
         <widget class="QLabel" name="label_80x04">
          <property name="text">
-          <string>Température ambiante</string>
+          <string comment="EN: Ambient temperature">@5125</string>
          </property>
         </widget>
        </item>
        <item row="4" column="2">
         <widget class="QLabel" name="m_80_04">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5126</string>
+         </property>
         </widget>
        </item>
-	   <item row="4" column="3">
+       <item row="4" column="3">
         <widget class="QLabel" name="r_80_04">
-		<property name="text">
-		<string>--- °C</string>
-		</property>
+         <property name="text">
+          <string comment="EN: --- °C">@5127</string>
+         </property>
         </widget>
        </item>
-
-        <item row="5" column="0">
+       <item row="5" column="0">
         <widget class="QLabel" name="Ax05">
          <property name="text">
-          <string>0x05</string>
+          <string comment="EN: 0x05">@5128</string>
          </property>
         </widget>
        </item>
        <item row="5" column="1">
         <widget class="QLabel" name="label_80x05">
          <property name="text">
-          <string>Température air d'admission</string>
+          <string comment="EN: Intake air temperature">@5129</string>
          </property>
         </widget>
        </item>
        <item row="5" column="2">
         <widget class="QLabel" name="m_80_05">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5130</string>
+         </property>
         </widget>
        </item>
-	   <item row="5" column="3">
+       <item row="5" column="3">
         <widget class="QLabel" name="r_80_05">
-		<property name="text">
-		<string>--- °C</string>
-		</property>
+         <property name="text">
+          <string comment="EN: --- °C">@5131</string>
+         </property>
         </widget>
        </item>
-
-        <item row="6" column="0">
+       <item row="6" column="0">
         <widget class="QLabel" name="Ax06">
          <property name="text">
-          <string>0x06</string>
+          <string comment="EN: 0x06">@5132</string>
          </property>
         </widget>
        </item>
        <item row="6" column="1">
         <widget class="QLabel" name="label_80x06">
          <property name="text">
-          <string>Température carburant</string>
+          <string comment="EN: Fuel temperature">@5133</string>
          </property>
         </widget>
        </item>
        <item row="6" column="2">
         <widget class="QLabel" name="m_80_06">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5134</string>
+         </property>
         </widget>
        </item>
-	   <item row="6" column="3">
+       <item row="6" column="3">
         <widget class="QLabel" name="r_80_06">
-		<property name="text">
-		<string>--- °C</string>
-		</property>
+         <property name="text">
+          <string comment="EN: --- °C">@5135</string>
+         </property>
         </widget>
        </item>
-
-        <item row="7" column="0">
+       <item row="7" column="0">
         <widget class="QLabel" name="Ax07">
          <property name="text">
-          <string>0x07</string>
+          <string comment="EN: 0x07">@5136</string>
          </property>
         </widget>
        </item>
        <item row="7" column="1">
         <widget class="QLabel" name="label_80x07">
          <property name="text">
-          <string>Pression collecteur</string>
+          <string comment="EN: Manifold pressure">@5137</string>
          </property>
         </widget>
        </item>
        <item row="7" column="2">
         <widget class="QLabel" name="m_80_07">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5138</string>
+         </property>
         </widget>
        </item>
-		<item row="7" column="3">
+       <item row="7" column="3">
         <widget class="QLabel" name="r_80_07">
-		<property name="text">
-		<string>--- kPa</string>
-		</property>
+         <property name="text">
+          <string comment="EN: --- kPa">@5139</string>
+         </property>
         </widget>
-       </item> 
-
-        <item row="8" column="0">
+       </item>
+       <item row="8" column="0">
         <widget class="QLabel" name="Ax08">
          <property name="text">
-          <string>0x08</string>
+          <string comment="EN: 0x08">@5140</string>
          </property>
         </widget>
        </item>
        <item row="8" column="1">
         <widget class="QLabel" name="label_80x08">
          <property name="text">
-          <string>Tension batterie</string>
+          <string comment="EN: Battery voltage">@5141</string>
          </property>
         </widget>
        </item>
        <item row="8" column="2">
         <widget class="QLabel" name="m_80_08">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5142</string>
+         </property>
         </widget>
-		</item>
-		<item row="8" column="3">
+       </item>
+       <item row="8" column="3">
         <widget class="QLabel" name="r_80_08">
-		<property name="text">
-		<string>--- V</string>
-		</property>
+         <property name="text">
+          <string comment="EN: --- V">@5143</string>
+         </property>
         </widget>
-       </item> 
-
-        <item row="9" column="0">
+       </item>
+       <item row="9" column="0">
         <widget class="QLabel" name="Ax09">
          <property name="text">
-          <string>0x09</string>
+          <string comment="EN: 0x09">@5144</string>
          </property>
         </widget>
        </item>
        <item row="9" column="1">
         <widget class="QLabel" name="label_80x09">
          <property name="text">
-          <string>Capteur potentiomètre papillon</string>
+          <string comment="EN: Throttle potentiometer sensor">@5145</string>
          </property>
         </widget>
        </item>
        <item row="9" column="2">
         <widget class="QLabel" name="m_80_09">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5146</string>
+         </property>
         </widget>
        </item>
-	   <item row="9" column="3">
+       <item row="9" column="3">
         <widget class="QLabel" name="r_80_09">
-		<property name="text">
-		<string>--- V</string>
-		</property>
+         <property name="text">
+          <string comment="EN: --- V">@5147</string>
+         </property>
         </widget>
-       </item>	   
-
-        <item row="10" column="0">
+       </item>
+       <item row="10" column="0">
         <widget class="QLabel" name="Ax0A">
          <property name="text">
-          <string>0x0A</string>
+          <string comment="EN: 0x0A">@5148</string>
          </property>
         </widget>
        </item>
        <item row="10" column="1">
         <widget class="QLabel" name="label_80x0A">
          <property name="text">
-          <string>Contact ralenti</string>
+          <string comment="EN: Idle switch">@5149</string>
          </property>
         </widget>
        </item>
        <item row="10" column="2">
         <widget class="QLabel" name="m_80_0A">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5150</string>
+         </property>
         </widget>
        </item>
-	   <item row="10" column="3">
+       <item row="10" column="3">
         <widget class="QLabel" name="r_80_0A">
-		<property name="text">
-		<string>Activé / Désactivé</string>
-		</property>
+         <property name="text">
+          <string comment="EN: Enabled / Disabled">@5151</string>
+         </property>
         </widget>
        </item>
-
-        <item row="11" column="0">
+       <item row="11" column="0">
         <widget class="QLabel" name="Ax0B">
          <property name="text">
-          <string>0x0B</string>
+          <string comment="EN: 0x0B">@5152</string>
          </property>
         </widget>
        </item>
        <item row="11" column="1">
         <widget class="QLabel" name="label_80x0B">
          <property name="text">
-          <string>Contact climatisation</string>
+          <string comment="EN: A/C switch">@5153</string>
          </property>
         </widget>
        </item>
        <item row="11" column="2">
         <widget class="QLabel" name="m_80_0B">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5154</string>
+         </property>
         </widget>
        </item>
-	   <item row="11" column="3">
+       <item row="11" column="3">
         <widget class="QLabel" name="r_80_0B">
-		<property name="text">
-		<string>Activé / Désactivé</string>
-		</property>
+         <property name="text">
+          <string comment="EN: Enabled / Disabled">@5155</string>
+         </property>
         </widget>
        </item>
-
-        <item row="12" column="0">
+       <item row="12" column="0">
         <widget class="QLabel" name="Ax0C">
          <property name="text">
-          <string>0x0C</string>
+          <string comment="EN: 0x0C">@5156</string>
          </property>
         </widget>
        </item>
        <item row="12" column="1">
         <widget class="QLabel" name="label_80x0C">
          <property name="text">
-          <string>Contact point mort</string>
+          <string comment="EN: Park/neutral switch">@5157</string>
          </property>
         </widget>
        </item>
        <item row="12" column="2">
         <widget class="QLabel" name="m_80_0C">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5158</string>
+         </property>
         </widget>
        </item>
-	   <item row="12" column="3">
+       <item row="12" column="3">
         <widget class="QLabel" name="r_80_0C">
-		<property name="text">
-		<string>Activé / Désactivé</string>
-		</property>
+         <property name="text">
+          <string comment="EN: Enabled / Disabled">@5159</string>
+         </property>
         </widget>
        </item>
-
-        <item row="13" column="0">
+       <item row="13" column="0">
         <widget class="QLabel" name="Ax0D">
          <property name="text">
-          <string>0x0D</string>
+          <string comment="EN: 0x0D">@5160</string>
          </property>
         </widget>
        </item>
        <item row="13" column="1">
         <widget class="QLabel" name="label_80x0D">
          <property name="text">
-          <string>DTC 0</string>
+          <string comment="EN: DTC 0">@5161</string>
          </property>
         </widget>
        </item>
        <item row="13" column="2">
         <widget class="QLabel" name="m_80_0D">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5162</string>
+         </property>
         </widget>
        </item>
-	   	<item row="13" column="3">
+       <item row="13" column="3">
         <widget class="QLabel" name="r_80_0D">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5163</string>
+         </property>
         </widget>
        </item>
-
-        <item row="14" column="0">
+       <item row="14" column="0">
         <widget class="QLabel" name="Ax0E">
          <property name="text">
-          <string>0x0E</string>
+          <string comment="EN: 0x0E">@5164</string>
          </property>
         </widget>
        </item>
        <item row="14" column="1">
         <widget class="QLabel" name="label_80x0E">
          <property name="text">
-          <string>DTC 1</string>
+          <string comment="EN: DTC 1">@5165</string>
          </property>
         </widget>
        </item>
        <item row="14" column="2">
         <widget class="QLabel" name="m_80_0E">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5166</string>
+         </property>
         </widget>
        </item>
-	   	<item row="14" column="3">
+       <item row="14" column="3">
         <widget class="QLabel" name="r_80_0E">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5167</string>
+         </property>
         </widget>
        </item>
-
-        <item row="15" column="0">
+       <item row="15" column="0">
         <widget class="QLabel" name="Ax0F">
          <property name="text">
-          <string>0x0F</string>
+          <string comment="EN: 0x0F">@5168</string>
          </property>
         </widget>
        </item>
        <item row="15" column="1">
         <widget class="QLabel" name="label_80x0F">
          <property name="text">
-          <string>Consigne de ralenti</string>
+          <string comment="EN: Idle set point">@5169</string>
          </property>
         </widget>
        </item>
        <item row="15" column="2">
         <widget class="QLabel" name="m_80_0F">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5170</string>
+         </property>
         </widget>
        </item>
-
-        <item row="16" column="0">
+       <item row="16" column="0">
         <widget class="QLabel" name="Ax10">
          <property name="text">
-          <string>0x10</string>
+          <string comment="EN: 0x10">@5171</string>
          </property>
         </widget>
        </item>
        <item row="16" column="1">
         <widget class="QLabel" name="label_80x10">
          <property name="text">
-          <string>Ralenti chaud / décroissance ralenti</string>
+          <string comment="EN: Hot idle / idle decay">@5172</string>
          </property>
         </widget>
        </item>
        <item row="16" column="2">
         <widget class="QLabel" name="m_80_10">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5173</string>
+         </property>
         </widget>
        </item>
-	   <item row="16" column="3">
+       <item row="16" column="3">
         <widget class="QLabel" name="r_80_10">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5174</string>
+         </property>
         </widget>
        </item>
-
-        <item row="17" column="0">
+       <item row="17" column="0">
         <widget class="QLabel" name="Ax11">
          <property name="text">
-          <string>0x11</string>
+          <string comment="EN: 0x11">@5175</string>
          </property>
         </widget>
        </item>
        <item row="17" column="1">
         <widget class="QLabel" name="label_80x11">
          <property name="text">
-          <string>Inconnu</string>
+          <string comment="EN: Unknown">@5176</string>
          </property>
         </widget>
        </item>
        <item row="17" column="2">
         <widget class="QLabel" name="m_80_11">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5177</string>
+         </property>
         </widget>
        </item>
-
-        <item row="18" column="0">
+       <item row="18" column="0">
         <widget class="QLabel" name="Ax12">
          <property name="text">
-          <string>0x12</string>
+          <string comment="EN: 0x12">@5178</string>
          </property>
         </widget>
        </item>
        <item row="18" column="1">
         <widget class="QLabel" name="label_80x12">
          <property name="text">
-          <string>Position moteur de régulation d'air ralenti</string>
+          <string comment="EN: Idle air control motor position">@5179</string>
          </property>
         </widget>
        </item>
        <item row="18" column="2">
         <widget class="QLabel" name="m_80_12">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5180</string>
+         </property>
         </widget>
        </item>
-	   <item row="18" column="3">
+       <item row="18" column="3">
         <widget class="QLabel" name="r_80_12">
-		<property name="text">
-		<string>--- %</string>
-		</property>
+         <property name="text">
+          <string comment="EN: --- %">@5181</string>
+         </property>
         </widget>
        </item>
-
-        <item row="19" column="0">
+       <item row="19" column="0">
         <widget class="QLabel" name="Ax13">
          <property name="text">
-          <string>0x13-14</string>
+          <string comment="EN: 0x13-14">@5182</string>
          </property>
         </widget>
        </item>
        <item row="19" column="1">
         <widget class="QLabel" name="label_80x13">
          <property name="text">
-          <string>Écart régime de ralenti</string>
+          <string comment="EN: Idle speed deviation">@5183</string>
          </property>
         </widget>
        </item>
        <item row="19" column="2">
         <widget class="QLabel" name="m_80_13">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5184</string>
+         </property>
         </widget>
        </item>
-	   <item row="19" column="3">
+       <item row="19" column="3">
         <widget class="QLabel" name="r_80_13">
-		<property name="text">
-		<string>--- tr/min</string>
-		</property>
+         <property name="text">
+          <string comment="EN: --- rpm">@5185</string>
+         </property>
         </widget>
-       </item> 
-
-
-        <item row="21" column="0">
+       </item>
+       <item row="21" column="0">
         <widget class="QLabel" name="Ax15">
          <property name="text">
-          <string>0x15</string>
+          <string comment="EN: 0x15">@5186</string>
          </property>
         </widget>
        </item>
        <item row="21" column="1">
         <widget class="QLabel" name="label_80x15">
          <property name="text">
-          <string>Décalage d'avance</string>
+          <string comment="EN: Ignition advance offset">@5187</string>
          </property>
         </widget>
        </item>
        <item row="21" column="2">
         <widget class="QLabel" name="m_80_15">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5188</string>
+         </property>
         </widget>
        </item>
-
-        <item row="22" column="0">
+       <item row="22" column="0">
         <widget class="QLabel" name="Ax16">
          <property name="text">
-          <string>0x16</string>
+          <string comment="EN: 0x16">@5189</string>
          </property>
         </widget>
        </item>
        <item row="22" column="1">
         <widget class="QLabel" name="label_80x16">
          <property name="text">
-          <string>Avance à l'allumage</string>
+          <string comment="EN: Ignition advance">@5190</string>
          </property>
         </widget>
        </item>
        <item row="22" column="2">
         <widget class="QLabel" name="m_80_16">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5191</string>
+         </property>
         </widget>
        </item>
-	   <item row="22" column="3">
+       <item row="22" column="3">
         <widget class="QLabel" name="r_80_16">
-		<property name="text">
-		<string>--- °</string>
-		</property>
+         <property name="text">
+          <string comment="EN: --- °">@5192</string>
+         </property>
         </widget>
-       </item>	
-
+       </item>
        <item row="23" column="0">
         <widget class="QLabel" name="Ax17">
          <property name="text">
-          <string>0x17-18</string>
+          <string comment="EN: 0x17-18">@5193</string>
          </property>
         </widget>
        </item>
        <item row="23" column="1">
         <widget class="QLabel" name="label_80x17">
          <property name="text">
-          <string>Temps bobine</string>
+          <string comment="EN: Coil charge time">@5194</string>
          </property>
         </widget>
        </item>
        <item row="23" column="2">
         <widget class="QLabel" name="m_80_17">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5195</string>
+         </property>
         </widget>
        </item>
-	   <item row="23" column="3">
+       <item row="23" column="3">
         <widget class="QLabel" name="r_80_17">
-		<property name="text">
-		<string>--- ms</string>
-		</property>
+         <property name="text">
+          <string comment="EN: --- ms">@5196</string>
+         </property>
         </widget>
-       </item>	
-
-
+       </item>
        <item row="25" column="0">
         <widget class="QLabel" name="Ax19">
          <property name="text">
-          <string>0x19</string>
+          <string comment="EN: 0x19">@5197</string>
          </property>
         </widget>
        </item>
        <item row="25" column="1">
         <widget class="QLabel" name="label_80x19">
          <property name="text">
-          <string>Capteur position vilebrequin</string>
+          <string comment="EN: Crankshaft position sensor">@5198</string>
          </property>
         </widget>
        </item>
        <item row="25" column="2">
         <widget class="QLabel" name="m_80_19">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5199</string>
+         </property>
         </widget>
        </item>
-	   <item row="25" column="3">
+       <item row="25" column="3">
         <widget class="QLabel" name="r_80_19">
-		<property name="text">
-		<string>signal oui/non</string>
-		</property>
+         <property name="text">
+          <string comment="EN: signal yes/no">@5200</string>
+         </property>
         </widget>
        </item>
-
        <item row="26" column="0">
         <widget class="QLabel" name="Ax1A">
          <property name="text">
-          <string>0x1A</string>
+          <string comment="EN: 0x1A">@5201</string>
          </property>
         </widget>
        </item>
        <item row="26" column="1">
         <widget class="QLabel" name="label_80x1A">
          <property name="text">
-          <string>Inconnu</string>
+          <string comment="EN: Unknown">@5202</string>
          </property>
         </widget>
        </item>
        <item row="26" column="2">
         <widget class="QLabel" name="m_80_1A">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5203</string>
+         </property>
         </widget>
        </item>
-
        <item row="27" column="0">
         <widget class="QLabel" name="Ax1B">
          <property name="text">
-          <string>0x1B</string>
+          <string comment="EN: 0x1B">@5204</string>
          </property>
         </widget>
        </item>
        <item row="27" column="1">
         <widget class="QLabel" name="label_80x1B">
          <property name="text">
-          <string>Inconnu</string>
+          <string comment="EN: Unknown">@5205</string>
          </property>
         </widget>
        </item>
        <item row="27" column="2">
         <widget class="QLabel" name="m_80_1B">
-		<property name="text">
-		<string>---</string>
-		</property>
+         <property name="text">
+          <string comment="EN: ---">@5206</string>
+         </property>
         </widget>
        </item>
-
       </layout>
-     </widget>     
+     </widget>
     </widget>
-
     <widget class="QWidget" name="ECU">
      <attribute name="title">
-      <string>mode interactif</string>
+      <string comment="EN: Interactive mode">@6002</string>
      </attribute>
      <widget class="QLabel" name="label_9">
       <property name="geometry">
@@ -3787,7 +3610,7 @@
        </font>
       </property>
       <property name="text">
-       <string>Mode interactif</string>
+       <string comment="EN: Interactive mode">@6003</string>
       </property>
      </widget>
      <widget class="QLabel" name="label_23">
@@ -3800,7 +3623,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>Ceci ne fonctionne qu'en dehors de mems-rosco</string>
+       <string comment="EN: This only works outside mems-rosco.">@6004</string>
       </property>
      </widget>
      <widget class="QLabel" name="label_24">
@@ -3813,7 +3636,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>Ouvrez une invite de commandes ou PowerShell et déplacez-vous dans le dossier où se trouve readmems. Ex. c:\mems-roscobin.</string>
+       <string comment="EN: Open Command Prompt or PowerShell and change to the folder containing readmems, e.g. c:\mems-roscobin.">@6005</string>
       </property>
      </widget>
      <widget class="QLabel" name="label_48">
@@ -3826,7 +3649,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>Vous pouvez vérifier cela en tapant "dir" ou ".dir".</string>
+       <string comment="EN: You can check this by typing &quot;dir&quot; or &quot;.dir&quot;.">@6006</string>
       </property>
      </widget>
      <widget class="QLabel" name="label_49">
@@ -3839,7 +3662,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Ouvrez le mode interactif en tapant &amp;quot;readmems com3 interactive&amp;quot; ou en mode PowerShell &amp;quot;.readmems com3 interactive&amp;quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <string comment="EN: &lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open interactive mode by entering &amp;quot;readmems com3 interactive&amp;quot;, or in PowerShell &amp;quot;.readmems com3 interactive&amp;quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;">@6007</string>
       </property>
      </widget>
      <widget class="QLabel" name="label_50">
@@ -3852,7 +3675,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>com est le port où votre interface est connectée !</string>
+       <string comment="EN: com is the port your interface is connected to!">@6008</string>
       </property>
      </widget>
      <widget class="QLabel" name="label_22">
@@ -3865,7 +3688,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-size:12pt; color:#ff0000;"&gt;Ne faites cela que si vous connaissez bien la liste de commandes de Colin.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=" font-size:12pt; color:#ff0000;"&gt;À vos risques et périls !&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <string comment="EN: &lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; color:#ff0000;&quot;&gt;Only do this if you know Colin's command list well.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; color:#ff0000;&quot;&gt;Proceed at your own risk!&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;">@6009</string>
       </property>
      </widget>
      <widget class="QLabel" name="label_51">
@@ -3878,7 +3701,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&amp;quot;0xFA&amp;quot; détruit tous vos réglages !&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <string comment="EN: &lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&amp;quot;0xFA&amp;quot; destroys all your settings!&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;">@6010</string>
       </property>
      </widget>
      <widget class="QLineEdit" name="lineEdit_2">
@@ -3891,11 +3714,10 @@
        </rect>
       </property>
       <property name="text">
-       <string>"0x0F" réinitialisera les changements de la page émissions</string>
+       <string comment="EN: &quot;0x0F&quot; resets changes made on the emissions page.">@6011</string>
       </property>
      </widget>
     </widget>
-	
    </widget>
    <widget class="QWidget" name="layoutWidget_7">
     <property name="geometry">
@@ -3916,7 +3738,7 @@
         </size>
        </property>
        <property name="text">
-        <string>Connecter</string>
+        <string comment="EN: Connect">@0101</string>
        </property>
       </widget>
      </item>
@@ -3928,7 +3750,7 @@
        <item>
         <widget class="QLabel" name="m_communicationsStatusLabel">
          <property name="text">
-          <string>Communications :</string>
+          <string comment="EN: Communications:">@0102</string>
          </property>
         </widget>
        </item>
@@ -3938,9 +3760,9 @@
        <item>
         <widget class="QLedIndicator" name="m_commsBadLed" native="true" />
        </item>
-	   </layout>
+      </layout>
      </item>
-    <item>
+     <item>
       <widget class="QPushButton" name="m_disconnectButton">
        <property name="minimumSize">
         <size>
@@ -3952,7 +3774,7 @@
         <bool>true</bool>
        </property>
        <property name="text">
-        <string>Déconnecter</string>
+        <string comment="EN: Disconnect">@0103</string>
        </property>
       </widget>
      </item>
@@ -3966,7 +3788,7 @@
      <item>
       <widget class="QLabel" name="m_ecuIdLabel">
        <property name="text">
-        <string>ID ECU :</string>
+        <string comment="EN: ECU ID:">@0104</string>
        </property>
       </widget>
      </item>
@@ -3977,24 +3799,28 @@
        </property>
       </widget>
      </item>
-     <item><layout class="QHBoxLayout" name="ecuStatusLayout"><item>
-      <widget class="Line" name="m_vline2">
-       <property name="orientation">
-        <enum>Qt::Vertical</enum>
-       </property>
-      </widget>
-     </item>
-	   <item>
-        <widget class="QLabel" name="m_engineerrorLabel">
-         <property name="text">
-          <string>Erreurs ECU :</string>
+     <item>
+      <layout class="QHBoxLayout" name="ecuStatusLayout">
+       <item>
+        <widget class="Line" name="m_vline2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
          </property>
         </widget>
        </item>
-	    <item>
+       <item>
+        <widget class="QLabel" name="m_engineerrorLabel">
+         <property name="text">
+          <string comment="EN: ECU errors:">@0105</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QLedIndicator" name="m_engine_error" native="true" />
        </item>
-      </layout></item></layout>
+      </layout>
+     </item>
+    </layout>
    </widget>
    <widget class="QWidget" name="layoutWidget_8">
     <property name="geometry">
@@ -4007,8 +3833,6 @@
     </property>
     <layout class="QHBoxLayout" name="m_lowerHorizontalLayout" />
    </widget>
-
-   	 
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -4021,20 +3845,20 @@
    </property>
    <widget class="QMenu" name="m_fileMenu">
     <property name="title">
-     <string>&amp;Fichier</string>
+     <string comment="EN: &amp;File">@0106</string>
     </property>
     <addaction name="separator" />
     <addaction name="m_exitAction" />
    </widget>
    <widget class="QMenu" name="m_optionsMenu">
     <property name="title">
-     <string>&amp;Options</string>
+     <string comment="EN: &amp;Options">@0107</string>
     </property>
     <addaction name="m_editSettingsAction" />
    </widget>
    <widget class="QMenu" name="m_helpMenu">
     <property name="title">
-     <string>&amp;Aide</string>
+     <string comment="EN: &amp;Help">@0108</string>
     </property>
     <addaction name="m_helpContentsAction" />
     <addaction name="m_helpAboutAction" />
@@ -4045,37 +3869,37 @@
   </widget>
   <action name="m_helpContentsAction">
    <property name="text">
-    <string>&amp;Sommaire...</string>
+    <string comment="EN: &amp;Sommaire...">@0109</string>
    </property>
   </action>
   <action name="m_helpAboutAction">
    <property name="text">
-    <string>À &amp;propos</string>
+    <string comment="EN: &amp;About">@0110</string>
    </property>
   </action>
   <action name="m_showFaultCodesAction">
    <property name="text">
-    <string>Afficher les &amp;codes défaut...</string>
+    <string comment="EN: Show &amp;fault codes...">@0111</string>
    </property>
   </action>
   <action name="m_idleAirControlAction">
    <property name="text">
-    <string>Contrôle d'air de &amp;ralenti...</string>
+    <string comment="EN: &amp;Idle air control...">@0112</string>
    </property>
   </action>
   <action name="m_editSettingsAction">
    <property name="text">
-    <string>&amp;Modifier les paramètres...</string>
+    <string comment="EN: &amp;Edit settings...">@0113</string>
    </property>
   </action>
   <action name="m_saveROMImageAction">
    <property name="text">
-    <string>&amp;Enregistrer image ROM...</string>
+    <string comment="EN: &amp;Enregistrer image ROM...">@0114</string>
    </property>
   </action>
   <action name="m_exitAction">
    <property name="text">
-    <string>&amp;Quitter</string>
+    <string comment="EN: &amp;Quitter">@0115</string>
    </property>
   </action>
  </widget>
@@ -4093,7 +3917,7 @@
    <header>manometer100.h</header>
    <container>1</container>
   </customwidget>
-   <customwidget>
+  <customwidget>
    <class>ManoMeter900</class>
    <extends>QWidget</extends>
    <header>manometer900.h</header>
