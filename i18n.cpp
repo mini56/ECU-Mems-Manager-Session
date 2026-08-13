@@ -37,7 +37,6 @@ bool I18n::load(const QString &languageCode)
 
     const QString base = QCoreApplication::applicationDirPath() + "/translations/";
 
-    // Nouveau système : dictionnaire numérique stable (ex. 0001, 1001, 2001...).
     QFile jsonFile(base + self->m_language + ".json");
     if (jsonFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
         const QJsonDocument doc = QJsonDocument::fromJson(jsonFile.readAll());
@@ -52,7 +51,6 @@ bool I18n::load(const QString &languageCode)
         }
     }
 
-    // Compatibilité temporaire pendant la migration complète des chaînes.
     const QString tsFile = base + "ECUMemsManager_" + self->m_language + ".ts";
     const bool legacyLoaded = self->loadDictionary(tsFile);
 
@@ -96,6 +94,24 @@ QString I18n::lookup(const QString &source) const
 {
     if (source.isEmpty())
         return source;
+
+    const auto numericToken = [this](const QString &value, bool *matched) -> QString {
+        *matched = false;
+        if (value.size() < 2 || value.at(0).unicode() != 64)
+            return QString();
+        bool ok = false;
+        const int key = value.mid(1).toInt(&ok);
+        if (!ok)
+            return QString();
+        *matched = true;
+        return lookupKey(key);
+    };
+
+    bool matched = false;
+    const QString keyed = numericToken(source, &matched);
+    if (matched)
+        return keyed;
+
     const auto it = m_dictionary.constFind(source);
     return it == m_dictionary.constEnd() || it.value().isEmpty() ? source : it.value();
 }
