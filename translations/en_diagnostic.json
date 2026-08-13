@@ -95,5 +95,6 @@
   "6893": "Export report",
   "6894": "report texte (*.txt)",
   "6895": "Diagnostics",
-  "6896": "Unable to write report."
+  "6896": "Unable to write report.",
+  "6897": "Decoding: (raw 7D14-15 - 32768) + Hot idle position correction. The correction follows the value configured in the Settings tab; it is not hard-coded. The indicative value is consistent when it remains close to zero."
 }

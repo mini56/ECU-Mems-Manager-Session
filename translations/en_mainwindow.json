@@ -77,5 +77,6 @@
   "7075": "    [Mode diagnostic : %1]",
   "7076": "    [ASCII : %1]",
   "7077": "    [Security status received]",
-  "7078": "    [ECU identification received]"
+  "7078": "    [ECU identification received]",
+  "7079": "Mode change: the command is sent only on request. D3 (ECU recoding) remains intentionally disabled."
 }

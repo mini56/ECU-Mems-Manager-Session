@@ -95,5 +95,6 @@
   "6893": "Exporter le rapport",
   "6894": "Rapport texte (*.txt)",
   "6895": "Diagnostic",
-  "6896": "Impossible d'écrire le rapport."
+  "6896": "Impossible d'écrire le rapport.",
+  "6897": "Décodage : (7D14-15 brut - 32768) + correction Position ralenti chaud. La correction suit le réglage de l'onglet Réglages ; elle n'est pas codée en dur. Valeur indicative cohérente si elle reste proche de zéro."
 }

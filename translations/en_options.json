@@ -7,5 +7,5 @@
   "6105": "Dark",
   "6106": "Language:",
   "6107": "Create and maintain a Desktop shortcut",
-  "6108": "The shortcut is created immediately after validation. If it is removed, the software will automatically recreate it on the next startup."
+  "6108": "The shortcut is created immediately after confirmation. If it is deleted, the software will automatically recreate it at the next startup."
 }

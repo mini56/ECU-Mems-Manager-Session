@@ -75,8 +75,7 @@ void OptionsDialog::setupWidgets()
       I18n::text(6107) /* EN: Create and maintain a Desktop shortcut */, this);
   m_desktopShortcutBox->setChecked(m_desktopShortcut);
   m_desktopShortcutBox->setToolTip(
-      tr("Le raccourci est créé immédiatement après validation. S'il est supprimé, "
-         "le logiciel le recréera automatiquement au prochain démarrage."));
+      I18n::text(6108) /* EN: The shortcut is created immediately after confirmation. If it is deleted, the software will automatically recreate it at the next startup. */);
   
 /*   m_lambdaScaleBox->setEditable(false);
   m_lambdaScaleBox->addItem("_4mV_steps");

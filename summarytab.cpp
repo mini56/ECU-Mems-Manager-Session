@@ -95,82 +95,47 @@ SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)
   // dans le logiciel (onglets Aperçu et Réglages). Les lignes concernées
   // sont repérables par l'icône en forme de bulle devant leur nom.
   setTooltip(m_rowCoolantTemp,
-    tr("Affiche la température du liquide de refroidissement mesurée par l'ECU. Si le capteur est en circuit ouvert, "
-    "une valeur par défaut d'environ 60°C sera affichée. Pendant la montée en température, la valeur doit augmenter "
-    "progressivement de la température ambiante à environ 90°C. Un capteur défectueux peut causer un démarrage "
-    "difficile, un ralenti trop élevé, une surconsommation et des ventilateurs tournant en continu."));
+    I18n::text(6687) /* EN: Displays coolant temperature measured by the ECU. If the sensor circuit is open, a default value of about 60°C is displayed. During warm-up the value should rise progressively from ambient temperature to about 90°C. A faulty sensor can cause difficult starting, excessively high idle, high fuel consumption and continuously running fans. */);
   setTooltip(m_rowAmbientTemp,
-    tr("Affiche la température mesurée par l'ECU via la sonde de température d'air ambiant (si équipée). Si le capteur "
-    "est en circuit ouvert, une valeur par défaut fixe sera affichée. Ce capteur sert à l'ECU pour mesurer la "
-    "température dans le compartiment moteur, généralement pour piloter un ventilateur supplémentaire. Sur les ECU "
-    "MEMS qui ne supportent pas ce capteur, la valeur affichera N/S."));
+    I18n::text(6688) /* EN: Displays ambient-air temperature measured by the ECU (if equipped). If the sensor circuit is open, a fixed default value is displayed. The ECU uses this sensor to measure engine-bay temperature, generally to control an additional fan. On MEMS ECUs that do not support this sensor, N/S is displayed. */);
   setTooltip(m_rowIntakeAirTemp,
-    tr("Affiche la température mesurée par l'ECU via la sonde de température d'air admission (si équipée). Si le "
-    "capteur est en circuit ouvert, une valeur par défaut fixe sera affichée. Cette température sert à l'ECU pour "
-    "retarder l'allumage afin d'éviter le cliquetis et ajuster la richesse à chaud."));
+    I18n::text(6689) /* EN: Displays intake-air temperature measured by the ECU (if equipped). If the sensor circuit is open, a fixed default value is displayed. The ECU uses this temperature to retard ignition to prevent knock and to adjust hot mixture. */);
   setTooltip(m_rowMapKpa,
-    tr("Affiche la pression mesurée par le capteur de pression d'air interne du MEMS. Cette valeur doit indiquer la "
-    "pression atmosphérique de 100 kPa moteur à l'arrêt, et une valeur plus basse entre 25 et 40 kPa au ralenti. Des "
-    "valeurs très élevées peuvent indiquer un problème du capteur interne au MEMS, ou plus probablement une durite "
-    "de dépression bouchée ou débranchée."));
+    I18n::text(6690) /* EN: Displays pressure measured by the MEMS internal air-pressure sensor. It should show atmospheric pressure of about 100 kPa with the engine stopped and a lower value of 25-40 kPa at idle. Very high values may indicate an internal MEMS sensor problem or, more commonly, a blocked or disconnected vacuum hose. */);
   setTooltip(m_rowBatteryVoltage,
-    tr("Affiche la tension d'alimentation du véhicule mesurée en interne par l'ECU. De grands écarts sur cette mesure "
-    "peuvent entraîner des difficultés de démarrage et des erreurs de CO au ralenti."));
+    I18n::text(6691) /* EN: Displays vehicle supply voltage measured internally by the ECU. Large deviations can cause starting difficulties and idle CO errors. */);
   setTooltip(m_rowThrottlePot,
-    tr("Affiche la position du papillon obtenue par l'ECU MEMS via le potentiomètre de papillon. Cette valeur doit "
-    "passer d'une valeur basse à une valeur haute lorsque la pédale d'accélérateur est enfoncée."));
+    I18n::text(6692) /* EN: Displays throttle position obtained by the MEMS ECU from the throttle potentiometer. The value should move from low to high as the accelerator pedal is pressed. */);
   setTooltip(m_rowIdleSwitch,
-    tr("Affiche l'état du contacteur papillon (si équipé). Si le contact indique 'ON' alors que le papillon est fermé, "
-    "le véhicule ne tournera pas correctement au ralenti et la position papillon fermé devra peut-être être "
-    "réinitialisée (enfoncer/relâcher complètement l'accélérateur 5 fois en 10 secondes après la mise du contact, "
-    "puis attendre 20 secondes)."));
+    I18n::text(6693) /* EN: Displays throttle-switch status (if fitted). If the switch indicates 'ON' while the throttle is closed, the vehicle will not idle correctly and the closed-throttle position may need to be reset (fully press/release the accelerator 5 times within 10 seconds after switching the ignition on, then wait 20 seconds). */);
   setTooltip(m_rowParkNeutralSwitch,
-    tr("Affiche l'état du contacteur point mort/parking mesuré par l'ECU MEMS. Ce contacteur améliore la régulation du "
-    "ralenti sur les véhicules à boîte automatique ou CVT. Ne fonctionne pas sur les véhicules à boîte manuelle."));
+    I18n::text(6694) /* EN: Displays park/neutral switch status measured by the MEMS ECU. This switch improves idle control on automatic or CVT vehicles. It is not used on manual-transmission vehicles. */);
   setTooltip(m_rowIdleSpeedOffset,
-    tr("Si un décalage de service du ralenti a été configuré dans cet ECU, l'écart par rapport au ralenti normal est "
-    "affiché ici. Normalement, seules deux valeurs sont possibles : 0 tr/min ou 49 tr/min."));
+    I18n::text(6695) /* EN: If an idle service offset is configured in this ECU, the difference from normal idle is displayed here. Normally only two values are possible: 0 rpm or 49 rpm. */);
   setTooltip(m_rowIacPosition,
-    tr("C'est le nombre de pas du moteur pas-à-pas depuis la fermeture complète (0) que l'ECU a appris comme position "
-    "correcte pour maintenir le régime de ralenti visé, moteur bien chaud. Si cette valeur sort de la plage 10-50 "
-    "pas, c'est le signe possible d'un défaut ou d'un mauvais réglage."));
+    I18n::text(6696) /* EN: This is the number of stepper-motor steps from fully closed (0) learned by the ECU as the correct position to maintain target idle with the engine fully warm. A value outside 10-50 steps may indicate a fault or incorrect adjustment. */);
   setTooltip(m_rowIdleError,
-    tr("C'est l'écart actuel entre le régime de ralenti visé par l'ECU MEMS et le régime moteur réel. Une valeur "
-    "supérieure à 100 tr/min indique que l'ECU ne maîtrise pas le ralenti, signe possible d'un défaut."));
+    I18n::text(6697) /* EN: This is the current difference between the MEMS ECU target idle speed and actual engine speed. A value above 100 rpm indicates that the ECU is not controlling idle correctly and may indicate a fault. */);
   setTooltip(m_rowIdleErrorHotCorrected,
-    tr("Décodage du champ 7D14-15 : la valeur brute 16 bits est centrée sur 32768, puis la correction de position "
-    "du ralenti chaud configurée dans l'onglet Réglages est appliquée. La formule est : "
-    "(valeur brute - 32768) + correction ralenti chaud. La correction n'est pas une constante : elle suit le réglage "
-    "actuel de l'utilisateur."));
+    I18n::text(6698) /* EN: Decodes field 7D14-15: the raw 16-bit value is centred on 32768, then the hot-idle position correction configured in the Settings tab is applied. Formula: (raw value - 32768) + hot-idle correction. The correction is not constant; it follows the user's current setting. */);
   setTooltip(m_rowIgnitionAdvanceOffset,
-    tr("Affiche le décalage d'avance de service actuellement utilisé par l'ECU MEMS. C'est un réglage spécial pour les "
-    "pays utilisant un carburant à faible indice d'octane, configurable dans l'onglet Réglages."));
+    I18n::text(6699) /* EN: Displays the service ignition-advance offset currently used by the MEMS ECU. This special setting is intended for countries using low-octane fuel and can be configured in the Settings tab. */);
   setTooltip(m_rowCoilTime,
-    tr("C'est le temps de charge de la bobine d'allumage jusqu'à son courant nominal, mesuré par l'ECU MEMS. Avec une "
-    "tension batterie d'environ 14V, cette valeur doit être d'environ 2-3ms. Une valeur élevée peut indiquer un "
-    "problème du circuit primaire de la bobine."));
+    I18n::text(6700) /* EN: This is ignition-coil charge time to nominal current, measured by the MEMS ECU. At about 14 V battery voltage it should be around 2-3 ms. A high value may indicate a problem in the coil primary circuit. */);
   setTooltip(m_rowThrottleAngle,
-    tr("Affiche la position du papillon obtenue par l'ECU MEMS via le potentiomètre de papillon. Cette valeur doit "
-    "passer d'une valeur basse à une valeur haute lorsque la pédale d'accélérateur est enfoncée."));
+    I18n::text(6701) /* EN: Displays throttle position obtained by the MEMS ECU from the throttle potentiometer. The value should move from low to high as the accelerator pedal is pressed. */);
   setTooltip(m_rowLambdaVoltage,
-    tr("Affiche la tension de la sonde à oxygène lue par l'ECU MEMS. Moteur bien chaud, en conditions normales de "
-    "ralenti ou de conduite, cette tension oscille rapidement entre 0,0-0,2V et 0,7-1,0V."));
+    I18n::text(6702) /* EN: Displays oxygen-sensor voltage read by the MEMS ECU. With the engine fully warm under normal idle or driving conditions, this voltage rapidly switches between 0.0-0.2 V and 0.7-1.0 V. */);
   setTooltip(m_rowLambdaStatus,
-    tr("Affiche l'état du diagnostic interne MEMS sur la sonde à oxygène et son câblage. La valeur ON indique aucun "
-    "défaut, OFF indique un problème possible."));
+    I18n::text(6703) /* EN: Displays the MEMS internal diagnostic status for the oxygen sensor and its wiring. ON means no fault; OFF indicates a possible problem. */);
   setTooltip(m_rowClosedLoop,
-    tr("Affiche si l'injection est régulée par rétroaction des sondes à oxygène. Sur un véhicule bien chaud, l'état de "
-    "boucle doit indiquer boucle fermée dans la plupart des conditions de conduite et de ralenti."));
+    I18n::text(6704) /* EN: Shows whether fuelling is controlled by oxygen-sensor feedback. With the vehicle fully warm, loop status should indicate closed loop under most driving and idle conditions. */);
   setTooltip(m_rowLongTermFuelTrim,
-    tr("Affiche la correction carburant actuelle par rétroaction, en pourcentage par rapport à la valeur cartographiée. "
-    "Des valeurs élevées (ex. 120%) indiquent une compensation d'un mélange trop pauvre, des valeurs basses (ex. "
-    "80%) une compensation d'un mélange trop riche."));
+    I18n::text(6705) /* EN: Displays current feedback fuel correction as a percentage of the mapped value. High values (e.g. 120%) indicate compensation for a mixture that is too lean; low values (e.g. 80%) indicate compensation for a mixture that is too rich. */);
   setTooltip(m_rowShortTermFuelTrim,
-    tr("La correction carburant court terme n'est active qu'en boucle fermée. Des valeurs jusqu'à 10% sont normales, "
-    "occasionnellement jusqu'à 15%. Des valeurs supérieures à 15% sont anormales."));
+    I18n::text(6706) /* EN: Short-term fuel trim is active only in closed loop. Values up to 10% are normal and occasionally up to 15%. Values above 15% are abnormal. */);
   setTooltip(m_rowIgnitionAdvance2,
-    tr("Fonction intégrée à l'ECU MEMS pour pallier certaines situations pendant la vie du véhicule (carburant à "
-    "faible indice d'octane, usure moteur), en avançant légèrement l'allumage au ralenti."));
+    I18n::text(6707) /* EN: MEMS ECU function intended to compensate for certain conditions over the vehicle's life (low-octane fuel, engine wear) by slightly advancing ignition at idle. */);
 }
 
 int SummaryTab::addRow(const QString &name)

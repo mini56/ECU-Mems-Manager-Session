@@ -77,5 +77,6 @@
   "7075": "    [Mode diagnostic : %1]",
   "7076": "    [ASCII : %1]",
   "7077": "    [Statut sécurité reçu]",
-  "7078": "    [Identification ECU reçue]"
+  "7078": "    [Identification ECU reçue]",
+  "7079": "Changement de mode : la commande est envoyée uniquement sur demande. D3 (recodage) reste volontairement bloquée."
 }

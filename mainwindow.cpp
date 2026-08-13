@@ -206,8 +206,7 @@ m_mems(0), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerD
   }
 
   QLabel *modeWarning = new QLabel(
-      tr("Changement de mode : la commande est envoyée uniquement sur demande. "
-         "D3 (recodage) reste volontairement bloquée."),
+      I18n::text(7079) /* EN: Mode change: the command is sent only on request. D3 (ECU recoding) remains intentionally disabled. */,
       sessionBox);
   modeWarning->setWordWrap(true);
   sessionGrid->addWidget(modeWarning, 3, 0, 1, 4);
