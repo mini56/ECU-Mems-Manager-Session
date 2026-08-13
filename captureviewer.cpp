@@ -20,7 +20,7 @@
 
 CaptureViewer::CaptureViewer(QWidget *parent) : QDialog(parent)
 {
-    setWindowTitle(tr("Voir les captures"));
+    setWindowTitle(I18n::text(6300) /* EN: View captures */);
     resize(800, 520);
 
     QHBoxLayout *main = new QHBoxLayout(this);
@@ -29,16 +29,16 @@ CaptureViewer::CaptureViewer(QWidget *parent) : QDialog(parent)
     main->addWidget(m_list);
 
     QVBoxLayout *right = new QVBoxLayout;
-    m_preview = new QLabel(tr("Sélectionnez une capture."), this);
+    m_preview = new QLabel(I18n::text(6301) /* EN: Select a capture. */, this);
     m_preview->setAlignment(Qt::AlignCenter);
     m_preview->setMinimumSize(460, 360);
     m_preview->setFrameShape(QFrame::StyledPanel);
     right->addWidget(m_preview, 1);
 
     QHBoxLayout *buttons = new QHBoxLayout;
-    m_open = new QPushButton(tr("Ouvrir / Agrandir"), this);
-    m_delete = new QPushButton(tr("Supprimer"), this);
-    m_close = new QPushButton(tr("Fermer"), this);
+    m_open = new QPushButton(I18n::text(6302) /* EN: Open / Enlarge */, this);
+    m_delete = new QPushButton(I18n::text(6303) /* EN: Delete */, this);
+    m_close = new QPushButton(I18n::text(6304) /* EN: Close */, this);
     buttons->addWidget(m_open);
     buttons->addWidget(m_delete);
     buttons->addStretch();
@@ -75,7 +75,7 @@ void CaptureViewer::refresh()
     if (m_list->count() > 0)
         m_list->setCurrentRow(0);
     else
-        m_preview->setText(tr("Aucune capture enregistrée."));
+        m_preview->setText(I18n::text(6305) /* EN: No saved capture. */);
 }
 
 void CaptureViewer::selectionChanged()
@@ -84,7 +84,7 @@ void CaptureViewer::selectionChanged()
     if (path.isEmpty()) return;
     QPixmap pix(path);
     if (pix.isNull())
-        m_preview->setText(tr("Impossible de lire cette capture."));
+        m_preview->setText(I18n::text(6306) /* EN: Unable to read this capture. */);
     else
         m_preview->setPixmap(pix.scaled(m_preview->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
 }
@@ -101,14 +101,14 @@ void CaptureViewer::deleteSelected()
     const QString path = selectedPath();
     if (path.isEmpty()) return;
 
-    if (QMessageBox::question(this, tr("Supprimer la capture"),
-                              tr("Supprimer définitivement la capture sélectionnée ?"),
+    if (QMessageBox::question(this, I18n::text(6307) /* EN: Delete capture */,
+                              I18n::text(6308) /* EN: Permanently delete the selected capture? */,
                               QMessageBox::Yes | QMessageBox::No) != QMessageBox::Yes)
         return;
 
     if (!QFile::remove(path))
     {
-        QMessageBox::warning(this, tr("Erreur"), tr("Impossible de supprimer cette capture."));
+        QMessageBox::warning(this, I18n::text(6309) /* EN: Error */, I18n::text(6310) /* EN: Unable to delete this capture. */);
         return;
     }
     refresh();
