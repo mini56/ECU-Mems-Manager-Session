@@ -191,7 +191,13 @@ void I18n::applyObject(QObject *object)
     if (QLabel *w = qobject_cast<QLabel*>(object)) w->setText(lookup(w->text()));
     if (QAbstractButton *w = qobject_cast<QAbstractButton*>(object)) w->setText(lookup(w->text()));
     if (QGroupBox *w = qobject_cast<QGroupBox*>(object)) w->setTitle(lookup(w->title()));
-    if (QLineEdit *w = qobject_cast<QLineEdit*>(object)) w->setPlaceholderText(lookup(w->placeholderText()));
+    if (QLineEdit *w = qobject_cast<QLineEdit*>(object)) {
+        // Static keyed text from .ui files must be resolved too. Restrict this
+        // to @-tokens so normal user-entered values are never translated.
+        if (w->text().startsWith(QLatin1Char('@')))
+            w->setText(lookup(w->text()));
+        w->setPlaceholderText(lookup(w->placeholderText()));
+    }
     if (QTextEdit *w = qobject_cast<QTextEdit*>(object)) w->setPlaceholderText(lookup(w->placeholderText()));
     if (QPlainTextEdit *w = qobject_cast<QPlainTextEdit*>(object)) w->setPlaceholderText(lookup(w->placeholderText()));
     if (QAction *a = qobject_cast<QAction*>(object)) {
