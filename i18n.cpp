@@ -8,6 +8,8 @@
 #include <QEvent>
 #include <QFile>
 #include <QGroupBox>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMenu>
@@ -31,10 +33,30 @@ bool I18n::load(const QString &languageCode)
     I18n *self = instance();
     self->m_language = languageCode.toLower();
     self->m_dictionary.clear();
+    self->m_keyDictionary.clear();
 
-    const QString fileName = QCoreApplication::applicationDirPath()
-        + "/translations/ECUMemsManager_" + self->m_language + ".ts";
-    return self->loadDictionary(fileName);
+    const QString base = QCoreApplication::applicationDirPath() + "/translations/";
+
+    // Nouveau système : dictionnaire numérique stable (ex. 0001, 1001, 2001...).
+    QFile jsonFile(base + self->m_language + ".json");
+    if (jsonFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        const QJsonDocument doc = QJsonDocument::fromJson(jsonFile.readAll());
+        if (doc.isObject()) {
+            const QJsonObject obj = doc.object();
+            for (auto it = obj.constBegin(); it != obj.constEnd(); ++it) {
+                bool ok = false;
+                const int key = it.key().toInt(&ok);
+                if (ok && it.value().isString())
+                    self->m_keyDictionary.insert(key, it.value().toString());
+            }
+        }
+    }
+
+    // Compatibilité temporaire pendant la migration complète des chaînes.
+    const QString tsFile = base + "ECUMemsManager_" + self->m_language + ".ts";
+    const bool legacyLoaded = self->loadDictionary(tsFile);
+
+    return !self->m_keyDictionary.isEmpty() || legacyLoaded;
 }
 
 bool I18n::loadDictionary(const QString &fileName)
@@ -78,6 +100,14 @@ QString I18n::lookup(const QString &source) const
     return it == m_dictionary.constEnd() || it.value().isEmpty() ? source : it.value();
 }
 
+QString I18n::lookupKey(int key) const
+{
+    const auto it = m_keyDictionary.constFind(key);
+    if (it != m_keyDictionary.constEnd() && !it.value().isEmpty())
+        return it.value();
+    return QString("[%1]").arg(key, 4, 10, QLatin1Char('0'));
+}
+
 QString I18n::text(const char *source)
 {
     return instance()->lookup(QString::fromUtf8(source));
@@ -86,6 +116,11 @@ QString I18n::text(const char *source)
 QString I18n::text(const QString &source)
 {
     return instance()->lookup(source);
+}
+
+QString I18n::text(int key)
+{
+    return instance()->lookupKey(key);
 }
 
 QString I18n::language()
