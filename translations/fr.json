@@ -1,0 +1,16 @@
+{
+  "0001": "Détection des ports série : %1 %",
+  "0002": "ECU MEMS Manager - Langue",
+  "0003": "<b>Choisissez votre langue</b>",
+  "0004": "La langue pourra être modifiée ensuite dans Options.",
+  "0005": "Français",
+  "0006": "English",
+  "0007": "ECU MEMS Manager",
+  "0008": "Initialisation du diagnostic ECU",
+  "0009": "Version %1",
+  "0010": "Initialisation...",
+  "0011": "Initialisation de la base de données...",
+  "0012": "Erreur base de données",
+  "0013": "Impossible d'ouvrir la base de données SQLite.\n\nECU Mems Manager ne peut pas démarrer.",
+  "0014": "Chargement de l'interface..."
+}
