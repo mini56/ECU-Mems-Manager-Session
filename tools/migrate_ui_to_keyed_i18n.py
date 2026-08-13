@@ -118,3 +118,5 @@ print(f"EN keys: {len(out_en)}")
 print(f"FR keys: {len(out_fr)}")
 if set(out_en) != set(out_fr):
     raise SystemExit("EN/FR key mismatch")
+
+# trigger 2
