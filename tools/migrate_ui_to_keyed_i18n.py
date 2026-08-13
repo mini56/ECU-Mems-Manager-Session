@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import re
 ROOT=Path(__file__).resolve().parents[1]
-keyed=ROOT/'main_keyed.cpp'
-main=ROOT/'main.cpp'
-cmake=ROOT/'CMakeLists.txt'
-if not keyed.exists(): raise SystemExit('main_keyed.cpp missing')
-main.write_text(keyed.read_text(encoding='utf-8'),encoding='utf-8')
-text=cmake.read_text(encoding='utf-8')
-if 'main_keyed.cpp' not in text: raise SystemExit('main_keyed.cpp not found in CMakeLists.txt')
-cmake.write_text(text.replace('main_keyed.cpp','main.cpp',1),encoding='utf-8')
-print('main.cpp synchronized from keyed startup source')
-print('CMake now compiles main.cpp')
+active={'main.cpp','mainwindow.cpp','optionsdialog.cpp','summarytab.cpp','diagnosticpanel.cpp','analysistab.cpp','captureviewer.cpp','helpviewer.cpp','aboutbox.cpp'}
+patterns=[('tr-call',re.compile(r'\btr\s*\(')),('text-literal',re.compile(r'I18n::text\s*\(\s*"'))]
+count=0
+for name in sorted(active):
+    p=ROOT/name
+    if not p.exists(): continue
+    for no,line in enumerate(p.read_text(encoding='utf-8',errors='replace').splitlines(),1):
+        for kind,pat in patterns:
+            if pat.search(line):
+                count+=1
+                print(f'{kind}: {name}:{no}: {line.strip()[:180]}')
+print(f'ACTIVE_REMAINING_CALL_LINES={count}')
