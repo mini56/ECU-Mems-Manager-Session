@@ -92,13 +92,12 @@ if(WIN32)
     )
 endif()
 
-# Runtime language files. EN/FR numeric dictionaries are the new system.
-# Legacy TS files remain temporarily only while the remaining UI is migrated.
+# Runtime language files. Deploy every keyed JSON module automatically.
+file(GLOB KEYED_TRANSLATION_JSON "${CMAKE_SOURCE_DIR}/translations/*.json")
 add_custom_command(TARGET ${PNAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PNAME}>/translations"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_SOURCE_DIR}/translations/en.json"
-        "${CMAKE_SOURCE_DIR}/translations/fr.json"
+        ${KEYED_TRANSLATION_JSON}
         "${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_fr.ts"
         "${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_en.ts"
         "$<TARGET_FILE_DIR:${PNAME}>/translations"
