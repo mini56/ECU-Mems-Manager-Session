@@ -140,8 +140,31 @@ if cmake.exists():
         cmake.write_text(cmake_text.replace(old, new, 1), encoding="utf-8")
         cmake_changed = True
 
+options = ROOT / "optionsdialog.cpp"
+options_count = 0
+if options.exists():
+    source = options.read_text(encoding="utf-8")
+    pattern = re.compile(r'\btr\(\s*"(?:\\.|[^"\\])*"\s*\)')
+    matches = list(pattern.finditer(source))
+    if matches:
+        expected = 8
+        if len(matches) != expected:
+            raise SystemExit(f"OptionsDialog simple tr count unexpected: {len(matches)}")
+        english_options = read_json(TR / "en_options.json")
+        nonlocal_index = [0]
+        def replace_options(match):
+            nonlocal_index[0] += 1
+            key = 6099 + nonlocal_index[0]
+            comment = english_options.get(str(key), "")
+            suffix = f" /* EN: {comment} */" if comment else ""
+            return f"I18n::text({key}){suffix}"
+        source = pattern.sub(replace_options, source)
+        options.write_text(source, encoding="utf-8")
+        options_count = expected
+
 print(f"UI migrated: {count} strings")
 print(f"CaptureViewer migrated: {capture_count} strings")
+print(f"OptionsDialog migrated: {options_count} strings")
 print(f"CMake translation deploy patched: {cmake_changed}")
 print(f"EN keys: {len(out_en)}")
 print(f"FR keys: {len(out_fr)}")
