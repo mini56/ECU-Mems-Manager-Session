@@ -13,22 +13,22 @@ def load_ts(lang):
     return out
 
 en_ts=load_ts('en'); fr_ts=load_ts('fr')
-p=ROOT/'summarytab.cpp'; source=p.read_text(encoding='utf-8')
+p=ROOT/'diagnosticpanel.cpp'; source=p.read_text(encoding='utf-8')
 pat=re.compile(r'\b(?:tr|I18n::text)\(\s*"((?:\\.|[^"\\])*)"\s*\)')
 matches=list(pat.finditer(source))
-if not matches: raise SystemExit('No simple SummaryTab strings found')
-if len(matches)>190: raise SystemExit(f'Too many SummaryTab strings: {len(matches)}')
+if not matches: raise SystemExit('No simple DiagnosticPanel strings found')
+if len(matches)>190: raise SystemExit(f'Too many DiagnosticPanel strings: {len(matches)}')
 out_en={}; out_fr={}; idx=[0]
 def decode(raw):
     return raw.replace('\\n','\n').replace('\\"','"').replace('\\\\','\\')
 def repl(m):
-    idx[0]+=1; key=6599+idx[0]; src=decode(m.group(1))
+    idx[0]+=1; key=6799+idx[0]; src=decode(m.group(1))
     en=en_ts.get(src,src); fr=fr_ts.get(src,src)
     out_en[str(key)]=en; out_fr[str(key)]=fr
     safe=en.replace('*/','* /').replace('\n',' ')
     return f'I18n::text({key}) /* EN: {safe} */'
 source=pat.sub(repl,source)
 p.write_text(source,encoding='utf-8')
-(TR/'en_summary.json').write_text(json.dumps(out_en,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-(TR/'fr_summary.json').write_text(json.dumps(out_fr,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-print(f'SummaryTab migrated: {idx[0]} strings, keys 6600-{6599+idx[0]}')
+(TR/'en_diagnostic.json').write_text(json.dumps(out_en,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+(TR/'fr_diagnostic.json').write_text(json.dumps(out_fr,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+print(f'DiagnosticPanel migrated: {idx[0]} strings, keys 6800-{6799+idx[0]}')
