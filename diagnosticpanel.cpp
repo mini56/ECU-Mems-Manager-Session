@@ -21,7 +21,7 @@
 namespace {
 QString stateFor(bool ok, bool warn = false)
 {
-    return ok ? I18n::text("OK") : (warn ? I18n::text("SURVEILLER") : I18n::text("ANOMALIE"));
+    return ok ? I18n::text(6800) /* EN: OK */ : (warn ? I18n::text(6801) /* EN: SURVEILLER */ : I18n::text(6802) /* EN: anomaly */);
 }
 }
 
@@ -30,8 +30,8 @@ DiagnosticPanel::DiagnosticPanel(QWidget *parent) : QWidget(parent)
     QVBoxLayout *root = new QVBoxLayout(this);
 
     QHBoxLayout *top = new QHBoxLayout;
-    m_status = new QLabel(tr("En attente de données ECU"), this);
-    m_score = new QLabel(tr("Diagnostic : --"), this);
+    m_status = new QLabel(I18n::text(6803) /* EN: Waiting for ECU data */, this);
+    m_score = new QLabel(I18n::text(6804) /* EN: Diagnostics: -- */, this);
     QFont scoreFont = m_score->font();
     scoreFont.setBold(true);
     scoreFont.setPointSize(scoreFont.pointSize() + 2);
@@ -41,9 +41,9 @@ DiagnosticPanel::DiagnosticPanel(QWidget *parent) : QWidget(parent)
     root->addLayout(top);
 
     QHBoxLayout *buttons = new QHBoxLayout;
-    m_capture = new QPushButton(tr("Capturer comme référence"), this);
-    m_clear = new QPushButton(tr("Effacer référence"), this);
-    m_export = new QPushButton(tr("Exporter le rapport"), this);
+    m_capture = new QPushButton(I18n::text(6805) /* EN: Capture as reference */, this);
+    m_clear = new QPushButton(I18n::text(6806) /* EN: Clear reference */, this);
+    m_export = new QPushButton(I18n::text(6807) /* EN: Export report */, this);
     buttons->addWidget(m_capture);
     buttons->addWidget(m_clear);
     buttons->addStretch();
@@ -52,8 +52,8 @@ DiagnosticPanel::DiagnosticPanel(QWidget *parent) : QWidget(parent)
 
     m_checks = new QTableWidget(0, 4, this);
     m_checks->setHorizontalHeaderLabels(QStringList()
-        << tr("Contrôle") << tr("Valeur")
-        << tr("État") << tr("Interprétation / action"));
+        << I18n::text(6808) /* EN: Check */ << I18n::text(6809) /* EN: Value */
+        << I18n::text(6810) /* EN: Status */ << I18n::text(6811) /* EN: Interpretation / action */);
     m_checks->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
     m_checks->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
     m_checks->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
@@ -61,7 +61,7 @@ DiagnosticPanel::DiagnosticPanel(QWidget *parent) : QWidget(parent)
     m_checks->verticalHeader()->setVisible(false);
     root->addWidget(m_checks, 3);
 
-    QGroupBox *reportBox = new QGroupBox(tr("Rapport automatique"), this);
+    QGroupBox *reportBox = new QGroupBox(I18n::text(6812) /* EN: Automatic report */, this);
     QVBoxLayout *reportLayout = new QVBoxLayout(reportBox);
     m_report = new QPlainTextEdit(reportBox);
     m_report->setReadOnly(true);
@@ -112,71 +112,71 @@ void DiagnosticPanel::rebuild(const mems_data &d)
     int warnings = 0;
 
     const bool hasDtc = (d.dtc0 != 0 || d.dtc1 != 0 || d.dtc2 != 0);
-    addCheck(tr("Défauts ECU"),
-             tr("DTC0=%1  DTC1=%2  DTC2=%3").arg(hexByte(d.dtc0), hexByte(d.dtc1), hexByte(d.dtc2)),
-             hasDtc ? tr("ANOMALIE") : tr("OK"),
-             hasDtc ? tr("Lire les bits concernés avant tout effacement.")
-                    : tr("Aucun bit défaut actif dans les trames 0x7D/0x80."));
+    addCheck(I18n::text(6813) /* EN: ECU faults */,
+             I18n::text(6814) /* EN: DTC0=%1  DTC1=%2  DTC2=%3 */.arg(hexByte(d.dtc0), hexByte(d.dtc1), hexByte(d.dtc2)),
+             hasDtc ? I18n::text(6815) /* EN: anomaly */ : I18n::text(6816) /* EN: OK */,
+             hasDtc ? I18n::text(6817) /* EN: Read the relevant bits before clearing anything. */
+                    : I18n::text(6818) /* EN: No active fault bit in 0x7D/0x80 frames. */);
     if (hasDtc) ++issues;
 
     const double battery = d.battery_voltage / 10.0;
     const bool batteryOk = battery >= 11.5 && battery <= 15.2;
-    addCheck(tr("Tension batterie"), tr("%1 V").arg(battery, 0, 'f', 1),
+    addCheck(I18n::text(6819) /* EN: Battery voltage */, I18n::text(6820) /* EN: %1 V */.arg(battery, 0, 'f', 1),
              stateFor(batteryOk, true),
-             battery < 11.5 ? tr("Tension basse : contrôler batterie, masses et alimentation ECU.")
-                            : (battery > 15.2 ? tr("Tension élevée : contrôler charge/régulateur.")
-                                              : tr("Plage cohérente pour un contrôle en cours de fonctionnement.")));
+             battery < 11.5 ? I18n::text(6821) /* EN: Low voltage: check battery, grounds and ECU supply. */
+                            : (battery > 15.2 ? I18n::text(6822) /* EN: High voltage: check charging system/regulator. */
+                                              : I18n::text(6823) /* EN: Range is consistent for a check while the engine is running. */));
     if (!batteryOk) ++warnings;
 
     const double coolant = d.coolant_temp;
     const bool coolantPlausible = coolant > 0 && coolant < 250;
-    addCheck(tr("Température LDR brute"), QString::number(coolant),
+    addCheck(I18n::text(6824) /* EN: Temperature LDR raw */, QString::number(coolant),
              stateFor(coolantPlausible, true),
-             coolantPlausible ? tr("Valeur exploitable ; interpréter selon l'échelle MEMS du calculateur.")
-                              : tr("Valeur hors plage plausible : contrôler la sonde et son circuit."));
+             coolantPlausible ? I18n::text(6825) /* EN: Usable value; interpret it according to the ECU's MEMS scale. */
+                              : I18n::text(6826) /* EN: Value outside plausible range: check the sensor and its circuit. */);
     if (!coolantPlausible) ++issues;
 
     const bool rpmPlausible = d.engine_rpm <= 8000;
-    addCheck(tr("Régime moteur"), tr("%1 tr/min").arg(d.engine_rpm),
+    addCheck(I18n::text(6827) /* EN: Engine speed */, I18n::text(6828) /* EN: %1 tr/min */.arg(d.engine_rpm),
              stateFor(rpmPlausible, true),
-             rpmPlausible ? tr("Trame régime cohérente.")
-                          : tr("Valeur régime anormale : contrôler signal régime / câblage."));
+             rpmPlausible ? I18n::text(6829) /* EN: Engine-speed frame is consistent. */
+                          : I18n::text(6830) /* EN: Abnormal engine-speed value: check engine-speed signal and wiring. */);
     if (!rpmPlausible) ++issues;
 
     const bool mapPlausible = d.map_kpa <= 160;
-    addCheck(tr("MAP"), tr("%1 kPa").arg(d.map_kpa),
+    addCheck(I18n::text(6831) /* EN: MAP */, I18n::text(6832) /* EN: %1 kPa */.arg(d.map_kpa),
              stateFor(mapPlausible, true),
-             mapPlausible ? tr("Valeur dans la plage décodée par MEMS.")
-                          : tr("Valeur hors plage décodée : contrôler mesure MAP."));
+             mapPlausible ? I18n::text(6833) /* EN: Value is within the range decoded by MEMS. */
+                          : I18n::text(6834) /* EN: Decoded value out of range: check MAP measurement. */);
     if (!mapPlausible) ++issues;
 
     const bool tpsPlausible = d.throttle_pot <= 255;
-    addCheck(tr("TPS"), QStringLiteral("%1 / 255").arg(d.throttle_pot),
+    addCheck(I18n::text(6835) /* EN: TPS */, QStringLiteral("%1 / 255").arg(d.throttle_pot),
              stateFor(tpsPlausible),
              (d.dtc1 & 0x80) || (d.dtc2 & 0x01)
-                 ? tr("Un défaut TPS/alimentation TPS est signalé : contrôler alimentation, masse et progression du capteur.")
-                 : tr("Aucun défaut TPS connu actif dans les bits surveillés."));
+                 ? I18n::text(6836) /* EN: A TPS/TPS-supply fault is reported: check supply, ground and sensor progression. */
+                 : I18n::text(6837) /* EN: No known active TPS fault in the monitored bits. */);
     if ((d.dtc1 & 0x80) || (d.dtc2 & 0x01)) ++issues;
 
     const bool lambdaFault = (d.dtc2 & 0x04) || (d.dtc2 & 0x08);
-    addCheck(tr("Lambda"),
-             tr("U=%1  freq=%2  duty=%3  status=%4")
+    addCheck(I18n::text(6838) /* EN: lambda */,
+             I18n::text(6839) /* EN: U=%1  freq=%2  duty=%3  status=%4 */
                  .arg(d.lambda_voltage).arg(d.lambda_sensor_frequency)
                  .arg(d.lambda_sensor_dutycycle).arg(d.lambda_sensor_status),
-             lambdaFault ? tr("ANOMALIE") : tr("INFORMATION"),
-             lambdaFault ? tr("Défaut circuit/alimentation lambda : contrôler chauffage, alimentation et câblage.")
-                         : (d.closed_loop ? tr("Boucle fermée active : les corrections lambda sont en cours d'utilisation.")
-                                          : tr("Boucle fermée inactive à cet instant ; interpréter avec température et conditions moteur.")));
+             lambdaFault ? I18n::text(6840) /* EN: anomaly */ : I18n::text(6841) /* EN: INFORMATION */,
+             lambdaFault ? I18n::text(6842) /* EN: Lambda circuit/supply fault: check heater, supply and wiring. */
+                         : (d.closed_loop ? I18n::text(6843) /* EN: Closed loop active: lambda corrections are being applied. */
+                                          : I18n::text(6844) /* EN: Closed loop is currently inactive; interpret together with temperature and engine conditions. */));
     if (lambdaFault) ++issues;
 
     const int fuelTrim = int(d.short_term_fuel_trim) - 100;
     const bool trimWatch = qAbs(fuelTrim) > 20 || qAbs(int(d.long_term_fuel_trim) - 100) > 20;
-    addCheck(tr("Corrections carburant"),
-             tr("court terme=%1  long terme=%2")
+    addCheck(I18n::text(6845) /* EN: Corrections fuel */,
+             I18n::text(6846) /* EN: short-term=%1  long-term=%2 */
                  .arg(fuelTrim).arg(int(d.long_term_fuel_trim) - 100),
              stateFor(!trimWatch, true),
-             trimWatch ? tr("Correction importante : rechercher prise d'air, pression/carburant, injection ou mesure lambda avant de modifier les réglages.")
-                       : tr("Corrections sans écart important selon ce critère indicatif."));
+             trimWatch ? I18n::text(6847) /* EN: Large correction: check for air leaks, fuel pressure/supply, injection or lambda measurement before changing settings. */
+                       : I18n::text(6848) /* EN: Corrections show no significant deviation according to this indicative criterion. */);
     if (trimWatch) ++warnings;
 
     // Temps de charge de la bobine : contrôle spécifique demandé pour
@@ -188,21 +188,21 @@ void DiagnosticPanel::rebuild(const mems_data &d)
     QString coilState;
     QString coilAdvice;
     if (!batteryNear14) {
-        coilState = tr("NON ÉVALUÉ");
-        coilAdvice = tr("Mesure affichée. Le contrôle 1,9–3,1 ms est appliqué automatiquement uniquement avec une tension batterie proche de 14 V.");
+        coilState = I18n::text(6849) /* EN: NOT EVALUATED */;
+        coilAdvice = I18n::text(6850) /* EN: Measurement displayed. The 1.9–3.1 ms check is applied automatically only when battery voltage is close to 14 V. */;
     } else if (coilOk) {
-        coilState = tr("OK");
-        coilAdvice = tr("Temps de charge dans la plage 1,9–3,1 ms à environ 14 V.");
+        coilState = I18n::text(6851) /* EN: OK */;
+        coilAdvice = I18n::text(6852) /* EN: Coil charge time is within the 1.9–3.1 ms range at about 14 V. */;
     } else if (coilTime > 3.1) {
-        coilState = tr("ANOMALIE");
-        coilAdvice = tr("Temps de charge trop élevé à environ 14 V : contrôler en priorité le circuit primaire de la bobine, la bobine et son câblage.");
+        coilState = I18n::text(6853) /* EN: anomaly */;
+        coilAdvice = I18n::text(6854) /* EN: Coil charge time too high at about 14 V: first check the coil primary circuit, coil and wiring. */;
         ++issues;
     } else {
-        coilState = tr("SURVEILLER");
-        coilAdvice = tr("Temps de charge inférieur à 1,9 ms à environ 14 V : contrôler la mesure, l'alimentation et le circuit de commande avant conclusion.");
+        coilState = I18n::text(6855) /* EN: SURVEILLER */;
+        coilAdvice = I18n::text(6856) /* EN: Coil charge time below 1.9 ms at about 14 V: check the measurement, supply and control circuit before drawing a conclusion. */;
         ++warnings;
     }
-    addCheck(tr("Temps bobine"), tr("%1 ms  | batterie %2 V").arg(coilTime, 0, 'f', 2).arg(battery, 0, 'f', 1),
+    addCheck(I18n::text(6857) /* EN: Coil charge time */, I18n::text(6858) /* EN: %1 ms  | battery %2 V */.arg(coilTime, 0, 'f', 2).arg(battery, 0, 'f', 1),
              coilState, coilAdvice);
 
     // Décodage du champ 7D14-15. La correction de -3 n'est pas une constante :
@@ -211,8 +211,8 @@ void DiagnosticPanel::rebuild(const mems_data &d)
     const int hotIdleCorrection = static_cast<int>(d.idle_hot) - 35;
     const int hotIdleErrorCorrected = (raw7d1415 - 32768) + hotIdleCorrection;
     const bool hotIdleErrorOk = qAbs(hotIdleErrorCorrected) <= 15;
-    addCheck(tr("Erreur ralenti à chaud"),
-             tr("%1 ECU | brut 7D14-15=%2 | correction=%3")
+    addCheck(I18n::text(6859) /* EN: Hot idle error */,
+             I18n::text(6860) /* EN: %1 ECU | brut 7D14-15=%2 | correction=%3 */
                  .arg(hotIdleErrorCorrected).arg(raw7d1415).arg(hotIdleCorrection),
              stateFor(hotIdleErrorOk, true),
              tr("Décodage : (7D14-15 brut - 32768) + correction Position ralenti chaud. "
@@ -221,28 +221,28 @@ void DiagnosticPanel::rebuild(const mems_data &d)
     if (!hotIdleErrorOk) ++warnings;
 
     const bool iacSuspicious = (d.iac_position == 0 && d.idle_error >= 50 && d.idle_switch == 0 && d.uk3 != 0);
-    addCheck(tr("Commande de ralenti IAC"),
-             tr("position=%1  erreur=%2").arg(d.iac_position).arg(d.idle_error),
-             iacSuspicious ? tr("ANOMALIE") : tr("OK"),
-             iacSuspicious ? tr("IAC en butée avec erreur de ralenti : contrôler moteur pas-à-pas, butée, prise d'air et réglage mécanique.")
-                           : tr("Aucune combinaison critique IAC/erreur détectée."));
+    addCheck(I18n::text(6861) /* EN: IAC idle command */,
+             I18n::text(6862) /* EN: position=%1  error=%2 */.arg(d.iac_position).arg(d.idle_error),
+             iacSuspicious ? I18n::text(6863) /* EN: anomaly */ : I18n::text(6864) /* EN: OK */,
+             iacSuspicious ? I18n::text(6865) /* EN: IAC at its limit with idle error: check stepper motor, stop, air leaks and mechanical adjustment. */
+                           : I18n::text(6866) /* EN: No critical IAC/error combination detected. */);
     if (iacSuspicious) ++issues;
 
     if (m_reference.valid) {
         const int rpmDelta = int(d.engine_rpm) - int(m_reference.data.engine_rpm);
         const int mapDelta = int(d.map_kpa) - int(m_reference.data.map_kpa);
         const int tpsDelta = int(d.throttle_pot) - int(m_reference.data.throttle_pot);
-        addCheck(tr("Comparaison référence"),
-                 tr("ΔRPM=%1  ΔMAP=%2 kPa  ΔTPS=%3").arg(rpmDelta).arg(mapDelta).arg(tpsDelta),
-                 tr("INFO"),
-                 tr("Référence capturée le %1. Cette comparaison sert à repérer une dérive ; elle ne constitue pas une spécification constructeur.").arg(m_reference.timestamp));
+        addCheck(I18n::text(6867) /* EN: Comparaison reference */,
+                 I18n::text(6868) /* EN: ΔRPM=%1  ΔMAP=%2 kPa  ΔTPS=%3 */.arg(rpmDelta).arg(mapDelta).arg(tpsDelta),
+                 I18n::text(6869) /* EN: INFO */,
+                 I18n::text(6870) /* EN: Reference captured on %1. This comparison helps identify drift; it is not a manufacturer specification. */.arg(m_reference.timestamp));
     }
 
     const int total = issues * 2 + warnings;
-    const QString level = issues == 0 ? (warnings == 0 ? tr("NORMAL") : tr("SURVEILLER"))
-                                      : tr("ANOMALIE À INVESTIGUER");
-    m_score->setText(tr("Diagnostic : %1  |  %2 anomalie(s), %3 avertissement(s)").arg(level).arg(issues).arg(warnings));
-    m_status->setText(tr("Dernière analyse : %1  |  score interne=%2")
+    const QString level = issues == 0 ? (warnings == 0 ? I18n::text(6871) /* EN: NORMAL */ : I18n::text(6872) /* EN: SURVEILLER */)
+                                      : I18n::text(6873) /* EN: ANOMALY TO INVESTIGATE */;
+    m_score->setText(I18n::text(6874) /* EN: Diagnostics : %1  |  %2 anomaly(s), %3 warning(s) */.arg(level).arg(issues).arg(warnings));
+    m_status->setText(I18n::text(6875) /* EN: Last analysis : %1  |  score interne=%2 */
                       .arg(QDateTime::currentDateTime().toString("dd/MM/yyyy hh:mm:ss")).arg(total));
     m_report->setPlainText(buildReport());
 }
@@ -250,7 +250,7 @@ void DiagnosticPanel::rebuild(const mems_data &d)
 void DiagnosticPanel::captureReference()
 {
     if (!m_haveData) {
-        QMessageBox::information(this, tr("Diagnostic"), tr("Aucune donnée ECU disponible."));
+        QMessageBox::information(this, I18n::text(6876) /* EN: Diagnostics */, I18n::text(6877) /* EN: No ECU data available. */);
         return;
     }
     m_reference.valid = true;
@@ -268,44 +268,44 @@ void DiagnosticPanel::clearReference()
 QString DiagnosticPanel::buildReport() const
 {
     if (!m_haveData)
-        return tr("Aucune donnée ECU disponible.");
+        return I18n::text(6878) /* EN: No ECU data available. */;
 
     const mems_data &d = m_last;
     QString text;
-    text += tr("ECU MEMS MANAGER - RAPPORT DE DIAGNOSTIC\n");
-    text += tr("Date : %1\n").arg(QDateTime::currentDateTime().toString("dd/MM/yyyy hh:mm:ss"));
-    if (!m_ecuId.isEmpty()) text += tr("Identification : %1\n").arg(QString::fromLatin1(m_ecuId.toHex(' ').toUpper()));
-    text += tr("DTC : %1 %2 %3\n").arg(hexByte(d.dtc0), hexByte(d.dtc1), hexByte(d.dtc2));
+    text += I18n::text(6879) /* EN: ECU MEMS MANAGER - DIAGNOSTIC REPORT  */;
+    text += I18n::text(6880) /* EN: Date : %1  */.arg(QDateTime::currentDateTime().toString("dd/MM/yyyy hh:mm:ss"));
+    if (!m_ecuId.isEmpty()) text += I18n::text(6881) /* EN: Identification : %1  */.arg(QString::fromLatin1(m_ecuId.toHex(' ').toUpper()));
+    text += I18n::text(6882) /* EN: DTC : %1 %2 %3  */.arg(hexByte(d.dtc0), hexByte(d.dtc1), hexByte(d.dtc2));
     const int raw7d1415 = (static_cast<int>(d.idle_error2) << 8) | static_cast<int>(d.uk10);
     const int hotIdleCorrection = static_cast<int>(d.idle_hot) - 35;
     const int hotIdleErrorCorrected = (raw7d1415 - 32768) + hotIdleCorrection;
-    text += tr("Temps bobine=%1 ms\n").arg(static_cast<double>(d.coil_time), 0, 'f', 2);
-    text += tr("7D14-15 brut=%1 | correction ralenti chaud=%2 | erreur ralenti chaud corrigée=%3 ECU\n")
+    text += I18n::text(6883) /* EN: Temps coil=%1 ms  */.arg(static_cast<double>(d.coil_time), 0, 'f', 2);
+    text += I18n::text(6884) /* EN: raw 7D14-15=%1 | hot-idle correction=%2 | corrected hot-idle error=%3 ECU  */
         .arg(raw7d1415).arg(hotIdleCorrection).arg(hotIdleErrorCorrected);
-    text += tr("RPM=%1 | MAP=%2 kPa | batterie=%3 V | TPS=%4 | IAC=%5 | erreur ralenti=%6\n")
+    text += I18n::text(6885) /* EN: RPM=%1 | MAP=%2 kPa | battery=%3 V | TPS=%4 | IAC=%5 | idle error=%6  */
         .arg(d.engine_rpm).arg(d.map_kpa).arg(d.battery_voltage / 10.0, 0, 'f', 1)
         .arg(d.throttle_pot).arg(d.iac_position).arg(d.idle_error);
-    text += tr("LDR brut=%1 | air admission brut=%2 | lambda=%3 | boucle fermee=%4\n")
-        .arg(d.coolant_temp).arg(d.intake_air_temp).arg(d.lambda_voltage).arg(d.closed_loop ? tr("oui") : tr("non"));
+    text += I18n::text(6886) /* EN: raw coolant=%1 | raw intake air=%2 | lambda=%3 | closed loop=%4  */
+        .arg(d.coolant_temp).arg(d.intake_air_temp).arg(d.lambda_voltage).arg(d.closed_loop ? I18n::text(6887) /* EN: oui */ : I18n::text(6888) /* EN: non */);
     if (m_reference.valid)
-        text += tr("Référence : %1\n").arg(m_reference.timestamp);
-    text += tr("\nLes états et conseils de ce rapport sont des contrôles de cohérence et ne remplacent pas les spécifications constructeur.\n");
+        text += I18n::text(6889) /* EN: Reference: %1  */.arg(m_reference.timestamp);
+    text += I18n::text(6890) /* EN:  The statuses and guidance in this report are consistency checks and do not replace manufacturer specifications.  */;
     return text;
 }
 
 void DiagnosticPanel::exportReport()
 {
     if (!m_haveData) {
-        QMessageBox::information(this, tr("Diagnostic"), tr("Aucune donnée à exporter."));
+        QMessageBox::information(this, I18n::text(6891) /* EN: Diagnostics */, I18n::text(6892) /* EN: No data to export. */);
         return;
     }
-    const QString fileName = QFileDialog::getSaveFileName(this, tr("Exporter le rapport"),
+    const QString fileName = QFileDialog::getSaveFileName(this, I18n::text(6893) /* EN: Export report */,
         QStringLiteral("diagnostic_mems_%1.txt").arg(QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMdd_hhmmss"))),
-        tr("Rapport texte (*.txt)"));
+        I18n::text(6894) /* EN: report texte (*.txt) */);
     if (fileName.isEmpty()) return;
     QFile file(fileName);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QMessageBox::warning(this, tr("Diagnostic"), tr("Impossible d'écrire le rapport."));
+        QMessageBox::warning(this, I18n::text(6895) /* EN: Diagnostics */, I18n::text(6896) /* EN: Unable to write report. */);
         return;
     }
     file.write(m_report->toPlainText().toUtf8());
