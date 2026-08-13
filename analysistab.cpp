@@ -137,7 +137,7 @@ void SingleChartWidget::paintEvent(QPaintEvent *event)
   if (m_time.count() < 2 || m_values.count() < 2)
   {
     painter.setPen(QColor("#9aa0ab"));
-    painter.drawText(plotRect, Qt::AlignCenter, tr("Pas de données"));
+    painter.drawText(plotRect, Qt::AlignCenter, I18n::text(6440) /* EN: No data */);
     return;
   }
 
@@ -368,7 +368,7 @@ void ChartWidget::paintEvent(QPaintEvent *event)
   {
     painter.setPen(QColor("#8a93a6"));
     painter.drawText(rect(), Qt::AlignCenter,
-                      tr("Cochez une ou plusieurs voies dans la liste à gauche pour les afficher"));
+                      I18n::text(6441) /* EN: Select one or more channels in the list on the left to display them */);
   }
 
   painter.setPen(QColor("#8a93a6"));
@@ -440,18 +440,18 @@ AnalysisTab::AnalysisTab(QWidget *parent) : QWidget(parent), m_overlayMode(false
   leftPanel->setMinimumWidth(300);
   QVBoxLayout *leftLayout = new QVBoxLayout(leftPanel);
 
-  m_loadButton = new QPushButton(tr("Charger un fichier CSV / TXT..."), leftPanel);
+  m_loadButton = new QPushButton(I18n::text(6442) /* EN: Load CSV / TXT file... */, leftPanel);
   connect(m_loadButton, SIGNAL(clicked()), this, SLOT(onLoadFileClicked()));
   leftLayout->addWidget(m_loadButton);
 
-  m_fileLabel = new QLabel(tr("Aucun fichier chargé"), leftPanel);
+  m_fileLabel = new QLabel(I18n::text(6443) /* EN: No file loaded */, leftPanel);
   m_fileLabel->setWordWrap(true);
   m_fileLabel->setStyleSheet("color: #565d6b; font-style: italic;");
   leftLayout->addWidget(m_fileLabel);
 
   QHBoxLayout *selectRow = new QHBoxLayout();
-  m_selectAllButton = new QPushButton(tr("Tout cocher"), leftPanel);
-  m_selectNoneButton = new QPushButton(tr("Tout décocher"), leftPanel);
+  m_selectAllButton = new QPushButton(I18n::text(6444) /* EN: Select all */, leftPanel);
+  m_selectNoneButton = new QPushButton(I18n::text(6445) /* EN: Clear all */, leftPanel);
   connect(m_selectAllButton, SIGNAL(clicked()), this, SLOT(onSelectAllClicked()));
   connect(m_selectNoneButton, SIGNAL(clicked()), this, SLOT(onSelectNoneClicked()));
   selectRow->addWidget(m_selectAllButton);
@@ -460,7 +460,7 @@ AnalysisTab::AnalysisTab(QWidget *parent) : QWidget(parent), m_overlayMode(false
 
   // Bouton de superposition : sous les deux boutons ci-dessus, largeur fixe
   // pour qu'il ne change pas de taille selon le texte affiché
-  m_overlayButton = new QPushButton(tr("Superposer toutes\nles courbes sélectionnées"), leftPanel);
+  m_overlayButton = new QPushButton(I18n::text(6446) /* EN: Overlay all selected curves */, leftPanel);
   m_overlayButton->setCheckable(true);
   m_overlayButton->setMinimumWidth(290);
   m_overlayButton->setFixedWidth(290);
@@ -468,7 +468,7 @@ AnalysisTab::AnalysisTab(QWidget *parent) : QWidget(parent), m_overlayMode(false
   connect(m_overlayButton, SIGNAL(toggled(bool)), this, SLOT(onOverlayToggled(bool)));
   leftLayout->addWidget(m_overlayButton);
 
-  QLabel *voiesLabel = new QLabel(tr("Voies disponibles :"), leftPanel);
+  QLabel *voiesLabel = new QLabel(I18n::text(6447) /* EN: Available channels: */, leftPanel);
   voiesLabel->setStyleSheet("font-weight: 600; margin-top: 6px;");
   leftLayout->addWidget(voiesLabel);
 
@@ -499,8 +499,8 @@ AnalysisTab::AnalysisTab(QWidget *parent) : QWidget(parent), m_overlayMode(false
 
 void AnalysisTab::onLoadFileClicked()
 {
-  QString path = QFileDialog::getOpenFileName(this, tr("Charger un fichier journal"),
-                                                "logs", tr("Fichiers journal (*.csv *.txt);;Fichiers CSV (*.csv);;Fichiers texte (*.txt);;Tous les fichiers (*.*)"));
+  QString path = QFileDialog::getOpenFileName(this, I18n::text(6448) /* EN: Load log file */,
+                                                "logs", I18n::text(6449) /* EN: Log files (*.csv *.txt);;CSV files (*.csv);;Text files (*.txt);;All files (*.*) */);
   if (path.isEmpty()) return;
   loadFile(path);
 }
@@ -515,7 +515,7 @@ void AnalysisTab::parseCsv(const QString &path)
   QFile file(path);
   if (!file.open(QFile::ReadOnly | QFile::Text))
   {
-    QMessageBox::warning(this, tr("Erreur"), tr("Impossible d'ouvrir le fichier :\n%1").arg(path), QMessageBox::Ok);
+    QMessageBox::warning(this, I18n::text(6450) /* EN: Error */, I18n::text(6451) /* EN: Unable to open file: %1 */.arg(path), QMessageBox::Ok);
     return;
   }
 
@@ -524,7 +524,7 @@ void AnalysisTab::parseCsv(const QString &path)
 
   if (stream.atEnd())
   {
-    QMessageBox::warning(this, tr("Erreur"), tr("Fichier CSV vide ou incomplet."), QMessageBox::Ok);
+    QMessageBox::warning(this, I18n::text(6452) /* EN: Error */, I18n::text(6453) /* EN: CSV file is empty or incomplete. */, QMessageBox::Ok);
     return;
   }
   QString headerLine = stream.readLine();
@@ -537,7 +537,7 @@ void AnalysisTab::parseCsv(const QString &path)
   int columnCount = headers.count() - 1;
   if (columnCount <= 0)
   {
-    QMessageBox::warning(this, tr("Erreur"), tr("Format de fichier CSV non reconnu."), QMessageBox::Ok);
+    QMessageBox::warning(this, I18n::text(6454) /* EN: Error */, I18n::text(6455) /* EN: Unrecognized CSV file format. */, QMessageBox::Ok);
     return;
   }
 
@@ -590,7 +590,7 @@ void AnalysisTab::parseCsv(const QString &path)
 
   if (lineCount == 0)
   {
-    QMessageBox::warning(this, tr("Erreur"), tr("Aucune donnée exploitable dans ce fichier."), QMessageBox::Ok);
+    QMessageBox::warning(this, I18n::text(6456) /* EN: Error */, I18n::text(6457) /* EN: No usable data in this file. */, QMessageBox::Ok);
     return;
   }
 
@@ -625,8 +625,8 @@ void AnalysisTab::rebuildCheckboxes()
       "QCheckBox::indicator:hover { border: 2px solid %1; }"
       ).arg(c.name()));
 
-    if (m_columnNames[i].contains(tr("Régime moteur")) || m_columnNames[i].contains(tr("liquide refroid")) ||
-        m_columnNames[i].contains(tr("Tension batterie")))
+    if (m_columnNames[i].contains(I18n::text(6458) /* EN: Engine speed */) || m_columnNames[i].contains(I18n::text(6459) /* EN: coolant */) ||
+        m_columnNames[i].contains(I18n::text(6460) /* EN: Battery voltage */))
     {
       cb->setChecked(true);
     }
@@ -718,14 +718,14 @@ void AnalysisTab::onOverlayToggled(bool checked)
   m_overlayMode = checked;
   if (checked)
   {
-    m_overlayButton->setText(tr("Revenir à l'affichage empilé"));
+    m_overlayButton->setText(I18n::text(6461) /* EN: Return to stacked display */);
     m_stackScrollArea->hide();
     m_overlayChart->show();
     rebuildOverlayChart();
   }
   else
   {
-    m_overlayButton->setText(tr("Superposer toutes les courbes sélectionnées"));
+    m_overlayButton->setText(I18n::text(6462) /* EN: Overlay all selected curves */);
     m_overlayChart->hide();
     m_stackScrollArea->show();
     updateChartVisibility();
