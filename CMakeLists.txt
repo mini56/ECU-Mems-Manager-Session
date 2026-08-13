@@ -42,7 +42,7 @@ configure_file("${CMAKE_SOURCE_DIR}/help.html.in" "${CMAKE_SOURCE_DIR}/help.html
 configure_file("${CMAKE_SOURCE_DIR}/help_en.html.in" "${CMAKE_SOURCE_DIR}/help_en.html")
 
 set(SOURCES
-    main_keyed.cpp
+    main.cpp
     i18n.cpp
     i18n.h
     memsinterface.cpp

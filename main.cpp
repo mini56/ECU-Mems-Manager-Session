@@ -20,7 +20,6 @@
 #include "desktopshortcut.h"
 #include "database/DatabaseManager.h"
 #include "i18n.h"
-#define tr I18n::text
 
 namespace
 {
@@ -35,46 +34,39 @@ void updateStartupProgress(int percent)
     percent = qBound(0, percent, 100);
     g_startupProgress->setValue(percent);
     if (g_startupStatus)
-        g_startupStatus->setText(I18n::text("Détection des ports série : %1 %").arg(percent));
+        g_startupStatus->setText(I18n::text(1).arg(percent)); // Serial port detection: %1 %
     qApp->processEvents();
 }
 
 QString chooseInitialLanguage()
 {
     QDialog dialog;
-    dialog.setWindowTitle(QStringLiteral("ECU MEMS Manager - Language"));
+    dialog.setWindowTitle(I18n::text(2)); // ECU MEMS Manager - Language
     dialog.setModal(true);
     dialog.setMinimumWidth(430);
 
     QVBoxLayout *layout = new QVBoxLayout(&dialog);
-    QLabel *title = new QLabel(
-        QStringLiteral("<b>Choisissez votre langue / Choose your language</b>"), &dialog);
+    QLabel *title = new QLabel(I18n::text(3), &dialog); // <b>Choose your language</b>
     title->setAlignment(Qt::AlignCenter);
     layout->addWidget(title);
 
-    QLabel *info = new QLabel(
-        QStringLiteral("La langue pourra être modifiée ensuite dans Options.\n"
-                       "The language can be changed later in Options."), &dialog);
+    QLabel *info = new QLabel(I18n::text(4), &dialog); // The language can be changed later in Options.
     info->setAlignment(Qt::AlignCenter);
     layout->addWidget(info);
 
     QGridLayout *grid = new QGridLayout();
-    struct LanguageChoice { const char *code; const char *name; const char *icon; };
+    struct LanguageChoice { const char *code; int labelKey; const char *icon; };
     const LanguageChoice choices[] = {
-        {"fr", "Français",  ":/flags/fr.png"},
-        {"en", "English",   ":/flags/en.png"},
-        {"es", "Español",   ":/flags/es.png"},
-        {"it", "Italiano",  ":/flags/it.png"},
-        {"pt", "Português", ":/flags/pt.png"},
-        {"de", "Deutsch",   ":/flags/de.png"}
+        {"fr", 5, ":/flags/fr.png"}, // French
+        {"en", 6, ":/flags/en.png"}  // English
     };
 
     QString selected;
-    for (int i = 0; i < 6; ++i)
+    for (int i = 0; i < 2; ++i)
     {
         QPushButton *button = new QPushButton(
             QIcon(QString::fromLatin1(choices[i].icon)),
-            QString::fromUtf8(choices[i].name), &dialog);
+            I18n::text(choices[i].labelKey), &dialog);
         button->setIconSize(QSize(48, 32));
         button->setMinimumSize(180, 52);
         const QString code = QString::fromLatin1(choices[i].code);
@@ -82,7 +74,7 @@ QString chooseInitialLanguage()
             selected = code;
             dialog.accept();
         });
-        grid->addWidget(button, i / 2, i % 2);
+        grid->addWidget(button, 0, i);
     }
     layout->addLayout(grid);
 
@@ -102,8 +94,7 @@ QSplashScreen *createStartupSplash()
     titleFont.setPointSize(18);
     painter.setFont(titleFont);
     painter.drawText(QRect(24, 22, 472, 40), Qt::AlignLeft | Qt::AlignVCenter,
-                     QStringLiteral("ECU MEMS Manager"));
-    // Cadre noir fin autour de l'écran de démarrage.
+                     I18n::text(7)); // ECU MEMS Manager
     painter.setPen(QPen(Qt::black, 1));
     painter.drawRect(pixmap.rect().adjusted(1, 1, -2, -2));
 
@@ -112,9 +103,9 @@ QSplashScreen *createStartupSplash()
     subFont.setPointSize(10);
     painter.setFont(subFont);
     painter.drawText(QRect(24, 62, 472, 24), Qt::AlignLeft | Qt::AlignVCenter,
-                     I18n::text("Initialisation du diagnostic ECU"));
+                     I18n::text(8)); // Initializing ECU diagnostics
     painter.drawText(QRect(24, 84, 472, 22), Qt::AlignLeft | Qt::AlignVCenter,
-                     I18n::text("Version %1").arg(QStringLiteral(APP_VERSION)));
+                     I18n::text(9).arg(QStringLiteral(APP_VERSION))); // Version %1
     painter.end();
 
     QSplashScreen *splash = new QSplashScreen(pixmap, Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint);
@@ -122,7 +113,7 @@ QSplashScreen *createStartupSplash()
     progress->setGeometry(24, 136, 472, 18);
     progress->setRange(0, 100);
     progress->setValue(0);
-    QLabel *status = new QLabel(I18n::text("Initialisation..."), splash);
+    QLabel *status = new QLabel(I18n::text(10), splash); // Initializing...
     status->setGeometry(24, 110, 472, 22);
     g_startupProgress = progress;
     g_startupStatus = status;
@@ -134,21 +125,17 @@ QSplashScreen *createStartupSplash()
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
-
     QApplication::setApplicationName("ECU Mems Manager");
     QApplication::setApplicationVersion(QStringLiteral(APP_VERSION));
     QApplication::setOrganizationName("ECU Mems Manager");
 
-    // Au tout premier démarrage, demander la langue avant de créer les widgets.
     QSettings languageSettings(QSettings::IniFormat, QSettings::UserScope, PROJECTNAME);
     languageSettings.beginGroup("Settings");
     const bool languageConfigured = languageSettings.value("LanguageConfigured", false).toBool();
     QString language = languageSettings.value("Language", "fr").toString();
     languageSettings.endGroup();
 
-    // Mode TEST9 : afficher temporairement le sélecteur à chaque démarrage
-    // afin de valider facilement les six langues. Le comportement final
-    // reviendra à un affichage uniquement au premier lancement.
+    I18n::load(QStringLiteral("en"));
     Q_UNUSED(languageConfigured);
     language = chooseInitialLanguage();
     languageSettings.beginGroup("Settings");
@@ -159,7 +146,6 @@ int main(int argc, char *argv[])
     I18n::load(language);
     I18n::install(&app);
 
-    // Vérifie le raccourci Bureau demandé dans Options.
     DesktopShortcut::ensureIfEnabled();
 
     QSplashScreen *splash = createStartupSplash();
@@ -168,31 +154,14 @@ int main(int argc, char *argv[])
     g_splashProgressCallback = updateStartupProgress;
     updateStartupProgress(0);
 
-    /*
-     * Base SQLite locale.
-     *
-     * La base est créée automatiquement dans :
-     *
-     *    <dossier du programme>/database/
-     *
-     * Aucun accès Internet n'est nécessaire.
-     */
     DatabaseManager database;
     if (g_startupStatus)
-        g_startupStatus->setText(I18n::text("Initialisation de la base de données..."));
+        g_startupStatus->setText(I18n::text(11)); // Initializing database...
     app.processEvents();
 
     if (!database.open())
     {
-        QMessageBox::critical(
-            nullptr,
-            I18n::text("Erreur base de données"),
-            I18n::text(
-                "Impossible d'ouvrir la base de données SQLite.\n\n"
-                "ECU Mems Manager ne peut pas démarrer."
-            )
-        );
-
+        QMessageBox::critical(nullptr, I18n::text(12), I18n::text(13)); // Database error / Unable to open SQLite database
         g_splashProgressCallback = nullptr;
         splash->close();
         delete splash;
@@ -200,11 +169,10 @@ int main(int argc, char *argv[])
     }
 
     if (g_startupStatus)
-        g_startupStatus->setText(I18n::text("Chargement de l'interface..."));
+        g_startupStatus->setText(I18n::text(14)); // Loading interface...
     updateStartupProgress(100);
 
     MainWindow window;
-
     QScreen *screen = QGuiApplication::primaryScreen();
     if (screen)
     {
@@ -224,10 +192,7 @@ int main(int argc, char *argv[])
     g_splashProgressCallback = nullptr;
 
     window.show();
-
     const int result = app.exec();
-
     database.close();
-
     return result;
 }
