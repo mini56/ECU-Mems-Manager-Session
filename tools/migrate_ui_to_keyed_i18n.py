@@ -30,7 +30,7 @@ def load_ts(lang):
 en = load_ts("en")
 fr = load_ts("fr")
 
-# Preserve already migrated 0xxx startup keys.
+
 def read_json(path):
     if not path.exists():
         return {}
@@ -42,13 +42,11 @@ out_fr = read_json(TR / "fr.json")
 raw = UI.read_text(encoding="utf-8")
 root = ET.fromstring(raw)
 
-# Map each object name to the tab range it belongs to.
 range_by_object = {}
 main_tab = root.find(".//widget[@class='QTabWidget'][@name='Tab_main']")
 if main_tab is None:
     raise SystemExit("Tab_main introuvable")
 
-# Anything outside a tab page is common 0xxx.
 for page_index, page in enumerate(main_tab.findall("widget"), start=1):
     base = page_index * 1000
     for obj in page.iter("widget"):
@@ -76,7 +74,6 @@ def alloc(base):
     next_key[base] = k + 1
     return k
 
-# Build parent map to locate the owning widget of each string.
 parent = {c: p for p in root.iter() for c in p}
 
 def owning_widget(el):
@@ -100,23 +97,43 @@ for string_el in root.iter("string"):
     french = fr.get(("MainWindow", src), fr.get(("*", src), src))
     out_en[str(key)] = english
     out_fr[str(key)] = french
-    # Preserve English source for maintenance directly in the .ui.
     string_el.set("comment", f"EN: {english}")
     string_el.text = f"@{key:04d}"
     for child in list(string_el):
         string_el.remove(child)
     count += 1
 
-# Pretty-print while keeping UTF-8 text.
 ET.indent(root, space=" ")
 UI.write_text("<?xml version='1.0' encoding='utf-8'?>\n" + ET.tostring(root, encoding="unicode") + "\n", encoding="utf-8")
 (TR / "en.json").write_text(json.dumps(out_en, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 (TR / "fr.json").write_text(json.dumps(out_fr, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
+capture = ROOT / "captureviewer.cpp"
+capture_count = 0
+if capture.exists():
+    source = capture.read_text(encoding="utf-8")
+    pattern = re.compile(r'\btr\(\s*"(?:\\.|[^"\\])*"\s*\)')
+    matches = list(pattern.finditer(source))
+    if matches:
+        expected = 11
+        if len(matches) != expected:
+            raise SystemExit(f"CaptureViewer tr count unexpected: {len(matches)}")
+        english_capture = read_json(TR / "en_capture.json")
+        index = 0
+        def replace_capture(match):
+            nonlocal_index[0] += 1
+            key = 6299 + nonlocal_index[0]
+            comment = english_capture.get(str(key), "")
+            suffix = f" /* EN: {comment} */" if comment else ""
+            return f"I18n::text({key}){suffix}"
+        nonlocal_index = [0]
+        source = pattern.sub(replace_capture, source)
+        capture.write_text(source, encoding="utf-8")
+        capture_count = expected
+
 print(f"UI migrated: {count} strings")
+print(f"CaptureViewer migrated: {capture_count} strings")
 print(f"EN keys: {len(out_en)}")
 print(f"FR keys: {len(out_fr)}")
 if set(out_en) != set(out_fr):
     raise SystemExit("EN/FR key mismatch")
-
-# trigger 2
