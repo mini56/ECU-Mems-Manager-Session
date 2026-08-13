@@ -7,6 +7,7 @@
 #include <QCoreApplication>
 #include <QEvent>
 #include <QFile>
+#include <QDir>
 #include <QGroupBox>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -37,19 +38,29 @@ bool I18n::load(const QString &languageCode)
 
     const QString base = QCoreApplication::applicationDirPath() + "/translations/";
 
-    QFile jsonFile(base + self->m_language + ".json");
-    if (jsonFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    const auto loadJson = [self](const QString &fileName) {
+        QFile jsonFile(fileName);
+        if (!jsonFile.open(QIODevice::ReadOnly | QIODevice::Text))
+            return;
         const QJsonDocument doc = QJsonDocument::fromJson(jsonFile.readAll());
-        if (doc.isObject()) {
-            const QJsonObject obj = doc.object();
-            for (auto it = obj.constBegin(); it != obj.constEnd(); ++it) {
-                bool ok = false;
-                const int key = it.key().toInt(&ok);
-                if (ok && it.value().isString())
-                    self->m_keyDictionary.insert(key, it.value().toString());
-            }
+        if (!doc.isObject())
+            return;
+        const QJsonObject obj = doc.object();
+        for (auto it = obj.constBegin(); it != obj.constEnd(); ++it) {
+            bool ok = false;
+            const int key = it.key().toInt(&ok);
+            if (ok && it.value().isString())
+                self->m_keyDictionary.insert(key, it.value().toString());
         }
-    }
+    };
+
+    loadJson(base + self->m_language + ".json");
+
+    QDir translationDir(base);
+    const QStringList modularFiles = translationDir.entryList(
+        QStringList() << (self->m_language + "_*.json"), QDir::Files, QDir::Name);
+    for (const QString &fileName : modularFiles)
+        loadJson(translationDir.filePath(fileName));
 
     const QString tsFile = base + "ECUMemsManager_" + self->m_language + ".ts";
     const bool legacyLoaded = self->loadDictionary(tsFile);
