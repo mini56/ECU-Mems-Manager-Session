@@ -91,7 +91,7 @@ if(WIN32)
 endif()
 
 # Traductions multilingues.
-# Une seule source .ts dans translations/, puis deux passes de nettoyage
+# Une seule source .ts dans translations/, puis trois passes de nettoyage
 # avant lrelease. Les .qm finaux restent uniquement dans translations/.
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 execute_process(
@@ -110,6 +110,15 @@ execute_process(
 )
 if(NOT TRANSLATION_SECOND_PASS_RESULT EQUAL 0)
     message(FATAL_ERROR "Impossible d'appliquer la seconde passe de traduction ES/IT/PT/DE")
+endif()
+
+execute_process(
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/translations/final_cleanup.py
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    RESULT_VARIABLE TRANSLATION_FINAL_PASS_RESULT
+)
+if(NOT TRANSLATION_FINAL_PASS_RESULT EQUAL 0)
+    message(FATAL_ERROR "Impossible d'appliquer la passe finale de traduction ES/IT/PT/DE")
 endif()
 
 set(TS_FILES
@@ -157,7 +166,7 @@ else()
     set(CMAKE_INSTALL_PREFIX "/usr")
     set(EXE_FILE "${CMAKE_CURRENT_BINARY_DIR}/${PNAME}")
     install(FILES ${EXE_FILE} DESTINATION "bin" PERMISSIONS OWNER_READ OWNER_EXECUTE OWNER_WRITE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-    install(DIRECTORY DESTINATION "share/doc/${PNAME}" DIRECTORY_PERMISSIONS OWNER_READ OWNER_EXECUTE OWNER_WRITE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+    install(DIRECTORY DESTINATION "share/doc/${PNAME}" DIRECTORY_PERMISSIONS OWNER_READ OWNER_EXECUTE OWNER_WRITE GROUP_READ GROUP_EXECUTE WORLD_READ GROUP_EXECUTE)
     install(FILES "${CMAKE_SOURCE_DIR}/README" "${CMAKE_SOURCE_DIR}/LICENSE" DESTINATION "share/doc/${PNAME}" PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
     if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
         set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE amd64)
