@@ -120,6 +120,19 @@ if(WIN32)
 endif()
 
 # Traductions multilingues
+# Les 4 nouvelles langues sont stockées sous forme compacte dans le dépôt puis
+# régénérées ici avant lrelease. Cela garantit que les 623 entrées complètes
+# (interface, messages dynamiques et bulles d'aide) sont utilisées au build.
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+execute_process(
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/decode_translations.py
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    RESULT_VARIABLE TRANSLATION_DECODE_RESULT
+)
+if(NOT TRANSLATION_DECODE_RESULT EQUAL 0)
+    message(FATAL_ERROR "Impossible de régénérer les traductions ES/IT/PT/DE")
+endif()
+
 set(TS_FILES
     ${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_fr.ts
     ${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_en.ts
