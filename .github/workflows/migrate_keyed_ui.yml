@@ -1,0 +1,33 @@
+name: One-shot keyed UI migration
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "tools/migrate_ui_to_keyed_i18n.py"
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Migrate UI strings to stable keys
+        run: python tools/migrate_ui_to_keyed_i18n.py
+      - name: Commit generated UI and EN FR dictionaries
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mainwindow.ui translations/en.json translations/fr.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Migrate main window UI to stable keyed EN FR texts"
+          git push
