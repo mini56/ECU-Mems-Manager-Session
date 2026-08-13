@@ -27,13 +27,13 @@ void OptionsDialog::setupWidgets()
 
   m_grid = new QGridLayout(this);
 
-  m_serialDeviceLabel = new QLabel(tr("Nom du périphérique série :"), this);
+  m_serialDeviceLabel = new QLabel(I18n::text(6100) /* EN: Serial device name: */, this);
   m_serialDeviceBox = new QComboBox(this);
 
-  m_temperatureUnitsLabel = new QLabel(tr("Unités de température :"), this);
+  m_temperatureUnitsLabel = new QLabel(I18n::text(6101) /* EN: Temperature units: */, this);
   m_temperatureUnitsBox = new QComboBox(this);
 
-  m_themeLabel = new QLabel(tr("Thème de l'interface :"), this);
+  m_themeLabel = new QLabel(I18n::text(6102) /* EN: Interface theme: */, this);
   m_themeBox = new QComboBox(this);
   
 /*   m_lambdaScaleLabel = new QLabel("Lambda sensor scale:", this);
@@ -44,7 +44,7 @@ void OptionsDialog::setupWidgets()
   m_horizontalLineA->setFrameShadow(QFrame::Sunken);
 
   m_okButton = new QPushButton("OK", this);
-  m_cancelButton = new QPushButton(tr("Annuler"), this);
+  m_cancelButton = new QPushButton(I18n::text(6103) /* EN: Cancel */, this);
 
   SerialDevEnumerator serialDevs;
 
@@ -58,11 +58,11 @@ void OptionsDialog::setupWidgets()
   m_temperatureUnitsBox->setCurrentIndex((int)m_tempUnits);
 
   m_themeBox->setEditable(false);
-  m_themeBox->addItem(tr("Clair"), "light");
-  m_themeBox->addItem(tr("Sombre"), "dark");
+  m_themeBox->addItem(I18n::text(6104) /* EN: Light */, "light");
+  m_themeBox->addItem(I18n::text(6105) /* EN: Dark */, "dark");
   m_themeBox->setCurrentIndex(m_theme == "dark" || m_theme == "Sombre" ? 1 : 0);
 
-  m_languageLabel = new QLabel(tr("Langue :"), this);
+  m_languageLabel = new QLabel(I18n::text(6106) /* EN: Language: */, this);
   m_languageBox = new QComboBox(this);
   // Keep language names native so they remain identifiable in either UI language.
   m_languageBox->addItem(QIcon(":/flags/fr.png"), QStringLiteral("Français"), "fr");
@@ -72,7 +72,7 @@ void OptionsDialog::setupWidgets()
   m_languageBox->setCurrentIndex(languageIndex);
 
   m_desktopShortcutBox = new QCheckBox(
-      tr("Créer et maintenir un raccourci sur le Bureau"), this);
+      I18n::text(6107) /* EN: Create and maintain a Desktop shortcut */, this);
   m_desktopShortcutBox->setChecked(m_desktopShortcut);
   m_desktopShortcutBox->setToolTip(
       tr("Le raccourci est créé immédiatement après validation. S'il est supprimé, "
