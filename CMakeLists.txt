@@ -1,4 +1,3 @@
-
 cmake_minimum_required(VERSION 3.16)
 
 set(PROJECTNAME "ECU_Mems_Manager")
@@ -92,9 +91,8 @@ if(WIN32)
 endif()
 
 # Traductions multilingues.
-# Les .ts restent dans translations/. Les .qm générés sont copiés uniquement
-# dans <dossier executable>/translations puis supprimés du dossier de build
-# afin d'éviter le doublon à la racine de l'archive GitHub Actions.
+# Une seule source .ts dans translations/, puis deux passes de nettoyage
+# avant lrelease. Les .qm finaux restent uniquement dans translations/.
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 execute_process(
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/translations/complete_catalogs.py
@@ -103,6 +101,15 @@ execute_process(
 )
 if(NOT TRANSLATION_COMPLETE_RESULT EQUAL 0)
     message(FATAL_ERROR "Impossible de compléter les traductions ES/IT/PT/DE")
+endif()
+
+execute_process(
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/translations/translate_remaining.py
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    RESULT_VARIABLE TRANSLATION_SECOND_PASS_RESULT
+)
+if(NOT TRANSLATION_SECOND_PASS_RESULT EQUAL 0)
+    message(FATAL_ERROR "Impossible d'appliquer la seconde passe de traduction ES/IT/PT/DE")
 endif()
 
 set(TS_FILES
