@@ -90,35 +90,17 @@ if(WIN32)
     )
 endif()
 
-# Traductions multilingues.
-# Une seule source .ts dans translations/, puis trois passes de nettoyage
-# avant lrelease. Les .qm finaux restent uniquement dans translations/.
+# Traductions multilingues : une seule passe déterministe avant lrelease.
+# Les .ts de translations/ sont la seule source et les .qm finaux restent
+# uniquement dans le sous-dossier translations/ de l'application.
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 execute_process(
-    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/translations/complete_catalogs.py
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/translations/build_catalogs.py
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    RESULT_VARIABLE TRANSLATION_COMPLETE_RESULT
+    RESULT_VARIABLE TRANSLATION_BUILD_RESULT
 )
-if(NOT TRANSLATION_COMPLETE_RESULT EQUAL 0)
-    message(FATAL_ERROR "Impossible de compléter les traductions ES/IT/PT/DE")
-endif()
-
-execute_process(
-    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/translations/translate_remaining.py
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    RESULT_VARIABLE TRANSLATION_SECOND_PASS_RESULT
-)
-if(NOT TRANSLATION_SECOND_PASS_RESULT EQUAL 0)
-    message(FATAL_ERROR "Impossible d'appliquer la seconde passe de traduction ES/IT/PT/DE")
-endif()
-
-execute_process(
-    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/translations/final_cleanup.py
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    RESULT_VARIABLE TRANSLATION_FINAL_PASS_RESULT
-)
-if(NOT TRANSLATION_FINAL_PASS_RESULT EQUAL 0)
-    message(FATAL_ERROR "Impossible d'appliquer la passe finale de traduction ES/IT/PT/DE")
+if(NOT TRANSLATION_BUILD_RESULT EQUAL 0)
+    message(FATAL_ERROR "Impossible de préparer les catalogues de traduction")
 endif()
 
 set(TS_FILES
