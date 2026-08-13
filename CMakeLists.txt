@@ -120,17 +120,16 @@ if(WIN32)
 endif()
 
 # Traductions multilingues
-# Les 4 nouvelles langues sont stockées sous forme compacte dans le dépôt puis
-# régénérées ici avant lrelease. Cela garantit que les 623 entrées complètes
-# (interface, messages dynamiques et bulles d'aide) sont utilisées au build.
+# Un seul jeu de fichiers source .ts est conservé dans translations/.
+# Avant lrelease, on complète les entrées ES/IT/PT/DE restées en anglais.
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 execute_process(
-    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/decode_translations.py
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/translations/complete_catalogs.py
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    RESULT_VARIABLE TRANSLATION_DECODE_RESULT
+    RESULT_VARIABLE TRANSLATION_COMPLETE_RESULT
 )
-if(NOT TRANSLATION_DECODE_RESULT EQUAL 0)
-    message(FATAL_ERROR "Impossible de régénérer les traductions ES/IT/PT/DE")
+if(NOT TRANSLATION_COMPLETE_RESULT EQUAL 0)
+    message(FATAL_ERROR "Impossible de compléter les traductions ES/IT/PT/DE")
 endif()
 
 set(TS_FILES
