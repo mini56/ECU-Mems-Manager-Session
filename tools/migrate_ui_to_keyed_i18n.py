@@ -119,20 +119,30 @@ if capture.exists():
         if len(matches) != expected:
             raise SystemExit(f"CaptureViewer tr count unexpected: {len(matches)}")
         english_capture = read_json(TR / "en_capture.json")
-        index = 0
+        nonlocal_index = [0]
         def replace_capture(match):
             nonlocal_index[0] += 1
             key = 6299 + nonlocal_index[0]
             comment = english_capture.get(str(key), "")
             suffix = f" /* EN: {comment} */" if comment else ""
             return f"I18n::text({key}){suffix}"
-        nonlocal_index = [0]
         source = pattern.sub(replace_capture, source)
         capture.write_text(source, encoding="utf-8")
         capture_count = expected
 
+cmake = ROOT / "CMakeLists.txt"
+cmake_changed = False
+if cmake.exists():
+    cmake_text = cmake.read_text(encoding="utf-8")
+    old = '''# Runtime language files. EN/FR numeric dictionaries are the new system.\n# Legacy TS files remain temporarily only while the remaining UI is migrated.\nadd_custom_command(TARGET ${PNAME} POST_BUILD\n    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PNAME}>/translations"\n    COMMAND ${CMAKE_COMMAND} -E copy_if_different\n        "${CMAKE_SOURCE_DIR}/translations/en.json"\n        "${CMAKE_SOURCE_DIR}/translations/fr.json"\n        "${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_fr.ts"\n        "${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_en.ts"\n        "$<TARGET_FILE_DIR:${PNAME}>/translations"\n)'''
+    new = '''# Runtime language files. Deploy every keyed JSON module automatically.\nfile(GLOB KEYED_TRANSLATION_JSON "${CMAKE_SOURCE_DIR}/translations/*.json")\nadd_custom_command(TARGET ${PNAME} POST_BUILD\n    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PNAME}>/translations"\n    COMMAND ${CMAKE_COMMAND} -E copy_if_different\n        ${KEYED_TRANSLATION_JSON}\n        "${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_fr.ts"\n        "${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_en.ts"\n        "$<TARGET_FILE_DIR:${PNAME}>/translations"\n)'''
+    if old in cmake_text:
+        cmake.write_text(cmake_text.replace(old, new, 1), encoding="utf-8")
+        cmake_changed = True
+
 print(f"UI migrated: {count} strings")
 print(f"CaptureViewer migrated: {capture_count} strings")
+print(f"CMake translation deploy patched: {cmake_changed}")
 print(f"EN keys: {len(out_en)}")
 print(f"FR keys: {len(out_fr)}")
 if set(out_en) != set(out_fr):
