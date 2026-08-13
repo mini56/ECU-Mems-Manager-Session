@@ -45,6 +45,8 @@ set(SOURCES
     main.cpp
     i18n.cpp
     i18n.h
+    i18n.cpp
+    i18n.h
     memsinterface.cpp
     memslogic.cpp
     database/DatabaseSeed.cpp

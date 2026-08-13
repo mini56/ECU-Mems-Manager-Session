@@ -16,7 +16,7 @@
   </message>
   <message>
    <source>Erreur</source>
-   <translation>erroreee</translation>
+   <translation>erroreeeee</translation>
   </message>
   <message>
    <source>Fichier CSV vide ou incomplet.</source>
@@ -95,7 +95,7 @@ le curve selezionate</translation>
   </message>
   <message>
    <source>Erreur</source>
-   <translation>erroreee</translation>
+   <translation>erroreeeee</translation>
   </message>
   <message>
    <source>Fermer</source>
@@ -167,7 +167,7 @@ The Statoes and guidance in this rapporto are consistency Controllos and do not 
   <message>
    <source>7D14-15 brut=%1 | correction ralenti chaud=%2 | erreur ralenti chaud corrigée=%3 ECU
 </source>
-   <translation>raw 7D14-15=%1 | hot-idle correction=%2 | corrected hot-errore minimoee=%3 ECU
+   <translation>raw 7D14-15=%1 | hot-idle correction=%2 | corrected hot-erroreee minimoee=%3 ECU
 </translation>
   </message>
   <message>
@@ -302,7 +302,7 @@ The Statoes and guidance in this rapporto are consistency Controllos and do not 
   </message>
   <message>
    <source>IAC en butée avec erreur de ralenti : contrôler moteur pas-à-pas, butée, prise d'air et réglage mécanique.</source>
-   <translation>IAC at its limit with errore minimoee: Controllo motore passo-passo, stop, air leaks and mechanical adjustment.</translation>
+   <translation>IAC at its limit with erroreee minimoee: Controllo motore passo-passo, stop, air leaks and mechanical adjustment.</translation>
   </message>
   <message>
    <source>INFO</source>
@@ -367,7 +367,7 @@ The Statoes and guidance in this rapporto are consistency Controllos and do not 
   <message>
    <source>RPM=%1 | MAP=%2 kPa | batterie=%3 V | TPS=%4 | IAC=%5 | erreur ralenti=%6
 </source>
-   <translation>RPM=%1 | MAP=%2 kPa | batteria=%3 V | TPS=%4 | IAC=%5 | errore minimoee=%6
+   <translation>RPM=%1 | MAP=%2 kPa | batteria=%3 V | TPS=%4 | IAC=%5 | erroreee minimoee=%6
 </translation>
   </message>
   <message>
@@ -448,7 +448,7 @@ The Statoes and guidance in this rapporto are consistency Controllos and do not 
   </message>
   <message>
    <source>Un défaut TPS/alimentation TPS est signalé : contrôler alimentation, masse et progression du capteur.</source>
-   <translation>A TPS/TPS-supply guasto is rapportoed: Controllo supply, ground and sensoree progression.</translation>
+   <translation>A TPS/TPS-supply guasto is rapportoed: Controllo supply, ground and sensoreeee progression.</translation>
   </message>
   <message>
    <source>Valeur</source>
@@ -468,7 +468,7 @@ The Statoes and guidance in this rapporto are consistency Controllos and do not 
   </message>
   <message>
    <source>Valeur hors plage plausible : contrôler la sonde et son circuit.</source>
-   <translation>Valore outside plausible range: Controllo the sensoree and its circuit.</translation>
+   <translation>Valore outside plausible range: Controllo the sensoreeee and its circuit.</translation>
   </message>
   <message>
    <source>Valeur régime anormale : contrôler signal régime / câblage.</source>
@@ -488,7 +488,7 @@ The Statoes and guidance in this rapporto are consistency Controllos and do not 
   </message>
   <message>
    <source>position=%1  erreur=%2</source>
-   <translation>position=%1  erroree=%2</translation>
+   <translation>position=%1  erroreeee=%2</translation>
   </message>
   <message>
    <source>État</source>
@@ -542,7 +542,7 @@ The Statoes and guidance in this rapporto are consistency Controllos and do not 
   </message>
   <message>
    <source>Chauffage sonde O2</source>
-   <translation>O2 sensoree heater</translation>
+   <translation>O2 sensoreeee heater</translation>
   </message>
   <message>
    <source>Codes défauts</source>
@@ -757,11 +757,11 @@ The Statoes and guidance in this rapporto are consistency Controllos and do not 
   </message>
   <message>
    <source>01 - Capteur température liquide refroidissement</source>
-   <translation>01 - Temperatura liquido refrigerante sensoree</translation>
+   <translation>01 - Temperatura liquido refrigerante sensoreeee</translation>
   </message>
   <message>
    <source>02 - Capteur température d'air admission</source>
-   <translation>02 - Temperatura aria aspirata sensoree</translation>
+   <translation>02 - Temperatura aria aspirata sensoreeee</translation>
   </message>
   <message>
    <source>03 -</source>
@@ -773,11 +773,11 @@ The Statoes and guidance in this rapporto are consistency Controllos and do not 
   </message>
   <message>
    <source>05 - Capteur température air ambiant</source>
-   <translation>05 - Ambient air temperatura sensoree</translation>
+   <translation>05 - Ambient air temperatura sensoreeee</translation>
   </message>
   <message>
    <source>06 - Capteur température carburant</source>
-   <translation>06 - temperatura carburante sensoree</translation>
+   <translation>06 - temperatura carburante sensoreeee</translation>
   </message>
   <message>
    <source>07 - Cliquetis détecté</source>
@@ -945,7 +945,7 @@ The Statoes and guidance in this rapporto are consistency Controllos and do not 
   </message>
   <message>
    <source>14 - Capteur MAP</source>
-   <translation>14 - MAP sensoree</translation>
+   <translation>14 - MAP sensoreeee</translation>
   </message>
   <message>
    <source>15 - Électrovanne de suralimentation</source>
@@ -953,7 +953,7 @@ The Statoes and guidance in this rapporto are consistency Controllos and do not 
   </message>
   <message>
    <source>16 - Circuit capteur position papillon</source>
-   <translation>16 - Posizione farfalla sensoree circuit</translation>
+   <translation>16 - Posizione farfalla sensoreeee circuit</translation>
   </message>
   <message>
    <source>17 -</source>
@@ -1021,7 +1021,7 @@ The Statoes and guidance in this rapporto are consistency Controllos and do not 
   </message>
   <message>
    <source>ATTENTION : RISQUE D'ENDOMMAGER LA SONDE</source>
-   <translation>ATTENTION : RISQUE D'ENDOMMAGER LA sensoree</translation>
+   <translation>ATTENTION : RISQUE D'ENDOMMAGER LA sensoreeee</translation>
   </message>
   <message>
    <source>Actionneurs</source>
@@ -1081,7 +1081,7 @@ The Statoes and guidance in this rapporto are consistency Controllos and do not 
   </message>
   <message>
    <source>CAPTEUR DÉFECTUEUX</source>
-   <translation>sensoree guasto</translation>
+   <translation>sensoreeee guasto</translation>
   </message>
   <message>
    <source>Calculé</source>
@@ -1089,7 +1089,7 @@ The Statoes and guidance in this rapporto are consistency Controllos and do not 
   </message>
   <message>
    <source>Capteur OK</source>
-   <translation>sensoree OK</translation>
+   <translation>sensoreeee OK</translation>
   </message>
   <message>
    <source>Capteur position vilebrequin</source>
@@ -1277,19 +1277,19 @@ The Statoes and guidance in this rapporto are consistency Controllos and do not 
   </message>
   <message>
    <source>Erreur</source>
-   <translation>erroreee</translation>
+   <translation>erroreeeee</translation>
   </message>
   <message>
    <source>Erreur de connexion à l'ECU sur le port %1.
 Vérifiez le câblage et que l'ECU est alimenté.</source>
-   <translation>ECU connection erroree on port %1.
+   <translation>ECU connection erroreeee on port %1.
 Controllo the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>Erreur de connexion à l'ECU. Aucun port série spécifié.
 
 </source>
-   <translation>ECU connection erroree. No serial port specified.
+   <translation>ECU connection erroreeee. No serial port specified.
 
 </translation>
   </message>
@@ -1307,7 +1307,7 @@ Controllo the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>Erreurs enregistrées :</source>
-   <translation>Memorizzato errorees:</translation>
+   <translation>Memorizzato erroreeees:</translation>
   </message>
   <message>
    <source>F0  • État session</source>
@@ -1367,7 +1367,7 @@ Controllo the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>L'erreur de ralenti est l'écart entre le régime moteur actuel et le régime de ralenti visé. Valeurs affichées uniquement quand le contact ralenti est actif ; la valeur max. affichée est 200 tr/min.</source>
-   <translation>Idle erroree is the difference between current regime motore and the ECU target idle speed. Valores are displayed only when the interruttore minimo is active; the maximum displayed Valore is 200 rpm.</translation>
+   <translation>Idle erroreeee is the difference between current regime motore and the ECU target idle speed. Valores are displayed only when the interruttore minimo is active; the maximum displayed Valore is 200 rpm.</translation>
   </message>
   <message>
    <source>La correction carburant court terme n'est active qu'en boucle fermée. Des valeurs jusqu'à 10% sont normales, occasionnellement jusqu'à 15%. Des valeurs supérieures à 15% sont anormales.</source>
@@ -1519,7 +1519,7 @@ Controllo the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>Pour éviter d'endommager la sonde lambda, le temps de chauffe est limité. ATTENTION : après le chauffage, il est fortement conseillé de NE PAS démarrer le moteur avant que la sonde ait suffisamment refroidi</source>
-   <translation>To avoid damaging the sonda lambda, heating time is limited. avviso: after heating, it is strongly recommended NOT to start the engine until the sensoree has cooled sufficiently.</translation>
+   <translation>To avoid damaging the sonda lambda, heating time is limited. avviso: after heating, it is strongly recommended NOT to start the engine until the sensoreeee has cooled sufficiently.</translation>
   </message>
   <message>
    <source>Pression collecteur</source>
@@ -1715,7 +1715,7 @@ Controllo the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>erreur</source>
-   <translation>erroree</translation>
+   <translation>erroreeee</translation>
   </message>
   <message>
    <source>false
@@ -1831,7 +1831,7 @@ Controllo the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>L'erreur de ralenti est l'écart entre le régime moteur actuel et le régime de ralenti visé. Valeurs affichées uniquement quand le contact ralenti est actif ; la valeur max. affichée est 200 tr/min. </source>
-   <translation>Idle erroree is the difference between current regime motore and the ECU target idle speed. Valores are displayed only when the interruttore minimo is active; the maximum displayed Valore is 200 rpm.</translation>
+   <translation>Idle erroreeee is the difference between current regime motore and the ECU target idle speed. Valores are displayed only when the interruttore minimo is active; the maximum displayed Valore is 200 rpm.</translation>
   </message>
   <message>
    <source>La correction carburant court terme n'est active qu'en boucle fermée. Des valeurs jusqu'à 10% sont normales, occasionnellement jusqu'à 15%. Des valeurs supérieures à 15% sont anormales. </source>
@@ -1867,7 +1867,7 @@ Controllo the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source> Signal régime et capteur PMH</source>
-   <translation>Segnale regime e sensoreee albero motore</translation>
+   <translation>Segnale regime e sensoreeeee albero motore</translation>
   </message>
   <message>
    <source> Anomalies :</source>
@@ -1875,7 +1875,7 @@ Controllo the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source> Erreur signal lambda</source>
-   <translation>erroreee segnale lambda</translation>
+   <translation>erroreeeee segnale lambda</translation>
   </message>
   <message>
    <source> Signal lambda anormalement élevé</source>
@@ -2114,15 +2114,15 @@ Controllo the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>Erreur base de données</source>
-   <translation>Database erroree</translation>
+   <translation>Database erroreeee</translation>
   </message>
   <message>
    <source>Erreur de ralenti</source>
-   <translation>erroreee minimo</translation>
+   <translation>erroreeeee minimo</translation>
   </message>
   <message>
    <source>Erreur de ralenti à chaud (corrigée)</source>
-   <translation>Errore minimo a caldoee (corrected)</translation>
+   <translation>erroreee minimo a caldoee (corrected)</translation>
   </message>
   <message>
    <source>Fréquence lambda</source>
@@ -2248,7 +2248,7 @@ Controllo the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>Affiche l'état du diagnostic interne MEMS sur la sonde à oxygène et son câblage. La valeur ON indique aucun défaut, OFF indique un problème possible.</source>
-   <translation>Displays the MEMS internal diagnostic Stato for the oxygen sensoree and its wiring. ON means no guasto; OFF indicates a possible problem.</translation>
+   <translation>Displays the MEMS internal diagnostic Stato for the oxygen sensoreeee and its wiring. ON means no guasto; OFF indicates a possible problem.</translation>
   </message>
   <message>
    <source>Affiche la correction carburant actuelle par rétroaction, en pourcentage par rapport à la valeur cartographiée. Des valeurs élevées (ex. 120%) indiquent une compensation d'un mélange trop pauvre, des valeurs basses (ex. 80%) une compensation d'un mélange trop riche.</source>
@@ -2260,27 +2260,27 @@ Controllo the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>Affiche la pression mesurée par le capteur de pression d'air interne du MEMS. Cette valeur doit indiquer la pression atmosphérique de 100 kPa moteur à l'arrêt, et une valeur plus basse entre 25 et 40 kPa au ralenti. Des valeurs très élevées peuvent indiquer un problème du capteur interne au MEMS, ou plus probablement une durite de dépression bouchée ou débranchée.</source>
-   <translation>Displays pressione measured by the MEMS internal air-pressione sensoree. It should show atmospheric pressione of about 100 kPa with the engine stopped and a lower Valore of 25-40 kPa at idle. Very high Valores may indicate an internal MEMS sensoree problem or, more commonly, a blocked or disconnected vacuum hose.</translation>
+   <translation>Displays pressione measured by the MEMS internal air-pressione sensoreeee. It should show atmospheric pressione of about 100 kPa with the engine stopped and a lower Valore of 25-40 kPa at idle. Very high Valores may indicate an internal MEMS sensoreeee problem or, more commonly, a blocked or disconnected vacuum hose.</translation>
   </message>
   <message>
    <source>Affiche la température du liquide de refroidissement mesurée par l'ECU. Si le capteur est en circuit ouvert, une valeur par défaut d'environ 60°C sera affichée. Pendant la montée en température, la valeur doit augmenter progressivement de la température ambiante à environ 90°C. Un capteur défectueux peut causer un démarrage difficile, un ralenti trop élevé, une surconsommation et des ventilateurs tournant en continu.</source>
-   <translation>Displays temperatura liquido refrigerante measured by the ECU. If the sensoree circuit is Apri, a deguasto Valore of about 60°C is displayed. During warm-up the Valore should rise progressively from temperatura ambiente to about 90°C. A guastoy sensoree can cause difficult starting, excessively high idle, high fuel consumption and continuously running fans.</translation>
+   <translation>Displays temperatura liquido refrigerante measured by the ECU. If the sensoreeee circuit is Apri, a deguasto Valore of about 60°C is displayed. During warm-up the Valore should rise progressively from temperatura ambiente to about 90°C. A guastoy sensoreeee can cause difficult starting, excessively high idle, high fuel consumption and continuously running fans.</translation>
   </message>
   <message>
    <source>Affiche la température mesurée par l'ECU via la sonde de température d'air admission (si équipée). Si le capteur est en circuit ouvert, une valeur par défaut fixe sera affichée. Cette température sert à l'ECU pour retarder l'allumage afin d'éviter le cliquetis et ajuster la richesse à chaud.</source>
-   <translation>Displays intake-air temperatura measured by the ECU (if equipped). If the sensoree circuit is Apri, a fixed deguasto Valore is displayed. The ECU uses this temperatura to retard ignition to prevent knock and to adjust hot mixture.</translation>
+   <translation>Displays intake-air temperatura measured by the ECU (if equipped). If the sensoreeee circuit is Apri, a fixed deguasto Valore is displayed. The ECU uses this temperatura to retard ignition to prevent knock and to adjust hot mixture.</translation>
   </message>
   <message>
    <source>Affiche la température mesurée par l'ECU via la sonde de température d'air ambiant (si équipée). Si le capteur est en circuit ouvert, une valeur par défaut fixe sera affichée. Ce capteur sert à l'ECU pour mesurer la température dans le compartiment moteur, généralement pour piloter un ventilateur supplémentaire. Sur les ECU MEMS qui ne supportent pas ce capteur, la valeur affichera N/S.</source>
-   <translation>Displays ambient-air temperatura measured by the ECU (if equipped). If the sensoree circuit is Apri, a fixed deguasto Valore is displayed. The ECU uses this sensoree to measure engine-bay temperatura, generally to control an additional fan. On MEMS ECUs that do not support this sensoree, N/S is displayed.</translation>
+   <translation>Displays ambient-air temperatura measured by the ECU (if equipped). If the sensoreeee circuit is Apri, a fixed deguasto Valore is displayed. The ECU uses this sensoreeee to measure engine-bay temperatura, generally to control an additional fan. On MEMS ECUs that do not support this sensoreeee, N/S is displayed.</translation>
   </message>
   <message>
    <source>Affiche la tension d'alimentation du véhicule mesurée en interne par l'ECU. De grands écarts sur cette mesure peuvent entraîner des difficultés de démarrage et des erreurs de CO au ralenti.</source>
-   <translation>Displays vehicle supply tensione measured internally by the ECU. Large deviations can cause starting difficulties and idle CO errorees.</translation>
+   <translation>Displays vehicle supply tensione measured internally by the ECU. Large deviations can cause starting difficulties and idle CO erroreeees.</translation>
   </message>
   <message>
    <source>Affiche la tension de la sonde à oxygène lue par l'ECU MEMS. Moteur bien chaud, en conditions normales de ralenti ou de conduite, cette tension oscille rapidement entre 0,0-0,2V et 0,7-1,0V.</source>
-   <translation>Displays oxygen-sensoree tensione read by the MEMS ECU. With the engine fully warm under normal idle or driving conditions, this tensione rapidly switches between 0.0-0.2 V and 0.7-1.0 V.</translation>
+   <translation>Displays oxygen-sensoreeee tensione read by the MEMS ECU. With the engine fully warm under normal idle or driving conditions, this tensione rapidly switches between 0.0-0.2 V and 0.7-1.0 V.</translation>
   </message>
   <message>
    <source>Affiche le décalage d'avance de service actuellement utilisé par l'ECU MEMS. C'est un réglage spécial pour les pays utilisant un carburant à faible indice d'octane, configurable dans l'onglet Réglages.</source>
@@ -2288,7 +2288,7 @@ Controllo the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>Affiche si l'injection est régulée par rétroaction des sondes à oxygène. Sur un véhicule bien chaud, l'état de boucle doit indiquer boucle fermée dans la plupart des conditions de conduite et de ralenti.</source>
-   <translation>Shows whether fuelling is controlled by oxygen-sensoree feedback. With the vehicle fully warm, loop Stato should indicate anello chiuso under most driving and idle conditions.</translation>
+   <translation>Shows whether fuelling is controlled by oxygen-sensoreeee feedback. With the vehicle fully warm, loop Stato should indicate anello chiuso under most driving and idle conditions.</translation>
   </message>
   <message>
    <source>Angle papillon (°)</source>
@@ -2324,11 +2324,11 @@ Controllo the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>CAPTEUR DÉFECTUEUX</source>
-   <translation>sensoree guasto</translation>
+   <translation>sensoreeee guasto</translation>
   </message>
   <message>
    <source>Capteur OK</source>
-   <translation>sensoree OK</translation>
+   <translation>sensoreeee OK</translation>
   </message>
   <message>
    <source>Codes défaut (brut)</source>
@@ -2408,11 +2408,11 @@ Controllo the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>Erreur de ralenti</source>
-   <translation>erroreee minimo</translation>
+   <translation>erroreeeee minimo</translation>
   </message>
   <message>
    <source>Erreur de ralenti à chaud (corrigée)</source>
-   <translation>Errore minimo a caldoee (corrected)</translation>
+   <translation>erroreee minimo a caldoee (corrected)</translation>
   </message>
   <message>
    <source>Fonction intégrée à l'ECU MEMS pour pallier certaines situations pendant la vie du véhicule (carburant à faible indice d'octane, usure moteur), en avançant légèrement l'allumage au ralenti.</source>

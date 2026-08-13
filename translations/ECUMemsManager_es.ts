@@ -2122,7 +2122,7 @@ Comprobación the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>Erreur de ralenti à chaud (corrigée)</source>
-   <translation>Error de ralentí en caliente corregido</translation>
+   <translation>error de ralentí en caliente corregido</translation>
   </message>
   <message>
    <source>Fréquence lambda</source>
@@ -2412,7 +2412,7 @@ Comprobación the wiring and make sure the ECU is powered.</translation>
   </message>
   <message>
    <source>Erreur de ralenti à chaud (corrigée)</source>
-   <translation>Error de ralentí en caliente corregido</translation>
+   <translation>error de ralentí en caliente corregido</translation>
   </message>
   <message>
    <source>Fonction intégrée à l'ECU MEMS pour pallier certaines situations pendant la vie du véhicule (carburant à faible indice d'octane, usure moteur), en avançant légèrement l'allumage au ralenti.</source>
