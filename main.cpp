@@ -52,7 +52,7 @@ QString chooseInitialLanguage()
     layout->addWidget(title);
 
     QLabel *info = new QLabel(
-        QStringLiteral("La langue pourra être modifiée ensuite dans Options.\\n"
+        QStringLiteral("La langue pourra être modifiée ensuite dans Options.\n"
                        "The language can be changed later in Options."), &dialog);
     info->setAlignment(Qt::AlignCenter);
     layout->addWidget(info);
@@ -145,15 +145,16 @@ int main(int argc, char *argv[])
     QString language = languageSettings.value("Language", "fr").toString();
     languageSettings.endGroup();
 
-    if (!languageConfigured)
-    {
-        language = chooseInitialLanguage();
-        languageSettings.beginGroup("Settings");
-        languageSettings.setValue("Language", language);
-        languageSettings.setValue("LanguageConfigured", true);
-        languageSettings.endGroup();
-        languageSettings.sync();
-    }
+    // Mode TEST9 : afficher temporairement le sélecteur à chaque démarrage
+    // afin de valider facilement les six langues. Le comportement final
+    // reviendra à un affichage uniquement au premier lancement.
+    Q_UNUSED(languageConfigured);
+    language = chooseInitialLanguage();
+    languageSettings.beginGroup("Settings");
+    languageSettings.setValue("Language", language);
+    languageSettings.setValue("LanguageConfigured", true);
+    languageSettings.endGroup();
+    languageSettings.sync();
 
     QTranslator translator;
     const QString translationPath = QCoreApplication::applicationDirPath()
