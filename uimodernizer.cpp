@@ -22,10 +22,8 @@ public:
         if (!m_tabs) return;
         if (qApp) qApp->setProperty("ecuDarkTheme", true);
 
-        // The approved mock-up contains only the real application pages.
-        // Do not create a mode selector, a placeholder Database tab or a second
-        // trends panel here. Their previous creation caused visible layout jumps
-        // and duplicated elements that were not present in the reference.
+        // Approved mock-up: real application pages only. No invented mode selector,
+        // placeholder tab or duplicate trends panel.
         installNavigation();
         modernizeOverview();
     }
@@ -46,8 +44,8 @@ private:
         workspace->setStyleSheet(
             "#modernWorkspace{background:#0d1116;}"
             "QListWidget{background:#10151a;color:#b8c0c7;border:0;border-right:1px solid #293038;"
-            "padding:5px 3px;outline:0;}"
-            "QListWidget::item{min-height:28px;padding:2px 9px;border-radius:1px;margin:1px 0px;}"
+            "padding:4px 2px;outline:0;}"
+            "QListWidget::item{min-height:27px;padding:2px 8px;border-radius:0;margin:0;}"
             "QListWidget::item:hover{background:#171d23;color:#ffffff;}"
             "QListWidget::item:selected{background:#191f25;color:#ff9b32;border-left:3px solid #ff8a1c;}"
             "QTabWidget::pane{border:0;background:#0d1116;}"
@@ -59,7 +57,7 @@ private:
 
         m_nav = new QListWidget(workspace);
         m_nav->setObjectName(QStringLiteral("modernNavigation"));
-        m_nav->setFixedWidth(176);
+        m_nav->setFixedWidth(168);
         m_nav->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         m_nav->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
         m_nav->setSelectionMode(QAbstractItemView::SingleSelection);
