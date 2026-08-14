@@ -30,8 +30,9 @@ set(SOURCES
 add_executable(${PNAME} ${SOURCES})
 target_sources(${PNAME} PRIVATE ${CMAKE_SOURCE_DIR}/desktopshortcut.cpp ${CMAKE_SOURCE_DIR}/desktopshortcut.h)
 if(WIN32)
+    # Embed the real multi-resolution key.ico directly in the Windows EXE.
+    target_sources(${PNAME} PRIVATE ${CMAKE_SOURCE_DIR}/appicon.rc)
     target_link_libraries(${PNAME} PRIVATE ole32 shell32 uuid)
-    add_custom_command(TARGET ${PNAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/key.ico" "$<TARGET_FILE_DIR:${PNAME}>/key.ico")
 endif()
 
 # Runtime translations: v1.1.0 uses only the six per-language JSON folders.
