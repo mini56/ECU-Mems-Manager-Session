@@ -53,7 +53,7 @@ protected:
             window->objectName()==QStringLiteral("MainWindow") &&
             !window->property("mockupChromeInstalled").toBool()) {
             window->setProperty("mockupChromeInstalled", true);
-            QTimer::singleShot(90, window, [window](){ install(window); });
+            QTimer::singleShot(0, window, [window](){ install(window); });
         }
         return QObject::eventFilter(watched, event);
     }
