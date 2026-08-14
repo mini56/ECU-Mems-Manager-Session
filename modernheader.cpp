@@ -42,35 +42,46 @@ private:
 
         if (window->menuBar()) window->menuBar()->hide();
 
-        // The approved mock-up uses the REAL connection controls. Reuse the
-        // existing functional connection bar instead of creating mirror/fake controls.
+        // Approved mock-up: reuse the REAL connection controls instead of mirrors.
         QWidget *legacy=central->findChild<QWidget*>(QStringLiteral("layoutWidget_7"));
         if (!legacy) return;
 
         QFrame *bar=new QFrame(central);
         bar->setObjectName(QStringLiteral("mockupTopHeader"));
         bar->setStyleSheet(
-            "#mockupTopHeader{background:#0e1318;border-bottom:1px solid #29313a;}"
+            "#mockupTopHeader{background:#0b1015;border-bottom:1px solid #29313a;}"
             "#mockupTopHeader QLabel{color:#dce2e7;background:transparent;border:0;}"
             "#mockupTopHeader QPushButton{background:#1769d2;color:#ffffff;border:1px solid #2d7ee8;"
-            "border-radius:4px;padding:4px 10px;font-weight:600;}"
+            "border-radius:3px;padding:3px 8px;font-weight:600;}"
             "#mockupTopHeader QPushButton:hover{background:#2378e6;border-color:#4c91ef;}"
             "#mockupTopHeader QPushButton:pressed{background:#1257b0;}"
             "#mockupTopHeader QPushButton:disabled{background:#252b31;color:#707983;border-color:#333b43;}"
+            "#mockupTopHeader QFrame[frameShape=\"5\"]{color:#303943;}"
         );
 
         QHBoxLayout *layout=new QHBoxLayout(bar);
-        layout->setContentsMargins(10,5,10,5);
-        layout->setSpacing(12);
+        layout->setContentsMargins(9,4,9,4);
+        layout->setSpacing(8);
 
-        QLabel *brand=new QLabel(QStringLiteral("ECU MEMS MANAGER"),bar);
+        QWidget *brandBox=new QWidget(bar);
+        brandBox->setObjectName(QStringLiteral("mockupBrandBox"));
+        QHBoxLayout *brandLayout=new QHBoxLayout(brandBox);
+        brandLayout->setContentsMargins(0,0,0,0);
+        brandLayout->setSpacing(6);
+
+        QLabel *brand=new QLabel(QStringLiteral("ECU MEMS MANAGER"),brandBox);
         brand->setObjectName(QStringLiteral("mockupBrandLabel"));
         brand->setStyleSheet("color:#f3f5f7;font-weight:700;letter-spacing:.5px;background:transparent;");
-        layout->addWidget(brand);
-        layout->addSpacing(10);
+        brandLayout->addWidget(brand);
 
-        // Reparent the original functional bar. This preserves every signal,
-        // slot, live LED and ECU/connection state exactly as before.
+        QLabel *version=new QLabel(QStringLiteral("v%1.%2.%3").arg(VER_MAJOR).arg(VER_MINOR).arg(VER_PATCH),brandBox);
+        version->setObjectName(QStringLiteral("mockupVersionLabel"));
+        version->setStyleSheet("color:#7f8992;font-weight:600;background:transparent;");
+        brandLayout->addWidget(version);
+        layout->addWidget(brandBox,0,Qt::AlignVCenter);
+        layout->addSpacing(8);
+
+        // Reparent the original functional bar. Signals, slots, LEDs and ECU state stay intact.
         legacy->setParent(bar);
         legacy->setMinimumSize(0,0);
         legacy->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
@@ -78,8 +89,8 @@ private:
         legacy->setStyleSheet(
             "QWidget{background:transparent;color:#dce2e7;}"
             "QLabel{color:#cfd5da;background:transparent;border:0;}"
-            "QPushButton{background:#1769d2;color:#fff;border:1px solid #2d7ee8;border-radius:4px;"
-            "padding:4px 10px;font-weight:600;}"
+            "QPushButton{background:#1769d2;color:#fff;border:1px solid #2d7ee8;border-radius:3px;"
+            "padding:3px 8px;font-weight:600;}"
             "QPushButton:hover{background:#2378e6;}"
             "QPushButton:disabled{background:#252b31;color:#707983;border-color:#333b43;}"
         );
@@ -88,7 +99,13 @@ private:
         for (QPushButton *button : realButtons) {
             button->setMinimumWidth(0);
             button->setMaximumWidth(QWIDGETSIZE_MAX);
-            button->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
+            button->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Preferred);
+        }
+
+        // Compact the historical connection layout: no oversized legacy margins.
+        if (QLayout *legacyLayout=legacy->layout()) {
+            legacyLayout->setContentsMargins(0,0,0,0);
+            legacyLayout->setSpacing(7);
         }
 
         layout->addWidget(legacy,1);
@@ -96,26 +113,31 @@ private:
         legacy->show();
 
         QTimer *sync=new QTimer(bar);
-        sync->setInterval(250);
+        sync->setInterval(200);
         QObject::connect(sync,&QTimer::timeout,bar,[=](){
             const qreal scale=window->property("globalUiScale").isValid()
                 ? window->property("globalUiScale").toDouble() : 1.0;
-            const int headerH=qBound(34,qRound(42.0*scale),49);
+            const int headerH=qBound(32,qRound(40.0*scale),46);
             if (bar->height()!=headerH) bar->setFixedHeight(headerH);
 
-            const int margin=qBound(5,qRound(10.0*scale),11);
-            const int spacing=qBound(5,qRound(12.0*scale),13);
-            layout->setContentsMargins(margin,qMax(3,qRound(5.0*scale)),margin,qMax(3,qRound(5.0*scale)));
+            const int margin=qBound(5,qRound(9.0*scale),10);
+            const int spacing=qBound(4,qRound(8.0*scale),9);
+            layout->setContentsMargins(margin,qMax(3,qRound(4.0*scale)),margin,qMax(3,qRound(4.0*scale)));
             layout->setSpacing(spacing);
 
             QFont bf=brand->font();
-            bf.setPointSizeF(qBound<qreal>(7.0,9.0*scale,10.5));
+            bf.setPointSizeF(qBound<qreal>(7.0,9.0*scale,10.2));
             brand->setFont(bf);
+            QFont vf=version->font();
+            vf.setPointSizeF(qBound<qreal>(6.2,7.3*scale,8.2));
+            version->setFont(vf);
 
             for (QPushButton *button : realButtons) {
-                const int h=qBound(22,qRound(28.0*scale),32);
-                button->setMinimumHeight(h);
-                button->setMaximumHeight(h);
+                const int h=qBound(22,qRound(27.0*scale),31);
+                const int pad=qBound(14,qRound(18.0*scale),22);
+                const int w=qMax(62,button->fontMetrics().horizontalAdvance(button->text())+pad);
+                button->setFixedHeight(h);
+                button->setFixedWidth(w);
             }
         });
         sync->start();
