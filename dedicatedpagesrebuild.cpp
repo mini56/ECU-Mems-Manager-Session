@@ -48,6 +48,7 @@ static void replaceRoot(QWidget *page,QVBoxLayout *&root)
     root=new QVBoxLayout(page);
     root->setContentsMargins(10,8,10,8);
     root->setSpacing(8);
+    root->setSizeConstraint(QLayout::SetDefaultConstraint);
     page->setMinimumSize(0,0);
     page->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
     page->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
@@ -68,6 +69,8 @@ static QFrame *hero(QWidget *parent,const QString &title,const QString &subtitle
 static QFrame *card(QWidget *parent,const QString &title)
 {
     QFrame *f=new QFrame(parent); f->setAttribute(Qt::WA_StyledBackground,true);
+    f->setMinimumSize(0,0); f->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
+    f->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     f->setStyleSheet(QStringLiteral("QFrame{background:#10161c;border:1px solid #29343e;border-radius:5px;}"));
     QVBoxLayout *v=new QVBoxLayout(f); v->setContentsMargins(12,10,12,12); v->setSpacing(7);
     QLabel *t=new QLabel(title,f); QFont tf=t->font(); tf.setBold(true); tf.setPointSizeF(8.5); t->setFont(tf); t->setStyleSheet(QStringLiteral("color:#ff9828;background:transparent;border:0;"));
@@ -79,17 +82,27 @@ static QFrame *card(QWidget *parent,const QString &title)
 static QWidget *findTabByText(QTabWidget *tabs,const QString &needle)
 {
     if(!tabs) return nullptr;
-    for(int i=0;i<tabs->count();++i) if(tabs->tabText(i).toLower().contains(needle.toLower())) return realPage(tabs->widget(i));
+    for(int i=0;i<tabs->count();++i)
+        if(tabs->tabText(i).toLower().contains(needle.toLower())) return realPage(tabs->widget(i));
     return nullptr;
 }
 
 static void cleanupOldShell(QWidget *page)
 {
     if(!page) return;
-    for(QFrame *f:page->findChildren<QFrame*>(QString(),Qt::FindDirectChildrenOnly)){
+    for(QFrame *f:page->findChildren<QFrame*>()){
         const QString n=f->objectName();
         if(n.startsWith(QStringLiteral("uiRebuildHero_"))||n.startsWith(QStringLiteral("uiRebuildCard_"))) f->hide();
     }
+}
+
+static void normalizeWidget(QWidget *w)
+{
+    if(!w) return;
+    w->setMinimumSize(0,0);
+    w->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
+    w->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    w->show();
 }
 
 static void rebuildSummary(QTabWidget *tabs)
@@ -100,7 +113,7 @@ static void rebuildSummary(QTabWidget *tabs)
     if(tables.size()<3) return;
     page->setProperty("strictSummaryBuilt",true);
     cleanupOldShell(page);
-    for(QTableWidget *t:tables){t->setParent(page);t->setMinimumSize(0,0);t->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);t->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);t->show();}
+    for(QTableWidget *t:tables){t->setParent(page);normalizeWidget(t);}
     QVBoxLayout *root=nullptr; replaceRoot(page,root); root->addWidget(hero(page,QStringLiteral("TOUTES LES MESURES"),QStringLiteral("MESURES ECU EN TEMPS RÉEL")));
     QHBoxLayout *body=new QHBoxLayout; body->setSpacing(7);
     for(int i=0;i<3;i++) body->addWidget(tables.at(i),1);
@@ -110,7 +123,7 @@ static void rebuildSummary(QTabWidget *tabs)
 static void styleRawBlock(QWidget *block)
 {
     if(!block) return;
-    block->setMinimumSize(0,0); block->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX); block->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    normalizeWidget(block);
     for(QLabel *l:block->findChildren<QLabel*>()){
         const QString n=l->objectName();
         const bool head=n.startsWith(QStringLiteral("header_"))||n.startsWith(QStringLiteral("Aheader_"));
@@ -125,7 +138,7 @@ static void rebuildRaw(QTabWidget *tabs)
     if(!page||page->property("strictRawBuilt").toBool()) return;
     QWidget *a=page->findChild<QWidget*>(QStringLiteral("raw_1")); QWidget *b=page->findChild<QWidget*>(QStringLiteral("raw_2"));
     if(!a||!b) return;
-    page->setProperty("strictRawBuilt",true); cleanupOldShell(page); a->setParent(page);b->setParent(page);a->show();b->show();styleRawBlock(a);styleRawBlock(b);
+    page->setProperty("strictRawBuilt",true); cleanupOldShell(page); a->setParent(page);b->setParent(page);styleRawBlock(a);styleRawBlock(b);
     QVBoxLayout *root=nullptr; replaceRoot(page,root); root->addWidget(hero(page,QStringLiteral("TOUTES LES DONNÉES"),QStringLiteral("DONNÉES BRUTES ET VALEURS DÉCODÉES")));
     QHBoxLayout *body=new QHBoxLayout; body->setSpacing(8);
     QFrame *ca=card(page,QStringLiteral("TRAME 7D")); static_cast<QVBoxLayout*>(ca->layout())->addWidget(a,1);
@@ -135,8 +148,10 @@ static void rebuildRaw(QTabWidget *tabs)
 
 static void moveLabel(QLabel *l,QWidget *parent,QVBoxLayout *layout,bool warning=false)
 {
-    if(!l||!parent||!layout) return; l->setParent(parent); l->setWordWrap(true); l->setMinimumHeight(0); l->setMaximumHeight(QWIDGETSIZE_MAX);
-    l->setStyleSheet(warning?QStringLiteral("color:#ff6559;background:#160d0d;border:1px solid #5d2c2c;border-radius:3px;padding:8px;font-weight:700;"):QStringLiteral("color:#dce3e8;background:transparent;border:0;")); l->show(); layout->addWidget(l);
+    if(!l||!parent||!layout) return;
+    l->setParent(parent); l->setWordWrap(true); l->setMinimumHeight(0); l->setMaximumHeight(QWIDGETSIZE_MAX);
+    l->setStyleSheet(warning?QStringLiteral("color:#ff6559;background:#160d0d;border:1px solid #5d2c2c;border-radius:3px;padding:8px;font-weight:700;"):QStringLiteral("color:#dce3e8;background:transparent;border:0;"));
+    l->show(); layout->addWidget(l);
 }
 
 static void rebuildInteractive(QTabWidget *tabs)
@@ -159,9 +174,10 @@ static void rebuildInteractive(QTabWidget *tabs)
 static void rebuildRosco(QTabWidget *tabs)
 {
     QWidget *page=findTabByText(tabs,QStringLiteral("rosco")); if(!page||page->property("strictRoscoBuilt").toBool()) return;
-    QList<QGroupBox*> groups=page->findChildren<QGroupBox*>(QString(),Qt::FindDirectChildrenOnly); QList<QTextEdit*> edits=page->findChildren<QTextEdit*>(QString(),Qt::FindDirectChildrenOnly);
+    QList<QGroupBox*> groups=page->findChildren<QGroupBox*>(); QList<QTextEdit*> edits=page->findChildren<QTextEdit*>();
     if(groups.isEmpty()||edits.isEmpty()) return;
-    page->setProperty("strictRoscoBuilt",true); cleanupOldShell(page); QGroupBox *session=groups.first(); QTextEdit *output=edits.first(); session->setParent(page);output->setParent(page);session->show();output->show();
+    page->setProperty("strictRoscoBuilt",true); cleanupOldShell(page);
+    QGroupBox *session=groups.first(); QTextEdit *output=edits.first(); session->setParent(page);output->setParent(page);normalizeWidget(session);normalizeWidget(output);
     QVBoxLayout *root=nullptr;replaceRoot(page,root);root->addWidget(hero(page,QStringLiteral("ECU / ROSCO"),QStringLiteral("INFORMATIONS TECHNIQUES ET SESSION ECU / ROSCO")));
     QHBoxLayout *body=new QHBoxLayout;body->setSpacing(8);QFrame *left=card(page,QStringLiteral("SESSION ECU"));static_cast<QVBoxLayout*>(left->layout())->addWidget(session,1);QFrame *right=card(page,QStringLiteral("RÉPONSES"));static_cast<QVBoxLayout*>(right->layout())->addWidget(output,1);body->addWidget(left,2);body->addWidget(right,3);root->addLayout(body,1);
 }
@@ -170,17 +186,36 @@ static void rebuildDiagnostic(QTabWidget *tabs)
 {
     QWidget *page=findTabByText(tabs,QStringLiteral("diagnostic")); if(!page||page->property("strictDiagnosticBuilt").toBool()) return;
     QList<QTableWidget*> tables=page->findChildren<QTableWidget*>(); QList<QGroupBox*> groups=page->findChildren<QGroupBox*>(); if(tables.isEmpty()||groups.isEmpty()) return;
-    page->setProperty("strictDiagnosticBuilt",true); cleanupOldShell(page); QTableWidget *table=tables.first(); QGroupBox *report=groups.last(); table->setParent(page);report->setParent(page);table->show();report->show();
-    QList<QPushButton*> buttons=page->findChildren<QPushButton*>(QString(),Qt::FindDirectChildrenOnly); QList<QLabel*> labels=page->findChildren<QLabel*>(QString(),Qt::FindDirectChildrenOnly);
+    QTableWidget *table=tables.first(); QGroupBox *report=groups.last();
+    QList<QPushButton*> buttons=page->findChildren<QPushButton*>(); QList<QLabel*> labels=page->findChildren<QLabel*>();
+    page->setProperty("strictDiagnosticBuilt",true); cleanupOldShell(page); table->setParent(page);report->setParent(page);normalizeWidget(table);normalizeWidget(report);
     QVBoxLayout *root=nullptr;replaceRoot(page,root);root->addWidget(hero(page,QStringLiteral("DIAGNOSTIC AUTOMATIQUE"),QStringLiteral("VÉRIFICATION COMPLÈTE DU SYSTÈME ET RAPPORT DE SANTÉ")));
-    QFrame *toolbar=card(page,QStringLiteral("ÉTAT DU DIAGNOSTIC"));QHBoxLayout *th=new QHBoxLayout;th->setSpacing(8);for(QLabel *l:labels){if(!l||l->objectName().startsWith(QStringLiteral("strict")))continue;l->setParent(toolbar);l->show();th->addWidget(l);}th->addStretch(1);for(QPushButton *b:buttons){b->setParent(toolbar);b->setMinimumHeight(30);b->show();th->addWidget(b);}static_cast<QVBoxLayout*>(toolbar->layout())->addLayout(th);root->addWidget(toolbar,0);
+    QFrame *toolbar=card(page,QStringLiteral("ÉTAT DU DIAGNOSTIC"));QHBoxLayout *th=new QHBoxLayout;th->setSpacing(8);
+    for(QLabel *l:labels){if(!l||l->parentWidget()==report||report->isAncestorOf(l)||l->objectName().startsWith(QStringLiteral("strict")))continue;l->setParent(toolbar);l->show();th->addWidget(l);}
+    th->addStretch(1);
+    for(QPushButton *b:buttons){if(!b||report->isAncestorOf(b))continue;b->setParent(toolbar);b->setMinimumHeight(30);b->show();th->addWidget(b);}
+    static_cast<QVBoxLayout*>(toolbar->layout())->addLayout(th);root->addWidget(toolbar,0);
     QHBoxLayout *body=new QHBoxLayout;body->setSpacing(8);QFrame *checks=card(page,QStringLiteral("CONTRÔLES"));static_cast<QVBoxLayout*>(checks->layout())->addWidget(table,1);QFrame *rep=card(page,QStringLiteral("RAPPORT"));static_cast<QVBoxLayout*>(rep->layout())->addWidget(report,1);body->addWidget(checks,3);body->addWidget(rep,2);root->addLayout(body,1);
+}
+
+static void fitBuiltPages(QMainWindow *w)
+{
+    QTabWidget *tabs=w?w->findChild<QTabWidget*>(QStringLiteral("Tab_main")):nullptr; if(!tabs) return;
+    const int h=qMax(420,tabs->height());
+    const int margin=h<620?6:10;
+    const int spacing=h<620?6:8;
+    for(int i=0;i<tabs->count();++i){
+        QWidget *page=realPage(tabs->widget(i)); if(!page) continue;
+        if(!(page->property("strictSummaryBuilt").toBool()||page->property("strictRawBuilt").toBool()||page->property("strictInteractiveBuilt").toBool()||page->property("strictRoscoBuilt").toBool()||page->property("strictDiagnosticBuilt").toBool())) continue;
+        if(QLayout *l=page->layout()){l->setContentsMargins(margin,margin,margin,margin);l->setSpacing(spacing);}
+        page->setMinimumSize(0,0);page->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
+    }
 }
 
 static void rebuildAll(QMainWindow *w)
 {
     QTabWidget *tabs=w?w->findChild<QTabWidget*>(QStringLiteral("Tab_main")):nullptr;if(!tabs)return;
-    rebuildSummary(tabs);rebuildRaw(tabs);rebuildInteractive(tabs);rebuildRosco(tabs);rebuildDiagnostic(tabs);
+    rebuildSummary(tabs);rebuildRaw(tabs);rebuildInteractive(tabs);rebuildRosco(tabs);rebuildDiagnostic(tabs);fitBuiltPages(w);
 }
 
 class DedicatedInstaller:public QObject
@@ -188,9 +223,16 @@ class DedicatedInstaller:public QObject
 public:explicit DedicatedInstaller(QObject *p=nullptr):QObject(p){}
 protected:bool eventFilter(QObject *watched,QEvent *event)override
     {
-        if(event->type()!=QEvent::Show||!watched)return QObject::eventFilter(watched,event);
-        QMainWindow *w=qobject_cast<QMainWindow*>(watched);if(!w||w->objectName()!=QStringLiteral("MainWindow")||w->property("dedicatedPagesScheduled").toBool())return QObject::eventFilter(watched,event);
-        w->setProperty("dedicatedPagesScheduled",true);QTimer::singleShot(2700,w,[w](){rebuildAll(w);});return QObject::eventFilter(watched,event);
+        if(!watched)return QObject::eventFilter(watched,event);
+        QMainWindow *w=qobject_cast<QMainWindow*>(watched);if(!w||w->objectName()!=QStringLiteral("MainWindow"))return QObject::eventFilter(watched,event);
+        if(event->type()==QEvent::Show&&!w->property("dedicatedPagesScheduled").toBool()){
+            w->setProperty("dedicatedPagesScheduled",true);
+            QTimer::singleShot(2700,w,[w](){rebuildAll(w);});
+            QTimer::singleShot(3600,w,[w](){rebuildAll(w);});
+        } else if(event->type()==QEvent::Resize&&w->property("dedicatedPagesScheduled").toBool()) {
+            QTimer::singleShot(0,w,[w](){fitBuiltPages(w);});
+        }
+        return QObject::eventFilter(watched,event);
     }
 };
 
