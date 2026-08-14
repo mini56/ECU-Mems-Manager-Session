@@ -6,6 +6,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLCDNumber>
+#include <QLineEdit>
 #include <QMainWindow>
 #include <QPushButton>
 #include <QTabWidget>
