@@ -21,7 +21,7 @@ static QLabel *makeStatusCell(const QString &title, QWidget *parent)
     label->setAlignment(Qt::AlignCenter);
     label->setMinimumHeight(22);
     label->setStyleSheet(
-        "QLabel{color:#cfd5da;background:#0f1419;border-right:1px solid #2b323a;padding:2px 7px;}"
+        "QLabel{color:#cfd5da;background:#0f1419;border-right:1px solid #2b323a;padding:2px 6px;}"
     );
     return label;
 }
@@ -76,8 +76,8 @@ private:
         if (nav) {
             nav->setStyleSheet(
                 "QListWidget{background:#10151a;color:#b8c0c7;border:0;border-right:1px solid #293038;"
-                "padding:4px 2px;outline:0;}"
-                "QListWidget::item{min-height:27px;padding:2px 8px;border-radius:0;margin:0;}"
+                "padding:3px 1px;outline:0;}"
+                "QListWidget::item{min-height:24px;padding:1px 7px;border-radius:0;margin:0;}"
                 "QListWidget::item:hover{background:#171d23;color:#ffffff;}"
                 "QListWidget::item:selected{background:#191f25;color:#ff9b32;border-left:3px solid #ff8a1c;}"
             );
@@ -88,11 +88,11 @@ private:
 
         QFrame *status = new QFrame(central);
         status->setObjectName(QStringLiteral("mockupBottomStatus"));
-        status->setFixedHeight(26);
+        status->setFixedHeight(24);
         status->setStyleSheet(
             "#mockupBottomStatus{background:#0f1419;border-top:1px solid #2a3138;}"
             "#mockupBottomStatus QPushButton{background:#121820;color:#cfd5da;border:0;border-left:1px solid #2b323a;"
-            "border-radius:0;padding:2px 9px;}"
+            "border-radius:0;padding:2px 8px;}"
             "#mockupBottomStatus QPushButton:hover{color:#ffffff;background:#18212a;}"
         );
         QHBoxLayout *sl = new QHBoxLayout(status);
@@ -132,26 +132,25 @@ private:
         });
 
         const QList<QLabel*> cells = {fileCell, loopCell, lambdaCell, systemCell, injCell, airCell};
-        QTimer *sync = new QTimer(status);
-        sync->setInterval(220);
-        QObject::connect(sync, &QTimer::timeout, status, [=](){
+
+        auto refresh = [=](){
             const qreal scale = window->property("globalUiScale").isValid()
                 ? window->property("globalUiScale").toDouble() : 1.0;
 
-            const int navWidth = qBound(120, qRound(168.0 * scale), 194);
+            const int navWidth = qBound(108, qRound(142.0 * scale), 166);
             if (nav && nav->width()!=navWidth) nav->setFixedWidth(navWidth);
 
-            const int statusH = qBound(21, qRound(26.0 * scale), 30);
+            const int statusH = qBound(20, qRound(24.0 * scale), 28);
             if (status->height()!=statusH) status->setFixedHeight(statusH);
 
             QFont sf = status->font();
-            sf.setPointSizeF(qBound<qreal>(6.3, 8.0 * scale, 9.2));
+            sf.setPointSizeF(qBound<qreal>(6.1, 7.6 * scale, 8.7));
             for (QLabel *cell : cells) cell->setFont(sf);
             captureButton->setFont(sf);
 
             if (nav) {
                 QFont nf = nav->font();
-                nf.setPointSizeF(qBound<qreal>(6.4, 8.2 * scale, 9.3));
+                nf.setPointSizeF(qBound<qreal>(6.2, 7.7 * scale, 8.8));
                 nav->setFont(nf);
             }
 
@@ -172,10 +171,15 @@ private:
                 const bool err = system->property("checked").toBool();
                 systemCell->setText(err ? QStringLiteral("Système : défaut") : QStringLiteral("Système : OK"));
                 systemCell->setStyleSheet(err
-                    ? "QLabel{color:#ff6b6b;background:#0f1419;border-right:1px solid #2b323a;padding:2px 7px;}"
-                    : "QLabel{color:#6edc8b;background:#0f1419;border-right:1px solid #2b323a;padding:2px 7px;}");
+                    ? "QLabel{color:#ff6b6b;background:#0f1419;border-right:1px solid #2b323a;padding:2px 6px;}"
+                    : "QLabel{color:#6edc8b;background:#0f1419;border-right:1px solid #2b323a;padding:2px 6px;}");
             }
-        });
+        };
+
+        refresh();
+        QTimer *sync = new QTimer(status);
+        sync->setInterval(220);
+        QObject::connect(sync, &QTimer::timeout, status, refresh);
         sync->start();
     }
 };
