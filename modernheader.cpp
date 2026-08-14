@@ -36,11 +36,11 @@ protected:
     }
 
 private:
-    static QString infoStyle(int pad=8)
+    static QString infoStyle(int pad=6)
     {
         return QStringLiteral(
-            "QLabel{color:#cfd5da;background:#121820;border:1px solid #303943;"
-            "border-radius:1px;padding:3px %1px;font-weight:600;}"
+            "QLabel{color:#cfd5da;background:#10161c;border:1px solid #303943;"
+            "border-radius:0px;padding:2px %1px;font-weight:600;}"
         ).arg(pad);
     }
 
@@ -84,32 +84,32 @@ private:
         bar->setStyleSheet(
             "#mockupTopHeader{background:#0b1015;border-bottom:1px solid #29313a;}"
             "#mockupTopHeader QLabel{color:#dce2e7;background:transparent;border:0;}"
-            "#mockupTopHeader QPushButton{background:#1769d2;color:#ffffff;border:1px solid #2d7ee8;"
-            "border-radius:1px;padding:3px 8px;font-weight:600;}"
-            "#mockupTopHeader QPushButton:hover{background:#2378e6;border-color:#4c91ef;}"
-            "#mockupTopHeader QPushButton:pressed{background:#1257b0;}"
-            "#mockupTopHeader QPushButton:disabled{background:#252b31;color:#707983;border-color:#333b43;}"
+            "#mockupTopHeader QPushButton{background:#ff8a1c;color:#101419;border:1px solid #ff9b32;"
+            "border-radius:0px;padding:2px 7px;font-weight:700;}"
+            "#mockupTopHeader QPushButton:hover{background:#ff9b32;border-color:#ffad57;}"
+            "#mockupTopHeader QPushButton:pressed{background:#d86d0d;border-color:#e97b14;}"
+            "#mockupTopHeader QPushButton:disabled{background:#20262c;color:#6d7680;border-color:#303841;}"
         );
 
         QHBoxLayout *layout=new QHBoxLayout(bar);
-        layout->setContentsMargins(9,4,9,4);
-        layout->setSpacing(7);
+        layout->setContentsMargins(7,3,7,3);
+        layout->setSpacing(5);
 
         QWidget *brandBox=new QWidget(bar);
         QHBoxLayout *brandLayout=new QHBoxLayout(brandBox);
         brandLayout->setContentsMargins(0,0,0,0);
-        brandLayout->setSpacing(5);
+        brandLayout->setSpacing(4);
 
         QLabel *logo=new QLabel(brandBox);
         logo->setObjectName(QStringLiteral("mockupLogoLabel"));
         logo->setAlignment(Qt::AlignCenter);
         const QPixmap logoSource(QStringLiteral(":/icons/key.png"));
-        if (!logoSource.isNull()) logo->setPixmap(logoSource.scaled(24,24,Qt::KeepAspectRatio,Qt::SmoothTransformation));
-        logo->setFixedSize(26,26);
+        if (!logoSource.isNull()) logo->setPixmap(logoSource.scaled(22,22,Qt::KeepAspectRatio,Qt::SmoothTransformation));
+        logo->setFixedSize(24,24);
         brandLayout->addWidget(logo);
 
         QLabel *brand=new QLabel(QStringLiteral("ECU MEMS MANAGER"),brandBox);
-        brand->setStyleSheet("color:#f3f5f7;font-weight:700;letter-spacing:.5px;background:transparent;");
+        brand->setStyleSheet("color:#f3f5f7;font-weight:700;letter-spacing:.4px;background:transparent;");
         QLabel *version=new QLabel(QStringLiteral("v%1.%2.%3").arg(VER_MAJOR).arg(VER_MINOR).arg(VER_PATCH),brandBox);
         version->setStyleSheet("color:#7f8992;font-weight:600;background:transparent;");
         brandLayout->addWidget(brand);
@@ -131,10 +131,10 @@ private:
 
         QWidget *commBox=new QWidget(bar);
         commBox->setObjectName(QStringLiteral("mockupCommunicationBox"));
-        commBox->setStyleSheet("#mockupCommunicationBox{background:#121820;border:1px solid #303943;border-radius:1px;}");
+        commBox->setStyleSheet("#mockupCommunicationBox{background:#10161c;border:1px solid #303943;border-radius:0px;}");
         QHBoxLayout *commLayout=new QHBoxLayout(commBox);
-        commLayout->setContentsMargins(7,2,6,2);
-        commLayout->setSpacing(4);
+        commLayout->setContentsMargins(6,1,5,1);
+        commLayout->setSpacing(3);
         commLabel->setParent(commBox);
         commLabel->setStyleSheet("color:#cfd5da;background:transparent;border:0;font-weight:600;");
         commLayout->addWidget(commLabel);
@@ -160,37 +160,37 @@ private:
         const auto syncHeader = [=](){
             const qreal scale=window->property("globalUiScale").isValid()
                 ? window->property("globalUiScale").toDouble() : 1.0;
-            const int headerH=qBound(32,qRound(40.0*scale),46);
+            const int headerH=qBound(30,qRound(36.0*scale),40);
             if (bar->height()!=headerH) bar->setFixedHeight(headerH);
 
-            const int margin=qBound(5,qRound(9.0*scale),10);
-            const int spacing=qBound(4,qRound(7.0*scale),8);
-            layout->setContentsMargins(margin,qMax(3,qRound(4.0*scale)),margin,qMax(3,qRound(4.0*scale)));
+            const int margin=qBound(4,qRound(7.0*scale),8);
+            const int spacing=qBound(3,qRound(5.0*scale),6);
+            layout->setContentsMargins(margin,qMax(2,qRound(3.0*scale)),margin,qMax(2,qRound(3.0*scale)));
             layout->setSpacing(spacing);
 
-            const int logoSize=qBound(18,qRound(24.0*scale),28);
+            const int logoSize=qBound(17,qRound(22.0*scale),25);
             logo->setFixedSize(logoSize+2,logoSize+2);
             if (!logoSource.isNull()) logo->setPixmap(logoSource.scaled(logoSize,logoSize,Qt::KeepAspectRatio,Qt::SmoothTransformation));
 
             QFont bf=brand->font();
-            bf.setPointSizeF(qBound<qreal>(7.0,9.0*scale,10.2));
+            bf.setPointSizeF(qBound<qreal>(6.8,8.4*scale,9.5));
             brand->setFont(bf);
             QFont vf=version->font();
-            vf.setPointSizeF(qBound<qreal>(6.2,7.3*scale,8.2));
+            vf.setPointSizeF(qBound<qreal>(6.0,6.9*scale,7.8));
             version->setFont(vf);
 
-            const int chipPad=qBound(4,qRound(8.0*scale),9);
+            const int chipPad=qBound(3,qRound(6.0*scale),7);
             const QString chipCss=infoStyle(chipPad);
             ecuLabel->setStyleSheet(chipCss);
             portChip->setStyleSheet(chipCss);
             frequencyChip->setStyleSheet(chipCss);
 
-            const int h=qBound(22,qRound(27.0*scale),31);
-            const int pad=qBound(14,qRound(18.0*scale),22);
+            const int h=qBound(21,qRound(24.0*scale),27);
+            const int pad=qBound(12,qRound(16.0*scale),19);
             connectButton->setFixedHeight(h);
             disconnectButton->setFixedHeight(h);
-            connectButton->setFixedWidth(qMax(62,connectButton->fontMetrics().horizontalAdvance(connectButton->text())+pad));
-            disconnectButton->setFixedWidth(qMax(62,disconnectButton->fontMetrics().horizontalAdvance(disconnectButton->text())+pad));
+            connectButton->setFixedWidth(qMax(58,connectButton->fontMetrics().horizontalAdvance(connectButton->text())+pad));
+            disconnectButton->setFixedWidth(qMax(58,disconnectButton->fontMetrics().horizontalAdvance(disconnectButton->text())+pad));
 
             portChip->setText(QStringLiteral("Port : %1").arg(configuredSerialPort()));
         };
