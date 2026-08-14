@@ -7,6 +7,7 @@
 #include <QMainWindow>
 #include <QMenuBar>
 #include <QPushButton>
+#include <QSettings>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -34,6 +35,26 @@ protected:
     }
 
 private:
+    static QLabel *makeInfoChip(const QString &text, QWidget *parent)
+    {
+        QLabel *label=new QLabel(text,parent);
+        label->setAlignment(Qt::AlignCenter);
+        label->setStyleSheet(
+            "QLabel{color:#cfd5da;background:#121820;border:1px solid #303943;"
+            "border-radius:3px;padding:3px 8px;font-weight:600;}"
+        );
+        return label;
+    }
+
+    static QString configuredSerialPort()
+    {
+        QSettings settings(QSettings::IniFormat,QSettings::UserScope,PROJECTNAME);
+        settings.beginGroup(QStringLiteral("Settings"));
+        const QString port=settings.value(QStringLiteral("SerialDevice"),QString()).toString().trimmed();
+        settings.endGroup();
+        return port.isEmpty() ? QStringLiteral("--") : port;
+    }
+
     static void install(QMainWindow *window)
     {
         QWidget *central=window->centralWidget();
@@ -42,7 +63,6 @@ private:
 
         if (window->menuBar()) window->menuBar()->hide();
 
-        // Approved mock-up: reuse the REAL connection controls instead of mirrors.
         QWidget *legacy=central->findChild<QWidget*>(QStringLiteral("layoutWidget_7"));
         if (!legacy) return;
 
@@ -56,7 +76,6 @@ private:
             "#mockupTopHeader QPushButton:hover{background:#2378e6;border-color:#4c91ef;}"
             "#mockupTopHeader QPushButton:pressed{background:#1257b0;}"
             "#mockupTopHeader QPushButton:disabled{background:#252b31;color:#707983;border-color:#333b43;}"
-            "#mockupTopHeader QFrame[frameShape=\"5\"]{color:#303943;}"
         );
 
         QHBoxLayout *layout=new QHBoxLayout(bar);
@@ -64,7 +83,6 @@ private:
         layout->setSpacing(8);
 
         QWidget *brandBox=new QWidget(bar);
-        brandBox->setObjectName(QStringLiteral("mockupBrandBox"));
         QHBoxLayout *brandLayout=new QHBoxLayout(brandBox);
         brandLayout->setContentsMargins(0,0,0,0);
         brandLayout->setSpacing(6);
@@ -79,9 +97,17 @@ private:
         version->setStyleSheet("color:#7f8992;font-weight:600;background:transparent;");
         brandLayout->addWidget(version);
         layout->addWidget(brandBox,0,Qt::AlignVCenter);
-        layout->addSpacing(8);
 
-        // Reparent the original functional bar. Signals, slots, LEDs and ECU state stay intact.
+        QLabel *portChip=makeInfoChip(QStringLiteral("Port : %1").arg(configuredSerialPort()),bar);
+        portChip->setObjectName(QStringLiteral("mockupPortLabel"));
+        layout->addWidget(portChip,0,Qt::AlignVCenter);
+
+        // MEMS polling runs continuously without a fixed sleep in the service loop;
+        // therefore no fabricated numeric Hz value is shown.
+        QLabel *frequencyChip=makeInfoChip(QStringLiteral("Fréquence : auto"),bar);
+        frequencyChip->setObjectName(QStringLiteral("mockupFrequencyLabel"));
+        layout->addWidget(frequencyChip,0,Qt::AlignVCenter);
+
         legacy->setParent(bar);
         legacy->setMinimumSize(0,0);
         legacy->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
@@ -101,8 +127,6 @@ private:
             button->setMaximumWidth(QWIDGETSIZE_MAX);
             button->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Preferred);
         }
-
-        // Compact the historical connection layout: no oversized legacy margins.
         if (QLayout *legacyLayout=legacy->layout()) {
             legacyLayout->setContentsMargins(0,0,0,0);
             legacyLayout->setSpacing(7);
@@ -131,6 +155,14 @@ private:
             QFont vf=version->font();
             vf.setPointSizeF(qBound<qreal>(6.2,7.3*scale,8.2));
             version->setFont(vf);
+
+            const int chipPad=qBound(4,qRound(8.0*scale),9);
+            const QString chipStyle=QStringLiteral(
+                "QLabel{color:#cfd5da;background:#121820;border:1px solid #303943;"
+                "border-radius:3px;padding:3px %1px;font-weight:600;}"
+            ).arg(chipPad);
+            portChip->setStyleSheet(chipStyle);
+            frequencyChip->setStyleSheet(chipStyle);
 
             for (QPushButton *button : realButtons) {
                 const int h=qBound(22,qRound(27.0*scale),31);
