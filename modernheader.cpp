@@ -40,7 +40,7 @@ private:
     {
         return QStringLiteral(
             "QLabel{color:#cfd5da;background:#121820;border:1px solid #303943;"
-            "border-radius:3px;padding:3px %1px;font-weight:600;}"
+            "border-radius:1px;padding:3px %1px;font-weight:600;}"
         ).arg(pad);
     }
 
@@ -85,7 +85,7 @@ private:
             "#mockupTopHeader{background:#0b1015;border-bottom:1px solid #29313a;}"
             "#mockupTopHeader QLabel{color:#dce2e7;background:transparent;border:0;}"
             "#mockupTopHeader QPushButton{background:#1769d2;color:#ffffff;border:1px solid #2d7ee8;"
-            "border-radius:3px;padding:3px 8px;font-weight:600;}"
+            "border-radius:1px;padding:3px 8px;font-weight:600;}"
             "#mockupTopHeader QPushButton:hover{background:#2378e6;border-color:#4c91ef;}"
             "#mockupTopHeader QPushButton:pressed{background:#1257b0;}"
             "#mockupTopHeader QPushButton:disabled{background:#252b31;color:#707983;border-color:#333b43;}"
@@ -131,7 +131,7 @@ private:
 
         QWidget *commBox=new QWidget(bar);
         commBox->setObjectName(QStringLiteral("mockupCommunicationBox"));
-        commBox->setStyleSheet("#mockupCommunicationBox{background:#121820;border:1px solid #303943;border-radius:3px;}");
+        commBox->setStyleSheet("#mockupCommunicationBox{background:#121820;border:1px solid #303943;border-radius:1px;}");
         QHBoxLayout *commLayout=new QHBoxLayout(commBox);
         commLayout->setContentsMargins(7,2,6,2);
         commLayout->setSpacing(4);
@@ -195,7 +195,6 @@ private:
             portChip->setText(QStringLiteral("Port : %1").arg(configuredSerialPort()));
         };
 
-        // Apply the final geometry before the first periodic synchronization tick.
         syncHeader();
 
         QTimer *sync=new QTimer(bar);
