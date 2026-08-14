@@ -78,5 +78,20 @@
   "7076": "    [ASCII: %1]",
   "7077": "    [Estado de seguridad recibido]",
   "7078": "    [Identificación de ECU recibida]",
-  "7079": "Cambio de modo: el comando se envía solo cuando se solicita. D3 (recodificación de ECU) permanece desactivado intencionadamente."
+  "7079": "Cambio de modo: el comando se envía solo cuando se solicita. D3 (recodificación de ECU) permanece desactivado intencionadamente.",
+  "7100": "Modo:",
+  "7101": "Simple",
+  "7102": "Experto",
+  "7103": "Base de datos de ECU",
+  "7104": "Espacio preparado para la futura base de datos MEMS: identificación de ECU, versiones, tramas, comandos, DTC, actuadores, ajustes y documentación técnica.",
+  "7105": "Base de datos",
+  "7106": "Historial rápido — últimos 2 minutos",
+  "7107": "Régimen del motor",
+  "7108": "Presión MAP",
+  "7109": "Temperatura del motor",
+  "7110": "Mariposa",
+  "7111": "Lambda",
+  "7112": "Ahora",
+  "7113": "2 min",
+  "7114": "Batería"
 }
