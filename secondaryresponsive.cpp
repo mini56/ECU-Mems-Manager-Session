@@ -19,6 +19,9 @@
 
 namespace {
 
+static const qreal kGlobalMinScale = 0.62;
+static const qreal kGlobalMaxScale = 1.16;
+
 static qreal globalScaleFromMainWindow()
 {
     const QList<QWidget*> topLevels = QApplication::topLevelWidgets();
@@ -28,7 +31,7 @@ static qreal globalScaleFromMainWindow()
             continue;
         const QVariant v = mw->property("globalUiScale");
         if (v.isValid())
-            return qBound<qreal>(0.48, v.toDouble(), 1.20);
+            return qBound<qreal>(kGlobalMinScale, v.toDouble(), kGlobalMaxScale);
     }
     return 1.0;
 }
@@ -46,8 +49,7 @@ static void captureAbsoluteChildren(QWidget *window)
 {
     const QList<QWidget*> children = window->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
     for (QWidget *child : children) {
-        if (!child)
-            continue;
+        if (!child) continue;
         if (!child->property("secondaryResponsiveBaseGeometry").isValid())
             child->setProperty("secondaryResponsiveBaseGeometry", child->geometry());
         if (!child->property("secondaryResponsiveBaseFont").isValid()) {
@@ -62,16 +64,14 @@ static void scaleFontsRecursively(QWidget *root, qreal scale)
 {
     const QList<QWidget*> children = root->findChildren<QWidget*>();
     for (QWidget *child : children) {
-        if (!child)
-            continue;
+        if (!child) continue;
         if (!child->property("secondaryResponsiveBaseFont").isValid()) {
             const qreal ps = child->font().pointSizeF();
             if (ps > 0.0)
                 child->setProperty("secondaryResponsiveBaseFont", ps);
         }
         const QVariant fv = child->property("secondaryResponsiveBaseFont");
-        if (!fv.isValid())
-            continue;
+        if (!fv.isValid()) continue;
         QFont f = child->font();
         f.setPointSizeF(qMax<qreal>(6.5, fv.toDouble() * scale));
         child->setFont(f);
@@ -80,13 +80,10 @@ static void scaleFontsRecursively(QWidget *root, qreal scale)
 
 static void applyScale(QWidget *window)
 {
-    if (!window || isNativeOrTransientSystemDialog(window))
-        return;
-    if (window->objectName() == QStringLiteral("MainWindow"))
-        return;
+    if (!window || isNativeOrTransientSystemDialog(window)) return;
+    if (window->objectName() == QStringLiteral("MainWindow")) return;
 
-    qreal scale = globalScaleFromMainWindow();
-    scale = qBound<qreal>(0.48, scale, 1.20);
+    const qreal scale = globalScaleFromMainWindow();
 
     if (!window->property("secondaryResponsiveBaseSize").isValid()) {
         const QSize base = window->size().expandedTo(window->sizeHint());
@@ -99,11 +96,8 @@ static void applyScale(QWidget *window)
     }
 
     const QSize base = window->property("secondaryResponsiveBaseSize").toSize();
-    if (!base.isValid())
-        return;
+    if (!base.isValid()) return;
 
-    // Release historical fixed-size constraints so the same composition can be
-    // uniformly scaled on smaller or larger displays.
     window->setMinimumSize(0, 0);
     window->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
 
@@ -122,8 +116,7 @@ static void applyScale(QWidget *window)
         const QList<QWidget*> children = window->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
         for (QWidget *child : children) {
             const QVariant gv = child->property("secondaryResponsiveBaseGeometry");
-            if (!gv.isValid())
-                continue;
+            if (!gv.isValid()) continue;
             const QRect baseRect = gv.toRect();
             child->setGeometry(qRound(baseRect.x() * scale),
                                qRound(baseRect.y() * scale),
@@ -145,8 +138,7 @@ protected:
     bool eventFilter(QObject *watched, QEvent *event) override
     {
         QWidget *window = qobject_cast<QWidget*>(watched);
-        if (!window)
-            return QObject::eventFilter(watched, event);
+        if (!window) return QObject::eventFilter(watched, event);
 
         if (event->type() == QEvent::Show && window->isWindow() &&
             window->objectName() != QStringLiteral("MainWindow") &&
@@ -155,8 +147,7 @@ protected:
                 window->setProperty("secondaryResponsiveInstalled", true);
                 QPointer<QWidget> safe(window);
                 QTimer::singleShot(0, window, [safe]() {
-                    if (safe)
-                        applyScale(safe);
+                    if (safe) applyScale(safe);
                 });
             }
         }
@@ -167,8 +158,7 @@ protected:
 void installSecondaryResponsiveHook()
 {
     QApplication *app = qobject_cast<QApplication*>(QCoreApplication::instance());
-    if (!app)
-        return;
+    if (!app) return;
     SecondaryResponsiveInstaller *installer = new SecondaryResponsiveInstaller(app);
     app->installEventFilter(installer);
 }
