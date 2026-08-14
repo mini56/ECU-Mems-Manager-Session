@@ -21,7 +21,7 @@ configure_file("${CMAKE_SOURCE_DIR}/help_en.html.in" "${CMAKE_SOURCE_DIR}/help_e
 set(SOURCES
     main.cpp i18n.cpp i18n.h memsinterface.cpp memslogic.cpp database/DatabaseSeed.cpp
     helpviewer.cpp logger.cpp serialdevenumerator.cpp splashprogress.cpp mainwindow.cpp aboutbox.cpp
-    optionsdialog.cpp summarytab.cpp diagnosticpanel.cpp analysistab.cpp captureviewer.cpp captureviewer.h
+    optionsdialog.cpp summarytab.cpp diagnosticpanel.cpp analysistab.cpp analysismodernizer.cpp captureviewer.cpp captureviewer.h
     tooltipbubblemanager.cpp tooltipbubblemanager.h uirebuild.cpp overviewrebuild.cpp majorpagesrebuild.cpp scr/ecu/ecumanager.cpp scr/ecu/ecumanager.h
     qledindicator/qledindicator.cpp analogwidgets/led.cpp analogwidgets/functions.cpp
     analogwidgets/widgetwithbackground.cpp analogwidgets/manometer.cpp analogwidgets/abstractmeter.cpp
