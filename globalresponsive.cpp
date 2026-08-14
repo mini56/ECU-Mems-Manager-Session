@@ -8,6 +8,7 @@
 #include <QPointer>
 #include <QRect>
 #include <QScreen>
+#include <QScrollArea>
 #include <QTabWidget>
 #include <QTimer>
 #include <QVariant>
@@ -16,12 +17,36 @@
 
 namespace {
 
-static const qreal kMinReadableScale = 0.62;
+static const qreal kMinReadableScale = 0.58;
 static const qreal kMaxScale = 1.16;
 static const int kWindowReferenceWidth = 1300;
 static const int kWindowReferenceHeight = 690;
 static const int kPageReferenceWidth = 1280;
 static const int kPageReferenceHeight = 620;
+
+static QWidget *realTabPage(QWidget *tabPage, QScrollArea **scrollOut = nullptr)
+{
+    if (scrollOut) *scrollOut = nullptr;
+    if (!tabPage) return nullptr;
+    if (QScrollArea *scroll = qobject_cast<QScrollArea*>(tabPage)) {
+        if (scrollOut) *scrollOut = scroll;
+        return scroll->widget();
+    }
+    return tabPage;
+}
+
+static void prepareScrollArea(QScrollArea *scroll)
+{
+    if (!scroll) return;
+    scroll->setWidgetResizable(true);
+    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    scroll->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+    if (QWidget *page = scroll->widget()) {
+        page->setMinimumSize(0, 0);
+        page->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+    }
+}
 
 static qreal calculateGlobalScale(QMainWindow *window)
 {
@@ -33,15 +58,10 @@ static qreal calculateGlobalScale(QMainWindow *window)
     int availableHeight = window->height();
     if (screen) {
         const QRect available = screen->availableGeometry();
-        // Never size the UI from the physical screen when the application window
-        // itself is smaller. This keeps exactly the same composition in a 1200 px
-        // window, at 1366x768, 1600x900 and at larger desktop resolutions.
         availableWidth = qMin(availableWidth, available.width() - 12);
         availableHeight = qMin(availableHeight, available.height() - 12);
     }
 
-    // During the very first polish event the native window can temporarily report
-    // a tiny geometry. Ignore that transient value and let the next resize settle it.
     if (availableWidth < 700 || availableHeight < 430) return 1.0;
 
     const qreal sx = qreal(availableWidth) / qreal(kWindowReferenceWidth);
@@ -52,10 +72,14 @@ static qreal calculateGlobalScale(QMainWindow *window)
 class LegacyPageFitter : public QObject
 {
 public:
-    explicit LegacyPageFitter(QWidget *page)
-        : QObject(page), m_page(page)
+    LegacyPageFitter(QWidget *page, QScrollArea *scroll)
+        : QObject(page), m_page(page), m_scroll(scroll)
     {
         if (!m_page) return;
+        if (m_scroll) {
+            prepareScrollArea(m_scroll);
+            if (m_scroll->viewport()) m_scroll->viewport()->installEventFilter(this);
+        }
         if (m_page->layout()) {
             m_layoutDriven = true;
             m_page->setMinimumSize(0, 0);
@@ -71,7 +95,8 @@ public:
 protected:
     bool eventFilter(QObject *watched, QEvent *event) override
     {
-        if (watched == m_page && (event->type() == QEvent::Resize || event->type() == QEvent::Show)) {
+        const bool relevant = watched == m_page || (m_scroll && watched == m_scroll->viewport());
+        if (relevant && (event->type() == QEvent::Resize || event->type() == QEvent::Show)) {
             if (!m_pending) {
                 m_pending = true;
                 QTimer::singleShot(0, this, [this]() { m_pending = false; fit(); });
@@ -116,20 +141,37 @@ private:
         m_page->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
     }
 
-    qreal globalScale() const
+    qreal effectiveScale() const
     {
         if (!m_page) return 1.0;
         QWidget *top = m_page->window();
-        if (top && top->property("globalUiScale").isValid())
-            return top->property("globalUiScale").toDouble();
-        return 1.0;
+        qreal scale = (top && top->property("globalUiScale").isValid())
+            ? top->property("globalUiScale").toDouble() : 1.0;
+
+        if (m_scroll && m_scroll->viewport()) {
+            const QSize viewport = m_scroll->viewport()->size();
+            if (viewport.width() > 100 && m_baseWidth > 0)
+                scale = qMin(scale, qreal(viewport.width() - 8) / qreal(m_baseWidth));
+            if (!m_layoutDriven && viewport.height() > 100 && m_baseHeight > 0)
+                scale = qMin(scale, qreal(viewport.height() - 8) / qreal(m_baseHeight));
+        }
+        return qBound<qreal>(kMinReadableScale, scale, kMaxScale);
     }
 
     void fit()
     {
         if (!m_page) return;
-        const qreal scale = globalScale();
+        if (!m_layoutDriven && (m_baseWidth <= 0 || m_baseHeight <= 0)) captureReference();
+
+        const qreal scale = effectiveScale();
         m_page->setProperty("globalResponsiveScale", scale);
+
+        if (m_scroll && m_scroll->viewport()) {
+            const QSize viewport = m_scroll->viewport()->size();
+            m_page->setMinimumSize(0, 0);
+            m_page->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+            m_page->resize(viewport);
+        }
 
         if (m_layoutDriven) {
             softenLayoutTree(m_page);
@@ -139,12 +181,11 @@ private:
                 : (m_page->font().pointSizeF() > 0 ? m_page->font().pointSizeF() : 9.0);
             if (!m_page->property("globalResponsiveBasePageFont").isValid())
                 m_page->setProperty("globalResponsiveBasePageFont", base);
-            f.setPointSizeF(qMax<qreal>(6.5, base * scale));
+            f.setPointSizeF(qMax<qreal>(6.2, base * scale));
             m_page->setFont(f);
             return;
         }
 
-        if (m_baseWidth <= 0 || m_baseHeight <= 0) captureReference();
         if (m_baseWidth <= 0 || m_baseHeight <= 0) return;
 
         const int scaledW = qRound(m_baseWidth * scale);
@@ -163,7 +204,7 @@ private:
             const QVariant fv = child->property("globalResponsiveBaseFont");
             if (fv.isValid()) {
                 QFont font = child->font();
-                font.setPointSizeF(qMax<qreal>(6.5, fv.toDouble() * scale));
+                font.setPointSizeF(qMax<qreal>(6.2, fv.toDouble() * scale));
                 child->setFont(font);
             }
         }
@@ -171,6 +212,7 @@ private:
     }
 
     QPointer<QWidget> m_page;
+    QPointer<QScrollArea> m_scroll;
     bool m_layoutDriven = false;
     bool m_pending = false;
     int m_baseWidth = 0;
@@ -205,14 +247,14 @@ private:
     {
         if (!m_window) return;
         const qreal scale = calculateGlobalScale(m_window);
-        if (qAbs(m_window->property("globalUiScale").toDouble() - scale) < 0.001 && m_window->property("globalUiScale").isValid())
-            return;
-
         m_window->setProperty("globalUiScale", scale);
+
         if (QTabWidget *tabs = m_window->findChild<QTabWidget*>(QStringLiteral("Tab_main"))) {
             tabs->setProperty("globalUiScale", scale);
             for (int i = 0; i < tabs->count(); ++i) {
-                QWidget *page = tabs->widget(i);
+                QScrollArea *scroll = nullptr;
+                QWidget *page = realTabPage(tabs->widget(i), &scroll);
+                if (scroll) prepareScrollArea(scroll);
                 if (page) {
                     page->setProperty("globalUiScale", scale);
                     QEvent resizeEvent(QEvent::Resize);
@@ -254,13 +296,15 @@ private:
         if (!tabs) return;
 
         for (int i = 0; i < tabs->count(); ++i) {
-            QWidget *page = tabs->widget(i);
+            QScrollArea *scroll = nullptr;
+            QWidget *page = realTabPage(tabs->widget(i), &scroll);
             if (!page) continue;
+            if (scroll) prepareScrollArea(scroll);
             if (page->objectName() == QStringLiteral("overview_tab")) continue;
             if (QString::fromLatin1(page->metaObject()->className()) == QStringLiteral("AnalysisTab")) continue;
             if (!page->property("legacyResponsiveInstalled").toBool()) {
                 page->setProperty("legacyResponsiveInstalled", true);
-                new LegacyPageFitter(page);
+                new LegacyPageFitter(page, scroll);
             }
         }
     }
