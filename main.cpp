@@ -43,7 +43,7 @@ QString chooseInitialLanguage()
     QDialog dialog;
     dialog.setWindowTitle(I18n::text(2)); // ECU MEMS Manager - Language
     dialog.setModal(true);
-    dialog.setMinimumWidth(430);
+    dialog.setMinimumWidth(620);
 
     QVBoxLayout *layout = new QVBoxLayout(&dialog);
     QLabel *title = new QLabel(I18n::text(3), &dialog); // <b>Choose your language</b>
@@ -55,18 +55,23 @@ QString chooseInitialLanguage()
     layout->addWidget(info);
 
     QGridLayout *grid = new QGridLayout();
-    struct LanguageChoice { const char *code; int labelKey; const char *icon; };
+    struct LanguageChoice { const char *code; const char *nativeName; const char *icon; };
     const LanguageChoice choices[] = {
-        {"fr", 5, ":/flags/fr.png"}, // French
-        {"en", 6, ":/flags/en.png"}  // English
+        {"fr", "Français",  ":/flags/fr.png"},
+        {"en", "English",   ":/flags/en.png"},
+        {"es", "Español",   ":/flags/es.png"},
+        {"it", "Italiano",  ":/flags/it.png"},
+        {"pt", "Português", ":/flags/pt.png"},
+        {"de", "Deutsch",   ":/flags/de.png"}
     };
 
     QString selected;
-    for (int i = 0; i < 2; ++i)
+    const int choiceCount = int(sizeof(choices) / sizeof(choices[0]));
+    for (int i = 0; i < choiceCount; ++i)
     {
         QPushButton *button = new QPushButton(
             QIcon(QString::fromLatin1(choices[i].icon)),
-            I18n::text(choices[i].labelKey), &dialog);
+            QString::fromUtf8(choices[i].nativeName), &dialog);
         button->setIconSize(QSize(48, 32));
         button->setMinimumSize(180, 52);
         const QString code = QString::fromLatin1(choices[i].code);
@@ -74,7 +79,7 @@ QString chooseInitialLanguage()
             selected = code;
             dialog.accept();
         });
-        grid->addWidget(button, 0, i);
+        grid->addWidget(button, i / 3, i % 3);
     }
     layout->addLayout(grid);
 
