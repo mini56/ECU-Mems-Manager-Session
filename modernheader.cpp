@@ -29,7 +29,7 @@ protected:
             if (window && window->objectName()==QStringLiteral("MainWindow") &&
                 !window->property("modernHeaderInstalled").toBool()) {
                 window->setProperty("modernHeaderInstalled", true);
-                QTimer::singleShot(220, window, [window](){ install(window); });
+                QTimer::singleShot(0, window, [window](){ install(window); });
             }
         }
         return QObject::eventFilter(watched,event);
