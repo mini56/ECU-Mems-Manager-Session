@@ -3,10 +3,12 @@
 #include <QComboBox>
 #include <QCoreApplication>
 #include <QEvent>
+#include <QFontMetrics>
 #include <QFrame>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHeaderView>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
