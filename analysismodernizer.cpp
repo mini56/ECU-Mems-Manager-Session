@@ -39,6 +39,13 @@ protected:
     }
 
 private:
+    static QLabel *sectionTitle(const QString &text, QWidget *parent, const QString &name)
+    {
+        QLabel *label=new QLabel(text,parent);
+        label->setObjectName(name);
+        return label;
+    }
+
     static void matchApprovedLayout(QWidget *tab)
     {
         QWidget *legacyPanel = tab->findChild<QWidget*>(QStringLiteral("analysisLeftPanel"));
@@ -70,31 +77,50 @@ private:
         QWidget *topBar = new QWidget(tab);
         topBar->setObjectName(QStringLiteral("analysisTopBar"));
         QHBoxLayout *top = new QHBoxLayout(topBar);
-        top->setContentsMargins(10,7,10,7);
-        top->setSpacing(8);
+        top->setContentsMargins(9,6,9,6);
+        top->setSpacing(7);
         if (load) { load->setParent(topBar); top->addWidget(load); }
-        if (fileLabel) { fileLabel->setParent(topBar); fileLabel->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred); top->addWidget(fileLabel,1); }
-        if (all) { all->setParent(topBar); top->addWidget(all); }
-        if (none) { none->setParent(topBar); top->addWidget(none); }
+        if (fileLabel) {
+            fileLabel->setParent(topBar);
+            fileLabel->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
+            top->addWidget(fileLabel,1);
+        }
         if (overlay) { overlay->setParent(topBar); top->addWidget(overlay); }
         root->insertWidget(0, topBar);
 
         QWidget *rightPanel = new QWidget(tab);
         rightPanel->setObjectName(QStringLiteral("analysisRightPanel"));
         QVBoxLayout *right = new QVBoxLayout(rightPanel);
-        right->setContentsMargins(10,10,10,10);
-        right->setSpacing(7);
-        QLabel *title = new QLabel(QStringLiteral("PARAMETRES"), rightPanel);
-        title->setObjectName(QStringLiteral("analysisParametersTitle"));
-        right->addWidget(title);
-        if (parameterScroll) { parameterScroll->setParent(rightPanel); right->addWidget(parameterScroll,1); }
+        right->setContentsMargins(9,9,9,9);
+        right->setSpacing(6);
+
+        right->addWidget(sectionTitle(QStringLiteral("PARAMÈTRES"),rightPanel,QStringLiteral("analysisParametersTitle")));
+        if (parameterScroll) {
+            parameterScroll->setParent(rightPanel);
+            right->addWidget(parameterScroll,1);
+        }
+
+        right->addWidget(sectionTitle(QStringLiteral("CURSEUR"),rightPanel,QStringLiteral("analysisCursorTitle")));
+        QLabel *cursorHelp=new QLabel(QStringLiteral("Survolez un graphique pour lire la valeur."),rightPanel);
+        cursorHelp->setObjectName(QStringLiteral("analysisCursorHelp"));
+        cursorHelp->setWordWrap(true);
+        right->addWidget(cursorHelp);
+
+        right->addWidget(sectionTitle(QStringLiteral("OUTILS"),rightPanel,QStringLiteral("analysisToolsTitle")));
+        QHBoxLayout *tools=new QHBoxLayout();
+        tools->setContentsMargins(0,0,0,0);
+        tools->setSpacing(6);
+        if (all) { all->setParent(rightPanel); tools->addWidget(all); }
+        if (none) { none->setParent(rightPanel); tools->addWidget(none); }
+        right->addLayout(tools);
 
         mainRow->removeWidget(legacyPanel);
         legacyPanel->hide();
         legacyPanel->setMaximumWidth(0);
         mainRow->addWidget(rightPanel);
         mainRow->setStretch(0,1);
-        if (mainRow->count() > 1) mainRow->setStretch(1,0);
+        if (mainRow->count() > 1) mainRow->setStretch(1,1);
+        if (mainRow->count() > 2) mainRow->setStretch(2,0);
     }
 
     static void apply(QWidget *tab)
@@ -107,7 +133,9 @@ private:
             "QLabel{background:transparent;border:0;color:#dce2e7;}"
             "#analysisTopBar{background:#111820;border:1px solid #26313b;border-radius:3px;}"
             "#analysisRightPanel{background:#10161d;border:1px solid #26313b;border-radius:3px;}"
-            "#analysisParametersTitle{color:#f0f3f5;font-weight:700;padding:3px 0px;border-bottom:1px solid #2b3540;}"
+            "#analysisParametersTitle,#analysisCursorTitle,#analysisToolsTitle{color:#f0f3f5;font-weight:700;"
+            "padding:4px 0px;border-bottom:1px solid #2b3540;}"
+            "#analysisCursorHelp{color:#89939d;padding:2px 0px 4px 0px;}"
             "QPushButton{background:#17202a;color:#dce2e7;border:1px solid #34414d;"
             "border-radius:3px;padding:5px 10px;font-weight:600;min-height:25px;}"
             "QPushButton:hover{border-color:#ff8a1c;color:#ffffff;}"
@@ -157,7 +185,7 @@ private:
             right->setMaximumWidth(target);
         }
         QWidget *topBar = tab->findChild<QWidget*>(QStringLiteral("analysisTopBar"));
-        if (topBar) topBar->setMinimumHeight(qBound(36,qRound(45.0*scale),52));
+        if (topBar) topBar->setMinimumHeight(qBound(34,qRound(42.0*scale),49));
 
         const qreal basePointSize = tab->property("analysisBaseFontPointSize").isValid()
             ? tab->property("analysisBaseFontPointSize").toDouble() : 9.0;
@@ -166,7 +194,7 @@ private:
         tab->setFont(f);
         tab->setProperty("analysisScale", scale);
 
-        const int buttonHeight = qBound(22, qRound(28.0 * scale), 33);
+        const int buttonHeight = qBound(22, qRound(27.0 * scale), 32);
         const QList<QPushButton*> buttons = tab->findChildren<QPushButton*>();
         for (QPushButton *button : buttons) button->setMinimumHeight(buttonHeight);
 
