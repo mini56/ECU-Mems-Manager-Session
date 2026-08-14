@@ -54,13 +54,26 @@ bool I18n::load(const QString &languageCode)
         }
     };
 
+    // Compatibility fallback: load the historical flat catalog first.
+    // A language subfolder, when present, is then loaded on top and becomes
+    // authoritative. This allows a safe incremental migration without losing
+    // any existing keyed translations.
     loadJson(base + self->m_language + ".json");
-
-    QDir translationDir(base);
-    const QStringList modularFiles = translationDir.entryList(
+    QDir rootDir(base);
+    const QStringList rootModules = rootDir.entryList(
         QStringList() << (self->m_language + "_*.json"), QDir::Files, QDir::Name);
-    for (const QString &fileName : modularFiles)
-        loadJson(translationDir.filePath(fileName));
+    for (const QString &fileName : rootModules)
+        loadJson(rootDir.filePath(fileName));
+
+    const QString languagePath = base + self->m_language + "/";
+    QDir languageDir(languagePath);
+    if (languageDir.exists()) {
+        loadJson(languagePath + self->m_language + ".json");
+        const QStringList modularFiles = languageDir.entryList(
+            QStringList() << (self->m_language + "_*.json"), QDir::Files, QDir::Name);
+        for (const QString &fileName : modularFiles)
+            loadJson(languageDir.filePath(fileName));
+    }
 
     const QString tsFile = base + "ECUMemsManager_" + self->m_language + ".ts";
     const bool legacyLoaded = self->loadDictionary(tsFile);
@@ -103,26 +116,19 @@ bool I18n::loadDictionary(const QString &fileName)
 
 QString I18n::lookup(const QString &source) const
 {
-    if (source.isEmpty())
-        return source;
-
+    if (source.isEmpty()) return source;
     const auto numericToken = [this](const QString &value, bool *matched) -> QString {
         *matched = false;
-        if (value.size() < 2 || value.at(0).unicode() != 64)
-            return QString();
+        if (value.size() < 2 || value.at(0).unicode() != 64) return QString();
         bool ok = false;
         const int key = value.mid(1).toInt(&ok);
-        if (!ok)
-            return QString();
+        if (!ok) return QString();
         *matched = true;
         return lookupKey(key);
     };
-
     bool matched = false;
     const QString keyed = numericToken(source, &matched);
-    if (matched)
-        return keyed;
-
+    if (matched) return keyed;
     const auto it = m_dictionary.constFind(source);
     return it == m_dictionary.constEnd() || it.value().isEmpty() ? source : it.value();
 }
@@ -130,58 +136,35 @@ QString I18n::lookup(const QString &source) const
 QString I18n::lookupKey(int key) const
 {
     const auto it = m_keyDictionary.constFind(key);
-    if (it != m_keyDictionary.constEnd() && !it.value().isEmpty())
-        return it.value();
+    if (it != m_keyDictionary.constEnd() && !it.value().isEmpty()) return it.value();
     return QString("[%1]").arg(key, 4, 10, QLatin1Char('0'));
 }
 
-QString I18n::text(const char *source)
-{
-    return instance()->lookup(QString::fromUtf8(source));
-}
-
-QString I18n::text(const QString &source)
-{
-    return instance()->lookup(source);
-}
-
-QString I18n::text(int key)
-{
-    return instance()->lookupKey(key);
-}
-
-QString I18n::language()
-{
-    return instance()->m_language;
-}
+QString I18n::text(const char *source) { return instance()->lookup(QString::fromUtf8(source)); }
+QString I18n::text(const QString &source) { return instance()->lookup(source); }
+QString I18n::text(int key) { return instance()->lookupKey(key); }
+QString I18n::language() { return instance()->m_language; }
 
 void I18n::install(QApplication *app)
 {
-    if (!app)
-        return;
-    app->installEventFilter(instance());
+    if (app) app->installEventFilter(instance());
 }
 
 void I18n::apply(QWidget *root)
 {
-    if (!root)
-        return;
+    if (!root) return;
     I18n *self = instance();
-    if (self->m_applying)
-        return;
+    if (self->m_applying) return;
     self->m_applying = true;
     self->applyObject(root);
     const QList<QObject*> objects = root->findChildren<QObject*>();
-    for (QObject *object : objects)
-        self->applyObject(object);
+    for (QObject *object : objects) self->applyObject(object);
     self->m_applying = false;
 }
 
 void I18n::applyObject(QObject *object)
 {
-    if (!object)
-        return;
-
+    if (!object) return;
     if (QWidget *w = qobject_cast<QWidget*>(object)) {
         if (!w->windowTitle().isEmpty()) w->setWindowTitle(lookup(w->windowTitle()));
         if (!w->toolTip().isEmpty()) w->setToolTip(lookup(w->toolTip()));
@@ -192,46 +175,27 @@ void I18n::applyObject(QObject *object)
     if (QAbstractButton *w = qobject_cast<QAbstractButton*>(object)) w->setText(lookup(w->text()));
     if (QGroupBox *w = qobject_cast<QGroupBox*>(object)) w->setTitle(lookup(w->title()));
     if (QLineEdit *w = qobject_cast<QLineEdit*>(object)) {
-        // Static keyed text from .ui files must be resolved too. Restrict this
-        // to @-tokens so normal user-entered values are never translated.
-        if (w->text().startsWith(QLatin1Char('@')))
-            w->setText(lookup(w->text()));
+        if (w->text().startsWith(QLatin1Char('@'))) w->setText(lookup(w->text()));
         w->setPlaceholderText(lookup(w->placeholderText()));
     }
     if (QTextEdit *w = qobject_cast<QTextEdit*>(object)) w->setPlaceholderText(lookup(w->placeholderText()));
     if (QPlainTextEdit *w = qobject_cast<QPlainTextEdit*>(object)) w->setPlaceholderText(lookup(w->placeholderText()));
     if (QAction *a = qobject_cast<QAction*>(object)) {
-        a->setText(lookup(a->text()));
-        a->setToolTip(lookup(a->toolTip()));
-        a->setStatusTip(lookup(a->statusTip()));
+        a->setText(lookup(a->text())); a->setToolTip(lookup(a->toolTip())); a->setStatusTip(lookup(a->statusTip()));
     }
-    if (QComboBox *box = qobject_cast<QComboBox*>(object)) {
-        for (int i = 0; i < box->count(); ++i)
-            box->setItemText(i, lookup(box->itemText(i)));
-    }
-    if (QTabWidget *tabs = qobject_cast<QTabWidget*>(object)) {
-        for (int i = 0; i < tabs->count(); ++i) {
-            tabs->setTabText(i, lookup(tabs->tabText(i)));
-            tabs->setTabToolTip(i, lookup(tabs->tabToolTip(i)));
-        }
-    }
+    if (QComboBox *box = qobject_cast<QComboBox*>(object))
+        for (int i = 0; i < box->count(); ++i) box->setItemText(i, lookup(box->itemText(i)));
+    if (QTabWidget *tabs = qobject_cast<QTabWidget*>(object))
+        for (int i = 0; i < tabs->count(); ++i) { tabs->setTabText(i, lookup(tabs->tabText(i))); tabs->setTabToolTip(i, lookup(tabs->tabToolTip(i))); }
     if (QTableWidget *table = qobject_cast<QTableWidget*>(object)) {
-        for (int c = 0; c < table->columnCount(); ++c) {
-            if (QTableWidgetItem *item = table->horizontalHeaderItem(c))
-                item->setText(lookup(item->text()));
-        }
-        for (int r = 0; r < table->rowCount(); ++r) {
-            if (QTableWidgetItem *item = table->verticalHeaderItem(r))
-                item->setText(lookup(item->text()));
-        }
+        for (int c = 0; c < table->columnCount(); ++c) if (QTableWidgetItem *item = table->horizontalHeaderItem(c)) item->setText(lookup(item->text()));
+        for (int r = 0; r < table->rowCount(); ++r) if (QTableWidgetItem *item = table->verticalHeaderItem(r)) item->setText(lookup(item->text()));
     }
 }
 
 bool I18n::eventFilter(QObject *watched, QEvent *event)
 {
-    if (!m_applying && watched && (event->type() == QEvent::Show || event->type() == QEvent::Polish)) {
-        if (QWidget *w = qobject_cast<QWidget*>(watched))
-            apply(w);
-    }
+    if (!m_applying && watched && (event->type() == QEvent::Show || event->type() == QEvent::Polish))
+        if (QWidget *w = qobject_cast<QWidget*>(watched)) apply(w);
     return QObject::eventFilter(watched, event);
 }
