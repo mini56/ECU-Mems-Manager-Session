@@ -28,21 +28,26 @@ protected:
             if (window && window->objectName()==QStringLiteral("MainWindow") &&
                 !window->property("modernHeaderInstalled").toBool()) {
                 window->setProperty("modernHeaderInstalled", true);
-                QTimer::singleShot(420, window, [window](){ install(window); });
+                QTimer::singleShot(220, window, [window](){ install(window); });
             }
         }
         return QObject::eventFilter(watched,event);
     }
 
 private:
+    static QString infoStyle(int pad=8)
+    {
+        return QStringLiteral(
+            "QLabel{color:#cfd5da;background:#121820;border:1px solid #303943;"
+            "border-radius:3px;padding:3px %1px;font-weight:600;}"
+        ).arg(pad);
+    }
+
     static QLabel *makeInfoChip(const QString &text, QWidget *parent)
     {
         QLabel *label=new QLabel(text,parent);
         label->setAlignment(Qt::AlignCenter);
-        label->setStyleSheet(
-            "QLabel{color:#cfd5da;background:#121820;border:1px solid #303943;"
-            "border-radius:3px;padding:3px 8px;font-weight:600;}"
-        );
+        label->setStyleSheet(infoStyle());
         return label;
     }
 
@@ -60,11 +65,18 @@ private:
         QWidget *central=window->centralWidget();
         QVBoxLayout *root=central ? qobject_cast<QVBoxLayout*>(central->layout()) : nullptr;
         if (!central || !root) return;
-
         if (window->menuBar()) window->menuBar()->hide();
 
         QWidget *legacy=central->findChild<QWidget*>(QStringLiteral("layoutWidget_7"));
         if (!legacy) return;
+
+        QPushButton *connectButton=legacy->findChild<QPushButton*>(QStringLiteral("m_connectButton"));
+        QPushButton *disconnectButton=legacy->findChild<QPushButton*>(QStringLiteral("m_disconnectButton"));
+        QLabel *ecuLabel=legacy->findChild<QLabel*>(QStringLiteral("m_ecuIdLabel"));
+        QLabel *commLabel=legacy->findChild<QLabel*>(QStringLiteral("m_communicationsStatusLabel"));
+        QWidget *goodLed=legacy->findChild<QWidget*>(QStringLiteral("m_commsGoodLed"));
+        QWidget *badLed=legacy->findChild<QWidget*>(QStringLiteral("m_commsBadLed"));
+        if (!connectButton || !disconnectButton || !ecuLabel || !commLabel) return;
 
         QFrame *bar=new QFrame(central);
         bar->setObjectName(QStringLiteral("mockupTopHeader"));
@@ -80,61 +92,64 @@ private:
 
         QHBoxLayout *layout=new QHBoxLayout(bar);
         layout->setContentsMargins(9,4,9,4);
-        layout->setSpacing(8);
+        layout->setSpacing(7);
 
         QWidget *brandBox=new QWidget(bar);
         QHBoxLayout *brandLayout=new QHBoxLayout(brandBox);
         brandLayout->setContentsMargins(0,0,0,0);
-        brandLayout->setSpacing(6);
-
+        brandLayout->setSpacing(5);
         QLabel *brand=new QLabel(QStringLiteral("ECU MEMS MANAGER"),brandBox);
-        brand->setObjectName(QStringLiteral("mockupBrandLabel"));
         brand->setStyleSheet("color:#f3f5f7;font-weight:700;letter-spacing:.5px;background:transparent;");
-        brandLayout->addWidget(brand);
-
         QLabel *version=new QLabel(QStringLiteral("v%1.%2.%3").arg(VER_MAJOR).arg(VER_MINOR).arg(VER_PATCH),brandBox);
-        version->setObjectName(QStringLiteral("mockupVersionLabel"));
         version->setStyleSheet("color:#7f8992;font-weight:600;background:transparent;");
+        brandLayout->addWidget(brand);
         brandLayout->addWidget(version);
         layout->addWidget(brandBox,0,Qt::AlignVCenter);
+
+        // Approved order: ECU state, Port, Frequency, Communication, Connect/Disconnect.
+        ecuLabel->setParent(bar);
+        ecuLabel->setAlignment(Qt::AlignCenter);
+        ecuLabel->setStyleSheet(infoStyle());
+        layout->addWidget(ecuLabel,0,Qt::AlignVCenter);
 
         QLabel *portChip=makeInfoChip(QStringLiteral("Port : %1").arg(configuredSerialPort()),bar);
         portChip->setObjectName(QStringLiteral("mockupPortLabel"));
         layout->addWidget(portChip,0,Qt::AlignVCenter);
 
-        // MEMS polling runs continuously without a fixed sleep in the service loop;
-        // therefore no fabricated numeric Hz value is shown.
+        // The current MEMS service loop polls continuously; no fixed numeric Hz is configured.
         QLabel *frequencyChip=makeInfoChip(QStringLiteral("Fréquence : auto"),bar);
         frequencyChip->setObjectName(QStringLiteral("mockupFrequencyLabel"));
         layout->addWidget(frequencyChip,0,Qt::AlignVCenter);
 
-        legacy->setParent(bar);
-        legacy->setMinimumSize(0,0);
-        legacy->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
-        legacy->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
-        legacy->setStyleSheet(
-            "QWidget{background:transparent;color:#dce2e7;}"
-            "QLabel{color:#cfd5da;background:transparent;border:0;}"
-            "QPushButton{background:#1769d2;color:#fff;border:1px solid #2d7ee8;border-radius:3px;"
-            "padding:3px 8px;font-weight:600;}"
-            "QPushButton:hover{background:#2378e6;}"
-            "QPushButton:disabled{background:#252b31;color:#707983;border-color:#333b43;}"
-        );
+        QWidget *commBox=new QWidget(bar);
+        commBox->setObjectName(QStringLiteral("mockupCommunicationBox"));
+        commBox->setStyleSheet("#mockupCommunicationBox{background:#121820;border:1px solid #303943;border-radius:3px;}");
+        QHBoxLayout *commLayout=new QHBoxLayout(commBox);
+        commLayout->setContentsMargins(7,2,6,2);
+        commLayout->setSpacing(4);
+        commLabel->setParent(commBox);
+        commLabel->setStyleSheet("color:#cfd5da;background:transparent;border:0;font-weight:600;");
+        commLayout->addWidget(commLabel);
+        if (goodLed) { goodLed->setParent(commBox); commLayout->addWidget(goodLed); goodLed->show(); }
+        if (badLed) { badLed->setParent(commBox); commLayout->addWidget(badLed); badLed->show(); }
+        layout->addWidget(commBox,0,Qt::AlignVCenter);
 
-        const QList<QPushButton*> realButtons=legacy->findChildren<QPushButton*>();
-        for (QPushButton *button : realButtons) {
-            button->setMinimumWidth(0);
-            button->setMaximumWidth(QWIDGETSIZE_MAX);
-            button->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Preferred);
-        }
-        if (QLayout *legacyLayout=legacy->layout()) {
-            legacyLayout->setContentsMargins(0,0,0,0);
-            legacyLayout->setSpacing(7);
-        }
+        layout->addStretch(1);
 
-        layout->addWidget(legacy,1);
+        connectButton->setParent(bar);
+        disconnectButton->setParent(bar);
+        connectButton->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Preferred);
+        disconnectButton->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Preferred);
+        layout->addWidget(connectButton,0,Qt::AlignVCenter);
+        layout->addWidget(disconnectButton,0,Qt::AlignVCenter);
+
+        // The remaining legacy separators/error block are represented elsewhere
+        // (notably in the approved bottom system status), so the old container is hidden.
+        legacy->hide();
+        legacy->setMaximumSize(0,0);
+
         root->insertWidget(0,bar);
-        legacy->show();
+        bar->show();
 
         QTimer *sync=new QTimer(bar);
         sync->setInterval(200);
@@ -145,7 +160,7 @@ private:
             if (bar->height()!=headerH) bar->setFixedHeight(headerH);
 
             const int margin=qBound(5,qRound(9.0*scale),10);
-            const int spacing=qBound(4,qRound(8.0*scale),9);
+            const int spacing=qBound(4,qRound(7.0*scale),8);
             layout->setContentsMargins(margin,qMax(3,qRound(4.0*scale)),margin,qMax(3,qRound(4.0*scale)));
             layout->setSpacing(spacing);
 
@@ -157,20 +172,20 @@ private:
             version->setFont(vf);
 
             const int chipPad=qBound(4,qRound(8.0*scale),9);
-            const QString chipStyle=QStringLiteral(
-                "QLabel{color:#cfd5da;background:#121820;border:1px solid #303943;"
-                "border-radius:3px;padding:3px %1px;font-weight:600;}"
-            ).arg(chipPad);
-            portChip->setStyleSheet(chipStyle);
-            frequencyChip->setStyleSheet(chipStyle);
+            const QString chipCss=infoStyle(chipPad);
+            ecuLabel->setStyleSheet(chipCss);
+            portChip->setStyleSheet(chipCss);
+            frequencyChip->setStyleSheet(chipCss);
 
-            for (QPushButton *button : realButtons) {
-                const int h=qBound(22,qRound(27.0*scale),31);
-                const int pad=qBound(14,qRound(18.0*scale),22);
-                const int w=qMax(62,button->fontMetrics().horizontalAdvance(button->text())+pad);
-                button->setFixedHeight(h);
-                button->setFixedWidth(w);
-            }
+            const int h=qBound(22,qRound(27.0*scale),31);
+            const int pad=qBound(14,qRound(18.0*scale),22);
+            connectButton->setFixedHeight(h);
+            disconnectButton->setFixedHeight(h);
+            connectButton->setFixedWidth(qMax(62,connectButton->fontMetrics().horizontalAdvance(connectButton->text())+pad));
+            disconnectButton->setFixedWidth(qMax(62,disconnectButton->fontMetrics().horizontalAdvance(disconnectButton->text())+pad));
+
+            // Keep the displayed COM port synchronized if the user changes it in Options.
+            portChip->setText(QStringLiteral("Port : %1").arg(configuredSerialPort()));
         });
         sync->start();
     }
