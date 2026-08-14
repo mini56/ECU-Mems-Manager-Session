@@ -27,7 +27,9 @@ public:
         m_tabs->installEventFilter(this);
         window->installEventFilter(this);
         QTimer::singleShot(0, this, [this](){ fitToAvailableArea(); });
-        QTimer::singleShot(250, this, [this](){ captureNewWidgetsAndFit(); });
+        // Gauge cards are installed shortly after startup. Re-capture once after
+        // they exist, without the old 750 ms visible layout jump.
+        QTimer::singleShot(180, this, [this](){ captureNewWidgetsAndFit(); });
     }
 
 protected:
@@ -119,7 +121,7 @@ protected:
             if (window && window->objectName() == QStringLiteral("MainWindow") && !window->property("screenFitInstalled").toBool()) {
                 if (window->findChild<QTabWidget*>(QStringLiteral("Tab_main"))) {
                     window->setProperty("screenFitInstalled", true);
-                    QTimer::singleShot(750, window, [window](){ new OverviewScreenFitter(window); });
+                    QTimer::singleShot(220, window, [window](){ new OverviewScreenFitter(window); });
                 }
             }
         }
