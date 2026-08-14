@@ -1,12 +1,9 @@
 #include <QApplication>
 #include <QCoreApplication>
 #include <QEvent>
-#include <QFrame>
 #include <QListWidget>
 #include <QMainWindow>
 #include <QTabWidget>
-#include <QTimer>
-#include <QWidget>
 
 namespace {
 
@@ -23,56 +20,30 @@ protected:
             if (window && window->objectName() == QStringLiteral("MainWindow") &&
                 !window->property("mockupCleanupInstalled").toBool()) {
                 window->setProperty("mockupCleanupInstalled", true);
-                // Run soon after the modern UI has created its widgets so obsolete
-                // layers never remain visible long enough to disturb the approved layout.
-                QTimer::singleShot(560, window, [window]() { cleanup(window); });
+                ensureRealPagesVisible(window);
             }
         }
         return QObject::eventFilter(watched, event);
     }
 
 private:
-    static void cleanup(QMainWindow *window)
+    static void ensureRealPagesVisible(QMainWindow *window)
     {
         if (!window) return;
-
-        if (QFrame *modeBar = window->findChild<QFrame*>(QStringLiteral("modernModeBar"))) {
-            modeBar->hide();
-            modeBar->deleteLater();
-        }
-
-        if (QFrame *trendPanel = window->findChild<QFrame*>(QStringLiteral("trendPanel2min"))) {
-            trendPanel->hide();
-            trendPanel->deleteLater();
-        }
-
         QTabWidget *tabs = window->findChild<QTabWidget*>(QStringLiteral("Tab_main"));
-        QListWidget *nav = window->findChild<QListWidget*>(QStringLiteral("modernNavigation"));
         if (!tabs) return;
 
-        QWidget *database = tabs->findChild<QWidget*>(QStringLiteral("database_tab"));
-        if (database) {
-            const int index = tabs->indexOf(database);
-            if (index >= 0) {
-                if (nav && index < nav->count())
-                    delete nav->takeItem(index);
-                tabs->removeTab(index);
-            }
-            database->deleteLater();
-        }
-
-        // Keep all real application pages available. No invented expert/basic filtering.
+        QListWidget *nav = window->findChild<QListWidget*>(QStringLiteral("modernNavigation"));
         for (int i = 0; i < tabs->count(); ++i) {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
             tabs->setTabVisible(i, true);
 #else
             tabs->setTabEnabled(i, true);
 #endif
-            if (nav && i < nav->count())
-                nav->item(i)->setHidden(false);
+            if (nav && i < nav->count()) nav->item(i)->setHidden(false);
         }
 
-        if (nav && nav->count() > 0 && tabs->currentIndex() >= 0 && tabs->currentIndex() < nav->count())
+        if (nav && tabs->currentIndex() >= 0 && tabs->currentIndex() < nav->count())
             nav->setCurrentRow(tabs->currentIndex());
     }
 };
