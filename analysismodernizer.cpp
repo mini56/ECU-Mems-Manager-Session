@@ -77,6 +77,10 @@ private:
         for (QScrollArea *scroll : scrolls) {
             scroll->setFrameShape(QFrame::NoFrame);
             scroll->setWidgetResizable(true);
+            if (scroll->viewport()) {
+                scroll->viewport()->setAutoFillBackground(false);
+                scroll->viewport()->setStyleSheet("background:#11161c;");
+            }
         }
 
         fit(tab);
@@ -110,6 +114,17 @@ private:
         f.setPointSizeF(qBound<qreal>(8.0, basePointSize * scale, 11.0));
         tab->setFont(f);
         tab->setProperty("analysisScale", scale);
+
+        // Keep controls readable and proportional without changing the validated layout.
+        const int buttonHeight = qBound(28, qRound(30.0 * scale), 34);
+        const QList<QPushButton*> buttons = tab->findChildren<QPushButton*>();
+        for (QPushButton *button : buttons)
+            button->setMinimumHeight(buttonHeight);
+
+        const int indicatorSize = qBound(13, qRound(14.0 * scale), 16);
+        const QList<QCheckBox*> checks = tab->findChildren<QCheckBox*>();
+        for (QCheckBox *check : checks)
+            check->setStyleSheet(QStringLiteral("QCheckBox::indicator{width:%1px;height:%1px;}").arg(indicatorSize));
 
         // Stacked analysis graphs retain the same proportions as the validated
         // mock-up while remaining usable on 1366x768 and larger displays.
