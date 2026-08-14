@@ -61,7 +61,6 @@ static QString subtitleFor(const QString &title)
     if (t.contains(QStringLiteral("analyse"))) return QStringLiteral("ANALYSE DÉTAILLÉE, COURBES ET CURSEURS");
     if (t.contains(QStringLiteral("rosco"))) return QStringLiteral("INFORMATIONS TECHNIQUES ET SESSION ECU / ROSCO");
     if (t.contains(QStringLiteral("diagnostic"))) return QStringLiteral("VÉRIFICATION COMPLÈTE DU SYSTÈME ET RAPPORT DE SANTÉ");
-    if (t.contains(QStringLiteral("enregistre"))) return QStringLiteral("ENREGISTREMENT DES SESSIONS DE DIAGNOSTIC");
     return QStringLiteral("ECU MEMS MANAGER");
 }
 
@@ -152,6 +151,22 @@ static void prepareViewWidgets(QWidget *page)
     }
 }
 
+static bool usesDedicatedLayout(QWidget *page,const QString &title)
+{
+    if (!page) return true;
+    const QString name=page->objectName();
+    const QString cls=QString::fromLatin1(page->metaObject()->className());
+    const QString t=title.toLower();
+    if (name==QStringLiteral("overview_tab") || name==QStringLiteral("emission_tab") ||
+        name==QStringLiteral("errors") || name==QStringLiteral("actuators") ||
+        name==QStringLiteral("raw") || name==QStringLiteral("ECU")) return true;
+    if (cls==QStringLiteral("SummaryTab") || cls==QStringLiteral("AnalysisTab") || cls==QStringLiteral("DiagnosticPanel")) return true;
+    return t.contains(QStringLiteral("mesures")) || t.contains(QStringLiteral("données")) ||
+           t.contains(QStringLiteral("interactif")) || t.contains(QStringLiteral("rosco")) ||
+           t.contains(QStringLiteral("diagnostic")) || t.contains(QStringLiteral("régl")) ||
+           t.contains(QStringLiteral("erreur")) || t.contains(QStringLiteral("actionneur"));
+}
+
 static void composeGenericPage(QWidget *page, const QString &title)
 {
     if (!page || page->property("uiRebuiltPage").toBool()) return;
@@ -198,37 +213,6 @@ static void composeGenericPage(QWidget *page, const QString &title)
     prepareViewWidgets(page);
 }
 
-static QWidget *createRecorderTab(QTabWidget *tabs, QWidget *overview)
-{
-    if (!tabs || !overview) return nullptr;
-    QWidget *loggerBox=overview->findChild<QWidget*>(QStringLiteral("layoutWidget"),Qt::FindDirectChildrenOnly);
-    if (!loggerBox) return nullptr;
-    QWidget *page=new QWidget(tabs);
-    page->setObjectName(QStringLiteral("recorder_tab"));
-    page->setAttribute(Qt::WA_StyledBackground,true);
-    QVBoxLayout *root=new QVBoxLayout(page);
-    root->setContentsMargins(15,12,15,12); root->setSpacing(10);
-    root->addWidget(makePageHeader(page,QStringLiteral("Enregistreur")));
-    QHBoxLayout *body=new QHBoxLayout; body->setSpacing(10);
-    QFrame *mainCard=makeCard(page,QStringLiteral("recorderMainCard"));
-    QVBoxLayout *mainLayout=new QVBoxLayout(mainCard);
-    mainLayout->setContentsMargins(18,16,18,18); mainLayout->setSpacing(10);
-    QLabel *heading=new QLabel(QStringLiteral("SESSION D'ENREGISTREMENT"),mainCard);
-    QFont hf=heading->font(); hf.setBold(true); hf.setPointSizeF(10); heading->setFont(hf);
-    heading->setStyleSheet(QStringLiteral("color:#f0f3f5;background:transparent;"));
-    mainLayout->addWidget(heading);
-    QFrame *line=new QFrame(mainCard); line->setFrameShape(QFrame::HLine); line->setStyleSheet(QStringLiteral("background:%1;border:0;max-height:1px;").arg(QString::fromLatin1(kBorder))); mainLayout->addWidget(line);
-    loggerBox->setParent(mainCard); loggerBox->setMinimumWidth(0); loggerBox->setMaximumWidth(QWIDGETSIZE_MAX); loggerBox->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed); mainLayout->addWidget(loggerBox,0); mainLayout->addStretch(1);
-    body->addWidget(mainCard,3);
-    QFrame *side=makeCard(page,QStringLiteral("recorderSideCard")); side->setObjectName(QStringLiteral("recorderSideCard"));
-    QVBoxLayout *sv=new QVBoxLayout(side); sv->setContentsMargins(16,16,16,16);
-    QLabel *st=new QLabel(QStringLiteral("ENREGISTREMENT"),side); QFont stf=st->font(); stf.setBold(true); stf.setPointSizeF(10); st->setFont(stf); st->setStyleSheet(QStringLiteral("color:%1;background:transparent;").arg(QString::fromLatin1(kOrange2)));
-    QLabel *desc=new QLabel(QStringLiteral("Nom de fichier, démarrage et arrêt de la session. Les commandes restent reliées à l'enregistreur réel du programme."),side); desc->setWordWrap(true); desc->setStyleSheet(QStringLiteral("color:%1;background:transparent;").arg(QString::fromLatin1(kMuted)));
-    sv->addWidget(st); sv->addWidget(desc); sv->addStretch(1); body->addWidget(side,1);
-    root->addLayout(body,1);
-    return page;
-}
-
 static QFrame *buildHeader(QMainWindow *window, QWidget *legacy)
 {
     if (!window || !legacy) return nullptr;
@@ -251,7 +235,7 @@ static QFrame *buildHeader(QMainWindow *window, QWidget *legacy)
     ecu->setParent(header); ecu->setStyleSheet(QStringLiteral("color:#dfe4e8;font-weight:700;padding:0 8px;")); h->addWidget(ecu);
     QSettings s(QSettings::IniFormat,QSettings::UserScope,PROJECTNAME); s.beginGroup(QStringLiteral("Settings")); QString port=s.value(QStringLiteral("SerialDevice"),QStringLiteral("--")).toString(); s.endGroup(); if(port.trimmed().isEmpty())port=QStringLiteral("--");
     QLabel *portLabel=new QLabel(QStringLiteral("Port\n%1").arg(port),header); portLabel->setAlignment(Qt::AlignCenter); portLabel->setStyleSheet(QStringLiteral("color:#cbd3d9;font-weight:600;")); h->addWidget(portLabel);
-    QLabel *freqLabel=new QLabel(QStringLiteral("Fréquence\nauto"),header); freqLabel->setAlignment(Qt::AlignCenter); freqLabel->setStyleSheet(QStringLiteral("color:#cbd3d9;font-weight:600;")); h->addWidget(freqLabel); h->addStretch(1);
+    h->addStretch(1);
     QWidget *commBox=new QWidget(header); QHBoxLayout *ch=new QHBoxLayout(commBox); ch->setContentsMargins(0,0,0,0); ch->setSpacing(5); comm->setParent(commBox); comm->setStyleSheet(QStringLiteral("color:#cbd3d9;font-weight:700;")); ch->addWidget(comm); if(good){good->setParent(commBox);ch->addWidget(good);} if(bad){bad->setParent(commBox);ch->addWidget(bad);} h->addWidget(commBox);
     connectButton->setParent(header); disconnectButton->setParent(header); h->addWidget(connectButton); h->addWidget(disconnectButton);
     legacy->hide(); legacy->setMaximumSize(0,0); return header;
@@ -263,18 +247,16 @@ static QFrame *buildBottomStatus(QMainWindow *window)
     bar->setStyleSheet(QStringLiteral("#uiRebuildStatus{background:#080d12;border-top:1px solid %1;}#uiRebuildStatus QLabel{background:transparent;border-right:1px solid %1;color:#c9d1d7;padding:0 8px;}#uiRebuildStatus QPushButton{margin:3px 5px;padding:2px 10px;}").arg(QString::fromLatin1(kBorder)));
     QHBoxLayout *h=new QHBoxLayout(bar); h->setContentsMargins(0,0,0,0); h->setSpacing(0);
     QLabel *file=new QLabel(QStringLiteral("Fichier : --"),bar); QLabel *loop=new QLabel(QStringLiteral("Boucle : --"),bar); QLabel *lambda=new QLabel(QStringLiteral("Lambda : --"),bar); QLabel *system=new QLabel(QStringLiteral("Système : --"),bar); system->setStyleSheet(QStringLiteral("color:#65db79;background:transparent;border-right:1px solid %1;padding:0 8px;").arg(QString::fromLatin1(kBorder))); QLabel *inject=new QLabel(QStringLiteral("Injection : -- ms"),bar); QLabel *air=new QLabel(QStringLiteral("Air : -- °C"),bar);
-    h->addWidget(file,2);h->addWidget(loop,1);h->addWidget(lambda,1);h->addWidget(system,1);h->addWidget(inject,1);h->addWidget(air,1); QPushButton *capture=new QPushButton(QStringLiteral("Capture écran"),bar);h->addWidget(capture,1);
-    QObject::connect(capture,&QPushButton::clicked,window,[window](){QMetaObject::invokeMethod(window,"onSnapshotClicked",Qt::QueuedConnection);});
+    h->addWidget(file,2);h->addWidget(loop,1);h->addWidget(lambda,1);h->addWidget(system,1);h->addWidget(inject,1);h->addWidget(air,1);
     QTimer *timer=new QTimer(bar);timer->setInterval(400);QObject::connect(timer,&QTimer::timeout,bar,[=](){if(QLineEdit *f=window->findChild<QLineEdit*>(QStringLiteral("m_logFileNameBox")))file->setText(QStringLiteral("Fichier : %1").arg(f->text()));if(QWidget *w=window->findChild<QWidget*>(QStringLiteral("m_closedLoopLed")))loop->setText(QStringLiteral("Boucle : %1").arg(w->property("checked").toBool()?QStringLiteral("fermée"):QStringLiteral("ouverte")));if(QWidget *w=window->findChild<QWidget*>(QStringLiteral("m_lambda_voltage")))lambda->setText(QStringLiteral("Lambda : %1").arg(w->property("value").toString()));if(QWidget *w=window->findChild<QWidget*>(QStringLiteral("m_engine_error")))system->setText(w->property("checked").toBool()?QStringLiteral("Système : défaut"):QStringLiteral("Système : OK"));if(QWidget *w=window->findChild<QWidget*>(QStringLiteral("m_injector_time")))inject->setText(QStringLiteral("Injection : %1 ms").arg(w->property("value").toString()));if(QWidget *w=window->findChild<QWidget*>(QStringLiteral("m_airTempGauge")))air->setText(QStringLiteral("Air : %1").arg(w->property("value").toString()));});timer->start();return bar;
 }
 
 static qreal responsiveScale(QMainWindow *window)
 {
     if(!window) return 1.0;
-    const QSize sz=window->centralWidget()?window->centralWidget()->size():window->size();
-    const qreal sx=sz.width()/1366.0;
-    const qreal sy=sz.height()/768.0;
-    return qBound<qreal>(0.78,qMin(sx,sy),1.28);
+    QWidget *workspace=window->findChild<QWidget*>(QStringLiteral("uiRebuildWorkspace"));
+    const QSize sz=(workspace&&workspace->width()>0&&workspace->height()>0)?workspace->size():(window->centralWidget()?window->centralWidget()->size():window->size());
+    return qBound<qreal>(0.64,qMin(sz.width()/1450.0,sz.height()/720.0),1.28);
 }
 
 static void applyResponsive(QMainWindow *window)
@@ -284,7 +266,7 @@ static void applyResponsive(QMainWindow *window)
     window->setProperty("globalUiScale",s);
 
     if(QFrame *header=window->findChild<QFrame*>(QStringLiteral("uiRebuildHeader")))
-        header->setFixedHeight(qBound(44,qRound(56.0*s),68));
+        header->setFixedHeight(qBound(42,qRound(54.0*s),64));
     if(QLabel *logo=window->findChild<QLabel*>(QStringLiteral("uiRebuildLogo"))) {
         const int side=qBound(28,qRound(38.0*s),46);
         logo->setFixedSize(side,side);
@@ -310,19 +292,17 @@ static void applyResponsive(QMainWindow *window)
     }
 
     if(QListWidget *nav=window->findChild<QListWidget*>(QStringLiteral("uiRebuildNav"))) {
-        const int navW=qBound(155,qRound(190.0*s),220);
-        const int rowH=qBound(29,qRound(35.0*s),42);
-        const int pad=qBound(8,qRound(14.0*s),17);
+        const QSize a=window->findChild<QWidget*>(QStringLiteral("uiRebuildWorkspace"))?window->findChild<QWidget*>(QStringLiteral("uiRebuildWorkspace"))->size():(window->centralWidget()?window->centralWidget()->size():window->size());
+        const int navW=qBound(142,qRound(a.width()*0.12),214);
+        const int rowH=qBound(27,qRound(34.0*s),40);
+        const int pad=qBound(8,qRound(13.0*s),16);
         nav->setFixedWidth(navW);
-        nav->setStyleSheet(QStringLiteral("#uiRebuildNav{background:#0d1318;color:#c7d0d6;border:0;border-right:1px solid %1;padding:6px 0;}#uiRebuildNav::item{min-height:%2px;padding:2px %3px;border-left:3px solid transparent;font-weight:650;}#uiRebuildNav::item:hover{background:#161d23;color:white;}#uiRebuildNav::item:selected{background:#1c211f;color:%4;border-left:3px solid %5;}")
+        nav->setStyleSheet(QStringLiteral("#uiRebuildNav{background:#0d1318;color:#c7d0d6;border:0;border-right:1px solid %1;padding:5px 0;}#uiRebuildNav::item{min-height:%2px;padding:2px %3px;border-left:3px solid transparent;font-weight:650;}#uiRebuildNav::item:hover{background:#161d23;color:white;}#uiRebuildNav::item:selected{background:#1c211f;color:%4;border-left:3px solid %5;}")
             .arg(QString::fromLatin1(kBorder)).arg(rowH).arg(pad).arg(QString::fromLatin1(kOrange2)).arg(QString::fromLatin1(kOrange)));
     }
 
     if(QFrame *status=window->findChild<QFrame*>(QStringLiteral("uiRebuildStatus")))
-        status->setFixedHeight(qBound(29,qRound(36.0*s),43));
-
-    if(QFrame *side=window->findChild<QFrame*>(QStringLiteral("recorderSideCard")))
-        side->setMaximumWidth(qBound(210,qRound(310.0*s),360));
+        status->setFixedHeight(qBound(29,qRound(35.0*s),40));
 
     const QList<QScrollArea*> scrolls=window->findChildren<QScrollArea*>();
     for(QScrollArea *scroll:scrolls){
@@ -360,8 +340,6 @@ private:
     {
         qApp->setStyleSheet(globalStyle()); central->setAttribute(Qt::WA_StyledBackground,true); central->setStyleSheet(QStringLiteral("background:%1;").arg(QString::fromLatin1(kBg)));
         if(QFrame *header=buildHeader(window,legacy))root->insertWidget(0,header);
-        QWidget *overview=nullptr;for(int i=0;i<tabs->count();++i){QWidget *p=realPage(tabs->widget(i));if(p&&p->objectName()==QStringLiteral("overview_tab")){overview=p;break;}}
-        if(overview&&tabs->findChild<QWidget*>(QStringLiteral("recorder_tab"))==nullptr)if(QWidget *rec=createRecorderTab(tabs,overview))tabs->addTab(rec,QStringLiteral("Enregistreur"));
         const int oldIndex=root->indexOf(tabs);if(oldIndex>=0)root->removeWidget(tabs);
         QFrame *workspace=new QFrame(central);workspace->setObjectName(QStringLiteral("uiRebuildWorkspace"));workspace->setAttribute(Qt::WA_StyledBackground,true);workspace->setStyleSheet(QStringLiteral("#uiRebuildWorkspace{background:%1;border:0;}").arg(QString::fromLatin1(kBg)));QHBoxLayout *wh=new QHBoxLayout(workspace);wh->setContentsMargins(0,0,0,0);wh->setSpacing(0);
         QListWidget *nav=new QListWidget(workspace);nav->setObjectName(QStringLiteral("uiRebuildNav"));nav->setFocusPolicy(Qt::NoFocus);nav->setUniformItemSizes(true);nav->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -372,7 +350,7 @@ private:
         wh->addWidget(nav);wh->addWidget(tabs,1);root->insertWidget(oldIndex<0?1:oldIndex,workspace,1);
         QObject::connect(nav,&QListWidget::currentRowChanged,tabs,&QTabWidget::setCurrentIndex);
         QObject::connect(tabs,&QTabWidget::currentChanged,nav,[nav](int row){ nav->setCurrentRow(row); });
-        for(int i=0;i<tabs->count();++i){QWidget *page=realPage(tabs->widget(i));if(!page)continue;if(QScrollArea *scroll=qobject_cast<QScrollArea*>(tabs->widget(i))){scroll->setWidgetResizable(true);scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);page->setMinimumSize(0,0);}const QString title=titleForIndex(tabs,i);if(page->objectName()!=QStringLiteral("overview_tab")&&page->objectName()!=QStringLiteral("recorder_tab")&&QString::fromLatin1(page->metaObject()->className())!=QStringLiteral("AnalysisTab"))composeGenericPage(page,title);}
+        for(int i=0;i<tabs->count();++i){QWidget *page=realPage(tabs->widget(i));if(!page)continue;if(QScrollArea *scroll=qobject_cast<QScrollArea*>(tabs->widget(i))){scroll->setWidgetResizable(true);scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);page->setMinimumSize(0,0);}const QString title=titleForIndex(tabs,i);if(!usesDedicatedLayout(page,title))composeGenericPage(page,title);}
         root->addWidget(buildBottomStatus(window));tabs->setCurrentIndex(0);
         applyResponsive(window);
         QTimer::singleShot(120,window,[window](){applyResponsive(window);});
