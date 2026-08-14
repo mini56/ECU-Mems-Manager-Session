@@ -17,6 +17,7 @@
 #include <QVector>
 
 #include "analogwidgets/abstractmeter.h"
+#include "i18n.h"
 
 namespace {
 
@@ -36,7 +37,7 @@ public:
         if (!m_meter) return;
         const qint64 now = m_clock.elapsed();
         m_points.append(qMakePair(now, m_meter->value()));
-        const qint64 cutoff = now - 120000; // 2 minutes
+        const qint64 cutoff = now - 120000;
         int removeCount = 0;
         while (removeCount < m_points.size() && m_points.at(removeCount).first < cutoff)
             ++removeCount;
@@ -66,7 +67,7 @@ protected:
 
         if (m_points.size() < 2) {
             p.setPen(QColor("#737b83"));
-            p.drawText(plot, Qt::AlignCenter, QStringLiteral("2 min"));
+            p.drawText(plot, Qt::AlignCenter, I18n::text(7113));
             return;
         }
 
@@ -89,7 +90,7 @@ protected:
         p.setPen(QColor("#8b939b"));
         f.setPointSize(7); f.setBold(false); p.setFont(f);
         p.drawText(QRectF(plot.left(), plot.bottom()-13, 50, 13), Qt::AlignLeft, QStringLiteral("-2 min"));
-        p.drawText(QRectF(plot.right()-50, plot.bottom()-13, 50, 13), Qt::AlignRight, QStringLiteral("Maint."));
+        p.drawText(QRectF(plot.right()-60, plot.bottom()-13, 60, 13), Qt::AlignRight, I18n::text(7112));
     }
 
 private:
@@ -127,11 +128,11 @@ private:
         QFont titleFont=title->font(); titleFont.setBold(true); title->setFont(titleFont);
         layout->addWidget(title);
         layout->addStretch();
-        QLabel *modeLabel=new QLabel(QStringLiteral("Mode :"),bar);
+        QLabel *modeLabel=new QLabel(I18n::text(7100),bar);
         layout->addWidget(modeLabel);
         m_modeBox=new QComboBox(bar);
-        m_modeBox->addItem(QStringLiteral("Simple"));
-        m_modeBox->addItem(QStringLiteral("Expert"));
+        m_modeBox->addItem(I18n::text(7101));
+        m_modeBox->addItem(I18n::text(7102));
         QSettings settings(QStringLiteral("ECU MEMS Manager"), QStringLiteral("ECU MEMS Manager"));
         m_modeBox->setCurrentIndex(settings.value(QStringLiteral("InterfaceMode"),0).toInt()==1 ? 1 : 0);
         layout->addWidget(m_modeBox);
@@ -149,14 +150,14 @@ private:
         database->setObjectName(QStringLiteral("database_tab"));
         QVBoxLayout *layout=new QVBoxLayout(database);
         layout->setContentsMargins(28,28,28,28);
-        QLabel *heading=new QLabel(QStringLiteral("Base de données ECU"),database);
+        QLabel *heading=new QLabel(I18n::text(7103),database);
         QFont f=heading->font(); f.setPointSize(16); f.setBold(true); heading->setFont(f);
-        QLabel *info=new QLabel(QStringLiteral("Espace préparé pour la future base MEMS : identification ECU, versions, trames, commandes, DTC, actionneurs, réglages et documentation technique."),database);
+        QLabel *info=new QLabel(I18n::text(7104),database);
         info->setWordWrap(true);
         layout->addWidget(heading);
         layout->addWidget(info);
         layout->addStretch();
-        m_tabs->addTab(database, QStringLiteral("Base de données"));
+        m_tabs->addTab(database, I18n::text(7105));
     }
 
     void installOverviewTrends()
@@ -170,20 +171,20 @@ private:
         panel->setStyleSheet("#trendPanel2min{background:#20242a;border:1px solid #343941;border-radius:8px;} QLabel{color:#e7ebee;}");
         QVBoxLayout *outer=new QVBoxLayout(panel);
         outer->setContentsMargins(10,8,10,10);
-        QLabel *heading=new QLabel(QStringLiteral("Historique rapide — 2 dernières minutes"),panel);
+        QLabel *heading=new QLabel(I18n::text(7106),panel);
         QFont hf=heading->font(); hf.setBold(true); heading->setFont(hf);
         outer->addWidget(heading);
         QGridLayout *grid=new QGridLayout();
         grid->setSpacing(7);
         outer->addLayout(grid);
 
-        const struct { const char *name; const char *title; } gauges[] = {
-            {"m_revCounter","Régime moteur"}, {"m_mapGauge","Pression MAP"}, {"m_waterTempGauge","Température moteur"},
-            {"m_throttle_pos","Papillon"}, {"m_lambda_voltage","Lambda"}, {"m_battery","Batterie"}
+        const struct { const char *name; int titleKey; } gauges[] = {
+            {"m_revCounter",7107}, {"m_mapGauge",7108}, {"m_waterTempGauge",7109},
+            {"m_throttle_pos",7110}, {"m_lambda_voltage",7111}, {"m_battery",7114}
         };
         for (int i=0;i<6;++i) {
             AbstractMeter *meter=m_window->findChild<AbstractMeter*>(QString::fromLatin1(gauges[i].name));
-            MiniTrendWidget *trend=new MiniTrendWidget(QString::fromUtf8(gauges[i].title),meter,panel);
+            MiniTrendWidget *trend=new MiniTrendWidget(I18n::text(gauges[i].titleKey),meter,panel);
             grid->addWidget(trend,i/3,i%3);
             m_trends.append(trend);
         }
@@ -204,8 +205,7 @@ private:
             const QString name=page->objectName();
             const QString title=m_tabs->tabText(i).toLower();
             const bool expertOnly = name==QStringLiteral("raw") || name==QStringLiteral("ECU") ||
-                title.contains(QStringLiteral("rosco")) || title.contains(QStringLiteral("analyse")) ||
-                title.contains(QStringLiteral("analysis"));
+                title.contains(QStringLiteral("rosco")) || title.contains(I18n::text(7018).toLower());
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
             m_tabs->setTabVisible(i, !expertOnly || expert);
 #else
