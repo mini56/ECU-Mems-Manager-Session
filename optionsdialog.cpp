@@ -64,9 +64,13 @@ void OptionsDialog::setupWidgets()
 
   m_languageLabel = new QLabel(I18n::text(6106) /* EN: Language: */, this);
   m_languageBox = new QComboBox(this);
-  // Keep language names native so they remain identifiable in either UI language.
+  // Keep language names native so they remain identifiable in every UI language.
   m_languageBox->addItem(QIcon(":/flags/fr.png"), QStringLiteral("Français"), "fr");
   m_languageBox->addItem(QIcon(":/flags/en.png"), QStringLiteral("English"), "en");
+  m_languageBox->addItem(QIcon(":/flags/es.png"), QString::fromUtf8("Español"), "es");
+  m_languageBox->addItem(QIcon(":/flags/it.png"), QStringLiteral("Italiano"), "it");
+  m_languageBox->addItem(QIcon(":/flags/pt.png"), QString::fromUtf8("Português"), "pt");
+  m_languageBox->addItem(QIcon(":/flags/de.png"), QStringLiteral("Deutsch"), "de");
   int languageIndex = m_languageBox->findData(m_language);
   if (languageIndex < 0) languageIndex = 0;
   m_languageBox->setCurrentIndex(languageIndex);
@@ -164,8 +168,9 @@ void OptionsDialog::readSettings()
   if (m_theme == "Clair") m_theme = "light";
   if (m_theme == "Sombre") m_theme = "dark";
   m_themeChanged = false;
-  m_language = settings.value(m_settingLanguage, "fr").toString();
-  if (m_language != "fr" && m_language != "en") m_language = "fr";
+  m_language = settings.value(m_settingLanguage, "fr").toString().toLower();
+  const QStringList supportedLanguages = QStringList() << "fr" << "en" << "es" << "it" << "pt" << "de";
+  if (!supportedLanguages.contains(m_language)) m_language = "fr";
   m_languageChanged = false;
   m_desktopShortcut = settings.value(m_settingDesktopShortcut, false).toBool();
 
