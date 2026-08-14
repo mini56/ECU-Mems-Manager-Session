@@ -2,9 +2,9 @@ name: Build ECU Mems Manager (Windows)
 
 on:
   push:
-    branches: ["main", "master"]
+    branches: ["main", "master", "ui-rebuild"]
   pull_request:
-    branches: ["main", "master"]
+    branches: ["main", "master", "ui-rebuild"]
 
 permissions:
   contents: read
@@ -27,9 +27,19 @@ jobs:
         run: pip install aqtinstall
 
       - name: Installer Qt 5.15.2 MinGW 32 bits
+        shell: pwsh
         run: |
-          aqt install-qt windows desktop 5.15.2 win32_mingw81 -m qtcharts -O C:\Qt
-          aqt install-tool windows desktop tools_mingw qt.tools.win32_mingw810 -O C:\Qt
+          $ErrorActionPreference = "Stop"
+          for ($i=1; $i -le 3; $i++) {
+            try {
+              aqt install-qt windows desktop 5.15.2 win32_mingw81 -m qtcharts -O C:\Qt
+              aqt install-tool windows desktop tools_mingw qt.tools.win32_mingw810 -O C:\Qt
+              exit 0
+            } catch {
+              if ($i -eq 3) { throw }
+              Start-Sleep -Seconds 10
+            }
+          }
 
       - name: Ajouter MinGW et Qt au PATH
         run: |
