@@ -6,6 +6,7 @@
 #include <QLabel>
 #include <QMainWindow>
 #include <QMenuBar>
+#include <QPixmap>
 #include <QPushButton>
 #include <QSettings>
 #include <QTimer>
@@ -98,6 +99,15 @@ private:
         QHBoxLayout *brandLayout=new QHBoxLayout(brandBox);
         brandLayout->setContentsMargins(0,0,0,0);
         brandLayout->setSpacing(5);
+
+        QLabel *logo=new QLabel(brandBox);
+        logo->setObjectName(QStringLiteral("mockupLogoLabel"));
+        logo->setAlignment(Qt::AlignCenter);
+        const QPixmap logoSource(QStringLiteral(":/icons/key.png"));
+        if (!logoSource.isNull()) logo->setPixmap(logoSource.scaled(24,24,Qt::KeepAspectRatio,Qt::SmoothTransformation));
+        logo->setFixedSize(26,26);
+        brandLayout->addWidget(logo);
+
         QLabel *brand=new QLabel(QStringLiteral("ECU MEMS MANAGER"),brandBox);
         brand->setStyleSheet("color:#f3f5f7;font-weight:700;letter-spacing:.5px;background:transparent;");
         QLabel *version=new QLabel(QStringLiteral("v%1.%2.%3").arg(VER_MAJOR).arg(VER_MINOR).arg(VER_PATCH),brandBox);
@@ -163,6 +173,10 @@ private:
             const int spacing=qBound(4,qRound(7.0*scale),8);
             layout->setContentsMargins(margin,qMax(3,qRound(4.0*scale)),margin,qMax(3,qRound(4.0*scale)));
             layout->setSpacing(spacing);
+
+            const int logoSize=qBound(18,qRound(24.0*scale),28);
+            logo->setFixedSize(logoSize+2,logoSize+2);
+            if (!logoSource.isNull()) logo->setPixmap(logoSource.scaled(logoSize,logoSize,Qt::KeepAspectRatio,Qt::SmoothTransformation));
 
             QFont bf=brand->font();
             bf.setPointSizeF(qBound<qreal>(7.0,9.0*scale,10.2));
