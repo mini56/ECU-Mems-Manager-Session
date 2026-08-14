@@ -30,16 +30,23 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
+          $ok = $false
           for ($i=1; $i -le 3; $i++) {
-            try {
-              aqt install-qt windows desktop 5.15.2 win32_mingw81 -m qtcharts -O C:\Qt
-              aqt install-tool windows desktop tools_mingw qt.tools.win32_mingw810 -O C:\Qt
-              exit 0
-            } catch {
-              if ($i -eq 3) { throw }
-              Start-Sleep -Seconds 10
+            if (Test-Path "C:\Qt\5.15.2") {
+              Remove-Item "C:\Qt\5.15.2" -Recurse -Force -ErrorAction SilentlyContinue
             }
+            Write-Host "Tentative Qt $i/3"
+            & aqt install-qt windows desktop 5.15.2 win32_mingw81 -m qtcharts -O C:\Qt
+            if ($LASTEXITCODE -eq 0 -and (Test-Path "C:\Qt\5.15.2\mingw81_32\lib\cmake\Qt5\Qt5Config.cmake")) {
+              $ok = $true
+              break
+            }
+            Write-Warning "Installation Qt incomplete, nouvelle tentative..."
+            Start-Sleep -Seconds 8
           }
+          if (-not $ok) { throw "Impossible d'installer Qt 5.15.2 correctement apres 3 tentatives." }
+          & aqt install-tool windows desktop tools_mingw qt.tools.win32_mingw810 -O C:\Qt
+          if ($LASTEXITCODE -ne 0) { throw "Echec installation MinGW 8.1" }
 
       - name: Ajouter MinGW et Qt au PATH
         run: |
