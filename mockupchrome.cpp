@@ -34,7 +34,7 @@ static QString valueText(QObject *obj, const QString &suffix = QString())
     if (!v.isValid()) return QStringLiteral("--") + suffix;
     if (v.type() == QVariant::Double || v.type() == QVariant::Int || v.type() == QVariant::UInt)
         return QString::number(v.toDouble(), 'f', 1) + suffix;
-    const QString text=v.toString().trimmed();
+    const QString text = v.toString().trimmed();
     return (text.isEmpty() ? QStringLiteral("--") : text) + suffix;
 }
 
@@ -53,7 +53,7 @@ protected:
             window->objectName()==QStringLiteral("MainWindow") &&
             !window->property("mockupChromeInstalled").toBool()) {
             window->setProperty("mockupChromeInstalled", true);
-            QTimer::singleShot(260, window, [window](){ install(window); });
+            QTimer::singleShot(90, window, [window](){ install(window); });
         }
         return QObject::eventFilter(watched, event);
     }
@@ -76,8 +76,8 @@ private:
         if (nav) {
             nav->setStyleSheet(
                 "QListWidget{background:#10151a;color:#b8c0c7;border:0;border-right:1px solid #293038;"
-                "padding:5px 3px;outline:0;}"
-                "QListWidget::item{min-height:28px;padding:2px 9px;border-radius:1px;margin:1px 0px;}"
+                "padding:4px 2px;outline:0;}"
+                "QListWidget::item{min-height:27px;padding:2px 8px;border-radius:0;margin:0;}"
                 "QListWidget::item:hover{background:#171d23;color:#ffffff;}"
                 "QListWidget::item:selected{background:#191f25;color:#ff9b32;border-left:3px solid #ff8a1c;}"
             );
@@ -127,29 +127,37 @@ private:
         QObject *system = window->findChild<QObject*>(QStringLiteral("m_engine_error"));
         QLineEdit *logName = window->findChild<QLineEdit*>(QStringLiteral("m_logFileNameBox"));
 
-        QObject::connect(captureButton,&QPushButton::clicked,window,[window](){
-            QMetaObject::invokeMethod(window,"onSnapshotClicked",Qt::QueuedConnection);
+        QObject::connect(captureButton, &QPushButton::clicked, window, [window](){
+            QMetaObject::invokeMethod(window, "onSnapshotClicked", Qt::QueuedConnection);
         });
 
-        const QList<QLabel*> cells = {fileCell,loopCell,lambdaCell,systemCell,injCell,airCell};
+        const QList<QLabel*> cells = {fileCell, loopCell, lambdaCell, systemCell, injCell, airCell};
         QTimer *sync = new QTimer(status);
         sync->setInterval(220);
         QObject::connect(sync, &QTimer::timeout, status, [=](){
             const qreal scale = window->property("globalUiScale").isValid()
                 ? window->property("globalUiScale").toDouble() : 1.0;
-            const int navWidth = qBound(126, qRound(176.0 * scale), 204);
+
+            const int navWidth = qBound(120, qRound(168.0 * scale), 194);
             if (nav && nav->width()!=navWidth) nav->setFixedWidth(navWidth);
+
             const int statusH = qBound(21, qRound(26.0 * scale), 30);
             if (status->height()!=statusH) status->setFixedHeight(statusH);
 
-            QFont sf=status->font();
-            sf.setPointSizeF(qBound<qreal>(6.3,8.0*scale,9.2));
+            QFont sf = status->font();
+            sf.setPointSizeF(qBound<qreal>(6.3, 8.0 * scale, 9.2));
             for (QLabel *cell : cells) cell->setFont(sf);
             captureButton->setFont(sf);
 
+            if (nav) {
+                QFont nf = nav->font();
+                nf.setPointSizeF(qBound<qreal>(6.4, 8.2 * scale, 9.3));
+                nav->setFont(nf);
+            }
+
             if (logName) {
-                const QString name=logName->text().trimmed();
-                fileCell->setText(QStringLiteral("Fichier : ") + (name.isEmpty()?QStringLiteral("--"):name));
+                const QString name = logName->text().trimmed();
+                fileCell->setText(QStringLiteral("Fichier : ") + (name.isEmpty() ? QStringLiteral("--") : name));
             }
             if (closedLoop) {
                 const bool on = closedLoop->property("checked").isValid()
