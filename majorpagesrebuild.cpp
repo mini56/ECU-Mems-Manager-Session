@@ -123,7 +123,7 @@ static void composeSettings(QMainWindow *window)
         QFrame *box=new QFrame(metrics);box->setStyleSheet(QStringLiteral("background:#0b1116;border:1px solid #27323b;border-radius:4px;"));
         QVBoxLayout *bv=new QVBoxLayout(box);bv->setContentsMargins(6,6,6,6);bv->setSpacing(3);
         QLabel *tl=new QLabel(QString::fromUtf8(titles[i]),box);QFont tf=tl->font();tf.setBold(true);tf.setPointSizeF(7.2);tl->setFont(tf);tl->setAlignment(Qt::AlignCenter);tl->setStyleSheet(QStringLiteral("color:#cfd6dc;background:transparent;border:0;"));bv->addWidget(tl);
-        if(gauges[i]){gauges[i]->setParent(box);gauges[i]->setMinimumHeight(120);gauges[i]->setMaximumHeight(180);gauges[i]->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);gauges[i]->show();bv->addWidget(gauges[i],1);}
+        if(gauges[i]){gauges[i]->setParent(box);gauges[i]->setMinimumHeight(80);gauges[i]->setMaximumHeight(130);gauges[i]->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);gauges[i]->show();bv->addWidget(gauges[i],1);}
         mg->addWidget(box,i<3?0:1,i<3?i:i-3);
     }
     static_cast<QVBoxLayout*>(metrics->layout())->addLayout(mg,1);
@@ -193,7 +193,7 @@ protected:bool eventFilter(QObject*watched,QEvent*event)override
     {
         if((event->type()!=QEvent::Show&&event->type()!=QEvent::Polish)||!watched)return QObject::eventFilter(watched,event);
         QMainWindow *w=qobject_cast<QMainWindow*>(watched);if(!w||w->objectName()!=QStringLiteral("MainWindow")||w->property("majorPagesInstaller").toBool())return QObject::eventFilter(watched,event);
-        w->setProperty("majorPagesInstaller",true);QTimer::singleShot(320,w,[w](){composeSettings(w);composeErrors(w);composeActuators(w);});return QObject::eventFilter(watched,event);
+        w->setProperty("majorPagesInstaller",true);QTimer::singleShot(60,w,[w](){composeSettings(w);composeErrors(w);composeActuators(w);});return QObject::eventFilter(watched,event);
     }
 };
 
