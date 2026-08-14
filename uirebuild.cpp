@@ -160,9 +160,6 @@ static void composeGenericPage(QWidget *page, const QString &title)
     page->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
     page->setAttribute(Qt::WA_StyledBackground,true);
 
-    // Dynamic pages already have coherent functional layouts (Diagnostic,
-    // ECU/ROSCO, summary tables...). Preserve them intact and only add the
-    // approved page heading/margins instead of dismantling their controls.
     if (QBoxLayout *existing=qobject_cast<QBoxLayout*>(page->layout())) {
         existing->setContentsMargins(15,12,15,12);
         existing->setSpacing(qMax(9,existing->spacing()));
@@ -171,8 +168,6 @@ static void composeGenericPage(QWidget *page, const QString &title)
         return;
     }
 
-    // Historical .ui pages use absolute child containers. Recompose those
-    // containers into a responsive two-column card grid.
     QList<QWidget*> blocks=directLayoutBlocks(page);
     QVBoxLayout *root=new QVBoxLayout(page);
     root->setContentsMargins(15,12,15,12);
@@ -296,7 +291,13 @@ private:
         const int oldIndex=root->indexOf(tabs);if(oldIndex>=0)root->removeWidget(tabs);
         QFrame *workspace=new QFrame(central);workspace->setObjectName(QStringLiteral("uiRebuildWorkspace"));workspace->setAttribute(Qt::WA_StyledBackground,true);workspace->setStyleSheet(QStringLiteral("#uiRebuildWorkspace{background:%1;border:0;}").arg(QString::fromLatin1(kBg)));QHBoxLayout *wh=new QHBoxLayout(workspace);wh->setContentsMargins(0,0,0,0);wh->setSpacing(0);
         QListWidget *nav=new QListWidget(workspace);nav->setObjectName(QStringLiteral("uiRebuildNav"));nav->setFixedWidth(190);nav->setFocusPolicy(Qt::NoFocus);nav->setUniformItemSizes(true);nav->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);nav->setStyleSheet(QStringLiteral("#uiRebuildNav{background:#0d1318;color:#c7d0d6;border:0;border-right:1px solid %1;padding:8px 0;}#uiRebuildNav::item{min-height:35px;padding:2px 14px;border-left:3px solid transparent;font-weight:650;}#uiRebuildNav::item:hover{background:#161d23;color:white;}#uiRebuildNav::item:selected{background:#1c211f;color:%2;border-left:3px solid %3;}").arg(QString::fromLatin1(kBorder),QString::fromLatin1(kOrange2),QString::fromLatin1(kOrange)));
-        for(int i=0;i<tabs->count();++i)nav->addItem(titleForIndex(tabs,i));nav->setCurrentRow(tabs->currentIndex());tabs->tabBar()->hide();tabs->setStyleSheet(QStringLiteral("QTabWidget::pane{border:0;background:%1;}").arg(QString::fromLatin1(kBg)));wh->addWidget(nav);wh->addWidget(tabs,1);root->insertWidget(oldIndex<0?1:oldIndex,workspace,1);QObject::connect(nav,&QListWidget::currentRowChanged,tabs,&QTabWidget::setCurrentIndex);QObject::connect(tabs,&QTabWidget::currentChanged,nav,&QListWidget::setCurrentRow);
+        for(int i=0;i<tabs->count();++i)nav->addItem(titleForIndex(tabs,i));
+        nav->setCurrentRow(tabs->currentIndex());
+        tabs->tabBar()->hide();
+        tabs->setStyleSheet(QStringLiteral("QTabWidget::pane{border:0;background:%1;}").arg(QString::fromLatin1(kBg)));
+        wh->addWidget(nav);wh->addWidget(tabs,1);root->insertWidget(oldIndex<0?1:oldIndex,workspace,1);
+        QObject::connect(nav,&QListWidget::currentRowChanged,tabs,&QTabWidget::setCurrentIndex);
+        QObject::connect(tabs,&QTabWidget::currentChanged,nav,[nav](int row){ nav->setCurrentRow(row); });
         for(int i=0;i<tabs->count();++i){QWidget *page=realPage(tabs->widget(i));if(!page)continue;if(QScrollArea *scroll=qobject_cast<QScrollArea*>(tabs->widget(i))){scroll->setWidgetResizable(true);scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);page->setMinimumSize(0,0);}const QString title=titleForIndex(tabs,i);if(page->objectName()!=QStringLiteral("overview_tab")&&page->objectName()!=QStringLiteral("recorder_tab")&&QString::fromLatin1(page->metaObject()->className())!=QStringLiteral("AnalysisTab"))composeGenericPage(page,title);}
         root->addWidget(buildBottomStatus(window));tabs->setCurrentIndex(0);
     }
