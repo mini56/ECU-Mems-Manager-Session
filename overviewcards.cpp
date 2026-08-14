@@ -48,25 +48,28 @@ protected:
         QPainter p(this);
         p.setRenderHint(QPainter::Antialiasing);
 
-        // 238 x 252 is the approved card reference size. Everything inside the
-        // card is painted from this single proportional factor so ScreenFit can
-        // resize the card without changing its composition.
+        // Reference card: same composition at every resolution. ScreenFit only
+        // changes this single proportional factor; no alternate layout is used.
         const qreal sx = width() / 238.0;
         const qreal sy = height() / 252.0;
         const qreal s = qBound<qreal>(0.62, qMin(sx, sy), 1.35);
-        const qreal px = qMax<qreal>(1.0, s);
+        const qreal line = qMax<qreal>(0.8, s);
 
-        const QRectF card = rect().adjusted(px,px,-px,-px);
-        QLinearGradient cardGrad(card.topLeft(), card.bottomRight());
-        cardGrad.setColorAt(0.0, QColor("#1b2026"));
-        cardGrad.setColorAt(1.0, QColor("#11151a"));
-        p.setPen(QPen(QColor("#343b43"), px));
-        p.setBrush(cardGrad);
-        p.drawRoundedRect(card, 10*s, 10*s);
+        const QRectF card = rect().adjusted(line, line, -line, -line);
+        p.setPen(QPen(QColor("#27313a"), line));
+        p.setBrush(QColor("#0d1217"));
+        p.drawRoundedRect(card, 3.0*s, 3.0*s);
 
-        p.setPen(QColor("#e9edf0"));
-        QFont tf = p.font(); tf.setPointSizeF(qBound<qreal>(6.5, 8.0*s, 10.5)); tf.setBold(true); p.setFont(tf);
-        p.drawText(QRectF(8*s,6*s,width()-16*s,18*s), Qt::AlignCenter, m_title);
+        // Header strip exactly follows the compact DARK PRO language of the mock-up.
+        const QRectF titleRect(7*s, 5*s, width()-14*s, 17*s);
+        p.setPen(QColor("#cfd6dc"));
+        QFont titleFont=p.font();
+        titleFont.setPointSizeF(qBound<qreal>(5.8, 6.8*s, 8.5));
+        titleFont.setBold(true);
+        p.setFont(titleFont);
+        p.drawText(titleRect, Qt::AlignHCenter|Qt::AlignVCenter, m_title.toUpper());
+        p.setPen(QPen(QColor("#202a32"), line));
+        p.drawLine(QPointF(7*s,24*s),QPointF(width()-7*s,24*s));
 
         const double value = m_source ? m_source->property("value").toDouble() : 0.0;
         double minv = m_source ? m_source->property("minimum").toDouble() : 0.0;
@@ -74,109 +77,153 @@ protected:
         if (qFuzzyCompare(minv,maxv)) { minv=0.0; maxv=100.0; }
         const QString suffix = m_source ? m_source->property("suffix").toString().trimmed() : QString();
 
-        const qreal gaugeTop = 26.0*s;
-        const qreal trendH = 48.0*s;
-        const qreal trendBottom = height()-9.0*s;
-        const QRectF trendRect(10*s, trendBottom-trendH, width()-20*s, trendH);
-        const qreal gaugeAvailableH = trendRect.top()-gaugeTop-4.0*s;
-        const qreal diameter = qMin<qreal>(width()-28.0*s, gaugeAvailableH);
-        const QPointF center(width()/2.0, gaugeTop + diameter/2.0 + 1.0*s);
-        const qreal radius = diameter/2.0;
+        // Gauge occupies the upper card, history trace remains immediately below it.
+        const QRectF trendRect(8*s, 204*s, width()-16*s, 39*s);
+        const QPointF center(width()/2.0, 104*s);
+        const qreal radius = qMin<qreal>(88*s, (width()-30*s)/2.0);
 
-        QRadialGradient face(center, radius, center-QPointF(radius*0.25,radius*0.30));
-        face.setColorAt(0.0, QColor("#20262d"));
-        face.setColorAt(0.70, QColor("#11161c"));
-        face.setColorAt(1.0, QColor("#070a0e"));
-        p.setPen(QPen(QColor("#4b535d"), 2*s));
-        p.setBrush(face);
+        // Crisp layered dial, deliberately flatter than the previous gradient card.
+        p.setPen(QPen(QColor("#303b45"), 1.2*s));
+        p.setBrush(QColor("#080c10"));
         p.drawEllipse(center, radius, radius);
-        p.setPen(QPen(QColor("#242a31"), 5*s));
+        p.setPen(QPen(QColor("#131b22"), 4.0*s));
         p.setBrush(Qt::NoBrush);
-        p.drawEllipse(center, radius-5*s, radius-5*s);
+        p.drawEllipse(center, radius-4.5*s, radius-4.5*s);
+        p.setPen(QPen(QColor("#3a4651"), 0.9*s));
+        p.drawEllipse(center, radius-9*s, radius-9*s);
 
-        const qreal startDeg = -135.0;
-        const qreal sweepDeg = 270.0;
+        const qreal startDeg=-135.0;
+        const qreal sweepDeg=270.0;
         p.save();
         p.translate(center);
-        for (int i=0;i<=40;++i) {
-            const bool major=(i%5)==0;
-            const qreal a=qDegreesToRadians(startDeg + sweepDeg*i/40.0);
+        for (int i=0;i<=60;++i) {
+            const bool major=(i%10)==0;
+            const bool medium=(!major && i%5==0);
+            const qreal a=qDegreesToRadians(startDeg+sweepDeg*i/60.0);
             const qreal outer=radius-10*s;
-            const qreal inner=outer-(major?9*s:5*s);
-            QPointF po(qCos(a)*outer,qSin(a)*outer);
-            QPointF pi(qCos(a)*inner,qSin(a)*inner);
-            p.setPen(QPen(major?QColor("#e5e8eb"):QColor("#7f8994"), (major?1.5:0.8)*s));
+            const qreal len=(major?10.5:(medium?7.5:4.5))*s;
+            const QPointF po(qCos(a)*outer,qSin(a)*outer);
+            const QPointF pi(qCos(a)*(outer-len),qSin(a)*(outer-len));
+
+            QColor tick("#8c959e");
+            if (major) tick=QColor("#d8dde1");
+            // The approved reference has an orange/red high-end warning sector.
+            if (i>=54) tick=QColor("#f04b32");
+            else if (i>=49) tick=QColor("#ff8a1c");
+            p.setPen(QPen(tick,(major?1.25:(medium?1.0:0.7))*s,Qt::SolidLine,Qt::FlatCap));
             p.drawLine(pi,po);
         }
         p.restore();
 
-        QFont sf=p.font(); sf.setPointSizeF(qBound<qreal>(5.8, 7.0*s, 9.0)); sf.setBold(false); p.setFont(sf);
-        p.setPen(QColor("#d8dde1"));
-        for (int i=0;i<=4;++i) {
-            const double fv=minv+(maxv-minv)*i/4.0;
-            const qreal a=qDegreesToRadians(startDeg+sweepDeg*i/4.0);
-            const qreal rr=radius-27*s;
+        // Six clean numeric marks, kept small like the visual reference.
+        QFont scaleFont=p.font();
+        scaleFont.setPointSizeF(qBound<qreal>(4.8,5.8*s,7.2));
+        scaleFont.setBold(false);
+        p.setFont(scaleFont);
+        p.setPen(QColor("#aeb6bd"));
+        for (int i=0;i<=5;++i) {
+            const double fv=minv+(maxv-minv)*i/5.0;
+            const qreal a=qDegreesToRadians(startDeg+sweepDeg*i/5.0);
+            const qreal rr=radius-26*s;
             const QPointF pos=center+QPointF(qCos(a)*rr,qSin(a)*rr);
-            QString txt;
             const double span=qAbs(maxv-minv);
-            if (span<=20.0) txt=QString::number(fv,'f',1);
-            else txt=QString::number(fv,'f',0);
-            QRectF tr(pos.x()-24*s,pos.y()-8*s,48*s,16*s);
-            p.drawText(tr,Qt::AlignCenter,txt);
+            const QString txt=span<=20.0 ? QString::number(fv,'f',1) : QString::number(fv,'f',0);
+            p.drawText(QRectF(pos.x()-20*s,pos.y()-6*s,40*s,12*s),Qt::AlignCenter,txt);
         }
 
         double norm=(value-minv)/(maxv-minv);
+        const bool inRange=(value>=minv && value<=maxv);
         norm=qBound(0.0,norm,1.0);
         const qreal needleDeg=startDeg+sweepDeg*norm;
         const qreal na=qDegreesToRadians(needleDeg);
-        const QPointF tip=center+QPointF(qCos(na)*(radius-22*s),qSin(na)*(radius-22*s));
-        const QPointF tail=center-QPointF(qCos(na)*12*s,qSin(na)*12*s);
+        const QPointF tip=center+QPointF(qCos(na)*(radius-23*s),qSin(na)*(radius-23*s));
+        const QPointF tail=center-QPointF(qCos(na)*9*s,qSin(na)*9*s);
 
-        QPen glow(QColor(255,123,0,70),7*s,Qt::SolidLine,Qt::RoundCap);
-        p.setPen(glow); p.drawLine(tail,tip);
-        p.setPen(QPen(QColor("#ff8a1c"),3*s,Qt::SolidLine,Qt::RoundCap));
+        // Thin orange needle and small metallic hub: no oversized glow.
+        p.setPen(QPen(QColor(255,104,0,75),4.2*s,Qt::SolidLine,Qt::RoundCap));
         p.drawLine(tail,tip);
+        p.setPen(QPen(QColor("#ff7200"),1.8*s,Qt::SolidLine,Qt::RoundCap));
+        p.drawLine(tail,tip);
+        p.setPen(QPen(QColor("#56616b"),0.8*s));
+        p.setBrush(QColor("#1c242b"));
+        p.drawEllipse(center,5.0*s,5.0*s);
         p.setPen(Qt::NoPen);
-        p.setBrush(QColor("#ff9b32")); p.drawEllipse(center,5.5*s,5.5*s);
-        p.setBrush(QColor("#242a31")); p.drawEllipse(center,2.4*s,2.4*s);
+        p.setBrush(QColor("#ff7200"));
+        p.drawEllipse(center,2.1*s,2.1*s);
 
-        QFont vf=p.font(); vf.setPointSizeF(qBound<qreal>(11.0, 16.0*s, 20.0)); vf.setBold(false); p.setFont(vf);
-        p.setPen(QColor("#ffffff"));
+        // Large central value and smaller unit, matching the hierarchy of the mock-up.
+        QFont valueFont=p.font();
+        valueFont.setPointSizeF(qBound<qreal>(10.0,14.5*s,18.0));
+        valueFont.setBold(true);
+        p.setFont(valueFont);
+        p.setPen(QColor("#f4f6f7"));
         QString valueText;
-        if (qAbs(value) < 10.0 && qAbs(maxv-minv)<=40.0) valueText=QString::number(value,'f',1);
+        if (qAbs(value)<10.0 && qAbs(maxv-minv)<=40.0) valueText=QString::number(value,'f',1);
         else valueText=QString::number(value,'f',0);
-        p.drawText(QRectF(center.x()-62*s,center.y()+18*s,124*s,25*s),Qt::AlignCenter,valueText);
-        if (!suffix.isEmpty()) {
-            QFont uf=p.font(); uf.setPointSizeF(qBound<qreal>(5.8, 7.0*s, 9.0)); uf.setBold(false); p.setFont(uf);
-            p.setPen(QColor("#aeb6bd"));
-            QString clean=suffix; clean.remove('['); clean.remove(']');
-            p.drawText(QRectF(center.x()-58*s,center.y()+41*s,116*s,14*s),Qt::AlignCenter,clean.trimmed());
+        p.drawText(QRectF(center.x()-58*s,center.y()+14*s,116*s,24*s),Qt::AlignCenter,valueText);
+
+        QString cleanSuffix=suffix;
+        cleanSuffix.remove('['); cleanSuffix.remove(']');
+        if (!cleanSuffix.trimmed().isEmpty()) {
+            QFont unitFont=p.font();
+            unitFont.setPointSizeF(qBound<qreal>(4.8,5.9*s,7.2));
+            unitFont.setBold(false);
+            p.setFont(unitFont);
+            p.setPen(QColor("#a3adb5"));
+            p.drawText(QRectF(center.x()-52*s,center.y()+35*s,104*s,12*s),Qt::AlignCenter,cleanSuffix.trimmed());
         }
 
-        p.setPen(QPen(QColor("#303740"),px));
-        p.setBrush(QColor("#0d1116"));
-        p.drawRoundedRect(trendRect,4*s,4*s);
+        // Real state: NORMAL means the current value is inside the declared gauge range.
+        QFont statusFont=p.font();
+        statusFont.setPointSizeF(qBound<qreal>(4.8,5.6*s,6.8));
+        statusFont.setBold(true);
+        p.setFont(statusFont);
+        p.setPen(inRange ? QColor("#63d66f") : QColor("#ff5a42"));
+        p.drawText(QRectF(8*s,181*s,width()-16*s,14*s),Qt::AlignCenter,
+                   inRange ? QStringLiteral("NORMAL") : QStringLiteral("HORS PLAGE"));
+
+        // 2-minute trace integrated immediately below each dial.
+        p.setPen(QPen(QColor("#253039"),line));
+        p.setBrush(QColor("#090e13"));
+        p.drawRoundedRect(trendRect,2.0*s,2.0*s);
         for (int i=1;i<4;++i) {
             const qreal y=trendRect.top()+trendRect.height()*i/4.0;
-            p.setPen(QPen(QColor("#232930"),qMax<qreal>(0.7,0.8*s)));
-            p.drawLine(trendRect.left()+4*s,y,trendRect.right()-4*s,y);
+            p.setPen(QPen(QColor("#192229"),qMax<qreal>(0.6,0.7*s)));
+            p.drawLine(trendRect.left()+3*s,y,trendRect.right()-3*s,y);
         }
+        for (int i=1;i<6;++i) {
+            const qreal x=trendRect.left()+trendRect.width()*i/6.0;
+            p.setPen(QPen(QColor("#141c23"),qMax<qreal>(0.5,0.6*s)));
+            p.drawLine(x,trendRect.top()+3*s,x,trendRect.bottom()-3*s);
+        }
+
         if (m_history.size()>1) {
             double hmin=m_history.first().second,hmax=hmin;
             for (const auto &pt:m_history) { hmin=qMin(hmin,pt.second); hmax=qMax(hmax,pt.second); }
             if (qAbs(hmax-hmin)<0.001) { hmin-=1.0; hmax+=1.0; }
             const qint64 tmax=m_history.last().first;
             const qint64 tmin=qMax<qint64>(0,tmax-120000);
-            QPainterPath path; bool first=true;
+            QPainterPath path;
+            bool first=true;
             for (const auto &pt:m_history) {
                 if (pt.first<tmin) continue;
-                const qreal x=trendRect.left()+4*s+((pt.first-tmin)/120000.0)*(trendRect.width()-8*s);
-                const qreal y=trendRect.bottom()-4*s-((pt.second-hmin)/(hmax-hmin))*(trendRect.height()-8*s);
-                if (first) { path.moveTo(x,y); first=false; } else path.lineTo(x,y);
+                const qreal x=trendRect.left()+3*s+((pt.first-tmin)/120000.0)*(trendRect.width()-6*s);
+                const qreal y=trendRect.bottom()-3*s-((pt.second-hmin)/(hmax-hmin))*(trendRect.height()-6*s);
+                if (first) { path.moveTo(x,y); first=false; }
+                else path.lineTo(x,y);
             }
-            p.setPen(QPen(QColor(255,138,28,65),4*s,Qt::SolidLine,Qt::RoundCap)); p.drawPath(path);
-            p.setPen(QPen(QColor("#ff8a1c"),qMax<qreal>(1.0,1.5*s))); p.drawPath(path);
+            p.setPen(QPen(QColor(255,114,0,55),3.0*s,Qt::SolidLine,Qt::RoundCap));
+            p.drawPath(path);
+            p.setPen(QPen(QColor("#ff7200"),qMax<qreal>(0.9,1.25*s),Qt::SolidLine,Qt::RoundCap));
+            p.drawPath(path);
         }
+
+        QFont traceFont=p.font();
+        traceFont.setPointSizeF(qBound<qreal>(4.2,4.8*s,5.8));
+        traceFont.setBold(false);
+        p.setFont(traceFont);
+        p.setPen(QColor("#59636c"));
+        p.drawText(QRectF(trendRect.left()+4*s,trendRect.top()+2*s,35*s,9*s),Qt::AlignLeft,QStringLiteral("-2 min"));
     }
 
 private:
@@ -201,7 +248,7 @@ protected:
                 QWidget *overview=window->findChild<QWidget*>(QStringLiteral("overview_tab"));
                 if (overview) {
                     window->setProperty("overviewCardsInstalled", true);
-                    QTimer::singleShot(180, window, [window,overview](){
+                    QTimer::singleShot(0, window, [window,overview](){
                         struct Item { const char *source; const char *label; };
                         const Item items[10] = {
                             {"m_revCounter","m_revCounterLabel"},
