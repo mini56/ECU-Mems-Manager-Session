@@ -6,14 +6,31 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMainWindow>
+#include <QMenu>
+#include <QMenuBar>
+#include <QMouseEvent>
 #include <QPushButton>
 #include <QTimer>
 #include <QToolButton>
 #include <QVBoxLayout>
+#include <functional>
 
 #include "i18n.h"
 
 namespace {
+
+class ClickableFrame : public QFrame
+{
+public:
+    explicit ClickableFrame(QWidget *parent=nullptr) : QFrame(parent) { setCursor(Qt::PointingHandCursor); }
+    std::function<void()> onClick;
+protected:
+    void mousePressEvent(QMouseEvent *event) override
+    {
+        if (event->button()==Qt::LeftButton && onClick) onClick();
+        QFrame::mousePressEvent(event);
+    }
+};
 
 static QPushButton *makeBlueButton(const QString &text, QWidget *parent)
 {
@@ -25,14 +42,13 @@ static QPushButton *makeBlueButton(const QString &text, QWidget *parent)
         "border-radius:4px;padding:4px 13px;font-weight:600;}"
         "QPushButton:hover{background:#2378e6;}"
         "QPushButton:pressed{background:#1257b0;}"
-        "QPushButton:disabled{background:#20262d;color:#65707a;border-color:#343c45;}"
     );
     return button;
 }
 
-static QFrame *makeStatusChip(QWidget *parent)
+static ClickableFrame *makeStatusChip(QWidget *parent)
 {
-    QFrame *chip = new QFrame(parent);
+    ClickableFrame *chip = new ClickableFrame(parent);
     chip->setStyleSheet(
         "QFrame{background:#151a20;border:1px solid #313943;border-radius:4px;}"
         "QLabel{color:#dce2e7;background:transparent;border:0;}"
@@ -66,9 +82,11 @@ private:
         QVBoxLayout *root=central ? qobject_cast<QVBoxLayout*>(central->layout()) : nullptr;
         if (!central || !root) return;
 
-        // Keep the classic application menu available; no extra hamburger menu is added.
+        // Exact visual structure of the approved top mock-up.
+        // Historical controls stay alive underneath as the functional back-end.
         QWidget *legacy=central->findChild<QWidget*>(QStringLiteral("layoutWidget_7"));
         if (legacy) legacy->hide();
+        if (window->menuBar()) window->menuBar()->hide();
 
         QFrame *oldModeBar=central->findChild<QFrame*>(QStringLiteral("modernModeBar"));
         QComboBox *modeBox=oldModeBar ? oldModeBar->findChild<QComboBox*>() : nullptr;
@@ -86,15 +104,30 @@ private:
             "border-radius:4px;padding:4px 10px;min-width:92px;}"
         );
         QHBoxLayout *layout=new QHBoxLayout(bar);
-        layout->setContentsMargins(10,6,10,6);
+        layout->setContentsMargins(8,6,8,6);
         layout->setSpacing(8);
+
+        // Left three-line menu visible in the approved mock-up.
+        QToolButton *menuButton=new QToolButton(bar);
+        menuButton->setText(QString::fromUtf8("☰"));
+        menuButton->setFixedSize(31,28);
+        QMenu *menu=new QMenu(menuButton);
+        if (QAction *a=window->findChild<QAction*>(QStringLiteral("m_editSettingsAction"))) menu->addAction(a);
+        if (QAction *a=window->findChild<QAction*>(QStringLiteral("m_helpContentsAction"))) menu->addAction(a);
+        if (QAction *a=window->findChild<QAction*>(QStringLiteral("m_helpAboutAction"))) menu->addAction(a);
+        menu->addSeparator();
+        if (QAction *a=window->findChild<QAction*>(QStringLiteral("m_exitAction"))) menu->addAction(a);
+        menuButton->setMenu(menu);
+        menuButton->setPopupMode(QToolButton::InstantPopup);
+        layout->addWidget(menuButton);
 
         QLabel *brand=new QLabel(QStringLiteral("ECU MEMS MANAGER"),bar);
         brand->setStyleSheet("color:#f2f5f7;font-weight:700;letter-spacing:.4px;");
         layout->addWidget(brand);
         layout->addSpacing(10);
 
-        QFrame *commChip=makeStatusChip(bar);
+        // Communication chip: same visual as mock-up; click toggles Connect/Disconnect.
+        ClickableFrame *commChip=makeStatusChip(bar);
         QHBoxLayout *commLayout=new QHBoxLayout(commChip);
         commLayout->setContentsMargins(9,2,7,2);
         commLayout->setSpacing(5);
@@ -106,7 +139,8 @@ private:
         commLayout->addWidget(commDot);
         layout->addWidget(commChip);
 
-        QFrame *errorChip=makeStatusChip(bar);
+        ClickableFrame *errorChip=makeStatusChip(bar);
+        errorChip->setCursor(Qt::ArrowCursor);
         QHBoxLayout *errLayout=new QHBoxLayout(errorChip);
         errLayout->setContentsMargins(9,2,7,2);
         errLayout->setSpacing(5);
@@ -123,6 +157,8 @@ private:
         QLabel *ecuLabel=window->findChild<QLabel*>(QStringLiteral("m_ecuIdLabel"));
         QLabel *ecuMirror=new QLabel(ecuLabel ? ecuLabel->text() : I18n::text(104),bar);
         ecuMirror->setObjectName(QStringLiteral("modernEcuIdLabel"));
+        ecuMirror->setMinimumWidth(155);
+        ecuMirror->setAlignment(Qt::AlignCenter);
         ecuMirror->setStyleSheet("color:#d8dde2;background:#151a20;border:1px solid #313943;border-radius:4px;padding:5px 12px;");
         layout->addWidget(ecuMirror);
 
@@ -135,18 +171,10 @@ private:
             modeBox->show();
         }
 
-        QPushButton *connect=makeBlueButton(I18n::text(101),bar);
-        QPushButton *disconnect=makeBlueButton(I18n::text(103),bar);
         QPushButton *snapshot=makeBlueButton(I18n::text(7015),bar);
         QPushButton *captures=makeBlueButton(I18n::text(7016),bar);
-
-        QObject::connect(connect,&QPushButton::clicked,window,[window](){QMetaObject::invokeMethod(window,"onConnectClicked",Qt::QueuedConnection);});
-        QObject::connect(disconnect,&QPushButton::clicked,window,[window](){QMetaObject::invokeMethod(window,"onDisconnectClicked",Qt::QueuedConnection);});
         QObject::connect(snapshot,&QPushButton::clicked,window,[window](){QMetaObject::invokeMethod(window,"onSnapshotClicked",Qt::QueuedConnection);});
         QObject::connect(captures,&QPushButton::clicked,window,[window](){QMetaObject::invokeMethod(window,"onViewCapturesClicked",Qt::QueuedConnection);});
-
-        layout->addWidget(connect);
-        layout->addWidget(disconnect);
         layout->addWidget(snapshot);
         layout->addWidget(captures);
 
@@ -163,19 +191,22 @@ private:
         QObject *goodLed=window->findChild<QObject*>(QStringLiteral("m_commsGoodLed"));
         QObject *errorLed=window->findChild<QObject*>(QStringLiteral("m_engine_error"));
 
+        commChip->onClick=[window,legacyDisconnect](){
+            const bool connected=legacyDisconnect && legacyDisconnect->isEnabled();
+            QMetaObject::invokeMethod(window,connected?"onDisconnectClicked":"onConnectClicked",Qt::QueuedConnection);
+        };
+
         QTimer *sync=new QTimer(bar);
         sync->setInterval(250);
         QObject::connect(sync,&QTimer::timeout,bar,[=](){
             if (ecuLabel) ecuMirror->setText(ecuLabel->text());
             const bool connected=legacyDisconnect && legacyDisconnect->isEnabled();
-            const bool canConnect=legacyConnect ? legacyConnect->isEnabled() : !connected;
-            connect->setEnabled(canConnect);
-            disconnect->setEnabled(connected);
             commDot->setStyleSheet(QStringLiteral("color:%1;font-size:15px;border:0;background:transparent;").arg(connected?QStringLiteral("#1ed760"):QStringLiteral("#31553d")));
             if (goodLed && goodLed->property("checked").isValid() && goodLed->property("checked").toBool())
                 commDot->setStyleSheet("color:#1ed760;font-size:15px;border:0;background:transparent;");
             const bool errorOn=errorLed && errorLed->property("checked").toBool();
             errDot->setStyleSheet(QStringLiteral("color:%1;font-size:15px;border:0;background:transparent;").arg(errorOn?QStringLiteral("#d83b43"):QStringLiteral("#702126")));
+            if (oldModeBar) oldModeBar->hide();
         });
         sync->start();
     }
