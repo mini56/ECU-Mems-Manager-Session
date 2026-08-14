@@ -21,7 +21,7 @@ protected:
             if (window && window->objectName()==QStringLiteral("MainWindow") &&
                 !window->property("mockupThemeInstalled").toBool()) {
                 window->setProperty("mockupThemeInstalled", true);
-                QTimer::singleShot(80, window, [window](){ apply(window); });
+                QTimer::singleShot(0, window, [window](){ apply(window); });
             }
         }
         return QObject::eventFilter(watched,event);
