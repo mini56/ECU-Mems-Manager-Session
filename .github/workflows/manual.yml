@@ -73,6 +73,7 @@ jobs:
           $qtBin = "$qtRoot\bin"
           $qtPlugins = "$qtRoot\plugins"
           $mingwBin = "C:\Qt\Tools\mingw810_32\bin"
+          $build = "${{ github.workspace }}\build"
           $dist = "${{ github.workspace }}\dist"
 
           if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }
@@ -83,8 +84,15 @@ jobs:
           New-Item -ItemType Directory -Path "$dist\iconengines" | Out-Null
           New-Item -ItemType Directory -Path "$dist\styles" | Out-Null
 
-          Copy-Item "${{ github.workspace }}\build\ecu_mems_manager.exe" "$dist\ecu_mems_manager.exe" -Force
+          Copy-Item "$build\ecu_mems_manager.exe" "$dist\ecu_mems_manager.exe" -Force
           Copy-Item "${{ github.workspace }}\prebuilt-librosco\librosco.dll" "$dist\librosco.dll" -Force
+
+          # Les traductions sont generees/copied par CMake dans build/translations.
+          # Elles sont obligatoires : sans elles l'I18n affiche [0101], [3001], etc.
+          if (-not (Test-Path "$build\translations")) {
+            throw "Dossier de traductions absent du build"
+          }
+          Copy-Item "$build\translations" "$dist\translations" -Recurse -Force
 
           $rootDlls = @(
             "$qtBin\Qt5Core.dll",
@@ -101,20 +109,17 @@ jobs:
             Copy-Item $dll $dist -Force
           }
 
-          # Bibliotheques graphiques Qt presentes dans la distribution officielle.
           foreach ($name in @("libEGL.dll","libGLESv2.dll","D3Dcompiler_47.dll","opengl32sw.dll")) {
             $src = Join-Path $qtBin $name
             if (Test-Path $src) { Copy-Item $src $dist -Force }
           }
 
-          # Plugins strictement necessaires / utiles au programme.
           Copy-Item "$qtPlugins\platforms\qwindows.dll" "$dist\platforms\qwindows.dll" -Force
           Copy-Item "$qtPlugins\sqldrivers\qsqlite.dll" "$dist\sqldrivers\qsqlite.dll" -Force
           if (Test-Path "$qtPlugins\imageformats") { Copy-Item "$qtPlugins\imageformats\*.dll" "$dist\imageformats\" -Force }
           if (Test-Path "$qtPlugins\iconengines") { Copy-Item "$qtPlugins\iconengines\*.dll" "$dist\iconengines\" -Force }
           if (Test-Path "$qtPlugins\styles") { Copy-Item "$qtPlugins\styles\*.dll" "$dist\styles\" -Force }
 
-          # Verification bloquante du dossier reellement publie.
           $required = @(
             "ecu_mems_manager.exe",
             "Qt5Core.dll",
@@ -126,7 +131,13 @@ jobs:
             "libwinpthread-1.dll",
             "librosco.dll",
             "platforms\qwindows.dll",
-            "sqldrivers\qsqlite.dll"
+            "sqldrivers\qsqlite.dll",
+            "translations\fr\fr.json",
+            "translations\en\en.json",
+            "translations\es\es.json",
+            "translations\it\it.json",
+            "translations\pt\pt.json",
+            "translations\de\de.json"
           )
           foreach ($file in $required) {
             $full = Join-Path $dist $file
@@ -134,6 +145,15 @@ jobs:
             if ((Get-Item $full).Length -le 0) { throw "Fichier obligatoire vide: $file" }
             Write-Host "OK: $file - $((Get-Item $full).Length) octets"
           }
+
+          # Test de demarrage reel : si une DLL/plugin manque, le processus quitte immediatement.
+          $proc = Start-Process "$dist\ecu_mems_manager.exe" -WorkingDirectory $dist -PassThru
+          Start-Sleep -Seconds 5
+          if ($proc.HasExited) {
+            throw "L'application a quitte pendant le smoke test (code $($proc.ExitCode))"
+          }
+          Stop-Process -Id $proc.Id -Force
+          Write-Host "OK: l'application reste lancee pendant le smoke test Windows"
 
           Write-Host "Package Windows verifie:"
           Get-ChildItem $dist -Recurse | Select-Object FullName,Length
