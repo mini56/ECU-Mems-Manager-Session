@@ -27,6 +27,8 @@ protected:
             QString::fromLatin1(widget->metaObject()->className()) == QStringLiteral("AnalysisTab") &&
             !widget->property("analysisModernized").toBool()) {
             widget->setProperty("analysisModernized", true);
+            const qreal initialPointSize = widget->font().pointSizeF() > 0 ? widget->font().pointSizeF() : 9.0;
+            widget->setProperty("analysisBaseFontPointSize", initialPointSize);
             QTimer::singleShot(0, widget, [widget]() { apply(widget); });
         }
 
@@ -54,12 +56,14 @@ private:
             "QCheckBox{spacing:7px;padding:4px 2px;color:#dce2e7;background:transparent;}"
             "QCheckBox::indicator{width:14px;height:14px;border:1px solid #47515c;"
             "border-radius:3px;background:#0d1116;}"
+            "QCheckBox::indicator:checked{background:#1769d2;border-color:#2d7ee8;}"
             "QScrollBar:vertical{background:#10151a;width:10px;margin:1px;}"
             "QScrollBar::handle:vertical{background:#39434d;border-radius:4px;min-height:28px;}"
             "QScrollBar::handle:vertical:hover{background:#4a5662;}"
             "QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical{height:0;}"
             "QScrollBar:horizontal{background:#10151a;height:10px;margin:1px;}"
             "QScrollBar::handle:horizontal{background:#39434d;border-radius:4px;min-width:28px;}"
+            "QScrollBar::handle:horizontal:hover{background:#4a5662;}"
             "QScrollBar::add-line:horizontal,QScrollBar::sub-line:horizontal{width:0;}"
         );
 
@@ -75,7 +79,6 @@ private:
             scroll->setWidgetResizable(true);
         }
 
-        tab->installEventFilter(qApp);
         fit(tab);
     }
 
@@ -85,18 +88,42 @@ private:
         if (!left)
             return;
 
-        const int available = qMax(640, tab->width());
-        // Preserve the approved composition: selector panel remains about a
-        // quarter of the working area, but scales smoothly on smaller screens.
-        const int target = qBound(220, qRound(available * 0.245), 330);
+        const int availableWidth = qMax(640, tab->width());
+        const int availableHeight = qMax(480, tab->height());
+
+        // Keep exactly the approved composition: the selector stays near one
+        // quarter of the work area and only its scale changes with resolution.
+        const int target = qBound(220, qRound(availableWidth * 0.245), 330);
         left->setMinimumWidth(target);
         left->setMaximumWidth(target);
 
-        const qreal scale = qBound<qreal>(0.78, available / 1280.0, 1.12);
+        // Always calculate from the original font size. This prevents the
+        // cumulative growth/shrink drift that occurred after repeated resizes.
+        const qreal basePointSize = tab->property("analysisBaseFontPointSize").isValid()
+            ? tab->property("analysisBaseFontPointSize").toDouble()
+            : 9.0;
+        const qreal widthScale = availableWidth / 1280.0;
+        const qreal heightScale = availableHeight / 820.0;
+        const qreal scale = qBound<qreal>(0.78, qMin(widthScale, heightScale), 1.12);
+
         QFont f = tab->font();
-        const qreal base = f.pointSizeF() > 0 ? f.pointSizeF() : 9.0;
-        f.setPointSizeF(qBound<qreal>(8.0, base * scale, 11.0));
+        f.setPointSizeF(qBound<qreal>(8.0, basePointSize * scale, 11.0));
         tab->setFont(f);
+        tab->setProperty("analysisScale", scale);
+
+        // Stacked analysis graphs retain the same proportions as the validated
+        // mock-up while remaining usable on 1366x768 and larger displays.
+        const QList<QWidget*> children = tab->findChildren<QWidget*>();
+        for (QWidget *child : children) {
+            const QString className = QString::fromLatin1(child->metaObject()->className());
+            if (className == QStringLiteral("SingleChartWidget")) {
+                const int chartHeight = qBound(150, qRound(190.0 * scale), 215);
+                child->setMinimumHeight(chartHeight);
+                child->setMaximumHeight(chartHeight);
+            } else if (className == QStringLiteral("ChartWidget")) {
+                child->setMinimumHeight(qBound(130, qRound(150.0 * scale), 175));
+            }
+        }
     }
 };
 
