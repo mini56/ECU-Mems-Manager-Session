@@ -18,7 +18,6 @@
 #include <QVBoxLayout>
 #include <QVector>
 
-#include "analogwidgets/abstractmeter.h"
 #include "i18n.h"
 
 namespace {
@@ -26,8 +25,8 @@ namespace {
 class MiniTrendWidget : public QWidget
 {
 public:
-    MiniTrendWidget(const QString &title, AbstractMeter *meter, QWidget *parent)
-        : QWidget(parent), m_title(title), m_meter(meter)
+    MiniTrendWidget(const QString &title, QObject *valueSource, QWidget *parent)
+        : QWidget(parent), m_title(title), m_valueSource(valueSource)
     {
         setMinimumHeight(86);
         setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -36,9 +35,11 @@ public:
 
     void sample()
     {
-        if (!m_meter) return;
+        if (!m_valueSource) return;
+        const QVariant value = m_valueSource->property("value");
+        if (!value.isValid()) return;
         const qint64 now = m_clock.elapsed();
-        m_points.append(qMakePair(now, m_meter->value()));
+        m_points.append(qMakePair(now, value.toDouble()));
         const qint64 cutoff = now - 120000;
         int removeCount = 0;
         while (removeCount < m_points.size() && m_points.at(removeCount).first < cutoff)
@@ -82,10 +83,12 @@ protected:
         const qint64 tMin=qMax<qint64>(0, tMax-120000);
 
         QPainterPath path;
+        bool started=false;
         for (int i=0; i<m_points.size(); ++i) {
+            if (m_points[i].first < tMin) continue;
             const double x=plot.left()+((m_points[i].first-tMin)/120000.0)*plot.width();
             const double y=plot.bottom()-((m_points[i].second-vMin)/(vMax-vMin))*plot.height();
-            if (i==0) path.moveTo(x,y); else path.lineTo(x,y);
+            if (!started) { path.moveTo(x,y); started=true; } else path.lineTo(x,y);
         }
         p.setPen(QPen(QColor("#ff8a1c"), 1.7));
         p.drawPath(path);
@@ -97,7 +100,7 @@ protected:
 
 private:
     QString m_title;
-    AbstractMeter *m_meter;
+    QObject *m_valueSource;
     QElapsedTimer m_clock;
     QVector<QPair<qint64,double> > m_points;
 };
@@ -109,9 +112,11 @@ public:
     {
         m_tabs = window->findChild<QTabWidget*>(QStringLiteral("Tab_main"));
         if (!m_tabs) return;
+        if (qApp) qApp->setProperty("ecuDarkTheme", true);
         installModeSelector();
         installDatabasePlaceholder();
         installNavigation();
+        modernizeOverview();
         installOverviewTrends();
         applyMode(m_modeBox ? m_modeBox->currentIndex() : 0);
     }
@@ -155,6 +160,7 @@ private:
     {
         QWidget *database=new QWidget(m_tabs);
         database->setObjectName(QStringLiteral("database_tab"));
+        database->setStyleSheet("#database_tab{background:#171a1f;color:#e7ebee;} #database_tab QLabel{color:#e7ebee;}");
         QVBoxLayout *layout=new QVBoxLayout(database);
         layout->setContentsMargins(28,28,28,28);
         QLabel *heading=new QLabel(I18n::text(7103),database);
@@ -206,6 +212,32 @@ private:
         });
     }
 
+    void modernizeOverview()
+    {
+        QWidget *overview=m_window->findChild<QWidget*>(QStringLiteral("overview_tab"));
+        if (!overview) return;
+        overview->setStyleSheet(
+            "#overview_tab{background:#171a1f;color:#e7ebee;}"
+            "#overview_tab QLabel{color:#dfe4e8;}"
+            "#overview_tab QGroupBox{color:#e7ebee;background:#1b1f24;border:1px solid #343941;border-radius:8px;margin-top:10px;font-weight:600;}"
+            "#overview_tab QGroupBox::title{subcontrol-origin:margin;left:10px;padding:0 5px;color:#ff9b3d;}"
+            "#overview_tab QPushButton{background:#20242a;color:#e7ebee;border:1px solid #3a4047;border-radius:5px;padding:6px 10px;}"
+            "#overview_tab QPushButton:hover{border-color:#ff8a1c;}"
+            "#overview_tab QProgressBar{background:#101317;color:#e7ebee;border:1px solid #343941;border-radius:4px;text-align:center;}"
+            "#overview_tab QProgressBar::chunk{background:#ff8a1c;border-radius:3px;}"
+        );
+
+        const QList<QWidget*> children=overview->findChildren<QWidget*>();
+        for (QWidget *widget : children) {
+            const QMetaObject *meta=widget->metaObject();
+            if (meta->indexOfProperty("value") >= 0 && meta->indexOfProperty("minimum") >= 0) {
+                const QVariant minimum=widget->property("minimum");
+                if (minimum.isValid()) widget->setProperty("minimum", minimum);
+                widget->update();
+            }
+        }
+    }
+
     void installOverviewTrends()
     {
         QWidget *overview=m_window->findChild<QWidget*>(QStringLiteral("overview_tab"));
@@ -213,7 +245,9 @@ private:
 
         QFrame *panel=new QFrame(overview);
         panel->setObjectName(QStringLiteral("trendPanel2min"));
-        panel->setGeometry(25, 600, 1240, 205);
+        const int panelWidth=qMax(760, overview->width()-36);
+        panel->setGeometry(18, 600, panelWidth, 205);
+        panel->setMinimumWidth(760);
         panel->setStyleSheet("#trendPanel2min{background:#20242a;border:1px solid #343941;border-radius:8px;} QLabel{color:#e7ebee;}");
         QVBoxLayout *outer=new QVBoxLayout(panel);
         outer->setContentsMargins(10,8,10,10);
@@ -229,12 +263,13 @@ private:
             {"m_throttle_pos",7110}, {"m_lambda_voltage",7111}, {"m_battery",7114}
         };
         for (int i=0;i<6;++i) {
-            AbstractMeter *meter=m_window->findChild<AbstractMeter*>(QString::fromLatin1(gauges[i].name));
-            MiniTrendWidget *trend=new MiniTrendWidget(I18n::text(gauges[i].titleKey),meter,panel);
+            QObject *source=m_window->findChild<QObject*>(QString::fromLatin1(gauges[i].name));
+            MiniTrendWidget *trend=new MiniTrendWidget(I18n::text(gauges[i].titleKey),source,panel);
             grid->addWidget(trend,i/3,i%3);
             m_trends.append(trend);
         }
         overview->setMinimumHeight(qMax(overview->minimumHeight(),820));
+        panel->raise();
         QTimer *timer=new QTimer(this);
         timer->setInterval(500);
         connect(timer,&QTimer::timeout,this,[this](){ for (MiniTrendWidget *trend:m_trends) trend->sample(); });
