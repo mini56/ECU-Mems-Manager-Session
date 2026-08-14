@@ -1,7 +1,6 @@
 <RCC>
     <qresource prefix="/icons">
-        <file>key.png</file>
-        <file>header-logo.png</file>
+        <file alias="key.png">header-logo.png</file>
         <file>helpbubble.svg</file>
         <file>helpbubble.png</file>
     </qresource>
