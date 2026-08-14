@@ -32,17 +32,22 @@ protected:
     }
 };
 
+static QString blueButtonStyle(bool compact)
+{
+    return QStringLiteral(
+        "QPushButton{background:#1769d2;color:#ffffff;border:1px solid #2d7ee8;"
+        "border-radius:4px;padding:4px %1px;font-weight:600;}"
+        "QPushButton:hover{background:#2378e6;}"
+        "QPushButton:pressed{background:#1257b0;}"
+    ).arg(compact ? 7 : 13);
+}
+
 static QPushButton *makeBlueButton(const QString &text, QWidget *parent)
 {
     QPushButton *button = new QPushButton(text, parent);
     button->setCursor(Qt::PointingHandCursor);
     button->setMinimumHeight(28);
-    button->setStyleSheet(
-        "QPushButton{background:#1769d2;color:#ffffff;border:1px solid #2d7ee8;"
-        "border-radius:4px;padding:4px 13px;font-weight:600;}"
-        "QPushButton:hover{background:#2378e6;}"
-        "QPushButton:pressed{background:#1257b0;}"
-    );
+    button->setStyleSheet(blueButtonStyle(false));
     return button;
 }
 
@@ -100,14 +105,11 @@ private:
             "QToolButton{color:#dce2e7;background:#171c22;border:1px solid #303944;"
             "border-radius:4px;padding:3px 7px;font-weight:600;}"
             "QToolButton:hover{border-color:#ff8a1c;color:#ffffff;}"
-            "QComboBox{background:#151a20;color:#ffffff;border:1px solid #38424c;"
-            "border-radius:4px;padding:4px 10px;min-width:92px;}"
         );
         QHBoxLayout *layout=new QHBoxLayout(bar);
         layout->setContentsMargins(8,6,8,6);
         layout->setSpacing(8);
 
-        // Left three-line menu visible in the approved mock-up.
         QToolButton *menuButton=new QToolButton(bar);
         menuButton->setText(QString::fromUtf8("☰"));
         menuButton->setFixedSize(31,28);
@@ -126,7 +128,6 @@ private:
         layout->addWidget(brand);
         layout->addSpacing(10);
 
-        // Communication chip: same visual as mock-up; click toggles Connect/Disconnect.
         ClickableFrame *commChip=makeStatusChip(bar);
         QHBoxLayout *commLayout=new QHBoxLayout(commChip);
         commLayout->setContentsMargins(9,2,7,2);
@@ -167,6 +168,10 @@ private:
         layout->addWidget(modeLabel);
         if (modeBox) {
             modeBox->setParent(bar);
+            modeBox->setStyleSheet(
+                "QComboBox{background:#151a20;color:#ffffff;border:1px solid #38424c;"
+                "border-radius:4px;padding:4px 10px;min-width:92px;}"
+            );
             layout->addWidget(modeBox);
             modeBox->show();
         }
@@ -186,7 +191,6 @@ private:
 
         root->insertWidget(0,bar);
 
-        QPushButton *legacyConnect=window->findChild<QPushButton*>(QStringLiteral("m_connectButton"));
         QPushButton *legacyDisconnect=window->findChild<QPushButton*>(QStringLiteral("m_disconnectButton"));
         QObject *goodLed=window->findChild<QObject*>(QStringLiteral("m_commsGoodLed"));
         QObject *errorLed=window->findChild<QObject*>(QStringLiteral("m_engine_error"));
@@ -200,6 +204,31 @@ private:
         sync->setInterval(250);
         QObject::connect(sync,&QTimer::timeout,bar,[=](){
             if (ecuLabel) ecuMirror->setText(ecuLabel->text());
+
+            // Small-screen safety: preserve every element and the approved order,
+            // but compact only spacing/padding when the header becomes narrow.
+            const bool compact = bar->width() < 1250;
+            const bool veryCompact = bar->width() < 1120;
+            layout->setContentsMargins(compact ? 5 : 8, 6, compact ? 5 : 8, 6);
+            layout->setSpacing(compact ? 4 : 8);
+            commLayout->setContentsMargins(compact ? 6 : 9,2,compact ? 5 : 7,2);
+            errLayout->setContentsMargins(compact ? 6 : 9,2,compact ? 5 : 7,2);
+            ecuMirror->setMinimumWidth(veryCompact ? 105 : (compact ? 120 : 155));
+            ecuMirror->setStyleSheet(QStringLiteral(
+                "color:#d8dde2;background:#151a20;border:1px solid #313943;border-radius:4px;padding:5px %1px;"
+            ).arg(compact ? 7 : 12));
+            snapshot->setStyleSheet(blueButtonStyle(compact));
+            captures->setStyleSheet(blueButtonStyle(compact));
+            if (modeBox) {
+                modeBox->setStyleSheet(QStringLiteral(
+                    "QComboBox{background:#151a20;color:#ffffff;border:1px solid #38424c;"
+                    "border-radius:4px;padding:4px %1px;min-width:%2px;}"
+                ).arg(compact ? 6 : 10).arg(veryCompact ? 72 : (compact ? 80 : 92)));
+            }
+            QFont brandFont=brand->font();
+            brandFont.setPointSizeF(veryCompact ? 8.0 : (compact ? 8.5 : 9.0));
+            brand->setFont(brandFont);
+
             const bool connected=legacyDisconnect && legacyDisconnect->isEnabled();
             commDot->setStyleSheet(QStringLiteral("color:%1;font-size:15px;border:0;background:transparent;").arg(connected?QStringLiteral("#1ed760"):QStringLiteral("#31553d")));
             if (goodLed && goodLed->property("checked").isValid() && goodLed->property("checked").toBool())
