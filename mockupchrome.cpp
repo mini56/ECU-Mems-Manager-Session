@@ -76,11 +76,14 @@ private:
         if (nav) {
             nav->setStyleSheet(
                 "QListWidget{background:#10151a;color:#b8c0c7;border:0;border-right:1px solid #293038;"
-                "padding:6px 3px;outline:0;}"
-                "QListWidget::item{min-height:30px;padding:3px 9px;border-radius:2px;margin:1px 1px;}"
+                "padding:5px 3px;outline:0;}"
+                "QListWidget::item{min-height:28px;padding:2px 9px;border-radius:1px;margin:1px 0px;}"
                 "QListWidget::item:hover{background:#171d23;color:#ffffff;}"
                 "QListWidget::item:selected{background:#191f25;color:#ff9b32;border-left:3px solid #ff8a1c;}"
             );
+            nav->setFocusPolicy(Qt::NoFocus);
+            nav->setUniformItemSizes(true);
+            nav->setSpacing(0);
         }
 
         QFrame *status = new QFrame(central);
@@ -134,7 +137,7 @@ private:
         QObject::connect(sync, &QTimer::timeout, status, [=](){
             const qreal scale = window->property("globalUiScale").isValid()
                 ? window->property("globalUiScale").toDouble() : 1.0;
-            const int navWidth = qBound(132, qRound(184.0 * scale), 214);
+            const int navWidth = qBound(126, qRound(176.0 * scale), 204);
             if (nav && nav->width()!=navWidth) nav->setFixedWidth(navWidth);
             const int statusH = qBound(21, qRound(26.0 * scale), 30);
             if (status->height()!=statusH) status->setFixedHeight(statusH);
