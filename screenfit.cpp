@@ -11,8 +11,15 @@
 
 namespace {
 
-static const int kReferenceWidth = 1280;
-static const int kReferenceHeight = 540;
+// Approved overview composition: six compact gauge cards on the first row,
+// four centred on the second row. No horizontal scrolling is allowed.
+static const int kReferenceWidth = 1168;
+static const int kReferenceHeight = 414;
+static const int kGaugeWidth = 184;
+static const int kGaugeHeight = 195;
+static const int kGaugeGap = 8;
+static const int kGaugeLeft = 8;
+static const int kGaugeTop = 6;
 
 static QScrollArea *containingScrollArea(QWidget *widget)
 {
@@ -23,6 +30,23 @@ static QScrollArea *containingScrollArea(QWidget *widget)
         p = p->parentWidget();
     }
     return nullptr;
+}
+
+static QRect approvedGaugeGeometry(QWidget *widget)
+{
+    if (!widget) return QRect();
+    const QString name = widget->objectName();
+    if (!name.startsWith(QStringLiteral("modernGaugeCard_"))) return QRect();
+
+    bool ok = false;
+    const int index = name.mid(QStringLiteral("modernGaugeCard_").size()).toInt(&ok);
+    if (!ok || index < 0 || index >= 10) return QRect();
+
+    const int row = index < 6 ? 0 : 1;
+    const int col = index < 6 ? index : (index - 6 + 1); // centre the four lower cards
+    const int x = kGaugeLeft + col * (kGaugeWidth + kGaugeGap);
+    const int y = kGaugeTop + row * (kGaugeHeight + kGaugeGap);
+    return QRect(x, y, kGaugeWidth, kGaugeHeight);
 }
 
 class OverviewScreenFitter : public QObject
@@ -51,7 +75,7 @@ public:
         m_tabs->installEventFilter(this);
         window->installEventFilter(this);
         QTimer::singleShot(0, this, [this](){ fitToAvailableArea(); });
-        QTimer::singleShot(180, this, [this](){ captureNewWidgetsAndFit(); });
+        QTimer::singleShot(0, this, [this](){ captureNewWidgetsAndFit(); });
     }
 
 protected:
@@ -74,8 +98,14 @@ private:
         if (!m_overview) return;
         const QList<QWidget*> children = m_overview->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
         for (QWidget *widget : children) {
-            if (!widget->property("screenfitBaseGeometry").isValid())
+            const QRect approved = approvedGaugeGeometry(widget);
+            if (approved.isValid()) {
+                // Always override the old 238x252 gauge reference geometry.
+                widget->setProperty("screenfitBaseGeometry", approved);
+            } else if (!widget->property("screenfitBaseGeometry").isValid()) {
                 widget->setProperty("screenfitBaseGeometry", widget->geometry());
+            }
+
             if (!widget->property("screenfitBaseFontSize").isValid()) {
                 const qreal pointSize = widget->font().pointSizeF();
                 if (pointSize > 0) widget->setProperty("screenfitBaseFontSize", pointSize);
@@ -99,10 +129,8 @@ private:
             ? m_window->property("globalUiScale").toDouble()
             : 1.0;
 
-        // The approved composition must fit the real page viewport, not the physical screen.
-        // This is what prevents the 1300 px legacy page from creating a horizontal scrollbar.
-        scale = qMin(scale, qreal(viewport.width() - 8) / qreal(kReferenceWidth));
-        scale = qMin(scale, qreal(viewport.height() - 8) / qreal(kReferenceHeight));
+        scale = qMin(scale, qreal(viewport.width() - 12) / qreal(kReferenceWidth));
+        scale = qMin(scale, qreal(viewport.height() - 12) / qreal(kReferenceHeight));
         scale = qBound<qreal>(0.58, scale, 1.16);
 
         const int scaledW = qRound(kReferenceWidth * scale);
