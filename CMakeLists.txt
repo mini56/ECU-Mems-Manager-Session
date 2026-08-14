@@ -28,18 +28,14 @@ set(SOURCES
     analogwidgets/manometer100.cpp analogwidgets/abstractmeter100.cpp analogwidgets/manometer900.cpp
     analogwidgets/abstractmeter900.cpp mainwindow.ui resources.qrc database/DatabaseManager.cpp
     uirebuild.cpp overviewrebuild.cpp majorpagesrebuild.cpp analysismodernizer.cpp
-    strictvisualrebuild.cpp dedicatedpagesrebuild.cpp visualcompletion.cpp darkprolayoutfinal.cpp)
+    strictvisualrebuild.cpp dedicatedpagesrebuild.cpp visualcompletion.cpp darkstyle.cpp)
 add_executable(${PNAME} ${SOURCES})
 target_sources(${PNAME} PRIVATE ${CMAKE_SOURCE_DIR}/desktopshortcut.cpp ${CMAKE_SOURCE_DIR}/desktopshortcut.h)
 if(WIN32)
-    # Embed the real multi-resolution key.ico directly in the Windows EXE.
     target_sources(${PNAME} PRIVATE ${CMAKE_SOURCE_DIR}/appicon.rc)
     target_link_libraries(${PNAME} PRIVATE ole32 shell32 uuid)
 endif()
 
-# Runtime translations: v1.1.0 uses only the six per-language JSON folders.
-# Legacy flat JSON catalogs, Qt .ts catalogs and migration scripts are no
-# longer deployed with the application.
 add_custom_command(TARGET ${PNAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PNAME}>/translations"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/translations/fr" "$<TARGET_FILE_DIR:${PNAME}>/translations/fr"
