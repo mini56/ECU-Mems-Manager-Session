@@ -239,7 +239,7 @@ protected:
             QMainWindow *window = qobject_cast<QMainWindow*>(watched);
             if (window && window->objectName() == QStringLiteral("MainWindow") && !window->property("globalResponsiveInstalled").toBool()) {
                 window->setProperty("globalResponsiveInstalled", true);
-                QTimer::singleShot(90, window, [window]() { install(window); });
+                QTimer::singleShot(0, window, [window]() { install(window); });
             }
         }
         return QObject::eventFilter(watched, event);
