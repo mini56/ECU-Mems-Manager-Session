@@ -79,6 +79,7 @@ private:
         if (!labels.isEmpty()) fileLabel = labels.at(0);
         QScrollArea *parameterScroll = legacyPanel->findChild<QScrollArea*>();
 
+        // Approved mock-up: the upper strip only carries file loading / file state.
         QWidget *topBar = new QWidget(tab);
         topBar->setObjectName(QStringLiteral("analysisTopBar"));
         QHBoxLayout *top = new QHBoxLayout(topBar);
@@ -90,7 +91,6 @@ private:
             fileLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
             top->addWidget(fileLabel, 1);
         }
-        if (overlay) { overlay->setParent(topBar); top->addWidget(overlay); }
         root->insertWidget(0, topBar);
 
         QWidget *rightPanel = new QWidget(tab);
@@ -105,18 +105,25 @@ private:
             right->addWidget(parameterScroll, 1);
         }
 
+        // Keep the approved CURSEUR section without inventing extra controls.
         right->addWidget(sectionTitle(QStringLiteral("CURSEUR"), rightPanel, QStringLiteral("analysisCursorTitle")));
-        QLabel *cursorHelp = new QLabel(QStringLiteral("Survolez un graphique pour lire la valeur."), rightPanel);
-        cursorHelp->setObjectName(QStringLiteral("analysisCursorHelp"));
-        cursorHelp->setWordWrap(true);
-        right->addWidget(cursorHelp);
 
         right->addWidget(sectionTitle(QStringLiteral("OUTILS"), rightPanel, QStringLiteral("analysisToolsTitle")));
-        QHBoxLayout *tools = new QHBoxLayout();
+        QVBoxLayout *tools = new QVBoxLayout();
         tools->setContentsMargins(0,0,0,0);
         tools->setSpacing(5);
-        if (all) { all->setParent(rightPanel); tools->addWidget(all); }
-        if (none) { none->setParent(rightPanel); tools->addWidget(none); }
+
+        QHBoxLayout *selectionTools = new QHBoxLayout();
+        selectionTools->setContentsMargins(0,0,0,0);
+        selectionTools->setSpacing(5);
+        if (all) { all->setParent(rightPanel); selectionTools->addWidget(all); }
+        if (none) { none->setParent(rightPanel); selectionTools->addWidget(none); }
+        tools->addLayout(selectionTools);
+        if (overlay) {
+            overlay->setParent(rightPanel);
+            overlay->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+            tools->addWidget(overlay);
+        }
         right->addLayout(tools);
 
         mainRow->removeWidget(legacyPanel);
@@ -136,26 +143,25 @@ private:
             "AnalysisTab{background:#0b0f14;color:#dce2e7;}"
             "QWidget{color:#dce2e7;}"
             "QLabel{background:transparent;border:0;color:#dce2e7;}"
-            "#analysisTopBar{background:#10161d;border:1px solid #26313b;border-radius:2px;}"
-            "#analysisRightPanel{background:#0f151b;border:1px solid #26313b;border-radius:2px;}"
+            "#analysisTopBar{background:#10161d;border:1px solid #26313b;border-radius:0px;}"
+            "#analysisRightPanel{background:#0f151b;border:1px solid #26313b;border-radius:0px;}"
             "#analysisParametersTitle,#analysisCursorTitle,#analysisToolsTitle{color:#f0f3f5;font-weight:700;"
             "padding:3px 0px;border-bottom:1px solid #2b3540;}"
-            "#analysisCursorHelp{color:#89939d;padding:1px 0px 3px 0px;}"
             "QPushButton{background:#17202a;color:#dce2e7;border:1px solid #34414d;"
-            "border-radius:2px;padding:4px 8px;font-weight:600;min-height:23px;}"
+            "border-radius:1px;padding:4px 8px;font-weight:600;min-height:23px;}"
             "QPushButton:hover{border-color:#ff8a1c;color:#ffffff;}"
             "QPushButton:pressed{background:#202b36;}"
             "QPushButton:checked{background:#ff8a1c;color:#101419;border-color:#ff9b32;}"
             "QScrollArea{background:#0d1218;border:0px;}"
             "QScrollArea>QWidget>QWidget{background:#0d1218;}"
             "QCheckBox{spacing:6px;padding:2px 1px;color:#dce2e7;background:transparent;}"
-            "QCheckBox::indicator{width:12px;height:12px;border:1px solid #53606c;border-radius:2px;background:#0b1015;}"
+            "QCheckBox::indicator{width:12px;height:12px;border:1px solid #53606c;border-radius:1px;background:#0b1015;}"
             "QCheckBox::indicator:checked{background:#ff8a1c;border-color:#ff9b32;}"
             "QScrollBar:vertical{background:#0c1116;width:8px;margin:1px;}"
-            "QScrollBar::handle:vertical{background:#384550;border-radius:3px;min-height:24px;}"
+            "QScrollBar::handle:vertical{background:#384550;border-radius:1px;min-height:24px;}"
             "QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical{height:0;}"
             "QScrollBar:horizontal{background:#0c1116;height:8px;margin:1px;}"
-            "QScrollBar::handle:horizontal{background:#384550;border-radius:3px;min-width:24px;}"
+            "QScrollBar::handle:horizontal{background:#384550;border-radius:1px;min-width:24px;}"
             "QScrollBar::add-line:horizontal,QScrollBar::sub-line:horizontal{width:0;}"
         );
 
@@ -186,13 +192,13 @@ private:
 
         QWidget *right = tab->findChild<QWidget*>(QStringLiteral("analysisRightPanel"));
         if (right) {
-            const int target = qBound(188, qRound(248.0 * scale), 286);
+            const int target = qBound(184, qRound(238.0 * scale), 276);
             right->setMinimumWidth(target);
             right->setMaximumWidth(target);
         }
 
         QWidget *topBar = tab->findChild<QWidget*>(QStringLiteral("analysisTopBar"));
-        if (topBar) topBar->setMinimumHeight(qBound(31, qRound(37.0 * scale), 43));
+        if (topBar) topBar->setMinimumHeight(qBound(30, qRound(36.0 * scale), 42));
 
         const qreal basePointSize = tab->property("analysisBaseFontPointSize").isValid()
             ? tab->property("analysisBaseFontPointSize").toDouble() : 9.0;
