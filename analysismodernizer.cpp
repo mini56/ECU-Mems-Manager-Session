@@ -20,8 +20,7 @@ protected:
     bool eventFilter(QObject *watched, QEvent *event) override
     {
         QWidget *widget = qobject_cast<QWidget*>(watched);
-        if (!widget)
-            return QObject::eventFilter(watched, event);
+        if (!widget) return QObject::eventFilter(watched, event);
 
         if ((event->type() == QEvent::Show || event->type() == QEvent::Polish) &&
             QString::fromLatin1(widget->metaObject()->className()) == QStringLiteral("AnalysisTab") &&
@@ -67,11 +66,8 @@ private:
             "QScrollBar::add-line:horizontal,QScrollBar::sub-line:horizontal{width:0;}"
         );
 
-        if (QWidget *left = tab->findChild<QWidget*>(QStringLiteral("analysisLeftPanel"))) {
-            left->setStyleSheet(
-                "#analysisLeftPanel{background:#151a20;border:1px solid #313943;border-radius:7px;}"
-            );
-        }
+        if (QWidget *left = tab->findChild<QWidget*>(QStringLiteral("analysisLeftPanel")))
+            left->setStyleSheet("#analysisLeftPanel{background:#151a20;border:1px solid #313943;border-radius:7px;}");
 
         const QList<QScrollArea*> scrolls = tab->findChildren<QScrollArea*>();
         for (QScrollArea *scroll : scrolls) {
@@ -82,61 +78,53 @@ private:
                 scroll->viewport()->setStyleSheet("background:#11161c;");
             }
         }
-
         fit(tab);
+    }
+
+    static qreal globalScale(QWidget *tab)
+    {
+        if (!tab) return 1.0;
+        QWidget *top = tab->window();
+        if (top && top->property("globalUiScale").isValid())
+            return qBound<qreal>(0.62, top->property("globalUiScale").toDouble(), 1.16);
+        return 1.0;
     }
 
     static void fit(QWidget *tab)
     {
         QWidget *left = tab->findChild<QWidget*>(QStringLiteral("analysisLeftPanel"));
-        if (!left)
-            return;
+        if (!left) return;
 
-        const int availableWidth = qMax(640, tab->width());
-        const int availableHeight = qMax(480, tab->height());
-
-        // Keep exactly the approved composition: the selector stays near one
-        // quarter of the work area and only its scale changes with resolution.
-        const int target = qBound(220, qRound(availableWidth * 0.245), 330);
+        const qreal scale = globalScale(tab);
+        const int target = qBound(190, qRound(300.0 * scale), 348);
         left->setMinimumWidth(target);
         left->setMaximumWidth(target);
 
-        // Always calculate from the original font size. This prevents the
-        // cumulative growth/shrink drift that occurred after repeated resizes.
         const qreal basePointSize = tab->property("analysisBaseFontPointSize").isValid()
-            ? tab->property("analysisBaseFontPointSize").toDouble()
-            : 9.0;
-        const qreal widthScale = availableWidth / 1280.0;
-        const qreal heightScale = availableHeight / 820.0;
-        const qreal scale = qBound<qreal>(0.78, qMin(widthScale, heightScale), 1.12);
-
+            ? tab->property("analysisBaseFontPointSize").toDouble() : 9.0;
         QFont f = tab->font();
-        f.setPointSizeF(qBound<qreal>(8.0, basePointSize * scale, 11.0));
+        f.setPointSizeF(qMax<qreal>(6.5, basePointSize * scale));
         tab->setFont(f);
         tab->setProperty("analysisScale", scale);
 
-        // Keep controls readable and proportional without changing the validated layout.
-        const int buttonHeight = qBound(28, qRound(30.0 * scale), 34);
+        const int buttonHeight = qBound(22, qRound(30.0 * scale), 35);
         const QList<QPushButton*> buttons = tab->findChildren<QPushButton*>();
-        for (QPushButton *button : buttons)
-            button->setMinimumHeight(buttonHeight);
+        for (QPushButton *button : buttons) button->setMinimumHeight(buttonHeight);
 
-        const int indicatorSize = qBound(13, qRound(14.0 * scale), 16);
+        const int indicatorSize = qBound(10, qRound(14.0 * scale), 16);
         const QList<QCheckBox*> checks = tab->findChildren<QCheckBox*>();
         for (QCheckBox *check : checks)
             check->setStyleSheet(QStringLiteral("QCheckBox::indicator{width:%1px;height:%1px;}").arg(indicatorSize));
 
-        // Stacked analysis graphs retain the same proportions as the validated
-        // mock-up while remaining usable on 1366x768 and larger displays.
         const QList<QWidget*> children = tab->findChildren<QWidget*>();
         for (QWidget *child : children) {
             const QString className = QString::fromLatin1(child->metaObject()->className());
             if (className == QStringLiteral("SingleChartWidget")) {
-                const int chartHeight = qBound(150, qRound(190.0 * scale), 215);
+                const int chartHeight = qBound(118, qRound(190.0 * scale), 220);
                 child->setMinimumHeight(chartHeight);
                 child->setMaximumHeight(chartHeight);
             } else if (className == QStringLiteral("ChartWidget")) {
-                child->setMinimumHeight(qBound(130, qRound(150.0 * scale), 175));
+                child->setMinimumHeight(qBound(95, qRound(150.0 * scale), 175));
             }
         }
     }
@@ -145,8 +133,7 @@ private:
 void installAnalysisModernizerHook()
 {
     QApplication *app = qobject_cast<QApplication*>(QCoreApplication::instance());
-    if (!app)
-        return;
+    if (!app) return;
     AnalysisModernizer *modernizer = new AnalysisModernizer(app);
     app->installEventFilter(modernizer);
 }
