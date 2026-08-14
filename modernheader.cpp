@@ -39,17 +39,27 @@ private:
     static QString infoStyle(int pad=6)
     {
         return QStringLiteral(
-            "QLabel{color:#cfd5da;background:#10161c;border:1px solid #303943;"
-            "border-radius:0px;padding:2px %1px;font-weight:600;}"
+            "QLabel{color:#cfd5da;background:transparent;border:0;"
+            "padding:1px %1px;font-weight:600;}"
         ).arg(pad);
     }
 
-    static QLabel *makeInfoChip(const QString &text, QWidget *parent)
+    static QLabel *makeInfoLabel(const QString &text, QWidget *parent)
     {
         QLabel *label=new QLabel(text,parent);
         label->setAlignment(Qt::AlignCenter);
         label->setStyleSheet(infoStyle());
         return label;
+    }
+
+    static QFrame *separator(QWidget *parent)
+    {
+        QFrame *line=new QFrame(parent);
+        line->setFrameShape(QFrame::VLine);
+        line->setFrameShadow(QFrame::Plain);
+        line->setStyleSheet(QStringLiteral("color:#252d35;background:#252d35;"));
+        line->setFixedWidth(1);
+        return line;
     }
 
     static QString configuredSerialPort()
@@ -84,16 +94,21 @@ private:
         bar->setStyleSheet(
             "#mockupTopHeader{background:#0b1015;border-bottom:1px solid #29313a;}"
             "#mockupTopHeader QLabel{color:#dce2e7;background:transparent;border:0;}"
-            "#mockupTopHeader QPushButton{background:#ff8a1c;color:#101419;border:1px solid #ff9b32;"
-            "border-radius:0px;padding:2px 7px;font-weight:700;}"
-            "#mockupTopHeader QPushButton:hover{background:#ff9b32;border-color:#ffad57;}"
-            "#mockupTopHeader QPushButton:pressed{background:#d86d0d;border-color:#e97b14;}"
-            "#mockupTopHeader QPushButton:disabled{background:#20262c;color:#6d7680;border-color:#303841;}"
+            "#mockupTopHeader #m_connectButton{background:#141a20;color:#cfd5da;border:1px solid #3a434c;"
+            "border-radius:0px;padding:2px 8px;font-weight:700;}"
+            "#mockupTopHeader #m_connectButton:hover{color:#ff9b32;border-color:#ff8a1c;}"
+            "#mockupTopHeader #m_connectButton:pressed{background:#1b2229;}"
+            "#mockupTopHeader #m_connectButton:disabled{background:#151a1f;color:#535c65;border-color:#252c33;}"
+            "#mockupTopHeader #m_disconnectButton{background:#d92f2f;color:#ffffff;border:1px solid #ef4949;"
+            "border-radius:0px;padding:2px 8px;font-weight:700;}"
+            "#mockupTopHeader #m_disconnectButton:hover{background:#e83b3b;border-color:#ff6262;}"
+            "#mockupTopHeader #m_disconnectButton:pressed{background:#b52323;}"
+            "#mockupTopHeader #m_disconnectButton:disabled{background:#151a1f;color:#535c65;border-color:#252c33;}"
         );
 
         QHBoxLayout *layout=new QHBoxLayout(bar);
         layout->setContentsMargins(7,3,7,3);
-        layout->setSpacing(5);
+        layout->setSpacing(4);
 
         QWidget *brandBox=new QWidget(bar);
         QHBoxLayout *brandLayout=new QHBoxLayout(brandBox);
@@ -115,34 +130,37 @@ private:
         brandLayout->addWidget(brand);
         brandLayout->addWidget(version);
         layout->addWidget(brandBox,0,Qt::AlignVCenter);
+        layout->addWidget(separator(bar));
 
         ecuLabel->setParent(bar);
         ecuLabel->setAlignment(Qt::AlignCenter);
         ecuLabel->setStyleSheet(infoStyle());
         layout->addWidget(ecuLabel,0,Qt::AlignVCenter);
+        layout->addWidget(separator(bar));
 
-        QLabel *portChip=makeInfoChip(QStringLiteral("Port : %1").arg(configuredSerialPort()),bar);
-        portChip->setObjectName(QStringLiteral("mockupPortLabel"));
-        layout->addWidget(portChip,0,Qt::AlignVCenter);
+        QLabel *portLabel=makeInfoLabel(QStringLiteral("Port\n%1").arg(configuredSerialPort()),bar);
+        portLabel->setObjectName(QStringLiteral("mockupPortLabel"));
+        layout->addWidget(portLabel,0,Qt::AlignVCenter);
+        layout->addWidget(separator(bar));
 
-        QLabel *frequencyChip=makeInfoChip(QStringLiteral("Fréquence : auto"),bar);
-        frequencyChip->setObjectName(QStringLiteral("mockupFrequencyLabel"));
-        layout->addWidget(frequencyChip,0,Qt::AlignVCenter);
+        QLabel *frequencyLabel=makeInfoLabel(QStringLiteral("Fréquence\nauto"),bar);
+        frequencyLabel->setObjectName(QStringLiteral("mockupFrequencyLabel"));
+        layout->addWidget(frequencyLabel,0,Qt::AlignVCenter);
+
+        layout->addStretch(1);
 
         QWidget *commBox=new QWidget(bar);
         commBox->setObjectName(QStringLiteral("mockupCommunicationBox"));
-        commBox->setStyleSheet("#mockupCommunicationBox{background:#10161c;border:1px solid #303943;border-radius:0px;}");
+        commBox->setStyleSheet("#mockupCommunicationBox{background:transparent;border:0;}");
         QHBoxLayout *commLayout=new QHBoxLayout(commBox);
-        commLayout->setContentsMargins(6,1,5,1);
-        commLayout->setSpacing(3);
+        commLayout->setContentsMargins(4,0,4,0);
+        commLayout->setSpacing(4);
         commLabel->setParent(commBox);
-        commLabel->setStyleSheet("color:#cfd5da;background:transparent;border:0;font-weight:600;");
+        commLabel->setStyleSheet("color:#bfc7ce;background:transparent;border:0;font-weight:600;");
         commLayout->addWidget(commLabel);
         if (goodLed) { goodLed->setParent(commBox); commLayout->addWidget(goodLed); goodLed->show(); }
         if (badLed) { badLed->setParent(commBox); commLayout->addWidget(badLed); badLed->show(); }
         layout->addWidget(commBox,0,Qt::AlignVCenter);
-
-        layout->addStretch(1);
 
         connectButton->setParent(bar);
         disconnectButton->setParent(bar);
@@ -160,11 +178,11 @@ private:
         const auto syncHeader = [=](){
             const qreal scale=window->property("globalUiScale").isValid()
                 ? window->property("globalUiScale").toDouble() : 1.0;
-            const int headerH=qBound(30,qRound(36.0*scale),40);
+            const int headerH=qBound(31,qRound(38.0*scale),42);
             if (bar->height()!=headerH) bar->setFixedHeight(headerH);
 
             const int margin=qBound(4,qRound(7.0*scale),8);
-            const int spacing=qBound(3,qRound(5.0*scale),6);
+            const int spacing=qBound(2,qRound(4.0*scale),5);
             layout->setContentsMargins(margin,qMax(2,qRound(3.0*scale)),margin,qMax(2,qRound(3.0*scale)));
             layout->setSpacing(spacing);
 
@@ -179,20 +197,20 @@ private:
             vf.setPointSizeF(qBound<qreal>(6.0,6.9*scale,7.8));
             version->setFont(vf);
 
-            const int chipPad=qBound(3,qRound(6.0*scale),7);
-            const QString chipCss=infoStyle(chipPad);
-            ecuLabel->setStyleSheet(chipCss);
-            portChip->setStyleSheet(chipCss);
-            frequencyChip->setStyleSheet(chipCss);
+            const int infoPad=qBound(2,qRound(5.0*scale),6);
+            const QString infoCss=infoStyle(infoPad);
+            ecuLabel->setStyleSheet(infoCss);
+            portLabel->setStyleSheet(infoCss);
+            frequencyLabel->setStyleSheet(infoCss);
 
             const int h=qBound(21,qRound(24.0*scale),27);
             const int pad=qBound(12,qRound(16.0*scale),19);
             connectButton->setFixedHeight(h);
             disconnectButton->setFixedHeight(h);
-            connectButton->setFixedWidth(qMax(58,connectButton->fontMetrics().horizontalAdvance(connectButton->text())+pad));
-            disconnectButton->setFixedWidth(qMax(58,disconnectButton->fontMetrics().horizontalAdvance(disconnectButton->text())+pad));
+            connectButton->setFixedWidth(qMax(62,connectButton->fontMetrics().horizontalAdvance(connectButton->text())+pad));
+            disconnectButton->setFixedWidth(qMax(70,disconnectButton->fontMetrics().horizontalAdvance(disconnectButton->text())+pad));
 
-            portChip->setText(QStringLiteral("Port : %1").arg(configuredSerialPort()));
+            portLabel->setText(QStringLiteral("Port\n%1").arg(configuredSerialPort()));
         };
 
         syncHeader();
