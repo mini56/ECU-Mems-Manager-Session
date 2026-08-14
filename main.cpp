@@ -14,6 +14,7 @@
 #include <QGridLayout>
 #include <QPushButton>
 #include <QIcon>
+#include <QStringList>
 #include "splashprogress.h"
 
 #include "mainwindow.h"
@@ -34,23 +35,23 @@ void updateStartupProgress(int percent)
     percent = qBound(0, percent, 100);
     g_startupProgress->setValue(percent);
     if (g_startupStatus)
-        g_startupStatus->setText(I18n::text(1).arg(percent)); // Serial port detection: %1 %
+        g_startupStatus->setText(I18n::text(1).arg(percent));
     qApp->processEvents();
 }
 
 QString chooseInitialLanguage()
 {
     QDialog dialog;
-    dialog.setWindowTitle(I18n::text(2)); // ECU MEMS Manager - Language
+    dialog.setWindowTitle(I18n::text(2));
     dialog.setModal(true);
     dialog.setMinimumWidth(620);
 
     QVBoxLayout *layout = new QVBoxLayout(&dialog);
-    QLabel *title = new QLabel(I18n::text(3), &dialog); // <b>Choose your language</b>
+    QLabel *title = new QLabel(I18n::text(3), &dialog);
     title->setAlignment(Qt::AlignCenter);
     layout->addWidget(title);
 
-    QLabel *info = new QLabel(I18n::text(4), &dialog); // The language can be changed later in Options.
+    QLabel *info = new QLabel(I18n::text(4), &dialog);
     info->setAlignment(Qt::AlignCenter);
     layout->addWidget(info);
 
@@ -99,7 +100,7 @@ QSplashScreen *createStartupSplash()
     titleFont.setPointSize(18);
     painter.setFont(titleFont);
     painter.drawText(QRect(24, 22, 472, 40), Qt::AlignLeft | Qt::AlignVCenter,
-                     I18n::text(7)); // ECU MEMS Manager
+                     I18n::text(7));
     painter.setPen(QPen(Qt::black, 1));
     painter.drawRect(pixmap.rect().adjusted(1, 1, -2, -2));
 
@@ -108,9 +109,9 @@ QSplashScreen *createStartupSplash()
     subFont.setPointSize(10);
     painter.setFont(subFont);
     painter.drawText(QRect(24, 62, 472, 24), Qt::AlignLeft | Qt::AlignVCenter,
-                     I18n::text(8)); // Initializing ECU diagnostics
+                     I18n::text(8));
     painter.drawText(QRect(24, 84, 472, 22), Qt::AlignLeft | Qt::AlignVCenter,
-                     I18n::text(9).arg(QStringLiteral(APP_VERSION))); // Version %1
+                     I18n::text(9).arg(QStringLiteral(APP_VERSION)));
     painter.end();
 
     QSplashScreen *splash = new QSplashScreen(pixmap, Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint);
@@ -118,7 +119,7 @@ QSplashScreen *createStartupSplash()
     progress->setGeometry(24, 136, 472, 18);
     progress->setRange(0, 100);
     progress->setValue(0);
-    QLabel *status = new QLabel(I18n::text(10), splash); // Initializing...
+    QLabel *status = new QLabel(I18n::text(10), splash);
     status->setGeometry(24, 110, 472, 22);
     g_startupProgress = progress;
     g_startupStatus = status;
@@ -137,17 +138,30 @@ int main(int argc, char *argv[])
     QSettings languageSettings(QSettings::IniFormat, QSettings::UserScope, PROJECTNAME);
     languageSettings.beginGroup("Settings");
     const bool languageConfigured = languageSettings.value("LanguageConfigured", false).toBool();
-    QString language = languageSettings.value("Language", "fr").toString();
+    QString language = languageSettings.value("Language", "fr").toString().toLower();
     languageSettings.endGroup();
 
-    I18n::load(QStringLiteral("en"));
-    Q_UNUSED(languageConfigured);
-    language = chooseInitialLanguage();
-    languageSettings.beginGroup("Settings");
-    languageSettings.setValue("Language", language);
-    languageSettings.setValue("LanguageConfigured", true);
-    languageSettings.endGroup();
-    languageSettings.sync();
+    const QStringList supportedLanguages = {
+        QStringLiteral("fr"), QStringLiteral("en"), QStringLiteral("es"),
+        QStringLiteral("it"), QStringLiteral("pt"), QStringLiteral("de")
+    };
+    if (!supportedLanguages.contains(language))
+        language = QStringLiteral("fr");
+
+    // English is used only to display the first-start language selector.
+    // Once a language has been chosen, LanguageConfigured prevents this
+    // dialog from being shown again on subsequent starts.
+    if (!languageConfigured)
+    {
+        I18n::load(QStringLiteral("en"));
+        language = chooseInitialLanguage();
+        languageSettings.beginGroup("Settings");
+        languageSettings.setValue("Language", language);
+        languageSettings.setValue("LanguageConfigured", true);
+        languageSettings.endGroup();
+        languageSettings.sync();
+    }
+
     I18n::load(language);
     I18n::install(&app);
 
@@ -161,12 +175,12 @@ int main(int argc, char *argv[])
 
     DatabaseManager database;
     if (g_startupStatus)
-        g_startupStatus->setText(I18n::text(11)); // Initializing database...
+        g_startupStatus->setText(I18n::text(11));
     app.processEvents();
 
     if (!database.open())
     {
-        QMessageBox::critical(nullptr, I18n::text(12), I18n::text(13)); // Database error / Unable to open SQLite database
+        QMessageBox::critical(nullptr, I18n::text(12), I18n::text(13));
         g_splashProgressCallback = nullptr;
         splash->close();
         delete splash;
@@ -174,7 +188,7 @@ int main(int argc, char *argv[])
     }
 
     if (g_startupStatus)
-        g_startupStatus->setText(I18n::text(14)); // Loading interface...
+        g_startupStatus->setText(I18n::text(14));
     updateStartupProgress(100);
 
     MainWindow window;
