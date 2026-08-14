@@ -23,7 +23,9 @@ protected:
             if (window && window->objectName() == QStringLiteral("MainWindow") &&
                 !window->property("mockupCleanupInstalled").toBool()) {
                 window->setProperty("mockupCleanupInstalled", true);
-                QTimer::singleShot(1200, window, [window]() { cleanup(window); });
+                // Run soon after the modern UI has created its widgets so obsolete
+                // layers never remain visible long enough to disturb the approved layout.
+                QTimer::singleShot(560, window, [window]() { cleanup(window); });
             }
         }
         return QObject::eventFilter(watched, event);
@@ -34,15 +36,11 @@ private:
     {
         if (!window) return;
 
-        // The approved mockup has one top header only. Remove the extra mode bar
-        // introduced by the first modernization pass.
         if (QFrame *modeBar = window->findChild<QFrame*>(QStringLiteral("modernModeBar"))) {
             modeBar->hide();
             modeBar->deleteLater();
         }
 
-        // The mockup uses the 2-minute trace inside each gauge card. Remove the
-        // duplicate legacy trend panel that was added below the gauges.
         if (QFrame *trendPanel = window->findChild<QFrame*>(QStringLiteral("trendPanel2min"))) {
             trendPanel->hide();
             trendPanel->deleteLater();
@@ -52,21 +50,18 @@ private:
         QListWidget *nav = window->findChild<QListWidget*>(QStringLiteral("modernNavigation"));
         if (!tabs) return;
 
-        // Remove the placeholder tab that is not part of the approved mockup.
         QWidget *database = tabs->findChild<QWidget*>(QStringLiteral("database_tab"));
         if (database) {
             const int index = tabs->indexOf(database);
             if (index >= 0) {
-                if (nav && index < nav->count()) {
+                if (nav && index < nav->count())
                     delete nav->takeItem(index);
-                }
                 tabs->removeTab(index);
             }
             database->deleteLater();
         }
 
-        // The approved mockup shows the real application pages directly.
-        // Do not hide ECU/ROSCO or automatic diagnostics behind an invented mode.
+        // Keep all real application pages available. No invented expert/basic filtering.
         for (int i = 0; i < tabs->count(); ++i) {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
             tabs->setTabVisible(i, true);
