@@ -121,7 +121,7 @@ protected:
             if (window && window->objectName() == QStringLiteral("MainWindow") && !window->property("screenFitInstalled").toBool()) {
                 if (window->findChild<QTabWidget*>(QStringLiteral("Tab_main"))) {
                     window->setProperty("screenFitInstalled", true);
-                    QTimer::singleShot(40, window, [window](){ new OverviewScreenFitter(window); });
+                    QTimer::singleShot(0, window, [window](){ new OverviewScreenFitter(window); });
                 }
             }
         }
