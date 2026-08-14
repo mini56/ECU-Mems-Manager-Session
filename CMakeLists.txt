@@ -22,7 +22,7 @@ set(SOURCES
     main.cpp i18n.cpp i18n.h memsinterface.cpp memslogic.cpp database/DatabaseSeed.cpp
     helpviewer.cpp logger.cpp serialdevenumerator.cpp splashprogress.cpp mainwindow.cpp aboutbox.cpp
     optionsdialog.cpp summarytab.cpp diagnosticpanel.cpp analysistab.cpp analysismodernizer.cpp captureviewer.cpp captureviewer.h
-    tooltipbubblemanager.cpp tooltipbubblemanager.h uimodernizer.cpp screenfit.cpp overviewcards.cpp hidelegacytrends.cpp modernheader.cpp globalresponsive.cpp secondaryresponsive.cpp mockupchrome.cpp scr/ecu/ecumanager.cpp scr/ecu/ecumanager.h
+    tooltipbubblemanager.cpp tooltipbubblemanager.h uimodernizer.cpp screenfit.cpp overviewcards.cpp hidelegacytrends.cpp modernheader.cpp globalresponsive.cpp secondaryresponsive.cpp mockupchrome.cpp mockupcleanup.cpp scr/ecu/ecumanager.cpp scr/ecu/ecumanager.h
     qledindicator/qledindicator.cpp analogwidgets/led.cpp analogwidgets/functions.cpp
     analogwidgets/widgetwithbackground.cpp analogwidgets/manometer.cpp analogwidgets/abstractmeter.cpp
     analogwidgets/manometer100.cpp analogwidgets/abstractmeter100.cpp analogwidgets/manometer900.cpp
