@@ -4,8 +4,10 @@
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QLineEdit>
 #include <QListWidget>
 #include <QMainWindow>
+#include <QPushButton>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QVariant>
@@ -33,7 +35,8 @@ static QString valueText(QObject *obj, const QString &suffix = QString())
     if (!v.isValid()) return QStringLiteral("--") + suffix;
     if (v.type() == QVariant::Double || v.type() == QVariant::Int || v.type() == QVariant::UInt)
         return QString::number(v.toDouble(), 'f', 1) + suffix;
-    return v.toString() + suffix;
+    const QString text=v.toString().trimmed();
+    return (text.isEmpty() ? QStringLiteral("--") : text) + suffix;
 }
 
 class MockupChromeInstaller : public QObject
@@ -51,7 +54,7 @@ protected:
             window->objectName()==QStringLiteral("MainWindow") &&
             !window->property("mockupChromeInstalled").toBool()) {
             window->setProperty("mockupChromeInstalled", true);
-            QTimer::singleShot(850, window, [window](){ install(window); });
+            QTimer::singleShot(700, window, [window](){ install(window); });
         }
         return QObject::eventFilter(watched, event);
     }
@@ -73,9 +76,9 @@ private:
         QListWidget *nav = central->findChild<QListWidget*>(QStringLiteral("modernNavigation"));
         if (nav) {
             nav->setStyleSheet(
-                "QListWidget{background:#11161b;color:#b8c0c7;border:0;border-right:1px solid #293038;"
-                "padding:7px 4px;outline:0;}"
-                "QListWidget::item{min-height:31px;padding:3px 9px;border-radius:2px;margin:1px 1px;}"
+                "QListWidget{background:#10151a;color:#b8c0c7;border:0;border-right:1px solid #293038;"
+                "padding:6px 3px;outline:0;}"
+                "QListWidget::item{min-height:30px;padding:3px 9px;border-radius:2px;margin:1px 1px;}"
                 "QListWidget::item:hover{background:#171d23;color:#ffffff;}"
                 "QListWidget::item:selected{background:#191f25;color:#ff9b32;border-left:3px solid #ff8a1c;}"
             );
@@ -84,7 +87,12 @@ private:
         QFrame *status = new QFrame(central);
         status->setObjectName(QStringLiteral("mockupBottomStatus"));
         status->setFixedHeight(28);
-        status->setStyleSheet("#mockupBottomStatus{background:#0f1419;border-top:1px solid #2a3138;}");
+        status->setStyleSheet(
+            "#mockupBottomStatus{background:#0f1419;border-top:1px solid #2a3138;}"
+            "#mockupBottomStatus QPushButton{background:#121820;color:#cfd5da;border:0;border-left:1px solid #2b323a;"
+            "border-radius:0;padding:2px 10px;font-size:10px;}"
+            "#mockupBottomStatus QPushButton:hover{color:#ffffff;background:#18212a;}"
+        );
         QHBoxLayout *sl = new QHBoxLayout(status);
         sl->setContentsMargins(0,0,0,0);
         sl->setSpacing(0);
@@ -95,7 +103,8 @@ private:
         QLabel *systemCell = makeStatusCell(QStringLiteral("Système : --"), status);
         QLabel *injCell = makeStatusCell(QStringLiteral("Injection : -- ms"), status);
         QLabel *airCell = makeStatusCell(QStringLiteral("Air : -- °C"), status);
-        QLabel *captureCell = makeStatusCell(QStringLiteral("Capture écran"), status);
+        QPushButton *captureButton = new QPushButton(QStringLiteral("Capture écran"), status);
+        captureButton->setCursor(Qt::PointingHandCursor);
 
         sl->addWidget(fileCell, 2);
         sl->addWidget(loopCell, 1);
@@ -103,19 +112,25 @@ private:
         sl->addWidget(systemCell, 1);
         sl->addWidget(injCell, 1);
         sl->addWidget(airCell, 1);
-        sl->addWidget(captureCell, 1);
+        sl->addWidget(captureButton, 1);
 
         root->addWidget(status);
 
         QObject *closedLoop = window->findChild<QObject*>(QStringLiteral("m_closed_loop"));
+        if (!closedLoop) closedLoop = window->findChild<QObject*>(QStringLiteral("m_closedLoopLed"));
         QObject *lambda = window->findChild<QObject*>(QStringLiteral("m_lambda_voltage"));
         QObject *inj = window->findChild<QObject*>(QStringLiteral("m_injector_time"));
         if (!inj) inj = window->findChild<QObject*>(QStringLiteral("m_injection_time"));
         QObject *air = window->findChild<QObject*>(QStringLiteral("m_airTempGauge"));
         QObject *system = window->findChild<QObject*>(QStringLiteral("m_engine_error"));
+        QLineEdit *logName = window->findChild<QLineEdit*>(QStringLiteral("m_logFileNameBox"));
+
+        QObject::connect(captureButton,&QPushButton::clicked,window,[window](){
+            QMetaObject::invokeMethod(window,"onSnapshotClicked",Qt::QueuedConnection);
+        });
 
         QTimer *sync = new QTimer(status);
-        sync->setInterval(300);
+        sync->setInterval(250);
         QObject::connect(sync, &QTimer::timeout, status, [=](){
             const qreal scale = window->property("globalUiScale").isValid()
                 ? window->property("globalUiScale").toDouble() : 1.0;
@@ -124,6 +139,10 @@ private:
             const int statusH = qBound(22, qRound(28.0 * scale), 31);
             if (status->height()!=statusH) status->setFixedHeight(statusH);
 
+            if (logName) {
+                const QString name=logName->text().trimmed();
+                fileCell->setText(QStringLiteral("Fichier : ") + (name.isEmpty()?QStringLiteral("--"):name));
+            }
             if (closedLoop) {
                 const bool on = closedLoop->property("checked").isValid()
                     ? closedLoop->property("checked").toBool()
