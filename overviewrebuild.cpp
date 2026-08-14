@@ -2,12 +2,14 @@
 #include <QCoreApplication>
 #include <QElapsedTimer>
 #include <QEvent>
+#include <QFrame>
 #include <QGridLayout>
 #include <QLabel>
 #include <QMainWindow>
 #include <QPainter>
 #include <QPainterPath>
 #include <QRadialGradient>
+#include <QSizePolicy>
 #include <QTimer>
 #include <QVariant>
 #include <QVector>
@@ -23,7 +25,8 @@ public:
     RebuildGaugeCard(QObject *source,const QString &title,const QString &unit,QWidget *parent=nullptr)
         : QWidget(parent),m_source(source),m_title(title),m_unit(unit)
     {
-        setMinimumSize(118,174);
+        setMinimumSize(88,122);
+        setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
         setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
         setAttribute(Qt::WA_TransparentForMouseEvents,true);
         m_clock.start();
@@ -49,7 +52,7 @@ protected:
         p.setRenderHint(QPainter::Antialiasing,true);
 
         const qreal baseW=188.0;
-        const qreal baseH=246.0;
+        const qreal baseH=226.0;
         const qreal s=qMin(width()/baseW,height()/baseH);
         const qreal x0=(width()-baseW*s)/2.0;
         const qreal y0=(height()-baseH*s)/2.0;
@@ -75,8 +78,8 @@ protected:
         double maxv=m_source?m_source->property("maximum").toDouble():100.0;
         if (!qIsFinite(minv)||!qIsFinite(maxv)||qFuzzyCompare(minv,maxv)) { minv=0; maxv=100; }
 
-        const QPointF c(94,96);
-        const qreal r=67;
+        const QPointF c(94,92);
+        const qreal r=63;
         QRadialGradient bezel(c-QPointF(13,15),r*1.20);
         bezel.setColorAt(0,QColor("#4a5258"));
         bezel.setColorAt(.18,QColor("#1c2329"));
@@ -97,14 +100,6 @@ protected:
         const qreal start=-140.0;
         const qreal sweep=280.0;
 
-        // Approved automotive warning band: orange, then red at the end of scale.
-        QRectF arcRect(c.x()-r+12,c.y()-r+12,(r-12)*2,(r-12)*2);
-        p.setBrush(Qt::NoBrush);
-        p.setPen(QPen(QColor("#ff7a00"),4.4,Qt::SolidLine,Qt::FlatCap));
-        p.drawArc(arcRect,int(-(start+sweep*.82)*16),int(-sweep*.10*16));
-        p.setPen(QPen(QColor("#e93e32"),4.4,Qt::SolidLine,Qt::FlatCap));
-        p.drawArc(arcRect,int(-(start+sweep*.92)*16),int(-sweep*.08*16));
-
         p.save();
         p.translate(c);
         for(int i=0;i<=70;i++) {
@@ -115,9 +110,7 @@ protected:
             const qreal len=major?10.5:(medium?6.8:3.6);
             QPointF po(qCos(a)*ro,qSin(a)*ro);
             QPointF pi(qCos(a)*(ro-len),qSin(a)*(ro-len));
-            QColor col=major?QColor("#ecf0f2"):QColor("#828d95");
-            if (i>=65) col=QColor("#ef4638");
-            else if (i>=59) col=QColor("#ff8a20");
+            const QColor col=major?QColor("#ecf0f2"):QColor("#828d95");
             p.setPen(QPen(col,major?1.25:(medium?.9:.55),Qt::SolidLine,Qt::FlatCap));
             p.drawLine(pi,po);
         }
@@ -135,7 +128,6 @@ protected:
         }
 
         double n=(value-minv)/(maxv-minv);
-        const bool ok=value>=minv && value<=maxv;
         n=qBound(0.0,n,1.0);
         qreal ang=qDegreesToRadians(start+sweep*n);
         QPointF d(qCos(ang),qSin(ang));
@@ -158,18 +150,15 @@ protected:
         p.setBrush(QColor("#505960"));
         p.drawEllipse(c,2.2,2.2);
 
-        QFont vf=p.font(); vf.setBold(true); vf.setPointSizeF(14.0); p.setFont(vf);
+        QFont vf=p.font(); vf.setBold(true); vf.setPointSizeF(13.0); p.setFont(vf);
         p.setPen(QColor("#f8fafb"));
         QString val=qAbs(value)<10 && qAbs(maxv-minv)<=40?QString::number(value,'f',1):QString::number(value,'f',0);
-        p.drawText(QRectF(42,116,104,23),Qt::AlignCenter,val);
+        p.drawText(QRectF(42,111,104,22),Qt::AlignCenter,val);
         QFont uf=p.font(); uf.setBold(false); uf.setPointSizeF(5.7); p.setFont(uf);
         p.setPen(QColor("#adb7bd"));
-        p.drawText(QRectF(42,137,104,11),Qt::AlignCenter,m_unit);
-        QFont st=p.font(); st.setBold(true); st.setPointSizeF(5.3); p.setFont(st);
-        p.setPen(ok?QColor("#6ee27a"):QColor("#ff5141"));
-        p.drawText(QRectF(8,151,172,12),Qt::AlignCenter,ok?QStringLiteral("NORMAL"):QStringLiteral("HORS PLAGE"));
+        p.drawText(QRectF(42,131,104,11),Qt::AlignCenter,m_unit);
 
-        QRectF tr(8,171,172,66);
+        QRectF tr(8,151,172,66);
         p.setPen(QPen(QColor("#2a343d"),0.8));
         p.setBrush(QColor("#070c10"));
         p.drawRoundedRect(tr,2.5,2.5);
@@ -217,14 +206,15 @@ class SystemStateCard : public QWidget
 public:
     explicit SystemStateCard(QObject *source,QWidget *parent=nullptr):QWidget(parent),m_source(source)
     {
-        setMinimumSize(118,174);
+        setMinimumSize(88,122);
+        setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
         setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     }
 protected:
     void paintEvent(QPaintEvent*) override
     {
         QPainter p(this); p.setRenderHint(QPainter::Antialiasing,true);
-        const qreal baseW=188.0,baseH=246.0;
+        const qreal baseW=188.0,baseH=226.0;
         const qreal s=qMin(width()/baseW,height()/baseH);
         p.translate((width()-baseW*s)/2.,(height()-baseH*s)/2.); p.scale(s,s);
         QRectF card(0,0,baseW,baseH);
@@ -233,15 +223,15 @@ protected:
         p.drawText(QRectF(6,6,176,17),Qt::AlignCenter,QStringLiteral("ÉTAT SYSTÈME"));
         p.setPen(QPen(QColor("#222c34"),.8)); p.drawLine(QPointF(8,24),QPointF(180,24));
         const bool fault=m_source?m_source->property("checked").toBool():false;
-        QPointF c(94,106); qreal rr=48;
+        QPointF c(94,97); qreal rr=44;
         QPainterPath shield; shield.moveTo(c.x(),c.y()-rr); shield.lineTo(c.x()+rr*.75,c.y()-rr*.65); shield.lineTo(c.x()+rr*.62,c.y()+rr*.28); shield.quadTo(c.x(),c.y()+rr,c.x()-rr*.62,c.y()+rr*.28); shield.lineTo(c.x()-rr*.75,c.y()-rr*.65); shield.closeSubpath();
         p.setPen(QPen(fault?QColor("#ff4b3b"):QColor("#6bdd45"),2.3)); p.setBrush(QColor(0,0,0,0)); p.drawPath(shield);
         p.setPen(QPen(fault?QColor("#ff4b3b"):QColor("#6bdd45"),3,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin));
         if(!fault){p.drawLine(QPointF(c.x()-18,c.y()+2),QPointF(c.x()-5,c.y()+15));p.drawLine(QPointF(c.x()-5,c.y()+15),QPointF(c.x()+23,c.y()-18));}
-        QFont st=p.font(); st.setBold(true); st.setPointSizeF(8.5); p.setFont(st); p.setPen(fault?QColor("#ff5141"):QColor("#6bdd45"));
-        p.drawText(QRectF(10,174,168,28),Qt::AlignCenter,fault?QStringLiteral("DÉFAUT DÉTECTÉ"):QStringLiteral("AUCUN DÉFAUT"));
+        QFont st=p.font(); st.setBold(true); st.setPointSizeF(8.2); p.setFont(st); p.setPen(fault?QColor("#ff5141"):QColor("#6bdd45"));
+        p.drawText(QRectF(10,157,168,28),Qt::AlignCenter,fault?QStringLiteral("DÉFAUT DÉTECTÉ"):QStringLiteral("AUCUN DÉFAUT"));
         QFont sub=p.font(); sub.setBold(false); sub.setPointSizeF(5.6); p.setFont(sub); p.setPen(QColor("#8d99a3"));
-        p.drawText(QRectF(14,207,160,24),Qt::AlignCenter|Qt::TextWordWrap,QStringLiteral("Surveillance générale ECU"));
+        p.drawText(QRectF(14,190,160,24),Qt::AlignCenter|Qt::TextWordWrap,QStringLiteral("Surveillance générale ECU"));
     }
 private: QObject *m_source=nullptr;
 };
@@ -270,27 +260,32 @@ private:
 
         overview->setMinimumSize(0,0);
         overview->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
+        overview->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
         overview->setAttribute(Qt::WA_StyledBackground,true);
         overview->setStyleSheet(QStringLiteral("#overview_tab{background:#090e13;}") );
 
         QVBoxLayout *root=new QVBoxLayout(overview);
-        root->setContentsMargins(10,8,10,8);
-        root->setSpacing(7);
+        root->setContentsMargins(8,6,8,6);
+        root->setSpacing(5);
+        root->setSizeConstraint(QLayout::SetDefaultConstraint);
 
         QFrame *heading=new QFrame(overview);
         heading->setObjectName(QStringLiteral("overviewHeading"));
         heading->setAttribute(Qt::WA_StyledBackground,true);
         heading->setStyleSheet(QStringLiteral("#overviewHeading{background:#10161c;border:1px solid #29343e;border-radius:4px;}"));
-        heading->setFixedHeight(42);
-        QVBoxLayout *hv=new QVBoxLayout(heading); hv->setContentsMargins(12,5,12,5); hv->setSpacing(0);
+        heading->setMinimumHeight(34);
+        heading->setMaximumHeight(44);
+        heading->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+        QVBoxLayout *hv=new QVBoxLayout(heading); hv->setContentsMargins(12,4,12,4); hv->setSpacing(0);
         QLabel *title=new QLabel(QStringLiteral("APERÇU"),heading); QFont tf=title->font(); tf.setBold(true); tf.setPointSizeF(9.5); title->setFont(tf); title->setStyleSheet(QStringLiteral("color:#ff9828;background:transparent;"));
         QLabel *sub=new QLabel(QStringLiteral("PARAMÈTRES MOTEUR ESSENTIELS • HISTORIQUE 2 MINUTES"),heading); QFont sf=sub->font(); sf.setPointSizeF(6.8); sub->setFont(sf); sub->setStyleSheet(QStringLiteral("color:#83909a;background:transparent;"));
-        hv->addWidget(title); hv->addWidget(sub); root->addWidget(heading);
+        hv->addWidget(title); hv->addWidget(sub); root->addWidget(heading,0);
 
         QGridLayout *grid=new QGridLayout;
         grid->setContentsMargins(0,0,0,0);
-        grid->setHorizontalSpacing(6);
-        grid->setVerticalSpacing(6);
+        grid->setHorizontalSpacing(5);
+        grid->setVerticalSpacing(5);
+        grid->setSizeConstraint(QLayout::SetDefaultConstraint);
         for(int c=0;c<6;c++) grid->setColumnStretch(c,1);
         grid->setRowStretch(0,1); grid->setRowStretch(1,1);
 
