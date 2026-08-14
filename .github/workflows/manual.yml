@@ -65,13 +65,70 @@ jobs:
       - name: Build Application
         run: cmake --build build
 
-      - name: Deploy Qt DLLs and librosco
+      - name: Create self-contained Windows package
+        shell: pwsh
         run: |
-          windeployqt build/ecu_mems_manager.exe
-          Copy-Item -Path "${{ github.workspace }}/prebuilt-librosco/librosco.dll" -Destination "build/" -ErrorAction SilentlyContinue
+          $ErrorActionPreference = "Stop"
+          $qtBin = "C:\Qt\5.15.2\mingw81_32\bin"
+          $mingwBin = "C:\Qt\Tools\mingw810_32\bin"
+          $dist = "${{ github.workspace }}\dist"
+
+          if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }
+          New-Item -ItemType Directory -Path $dist | Out-Null
+
+          Copy-Item "${{ github.workspace }}\build\ecu_mems_manager.exe" "$dist\ecu_mems_manager.exe"
+
+          & "$qtBin\windeployqt.exe" --release --no-translations "$dist\ecu_mems_manager.exe"
+          if ($LASTEXITCODE -ne 0) { throw "windeployqt a echoue" }
+
+          # DLLs explicitement indispensables au programme et au runtime MinGW.
+          $runtimeDlls = @(
+            "$qtBin\Qt5Core.dll",
+            "$qtBin\Qt5Gui.dll",
+            "$qtBin\Qt5Widgets.dll",
+            "$qtBin\Qt5Sql.dll",
+            "$qtBin\Qt5Svg.dll",
+            "$mingwBin\libgcc_s_dw2-1.dll",
+            "$mingwBin\libstdc++-6.dll",
+            "$mingwBin\libwinpthread-1.dll",
+            "${{ github.workspace }}\prebuilt-librosco\librosco.dll"
+          )
+          foreach ($dll in $runtimeDlls) {
+            if (-not (Test-Path $dll)) { throw "DLL source introuvable: $dll" }
+            Copy-Item $dll $dist -Force
+          }
+
+          # Le programme utilise QSQLITE uniquement. Evite de publier des pilotes
+          # PostgreSQL/ODBC incomplets et leurs dependances externes inutiles.
+          Remove-Item "$dist\sqldrivers\qsqlpsql.dll" -Force -ErrorAction SilentlyContinue
+          Remove-Item "$dist\sqldrivers\qsqlodbc.dll" -Force -ErrorAction SilentlyContinue
+
+          # Verification bloquante: l'artefact ne sera jamais publie s'il manque
+          # une DLL essentielle a cote de l'EXE.
+          $required = @(
+            "ecu_mems_manager.exe",
+            "Qt5Core.dll",
+            "Qt5Gui.dll",
+            "Qt5Widgets.dll",
+            "Qt5Sql.dll",
+            "libgcc_s_dw2-1.dll",
+            "libstdc++-6.dll",
+            "libwinpthread-1.dll",
+            "librosco.dll",
+            "platforms\qwindows.dll",
+            "sqldrivers\qsqlite.dll"
+          )
+          foreach ($file in $required) {
+            $full = Join-Path $dist $file
+            if (-not (Test-Path $full)) { throw "Fichier obligatoire manquant dans le package: $file" }
+            Write-Host "OK: $file"
+          }
+
+          Write-Host "Contenu final du package Windows:"
+          Get-ChildItem $dist -Recurse | Select-Object FullName,Length
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ECU-Mems-Manager-Windows
-          path: build/
+          path: dist/
