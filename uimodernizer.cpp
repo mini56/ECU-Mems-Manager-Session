@@ -5,7 +5,9 @@
 #include <QEvent>
 #include <QFrame>
 #include <QGridLayout>
+#include <QHBoxLayout>
 #include <QLabel>
+#include <QListWidget>
 #include <QMainWindow>
 #include <QPainter>
 #include <QPainterPath>
@@ -109,6 +111,7 @@ public:
         if (!m_tabs) return;
         installModeSelector();
         installDatabasePlaceholder();
+        installNavigation();
         installOverviewTrends();
         applyMode(m_modeBox ? m_modeBox->currentIndex() : 0);
     }
@@ -117,15 +120,16 @@ private:
     void installModeSelector()
     {
         QWidget *central=m_window->centralWidget();
-        if (!central || !central->layout()) return;
+        QBoxLayout *root=central ? qobject_cast<QBoxLayout*>(central->layout()) : nullptr;
+        if (!central || !root) return;
 
         QFrame *bar=new QFrame(central);
         bar->setObjectName(QStringLiteral("modernModeBar"));
         bar->setStyleSheet("#modernModeBar{background:#20242a;border-bottom:1px solid #343941;} QLabel{color:#cfd5da;} QComboBox{background:#121519;color:#f4f6f8;border:1px solid #ff8a1c;border-radius:4px;padding:4px 9px;min-width:145px;}");
         QHBoxLayout *layout=new QHBoxLayout(bar);
-        layout->setContentsMargins(12,4,12,4);
+        layout->setContentsMargins(14,5,14,5);
         QLabel *title=new QLabel(QStringLiteral("ECU MEMS MANAGER"),bar);
-        QFont titleFont=title->font(); titleFont.setBold(true); title->setFont(titleFont);
+        QFont titleFont=title->font(); titleFont.setBold(true); titleFont.setPointSize(titleFont.pointSize()+1); title->setFont(titleFont);
         layout->addWidget(title);
         layout->addStretch();
         QLabel *modeLabel=new QLabel(I18n::text(7100),bar);
@@ -136,7 +140,10 @@ private:
         QSettings settings(QStringLiteral("ECU MEMS Manager"), QStringLiteral("ECU MEMS Manager"));
         m_modeBox->setCurrentIndex(settings.value(QStringLiteral("InterfaceMode"),0).toInt()==1 ? 1 : 0);
         layout->addWidget(m_modeBox);
-        central->layout()->addWidget(bar);
+
+        const int tabIndex=root->indexOf(m_tabs);
+        root->insertWidget(tabIndex >= 0 ? tabIndex : 0, bar);
+
         connect(m_modeBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index){
             QSettings s(QStringLiteral("ECU MEMS Manager"), QStringLiteral("ECU MEMS Manager"));
             s.setValue(QStringLiteral("InterfaceMode"), index);
@@ -158,6 +165,45 @@ private:
         layout->addWidget(info);
         layout->addStretch();
         m_tabs->addTab(database, I18n::text(7105));
+    }
+
+    void installNavigation()
+    {
+        QWidget *central=m_window->centralWidget();
+        QBoxLayout *root=central ? qobject_cast<QBoxLayout*>(central->layout()) : nullptr;
+        if (!central || !root || !m_tabs) return;
+
+        const int tabsIndex=root->indexOf(m_tabs);
+        if (tabsIndex < 0) return;
+        root->removeWidget(m_tabs);
+
+        QFrame *workspace=new QFrame(central);
+        workspace->setObjectName(QStringLiteral("modernWorkspace"));
+        workspace->setStyleSheet("#modernWorkspace{background:#171a1f;} QListWidget{background:#20242a;color:#cfd5da;border:0;border-right:1px solid #343941;padding:8px 5px;outline:0;} QListWidget::item{min-height:34px;padding:4px 10px;border-radius:5px;margin:1px 2px;} QListWidget::item:hover{background:#2a2f36;color:#ffffff;} QListWidget::item:selected{background:#343a42;color:#ff9a32;border-left:3px solid #ff8a1c;} QTabWidget::pane{border:0;background:#171a1f;}");
+        QHBoxLayout *layout=new QHBoxLayout(workspace);
+        layout->setContentsMargins(0,0,0,0);
+        layout->setSpacing(0);
+
+        m_nav=new QListWidget(workspace);
+        m_nav->setObjectName(QStringLiteral("modernNavigation"));
+        m_nav->setFixedWidth(205);
+        m_nav->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        for (int i=0;i<m_tabs->count();++i)
+            m_nav->addItem(m_tabs->tabText(i));
+        m_nav->setCurrentRow(m_tabs->currentIndex());
+
+        m_tabs->tabBar()->hide();
+        layout->addWidget(m_nav);
+        layout->addWidget(m_tabs,1);
+        root->insertWidget(tabsIndex,workspace,1);
+
+        connect(m_nav,&QListWidget::currentRowChanged,this,[this](int row){
+            if (row>=0 && row<m_tabs->count()) m_tabs->setCurrentIndex(row);
+        });
+        connect(m_tabs,&QTabWidget::currentChanged,this,[this](int index){
+            if (m_nav && index>=0 && index<m_nav->count() && m_nav->currentRow()!=index)
+                m_nav->setCurrentRow(index);
+        });
     }
 
     void installOverviewTrends()
@@ -211,13 +257,16 @@ private:
 #else
             m_tabs->setTabEnabled(i, !expertOnly || expert);
 #endif
+            if (m_nav && i<m_nav->count()) m_nav->item(i)->setHidden(expertOnly && !expert);
         }
         m_tabs->setCurrentIndex(0);
+        if (m_nav) m_nav->setCurrentRow(0);
     }
 
     QMainWindow *m_window=nullptr;
     QTabWidget *m_tabs=nullptr;
     QComboBox *m_modeBox=nullptr;
+    QListWidget *m_nav=nullptr;
     QVector<MiniTrendWidget*> m_trends;
 };
 
