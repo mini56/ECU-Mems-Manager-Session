@@ -12,100 +12,83 @@
 #include "i18n.h"
 #define tr I18n::text
 
-// Correspondance entre les noms techniques des colonnes du CSV et des
-// libellés clairs en français, affichés dans la liste des voies.
 static QString friendlyColumnName(const QString &rawName)
 {
   static QMap<QString, QString> names;
   if (names.isEmpty())
   {
-    names["80x01-02_engine-rpm"] = I18n::text(6400) /* EN: Engine speed (rpm) */;
-    names["80x03_coolant_temp"] = I18n::text(6401) /* EN: Coolant temperature (°C) */;
-    names["80x04_ambient_temp"] = I18n::text(6402) /* EN: Ambient temperature (°C) */;
-    names["80x05_intake_air_temp"] = I18n::text(6403) /* EN: Intake air temperature (°C) */;
-    names["80x06_fuel_temp"] = I18n::text(6404) /* EN: Fuel temperature (°C) */;
-    names["80x07_map_kpa"] = I18n::text(6405) /* EN: Manifold pressure (kPa) */;
-    names["80x08_battery_voltage"] = I18n::text(6406) /* EN: Battery voltage (V) */;
-    names["80x09_throttle_pot"] = I18n::text(6407) /* EN: Throttle position (%) */;
-    names["80x0A_idle_switch"] = I18n::text(6408) /* EN: Idle switch */;
-    names["80x0C_park_neutral_switch"] = I18n::text(6409) /* EN: Park/neutral switch */;
-    names["80x0D-0E_fault_codes"] = I18n::text(6410) /* EN: Fault codes (raw) */;
-    names["80x0F_idle_set_point"] = I18n::text(6411) /* EN: Idle set point */;
-    names["80x10_idle_hot"] = I18n::text(6412) /* EN: Hot idle */;
-    names["80x12_iac_position"] = I18n::text(6413) /* EN: Stepper motor position (%) */;
-    names["80x13-14_idle_error"] = I18n::text(6414) /* EN: Idle error */;
-    names["80x15_ignition_advance_offset"] = I18n::text(6415) /* EN: Ignition advance offset */;
-    names["80x16_ignition_advance"] = I18n::text(6416) /* EN: Ignition advance (°) */;
-    names["80x17-18_coil_time"] = I18n::text(6417) /* EN: Coil time (ms) */;
-    names["80x19_crankshaft_position_sensor"] = I18n::text(6418) /* EN: Crankshaft position sensor */;
-    names["7dx01_ignition_switch"] = I18n::text(6419) /* EN: Ignition switch */;
-    names["7dx02_throttle_angle"] = I18n::text(6420) /* EN: Throttle angle (°) */;
-    names["7dx04_air_fuel_ratio"] = I18n::text(6421) /* EN: Air/fuel ratio */;
-    names["7dx05_dtc2"] = I18n::text(6422) /* EN: DTC 2 */;
-    names["7dx06_lambda_voltage"] = I18n::text(6423) /* EN: Lambda sensor voltage (mV) */;
-    names["7dx07_lambda_sensor_frequency"] = I18n::text(6424) /* EN: Lambda frequency */;
-    names["7dx08_lambda_sensor_dutycycle"] = I18n::text(6425) /* EN: Lambda duty cycle (%) */;
-    names["7dx09_lambda_sensor_status"] = I18n::text(6426) /* EN: Lambda status */;
-    names["7dx0A_closed_loop"] = I18n::text(6427) /* EN: Closed loop */;
-    names["7dx0B_long_term_fuel_trim"] = I18n::text(6428) /* EN: Long-term fuel trim (%) */;
-    names["7dx0C_short_term_fuel_trim"] = I18n::text(6429) /* EN: Short-term fuel trim (%) */;
-    names["7dx0D_carbon_canister_dutycycle"] = I18n::text(6430) /* EN: Canister purge duty cycle (%) */;
-    names["7dx0E_dtc3"] = I18n::text(6431) /* EN: DTC 3 */;
-    names["7dx0F_idle_base_pos"] = I18n::text(6432) /* EN: Idle base position */;
-    names["7dx11_dtc4"] = I18n::text(6433) /* EN: DTC 4 */;
-    names["7dx12_ignition_advance2"] = I18n::text(6434) /* EN: Ignition advance 2 */;
-    names["7dx13_idle_speed_offset"] = I18n::text(6435) /* EN: Idle speed offset */;
-    names["7dx14-15_idle_error_hot_corrected"] = I18n::text(6436) /* EN: Hot idle error (corrected) */;
-    names["7dx14-15_raw"] = I18n::text(6437) /* EN: Raw frame 7D14-15 */;
-    names["7dx16_dtc5"] = I18n::text(6438) /* EN: DTC 5 */;
+    names["80x01-02_engine-rpm"] = I18n::text(6400);
+    names["80x03_coolant_temp"] = I18n::text(6401);
+    names["80x04_ambient_temp"] = I18n::text(6402);
+    names["80x05_intake_air_temp"] = I18n::text(6403);
+    names["80x06_fuel_temp"] = I18n::text(6404);
+    names["80x07_map_kpa"] = I18n::text(6405);
+    names["80x08_battery_voltage"] = I18n::text(6406);
+    names["80x09_throttle_pot"] = I18n::text(6407);
+    names["80x0A_idle_switch"] = I18n::text(6408);
+    names["80x0C_park_neutral_switch"] = I18n::text(6409);
+    names["80x0D-0E_fault_codes"] = I18n::text(6410);
+    names["80x0F_idle_set_point"] = I18n::text(6411);
+    names["80x10_idle_hot"] = I18n::text(6412);
+    names["80x12_iac_position"] = I18n::text(6413);
+    names["80x13-14_idle_error"] = I18n::text(6414);
+    names["80x15_ignition_advance_offset"] = I18n::text(6415);
+    names["80x16_ignition_advance"] = I18n::text(6416);
+    names["80x17-18_coil_time"] = I18n::text(6417);
+    names["80x19_crankshaft_position_sensor"] = I18n::text(6418);
+    names["7dx01_ignition_switch"] = I18n::text(6419);
+    names["7dx02_throttle_angle"] = I18n::text(6420);
+    names["7dx04_air_fuel_ratio"] = I18n::text(6421);
+    names["7dx05_dtc2"] = I18n::text(6422);
+    names["7dx06_lambda_voltage"] = I18n::text(6423);
+    names["7dx07_lambda_sensor_frequency"] = I18n::text(6424);
+    names["7dx08_lambda_sensor_dutycycle"] = I18n::text(6425);
+    names["7dx09_lambda_sensor_status"] = I18n::text(6426);
+    names["7dx0A_closed_loop"] = I18n::text(6427);
+    names["7dx0B_long_term_fuel_trim"] = I18n::text(6428);
+    names["7dx0C_short_term_fuel_trim"] = I18n::text(6429);
+    names["7dx0D_carbon_canister_dutycycle"] = I18n::text(6430);
+    names["7dx0E_dtc3"] = I18n::text(6431);
+    names["7dx0F_idle_base_pos"] = I18n::text(6432);
+    names["7dx11_dtc4"] = I18n::text(6433);
+    names["7dx12_ignition_advance2"] = I18n::text(6434);
+    names["7dx13_idle_speed_offset"] = I18n::text(6435);
+    names["7dx14-15_idle_error_hot_corrected"] = I18n::text(6436);
+    names["7dx14-15_raw"] = I18n::text(6437);
+    names["7dx16_dtc5"] = I18n::text(6438);
   }
-
-  if (names.contains(rawName))
-  {
-    return names[rawName];
-  }
-  if (rawName.contains("_uk") || rawName.contains("uk1") || rawName.contains("uk2"))
-  {
-    return I18n::text(6439) /* EN: Undocumented (%1) */.arg(rawName);
-  }
+  if (names.contains(rawName)) return names[rawName];
+  if (rawName.contains("_uk") || rawName.contains("uk1") || rawName.contains("uk2")) return I18n::text(6439).arg(rawName);
   return rawName;
 }
-
-//=============================================================================
-// SingleChartWidget : un graphique dedie a une seule voie
-//=============================================================================
 
 SingleChartWidget::SingleChartWidget(const QString &name, const QColor &color, QWidget *parent)
   : QWidget(parent), m_name(name), m_color(color), m_hasCursor(false), m_cursorX(0)
 {
-  setMinimumHeight(190);
-  setMaximumHeight(190);
-  setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+  setMinimumHeight(160);
+  setMaximumHeight(160);
+  setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
   setMouseTracking(true);
-  setAutoFillBackground(true);
-  QPalette pal = palette();
-  pal.setColor(QPalette::Window, QColor("#ffffff"));
-  setPalette(pal);
 }
 
-void SingleChartWidget::setData(const QVector<double> &time, const QVector<double> &values)
+void SingleChartWidget::setData(const QVector<double>&time,const QVector<double>&values)
 {
-  m_time = time;
-  m_values = values;
+  m_time=time;
+  m_values=values;
   update();
 }
 
-void SingleChartWidget::mouseMoveEvent(QMouseEvent *event)
+void SingleChartWidget::mouseMoveEvent(QMouseEvent*event)
 {
-  m_hasCursor = true;
-  m_cursorX = event->pos().x();
+  m_hasCursor=true;
+  m_cursorX=event->pos().x();
   update();
 }
 
-void SingleChartWidget::leaveEvent(QEvent *event)
+void SingleChartWidget::leaveEvent(QEvent*event)
 {
   Q_UNUSED(event);
-  m_hasCursor = false;
+  m_hasCursor=false;
   update();
 }
 
@@ -115,160 +98,149 @@ void SingleChartWidget::paintEvent(QPaintEvent *event)
   QPainter painter(this);
   painter.setRenderHint(QPainter::Antialiasing);
 
-  // Titre de la courbe
-  painter.setPen(QColor("#1f2430"));
-  QFont titleFont = painter.font();
+  painter.fillRect(rect(),QColor("#0b1015"));
+  painter.setPen(QPen(QColor("#26313b"),1));
+  painter.setBrush(QColor("#0d1319"));
+  painter.drawRect(rect().adjusted(0,0,-1,-1));
+
+  QFont titleFont=painter.font();
   titleFont.setBold(true);
-  titleFont.setPointSize(9);
+  titleFont.setPointSize(8);
   painter.setFont(titleFont);
-  painter.drawText(QRect(0, 4, width(), 18), Qt::AlignHCenter, m_name);
+  painter.setPen(QColor("#dce2e7"));
+  painter.drawText(QRect(10,2,width()-20,18),Qt::AlignLeft|Qt::AlignVCenter,m_name);
 
-  const int leftMargin = 55;
-  const int rightMargin = 10;
-  const int topMargin = 26;
-  const int bottomMargin = 20;
-  QRect plotRect(leftMargin, topMargin, width() - leftMargin - rightMargin,
-                  height() - topMargin - bottomMargin);
+  const int leftMargin=48;
+  const int rightMargin=8;
+  const int topMargin=22;
+  const int bottomMargin=18;
+  QRect plotRect(leftMargin,topMargin,width()-leftMargin-rightMargin,height()-topMargin-bottomMargin);
+  if (plotRect.width()<10 || plotRect.height()<10) return;
 
-  painter.setPen(QPen(QColor("#e5e8ee"), 1));
-  painter.setBrush(QColor("#fbfbfd"));
+  painter.setPen(QPen(QColor("#26313b"),1));
+  painter.setBrush(QColor("#091017"));
   painter.drawRect(plotRect);
 
-  if (m_time.count() < 2 || m_values.count() < 2)
-  {
-    painter.setPen(QColor("#9aa0ab"));
-    painter.drawText(plotRect, Qt::AlignCenter, I18n::text(6440) /* EN: No data */);
-    return;
-  }
-
-  double tMin = m_time.first();
-  double tMax = m_time.last();
-  double tSpan = (tMax - tMin) > 0.0001 ? (tMax - tMin) : 1.0;
-
-  double vMin = m_values[0];
-  double vMax = m_values[0];
-  for (int i = 1; i < m_values.count(); i++)
-  {
-    if (m_values[i] < vMin) vMin = m_values[i];
-    if (m_values[i] > vMax) vMax = m_values[i];
-  }
-  if (vMax - vMin < 0.0001)
-  {
-    vMax += 1.0;
-    vMin -= 1.0;
-  }
-  double margin = (vMax - vMin) * 0.08;
-  vMax += margin;
-  vMin -= margin;
-  double vSpan = vMax - vMin;
-
-  // Grille horizontale + graduation de l'échelle réelle à gauche
-  painter.setPen(QColor("#eef0f4"));
-  QFont axisFont = painter.font();
+  QFont axisFont=painter.font();
   axisFont.setBold(false);
   axisFont.setPointSize(7);
   painter.setFont(axisFont);
-  for (int i = 0; i <= 4; i++)
-  {
-    int y = plotRect.top() + (plotRect.height() * i) / 4;
-    painter.drawLine(plotRect.left(), y, plotRect.right(), y);
-    double val = vMax - (vSpan * i) / 4.0;
-    painter.setPen(QColor("#6b7280"));
-    painter.drawText(QRect(0, y - 8, leftMargin - 6, 16), Qt::AlignRight | Qt::AlignVCenter,
-                      QString::number(val, 'f', val < 10 ? 1 : 0));
-    painter.setPen(QColor("#eef0f4"));
+
+  for(int i=0;i<=4;i++) {
+    int y=plotRect.top()+(plotRect.height()*i)/4;
+    painter.setPen(QColor("#1e2730"));
+    painter.drawLine(plotRect.left(),y,plotRect.right(),y);
+  }
+  for(int i=0;i<=10;i++) {
+    int x=plotRect.left()+(plotRect.width()*i)/10;
+    painter.setPen(QColor("#1e2730"));
+    painter.drawLine(x,plotRect.top(),x,plotRect.bottom());
   }
 
-  // Tracé de la courbe
-  painter.setPen(QPen(m_color, 2));
-  QPolygonF poly;
-  int n = qMin(m_time.count(), m_values.count());
-  for (int i = 0; i < n; i++)
-  {
-    double xFrac = (m_time[i] - tMin) / tSpan;
-    double yFrac = (m_values[i] - vMin) / vSpan;
-    double x = plotRect.left() + xFrac * plotRect.width();
-    double y = plotRect.bottom() - yFrac * plotRect.height();
-    poly << QPointF(x, y);
+  if(m_time.count()<2||m_values.count()<2) {
+    painter.setPen(QColor("#707b85"));
+    painter.drawText(plotRect,Qt::AlignCenter,I18n::text(6440));
+    return;
   }
+
+  double tMin=m_time.first();
+  double tMax=m_time.last();
+  double tSpan=(tMax-tMin)>0.0001?(tMax-tMin):1.0;
+  double vMin=m_values[0],vMax=m_values[0];
+  for(int i=1;i<m_values.count();i++) {
+    if(m_values[i]<vMin)vMin=m_values[i];
+    if(m_values[i]>vMax)vMax=m_values[i];
+  }
+  if(vMax-vMin<0.0001){vMax+=1;vMin-=1;}
+  double margin=(vMax-vMin)*.08;
+  vMax+=margin;
+  vMin-=margin;
+  double vSpan=vMax-vMin;
+
+  for(int i=0;i<=4;i++) {
+    int y=plotRect.top()+(plotRect.height()*i)/4;
+    double val=vMax-(vSpan*i)/4.;
+    painter.setPen(QColor("#77838e"));
+    painter.drawText(QRect(0,y-8,leftMargin-5,16),Qt::AlignRight|Qt::AlignVCenter,
+                     QString::number(val,'f',qAbs(val)<10?1:0));
+  }
+
+  QPolygonF poly;
+  int n=qMin(m_time.count(),m_values.count());
+  for(int i=0;i<n;i++) {
+    double x=(m_time[i]-tMin)/tSpan;
+    double y=(m_values[i]-vMin)/vSpan;
+    poly<<QPointF(plotRect.left()+x*plotRect.width(),plotRect.bottom()-y*plotRect.height());
+  }
+  painter.setPen(QPen(QColor(m_color.red(),m_color.green(),m_color.blue(),45),4,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin));
+  painter.drawPolyline(poly);
+  painter.setPen(QPen(m_color,1.6,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin));
   painter.drawPolyline(poly);
 
-  // Axe du temps en bas
-  painter.setPen(QColor("#6b7280"));
-  for (int i = 0; i <= 5; i++)
-  {
-    double t = tMin + (tSpan * i) / 5.0;
-    int x = plotRect.left() + (plotRect.width() * i) / 5;
-    painter.drawText(QRect(x - 30, plotRect.bottom() + 2, 60, 16), Qt::AlignCenter,
-                      QString("%1 s").arg(t - tMin, 0, 'f', 0));
+  painter.setPen(QColor("#77838e"));
+  for(int i=0;i<=5;i++) {
+    double t=tMin+(tSpan*i)/5.;
+    int x=plotRect.left()+(plotRect.width()*i)/5;
+    painter.drawText(QRect(x-28,plotRect.bottom()+1,56,15),Qt::AlignCenter,
+                     QString("%1 s").arg(t-tMin,0,'f',0));
   }
 
-  // Curseur de survol avec valeur instantanée
-  if (m_hasCursor && m_cursorX >= plotRect.left() && m_cursorX <= plotRect.right())
-  {
-    painter.setPen(QPen(QColor("#9aa0ab"), 1, Qt::DashLine));
-    painter.drawLine(m_cursorX, plotRect.top(), m_cursorX, plotRect.bottom());
-
-    double xFrac = double(m_cursorX - plotRect.left()) / double(plotRect.width());
-    double tAtCursor = tMin + xFrac * tSpan;
-    int idx = 0;
-    double best = 1e18;
-    for (int i = 0; i < m_time.count(); i++)
-    {
-      double d = qAbs(m_time[i] - tAtCursor);
-      if (d < best) { best = d; idx = i; }
+  if(m_hasCursor&&m_cursorX>=plotRect.left()&&m_cursorX<=plotRect.right()) {
+    painter.setPen(QPen(QColor("#aeb8c1"),1,Qt::DashLine));
+    painter.drawLine(m_cursorX,plotRect.top(),m_cursorX,plotRect.bottom());
+    double xf=double(m_cursorX-plotRect.left())/plotRect.width();
+    double tc=tMin+xf*tSpan;
+    int idx=0;
+    double best=1e18;
+    for(int i=0;i<m_time.count();i++) {
+      double d=qAbs(m_time[i]-tc);
+      if(d<best){best=d;idx=i;}
     }
-    if (idx < m_values.count())
-    {
-      QString label = QString::number(m_values[idx], 'f', 1);
-      QFontMetrics fm(axisFont);
-      int textW = fm.horizontalAdvance(label) + 10;
-      int boxX = m_cursorX + 6;
-      if (boxX + textW > plotRect.right()) boxX = m_cursorX - 6 - textW;
+    if(idx<m_values.count()) {
+      const double yf=(m_values[idx]-vMin)/vSpan;
+      const QPointF marker(m_cursorX,plotRect.bottom()-yf*plotRect.height());
+      painter.setPen(QPen(QColor("#0b1015"),2));
+      painter.setBrush(m_color);
+      painter.drawEllipse(marker,3.5,3.5);
 
-      painter.setPen(Qt::NoPen);
-      painter.setBrush(QColor(255, 255, 255, 230));
-      painter.drawRect(boxX, plotRect.top() + 4, textW, 16);
+      QString label=QString("%1   %2 s").arg(m_values[idx],0,'f',1).arg(m_time[idx]-tMin,0,'f',0);
+      QFontMetrics fm(axisFont);
+      int tw=fm.horizontalAdvance(label)+12;
+      int bx=m_cursorX+7;
+      if(bx+tw>plotRect.right())bx=m_cursorX-7-tw;
+      int by=qMax(plotRect.top()+4,int(marker.y())-22);
+      if(by+18>plotRect.bottom())by=plotRect.bottom()-18;
+      painter.setPen(QPen(QColor("#34414d"),1));
+      painter.setBrush(QColor(12,18,24,238));
+      painter.drawRect(bx,by,tw,18);
       painter.setPen(m_color);
-      painter.drawText(QRect(boxX + 5, plotRect.top() + 4, textW, 16),
-                        Qt::AlignVCenter | Qt::AlignLeft, label);
+      painter.drawText(QRect(bx+6,by,tw-10,18),Qt::AlignVCenter|Qt::AlignLeft,label);
     }
   }
 }
 
-//=============================================================================
-// ChartWidget : mode superpose (toutes les voies sur un seul graphique)
-//=============================================================================
-
-ChartWidget::ChartWidget(QWidget *parent) : QWidget(parent), m_hasCursor(false), m_cursorX(0)
+ChartWidget::ChartWidget(QWidget *parent)
+  : QWidget(parent),m_hasCursor(false),m_cursorX(0)
 {
   setMinimumHeight(150);
-  setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
   setMouseTracking(true);
-  setAutoFillBackground(true);
-  QPalette pal = palette();
-  pal.setColor(QPalette::Window, QColor("#0e1420"));
-  setPalette(pal);
 }
 
-void ChartWidget::setData(const QVector<double> &time,
-                           const QVector<QVector<double> > &series,
-                           const QStringList &names,
-                           const QVector<QColor> &colors)
+void ChartWidget::setData(const QVector<double>&time,const QVector<QVector<double> >&series,const QStringList&names,const QVector<QColor>&colors)
 {
-  m_time = time;
-  m_series = series;
-  m_names = names;
-  m_colors = colors;
-  m_visible = QVector<bool>(names.count(), false);
+  m_time=time;
+  m_series=series;
+  m_names=names;
+  m_colors=colors;
+  m_visible=QVector<bool>(names.count(),false);
   update();
 }
 
-void ChartWidget::setVisible(int index, bool vis)
+void ChartWidget::setVisible(int index,bool vis)
 {
-  if (index >= 0 && index < m_visible.count())
-  {
-    m_visible[index] = vis;
+  if(index>=0&&index<m_visible.count()) {
+    m_visible[index]=vis;
     update();
   }
 }
@@ -283,17 +255,17 @@ void ChartWidget::clearData()
   update();
 }
 
-void ChartWidget::mouseMoveEvent(QMouseEvent *event)
+void ChartWidget::mouseMoveEvent(QMouseEvent*event)
 {
-  m_hasCursor = true;
-  m_cursorX = event->pos().x();
+  m_hasCursor=true;
+  m_cursorX=event->pos().x();
   update();
 }
 
-void ChartWidget::leaveEvent(QEvent *event)
+void ChartWidget::leaveEvent(QEvent*event)
 {
   Q_UNUSED(event);
-  m_hasCursor = false;
+  m_hasCursor=false;
   update();
 }
 
@@ -302,430 +274,322 @@ void ChartWidget::paintEvent(QPaintEvent *event)
   Q_UNUSED(event);
   QPainter painter(this);
   painter.setRenderHint(QPainter::Antialiasing);
+  painter.fillRect(rect(),QColor("#0b1015"));
+  painter.setPen(QPen(QColor("#26313b"),1));
+  painter.setBrush(QColor("#091017"));
 
-  const int leftMargin = 8;
-  const int rightMargin = 8;
-  const int topMargin = 10;
-  const int bottomMargin = 26;
-  QRect plotRect(leftMargin, topMargin, width() - leftMargin - rightMargin,
-                  height() - topMargin - bottomMargin);
-
-  painter.setPen(QPen(QColor("#233047"), 1));
-  for (int i = 0; i <= 4; i++)
-  {
-    int y = plotRect.top() + (plotRect.height() * i) / 4;
-    painter.drawLine(plotRect.left(), y, plotRect.right(), y);
+  const int l=8,r=8,t=8,b=24;
+  QRect pr(l,t,width()-l-r,height()-t-b);
+  painter.drawRect(pr);
+  painter.setPen(QPen(QColor("#1e2730"),1));
+  for(int i=0;i<=4;i++) {
+    int y=pr.top()+pr.height()*i/4;
+    painter.drawLine(pr.left(),y,pr.right(),y);
   }
-  for (int i = 0; i <= 10; i++)
-  {
-    int x = plotRect.left() + (plotRect.width() * i) / 10;
-    painter.drawLine(x, plotRect.top(), x, plotRect.bottom());
+  for(int i=0;i<=10;i++) {
+    int x=pr.left()+pr.width()*i/10;
+    painter.drawLine(x,pr.top(),x,pr.bottom());
   }
 
-  if (m_time.count() < 2)
-  {
-    painter.setPen(QColor("#8a93a6"));
-    painter.drawText(rect(), Qt::AlignCenter,
-                      "Chargez un fichier CSV et cochez une ou plusieurs voies ci-contre");
+  if(m_time.count()<2) {
+    painter.setPen(QColor("#77838e"));
+    painter.drawText(rect(),Qt::AlignCenter,I18n::text(6440));
     return;
   }
 
-  double tMin = m_time.first();
-  double tMax = m_time.last();
-  double tSpan = (tMax - tMin) > 0.0001 ? (tMax - tMin) : 1.0;
-
-  int anyVisible = 0;
-  for (int s = 0; s < m_series.count(); s++)
-  {
-    if (s >= m_visible.count() || !m_visible[s]) continue;
-    anyVisible++;
-    const QVector<double> &values = m_series[s];
-    if (values.isEmpty()) continue;
-
-    double vMin = values[0];
-    double vMax = values[0];
-    for (int i = 1; i < values.count(); i++)
-    {
-      if (values[i] < vMin) vMin = values[i];
-      if (values[i] > vMax) vMax = values[i];
-    }
-    double vSpan = (vMax - vMin) > 0.0001 ? (vMax - vMin) : 1.0;
-
-    painter.setPen(QPen(m_colors[s % m_colors.count()], 2));
+  double tMin=m_time.first(),tMax=m_time.last(),span=(tMax-tMin)>.0001?tMax-tMin:1.;
+  int any=0;
+  for(int s=0;s<m_series.count();s++) {
+    if(s>=m_visible.count()||!m_visible[s])continue;
+    any++;
+    const QVector<double>&v=m_series[s];
+    if(v.isEmpty())continue;
+    double mn=v[0],mx=v[0];
+    for(int i=1;i<v.count();i++){mn=qMin(mn,v[i]);mx=qMax(mx,v[i]);}
+    double vs=(mx-mn)>.0001?mx-mn:1.;
     QPolygonF poly;
-    int n = qMin(m_time.count(), values.count());
-    for (int i = 0; i < n; i++)
-    {
-      double xFrac = (m_time[i] - tMin) / tSpan;
-      double yFrac = (values[i] - vMin) / vSpan;
-      poly << QPointF(plotRect.left() + xFrac * plotRect.width(),
-                       plotRect.bottom() - yFrac * plotRect.height());
+    int n=qMin(m_time.count(),v.count());
+    for(int i=0;i<n;i++) {
+      double xf=(m_time[i]-tMin)/span,yf=(v[i]-mn)/vs;
+      poly<<QPointF(pr.left()+xf*pr.width(),pr.bottom()-yf*pr.height());
     }
+    QColor c=m_colors[s%m_colors.count()];
+    painter.setPen(QPen(QColor(c.red(),c.green(),c.blue(),40),4,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin));
+    painter.drawPolyline(poly);
+    painter.setPen(QPen(c,1.5,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin));
     painter.drawPolyline(poly);
   }
 
-  if (anyVisible == 0)
-  {
-    painter.setPen(QColor("#8a93a6"));
-    painter.drawText(rect(), Qt::AlignCenter,
-                      I18n::text(6441) /* EN: Select one or more channels in the list on the left to display them */);
+  if(!any) {
+    painter.setPen(QColor("#77838e"));
+    painter.drawText(rect(),Qt::AlignCenter,I18n::text(6441));
   }
 
-  painter.setPen(QColor("#8a93a6"));
-  for (int i = 0; i <= 5; i++)
-  {
-    double t = tMin + (tSpan * i) / 5.0;
-    int x = plotRect.left() + (plotRect.width() * i) / 5;
-    painter.drawText(QRect(x - 30, plotRect.bottom() + 4, 60, 18), Qt::AlignCenter,
-                      QString("%1 s").arg(t - tMin, 0, 'f', 0));
+  QFont axisFont=painter.font();
+  axisFont.setPointSize(7);
+  painter.setFont(axisFont);
+  painter.setPen(QColor("#77838e"));
+  for(int i=0;i<=5;i++) {
+    double tv=tMin+span*i/5.;
+    int x=pr.left()+pr.width()*i/5;
+    painter.drawText(QRect(x-28,pr.bottom()+3,56,16),Qt::AlignCenter,
+                     QString("%1 s").arg(tv-tMin,0,'f',0));
   }
 
-  if (m_hasCursor && m_cursorX >= plotRect.left() && m_cursorX <= plotRect.right() && anyVisible > 0)
-  {
-    painter.setPen(QPen(QColor("#e6e8ee"), 1, Qt::DashLine));
-    painter.drawLine(m_cursorX, plotRect.top(), m_cursorX, plotRect.bottom());
-
-    double xFrac = double(m_cursorX - plotRect.left()) / double(plotRect.width());
-    double tAtCursor = tMin + xFrac * tSpan;
-    int idx = 0;
-    double best = 1e18;
-    for (int i = 0; i < m_time.count(); i++)
-    {
-      double d = qAbs(m_time[i] - tAtCursor);
-      if (d < best) { best = d; idx = i; }
+  if(m_hasCursor&&m_cursorX>=pr.left()&&m_cursorX<=pr.right()&&any>0) {
+    painter.setPen(QPen(QColor("#aeb8c1"),1,Qt::DashLine));
+    painter.drawLine(m_cursorX,pr.top(),m_cursorX,pr.bottom());
+    double xf=double(m_cursorX-pr.left())/pr.width(),tc=tMin+xf*span;
+    int idx=0;
+    double best=1e18;
+    for(int i=0;i<m_time.count();i++) {
+      double d=qAbs(m_time[i]-tc);
+      if(d<best){best=d;idx=i;}
     }
-
-    int legendY = plotRect.top() + 6;
-    QFont f = painter.font();
+    int ly=pr.top()+6;
+    QFont f=painter.font();
     f.setPointSize(8);
     painter.setFont(f);
-    for (int s = 0; s < m_series.count(); s++)
-    {
-      if (s >= m_visible.count() || !m_visible[s]) continue;
-      if (idx >= m_series[s].count()) continue;
-      QString label = QString("%1 : %2").arg(m_names[s]).arg(m_series[s][idx], 0, 'f', 1);
+    for(int s=0;s<m_series.count();s++) {
+      if(s>=m_visible.count()||!m_visible[s]||idx>=m_series[s].count())continue;
+      QString label=QString("%1 : %2").arg(m_names[s]).arg(m_series[s][idx],0,'f',1);
       QFontMetrics fm(f);
-      int textW = fm.horizontalAdvance(label) + 10;
-      int boxX = m_cursorX + 8;
-      if (boxX + textW > plotRect.right()) boxX = m_cursorX - 8 - textW;
-      painter.setPen(Qt::NoPen);
-      painter.setBrush(QColor(14, 20, 32, 210));
-      painter.drawRect(boxX, legendY, textW, 16);
-      painter.setPen(m_colors[s % m_colors.count()]);
-      painter.drawText(QRect(boxX + 5, legendY, textW, 16), Qt::AlignVCenter | Qt::AlignLeft, label);
-      legendY += 18;
+      int tw=fm.horizontalAdvance(label)+12;
+      int bx=m_cursorX+8;
+      if(bx+tw>pr.right())bx=m_cursorX-8-tw;
+      painter.setPen(QPen(QColor("#34414d"),1));
+      painter.setBrush(QColor(12,18,24,235));
+      painter.drawRect(bx,ly,tw,18);
+      painter.setPen(m_colors[s%m_colors.count()]);
+      painter.drawText(QRect(bx+6,ly,tw-10,18),Qt::AlignVCenter|Qt::AlignLeft,label);
+      ly+=20;
     }
   }
 }
 
-//=============================================================================
-// AnalysisTab
-//=============================================================================
-
-AnalysisTab::AnalysisTab(QWidget *parent) : QWidget(parent), m_overlayMode(false)
+AnalysisTab::AnalysisTab(QWidget *parent):QWidget(parent),m_overlayMode(false)
 {
-  m_colors << QColor("#4fc3f7") << QColor("#ff7043") << QColor("#66bb6a")
-           << QColor("#ffca28") << QColor("#ba68c8") << QColor("#26c6da")
-           << QColor("#ef5350") << QColor("#9ccc65") << QColor("#ec407a")
-           << QColor("#7e57c2") << QColor("#8d6e63") << QColor("#5c6bc0");
+  m_colors<<QColor("#4fc3f7")<<QColor("#ff7043")<<QColor("#66bb6a")<<QColor("#ffca28")<<QColor("#ba68c8")<<QColor("#26c6da")<<QColor("#ef5350")<<QColor("#9ccc65")<<QColor("#ec407a")<<QColor("#7e57c2")<<QColor("#8d6e63")<<QColor("#5c6bc0");
+  setStyleSheet("AnalysisTab{background:#0b0f14;color:#e7ebee;} QWidget{color:#e7ebee;} QPushButton{background:#17202a;color:#e7ebee;border:1px solid #34414d;border-radius:3px;padding:5px 9px;} QPushButton:hover{border-color:#ff8a1c;} QPushButton:checked{background:#ff8a1c;color:#111;border-color:#ff8a1c;} QScrollArea{background:#0d1218;border:1px solid #26313b;border-radius:3px;} QScrollArea>QWidget>QWidget{background:#0d1218;}");
 
-  QVBoxLayout *rootLayout = new QVBoxLayout(this);
+  QVBoxLayout*root=new QVBoxLayout(this);
+  root->setContentsMargins(6,6,6,6);
+  root->setSpacing(6);
+  QHBoxLayout*main=new QHBoxLayout();
+  main->setSpacing(6);
+  root->addLayout(main,1);
 
-  QHBoxLayout *mainLayout = new QHBoxLayout();
-  rootLayout->addLayout(mainLayout, 1);
+  QWidget*left=new QWidget(this);
+  left->setObjectName("analysisLeftPanel");
+  left->setStyleSheet("#analysisLeftPanel{background:#10161d;border:1px solid #26313b;border-radius:3px;}");
+  left->setMaximumWidth(320);
+  left->setMinimumWidth(300);
+  QVBoxLayout*ll=new QVBoxLayout(left);
+  ll->setContentsMargins(9,9,9,9);
+  ll->setSpacing(6);
 
-  // --- Colonne de gauche : chargement + liste des voies (défilement propre) ---
-  QWidget *leftPanel = new QWidget(this);
-  leftPanel->setMaximumWidth(320);
-  leftPanel->setMinimumWidth(300);
-  QVBoxLayout *leftLayout = new QVBoxLayout(leftPanel);
-
-  m_loadButton = new QPushButton(I18n::text(6442) /* EN: Load CSV / TXT file... */, leftPanel);
-  connect(m_loadButton, SIGNAL(clicked()), this, SLOT(onLoadFileClicked()));
-  leftLayout->addWidget(m_loadButton);
-
-  m_fileLabel = new QLabel(I18n::text(6443) /* EN: No file loaded */, leftPanel);
+  m_loadButton=new QPushButton(I18n::text(6442),left);
+  connect(m_loadButton,SIGNAL(clicked()),this,SLOT(onLoadFileClicked()));
+  ll->addWidget(m_loadButton);
+  m_fileLabel=new QLabel(I18n::text(6443),left);
   m_fileLabel->setWordWrap(true);
-  m_fileLabel->setStyleSheet("color: #565d6b; font-style: italic;");
-  leftLayout->addWidget(m_fileLabel);
+  m_fileLabel->setStyleSheet("color:#89939d;font-style:italic;");
+  ll->addWidget(m_fileLabel);
 
-  QHBoxLayout *selectRow = new QHBoxLayout();
-  m_selectAllButton = new QPushButton(I18n::text(6444) /* EN: Select all */, leftPanel);
-  m_selectNoneButton = new QPushButton(I18n::text(6445) /* EN: Clear all */, leftPanel);
-  connect(m_selectAllButton, SIGNAL(clicked()), this, SLOT(onSelectAllClicked()));
-  connect(m_selectNoneButton, SIGNAL(clicked()), this, SLOT(onSelectNoneClicked()));
-  selectRow->addWidget(m_selectAllButton);
-  selectRow->addWidget(m_selectNoneButton);
-  leftLayout->addLayout(selectRow);
+  QHBoxLayout*sr=new QHBoxLayout();
+  m_selectAllButton=new QPushButton(I18n::text(6444),left);
+  m_selectNoneButton=new QPushButton(I18n::text(6445),left);
+  connect(m_selectAllButton,SIGNAL(clicked()),this,SLOT(onSelectAllClicked()));
+  connect(m_selectNoneButton,SIGNAL(clicked()),this,SLOT(onSelectNoneClicked()));
+  sr->addWidget(m_selectAllButton);
+  sr->addWidget(m_selectNoneButton);
+  ll->addLayout(sr);
 
-  // Bouton de superposition : sous les deux boutons ci-dessus, largeur fixe
-  // pour qu'il ne change pas de taille selon le texte affiché
-  m_overlayButton = new QPushButton(I18n::text(6446) /* EN: Overlay all selected curves */, leftPanel);
+  m_overlayButton=new QPushButton(I18n::text(6446),left);
   m_overlayButton->setCheckable(true);
-  m_overlayButton->setMinimumWidth(290);
-  m_overlayButton->setFixedWidth(290);
-  m_overlayButton->setMinimumHeight(44);
-  connect(m_overlayButton, SIGNAL(toggled(bool)), this, SLOT(onOverlayToggled(bool)));
-  leftLayout->addWidget(m_overlayButton);
+  m_overlayButton->setMinimumHeight(34);
+  connect(m_overlayButton,SIGNAL(toggled(bool)),this,SLOT(onOverlayToggled(bool)));
+  ll->addWidget(m_overlayButton);
 
-  QLabel *voiesLabel = new QLabel(I18n::text(6447) /* EN: Available channels: */, leftPanel);
-  voiesLabel->setStyleSheet("font-weight: 600; margin-top: 6px;");
-  leftLayout->addWidget(voiesLabel);
-
-  m_checkboxScrollArea = new QScrollArea(leftPanel);
+  QLabel*vl=new QLabel(I18n::text(6447),left);
+  vl->setStyleSheet("font-weight:600;margin-top:4px;color:#ff9b32;");
+  ll->addWidget(vl);
+  m_checkboxScrollArea=new QScrollArea(left);
   m_checkboxScrollArea->setWidgetResizable(true);
-  m_checkboxContainer = new QWidget();
-  m_checkboxLayout = new QVBoxLayout(m_checkboxContainer);
+  m_checkboxContainer=new QWidget();
+  m_checkboxLayout=new QVBoxLayout(m_checkboxContainer);
+  m_checkboxLayout->setContentsMargins(5,5,5,5);
+  m_checkboxLayout->setSpacing(2);
   m_checkboxLayout->addStretch();
   m_checkboxScrollArea->setWidget(m_checkboxContainer);
-  leftLayout->addWidget(m_checkboxScrollArea, 1);
+  ll->addWidget(m_checkboxScrollArea,1);
+  main->addWidget(left);
 
-  mainLayout->addWidget(leftPanel);
-
-  // --- Colonne de droite : pile de mini-graphiques, avec son propre défilement ---
-  m_stackScrollArea = new QScrollArea(this);
+  m_stackScrollArea=new QScrollArea(this);
   m_stackScrollArea->setWidgetResizable(true);
-  m_stackContainer = new QWidget();
-  m_stackLayout = new QVBoxLayout(m_stackContainer);
+  m_stackContainer=new QWidget();
+  m_stackLayout=new QVBoxLayout(m_stackContainer);
+  m_stackLayout->setContentsMargins(4,4,4,4);
+  m_stackLayout->setSpacing(5);
   m_stackLayout->addStretch();
   m_stackScrollArea->setWidget(m_stackContainer);
-  mainLayout->addWidget(m_stackScrollArea, 1);
-
-  // Graphique superposé (mode alternatif, masqué par défaut)
-  m_overlayChart = new ChartWidget(this);
+  main->addWidget(m_stackScrollArea,1);
+  m_overlayChart=new ChartWidget(this);
   m_overlayChart->hide();
-  mainLayout->addWidget(m_overlayChart, 1);
+  main->addWidget(m_overlayChart,1);
 }
 
 void AnalysisTab::onLoadFileClicked()
 {
-  QString path = QFileDialog::getOpenFileName(this, I18n::text(6448) /* EN: Load log file */,
-                                                "logs", I18n::text(6449) /* EN: Log files (*.csv *.txt);;CSV files (*.csv);;Text files (*.txt);;All files (*.*) */);
-  if (path.isEmpty()) return;
-  loadFile(path);
+  QString path=QFileDialog::getOpenFileName(this,I18n::text(6448),"logs",I18n::text(6449));
+  if(!path.isEmpty())loadFile(path);
 }
 
-void AnalysisTab::loadFile(const QString &path)
+void AnalysisTab::loadFile(const QString&path)
 {
   parseCsv(path);
 }
 
-void AnalysisTab::parseCsv(const QString &path)
+void AnalysisTab::parseCsv(const QString&path)
 {
   QFile file(path);
-  if (!file.open(QFile::ReadOnly | QFile::Text))
-  {
-    QMessageBox::warning(this, I18n::text(6450) /* EN: Error */, I18n::text(6451) /* EN: Unable to open file: %1 */.arg(path), QMessageBox::Ok);
+  if(!file.open(QFile::ReadOnly|QFile::Text)) {
+    QMessageBox::warning(this,I18n::text(6450),I18n::text(6451).arg(path),QMessageBox::Ok);
     return;
   }
-
   QTextStream stream(&file);
-  if (!stream.atEnd()) stream.readLine(); // ID ECU, ignoré
-
-  if (stream.atEnd())
-  {
-    QMessageBox::warning(this, I18n::text(6452) /* EN: Error */, I18n::text(6453) /* EN: CSV file is empty or incomplete. */, QMessageBox::Ok);
+  if(!stream.atEnd())stream.readLine();
+  if(stream.atEnd()) {
+    QMessageBox::warning(this,I18n::text(6452),I18n::text(6453),QMessageBox::Ok);
     return;
   }
-  QString headerLine = stream.readLine();
-  QStringList headers = headerLine.split(",");
-  if (!headers.isEmpty() && headers[0].startsWith("#"))
-  {
-    headers[0] = headers[0].mid(1);
-  }
-
-  int columnCount = headers.count() - 1;
-  if (columnCount <= 0)
-  {
-    QMessageBox::warning(this, I18n::text(6454) /* EN: Error */, I18n::text(6455) /* EN: Unrecognized CSV file format. */, QMessageBox::Ok);
+  QStringList headers=stream.readLine().split(",");
+  if(!headers.isEmpty()&&headers[0].startsWith("#"))headers[0]=headers[0].mid(1);
+  int cc=headers.count()-1;
+  if(cc<=0) {
+    QMessageBox::warning(this,I18n::text(6454),I18n::text(6455),QMessageBox::Ok);
     return;
   }
-
   m_columnNames.clear();
-  for (int i = 1; i < headers.count(); i++)
-  {
-    m_columnNames << friendlyColumnName(headers[i].trimmed());
-  }
-
+  for(int i=1;i<headers.count();i++)m_columnNames<<friendlyColumnName(headers[i].trimmed());
   m_time.clear();
   m_columns.clear();
-  m_columns.resize(columnCount);
-
-  QTime firstTime;
-  int lineCount = 0;
-
-  while (!stream.atEnd())
-  {
-    QString line = stream.readLine();
-    if (line.trimmed().isEmpty()) continue;
-    QStringList fields = line.split(",");
-    if (fields.count() < 2) continue;
-
-    QTime t = QTime::fromString(fields[0], "hh:mm:ss");
-    double seconds;
-    if (t.isValid())
-    {
-      if (!firstTime.isValid()) firstTime = t;
-      seconds = firstTime.secsTo(t);
-      if (seconds < 0) seconds += 24 * 3600;
+  m_columns.resize(cc);
+  QTime first;
+  int lines=0;
+  while(!stream.atEnd()) {
+    QString line=stream.readLine();
+    if(line.trimmed().isEmpty())continue;
+    QStringList f=line.split(",");
+    if(f.count()<2)continue;
+    QTime tm=QTime::fromString(f[0],"hh:mm:ss");
+    double sec;
+    if(tm.isValid()) {
+      if(!first.isValid())first=tm;
+      sec=first.secsTo(tm);
+      if(sec<0)sec+=86400;
+    } else sec=lines;
+    m_time.append(sec);
+    for(int c=0;c<cc;c++) {
+      double v=0;
+      if(c+1<f.count())v=f[c+1].trimmed().toDouble();
+      m_columns[c].append(v);
     }
-    else
-    {
-      seconds = lineCount;
-    }
-    m_time.append(seconds);
-
-    for (int c = 0; c < columnCount; c++)
-    {
-      double value = 0.0;
-      if (c + 1 < fields.count())
-      {
-        value = fields[c + 1].trimmed().toDouble();
-      }
-      m_columns[c].append(value);
-    }
-    lineCount++;
+    lines++;
   }
   file.close();
-
-  if (lineCount == 0)
-  {
-    QMessageBox::warning(this, I18n::text(6456) /* EN: Error */, I18n::text(6457) /* EN: No usable data in this file. */, QMessageBox::Ok);
+  if(!lines) {
+    QMessageBox::warning(this,I18n::text(6456),I18n::text(6457),QMessageBox::Ok);
     return;
   }
-
-  m_fileLabel->setText(QFileInfo(path).fileName() + " (" + QString::number(lineCount) + " points)");
-
-  m_overlayChart->setData(m_time, m_columns, m_columnNames, m_colors);
+  m_fileLabel->setText(QFileInfo(path).fileName()+" ("+QString::number(lines)+" points)");
+  m_overlayChart->setData(m_time,m_columns,m_columnNames,m_colors);
   rebuildCheckboxes();
 }
 
 void AnalysisTab::rebuildCheckboxes()
 {
-  for (int i = 0; i < m_checkboxes.count(); i++)
-  {
-    m_checkboxLayout->removeWidget(m_checkboxes[i]);
-    delete m_checkboxes[i];
+  for(QCheckBox*cb:m_checkboxes) {
+    m_checkboxLayout->removeWidget(cb);
+    delete cb;
   }
   m_checkboxes.clear();
-
   qDeleteAll(m_stackedCharts);
   m_stackedCharts.clear();
-
-  QLayoutItem *stretchItem = m_checkboxLayout->takeAt(m_checkboxLayout->count() - 1);
-
-  for (int i = 0; i < m_columnNames.count(); i++)
-  {
-    QCheckBox *cb = new QCheckBox(m_columnNames[i], m_checkboxContainer);
-    QColor c = m_colors[i % m_colors.count()];
-    cb->setStyleSheet(QString(
-      "QCheckBox { padding: 3px 0; }"
-      "QCheckBox::indicator { width: 14px; height: 14px; border: 2px solid %1; border-radius: 3px; background-color: #ffffff; }"
-      "QCheckBox::indicator:checked { background-color: %1; }"
-      "QCheckBox::indicator:hover { border: 2px solid %1; }"
-      ).arg(c.name()));
-
-    if (m_columnNames[i].contains(I18n::text(6458) /* EN: Engine speed */) || m_columnNames[i].contains(I18n::text(6459) /* EN: coolant */) ||
-        m_columnNames[i].contains(I18n::text(6460) /* EN: Battery voltage */))
-    {
-      cb->setChecked(true);
-    }
-
-    connect(cb, SIGNAL(toggled(bool)), this, SLOT(onCheckboxToggled(bool)));
+  QLayoutItem*stretch=m_checkboxLayout->takeAt(m_checkboxLayout->count()-1);
+  for(int i=0;i<m_columnNames.count();i++) {
+    QCheckBox*cb=new QCheckBox(m_columnNames[i],m_checkboxContainer);
+    QColor c=m_colors[i%m_colors.count()];
+    cb->setStyleSheet(QString("QCheckBox{padding:3px 0;color:#dfe4e8;} QCheckBox::indicator{width:13px;height:13px;border:1px solid %1;border-radius:2px;background:#0b1015;} QCheckBox::indicator:checked{background:%1;}").arg(c.name()));
+    if(m_columnNames[i].contains(I18n::text(6458))||m_columnNames[i].contains(I18n::text(6459))||m_columnNames[i].contains(I18n::text(6460)))cb->setChecked(true);
+    connect(cb,SIGNAL(toggled(bool)),this,SLOT(onCheckboxToggled(bool)));
     m_checkboxLayout->addWidget(cb);
     m_checkboxes.append(cb);
   }
-
-  if (stretchItem) m_checkboxLayout->addItem(stretchItem);
-  else m_checkboxLayout->addStretch();
-
+  if(stretch)m_checkboxLayout->addItem(stretch);else m_checkboxLayout->addStretch();
   updateChartVisibility();
 }
 
 void AnalysisTab::onCheckboxToggled(bool checked)
 {
-  QCheckBox *cb = qobject_cast<QCheckBox*>(sender());
-  if (!cb) return;
-  int index = m_checkboxes.indexOf(cb);
-  if (index < 0) return;
-
-  if (m_overlayMode)
-  {
-    m_overlayChart->setVisible(index, checked);
-  }
-  else
-  {
-    if (checked) addStackedChart(index);
-    else removeStackedChart(index);
+  QCheckBox*cb=qobject_cast<QCheckBox*>(sender());
+  if(!cb)return;
+  int i=m_checkboxes.indexOf(cb);
+  if(i<0)return;
+  if(m_overlayMode)m_overlayChart->setVisible(i,checked);
+  else {
+    if(checked)addStackedChart(i);else removeStackedChart(i);
   }
 }
 
-void AnalysisTab::addStackedChart(int index)
+void AnalysisTab::addStackedChart(int i)
 {
-  if (m_stackedCharts.contains(index)) return;
-  if (index < 0 || index >= m_columns.count()) return;
-
-  SingleChartWidget *chart = new SingleChartWidget(m_columnNames[index],
-                                                     m_colors[index % m_colors.count()],
-                                                     m_stackContainer);
-  chart->setData(m_time, m_columns[index]);
-
-  int insertPos = m_stackLayout->count() - 1; // avant le stretch final
-  m_stackLayout->insertWidget(insertPos, chart);
-  m_stackedCharts[index] = chart;
+  if(m_stackedCharts.contains(i)||i<0||i>=m_columns.count())return;
+  SingleChartWidget*c=new SingleChartWidget(m_columnNames[i],m_colors[i%m_colors.count()],m_stackContainer);
+  c->setData(m_time,m_columns[i]);
+  m_stackLayout->insertWidget(m_stackLayout->count()-1,c);
+  m_stackedCharts[i]=c;
 }
 
-void AnalysisTab::removeStackedChart(int index)
+void AnalysisTab::removeStackedChart(int i)
 {
-  if (!m_stackedCharts.contains(index)) return;
-  SingleChartWidget *chart = m_stackedCharts.take(index);
-  m_stackLayout->removeWidget(chart);
-  delete chart;
+  if(!m_stackedCharts.contains(i))return;
+  SingleChartWidget*c=m_stackedCharts.take(i);
+  m_stackLayout->removeWidget(c);
+  delete c;
 }
 
 void AnalysisTab::onSelectAllClicked()
 {
-  for (int i = 0; i < m_checkboxes.count(); i++)
-  {
-    m_checkboxes[i]->setChecked(true);
-  }
+  for(QCheckBox*cb:m_checkboxes)cb->setChecked(true);
 }
 
 void AnalysisTab::onSelectNoneClicked()
 {
-  for (int i = 0; i < m_checkboxes.count(); i++)
-  {
-    m_checkboxes[i]->setChecked(false);
-  }
+  for(QCheckBox*cb:m_checkboxes)cb->setChecked(false);
 }
 
 void AnalysisTab::updateChartVisibility()
 {
-  for (int i = 0; i < m_checkboxes.count(); i++)
-  {
-    bool checked = m_checkboxes[i]->isChecked();
-    m_overlayChart->setVisible(i, checked);
-    if (!m_overlayMode)
-    {
-      if (checked) addStackedChart(i);
-      else removeStackedChart(i);
+  for(int i=0;i<m_checkboxes.count();i++) {
+    bool c=m_checkboxes[i]->isChecked();
+    m_overlayChart->setVisible(i,c);
+    if(!m_overlayMode) {
+      if(c)addStackedChart(i);else removeStackedChart(i);
     }
   }
 }
 
 void AnalysisTab::onOverlayToggled(bool checked)
 {
-  m_overlayMode = checked;
-  if (checked)
-  {
-    m_overlayButton->setText(I18n::text(6461) /* EN: Return to stacked display */);
+  m_overlayMode=checked;
+  if(checked) {
+    m_overlayButton->setText(I18n::text(6461));
     m_stackScrollArea->hide();
     m_overlayChart->show();
     rebuildOverlayChart();
-  }
-  else
-  {
-    m_overlayButton->setText(I18n::text(6462) /* EN: Overlay all selected curves */);
+  } else {
+    m_overlayButton->setText(I18n::text(6462));
     m_overlayChart->hide();
     m_stackScrollArea->show();
     updateChartVisibility();
@@ -734,8 +598,5 @@ void AnalysisTab::onOverlayToggled(bool checked)
 
 void AnalysisTab::rebuildOverlayChart()
 {
-  for (int i = 0; i < m_checkboxes.count(); i++)
-  {
-    m_overlayChart->setVisible(i, m_checkboxes[i]->isChecked());
-  }
+  for(int i=0;i<m_checkboxes.count();i++)m_overlayChart->setVisible(i,m_checkboxes[i]->isChecked());
 }
