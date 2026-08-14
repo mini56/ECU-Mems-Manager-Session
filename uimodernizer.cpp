@@ -89,16 +89,18 @@ private:
         overview->setStyleSheet(
             "#overview_tab{background:#0d1116;color:#e7ebee;}"
             "#overview_tab QLabel{color:#dfe4e8;background:transparent;}"
-            "#overview_tab QGroupBox{color:#e7ebee;background:#14191f;border:1px solid #303842;"
-            "border-radius:4px;margin-top:10px;font-weight:600;}"
-            "#overview_tab QGroupBox::title{subcontrol-origin:margin;left:9px;padding:0 4px;color:#ff9b32;}"
-            "#overview_tab QPushButton{background:#1769d2;color:#ffffff;border:1px solid #2d7ee8;"
-            "border-radius:4px;padding:5px 10px;font-weight:600;}"
-            "#overview_tab QPushButton:hover{background:#2378e6;border-color:#4c91ef;}"
-            "#overview_tab QPushButton:disabled{background:#252b31;color:#707983;border-color:#333b43;}"
-            "#overview_tab QProgressBar{background:#10151a;color:#dce2e7;border:1px solid #303842;"
-            "border-radius:3px;text-align:center;}"
-            "#overview_tab QProgressBar::chunk{background:#ff8a1c;border-radius:2px;}"
+            "#overview_tab QGroupBox{color:#e7ebee;background:#12181e;border:1px solid #2b343d;"
+            "border-radius:3px;margin-top:8px;font-weight:600;}"
+            "#overview_tab QGroupBox::title{subcontrol-origin:margin;left:8px;padding:0 4px;color:#ff9b32;}"
+            "#overview_tab QPushButton{background:#17202a;color:#eef2f5;border:1px solid #34414d;"
+            "border-radius:3px;padding:3px 8px;font-weight:600;}"
+            "#overview_tab QPushButton:hover{background:#1c2833;border-color:#ff8a1c;color:#ffffff;}"
+            "#overview_tab QPushButton:pressed{background:#111820;}"
+            "#overview_tab QPushButton:checked{background:#ff8a1c;color:#101419;border-color:#ff9b32;}"
+            "#overview_tab QPushButton:disabled{background:#20262c;color:#68727c;border-color:#303841;}"
+            "#overview_tab QProgressBar{background:#0f151a;color:#dce2e7;border:1px solid #2b343d;"
+            "border-radius:2px;text-align:center;}"
+            "#overview_tab QProgressBar::chunk{background:#ff8a1c;border-radius:1px;}"
         );
     }
 
