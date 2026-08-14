@@ -19,10 +19,9 @@ static QLabel *makeStatusCell(const QString &title, QWidget *parent)
 {
     QLabel *label = new QLabel(title, parent);
     label->setAlignment(Qt::AlignCenter);
-    label->setMinimumHeight(24);
+    label->setMinimumHeight(22);
     label->setStyleSheet(
-        "QLabel{color:#cfd5da;background:#0f1419;border-right:1px solid #2b323a;"
-        "padding:2px 8px;font-size:10px;}"
+        "QLabel{color:#cfd5da;background:#0f1419;border-right:1px solid #2b323a;padding:2px 7px;}"
     );
     return label;
 }
@@ -54,7 +53,7 @@ protected:
             window->objectName()==QStringLiteral("MainWindow") &&
             !window->property("mockupChromeInstalled").toBool()) {
             window->setProperty("mockupChromeInstalled", true);
-            QTimer::singleShot(700, window, [window](){ install(window); });
+            QTimer::singleShot(260, window, [window](){ install(window); });
         }
         return QObject::eventFilter(watched, event);
     }
@@ -86,11 +85,11 @@ private:
 
         QFrame *status = new QFrame(central);
         status->setObjectName(QStringLiteral("mockupBottomStatus"));
-        status->setFixedHeight(28);
+        status->setFixedHeight(26);
         status->setStyleSheet(
             "#mockupBottomStatus{background:#0f1419;border-top:1px solid #2a3138;}"
             "#mockupBottomStatus QPushButton{background:#121820;color:#cfd5da;border:0;border-left:1px solid #2b323a;"
-            "border-radius:0;padding:2px 10px;font-size:10px;}"
+            "border-radius:0;padding:2px 9px;}"
             "#mockupBottomStatus QPushButton:hover{color:#ffffff;background:#18212a;}"
         );
         QHBoxLayout *sl = new QHBoxLayout(status);
@@ -129,15 +128,21 @@ private:
             QMetaObject::invokeMethod(window,"onSnapshotClicked",Qt::QueuedConnection);
         });
 
+        const QList<QLabel*> cells = {fileCell,loopCell,lambdaCell,systemCell,injCell,airCell};
         QTimer *sync = new QTimer(status);
-        sync->setInterval(250);
+        sync->setInterval(220);
         QObject::connect(sync, &QTimer::timeout, status, [=](){
             const qreal scale = window->property("globalUiScale").isValid()
                 ? window->property("globalUiScale").toDouble() : 1.0;
             const int navWidth = qBound(132, qRound(184.0 * scale), 214);
             if (nav && nav->width()!=navWidth) nav->setFixedWidth(navWidth);
-            const int statusH = qBound(22, qRound(28.0 * scale), 31);
+            const int statusH = qBound(21, qRound(26.0 * scale), 30);
             if (status->height()!=statusH) status->setFixedHeight(statusH);
+
+            QFont sf=status->font();
+            sf.setPointSizeF(qBound<qreal>(6.3,8.0*scale,9.2));
+            for (QLabel *cell : cells) cell->setFont(sf);
+            captureButton->setFont(sf);
 
             if (logName) {
                 const QString name=logName->text().trimmed();
@@ -156,8 +161,8 @@ private:
                 const bool err = system->property("checked").toBool();
                 systemCell->setText(err ? QStringLiteral("Système : défaut") : QStringLiteral("Système : OK"));
                 systemCell->setStyleSheet(err
-                    ? "QLabel{color:#ff6b6b;background:#0f1419;border-right:1px solid #2b323a;padding:2px 8px;font-size:10px;}"
-                    : "QLabel{color:#6edc8b;background:#0f1419;border-right:1px solid #2b323a;padding:2px 8px;font-size:10px;}");
+                    ? "QLabel{color:#ff6b6b;background:#0f1419;border-right:1px solid #2b323a;padding:2px 7px;}"
+                    : "QLabel{color:#6edc8b;background:#0f1419;border-right:1px solid #2b323a;padding:2px 7px;}");
             }
         });
         sync->start();
