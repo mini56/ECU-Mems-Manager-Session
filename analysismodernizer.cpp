@@ -1,4 +1,5 @@
 #include <QApplication>
+#include <QBoxLayout>
 #include <QCheckBox>
 #include <QCoreApplication>
 #include <QEvent>
@@ -38,36 +39,92 @@ protected:
     }
 
 private:
+    static void matchApprovedLayout(QWidget *tab)
+    {
+        QWidget *legacyPanel = tab->findChild<QWidget*>(QStringLiteral("analysisLeftPanel"));
+        if (!legacyPanel || tab->findChild<QWidget*>(QStringLiteral("analysisTopBar"))) return;
+
+        QVBoxLayout *root = qobject_cast<QVBoxLayout*>(tab->layout());
+        QHBoxLayout *mainRow = nullptr;
+        if (root) {
+            for (int i=0; i<root->count(); ++i) {
+                if (QLayout *layout = root->itemAt(i)->layout()) {
+                    mainRow = qobject_cast<QHBoxLayout*>(layout);
+                    if (mainRow) break;
+                }
+            }
+        }
+        if (!root || !mainRow) return;
+
+        QPushButton *load = nullptr, *all = nullptr, *none = nullptr, *overlay = nullptr;
+        const QList<QPushButton*> buttons = legacyPanel->findChildren<QPushButton*>();
+        if (buttons.size() > 0) load = buttons.at(0);
+        if (buttons.size() > 1) all = buttons.at(1);
+        if (buttons.size() > 2) none = buttons.at(2);
+        if (buttons.size() > 3) overlay = buttons.at(3);
+        QLabel *fileLabel = nullptr;
+        const QList<QLabel*> labels = legacyPanel->findChildren<QLabel*>();
+        if (!labels.isEmpty()) fileLabel = labels.at(0);
+        QScrollArea *parameterScroll = legacyPanel->findChild<QScrollArea*>();
+
+        QWidget *topBar = new QWidget(tab);
+        topBar->setObjectName(QStringLiteral("analysisTopBar"));
+        QHBoxLayout *top = new QHBoxLayout(topBar);
+        top->setContentsMargins(10,7,10,7);
+        top->setSpacing(8);
+        if (load) { load->setParent(topBar); top->addWidget(load); }
+        if (fileLabel) { fileLabel->setParent(topBar); fileLabel->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred); top->addWidget(fileLabel,1); }
+        if (all) { all->setParent(topBar); top->addWidget(all); }
+        if (none) { none->setParent(topBar); top->addWidget(none); }
+        if (overlay) { overlay->setParent(topBar); top->addWidget(overlay); }
+        root->insertWidget(0, topBar);
+
+        QWidget *rightPanel = new QWidget(tab);
+        rightPanel->setObjectName(QStringLiteral("analysisRightPanel"));
+        QVBoxLayout *right = new QVBoxLayout(rightPanel);
+        right->setContentsMargins(10,10,10,10);
+        right->setSpacing(7);
+        QLabel *title = new QLabel(QStringLiteral("PARAMETRES"), rightPanel);
+        title->setObjectName(QStringLiteral("analysisParametersTitle"));
+        right->addWidget(title);
+        if (parameterScroll) { parameterScroll->setParent(rightPanel); right->addWidget(parameterScroll,1); }
+
+        mainRow->removeWidget(legacyPanel);
+        legacyPanel->hide();
+        legacyPanel->setMaximumWidth(0);
+        mainRow->addWidget(rightPanel);
+        mainRow->setStretch(0,1);
+        if (mainRow->count() > 1) mainRow->setStretch(1,0);
+    }
+
     static void apply(QWidget *tab)
     {
+        matchApprovedLayout(tab);
         tab->setAttribute(Qt::WA_StyledBackground, true);
         tab->setStyleSheet(
-            "AnalysisTab{background:#0e1318;color:#dce2e7;}"
+            "AnalysisTab{background:#0b0f14;color:#dce2e7;}"
             "QWidget{color:#dce2e7;}"
             "QLabel{background:transparent;border:0;color:#dce2e7;}"
-            "QPushButton{background:#1769d2;color:#ffffff;border:1px solid #2d7ee8;"
-            "border-radius:4px;padding:6px 12px;font-weight:600;min-height:28px;}"
-            "QPushButton:hover{background:#2378e6;border-color:#4c91ef;}"
-            "QPushButton:pressed{background:#1257b0;}"
-            "QPushButton:checked{background:#ff8a1c;color:#11151a;border-color:#ff9b32;}"
-            "QScrollArea{background:#11161c;border:1px solid #313943;border-radius:6px;}"
-            "QScrollArea>QWidget>QWidget{background:#11161c;}"
-            "QCheckBox{spacing:7px;padding:4px 2px;color:#dce2e7;background:transparent;}"
-            "QCheckBox::indicator{width:14px;height:14px;border:1px solid #47515c;"
-            "border-radius:3px;background:#0d1116;}"
-            "QCheckBox::indicator:checked{background:#1769d2;border-color:#2d7ee8;}"
-            "QScrollBar:vertical{background:#10151a;width:10px;margin:1px;}"
-            "QScrollBar::handle:vertical{background:#39434d;border-radius:4px;min-height:28px;}"
-            "QScrollBar::handle:vertical:hover{background:#4a5662;}"
+            "#analysisTopBar{background:#111820;border:1px solid #26313b;border-radius:3px;}"
+            "#analysisRightPanel{background:#10161d;border:1px solid #26313b;border-radius:3px;}"
+            "#analysisParametersTitle{color:#f0f3f5;font-weight:700;padding:3px 0px;border-bottom:1px solid #2b3540;}"
+            "QPushButton{background:#17202a;color:#dce2e7;border:1px solid #34414d;"
+            "border-radius:3px;padding:5px 10px;font-weight:600;min-height:25px;}"
+            "QPushButton:hover{border-color:#ff8a1c;color:#ffffff;}"
+            "QPushButton:pressed{background:#202b36;}"
+            "QPushButton:checked{background:#ff8a1c;color:#101419;border-color:#ff9b32;}"
+            "QScrollArea{background:#0d1218;border:0px;}"
+            "QScrollArea>QWidget>QWidget{background:#0d1218;}"
+            "QCheckBox{spacing:7px;padding:3px 2px;color:#dce2e7;background:transparent;}"
+            "QCheckBox::indicator{width:13px;height:13px;border:1px solid #53606c;border-radius:2px;background:#0b1015;}"
+            "QCheckBox::indicator:checked{background:#ff8a1c;border-color:#ff9b32;}"
+            "QScrollBar:vertical{background:#0c1116;width:9px;margin:1px;}"
+            "QScrollBar::handle:vertical{background:#384550;border-radius:3px;min-height:26px;}"
             "QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical{height:0;}"
-            "QScrollBar:horizontal{background:#10151a;height:10px;margin:1px;}"
-            "QScrollBar::handle:horizontal{background:#39434d;border-radius:4px;min-width:28px;}"
-            "QScrollBar::handle:horizontal:hover{background:#4a5662;}"
+            "QScrollBar:horizontal{background:#0c1116;height:9px;margin:1px;}"
+            "QScrollBar::handle:horizontal{background:#384550;border-radius:3px;min-width:26px;}"
             "QScrollBar::add-line:horizontal,QScrollBar::sub-line:horizontal{width:0;}"
         );
-
-        if (QWidget *left = tab->findChild<QWidget*>(QStringLiteral("analysisLeftPanel")))
-            left->setStyleSheet("#analysisLeftPanel{background:#151a20;border:1px solid #313943;border-radius:7px;}");
 
         const QList<QScrollArea*> scrolls = tab->findChildren<QScrollArea*>();
         for (QScrollArea *scroll : scrolls) {
@@ -75,7 +132,7 @@ private:
             scroll->setWidgetResizable(true);
             if (scroll->viewport()) {
                 scroll->viewport()->setAutoFillBackground(false);
-                scroll->viewport()->setStyleSheet("background:#11161c;");
+                scroll->viewport()->setStyleSheet("background:#0d1218;");
             }
         }
         fit(tab);
@@ -92,13 +149,15 @@ private:
 
     static void fit(QWidget *tab)
     {
-        QWidget *left = tab->findChild<QWidget*>(QStringLiteral("analysisLeftPanel"));
-        if (!left) return;
-
         const qreal scale = globalScale(tab);
-        const int target = qBound(190, qRound(300.0 * scale), 348);
-        left->setMinimumWidth(target);
-        left->setMaximumWidth(target);
+        QWidget *right = tab->findChild<QWidget*>(QStringLiteral("analysisRightPanel"));
+        if (right) {
+            const int target = qBound(205, qRound(275.0 * scale), 320);
+            right->setMinimumWidth(target);
+            right->setMaximumWidth(target);
+        }
+        QWidget *topBar = tab->findChild<QWidget*>(QStringLiteral("analysisTopBar"));
+        if (topBar) topBar->setMinimumHeight(qBound(36,qRound(45.0*scale),52));
 
         const qreal basePointSize = tab->property("analysisBaseFontPointSize").isValid()
             ? tab->property("analysisBaseFontPointSize").toDouble() : 9.0;
@@ -107,20 +166,15 @@ private:
         tab->setFont(f);
         tab->setProperty("analysisScale", scale);
 
-        const int buttonHeight = qBound(22, qRound(30.0 * scale), 35);
+        const int buttonHeight = qBound(22, qRound(28.0 * scale), 33);
         const QList<QPushButton*> buttons = tab->findChildren<QPushButton*>();
         for (QPushButton *button : buttons) button->setMinimumHeight(buttonHeight);
-
-        const int indicatorSize = qBound(10, qRound(14.0 * scale), 16);
-        const QList<QCheckBox*> checks = tab->findChildren<QCheckBox*>();
-        for (QCheckBox *check : checks)
-            check->setStyleSheet(QStringLiteral("QCheckBox::indicator{width:%1px;height:%1px;}").arg(indicatorSize));
 
         const QList<QWidget*> children = tab->findChildren<QWidget*>();
         for (QWidget *child : children) {
             const QString className = QString::fromLatin1(child->metaObject()->className());
             if (className == QStringLiteral("SingleChartWidget")) {
-                const int chartHeight = qBound(118, qRound(190.0 * scale), 220);
+                const int chartHeight = qBound(105, qRound(158.0 * scale), 185);
                 child->setMinimumHeight(chartHeight);
                 child->setMaximumHeight(chartHeight);
             } else if (className == QStringLiteral("ChartWidget")) {
