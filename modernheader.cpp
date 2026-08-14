@@ -116,7 +116,6 @@ private:
         brandLayout->addWidget(version);
         layout->addWidget(brandBox,0,Qt::AlignVCenter);
 
-        // Approved order: ECU state, Port, Frequency, Communication, Connect/Disconnect.
         ecuLabel->setParent(bar);
         ecuLabel->setAlignment(Qt::AlignCenter);
         ecuLabel->setStyleSheet(infoStyle());
@@ -126,7 +125,6 @@ private:
         portChip->setObjectName(QStringLiteral("mockupPortLabel"));
         layout->addWidget(portChip,0,Qt::AlignVCenter);
 
-        // The current MEMS service loop polls continuously; no fixed numeric Hz is configured.
         QLabel *frequencyChip=makeInfoChip(QStringLiteral("Fréquence : auto"),bar);
         frequencyChip->setObjectName(QStringLiteral("mockupFrequencyLabel"));
         layout->addWidget(frequencyChip,0,Qt::AlignVCenter);
@@ -153,17 +151,13 @@ private:
         layout->addWidget(connectButton,0,Qt::AlignVCenter);
         layout->addWidget(disconnectButton,0,Qt::AlignVCenter);
 
-        // The remaining legacy separators/error block are represented elsewhere
-        // (notably in the approved bottom system status), so the old container is hidden.
         legacy->hide();
         legacy->setMaximumSize(0,0);
 
         root->insertWidget(0,bar);
         bar->show();
 
-        QTimer *sync=new QTimer(bar);
-        sync->setInterval(200);
-        QObject::connect(sync,&QTimer::timeout,bar,[=](){
+        const auto syncHeader = [=](){
             const qreal scale=window->property("globalUiScale").isValid()
                 ? window->property("globalUiScale").toDouble() : 1.0;
             const int headerH=qBound(32,qRound(40.0*scale),46);
@@ -198,9 +192,15 @@ private:
             connectButton->setFixedWidth(qMax(62,connectButton->fontMetrics().horizontalAdvance(connectButton->text())+pad));
             disconnectButton->setFixedWidth(qMax(62,disconnectButton->fontMetrics().horizontalAdvance(disconnectButton->text())+pad));
 
-            // Keep the displayed COM port synchronized if the user changes it in Options.
             portChip->setText(QStringLiteral("Port : %1").arg(configuredSerialPort()));
-        });
+        };
+
+        // Apply the final geometry before the first periodic synchronization tick.
+        syncHeader();
+
+        QTimer *sync=new QTimer(bar);
+        sync->setInterval(200);
+        QObject::connect(sync,&QTimer::timeout,bar,syncHeader);
         sync->start();
     }
 };
