@@ -45,9 +45,9 @@ private:
         workspace->setObjectName(QStringLiteral("modernWorkspace"));
         workspace->setStyleSheet(
             "#modernWorkspace{background:#0d1116;}"
-            "QListWidget{background:#11161b;color:#b8c0c7;border:0;border-right:1px solid #293038;"
-            "padding:7px 4px;outline:0;}"
-            "QListWidget::item{min-height:31px;padding:3px 9px;border-radius:2px;margin:1px 1px;}"
+            "QListWidget{background:#10151a;color:#b8c0c7;border:0;border-right:1px solid #293038;"
+            "padding:5px 3px;outline:0;}"
+            "QListWidget::item{min-height:28px;padding:2px 9px;border-radius:1px;margin:1px 0px;}"
             "QListWidget::item:hover{background:#171d23;color:#ffffff;}"
             "QListWidget::item:selected{background:#191f25;color:#ff9b32;border-left:3px solid #ff8a1c;}"
             "QTabWidget::pane{border:0;background:#0d1116;}"
@@ -59,8 +59,13 @@ private:
 
         m_nav = new QListWidget(workspace);
         m_nav->setObjectName(QStringLiteral("modernNavigation"));
-        m_nav->setFixedWidth(184);
+        m_nav->setFixedWidth(176);
         m_nav->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        m_nav->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+        m_nav->setSelectionMode(QAbstractItemView::SingleSelection);
+        m_nav->setFocusPolicy(Qt::NoFocus);
+        m_nav->setUniformItemSizes(true);
+        m_nav->setSpacing(0);
         for (int i = 0; i < m_tabs->count(); ++i)
             m_nav->addItem(m_tabs->tabText(i));
         m_nav->setCurrentRow(m_tabs->currentIndex());
