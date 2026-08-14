@@ -27,9 +27,26 @@ jobs:
         run: pip install aqtinstall
 
       - name: Installer Qt 5.15.2 MinGW 32 bits
+        shell: pwsh
         run: |
-          aqt install-qt windows desktop 5.15.2 win32_mingw81 -m qtcharts -O C:\Qt
+          $qtOk = $false
+          for ($attempt = 1; $attempt -le 3; $attempt++) {
+            Write-Host "Installation Qt - tentative $attempt/3"
+            Remove-Item "C:\Qt\5.15.2" -Recurse -Force -ErrorAction SilentlyContinue
+            aqt install-qt windows desktop 5.15.2 win32_mingw81 -m qtcharts -O C:\Qt
+            $qtConfig = "C:\Qt\5.15.2\mingw81_32\lib\cmake\Qt5\Qt5Config.cmake"
+            if ($LASTEXITCODE -eq 0 -and (Test-Path $qtConfig)) {
+              $qtOk = $true
+              break
+            }
+            Write-Warning "Qt incomplet ou archive invalide. Nouvelle tentative dans 5 secondes."
+            Start-Sleep -Seconds 5
+          }
+          if (-not $qtOk) {
+            throw "Impossible d'installer Qt 5.15.2 apres 3 tentatives."
+          }
           aqt install-tool windows desktop tools_mingw qt.tools.win32_mingw810 -O C:\Qt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Ajouter MinGW et Qt au PATH
         run: |
