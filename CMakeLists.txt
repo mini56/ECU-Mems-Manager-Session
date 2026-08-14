@@ -1,113 +1,52 @@
 cmake_minimum_required(VERSION 3.16)
 
 set(PROJECTNAME "ECU_Mems_Manager")
-
 string(TOLOWER ${PROJECTNAME} PNAME)
 project(${PNAME} CXX)
-
 add_definitions(-DPROJECTNAME="${PROJECTNAME}")
-
 set(VER_MAJOR 1)
 set(VER_MINOR 0)
 set(VER_PATCH 9)
 set(APP_VERSION "${VER_MAJOR}.${VER_MINOR}.${VER_PATCH}")
-
-add_compile_definitions(
-    APP_NAME="ECU Mems Manager"
-    APP_VERSION="${APP_VERSION}"
-)
-
-add_definitions(
-    "-DVER_MAJOR=${VER_MAJOR}"
-    "-DVER_MINOR=${VER_MINOR}"
-    "-DVER_PATCH=${VER_PATCH}"
-)
-
+add_compile_definitions(APP_NAME="ECU Mems Manager" APP_VERSION="${APP_VERSION}")
+add_definitions("-DVER_MAJOR=${VER_MAJOR}" "-DVER_MINOR=${VER_MINOR}" "-DVER_PATCH=${VER_PATCH}")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
-
 find_package(Qt5 REQUIRED COMPONENTS Widgets SerialPort Charts Sql)
-
-include_directories(
-    "${CMAKE_SOURCE_DIR}"
-    "${CMAKE_SOURCE_DIR}/qledindicator"
-    "${CMAKE_SOURCE_DIR}/analogwidgets"
-    "${CMAKE_SOURCE_DIR}/ecu"
-    "${CMAKE_CURRENT_BINARY_DIR}"
-)
-
+include_directories("${CMAKE_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}/qledindicator" "${CMAKE_SOURCE_DIR}/analogwidgets" "${CMAKE_SOURCE_DIR}/ecu" "${CMAKE_CURRENT_BINARY_DIR}")
 configure_file("${CMAKE_SOURCE_DIR}/help.html.in" "${CMAKE_SOURCE_DIR}/help.html")
 configure_file("${CMAKE_SOURCE_DIR}/help_en.html.in" "${CMAKE_SOURCE_DIR}/help_en.html")
-
 set(SOURCES
-    main.cpp
-    i18n.cpp
-    i18n.h
-    memsinterface.cpp
-    memslogic.cpp
-    database/DatabaseSeed.cpp
-    helpviewer.cpp
-    logger.cpp
-    serialdevenumerator.cpp
-    splashprogress.cpp
-    mainwindow.cpp
-    aboutbox.cpp
-    optionsdialog.cpp
-    summarytab.cpp
-    diagnosticpanel.cpp
-    analysistab.cpp
-    captureviewer.cpp
-    captureviewer.h
-    tooltipbubblemanager.cpp
-    tooltipbubblemanager.h
-    scr/ecu/ecumanager.cpp
-    scr/ecu/ecumanager.h
-    qledindicator/qledindicator.cpp
-    analogwidgets/led.cpp
-    analogwidgets/functions.cpp
-    analogwidgets/widgetwithbackground.cpp
-    analogwidgets/manometer.cpp
-    analogwidgets/abstractmeter.cpp
-    analogwidgets/manometer100.cpp
-    analogwidgets/abstractmeter100.cpp
-    analogwidgets/manometer900.cpp
-    analogwidgets/abstractmeter900.cpp
-    mainwindow.ui
-    resources.qrc
-    database/DatabaseManager.cpp
-)
-
+    main.cpp i18n.cpp i18n.h memsinterface.cpp memslogic.cpp database/DatabaseSeed.cpp
+    helpviewer.cpp logger.cpp serialdevenumerator.cpp splashprogress.cpp mainwindow.cpp aboutbox.cpp
+    optionsdialog.cpp summarytab.cpp diagnosticpanel.cpp analysistab.cpp captureviewer.cpp captureviewer.h
+    tooltipbubblemanager.cpp tooltipbubblemanager.h scr/ecu/ecumanager.cpp scr/ecu/ecumanager.h
+    qledindicator/qledindicator.cpp analogwidgets/led.cpp analogwidgets/functions.cpp
+    analogwidgets/widgetwithbackground.cpp analogwidgets/manometer.cpp analogwidgets/abstractmeter.cpp
+    analogwidgets/manometer100.cpp analogwidgets/abstractmeter100.cpp analogwidgets/manometer900.cpp
+    analogwidgets/abstractmeter900.cpp mainwindow.ui resources.qrc database/DatabaseManager.cpp)
 add_executable(${PNAME} ${SOURCES})
-
-target_sources(${PNAME} PRIVATE
-    ${CMAKE_SOURCE_DIR}/desktopshortcut.cpp
-    ${CMAKE_SOURCE_DIR}/desktopshortcut.h
-)
+target_sources(${PNAME} PRIVATE ${CMAKE_SOURCE_DIR}/desktopshortcut.cpp ${CMAKE_SOURCE_DIR}/desktopshortcut.h)
 if(WIN32)
     target_link_libraries(${PNAME} PRIVATE ole32 shell32 uuid)
-    add_custom_command(TARGET ${PNAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/key.ico" "$<TARGET_FILE_DIR:${PNAME}>/key.ico"
-    )
+    add_custom_command(TARGET ${PNAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/key.ico" "$<TARGET_FILE_DIR:${PNAME}>/key.ico")
 endif()
 
-# Runtime language files. Deploy every keyed JSON module automatically.
-file(GLOB KEYED_TRANSLATION_JSON "${CMAKE_SOURCE_DIR}/translations/*.json")
+# Runtime language files: preserve the complete translations tree, including
+# per-language folders (fr/en/es/it/pt/de). Root files remain temporarily as
+# compatibility fallback during the migration away from legacy .ts catalogs.
 add_custom_command(TARGET ${PNAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PNAME}>/translations"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${KEYED_TRANSLATION_JSON}
-        "${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_fr.ts"
-        "${CMAKE_SOURCE_DIR}/translations/ECUMemsManager_en.ts"
-        "$<TARGET_FILE_DIR:${PNAME}>/translations"
-)
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/translations"
+        "$<TARGET_FILE_DIR:${PNAME}>/translations")
 
 if(MSVC)
     add_compile_definitions(_HAS_STD_BYTE=0)
     target_compile_options(${PNAME} PRIVATE /permissive)
 endif()
-
 if(WIN32)
     message(STATUS "Plateforme Windows détectée (MSVC / MinGW).")
     if(MSVC)
@@ -115,7 +54,6 @@ if(WIN32)
     elseif(MINGW)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mwindows")
     endif()
-
     find_library(LIBROSCO_DLL rosco)
     if(LIBROSCO_DLL)
         message(STATUS "Bibliothèque rosco trouvée : ${LIBROSCO_DLL}")
