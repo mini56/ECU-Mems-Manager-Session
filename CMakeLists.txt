@@ -5,8 +5,8 @@ string(TOLOWER ${PROJECTNAME} PNAME)
 project(${PNAME} CXX)
 add_definitions(-DPROJECTNAME="${PROJECTNAME}")
 set(VER_MAJOR 1)
-set(VER_MINOR 0)
-set(VER_PATCH 9)
+set(VER_MINOR 1)
+set(VER_PATCH 0)
 set(APP_VERSION "${VER_MAJOR}.${VER_MINOR}.${VER_PATCH}")
 add_compile_definitions(APP_NAME="ECU Mems Manager" APP_VERSION="${APP_VERSION}")
 add_definitions("-DVER_MAJOR=${VER_MAJOR}" "-DVER_MINOR=${VER_MINOR}" "-DVER_PATCH=${VER_PATCH}")
@@ -34,14 +34,17 @@ if(WIN32)
     add_custom_command(TARGET ${PNAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/key.ico" "$<TARGET_FILE_DIR:${PNAME}>/key.ico")
 endif()
 
-# Runtime language files: preserve the complete translations tree, including
-# per-language folders (fr/en/es/it/pt/de). Root files remain temporarily as
-# compatibility fallback during the migration away from legacy .ts catalogs.
+# Runtime translations: v1.1.0 uses only the six per-language JSON folders.
+# Legacy flat JSON catalogs, Qt .ts catalogs and migration scripts are no
+# longer deployed with the application.
 add_custom_command(TARGET ${PNAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PNAME}>/translations"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_SOURCE_DIR}/translations"
-        "$<TARGET_FILE_DIR:${PNAME}>/translations")
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/translations/fr" "$<TARGET_FILE_DIR:${PNAME}>/translations/fr"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/translations/en" "$<TARGET_FILE_DIR:${PNAME}>/translations/en"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/translations/es" "$<TARGET_FILE_DIR:${PNAME}>/translations/es"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/translations/it" "$<TARGET_FILE_DIR:${PNAME}>/translations/it"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/translations/pt" "$<TARGET_FILE_DIR:${PNAME}>/translations/pt"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/translations/de" "$<TARGET_FILE_DIR:${PNAME}>/translations/de")
 
 if(MSVC)
     add_compile_definitions(_HAS_STD_BYTE=0)
