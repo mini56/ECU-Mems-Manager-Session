@@ -28,7 +28,7 @@ set(SOURCES
     analogwidgets/manometer100.cpp analogwidgets/abstractmeter100.cpp analogwidgets/manometer900.cpp
     analogwidgets/abstractmeter900.cpp mainwindow.ui resources.qrc database/DatabaseManager.cpp
     uirebuild.cpp overviewrebuild.cpp majorpagesrebuild.cpp analysismodernizer.cpp
-    strictvisualrebuild.cpp dedicatedpagesrebuild.cpp uipreflight.cpp)
+    strictvisualrebuild.cpp dedicatedpagesrebuild.cpp uipreflight.cpp responsivefinalizer.cpp)
 add_executable(${PNAME} ${SOURCES})
 target_sources(${PNAME} PRIVATE ${CMAKE_SOURCE_DIR}/desktopshortcut.cpp ${CMAKE_SOURCE_DIR}/desktopshortcut.h)
 if(WIN32)
