@@ -65,45 +65,56 @@ jobs:
       - name: Build Application
         run: cmake --build build
 
-      - name: Create self-contained Windows package
+      - name: Create verified self-contained Windows package
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          $qtBin = "C:\Qt\5.15.2\mingw81_32\bin"
+          $qtRoot = "C:\Qt\5.15.2\mingw81_32"
+          $qtBin = "$qtRoot\bin"
+          $qtPlugins = "$qtRoot\plugins"
           $mingwBin = "C:\Qt\Tools\mingw810_32\bin"
-          $build = "${{ github.workspace }}\build"
           $dist = "${{ github.workspace }}\dist"
 
-          # windeployqt fonctionne correctement sur l'EXE dans son dossier de build.
-          & "$qtBin\windeployqt.exe" --release --no-translations "$build\ecu_mems_manager.exe"
-          if ($LASTEXITCODE -ne 0) { throw "windeployqt a echoue sur l'EXE de build" }
+          if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }
+          New-Item -ItemType Directory -Path $dist | Out-Null
+          New-Item -ItemType Directory -Path "$dist\platforms" | Out-Null
+          New-Item -ItemType Directory -Path "$dist\sqldrivers" | Out-Null
+          New-Item -ItemType Directory -Path "$dist\imageformats" | Out-Null
+          New-Item -ItemType Directory -Path "$dist\iconengines" | Out-Null
+          New-Item -ItemType Directory -Path "$dist\styles" | Out-Null
 
-          # Completer explicitement le runtime MinGW et librosco.
-          $runtimeDlls = @(
+          Copy-Item "${{ github.workspace }}\build\ecu_mems_manager.exe" "$dist\ecu_mems_manager.exe" -Force
+          Copy-Item "${{ github.workspace }}\prebuilt-librosco\librosco.dll" "$dist\librosco.dll" -Force
+
+          $rootDlls = @(
             "$qtBin\Qt5Core.dll",
             "$qtBin\Qt5Gui.dll",
             "$qtBin\Qt5Widgets.dll",
             "$qtBin\Qt5Sql.dll",
+            "$qtBin\Qt5Svg.dll",
             "$mingwBin\libgcc_s_dw2-1.dll",
             "$mingwBin\libstdc++-6.dll",
-            "$mingwBin\libwinpthread-1.dll",
-            "${{ github.workspace }}\prebuilt-librosco\librosco.dll"
+            "$mingwBin\libwinpthread-1.dll"
           )
-          foreach ($dll in $runtimeDlls) {
+          foreach ($dll in $rootDlls) {
             if (-not (Test-Path $dll)) { throw "DLL source introuvable: $dll" }
-            Copy-Item $dll $build -Force
+            Copy-Item $dll $dist -Force
           }
 
-          # Le programme utilise QSQLITE uniquement.
-          Remove-Item "$build\sqldrivers\qsqlpsql.dll" -Force -ErrorAction SilentlyContinue
-          Remove-Item "$build\sqldrivers\qsqlodbc.dll" -Force -ErrorAction SilentlyContinue
+          # Bibliotheques graphiques Qt presentes dans la distribution officielle.
+          foreach ($name in @("libEGL.dll","libGLESv2.dll","D3Dcompiler_47.dll","opengl32sw.dll")) {
+            $src = Join-Path $qtBin $name
+            if (Test-Path $src) { Copy-Item $src $dist -Force }
+          }
 
-          # Construire ensuite un dossier dist propre depuis le build deja deploye.
-          if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }
-          New-Item -ItemType Directory -Path $dist | Out-Null
-          Copy-Item "$build\*" $dist -Recurse -Force
+          # Plugins strictement necessaires / utiles au programme.
+          Copy-Item "$qtPlugins\platforms\qwindows.dll" "$dist\platforms\qwindows.dll" -Force
+          Copy-Item "$qtPlugins\sqldrivers\qsqlite.dll" "$dist\sqldrivers\qsqlite.dll" -Force
+          if (Test-Path "$qtPlugins\imageformats") { Copy-Item "$qtPlugins\imageformats\*.dll" "$dist\imageformats\" -Force }
+          if (Test-Path "$qtPlugins\iconengines") { Copy-Item "$qtPlugins\iconengines\*.dll" "$dist\iconengines\" -Force }
+          if (Test-Path "$qtPlugins\styles") { Copy-Item "$qtPlugins\styles\*.dll" "$dist\styles\" -Force }
 
-          # Verification bloquante du package réellement publie.
+          # Verification bloquante du dossier reellement publie.
           $required = @(
             "ecu_mems_manager.exe",
             "Qt5Core.dll",
@@ -120,11 +131,12 @@ jobs:
           foreach ($file in $required) {
             $full = Join-Path $dist $file
             if (-not (Test-Path $full)) { throw "Fichier obligatoire manquant dans le package: $file" }
-            Write-Host "OK: $file"
+            if ((Get-Item $full).Length -le 0) { throw "Fichier obligatoire vide: $file" }
+            Write-Host "OK: $file - $((Get-Item $full).Length) octets"
           }
 
-          Write-Host "Package Windows valide. Contenu principal:"
-          Get-ChildItem $dist | Select-Object Name,Length
+          Write-Host "Package Windows verifie:"
+          Get-ChildItem $dist -Recurse | Select-Object FullName,Length
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
