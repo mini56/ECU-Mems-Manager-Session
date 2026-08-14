@@ -8,8 +8,10 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMainWindow>
+#include <QMenuBar>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QSignalBlocker>
 #include <QSizePolicy>
 #include <QTabWidget>
 #include <QTableView>
@@ -30,8 +32,11 @@ static QWidget *realPage(QWidget *tab)
 static qreal scaleFor(QMainWindow *w)
 {
     if (!w) return 1.0;
-    const QSize a=w->centralWidget()?w->centralWidget()->size():w->size();
-    return qBound<qreal>(0.65,qMin(a.width()/1600.0,a.height()/900.0),1.30);
+    QWidget *workspace=w->findChild<QWidget*>(QStringLiteral("uiRebuildWorkspace"));
+    const QSize a=(workspace && workspace->width()>0 && workspace->height()>0)
+        ? workspace->size()
+        : (w->centralWidget()?w->centralWidget()->size():w->size());
+    return qBound<qreal>(0.64,qMin(a.width()/1450.0,a.height()/720.0),1.30);
 }
 
 static QPushButton *buttonByText(QMainWindow *w,const QString &text,QWidget *exclude=nullptr)
@@ -42,7 +47,20 @@ static QPushButton *buttonByText(QMainWindow *w,const QString &text,QWidget *exc
     return nullptr;
 }
 
-static void preserveRealUtilityControls(QMainWindow *w)
+static void styleMenuBar(QMainWindow *w)
+{
+    if (!w || !w->menuBar()) return;
+    w->menuBar()->setStyleSheet(QStringLiteral(
+        "QMenuBar{background:#080d12;color:#d9e0e5;border:0;border-bottom:1px solid #29343e;padding:1px 4px;}"
+        "QMenuBar::item{background:transparent;padding:4px 9px;}"
+        "QMenuBar::item:selected{background:#182027;color:#ff9828;}"
+        "QMenu{background:#0d141a;color:#dce3e8;border:1px solid #313d47;padding:4px;}"
+        "QMenu::item{padding:5px 26px 5px 10px;}"
+        "QMenu::item:selected{background:#2d2117;color:#ff9828;}"
+        "QMenu::separator{height:1px;background:#29343e;margin:3px 6px;}"));
+}
+
+static void preserveRealUtilityControls(QMainWindow *w,qreal s)
 {
     if (!w) return;
     QFrame *status=w->findChild<QFrame*>(QStringLiteral("uiRebuildStatus"));
@@ -56,7 +74,11 @@ static void preserveRealUtilityControls(QMainWindow *w)
     if (file && start && stop) {
         if (fileLabel) fileLabel->hide();
         file->setParent(status); start->setParent(status); stop->setParent(status);
-        file->setMinimumWidth(78); file->setMaximumWidth(175); file->setMinimumHeight(23); file->setMaximumHeight(29);
+        file->setMinimumWidth(qBound(68,qRound(105*s),120));
+        file->setMaximumWidth(qBound(105,qRound(150*s),175));
+        file->setMinimumHeight(23); file->setMaximumHeight(29);
+        start->setMinimumWidth(qBound(54,qRound(68*s),82)); start->setMaximumWidth(qBound(66,qRound(88*s),98));
+        stop->setMinimumWidth(qBound(50,qRound(62*s),76)); stop->setMaximumWidth(qBound(60,qRound(80*s),90));
         start->setMinimumHeight(23); start->setMaximumHeight(29);
         stop->setMinimumHeight(23); stop->setMaximumHeight(29);
         if (bar->indexOf(file)<0) bar->addWidget(file,1);
@@ -69,17 +91,33 @@ static void preserveRealUtilityControls(QMainWindow *w)
     QPushButton *view=buttonByText(w,I18n::text(7016),status);
     if (snapshot) {
         snapshot->setParent(status); snapshot->setMinimumHeight(23); snapshot->setMaximumHeight(29);
+        snapshot->setMaximumWidth(qBound(86,qRound(122*s),145));
         if (bar->indexOf(snapshot)<0) bar->addWidget(snapshot,0);
         snapshot->show();
     }
     if (view) {
         view->setParent(status); view->setMinimumHeight(23); view->setMaximumHeight(29);
+        view->setMaximumWidth(qBound(86,qRound(122*s),145));
         if (bar->indexOf(view)<0) bar->addWidget(view,0);
         view->show();
     }
 
     for (QPushButton *b:status->findChildren<QPushButton*>(QString(),Qt::FindDirectChildrenOnly))
         if (b && b!=snapshot && b!=view && b->text()==QStringLiteral("Capture écran")) b->hide();
+}
+
+static void removeInventedRecorder(QMainWindow *w)
+{
+    QTabWidget *tabs=w?w->findChild<QTabWidget*>(QStringLiteral("Tab_main")):nullptr;
+    if (!tabs) return;
+    for (int i=tabs->count()-1;i>=0;--i) {
+        QWidget *p=realPage(tabs->widget(i));
+        if (p && p->objectName()==QStringLiteral("recorder_tab")) {
+            QWidget *victim=tabs->widget(i);
+            tabs->removeTab(i);
+            if (victim) victim->deleteLater();
+        }
+    }
 }
 
 static void removeFakeHeaderTelemetry(QMainWindow *w)
@@ -90,6 +128,18 @@ static void removeFakeHeaderTelemetry(QMainWindow *w)
     for (QLabel *l:header->findChildren<QLabel*>(QString(),Qt::FindDirectChildrenOnly))
         if (l && l->text().contains(QStringLiteral("Fréquence"),Qt::CaseInsensitive) && l->text().contains(QStringLiteral("auto"),Qt::CaseInsensitive))
             l->hide();
+}
+
+static void syncNavigation(QMainWindow *w)
+{
+    QTabWidget *tabs=w?w->findChild<QTabWidget*>(QStringLiteral("Tab_main")):nullptr;
+    QListWidget *nav=w?w->findChild<QListWidget*>(QStringLiteral("uiRebuildNav")):nullptr;
+    if (!tabs || !nav) return;
+    const int current=tabs->currentIndex();
+    const QSignalBlocker blocker(nav);
+    nav->clear();
+    for (int i=0;i<tabs->count();++i) nav->addItem(tabs->tabText(i).trimmed());
+    nav->setCurrentRow(qBound(0,current,qMax(0,tabs->count()-1)));
 }
 
 static void fitAnalysis(QMainWindow *w,qreal s)
@@ -106,11 +156,12 @@ static void fitAnalysis(QMainWindow *w,qreal s)
         root->setContentsMargins(m,m,m,m); root->setSpacing(gap); root->setSizeConstraint(QLayout::SetDefaultConstraint);
     }
     if (QWidget *right=tab->findChild<QWidget*>(QStringLiteral("analysisRightPanel"))) {
-        const int target=qBound(176,qRound(tab->width()*0.18),285);
+        const int target=qBound(168,qRound(tab->width()*0.18),285);
         right->setMinimumWidth(target); right->setMaximumWidth(target);
+        right->setMinimumHeight(0); right->setMaximumHeight(QWIDGETSIZE_MAX);
     }
     if (QWidget *top=tab->findChild<QWidget*>(QStringLiteral("analysisTopBar")))
-        top->setFixedHeight(qBound(30,qRound(36*s),42));
+        top->setFixedHeight(qBound(29,qRound(36*s),42));
 
     QList<QWidget*> charts;
     for (QWidget *c:tab->findChildren<QWidget*>()) {
@@ -118,10 +169,11 @@ static void fitAnalysis(QMainWindow *w,qreal s)
         if (cls==QStringLiteral("SingleChartWidget") || cls==QStringLiteral("ChartWidget")) charts.append(c);
     }
     if (!charts.isEmpty()) {
-        const int available=qMax(240,tab->height()-80);
-        const int each=qBound(92,available/qMax(1,charts.size()),210);
+        const int available=qMax(225,tab->height()-72);
+        const int each=qBound(80,(available-qMax(0,charts.size()-1)*5)/qMax(1,charts.size()),215);
         for (QWidget *c:charts) {
             c->setMinimumHeight(each); c->setMaximumHeight(QWIDGETSIZE_MAX);
+            c->setMinimumWidth(0); c->setMaximumWidth(QWIDGETSIZE_MAX);
             c->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
         }
     }
@@ -138,7 +190,7 @@ static void fitOverviewAndSettings(QMainWindow *w,qreal s)
         for (QWidget *c:overview->findChildren<QWidget*>(QString(),Qt::FindDirectChildrenOnly)) {
             const QString cls=QString::fromLatin1(c->metaObject()->className());
             if (cls==QStringLiteral("RebuildGaugeCard") || cls==QStringLiteral("SystemStateCard")) {
-                c->setMinimumSize(70,96); c->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
+                c->setMinimumSize(64,88); c->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
                 c->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
             }
         }
@@ -157,7 +209,7 @@ static void fitOverviewAndSettings(QMainWindow *w,qreal s)
             }
         for (QWidget *c:settings->findChildren<QWidget*>())
             if (QString::fromLatin1(c->metaObject()->className())==QStringLiteral("CompactGauge")) {
-                c->setMinimumSize(66,88); c->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
+                c->setMinimumSize(60,80); c->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
                 c->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding); c->show();
             }
     }
@@ -167,8 +219,8 @@ static void fitDedicatedPages(QMainWindow *w,qreal s)
 {
     QTabWidget *tabs=w?w->findChild<QTabWidget*>(QStringLiteral("Tab_main")):nullptr;
     if (!tabs) return;
-    const int margin=qBound(4,qRound(8*s),11),gap=qBound(4,qRound(7*s),9);
-    const int row=qBound(20,qRound(25*s),29);
+    const int margin=qBound(3,qRound(7*s),10),gap=qBound(3,qRound(6*s),8);
+    const int row=qBound(19,qRound(24*s),28);
     for (int i=0;i<tabs->count();++i) {
         QWidget *p=realPage(tabs->widget(i)); if (!p) continue;
         const bool dedicated=p->property("strictSummaryBuilt").toBool() || p->property("strictRawBuilt").toBool() ||
@@ -177,7 +229,7 @@ static void fitDedicatedPages(QMainWindow *w,qreal s)
         p->setMinimumSize(0,0); p->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
         if (QLayout *l=p->layout()) { l->setContentsMargins(margin,margin,margin,margin); l->setSpacing(gap); }
         for (QFrame *f:p->findChildren<QFrame*>())
-            if (f->objectName().startsWith(QStringLiteral("strictHero_"))) f->setMaximumHeight(qBound(38,qRound(46*s),50));
+            if (f->objectName().startsWith(QStringLiteral("strictHero_"))) f->setMaximumHeight(qBound(36,qRound(44*s),48));
         for (QTableView *t:p->findChildren<QTableView*>()) {
             t->setMinimumSize(0,0); t->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
             if (t->verticalHeader()) t->verticalHeader()->setDefaultSectionSize(row);
@@ -194,24 +246,28 @@ static void fitDedicatedPages(QMainWindow *w,qreal s)
 static void fitChrome(QMainWindow *w,qreal s)
 {
     if (!w) return;
-    const QSize a=w->centralWidget()?w->centralWidget()->size():w->size();
+    QWidget *workspace=w->findChild<QWidget*>(QStringLiteral("uiRebuildWorkspace"));
+    const QSize a=(workspace && workspace->width()>0)?workspace->size():(w->centralWidget()?w->centralWidget()->size():w->size());
     if (QListWidget *nav=w->findChild<QListWidget*>(QStringLiteral("uiRebuildNav"))) {
-        nav->setFixedWidth(qBound(148,qRound(a.width()*0.115),218));
+        nav->setFixedWidth(qBound(142,qRound(a.width()*0.12),214));
         nav->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     }
     if (QFrame *header=w->findChild<QFrame*>(QStringLiteral("uiRebuildHeader")))
-        header->setFixedHeight(qBound(43,qRound(54*s),64));
+        header->setFixedHeight(qBound(41,qRound(52*s),62));
     if (QFrame *status=w->findChild<QFrame*>(QStringLiteral("uiRebuildStatus")))
-        status->setFixedHeight(qBound(30,qRound(36*s),42));
+        status->setFixedHeight(qBound(29,qRound(35*s),40));
 }
 
 static void apply(QMainWindow *w)
 {
     if (!w) return;
     const qreal s=scaleFor(w);
+    styleMenuBar(w);
     fitChrome(w,s);
     removeFakeHeaderTelemetry(w);
-    preserveRealUtilityControls(w);
+    preserveRealUtilityControls(w,s);
+    removeInventedRecorder(w);
+    syncNavigation(w);
     fitOverviewAndSettings(w,s);
     fitAnalysis(w,s);
     fitDedicatedPages(w,s);
@@ -228,9 +284,9 @@ protected:
         if (!w || w->objectName()!=QStringLiteral("MainWindow")) return QObject::eventFilter(watched,event);
         if ((event->type()==QEvent::Show || event->type()==QEvent::Polish) && !w->property("visualCompletionScheduled").toBool()) {
             w->setProperty("visualCompletionScheduled",true);
-            QTimer::singleShot(600,w,[w](){apply(w);});
-            QTimer::singleShot(1500,w,[w](){apply(w);});
-            QTimer::singleShot(3800,w,[w](){apply(w);});
+            QTimer::singleShot(120,w,[w](){apply(w);});
+            QTimer::singleShot(450,w,[w](){apply(w);});
+            QTimer::singleShot(900,w,[w](){apply(w);});
         } else if (event->type()==QEvent::Resize && w->property("visualCompletionScheduled").toBool()) {
             QTimer::singleShot(0,w,[w](){apply(w);});
         }
