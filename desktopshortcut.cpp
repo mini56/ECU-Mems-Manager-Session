@@ -28,10 +28,10 @@ void DesktopShortcut::ensureIfEnabled()
     if (!enabled)
         return;
 
-    // Une fois activée, la fonction reste active : si l'utilisateur supprime
-    // accidentellement le raccourci, il sera recréé au prochain démarrage.
-    if (!QFileInfo::exists(shortcutPath()))
-        create();
+    // Refresh the shortcut at each startup while this option is enabled.
+    // This also upgrades older shortcuts so they use the icon embedded in
+    // the executable instead of an external icon file.
+    create();
 }
 
 bool DesktopShortcut::create()
@@ -39,8 +39,6 @@ bool DesktopShortcut::create()
 #ifdef Q_OS_WIN
     const QString exePath = QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
     const QString appDir = QDir::toNativeSeparators(QCoreApplication::applicationDirPath());
-    const QString iconPath = QDir::toNativeSeparators(
-        QDir(QCoreApplication::applicationDirPath()).filePath("key.ico"));
     const QString linkPath = QDir::toNativeSeparators(shortcutPath());
 
     HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
@@ -57,10 +55,7 @@ bool DesktopShortcut::create()
     {
         shellLink->SetPath(reinterpret_cast<LPCWSTR>(exePath.utf16()));
         shellLink->SetWorkingDirectory(reinterpret_cast<LPCWSTR>(appDir.utf16()));
-
-        // Utilise explicitement l'icône issue de KEY.PNG.
-        if (QFileInfo::exists(iconPath))
-            shellLink->SetIconLocation(reinterpret_cast<LPCWSTR>(iconPath.utf16()), 0);
+        shellLink->SetIconLocation(reinterpret_cast<LPCWSTR>(exePath.utf16()), 0);
 
         IPersistFile *persistFile = nullptr;
         hr = shellLink->QueryInterface(IID_IPersistFile,
