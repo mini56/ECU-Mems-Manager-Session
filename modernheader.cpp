@@ -6,8 +6,6 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMainWindow>
-#include <QMenu>
-#include <QMenuBar>
 #include <QPushButton>
 #include <QTimer>
 #include <QToolButton>
@@ -27,6 +25,7 @@ static QPushButton *makeBlueButton(const QString &text, QWidget *parent)
         "border-radius:4px;padding:4px 13px;font-weight:600;}"
         "QPushButton:hover{background:#2378e6;}"
         "QPushButton:pressed{background:#1257b0;}"
+        "QPushButton:disabled{background:#20262d;color:#65707a;border-color:#343c45;}"
     );
     return button;
 }
@@ -67,8 +66,9 @@ private:
         QVBoxLayout *root=central ? qobject_cast<QVBoxLayout*>(central->layout()) : nullptr;
         if (!central || !root) return;
 
-        if (QMenuBar *menuBar=window->menuBar()) menuBar->hide();
-        if (QWidget *legacy=central->findChild<QWidget*>(QStringLiteral("layoutWidget_7"))) legacy->hide();
+        // Keep the classic application menu available; no extra hamburger menu is added.
+        QWidget *legacy=central->findChild<QWidget*>(QStringLiteral("layoutWidget_7"));
+        if (legacy) legacy->hide();
 
         QFrame *oldModeBar=central->findChild<QFrame*>(QStringLiteral("modernModeBar"));
         QComboBox *modeBox=oldModeBar ? oldModeBar->findChild<QComboBox*>() : nullptr;
@@ -89,28 +89,6 @@ private:
         layout->setContentsMargins(10,6,10,6);
         layout->setSpacing(8);
 
-        QToolButton *hamburger=new QToolButton(bar);
-        hamburger->setText(QString::fromUtf8("☰"));
-        hamburger->setFixedSize(30,28);
-        hamburger->setPopupMode(QToolButton::InstantPopup);
-        QMenu *menu=new QMenu(hamburger);
-        QAction *connectAction=menu->addAction(I18n::text(101));
-        QAction *disconnectAction=menu->addAction(I18n::text(103));
-        menu->addSeparator();
-        QAction *settingsAction=menu->addAction(I18n::text(113));
-        QAction *helpAction=menu->addAction(I18n::text(109));
-        QAction *aboutAction=menu->addAction(I18n::text(110));
-        menu->addSeparator();
-        QAction *quitAction=menu->addAction(I18n::text(115));
-        hamburger->setMenu(menu);
-        QObject::connect(connectAction,&QAction::triggered,window,[window](){QMetaObject::invokeMethod(window,"onConnectClicked",Qt::QueuedConnection);});
-        QObject::connect(disconnectAction,&QAction::triggered,window,[window](){QMetaObject::invokeMethod(window,"onDisconnectClicked",Qt::QueuedConnection);});
-        QObject::connect(settingsAction,&QAction::triggered,window,[window](){QMetaObject::invokeMethod(window,"onEditOptionsClicked",Qt::QueuedConnection);});
-        QObject::connect(helpAction,&QAction::triggered,window,[window](){QMetaObject::invokeMethod(window,"onHelpContentsClicked",Qt::QueuedConnection);});
-        QObject::connect(aboutAction,&QAction::triggered,window,[window](){QMetaObject::invokeMethod(window,"onHelpAboutClicked",Qt::QueuedConnection);});
-        QObject::connect(quitAction,&QAction::triggered,window,[window](){QMetaObject::invokeMethod(window,"onExitSelected",Qt::QueuedConnection);});
-        layout->addWidget(hamburger);
-
         QLabel *brand=new QLabel(QStringLiteral("ECU MEMS MANAGER"),bar);
         brand->setStyleSheet("color:#f2f5f7;font-weight:700;letter-spacing:.4px;");
         layout->addWidget(brand);
@@ -123,7 +101,7 @@ private:
         QLabel *commText=new QLabel(I18n::text(102).remove(':'),commChip);
         QLabel *commDot=new QLabel(QString::fromUtf8("●"),commChip);
         commDot->setObjectName(QStringLiteral("modernCommDot"));
-        commDot->setStyleSheet("color:#1ebd59;font-size:15px;border:0;background:transparent;");
+        commDot->setStyleSheet("color:#31553d;font-size:15px;border:0;background:transparent;");
         commLayout->addWidget(commText);
         commLayout->addWidget(commDot);
         layout->addWidget(commChip);
@@ -157,10 +135,18 @@ private:
             modeBox->show();
         }
 
+        QPushButton *connect=makeBlueButton(I18n::text(101),bar);
+        QPushButton *disconnect=makeBlueButton(I18n::text(103),bar);
         QPushButton *snapshot=makeBlueButton(I18n::text(7015),bar);
         QPushButton *captures=makeBlueButton(I18n::text(7016),bar);
+
+        QObject::connect(connect,&QPushButton::clicked,window,[window](){QMetaObject::invokeMethod(window,"onConnectClicked",Qt::QueuedConnection);});
+        QObject::connect(disconnect,&QPushButton::clicked,window,[window](){QMetaObject::invokeMethod(window,"onDisconnectClicked",Qt::QueuedConnection);});
         QObject::connect(snapshot,&QPushButton::clicked,window,[window](){QMetaObject::invokeMethod(window,"onSnapshotClicked",Qt::QueuedConnection);});
         QObject::connect(captures,&QPushButton::clicked,window,[window](){QMetaObject::invokeMethod(window,"onViewCapturesClicked",Qt::QueuedConnection);});
+
+        layout->addWidget(connect);
+        layout->addWidget(disconnect);
         layout->addWidget(snapshot);
         layout->addWidget(captures);
 
@@ -182,13 +168,14 @@ private:
         QObject::connect(sync,&QTimer::timeout,bar,[=](){
             if (ecuLabel) ecuMirror->setText(ecuLabel->text());
             const bool connected=legacyDisconnect && legacyDisconnect->isEnabled();
+            const bool canConnect=legacyConnect ? legacyConnect->isEnabled() : !connected;
+            connect->setEnabled(canConnect);
+            disconnect->setEnabled(connected);
             commDot->setStyleSheet(QStringLiteral("color:%1;font-size:15px;border:0;background:transparent;").arg(connected?QStringLiteral("#1ed760"):QStringLiteral("#31553d")));
             if (goodLed && goodLed->property("checked").isValid() && goodLed->property("checked").toBool())
                 commDot->setStyleSheet("color:#1ed760;font-size:15px;border:0;background:transparent;");
             const bool errorOn=errorLed && errorLed->property("checked").toBool();
             errDot->setStyleSheet(QStringLiteral("color:%1;font-size:15px;border:0;background:transparent;").arg(errorOn?QStringLiteral("#d83b43"):QStringLiteral("#702126")));
-            connectAction->setEnabled(!connected || (legacyConnect && legacyConnect->isEnabled()));
-            disconnectAction->setEnabled(connected);
         });
         sync->start();
     }
