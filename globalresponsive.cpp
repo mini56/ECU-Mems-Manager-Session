@@ -28,11 +28,24 @@ static qreal calculateGlobalScale(QMainWindow *window)
     if (!window) return 1.0;
     QScreen *screen = window->screen();
     if (!screen) screen = QGuiApplication::primaryScreen();
-    if (!screen) return 1.0;
 
-    const QRect available = screen->availableGeometry();
-    const qreal sx = qreal(qMax(640, available.width() - 20)) / qreal(kWindowReferenceWidth);
-    const qreal sy = qreal(qMax(480, available.height() - 20)) / qreal(kWindowReferenceHeight);
+    int availableWidth = window->width();
+    int availableHeight = window->height();
+    if (screen) {
+        const QRect available = screen->availableGeometry();
+        // Never size the UI from the physical screen when the application window
+        // itself is smaller. This keeps exactly the same composition in a 1200 px
+        // window, at 1366x768, 1600x900 and at larger desktop resolutions.
+        availableWidth = qMin(availableWidth, available.width() - 12);
+        availableHeight = qMin(availableHeight, available.height() - 12);
+    }
+
+    // During the very first polish event the native window can temporarily report
+    // a tiny geometry. Ignore that transient value and let the next resize settle it.
+    if (availableWidth < 700 || availableHeight < 430) return 1.0;
+
+    const qreal sx = qreal(availableWidth) / qreal(kWindowReferenceWidth);
+    const qreal sy = qreal(availableHeight) / qreal(kWindowReferenceHeight);
     return qBound<qreal>(kMinReadableScale, qMin(sx, sy), kMaxScale);
 }
 
@@ -226,7 +239,7 @@ protected:
             QMainWindow *window = qobject_cast<QMainWindow*>(watched);
             if (window && window->objectName() == QStringLiteral("MainWindow") && !window->property("globalResponsiveInstalled").toBool()) {
                 window->setProperty("globalResponsiveInstalled", true);
-                QTimer::singleShot(700, window, [window]() { install(window); });
+                QTimer::singleShot(90, window, [window]() { install(window); });
             }
         }
         return QObject::eventFilter(watched, event);
