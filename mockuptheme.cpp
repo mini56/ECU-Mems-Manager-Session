@@ -21,7 +21,7 @@ protected:
             if (window && window->objectName()==QStringLiteral("MainWindow") &&
                 !window->property("mockupThemeInstalled").toBool()) {
                 window->setProperty("mockupThemeInstalled", true);
-                QTimer::singleShot(1300, window, [window](){ apply(window); });
+                QTimer::singleShot(80, window, [window](){ apply(window); });
             }
         }
         return QObject::eventFilter(watched,event);
@@ -36,38 +36,48 @@ private:
         const QString style = QStringLiteral(
             "QWidget{background:#0d1116;color:#dce2e7;}"
             "QLabel{background:transparent;color:#dce2e7;border:0;}"
-            "QGroupBox{background:#14191f;color:#e5e9ec;border:1px solid #303842;"
-            "border-radius:4px;margin-top:10px;font-weight:600;}"
-            "QGroupBox::title{subcontrol-origin:margin;left:9px;padding:0 4px;color:#ff9b32;}"
-            "QPushButton{background:#1769d2;color:#fff;border:1px solid #2d7ee8;border-radius:4px;"
-            "padding:5px 10px;font-weight:600;}"
-            "QPushButton:hover{background:#2378e6;border-color:#4c91ef;}"
-            "QPushButton:pressed{background:#1257b0;}"
-            "QPushButton:disabled{background:#252b31;color:#707983;border-color:#333b43;}"
-            "QLineEdit,QTextEdit,QPlainTextEdit,QSpinBox,QDoubleSpinBox,QComboBox{background:#11161c;"
-            "color:#f0f3f5;border:1px solid #343d46;border-radius:3px;padding:4px 6px;selection-background-color:#1769d2;}"
-            "QComboBox::drop-down{border:0;width:20px;}"
-            "QCheckBox,QRadioButton{background:transparent;color:#dce2e7;spacing:6px;}"
-            "QTableWidget,QTableView,QTreeWidget,QListView{background:#10151a;color:#dce2e7;"
-            "alternate-background-color:#151b21;border:1px solid #303842;gridline-color:#2b333b;}"
-            "QHeaderView::section{background:#171d23;color:#dce2e7;border:0;border-right:1px solid #303842;"
-            "border-bottom:1px solid #303842;padding:5px;font-weight:600;}"
+            "QFrame{border-color:#2b343d;}"
+            "QGroupBox{background:#12181e;color:#e5e9ec;border:1px solid #2b343d;"
+            "border-radius:3px;margin-top:8px;font-weight:600;}"
+            "QGroupBox::title{subcontrol-origin:margin;left:8px;padding:0 4px;color:#ff9b32;}"
+            "QPushButton,QToolButton{background:#17202a;color:#eef2f5;border:1px solid #34414d;"
+            "border-radius:3px;padding:3px 8px;font-weight:600;}"
+            "QPushButton:hover,QToolButton:hover{background:#1c2833;border-color:#ff8a1c;color:#ffffff;}"
+            "QPushButton:pressed,QToolButton:pressed{background:#111820;}"
+            "QPushButton:checked,QToolButton:checked{background:#ff8a1c;color:#101419;border-color:#ff9b32;}"
+            "QPushButton:disabled,QToolButton:disabled{background:#20262c;color:#68727c;border-color:#303841;}"
+            "QLineEdit,QTextEdit,QPlainTextEdit,QSpinBox,QDoubleSpinBox,QComboBox{background:#0f151b;"
+            "color:#f0f3f5;border:1px solid #303b45;border-radius:2px;padding:3px 5px;"
+            "selection-background-color:#1769d2;}"
+            "QLineEdit:focus,QTextEdit:focus,QPlainTextEdit:focus,QSpinBox:focus,QDoubleSpinBox:focus,QComboBox:focus{"
+            "border-color:#596775;}"
+            "QComboBox::drop-down{border:0;width:18px;}"
+            "QCheckBox,QRadioButton{background:transparent;color:#dce2e7;spacing:5px;padding:1px 0;}"
+            "QCheckBox::indicator,QRadioButton::indicator{width:13px;height:13px;}"
+            "QTableWidget,QTableView,QTreeWidget,QListView{background:#0f151a;color:#dce2e7;"
+            "alternate-background-color:#131a20;border:1px solid #2b343d;gridline-color:#263039;outline:0;}"
+            "QTableWidget::item,QTableView::item,QTreeWidget::item,QListView::item{padding:2px 4px;}"
+            "QTableWidget::item:selected,QTableView::item:selected,QTreeWidget::item:selected,QListView::item:selected{"
+            "background:#1b2530;color:#ffffff;}"
+            "QHeaderView::section{background:#141b21;color:#dce2e7;border:0;border-right:1px solid #2b343d;"
+            "border-bottom:1px solid #2b343d;padding:3px 5px;font-weight:600;}"
             "QScrollArea{background:#0d1116;border:0;}"
             "QScrollArea>QWidget>QWidget{background:#0d1116;}"
-            "QScrollBar:vertical{background:#0d1116;width:10px;margin:0;}"
-            "QScrollBar::handle:vertical{background:#39434d;border-radius:4px;min-height:28px;}"
+            "QScrollBar:vertical{background:#0b1015;width:9px;margin:0;}"
+            "QScrollBar::handle:vertical{background:#34414c;border-radius:3px;min-height:24px;}"
             "QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical{height:0;}"
-            "QScrollBar:horizontal{background:#0d1116;height:10px;margin:0;}"
-            "QScrollBar::handle:horizontal{background:#39434d;border-radius:4px;min-width:28px;}"
+            "QScrollBar:horizontal{background:#0b1015;height:9px;margin:0;}"
+            "QScrollBar::handle:horizontal{background:#34414c;border-radius:3px;min-width:24px;}"
             "QScrollBar::add-line:horizontal,QScrollBar::sub-line:horizontal{width:0;}"
-            "QProgressBar{background:#10151a;color:#dce2e7;border:1px solid #303842;border-radius:3px;text-align:center;}"
-            "QProgressBar::chunk{background:#ff8a1c;border-radius:2px;}"
+            "QProgressBar{background:#0f151a;color:#dce2e7;border:1px solid #2b343d;border-radius:2px;text-align:center;}"
+            "QProgressBar::chunk{background:#ff8a1c;border-radius:1px;}"
+            "QSlider::groove:horizontal{height:4px;background:#27313a;border-radius:2px;}"
+            "QSlider::handle:horizontal{width:12px;margin:-4px 0;background:#ff8a1c;border:1px solid #ff9b32;border-radius:6px;}"
         );
 
         for (int i=0;i<tabs->count();++i) {
             QWidget *page=tabs->widget(i);
             if (!page) continue;
-            // Analysis and Overview keep their dedicated approved renderers.
             if (page->objectName()==QStringLiteral("overview_tab")) continue;
             if (QString::fromLatin1(page->metaObject()->className())==QStringLiteral("AnalysisTab")) continue;
             page->setAttribute(Qt::WA_StyledBackground,true);
