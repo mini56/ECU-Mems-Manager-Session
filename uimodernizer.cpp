@@ -9,6 +9,7 @@
 #include <QTabBar>
 #include <QTabWidget>
 #include <QTimer>
+#include <QVBoxLayout>
 #include <QWidget>
 
 namespace {
@@ -22,6 +23,10 @@ public:
         if (!m_tabs) return;
         if (qApp) qApp->setProperty("ecuDarkTheme", true);
 
+        // The recorder controls used to sit underneath the overview gauges.
+        // Move the real controls to their own page before building navigation.
+        extractRecorderPage();
+
         // Approved mock-up: real application pages only. No invented mode selector,
         // placeholder tab or duplicate trends panel.
         installNavigation();
@@ -29,6 +34,50 @@ public:
     }
 
 private:
+    void extractRecorderPage()
+    {
+        if (!m_tabs || m_tabs->findChild<QWidget*>(QStringLiteral("recorder_tab"))) return;
+        QWidget *overview = m_window->findChild<QWidget*>(QStringLiteral("overview_tab"));
+        if (!overview) return;
+
+        QWidget *loggerBox = overview->findChild<QWidget*>(QStringLiteral("layoutWidget"), Qt::FindDirectChildrenOnly);
+        if (!loggerBox) return;
+
+        QWidget *recorder = new QWidget(m_tabs);
+        recorder->setObjectName(QStringLiteral("recorder_tab"));
+        recorder->setAttribute(Qt::WA_StyledBackground, true);
+        recorder->setStyleSheet(
+            "#recorder_tab{background:#0d1116;color:#dce2e7;}"
+            "#recorder_tab QLabel{color:#dce2e7;background:transparent;}"
+            "#recorder_tab QLineEdit{background:#0f151b;color:#f0f3f5;border:1px solid #303b45;"
+            "border-radius:0;padding:4px 6px;}"
+            "#recorder_tab QPushButton{background:#17202a;color:#eef2f5;border:1px solid #34414d;"
+            "border-radius:0;padding:4px 10px;font-weight:600;}"
+            "#recorder_tab QPushButton:hover{border-color:#ff8a1c;color:#ffffff;}"
+        );
+
+        QVBoxLayout *recorderLayout = new QVBoxLayout(recorder);
+        recorderLayout->setContentsMargins(28,24,28,24);
+        recorderLayout->setSpacing(12);
+
+        QLabel *title = new QLabel(QStringLiteral("ENREGISTREUR"), recorder);
+        QFont tf = title->font();
+        tf.setBold(true);
+        tf.setPointSizeF(11.0);
+        title->setFont(tf);
+        title->setStyleSheet(QStringLiteral("color:#ff9b32;background:transparent;"));
+        recorderLayout->addWidget(title, 0, Qt::AlignLeft);
+
+        loggerBox->setParent(recorder);
+        loggerBox->setMinimumWidth(360);
+        loggerBox->setMaximumWidth(520);
+        loggerBox->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+        recorderLayout->addWidget(loggerBox, 0, Qt::AlignLeft | Qt::AlignTop);
+        recorderLayout->addStretch(1);
+
+        m_tabs->addTab(recorder, QStringLiteral("Enregistreur"));
+    }
+
     void installNavigation()
     {
         QWidget *central = m_window->centralWidget();
@@ -90,18 +139,30 @@ private:
             "#overview_tab{background:#0d1116;color:#e7ebee;}"
             "#overview_tab QLabel{color:#dfe4e8;background:transparent;}"
             "#overview_tab QGroupBox{color:#e7ebee;background:#12181e;border:1px solid #2b343d;"
-            "border-radius:3px;margin-top:8px;font-weight:600;}"
+            "border-radius:0;margin-top:8px;font-weight:600;}"
             "#overview_tab QGroupBox::title{subcontrol-origin:margin;left:8px;padding:0 4px;color:#ff9b32;}"
             "#overview_tab QPushButton{background:#17202a;color:#eef2f5;border:1px solid #34414d;"
-            "border-radius:3px;padding:3px 8px;font-weight:600;}"
+            "border-radius:0;padding:3px 8px;font-weight:600;}"
             "#overview_tab QPushButton:hover{background:#1c2833;border-color:#ff8a1c;color:#ffffff;}"
             "#overview_tab QPushButton:pressed{background:#111820;}"
             "#overview_tab QPushButton:checked{background:#ff8a1c;color:#101419;border-color:#ff9b32;}"
             "#overview_tab QPushButton:disabled{background:#20262c;color:#68727c;border-color:#303841;}"
             "#overview_tab QProgressBar{background:#0f151a;color:#dce2e7;border:1px solid #2b343d;"
-            "border-radius:2px;text-align:center;}"
-            "#overview_tab QProgressBar::chunk{background:#ff8a1c;border-radius:1px;}"
+            "border-radius:0;text-align:center;}"
+            "#overview_tab QProgressBar::chunk{background:#ff8a1c;border-radius:0;}"
         );
+
+        // These legacy status widgets are represented by the approved bottom status bar
+        // or by the modern gauges. They must never remain visible between gauge cards.
+        const QStringList legacyOverlayNames = {
+            QStringLiteral("m_closed_loop_label"),
+            QStringLiteral("m_closedLoopLed"),
+            QStringLiteral("m_idleSwitchLabel"),
+            QStringLiteral("m_idleSwitchLed")
+        };
+        for (const QString &name : legacyOverlayNames) {
+            if (QWidget *legacy = overview->findChild<QWidget*>(name)) legacy->hide();
+        }
     }
 
     QMainWindow *m_window = nullptr;
