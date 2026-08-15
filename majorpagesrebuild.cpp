@@ -13,6 +13,7 @@
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
+#include "i18n.h"
 
 namespace {
 
@@ -115,29 +116,29 @@ static void composeSettings(QMainWindow *window)
     QVBoxLayout *root=nullptr;beginPage(page,root);
     QGridLayout *body=new QGridLayout;body->setHorizontalSpacing(10);body->setVerticalSpacing(10);body->setColumnStretch(0,3);body->setColumnStretch(1,2);
 
-    QFrame *metrics=card(page,QStringLiteral("settingsMetrics"),QStringLiteral("ÉTAT MOTEUR"));
+    QFrame *metrics=card(page,QStringLiteral("settingsMetrics"),I18n::text(7133));
     QGridLayout *mg=new QGridLayout;mg->setSpacing(8);
     QWidget *gauges[]={idleErr,rpm,trim,advance,lambda};
-    const char *titles[]={"ERREUR RALENTI","RÉGIME MOTEUR","CORRECTION CARBURANT","AVANCE ALLUMAGE","SONDE LAMBDA"};
+    const int titleKeys[]={7139,1011,7140,7141,7142};
     for(int i=0;i<5;i++){
         QFrame *box=new QFrame(metrics);box->setStyleSheet(QStringLiteral("background:#0b1116;border:1px solid #27323b;border-radius:4px;"));
         QVBoxLayout *bv=new QVBoxLayout(box);bv->setContentsMargins(6,6,6,6);bv->setSpacing(3);
-        QLabel *tl=new QLabel(QString::fromUtf8(titles[i]),box);QFont tf=tl->font();tf.setBold(true);tf.setPointSizeF(7.2);tl->setFont(tf);tl->setAlignment(Qt::AlignCenter);tl->setStyleSheet(QStringLiteral("color:#cfd6dc;background:transparent;border:0;"));bv->addWidget(tl);
+        QLabel *tl=new QLabel(I18n::text(titleKeys[i]),box);QFont tf=tl->font();tf.setBold(true);tf.setPointSizeF(7.2);tl->setFont(tf);tl->setAlignment(Qt::AlignCenter);tl->setStyleSheet(QStringLiteral("color:#cfd6dc;background:transparent;border:0;"));bv->addWidget(tl);
         if(gauges[i]){gauges[i]->setParent(box);gauges[i]->setMinimumHeight(80);gauges[i]->setMaximumHeight(130);gauges[i]->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);gauges[i]->show();bv->addWidget(gauges[i],1);}
         mg->addWidget(box,i<3?0:1,i<3?i:i-3);
     }
     static_cast<QVBoxLayout*>(metrics->layout())->addLayout(mg,1);
     body->addWidget(metrics,0,0,2,1);
 
-    QFrame *states=card(page,QStringLiteral("settingsStates"),QStringLiteral("ÉTATS"));
+    QFrame *states=card(page,QStringLiteral("settingsStates"),I18n::text(7134));
     QGridLayout *sg=new QGridLayout;sg->setHorizontalSpacing(12);sg->setVerticalSpacing(10);
-    QLabel *idleTxt=new QLabel(QStringLiteral("Contact ralenti"),states);QLabel *loopTxt=new QLabel(QStringLiteral("Boucle fermée"),states);
+    QLabel *idleTxt=new QLabel(I18n::text(2015),states);QLabel *loopTxt=new QLabel(I18n::text(2014),states);
     if(idleLed){idleLed->setParent(states);idleLed->setFixedSize(26,26);idleLed->show();sg->addWidget(idleLed,0,0);}sg->addWidget(idleTxt,0,1);
     if(loopLed){loopLed->setParent(states);loopLed->setFixedSize(26,26);loopLed->show();sg->addWidget(loopLed,1,0);}sg->addWidget(loopTxt,1,1);sg->setColumnStretch(2,1);
     static_cast<QVBoxLayout*>(states->layout())->addLayout(sg);static_cast<QVBoxLayout*>(states->layout())->addStretch(1);
     body->addWidget(states,0,1);
 
-    QFrame *adjust=card(page,QStringLiteral("settingsAdjust"),QStringLiteral("RÉGLAGES ECU"));
+    QFrame *adjust=card(page,QStringLiteral("settingsAdjust"),I18n::text(7135));
     QGridLayout *ag=new QGridLayout;ag->setHorizontalSpacing(8);ag->setVerticalSpacing(7);ag->setColumnStretch(1,1);
     struct Row{QLabel*l;QPushButton*minus;QLCDNumber*lcd;QPushButton*plus;};
     Row rows[]={{fuelLabel,fuelMinus,fuelLcd,fuelPlus},{hotLabel,hotMinus,hotLcd,hotPlus},{rpmLabel,rpmMinus,rpmLcd,rpmPlus},{ignLabel,ignMinus,ignLcd,ignPlus}};
@@ -160,9 +161,9 @@ static void composeErrors(QMainWindow *window)
     QWidget *live=window->findChild<QWidget*>(QStringLiteral("layoutWidget_9"));
     if(stored)stored->setParent(page);if(live)live->setParent(page);
     QVBoxLayout *root=nullptr;beginPage(page,root);
-    QFrame *top=card(page,QStringLiteral("errorsStored"),QStringLiteral("ERREURS ENREGISTRÉES"));
+    QFrame *top=card(page,QStringLiteral("errorsStored"),I18n::text(7136));
     if(stored){prepWidget(stored);stored->setParent(top);static_cast<QVBoxLayout*>(top->layout())->addWidget(stored,1);}root->addWidget(top,3);
-    QFrame *bottom=card(page,QStringLiteral("errorsLive"),QStringLiteral("ANOMALIES ET SIGNAUX EN DIRECT"));
+    QFrame *bottom=card(page,QStringLiteral("errorsLive"),I18n::text(7137));
     if(live){prepWidget(live);live->setParent(bottom);static_cast<QVBoxLayout*>(bottom->layout())->addWidget(live,1);}root->addWidget(bottom,2);
 }
 
@@ -179,8 +180,8 @@ static void composeActuators(QMainWindow *window)
     if(list)list->setParent(page);if(pos)pos->setParent(page);if(slider)slider->setParent(page);if(info)info->setParent(page);if(move)move->setParent(page);if(minus)minus->setParent(page);if(plus)plus->setParent(page);
     QVBoxLayout *root=nullptr;beginPage(page,root);
     QHBoxLayout *body=new QHBoxLayout;body->setSpacing(10);
-    QFrame *left=card(page,QStringLiteral("actuatorListCard"),QStringLiteral("ACTIONNEURS"));if(list){prepWidget(list);list->setParent(left);static_cast<QVBoxLayout*>(left->layout())->addWidget(list,1);}body->addWidget(left,3);
-    QFrame *right=card(page,QStringLiteral("actuatorIacCard"),QStringLiteral("MOTEUR PAS-À-PAS DE RALENTI"));QVBoxLayout *rv=static_cast<QVBoxLayout*>(right->layout());
+    QFrame *left=card(page,QStringLiteral("actuatorListCard"),I18n::text(4001).toUpper());if(list){prepWidget(list);list->setParent(left);static_cast<QVBoxLayout*>(left->layout())->addWidget(list,1);}body->addWidget(left,3);
+    QFrame *right=card(page,QStringLiteral("actuatorIacCard"),I18n::text(7138));QVBoxLayout *rv=static_cast<QVBoxLayout*>(right->layout());
     if(info){info->setParent(right);info->setWordWrap(true);info->show();rv->addWidget(info);}if(pos){prepWidget(pos);pos->setParent(right);rv->addWidget(pos);}if(slider){prepWidget(slider);slider->setParent(right);rv->addWidget(slider);}
     QHBoxLayout *buttons=new QHBoxLayout;if(minus){minus->setParent(right);minus->show();buttons->addWidget(minus);}if(move){move->setParent(right);move->show();buttons->addWidget(move,1);}if(plus){plus->setParent(right);plus->show();buttons->addWidget(plus);}rv->addLayout(buttons);rv->addStretch(1);body->addWidget(right,2);
     root->addLayout(body,1);
