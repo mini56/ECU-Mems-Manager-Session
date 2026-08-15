@@ -29,7 +29,7 @@ set(SOURCES
     analogwidgets/abstractmeter900.cpp mainwindow.ui resources.qrc database/DatabaseManager.cpp
     uirebuild.cpp overviewrebuild.cpp majorpagesrebuild.cpp analysismodernizer.cpp
     strictvisualrebuild.cpp dedicatedpagesrebuild.cpp visualcompletion.cpp darkstyle.cpp darkfixes.cpp
-    settingstabdark.cpp)
+    settingstabdark.cpp sidebarbubblecleaner.cpp)
 add_executable(${PNAME} ${SOURCES})
 target_sources(${PNAME} PRIVATE ${CMAKE_SOURCE_DIR}/desktopshortcut.cpp ${CMAKE_SOURCE_DIR}/desktopshortcut.h)
 if(WIN32)
