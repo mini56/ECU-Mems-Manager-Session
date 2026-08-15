@@ -20,6 +20,7 @@
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
+#include "i18n.h"
 
 namespace {
 
@@ -28,6 +29,12 @@ static QWidget *realPage(QWidget *tab)
     if (!tab) return nullptr;
     if (QScrollArea *s=qobject_cast<QScrollArea*>(tab)) return s->widget();
     return tab;
+}
+
+static QWidget *pageAt(QTabWidget *tabs,int index)
+{
+    if (!tabs || index<0 || index>=tabs->count()) return nullptr;
+    return realPage(tabs->widget(index));
 }
 
 static void clearLayout(QLayout *layout)
@@ -98,14 +105,6 @@ static QFrame *card(QWidget *parent,const QString &title)
     return f;
 }
 
-static QWidget *findTabByText(QTabWidget *tabs,const QString &needle)
-{
-    if (!tabs) return nullptr;
-    for (int i=0;i<tabs->count();++i)
-        if (tabs->tabText(i).toLower().contains(needle.toLower())) return realPage(tabs->widget(i));
-    return nullptr;
-}
-
 static void cleanupOldShell(QWidget *page)
 {
     if (!page) return;
@@ -139,7 +138,8 @@ static void polishTable(QTableWidget *t)
 
 static void rebuildSummary(QTabWidget *tabs)
 {
-    QWidget *page=findTabByText(tabs,QStringLiteral("mesures"));
+    const int index=2;
+    QWidget *page=pageAt(tabs,index);
     if (!page || page->property("strictSummaryBuilt").toBool()) return;
     QList<QTableWidget*> tables=page->findChildren<QTableWidget*>();
     if (tables.size()<3) return;
@@ -148,7 +148,7 @@ static void rebuildSummary(QTabWidget *tabs)
     for (QTableWidget *t:tables) { t->setParent(page); polishTable(t); }
     QVBoxLayout *root=nullptr;
     replaceRoot(page,root);
-    root->addWidget(hero(page,QStringLiteral("TOUTES LES MESURES"),QStringLiteral("MESURES ECU EN TEMPS RÉEL")));
+    root->addWidget(hero(page,tabs->tabText(index),I18n::text(7106)));
     QHBoxLayout *body=new QHBoxLayout;
     body->setSpacing(6);
     for (int i=0;i<3;i++) body->addWidget(tables.at(i),1);
@@ -170,11 +170,8 @@ static void styleRawBlock(QWidget *block)
 
 static void rebuildRaw(QTabWidget *tabs)
 {
-    QWidget *page=nullptr;
-    for (int i=0;i<tabs->count();++i) {
-        QWidget *p=realPage(tabs->widget(i));
-        if (p && p->objectName()==QStringLiteral("raw")) { page=p; break; }
-    }
+    const int index=5;
+    QWidget *page=pageAt(tabs,index);
     if (!page || page->property("strictRawBuilt").toBool()) return;
     QWidget *a=page->findChild<QWidget*>(QStringLiteral("raw_1"));
     QWidget *b=page->findChild<QWidget*>(QStringLiteral("raw_2"));
@@ -185,12 +182,12 @@ static void rebuildRaw(QTabWidget *tabs)
     styleRawBlock(a); styleRawBlock(b);
     QVBoxLayout *root=nullptr;
     replaceRoot(page,root);
-    root->addWidget(hero(page,QStringLiteral("TOUTES LES DONNÉES"),QStringLiteral("DONNÉES BRUTES ET VALEURS DÉCODÉES")));
+    root->addWidget(hero(page,tabs->tabText(index),I18n::text(7109)));
     QHBoxLayout *body=new QHBoxLayout;
     body->setSpacing(7);
-    QFrame *ca=card(page,QStringLiteral("TRAME 7D"));
+    QFrame *ca=card(page,I18n::text(7124));
     static_cast<QVBoxLayout*>(ca->layout())->addWidget(a,1);
-    QFrame *cb=card(page,QStringLiteral("TRAME 80"));
+    QFrame *cb=card(page,I18n::text(7125));
     static_cast<QVBoxLayout*>(cb->layout())->addWidget(b,1);
     body->addWidget(ca,1); body->addWidget(cb,1);
     root->addLayout(body,1);
@@ -212,11 +209,8 @@ static void moveLabel(QLabel *l,QWidget *parent,QVBoxLayout *layout,bool warning
 
 static void rebuildInteractive(QTabWidget *tabs)
 {
-    QWidget *page=nullptr;
-    for (int i=0;i<tabs->count();++i) {
-        QWidget *p=realPage(tabs->widget(i));
-        if (p && p->objectName()==QStringLiteral("ECU")) { page=p; break; }
-    }
+    const int index=6;
+    QWidget *page=pageAt(tabs,index);
     if (!page || page->property("strictInteractiveBuilt").toBool()) return;
     page->setProperty("strictInteractiveBuilt",true);
     cleanupOldShell(page);
@@ -233,10 +227,10 @@ static void rebuildInteractive(QTabWidget *tabs)
 
     QVBoxLayout *root=nullptr;
     replaceRoot(page,root);
-    root->addWidget(hero(page,QStringLiteral("MODE INTERACTIF"),QStringLiteral("COMMANDES MANUELLES ET MODE TECHNIQUE")));
+    root->addWidget(hero(page,tabs->tabText(index),I18n::text(7110)));
     QHBoxLayout *body=new QHBoxLayout;
     body->setSpacing(7);
-    QFrame *instructions=card(page,QStringLiteral("UTILISATION"));
+    QFrame *instructions=card(page,I18n::text(7126));
     QVBoxLayout *iv=static_cast<QVBoxLayout*>(instructions->layout());
     moveLabel(l23,instructions,iv); moveLabel(l24,instructions,iv); moveLabel(l48,instructions,iv); moveLabel(l49,instructions,iv); moveLabel(l50,instructions,iv);
     if (button) {
@@ -247,7 +241,7 @@ static void rebuildInteractive(QTabWidget *tabs)
         iv->addWidget(button,0,Qt::AlignLeft);
     }
     iv->addStretch(1);
-    QFrame *safety=card(page,QStringLiteral("SÉCURITÉ"));
+    QFrame *safety=card(page,I18n::text(7127));
     QVBoxLayout *sv=static_cast<QVBoxLayout*>(safety->layout());
     moveLabel(l51,safety,sv,true); moveLabel(l22,safety,sv,true);
     if (info) {
@@ -264,7 +258,8 @@ static void rebuildInteractive(QTabWidget *tabs)
 
 static void rebuildRosco(QTabWidget *tabs)
 {
-    QWidget *page=findTabByText(tabs,QStringLiteral("rosco"));
+    const int index=8;
+    QWidget *page=pageAt(tabs,index);
     if (!page || page->property("strictRoscoBuilt").toBool()) return;
     QList<QGroupBox*> groups=page->findChildren<QGroupBox*>();
     QList<QTextEdit*> edits=page->findChildren<QTextEdit*>();
@@ -277,12 +272,12 @@ static void rebuildRosco(QTabWidget *tabs)
     normalizeWidget(session); normalizeWidget(output);
     QVBoxLayout *root=nullptr;
     replaceRoot(page,root);
-    root->addWidget(hero(page,QStringLiteral("ECU / ROSCO"),QStringLiteral("INFORMATIONS TECHNIQUES ET SESSION ECU / ROSCO")));
+    root->addWidget(hero(page,tabs->tabText(index),I18n::text(7112)));
     QHBoxLayout *body=new QHBoxLayout;
     body->setSpacing(7);
-    QFrame *left=card(page,QStringLiteral("SESSION ECU"));
+    QFrame *left=card(page,I18n::text(7128));
     static_cast<QVBoxLayout*>(left->layout())->addWidget(session,1);
-    QFrame *right=card(page,QStringLiteral("RÉPONSES"));
+    QFrame *right=card(page,I18n::text(7129));
     static_cast<QVBoxLayout*>(right->layout())->addWidget(output,1);
     body->addWidget(left,2); body->addWidget(right,3);
     root->addLayout(body,1);
@@ -290,7 +285,8 @@ static void rebuildRosco(QTabWidget *tabs)
 
 static void rebuildDiagnostic(QTabWidget *tabs)
 {
-    QWidget *page=findTabByText(tabs,QStringLiteral("diagnostic"));
+    const int index=9;
+    QWidget *page=pageAt(tabs,index);
     if (!page || page->property("strictDiagnosticBuilt").toBool()) return;
     QList<QTableWidget*> tables=page->findChildren<QTableWidget*>();
     QList<QGroupBox*> groups=page->findChildren<QGroupBox*>();
@@ -306,8 +302,8 @@ static void rebuildDiagnostic(QTabWidget *tabs)
 
     QVBoxLayout *root=nullptr;
     replaceRoot(page,root);
-    root->addWidget(hero(page,QStringLiteral("DIAGNOSTIC AUTOMATIQUE"),QStringLiteral("VÉRIFICATION COMPLÈTE DU SYSTÈME ET RAPPORT DE SANTÉ")));
-    QFrame *toolbar=card(page,QStringLiteral("ÉTAT DU DIAGNOSTIC"));
+    root->addWidget(hero(page,tabs->tabText(index),I18n::text(7113)));
+    QFrame *toolbar=card(page,I18n::text(7130));
     QHBoxLayout *th=new QHBoxLayout;
     th->setSpacing(7);
     for (QLabel *l:labels) {
@@ -324,9 +320,9 @@ static void rebuildDiagnostic(QTabWidget *tabs)
 
     QHBoxLayout *body=new QHBoxLayout;
     body->setSpacing(7);
-    QFrame *checks=card(page,QStringLiteral("CONTRÔLES"));
+    QFrame *checks=card(page,I18n::text(7131));
     static_cast<QVBoxLayout*>(checks->layout())->addWidget(table,1);
-    QFrame *rep=card(page,QStringLiteral("RAPPORT"));
+    QFrame *rep=card(page,I18n::text(7132));
     static_cast<QVBoxLayout*>(rep->layout())->addWidget(report,1);
     body->addWidget(checks,3); body->addWidget(rep,2);
     root->addLayout(body,1);
