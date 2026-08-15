@@ -101,9 +101,6 @@ static void preserveRealUtilityControls(QMainWindow *w,qreal s)
         if (bar->indexOf(view)<0) bar->addWidget(view,0);
         view->show();
     }
-
-    for (QPushButton *b:status->findChildren<QPushButton*>(QString(),Qt::FindDirectChildrenOnly))
-        if (b && b!=snapshot && b!=view && b->text()==QStringLiteral("Capture écran")) b->hide();
 }
 
 static void removeInventedRecorder(QMainWindow *w)
@@ -118,16 +115,6 @@ static void removeInventedRecorder(QMainWindow *w)
             if (victim) victim->deleteLater();
         }
     }
-}
-
-static void removeFakeHeaderTelemetry(QMainWindow *w)
-{
-    if (!w) return;
-    QFrame *header=w->findChild<QFrame*>(QStringLiteral("uiRebuildHeader"));
-    if (!header) return;
-    for (QLabel *l:header->findChildren<QLabel*>(QString(),Qt::FindDirectChildrenOnly))
-        if (l && l->text().contains(QStringLiteral("Fréquence"),Qt::CaseInsensitive) && l->text().contains(QStringLiteral("auto"),Qt::CaseInsensitive))
-            l->hide();
 }
 
 static void syncNavigation(QMainWindow *w)
@@ -264,7 +251,6 @@ static void apply(QMainWindow *w)
     const qreal s=scaleFor(w);
     styleMenuBar(w);
     fitChrome(w,s);
-    removeFakeHeaderTelemetry(w);
     preserveRealUtilityControls(w,s);
     removeInventedRecorder(w);
     syncNavigation(w);
