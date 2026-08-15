@@ -21,12 +21,8 @@
 
 namespace {
 
-static const QColor kPanel("#10161c");
-static const QColor kBorder("#29343e");
 static const QColor kText("#edf2f4");
-static const QColor kMuted("#8d99a3");
 static const QColor kOrange("#ff7a00");
-static const QColor kOrange2("#ff9828");
 static const QColor kRed("#ff3d32");
 
 static void disposeLayoutItem(QLayoutItem *item)
@@ -40,10 +36,10 @@ static void disposeLayoutItem(QLayoutItem *item)
     delete item;
 }
 
-static void clearLayout(QLayout *layout,int keep=0)
+static void clearLayout(QLayout *layout)
 {
     if(!layout) return;
-    while(layout->count()>keep) disposeLayoutItem(layout->takeAt(keep));
+    while(QLayoutItem *item=layout->takeAt(0)) disposeLayoutItem(item);
 }
 
 class SettingsGauge : public QWidget
@@ -54,9 +50,9 @@ public:
     SettingsGauge(QObject *source,const QString &title,const QString &unit,Kind kind,QWidget *parent=nullptr)
         : QWidget(parent),m_source(source),m_title(title),m_unit(unit),m_kind(kind)
     {
-        setMinimumSize(kind==EngineRpm?230:130,kind==EngineRpm?230:135);
+        setMinimumSize(kind==EngineRpm?260:145,kind==EngineRpm?260:145);
         setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
-        setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+        setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
         setAttribute(Qt::WA_TransparentForMouseEvents,true);
         QTimer *timer=new QTimer(this);
         timer->setInterval(250);
@@ -118,13 +114,14 @@ protected:
             else {minv=0.0;maxv=900.0;}
         }
 
-        auto pointFor=[&](double f,qreal radius){
-            const qreal a=qDegreesToRadians(startDeg+sweepDeg*f);
-            return c+QPointF(qCos(a)*radius,qSin(a)*radius);
+        auto pointFor=[&](double fraction,qreal radius){
+            const qreal angle=qDegreesToRadians(startDeg+sweepDeg*fraction);
+            return c+QPointF(qCos(angle)*radius,qSin(angle)*radius);
         };
         auto drawRange=[&](double lo,double hi,const QColor &color,qreal width){
             if(hi<=lo || hi<=minv || lo>=maxv) return;
-            lo=qMax(lo,minv); hi=qMin(hi,maxv);
+            lo=qMax(lo,minv);
+            hi=qMin(hi,maxv);
             const qreal f0=(lo-minv)/(maxv-minv);
             const qreal f1=(hi-minv)/(maxv-minv);
             QPainterPath path;
@@ -149,23 +146,23 @@ protected:
 
         if(m_kind==EngineRpm) {
             const double redStart=(maxv>=1900.0)?1750.0:(minv+(maxv-minv)*.875);
-            drawRange(redStart,maxv,kRed,large?7.0:4.0);
+            drawRange(redStart,maxv,kRed,7.0);
         } else if(m_kind==IdleError) {
             const double redStart=(maxv>=180.0)?100.0:(minv+(maxv-minv)*.60);
-            drawRange(redStart,maxv,kRed,large?6.0:4.5);
+            drawRange(redStart,maxv,kRed,4.5);
         }
 
-        const int majorCount=(m_kind==EngineRpm || m_kind==IdleError || m_kind==FuelTrim || m_kind==IgnitionAdvance)?8:6;
+        const int majorCount=(m_kind==Lambda)?6:8;
         const int tickCount=majorCount*5;
         p.save();
         p.translate(c);
         for(int i=0;i<=tickCount;i++) {
             const bool major=(i%5==0);
-            const qreal a=qDegreesToRadians(startDeg+sweepDeg*i/qreal(tickCount));
-            const qreal ro=r-(large?9.0:6.5);
-            const qreal len=major?(large?15.0:9.0):(large?7.0:4.0);
-            const QPointF po(qCos(a)*ro,qSin(a)*ro);
-            const QPointF pi(qCos(a)*(ro-len),qSin(a)*(ro-len));
+            const qreal angle=qDegreesToRadians(startDeg+sweepDeg*i/qreal(tickCount));
+            const qreal outer=r-(large?9.0:6.5);
+            const qreal length=major?(large?15.0:9.0):(large?7.0:4.0);
+            const QPointF po(qCos(angle)*outer,qSin(angle)*outer);
+            const QPointF pi(qCos(angle)*(outer-length),qSin(angle)*(outer-length));
             p.setPen(QPen(major?QColor("#f3f5f6"):QColor("#89949b"),major?(large?2.0:1.2):(large?1.0:.62),Qt::SolidLine,Qt::FlatCap));
             p.drawLine(pi,po);
         }
@@ -180,21 +177,21 @@ protected:
         for(int i=0;i<=majorCount;i++) {
             const double fv=minv+(maxv-minv)*i/qreal(majorCount);
             const QPointF pos=pointFor(i/qreal(majorCount),labelR);
-            QString txt;
-            if(qAbs(maxv-minv)<=50.0) txt=QString::number(fv,'f',0);
-            else txt=QString::number(qRound(fv));
-            p.drawText(QRectF(pos.x()-(large?28:18),pos.y()-(large?9:7),large?56:36,large?18:14),Qt::AlignCenter,txt);
+            QString text;
+            if(qAbs(maxv-minv)<=50.0) text=QString::number(fv,'f',0);
+            else text=QString::number(qRound(fv));
+            p.drawText(QRectF(pos.x()-(large?28:18),pos.y()-(large?9:7),large?56:36,large?18:14),Qt::AlignCenter,text);
         }
 
-        const double n=qBound(0.0,(value-minv)/(maxv-minv),1.0);
-        const qreal needleDeg=startDeg+sweepDeg*n;
-        const qreal a=qDegreesToRadians(needleDeg);
-        const QPointF d(qCos(a),qSin(a));
-        const QPointF normal(-d.y(),d.x());
+        const double normalized=qBound(0.0,(value-minv)/(maxv-minv),1.0);
+        const qreal needleDeg=startDeg+sweepDeg*normalized;
+        const qreal angle=qDegreesToRadians(needleDeg);
+        const QPointF direction(qCos(angle),qSin(angle));
+        const QPointF normal(-direction.y(),direction.x());
         QPainterPath needle;
-        needle.moveTo(c+d*(r-(large?24.0:14.0)));
+        needle.moveTo(c+direction*(r-(large?24.0:14.0)));
         needle.lineTo(c+normal*(large?4.2:2.8));
-        needle.lineTo(c-d*(large?14.0:8.0));
+        needle.lineTo(c-direction*(large?14.0:8.0));
         needle.lineTo(c-normal*(large?4.2:2.8));
         needle.closeSubpath();
         p.setPen(Qt::NoPen);
@@ -230,28 +227,20 @@ private:
     Kind m_kind;
 };
 
-static void prepareGaugeSource(QWidget *page,const char *name)
-{
-    if(!page) return;
-    if(QWidget *source=page->findChild<QWidget*>(QString::fromLatin1(name))) source->hide();
-}
-
 static void styleLed(QWidget *led)
 {
     if(!led) return;
     led->setFixedSize(24,24);
-    led->setMinimumSize(24,24);
-    led->setMaximumSize(24,24);
     led->show();
 }
 
 static void styleAdjustButton(QPushButton *button)
 {
     if(!button) return;
-    button->setMinimumHeight(31);
-    button->setMaximumHeight(36);
-    button->setMinimumWidth(102);
-    button->setMaximumWidth(QWIDGETSIZE_MAX);
+    button->setMinimumHeight(29);
+    button->setMaximumHeight(34);
+    button->setMinimumWidth(125);
+    button->setMaximumWidth(170);
     button->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
     button->show();
 }
@@ -262,29 +251,46 @@ static void styleLcd(QLCDNumber *lcd)
     lcd->setSegmentStyle(QLCDNumber::Flat);
     lcd->setDigitCount(4);
     lcd->setSmallDecimalPoint(true);
-    lcd->setMinimumSize(82,31);
-    lcd->setMaximumHeight(36);
+    lcd->setFixedSize(86,32);
     lcd->setStyleSheet(QStringLiteral("QLCDNumber{background:#080e13;color:#ff8a00;border:1px solid #34414b;border-radius:3px;}"));
     lcd->show();
 }
 
-static void rebuildGaugeArea(QMainWindow *window,QWidget *page,QFrame *metrics,QLineEdit *note)
+static void deleteLegacyGaugeOverlays(QFrame *metrics)
 {
-    if(!window || !page || !metrics) return;
+    if(!metrics) return;
+    const QList<QWidget*> widgets=metrics->findChildren<QWidget*>();
+    for(QWidget *widget:widgets) {
+        if(!widget) continue;
+        const QString className=QString::fromLatin1(widget->metaObject()->className());
+        if(className==QStringLiteral("CompactGauge")) {
+            widget->hide();
+            widget->deleteLater();
+        }
+    }
+}
 
+static void rebuildGaugeArea(QWidget *page,QFrame *metrics)
+{
+    if(!page || !metrics) return;
     QVBoxLayout *layout=qobject_cast<QVBoxLayout*>(metrics->layout());
     if(!layout) return;
 
-    for(QWidget *w:metrics->findChildren<QWidget*>()) {
-        if(QString::fromLatin1(w->metaObject()->className())==QStringLiteral("CompactGauge")) w->hide();
-    }
-    clearLayout(layout,2);
+    deleteLegacyGaugeOverlays(metrics);
 
-    prepareGaugeSource(page,"e_idle_error");
-    prepareGaugeSource(page,"m_revCounter_exhaust");
-    prepareGaugeSource(page,"e_short_term_fuel_trim");
-    prepareGaugeSource(page,"e_ignition_advance");
-    prepareGaugeSource(page,"e_lambda");
+    const QList<QWidget*> directChildren=metrics->findChildren<QWidget*>(QString(),Qt::FindDirectChildrenOnly);
+    for(QWidget *child:directChildren) child->hide();
+    clearLayout(layout);
+    layout->setContentsMargins(7,4,7,4);
+    layout->setSpacing(0);
+
+    const char *sourceNames[]={"e_idle_error","m_revCounter_exhaust","e_short_term_fuel_trim","e_ignition_advance","e_lambda"};
+    for(const char *name:sourceNames) {
+        if(QWidget *source=page->findChild<QWidget*>(QString::fromLatin1(name))) {
+            source->hide();
+            if(QWidget *box=source->parentWidget()) box->hide();
+        }
+    }
 
     QObject *idleSrc=page->findChild<QObject*>(QStringLiteral("e_idle_error"));
     QObject *rpmSrc=page->findChild<QObject*>(QStringLiteral("m_revCounter_exhaust"));
@@ -295,7 +301,7 @@ static void rebuildGaugeArea(QMainWindow *window,QWidget *page,QFrame *metrics,Q
     SettingsGauge *idle=new SettingsGauge(idleSrc,I18n::text(7139),QStringLiteral("tr/min"),SettingsGauge::IdleError,metrics);
     SettingsGauge *rpm=new SettingsGauge(rpmSrc,I18n::text(1011),QStringLiteral("tr/min"),SettingsGauge::EngineRpm,metrics);
     SettingsGauge *trim=new SettingsGauge(trimSrc,I18n::text(7140),QStringLiteral("%"),SettingsGauge::FuelTrim,metrics);
-    SettingsGauge *ign=new SettingsGauge(ignSrc,I18n::text(7141),QStringLiteral("°"),SettingsGauge::IgnitionAdvance,metrics);
+    SettingsGauge *ign=new SettingsGauge(ignSrc,I18n::text(7141),QString::fromUtf8("°"),SettingsGauge::IgnitionAdvance,metrics);
     SettingsGauge *lambda=new SettingsGauge(lambdaSrc,I18n::text(7142),QStringLiteral("mV"),SettingsGauge::Lambda,metrics);
 
     idle->setObjectName(QStringLiteral("darkTuneGaugeIdle"));
@@ -305,9 +311,9 @@ static void rebuildGaugeArea(QMainWindow *window,QWidget *page,QFrame *metrics,Q
     lambda->setObjectName(QStringLiteral("darkTuneGaugeLambda"));
 
     QGridLayout *grid=new QGridLayout;
-    grid->setContentsMargins(4,2,4,2);
-    grid->setHorizontalSpacing(14);
-    grid->setVerticalSpacing(4);
+    grid->setContentsMargins(2,0,2,0);
+    grid->setHorizontalSpacing(18);
+    grid->setVerticalSpacing(0);
     grid->addWidget(idle,0,0,Qt::AlignCenter);
     grid->addWidget(ign,1,0,Qt::AlignCenter);
     grid->addWidget(rpm,0,1,2,1,Qt::AlignCenter);
@@ -319,27 +325,11 @@ static void rebuildGaugeArea(QMainWindow *window,QWidget *page,QFrame *metrics,Q
     grid->setRowStretch(0,1);
     grid->setRowStretch(1,1);
     layout->addLayout(grid,1);
-
-    if(note) {
-        note->setParent(metrics);
-        note->setReadOnly(true);
-        note->setAlignment(Qt::AlignCenter);
-        note->setMinimumHeight(25);
-        note->setMaximumHeight(29);
-        note->setMaximumWidth(620);
-        note->setStyleSheet(QStringLiteral("QLineEdit{background:#0b1116;color:#9ca8b0;border:1px solid #27333b;border-radius:3px;padding:2px 8px;}"));
-        note->show();
-        layout->addWidget(note,0,Qt::AlignHCenter);
-    }
-
-    metrics->setMinimumHeight(350);
-    metrics->setMaximumHeight(QWIDGETSIZE_MAX);
-    metrics->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
 }
 
-static void rebuildAdjustArea(QMainWindow *window,QWidget *page,QFrame *states,QFrame *adjust)
+static void rebuildAdjustArea(QWidget *page,QFrame *states,QFrame *adjust,QLineEdit *note)
 {
-    if(!window || !page || !adjust) return;
+    if(!page || !adjust) return;
 
     QWidget *idleLed=page->findChild<QWidget*>(QStringLiteral("idleswitch_led"));
     QWidget *loopLed=page->findChild<QWidget*>(QStringLiteral("closedloop_led"));
@@ -370,49 +360,75 @@ static void rebuildAdjustArea(QMainWindow *window,QWidget *page,QFrame *states,Q
 
     QVBoxLayout *layout=qobject_cast<QVBoxLayout*>(adjust->layout());
     if(!layout) return;
-    clearLayout(layout,0);
+    clearLayout(layout);
     for(QWidget *child:adjust->findChildren<QWidget*>(QString(),Qt::FindDirectChildrenOnly)) child->hide();
+    layout->setContentsMargins(14,8,14,9);
+    layout->setSpacing(5);
 
     QHBoxLayout *header=new QHBoxLayout;
     header->setContentsMargins(0,0,0,0);
-    header->setSpacing(10);
+    header->setSpacing(9);
+
     QLabel *title=new QLabel(I18n::text(7135),adjust);
     QFont titleFont=title->font();
     titleFont.setBold(true);
     titleFont.setPointSizeF(9.0);
     title->setFont(titleFont);
     title->setStyleSheet(QStringLiteral("color:#ff9828;background:transparent;border:0;"));
-    title->show();
     header->addWidget(title);
     header->addSpacing(18);
 
     if(loopLed) {
-        loopLed->setParent(adjust); styleLed(loopLed); header->addWidget(loopLed);
-        QLabel *loopText=new QLabel(I18n::text(2014),adjust); loopText->setStyleSheet(QStringLiteral("color:#dce3e8;background:transparent;border:0;")); header->addWidget(loopText);
+        loopLed->setParent(adjust);
+        styleLed(loopLed);
+        header->addWidget(loopLed);
+        QLabel *loopText=new QLabel(I18n::text(2014),adjust);
+        loopText->setStyleSheet(QStringLiteral("color:#dce3e8;background:transparent;border:0;"));
+        header->addWidget(loopText);
     }
-    header->addSpacing(18);
+    header->addSpacing(14);
     if(idleLed) {
-        idleLed->setParent(adjust); styleLed(idleLed); header->addWidget(idleLed);
-        QLabel *idleText=new QLabel(I18n::text(2015),adjust); idleText->setStyleSheet(QStringLiteral("color:#dce3e8;background:transparent;border:0;")); header->addWidget(idleText);
+        idleLed->setParent(adjust);
+        styleLed(idleLed);
+        header->addWidget(idleLed);
+        QLabel *idleText=new QLabel(I18n::text(2015),adjust);
+        idleText->setStyleSheet(QStringLiteral("color:#dce3e8;background:transparent;border:0;"));
+        header->addWidget(idleText);
     }
+
     header->addStretch(1);
+    if(note) {
+        note->setParent(adjust);
+        note->setReadOnly(true);
+        note->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
+        note->setMinimumWidth(280);
+        note->setMaximumWidth(470);
+        note->setMinimumHeight(24);
+        note->setMaximumHeight(28);
+        note->setStyleSheet(QStringLiteral("QLineEdit{background:transparent;color:#b8c1c7;border:0;padding:1px 2px;}"));
+        note->show();
+        header->addWidget(note,0);
+    }
     layout->addLayout(header);
 
     QFrame *line=new QFrame(adjust);
     line->setFrameShape(QFrame::HLine);
     line->setStyleSheet(QStringLiteral("background:#29343e;border:0;max-height:1px;"));
-    line->show();
     layout->addWidget(line);
 
-    QGridLayout *grid=new QGridLayout;
-    grid->setContentsMargins(0,1,0,0);
-    grid->setHorizontalSpacing(9);
-    grid->setVerticalSpacing(6);
-    grid->setColumnStretch(0,2);
-    grid->setColumnStretch(1,1);
+    QWidget *form=new QWidget(adjust);
+    form->setObjectName(QStringLiteral("darkSettingsAdjustForm"));
+    form->setMaximumWidth(900);
+    form->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
+    QGridLayout *grid=new QGridLayout(form);
+    grid->setContentsMargins(0,0,0,0);
+    grid->setHorizontalSpacing(10);
+    grid->setVerticalSpacing(4);
+    grid->setColumnStretch(0,0);
+    grid->setColumnStretch(1,0);
     grid->setColumnStretch(2,0);
     grid->setColumnStretch(3,0);
-    grid->setColumnStretch(4,1);
+    grid->setColumnStretch(4,0);
 
     struct Row {
         QLabel *label;
@@ -428,46 +444,69 @@ static void rebuildAdjustArea(QMainWindow *window,QWidget *page,QFrame *states,Q
         {ignLabel,ignMinus,ignLcd,"°",ignPlus}
     };
 
-    for(int r=0;r<4;r++) {
-        if(rows[r].label) {
-            rows[r].label->setParent(adjust);
-            rows[r].label->setMinimumWidth(190);
-            rows[r].label->setStyleSheet(QStringLiteral("color:#e6ecef;background:transparent;border:0;"));
-            rows[r].label->show();
-            grid->addWidget(rows[r].label,r,0);
+    for(int row=0;row<4;row++) {
+        if(rows[row].label) {
+            rows[row].label->setParent(form);
+            rows[row].label->setMinimumWidth(210);
+            rows[row].label->setMaximumWidth(240);
+            rows[row].label->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
+            rows[row].label->setStyleSheet(QStringLiteral("color:#e6ecef;background:transparent;border:0;"));
+            rows[row].label->show();
+            grid->addWidget(rows[row].label,row,0);
         }
-        if(rows[r].minus) {
-            rows[r].minus->setParent(adjust); styleAdjustButton(rows[r].minus); grid->addWidget(rows[r].minus,r,1);
+        if(rows[row].minus) {
+            rows[row].minus->setParent(form);
+            styleAdjustButton(rows[row].minus);
+            grid->addWidget(rows[row].minus,row,1);
         }
-        if(rows[r].lcd) {
-            rows[r].lcd->setParent(adjust); styleLcd(rows[r].lcd); grid->addWidget(rows[r].lcd,r,2);
+        if(rows[row].lcd) {
+            rows[row].lcd->setParent(form);
+            styleLcd(rows[row].lcd);
+            grid->addWidget(rows[row].lcd,row,2);
         }
-        QLabel *unitLabel=new QLabel(QString::fromUtf8(rows[r].unit),adjust);
-        QFont uf=unitLabel->font(); uf.setBold(true); uf.setPointSizeF(8.5); unitLabel->setFont(uf);
-        unitLabel->setMinimumWidth(34);
+        QLabel *unitLabel=new QLabel(QString::fromUtf8(rows[row].unit),form);
+        QFont unitFont=unitLabel->font();
+        unitFont.setBold(true);
+        unitFont.setPointSizeF(8.4);
+        unitLabel->setFont(unitFont);
+        unitLabel->setFixedWidth(38);
         unitLabel->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
         unitLabel->setStyleSheet(QStringLiteral("color:#d8dfe3;background:transparent;border:0;"));
-        grid->addWidget(unitLabel,r,3);
-        if(rows[r].plus) {
-            rows[r].plus->setParent(adjust); styleAdjustButton(rows[r].plus); grid->addWidget(rows[r].plus,r,4);
+        grid->addWidget(unitLabel,row,3);
+        if(rows[row].plus) {
+            rows[row].plus->setParent(form);
+            styleAdjustButton(rows[row].plus);
+            grid->addWidget(rows[row].plus,row,4);
         }
     }
 
-    layout->addLayout(grid,1);
+    QHBoxLayout *formCenter=new QHBoxLayout;
+    formCenter->setContentsMargins(0,0,0,0);
+    formCenter->addStretch(1);
+    formCenter->addWidget(form,0,Qt::AlignHCenter);
+    formCenter->addStretch(1);
+    layout->addLayout(formCenter,1);
 
     QHBoxLayout *resets=new QHBoxLayout;
-    resets->setContentsMargins(0,2,0,0);
+    resets->setContentsMargins(0,0,0,0);
     resets->addStretch(1);
     if(resetAdj) {
-        resetAdj->setParent(adjust); resetAdj->setMinimumHeight(31); resetAdj->setMaximumHeight(36); resetAdj->show(); resets->addWidget(resetAdj);
+        resetAdj->setParent(adjust);
+        resetAdj->setMinimumHeight(29);
+        resetAdj->setMaximumHeight(34);
+        resetAdj->show();
+        resets->addWidget(resetAdj);
     }
     if(resetEcu) {
-        resetEcu->setParent(adjust); resetEcu->setMinimumHeight(31); resetEcu->setMaximumHeight(36); resetEcu->show(); resets->addWidget(resetEcu);
+        resetEcu->setParent(adjust);
+        resetEcu->setMinimumHeight(29);
+        resetEcu->setMaximumHeight(34);
+        resetEcu->show();
+        resets->addWidget(resetEcu);
     }
+    resets->addStretch(1);
     layout->addLayout(resets);
 
-    adjust->setMinimumHeight(215);
-    adjust->setMaximumHeight(QWIDGETSIZE_MAX);
     adjust->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
     adjust->show();
 }
@@ -475,12 +514,13 @@ static void rebuildAdjustArea(QMainWindow *window,QWidget *page,QFrame *states,Q
 static void rebuildPageLayout(QWidget *page,QFrame *metrics,QFrame *states,QFrame *adjust)
 {
     if(!page || !metrics || !adjust) return;
-    QLayout *root=page->layout();
-    if(!root) return;
 
     QGridLayout *body=nullptr;
     for(QGridLayout *grid:page->findChildren<QGridLayout*>()) {
-        if(grid->indexOf(metrics)>=0 || grid->indexOf(adjust)>=0) { body=grid; break; }
+        if(grid->indexOf(metrics)>=0 || grid->indexOf(adjust)>=0) {
+            body=grid;
+            break;
+        }
     }
     if(!body) return;
 
@@ -491,10 +531,58 @@ static void rebuildPageLayout(QWidget *page,QFrame *metrics,QFrame *states,QFram
     body->addWidget(adjust,1,0,1,2);
     body->setColumnStretch(0,1);
     body->setColumnStretch(1,1);
-    body->setRowStretch(0,5);
-    body->setRowStretch(1,3);
+    body->setRowStretch(0,3);
+    body->setRowStretch(1,2);
     body->setHorizontalSpacing(0);
-    body->setVerticalSpacing(9);
+    body->setVerticalSpacing(7);
+}
+
+static void sizeGauge(QWidget *gauge,int size)
+{
+    if(!gauge) return;
+    gauge->setMinimumSize(size,size);
+    gauge->setMaximumSize(size,size);
+    gauge->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
+    gauge->show();
+}
+
+static void applySettingsSizing(QWidget *page,QFrame *metrics,QFrame *adjust)
+{
+    if(!page || !metrics || !adjust) return;
+
+    const int width=qMax(700,page->width());
+    const int height=qMax(430,page->height());
+    const int centerByWidth=qRound(width*.285);
+    const int centerByHeight=qRound((height-175)*.91);
+    const int center=qBound(270,qMin(centerByWidth,centerByHeight),335);
+    const int outer=qBound(155,qRound(center*.57),192);
+
+    sizeGauge(page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeRpm")),center);
+    sizeGauge(page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeIdle")),outer);
+    sizeGauge(page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeTrim")),outer);
+    sizeGauge(page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeIgnition")),outer);
+    sizeGauge(page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeLambda")),outer);
+
+    const int metricsHeight=qBound(292,center+12,350);
+    metrics->setMinimumHeight(metricsHeight);
+    metrics->setMaximumHeight(metricsHeight+6);
+    metrics->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+
+    const int adjustHeight=qBound(168,qRound(height*.31),205);
+    adjust->setMinimumHeight(adjustHeight);
+    adjust->setMaximumHeight(adjustHeight+12);
+}
+
+static void suppressLegacyOverlays(QFrame *metrics)
+{
+    deleteLegacyGaugeOverlays(metrics);
+    if(!metrics) return;
+    for(QWidget *child:metrics->findChildren<QWidget*>(QString(),Qt::FindDirectChildrenOnly)) {
+        const QString name=child->objectName();
+        if(name.startsWith(QStringLiteral("darkTuneGauge"))) continue;
+        if(QString::fromLatin1(child->metaObject()->className())==QStringLiteral("SettingsGauge")) continue;
+        child->hide();
+    }
 }
 
 static void applySettingsLayout(QMainWindow *window)
@@ -506,33 +594,26 @@ static void applySettingsLayout(QMainWindow *window)
     QFrame *adjust=window->findChild<QFrame*>(QStringLiteral("settingsAdjust"));
     if(!page || !metrics || !adjust) return;
 
-    if(!page->property("settingsDark409Built").toBool()) {
-        page->setProperty("settingsDark409Built",true);
+    if(!page->property("settingsDark410Built").toBool()) {
+        page->setProperty("settingsDark410Built",true);
         QLineEdit *note=page->findChild<QLineEdit*>(QStringLiteral("lineEdit_3"));
-        rebuildGaugeArea(window,page,metrics,note);
-        rebuildAdjustArea(window,page,states,adjust);
+        rebuildGaugeArea(page,metrics);
+        rebuildAdjustArea(page,states,adjust,note);
         rebuildPageLayout(page,metrics,states,adjust);
     }
+
+    suppressLegacyOverlays(metrics);
 
     page->setMinimumSize(0,0);
     page->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
     page->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     if(QLayout *root=page->layout()) {
-        root->setContentsMargins(8,7,8,7);
-        root->setSpacing(8);
+        root->setContentsMargins(6,5,6,5);
+        root->setSpacing(6);
         root->setSizeConstraint(QLayout::SetDefaultConstraint);
     }
 
-    metrics->setMinimumHeight(qBound(335,qRound(page->height()*.56),405));
-    adjust->setMinimumHeight(qBound(205,qRound(page->height()*.34),245));
-
-    if(SettingsGauge *rpm=page->findChild<SettingsGauge*>(QStringLiteral("darkTuneGaugeRpm"))) {
-        rpm->setMinimumSize(qBound(225,qRound(page->width()*.23),300),qBound(225,qRound(page->height()*.40),305));
-    }
-    for(const char *name:{"darkTuneGaugeIdle","darkTuneGaugeTrim","darkTuneGaugeIgnition","darkTuneGaugeLambda"}) {
-        if(SettingsGauge *g=page->findChild<SettingsGauge*>(QString::fromLatin1(name)))
-            g->setMinimumSize(qBound(125,qRound(page->width()*.135),180),qBound(125,qRound(page->height()*.22),170));
-    }
+    applySettingsSizing(page,metrics,adjust);
 }
 
 class SettingsTabDarkInstaller : public QObject
@@ -553,7 +634,7 @@ protected:
             QTimer::singleShot(2050,window,[window](){applySettingsLayout(window);});
             QTimer::singleShot(2450,window,[window](){applySettingsLayout(window);});
         } else if(event->type()==QEvent::Resize && window->property("settingsTabDarkScheduled").toBool()) {
-            QTimer::singleShot(220,window,[window](){applySettingsLayout(window);});
+            QTimer::singleShot(240,window,[window](){applySettingsLayout(window);});
         }
         return QObject::eventFilter(watched,event);
     }
