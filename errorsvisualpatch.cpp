@@ -162,10 +162,13 @@ static void addLabel(QGridLayout *grid,QLabel *label,QWidget *parent,int row,int
     if(!grid || !label || !parent) return;
     moveWidget(label,parent);
     label->setMinimumWidth(0);
-    label->setMinimumHeight(22);
+    label->setMaximumWidth(QWIDGETSIZE_MAX);
+    label->setMinimumHeight(24);
+    label->setMaximumHeight(QWIDGETSIZE_MAX);
     label->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
     label->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
-    grid->addWidget(label,row,col,Qt::AlignVCenter);
+    grid->setRowMinimumHeight(row,24);
+    grid->addWidget(label,row,col);
 }
 
 static void rebuildLivePanel(QMainWindow *w,QFrame *bottom)
@@ -246,10 +249,14 @@ static void rebuildLivePanel(QMainWindow *w,QFrame *bottom)
     }
     if(anomHead) {
         moveWidget(anomHead,signalPanel);
-        anomHead->setMinimumHeight(22);
+        anomHead->setMinimumWidth(0);
+        anomHead->setMaximumWidth(QWIDGETSIZE_MAX);
+        anomHead->setMinimumHeight(24);
+        anomHead->setMaximumHeight(QWIDGETSIZE_MAX);
         anomHead->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
         anomHead->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
-        grid->addWidget(anomHead,0,2,Qt::AlignVCenter);
+        grid->setRowMinimumHeight(0,24);
+        grid->addWidget(anomHead,0,2);
     }
 
     struct LiveRow { const char *live; const char *recorded; const char *label; };
