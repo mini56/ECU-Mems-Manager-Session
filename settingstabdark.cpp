@@ -210,14 +210,14 @@ protected:
         p.setFont(valueFont);
         p.setPen(QColor("#ffffff"));
         const QString valueText=(qAbs(maxv-minv)<=50.0)?QString::number(value,'f',1):QString::number(value,'f',0);
-        p.drawText(QRectF(c.x()-(large?62:40),c.y()+(large?72:39),large?124:80,large?32:22),Qt::AlignCenter,valueText);
+        p.drawText(QRectF(c.x()-(large?62:40),c.y()+(large?58:26),large?124:80,large?32:22),Qt::AlignCenter,valueText);
 
         QFont unitFont=p.font();
         unitFont.setBold(true);
         unitFont.setPointSizeF(large?8.5:6.3);
         p.setFont(unitFont);
         p.setPen(QColor("#d4dbe0"));
-        p.drawText(QRectF(c.x()-(large?55:36),c.y()+(large?101:58),large?110:72,large?17:13),Qt::AlignCenter,m_unit);
+        p.drawText(QRectF(c.x()-(large?55:36),c.y()+(large?83:45),large?110:72,large?17:13),Qt::AlignCenter,m_unit);
     }
 
 private:
