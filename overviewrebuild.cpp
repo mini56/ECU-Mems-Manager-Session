@@ -16,6 +16,7 @@
 #include <QVBoxLayout>
 #include <QWidget>
 #include <QtMath>
+#include "i18n.h"
 
 namespace {
 
@@ -220,7 +221,7 @@ protected:
         QRectF card(0,0,baseW,baseH);
         p.setPen(QPen(QColor("#303a43"),.9)); p.setBrush(QColor("#0c1217")); p.drawRoundedRect(card.adjusted(.5,.5,-.5,-.5),3.5,3.5);
         QFont f=p.font(); f.setBold(true); f.setPointSizeF(7.0); p.setFont(f); p.setPen(QColor("#dfe5e9"));
-        p.drawText(QRectF(6,6,176,17),Qt::AlignCenter,QStringLiteral("ÉTAT SYSTÈME"));
+        p.drawText(QRectF(6,6,176,17),Qt::AlignCenter,I18n::text(7149));
         p.setPen(QPen(QColor("#222c34"),.8)); p.drawLine(QPointF(8,24),QPointF(180,24));
         const bool fault=m_source?m_source->property("checked").toBool():false;
         QPointF c(94,97); qreal rr=44;
@@ -229,9 +230,9 @@ protected:
         p.setPen(QPen(fault?QColor("#ff4b3b"):QColor("#6bdd45"),3,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin));
         if(!fault){p.drawLine(QPointF(c.x()-18,c.y()+2),QPointF(c.x()-5,c.y()+15));p.drawLine(QPointF(c.x()-5,c.y()+15),QPointF(c.x()+23,c.y()-18));}
         QFont st=p.font(); st.setBold(true); st.setPointSizeF(8.2); p.setFont(st); p.setPen(fault?QColor("#ff5141"):QColor("#6bdd45"));
-        p.drawText(QRectF(10,157,168,28),Qt::AlignCenter,fault?QStringLiteral("DÉFAUT DÉTECTÉ"):QStringLiteral("AUCUN DÉFAUT"));
+        p.drawText(QRectF(10,157,168,28),Qt::AlignCenter,fault?I18n::text(7144):I18n::text(7143));
         QFont sub=p.font(); sub.setBold(false); sub.setPointSizeF(5.6); p.setFont(sub); p.setPen(QColor("#8d99a3"));
-        p.drawText(QRectF(14,190,160,24),Qt::AlignCenter|Qt::TextWordWrap,QStringLiteral("Surveillance générale ECU"));
+        p.drawText(QRectF(14,190,160,24),Qt::AlignCenter|Qt::TextWordWrap,I18n::text(7145));
     }
 private: QObject *m_source=nullptr;
 };
@@ -277,8 +278,8 @@ private:
         heading->setMaximumHeight(44);
         heading->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
         QVBoxLayout *hv=new QVBoxLayout(heading); hv->setContentsMargins(12,4,12,4); hv->setSpacing(0);
-        QLabel *title=new QLabel(QStringLiteral("APERÇU"),heading); QFont tf=title->font(); tf.setBold(true); tf.setPointSizeF(9.5); title->setFont(tf); title->setStyleSheet(QStringLiteral("color:#ff9828;background:transparent;"));
-        QLabel *sub=new QLabel(QStringLiteral("PARAMÈTRES MOTEUR ESSENTIELS • HISTORIQUE 2 MINUTES"),heading); QFont sf=sub->font(); sf.setPointSizeF(6.8); sub->setFont(sf); sub->setStyleSheet(QStringLiteral("color:#83909a;background:transparent;"));
+        QLabel *title=new QLabel(I18n::text(1001).toUpper(),heading); QFont tf=title->font(); tf.setBold(true); tf.setPointSizeF(9.5); title->setFont(tf); title->setStyleSheet(QStringLiteral("color:#ff9828;background:transparent;"));
+        QLabel *sub=new QLabel(I18n::text(7146),heading); QFont sf=sub->font(); sf.setPointSizeF(6.8); sub->setFont(sf); sub->setStyleSheet(QStringLiteral("color:#83909a;background:transparent;"));
         hv->addWidget(title); hv->addWidget(sub); root->addWidget(heading,0);
 
         QGridLayout *grid=new QGridLayout;
@@ -289,25 +290,25 @@ private:
         for(int c=0;c<6;c++) grid->setColumnStretch(c,1);
         grid->setRowStretch(0,1); grid->setRowStretch(1,1);
 
-        struct G{const char*name;const char*title;const char*unit;int row;int col;};
+        struct G{const char*name;int titleKey;const char*unit;int row;int col;};
         const G gauges[]={
-            {"m_revCounter","Régime moteur","tr/min",0,0},
-            {"m_waterTempGauge","Temp. eau","°C",0,1},
-            {"m_mapGauge","Pression MAP","kPa",0,2},
-            {"m_throttle_pos","Position papillon","%",0,3},
-            {"m_battery","Tension batterie","V",0,4},
-            {"m_short_term_correction","Correction carburant","%",0,5},
-            {"m_lambda_voltage","Sonde lambda","mV",1,0},
-            {"m_injector_time","Temps injection","ms",1,1},
-            {"m_airTempGauge","Temp. air","°C",1,2},
-            {"m_idle_position","Position ralenti","%",1,3},
-            {"m_ignition_advance","Avance allumage","°",1,4}
+            {"m_revCounter",1011,"tr/min",0,0},
+            {"m_waterTempGauge",1017,"°C",0,1},
+            {"m_mapGauge",1012,"kPa",0,2},
+            {"m_throttle_pos",1003,"%",0,3},
+            {"m_battery",1006,"V",0,4},
+            {"m_short_term_correction",7140,"%",0,5},
+            {"m_lambda_voltage",7142,"mV",1,0},
+            {"m_injector_time",7147,"ms",1,1},
+            {"m_airTempGauge",1018,"°C",1,2},
+            {"m_idle_position",7148,"%",1,3},
+            {"m_ignition_advance",7141,"°",1,4}
         };
 
         QVector<RebuildGaugeCard*> cards;
         for(const G &g:gauges){
             QObject *src=w->findChild<QObject*>(QString::fromLatin1(g.name));
-            RebuildGaugeCard *card=new RebuildGaugeCard(src,QString::fromUtf8(g.title),QString::fromUtf8(g.unit),overview);
+            RebuildGaugeCard *card=new RebuildGaugeCard(src,I18n::text(g.titleKey),QString::fromUtf8(g.unit),overview);
             grid->addWidget(card,g.row,g.col);
             cards.append(card);
         }
