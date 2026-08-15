@@ -27,6 +27,41 @@ static void removeSidebarBubble(QMainWindow *w)
         bubble->hide();
 }
 
+static bool isSummaryTable(QTableWidget *table)
+{
+    if(!table) return false;
+    for(QObject *p=table->parent();p;p=p->parent())
+        if(qobject_cast<SummaryTab*>(p))
+            return true;
+    return false;
+}
+
+static void sizeSummaryTable(QTableWidget *table)
+{
+    if(!table || table->columnCount()<4) return;
+
+    const int helpWidth=28;
+    const int receivedWidth=54;
+    const int interpretedWidth=68;
+
+    QHeaderView *header=table->horizontalHeader();
+    header->setStretchLastSection(false);
+    header->setSectionResizeMode(0,QHeaderView::Fixed);
+    header->setSectionResizeMode(1,QHeaderView::Fixed);
+    header->setSectionResizeMode(2,QHeaderView::Fixed);
+    header->setSectionResizeMode(3,QHeaderView::Fixed);
+
+    // Only Parameter follows the available table width. The three columns to
+    // its right always keep the same width, whatever the language or sidebar.
+    const int available=qMax(0,table->viewport()->width()-2);
+    const int parameterWidth=qMax(80,available-helpWidth-receivedWidth-interpretedWidth);
+
+    header->resizeSection(0,parameterWidth);
+    header->resizeSection(1,helpWidth);
+    header->resizeSection(2,receivedWidth);
+    header->resizeSection(3,interpretedWidth);
+}
+
 static void styleSummaryTables(QMainWindow *w)
 {
     if(!w) return;
@@ -57,16 +92,9 @@ static void styleSummaryTables(QMainWindow *w)
             interpretedHeader->setTextAlignment(Qt::AlignCenter);
 
         table->setIconSize(QSize(24,18));
-        QHeaderView *header=table->horizontalHeader();
-        header->setStretchLastSection(false);
-        header->setSectionResizeMode(0,QHeaderView::Stretch);
-        header->setSectionResizeMode(1,QHeaderView::Fixed);
-        header->setSectionResizeMode(2,QHeaderView::Fixed);
-        header->setSectionResizeMode(3,QHeaderView::Fixed);
-        table->setColumnWidth(1,28);
-        table->setColumnWidth(2,54);
-        table->setColumnWidth(3,68);
+        sizeSummaryTable(table);
 
+        QHeaderView *header=table->horizontalHeader();
         header->setStyleSheet(QStringLiteral(
             "QHeaderView::section{"
             "background:#141c23;"
@@ -102,6 +130,11 @@ public:
 protected:
     bool eventFilter(QObject *watched,QEvent *event) override
     {
+        if(QTableWidget *table=qobject_cast<QTableWidget*>(watched)) {
+            if(isSummaryTable(table) && event->type()==QEvent::Resize)
+                QTimer::singleShot(0,table,[table](){sizeSummaryTable(table);});
+        }
+
         QMainWindow *w=qobject_cast<QMainWindow*>(watched);
         if(!w || w->objectName()!=QStringLiteral("MainWindow"))
             return QObject::eventFilter(watched,event);
@@ -109,7 +142,7 @@ protected:
         if(event->type()==QEvent::Show || event->type()==QEvent::Polish) {
             QTimer::singleShot(1900,w,[w](){applyVisualOnlyPatches(w);});
             QTimer::singleShot(2400,w,[w](){applyVisualOnlyPatches(w);});
-        } else if(event->type()==QEvent::Resize) {
+        } else if(event->type()==QEvent::Resize || event->type()==QEvent::LayoutRequest) {
             QTimer::singleShot(0,w,[w](){applyVisualOnlyPatches(w);});
         }
         return QObject::eventFilter(watched,event);
