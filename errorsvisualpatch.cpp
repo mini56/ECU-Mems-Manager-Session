@@ -60,12 +60,14 @@ static void putButtonInTitleBar(QFrame *card,QPushButton *button)
     button->setSizePolicy(QSizePolicy::Maximum,QSizePolicy::Fixed);
     button->show();
 
-    QHBoxLayout *head=new QHBoxLayout;
+    QGridLayout *head=new QGridLayout;
     head->setContentsMargins(0,0,0,0);
-    head->setSpacing(8);
-    head->addWidget(title,0,Qt::AlignVCenter);
-    head->addStretch(1);
-    head->addWidget(button,0,Qt::AlignVCenter);
+    head->setHorizontalSpacing(8);
+    head->setColumnStretch(0,1);
+    head->setColumnStretch(1,0);
+    head->setColumnStretch(2,1);
+    head->addWidget(title,0,0,Qt::AlignLeft|Qt::AlignVCenter);
+    head->addWidget(button,0,1,Qt::AlignCenter);
     v->insertLayout(0,head);
 }
 
@@ -74,8 +76,9 @@ class SystemStatePreview : public QWidget
 public:
     explicit SystemStatePreview(QWidget *parent=nullptr):QWidget(parent)
     {
-        setMinimumSize(150,135);
+        setMinimumWidth(150);
         setMaximumWidth(210);
+        setMinimumHeight(135);
         setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Expanding);
         setAttribute(Qt::WA_TransparentForMouseEvents,true);
     }
@@ -87,26 +90,23 @@ protected:
         p.setRenderHint(QPainter::Antialiasing,true);
         p.setRenderHint(QPainter::TextAntialiasing,true);
 
-        const qreal bw=188.0,bh=170.0;
-        const qreal s=qMin(width()/bw,height()/bh);
-        p.translate((width()-bw*s)/2.0,(height()-bh*s)/2.0);
-        p.scale(s,s);
-
+        const QRectF outer=QRectF(rect()).adjusted(.5,.5,-.5,-.5);
         p.setPen(QPen(QColor("#34414a"),1.0));
         p.setBrush(QColor("#0c1217"));
-        p.drawRoundedRect(QRectF(.5,.5,bw-1,bh-1),5,5);
+        p.drawRoundedRect(outer,5,5);
 
         QFont f=p.font();
         f.setBold(true);
         f.setPointSizeF(8.2);
         p.setFont(f);
         p.setPen(QColor("#edf2f4"));
-        p.drawText(QRectF(6,5,176,18),Qt::AlignCenter,I18n::text(7149));
-        p.setPen(QPen(QColor("#27333b"),1.0));
-        p.drawLine(QPointF(8,25),QPointF(180,25));
+        p.drawText(QRectF(6,5,qMax(0,width()-12),18),Qt::AlignCenter,I18n::text(7149));
 
-        const QPointF c(94,88);
-        const qreal rr=36;
+        p.setPen(QPen(QColor("#27333b"),1.0));
+        p.drawLine(QPointF(8,25),QPointF(qMax(8,width()-8),25));
+
+        const QPointF c(width()/2.0,height()*0.54);
+        const qreal rr=qMin(width()*0.19,height()*0.19);
         QPainterPath shield;
         shield.moveTo(c.x(),c.y()-rr);
         shield.lineTo(c.x()+rr*.75,c.y()-rr*.65);
@@ -123,7 +123,8 @@ protected:
         sub.setPointSizeF(6.2);
         p.setFont(sub);
         p.setPen(QColor("#8d99a3"));
-        p.drawText(QRectF(12,132,164,25),Qt::AlignCenter|Qt::TextWordWrap,I18n::text(7145));
+        p.drawText(QRectF(8,qMax(30,height()-38),qMax(0,width()-16),30),
+                   Qt::AlignCenter|Qt::TextWordWrap,I18n::text(7145));
     }
 };
 
@@ -143,7 +144,7 @@ static void compactStoredPanel(QMainWindow *w,QFrame *top)
         if(QGridLayout *g=qobject_cast<QGridLayout*>(stored->layout())) {
             g->setContentsMargins(0,0,0,0);
             g->setHorizontalSpacing(10);
-            g->setVerticalSpacing(3);
+            g->setVerticalSpacing(2);
         }
     }
 }
@@ -161,8 +162,10 @@ static void addLabel(QGridLayout *grid,QLabel *label,QWidget *parent,int row,int
     if(!grid || !label || !parent) return;
     moveWidget(label,parent);
     label->setMinimumWidth(0);
+    label->setMinimumHeight(22);
+    label->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
     label->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
-    grid->addWidget(label,row,col,Qt::AlignLeft|Qt::AlignVCenter);
+    grid->addWidget(label,row,col,Qt::AlignVCenter);
 }
 
 static void rebuildLivePanel(QMainWindow *w,QFrame *bottom)
@@ -187,26 +190,30 @@ static void rebuildLivePanel(QMainWindow *w,QFrame *bottom)
     signalPanel->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     QVBoxLayout *sv=new QVBoxLayout(signalPanel);
     sv->setContentsMargins(10,7,10,8);
-    sv->setSpacing(5);
+    sv->setSpacing(4);
 
     QWidget *rpmLed=w->findChild<QWidget*>(QStringLiteral("m_RPMSensor"));
     QLabel *rpmLabel=w->findChild<QLabel*>(QStringLiteral("m_RPMSensorLabel"));
-    QHBoxLayout *rpmRow=new QHBoxLayout;
-    rpmRow->setContentsMargins(0,0,0,0);
-    rpmRow->setSpacing(7);
-    rpmRow->addStretch(1);
+    QGridLayout *rpmGrid=new QGridLayout;
+    rpmGrid->setContentsMargins(0,0,0,0);
+    rpmGrid->setHorizontalSpacing(10);
+    rpmGrid->setColumnMinimumWidth(0,82);
+    rpmGrid->setColumnMinimumWidth(1,96);
+    rpmGrid->setColumnStretch(0,0);
+    rpmGrid->setColumnStretch(1,0);
+    rpmGrid->setColumnStretch(2,1);
     if(rpmLed) {
         moveWidget(rpmLed,signalPanel);
         rpmLed->setFixedSize(22,22);
-        rpmRow->addWidget(rpmLed,0,Qt::AlignVCenter);
+        rpmGrid->addWidget(rpmLed,0,0,Qt::AlignHCenter|Qt::AlignVCenter);
     }
     if(rpmLabel) {
         moveWidget(rpmLabel,signalPanel);
+        rpmLabel->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
         rpmLabel->setSizePolicy(QSizePolicy::Maximum,QSizePolicy::Preferred);
-        rpmRow->addWidget(rpmLabel,0,Qt::AlignVCenter);
+        rpmGrid->addWidget(rpmLabel,0,1,1,2,Qt::AlignLeft|Qt::AlignVCenter);
     }
-    rpmRow->addStretch(1);
-    sv->addLayout(rpmRow);
+    sv->addLayout(rpmGrid);
 
     QFrame *sep=new QFrame(signalPanel);
     sep->setFrameShape(QFrame::HLine);
@@ -239,8 +246,10 @@ static void rebuildLivePanel(QMainWindow *w,QFrame *bottom)
     }
     if(anomHead) {
         moveWidget(anomHead,signalPanel);
+        anomHead->setMinimumHeight(22);
         anomHead->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
-        grid->addWidget(anomHead,0,2,Qt::AlignLeft|Qt::AlignVCenter);
+        anomHead->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
+        grid->addWidget(anomHead,0,2,Qt::AlignVCenter);
     }
 
     struct LiveRow { const char *live; const char *recorded; const char *label; };
@@ -271,6 +280,18 @@ static void rebuildLivePanel(QMainWindow *w,QFrame *bottom)
     bv->addLayout(body,1);
 }
 
+static void rebalanceErrorsHeight(QFrame *top,QFrame *bottom)
+{
+    if(!top || !bottom) return;
+    QWidget *page=top->parentWidget();
+    QVBoxLayout *root=page?qobject_cast<QVBoxLayout*>(page->layout()):nullptr;
+    if(!root) return;
+    const int topIndex=root->indexOf(top);
+    const int bottomIndex=root->indexOf(bottom);
+    if(topIndex>=0) root->setStretch(topIndex,5);
+    if(bottomIndex>=0) root->setStretch(bottomIndex,6);
+}
+
 static void applyErrorsVisualPhaseOne(QMainWindow *w)
 {
     if(!w || w->property("errorsVisualPhaseOne").toBool()) return;
@@ -281,6 +302,7 @@ static void applyErrorsVisualPhaseOne(QMainWindow *w)
     w->setProperty("errorsVisualPhaseOne",true);
     compactStoredPanel(w,top);
     rebuildLivePanel(w,bottom);
+    rebalanceErrorsHeight(top,bottom);
 }
 
 class ErrorsVisualInstaller : public QObject
