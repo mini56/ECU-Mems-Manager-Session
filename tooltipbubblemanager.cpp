@@ -4,6 +4,7 @@
 #include <QLabel>
 #include <QMargins>
 #include <QPixmap>
+#include <QVariant>
 #include <QWidget>
 
 namespace {
