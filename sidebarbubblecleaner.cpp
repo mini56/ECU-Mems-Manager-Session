@@ -42,7 +42,7 @@ static void sizeSummaryTable(QTableWidget *table)
 
     const int helpWidth=28;
     const int receivedWidth=54;
-    const int interpretedWidth=68;
+    const int interpretedWidth=82;
 
     QHeaderView *header=table->horizontalHeader();
     header->setStretchLastSection(false);
