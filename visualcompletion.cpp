@@ -224,9 +224,6 @@ static void fitRawDataPage(QWidget *page)
     QGridLayout *rightGrid=gridFor(right);
     const int rows=qMax(leftGrid?leftGrid->rowCount():1,rightGrid?rightGrid->rowCount():1);
 
-    // If the original raw blocks are still positioned directly on the page,
-    // shrink their height to the actual visible viewport instead of keeping
-    // the fixed Designer height that hides the last rows on small screens.
     for (QWidget *block:{left,right}) {
         block->setMinimumSize(0,0);
         block->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
@@ -240,8 +237,8 @@ static void fitRawDataPage(QWidget *page)
     }
 
     const int usableHeight=qMax(300,visibleHeight-14);
-    const int rowHeight=qBound(13,usableHeight/qMax(1,rows),19);
-    const qreal fontSize=rowHeight<=13?6.6:(rowHeight<=14?6.9:(rowHeight<=15?7.2:(rowHeight<=16?7.5:7.8)));
+    const int rowHeight=qMax(10,qMin(21,usableHeight/qMax(1,rows)));
+    const qreal fontSize=rowHeight<=10?6.7:(rowHeight<=11?6.9:(rowHeight<=12?7.1:(rowHeight<=13?7.4:(rowHeight<=14?7.6:(rowHeight<=15?7.8:(rowHeight<=16?8.0:8.2))))));
 
     auto fitBlock=[&](QWidget *block,QGridLayout *grid) {
         if (!block) return;
@@ -250,7 +247,7 @@ static void fitRawDataPage(QWidget *page)
             grid->setHorizontalSpacing(8);
             grid->setVerticalSpacing(0);
             grid->setSizeConstraint(QLayout::SetDefaultConstraint);
-            for (int r=0;r<grid->rowCount();++r) grid->setRowMinimumHeight(r,0);
+            for (int r=0;r<grid->rowCount();++r) grid->setRowMinimumHeight(r,rowHeight);
         }
         for (QLabel *label:block->findChildren<QLabel*>()) {
             const QString name=label->objectName();
@@ -260,7 +257,7 @@ static void fitRawDataPage(QWidget *page)
             f.setBold(header);
             label->setFont(f);
             label->setWordWrap(false);
-            label->setMinimumHeight(0);
+            label->setMinimumHeight(rowHeight);
             label->setMaximumHeight(rowHeight);
             label->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
             label->setStyleSheet(header
@@ -282,8 +279,6 @@ static void fitDedicatedPages(QMainWindow *w,qreal s)
     for (int i=0;i<tabs->count();++i) {
         QWidget *p=realPage(tabs->widget(i)); if (!p) continue;
 
-        // All data must remain responsive even when the legacy raw page has
-        // not yet been wrapped by the dedicated-page rebuild.
         fitRawDataPage(p);
 
         const bool dedicated=p->property("strictSummaryBuilt").toBool() || p->property("strictRawBuilt").toBool() ||
