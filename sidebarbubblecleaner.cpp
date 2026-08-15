@@ -9,7 +9,6 @@
 #include <QTimer>
 #include <QToolButton>
 
-#include "i18n.h"
 #include "summarytab.h"
 
 namespace {
@@ -38,17 +37,18 @@ static void styleSummaryTables(QMainWindow *w)
     for(QTableWidget *table:tables) {
         if(!table || table->columnCount()<4) continue;
 
+        // Keep the help-icon column but leave its heading empty.
         if(QTableWidgetItem *header=table->horizontalHeaderItem(1))
-            header->setText(I18n::text(6708));
+            header->setText(QString());
 
         table->setIconSize(QSize(24,18));
         table->horizontalHeader()->setSectionResizeMode(0,QHeaderView::Stretch);
         table->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Fixed);
         table->horizontalHeader()->setSectionResizeMode(2,QHeaderView::Fixed);
         table->horizontalHeader()->setSectionResizeMode(3,QHeaderView::Fixed);
-        table->setColumnWidth(1,46);
-        table->setColumnWidth(2,100);
-        table->setColumnWidth(3,100);
+        table->setColumnWidth(1,28);
+        table->setColumnWidth(2,72);
+        table->setColumnWidth(3,86);
 
         table->horizontalHeader()->setStyleSheet(QStringLiteral(
             "QHeaderView::section{"
