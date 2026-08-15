@@ -25,6 +25,7 @@
 #include <QVBoxLayout>
 #include <QWidget>
 #include <QtMath>
+#include "i18n.h"
 
 namespace {
 
@@ -139,7 +140,7 @@ static void removeInventedRecorder(QMainWindow *w)
         status->setProperty("realLoggerIntegrated",true);
         if(fileLabel) fileLabel->hide();
         file->setParent(status); start->setParent(status); stop->setParent(status);
-        file->setPlaceholderText(QStringLiteral("Fichier d'enregistrement"));
+        file->setPlaceholderText(fileLabel?fileLabel->text():QString());
         file->setMinimumWidth(82); file->setMaximumWidth(180); file->setMinimumHeight(23); file->setMaximumHeight(29);
         start->setMinimumWidth(60); start->setMaximumWidth(84); start->setMinimumHeight(23); start->setMaximumHeight(29);
         stop->setMinimumWidth(54); stop->setMaximumWidth(76); stop->setMinimumHeight(23); stop->setMaximumHeight(29);
@@ -235,7 +236,7 @@ static void rebuildSettingsGauges(QMainWindow *w)
     metrics->setProperty("premiumGaugeGrid",true);
 
     const char *names[]={"e_idle_error","m_revCounter_exhaust","e_short_term_fuel_trim","e_ignition_advance","e_lambda"};
-    const char *titles[]={"ERREUR RALENTI","RÉGIME MOTEUR","CORRECTION CARBURANT","AVANCE ALLUMAGE","SONDE LAMBDA"};
+    const int titleKeys[]={7139,1011,7140,7141,7142};
     const char *units[]={"tr/min","tr/min","%","°","mV"};
     for(const char *n:names) if(QWidget *g=page->findChild<QWidget*>(QString::fromLatin1(n))){g->hide(); if(g->parentWidget())g->parentWidget()->hide();}
 
@@ -244,7 +245,7 @@ static void rebuildSettingsGauges(QMainWindow *w)
     for(int c=0;c<3;c++) grid->setColumnStretch(c,1); grid->setRowStretch(0,1);grid->setRowStretch(1,1);
     for(int i=0;i<5;i++){
         QObject *src=page->findChild<QObject*>(QString::fromLatin1(names[i]));
-        CompactGauge *g=new CompactGauge(src,QString::fromUtf8(titles[i]),QString::fromUtf8(units[i]),metrics);
+        CompactGauge *g=new CompactGauge(src,I18n::text(titleKeys[i]),QString::fromUtf8(units[i]),metrics);
         grid->addWidget(g,i<3?0:1,i<3?i:i-3);
     }
     v->addLayout(grid,1);
