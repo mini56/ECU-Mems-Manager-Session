@@ -65,14 +65,19 @@ static void prepareDatabaseAndInteractiveOrder(QMainWindow *w)
     QWidget *interactive=findInteractiveTab(tabs);
     if(!interactive) return;
 
-    // Wait until the existing Interactive page has completed its normal
-    // dedicated-layout initialization. Reordering earlier would change the
-    // legacy numeric tab indexes used during startup.
-    QWidget *interactivePage=realPage(interactive);
-    if(interactivePage && !interactivePage->property("strictInteractiveBuilt").toBool())
-        return;
-
     QWidget *database=findDatabaseTab(tabs);
+
+    // If the requested order is already in place, only refresh the translated
+    // Database title and keep the navigation list synchronized.
+    if(database && tabs->count()>=2 &&
+       tabs->indexOf(database)==tabs->count()-2 &&
+       tabs->indexOf(interactive)==tabs->count()-1) {
+        tabs->setTabText(tabs->indexOf(database),I18n::text(7152));
+        syncNavigation(w,tabs);
+        w->setProperty("databaseTabPrepared",true);
+        return;
+    }
+
     if(!database) {
         database=new QWidget(tabs);
         database->setObjectName(QStringLiteral("database_tab"));
@@ -84,7 +89,7 @@ static void prepareDatabaseAndInteractiveOrder(QMainWindow *w)
     QWidget *current=tabs->currentWidget();
     const QString interactiveTitle=tabs->tabText(tabs->indexOf(interactive));
 
-    int databaseIndex=tabs->indexOf(database);
+    const int databaseIndex=tabs->indexOf(database);
     if(databaseIndex>=0)
         tabs->removeTab(databaseIndex);
 
@@ -92,6 +97,8 @@ static void prepareDatabaseAndInteractiveOrder(QMainWindow *w)
     if(interactiveIndex>=0)
         tabs->removeTab(interactiveIndex);
 
+    // Required final menu order: Database immediately before Interactive,
+    // with Interactive always the last tab.
     tabs->addTab(database,I18n::text(7152));
     tabs->addTab(interactive,interactiveTitle);
 
@@ -116,8 +123,11 @@ protected:
         if((event->type()==QEvent::Show || event->type()==QEvent::Polish) &&
            !w->property("databaseTabScheduled").toBool()) {
             w->setProperty("databaseTabScheduled",true);
-            QTimer::singleShot(1200,w,[w](){prepareDatabaseAndInteractiveOrder(w);});
-            QTimer::singleShot(1800,w,[w](){prepareDatabaseAndInteractiveOrder(w);});
+            // Run after the normal page initialization. Multiple harmless
+            // passes make the final menu order deterministic at startup.
+            QTimer::singleShot(1400,w,[w](){prepareDatabaseAndInteractiveOrder(w);});
+            QTimer::singleShot(2400,w,[w](){prepareDatabaseAndInteractiveOrder(w);});
+            QTimer::singleShot(3600,w,[w](){prepareDatabaseAndInteractiveOrder(w);});
         } else if(event->type()==QEvent::LanguageChange && w->property("databaseTabPrepared").toBool()) {
             QTimer::singleShot(0,w,[w](){prepareDatabaseAndInteractiveOrder(w);});
         }
