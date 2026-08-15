@@ -40,28 +40,35 @@ void TooltipBubbleManager::ensureBubble(QWidget *widget)
         return;
 
     QLabel *bubble = widget->findChild<QLabel*>(kBubbleObjectName, Qt::FindDirectChildrenOnly);
+    const bool bubbleLeft = widget->property("helpBubbleLeft").toBool();
+
+    // Labels explicitly marked helpBubbleLeft always reserve the HELP column,
+    // even when that particular row has no tooltip/bubble.  This keeps the
+    // text aligned with neighbouring rows without creating a fake bubble.
+    if (bubbleLeft)
+    {
+        if (QLabel *textLabel = qobject_cast<QLabel*>(widget))
+        {
+            const QMargins m = textLabel->contentsMargins();
+            if (m.left() < 30 || m.right() != 0)
+                textLabel->setContentsMargins(qMax(m.left(), 30), m.top(), 0, m.bottom());
+        }
+    }
+
     if (widget->toolTip().isEmpty())
     {
         if (bubble) bubble->hide();
         return;
     }
 
-    const bool bubbleLeft = widget->property("helpBubbleLeft").toBool();
-
-    // Reserve space for the embedded help bubble in text labels.
-    // Labels explicitly marked helpBubbleLeft keep the icon before the text;
-    // all other labels preserve the existing right-side behaviour.
-    if (QLabel *textLabel = qobject_cast<QLabel*>(widget))
+    // All other tooltip labels preserve the existing right-side behaviour.
+    if (!bubbleLeft)
     {
-        const QMargins m = textLabel->contentsMargins();
-        if (bubbleLeft)
+        if (QLabel *textLabel = qobject_cast<QLabel*>(widget))
         {
-            if (m.left() < 30 || m.right() != 0)
-                textLabel->setContentsMargins(qMax(m.left(), 30), m.top(), 0, m.bottom());
-        }
-        else if (m.right() < 30)
-        {
-            textLabel->setContentsMargins(m.left(), m.top(), 30, m.bottom());
+            const QMargins m = textLabel->contentsMargins();
+            if (m.right() < 30)
+                textLabel->setContentsMargins(m.left(), m.top(), 30, m.bottom());
         }
     }
 
