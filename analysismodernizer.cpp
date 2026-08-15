@@ -9,6 +9,7 @@
 #include <QScrollArea>
 #include <QTimer>
 #include <QWidget>
+#include "i18n.h"
 
 namespace {
 
@@ -103,7 +104,7 @@ private:
         right->setContentsMargins(7,7,7,7);
         right->setSpacing(5);
 
-        right->addWidget(sectionTitle(QStringLiteral("PARAMÈTRES"), rightPanel, QStringLiteral("analysisParametersTitle")));
+        right->addWidget(sectionTitle(I18n::text(7150), rightPanel, QStringLiteral("analysisParametersTitle")));
         if (parameterScroll) {
             parameterScroll->setParent(rightPanel);
             parameterScroll->setWidgetResizable(true);
@@ -112,8 +113,8 @@ private:
             right->addWidget(parameterScroll, 1);
         }
 
-        right->addWidget(sectionTitle(QStringLiteral("CURSEUR"), rightPanel, QStringLiteral("analysisCursorTitle")));
-        right->addWidget(sectionTitle(QStringLiteral("OUTILS"), rightPanel, QStringLiteral("analysisToolsTitle")));
+        right->addWidget(sectionTitle(I18n::text(7151), rightPanel, QStringLiteral("analysisCursorTitle")));
+        right->addWidget(sectionTitle(I18n::text(7100), rightPanel, QStringLiteral("analysisToolsTitle")));
 
         QVBoxLayout *tools = new QVBoxLayout();
         tools->setContentsMargins(0,0,0,0);
