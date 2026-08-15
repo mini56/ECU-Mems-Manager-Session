@@ -131,8 +131,8 @@ static void applySidebarState(QMainWindow *w)
         toggle->setIcon(utilityIcon(collapsed?QStringLiteral("expand"):QStringLiteral("collapse")));
         toggle->setIconSize(QSize(19,19));
         toggle->setToolButtonStyle(collapsed?Qt::ToolButtonIconOnly:Qt::ToolButtonTextBesideIcon);
-        toggle->setText(collapsed?QString():QStringLiteral("Réduire"));
-        toggle->setToolTip(collapsed?QStringLiteral("Agrandir la barre latérale"):QStringLiteral("Réduire la barre latérale"));
+        toggle->setText(collapsed?QString():I18n::text(7101));
+        toggle->setToolTip(collapsed?I18n::text(7103):I18n::text(7102));
         toggle->setMinimumHeight(30); toggle->setMaximumHeight(32);
     }
 
@@ -227,7 +227,7 @@ static void ensureSidebar(QMainWindow *w)
         QVBoxLayout *uv=new QVBoxLayout(utils);
         uv->setContentsMargins(8,4,8,4);
         uv->setSpacing(4);
-        QLabel *ut=new QLabel(QStringLiteral("OUTILS"),utils);
+        QLabel *ut=new QLabel(I18n::text(7100),utils);
         ut->setObjectName(QStringLiteral("darkUtilitiesTitle"));
         QFont uf=ut->font(); uf.setBold(true); uf.setPointSizeF(qMax<qreal>(7.0,uf.pointSizeF()-1.0)); ut->setFont(uf);
         ut->setStyleSheet(QStringLiteral("color:#ff9828;background:transparent;border:0;padding:0 2px 1px 2px;"));
