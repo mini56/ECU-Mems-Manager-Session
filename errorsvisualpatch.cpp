@@ -7,6 +7,7 @@
 #include <QLabel>
 #include <QLayout>
 #include <QMainWindow>
+#include <QMargins>
 #include <QPainter>
 #include <QPainterPath>
 #include <QPushButton>
@@ -41,6 +42,48 @@ static QLabel *cardTitle(QFrame *card)
         if(l && l->styleSheet().contains(QStringLiteral("#ff9828")))
             return l;
     return labels.isEmpty()?nullptr:labels.first();
+}
+
+static void placeErrorHelpBubbleLeft(QLabel *label)
+{
+    if(!label) return;
+    QLabel *bubble=label->findChild<QLabel*>(QStringLiteral("_ecuHelpBubble"),Qt::FindDirectChildrenOnly);
+    if(!bubble) return;
+    const int y=qMax(0,(label->height()-bubble->height())/2);
+    bubble->move(2,y);
+    bubble->raise();
+    bubble->show();
+}
+
+class ErrorsHelpBubbleLeftFilter : public QObject
+{
+public:
+    explicit ErrorsHelpBubbleLeftFilter(QObject *parent=nullptr):QObject(parent){}
+protected:
+    bool eventFilter(QObject *watched,QEvent *event) override
+    {
+        QLabel *label=qobject_cast<QLabel*>(watched);
+        if(label && (event->type()==QEvent::Resize || event->type()==QEvent::Show))
+            QTimer::singleShot(0,label,[label](){placeErrorHelpBubbleLeft(label);});
+        return QObject::eventFilter(watched,event);
+    }
+};
+
+static void alignErrorHelpBubbleLeft(QLabel *label)
+{
+    if(!label) return;
+
+    // Keep the global manager's right-side reserve untouched.  We only add a
+    // left reserve once, so there is no margin tug-of-war and no event loop.
+    const QMargins m=label->contentsMargins();
+    if(m.left()<30)
+        label->setContentsMargins(30,m.top(),m.right(),m.bottom());
+
+    if(!label->property("errorsHelpBubbleLeftSafe").toBool()) {
+        label->setProperty("errorsHelpBubbleLeftSafe",true);
+        label->installEventFilter(new ErrorsHelpBubbleLeftFilter(label));
+    }
+    QTimer::singleShot(0,label,[label](){placeErrorHelpBubbleLeft(label);});
 }
 
 static void putButtonInTitleBar(QFrame *card,QPushButton *button)
@@ -167,6 +210,7 @@ static void addLabel(QGridLayout *grid,QLabel *label,QWidget *parent,int row,int
     label->setMaximumHeight(QWIDGETSIZE_MAX);
     label->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
     label->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
+    alignErrorHelpBubbleLeft(label);
     grid->setRowMinimumHeight(row,24);
     grid->addWidget(label,row,col);
 }
@@ -212,16 +256,15 @@ static void rebuildLivePanel(QMainWindow *w,QFrame *bottom)
     }
     if(rpmLabel) {
         moveWidget(rpmLabel,signalPanel);
+        rpmLabel->setMinimumWidth(0);
+        rpmLabel->setMaximumWidth(QWIDGETSIZE_MAX);
+        rpmLabel->setMinimumHeight(24);
         rpmLabel->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
-        rpmLabel->setSizePolicy(QSizePolicy::Maximum,QSizePolicy::Preferred);
-        rpmGrid->addWidget(rpmLabel,0,1,1,2,Qt::AlignLeft|Qt::AlignVCenter);
+        rpmLabel->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
+        alignErrorHelpBubbleLeft(rpmLabel);
+        rpmGrid->addWidget(rpmLabel,0,2);
     }
     sv->addLayout(rpmGrid);
-
-    QFrame *sep=new QFrame(signalPanel);
-    sep->setFrameShape(QFrame::HLine);
-    sep->setStyleSheet(QStringLiteral("background:#27333b;border:0;max-height:1px;"));
-    sv->addWidget(sep);
 
     QGridLayout *grid=new QGridLayout;
     grid->setContentsMargins(0,0,0,0);
@@ -255,6 +298,7 @@ static void rebuildLivePanel(QMainWindow *w,QFrame *bottom)
         anomHead->setMaximumHeight(QWIDGETSIZE_MAX);
         anomHead->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
         anomHead->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
+        alignErrorHelpBubbleLeft(anomHead);
         grid->setRowMinimumHeight(0,24);
         grid->addWidget(anomHead,0,2);
     }
