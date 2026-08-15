@@ -79,8 +79,8 @@ static void compactAdjustForm(QWidget *page,QFrame *adjust)
     }
 
     if(QLineEdit *note=page->findChild<QLineEdit*>(QStringLiteral("lineEdit_3"))) {
-        note->setMinimumWidth(300);
-        note->setMaximumWidth(460);
+        note->setMinimumWidth(0);
+        note->setMaximumWidth(QWIDGETSIZE_MAX);
         note->setMinimumHeight(19);
         note->setMaximumHeight(21);
         note->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
@@ -154,18 +154,16 @@ static void moveNoteBelowRpm(QWidget *page,QFrame *metrics,QFrame *adjust)
     for(QHBoxLayout *row:adjust->findChildren<QHBoxLayout*>())
         if(row->indexOf(note)>=0) row->removeWidget(note);
 
-    note->setParent(metrics);
+    note->setParent(rpm);
     note->setReadOnly(true);
     note->show();
     note->raise();
 
-    if(metrics->layout()) metrics->layout()->activate();
-    const QRect rpmRect=rpm->geometry();
-    const int noteWidth=qMin(note->maximumWidth(),qMax(note->minimumWidth(),rpmRect.width()+80));
-    const int noteHeight=qMax(note->minimumHeight(),qMin(note->maximumHeight(),21));
-    const int x=qMax(4,rpmRect.center().x()-noteWidth/2);
-    const int desiredY=rpmRect.bottom()+1;
-    const int y=qMax(2,qMin(desiredY,metrics->height()-noteHeight-3));
+    const int noteHeight=qBound(19,note->sizeHint().height(),21);
+    const int margin=8;
+    const int noteWidth=qMax(1,rpm->width()-margin*2);
+    const int x=margin;
+    const int y=qMax(2,rpm->height()-noteHeight-4);
     note->setGeometry(x,y,noteWidth,noteHeight);
 }
 
