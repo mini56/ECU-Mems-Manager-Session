@@ -45,13 +45,23 @@ void TooltipBubbleManager::ensureBubble(QWidget *widget)
         return;
     }
 
+    const bool bubbleLeft = widget->property("helpBubbleLeft").toBool();
+
     // Reserve space for the embedded help bubble in text labels.
-    // This prevents long translations from running underneath the icon.
+    // Labels explicitly marked helpBubbleLeft keep the icon before the text;
+    // all other labels preserve the existing right-side behaviour.
     if (QLabel *textLabel = qobject_cast<QLabel*>(widget))
     {
         const QMargins m = textLabel->contentsMargins();
-        if (m.right() < 30)
+        if (bubbleLeft)
+        {
+            if (m.left() < 30 || m.right() != 0)
+                textLabel->setContentsMargins(qMax(m.left(), 30), m.top(), 0, m.bottom());
+        }
+        else if (m.right() < 30)
+        {
             textLabel->setContentsMargins(m.left(), m.top(), 30, m.bottom());
+        }
     }
 
     if (!bubble)
@@ -65,7 +75,11 @@ void TooltipBubbleManager::ensureBubble(QWidget *widget)
         bubble->setStyleSheet("background: transparent;");
     }
 
-    bubble->move(qMax(0, widget->width() - bubble->width() - 2), 1);
+    const int y = qMax(0, (widget->height() - bubble->height()) / 2);
+    if (bubbleLeft)
+        bubble->move(2, y);
+    else
+        bubble->move(qMax(0, widget->width() - bubble->width() - 2), y);
     bubble->raise();
     bubble->show();
 }
@@ -78,7 +92,8 @@ bool TooltipBubbleManager::eventFilter(QObject *watched, QEvent *event)
 
     if (event->type() == QEvent::ToolTipChange ||
         event->type() == QEvent::Resize ||
-        event->type() == QEvent::Show)
+        event->type() == QEvent::Show ||
+        event->type() == QEvent::DynamicPropertyChange)
     {
         ensureBubble(widget);
     }

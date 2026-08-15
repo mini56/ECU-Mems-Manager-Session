@@ -7,7 +7,6 @@
 #include <QLabel>
 #include <QLayout>
 #include <QMainWindow>
-#include <QMargins>
 #include <QPainter>
 #include <QPainterPath>
 #include <QPushButton>
@@ -42,48 +41,6 @@ static QLabel *cardTitle(QFrame *card)
         if(l && l->styleSheet().contains(QStringLiteral("#ff9828")))
             return l;
     return labels.isEmpty()?nullptr:labels.first();
-}
-
-static void placeErrorHelpBubbleLeft(QLabel *label)
-{
-    if(!label) return;
-    QLabel *bubble=label->findChild<QLabel*>(QStringLiteral("_ecuHelpBubble"),Qt::FindDirectChildrenOnly);
-    if(!bubble) return;
-    const int y=qMax(0,(label->height()-bubble->height())/2);
-    bubble->move(2,y);
-    bubble->raise();
-    bubble->show();
-}
-
-class ErrorsHelpBubbleLeftFilter : public QObject
-{
-public:
-    explicit ErrorsHelpBubbleLeftFilter(QObject *parent=nullptr):QObject(parent){}
-protected:
-    bool eventFilter(QObject *watched,QEvent *event) override
-    {
-        QLabel *label=qobject_cast<QLabel*>(watched);
-        if(label && (event->type()==QEvent::Resize || event->type()==QEvent::Show))
-            QTimer::singleShot(0,label,[label](){placeErrorHelpBubbleLeft(label);});
-        return QObject::eventFilter(watched,event);
-    }
-};
-
-static void alignErrorHelpBubbleLeft(QLabel *label)
-{
-    if(!label) return;
-
-    // Keep the global manager's right-side reserve untouched.  We only add a
-    // left reserve once, so there is no margin tug-of-war and no event loop.
-    const QMargins m=label->contentsMargins();
-    if(m.left()<30)
-        label->setContentsMargins(30,m.top(),m.right(),m.bottom());
-
-    if(!label->property("errorsHelpBubbleLeftSafe").toBool()) {
-        label->setProperty("errorsHelpBubbleLeftSafe",true);
-        label->installEventFilter(new ErrorsHelpBubbleLeftFilter(label));
-    }
-    QTimer::singleShot(0,label,[label](){placeErrorHelpBubbleLeft(label);});
 }
 
 static void putButtonInTitleBar(QFrame *card,QPushButton *button)
@@ -200,7 +157,7 @@ static void addLed(QGridLayout *grid,QWidget *led,QWidget *parent,int row,int co
     grid->addWidget(led,row,col,Qt::AlignHCenter|Qt::AlignVCenter);
 }
 
-static void addLabel(QGridLayout *grid,QLabel *label,QWidget *parent,int row,int col)
+static void addLeftHelpLabel(QGridLayout *grid,QLabel *label,QWidget *parent,int row,int col)
 {
     if(!grid || !label || !parent) return;
     moveWidget(label,parent);
@@ -210,7 +167,7 @@ static void addLabel(QGridLayout *grid,QLabel *label,QWidget *parent,int row,int
     label->setMaximumHeight(QWIDGETSIZE_MAX);
     label->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
     label->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
-    alignErrorHelpBubbleLeft(label);
+    label->setProperty("helpBubbleLeft",true);
     grid->setRowMinimumHeight(row,24);
     grid->addWidget(label,row,col);
 }
@@ -237,34 +194,7 @@ static void rebuildLivePanel(QMainWindow *w,QFrame *bottom)
     signalPanel->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     QVBoxLayout *sv=new QVBoxLayout(signalPanel);
     sv->setContentsMargins(10,7,10,8);
-    sv->setSpacing(4);
-
-    QWidget *rpmLed=w->findChild<QWidget*>(QStringLiteral("m_RPMSensor"));
-    QLabel *rpmLabel=w->findChild<QLabel*>(QStringLiteral("m_RPMSensorLabel"));
-    QGridLayout *rpmGrid=new QGridLayout;
-    rpmGrid->setContentsMargins(0,0,0,0);
-    rpmGrid->setHorizontalSpacing(10);
-    rpmGrid->setColumnMinimumWidth(0,82);
-    rpmGrid->setColumnMinimumWidth(1,96);
-    rpmGrid->setColumnStretch(0,0);
-    rpmGrid->setColumnStretch(1,0);
-    rpmGrid->setColumnStretch(2,1);
-    if(rpmLed) {
-        moveWidget(rpmLed,signalPanel);
-        rpmLed->setFixedSize(22,22);
-        rpmGrid->addWidget(rpmLed,0,0,Qt::AlignHCenter|Qt::AlignVCenter);
-    }
-    if(rpmLabel) {
-        moveWidget(rpmLabel,signalPanel);
-        rpmLabel->setMinimumWidth(0);
-        rpmLabel->setMaximumWidth(QWIDGETSIZE_MAX);
-        rpmLabel->setMinimumHeight(24);
-        rpmLabel->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
-        rpmLabel->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
-        alignErrorHelpBubbleLeft(rpmLabel);
-        rpmGrid->addWidget(rpmLabel,0,2);
-    }
-    sv->addLayout(rpmGrid);
+    sv->setSpacing(2);
 
     QGridLayout *grid=new QGridLayout;
     grid->setContentsMargins(0,0,0,0);
@@ -276,32 +206,27 @@ static void rebuildLivePanel(QMainWindow *w,QFrame *bottom)
     grid->setColumnStretch(1,0);
     grid->setColumnStretch(2,1);
 
+    // Row 0: RPM/crankshaft signal.  It deliberately shares the exact same
+    // columns as the anomaly rows so its HELP bubble aligns with all others.
+    addLed(grid,w->findChild<QWidget*>(QStringLiteral("m_RPMSensor")),signalPanel,0,0);
+    addLeftHelpLabel(grid,w->findChild<QLabel*>(QStringLiteral("m_RPMSensorLabel")),signalPanel,0,2);
+
+    // Row 1: column headings.
     QLabel *liveHead=w->findChild<QLabel*>(QStringLiteral("m_faultCodesLabel2"));
     QLabel *recordedHead=w->findChild<QLabel*>(QStringLiteral("m_faultCodesLabel3"));
     QLabel *anomHead=w->findChild<QLabel*>(QStringLiteral("m_faultCodesLabel4"));
     if(liveHead) {
         moveWidget(liveHead,signalPanel);
         liveHead->setAlignment(Qt::AlignCenter);
-        grid->addWidget(liveHead,0,0,Qt::AlignCenter);
+        grid->addWidget(liveHead,1,0,Qt::AlignCenter);
     }
     if(recordedHead) {
         moveWidget(recordedHead,signalPanel);
         recordedHead->setText(I18n::text(1015));
         recordedHead->setAlignment(Qt::AlignCenter);
-        grid->addWidget(recordedHead,0,1,Qt::AlignCenter);
+        grid->addWidget(recordedHead,1,1,Qt::AlignCenter);
     }
-    if(anomHead) {
-        moveWidget(anomHead,signalPanel);
-        anomHead->setMinimumWidth(0);
-        anomHead->setMaximumWidth(QWIDGETSIZE_MAX);
-        anomHead->setMinimumHeight(24);
-        anomHead->setMaximumHeight(QWIDGETSIZE_MAX);
-        anomHead->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
-        anomHead->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
-        alignErrorHelpBubbleLeft(anomHead);
-        grid->setRowMinimumHeight(0,24);
-        grid->addWidget(anomHead,0,2);
-    }
+    addLeftHelpLabel(grid,anomHead,signalPanel,1,2);
 
     struct LiveRow { const char *live; const char *recorded; const char *label; };
     const LiveRow rows[]={
@@ -313,13 +238,21 @@ static void rebuildLivePanel(QMainWindow *w,QFrame *bottom)
     };
 
     for(int i=0;i<5;i++) {
-        const int row=i+1;
+        const int row=i+2;
         addLed(grid,w->findChild<QWidget*>(QString::fromLatin1(rows[i].live)),signalPanel,row,0);
         if(rows[i].recorded)
             addLed(grid,w->findChild<QWidget*>(QString::fromLatin1(rows[i].recorded)),signalPanel,row,1);
-        addLabel(grid,w->findChild<QLabel*>(QString::fromLatin1(rows[i].label)),signalPanel,row,2);
+        addLeftHelpLabel(grid,w->findChild<QLabel*>(QString::fromLatin1(rows[i].label)),signalPanel,row,2);
     }
     sv->addLayout(grid,1);
+
+    // The lower signal panel must not contain a separator below the RPM row.
+    // The title-bar separator belongs to errorsLive (the parent card), so it
+    // is not affected here.
+    const QList<QFrame*> panelFrames=signalPanel->findChildren<QFrame*>(QString(),Qt::FindDirectChildrenOnly);
+    for(QFrame *line:panelFrames)
+        if(line && line!=signalPanel && line->frameShape()==QFrame::HLine)
+            line->hide();
 
     SystemStatePreview *preview=new SystemStatePreview(bottom);
 
