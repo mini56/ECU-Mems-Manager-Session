@@ -1,10 +1,16 @@
 #include <QApplication>
 #include <QCoreApplication>
 #include <QEvent>
+#include <QHeaderView>
 #include <QLabel>
 #include <QMainWindow>
+#include <QSize>
+#include <QTableWidget>
 #include <QTimer>
 #include <QToolButton>
+
+#include "i18n.h"
+#include "summarytab.h"
 
 namespace {
 
@@ -22,6 +28,52 @@ static void removeSidebarBubble(QMainWindow *w)
         bubble->hide();
 }
 
+static void styleSummaryTables(QMainWindow *w)
+{
+    if(!w) return;
+    SummaryTab *summary=w->findChild<SummaryTab*>();
+    if(!summary) return;
+
+    const QList<QTableWidget*> tables=summary->findChildren<QTableWidget*>();
+    for(QTableWidget *table:tables) {
+        if(!table || table->columnCount()<4) continue;
+
+        if(QTableWidgetItem *header=table->horizontalHeaderItem(1))
+            header->setText(I18n::text(6708));
+
+        table->setIconSize(QSize(24,18));
+        table->horizontalHeader()->setSectionResizeMode(0,QHeaderView::Stretch);
+        table->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Fixed);
+        table->horizontalHeader()->setSectionResizeMode(2,QHeaderView::Fixed);
+        table->horizontalHeader()->setSectionResizeMode(3,QHeaderView::Fixed);
+        table->setColumnWidth(1,46);
+        table->setColumnWidth(2,100);
+        table->setColumnWidth(3,100);
+
+        table->horizontalHeader()->setStyleSheet(QStringLiteral(
+            "QHeaderView::section{"
+            "background:#141c23;"
+            "color:#ff9828;"
+            "border:0;"
+            "border-right:1px solid #29343e;"
+            "border-bottom:2px solid #ff7a00;"
+            "padding:4px 5px;"
+            "font-weight:700;"
+            "}"));
+
+        for(int row=0;row<table->rowCount();++row) {
+            if(QTableWidgetItem *bubble=table->item(row,1))
+                bubble->setTextAlignment(Qt::AlignCenter);
+        }
+    }
+}
+
+static void applyVisualOnlyPatches(QMainWindow *w)
+{
+    removeSidebarBubble(w);
+    styleSummaryTables(w);
+}
+
 class SidebarBubbleCleaner : public QObject
 {
 public:
@@ -34,10 +86,10 @@ protected:
             return QObject::eventFilter(watched,event);
 
         if(event->type()==QEvent::Show || event->type()==QEvent::Polish) {
-            QTimer::singleShot(1900,w,[w](){removeSidebarBubble(w);});
-            QTimer::singleShot(2400,w,[w](){removeSidebarBubble(w);});
+            QTimer::singleShot(1900,w,[w](){applyVisualOnlyPatches(w);});
+            QTimer::singleShot(2400,w,[w](){applyVisualOnlyPatches(w);});
         } else if(event->type()==QEvent::Resize) {
-            QTimer::singleShot(0,w,[w](){removeSidebarBubble(w);});
+            QTimer::singleShot(0,w,[w](){applyVisualOnlyPatches(w);});
         }
         return QObject::eventFilter(watched,event);
     }

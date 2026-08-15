@@ -50,8 +50,8 @@ void TooltipBubbleManager::ensureBubble(QWidget *widget)
     if (QLabel *textLabel = qobject_cast<QLabel*>(widget))
     {
         const QMargins m = textLabel->contentsMargins();
-        if (m.right() < 24)
-            textLabel->setContentsMargins(m.left(), m.top(), 24, m.bottom());
+        if (m.right() < 30)
+            textLabel->setContentsMargins(m.left(), m.top(), 30, m.bottom());
     }
 
     if (!bubble)
@@ -59,13 +59,13 @@ void TooltipBubbleManager::ensureBubble(QWidget *widget)
         bubble = new QLabel(widget);
         bubble->setObjectName(kBubbleObjectName);
         bubble->setPixmap(QPixmap(":/icons/helpbubble.png"));
-        bubble->setFixedSize(18, 18);
+        bubble->setFixedSize(24, 18);
         bubble->setScaledContents(true);
         bubble->setAttribute(Qt::WA_TransparentForMouseEvents, true);
         bubble->setStyleSheet("background: transparent;");
     }
 
-    bubble->move(qMax(0, widget->width() - bubble->width() - 2), 2);
+    bubble->move(qMax(0, widget->width() - bubble->width() - 2), 1);
     bubble->raise();
     bubble->show();
 }
