@@ -24,9 +24,6 @@ namespace {
 static void removeCollapseHelpBubble(QToolButton *toggle)
 {
     if(!toggle || toggle->objectName()!=QStringLiteral("darkSidebarToggle")) return;
-
-    // This control is explicitly labelled when the sidebar is expanded.
-    // It must never receive the generic help-bubble decoration.
     if(!toggle->toolTip().isEmpty()) toggle->setToolTip(QString());
     toggle->setStatusTip(QString());
     toggle->setWhatsThis(QString());
@@ -99,12 +96,19 @@ protected:
             maxv=100.0;
         }
 
-        // Automotive dial geometry: the ungraduated sector is centred at the
-        // BOTTOM of the gauge. Min is lower-left and max is lower-right.
-        const QPointF c(94,101);
+        const QString sourceName=m_source?m_source->objectName():QString();
+        const bool rpmGauge=(sourceName==QStringLiteral("m_revCounter"));
+        const bool coolantGauge=(sourceName==QStringLiteral("m_waterTempGauge"));
+        const bool batteryGauge=(sourceName==QStringLiteral("m_battery"));
+        const bool airGauge=(sourceName==QStringLiteral("m_airTempGauge"));
+        const bool advanceGauge=(sourceName==QStringLiteral("m_ignition_advance"));
+
+        // Opening centred at the bottom, matching the readable MemsFCR-style
+        // placement: scale around the upper 270 degrees, value in the lower gap.
+        const QPointF c(94,99);
         const qreal r=75.0;
-        const qreal startDeg=140.0;
-        const qreal sweepDeg=260.0;
+        const qreal startDeg=135.0;
+        const qreal sweepDeg=270.0;
         const qreal arcR=r-10.5;
 
         QRadialGradient bezel(c-QPointF(16,19),r*1.22);
@@ -124,71 +128,99 @@ protected:
         p.setBrush(Qt::NoBrush);
         p.drawEllipse(c,r-10.5,r-10.5);
 
-        // Draw the scale arc with the same geometry as the ticks so there is
-        // no Qt arc-direction ambiguity.
+        auto drawArcRange=[&](double lo,double hi,const QColor &color,qreal width) {
+            if(hi<=minv || lo>=maxv || hi<=lo) return;
+            lo=qMax(lo,minv);
+            hi=qMin(hi,maxv);
+            const qreal f0=(lo-minv)/(maxv-minv);
+            const qreal f1=(hi-minv)/(maxv-minv);
+            QPainterPath path;
+            const int steps=36;
+            for(int i=0;i<=steps;i++) {
+                const qreal f=f0+(f1-f0)*i/qreal(steps);
+                const qreal a=qDegreesToRadians(startDeg+sweepDeg*f);
+                const QPointF pt=c+QPointF(qCos(a)*arcR,qSin(a)*arcR);
+                if(i==0) path.moveTo(pt); else path.lineTo(pt);
+            }
+            p.setPen(QPen(color,width,Qt::SolidLine,Qt::RoundCap));
+            p.drawPath(path);
+        };
+
         QPainterPath baseArc;
-        const int arcSteps=90;
+        const int arcSteps=100;
         for(int i=0;i<=arcSteps;i++) {
             const qreal a=qDegreesToRadians(startDeg+sweepDeg*i/qreal(arcSteps));
             const QPointF pt=c+QPointF(qCos(a)*arcR,qSin(a)*arcR);
             if(i==0) baseArc.moveTo(pt); else baseArc.lineTo(pt);
         }
-        p.setPen(QPen(QColor("#303b43"),2.2,Qt::SolidLine,Qt::RoundCap));
+        p.setPen(QPen(QColor("#38434a"),2.1,Qt::SolidLine,Qt::RoundCap));
         p.drawPath(baseArc);
+
+        // Requested operating/warning ranges.
+        if(rpmGauge) {
+            drawArcRange(6000.0,6500.0,QColor("#ff9a20"),3.8);
+            drawArcRange(6500.0,8000.0,QColor("#ff3d32"),4.2);
+        } else if(batteryGauge) {
+            drawArcRange(13.5,14.5,QColor("#63d64b"),3.8);
+            drawArcRange(14.5,maxv,QColor("#ff3d32"),4.2);
+        } else if(coolantGauge) {
+            drawArcRange(85.0,95.0,QColor("#63d64b"),3.8);
+            drawArcRange(95.0,maxv,QColor("#ff3d32"),4.2);
+        } else if(airGauge) {
+            drawArcRange(50.0,80.0,QColor("#ff3d32"),4.2);
+        } else if(advanceGauge) {
+            drawArcRange(5.0,15.0,QColor("#63d64b"),3.8);
+            drawArcRange(15.0,maxv,QColor("#ff3d32"),4.2);
+        }
 
         double n=(value-minv)/(maxv-minv);
         n=qBound(0.0,n,1.0);
         const qreal currentDeg=startDeg+sweepDeg*n;
 
-        QPainterPath activeArc;
-        const int activeSteps=qMax(1,qRound(arcSteps*n));
-        for(int i=0;i<=activeSteps;i++) {
-            const qreal f=(activeSteps>0)?i/qreal(activeSteps):0.0;
-            const qreal a=qDegreesToRadians(startDeg+(currentDeg-startDeg)*f);
-            const QPointF pt=c+QPointF(qCos(a)*arcR,qSin(a)*arcR);
-            if(i==0) activeArc.moveTo(pt); else activeArc.lineTo(pt);
-        }
-        p.setPen(QPen(QColor("#ff7a00"),2.5,Qt::SolidLine,Qt::RoundCap));
-        p.drawPath(activeArc);
-
         p.save();
         p.translate(c);
-        const int tickCount=40;
+        const int tickCount=rpmGauge?64:40;
         for(int i=0;i<=tickCount;i++) {
-            const bool major=i%10==0;
-            const bool medium=!major && i%5==0;
+            const bool major=rpmGauge?(i%8==0):(i%10==0);
+            const bool medium=!major && (rpmGauge?(i%4==0):(i%5==0));
             const qreal a=qDegreesToRadians(startDeg+sweepDeg*i/qreal(tickCount));
             const qreal ro=r-8.0;
-            const qreal len=major?14.0:(medium?8.8:4.8);
+            const qreal len=major?13.5:(medium?8.2:4.5);
             const QPointF po(qCos(a)*ro,qSin(a)*ro);
             const QPointF pi(qCos(a)*(ro-len),qSin(a)*(ro-len));
             const QColor col=major?QColor("#f4f6f7"):(medium?QColor("#b4bec5"):QColor("#707d85"));
-            p.setPen(QPen(col,major?1.7:(medium?1.1:.72),Qt::SolidLine,Qt::FlatCap));
+            p.setPen(QPen(col,major?1.55:(medium?1.0:.68),Qt::SolidLine,Qt::FlatCap));
             p.drawLine(pi,po);
         }
         p.restore();
 
+        // Scale numbers follow the MemsFCR reference: smaller and clearly
+        // inside the tick ring rather than sitting on the graduation marks.
         QFont scaleFont=p.font();
         scaleFont.setBold(true);
-        scaleFont.setPointSizeF(7.5);
+        scaleFont.setPointSizeF(rpmGauge?6.3:6.2);
         p.setFont(scaleFont);
         p.setPen(QColor("#eef2f4"));
 
-        const int labelCount=4;
+        const int labelCount=rpmGauge?8:4;
         for(int i=0;i<=labelCount;i++) {
             const double fv=minv+(maxv-minv)*i/qreal(labelCount);
             const qreal a=qDegreesToRadians(startDeg+sweepDeg*i/qreal(labelCount));
-            const qreal rr=r-24.0;
+            const qreal rr=r-32.0;
             QPointF pos=c+QPointF(qCos(a)*rr,qSin(a)*rr);
 
-            // Pull the end labels away from the central value area.
-            if(i==0) pos+=QPointF(-7,-5);
-            else if(i==labelCount) pos+=QPointF(7,-5);
+            if(i==0) pos+=QPointF(-2,-4);
+            else if(i==labelCount) pos+=QPointF(2,-4);
 
-            const QString txt=qAbs(maxv-minv)<=25.0
-                ? QString::number(fv,'f',1)
-                : QString::number(fv,'f',0);
-            p.drawText(QRectF(pos.x()-21,pos.y()-7,42,14),Qt::AlignCenter,txt);
+            QString txt;
+            if(rpmGauge) {
+                txt=QString::number(qRound(fv/1000.0));
+            } else if(qAbs(maxv-minv)<=25.0) {
+                txt=QString::number(fv,'f',1);
+            } else {
+                txt=QString::number(fv,'f',0);
+            }
+            p.drawText(QRectF(pos.x()-17,pos.y()-6,34,12),Qt::AlignCenter,txt);
         }
 
         const qreal ang=qDegreesToRadians(currentDeg);
@@ -213,25 +245,25 @@ protected:
         p.setBrush(QColor("#59636a"));
         p.drawEllipse(c,2.6,2.6);
 
-        // Central value and unit sit entirely inside the open bottom sector.
+        // Lift the live value and unit well into the black opening.
         QFont valueFont=p.font();
         valueFont.setBold(true);
-        valueFont.setPointSizeF(19.0);
+        valueFont.setPointSizeF(18.5);
         p.setFont(valueFont);
         p.setPen(QColor("#ffffff"));
         const QString val=(qAbs(value)<10.0 && qAbs(maxv-minv)<=40.0)
             ? QString::number(value,'f',1)
             : QString::number(value,'f',0);
-        p.drawText(QRectF(52,139,84,27),Qt::AlignCenter,val);
+        p.drawText(QRectF(51,132,86,26),Qt::AlignCenter,val);
 
         QFont unitFont=p.font();
         unitFont.setBold(true);
-        unitFont.setPointSizeF(8.1);
+        unitFont.setPointSizeF(7.7);
         p.setFont(unitFont);
         p.setPen(QColor("#d0d8dc"));
-        p.drawText(QRectF(50,163,88,14),Qt::AlignCenter,m_unit);
+        p.drawText(QRectF(48,154,92,14),Qt::AlignCenter,m_unit);
 
-        // Thin 2-minute history strip: it no longer steals height from the dial.
+        // Compact two-minute trace, leaving maximum height for the dial.
         const QRectF tr(8,192,172,25);
         p.setPen(QPen(QColor("#2d3942"),.85));
         p.setBrush(QColor("#070c10"));
@@ -372,8 +404,6 @@ public:
 protected:
     bool eventFilter(QObject *watched,QEvent *event) override
     {
-        // The generic tooltip manager may react after the sidebar has been
-        // created or resized. Clear the tooltip again after that event cycle.
         if(QToolButton *toggle=qobject_cast<QToolButton*>(watched)) {
             if(toggle->objectName()==QStringLiteral("darkSidebarToggle") &&
                (event->type()==QEvent::ToolTipChange || event->type()==QEvent::Show ||
