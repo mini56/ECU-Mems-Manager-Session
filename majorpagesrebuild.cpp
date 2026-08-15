@@ -180,10 +180,10 @@ static void composeActuators(QMainWindow *window)
     if(list)list->setParent(page);if(pos)pos->setParent(page);if(slider)slider->setParent(page);if(info)info->setParent(page);if(move)move->setParent(page);if(minus)minus->setParent(page);if(plus)plus->setParent(page);
     QVBoxLayout *root=nullptr;beginPage(page,root);
     QHBoxLayout *body=new QHBoxLayout;body->setSpacing(10);
-    QFrame *left=card(page,QStringLiteral("actuatorListCard"),I18n::text(4001).toUpper());if(list){prepWidget(list);list->setParent(left);static_cast<QVBoxLayout*>(left->layout())->addWidget(list,1);}body->addWidget(left,3);
+    QFrame *left=card(page,QStringLiteral("actuatorListCard"),I18n::text(4001).toUpper());if(list){prepWidget(list);list->setParent(left);static_cast<QVBoxLayout*>(left->layout())->addWidget(list,1);}body->addWidget(left,1);
     QFrame *right=card(page,QStringLiteral("actuatorIacCard"),I18n::text(7138));QVBoxLayout *rv=static_cast<QVBoxLayout*>(right->layout());
     if(info){info->setParent(right);info->setWordWrap(true);info->show();rv->addWidget(info);}if(pos){prepWidget(pos);pos->setParent(right);rv->addWidget(pos);}if(slider){prepWidget(slider);slider->setParent(right);rv->addWidget(slider);}
-    QHBoxLayout *buttons=new QHBoxLayout;if(minus){minus->setParent(right);minus->show();buttons->addWidget(minus);}if(move){move->setParent(right);move->show();buttons->addWidget(move,1);}if(plus){plus->setParent(right);plus->show();buttons->addWidget(plus);}rv->addLayout(buttons);rv->addStretch(1);body->addWidget(right,2);
+    QHBoxLayout *buttons=new QHBoxLayout;if(minus){minus->setParent(right);minus->show();buttons->addWidget(minus);}if(move){move->setParent(right);move->show();buttons->addWidget(move,1);}if(plus){plus->setParent(right);plus->show();buttons->addWidget(plus);}rv->addLayout(buttons);rv->addStretch(1);body->addWidget(right,1);
     root->addLayout(body,1);
 }
 
