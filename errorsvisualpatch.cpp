@@ -180,12 +180,12 @@ static void rebuildLivePanel(QMainWindow *w,QFrame *bottom)
         oldLive->hide();
     }
 
-    QFrame *signals=new QFrame(bottom);
-    signals->setObjectName(QStringLiteral("errorsCompactSignals"));
-    signals->setAttribute(Qt::WA_StyledBackground,true);
-    signals->setStyleSheet(QStringLiteral("#errorsCompactSignals{background:#0b1116;border:1px solid #27323b;border-radius:4px;}"));
-    signals->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
-    QVBoxLayout *sv=new QVBoxLayout(signals);
+    QFrame *signalPanel=new QFrame(bottom);
+    signalPanel->setObjectName(QStringLiteral("errorsCompactSignals"));
+    signalPanel->setAttribute(Qt::WA_StyledBackground,true);
+    signalPanel->setStyleSheet(QStringLiteral("#errorsCompactSignals{background:#0b1116;border:1px solid #27323b;border-radius:4px;}"));
+    signalPanel->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    QVBoxLayout *sv=new QVBoxLayout(signalPanel);
     sv->setContentsMargins(10,7,10,8);
     sv->setSpacing(5);
 
@@ -196,19 +196,19 @@ static void rebuildLivePanel(QMainWindow *w,QFrame *bottom)
     rpmRow->setSpacing(7);
     rpmRow->addStretch(1);
     if(rpmLed) {
-        moveWidget(rpmLed,signals);
+        moveWidget(rpmLed,signalPanel);
         rpmLed->setFixedSize(22,22);
         rpmRow->addWidget(rpmLed,0,Qt::AlignVCenter);
     }
     if(rpmLabel) {
-        moveWidget(rpmLabel,signals);
+        moveWidget(rpmLabel,signalPanel);
         rpmLabel->setSizePolicy(QSizePolicy::Maximum,QSizePolicy::Preferred);
         rpmRow->addWidget(rpmLabel,0,Qt::AlignVCenter);
     }
     rpmRow->addStretch(1);
     sv->addLayout(rpmRow);
 
-    QFrame *sep=new QFrame(signals);
+    QFrame *sep=new QFrame(signalPanel);
     sep->setFrameShape(QFrame::HLine);
     sep->setStyleSheet(QStringLiteral("background:#27333b;border:0;max-height:1px;"));
     sv->addWidget(sep);
@@ -227,18 +227,18 @@ static void rebuildLivePanel(QMainWindow *w,QFrame *bottom)
     QLabel *recordedHead=w->findChild<QLabel*>(QStringLiteral("m_faultCodesLabel3"));
     QLabel *anomHead=w->findChild<QLabel*>(QStringLiteral("m_faultCodesLabel4"));
     if(liveHead) {
-        moveWidget(liveHead,signals);
+        moveWidget(liveHead,signalPanel);
         liveHead->setAlignment(Qt::AlignCenter);
         grid->addWidget(liveHead,0,0,Qt::AlignCenter);
     }
     if(recordedHead) {
-        moveWidget(recordedHead,signals);
+        moveWidget(recordedHead,signalPanel);
         recordedHead->setText(I18n::text(1015));
         recordedHead->setAlignment(Qt::AlignCenter);
         grid->addWidget(recordedHead,0,1,Qt::AlignCenter);
     }
     if(anomHead) {
-        moveWidget(anomHead,signals);
+        moveWidget(anomHead,signalPanel);
         anomHead->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
         grid->addWidget(anomHead,0,2,Qt::AlignLeft|Qt::AlignVCenter);
     }
@@ -254,10 +254,10 @@ static void rebuildLivePanel(QMainWindow *w,QFrame *bottom)
 
     for(int i=0;i<5;i++) {
         const int row=i+1;
-        addLed(grid,w->findChild<QWidget*>(QString::fromLatin1(rows[i].live)),signals,row,0);
+        addLed(grid,w->findChild<QWidget*>(QString::fromLatin1(rows[i].live)),signalPanel,row,0);
         if(rows[i].recorded)
-            addLed(grid,w->findChild<QWidget*>(QString::fromLatin1(rows[i].recorded)),signals,row,1);
-        addLabel(grid,w->findChild<QLabel*>(QString::fromLatin1(rows[i].label)),signals,row,2);
+            addLed(grid,w->findChild<QWidget*>(QString::fromLatin1(rows[i].recorded)),signalPanel,row,1);
+        addLabel(grid,w->findChild<QLabel*>(QString::fromLatin1(rows[i].label)),signalPanel,row,2);
     }
     sv->addLayout(grid,1);
 
@@ -266,7 +266,7 @@ static void rebuildLivePanel(QMainWindow *w,QFrame *bottom)
     QHBoxLayout *body=new QHBoxLayout;
     body->setContentsMargins(0,0,0,0);
     body->setSpacing(8);
-    body->addWidget(signals,1);
+    body->addWidget(signalPanel,1);
     body->addWidget(preview,0);
     bv->addLayout(body,1);
 }
