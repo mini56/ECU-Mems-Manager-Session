@@ -43,52 +43,6 @@ static QLabel *cardTitle(QFrame *card)
     return labels.isEmpty()?nullptr:labels.first();
 }
 
-static void placeHelpBubbleLeft(QLabel *label)
-{
-    if(!label) return;
-
-    const QMargins m=label->contentsMargins();
-    if(m.left()!=30 || m.right()!=0)
-        label->setContentsMargins(30,m.top(),0,m.bottom());
-
-    QLabel *bubble=label->findChild<QLabel*>(QStringLiteral("_ecuHelpBubble"),Qt::FindDirectChildrenOnly);
-    if(!bubble) return;
-
-    const int y=qMax(0,(label->height()-bubble->height())/2);
-    bubble->move(2,y);
-    bubble->raise();
-    bubble->show();
-}
-
-class ErrorsHelpBubbleAligner : public QObject
-{
-public:
-    explicit ErrorsHelpBubbleAligner(QObject *parent=nullptr):QObject(parent){}
-protected:
-    bool eventFilter(QObject *watched,QEvent *event) override
-    {
-        QLabel *label=qobject_cast<QLabel*>(watched);
-        if(label && (event->type()==QEvent::Resize ||
-                     event->type()==QEvent::Show ||
-                     event->type()==QEvent::LayoutRequest ||
-                     event->type()==QEvent::ChildAdded)) {
-            QTimer::singleShot(0,label,[label](){placeHelpBubbleLeft(label);});
-        }
-        return QObject::eventFilter(watched,event);
-    }
-};
-
-static void alignHelpBubbleLeft(QLabel *label)
-{
-    if(!label) return;
-    if(!label->property("errorsHelpBubbleLeft").toBool()) {
-        label->setProperty("errorsHelpBubbleLeft",true);
-        label->installEventFilter(new ErrorsHelpBubbleAligner(label));
-    }
-    placeHelpBubbleLeft(label);
-    QTimer::singleShot(0,label,[label](){placeHelpBubbleLeft(label);});
-}
-
 static void putButtonInTitleBar(QFrame *card,QPushButton *button)
 {
     if(!card || !button) return;
@@ -213,7 +167,6 @@ static void addLabel(QGridLayout *grid,QLabel *label,QWidget *parent,int row,int
     label->setMaximumHeight(QWIDGETSIZE_MAX);
     label->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
     label->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
-    alignHelpBubbleLeft(label);
     grid->setRowMinimumHeight(row,24);
     grid->addWidget(label,row,col);
 }
@@ -240,7 +193,7 @@ static void rebuildLivePanel(QMainWindow *w,QFrame *bottom)
     signalPanel->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     QVBoxLayout *sv=new QVBoxLayout(signalPanel);
     sv->setContentsMargins(10,7,10,8);
-    sv->setSpacing(2);
+    sv->setSpacing(4);
 
     QWidget *rpmLed=w->findChild<QWidget*>(QStringLiteral("m_RPMSensor"));
     QLabel *rpmLabel=w->findChild<QLabel*>(QStringLiteral("m_RPMSensorLabel"));
@@ -259,15 +212,16 @@ static void rebuildLivePanel(QMainWindow *w,QFrame *bottom)
     }
     if(rpmLabel) {
         moveWidget(rpmLabel,signalPanel);
-        rpmLabel->setMinimumWidth(0);
-        rpmLabel->setMaximumWidth(QWIDGETSIZE_MAX);
-        rpmLabel->setMinimumHeight(24);
         rpmLabel->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
-        rpmLabel->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
-        alignHelpBubbleLeft(rpmLabel);
-        rpmGrid->addWidget(rpmLabel,0,2);
+        rpmLabel->setSizePolicy(QSizePolicy::Maximum,QSizePolicy::Preferred);
+        rpmGrid->addWidget(rpmLabel,0,1,1,2,Qt::AlignLeft|Qt::AlignVCenter);
     }
     sv->addLayout(rpmGrid);
+
+    QFrame *sep=new QFrame(signalPanel);
+    sep->setFrameShape(QFrame::HLine);
+    sep->setStyleSheet(QStringLiteral("background:#27333b;border:0;max-height:1px;"));
+    sv->addWidget(sep);
 
     QGridLayout *grid=new QGridLayout;
     grid->setContentsMargins(0,0,0,0);
@@ -301,7 +255,6 @@ static void rebuildLivePanel(QMainWindow *w,QFrame *bottom)
         anomHead->setMaximumHeight(QWIDGETSIZE_MAX);
         anomHead->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
         anomHead->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
-        alignHelpBubbleLeft(anomHead);
         grid->setRowMinimumHeight(0,24);
         grid->addWidget(anomHead,0,2);
     }
