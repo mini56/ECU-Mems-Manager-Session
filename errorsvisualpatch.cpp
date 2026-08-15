@@ -74,13 +74,19 @@ static void putButtonInTitleBar(QFrame *card,QPushButton *button)
 class SystemStatePreview : public QWidget
 {
 public:
-    explicit SystemStatePreview(QWidget *parent=nullptr):QWidget(parent)
+    explicit SystemStatePreview(QObject *source,QWidget *parent=nullptr)
+        : QWidget(parent),m_source(source)
     {
         setMinimumWidth(150);
         setMaximumWidth(210);
         setMinimumHeight(135);
         setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Expanding);
         setAttribute(Qt::WA_TransparentForMouseEvents,true);
+
+        QTimer *refresh=new QTimer(this);
+        refresh->setInterval(500);
+        QObject::connect(refresh,&QTimer::timeout,this,[this](){update();});
+        refresh->start();
     }
 
 protected:
@@ -105,8 +111,12 @@ protected:
         p.setPen(QPen(QColor("#27333b"),1.0));
         p.drawLine(QPointF(8,25),QPointF(qMax(8,width()-8),25));
 
-        const QPointF c(width()/2.0,height()*0.54);
-        const qreal rr=qMin(width()*0.19,height()*0.19);
+        // Same source, rule, colours and translated states as the Overview card.
+        const bool fault=m_source?m_source->property("checked").toBool():false;
+        const QColor state=fault?QColor("#ff4b3b"):QColor("#6bdd45");
+
+        const QPointF c(width()/2.0,height()*0.48);
+        const qreal rr=qMin(width()*0.19,height()*0.16);
         QPainterPath shield;
         shield.moveTo(c.x(),c.y()-rr);
         shield.lineTo(c.x()+rr*.75,c.y()-rr*.65);
@@ -114,9 +124,25 @@ protected:
         shield.quadTo(c.x(),c.y()+rr,c.x()-rr*.62,c.y()+rr*.28);
         shield.lineTo(c.x()-rr*.75,c.y()-rr*.65);
         shield.closeSubpath();
-        p.setPen(QPen(QColor("#64727c"),2.0));
+        p.setPen(QPen(state,2.4));
         p.setBrush(Qt::NoBrush);
         p.drawPath(shield);
+
+        if(!fault) {
+            p.setPen(QPen(state,2.8,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin));
+            p.drawLine(QPointF(c.x()-rr*.40,c.y()+rr*.04),
+                       QPointF(c.x()-rr*.12,c.y()+rr*.32));
+            p.drawLine(QPointF(c.x()-rr*.12,c.y()+rr*.32),
+                       QPointF(c.x()+rr*.50,c.y()-rr*.40));
+        }
+
+        QFont stateFont=p.font();
+        stateFont.setBold(true);
+        stateFont.setPointSizeF(7.8);
+        p.setFont(stateFont);
+        p.setPen(state);
+        p.drawText(QRectF(8,height()*0.67,qMax(0,width()-16),24),
+                   Qt::AlignCenter,fault?I18n::text(7144):I18n::text(7143));
 
         QFont sub=p.font();
         sub.setBold(false);
@@ -126,6 +152,9 @@ protected:
         p.drawText(QRectF(8,qMax(30,height()-38),qMax(0,width()-16),30),
                    Qt::AlignCenter|Qt::TextWordWrap,I18n::text(7145));
     }
+
+private:
+    QObject *m_source=nullptr;
 };
 
 static void compactStoredPanel(QMainWindow *w,QFrame *top)
@@ -254,7 +283,8 @@ static void rebuildLivePanel(QMainWindow *w,QFrame *bottom)
         if(line && line!=signalPanel && line->frameShape()==QFrame::HLine)
             line->hide();
 
-    SystemStatePreview *preview=new SystemStatePreview(bottom);
+    QObject *sys=w->findChild<QObject*>(QStringLiteral("m_engine_error"));
+    SystemStatePreview *preview=new SystemStatePreview(sys,bottom);
 
     QHBoxLayout *body=new QHBoxLayout;
     body->setContentsMargins(0,0,0,0);
