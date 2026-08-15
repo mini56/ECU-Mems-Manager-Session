@@ -3,6 +3,7 @@
 #include <QEvent>
 #include <QFrame>
 #include <QGridLayout>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QLayout>
 #include <QLineEdit>
@@ -12,6 +13,7 @@
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
+#include "i18n.h"
 
 namespace {
 
@@ -54,15 +56,136 @@ static void compactAdjustForm(QWidget *page)
     }
 
     if(QLineEdit *note=page->findChild<QLineEdit*>(QStringLiteral("lineEdit_3"))) {
-        note->setMinimumWidth(460);
-        note->setMaximumWidth(620);
-        note->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+        note->setMinimumWidth(300);
+        note->setMaximumWidth(460);
+        note->setMinimumHeight(22);
+        note->setMaximumHeight(24);
+        note->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
+        note->setAlignment(Qt::AlignCenter);
         QFont font=note->font();
         font.setPointSizeF(8.0);
         note->setFont(font);
         note->setStyleSheet(QStringLiteral(
             "QLineEdit{background:transparent;color:#b8c1c7;"
-            "border:0;padding:1px 2px;}"));
+            "border:0;padding:0 2px;}"));
+    }
+}
+
+static void moveIndicatorsToStates(QWidget *page,QFrame *states,QFrame *adjust)
+{
+    if(!page || !states || !adjust) return;
+
+    QWidget *idleLed=page->findChild<QWidget*>(QStringLiteral("idleswitch_led"));
+    QWidget *loopLed=page->findChild<QWidget*>(QStringLiteral("closedloop_led"));
+    if(!idleLed || !loopLed) return;
+
+    for(QHBoxLayout *row:adjust->findChildren<QHBoxLayout*>()) {
+        if(row->indexOf(idleLed)>=0) row->removeWidget(idleLed);
+        if(row->indexOf(loopLed)>=0) row->removeWidget(loopLed);
+    }
+
+    for(QLabel *label:adjust->findChildren<QLabel*>(QString(),Qt::FindDirectChildrenOnly)) {
+        if(label->text()==I18n::text(2014) || label->text()==I18n::text(2015))
+            label->hide();
+    }
+
+    QLabel *idleText=nullptr;
+    QLabel *loopText=nullptr;
+    for(QLabel *label:states->findChildren<QLabel*>()) {
+        if(!idleText && label->text()==I18n::text(2015)) idleText=label;
+        if(!loopText && label->text()==I18n::text(2014)) loopText=label;
+    }
+
+    QGridLayout *stateGrid=nullptr;
+    for(QGridLayout *grid:states->findChildren<QGridLayout*>()) {
+        if((idleText && grid->indexOf(idleText)>=0) || (loopText && grid->indexOf(loopText)>=0)) {
+            stateGrid=grid;
+            break;
+        }
+    }
+    if(!stateGrid) return;
+
+    idleLed->setParent(states);
+    idleLed->setFixedSize(24,24);
+    idleLed->show();
+    stateGrid->addWidget(idleLed,0,0,Qt::AlignCenter);
+
+    loopLed->setParent(states);
+    loopLed->setFixedSize(24,24);
+    loopLed->show();
+    stateGrid->addWidget(loopLed,1,0,Qt::AlignCenter);
+
+    if(idleText) idleText->show();
+    if(loopText) loopText->show();
+    states->show();
+}
+
+static void moveNoteBelowRpm(QWidget *page,QFrame *metrics,QFrame *adjust)
+{
+    if(!page || !metrics || !adjust) return;
+
+    QLineEdit *note=page->findChild<QLineEdit*>(QStringLiteral("lineEdit_3"));
+    QWidget *rpm=page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeRpm"));
+    if(!note || !rpm) return;
+
+    for(QHBoxLayout *row:adjust->findChildren<QHBoxLayout*>())
+        if(row->indexOf(note)>=0) row->removeWidget(note);
+
+    note->setParent(metrics);
+    note->setReadOnly(true);
+    note->show();
+    note->raise();
+
+    if(metrics->layout()) metrics->layout()->activate();
+    const QRect rpmRect=rpm->geometry();
+    const int noteWidth=qMin(note->maximumWidth(),qMax(note->minimumWidth(),rpmRect.width()+80));
+    const int noteHeight=qMax(note->minimumHeight(),qMin(note->maximumHeight(),24));
+    const int x=qMax(4,rpmRect.center().x()-noteWidth/2);
+    const int desiredY=rpmRect.bottom()+1;
+    const int y=qMax(2,qMin(desiredY,metrics->height()-noteHeight-3));
+    note->setGeometry(x,y,noteWidth,noteHeight);
+}
+
+static void arrangeBottomPanels(QWidget *page,QFrame *metrics,QFrame *states,QFrame *adjust)
+{
+    if(!page || !metrics || !states || !adjust) return;
+
+    QGridLayout *body=nullptr;
+    for(QGridLayout *grid:page->findChildren<QGridLayout*>()) {
+        if(grid->indexOf(metrics)>=0 && grid->indexOf(adjust)>=0) {
+            body=grid;
+            break;
+        }
+    }
+    if(!body) return;
+
+    body->removeWidget(states);
+    body->removeWidget(adjust);
+    body->addWidget(states,1,0);
+    body->addWidget(adjust,1,1);
+    body->setColumnStretch(0,1);
+    body->setColumnStretch(1,4);
+    body->setHorizontalSpacing(8);
+    body->setVerticalSpacing(7);
+
+    states->setMinimumWidth(205);
+    states->setMaximumWidth(275);
+    states->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
+    adjust->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+}
+
+static void shortenSettingsSeparator(QFrame *adjust)
+{
+    if(!adjust) return;
+    QVBoxLayout *layout=qobject_cast<QVBoxLayout*>(adjust->layout());
+    if(!layout) return;
+
+    for(QFrame *line:adjust->findChildren<QFrame*>(QString(),Qt::FindDirectChildrenOnly)) {
+        if(line->frameShape()!=QFrame::HLine) continue;
+        line->setMaximumWidth(720);
+        line->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+        layout->setAlignment(line,Qt::AlignHCenter);
+        break;
     }
 }
 
@@ -72,8 +195,9 @@ static void applySettingsVisualPatch(QMainWindow *window)
 
     QWidget *page=window->findChild<QWidget*>(QStringLiteral("emission_tab"));
     QFrame *metrics=window->findChild<QFrame*>(QStringLiteral("settingsMetrics"));
+    QFrame *states=window->findChild<QFrame*>(QStringLiteral("settingsStates"));
     QFrame *adjust=window->findChild<QFrame*>(QStringLiteral("settingsAdjust"));
-    if(!page || !metrics || !adjust) return;
+    if(!page || !metrics || !states || !adjust) return;
 
     if(!page->property("settingsDark410Built").toBool()) {
         QTimer::singleShot(350,window,[window](){applySettingsVisualPatch(window);});
@@ -109,19 +233,22 @@ static void applySettingsVisualPatch(QMainWindow *window)
         "QFrame#settingsAdjust{background:#10161c;"
         "border:1px solid #34414a;border-radius:6px;}"));
 
+    states->setMinimumHeight(adjustHeight);
+    states->setMaximumHeight(adjustHeight+12);
+    states->setStyleSheet(QStringLiteral(
+        "QFrame#settingsStates{background:#10161c;"
+        "border:1px solid #34414a;border-radius:6px;}"));
+
     if(QVBoxLayout *layout=qobject_cast<QVBoxLayout*>(adjust->layout())) {
-        layout->setContentsMargins(14,12,14,11);
-        layout->setSpacing(6);
+        layout->setContentsMargins(12,7,12,8);
+        layout->setSpacing(4);
     }
 
     compactAdjustForm(page);
-
-    for(QGridLayout *grid:page->findChildren<QGridLayout*>()) {
-        if(grid->indexOf(metrics)>=0 && grid->indexOf(adjust)>=0) {
-            grid->setVerticalSpacing(12);
-            break;
-        }
-    }
+    moveIndicatorsToStates(page,states,adjust);
+    arrangeBottomPanels(page,metrics,states,adjust);
+    shortenSettingsSeparator(adjust);
+    moveNoteBelowRpm(page,metrics,adjust);
 }
 
 class SettingsVisualPatchInstaller : public QObject
