@@ -38,8 +38,23 @@ static void styleSummaryTables(QMainWindow *w)
         if(!table || table->columnCount()<4) continue;
 
         // Keep the help-icon column but leave its heading empty.
-        if(QTableWidgetItem *header=table->horizontalHeaderItem(1))
-            header->setText(QString());
+        if(QTableWidgetItem *helpHeader=table->horizontalHeaderItem(1))
+            helpHeader->setText(QString());
+
+        // Keep the existing translated label, simply display its two words
+        // on separate lines when possible so the fixed column can stay narrow.
+        if(QTableWidgetItem *receivedHeader=table->horizontalHeaderItem(2)) {
+            QString text=receivedHeader->text();
+            if(!text.contains(QLatin1Char('\n'))) {
+                const int split=text.indexOf(QLatin1Char(' '));
+                if(split>0)
+                    text[split]=QLatin1Char('\n');
+            }
+            receivedHeader->setText(text);
+            receivedHeader->setTextAlignment(Qt::AlignCenter);
+        }
+        if(QTableWidgetItem *interpretedHeader=table->horizontalHeaderItem(3))
+            interpretedHeader->setTextAlignment(Qt::AlignCenter);
 
         table->setIconSize(QSize(24,18));
         QHeaderView *header=table->horizontalHeader();
@@ -49,8 +64,8 @@ static void styleSummaryTables(QMainWindow *w)
         header->setSectionResizeMode(2,QHeaderView::Fixed);
         header->setSectionResizeMode(3,QHeaderView::Fixed);
         table->setColumnWidth(1,28);
-        table->setColumnWidth(2,72);
-        table->setColumnWidth(3,86);
+        table->setColumnWidth(2,54);
+        table->setColumnWidth(3,68);
 
         header->setStyleSheet(QStringLiteral(
             "QHeaderView::section{"
@@ -66,6 +81,10 @@ static void styleSummaryTables(QMainWindow *w)
         for(int row=0;row<table->rowCount();++row) {
             if(QTableWidgetItem *bubble=table->item(row,1))
                 bubble->setTextAlignment(Qt::AlignCenter);
+            if(QTableWidgetItem *received=table->item(row,2))
+                received->setTextAlignment(Qt::AlignCenter);
+            if(QTableWidgetItem *interpreted=table->item(row,3))
+                interpreted->setTextAlignment(Qt::AlignCenter);
         }
     }
 }
