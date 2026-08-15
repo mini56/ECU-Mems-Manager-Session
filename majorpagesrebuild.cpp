@@ -174,13 +174,42 @@ static void composeActuators(QMainWindow *window)
     QWidget *pos=window->findChild<QWidget*>(QStringLiteral("layoutWidget_5"));
     QWidget *slider=window->findChild<QWidget*>(QStringLiteral("layoutWidget_6"));
     QLabel *info=page->findChild<QLabel*>(QStringLiteral("label"));
+    QLabel *o2Label=page->findChild<QLabel*>(QStringLiteral("m_O2Heater"));
+    QPushButton *o2On=page->findChild<QPushButton*>(QStringLiteral("m_O2Heater_OnButton"));
     QPushButton *move=page->findChild<QPushButton*>(QStringLiteral("m_moveIACButton"));
     QPushButton *minus=page->findChild<QPushButton*>(QStringLiteral("m_IACMinusButton"));
     QPushButton *plus=page->findChild<QPushButton*>(QStringLiteral("m_IACPlusButton"));
     if(list)list->setParent(page);if(pos)pos->setParent(page);if(slider)slider->setParent(page);if(info)info->setParent(page);if(move)move->setParent(page);if(minus)minus->setParent(page);if(plus)plus->setParent(page);
+
+    if(o2Label&&o2On){
+        const QString tip=o2On->toolTip();
+        if(!tip.isEmpty()){
+            o2On->setToolTip(QString());
+            o2Label->setProperty("helpBubbleLeft",true);
+            o2Label->setToolTip(tip);
+            o2Label->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
+            o2Label->setSizePolicy(QSizePolicy::Maximum,QSizePolicy::Preferred);
+            if(list&&list->layout())list->layout()->setAlignment(o2Label,Qt::AlignRight|Qt::AlignVCenter);
+        }
+    }
+
     QVBoxLayout *root=nullptr;beginPage(page,root);
     QHBoxLayout *body=new QHBoxLayout;body->setSpacing(10);
-    QFrame *left=card(page,QStringLiteral("actuatorListCard"),I18n::text(4001).toUpper());if(list){prepWidget(list);list->setParent(left);static_cast<QVBoxLayout*>(left->layout())->addWidget(list,1);}body->addWidget(left,1);
+    QFrame *left=card(page,QStringLiteral("actuatorListCard"),I18n::text(4001).toUpper());
+    if(list){
+        prepWidget(list);
+        list->setParent(left);
+        list->setMaximumWidth(490);
+        list->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Expanding);
+        QHBoxLayout *centered=new QHBoxLayout;
+        centered->setContentsMargins(0,0,0,0);
+        centered->setSpacing(0);
+        centered->addStretch(1);
+        centered->addWidget(list,0);
+        centered->addStretch(1);
+        static_cast<QVBoxLayout*>(left->layout())->addLayout(centered,1);
+    }
+    body->addWidget(left,1);
     QFrame *right=card(page,QStringLiteral("actuatorIacCard"),I18n::text(7138));QVBoxLayout *rv=static_cast<QVBoxLayout*>(right->layout());
     if(info){info->setParent(right);info->setWordWrap(true);info->show();rv->addWidget(info);}if(pos){prepWidget(pos);pos->setParent(right);rv->addWidget(pos);}if(slider){prepWidget(slider);slider->setParent(right);rv->addWidget(slider);}
     QHBoxLayout *buttons=new QHBoxLayout;if(minus){minus->setParent(right);minus->show();buttons->addWidget(minus);}if(move){move->setParent(right);move->show();buttons->addWidget(move,1);}if(plus){plus->setParent(right);plus->show();buttons->addWidget(plus);}rv->addLayout(buttons);rv->addStretch(1);body->addWidget(right,1);
