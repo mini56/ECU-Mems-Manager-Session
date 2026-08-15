@@ -105,7 +105,8 @@ protected:
 
         // Opening centred at the bottom, matching the readable MemsFCR-style
         // placement: scale around the upper 270 degrees, value in the lower gap.
-        const QPointF c(94,99);
+        // The complete dial is lowered slightly to clear the separator under the title.
+        const QPointF c(94,106);
         const qreal r=75.0;
         const qreal startDeg=135.0;
         const qreal sweepDeg=270.0;
@@ -245,7 +246,8 @@ protected:
         p.setBrush(QColor("#59636a"));
         p.drawEllipse(c,2.6,2.6);
 
-        // Lift the live value and unit well into the black opening.
+        // The live value and unit are raised into the black opening so they no
+        // longer sit on the lower rim of the dial.
         QFont valueFont=p.font();
         valueFont.setBold(true);
         valueFont.setPointSizeF(18.5);
@@ -254,14 +256,14 @@ protected:
         const QString val=(qAbs(value)<10.0 && qAbs(maxv-minv)<=40.0)
             ? QString::number(value,'f',1)
             : QString::number(value,'f',0);
-        p.drawText(QRectF(51,132,86,26),Qt::AlignCenter,val);
+        p.drawText(QRectF(51,124,86,25),Qt::AlignCenter,val);
 
         QFont unitFont=p.font();
         unitFont.setBold(true);
         unitFont.setPointSizeF(7.7);
         p.setFont(unitFont);
         p.setPen(QColor("#d0d8dc"));
-        p.drawText(QRectF(48,154,92,14),Qt::AlignCenter,m_unit);
+        p.drawText(QRectF(48,148,92,14),Qt::AlignCenter,m_unit);
 
         // Compact two-minute trace, leaving maximum height for the dial.
         const QRectF tr(8,192,172,25);
