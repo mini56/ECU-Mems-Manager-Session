@@ -11,6 +11,7 @@
 #include <QRadialGradient>
 #include <QSizePolicy>
 #include <QTimer>
+#include <QToolButton>
 #include <QVariant>
 #include <QVector>
 #include <QVBoxLayout>
@@ -19,6 +20,22 @@
 #include "i18n.h"
 
 namespace {
+
+static void removeCollapseHelpBubble(QToolButton *toggle)
+{
+    if(!toggle || toggle->objectName()!=QStringLiteral("darkSidebarToggle")) return;
+
+    // This control is explicitly labelled when the sidebar is expanded.
+    // It must never receive the generic help-bubble decoration.
+    if(!toggle->toolTip().isEmpty()) toggle->setToolTip(QString());
+    toggle->setStatusTip(QString());
+    toggle->setWhatsThis(QString());
+
+    if(QLabel *bubble=toggle->findChild<QLabel*>(QStringLiteral("_ecuHelpBubble"),Qt::FindDirectChildrenOnly)) {
+        bubble->hide();
+        bubble->deleteLater();
+    }
+}
 
 class RebuildGaugeCard : public QWidget
 {
@@ -35,14 +52,15 @@ public:
 
     void sample()
     {
-        if (!m_source) return;
+        if(!m_source) return;
         const QVariant v=m_source->property("value");
-        if (!v.isValid()) return;
+        if(!v.isValid()) return;
+
         const qint64 now=m_clock.elapsed();
         m_history.append(qMakePair(now,v.toDouble()));
         const qint64 cutoff=now-120000;
-        while (!m_history.isEmpty() && m_history.first().first<cutoff) m_history.removeFirst();
-        if (m_history.size()>600) m_history.remove(0,m_history.size()-600);
+        while(!m_history.isEmpty() && m_history.first().first<cutoff) m_history.removeFirst();
+        if(m_history.size()>600) m_history.remove(0,m_history.size()-600);
         update();
     }
 
@@ -64,10 +82,10 @@ protected:
         p.setBrush(QColor("#0c1217"));
         p.drawRoundedRect(card.adjusted(.5,.5,-.5,-.5),5.0,5.0);
 
-        QFont title=p.font();
-        title.setBold(true);
-        title.setPointSizeF(8.2);
-        p.setFont(title);
+        QFont titleFont=p.font();
+        titleFont.setBold(true);
+        titleFont.setPointSizeF(8.2);
+        p.setFont(titleFont);
         p.setPen(QColor("#edf2f4"));
         p.drawText(QRectF(6,5,176,18),Qt::AlignCenter,m_title.toUpper());
         p.setPen(QPen(QColor("#27333b"),1.0));
@@ -76,17 +94,18 @@ protected:
         double value=m_source?m_source->property("value").toDouble():0.0;
         double minv=m_source?m_source->property("minimum").toDouble():0.0;
         double maxv=m_source?m_source->property("maximum").toDouble():100.0;
-        if (!qIsFinite(minv)||!qIsFinite(maxv)||qFuzzyCompare(minv,maxv)) {
+        if(!qIsFinite(minv) || !qIsFinite(maxv) || qFuzzyCompare(minv,maxv)) {
             minv=0.0;
             maxv=100.0;
         }
 
-        // The history strip is intentionally compact so the dial can dominate
-        // the card and remain readable at normal desktop resolutions.
+        // Automotive dial geometry: the ungraduated sector is centred at the
+        // BOTTOM of the gauge. Min is lower-left and max is lower-right.
         const QPointF c(94,101);
-        const qreal r=74.0;
-        const qreal start=-140.0;
-        const qreal sweep=280.0;
+        const qreal r=75.0;
+        const qreal startDeg=140.0;
+        const qreal sweepDeg=260.0;
+        const qreal arcR=r-10.5;
 
         QRadialGradient bezel(c-QPointF(16,19),r*1.22);
         bezel.setColorAt(0,QColor("#56616a"));
@@ -105,15 +124,32 @@ protected:
         p.setBrush(Qt::NoBrush);
         p.drawEllipse(c,r-10.5,r-10.5);
 
-        const QRectF arcRect(c.x()-r+11,c.y()-r+11,(r-11)*2,(r-11)*2);
+        // Draw the scale arc with the same geometry as the ticks so there is
+        // no Qt arc-direction ambiguity.
+        QPainterPath baseArc;
+        const int arcSteps=90;
+        for(int i=0;i<=arcSteps;i++) {
+            const qreal a=qDegreesToRadians(startDeg+sweepDeg*i/qreal(arcSteps));
+            const QPointF pt=c+QPointF(qCos(a)*arcR,qSin(a)*arcR);
+            if(i==0) baseArc.moveTo(pt); else baseArc.lineTo(pt);
+        }
         p.setPen(QPen(QColor("#303b43"),2.2,Qt::SolidLine,Qt::RoundCap));
-        p.drawArc(arcRect,qRound(-start*16.0),qRound(-sweep*16.0));
+        p.drawPath(baseArc);
 
         double n=(value-minv)/(maxv-minv);
         n=qBound(0.0,n,1.0);
-        const qreal currentDeg=start+sweep*n;
+        const qreal currentDeg=startDeg+sweepDeg*n;
+
+        QPainterPath activeArc;
+        const int activeSteps=qMax(1,qRound(arcSteps*n));
+        for(int i=0;i<=activeSteps;i++) {
+            const qreal f=(activeSteps>0)?i/qreal(activeSteps):0.0;
+            const qreal a=qDegreesToRadians(startDeg+(currentDeg-startDeg)*f);
+            const QPointF pt=c+QPointF(qCos(a)*arcR,qSin(a)*arcR);
+            if(i==0) activeArc.moveTo(pt); else activeArc.lineTo(pt);
+        }
         p.setPen(QPen(QColor("#ff7a00"),2.5,Qt::SolidLine,Qt::RoundCap));
-        p.drawArc(arcRect,qRound(-start*16.0),qRound(-(currentDeg-start)*16.0));
+        p.drawPath(activeArc);
 
         p.save();
         p.translate(c);
@@ -121,7 +157,7 @@ protected:
         for(int i=0;i<=tickCount;i++) {
             const bool major=i%10==0;
             const bool medium=!major && i%5==0;
-            const qreal a=qDegreesToRadians(start+sweep*i/qreal(tickCount));
+            const qreal a=qDegreesToRadians(startDeg+sweepDeg*i/qreal(tickCount));
             const qreal ro=r-8.0;
             const qreal len=major?14.0:(medium?8.8:4.8);
             const QPointF po(qCos(a)*ro,qSin(a)*ro);
@@ -134,15 +170,21 @@ protected:
 
         QFont scaleFont=p.font();
         scaleFont.setBold(true);
-        scaleFont.setPointSizeF(7.4);
+        scaleFont.setPointSizeF(7.5);
         p.setFont(scaleFont);
-        p.setPen(QColor("#e8edef"));
+        p.setPen(QColor("#eef2f4"));
+
         const int labelCount=4;
         for(int i=0;i<=labelCount;i++) {
             const double fv=minv+(maxv-minv)*i/qreal(labelCount);
-            const qreal a=qDegreesToRadians(start+sweep*i/qreal(labelCount));
-            const qreal rr=r-25.0;
-            const QPointF pos=c+QPointF(qCos(a)*rr,qSin(a)*rr);
+            const qreal a=qDegreesToRadians(startDeg+sweepDeg*i/qreal(labelCount));
+            const qreal rr=r-24.0;
+            QPointF pos=c+QPointF(qCos(a)*rr,qSin(a)*rr);
+
+            // Pull the end labels away from the central value area.
+            if(i==0) pos+=QPointF(-7,-5);
+            else if(i==labelCount) pos+=QPointF(7,-5);
+
             const QString txt=qAbs(maxv-minv)<=25.0
                 ? QString::number(fv,'f',1)
                 : QString::number(fv,'f',0);
@@ -171,31 +213,31 @@ protected:
         p.setBrush(QColor("#59636a"));
         p.drawEllipse(c,2.6,2.6);
 
-        // Value and unit are deliberately kept below the centre of the dial,
-        // away from the scale labels, to avoid the overlaps seen in #402.
+        // Central value and unit sit entirely inside the open bottom sector.
         QFont valueFont=p.font();
         valueFont.setBold(true);
-        valueFont.setPointSizeF(20.5);
+        valueFont.setPointSizeF(19.0);
         p.setFont(valueFont);
         p.setPen(QColor("#ffffff"));
         const QString val=(qAbs(value)<10.0 && qAbs(maxv-minv)<=40.0)
             ? QString::number(value,'f',1)
             : QString::number(value,'f',0);
-        p.drawText(QRectF(36,129,116,29),Qt::AlignCenter,val);
+        p.drawText(QRectF(52,139,84,27),Qt::AlignCenter,val);
 
         QFont unitFont=p.font();
         unitFont.setBold(true);
-        unitFont.setPointSizeF(8.0);
+        unitFont.setPointSizeF(8.1);
         p.setFont(unitFont);
         p.setPen(QColor("#d0d8dc"));
-        p.drawText(QRectF(40,157,108,15),Qt::AlignCenter,m_unit);
+        p.drawText(QRectF(50,163,88,14),Qt::AlignCenter,m_unit);
 
-        const QRectF tr(8,185,172,32);
+        // Thin 2-minute history strip: it no longer steals height from the dial.
+        const QRectF tr(8,192,172,25);
         p.setPen(QPen(QColor("#2d3942"),.85));
         p.setBrush(QColor("#070c10"));
         p.drawRoundedRect(tr,3.0,3.0);
 
-        p.setPen(QPen(QColor("#192229"),.55));
+        p.setPen(QPen(QColor("#192229"),.5));
         const qreal midY=tr.top()+tr.height()/2.0;
         p.drawLine(tr.left()+4,midY,tr.right()-4,midY);
         for(int i=1;i<6;i++) {
@@ -203,8 +245,9 @@ protected:
             p.drawLine(x,tr.top()+3,x,tr.bottom()-3);
         }
 
-        if (m_history.size()>1) {
-            double hmin=m_history.first().second,hmax=hmin;
+        if(m_history.size()>1) {
+            double hmin=m_history.first().second;
+            double hmax=hmin;
             for(const auto &pt:m_history) {
                 hmin=qMin(hmin,pt.second);
                 hmax=qMax(hmax,pt.second);
@@ -213,6 +256,7 @@ protected:
                 hmin-=1.0;
                 hmax+=1.0;
             }
+
             const qint64 tmax=m_history.last().first;
             const qint64 tmin=qMax<qint64>(0,tmax-120000);
             QPainterPath path;
@@ -220,7 +264,7 @@ protected:
             for(const auto &pt:m_history) {
                 if(pt.first<tmin) continue;
                 const qreal x=tr.left()+5+((pt.first-tmin)/120000.0)*(tr.width()-10);
-                const qreal y=tr.bottom()-4-((pt.second-hmin)/(hmax-hmin))*(tr.height()-8);
+                const qreal y=tr.bottom()-3-((pt.second-hmin)/(hmax-hmin))*(tr.height()-6);
                 if(first) {
                     path.moveTo(x,y);
                     first=false;
@@ -228,9 +272,9 @@ protected:
                     path.lineTo(x,y);
                 }
             }
-            p.setPen(QPen(QColor(255,122,0,42),3.0,Qt::SolidLine,Qt::RoundCap));
+            p.setPen(QPen(QColor(255,122,0,42),2.6,Qt::SolidLine,Qt::RoundCap));
             p.drawPath(path);
-            p.setPen(QPen(QColor("#ff7a00"),1.35,Qt::SolidLine,Qt::RoundCap));
+            p.setPen(QPen(QColor("#ff7a00"),1.25,Qt::SolidLine,Qt::RoundCap));
             p.drawPath(path);
         }
     }
@@ -260,7 +304,8 @@ protected:
         p.setRenderHint(QPainter::Antialiasing,true);
         p.setRenderHint(QPainter::TextAntialiasing,true);
 
-        const qreal baseW=188.0,baseH=226.0;
+        const qreal baseW=188.0;
+        const qreal baseH=226.0;
         const qreal s=qMin(width()/baseW,height()/baseH);
         p.translate((width()-baseW*s)/2.0,(height()-baseH*s)/2.0);
         p.scale(s,s);
@@ -327,19 +372,33 @@ public:
 protected:
     bool eventFilter(QObject *watched,QEvent *event) override
     {
-        if((event->type()!=QEvent::Show&&event->type()!=QEvent::Polish)||!watched)
+        // The generic tooltip manager may react after the sidebar has been
+        // created or resized. Clear the tooltip again after that event cycle.
+        if(QToolButton *toggle=qobject_cast<QToolButton*>(watched)) {
+            if(toggle->objectName()==QStringLiteral("darkSidebarToggle") &&
+               (event->type()==QEvent::ToolTipChange || event->type()==QEvent::Show ||
+                event->type()==QEvent::Resize || event->type()==QEvent::Polish)) {
+                QTimer::singleShot(0,toggle,[toggle](){removeCollapseHelpBubble(toggle);});
+            }
+        }
+
+        if((event->type()!=QEvent::Show && event->type()!=QEvent::Polish) || !watched)
             return QObject::eventFilter(watched,event);
 
         QMainWindow *w=qobject_cast<QMainWindow*>(watched);
-        if(!w||w->objectName()!=QStringLiteral("MainWindow")||w->property("overviewRebuildInstalled").toBool())
+        if(!w || w->objectName()!=QStringLiteral("MainWindow") ||
+           w->property("overviewRebuildInstalled").toBool())
             return QObject::eventFilter(watched,event);
 
         QWidget *overview=w->findChild<QWidget*>(QStringLiteral("overview_tab"));
-        if(!overview)
-            return QObject::eventFilter(watched,event);
+        if(!overview) return QObject::eventFilter(watched,event);
 
         w->setProperty("overviewRebuildInstalled",true);
         QTimer::singleShot(80,w,[w,overview](){install(w,overview);});
+        QTimer::singleShot(2100,w,[w](){
+            if(QToolButton *toggle=w->findChild<QToolButton*>(QStringLiteral("darkSidebarToggle")))
+                removeCollapseHelpBubble(toggle);
+        });
         return QObject::eventFilter(watched,event);
     }
 
@@ -396,7 +455,7 @@ private:
         grid->setHorizontalSpacing(5);
         grid->setVerticalSpacing(5);
         grid->setSizeConstraint(QLayout::SetDefaultConstraint);
-        for(int c=0;c<6;c++) grid->setColumnStretch(c,1);
+        for(int col=0;col<6;col++) grid->setColumnStretch(col,1);
         grid->setRowStretch(0,1);
         grid->setRowStretch(1,1);
 
@@ -430,7 +489,7 @@ private:
         QTimer *timer=new QTimer(overview);
         timer->setInterval(500);
         QObject::connect(timer,&QTimer::timeout,overview,[cards](){
-            for(RebuildGaugeCard *c:cards) c->sample();
+            for(RebuildGaugeCard *card:cards) card->sample();
         });
         timer->start();
     }
