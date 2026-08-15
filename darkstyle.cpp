@@ -80,19 +80,31 @@ static QIcon navIcon(const QString &kind)
     return QIcon(pm);
 }
 
-static QString iconKind(QWidget *page,const QString &title)
+static QString iconKind(QWidget *page,int index)
 {
+    switch(index) {
+    case 0: return QStringLiteral("overview");
+    case 1: return QStringLiteral("settings");
+    case 2: return QStringLiteral("data");
+    case 3: return QStringLiteral("error");
+    case 4: return QStringLiteral("actuator");
+    case 5: return QStringLiteral("data");
+    case 6: return QStringLiteral("link");
+    case 7: return QStringLiteral("chart");
+    case 8: return QStringLiteral("link");
+    case 9: return QStringLiteral("diag");
+    default: break;
+    }
     const QString n=page?page->objectName().toLower():QString();
     const QString c=cls(page).toLower();
-    const QString t=title.toLower();
-    if(n==QStringLiteral("overview_tab")||t.contains(QStringLiteral("aper"))) return QStringLiteral("overview");
-    if(n==QStringLiteral("emission_tab")||t.contains(QStringLiteral("régl"))||t.contains(QStringLiteral("regl"))) return QStringLiteral("settings");
-    if(n==QStringLiteral("errors")||t.contains(QStringLiteral("erreur"))) return QStringLiteral("error");
-    if(n==QStringLiteral("actuators")||t.contains(QStringLiteral("actionneur"))) return QStringLiteral("actuator");
-    if(c.contains(QStringLiteral("analysis"))||t.contains(QStringLiteral("analyse"))) return QStringLiteral("chart");
-    if(c.contains(QStringLiteral("diagnostic"))||t.contains(QStringLiteral("diagnostic"))) return QStringLiteral("diag");
-    if(t.contains(QStringLiteral("rosco"))||n==QStringLiteral("ecu")) return QStringLiteral("link");
-    if(t.contains(QStringLiteral("mesure"))||t.contains(QStringLiteral("donnée"))||t.contains(QStringLiteral("donnee"))||n==QStringLiteral("raw")) return QStringLiteral("data");
+    if(n==QStringLiteral("overview_tab")) return QStringLiteral("overview");
+    if(n==QStringLiteral("emission_tab")) return QStringLiteral("settings");
+    if(n==QStringLiteral("errors")) return QStringLiteral("error");
+    if(n==QStringLiteral("actuators")) return QStringLiteral("actuator");
+    if(n==QStringLiteral("raw")) return QStringLiteral("data");
+    if(n==QStringLiteral("ecu")) return QStringLiteral("link");
+    if(c.contains(QStringLiteral("analysis"))) return QStringLiteral("chart");
+    if(c.contains(QStringLiteral("diagnostic"))) return QStringLiteral("diag");
     return QStringLiteral("page");
 }
 
@@ -118,7 +130,7 @@ static void styleNavigation(QMainWindow *w)
         const QString text=tabs->tabText(i).trimmed();
         QListWidgetItem *item=i<nav->count()?nav->item(i):new QListWidgetItem(nav);
         item->setText(text);
-        item->setIcon(navIcon(iconKind(pageOf(tabs->widget(i)),text)));
+        item->setIcon(navIcon(iconKind(pageOf(tabs->widget(i)),i)));
         item->setSizeHint(QSize(0,qMax(37,fm.height()+19)));
         item->setToolTip(text);
         longest=qMax(longest,fm.horizontalAdvance(text));
