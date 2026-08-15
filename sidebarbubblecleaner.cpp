@@ -42,15 +42,17 @@ static void styleSummaryTables(QMainWindow *w)
             header->setText(QString());
 
         table->setIconSize(QSize(24,18));
-        table->horizontalHeader()->setSectionResizeMode(0,QHeaderView::Stretch);
-        table->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Fixed);
-        table->horizontalHeader()->setSectionResizeMode(2,QHeaderView::Fixed);
-        table->horizontalHeader()->setSectionResizeMode(3,QHeaderView::Fixed);
+        QHeaderView *header=table->horizontalHeader();
+        header->setStretchLastSection(false);
+        header->setSectionResizeMode(0,QHeaderView::Stretch);
+        header->setSectionResizeMode(1,QHeaderView::Fixed);
+        header->setSectionResizeMode(2,QHeaderView::Fixed);
+        header->setSectionResizeMode(3,QHeaderView::Fixed);
         table->setColumnWidth(1,28);
         table->setColumnWidth(2,72);
         table->setColumnWidth(3,86);
 
-        table->horizontalHeader()->setStyleSheet(QStringLiteral(
+        header->setStyleSheet(QStringLiteral(
             "QHeaderView::section{"
             "background:#141c23;"
             "color:#ff9828;"
