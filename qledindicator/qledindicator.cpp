@@ -34,47 +34,89 @@ QLedIndicator::QLedIndicator(QWidget *parent) : QAbstractButton(parent)
     offColor2 = QColor(0,128,0);
 }
 
-void QLedIndicator::resizeEvent(QResizeEvent *event) {
+void QLedIndicator::resizeEvent(QResizeEvent *event)
+{
+    Q_UNUSED(event);
     update();
 }
 
-void QLedIndicator::paintEvent(QPaintEvent *event) {
-    qreal realSize = qMin(width(), height());
+void QLedIndicator::paintEvent(QPaintEvent *event)
+{
+    Q_UNUSED(event);
 
-    QRadialGradient gradient;
+    const qreal realSize = qMin(width(), height());
+    if (realSize <= 0.0)
+        return;
+
     QPainter painter(this);
-    QPen     pen(Qt::black);
-             pen.setWidth(1);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+    painter.translate(width() / 2.0, height() / 2.0);
+    painter.scale(realSize / scaledSize, realSize / scaledSize);
 
-    painter.setRenderHint(QPainter::Antialiasing);
-    painter.translate(width()/2, height()/2);
-    painter.scale(realSize/scaledSize, realSize/scaledSize);
+    /*
+     * DARK indicator: the widget geometry is deliberately unchanged.
+     * Everything below is painted inside the same 1000 x 1000 logical area,
+     * so replacing the old lamp cannot alter any page layout.
+     */
 
-    gradient = QRadialGradient (QPointF(-500,-500), 1500, QPointF(-500,-500));
-    gradient.setColorAt(0, QColor(224,224,224));
-    gradient.setColorAt(1, QColor(28,28,28));
-    painter.setPen(pen);
-    painter.setBrush(QBrush(gradient));
-    painter.drawEllipse(QPointF(0,0), 500, 500);
+    // Very subtle shadow around the lamp, kept inside the widget bounds.
+    QRadialGradient shadow(QPointF(0, 0), 495);
+    shadow.setColorAt(0.76, QColor(0, 0, 0, 0));
+    shadow.setColorAt(1.00, QColor(0, 0, 0, 150));
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(shadow);
+    painter.drawEllipse(QPointF(0, 0), 492, 492);
 
-    gradient = QRadialGradient (QPointF(500,500), 1500, QPointF(500,500));
-    gradient.setColorAt(0, QColor(224,224,224));
-    gradient.setColorAt(1, QColor(28,28,28));
-    painter.setPen(pen);
-    painter.setBrush(QBrush(gradient));
-    painter.drawEllipse(QPointF(0,0), 450, 450);
+    // Dark outer bezel.
+    QLinearGradient bezel(-350, -420, 350, 420);
+    bezel.setColorAt(0.00, QColor(92, 104, 112));
+    bezel.setColorAt(0.18, QColor(47, 56, 63));
+    bezel.setColorAt(0.52, QColor(17, 23, 28));
+    bezel.setColorAt(1.00, QColor(5, 8, 11));
+    painter.setPen(QPen(QColor(8, 12, 15), 34));
+    painter.setBrush(bezel);
+    painter.drawEllipse(QPointF(0, 0), 454, 454);
 
-    painter.setPen(pen);
-    if( isChecked() ) {
-        gradient = QRadialGradient (QPointF(-500,-500), 1500, QPointF(-500,-500));
-        gradient.setColorAt(0, onColor1);
-        gradient.setColorAt(1, onColor2);
-    } else {
-        gradient = QRadialGradient (QPointF(500,500), 1500, QPointF(500,500));
-        gradient.setColorAt(0, offColor1);
-        gradient.setColorAt(1, offColor2);
+    // Thin light rim (the selected "liseré"), intentionally restrained.
+    painter.setBrush(Qt::NoBrush);
+    painter.setPen(QPen(QColor(116, 132, 142), 28));
+    painter.drawEllipse(QPointF(0, 0), 411, 411);
+    painter.setPen(QPen(QColor(35, 44, 50), 22));
+    painter.drawEllipse(QPointF(0, 0), 382, 382);
+
+    const QColor c1 = isChecked() ? onColor1 : offColor1;
+    const QColor c2 = isChecked() ? onColor2 : offColor2;
+
+    // LED lens. Existing configured red/green colours are preserved.
+    QRadialGradient lens(QPointF(-130, -155), 560, QPointF(-145, -165));
+    QColor highlight = c1.lighter(isChecked() ? 145 : 112);
+    QColor body = c1;
+    QColor edge = c2.darker(isChecked() ? 112 : 138);
+    if (!isChecked()) {
+        body = body.darker(135);
+        highlight = highlight.darker(120);
     }
-    painter.setBrush(gradient);
-    painter.drawEllipse(QPointF(0,0), 400, 400);
-}
+    lens.setColorAt(0.00, highlight);
+    lens.setColorAt(0.30, body);
+    lens.setColorAt(0.78, c2);
+    lens.setColorAt(1.00, edge);
 
+    painter.setPen(QPen(QColor(4, 7, 9), 24));
+    painter.setBrush(lens);
+    painter.drawEllipse(QPointF(0, 0), 350, 350);
+
+    // Soft glass reflection, more visible when the indicator is active.
+    QRadialGradient reflection(QPointF(-145, -165), 260);
+    reflection.setColorAt(0.00, QColor(255, 255, 255, isChecked() ? 110 : 48));
+    reflection.setColorAt(0.45, QColor(255, 255, 255, isChecked() ? 28 : 10));
+    reflection.setColorAt(1.00, QColor(255, 255, 255, 0));
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(reflection);
+    painter.drawEllipse(QPointF(-105, -120), 205, 150);
+
+    // Fine inner contour keeps the lamp readable on the DARK background.
+    painter.setBrush(Qt::NoBrush);
+    painter.setPen(QPen(QColor(255, 255, 255, isChecked() ? 34 : 18), 14));
+    painter.drawEllipse(QPointF(0, 0), 330, 330);
+}
