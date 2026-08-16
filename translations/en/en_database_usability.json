@@ -1,8 +1,23 @@
 {
   "7216": "SEARCH DATABASE",
-  "7217": "e.g. MNE101351, Mini, Rover, Japan…",
+  "7217": "e.g. ECU, 1.3, MNE101351, Mini, Rover, Japan…",
   "7285": "Suggested results for “%1”",
   "7286": "Tolerant search: case, accents and O/0 are ignored.",
   "7287": "View XML sheet",
-  "7288": "DOCUMENTATION"
+  "7288": "DOCUMENTATION",
+  "7289": "QUICK ACCESS",
+  "7290": "All ECUs",
+  "7291": "MEMS 1.2",
+  "7292": "MEMS 1.3",
+  "7293": "MEMS 1.6",
+  "7294": "MEMS 1.9",
+  "7295": "Enter a reference, vehicle or generation, or use quick access.",
+  "7296": "%1 — generation sheet",
+  "7297": "%1 ECUs in this generation.",
+  "7298": "No dedicated XML/PDF sheet is available for this generation.",
+  "7299": "Select an ECU in the list to view its complete sheet.",
+  "7300": "GENERATION DOCUMENTATION",
+  "7301": "Local sheets are available for MEMS 1.3, 1.6 and 1.9.",
+  "7302": "“ECU” displays ECUs; “1.3” opens the MEMS 1.3 sheet directly.",
+  "7303": "No results. Keep typing or choose a quick access option."
 }

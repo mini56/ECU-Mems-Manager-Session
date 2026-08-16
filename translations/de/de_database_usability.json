@@ -1,8 +1,23 @@
 {
   "7216": "DATENBANK DURCHSUCHEN",
-  "7217": "Z. B. MNE101351, Mini, Rover, Japan…",
+  "7217": "Z. B. ECU, 1.3, MNE101351, Mini, Rover, Japan…",
   "7285": "Vorgeschlagene Ergebnisse für „%1“",
   "7286": "Tolerante Suche: Groß-/Kleinschreibung, Akzente und O/0 werden ignoriert.",
   "7287": "XML-Datenblatt anzeigen",
-  "7288": "DOKUMENTATION"
+  "7288": "DOKUMENTATION",
+  "7289": "DIREKTZUGRIFF",
+  "7290": "Alle ECU",
+  "7291": "MEMS 1.2",
+  "7292": "MEMS 1.3",
+  "7293": "MEMS 1.6",
+  "7294": "MEMS 1.9",
+  "7295": "Referenz, Fahrzeug oder Generation eingeben oder den Direktzugriff verwenden.",
+  "7296": "%1 — Generationsdatenblatt",
+  "7297": "%1 ECU in dieser Generation.",
+  "7298": "Für diese Generation ist kein eigenes XML/PDF-Datenblatt verfügbar.",
+  "7299": "Eine ECU in der Liste auswählen, um das vollständige Datenblatt anzuzeigen.",
+  "7300": "GENERATIONSDOKUMENTATION",
+  "7301": "Lokale Datenblätter sind für MEMS 1.3, 1.6 und 1.9 verfügbar.",
+  "7302": "„ECU“ zeigt die ECU an; „1.3“ öffnet direkt das MEMS-1.3-Datenblatt.",
+  "7303": "Keine Ergebnisse. Weiterschreiben oder einen Direktzugriff wählen."
 }

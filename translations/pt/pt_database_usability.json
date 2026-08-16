@@ -1,8 +1,23 @@
 {
   "7216": "PESQUISAR NA BASE",
-  "7217": "Ex. MNE101351, Mini, Rover, Japão…",
+  "7217": "Ex. ECU, 1.3, MNE101351, Mini, Rover, Japão…",
   "7285": "Resultados sugeridos para «%1»",
   "7286": "Pesquisa tolerante: maiúsculas/minúsculas, acentos e O/0 são ignorados.",
   "7287": "Ver ficha XML",
-  "7288": "DOCUMENTAÇÃO"
+  "7288": "DOCUMENTAÇÃO",
+  "7289": "ACESSO DIRETO",
+  "7290": "Todas as ECU",
+  "7291": "MEMS 1.2",
+  "7292": "MEMS 1.3",
+  "7293": "MEMS 1.6",
+  "7294": "MEMS 1.9",
+  "7295": "Introduza uma referência, um veículo ou uma geração, ou use o acesso direto.",
+  "7296": "%1 — ficha de geração",
+  "7297": "%1 ECU nesta geração.",
+  "7298": "Não existe uma ficha XML/PDF dedicada para esta geração.",
+  "7299": "Selecione uma ECU na lista para consultar a ficha completa.",
+  "7300": "DOCUMENTAÇÃO DAS GERAÇÕES",
+  "7301": "Fichas locais disponíveis para MEMS 1.3, 1.6 e 1.9.",
+  "7302": "«ECU» mostra as ECU; «1.3» abre diretamente a ficha MEMS 1.3.",
+  "7303": "Sem resultados. Continue a escrever ou escolha um acesso direto."
 }
