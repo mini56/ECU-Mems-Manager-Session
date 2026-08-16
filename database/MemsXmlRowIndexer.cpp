@@ -1,6 +1,7 @@
 #include "MemsGlobalSearchIndex.h"
 #include "MemsReferenceDatabase.h"
 
+#include <QAbstractScrollArea>
 #include <QApplication>
 #include <QCoreApplication>
 #include <QDateTime>
@@ -15,6 +16,7 @@
 #include <QSqlQuery>
 #include <QStandardPaths>
 #include <QTableWidget>
+#include <QTextBrowser>
 #include <QTimer>
 #include <QUuid>
 #include <QWidget>
@@ -292,13 +294,8 @@ void buildXmlRowIndex()
     QSqlDatabase::removeDatabase(connection);
 }
 
-void styleResultScroll(QWidget *browser)
+void styleVerticalBar(QScrollBar *bar)
 {
-    if(!browser) return;
-    QTableWidget *table=browser->findChild<QTableWidget*>();
-    if(!table) return;
-    table->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-    QScrollBar *bar=table->verticalScrollBar();
     if(!bar) return;
     bar->setFixedWidth(16);
     bar->setStyleSheet(QStringLiteral(
@@ -308,6 +305,31 @@ void styleResultScroll(QWidget *browser)
         "QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical{height:0;}"
         "QScrollBar::add-page:vertical,QScrollBar::sub-page:vertical{background:#111a21;}"));
     bar->show();
+}
+
+void styleResultScroll(QWidget *browser)
+{
+    if(!browser) return;
+
+    if(QTableWidget *table=browser->findChild<QTableWidget*>()){
+        table->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+        styleVerticalBar(table->verticalScrollBar());
+    }
+
+    const QList<QTextBrowser*> documents=browser->findChildren<QTextBrowser*>();
+    for(QTextBrowser *view:documents){
+        if(!view) continue;
+        view->setSizeAdjustPolicy(QAbstractScrollArea::AdjustIgnored);
+        view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+        view->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+        view->setFocusPolicy(Qt::StrongFocus);
+        QScrollBar *bar=view->verticalScrollBar();
+        if(!bar) continue;
+        bar->setSingleStep(28);
+        const int page=view->viewport()?view->viewport()->height()-40:0;
+        bar->setPageStep(page>64?page:64);
+        styleVerticalBar(bar);
+    }
 }
 
 class ResultScrollInstaller : public QObject
