@@ -29,7 +29,7 @@ set(SOURCES
     analogwidgets/abstractmeter900.cpp mainwindow.ui resources.qrc database/DatabaseManager.cpp
     database/MemsReferenceDatabase.cpp database/MemsReferenceDatabase.h
     database/MemsGlobalSearchIndex.cpp database/MemsGlobalSearchIndex.h database/MemsDatabaseExplorerV2.cpp
-    database/MemsDatabaseBrowser.cpp database/MemsDatabaseBrowser.h
+    database/MemsXmlRowIndexer.cpp database/MemsDatabaseBrowser.cpp database/MemsDatabaseBrowser.h
     uirebuild.cpp overviewrebuild.cpp majorpagesrebuild.cpp errorsvisualpatch.cpp analysismodernizer.cpp
     strictvisualrebuild.cpp dedicatedpagesrebuild.cpp visualcompletion.cpp taborderpatch.cpp navigationorderpatch.cpp darkstyle.cpp darkfixes.cpp
     settingstabdark.cpp sidebarbubblecleaner.cpp splashtextfix.cpp settingsvisualpatch.cpp)
