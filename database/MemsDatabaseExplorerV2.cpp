@@ -101,30 +101,6 @@ QString categoryLabel(const QString &category)
     return I18n::text(7326);
 }
 
-QString exactCategoryIntent(const QString &raw)
-{
-    const QString n=normalized(raw);
-    static const QSet<QString> ecu={QStringLiteral("ecu"),QStringLiteral("ecus"),QStringLiteral("calculateur"),QStringLiteral("calculateurs")};
-    static const QSet<QString> dtc={QStringLiteral("code"),QStringLiteral("codes"),QStringLiteral("dtc"),QStringLiteral("defaut"),QStringLiteral("defauts"),QStringLiteral("fault"),QStringLiteral("faults")};
-    static const QSet<QString> vehicle={QStringLiteral("vehicule"),QStringLiteral("vehicules"),QStringLiteral("vehicle"),QStringLiteral("vehicles")};
-    static const QSet<QString> command={QStringLiteral("commande"),QStringLiteral("commandes"),QStringLiteral("command"),QStringLiteral("commands")};
-    static const QSet<QString> wiring={QStringLiteral("cablage"),QStringLiteral("brochage"),QStringLiteral("pin"),QStringLiteral("pins"),QStringLiteral("broche"),QStringLiteral("broches"),QStringLiteral("wiring")};
-    static const QSet<QString> protocol={QStringLiteral("protocole"),QStringLiteral("protocol")};
-    static const QSet<QString> documentation={QStringLiteral("documentation"),QStringLiteral("document"),QStringLiteral("documents"),QStringLiteral("xml"),QStringLiteral("fiche"),QStringLiteral("fiches")};
-    static const QSet<QString> actuator={QStringLiteral("actionneur"),QStringLiteral("actionneurs"),QStringLiteral("actuator"),QStringLiteral("actuators")};
-    static const QSet<QString> data={QStringLiteral("trame"),QStringLiteral("trames"),QStringLiteral("mesure"),QStringLiteral("mesures"),QStringLiteral("pid"),QStringLiteral("capteur"),QStringLiteral("capteurs")};
-    if(ecu.contains(n)) return QStringLiteral("ecu");
-    if(dtc.contains(n)) return QStringLiteral("dtc");
-    if(vehicle.contains(n)) return QStringLiteral("vehicle");
-    if(command.contains(n)) return QStringLiteral("command");
-    if(wiring.contains(n)) return QStringLiteral("wiring");
-    if(protocol.contains(n)) return QStringLiteral("protocol");
-    if(documentation.contains(n)) return QStringLiteral("documentation");
-    if(actuator.contains(n)) return QStringLiteral("actuator");
-    if(data.contains(n)) return QStringLiteral("data");
-    return QString();
-}
-
 QString htmlStyle()
 {
     return QStringLiteral(
@@ -567,37 +543,13 @@ private:
         return rows;
     }
 
-    QVariantList combinedUnique(const QVariantList &first,const QVariantList &second) const
+    QVariantList fetchRows(const QString &raw,const QString &category,const QString &generation) const
     {
-        QVariantList result;
-        QSet<QString> seen;
-        const auto append=[&result,&seen](const QVariantList &source){
-            for(const QVariant &v:source){
-                const QVariantMap row=v.toMap();
-                const QString key=row.value(QStringLiteral("category")).toString()+QLatin1Char('|')+
-                                  row.value(QStringLiteral("source_table")).toString()+QLatin1Char('|')+
-                                  row.value(QStringLiteral("source_key")).toString()+QLatin1Char('|')+
-                                  row.value(QStringLiteral("title")).toString();
-                if(!seen.contains(key)){seen.insert(key);result.append(v);}
-            }
-        };
-        append(first);append(second);
-        return result;
-    }
-
-    QVariantList fetchRows(const QString &raw,QString category,const QString &generation) const
-    {
-        if(category==QStringLiteral("wiring")){
-            QVariantList rows=executeQuery(raw,QStringLiteral("wiring"),generation,180);
-            rows=combinedUnique(rows,executeQuery(raw.isEmpty()?QStringLiteral("broche"):raw,QStringLiteral("documentation"),generation,80));
-            return rows;
-        }
         return executeQuery(raw,category,generation,category.isEmpty()?140:220);
     }
 
-    QVector<QVariantMap> cleanAndSort(const QVariantList &fetched,const QString &raw,const QString &requestedCategory) const
+    QVector<QVariantMap> cleanAndSort(const QVariantList &fetched,const QString &requestedCategory) const
     {
-        Q_UNUSED(raw);
         QVector<QVariantMap> rows;
         QSet<QString> seen;
         QSet<QString> ecuTargetTitles;
@@ -618,7 +570,9 @@ private:
                 bool numeric=true;for(const QChar ch:title){if(!ch.isDigit()){numeric=false;break;}}
                 if(numeric) continue;
             }
-            const QString key=category+QLatin1Char('|')+title.toCaseFolded()+QLatin1Char('|')+row.value(QStringLiteral("generation")).toString();
+            const QString key=category+QLatin1Char('|')+source+QLatin1Char('|')+
+                              row.value(QStringLiteral("source_key")).toString()+QLatin1Char('|')+
+                              title.toCaseFolded()+QLatin1Char('|')+row.value(QStringLiteral("generation")).toString();
             if(seen.contains(key)) continue;
             seen.insert(key);
             rows.append(row);
@@ -652,9 +606,8 @@ private:
         if(!m_results) return;
         if(m_debounce) m_debounce->stop();
         const QString raw=m_search?m_search->text().trimmed():QString();
-        QString category=filterCategory();
+        const QString category=filterCategory();
         QString generation=filterGeneration();
-        if(category.isEmpty() && generation.isEmpty()) category=exactCategoryIntent(raw);
         if(generation.isEmpty()) generation=generationFromText(raw);
 
         if(raw.isEmpty() && category.isEmpty() && generation.isEmpty()){
@@ -665,10 +618,8 @@ private:
             return;
         }
 
-        QString effectiveRaw=raw;
-        if(!category.isEmpty() && exactCategoryIntent(raw)==category) effectiveRaw.clear();
-        const QVariantList fetched=fetchRows(effectiveRaw,category,generation);
-        QVector<QVariantMap> rows=cleanAndSort(fetched,raw,category);
+        const QVariantList fetched=fetchRows(raw,category,generation);
+        QVector<QVariantMap> rows=cleanAndSort(fetched,category);
         populate(rows);
         if(m_count) m_count->setText(I18n::text(7324).arg(QString::number(rows.size())));
         updateSuggestions(raw,rows);
