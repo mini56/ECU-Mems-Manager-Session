@@ -3,7 +3,9 @@
 #include <QApplication>
 #include <QEvent>
 #include <QFrame>
+#include <QGridLayout>
 #include <QIcon>
+#include <QLabel>
 #include <QListWidget>
 #include <QMainWindow>
 #include <QPainter>
@@ -141,6 +143,63 @@ static QIcon iconForRank(int rank)
     return QIcon(pm);
 }
 
+static void fitRawSpacing(QMainWindow *window)
+{
+    if (!window) return;
+    QTabWidget *tabs = window->findChild<QTabWidget*>(QStringLiteral("Tab_main"));
+    if (!tabs) return;
+
+    QWidget *page = nullptr;
+    for (int i = 0; i < tabs->count(); ++i)
+    {
+        QWidget *candidate = realPage(tabs->widget(i));
+        if (candidate && candidate->objectName() == QStringLiteral("raw"))
+        {
+            page = candidate;
+            break;
+        }
+    }
+    if (!page) return;
+
+    QWidget *left = page->findChild<QWidget*>(QStringLiteral("raw_1"));
+    QWidget *right = page->findChild<QWidget*>(QStringLiteral("raw_2"));
+    if (!left || !right) return;
+
+    QGridLayout *leftGrid = qobject_cast<QGridLayout*>(left->layout());
+    QGridLayout *rightGrid = qobject_cast<QGridLayout*>(right->layout());
+    const int rows = qMax(leftGrid ? leftGrid->rowCount() : 1,
+                          rightGrid ? rightGrid->rowCount() : 1);
+    if (rows <= 0) return;
+
+    // Utiliser la hauteur réellement visible du QTabWidget, et non l'ancienne
+    // géométrie historique de raw_1/raw_2. À 1366x768 cela laisse respirer les
+    // lignes tout en conservant la dernière ligne visible.
+    const int visibleHeight = qMax(400, tabs->height());
+    const int rowHeight = qBound(12, (visibleHeight - 28) / rows, 17);
+    const int verticalGap = rowHeight >= 15 ? 1 : 0;
+
+    auto fitBlock = [rowHeight, verticalGap](QWidget *block, QGridLayout *grid)
+    {
+        if (!block || !grid) return;
+        grid->setContentsMargins(0,0,0,0);
+        grid->setVerticalSpacing(verticalGap);
+        grid->setSizeConstraint(QLayout::SetDefaultConstraint);
+        for (int r = 0; r < grid->rowCount(); ++r)
+            grid->setRowMinimumHeight(r, rowHeight);
+
+        for (QLabel *label : block->findChildren<QLabel*>())
+        {
+            label->setWordWrap(false);
+            label->setMinimumHeight(rowHeight);
+            label->setMaximumHeight(rowHeight);
+            label->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+        }
+    };
+
+    fitBlock(left, leftGrid);
+    fitBlock(right, rightGrid);
+}
+
 static QWidget *tabFromItem(QListWidgetItem *item)
 {
     if (!item) return nullptr;
@@ -223,6 +282,7 @@ static void applyFinalMenu(QMainWindow *window)
     }
 
     installMappedConnections(window, tabs, nav);
+    fitRawSpacing(window);
     window->setProperty("finalNavigationApplied", true);
 }
 
