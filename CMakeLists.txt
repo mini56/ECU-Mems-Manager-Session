@@ -38,6 +38,10 @@ target_sources(${PNAME} PRIVATE ${CMAKE_SOURCE_DIR}/desktopshortcut.cpp ${CMAKE_
 if(WIN32)
     target_sources(${PNAME} PRIVATE ${CMAKE_SOURCE_DIR}/appicon.rc)
     target_link_libraries(${PNAME} PRIVATE ole32 shell32 uuid)
+
+    add_executable(ecu_mems_uninstaller WIN32
+        uninstaller.cpp i18n.cpp i18n.h appicon.rc)
+    target_link_libraries(ecu_mems_uninstaller PRIVATE Qt5::Widgets)
 endif()
 
 add_custom_command(TARGET ${PNAME} POST_BUILD
