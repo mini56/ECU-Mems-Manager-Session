@@ -37,6 +37,14 @@ QByteArray referencePackageSignature(const QString &root)
     };
 
     QCryptographicHash hash(QCryptographicHash::Sha256);
+
+    // IMPORTANT: the cache belongs to one GitHub Actions build number.
+    // A new # must never reuse the database/search cache from a previous #,
+    // even when the embedded reference files happen to have identical bytes.
+    hash.addData("build:",6);
+    hash.addData(QByteArray(APP_BUILD_NUMBER));
+    hash.addData("\0",1);
+
     for(const QString &relative:relativeFiles){
         QFile file(root+QLatin1Char('/')+relative);
         if(!file.open(QIODevice::ReadOnly)) return QByteArray();
@@ -134,6 +142,7 @@ bool refreshMemsReferencePackage(MemsReferencePackageAction *detectedAction)
     const QString destinationRoot=cacheRoot();
     QDir().mkpath(destinationRoot);
 
+    // New build/package: remove every generated reference artifact before rebuild.
     removeMatching(destinationRoot,QStringList()
         <<QStringLiteral("ecu_mems_reference_*.sqlite")
         <<QStringLiteral("ecu_mems_reference_*.sqlite-*")
