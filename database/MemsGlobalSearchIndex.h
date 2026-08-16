@@ -1,6 +1,8 @@
 #ifndef MEMSGLOBALSEARCHINDEX_H
 #define MEMSGLOBALSEARCHINDEX_H
 
+#include <QDesktopServices>
+#include <QStandardPaths>
 #include <QString>
 #include <QVariantList>
 
