@@ -29,6 +29,7 @@ QByteArray referencePackageSignature(const QString &root)
         QStringLiteral("mems_reference_seed_2.qz64"),
         QStringLiteral("mems_reference_seed_3.qz64"),
         QStringLiteral("mems_reference_seed_4.qz64"),
+        QStringLiteral("research_enrichment.qz64"),
         QStringLiteral("fiches/mems_1_3.xml.qz64"),
         QStringLiteral("fiches/mems_1_6.xml.qz64"),
         QStringLiteral("fiches/mems_1_9.xml.qz64")

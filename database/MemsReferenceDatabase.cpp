@@ -31,6 +31,23 @@ bool expandQz64(const QString &source,const QString &destination)
     return output.write(raw)==raw.size();
 }
 
+bool executeQz64Sql(QSqlDatabase &database,const QString &path)
+{
+    QFile file(path);
+    if(!file.open(QIODevice::ReadOnly|QIODevice::Text)) return false;
+    const QByteArray sqlBytes=qUncompress(QByteArray::fromBase64(file.readAll().trimmed()));
+    if(sqlBytes.isEmpty()) return false;
+
+    QSqlQuery query(database);
+    const QList<QByteArray> statements=sqlBytes.split('\n');
+    for(const QByteArray &line:statements){
+        const QString statement=QString::fromUtf8(line).trimmed();
+        if(statement.isEmpty() || statement.startsWith(QStringLiteral("--"))) continue;
+        if(!query.exec(statement)) return false;
+    }
+    return true;
+}
+
 }
 
 MemsReferenceDatabase::MemsReferenceDatabase()
@@ -51,7 +68,7 @@ bool MemsReferenceDatabase::open()
 
     const QString cacheRoot=cacheReferenceRoot();
     QDir().mkpath(cacheRoot);
-    m_databasePath=cacheRoot+QStringLiteral("/ecu_mems_reference_r3.sqlite");
+    m_databasePath=cacheRoot+QStringLiteral("/ecu_mems_reference_r4.sqlite");
 
     if(!QFileInfo::exists(m_databasePath)){
         const QString seedConnection=QStringLiteral("%1_SEED").arg(m_connectionName);
@@ -83,6 +100,10 @@ bool MemsReferenceDatabase::open()
                 if(!query.exec(statement)){ok=false;break;}
             }
         }
+
+        if(ok)
+            ok=executeQz64Sql(buildDb,referenceRoot()+QStringLiteral("/research_enrichment.qz64"));
+
         buildDb.close();
         buildDb=QSqlDatabase();
         QSqlDatabase::removeDatabase(seedConnection);
