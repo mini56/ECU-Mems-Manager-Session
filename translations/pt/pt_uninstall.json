@@ -1,0 +1,13 @@
+{
+  "0033": "Desinstalar ECU MEMS Manager",
+  "0034": "Esta operação remove apenas os ficheiros instalados pelo ECU MEMS Manager e o respetivo atalho. Os ficheiros pessoais colocados na mesma pasta não são eliminados.",
+  "0035": "Manter o meu perfil e dados locais (recomendado)",
+  "0036": "Se esta opção permanecer selecionada, as preferências, o perfil e a cache MEMS local serão mantidos para uma futura reinstalação. Se a desmarcar, esses dados locais serão eliminados.",
+  "0037": "Desinstalar",
+  "0038": "Cancelar",
+  "0039": "Confirmar a desinstalação do ECU MEMS Manager? O seu perfil de utilizador será mantido.",
+  "0040": "O manifesto de instalação está ausente ou é inválido. Por segurança, nenhum ficheiro será eliminado.",
+  "0041": "Não foi possível iniciar a desinstalação. Nenhum ficheiro foi eliminado.",
+  "0042": "O ECU MEMS Manager ainda está em execução. Feche completamente o programa antes de iniciar a desinstalação.",
+  "0043": "Escolheu também eliminar o perfil, as preferências e a cache MEMS local. Esta eliminação é irreversível. Confirmar a desinstalação completa?"
+}
