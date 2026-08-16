@@ -142,10 +142,43 @@ int MemsReferenceDatabase::scalarInt(const QString &sql) const
 
 QVariantList MemsReferenceDatabase::searchEcus(const QString &text,const QString &generation,int limit) const
 {
-    QVariantMap bind; bind.insert(QStringLiteral(":query"),text.trimmed().toUpper()); bind.insert(QStringLiteral(":generation"),generation.trimmed()); bind.insert(QStringLiteral(":limit"),qBound(1,limit,1000));
-    return queryList(QStringLiteral(
-        "SELECT e.part_number,e.brand,e.system_family,e.injection,e.makes,e.models,e.year_from,e.year_to,e.n_fitments,e.n_files,e.notes FROM ecu_target e "
-        "WHERE (:generation='' OR e.system_family LIKE '%' || :generation || '%') AND (:query='' OR UPPER(e.part_number) LIKE '%' || :query || '%' OR UPPER(COALESCE(e.makes,'')) LIKE '%' || :query || '%' OR UPPER(COALESCE(e.models,'')) LIKE '%' || :query || '%' OR UPPER(COALESCE(e.notes,'')) LIKE '%' || :query || '%' OR EXISTS (SELECT 1 FROM ecu_fitment_target f WHERE f.part_number=e.part_number AND (UPPER(COALESCE(f.make,'')) LIKE '%' || :query || '%' OR UPPER(COALESCE(f.model,'')) LIKE '%' || :query || '%' OR UPPER(COALESCE(f.variant,'')) LIKE '%' || :query || '%' OR UPPER(COALESCE(f.engine,'')) LIKE '%' || :query || '%' OR UPPER(COALESCE(f.market,'')) LIKE '%' || :query || '%' OR UPPER(COALESCE(f.alt_refs,'')) LIKE '%' || :query || '%'))) ORDER BY e.system_family,e.part_number LIMIT :limit"),bind);
+    QString sql=QStringLiteral(
+        "SELECT e.part_number,e.brand,e.system_family,e.injection,e.makes,e.models,e.year_from,e.year_to,e.n_fitments,e.n_files,e.notes "
+        "FROM ecu_target e WHERE 1=1");
+    QVariantMap bind;
+
+    const QString generationText=generation.trimmed();
+    if(!generationText.isEmpty()){
+        sql+=QStringLiteral(" AND e.system_family LIKE :generation COLLATE NOCASE");
+        bind.insert(QStringLiteral(":generation"),QStringLiteral("%%1%").arg(generationText));
+    }
+
+    const QString searchText=text.trimmed();
+    if(!searchText.isEmpty()){
+        const QString pattern=QStringLiteral("%%1%").arg(searchText);
+        sql+=QStringLiteral(
+            " AND ("
+            "e.part_number LIKE :q0 COLLATE NOCASE OR "
+            "COALESCE(e.brand,'') LIKE :q1 COLLATE NOCASE OR "
+            "COALESCE(e.system_family,'') LIKE :q2 COLLATE NOCASE OR "
+            "COALESCE(e.injection,'') LIKE :q3 COLLATE NOCASE OR "
+            "COALESCE(e.makes,'') LIKE :q4 COLLATE NOCASE OR "
+            "COALESCE(e.models,'') LIKE :q5 COLLATE NOCASE OR "
+            "COALESCE(e.notes,'') LIKE :q6 COLLATE NOCASE OR "
+            "EXISTS (SELECT 1 FROM ecu_fitment_target f WHERE f.part_number=e.part_number AND ("
+            "COALESCE(f.make,'') LIKE :q7 COLLATE NOCASE OR "
+            "COALESCE(f.model,'') LIKE :q8 COLLATE NOCASE OR "
+            "COALESCE(f.variant,'') LIKE :q9 COLLATE NOCASE OR "
+            "COALESCE(f.engine,'') LIKE :q10 COLLATE NOCASE OR "
+            "COALESCE(f.market,'') LIKE :q11 COLLATE NOCASE OR "
+            "COALESCE(f.alt_refs,'') LIKE :q12 COLLATE NOCASE)))");
+        for(int i=0;i<=12;++i)
+            bind.insert(QStringLiteral(":q%1").arg(i),pattern);
+    }
+
+    sql+=QStringLiteral(" ORDER BY e.system_family,e.part_number LIMIT %1")
+        .arg(qBound(1,limit,1000));
+    return queryList(sql,bind);
 }
 
 QVariantMap MemsReferenceDatabase::ecu(const QString &partNumber) const
