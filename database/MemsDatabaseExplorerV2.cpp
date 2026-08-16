@@ -38,8 +38,6 @@
 #include <QVector>
 #include <QXmlStreamReader>
 
-#include <algorithm>
-
 namespace {
 
 QString normalized(QString input)
@@ -125,41 +123,6 @@ QString exactCategoryIntent(const QString &raw)
     if(actuator.contains(n)) return QStringLiteral("actuator");
     if(data.contains(n)) return QStringLiteral("data");
     return QString();
-}
-
-int categoryPriority(const QString &category,const QString &raw)
-{
-    const QString n=normalized(raw);
-    const bool wiring=n.contains(QStringLiteral("broche")) || n.contains(QStringLiteral("pin")) ||
-                      n.contains(QStringLiteral("cablage")) || n.contains(QStringLiteral("fil")) ||
-                      n.contains(QStringLiteral("wire")) || n.contains(QStringLiteral("connecteur"));
-    const bool dtc=n.contains(QStringLiteral("dtc")) || n.contains(QStringLiteral("code")) ||
-                   n.contains(QStringLiteral("defaut")) || n.contains(QStringLiteral("fault"));
-    const bool generation=!generationFromText(raw).isEmpty();
-    if(wiring){
-        if(category==QStringLiteral("wiring")) return 0;
-        if(category==QStringLiteral("documentation")) return 1;
-        if(category==QStringLiteral("protocol")) return 2;
-    }
-    if(dtc && category==QStringLiteral("dtc")) return 0;
-    if(generation){
-        if(category==QStringLiteral("documentation")) return 0;
-        if(category==QStringLiteral("ecu")) return 1;
-        if(category==QStringLiteral("protocol")) return 2;
-        if(category==QStringLiteral("command")) return 3;
-        if(category==QStringLiteral("data")) return 4;
-        if(category==QStringLiteral("dtc")) return 5;
-    }
-    if(category==QStringLiteral("ecu")) return 10;
-    if(category==QStringLiteral("vehicle")) return 11;
-    if(category==QStringLiteral("dtc")) return 12;
-    if(category==QStringLiteral("command")) return 13;
-    if(category==QStringLiteral("wiring")) return 14;
-    if(category==QStringLiteral("protocol")) return 15;
-    if(category==QStringLiteral("documentation")) return 16;
-    if(category==QStringLiteral("actuator")) return 17;
-    if(category==QStringLiteral("data")) return 18;
-    return 30;
 }
 
 QString htmlStyle()
@@ -634,6 +597,7 @@ private:
 
     QVector<QVariantMap> cleanAndSort(const QVariantList &fetched,const QString &raw,const QString &requestedCategory) const
     {
+        Q_UNUSED(raw);
         QVector<QVariantMap> rows;
         QSet<QString> seen;
         QSet<QString> ecuTargetTitles;
@@ -659,12 +623,6 @@ private:
             seen.insert(key);
             rows.append(row);
         }
-        std::sort(rows.begin(),rows.end(),[raw](const QVariantMap &a,const QVariantMap &b){
-            const int pa=categoryPriority(a.value(QStringLiteral("category")).toString(),raw);
-            const int pb=categoryPriority(b.value(QStringLiteral("category")).toString(),raw);
-            if(pa!=pb) return pa<pb;
-            return QString::localeAwareCompare(a.value(QStringLiteral("title")).toString(),b.value(QStringLiteral("title")).toString())<0;
-        });
         return rows;
     }
 
