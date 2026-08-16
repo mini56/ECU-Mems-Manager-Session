@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
     g_startupStatus = nullptr;
     g_splashProgressCallback = nullptr;
 
-    window.show();
+    window.showMaximized();
     installFinalNavigation(&app, &window);
     const int result = app.exec();
     database.close();

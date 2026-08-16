@@ -19,24 +19,24 @@ static void applySplashTextFix(QWidget *widget)
     if(!belongsToStartupSplash(widget)) return;
 
     if(QProgressBar *progress=qobject_cast<QProgressBar*>(widget)) {
-        if(progress->property("splashBlackTextApplied").toBool()) return;
-        progress->setProperty("splashBlackTextApplied",true);
+        if(progress->property("splashWhiteTextApplied").toBool()) return;
+        progress->setProperty("splashWhiteTextApplied",true);
         QPalette palette=progress->palette();
-        palette.setColor(QPalette::Text,Qt::black);
-        palette.setColor(QPalette::HighlightedText,Qt::black);
+        palette.setColor(QPalette::Text,Qt::white);
+        palette.setColor(QPalette::HighlightedText,Qt::white);
         progress->setPalette(palette);
-        progress->setStyleSheet(QStringLiteral("QProgressBar{color:#000000;}"));
+        progress->setStyleSheet(QStringLiteral("QProgressBar{color:#ffffff;}"));
         return;
     }
 
     if(QLabel *label=qobject_cast<QLabel*>(widget)) {
-        if(label->property("splashBlackTextApplied").toBool()) return;
-        label->setProperty("splashBlackTextApplied",true);
+        if(label->property("splashWhiteTextApplied").toBool()) return;
+        label->setProperty("splashWhiteTextApplied",true);
         QPalette palette=label->palette();
-        palette.setColor(QPalette::WindowText,Qt::black);
-        palette.setColor(QPalette::Text,Qt::black);
+        palette.setColor(QPalette::WindowText,Qt::white);
+        palette.setColor(QPalette::Text,Qt::white);
         label->setPalette(palette);
-        label->setStyleSheet(QStringLiteral("color:#000000;background:transparent;"));
+        label->setStyleSheet(QStringLiteral("color:#ffffff;background:transparent;"));
     }
 }
 
