@@ -94,6 +94,13 @@ jobs:
           }
           Copy-Item "$build\translations" "$dist\translations" -Recurse -Force
 
+          # La base MEMS hors ligne est generee/copied par CMake dans build/database.
+          # Elle doit imperativement voyager avec l'application.
+          if (-not (Test-Path "$build\database\reference")) {
+            throw "Base MEMS hors ligne absente du build"
+          }
+          Copy-Item "$build\database" "$dist\database" -Recurse -Force
+
           $rootDlls = @(
             "$qtBin\Qt5Core.dll",
             "$qtBin\Qt5Gui.dll",
@@ -137,7 +144,15 @@ jobs:
             "translations\es\es.json",
             "translations\it\it.json",
             "translations\pt\pt.json",
-            "translations\de\de.json"
+            "translations\de\de.json",
+            "database\reference\manifest.json",
+            "database\reference\mems_reference_seed_1.qz64",
+            "database\reference\mems_reference_seed_2.qz64",
+            "database\reference\mems_reference_seed_3.qz64",
+            "database\reference\mems_reference_seed_4.qz64",
+            "database\reference\fiches\mems_1_3.xml.qz64",
+            "database\reference\fiches\mems_1_6.xml.qz64",
+            "database\reference\fiches\mems_1_9.xml.qz64"
           )
           foreach ($file in $required) {
             $full = Join-Path $dist $file
@@ -145,6 +160,53 @@ jobs:
             if ((Get-Item $full).Length -le 0) { throw "Fichier obligatoire vide: $file" }
             Write-Host "OK: $file - $((Get-Item $full).Length) octets"
           }
+
+          # Validation du contenu de la base embarquee avant publication de l'artefact.
+          # Le format qz64 correspond a qCompress Qt : taille big-endian sur 4 octets + flux zlib.
+          $env:MEMS_REFERENCE_DIR = "$dist\database\reference"
+          @'
+          import base64
+          import os
+          import pathlib
+          import sqlite3
+          import tempfile
+          import zlib
+
+          root = pathlib.Path(os.environ["MEMS_REFERENCE_DIR"])
+          encoded = b"".join(
+              (root / f"mems_reference_seed_{i}.qz64").read_bytes().strip()
+              for i in range(1, 5)
+          )
+          packed = base64.b64decode(encoded)
+          if len(packed) < 5:
+              raise SystemExit("Seed MEMS invalide: contenu compresse trop court")
+          expected = int.from_bytes(packed[:4], "big")
+          sql_bytes = zlib.decompress(packed[4:])
+          if len(sql_bytes) != expected:
+              raise SystemExit(f"Seed MEMS invalide: {len(sql_bytes)} octets reconstruits, {expected} attendus")
+
+          smoke = pathlib.Path(tempfile.gettempdir()) / "ecu_mems_reference_smoke.sqlite"
+          if smoke.exists():
+              smoke.unlink()
+          con = sqlite3.connect(smoke)
+          try:
+              for statement in sql_bytes.decode("utf-8").splitlines():
+                  statement = statement.strip()
+                  if statement:
+                      con.execute(statement)
+              con.commit()
+              ecu_count = con.execute("SELECT COUNT(*) FROM ecu_target").fetchone()[0]
+              fitment_count = con.execute("SELECT COUNT(*) FROM ecu_fitment_target").fetchone()[0]
+              command_count = con.execute("SELECT COUNT(*) FROM protocol_commands").fetchone()[0]
+              if ecu_count <= 0 or fitment_count <= 0 or command_count <= 0:
+                  raise SystemExit("Base MEMS reconstruite mais vide")
+              print(f"OK base MEMS: {ecu_count} ECU, {fitment_count} affectations, {command_count} commandes")
+          finally:
+              con.close()
+              if smoke.exists():
+                  smoke.unlink()
+          '@ | python -
+          if ($LASTEXITCODE -ne 0) { throw "Echec validation de la base MEMS hors ligne" }
 
           # Test de demarrage reel : si une DLL/plugin manque, le processus quitte immediatement.
           $proc = Start-Process "$dist\ecu_mems_manager.exe" -WorkingDirectory $dist -PassThru
