@@ -43,6 +43,16 @@ set(SOURCES
     settingstabdark.cpp sidebarbubblecleaner.cpp splashtextfix.cpp settingsvisualpatch.cpp)
 add_executable(${PNAME} ${SOURCES})
 target_sources(${PNAME} PRIVATE ${CMAKE_SOURCE_DIR}/desktopshortcut.cpp ${CMAKE_SOURCE_DIR}/desktopshortcut.h)
+
+# Functional search self-test: exercises the same reference DB + global index code
+# used by the application, without starting the GUI.
+add_executable(mems_search_selftest
+    database/MemsSearchSelfTest.cpp
+    database/MemsReferenceDatabase.cpp database/MemsReferenceDatabase.h
+    database/MemsGlobalSearchIndex.cpp database/MemsGlobalSearchIndex.h)
+target_link_libraries(mems_search_selftest PRIVATE Qt5::Core Qt5::Sql)
+add_dependencies(${PNAME} mems_search_selftest)
+
 if(WIN32)
     target_sources(${PNAME} PRIVATE ${CMAKE_SOURCE_DIR}/appicon.rc)
     target_link_libraries(${PNAME} PRIVATE ole32 shell32 uuid)
@@ -61,7 +71,8 @@ add_custom_command(TARGET ${PNAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/translations/pt" "$<TARGET_FILE_DIR:${PNAME}>/translations/pt"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/translations/de" "$<TARGET_FILE_DIR:${PNAME}>/translations/de"
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PNAME}>/database"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/database/reference" "$<TARGET_FILE_DIR:${PNAME}>/database/reference")
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/database/reference" "$<TARGET_FILE_DIR:${PNAME}>/database/reference"
+    COMMAND "$<TARGET_FILE:mems_search_selftest>")
 
 if(MSVC)
     add_compile_definitions(_HAS_STD_BYTE=0)
