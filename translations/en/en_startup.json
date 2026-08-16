@@ -1,0 +1,20 @@
+{
+  "0015": "Loading user profile...",
+  "0016": "User profile loaded",
+  "0017": "Checking MEMS database...",
+  "0018": "Installing MEMS database...",
+  "0019": "Updating MEMS database...",
+  "0020": "MEMS database up to date",
+  "0021": "Building search index...",
+  "0022": "Search index ready",
+  "0023": "Detecting serial ports: %1 %",
+  "0024": "Serial ports detected",
+  "0025": "Loading interface...",
+  "0026": "Interface ready",
+  "0027": "Unable to prepare the MEMS database.",
+  "0028": "Unable to build the search index.",
+  "0029": "Serial port detection pending",
+  "0030": "Interface pending",
+  "0031": "MEMS database pending",
+  "0032": "Search index pending"
+}

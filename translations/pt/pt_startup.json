@@ -1,0 +1,20 @@
+{
+  "0015": "A carregar perfil de utilizador...",
+  "0016": "Perfil de utilizador carregado",
+  "0017": "A verificar base de dados MEMS...",
+  "0018": "A instalar base de dados MEMS...",
+  "0019": "A atualizar base de dados MEMS...",
+  "0020": "Base de dados MEMS atualizada",
+  "0021": "A construir índice de pesquisa...",
+  "0022": "Índice de pesquisa pronto",
+  "0023": "A detetar portas série: %1 %",
+  "0024": "Portas série detetadas",
+  "0025": "A carregar interface...",
+  "0026": "Interface pronta",
+  "0027": "Não foi possível preparar a base de dados MEMS.",
+  "0028": "Não foi possível construir o índice de pesquisa.",
+  "0029": "Deteção de portas série em espera",
+  "0030": "Interface em espera",
+  "0031": "Base de dados MEMS em espera",
+  "0032": "Índice de pesquisa em espera"
+}

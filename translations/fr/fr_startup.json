@@ -1,0 +1,20 @@
+{
+  "0015": "Chargement du profil utilisateur...",
+  "0016": "Profil utilisateur chargé",
+  "0017": "Vérification de la base MEMS...",
+  "0018": "Installation de la base MEMS...",
+  "0019": "Mise à jour de la base MEMS...",
+  "0020": "Base MEMS à jour",
+  "0021": "Construction de l'index de recherche...",
+  "0022": "Index de recherche prêt",
+  "0023": "Détection des ports série : %1 %",
+  "0024": "Ports série détectés",
+  "0025": "Chargement de l'interface...",
+  "0026": "Interface prête",
+  "0027": "Impossible de préparer la base MEMS.",
+  "0028": "Impossible de construire l'index de recherche.",
+  "0029": "Détection des ports série en attente",
+  "0030": "Interface en attente",
+  "0031": "Base MEMS en attente",
+  "0032": "Index de recherche en attente"
+}

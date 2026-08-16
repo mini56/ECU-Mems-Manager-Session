@@ -1,0 +1,20 @@
+{
+  "0015": "Caricamento profilo utente...",
+  "0016": "Profilo utente caricato",
+  "0017": "Verifica database MEMS...",
+  "0018": "Installazione database MEMS...",
+  "0019": "Aggiornamento database MEMS...",
+  "0020": "Database MEMS aggiornato",
+  "0021": "Creazione indice di ricerca...",
+  "0022": "Indice di ricerca pronto",
+  "0023": "Rilevamento porte seriali: %1 %",
+  "0024": "Porte seriali rilevate",
+  "0025": "Caricamento interfaccia...",
+  "0026": "Interfaccia pronta",
+  "0027": "Impossibile preparare il database MEMS.",
+  "0028": "Impossibile creare l'indice di ricerca.",
+  "0029": "Rilevamento porte seriali in attesa",
+  "0030": "Interfaccia in attesa",
+  "0031": "Database MEMS in attesa",
+  "0032": "Indice di ricerca in attesa"
+}

@@ -1,0 +1,20 @@
+{
+  "0015": "Benutzerprofil wird geladen...",
+  "0016": "Benutzerprofil geladen",
+  "0017": "MEMS-Datenbank wird geprüft...",
+  "0018": "MEMS-Datenbank wird installiert...",
+  "0019": "MEMS-Datenbank wird aktualisiert...",
+  "0020": "MEMS-Datenbank ist aktuell",
+  "0021": "Suchindex wird erstellt...",
+  "0022": "Suchindex bereit",
+  "0023": "Serielle Anschlüsse werden erkannt: %1 %",
+  "0024": "Serielle Anschlüsse erkannt",
+  "0025": "Benutzeroberfläche wird geladen...",
+  "0026": "Benutzeroberfläche bereit",
+  "0027": "Die MEMS-Datenbank konnte nicht vorbereitet werden.",
+  "0028": "Der Suchindex konnte nicht erstellt werden.",
+  "0029": "Erkennung serieller Anschlüsse wartet",
+  "0030": "Benutzeroberfläche wartet",
+  "0031": "MEMS-Datenbank wartet",
+  "0032": "Suchindex wartet"
+}
