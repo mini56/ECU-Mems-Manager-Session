@@ -1,3 +1,5 @@
+#include "MemsReferencePackageRefresh.h"
+
 #include <QCoreApplication>
 #include <QCryptographicHash>
 #include <QDir>
@@ -5,11 +7,21 @@
 #include <QFileInfo>
 #include <QSaveFile>
 #include <QStandardPaths>
-#include <QTimer>
 
 namespace {
 
-QByteArray referencePackageSignature(const QString &referenceRoot)
+QString referenceRoot()
+{
+    return QCoreApplication::applicationDirPath()+QStringLiteral("/database/reference");
+}
+
+QString cacheRoot()
+{
+    return QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)
+        +QStringLiteral("/reference");
+}
+
+QByteArray referencePackageSignature(const QString &root)
 {
     const QStringList relativeFiles={
         QStringLiteral("manifest.json"),
@@ -24,7 +36,7 @@ QByteArray referencePackageSignature(const QString &referenceRoot)
 
     QCryptographicHash hash(QCryptographicHash::Sha256);
     for(const QString &relative:relativeFiles){
-        QFile file(referenceRoot+QLatin1Char('/')+relative);
+        QFile file(root+QLatin1Char('/')+relative);
         if(!file.open(QIODevice::ReadOnly)) return QByteArray();
         hash.addData(relative.toUtf8());
         hash.addData("\0",1);
@@ -50,16 +62,26 @@ bool writeMarker(const QString &path,const QByteArray &signature)
     return file.commit();
 }
 
-bool cacheComplete(const QString &cacheRoot)
+bool cacheComplete(const QString &root)
 {
-    QDir root(cacheRoot);
-    if(root.entryList(QStringList()<<QStringLiteral("ecu_mems_reference_*.sqlite"),QDir::Files).isEmpty())
+    QDir dir(root);
+    if(dir.entryList(QStringList()<<QStringLiteral("ecu_mems_reference_*.sqlite"),QDir::Files).isEmpty())
         return false;
 
-    const QString fiches=cacheRoot+QStringLiteral("/fiches/");
+    const QString fiches=root+QStringLiteral("/fiches/");
     return QFileInfo::exists(fiches+QStringLiteral("mems_1_3.xml")) &&
            QFileInfo::exists(fiches+QStringLiteral("mems_1_6.xml")) &&
            QFileInfo::exists(fiches+QStringLiteral("mems_1_9.xml"));
+}
+
+bool cacheHasReferenceData(const QString &root)
+{
+    QDir dir(root);
+    if(!dir.entryList(QStringList()<<QStringLiteral("ecu_mems_reference_*.sqlite"),QDir::Files).isEmpty())
+        return true;
+
+    const QDir fiches(root+QStringLiteral("/fiches"));
+    return !fiches.entryList(QStringList()<<QStringLiteral("mems_*.xml"),QDir::Files).isEmpty();
 }
 
 void removeMatching(const QString &directory,const QStringList &patterns)
@@ -69,21 +91,48 @@ void removeMatching(const QString &directory,const QStringList &patterns)
     for(const QString &file:files) QFile::remove(dir.filePath(file));
 }
 
-void invalidateReferenceCache()
+}
+
+MemsReferencePackageAction memsReferencePackageAction()
 {
-    const QString referenceRoot=QCoreApplication::applicationDirPath()+QStringLiteral("/database/reference");
-    const QByteArray signature=referencePackageSignature(referenceRoot);
-    if(signature.isEmpty()) return;
+    const QString sourceRoot=referenceRoot();
+    const QByteArray signature=referencePackageSignature(sourceRoot);
+    if(signature.isEmpty())
+        return MemsReferencePackageAction::Unavailable;
 
-    const QString cacheRoot=QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)
-        +QStringLiteral("/reference");
-    QDir().mkpath(cacheRoot);
+    const QString destinationRoot=cacheRoot();
+    const QByteArray cachedSignature=readMarker(destinationRoot+QStringLiteral("/reference_package.sha256"));
+    const bool complete=cacheComplete(destinationRoot);
 
-    const QString markerPath=cacheRoot+QStringLiteral("/reference_package.sha256");
-    const QByteArray cachedSignature=readMarker(markerPath);
-    if(cachedSignature==signature && cacheComplete(cacheRoot)) return;
+    if(complete && cachedSignature==signature)
+        return MemsReferencePackageAction::None;
 
-    removeMatching(cacheRoot,QStringList()
+    if(cacheHasReferenceData(destinationRoot) || !cachedSignature.isEmpty())
+        return MemsReferencePackageAction::Update;
+
+    return MemsReferencePackageAction::Install;
+}
+
+bool refreshMemsReferencePackage(MemsReferencePackageAction *detectedAction)
+{
+    const MemsReferencePackageAction action=memsReferencePackageAction();
+    if(detectedAction)
+        *detectedAction=action;
+
+    if(action==MemsReferencePackageAction::Unavailable)
+        return false;
+    if(action==MemsReferencePackageAction::None)
+        return true;
+
+    const QString sourceRoot=referenceRoot();
+    const QByteArray signature=referencePackageSignature(sourceRoot);
+    if(signature.isEmpty())
+        return false;
+
+    const QString destinationRoot=cacheRoot();
+    QDir().mkpath(destinationRoot);
+
+    removeMatching(destinationRoot,QStringList()
         <<QStringLiteral("ecu_mems_reference_*.sqlite")
         <<QStringLiteral("ecu_mems_reference_*.sqlite-*")
         <<QStringLiteral("ecu_mems_reference_*.sqlite.*")
@@ -91,19 +140,8 @@ void invalidateReferenceCache()
         <<QStringLiteral("mems_global_search_*.sqlite-*")
         <<QStringLiteral("mems_global_search_*.sqlite.*"));
 
-    const QString fiches=cacheRoot+QStringLiteral("/fiches");
+    const QString fiches=destinationRoot+QStringLiteral("/fiches");
     removeMatching(fiches,QStringList()<<QStringLiteral("mems_*.xml"));
 
-    writeMarker(markerPath,signature);
+    return writeMarker(destinationRoot+QStringLiteral("/reference_package.sha256"),signature);
 }
-
-void installReferenceCacheInvalidation()
-{
-    QCoreApplication *app=QCoreApplication::instance();
-    if(!app) return;
-    QTimer::singleShot(0,app,[](){invalidateReferenceCache();});
-}
-
-}
-
-Q_COREAPP_STARTUP_FUNCTION(installReferenceCacheInvalidation)
