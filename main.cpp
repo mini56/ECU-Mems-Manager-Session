@@ -21,6 +21,7 @@
 #include "desktopshortcut.h"
 #include "database/DatabaseManager.h"
 #include "i18n.h"
+#include "navigationorderpatch.h"
 
 namespace
 {
@@ -211,6 +212,7 @@ int main(int argc, char *argv[])
     g_splashProgressCallback = nullptr;
 
     window.show();
+    installFinalNavigation(&app, &window);
     const int result = app.exec();
     database.close();
     return result;
