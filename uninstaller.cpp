@@ -85,6 +85,38 @@ QStringList manifestDirectories(const QStringList &files)
     return result;
 }
 
+bool mainApplicationRunning()
+{
+#ifdef Q_OS_WIN
+    QProcess process;
+    process.start(QStringLiteral("tasklist.exe"),
+                  QStringList() << QStringLiteral("/FI")
+                                << QStringLiteral("IMAGENAME eq ecu_mems_manager.exe")
+                                << QStringLiteral("/FO") << QStringLiteral("CSV")
+                                << QStringLiteral("/NH"));
+    if (!process.waitForFinished(3000))
+        return false;
+    return QString::fromLocal8Bit(process.readAllStandardOutput())
+        .contains(QStringLiteral("ecu_mems_manager.exe"), Qt::CaseInsensitive);
+#else
+    return false;
+#endif
+}
+
+bool safeApplicationDataPath(const QString &path)
+{
+    const QString clean = QDir::cleanPath(path);
+    const QString home = QDir::cleanPath(QDir::homePath());
+    if (clean.isEmpty() || home.isEmpty())
+        return false;
+#ifdef Q_OS_WIN
+    return clean.startsWith(home + QLatin1Char('/'), Qt::CaseInsensitive) ||
+           clean.startsWith(home + QLatin1Char('\\'), Qt::CaseInsensitive);
+#else
+    return clean.startsWith(home + QLatin1Char('/'));
+#endif
+}
+
 bool writeRemovalScript(const QString &scriptPath,
                         const QString &appDir,
                         const QStringList &files,
@@ -109,11 +141,11 @@ bool writeRemovalScript(const QString &scriptPath,
     {
         QSettings settings(QSettings::IniFormat, QSettings::UserScope, PROJECTNAME);
         const QString settingsFile = settings.fileName();
-        if (!settingsFile.isEmpty())
+        if (!settingsFile.isEmpty() && safeApplicationDataPath(settingsFile))
             out << "del /f /q " << batchQuoted(settingsFile) << " >nul 2>&1\r\n";
 
         const QString localData = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
-        if (!localData.isEmpty())
+        if (!localData.isEmpty() && safeApplicationDataPath(localData))
             out << "rmdir /s /q " << batchQuoted(localData) << " >nul 2>&1\r\n";
     }
 
@@ -130,8 +162,8 @@ bool writeRemovalScript(const QString &scriptPath,
         out << "rmdir " << batchQuoted(fullDir) << " >nul 2>&1\r\n";
     }
 
-    // Remove the application directory only when it is empty. Any unrelated
-    // user file placed next to the application is therefore preserved.
+    // The application directory is removed only when empty. Any unrelated
+    // file that the user placed next to the application is preserved.
     out << "rmdir " << batchQuoted(appDir) << " >nul 2>&1\r\n";
     out << "del /f /q \"%~f0\" >nul 2>&1\r\n";
     out << "endlocal\r\n";
@@ -159,6 +191,12 @@ int main(int argc, char *argv[])
     I18n::load(language);
     I18n::install(&app);
 
+    if (mainApplicationRunning())
+    {
+        QMessageBox::warning(nullptr, I18n::text(33), I18n::text(42));
+        return 1;
+    }
+
     const QString appDir = QCoreApplication::applicationDirPath();
     const QStringList manifestFiles = loadInstallManifest(appDir);
     if (manifestFiles.isEmpty())
@@ -169,7 +207,7 @@ int main(int argc, char *argv[])
 
     QDialog dialog;
     dialog.setWindowTitle(I18n::text(33));
-    dialog.setMinimumWidth(520);
+    dialog.setMinimumWidth(540);
 
     QVBoxLayout *layout = new QVBoxLayout(&dialog);
     QLabel *description = new QLabel(I18n::text(34), &dialog);
@@ -195,7 +233,8 @@ int main(int argc, char *argv[])
 
     QObject::connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
     QObject::connect(uninstallButton, &QPushButton::clicked, &dialog, [&]() {
-        if (QMessageBox::question(&dialog, I18n::text(33), I18n::text(39),
+        const QString confirmation = keepProfile->isChecked() ? I18n::text(39) : I18n::text(43);
+        if (QMessageBox::question(&dialog, I18n::text(33), confirmation,
                                   QMessageBox::Yes | QMessageBox::No,
                                   QMessageBox::No) != QMessageBox::Yes)
             return;
@@ -224,5 +263,6 @@ int main(int argc, char *argv[])
         dialog.accept();
     });
 
-    return dialog.exec() == QDialog::Accepted ? 0 : 0;
+    dialog.exec();
+    return 0;
 }
