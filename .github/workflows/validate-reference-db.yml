@@ -1,0 +1,139 @@
+name: Validate MEMS Reference Database
+
+on:
+  push:
+    branches: ["main", "master", "ui-rebuild"]
+  pull_request:
+    branches: ["main", "master", "ui-rebuild"]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-reference-database:
+    name: Validate MEMS reference database
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate qz64 packages and reconstructed SQLite
+        shell: bash
+        run: |
+          python - <<'PY'
+          import base64
+          import json
+          import pathlib
+          import sqlite3
+          import tempfile
+          import xml.etree.ElementTree as ET
+          import zlib
+
+          root = pathlib.Path("database/reference")
+          manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+
+          def unpack_qz64_bytes(encoded: bytes, label: str) -> bytes:
+              packed = base64.b64decode(encoded.strip(), validate=True)
+              if len(packed) < 5:
+                  raise SystemExit(f"{label}: qz64 trop court")
+              expected = int.from_bytes(packed[:4], "big")
+              try:
+                  raw = zlib.decompress(packed[4:])
+              except zlib.error as exc:
+                  raise SystemExit(f"{label}: flux zlib invalide: {exc}") from exc
+              if len(raw) != expected:
+                  raise SystemExit(f"{label}: {len(raw)} octets reconstruits, {expected} attendus")
+              return raw
+
+          def execute_sql_lines(con: sqlite3.Connection, raw: bytes, label: str) -> None:
+              try:
+                  text = raw.decode("utf-8")
+              except UnicodeDecodeError as exc:
+                  raise SystemExit(f"{label}: SQL non UTF-8: {exc}") from exc
+              for line_no, statement in enumerate(text.splitlines(), 1):
+                  statement = statement.strip()
+                  if not statement or statement.startswith("--"):
+                      continue
+                  try:
+                      con.execute(statement)
+                  except sqlite3.Error as exc:
+                      raise SystemExit(f"{label}:{line_no}: SQL invalide: {exc}\n{statement}") from exc
+
+          seed_encoded = b"".join(
+              (root / f"mems_reference_seed_{i}.qz64").read_bytes().strip()
+              for i in range(1, 5)
+          )
+          seed_sql = unpack_qz64_bytes(seed_encoded, "seeds MEMS")
+
+          batches = manifest.get("research_enrichment_batches", [])
+          expected_batches = ["research_enrichment.qz64", "research_enrichment_500.qz64"]
+          if batches != expected_batches:
+              raise SystemExit(f"Liste des lots inattendue: {batches}")
+
+          enrichment_sql = []
+          for batch in batches:
+              path = root / batch
+              if not path.is_file():
+                  raise SystemExit(f"Lot manquant: {batch}")
+              enrichment_sql.append((batch, unpack_qz64_bytes(path.read_bytes(), batch)))
+
+          for generation in ("1_3", "1_6", "1_9"):
+              name = f"fiches/mems_{generation}.xml.qz64"
+              raw = unpack_qz64_bytes((root / name).read_bytes(), name)
+              try:
+                  ET.fromstring(raw.decode("utf-8"))
+              except Exception as exc:
+                  raise SystemExit(f"{name}: XML invalide: {exc}") from exc
+
+          smoke = pathlib.Path(tempfile.gettempdir()) / "ecu_mems_reference_ci.sqlite"
+          if smoke.exists():
+              smoke.unlink()
+          con = sqlite3.connect(smoke)
+          try:
+              execute_sql_lines(con, seed_sql, "seeds MEMS")
+              for label, raw in enrichment_sql:
+                  execute_sql_lines(con, raw, label)
+              con.commit()
+
+              integrity = con.execute("PRAGMA integrity_check").fetchone()[0]
+              if integrity != "ok":
+                  raise SystemExit(f"SQLite integrity_check: {integrity}")
+
+              expected_counts = {
+                  "ecu_target": 85,
+                  "ecu_fitment_target": 140,
+                  "protocol_commands": 91,
+                  "research_fact": 13,
+                  "protocol_command_observation": 103,
+                  "protocol_data_observation": 60,
+                  "fault_knowledge": 11,
+                  "firmware_reference": 30,
+                  "documentation_sources_500": 14,
+                  "protocol_research_facts_500": 13,
+                  "protocol_capabilities_research_500": 16,
+                  "ecu_fitment_research_500": 62,
+                  "diagnostic_reference_500": 10,
+                  "research_conflicts_500": 2,
+              }
+              for table, expected in expected_counts.items():
+                  actual = con.execute(f'SELECT COUNT(*) FROM "{table}"').fetchone()[0]
+                  if actual != expected:
+                      raise SystemExit(f"{table}: {actual} lignes, {expected} attendues")
+
+              tables = [r[0] for r in con.execute(
+                  "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+              )]
+              total_rows = sum(con.execute(f'SELECT COUNT(*) FROM "{t}"').fetchone()[0] for t in tables)
+              if total_rows < 813:
+                  raise SystemExit(f"Base MEMS incomplète: {total_rows} lignes structurées, minimum 813")
+
+              print("OK SQLite MEMS: integrity_check=ok")
+              print("OK base: 85 ECU, 140 affectations, 91 commandes")
+              print("OK lot #499: 217 lignes actives")
+              print("OK lot #500: 117 lignes actives")
+              print(f"OK total structuré: {total_rows} lignes")
+          finally:
+              con.close()
+              if smoke.exists():
+                  smoke.unlink()
+          PY
