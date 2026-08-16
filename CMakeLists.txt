@@ -28,7 +28,7 @@ set(SOURCES
     analogwidgets/manometer100.cpp analogwidgets/abstractmeter100.cpp analogwidgets/manometer900.cpp
     analogwidgets/abstractmeter900.cpp mainwindow.ui resources.qrc database/DatabaseManager.cpp
     uirebuild.cpp overviewrebuild.cpp majorpagesrebuild.cpp errorsvisualpatch.cpp analysismodernizer.cpp
-    strictvisualrebuild.cpp dedicatedpagesrebuild.cpp visualcompletion.cpp taborderpatch.cpp darkstyle.cpp darkfixes.cpp
+    strictvisualrebuild.cpp dedicatedpagesrebuild.cpp visualcompletion.cpp taborderpatch.cpp navigationorderpatch.cpp darkstyle.cpp darkfixes.cpp
     settingstabdark.cpp sidebarbubblecleaner.cpp splashtextfix.cpp settingsvisualpatch.cpp)
 add_executable(${PNAME} ${SOURCES})
 target_sources(${PNAME} PRIVATE ${CMAKE_SOURCE_DIR}/desktopshortcut.cpp ${CMAKE_SOURCE_DIR}/desktopshortcut.h)
