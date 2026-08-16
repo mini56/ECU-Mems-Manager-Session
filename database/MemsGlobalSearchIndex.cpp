@@ -82,11 +82,20 @@ QString categoryForTable(const QString &tableName)
         return QStringLiteral("setting");
     if (table.contains(QStringLiteral("fitment")) || table.contains(QStringLiteral("vehicle")))
         return QStringLiteral("vehicle");
-    if (table.contains(QStringLiteral("firmware")) || table.contains(QStringLiteral("rom")) ||
-        table.contains(QStringLiteral("file")) || table.contains(QStringLiteral("calibration")))
-        return QStringLiteral("file");
+
+    // Protocol tables must be classified before file tables. In particular,
+    // "protocol_profiles" contains the character sequence "file" in "profiles".
     if (table.startsWith(QStringLiteral("protocol_")) || table == QStringLiteral("protocol"))
         return QStringLiteral("protocol");
+
+    if (table.contains(QStringLiteral("firmware")) ||
+        table == QStringLiteral("ecu_file") ||
+        table.endsWith(QStringLiteral("_file")) ||
+        table.endsWith(QStringLiteral("_files")) ||
+        table.startsWith(QStringLiteral("rom_")) ||
+        table.endsWith(QStringLiteral("_rom")) ||
+        table.contains(QStringLiteral("calibration_file")))
+        return QStringLiteral("file");
     if (table.contains(QStringLiteral("ecu")))
         return QStringLiteral("ecu");
     if (table.contains(QStringLiteral("source")) || table.contains(QStringLiteral("document")) ||
@@ -116,10 +125,31 @@ QString extractGeneration(const QString &text)
 QString preferredTitle(const QSqlRecord &record, const QSqlQuery &query)
 {
     static const QStringList preferred = {
-        QStringLiteral("part_number"), QStringLiteral("code"), QStringLiteral("command_hex"),
-        QStringLiteral("component_name"), QStringLiteral("field_name_fr"), QStringLiteral("capability"),
-        QStringLiteral("setting_name"), QStringLiteral("name_fr"), QStringLiteral("name"),
-        QStringLiteral("model"), QStringLiteral("filename"), QStringLiteral("title")
+        QStringLiteral("part_number"),
+        QStringLiteral("code"),
+        QStringLiteral("command_hex"),
+        QStringLiteral("component_name"),
+        QStringLiteral("field_name_fr"),
+        QStringLiteral("field_name"),
+        QStringLiteral("capability"),
+        QStringLiteral("setting_name"),
+        QStringLiteral("name_fr"),
+        QStringLiteral("function_name"),
+        QStringLiteral("function_fr"),
+        QStringLiteral("rule_name"),
+        QStringLiteral("protocol_name"),
+        QStringLiteral("parameter"),
+        QStringLiteral("subject"),
+        QStringLiteral("topic"),
+        QStringLiteral("api_operation"),
+        QStringLiteral("calibration_id"),
+        QStringLiteral("ecu_part_number"),
+        QStringLiteral("source_name"),
+        QStringLiteral("title"),
+        QStringLiteral("name"),
+        QStringLiteral("model"),
+        QStringLiteral("filename"),
+        QStringLiteral("system")
     };
     for (const QString &name : preferred) {
         const int index = record.indexOf(name);
@@ -132,7 +162,7 @@ QString preferredTitle(const QSqlRecord &record, const QSqlQuery &query)
     for (int i = 0; i < record.count(); ++i) {
         const QString value = query.value(i).toString().trimmed();
         if (!value.isEmpty())
-            return value.left(160);
+            return value.left(180);
     }
     return QString();
 }
@@ -344,8 +374,9 @@ bool indexXml(QSqlDatabase &indexDatabase,
     plain.replace(QRegularExpression(QStringLiteral("<[^>]+>")), QStringLiteral(" "));
     plain = plain.simplified();
 
-    // The complete sheet remains addressable for display, but technical words are
-    // indexed in their own contextual XML records below instead of as one giant hit.
+    // Keep a document entry for opening the complete sheet, but do not put all
+    // of its technical text into one broad search hit. Technical text is indexed
+    // below in its actual line/section context.
     if (!insertDocument(indexDatabase,
                         ftsEnabled,
                         QStringLiteral("documentation"),
@@ -380,7 +411,7 @@ bool indexXml(QSqlDatabase &indexDatabase,
             ++rowNumber;
             QStringList cells;
             QStringList tags;
-            QStringList rawParts;
+            QStringList searchableParts;
 
             while (!xml.atEnd()) {
                 xml.readNext();
@@ -391,16 +422,18 @@ bool indexXml(QSqlDatabase &indexDatabase,
 
                 const QString tag = xml.name().toString().toCaseFolded();
                 tags.append(tag);
-                rawParts.append(tag);
+                if (tag == QStringLiteral("broche") ||
+                    tag == QStringLiteral("fonction") ||
+                    tag == QStringLiteral("couleur"))
+                    searchableParts.append(tag);
+
                 const auto attributes = xml.attributes();
-                for (const QXmlStreamAttribute &attribute : attributes) {
-                    rawParts.append(attribute.name().toString());
-                    rawParts.append(attribute.value().toString());
-                }
+                for (const QXmlStreamAttribute &attribute : attributes)
+                    searchableParts.append(attribute.value().toString());
 
                 const QString text = xml.readElementText(QXmlStreamReader::IncludeChildElements).simplified();
                 if (!text.isEmpty()) {
-                    rawParts.append(text);
+                    searchableParts.append(text);
                     if (tag == QStringLiteral("cellule") ||
                         tag == QStringLiteral("broche") ||
                         tag == QStringLiteral("fonction") ||
@@ -409,14 +442,13 @@ bool indexXml(QSqlDatabase &indexDatabase,
                 }
             }
 
-            const QString actual = rawParts.join(QLatin1Char(' '));
+            const QString actual = searchableParts.join(QLatin1Char(' '));
             if (actual.trimmed().isEmpty())
                 continue;
             const QString category = categoryForXmlSection(section, tags);
             const QString visible = cells.isEmpty() ? actual : cells.join(QStringLiteral(" — "));
             const QString content = QStringLiteral("MEMS %1\n%2\n%3").arg(generation, section, visible);
-            const QString searchable = QStringLiteral("MEMS %1 %2 %3 %4")
-                                           .arg(generation, section, tags.join(QLatin1Char(' ')), actual);
+            const QString searchable = QStringLiteral("MEMS %1 %2 %3").arg(generation, section, actual);
 
             if (!insertDocument(indexDatabase,
                                 ftsEnabled,
@@ -442,7 +474,7 @@ bool indexXml(QSqlDatabase &indexDatabase,
             const QStringList tags = {element};
             const QString category = categoryForXmlSection(section, tags);
             const QString content = QStringLiteral("MEMS %1\n%2\n%3").arg(generation, section, text);
-            const QString searchable = QStringLiteral("MEMS %1 %2 %3 %4").arg(generation, section, element, text);
+            const QString searchable = QStringLiteral("MEMS %1 %2 %3").arg(generation, section, text);
             if (!insertDocument(indexDatabase,
                                 ftsEnabled,
                                 category,
@@ -463,7 +495,7 @@ QString sourceSignature(const QString &databasePath, const QStringList &xmlPaths
 {
     QFileInfo databaseInfo(databasePath);
     QStringList parts;
-    parts << QStringLiteral("global-search-v4")
+    parts << QStringLiteral("global-search-v5")
           << QString::number(databaseInfo.size())
           << QString::number(databaseInfo.lastModified().toMSecsSinceEpoch());
 #ifdef APP_BUILD_NUMBER
@@ -509,12 +541,18 @@ bool validateIndex(QSqlDatabase &index,
     if (!query.exec(QStringLiteral("SELECT COUNT(*) FROM search_terms")) ||
         !query.next() || query.value(0).toInt() <= 0)
         return false;
-
-    // Every indexed document must have at least one individually indexed word.
     if (!query.exec(QStringLiteral(
             "SELECT COUNT(*) FROM search_documents d "
             "WHERE NOT EXISTS(SELECT 1 FROM search_terms t WHERE t.document_id=d.id)")) ||
         !query.next() || query.value(0).toInt() != 0)
+        return false;
+
+    // Category invariants catch substring mistakes such as protocol_profiles -> file.
+    QSqlQuery protocolProfiles(index);
+    if (!protocolProfiles.exec(QStringLiteral(
+            "SELECT COUNT(*) FROM search_documents "
+            "WHERE source_table='protocol_profiles' AND category<>'protocol'")) ||
+        !protocolProfiles.next() || protocolProfiles.value(0).toInt() != 0)
         return false;
 
     for (int i = 0; i < xmlPaths.size(); ++i) {
@@ -598,7 +636,7 @@ bool rebuildIndex(const QString &sourcePath,
             QSqlQuery meta(index);
             meta.prepare(QStringLiteral("INSERT INTO search_meta(key,value) VALUES(:key,:value)"));
             const QList<QPair<QString, QString>> values = {
-                {QStringLiteral("schema_version"), QStringLiteral("4")},
+                {QStringLiteral("schema_version"), QStringLiteral("5")},
                 {QStringLiteral("source_signature"), signature},
                 {QStringLiteral("fts5_enabled"), ftsEnabled ? QStringLiteral("1") : QStringLiteral("0")}
             };
@@ -634,6 +672,18 @@ bool rebuildIndex(const QString &sourcePath,
     return ok;
 }
 
+QString ftsExpression(const QString &text)
+{
+    const QStringList terms = normalizeSearchText(text).split(QLatin1Char(' '), Qt::SkipEmptyParts);
+    QStringList query;
+    for (QString term : terms) {
+        term.replace(QLatin1Char('"'), QStringLiteral("\"\""));
+        if (!term.isEmpty())
+            query.append(QStringLiteral("\"%1\"*").arg(term));
+    }
+    return query.join(QStringLiteral(" AND "));
+}
+
 QVariantList queryIndex(const QString &path,
                         const QString &text,
                         const QString &category,
@@ -649,25 +699,49 @@ QVariantList queryIndex(const QString &path,
     database.setDatabaseName(path);
 
     if (database.open()) {
+        bool ftsEnabled = false;
+        QSqlQuery meta(database);
+        if (meta.exec(QStringLiteral("SELECT value FROM search_meta WHERE key='fts5_enabled'")) && meta.next())
+            ftsEnabled = meta.value(0).toString() == QStringLiteral("1");
+
+        const QString expression = ftsExpression(text);
         const QStringList terms = normalizeSearchText(text).split(QLatin1Char(' '), Qt::SkipEmptyParts);
-        QString sql = QStringLiteral(
-            "SELECT d.id,d.category,d.source_table,d.source_key,d.generation,d.title,d.content "
-            "FROM search_documents d WHERE 1=1");
-        if (!category.trimmed().isEmpty())
-            sql += QStringLiteral(" AND d.category=:category");
-        for (int i = 0; i < terms.size(); ++i) {
-            sql += QStringLiteral(
-                " AND EXISTS(SELECT 1 FROM search_terms st%1 "
-                "WHERE st%1.document_id=d.id AND st%1.term LIKE :term%1)").arg(i);
+        const bool useFts = ftsEnabled && !expression.isEmpty();
+        QString sql;
+
+        if (useFts) {
+            sql = QStringLiteral(
+                "SELECT d.id,d.category,d.source_table,d.source_key,d.generation,d.title,d.content "
+                "FROM search_fts f JOIN search_documents d ON d.id=f.rowid "
+                "WHERE search_fts MATCH :match");
+            if (!category.trimmed().isEmpty())
+                sql += QStringLiteral(" AND d.category=:category");
+            sql += QStringLiteral(" ORDER BY bm25(search_fts),d.category,d.title");
+        } else {
+            sql = QStringLiteral(
+                "SELECT d.id,d.category,d.source_table,d.source_key,d.generation,d.title,d.content "
+                "FROM search_documents d WHERE 1=1");
+            if (!category.trimmed().isEmpty())
+                sql += QStringLiteral(" AND d.category=:category");
+            for (int i = 0; i < terms.size(); ++i) {
+                sql += QStringLiteral(
+                    " AND EXISTS(SELECT 1 FROM search_terms st%1 "
+                    "WHERE st%1.document_id=d.id AND st%1.term LIKE :term%1)").arg(i);
+            }
+            sql += QStringLiteral(" ORDER BY d.category,d.title");
         }
-        sql += QStringLiteral(" ORDER BY d.category,d.title LIMIT %1").arg(qBound(1, limit, 500));
+        sql += QStringLiteral(" LIMIT %1").arg(qBound(1, limit, 500));
 
         QSqlQuery query(database);
         if (query.prepare(sql)) {
+            if (useFts)
+                query.bindValue(QStringLiteral(":match"), expression);
             if (!category.trimmed().isEmpty())
                 query.bindValue(QStringLiteral(":category"), category.trimmed());
-            for (int i = 0; i < terms.size(); ++i)
-                query.bindValue(QStringLiteral(":term%1").arg(i), terms.at(i) + QLatin1Char('%'));
+            if (!useFts) {
+                for (int i = 0; i < terms.size(); ++i)
+                    query.bindValue(QStringLiteral(":term%1").arg(i), terms.at(i) + QLatin1Char('%'));
+            }
             if (query.exec()) {
                 while (query.next()) {
                     QVariantMap row;
