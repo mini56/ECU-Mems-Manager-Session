@@ -35,17 +35,17 @@ static QWidget *realPage(QWidget *tab)
 static int rankFromTitle(const QString &title)
 {
     const QString t = title.trimmed();
-    if (t == I18n::text(1001).trimmed()) return 0;  // Aperçu
-    if (t == I18n::text(2001).trimmed()) return 1;  // Réglages
-    if (t == I18n::text(4001).trimmed()) return 2;  // Actionneurs
-    if (t == I18n::text(3001).trimmed()) return 3;  // Erreurs
-    if (t == I18n::text(7013).trimmed()) return 4;  // Diagnostic automatique
-    if (t == I18n::text(7018).trimmed()) return 5;  // Analyse
-    if (t == I18n::text(7017).trimmed()) return 6;  // Toutes les mesures
-    if (t == I18n::text(7012).trimmed()) return 7;  // ECU / ROSCO
-    if (t == I18n::text(5001).trimmed()) return 8;  // Toutes les données
-    if (t == I18n::text(7152).trimmed()) return 9;  // Base de données
-    if (t == I18n::text(6002).trimmed() || t == I18n::text(6003).trimmed()) return 10; // Mode interactif
+    if (t == I18n::text(1001).trimmed()) return 0;
+    if (t == I18n::text(2001).trimmed()) return 1;
+    if (t == I18n::text(4001).trimmed()) return 2;
+    if (t == I18n::text(3001).trimmed()) return 3;
+    if (t == I18n::text(7013).trimmed()) return 4;
+    if (t == I18n::text(7018).trimmed()) return 5;
+    if (t == I18n::text(7017).trimmed()) return 6;
+    if (t == I18n::text(7012).trimmed()) return 7;
+    if (t == I18n::text(5001).trimmed()) return 8;
+    if (t == I18n::text(7152).trimmed()) return 9;
+    if (t == I18n::text(6002).trimmed() || t == I18n::text(6003).trimmed()) return 10;
     return -1;
 }
 
@@ -87,52 +87,52 @@ static QIcon iconForRank(int rank)
 
     switch (rank)
     {
-    case 0: // Aperçu : 4 cadrans
+    case 0:
         p.drawRoundedRect(QRectF(3,4,7,6),1.2,1.2); p.drawRoundedRect(QRectF(12,4,7,6),1.2,1.2);
         p.drawRoundedRect(QRectF(3,12,7,6),1.2,1.2); p.drawRoundedRect(QRectF(12,12,7,6),1.2,1.2);
         break;
-    case 1: // Réglages : curseurs
+    case 1:
         p.drawLine(4,6,18,6); p.drawLine(4,11,18,11); p.drawLine(4,16,18,16);
         p.drawEllipse(QPointF(9,6),2,2); p.drawEllipse(QPointF(14,11),2,2); p.drawEllipse(QPointF(7,16),2,2);
         break;
-    case 2: // Actionneurs : engrenage
+    case 2:
         p.drawEllipse(QRectF(6,6,10,10)); p.drawEllipse(QPointF(11,11),2.4,2.4);
         p.drawLine(11,3,11,6); p.drawLine(11,16,11,19); p.drawLine(3,11,6,11); p.drawLine(16,11,19,11);
         p.drawLine(5.3,5.3,7.2,7.2); p.drawLine(14.8,14.8,16.7,16.7);
         break;
-    case 3: { // Erreurs : triangle
+    case 3: {
         QPolygonF q; q << QPointF(11,3.5) << QPointF(19,18) << QPointF(3,18);
         p.drawPolygon(q); p.drawLine(11,8,11,13); p.drawPoint(QPointF(11,16));
         break;
     }
-    case 4: // Diagnostic : loupe + coche
+    case 4:
         p.drawEllipse(QRectF(4,4,11,11)); p.drawLine(14,14,19,19);
         p.drawLine(7,10,9.5,12.5); p.drawLine(9.5,12.5,13,8);
         break;
-    case 5: { // Analyse : courbe
+    case 5: {
         p.drawLine(4,18,4,5); p.drawLine(4,18,19,18);
         QPolygonF q; q << QPointF(5,15) << QPointF(9,10) << QPointF(12,12) << QPointF(18,6);
         p.drawPolyline(q);
         break;
     }
-    case 6: // Toutes les mesures : histogramme
+    case 6:
         p.drawRoundedRect(QRectF(4,12,3,6),.8,.8); p.drawRoundedRect(QRectF(9.5,8,3,10),.8,.8);
         p.drawRoundedRect(QRectF(15,4,3,14),.8,.8); p.drawLine(3,18.5,19,18.5);
         break;
-    case 7: // ECU / ROSCO : liaison
+    case 7:
         p.drawRoundedRect(QRectF(3,7,9,8),4,4); p.drawRoundedRect(QRectF(10,7,9,8),4,4); p.drawLine(8,11,14,11);
         break;
-    case 8: // Toutes les données : matrice
+    case 8:
         p.drawRoundedRect(QRectF(3.5,3.5,15,15),1.5,1.5);
         p.drawLine(8.5,4,8.5,18); p.drawLine(13.5,4,13.5,18);
         p.drawLine(4,8.5,18,8.5); p.drawLine(4,13.5,18,13.5);
         p.drawPoint(QPointF(6,6)); p.drawPoint(QPointF(11,11)); p.drawPoint(QPointF(16,16));
         break;
-    case 9: // Base de données : cylindre
+    case 9:
         p.drawEllipse(QRectF(4,4,14,5)); p.drawLine(4,6.5,4,16); p.drawLine(18,6.5,18,16);
         p.drawArc(QRectF(4,13.5,14,5),180*16,180*16); p.drawArc(QRectF(4,9,14,5),180*16,180*16);
         break;
-    case 10: // Mode interactif : terminal
+    case 10:
         p.drawRoundedRect(QRectF(3,4,16,14),2,2);
         p.drawLine(6,8,9,11); p.drawLine(9,11,6,14); p.drawLine(11.5,14,16,14);
         break;
@@ -171,21 +171,43 @@ static void fitRawSpacing(QMainWindow *window)
                           rightGrid ? rightGrid->rowCount() : 1);
     if (rows <= 0) return;
 
-    // Utiliser la hauteur réellement visible du QTabWidget, et non l'ancienne
-    // géométrie historique de raw_1/raw_2. À 1366x768 cela laisse respirer les
-    // lignes tout en conservant la dernière ligne visible.
-    const int visibleHeight = qMax(400, tabs->height());
-    const int rowHeight = qBound(12, (visibleHeight - 28) / rows, 17);
-    const int verticalGap = rowHeight >= 15 ? 1 : 0;
+    // Le panneau était calculé avec une ancienne hauteur de conteneur (~360 px),
+    // alors que la page visible est nettement plus haute. On dimensionne ici
+    // les deux blocs sur la hauteur réellement disponible de la page.
+    const int pageHeight = qMax(page->height(), tabs->height());
+    const bool wrapped = left->parentWidget() && left->parentWidget() != page;
+    const int reserve = wrapped ? 48 : 20;
+    const int usableHeight = qMax(320, pageHeight - reserve);
+    const int rowHeight = qBound(13, usableHeight / rows, 18);
+    const int blockHeight = rowHeight * rows;
 
-    auto fitBlock = [rowHeight, verticalGap](QWidget *block, QGridLayout *grid)
+    auto fitBlock = [page, rowHeight, blockHeight](QWidget *block, QGridLayout *grid)
     {
         if (!block || !grid) return;
+
         grid->setContentsMargins(0,0,0,0);
-        grid->setVerticalSpacing(verticalGap);
+        grid->setHorizontalSpacing(8);
+        grid->setVerticalSpacing(0);
         grid->setSizeConstraint(QLayout::SetDefaultConstraint);
         for (int r = 0; r < grid->rowCount(); ++r)
             grid->setRowMinimumHeight(r, rowHeight);
+
+        block->setMinimumHeight(blockHeight);
+        block->setMaximumHeight(blockHeight);
+        block->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+        QWidget *container = block->parentWidget();
+        if (container && container != page)
+        {
+            container->setMinimumHeight(blockHeight + 42);
+            container->setMaximumHeight(QWIDGETSIZE_MAX);
+            container->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        }
+        else if (container == page)
+        {
+            const int y = qMax(6, block->y());
+            block->setGeometry(block->x(), y, block->width(), blockHeight);
+        }
 
         for (QLabel *label : block->findChildren<QLabel*>())
         {
@@ -222,7 +244,7 @@ static void installMappedConnections(QMainWindow *window, QTabWidget *tabs, QLis
         if (index >= 0 && tabs->currentIndex() != index) tabs->setCurrentIndex(index);
     });
 
-    QObject::connect(tabs, &QTabWidget::currentChanged, window, [nav, tabs](int index) {
+    QObject::connect(tabs, &QTabWidget::currentChanged, window, [window, nav, tabs](int index) {
         if (index < 0 || index >= tabs->count()) return;
         QWidget *current = tabs->widget(index);
         for (int row = 0; row < nav->count(); ++row)
@@ -234,6 +256,7 @@ static void installMappedConnections(QMainWindow *window, QTabWidget *tabs, QLis
                 break;
             }
         }
+        QTimer::singleShot(60, window, [window]() { fitRawSpacing(window); });
     });
 
     nav->setProperty("finalNavigationMapped", true);
@@ -316,8 +339,6 @@ void installFinalNavigation(QApplication *app, QMainWindow *window)
     window->setProperty("finalNavigationInstalled", true);
     window->installEventFilter(new FinalNavigationFilter(window));
 
-    // Les anciens modules reconstruisent encore la barre pendant les premières secondes.
-    // Ces passages finis, ce gestionnaire devient l'unique source de l'ordre du menu.
     const int delays[] = {80, 1550, 2550, 3750, 4700};
     for (int delay : delays)
         QTimer::singleShot(delay, window, [window]() { applyFinalMenu(window); });
