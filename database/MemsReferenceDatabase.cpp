@@ -68,7 +68,7 @@ bool MemsReferenceDatabase::open()
 
     const QString cacheRoot=cacheReferenceRoot();
     QDir().mkpath(cacheRoot);
-    m_databasePath=cacheRoot+QStringLiteral("/ecu_mems_reference_r4.sqlite");
+    m_databasePath=cacheRoot+QStringLiteral("/ecu_mems_reference_r5.sqlite");
 
     if(!QFileInfo::exists(m_databasePath)){
         const QString seedConnection=QStringLiteral("%1_SEED").arg(m_connectionName);
@@ -103,6 +103,8 @@ bool MemsReferenceDatabase::open()
 
         if(ok)
             ok=executeQz64Sql(buildDb,referenceRoot()+QStringLiteral("/research_enrichment.qz64"));
+        if(ok)
+            ok=executeQz64Sql(buildDb,referenceRoot()+QStringLiteral("/research_enrichment_500.qz64"));
 
         buildDb.close();
         buildDb=QSqlDatabase();
