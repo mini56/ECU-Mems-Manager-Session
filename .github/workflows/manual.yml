@@ -85,6 +85,7 @@ jobs:
           New-Item -ItemType Directory -Path "$dist\styles" | Out-Null
 
           Copy-Item "$build\ecu_mems_manager.exe" "$dist\ecu_mems_manager.exe" -Force
+          Copy-Item "$build\ecu_mems_uninstaller.exe" "$dist\uninstall_ecu_mems_manager.exe" -Force
           Copy-Item "${{ github.workspace }}\prebuilt-librosco\librosco.dll" "$dist\librosco.dll" -Force
 
           # Les traductions sont generees/copied par CMake dans build/translations.
@@ -127,8 +128,20 @@ jobs:
           if (Test-Path "$qtPlugins\iconengines") { Copy-Item "$qtPlugins\iconengines\*.dll" "$dist\iconengines\" -Force }
           if (Test-Path "$qtPlugins\styles") { Copy-Item "$qtPlugins\styles\*.dll" "$dist\styles\" -Force }
 
+          # Manifeste de desinstallation : liste uniquement les fichiers que le package installe.
+          # Le desinstalleur se base exclusivement sur cette liste et ne supprime jamais
+          # arbitrairement tout le contenu du dossier utilisateur.
+          $manifestPath = Join-Path $dist "install_manifest.txt"
+          $relativeFiles = Get-ChildItem $dist -Recurse -File | ForEach-Object {
+            [IO.Path]::GetRelativePath($dist, $_.FullName)
+          } | Sort-Object -Unique
+          $relativeFiles += "install_manifest.txt"
+          $relativeFiles | Sort-Object -Unique | Set-Content -Path $manifestPath -Encoding UTF8
+
           $required = @(
             "ecu_mems_manager.exe",
+            "uninstall_ecu_mems_manager.exe",
+            "install_manifest.txt",
             "Qt5Core.dll",
             "Qt5Gui.dll",
             "Qt5Widgets.dll",
@@ -140,11 +153,17 @@ jobs:
             "platforms\qwindows.dll",
             "sqldrivers\qsqlite.dll",
             "translations\fr\fr.json",
+            "translations\fr\fr_uninstall.json",
             "translations\en\en.json",
+            "translations\en\en_uninstall.json",
             "translations\es\es.json",
+            "translations\es\es_uninstall.json",
             "translations\it\it.json",
+            "translations\it\it_uninstall.json",
             "translations\pt\pt.json",
+            "translations\pt\pt_uninstall.json",
             "translations\de\de.json",
+            "translations\de\de_uninstall.json",
             "database\reference\manifest.json",
             "database\reference\mems_reference_seed_1.qz64",
             "database\reference\mems_reference_seed_2.qz64",
@@ -159,6 +178,18 @@ jobs:
             if (-not (Test-Path $full)) { throw "Fichier obligatoire manquant dans le package: $file" }
             if ((Get-Item $full).Length -le 0) { throw "Fichier obligatoire vide: $file" }
             Write-Host "OK: $file - $((Get-Item $full).Length) octets"
+          }
+
+          # Validation du manifeste de desinstallation : chaque entree doit etre relative
+          # et correspondre a un fichier reel du package.
+          $manifestLines = Get-Content $manifestPath | Where-Object { $_ -and $_.Trim() }
+          foreach ($entry in $manifestLines) {
+            if ([IO.Path]::IsPathRooted($entry) -or $entry -match '(^|[\\/])\.\.([\\/]|$)') {
+              throw "Entree dangereuse dans install_manifest.txt: $entry"
+            }
+            if ($entry -ne "install_manifest.txt" -and -not (Test-Path (Join-Path $dist $entry))) {
+              throw "Entree du manifeste absente du package: $entry"
+            }
           }
 
           # Validation du contenu de la base embarquee avant publication de l'artefact.
