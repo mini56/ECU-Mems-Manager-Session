@@ -28,6 +28,7 @@ set(SOURCES
     analogwidgets/manometer100.cpp analogwidgets/abstractmeter100.cpp analogwidgets/manometer900.cpp
     analogwidgets/abstractmeter900.cpp mainwindow.ui resources.qrc database/DatabaseManager.cpp
     database/MemsReferenceDatabase.cpp database/MemsReferenceDatabase.h
+    database/MemsGlobalSearchIndex.cpp database/MemsGlobalSearchIndex.h
     database/MemsDatabaseBrowser.cpp database/MemsDatabaseBrowser.h database/MemsDatabaseUsability.cpp
     uirebuild.cpp overviewrebuild.cpp majorpagesrebuild.cpp errorsvisualpatch.cpp analysismodernizer.cpp
     strictvisualrebuild.cpp dedicatedpagesrebuild.cpp visualcompletion.cpp taborderpatch.cpp navigationorderpatch.cpp darkstyle.cpp darkfixes.cpp
