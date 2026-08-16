@@ -20,24 +20,96 @@
 #include "mainwindow.h"
 #include "desktopshortcut.h"
 #include "database/DatabaseManager.h"
+#include "database/MemsReferenceDatabase.h"
+#include "database/MemsGlobalSearchIndex.h"
+#include "database/MemsReferencePackageRefresh.h"
 #include "i18n.h"
 #include "navigationorderpatch.h"
 
 namespace
 {
+enum class StartupStepState
+{
+    Pending,
+    Active,
+    Done,
+    Error
+};
+
 QProgressBar *g_startupProgress = nullptr;
-QLabel *g_startupStatus = nullptr;
+QLabel *g_profileStep = nullptr;
+QLabel *g_databaseStep = nullptr;
+QLabel *g_indexStep = nullptr;
+QLabel *g_portsStep = nullptr;
+QLabel *g_interfaceStep = nullptr;
 QSplashScreen *g_startupSplash = nullptr;
+
+void setStartupProgress(int percent)
+{
+    if (!g_startupProgress)
+        return;
+    g_startupProgress->setValue(qBound(0, percent, 100));
+    if (qApp)
+        qApp->processEvents();
+}
+
+void setStep(QLabel *label, StartupStepState state, const QString &text)
+{
+    if (!label)
+        return;
+
+    QString marker;
+    QString markerColor;
+    QString textColor = QStringLiteral("#E7ECF2");
+
+    switch (state)
+    {
+    case StartupStepState::Pending:
+        marker = QStringLiteral("○");
+        markerColor = QStringLiteral("#66717D");
+        textColor = QStringLiteral("#8E99A5");
+        break;
+    case StartupStepState::Active:
+        marker = QStringLiteral("●");
+        markerColor = QStringLiteral("#5AA2FF");
+        break;
+    case StartupStepState::Done:
+        marker = QString::fromUtf8("✓");
+        markerColor = QStringLiteral("#48C77B");
+        break;
+    case StartupStepState::Error:
+        marker = QStringLiteral("!");
+        markerColor = QStringLiteral("#FF6B6B");
+        textColor = QStringLiteral("#FFD7D7");
+        break;
+    }
+
+    label->setText(QStringLiteral(
+        "<span style=\"color:%1;font-weight:700;\">%2</span> "
+        "<span style=\"color:%3;\">%4</span>")
+        .arg(markerColor, marker, textColor, text.toHtmlEscaped()));
+    label->setTextFormat(Qt::RichText);
+    if (qApp)
+        qApp->processEvents();
+}
 
 void updateStartupProgress(int percent)
 {
     if (!g_startupProgress || !g_startupSplash)
         return;
+
     percent = qBound(0, percent, 100);
-    g_startupProgress->setValue(percent);
-    if (g_startupStatus)
-        g_startupStatus->setText(I18n::text(1).arg(percent));
-    qApp->processEvents();
+    setStartupProgress(70 + ((percent * 22) / 100));
+
+    if (percent >= 100)
+    {
+        setStep(g_portsStep, StartupStepState::Done, I18n::text(24));
+        setStep(g_interfaceStep, StartupStepState::Active, I18n::text(25));
+    }
+    else
+    {
+        setStep(g_portsStep, StartupStepState::Active, I18n::text(23).arg(percent));
+    }
 }
 
 QString chooseInitialLanguage()
@@ -92,39 +164,78 @@ QString chooseInitialLanguage()
 
 QSplashScreen *createStartupSplash()
 {
-    QPixmap pixmap(520, 190);
-    pixmap.fill(Qt::white);
+    QPixmap pixmap(640, 360);
+    pixmap.fill(QColor(QStringLiteral("#111820")));
+
     QPainter painter(&pixmap);
-    painter.setPen(Qt::black);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setPen(QPen(QColor(QStringLiteral("#3A4652")), 1));
+    painter.drawRoundedRect(pixmap.rect().adjusted(1, 1, -2, -2), 8, 8);
+
+    painter.setPen(QColor(QStringLiteral("#F4F7FA")));
     QFont titleFont = painter.font();
     titleFont.setBold(true);
-    titleFont.setPointSize(18);
+    titleFont.setPointSize(19);
     painter.setFont(titleFont);
-    painter.drawText(QRect(24, 22, 472, 40), Qt::AlignLeft | Qt::AlignVCenter,
+    painter.drawText(QRect(28, 24, 584, 38), Qt::AlignLeft | Qt::AlignVCenter,
                      I18n::text(7));
-    painter.setPen(QPen(Qt::black, 1));
-    painter.drawRect(pixmap.rect().adjusted(1, 1, -2, -2));
 
+    painter.setPen(QColor(QStringLiteral("#AAB4BF")));
     QFont subFont = painter.font();
     subFont.setBold(false);
     subFont.setPointSize(10);
     painter.setFont(subFont);
-    painter.drawText(QRect(24, 62, 472, 24), Qt::AlignLeft | Qt::AlignVCenter,
+    painter.drawText(QRect(28, 65, 584, 22), Qt::AlignLeft | Qt::AlignVCenter,
                      I18n::text(8));
-    painter.drawText(QRect(24, 84, 472, 22), Qt::AlignLeft | Qt::AlignVCenter,
+    painter.drawText(QRect(28, 88, 584, 22), Qt::AlignLeft | Qt::AlignVCenter,
                      I18n::text(9).arg(QStringLiteral(APP_VERSION)));
     painter.end();
 
-    QSplashScreen *splash = new QSplashScreen(pixmap, Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint);
+    QSplashScreen *splash = new QSplashScreen(
+        pixmap, Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint);
+
+    const auto makeStepLabel = [splash](int y) {
+        QLabel *label = new QLabel(splash);
+        label->setGeometry(30, y, 580, 25);
+        QFont font = label->font();
+        font.setPointSize(10);
+        label->setFont(font);
+        return label;
+    };
+
+    g_profileStep = makeStepLabel(126);
+    g_databaseStep = makeStepLabel(160);
+    g_indexStep = makeStepLabel(194);
+    g_portsStep = makeStepLabel(228);
+    g_interfaceStep = makeStepLabel(262);
+
     QProgressBar *progress = new QProgressBar(splash);
-    progress->setGeometry(24, 136, 472, 18);
+    progress->setGeometry(30, 310, 580, 20);
     progress->setRange(0, 100);
     progress->setValue(0);
-    QLabel *status = new QLabel(I18n::text(10), splash);
-    status->setGeometry(24, 110, 472, 22);
+    progress->setTextVisible(true);
+    progress->setStyleSheet(QStringLiteral(
+        "QProgressBar {"
+        "  border: 1px solid #3A4652;"
+        "  border-radius: 5px;"
+        "  background: #0C1218;"
+        "  color: #E7ECF2;"
+        "  text-align: center;"
+        "}"
+        "QProgressBar::chunk {"
+        "  background: #2D7FF9;"
+        "  border-radius: 4px;"
+        "}"));
+
     g_startupProgress = progress;
-    g_startupStatus = status;
     g_startupSplash = splash;
+
+    setStep(g_profileStep, StartupStepState::Pending, I18n::text(15));
+    setStep(g_databaseStep, StartupStepState::Pending, I18n::text(31));
+    setStep(g_indexStep, StartupStepState::Pending, I18n::text(32));
+    setStep(g_portsStep, StartupStepState::Pending, I18n::text(29));
+    setStep(g_interfaceStep, StartupStepState::Pending, I18n::text(30));
+
     return splash;
 }
 }
@@ -149,9 +260,6 @@ int main(int argc, char *argv[])
     if (!supportedLanguages.contains(language))
         language = QStringLiteral("fr");
 
-    // English is used only to display the first-start language selector.
-    // Once a language has been chosen, LanguageConfigured prevents this
-    // dialog from being shown again on subsequent starts.
     if (!languageConfigured)
     {
         I18n::load(QStringLiteral("en"));
@@ -171,28 +279,81 @@ int main(int argc, char *argv[])
     QSplashScreen *splash = createStartupSplash();
     splash->show();
     app.processEvents();
-    g_splashProgressCallback = updateStartupProgress;
-    updateStartupProgress(0);
 
-    DatabaseManager database;
-    if (g_startupStatus)
-        g_startupStatus->setText(I18n::text(11));
-    app.processEvents();
+    setStep(g_profileStep, StartupStepState::Active, I18n::text(15));
+    setStartupProgress(5);
+    setStep(g_profileStep, StartupStepState::Done, I18n::text(16));
+    setStartupProgress(12);
 
-    if (!database.open())
+    MemsReferencePackageAction referenceAction = memsReferencePackageAction();
+    if (referenceAction == MemsReferencePackageAction::Install)
+        setStep(g_databaseStep, StartupStepState::Active, I18n::text(18));
+    else if (referenceAction == MemsReferencePackageAction::Update)
+        setStep(g_databaseStep, StartupStepState::Active, I18n::text(19));
+    else
+        setStep(g_databaseStep, StartupStepState::Active, I18n::text(17));
+    setStartupProgress(20);
+
+    if (!refreshMemsReferencePackage(&referenceAction))
     {
-        QMessageBox::critical(nullptr, I18n::text(12), I18n::text(13));
-        g_splashProgressCallback = nullptr;
+        setStep(g_databaseStep, StartupStepState::Error, I18n::text(27));
+        QMessageBox::critical(nullptr, I18n::text(12), I18n::text(27));
         splash->close();
         delete splash;
         return 1;
     }
 
-    if (g_startupStatus)
-        g_startupStatus->setText(I18n::text(14));
-    updateStartupProgress(100);
+    MemsReferenceDatabase referenceDatabase;
+    if (!referenceDatabase.open())
+    {
+        setStep(g_databaseStep, StartupStepState::Error, I18n::text(27));
+        QMessageBox::critical(nullptr, I18n::text(12), I18n::text(27));
+        splash->close();
+        delete splash;
+        return 1;
+    }
+    referenceDatabase.close();
+
+    DatabaseManager database;
+    if (!database.open())
+    {
+        setStep(g_databaseStep, StartupStepState::Error, I18n::text(13));
+        QMessageBox::critical(nullptr, I18n::text(12), I18n::text(13));
+        splash->close();
+        delete splash;
+        return 1;
+    }
+
+    setStep(g_databaseStep, StartupStepState::Done, I18n::text(20));
+    setStartupProgress(42);
+
+    setStep(g_indexStep, StartupStepState::Active, I18n::text(21));
+    setStartupProgress(50);
+    QString indexError;
+    if (!MemsGlobalSearchIndex::ensureBuilt(&indexError))
+    {
+        Q_UNUSED(indexError);
+        setStep(g_indexStep, StartupStepState::Error, I18n::text(28));
+        QMessageBox::critical(nullptr, I18n::text(12), I18n::text(28));
+        database.close();
+        splash->close();
+        delete splash;
+        return 1;
+    }
+    setStep(g_indexStep, StartupStepState::Done, I18n::text(22));
+    setStartupProgress(68);
+
+    setStep(g_portsStep, StartupStepState::Active, I18n::text(23).arg(0));
+    setStep(g_interfaceStep, StartupStepState::Pending, I18n::text(30));
+    setStartupProgress(70);
+    g_splashProgressCallback = updateStartupProgress;
 
     MainWindow window;
+
+    setStep(g_portsStep, StartupStepState::Done, I18n::text(24));
+    setStep(g_interfaceStep, StartupStepState::Done, I18n::text(26));
+    setStartupProgress(100);
+
     QScreen *screen = QGuiApplication::primaryScreen();
     if (screen)
     {
@@ -208,7 +369,11 @@ int main(int argc, char *argv[])
     delete splash;
     g_startupSplash = nullptr;
     g_startupProgress = nullptr;
-    g_startupStatus = nullptr;
+    g_profileStep = nullptr;
+    g_databaseStep = nullptr;
+    g_indexStep = nullptr;
+    g_portsStep = nullptr;
+    g_interfaceStep = nullptr;
     g_splashProgressCallback = nullptr;
 
     window.showMaximized();
