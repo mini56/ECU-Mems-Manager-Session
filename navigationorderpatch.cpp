@@ -14,8 +14,13 @@
 #include <QTimer>
 #include <QVector>
 #include <QWidget>
+#include "i18n.h"
 
 namespace {
+
+static const int kTextRole=Qt::UserRole+42;
+static const int kTabPtrRole=Qt::UserRole+60;
+static const int kRankRole=Qt::UserRole+61;
 
 static QWidget *pageOf(QWidget *tab)
 {
@@ -29,27 +34,29 @@ static QString className(QObject *object)
     return object ? QString::fromLatin1(object->metaObject()->className()) : QString();
 }
 
-// Final menu order requested by the user:
-// 1,2,7,6,8,5,3,9,4,10,11 from the previously numbered list.
-static int pageRank(QWidget *tab)
+static int pageRank(QTabWidget *tabs,int index)
 {
+    if(!tabs || index<0 || index>=tabs->count()) return 100;
+    QWidget *tab=tabs->widget(index);
     QWidget *page=pageOf(tab);
     if(!page) return 100;
 
     const QString name=page->objectName();
     const QString cls=className(page);
+    const QString title=tabs->tabText(index).trimmed();
 
-    if(name==QStringLiteral("overview_tab")) return 0;                         // Apercu
-    if(name==QStringLiteral("emission_tab")) return 1;                         // Reglages
+    // Ordre demandé : 1,2,7,6,8,5,3,9,4,10,11
+    if(name==QStringLiteral("overview_tab")) return 0;                          // Aperçu
+    if(name==QStringLiteral("emission_tab")) return 1;                         // Réglages
     if(name==QStringLiteral("actuators")) return 2;                            // Actionneurs
     if(name==QStringLiteral("errors")) return 3;                               // Erreurs
-    if(cls==QStringLiteral("DiagnosticPanel") || page->property("strictDiagnosticBuilt").toBool()) return 4;
+    if(cls==QStringLiteral("DiagnosticPanel") || title==I18n::text(7013).trimmed()) return 4;
     if(cls==QStringLiteral("AnalysisTab")) return 5;                           // Analyse
-    if(cls==QStringLiteral("SummaryTab") || page->property("strictSummaryBuilt").toBool()) return 6;
-    if(page->property("strictRoscoBuilt").toBool()) return 7;                  // ECU / ROSCO
-    if(name==QStringLiteral("raw") || page->property("strictRawBuilt").toBool()) return 8;
-    if(name==QStringLiteral("database_tab")) return 9;                         // Base de donnees
-    if(name==QStringLiteral("ECU") || page->property("strictInteractiveBuilt").toBool()) return 10;
+    if(cls==QStringLiteral("SummaryTab") || title==I18n::text(7017).trimmed()) return 6;
+    if(title==I18n::text(7012).trimmed() || page->property("strictRoscoBuilt").toBool()) return 7;
+    if(name==QStringLiteral("raw")) return 8;                                  // Toutes les données
+    if(name==QStringLiteral("database_tab") || title==I18n::text(7152).trimmed()) return 9;
+    if(name==QStringLiteral("ECU")) return 10;                                 // Mode interactif
 
     return 100;
 }
@@ -64,28 +71,28 @@ static QIcon menuIcon(int rank)
     p.setBrush(Qt::NoBrush);
 
     switch(rank) {
-    case 0: // Apercu : quatre cadrans
+    case 0: // Aperçu : quatre cadrans
         p.drawRoundedRect(QRectF(3,4,7,6),1.2,1.2);
         p.drawRoundedRect(QRectF(12,4,7,6),1.2,1.2);
         p.drawRoundedRect(QRectF(3,12,7,6),1.2,1.2);
         p.drawRoundedRect(QRectF(12,12,7,6),1.2,1.2);
         break;
-    case 1: // Reglages : curseurs
+    case 1: // Réglages : curseurs
         p.drawLine(4,6,18,6); p.drawLine(4,11,18,11); p.drawLine(4,16,18,16);
         p.drawEllipse(QPointF(9,6),2,2); p.drawEllipse(QPointF(14,11),2,2); p.drawEllipse(QPointF(7,16),2,2);
         break;
-    case 2: // Actionneurs : moteur/engrenage
+    case 2: // Actionneurs : engrenage
         p.drawEllipse(QRectF(6,6,10,10)); p.drawEllipse(QPointF(11,11),2.4,2.4);
         p.drawLine(11,3,11,6); p.drawLine(11,16,11,19);
         p.drawLine(3,11,6,11); p.drawLine(16,11,19,11);
         p.drawLine(5.3,5.3,7.2,7.2); p.drawLine(14.8,14.8,16.7,16.7);
         break;
-    case 3: { // Erreurs : alerte
+    case 3: { // Erreurs : triangle d'alerte
         QPolygonF q; q << QPointF(11,3.5) << QPointF(19,18) << QPointF(3,18);
         p.drawPolygon(q); p.drawLine(11,8,11,13); p.drawPoint(QPointF(11,16));
         break;
     }
-    case 4: // Diagnostic automatique : loupe + validation
+    case 4: // Diagnostic : loupe + validation
         p.drawEllipse(QRectF(4,4,11,11)); p.drawLine(14,14,19,19);
         p.drawLine(7,10,9.5,12.5); p.drawLine(9.5,12.5,13,8);
         break;
@@ -95,24 +102,24 @@ static QIcon menuIcon(int rank)
         p.drawPolyline(q);
         break;
     }
-    case 6: // Toutes les mesures : barres de mesures
+    case 6: // Toutes les mesures : histogramme
         p.drawRoundedRect(QRectF(4,12,3,6),.8,.8);
         p.drawRoundedRect(QRectF(9.5,8,3,10),.8,.8);
         p.drawRoundedRect(QRectF(15,4,3,14),.8,.8);
         p.drawLine(3,18.5,19,18.5);
         break;
-    case 7: // ECU / ROSCO : liaison
+    case 7: // ECU / ROSCO : chaîne
         p.drawRoundedRect(QRectF(3,7,9,8),4,4);
         p.drawRoundedRect(QRectF(10,7,9,8),4,4);
         p.drawLine(8,11,14,11);
         break;
-    case 8: // Toutes les donnees : matrice brute
+    case 8: // Toutes les données : matrice
         p.drawRoundedRect(QRectF(3.5,3.5,15,15),1.5,1.5);
         p.drawLine(8.5,4,8.5,18); p.drawLine(13.5,4,13.5,18);
         p.drawLine(4,8.5,18,8.5); p.drawLine(4,13.5,18,13.5);
         p.drawPoint(QPointF(6,6)); p.drawPoint(QPointF(11,11)); p.drawPoint(QPointF(16,16));
         break;
-    case 9: // Base de donnees : cylindre
+    case 9: // Base de données : cylindre
         p.drawEllipse(QRectF(4,4,14,5));
         p.drawLine(4,6.5,4,16); p.drawLine(18,6.5,18,16);
         p.drawArc(QRectF(4,13.5,14,5),180*16,180*16);
@@ -124,101 +131,113 @@ static QIcon menuIcon(int rank)
         p.drawLine(11.5,14,16,14);
         break;
     default:
-        p.drawRoundedRect(QRectF(4,4,14,14),2,2);
+        p.drawEllipse(QPointF(11,11),7,7);
         break;
     }
-
     return QIcon(pm);
 }
 
-struct TabInfo
+struct MenuEntry
 {
     QWidget *tab=nullptr;
     QString title;
-    QString toolTip;
-    QIcon icon;
     int rank=100;
-    int original=0;
+    int originalIndex=0;
 };
 
-static void syncSidebar(QMainWindow *window,QTabWidget *tabs)
+static QWidget *tabFromItem(QListWidgetItem *item)
 {
-    if(!window || !tabs) return;
-    QListWidget *nav=window->findChild<QListWidget*>(QStringLiteral("uiRebuildNav"));
-    if(!nav) return;
-
-    const QSignalBlocker blocker(nav);
-    const int textRole=Qt::UserRole+42;
-    bool collapsed=false;
-    if(QFrame *sidebar=window->findChild<QFrame*>(QStringLiteral("darkSidebar")))
-        collapsed=sidebar->property("collapsed").toBool();
-
-    nav->clear();
-    nav->setIconSize(QSize(20,20));
-    for(int i=0;i<tabs->count();++i) {
-        const QString title=tabs->tabText(i).trimmed();
-        const int rank=pageRank(tabs->widget(i));
-        QListWidgetItem *item=new QListWidgetItem(menuIcon(rank),collapsed?QString():title,nav);
-        item->setData(textRole,title);
-        item->setToolTip(title);
-    }
-    nav->setCurrentRow(tabs->currentIndex());
+    if(!item) return nullptr;
+    const qulonglong raw=item->data(kTabPtrRole).toULongLong();
+    return reinterpret_cast<QWidget*>(static_cast<quintptr>(raw));
 }
 
-static void applyIconsOnly(QMainWindow *window)
+static void installMappedConnections(QMainWindow *window,QTabWidget *tabs,QListWidget *nav)
+{
+    if(!window || !tabs || !nav || nav->property("mappedNavigationConnections").toBool()) return;
+
+    // Retire les deux liaisons historiques qui supposaient que la ligne N du
+    // menu correspondait obligatoirement à l'index N du QTabWidget.
+    QObject::disconnect(nav,&QListWidget::currentRowChanged,tabs,&QTabWidget::setCurrentIndex);
+    QObject::disconnect(tabs,nullptr,nav,nullptr);
+
+    QObject::connect(nav,&QListWidget::currentRowChanged,window,[nav,tabs](int row){
+        if(row<0 || row>=nav->count()) return;
+        QWidget *target=tabFromItem(nav->item(row));
+        if(!target) return;
+        const int index=tabs->indexOf(target);
+        if(index>=0 && tabs->currentIndex()!=index) tabs->setCurrentIndex(index);
+    });
+
+    QObject::connect(tabs,&QTabWidget::currentChanged,window,[nav,tabs](int index){
+        if(index<0 || index>=tabs->count()) return;
+        QWidget *current=tabs->widget(index);
+        for(int row=0;row<nav->count();++row) {
+            if(tabFromItem(nav->item(row))==current) {
+                const QSignalBlocker blocker(nav);
+                nav->setCurrentRow(row);
+                break;
+            }
+        }
+    });
+
+    nav->setProperty("mappedNavigationConnections",true);
+}
+
+static void applyRequestedMenu(QMainWindow *window)
 {
     if(!window) return;
     QTabWidget *tabs=window->findChild<QTabWidget*>(QStringLiteral("Tab_main"));
     QListWidget *nav=window->findChild<QListWidget*>(QStringLiteral("uiRebuildNav"));
-    if(!tabs || !nav || nav->count()!=tabs->count()) return;
+    if(!tabs || !nav || tabs->count()!=11) return;
 
-    for(int i=0;i<tabs->count();++i) {
-        const int rank=pageRank(tabs->widget(i));
-        if(QListWidgetItem *item=nav->item(i)) item->setIcon(menuIcon(rank));
-    }
-}
-
-static void applyRequestedOrder(QMainWindow *window)
-{
-    if(!window) return;
-    QTabWidget *tabs=window->findChild<QTabWidget*>(QStringLiteral("Tab_main"));
-    if(!tabs || tabs->count()!=11) return;
-
-    QVector<TabInfo> entries;
+    QVector<MenuEntry> entries;
     entries.reserve(tabs->count());
     int rankCounts[11]={0,0,0,0,0,0,0,0,0,0,0};
 
     for(int i=0;i<tabs->count();++i) {
-        TabInfo info;
-        info.tab=tabs->widget(i);
-        info.title=tabs->tabText(i);
-        info.toolTip=tabs->tabToolTip(i);
-        info.icon=tabs->tabIcon(i);
-        info.rank=pageRank(info.tab);
-        info.original=i;
-        if(info.rank>=0 && info.rank<11) ++rankCounts[info.rank];
-        entries.append(info);
+        MenuEntry entry;
+        entry.tab=tabs->widget(i);
+        entry.title=tabs->tabText(i).trimmed();
+        entry.rank=pageRank(tabs,i);
+        entry.originalIndex=i;
+        if(entry.rank>=0 && entry.rank<11) ++rankCounts[entry.rank];
+        entries.append(entry);
     }
 
+    // Les onze pages doivent être reconnues une seule fois chacune.
     for(int rank=0;rank<11;++rank)
         if(rankCounts[rank]!=1) return;
 
-    std::stable_sort(entries.begin(),entries.end(),[](const TabInfo &a,const TabInfo &b){
+    std::stable_sort(entries.begin(),entries.end(),[](const MenuEntry &a,const MenuEntry &b){
         if(a.rank!=b.rank) return a.rank<b.rank;
-        return a.original<b.original;
+        return a.originalIndex<b.originalIndex;
     });
 
-    QWidget *current=tabs->currentWidget();
-    for(int i=tabs->count()-1;i>=0;--i) tabs->removeTab(i);
+    bool collapsed=false;
+    if(QFrame *sidebar=window->findChild<QFrame*>(QStringLiteral("darkSidebar")))
+        collapsed=sidebar->property("collapsed").toBool();
 
-    for(const TabInfo &info:entries) {
-        const int index=tabs->addTab(info.tab,menuIcon(info.rank),info.title);
-        tabs->setTabToolTip(index,info.toolTip);
+    QWidget *current=tabs->currentWidget();
+    {
+        const QSignalBlocker blocker(nav);
+        nav->clear();
+        nav->setIconSize(QSize(20,20));
+        int currentRow=-1;
+        for(int row=0;row<entries.size();++row) {
+            const MenuEntry &entry=entries.at(row);
+            QListWidgetItem *item=new QListWidgetItem(menuIcon(entry.rank),collapsed?QString():entry.title,nav);
+            item->setData(kTextRole,entry.title);
+            item->setData(kTabPtrRole,static_cast<qulonglong>(reinterpret_cast<quintptr>(entry.tab)));
+            item->setData(kRankRole,entry.rank);
+            item->setToolTip(entry.title);
+            if(entry.tab==current) currentRow=row;
+        }
+        if(currentRow>=0) nav->setCurrentRow(currentRow);
     }
 
-    if(current && tabs->indexOf(current)>=0) tabs->setCurrentWidget(current);
-    syncSidebar(window,tabs);
-    window->setProperty("requestedNavigationOrderApplied",true);
+    installMappedConnections(window,tabs,nav);
+    window->setProperty("requestedNavigationMenuApplied",true);
 }
 
 class NavigationOrderInstaller : public QObject
@@ -233,17 +252,18 @@ protected:
             return QObject::eventFilter(watched,event);
 
         if((event->type()==QEvent::Show || event->type()==QEvent::Polish) &&
-           !window->property("requestedNavigationOrderScheduled").toBool()) {
-            window->setProperty("requestedNavigationOrderScheduled",true);
-            // Run after the legacy dedicated-page rebuild and Database-tab insertion.
-            QTimer::singleShot(4300,window,[window](){applyRequestedOrder(window);});
-            QTimer::singleShot(5400,window,[window](){applyRequestedOrder(window);});
+           !window->property("requestedNavigationMenuScheduled").toBool()) {
+            window->setProperty("requestedNavigationMenuScheduled",true);
+            // taborderpatch.cpp termine ses passages à 3,6 s.
+            QTimer::singleShot(4000,window,[window](){applyRequestedMenu(window);});
+            QTimer::singleShot(4700,window,[window](){applyRequestedMenu(window);});
+            QTimer::singleShot(5600,window,[window](){applyRequestedMenu(window);});
         } else if(event->type()==QEvent::LanguageChange) {
-            QTimer::singleShot(160,window,[window](){applyRequestedOrder(window);});
-        } else if(event->type()==QEvent::Resize && window->property("requestedNavigationOrderApplied").toBool()) {
-            // darkstyle.cpp restyles the navigation shortly after a resize;
-            // restore the semantic, unique icons just after that visual pass.
-            QTimer::singleShot(150,window,[window](){applyIconsOnly(window);});
+            QTimer::singleShot(550,window,[window](){applyRequestedMenu(window);});
+        } else if(event->type()==QEvent::Resize && window->property("requestedNavigationMenuApplied").toBool()) {
+            // darkstyle.cpp intervient 70 ms après un resize : on restaure
+            // ensuite l'ordre et les onze icônes uniques.
+            QTimer::singleShot(180,window,[window](){applyRequestedMenu(window);});
         }
         return QObject::eventFilter(watched,event);
     }
