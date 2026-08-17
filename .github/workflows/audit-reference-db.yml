@@ -19,7 +19,7 @@ jobs:
 
       - name: Audit SQLite, XML, assets and six-language coverage
         shell: bash
-        run: python tools/audit_reference_database.py --max-language-violations 794
+        run: python tools/audit_reference_database.py --max-language-violations 690
 
       - name: Report incomplete language families during migration
         shell: bash
