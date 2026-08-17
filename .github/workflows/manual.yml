@@ -146,12 +146,14 @@ jobs:
             "Qt5Gui.dll",
             "Qt5Widgets.dll",
             "Qt5Sql.dll",
+            "Qt5Svg.dll",
             "libgcc_s_dw2-1.dll",
             "libstdc++-6.dll",
             "libwinpthread-1.dll",
             "librosco.dll",
             "platforms\qwindows.dll",
             "sqldrivers\qsqlite.dll",
+            "imageformats\qsvg.dll",
             "translations\fr\fr.json",
             "translations\fr\fr_uninstall.json",
             "translations\en\en.json",
@@ -169,9 +171,16 @@ jobs:
             "database\reference\mems_reference_seed_2.qz64",
             "database\reference\mems_reference_seed_3.qz64",
             "database\reference\mems_reference_seed_4.qz64",
+            "database\reference\fiches\mems_1_2.xml.qz64",
             "database\reference\fiches\mems_1_3.xml.qz64",
             "database\reference\fiches\mems_1_6.xml.qz64",
-            "database\reference\fiches\mems_1_9.xml.qz64"
+            "database\reference\fiches\mems_1_9.xml.qz64",
+            "database\reference\images\mems_1_2_ecu_connector.svg",
+            "database\reference\images\mems_1_3_ecu_connectors.svg",
+            "database\reference\images\mems_1_6_ecu_connector.svg",
+            "database\reference\images\mems_1_9_ecu_connector.svg",
+            "database\reference\images\rover_rosco_3pin_black.svg",
+            "database\reference\images\mems_1_9_obd_16pin.svg"
           )
           foreach ($file in $required) {
             $full = Join-Path $dist $file
