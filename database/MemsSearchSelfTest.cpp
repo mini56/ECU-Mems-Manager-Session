@@ -1,9 +1,14 @@
 #include "MemsGlobalSearchIndex.h"
+#include "MemsReferenceDatabase.h"
 
 #include <QCoreApplication>
+#include <QSet>
+#include <QSqlDatabase>
+#include <QSqlQuery>
 #include <QStringList>
 #include <QVariantList>
 #include <QVariantMap>
+#include <QUuid>
 
 #include <cstdio>
 
@@ -27,6 +32,12 @@ QString normalized(QString input)
         }
     }
     return out.simplified();
+}
+
+QString quoteIdentifier(QString value)
+{
+    value.replace(QLatin1Char('"'),QStringLiteral("\"\""));
+    return QStringLiteral("\"%1\"").arg(value);
 }
 
 QString rowText(const QVariantMap &row)
@@ -112,6 +123,97 @@ bool requireFirstResult(const QString &query,const QString &expectedCategory,con
     return true;
 }
 
+bool requireCompleteSqliteCoverage()
+{
+    MemsReferenceDatabase reference;
+    if(!reference.open()){
+        printLine(QStringLiteral("FAIL coverage: cannot open MEMS reference database"));
+        return false;
+    }
+
+    const QString sourceConnection=QStringLiteral("MEMS_SELFTEST_SOURCE_%1").arg(QUuid::createUuid().toString());
+    const QString indexConnection=QStringLiteral("MEMS_SELFTEST_INDEX_%1").arg(QUuid::createUuid().toString());
+    bool ok=true;
+    int sourceRows=0;
+    int indexedRows=0;
+
+    {
+        QSqlDatabase source=QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),sourceConnection);
+        source.setDatabaseName(reference.databasePath());
+        QSqlDatabase index=QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),indexConnection);
+        index.setDatabaseName(MemsGlobalSearchIndex::indexPath());
+
+        if(!source.open() || !index.open()){
+            printLine(QStringLiteral("FAIL coverage: cannot open source/index SQLite files"));
+            ok=false;
+        }else{
+            QSqlQuery tables(source);
+            if(!tables.exec(QStringLiteral("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name"))){
+                printLine(QStringLiteral("FAIL coverage: cannot enumerate source tables"));
+                ok=false;
+            }else{
+                while(tables.next()){
+                    const QString table=tables.value(0).toString();
+                    if(table.startsWith(QStringLiteral("search_"),Qt::CaseInsensitive)) continue;
+
+                    QSqlQuery sourceCount(source);
+                    const QString countSql=QStringLiteral("SELECT COUNT(*) FROM %1").arg(quoteIdentifier(table));
+                    if(!sourceCount.exec(countSql) || !sourceCount.next()){
+                        printLine(QStringLiteral("FAIL coverage: cannot count source table %1").arg(table));
+                        ok=false;
+                        continue;
+                    }
+                    const int expected=sourceCount.value(0).toInt();
+                    sourceRows+=expected;
+
+                    QSqlQuery indexCount(index);
+                    indexCount.prepare(QStringLiteral("SELECT COUNT(*) FROM search_documents WHERE source_table=:table"));
+                    indexCount.bindValue(QStringLiteral(":table"),table);
+                    if(!indexCount.exec() || !indexCount.next()){
+                        printLine(QStringLiteral("FAIL coverage: cannot count indexed table %1").arg(table));
+                        ok=false;
+                        continue;
+                    }
+                    const int actual=indexCount.value(0).toInt();
+                    indexedRows+=actual;
+                    if(actual!=expected){
+                        printLine(QStringLiteral("FAIL coverage table=%1 source_rows=%2 indexed_rows=%3")
+                                  .arg(table).arg(expected).arg(actual));
+                        ok=false;
+                    }
+                }
+            }
+
+            QSqlQuery xml(index);
+            if(!xml.exec(QStringLiteral("SELECT DISTINCT generation FROM search_documents WHERE source_table='xml_documentation'"))){
+                printLine(QStringLiteral("FAIL coverage: cannot inspect XML documentation index"));
+                ok=false;
+            }else{
+                QSet<QString> generations;
+                while(xml.next()) generations.insert(xml.value(0).toString());
+                const QStringList required={QStringLiteral("1.2"),QStringLiteral("1.3"),QStringLiteral("1.6"),QStringLiteral("1.9")};
+                for(const QString &generation:required){
+                    if(!generations.contains(generation)){
+                        printLine(QStringLiteral("FAIL coverage: MEMS %1 XML is not indexed").arg(generation));
+                        ok=false;
+                    }
+                }
+            }
+        }
+
+        if(source.isOpen()) source.close();
+        if(index.isOpen()) index.close();
+    }
+    QSqlDatabase::removeDatabase(sourceConnection);
+    QSqlDatabase::removeDatabase(indexConnection);
+    reference.close();
+
+    if(ok)
+        printLine(QStringLiteral("PASS exhaustive SQLite coverage: source_rows=%1 indexed_rows=%2 + XML 1.2/1.3/1.6/1.9")
+                  .arg(sourceRows).arg(indexedRows));
+    return ok;
+}
+
 }
 
 int main(int argc,char **argv)
@@ -131,6 +233,7 @@ int main(int argc,char **argv)
     printLine(QStringLiteral("INDEX documents=%1").arg(MemsGlobalSearchIndex::documentCount()));
 
     bool ok=true;
+    ok=requireCompleteSqliteCoverage() && ok;
     ok=requireSearch(QStringLiteral("vert rouge"),QStringLiteral("wiring"),
                      {QStringLiteral("IAT"),QStringLiteral("Vert / Rouge")}) && ok;
     ok=requireSearch(QStringLiteral("IAT"),QStringLiteral("wiring"),
