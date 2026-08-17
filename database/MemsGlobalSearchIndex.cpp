@@ -374,9 +374,6 @@ bool indexXml(QSqlDatabase &indexDatabase,
     plain.replace(QRegularExpression(QStringLiteral("<[^>]+>")), QStringLiteral(" "));
     plain = plain.simplified();
 
-    // Keep a document entry for opening the complete sheet, but do not put all
-    // of its technical text into one broad search hit. Technical text is indexed
-    // below in its actual line/section context.
     if (!insertDocument(indexDatabase,
                         ftsEnabled,
                         QStringLiteral("documentation"),
@@ -547,7 +544,6 @@ bool validateIndex(QSqlDatabase &index,
         !query.next() || query.value(0).toInt() != 0)
         return false;
 
-    // Category invariants catch substring mistakes such as protocol_profiles -> file.
     QSqlQuery protocolProfiles(index);
     if (!protocolProfiles.exec(QStringLiteral(
             "SELECT COUNT(*) FROM search_documents "
@@ -778,7 +774,7 @@ bool MemsGlobalSearchIndex::ensureBuilt(QString *errorMessage)
     }
 
     const QStringList generations = {
-        QStringLiteral("1.3"), QStringLiteral("1.6"), QStringLiteral("1.9")
+        QStringLiteral("1.2"), QStringLiteral("1.3"), QStringLiteral("1.6"), QStringLiteral("1.9")
     };
     QStringList xmlPaths;
     for (const QString &generation : generations)
