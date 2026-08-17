@@ -10,7 +10,7 @@ LANGUAGES = base.LANGUAGES
 LOCALIZED_XML_RE = re.compile(r"^(?P<base>.+?)(?:\.(?P<lang>fr|en|es|it|pt|de))?\.xml\.qz64$", re.I)
 
 
-def xml_text_slot_count(path: pathlib.Path, expected_language: str, violations: list[str]) -> int:
+def xml_text_slot_count(path: pathlib.Path, violations: list[str]) -> int:
     try:
         raw = base.unpack_qz64_bytes(path.read_bytes(), path.as_posix())
         root = ET.fromstring(raw.decode("utf-8"))
@@ -18,16 +18,9 @@ def xml_text_slot_count(path: pathlib.Path, expected_language: str, violations: 
         violations.append(f"XML_INVALID|{path.name}|{exc}")
         return -1
 
-    declared = (root.attrib.get("lang") or root.attrib.get("{http://www.w3.org/XML/1998/namespace}lang") or "").lower()
-    if expected_language != "fr" and declared != expected_language:
-        violations.append(f"XML_LANGUAGE_MARKER|{path.name}|expected={expected_language}|declared={declared or 'none'}")
-    if declared and declared not in LANGUAGES:
-        violations.append(f"XML_LANGUAGE_MARKER|{path.name}|unsupported={declared}")
-
-    # Compare structural text slots, not vocabulary. A one-word translation such
-    # as "Ground" or "Sensormasse" must not be mistaken for a technical token.
-    # Counting every populated user-visible slot guarantees that no paragraph,
-    # cell, label or selected descriptive attribute disappeared in translation.
+    # The language suffix in the package filename is authoritative. The runtime
+    # selects fiches by that suffix, so an optional XML lang attribute is only
+    # documentary metadata and must never override the package contract.
     count = 0
     for element in root.iter():
         if element.text and element.text.strip():
@@ -46,6 +39,7 @@ def audit_localized_xml(root: pathlib.Path, violations: list[str]) -> tuple[int,
 
     groups: dict[str, dict[str, pathlib.Path]] = {}
     counts: dict[tuple[str, str], int] = {}
+    raw_by_family: dict[tuple[str, str], bytes] = {}
     total_slots = 0
 
     for path in files:
@@ -60,8 +54,12 @@ def audit_localized_xml(root: pathlib.Path, violations: list[str]) -> tuple[int,
             violations.append(f"XML_LANGUAGE_DUPLICATE|{stem}|{language}")
             continue
         variants[language] = path
-        count = xml_text_slot_count(path, language, violations)
+        count = xml_text_slot_count(path, violations)
         counts[(stem, language)] = count
+        try:
+            raw_by_family[(stem, language)] = base.unpack_qz64_bytes(path.read_bytes(), path.as_posix())
+        except Exception:
+            raw_by_family[(stem, language)] = b""
         if count > 0:
             total_slots += count
 
@@ -83,6 +81,7 @@ def audit_localized_xml(root: pathlib.Path, violations: list[str]) -> tuple[int,
             continue
 
         family_ok = True
+        french_raw = raw_by_family.get((stem, "fr"), b"")
         for language in LANGUAGES:
             count = counts.get((stem, language), -1)
             if count <= 0:
@@ -90,6 +89,9 @@ def audit_localized_xml(root: pathlib.Path, violations: list[str]) -> tuple[int,
                 family_ok = False
             elif count != reference:
                 violations.append(f"XML_LANGUAGE_COVERAGE|{stem}|{language}|slots={count}|fr={reference}")
+                family_ok = False
+            elif language != "fr" and raw_by_family.get((stem, language), b"") == french_raw:
+                violations.append(f"XML_LANGUAGE_UNTRANSLATED_COPY|{stem}|{language}")
                 family_ok = False
         if family_ok:
             localized_slots += reference * len(LANGUAGES)
