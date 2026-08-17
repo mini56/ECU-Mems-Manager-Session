@@ -826,5 +826,45 @@ QVariantList MemsGlobalSearchIndex::search(const QString &text,
 {
     if (!ensureBuilt())
         return QVariantList();
-    return queryIndex(indexPath(), text, category, limit);
+
+    QVariantList rows = queryIndex(indexPath(), text, category, limit);
+    if (!category.trimmed().isEmpty() || rows.size() < 2)
+        return rows;
+
+    const QString normalized = normalizeSearchText(text);
+    const QStringList terms = normalized.split(QLatin1Char(' '), Qt::SkipEmptyParts);
+    if (terms.size() != 1)
+        return rows;
+
+    const QString token = terms.first();
+    QStringList priority;
+    if (QRegularExpression(QStringLiteral("^p[0-9]{4}$"), QRegularExpression::CaseInsensitiveOption).match(token).hasMatch()) {
+        priority << QStringLiteral("dtc") << QStringLiteral("wiring") << QStringLiteral("data") << QStringLiteral("command");
+    } else if (QRegularExpression(QStringLiteral("^[0-9a-f]{2}$"), QRegularExpression::CaseInsensitiveOption).match(token).hasMatch()
+               && token.contains(QRegularExpression(QStringLiteral("[0-9]")))) {
+        priority << QStringLiteral("command") << QStringLiteral("data") << QStringLiteral("wiring") << QStringLiteral("dtc");
+    } else if (QRegularExpression(QStringLiteral("^[a-z]{2,5}$"), QRegularExpression::CaseInsensitiveOption).match(token).hasMatch()) {
+        priority << QStringLiteral("wiring") << QStringLiteral("data") << QStringLiteral("dtc") << QStringLiteral("command");
+    } else {
+        return rows;
+    }
+
+    QVariantList ranked;
+    QSet<int> emitted;
+    for (const QString &wanted : priority) {
+        for (int i = 0; i < rows.size(); ++i) {
+            if (emitted.contains(i))
+                continue;
+            const QVariantMap row = rows.at(i).toMap();
+            if (row.value(QStringLiteral("category")).toString() == wanted) {
+                ranked.append(rows.at(i));
+                emitted.insert(i);
+            }
+        }
+    }
+    for (int i = 0; i < rows.size(); ++i) {
+        if (!emitted.contains(i))
+            ranked.append(rows.at(i));
+    }
+    return ranked;
 }
