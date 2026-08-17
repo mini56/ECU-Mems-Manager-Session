@@ -102,12 +102,17 @@ jobs:
           }
           Copy-Item "$build\database" "$dist\database" -Recurse -Force
 
+          # Tous les modules Qt lies directement par l'application doivent voyager
+          # avec l'executable. SerialPort est notamment requis depuis la detection
+          # native des ports COM introduite dans le build 589.
           $rootDlls = @(
             "$qtBin\Qt5Core.dll",
             "$qtBin\Qt5Gui.dll",
             "$qtBin\Qt5Widgets.dll",
             "$qtBin\Qt5Sql.dll",
             "$qtBin\Qt5Svg.dll",
+            "$qtBin\Qt5SerialPort.dll",
+            "$qtBin\Qt5Charts.dll",
             "$mingwBin\libgcc_s_dw2-1.dll",
             "$mingwBin\libstdc++-6.dll",
             "$mingwBin\libwinpthread-1.dll"
@@ -147,6 +152,8 @@ jobs:
             "Qt5Widgets.dll",
             "Qt5Sql.dll",
             "Qt5Svg.dll",
+            "Qt5SerialPort.dll",
+            "Qt5Charts.dll",
             "libgcc_s_dw2-1.dll",
             "libstdc++-6.dll",
             "libwinpthread-1.dll",
@@ -187,6 +194,26 @@ jobs:
             if (-not (Test-Path $full)) { throw "Fichier obligatoire manquant dans le package: $file" }
             if ((Get-Item $full).Length -le 0) { throw "Fichier obligatoire vide: $file" }
             Write-Host "OK: $file - $((Get-Item $full).Length) octets"
+          }
+
+          # Controle des imports runtime de l'executable. Le smoke test graphique seul
+          # n'est pas suffisant sous Windows : une boite "DLL introuvable" garde le
+          # processus vivant et pouvait donc laisser passer un artefact incomplet.
+          $objdump = Join-Path $mingwBin "objdump.exe"
+          if (-not (Test-Path $objdump)) { throw "objdump.exe introuvable pour verifier les DLL" }
+          $dependencyOutput = & $objdump -p "$dist\ecu_mems_manager.exe"
+          if ($LASTEXITCODE -ne 0) { throw "Impossible de lire les dependances runtime de l'executable" }
+          $runtimeDlls = @($dependencyOutput | ForEach-Object {
+            if ($_ -match 'DLL Name:\s+(.+\.dll)') { $Matches[1].Trim() }
+          } | Where-Object { $_ } | Sort-Object -Unique)
+          Write-Host "Dependances runtime detectees: $($runtimeDlls -join ', ')"
+          foreach ($dep in $runtimeDlls) {
+            $mustShip = ($dep -match '^Qt5.*\.dll$') -or ($dep -in @(
+              'libgcc_s_dw2-1.dll', 'libstdc++-6.dll', 'libwinpthread-1.dll', 'librosco.dll'
+            ))
+            if ($mustShip -and -not (Test-Path (Join-Path $dist $dep))) {
+              throw "Dependance runtime absente du package: $dep"
+            }
           }
 
           # Validation du manifeste de desinstallation : chaque entree doit etre relative
@@ -248,7 +275,7 @@ jobs:
           '@ | python -
           if ($LASTEXITCODE -ne 0) { throw "Echec validation de la base MEMS hors ligne" }
 
-          # Test de demarrage reel : si une DLL/plugin manque, le processus quitte immediatement.
+          # Test de demarrage reel apres verification explicite des dependances.
           $proc = Start-Process "$dist\ecu_mems_manager.exe" -WorkingDirectory $dist -PassThru
           Start-Sleep -Seconds 5
           if ($proc.HasExited) {
