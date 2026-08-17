@@ -113,6 +113,7 @@ bool MemsReferenceDatabase::open()
     }
 
     const QString fiches=cacheRoot+QStringLiteral("/fiches");
+    expandQz64(referenceRoot()+QStringLiteral("/fiches/mems_1_2.xml.qz64"),fiches+QStringLiteral("/mems_1_2.xml"));
     expandQz64(referenceRoot()+QStringLiteral("/fiches/mems_1_3.xml.qz64"),fiches+QStringLiteral("/mems_1_3.xml"));
     expandQz64(referenceRoot()+QStringLiteral("/fiches/mems_1_6.xml.qz64"),fiches+QStringLiteral("/mems_1_6.xml"));
     expandQz64(referenceRoot()+QStringLiteral("/fiches/mems_1_9.xml.qz64"),fiches+QStringLiteral("/mems_1_9.xml"));
@@ -269,6 +270,7 @@ int MemsReferenceDatabase::capabilityCount() const{return scalarInt(QStringLiter
 QString MemsReferenceDatabase::generationXmlPath(const QString &systemFamily) const
 {
     const QString token=generationToken(systemFamily); const QString root=cacheReferenceRoot()+QStringLiteral("/fiches/");
+    if(token==QStringLiteral("1.2")) return root+QStringLiteral("mems_1_2.xml");
     if(token==QStringLiteral("1.3")) return root+QStringLiteral("mems_1_3.xml");
     if(token==QStringLiteral("1.6")) return root+QStringLiteral("mems_1_6.xml");
     if(token==QStringLiteral("1.9")) return root+QStringLiteral("mems_1_9.xml");
