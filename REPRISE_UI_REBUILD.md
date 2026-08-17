@@ -5,9 +5,9 @@
 - Branche unique de travail : `ui-rebuild`.
 - **Dernier build validé fonctionnellement par l’utilisateur : #518.**
 - Commit applicatif validé : `9fba41d125030616c9eb35eef07a10a00a90e138`.
-- Le build #518 devient le **point de non-régression fonctionnel** pour l’explorateur et le moteur de recherche MEMS.
+- Le build #518 reste le **point de non-régression fonctionnel** pour l’explorateur et le moteur de recherche MEMS.
 - Ce fichier sert de point de reprise pour éviter toute perte de contexte lors d’un changement de discussion.
-- **Ne jamais repartir de #483 pour remplacer l’état actuel.** #483 reste seulement un ancien repère historique ; #518 est désormais la référence fonctionnelle validée.
+- **Ne jamais repartir de #483 pour remplacer l’état actuel.** #483 reste seulement un ancien repère historique ; #518 est la référence fonctionnelle validée.
 
 ## Moteur de recherche MEMS — comportement validé à conserver
 
@@ -83,18 +83,40 @@ Le build #518 a validé automatiquement :
 - test de pertinence `IAT` : premier résultat validé = **`[wiring] 6 — IAT — Vert / Rouge`** ;
 - résultat final : **`PASS MEMS search semantic self-test`**.
 
+Le self-test contient désormais aussi un contrôle MEMS 1.2 : une recherche `connecteur 36 voies` dans `wiring` doit retrouver la fiche MEMS 1.2 avec son connecteur 36 voies.
+
 Une modification future du moteur de recherche qui casse l’un de ces contrôles doit faire échouer le build et être considérée comme une régression jusqu’à correction.
 
 Ces exemples sont des **tests de contrôle**, pas une liste exhaustive des mots que le moteur doit connaître. Le principe reste : **tout mot réel contenu dans la base SQLite ou les XML doit être indexé et retrouvable dans son contexte réel.**
+
+## Fiche MEMS 1.2 — VALIDÉE VISUELLEMENT
+
+- La fiche `database/reference/fiches/mems_1_2.xml.qz64` a été créée à partir de la fiche XML présentée visuellement à l’utilisateur puis validée avant intégration.
+- Elle comporte le connecteur ECU **36 voies** et les 36 lignes de brochage.
+- Les couleurs et affectations non universelles ne doivent jamais être présentées comme certaines : elles portent exactement **« À vérifier suivant modèle du véhicule »**.
+- Ne jamais utiliser le statut « probable » dans cette fiche.
+- La fiche contient aussi les informations ROSCO, la trame 0x80, les défauts documentés et les sources utilisées.
+
+### Connecteurs réels à conserver dans les schémas
+
+- **MEMS 1.2 : 1 connecteur ECU 36 voies.**
+- **MEMS 1.3 : 2 connecteurs ECU, 36 + 18 voies.**
+- **MEMS 1.6 : connecteur principal 36 voies ; variante 36 + 18 voies = « À vérifier suivant modèle du véhicule ».**
+- **MEMS 1.9 : 1 connecteur ECU 36 voies.**
+- **MEMS 1.2 / 1.3 / 1.6 : prise diagnostic Rover / ROSCO 3 broches.**
+- Le SVG ROSCO principal est **noir**, en **vue de face uniquement** ; pas de vue de côté.
+- La famille de prise 3 broches existe aussi en variante verte pour l’immobilisateur ; ne pas transformer la fiche générale en vert et ne pas confondre cette variante avec le connecteur ECU.
+- **MEMS 1.9 : prise diagnostic 16 broches type J1962 / OBD**, utilisée pour la communication MEMS/K-Line et à ne pas présenter comme une simple interface OBD-II générique.
+
+Les SVG intégrés sont stockés dans `database/reference/images/` et doivent conserver le style dark harmonisé noir/gris, texte blanc et accents orange.
 
 ## Base de référence
 
 - Conserver la base enrichie/réparée actuelle.
 - Ne pas supprimer les enrichissements de recherche déjà intégrés.
 - Générations concernées : MEMS 1.2, 1.3, 1.6 et 1.9.
-- Les fiches XML actuellement présentes concernent 1.3, 1.6 et 1.9.
-- Ne pas prétendre qu’une fiche XML MEMS 1.2 existe tant qu’elle n’a pas été créée et vérifiée.
-- Les couleurs de fils MEMS 1.2 restent à vérifier avant toute intégration non confirmée.
+- Les fiches XML présentes concernent désormais **1.2, 1.3, 1.6 et 1.9**.
+- Les informations MEMS 1.2 incertaines restent dans la fiche mais doivent être explicitement marquées **« À vérifier suivant modèle du véhicule »**.
 
 ## Interdictions de modification
 
@@ -114,6 +136,7 @@ Ces exemples sont des **tests de contrôle**, pas une liste exhaustive des mots 
 
 1. Partir de `ui-rebuild` et considérer **#518 / `9fba41d125030616c9eb35eef07a10a00a90e138`** comme référence fonctionnelle validée du moteur de recherche.
 2. Préserver toutes les fonctionnalités demandées avant et après #483 ; ne jamais faire un reset qui en supprimerait une partie.
-3. Vérifier que le self-test sémantique reste bloquant et vert après toute modification du moteur/base/XML.
-4. Ne modifier l’architecture de recherche qu’en conservant au minimum tous les comportements validés dans #518.
-5. Continuer les travaux futurs depuis ce socle sans régression.
+3. Conserver la fiche MEMS 1.2 et les schémas de connecteurs décrits ci-dessus.
+4. Vérifier que le self-test sémantique reste bloquant et vert après toute modification du moteur/base/XML.
+5. Ne modifier l’architecture de recherche qu’en conservant au minimum tous les comportements validés dans #518.
+6. Continuer les travaux futurs depuis ce socle sans régression.
