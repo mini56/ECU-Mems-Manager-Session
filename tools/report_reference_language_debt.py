@@ -2,6 +2,7 @@
 import pathlib
 import sqlite3
 import sys
+import xml.etree.ElementTree as ET
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import audit_reference_database as audit
@@ -12,27 +13,58 @@ def main() -> int:
     db_path = audit.build_database(root)
     con = sqlite3.connect(db_path)
     try:
-        targets = (
-            ("protocol_commands", "name"),
-            ("protocol_data_fields", "field_name"),
-            ("protocol_operations", "function"),
-        )
-        print("LANGUAGE_FAMILY_SOURCE_VALUES")
-        for table, base in targets:
+        print("SQLITE_LEGACY_UNIQUE_VALUES")
+        seen = set()
+        tables = [r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")]
+        for table in tables:
             columns = [r[1] for r in con.execute(f'PRAGMA table_info("{table}")')]
-            source = f"{base}_fr" if f"{base}_fr" in columns else base
-            print(f"FAMILY {table}.{base} SOURCE={source}")
-            try:
-                rows = con.execute(
-                    f'SELECT rowid,"{source}" FROM "{table}" '
-                    f'WHERE "{source}" IS NOT NULL AND TRIM(CAST("{source}" AS TEXT))<>\'\' '
-                    f'ORDER BY rowid'
-                ).fetchall()
-            except sqlite3.Error as exc:
-                print(f"REPORT_ERROR {table}.{source}: {exc}")
-                continue
-            for rowid, value in rows:
-                print(f"SOURCE_VALUE|{table}.{base}|rowid={rowid}|{value}")
+            lower_map = {c.lower(): c for c in columns}
+            for column in columns:
+                lc = column.lower()
+                if audit.LANG_SUFFIX_RE.match(lc) or not audit.is_translatable_column(lc):
+                    continue
+                if f"{lc}_fr" in lower_map:
+                    continue
+                for rowid, value in con.execute(f'SELECT rowid,"{column}" FROM "{table}" WHERE "{column}" IS NOT NULL'):
+                    text = str(value).strip()
+                    if not text or audit.looks_technical_text(text):
+                        continue
+                    key = (table, lc, text)
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    print(f"SQLITE_UNIQUE|{table}.{column}|{text}")
+
+        print("XML_UNIQUE_VALUES")
+        seen_xml = set()
+        for path in sorted((root / "fiches").glob("*.xml.qz64")):
+            raw = audit.unpack_qz64_bytes(path.read_bytes(), path.as_posix())
+            tree = ET.fromstring(raw.decode("utf-8"))
+            for element in tree.iter():
+                texts = []
+                if element.text and element.text.strip():
+                    texts.append(element.text.strip())
+                for key, value in element.attrib.items():
+                    if key.lower() in {"titre", "title", "description", "fonction", "function", "note", "label"} and value.strip():
+                        texts.append(value.strip())
+                for text in texts:
+                    if audit.looks_technical_text(text) or text in seen_xml:
+                        continue
+                    seen_xml.add(text)
+                    print(f"XML_UNIQUE|{text}")
+
+        print("SVG_UNIQUE_VALUES")
+        seen_svg = set()
+        for asset in sorted(root.rglob("*.svg")):
+            tree = ET.parse(asset).getroot()
+            for element in tree.iter():
+                if audit.local_tag(element.tag) != "text":
+                    continue
+                text = " ".join("".join(element.itertext()).split())
+                if not text or audit.looks_technical_text(text) or text in seen_svg:
+                    continue
+                seen_svg.add(text)
+                print(f"SVG_UNIQUE|{text}")
         return 0
     finally:
         con.close()
