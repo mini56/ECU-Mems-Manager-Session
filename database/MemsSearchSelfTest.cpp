@@ -76,6 +76,23 @@ bool requireSearch(const QString &query,const QString &category,const QStringLis
     return true;
 }
 
+bool requireSourceTable(const QString &query,const QString &category,const QString &sourceTable,const QStringList &needles)
+{
+    const QVariantList rows=MemsGlobalSearchIndex::search(query,category,200);
+    for(const QVariant &value:rows){
+        const QVariantMap row=value.toMap();
+        if(row.value(QStringLiteral("source_table")).toString()!=sourceTable) continue;
+        if(hasResult(QVariantList{row},needles)){
+            printLine(QStringLiteral("PASS resource '%1': table=%2 title=%3")
+                      .arg(query,sourceTable,row.value(QStringLiteral("title")).toString()));
+            return true;
+        }
+    }
+    printLine(QStringLiteral("FAIL resource '%1': source table %2 not indexed/searchable")
+              .arg(query,sourceTable));
+    return false;
+}
+
 bool requireFirstResult(const QString &query,const QString &expectedCategory,const QStringList &needles)
 {
     const QVariantList rows=MemsGlobalSearchIndex::search(query,QString(),50);
@@ -130,6 +147,16 @@ int main(int argc,char **argv)
                      {QStringLiteral("ROSCO"),QStringLiteral("9600")}) && ok;
     ok=requireSearch(QStringLiteral("connecteur 36 voies"),QStringLiteral("wiring"),
                      {QStringLiteral("MEMS 1.2"),QStringLiteral("36 voies")}) && ok;
+
+    // Regression guard for build 534: diagrams/resources must be part of the
+    // global searchable database, not merely copied next to the executable.
+    ok=requireSourceTable(QStringLiteral("rosco diagnostic connector"),QStringLiteral("wiring"),
+                          QStringLiteral("wiring_assets"),
+                          {QStringLiteral("ROSCO"),QStringLiteral("rover_rosco_3pin_black.svg")}) && ok;
+    ok=requireSourceTable(QStringLiteral("obd j1962"),QStringLiteral("wiring"),
+                          QStringLiteral("wiring_assets"),
+                          {QStringLiteral("OBD"),QStringLiteral("mems_1_9_obd_16pin.svg")}) && ok;
+
     ok=requireFirstResult(QStringLiteral("IAT"),QStringLiteral("wiring"),
                           {QStringLiteral("IAT"),QStringLiteral("Vert / Rouge")}) && ok;
 
