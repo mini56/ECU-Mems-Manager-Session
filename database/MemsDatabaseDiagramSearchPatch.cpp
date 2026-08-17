@@ -5,6 +5,7 @@
 #include <QEvent>
 #include <QFileInfo>
 #include <QPointer>
+#include <QScrollBar>
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QTextBrowser>
