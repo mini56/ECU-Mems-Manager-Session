@@ -108,8 +108,40 @@ QString htmlStyle()
         "h1{color:#ff9828;font-size:16pt;margin:0 0 6px 0;}"
         "h2{color:#ff9828;font-size:10.5pt;border-bottom:1px solid #34414b;padding-bottom:4px;margin-top:14px;}"
         "p{line-height:1.4;margin:5px 0}.muted{color:#98a5af}.note{background:#15100b;border:1px solid #60401f;color:#ffd0a0;padding:7px;}"
+        ".diagram{background:#0d151b;border:1px solid #34414b;padding:8px;margin:8px 0 12px 0;text-align:center;}"
+        ".diagram img{max-width:100%;height:auto;}"
         "table{border-collapse:collapse;width:100%;}th{color:#ff9828;text-align:left;border-bottom:1px solid #394650;padding:5px;}"
         "td{border-bottom:1px solid #26323b;padding:5px;vertical-align:top}.content{white-space:pre-wrap;line-height:1.45}</style>");
+}
+
+QString diagramHtml(const QString &path)
+{
+    const QString base=QFileInfo(path).baseName().toLower();
+    const QString root=QCoreApplication::applicationDirPath()+QStringLiteral("/database/reference/images/");
+    QStringList files;
+    QStringList captions;
+    if(base==QStringLiteral("mems_1_2")){
+        files << QStringLiteral("mems_1_2_ecu_connector.svg") << QStringLiteral("rover_rosco_3pin_black.svg");
+        captions << QStringLiteral("Connecteur ECU MEMS 1.2 — 36 voies") << QStringLiteral("Prise diagnostic Rover / ROSCO — 3 broches");
+    }else if(base==QStringLiteral("mems_1_3")){
+        files << QStringLiteral("mems_1_3_ecu_connectors.svg") << QStringLiteral("rover_rosco_3pin_black.svg");
+        captions << QStringLiteral("Connecteurs ECU MEMS 1.3 — 36 + 18 voies") << QStringLiteral("Prise diagnostic Rover / ROSCO — 3 broches");
+    }else if(base==QStringLiteral("mems_1_6")){
+        files << QStringLiteral("mems_1_6_ecu_connector.svg") << QStringLiteral("rover_rosco_3pin_black.svg");
+        captions << QStringLiteral("Connecteur ECU MEMS 1.6 — 36 voies ; variante 36 + 18 selon véhicule") << QStringLiteral("Prise diagnostic Rover / ROSCO — 3 broches");
+    }else if(base==QStringLiteral("mems_1_9")){
+        files << QStringLiteral("mems_1_9_ecu_connector.svg") << QStringLiteral("mems_1_9_obd_16pin.svg");
+        captions << QStringLiteral("Connecteur ECU MEMS 1.9 — 36 voies") << QStringLiteral("Prise diagnostic MEMS 1.9 — 16 broches type J1962 / OBD");
+    }
+    QString html;
+    for(int i=0;i<files.size();++i){
+        const QString filePath=root+files.at(i);
+        if(!QFileInfo::exists(filePath)) continue;
+        const QString url=QUrl::fromLocalFile(filePath).toString().toHtmlEscaped();
+        const QString caption=captions.value(i).toHtmlEscaped();
+        html+=QStringLiteral("<div class='diagram'><img src='%1'><p class='muted'>%2</p></div>").arg(url,caption);
+    }
+    return html;
 }
 
 QString swatchHtml(const QStringList &fills,const QString &text)
@@ -156,7 +188,7 @@ QString renderXml(const QString &path)
     if(!file.open(QIODevice::ReadOnly|QIODevice::Text))
         return htmlStyle()+QStringLiteral("<p class='note'>%1</p>").arg(I18n::text(7232).toHtmlEscaped());
     QXmlStreamReader xml(&file);
-    QString html=htmlStyle();
+    QString html=htmlStyle()+diagramHtml(path);
     bool firstRow=true;
     while(!xml.atEnd()){
         xml.readNext();
@@ -194,6 +226,7 @@ QString renderXml(const QString &path)
 QString xmlPath(const QString &generation)
 {
     const QString root=QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)+QStringLiteral("/reference/fiches/");
+    if(generation==QStringLiteral("1.2")) return root+QStringLiteral("mems_1_2.xml");
     if(generation==QStringLiteral("1.3")) return root+QStringLiteral("mems_1_3.xml");
     if(generation==QStringLiteral("1.6")) return root+QStringLiteral("mems_1_6.xml");
     if(generation==QStringLiteral("1.9")) return root+QStringLiteral("mems_1_9.xml");
