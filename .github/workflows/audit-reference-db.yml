@@ -17,10 +17,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Audit SQLite, XML, assets and six-language coverage
+      - name: Strict audit SQLite, XML, assets and six-language coverage
         shell: bash
-        run: python tools/audit_reference_database.py --max-language-violations 690
+        run: python tools/audit_reference_database_strict.py
 
-      - name: Report incomplete language families during migration
+      - name: Report language debt details
+        if: always()
         shell: bash
         run: python tools/report_reference_language_debt.py
