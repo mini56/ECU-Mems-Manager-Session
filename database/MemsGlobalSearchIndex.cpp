@@ -700,10 +700,18 @@ QVariantList queryIndex(const QString &path,
         if (meta.exec(QStringLiteral("SELECT value FROM search_meta WHERE key='fts5_enabled'")) && meta.next())
             ftsEnabled = meta.value(0).toString() == QStringLiteral("1");
 
-        const QString expression = ftsExpression(text);
-        const QStringList terms = normalizeSearchText(text).split(QLatin1Char(' '), Qt::SkipEmptyParts);
+        const QString trimmedText = text.trimmed();
+        const QString expression = ftsExpression(trimmedText);
+        const QStringList terms = normalizeSearchText(trimmedText).split(QLatin1Char(' '), Qt::SkipEmptyParts);
         const bool useFts = ftsEnabled && !expression.isEmpty();
         QString sql;
+
+        const QString titleRanking = QStringLiteral(
+            " CASE "
+            "WHEN lower(d.title)=lower(:rankExact) THEN 0 "
+            "WHEN lower(d.title) LIKE lower(:rankPrefix) THEN 1 "
+            "WHEN lower(d.title) LIKE lower(:rankContains) THEN 2 "
+            "ELSE 3 END, ");
 
         if (useFts) {
             sql = QStringLiteral(
@@ -712,7 +720,8 @@ QVariantList queryIndex(const QString &path,
                 "WHERE search_fts MATCH :match");
             if (!category.trimmed().isEmpty())
                 sql += QStringLiteral(" AND d.category=:category");
-            sql += QStringLiteral(" ORDER BY bm25(search_fts),d.category,d.title");
+            sql += QStringLiteral(" ORDER BY") + titleRanking
+                + QStringLiteral("bm25(search_fts),d.category,d.title");
         } else {
             sql = QStringLiteral(
                 "SELECT d.id,d.category,d.source_table,d.source_key,d.generation,d.title,d.content "
@@ -724,7 +733,8 @@ QVariantList queryIndex(const QString &path,
                     " AND EXISTS(SELECT 1 FROM search_terms st%1 "
                     "WHERE st%1.document_id=d.id AND st%1.term LIKE :term%1)").arg(i);
             }
-            sql += QStringLiteral(" ORDER BY d.category,d.title");
+            sql += QStringLiteral(" ORDER BY") + titleRanking
+                + QStringLiteral("d.category,d.title");
         }
         sql += QStringLiteral(" LIMIT %1").arg(qBound(1, limit, 500));
 
@@ -732,6 +742,9 @@ QVariantList queryIndex(const QString &path,
         if (query.prepare(sql)) {
             if (useFts)
                 query.bindValue(QStringLiteral(":match"), expression);
+            query.bindValue(QStringLiteral(":rankExact"), trimmedText);
+            query.bindValue(QStringLiteral(":rankPrefix"), trimmedText + QLatin1Char('%'));
+            query.bindValue(QStringLiteral(":rankContains"), QLatin1Char('%') + trimmedText + QLatin1Char('%'));
             if (!category.trimmed().isEmpty())
                 query.bindValue(QStringLiteral(":category"), category.trimmed());
             if (!useFts) {
