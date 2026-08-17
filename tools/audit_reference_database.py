@@ -14,8 +14,6 @@ LANGUAGES = ("fr", "en", "es", "it", "pt", "de")
 SUPPORTED_ASSETS = {".svg", ".png", ".jpg", ".jpeg", ".webp", ".gif", ".pdf", ".html", ".htm", ".md", ".txt", ".csv", ".xml"}
 LANG_SUFFIX_RE = re.compile(r"^(.+)_(fr|en|es|it|pt|de)$", re.I)
 
-# Columns whose values are intended to be read by the user and therefore
-# must either have six language variants or an explicit localization layer.
 TRANSLATABLE_HINTS = (
     "description", "note", "cause", "solution", "function", "capability",
     "availability", "access_method", "testing", "subject", "topic", "summary",
@@ -24,8 +22,6 @@ TRANSLATABLE_HINTS = (
     "safety_level", "confidence", "status", "label", "title"
 )
 
-# These values are identifiers/proper names/technical data. They are searchable
-# in every language but are intentionally not translated.
 TECHNICAL_COLUMN_EXACT = {
     "id", "rowid", "part_number", "ecu_part_number", "alt_refs", "brand", "make",
     "makes", "model", "models", "variant", "engine", "market", "year", "year_from",
@@ -151,12 +147,41 @@ def audit_xml(root: pathlib.Path, violations: list[str]) -> tuple[int, int]:
     return human_nodes, multilingual_nodes
 
 
-def audit_assets(root: pathlib.Path, violations: list[str]) -> int:
+def local_tag(tag: str) -> str:
+    return tag.rsplit("}", 1)[-1].lower()
+
+
+def audit_assets(root: pathlib.Path, violations: list[str]) -> tuple[int, int]:
     assets = [p for p in root.rglob("*") if p.is_file() and p.suffix.lower() in SUPPORTED_ASSETS and not p.name.endswith(".qz64")]
+    svg_human_nodes = 0
     for asset in assets:
+        relative = asset.relative_to(root).as_posix()
         if asset.stat().st_size <= 0:
-            violations.append(f"ASSET_EMPTY|{asset.relative_to(root).as_posix()}")
-    return len(assets)
+            violations.append(f"ASSET_EMPTY|{relative}")
+            continue
+        if asset.suffix.lower() != ".svg":
+            continue
+        try:
+            tree = ET.parse(asset).getroot()
+        except Exception as exc:
+            violations.append(f"SVG_INVALID|{relative}|{exc}")
+            continue
+
+        # A visible SVG label is user-facing content just like a database cell.
+        # We inspect <text> roots (their nested tspans are included via itertext)
+        # and require either neutral technical content or an explicit i18n marker.
+        for element in tree.iter():
+            if local_tag(element.tag) != "text":
+                continue
+            text = " ".join("".join(element.itertext()).split())
+            if not text or looks_technical_text(text):
+                continue
+            svg_human_nodes += 1
+            marker = (element.attrib.get("data-i18n") or element.attrib.get("data-i18n-key") or "").strip()
+            lang = (element.attrib.get("lang") or element.attrib.get("{http://www.w3.org/XML/1998/namespace}lang") or "").lower()
+            if not marker and lang not in LANGUAGES:
+                violations.append(f"SVG_LANGUAGE|{relative}|{text[:180]}")
+    return len(assets), svg_human_nodes
 
 
 def audit_sqlite(db_path: pathlib.Path, violations: list[str]) -> dict:
@@ -180,8 +205,7 @@ def audit_sqlite(db_path: pathlib.Path, violations: list[str]) -> dict:
         for table in tables:
             row_count = con.execute(f'SELECT COUNT(*) FROM "{table}"').fetchone()[0]
             stats["rows"] += row_count
-            info = con.execute(f'PRAGMA table_info("{table}")').fetchall()
-            columns = [r[1] for r in info]
+            columns = [r[1] for r in con.execute(f'PRAGMA table_info("{table}")').fetchall()]
             lower_map = {c.lower(): c for c in columns}
 
             families = {}
@@ -208,8 +232,6 @@ def audit_sqlite(db_path: pathlib.Path, violations: list[str]) -> dict:
                     if missing_values:
                         violations.append(f"LANG_VALUES|{table}.{base}|rowid={rowid}|missing={','.join(missing_values)}")
 
-            # Unsuffixed user-facing columns are legacy localization debt. They
-            # are fully enumerated, not merely guessed by English detection.
             for column in columns:
                 lc = column.lower()
                 if LANG_SUFFIX_RE.match(lc) or not is_translatable_column(lc):
@@ -238,6 +260,8 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", default="database/reference")
     parser.add_argument("--strict-language", action="store_true", help="Fail on any language violation")
+    parser.add_argument("--max-language-violations", type=int, default=None,
+                        help="Fail if language debt grows above this ceiling")
     args = parser.parse_args()
 
     root = pathlib.Path(args.root)
@@ -252,27 +276,29 @@ def main() -> int:
         db_path = build_database(root)
         stats = audit_sqlite(db_path, violations)
         xml_human, xml_multilingual = audit_xml(root, violations)
-        asset_count = audit_assets(root, violations)
+        asset_count, svg_human = audit_assets(root, violations)
 
-        language_violations = [v for v in violations if v.startswith(("LANG_", "XML_LANGUAGE"))]
-        structural_violations = [v for v in violations if not v.startswith(("LANG_", "XML_LANGUAGE"))]
+        language_prefixes = ("LANG_", "XML_LANGUAGE", "SVG_LANGUAGE")
+        language_violations = [v for v in violations if v.startswith(language_prefixes)]
+        structural_violations = [v for v in violations if not v.startswith(language_prefixes)]
 
         print("AUDIT MEMS REFERENCE DATABASE")
         print(f"SQLITE tables={stats['tables']} rows={stats['rows']}")
         print(f"LANGUAGE families={stats['language_families']} incomplete_families={stats['incomplete_language_families']}")
         print(f"LANGUAGE legacy_cells={stats['legacy_translatable_cells']} unique_values={stats['legacy_translatable_unique']}")
         print(f"XML human_text_nodes={xml_human} explicitly_localized={xml_multilingual}")
-        print(f"ASSETS files={asset_count}")
+        print(f"ASSETS files={asset_count} svg_human_text_nodes={svg_human}")
         print(f"VIOLATIONS structural={len(structural_violations)} language={len(language_violations)} total={len(violations)}")
 
-        # Print every structural issue, and a complete language inventory. This
-        # log is the authoritative cleanup list until strict mode reaches zero.
         for item in violations:
             print("AUDIT_VIOLATION", item)
 
         if structural_violations:
             return 2
         if args.strict_language and language_violations:
+            return 3
+        if args.max_language_violations is not None and len(language_violations) > args.max_language_violations:
+            print(f"AUDIT_LANGUAGE_REGRESSION current={len(language_violations)} max={args.max_language_violations}", file=sys.stderr)
             return 3
         return 0
     except Exception as exc:
