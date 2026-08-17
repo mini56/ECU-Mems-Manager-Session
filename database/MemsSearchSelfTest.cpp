@@ -128,6 +128,8 @@ int main(int argc,char **argv)
                      {QStringLiteral("Tension batterie")}) && ok;
     ok=requireSearch(QStringLiteral("9600"),QStringLiteral("protocol"),
                      {QStringLiteral("ROSCO"),QStringLiteral("9600")}) && ok;
+    ok=requireSearch(QStringLiteral("connecteur 36 voies"),QStringLiteral("wiring"),
+                     {QStringLiteral("MEMS 1.2"),QStringLiteral("36 voies")}) && ok;
     ok=requireFirstResult(QStringLiteral("IAT"),QStringLiteral("wiring"),
                           {QStringLiteral("IAT"),QStringLiteral("Vert / Rouge")}) && ok;
 
