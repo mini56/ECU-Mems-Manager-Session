@@ -3,10 +3,13 @@
 #include <QCoreApplication>
 #include <QCryptographicHash>
 #include <QDir>
+#include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
 #include <QSaveFile>
 #include <QStandardPaths>
+
+#include <algorithm>
 
 namespace {
 
@@ -21,30 +24,42 @@ QString cacheRoot()
         +QStringLiteral("/reference");
 }
 
+QStringList packagedReferenceFiles(const QString &root)
+{
+    QStringList relativeFiles;
+    QDir base(root);
+    if(!base.exists()) return relativeFiles;
+
+    QDirIterator it(root,QDir::Files|QDir::NoDotAndDotDot,QDirIterator::Subdirectories);
+    while(it.hasNext()){
+        const QString absolute=it.next();
+        const QString relative=base.relativeFilePath(absolute).replace(QLatin1Char('\\'),QLatin1Char('/'));
+        if(!relative.isEmpty()) relativeFiles.append(relative);
+    }
+    std::sort(relativeFiles.begin(),relativeFiles.end(),[](const QString &a,const QString &b){
+        return QString::compare(a,b,Qt::CaseInsensitive)<0;
+    });
+    return relativeFiles;
+}
+
 QByteArray referencePackageSignature(const QString &root)
 {
-    const QStringList relativeFiles={
-        QStringLiteral("manifest.json"),
-        QStringLiteral("mems_reference_seed_1.qz64"),
-        QStringLiteral("mems_reference_seed_2.qz64"),
-        QStringLiteral("mems_reference_seed_3.qz64"),
-        QStringLiteral("mems_reference_seed_4.qz64"),
-        QStringLiteral("research_enrichment.qz64"),
-        QStringLiteral("research_enrichment_500.qz64"),
-        QStringLiteral("fiches/mems_1_3.xml.qz64"),
-        QStringLiteral("fiches/mems_1_6.xml.qz64"),
-        QStringLiteral("fiches/mems_1_9.xml.qz64")
-    };
+    const QStringList relativeFiles=packagedReferenceFiles(root);
+    if(relativeFiles.isEmpty()) return QByteArray();
 
     QCryptographicHash hash(QCryptographicHash::Sha256);
 
-    // IMPORTANT: the cache belongs to one GitHub Actions build number.
-    // A new # must never reuse the database/search cache from a previous #,
-    // even when the embedded reference files happen to have identical bytes.
+    // The cache belongs to one packaged reference set. The GitHub Actions
+    // build number remains part of the signature so two executable builds
+    // never accidentally share stale generated data.
     hash.addData("build:",6);
     hash.addData(QByteArray(APP_BUILD_NUMBER));
     hash.addData("\0",1);
 
+    // IMPORTANT: hash every file below database/reference. No resource is
+    // allowed to require a new hard-coded entry here. Adding an enrichment,
+    // fiche, SVG, image, PDF, manifest entry or any future reference asset
+    // automatically invalidates the generated database/search cache.
     for(const QString &relative:relativeFiles){
         QFile file(root+QLatin1Char('/')+relative);
         if(!file.open(QIODevice::ReadOnly)) return QByteArray();
@@ -79,7 +94,8 @@ bool cacheComplete(const QString &root)
         return false;
 
     const QString fiches=root+QStringLiteral("/fiches/");
-    return QFileInfo::exists(fiches+QStringLiteral("mems_1_3.xml")) &&
+    return QFileInfo::exists(fiches+QStringLiteral("mems_1_2.xml")) &&
+           QFileInfo::exists(fiches+QStringLiteral("mems_1_3.xml")) &&
            QFileInfo::exists(fiches+QStringLiteral("mems_1_6.xml")) &&
            QFileInfo::exists(fiches+QStringLiteral("mems_1_9.xml"));
 }
@@ -142,7 +158,9 @@ bool refreshMemsReferencePackage(MemsReferencePackageAction *detectedAction)
     const QString destinationRoot=cacheRoot();
     QDir().mkpath(destinationRoot);
 
-    // New build/package: remove every generated reference artifact before rebuild.
+    // New/changed reference package: remove every generated artifact before
+    // rebuilding. The next MemsReferenceDatabase/MemsGlobalSearchIndex open
+    // recreates them from the complete packaged reference set.
     removeMatching(destinationRoot,QStringList()
         <<QStringLiteral("ecu_mems_reference_*.sqlite")
         <<QStringLiteral("ecu_mems_reference_*.sqlite-*")
