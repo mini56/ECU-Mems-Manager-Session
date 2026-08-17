@@ -2,6 +2,7 @@
 #define I18N_H
 
 #include <QObject>
+#include <QDir>
 #include <QHash>
 #include <QString>
 
