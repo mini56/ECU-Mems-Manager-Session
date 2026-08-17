@@ -19,4 +19,6 @@ jobs:
 
       - name: Audit SQLite, XML, assets and six-language coverage
         shell: bash
-        run: python tools/audit_reference_database.py
+        # Temporary ceiling while the historical database is being migrated.
+        # It may only decrease. Once it reaches zero this becomes --strict-language.
+        run: python tools/audit_reference_database.py --max-language-violations 1765
