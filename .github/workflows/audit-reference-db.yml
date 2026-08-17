@@ -1,0 +1,22 @@
+name: Audit MEMS Reference Accessibility and Languages
+
+on:
+  push:
+    branches: ["main", "master", "ui-rebuild"]
+  pull_request:
+    branches: ["main", "master", "ui-rebuild"]
+
+permissions:
+  contents: read
+
+jobs:
+  audit-reference-database:
+    name: Audit all MEMS reference content
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Audit SQLite, XML, assets and six-language coverage
+        shell: bash
+        run: python tools/audit_reference_database.py
