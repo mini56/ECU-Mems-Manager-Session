@@ -1,10 +1,126 @@
 #include <QSettings>
+#include <QSerialPortInfo>
+#include <QRegularExpression>
+
 #include "optionsdialog.h"
 #include "serialdevenumerator.h"
 #include "desktopshortcut.h"
 #include <QIcon>
 #include "i18n.h"
 #define tr I18n::text
+
+namespace {
+
+QString serialPortName(const QSerialPortInfo &info)
+{
+#ifdef Q_OS_WIN
+  return info.portName().trimmed();
+#else
+  return info.systemLocation().trimmed();
+#endif
+}
+
+bool looksLikeUsbSerial(const QSerialPortInfo &info)
+{
+  if (info.hasVendorIdentifier() || info.hasProductIdentifier())
+    return true;
+
+  const QString identity = (info.description() + QLatin1Char(' ') + info.manufacturer()).toLower();
+  static const QRegularExpression usbSerial(
+      QStringLiteral("usb|ftdi|ch340|ch341|cp210|prolific|serial|uart"),
+      QRegularExpression::CaseInsensitiveOption);
+  return usbSerial.match(identity).hasMatch();
+}
+
+void saveSerialIdentity(QSettings &settings, const QString &portName)
+{
+  settings.remove(QStringLiteral("SerialDeviceSerialNumber"));
+  settings.remove(QStringLiteral("SerialDeviceVendorId"));
+  settings.remove(QStringLiteral("SerialDeviceProductId"));
+
+  for (const QSerialPortInfo &info : QSerialPortInfo::availablePorts())
+  {
+    if (serialPortName(info).compare(portName, Qt::CaseInsensitive) != 0)
+      continue;
+
+    if (!info.serialNumber().trimmed().isEmpty())
+      settings.setValue(QStringLiteral("SerialDeviceSerialNumber"), info.serialNumber().trimmed());
+    if (info.hasVendorIdentifier())
+      settings.setValue(QStringLiteral("SerialDeviceVendorId"), int(info.vendorIdentifier()));
+    if (info.hasProductIdentifier())
+      settings.setValue(QStringLiteral("SerialDeviceProductId"), int(info.productIdentifier()));
+    return;
+  }
+}
+
+QString resolveSerialDevice(QSettings &settings, const QString &savedPort)
+{
+  const QList<QSerialPortInfo> ports = QSerialPortInfo::availablePorts();
+  if (ports.isEmpty())
+    return QString();
+
+  const QString savedSerial = settings.value(QStringLiteral("SerialDeviceSerialNumber")).toString().trimmed();
+  const bool hasSavedVid = settings.contains(QStringLiteral("SerialDeviceVendorId"));
+  const bool hasSavedPid = settings.contains(QStringLiteral("SerialDeviceProductId"));
+  const quint16 savedVid = quint16(settings.value(QStringLiteral("SerialDeviceVendorId"), 0).toUInt());
+  const quint16 savedPid = quint16(settings.value(QStringLiteral("SerialDeviceProductId"), 0).toUInt());
+
+  // First follow the physical adapter, not its COM number. Windows can assign
+  // another COM number after a USB-port/driver change.
+  if (!savedSerial.isEmpty())
+  {
+    for (const QSerialPortInfo &info : ports)
+      if (!info.serialNumber().isEmpty() && info.serialNumber() == savedSerial)
+        return serialPortName(info);
+  }
+
+  if (hasSavedVid && hasSavedPid)
+  {
+    QList<QSerialPortInfo> hardwareMatches;
+    for (const QSerialPortInfo &info : ports)
+      if (info.hasVendorIdentifier() && info.hasProductIdentifier() &&
+          info.vendorIdentifier() == savedVid && info.productIdentifier() == savedPid)
+        hardwareMatches.append(info);
+    if (hardwareMatches.size() == 1)
+      return serialPortName(hardwareMatches.first());
+  }
+
+  const QSerialPortInfo *savedInfo = nullptr;
+  for (const QSerialPortInfo &info : ports)
+  {
+    if (serialPortName(info).compare(savedPort, Qt::CaseInsensitive) == 0)
+    {
+      savedInfo = &info;
+      break;
+    }
+  }
+
+  QList<QSerialPortInfo> usbCandidates;
+  for (const QSerialPortInfo &info : ports)
+    if (looksLikeUsbSerial(info))
+      usbCandidates.append(info);
+
+  if (savedInfo)
+  {
+    // A legacy configuration only stored "COMx". If that COM now names a
+    // non-USB port while exactly one USB-serial adapter is present, the USB
+    // adapter is the unambiguous diagnostic candidate.
+    if (savedSerial.isEmpty() && !hasSavedVid && !hasSavedPid &&
+        !looksLikeUsbSerial(*savedInfo) && usbCandidates.size() == 1)
+      return serialPortName(usbCandidates.first());
+    return serialPortName(*savedInfo);
+  }
+
+  // Never keep displaying or opening a COM number that no longer exists.
+  if (usbCandidates.size() == 1)
+    return serialPortName(usbCandidates.first());
+  if (ports.size() == 1)
+    return serialPortName(ports.first());
+
+  return QString();
+}
+
+}
 
 /**
  * Constructor; sets up the options-dialog UI and sets settings-file field names.
@@ -35,9 +151,6 @@ void OptionsDialog::setupWidgets()
 
   m_themeLabel = new QLabel(I18n::text(6102) /* EN: Interface theme: */, this);
   m_themeBox = new QComboBox(this);
-  
-/*   m_lambdaScaleLabel = new QLabel("Lambda sensor scale:", this);
-  m_lambdaScaleBox = new QComboBox(this); */
 
   m_horizontalLineA = new QFrame(this);
   m_horizontalLineA->setFrameShape(QFrame::HLine);
@@ -47,10 +160,12 @@ void OptionsDialog::setupWidgets()
   m_cancelButton = new QPushButton(I18n::text(6103) /* EN: Cancel */, this);
 
   SerialDevEnumerator serialDevs;
-
   m_serialDeviceBox->addItems(serialDevs.getSerialDevList(m_serialDeviceName));
   m_serialDeviceBox->setEditable(true);
   m_serialDeviceBox->setMinimumWidth(150);
+  const int currentPort = m_serialDeviceBox->findText(m_serialDeviceName, Qt::MatchFixedString);
+  if (currentPort >= 0)
+    m_serialDeviceBox->setCurrentIndex(currentPort);
 
   m_temperatureUnitsBox->setEditable(false);
   m_temperatureUnitsBox->addItem("Fahrenheit");
@@ -64,7 +179,6 @@ void OptionsDialog::setupWidgets()
 
   m_languageLabel = new QLabel(I18n::text(6106) /* EN: Language: */, this);
   m_languageBox = new QComboBox(this);
-  // Keep language names native so they remain identifiable in every UI language.
   m_languageBox->addItem(QIcon(":/flags/fr.png"), QStringLiteral("Français"), "fr");
   m_languageBox->addItem(QIcon(":/flags/en.png"), QStringLiteral("English"), "en");
   m_languageBox->addItem(QIcon(":/flags/es.png"), QString::fromUtf8("Español"), "es");
@@ -80,11 +194,6 @@ void OptionsDialog::setupWidgets()
   m_desktopShortcutBox->setChecked(m_desktopShortcut);
   m_desktopShortcutBox->setToolTip(
       I18n::text(6108) /* EN: The shortcut is created immediately after confirmation. If it is deleted, the software will automatically recreate it at the next startup. */);
-  
-/*   m_lambdaScaleBox->setEditable(false);
-  m_lambdaScaleBox->addItem("_4mV_steps");
-  m_lambdaScaleBox->addItem("_5mV_steps");
-  m_lambdaScaleBox->setCurrentIndex((int)m_lambdaScale); */
 
   m_grid->addWidget(m_serialDeviceLabel, row, 0);
   m_grid->addWidget(m_serialDeviceBox, row++, 1);
@@ -99,9 +208,6 @@ void OptionsDialog::setupWidgets()
   m_grid->addWidget(m_languageBox, row++, 1);
 
   m_grid->addWidget(m_desktopShortcutBox, row++, 0, 1, 2);
-  
-/*   m_grid->addWidget(m_lambdaScaleLabel, row, 0);  
-  m_grid->addWidget(m_lambdaScaleBox, row++, 1); */
 
   m_grid->addWidget(m_horizontalLineA, row++, 0, 1, 2);
 
@@ -117,12 +223,9 @@ void OptionsDialog::setupWidgets()
  */
 void OptionsDialog::accept()
 {
-  QString newSerialDeviceName = m_serialDeviceBox->currentText();
+  QString newSerialDeviceName = m_serialDeviceBox->currentText().trimmed();
 
-  // set a flag if the serial device has been changed;
-  // the main application needs to know if it should
-  // reconnect to the ECU
-  if (m_serialDeviceName.compare(newSerialDeviceName) != 0)
+  if (m_serialDeviceName.compare(newSerialDeviceName, Qt::CaseInsensitive) != 0)
   {
     m_serialDeviceName = newSerialDeviceName;
     m_serialDeviceChanged = true;
@@ -133,7 +236,6 @@ void OptionsDialog::accept()
   }
 
   m_tempUnits = (TemperatureUnits) (m_temperatureUnitsBox->currentIndex());
-  // m_lambdaScale = (LambdaScale) (m_lambdaScaleBox->currentIndex());
 
   QString newTheme = m_themeBox->currentData().toString();
   QString newLanguage = m_languageBox->currentData().toString();
@@ -161,9 +263,14 @@ void OptionsDialog::readSettings()
   QSettings settings(QSettings::IniFormat, QSettings::UserScope, PROJECTNAME);
 
   settings.beginGroup(m_settingsGroupName);
-  m_serialDeviceName = settings.value(m_settingSerialDev, "").toString();
+  const QString savedSerialDevice = settings.value(m_settingSerialDev, "").toString().trimmed();
+  m_serialDeviceName = resolveSerialDevice(settings, savedSerialDevice);
+  if (m_serialDeviceName != savedSerialDevice)
+    settings.setValue(m_settingSerialDev, m_serialDeviceName);
+  if (!m_serialDeviceName.isEmpty())
+    saveSerialIdentity(settings, m_serialDeviceName);
+
   m_tempUnits = (TemperatureUnits) (settings.value(m_settingTemperatureUnits, Celsius).toInt());
-  // m_lambdaScale = (LambdaScale) (settings.value(m_settingLambdaScale, _5mV_steps).toInt());
   m_theme = settings.value(m_settingTheme, "light").toString();
   if (m_theme == "Clair") m_theme = "light";
   if (m_theme == "Sombre") m_theme = "dark";
@@ -175,6 +282,7 @@ void OptionsDialog::readSettings()
   m_desktopShortcut = settings.value(m_settingDesktopShortcut, false).toBool();
 
   settings.endGroup();
+  settings.sync();
 }
 
 /**
@@ -186,22 +294,21 @@ void OptionsDialog::writeSettings()
 
   settings.beginGroup(m_settingsGroupName);
   settings.setValue(m_settingSerialDev, m_serialDeviceName);
+  saveSerialIdentity(settings, m_serialDeviceName);
   settings.setValue(m_settingTemperatureUnits, m_tempUnits);
-  // settings.setValue(m_settingLambdaScale, m_lambdaScale);
   settings.setValue(m_settingTheme, m_theme);
   settings.setValue(m_settingLanguage, m_language);
   settings.setValue("LanguageConfigured", true);
   settings.setValue(m_settingDesktopShortcut, m_desktopShortcut);
-
   settings.endGroup();
+  settings.sync();
 }
 
-/**
- * Returns the name of the serial device.
- */
 QString OptionsDialog::getSerialDeviceName()
 {
 #ifdef WIN32
+  if (m_serialDeviceName.isEmpty())
+    return QString();
   return QString("\\\\.\\%1").arg(m_serialDeviceName);
 #else
   return m_serialDeviceName;

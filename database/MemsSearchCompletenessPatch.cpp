@@ -1,26 +1,41 @@
 #include "MemsReferenceDatabase.h"
+#include "MemsGlobalSearchIndex.h"
 #include "../i18n.h"
 
 #include <QApplication>
+#include <QBoxLayout>
 #include <QComboBox>
 #include <QCoreApplication>
 #include <QDialog>
 #include <QEvent>
 #include <QFile>
 #include <QFileInfo>
+#include <QGridLayout>
 #include <QLineEdit>
 #include <QPointer>
 #include <QPushButton>
 #include <QRegularExpression>
+#include <QScrollBar>
 #include <QSet>
-#include <QStandardPaths>
+#include <QSqlDatabase>
+#include <QSqlQuery>
 #include <QTableWidget>
+#include <QTextBlock>
 #include <QTextBrowser>
+#include <QTextCursor>
+#include <QTextDocument>
+#include <QTextFragment>
+#include <QTextImageFormat>
 #include <QTimer>
+#include <QUrl>
+#include <QUuid>
 #include <QVBoxLayout>
 #include <QXmlStreamReader>
 
 namespace {
+
+const int RoleSourceTable=Qt::UserRole+11;
+const int RoleGeneration=Qt::UserRole+14;
 
 QString normalized(QString input)
 {
@@ -39,6 +54,41 @@ QString normalized(QString input)
         }
     }
     return out.simplified();
+}
+
+QString languageText(const QString &fr,const QString &en,const QString &es,
+                     const QString &it,const QString &pt,const QString &de)
+{
+    const QString lang=I18n::language().left(2).toLower();
+    if(lang==QStringLiteral("en")) return en;
+    if(lang==QStringLiteral("es")) return es;
+    if(lang==QStringLiteral("it")) return it;
+    if(lang==QStringLiteral("pt")) return pt;
+    if(lang==QStringLiteral("de")) return de;
+    return fr;
+}
+
+QString enlargeImageText()
+{
+    return languageText(QString::fromUtf8("Agrandir l’image"),QStringLiteral("Enlarge image"),
+                        QStringLiteral("Ampliar imagen"),QStringLiteral("Ingrandisci immagine"),
+                        QStringLiteral("Ampliar imagem"),QString::fromUtf8("Bild vergrößern"));
+}
+
+QString enlargedImageTitle()
+{
+    return languageText(QString::fromUtf8("Image agrandie"),QStringLiteral("Enlarged image"),
+                        QStringLiteral("Imagen ampliada"),QStringLiteral("Immagine ingrandita"),
+                        QStringLiteral("Imagem ampliada"),QString::fromUtf8("Vergrößertes Bild"));
+}
+
+QString sourceTitle(const QString &generation)
+{
+    QString text=languageText(QStringLiteral("Sources documentaires"),QStringLiteral("Documentary sources"),
+                              QStringLiteral("Fuentes documentales"),QStringLiteral("Fonti documentali"),
+                              QStringLiteral("Fontes documentais"),QStringLiteral("Dokumentationsquellen"));
+    if(!generation.trimmed().isEmpty()) text+=QStringLiteral(" — MEMS ")+generation.trimmed();
+    return text;
 }
 
 QString cssColor(const QString &word)
@@ -156,14 +206,334 @@ void showRichSheet(QWidget *browser)
     QTextBrowser *view=new QTextBrowser(&dialog);
     view->setHtml(richXmlHtml(path));
     view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    view->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    view->setFocusPolicy(Qt::StrongFocus);
     layout->addWidget(view);
     dialog.exec();
 }
 
+QString localImagePath(const QString &name)
+{
+    const QUrl url(name);
+    if(url.isLocalFile()) return QDir::cleanPath(url.toLocalFile());
+    const QFileInfo info(name);
+    if(info.isAbsolute()) return QDir::cleanPath(name);
+    return QString();
+}
+
+QSizeF svgNativeSize(const QString &path)
+{
+    if(QFileInfo(path).suffix().compare(QStringLiteral("svg"),Qt::CaseInsensitive)!=0) return QSizeF();
+    QFile file(path);
+    if(!file.open(QIODevice::ReadOnly|QIODevice::Text)) return QSizeF();
+    const QString text=QString::fromUtf8(file.read(128*1024));
+
+    static const QRegularExpression viewBox(
+        QStringLiteral("viewBox\\s*=\\s*['\"]\\s*[-+0-9.eE]+\\s+[-+0-9.eE]+\\s+([-+0-9.eE]+)\\s+([-+0-9.eE]+)\\s*['\"]"),
+        QRegularExpression::CaseInsensitiveOption);
+    const QRegularExpressionMatch match=viewBox.match(text);
+    if(match.hasMatch()){
+        const double width=match.captured(1).toDouble();
+        const double height=match.captured(2).toDouble();
+        if(width>0.0 && height>0.0) return QSizeF(width,height);
+    }
+
+    static const QRegularExpression widthRx(QStringLiteral("\\bwidth\\s*=\\s*['\"]\\s*([0-9.]+)"),QRegularExpression::CaseInsensitiveOption);
+    static const QRegularExpression heightRx(QStringLiteral("\\bheight\\s*=\\s*['\"]\\s*([0-9.]+)"),QRegularExpression::CaseInsensitiveOption);
+    const QRegularExpressionMatch wm=widthRx.match(text);
+    const QRegularExpressionMatch hm=heightRx.match(text);
+    if(wm.hasMatch() && hm.hasMatch()) return QSizeF(wm.captured(1).toDouble(),hm.captured(1).toDouble());
+    return QSizeF();
+}
+
+QString firstImagePath(QTextBrowser *detail)
+{
+    if(!detail || !detail->document()) return QString();
+    QTextDocument *document=detail->document();
+    for(QTextBlock block=document->begin();block.isValid();block=block.next()){
+        for(QTextBlock::iterator it=block.begin();!it.atEnd();++it){
+            const QTextFragment fragment=it.fragment();
+            if(!fragment.isValid() || !fragment.charFormat().isImageFormat()) continue;
+            const QTextImageFormat format=fragment.charFormat().toImageFormat();
+            const QString path=localImagePath(format.name());
+            if(!path.isEmpty() && QFileInfo::exists(path)) return path;
+        }
+    }
+    return QString();
+}
+
+void fitDetailImages(QTextBrowser *detail)
+{
+    if(!detail || !detail->document() || !detail->viewport()) return;
+    const qreal targetWidth=qMax(120,detail->viewport()->width()-36);
+    QTextDocument *document=detail->document();
+
+    for(QTextBlock block=document->begin();block.isValid();block=block.next()){
+        for(QTextBlock::iterator it=block.begin();!it.atEnd();++it){
+            const QTextFragment fragment=it.fragment();
+            if(!fragment.isValid() || !fragment.charFormat().isImageFormat()) continue;
+            QTextImageFormat format=fragment.charFormat().toImageFormat();
+            const QString path=localImagePath(format.name());
+            const QSizeF native=svgNativeSize(path);
+
+            qreal width=targetWidth;
+            qreal height=0.0;
+            if(native.isValid() && native.width()>0.0 && native.height()>0.0){
+                width=qMin(targetWidth,native.width());
+                height=width*native.height()/native.width();
+            }
+            format.setWidth(width);
+            if(height>0.0) format.setHeight(height);
+
+            QTextCursor cursor(document);
+            cursor.setPosition(fragment.position());
+            cursor.setPosition(fragment.position()+fragment.length(),QTextCursor::KeepAnchor);
+            cursor.setCharFormat(format);
+        }
+    }
+
+    detail->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    detail->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    detail->setFocusPolicy(Qt::StrongFocus);
+}
+
+void openLargeImage(QWidget *browser,const QString &path)
+{
+    if(path.isEmpty() || !QFileInfo::exists(path)) return;
+    QDialog dialog(browser);
+    dialog.setWindowTitle(enlargedImageTitle());
+    dialog.resize(1100,760);
+    QVBoxLayout *layout=new QVBoxLayout(&dialog);
+    layout->setContentsMargins(6,6,6,6);
+
+    QTextBrowser *view=new QTextBrowser(&dialog);
+    view->setOpenExternalLinks(false);
+    view->setLineWrapMode(QTextEdit::NoWrap);
+    view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    view->setFocusPolicy(Qt::StrongFocus);
+
+    const QSizeF native=svgNativeSize(path);
+    qreal displayWidth=native.isValid()?native.width():1400.0;
+    qreal displayHeight=native.isValid()?native.height():900.0;
+    if(displayWidth<1200.0 && displayWidth>0.0){
+        const qreal ratio=1200.0/displayWidth;
+        displayWidth=1200.0;
+        displayHeight*=ratio;
+    }
+    if(displayWidth<=0.0) displayWidth=1400.0;
+    if(displayHeight<=0.0) displayHeight=900.0;
+
+    const QString url=QUrl::fromLocalFile(path).toString().toHtmlEscaped();
+    view->setHtml(QStringLiteral(
+        "<html><body style='margin:8px;background:#0a1015;'>"
+        "<img src='%1' width='%2' height='%3'>"
+        "</body></html>").arg(url).arg(int(displayWidth)).arg(int(displayHeight)));
+    view->document()->setTextWidth(displayWidth+24.0);
+    layout->addWidget(view);
+    dialog.exec();
+}
+
+void cleanOversizedSourceTitle(QWidget *browser,QTextBrowser *detail)
+{
+    if(!browser || !detail || !detail->document()) return;
+    QTableWidget *table=browser->findChild<QTableWidget*>();
+    if(!table || table->currentRow()<0) return;
+    QTableWidgetItem *item=table->item(table->currentRow(),0);
+    if(!item) return;
+    const QString sourceTable=item->data(RoleSourceTable).toString().toLower();
+    if(!sourceTable.contains(QStringLiteral("source")) && !sourceTable.contains(QStringLiteral("document"))) return;
+
+    QTextBlock block=detail->document()->begin();
+    while(block.isValid() && block.text().trimmed().isEmpty()) block=block.next();
+    if(!block.isValid()) return;
+    const QString current=block.text().trimmed();
+    if(current.size()<100) return;
+
+    const QString generation=item->data(RoleGeneration).toString();
+    QTextCursor cursor(block);
+    cursor.select(QTextCursor::BlockUnderCursor);
+    QTextCharFormat format;
+    format.setForeground(QColor(QStringLiteral("#ff9828")));
+    format.setFontPointSize(16.0);
+    format.setFontWeight(QFont::Bold);
+    cursor.insertText(sourceTitle(generation),format);
+}
+
+void ensureWiringSearchAliases()
+{
+    const QString indexPath=MemsGlobalSearchIndex::indexPath();
+    if(indexPath.isEmpty() || !QFileInfo::exists(indexPath)) return;
+
+    const QString connection=QStringLiteral("MEMS_WIRING_ALIASES_%1").arg(QUuid::createUuid().toString());
+    QSqlDatabase database=QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),connection);
+    database.setDatabaseName(indexPath);
+    if(!database.open()){
+        database=QSqlDatabase();
+        QSqlDatabase::removeDatabase(connection);
+        return;
+    }
+
+    QSqlQuery marker(database);
+    marker.prepare(QStringLiteral("SELECT value FROM search_meta WHERE key='wiring_alias_version'"));
+    if(marker.exec() && marker.next() && marker.value(0).toString()==QStringLiteral("2")){
+        database.close();
+        database=QSqlDatabase();
+        QSqlDatabase::removeDatabase(connection);
+        return;
+    }
+
+    const QString aliases=QString::fromUtf8(
+        "image images schéma schemas schema diagramme diagram diagrams "
+        "connecteur connector connectors conector connettore stecker "
+        "brochage pinout câblage cablage wiring faisceau harness "
+        "prise diagnostic connecteur diagnostic diagnostic connector "
+        "ROSCO OBD J1962 ECU MEMS broche broches pin pins pines");
+    const QString normalizedAliases=normalized(aliases);
+
+    if(database.transaction()){
+        QSqlQuery updateDocs(database);
+        updateDocs.prepare(QStringLiteral(
+            "UPDATE search_documents SET searchable=searchable||' '||:aliases, normalized=normalized||' '||:normalized "
+            "WHERE category='wiring'"));
+        updateDocs.bindValue(QStringLiteral(":aliases"),aliases);
+        updateDocs.bindValue(QStringLiteral(":normalized"),normalizedAliases);
+        bool ok=updateDocs.exec();
+
+        bool ftsEnabled=false;
+        QSqlQuery meta(database);
+        if(meta.exec(QStringLiteral("SELECT value FROM search_meta WHERE key='fts5_enabled'")) && meta.next())
+            ftsEnabled=meta.value(0).toString()==QStringLiteral("1");
+        if(ok && ftsEnabled){
+            QSqlQuery updateFts(database);
+            updateFts.prepare(QStringLiteral(
+                "UPDATE search_fts SET searchable=searchable||' '||:aliases, normalized=normalized||' '||:normalized "
+                "WHERE rowid IN (SELECT id FROM search_documents WHERE category='wiring')"));
+            updateFts.bindValue(QStringLiteral(":aliases"),aliases);
+            updateFts.bindValue(QStringLiteral(":normalized"),normalizedAliases);
+            ok=updateFts.exec();
+        }
+
+        if(ok){
+            QList<qlonglong> ids;
+            QSqlQuery rows(database);
+            if(rows.exec(QStringLiteral("SELECT id FROM search_documents WHERE category='wiring'")))
+                while(rows.next()) ids.append(rows.value(0).toLongLong());
+            else ok=false;
+
+            if(ok){
+                QSqlQuery insert(database);
+                insert.prepare(QStringLiteral("INSERT OR IGNORE INTO search_terms(term,document_id) VALUES(:term,:id)"));
+                const QStringList terms=normalizedAliases.split(QLatin1Char(' '),Qt::SkipEmptyParts);
+                for(const qlonglong id:ids){
+                    for(const QString &term:terms){
+                        insert.bindValue(QStringLiteral(":term"),term);
+                        insert.bindValue(QStringLiteral(":id"),id);
+                        if(!insert.exec()){ok=false;break;}
+                    }
+                    if(!ok) break;
+                }
+            }
+        }
+
+        if(ok){
+            QSqlQuery writeMarker(database);
+            ok=writeMarker.exec(QStringLiteral("INSERT OR REPLACE INTO search_meta(key,value) VALUES('wiring_alias_version','2')"));
+        }
+        if(ok) database.commit(); else database.rollback();
+    }
+
+    database.close();
+    database=QSqlDatabase();
+    QSqlDatabase::removeDatabase(connection);
+}
+
+class MediaController : public QObject
+{
+public:
+    explicit MediaController(QWidget *browser):QObject(browser),m_browser(browser)
+    {
+        if(!m_browser) return;
+        m_detail=m_browser->findChild<QTextBrowser*>();
+        m_results=m_browser->findChild<QTableWidget*>();
+        if(m_detail){
+            m_detail->installEventFilter(this);
+            m_detail->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+            m_detail->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+        }
+        m_browser->installEventFilter(this);
+        createImageButton();
+        if(m_results) QObject::connect(m_results,&QTableWidget::itemSelectionChanged,this,[this](){scheduleRefresh();});
+        QTimer::singleShot(600,this,[this](){refresh();});
+    }
+
+protected:
+    bool eventFilter(QObject *watched,QEvent *event) override
+    {
+        if(!event) return QObject::eventFilter(watched,event);
+        if((watched==m_detail || watched==m_browser) && event->type()==QEvent::Resize)
+            QTimer::singleShot(30,this,[this](){refresh();});
+        if(watched==m_browser && event->type()==QEvent::LanguageChange){
+            if(m_imageButton) m_imageButton->setText(enlargeImageText());
+            scheduleRefresh();
+        }
+        return QObject::eventFilter(watched,event);
+    }
+
+private:
+    void createImageButton()
+    {
+        if(!m_browser || m_browser->findChild<QPushButton*>(QStringLiteral("memsEnlargeImageButton"))) return;
+        QPushButton *sheet=nullptr;
+        for(QPushButton *button:m_browser->findChildren<QPushButton*>()){
+            if(!button) continue;
+            const QString text=button->text();
+            if(text==I18n::text(7325) || text==I18n::text(7253) || text==I18n::text(7287)){
+                sheet=button;
+                break;
+            }
+        }
+        if(!sheet || !sheet->parentWidget() || !sheet->parentWidget()->layout()) return;
+
+        m_imageButton=new QPushButton(enlargeImageText(),sheet->parentWidget());
+        m_imageButton->setObjectName(QStringLiteral("memsEnlargeImageButton"));
+        m_imageButton->setEnabled(false);
+        QLayout *layout=sheet->parentWidget()->layout();
+        if(QBoxLayout *box=qobject_cast<QBoxLayout*>(layout)){
+            const int index=box->indexOf(sheet);
+            box->insertWidget(index>=0?index+1:box->count(),m_imageButton);
+        }else{
+            layout->addWidget(m_imageButton);
+        }
+        QObject::connect(m_imageButton,&QPushButton::clicked,this,[this](){
+            if(m_detail) openLargeImage(m_browser,firstImagePath(m_detail));
+        });
+    }
+
+    void scheduleRefresh()
+    {
+        QTimer::singleShot(140,this,[this](){refresh();});
+    }
+
+    void refresh()
+    {
+        if(!m_detail) return;
+        cleanOversizedSourceTitle(m_browser,m_detail);
+        fitDetailImages(m_detail);
+        if(m_imageButton) m_imageButton->setEnabled(!firstImagePath(m_detail).isEmpty());
+    }
+
+    QPointer<QWidget> m_browser;
+    QPointer<QTextBrowser> m_detail;
+    QPointer<QTableWidget> m_results;
+    QPointer<QPushButton> m_imageButton;
+};
+
 void patchBrowser(QWidget *browser)
 {
-    if(!browser || browser->property("richSheetRendererV4").toBool()) return;
-    browser->setProperty("richSheetRendererV4",true);
+    if(!browser || browser->property("richSheetRendererV5").toBool()) return;
+    browser->setProperty("richSheetRendererV5",true);
+    ensureWiringSearchAliases();
     const QList<QPushButton*> buttons=browser->findChildren<QPushButton*>();
     for(QPushButton *button:buttons){
         if(!button) continue;
@@ -173,6 +543,7 @@ void patchBrowser(QWidget *browser)
             QObject::connect(button,&QPushButton::clicked,browser,[browser](){showRichSheet(browser);});
         }
     }
+    new MediaController(browser);
 }
 
 class BrowserPatchInstaller : public QObject
