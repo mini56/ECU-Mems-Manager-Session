@@ -3,12 +3,20 @@
 #include <QByteArray>
 #include <QCoreApplication>
 #include <QDir>
+#include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QRegularExpression>
+#include <QSet>
 #include <QStandardPaths>
 #include <QSqlQuery>
 #include <QSqlRecord>
 #include <QUuid>
+
+#include <algorithm>
 
 namespace {
 
@@ -48,6 +56,223 @@ bool executeQz64Sql(QSqlDatabase &database,const QString &path)
     return true;
 }
 
+int numericSuffix(const QString &name)
+{
+    static const QRegularExpression rx(QStringLiteral("_(\\d+)\\.qz64$"),QRegularExpression::CaseInsensitiveOption);
+    const QRegularExpressionMatch match=rx.match(name);
+    return match.hasMatch()?match.captured(1).toInt():0;
+}
+
+QStringList seedFiles(const QString &root)
+{
+    QDir dir(root);
+    QStringList names=dir.entryList(QStringList()<<QStringLiteral("mems_reference_seed_*.qz64"),QDir::Files,QDir::Name);
+    std::sort(names.begin(),names.end(),[](const QString &a,const QString &b){
+        const int na=numericSuffix(a),nb=numericSuffix(b);
+        if(na!=nb) return na<nb;
+        return a<b;
+    });
+    QStringList result;
+    for(const QString &name:names) result.append(dir.filePath(name));
+    return result;
+}
+
+QStringList enrichmentFiles(const QString &root)
+{
+    QStringList ordered;
+    QSet<QString> seen;
+    const QDir base(root);
+
+    // Respect the manifest order first when it is present.
+    QFile manifest(base.filePath(QStringLiteral("manifest.json")));
+    if(manifest.open(QIODevice::ReadOnly|QIODevice::Text)){
+        const QJsonDocument doc=QJsonDocument::fromJson(manifest.readAll());
+        const QJsonArray batches=doc.object().value(QStringLiteral("research_enrichment_batches")).toArray();
+        for(const QJsonValue &value:batches){
+            const QString relative=QDir::cleanPath(value.toString()).replace(QLatin1Char('\\'),QLatin1Char('/'));
+            if(relative.isEmpty() || relative.startsWith(QStringLiteral("../")) || relative==QStringLiteral("..")) continue;
+            const QString absolute=base.filePath(relative);
+            if(QFileInfo::exists(absolute) && !seen.contains(QFileInfo(absolute).canonicalFilePath())){
+                ordered.append(absolute);
+                seen.insert(QFileInfo(absolute).canonicalFilePath());
+            }
+        }
+    }
+
+    // Any future enrichment file is also discovered automatically even if
+    // somebody forgot to extend the manifest. This prevents silent data loss.
+    QStringList discovered;
+    QDirIterator it(root,QStringList()<<QStringLiteral("research_enrichment*.qz64"),QDir::Files,QDirIterator::Subdirectories);
+    while(it.hasNext()) discovered.append(it.next());
+    std::sort(discovered.begin(),discovered.end(),[](const QString &a,const QString &b){
+        const int na=numericSuffix(QFileInfo(a).fileName()),nb=numericSuffix(QFileInfo(b).fileName());
+        if(na!=nb) return na<nb;
+        return a<b;
+    });
+    for(const QString &absolute:discovered){
+        const QString canonical=QFileInfo(absolute).canonicalFilePath();
+        if(!seen.contains(canonical)){
+            ordered.append(absolute);
+            seen.insert(canonical);
+        }
+    }
+    return ordered;
+}
+
+bool expandReferenceSheets(const QString &sourceRoot,const QString &cacheRoot)
+{
+    const QString fichesRoot=sourceRoot+QStringLiteral("/fiches");
+    QDir dir(fichesRoot);
+    if(!dir.exists()) return true;
+    const QStringList files=dir.entryList(QStringList()<<QStringLiteral("*.qz64"),QDir::Files,QDir::Name);
+    for(const QString &fileName:files){
+        QString destinationName=fileName;
+        destinationName.chop(QStringLiteral(".qz64").size());
+        if(!expandQz64(dir.filePath(fileName),cacheRoot+QStringLiteral("/fiches/")+destinationName))
+            return false;
+    }
+    return true;
+}
+
+QString assetGeneration(const QString &relativePath)
+{
+    const QString text=relativePath.toLower();
+    const struct { const char *a; const char *b; const char *c; const char *value; } patterns[]={
+        {"1_2","1.2","1-2","1.2"},
+        {"1_3","1.3","1-3","1.3"},
+        {"1_6","1.6","1-6","1.6"},
+        {"1_9","1.9","1-9","1.9"}
+    };
+    for(const auto &pattern:patterns){
+        if(text.contains(QString::fromLatin1(pattern.a)) || text.contains(QString::fromLatin1(pattern.b)) || text.contains(QString::fromLatin1(pattern.c)))
+            return QString::fromLatin1(pattern.value);
+    }
+    if(text.contains(QStringLiteral("rosco")))
+        return QStringLiteral("1.2/1.3/1.6");
+    return QString();
+}
+
+QString humanStem(const QString &relativePath)
+{
+    QString text=QFileInfo(relativePath).completeBaseName();
+    text.replace(QLatin1Char('_'),QLatin1Char(' '));
+    text.replace(QLatin1Char('-'),QLatin1Char(' '));
+    return text.simplified();
+}
+
+QString assetKind(const QString &relativePath,const QString &suffix)
+{
+    const QString lower=relativePath.toLower();
+    if(lower.contains(QStringLiteral("rosco"))) return QStringLiteral("rosco");
+    if(lower.contains(QStringLiteral("obd")) || lower.contains(QStringLiteral("j1962"))) return QStringLiteral("obd");
+    if(lower.contains(QStringLiteral("connector")) || lower.contains(QStringLiteral("pinout"))) return QStringLiteral("ecu_connector");
+    const QSet<QString> imageExtensions={QStringLiteral("svg"),QStringLiteral("png"),QStringLiteral("jpg"),QStringLiteral("jpeg"),QStringLiteral("webp"),QStringLiteral("gif")};
+    if(imageExtensions.contains(suffix)) return QStringLiteral("diagram");
+    return QStringLiteral("document");
+}
+
+QString localizedAssetName(const QString &kind,const QString &generation,const QString &fallback,const QString &language)
+{
+    QString label;
+    if(language==QStringLiteral("fr")){
+        if(kind==QStringLiteral("rosco")) label=QStringLiteral("Prise diagnostic Rover / ROSCO — 3 broches");
+        else if(kind==QStringLiteral("obd")) label=QStringLiteral("Prise diagnostic OBD / J1962 — 16 broches");
+        else if(kind==QStringLiteral("ecu_connector")) label=QStringLiteral("Connecteur ECU");
+        else if(kind==QStringLiteral("diagram")) label=QStringLiteral("Schéma technique");
+        else label=QStringLiteral("Document technique");
+    }else if(language==QStringLiteral("es")){
+        if(kind==QStringLiteral("rosco")) label=QStringLiteral("Conector de diagnóstico Rover / ROSCO — 3 pines");
+        else if(kind==QStringLiteral("obd")) label=QStringLiteral("Conector de diagnóstico OBD / J1962 — 16 pines");
+        else if(kind==QStringLiteral("ecu_connector")) label=QStringLiteral("Conector ECU");
+        else if(kind==QStringLiteral("diagram")) label=QStringLiteral("Esquema técnico");
+        else label=QStringLiteral("Documento técnico");
+    }else if(language==QStringLiteral("it")){
+        if(kind==QStringLiteral("rosco")) label=QStringLiteral("Connettore diagnostico Rover / ROSCO — 3 pin");
+        else if(kind==QStringLiteral("obd")) label=QStringLiteral("Connettore diagnostico OBD / J1962 — 16 pin");
+        else if(kind==QStringLiteral("ecu_connector")) label=QStringLiteral("Connettore ECU");
+        else if(kind==QStringLiteral("diagram")) label=QStringLiteral("Schema tecnico");
+        else label=QStringLiteral("Documento tecnico");
+    }else if(language==QStringLiteral("pt")){
+        if(kind==QStringLiteral("rosco")) label=QStringLiteral("Conector de diagnóstico Rover / ROSCO — 3 pinos");
+        else if(kind==QStringLiteral("obd")) label=QStringLiteral("Conector de diagnóstico OBD / J1962 — 16 pinos");
+        else if(kind==QStringLiteral("ecu_connector")) label=QStringLiteral("Conector ECU");
+        else if(kind==QStringLiteral("diagram")) label=QStringLiteral("Esquema técnico");
+        else label=QStringLiteral("Documento técnico");
+    }else if(language==QStringLiteral("de")){
+        if(kind==QStringLiteral("rosco")) label=QStringLiteral("Rover-/ROSCO-Diagnosestecker — 3-polig");
+        else if(kind==QStringLiteral("obd")) label=QStringLiteral("OBD-/J1962-Diagnosestecker — 16-polig");
+        else if(kind==QStringLiteral("ecu_connector")) label=QStringLiteral("ECU-Steckverbinder");
+        else if(kind==QStringLiteral("diagram")) label=QStringLiteral("Technischer Schaltplan");
+        else label=QStringLiteral("Technisches Dokument");
+    }else{
+        if(kind==QStringLiteral("rosco")) label=QStringLiteral("Rover / ROSCO diagnostic connector — 3 pin");
+        else if(kind==QStringLiteral("obd")) label=QStringLiteral("OBD / J1962 diagnostic connector — 16 pin");
+        else if(kind==QStringLiteral("ecu_connector")) label=QStringLiteral("ECU connector");
+        else if(kind==QStringLiteral("diagram")) label=QStringLiteral("Technical diagram");
+        else label=QStringLiteral("Technical document");
+    }
+
+    if(!generation.isEmpty() && kind!=QStringLiteral("rosco"))
+        label=QStringLiteral("MEMS %1 — %2").arg(generation,label);
+    if(kind==QStringLiteral("diagram") || kind==QStringLiteral("document"))
+        label+=QStringLiteral(" — ")+fallback;
+    return label;
+}
+
+bool registerReferenceAssets(QSqlDatabase &database,const QString &root)
+{
+    QSqlQuery setup(database);
+    const QString schema=QStringLiteral(
+        "(id INTEGER PRIMARY KEY AUTOINCREMENT,generation TEXT,name_fr TEXT,name_en TEXT,name_es TEXT,name_it TEXT,name_pt TEXT,name_de TEXT,"
+        "relative_path TEXT NOT NULL UNIQUE,filename TEXT NOT NULL,file_type TEXT,keywords TEXT)");
+    if(!setup.exec(QStringLiteral("CREATE TABLE IF NOT EXISTS wiring_assets")+schema)) return false;
+    if(!setup.exec(QStringLiteral("CREATE TABLE IF NOT EXISTS document_assets")+schema)) return false;
+    if(!setup.exec(QStringLiteral("DELETE FROM wiring_assets"))) return false;
+    if(!setup.exec(QStringLiteral("DELETE FROM document_assets"))) return false;
+
+    const QSet<QString> imageExtensions={QStringLiteral("svg"),QStringLiteral("png"),QStringLiteral("jpg"),QStringLiteral("jpeg"),QStringLiteral("webp"),QStringLiteral("gif")};
+    const QSet<QString> documentExtensions={QStringLiteral("pdf"),QStringLiteral("html"),QStringLiteral("htm"),QStringLiteral("md"),QStringLiteral("txt"),QStringLiteral("csv"),QStringLiteral("xml")};
+    QDir base(root);
+    QDirIterator it(root,QDir::Files|QDir::NoDotAndDotDot,QDirIterator::Subdirectories);
+    while(it.hasNext()){
+        const QString absolute=it.next();
+        const QFileInfo info(absolute);
+        const QString suffix=info.suffix().toLower();
+        if(!imageExtensions.contains(suffix) && !documentExtensions.contains(suffix)) continue;
+
+        const QString relative=base.relativeFilePath(absolute).replace(QLatin1Char('\\'),QLatin1Char('/'));
+        if(relative==QStringLiteral("manifest.json")) continue;
+        const bool wiring=imageExtensions.contains(suffix);
+        const QString table=wiring?QStringLiteral("wiring_assets"):QStringLiteral("document_assets");
+        const QString generation=assetGeneration(relative);
+        const QString kind=assetKind(relative,suffix);
+        const QString fallback=humanStem(relative);
+        const QString keywords=QStringLiteral(
+            "MEMS %1 schema schéma diagram diagramme image illustration connector connecteur brochage pinout wiring cablage câblage "
+            "diagnostic diagnostique obd j1962 rosco documentation document fiche source recurso recurso técnico esquema conector pines "
+            "cablaggio connettore pinagem stecker pinbelegung schaltplan technical technique técnico tecnico technisch %2 %3")
+            .arg(generation,relative,fallback);
+
+        QSqlQuery insert(database);
+        insert.prepare(QStringLiteral(
+            "INSERT INTO %1(generation,name_fr,name_en,name_es,name_it,name_pt,name_de,relative_path,filename,file_type,keywords) "
+            "VALUES(:generation,:fr,:en,:es,:it,:pt,:de,:path,:filename,:type,:keywords)").arg(table));
+        insert.bindValue(QStringLiteral(":generation"),generation);
+        insert.bindValue(QStringLiteral(":fr"),localizedAssetName(kind,generation,fallback,QStringLiteral("fr")));
+        insert.bindValue(QStringLiteral(":en"),localizedAssetName(kind,generation,fallback,QStringLiteral("en")));
+        insert.bindValue(QStringLiteral(":es"),localizedAssetName(kind,generation,fallback,QStringLiteral("es")));
+        insert.bindValue(QStringLiteral(":it"),localizedAssetName(kind,generation,fallback,QStringLiteral("it")));
+        insert.bindValue(QStringLiteral(":pt"),localizedAssetName(kind,generation,fallback,QStringLiteral("pt")));
+        insert.bindValue(QStringLiteral(":de"),localizedAssetName(kind,generation,fallback,QStringLiteral("de")));
+        insert.bindValue(QStringLiteral(":path"),relative);
+        insert.bindValue(QStringLiteral(":filename"),info.fileName());
+        insert.bindValue(QStringLiteral(":type"),suffix);
+        insert.bindValue(QStringLiteral(":keywords"),keywords);
+        if(!insert.exec()) return false;
+    }
+    return true;
+}
+
 }
 
 MemsReferenceDatabase::MemsReferenceDatabase()
@@ -82,8 +307,10 @@ bool MemsReferenceDatabase::open()
 
         QByteArray encoded;
         bool ok=true;
-        for(int part=1;part<=4;++part){
-            QFile seed(referenceRoot()+QStringLiteral("/mems_reference_seed_%1.qz64").arg(part));
+        const QStringList parts=seedFiles(referenceRoot());
+        if(parts.isEmpty()) ok=false;
+        for(const QString &partPath:parts){
+            QFile seed(partPath);
             if(!seed.open(QIODevice::ReadOnly|QIODevice::Text)){ok=false;break;}
             encoded+=seed.readAll().trimmed();
         }
@@ -101,10 +328,13 @@ bool MemsReferenceDatabase::open()
             }
         }
 
-        if(ok)
-            ok=executeQz64Sql(buildDb,referenceRoot()+QStringLiteral("/research_enrichment.qz64"));
-        if(ok)
-            ok=executeQz64Sql(buildDb,referenceRoot()+QStringLiteral("/research_enrichment_500.qz64"));
+        if(ok){
+            const QStringList enrichments=enrichmentFiles(referenceRoot());
+            for(const QString &path:enrichments){
+                if(!executeQz64Sql(buildDb,path)){ok=false;break;}
+            }
+        }
+        if(ok) ok=registerReferenceAssets(buildDb,referenceRoot());
 
         buildDb.close();
         buildDb=QSqlDatabase();
@@ -112,11 +342,7 @@ bool MemsReferenceDatabase::open()
         if(!ok){QFile::remove(m_databasePath);return false;}
     }
 
-    const QString fiches=cacheRoot+QStringLiteral("/fiches");
-    expandQz64(referenceRoot()+QStringLiteral("/fiches/mems_1_2.xml.qz64"),fiches+QStringLiteral("/mems_1_2.xml"));
-    expandQz64(referenceRoot()+QStringLiteral("/fiches/mems_1_3.xml.qz64"),fiches+QStringLiteral("/mems_1_3.xml"));
-    expandQz64(referenceRoot()+QStringLiteral("/fiches/mems_1_6.xml.qz64"),fiches+QStringLiteral("/mems_1_6.xml"));
-    expandQz64(referenceRoot()+QStringLiteral("/fiches/mems_1_9.xml.qz64"),fiches+QStringLiteral("/mems_1_9.xml"));
+    if(!expandReferenceSheets(referenceRoot(),cacheRoot)) return false;
 
     m_database=QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),m_connectionName);
     m_database.setConnectOptions(QStringLiteral("QSQLITE_OPEN_READONLY"));
