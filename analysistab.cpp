@@ -441,6 +441,7 @@ AnalysisTab::AnalysisTab(QWidget *parent) : QWidget(parent), m_overlayMode(false
   QVBoxLayout *leftLayout = new QVBoxLayout(leftPanel);
 
   m_loadButton = new QPushButton(I18n::text(6442) /* EN: Load CSV / TXT file... */, leftPanel);
+  m_loadButton->setMinimumHeight(32);
   connect(m_loadButton, SIGNAL(clicked()), this, SLOT(onLoadFileClicked()));
   leftLayout->addWidget(m_loadButton);
 
