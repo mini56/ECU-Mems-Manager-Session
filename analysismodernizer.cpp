@@ -214,7 +214,7 @@ private:
         }
 
         QWidget *topBar = tab->findChild<QWidget*>(QStringLiteral("analysisTopBar"));
-        const int topHeight=qBound(30,qRound(36.0*scale),42);
+        const int topHeight=qBound(48,qRound(48.0*scale),52);
         if (topBar) {
             topBar->setMinimumHeight(topHeight);
             topBar->setMaximumHeight(topHeight);
@@ -229,6 +229,8 @@ private:
 
         const int buttonHeight = qBound(21, qRound(25.0 * scale), 29);
         for (QPushButton *button : tab->findChildren<QPushButton*>()) {
+            if (topBar && button->parentWidget() == topBar)
+                continue;
             button->setMinimumHeight(buttonHeight);
             button->setMaximumHeight(qMax(buttonHeight,34));
         }
