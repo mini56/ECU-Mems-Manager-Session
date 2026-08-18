@@ -2,10 +2,11 @@
 #define HELPVIEWER_H
 
 #include <QDialog>
-#include <QString>
+#include <QScrollBar>
+#include <QStringList>
 #include <QUrl>
-#include <QVector>
 
+class QEvent;
 class QLineEdit;
 class QListWidget;
 class QPushButton;
@@ -17,30 +18,39 @@ class HelpViewer : public QDialog
 public:
     explicit HelpViewer(const QString title, QWidget *parent = nullptr);
 
+protected:
+    void changeEvent(QEvent *event) override;
+
 private slots:
     void onCloseClicked();
     void onAnchorClicked(const QUrl &url);
     void onChapterChanged(int row);
-    void onSearchTextChanged(const QString &text);
-    void onZoomIn();
-    void onZoomOut();
-    void onZoomReset();
-    void onTopClicked();
+    void onSearchChanged(const QString &text);
+    void onSearchActivated();
+    void goTop();
+    void zoomOutHelp();
+    void resetZoom();
+    void zoomInHelp();
 
 private:
-    QString buildHelpHtml() const;
-    void resetViewerToTop();
+    void buildUi();
+    void retranslateUi();
+    void rebuildDocument();
+    QString buildDocumentHtml() const;
+    QStringList chapterImages() const;
+    void openImage(int chapterIndex);
+    void setZoomLevel(int level);
 
-    QLineEdit *m_searchEdit;
-    QListWidget *m_chapterList;
+    QString m_baseTitle;
+    QLineEdit *m_search;
+    QListWidget *m_chapters;
     QTextBrowser *m_viewer;
-    QPushButton *m_closeButton;
     QPushButton *m_topButton;
     QPushButton *m_zoomOutButton;
     QPushButton *m_zoomResetButton;
     QPushButton *m_zoomInButton;
-    QVector<QString> m_anchors;
-    int m_zoomSteps;
+    QPushButton *m_closeButton;
+    int m_zoomLevel;
 };
 
 #endif // HELPVIEWER_H

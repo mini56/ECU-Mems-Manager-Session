@@ -4,6 +4,9 @@ set(PROJECTNAME "ECU_Mems_Manager")
 string(TOLOWER ${PROJECTNAME} PNAME)
 project(${PNAME} CXX)
 add_definitions(-DPROJECTNAME="${PROJECTNAME}")
+
+# Local fallback only. GitHub Actions is the version source of truth:
+# run 610 -> 1.6.10, 611 -> 1.6.11, 699 -> 1.6.99, 700 -> 1.7.0.
 set(VER_MAJOR 1)
 set(VER_MINOR 6)
 set(VER_PATCH 10)
@@ -13,12 +16,14 @@ if(DEFINED ENV{GITHUB_RUN_NUMBER} AND NOT "$ENV{GITHUB_RUN_NUMBER}" STREQUAL "")
     set(APP_BUILD_NUMBER "$ENV{GITHUB_RUN_NUMBER}")
 endif()
 include("${CMAKE_SOURCE_DIR}/cmake/BuildVersion.cmake")
+
 set(APP_COMMIT_SHA "local")
 if(DEFINED ENV{GITHUB_SHA} AND NOT "$ENV{GITHUB_SHA}" STREQUAL "")
     string(SUBSTRING "$ENV{GITHUB_SHA}" 0 7 APP_COMMIT_SHA)
 endif()
 add_compile_definitions(APP_NAME="ECU Mems Manager" APP_VERSION="${APP_VERSION}" APP_BUILD_NUMBER="${APP_BUILD_NUMBER}" APP_COMMIT_SHA="${APP_COMMIT_SHA}")
 add_definitions("-DVER_MAJOR=${VER_MAJOR}" "-DVER_MINOR=${VER_MINOR}" "-DVER_PATCH=${VER_PATCH}")
+
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
@@ -27,9 +32,13 @@ find_package(Qt5 REQUIRED COMPONENTS Widgets SerialPort Charts Sql)
 include_directories("${CMAKE_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}/qledindicator" "${CMAKE_SOURCE_DIR}/analogwidgets" "${CMAKE_SOURCE_DIR}/ecu" "${CMAKE_CURRENT_BINARY_DIR}")
 configure_file("${CMAKE_SOURCE_DIR}/help.html.in" "${CMAKE_SOURCE_DIR}/help.html")
 configure_file("${CMAKE_SOURCE_DIR}/help_en.html.in" "${CMAKE_SOURCE_DIR}/help_en.html")
+
+# One implementation per feature. The former database UI overlay patches are
+# intentionally not compiled: search, scrolling, media and XML rendering are
+# owned by MemsDatabaseExplorerV2 only.
 set(SOURCES
     main.cpp i18n.cpp i18n.h memsinterface.cpp memslogic.cpp database/DatabaseSeed.cpp
-    helpviewer.cpp helpmodernizer.cpp logger.cpp serialdevenumerator.cpp splashprogress.cpp mainwindow.cpp aboutbox.cpp
+    helpviewer.cpp logger.cpp serialdevenumerator.cpp splashprogress.cpp mainwindow.cpp aboutbox.cpp
     optionsdialog.cpp summarytab.cpp diagnosticpanel.cpp analysistab.cpp captureviewer.cpp captureviewer.h
     tooltipbubblemanager.cpp tooltipbubblemanager.h scr/ecu/ecumanager.cpp scr/ecu/ecumanager.h
     qledindicator/qledindicator.cpp analogwidgets/led.cpp analogwidgets/functions.cpp
@@ -38,16 +47,15 @@ set(SOURCES
     analogwidgets/abstractmeter900.cpp mainwindow.ui resources.qrc database/DatabaseManager.cpp
     database/MemsReferenceDatabase.cpp database/MemsReferenceDatabase.h database/MemsReferencePackageRefresh.cpp
     database/MemsGlobalSearchIndex.cpp database/MemsGlobalSearchIndex.h database/MemsDatabaseExplorerV2.cpp
-    database/MemsDatabaseUniversalAccess.cpp database/MemsReferenceLanguageSync.cpp
-    database/MemsXmlRowIndexer.cpp database/MemsDatabaseMetricsCompact.cpp database/MemsSearchCompletenessPatch.cpp database/MemsDatabaseStabilityPatch.cpp database/MemsDatabaseBrowser.cpp database/MemsDatabaseBrowser.h
+    database/MemsReferenceLanguageSync.cpp database/MemsXmlRowIndexer.cpp
+    database/MemsDatabaseBrowser.cpp database/MemsDatabaseBrowser.h
     uirebuild.cpp overviewrebuild.cpp majorpagesrebuild.cpp errorsvisualpatch.cpp analysismodernizer.cpp
     strictvisualrebuild.cpp dedicatedpagesrebuild.cpp visualcompletion.cpp taborderpatch.cpp navigationorderpatch.cpp darkstyle.cpp darkfixes.cpp
     settingstabdark.cpp sidebarbubblecleaner.cpp splashtextfix.cpp settingsvisualpatch.cpp)
+
 add_executable(${PNAME} ${SOURCES})
 target_sources(${PNAME} PRIVATE ${CMAKE_SOURCE_DIR}/desktopshortcut.cpp ${CMAKE_SOURCE_DIR}/desktopshortcut.h)
 
-# Functional search self-test: exercises the same reference DB + global index code
-# used by the application, without starting the GUI.
 add_executable(mems_search_selftest
     database/MemsSearchSelfTest.cpp
     database/MemsReferenceDatabase.cpp database/MemsReferenceDatabase.h
@@ -80,6 +88,7 @@ if(MSVC)
     add_compile_definitions(_HAS_STD_BYTE=0)
     target_compile_options(${PNAME} PRIVATE /permissive)
 endif()
+
 if(WIN32)
     message(STATUS "Plateforme Windows détectée (MSVC / MinGW).")
     if(MSVC)
