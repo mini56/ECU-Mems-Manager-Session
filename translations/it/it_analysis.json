@@ -45,7 +45,7 @@
   "6443": "Nessun file caricato",
   "6444": "Seleziona tutto",
   "6445": "Deseleziona tutto",
-  "6446": "Sovrapponi tutte le\ncurve selezionate",
+  "6446": "Sovrapponi curve",
   "6447": "Canali disponibili:",
   "6448": "Carica file di registro",
   "6449": "File di registro (*.csv *.txt);;File CSV (*.csv);;File di testo (*.txt);;Tutti i file (*.*)",
@@ -61,5 +61,5 @@
   "6459": "liquido di raffreddamento",
   "6460": "Tensione batteria",
   "6461": "Torna alla visualizzazione impilata",
-  "6462": "Sovrapponi tutte le curve selezionate"
+  "6462": "Sovrapponi curve"
 }

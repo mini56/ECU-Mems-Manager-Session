@@ -45,7 +45,7 @@
   "6443": "Ningún archivo cargado",
   "6444": "Seleccionar todo",
   "6445": "Deseleccionar todo",
-  "6446": "Superponer todas las\ncurvas seleccionadas",
+  "6446": "Superponer curvas",
   "6447": "Canales disponibles:",
   "6448": "Cargar archivo de registro",
   "6449": "Archivos de registro (*.csv *.txt);;Archivos CSV (*.csv);;Archivos de texto (*.txt);;Todos los archivos (*.*)",
@@ -61,5 +61,5 @@
   "6459": "refrigerante",
   "6460": "Tensión de la batería",
   "6461": "Volver a la vista apilada",
-  "6462": "Superponer todas las curvas seleccionadas"
+  "6462": "Superponer curvas"
 }
