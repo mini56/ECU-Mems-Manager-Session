@@ -50,5 +50,14 @@
   "7361": "Type de fichier",
   "7362": "Chemin de la ressource",
   "7363": "Ouvrir la ressource",
-  "7364": "Contenu"
+  "7364": "Contenu",
+  "7365": "Agrandir l’image",
+  "7366": "Image agrandie",
+  "7367": "Connecteur ECU MEMS 1.2 — 18 voies",
+  "7368": "Connecteur ECU MEMS 1.3 — 20 voies",
+  "7369": "Connecteur ECU MEMS 1.6 — 20 voies",
+  "7370": "Connecteur ECU MEMS 1.9 — 20 voies",
+  "7371": "Prise diagnostic Rover / MEMS — 3 broches",
+  "7372": "Prise diagnostic MEMS 1.9 — 16 broches",
+  "7373": "Schémas de connecteurs — MEMS %1"
 }

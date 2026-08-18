@@ -50,5 +50,14 @@
   "7361": "File type",
   "7362": "Resource path",
   "7363": "Open resource",
-  "7364": "Content"
+  "7364": "Content",
+  "7365": "Enlarge image",
+  "7366": "Enlarged image",
+  "7367": "MEMS 1.2 ECU connector — 18 ways",
+  "7368": "MEMS 1.3 ECU connector — 20 ways",
+  "7369": "MEMS 1.6 ECU connector — 20 ways",
+  "7370": "MEMS 1.9 ECU connector — 20 ways",
+  "7371": "Rover / MEMS diagnostic connector — 3 pins",
+  "7372": "MEMS 1.9 diagnostic connector — 16 pins",
+  "7373": "Connector diagrams — MEMS %1"
 }
