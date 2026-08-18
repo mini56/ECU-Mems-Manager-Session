@@ -5,8 +5,46 @@
 #include <QIcon>
 #include <QPalette>
 #include <QColor>
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
 #include "i18n.h"
 #define tr I18n::text
+
+namespace {
+
+static void applyDarkNativeTitleBar(QWidget *widget)
+{
+#ifdef Q_OS_WIN
+  if (!widget)
+    return;
+
+  HWND hwnd = reinterpret_cast<HWND>(widget->winId());
+  HMODULE dwmApi = LoadLibraryW(L"dwmapi.dll");
+  if (!dwmApi)
+    return;
+
+  typedef HRESULT (WINAPI *DwmSetWindowAttributeFn)(HWND, DWORD, LPCVOID, DWORD);
+  DwmSetWindowAttributeFn setAttribute = reinterpret_cast<DwmSetWindowAttributeFn>(
+      GetProcAddress(dwmApi, "DwmSetWindowAttribute"));
+  if (setAttribute)
+  {
+    const BOOL dark = TRUE;
+    const DWORD attributes[] = {20, 19};
+    for (DWORD attribute : attributes)
+    {
+      if (SUCCEEDED(setAttribute(hwnd, attribute, &dark, sizeof(dark))))
+        break;
+    }
+  }
+
+  FreeLibrary(dwmApi);
+#else
+  Q_UNUSED(widget);
+#endif
+}
+
+}
 
 /**
  * Constructor; sets up the options-dialog UI and sets settings-file field names.
@@ -23,6 +61,7 @@ m_settingsGroupName("Settings"), m_settingSerialDev("SerialDevice"), m_settingTe
   setAutoFillBackground(true);
   readSettings();
   setupWidgets();
+  applyDarkNativeTitleBar(this);
 }
 
 /**
