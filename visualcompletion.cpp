@@ -118,18 +118,6 @@ static void removeInventedRecorder(QMainWindow *w)
     }
 }
 
-static void syncNavigation(QMainWindow *w)
-{
-    QTabWidget *tabs=w?w->findChild<QTabWidget*>(QStringLiteral("Tab_main")):nullptr;
-    QListWidget *nav=w?w->findChild<QListWidget*>(QStringLiteral("uiRebuildNav")):nullptr;
-    if (!tabs || !nav) return;
-    const int current=tabs->currentIndex();
-    const QSignalBlocker blocker(nav);
-    nav->clear();
-    for (int i=0;i<tabs->count();++i) nav->addItem(tabs->tabText(i).trimmed());
-    nav->setCurrentRow(qBound(0,current,qMax(0,tabs->count()-1)));
-}
-
 static void fitAnalysis(QMainWindow *w,qreal s)
 {
     if (!w) return;
@@ -324,7 +312,6 @@ static void apply(QMainWindow *w)
     fitChrome(w,s);
     preserveRealUtilityControls(w,s);
     removeInventedRecorder(w);
-    syncNavigation(w);
     fitOverviewAndSettings(w,s);
     fitAnalysis(w,s);
     fitDedicatedPages(w,s);

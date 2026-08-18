@@ -8,14 +8,19 @@
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
+#include <QIcon>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMainWindow>
+#include <QPainter>
+#include <QPixmap>
 #include <QPlainTextEdit>
+#include <QPolygonF>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSettings>
+#include <QSignalBlocker>
 #include <QStyle>
 #include <QTabBar>
 #include <QTabWidget>
@@ -26,6 +31,7 @@
 #include <QVBoxLayout>
 #include <QWidget>
 #include "i18n.h"
+#include "database/MemsDatabaseBrowser.h"
 
 namespace {
 
@@ -36,6 +42,8 @@ static const char *kPanel = "#10161c";
 static const char *kBorder = "#29343e";
 static const char *kText = "#e7ecef";
 static const char *kMuted = "#8d99a3";
+static const int kNavTextRole = Qt::UserRole + 42;
+static const int kNavTabPtrRole = Qt::UserRole + 60;
 
 static QWidget *realPage(QWidget *tab)
 {
@@ -47,6 +55,176 @@ static QWidget *realPage(QWidget *tab)
 static QString titleForIndex(QTabWidget *tabs, int i)
 {
     return tabs ? tabs->tabText(i).trimmed() : QString();
+}
+
+static int navigationRank(QTabWidget *tabs, int index)
+{
+    if (!tabs || index < 0 || index >= tabs->count()) return -1;
+    QWidget *page = realPage(tabs->widget(index));
+    const QString name = page ? page->objectName().toLower() : QString();
+    const QString cls = page ? QString::fromLatin1(page->metaObject()->className()).toLower() : QString();
+    const QString title = tabs->tabText(index).trimmed();
+
+    if (name == QStringLiteral("overview_tab") || title == I18n::text(1001).trimmed()) return 0;
+    if (name == QStringLiteral("emission_tab") || title == I18n::text(2001).trimmed()) return 1;
+    if (name == QStringLiteral("actuators") || title == I18n::text(4001).trimmed()) return 2;
+    if (name == QStringLiteral("errors") || title == I18n::text(3001).trimmed()) return 3;
+    if (cls.contains(QStringLiteral("diagnostic")) || title == I18n::text(7013).trimmed()) return 4;
+    if (cls.contains(QStringLiteral("analysis")) || title == I18n::text(7018).trimmed()) return 5;
+    if (cls.contains(QStringLiteral("summary")) || title == I18n::text(7017).trimmed()) return 6;
+    if (title == I18n::text(7012).trimmed()) return 7;
+    if (name == QStringLiteral("raw") || title == I18n::text(5001).trimmed()) return 8;
+    if (name == QStringLiteral("database_tab") || title == I18n::text(7152).trimmed()) return 9;
+    if (name == QStringLiteral("ecu") || title == I18n::text(6002).trimmed() || title == I18n::text(6003).trimmed()) return 10;
+    return -1;
+}
+
+static QIcon iconForRank(int rank)
+{
+    QPixmap pm(22, 22);
+    pm.fill(Qt::transparent);
+    QPainter p(&pm);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    p.setPen(QPen(QColor(QStringLiteral("#ff8a1c")), 1.7, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    p.setBrush(Qt::NoBrush);
+
+    switch (rank)
+    {
+    case 0:
+        p.drawRoundedRect(QRectF(3,4,7,6),1.2,1.2); p.drawRoundedRect(QRectF(12,4,7,6),1.2,1.2);
+        p.drawRoundedRect(QRectF(3,12,7,6),1.2,1.2); p.drawRoundedRect(QRectF(12,12,7,6),1.2,1.2);
+        break;
+    case 1:
+        p.drawLine(4,6,18,6); p.drawLine(4,11,18,11); p.drawLine(4,16,18,16);
+        p.drawEllipse(QPointF(9,6),2,2); p.drawEllipse(QPointF(14,11),2,2); p.drawEllipse(QPointF(7,16),2,2);
+        break;
+    case 2:
+        p.drawEllipse(QRectF(6,6,10,10)); p.drawEllipse(QPointF(11,11),2.4,2.4);
+        p.drawLine(11,3,11,6); p.drawLine(11,16,11,19); p.drawLine(3,11,6,11); p.drawLine(16,11,19,11);
+        p.drawLine(5.3,5.3,7.2,7.2); p.drawLine(14.8,14.8,16.7,16.7);
+        break;
+    case 3: {
+        QPolygonF q; q << QPointF(11,3.5) << QPointF(19,18) << QPointF(3,18);
+        p.drawPolygon(q); p.drawLine(11,8,11,13); p.drawPoint(QPointF(11,16));
+        break;
+    }
+    case 4:
+        p.drawEllipse(QRectF(4,4,11,11)); p.drawLine(14,14,19,19);
+        p.drawLine(7,10,9.5,12.5); p.drawLine(9.5,12.5,13,8);
+        break;
+    case 5: {
+        p.drawLine(4,18,4,5); p.drawLine(4,18,19,18);
+        QPolygonF q; q << QPointF(5,15) << QPointF(9,10) << QPointF(12,12) << QPointF(18,6);
+        p.drawPolyline(q);
+        break;
+    }
+    case 6:
+        p.drawRoundedRect(QRectF(4,12,3,6),.8,.8); p.drawRoundedRect(QRectF(9.5,8,3,10),.8,.8);
+        p.drawRoundedRect(QRectF(15,4,3,14),.8,.8); p.drawLine(3,18.5,19,18.5);
+        break;
+    case 7:
+        p.drawRoundedRect(QRectF(3,7,9,8),4,4); p.drawRoundedRect(QRectF(10,7,9,8),4,4); p.drawLine(8,11,14,11);
+        break;
+    case 8:
+        p.drawRoundedRect(QRectF(3.5,3.5,15,15),1.5,1.5);
+        p.drawLine(8.5,4,8.5,18); p.drawLine(13.5,4,13.5,18);
+        p.drawLine(4,8.5,18,8.5); p.drawLine(4,13.5,18,13.5);
+        p.drawPoint(QPointF(6,6)); p.drawPoint(QPointF(11,11)); p.drawPoint(QPointF(16,16));
+        break;
+    case 9:
+        p.drawEllipse(QRectF(4,4,14,5)); p.drawLine(4,6.5,4,16); p.drawLine(18,6.5,18,16);
+        p.drawArc(QRectF(4,13.5,14,5),180*16,180*16); p.drawArc(QRectF(4,9,14,5),180*16,180*16);
+        break;
+    case 10:
+        p.drawRoundedRect(QRectF(3,4,16,14),2,2);
+        p.drawLine(6,8,9,11); p.drawLine(9,11,6,14); p.drawLine(11.5,14,16,14);
+        break;
+    default:
+        p.drawEllipse(QPointF(11,11),7,7);
+        break;
+    }
+    return QIcon(pm);
+}
+
+static QWidget *tabFromNavItem(QListWidgetItem *item)
+{
+    if (!item) return nullptr;
+    const qulonglong raw = item->data(kNavTabPtrRole).toULongLong();
+    return reinterpret_cast<QWidget*>(static_cast<quintptr>(raw));
+}
+
+static void ensureDatabaseTab(QTabWidget *tabs)
+{
+    if (!tabs) return;
+    for (int i = 0; i < tabs->count(); ++i) {
+        QWidget *page = realPage(tabs->widget(i));
+        if (page && page->objectName() == QStringLiteral("database_tab")) return;
+    }
+
+    QWidget *databaseTab = new QWidget(tabs);
+    databaseTab->setObjectName(QStringLiteral("database_tab"));
+    databaseTab->setMinimumSize(0,0);
+    databaseTab->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
+    databaseTab->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+
+    QVBoxLayout *layout = new QVBoxLayout(databaseTab);
+    layout->setContentsMargins(0,0,0,0);
+    layout->setSpacing(0);
+    MemsDatabaseBrowser *browser = new MemsDatabaseBrowser(databaseTab);
+    browser->setObjectName(QStringLiteral("memsDatabaseBrowser"));
+    browser->setMinimumSize(0,0);
+    browser->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
+    browser->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    layout->addWidget(browser,1);
+    tabs->addTab(databaseTab,I18n::text(7152));
+}
+
+static bool buildNativeNavigation(QTabWidget *tabs, QListWidget *nav)
+{
+    if (!tabs || !nav) return false;
+    QWidget *orderedTabs[11] = {nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr};
+    QString orderedTitles[11];
+
+    for (int i = 0; i < tabs->count(); ++i) {
+        const int rank = navigationRank(tabs,i);
+        if (rank < 0 || rank >= 11 || orderedTabs[rank]) continue;
+        orderedTabs[rank] = tabs->widget(i);
+        orderedTitles[rank] = tabs->tabText(i).trimmed();
+    }
+    for (int rank = 0; rank < 11; ++rank)
+        if (!orderedTabs[rank]) return false;
+
+    QWidget *current = tabs->currentWidget();
+    int currentRow = 0;
+    nav->clear();
+    nav->setIconSize(QSize(20,20));
+    for (int rank = 0; rank < 11; ++rank) {
+        QListWidgetItem *item = new QListWidgetItem(iconForRank(rank),orderedTitles[rank],nav);
+        item->setData(kNavTextRole,orderedTitles[rank]);
+        item->setData(kNavTabPtrRole,static_cast<qulonglong>(reinterpret_cast<quintptr>(orderedTabs[rank])));
+        item->setToolTip(orderedTitles[rank]);
+        if (orderedTabs[rank] == current) currentRow = rank;
+    }
+    nav->setCurrentRow(currentRow);
+
+    QObject::connect(nav,&QListWidget::currentRowChanged,tabs,[nav,tabs](int row){
+        if (row < 0 || row >= nav->count()) return;
+        QWidget *target = tabFromNavItem(nav->item(row));
+        const int index = target ? tabs->indexOf(target) : -1;
+        if (index >= 0 && tabs->currentIndex() != index) tabs->setCurrentIndex(index);
+    });
+    QObject::connect(tabs,&QTabWidget::currentChanged,nav,[nav,tabs](int index){
+        if (index < 0 || index >= tabs->count()) return;
+        QWidget *currentTab = tabs->widget(index);
+        for (int row = 0; row < nav->count(); ++row) {
+            if (tabFromNavItem(nav->item(row)) == currentTab) {
+                const QSignalBlocker blocker(nav);
+                nav->setCurrentRow(row);
+                break;
+            }
+        }
+    });
+    return true;
 }
 
 static QString subtitleForIndex(int index)
@@ -161,7 +339,8 @@ static bool usesDedicatedLayout(QWidget *page,int index)
     if (index>=0 && index<=9) return true;
     if (name==QStringLiteral("overview_tab") || name==QStringLiteral("emission_tab") ||
         name==QStringLiteral("errors") || name==QStringLiteral("actuators") ||
-        name==QStringLiteral("raw") || name==QStringLiteral("ECU")) return true;
+        name==QStringLiteral("raw") || name==QStringLiteral("ECU") ||
+        name==QStringLiteral("database_tab")) return true;
     return cls==QStringLiteral("SummaryTab") || cls==QStringLiteral("AnalysisTab") || cls==QStringLiteral("DiagnosticPanel");
 }
 
@@ -227,8 +406,8 @@ static QFrame *buildHeader(QMainWindow *window, QWidget *legacy)
     QHBoxLayout *h=new QHBoxLayout(header); h->setContentsMargins(12,5,10,5); h->setSpacing(8);
     QLabel *logo=new QLabel(header); logo->setObjectName(QStringLiteral("uiRebuildLogo")); QPixmap p(QStringLiteral(":/icons/key.png")); if(!p.isNull())logo->setPixmap(p.scaled(34,34,Qt::KeepAspectRatio,Qt::SmoothTransformation)); logo->setAlignment(Qt::AlignCenter); h->addWidget(logo);
     QVBoxLayout *brandV=new QVBoxLayout; brandV->setContentsMargins(0,0,0,0); brandV->setSpacing(0);
-    QLabel *brand=new QLabel(QStringLiteral("ECU MEMS MANAGER"),header); brand->setObjectName(QStringLiteral("uiRebuildBrand")); QFont bf=brand->font(); bf.setBold(true); bf.setPointSizeF(10.5); brand->setFont(bf); brand->setStyleSheet(QStringLiteral("color:#f5f7f8;letter-spacing:.5px;"));
-    QLabel *ver=new QLabel(QStringLiteral("v%1.%2.%3").arg(VER_MAJOR).arg(VER_MINOR).arg(VER_PATCH),header); ver->setStyleSheet(QStringLiteral("color:%1;font-weight:700;").arg(QString::fromLatin1(kOrange2))); brandV->addWidget(brand); brandV->addWidget(ver); h->addLayout(brandV);
+    QLabel *brand=new QLabel(I18n::text(7).toUpper(),header); brand->setObjectName(QStringLiteral("uiRebuildBrand")); QFont bf=brand->font(); bf.setBold(true); bf.setPointSizeF(10.5); brand->setFont(bf); brand->setStyleSheet(QStringLiteral("color:#f5f7f8;letter-spacing:.5px;"));
+    QLabel *ver=new QLabel(I18n::text(9).arg(QStringLiteral(APP_VERSION)),header); ver->setStyleSheet(QStringLiteral("color:%1;font-weight:700;").arg(QString::fromLatin1(kOrange2))); brandV->addWidget(brand); brandV->addWidget(ver); h->addLayout(brandV);
     QFrame *sep=new QFrame(header); sep->setFrameShape(QFrame::VLine); sep->setStyleSheet(QStringLiteral("background:%1;max-width:1px;").arg(QString::fromLatin1(kBorder))); h->addWidget(sep);
     ecu->setParent(header); ecu->setStyleSheet(QStringLiteral("color:#dfe4e8;font-weight:700;padding:0 8px;")); h->addWidget(ecu);
     QSettings s(QSettings::IniFormat,QSettings::UserScope,PROJECTNAME); s.beginGroup(QStringLiteral("Settings")); QString port=s.value(QStringLiteral("SerialDevice"),QStringLiteral("--")).toString(); s.endGroup(); if(port.trimmed().isEmpty())port=QStringLiteral("--");
@@ -348,23 +527,26 @@ protected:
         if((event->type()!=QEvent::Show&&event->type()!=QEvent::Polish)||window->property("uiRebuildInstalled").toBool())return QObject::eventFilter(watched,event);
         QTabWidget *tabs=window->findChild<QTabWidget*>(QStringLiteral("Tab_main")); QWidget *central=window->centralWidget(); QVBoxLayout *root=central?qobject_cast<QVBoxLayout*>(central->layout()):nullptr; QWidget *legacy=central?central->findChild<QWidget*>(QStringLiteral("layoutWidget_7")):nullptr;
         if(!tabs||!root||!legacy)return QObject::eventFilter(watched,event);
-        window->setProperty("uiRebuildInstalled",true); QTimer::singleShot(0,window,[=](){rebuild(window,central,root,tabs,legacy);}); return QObject::eventFilter(watched,event);
+        window->setProperty("uiRebuildInstalled",true);
+        rebuild(window,central,root,tabs,legacy);
+        return QObject::eventFilter(watched,event);
     }
 private:
     static void rebuild(QMainWindow *window,QWidget *central,QVBoxLayout *root,QTabWidget *tabs,QWidget *legacy)
     {
+        ensureDatabaseTab(tabs);
         qApp->setStyleSheet(globalStyle()); central->setAttribute(Qt::WA_StyledBackground,true); central->setStyleSheet(QStringLiteral("background:%1;").arg(QString::fromLatin1(kBg)));
         if(QFrame *header=buildHeader(window,legacy))root->insertWidget(0,header);
         const int oldIndex=root->indexOf(tabs);if(oldIndex>=0)root->removeWidget(tabs);
         QFrame *workspace=new QFrame(central);workspace->setObjectName(QStringLiteral("uiRebuildWorkspace"));workspace->setAttribute(Qt::WA_StyledBackground,true);workspace->setStyleSheet(QStringLiteral("#uiRebuildWorkspace{background:%1;border:0;}").arg(QString::fromLatin1(kBg)));QHBoxLayout *wh=new QHBoxLayout(workspace);wh->setContentsMargins(0,0,0,0);wh->setSpacing(0);
         QListWidget *nav=new QListWidget(workspace);nav->setObjectName(QStringLiteral("uiRebuildNav"));nav->setFocusPolicy(Qt::NoFocus);nav->setUniformItemSizes(true);nav->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        for(int i=0;i<tabs->count();++i)nav->addItem(titleForIndex(tabs,i));
-        nav->setCurrentRow(tabs->currentIndex());
+        if(!buildNativeNavigation(tabs,nav)) {
+            delete nav;
+            return;
+        }
         tabs->tabBar()->hide();
         tabs->setStyleSheet(QStringLiteral("QTabWidget::pane{border:0;background:%1;}").arg(QString::fromLatin1(kBg)));
         wh->addWidget(nav);wh->addWidget(tabs,1);root->insertWidget(oldIndex<0?1:oldIndex,workspace,1);
-        QObject::connect(nav,&QListWidget::currentRowChanged,tabs,&QTabWidget::setCurrentIndex);
-        QObject::connect(tabs,&QTabWidget::currentChanged,nav,[nav](int row){ nav->setCurrentRow(row); });
         for(int i=0;i<tabs->count();++i){QWidget *page=realPage(tabs->widget(i));if(!page)continue;if(QScrollArea *scroll=qobject_cast<QScrollArea*>(tabs->widget(i))){scroll->setWidgetResizable(true);scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);page->setMinimumSize(0,0);}const QString title=titleForIndex(tabs,i);if(!usesDedicatedLayout(page,i))composeGenericPage(page,title,i);}
         root->addWidget(buildBottomStatus(window));tabs->setCurrentIndex(0);
         applyResponsive(window);

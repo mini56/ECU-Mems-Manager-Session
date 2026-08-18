@@ -157,17 +157,6 @@ static void removeInventedRecorder(QMainWindow *w)
     }
 }
 
-static void syncNavigation(QMainWindow *w)
-{
-    QTabWidget *tabs=w?w->findChild<QTabWidget*>(QStringLiteral("Tab_main")):nullptr;
-    QListWidget *nav=w?w->findChild<QListWidget*>(QStringLiteral("uiRebuildNav")):nullptr;
-    if(!tabs||!nav) return;
-    const QSignalBlocker b(nav);
-    nav->clear();
-    for(int i=0;i<tabs->count();++i) nav->addItem(tabs->tabText(i).trimmed());
-    nav->setCurrentRow(tabs->currentIndex());
-}
-
 static void releaseLegacySizing(QMainWindow *w)
 {
     if(!w) return;
@@ -289,7 +278,6 @@ static void applyStrict(QMainWindow *w)
     if(tabs){for(int i=0;i<tabs->count();++i)stylePage(pageOf(tabs->widget(i)),s);}
     rebuildSettingsGauges(w);
     fitOverview(w,s);
-    syncNavigation(w);
 }
 
 class StrictVisualInstaller:public QObject

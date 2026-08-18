@@ -50,7 +50,7 @@ set(SOURCES
     database/MemsReferenceLanguageSync.cpp database/MemsXmlRowIndexer.cpp
     database/MemsDatabaseBrowser.cpp database/MemsDatabaseBrowser.h
     uirebuild.cpp overviewrebuild.cpp majorpagesrebuild.cpp errorsvisualpatch.cpp analysismodernizer.cpp
-    strictvisualrebuild.cpp dedicatedpagesrebuild.cpp visualcompletion.cpp taborderpatch.cpp navigationorderpatch.cpp darkstyle.cpp darkfixes.cpp
+    strictvisualrebuild.cpp dedicatedpagesrebuild.cpp visualcompletion.cpp darkstyle.cpp darkfixes.cpp
     settingstabdark.cpp sidebarbubblecleaner.cpp splashtextfix.cpp settingsvisualpatch.cpp)
 
 add_executable(${PNAME} ${SOURCES})
