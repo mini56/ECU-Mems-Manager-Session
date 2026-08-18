@@ -26,6 +26,7 @@
 #include <QVBoxLayout>
 #include <QWidget>
 #include "i18n.h"
+#include "optionsdialog.h"
 
 namespace {
 
@@ -97,8 +98,8 @@ static QString globalStyle()
         "QSlider::handle:horizontal{width:12px;margin:-4px 0;background:%6;border:1px solid %5;border-radius:6px;}"
         "QProgressBar{background:#0a1117;color:#dfe5e9;border:1px solid %3;border-radius:3px;text-align:center;}"
         "QProgressBar::chunk{background:%6;border-radius:2px;}"
-    ).arg(QString::fromLatin1(kBg), QString::fromLatin1(kText), QString::fromLatin1(kBorder),
-          QString::fromLatin1(kPanel), QString::fromLatin1(kOrange2), QString::fromLatin1(kOrange));
+    ).arg(QString::fromLatin1(kBg), QString::fromLatin1(kText), QString::fromLatin1(kBorder), QString::fromLatin1(kPanel),
+          QString::fromLatin1(kOrange2), QString::fromLatin1(kOrange));
 }
 
 static QFrame *makeCard(QWidget *parent, const QString &objectName)
@@ -231,8 +232,22 @@ static QFrame *buildHeader(QMainWindow *window, QWidget *legacy)
     QLabel *ver=new QLabel(QStringLiteral("v%1.%2.%3").arg(VER_MAJOR).arg(VER_MINOR).arg(VER_PATCH),header); ver->setStyleSheet(QStringLiteral("color:%1;font-weight:700;").arg(QString::fromLatin1(kOrange2))); brandV->addWidget(brand); brandV->addWidget(ver); h->addLayout(brandV);
     QFrame *sep=new QFrame(header); sep->setFrameShape(QFrame::VLine); sep->setStyleSheet(QStringLiteral("background:%1;max-width:1px;").arg(QString::fromLatin1(kBorder))); h->addWidget(sep);
     ecu->setParent(header); ecu->setStyleSheet(QStringLiteral("color:#dfe4e8;font-weight:700;padding:0 8px;")); h->addWidget(ecu);
-    QSettings s(QSettings::IniFormat,QSettings::UserScope,PROJECTNAME); s.beginGroup(QStringLiteral("Settings")); QString port=s.value(QStringLiteral("SerialDevice"),QStringLiteral("--")).toString(); s.endGroup(); if(port.trimmed().isEmpty())port=QStringLiteral("--");
-    QLabel *portLabel=new QLabel(I18n::text(7114)+QStringLiteral("\n")+port,header); portLabel->setAlignment(Qt::AlignCenter); portLabel->setStyleSheet(QStringLiteral("color:#cbd3d9;font-weight:600;")); h->addWidget(portLabel);
+    QLabel *portLabel=new QLabel(header);
+    portLabel->setObjectName(QStringLiteral("uiRebuildPortLabel"));
+    portLabel->setAlignment(Qt::AlignCenter);
+    portLabel->setStyleSheet(QStringLiteral("color:#cbd3d9;font-weight:600;"));
+    const auto refreshPortLabel=[portLabel](){
+        QSettings s(QSettings::IniFormat,QSettings::UserScope,PROJECTNAME);
+        s.beginGroup(QStringLiteral("Settings"));
+        QString port=s.value(QStringLiteral("SerialDevice"),QString()).toString().trimmed();
+        s.endGroup();
+        if(port.isEmpty()) port=QStringLiteral("--");
+        portLabel->setText(I18n::text(7114)+QStringLiteral("\n")+port);
+    };
+    refreshPortLabel();
+    if(OptionsDialog *options=window->findChild<OptionsDialog*>())
+        QObject::connect(options,&QDialog::accepted,portLabel,refreshPortLabel);
+    h->addWidget(portLabel);
     h->addStretch(1);
     QWidget *commBox=new QWidget(header); QHBoxLayout *ch=new QHBoxLayout(commBox); ch->setContentsMargins(0,0,0,0); ch->setSpacing(5); comm->setParent(commBox); comm->setStyleSheet(QStringLiteral("color:#cbd3d9;font-weight:700;")); ch->addWidget(comm); if(good){good->setParent(commBox);ch->addWidget(good);} if(bad){bad->setParent(commBox);ch->addWidget(bad);} h->addWidget(commBox);
     connectButton->setParent(header); disconnectButton->setParent(header); h->addWidget(connectButton); h->addWidget(disconnectButton);
