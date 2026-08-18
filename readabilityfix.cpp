@@ -1,4 +1,5 @@
 #include <QApplication>
+#include <QColor>
 #include <QCoreApplication>
 #include <QEvent>
 #include <QLabel>
@@ -10,11 +11,47 @@
 
 namespace {
 
+static void forceReadableTable(QTableWidget *table)
+{
+    if (!table)
+        return;
+
+    const QString readableRule = QStringLiteral(
+        "QTableWidget{color:#ffffff;}"
+        "QTableWidget:disabled{color:#ffffff;}"
+        "QTableWidget::item{color:#ffffff;}"
+        "QTableWidget::item:disabled{color:#ffffff;}");
+
+    QString style = table->styleSheet();
+    if (!style.contains(readableRule)) {
+        style += readableRule;
+        table->setStyleSheet(style);
+    }
+
+    for (int row = 0; row < table->rowCount(); ++row) {
+        for (int column = 0; column < table->columnCount(); ++column) {
+            if (QTableWidgetItem *item = table->item(row, column))
+                item->setData(Qt::ForegroundRole, QColor(QStringLiteral("#ffffff")));
+        }
+    }
+}
+
 static void applyRequestedReadableText(QMainWindow *window)
 {
     if (!window)
         return;
 
+    // Toutes les mesures : rendre lisibles uniquement les lignes des 3 tableaux.
+    for (QWidget *widget : window->findChildren<QWidget*>()) {
+        if (QString::fromLatin1(widget->metaObject()->className()) == QStringLiteral("SummaryTab")) {
+            const QList<QTableWidget*> tables = widget->findChildren<QTableWidget*>();
+            for (QTableWidget *table : tables)
+                forceReadableTable(table);
+            break;
+        }
+    }
+
+    // Toutes les données : conserver les en-têtes orange et passer les lignes en blanc.
     QWidget *rawPage = window->findChild<QWidget*>(QStringLiteral("raw"));
     if (rawPage) {
         const QStringList blocks = { QStringLiteral("raw_1"), QStringLiteral("raw_2") };
@@ -33,25 +70,11 @@ static void applyRequestedReadableText(QMainWindow *window)
         }
     }
 
-    QWidget *diagnosticPage = nullptr;
+    // Diagnostic automatique : rendre lisibles uniquement les lignes du tableau.
     for (QWidget *widget : window->findChildren<QWidget*>()) {
         if (QString::fromLatin1(widget->metaObject()->className()) == QStringLiteral("DiagnosticPanel")) {
-            diagnosticPage = widget;
+            forceReadableTable(widget->findChild<QTableWidget*>());
             break;
-        }
-    }
-
-    if (diagnosticPage) {
-        QTableWidget *table = diagnosticPage->findChild<QTableWidget*>();
-        if (table) {
-            const QString readableRule = QStringLiteral(
-                "QTableWidget{color:#ffffff;}"
-                "QTableWidget::item{color:#ffffff;}");
-            QString style = table->styleSheet();
-            if (!style.contains(readableRule)) {
-                style += readableRule;
-                table->setStyleSheet(style);
-            }
         }
     }
 }
