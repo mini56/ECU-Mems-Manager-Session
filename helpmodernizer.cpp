@@ -5,8 +5,6 @@
 #include <QDesktopServices>
 #include <QDialog>
 #include <QEvent>
-#include <QFileInfo>
-#include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
@@ -14,6 +12,7 @@
 #include <QPointer>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QScrollBar>
 #include <QTextBrowser>
 #include <QTimer>
 #include <QUrl>
@@ -38,16 +37,16 @@ QStringList chapterImages()
         QStringLiteral(":/help/screens/analysis.jpg"),
         QStringLiteral(":/help/screens/measures.jpg"),
         QStringLiteral(":/help/screens/rosco.jpg"),
-        QStringLiteral(":/help/screens/measures.jpg"),
+        QStringLiteral(":/help/screens/all_data.jpg"),
         QString(),
         QStringLiteral(":/help/screens/overview.jpg"),
         QStringLiteral(":/help/screens/database.jpg"),
         QStringLiteral(":/help/screens/database.jpg"),
-        QStringLiteral(":/help/screens/database.jpg"),
-        QStringLiteral(":/help/screens/database.jpg"),
+        QStringLiteral(":/help/screens/database_image.jpg"),
+        QStringLiteral(":/help/screens/database_image.jpg"),
         QStringLiteral(":/help/screens/options.jpg"),
         QStringLiteral(":/help/screens/database.jpg"),
-        QStringLiteral(":/help/screens/database.jpg"),
+        QStringLiteral(":/help/screens/database_image.jpg"),
         QStringLiteral(":/help/screens/options.jpg"),
         QString(),
         QStringLiteral(":/help/screens/overview.jpg")
@@ -56,15 +55,21 @@ QStringList chapterImages()
 
 QString qrcUrl(const QString &resource)
 {
-    if(!resource.startsWith(QStringLiteral(":/"))) return QString();
-    return QStringLiteral("qrc")+resource;
+    return resource.startsWith(QStringLiteral(":/")) ? QStringLiteral("qrc")+resource : QString();
+}
+
+bool screenshotsMatchActiveLanguage()
+{
+    // The currently supplied validation screenshots were captured in French.
+    // Never present a French UI screenshot as if it were localized in another language.
+    return I18n::language().left(2).toLower()==QStringLiteral("fr");
 }
 
 QString paragraphs(QString text)
 {
     text.replace(QStringLiteral("\r\n"),QStringLiteral("\n"));
     text.replace(QLatin1Char('\r'),QLatin1Char('\n'));
-    QStringList parts=text.split(QStringLiteral("\n\n"),Qt::SkipEmptyParts);
+    const QStringList parts=text.split(QStringLiteral("\n\n"),Qt::SkipEmptyParts);
     QString html;
     for(QString part:parts){
         part=part.toHtmlEscaped();
@@ -77,6 +82,7 @@ QString paragraphs(QString text)
 QString buildModernHelpHtml()
 {
     const QStringList images=chapterImages();
+    const bool showScreenshots=screenshotsMatchActiveLanguage();
     QString html=QStringLiteral(
         "<!doctype html><html><head><meta charset='utf-8'><style>"
         "body{background:#080e13;color:#edf3f6;font-family:'Segoe UI',Arial,sans-serif;font-size:10pt;line-height:1.48;margin:18px 24px 34px;}"
@@ -86,8 +92,7 @@ QString buildModernHelpHtml()
         ".chapter{background:#101a21;border:1px solid #263640;margin:0 0 18px;padding:14px 16px;}"
         ".kicker{color:#ff8a00;font-size:8.5pt;font-weight:800;}h2{color:#f4f7f8;font-size:16pt;margin:4px 0 9px;border-bottom:1px solid #2b3a43;padding-bottom:7px;}"
         "p{color:#c7d3d8;margin:7px 0}.screen{background:#050a0d;border:1px solid #344650;margin:13px 0 9px;text-align:center;padding:7px;}"
-        ".screen img{max-width:100%;height:auto}.screenlink{color:#ff9a2f;font-size:9pt}.note{background:#0d151b;border-left:3px solid #ff8a00;padding:8px 10px;color:#aebbc3;margin-top:10px;}"
-        ".footer{border-top:1px solid #263640;color:#81939d;padding-top:12px;margin-top:24px;}a{color:#ff9a2f;text-decoration:none;}"
+        ".screenlink{color:#ff9a2f;font-size:9pt}.footer{border-top:1px solid #263640;color:#81939d;padding-top:12px;margin-top:24px;}a{color:#ff9a2f;text-decoration:none;}"
         "</style></head><body>");
     html+=QStringLiteral("<div class='hero'><div class='eyebrow'>%1</div><h1>%2</h1><div class='subtitle'>%3</div></div>")
         .arg(I18n::text(6480).toHtmlEscaped(),I18n::text(6259).toHtmlEscaped(),I18n::text(6481).toHtmlEscaped());
@@ -98,9 +103,11 @@ QString buildModernHelpHtml()
         html+=QStringLiteral("<div class='chapter' id='modern-chapter-%1'><div class='kicker'>%2 %1</div><h2>%1. %3</h2>%4")
             .arg(i+1).arg(I18n::text(6482).toHtmlEscaped()).arg(I18n::text(6500+i).toHtmlEscaped()).arg(paragraphs(I18n::text(6600+i)));
         const QString image=images.value(i);
-        if(!image.isEmpty()){
-            html+=QStringLiteral("<div class='screen'><a href='helpimg:%1'><img src='%2'></a><div class='screenlink'>%3</div></div>")
-                .arg(i).arg(qrcUrl(image).toHtmlEscaped()).arg(I18n::text(6483).toHtmlEscaped());
+        if(showScreenshots && !image.isEmpty()){
+            const QPixmap pixmap(image);
+            const int previewWidth=pixmap.isNull()?700:qMin(820,pixmap.width());
+            html+=QStringLiteral("<div class='screen'><a href='helpimg:%1'><img src='%2' width='%3'></a><div class='screenlink'>%4</div></div>")
+                .arg(i).arg(qrcUrl(image).toHtmlEscaped()).arg(previewWidth).arg(I18n::text(6483).toHtmlEscaped());
         }
         html+=QStringLiteral("</div>");
     }
@@ -136,19 +143,28 @@ private:
     void applyStyle()
     {
         if(!m_dialog) return;
+        const QString scrollStyle=QStringLiteral(
+            "QScrollBar:vertical{background:#111a21;width:16px;border-left:1px solid #53616c;}"
+            "QScrollBar::handle:vertical{background:#7c8b96;min-height:38px;border:1px solid #a0abb3;border-radius:5px;margin:2px;}"
+            "QScrollBar::handle:vertical:hover{background:#ff8a22;}QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical{height:0;}");
         m_dialog->setStyleSheet(QStringLiteral(
             "QDialog{background:#080e13;color:#edf3f6;}QLabel{color:#edf3f6;}"
             "QPushButton{background:#111b22;color:#eef3f5;border:1px solid #3a4851;border-radius:5px;padding:6px 11px;}"
             "QPushButton:hover{border-color:#ff8a00;color:#ffb35f;background:#172129;}"
-            "QLineEdit{background:#0a1117;color:#edf3f6;border:1px solid #34414b;border-radius:5px;padding:7px;selection-background-color:#8a4b00;}"
+            "QSplitter::handle{background:#263640;width:2px;}")+scrollStyle);
+        m_list->setStyleSheet(QStringLiteral(
             "QListWidget{background:#091117;color:#d5e0e5;border:1px solid #263640;outline:0;padding:4px;}"
             "QListWidget::item{padding:7px;border-radius:4px;}QListWidget::item:selected{background:#3b260f;color:#ffad4d;border-left:3px solid #ff8a00;}"
-            "QListWidget::item:hover{background:#121d24;color:#ffffff;}"
-            "QTextBrowser{background:#080e13;color:#edf3f6;border:1px solid #263640;padding:4px;selection-background-color:#8a4b00;}"
-            "QSplitter::handle{background:#263640;width:2px;}"
-            "QScrollBar:vertical{background:#111a21;width:16px;border-left:1px solid #53616c;}"
-            "QScrollBar::handle:vertical{background:#7c8b96;min-height:38px;border:1px solid #a0abb3;border-radius:5px;margin:2px;}"
-            "QScrollBar::handle:vertical:hover{background:#ff8a22;}QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical{height:0;}"));
+            "QListWidget::item:hover{background:#121d24;color:#ffffff;}")+scrollStyle);
+        m_viewer->setStyleSheet(QStringLiteral(
+            "QTextBrowser{background:#080e13;color:#edf3f6;border:1px solid #263640;padding:4px;selection-background-color:#8a4b00;}")+scrollStyle);
+        if(m_search) m_search->setStyleSheet(QStringLiteral(
+            "QLineEdit{background:#0a1117;color:#edf3f6;border:1px solid #34414b;border-radius:5px;padding:7px;selection-background-color:#8a4b00;}"
+            "QLineEdit:focus{border-color:#ff8a00;}"));
+        for(QLabel *label:m_dialog->findChildren<QLabel*>()){
+            if(label && label->text()==I18n::text(6254))
+                label->setStyleSheet(QStringLiteral("font-size:13px;font-weight:700;color:#ff8a00;padding:2px 2px 0 2px;"));
+        }
     }
 
     void apply()
@@ -163,14 +179,20 @@ private:
         m_viewer->setOpenExternalLinks(false);
         m_viewer->setHtml(buildModernHelpHtml());
         m_viewer->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+        if(m_viewer->verticalScrollBar()){m_viewer->verticalScrollBar()->setSingleStep(42);m_viewer->verticalScrollBar()->show();}
         connect(m_list,&QListWidget::currentRowChanged,this,[this](int row){
             if(row>=0 && row<ChapterCount) m_viewer->scrollToAnchor(QStringLiteral("modern-chapter-%1").arg(row+1));
         });
         connect(m_viewer,&QTextBrowser::anchorClicked,this,[this](const QUrl &url){
             if(url.scheme()==QStringLiteral("helpimg")){
-                bool ok=false; QString token=url.path(); if(token.isEmpty()) token=url.toString().section(QLatin1Char(':'),1); const int index=token.toInt(&ok); if(ok) openImage(index);
+                bool ok=false;
+                QString token=url.path();
+                if(token.isEmpty()) token=url.toString().section(QLatin1Char(':'),1);
+                const int index=token.toInt(&ok);
+                if(ok) openImage(index);
             }else if(url.scheme().isEmpty()){
-                const QString anchor=url.fragment().isEmpty()?url.toString():url.fragment(); if(!anchor.isEmpty()) m_viewer->scrollToAnchor(anchor);
+                const QString anchor=url.fragment().isEmpty()?url.toString():url.fragment();
+                if(!anchor.isEmpty()) m_viewer->scrollToAnchor(anchor);
             }else QDesktopServices::openUrl(url);
         });
         if(m_search) m_search->setPlaceholderText(I18n::text(6253));
@@ -179,14 +201,18 @@ private:
 
     void openImage(int index)
     {
+        if(!screenshotsMatchActiveLanguage()) return;
         const QString resource=chapterImages().value(index);
         if(resource.isEmpty()) return;
-        QPixmap pixmap(resource);
+        const QPixmap pixmap(resource);
         if(pixmap.isNull()) return;
         QDialog dialog(m_dialog);
         dialog.setWindowTitle(I18n::text(6484));
         dialog.resize(1180,780);
-        dialog.setStyleSheet(QStringLiteral("QDialog{background:#080e13;}QScrollArea{background:#080e13;border:1px solid #34414b;}"));
+        dialog.setStyleSheet(QStringLiteral(
+            "QDialog{background:#080e13;}QScrollArea{background:#080e13;border:1px solid #34414b;}"
+            "QScrollBar:vertical,QScrollBar:horizontal{background:#111a21;border:1px solid #53616c;}"
+            "QScrollBar::handle:vertical,QScrollBar::handle:horizontal{background:#7c8b96;min-height:38px;min-width:38px;border-radius:5px;margin:2px;}"));
         QVBoxLayout *layout=new QVBoxLayout(&dialog);
         QScrollArea *scroll=new QScrollArea(&dialog);
         scroll->setWidgetResizable(false);
@@ -219,11 +245,11 @@ public:
 private:
     void schedule(QDialog *dialog)
     {
-        if(!dialog || dialog->property("modernHelpPatchV3").toBool()) return;
+        if(!dialog || dialog->property("modernHelpPatchV4").toBool()) return;
         QListWidget *list=dialog->findChild<QListWidget*>();
         QTextBrowser *viewer=dialog->findChild<QTextBrowser*>();
         if(!list || !viewer || list->count()!=18) return;
-        dialog->setProperty("modernHelpPatchV3",true);
+        dialog->setProperty("modernHelpPatchV4",true);
         QPointer<QDialog> guarded(dialog);
         QTimer::singleShot(40,this,[guarded](){if(guarded) new ModernHelpController(guarded);});
     }
