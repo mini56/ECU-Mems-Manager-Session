@@ -28,6 +28,13 @@ public:
     explicit SingleChartWidget(const QString &name, const QColor &color, QWidget *parent = 0);
     void setData(const QVector<double> &time, const QVector<double> &values);
 
+    const QString &chartName() const { return m_name; }
+    const QColor &chartColor() const { return m_color; }
+    const QVector<double> &chartTime() const { return m_time; }
+    const QVector<double> &chartValues() const { return m_values; }
+    bool chartHasCursor() const { return m_hasCursor; }
+    int chartCursorX() const { return m_cursorX; }
+
 protected:
     void paintEvent(QPaintEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
