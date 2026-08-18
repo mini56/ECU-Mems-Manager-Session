@@ -3,6 +3,7 @@
 #include <QEvent>
 #include <QLabel>
 #include <QMainWindow>
+#include <QStringList>
 #include <QTableWidget>
 #include <QTimer>
 #include <QWidget>
