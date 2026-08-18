@@ -3,6 +3,8 @@
 #include "serialdevenumerator.h"
 #include "desktopshortcut.h"
 #include <QIcon>
+#include <QPalette>
+#include <QColor>
 #include "i18n.h"
 #define tr I18n::text
 
@@ -14,6 +16,11 @@ m_serialDeviceChanged(false),
 m_settingsGroupName("Settings"), m_settingSerialDev("SerialDevice"), m_settingTemperatureUnits("TemperatureUnits"), m_settingLambdaScale("LambdaScale"), m_settingTheme("Theme"), m_settingLanguage("Language"), m_settingDesktopShortcut("DesktopShortcut")
 {
   this->setWindowTitle(title);
+  QPalette dialogPalette = palette();
+  dialogPalette.setColor(QPalette::Window, QColor(QStringLiteral("#090e13")));
+  dialogPalette.setColor(QPalette::WindowText, QColor(QStringLiteral("#e7ecef")));
+  setPalette(dialogPalette);
+  setAutoFillBackground(true);
   readSettings();
   setupWidgets();
 }
@@ -51,6 +58,9 @@ void OptionsDialog::setupWidgets()
   m_serialDeviceBox->addItems(serialDevs.getSerialDevList(m_serialDeviceName));
   m_serialDeviceBox->setEditable(true);
   m_serialDeviceBox->setMinimumWidth(150);
+  m_serialDeviceBox->setMinimumHeight(30);
+  if (m_serialDeviceBox->lineEdit())
+    m_serialDeviceBox->lineEdit()->setMinimumHeight(22);
 
   m_temperatureUnitsBox->setEditable(false);
   m_temperatureUnitsBox->addItem("Fahrenheit");
@@ -59,7 +69,7 @@ void OptionsDialog::setupWidgets()
 
   m_themeBox->setEditable(false);
   m_themeBox->addItem(I18n::text(6104) /* EN: Light */, "light");
-  m_themeBox->addItem(I18n::text(6105) /* EN: Dark */, "dark");
+  m_themeBox->addItem(QStringLiteral("StyleDark"), "dark");
   m_themeBox->setCurrentIndex(m_theme == "dark" || m_theme == "Sombre" ? 1 : 0);
 
   m_languageLabel = new QLabel(I18n::text(6106) /* EN: Language: */, this);
@@ -78,6 +88,7 @@ void OptionsDialog::setupWidgets()
   m_desktopShortcutBox = new QCheckBox(
       I18n::text(6107) /* EN: Create and maintain a Desktop shortcut */, this);
   m_desktopShortcutBox->setChecked(m_desktopShortcut);
+  m_desktopShortcutBox->setStyleSheet(QStringLiteral("QCheckBox{color:#e7ecef;background:transparent;} QCheckBox:disabled{color:#aeb7bf;}"));
   m_desktopShortcutBox->setToolTip(
       I18n::text(6108) /* EN: The shortcut is created immediately after confirmation. If it is deleted, the software will automatically recreate it at the next startup. */);
   
