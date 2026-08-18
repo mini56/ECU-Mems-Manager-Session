@@ -16,4 +16,15 @@
         <file>help.html</file>
         <file>help_en.html</file>
     </qresource>
+    <qresource prefix="/help/screens">
+        <file alias="overview.jpg">help/images/overview.jpg</file>
+        <file alias="settings.jpg">help/images/settings.jpg</file>
+        <file alias="faults.jpg">help/images/faults.jpg</file>
+        <file alias="diagnostic.jpg">help/images/diagnostic.jpg</file>
+        <file alias="measures.jpg">help/images/measures.jpg</file>
+        <file alias="rosco.jpg">help/images/rosco.jpg</file>
+        <file alias="database.jpg">help/images/database.jpg</file>
+        <file alias="analysis.jpg">help/images/analysis.jpg</file>
+        <file alias="options.jpg">help/images/options.jpg</file>
+    </qresource>
 </RCC>
