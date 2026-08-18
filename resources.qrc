@@ -26,5 +26,7 @@
         <file alias="database.jpg">help/images/database.jpg</file>
         <file alias="analysis.jpg">help/images/analysis.jpg</file>
         <file alias="options.jpg">help/images/options.jpg</file>
+        <file alias="all_data.jpg">help/images/all_data.jpg</file>
+        <file alias="database_image.jpg">help/images/database_image.jpg</file>
     </qresource>
 </RCC>
