@@ -145,7 +145,10 @@ protected:
         if (window && event->type() == QEvent::Close && isPrimaryMainWindow(window))
         {
             if (!confirmMainWindowClose(window))
+            {
+                event->ignore();
                 return true;
+            }
         }
 
         return QObject::eventFilter(watched, event);
