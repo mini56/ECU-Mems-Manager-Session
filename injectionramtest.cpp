@@ -282,7 +282,7 @@ void MEMSInterface::onInjectionRamTestRequested()
         return;
     }
 
-    auto exchange = [this](const QByteArray &request, QByteArray &response) -> bool
+    auto exchange = [this](const QByteArray &request, QByteArray &response, int quietLimitMs = 150) -> bool
     {
         response.clear();
         if (request.isEmpty() || !isAllowedTestRequest(request) ||
@@ -301,8 +301,9 @@ void MEMSInterface::onInjectionRamTestRequested()
             return false;
 
         COMMTIMEOUTS timeouts = oldTimeouts;
-        timeouts.ReadIntervalTimeout = 20;
-        timeouts.ReadTotalTimeoutConstant = 35;
+        const bool fastExchange = quietLimitMs <= 20;
+        timeouts.ReadIntervalTimeout = fastExchange ? 5 : 20;
+        timeouts.ReadTotalTimeoutConstant = fastExchange ? 10 : 35;
         timeouts.ReadTotalTimeoutMultiplier = 0;
         timeouts.WriteTotalTimeoutConstant = 100;
         timeouts.WriteTotalTimeoutMultiplier = 5;
@@ -332,7 +333,7 @@ void MEMSInterface::onInjectionRamTestRequested()
         quiet.start();
         bool gotAny = false;
 
-        while (overall.elapsed() < 900 && (!gotAny || quiet.elapsed() < 150))
+        while (overall.elapsed() < 900 && (!gotAny || quiet.elapsed() < quietLimitMs))
         {
             unsigned char buffer[64];
             DWORD count = 0;
@@ -364,14 +365,14 @@ void MEMSInterface::onInjectionRamTestRequested()
         quiet.start();
         bool gotAny = false;
 
-        while (overall.elapsed() < 900 && (!gotAny || quiet.elapsed() < 150))
+        while (overall.elapsed() < 900 && (!gotAny || quiet.elapsed() < quietLimitMs))
         {
             fd_set set;
             FD_ZERO(&set);
             FD_SET(fd, &set);
             struct timeval timeout;
             timeout.tv_sec = 0;
-            timeout.tv_usec = 30000;
+            timeout.tv_usec = (quietLimitMs <= 20) ? 5000 : 30000;
 
             const int ready = select(fd + 1, &set, NULL, NULL, &timeout);
             if (ready < 0)
@@ -393,7 +394,7 @@ void MEMSInterface::onInjectionRamTestRequested()
 #endif
     };
 
-    auto send = [&exchange, &log](const QByteArray &request, QByteArray &response) -> bool
+    auto send = [&exchange, &log](const QByteArray &request, QByteArray &response, int quietLimitMs = 150) -> bool
     {
         if (!isAllowedTestRequest(request))
         {
@@ -403,7 +404,7 @@ void MEMSInterface::onInjectionRamTestRequested()
         }
 
         log += QStringLiteral("TX : %1\n").arg(hexText(request));
-        const bool ok = exchange(request, response);
+        const bool ok = exchange(request, response, quietLimitMs);
         log += QStringLiteral("RX : %1\n").arg(hexText(response));
         return ok;
     };
@@ -438,7 +439,7 @@ void MEMSInterface::onInjectionRamTestRequested()
             log += QStringLiteral("BLOCAGE INTERNE : lecture mode 4 refusée sans confirmation F0 1E.\n");
             return false;
         }
-        return send(request, response);
+        return send(request, response, 20);
     };
 
     auto selectMode4Block = [&](quint8 block) -> bool
