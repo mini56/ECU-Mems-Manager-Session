@@ -114,7 +114,9 @@ static bool isAANMP002Reply(const QByteArray &response)
     return first >= 2 && byteAt(response, first - 2) == 0xD1;
 }
 
-static bool parseExactData80(const QByteArray &response, quint16 *rpm)
+static bool parseExactData80(const QByteArray &response,
+                             quint16 *rpm,
+                             quint8 *batteryDecivolts = nullptr)
 {
     if (!rpm)
         return false;
@@ -141,6 +143,10 @@ static bool parseExactData80(const QByteArray &response, quint16 *rpm)
 
     *rpm = (quint16(byteAt(response, start + 2)) << 8)
          | quint16(byteAt(response, start + 3));
+
+    if (batteryDecivolts)
+        *batteryDecivolts = byteAt(response, start + 9);
+
     return true;
 }
 
@@ -228,12 +234,13 @@ private:
 } // namespace
 
 /*
- * One-shot RAM read test for AANMP002.
+ * One-shot dynamic RAM read test for AANMP002.
  *
  * No test-specific ECU traffic exists before the user's explicit Run click.
  * D1 and 0x80 are read only in the normal ROSCO session (F0 50), matching
  * the session in which AANMP002 was already observed on this ECU.
- * No DC/offset read is sent until mode 4 has been positively proven.
+ * C4 is allowed only when a fresh 0x80 frame proves a stable idle between
+ * 500 and 1500 rpm. The mode-4 phase is deliberately short and read-only.
  */
 void MEMSInterface::onInjectionRamTestRequested()
 {
@@ -271,14 +278,15 @@ void MEMSInterface::onInjectionRamTestRequested()
         return;
     }
 
-    // Local guard before the first test command.
-    if (m_data.engine_rpm != 0)
+    // Cached RPM is only an early guard. The authoritative check is the fresh
+    // 0x80 frame below, before F5/C4 can be sent.
+    if (m_data.engine_rpm > 1800)
     {
-        log = QStringLiteral("Régime moteur déjà détecté : %1 tr/min.\n"
+        log = QStringLiteral("Régime moteur déjà trop élevé : %1 tr/min.\n"
                              "Aucune commande de test n'a été envoyée.")
                   .arg(m_data.engine_rpm);
         finish(false, 0, 0,
-               QStringLiteral("TEST REFUSÉ — MOTEUR DÉTECTÉ EN FONCTIONNEMENT"));
+               QStringLiteral("TEST REFUSÉ — RÉGIME TROP ÉLEVÉ"));
         return;
     }
 
@@ -527,8 +535,8 @@ void MEMSInterface::onInjectionRamTestRequested()
         }
     };
 
-    log += QStringLiteral("TEST RAM TEMPS INJECTION — AANMP002\n");
-    log += QStringLiteral("Moteur à l'arrêt / contact mis.\n");
+    log += QStringLiteral("TEST DYNAMIQUE RAM TEMPS INJECTION — AANMP002\n");
+    log += QStringLiteral("Moteur au ralenti stable — plage autorisée 500 à 1500 tr/min.\n");
     log += QStringLiteral("Aucune commande d'effacement, d'adaptation ou d'écriture de calibration.\n\n");
 
     QByteArray response;
@@ -616,9 +624,12 @@ void MEMSInterface::onInjectionRamTestRequested()
     log += QStringLiteral("ECU AANMP002 confirmé.\n\n");
 
     // CHECK 3 — Fresh exact-length 0x80 frame in the same normal session.
+    // This is the authoritative RPM safety check immediately before F5/C4.
     response.clear();
     quint16 freshRpm = 0;
-    if (!sendNormal(testBytes({0x80}), response) || !parseExactData80(response, &freshRpm))
+    quint8 batteryDecivolts = 0;
+    if (!sendNormal(testBytes({0x80}), response) ||
+        !parseExactData80(response, &freshRpm, &batteryDecivolts))
     {
         log += QStringLiteral("Trame 0x80 MEMS 1.6 complète non validée. C4 non envoyé.\n");
         finish(false, 0, 0,
@@ -627,16 +638,19 @@ void MEMSInterface::onInjectionRamTestRequested()
     }
 
     log += QStringLiteral("Régime moteur frais : %1 tr/min.\n").arg(freshRpm);
-    if (freshRpm != 0)
+    log += QStringLiteral("Tension batterie fraîche : %1 V.\n")
+               .arg(double(batteryDecivolts) / 10.0, 0, 'f', 1);
+
+    if (freshRpm < 500 || freshRpm > 1500)
     {
-        log += QStringLiteral("C4 n'a pas été envoyé.\n");
+        log += QStringLiteral("C4 n'a pas été envoyé : ralenti hors plage autorisée 500–1500 tr/min.\n");
         finish(false, 0, 0,
-               QStringLiteral("TEST REFUSÉ — MOTEUR DÉTECTÉ EN FONCTIONNEMENT"));
+               QStringLiteral("TEST REFUSÉ — RALENTI HORS PLAGE"));
         return;
     }
 
-    // CHECK 4 — Only after AANMP002 + fresh 0 rpm have been proven do we
-    // leave the normal session. F5 must produce F0 14 before C4 is allowed.
+    // CHECK 4 — Only after AANMP002 + fresh stable idle have been proven do
+    // we leave the normal session. F5 must produce F0 14 before C4 is allowed.
     QByteArray f5Response;
     send(testBytes({0xF5}), f5Response);
 
@@ -670,9 +684,10 @@ void MEMSInterface::onInjectionRamTestRequested()
     mode4Attempted = true;
     mode3Confirmed = false;
 
-    // CHECK 5 — No RAM addressing command until exact mode-4 proof.
+    // CHECK 5 — No RAM addressing command until exact mode-4 proof. Use the
+    // same short cadence as the subsequent RAM reads to minimize mode-4 time.
     response.clear();
-    if (!send(testBytes({0xF0}), response) || !exactModeReply(response, 0x1E))
+    if (!send(testBytes({0xF0}), response, 20) || !exactModeReply(response, 0x1E))
     {
         abortAfterMode4Attempt(QStringLiteral("mode 4 non confirmé par réponse exacte F0 1E"));
         return;
@@ -686,17 +701,28 @@ void MEMSInterface::onInjectionRamTestRequested()
         return;
     }
 
-    response.clear();
-    if (!sendMode4(testBytes({0x60}), response) ||
-        !parseExactWordReply(response, 0x60, &baseRaw))
+    // Three immediate samples improve the chance of observing the dynamic
+    // snapshot while keeping the mode-4 dwell short.
+    const int baseSampleCount = 3;
+    quint16 baseSamples[baseSampleCount] = {0, 0, 0};
+    for (int i = 0; i < baseSampleCount; ++i)
     {
-        abortAfterMode4Attempt(QStringLiteral("lecture RAM 0x03C0 absente ou format inattendu"));
-        return;
+        response.clear();
+        if (!sendMode4(testBytes({0x60}), response) ||
+            !parseExactWordReply(response, 0x60, &baseSamples[i]))
+        {
+            abortAfterMode4Attempt(QStringLiteral("lecture RAM 0x03C0 absente ou format inattendu"));
+            return;
+        }
+
+        log += QStringLiteral("RAM 0x03C0 échantillon %1 : 0x%2  (%3)\n")
+                   .arg(i + 1)
+                   .arg(baseSamples[i], 4, 16, QLatin1Char('0'))
+                   .arg(baseSamples[i])
+                   .toUpper();
     }
-    log += QStringLiteral("RAM 0x03C0 brut : 0x%1  (%2)\n\n")
-               .arg(baseRaw, 4, 16, QLatin1Char('0'))
-               .arg(baseRaw)
-               .toUpper();
+    baseRaw = baseSamples[baseSampleCount - 1];
+    log += QLatin1Char('\n');
 
     if (!selectMode4Block(0x00))
     {
@@ -711,10 +737,27 @@ void MEMSInterface::onInjectionRamTestRequested()
         abortAfterMode4Attempt(QStringLiteral("lecture RAM 0x0064 absente ou format inattendu"));
         return;
     }
-    log += QStringLiteral("RAM 0x0064 brut : 0x%1  (%2)\n\n")
+    log += QStringLiteral("RAM 0x0064 brut : 0x%1  (%2)\n")
                .arg(correctionRaw, 4, 16, QLatin1Char('0'))
                .arg(correctionRaw)
                .toUpper();
+
+    const qint32 correctionTicks = qint32(correctionRaw) - 0x8000;
+    const double correctionMs = double(correctionTicks) * 0.002;
+    log += QStringLiteral("Compensation tension injecteur : %1 ticks = %2 ms\n")
+               .arg(correctionTicks)
+               .arg(correctionMs, 0, 'f', 3);
+
+    for (int i = 0; i < baseSampleCount; ++i)
+    {
+        const qint32 durationTicks = qint32(baseSamples[i]) + correctionTicks;
+        const double durationMs = double(durationTicks) * 0.002;
+        log += QStringLiteral("Temps injection calculé échantillon %1 : %2 ticks = %3 ms\n")
+                   .arg(i + 1)
+                   .arg(durationTicks)
+                   .arg(durationMs, 0, 'f', 3);
+    }
+    log += QLatin1Char('\n');
 
     if (!restoreNormalSession())
     {
@@ -726,7 +769,7 @@ void MEMSInterface::onInjectionRamTestRequested()
     }
 
     finish(true, baseRaw, correctionRaw,
-           QStringLiteral("SESSION NORMALE CONFIRMÉE — TEST TERMINÉ"));
+           QStringLiteral("SESSION NORMALE CONFIRMÉE — TEST DYNAMIQUE TERMINÉ"));
 }
 
 class InjectionRamTestInstaller : public QObject
@@ -794,14 +837,14 @@ private:
 
         const int row = grid->rowCount();
         QLabel *warning = new QLabel(
-            QStringLiteral("Test expérimental RAM temps injection — AANMP002 — MOTEUR À L'ARRÊT"),
+            QStringLiteral("Test dynamique RAM temps injection — AANMP002 — RALENTI STABLE"),
             session);
         warning->setObjectName(QStringLiteral("injectionRamTestWarning"));
         warning->setWordWrap(true);
         warning->setStyleSheet(QStringLiteral("font-weight:700; color:#ff9828;"));
         grid->addWidget(warning, row, 0, 1, 4);
 
-        QPushButton *button = new QPushButton(QStringLiteral("Ouvrir le test RAM temps injection"), session);
+        QPushButton *button = new QPushButton(QStringLiteral("Ouvrir le test dynamique temps injection"), session);
         button->setObjectName(QStringLiteral("injectionRamTestButton"));
         button->setMinimumHeight(30);
         grid->addWidget(button, row + 1, 0, 1, 4);
@@ -822,17 +865,17 @@ private:
         MEMSInterface *mems = window->m_mems;
 
         InjectionRamTestDialog dialog(window);
-        dialog.setWindowTitle(QStringLiteral("Test RAM temps injection — AANMP002"));
+        dialog.setWindowTitle(QStringLiteral("Test dynamique temps injection — AANMP002"));
         dialog.setModal(true);
-        dialog.resize(760, 620);
+        dialog.resize(760, 640);
 
         QVBoxLayout *layout = new QVBoxLayout(&dialog);
         layout->setContentsMargins(14, 14, 14, 14);
         layout->setSpacing(9);
 
         QLabel *warning = new QLabel(
-            QStringLiteral("<b>MOTEUR À L'ARRÊT — CONTACT MIS</b><br>"
-                           "Ne démarrez pas le moteur pendant le test."),
+            QStringLiteral("<b>MOTEUR AU RALENTI STABLE — 500 À 1500 TR/MIN</b><br>"
+                           "Véhicule immobilisé. Ne touchez pas à l'accélérateur pendant le test."),
             &dialog);
         warning->setWordWrap(true);
         warning->setAlignment(Qt::AlignCenter);
@@ -842,26 +885,26 @@ private:
         QLabel *info = new QLabel(
             QStringLiteral("Aucune commande spécifique à ce test n'est envoyée en ouvrant cette fenêtre. "
                            "Le test ne démarre qu'après les DEUX confirmations ci-dessous et un clic sur "
-                           "« Lancer le test une fois ». F0 est toujours la première commande du test. "
-                           "D1 et 0x80 sont lus uniquement après confirmation de la session normale F0 50. "
-                           "C4 reste bloqué tant que F0 14 n'a pas confirmé le mode 3."),
+                           "« Lancer la lecture dynamique une fois ». F0 est toujours la première commande. "
+                           "D1 et 0x80 sont lus en session normale F0 50. Le test refuse C4 si le régime frais "
+                           "n'est pas compris entre 500 et 1500 tr/min. Le mode 4 ne contient que des lectures RAM."),
             &dialog);
         info->setWordWrap(true);
         layout->addWidget(info);
 
         QLabel *sequence = new QLabel(
             QStringLiteral("Séquence verrouillée : F0 — [retour F0 50 si nécessaire] — D1 — 80 — "
-                           "F5 — F0 14 — C4 — F0 1E — DC 03 / 60 — DC 00 / 32 — "
+                           "F5 — F0 14 — C4 — F0 1E — DC 03 / 60 ×3 — DC 00 / 32 — "
                            "F5 — F0 14 — F4 — F0 50"),
             &dialog);
         sequence->setWordWrap(true);
         layout->addWidget(sequence);
 
         QCheckBox *confirmStopped = new QCheckBox(
-            QStringLiteral("Je confirme : moteur à l'arrêt, contact mis."),
+            QStringLiteral("Je confirme : véhicule immobilisé, moteur au ralenti stable."),
             &dialog);
         QCheckBox *confirmNoStart = new QCheckBox(
-            QStringLiteral("Je confirme : je ne démarrerai pas le moteur avant la fin du test."),
+            QStringLiteral("Je confirme : je ne toucherai pas à l'accélérateur pendant le test."),
             &dialog);
         layout->addWidget(confirmStopped);
         layout->addWidget(confirmNoStart);
@@ -878,7 +921,7 @@ private:
         layout->addWidget(output, 1);
 
         QHBoxLayout *buttons = new QHBoxLayout;
-        QPushButton *run = new QPushButton(QStringLiteral("Lancer le test une fois"), &dialog);
+        QPushButton *run = new QPushButton(QStringLiteral("Lancer la lecture dynamique une fois"), &dialog);
         QPushButton *close = new QPushButton(QStringLiteral("Fermer"), &dialog);
         run->setEnabled(false);
         buttons->addWidget(run);
@@ -934,9 +977,9 @@ private:
             confirmNoStart->setEnabled(false);
             close->setEnabled(false);
             dialog.setTestRunning(true);
-            status->setText(QStringLiteral("TEST EN COURS — NE PAS DÉMARRER LE MOTEUR"));
+            status->setText(QStringLiteral("TEST EN COURS — NE PAS TOUCHER À L'ACCÉLÉRATEUR"));
             status->setStyleSheet(QStringLiteral("font-weight:700; color:#ff9828;"));
-            output->setPlainText(QStringLiteral("Contrôles de sécurité en cours..."));
+            output->setPlainText(QStringLiteral("Contrôles de sécurité et lecture dynamique en cours..."));
 
             if (!mems)
             {
