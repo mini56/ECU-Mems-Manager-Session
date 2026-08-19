@@ -6,6 +6,7 @@
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QSettings>
 #include <QString>
 #include <QTimer>
 
@@ -17,6 +18,14 @@
 #endif
 
 namespace {
+
+#ifdef Q_OS_WIN
+static HANDLE g_instanceMutex = nullptr;
+static HANDLE g_replaceEvent = nullptr;
+static bool g_replacePending = false;
+static const wchar_t *kInstanceMutexName = L"Local\\ECU_MEMS_Manager_Single_Instance";
+static const wchar_t *kReplaceEventName = L"Local\\ECU_MEMS_Manager_Replace_Request";
+#endif
 
 static void applyNativeTitleBar(QWidget *window, bool dark)
 {
@@ -60,6 +69,133 @@ static bool isPrimaryMainWindow(QMainWindow *window)
 {
     return window && QString::fromLatin1(window->metaObject()->className()) == QStringLiteral("MainWindow");
 }
+
+#ifdef Q_OS_WIN
+struct ExistingInstanceText
+{
+    QString title;
+    QString message;
+};
+
+static ExistingInstanceText existingInstanceText(const QString &language)
+{
+    if (language == QStringLiteral("en"))
+        return {QStringLiteral("ECU MEMS Manager already running"),
+                QStringLiteral("ECU MEMS Manager is already running. The existing instance will be closed so this new startup can continue.")};
+    if (language == QStringLiteral("es"))
+        return {QString::fromUtf8("ECU MEMS Manager ya está abierto"),
+                QString::fromUtf8("ECU MEMS Manager ya está abierto. La instancia existente se cerrará para que este nuevo inicio pueda continuar.")};
+    if (language == QStringLiteral("it"))
+        return {QStringLiteral("ECU MEMS Manager è già aperto"),
+                QStringLiteral("ECU MEMS Manager è già aperto. L'istanza esistente verrà chiusa per consentire il proseguimento di questo nuovo avvio.")};
+    if (language == QStringLiteral("pt"))
+        return {QString::fromUtf8("ECU MEMS Manager já está aberto"),
+                QString::fromUtf8("ECU MEMS Manager já está aberto. A instância existente será fechada para que esta nova inicialização possa continuar.")};
+    if (language == QStringLiteral("de"))
+        return {QStringLiteral("ECU MEMS Manager ist bereits geöffnet"),
+                QStringLiteral("ECU MEMS Manager ist bereits geöffnet. Die vorhandene Instanz wird geschlossen, damit dieser neue Start fortgesetzt werden kann.")};
+
+    return {QString::fromUtf8("ECU MEMS Manager déjà ouvert"),
+            QString::fromUtf8("ECU MEMS Manager est déjà ouvert. L'instance déjà ouverte va être fermée pour continuer ce nouveau démarrage.")};
+}
+
+static void showExistingInstanceNotice()
+{
+    QSettings settings(QSettings::IniFormat, QSettings::UserScope, PROJECTNAME);
+    settings.beginGroup(QStringLiteral("Settings"));
+    QString language = settings.value(QStringLiteral("Language"), QStringLiteral("fr")).toString().toLower();
+    QString theme = settings.value(QStringLiteral("Theme"), QStringLiteral("light")).toString().toLower();
+    settings.endGroup();
+
+    if (theme == QStringLiteral("sombre"))
+        theme = QStringLiteral("dark");
+
+    const ExistingInstanceText text = existingInstanceText(language);
+    QMessageBox box(QMessageBox::Information, text.title, text.message, QMessageBox::Ok, nullptr);
+    const bool dark = theme == QStringLiteral("dark");
+
+    if (dark)
+    {
+        box.setStyleSheet(QStringLiteral(
+            "QMessageBox{background:#090e13;color:#e7ecef;}"
+            "QMessageBox QLabel{color:#e7ecef;background:transparent;}"
+            "QMessageBox QPushButton{background:#ff7a00;color:#101419;border:1px solid #ff9828;border-radius:5px;padding:6px 16px;font-weight:700;min-width:72px;}"
+            "QMessageBox QPushButton:hover{background:#ff9828;}"
+            "QMessageBox QPushButton:pressed{background:#d96500;}"));
+    }
+
+    applyNativeTitleBar(&box, dark);
+    box.exec();
+}
+
+static bool initializeSingleInstance()
+{
+    g_instanceMutex = CreateMutexW(nullptr, TRUE, kInstanceMutexName);
+    if (!g_instanceMutex)
+        return true;
+
+    const bool alreadyRunning = GetLastError() == ERROR_ALREADY_EXISTS;
+    g_replaceEvent = CreateEventW(nullptr, FALSE, FALSE, kReplaceEventName);
+
+    if (!alreadyRunning)
+        return true;
+
+    showExistingInstanceNotice();
+
+    if (g_replaceEvent)
+        SetEvent(g_replaceEvent);
+
+    const DWORD waitResult = WaitForSingleObject(g_instanceMutex, 15000);
+    if (waitResult == WAIT_OBJECT_0 || waitResult == WAIT_ABANDONED)
+        return true;
+
+    QMessageBox box(QMessageBox::Critical,
+                    QStringLiteral("ECU MEMS Manager"),
+                    QString::fromUtf8("Impossible de fermer l'instance déjà ouverte. Le nouveau démarrage est annulé."),
+                    QMessageBox::Ok, nullptr);
+    box.setStyleSheet(QStringLiteral(
+        "QMessageBox{background:#090e13;color:#e7ecef;}"
+        "QMessageBox QLabel{color:#e7ecef;background:transparent;}"
+        "QMessageBox QPushButton{background:#ff7a00;color:#101419;border:1px solid #ff9828;border-radius:5px;padding:6px 16px;font-weight:700;min-width:72px;}"));
+    applyNativeTitleBar(&box, true);
+    box.exec();
+    ExitProcess(0);
+    return false;
+}
+
+static void processReplacementRequest()
+{
+    if (g_replaceEvent && WaitForSingleObject(g_replaceEvent, 0) == WAIT_OBJECT_0)
+        g_replacePending = true;
+
+    if (!g_replacePending)
+        return;
+
+    QMainWindow *mainWindow = nullptr;
+    const QWidgetList topLevels = QApplication::topLevelWidgets();
+    for (QWidget *widget : topLevels)
+    {
+        QMainWindow *candidate = qobject_cast<QMainWindow*>(widget);
+        if (isPrimaryMainWindow(candidate))
+        {
+            mainWindow = candidate;
+            break;
+        }
+    }
+
+    if (!mainWindow)
+        return;
+
+    g_replacePending = false;
+
+    QWidget *modal = QApplication::activeModalWidget();
+    if (modal && modal != mainWindow)
+        modal->close();
+
+    mainWindow->setProperty("ecuSkipExitConfirmation", true);
+    mainWindow->close();
+}
+#endif
 
 static QString serialPortForDisplay(OptionsDialog *options)
 {
@@ -151,7 +287,7 @@ static ExitConfirmationText exitConfirmationText()
                 QString::fromUtf8("Sì"), QStringLiteral("No")};
     if (language == QStringLiteral("pt"))
         return {QStringLiteral("Sair do ECU MEMS Manager"),
-                QStringLiteral("Deseja realmente sair do ECU MEMS Manager?"),
+                QStringLiteral("Deseja realmente sair de ECU MEMS Manager?"),
                 QStringLiteral("Sim"), QString::fromUtf8("Não")};
     if (language == QStringLiteral("de"))
         return {QStringLiteral("ECU MEMS Manager beenden"),
@@ -283,6 +419,9 @@ protected:
 
         if (window && event->type() == QEvent::Close && isPrimaryMainWindow(window))
         {
+            if (window->property("ecuSkipExitConfirmation").toBool())
+                return QObject::eventFilter(watched, event);
+
             if (!confirmMainWindowClose(window))
             {
                 event->ignore();
@@ -297,8 +436,24 @@ protected:
 void installMainWindowTitleBarFix()
 {
     QApplication *app = qobject_cast<QApplication*>(QCoreApplication::instance());
-    if (app)
-        app->installEventFilter(new MainWindowTitleBarFix(app));
+    if (!app)
+        return;
+
+#ifdef Q_OS_WIN
+    if (!initializeSingleInstance())
+        return;
+#endif
+
+    app->installEventFilter(new MainWindowTitleBarFix(app));
+
+#ifdef Q_OS_WIN
+    QTimer *replaceTimer = new QTimer(app);
+    replaceTimer->setInterval(100);
+    QObject::connect(replaceTimer, &QTimer::timeout, app, []() {
+        processReplacementRequest();
+    });
+    replaceTimer->start();
+#endif
 }
 
 }
