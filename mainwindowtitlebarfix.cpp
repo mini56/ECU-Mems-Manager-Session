@@ -196,6 +196,58 @@ static bool confirmMainWindowClose(QMainWindow *window)
     return box.clickedButton() == yesButton;
 }
 
+static bool matchesConnectionErrorTemplate(const QString &text, const QString &pattern)
+{
+    const int marker = pattern.indexOf(QStringLiteral("%1"));
+    if (marker < 0)
+        return text == pattern;
+
+    return text.startsWith(pattern.left(marker)) &&
+           text.endsWith(pattern.mid(marker + 2));
+}
+
+static bool isConnectionErrorBox(QMessageBox *box)
+{
+    if (!box || box->icon() != QMessageBox::Warning)
+        return false;
+
+    QMainWindow *parentWindow = qobject_cast<QMainWindow*>(box->parentWidget());
+    if (!isPrimaryMainWindow(parentWindow))
+        return false;
+
+    const QString text = box->text();
+    if (text == I18n::text(7057) + I18n::text(7058))
+        return true;
+
+    return matchesConnectionErrorTemplate(text, I18n::text(7060));
+}
+
+static void styleConnectionErrorBox(QMessageBox *box)
+{
+    if (!isConnectionErrorBox(box))
+        return;
+
+    const bool dark = qApp && qApp->property("ecuDarkTheme").toBool();
+    if (dark)
+    {
+        box->setStyleSheet(QStringLiteral(
+            "QMessageBox{background:#090e13;color:#e7ecef;}"
+            "QMessageBox QLabel{color:#e7ecef;background:transparent;}"
+            "QMessageBox QPushButton{background:#151d25;color:#edf2f5;border:1px solid #35414c;border-radius:5px;padding:6px 16px;font-weight:700;min-width:72px;}"
+            "QMessageBox QPushButton:hover{background:#1b252e;border-color:#ff7a00;}"));
+
+        if (QAbstractButton *okButton = box->button(QMessageBox::Ok))
+        {
+            okButton->setStyleSheet(QStringLiteral(
+                "QPushButton{background:#ff7a00;color:#101419;border:1px solid #ff9828;border-radius:5px;padding:6px 16px;font-weight:700;min-width:72px;}"
+                "QPushButton:hover{background:#ff9828;}"
+                "QPushButton:pressed{background:#d96500;}"));
+        }
+    }
+
+    applyNativeTitleBar(box, dark);
+}
+
 class MainWindowTitleBarFix : public QObject
 {
 public:
@@ -221,6 +273,12 @@ protected:
                 syncTimer->start();
                 QTimer::singleShot(0, window, [window]() { syncConnectionHeader(window); });
             }
+        }
+
+        if (QMessageBox *box = qobject_cast<QMessageBox*>(watched))
+        {
+            if ((event->type() == QEvent::Show || event->type() == QEvent::Polish) && isConnectionErrorBox(box))
+                QTimer::singleShot(0, box, [box]() { styleConnectionErrorBox(box); });
         }
 
         if (window && event->type() == QEvent::Close && isPrimaryMainWindow(window))
