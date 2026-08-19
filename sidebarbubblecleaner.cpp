@@ -3,6 +3,7 @@
 #include <QEvent>
 #include <QHeaderView>
 #include <QLabel>
+#include <QListWidget>
 #include <QMainWindow>
 #include <QSize>
 #include <QTableWidget>
@@ -25,6 +26,14 @@ static void removeSidebarBubble(QMainWindow *w)
     toggle->setToolTip(QString());
     if(QLabel *bubble=toggle->findChild<QLabel*>(QStringLiteral("_ecuHelpBubble"),Qt::FindDirectChildrenOnly))
         bubble->hide();
+}
+
+static void styleSidebarTooltip(QListWidget *nav)
+{
+    if(!nav || nav->objectName()!=QStringLiteral("uiRebuildNav")) return;
+    const QString tooltipRule=QStringLiteral("QToolTip{color:#ffffff;}");
+    if(!nav->styleSheet().contains(tooltipRule))
+        nav->setStyleSheet(nav->styleSheet()+tooltipRule);
 }
 
 static bool isSummaryTable(QTableWidget *table)
@@ -120,6 +129,8 @@ static void styleSummaryTables(QMainWindow *w)
 static void applyVisualOnlyPatches(QMainWindow *w)
 {
     removeSidebarBubble(w);
+    if(QListWidget *nav=w?w->findChild<QListWidget*>(QStringLiteral("uiRebuildNav")):nullptr)
+        styleSidebarTooltip(nav);
     styleSummaryTables(w);
 }
 
@@ -130,6 +141,12 @@ public:
 protected:
     bool eventFilter(QObject *watched,QEvent *event) override
     {
+        if(QListWidget *nav=qobject_cast<QListWidget*>(watched)) {
+            if(nav->objectName()==QStringLiteral("uiRebuildNav") &&
+               (event->type()==QEvent::Show || event->type()==QEvent::StyleChange))
+                QTimer::singleShot(0,nav,[nav](){styleSidebarTooltip(nav);});
+        }
+
         if(QTableWidget *table=qobject_cast<QTableWidget*>(watched)) {
             if(isSummaryTable(table) && event->type()==QEvent::Resize)
                 QTimer::singleShot(0,table,[table](){sizeSummaryTable(table);});
