@@ -7,6 +7,7 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QSettings>
+#include <QSplashScreen>
 #include <QString>
 #include <QTimer>
 
@@ -23,6 +24,7 @@ namespace {
 static HANDLE g_instanceMutex = nullptr;
 static HANDLE g_replaceEvent = nullptr;
 static bool g_replacePending = false;
+static bool g_duplicateInstance = false;
 static const wchar_t *kInstanceMutexName = L"Local\\ECU_MEMS_Manager_Single_Instance";
 static const wchar_t *kReplaceEventName = L"Local\\ECU_MEMS_Manager_Replace_Request";
 #endif
@@ -112,6 +114,7 @@ static void showExistingInstanceNotice()
 
     const ExistingInstanceText text = existingInstanceText(language);
     QMessageBox box(QMessageBox::Information, text.title, text.message, QMessageBox::Ok, nullptr);
+    box.setWindowFlag(Qt::WindowStaysOnTopHint, true);
     const bool dark = theme == QStringLiteral("dark");
 
     if (dark)
@@ -128,17 +131,32 @@ static void showExistingInstanceNotice()
     box.exec();
 }
 
-static bool initializeSingleInstance()
+static void initializeSingleInstance()
 {
     g_instanceMutex = CreateMutexW(nullptr, TRUE, kInstanceMutexName);
     if (!g_instanceMutex)
-        return true;
+        return;
 
-    const bool alreadyRunning = GetLastError() == ERROR_ALREADY_EXISTS;
+    g_duplicateInstance = GetLastError() == ERROR_ALREADY_EXISTS;
     g_replaceEvent = CreateEventW(nullptr, FALSE, FALSE, kReplaceEventName);
+}
 
-    if (!alreadyRunning)
-        return true;
+static void handleDuplicateStartup()
+{
+    if (!g_duplicateInstance)
+        return;
+
+    QSplashScreen *startupSplash = nullptr;
+    const QWidgetList topLevels = QApplication::topLevelWidgets();
+    for (QWidget *widget : topLevels)
+    {
+        startupSplash = qobject_cast<QSplashScreen*>(widget);
+        if (startupSplash)
+            break;
+    }
+
+    if (startupSplash)
+        startupSplash->hide();
 
     showExistingInstanceNotice();
 
@@ -147,12 +165,18 @@ static bool initializeSingleInstance()
 
     const DWORD waitResult = WaitForSingleObject(g_instanceMutex, 15000);
     if (waitResult == WAIT_OBJECT_0 || waitResult == WAIT_ABANDONED)
-        return true;
+    {
+        g_duplicateInstance = false;
+        if (startupSplash)
+            startupSplash->show();
+        return;
+    }
 
     QMessageBox box(QMessageBox::Critical,
                     QStringLiteral("ECU MEMS Manager"),
                     QString::fromUtf8("Impossible de fermer l'instance déjà ouverte. Le nouveau démarrage est annulé."),
                     QMessageBox::Ok, nullptr);
+    box.setWindowFlag(Qt::WindowStaysOnTopHint, true);
     box.setStyleSheet(QStringLiteral(
         "QMessageBox{background:#090e13;color:#e7ecef;}"
         "QMessageBox QLabel{color:#e7ecef;background:transparent;}"
@@ -160,7 +184,6 @@ static bool initializeSingleInstance()
     applyNativeTitleBar(&box, true);
     box.exec();
     ExitProcess(0);
-    return false;
 }
 
 static void processReplacementRequest()
@@ -287,7 +310,7 @@ static ExitConfirmationText exitConfirmationText()
                 QString::fromUtf8("Sì"), QStringLiteral("No")};
     if (language == QStringLiteral("pt"))
         return {QStringLiteral("Sair do ECU MEMS Manager"),
-                QStringLiteral("Deseja realmente sair de ECU MEMS Manager?"),
+                QStringLiteral("Deseja realmente sair do ECU MEMS Manager?"),
                 QStringLiteral("Sim"), QString::fromUtf8("Não")};
     if (language == QStringLiteral("de"))
         return {QStringLiteral("ECU MEMS Manager beenden"),
@@ -440,8 +463,7 @@ void installMainWindowTitleBarFix()
         return;
 
 #ifdef Q_OS_WIN
-    if (!initializeSingleInstance())
-        return;
+    initializeSingleInstance();
 #endif
 
     app->installEventFilter(new MainWindowTitleBarFix(app));
@@ -453,6 +475,9 @@ void installMainWindowTitleBarFix()
         processReplacementRequest();
     });
     replaceTimer->start();
+
+    if (g_duplicateInstance)
+        QTimer::singleShot(0, app, []() { handleDuplicateStartup(); });
 #endif
 }
 
