@@ -79,6 +79,7 @@ public slots:
 	void on_m_AllActuatorsOffButton_clicked();
 	void on_interactive_push_button_clicked();
     void onProtocolCommandRequested(quint8 command);
+    void onInjectionRamTestRequested();
 
 signals:
     void dataReady();
@@ -115,6 +116,11 @@ signals:
     void ignition_advance_minus();
     void interactive_mode();
     void protocolResponse(quint8 command, QByteArray response);
+    void injectionRamTestFinished(bool success,
+                                  quint16 baseRaw,
+                                  quint16 correctionRaw,
+                                  QString status,
+                                  QString log);
 private:
     mems_data m_data;
     QString m_deviceName;

@@ -33,6 +33,8 @@ namespace Ui
 class MainWindow;
 }
 
+class InjectionRamTestInstaller;
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -152,6 +154,8 @@ protected:
     void closeEvent(QCloseEvent *event) override;
 
 private:
+    friend class InjectionRamTestInstaller;
+
     Ui::MainWindow *m_ui;
 
     QThread *m_memsThread;
