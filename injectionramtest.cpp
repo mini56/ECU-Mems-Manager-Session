@@ -53,9 +53,10 @@ static QString hexText(const QByteArray &bytes)
 
 static bool isAllowedTestRequest(const QByteArray &request)
 {
-    // Closed list.  D1 and 0x80 are allowed ONLY while mode 3 has been
-    // explicitly confirmed by the state checks in the test routine.
+    // Closed read/session-only list for this one-shot test.
+    // No clear/reset/adaptation/calibration write command is present here.
     return request == testBytes({0xF0}) ||
+           request == testBytes({0xF4}) ||
            request == testBytes({0xF5}) ||
            request == testBytes({0xD1}) ||
            request == testBytes({0x80}) ||
@@ -104,8 +105,8 @@ static bool isAANMP002Reply(const QByteArray &response)
     if (first < 1)
         return false;
 
-    // The first ASCII identifier must be introduced by D1.  One additional
-    // D1 immediately before it is tolerated as an interface echo.
+    // The ASCII identifier must be introduced by D1. One extra D1 is
+    // tolerated for interfaces that echo the transmitted command.
     if (byteAt(response, first - 1) == 0xD1)
         return true;
 
@@ -118,7 +119,7 @@ static bool parseExactData80(const QByteArray &response, quint16 *rpm)
         return false;
 
     // AANMP002 / MEMS 1.6: command 0x80 plus a 28-byte frame whose first
-    // byte is 0x1C.  Accept exactly that, with at most one leading 0x80 echo.
+    // byte is 0x1C. Accept exactly that, with at most one leading 0x80 echo.
     int start = -1;
     if (response.size() == 29 &&
         byteAt(response, 0) == 0x80 && byteAt(response, 1) == 0x1C)
@@ -225,7 +226,8 @@ private:
  * One-shot RAM read test for AANMP002.
  *
  * No test-specific ECU traffic exists before the user's explicit Run click.
- * D1 and 0x80 are NEVER sent until mode 3 has been positively proven.
+ * D1 and 0x80 are read only in the normal ROSCO session (F0 50), matching
+ * the session in which AANMP002 was already observed on this ECU.
  * No DC/offset read is sent until mode 4 has been positively proven.
  */
 void MEMSInterface::onInjectionRamTestRequested()
@@ -243,6 +245,7 @@ void MEMSInterface::onInjectionRamTestRequested()
     QString log;
     quint16 baseRaw = 0;
     quint16 correctionRaw = 0;
+    bool normalSessionConfirmed = false;
     bool mode3Confirmed = false;
     bool mode4Confirmed = false;
     bool mode4Attempted = false;
@@ -400,6 +403,17 @@ void MEMSInterface::onInjectionRamTestRequested()
         return ok;
     };
 
+    auto sendNormal = [&](const QByteArray &request, QByteArray &response) -> bool
+    {
+        if (!normalSessionConfirmed)
+        {
+            response.clear();
+            log += QStringLiteral("BLOCAGE INTERNE : commande session normale refusée sans confirmation F0 50.\n");
+            return false;
+        }
+        return send(request, response);
+    };
+
     auto sendMode3 = [&](const QByteArray &request, QByteArray &response) -> bool
     {
         if (!mode3Confirmed)
@@ -422,49 +436,69 @@ void MEMSInterface::onInjectionRamTestRequested()
         return send(request, response);
     };
 
-    auto restoreMode3 = [&]() -> bool
+    auto restoreNormalSession = [&]() -> bool
     {
-        if (!mode4Attempted)
-            return false;
-
-        log += QStringLiteral("\n--- Retour contrôlé au mode 3 ---\n");
+        log += QStringLiteral("\n--- Retour contrôlé à la session normale ---\n");
+        normalSessionConfirmed = false;
         mode4Confirmed = false;
 
-        QByteArray f5Response;
-        send(testBytes({0xF5}), f5Response);
-
-        QByteArray modeResponse;
-        const bool modeRead = send(testBytes({0xF0}), modeResponse);
-        const bool confirmed = modeRead && exactModeReply(modeResponse, 0x14);
-
-        if (confirmed)
+        // If C4 may have reached the ECU, first use the documented F5 route
+        // back to mode 3 and prove F0 14 before asking for the normal session.
+        if (mode4Attempted)
         {
+            QByteArray f5Response;
+            send(testBytes({0xF5}), f5Response);
+
+            QByteArray modeResponse;
+            if (!send(testBytes({0xF0}), modeResponse) || !exactModeReply(modeResponse, 0x14))
+            {
+                mode3Confirmed = false;
+                log += QStringLiteral("MODE 3 NON CONFIRMÉ après F5.\n");
+                return false;
+            }
+
             mode3Confirmed = true;
             mode4Attempted = false;
             log += QStringLiteral("MODE 3 CONFIRMÉ (F0 14).\n");
         }
-        else
+
+        if (!mode3Confirmed)
+        {
+            log += QStringLiteral("Retour session normale refusé : mode 3 non confirmé.\n");
+            return false;
+        }
+
+        QByteArray f4Response;
+        send(testBytes({0xF4}), f4Response);
+
+        QByteArray normalResponse;
+        if (!send(testBytes({0xF0}), normalResponse) || !exactModeReply(normalResponse, 0x50))
         {
             mode3Confirmed = false;
-            log += QStringLiteral("MODE 3 NON CONFIRMÉ.\n");
+            log += QStringLiteral("SESSION NORMALE NON CONFIRMÉE après F4.\n");
+            return false;
         }
-        return confirmed;
+
+        normalSessionConfirmed = true;
+        mode3Confirmed = false;
+        log += QStringLiteral("SESSION NORMALE CONFIRMÉE (F0 50).\n");
+        return true;
     };
 
     auto abortAfterMode4Attempt = [&](const QString &reason)
     {
         log += QStringLiteral("\nARRÊT DU TEST : %1\n").arg(reason);
-        if (restoreMode3())
+        if (restoreNormalSession())
         {
             finish(false, baseRaw, correctionRaw,
-                   QStringLiteral("TEST ARRÊTÉ — MODE 3 CONFIRMÉ"));
+                   QStringLiteral("TEST ARRÊTÉ — SESSION NORMALE CONFIRMÉE"));
         }
         else
         {
             m_stopPolling = true;
             log += QStringLiteral("Polling normal arrêté et connexion fermée par sécurité.\n");
             finish(false, baseRaw, correctionRaw,
-                   QStringLiteral("TEST ARRÊTÉ — MODE 3 NON CONFIRMÉ — DÉCONNECTER ET COUPER LE CONTACT"));
+                   QStringLiteral("TEST ARRÊTÉ — SESSION NON CONFIRMÉE — DÉCONNECTER ET COUPER LE CONTACT"));
         }
     };
 
@@ -474,10 +508,9 @@ void MEMSInterface::onInjectionRamTestRequested()
 
     QByteArray response;
 
-    // CHECK 1 — Determine the current mode with F0 before any mode-sensitive
-    // command.  If normal diagnostics is currently in mode 5/6 (F0 50), or
-    // if a prior session left mode 4 active (F0 1E), F5 is the documented
-    // route back to mode 3.  No D1 or 0x80 is sent until F0 14 is then proven.
+    // CHECK 1 — Determine current state with F0. D1 and 0x80 are intentionally
+    // read only in the normal ROSCO session F0 50. If a previous/manual action
+    // left the ECU in mode 3 or 4, normalize the diagnostic session first.
     if (!send(testBytes({0xF0}), response))
     {
         m_stopPolling = true;
@@ -497,49 +530,70 @@ void MEMSInterface::onInjectionRamTestRequested()
         return;
     }
 
-    if (initialMode == 0x14)
+    if (initialMode == 0x50)
     {
-        mode3Confirmed = true;
-        log += QStringLiteral("Mode 3 déjà confirmé (F0 14).\n\n");
+        normalSessionConfirmed = true;
+        log += QStringLiteral("Session normale déjà confirmée (F0 50).\n\n");
     }
     else
     {
-        log += QStringLiteral("Mode non-3 détecté (F0 %1). Retour F5 demandé avant toute autre commande.\n")
-                   .arg(initialMode, 2, 16, QLatin1Char('0'))
-                   .toUpper();
+        if (initialMode == 0x1E)
+        {
+            log += QStringLiteral("Mode 4 détecté au départ. Retour F5 demandé avant toute identification.\n");
+            QByteArray f5Response;
+            send(testBytes({0xF5}), f5Response);
 
-        QByteArray f5Response;
-        send(testBytes({0xF5}), f5Response);
+            response.clear();
+            if (!send(testBytes({0xF0}), response) || !exactModeReply(response, 0x14))
+            {
+                m_stopPolling = true;
+                log += QStringLiteral("Mode 3 non confirmé après F5. D1/80/C4 non envoyés.\n");
+                finish(false, 0, 0,
+                       QStringLiteral("TEST REFUSÉ — MODE 3 NON CONFIRMÉ — DÉCONNECTER ET COUPER LE CONTACT"));
+                return;
+            }
+            mode3Confirmed = true;
+        }
+        else if (initialMode == 0x14)
+        {
+            mode3Confirmed = true;
+            log += QStringLiteral("Mode 3 détecté au départ (F0 14).\n");
+        }
+
+        QByteArray f4Response;
+        send(testBytes({0xF4}), f4Response);
 
         response.clear();
-        if (!send(testBytes({0xF0}), response) || !exactModeReply(response, 0x14))
+        if (!send(testBytes({0xF0}), response) || !exactModeReply(response, 0x50))
         {
             m_stopPolling = true;
-            log += QStringLiteral("Mode 3 non confirmé après F5. D1/80/C4 non envoyés.\n");
+            log += QStringLiteral("Session normale F0 50 non confirmée après F4. D1/80/C4 non envoyés.\n");
             finish(false, 0, 0,
-                   QStringLiteral("TEST REFUSÉ — MODE 3 NON CONFIRMÉ — DÉCONNECTER ET COUPER LE CONTACT"));
+                   QStringLiteral("TEST REFUSÉ — SESSION NORMALE NON CONFIRMÉE — DÉCONNECTER ET COUPER LE CONTACT"));
             return;
         }
 
-        mode3Confirmed = true;
-        log += QStringLiteral("Mode 3 confirmé après F5 (F0 14).\n\n");
+        normalSessionConfirmed = true;
+        mode3Confirmed = false;
+        log += QStringLiteral("Session normale confirmée après F4 (F0 50).\n\n");
     }
 
-    // CHECK 2 — Exact ECU identity, while mode 3 is proven.
+    // CHECK 2 — Exact ECU identity in the normal session where AANMP002 is
+    // known to be returned by this ECU.
     response.clear();
-    if (!sendMode3(testBytes({0xD1}), response) || !isAANMP002Reply(response))
+    if (!sendNormal(testBytes({0xD1}), response) || !isAANMP002Reply(response))
     {
-        log += QStringLiteral("AANMP002 non confirmé. C4 n'a pas été envoyé.\n");
+        log += QStringLiteral("AANMP002 non confirmé dans la session normale. C4 n'a pas été envoyé.\n");
         finish(false, 0, 0,
                QStringLiteral("TEST REFUSÉ — ECU AANMP002 NON CONFIRMÉ"));
         return;
     }
     log += QStringLiteral("ECU AANMP002 confirmé.\n\n");
 
-    // CHECK 3 — Fresh exact-length 0x80 frame, while mode 3 is proven.
+    // CHECK 3 — Fresh exact-length 0x80 frame in the same normal session.
     response.clear();
     quint16 freshRpm = 0;
-    if (!sendMode3(testBytes({0x80}), response) || !parseExactData80(response, &freshRpm))
+    if (!sendNormal(testBytes({0x80}), response) || !parseExactData80(response, &freshRpm))
     {
         log += QStringLiteral("Trame 0x80 MEMS 1.6 complète non validée. C4 non envoyé.\n");
         finish(false, 0, 0,
@@ -556,20 +610,27 @@ void MEMSInterface::onInjectionRamTestRequested()
         return;
     }
 
-    // CHECK 4 — Reconfirm mode 3 immediately before requesting mode 4.
+    // CHECK 4 — Only after AANMP002 + fresh 0 rpm have been proven do we
+    // leave the normal session. F5 must produce F0 14 before C4 is allowed.
+    QByteArray f5Response;
+    send(testBytes({0xF5}), f5Response);
+
     response.clear();
     if (!send(testBytes({0xF0}), response) || !exactModeReply(response, 0x14))
     {
+        normalSessionConfirmed = false;
         mode3Confirmed = false;
         m_stopPolling = true;
-        log += QStringLiteral("Mode 3 perdu juste avant C4. C4 non envoyé.\n"
+        log += QStringLiteral("Mode 3 non confirmé après F5. C4 non envoyé.\n"
                               "Polling normal arrêté par sécurité.\n");
         finish(false, 0, 0,
-               QStringLiteral("TEST REFUSÉ — MODE 3 PERDU — DÉCONNECTER ET COUPER LE CONTACT"));
+               QStringLiteral("TEST REFUSÉ — MODE 3 NON CONFIRMÉ — DÉCONNECTER ET COUPER LE CONTACT"));
         return;
     }
+
+    normalSessionConfirmed = false;
     mode3Confirmed = true;
-    log += QStringLiteral("Mode 3 reconfirmé juste avant C4 (F0 14).\n\n");
+    log += QStringLiteral("Mode 3 confirmé juste avant C4 (F0 14).\n\n");
 
     // C4 itself is allowed only after the immediately preceding F0 14.
     response.clear();
@@ -632,17 +693,17 @@ void MEMSInterface::onInjectionRamTestRequested()
                .arg(correctionRaw)
                .toUpper();
 
-    if (!restoreMode3())
+    if (!restoreNormalSession())
     {
         m_stopPolling = true;
         log += QStringLiteral("Polling normal arrêté et connexion fermée par sécurité.\n");
         finish(false, baseRaw, correctionRaw,
-               QStringLiteral("TEST ARRÊTÉ — MODE 3 NON CONFIRMÉ — DÉCONNECTER ET COUPER LE CONTACT"));
+               QStringLiteral("TEST ARRÊTÉ — SESSION NON CONFIRMÉE — DÉCONNECTER ET COUPER LE CONTACT"));
         return;
     }
 
     finish(true, baseRaw, correctionRaw,
-           QStringLiteral("MODE 3 CONFIRMÉ — TEST TERMINÉ"));
+           QStringLiteral("SESSION NORMALE CONFIRMÉE — TEST TERMINÉ"));
 }
 
 class InjectionRamTestInstaller : public QObject
@@ -678,7 +739,7 @@ private:
         QGroupBox *session = nullptr;
 
         // No timer: at MainWindow Show, the ECU/ROSCO page and its session
-        // group already exist.  The later visual rebuild reparents this same
+        // group already exist. The later visual rebuild reparents this same
         // group, so the button remains attached to it.
         for (int i = 0; i < tabs->count() && !session; ++i)
         {
@@ -759,14 +820,16 @@ private:
             QStringLiteral("Aucune commande spécifique à ce test n'est envoyée en ouvrant cette fenêtre. "
                            "Le test ne démarre qu'après les DEUX confirmations ci-dessous et un clic sur "
                            "« Lancer le test une fois ». F0 est toujours la première commande du test. "
-                           "D1 et 0x80 restent bloqués tant que F0 14 n'a pas confirmé le mode 3."),
+                           "D1 et 0x80 sont lus uniquement après confirmation de la session normale F0 50. "
+                           "C4 reste bloqué tant que F0 14 n'a pas confirmé le mode 3."),
             &dialog);
         info->setWordWrap(true);
         layout->addWidget(info);
 
         QLabel *sequence = new QLabel(
-            QStringLiteral("Séquence verrouillée : F0 — [F5 / F0 si nécessaire] — D1 — 80 — F0 — "
-                           "C4 — F0 — DC 03 / 60 — DC 00 / 32 — F5 — F0"),
+            QStringLiteral("Séquence verrouillée : F0 — [retour F0 50 si nécessaire] — D1 — 80 — "
+                           "F5 — F0 14 — C4 — F0 1E — DC 03 / 60 — DC 00 / 32 — "
+                           "F5 — F0 14 — F4 — F0 50"),
             &dialog);
         sequence->setWordWrap(true);
         layout->addWidget(sequence);
