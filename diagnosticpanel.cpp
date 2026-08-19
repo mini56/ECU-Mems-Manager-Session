@@ -182,7 +182,7 @@ void DiagnosticPanel::rebuild(const mems_data &d)
     // Temps de charge de la bobine : contrôle spécifique demandé pour
     // une tension batterie proche de 14 V. Hors de cette tension, le
     // logiciel affiche la mesure mais ne porte pas de jugement automatique.
-    const double coilTime = d.coil_time;
+    const double coilTime = static_cast<double>(d.coil_time) * 0.002;
     const bool batteryNear14 = battery >= 13.5 && battery <= 14.5;
     const bool coilOk = coilTime >= 1.9 && coilTime <= 3.1;
     QString coilState;
@@ -277,7 +277,7 @@ QString DiagnosticPanel::buildReport() const
     const int raw7d1415 = (static_cast<int>(d.idle_error2) << 8) | static_cast<int>(d.uk10);
     const int hotIdleCorrection = static_cast<int>(d.idle_hot) - 35;
     const int hotIdleErrorCorrected = (raw7d1415 - 32768) + hotIdleCorrection;
-    text += I18n::text(6883) /* EN: Temps coil=%1 ms  */.arg(static_cast<double>(d.coil_time), 0, 'f', 2);
+    text += I18n::text(6883) /* EN: Temps coil=%1 ms  */.arg(static_cast<double>(d.coil_time) * 0.002, 0, 'f', 2);
     text += I18n::text(6884) /* EN: raw 7D14-15=%1 | hot-idle correction=%2 | corrected hot-idle error=%3 ECU  */
         .arg(raw7d1415).arg(hotIdleCorrection).arg(hotIdleErrorCorrected);
     text += I18n::text(6885) /* EN: RPM=%1 | MAP=%2 kPa | battery=%3 V | TPS=%4 | IAC=%5 | idle error=%6  */
