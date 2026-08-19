@@ -4,6 +4,7 @@
 #include <QEvent>
 #include <QFrame>
 #include <QLabel>
+#include <QLayout>
 #include <QMainWindow>
 #include <QPainter>
 #include <QPainterPath>
@@ -136,28 +137,93 @@ private:
     QMainWindow *m_window = nullptr;
 };
 
-static QLabel *findBottomSystemLabel(QMainWindow *window)
+class ErrorsDisconnectedSystemOverlay : public QWidget
 {
-    QFrame *bar = window ? window->findChild<QFrame*>(QStringLiteral("uiRebuildStatus")) : nullptr;
-    if (!bar)
-        return nullptr;
-
-    const auto labels = bar->findChildren<QLabel*>(QString(), Qt::FindDirectChildrenOnly);
-    for (QLabel *label : labels)
+public:
+    ErrorsDisconnectedSystemOverlay(QMainWindow *window, QWidget *parent)
+        : QWidget(parent), m_window(window)
     {
-        if (!label)
-            continue;
-        if (label->objectName() == QStringLiteral("uiRebuildSystemStatus"))
-            return label;
-        if (label->text() == I18n::text(7120) || label->text() == I18n::text(7121) ||
-            label->text() == disconnectedSystemText())
+        setAttribute(Qt::WA_TransparentForMouseEvents, true);
+        setAutoFillBackground(false);
+        hide();
+    }
+
+    void syncState()
+    {
+        if (!parentWidget())
+            return;
+
+        setGeometry(parentWidget()->rect());
+        const bool showDisconnected = isDisconnected(m_window) && parentWidget()->isVisible();
+        setVisible(showDisconnected);
+        if (showDisconnected)
         {
-            label->setObjectName(QStringLiteral("uiRebuildSystemStatus"));
-            return label;
+            raise();
+            update();
         }
     }
-    return nullptr;
-}
+
+protected:
+    void paintEvent(QPaintEvent*) override
+    {
+        QPainter p(this);
+        p.setRenderHint(QPainter::Antialiasing, true);
+        p.setRenderHint(QPainter::TextAntialiasing, true);
+
+        const QRectF outer = QRectF(rect()).adjusted(.5, .5, -.5, -.5);
+        p.setPen(QPen(QColor("#34414a"), 1.0));
+        p.setBrush(QColor("#0c1217"));
+        p.drawRoundedRect(outer, 5, 5);
+
+        QFont f = p.font();
+        f.setBold(true);
+        f.setPointSizeF(8.2);
+        p.setFont(f);
+        p.setPen(QColor("#edf2f4"));
+        p.drawText(QRectF(6, 5, qMax(0, width() - 12), 18), Qt::AlignCenter, I18n::text(7149));
+        p.setPen(QPen(QColor("#27333b"), 1.0));
+        p.drawLine(QPointF(8, 25), QPointF(qMax(8, width() - 8), 25));
+
+        const QColor state("#ff9828");
+        const QPointF c(width() / 2.0, height() * 0.48);
+        const qreal rr = qMin(width() * 0.19, height() * 0.16);
+        QPainterPath shield;
+        shield.moveTo(c.x(), c.y() - rr);
+        shield.lineTo(c.x() + rr * .75, c.y() - rr * .65);
+        shield.lineTo(c.x() + rr * .62, c.y() + rr * .28);
+        shield.quadTo(c.x(), c.y() + rr, c.x() - rr * .62, c.y() + rr * .28);
+        shield.lineTo(c.x() - rr * .75, c.y() - rr * .65);
+        shield.closeSubpath();
+        p.setPen(QPen(state, 2.4));
+        p.setBrush(Qt::NoBrush);
+        p.drawPath(shield);
+
+        p.setPen(QPen(state, 2.8, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        p.drawLine(QPointF(c.x() - rr * .40, c.y() + rr * .04),
+                   QPointF(c.x() - rr * .12, c.y() + rr * .32));
+        p.drawLine(QPointF(c.x() - rr * .12, c.y() + rr * .32),
+                   QPointF(c.x() + rr * .50, c.y() - rr * .40));
+
+        QFont stateFont = p.font();
+        stateFont.setBold(true);
+        stateFont.setPointSizeF(7.8);
+        p.setFont(stateFont);
+        p.setPen(state);
+        p.drawText(QRectF(8, height() * 0.67, qMax(0, width() - 16), 24),
+                   Qt::AlignCenter, disconnectedText());
+
+        QFont sub = p.font();
+        sub.setBold(false);
+        sub.setPointSizeF(6.2);
+        p.setFont(sub);
+        p.setPen(QColor("#8d99a3"));
+        p.drawText(QRectF(8, qMax(30, height() - 38), qMax(0, width() - 16), 30),
+                   Qt::AlignCenter | Qt::TextWordWrap, I18n::text(7145));
+    }
+
+private:
+    QMainWindow *m_window = nullptr;
+};
 
 class BottomSystemStatusOverlay : public QLabel
 {
@@ -209,7 +275,64 @@ private:
     QLabel *m_source = nullptr;
 };
 
-static QWidget *findSystemStateCard(QMainWindow *window)
+class BottomDisconnectedValueOverlay : public QLabel
+{
+public:
+    BottomDisconnectedValueOverlay(QMainWindow *window, QLabel *source, const QString &text)
+        : QLabel(source ? source->parentWidget() : nullptr), m_window(window), m_source(source), m_text(text)
+    {
+        setAttribute(Qt::WA_TransparentForMouseEvents, true);
+        if (m_source)
+        {
+            setAlignment(m_source->alignment());
+            setFont(m_source->font());
+        }
+        hide();
+        syncState();
+    }
+
+    void syncState()
+    {
+        if (!m_window || !m_source || !parentWidget())
+            return;
+
+        setGeometry(m_source->geometry());
+        const bool showDisconnected = isDisconnected(m_window) && m_source->isVisible();
+        setVisible(showDisconnected);
+        if (showDisconnected)
+        {
+            setText(m_text);
+            setStyleSheet(QStringLiteral(
+                "background:#080d12;color:#c9d1d7;border-right:1px solid #29343e;padding:0 8px;"));
+            raise();
+        }
+    }
+
+private:
+    QMainWindow *m_window = nullptr;
+    QLabel *m_source = nullptr;
+    QString m_text;
+};
+
+static QList<QLabel*> bottomStatusLabels(QMainWindow *window)
+{
+    QList<QLabel*> labels;
+    QFrame *bar = window ? window->findChild<QFrame*>(QStringLiteral("uiRebuildStatus")) : nullptr;
+    QLayout *layout = bar ? bar->layout() : nullptr;
+    if (!layout)
+        return labels;
+
+    for (int i = 0; i < layout->count(); ++i)
+    {
+        QLayoutItem *item = layout->itemAt(i);
+        QLabel *label = item ? qobject_cast<QLabel*>(item->widget()) : nullptr;
+        if (label)
+            labels.append(label);
+    }
+    return labels;
+}
+
+static QWidget *findOverviewSystemStateCard(QMainWindow *window)
 {
     QWidget *overview = window ? window->findChild<QWidget*>(QStringLiteral("overview_tab")) : nullptr;
     if (!overview || !overview->layout())
@@ -229,12 +352,31 @@ static QWidget *findSystemStateCard(QMainWindow *window)
     return nullptr;
 }
 
-static void installSystemStateConnectionFix(QMainWindow *window)
+static QWidget *findErrorsSystemStateCard(QMainWindow *window)
+{
+    QFrame *errorsLive = window ? window->findChild<QFrame*>(QStringLiteral("errorsLive")) : nullptr;
+    if (!errorsLive)
+        return nullptr;
+
+    const QList<QWidget*> children = errorsLive->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
+    for (QWidget *child : children)
+    {
+        if (!child || child->objectName() == QStringLiteral("errorsCompactSignals"))
+            continue;
+        if (!child->testAttribute(Qt::WA_TransparentForMouseEvents))
+            continue;
+        if (child->minimumWidth() >= 140 && child->maximumWidth() <= 220)
+            return child;
+    }
+    return nullptr;
+}
+
+static void installOverviewConnectionFix(QMainWindow *window)
 {
     if (!window || window->property("systemStateConnectionFixInstalled").toBool())
         return;
 
-    QWidget *card = findSystemStateCard(window);
+    QWidget *card = findOverviewSystemStateCard(window);
     if (!card)
         return;
 
@@ -242,21 +384,86 @@ static void installSystemStateConnectionFix(QMainWindow *window)
     DisconnectedSystemOverlay *overlay = new DisconnectedSystemOverlay(window, card);
     overlay->setObjectName(QStringLiteral("disconnectedSystemOverlay"));
 
-    BottomSystemStatusOverlay *bottomOverlay = nullptr;
-    if (QLabel *systemLabel = findBottomSystemLabel(window))
-        bottomOverlay = new BottomSystemStatusOverlay(window, systemLabel);
+    QTimer *timer = new QTimer(overlay);
+    timer->setInterval(200);
+    QObject::connect(timer, &QTimer::timeout, overlay, [overlay]() { overlay->syncState(); });
+    timer->start();
+    overlay->syncState();
+}
+
+static void installErrorsConnectionFix(QMainWindow *window)
+{
+    if (!window || window->property("errorsSystemStateConnectionFixInstalled").toBool())
+        return;
+
+    QWidget *card = findErrorsSystemStateCard(window);
+    if (!card)
+        return;
+
+    window->setProperty("errorsSystemStateConnectionFixInstalled", true);
+    ErrorsDisconnectedSystemOverlay *overlay = new ErrorsDisconnectedSystemOverlay(window, card);
+    overlay->setObjectName(QStringLiteral("errorsDisconnectedSystemOverlay"));
 
     QTimer *timer = new QTimer(overlay);
     timer->setInterval(200);
-    QObject::connect(timer, &QTimer::timeout, overlay, [overlay, bottomOverlay]() {
-        overlay->syncState();
-        if (bottomOverlay)
-            bottomOverlay->syncState();
-    });
+    QObject::connect(timer, &QTimer::timeout, overlay, [overlay]() { overlay->syncState(); });
     timer->start();
     overlay->syncState();
-    if (bottomOverlay)
-        bottomOverlay->syncState();
+}
+
+static void installBottomStatusConnectionFix(QMainWindow *window)
+{
+    if (!window || window->property("bottomStatusConnectionFixInstalled").toBool())
+        return;
+
+    const QList<QLabel*> labels = bottomStatusLabels(window);
+    if (labels.size() < 6)
+        return;
+
+    window->setProperty("bottomStatusConnectionFixInstalled", true);
+
+    QLabel *loopLabel = labels.at(1);
+    QLabel *lambdaLabel = labels.at(2);
+    QLabel *systemLabel = labels.at(3);
+    QLabel *injectLabel = labels.at(4);
+    QLabel *airLabel = labels.at(5);
+    systemLabel->setObjectName(QStringLiteral("uiRebuildSystemStatus"));
+
+    BottomSystemStatusOverlay *systemOverlay = new BottomSystemStatusOverlay(window, systemLabel);
+    BottomDisconnectedValueOverlay *loopOverlay = new BottomDisconnectedValueOverlay(
+        window, loopLabel, I18n::text(7116).arg(QStringLiteral("--")));
+    BottomDisconnectedValueOverlay *lambdaOverlay = new BottomDisconnectedValueOverlay(
+        window, lambdaLabel, I18n::text(7119).arg(QStringLiteral("--")));
+    BottomDisconnectedValueOverlay *injectOverlay = new BottomDisconnectedValueOverlay(
+        window, injectLabel, I18n::text(7122).arg(QStringLiteral("--")));
+    BottomDisconnectedValueOverlay *airOverlay = new BottomDisconnectedValueOverlay(
+        window, airLabel, I18n::text(7123).arg(QStringLiteral("--")));
+
+    QFrame *bar = window->findChild<QFrame*>(QStringLiteral("uiRebuildStatus"));
+    QTimer *timer = new QTimer(bar ? static_cast<QObject*>(bar) : static_cast<QObject*>(systemOverlay));
+    timer->setInterval(200);
+    QObject::connect(timer, &QTimer::timeout, systemOverlay,
+                     [systemOverlay, loopOverlay, lambdaOverlay, injectOverlay, airOverlay]() {
+        systemOverlay->syncState();
+        loopOverlay->syncState();
+        lambdaOverlay->syncState();
+        injectOverlay->syncState();
+        airOverlay->syncState();
+    });
+    timer->start();
+
+    systemOverlay->syncState();
+    loopOverlay->syncState();
+    lambdaOverlay->syncState();
+    injectOverlay->syncState();
+    airOverlay->syncState();
+}
+
+static void installSystemStateConnectionFix(QMainWindow *window)
+{
+    installOverviewConnectionFix(window);
+    installErrorsConnectionFix(window);
+    installBottomStatusConnectionFix(window);
 }
 
 class SystemStateConnectionFixInstaller : public QObject
