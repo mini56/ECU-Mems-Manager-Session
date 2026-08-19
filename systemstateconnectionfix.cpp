@@ -25,6 +25,17 @@ static QString disconnectedText()
     return QString::fromUtf8("DÉCONNECTÉ");
 }
 
+static QString disconnectedSystemText()
+{
+    const QString language = I18n::language().toLower();
+    if (language == QStringLiteral("en")) return QStringLiteral("System: disconnected");
+    if (language == QStringLiteral("es")) return QStringLiteral("Sistema: desconectado");
+    if (language == QStringLiteral("it")) return QStringLiteral("Sistema: disconnesso");
+    if (language == QStringLiteral("pt")) return QStringLiteral("Sistema: desconectado");
+    if (language == QStringLiteral("de")) return QStringLiteral("System: getrennt");
+    return QString::fromUtf8("Système : déconnecté");
+}
+
 static bool isDisconnected(QMainWindow *window)
 {
     if (!window)
@@ -125,6 +136,79 @@ private:
     QMainWindow *m_window = nullptr;
 };
 
+static QLabel *findBottomSystemLabel(QMainWindow *window)
+{
+    QFrame *bar = window ? window->findChild<QFrame*>(QStringLiteral("uiRebuildStatus")) : nullptr;
+    if (!bar)
+        return nullptr;
+
+    const auto labels = bar->findChildren<QLabel*>(QString(), Qt::FindDirectChildrenOnly);
+    for (QLabel *label : labels)
+    {
+        if (!label)
+            continue;
+        if (label->objectName() == QStringLiteral("uiRebuildSystemStatus"))
+            return label;
+        if (label->text() == I18n::text(7120) || label->text() == I18n::text(7121) ||
+            label->text() == disconnectedSystemText())
+        {
+            label->setObjectName(QStringLiteral("uiRebuildSystemStatus"));
+            return label;
+        }
+    }
+    return nullptr;
+}
+
+class BottomSystemStatusOverlay : public QLabel
+{
+public:
+    BottomSystemStatusOverlay(QMainWindow *window, QLabel *source)
+        : QLabel(source ? source->parentWidget() : nullptr), m_window(window), m_source(source)
+    {
+        setObjectName(QStringLiteral("uiRebuildSystemStatusOverlay"));
+        setAttribute(Qt::WA_TransparentForMouseEvents, true);
+        if (m_source)
+        {
+            setAlignment(m_source->alignment());
+            setFont(m_source->font());
+        }
+        syncState();
+    }
+
+    void syncState()
+    {
+        if (!m_window || !m_source || !parentWidget())
+            return;
+
+        setGeometry(m_source->geometry());
+
+        QString text;
+        QString color;
+        if (isDisconnected(m_window))
+        {
+            text = disconnectedSystemText();
+            color = QStringLiteral("#ff9828");
+        }
+        else
+        {
+            QWidget *engineError = m_window->findChild<QWidget*>(QStringLiteral("m_engine_error"));
+            const bool fault = engineError && engineError->property("checked").toBool();
+            text = fault ? I18n::text(7120) : I18n::text(7121);
+            color = fault ? QStringLiteral("#ff4b3b") : QStringLiteral("#65db79");
+        }
+
+        setText(text);
+        setStyleSheet(QStringLiteral(
+            "background:#080d12;color:%1;border-right:1px solid #29343e;padding:0 8px;").arg(color));
+        show();
+        raise();
+    }
+
+private:
+    QMainWindow *m_window = nullptr;
+    QLabel *m_source = nullptr;
+};
+
 static QWidget *findSystemStateCard(QMainWindow *window)
 {
     QWidget *overview = window ? window->findChild<QWidget*>(QStringLiteral("overview_tab")) : nullptr;
@@ -158,11 +242,21 @@ static void installSystemStateConnectionFix(QMainWindow *window)
     DisconnectedSystemOverlay *overlay = new DisconnectedSystemOverlay(window, card);
     overlay->setObjectName(QStringLiteral("disconnectedSystemOverlay"));
 
+    BottomSystemStatusOverlay *bottomOverlay = nullptr;
+    if (QLabel *systemLabel = findBottomSystemLabel(window))
+        bottomOverlay = new BottomSystemStatusOverlay(window, systemLabel);
+
     QTimer *timer = new QTimer(overlay);
     timer->setInterval(200);
-    QObject::connect(timer, &QTimer::timeout, overlay, [overlay]() { overlay->syncState(); });
+    QObject::connect(timer, &QTimer::timeout, overlay, [overlay, bottomOverlay]() {
+        overlay->syncState();
+        if (bottomOverlay)
+            bottomOverlay->syncState();
+    });
     timer->start();
     overlay->syncState();
+    if (bottomOverlay)
+        bottomOverlay->syncState();
 }
 
 class SystemStateConnectionFixInstaller : public QObject
