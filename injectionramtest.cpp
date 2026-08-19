@@ -61,9 +61,10 @@ static bool isAllowedTestRequest(const QByteArray &request)
            request == testBytes({0xD1}) ||
            request == testBytes({0x80}) ||
            request == testBytes({0xC4}) ||
-           request == testBytes({0xDC, 0x03}) ||
+           request == testBytes({0xDC}) ||
+           request == testBytes({0x03}) ||
+           request == testBytes({0x00}) ||
            request == testBytes({0x60}) ||
-           request == testBytes({0xDC, 0x00}) ||
            request == testBytes({0x32});
 }
 
@@ -143,12 +144,16 @@ static bool parseExactData80(const QByteArray &response, quint16 *rpm)
     return true;
 }
 
-static bool exactDcReply(const QByteArray &response, quint8 block)
+static bool exactEchoReply(const QByteArray &response, quint8 value)
 {
-    const QByteArray direct = testBytes({0xDC, block});
-    const QByteArray commandEcho = testBytes({0xDC, 0xDC, block});
-    const QByteArray fullEcho = testBytes({0xDC, block, 0xDC, block});
-    return response == direct || response == commandEcho || response == fullEcho;
+    if (response.size() == 1)
+        return byteAt(response, 0) == value;
+
+    // Tolerate one additional physical/interface echo, but no other payload.
+    if (response.size() == 2)
+        return byteAt(response, 0) == value && byteAt(response, 1) == value;
+
+    return false;
 }
 
 static bool parseExactWordReply(const QByteArray &response, quint8 command, quint16 *value)
@@ -436,6 +441,25 @@ void MEMSInterface::onInjectionRamTestRequested()
         return send(request, response);
     };
 
+    auto selectMode4Block = [&](quint8 block) -> bool
+    {
+        if (block != 0x03 && block != 0x00)
+        {
+            log += QStringLiteral("BLOCAGE INTERNE : bloc mode 4 hors liste blanche refusé.\n");
+            return false;
+        }
+
+        QByteArray dcResponse;
+        if (!sendMode4(testBytes({0xDC}), dcResponse) || !exactEchoReply(dcResponse, 0xDC))
+            return false;
+
+        QByteArray blockResponse;
+        if (!sendMode4(testBytes({block}), blockResponse) || !exactEchoReply(blockResponse, block))
+            return false;
+
+        return true;
+    };
+
     auto restoreNormalSession = [&]() -> bool
     {
         log += QStringLiteral("\n--- Retour contrôlé à la session normale ---\n");
@@ -655,8 +679,7 @@ void MEMSInterface::onInjectionRamTestRequested()
     mode4Confirmed = true;
     log += QStringLiteral("Mode 4 confirmé (F0 1E).\n\n");
 
-    response.clear();
-    if (!sendMode4(testBytes({0xDC, 0x03}), response) || !exactDcReply(response, 0x03))
+    if (!selectMode4Block(0x03))
     {
         abortAfterMode4Attempt(QStringLiteral("sélection du bloc de lecture 0x03 non confirmée"));
         return;
@@ -674,8 +697,7 @@ void MEMSInterface::onInjectionRamTestRequested()
                .arg(baseRaw)
                .toUpper();
 
-    response.clear();
-    if (!sendMode4(testBytes({0xDC, 0x00}), response) || !exactDcReply(response, 0x00))
+    if (!selectMode4Block(0x00))
     {
         abortAfterMode4Attempt(QStringLiteral("sélection du bloc de lecture 0x00 non confirmée"));
         return;
