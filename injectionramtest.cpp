@@ -17,10 +17,10 @@
 #include <QPushButton>
 #include <QScrollArea>
 #include <QTabWidget>
+#include <QThread>
 #include <QVBoxLayout>
 
 #include <initializer_list>
-#include <string.h>
 
 #ifdef WIN32
 #include <windows.h>
@@ -65,6 +65,7 @@ static bool isAllowedTestRequest(const QByteArray &request)
            request == testBytes({0x00}) ||
            request == testBytes({0x02}) ||
            request == testBytes({0x03}) ||
+           request == testBytes({0x2F}) ||
            request == testBytes({0x32}) ||
            request == testBytes({0x33}) ||
            request == testBytes({0x3D}) ||
@@ -240,19 +241,19 @@ private:
 } // namespace
 
 /*
- * Targeted one-shot RAM reconstruction test for AANMP002.
+ * Targeted transient injection test for AANMP002.
  *
- * Guards retained from the proven dynamic test:
+ * Guards retained from the proven tests:
  * - connected ECU only;
  * - exact AANMP002 identification in F0 50;
  * - authoritative fresh 0x80 RPM between 500 and 2000 rpm;
  * - exact F0 14 before C4;
  * - exact F0 1E before any RAM read;
+ * - live Mode-4 R5E RPM guard during the transient capture;
  * - closed read-only command whitelist;
  * - controlled return F5 -> F0 14 -> F4 -> F0 50;
+ * - final fresh 0x80 RPM check after returning to normal mode;
  * - stop polling on any unproven final session.
- *
- * The obsolete asynchronous 0x03C0 snapshot read is deliberately removed.
  */
 void MEMSInterface::onInjectionRamTestRequested()
 {
@@ -573,9 +574,10 @@ void MEMSInterface::onInjectionRamTestRequested()
     };
 
     log += QStringLiteral("TEST DYNAMIQUE RAM TEMPS INJECTION — AANMP002\n");
-    log += QStringLiteral("Test ciblé reconstruction R78 — variables persistantes.\n");
-    log += QStringLiteral("Moteur au ralenti stable — plage autorisée 500 à 2000 tr/min.\n");
-    log += QStringLiteral("Lecture seule : 0x0064, 0x0066, 0x007A, 0x00DA, 0x026E, 0x0280, 0x03C8.\n");
+    log += QStringLiteral("Variante transitoire — capture répétée de l'enrichissement d'accélération.\n");
+    log += QStringLiteral("Plage autorisée : 500 à 2000 tr/min. Véhicule immobilisé.\n");
+    log += QStringLiteral("Pendant la capture : UNE impulsion brève d'accélérateur, puis relâcher, sans dépasser 2000 tr/min.\n");
+    log += QStringLiteral("Lecture seule : R5E/0x005E, 0x0064, 0x0066, 0x026E, 0x0280/0x0281 et 0x03C8.\n");
     log += QStringLiteral("Aucune commande d'effacement, d'adaptation, d'actionneur ou d'écriture de calibration.\n\n");
 
     QByteArray response;
@@ -670,14 +672,14 @@ void MEMSInterface::onInjectionRamTestRequested()
         return;
     }
 
-    log += QStringLiteral("Régime moteur frais : %1 tr/min.\n").arg(freshRpm);
+    log += QStringLiteral("Régime moteur frais avant capture : %1 tr/min.\n").arg(freshRpm);
     log += QStringLiteral("Tension batterie fraîche : %1 V.\n")
                .arg(double(batteryDecivolts) / 10.0, 0, 'f', 1);
 
     if (freshRpm < 500 || freshRpm > 2000)
     {
-        log += QStringLiteral("C4 n'a pas été envoyé : ralenti hors plage autorisée 500–2000 tr/min.\n");
-        finish(false, 0, 0, QStringLiteral("TEST REFUSÉ — RALENTI HORS PLAGE"));
+        log += QStringLiteral("C4 n'a pas été envoyé : régime hors plage autorisée 500–2000 tr/min.\n");
+        finish(false, 0, 0, QStringLiteral("TEST REFUSÉ — RÉGIME HORS PLAGE"));
         return;
     }
 
@@ -724,113 +726,158 @@ void MEMSInterface::onInjectionRamTestRequested()
     mode4Confirmed = true;
     log += QStringLiteral("Mode 4 confirmé (F0 1E).\n\n");
 
-    quint16 r0064 = 0;
-    quint16 r0066 = 0;
-    quint16 r007A = 0;
-    quint16 r00DA = 0;
-    quint16 r026E = 0;
-    quint16 r0280 = 0;
-    quint16 r03C8 = 0;
+    QThread::msleep(600);
 
-    // Block 0x00: 0x0064, 0x0066, 0x007A, 0x00DA.
-    if (!selectMode4Block(0x00))
+    const int maxSamples = 24;
+    const int keepAfterFirstTransient = 5;
+    bool transientSeen = false;
+    int firstTransientSample = -1;
+    int samplesAfterFirstTransient = 0;
+    quint8 maxTransientCounter = 0;
+    quint16 last03C8 = 0;
+    quint16 last0064 = 0;
+    quint16 last0066 = 0;
+    quint16 last026E = 0;
+    quint16 lastMode4Rpm = 0;
+
+    log += QStringLiteral("--- CAPTURE TRANSITOIRE — %1 ÉCHANTILLONS MAXIMUM ---\n")
+               .arg(maxSamples);
+    log += QStringLiteral("Le registre R5E/0x005E est lu à chaque échantillon comme garde-fou régime en Mode 4.\n\n");
+
+    for (int sample = 1; sample <= maxSamples; ++sample)
     {
-        abortAfterMode4Attempt(QStringLiteral("sélection du bloc de lecture 0x00 non confirmée"));
-        return;
+        quint16 mode4Rpm = 0;
+        quint16 r0064 = 0;
+        quint16 r0066 = 0;
+        quint16 r026E = 0;
+        quint16 r0280Pair = 0;
+        quint16 r03C8 = 0;
+
+        if (!selectMode4Block(0x00) ||
+            !readMode4Word(0x2F, 0x005E, QStringLiteral("R5E régime Mode 4"), &mode4Rpm) ||
+            !readMode4Word(0x32, 0x0064, QStringLiteral("compensation tension"), &r0064) ||
+            !readMode4Word(0x33, 0x0066, QStringLiteral("R66 persistant"), &r0066))
+        {
+            abortAfterMode4Attempt(QStringLiteral("lecture bloc 0x00 impossible pendant capture transitoire"));
+            return;
+        }
+
+        lastMode4Rpm = mode4Rpm;
+        last0064 = r0064;
+        last0066 = r0066;
+        correctionRaw = r0064;
+
+        if (mode4Rpm < 500 || mode4Rpm > 2000)
+        {
+            log += QStringLiteral("GARDE-FOU RÉGIME : R5E = %1 tr/min, hors plage 500–2000. Capture interrompue immédiatement.\n")
+                       .arg(mode4Rpm);
+            abortAfterMode4Attempt(QStringLiteral("garde-fou régime Mode 4 déclenché"));
+            return;
+        }
+
+        if (!selectMode4Block(0x02) ||
+            !readMode4Word(0x37, 0x026E, QStringLiteral("source transitoire"), &r026E) ||
+            !readMode4Word(0x40, 0x0280, QStringLiteral("paire 0x0280/0x0281"), &r0280Pair))
+        {
+            abortAfterMode4Attempt(QStringLiteral("lecture bloc 0x02 impossible pendant capture transitoire"));
+            return;
+        }
+
+        if (!selectMode4Block(0x03) ||
+            !readMode4Word(0x64, 0x03C8, QStringLiteral("temps injection normal"), &r03C8))
+        {
+            abortAfterMode4Attempt(QStringLiteral("lecture 0x03C8 impossible pendant capture transitoire"));
+            return;
+        }
+
+        last026E = r026E;
+        last03C8 = r03C8;
+        resultPrimary = r03C8;
+
+        const quint8 transientCounter = quint8(r0280Pair & 0x00FFu);
+        const quint8 previousX = quint8((r0280Pair >> 8) & 0x00FFu);
+        const quint16 conditionalTicks = highWordC001(r026E);
+        const quint32 candidateRaw = quint32(r03C8) + quint32(conditionalTicks);
+        const quint16 candidateTicks = candidateRaw > 0xFFFFu ? quint16(0xFFFFu) : quint16(candidateRaw);
+
+        if (transientCounter > maxTransientCounter)
+            maxTransientCounter = transientCounter;
+
+        const qint32 correctionTicks = qint32(r0064) - 0x8000;
+        const qint32 expected03C8 = qint32(r0066) + correctionTicks;
+        const qint32 delta03C8 = qint32(r03C8) - expected03C8;
+
+        log += QStringLiteral("ÉCHANTILLON %1/%2 : RPM=%3 ; 0280=%4 ; 0281=%5 ; 026E=%6 ; "
+                              "03C8=%7 ticks=%8 ms ; S(026E)=%9 ticks ; candidat 03C8+S=%10 ticks=%11 ms ; "
+                              "R66=%12 ; corr=%13 ; écart03C8=%14 ticks\n")
+                   .arg(sample)
+                   .arg(maxSamples)
+                   .arg(mode4Rpm)
+                   .arg(transientCounter)
+                   .arg(previousX)
+                   .arg(r026E)
+                   .arg(r03C8)
+                   .arg(double(r03C8) * 0.002, 0, 'f', 3)
+                   .arg(conditionalTicks)
+                   .arg(candidateTicks)
+                   .arg(double(candidateTicks) * 0.002, 0, 'f', 3)
+                   .arg(r0066)
+                   .arg(correctionTicks)
+                   .arg(delta03C8);
+
+        if (transientCounter != 0)
+        {
+            if (!transientSeen)
+            {
+                transientSeen = true;
+                firstTransientSample = sample;
+                samplesAfterFirstTransient = 0;
+                log += QStringLiteral("*** TRANSITOIRE DÉTECTÉ : compteur RAM 0x0280 devient non nul à l'échantillon %1. ***\n")
+                           .arg(sample);
+            }
+            else
+            {
+                ++samplesAfterFirstTransient;
+            }
+        }
+        else if (transientSeen)
+        {
+            ++samplesAfterFirstTransient;
+        }
+
+        if (transientSeen && samplesAfterFirstTransient >= keepAfterFirstTransient)
+        {
+            log += QStringLiteral("Capture poursuivie %1 échantillons après la première détection ; arrêt de la série.\n")
+                       .arg(keepAfterFirstTransient);
+            break;
+        }
+
+        QThread::msleep(15);
     }
 
-    if (!readMode4Word(0x32, 0x0064, QStringLiteral("compensation tension"), &r0064) ||
-        !readMode4Word(0x33, 0x0066, QStringLiteral("R66 persistant"), &r0066) ||
-        !readMode4Word(0x3D, 0x007A, QStringLiteral("R7A persistant — témoin uniquement"), &r007A) ||
-        !readMode4Word(0x6D, 0x00DA, QStringLiteral("RDA témoin amont"), &r00DA))
-    {
-        abortAfterMode4Attempt(QStringLiteral("une lecture ciblée du bloc 0x00 a échoué"));
-        return;
-    }
-
-    // Block 0x02: conditional contribution and its guard/counter.
-    if (!selectMode4Block(0x02))
-    {
-        abortAfterMode4Attempt(QStringLiteral("sélection du bloc de lecture 0x02 non confirmée"));
-        return;
-    }
-
-    if (!readMode4Word(0x37, 0x026E, QStringLiteral("contribution conditionnelle source"), &r026E) ||
-        !readMode4Word(0x40, 0x0280, QStringLiteral("paire octets 0x0280/0x0281"), &r0280))
-    {
-        abortAfterMode4Attempt(QStringLiteral("une lecture ciblée du bloc 0x02 a échoué"));
-        return;
-    }
-
-    // Block 0x03: injection duration for non-transient operation.
-    if (!selectMode4Block(0x03))
-    {
-        abortAfterMode4Attempt(QStringLiteral("sélection du bloc de lecture 0x03 non confirmée"));
-        return;
-    }
-
-    if (!readMode4Word(0x64, 0x03C8, QStringLiteral("temps injection normal"), &r03C8))
-    {
-        abortAfterMode4Attempt(QStringLiteral("lecture ciblée RAM 0x03C8 échouée"));
-        return;
-    }
-
-    correctionRaw = r0064;
-    resultPrimary = r03C8;
-
-    const qint32 correctionTicks = qint32(r0064) - 0x8000;
-    const double correctionMs = double(correctionTicks) * 0.002;
-    const double injectionMs = double(r03C8) * 0.002;
-
-    const quint16 conditionalUnit = highWordC001(r026E);
-    const double conditionalUnitMs = double(conditionalUnit) * 0.002;
-
-    const quint8 transientCounter = quint8(r0280 & 0x00FFu);
-    const quint8 previousX = quint8((r0280 >> 8) & 0x00FFu);
-    const bool transientActive = transientCounter != 0;
-
-    const qint32 checkSigned = qint32(r0066) + correctionTicks;
-    const quint16 expected03C8 = quint16(quint32(checkSigned) & 0xFFFFu);
-    const qint32 checkDeltaTicks = qint32(r03C8) - qint32(expected03C8);
-    const double checkDeltaMs = double(checkDeltaTicks) * 0.002;
-
-    log += QStringLiteral("\n--- Temps injection ROM ---\n");
-    log += QStringLiteral("Temps injection RAM 0x03C8 : %1 ticks = %2 ms\n")
-               .arg(r03C8)
-               .arg(injectionMs, 0, 'f', 3);
-    log += QStringLiteral("Compensation tension 0x0064 : %1 ticks = %2 ms\n")
-               .arg(correctionTicks)
-               .arg(correctionMs, 0, 'f', 3);
-    log += QStringLiteral("R66 0x0066 : %1 ticks\n").arg(r0066);
-    log += QStringLiteral("R7A 0x007A : %1 — témoin uniquement, aucun calcul 8 × R7A appliqué\n")
-               .arg(r007A);
-    log += QStringLiteral("Source transitoire 0x026E : %1 ; S(0x026E) = %2 ticks = %3 ms si la branche transitoire est active\n")
-               .arg(r026E)
-               .arg(conditionalUnit)
-               .arg(conditionalUnitMs, 0, 'f', 3);
-    log += QStringLiteral("Compteur transitoire RAM 0x0280 : %1\n").arg(transientCounter);
-    log += QStringLiteral("Échantillon précédent RAM 0x0281 : %1\n").arg(previousX);
-    log += QStringLiteral("Témoin amont 0x00DA : 0x%1 (%2)\n")
-               .arg(r00DA, 4, 16, QLatin1Char('0'))
-               .arg(r00DA)
+    log += QStringLiteral("\n--- SYNTHÈSE CAPTURE TRANSITOIRE ---\n");
+    log += QStringLiteral("Dernier régime Mode 4 R5E : %1 tr/min.\n").arg(lastMode4Rpm);
+    log += QStringLiteral("Dernier 0x0064 : 0x%1 ; dernier R66 : %2 ; dernier 0x026E : %3.\n")
+               .arg(last0064, 4, 16, QLatin1Char('0'))
+               .arg(last0066)
+               .arg(last026E)
                .toUpper();
-    log += QStringLiteral("Contrôle R66 + compensation : attendu 0x%1 ; 0x03C8 lu 0x%2 ; écart %3 ticks = %4 ms — lectures séquentielles\n")
-               .arg(expected03C8, 4, 16, QLatin1Char('0'))
-               .arg(r03C8, 4, 16, QLatin1Char('0'))
-               .arg(checkDeltaTicks)
-               .arg(checkDeltaMs, 0, 'f', 3)
-               .toUpper();
+    log += QStringLiteral("Dernier 0x03C8 : %1 ticks = %2 ms.\n")
+               .arg(last03C8)
+               .arg(double(last03C8) * 0.002, 0, 'f', 3);
+    log += QStringLiteral("Compteur transitoire maximal observé : %1.\n").arg(maxTransientCounter);
 
-    if (transientActive)
+    if (transientSeen)
     {
-        log += QStringLiteral("ATTENTION : compteur transitoire non nul. Une correction 0x026E peut être active ; 0x03C8 seul peut ne pas représenter la totalité du pulse.\n");
+        log += QStringLiteral("TRANSITOIRE CAPTURÉ : première détection à l'échantillon %1.\n")
+                   .arg(firstTransientSample);
+        log += QStringLiteral("Les valeurs candidat 0x03C8 + S(0x026E) sont enregistrées pour comparaison ROM ; elles ne sont pas encore déclarées comme temps d'injection transitoire validé.\n");
     }
     else
     {
-        log += QStringLiteral("Aucune correction transitoire détectée : compteur 0x0280 = 0. 0x03C8 est utilisé comme temps d'injection normal.\n");
+        log += QStringLiteral("AUCUN TRANSITOIRE CAPTURÉ : RAM 0x0280 est restée à zéro pendant toute la série.\n");
+        log += QStringLiteral("Le test peut être refait avec une impulsion d'accélérateur un peu plus nette, toujours sans dépasser 2000 tr/min.\n");
     }
-
-    log += QStringLiteral("0x03C0 n'est plus utilisé dans ce test.\n\n");
 
     if (!restoreNormalSession())
     {
@@ -841,8 +888,40 @@ void MEMSInterface::onInjectionRamTestRequested()
         return;
     }
 
-    finish(true, resultPrimary, correctionRaw,
-           QStringLiteral("SESSION NORMALE CONFIRMÉE — TEST CIBLÉ TERMINÉ"));
+    QByteArray final80;
+    quint16 finalRpm = 0;
+    quint8 finalBattery = 0;
+    if (!sendNormal(testBytes({0x80}), final80) ||
+        !parseExactData80(final80, &finalRpm, &finalBattery))
+    {
+        log += QStringLiteral("Contrôle final 0x80 impossible malgré retour F0 50 confirmé.\n");
+        finish(false, resultPrimary, correctionRaw,
+               QStringLiteral("TEST TERMINÉ — SESSION NORMALE CONFIRMÉE — CONTRÔLE RPM FINAL IMPOSSIBLE"));
+        return;
+    }
+
+    log += QStringLiteral("Régime moteur frais après retour normal : %1 tr/min.\n").arg(finalRpm);
+    log += QStringLiteral("Tension batterie finale : %1 V.\n")
+               .arg(double(finalBattery) / 10.0, 0, 'f', 1);
+
+    if (finalRpm > 2000)
+    {
+        log += QStringLiteral("GARDE-FOU FINAL : régime supérieur à 2000 tr/min après la capture.\n");
+        finish(false, resultPrimary, correctionRaw,
+               QStringLiteral("TEST TERMINÉ — RÉGIME FINAL TROP ÉLEVÉ"));
+        return;
+    }
+
+    if (transientSeen)
+    {
+        finish(true, resultPrimary, correctionRaw,
+               QStringLiteral("TRANSITOIRE CAPTURÉ — SESSION NORMALE CONFIRMÉE"));
+    }
+    else
+    {
+        finish(false, resultPrimary, correctionRaw,
+               QStringLiteral("TEST TERMINÉ — AUCUN TRANSITOIRE CAPTURÉ — REFAIRE"));
+    }
 }
 
 class InjectionRamTestInstaller : public QObject
@@ -907,14 +986,14 @@ private:
 
         const int row = grid->rowCount();
         QLabel *warning = new QLabel(
-            QStringLiteral("Test ciblé RAM temps injection — AANMP002 — RALENTI STABLE"),
+            QStringLiteral("Test transitoire RAM temps injection — AANMP002 — MAX 2000 TR/MIN"),
             session);
         warning->setObjectName(QStringLiteral("injectionRamTestWarning"));
         warning->setWordWrap(true);
         warning->setStyleSheet(QStringLiteral("font-weight:700; color:#ff9828;"));
         grid->addWidget(warning, row, 0, 1, 4);
 
-        QPushButton *button = new QPushButton(QStringLiteral("Ouvrir le test ciblé temps injection"), session);
+        QPushButton *button = new QPushButton(QStringLiteral("Ouvrir le test transitoire temps injection"), session);
         button->setObjectName(QStringLiteral("injectionRamTestButton"));
         button->setMinimumHeight(30);
         grid->addWidget(button, row + 1, 0, 1, 4);
@@ -938,15 +1017,17 @@ private:
         // Keep this exact title: the automatic logger recognises it.
         dialog.setWindowTitle(QStringLiteral("Test dynamique temps injection — AANMP002"));
         dialog.setModal(true);
-        dialog.resize(780, 660);
+        dialog.resize(820, 700);
 
         QVBoxLayout *layout = new QVBoxLayout(&dialog);
         layout->setContentsMargins(14, 14, 14, 14);
         layout->setSpacing(9);
 
         QLabel *warning = new QLabel(
-            QStringLiteral("<b>MOTEUR AU RALENTI STABLE — 500 À 2000 TR/MIN</b><br>"
-                           "Véhicule immobilisé. Ne touchez pas à l'accélérateur pendant le test."),
+            QStringLiteral("<b>TEST TRANSITOIRE — 500 À 2000 TR/MIN</b><br>"
+                           "Véhicule immobilisé. Après avoir lancé le test, attendez environ 2 secondes, "
+                           "donnez UNE brève impulsion d'accélérateur vers 1600–1900 tr/min puis relâchez. "
+                           "NE DÉPASSEZ JAMAIS 2000 TR/MIN."),
             &dialog);
         warning->setWordWrap(true);
         warning->setAlignment(Qt::AlignCenter);
@@ -954,11 +1035,11 @@ private:
         layout->addWidget(warning);
 
         QLabel *info = new QLabel(
-            QStringLiteral("Test ciblé issu de l'analyse ROM. Il ne lit plus 0x03C0. "
-                           "Il lit uniquement 0x0064, 0x0066, 0x007A, 0x00DA, 0x026E, 0x0280 et 0x03C8. "
-                           "Aucune commande spécifique n'est envoyée en ouvrant cette fenêtre. "
-                           "C4 reste interdit tant que AANMP002, F0 50, le régime frais 500–2000 tr/min "
-                           "et F0 14 n'ont pas été confirmés."),
+            QStringLiteral("Cette variante cherche volontairement à faire apparaître RAM 0x0280 > 0. "
+                           "Elle effectue jusqu'à 24 captures rapides de R5E/0x005E, 0x0064, 0x0066, "
+                           "0x026E, 0x0280/0x0281 et 0x03C8. "
+                           "R5E est contrôlé à chaque échantillon et le test s'arrête immédiatement "
+                           "si le régime sort de la plage 500–2000 tr/min. Aucune écriture RAM n'est effectuée."),
             &dialog);
         info->setWordWrap(true);
         layout->addWidget(info);
@@ -966,20 +1047,20 @@ private:
         QLabel *sequence = new QLabel(
             QStringLiteral("Séquence verrouillée : F0 — [retour F0 50 si nécessaire] — D1 — 80 — "
                            "F5 — F0 14 — C4 — F0 1E — "
-                           "DC 00 / 32,33,3D,6D — DC 02 / 37,40 — DC 03 / 64 — "
-                           "F5 — F0 14 — F4 — F0 50"),
+                           "[captures : DC 00 / 2F,32,33 — DC 02 / 37,40 — DC 03 / 64] — "
+                           "F5 — F0 14 — F4 — F0 50 — 80 final"),
             &dialog);
         sequence->setWordWrap(true);
         layout->addWidget(sequence);
 
         QCheckBox *confirmStopped = new QCheckBox(
-            QStringLiteral("Je confirme : véhicule immobilisé, moteur au ralenti stable."),
+            QStringLiteral("Je confirme : véhicule immobilisé pendant tout le test."),
             &dialog);
-        QCheckBox *confirmNoStart = new QCheckBox(
-            QStringLiteral("Je confirme : je ne toucherai pas à l'accélérateur pendant le test."),
+        QCheckBox *confirmTransient = new QCheckBox(
+            QStringLiteral("Je confirme : une seule impulsion brève, puis relâcher, sans dépasser 2000 tr/min."),
             &dialog);
         layout->addWidget(confirmStopped);
-        layout->addWidget(confirmNoStart);
+        layout->addWidget(confirmTransient);
 
         QLabel *status = new QLabel(QStringLiteral("PRÊT — AUCUNE COMMANDE DE TEST ENVOYÉE"), &dialog);
         status->setWordWrap(true);
@@ -989,11 +1070,11 @@ private:
         QPlainTextEdit *output = new QPlainTextEdit(&dialog);
         output->setObjectName(QStringLiteral("injectionRamTestOutput"));
         output->setReadOnly(true);
-        output->setPlaceholderText(QStringLiteral("Le journal TX/RX du test apparaîtra ici."));
+        output->setPlaceholderText(QStringLiteral("Le journal TX/RX et les échantillons transitoires apparaîtront ici."));
         layout->addWidget(output, 1);
 
         QHBoxLayout *buttons = new QHBoxLayout;
-        QPushButton *run = new QPushButton(QStringLiteral("Lancer le test ciblé une fois"), &dialog);
+        QPushButton *run = new QPushButton(QStringLiteral("Lancer la capture transitoire"), &dialog);
         QPushButton *close = new QPushButton(QStringLiteral("Fermer"), &dialog);
         run->setEnabled(false);
         buttons->addWidget(run);
@@ -1001,20 +1082,20 @@ private:
         buttons->addWidget(close);
         layout->addLayout(buttons);
 
-        const auto updateRunEnabled = [run, confirmStopped, confirmNoStart]()
+        const auto updateRunEnabled = [run, confirmStopped, confirmTransient]()
         {
-            run->setEnabled(confirmStopped->isChecked() && confirmNoStart->isChecked());
+            run->setEnabled(confirmStopped->isChecked() && confirmTransient->isChecked());
         };
         QObject::connect(confirmStopped, &QCheckBox::toggled, &dialog,
                          [updateRunEnabled](bool) { updateRunEnabled(); });
-        QObject::connect(confirmNoStart, &QCheckBox::toggled, &dialog,
+        QObject::connect(confirmTransient, &QCheckBox::toggled, &dialog,
                          [updateRunEnabled](bool) { updateRunEnabled(); });
         QObject::connect(close, &QPushButton::clicked, &dialog, &QDialog::accept);
 
         if (mems)
         {
             QObject::connect(mems, &MEMSInterface::injectionRamTestFinished, &dialog,
-                             [&dialog, status, output, close, confirmStopped, confirmNoStart, run]
+                             [&dialog, status, output, close, confirmStopped, confirmTransient, run]
                              (bool success,
                               quint16 primaryRaw,
                               quint16 correctionValue,
@@ -1032,26 +1113,25 @@ private:
                 output->setPlainText(testLog);
                 close->setEnabled(true);
                 confirmStopped->setEnabled(false);
-                confirmNoStart->setEnabled(false);
+                confirmTransient->setEnabled(false);
                 run->setEnabled(false);
             });
         }
 
         QObject::connect(run, &QPushButton::clicked, &dialog,
-                         [&dialog, mems, status, output, close, confirmStopped, confirmNoStart, run]()
+                         [&dialog, mems, status, output, close, confirmStopped, confirmTransient, run]()
         {
-            if (!confirmStopped->isChecked() || !confirmNoStart->isChecked())
+            if (!confirmStopped->isChecked() || !confirmTransient->isChecked())
                 return;
 
             run->setEnabled(false);
             confirmStopped->setEnabled(false);
-            confirmNoStart->setEnabled(false);
+            confirmTransient->setEnabled(false);
             close->setEnabled(false);
             dialog.setTestRunning(true);
-            status->setText(QStringLiteral("TEST EN COURS — NE PAS TOUCHER À L'ACCÉLÉRATEUR"));
+            status->setText(QStringLiteral("TEST EN COURS — ATTENDEZ ~2 S PUIS UNE IMPULSION BRÈVE — RESTER SOUS 2000 TR/MIN"));
             status->setStyleSheet(QStringLiteral("font-weight:700; color:#ff9828;"));
-            // Keep this exact transient text: the automatic logger knows not to save it.
-            output->setPlainText(QStringLiteral("Contrôles de sécurité et lecture dynamique en cours..."));
+            output->setPlainText(QStringLiteral("Préparation de la capture transitoire... Attendez environ 2 secondes puis donnez UNE impulsion brève et relâchez."));
 
             if (!mems)
             {
