@@ -80,6 +80,7 @@ public slots:
 	void on_interactive_push_button_clicked();
     void onProtocolCommandRequested(quint8 command);
     void onInjectionRamTestRequested();
+    void onOverviewLiveModeRequested(bool enabled);
 
 signals:
     void dataReady();
@@ -121,6 +122,17 @@ signals:
                                   quint16 correctionRaw,
                                   QString status,
                                   QString log);
+    void overviewLiveDataReady(int rpm,
+                               int iacRaw,
+                               int shortTrimRaw,
+                               int ignitionAdvanceRaw,
+                               int lambdaRaw,
+                               int batteryRaw,
+                               int airTempRaw,
+                               int coolantRaw,
+                               int mapRaw,
+                               int throttleRaw,
+                               double injectionMs);
 private:
     mems_data m_data;
     QString m_deviceName;
