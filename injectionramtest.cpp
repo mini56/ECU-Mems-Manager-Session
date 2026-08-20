@@ -741,7 +741,7 @@ void MEMSInterface::onInjectionRamTestRequested()
 
     if (!readMode4Word(0x32, 0x0064, QStringLiteral("compensation tension"), &r0064) ||
         !readMode4Word(0x33, 0x0066, QStringLiteral("R66 persistant"), &r0066) ||
-        !readMode4Word(0x3D, 0x007A, QStringLiteral("R7A persistant"), &r007A) ||
+        !readMode4Word(0x3D, 0x007A, QStringLiteral("R7A persistant — témoin uniquement"), &r007A) ||
         !readMode4Word(0x6D, 0x00DA, QStringLiteral("RDA témoin amont"), &r00DA))
     {
         abortAfterMode4Attempt(QStringLiteral("une lecture ciblée du bloc 0x00 a échoué"));
@@ -756,67 +756,80 @@ void MEMSInterface::onInjectionRamTestRequested()
     }
 
     if (!readMode4Word(0x37, 0x026E, QStringLiteral("contribution conditionnelle source"), &r026E) ||
-        !readMode4Word(0x40, 0x0280, QStringLiteral("compteur/garde conditionnel"), &r0280))
+        !readMode4Word(0x40, 0x0280, QStringLiteral("paire octets 0x0280/0x0281"), &r0280))
     {
         abortAfterMode4Attempt(QStringLiteral("une lecture ciblée du bloc 0x02 a échoué"));
         return;
     }
 
-    // Block 0x03: independent consistency witness for R66 + correction.
+    // Block 0x03: injection duration for non-transient operation.
     if (!selectMode4Block(0x03))
     {
         abortAfterMode4Attempt(QStringLiteral("sélection du bloc de lecture 0x03 non confirmée"));
         return;
     }
 
-    if (!readMode4Word(0x64, 0x03C8, QStringLiteral("contrôle R66 + correction"), &r03C8))
+    if (!readMode4Word(0x64, 0x03C8, QStringLiteral("temps injection normal"), &r03C8))
     {
         abortAfterMode4Attempt(QStringLiteral("lecture ciblée RAM 0x03C8 échouée"));
         return;
     }
 
     correctionRaw = r0064;
-    resultPrimary = r007A;
+    resultPrimary = r03C8;
 
     const qint32 correctionTicks = qint32(r0064) - 0x8000;
     const double correctionMs = double(correctionTicks) * 0.002;
-
-    const quint32 principalRaw = quint32(r007A) * 8u + quint32(r0066);
-    const bool principalOverflow = principalRaw > 0xFFFFu;
-    const qint64 simpleTicks = qint64(principalRaw) + qint64(correctionTicks);
-    const double simpleMs = double(simpleTicks) * 0.002;
+    const double injectionMs = double(r03C8) * 0.002;
 
     const quint16 conditionalUnit = highWordC001(r026E);
     const double conditionalUnitMs = double(conditionalUnit) * 0.002;
 
+    const quint8 transientCounter = quint8(r0280 & 0x00FFu);
+    const quint8 previousX = quint8((r0280 >> 8) & 0x00FFu);
+    const bool transientActive = transientCounter != 0;
+
     const qint32 checkSigned = qint32(r0066) + correctionTicks;
     const quint16 expected03C8 = quint16(quint32(checkSigned) & 0xFFFFu);
-    const bool check03C8Ok = expected03C8 == r03C8;
+    const qint32 checkDeltaTicks = qint32(r03C8) - qint32(expected03C8);
+    const double checkDeltaMs = double(checkDeltaTicks) * 0.002;
 
-    log += QStringLiteral("\n--- Reconstruction ROM ---\n");
-    log += QStringLiteral("Compensation 0x0064 : %1 ticks = %2 ms\n")
+    log += QStringLiteral("\n--- Temps injection ROM ---\n");
+    log += QStringLiteral("Temps injection RAM 0x03C8 : %1 ticks = %2 ms\n")
+               .arg(r03C8)
+               .arg(injectionMs, 0, 'f', 3);
+    log += QStringLiteral("Compensation tension 0x0064 : %1 ticks = %2 ms\n")
                .arg(correctionTicks)
                .arg(correctionMs, 0, 'f', 3);
-    log += QStringLiteral("Composante principale brute : 8 × 0x007A + 0x0066 = %1 ticks%2\n")
-               .arg(principalRaw)
-               .arg(principalOverflow ? QStringLiteral(" — DÉPASSE 16 BITS") : QString());
-    log += QStringLiteral("Reconstruction simple provisoire : principale + compensation = %1 ticks = %2 ms\n")
-               .arg(simpleTicks)
-               .arg(simpleMs, 0, 'f', 3);
-    log += QStringLiteral("Contribution conditionnelle candidate S(0x026E) : %1 ticks = %2 ms\n")
+    log += QStringLiteral("R66 0x0066 : %1 ticks\n").arg(r0066);
+    log += QStringLiteral("R7A 0x007A : %1 — témoin uniquement, aucun calcul 8 × R7A appliqué\n")
+               .arg(r007A);
+    log += QStringLiteral("Source transitoire 0x026E : %1 ; S(0x026E) = %2 ticks = %3 ms si la branche transitoire est active\n")
+               .arg(r026E)
                .arg(conditionalUnit)
                .arg(conditionalUnitMs, 0, 'f', 3);
-    log += QStringLiteral("Compteur/garde 0x0280 : %1\n").arg(r0280);
+    log += QStringLiteral("Compteur transitoire RAM 0x0280 : %1\n").arg(transientCounter);
+    log += QStringLiteral("Échantillon précédent RAM 0x0281 : %1\n").arg(previousX);
     log += QStringLiteral("Témoin amont 0x00DA : 0x%1 (%2)\n")
                .arg(r00DA, 4, 16, QLatin1Char('0'))
                .arg(r00DA)
                .toUpper();
-    log += QStringLiteral("Contrôle 0x03C8 attendu : 0x%1 ; lu : 0x%2 ; cohérence : %3\n")
+    log += QStringLiteral("Contrôle R66 + compensation : attendu 0x%1 ; 0x03C8 lu 0x%2 ; écart %3 ticks = %4 ms — lectures séquentielles\n")
                .arg(expected03C8, 4, 16, QLatin1Char('0'))
                .arg(r03C8, 4, 16, QLatin1Char('0'))
-               .arg(check03C8Ok ? QStringLiteral("OUI") : QStringLiteral("NON / variables possiblement asynchrones"))
+               .arg(checkDeltaTicks)
+               .arg(checkDeltaMs, 0, 'f', 3)
                .toUpper();
-    log += QStringLiteral("IMPORTANT : la reconstruction simple reste PROVISOIRE tant que l'application exacte de la contribution 0x026E n'est pas établie sur le cycle observé.\n");
+
+    if (transientActive)
+    {
+        log += QStringLiteral("ATTENTION : compteur transitoire non nul. Une correction 0x026E peut être active ; 0x03C8 seul peut ne pas représenter la totalité du pulse.\n");
+    }
+    else
+    {
+        log += QStringLiteral("Aucune correction transitoire détectée : compteur 0x0280 = 0. 0x03C8 est utilisé comme temps d'injection normal.\n");
+    }
+
     log += QStringLiteral("0x03C0 n'est plus utilisé dans ce test.\n\n");
 
     if (!restoreNormalSession())
