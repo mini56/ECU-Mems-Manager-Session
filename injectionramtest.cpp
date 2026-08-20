@@ -245,7 +245,7 @@ private:
  * Guards retained from the proven dynamic test:
  * - connected ECU only;
  * - exact AANMP002 identification in F0 50;
- * - authoritative fresh 0x80 RPM between 500 and 1500 rpm;
+ * - authoritative fresh 0x80 RPM between 500 and 2000 rpm;
  * - exact F0 14 before C4;
  * - exact F0 1E before any RAM read;
  * - closed read-only command whitelist;
@@ -291,7 +291,7 @@ void MEMSInterface::onInjectionRamTestRequested()
     }
 
     // Early cached guard only. The fresh 0x80 check below is authoritative.
-    if (m_data.engine_rpm > 1800)
+    if (m_data.engine_rpm > 2000)
     {
         log = QStringLiteral("Régime moteur déjà trop élevé : %1 tr/min.\n"
                              "Aucune commande de test n'a été envoyée.")
@@ -574,7 +574,7 @@ void MEMSInterface::onInjectionRamTestRequested()
 
     log += QStringLiteral("TEST DYNAMIQUE RAM TEMPS INJECTION — AANMP002\n");
     log += QStringLiteral("Test ciblé reconstruction R78 — variables persistantes.\n");
-    log += QStringLiteral("Moteur au ralenti stable — plage autorisée 500 à 1500 tr/min.\n");
+    log += QStringLiteral("Moteur au ralenti stable — plage autorisée 500 à 2000 tr/min.\n");
     log += QStringLiteral("Lecture seule : 0x0064, 0x0066, 0x007A, 0x00DA, 0x026E, 0x0280, 0x03C8.\n");
     log += QStringLiteral("Aucune commande d'effacement, d'adaptation, d'actionneur ou d'écriture de calibration.\n\n");
 
@@ -674,9 +674,9 @@ void MEMSInterface::onInjectionRamTestRequested()
     log += QStringLiteral("Tension batterie fraîche : %1 V.\n")
                .arg(double(batteryDecivolts) / 10.0, 0, 'f', 1);
 
-    if (freshRpm < 500 || freshRpm > 1500)
+    if (freshRpm < 500 || freshRpm > 2000)
     {
-        log += QStringLiteral("C4 n'a pas été envoyé : ralenti hors plage autorisée 500–1500 tr/min.\n");
+        log += QStringLiteral("C4 n'a pas été envoyé : ralenti hors plage autorisée 500–2000 tr/min.\n");
         finish(false, 0, 0, QStringLiteral("TEST REFUSÉ — RALENTI HORS PLAGE"));
         return;
     }
@@ -932,7 +932,7 @@ private:
         layout->setSpacing(9);
 
         QLabel *warning = new QLabel(
-            QStringLiteral("<b>MOTEUR AU RALENTI STABLE — 500 À 1500 TR/MIN</b><br>"
+            QStringLiteral("<b>MOTEUR AU RALENTI STABLE — 500 À 2000 TR/MIN</b><br>"
                            "Véhicule immobilisé. Ne touchez pas à l'accélérateur pendant le test."),
             &dialog);
         warning->setWordWrap(true);
@@ -944,7 +944,7 @@ private:
             QStringLiteral("Test ciblé issu de l'analyse ROM. Il ne lit plus 0x03C0. "
                            "Il lit uniquement 0x0064, 0x0066, 0x007A, 0x00DA, 0x026E, 0x0280 et 0x03C8. "
                            "Aucune commande spécifique n'est envoyée en ouvrant cette fenêtre. "
-                           "C4 reste interdit tant que AANMP002, F0 50, le régime frais 500–1500 tr/min "
+                           "C4 reste interdit tant que AANMP002, F0 50, le régime frais 500–2000 tr/min "
                            "et F0 14 n'ont pas été confirmés."),
             &dialog);
         info->setWordWrap(true);
