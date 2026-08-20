@@ -1,14 +1,37 @@
+#include "mainwindow.h"
+#include "i18n.h"
+
 #include <QApplication>
+#include <QCoreApplication>
 #include <QDateTime>
+#include <QDesktopServices>
 #include <QDialog>
 #include <QDir>
+#include <QEvent>
 #include <QFile>
+#include <QGridLayout>
+#include <QGroupBox>
 #include <QPlainTextEdit>
+#include <QPushButton>
+#include <QScrollArea>
 #include <QStandardPaths>
+#include <QTabWidget>
 #include <QTimer>
+#include <QUrl>
 #include <QWidget>
 
 namespace {
+
+static QString logDirectory()
+{
+    QString base = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    if (base.isEmpty())
+        base = QDir::homePath();
+
+    const QString path = QDir(base).filePath(QStringLiteral("ECU MEMS Manager/InjectionTests"));
+    QDir().mkpath(path);
+    return path;
+}
 
 class InjectionRamTestLogSaver : public QObject
 {
@@ -28,20 +51,15 @@ private:
         const QString trimmed = text.trimmed();
         if (trimmed.isEmpty())
             return false;
-        if (trimmed == QStringLiteral("Contrôles de sécurité en cours..."))
+
+        if (trimmed == QStringLiteral("Contrôles de sécurité en cours...") ||
+            trimmed == QStringLiteral("Contrôles de sécurité et lecture dynamique en cours..."))
+        {
             return false;
-        return true;
-    }
+        }
 
-    static QString logDirectory()
-    {
-        QString base = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-        if (base.isEmpty())
-            base = QDir::homePath();
-
-        const QString path = QDir(base).filePath(QStringLiteral("ECU MEMS Manager/InjectionTests"));
-        QDir().mkpath(path);
-        return path;
+        return trimmed.startsWith(QStringLiteral("TEST RAM TEMPS INJECTION — AANMP002")) ||
+               trimmed.startsWith(QStringLiteral("TEST DYNAMIQUE RAM TEMPS INJECTION — AANMP002"));
     }
 
     static void saveLog(QPlainTextEdit *output)
@@ -90,8 +108,15 @@ private:
         for (QWidget *top : QApplication::topLevelWidgets())
         {
             QDialog *dialog = qobject_cast<QDialog*>(top);
-            if (!dialog || dialog->windowTitle() != QStringLiteral("Test RAM temps injection — AANMP002"))
+            if (!dialog)
                 continue;
+
+            const QString title = dialog->windowTitle();
+            if (title != QStringLiteral("Test RAM temps injection — AANMP002") &&
+                title != QStringLiteral("Test dynamique temps injection — AANMP002"))
+            {
+                continue;
+            }
 
             QPlainTextEdit *output = dialog->findChild<QPlainTextEdit*>();
             if (!output || output->property("injectionLogAutoSaveConnected").toBool())
@@ -109,12 +134,99 @@ private:
     }
 };
 
-static void installInjectionRamTestLogSaver()
+static QWidget *realTabPage(QWidget *tab)
 {
-    if (qApp)
-        new InjectionRamTestLogSaver(qApp);
+    if (!tab)
+        return nullptr;
+    if (QScrollArea *scroll = qobject_cast<QScrollArea*>(tab))
+        return scroll->widget();
+    return tab;
+}
+
+class InjectionTestFolderButtonInstaller : public QObject
+{
+public:
+    explicit InjectionTestFolderButtonInstaller(QObject *parent = nullptr)
+        : QObject(parent)
+    {
+    }
+
+protected:
+    bool eventFilter(QObject *watched, QEvent *event) override
+    {
+        if (event && event->type() == QEvent::Show)
+        {
+            if (MainWindow *window = qobject_cast<MainWindow*>(watched))
+                installButton(window);
+        }
+        return QObject::eventFilter(watched, event);
+    }
+
+private:
+    static bool installButton(MainWindow *window)
+    {
+        if (!window)
+            return false;
+
+        QTabWidget *tabs = window->findChild<QTabWidget*>(QStringLiteral("Tab_main"));
+        if (!tabs)
+            return false;
+
+        QGroupBox *session = nullptr;
+        for (int i = 0; i < tabs->count() && !session; ++i)
+        {
+            QWidget *page = realTabPage(tabs->widget(i));
+            if (!page)
+                continue;
+
+            const QList<QGroupBox*> groups = page->findChildren<QGroupBox*>();
+            for (QGroupBox *group : groups)
+            {
+                if (group && group->title().trimmed() == I18n::text(7000).trimmed())
+                {
+                    session = group;
+                    break;
+                }
+            }
+        }
+
+        if (!session)
+            return false;
+
+        if (session->findChild<QPushButton*>(QStringLiteral("injectionTestFolderButton")))
+            return true;
+
+        QGridLayout *grid = qobject_cast<QGridLayout*>(session->layout());
+        if (!grid)
+            return false;
+
+        const QString folder = logDirectory();
+        QPushButton *button = new QPushButton(QStringLiteral("Ouvrir le dossier des tests"), session);
+        button->setObjectName(QStringLiteral("injectionTestFolderButton"));
+        button->setMinimumHeight(30);
+        button->setToolTip(QDir::toNativeSeparators(folder));
+        grid->addWidget(button, grid->rowCount(), 0, 1, 4);
+
+        QObject::connect(button, &QPushButton::clicked, session, []()
+        {
+            const QString path = logDirectory();
+            QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+        });
+
+        return true;
+    }
+};
+
+static void installInjectionRamTestSupport()
+{
+    QApplication *app = qobject_cast<QApplication*>(QCoreApplication::instance());
+    if (!app)
+        return;
+
+    new InjectionRamTestLogSaver(app);
+    app->installEventFilter(new InjectionTestFolderButtonInstaller(app));
 }
 
 } // namespace
 
-Q_COREAPP_STARTUP_FUNCTION(installInjectionRamTestLogSaver)
+Q_COREAPP_STARTUP_FUNCTION(installInjectionRamTestSupport)
