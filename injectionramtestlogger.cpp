@@ -64,10 +64,23 @@ private:
 
     static void saveLog(QPlainTextEdit *output)
     {
-        if (!output || output->property("injectionLogSaveAttempted").toBool())
+        if (!output)
             return;
 
         const QString text = output->toPlainText();
+
+        // Build #672: phase 1 and phase 2 use the same output widget. The phase-1
+        // save sets injectionLogSaveAttempted=true; re-arm it when phase 2 starts
+        // so the final phase-2 journal is written to a second file.
+        if (text.trimmed().startsWith(QStringLiteral("Phase 2 :")))
+        {
+            output->setProperty("injectionLogSaveAttempted", false);
+            return;
+        }
+
+        if (output->property("injectionLogSaveAttempted").toBool())
+            return;
+
         if (!isFinalLog(text))
             return;
 
