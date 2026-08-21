@@ -509,6 +509,15 @@ private:
         QVector<RebuildGaugeCard*> cards;
         for(const G &g:gauges) {
             QObject *src=w->findChild<QObject*>(QString::fromLatin1(g.name));
+            if(!src && QString::fromLatin1(g.name)==QStringLiteral("m_injector_time")) {
+                QWidget *injectorSource=new QWidget(overview);
+                injectorSource->setObjectName(QStringLiteral("m_injector_time"));
+                injectorSource->setProperty("minimum",0.0);
+                injectorSource->setProperty("maximum",20.0);
+                injectorSource->setProperty("value",0.0);
+                injectorSource->hide();
+                src=injectorSource;
+            }
             RebuildGaugeCard *gaugeCard=new RebuildGaugeCard(src,I18n::text(g.titleKey),QString::fromUtf8(g.unit),overview);
             grid->addWidget(gaugeCard,g.row,g.col);
             cards.append(gaugeCard);
