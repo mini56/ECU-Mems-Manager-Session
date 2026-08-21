@@ -47,6 +47,7 @@ private:
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+    MEMSInterface *memsInterface() const { return m_mems; }
 
 public slots:
     void onDataReady();

@@ -14,32 +14,27 @@
 #include <QPaintEvent>
 #include <QMouseEvent>
 #include <QMap>
+#include <QElapsedTimer>
+#include "rosco.h"
 
-/**
- * Mini-graphique dedie a une seule voie, avec son propre titre, sa
- * propre echelle verticale (valeurs reelles, pas normalisees) et l'axe
- * du temps en bas. Utilise en mode "empile" (une fenetre par courbe).
- */
+class QButtonGroup;
+
 class SingleChartWidget : public QWidget
 {
     Q_OBJECT
-
 public:
     explicit SingleChartWidget(const QString &name, const QColor &color, QWidget *parent = 0);
     void setData(const QVector<double> &time, const QVector<double> &values);
-
     const QString &chartName() const { return m_name; }
     const QColor &chartColor() const { return m_color; }
     const QVector<double> &chartTime() const { return m_time; }
     const QVector<double> &chartValues() const { return m_values; }
     bool chartHasCursor() const { return m_hasCursor; }
     int chartCursorX() const { return m_cursorX; }
-
 protected:
-    void paintEvent(QPaintEvent *event);
-    void mouseMoveEvent(QMouseEvent *event);
-    void leaveEvent(QEvent *event);
-
+    void paintEvent(QPaintEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void leaveEvent(QEvent *event) override;
 private:
     QString m_name;
     QColor m_color;
@@ -49,30 +44,21 @@ private:
     int m_cursorX;
 };
 
-/**
- * Widget de trace "superpose" : plusieurs series sur un seul graphique,
- * chacune normalisee sur sa propre echelle (0-100%). Utilise en mode
- * superposition (bouton en haut de l'onglet).
- */
 class ChartWidget : public QWidget
 {
     Q_OBJECT
-
 public:
     explicit ChartWidget(QWidget *parent = 0);
-
     void setData(const QVector<double> &time,
                  const QVector<QVector<double> > &series,
                  const QStringList &names,
                  const QVector<QColor> &colors);
     void setVisible(int index, bool visible);
     void clearData();
-
 protected:
-    void paintEvent(QPaintEvent *event);
-    void mouseMoveEvent(QMouseEvent *event);
-    void leaveEvent(QEvent *event);
-
+    void paintEvent(QPaintEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void leaveEvent(QEvent *event) override;
 private:
     QVector<double> m_time;
     QVector<QVector<double> > m_series;
@@ -83,19 +69,31 @@ private:
     int m_cursorX;
 };
 
-/**
- * Onglet "Analyse" : charge un fichier CSV enregistre par MEMS-Scan et
- * permet d'afficher/masquer chaque colonne de donnees. Deux modes
- * d'affichage : une mini-fenetre par voie empilee (par defaut), ou
- * toutes les voies superposees sur un seul graphique.
- */
 class AnalysisTab : public QWidget
 {
     Q_OBJECT
-
 public:
+    enum LiveSource {
+        FileSource,
+        DiagnosticLiveSource,
+        InjectionLiveSource
+    };
+
     explicit AnalysisTab(QWidget *parent = 0);
     void loadFile(const QString &path);
+
+    bool diagnosticLiveSelected() const { return m_liveSource == DiagnosticLiveSource; }
+    bool injectionLiveSelected() const { return m_liveSource == InjectionLiveSource; }
+    bool fileSourceSelected() const { return m_liveSource == FileSource; }
+    void selectDiagnosticLive(bool notify = true);
+    void selectInjectionLive(bool notify = true);
+    void setInjectionLiveAvailable(bool available, const QString &reason = QString());
+    void appendDiagnosticData(const mems_data *data);
+    void appendInjectionSample(double finalMs, double baseMs, double transientMs,
+                               quint16 baseRaw, quint16 transientRaw, quint8 transientCounter);
+
+signals:
+    void liveSourceRequested(bool injectionMode);
 
 private slots:
     void onLoadFileClicked();
@@ -103,6 +101,8 @@ private slots:
     void onSelectAllClicked();
     void onSelectNoneClicked();
     void onOverlayToggled(bool checked);
+    void onDiagnosticLiveClicked();
+    void onInjectionLiveClicked();
 
 private:
     void parseCsv(const QString &path);
@@ -111,12 +111,20 @@ private:
     void addStackedChart(int index);
     void removeStackedChart(int index);
     void rebuildOverlayChart();
+    void prepareDiagnosticLive();
+    void prepareInjectionLive();
+    void appendLiveRow(const QVector<double> &values);
+    void refreshLiveCharts();
+    void setLiveButtons(bool diagnostic, bool injection);
 
     QLabel *m_fileLabel;
     QPushButton *m_loadButton;
     QPushButton *m_selectAllButton;
     QPushButton *m_selectNoneButton;
     QPushButton *m_overlayButton;
+    QPushButton *m_diagnosticLiveButton;
+    QPushButton *m_injectionLiveButton;
+    QButtonGroup *m_liveButtonGroup;
 
     QScrollArea *m_checkboxScrollArea;
     QWidget *m_checkboxContainer;
@@ -129,6 +137,8 @@ private:
 
     ChartWidget *m_overlayChart;
     bool m_overlayMode;
+    LiveSource m_liveSource;
+    QElapsedTimer m_liveClock;
 
     QVector<double> m_time;
     QVector<QVector<double> > m_columns;
