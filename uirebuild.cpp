@@ -232,22 +232,6 @@ static QFrame *buildHeader(QMainWindow *window, QWidget *legacy)
     QLabel *ver=new QLabel(QStringLiteral("v%1.%2.%3").arg(VER_MAJOR).arg(VER_MINOR).arg(VER_PATCH),header); ver->setStyleSheet(QStringLiteral("color:%1;font-weight:700;").arg(QString::fromLatin1(kOrange2))); brandV->addWidget(brand); brandV->addWidget(ver); h->addLayout(brandV);
     QFrame *sep=new QFrame(header); sep->setFrameShape(QFrame::VLine); sep->setStyleSheet(QStringLiteral("background:%1;max-width:1px;").arg(QString::fromLatin1(kBorder))); h->addWidget(sep);
     ecu->setParent(header); ecu->setStyleSheet(QStringLiteral("color:#dfe4e8;font-weight:700;padding:0 8px;")); h->addWidget(ecu);
-    QLabel *portLabel=new QLabel(header);
-    portLabel->setObjectName(QStringLiteral("uiRebuildPortLabel"));
-    portLabel->setAlignment(Qt::AlignCenter);
-    portLabel->setStyleSheet(QStringLiteral("color:#cbd3d9;font-weight:600;"));
-    const auto refreshPortLabel=[portLabel](){
-        QSettings s(QSettings::IniFormat,QSettings::UserScope,PROJECTNAME);
-        s.beginGroup(QStringLiteral("Settings"));
-        QString port=s.value(QStringLiteral("SerialDevice"),QString()).toString().trimmed();
-        s.endGroup();
-        if(port.isEmpty()) port=QStringLiteral("--");
-        portLabel->setText(I18n::text(7114)+QStringLiteral("\n")+port);
-    };
-    refreshPortLabel();
-    if(OptionsDialog *options=window->findChild<OptionsDialog*>())
-        QObject::connect(options,&QDialog::accepted,portLabel,refreshPortLabel);
-    h->addWidget(portLabel);
     h->addStretch(1);
     QWidget *commBox=new QWidget(header); QHBoxLayout *ch=new QHBoxLayout(commBox); ch->setContentsMargins(0,0,0,0); ch->setSpacing(5); comm->setParent(commBox); comm->setStyleSheet(QStringLiteral("color:#cbd3d9;font-weight:700;")); ch->addWidget(comm); if(good){good->setParent(commBox);ch->addWidget(good);} if(bad){bad->setParent(commBox);ch->addWidget(bad);} h->addWidget(commBox);
     connectButton->setParent(header); disconnectButton->setParent(header); h->addWidget(connectButton); h->addWidget(disconnectButton);
@@ -256,28 +240,46 @@ static QFrame *buildHeader(QMainWindow *window, QWidget *legacy)
 
 static QFrame *buildBottomStatus(QMainWindow *window)
 {
-    QFrame *bar=new QFrame(window->centralWidget()); bar->setObjectName(QStringLiteral("uiRebuildStatus")); bar->setAttribute(Qt::WA_StyledBackground,true);
-    bar->setStyleSheet(QStringLiteral("#uiRebuildStatus{background:#080d12;border-top:1px solid %1;}#uiRebuildStatus QLabel{background:transparent;border-right:1px solid %1;color:#c9d1d7;padding:0 8px;}#uiRebuildStatus QPushButton{margin:3px 5px;padding:2px 10px;}").arg(QString::fromLatin1(kBorder)));
-    QHBoxLayout *h=new QHBoxLayout(bar); h->setContentsMargins(0,0,0,0); h->setSpacing(0);
-    QLabel *file=new QLabel(I18n::text(7115).arg(QStringLiteral("--")),bar);
-    QLabel *loop=new QLabel(I18n::text(7116).arg(QStringLiteral("--")),bar);
-    QLabel *lambda=new QLabel(I18n::text(7119).arg(QStringLiteral("--")),bar);
-    QLabel *system=new QLabel(I18n::text(7121),bar);
-    system->setStyleSheet(QStringLiteral("color:#65db79;background:transparent;border-right:1px solid %1;padding:0 8px;").arg(QString::fromLatin1(kBorder)));
-    QLabel *inject=new QLabel(I18n::text(7122).arg(QStringLiteral("--")),bar);
-    QLabel *air=new QLabel(I18n::text(7123).arg(QStringLiteral("--")),bar);
-    h->addWidget(file,2);h->addWidget(loop,1);h->addWidget(lambda,1);h->addWidget(system,1);h->addWidget(inject,1);h->addWidget(air,1);
-    QTimer *timer=new QTimer(bar);
-    timer->setInterval(400);
-    QObject::connect(timer,&QTimer::timeout,bar,[=](){
-        if(QLineEdit *f=window->findChild<QLineEdit*>(QStringLiteral("m_logFileNameBox"))) file->setText(I18n::text(7115).arg(f->text()));
-        if(QWidget *x=window->findChild<QWidget*>(QStringLiteral("m_closedLoopLed"))) loop->setText(I18n::text(7116).arg(x->property("checked").toBool()?I18n::text(7117):I18n::text(7118)));
-        if(QWidget *x=window->findChild<QWidget*>(QStringLiteral("m_lambda_voltage"))) lambda->setText(I18n::text(7119).arg(x->property("value").toString()));
-        if(QWidget *x=window->findChild<QWidget*>(QStringLiteral("m_engine_error"))) system->setText(x->property("checked").toBool()?I18n::text(7120):I18n::text(7121));
-        if(QWidget *x=window->findChild<QWidget*>(QStringLiteral("m_injector_time"))) inject->setText(I18n::text(7122).arg(x->property("value").toString()));
-        if(QWidget *x=window->findChild<QWidget*>(QStringLiteral("m_airTempGauge"))) air->setText(I18n::text(7123).arg(x->property("value").toString()));
-    });
-    timer->start();
+    QFrame *bar=new QFrame(window->centralWidget());
+    bar->setObjectName(QStringLiteral("uiRebuildStatus"));
+    bar->setAttribute(Qt::WA_StyledBackground,true);
+    bar->setStyleSheet(QStringLiteral("#uiRebuildStatus{background:#080d12;border-top:1px solid %1;}#uiRebuildStatus QLabel{background:transparent;border-right:1px solid %1;color:#c9d1d7;padding:0 10px;}").arg(QString::fromLatin1(kBorder)));
+
+    QHBoxLayout *h=new QHBoxLayout(bar);
+    h->setContentsMargins(0,0,0,0);
+    h->setSpacing(0);
+
+    QString fileName=QStringLiteral("--");
+    if(QLineEdit *f=window->findChild<QLineEdit*>(QStringLiteral("m_logFileNameBox"))){
+        const QString current=f->text().trimmed();
+        if(!current.isEmpty())fileName=current;
+    }
+
+    QSettings settings(QSettings::IniFormat,QSettings::UserScope,PROJECTNAME);
+    settings.beginGroup(QStringLiteral("Settings"));
+    QString portName=settings.value(QStringLiteral("SerialDevice"),QString()).toString().trimmed();
+    settings.endGroup();
+    if(portName.isEmpty())portName=QStringLiteral("--");
+
+    QLabel *file=new QLabel(I18n::text(7115).arg(fileName),bar);
+    file->setObjectName(QStringLiteral("statusFile"));
+    QLabel *mode=new QLabel(I18n::text(7909).arg(I18n::text(7912)),bar);
+    mode->setObjectName(QStringLiteral("statusReadMode"));
+    QLabel *port=new QLabel(QStringLiteral("%1 : %2").arg(I18n::text(7114),portName),bar);
+    port->setObjectName(QStringLiteral("statusPort"));
+    QLabel *firmware=new QLabel(I18n::text(7916).arg(QStringLiteral("--")),bar);
+    firmware->setObjectName(QStringLiteral("statusFirmware"));
+
+    for(QLabel *label:{file,mode,port,firmware}){
+        label->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
+        label->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
+    }
+    mode->setStyleSheet(QStringLiteral("color:#8d99a3;background:transparent;border-right:1px solid %1;padding:0 10px;font-weight:700;").arg(QString::fromLatin1(kBorder)));
+
+    h->addWidget(file,3);
+    h->addWidget(mode,2);
+    h->addWidget(port,1);
+    h->addWidget(firmware,1);
     return bar;
 }
 

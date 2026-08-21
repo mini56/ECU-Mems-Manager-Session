@@ -114,8 +114,8 @@ public:
         QObject::connect(m_tabs,&QTabWidget::currentChanged,m_window,[this](int index){onTabChanged(index);});
 
         updateFirmware(m_window->property("ecuExtendedIdentifier").toString());
-        QTimer *probe=new QTimer(this);probe->setInterval(250);QObject::connect(probe,&QTimer::timeout,this,[this,probe](){if(installStatusBar()){probe->stop();probe->deleteLater();}});probe->start();
-        QTimer::singleShot(20,this,[this](){installStatusBar();});
+        QTimer *probe=new QTimer(this);probe->setInterval(250);QObject::connect(probe,&QTimer::timeout,this,[this,probe](){if(bindStatusBar()){probe->stop();probe->deleteLater();}});probe->start();
+        QTimer::singleShot(20,this,[this](){bindStatusBar();});
     }
 
 private:

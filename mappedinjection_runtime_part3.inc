@@ -12,36 +12,24 @@
         m_previous=target;updateStatusSoon();
     }
 
-    bool installStatusBar()
+    bool bindStatusBar()
     {
-        if(m_statusInstalled)return true;
+        if(m_statusBound)return true;
         QFrame *bar=m_window->findChild<QFrame*>(QStringLiteral("uiRebuildStatus"));if(!bar)return false;
-        QHBoxLayout *h=qobject_cast<QHBoxLayout*>(bar->layout());if(!h)return false;
+        if(!bar->findChild<QLabel*>(QStringLiteral("statusFile"))||
+           !bar->findChild<QLabel*>(QStringLiteral("statusReadMode"))||
+           !bar->findChild<QLabel*>(QStringLiteral("statusPort"))||
+           !bar->findChild<QLabel*>(QStringLiteral("statusFirmware")))return false;
 
-        // The footer is context only: it must never duplicate live measurements
-        // and must never generate an ECU request.
-        for(QTimer *t:bar->findChildren<QTimer*>(QString(),Qt::FindDirectChildrenOnly))t->stop();
-        while(h->count()>0){QLayoutItem *item=h->takeAt(0);if(QWidget *w=item->widget()){w->hide();w->deleteLater();}delete item;}
-
-        QLabel *file=new QLabel(bar);file->setObjectName(QStringLiteral("statusFile"));
-        QLabel *mode=new QLabel(bar);mode->setObjectName(QStringLiteral("statusReadMode"));
-        QLabel *port=new QLabel(bar);port->setObjectName(QStringLiteral("statusPort"));
-        QLabel *firmware=new QLabel(bar);firmware->setObjectName(QStringLiteral("statusFirmware"));
-        for(QLabel *label:{file,mode,port,firmware}){
-            label->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
-            label->setStyleSheet(QStringLiteral("color:#c9d1d7;background:transparent;border-right:1px solid #25313a;padding:0 10px;"));
-        }
-        h->addWidget(file,3);h->addWidget(mode,2);h->addWidget(port,1);h->addWidget(firmware,1);
-
-        // Port is a session context value: show it in the footer, not twice.
-        if(QWidget *topPort=m_window->findChild<QWidget*>(QStringLiteral("uiRebuildPortLabel"))){topPort->hide();topPort->setMaximumWidth(0);}
-
-        m_statusInstalled=true;
-        QTimer *timer=new QTimer(bar);timer->setInterval(500);QObject::connect(timer,&QTimer::timeout,bar,[this](){refreshStatusBar();});timer->start();
-        refreshStatusBar();return true;
+        m_statusBound=true;
+        QTimer *timer=new QTimer(this);timer->setInterval(500);
+        QObject::connect(timer,&QTimer::timeout,this,[this](){refreshStatusBar();});
+        timer->start();
+        refreshStatusBar();
+        return true;
     }
 
-    void updateStatusSoon(){QTimer::singleShot(0,m_window,[this](){if(m_statusInstalled)refreshStatusBar();});}
+    void updateStatusSoon(){QTimer::singleShot(0,m_window,[this](){if(m_statusBound)refreshStatusBar();});}
 
     void refreshStatusBar()
     {
@@ -85,7 +73,7 @@
         mode->setStyleSheet(QStringLiteral("color:%1;background:transparent;border-right:1px solid #25313a;padding:0 10px;font-weight:700;").arg(color));
     }
 
-    MainWindow *m_window=nullptr;MEMSInterface *m_mems=nullptr;QTabWidget *m_tabs=nullptr;AnalysisTab *m_analysis=nullptr;InjectionDashboard *m_dashboard=nullptr;QWidget *m_injectionTab=nullptr,*m_previous=nullptr;QString m_firmware;InjectionRamMap m_map{0,0,0};bool m_supported=false,m_statusInstalled=false;
+    MainWindow *m_window=nullptr;MEMSInterface *m_mems=nullptr;QTabWidget *m_tabs=nullptr;AnalysisTab *m_analysis=nullptr;InjectionDashboard *m_dashboard=nullptr;QWidget *m_injectionTab=nullptr,*m_previous=nullptr;QString m_firmware;InjectionRamMap m_map{0,0,0};bool m_supported=false,m_statusBound=false;
 };
 
 class MappedInjectionInstaller : public QObject
