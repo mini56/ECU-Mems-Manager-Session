@@ -54,7 +54,6 @@ private:
             "AnalysisTab{background:#0b0f14;color:#dce2e7;}"
             "QWidget{color:#dce2e7;}"
             "QLabel{background:transparent;border:0;color:#dce2e7;}"
-            "#analysisTopBar{background:#10161d;border:1px solid #26313b;border-radius:0;}"
             "#analysisRightPanel{background:#0f151b;border:1px solid #26313b;border-radius:0;}"
             "#analysisParametersTitle,#analysisToolsTitle{color:#ff9828;font-weight:700;padding:3px 0;border-bottom:1px solid #2b3540;}"
             "#analysisFileLabel{color:#aeb8bf;font-style:italic;}"
@@ -86,15 +85,8 @@ private:
         }
 
         QWidget *right=tab->findChild<QWidget*>(QStringLiteral("analysisRightPanel"));
-        const int rightWidth=qBound(176,qRound(tab->width()*0.19),292);
+        const int rightWidth=qBound(210,qRound(tab->width()*0.20),300);
         if(right){right->setMinimumWidth(rightWidth);right->setMaximumWidth(rightWidth);}
-        for(const char *name:{"analysisTopSpacer1","analysisTopSpacer2"}){
-            if(QWidget *sp=tab->findChild<QWidget*>(QString::fromLatin1(name))){sp->setMinimumWidth(rightWidth);sp->setMaximumWidth(rightWidth);}
-        }
-
-        QWidget *topBar=tab->findChild<QWidget*>(QStringLiteral("analysisTopBar"));
-        const int topHeight=qBound(72,qRound(82.0*scale),94);
-        if(topBar){topBar->setMinimumHeight(topHeight);topBar->setMaximumHeight(topHeight);}
 
         const qreal base=tab->property("analysisBaseFontPointSize").isValid()?tab->property("analysisBaseFontPointSize").toDouble():9.0;
         QFont f=tab->font();f.setPointSizeF(qMax<qreal>(6.5,base*scale));tab->setFont(f);

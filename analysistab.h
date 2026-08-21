@@ -87,6 +87,7 @@ public:
     bool fileSourceSelected() const { return m_liveSource == FileSource; }
     void selectDiagnosticLive(bool notify = true);
     void selectInjectionLive(bool notify = true);
+    void setDiagnosticLiveAvailable(bool available);
     void setInjectionLiveAvailable(bool available, const QString &reason = QString());
     void appendDiagnosticData(const mems_data *data);
     void appendInjectionSample(double finalMs, double baseMs, double transientMs,

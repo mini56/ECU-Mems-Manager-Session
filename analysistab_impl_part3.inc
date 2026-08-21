@@ -4,6 +4,10 @@
 
     QWidget *rightPanel=new QWidget(this);rightPanel->setObjectName(QStringLiteral("analysisRightPanel"));rightPanel->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Expanding);
     QVBoxLayout *right=new QVBoxLayout(rightPanel);right->setContentsMargins(7,7,7,7);right->setSpacing(5);
+    right->addWidget(m_loadButton);
+    right->addWidget(m_fileLabel);
+    right->addWidget(m_diagnosticLiveButton);
+    right->addWidget(m_injectionLiveButton);
     QLabel *channels=new QLabel(I18n::text(6447),rightPanel);channels->setObjectName(QStringLiteral("analysisParametersTitle"));right->addWidget(channels);
     m_checkboxScrollArea=new QScrollArea(rightPanel);m_checkboxScrollArea->setWidgetResizable(true);m_checkboxContainer=new QWidget();m_checkboxLayout=new QVBoxLayout(m_checkboxContainer);m_checkboxLayout->setContentsMargins(4,4,4,4);m_checkboxLayout->addStretch();m_checkboxScrollArea->setWidget(m_checkboxContainer);right->addWidget(m_checkboxScrollArea,1);
     QLabel *tools=new QLabel(I18n::text(7100),rightPanel);tools->setObjectName(QStringLiteral("analysisToolsTitle"));right->addWidget(tools);
@@ -17,6 +21,7 @@
     connect(m_diagnosticLiveButton,&QPushButton::clicked,this,&AnalysisTab::onDiagnosticLiveClicked);
     connect(m_injectionLiveButton,&QPushButton::clicked,this,&AnalysisTab::onInjectionLiveClicked);
 
+    setDiagnosticLiveAvailable(false);
     setInjectionLiveAvailable(false,I18n::text(7922));
 }
 
@@ -27,16 +32,27 @@ void AnalysisTab::setLiveButtons(bool diagnostic,bool injection)
     m_liveButtonGroup->setExclusive(exclusive);
 }
 
+void AnalysisTab::setDiagnosticLiveAvailable(bool available)
+{
+    m_diagnosticLiveButton->setEnabled(available);
+    if(!available && diagnosticLiveSelected()) setLiveButtons(false,false);
+    else if(available && diagnosticLiveSelected()) setLiveButtons(true,false);
+}
+
 void AnalysisTab::setInjectionLiveAvailable(bool available,const QString &reason)
 {
     Q_UNUSED(reason);
     m_injectionLiveButton->setEnabled(available);
     m_injectionLiveButton->setToolTip(QString());
-    if(!available && injectionLiveSelected()) selectDiagnosticLive(true);
+    if(!available && injectionLiveSelected()){
+        if(m_diagnosticLiveButton->isEnabled()) selectDiagnosticLive(true);
+        else setLiveButtons(false,false);
+    }
 }
 
 void AnalysisTab::selectDiagnosticLive(bool notify)
 {
+    if(!m_diagnosticLiveButton->isEnabled()) return;
     if(m_liveSource!=DiagnosticLiveSource) prepareDiagnosticLive();
     m_liveSource=DiagnosticLiveSource;setProperty("analysisSourceFile",QString());setLiveButtons(true,false);
     m_fileLabel->setText(I18n::text(7918));

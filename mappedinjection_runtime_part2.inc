@@ -88,9 +88,10 @@ public:
     {
         if(!m_window||!m_mems||!m_tabs||!m_analysis||!m_dashboard)return;
         m_window->setProperty("ecuReadMode",QStringLiteral("disconnected"));m_dashboard->setReadMode(QStringLiteral("disconnected"));
+        m_analysis->setDiagnosticLiveAvailable(false);
 
-        QObject::connect(m_mems,&MEMSInterface::connected,m_window,[this](){updateFirmware(QString());m_window->setProperty("ecuReadMode",QStringLiteral("diagnostic"));m_dashboard->setReadMode(QStringLiteral("diagnostic"));updateStatusSoon();});
-        QObject::connect(m_mems,&MEMSInterface::disconnected,m_window,[this](){updateFirmware(QString());m_window->setProperty("ecuReadMode",QStringLiteral("disconnected"));m_dashboard->setReadMode(QStringLiteral("disconnected"));updateStatusSoon();});
+        QObject::connect(m_mems,&MEMSInterface::connected,m_window,[this](){m_analysis->setDiagnosticLiveAvailable(true);updateFirmware(QString());m_window->setProperty("ecuReadMode",QStringLiteral("diagnostic"));m_dashboard->setReadMode(QStringLiteral("diagnostic"));updateStatusSoon();});
+        QObject::connect(m_mems,&MEMSInterface::disconnected,m_window,[this](){m_analysis->setDiagnosticLiveAvailable(false);updateFirmware(QString());m_window->setProperty("ecuReadMode",QStringLiteral("disconnected"));m_dashboard->setReadMode(QStringLiteral("disconnected"));updateStatusSoon();});
         QObject::connect(m_mems,&MEMSInterface::readModeChanged,m_window,[this](const QString &mode){m_window->setProperty("ecuReadMode",mode);m_dashboard->setReadMode(mode);updateStatusSoon();});
         QObject::connect(m_mems,&MEMSInterface::dataReady,m_window,[this](){m_analysis->appendDiagnosticData(m_mems->getData());});
         QObject::connect(m_mems,&MEMSInterface::injectionLiveSample,m_window,[this](double finalMs,double baseMs,double transientMs,quint16 baseRaw,quint16 transientRaw,quint8 counter){
