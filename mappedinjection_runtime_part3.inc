@@ -46,8 +46,9 @@
         if(fileName.isEmpty())fileName=QStringLiteral("--");
         file->setText(I18n::text(7115).arg(fileName));
 
-        QSettings settings(QSettings::IniFormat,QSettings::UserScope,PROJECTNAME);
-        settings.beginGroup(QStringLiteral("Settings"));QString portName=settings.value(QStringLiteral("SerialDevice"),QString()).toString().trimmed();settings.endGroup();
+        QString portName=m_mems?m_mems->getSerialDevice().trimmed():QString();
+        const QString windowsPrefix=QStringLiteral("\\\\.\\");
+        if(portName.startsWith(windowsPrefix,Qt::CaseInsensitive))portName.remove(0,windowsPrefix.size());
         if(portName.isEmpty())portName=QStringLiteral("--");
         port->setText(QStringLiteral("%1 : %2").arg(I18n::text(7114),portName));
         firmware->setText(I18n::text(7916).arg(m_firmware.isEmpty()?QStringLiteral("--"):m_firmware));
