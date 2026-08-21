@@ -64,6 +64,9 @@ public slots:
     void on_m_Fan1_TestButton_clicked();
     void on_m_Fan2_TestButton_clicked();
     void on_m_Fan3_TestButton_clicked();
+    void on_m_Fan1_OnButton_clicked();
+    void on_m_Fan2_OnButton_clicked();
+    void on_m_Fan3_OnButton_clicked();
     void on_m_Fan1_OffButton_clicked();
     void on_m_Fan2_OffButton_clicked();
     void on_m_Fan3_OffButton_clicked();
