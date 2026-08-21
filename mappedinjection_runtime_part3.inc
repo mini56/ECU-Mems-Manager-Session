@@ -14,45 +14,75 @@
 
     bool installStatusBar()
     {
-        if(m_statusInstalled)return true;QFrame *bar=m_window->findChild<QFrame*>(QStringLiteral("uiRebuildStatus"));if(!bar)return false;QHBoxLayout *h=qobject_cast<QHBoxLayout*>(bar->layout());if(!h||h->count()<6)return false;
-        const char *names[]={"statusFile","statusLoop","statusLambda","statusSystem","statusDwell","statusAir"};
-        for(int i=0;i<6;++i)if(QWidget *w=h->itemAt(i)->widget())w->setObjectName(QString::fromLatin1(names[i]));
+        if(m_statusInstalled)return true;
+        QFrame *bar=m_window->findChild<QFrame*>(QStringLiteral("uiRebuildStatus"));if(!bar)return false;
+        QHBoxLayout *h=qobject_cast<QHBoxLayout*>(bar->layout());if(!h)return false;
+
+        // The footer is context only: it must never duplicate live measurements
+        // and must never generate an ECU request.
         for(QTimer *t:bar->findChildren<QTimer*>(QString(),Qt::FindDirectChildrenOnly))t->stop();
-        QLabel *mode=new QLabel(bar);mode->setObjectName(QStringLiteral("statusReadMode"));h->insertWidget(3,mode,1);
-        m_statusInstalled=true;QTimer *timer=new QTimer(bar);timer->setInterval(300);QObject::connect(timer,&QTimer::timeout,bar,[this](){refreshStatusBar();});timer->start();refreshStatusBar();return true;
+        while(h->count()>0){QLayoutItem *item=h->takeAt(0);if(QWidget *w=item->widget()){w->hide();w->deleteLater();}delete item;}
+
+        QLabel *file=new QLabel(bar);file->setObjectName(QStringLiteral("statusFile"));
+        QLabel *mode=new QLabel(bar);mode->setObjectName(QStringLiteral("statusReadMode"));
+        QLabel *port=new QLabel(bar);port->setObjectName(QStringLiteral("statusPort"));
+        QLabel *firmware=new QLabel(bar);firmware->setObjectName(QStringLiteral("statusFirmware"));
+        for(QLabel *label:{file,mode,port,firmware}){
+            label->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
+            label->setStyleSheet(QStringLiteral("color:#c9d1d7;background:transparent;border-right:1px solid #25313a;padding:0 10px;"));
+        }
+        h->addWidget(file,3);h->addWidget(mode,2);h->addWidget(port,1);h->addWidget(firmware,1);
+
+        // Port is a session context value: show it in the footer, not twice.
+        if(QWidget *topPort=m_window->findChild<QWidget*>(QStringLiteral("uiRebuildPortLabel"))){topPort->hide();topPort->setMaximumWidth(0);}
+
+        m_statusInstalled=true;
+        QTimer *timer=new QTimer(bar);timer->setInterval(500);QObject::connect(timer,&QTimer::timeout,bar,[this](){refreshStatusBar();});timer->start();
+        refreshStatusBar();return true;
     }
 
     void updateStatusSoon(){QTimer::singleShot(0,m_window,[this](){if(m_statusInstalled)refreshStatusBar();});}
 
     void refreshStatusBar()
     {
-        QLabel *file=m_window->findChild<QLabel*>(QStringLiteral("statusFile"));QLabel *loop=m_window->findChild<QLabel*>(QStringLiteral("statusLoop"));QLabel *lambda=m_window->findChild<QLabel*>(QStringLiteral("statusLambda"));QLabel *system=m_window->findChild<QLabel*>(QStringLiteral("statusSystem"));QLabel *dwell=m_window->findChild<QLabel*>(QStringLiteral("statusDwell"));QLabel *air=m_window->findChild<QLabel*>(QStringLiteral("statusAir"));QLabel *mode=m_window->findChild<QLabel*>(QStringLiteral("statusReadMode"));if(!mode)return;
-        if(file)if(QLineEdit *f=m_window->findChild<QLineEdit*>(QStringLiteral("m_logFileNameBox")))file->setText(I18n::text(7115).arg(f->text()));
-        const QString state=m_window->property("ecuReadMode").toString();QString modeName=I18n::text(7212);
-        if(state==QStringLiteral("diagnostic"))modeName=I18n::text(7210);else if(state==QStringLiteral("injection"))modeName=I18n::text(7211);else if(state==QStringLiteral("transition"))modeName=I18n::text(7226);else if(state==QStringLiteral("rom"))modeName=I18n::text(7227);else if(state==QStringLiteral("mode3"))modeName=I18n::text(7228);
-        mode->setText(I18n::text(7209).arg(modeName));
+        QLabel *file=m_window->findChild<QLabel*>(QStringLiteral("statusFile"));
+        QLabel *mode=m_window->findChild<QLabel*>(QStringLiteral("statusReadMode"));
+        QLabel *port=m_window->findChild<QLabel*>(QStringLiteral("statusPort"));
+        QLabel *firmware=m_window->findChild<QLabel*>(QStringLiteral("statusFirmware"));
+        if(!file||!mode||!port||!firmware)return;
+
+        QString fileName;
+        const bool analysisFile=(m_tabs->currentWidget()==m_analysis)&&m_analysis->fileSourceSelected();
+        if(analysisFile)fileName=m_analysis->property("analysisSourceFile").toString().trimmed();
+        if(fileName.isEmpty())if(QLineEdit *f=m_window->findChild<QLineEdit*>(QStringLiteral("m_logFileNameBox")))fileName=f->text().trimmed();
+        if(fileName.isEmpty())fileName=QStringLiteral("--");
+        file->setText(I18n::text(7115).arg(fileName));
+
+        QSettings settings(QSettings::IniFormat,QSettings::UserScope,PROJECTNAME);
+        settings.beginGroup(QStringLiteral("Settings"));QString portName=settings.value(QStringLiteral("SerialDevice"),QString()).toString().trimmed();settings.endGroup();
+        if(portName.isEmpty())portName=QStringLiteral("--");
+        port->setText(QStringLiteral("%1 : %2").arg(I18n::text(7114),portName));
+        firmware->setText(I18n::text(7916).arg(m_firmware.isEmpty()?QStringLiteral("--"):m_firmware));
+
+        const QString state=m_window->property("ecuReadMode").toString();
+        const bool fileMode=analysisFile&&!m_analysis->property("analysisSourceFile").toString().trimmed().isEmpty();
+        QString modeName=I18n::text(7912);
+        if(fileMode)modeName=I18n::text(7933);
+        else if(state==QStringLiteral("diagnostic"))modeName=I18n::text(7910);
+        else if(state==QStringLiteral("injection"))modeName=I18n::text(7911);
+        else if(state==QStringLiteral("transition"))modeName=I18n::text(7926);
+        else if(state==QStringLiteral("rom"))modeName=I18n::text(7927);
+        else if(state==QStringLiteral("mode3"))modeName=I18n::text(7928);
+        mode->setText(I18n::text(7909).arg(modeName));
+
         const bool expectedInjection=(m_tabs->currentWidget()==m_injectionTab)||(m_tabs->currentWidget()==m_analysis&&m_analysis->injectionLiveSelected());
-        const bool mismatch=(state==QStringLiteral("injection")&&!expectedInjection)||(state==QStringLiteral("diagnostic")&&expectedInjection);
-        const QString color=state==QStringLiteral("transition")?QStringLiteral("#ff9828"):(mismatch?QStringLiteral("#ff5b55"):QStringLiteral("#65db79"));mode->setStyleSheet(QStringLiteral("color:%1;background:transparent;border-right:1px solid #25313a;padding:0 8px;font-weight:700;").arg(color));
-        if(state==QStringLiteral("disconnected")){
-            if(loop)loop->setText(I18n::text(7116).arg(QStringLiteral("--")));
-            if(lambda)lambda->setText(I18n::text(7119).arg(QStringLiteral("--")));
-            if(system)system->setText(I18n::text(7212));
-            if(dwell)dwell->setText(I18n::text(7122).arg(QStringLiteral("--")));
-            if(air)air->setText(I18n::text(7123).arg(QStringLiteral("--")));
-        } else if(state==QStringLiteral("injection")||state==QStringLiteral("transition")){
-            if(loop)loop->setText(I18n::text(7116).arg(I18n::text(7211)));
-            if(lambda)lambda->setText(I18n::text(7229));
-            if(system)system->setText(I18n::text(7230));
-            if(dwell)dwell->setText(I18n::text(7231).arg(m_window->property("lastInjectionMs").isValid()?QString::number(m_window->property("lastInjectionMs").toDouble(),'f',2):QStringLiteral("--")));
-            if(air)air->setText(I18n::text(7232).arg(m_firmware.isEmpty()?QStringLiteral("--"):m_firmware));
-        } else {
-            if(loop)if(QWidget *x=m_window->findChild<QWidget*>(QStringLiteral("m_closedLoopLed")))loop->setText(I18n::text(7116).arg(x->property("checked").toBool()?I18n::text(7117):I18n::text(7118)));
-            if(lambda)if(QWidget *x=m_window->findChild<QWidget*>(QStringLiteral("m_lambda_voltage")))lambda->setText(I18n::text(7119).arg(x->property("value").toString()));
-            if(system)if(QWidget *x=m_window->findChild<QWidget*>(QStringLiteral("m_engine_error")))system->setText(x->property("checked").toBool()?I18n::text(7120):I18n::text(7121));
-            if(dwell)if(QWidget *x=m_window->findChild<QWidget*>(QStringLiteral("m_injector_time")))dwell->setText(I18n::text(7122).arg(x->property("value").toString()));
-            if(air)if(QWidget *x=m_window->findChild<QWidget*>(QStringLiteral("m_airTempGauge")))air->setText(I18n::text(7123).arg(x->property("value").toString()));
-        }
+        const bool mismatch=!fileMode&&((state==QStringLiteral("injection")&&!expectedInjection)||(state==QStringLiteral("diagnostic")&&expectedInjection));
+        QString color=QStringLiteral("#c9d1d7");
+        if(state==QStringLiteral("transition"))color=QStringLiteral("#ff9828");
+        else if(mismatch)color=QStringLiteral("#ff5b55");
+        else if(fileMode||state==QStringLiteral("diagnostic")||state==QStringLiteral("injection")||state==QStringLiteral("rom")||state==QStringLiteral("mode3"))color=QStringLiteral("#65db79");
+        else if(state==QStringLiteral("disconnected")||state.isEmpty())color=QStringLiteral("#8d99a3");
+        mode->setStyleSheet(QStringLiteral("color:%1;background:transparent;border-right:1px solid #25313a;padding:0 10px;font-weight:700;").arg(color));
     }
 
     MainWindow *m_window=nullptr;MEMSInterface *m_mems=nullptr;QTabWidget *m_tabs=nullptr;AnalysisTab *m_analysis=nullptr;InjectionDashboard *m_dashboard=nullptr;QWidget *m_injectionTab=nullptr,*m_previous=nullptr;QString m_firmware;InjectionRamMap m_map{0,0,0};bool m_supported=false,m_statusInstalled=false;
@@ -70,7 +100,7 @@ protected:
         QTabWidget *tabs=window->findChild<QTabWidget*>(QStringLiteral("Tab_main"));AnalysisTab *analysis=window->findChild<AnalysisTab*>();if(!tabs||!analysis)return QObject::eventFilter(watched,event);
         window->setProperty("mappedInjectionUiInstalled",true);
         QTimer::singleShot(0,window,[window,tabs,analysis](){
-            InjectionDashboard *dashboard=new InjectionDashboard(tabs);tabs->insertTab(1,dashboard,I18n::text(7200));
+            InjectionDashboard *dashboard=new InjectionDashboard(tabs);tabs->insertTab(1,dashboard,I18n::text(7900));
             new InjectionModeController(window,window->memsInterface(),tabs,analysis,dashboard,dashboard);
         });
         return QObject::eventFilter(watched,event);

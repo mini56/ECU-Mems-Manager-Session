@@ -17,7 +17,7 @@
     connect(m_diagnosticLiveButton,&QPushButton::clicked,this,&AnalysisTab::onDiagnosticLiveClicked);
     connect(m_injectionLiveButton,&QPushButton::clicked,this,&AnalysisTab::onInjectionLiveClicked);
 
-    setInjectionLiveAvailable(false,I18n::text(7222));
+    setInjectionLiveAvailable(false,I18n::text(7922));
 }
 
 void AnalysisTab::setLiveButtons(bool diagnostic,bool injection)
@@ -29,16 +29,17 @@ void AnalysisTab::setLiveButtons(bool diagnostic,bool injection)
 
 void AnalysisTab::setInjectionLiveAvailable(bool available,const QString &reason)
 {
+    Q_UNUSED(reason);
     m_injectionLiveButton->setEnabled(available);
-    m_injectionLiveButton->setToolTip(available?QString():reason);
+    m_injectionLiveButton->setToolTip(QString());
     if(!available && injectionLiveSelected()) selectDiagnosticLive(true);
 }
 
 void AnalysisTab::selectDiagnosticLive(bool notify)
 {
     if(m_liveSource!=DiagnosticLiveSource) prepareDiagnosticLive();
-    m_liveSource=DiagnosticLiveSource;setLiveButtons(true,false);
-    m_fileLabel->setText(I18n::text(7218));
+    m_liveSource=DiagnosticLiveSource;setProperty("analysisSourceFile",QString());setLiveButtons(true,false);
+    m_fileLabel->setText(I18n::text(7918));
     if(notify) emit liveSourceRequested(false);
 }
 
@@ -46,8 +47,8 @@ void AnalysisTab::selectInjectionLive(bool notify)
 {
     if(!m_injectionLiveButton->isEnabled()) return;
     if(m_liveSource!=InjectionLiveSource) prepareInjectionLive();
-    m_liveSource=InjectionLiveSource;setLiveButtons(false,true);
-    m_fileLabel->setText(I18n::text(7219));
+    m_liveSource=InjectionLiveSource;setProperty("analysisSourceFile",QString());setLiveButtons(false,true);
+    m_fileLabel->setText(I18n::text(7919));
     if(notify) emit liveSourceRequested(true);
 }
 
@@ -65,7 +66,7 @@ void AnalysisTab::prepareDiagnosticLive()
 void AnalysisTab::prepareInjectionLive()
 {
     m_time.clear();m_columns.clear();
-    m_columnNames=QStringList()<<I18n::text(7201)<<I18n::text(7202)<<I18n::text(7203)<<I18n::text(7204)<<I18n::text(7220)<<I18n::text(7221);
+    m_columnNames=QStringList()<<I18n::text(7901)<<I18n::text(7902)<<I18n::text(7903)<<I18n::text(7904)<<I18n::text(7920)<<I18n::text(7921);
     m_columns.resize(m_columnNames.size());m_liveClock.restart();rebuildCheckboxes();
 }
 
@@ -123,7 +124,7 @@ void AnalysisTab::parseCsv(const QString &path)
         m_time.append(sec);for(int c=0;c<columnCount;++c)m_columns[c].append(c+1<fields.size()?fields[c+1].trimmed().toDouble():0.0);++lines;
     }
     file.close();if(!lines){QMessageBox::warning(this,I18n::text(6456),I18n::text(6457));return;}
-    m_liveSource=FileSource;setLiveButtons(false,false);emit liveSourceRequested(false);
+    m_liveSource=FileSource;setProperty("analysisSourceFile",QFileInfo(path).fileName());setLiveButtons(false,false);emit liveSourceRequested(false);
     m_fileLabel->setText(QFileInfo(path).fileName()+QString(" (%1 points)").arg(lines));m_overlayChart->setData(m_time,m_columns,m_columnNames,m_colors);rebuildCheckboxes();
 }
 

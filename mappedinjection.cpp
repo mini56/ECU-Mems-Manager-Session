@@ -20,6 +20,7 @@
 #include <QPainterPath>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QSettings>
 #include <QTabWidget>
 #include <QThread>
 #include <QTimer>

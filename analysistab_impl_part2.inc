@@ -104,6 +104,7 @@ AnalysisTab::AnalysisTab(QWidget *parent)
     : QWidget(parent), m_overlayMode(false), m_liveSource(FileSource)
 {
     setObjectName(QStringLiteral("analysisTab"));
+    setProperty("analysisSourceFile",QString());
     m_colors << QColor("#ff7a00") << QColor("#4fc3f7") << QColor("#66bb6a")
              << QColor("#ffca28") << QColor("#ba68c8") << QColor("#26c6da")
              << QColor("#ef5350") << QColor("#9ccc65") << QColor("#ec407a")
@@ -117,6 +118,8 @@ AnalysisTab::AnalysisTab(QWidget *parent)
     QWidget *spacer1=new QWidget(topBar);spacer1->setObjectName(QStringLiteral("analysisTopSpacer1"));
     QWidget *spacer2=new QWidget(topBar);spacer2->setObjectName(QStringLiteral("analysisTopSpacer2"));
     spacer1->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Preferred);spacer2->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Preferred);
+    spacer1->setAttribute(Qt::WA_TransparentForMouseEvents,true);spacer2->setAttribute(Qt::WA_TransparentForMouseEvents,true);
+    spacer1->setStyleSheet(QStringLiteral("background:transparent;border:0;"));spacer2->setStyleSheet(QStringLiteral("background:transparent;border:0;"));
 
     // Keep the four historical buttons created first: some older visual patches
     // still locate them by creation order.
@@ -126,12 +129,12 @@ AnalysisTab::AnalysisTab(QWidget *parent)
     m_overlayButton=new QPushButton(I18n::text(6446),this);m_overlayButton->setObjectName(QStringLiteral("analysisOverlayButton"));m_overlayButton->setCheckable(true);
     m_fileLabel=new QLabel(I18n::text(6443),topBar);m_fileLabel->setObjectName(QStringLiteral("analysisFileLabel"));m_fileLabel->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
 
-    m_diagnosticLiveButton=new QPushButton(I18n::text(7207),topBar);m_diagnosticLiveButton->setObjectName(QStringLiteral("analysisDiagnosticLiveButton"));m_diagnosticLiveButton->setCheckable(true);
-    m_injectionLiveButton=new QPushButton(I18n::text(7208),topBar);m_injectionLiveButton->setObjectName(QStringLiteral("analysisInjectionLiveButton"));m_injectionLiveButton->setCheckable(true);
+    m_diagnosticLiveButton=new QPushButton(I18n::text(7907),topBar);m_diagnosticLiveButton->setObjectName(QStringLiteral("analysisDiagnosticLiveButton"));m_diagnosticLiveButton->setCheckable(true);m_diagnosticLiveButton->setMinimumWidth(190);
+    m_injectionLiveButton=new QPushButton(I18n::text(7908),topBar);m_injectionLiveButton->setObjectName(QStringLiteral("analysisInjectionLiveButton"));m_injectionLiveButton->setCheckable(true);m_injectionLiveButton->setMinimumWidth(190);
     m_liveButtonGroup=new QButtonGroup(this);m_liveButtonGroup->setExclusive(true);m_liveButtonGroup->addButton(m_diagnosticLiveButton);m_liveButtonGroup->addButton(m_injectionLiveButton);
 
     top->addWidget(spacer1,0,0);top->addWidget(m_loadButton,0,1);top->addWidget(m_fileLabel,0,2,1,2);
-    top->addWidget(spacer2,1,0);top->addWidget(m_diagnosticLiveButton,1,1);top->addWidget(m_injectionLiveButton,1,2);top->setColumnStretch(3,1);
+    top->addWidget(spacer2,1,0);top->addWidget(m_diagnosticLiveButton,1,1);top->addWidget(m_injectionLiveButton,1,2);top->setColumnStretch(1,0);top->setColumnStretch(2,0);top->setColumnStretch(3,1);
     root->addWidget(topBar);
 
     QHBoxLayout *mainRow=new QHBoxLayout();mainRow->setContentsMargins(0,0,0,0);mainRow->setSpacing(6);root->addLayout(mainRow,1);

@@ -51,7 +51,7 @@ protected:
     void paintEvent(QPaintEvent*) override
     {
         QPainter p(this);p.setRenderHint(QPainter::Antialiasing,true);p.fillRect(rect(),QColor("#0c1217"));
-        QFont f=p.font();f.setBold(true);f.setPointSize(9);p.setFont(f);p.setPen(QColor("#edf2f4"));p.drawText(QRect(12,6,width()-24,20),Qt::AlignLeft|Qt::AlignVCenter,I18n::text(7205));
+        QFont f=p.font();f.setBold(true);f.setPointSize(9);p.setFont(f);p.setPen(QColor("#edf2f4"));p.drawText(QRect(12,6,width()-24,20),Qt::AlignLeft|Qt::AlignVCenter,I18n::text(7905));
         QRect plot(48,34,qMax(1,width()-62),qMax(1,height()-58));p.setPen(QPen(QColor("#26313b"),1));p.setBrush(QColor("#090e13"));p.drawRect(plot);
         for(int i=0;i<=4;++i){int y=plot.top()+plot.height()*i/4;p.setPen(QColor("#233047"));p.drawLine(plot.left(),y,plot.right(),y);}
         for(int i=0;i<=6;++i){int x=plot.left()+plot.width()*i/6;p.drawLine(x,plot.top(),x,plot.bottom());}
@@ -77,17 +77,17 @@ public:
         QVBoxLayout *root=new QVBoxLayout(this);root->setContentsMargins(8,6,8,6);root->setSpacing(6);
         QFrame *head=new QFrame(this);head->setObjectName(QStringLiteral("injectionHeading"));head->setStyleSheet(QStringLiteral("#injectionHeading{background:#10161c;border:1px solid #29343e;border-radius:4px;}"));
         QVBoxLayout *hv=new QVBoxLayout(head);hv->setContentsMargins(12,5,12,5);hv->setSpacing(0);
-        QLabel *title=new QLabel(I18n::text(7200).toUpper(),head);QFont tf=title->font();tf.setBold(true);tf.setPointSizeF(9.5);title->setFont(tf);title->setStyleSheet(QStringLiteral("color:#ff9828;"));hv->addWidget(title);
-        m_status=new QLabel(I18n::text(7222),head);m_status->setStyleSheet(QStringLiteral("color:#89959e;"));hv->addWidget(m_status);root->addWidget(head);
+        QLabel *title=new QLabel(I18n::text(7900).toUpper(),head);QFont tf=title->font();tf.setBold(true);tf.setPointSizeF(9.5);title->setFont(tf);title->setStyleSheet(QStringLiteral("color:#ff9828;"));hv->addWidget(title);
+        m_status=new QLabel(I18n::text(7922),head);m_status->setStyleSheet(QStringLiteral("color:#89959e;"));hv->addWidget(m_status);root->addWidget(head);
 
         QGridLayout *grid=new QGridLayout;grid->setContentsMargins(0,0,0,0);grid->setSpacing(6);for(int c=0;c<4;++c)grid->setColumnStretch(c,1);
-        m_final=new InjectionGaugeCard(I18n::text(7201),QStringLiteral("ms"),0,20,this);
-        m_base=new InjectionGaugeCard(I18n::text(7202),QStringLiteral("ms"),0,20,this);
-        m_transient=new InjectionGaugeCard(I18n::text(7203),QStringLiteral("ms"),0,5,this);
-        m_counter=new InjectionGaugeCard(I18n::text(7204),QString(),0,255,this);
+        m_final=new InjectionGaugeCard(I18n::text(7901),QStringLiteral("ms"),0,20,this);
+        m_base=new InjectionGaugeCard(I18n::text(7902),QStringLiteral("ms"),0,20,this);
+        m_transient=new InjectionGaugeCard(I18n::text(7903),QStringLiteral("ms"),0,5,this);
+        m_counter=new InjectionGaugeCard(I18n::text(7904),QString(),0,255,this);
         grid->addWidget(m_final,0,0);grid->addWidget(m_base,0,1);grid->addWidget(m_transient,0,2);grid->addWidget(m_counter,0,3);root->addLayout(grid,1);
 
         QHBoxLayout *bottom=new QHBoxLayout;bottom->setContentsMargins(0,0,0,0);bottom->setSpacing(6);
         m_history=new InjectionHistoryWidget(this);bottom->addWidget(m_history,3);
         QFrame *raw=new QFrame(this);raw->setObjectName(QStringLiteral("injectionRawPanel"));raw->setStyleSheet(QStringLiteral("#injectionRawPanel{background:#0c1217;border:1px solid #29343e;border-radius:4px;}"));QVBoxLayout *rv=new QVBoxLayout(raw);rv->setContentsMargins(10,8,10,8);rv->setSpacing(4);
-        QLabel *rt=new QLabel(I18n::text(7206).toUpper(),raw);QFont rtf=rt->font();rtf.setBold(true);rt->setFont(rtf);rt->setStyleSheet(QStringLiteral("color:#ff9828;"));rv->addWidget(rt);
+        QLabel *rt=new QLabel(I18n::text(7906).toUpper(),raw);QFont rtf=rt->font();rtf.setBold(true);rt->setFont(rtf);rt->setStyleSheet(QStringLiteral("color:#ff9828;"));rv->addWidget(rt);
