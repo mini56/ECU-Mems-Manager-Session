@@ -36,7 +36,7 @@ void AnalysisTab::onSelectNoneClicked(){for(QCheckBox *cb:m_checkboxes)cb->setCh
 
 void AnalysisTab::onOverlayToggled(bool checked)
 {
-    m_overlayMode=checked;m_stackScrollArea->setVisible(!checked);m_overlayChart->setVisible(checked);
+    m_overlayMode=checked;m_stackScrollArea->setVisible(!checked);m_overlayChart->QWidget::setVisible(checked);
     m_overlayButton->setText(checked?I18n::text(6461):I18n::text(6462));
     if(checked)rebuildOverlayChart();else updateChartVisibility();
 }
