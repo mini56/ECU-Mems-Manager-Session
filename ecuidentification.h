@@ -1,0 +1,77 @@
+#ifndef ECUIDENTIFICATION_H
+#define ECUIDENTIFICATION_H
+
+#include <QByteArray>
+#include <QHash>
+#include <QRegularExpression>
+#include <QString>
+
+namespace EcuIdentification
+{
+inline QString referenceForExtendedIdentifier(const QString &identifier)
+{
+    static const QHash<QString, QString> refs = {
+        {QStringLiteral("AANMP000"), QString::fromUtf8("MNE10089 (non confirmé)")},
+        {QStringLiteral("AANMP001"), QStringLiteral("MNE101040")},
+        {QStringLiteral("AANMP002"), QStringLiteral("MNE101150")},
+        {QStringLiteral("ABEMR002"), QStringLiteral("MNE10027")},
+        {QStringLiteral("ABNMP000"), QStringLiteral("MNE10092")},
+        {QStringLiteral("ABNMP002"), QStringLiteral("MNE101070")},
+        {QStringLiteral("ABNMP003"), QStringLiteral("MNE101170")},
+        {QStringLiteral("ABNMP005"), QString::fromUtf8("MNE101350 (non confirmé)")},
+        {QStringLiteral("ABNMP006"), QStringLiteral("MNE101351")},
+        {QStringLiteral("ACNMP005"), QStringLiteral("MNE101361")},
+        {QStringLiteral("CNSMR000"), QStringLiteral("MKC10027 / MNE10027")},
+        {QStringLiteral("CS6MB001"), QStringLiteral("MKC10117 / MKC101550")},
+        {QStringLiteral("CS6MR004"), QStringLiteral("MKC101600 / MKC101960")},
+        {QStringLiteral("KBACP000"), QStringLiteral("MKC101830")},
+        {QStringLiteral("KBE6R003"), QStringLiteral("MKC10027")},
+        {QStringLiteral("KBHBV001"), QStringLiteral("MKC104020")},
+        {QStringLiteral("KBHBV002"), QStringLiteral("MKC104022")},
+        {QStringLiteral("KBP8P004"), QStringLiteral("MKC101470")},
+        {QStringLiteral("KBP8P005"), QStringLiteral("MKC101610")},
+        {QStringLiteral("KCE6P000"), QStringLiteral("MNE10073")},
+        {QStringLiteral("KCE6P002"), QStringLiteral("MNE101080")},
+        {QStringLiteral("KDE6P002"), QStringLiteral("MNE10072")},
+        {QStringLiteral("KDE6P004"), QStringLiteral("MNE101140")},
+        {QStringLiteral("KFACV000"), QStringLiteral("MKC103930")},
+        {QStringLiteral("KFACV001"), QStringLiteral("MKC104152")},
+        {QStringLiteral("KFHBV004"), QStringLiteral("MKC104322")},
+        {QStringLiteral("KFHHV002"), QStringLiteral("MKC103370")},
+        {QStringLiteral("KLH3V005"), QStringLiteral("MKC103730")},
+        {QStringLiteral("KLH3V006"), QStringLiteral("MKC104111 / MKC104112")},
+        {QStringLiteral("KLH4V009"), QStringLiteral("MKC104391 / MKC104392")},
+        {QStringLiteral("KLHBV002"), QStringLiteral("MKC104322")},
+        {QStringLiteral("KLHCV001"), QStringLiteral("MKC104512")},
+        {QStringLiteral("KRHBV005"), QStringLiteral("MKC104042")},
+        {QStringLiteral("KTHBV002"), QStringLiteral("MKC104010")},
+        {QStringLiteral("TAHHV003"), QStringLiteral("MKC102320")},
+        {QStringLiteral("TAP8P007"), QStringLiteral("MKC101890")},
+        {QStringLiteral("TCF7X005"), QStringLiteral("MKC10117")},
+        {QStringLiteral("TCF8X005"), QStringLiteral("MKC101550")},
+        {QStringLiteral("TFF8X000"), QStringLiteral("MKC101960")},
+        {QStringLiteral("TFFSX000"), QStringLiteral("MKC101600")},
+        {QStringLiteral("TFH7G031"), QString::fromUtf8("MKC104072 (modifié)")},
+        {QStringLiteral("TFH7V007"), QStringLiteral("MKC104101")}
+    };
+    return refs.value(identifier.trimmed().toUpper());
+}
+
+inline QString extendedIdentifierFromReply(const QByteArray &response)
+{
+    QByteArray printable;
+    printable.reserve(response.size());
+    for (char c : response)
+    {
+        const unsigned char value = static_cast<unsigned char>(c);
+        printable.append((value >= 0x20 && value <= 0x7E) ? char(value) : ' ');
+    }
+
+    const QString ascii = QString::fromLatin1(printable).toUpper();
+    static const QRegularExpression pattern(QStringLiteral("([A-Z0-9]{8})"));
+    const QRegularExpressionMatch match = pattern.match(ascii);
+    return match.hasMatch() ? match.captured(1) : QString();
+}
+}
+
+#endif // ECUIDENTIFICATION_H

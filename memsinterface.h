@@ -122,17 +122,7 @@ signals:
                                   quint16 correctionRaw,
                                   QString status,
                                   QString log);
-    void overviewLiveDataReady(int rpm,
-                               int iacRaw,
-                               int shortTrimRaw,
-                               int ignitionAdvanceRaw,
-                               int lambdaRaw,
-                               int batteryRaw,
-                               int airTempRaw,
-                               int coolantRaw,
-                               int mapRaw,
-                               int throttleRaw,
-                               double injectionMs);
+    void overviewInjectionReady(double injectionMs);
 private:
     mems_data m_data;
     QString m_deviceName;

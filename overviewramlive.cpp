@@ -1,16 +1,17 @@
 #include "mainwindow.h"
 #include "memsinterface.h"
+#include "ecuidentification.h"
+#include "i18n.h"
 
 #include <QApplication>
 #include <QByteArray>
 #include <QCoreApplication>
 #include <QElapsedTimer>
 #include <QEvent>
+#include <QLabel>
 #include <QMetaObject>
 #include <QTabWidget>
-#include <QVariant>
 #include <QWidget>
-#include <QtGlobal>
 
 #ifdef WIN32
 #include <windows.h>
@@ -80,25 +81,12 @@ static bool parseExactWordReply(const QByteArray &response, quint8 command, quin
     return true;
 }
 
-static bool isAANMP002Reply(const QByteArray &response)
-{
-    const QByteArray id("AANMP002");
-    const int first = response.indexOf(id);
-    if (first < 1)
-        return false;
-    if (byteAt(response, first - 1) == 0xD1)
-        return true;
-    return first >= 2 && byteAt(response, first - 2) == 0xD1;
-}
-
 static quint16 highWordC001(quint16 value)
 {
     const quint32 product = quint32(value) * quint32(0xC001u);
     return quint16((product >> 16) & 0xFFFFu);
 }
 
-// One command byte per write. In particular, DC and its block parameter are
-// deliberately sent by two separate calls, as validated on AANMP002.
 static bool exchangeByte(mems_info *info, quint8 command, QByteArray &response,
                          int quietLimitMs = 30)
 {
@@ -202,8 +190,6 @@ static bool exchangeByte(mems_info *info, quint8 command, QByteArray &response,
 #endif
 }
 
-// Exact little-endian Mode-4 word reader copied from the already validated
-// dynamic RAM test behaviour: no artificial quiet period after a full reply.
 static bool readMode4Word(mems_info *info, quint8 command, quint16 *value)
 {
     if (!info || !value || !mems_is_connected(info))
@@ -351,18 +337,15 @@ static bool ensureNormalSession(mems_info *info)
     return restoreNormalSession(info);
 }
 
-static bool confirmAANMP002(mems_info *info)
+static bool enterMode4(mems_info *info)
 {
     QByteArray response;
-    return exchangeByte(info, 0xD1, response, 150) && isAANMP002Reply(response);
-}
-
-static void setGaugeValue(MainWindow *window, const char *name, const QVariant &value)
-{
-    if (!window)
-        return;
-    if (QObject *gauge = window->findChild<QObject*>(QString::fromLatin1(name)))
-        gauge->setProperty("value", value);
+    exchangeByte(info, 0xF5, response, 30);
+    if (!readMode(info, 0x14))
+        return false;
+    if (!exchangeByte(info, 0xC4, response, 30))
+        return false;
+    return readMode(info, 0x1E);
 }
 
 } // namespace
@@ -371,107 +354,94 @@ void MEMSInterface::onOverviewLiveModeRequested(bool enabled)
 {
     setProperty("overviewLiveRequested", enabled);
 
+    // A disable request is processed only at a normal-session boundary. The
+    // injection loop always restores F0 50 before processing queued UI events.
     if (!enabled || property("overviewLiveModeActive").toBool())
         return;
     if (!(m_initComplete && mems_is_connected(&m_memsinfo)) || m_stopPolling || m_shutdownThread)
         return;
 
-    // This RAM map is validated for AANMP002 only. Other ECUs stay on the
-    // existing normal ROSCO polling path.
-    if (!ensureNormalSession(&m_memsinfo) || !confirmAANMP002(&m_memsinfo))
-    {
-        setProperty("overviewLiveRequested", false);
-        return;
-    }
-
-    QByteArray response;
-    exchangeByte(&m_memsinfo, 0xF5, response, 30);
-    if (!readMode(&m_memsinfo, 0x14))
-    {
-        setProperty("overviewLiveRequested", false);
-        if (!restoreNormalSession(&m_memsinfo))
-            m_stopPolling = true;
-        return;
-    }
-
-    if (!exchangeByte(&m_memsinfo, 0xC4, response, 30) || !readMode(&m_memsinfo, 0x1E))
-    {
-        setProperty("overviewLiveRequested", false);
-        if (!restoreNormalSession(&m_memsinfo))
-            m_stopPolling = true;
-        return;
-    }
-
     setProperty("overviewLiveModeActive", true);
-    bool readOk = true;
+    QElapsedTimer injectionCadence;
+    injectionCadence.start();
 
     while (property("overviewLiveRequested").toBool() && !m_stopPolling &&
            !m_shutdownThread && mems_is_connected(&m_memsinfo))
     {
-        quint16 rpm = 0, iac = 0, shortTrim = 0, advance = 0;
-        quint16 lambda = 0, battery = 0, airTemp = 0, coolant = 0, map = 0, throttle = 0;
-        quint16 transientPair = 0, transientSource = 0, injectionBase = 0;
-
-        // One complete current-Aperçu refresh; no priority/cadence split.
-        readOk = selectMode4Block(&m_memsinfo, 0x00) &&
-                 readMode4Word(&m_memsinfo, 0x2F, &rpm) &&
-                 readMode4Word(&m_memsinfo, 0x47, &iac) &&
-                 readMode4Word(&m_memsinfo, 0x6B, &shortTrim) &&
-                 readMode4Word(&m_memsinfo, 0x6E, &advance);
-
-        if (readOk)
-            readOk = selectMode4Block(&m_memsinfo, 0x01) &&
-                     readMode4Word(&m_memsinfo, 0x25, &lambda) &&
-                     readMode4Word(&m_memsinfo, 0x7A, &battery) &&
-                     readMode4Word(&m_memsinfo, 0x7B, &airTemp) &&
-                     readMode4Word(&m_memsinfo, 0x7C, &coolant) &&
-                     readMode4Word(&m_memsinfo, 0x7D, &map) &&
-                     readMode4Word(&m_memsinfo, 0x7E, &throttle);
-
-        if (readOk)
+        // Keep the original application data path intact. Every existing gauge,
+        // the summary tab, diagnostics and normal logging continue to receive
+        // exactly the same mems_data structure produced by librosco.
+        if (!mems_read(&m_memsinfo, &m_data))
         {
-            readOk = selectMode4Block(&m_memsinfo, 0x02) &&
-                     readMode4Word(&m_memsinfo, 0x40, &transientPair);
-            // 0x0280 is a state/counter, never a multiplier.
-            if (readOk && quint8(transientPair & 0x00FFu) != 0)
-                readOk = readMode4Word(&m_memsinfo, 0x37, &transientSource);
+            emit readError();
+            m_stopPolling = true;
+            break;
         }
 
-        if (readOk)
-            readOk = selectMode4Block(&m_memsinfo, 0x03) &&
-                     readMode4Word(&m_memsinfo, 0x64, &injectionBase);
+        emit readSuccess();
+        emit dataReady();
 
-        if (!readOk)
+        // Process tab changes and normal commands while the ECU is still in the
+        // normal F0 50 session. No queued UI command is processed inside Mode 4.
+        QCoreApplication::processEvents();
+        if (!property("overviewLiveRequested").toBool() || m_stopPolling || m_shutdownThread)
             break;
+
+        // The new injection value does not need to replace the normal gauge
+        // polling. Sample it independently at about 4 Hz.
+        if (injectionCadence.elapsed() < 250)
+            continue;
+
+        bool sampleOk = ensureNormalSession(&m_memsinfo);
+        if (sampleOk)
+            sampleOk = enterMode4(&m_memsinfo);
+
+        quint16 transientPair = 0;
+        quint16 transientSource = 0;
+        quint16 injectionBase = 0;
+
+        if (sampleOk)
+        {
+            sampleOk = selectMode4Block(&m_memsinfo, 0x02) &&
+                       readMode4Word(&m_memsinfo, 0x40, &transientPair);
+            // 0x0280 is a state/counter, never a multiplier.
+            if (sampleOk && quint8(transientPair & 0x00FFu) != 0)
+                sampleOk = readMode4Word(&m_memsinfo, 0x37, &transientSource);
+        }
+
+        if (sampleOk)
+            sampleOk = selectMode4Block(&m_memsinfo, 0x03) &&
+                       readMode4Word(&m_memsinfo, 0x64, &injectionBase);
+
+        // Always return to F0 50 before exposing events or continuing normal
+        // librosco polling, even when a RAM read failed.
+        const bool normalRestored = restoreNormalSession(&m_memsinfo);
+        if (!normalRestored)
+        {
+            emit overviewInjectionReady(-1.0);
+            m_stopPolling = true;
+            break;
+        }
+
+        if (!sampleOk)
+        {
+            // Injection becomes unavailable, but the rest of ECU MEMS Manager
+            // is left on the normal ROSCO path and continues to work.
+            emit overviewInjectionReady(-1.0);
+            setProperty("overviewLiveRequested", false);
+            break;
+        }
 
         quint32 injectionTicks = quint32(injectionBase);
         if (quint8(transientPair & 0x00FFu) != 0)
             injectionTicks += quint32(highWordC001(transientSource));
 
-        emit overviewLiveDataReady(
-            int(rpm),
-            int(iac & 0x00FFu),
-            int(shortTrim & 0x00FFu),
-            int(advance & 0x00FFu),
-            int((lambda >> 8) & 0x00FFu),
-            int((battery >> 8) & 0x00FFu),
-            int((airTemp >> 8) & 0x00FFu),
-            int((coolant >> 8) & 0x00FFu),
-            int((map >> 8) & 0x00FFu),
-            int((throttle >> 8) & 0x00FFu),
-            double(injectionTicks) * 0.002);
-
-        // The normal 7D/80 service loop is suspended in Mode 4. Only process
-        // queued tab/disconnect requests at a complete-snapshot boundary.
+        emit overviewInjectionReady(double(injectionTicks) * 0.002);
+        injectionCadence.restart();
         QCoreApplication::processEvents();
     }
 
-    const bool normalRestored = restoreNormalSession(&m_memsinfo);
     setProperty("overviewLiveModeActive", false);
-    if (!readOk)
-        setProperty("overviewLiveRequested", false);
-    if (!normalRestored)
-        m_stopPolling = true;
 }
 
 class OverviewLiveInstaller : public QObject
@@ -493,67 +463,99 @@ protected:
         if (!tabs)
             return QObject::eventFilter(watched, event);
 
-        // Hidden data source only: OverviewRebuild keeps drawing the exact same
-        // card. Its min/max properties recalibrate this one dial to 0..20 ms.
         QWidget *injectorSource = window->findChild<QWidget*>(QStringLiteral("m_injector_time"));
         if (!injectorSource)
         {
             injectorSource = new QWidget(window);
             injectorSource->setObjectName(QStringLiteral("m_injector_time"));
-            injectorSource->setProperty("minimum", 0.0);
-            injectorSource->setProperty("maximum", 20.0);
-            injectorSource->setProperty("value", QStringLiteral("--"));
             injectorSource->hide();
         }
+        injectorSource->setProperty("minimum", 0.0);
+        injectorSource->setProperty("maximum", 20.0);
+        injectorSource->setProperty("value", QStringLiteral("--"));
 
         window->setProperty("overviewLiveInstalled", true);
+        window->setProperty("ecuExtendedIdentifier", QString());
         MEMSInterface *mems = window->m_mems;
 
-        QObject::connect(mems, &MEMSInterface::overviewLiveDataReady, window,
-            [window, tabs, injectorSource](int rpm, int iacRaw, int shortTrimRaw,
-                                           int advanceRaw, int lambdaRaw, int batteryRaw,
-                                           int airTempRaw, int coolantRaw, int mapRaw,
-                                           int throttleRaw, double injectionMs)
+        // Only the injection source is written here. Existing gauges remain
+        // exclusively controlled by MainWindow::onDataReady().
+        QObject::connect(mems, &MEMSInterface::overviewInjectionReady, window,
+            [tabs, injectorSource](double injectionMs)
             {
                 if (!tabs || tabs->currentIndex() != 0)
                     return;
+                if (injectionMs < 0.0)
+                    injectorSource->setProperty("value", QStringLiteral("--"));
+                else
+                    injectorSource->setProperty("value", injectionMs);
+            });
 
-                const int correctedIac = qBound(0, iacRaw, int(IAC_MAXIMUM));
-                setGaugeValue(window, "m_revCounter", rpm);
-                setGaugeValue(window, "m_waterTempGauge", window->convertTemperature(coolantRaw));
-                setGaugeValue(window, "m_mapGauge", mapRaw);
-                setGaugeValue(window, "m_throttle_pos", throttleRaw / 2);
-                setGaugeValue(window, "m_battery", batteryRaw / 10.0);
-                setGaugeValue(window, "m_short_term_correction", shortTrimRaw - 100);
-                setGaugeValue(window, "m_lambda_voltage", lambdaRaw * 5);
-                setGaugeValue(window, "m_airTempGauge", window->convertTemperature(airTempRaw));
-                setGaugeValue(window, "m_idle_position",
-                              qRound(double(correctedIac) / double(IAC_MAXIMUM) * 100.0));
-                setGaugeValue(window, "m_ignition_advance", (advanceRaw / 2) - 24);
-                injectorSource->setProperty("value", injectionMs);
+        // Ask D1 once after the normal connection has completed. The request
+        // uses the existing queued MainWindow -> MEMSInterface path and is
+        // therefore handled only between normal librosco reads.
+        QObject::connect(mems, &MEMSInterface::connected, window,
+            [window, injectorSource]()
+            {
+                window->setProperty("ecuExtendedIdentifier", QString());
+                injectorSource->setProperty("value", QStringLiteral("--"));
+                emit window->requestProtocolCommand(quint8(0xD1));
+            });
+
+        QObject::connect(mems, &MEMSInterface::protocolResponse, window,
+            [window, mems, tabs, injectorSource](quint8 command, const QByteArray &response)
+            {
+                if (command != quint8(0xD1))
+                    return;
+
+                const QString identifier = EcuIdentification::extendedIdentifierFromReply(response);
+                if (identifier.isEmpty())
+                {
+                    // Unsupported/empty D1: keep the already displayed D0 and
+                    // do not enter AANMP002-specific RAM mode.
+                    window->setProperty("ecuExtendedIdentifier", QString());
+                    injectorSource->setProperty("value", QStringLiteral("--"));
+                    return;
+                }
+
+                window->setProperty("ecuExtendedIdentifier", identifier);
+                if (QLabel *label = window->findChild<QLabel*>(QStringLiteral("m_ecuIdLabel")))
+                {
+                    QString text = I18n::text(7050);
+                    if (!text.endsWith(QLatin1Char(' ')))
+                        text += QLatin1Char(' ');
+                    text += identifier;
+                    const QString reference = EcuIdentification::referenceForExtendedIdentifier(identifier);
+                    if (!reference.isEmpty())
+                        text += QString::fromUtf8(" — ") + reference;
+                    label->setText(text);
+                }
+
+                if (tabs && tabs->currentIndex() == 0 && identifier == QStringLiteral("AANMP002"))
+                    QMetaObject::invokeMethod(mems, "onOverviewLiveModeRequested",
+                                              Qt::QueuedConnection, Q_ARG(bool, true));
             });
 
         QObject::connect(tabs, &QTabWidget::currentChanged, window,
-            [mems, injectorSource](int index)
+            [window, mems, injectorSource](int index)
             {
-                const bool overviewActive = (index == 0);
-                if (!overviewActive)
+                if (index != 0)
+                {
                     injectorSource->setProperty("value", QStringLiteral("--"));
-                QMetaObject::invokeMethod(mems, "onOverviewLiveModeRequested",
-                                          Qt::QueuedConnection, Q_ARG(bool, overviewActive));
-            });
+                    QMetaObject::invokeMethod(mems, "onOverviewLiveModeRequested",
+                                              Qt::QueuedConnection, Q_ARG(bool, false));
+                    return;
+                }
 
-        QObject::connect(mems, &MEMSInterface::connected, window,
-            [mems, tabs]()
-            {
-                if (tabs && tabs->currentIndex() == 0)
+                if (window->property("ecuExtendedIdentifier").toString() == QStringLiteral("AANMP002"))
                     QMetaObject::invokeMethod(mems, "onOverviewLiveModeRequested",
                                               Qt::QueuedConnection, Q_ARG(bool, true));
             });
 
         QObject::connect(mems, &MEMSInterface::disconnected, window,
-            [injectorSource]()
+            [window, injectorSource]()
             {
+                window->setProperty("ecuExtendedIdentifier", QString());
                 injectorSource->setProperty("value", QStringLiteral("--"));
             });
 
