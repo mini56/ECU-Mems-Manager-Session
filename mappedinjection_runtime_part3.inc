@@ -46,9 +46,12 @@
         if(fileName.isEmpty())fileName=QStringLiteral("--");
         file->setText(I18n::text(7115).arg(fileName));
 
-        QString portName=m_mems?m_mems->getSerialDevice().trimmed():QString();
-        const QString windowsPrefix=QStringLiteral("\\\\.\\");
-        if(portName.startsWith(windowsPrefix,Qt::CaseInsensitive))portName.remove(0,windowsPrefix.size());
+        QString portName;
+        if(m_mems&&m_mems->isConnected()){
+            portName=m_mems->getSerialDevice().trimmed();
+            const QString windowsPrefix=QStringLiteral("\\\\.\\");
+            if(portName.startsWith(windowsPrefix,Qt::CaseInsensitive))portName.remove(0,windowsPrefix.size());
+        }
         if(portName.isEmpty())portName=QStringLiteral("--");
         port->setText(QStringLiteral("%1 : %2").arg(I18n::text(7114),portName));
         firmware->setText(I18n::text(7916).arg(m_firmware.isEmpty()?QStringLiteral("--"):m_firmware));
