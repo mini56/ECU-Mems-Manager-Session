@@ -45,12 +45,13 @@ static bool validatedInjectionProfileForFirmware(const QString &firmware,
 
     const QString id = firmware.trimmed().toUpper();
 
-    // AANMP002 / MEMS 1.6 Mini SPi.
-    // Validated from the ROM execution path and real ECU Mode-4 captures:
-    // final = base(0x03C8) + HI16(transient(0x026E) * 0xC001)
-    // while counter 0x0280 indicates the transient contribution is active.
-    // Timer granularity is 0.002 ms per tick.
-    if (id == QStringLiteral("AANMP002"))
+    // Mini SPi MEMS 1.6 family using the validated AANMP002 injection path.
+    // AANMP002 is validated from ROM execution and real ECU Mode-4 captures.
+    // Andrew Revill's RAM-variable correlation maps ABNMP003 to the same
+    // 0x03C8 / 0x026E / 0x0280 variable classes, so it uses the same profile:
+    // final = base + HI16(transient * 0xC001), at 0.002 ms per timer tick.
+    if (id == QStringLiteral("AANMP002") ||
+        id == QStringLiteral("ABNMP003"))
     {
         *profile = InjectionCalculationProfile(
             InjectionRamMap{0x03C8u, 0x026Eu, 0x0280u},
