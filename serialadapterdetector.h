@@ -17,6 +17,7 @@ struct DetectedSerialAdapter
     quint16 productId = 0;
     bool hasVendorId = false;
     bool hasProductId = false;
+    bool detectedBySystem = true;
 
     QString displayName() const
     {
@@ -63,8 +64,8 @@ inline QString adapterFamily(const QSerialPortInfo &info)
     if (vid == 0x10C4u || haystack.contains(QStringLiteral("CP210")) || haystack.contains(QStringLiteral("SILICON LABS")))
         return QStringLiteral("Silicon Labs CP210x");
     if (info.hasVendorIdentifier())
-        return QStringLiteral("USB série");
-    return QStringLiteral("Port série");
+        return QStringLiteral("USB Serial");
+    return QStringLiteral("Serial Port");
 }
 
 inline QList<DetectedSerialAdapter> availableAdapters(const QString &preferredDevice = QString())
@@ -84,12 +85,13 @@ inline QList<DetectedSerialAdapter> availableAdapters(const QString &preferredDe
         item.manufacturer = info.manufacturer().trimmed();
         item.hasVendorId = info.hasVendorIdentifier();
         item.hasProductId = info.hasProductIdentifier();
+        item.detectedBySystem = true;
         if (item.hasVendorId) item.vendorId = info.vendorIdentifier();
         if (item.hasProductId) item.productId = info.productIdentifier();
         result.append(item);
     }
 
-    // Keep the user's previously selected/manual port first when it still exists.
+    // Keep the user's previously selected port first when it still exists.
     if (!preferredPort.isEmpty())
     {
         for (int i = 0; i < result.size(); ++i)
@@ -102,12 +104,14 @@ inline QList<DetectedSerialAdapter> availableAdapters(const QString &preferredDe
             }
         }
 
-        // A manually entered virtual/legacy COM port may not expose USB metadata.
+        // Preserve a stale/manual port as a fallback, but mark it as not
+        // currently detected so the UI can prefer a real cable automatically.
         DetectedSerialAdapter manual;
         manual.portName = preferredPort;
         manual.qtPortName = preferredPort;
         manual.devicePath = libroscoDevicePath(preferredPort, QString());
-        manual.adapterFamily = QStringLiteral("Port configuré");
+        manual.adapterFamily = QStringLiteral("Configured port");
+        manual.detectedBySystem = false;
         result.prepend(manual);
     }
 
