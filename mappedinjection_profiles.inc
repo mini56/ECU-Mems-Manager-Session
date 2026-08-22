@@ -258,6 +258,63 @@ static bool validatedInjectionProfileForFirmware(const QString &firmware,
         return true;
     }
 
+    // KDE6F variants are direct RAM-relocated siblings of the validated
+    // KDE6P004/KDE6P005 additive paths. KDE6F015 keeps the same 0x36/0x35
+    // transient construction as KDE6P004; KDE6F022 keeps the same 0x38/0x37
+    // construction as KDE6P005. Their ASM then performs the same C001
+    // high-word addition into the injector accumulator.
+    if (id == QStringLiteral("KDE6F015"))
+    {
+        *profile = InjectionCalculationProfile(
+            InjectionRamMap{0x03D8u, 0x0272u, 0x0284u},
+            InjectionCalculationKind::AdditiveC001,
+            InjectionCounterPolicy::NonZeroActive,
+            0.002,
+            0.002);
+        return true;
+    }
+
+    if (id == QStringLiteral("KDE6F022"))
+    {
+        *profile = InjectionCalculationProfile(
+            InjectionRamMap{0x03D8u, 0x0274u, 0x0289u},
+            InjectionCalculationKind::AdditiveC001,
+            InjectionCounterPolicy::NonZeroActive,
+            0.002,
+            0.002);
+        return true;
+    }
+
+    // KGM6 later family. These six firmwares retain the same 0x3D/0x3C
+    // transient construction seen in the validated KGM6P002 path; the RAM
+    // source is relocated to 0x0272 and the state byte to 0x0286/0x0287.
+    // Each ASM was checked through the C001 high-word injector-add routine.
+    if (id == QStringLiteral("KGM6F004") ||
+        id == QStringLiteral("KGM6P003"))
+    {
+        *profile = InjectionCalculationProfile(
+            InjectionRamMap{0x03C8u, 0x0272u, 0x0286u},
+            InjectionCalculationKind::AdditiveC001,
+            InjectionCounterPolicy::NonZeroActive,
+            0.002,
+            0.002);
+        return true;
+    }
+
+    if (id == QStringLiteral("KGM6F007") ||
+        id == QStringLiteral("KGM6F008") ||
+        id == QStringLiteral("KGM6P004") ||
+        id == QStringLiteral("KGM6P005"))
+    {
+        *profile = InjectionCalculationProfile(
+            InjectionRamMap{0x03C8u, 0x0272u, 0x0287u},
+            InjectionCalculationKind::AdditiveC001,
+            InjectionCounterPolicy::NonZeroActive,
+            0.002,
+            0.002);
+        return true;
+    }
+
     // KDE6P005 keeps the established 0x03C8 / 0x026E additive path,
     // with the transient state/counter relocated to 0x0283. Its ASM checks
     // and updates 0x0283, loads 0x026E and calls the same C001 high-word
