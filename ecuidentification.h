@@ -134,6 +134,7 @@ inline QString referenceForExtendedIdentifier(const QString &identifier)
         {QStringLiteral("CS6MR004"), QStringLiteral("MKC101600 / MKC101960")},
         {QStringLiteral("KBACP000"), QStringLiteral("MKC101830")},
         {QStringLiteral("KBE6R003"), QStringLiteral("MKC10027")},
+        {QStringLiteral("MGE7R002"), QString::fromUtf8("Référence ECU à confirmer")},
         {QStringLiteral("KBHBV001"), QStringLiteral("MKC104020")},
         {QStringLiteral("KBHBV002"), QStringLiteral("MKC104022")},
         {QStringLiteral("KBP8P004"), QStringLiteral("MKC101470")},
