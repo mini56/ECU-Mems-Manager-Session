@@ -7,10 +7,11 @@
     const QString firmwareId=firmwareIdentifier.trimmed().toUpper();
     const bool mems13ConditionalRead=(firmwareId==QStringLiteral("KBE6R003")||firmwareId==QStringLiteral("MGE7R002"));
     // MEMS 1.9 correlated profiles use the stable 0x004E scheduler contribution
-    // plus one 0x8000-biased injector compensation word.  The zero counter is
-    // intentional: both words belong to the same normal scheduled pulse and are
-    // always acquired in this single Mode-4 sample cycle.
-    const bool mems19ScheduledRead=(map.baseAddress==0x004Eu&&map.transientSourceAddress!=0u&&map.transientCounterAddress==0u&&profile.baseMsPerRaw==0.008);
+    // plus one 0x8000-biased injector compensation word. Two proven scheduler
+    // variants exist: normal x8 contribution (0.008 ms/raw) and a final doubled
+    // output variant (0.016 ms/raw). Both words stay in one Mode-4 sample cycle.
+    const bool mems19ScheduledRead=(map.baseAddress==0x004Eu&&map.transientSourceAddress!=0u&&map.transientCounterAddress==0u&&
+                                    (profile.baseMsPerRaw==0.008||profile.baseMsPerRaw==0.016));
     const bool directFinalRead=(!mems19ScheduledRead&&map.transientSourceAddress==0u&&map.transientCounterAddress==0u);
 
     setProperty("mappedInjectionModeActive",true);emit readModeChanged(QStringLiteral("transition"));
@@ -41,9 +42,6 @@
         }
         else if(mems19ScheduledRead)
         {
-            // MEMS 1.9 normal pulse: read the injector compensation word first,
-            // then the scheduler contribution. Both reads stay in this Mode-4
-            // sample. No normal 7D/80 polling value is used here.
             sampleOk=ensureBlock(quint8(map.transientSourceAddress>>8))&&readMappedWordInBlock(&m_memsinfo,map.transientSourceAddress,selected,&transientRaw);
         }
         else if(!directFinalRead)
@@ -76,17 +74,32 @@
         }
         else if(mems19ScheduledRead)
         {
-            // The MEMS 1.9 scheduler loads 0x004E eight times into each bank,
-            // then adds (compensation - 0x8000) immediately before the HSO
-            // injector output. The output timer and diagnostic injector test
-            // both use 1 us/raw, so the final result is converted at 0.001 ms.
-            qint64 finalRaw=qint64(baseRaw)*8+qint64(transientRaw)-qint64(0x8000u);
-            if(finalRaw<0)finalRaw=0;
-            if(finalRaw>0xFFFF)finalRaw=0xFFFF;
+            const qint64 compensation=qint64(transientRaw)-qint64(0x8000u);
             baseMs=double(baseRaw)*profile.baseMsPerRaw;
-            finalMs=double(finalRaw)*profile.transientMsPerRaw;
-            // The second word is injector dead-time/compensation, not an
-            // asynchronous enrichment pulse. Do not misreport it as transient.
+            if(profile.baseMsPerRaw==0.016)
+            {
+                // KLH4/KLQ4 scheduler family: calculate the pre-output width,
+                // apply the firmware's large-pulse half-base fallback, then
+                // double the result immediately before the injector HSO call.
+                qint64 pre=qint64(baseRaw)*8+compensation;
+                if(pre>0x7FFB)
+                {
+                    pre=qint64(baseRaw)*4+compensation;
+                    if(pre>0x7FFB)pre=0x7FFB;
+                }
+                if(pre<0)pre=0;
+                qint64 outputRaw=pre*2;
+                if(outputRaw>0xFFFF)outputRaw=0xFFFF;
+                finalMs=double(outputRaw)*0.001;
+            }
+            else
+            {
+                qint64 outputRaw=qint64(baseRaw)*8+compensation;
+                if(outputRaw<0)outputRaw=0;
+                if(outputRaw>0xFFFF)outputRaw=0xFFFF;
+                finalMs=double(outputRaw)*0.001;
+            }
+            // Compensation/dead-time is not an asynchronous enrichment pulse.
             transientMs=0.0;
         }
         else if(!calculateValidatedInjectionSample(profile,baseRaw,transientRaw,transientActive,&finalMs,&baseMs,&transientMs))break;
