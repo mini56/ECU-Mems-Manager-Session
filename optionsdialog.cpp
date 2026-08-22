@@ -1,6 +1,6 @@
 #include <QSettings>
 #include "optionsdialog.h"
-#include "serialdevenumerator.h"
+#include "serialadapterdetector.h"
 #include "desktopshortcut.h"
 #include <QIcon>
 #include <QPalette>
@@ -92,12 +92,40 @@ void OptionsDialog::setupWidgets()
   m_okButton = new QPushButton("OK", this);
   m_cancelButton = new QPushButton(I18n::text(6103) /* EN: Cancel */, this);
 
-  SerialDevEnumerator serialDevs;
+  // Enumerate real serial interfaces with USB metadata. The visible text is
+  // descriptive, while the item data always remains the actual COM/device name.
+  const QList<DetectedSerialAdapter> adapters =
+      SerialAdapterDetector::availableAdapters(m_serialDeviceName);
+  for (const DetectedSerialAdapter &adapter : adapters)
+    m_serialDeviceBox->addItem(adapter.displayName(), adapter.portName);
 
-  m_serialDeviceBox->addItems(serialDevs.getSerialDevList(m_serialDeviceName));
+  const QString configuredPort = SerialAdapterDetector::stripWindowsDevicePrefix(m_serialDeviceName);
+  int configuredIndex = m_serialDeviceBox->findData(configuredPort, Qt::UserRole, Qt::MatchFixedString);
+  if (configuredIndex >= 0)
+  {
+    m_serialDeviceBox->setCurrentIndex(configuredIndex);
+    m_serialDeviceName = m_serialDeviceBox->currentData().toString();
+  }
+  else if (m_serialDeviceBox->count() > 0)
+  {
+    // No valid saved choice: select the first detected serial interface.
+    // MEMSInterface will still scan every detected port when Connect is pressed,
+    // so a multi-adapter PC is not locked to this provisional selection.
+    m_serialDeviceBox->setCurrentIndex(0);
+    m_serialDeviceName = m_serialDeviceBox->currentData().toString();
+  }
+  else
+  {
+    // Preserve manual entry as an advanced fallback when Windows exposes no
+    // QSerialPortInfo metadata (old virtual COM drivers, unusual adapters, etc.).
+    m_serialDeviceBox->addItem(configuredPort, configuredPort);
+    m_serialDeviceBox->setCurrentIndex(0);
+  }
+
   m_serialDeviceBox->setEditable(true);
-  m_serialDeviceBox->setMinimumWidth(150);
+  m_serialDeviceBox->setMinimumWidth(330);
   m_serialDeviceBox->setMinimumHeight(30);
+  m_serialDeviceBox->setToolTip(QStringLiteral("Port COM et convertisseur USB détectés automatiquement. La saisie manuelle reste possible."));
   if (m_serialDeviceBox->lineEdit())
     m_serialDeviceBox->lineEdit()->setMinimumHeight(22);
 
@@ -167,12 +195,21 @@ void OptionsDialog::setupWidgets()
  */
 void OptionsDialog::accept()
 {
-  QString newSerialDeviceName = m_serialDeviceBox->currentText();
+  QString newSerialDeviceName;
+  if (m_serialDeviceBox->currentIndex() >= 0 && m_serialDeviceBox->currentData().isValid())
+    newSerialDeviceName = m_serialDeviceBox->currentData().toString().trimmed();
+
+  // Editable fallback: if the user typed a value, use the first visible token
+  // (e.g. COM7 from "COM7 — FTDI FT232 — USB Serial Port").
+  if (newSerialDeviceName.isEmpty())
+    newSerialDeviceName = m_serialDeviceBox->currentText().section(QStringLiteral(" — "), 0, 0).trimmed();
+
+  newSerialDeviceName = SerialAdapterDetector::stripWindowsDevicePrefix(newSerialDeviceName);
 
   // set a flag if the serial device has been changed;
   // the main application needs to know if it should
   // reconnect to the ECU
-  if (m_serialDeviceName.compare(newSerialDeviceName) != 0)
+  if (m_serialDeviceName.compare(newSerialDeviceName, Qt::CaseInsensitive) != 0)
   {
     m_serialDeviceName = newSerialDeviceName;
     m_serialDeviceChanged = true;
@@ -252,7 +289,8 @@ void OptionsDialog::writeSettings()
 QString OptionsDialog::getSerialDeviceName()
 {
 #ifdef WIN32
-  return QString("\\\\.\\%1").arg(m_serialDeviceName);
+  const QString port = SerialAdapterDetector::stripWindowsDevicePrefix(m_serialDeviceName);
+  return port.isEmpty() ? QString() : QStringLiteral("\\\\.\\") + port;
 #else
   return m_serialDeviceName;
 #endif
