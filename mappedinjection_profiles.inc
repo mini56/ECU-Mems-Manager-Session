@@ -77,6 +77,30 @@ static bool validatedInjectionProfileForFirmware(const QString &firmware,
         return true;
     }
 
+    // MEMS 1.6 family with the AANMP002 additive injection path and the
+    // transient state/counter relocated to 0x0281. For every firmware below,
+    // Andrew Revill's correlated map gives 0x03C8 / 0x026E / 0x0281 and the
+    // ASM directly loads 0x026E after checking 0x0281, then calls the routine
+    // performing mulu #-3FFFh (0xC001) and adds the high word to the injector
+    // timer accumulator. This is the same validated 0.002 ms/tick path.
+    if (id == QStringLiteral("KCE6F014") ||
+        id == QStringLiteral("KCE6F018") ||
+        id == QStringLiteral("KCE6P004") ||
+        id == QStringLiteral("KGM6F001") ||
+        id == QStringLiteral("KGM6P002") ||
+        id == QStringLiteral("TBP7F016") ||
+        id == QStringLiteral("TBP7P005") ||
+        id == QStringLiteral("TBP7P006"))
+    {
+        *profile = InjectionCalculationProfile(
+            InjectionRamMap{0x03C8u, 0x026Eu, 0x0281u},
+            InjectionCalculationKind::AdditiveC001,
+            InjectionCounterPolicy::NonZeroActive,
+            0.002,
+            0.002);
+        return true;
+    }
+
     // ACNMP001 / MEMS 1.6.
     // Andrew Revill PETA3 definitions:
     // s_pulsewidth     0x03C8 W 0.001333 ms/raw
