@@ -88,7 +88,7 @@ public:
     void selectDiagnosticLive(bool notify = true);
     void selectInjectionLive(bool notify = true);
     void setDiagnosticLiveAvailable(bool available);
-    void setInjectionLiveAvailable(bool available, const QString &reason = QString());
+    void setInjectionRamReadAvailable(bool available, const QString &reason = QString());
     void appendDiagnosticData(const mems_data *data);
     void appendInjectionSample(double finalMs, double baseMs, double transientMs,
                                quint16 baseRaw, quint16 transientRaw, quint8 transientCounter);

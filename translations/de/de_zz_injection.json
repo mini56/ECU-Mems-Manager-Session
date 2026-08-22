@@ -24,7 +24,7 @@
   "7919": "Live — Einspritz-RAM-Frames",
   "7920": "Rohe Einspritzbasis (Ticks)",
   "7921": "Rohe Übergangsquelle (Ticks)",
-  "7922": "Keine validierte Einspritz-RAM-Zuordnung für diese Firmware",
+  "7922": "Die Einspritz-RAM-Zuordnung ist für diese Firmware nicht dokumentiert",
   "7923": "Einspritzbasis %1",
   "7924": "Übergangskorrektur %1",
   "7925": "Übergangszustand %1",

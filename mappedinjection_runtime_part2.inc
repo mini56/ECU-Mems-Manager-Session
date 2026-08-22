@@ -4,11 +4,11 @@
         m_clock.start();m_modeText=I18n::text(7912);clearValues();
     }
 
-    void setMapping(const QString &firmware,bool available,quint16 baseAddr=0,quint16 transientAddr=0,quint16 counterAddr=0)
+    void setMapping(const QString &firmware,bool mappingKnown,quint16 baseAddr=0,quint16 transientAddr=0,quint16 counterAddr=0)
     {
-        m_firmwareId=firmware;m_available=available;m_baseAddr=baseAddr;m_transientAddr=transientAddr;m_counterAddr=counterAddr;
+        m_firmwareId=firmware;m_baseAddr=baseAddr;m_transientAddr=transientAddr;m_counterAddr=counterAddr;
         m_firmware->setText(I18n::text(7916).arg(firmware.isEmpty()?QStringLiteral("--"):firmware));
-        if(available){
+        if(mappingKnown){
             m_base->setTitle(I18n::text(7923).arg(hexAddress(baseAddr)));
             m_transient->setTitle(I18n::text(7924).arg(hexAddress(transientAddr)));
             m_counter->setTitle(I18n::text(7925).arg(hexAddress(counterAddr)));
@@ -55,7 +55,7 @@ private:
     }
     QLabel *m_status=nullptr,*m_firmware=nullptr,*m_baseRaw=nullptr,*m_transientRaw=nullptr,*m_counterRaw=nullptr,*m_mode=nullptr;
     InjectionGaugeCard *m_final=nullptr,*m_base=nullptr,*m_transient=nullptr,*m_counter=nullptr;InjectionHistoryWidget *m_history=nullptr;
-    QElapsedTimer m_clock;QVector<double> m_time,m_finalHistory;QString m_firmwareId,m_modeText;bool m_available=false;quint16 m_baseAddr=0,m_transientAddr=0,m_counterAddr=0,m_baseRawValue=0,m_transientRawValue=0;quint8 m_counterValue=0;double m_finalValue=0,m_baseValue=0,m_transientValue=0;
+    QElapsedTimer m_clock;QVector<double> m_time,m_finalHistory;QString m_firmwareId,m_modeText;quint16 m_baseAddr=0,m_transientAddr=0,m_counterAddr=0,m_baseRawValue=0,m_transientRawValue=0;quint8 m_counterValue=0;double m_finalValue=0,m_baseValue=0,m_transientValue=0;
 };
 
 static bool responseMode(const QByteArray &response,quint8 *mode)
@@ -87,11 +87,13 @@ public:
         : QObject(window),m_window(window),m_mems(mems),m_tabs(tabs),m_analysis(analysis),m_dashboard(dashboard),m_injectionTab(injectionTab),m_previous(tabs?tabs->currentWidget():nullptr)
     {
         if(!m_window||!m_mems||!m_tabs||!m_analysis||!m_dashboard)return;
-        m_window->setProperty("ecuReadMode",QStringLiteral("disconnected"));m_dashboard->setReadMode(QStringLiteral("disconnected"));
-        m_analysis->setDiagnosticLiveAvailable(false);
+        m_ecuConnected=m_mems->isConnected();
+        m_window->setProperty("ecuReadMode",m_ecuConnected?QStringLiteral("diagnostic"):QStringLiteral("disconnected"));
+        m_dashboard->setReadMode(m_ecuConnected?QStringLiteral("diagnostic"):QStringLiteral("disconnected"));
+        m_analysis->setDiagnosticLiveAvailable(m_ecuConnected);
 
-        QObject::connect(m_mems,&MEMSInterface::connected,m_window,[this](){m_analysis->setDiagnosticLiveAvailable(true);updateFirmware(QString());m_window->setProperty("ecuReadMode",QStringLiteral("diagnostic"));m_dashboard->setReadMode(QStringLiteral("diagnostic"));updateStatusSoon();});
-        QObject::connect(m_mems,&MEMSInterface::disconnected,m_window,[this](){m_analysis->setDiagnosticLiveAvailable(false);updateFirmware(QString());m_window->setProperty("ecuReadMode",QStringLiteral("disconnected"));m_dashboard->setReadMode(QStringLiteral("disconnected"));updateStatusSoon();});
+        QObject::connect(m_mems,&MEMSInterface::connected,m_window,[this](){m_ecuConnected=true;m_analysis->setDiagnosticLiveAvailable(true);updateFirmware(QString());m_window->setProperty("ecuReadMode",QStringLiteral("diagnostic"));m_dashboard->setReadMode(QStringLiteral("diagnostic"));updateStatusSoon();});
+        QObject::connect(m_mems,&MEMSInterface::disconnected,m_window,[this](){m_ecuConnected=false;m_analysis->setDiagnosticLiveAvailable(false);updateFirmware(QString());m_window->setProperty("ecuReadMode",QStringLiteral("disconnected"));m_dashboard->setReadMode(QStringLiteral("disconnected"));updateStatusSoon();});
         QObject::connect(m_mems,&MEMSInterface::readModeChanged,m_window,[this](const QString &mode){m_window->setProperty("ecuReadMode",mode);m_dashboard->setReadMode(mode);updateStatusSoon();});
         QObject::connect(m_mems,&MEMSInterface::dataReady,m_window,[this](){m_analysis->appendDiagnosticData(m_mems->getData());});
         QObject::connect(m_mems,&MEMSInterface::injectionLiveSample,m_window,[this](double finalMs,double baseMs,double transientMs,quint16 baseRaw,quint16 transientRaw,quint8 counter){
@@ -110,7 +112,9 @@ public:
             }
         });
         QObject::connect(m_analysis,&AnalysisTab::liveSourceRequested,m_window,[this](bool injection){
-            if(injection){if(m_supported)startMappedInjection(m_mems,m_firmware);}else stopMappedInjectionDirect(m_mems);
+            // A known injection map authorizes only the address-specific RAM reader.
+            // It is never used as a general ECU support test.
+            if(injection){if(m_ecuConnected&&m_hasKnownInjectionMap)startMappedInjection(m_mems,m_firmware);}else stopMappedInjectionDirect(m_mems);
         });
         QObject::connect(m_tabs,&QTabWidget::currentChanged,m_window,[this](int index){onTabChanged(index);});
 
@@ -122,9 +126,16 @@ public:
 private:
     void updateFirmware(const QString &firmware)
     {
-        m_firmware=firmware.trimmed().toUpper();InjectionRamMap map; m_supported=injectionRamMapForFirmware(m_firmware,&map);
-        if(m_supported){m_map=map;m_dashboard->setMapping(m_firmware,true,map.baseAddress,map.transientSourceAddress,map.transientCounterAddress);m_analysis->setInjectionLiveAvailable(true);}
-        else {m_dashboard->setMapping(m_firmware,false);m_analysis->setInjectionLiveAvailable(false,I18n::text(7922));}
+        m_firmware=firmware.trimmed().toUpper();InjectionRamMap map;m_hasKnownInjectionMap=injectionRamMapForFirmware(m_firmware,&map);
+        if(m_hasKnownInjectionMap){
+            m_map=map;
+            m_dashboard->setMapping(m_firmware,true,map.baseAddress,map.transientSourceAddress,map.transientCounterAddress);
+            m_analysis->setInjectionRamReadAvailable(m_ecuConnected,QString());
+        } else {
+            m_map={0,0,0};
+            m_dashboard->setMapping(m_firmware,false);
+            m_analysis->setInjectionRamReadAvailable(false,I18n::text(7922));
+        }
     }
 
     void onTabChanged(int index)

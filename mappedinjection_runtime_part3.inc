@@ -1,11 +1,11 @@
         if(index<0||index>=m_tabs->count())return;QWidget *target=m_tabs->widget(index);
         const bool wasInjection=(m_previous==m_injectionTab)||(m_previous==m_analysis&&m_analysis->injectionLiveSelected());
         if(target==m_injectionTab){
-            if(m_supported)startMappedInjection(m_mems,m_firmware);
+            if(m_ecuConnected&&m_hasKnownInjectionMap)startMappedInjection(m_mems,m_firmware);
         } else if(target==m_analysis){
-            if(wasInjection&&m_supported)m_analysis->selectInjectionLive(false);
+            if(wasInjection&&m_ecuConnected&&m_hasKnownInjectionMap)m_analysis->selectInjectionLive(false);
             else if(!m_analysis->fileSourceSelected())m_analysis->selectDiagnosticLive(false);
-            if(m_analysis->injectionLiveSelected()&&m_supported)startMappedInjection(m_mems,m_firmware);else stopMappedInjectionDirect(m_mems);
+            if(m_analysis->injectionLiveSelected()&&m_ecuConnected&&m_hasKnownInjectionMap)startMappedInjection(m_mems,m_firmware);else stopMappedInjectionDirect(m_mems);
         } else {
             if(wasInjection||m_window->property("ecuReadMode").toString()==QStringLiteral("injection")||m_window->property("ecuReadMode").toString()==QStringLiteral("transition"))stopMappedInjectionDirect(m_mems);
         }
@@ -77,7 +77,7 @@
         mode->setStyleSheet(QStringLiteral("color:%1;background:transparent;border-right:1px solid #25313a;padding:0 10px;font-weight:700;").arg(color));
     }
 
-    MainWindow *m_window=nullptr;MEMSInterface *m_mems=nullptr;QTabWidget *m_tabs=nullptr;AnalysisTab *m_analysis=nullptr;InjectionDashboard *m_dashboard=nullptr;QWidget *m_injectionTab=nullptr,*m_previous=nullptr;QString m_firmware;InjectionRamMap m_map{0,0,0};bool m_supported=false,m_statusBound=false;
+    MainWindow *m_window=nullptr;MEMSInterface *m_mems=nullptr;QTabWidget *m_tabs=nullptr;AnalysisTab *m_analysis=nullptr;InjectionDashboard *m_dashboard=nullptr;QWidget *m_injectionTab=nullptr,*m_previous=nullptr;QString m_firmware;InjectionRamMap m_map{0,0,0};bool m_ecuConnected=false,m_hasKnownInjectionMap=false,m_statusBound=false;
 };
 
 class MappedInjectionInstaller : public QObject

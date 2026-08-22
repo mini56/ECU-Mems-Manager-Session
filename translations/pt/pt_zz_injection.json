@@ -24,7 +24,7 @@
   "7919": "Direto — Tramas RAM de injeção",
   "7920": "Base de injeção bruta (ticks)",
   "7921": "Fonte transitória bruta (ticks)",
-  "7922": "Sem mapeamento RAM de injeção validado para este firmware",
+  "7922": "O mapa RAM de injeção não está documentado para este firmware",
   "7923": "Base de injeção %1",
   "7924": "Correção transitória %1",
   "7925": "Estado transitório %1",

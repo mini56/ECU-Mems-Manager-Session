@@ -22,7 +22,7 @@
     connect(m_injectionLiveButton,&QPushButton::clicked,this,&AnalysisTab::onInjectionLiveClicked);
 
     setDiagnosticLiveAvailable(false);
-    setInjectionLiveAvailable(false,I18n::text(7922));
+    setInjectionRamReadAvailable(false,I18n::text(7922));
 }
 
 void AnalysisTab::setLiveButtons(bool diagnostic,bool injection)
@@ -39,11 +39,10 @@ void AnalysisTab::setDiagnosticLiveAvailable(bool available)
     else if(available && diagnosticLiveSelected()) setLiveButtons(true,false);
 }
 
-void AnalysisTab::setInjectionLiveAvailable(bool available,const QString &reason)
+void AnalysisTab::setInjectionRamReadAvailable(bool available,const QString &reason)
 {
-    Q_UNUSED(reason);
     m_injectionLiveButton->setEnabled(available);
-    m_injectionLiveButton->setToolTip(QString());
+    m_injectionLiveButton->setToolTip(available?QString():reason);
     if(!available && injectionLiveSelected()){
         if(m_diagnosticLiveButton->isEnabled()) selectDiagnosticLive(true);
         else setLiveButtons(false,false);

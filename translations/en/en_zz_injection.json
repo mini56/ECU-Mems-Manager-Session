@@ -24,7 +24,7 @@
   "7919": "Live — Injection RAM frames",
   "7920": "Raw injection base (ticks)",
   "7921": "Raw transient source (ticks)",
-  "7922": "No validated injection RAM mapping for this firmware",
+  "7922": "Injection RAM mapping is not documented for this firmware",
   "7923": "Injection base %1",
   "7924": "Transient correction %1",
   "7925": "Transient state %1",

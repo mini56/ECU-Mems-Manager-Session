@@ -1,3 +1,6 @@
+    // Safety check for the address-specific Injection RAM reader only.
+    // Absence from the map table means "RAM mapping not documented"; it must
+    // never be interpreted as "ECU not supported" and no guessed address is sent.
     InjectionRamMap map;if(!injectionRamMapForFirmware(firmwareIdentifier,&map)){onMappedInjectionRequestState(false);return;}
 
     setProperty("mappedInjectionModeActive",true);emit readModeChanged(QStringLiteral("transition"));
