@@ -151,6 +151,113 @@ static bool validatedInjectionProfileForFirmware(const QString &firmware,
         return true;
     }
 
+    // MEMS 1.6 additive family with base pulsewidth relocated to 0x03CC
+    // and transient source at 0x026E. The ASM retains the same injector-timer
+    // construction as the 0x03C8 family: the transient word is multiplied by
+    // 0xC001 and its high word is added to the injector accumulator.
+    if (id == QStringLiteral("KBACF000") ||
+        id == QStringLiteral("KBACP000") ||
+        id == QStringLiteral("KBACP001") ||
+        id == QStringLiteral("KBP8P005"))
+    {
+        *profile = InjectionCalculationProfile(
+            InjectionRamMap{0x03CCu, 0x026Eu, 0x027Eu},
+            InjectionCalculationKind::AdditiveC001,
+            InjectionCounterPolicy::NonZeroActive,
+            0.002,
+            0.002);
+        return true;
+    }
+
+    if (id == QStringLiteral("KBACF001"))
+    {
+        *profile = InjectionCalculationProfile(
+            InjectionRamMap{0x03CCu, 0x026Eu, 0x0280u},
+            InjectionCalculationKind::AdditiveC001,
+            InjectionCounterPolicy::NonZeroActive,
+            0.002,
+            0.002);
+        return true;
+    }
+
+    if (id == QStringLiteral("KBP8F063") ||
+        id == QStringLiteral("KBP8F065") ||
+        id == QStringLiteral("KBP8F066") ||
+        id == QStringLiteral("KBP8P017"))
+    {
+        *profile = InjectionCalculationProfile(
+            InjectionRamMap{0x03CCu, 0x026Eu, 0x0281u},
+            InjectionCalculationKind::AdditiveC001,
+            InjectionCounterPolicy::NonZeroActive,
+            0.002,
+            0.002);
+        return true;
+    }
+
+    if (id == QStringLiteral("KBP8P013") ||
+        id == QStringLiteral("TAEDP001") ||
+        id == QStringLiteral("TAPDF008") ||
+        id == QStringLiteral("TAPDP000") ||
+        id == QStringLiteral("TAPDP001") ||
+        id == QStringLiteral("TAPDP002"))
+    {
+        *profile = InjectionCalculationProfile(
+            InjectionRamMap{0x03CCu, 0x026Eu, 0x027Fu},
+            InjectionCalculationKind::AdditiveC001,
+            InjectionCounterPolicy::NonZeroActive,
+            0.002,
+            0.002);
+        return true;
+    }
+
+    // Later MEMS 1.6 layouts relocate the same additive transient quantity
+    // from 0x026E to 0x0262 or 0x0266. Each firmware below was checked in its
+    // correlated ASM: the mapped state byte gates the mapped word and the
+    // called routine performs the same 0xC001 high-word injector addition.
+    if (id == QStringLiteral("KBM6P005") ||
+        id == QStringLiteral("KBM6P006") ||
+        id == QStringLiteral("KBP8P007") ||
+        id == QStringLiteral("KBP8P009") ||
+        id == QStringLiteral("KBP8P011") ||
+        id == QStringLiteral("KBP8P012"))
+    {
+        *profile = InjectionCalculationProfile(
+            InjectionRamMap{0x03CCu, 0x0262u, 0x0268u},
+            InjectionCalculationKind::AdditiveC001,
+            InjectionCounterPolicy::NonZeroActive,
+            0.002,
+            0.002);
+        return true;
+    }
+
+    if (id == QStringLiteral("KBP8F053") ||
+        id == QStringLiteral("KBP8P008") ||
+        id == QStringLiteral("KBP8P010") ||
+        id == QStringLiteral("KBP8P014") ||
+        id == QStringLiteral("KBP8P015"))
+    {
+        *profile = InjectionCalculationProfile(
+            InjectionRamMap{0x03CCu, 0x0262u, 0x0269u},
+            InjectionCalculationKind::AdditiveC001,
+            InjectionCounterPolicy::NonZeroActive,
+            0.002,
+            0.002);
+        return true;
+    }
+
+    if (id == QStringLiteral("KBP8F062") ||
+        id == QStringLiteral("KBP8F064") ||
+        id == QStringLiteral("KBP8P016"))
+    {
+        *profile = InjectionCalculationProfile(
+            InjectionRamMap{0x03CCu, 0x0266u, 0x026Cu},
+            InjectionCalculationKind::AdditiveC001,
+            InjectionCounterPolicy::NonZeroActive,
+            0.002,
+            0.002);
+        return true;
+    }
+
     // ACNMP001 / MEMS 1.6.
     // Andrew Revill PETA3 definitions:
     // s_pulsewidth     0x03C8 W 0.001333 ms/raw
