@@ -143,6 +143,8 @@ private:
     uint8_t m_d0_response_buffer[4];
     void runServiceLoop();
     bool connectToECU();
+    bool connectToECULegacy();
+    void onStartPollingRequestLegacy();
     bool tryRoscoConnect(const QString &devicePath);
     bool performMems19Wakeup(const QString &qtPortName, QString *detail = nullptr);
     bool actuatorOnOffDelayTest(actuator_cmd onCmd, actuator_cmd offCmd);
