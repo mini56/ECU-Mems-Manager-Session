@@ -100,18 +100,36 @@ void OptionsDialog::setupWidgets()
     m_serialDeviceBox->addItem(adapter.displayName(), adapter.portName);
 
   const QString configuredPort = SerialAdapterDetector::stripWindowsDevicePrefix(m_serialDeviceName);
-  int configuredIndex = m_serialDeviceBox->findData(configuredPort, Qt::UserRole, Qt::MatchFixedString);
-  if (configuredIndex >= 0)
+  const int configuredIndex = m_serialDeviceBox->findData(configuredPort, Qt::UserRole, Qt::MatchFixedString);
+  int selectedIndex = -1;
+
+  // Use the saved port only if Windows currently sees that interface.
+  if (configuredIndex >= 0 && configuredIndex < adapters.size() && adapters.at(configuredIndex).detectedBySystem)
   {
-    m_serialDeviceBox->setCurrentIndex(configuredIndex);
-    m_serialDeviceName = m_serialDeviceBox->currentData().toString();
+    selectedIndex = configuredIndex;
   }
-  else if (m_serialDeviceBox->count() > 0)
+  else
   {
-    // No valid saved choice: select the first detected serial interface.
-    // MEMSInterface will still scan every detected port when Connect is pressed,
-    // so a multi-adapter PC is not locked to this provisional selection.
-    m_serialDeviceBox->setCurrentIndex(0);
+    // Saved COM disappeared or was wrong: choose the first interface that is
+    // actually present now. This is the common case after Windows changes a
+    // USB cable from COM3 to COM5.
+    for (int i = 0; i < adapters.size(); ++i)
+    {
+      if (adapters.at(i).detectedBySystem)
+      {
+        selectedIndex = i;
+        break;
+      }
+    }
+
+    // If no physical metadata is available, keep the manual/saved fallback.
+    if (selectedIndex < 0 && configuredIndex >= 0)
+      selectedIndex = configuredIndex;
+  }
+
+  if (selectedIndex >= 0)
+  {
+    m_serialDeviceBox->setCurrentIndex(selectedIndex);
     m_serialDeviceName = m_serialDeviceBox->currentData().toString();
   }
   else
@@ -125,7 +143,7 @@ void OptionsDialog::setupWidgets()
   m_serialDeviceBox->setEditable(true);
   m_serialDeviceBox->setMinimumWidth(330);
   m_serialDeviceBox->setMinimumHeight(30);
-  m_serialDeviceBox->setToolTip(QStringLiteral("Port COM et convertisseur USB détectés automatiquement. La saisie manuelle reste possible."));
+  m_serialDeviceBox->setToolTip(QStringLiteral("COM port and USB serial adapter are detected automatically; manual entry remains available."));
   if (m_serialDeviceBox->lineEdit())
     m_serialDeviceBox->lineEdit()->setMinimumHeight(22);
 
