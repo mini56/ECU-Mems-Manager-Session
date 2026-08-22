@@ -6,7 +6,12 @@
     const InjectionRamMap &map=profile.map;
     const QString firmwareId=firmwareIdentifier.trimmed().toUpper();
     const bool mems13ConditionalRead=(firmwareId==QStringLiteral("KBE6R003")||firmwareId==QStringLiteral("MGE7R002"));
-    const bool directFinalRead=(map.transientSourceAddress==0u&&map.transientCounterAddress==0u);
+    // MEMS 1.9 correlated profiles use the stable 0x004E scheduler contribution
+    // plus one 0x8000-biased injector compensation word.  The zero counter is
+    // intentional: both words belong to the same normal scheduled pulse and are
+    // always acquired in this single Mode-4 sample cycle.
+    const bool mems19ScheduledRead=(map.baseAddress==0x004Eu&&map.transientSourceAddress!=0u&&map.transientCounterAddress==0u&&profile.baseMsPerRaw==0.008);
+    const bool directFinalRead=(!mems19ScheduledRead&&map.transientSourceAddress==0u&&map.transientCounterAddress==0u);
 
     setProperty("mappedInjectionModeActive",true);emit readModeChanged(QStringLiteral("transition"));
     bool entered=false;bool ok=ensureNormalSession(&m_memsinfo);
@@ -34,6 +39,13 @@
             counter=transientActive?quint8(1):quint8(0);
             if(sampleOk&&transientActive)sampleOk=ensureBlock(quint8(map.transientSourceAddress>>8))&&readMappedWordInBlock(&m_memsinfo,map.transientSourceAddress,selected,&transientRaw);
         }
+        else if(mems19ScheduledRead)
+        {
+            // MEMS 1.9 normal pulse: read the injector compensation word first,
+            // then the scheduler contribution. Both reads stay in this Mode-4
+            // sample. No normal 7D/80 polling value is used here.
+            sampleOk=ensureBlock(quint8(map.transientSourceAddress>>8))&&readMappedWordInBlock(&m_memsinfo,map.transientSourceAddress,selected,&transientRaw);
+        }
         else if(!directFinalRead)
         {
             sampleOk=ensureBlock(quint8(map.transientCounterAddress>>8))&&readMappedByteInBlock(&m_memsinfo,map.transientCounterAddress,selected,&counter);
@@ -43,7 +55,7 @@
         if(sampleOk)sampleOk=ensureBlock(quint8(map.baseAddress>>8))&&readMappedWordInBlock(&m_memsinfo,map.baseAddress,selected,&baseRaw);
         if(!sampleOk){if(++failures>=3)break;QThread::msleep(20);continue;}failures=0;
 
-        if(!directFinalRead&&!mems13ConditionalRead){previousCounter=counter;havePreviousCounter=true;}
+        if(!directFinalRead&&!mems13ConditionalRead&&!mems19ScheduledRead){previousCounter=counter;havePreviousCounter=true;}
         double finalMs=0.0,baseMs=0.0,transientMs=0.0;
         if(mems13ConditionalRead)
         {
@@ -61,6 +73,21 @@
             baseMs=double(baseRaw)*profile.baseMsPerRaw;
             finalMs=double(finalRaw)*profile.baseMsPerRaw;
             transientMs=transientActive?(finalMs-baseMs):0.0;
+        }
+        else if(mems19ScheduledRead)
+        {
+            // The MEMS 1.9 scheduler loads 0x004E eight times into each bank,
+            // then adds (compensation - 0x8000) immediately before the HSO
+            // injector output. The output timer and diagnostic injector test
+            // both use 1 us/raw, so the final result is converted at 0.001 ms.
+            qint64 finalRaw=qint64(baseRaw)*8+qint64(transientRaw)-qint64(0x8000u);
+            if(finalRaw<0)finalRaw=0;
+            if(finalRaw>0xFFFF)finalRaw=0xFFFF;
+            baseMs=double(baseRaw)*profile.baseMsPerRaw;
+            finalMs=double(finalRaw)*profile.transientMsPerRaw;
+            // The second word is injector dead-time/compensation, not an
+            // asynchronous enrichment pulse. Do not misreport it as transient.
+            transientMs=0.0;
         }
         else if(!calculateValidatedInjectionSample(profile,baseRaw,transientRaw,transientActive,&finalMs,&baseMs,&transientMs))break;
         emit injectionLiveSample(finalMs,baseMs,transientMs,baseRaw,transientRaw,counter);
