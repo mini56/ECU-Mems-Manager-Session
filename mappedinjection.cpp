@@ -50,7 +50,10 @@ namespace {
 #define validatedInjectionProfileForFirmware validatedInjectionProfileForFirmware13
 #include "mappedinjection_profiles_mems13.inc"
 #undef validatedInjectionProfileForFirmware
+#define validatedInjectionProfileForFirmware validatedInjectionProfileForFirmwareMems19B4
 #include "mappedinjection_profiles_mems19.inc"
+#undef validatedInjectionProfileForFirmware
+#include "mappedinjection_profiles_mems19_batch5.inc"
 }
 
 #include "mappedinjection_runtime.inc"
