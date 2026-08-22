@@ -1,4 +1,4 @@
-// Rover MEMS 1.9 injection profiles - 75 correlated firmware enabled.
+// Rover MEMS 1.9 injection profiles - 100 correlated firmware enabled.
 // 0x004E is the stable normal scheduler contribution. The compensation word
 // is 0x8000-biased and is correlated per firmware below. baseScale 0.008 is
 // the normal x8 scheduler; 0.016 marks the proven final-doubled KLH4/KLQ4 path.
@@ -85,6 +85,31 @@ static bool validatedInjectionProfileForFirmware(const QString &firmware,
         {"KLQ4G006", 0x014Cu, 0.016},
         {"KLQ4G007", 0x014Au, 0.016},
         {"KLQ4V002", 0x014Au, 0.016},
+        {"KLQ4V003", 0x014Au, 0.016},
+        {"KLQ4V004", 0x014Au, 0.016},
+        {"KLQ4V005", 0x014Au, 0.016},
+        {"KLQ4V006", 0x014Au, 0.016},
+        {"KRHBG015", 0x014Cu, 0.008},
+        {"KRHBG016", 0x014Au, 0.008},
+        {"KRHBG017", 0x014Cu, 0.008},
+        {"KRHBG018", 0x014Au, 0.008},
+        {"KRHBV000", 0x014Au, 0.008},
+        {"KRHBV001", 0x014Au, 0.008},
+        {"KRHBV002", 0x014Au, 0.008},
+        {"KRHBV003", 0x014Au, 0.008},
+        {"KRHBV004", 0x014Au, 0.008},
+        {"KRHBV005", 0x014Au, 0.008},
+        {"KTH6G008", 0x014Cu, 0.008},
+        {"KTH6G011", 0x014Cu, 0.008},
+        {"KTH6G012", 0x014Au, 0.008},
+        {"KTH6V000", 0x014Au, 0.008},
+        {"KTH6V001", 0x014Au, 0.008},
+        {"KTH6V002", 0x014Au, 0.008},
+        {"KTH6V003", 0x014Au, 0.008},
+        {"KTH6V004", 0x014Au, 0.008},
+        {"KTH6V005", 0x014Au, 0.008},
+        {"KTHBG010", 0x014Cu, 0.008},
+        {"KTHBG012", 0x014Cu, 0.008},
     };
     const QString id = firmware.trimmed().toUpper();
     for (const Entry &entry : entries)
