@@ -78,9 +78,18 @@ static bool validatedInjectionProfileForFirmware(const QString &firmware,
         return true;
     }
 
-    // ACNMP003 / MEMS 1.6. Same PETA pulse-width semantics as ACNMP001,
-    // with the asynchronous-fire counter relocated to 0x0285.
-    if (id == QStringLiteral("ACNMP003"))
+    // Mini Auto immobilised MEMS 1.6 family.
+    // ACNMP003 is the direct PETA3 anchor:
+    //   s_pulsewidth    0x03C8 W 0.001333 ms/raw
+    //   t_asyn_pw       0x0270 W 0.001000 ms/raw
+    //   t_asyn_fire_cnt 0x0285 B
+    // Andrew Revill's 1.6 correlation data maps ACNMF026, ACNMP004 and
+    // ACNMP005 to the same three RAM variables. They therefore share this
+    // calculation profile; no address or scale is inferred by proximity alone.
+    if (id == QStringLiteral("ACNMP003") ||
+        id == QStringLiteral("ACNMF026") ||
+        id == QStringLiteral("ACNMP004") ||
+        id == QStringLiteral("ACNMP005"))
     {
         *profile = InjectionCalculationProfile(
             InjectionRamMap{0x03C8u, 0x0270u, 0x0285u},
