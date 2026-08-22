@@ -6,12 +6,17 @@
     const InjectionRamMap &map=profile.map;
     const QString firmwareId=firmwareIdentifier.trimmed().toUpper();
     const bool mems13ConditionalRead=(firmwareId==QStringLiteral("KBE6R003")||firmwareId==QStringLiteral("MGE7R002"));
-    // MEMS 1.9 correlated profiles use the stable 0x004E scheduler contribution
-    // plus one 0x8000-biased injector compensation word. Two proven scheduler
-    // variants exist: normal x8 contribution (0.008 ms/raw) and a final doubled
-    // output variant (0.016 ms/raw). Both words stay in one Mode-4 sample cycle.
-    const bool mems19ScheduledRead=(map.baseAddress==0x004Eu&&map.transientSourceAddress!=0u&&map.transientCounterAddress==0u&&
-                                    (profile.baseMsPerRaw==0.008||profile.baseMsPerRaw==0.016));
+    // MEMS 1.9 correlated profiles use one x8 scheduler contribution plus one
+    // 0x8000-biased injector compensation word. The normal families keep the
+    // contribution at 0x004E; TBP7F015 uses the independently proven special
+    // path 0x0056 + compensation 0x0040. The KLH4/KLQ4 normal path is doubled
+    // at the output stage and therefore uses 0.016 ms/raw.
+    const bool mems19NormalScheduledRead=(map.baseAddress==0x004Eu&&map.transientSourceAddress!=0u&&map.transientCounterAddress==0u&&
+                                          (profile.baseMsPerRaw==0.008||profile.baseMsPerRaw==0.016));
+    const bool mems19Tbp7f015ScheduledRead=(firmwareId==QStringLiteral("TBP7F015")&&
+                                            map.baseAddress==0x0056u&&map.transientSourceAddress==0x0040u&&
+                                            map.transientCounterAddress==0u&&profile.baseMsPerRaw==0.008);
+    const bool mems19ScheduledRead=mems19NormalScheduledRead||mems19Tbp7f015ScheduledRead;
     const bool directFinalRead=(!mems19ScheduledRead&&map.transientSourceAddress==0u&&map.transientCounterAddress==0u);
 
     setProperty("mappedInjectionModeActive",true);emit readModeChanged(QStringLiteral("transition"));
