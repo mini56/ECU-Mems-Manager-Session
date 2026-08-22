@@ -116,6 +116,7 @@ signals:
     void ignition_advance_minus();
     void interactive_mode();
     void protocolResponse(quint8 command, QByteArray response);
+    void serialInterfaceDetected(QString portName, QString adapterFamily, QString protocolName);
     void injectionRamTestFinished(bool success,
                                   quint16 baseRaw,
                                   quint16 correctionRaw,
@@ -142,6 +143,8 @@ private:
     uint8_t m_d0_response_buffer[4];
     void runServiceLoop();
     bool connectToECU();
+    bool tryRoscoConnect(const QString &devicePath);
+    bool performMems19Wakeup(const QString &qtPortName, QString *detail = nullptr);
     bool actuatorOnOffDelayTest(actuator_cmd onCmd, actuator_cmd offCmd);
 };
 
