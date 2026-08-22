@@ -100,6 +100,25 @@ static bool validatedInjectionProfileForFirmware(const QString &firmware,
         return true;
     }
 
+    // Mini Cooper late MEMS 1.6 family.
+    // Andrew Revill's correlated RAM-variable classes identify the same
+    // s_pulsewidth and t_asyn_pw variables as the PETA3 anchor above, with
+    // t_asyn_fire_cnt relocated to 0x0283. His correlator explicitly carries
+    // PETA definitions by variable class across firmwares, so the scale is
+    // inherited from the class definition rather than guessed from the ID.
+    if (id == QStringLiteral("ABNMF032") ||
+        id == QStringLiteral("ABNMP005") ||
+        id == QStringLiteral("ABNMP006"))
+    {
+        *profile = InjectionCalculationProfile(
+            InjectionRamMap{0x03C8u, 0x0270u, 0x0283u},
+            InjectionCalculationKind::IndependentAsync,
+            InjectionCounterPolicy::IncrementEvent,
+            0.001333,
+            0.001);
+        return true;
+    }
+
     // AANMP000 / MEMS 1.6. Andrew Revill ASM correlates the same synchronous
     // snapshot at 0x03C8, asynchronous width at 0x0270 and the same C001/timer
     // path as ACNMP001. The low byte at 0x00EB is incremented per async fire.
