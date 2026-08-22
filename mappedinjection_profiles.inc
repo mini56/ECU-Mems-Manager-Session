@@ -62,11 +62,15 @@ static bool validatedInjectionProfileForFirmware(const QString &firmware,
         return true;
     }
 
-    // ACNMF024 / Mini Auto MEMS 1.6.
-    // Andrew Revill's full-triplet correlation keeps the same 0x03C8 duration
-    // and 0x026E conditional-source classes as the validated Mini SPi path;
-    // the transient state/counter is relocated to 0x0282.
-    if (id == QStringLiteral("ACNMF024"))
+    // MEMS 1.6 family with the AANMP002 additive injection path and the
+    // transient state/counter at 0x0282. ACNMF024 is the first validated
+    // member; the KCE8 variants have the same correlated 0x03C8 / 0x026E /
+    // 0x0282 triplet and their ASM executes the same 0xC001 high-word add.
+    if (id == QStringLiteral("ACNMF024") ||
+        id == QStringLiteral("KCE8F007") ||
+        id == QStringLiteral("KCE8F008") ||
+        id == QStringLiteral("KCE8F009") ||
+        id == QStringLiteral("KCE8P004"))
     {
         *profile = InjectionCalculationProfile(
             InjectionRamMap{0x03C8u, 0x026Eu, 0x0282u},
