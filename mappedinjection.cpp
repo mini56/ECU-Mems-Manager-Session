@@ -44,7 +44,10 @@ namespace {
 #define validatedInjectionProfileForFirmware validatedInjectionProfileForFirmwareNa
 #include "mappedinjection_profiles_extra.inc"
 #undef validatedInjectionProfileForFirmware
+#define validatedInjectionProfileForFirmware validatedInjectionProfileForFirmware16
 #include "mappedinjection_profiles_turbo.inc"
+#undef validatedInjectionProfileForFirmware
+#include "mappedinjection_profiles_mems13.inc"
 }
 
 #include "mappedinjection_runtime.inc"
