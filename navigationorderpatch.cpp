@@ -19,12 +19,14 @@
 #include <QWidget>
 
 #include "i18n.h"
+#include "mainwindow.h"
+#include "mems19testtab.h"
 
 namespace {
 
 static const int kTextRole=Qt::UserRole+42;
 static const int kTabPtrRole=Qt::UserRole+60;
-static const int kFinalTabCount=12;
+static const int kFinalTabCount=13;
 
 static QWidget *realPage(QWidget *tab)
 {
@@ -48,6 +50,7 @@ static int rankFromTitle(const QString &title)
     if(t==I18n::text(5001).trimmed())return 9; // Toutes les données
     if(t==I18n::text(7152).trimmed())return 10; // Base données
     if(t==I18n::text(6002).trimmed()||t==I18n::text(6003).trimmed())return 11; // Interactif
+    if(t==I18n::text(7930).trimmed())return 12; // Test ECU 1.9
     return -1;
 }
 
@@ -67,6 +70,7 @@ static int fallbackRank(QWidget *tab)
     if(name==QStringLiteral("raw"))return 9;
     if(name==QStringLiteral("database_tab"))return 10;
     if(name.contains(QStringLiteral("interactive")))return 11;
+    if(name==QStringLiteral("mems19_test_tab"))return 12;
     return -1;
 }
 
@@ -102,6 +106,8 @@ static QIcon iconForRank(int rank)
         p.drawEllipse(QRectF(4,4,14,5));p.drawLine(4,6.5,4,16);p.drawLine(18,6.5,18,16);p.drawArc(QRectF(4,13.5,14,5),180*16,180*16);p.drawArc(QRectF(4,9,14,5),180*16,180*16);break;
     case 11:
         p.drawRoundedRect(QRectF(3,4,16,14),2,2);p.drawLine(6,8,9,11);p.drawLine(9,11,6,14);p.drawLine(11.5,14,16,14);break;
+    case 12:
+        p.drawRoundedRect(QRectF(3,5,10,12),2,2);p.drawLine(13,9,18,9);p.drawLine(13,13,18,13);p.drawLine(18,7,18,15);p.drawLine(5,8,10,8);p.drawLine(5,11,10,11);p.drawLine(5,14,10,14);break;
     default:p.drawEllipse(QPointF(11,11),7,7);break;
     }
     return QIcon(pm);
@@ -153,5 +159,12 @@ protected:bool eventFilter(QObject *watched,QEvent *event) override{if(watched==
 
 void installFinalNavigation(QApplication *app,QMainWindow *window)
 {
-    if(!app||!window||window->property("finalNavigationInstalled").toBool())return;window->setProperty("finalNavigationInstalled",true);window->installEventFilter(new FinalNavigationFilter(window));const int delays[]={80,450,1550,2550,3750,4700};for(int delay:delays)QTimer::singleShot(delay,window,[window](){applyFinalMenu(window);});
+    if(!app||!window||window->property("finalNavigationInstalled").toBool())return;
+    if(MainWindow *mainWindow=qobject_cast<MainWindow*>(window)){
+        if(QTabWidget *tabs=mainWindow->findChild<QTabWidget*>(QStringLiteral("Tab_main"))){
+            bool exists=false;for(int i=0;i<tabs->count();++i){QWidget *page=realPage(tabs->widget(i));if(page&&page->objectName()==QStringLiteral("mems19_test_tab")){exists=true;break;}}
+            if(!exists&&mainWindow->memsInterface())tabs->addTab(new Mems19TestTab(mainWindow->memsInterface(),tabs),I18n::text(7930));
+        }
+    }
+    window->setProperty("finalNavigationInstalled",true);window->installEventFilter(new FinalNavigationFilter(window));const int delays[]={80,450,1550,2550,3750,4700};for(int delay:delays)QTimer::singleShot(delay,window,[window](){applyFinalMenu(window);});
 }
