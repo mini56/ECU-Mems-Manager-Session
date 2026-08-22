@@ -105,6 +105,52 @@ static bool validatedInjectionProfileForFirmware(const QString &firmware,
         return true;
     }
 
+    // MEMS 1.6 additive family with the transient state/counter at 0x027E.
+    // The correlated map gives the same 0x03C8 base and 0x026E transient
+    // variables as AANMP002. In every ASM below the firmware checks/updates
+    // 0x027E, loads 0x026E, then calls a routine which performs
+    // mulu #-3FFFh (0xC001) and adds the high word to the injector accumulator.
+    if (id == QStringLiteral("KCE6P003") ||
+        id == QStringLiteral("KCE8P000") ||
+        id == QStringLiteral("KDE6P004") ||
+        id == QStringLiteral("TAP8F019") ||
+        id == QStringLiteral("TAP8F022") ||
+        id == QStringLiteral("TAP8F023") ||
+        id == QStringLiteral("TAP8F027"))
+    {
+        *profile = InjectionCalculationProfile(
+            InjectionRamMap{0x03C8u, 0x026Eu, 0x027Eu},
+            InjectionCalculationKind::AdditiveC001,
+            InjectionCounterPolicy::NonZeroActive,
+            0.002,
+            0.002);
+        return true;
+    }
+
+    // MEMS 1.6 additive family with the transient state/counter at 0x027F.
+    // These firmwares retain the correlated 0x03C8 / 0x026E path. Their ASM
+    // checks/updates 0x027F, loads 0x026E, then executes the same C001
+    // high-word addition into the injector accumulator.
+    if (id == QStringLiteral("KCE8F000") ||
+        id == QStringLiteral("KCE8F005") ||
+        id == QStringLiteral("KCE8F006") ||
+        id == QStringLiteral("KCE8P001") ||
+        id == QStringLiteral("KCE8P003") ||
+        id == QStringLiteral("TAP7F017") ||
+        id == QStringLiteral("TAP7P005") ||
+        id == QStringLiteral("TAP7P006") ||
+        id == QStringLiteral("TAP8P006") ||
+        id == QStringLiteral("TAP8P007"))
+    {
+        *profile = InjectionCalculationProfile(
+            InjectionRamMap{0x03C8u, 0x026Eu, 0x027Fu},
+            InjectionCalculationKind::AdditiveC001,
+            InjectionCounterPolicy::NonZeroActive,
+            0.002,
+            0.002);
+        return true;
+    }
+
     // ACNMP001 / MEMS 1.6.
     // Andrew Revill PETA3 definitions:
     // s_pulsewidth     0x03C8 W 0.001333 ms/raw
