@@ -258,6 +258,40 @@ static bool validatedInjectionProfileForFirmware(const QString &firmware,
         return true;
     }
 
+    // KDE6P005 keeps the established 0x03C8 / 0x026E additive path,
+    // with the transient state/counter relocated to 0x0283. Its ASM checks
+    // and updates 0x0283, loads 0x026E and calls the same C001 high-word
+    // injector-accumulator routine as the other validated additive families.
+    if (id == QStringLiteral("KDE6P005"))
+    {
+        *profile = InjectionCalculationProfile(
+            InjectionRamMap{0x03C8u, 0x026Eu, 0x0283u},
+            InjectionCalculationKind::AdditiveC001,
+            InjectionCounterPolicy::NonZeroActive,
+            0.002,
+            0.002);
+        return true;
+    }
+
+    // TAPDF/TAPDP late MEMS 1.6 family. The correlated layout relocates the
+    // synchronous pulsewidth snapshot to 0x03CC while retaining the validated
+    // asynchronous width/counter pair 0x0270 / 0x0283 used by the Mini Cooper
+    // independent-async family. The ASM fire path is structurally identical.
+    if (id == QStringLiteral("TAPDF010") ||
+        id == QStringLiteral("TAPDF011") ||
+        id == QStringLiteral("TAPDF012") ||
+        id == QStringLiteral("TAPDF013") ||
+        id == QStringLiteral("TAPDP003"))
+    {
+        *profile = InjectionCalculationProfile(
+            InjectionRamMap{0x03CCu, 0x0270u, 0x0283u},
+            InjectionCalculationKind::IndependentAsync,
+            InjectionCounterPolicy::IncrementEvent,
+            0.001333,
+            0.001);
+        return true;
+    }
+
     // ACNMP001 / MEMS 1.6.
     // Andrew Revill PETA3 definitions:
     // s_pulsewidth     0x03C8 W 0.001333 ms/raw
