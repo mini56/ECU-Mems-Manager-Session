@@ -1,16 +1,10 @@
-// Rover MEMS 1.9 injection profiles - correlated batch 1/7.
+// Rover MEMS 1.9 injection profiles - correlated batches 1-2/7 (50 firmware).
 //
-// These firmware schedulers keep the normal pulse contribution at INTMEM 0x004E.
-// The scheduler copies that contribution eight times into each injector-bank
-// accumulator before firing, therefore baseMsPerRaw is 0.008 ms/raw here.
-// Immediately before the injector output routine the firmware adds a 0x8000-
-// biased injector compensation word.  The compensation address is 0x014A or
-// 0x014C depending on the correlated firmware family below.
-//
-// The low-level injector test path loads approximately 2000 raw units for the
-// documented ~2 ms test pulse, independently confirming 0.001 ms per scheduler
-// timer unit.  Both words are read in one Mode-4 sample cycle; no 7D/80 value is
-// mixed into this calculation.
+// Normal family: INTMEM 0x004E is accumulated eight times, then a 0x8000-biased
+// injector compensation word is applied. 1 scheduler timer unit = 1 us.
+// KLH4 family: same source/correction principle, but the final HSO width is
+// doubled by the firmware; baseMsPerRaw=0.016 marks that proven scheduler variant.
+// All words are acquired in one Mode-4 sample cycle.
 static bool validatedInjectionProfileForFirmware(const QString &firmware,
                                                  InjectionCalculationProfile *profile)
 {
@@ -22,6 +16,7 @@ static bool validatedInjectionProfileForFirmware(const QString &firmware,
 
     const QString id = firmware.trimmed().toUpper();
     quint16 compensationAddress = 0u;
+    double baseScale = 0.0;
 
     if (id == QStringLiteral("KBHBG009") ||
         id == QStringLiteral("KBHBV001") ||
@@ -40,19 +35,54 @@ static bool validatedInjectionProfileForFirmware(const QString &firmware,
         id == QStringLiteral("KFHHV002") ||
         id == QStringLiteral("KFHHV003") ||
         id == QStringLiteral("KIH6G011") ||
-        id == QStringLiteral("KIH6V003"))
+        id == QStringLiteral("KIH6V003") ||
+        id == QStringLiteral("KIH6V004") ||
+        id == QStringLiteral("KIHBG000") ||
+        id == QStringLiteral("KIHBV000") ||
+        id == QStringLiteral("KJH6G009") ||
+        id == QStringLiteral("KJH6G012") ||
+        id == QStringLiteral("KJH6V000") ||
+        id == QStringLiteral("KJH6V001") ||
+        id == QStringLiteral("KJH6V002") ||
+        id == QStringLiteral("KJH6V003") ||
+        id == QStringLiteral("KJH6V004") ||
+        id == QStringLiteral("KJH6V005"))
     {
         compensationAddress = 0x014Au;
+        baseScale = 0.008;
     }
     else if (id == QStringLiteral("KBHBG010") ||
-             id == QStringLiteral("KBHHG008") ||
-             id == QStringLiteral("KFACG001") ||
-             id == QStringLiteral("KFHBG007") ||
-             id == QStringLiteral("KFHBG009") ||
-             id == QStringLiteral("KIH6G010") ||
-             id == QStringLiteral("KIH6G012"))
+        id == QStringLiteral("KBHHG008") ||
+        id == QStringLiteral("KFACG001") ||
+        id == QStringLiteral("KFHBG007") ||
+        id == QStringLiteral("KFHBG009") ||
+        id == QStringLiteral("KIH6G010") ||
+        id == QStringLiteral("KIH6G012") ||
+        id == QStringLiteral("KJH6G008") ||
+        id == QStringLiteral("KJH6G011") ||
+        id == QStringLiteral("KLH3G015") ||
+        id == QStringLiteral("KLH3G017") ||
+        id == QStringLiteral("KLH3G018") ||
+        id == QStringLiteral("KLH3G019") ||
+        id == QStringLiteral("KLH3G020") ||
+        id == QStringLiteral("KLH3V004") ||
+        id == QStringLiteral("KLH3V005") ||
+        id == QStringLiteral("KLH3V006"))
     {
         compensationAddress = 0x014Cu;
+        baseScale = 0.008;
+    }
+    else if (id == QStringLiteral("KLH4G017") ||
+        id == QStringLiteral("KLH4G020"))
+    {
+        compensationAddress = 0x014Au;
+        baseScale = 0.016;
+    }
+    else if (id == QStringLiteral("KLH4G018") ||
+        id == QStringLiteral("KLH4G019"))
+    {
+        compensationAddress = 0x014Cu;
+        baseScale = 0.016;
     }
     else
     {
@@ -63,7 +93,7 @@ static bool validatedInjectionProfileForFirmware(const QString &firmware,
         InjectionRamMap{0x004Eu, compensationAddress, 0x0000u},
         InjectionCalculationKind::IndependentAsync,
         InjectionCounterPolicy::NonZeroActive,
-        0.008,   // 8 scheduler contributions * 1 us/raw
-        0.001);  // biased injector compensation uses 1 us/raw
+        baseScale,
+        0.001);
     return true;
 }
