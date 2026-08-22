@@ -87,6 +87,7 @@ jobs:
           Copy-Item "$build\ecu_mems_manager.exe" "$dist\ecu_mems_manager.exe" -Force
           Copy-Item "$build\ecu_mems_uninstaller.exe" "$dist\uninstall_ecu_mems_manager.exe" -Force
           Copy-Item "${{ github.workspace }}\prebuilt-librosco\librosco.dll" "$dist\librosco.dll" -Force
+
           # Les traductions sont generees/copied par CMake dans build/translations.
           # Elles sont obligatoires : sans elles l'I18n affiche [0101], [3001], etc.
           if (-not (Test-Path "$build\translations")) {
