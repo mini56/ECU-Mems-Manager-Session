@@ -4,6 +4,7 @@
     InjectionCalculationProfile profile;
     if(!validatedInjectionProfileForFirmware(firmwareIdentifier,&profile)){onMappedInjectionRequestState(false);return;}
     const InjectionRamMap &map=profile.map;
+    const bool directFinalRead=(map.transientSourceAddress==0u&&map.transientCounterAddress==0u);
 
     setProperty("mappedInjectionModeActive",true);emit readModeChanged(QStringLiteral("transition"));
     bool entered=false;bool ok=ensureNormalSession(&m_memsinfo);
@@ -17,13 +18,18 @@
     {
         quint8 counter=0;quint16 transientRaw=0,baseRaw=0;quint8 selected=0xFF;
         const auto ensureBlock=[&](quint8 block)->bool{if(selected==block)return true;if(!selectMode4Block(&m_memsinfo,block))return false;selected=block;return true;};
-        bool sampleOk=ensureBlock(quint8(map.transientCounterAddress>>8))&&readMappedByteInBlock(&m_memsinfo,map.transientCounterAddress,selected,&counter);
-        const bool transientActive=sampleOk&&injectionTransientActive(profile,counter,havePreviousCounter,previousCounter);
-        if(sampleOk&&transientActive)sampleOk=ensureBlock(quint8(map.transientSourceAddress>>8))&&readMappedWordInBlock(&m_memsinfo,map.transientSourceAddress,selected,&transientRaw);
+        bool sampleOk=true;
+        bool transientActive=false;
+        if(!directFinalRead)
+        {
+            sampleOk=ensureBlock(quint8(map.transientCounterAddress>>8))&&readMappedByteInBlock(&m_memsinfo,map.transientCounterAddress,selected,&counter);
+            transientActive=sampleOk&&injectionTransientActive(profile,counter,havePreviousCounter,previousCounter);
+            if(sampleOk&&transientActive)sampleOk=ensureBlock(quint8(map.transientSourceAddress>>8))&&readMappedWordInBlock(&m_memsinfo,map.transientSourceAddress,selected,&transientRaw);
+        }
         if(sampleOk)sampleOk=ensureBlock(quint8(map.baseAddress>>8))&&readMappedWordInBlock(&m_memsinfo,map.baseAddress,selected,&baseRaw);
         if(!sampleOk){if(++failures>=3)break;QThread::msleep(20);continue;}failures=0;
 
-        previousCounter=counter;havePreviousCounter=true;
+        if(!directFinalRead){previousCounter=counter;havePreviousCounter=true;}
         double finalMs=0.0,baseMs=0.0,transientMs=0.0;
         if(!calculateValidatedInjectionSample(profile,baseRaw,transientRaw,transientActive,&finalMs,&baseMs,&transientMs))break;
         emit injectionLiveSample(finalMs,baseMs,transientMs,baseRaw,transientRaw,counter);
