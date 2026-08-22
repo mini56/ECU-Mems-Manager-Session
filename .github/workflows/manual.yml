@@ -87,7 +87,6 @@ jobs:
           Copy-Item "$build\ecu_mems_manager.exe" "$dist\ecu_mems_manager.exe" -Force
           Copy-Item "$build\ecu_mems_uninstaller.exe" "$dist\uninstall_ecu_mems_manager.exe" -Force
           Copy-Item "${{ github.workspace }}\prebuilt-librosco\librosco.dll" "$dist\librosco.dll" -Force
-
           # Les traductions sont generees/copied par CMake dans build/translations.
           # Elles sont obligatoires : sans elles l'I18n affiche [0101], [3001], etc.
           if (-not (Test-Path "$build\translations")) {
@@ -108,6 +107,8 @@ jobs:
             "$qtBin\Qt5Widgets.dll",
             "$qtBin\Qt5Sql.dll",
             "$qtBin\Qt5Svg.dll",
+            "$qtBin\Qt5SerialPort.dll",
+            "$qtBin\Qt5Charts.dll",
             "$mingwBin\libgcc_s_dw2-1.dll",
             "$mingwBin\libstdc++-6.dll",
             "$mingwBin\libwinpthread-1.dll"
@@ -147,6 +148,8 @@ jobs:
             "Qt5Widgets.dll",
             "Qt5Sql.dll",
             "Qt5Svg.dll",
+            "Qt5SerialPort.dll",
+            "Qt5Charts.dll",
             "libgcc_s_dw2-1.dll",
             "libstdc++-6.dll",
             "libwinpthread-1.dll",
