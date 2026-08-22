@@ -38,7 +38,10 @@
 namespace {
 #include "mappedinjection_maps.inc"
 #include "mappedinjection_helpers.inc"
+#define validatedInjectionProfileForFirmware validatedInjectionProfileForFirmwareExisting
 #include "mappedinjection_profiles.inc"
+#undef validatedInjectionProfileForFirmware
+#include "mappedinjection_profiles_extra.inc"
 }
 
 #include "mappedinjection_runtime.inc"
