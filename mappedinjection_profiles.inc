@@ -62,6 +62,21 @@ static bool validatedInjectionProfileForFirmware(const QString &firmware,
         return true;
     }
 
+    // ACNMF024 / Mini Auto MEMS 1.6.
+    // Andrew Revill's full-triplet correlation keeps the same 0x03C8 duration
+    // and 0x026E conditional-source classes as the validated Mini SPi path;
+    // the transient state/counter is relocated to 0x0282.
+    if (id == QStringLiteral("ACNMF024"))
+    {
+        *profile = InjectionCalculationProfile(
+            InjectionRamMap{0x03C8u, 0x026Eu, 0x0282u},
+            InjectionCalculationKind::AdditiveC001,
+            InjectionCounterPolicy::NonZeroActive,
+            0.002,
+            0.002);
+        return true;
+    }
+
     // ACNMP001 / MEMS 1.6.
     // Andrew Revill PETA3 definitions:
     // s_pulsewidth     0x03C8 W 0.001333 ms/raw
