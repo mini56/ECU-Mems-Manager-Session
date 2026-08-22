@@ -38,6 +38,7 @@
 namespace {
 #include "mappedinjection_maps.inc"
 #include "mappedinjection_helpers.inc"
+#include "mappedinjection_profiles.inc"
 }
 
 #include "mappedinjection_runtime.inc"

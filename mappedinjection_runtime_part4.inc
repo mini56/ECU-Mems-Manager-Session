@@ -1,7 +1,9 @@
     // Safety check for the address-specific Injection RAM reader only.
-    // Absence from the map table means "RAM mapping not documented"; it must
-    // never be interpreted as "ECU not supported" and no guessed address is sent.
-    InjectionRamMap map;if(!injectionRamMapForFirmware(firmwareIdentifier,&map)){onMappedInjectionRequestState(false);return;}
+    // A correlated RAM address is not sufficient: the calculation semantics
+    // and scaling for this exact firmware must also have been validated.
+    InjectionCalculationProfile profile;
+    if(!validatedInjectionProfileForFirmware(firmwareIdentifier,&profile)){onMappedInjectionRequestState(false);return;}
+    const InjectionRamMap &map=profile.map;
 
     setProperty("mappedInjectionModeActive",true);emit readModeChanged(QStringLiteral("transition"));
     bool entered=false;bool ok=ensureNormalSession(&m_memsinfo);
@@ -17,8 +19,10 @@
         if(sampleOk&&counter!=0)sampleOk=ensureBlock(quint8(map.transientSourceAddress>>8))&&readMappedWordInBlock(&m_memsinfo,map.transientSourceAddress,selected,&transientRaw);
         if(sampleOk)sampleOk=ensureBlock(quint8(map.baseAddress>>8))&&readMappedWordInBlock(&m_memsinfo,map.baseAddress,selected,&baseRaw);
         if(!sampleOk){if(++failures>=3)break;QThread::msleep(20);continue;}failures=0;
-        const quint32 transientTicks=counter!=0?quint32(highWordC001(transientRaw)):0u;const quint32 finalTicks=quint32(baseRaw)+transientTicks;
-        emit injectionLiveSample(finalTicks*0.002,baseRaw*0.002,transientTicks*0.002,baseRaw,transientRaw,counter);
+
+        double finalMs=0.0,baseMs=0.0,transientMs=0.0;
+        if(!calculateValidatedInjectionSample(profile,baseRaw,transientRaw,counter,&finalMs,&baseMs,&transientMs))break;
+        emit injectionLiveSample(finalMs,baseMs,transientMs,baseRaw,transientRaw,counter);
         QThread::msleep(8);
     }
 

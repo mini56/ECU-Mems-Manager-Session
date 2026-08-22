@@ -112,8 +112,9 @@ public:
             }
         });
         QObject::connect(m_analysis,&AnalysisTab::liveSourceRequested,m_window,[this](bool injection){
-            // A known injection map authorizes only the address-specific RAM reader.
-            // It is never used as a general ECU support test.
+            // Only a calculation profile validated for this exact firmware may
+            // authorize the address-specific RAM reader. Address correlation
+            // alone is deliberately insufficient.
             if(injection){if(m_ecuConnected&&m_hasKnownInjectionMap)startMappedInjection(m_mems,m_firmware);}else stopMappedInjectionDirect(m_mems);
         });
         QObject::connect(m_tabs,&QTabWidget::currentChanged,m_window,[this](int index){onTabChanged(index);});
@@ -126,9 +127,12 @@ public:
 private:
     void updateFirmware(const QString &firmware)
     {
-        m_firmware=firmware.trimmed().toUpper();InjectionRamMap map;m_hasKnownInjectionMap=injectionRamMapForFirmware(m_firmware,&map);
+        m_firmware=firmware.trimmed().toUpper();
+        InjectionCalculationProfile profile;
+        m_hasKnownInjectionMap=validatedInjectionProfileForFirmware(m_firmware,&profile);
         if(m_hasKnownInjectionMap){
-            m_map=map;
+            m_map=profile.map;
+            const InjectionRamMap &map=profile.map;
             m_dashboard->setMapping(m_firmware,true,map.baseAddress,map.transientSourceAddress,map.transientCounterAddress);
             m_analysis->setInjectionRamReadAvailable(m_ecuConnected,QString());
         } else {
