@@ -108,6 +108,7 @@ void LocalAiClient::startServer()
 
     QStringList args;
     args << QStringLiteral("-m") << m_modelPath
+         << QStringLiteral("--alias") << QStringLiteral("ia-mems")
          << QStringLiteral("--host") << QStringLiteral("127.0.0.1")
          << QStringLiteral("--port") << QString::number(kAiPort)
          << QStringLiteral("-c") << QStringLiteral("4096")
