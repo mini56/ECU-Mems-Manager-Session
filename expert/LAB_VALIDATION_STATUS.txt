@@ -1,0 +1,5 @@
+IA MEMS laboratory validation: FAILED
+source_commit=4b7f0b4507c9f3827384c450607a97419cf9761f
+run=32662208587
+expert_selftest=failure
+application_build=success
