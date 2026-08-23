@@ -1,0 +1,100 @@
+name: Expert rule lots SQL smoke test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["lab-expert-engine"]
+    paths:
+      - "database/reference/research_enrichment_1640.qz64"
+      - "database/reference/research_enrichment_1650.qz64"
+      - ".github/workflows/expert-rules-sql-smoke.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  validate-rules:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Decode and execute expert rule lots
+        id: smoke
+        continue-on-error: true
+        shell: bash
+        run: |
+          python - <<'PY'
+          import base64, pathlib, sqlite3, struct, zlib, json
+
+          root = pathlib.Path('database/reference')
+          db = sqlite3.connect(':memory:')
+          report = []
+
+          for name in ('research_enrichment_1640.qz64', 'research_enrichment_1650.qz64'):
+              encoded = root.joinpath(name).read_bytes().strip()
+              packed = base64.b64decode(encoded)
+              if len(packed) < 6:
+                  raise RuntimeError(f'{name}: packed stream too short')
+              expected = struct.unpack('>I', packed[:4])[0]
+              sql = zlib.decompress(packed[4:])
+              if len(sql) != expected:
+                  raise RuntimeError(f'{name}: qCompress size mismatch expected={expected} got={len(sql)}')
+              text = sql.decode('utf-8')
+              executed = 0
+              for line_no, raw in enumerate(text.splitlines(), 1):
+                  statement = raw.strip()
+                  if not statement or statement.startswith('--'):
+                      continue
+                  try:
+                      db.execute(statement)
+                  except Exception as exc:
+                      raise RuntimeError(f'{name}:{line_no}: {exc} | {statement[:240]}') from exc
+                  executed += 1
+              report.append({'file': name, 'bytes': len(sql), 'statements': executed})
+
+          def scalar(sql):
+              return db.execute(sql).fetchone()[0]
+
+          counts = {
+              'rules': scalar('SELECT COUNT(*) FROM mems_expert_rule'),
+              'conditions': scalar('SELECT COUNT(*) FROM mems_expert_rule_condition'),
+              'recommendations': scalar('SELECT COUNT(*) FROM mems_expert_rule_recommendation'),
+              'active_dtc': scalar("SELECT COUNT(*) FROM mems_expert_rule WHERE rule_key='active_ecu_faults'"),
+              'dwell': scalar("SELECT COUNT(*) FROM mems_expert_rule WHERE rule_key='coil_dwell_outside_near14v'"),
+          }
+          condition_keys = [r[0] for r in db.execute('SELECT DISTINCT metric_key FROM mems_expert_rule_condition ORDER BY metric_key')]
+          if counts['active_dtc'] != 1 or counts['dwell'] != 1:
+              raise RuntimeError(f'expected initial rules missing: {counts}')
+          print(json.dumps({'lots': report, 'counts': counts, 'condition_keys': condition_keys}, indent=2))
+          pathlib.Path('expert_rules_sql_result.txt').write_text(
+              'Expert rule lots SQL smoke test: OK\n' +
+              f'source_commit=${{ github.sha }}\nrun=${{ github.run_id }}\n' +
+              json.dumps({'lots': report, 'counts': counts, 'condition_keys': condition_keys}, indent=2) + '\n',
+              encoding='utf-8')
+          PY
+      - name: Record failure details
+        if: steps.smoke.outcome != 'success'
+        shell: bash
+        run: |
+          printf 'Expert rule lots SQL smoke test: FAILED\nsource_commit=%s\nrun=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > expert_rules_sql_result.txt
+      - name: Commit smoke-test result
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin lab-expert-engine
+          git rebase origin/lab-expert-engine
+          git add -- expert_rules_sql_result.txt
+          if ! git diff --cached --quiet; then
+            git commit -m "Record expert rule SQL smoke test [skip ci]"
+            git push origin HEAD:lab-expert-engine
+          fi
+      - name: Fail workflow if SQL smoke test failed
+        if: steps.smoke.outcome != 'success'
+        shell: bash
+        run: exit 1
