@@ -19,6 +19,7 @@ class QPushButton;
 class QTextBrowser;
 class MainWindow;
 class MEMSInterface;
+class LocalAiClient;
 
 // Conversational MEMS view. It only observes data already acquired by
 // MEMSInterface; it never requests another ECU polling mode on its own.
@@ -41,6 +42,9 @@ private slots:
                            quint8 transientCounter);
     void onEcuConnected();
     void onEcuDisconnected();
+    void onLocalAiResponse(const QString &text);
+    void onLocalAiError(const QString &message);
+    void onLocalAiStateChanged();
 
 private:
     void startKnowledgeLoad();
@@ -52,6 +56,7 @@ private:
     void updateContextFromQuestion(const QString &question);
 
     QString answerQuestion(const QString &question);
+    QString softwareAnswer(const QString &question) const;
     QString currentValuesAnswer() const;
     QString historyAnswer() const;
     QString analysisAnswer(bool explainPrevious = false);
@@ -69,6 +74,7 @@ private:
     QLineEdit *m_question = nullptr;
     QPushButton *m_sendButton = nullptr;
     QLabel *m_status = nullptr;
+    LocalAiClient *m_localAi = nullptr;
 
     ExpertEngine m_engine;
     ExpertKnowledgeReader m_reader;
@@ -78,6 +84,7 @@ private:
 
     QString m_databasePath;
     QString m_knowledgeError;
+    QString m_pendingGrounding;
     bool m_knowledgeLoading = false;
     bool m_knowledgeReady = false;
     bool m_connected = false;
