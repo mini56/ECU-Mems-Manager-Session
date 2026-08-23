@@ -26,7 +26,8 @@ jobs:
         continue-on-error: true
         shell: bash
         run: |
-          python - <<'PY'
+          set +e
+          python - <<'PY' > expert_rules_sql_trace.txt 2>&1
           import base64, pathlib, sqlite3, struct, zlib, json
 
           root = pathlib.Path('database/reference')
@@ -65,21 +66,27 @@ jobs:
               'active_dtc': scalar("SELECT COUNT(*) FROM mems_expert_rule WHERE rule_key='active_ecu_faults'"),
               'dwell': scalar("SELECT COUNT(*) FROM mems_expert_rule WHERE rule_key='coil_dwell_outside_near14v'"),
           }
-          condition_keys = [r[0] for r in db.execute('SELECT DISTINCT metric_key FROM mems_expert_rule_condition ORDER BY metric_key')]
+          condition_keys = [f'{r[0]}:{r[1]}' for r in db.execute('SELECT DISTINCT parameter,metric FROM mems_expert_rule_condition ORDER BY parameter,metric')]
           if counts['active_dtc'] != 1 or counts['dwell'] != 1:
               raise RuntimeError(f'expected initial rules missing: {counts}')
-          print(json.dumps({'lots': report, 'counts': counts, 'condition_keys': condition_keys}, indent=2))
+          result = {'lots': report, 'counts': counts, 'condition_keys': condition_keys}
+          print(json.dumps(result, indent=2))
           pathlib.Path('expert_rules_sql_result.txt').write_text(
               'Expert rule lots SQL smoke test: OK\n' +
               f'source_commit=${{ github.sha }}\nrun=${{ github.run_id }}\n' +
-              json.dumps({'lots': report, 'counts': counts, 'condition_keys': condition_keys}, indent=2) + '\n',
-              encoding='utf-8')
+              json.dumps(result, indent=2) + '\n', encoding='utf-8')
           PY
+          code=$?
+          cat expert_rules_sql_trace.txt
+          exit $code
       - name: Record failure details
         if: steps.smoke.outcome != 'success'
         shell: bash
         run: |
-          printf 'Expert rule lots SQL smoke test: FAILED\nsource_commit=%s\nrun=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > expert_rules_sql_result.txt
+          {
+            printf 'Expert rule lots SQL smoke test: FAILED\nsource_commit=%s\nrun=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID"
+            cat expert_rules_sql_trace.txt 2>/dev/null || true
+          } > expert_rules_sql_result.txt
       - name: Commit smoke-test result
         if: always()
         shell: bash
