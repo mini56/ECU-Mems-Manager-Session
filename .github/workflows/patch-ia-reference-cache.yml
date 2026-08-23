@@ -1,10 +1,11 @@
-name: Apply IA MEMS reference cache revision patch
+name: Apply IA MEMS deterministic source patches
 
 on:
   push:
     branches: ["lab-expert-engine"]
     paths:
       - "tools/patch_reference_cache_revision.py"
+      - "tools/patch_ia_runtime_wiring.py"
       - ".github/workflows/patch-ia-reference-cache.yml"
 
 permissions:
@@ -23,23 +24,25 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Apply deterministic cache revision patch
-        run: python tools/patch_reference_cache_revision.py
+      - name: Apply deterministic IA MEMS patches
+        run: |
+          python tools/patch_reference_cache_revision.py
+          python tools/patch_ia_runtime_wiring.py
 
-      - name: Commit patched reference cache handling
+      - name: Commit patched IA MEMS sources
         shell: bash
         run: |
           set -euo pipefail
-          if git diff --quiet -- database/MemsReferenceDatabase.cpp; then
-            echo "Patch already applied"
+          if git diff --quiet -- database/MemsReferenceDatabase.cpp iamemstab.cpp CMakeLists.txt; then
+            echo "Patches already applied"
             exit 0
           fi
-          git diff --check -- database/MemsReferenceDatabase.cpp
+          git diff --check -- database/MemsReferenceDatabase.cpp iamemstab.cpp CMakeLists.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git stash push -- database/MemsReferenceDatabase.cpp
+          git stash push -- database/MemsReferenceDatabase.cpp iamemstab.cpp CMakeLists.txt
           git pull --rebase origin lab-expert-engine
           git stash pop
-          git add -- database/MemsReferenceDatabase.cpp
-          git commit -m "Version MEMS reference cache for IA [skip ci]"
+          git add -- database/MemsReferenceDatabase.cpp iamemstab.cpp CMakeLists.txt
+          git commit -m "Use compact runtime database for IA MEMS [skip ci]"
           git push origin HEAD:lab-expert-engine
