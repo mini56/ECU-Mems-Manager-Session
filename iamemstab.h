@@ -26,6 +26,7 @@ class LocalAiClient;
 // MEMSInterface; it never requests another ECU polling mode on its own.
 // Package validation must exercise this exact integrated source state,
 // including the main reference loader and lazy local-AI startup behavior.
+// Final lab package validation must use this exact source revision.
 class IaMemsTab final : public QWidget
 {
     Q_OBJECT
