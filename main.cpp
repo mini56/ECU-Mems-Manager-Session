@@ -349,6 +349,11 @@ int main(int argc, char *argv[])
     g_splashProgressCallback = updateStartupProgress;
 
     MainWindow window;
+    QObject::connect(&app, &QCoreApplication::aboutToQuit, &window, [&window]() {
+        if (window.isVisible())
+            window.close();
+    });
+
     if (QObject *injectorGauge = window.findChild<QObject*>(QStringLiteral("m_injector_time")))
     {
         injectorGauge->setProperty("minimum", 0.0);
