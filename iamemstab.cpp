@@ -3,6 +3,7 @@
 #include "mainwindow.h"
 #include "memsinterface.h"
 #include "expert/ExpertRuntimeDatabase.h"
+#include "expert/LocalAiClient.h"
 
 #include <QApplication>
 #include <QDateTime>
@@ -306,13 +307,24 @@ IaMemsTab::IaMemsTab(MainWindow *mainWindow, QWidget *parent)
     }
 
     m_engine.setContext(m_context);
+
+    m_localAi = new LocalAiClient(this);
+    connect(m_localAi, &LocalAiClient::responseReady,
+            this, &IaMemsTab::onLocalAiResponse);
+    connect(m_localAi, &LocalAiClient::responseError,
+            this, &IaMemsTab::onLocalAiError);
+    connect(m_localAi, &LocalAiClient::stateChanged,
+            this, &IaMemsTab::onLocalAiStateChanged);
+
     appendSystemMessage(QStringLiteral(
-        "Vous pouvez me poser des questions sur les mesures ECU, leur évolution, "
-        "les hypothèses du moteur expert et les connaissances MEMS. "
-        "Si les données disponibles ne permettent pas de conclure, je le dirai explicitement."));
+        "Bonjour, je suis IA MEMS, l'assistant intégré à ECU MEMS Manager. "
+        "Posez-moi votre question : je peux vous aider à utiliser le logiciel, "
+        "expliquer les fonctions MEMS, analyser les mesures ECU et commenter les hypothèses du moteur expert. "
+        "Si les informations disponibles ne permettent pas de conclure, je vous le dirai clairement."));
 
     updateStatus();
     QTimer::singleShot(250, this, &IaMemsTab::startKnowledgeLoad);
+    QTimer::singleShot(400, m_localAi, &LocalAiClient::initialize);
 }
 
 IaMemsTab::~IaMemsTab()
@@ -408,6 +420,8 @@ void IaMemsTab::updateStatus()
         parts << QStringLiteral("MEMS %1").arg(m_context.family);
     if (!m_context.firmware.isEmpty())
         parts << m_context.firmware;
+    if (m_localAi)
+        parts << m_localAi->statusText();
 
     m_status->setText(parts.join(QStringLiteral("  •  ")));
 }
@@ -507,7 +521,56 @@ void IaMemsTab::sendQuestion()
     m_question->clear();
     appendMessage(QStringLiteral("Vous"), question);
     updateContextFromQuestion(question);
-    appendMessage(QStringLiteral("IA MEMS"), answerQuestion(question));
+
+    // The deterministic layer supplies the technical/software grounding.
+    // The local model is responsible for natural language and conversation,
+    // never for inventing ECU facts.
+    m_pendingGrounding = answerQuestion(question);
+    if (m_localAi && m_localAi->isReady()) {
+        if (m_sendButton)
+            m_sendButton->setEnabled(false);
+        if (m_question)
+            m_question->setEnabled(false);
+        m_localAi->ask(question, m_pendingGrounding);
+        return;
+    }
+
+    appendMessage(QStringLiteral("IA MEMS"), m_pendingGrounding);
+}
+
+void IaMemsTab::onLocalAiResponse(const QString &text)
+{
+    appendMessage(QStringLiteral("IA MEMS"), text);
+    m_pendingGrounding.clear();
+    if (m_sendButton)
+        m_sendButton->setEnabled(true);
+    if (m_question) {
+        m_question->setEnabled(true);
+        m_question->setFocus();
+    }
+    updateStatus();
+}
+
+void IaMemsTab::onLocalAiError(const QString &message)
+{
+    QString fallback = m_pendingGrounding.trimmed();
+    if (fallback.isEmpty())
+        fallback = QStringLiteral("Je ne peux pas répondre avec le moteur conversationnel local pour le moment.");
+    appendMessage(QStringLiteral("IA MEMS"), fallback);
+    appendSystemMessage(QStringLiteral("Moteur conversationnel local indisponible : %1").arg(message));
+    m_pendingGrounding.clear();
+    if (m_sendButton)
+        m_sendButton->setEnabled(true);
+    if (m_question) {
+        m_question->setEnabled(true);
+        m_question->setFocus();
+    }
+    updateStatus();
+}
+
+void IaMemsTab::onLocalAiStateChanged()
+{
+    updateStatus();
 }
 
 void IaMemsTab::updateContextFromQuestion(const QString &question)
@@ -540,6 +603,16 @@ void IaMemsTab::updateContextFromQuestion(const QString &question)
 QString IaMemsTab::answerQuestion(const QString &question)
 {
     const QString text = normalized(question);
+
+    if (containsAny(text, {QStringLiteral("bonjour"), QStringLiteral("bonsoir"),
+                           QStringLiteral("salut"), QStringLiteral("hello")}))
+        return QStringLiteral(
+            "Bonjour. Je suis IA MEMS. Je peux répondre à vos questions sur ECU MEMS Manager, "
+            "sur les systèmes MEMS et sur les mesures de l'ECU connecté. Que souhaitez-vous savoir ?");
+
+    const QString software = softwareAnswer(question);
+    if (!software.isEmpty())
+        return software;
 
     if (containsAny(text, {QStringLiteral("aide"), QStringLiteral("que peux tu"),
                            QStringLiteral("que peux-tu"), QStringLiteral("comment te parler")}))
@@ -593,6 +666,100 @@ QString IaMemsTab::answerQuestion(const QString &question)
         "Je n'ai pas assez d'éléments pour relier cette question à une mesure ou à un fait MEMS précis. "
         "Vous pouvez me demander ce que je vois d'anormal, l'évolution des mesures, une valeur actuelle, "
         "ou une information technique sur un ECU, un firmware ou une famille MEMS.");
+}
+
+QString IaMemsTab::softwareAnswer(const QString &question) const
+{
+    const QString text = normalized(question);
+    const bool softwareIntent = containsAny(text, {
+        QStringLiteral("onglet"), QStringLiteral("mems manager"),
+        QStringLiteral("logiciel"), QStringLiteral("programme"),
+        QStringLiteral("a quoi sert"), QStringLiteral("comment fonctionne"),
+        QStringLiteral("c'est quoi"), QStringLiteral("c est quoi")
+    });
+
+    auto wants = [&text, softwareIntent](const QStringList &terms) {
+        if (!softwareIntent)
+            return false;
+        return containsAny(text, terms);
+    };
+
+    if (wants({QStringLiteral("analyse")}))
+        return QStringLiteral(
+            "L'onglet Analyse sert à étudier des journaux de diagnostic enregistrés. "
+            "Il peut lire les fichiers CSV/TXT pris en charge, vous laisser choisir les canaux de mesure "
+            "et afficher ou superposer leurs courbes pour observer l'évolution des valeurs dans le temps.");
+
+    if (wants({QStringLiteral("apercu"), QStringLiteral("vue d'ensemble")}))
+        return QStringLiteral(
+            "L'onglet Aperçu présente les principales mesures ECU en direct sous forme de cadrans et d'indicateurs : "
+            "régime, MAP, températures, batterie, papillon, lambda, ralenti et allumage. Il sert au contrôle rapide du moteur.");
+
+    if (wants({QStringLiteral("injection")}))
+        return QStringLiteral(
+            "L'onglet Injection regroupe les mesures d'injection acquises par le mode de lecture prévu pour cela, "
+            "notamment le temps d'injection final, le temps de base, la correction transitoire et son état. "
+            "L'IA n'active pas un autre mode de polling de son propre chef.");
+
+    if (wants({QStringLiteral("reglage"), QStringLiteral("reglages")}))
+        return QStringLiteral(
+            "L'onglet Réglage contient les ajustements de service disponibles, notamment ceux liés au ralenti, "
+            "au carburant ou à l'allumage selon l'ECU. Les réglages agissent sur l'ECU : ils doivent être utilisés avec prudence.");
+
+    if (wants({QStringLiteral("erreur"), QStringLiteral("defaut")}))
+        return QStringLiteral(
+            "L'onglet Erreurs affiche les informations de défaut et les états associés renvoyés par l'ECU. "
+            "Il faut lire et comprendre les défauts avant de les effacer.");
+
+    if (wants({QStringLiteral("actionneur"), QStringLiteral("actionneurs")}))
+        return QStringLiteral(
+            "L'onglet Actionneurs permet d'exécuter les tests d'actionneurs supportés par l'ECU, par exemple certains relais, "
+            "la pompe, le ventilateur ou la commande de ralenti selon le système. Ces tests peuvent réellement actionner des organes du véhicule.");
+
+    if (wants({QStringLiteral("diagnostic automatique"), QStringLiteral("diagnostique automatique"),
+               QStringLiteral("diagnostic auto"), QStringLiteral("diagnostique auto")}))
+        return QStringLiteral(
+            "L'onglet Diagnostic automatique contrôle les valeurs ECU courantes, signale les anomalies ou points à surveiller, "
+            "peut capturer une référence et produire un rapport. IA MEMS va plus loin en croisant ces contrôles avec l'historique, "
+            "la base de connaissances et le dialogue avec l'utilisateur.");
+
+    if (wants({QStringLiteral("toutes les mesures")}))
+        return QStringLiteral(
+            "L'onglet Toutes les mesures rassemble les paramètres décodés dans une vue détaillée. "
+            "Il permet de comparer le paramètre, son aide, la valeur reçue de l'ECU et sa valeur interprétée lorsque le décodage est connu.");
+
+    if (wants({QStringLiteral("ecu/rosco"), QStringLiteral("ecu rosco"), QStringLiteral("rosco")}))
+        return QStringLiteral(
+            "L'onglet ECU/ROSCO permet d'observer et d'utiliser les commandes de session et de diagnostic ROSCO prises en charge. "
+            "Les échanges TX/RX peuvent y être visualisés en hexadécimal. Les fonctions dangereuses ou non validées restent désactivées.");
+
+    if (wants({QStringLiteral("toutes les donnees"), QStringLiteral("donnees brutes")}))
+        return QStringLiteral(
+            "L'onglet Toutes les données est la vue détaillée des champs MEMS et de leurs valeurs brutes ou décodées. "
+            "Il est surtout utile pour comparer les octets du protocole avec les mesures interprétées.");
+
+    if (wants({QStringLiteral("base donnees"), QStringLiteral("base de donnees"), QStringLiteral("base données")}))
+        return QStringLiteral(
+            "L'onglet Base de données donne accès à la base documentaire et technique intégrée à MEMS Manager. "
+            "IA MEMS utilise également une partie structurée de cette connaissance avec son niveau de provenance et de confiance.");
+
+    if (wants({QStringLiteral("capture"), QStringLiteral("captures")}))
+        return QStringLiteral(
+            "La fonction Capture enregistre une image de la fenêtre de MEMS Manager. Le visualiseur intégré permet ensuite "
+            "de prévisualiser, ouvrir ou supprimer les captures enregistrées.");
+
+    if (wants({QStringLiteral("option"), QStringLiteral("parametre"), QStringLiteral("parametres")}))
+        return QStringLiteral(
+            "Les Options regroupent les paramètres généraux du logiciel, notamment l'interface série, l'unité de température, "
+            "le thème, la langue et certains réglages d'intégration au bureau.");
+
+    if (wants({QStringLiteral("ia mems"), QStringLiteral("ia")}))
+        return QStringLiteral(
+            "L'onglet IA MEMS réunit le dialogue en langage naturel, les mesures ECU déjà acquises, leur historique, "
+            "le moteur expert et la base de connaissances. Le modèle conversationnel formule les réponses, mais les faits techniques "
+            "et les diagnostics restent ancrés dans les données et règles de MEMS Manager.");
+
+    return QString();
 }
 
 QString IaMemsTab::currentValuesAnswer() const
@@ -846,6 +1013,9 @@ QString IaMemsTab::helpAnswer() const
         "• Comment le régime et le MAP ont-ils évolué ?\n"
         "• Pourquoi as-tu retenu cette hypothèse ?\n"
         "• Que sait-on sur AANMP002 ?\n"
+        "• C'est quoi l'onglet Analyse ?\n"
+        "• À quoi sert l'onglet Injection ?\n"
         "• Cette information est-elle certaine ?\n"
+        "Je peux également expliquer le fonctionnement de MEMS Manager. "
         "Je distingue toujours les mesures réelles, les hypothèses et les connaissances externes.");
 }
