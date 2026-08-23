@@ -116,3 +116,5 @@ jobs:
             throw "IA MEMS application build failed"
           }
           Write-Host "IA_MEMS_APPLICATION_BUILD=OK"
+
+# Validation trigger: SQL loader fix + verified 70 C expert condition.
