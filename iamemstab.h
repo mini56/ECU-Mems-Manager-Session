@@ -27,6 +27,7 @@ class LocalAiClient;
 // Package validation must exercise this exact integrated source state,
 // including the main reference loader and lazy local-AI startup behavior.
 // Final lab package validation must use this exact source revision.
+// Validation rerun after excluding raw archive lot 1600 from 32-bit runtime.
 class IaMemsTab final : public QWidget
 {
     Q_OBJECT
