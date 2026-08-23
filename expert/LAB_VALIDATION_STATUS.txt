@@ -1,5 +1,5 @@
 IA MEMS laboratory validation: OK
-source_commit=a9782990e4aa9f6535d34363b8ed749d2740b5d3
-run=32665876775
+source_commit=45fe38883179d0a65c1752702cc4fc8f831a1c27
+run=32667526313
 expert_selftest=success
 application_build=success
