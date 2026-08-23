@@ -1,0 +1,47 @@
+name: Apply IA runtime portability
+
+on:
+  push:
+    branches: ["lab-expert-engine"]
+    paths:
+      - ".github/workflows/apply-ia-runtime-portability.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch package workflow
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('.github/workflows/ia-mems-final-package.yml')
+          text = p.read_text(encoding='utf-8')
+          old = '''          Copy-Item -Path (Join-Path $server.Directory.FullName "*") -Destination ai -Recurse -Force\n\n          curl.exe -L --fail --retry 4 --retry-delay 3 -o ai/models/ia-mems.gguf $modelUrl\n'''
+          new = '''          Copy-Item -Path (Join-Path $server.Directory.FullName "*") -Destination ai -Recurse -Force\n\n          # The official Windows x64 CPU runtime is built against the Microsoft\n          # C++ runtime. GitHub runners already have it installed, but a portable\n          # end-user package must not rely on that. Ship the app-local runtime\n          # DLLs beside llama-server.exe.\n          $system32 = Join-Path $env:WINDIR "System32"\n          $vcRuntimeFiles = @(\n            "msvcp140.dll",\n            "msvcp140_1.dll",\n            "msvcp140_2.dll",\n            "vcruntime140.dll",\n            "vcruntime140_1.dll",\n            "concrt140.dll"\n          )\n          foreach ($dll in $vcRuntimeFiles) {\n            $src = Join-Path $system32 $dll\n            if (Test-Path $src) { Copy-Item $src ai -Force }\n          }\n\n          curl.exe -L --fail --retry 4 --retry-delay 3 -o ai/models/ia-mems.gguf $modelUrl\n'''
+          if old not in text:
+              raise SystemExit('runtime insertion point not found')
+          text = text.replace(old, new, 1)
+
+          old = '''            "database\\reference\\manifest.json","ai\\llama-server.exe","ai\\models\\ia-mems.gguf","ai\\runtime_manifest.json",\n            "ai\\LICENSE_llama.cpp.txt","ai\\LICENSE_Qwen3.txt","ai\\LOCAL_AI_VALIDATED_DIALOGUE.txt"\n'''
+          new = '''            "database\\reference\\manifest.json","ai\\llama-server.exe","ai\\models\\ia-mems.gguf","ai\\runtime_manifest.json",\n            "ai\\msvcp140.dll","ai\\vcruntime140.dll",\n            "ai\\LICENSE_llama.cpp.txt","ai\\LICENSE_Qwen3.txt","ai\\LOCAL_AI_VALIDATED_DIALOGUE.txt"\n'''
+          if old not in text:
+              raise SystemExit('required package list insertion point not found')
+          text = text.replace(old, new, 1)
+          p.write_text(text, encoding='utf-8', newline='\n')
+      - name: Commit portability fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- .github/workflows/ia-mems-final-package.yml
+          git commit -m "Bundle Visual C++ runtime with IA MEMS local server"
+          git pull --rebase origin lab-expert-engine
+          git push origin HEAD:lab-expert-engine
