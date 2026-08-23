@@ -1,0 +1,39 @@
+name: Apply final package trigger coverage
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["lab-expert-engine"]
+    paths:
+      - "tools/patch_final_package_triggers.py"
+      - ".github/workflows/apply-final-package-triggers.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Apply trigger coverage patch
+        run: python tools/patch_final_package_triggers.py
+      - name: Commit final package trigger coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- .github/workflows/ia-mems-final-package.yml; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/ia-mems-final-package.yml
+          git commit -m "Track main reference loader in IA MEMS package validation [skip ci]"
+          git pull --rebase origin lab-expert-engine
+          git push origin HEAD:lab-expert-engine
