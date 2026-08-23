@@ -26,6 +26,34 @@ QString cacheReferenceRoot()
         + QStringLiteral("/reference");
 }
 
+int manifestDatabaseRevision(const QString &root)
+{
+    QFile file(QDir(root).filePath(QStringLiteral("manifest.json")));
+    if(!file.open(QIODevice::ReadOnly|QIODevice::Text)) return 0;
+    const QJsonDocument document=QJsonDocument::fromJson(file.readAll());
+    if(!document.isObject()) return 0;
+    return document.object().value(QStringLiteral("database_revision")).toInt(0);
+}
+
+int cachedDatabaseRevision(const QString &databasePath)
+{
+    if(!QFileInfo::exists(databasePath)) return 0;
+    const QString connection=QStringLiteral("MEMS_REFERENCE_REV_%1").arg(QUuid::createUuid().toString());
+    QSqlDatabase database=QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),connection);
+    database.setConnectOptions(QStringLiteral("QSQLITE_OPEN_READONLY"));
+    database.setDatabaseName(databasePath);
+    int revision=0;
+    if(database.open()){
+        QSqlQuery query(database);
+        if(query.exec(QStringLiteral("PRAGMA user_version")) && query.next())
+            revision=query.value(0).toInt();
+        database.close();
+    }
+    database=QSqlDatabase();
+    QSqlDatabase::removeDatabase(connection);
+    return revision;
+}
+
 bool expandQz64(const QString &source,const QString &destination)
 {
     if(QFileInfo::exists(destination)) return true;
@@ -295,6 +323,13 @@ bool MemsReferenceDatabase::open()
     QDir().mkpath(cacheRoot);
     m_databasePath=cacheRoot+QStringLiteral("/ecu_mems_reference_r5.sqlite");
 
+    const int expectedRevision=manifestDatabaseRevision(referenceRoot());
+    if(QFileInfo::exists(m_databasePath) && expectedRevision>0
+       && cachedDatabaseRevision(m_databasePath)!=expectedRevision){
+        if(!QFile::remove(m_databasePath))
+            return false;
+    }
+
     if(!QFileInfo::exists(m_databasePath)){
         const QString seedConnection=QStringLiteral("%1_SEED").arg(m_connectionName);
         QSqlDatabase buildDb=QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),seedConnection);
@@ -335,6 +370,8 @@ bool MemsReferenceDatabase::open()
             }
         }
         if(ok) ok=registerReferenceAssets(buildDb,referenceRoot());
+        if(ok && expectedRevision>0)
+            ok=query.exec(QStringLiteral("PRAGMA user_version=%1").arg(expectedRevision));
 
         buildDb.close();
         buildDb=QSqlDatabase();
