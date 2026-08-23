@@ -1,5 +1,5 @@
 IA MEMS COMPLETE PACKAGE: OK
-source_commit=b552092ff85d9951c49e84771e4720bc92bca54c
-run=32665607598
+source_commit=a9782990e4aa9f6535d34363b8ed749d2740b5d3
+run=32665876785
 model=Qwen3-0.6B-Q8_0
 runtime=llama.cpp b10516 Windows x64 CPU
