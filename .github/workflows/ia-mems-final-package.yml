@@ -1,0 +1,215 @@
+name: IA MEMS complete Windows package
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["lab-expert-engine"]
+    paths:
+      - ".github/workflows/ia-mems-final-package.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  package-windows:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Apply deterministic IA MEMS source patches
+        shell: pwsh
+        run: |
+          python tools/patch_reference_cache_revision.py
+          python tools/patch_ia_runtime_wiring.py
+          python tools/patch_ia_conversation_routing.py
+          python tools/patch_ia_conversation_llm.py
+          python tools/patch_ia_expert_observations.py
+          if ($LASTEXITCODE -ne 0) { throw "IA MEMS source patch failed" }
+
+      - name: Install Qt 5.15.2 and MinGW 8.1
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          pip install aqtinstall
+          & aqt install-qt windows desktop 5.15.2 win32_mingw81 -m qtcharts -O C:\Qt
+          if ($LASTEXITCODE -ne 0) { throw "Qt installation failed" }
+          & aqt install-tool windows desktop tools_mingw qt.tools.win32_mingw810 -O C:\Qt
+          if ($LASTEXITCODE -ne 0) { throw "MinGW installation failed" }
+          "C:\Qt\Tools\mingw810_32\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          "C:\Qt\5.15.2\mingw81_32\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Generate librosco import library
+        shell: pwsh
+        run: |
+          Set-Location prebuilt-librosco
+          gendef librosco.dll
+          if ($LASTEXITCODE -ne 0) { throw "gendef failed" }
+          dlltool -d librosco.def -l librosco.dll.a
+          if ($LASTEXITCODE -ne 0) { throw "dlltool failed" }
+
+      - name: Build MEMS Manager with IA MEMS
+        shell: pwsh
+        run: |
+          cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/mingw81_32;${{ github.workspace }}/prebuilt-librosco"
+          if ($LASTEXITCODE -ne 0) { throw "CMake configure failed" }
+          cmake --build build --target ecu_mems_manager ecu_mems_uninstaller
+          if ($LASTEXITCODE -ne 0) { throw "Application build failed" }
+
+      - name: Run compact expert engine tests
+        shell: pwsh
+        run: |
+          cmake -S expert -B expert-build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/mingw81_32"
+          if ($LASTEXITCODE -ne 0) { throw "Expert CMake configure failed" }
+          cmake --build expert-build
+          if ($LASTEXITCODE -ne 0) { throw "Expert build failed" }
+          ctest --test-dir expert-build --output-on-failure
+          if ($LASTEXITCODE -ne 0) { throw "Expert tests failed" }
+
+      - name: Download and verify real local AI runtime
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $runtimeUrl = "https://github.com/ggml-org/llama.cpp/releases/download/b10516/llama-b10516-bin-win-cpu-x64.zip"
+          $runtimeSha = "fbbbc55e0eb2e1b07f9dcb9488616c98ed47d9003b90e15e7c8c7812c4307cd3"
+          $modelUrl = "https://huggingface.co/Qwen/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-Q8_0.gguf?download=true"
+          $modelSha = "9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031"
+
+          Remove-Item -Recurse -Force ai-runtime-download, ai/models -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force ai-runtime-download, ai/models | Out-Null
+
+          curl.exe -L --fail --retry 4 --retry-delay 3 -o llama-runtime.zip $runtimeUrl
+          if ($LASTEXITCODE -ne 0) { throw "llama.cpp download failed" }
+          $actual = (Get-FileHash llama-runtime.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $runtimeSha) { throw "llama.cpp SHA256 mismatch: $actual" }
+          Expand-Archive llama-runtime.zip ai-runtime-download -Force
+          $server = Get-ChildItem ai-runtime-download -Recurse -Filter llama-server.exe | Select-Object -First 1
+          if (-not $server) { throw "llama-server.exe missing" }
+          Copy-Item -Path (Join-Path $server.Directory.FullName "*") -Destination ai -Recurse -Force
+
+          curl.exe -L --fail --retry 4 --retry-delay 3 -o ai/models/ia-mems.gguf $modelUrl
+          if ($LASTEXITCODE -ne 0) { throw "Qwen model download failed" }
+          $actual = (Get-FileHash ai/models/ia-mems.gguf -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $modelSha) { throw "Qwen model SHA256 mismatch: $actual" }
+
+          curl.exe -L --fail -o ai/LICENSE_llama.cpp.txt https://raw.githubusercontent.com/ggml-org/llama.cpp/master/LICENSE
+          curl.exe -L --fail -o ai/LICENSE_Qwen3.txt https://huggingface.co/Qwen/Qwen3-0.6B-GGUF/raw/main/LICENSE
+
+      - name: Exercise real IA MEMS model
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $server = (Resolve-Path ai/llama-server.exe).Path
+          $model = (Resolve-Path ai/models/ia-mems.gguf).Path
+          $process = Start-Process -FilePath $server -ArgumentList @("-m",$model,"--alias","ia-mems","--host","127.0.0.1","--port","18089","-c","4096","-np","1") -PassThru -WindowStyle Hidden
+          try {
+            $ready = $false
+            for ($i=0; $i -lt 180; $i++) {
+              Start-Sleep -Milliseconds 750
+              try {
+                $health = Invoke-RestMethod -Method Get -Uri "http://127.0.0.1:18089/health" -TimeoutSec 3
+                if ($health.status -eq "ok") { $ready=$true; break }
+              } catch {
+                if ($process.HasExited) { throw "llama-server exited during loading" }
+              }
+            }
+            if (-not $ready) { throw "local IA model not ready" }
+
+            $system = "Tu es IA MEMS, assistant courtois intégré à ECU MEMS Manager. Réponds en français. N'invente aucun fait technique. /no_think"
+            $p1 = @{model="ia-mems";stream=$false;temperature=0.7;top_p=0.8;max_tokens=160;messages=@(@{role="system";content=$system},@{role="user";content="Bonjour /no_think"})} | ConvertTo-Json -Depth 8
+            $r1 = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:18089/v1/chat/completions" -ContentType "application/json" -Body $p1 -TimeoutSec 120
+            $hello = [string]$r1.choices[0].message.content
+            if ([string]::IsNullOrWhiteSpace($hello)) { throw "empty IA greeting" }
+
+            $ground = "CONTEXTE FIABLE FOURNI PAR MEMS MANAGER : L'onglet Analyse sert à étudier des journaux de diagnostic enregistrés. Il peut lire les fichiers CSV/TXT pris en charge, laisser choisir les canaux et afficher ou superposer leurs courbes pour observer l'évolution dans le temps."
+            $p2 = @{model="ia-mems";stream=$false;temperature=0.7;top_p=0.8;max_tokens=220;messages=@(@{role="system";content=$system},@{role="user";content="C'est quoi l'onglet Analyse ? /no_think`n`n$ground`nUtilise ce contexte et n'invente rien."})} | ConvertTo-Json -Depth 8
+            $r2 = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:18089/v1/chat/completions" -ContentType "application/json" -Body $p2 -TimeoutSec 120
+            $analysis = [string]$r2.choices[0].message.content
+            if ([string]::IsNullOrWhiteSpace($analysis)) { throw "empty Analysis response" }
+
+            "GREETING:`n$hello`n`nANALYSIS TAB:`n$analysis" | Set-Content -Encoding UTF8 ai/LOCAL_AI_VALIDATED_DIALOGUE.txt
+          }
+          finally {
+            if (-not $process.HasExited) { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue }
+          }
+
+      - name: Create self-contained Windows package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $qtRoot = "C:\Qt\5.15.2\mingw81_32"
+          $qtBin = "$qtRoot\bin"
+          $qtPlugins = "$qtRoot\plugins"
+          $mingwBin = "C:\Qt\Tools\mingw810_32\bin"
+          $build = "${{ github.workspace }}\build"
+          $dist = "${{ github.workspace }}\dist-ia-mems"
+          if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }
+          New-Item -ItemType Directory -Force $dist, "$dist\platforms", "$dist\sqldrivers", "$dist\imageformats", "$dist\iconengines", "$dist\styles" | Out-Null
+
+          Copy-Item "$build\ecu_mems_manager.exe" "$dist\ecu_mems_manager.exe" -Force
+          Copy-Item "$build\ecu_mems_uninstaller.exe" "$dist\uninstall_ecu_mems_manager.exe" -Force
+          Copy-Item prebuilt-librosco/librosco.dll "$dist\librosco.dll" -Force
+          Copy-Item "$build\translations" "$dist\translations" -Recurse -Force
+          Copy-Item "$build\database" "$dist\database" -Recurse -Force
+          Copy-Item ai "$dist\ai" -Recurse -Force
+
+          $dlls = @("Qt5Core.dll","Qt5Gui.dll","Qt5Widgets.dll","Qt5Sql.dll","Qt5Svg.dll","Qt5SerialPort.dll","Qt5Charts.dll","Qt5Network.dll")
+          foreach ($name in $dlls) { Copy-Item (Join-Path $qtBin $name) $dist -Force }
+          foreach ($name in @("libgcc_s_dw2-1.dll","libstdc++-6.dll","libwinpthread-1.dll")) { Copy-Item (Join-Path $mingwBin $name) $dist -Force }
+          foreach ($name in @("libEGL.dll","libGLESv2.dll","D3Dcompiler_47.dll","opengl32sw.dll")) { $src=Join-Path $qtBin $name; if(Test-Path $src){Copy-Item $src $dist -Force} }
+          Copy-Item "$qtPlugins\platforms\qwindows.dll" "$dist\platforms\qwindows.dll" -Force
+          Copy-Item "$qtPlugins\sqldrivers\qsqlite.dll" "$dist\sqldrivers\qsqlite.dll" -Force
+          if(Test-Path "$qtPlugins\imageformats"){Copy-Item "$qtPlugins\imageformats\*.dll" "$dist\imageformats\" -Force}
+          if(Test-Path "$qtPlugins\iconengines"){Copy-Item "$qtPlugins\iconengines\*.dll" "$dist\iconengines\" -Force}
+          if(Test-Path "$qtPlugins\styles"){Copy-Item "$qtPlugins\styles\*.dll" "$dist\styles\" -Force}
+
+          $required = @(
+            "ecu_mems_manager.exe","Qt5Network.dll","librosco.dll","platforms\qwindows.dll","sqldrivers\qsqlite.dll",
+            "database\reference\manifest.json","ai\llama-server.exe","ai\models\ia-mems.gguf","ai\runtime_manifest.json",
+            "ai\LICENSE_llama.cpp.txt","ai\LICENSE_Qwen3.txt","ai\LOCAL_AI_VALIDATED_DIALOGUE.txt"
+          )
+          foreach($item in $required){$p=Join-Path $dist $item;if(-not(Test-Path $p)){throw "Required package file missing: $item"};if((Get-Item $p).Length -le 0){throw "Required package file empty: $item"}}
+
+          $manifest = Join-Path $dist "install_manifest.txt"
+          (Get-ChildItem $dist -Recurse -File | ForEach-Object {[IO.Path]::GetRelativePath($dist,$_.FullName)} | Sort-Object -Unique) + "install_manifest.txt" | Sort-Object -Unique | Set-Content $manifest -Encoding UTF8
+
+          $proc = Start-Process "$dist\ecu_mems_manager.exe" -WorkingDirectory $dist -PassThru
+          Start-Sleep -Seconds 6
+          if($proc.HasExited){throw "Packaged MEMS Manager exited during smoke test, code $($proc.ExitCode)"}
+          Stop-Process -Id $proc.Id -Force
+
+          @"
+          IA MEMS COMPLETE PACKAGE: OK
+          source_commit=${{ github.sha }}
+          run=${{ github.run_id }}
+          model=Qwen3-0.6B-Q8_0
+          runtime=llama.cpp b10516 Windows x64 CPU
+          "@ | Set-Content -Encoding UTF8 IA_MEMS_FINAL_PACKAGE_OK.txt
+          Copy-Item IA_MEMS_FINAL_PACKAGE_OK.txt "$dist\IA_MEMS_FINAL_PACKAGE_OK.txt" -Force
+
+      - name: Upload complete IA MEMS package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ECU-MEMS-Manager-IA-MEMS-Windows-Lab
+          path: dist-ia-mems/
+          compression-level: 0
+          retention-days: 7
+
+      - name: Record complete package validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin lab-expert-engine
+          git rebase origin/lab-expert-engine
+          git add -f -- IA_MEMS_FINAL_PACKAGE_OK.txt
+          git commit -m "Validate complete IA MEMS Windows package [skip ci]"
+          git push origin HEAD:lab-expert-engine
