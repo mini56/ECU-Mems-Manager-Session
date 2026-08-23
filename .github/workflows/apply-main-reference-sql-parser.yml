@@ -1,0 +1,39 @@
+name: Apply main reference SQL parser compatibility
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["lab-expert-engine"]
+    paths:
+      - "tools/patch_main_reference_sql_parser.py"
+      - ".github/workflows/apply-main-reference-sql-parser.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Apply parser patch
+        run: python tools/patch_main_reference_sql_parser.py
+      - name: Commit parser compatibility
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- database/MemsReferenceDatabase.cpp; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add database/MemsReferenceDatabase.cpp
+          git commit -m "Support multiline expert SQL in main reference loader [skip ci]"
+          git pull --rebase origin lab-expert-engine
+          git push origin HEAD:lab-expert-engine
