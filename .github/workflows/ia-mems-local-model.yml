@@ -156,13 +156,13 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin lab-expert-engine
-          git rebase origin/lab-expert-engine
           git add -f -- ai/LOCAL_AI_SMOKETEST_OK.txt ai/LOCAL_AI_SMOKETEST_FAILED.txt 2>/dev/null || true
-          if ! git diff --cached --quiet; then
-            git commit -m "Record IA MEMS real local model smoke test [skip ci]"
-            git push origin HEAD:lab-expert-engine
+          if git diff --cached --quiet; then
+            exit 0
           fi
+          git commit -m "Record IA MEMS real local model smoke test [skip ci]"
+          git pull --rebase origin lab-expert-engine
+          git push origin HEAD:lab-expert-engine
 
       - name: Fail if the real local model did not answer
         if: steps.localai.outcome != 'success'
