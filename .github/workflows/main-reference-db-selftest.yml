@@ -1,5 +1,6 @@
 name: Main MEMS reference database self-test
 
+# Validates the exact database loader used by the Windows application.
 on:
   workflow_dispatch:
   push:
