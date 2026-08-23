@@ -275,14 +275,24 @@ void MEMSInterface::runServiceLoop()
          m_disconnectRequested.loadAcquire() == 0 &&
          m_shutdownRequested.loadAcquire() == 0 && connected)
   {
-    bool readOk = false;
+    // Never keep m_dataMutex locked while librosco performs serial I/O.
+    // mems_read() can block waiting for the ECU; holding the mutex here would
+    // make GUI-side getData() wait on the serial timeout and can freeze the
+    // whole window during the transition from diagnostic polling to Mode 4.
+    mems_data nextData;
     {
       QMutexLocker locker(&m_dataMutex);
-      readOk = mems_read(&m_memsinfo, &m_data);
+      nextData = m_data;
     }
+
+    const bool readOk = mems_read(&m_memsinfo, &nextData);
 
     if (readOk)
     {
+      {
+        QMutexLocker locker(&m_dataMutex);
+        m_data = nextData;
+      }
       emit readSuccess();
       emit dataReady();
     }
