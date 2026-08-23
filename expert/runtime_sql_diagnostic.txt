@@ -1,13 +1,176 @@
-Expert compact runtime SQL diagnostic: FAILED
-source_commit=51af59e965d21b80a8eb8a0125136f523f7ac61b
-run=32662899289
-Traceback (most recent call last):
-  File "<stdin>", line 15, in quncompress_qz64_bytes
-zlib.error: Error -3 while decompressing data: incorrect header check
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "<stdin>", line 41, in <module>
-  File "<stdin>", line 18, in quncompress_qz64_bytes
-RuntimeError: research_enrichment_1620.qz64: zlib decompress failed: Error -3 while decompressing data: incorrect header check; packed_prefix=c6c87035f2a15be31670f1f7; expected=3335024693
+Expert compact runtime SQL diagnostic: OK
+{
+  "status": "OK",
+  "revision": 20,
+  "tables": 63,
+  "rules": 9,
+  "conditions": 15,
+  "coolant_70_guard": 1,
+  "loaded": [
+    {
+      "item": "seed",
+      "bytes": 183165,
+      "packaging": "base64-qcompress"
+    },
+    {
+      "item": "research_enrichment.qz64",
+      "bytes": 29255,
+      "packaging": "base64-qcompress",
+      "status": "OK"
+    },
+    {
+      "item": "research_enrichment_500.qz64",
+      "bytes": 38766,
+      "packaging": "base64-qcompress",
+      "status": "OK"
+    },
+    {
+      "item": "research_enrichment_600.qz64",
+      "bytes": 68319,
+      "packaging": "base64-qcompress",
+      "status": "OK"
+    },
+    {
+      "item": "research_enrichment_700.qz64",
+      "bytes": 60055,
+      "packaging": "base64-qcompress",
+      "status": "OK"
+    },
+    {
+      "item": "research_enrichment_800.qz64",
+      "bytes": 84921,
+      "packaging": "base64-qcompress",
+      "status": "OK"
+    },
+    {
+      "item": "research_enrichment_900.qz64",
+      "bytes": 63978,
+      "packaging": "base64-qcompress",
+      "status": "OK"
+    },
+    {
+      "item": "research_enrichment_1000.qz64",
+      "bytes": 11987,
+      "packaging": "base64-qcompress",
+      "status": "OK"
+    },
+    {
+      "item": "research_enrichment_1100.qz64",
+      "bytes": 17934,
+      "packaging": "base64-qcompress",
+      "status": "OK"
+    },
+    {
+      "item": "research_enrichment_1200.qz64",
+      "bytes": 18253,
+      "packaging": "base64-qcompress",
+      "status": "OK"
+    },
+    {
+      "item": "research_enrichment_1300.qz64",
+      "bytes": 15558,
+      "packaging": "base64-qcompress",
+      "status": "OK"
+    },
+    {
+      "item": "research_enrichment_1400.qz64",
+      "bytes": 56480,
+      "packaging": "base64-qcompress",
+      "status": "OK"
+    },
+    {
+      "item": "research_enrichment_1500.qz64",
+      "bytes": 138640,
+      "packaging": "base64-qcompress",
+      "status": "OK"
+    },
+    {
+      "item": "research_enrichment_1510.qz64",
+      "bytes": 2302997,
+      "packaging": "base64-qcompress",
+      "status": "OK"
+    },
+    {
+      "item": "research_enrichment_1520.qz64",
+      "bytes": 6559107,
+      "packaging": "base64-qcompress",
+      "status": "OK"
+    },
+    {
+      "item": "research_enrichment_1530.qz64",
+      "bytes": 1435813,
+      "packaging": "base64-qcompress",
+      "status": "OK"
+    },
+    {
+      "item": "research_enrichment_1540.qz64",
+      "bytes": 4881641,
+      "packaging": "base64-qcompress",
+      "status": "OK"
+    },
+    {
+      "item": "research_enrichment_1550.qz64",
+      "bytes": 2764,
+      "packaging": "base64-qcompress",
+      "status": "OK"
+    },
+    {
+      "item": "research_enrichment_1560.qz64",
+      "bytes": 3576,
+      "packaging": "base64-qcompress",
+      "status": "OK"
+    },
+    {
+      "item": "research_enrichment_1570.qz64",
+      "bytes": 7915,
+      "packaging": "base64-qcompress",
+      "status": "OK"
+    },
+    {
+      "item": "research_enrichment_1580.qz64",
+      "bytes": 4028,
+      "packaging": "base64-qcompress",
+      "status": "OK"
+    },
+    {
+      "item": "research_enrichment_1590.qz64",
+      "bytes": 443352,
+      "packaging": "base64-qcompress",
+      "status": "OK"
+    },
+    {
+      "item": "research_enrichment_1600.qz64",
+      "status": "archive-only-skipped"
+    },
+    {
+      "item": "research_enrichment_1610.qz64",
+      "bytes": 23915,
+      "packaging": "base64-qcompress",
+      "status": "OK"
+    },
+    {
+      "item": "research_enrichment_1620.qz64",
+      "bytes": 32237,
+      "packaging": "binary-qcompress",
+      "status": "OK"
+    },
+    {
+      "item": "research_enrichment_1630.qz64",
+      "bytes": 11594,
+      "packaging": "base64-qcompress",
+      "status": "OK"
+    },
+    {
+      "item": "research_enrichment_1640.qz64",
+      "bytes": 1408,
+      "packaging": "base64-qcompress",
+      "status": "OK"
+    },
+    {
+      "item": "research_enrichment_1650.qz64",
+      "bytes": 5748,
+      "packaging": "base64-qcompress",
+      "status": "OK"
+    }
+  ]
+}
