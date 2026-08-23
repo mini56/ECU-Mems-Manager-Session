@@ -109,6 +109,9 @@ m_mems(0), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerD
   connect(m_mems, SIGNAL(O2HeaterTestComplete()), this, SLOT(onO2HeaterTestComplete()));
   connect(m_mems, SIGNAL(BoostValveTestComplete()), this, SLOT(onBoostValveTestComplete()));
   connect(m_mems, SIGNAL(PurgeValveTestComplete()), this, SLOT(onPurgeValveTestComplete()));
+  connect(m_mems, SIGNAL(Fan1TestComplete()), this, SLOT(onFan1TestComplete()));
+  connect(m_mems, SIGNAL(Fan2TestComplete()), this, SLOT(onFan2TestComplete()));
+  connect(m_mems, SIGNAL(Fan3TestComplete()), this, SLOT(onFan3TestComplete()));
   connect(m_mems, SIGNAL(moveIACComplete()), this, SLOT(onMoveIACComplete()));
   connect(m_mems, SIGNAL(turnO2HeaterOff()), this, SLOT(on_m_O2Heater_OffButton_clicked()));
   connect(this, SIGNAL(moveIAC(int)), m_mems, SLOT(onIdleAirControlMovementRequest(int)));
@@ -424,8 +427,6 @@ void MainWindow::setupWidgets()
   connect(m_ui->m_ignition_advance_plusButton, SIGNAL(clicked()), this, SLOT(on_m_ignition_advance_plusButton_clicked()));
   connect(m_ui->m_ignition_advance_minusButton, SIGNAL(clicked()), this, SLOT(on_m_ignition_advance_minusButton_clicked()));
 
-
-
   // set the LED colors
   m_ui->m_commsGoodLed->setOnColor1(QColor(102, 255, 102));
   m_ui->m_commsGoodLed->setOnColor2(QColor(82, 204, 82));
@@ -698,6 +699,11 @@ void MainWindow::setupWidgets()
  */
 void MainWindow::onConnectClicked()
 {
+  if (m_closing || property("ecuConnectInProgress").toBool())
+    return;
+
+  setProperty("ecuConnectInProgress", true);
+  m_ui->m_connectButton->setEnabled(false);
   m_autoReconnectEnabled = true;
 
   // If the worker thread hasn't been created yet, do that now.
@@ -723,7 +729,8 @@ void MainWindow::onConnectClicked()
 
 void MainWindow::onInterfaceThreadReady()
 {
-  emit requestToStartPolling();
+  if (!m_closing)
+    emit requestToStartPolling();
 }
 
 void MainWindow::onEcuIdReceived(uint8_t* id)
@@ -743,6 +750,7 @@ void MainWindow::onEcuIdReceived(uint8_t* id)
 void MainWindow::onDisconnectClicked()
 {
   m_autoReconnectEnabled = false;
+  setProperty("ecuConnectInProgress", false);
   m_reconnectTimer->stop();
   m_ui->m_disconnectButton->setEnabled(false);
   m_mems->disconnectFromECU();
@@ -1334,6 +1342,7 @@ void MainWindow::closeEvent(QCloseEvent* event)
   m_closing = true;
   m_autoReconnectEnabled = false;
   m_silentReconnect = false;
+  setProperty("ecuConnectInProgress", false);
   if (m_reconnectTimer)
     m_reconnectTimer->stop();
 
@@ -1341,9 +1350,10 @@ void MainWindow::closeEvent(QCloseEvent* event)
 
   if ((m_memsThread != 0) && m_memsThread->isRunning())
   {
+    m_mems->requestShutdown();
     emit requestThreadShutdown();
-
-    m_memsThread->wait(2000);
+    m_memsThread->quit();
+    m_memsThread->wait();
   }
 
   event->accept();
@@ -1375,6 +1385,7 @@ void MainWindow::clearRecordedAnomalies()
  */
 void MainWindow::onConnect()
 {
+  setProperty("ecuConnectInProgress", false);
   m_reconnectTimer->stop();
   m_ui->m_connectButton->setEnabled(false);
   m_ui->m_disconnectButton->setEnabled(true);
@@ -1394,6 +1405,7 @@ void MainWindow::onConnect()
  */
 void MainWindow::onDisconnect()
 {
+  setProperty("ecuConnectInProgress", false);
   m_ui->m_connectButton->setEnabled(true);
   m_ui->m_disconnectButton->setEnabled(false);
   m_ui->m_engine_error->setChecked(false);
@@ -1460,6 +1472,7 @@ void MainWindow::onDisconnect()
  */
 void MainWindow::onReadError()
 {
+  setProperty("ecuConnectInProgress", false);
   m_ui->m_commsGoodLed->setChecked(false);
   m_ui->m_commsBadLed->setChecked(true);
   setActuatorTestsEnabled(false);
@@ -1486,10 +1499,13 @@ void MainWindow::onReconnectAttempt()
 {
   if (m_autoReconnectEnabled && !m_closing)
   {
-    onConnectClicked();
+    if (property("ecuConnectInProgress").toBool())
+      return;
+
     // Les échecs de reconnexion automatiques ne doivent pas ouvrir
     // une boîte de dialogue en boucle lorsque le contact est coupé.
     m_silentReconnect = true;
+    onConnectClicked();
   }
   else
   {
@@ -1557,6 +1573,7 @@ void MainWindow::onViewCapturesClicked()
  */
 void MainWindow::onReadSuccess()
 {
+  setProperty("ecuConnectInProgress", false);
   m_silentReconnect = false;
   m_ui->m_commsGoodLed->setChecked(true);
   m_ui->m_commsBadLed->setChecked(false);
@@ -1620,6 +1637,10 @@ void MainWindow::onHelpContentsClicked()
  */
 void MainWindow::onFailedToConnect(QString dev)
 {
+  setProperty("ecuConnectInProgress", false);
+  if (!m_closing)
+    m_ui->m_connectButton->setEnabled(true);
+
   if (m_closing)
     return;
 
@@ -1695,7 +1716,7 @@ void MainWindow::onBoostValveTestComplete()
 {
   m_ui->m_Boost_Valve_TestButton->setEnabled(true);
   m_ui->m_Boost_Valve_OnButton->setEnabled(true);
-  m_ui->m_Boost_Valve_OnButton->setEnabled(false);
+  m_ui->m_Boost_Valve_OffButton->setEnabled(false);
 }
 
 void MainWindow::onPurgeValveTestComplete()
@@ -1981,7 +2002,7 @@ void MainWindow::on_m_Boost_Valve_OffButton_clicked()
 {
     m_ui->m_Boost_Valve_TestButton->setEnabled(true);
 	m_ui->m_Boost_Valve_OnButton->setEnabled(true);
-	m_ui->m_Boost_Valve_OnButton->setEnabled(false);
+	m_ui->m_Boost_Valve_OffButton->setEnabled(false);
 	emit Boost_Valve_Off();
 }
 
@@ -1999,7 +2020,7 @@ void MainWindow::on_m_Fan2_TestButton_clicked()
     m_ui->m_Fan2_TestButton->setEnabled(false);
 	m_ui->m_Fan2_OnButton->setEnabled(false);
 	m_ui->m_Fan2_OffButton->setEnabled(false);
-	emit Fan1_Test();
+	emit Fan2_Test();
 }
 
 void MainWindow::on_m_Fan3_TestButton_clicked()
@@ -2007,7 +2028,7 @@ void MainWindow::on_m_Fan3_TestButton_clicked()
     m_ui->m_Fan3_TestButton->setEnabled(false);
 	m_ui->m_Fan3_OnButton->setEnabled(false);
 	m_ui->m_Fan3_OffButton->setEnabled(false);
-	emit Fan1_Test();
+	emit Fan3_Test();
 }
 
 void MainWindow::on_m_Fan1_OnButton_clicked()
@@ -2044,7 +2065,7 @@ void MainWindow::on_m_Fan1_OffButton_clicked()
 
 void MainWindow::on_m_Fan2_OffButton_clicked()
 {
-	m_ui->m_Fan3_TestButton->setEnabled(true);
+	m_ui->m_Fan2_TestButton->setEnabled(true);
 	m_ui->m_Fan2_OnButton->setEnabled(true);
 	m_ui->m_Fan2_OffButton->setEnabled(false);
     emit Fan2_Off();
@@ -2174,4 +2195,3 @@ void MainWindow::onProtocolResponse(quint8 command, QByteArray response)
   m_protocolOutput->append(line);
   m_protocolOutput->ensureCursorVisible();
 }
-

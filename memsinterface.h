@@ -6,6 +6,7 @@
 #include <QHash>
 #include <QByteArray>
 #include <QAtomicInteger>
+#include <QMutex>
 #include "rosco.h"
 #include "commonunits.h"
 
@@ -21,7 +22,8 @@ public:
     int getIntervalMsecs();
     bool isConnected();
     void disconnectFromECU();
-    mems_data* getData()          { return &m_data; }
+    void requestShutdown();
+    mems_data* getData();
     librosco_version getVersion() { return mems_get_lib_version(); }
     void cancelRead();
 
@@ -133,12 +135,17 @@ signals:
 
 private:
     mems_data m_data;
+    mutable QMutex m_dataMutex;
     QString m_deviceName;
     mems_info m_memsinfo;
     bool m_stopPolling;
     bool m_shutdownThread;
     bool m_initComplete;
     bool m_serviceLoopRunning;
+    bool m_connectionAttemptActive;
+    QAtomicInteger<int> m_disconnectRequested{0};
+    QAtomicInteger<int> m_shutdownRequested{0};
+    QAtomicInteger<int> m_connectedState{0};
     QAtomicInteger<int> m_mappedInjectionRequested{0};
     uint8_t m_d0_response_buffer[4];
     void runServiceLoop();

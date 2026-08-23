@@ -2,6 +2,7 @@
 #include <QDateTime>
 #include <QElapsedTimer>
 #include <QCoreApplication>
+#include <QMutexLocker>
 #include <string.h>
 #include <QThread>
 #ifdef WIN32
@@ -18,7 +19,7 @@
  *  with the ECU.
  */
 MEMSInterface::MEMSInterface(QString device, QObject * parent):
-QObject(parent), m_deviceName(device), m_stopPolling(false), m_shutdownThread(false), m_initComplete(false)
+QObject(parent), m_deviceName(device), m_stopPolling(false), m_shutdownThread(false), m_initComplete(false), m_serviceLoopRunning(false), m_connectionAttemptActive(false)
 {
   memset(&m_data, 0, sizeof(mems_data));
   memset(m_d0_response_buffer, 0, 4);
@@ -124,8 +125,12 @@ void MEMSInterface::onIdleAirControlMovementRequest(int desiredPos)
  */
 bool MEMSInterface::connectToECU()
 {
+  if (m_shutdownRequested.loadAcquire() != 0)
+    return false;
+
   bool status = mems_connect(&m_memsinfo, m_deviceName.toStdString().c_str()) &&
     mems_init_link(&m_memsinfo, m_d0_response_buffer);
+  m_connectedState.storeRelease(status ? 1 : 0);
   if (status)
   {
     emit gotEcuId(m_d0_response_buffer);
@@ -134,11 +139,24 @@ bool MEMSInterface::connectToECU()
 }
 
 /**
- * Sets a flag that will cause us to stop polling and disconnect from the serial device.
+ * Sets a thread-safe flag that will cause polling/injection to stop and the
+ * serial session to be disconnected by the worker thread.
  */
 void MEMSInterface::disconnectFromECU()
 {
-  m_stopPolling = true;
+  m_disconnectRequested.storeRelease(1);
+  m_mappedInjectionRequested.storeRelease(0);
+}
+
+/**
+ * Thread-safe shutdown request used by MainWindow before waiting for the
+ * worker thread. Only atomics are touched here, so it is safe from the GUI thread.
+ */
+void MEMSInterface::requestShutdown()
+{
+  m_shutdownRequested.storeRelease(1);
+  m_disconnectRequested.storeRelease(1);
+  m_mappedInjectionRequested.storeRelease(0);
 }
 
 /**
@@ -146,6 +164,7 @@ void MEMSInterface::disconnectFromECU()
  */
 void MEMSInterface::onShutdownThreadRequest()
 {
+  requestShutdown();
   if (m_serviceLoopRunning)
   {
     m_shutdownThread = true;
@@ -158,11 +177,24 @@ void MEMSInterface::onShutdownThreadRequest()
 
 /**
  * Indicates whether the serial device is currently open/connected.
- * @return True when the device is connected; false otherwise.
+ * @return True when the device is connected; false otherwise
  */
 bool MEMSInterface::isConnected()
 {
-  return (m_initComplete && mems_is_connected(&m_memsinfo));
+  return m_connectedState.loadAcquire() != 0;
+}
+
+/**
+ * Returns a stable per-calling-thread snapshot of the last complete ECU data
+ * frame. The worker can continue polling without the GUI reading m_data while
+ * librosco is updating it.
+ */
+mems_data* MEMSInterface::getData()
+{
+  static thread_local mems_data snapshot;
+  QMutexLocker locker(&m_dataMutex);
+  snapshot = m_data;
+  return &snapshot;
 }
 
 /**
@@ -171,6 +203,12 @@ bool MEMSInterface::isConnected()
  */
 void MEMSInterface::onParentThreadStarted()
 {
+  if (m_shutdownRequested.loadAcquire() != 0)
+  {
+    QThread::currentThread()->quit();
+    return;
+  }
+
   // Initialize the interface state info struct here, so that
   // it's in the context of the thread that will use it.
   if (!m_initComplete)
@@ -187,16 +225,29 @@ void MEMSInterface::onParentThreadStarted()
  */
 void MEMSInterface::onStartPollingRequest()
 {
+  if (m_shutdownRequested.loadAcquire() != 0)
+  {
+    QThread::currentThread()->quit();
+    return;
+  }
+
+  if (m_connectionAttemptActive || m_serviceLoopRunning)
+    return;
+
+  m_connectionAttemptActive = true;
+  m_disconnectRequested.storeRelease(0);
+  m_stopPolling = false;
+  m_shutdownThread = false;
+
   if (connectToECU())
   {
     emit connected();
-
-    m_stopPolling = false;
-    m_shutdownThread = false;
     runServiceLoop();
+    m_connectionAttemptActive = false;
   }
   else
   {
+    m_connectionAttemptActive = false;
 #ifdef WIN32
     QString simpleDeviceName = m_deviceName;
 
@@ -217,11 +268,20 @@ void MEMSInterface::onStartPollingRequest()
 void MEMSInterface::runServiceLoop()
 {
   bool connected = mems_is_connected(&m_memsinfo);
+  m_connectedState.storeRelease(connected ? 1 : 0);
 
   m_serviceLoopRunning = true;
-  while (!m_stopPolling && !m_shutdownThread && connected)
+  while (!m_stopPolling && !m_shutdownThread &&
+         m_disconnectRequested.loadAcquire() == 0 &&
+         m_shutdownRequested.loadAcquire() == 0 && connected)
   {
-    if (mems_read(&m_memsinfo, &m_data))
+    bool readOk = false;
+    {
+      QMutexLocker locker(&m_dataMutex);
+      readOk = mems_read(&m_memsinfo, &m_data);
+    }
+
+    if (readOk)
     {
       emit readSuccess();
       emit dataReady();
@@ -242,9 +302,12 @@ void MEMSInterface::runServiceLoop()
   {
     mems_disconnect(&m_memsinfo);
   }
+  m_connectedState.storeRelease(0);
+  if (m_shutdownRequested.loadAcquire() == 0)
+    m_disconnectRequested.storeRelease(0);
   emit disconnected();
 
-  if (m_shutdownThread)
+  if (m_shutdownThread || m_shutdownRequested.loadAcquire() != 0)
   {
     QThread::currentThread()->quit();
   }
@@ -253,18 +316,17 @@ void MEMSInterface::runServiceLoop()
 bool MEMSInterface::actuatorOnOffDelayTest(actuator_cmd onCmd, actuator_cmd offCmd)
 {
   bool status = false;
-  void sleep();
 
   if (m_initComplete && mems_is_connected(&m_memsinfo))
   {
-    if (mems_test_actuator(&m_memsinfo, onCmd, NULL))
-		QThread::sleep(1);
-    {
-      if (mems_test_actuator(&m_memsinfo, offCmd, NULL))
-      {
-        status = true;
-      }
-    }
+    const bool onOk = mems_test_actuator(&m_memsinfo, onCmd, NULL);
+    if (onOk)
+      QThread::sleep(1);
+
+    // Toujours demander OFF par sécurité, même si l'accusé de la commande ON
+    // a échoué. Le test n'est réussi que si ON et OFF ont tous les deux réussi.
+    const bool offOk = mems_test_actuator(&m_memsinfo, offCmd, NULL);
+    status = onOk && offOk;
 
     if (!status)
     {
@@ -696,6 +758,9 @@ void MEMSInterface::on_m_fuel_trim_plusButton_clicked()
  */
 void MEMSInterface::onProtocolCommandRequested(quint8 command)
 {
+  if (m_shutdownRequested.loadAcquire() != 0)
+    return;
+
   if (!(m_initComplete && mems_is_connected(&m_memsinfo)))
   {
     emit notConnected();
@@ -740,7 +805,7 @@ void MEMSInterface::onProtocolCommandRequested(quint8 command)
   // inter-byte timeout expires, with a hard upper bound.
   QElapsedTimer timer;
   timer.start();
-  while (timer.elapsed() < 350)
+  while (timer.elapsed() < 350 && m_shutdownRequested.loadAcquire() == 0)
   {
     unsigned char b = 0;
     DWORD n = 0;
@@ -773,7 +838,7 @@ void MEMSInterface::onProtocolCommandRequested(quint8 command)
 
   QElapsedTimer timer;
   timer.start();
-  while (timer.elapsed() < 350)
+  while (timer.elapsed() < 350 && m_shutdownRequested.loadAcquire() == 0)
   {
     fd_set set;
     FD_ZERO(&set);
@@ -795,5 +860,6 @@ void MEMSInterface::onProtocolCommandRequested(quint8 command)
   }
 #endif
 
-  emit protocolResponse(command, response);
+  if (m_shutdownRequested.loadAcquire() == 0)
+    emit protocolResponse(command, response);
 }

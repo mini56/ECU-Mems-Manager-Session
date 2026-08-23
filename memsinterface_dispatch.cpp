@@ -15,8 +15,14 @@
 
 bool MEMSInterface::tryRoscoConnect(const QString &devicePath)
 {
+    if (m_shutdownRequested.loadAcquire() != 0)
+        return false;
+
     if (m_initComplete && mems_is_connected(&m_memsinfo))
+    {
         mems_disconnect(&m_memsinfo);
+        m_connectedState.storeRelease(0);
+    }
 
     m_deviceName = devicePath;
     return connectToECULegacy();
@@ -25,6 +31,12 @@ bool MEMSInterface::tryRoscoConnect(const QString &devicePath)
 bool MEMSInterface::performMems19Wakeup(const QString &qtPortName, QString *detail)
 {
     if (detail) detail->clear();
+
+    if (m_shutdownRequested.loadAcquire() != 0)
+    {
+        if (detail) *detail = QStringLiteral("shutdown-requested");
+        return false;
+    }
 
     QSerialPort port;
     port.setPortName(qtPortName);
@@ -55,17 +67,21 @@ bool MEMSInterface::performMems19Wakeup(const QString &qtPortName, QString *deta
     QThread::msleep(300);
     const quint8 address = 0x16u;
 
-    auto sendSlowBit = [&port](bool high) -> bool {
+    auto sendSlowBit = [this, &port](bool high) -> bool {
+        if (m_shutdownRequested.loadAcquire() != 0)
+            return false;
         // BREAK = active low, therefore a logical high means BREAK disabled.
         if (!port.setBreakEnabled(!high))
             return false;
         QThread::msleep(200);
-        return true;
+        return m_shutdownRequested.loadAcquire() == 0;
     };
 
     if (!sendSlowBit(false))
     {
-        if (detail) *detail = QStringLiteral("slow-init-start-failed");
+        if (detail) *detail = m_shutdownRequested.loadAcquire() != 0
+            ? QStringLiteral("shutdown-requested")
+            : QStringLiteral("slow-init-start-failed");
         port.setBreakEnabled(false);
         port.close();
         return false;
@@ -76,7 +92,9 @@ bool MEMSInterface::performMems19Wakeup(const QString &qtPortName, QString *deta
         const bool high = ((address >> bit) & 0x01u) != 0u;
         if (!sendSlowBit(high))
         {
-            if (detail) *detail = QStringLiteral("slow-init-data-failed");
+            if (detail) *detail = m_shutdownRequested.loadAcquire() != 0
+                ? QStringLiteral("shutdown-requested")
+                : QStringLiteral("slow-init-data-failed");
             port.setBreakEnabled(false);
             port.close();
             return false;
@@ -85,7 +103,9 @@ bool MEMSInterface::performMems19Wakeup(const QString &qtPortName, QString *deta
 
     if (!sendSlowBit(true))
     {
-        if (detail) *detail = QStringLiteral("slow-init-stop-failed");
+        if (detail) *detail = m_shutdownRequested.loadAcquire() != 0
+            ? QStringLiteral("shutdown-requested")
+            : QStringLiteral("slow-init-stop-failed");
         port.setBreakEnabled(false);
         port.close();
         return false;
@@ -99,7 +119,8 @@ bool MEMSInterface::performMems19Wakeup(const QString &qtPortName, QString *deta
     QElapsedTimer timer;
     timer.start();
     int syncIndex = -1;
-    while (timer.elapsed() < 1600 && syncIndex < 0)
+    while (timer.elapsed() < 1600 && syncIndex < 0 &&
+           m_shutdownRequested.loadAcquire() == 0)
     {
         if (port.waitForReadyRead(120))
             wakeReply += port.readAll();
@@ -114,6 +135,13 @@ bool MEMSInterface::performMems19Wakeup(const QString &qtPortName, QString *deta
                 break;
             }
         }
+    }
+
+    if (m_shutdownRequested.loadAcquire() != 0)
+    {
+        if (detail) *detail = QStringLiteral("shutdown-requested");
+        port.close();
+        return false;
     }
 
     if (syncIndex < 0 || syncIndex + 2 >= wakeReply.size())
@@ -138,7 +166,8 @@ bool MEMSInterface::performMems19Wakeup(const QString &qtPortName, QString *deta
     QByteArray confirmation;
     timer.restart();
     bool confirmed = false;
-    while (timer.elapsed() < 1200 && !confirmed)
+    while (timer.elapsed() < 1200 && !confirmed &&
+           m_shutdownRequested.loadAcquire() == 0)
     {
         if (port.waitForReadyRead(100))
             confirmation += port.readAll();
@@ -156,6 +185,11 @@ bool MEMSInterface::performMems19Wakeup(const QString &qtPortName, QString *deta
     }
 
     port.close();
+    if (m_shutdownRequested.loadAcquire() != 0)
+    {
+        if (detail) *detail = QStringLiteral("shutdown-requested");
+        return false;
+    }
     if (!confirmed)
     {
         if (detail) *detail = QStringLiteral("address-confirmation-missing");
@@ -169,6 +203,9 @@ bool MEMSInterface::performMems19Wakeup(const QString &qtPortName, QString *deta
 
 bool MEMSInterface::connectToECU()
 {
+    if (m_shutdownRequested.loadAcquire() != 0)
+        return false;
+
     const QString configuredDevice = m_deviceName;
     const QList<DetectedSerialAdapter> adapters =
         SerialAdapterDetector::availableAdapters(configuredDevice);
@@ -178,6 +215,9 @@ bool MEMSInterface::connectToECU()
     // the configured port is tried first, then the other detected serial ports.
     for (const DetectedSerialAdapter &adapter : adapters)
     {
+        if (m_shutdownRequested.loadAcquire() != 0)
+            break;
+
         if (tryRoscoConnect(adapter.devicePath))
         {
             emit serialInterfaceDetected(adapter.portName,
@@ -186,7 +226,10 @@ bool MEMSInterface::connectToECU()
             return true;
         }
         if (m_initComplete && mems_is_connected(&m_memsinfo))
+        {
             mems_disconnect(&m_memsinfo);
+            m_connectedState.storeRelease(0);
+        }
     }
 
     // Nothing answered the normal path: try the MEMS 1.9 ISO-9141 slow wake-up.
@@ -194,9 +237,15 @@ bool MEMSInterface::connectToECU()
     // do we hand the already-awake ECU to the existing 9600-baud ROSCO init.
     for (const DetectedSerialAdapter &adapter : adapters)
     {
+        if (m_shutdownRequested.loadAcquire() != 0)
+            break;
+
         QString detail;
         if (!performMems19Wakeup(adapter.qtPortName, &detail))
             continue;
+
+        if (m_shutdownRequested.loadAcquire() != 0)
+            break;
 
         if (tryRoscoConnect(adapter.devicePath))
         {
@@ -206,21 +255,57 @@ bool MEMSInterface::connectToECU()
             return true;
         }
         if (m_initComplete && mems_is_connected(&m_memsinfo))
+        {
             mems_disconnect(&m_memsinfo);
+            m_connectedState.storeRelease(0);
+        }
     }
 
     m_deviceName = configuredDevice;
+    m_connectedState.storeRelease(0);
     return false;
 }
 
 void MEMSInterface::onStartPollingRequest()
 {
+    if (m_shutdownRequested.loadAcquire() != 0)
+    {
+        QThread::currentThread()->quit();
+        return;
+    }
+
+    // Prevent a second queued connection request from entering while a slow
+    // MEMS 1.9 initialisation or the service loop is already active.
+    if (m_connectionAttemptActive || m_serviceLoopRunning)
+        return;
+
+    m_connectionAttemptActive = true;
+    m_disconnectRequested.storeRelease(0);
+    m_stopPolling = false;
+    m_shutdownThread = false;
+
     if (connectToECU())
     {
+        if (m_shutdownRequested.loadAcquire() != 0)
+        {
+            if (m_initComplete && mems_is_connected(&m_memsinfo))
+                mems_disconnect(&m_memsinfo);
+            m_connectedState.storeRelease(0);
+            m_connectionAttemptActive = false;
+            QThread::currentThread()->quit();
+            return;
+        }
+
         emit connected();
-        m_stopPolling = false;
-        m_shutdownThread = false;
         runServiceLoop();
+        m_connectionAttemptActive = false;
+        return;
+    }
+
+    m_connectionAttemptActive = false;
+    if (m_shutdownRequested.loadAcquire() != 0)
+    {
+        QThread::currentThread()->quit();
         return;
     }
 

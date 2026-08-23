@@ -169,11 +169,12 @@ void DiagnosticPanel::rebuild(const mems_data &d)
                                           : I18n::text(6844) /* EN: Closed loop is currently inactive; interpret together with temperature and engine conditions. */));
     if (lambdaFault) ++issues;
 
-    const int fuelTrim = int(d.short_term_fuel_trim) - 100;
-    const bool trimWatch = qAbs(fuelTrim) > 20 || qAbs(int(d.long_term_fuel_trim) - 100) > 20;
+    const int shortFuelTrim = int(d.short_term_fuel_trim) - 100;
+    const int longFuelTrim = int(d.long_term_fuel_trim) - 128;
+    const bool trimWatch = qAbs(shortFuelTrim) > 20 || qAbs(longFuelTrim) > 20;
     addCheck(I18n::text(6845) /* EN: Corrections fuel */,
              I18n::text(6846) /* EN: short-term=%1  long-term=%2 */
-                 .arg(fuelTrim).arg(int(d.long_term_fuel_trim) - 100),
+                 .arg(shortFuelTrim).arg(longFuelTrim),
              stateFor(!trimWatch, true),
              trimWatch ? I18n::text(6847) /* EN: Large correction: check for air leaks, fuel pressure/supply, injection or lambda measurement before changing settings. */
                        : I18n::text(6848) /* EN: Corrections show no significant deviation according to this indicative criterion. */);
