@@ -33,11 +33,18 @@ jobs:
           manifest = json.loads((root / 'manifest.json').read_text(encoding='utf-8'))
 
           def quncompress_qz64_bytes(encoded: bytes, label: str) -> bytes:
-              packed = base64.b64decode(encoded.strip())
+              try:
+                  packed = base64.b64decode(encoded.strip())
+              except Exception as exc:
+                  raise RuntimeError(f'{label}: base64 decode failed: {exc}') from exc
               if len(packed) < 6:
                   raise RuntimeError(f'{label}: packed stream too short')
               expected = struct.unpack('>I', packed[:4])[0]
-              raw = zlib.decompress(packed[4:])
+              try:
+                  raw = zlib.decompress(packed[4:])
+              except Exception as exc:
+                  prefix = packed[:12].hex()
+                  raise RuntimeError(f'{label}: zlib decompress failed: {exc}; packed_prefix={prefix}; expected={expected}') from exc
               if len(raw) != expected:
                   raise RuntimeError(f'{label}: qCompress size mismatch expected={expected} got={len(raw)}')
               return raw
