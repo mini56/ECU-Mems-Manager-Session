@@ -1,0 +1,153 @@
+{
+  "sources": [
+    [
+      "andrew_revill_memstools",
+      "Andrew Revill",
+      "MEMSTools – Rover MEMS knowledge corpus",
+      "https://andrewrevill.co.uk/MEMSToolsIndex.htm",
+      "12bb7dfc8c1f3bed1eed28b85b3bb2c344e4d7b5fcb0534e584092aaeb7ff1e8",
+      "source_externe",
+      "MEMS 1.3 / 1.6 / 1.9",
+      "Structured extraction from the supplied MEMSTools archive. Reverse-engineered external source; preserve provenance and validate safety-critical conclusions against project or vehicle evidence."
+    ],
+    [
+      "andrew_revill_memstools_mems12",
+      "Andrew Revill",
+      "MEMSTools – Rover MEMS 1.2 corpus",
+      "https://andrewrevill.co.uk/MEMS3FamiliesSupported.htm",
+      "12bb7dfc8c1f3bed1eed28b85b3bb2c344e4d7b5fcb0534e584092aaeb7ff1e8",
+      "source_externe",
+      "MEMS 1.2",
+      "Dedicated MEMS 1.2 extraction from the current Andrew Revill MEMSTools archive. No unsupported semantic fact is fabricated: if the ZIP exposes only assets and no correlation CSV, the database records that partial coverage explicitly."
+    ]
+  ],
+  "datasets": {
+    "mems_firmware_catalog": 286,
+    "mems_axis_definition": 320,
+    "mems_scalar_definition": 18519,
+    "mems_scalar_binding": 96240,
+    "mems_table_definition": 1815,
+    "mems_table_binding": 17458,
+    "mems_variable_correlation": 64706,
+    "mems_source_asset": 433
+  },
+  "family_firmware_counts": [
+    [
+      "andrew_revill_memstools",
+      "1.3",
+      3
+    ],
+    [
+      "andrew_revill_memstools",
+      "1.6",
+      119
+    ],
+    [
+      "andrew_revill_memstools",
+      "1.9",
+      164
+    ]
+  ],
+  "asset_counts": [
+    [
+      "andrew_revill_memstools",
+      "1.3",
+      "correlation",
+      4
+    ],
+    [
+      "andrew_revill_memstools",
+      "1.3",
+      "disassembly",
+      3
+    ],
+    [
+      "andrew_revill_memstools",
+      "1.3",
+      "firmware_image",
+      3
+    ],
+    [
+      "andrew_revill_memstools",
+      "1.3/1.6/1.9",
+      "definition",
+      2
+    ],
+    [
+      "andrew_revill_memstools",
+      "1.6",
+      "correlation",
+      8
+    ],
+    [
+      "andrew_revill_memstools",
+      "1.6",
+      "disassembly",
+      129
+    ],
+    [
+      "andrew_revill_memstools",
+      "1.6",
+      "firmware_image",
+      4
+    ],
+    [
+      "andrew_revill_memstools",
+      "1.6",
+      "help_asset",
+      30
+    ],
+    [
+      "andrew_revill_memstools",
+      "1.9",
+      "correlation",
+      4
+    ],
+    [
+      "andrew_revill_memstools",
+      "1.9",
+      "disassembly",
+      217
+    ],
+    [
+      "andrew_revill_memstools",
+      "1.9",
+      "help_asset",
+      29
+    ]
+  ],
+  "baseline_table_count": 29,
+  "full_table_count": 38,
+  "firmware_exact_text_overlap": {
+    "matched": 41,
+    "total": 286
+  },
+  "identifier_exact_text_overlap": {
+    "matched": 0,
+    "total": 1091
+  },
+  "quality": {
+    "orphan_scalar_bindings": 0,
+    "orphan_table_bindings": 0,
+    "variable_null_addresses": 0,
+    "variable_unknown_firmware": 0,
+    "shared_variable_addresses": 0,
+    "scalar_unresolved_axis": 0
+  },
+  "mems_1_2": {
+    "firmwares": 0,
+    "scalars": 0,
+    "tables": 0,
+    "variables": 0,
+    "assets": 0
+  },
+  "mems_1_2_asset_sample": [],
+  "aanmp002_inj_pw_rosco": [
+    "$00E",
+    "inj_pw_rosco",
+    "",
+    "ms",
+    0.001333,
+    0.0
+  ]
+}
