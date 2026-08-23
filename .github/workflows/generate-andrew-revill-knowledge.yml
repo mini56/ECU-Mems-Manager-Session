@@ -8,8 +8,10 @@ on:
       - "tools/build_memstools_enrichment.py"
       - "tools/build_memstools_12_enrichment.py"
       - "tools/build_andrew_family_capabilities.py"
+      - "tools/build_andrew_mems19_architecture.py"
       - "tools/validate_memstools_enrichment.py"
       - "tools/audit_andrew_revill_knowledge.py"
+      - "tools/finalize_andrew_revill_audit.py"
       - ".github/workflows/generate-andrew-revill-knowledge.yml"
 
 permissions:
@@ -68,7 +70,7 @@ jobs:
           set -euo pipefail
           python tools/audit_andrew_revill_knowledge.py database/reference \
             --output database/reference/audits/andrew_revill_audit.md \
-            --json-output database/reference/audits/andrew_revill_audit.json
+            --json-output database/reference/audits/andrew_revill_core_audit.json
 
       - name: Generate documented Andrew family capabilities
         shell: bash
@@ -76,6 +78,21 @@ jobs:
           set -euo pipefail
           python tools/build_andrew_family_capabilities.py \
             --output-dir database/reference
+
+      - name: Generate Andrew MEMS 1.9 architecture knowledge
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/build_andrew_mems19_architecture.py \
+            --output-dir database/reference
+
+      - name: Finalize complete Andrew audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/finalize_andrew_revill_audit.py database/reference \
+            --core-report database/reference/audits/andrew_revill_audit.md \
+            --json-output database/reference/audits/andrew_revill_audit.json
 
       - name: Upload generated knowledge package
         uses: actions/upload-artifact@v4
@@ -89,8 +106,10 @@ jobs:
             database/reference/research_enrichment_1540.qz64
             database/reference/research_enrichment_1560.qz64
             database/reference/research_enrichment_1570.qz64
+            database/reference/research_enrichment_1580.qz64
             database/reference/audits/andrew_revill_audit.md
             database/reference/audits/andrew_revill_audit.json
+            database/reference/audits/andrew_revill_core_audit.json
 
       - name: Commit generated knowledge and audit to laboratory branch
         shell: bash
@@ -106,11 +125,13 @@ jobs:
             database/reference/research_enrichment_1540.qz64 \
             database/reference/research_enrichment_1560.qz64 \
             database/reference/research_enrichment_1570.qz64 \
+            database/reference/research_enrichment_1580.qz64 \
             database/reference/audits/andrew_revill_audit.md \
-            database/reference/audits/andrew_revill_audit.json
+            database/reference/audits/andrew_revill_audit.json \
+            database/reference/audits/andrew_revill_core_audit.json
           if git diff --cached --quiet; then
             echo "Knowledge package and audit already identical; no commit required."
             exit 0
           fi
-          git commit -m "Audit Andrew Revill knowledge including MEMS 1.2 [skip ci]"
+          git commit -m "Complete Andrew Revill knowledge audit [skip ci]"
           git push origin HEAD:lab-andrew-revill-knowledge
