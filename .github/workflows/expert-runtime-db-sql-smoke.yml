@@ -24,7 +24,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Build compact runtime database exactly line by line
+      - name: Build compact runtime database statement by statement
         id: smoke
         continue-on-error: true
         shell: bash
@@ -47,17 +47,28 @@ jobs:
                   raise RuntimeError(f'qCompress size mismatch expected={expected} got={len(sql)}')
               return sql
 
-          def execute_lines(label, sql):
+          def execute_script(label, sql):
+              text=sql.decode('utf-8')
+              buffer=''
               count=0
-              for line_no, raw in enumerate(sql.decode('utf-8').splitlines(),1):
-                  statement=raw.strip()
-                  if not statement or statement.startswith('--'):
+              for line_no, raw in enumerate(text.splitlines(),1):
+                  stripped=raw.strip()
+                  if not buffer and (not stripped or stripped.startswith('--')):
+                      continue
+                  buffer += raw + '\n'
+                  if not sqlite3.complete_statement(buffer):
+                      continue
+                  statement=buffer.strip()
+                  buffer=''
+                  if not statement:
                       continue
                   try:
                       db.execute(statement)
                   except Exception as exc:
-                      raise RuntimeError(f'{label}:{line_no}: {exc} | {statement[:260]}') from exc
+                      raise RuntimeError(f'{label}:{line_no}: {exc} | {statement[:320]}') from exc
                   count += 1
+              if buffer.strip():
+                  raise RuntimeError(f'{label}: incomplete trailing SQL | {buffer[:320]}')
               report.append({'lot':label,'statements':count,'bytes':len(sql)})
 
           def suffix(p):
@@ -65,14 +76,14 @@ jobs:
               return int(m.group(1)) if m else 0
           seeds=sorted(root.glob('mems_reference_seed_*.qz64'), key=lambda p:(suffix(p),p.name))
           if not seeds: raise RuntimeError('seed absent')
-          execute_lines('seed', quncompress(b''.join(p.read_bytes().strip() for p in seeds)))
+          execute_script('seed', quncompress(b''.join(p.read_bytes().strip() for p in seeds)))
           for batch in batches:
               if batch == 'research_enrichment_1600.qz64':
                   report.append({'lot':batch,'skipped':'archive-only raw preservation layer'})
                   continue
               path=root/batch
               if not path.exists(): raise RuntimeError(f'lot absent: {batch}')
-              execute_lines(batch, quncompress(path.read_bytes().strip()))
+              execute_script(batch, quncompress(path.read_bytes().strip()))
 
           tables={r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
           required=['mems_expert_fact_external','mems_expert_rule','mems_expert_rule_condition','mems_expert_rule_recommendation','mems_scalar_definition','mems_variable_correlation']
