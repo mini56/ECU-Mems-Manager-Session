@@ -1,7 +1,13 @@
 Expert compact runtime SQL diagnostic: FAILED
-source_commit=ba7f8a6ff4692261cb56fc0c8ac4bcff7cd9efc6
-run=32662623272
+source_commit=51af59e965d21b80a8eb8a0125136f523f7ac61b
+run=32662899289
 Traceback (most recent call last):
-  File "<stdin>", line 34, in <module>
-  File "<stdin>", line 11, in quncompress_qz64_bytes
+  File "<stdin>", line 15, in quncompress_qz64_bytes
 zlib.error: Error -3 while decompressing data: incorrect header check
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<stdin>", line 41, in <module>
+  File "<stdin>", line 18, in quncompress_qz64_bytes
+RuntimeError: research_enrichment_1620.qz64: zlib decompress failed: Error -3 while decompressing data: incorrect header check; packed_prefix=c6c87035f2a15be31670f1f7; expected=3335024693
