@@ -20,6 +20,8 @@ class QTextBrowser;
 class MainWindow;
 class MEMSInterface;
 
+// Conversational MEMS view. It only observes data already acquired by
+// MEMSInterface; it never requests another ECU polling mode on its own.
 class IaMemsTab final : public QWidget
 {
     Q_OBJECT
