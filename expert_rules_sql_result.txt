@@ -1,6 +1,6 @@
 Expert rule lots SQL smoke test: FAILED
-source_commit=168aec05c42d394f35918dc6a0b4f29c51113116
-run=32661848445
+source_commit=7d818202a7cc0a2788403d640af7ba4d37b1e012
+run=32661882465
 Traceback (most recent call last):
   File "<stdin>", line 21, in <module>
 sqlite3.OperationalError: incomplete input
