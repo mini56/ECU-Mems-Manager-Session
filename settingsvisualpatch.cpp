@@ -180,13 +180,12 @@ static void arrangeBottomPanels(QWidget *page,QFrame *metrics,QFrame *states,QFr
     }
     if(!body) return;
 
-    // The metrics frame must span both body columns. If it remains in column 0,
-    // its ~760 px minimum width forces the first column wide and squeezes the
-    // ECU adjustment panel into a narrow strip on 1366 px displays.
+    // The metrics frame spans both body columns so the gauge group stays
+    // centered while the two lower panels share the full available width.
     body->removeWidget(metrics);
     body->removeWidget(states);
     body->removeWidget(adjust);
-    body->addWidget(metrics,0,0,1,2,Qt::AlignLeft);
+    body->addWidget(metrics,0,0,1,2);
     body->addWidget(states,1,0);
     body->addWidget(adjust,1,1);
     body->setColumnStretch(0,1);
@@ -235,8 +234,8 @@ static void applySettingsVisualPatch(QMainWindow *window)
     const int height=qMax(500,page->height());
     const int centerByWidth=qRound(width*.34);
     const int centerByHeight=qRound((height-190)*.96);
-    const int center=qBound(345,qMin(centerByWidth,centerByHeight),400);
-    const int outer=qBound(185,qRound(center*.53),210);
+    const int center=qBound(370,qMin(centerByWidth,centerByHeight),400);
+    const int outer=qBound(198,qRound(center*.53),210);
 
     applyGaugeFrame(page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeRpm")),center);
     applyGaugeFrame(page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeIdle")),outer);
