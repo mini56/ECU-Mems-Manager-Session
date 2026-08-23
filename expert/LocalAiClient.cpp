@@ -145,13 +145,22 @@ void LocalAiClient::checkHealth()
 
 void LocalAiClient::handleHealthReply(QNetworkReply *reply)
 {
-    if (reply->error() == QNetworkReply::NoError) {
-        const QJsonDocument document = QJsonDocument::fromJson(reply->readAll());
-        if (document.isObject()
-            && document.object().value(QStringLiteral("status")).toString() == QStringLiteral("ok")) {
-            setState(Ready);
-            return;
-        }
+    const int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    const QByteArray body = reply->readAll();
+    const QJsonDocument document = QJsonDocument::fromJson(body);
+
+    if (httpStatus == 200 && document.isObject()
+        && document.object().value(QStringLiteral("status")).toString() == QStringLiteral("ok")) {
+        setState(Ready);
+        return;
+    }
+
+    // llama.cpp deliberately returns HTTP 503 while a model is loading. If a
+    // server already owns our loopback port, simply keep waiting instead of
+    // trying to spawn a competing process.
+    if (httpStatus == 503) {
+        scheduleHealthCheck();
+        return;
     }
 
     if (!m_startedServer) {
@@ -271,6 +280,9 @@ void LocalAiClient::shutdown()
 {
     if (m_healthTimer)
         m_healthTimer->stop();
+
+    // Prevent a deliberate shutdown from being reported as an engine failure.
+    m_state = NotStarted;
     if (m_startedServer && m_server && m_server->state() != QProcess::NotRunning) {
         m_server->terminate();
         if (!m_server->waitForFinished(1200)) {
@@ -303,10 +315,7 @@ QString LocalAiClient::statusText() const
     case Starting: return QStringLiteral("IA locale en démarrage");
     case Ready: return QStringLiteral("IA locale prête");
     case Busy: return QStringLiteral("IA locale en réponse");
-    case Error:
-        return m_lastError.isEmpty()
-            ? QStringLiteral("erreur IA locale")
-            : QStringLiteral("erreur IA locale");
+    case Error: return QStringLiteral("erreur IA locale");
     }
     return QStringLiteral("IA locale");
 }
