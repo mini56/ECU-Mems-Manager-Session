@@ -550,10 +550,11 @@ QString IaMemsTab::answerQuestion(const QString &question)
             return analysisAnswer(true);
     }
 
-    if (containsAny(text, {QStringLiteral("anormal"), QStringLiteral("normal ?"),
-                           QStringLiteral("diagnostic"), QStringLiteral("panne"),
-                           QStringLiteral("probleme"), QStringLiteral("cause"),
-                           QStringLiteral("hypothese")}))
+    if (containsAny(text, {QStringLiteral("anormal"), QStringLiteral("normal"),
+                           QStringLiteral("normale"), QStringLiteral("coherent"),
+                           QStringLiteral("coherente"), QStringLiteral("diagnostic"),
+                           QStringLiteral("panne"), QStringLiteral("probleme"),
+                           QStringLiteral("cause"), QStringLiteral("hypothese")}))
         return analysisAnswer(false);
 
     if (containsAny(text, {QStringLiteral("historique"), QStringLiteral("evolution"),
@@ -563,7 +564,8 @@ QString IaMemsTab::answerQuestion(const QString &question)
         return historyAnswer();
 
     if (containsAny(text, {QStringLiteral("source"), QStringLiteral("certain"),
-                           QStringLiteral("sait-on"), QStringLiteral("sais tu"),
+                           QStringLiteral("certaine"), QStringLiteral("fiable"),
+                           QStringLiteral("preuve"), QStringLiteral("sait-on"), QStringLiteral("sais tu"),
                            QStringLiteral("sais-tu"), QStringLiteral("firmware"),
                            QStringLiteral("octet"), QStringLiteral("adresse"),
                            QStringLiteral("correspond"), QStringLiteral("mems 1."),
