@@ -4,6 +4,7 @@
 #include <QHash>
 #include <QList>
 #include <QPointer>
+#include <QScrollArea>
 #include <QString>
 #include <QWidget>
 
