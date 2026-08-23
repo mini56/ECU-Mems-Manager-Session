@@ -1,5 +1,5 @@
 IA MEMS laboratory validation: FAILED
-source_commit=f220a7223ba75af44bd66cffc814afc21d99b731
-run=32662579252
-expert_selftest=failure
+source_commit=e90f3ccdeb38d360a85b028f149ee3fcb4ee3322
+run=32662731418
+expert_selftest=cancelled
 application_build=cancelled
