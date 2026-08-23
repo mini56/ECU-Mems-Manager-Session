@@ -25,68 +25,77 @@ code{background:#f2f3f5;padding:1px 4px}
 
 <h2>2. Overview tab</h2>
 <p>The Overview tab is the default tab shown at startup. It provides the main live gauges and status indicators for quick diagnosis: engine speed, manifold pressure, coolant and intake temperatures, battery voltage, throttle information, lambda information, idle control and ignition values.</p>
-<p>In the light theme the gauges use the original light appearance. In the dark theme the gauge faces are dark, with light needles, graduations and values. Red warning areas remain red and green nominal areas remain green.</p>
+<p>The interface remains responsive. The dark theme preserves red warning areas and green nominal areas while adapting gauges and text to the dark background.</p>
 
-<h2>3. Settings tab</h2>
-<p>The Settings tab contains service adjustments such as idle, fuel and ignition-related corrections. Tooltips explain the purpose and risks of each adjustment. The hot-idle correction used for decoding field 7D14-15 follows the value actually configured here; it is not a hard-coded constant.</p>
+<h2>3. Injection tab</h2>
+<p>The Injection tab groups the injection values acquired through the dedicated reading mode: <b>final injection time</b>, <b>base injection time</b>, <b>transient correction</b> and <b>transient state</b>.</p>
+<p>These values share the same dedicated acquisition path to avoid unnecessary ECU reading-mode changes. IA MEMS observes them when they are already available; it does not start an additional ECU polling loop on its own.</p>
 
-<h2>4. Errors tab</h2>
+<h2>4. Settings tab</h2>
+<p>The Settings tab contains service adjustments such as idle, fuel and ignition-related corrections. Tooltips explain the purpose and risks of each adjustment.</p>
+<p>The hot-idle correction used for decoding field 7D14-15 follows the value actually present in the ECU adjustment; it is not replaced by an arbitrary constant.</p>
+
+<h2>5. Errors tab</h2>
 <p>This tab displays ECU fault information, recorded anomalies and status checks. Faults should be read and understood before they are cleared. Some counters or status fields may require a complete ECU reset before they return to their default state.</p>
 
-<h2>5. Actuators tab</h2>
+<h2>6. Actuators tab</h2>
 <p>Use this tab to test supported actuators. Available functions depend on the ECU and protocol state. Do not run injector, ignition or heater tests unless the vehicle is in a safe condition.</p>
 
-<h2>6. All measurements</h2>
-<p>The <b>All measurements</b> tab shows each parameter in four columns:</p>
+<h2>7. All measurements</h2>
+<p>The <b>All measurements</b> tab shows detailed parameters and their help text, together with the raw ECU value and the interpreted value when decoding is known.</p>
 <table>
 <tr><th>Parameter</th><th>Help</th><th>ECU received value</th><th>Interpreted value</th></tr>
 <tr><td>Example: battery voltage</td><td>Tooltip</td><td>138</td><td>13.8 V</td></tr>
 </table>
-<p>The received value is the raw value returned by the ECU. The interpreted value applies the same decoding rules used elsewhere in the program. Undocumented fields remain visible without inventing a conversion.</p>
+<p>Undocumented fields remain visible without inventing a conversion.</p>
 
-<h2>7. All data</h2>
-<p>This historical/raw-data view exposes the detailed MEMS fields and their decoded values. It is useful when comparing protocol bytes with interpreted measurements.</p>
+<h2>8. All data</h2>
+<p>This detailed view exposes raw and decoded MEMS fields. It is useful when comparing protocol bytes with interpreted measurements.</p>
 
-<h2>8. ECU / ROSCO</h2>
-<p>The ECU / ROSCO tab exposes documented session and read commands such as D0, D1, D2, F0 and session commands F2–F5. TX/RX data is shown in hexadecimal. D3 ECU recoding remains intentionally disabled.</p>
+<h2>9. ECU / ROSCO</h2>
+<p>The ECU / ROSCO tab exposes supported read and session commands such as D0, D1, D2, F0 and session commands F2–F5. TX/RX data is displayed in hexadecimal. D3 ECU recoding remains intentionally disabled.</p>
 
-<h2>9. Automatic diagnostics</h2>
+<h2>10. Automatic diagnostics</h2>
 <p>The automatic diagnostic panel evaluates current ECU values and reports normal values, warnings and anomalies. It can capture a reference and export a report. Coil charge time is checked against the expected range used by this application.</p>
 
-<h2>10. Log analysis</h2>
-<p>The Analysis tab can read supported CSV/TXT diagnostic logs, display selected channels and overlay curves. Use the channel list to choose which measurements are displayed.</p>
+<h2>11. Log analysis</h2>
+<p>The Analysis tab can read supported CSV/TXT diagnostic logs, display selected channels and overlay curves. Use the channel list to choose which measurements are displayed and compare their evolution over time.</p>
 
-<h2>11. Snapshots</h2>
-<p><b>Snapshot</b> saves an image of the current program window in the <code>captures</code> folder next to the executable. <b>View captures</b> opens the integrated capture viewer. From there you can preview, open/enlarge or delete a selected capture. Deletion requires confirmation.</p>
+<h2>12. IA MEMS</h2>
+<p>The <b>IA MEMS</b> tab combines natural-language dialogue, ECU measurements already acquired by the application, their history, the expert engine and the MEMS knowledge database.</p>
+<p>The expert engine distinguishes observations, hypotheses, external information and confidence/provenance levels. A component must not be condemned from a single reading. When information is insufficient or contradictory, IA MEMS must say so instead of inventing a conclusion.</p>
+<p>The conversational model runs locally from the files supplied with the package. It starts only when the IA MEMS tab is actually opened, avoiding unnecessary memory and CPU use during normal operation. It sends no extra ECU command: it only observes data already acquired by MEMS Manager.</p>
 
-<h2>12. Tooltips and help bubble</h2>
-<p>Wherever a hover comment is available, ECU MEMS Manager uses the same embedded speech-bubble icon with three dots. The icon is stored inside the program resources so its appearance does not depend on the Windows version or computer.</p>
+<h2>13. Snapshots</h2>
+<p><b>Snapshot</b> saves an image of the current program window in the <code>captures</code> folder. <b>View captures</b> opens the integrated capture viewer, where you can preview, open/enlarge or delete a selected capture. Deletion requires confirmation.</p>
 
-<h2>13. Options</h2>
-<p>Options include the serial device, temperature units, interface theme, language and Desktop-shortcut setting. French and English are supported. Changing language restarts the application so all translated UI elements are recreated consistently.</p>
-<p>When <b>Create and maintain a Desktop shortcut</b> is enabled, the shortcut is created immediately after confirmation. At later startups the program checks that it still exists and recreates it if necessary. The shortcut uses the KEY icon shipped with the application.</p>
+<h2>14. Tooltips and help bubble</h2>
+<p>Wherever contextual help is available, ECU MEMS Manager uses the embedded help-bubble graphic. Its appearance does not depend on the Windows version or computer.</p>
 
-<h2>14. Themes</h2>
-<p><b>Light:</b> original light gauge faces and light interface.</p>
-<p><b>Dark:</b> dark interface and dark gauge faces with high-contrast light text, graduations and needles. Table alternate-row colors are also dark to keep all text readable.</p>
+<h2>15. Options</h2>
+<p>Options include the serial device, temperature units, interface theme, language and Desktop-shortcut settings. The Desktop shortcut can be created and maintained automatically.</p>
 
-<h2>15. Language</h2>
-<p>French and English translations cover tab titles, buttons, labels, tooltips, dialogs, diagnostic messages, capture controls and dynamically generated interface text. The selected language is stored in the application settings.</p>
+<h2>16. Themes</h2>
+<p><b>Light:</b> light interface and gauge faces.</p>
+<p><b>Dark:</b> dark interface and gauge faces with high-contrast text, graduations and needles. Tables are also adapted for readability.</p>
 
-<h2>16. Supported ECU families</h2>
-<p>The project includes support paths for Rover MEMS 1.2, 1.3 and 1.6. Actual features available in a session depend on the ECU and vehicle configuration.</p>
+<h2>17. Language</h2>
+<p>The interface supports French, English, Spanish, Italian, Portuguese and German. The selected language is stored in the application settings.</p>
 
-<h2>17. Basic diagnostic guidance</h2>
+<h2>18. Supported ECU families</h2>
+<p>The project database and diagnostic paths cover Rover MEMS <b>1.2, 1.3, 1.6 and 1.9</b>. Features available during a session depend on the ECU, vehicle configuration and protocol in use.</p>
+
+<h2>19. Basic diagnostic guidance</h2>
 <table>
 <tr><th>Symptom</th><th>Checks</th></tr>
 <tr><td>No communication</td><td>Ignition, correct serial port, diagnostic cable, ECU power and grounds.</td></tr>
-<tr><td>Abnormal MAP value</td><td>Vacuum hose, manifold connection and internal MAP measurement.</td></tr>
+<tr><td>Abnormal MAP value</td><td>Vacuum hose, manifold connection and MAP measurement.</td></tr>
 <tr><td>Unstable idle</td><td>Idle switch, IAC position, air leaks, coolant temperature and fuel trims.</td></tr>
 <tr><td>Lambda fault</td><td>Sensor warm-up, wiring, voltage activity and closed-loop state.</td></tr>
 <tr><td>Abnormal coil charge time</td><td>Battery voltage, primary circuit, coil and wiring.</td></tr>
 </table>
 
-<h2>18. Closing the application</h2>
+<h2>20. Closing the application</h2>
 <p>The application stops automatic reconnect activity during shutdown so a lost ECU connection cannot prevent the window from closing normally.</p>
 </body>
 </html>
