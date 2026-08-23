@@ -1,0 +1,56 @@
+{
+  "source_key": "andrew_revill_memstools_user_archive_10_29",
+  "old_archive_sha256": "f652c214641c0c5ffb3d379fe8062dae818e99e5a3c2e47f31165f7ea76d5f6d",
+  "current_archive_sha256": "12bb7dfc8c1f3bed1eed28b85b3bb2c344e4d7b5fcb0534e584092aaeb7ff1e8",
+  "core_assets_old": 21,
+  "technical_assets_current": 374,
+  "status_counts": {
+    "identical": 23,
+    "changed": 0,
+    "missing_current": 0
+  },
+  "kind_stats": {
+    "correlation": {
+      "identical": 16,
+      "changed": 0,
+      "missing_current": 0
+    },
+    "definition": {
+      "identical": 2,
+      "changed": 0,
+      "missing_current": 0
+    },
+    "disassembly": {
+      "identical": 4,
+      "changed": 0,
+      "missing_current": 0
+    },
+    "firmware_image": {
+      "identical": 1,
+      "changed": 0,
+      "missing_current": 0
+    }
+  },
+  "semantic_counts_old": {
+    "mems_firmware_catalog": 286,
+    "mems_axis_definition": 320,
+    "mems_scalar_definition": 18519,
+    "mems_scalar_binding": 96240,
+    "mems_table_definition": 1815,
+    "mems_table_binding": 17458,
+    "mems_variable_correlation": 64706,
+    "mems_source_asset": 433
+  },
+  "semantic_counts_current": {
+    "mems_firmware_catalog": 286,
+    "mems_axis_definition": 320,
+    "mems_scalar_definition": 18519,
+    "mems_scalar_binding": 96240,
+    "mems_table_definition": 1815,
+    "mems_table_binding": 17458,
+    "mems_variable_correlation": 64706
+  },
+  "semantic_counts_equal": true,
+  "data_core_exact": true,
+  "expert_facts": 12
+}
