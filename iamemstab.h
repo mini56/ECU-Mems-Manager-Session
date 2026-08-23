@@ -23,7 +23,8 @@ class LocalAiClient;
 
 // Conversational MEMS view. It only observes data already acquired by
 // MEMSInterface; it never requests another ECU polling mode on its own.
-// Package validation must exercise this exact integrated source state.
+// Package validation must exercise this exact integrated source state,
+// including the main reference loader compatibility used by the application.
 class IaMemsTab final : public QWidget
 {
     Q_OBJECT
