@@ -26,7 +26,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
-find_package(Qt5 REQUIRED COMPONENTS Widgets SerialPort Charts Sql)
+find_package(Qt5 REQUIRED COMPONENTS Widgets SerialPort Charts Sql Network)
 include_directories("${CMAKE_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}/qledindicator" "${CMAKE_SOURCE_DIR}/analogwidgets" "${CMAKE_SOURCE_DIR}/ecu" "${CMAKE_CURRENT_BINARY_DIR}")
 configure_file("${CMAKE_SOURCE_DIR}/help.html.in" "${CMAKE_SOURCE_DIR}/help.html")
 configure_file("${CMAKE_SOURCE_DIR}/help_en.html.in" "${CMAKE_SOURCE_DIR}/help_en.html")
@@ -43,7 +43,7 @@ set(SOURCES
     database/MemsGlobalSearchIndex.cpp database/MemsGlobalSearchIndex.h database/MemsDatabaseExplorerV2.cpp
     database/MemsDatabaseUniversalAccess.cpp database/MemsReferenceLanguageSync.cpp
     database/MemsXmlRowIndexer.cpp database/MemsSearchCompletenessPatch.cpp database/MemsDatabaseBrowser.cpp database/MemsDatabaseBrowser.h
-    iamemstab.cpp iamemstab.h expert/ExpertEngine.cpp expert/ExpertEngine.h expert/ExpertKnowledgeReader.cpp expert/ExpertKnowledgeReader.h expert/ExpertRuntimeDatabase.cpp expert/ExpertRuntimeDatabase.h expert/ExpertTypes.h
+    iamemstab.cpp iamemstab.h expert/ExpertEngine.cpp expert/ExpertEngine.h expert/ExpertKnowledgeReader.cpp expert/ExpertKnowledgeReader.h expert/ExpertRuntimeDatabase.cpp expert/ExpertRuntimeDatabase.h expert/ExpertTypes.h expert/LocalAiClient.cpp expert/LocalAiClient.h
     uirebuild.cpp overviewrebuild.cpp majorpagesrebuild.cpp errorsvisualpatch.cpp analysismodernizer.cpp
     strictvisualrebuild.cpp dedicatedpagesrebuild.cpp visualcompletion.cpp taborderpatch.cpp navigationorderpatch.cpp darkstyle.cpp darkfixes.cpp
     settingstabdark.cpp sidebarbubblecleaner.cpp splashtextfix.cpp settingsvisualpatch.cpp readabilityfix.cpp mainwindowtitlebarfix.cpp systemstateconnectionfix.cpp)
@@ -77,8 +77,13 @@ add_custom_command(TARGET ${PNAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/translations/pt" "$<TARGET_FILE_DIR:${PNAME}>/translations/pt"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/translations/de" "$<TARGET_FILE_DIR:${PNAME}>/translations/de"
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PNAME}>/database"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/database/reference" "$<TARGET_FILE_DIR:${PNAME}>/database/reference"
-    COMMAND "$<TARGET_FILE:mems_search_selftest>")
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/database/reference" "$<TARGET_FILE_DIR:${PNAME}>/database/reference")
+
+option(MEMS_RUN_REFERENCE_SELFTEST_POST_BUILD "Run the heavyweight full reference search self-test after the application build" ON)
+if(MEMS_RUN_REFERENCE_SELFTEST_POST_BUILD)
+    add_custom_command(TARGET ${PNAME} POST_BUILD
+        COMMAND "$<TARGET_FILE:mems_search_selftest>")
+endif()
 
 if(MSVC)
     add_compile_definitions(_HAS_STD_BYTE=0)
@@ -94,14 +99,14 @@ if(WIN32)
     find_library(LIBROSCO_DLL rosco)
     if(LIBROSCO_DLL)
         message(STATUS "Bibliothèque rosco trouvée : ${LIBROSCO_DLL}")
-        target_link_libraries(${PNAME} PRIVATE ${LIBROSCO_DLL} Qt5::Widgets Qt5::SerialPort Qt5::Charts Qt5::Sql)
+        target_link_libraries(${PNAME} PRIVATE ${LIBROSCO_DLL} Qt5::Widgets Qt5::SerialPort Qt5::Charts Qt5::Sql Qt5::Network)
     else()
         message(STATUS "Bibliothèque rosco non trouvée.")
-        target_link_libraries(${PNAME} PRIVATE Qt5::Widgets Qt5::SerialPort Qt5::Charts Qt5::Sql)
+        target_link_libraries(${PNAME} PRIVATE Qt5::Widgets Qt5::SerialPort Qt5::Charts Qt5::Sql Qt5::Network)
     endif()
 else()
     message(STATUS "Environnement Linux/Unix détecté.")
-    target_link_libraries(${PNAME} PRIVATE rosco Qt5::Widgets Qt5::SerialPort)
+    target_link_libraries(${PNAME} PRIVATE rosco Qt5::Widgets Qt5::SerialPort Qt5::Network)
     set(CMAKE_SKIP_RPATH TRUE)
     set(CMAKE_INSTALL_PREFIX "/usr")
     set(EXE_FILE "${CMAKE_CURRENT_BINARY_DIR}/${PNAME}")
