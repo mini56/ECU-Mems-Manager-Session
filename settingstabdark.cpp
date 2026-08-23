@@ -256,6 +256,34 @@ static void styleLcd(QLCDNumber *lcd)
     lcd->show();
 }
 
+static void installPositiveLcdSign(QLCDNumber *lcd)
+{
+    if(!lcd || lcd->findChild<QWidget*>(QStringLiteral("ignitionAdjustmentPositiveSign"),Qt::FindDirectChildrenOnly)) return;
+
+    QWidget *sign=new QWidget(lcd);
+    sign->setObjectName(QStringLiteral("ignitionAdjustmentPositiveSign"));
+    sign->setAttribute(Qt::WA_TransparentForMouseEvents,true);
+    sign->setGeometry(5,5,14,22);
+    sign->setStyleSheet(QStringLiteral("background:transparent;border:0;"));
+
+    QFrame *horizontal=new QFrame(sign);
+    horizontal->setGeometry(1,10,12,2);
+    horizontal->setStyleSheet(QStringLiteral("background:#ff8a00;border:0;"));
+    QFrame *vertical=new QFrame(sign);
+    vertical->setGeometry(6,5,2,12);
+    vertical->setStyleSheet(QStringLiteral("background:#ff8a00;border:0;"));
+
+    sign->hide();
+    QTimer *timer=new QTimer(sign);
+    timer->setInterval(100);
+    QObject::connect(timer,&QTimer::timeout,sign,[lcd,sign](){
+        const bool positive=lcd->value()>0.0001;
+        sign->setVisible(positive);
+        if(positive) sign->raise();
+    });
+    timer->start();
+}
+
 static void deleteLegacyGaugeOverlays(QFrame *metrics)
 {
     if(!metrics) return;
@@ -462,6 +490,7 @@ static void rebuildAdjustArea(QWidget *page,QFrame *states,QFrame *adjust,QLineE
         if(rows[row].lcd) {
             rows[row].lcd->setParent(form);
             styleLcd(rows[row].lcd);
+            if(rows[row].lcd==ignLcd) installPositiveLcdSign(ignLcd);
             grid->addWidget(rows[row].lcd,row,2);
         }
         QLabel *unitLabel=new QLabel(QString::fromUtf8(rows[row].unit),form);

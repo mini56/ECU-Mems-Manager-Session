@@ -879,6 +879,7 @@ void MainWindow::onDataReady()
   if (m_diagnosticPanel) m_diagnosticPanel->updateData(data);
   int corrected_iac = (data->iac_position > IAC_MAXIMUM) ? IAC_MAXIMUM : data->iac_position;
   const double ignitionAdvanceDeg = static_cast<double>(data->ignition_advance) * 0.5 - 24.0;
+  const double ignitionAdjustmentDeg = (static_cast<int>(data->ignition_advance2) - 48) * 0.5;
 /*   float corrected_throttle = ((data->throttle_pot * 0.02) > 5.0) ? 5.0 : data->throttle_pot; */
 
   if ((data->uk3 == 0) && !m_actuatorTestsEnabled)
@@ -1111,7 +1112,7 @@ void MainWindow::onDataReady()
  m_ui->e_FuelTrim_lcd->display(data->long_term_fuel_trim - 128) ;
  m_ui->e_IdleDecay_lcd->display(data->idle_hot - 35) ;
  m_ui->e_IdleSpeed_lcd->display((data->idle_speed_offset - 128) * 25) ;
- m_ui->e_IgnitionAdvance_lcd->display(data->ignition_advance2 - 48) ;
+ m_ui->e_IgnitionAdvance_lcd->display(QString::number(ignitionAdjustmentDeg, 'f', 1));
 //  m_ui->m_fuel_trim->setText(QString::number(data->short_term_fuel_trim, 'f', 1));
  // m_ui->shorttimefueltrim_lcd->display(data->short_term_fuel_trim);
 
