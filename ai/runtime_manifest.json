@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "mode": "offline_local_only",
+  "listen_address": "127.0.0.1",
+  "listen_port": 18089,
+  "runtime": {
+    "name": "llama.cpp",
+    "release": "b10516",
+    "asset": "llama-b10516-bin-win-cpu-x64.zip",
+    "sha256": "fbbbc55e0eb2e1b07f9dcb9488616c98ed47d9003b90e15e7c8c7812c4307cd3",
+    "license": "MIT"
+  },
+  "model": {
+    "name": "Qwen3-0.6B-Q8_0",
+    "repository": "Qwen/Qwen3-0.6B-GGUF",
+    "filename": "Qwen3-0.6B-Q8_0.gguf",
+    "runtime_filename": "ia-mems.gguf",
+    "size_bytes": 669843456,
+    "sha256": "9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031",
+    "license": "Apache-2.0"
+  },
+  "conversation": {
+    "context_tokens": 4096,
+    "max_output_tokens": 520,
+    "temperature": 0.7,
+    "top_p": 0.8,
+    "thinking": false,
+    "maximum_retained_turns": 8
+  }
+}
