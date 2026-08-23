@@ -10,6 +10,7 @@ on:
       - "expert/CMakeLists.txt"
       - "iamemstab.cpp"
       - "iamemstab.h"
+      - "database/MemsReferenceDatabase.cpp"
       - "database/reference/manifest.json"
       - "database/reference/research_enrichment_1640.qz64"
       - "database/reference/research_enrichment_1650.qz64"
@@ -159,3 +160,5 @@ jobs:
           if git diff --cached --quiet; then exit 0; fi
           git commit -m "Record IA MEMS laboratory validation [skip ci]"
           git push origin HEAD:lab-expert-engine
+
+# Explicit validation trigger after binary Rover 1620 compatibility fixes.
