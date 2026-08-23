@@ -253,9 +253,9 @@ protected:
         valueFont.setPointSizeF(18.5);
         p.setFont(valueFont);
         p.setPen(QColor("#ffffff"));
-        const QString val=(qAbs(value)<10.0 && qAbs(maxv-minv)<=40.0)
-            ? QString::number(value,'f',1)
-            : QString::number(value,'f',0);
+        const bool oneDecimalValue=batteryGauge || advanceGauge ||
+            (qAbs(value)<10.0 && qAbs(maxv-minv)<=40.0);
+        const QString val=QString::number(value,'f',oneDecimalValue?1:0);
         p.drawText(QRectF(51,124,86,25),Qt::AlignCenter,val);
 
         QFont unitFont=p.font();

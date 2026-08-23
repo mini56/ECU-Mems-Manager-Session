@@ -878,6 +878,7 @@ void MainWindow::onDataReady()
   m_summaryTab->updateData(data);
   if (m_diagnosticPanel) m_diagnosticPanel->updateData(data);
   int corrected_iac = (data->iac_position > IAC_MAXIMUM) ? IAC_MAXIMUM : data->iac_position;
+  const double ignitionAdvanceDeg = static_cast<double>(data->ignition_advance) * 0.5 - 24.0;
 /*   float corrected_throttle = ((data->throttle_pot * 0.02) > 5.0) ? 5.0 : data->throttle_pot; */
 
   if ((data->uk3 == 0) && !m_actuatorTestsEnabled)
@@ -903,14 +904,14 @@ void MainWindow::onDataReady()
 	{m_ui->e_idle_error->setValue(200);}
     else
     {m_ui->e_idle_error->setValue(data->idle_error);}
- m_ui->e_ignition_advance->setValue((data->ignition_advance / 2) - 24);
+ m_ui->e_ignition_advance->setValue(ignitionAdvanceDeg);
  m_ui->e_short_term_fuel_trim->setValue(data->short_term_fuel_trim - 100);
  m_ui->e_lambda->setValue(data->lambda_voltage * 5);
  m_ui->m_throttle_pos->setValue(round(data->throttle_pot / 2));
  m_ui->m_idle_position->setValue(round((float)corrected_iac / (float)IAC_MAXIMUM * 100));
  m_ui->m_battery->setValue(data->battery_voltage / 10.0);
  m_ui->m_mapGauge->setValue(data->map_kpa);
- m_ui->m_ignition_advance->setValue((data->ignition_advance / 2) - 24);
+ m_ui->m_ignition_advance->setValue(ignitionAdvanceDeg);
  m_ui->m_waterTempGauge->setValue(convertTemperature(data->coolant_temp));
  m_ui->m_airTempGauge->setValue(convertTemperature(data->intake_air_temp));
  m_ui->m_faultLedCTS->setChecked((data->dtc0 & 0x01) != 0);
@@ -1247,7 +1248,7 @@ void MainWindow::onDataReady()
  m_ui->r_80_13->setText(QString::number(data->idle_error) + " RPM");
  m_ui->m_80_15->setText(QString::number(data->ignition_advance_offset));
  m_ui->m_80_16->setText(QString::number(data->ignition_advance));
- m_ui->r_80_16->setText(QString::number((data->ignition_advance / 2) - 24) + "°");
+ m_ui->r_80_16->setText(QString::number(ignitionAdvanceDeg, 'f', 1) + "°");
  m_ui->m_80_17->setText(QString::number(data->coil_time));
  m_ui->r_80_17->setText(QString::number(data->coil_time * 0.002) + " ms");
  m_ui->m_80_19->setText(QString::number(data->uk3));
