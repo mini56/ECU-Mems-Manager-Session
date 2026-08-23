@@ -1,0 +1,61 @@
+{
+  "source_key": "user_rover_mems_386_20210314",
+  "verification_level": "source_externe",
+  "archive": {
+    "name": "rover-mems-386(1).zip",
+    "sha256": "8f1272530c2f850461d270ab41dfdfd5ddea9bc0469782eea0d6bc2d1b8aba7a",
+    "entry_count": 29,
+    "file_count": 27,
+    "uncompressed_bytes": 10295700,
+    "app_version_from_web_ui": "1.2.0",
+    "executable": {
+      "path": "rover-mems_386.exe",
+      "sha256": "18bf3d4b1eea047d785f50fae9c1b2ffdcec8a1b19f38e2300d94c9b340e2fd9",
+      "size": 7151616,
+      "zip_timestamp": "2021-03-14 17:42:54",
+      "printable_version_string": "1.2.015"
+    }
+  },
+  "source_generation_match": {
+    "repository": "james-portman/rover-mems-agent",
+    "commit": "bf48bac0d43dd11894f22213b6cb69dbd4884e0c",
+    "commit_timestamp": "2021-03-14T17:42:47Z",
+    "parser_path": "ecu-1x-shared.go",
+    "parser_blob": "792eb8f4eb5603ef8121a2972f46dd32ce3c0b97",
+    "normalized_text_assets_exactly_matching": 11,
+    "confidence": "strong",
+    "method": "11 web-static text assets have exact Git blob SHA-1 after CRLF-to-LF normalization; ZIP EXE timestamp is 7 seconds after commit",
+    "caveat": "strong source-generation evidence, not cryptographic proof that the executable was compiled from every source file in the commit"
+  },
+  "structured_counts": {
+    "rovermems_archive_snapshot": 1,
+    "rovermems_archive_file": 27,
+    "rovermems_archive_repo_match": 11,
+    "rovermems_archive_live_measurement": 31,
+    "rovermems_archive_live_bitfield": 24,
+    "rovermems_archive_unknown_byte": 19,
+    "rovermems_archive_revision_delta": 4
+  },
+  "live_measurement_summary": {
+    "measurements": 31,
+    "bitfields": 24,
+    "unknown_bytes": 19,
+    "packets": [
+      "0x80",
+      "0x7D"
+    ],
+    "critical_differences_vs_later_2023_source": [
+      "Uploaded 2021 archive parser emits ignition_advance_raw only at 0x80:0x16.",
+      "Calculated ignition_advance = raw/2 was added later on 2022-05-25, so it is not attributed to this ZIP."
+    ]
+  },
+  "critical_conflicts_preserved": [
+    "0x80:0x09 TPS: implementation raw/200 conflicts with adjacent 0.02 V/LSB comment.",
+    "0x80:0x0A idle switch: implementation masks 0x1000 on an 8-bit byte; adjacent comment says bit 4.",
+    "0x7D:0x06 lambda: exact ZIP-generation parser uses raw*5; external Rover documentation used in lot 1610 has a conflicting scale.",
+    "0x80:0x16 ignition advance: ZIP-generation parser exposes raw only; comment proposes a candidate raw/2 - 24 conversion.",
+    "0x7D:0x0B is named long_term_trim by the archive-generation parser and must not be treated as total injection pulse width."
+  ],
+  "relationship_to_1610": "1620 is an exact user-archive snapshot/provenance layer. It does not overwrite 1610; later-source interpretations stay separately traceable.",
+  "ui_rebuild_modified": false
+}
