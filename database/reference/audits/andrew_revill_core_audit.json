@@ -1,0 +1,96 @@
+{
+  "baseline_table_count": 29,
+  "full_table_count": 45,
+  "sources": [
+    {
+      "source_key": "andrew_revill_family_support_page",
+      "title": "Full Support Added for All Rover MEMS ECU Families",
+      "scope": "MEMS 1.2 / 1.3 / 1.6 / 1.9",
+      "verification_level": "source_externe",
+      "url": "https://andrewrevill.co.uk/MEMS3FamiliesSupported.htm",
+      "archive_sha256": ""
+    },
+    {
+      "source_key": "andrew_revill_memstools",
+      "title": "MEMSTools – Rover MEMS knowledge corpus",
+      "scope": "MEMS 1.3 / 1.6 / 1.9",
+      "verification_level": "source_externe",
+      "url": "https://andrewrevill.co.uk/MEMSToolsIndex.htm",
+      "archive_sha256": "12bb7dfc8c1f3bed1eed28b85b3bb2c344e4d7b5fcb0534e584092aaeb7ff1e8"
+    },
+    {
+      "source_key": "andrew_revill_memstools_complete_metadata",
+      "title": "MEMSTools complete DEF/DIM/correlation metadata",
+      "scope": "MEMS 1.3 / 1.6 / 1.9",
+      "verification_level": "source_externe",
+      "url": "https://andrewrevill.co.uk/MEMSToolsIndex.htm",
+      "archive_sha256": "12bb7dfc8c1f3bed1eed28b85b3bb2c344e4d7b5fcb0534e584092aaeb7ff1e8"
+    },
+    {
+      "source_key": "andrew_revill_memstools_mems12",
+      "title": "MEMSTools – Rover MEMS 1.2 corpus",
+      "scope": "MEMS 1.2",
+      "verification_level": "source_externe",
+      "url": "https://andrewrevill.co.uk/MEMS3FamiliesSupported.htm",
+      "archive_sha256": "12bb7dfc8c1f3bed1eed28b85b3bb2c344e4d7b5fcb0534e584092aaeb7ff1e8"
+    }
+  ],
+  "datasets": {
+    "mems_firmware_catalog": 286,
+    "mems_axis_definition": 320,
+    "mems_scalar_definition": 18519,
+    "mems_scalar_binding": 96240,
+    "mems_table_definition": 1815,
+    "mems_table_binding": 17458,
+    "mems_variable_correlation": 64706,
+    "mems_source_asset": 433
+  },
+  "family_firmware_counts": [
+    [
+      "andrew_revill_memstools",
+      "1.3",
+      3
+    ],
+    [
+      "andrew_revill_memstools",
+      "1.6",
+      119
+    ],
+    [
+      "andrew_revill_memstools",
+      "1.9",
+      164
+    ]
+  ],
+  "firmware_exact_text_overlap": {
+    "matched": 41,
+    "total": 286
+  },
+  "identifier_exact_text_overlap": {
+    "matched": 0,
+    "total": 1091
+  },
+  "quality": {
+    "orphan_scalar_bindings": 0,
+    "orphan_table_bindings": 0,
+    "variable_null_addresses": 0,
+    "variable_unknown_firmware": 0,
+    "shared_variable_addresses": 0,
+    "scalar_unresolved_axis": 0
+  },
+  "mems_1_2": {
+    "firmwares": 0,
+    "scalars": 0,
+    "tables": 0,
+    "variables": 0,
+    "assets": 0
+  },
+  "aanmp002_inj_pw_rosco": [
+    "$00E",
+    "inj_pw_rosco",
+    "",
+    "ms",
+    0.001333,
+    0.0
+  ]
+}
