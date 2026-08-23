@@ -2,7 +2,7 @@
 
 #include "mainwindow.h"
 #include "memsinterface.h"
-#include "database/MemsReferenceDatabase.h"
+#include "expert/ExpertRuntimeDatabase.h"
 
 #include <QApplication>
 #include <QDateTime>
@@ -331,11 +331,10 @@ void IaMemsTab::startKnowledgeLoad()
 
     QPointer<IaMemsTab> guard(this);
     QThread *thread = QThread::create([guard]() {
-        MemsReferenceDatabase reference;
-        const bool ok = reference.open();
+        ExpertRuntimeDatabase reference;
+        const bool ok = reference.buildOrOpen();
         const QString path = ok ? reference.databasePath() : QString();
-        const QString error = ok ? QString() : QStringLiteral("Impossible de construire ou d'ouvrir la base MEMS fusionnée.");
-        reference.close();
+        const QString error = ok ? QString() : reference.lastError();
 
         if (!guard)
             return;
