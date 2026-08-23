@@ -78,6 +78,10 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -f MAIN_REFERENCE_DB_SELFTEST.txt MAIN_REFERENCE_DB_SELFTEST_LOG.txt
           git commit -m "Record main reference database self-test diagnostics [skip ci]" || exit 0
+          # CMake regenerates tracked help.html/help_en.html in the source tree.
+          # The result files are already committed, so discard only those
+          # remaining generated working-tree changes before rebasing/pushing.
+          git reset --hard HEAD
           git pull --rebase origin lab-expert-engine
           git push origin HEAD:lab-expert-engine
 
