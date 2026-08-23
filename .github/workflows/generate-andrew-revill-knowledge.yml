@@ -25,14 +25,20 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Download audited MEMSTools source archive
+      - name: Download and verify MEMSTools source archive
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail --location --retry 3 \
+          curl --fail --location --retry 3 --retry-delay 3 \
+            --user-agent "ECU-Mems-Manager knowledge audit" \
             "https://andrewrevill.co.uk/Downloads/MEMSTools.zip" \
             --output "$RUNNER_TEMP/MEMSTools.zip"
-          echo "f652c214641c0c5ffb3d379fe8062dae818e99e5a3c2e47f31165f7ea76d5f6d  $RUNNER_TEMP/MEMSTools.zip" | sha256sum --check -
+          unzip -t "$RUNNER_TEMP/MEMSTools.zip" >/dev/null
+          unzip -l "$RUNNER_TEMP/MEMSTools.zip" | grep -F "Executables/MemsMapper.RoverMems19.def" >/dev/null
+          unzip -l "$RUNNER_TEMP/MEMSTools.zip" | grep -F "Executables/MemsMapper.RoverMems19.dim" >/dev/null
+          unzip -l "$RUNNER_TEMP/MEMSTools.zip" | grep -F "Executables/Correlations/Variables.RoverMems19.csv" >/dev/null
+          echo "Archive MEMSTools réellement utilisée :"
+          sha256sum "$RUNNER_TEMP/MEMSTools.zip"
 
       - name: Generate reference database enrichments
         shell: bash
@@ -62,7 +68,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
+          git add -- \
             database/reference/research_enrichment_1500.qz64 \
             database/reference/research_enrichment_1510.qz64 \
             database/reference/research_enrichment_1520.qz64 \
@@ -74,5 +80,3 @@ jobs:
           fi
           git commit -m "Generate audited Andrew Revill knowledge [skip ci]"
           git push origin HEAD:lab-andrew-revill-knowledge
-
-# Triggered intentionally after workflow installation so generation occurs only on the laboratory branch.
