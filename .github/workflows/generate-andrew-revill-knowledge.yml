@@ -9,9 +9,11 @@ on:
       - "tools/build_memstools_12_enrichment.py"
       - "tools/build_andrew_family_capabilities.py"
       - "tools/build_andrew_mems19_architecture.py"
+      - "tools/build_andrew_map_library_index.py"
       - "tools/validate_memstools_enrichment.py"
       - "tools/audit_andrew_revill_knowledge.py"
       - "tools/finalize_andrew_revill_audit.py"
+      - "tools/append_andrew_map_audit.py"
       - ".github/workflows/generate-andrew-revill-knowledge.yml"
 
 permissions:
@@ -86,12 +88,22 @@ jobs:
           python tools/build_andrew_mems19_architecture.py \
             --output-dir database/reference
 
+      - name: Index Andrew Map and Firmware Library
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/build_andrew_map_library_index.py \
+            --output-dir database/reference
+
       - name: Finalize complete Andrew audit
         shell: bash
         run: |
           set -euo pipefail
           python tools/finalize_andrew_revill_audit.py database/reference \
             --core-report database/reference/audits/andrew_revill_audit.md \
+            --json-output database/reference/audits/andrew_revill_audit.json
+          python tools/append_andrew_map_audit.py database/reference \
+            --report database/reference/audits/andrew_revill_audit.md \
             --json-output database/reference/audits/andrew_revill_audit.json
 
       - name: Upload generated knowledge package
@@ -107,6 +119,7 @@ jobs:
             database/reference/research_enrichment_1560.qz64
             database/reference/research_enrichment_1570.qz64
             database/reference/research_enrichment_1580.qz64
+            database/reference/research_enrichment_1590.qz64
             database/reference/audits/andrew_revill_audit.md
             database/reference/audits/andrew_revill_audit.json
             database/reference/audits/andrew_revill_core_audit.json
@@ -126,6 +139,7 @@ jobs:
             database/reference/research_enrichment_1560.qz64 \
             database/reference/research_enrichment_1570.qz64 \
             database/reference/research_enrichment_1580.qz64 \
+            database/reference/research_enrichment_1590.qz64 \
             database/reference/audits/andrew_revill_audit.md \
             database/reference/audits/andrew_revill_audit.json \
             database/reference/audits/andrew_revill_core_audit.json
