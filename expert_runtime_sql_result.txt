@@ -1,13 +1,13 @@
 IA MEMS compact database SQL validation: FAILED
-source_commit=032303d577531ffa8dc8ff7aa5afed30675bcd6f
-run=32661631505
+source_commit=448841c823f47406e44906ffba3baae1e7e54820
+run=32661672706
 Traceback (most recent call last):
   File "<stdin>", line 24, in execute_lines
-sqlite3.OperationalError: cannot start a transaction within a transaction
+sqlite3.OperationalError: incomplete input
 
 The above exception was the direct cause of the following exception:
 
 Traceback (most recent call last):
   File "<stdin>", line 42, in <module>
   File "<stdin>", line 26, in execute_lines
-RuntimeError: research_enrichment_1500.qz64:1: cannot start a transaction within a transaction | BEGIN TRANSACTION;
+RuntimeError: research_enrichment_1610.qz64:3: incomplete input | CREATE TABLE IF NOT EXISTS mems_live_packet_external(
