@@ -15,7 +15,7 @@ on:
       - ".github/workflows/expert-engine-lab.yml"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: expert-engine-lab
@@ -23,7 +23,6 @@ concurrency:
 
 jobs:
   expert-selftest-windows:
-    if: github.actor != 'github-actions[bot]'
     runs-on: windows-latest
     steps:
       - name: Checkout expert laboratory branch
@@ -34,21 +33,15 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install aqtinstall
-        run: pip install aqtinstall
-
       - name: Install Qt 5.15.2 MinGW 32-bit
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
+          pip install aqtinstall
           & aqt install-qt windows desktop 5.15.2 win32_mingw81 -O C:\Qt
           if ($LASTEXITCODE -ne 0) { throw "Qt installation failed" }
           & aqt install-tool windows desktop tools_mingw qt.tools.win32_mingw810 -O C:\Qt
           if ($LASTEXITCODE -ne 0) { throw "MinGW installation failed" }
-
-      - name: Add Qt and MinGW to PATH
-        shell: pwsh
-        run: |
           "C:\Qt\Tools\mingw810_32\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           "C:\Qt\5.15.2\mingw81_32\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
@@ -59,48 +52,25 @@ jobs:
         run: cmake --build expert-build
 
       - name: Run expert engine self-test
+        id: ctest
+        continue-on-error: true
         run: ctest --test-dir expert-build --output-on-failure -V
 
       - name: Diagnose reference self-test exit
-        if: failure()
+        if: steps.ctest.outcome != 'success'
         shell: pwsh
         run: |
           & .\expert-build\mems_expert_reference_selftest.exe
           $code = $LASTEXITCODE
           Write-Host "REFERENCE_SELFTEST_EXIT=$code"
-          "reference_exit=$code" | Set-Content -Encoding UTF8 expert_reference_exit.txt
           exit 0
 
-      - name: Record failed laboratory self-test
-        if: failure()
+      - name: Fail if expert tests failed
+        if: steps.ctest.outcome != 'success'
         shell: bash
-        run: |
-          set -euo pipefail
-          extra=""
-          if [ -f expert_reference_exit.txt ]; then extra=$(tr -d '\r\n' < expert_reference_exit.txt); fi
-          printf 'Expert engine self-test: FAILED\nValidated source commit: %s\nWorkflow run: %s\n%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" "$extra" > expert/SELFTEST_FAILED.txt
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- expert/SELFTEST_FAILED.txt
-          git commit -m "Record expert engine self-test failure [skip ci]"
-          git push origin HEAD:lab-expert-engine
-
-      - name: Record successful laboratory self-test
-        if: success()
-        shell: bash
-        run: |
-          set -euo pipefail
-          printf 'Expert engine self-test: OK\nValidated source commit: %s\nWorkflow run: %s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > expert/SELFTEST_OK.txt
-          git rm -f --ignore-unmatch expert/SELFTEST_FAILED.txt
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- expert/SELFTEST_OK.txt
-          git commit -m "Validate expert engine self-test [skip ci]"
-          git push origin HEAD:lab-expert-engine
+        run: exit 1
 
   ia-mems-app-build:
-    needs: expert-selftest-windows
-    if: always() && github.actor != 'github-actions[bot]'
     runs-on: windows-latest
     steps:
       - name: Checkout IA MEMS source commit
@@ -139,36 +109,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "CMake configure failed" }
 
       - name: Compile main application with IA MEMS
-        id: iamemsbuild
-        continue-on-error: true
         shell: pwsh
         run: |
           cmake --build build --target ecu_mems_manager
           if ($LASTEXITCODE -ne 0 -or -not (Test-Path "build\ecu_mems_manager.exe")) {
-            "IA MEMS application build: FAILED`nsource_commit=${{ github.sha }}`nrun=${{ github.run_id }}" | Set-Content -Encoding UTF8 iamems_build_status.txt
-            exit 1
+            throw "IA MEMS application build failed"
           }
-          "IA MEMS application build: OK`nsource_commit=${{ github.sha }}`nrun=${{ github.run_id }}" | Set-Content -Encoding UTF8 iamems_build_status.txt
-
-      - name: Record IA MEMS application build
-        if: always()
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ ! -f iamems_build_status.txt ]; then
-            printf 'IA MEMS application build: FAILED before compile\nsource_commit=%s\nrun=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > iamems_build_status.txt
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- iamems_build_status.txt
-          if git diff --cached --quiet; then
-            exit 0
-          fi
-          git commit -m "Record IA MEMS application build [skip ci]"
-          git pull --rebase origin lab-expert-engine
-          git push origin HEAD:lab-expert-engine
-
-      - name: Fail if IA MEMS application did not compile
-        if: steps.iamemsbuild.outcome != 'success'
-        shell: bash
-        run: exit 1
+          Write-Host "IA_MEMS_APPLICATION_BUILD=OK"
