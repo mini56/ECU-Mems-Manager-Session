@@ -1,0 +1,3 @@
+IA MEMS application build: FAILED
+source_commit=82679a18f7c27f62c62feaa3b77740863e8eb96d
+run=32658749694
