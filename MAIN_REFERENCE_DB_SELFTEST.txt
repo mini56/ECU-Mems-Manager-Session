@@ -1,4 +1,4 @@
-Main MEMS reference database self-test: FAILED
-source_commit=08aa0c97ea3cbb815c3fec6c4ab95be20fc7823e
-run=32665565699
-result=failure
+Main MEMS reference database self-test: OK
+source_commit=9c65d8c765cee4fb5d46c278f7d9123f4f7ca874
+run=32665896075
+result=success

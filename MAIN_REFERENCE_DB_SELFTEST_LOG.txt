@@ -1,3 +1,15 @@
 START MEMS search semantic self-test
-terminate called after throwing an instance of 'std::bad_alloc'
-  what():  std::bad_alloc
+INDEX documents=202583
+PASS exhaustive SQLite coverage: source_rows=202353 indexed_rows=202353 + XML 1.2/1.3/1.6/1.9
+PASS search 'vert rouge' category 'wiring' (5 result(s))
+PASS search 'IAT' category 'wiring' (6 result(s))
+PASS search 'temperature air' category 'wiring' (3 result(s))
+PASS search 'D0' category 'command' (2 result(s))
+PASS search 'P0115' category 'dtc' (1 result(s))
+PASS search 'tension batterie' category 'data' (3 result(s))
+PASS search '9600' category 'protocol' (9 result(s))
+PASS search 'connecteur 36 voies' category 'wiring' (38 result(s))
+PASS resource 'rosco diagnostic connector': table=wiring_assets title=Prise diagnostic Rover / ROSCO — 3 broches
+PASS resource 'obd j1962': table=wiring_assets title=MEMS 1.9 — Prise diagnostic OBD / J1962 — 16 broches
+PASS relevance 'IAT': [wiring] 6 — IAT — Vert / Rouge
+PASS MEMS search semantic self-test
