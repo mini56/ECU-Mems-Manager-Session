@@ -47,6 +47,17 @@ int cachedDatabaseRevision(const QString &databasePath)
         QSqlQuery query(database);
         if(query.exec(QStringLiteral("PRAGMA user_version")) && query.next())
             revision=query.value(0).toInt();
+
+        // Runtime caches built before the IA MEMS memory split may contain the
+        // loss-preserving Andrew 1600 raw-correlation archive. That archive is
+        // intentionally kept on disk but must not live in the 32-bit runtime.
+        QSqlQuery archive(database);
+        if(archive.exec(QStringLiteral(
+               "SELECT 1 FROM sqlite_master WHERE type='table' "
+               "AND name='mems_correlation_cell_external' LIMIT 1"))
+           && archive.next())
+            revision=0;
+
         database.close();
     }
     database=QSqlDatabase();
@@ -486,6 +497,13 @@ bool MemsReferenceDatabase::open()
         if(ok){
             const QStringList enrichments=enrichmentFiles(referenceRoot());
             for(const QString &path:enrichments){
+                // research_enrichment_1600.qz64 is a loss-preserving archive
+                // containing millions of raw correlation cells. The decoded
+                // semantic equivalents are already provided by earlier lots.
+                // Keep 1600 shipped/audited, but do not load it into the
+                // 32-bit application runtime where it can exhaust address space.
+                if(QFileInfo(path).fileName()==QStringLiteral("research_enrichment_1600.qz64"))
+                    continue;
                 if(!executeQz64Sql(buildDb,path)){ok=false;break;}
             }
         }
