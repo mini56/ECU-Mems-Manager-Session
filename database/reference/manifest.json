@@ -21,7 +21,8 @@
     "research_enrichment_1510.qz64",
     "research_enrichment_1520.qz64",
     "research_enrichment_1530.qz64",
-    "research_enrichment_1540.qz64"
+    "research_enrichment_1540.qz64",
+    "research_enrichment_1550.qz64"
   ],
   "verification_levels": ["verifie_constructeur", "decoded_by_project", "recoupee", "source_externe", "plausible", "non_verifie", "conflit_a_verifier"],
   "documentation": {
