@@ -9,10 +9,14 @@ on:
       - "iamemstab.cpp"
       - "iamemstab.h"
       - "expert/**"
+      - "database/MemsReferenceDatabase.cpp"
       - "database/reference/manifest.json"
+      - "database/reference/research_enrichment_1620.qz64"
       - "database/reference/research_enrichment_1640.qz64"
       - "database/reference/research_enrichment_1650.qz64"
       - "ai/runtime_manifest.json"
+      - "help.html.in"
+      - "help_en.html.in"
       - ".github/workflows/ia-mems-final-package.yml"
 
 permissions:
@@ -206,7 +210,21 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -f --ignore-unmatch IA_MEMS_FINAL_PACKAGE_FAILED.txt
           git add -f -- IA_MEMS_FINAL_PACKAGE_OK.txt
-          git commit -m "Validate complete IA MEMS Windows package [skip ci]"
+          git commit -m "Validate complete IA MEMS Windows package [skip ci]" || exit 0
+          git pull --rebase origin lab-expert-engine
+          git push origin HEAD:lab-expert-engine
+
+      - name: Record complete package failure
+        if: failure()
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'IA MEMS COMPLETE PACKAGE: FAILED\nsource_commit=%s\nrun=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > IA_MEMS_FINAL_PACKAGE_FAILED.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f -- IA_MEMS_FINAL_PACKAGE_FAILED.txt
+          git commit -m "Record failed IA MEMS Windows package [skip ci]" || exit 0
           git pull --rebase origin lab-expert-engine
           git push origin HEAD:lab-expert-engine
