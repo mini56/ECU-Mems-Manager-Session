@@ -5,6 +5,14 @@ on:
   push:
     branches: ["lab-expert-engine"]
     paths:
+      - "CMakeLists.txt"
+      - "iamemstab.cpp"
+      - "iamemstab.h"
+      - "expert/**"
+      - "database/reference/manifest.json"
+      - "database/reference/research_enrichment_1640.qz64"
+      - "database/reference/research_enrichment_1650.qz64"
+      - "ai/runtime_manifest.json"
       - ".github/workflows/ia-mems-final-package.yml"
 
 permissions:
@@ -23,16 +31,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
-      - name: Apply deterministic IA MEMS source patches
-        shell: pwsh
-        run: |
-          python tools/patch_reference_cache_revision.py
-          python tools/patch_ia_runtime_wiring.py
-          python tools/patch_ia_conversation_routing.py
-          python tools/patch_ia_conversation_llm.py
-          python tools/patch_ia_expert_observations.py
-          if ($LASTEXITCODE -ne 0) { throw "IA MEMS source patch failed" }
 
       - name: Install Qt 5.15.2 and MinGW 8.1
         shell: pwsh
@@ -208,8 +206,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin lab-expert-engine
-          git rebase origin/lab-expert-engine
           git add -f -- IA_MEMS_FINAL_PACKAGE_OK.txt
           git commit -m "Validate complete IA MEMS Windows package [skip ci]"
+          git pull --rebase origin lab-expert-engine
           git push origin HEAD:lab-expert-engine
