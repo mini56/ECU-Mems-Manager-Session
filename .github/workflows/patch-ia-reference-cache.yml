@@ -1,0 +1,45 @@
+name: Apply IA MEMS reference cache revision patch
+
+on:
+  push:
+    branches: ["lab-expert-engine"]
+    paths:
+      - "tools/patch_reference_cache_revision.py"
+      - ".github/workflows/patch-ia-reference-cache.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Apply deterministic cache revision patch
+        run: python tools/patch_reference_cache_revision.py
+
+      - name: Commit patched reference cache handling
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- database/MemsReferenceDatabase.cpp; then
+            echo "Patch already applied"
+            exit 0
+          fi
+          git diff --check -- database/MemsReferenceDatabase.cpp
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git stash push -- database/MemsReferenceDatabase.cpp
+          git pull --rebase origin lab-expert-engine
+          git stash pop
+          git add -- database/MemsReferenceDatabase.cpp
+          git commit -m "Version MEMS reference cache for IA [skip ci]"
+          git push origin HEAD:lab-expert-engine
