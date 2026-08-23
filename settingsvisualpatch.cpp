@@ -180,8 +180,13 @@ static void arrangeBottomPanels(QWidget *page,QFrame *metrics,QFrame *states,QFr
     }
     if(!body) return;
 
+    // The metrics frame must span both body columns. If it remains in column 0,
+    // its ~760 px minimum width forces the first column wide and squeezes the
+    // ECU adjustment panel into a narrow strip on 1366 px displays.
+    body->removeWidget(metrics);
     body->removeWidget(states);
     body->removeWidget(adjust);
+    body->addWidget(metrics,0,0,1,2,Qt::AlignLeft);
     body->addWidget(states,1,0);
     body->addWidget(adjust,1,1);
     body->setColumnStretch(0,1);
