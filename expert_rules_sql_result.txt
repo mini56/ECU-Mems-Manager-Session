@@ -1,6 +1,12 @@
 Expert rule lots SQL smoke test: FAILED
-source_commit=1b51659b83d4e36cbae311fc1c5de8cd2479ce74
-run=32661692854
+source_commit=168aec05c42d394f35918dc6a0b4f29c51113116
+run=32661848445
 Traceback (most recent call last):
-  File "<stdin>", line 11, in <module>
-zlib.error: Error -3 while decompressing data: invalid bit length repeat
+  File "<stdin>", line 21, in <module>
+sqlite3.OperationalError: incomplete input
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<stdin>", line 23, in <module>
+RuntimeError: research_enrichment_1650.qz64:2: incomplete input | INSERT OR REPLACE INTO mems_expert_rule(rule_key,family,firmware_code,title,category,severity,base_confidence,min_samples,verification_level,notes,enabled,priority) VALUES
