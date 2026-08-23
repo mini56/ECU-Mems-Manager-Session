@@ -6,6 +6,7 @@
 #include <QLabel>
 #include <QMainWindow>
 #include <QPainter>
+#include <QPointer>
 #include <QPolygonF>
 #include <QStringList>
 #include <QTableWidget>
@@ -30,13 +31,16 @@ static void forceReadableTable(QTableWidget *table)
         "QTableWidget::item:disabled{color:#ffffff;}");
 
     QString style = table->styleSheet();
-    if (!style.contains(readableRule)) {
+    if (!style.contains(readableRule))
+    {
         style += readableRule;
         table->setStyleSheet(style);
     }
 
-    for (int row = 0; row < table->rowCount(); ++row) {
-        for (int column = 0; column < table->columnCount(); ++column) {
+    for (int row = 0; row < table->rowCount(); ++row)
+    {
+        for (int column = 0; column < table->columnCount(); ++column)
+        {
             if (QTableWidgetItem *item = table->item(row, column))
                 item->setData(Qt::ForegroundRole, QColor(QStringLiteral("#ffffff")));
         }
@@ -49,8 +53,10 @@ static void applyRequestedReadableText(QMainWindow *window)
         return;
 
     // Toutes les mesures : rendre lisibles uniquement les lignes des 3 tableaux.
-    for (QWidget *widget : window->findChildren<QWidget*>()) {
-        if (QString::fromLatin1(widget->metaObject()->className()) == QStringLiteral("SummaryTab")) {
+    for (QWidget *widget : window->findChildren<QWidget*>())
+    {
+        if (QString::fromLatin1(widget->metaObject()->className()) == QStringLiteral("SummaryTab"))
+        {
             const QList<QTableWidget*> tables = widget->findChildren<QTableWidget*>();
             for (QTableWidget *table : tables)
                 forceReadableTable(table);
@@ -60,14 +66,17 @@ static void applyRequestedReadableText(QMainWindow *window)
 
     // Toutes les données : conserver les en-têtes orange et passer les lignes en blanc.
     QWidget *rawPage = window->findChild<QWidget*>(QStringLiteral("raw"));
-    if (rawPage) {
+    if (rawPage)
+    {
         const QStringList blocks = { QStringLiteral("raw_1"), QStringLiteral("raw_2") };
-        for (const QString &blockName : blocks) {
+        for (const QString &blockName : blocks)
+        {
             QWidget *block = rawPage->findChild<QWidget*>(blockName);
             if (!block)
                 continue;
 
-            for (QLabel *label : block->findChildren<QLabel*>()) {
+            for (QLabel *label : block->findChildren<QLabel*>())
+            {
                 const QString name = label->objectName();
                 const bool header = name.startsWith(QStringLiteral("header_")) ||
                                     name.startsWith(QStringLiteral("Aheader_"));
@@ -78,8 +87,10 @@ static void applyRequestedReadableText(QMainWindow *window)
     }
 
     // Diagnostic automatique : rendre lisibles uniquement les lignes du tableau.
-    for (QWidget *widget : window->findChildren<QWidget*>()) {
-        if (QString::fromLatin1(widget->metaObject()->className()) == QStringLiteral("DiagnosticPanel")) {
+    for (QWidget *widget : window->findChildren<QWidget*>())
+    {
+        if (QString::fromLatin1(widget->metaObject()->className()) == QStringLiteral("DiagnosticPanel"))
+        {
             forceReadableTable(widget->findChild<QTableWidget*>());
             break;
         }
@@ -101,39 +112,39 @@ static bool chartNameIs(const QString &name, int textId)
 
 static bool isBinarySignal(const QString &name)
 {
-    return chartNameIs(name, 6408) ||  // Contact ralenti
-           chartNameIs(name, 6409) ||  // Contact point mort
-           chartNameIs(name, 6418) ||  // Capteur position vilebrequin
-           chartNameIs(name, 6419) ||  // Contact allumage
-           chartNameIs(name, 6426) ||  // Etat lambda
-           chartNameIs(name, 6427);    // Boucle fermee
+    return chartNameIs(name, 6408) ||
+           chartNameIs(name, 6409) ||
+           chartNameIs(name, 6418) ||
+           chartNameIs(name, 6419) ||
+           chartNameIs(name, 6426) ||
+           chartNameIs(name, 6427);
 }
 
 static bool isFixedPercentSignal(const QString &name)
 {
-    return chartNameIs(name, 6407) ||  // Position papillon
-           chartNameIs(name, 6413) ||  // Position moteur pas-a-pas
-           chartNameIs(name, 6425) ||  // Cycle lambda
-           chartNameIs(name, 6430);    // Cycle purge canister
+    return chartNameIs(name, 6407) ||
+           chartNameIs(name, 6413) ||
+           chartNameIs(name, 6425) ||
+           chartNameIs(name, 6430);
 }
 
 static bool isZeroBasedSignal(const QString &name)
 {
-    return chartNameIs(name, 6400) ||  // Regime moteur
-           chartNameIs(name, 6405) ||  // Pression collecteur
-           chartNameIs(name, 6410) ||  // Codes defaut bruts
-           chartNameIs(name, 6411) ||  // Consigne ralenti
-           chartNameIs(name, 6412) ||  // Ralenti chaud
-           chartNameIs(name, 6417) ||  // Temps bobine
-           chartNameIs(name, 6421) ||  // Ratio air/carburant
-           chartNameIs(name, 6422) ||  // DTC 2
-           chartNameIs(name, 6423) ||  // Tension lambda
-           chartNameIs(name, 6424) ||  // Frequence lambda
-           chartNameIs(name, 6431) ||  // DTC 3
-           chartNameIs(name, 6432) ||  // Position base ralenti
-           chartNameIs(name, 6433) ||  // DTC 4
-           chartNameIs(name, 6437) ||  // Trame brute 7D14-15
-           chartNameIs(name, 6438);    // DTC 5
+    return chartNameIs(name, 6400) ||
+           chartNameIs(name, 6405) ||
+           chartNameIs(name, 6410) ||
+           chartNameIs(name, 6411) ||
+           chartNameIs(name, 6412) ||
+           chartNameIs(name, 6417) ||
+           chartNameIs(name, 6421) ||
+           chartNameIs(name, 6422) ||
+           chartNameIs(name, 6423) ||
+           chartNameIs(name, 6424) ||
+           chartNameIs(name, 6431) ||
+           chartNameIs(name, 6432) ||
+           chartNameIs(name, 6433) ||
+           chartNameIs(name, 6437) ||
+           chartNameIs(name, 6438);
 }
 
 static bool isIntegerSignal(const QString &name)
@@ -157,14 +168,14 @@ static bool isIntegerSignal(const QString &name)
 static double minimumUsefulSpan(const QString &name)
 {
     if (chartNameIs(name, 6400))
-        return 500.0;  // tr/min
+        return 500.0;
     if (chartNameIs(name, 6401) || chartNameIs(name, 6402) ||
         chartNameIs(name, 6403) || chartNameIs(name, 6404))
-        return 2.0;    // degres C
+        return 2.0;
     if (chartNameIs(name, 6406))
-        return 0.8;    // volts
+        return 0.8;
     if (chartNameIs(name, 6417))
-        return 0.5;    // ms
+        return 0.5;
     if (isIntegerSignal(name))
         return 4.0;
     return 1.0;
@@ -215,7 +226,8 @@ static AxisSpec axisForChart(const QString &name, const QVector<double> &values)
 
     double rawMin = values.isEmpty() ? 0.0 : values.first();
     double rawMax = rawMin;
-    for (double value : values) {
+    for (double value : values)
+    {
         rawMin = qMin(rawMin, value);
         rawMax = qMax(rawMax, value);
     }
@@ -225,14 +237,19 @@ static AxisSpec axisForChart(const QString &name, const QVector<double> &values)
     const double minSpan = minimumUsefulSpan(name);
     double span = rawMax - rawMin;
 
-    if (zeroBased && rawMin >= 0.0) {
+    if (zeroBased && rawMin >= 0.0)
+    {
         rawMin = 0.0;
         rawMax = qMax(rawMax * 1.08, minSpan);
-    } else if (span < minSpan) {
+    }
+    else if (span < minSpan)
+    {
         const double center = (rawMin + rawMax) * 0.5;
         rawMin = center - minSpan * 0.5;
         rawMax = center + minSpan * 0.5;
-    } else {
+    }
+    else
+    {
         const double padding = span * 0.08;
         rawMin -= padding;
         rawMax += padding;
@@ -268,7 +285,6 @@ static void paintAnalysisChart(SingleChartWidget *chart)
     const QVector<double> &time = chart->chartTime();
     const QVector<double> &values = chart->chartValues();
 
-    // 1 + 2 : fond sombre et titre lisible.
     painter.setPen(QColor(QStringLiteral("#e7edf0")));
     QFont titleFont = painter.font();
     titleFont.setBold(true);
@@ -288,7 +304,8 @@ static void paintAnalysisChart(SingleChartWidget *chart)
     painter.setBrush(QColor(QStringLiteral("#151d23")));
     painter.drawRect(plotRect);
 
-    if (time.count() < 2 || values.count() < 2) {
+    if (time.count() < 2 || values.count() < 2)
+    {
         painter.setPen(QColor(QStringLiteral("#aab5bd")));
         painter.drawText(plotRect, Qt::AlignCenter, I18n::text(6440));
         return;
@@ -298,7 +315,6 @@ static void paintAnalysisChart(SingleChartWidget *chart)
     const double tMax = time.last();
     const double tSpan = (tMax - tMin) > 0.0001 ? (tMax - tMin) : 1.0;
 
-    // 4 : echelle propre au type de mesure, avec pas de graduation coherent.
     const AxisSpec axis = axisForChart(name, values);
     const double vSpan = axis.maximum - axis.minimum;
 
@@ -308,7 +324,8 @@ static void paintAnalysisChart(SingleChartWidget *chart)
     painter.setFont(axisFont);
 
     const int tickCount = qMax(2, int(qRound(vSpan / axis.step)) + 1);
-    for (int i = 0; i < tickCount; ++i) {
+    for (int i = 0; i < tickCount; ++i)
+    {
         const double value = axis.maximum - axis.step * i;
         if (value < axis.minimum - axis.step * 0.001)
             break;
@@ -318,7 +335,6 @@ static void paintAnalysisChart(SingleChartWidget *chart)
         painter.setPen(QColor(QStringLiteral("#2a343d")));
         painter.drawLine(plotRect.left(), y, plotRect.right(), y);
 
-        // 3 : graduations nettement lisibles sur le fond sombre.
         painter.setPen(QColor(QStringLiteral("#aab5bd")));
         painter.drawText(QRect(0, y - 8, leftMargin - 6, 16),
                          Qt::AlignRight | Qt::AlignVCenter,
@@ -328,7 +344,8 @@ static void paintAnalysisChart(SingleChartWidget *chart)
     painter.setPen(QPen(curveColor, 2));
     QPolygonF poly;
     const int count = qMin(time.count(), values.count());
-    for (int i = 0; i < count; ++i) {
+    for (int i = 0; i < count; ++i)
+    {
         const double xFraction = (time[i] - tMin) / tSpan;
         const double yFraction = (values[i] - axis.minimum) / vSpan;
         const double x = plotRect.left() + xFraction * plotRect.width();
@@ -338,7 +355,8 @@ static void paintAnalysisChart(SingleChartWidget *chart)
     painter.drawPolyline(poly);
 
     painter.setPen(QColor(QStringLiteral("#aab5bd")));
-    for (int i = 0; i <= 5; ++i) {
+    for (int i = 0; i <= 5; ++i)
+    {
         const double t = tMin + (tSpan * i) / 5.0;
         const int x = plotRect.left() + (plotRect.width() * i) / 5;
         painter.drawText(QRect(x - 30, plotRect.bottom() + 2, 60, 16),
@@ -347,7 +365,8 @@ static void paintAnalysisChart(SingleChartWidget *chart)
     }
 
     if (chart->chartHasCursor() && chart->chartCursorX() >= plotRect.left() &&
-        chart->chartCursorX() <= plotRect.right()) {
+        chart->chartCursorX() <= plotRect.right())
+    {
         const int cursorX = chart->chartCursorX();
         painter.setPen(QPen(QColor(QStringLiteral("#7f8b94")), 1, Qt::DashLine));
         painter.drawLine(cursorX, plotRect.top(), cursorX, plotRect.bottom());
@@ -356,15 +375,18 @@ static void paintAnalysisChart(SingleChartWidget *chart)
         const double tAtCursor = tMin + xFraction * tSpan;
         int index = 0;
         double best = 1e18;
-        for (int i = 0; i < time.count(); ++i) {
+        for (int i = 0; i < time.count(); ++i)
+        {
             const double distance = qAbs(time[i] - tAtCursor);
-            if (distance < best) {
+            if (distance < best)
+            {
                 best = distance;
                 index = i;
             }
         }
 
-        if (index < values.count()) {
+        if (index < values.count())
+        {
             const int valueDecimals = qMax(1, axis.decimals);
             const QString label = QString::number(values[index], 'f', valueDecimals);
             QFontMetrics metrics(axisFont);
@@ -383,44 +405,90 @@ static void paintAnalysisChart(SingleChartWidget *chart)
     }
 }
 
-class ReadabilityFixInstaller : public QObject
+class ChartReadabilityFilter : public QObject
 {
 public:
-    explicit ReadabilityFixInstaller(QObject *parent = nullptr) : QObject(parent) {}
+    explicit ChartReadabilityFilter(QObject *parent = nullptr) : QObject(parent) {}
 
 protected:
     bool eventFilter(QObject *watched, QEvent *event) override
     {
-        // Correction strictement limitee aux mini-trames empilees de l'onglet Analyse.
-        if (event->type() == QEvent::Paint) {
-            if (SingleChartWidget *chart = qobject_cast<SingleChartWidget*>(watched)) {
-                paintAnalysisChart(chart);
-                return true;
-            }
-        }
-
-        QMainWindow *window = qobject_cast<QMainWindow*>(watched);
-        if (!window || window->objectName() != QStringLiteral("MainWindow"))
+        if (!event || event->type() != QEvent::Paint)
             return QObject::eventFilter(watched, event);
 
-        if ((event->type() == QEvent::Show || event->type() == QEvent::Polish) &&
-            !window->property("requestedReadableTextScheduled").toBool()) {
-            window->setProperty("requestedReadableTextScheduled", true);
-            QTimer::singleShot(1500, window, [window]() { applyRequestedReadableText(window); });
-        } else if (event->type() == QEvent::Resize &&
-                   window->property("requestedReadableTextScheduled").toBool()) {
-            QTimer::singleShot(120, window, [window]() { applyRequestedReadableText(window); });
+        if (SingleChartWidget *chart = qobject_cast<SingleChartWidget*>(watched))
+        {
+            paintAnalysisChart(chart);
+            return true;
         }
 
         return QObject::eventFilter(watched, event);
     }
 };
 
+class WindowReadabilityFilter : public QObject
+{
+public:
+    explicit WindowReadabilityFilter(QApplication *app)
+        : QObject(app), m_app(app)
+    {
+    }
+
+protected:
+    bool eventFilter(QObject *watched, QEvent *event) override
+    {
+        if (!event)
+            return QObject::eventFilter(watched, event);
+
+        if (!m_window)
+        {
+            QMainWindow *candidate = qobject_cast<QMainWindow*>(watched);
+            if (!candidate || candidate->objectName() != QStringLiteral("MainWindow"))
+                return QObject::eventFilter(watched, event);
+
+            if (event->type() != QEvent::Show && event->type() != QEvent::Polish)
+                return QObject::eventFilter(watched, event);
+
+            m_window = candidate;
+            candidate->setProperty("requestedReadableTextScheduled", true);
+            candidate->installEventFilter(this);
+            if (m_app)
+                m_app->removeEventFilter(this);
+
+            QTimer::singleShot(1500, candidate, [this]() {
+                if (m_window)
+                    applyRequestedReadableText(m_window);
+            });
+            return QObject::eventFilter(watched, event);
+        }
+
+        if (watched == m_window && event->type() == QEvent::Resize)
+        {
+            QTimer::singleShot(120, m_window, [this]() {
+                if (m_window)
+                    applyRequestedReadableText(m_window);
+            });
+        }
+
+        return QObject::eventFilter(watched, event);
+    }
+
+private:
+    QApplication *m_app;
+    QPointer<QMainWindow> m_window;
+};
+
 void installRequestedReadableTextFix()
 {
     QApplication *app = qobject_cast<QApplication*>(QCoreApplication::instance());
-    if (app)
-        app->installEventFilter(new ReadabilityFixInstaller(app));
+    if (!app)
+        return;
+
+    // The chart override still needs to see paint events for dynamically
+    // created SingleChartWidget instances. It now receives paint events only;
+    // all other MainWindow readability work is moved to a local window filter.
+    app->installEventFilter(new ChartReadabilityFilter(app));
+    app->installEventFilter(new WindowReadabilityFilter(app));
 }
 
 }
