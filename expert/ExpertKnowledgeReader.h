@@ -4,6 +4,7 @@
 #include "ExpertTypes.h"
 
 #include <QSqlDatabase>
+#include <QSqlError>
 
 class ExpertKnowledgeReader
 {
