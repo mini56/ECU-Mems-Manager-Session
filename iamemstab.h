@@ -1,6 +1,7 @@
 #ifndef IAMEMSTAB_H
 #define IAMEMSTAB_H
 
+#include <QFont>
 #include <QHash>
 #include <QList>
 #include <QPointer>
