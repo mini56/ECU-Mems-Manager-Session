@@ -1,0 +1,101 @@
+name: Apply IA MEMS dialogue and runtime fixes
+
+on:
+  push:
+    branches: ["lab-expert-engine"]
+    paths:
+      - ".github/workflows/apply-ia-dialogue-runtime-fixes.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply targeted IA MEMS fixes
+        shell: python
+        run: |
+          from pathlib import Path
+
+          # ---- LocalAiClient.h: expose detailed startup error ----
+          h = Path('expert/LocalAiClient.h')
+          text = h.read_text(encoding='utf-8')
+          old = '    QString statusText() const;\n    QString runtimePath() const { return m_runtimePath; }\n'
+          new = '    QString statusText() const;\n    QString lastError() const { return m_lastError; }\n    QString runtimePath() const { return m_runtimePath; }\n'
+          if old not in text:
+              raise SystemExit('LocalAiClient.h getter insertion point not found')
+          text = text.replace(old, new, 1)
+          h.write_text(text, encoding='utf-8', newline='\n')
+
+          # ---- LocalAiClient.cpp: robust process launch + useful diagnostics ----
+          cpp = Path('expert/LocalAiClient.cpp')
+          text = cpp.read_text(encoding='utf-8')
+
+          old = '''    connect(m_server,\n            QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),\n            this,\n            [this](int, QProcess::ExitStatus) {\n                if (m_startedServer && m_state != NotStarted && m_state != MissingModel\n                    && m_state != MissingRuntime) {\n                    setState(Error, QStringLiteral("Le moteur d'IA locale s'est arrêté."));\n                }\n            });\n'''
+          new = '''    connect(m_server,\n            QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),\n            this,\n            [this](int exitCode, QProcess::ExitStatus exitStatus) {\n                if (m_startedServer && m_state != NotStarted && m_state != MissingModel\n                    && m_state != MissingRuntime) {\n                    const quint32 nativeCode = static_cast<quint32>(exitCode);\n                    QString detail = QStringLiteral("llama-server s'est arrêté (code %1 / 0x%2, statut %3).")\n                        .arg(exitCode)\n                        .arg(QString::number(nativeCode, 16).toUpper())\n                        .arg(exitStatus == QProcess::NormalExit ? QStringLiteral("normal")\n                                                               : QStringLiteral("crash"));\n                    const QString output = QString::fromUtf8(m_server->readAll()).trimmed();\n                    if (!output.isEmpty())\n                        detail += QStringLiteral(" ") + output.right(1200);\n                    setState(Error, detail);\n                }\n            });\n\n    connect(m_server, &QProcess::errorOccurred, this, [this](QProcess::ProcessError error) {\n        if (!m_startedServer || m_state == NotStarted)\n            return;\n        QString detail = QStringLiteral("Impossible de démarrer llama-server (erreur QProcess %1) : %2")\n            .arg(static_cast<int>(error))\n            .arg(m_server->errorString());\n        const QString output = QString::fromUtf8(m_server->readAll()).trimmed();\n        if (!output.isEmpty())\n            detail += QStringLiteral(" ") + output.right(1200);\n        setState(Error, detail);\n    });\n'''
+          if old not in text:
+              raise SystemExit('LocalAiClient.cpp finished handler not found')
+          text = text.replace(old, new, 1)
+
+          old = '''    m_server->setProgram(m_runtimePath);\n    m_server->setArguments(args);\n    m_server->setProcessChannelMode(QProcess::MergedChannels);\n    m_startedServer = true;\n'''
+          new = '''    const QString runtimeDirectory = QFileInfo(m_runtimePath).absolutePath();\n    m_server->setProgram(m_runtimePath);\n    m_server->setArguments(args);\n    m_server->setWorkingDirectory(runtimeDirectory);\n    QProcessEnvironment processEnvironment = QProcessEnvironment::systemEnvironment();\n    const QString currentPath = processEnvironment.value(QStringLiteral("PATH"));\n    processEnvironment.insert(QStringLiteral("PATH"),\n                              runtimeDirectory + QDir::listSeparator() + currentPath);\n    m_server->setProcessEnvironment(processEnvironment);\n    m_server->setProcessChannelMode(QProcess::MergedChannels);\n    m_startedServer = true;\n'''
+          if old not in text:
+              raise SystemExit('LocalAiClient.cpp process setup not found')
+          text = text.replace(old, new, 1)
+
+          old = '''    case Error: return QStringLiteral("erreur IA locale");\n'''
+          new = '''    case Error:\n        if (m_lastError.isEmpty())\n            return QStringLiteral("erreur IA locale");\n        return QStringLiteral("erreur IA locale : %1")\n            .arg(m_lastError.simplified().left(140));\n'''
+          if old not in text:
+              raise SystemExit('LocalAiClient.cpp status Error case not found')
+          text = text.replace(old, new, 1)
+          cpp.write_text(text, encoding='utf-8', newline='\n')
+
+          # ---- iamemstab.cpp: show exact error + improve routing/fallback ----
+          tab = Path('iamemstab.cpp')
+          text = tab.read_text(encoding='utf-8')
+
+          old = '''void IaMemsTab::onLocalAiStateChanged()\n{\n    updateStatus();\n}\n'''
+          new = '''void IaMemsTab::onLocalAiStateChanged()\n{\n    updateStatus();\n    if (!m_localAi)\n        return;\n    if (m_status)\n        m_status->setToolTip(m_localAi->lastError());\n    if ((m_localAi->state() == LocalAiClient::Error\n         || m_localAi->state() == LocalAiClient::MissingRuntime\n         || m_localAi->state() == LocalAiClient::MissingModel)\n        && !m_localAi->lastError().trimmed().isEmpty()) {\n        appendSystemMessage(QStringLiteral("Détail du moteur IA local : %1")\n                                .arg(m_localAi->lastError().trimmed()));\n    }\n}\n'''
+          if old not in text:
+              raise SystemExit('iamemstab.cpp onLocalAiStateChanged not found')
+          text = text.replace(old, new, 1)
+
+          # Insert conversational tolerance before software routing.
+          old = '''    const QString software = softwareAnswer(question);\n    if (!software.isEmpty())\n        return software;\n'''
+          new = '''    if (containsAny(text, {QStringLiteral("faute"), QStringLiteral("fautes"),\n                           QStringLiteral("orthographe"), QStringLiteral("mal ecrit"),\n                           QStringLiteral("mal écrit"), QStringLiteral("erreur de frappe")}))\n        return QStringLiteral(\n            "Non, ce n'est pas grave. Vous pouvez écrire naturellement, même avec des fautes d'orthographe "\n            "ou de frappe. J'essaie de comprendre le sens de votre question. Si une formulation est vraiment "\n            "ambiguë, je vous demanderai simplement de préciser au lieu d'inventer une réponse.");\n\n    const QString software = softwareAnswer(question);\n    if (!software.isEmpty())\n        return software;\n'''
+          if old not in text:
+              raise SystemExit('iamemstab.cpp software routing insertion point not found')
+          text = text.replace(old, new, 1)
+
+          # Put general technical questions through knowledge before live-value routing.
+          old = '''    if (containsAny(text, {QStringLiteral("anormal"), QStringLiteral("normal"),\n                           QStringLiteral("normale"), QStringLiteral("coherent"),\n                           QStringLiteral("coherente"), QStringLiteral("diagnostic"),\n                           QStringLiteral("panne"), QStringLiteral("probleme"),\n                           QStringLiteral("cause"), QStringLiteral("hypothese")}))\n        return analysisAnswer(false);\n'''
+          new = '''    const bool asksGeneralReference = containsAny(text, {\n        QStringLiteral("quelle avance"), QStringLiteral("quel avance"),\n        QStringLiteral("avance correcte"), QStringLiteral("avance normal"),\n        QStringLiteral("avance normale"), QStringLiteral("combien"),\n        QStringLiteral("pour un moteur"), QStringLiteral("mini spi"),\n        QStringLiteral("valeur de reference"), QStringLiteral("valeur de référence")\n    });\n    if (asksGeneralReference) {\n        const QString reference = knowledgeAnswer(question);\n        if (!reference.isEmpty())\n            return reference;\n        if (containsAny(text, {QStringLiteral("avance"), QStringLiteral("allumage")}))\n            return QStringLiteral(\n                "Il n'existe pas une seule valeur d'avance correcte pour tous les Mini SPi : elle dépend notamment "\n                "du régime, de la charge, de la température et du firmware MEMS. Je ne donnerai pas un chiffre "\n                "universel sans référence suffisamment fiable pour l'ECU concerné. Si vous me donnez le firmware "\n                "ou l'identification ECU, je peux rechercher la donnée correspondante dans la base MEMS.");\n    }\n\n    if (containsAny(text, {QStringLiteral("anormal"), QStringLiteral("normal"),\n                           QStringLiteral("normale"), QStringLiteral("coherent"),\n                           QStringLiteral("coherente"), QStringLiteral("diagnostic"),\n                           QStringLiteral("panne"), QStringLiteral("probleme"),\n                           QStringLiteral("cause"), QStringLiteral("hypothese")}))\n        return analysisAnswer(false);\n'''
+          if old not in text:
+              raise SystemExit('iamemstab.cpp analysis routing block not found')
+          text = text.replace(old, new, 1)
+
+          # Expand software intent handling for broad capability/creator questions.
+          old = '''    auto wants = [&text, softwareIntent](const QStringList &terms) {\n        if (!softwareIntent)\n            return false;\n        return containsAny(text, terms);\n    };\n\n    if (wants({QStringLiteral("analyse")}))\n'''
+          new = '''    auto wants = [&text, softwareIntent](const QStringList &terms) {\n        if (!softwareIntent)\n            return false;\n        return containsAny(text, terms);\n    };\n\n    if (softwareIntent && containsAny(text, {QStringLiteral("que peut faire"),\n                                              QStringLiteral("que peux faire"),\n                                              QStringLiteral("fonctionnalite"),\n                                              QStringLiteral("fonctionnalites"),\n                                              QStringLiteral("possibilites du logiciel")}))\n        return QStringLiteral(\n            "ECU MEMS Manager sert à dialoguer avec les ECU Rover/Mini MEMS pris en charge, afficher les mesures "\n            "en direct, lire les défauts, effectuer les tests d'actionneurs et réglages supportés, analyser des "\n            "journaux CSV/TXT, consulter les données et la base technique, travailler avec les fonctions ROSCO, "\n            "suivre l'injection lorsque ce mode est disponible et utiliser IA MEMS pour expliquer les mesures, "\n            "l'historique, les hypothèses diagnostiques et le fonctionnement du logiciel.");\n\n    if (softwareIntent && containsAny(text, {QStringLiteral("qui a concu"),\n                                              QStringLiteral("qui a conçu"),\n                                              QStringLiteral("qui a cree"),\n                                              QStringLiteral("qui a créé"),\n                                              QStringLiteral("auteur"),\n                                              QStringLiteral("developpe par"),\n                                              QStringLiteral("développé par")}))\n        return QStringLiteral(\n            "ECU MEMS Manager est le projet développé dans le dépôt mini56. Les travaux d'Andrew Revill, "\n            "RoverMEMS et les autres sources intégrées servent de références techniques : ils ne sont pas les "\n            "concepteurs de MEMS Manager.");\n\n    if (wants({QStringLiteral("analyse")}))\n'''
+          if old not in text:
+              raise SystemExit('iamemstab.cpp softwareAnswer insertion point not found')
+          text = text.replace(old, new, 1)
+
+          tab.write_text(text, encoding='utf-8', newline='\n')
+
+      - name: Commit fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- expert/LocalAiClient.h expert/LocalAiClient.cpp iamemstab.cpp
+          git commit -m "Improve IA MEMS local runtime diagnostics and dialogue"
+          git pull --rebase origin lab-expert-engine
+          git push origin HEAD:lab-expert-engine
