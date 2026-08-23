@@ -497,8 +497,9 @@ protected:
 
         QPointer<QMainWindow> guardedWindow(window);
         QTimer::singleShot(300, window, [guardedWindow]() {
-            if (!guardedWindow || guardedWindow->findChild<SystemStateConnectionController*>())
+            if (!guardedWindow || guardedWindow->property("systemStateConnectionControllerInstalled").toBool())
                 return;
+            guardedWindow->setProperty("systemStateConnectionControllerInstalled", true);
             SystemStateConnectionController *controller = new SystemStateConnectionController(guardedWindow);
             controller->setObjectName(QStringLiteral("systemStateConnectionController"));
         });
