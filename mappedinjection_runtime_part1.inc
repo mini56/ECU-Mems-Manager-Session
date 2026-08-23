@@ -57,8 +57,12 @@ protected:
         for(int i=0;i<=6;++i){int x=plot.left()+plot.width()*i/6;p.drawLine(x,plot.top(),x,plot.bottom());}
         if(m_time.size()<2||m_values.size()<2){p.setPen(QColor("#8a93a6"));p.drawText(plot,Qt::AlignCenter,I18n::text(6440));return;}
         const double tMin=m_time.first(),tMax=m_time.last(),tSpan=qMax(.001,tMax-tMin);double vMin=m_values.first(),vMax=vMin;for(double v:m_values){vMin=qMin(vMin,v);vMax=qMax(vMax,v);}if(qAbs(vMax-vMin)<.01){vMin-=.5;vMax+=.5;}const double vm=(vMax-vMin)*.1;vMin=qMax(0.0,vMin-vm);vMax+=vm;const double vSpan=vMax-vMin;
-        QPolygonF poly;const int n=qMin(m_time.size(),m_values.size());for(int i=0;i<n;++i){poly<<QPointF(plot.left()+(m_time[i]-tMin)/tSpan*plot.width(),plot.bottom()-(m_values[i]-vMin)/vSpan*plot.height());}
-        p.setPen(QPen(QColor("#ff7a00"),1.8));p.drawPolyline(poly);
+        // Never invent a continuous slope across a period where no Injection
+        // samples were received. Mode-4 normally samples far faster than this;
+        // a gap above 0.5 s is therefore rendered as a genuine break.
+        const double maxContinuousGapSeconds=0.5;
+        QPainterPath historyPath;const int n=qMin(m_time.size(),m_values.size());for(int i=0;i<n;++i){const QPointF point(plot.left()+(m_time[i]-tMin)/tSpan*plot.width(),plot.bottom()-(m_values[i]-vMin)/vSpan*plot.height());if(i==0||(m_time[i]-m_time[i-1])>maxContinuousGapSeconds)historyPath.moveTo(point);else historyPath.lineTo(point);}
+        p.setPen(QPen(QColor("#ff7a00"),1.8));p.drawPath(historyPath);
         QFont af=p.font();af.setBold(false);af.setPointSize(7);p.setFont(af);p.setPen(QColor("#9aa4ad"));
         for(int i=0;i<=4;++i){double v=vMax-vSpan*i/4.0;int y=plot.top()+plot.height()*i/4;p.drawText(QRect(0,y-8,43,16),Qt::AlignRight|Qt::AlignVCenter,QString::number(v,'f',2));}
         for(int i=0;i<=6;++i){int x=plot.left()+plot.width()*i/6;double t=tMin+tSpan*i/6.0;p.drawText(QRect(x-28,plot.bottom()+3,56,17),Qt::AlignCenter,QString("%1 s").arg(t-tMax,0,'f',0));}

@@ -94,8 +94,26 @@ public:
 
         QObject::connect(m_mems,&MEMSInterface::connected,m_window,[this](){m_ecuConnected=true;m_analysis->setDiagnosticLiveAvailable(true);updateFirmware(QString());m_window->setProperty("ecuReadMode",QStringLiteral("diagnostic"));m_dashboard->setReadMode(QStringLiteral("diagnostic"));updateStatusSoon();});
         QObject::connect(m_mems,&MEMSInterface::disconnected,m_window,[this](){m_ecuConnected=false;m_analysis->setDiagnosticLiveAvailable(false);updateFirmware(QString());m_window->setProperty("ecuReadMode",QStringLiteral("disconnected"));m_dashboard->setReadMode(QStringLiteral("disconnected"));updateStatusSoon();});
-        QObject::connect(m_mems,&MEMSInterface::readModeChanged,m_window,[this](const QString &mode){m_window->setProperty("ecuReadMode",mode);m_dashboard->setReadMode(mode);updateStatusSoon();});
-        QObject::connect(m_mems,&MEMSInterface::dataReady,m_window,[this](){m_analysis->appendDiagnosticData(m_mems->getData());});
+        QObject::connect(m_mems,&MEMSInterface::readModeChanged,m_window,[this](const QString &mode){
+            // Returning from Mode 4 restores the ECU diagnostic session first,
+            // but the displayed mode must remain "transition" until a fresh
+            // 7D/80 frame has actually arrived. This prevents stale pre-Mode-4
+            // values from being presented as current diagnostic data.
+            if(mode==QStringLiteral("diagnostic")&&m_window->property("ecuReadMode").toString()==QStringLiteral("transition")){
+                m_dashboard->setReadMode(QStringLiteral("transition"));updateStatusSoon();return;
+            }
+            m_window->setProperty("ecuReadMode",mode);m_dashboard->setReadMode(mode);updateStatusSoon();
+        });
+        QObject::connect(m_mems,&MEMSInterface::dataReady,m_window,[this](){
+            m_analysis->appendDiagnosticData(m_mems->getData());
+            // A dataReady emitted by the normal polling loop is the proof that
+            // the first fresh post-Mode-4 diagnostic frame is available.
+            if(m_window->property("ecuReadMode").toString()==QStringLiteral("transition")){
+                m_window->setProperty("ecuReadMode",QStringLiteral("diagnostic"));
+                m_dashboard->setReadMode(QStringLiteral("diagnostic"));
+                updateStatusSoon();
+            }
+        });
         QObject::connect(m_mems,&MEMSInterface::injectionLiveSample,m_window,[this](double finalMs,double baseMs,double transientMs,quint16 baseRaw,quint16 transientRaw,quint8 counter){
             m_window->setProperty("lastInjectionMs",finalMs);m_dashboard->appendSample(finalMs,baseMs,transientMs,baseRaw,transientRaw,counter);m_analysis->appendInjectionSample(finalMs,baseMs,transientMs,baseRaw,transientRaw,counter);
         });
