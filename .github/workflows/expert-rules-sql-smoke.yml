@@ -34,7 +34,7 @@ jobs:
           python - <<'PY' > expert_rules_sql_trace.txt 2>&1
           import base64, pathlib, sqlite3, struct, zlib, json
           root = pathlib.Path('database/reference')
-          db = sqlite3.connect(':memory:')
+          db = sqlite3.connect(':memory:', isolation_level=None)
           report = []
           for name in ('research_enrichment_1640.qz64', 'research_enrichment_1650.qz64'):
               encoded = root.joinpath(name).read_bytes().strip()
