@@ -13,6 +13,7 @@ on:
       - "tools/build_andrew_map_library_index.py"
       - "tools/validate_memstools_enrichment.py"
       - "tools/audit_andrew_revill_knowledge.py"
+      - "tools/audit_andrew_revill_knowledge_v2.py"
       - "tools/finalize_andrew_revill_audit.py"
       - "tools/append_andrew_map_audit.py"
       - "tools/append_andrew_metadata_audit.py"
@@ -76,11 +77,11 @@ jobs:
       - name: Validate core generated knowledge
         run: python tools/validate_memstools_enrichment.py database/reference
 
-      - name: Audit MEMSTools knowledge against previous reference database
+      - name: Audit MEMSTools knowledge against clean pre-Andrew database
         shell: bash
         run: |
           set -euo pipefail
-          python tools/audit_andrew_revill_knowledge.py database/reference \
+          python tools/audit_andrew_revill_knowledge_v2.py database/reference \
             --output database/reference/audits/andrew_revill_audit.md \
             --json-output database/reference/audits/andrew_revill_core_audit.json
 
