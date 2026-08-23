@@ -1,0 +1,63 @@
+{
+  "source_key": "rovermems_james_portman_live_measurements",
+  "verification_level": "source_externe",
+  "scope": [
+    "MEMS 1.2",
+    "MEMS 1.3",
+    "MEMS 1.6",
+    "MEMS 1.9"
+  ],
+  "sources": {
+    "documentation": {
+      "commit": "d028fba1af34aaee99f335f979819a2a72321207",
+      "blob": "3b94b1b57611c62d8df37a658a328400f89e07d7",
+      "path": "ECUs/1.x-ECU-all/diagnostics"
+    },
+    "agent": {
+      "commit": "b381af39b2031c80303c5262055aa0c0121dbdd4",
+      "blob": "a923a72325bd5d8541917ac03f0e7a677243234c",
+      "path": "ecu-1x-shared.go"
+    },
+    "project_crosscheck": {
+      "path": "rosco.h",
+      "blob": "4c39acadc2e5c37b4d208ea0459d10e90bc7a0a4"
+    }
+  },
+  "counts": {
+    "packets": 8,
+    "measurements": 57,
+    "bitfields": 26,
+    "conflicts": 5,
+    "aliases": 16,
+    "status": {
+      "conflict": 4,
+      "documented": 22,
+      "uncertain": 13,
+      "unknown": 18
+    }
+  },
+  "family_packet_support": {
+    "MEMS 1.2": {
+      "0x80": "available",
+      "0x7D": "unavailable_single_plug"
+    },
+    "MEMS 1.3": {
+      "0x80": "available",
+      "0x7D": "available"
+    },
+    "MEMS 1.6": {
+      "0x80": "available",
+      "0x7D": "available"
+    },
+    "MEMS 1.9": {
+      "0x80": "available",
+      "0x7D": "available"
+    }
+  },
+  "critical_rules": [
+    "0x7D:0x0B is uncertain and must not be named total injection pulse width",
+    "normal 0x80 multi-byte fields are high-byte then low-byte where documented/implemented",
+    "do not conflate normal packet offsets with Mode 4 RAM addresses",
+    "conflicts remain conflit_a_verifier until project/ECU recoupement"
+  ]
+}
