@@ -36,7 +36,7 @@ jobs:
           manifest = json.loads((root/'manifest.json').read_text(encoding='utf-8'))
           revision = int(manifest.get('database_revision', 0))
           batches = manifest.get('research_enrichment_batches', [])
-          db = sqlite3.connect(':memory:')
+          db = sqlite3.connect(':memory:', isolation_level=None)
           report=[]
 
           def quncompress(encoded_bytes):
