@@ -5,7 +5,9 @@ on:
   push:
     branches: ["lab-expert-engine"]
     paths:
-      - "expert/**"
+      - "expert/*.cpp"
+      - "expert/*.h"
+      - "expert/CMakeLists.txt"
       - "iamemstab.cpp"
       - "iamemstab.h"
       - "database/reference/manifest.json"
