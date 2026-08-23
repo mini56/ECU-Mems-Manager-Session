@@ -15,7 +15,6 @@
     "repository": "Qwen/Qwen3-0.6B-GGUF",
     "filename": "Qwen3-0.6B-Q8_0.gguf",
     "runtime_filename": "ia-mems.gguf",
-    "size_bytes": 669843456,
     "sha256": "9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031",
     "license": "Apache-2.0"
   },
