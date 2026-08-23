@@ -51,7 +51,7 @@ jobs:
 
             $serverPath = (Resolve-Path ai/llama-server.exe).Path
             $modelPath = (Resolve-Path ai/models/ia-mems.gguf).Path
-            $arguments = @("-m", $modelPath, "--host", "127.0.0.1", "--port", "18089", "-c", "4096", "-np", "1")
+            $arguments = @("-m", $modelPath, "--alias", "ia-mems", "--host", "127.0.0.1", "--port", "18089", "-c", "4096", "-np", "1")
             $process = Start-Process -FilePath $serverPath -ArgumentList $arguments -PassThru -WindowStyle Hidden
             $process.Id | Set-Content ai-local-server.pid
 
