@@ -263,7 +263,7 @@ static void installPositiveLcdSign(QLCDNumber *lcd)
     QWidget *sign=new QWidget(lcd);
     sign->setObjectName(QStringLiteral("ignitionAdjustmentPositiveSign"));
     sign->setAttribute(Qt::WA_TransparentForMouseEvents,true);
-    sign->setGeometry(5,5,14,22);
+    sign->setGeometry(5,1,14,22);
     sign->setStyleSheet(QStringLiteral("background:transparent;border:0;"));
 
     QFrame *horizontal=new QFrame(sign);
