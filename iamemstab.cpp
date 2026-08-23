@@ -473,13 +473,23 @@ void IaMemsTab::captureEcuSample()
     observation.values.insert(QStringLiteral("lambda_mv"), data->lambda_voltage * 5.0);
     observation.values.insert(QStringLiteral("short_term_trim_pct"), static_cast<int>(data->short_term_fuel_trim) - 100.0);
     observation.values.insert(QStringLiteral("long_term_trim_raw"), data->long_term_fuel_trim);
+    observation.values.insert(QStringLiteral("long_term_trim_pct"), static_cast<int>(data->long_term_fuel_trim) - 128.0);
     observation.values.insert(QStringLiteral("ignition_advance_deg"), data->ignition_advance * 0.5 - 24.0);
     observation.values.insert(QStringLiteral("coil_time_ms"), data->coil_time * 0.002);
     observation.values.insert(QStringLiteral("iac_position"), data->iac_position);
     observation.values.insert(QStringLiteral("idle_error_raw"), data->idle_error);
+    const int rawHotIdleError = (static_cast<int>(data->idle_error2) << 8) | static_cast<int>(data->uk10);
+    const int hotIdleCorrection = static_cast<int>(data->idle_hot) - 35;
+    observation.values.insert(QStringLiteral("idle_error_hot_corrected"),
+                              (rawHotIdleError - 32768) + hotIdleCorrection);
+    observation.values.insert(QStringLiteral("uk3_raw"), data->uk3);
     observation.values.insert(QStringLiteral("closed_loop"), data->closed_loop != 0 ? 1.0 : 0.0);
     observation.values.insert(QStringLiteral("idle_switch_closed"), data->idle_switch == 0 ? 1.0 : 0.0);
     observation.values.insert(QStringLiteral("throttle_pot_raw"), data->throttle_pot);
+    observation.values.insert(QStringLiteral("lambda_fault_active"),
+                              ((data->dtc2 & 0x04) || (data->dtc2 & 0x08)) ? 1.0 : 0.0);
+    observation.values.insert(QStringLiteral("tps_fault_active"),
+                              ((data->dtc1 & 0x80) || (data->dtc2 & 0x01)) ? 1.0 : 0.0);
     observation.values.insert(QStringLiteral("fault_mask"),
                               static_cast<double>(static_cast<quint32>(data->dtc0)
                               | (static_cast<quint32>(data->dtc1) << 8)
