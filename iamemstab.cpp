@@ -20,6 +20,7 @@
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QSet>
+#include <QShowEvent>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QSqlRecord>
@@ -323,8 +324,17 @@ IaMemsTab::IaMemsTab(MainWindow *mainWindow, QWidget *parent)
         "Si les informations disponibles ne permettent pas de conclure, je vous le dirai clairement."));
 
     updateStatus();
-    QTimer::singleShot(250, this, &IaMemsTab::startKnowledgeLoad);
-    QTimer::singleShot(400, m_localAi, &LocalAiClient::initialize);
+}
+
+void IaMemsTab::showEvent(QShowEvent *event)
+{
+    QWidget::showEvent(event);
+
+    // Keep the main ECU program light: the knowledge cache and the local
+    // language model are started only when IA MEMS is actually opened.
+    QTimer::singleShot(0, this, &IaMemsTab::startKnowledgeLoad);
+    if (m_localAi)
+        QTimer::singleShot(0, m_localAi, &LocalAiClient::initialize);
 }
 
 IaMemsTab::~IaMemsTab()

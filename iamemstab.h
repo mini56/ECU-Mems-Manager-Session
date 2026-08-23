@@ -17,6 +17,7 @@ class QLabel;
 class QLineEdit;
 class QPushButton;
 class QTextBrowser;
+class QShowEvent;
 class MainWindow;
 class MEMSInterface;
 class LocalAiClient;
@@ -32,6 +33,9 @@ class IaMemsTab final : public QWidget
 public:
     explicit IaMemsTab(MainWindow *mainWindow, QWidget *parent = nullptr);
     ~IaMemsTab() override;
+
+protected:
+    void showEvent(QShowEvent *event) override;
 
 private slots:
     void sendQuestion();
