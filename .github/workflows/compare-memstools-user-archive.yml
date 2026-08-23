@@ -1,0 +1,95 @@
+name: Compare archived MEMSTools 10.29
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["lab-andrew-revill-knowledge"]
+    paths:
+      - "tools/compare_memstools_user_archive.py"
+      - "tools/data/memstools_user_archive_10_29_baseline.json"
+      - ".github/workflows/compare-memstools-user-archive.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: memstools-user-archive-comparison
+  cancel-in-progress: true
+
+jobs:
+  compare:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout laboratory branch
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Download current Andrew MEMSTools archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --retry-delay 3 \
+            --user-agent "ECU-Mems-Manager historical knowledge comparison" \
+            "https://andrewrevill.co.uk/Downloads/MEMSTools.zip" \
+            --output "$RUNNER_TEMP/MEMSTools-current.zip"
+          unzip -t "$RUNNER_TEMP/MEMSTools-current.zip" >/dev/null
+          echo "Current archive:"
+          sha256sum "$RUNNER_TEMP/MEMSTools-current.zip"
+
+      - name: Compare 10.29 baseline and generate batch 1630
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/compare_memstools_user_archive.py \
+            "$RUNNER_TEMP/MEMSTools-current.zip" \
+            tools/data/memstools_user_archive_10_29_baseline.json \
+            --output-dir database/reference
+
+      - name: Register batch 1630
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('database/reference/manifest.json')
+          d=json.loads(p.read_text(encoding='utf-8'))
+          name='research_enrichment_1630.qz64'
+          batches=d.setdefault('research_enrichment_batches',[])
+          if name not in batches:
+              batches.append(name)
+          d['database_revision']=max(int(d.get('database_revision',0)),18)
+          p.write_text(json.dumps(d,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          PY
+
+      - name: Upload comparison package
+        uses: actions/upload-artifact@v4
+        with:
+          name: MEMSTools-10.29-Comparison
+          path: |
+            database/reference/research_enrichment_1630.qz64
+            database/reference/audits/memstools_user_archive_10_29_comparison.md
+            database/reference/audits/memstools_user_archive_10_29_comparison.json
+            database/reference/manifest.json
+
+      - name: Commit comparison to laboratory branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- \
+            database/reference/research_enrichment_1630.qz64 \
+            database/reference/audits/memstools_user_archive_10_29_comparison.md \
+            database/reference/audits/memstools_user_archive_10_29_comparison.json \
+            database/reference/manifest.json
+          if git diff --cached --quiet; then
+            echo "Comparison output already identical."
+            exit 0
+          fi
+          git commit -m "Audit historical MEMSTools 10.29 archive [skip ci]"
+          git push origin HEAD:lab-andrew-revill-knowledge
