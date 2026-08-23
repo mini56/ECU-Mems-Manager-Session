@@ -1,6 +1,7 @@
 name: Main MEMS reference database self-test
 
 # Validates the exact database loader used by the Windows application.
+# Final IA MEMS validation reruns this check on the current lab branch state.
 on:
   workflow_dispatch:
   push:
