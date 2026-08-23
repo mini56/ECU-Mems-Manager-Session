@@ -19,6 +19,10 @@ on:
       - "tools/append_andrew_metadata_audit.py"
       - ".github/workflows/generate-andrew-revill-knowledge.yml"
 
+concurrency:
+  group: andrew-revill-knowledge-lab
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
