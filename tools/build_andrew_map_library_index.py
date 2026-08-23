@@ -33,7 +33,9 @@ TARGETS = [
 ]
 
 PART_RE = re.compile(r"\b(?:MNE|MKC|MSB|NNN|NNW|YWC|SLD)\s?_?\d{5,6}\b", re.I)
-FW_RE = re.compile(r"\b[A-Z]{3,7}[0-9]{3,4}\b")
+# Earlier Intel MEMS firmware IDs are generally 8 alphanumeric characters,
+# e.g. AANMP002, KBE6R003, MGE7R002, KLH4G017, REGI1380.
+FW_RE = re.compile(r"\b[A-Z0-9]{8}\b")
 
 
 class Links(HTMLParser):
@@ -96,13 +98,24 @@ def part_numbers(text):
     return ";".join(values) or None
 
 
+def valid_fw_token(value):
+    value = value.upper()
+    if not re.fullmatch(r"[A-Z0-9]{8}", value):
+        return False
+    if not any(ch.isalpha() for ch in value) or not any(ch.isdigit() for ch in value):
+        return False
+    if value.startswith(("MEMS", "ROVER")):
+        return False
+    return True
+
+
 def firmware_code(text):
     stem = Path(text).stem.upper()
-    if re.fullmatch(r"[A-Z]{3,7}[0-9]{3,4}", stem):
+    if valid_fw_token(stem):
         return stem
     candidates = FW_RE.findall(text.upper().replace("_", " "))
     for value in candidates:
-        if not value.startswith(("MEMS", "ROVER", "MGROVER")):
+        if valid_fw_token(value):
             return value
     return None
 
