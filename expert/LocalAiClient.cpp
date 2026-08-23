@@ -41,12 +41,33 @@ LocalAiClient::LocalAiClient(QObject *parent)
     connect(m_server,
             QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this,
-            [this](int, QProcess::ExitStatus) {
+            [this](int exitCode, QProcess::ExitStatus exitStatus) {
                 if (m_startedServer && m_state != NotStarted && m_state != MissingModel
                     && m_state != MissingRuntime) {
-                    setState(Error, QStringLiteral("Le moteur d'IA locale s'est arrêté."));
+                    const quint32 nativeCode = static_cast<quint32>(exitCode);
+                    QString detail = QStringLiteral("llama-server s'est arrêté (code %1 / 0x%2, statut %3).")
+                        .arg(exitCode)
+                        .arg(QString::number(nativeCode, 16).toUpper())
+                        .arg(exitStatus == QProcess::NormalExit ? QStringLiteral("normal")
+                                                               : QStringLiteral("crash"));
+                    const QString output = QString::fromUtf8(m_server->readAll()).trimmed();
+                    if (!output.isEmpty())
+                        detail += QStringLiteral(" ") + output.right(1200);
+                    setState(Error, detail);
                 }
             });
+
+    connect(m_server, &QProcess::errorOccurred, this, [this](QProcess::ProcessError error) {
+        if (!m_startedServer || m_state == NotStarted)
+            return;
+        QString detail = QStringLiteral("Impossible de démarrer llama-server (erreur QProcess %1) : %2")
+            .arg(static_cast<int>(error))
+            .arg(m_server->errorString());
+        const QString output = QString::fromUtf8(m_server->readAll()).trimmed();
+        if (!output.isEmpty())
+            detail += QStringLiteral(" ") + output.right(1200);
+        setState(Error, detail);
+    });
 }
 
 LocalAiClient::~LocalAiClient()
@@ -114,8 +135,15 @@ void LocalAiClient::startServer()
          << QStringLiteral("-c") << QStringLiteral("4096")
          << QStringLiteral("-np") << QStringLiteral("1");
 
+    const QString runtimeDirectory = QFileInfo(m_runtimePath).absolutePath();
     m_server->setProgram(m_runtimePath);
     m_server->setArguments(args);
+    m_server->setWorkingDirectory(runtimeDirectory);
+    QProcessEnvironment processEnvironment = QProcessEnvironment::systemEnvironment();
+    const QString currentPath = processEnvironment.value(QStringLiteral("PATH"));
+    processEnvironment.insert(QStringLiteral("PATH"),
+                              runtimeDirectory + QDir::listSeparator() + currentPath);
+    m_server->setProcessEnvironment(processEnvironment);
     m_server->setProcessChannelMode(QProcess::MergedChannels);
     m_startedServer = true;
     m_server->start();
@@ -316,7 +344,11 @@ QString LocalAiClient::statusText() const
     case Starting: return QStringLiteral("IA locale en démarrage");
     case Ready: return QStringLiteral("IA locale prête");
     case Busy: return QStringLiteral("IA locale en réponse");
-    case Error: return QStringLiteral("erreur IA locale");
+    case Error:
+        if (m_lastError.isEmpty())
+            return QStringLiteral("erreur IA locale");
+        return QStringLiteral("erreur IA locale : %1")
+            .arg(m_lastError.simplified().left(140));
     }
     return QStringLiteral("IA locale");
 }

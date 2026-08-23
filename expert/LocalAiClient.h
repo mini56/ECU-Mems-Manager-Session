@@ -39,6 +39,7 @@ public:
     bool isReady() const { return m_state == Ready; }
     bool isBusy() const { return m_state == Busy; }
     QString statusText() const;
+    QString lastError() const { return m_lastError; }
     QString runtimePath() const { return m_runtimePath; }
     QString modelPath() const { return m_modelPath; }
 

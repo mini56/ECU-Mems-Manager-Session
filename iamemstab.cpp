@@ -591,6 +591,17 @@ void IaMemsTab::onLocalAiError(const QString &message)
 void IaMemsTab::onLocalAiStateChanged()
 {
     updateStatus();
+    if (!m_localAi)
+        return;
+    if (m_status)
+        m_status->setToolTip(m_localAi->lastError());
+    if ((m_localAi->state() == LocalAiClient::Error
+         || m_localAi->state() == LocalAiClient::MissingRuntime
+         || m_localAi->state() == LocalAiClient::MissingModel)
+        && !m_localAi->lastError().trimmed().isEmpty()) {
+        appendSystemMessage(QStringLiteral("Détail du moteur IA local : %1")
+                                .arg(m_localAi->lastError().trimmed()));
+    }
 }
 
 void IaMemsTab::updateContextFromQuestion(const QString &question)
@@ -630,6 +641,14 @@ QString IaMemsTab::answerQuestion(const QString &question)
             "Bonjour. Je suis IA MEMS. Je peux répondre à vos questions sur ECU MEMS Manager, "
             "sur les systèmes MEMS et sur les mesures de l'ECU connecté. Que souhaitez-vous savoir ?");
 
+    if (containsAny(text, {QStringLiteral("faute"), QStringLiteral("fautes"),
+                           QStringLiteral("orthographe"), QStringLiteral("mal ecrit"),
+                           QStringLiteral("mal écrit"), QStringLiteral("erreur de frappe")}))
+        return QStringLiteral(
+            "Non, ce n'est pas grave. Vous pouvez écrire naturellement, même avec des fautes d'orthographe "
+            "ou de frappe. J'essaie de comprendre le sens de votre question. Si une formulation est vraiment "
+            "ambiguë, je vous demanderai simplement de préciser au lieu d'inventer une réponse.");
+
     const QString software = softwareAnswer(question);
     if (!software.isEmpty())
         return software;
@@ -641,6 +660,25 @@ QString IaMemsTab::answerQuestion(const QString &question)
     if (containsAny(text, {QStringLiteral("pourquoi"), QStringLiteral("explique")})) {
         if (!m_lastAnalysis.hypotheses.isEmpty())
             return analysisAnswer(true);
+    }
+
+    const bool asksGeneralReference = containsAny(text, {
+        QStringLiteral("quelle avance"), QStringLiteral("quel avance"),
+        QStringLiteral("avance correcte"), QStringLiteral("avance normal"),
+        QStringLiteral("avance normale"), QStringLiteral("combien"),
+        QStringLiteral("pour un moteur"), QStringLiteral("mini spi"),
+        QStringLiteral("valeur de reference"), QStringLiteral("valeur de référence")
+    });
+    if (asksGeneralReference) {
+        const QString reference = knowledgeAnswer(question);
+        if (!reference.isEmpty())
+            return reference;
+        if (containsAny(text, {QStringLiteral("avance"), QStringLiteral("allumage")}))
+            return QStringLiteral(
+                "Il n'existe pas une seule valeur d'avance correcte pour tous les Mini SPi : elle dépend notamment "
+                "du régime, de la charge, de la température et du firmware MEMS. Je ne donnerai pas un chiffre "
+                "universel sans référence suffisamment fiable pour l'ECU concerné. Si vous me donnez le firmware "
+                "ou l'identification ECU, je peux rechercher la donnée correspondante dans la base MEMS.");
     }
 
     if (containsAny(text, {QStringLiteral("anormal"), QStringLiteral("normal"),
@@ -703,6 +741,30 @@ QString IaMemsTab::softwareAnswer(const QString &question) const
             return false;
         return containsAny(text, terms);
     };
+
+    if (softwareIntent && containsAny(text, {QStringLiteral("que peut faire"),
+                                              QStringLiteral("que peux faire"),
+                                              QStringLiteral("fonctionnalite"),
+                                              QStringLiteral("fonctionnalites"),
+                                              QStringLiteral("possibilites du logiciel")}))
+        return QStringLiteral(
+            "ECU MEMS Manager sert à dialoguer avec les ECU Rover/Mini MEMS pris en charge, afficher les mesures "
+            "en direct, lire les défauts, effectuer les tests d'actionneurs et réglages supportés, analyser des "
+            "journaux CSV/TXT, consulter les données et la base technique, travailler avec les fonctions ROSCO, "
+            "suivre l'injection lorsque ce mode est disponible et utiliser IA MEMS pour expliquer les mesures, "
+            "l'historique, les hypothèses diagnostiques et le fonctionnement du logiciel.");
+
+    if (softwareIntent && containsAny(text, {QStringLiteral("qui a concu"),
+                                              QStringLiteral("qui a conçu"),
+                                              QStringLiteral("qui a cree"),
+                                              QStringLiteral("qui a créé"),
+                                              QStringLiteral("auteur"),
+                                              QStringLiteral("developpe par"),
+                                              QStringLiteral("développé par")}))
+        return QStringLiteral(
+            "ECU MEMS Manager est le projet développé dans le dépôt mini56. Les travaux d'Andrew Revill, "
+            "RoverMEMS et les autres sources intégrées servent de références techniques : ils ne sont pas les "
+            "concepteurs de MEMS Manager.");
 
     if (wants({QStringLiteral("analyse")}))
         return QStringLiteral(
