@@ -28,7 +28,7 @@ int numericSuffix(const QString &name)
     return match.hasMatch() ? match.captured(1).toInt() : 0;
 }
 
-bool executeSqlLines(QSqlDatabase &database, const QByteArray &sqlBytes, QString *error)
+QString cleanedSqlText(const QByteArray &sqlBytes)
 {
     QString cleaned;
     const QList<QByteArray> lines = sqlBytes.split('\n');
@@ -39,15 +39,64 @@ bool executeSqlLines(QSqlDatabase &database, const QByteArray &sqlBytes, QString
         cleaned += line;
         cleaned += QLatin1Char('\n');
     }
+    return cleaned;
+}
 
+bool hasSqlTerminator(const QString &sql)
+{
+    bool inSingleQuote = false;
+    bool inDoubleQuote = false;
+    for (int i = 0; i < sql.size(); ++i) {
+        const QChar ch = sql.at(i);
+        if (ch == QLatin1Char('\'') && !inDoubleQuote) {
+            if (inSingleQuote && i + 1 < sql.size() && sql.at(i + 1) == QLatin1Char('\'')) {
+                ++i;
+                continue;
+            }
+            inSingleQuote = !inSingleQuote;
+            continue;
+        }
+        if (ch == QLatin1Char('"') && !inSingleQuote) {
+            if (inDoubleQuote && i + 1 < sql.size() && sql.at(i + 1) == QLatin1Char('"')) {
+                ++i;
+                continue;
+            }
+            inDoubleQuote = !inDoubleQuote;
+            continue;
+        }
+        if (ch == QLatin1Char(';') && !inSingleQuote && !inDoubleQuote)
+            return true;
+    }
+    return false;
+}
+
+bool executeLegacySqlLines(QSqlDatabase &database, const QString &sql, QString *error)
+{
+    QSqlQuery query(database);
+    const QStringList lines = sql.split(QLatin1Char('\n'));
+    for (const QString &rawLine : lines) {
+        const QString statement = rawLine.trimmed();
+        if (statement.isEmpty())
+            continue;
+        if (!query.exec(statement)) {
+            if (error)
+                *error = query.lastError().text() + QStringLiteral(" | ") + statement.left(180);
+            return false;
+        }
+    }
+    return true;
+}
+
+bool executeTerminatedSql(QSqlDatabase &database, const QString &sql, QString *error)
+{
     QSqlQuery query(database);
     QString statement;
-    statement.reserve(cleaned.size());
+    statement.reserve(sql.size());
     bool inSingleQuote = false;
     bool inDoubleQuote = false;
 
-    auto executeStatement = [&](const QString &sql) -> bool {
-        const QString trimmed = sql.trimmed();
+    auto executeStatement = [&](const QString &value) -> bool {
+        const QString trimmed = value.trimmed();
         if (trimmed.isEmpty())
             return true;
         if (!query.exec(trimmed)) {
@@ -58,13 +107,13 @@ bool executeSqlLines(QSqlDatabase &database, const QByteArray &sqlBytes, QString
         return true;
     };
 
-    for (int i = 0; i < cleaned.size(); ++i) {
-        const QChar ch = cleaned.at(i);
+    for (int i = 0; i < sql.size(); ++i) {
+        const QChar ch = sql.at(i);
 
         if (ch == QLatin1Char('\'') && !inDoubleQuote) {
-            if (inSingleQuote && i + 1 < cleaned.size() && cleaned.at(i + 1) == QLatin1Char('\'')) {
+            if (inSingleQuote && i + 1 < sql.size() && sql.at(i + 1) == QLatin1Char('\'')) {
                 statement += ch;
-                statement += cleaned.at(++i);
+                statement += sql.at(++i);
                 continue;
             }
             inSingleQuote = !inSingleQuote;
@@ -73,9 +122,9 @@ bool executeSqlLines(QSqlDatabase &database, const QByteArray &sqlBytes, QString
         }
 
         if (ch == QLatin1Char('"') && !inSingleQuote) {
-            if (inDoubleQuote && i + 1 < cleaned.size() && cleaned.at(i + 1) == QLatin1Char('"')) {
+            if (inDoubleQuote && i + 1 < sql.size() && sql.at(i + 1) == QLatin1Char('"')) {
                 statement += ch;
-                statement += cleaned.at(++i);
+                statement += sql.at(++i);
                 continue;
             }
             inDoubleQuote = !inDoubleQuote;
@@ -100,6 +149,20 @@ bool executeSqlLines(QSqlDatabase &database, const QByteArray &sqlBytes, QString
     }
 
     return executeStatement(statement);
+}
+
+bool executeSqlLines(QSqlDatabase &database, const QByteArray &sqlBytes, QString *error)
+{
+    const QString cleaned = cleanedSqlText(sqlBytes);
+
+    // Historical MEMS seed/enrichment files use one complete SQL statement per
+    // line and do not require a trailing semicolon. New expert lots can contain
+    // multiline statements explicitly terminated by ';'. Support both formats
+    // without changing the historical database representation.
+    if (!hasSqlTerminator(cleaned))
+        return executeLegacySqlLines(database, cleaned, error);
+
+    return executeTerminatedSql(database, cleaned, error);
 }
 
 bool executeQz64(QSqlDatabase &database, const QString &path, QString *error)
