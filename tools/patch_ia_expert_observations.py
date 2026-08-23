@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 
+# Deterministic patch used only on the lab-expert-engine branch.
 path = Path('iamemstab.cpp')
 text = path.read_text(encoding='utf-8')
 original = text
