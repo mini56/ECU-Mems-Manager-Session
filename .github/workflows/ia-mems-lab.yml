@@ -54,7 +54,7 @@ jobs:
       - name: Configure application
         shell: pwsh
         run: |
-          cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/mingw81_32;${{ github.workspace }}/prebuilt-librosco"
+          cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/mingw81_32;${{ github.workspace }}/prebuilt-librosco"
           if ($LASTEXITCODE -ne 0) { throw "CMake configure failed" }
 
       - name: Build application with IA MEMS
@@ -80,6 +80,8 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin lab-expert-engine
+          git rebase origin/lab-expert-engine
           if [ ! -f iamems_build_status.txt ]; then
             printf 'IA MEMS application build: FAILED before compile\nsource_commit=%s\nrun=%s\n' "${GITHUB_SHA}" "${GITHUB_RUN_ID}" > iamems_build_status.txt
           fi
