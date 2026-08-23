@@ -74,3 +74,5 @@ jobs:
           fi
           git commit -m "Generate audited Andrew Revill knowledge [skip ci]"
           git push origin HEAD:lab-andrew-revill-knowledge
+
+# Triggered intentionally after workflow installation so generation occurs only on the laboratory branch.
