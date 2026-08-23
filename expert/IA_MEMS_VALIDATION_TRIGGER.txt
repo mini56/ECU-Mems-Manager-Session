@@ -1,0 +1,2 @@
+IA MEMS laboratory validation trigger
+Scope: compact expert runtime + conversational tab + Windows application build
