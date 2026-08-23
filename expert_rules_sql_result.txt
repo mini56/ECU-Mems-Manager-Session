@@ -1,6 +1,6 @@
 Expert rule lots SQL smoke test: FAILED
-source_commit=8523e3b31d92f5139a1649a63db08fc7d21eea93
-run=32661607562
+source_commit=1b51659b83d4e36cbae311fc1c5de8cd2479ce74
+run=32661692854
 Traceback (most recent call last):
   File "<stdin>", line 11, in <module>
 zlib.error: Error -3 while decompressing data: invalid bit length repeat
