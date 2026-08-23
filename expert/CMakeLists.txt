@@ -13,6 +13,8 @@ add_library(mems_expert_engine STATIC
     ExpertEngine.h
     ExpertKnowledgeReader.cpp
     ExpertKnowledgeReader.h
+    ExpertRuntimeDatabase.cpp
+    ExpertRuntimeDatabase.h
     ExpertTypes.h)
 
 target_link_libraries(mems_expert_engine PUBLIC Qt5::Core Qt5::Sql)
@@ -22,9 +24,7 @@ add_executable(mems_expert_selftest ExpertEngineSelfTest.cpp)
 target_link_libraries(mems_expert_selftest PRIVATE mems_expert_engine Qt5::Core Qt5::Sql)
 
 add_executable(mems_expert_reference_selftest
-    ExpertReferenceIntegrationSelfTest.cpp
-    ../database/MemsReferenceDatabase.cpp
-    ../database/MemsReferenceDatabase.h)
+    ExpertReferenceIntegrationSelfTest.cpp)
 target_include_directories(mems_expert_reference_selftest PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/..)
