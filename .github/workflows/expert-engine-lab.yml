@@ -61,8 +61,11 @@ jobs:
         if: steps.ctest.outcome != 'success'
         shell: pwsh
         run: |
-          & .\expert-build\mems_expert_reference_selftest.exe
+          $ErrorActionPreference = "Continue"
+          $output = & .\expert-build\mems_expert_reference_selftest.exe 2>&1
           $code = $LASTEXITCODE
+          $output | ForEach-Object { Write-Host $_ }
+          $output | Out-File -FilePath expert_reference_diagnostic.txt -Encoding utf8
           Write-Host "REFERENCE_SELFTEST_EXIT=$code"
           exit 0
 
