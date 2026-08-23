@@ -8,6 +8,7 @@
 #include <QMainWindow>
 #include <QPainter>
 #include <QPainterPath>
+#include <QPointer>
 #include <QTimer>
 #include <QWidget>
 
@@ -118,10 +119,10 @@ protected:
         p.drawLine(QPointF(c.x() - 18, c.y() + 2), QPointF(c.x() - 5, c.y() + 15));
         p.drawLine(QPointF(c.x() - 5, c.y() + 15), QPointF(c.x() + 23, c.y() - 18));
 
-        QFont st = p.font();
-        st.setBold(true);
-        st.setPointSizeF(9.2);
-        p.setFont(st);
+        QFont stateFont = p.font();
+        stateFont.setBold(true);
+        stateFont.setPointSizeF(9.2);
+        p.setFont(stateFont);
         p.setPen(state);
         p.drawText(QRectF(10, 157, 168, 28), Qt::AlignCenter, disconnectedText());
 
@@ -371,121 +372,149 @@ static QWidget *findErrorsSystemStateCard(QMainWindow *window)
     return nullptr;
 }
 
-static void installOverviewConnectionFix(QMainWindow *window)
+class SystemStateConnectionController : public QObject
 {
-    if (!window || window->property("systemStateConnectionFixInstalled").toBool())
-        return;
+public:
+    explicit SystemStateConnectionController(QMainWindow *window)
+        : QObject(window), m_window(window)
+    {
+        QTimer *timer = new QTimer(this);
+        timer->setInterval(200);
+        QObject::connect(timer, &QTimer::timeout, this, [this]() { syncAll(); });
+        timer->start();
+        syncAll();
+    }
 
-    QWidget *card = findOverviewSystemStateCard(window);
-    if (!card)
-        return;
+private:
+    void ensureOverviewOverlay()
+    {
+        if (!m_window || m_overviewOverlay)
+            return;
 
-    window->setProperty("systemStateConnectionFixInstalled", true);
-    DisconnectedSystemOverlay *overlay = new DisconnectedSystemOverlay(window, card);
-    overlay->setObjectName(QStringLiteral("disconnectedSystemOverlay"));
+        QWidget *card = findOverviewSystemStateCard(m_window);
+        if (!card)
+            return;
 
-    QTimer *timer = new QTimer(overlay);
-    timer->setInterval(200);
-    QObject::connect(timer, &QTimer::timeout, overlay, [overlay]() { overlay->syncState(); });
-    timer->start();
-    overlay->syncState();
-}
+        m_overviewOverlay = new DisconnectedSystemOverlay(m_window, card);
+        m_overviewOverlay->setObjectName(QStringLiteral("disconnectedSystemOverlay"));
+        m_window->setProperty("systemStateConnectionFixInstalled", true);
+    }
 
-static void installErrorsConnectionFix(QMainWindow *window)
-{
-    if (!window || window->property("errorsSystemStateConnectionFixInstalled").toBool())
-        return;
+    void ensureErrorsOverlay()
+    {
+        if (!m_window || m_errorsOverlay)
+            return;
 
-    QWidget *card = findErrorsSystemStateCard(window);
-    if (!card)
-        return;
+        QWidget *card = findErrorsSystemStateCard(m_window);
+        if (!card)
+            return;
 
-    window->setProperty("errorsSystemStateConnectionFixInstalled", true);
-    ErrorsDisconnectedSystemOverlay *overlay = new ErrorsDisconnectedSystemOverlay(window, card);
-    overlay->setObjectName(QStringLiteral("errorsDisconnectedSystemOverlay"));
+        m_errorsOverlay = new ErrorsDisconnectedSystemOverlay(m_window, card);
+        m_errorsOverlay->setObjectName(QStringLiteral("errorsDisconnectedSystemOverlay"));
+        m_window->setProperty("errorsSystemStateConnectionFixInstalled", true);
+    }
 
-    QTimer *timer = new QTimer(overlay);
-    timer->setInterval(200);
-    QObject::connect(timer, &QTimer::timeout, overlay, [overlay]() { overlay->syncState(); });
-    timer->start();
-    overlay->syncState();
-}
+    void ensureBottomOverlays()
+    {
+        if (!m_window || m_systemOverlay)
+            return;
 
-static void installBottomStatusConnectionFix(QMainWindow *window)
-{
-    if (!window || window->property("bottomStatusConnectionFixInstalled").toBool())
-        return;
+        const QList<QLabel*> labels = bottomStatusLabels(m_window);
+        if (labels.size() < 6)
+            return;
 
-    const QList<QLabel*> labels = bottomStatusLabels(window);
-    if (labels.size() < 6)
-        return;
+        QLabel *loopLabel = labels.at(1);
+        QLabel *lambdaLabel = labels.at(2);
+        QLabel *systemLabel = labels.at(3);
+        QLabel *injectLabel = labels.at(4);
+        QLabel *airLabel = labels.at(5);
+        systemLabel->setObjectName(QStringLiteral("uiRebuildSystemStatus"));
 
-    window->setProperty("bottomStatusConnectionFixInstalled", true);
+        m_systemOverlay = new BottomSystemStatusOverlay(m_window, systemLabel);
+        m_loopOverlay = new BottomDisconnectedValueOverlay(
+            m_window, loopLabel, I18n::text(7116).arg(QStringLiteral("--")));
+        m_lambdaOverlay = new BottomDisconnectedValueOverlay(
+            m_window, lambdaLabel, I18n::text(7119).arg(QStringLiteral("--")));
+        m_injectOverlay = new BottomDisconnectedValueOverlay(
+            m_window, injectLabel, I18n::text(7122).arg(QStringLiteral("--")));
+        m_airOverlay = new BottomDisconnectedValueOverlay(
+            m_window, airLabel, I18n::text(7123).arg(QStringLiteral("--")));
+        m_window->setProperty("bottomStatusConnectionFixInstalled", true);
+    }
 
-    QLabel *loopLabel = labels.at(1);
-    QLabel *lambdaLabel = labels.at(2);
-    QLabel *systemLabel = labels.at(3);
-    QLabel *injectLabel = labels.at(4);
-    QLabel *airLabel = labels.at(5);
-    systemLabel->setObjectName(QStringLiteral("uiRebuildSystemStatus"));
+    void syncAll()
+    {
+        if (!m_window)
+            return;
 
-    BottomSystemStatusOverlay *systemOverlay = new BottomSystemStatusOverlay(window, systemLabel);
-    BottomDisconnectedValueOverlay *loopOverlay = new BottomDisconnectedValueOverlay(
-        window, loopLabel, I18n::text(7116).arg(QStringLiteral("--")));
-    BottomDisconnectedValueOverlay *lambdaOverlay = new BottomDisconnectedValueOverlay(
-        window, lambdaLabel, I18n::text(7119).arg(QStringLiteral("--")));
-    BottomDisconnectedValueOverlay *injectOverlay = new BottomDisconnectedValueOverlay(
-        window, injectLabel, I18n::text(7122).arg(QStringLiteral("--")));
-    BottomDisconnectedValueOverlay *airOverlay = new BottomDisconnectedValueOverlay(
-        window, airLabel, I18n::text(7123).arg(QStringLiteral("--")));
+        ensureOverviewOverlay();
+        ensureErrorsOverlay();
+        ensureBottomOverlays();
 
-    QFrame *bar = window->findChild<QFrame*>(QStringLiteral("uiRebuildStatus"));
-    QTimer *timer = new QTimer(bar ? static_cast<QObject*>(bar) : static_cast<QObject*>(systemOverlay));
-    timer->setInterval(200);
-    QObject::connect(timer, &QTimer::timeout, systemOverlay,
-                     [systemOverlay, loopOverlay, lambdaOverlay, injectOverlay, airOverlay]() {
-        systemOverlay->syncState();
-        loopOverlay->syncState();
-        lambdaOverlay->syncState();
-        injectOverlay->syncState();
-        airOverlay->syncState();
-    });
-    timer->start();
+        if (m_overviewOverlay)
+            m_overviewOverlay->syncState();
+        if (m_errorsOverlay)
+            m_errorsOverlay->syncState();
+        if (m_systemOverlay)
+            m_systemOverlay->syncState();
+        if (m_loopOverlay)
+            m_loopOverlay->syncState();
+        if (m_lambdaOverlay)
+            m_lambdaOverlay->syncState();
+        if (m_injectOverlay)
+            m_injectOverlay->syncState();
+        if (m_airOverlay)
+            m_airOverlay->syncState();
+    }
 
-    systemOverlay->syncState();
-    loopOverlay->syncState();
-    lambdaOverlay->syncState();
-    injectOverlay->syncState();
-    airOverlay->syncState();
-}
-
-static void installSystemStateConnectionFix(QMainWindow *window)
-{
-    installOverviewConnectionFix(window);
-    installErrorsConnectionFix(window);
-    installBottomStatusConnectionFix(window);
-}
+    QPointer<QMainWindow> m_window;
+    QPointer<DisconnectedSystemOverlay> m_overviewOverlay;
+    QPointer<ErrorsDisconnectedSystemOverlay> m_errorsOverlay;
+    QPointer<BottomSystemStatusOverlay> m_systemOverlay;
+    QPointer<BottomDisconnectedValueOverlay> m_loopOverlay;
+    QPointer<BottomDisconnectedValueOverlay> m_lambdaOverlay;
+    QPointer<BottomDisconnectedValueOverlay> m_injectOverlay;
+    QPointer<BottomDisconnectedValueOverlay> m_airOverlay;
+};
 
 class SystemStateConnectionFixInstaller : public QObject
 {
 public:
-    explicit SystemStateConnectionFixInstaller(QObject *parent = nullptr) : QObject(parent) {}
+    explicit SystemStateConnectionFixInstaller(QApplication *app)
+        : QObject(app), m_app(app)
+    {
+    }
 
 protected:
     bool eventFilter(QObject *watched, QEvent *event) override
     {
+        if (!event || (event->type() != QEvent::Show && event->type() != QEvent::Polish))
+            return QObject::eventFilter(watched, event);
+
         QMainWindow *window = qobject_cast<QMainWindow*>(watched);
         if (!window || QString::fromLatin1(window->metaObject()->className()) != QStringLiteral("MainWindow"))
             return QObject::eventFilter(watched, event);
 
-        if (event->type() == QEvent::Show || event->type() == QEvent::Polish)
-        {
-            QTimer::singleShot(300, window, [window]() { installSystemStateConnectionFix(window); });
-            QTimer::singleShot(1000, window, [window]() { installSystemStateConnectionFix(window); });
-        }
+        QPointer<QMainWindow> guardedWindow(window);
+        QTimer::singleShot(300, window, [guardedWindow]() {
+            if (!guardedWindow || guardedWindow->findChild<SystemStateConnectionController*>())
+                return;
+            SystemStateConnectionController *controller = new SystemStateConnectionController(guardedWindow);
+            controller->setObjectName(QStringLiteral("systemStateConnectionController"));
+        });
+
+        // After locating MainWindow, no application-wide event filtering is
+        // required. The controller owns one local 200 ms timer and retries the
+        // late-created visual targets itself.
+        if (m_app)
+            m_app->removeEventFilter(this);
+        deleteLater();
 
         return QObject::eventFilter(watched, event);
     }
+
+private:
+    QApplication *m_app;
 };
 
 void installSystemStateConnectionFixInstaller()
