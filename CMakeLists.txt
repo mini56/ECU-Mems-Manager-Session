@@ -77,7 +77,9 @@ add_custom_command(TARGET ${PNAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/translations/pt" "$<TARGET_FILE_DIR:${PNAME}>/translations/pt"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/translations/de" "$<TARGET_FILE_DIR:${PNAME}>/translations/de"
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PNAME}>/database"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/database/reference" "$<TARGET_FILE_DIR:${PNAME}>/database/reference")
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/database/reference" "$<TARGET_FILE_DIR:${PNAME}>/database/reference"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PNAME}>/ai"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/ai" "$<TARGET_FILE_DIR:${PNAME}>/ai")
 
 option(MEMS_RUN_REFERENCE_SELFTEST_POST_BUILD "Run the heavyweight full reference search self-test after the application build" ON)
 if(MEMS_RUN_REFERENCE_SELFTEST_POST_BUILD)
