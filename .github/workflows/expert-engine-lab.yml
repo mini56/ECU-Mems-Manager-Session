@@ -15,7 +15,7 @@ on:
       - ".github/workflows/expert-engine-lab.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: expert-engine-lab
@@ -23,6 +23,7 @@ concurrency:
 
 jobs:
   expert-selftest-windows:
+    if: github.actor != 'github-actions[bot]'
     runs-on: windows-latest
     steps:
       - name: Checkout expert laboratory branch
@@ -71,6 +72,7 @@ jobs:
         run: exit 1
 
   ia-mems-app-build:
+    if: github.actor != 'github-actions[bot]'
     runs-on: windows-latest
     steps:
       - name: Checkout IA MEMS source commit
@@ -117,4 +119,38 @@ jobs:
           }
           Write-Host "IA_MEMS_APPLICATION_BUILD=OK"
 
-# Validation trigger: SQL loader fix + verified 70 C expert condition.
+  record-validation:
+    if: always() && github.actor != 'github-actions[bot]'
+    needs: [expert-selftest-windows, ia-mems-app-build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Record combined validation result
+        shell: bash
+        env:
+          EXPERT_RESULT: ${{ needs.expert-selftest-windows.result }}
+          APP_RESULT: ${{ needs.ia-mems-app-build.result }}
+        run: |
+          set -euo pipefail
+          if [ "$EXPERT_RESULT" = "success" ] && [ "$APP_RESULT" = "success" ]; then
+            status="OK"
+          else
+            status="FAILED"
+          fi
+          tmp=$(mktemp)
+          printf 'IA MEMS laboratory validation: %s\nsource_commit=%s\nrun=%s\nexpert_selftest=%s\napplication_build=%s\n' \
+            "$status" "$GITHUB_SHA" "$GITHUB_RUN_ID" "$EXPERT_RESULT" "$APP_RESULT" > "$tmp"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin lab-expert-engine
+          git checkout -B lab-expert-engine origin/lab-expert-engine
+          cp "$tmp" expert/LAB_VALIDATION_STATUS.txt
+          if [ "$status" = "OK" ]; then
+            git rm -f --ignore-unmatch expert/SELFTEST_FAILED.txt
+          fi
+          git add -- expert/LAB_VALIDATION_STATUS.txt
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Record IA MEMS laboratory validation [skip ci]"
+          git push origin HEAD:lab-expert-engine
