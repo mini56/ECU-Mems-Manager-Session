@@ -28,6 +28,7 @@ class LocalAiClient;
 // including the main reference loader and lazy local-AI startup behavior.
 // Final lab package validation must use this exact source revision.
 // Validation rerun after excluding raw archive lot 1600 from 32-bit runtime.
+// User runtime rerun includes detailed llama-server startup diagnostics.
 class IaMemsTab final : public QWidget
 {
     Q_OBJECT
