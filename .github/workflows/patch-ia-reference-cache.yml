@@ -8,6 +8,7 @@ on:
       - "tools/patch_ia_runtime_wiring.py"
       - "tools/patch_ia_conversation_routing.py"
       - "tools/patch_ia_conversation_llm.py"
+      - "tools/patch_ia_expert_observations.py"
       - ".github/workflows/patch-ia-reference-cache.yml"
 
 permissions:
@@ -32,6 +33,7 @@ jobs:
           python tools/patch_ia_runtime_wiring.py
           python tools/patch_ia_conversation_routing.py
           python tools/patch_ia_conversation_llm.py
+          python tools/patch_ia_expert_observations.py
 
       - name: Commit patched IA MEMS sources
         shell: bash
@@ -48,5 +50,5 @@ jobs:
           git pull --rebase origin lab-expert-engine
           git stash pop
           git add -- database/MemsReferenceDatabase.cpp iamemstab.cpp CMakeLists.txt
-          git commit -m "Wire local conversational model into IA MEMS [skip ci]"
+          git commit -m "Extend IA MEMS expert observations [skip ci]"
           git push origin HEAD:lab-expert-engine
