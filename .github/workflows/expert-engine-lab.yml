@@ -120,7 +120,7 @@ jobs:
       - name: Configure main application
         shell: pwsh
         run: |
-          cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/mingw81_32;${{ github.workspace }}/prebuilt-librosco"
+          cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/mingw81_32;${{ github.workspace }}/prebuilt-librosco"
           if ($LASTEXITCODE -ne 0) { throw "CMake configure failed" }
 
       - name: Compile main application with IA MEMS
