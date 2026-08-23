@@ -15,6 +15,7 @@
 #include <QString>
 #include <QHash>
 #include <QFrame>
+#include <QShowEvent>
 #include "commonunits.h"
 
 class OptionsDialog : public QDialog
@@ -33,6 +34,7 @@ public:
     bool getLanguageChanged() const { return m_languageChanged; }
 
 protected:
+    void showEvent(QShowEvent *event) override;
     void accept();
 
 private:

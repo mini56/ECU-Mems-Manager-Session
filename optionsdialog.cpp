@@ -64,6 +64,22 @@ m_settingsGroupName("Settings"), m_settingSerialDev("SerialDevice"), m_settingTe
   applyDarkNativeTitleBar(this);
 }
 
+void OptionsDialog::showEvent(QShowEvent *event)
+{
+  QDialog::showEvent(event);
+
+  // The ECU worker can spend several seconds in a MEMS 1.9 slow
+  // initialisation. Do not allow the shared serial-device name to be changed
+  // during that interval; every other option remains available.
+  QWidget *owner = parentWidget();
+  const bool connectionInProgress =
+      owner && owner->property("ecuConnectInProgress").toBool();
+  if (m_serialDeviceLabel)
+    m_serialDeviceLabel->setEnabled(!connectionInProgress);
+  if (m_serialDeviceBox)
+    m_serialDeviceBox->setEnabled(!connectionInProgress);
+}
+
 /**
  * Instantiates widgets, connects to their signals, and places them on the form.
  */
