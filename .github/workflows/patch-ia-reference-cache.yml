@@ -6,6 +6,7 @@ on:
     paths:
       - "tools/patch_reference_cache_revision.py"
       - "tools/patch_ia_runtime_wiring.py"
+      - "tools/patch_ia_conversation_routing.py"
       - ".github/workflows/patch-ia-reference-cache.yml"
 
 permissions:
@@ -28,6 +29,7 @@ jobs:
         run: |
           python tools/patch_reference_cache_revision.py
           python tools/patch_ia_runtime_wiring.py
+          python tools/patch_ia_conversation_routing.py
 
       - name: Commit patched IA MEMS sources
         shell: bash
@@ -44,5 +46,5 @@ jobs:
           git pull --rebase origin lab-expert-engine
           git stash pop
           git add -- database/MemsReferenceDatabase.cpp iamemstab.cpp CMakeLists.txt
-          git commit -m "Use compact runtime database for IA MEMS [skip ci]"
+          git commit -m "Refine IA MEMS conversational routing [skip ci]"
           git push origin HEAD:lab-expert-engine
