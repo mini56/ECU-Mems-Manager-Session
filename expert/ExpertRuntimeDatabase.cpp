@@ -30,19 +30,76 @@ int numericSuffix(const QString &name)
 
 bool executeSqlLines(QSqlDatabase &database, const QByteArray &sqlBytes, QString *error)
 {
-    QSqlQuery query(database);
-    const QList<QByteArray> statements = sqlBytes.split('\n');
-    for (const QByteArray &line : statements) {
-        const QString statement = QString::fromUtf8(line).trimmed();
-        if (statement.isEmpty() || statement.startsWith(QStringLiteral("--")))
+    QString cleaned;
+    const QList<QByteArray> lines = sqlBytes.split('\n');
+    for (const QByteArray &rawLine : lines) {
+        const QString line = QString::fromUtf8(rawLine);
+        if (line.trimmed().startsWith(QStringLiteral("--")))
             continue;
-        if (!query.exec(statement)) {
+        cleaned += line;
+        cleaned += QLatin1Char('\n');
+    }
+
+    QSqlQuery query(database);
+    QString statement;
+    statement.reserve(cleaned.size());
+    bool inSingleQuote = false;
+    bool inDoubleQuote = false;
+
+    auto executeStatement = [&](const QString &sql) -> bool {
+        const QString trimmed = sql.trimmed();
+        if (trimmed.isEmpty())
+            return true;
+        if (!query.exec(trimmed)) {
             if (error)
-                *error = query.lastError().text() + QStringLiteral(" | ") + statement.left(180);
+                *error = query.lastError().text() + QStringLiteral(" | ") + trimmed.left(180);
             return false;
         }
+        return true;
+    };
+
+    for (int i = 0; i < cleaned.size(); ++i) {
+        const QChar ch = cleaned.at(i);
+
+        if (ch == QLatin1Char('\'') && !inDoubleQuote) {
+            if (inSingleQuote && i + 1 < cleaned.size() && cleaned.at(i + 1) == QLatin1Char('\'')) {
+                statement += ch;
+                statement += cleaned.at(++i);
+                continue;
+            }
+            inSingleQuote = !inSingleQuote;
+            statement += ch;
+            continue;
+        }
+
+        if (ch == QLatin1Char('"') && !inSingleQuote) {
+            if (inDoubleQuote && i + 1 < cleaned.size() && cleaned.at(i + 1) == QLatin1Char('"')) {
+                statement += ch;
+                statement += cleaned.at(++i);
+                continue;
+            }
+            inDoubleQuote = !inDoubleQuote;
+            statement += ch;
+            continue;
+        }
+
+        if (ch == QLatin1Char(';') && !inSingleQuote && !inDoubleQuote) {
+            if (!executeStatement(statement))
+                return false;
+            statement.clear();
+            continue;
+        }
+
+        statement += ch;
     }
-    return true;
+
+    if (inSingleQuote || inDoubleQuote) {
+        if (error)
+            *error = QStringLiteral("Instruction SQL incomplète : guillemet non fermé");
+        return false;
+    }
+
+    return executeStatement(statement);
 }
 
 bool executeQz64(QSqlDatabase &database, const QString &path, QString *error)
