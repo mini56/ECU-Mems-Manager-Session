@@ -55,11 +55,25 @@ jobs:
       - name: Run expert engine self-test
         run: ctest --test-dir expert-build --output-on-failure
 
+      - name: Record failed laboratory self-test
+        if: failure()
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'Expert engine self-test: FAILED\nValidated source commit: %s\nWorkflow run: %s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > expert/SELFTEST_FAILED.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- expert/SELFTEST_FAILED.txt
+          git commit -m "Record expert engine self-test failure [skip ci]"
+          git push origin HEAD:lab-expert-engine
+
       - name: Record successful laboratory self-test
+        if: success()
         shell: bash
         run: |
           set -euo pipefail
           printf 'Expert engine self-test: OK\nValidated source commit: %s\nWorkflow run: %s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > expert/SELFTEST_OK.txt
+          git rm -f --ignore-unmatch expert/SELFTEST_FAILED.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -- expert/SELFTEST_OK.txt
