@@ -28,6 +28,35 @@ int numericSuffix(const QString &name)
     return match.hasMatch() ? match.captured(1).toInt() : 0;
 }
 
+bool looksLikeBase64Text(const QByteArray &data)
+{
+    const QByteArray trimmed = data.trimmed();
+    if (trimmed.isEmpty())
+        return false;
+    for (char value : trimmed) {
+        const unsigned char c = static_cast<unsigned char>(value);
+        const bool base64 = (c >= 'A' && c <= 'Z')
+            || (c >= 'a' && c <= 'z')
+            || (c >= '0' && c <= '9')
+            || c == '+' || c == '/' || c == '='
+            || c == '\r' || c == '\n' || c == '\t' || c == ' ';
+        if (!base64)
+            return false;
+    }
+    return true;
+}
+
+QByteArray uncompressQz64Payload(const QByteArray &fileBytes)
+{
+    if (looksLikeBase64Text(fileBytes))
+        return qUncompress(QByteArray::fromBase64(fileBytes.trimmed()));
+
+    // Rover archive lot 1620 is stored as the raw qCompress byte stream rather
+    // than as textual Base64. Keep the original data intact and decode that
+    // historical packaging directly.
+    return qUncompress(fileBytes);
+}
+
 QString cleanedSqlText(const QByteArray &sqlBytes)
 {
     QString cleaned;
@@ -168,12 +197,12 @@ bool executeSqlLines(QSqlDatabase &database, const QByteArray &sqlBytes, QString
 bool executeQz64(QSqlDatabase &database, const QString &path, QString *error)
 {
     QFile file(path);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    if (!file.open(QIODevice::ReadOnly)) {
         if (error)
             *error = QStringLiteral("Impossible d'ouvrir %1").arg(path);
         return false;
     }
-    const QByteArray sqlBytes = qUncompress(QByteArray::fromBase64(file.readAll().trimmed()));
+    const QByteArray sqlBytes = uncompressQz64Payload(file.readAll());
     if (sqlBytes.isEmpty()) {
         if (error)
             *error = QStringLiteral("QZ64 vide ou invalide: %1").arg(path);
