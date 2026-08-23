@@ -3,12 +3,12 @@
 
 The generated reference data keeps URLs, family, firmware code, part-number hints,
 file kind and library area. It does not download ROM/ASM/PETA payloads into the
-application package.
+application package. Crawling is strictly confined to the requested MEMS family
+subtree so MEMS2J/MEMS3 cannot leak into the 1.2/1.3/1.6/1.9 knowledge set.
 """
 from __future__ import annotations
 
 import argparse
-import html
 import re
 import time
 import urllib.parse
@@ -73,9 +73,8 @@ def list_dir(url):
         if not href or href.startswith(("?", "#")) or href in ("../", "./"):
             continue
         absolute = urllib.parse.urljoin(url, href)
-        if not absolute.startswith(ROOT):
-            continue
-        result.append((absolute, urllib.parse.unquote(label or href)))
+        if absolute.startswith(ROOT):
+            result.append((absolute, urllib.parse.unquote(label or href)))
     return result
 
 
@@ -98,15 +97,12 @@ def part_numbers(text):
 
 
 def firmware_code(text):
-    # Prefer the filename stem when it is itself a firmware ID (archive files).
     stem = Path(text).stem.upper()
     if re.fullmatch(r"[A-Z]{3,7}[0-9]{3,4}", stem):
         return stem
-    # Identified-library names usually contain a software ID separated by dashes.
     candidates = FW_RE.findall(text.upper().replace("_", " "))
-    ignored_prefixes = ("MEMS", "ROVER", "MGROVER")
     for value in candidates:
-        if not value.startswith(ignored_prefixes):
+        if not value.startswith(("MEMS", "ROVER", "MGROVER")):
             return value
     return None
 
@@ -127,12 +123,15 @@ def crawl(family, area, relative_root):
             print(f"WARN list {url}: {exc}")
             continue
         for child, label in entries:
+            # Critical scope guard: ignore parent links and all sibling families.
+            if child == start or not child.startswith(start):
+                continue
             if child.endswith("/"):
                 if child not in seen:
                     pending.append(child)
                 continue
             filename = urllib.parse.unquote(urllib.parse.urlparse(child).path.rsplit("/", 1)[-1])
-            rel = urllib.parse.unquote(child[len(ROOT):]) if child.startswith(ROOT) else filename
+            rel = urllib.parse.unquote(child[len(ROOT):])
             rows.append((
                 SOURCE_KEY, family, area, rel, filename, kind(filename),
                 firmware_code(filename), part_numbers(filename), child,
@@ -146,16 +145,15 @@ def build(output_dir):
     all_rows = []
     coverage = []
     for family, area, relative in TARGETS:
+        target_url = urllib.parse.urljoin(ROOT, urllib.parse.quote(relative, safe="/"))
         rows = crawl(family, area, relative)
         all_rows.extend(rows)
-        coverage.append((SOURCE_KEY, family, area, urllib.parse.urljoin(ROOT, urllib.parse.quote(relative, safe="/")), "indexed" if rows else "empty_or_unreachable", len(rows), "source_externe"))
+        coverage.append((SOURCE_KEY, family, area, target_url, "indexed" if rows else "empty_or_unreachable", len(rows), "source_externe"))
         print(f"{family} {area}: {len(rows)}")
 
-    # Andrew's current top-level MapFirmwareLibrary does not expose a Rover MEMS 1.2 directory.
     coverage.append((SOURCE_KEY, "1.2", "identified_library", ROOT + "Rover%20MEMS%201.2/", "not_listed_at_top_level", 0, "source_externe"))
     coverage.append((SOURCE_KEY, "1.2", "firmware_archive", ROOT + "Firmware%20Archive/Rover%20MEMS%201.2/", "not_confirmed_by_index", 0, "source_externe"))
 
-    # Deduplicate exact URLs while preserving first classification.
     dedup = {}
     for row in all_rows:
         dedup.setdefault(row[8], row)
