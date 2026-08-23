@@ -1,0 +1,55 @@
+name: Expert engine laboratory self-test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["lab-expert-engine"]
+    paths:
+      - "expert/**"
+      - ".github/workflows/expert-engine-lab.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: expert-engine-lab
+  cancel-in-progress: true
+
+jobs:
+  expert-selftest-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout expert laboratory branch
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install aqtinstall
+        run: pip install aqtinstall
+
+      - name: Install Qt 5.15.2 MinGW 32-bit
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          & aqt install-qt windows desktop 5.15.2 win32_mingw81 -O C:\Qt
+          if ($LASTEXITCODE -ne 0) { throw "Qt installation failed" }
+          & aqt install-tool windows desktop tools_mingw qt.tools.win32_mingw810 -O C:\Qt
+          if ($LASTEXITCODE -ne 0) { throw "MinGW installation failed" }
+
+      - name: Add Qt and MinGW to PATH
+        shell: pwsh
+        run: |
+          "C:\Qt\Tools\mingw810_32\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          "C:\Qt\5.15.2\mingw81_32\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Configure expert engine self-test
+        run: cmake -S expert -B expert-build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/mingw81_32"
+
+      - name: Build expert engine self-test
+        run: cmake --build expert-build
+
+      - name: Run expert engine self-test
+        run: ctest --test-dir expert-build --output-on-failure
