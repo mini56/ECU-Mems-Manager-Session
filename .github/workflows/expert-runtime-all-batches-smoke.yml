@@ -31,23 +31,34 @@ jobs:
 
           root = pathlib.Path('database/reference')
           manifest = json.loads((root / 'manifest.json').read_text(encoding='utf-8'))
+          base64_chars = set(b'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=\r\n\t ')
 
-          def quncompress_qz64_bytes(encoded: bytes, label: str) -> bytes:
-              try:
-                  packed = base64.b64decode(encoded.strip())
-              except Exception as exc:
-                  raise RuntimeError(f'{label}: base64 decode failed: {exc}') from exc
+          def looks_like_base64_text(data: bytes) -> bool:
+              stripped = data.strip()
+              return bool(stripped) and all(byte in base64_chars for byte in stripped)
+
+          def quncompress_qz64_bytes(file_bytes: bytes, label: str) -> bytes:
+              if looks_like_base64_text(file_bytes):
+                  try:
+                      packed = base64.b64decode(file_bytes.strip())
+                  except Exception as exc:
+                      raise RuntimeError(f'{label}: base64 decode failed: {exc}') from exc
+                  packaging = 'base64-qcompress'
+              else:
+                  packed = file_bytes
+                  packaging = 'binary-qcompress'
+
               if len(packed) < 6:
-                  raise RuntimeError(f'{label}: packed stream too short')
+                  raise RuntimeError(f'{label}: packed stream too short ({packaging})')
               expected = struct.unpack('>I', packed[:4])[0]
               try:
                   raw = zlib.decompress(packed[4:])
               except Exception as exc:
                   prefix = packed[:12].hex()
-                  raise RuntimeError(f'{label}: zlib decompress failed: {exc}; packed_prefix={prefix}; expected={expected}') from exc
+                  raise RuntimeError(f'{label}: zlib decompress failed ({packaging}): {exc}; packed_prefix={prefix}; expected={expected}') from exc
               if len(raw) != expected:
-                  raise RuntimeError(f'{label}: qCompress size mismatch expected={expected} got={len(raw)}')
-              return raw
+                  raise RuntimeError(f'{label}: qCompress size mismatch expected={expected} got={len(raw)} ({packaging})')
+              return raw, packaging
 
           db = sqlite3.connect(':memory:', isolation_level=None)
           report = []
@@ -56,9 +67,10 @@ jobs:
           if not parts:
               raise RuntimeError('seed parts missing')
           seed_encoded = b''.join(p.read_bytes().strip() for p in parts)
-          seed_sql = quncompress_qz64_bytes(seed_encoded, 'seed').decode('utf-8')
-          db.executescript(seed_sql)
-          report.append({'item': 'seed', 'bytes': len(seed_sql.encode('utf-8'))})
+          seed_sql, seed_packaging = quncompress_qz64_bytes(seed_encoded, 'seed')
+          seed_text = seed_sql.decode('utf-8')
+          db.executescript(seed_text)
+          report.append({'item': 'seed', 'bytes': len(seed_sql), 'packaging': seed_packaging})
 
           for batch in manifest['research_enrichment_batches']:
               if batch == 'research_enrichment_1600.qz64':
@@ -67,12 +79,12 @@ jobs:
               path = root / batch
               if not path.exists():
                   raise RuntimeError(f'{batch}: file missing')
-              sql_bytes = quncompress_qz64_bytes(path.read_bytes(), batch)
+              sql_bytes, packaging = quncompress_qz64_bytes(path.read_bytes(), batch)
               try:
                   db.executescript(sql_bytes.decode('utf-8'))
               except Exception as exc:
                   raise RuntimeError(f'{batch}: SQL execution failed: {exc}') from exc
-              report.append({'item': batch, 'bytes': len(sql_bytes), 'status': 'OK'})
+              report.append({'item': batch, 'bytes': len(sql_bytes), 'packaging': packaging, 'status': 'OK'})
 
           tables = db.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table'").fetchone()[0]
           rules = db.execute("SELECT COUNT(*) FROM mems_expert_rule").fetchone()[0]
