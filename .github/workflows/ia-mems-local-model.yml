@@ -168,3 +168,5 @@ jobs:
         if: steps.localai.outcome != 'success'
         shell: bash
         run: exit 1
+
+# Explicit smoke-test trigger for the real local conversational model.
