@@ -12,6 +12,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: expert-rule-sql-smoke
+  cancel-in-progress: true
+
 jobs:
   validate-rules:
     if: github.actor != 'github-actions[bot]'
@@ -29,11 +33,9 @@ jobs:
           set +e
           python - <<'PY' > expert_rules_sql_trace.txt 2>&1
           import base64, pathlib, sqlite3, struct, zlib, json
-
           root = pathlib.Path('database/reference')
           db = sqlite3.connect(':memory:')
           report = []
-
           for name in ('research_enrichment_1640.qz64', 'research_enrichment_1650.qz64'):
               encoded = root.joinpath(name).read_bytes().strip()
               packed = base64.b64decode(encoded)
@@ -55,10 +57,8 @@ jobs:
                       raise RuntimeError(f'{name}:{line_no}: {exc} | {statement[:240]}') from exc
                   executed += 1
               report.append({'file': name, 'bytes': len(sql), 'statements': executed})
-
           def scalar(sql):
               return db.execute(sql).fetchone()[0]
-
           counts = {
               'rules': scalar('SELECT COUNT(*) FROM mems_expert_rule'),
               'conditions': scalar('SELECT COUNT(*) FROM mems_expert_rule_condition'),
@@ -87,20 +87,18 @@ jobs:
             printf 'Expert rule lots SQL smoke test: FAILED\nsource_commit=%s\nrun=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID"
             cat expert_rules_sql_trace.txt 2>/dev/null || true
           } > expert_rules_sql_result.txt
-      - name: Commit smoke-test result
+      - name: Publish smoke-test result
         if: always()
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin lab-expert-engine
-          git rebase origin/lab-expert-engine
           git add -- expert_rules_sql_result.txt
-          if ! git diff --cached --quiet; then
-            git commit -m "Record expert rule SQL smoke test [skip ci]"
-            git push origin HEAD:lab-expert-engine
-          fi
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Record expert rule SQL smoke test [skip ci]"
+          git pull --rebase origin lab-expert-engine
+          git push origin HEAD:lab-expert-engine
       - name: Fail workflow if SQL smoke test failed
         if: steps.smoke.outcome != 'success'
         shell: bash
