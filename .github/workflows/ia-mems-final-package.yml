@@ -213,6 +213,7 @@ jobs:
           git rm -f --ignore-unmatch IA_MEMS_FINAL_PACKAGE_FAILED.txt
           git add -f -- IA_MEMS_FINAL_PACKAGE_OK.txt
           git commit -m "Validate complete IA MEMS Windows package [skip ci]" || exit 0
+          git reset --hard HEAD
           git pull --rebase origin lab-expert-engine
           git push origin HEAD:lab-expert-engine
 
@@ -226,5 +227,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -f -- IA_MEMS_FINAL_PACKAGE_FAILED.txt
           git commit -m "Record failed IA MEMS Windows package [skip ci]" || exit 0
+          git reset --hard HEAD
           git pull --rebase origin lab-expert-engine
           git push origin HEAD:lab-expert-engine
