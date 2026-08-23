@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "database_revision": 19,
+  "database_revision": 20,
   "mode": "offline_read_only",
   "scope": [
     "MEMS 1.2",
@@ -39,7 +39,8 @@
     "research_enrichment_1610.qz64",
     "research_enrichment_1620.qz64",
     "research_enrichment_1630.qz64",
-    "research_enrichment_1640.qz64"
+    "research_enrichment_1640.qz64",
+    "research_enrichment_1650.qz64"
   ],
   "verification_levels": [
     "verifie_constructeur",
