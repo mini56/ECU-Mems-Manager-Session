@@ -1,3 +1,4 @@
+#include "ExpertEngine.h"
 #include "ExpertKnowledgeReader.h"
 #include "ExpertRuntimeDatabase.h"
 
@@ -33,7 +34,7 @@ bool tableExists(const QString &databasePath, const QString &table)
     return found;
 }
 
-bool manifestContains1640()
+bool manifestContains1650()
 {
     QFile file(QCoreApplication::applicationDirPath() + QStringLiteral("/database/reference/manifest.json"));
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -42,14 +43,16 @@ bool manifestContains1640()
     if (!document.isObject())
         return false;
     const QJsonObject root = document.object();
-    if (root.value(QStringLiteral("database_revision")).toInt() < 19)
+    if (root.value(QStringLiteral("database_revision")).toInt() < 20)
         return false;
     const QJsonArray batches = root.value(QStringLiteral("research_enrichment_batches")).toArray();
+    bool found1640 = false;
+    bool found1650 = false;
     for (const QJsonValue &value : batches) {
-        if (value.toString() == QStringLiteral("research_enrichment_1640.qz64"))
-            return true;
+        found1640 = found1640 || value.toString() == QStringLiteral("research_enrichment_1640.qz64");
+        found1650 = found1650 || value.toString() == QStringLiteral("research_enrichment_1650.qz64");
     }
-    return false;
+    return found1640 && found1650;
 }
 
 }
@@ -61,8 +64,8 @@ int main(int argc, char **argv)
     QCoreApplication::setApplicationName(QStringLiteral("runtime-selftest-%1").arg(QUuid::createUuid().toString()));
     QStandardPaths::setTestModeEnabled(true);
 
-    if (!manifestContains1640()) {
-        qCritical() << "Expert runtime manifest does not contain revision 19 / batch 1640";
+    if (!manifestContains1650()) {
+        qCritical() << "Expert runtime manifest does not contain revision 20 / batches 1640+1650";
         return 1;
     }
 
@@ -132,14 +135,71 @@ int main(int argc, char **argv)
         return 11;
     }
 
-    if (!reader.rules(context).isEmpty()) {
-        qCritical() << "Batch 1640 must define schema only; no diagnostic rule should be silently invented yet";
-        return 12;
+    const QList<ExpertRule> rules = reader.rules(context);
+    bool foundActiveDtc = false;
+    bool foundDwell = false;
+    for (const ExpertRule &rule : rules) {
+        if (rule.ruleKey == QStringLiteral("active_ecu_faults")) {
+            foundActiveDtc = true;
+            if (rule.verificationLevel != QStringLiteral("decoded_by_project")) {
+                qCritical() << "DTC rule provenance is wrong" << rule.verificationLevel;
+                return 12;
+            }
+        }
+        if (rule.ruleKey == QStringLiteral("coil_dwell_outside_near14v")) {
+            foundDwell = true;
+            if (rule.verificationLevel != QStringLiteral("plausible")) {
+                qCritical() << "Dwell indicative rule was promoted unexpectedly" << rule.verificationLevel;
+                return 13;
+            }
+        }
+    }
+    if (!foundActiveDtc || !foundDwell) {
+        qCritical() << "Initial expert rules from batch 1650 are missing";
+        return 14;
+    }
+
+    ExpertEngine engine;
+    engine.setContext(context);
+    engine.setKnowledgeReader(&reader);
+    for (int i = 0; i < 5; ++i) {
+        ExpertObservation sample;
+        sample.timestampMs = 1000 + i * 1000;
+        sample.values.insert(QStringLiteral("fault_mask"), 1.0);
+        sample.values.insert(QStringLiteral("battery_v"), 14.0);
+        sample.values.insert(QStringLiteral("coil_time_ms"), 3.6);
+        sample.values.insert(QStringLiteral("short_term_trim_pct"), 0.0);
+        sample.values.insert(QStringLiteral("long_term_trim_pct"), 0.0);
+        sample.values.insert(QStringLiteral("coolant_c"), 85.0);
+        sample.values.insert(QStringLiteral("idle_switch_closed"), 0.0);
+        sample.values.insert(QStringLiteral("lambda_fault_active"), 0.0);
+        sample.values.insert(QStringLiteral("tps_fault_active"), 0.0);
+        engine.addSample(sample);
+    }
+
+    const ExpertAnalysisResult result = engine.analyze();
+    bool dtcStrong = false;
+    bool dwellWeak = false;
+    for (const ExpertHypothesis &hypothesis : result.hypotheses) {
+        if (hypothesis.ruleKey == QStringLiteral("active_ecu_faults"))
+            dtcStrong = hypothesis.strongConclusionAllowed && hypothesis.confidence >= 0.70;
+        if (hypothesis.ruleKey == QStringLiteral("coil_dwell_outside_near14v"))
+            dwellWeak = !hypothesis.strongConclusionAllowed && hypothesis.confidence > 0.0;
+    }
+    if (!dtcStrong) {
+        qCritical() << "Decoded-project DTC rule did not produce expected strong hypothesis";
+        return 15;
+    }
+    if (!dwellWeak) {
+        qCritical() << "Plausible dwell rule did not retain its conclusion guard";
+        return 16;
     }
 
     qInfo() << "IA MEMS compact expert/reference self-test OK"
             << "revision=" << reference.manifestRevision()
             << "database=" << path
-            << "facts=" << facts.size();
+            << "facts=" << facts.size()
+            << "rules=" << rules.size()
+            << "hypotheses=" << result.hypotheses.size();
     return 0;
 }
