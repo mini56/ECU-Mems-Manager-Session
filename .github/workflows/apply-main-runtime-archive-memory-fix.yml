@@ -1,0 +1,52 @@
+name: Apply main runtime archive memory fix
+
+on:
+  push:
+    branches: ["lab-expert-engine"]
+    paths:
+      - ".github/workflows/apply-main-runtime-archive-memory-fix.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch main reference runtime loader
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('database/MemsReferenceDatabase.cpp')
+          text = path.read_text(encoding='utf-8')
+
+          old_revision = '''    if(database.open()){\n        QSqlQuery query(database);\n        if(query.exec(QStringLiteral("PRAGMA user_version")) && query.next())\n            revision=query.value(0).toInt();\n        database.close();\n    }\n'''
+          new_revision = '''    if(database.open()){\n        QSqlQuery query(database);\n        if(query.exec(QStringLiteral("PRAGMA user_version")) && query.next())\n            revision=query.value(0).toInt();\n\n        // Runtime caches built before the IA MEMS memory split may contain the\n        // loss-preserving Andrew 1600 raw-correlation archive. That archive is\n        // intentionally kept on disk but must not live in the 32-bit runtime.\n        QSqlQuery archive(database);\n        if(archive.exec(QStringLiteral(\n               "SELECT 1 FROM sqlite_master WHERE type='table' "\n               "AND name='mems_correlation_cell_external' LIMIT 1"))\n           && archive.next())\n            revision=0;\n\n        database.close();\n    }\n'''
+          if old_revision not in text:
+              raise SystemExit('cachedDatabaseRevision pattern not found')
+          text = text.replace(old_revision, new_revision, 1)
+
+          old_loop = '''        if(ok){\n            const QStringList enrichments=enrichmentFiles(referenceRoot());\n            for(const QString &path:enrichments){\n                if(!executeQz64Sql(buildDb,path)){ok=false;break;}\n            }\n        }\n'''
+          new_loop = '''        if(ok){\n            const QStringList enrichments=enrichmentFiles(referenceRoot());\n            for(const QString &path:enrichments){\n                // research_enrichment_1600.qz64 is a loss-preserving archive\n                // containing millions of raw correlation cells. The decoded\n                // semantic equivalents are already provided by earlier lots.\n                // Keep 1600 shipped/audited, but do not load it into the\n                // 32-bit application runtime where it can exhaust address space.\n                if(QFileInfo(path).fileName()==QStringLiteral("research_enrichment_1600.qz64"))\n                    continue;\n                if(!executeQz64Sql(buildDb,path)){ok=false;break;}\n            }\n        }\n'''
+          if old_loop not in text:
+              raise SystemExit('enrichment execution loop pattern not found')
+          text = text.replace(old_loop, new_loop, 1)
+
+          path.write_text(text, encoding='utf-8', newline='\n')
+
+      - name: Commit patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add database/MemsReferenceDatabase.cpp
+          git commit -m "Keep raw Andrew archive out of 32-bit runtime"
+          git pull --rebase origin lab-expert-engine
+          git push origin HEAD:lab-expert-engine
