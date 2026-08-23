@@ -1,0 +1,3 @@
+Expert rule lots SQL smoke test: FAILED
+source_commit=f150b2167c2992895defc482a8acdb1a73671b67
+run=32661359180
