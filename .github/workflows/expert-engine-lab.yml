@@ -9,7 +9,7 @@ on:
       - ".github/workflows/expert-engine-lab.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: expert-engine-lab
@@ -17,6 +17,7 @@ concurrency:
 
 jobs:
   expert-selftest-windows:
+    if: github.actor != 'github-actions[bot]'
     runs-on: windows-latest
     steps:
       - name: Checkout expert laboratory branch
@@ -53,3 +54,14 @@ jobs:
 
       - name: Run expert engine self-test
         run: ctest --test-dir expert-build --output-on-failure
+
+      - name: Record successful laboratory self-test
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'Expert engine self-test: OK\nValidated source commit: %s\nWorkflow run: %s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > expert/SELFTEST_OK.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- expert/SELFTEST_OK.txt
+          git commit -m "Validate expert engine self-test [skip ci]"
+          git push origin HEAD:lab-expert-engine
