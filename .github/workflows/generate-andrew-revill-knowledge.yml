@@ -7,6 +7,7 @@ on:
     paths:
       - "tools/build_memstools_enrichment.py"
       - "tools/build_memstools_12_enrichment.py"
+      - "tools/build_andrew_family_capabilities.py"
       - "tools/validate_memstools_enrichment.py"
       - "tools/audit_andrew_revill_knowledge.py"
       - ".github/workflows/generate-andrew-revill-knowledge.yml"
@@ -61,13 +62,20 @@ jobs:
       - name: Validate core generated knowledge
         run: python tools/validate_memstools_enrichment.py database/reference
 
-      - name: Audit Andrew knowledge against previous reference database
+      - name: Audit MEMSTools knowledge against previous reference database
         shell: bash
         run: |
           set -euo pipefail
           python tools/audit_andrew_revill_knowledge.py database/reference \
             --output database/reference/audits/andrew_revill_audit.md \
             --json-output database/reference/audits/andrew_revill_audit.json
+
+      - name: Generate documented Andrew family capabilities
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/build_andrew_family_capabilities.py \
+            --output-dir database/reference
 
       - name: Upload generated knowledge package
         uses: actions/upload-artifact@v4
@@ -80,6 +88,7 @@ jobs:
             database/reference/research_enrichment_1530.qz64
             database/reference/research_enrichment_1540.qz64
             database/reference/research_enrichment_1560.qz64
+            database/reference/research_enrichment_1570.qz64
             database/reference/audits/andrew_revill_audit.md
             database/reference/audits/andrew_revill_audit.json
 
@@ -96,6 +105,7 @@ jobs:
             database/reference/research_enrichment_1530.qz64 \
             database/reference/research_enrichment_1540.qz64 \
             database/reference/research_enrichment_1560.qz64 \
+            database/reference/research_enrichment_1570.qz64 \
             database/reference/audits/andrew_revill_audit.md \
             database/reference/audits/andrew_revill_audit.json
           if git diff --cached --quiet; then
