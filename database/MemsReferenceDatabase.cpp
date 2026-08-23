@@ -67,11 +67,35 @@ bool expandQz64(const QString &source,const QString &destination)
     return output.write(raw)==raw.size();
 }
 
+bool looksLikeReferenceBase64Text(const QByteArray &data)
+{
+    const QByteArray trimmed=data.trimmed();
+    if(trimmed.isEmpty()) return false;
+    for(char value:trimmed){
+        const unsigned char c=static_cast<unsigned char>(value);
+        const bool base64=(c>='A'&&c<='Z') || (c>='a'&&c<='z')
+            || (c>='0'&&c<='9') || c=='+' || c=='/' || c=='='
+            || c=='\r' || c=='\n' || c=='\t' || c==' ';
+        if(!base64) return false;
+    }
+    return true;
+}
+
+QByteArray uncompressReferenceQz64Payload(const QByteArray &fileBytes)
+{
+    if(looksLikeReferenceBase64Text(fileBytes))
+        return qUncompress(QByteArray::fromBase64(fileBytes.trimmed()));
+
+    // Historical Rover lot 1620 is stored directly as a binary qCompress
+    // stream. Keep its original bytes unchanged and decode that packaging.
+    return qUncompress(fileBytes);
+}
+
 bool executeQz64Sql(QSqlDatabase &database,const QString &path)
 {
     QFile file(path);
-    if(!file.open(QIODevice::ReadOnly|QIODevice::Text)) return false;
-    const QByteArray sqlBytes=qUncompress(QByteArray::fromBase64(file.readAll().trimmed()));
+    if(!file.open(QIODevice::ReadOnly)) return false;
+    const QByteArray sqlBytes=uncompressReferenceQz64Payload(file.readAll());
     if(sqlBytes.isEmpty()) return false;
 
     QSqlQuery query(database);
