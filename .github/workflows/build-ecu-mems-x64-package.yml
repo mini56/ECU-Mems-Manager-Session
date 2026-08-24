@@ -85,12 +85,12 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "windeployqt failed with code $LASTEXITCODE" }
 
           # The application expects its own JSON translations generated/copied by CMake.
-          $translations = Join-Path $build 'translations'
+          $translations = Join-Path $build 'Release\translations'
           if (-not (Test-Path $translations)) { throw 'Generated application translations are missing' }
           Copy-Item $translations (Join-Path $dist 'translations') -Recurse -Force
 
           # The offline MEMS reference database generated/copied by CMake must travel with the application.
-          $database = Join-Path $build 'database'
+          $database = Join-Path $build 'Release\database'
           if (-not (Test-Path (Join-Path $database 'reference'))) { throw 'Generated offline MEMS database is missing' }
           Copy-Item $database (Join-Path $dist 'database') -Recurse -Force
 
