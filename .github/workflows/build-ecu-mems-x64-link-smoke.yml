@@ -47,7 +47,7 @@ jobs:
             throw 'Qt 5.15.2 MSVC x64 installation incomplete'
           }
 
-      - name: Configure application x64 with bundled librosco
+      - name: Configure application x64 with bundled protocol DLL
         shell: pwsh
         run: |
           cmake -S . -B build-app-x64 -A x64 `
@@ -63,11 +63,11 @@ jobs:
         shell: pwsh
         run: python -m pip install --disable-pip-version-check pefile
 
-      - name: Validate x64 executable and x64 librosco import
+      - name: Validate x64 executable and mems_manager_x64 import
         shell: pwsh
         run: |
           $env:APP_EXE = "${{ github.workspace }}\build-app-x64\Release\ecu_mems_manager.exe"
-          $env:ROSCO_DLL = "${{ github.workspace }}\build-app-x64\librosco-x64\Release\librosco.dll"
+          $env:MEMS_DLL = "${{ github.workspace }}\build-app-x64\librosco-x64\Release\mems_manager_x64.dll"
           @'
           import hashlib
           import os
@@ -75,11 +75,11 @@ jobs:
           import pefile
 
           app = pathlib.Path(os.environ['APP_EXE'])
-          dll = pathlib.Path(os.environ['ROSCO_DLL'])
+          dll = pathlib.Path(os.environ['MEMS_DLL'])
           if not app.exists():
               raise SystemExit(f'Application missing: {app}')
           if not dll.exists():
-              raise SystemExit(f'librosco missing: {dll}')
+              raise SystemExit(f'mems_manager_x64.dll missing: {dll}')
 
           def validate_amd64(path):
               pe = pefile.PE(str(path), fast_load=False)
@@ -93,14 +93,16 @@ jobs:
           imported = []
           for entry in getattr(app_pe, 'DIRECTORY_ENTRY_IMPORT', []):
               imported.append(entry.dll.decode('ascii', errors='replace').lower())
-          if 'librosco.dll' not in imported:
-              raise SystemExit(f'Application does not import librosco.dll. Imports={imported}')
+          if 'mems_manager_x64.dll' not in imported:
+              raise SystemExit(f'Application does not import mems_manager_x64.dll. Imports={imported}')
+          if 'librosco.dll' in imported:
+              raise SystemExit('x64 application still imports historical 32-bit librosco.dll')
 
           exports = sorted(
               s.name.decode('ascii') for s in dll_pe.DIRECTORY_ENTRY_EXPORT.symbols if s.name
           )
           if len(exports) != 22:
-              raise SystemExit(f'Expected 22 librosco exports, found {len(exports)}')
+              raise SystemExit(f'Expected 22 compatibility exports, found {len(exports)}')
 
           app_sha = hashlib.sha256(app.read_bytes()).hexdigest()
           dll_sha = hashlib.sha256(dll.read_bytes()).hexdigest()
@@ -108,13 +110,15 @@ jobs:
           report.write_text(
               'ECU MEMS MANAGER X64 LINK: OK\n'
               'application=PE32+ AMD64\n'
-              'librosco=PE32+ AMD64\n'
-              'application_imports_librosco.dll=yes\n'
-              'librosco_exports=22\n'
+              'protocol_dll=mems_manager_x64.dll\n'
+              'protocol_dll_format=PE32+ AMD64\n'
+              'application_imports_mems_manager_x64.dll=yes\n'
+              'application_imports_historical_librosco.dll=no\n'
+              'protocol_dll_exports=22\n'
               f'application_size={app.stat().st_size}\n'
               f'application_sha256={app_sha}\n'
-              f'librosco_size={dll.stat().st_size}\n'
-              f'librosco_sha256={dll_sha}\n',
+              f'protocol_dll_size={dll.stat().st_size}\n'
+              f'protocol_dll_sha256={dll_sha}\n',
               encoding='utf-8'
           )
           print(report.read_text(encoding='utf-8'))
@@ -126,7 +130,7 @@ jobs:
           name: ecu-mems-manager-x64-link-smoke
           path: |
             build-app-x64/Release/ecu_mems_manager.exe
-            build-app-x64/librosco-x64/Release/librosco.dll
+            build-app-x64/librosco-x64/Release/mems_manager_x64.dll
             ECU_MEMS_X64_LINK_VALIDATION.txt
           if-no-files-found: error
 
