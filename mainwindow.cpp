@@ -964,7 +964,7 @@ void MainWindow::onDataReady()
 		emit LambdaMinOnce();
 	}
  m_ui->m_IACMin->setChecked((data->iac_position) ==0);
-	if ((data->iac_position==0) and (data->idle_error>=50) and (data->idle_switch==0) and (data->uk3!=0))
+	if ((data->iac_position==0) && (data->idle_error>=50) && (data->idle_switch==0) && (data->uk3!=0))
 	{
 		emit IACMinOnce();
 	}
