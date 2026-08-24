@@ -1,0 +1,171 @@
+name: Build ECU MEMS Manager x64 diagnostic package
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [MEMSX64-DIAG]
+    paths:
+      - 'main.cpp'
+      - 'diagnosticlogger.cpp'
+      - 'diagnosticlogger.h'
+      - 'expert/LocalAiClient.cpp'
+      - 'expert/LocalAiClient.h'
+      - 'CMakeLists.txt'
+      - '.github/workflows/build-ecu-mems-x64-diagnostic.yml'
+
+jobs:
+  build-diagnostic-x64:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout isolated diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          ref: MEMSX64-DIAG
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install build and PE validation tools
+        shell: pwsh
+        run: |
+          python -m pip install --disable-pip-version-check aqtinstall pefile
+
+      - name: Install Qt 5.15.2 MSVC 2019 x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt
+          if (-not (Test-Path 'C:\Qt\5.15.2\msvc2019_64\lib\cmake\Qt5\Qt5Config.cmake')) {
+            throw 'Qt 5.15.2 MSVC x64 installation incomplete'
+          }
+
+      - name: Configure diagnostic native x64 application
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake -S . -B build-diag-x64 -A x64 `
+            -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
+            -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
+            -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF
+
+      - name: Build diagnostic native x64 application
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake --build build-diag-x64 --config Release --target ecu_mems_manager
+
+      - name: Assemble diagnostic portable package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
+          $qtBin = Join-Path $qtRoot 'bin'
+          $qtPlugins = Join-Path $qtRoot 'plugins'
+          $build = '${{ github.workspace }}\build-diag-x64'
+          $dist = '${{ github.workspace }}\dist-diag-x64'
+          $app = Join-Path $build 'Release\ecu_mems_manager.exe'
+          $protocol = Join-Path $build 'librosco-x64\Release\mems_manager_x64.dll'
+
+          if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }
+          New-Item -ItemType Directory -Path $dist | Out-Null
+
+          foreach ($src in @($app, $protocol)) {
+            if (-not (Test-Path $src)) { throw "Required x64 binary missing: $src" }
+          }
+          Copy-Item $app (Join-Path $dist 'ecu_mems_manager.exe') -Force
+          Copy-Item $protocol (Join-Path $dist 'mems_manager_x64.dll') -Force
+
+          & (Join-Path $qtBin 'windeployqt.exe') `
+            --release `
+            --compiler-runtime `
+            --no-translations `
+            --dir $dist `
+            (Join-Path $dist 'ecu_mems_manager.exe')
+          if ($LASTEXITCODE -ne 0) { throw "windeployqt failed with code $LASTEXITCODE" }
+
+          $translations = Join-Path $build 'Release\translations'
+          if (-not (Test-Path $translations)) { throw 'Generated application translations are missing' }
+          Copy-Item $translations (Join-Path $dist 'translations') -Recurse -Force
+
+          $database = Join-Path $build 'Release\database'
+          if (-not (Test-Path (Join-Path $database 'reference'))) { throw 'Generated offline MEMS database is missing' }
+          Copy-Item $database (Join-Path $dist 'database') -Recurse -Force
+
+          $sqliteDst = Join-Path $dist 'sqldrivers\qsqlite.dll'
+          if (-not (Test-Path $sqliteDst)) {
+            New-Item -ItemType Directory -Path (Split-Path $sqliteDst) -Force | Out-Null
+            Copy-Item (Join-Path $qtPlugins 'sqldrivers\qsqlite.dll') $sqliteDst -Force
+          }
+
+          $oldRosco = Get-ChildItem $dist -Recurse -File -Filter 'librosco.dll' -ErrorAction SilentlyContinue
+          if ($oldRosco) { throw "Historical x86 librosco.dll found in x64 diagnostic package" }
+
+          @(
+            'ECU MEMS MANAGER x64 DIAGNOSTIC TEST',
+            'Use this package only to diagnose the PC-specific x64 closure.',
+            'It does not modify the normal MEMSX64 branch.',
+            'After each run, read/send MEMS_X64_DIAGNOSTIC.txt from this folder.',
+            'The previous run is kept as MEMS_X64_DIAGNOSTIC_previous.txt.',
+            'This package intentionally does not add the large IA runtime/model.'
+          ) | Set-Content -Path (Join-Path $dist 'README_X64_DIAGNOSTIC.txt') -Encoding UTF8
+
+      - name: Validate diagnostic package architecture
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:DIST = '${{ github.workspace }}\dist-diag-x64'
+          @'
+          import pathlib, os, pefile
+          root = pathlib.Path(os.environ['DIST'])
+          app = root / 'ecu_mems_manager.exe'
+          dll = root / 'mems_manager_x64.dll'
+          for path in (app, dll):
+              if not path.exists() or path.stat().st_size <= 0:
+                  raise SystemExit(f'Missing {path.name}')
+              pe = pefile.PE(str(path), fast_load=False)
+              if pe.FILE_HEADER.Machine != 0x8664 or pe.OPTIONAL_HEADER.Magic != 0x20B:
+                  raise SystemExit(f'{path.name} is not PE32+ AMD64')
+          app_pe = pefile.PE(str(app), fast_load=False)
+          imports = [entry.dll.decode('ascii', errors='replace').lower() for entry in app_pe.DIRECTORY_ENTRY_IMPORT]
+          if 'mems_manager_x64.dll' not in imports:
+              raise SystemExit('Diagnostic EXE does not import mems_manager_x64.dll')
+          if 'librosco.dll' in imports:
+              raise SystemExit('Diagnostic EXE imports historical librosco.dll')
+          print('OK: diagnostic EXE and protocol DLL are PE32+ AMD64')
+          '@ | python -
+
+      - name: Smoke launch and verify diagnostic journal
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $dist = '${{ github.workspace }}\dist-diag-x64'
+          $exe = Join-Path $dist 'ecu_mems_manager.exe'
+          $log = Join-Path $dist 'MEMS_X64_DIAGNOSTIC.txt'
+          $proc = Start-Process $exe -WorkingDirectory $dist -PassThru
+          Start-Sleep -Seconds 7
+          if ($proc.HasExited) {
+            if (Test-Path $log) { Get-Content $log }
+            throw "Diagnostic x64 application exited during smoke launch (code $($proc.ExitCode))"
+          }
+          if (-not (Test-Path $log)) {
+            Stop-Process -Id $proc.Id -Force
+            throw 'Diagnostic journal was not created'
+          }
+          $content = Get-Content $log -Raw
+          if ($content -notmatch 'Entering QApplication event loop') {
+            Get-Content $log
+            Stop-Process -Id $proc.Id -Force
+            throw 'Diagnostic journal did not reach the QApplication event loop'
+          }
+          Stop-Process -Id $proc.Id -Force
+          Get-Content $log
+
+      - name: Upload diagnostic portable x64 package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ECU-MEMS-Manager-x64-Diagnostic-PC
+          path: dist-diag-x64/
+          if-no-files-found: error
