@@ -35,11 +35,12 @@ jobs:
           git commit -m "Record IA x64 cache diagnostic run [skip ci]"
           git push origin HEAD:MEMSX64
 
-      - name: Inject test-only automatic IA opening
+      - name: Inject test-only IA opening and cache path probe
         shell: pwsh
         run: |
           @'
           from pathlib import Path
+
           p = Path('iamemstab.cpp')
           s = p.read_text(encoding='utf-8')
           old = '''    tabs->addTab(tab, iaMemsIcon(), QStringLiteral("IA MEMS"));
@@ -50,6 +51,29 @@ jobs:
               return tab;'''
           if s.count(old) != 1:
               raise SystemExit(f'Expected one IA insertion point, found {s.count(old)}')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+
+          p = Path('expert/ExpertRuntimeDatabase.cpp')
+          s = p.read_text(encoding='utf-8')
+          old = '''QString ExpertRuntimeDatabase::cacheRoot() const
+          {
+              return QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)
+                  + QStringLiteral("/ia-mems");
+          }'''
+          new = '''QString ExpertRuntimeDatabase::cacheRoot() const
+          {
+              const QString root = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)
+                  + QStringLiteral("/ia-mems");
+              const QString probe = qEnvironmentVariable("MEMS_SMOKE_CACHE_ROOT_FILE");
+              if (!probe.isEmpty()) {
+                  QFile file(probe);
+                  if (file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text))
+                      file.write(root.toUtf8());
+              }
+              return root;
+          }'''
+          if s.count(old) != 1:
+              raise SystemExit(f'Expected one cacheRoot implementation, found {s.count(old)}')
           p.write_text(s.replace(old, new, 1), encoding='utf-8')
           '@ | python -
 
@@ -99,20 +123,69 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $dist = '${{ github.workspace }}\dist-ia-cache-x64'
+          $result = Join-Path $dist 'IA_X64_CACHE_RESULT.txt'
+          $events = Join-Path $dist 'IA_X64_CACHE_EVENTS.txt'
+          $rootProbe = Join-Path $dist 'IA_X64_CACHE_ROOT.txt'
+          'IA_X64_FIRST_CACHE=STARTED' | Set-Content -Encoding UTF8 $result
+          ('localappdata=' + $env:LOCALAPPDATA) | Add-Content -Encoding UTF8 $result
           $env:MEMS_SMOKE_OPEN_IA = '1'
+          $env:MEMS_SMOKE_CACHE_ROOT_FILE = $rootProbe
+          $start = Get-Date
           $proc = Start-Process (Join-Path $dist 'ecu_mems_manager.exe') -WorkingDirectory $dist -PassThru
-          $deadline = (Get-Date).AddSeconds(150)
+          $deadline = (Get-Date).AddSeconds(240)
           $cache = $null
+          $cacheRoot = $null
           while ((Get-Date) -lt $deadline) {
-            Start-Sleep -Seconds 3
+            Start-Sleep -Seconds 2
             $proc.Refresh()
-            if ($proc.HasExited) { throw "First IA opening crashed with code $($proc.ExitCode)" }
-            $cache = Get-ChildItem $env:LOCALAPPDATA -Recurse -File -Filter 'ia_mems_reference_r*.sqlite' -ErrorAction SilentlyContinue | Select-Object -First 1
-            if ($cache -and $cache.Length -gt 0) { break }
+            if ($proc.HasExited) {
+              $hex = ('0x{0:X8}' -f ([uint32]$proc.ExitCode))
+              'FIRST_PROCESS_EXIT' | Add-Content -Encoding UTF8 $result
+              ('exit_code=' + $proc.ExitCode) | Add-Content -Encoding UTF8 $result
+              ('exit_code_hex=' + $hex) | Add-Content -Encoding UTF8 $result
+              ('elapsed_seconds=' + [int]((Get-Date) - $start).TotalSeconds) | Add-Content -Encoding UTF8 $result
+              break
+            }
+            if (-not $cacheRoot -and (Test-Path $rootProbe)) {
+              $cacheRoot = (Get-Content $rootProbe -Raw).Trim()
+              ('cache_root=' + $cacheRoot) | Add-Content -Encoding UTF8 $result
+            }
+            if ($cacheRoot -and (Test-Path $cacheRoot)) {
+              $cache = Get-ChildItem $cacheRoot -File -Filter 'ia_mems_reference_r*.sqlite' -ErrorAction SilentlyContinue | Select-Object -First 1
+              if ($cache -and $cache.Length -gt 0) { break }
+            }
           }
-          if (-not $cache) { throw 'IA MEMS cache was not created within 150 seconds' }
-          "cache_path=$($cache.FullName)" | Set-Content -Encoding UTF8 (Join-Path $dist 'IA_X64_CACHE_RESULT.txt')
-          "cache_size=$($cache.Length)" | Add-Content -Encoding UTF8 (Join-Path $dist 'IA_X64_CACHE_RESULT.txt')
+
+          if ($proc.HasExited) {
+            try {
+              Get-WinEvent -FilterHashtable @{LogName='Application'; StartTime=$start} -ErrorAction Stop |
+                Where-Object { $_.ProviderName -in @('Application Error','Windows Error Reporting','.NET Runtime') -or $_.Message -match 'ecu_mems_manager|llama-server' } |
+                Select-Object TimeCreated, ProviderName, Id, LevelDisplayName, Message |
+                Format-List | Out-String -Width 240 | Set-Content -Encoding UTF8 $events
+            } catch {
+              ('Event log read failed: ' + $_.Exception.Message) | Set-Content -Encoding UTF8 $events
+            }
+            throw 'FIRST_PROCESS_EXIT'
+          }
+
+          if (-not $cache) {
+            'FIRST_CACHE_TIMEOUT' | Add-Content -Encoding UTF8 $result
+            ('elapsed_seconds=' + [int]((Get-Date) - $start).TotalSeconds) | Add-Content -Encoding UTF8 $result
+            if ($cacheRoot -and (Test-Path $cacheRoot)) {
+              Get-ChildItem $cacheRoot -Force -ErrorAction SilentlyContinue |
+                ForEach-Object { 'cache_file=' + $_.Name + ';size=' + $(if ($_.PSIsContainer) { 'DIR' } else { $_.Length }) } |
+                Add-Content -Encoding UTF8 $result
+            } else {
+              'cache_root_not_created=1' | Add-Content -Encoding UTF8 $result
+            }
+            if (-not $proc.HasExited) { Stop-Process -Id $proc.Id -Force }
+            throw 'FIRST_CACHE_TIMEOUT'
+          }
+
+          'CACHE_READY' | Add-Content -Encoding UTF8 $result
+          ('cache_path=' + $cache.FullName) | Add-Content -Encoding UTF8 $result
+          ('cache_size=' + $cache.Length) | Add-Content -Encoding UTF8 $result
+          ('elapsed_seconds=' + [int]((Get-Date) - $start).TotalSeconds) | Add-Content -Encoding UTF8 $result
           Stop-Process -Id $proc.Id -Force
           Start-Sleep -Seconds 2
 
@@ -123,19 +196,21 @@ jobs:
           $dist = '${{ github.workspace }}\dist-ia-cache-x64'
           $result = Join-Path $dist 'IA_X64_CACHE_RESULT.txt'
           $events = Join-Path $dist 'IA_X64_CACHE_EVENTS.txt'
+          $rootProbe = Join-Path $dist 'IA_X64_CACHE_ROOT.txt'
           $env:MEMS_SMOKE_OPEN_IA = '1'
+          $env:MEMS_SMOKE_CACHE_ROOT_FILE = $rootProbe
           $start = Get-Date
           $proc = Start-Process (Join-Path $dist 'ecu_mems_manager.exe') -WorkingDirectory $dist -PassThru
-          Start-Sleep -Seconds 30
+          Start-Sleep -Seconds 45
           $proc.Refresh()
           if ($proc.HasExited) {
             $hex = ('0x{0:X8}' -f ([uint32]$proc.ExitCode))
-            'IA_X64_EXISTING_CACHE=CRASH' | Add-Content -Encoding UTF8 $result
-            ('exit_code=' + $proc.ExitCode) | Add-Content -Encoding UTF8 $result
-            ('exit_code_hex=' + $hex) | Add-Content -Encoding UTF8 $result
+            'RESTART_PROCESS_EXIT' | Add-Content -Encoding UTF8 $result
+            ('restart_exit_code=' + $proc.ExitCode) | Add-Content -Encoding UTF8 $result
+            ('restart_exit_code_hex=' + $hex) | Add-Content -Encoding UTF8 $result
           } else {
-            'IA_X64_EXISTING_CACHE=PASS' | Add-Content -Encoding UTF8 $result
-            'alive_after_seconds=30' | Add-Content -Encoding UTF8 $result
+            'RESTART_PASS' | Add-Content -Encoding UTF8 $result
+            'alive_after_seconds=45' | Add-Content -Encoding UTF8 $result
             Stop-Process -Id $proc.Id -Force
           }
           try {
@@ -148,6 +223,7 @@ jobs:
           }
           Get-Content $result
           if (Test-Path $events) { Get-Content $events }
+          if ($proc.HasExited) { throw 'RESTART_PROCESS_EXIT' }
 
       - name: Upload cache diagnostic evidence
         if: always()
@@ -157,4 +233,5 @@ jobs:
           path: |
             dist-ia-cache-x64/IA_X64_CACHE_RESULT.txt
             dist-ia-cache-x64/IA_X64_CACHE_EVENTS.txt
+            dist-ia-cache-x64/IA_X64_CACHE_ROOT.txt
           if-no-files-found: warn
