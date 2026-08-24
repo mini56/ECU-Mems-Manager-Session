@@ -7,7 +7,7 @@
 > Ce rapport est volontairement en **Markdown lisible directement sur GitHub**. Il ne doit pas être remplacé par un format encodé ou opaque.
 > La branche `RAPPORT` sert au suivi et à la transmission entre discussions. Elle ne doit pas servir à modifier le programme de production sauf demande explicite.
 
-Dernière mise à jour : **24 août 2026 — package portable ECU MEMS Manager x64 validé, prêt pour essai utilisateur Windows/ECU**
+Dernière mise à jour : **24 août 2026 — premier essai réel x64 sur PC vierge : application stable, IA locale absente comme prévu ; piste environnement/IA pour le plantage du PC principal**
 
 ---
 
@@ -346,3 +346,26 @@ Le package x64 de test n’intègre pas volontairement le gros package IA local 
 5. Ne considérer la x64 comme fonctionnellement validée qu’après ce test PC + ECU.
 6. Consigner immédiatement le résultat de ce test dans ce rapport.
 7. Ensuite seulement reprendre l’extension du moteur protocolaire par profils MEMS/modes, sans limiter `mems_manager_x64.dll` aux seules fonctions actuellement utilisées par l’interface.
+
+---
+
+## 12. Premier essai utilisateur x64 sur un PC vierge — 24 août 2026
+
+L’utilisateur a testé le package **`ECU-MEMS-Manager-x64-Windows-Test`** sur un PC qui n’avait jamais eu ECU MEMS Manager auparavant.
+
+Résultat observé sur deux captures de l’onglet **IA MEMS** :
+
+- l’application x64 **reste ouverte et ne plante pas** sur ce PC vierge ;
+- la base de connaissances MEMS se charge et affiche qu’elle est prête en lecture seule ;
+- l’IA conversationnelle ne fonctionne pas et indique explicitement : **`Moteur llama.cpp local absent du dossier IA.`** ;
+- ce comportement est cohérent avec le package x64 de test actuel : le ZIP contient **243 fichiers mais aucun dossier `ai/`, aucun `llama-server.exe` et aucun modèle `.gguf`** ;
+- l’interface IA montre également un problème d’encodage visible (`intÃ©grÃ©`, `prÃªte`, `connectÃ©`, etc.). Ce défaut visuel est distinct du plantage et n’est pas corrigé tant qu’aucune modification n’est explicitement demandée.
+
+Lecture technique importante :
+
+- `LocalAiClient::discoverAssets()` cherche en priorité les variables d’environnement **`MEMS_AI_SERVER`** et **`MEMS_AI_MODEL`**, puis `ai/llama-server.exe`, `ai/runtime/llama-server.exe`, `llama-server.exe` et les emplacements équivalents du modèle ;
+- si aucun runtime n’est trouvé, le code passe proprement en état `MissingRuntime` et ne lance aucun moteur IA ; c’est exactement ce que montre le PC vierge ;
+- cela **ne prouve pas encore** que le plantage du PC principal vient de l’IA, mais cela réduit fortement le champ : le noyau x64 peut rester stable quand aucun runtime IA local/externe n’est découvert ;
+- sur le PC principal, il faut maintenant vérifier si un ancien runtime/modèle est découvert via un dossier résiduel, une variable d’environnement, un `llama-server.exe` déjà présent ou un serveur déjà actif sur `127.0.0.1:18089`.
+
+**Prochaine vérification diagnostique avant toute modification du programme : comparer le comportement du PC principal avec le moteur IA totalement neutralisé, puis seulement si nécessaire isoler la cause exacte dans le runtime IA / environnement Windows.**
