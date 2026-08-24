@@ -6,7 +6,7 @@
 > L’assistant doit **mettre à jour ce rapport lui-même et le pousser régulièrement sur la branche `RAPPORT`**, au minimum après chaque étape technique importante, validation, découverte, changement de branche de travail ou décision d’architecture.
 > La branche `RAPPORT` sert au suivi et à la transmission entre discussions. Elle ne doit pas servir à modifier le programme de production sauf demande explicite.
 
-Dernière mise à jour : **24 août 2026 — le build #14 est validé sur PC réel avec IA locale prête + base prête + ECU AANMP002/MNE101150 connecté sur COM3 ; le package x64 complet plus récent ferme toujours à l’ouverture de IA MEMS, même avec dossier `ai` neutralisé et aucun `llama-server.exe` actif. La priorité est maintenant d’identifier la régression apparue après #14.**
+Dernière mise à jour : **24 août 2026 — l’IA historique du build #14 fonctionne réellement avec l’ECU AANMP002/MNE101150. Le package MEMSX64 complet ferme à l’ouverture de IA MEMS même sans runtime llama actif. Les fichiers centraux IA sont identiques entre la branche historique et MEMSX64. Entre le premier package x64 stable sans IA locale et le package x64 actuel, le seul changement persistant affectant la compilation de l’EXE est l’ajout de `/utf-8` à MSVC. Un package A/B x64 sans `/utf-8`, sans runtime IA, a été construit au vert (run 32753372131) et doit maintenant être essayé sur le PC utilisateur.**
 
 ---
 
@@ -45,6 +45,14 @@ Correctifs historiques importants :
 
 - `cbcb8a14189b1bc013cb3519b0ba33aa3f85c072` — `Fix IA MEMS history scroll and factual answers` ;
 - `896a59f762e648ce50023121491693ee70ad162d` — `Build IA MEMS quality patch`.
+
+Package historique IA validé :
+
+- `IA_MEMS_FINAL_PACKAGE_OK.txt` ;
+- source commit : `896a59f762e648ce50023121491693ee70ad162d` ;
+- run : **32694753190** ;
+- application historique : **32 bits** ;
+- `llama-server.exe` : processus séparé **x64**.
 
 ### 2.2 Base Andrew Revill / MEMSTools
 
@@ -126,7 +134,9 @@ Run **32713710308**, marqueur `494c8993ffc218195639d974b7b2a7c81b3f8541`.
 - smoke launch 5 s : OK ;
 - ancienne `librosco.dll` absente.
 
-Sur PC secondaire propre : navigation générale stable, base disponible, IA en secours normal car runtime absent. Défauts mojibake et responsive visibles mais non prioritaires.
+Sur PC secondaire propre : navigation générale stable, base disponible, **onglet IA MEMS stable**, avec secours déterministe normal car runtime local absent. Défauts mojibake et responsive visibles mais non prioritaires.
+
+Ce package est une référence A importante : **l’EXE x64 sait ouvrir IA MEMS sans fermeture lorsqu’il est compilé dans l’état antérieur à l’ajout de `/utf-8`.**
 
 ---
 
@@ -184,13 +194,68 @@ Sur le PC secondaire :
 - après vérification dans le Gestionnaire des tâches, **aucun `llama-server.exe` n’est actif** ;
 - avec `ai_OFF` + aucun serveur actif, l’ouverture IA ferme encore l’application.
 
-Conclusion : **le crash récent n’est pas causé directement par le runtime llama.cpp ni par le modèle Qwen**. La régression doit être recherchée après le build #14 dans l’état du programme/package autour de l’onglet IA, de son chargement expert, de la navigation ou d’un autre changement postérieur.
+Conclusion : **le crash récent n’est pas causé directement par le runtime llama.cpp ni par le modèle Qwen**. Il faut chercher une différence dans l’EXE x64 / compilation / environnement déclenché par l’ouverture de IA.
+
+### 9.2 Comparaison des sources IA — aucune dérive du cœur IA
+
+Comparaison directe `lab-expert-engine` ↔ `MEMSX64` :
+
+- `iamemstab.cpp` : même blob Git **`8a054a67430c58cd0bcbfb36cf542be83bfdf1b4`** ;
+- `expert/LocalAiClient.cpp` : même blob Git **`d438fa44cbf9436509ebc43367393b9f86140452`** ;
+- `expert/ExpertRuntimeDatabase.cpp` : même blob Git **`85aacb8a9456c6e85c1b5923f195e09f05230af9`**.
+
+Donc **le cœur de l’onglet IA, le client llama et la construction/ouverture de la base expert n’ont pas été modifiés entre ces branches**.
+
+### 9.3 Différence entre le premier x64 stable et le x64 actuel
+
+Comparaison Git entre le marqueur du premier package x64 stable `494c8993ffc218195639d974b7b2a7c81b3f8541` et le commit de packaging IA `58bd6a1f74da991ddf3b831fcfb55d2716755084` :
+
+- 25 commits intermédiaires, presque tous workflows/diagnostics/marqueurs ;
+- aucun changement du code IA central ;
+- **seule différence persistante affectant la compilation de l’application :**
+  - avant : `target_compile_options(${PNAME} PRIVATE /permissive)` ;
+  - après : `target_compile_options(${PNAME} PRIVATE /permissive /utf-8)`.
+
+Ajout de `/utf-8` :
+
+- `7217b58b8236bceac83cf9a002da801459ab271c` — `Compile MEMSX64 application source strings as UTF-8` ;
+- `5598ae99376912c4dfc2c902006a598290a2629d` — `Keep only MSVC UTF-8 source encoding fix`.
+
+**Hypothèse prioritaire à tester, pas encore conclusion :** `/utf-8` peut être la différence responsable ou associée à la fermeture réelle. L’A/B utilisateur est nécessaire.
+
+### 9.4 Package A/B x64 SANS `/utf-8` — prêt à tester
+
+Workflow diagnostic : `.github/workflows/memsx64-ia-ab-no-utf8-package.yml`.
+
+- workflow commit : **`321ffd0e2beca268116a97a369ff484966f06dd6`** ;
+- run : **32753372131** ;
+- résultat CI : **SUCCESS** ;
+- artefact : **`ECU-MEMS-Manager-x64-IA-AB-NO-UTF8`** ;
+- artifact id : **9530010669** ;
+- taille : **91 027 767 octets** ;
+- digest : **`sha256:deb57015a6fccb4d9e142603c1281be400fb161a16b8bf8ec1fdb6a977acef1a`** ;
+- expiration GitHub : **22 novembre 2026**.
+
+Construction :
+
+- même branche MEMSX64 actuelle ;
+- `/utf-8` retiré **uniquement dans le workspace du runner**, donc aucun retour arrière permanent dans le code normal ;
+- application et `mems_manager_x64.dll` restent AMD64 ;
+- base de référence incluse ;
+- runtime llama.cpp + modèle volontairement **omis** pour ce premier A/B, puisque le crash du package actuel a déjà été reproduit avec `ai_OFF` et aucun serveur actif.
+
+Test demandé : lancer ce package sur le même PC et ouvrir **IA MEMS**. Le message « moteur llama.cpp absent » est normal. Le seul résultat important est : **l’application reste ouverte ou elle ferme encore**.
+
+- si elle reste ouverte : `/utf-8` devient la cause/association principale à corriger, puis reconstruire immédiatement un package complet avec vraie IA sans ce flag ;
+- si elle ferme encore : `/utf-8` est exclu, puis produire un build instrumenté avec traces/breadcrumbs autour de `showEvent`, `startKnowledgeLoad`, `ExpertRuntimeDatabase::buildOrOpen` et `LocalAiClient::initialize` pour localiser l’instruction exacte avant la fermeture.
 
 ---
 
-## 10. BUILD #14 — NOUVELLE RÉFÉRENCE RÉELLE VALIDÉE SUR ECU
+## 10. BUILD #14 — RÉFÉRENCE HISTORIQUE RÉELLE VALIDÉE SUR ECU
 
-Le 24 août 2026, l’utilisateur a retesté **ECU MEMS Manager v1.0.14 / build #14** sur le même environnement réel.
+Le 24 août 2026, l’utilisateur a retesté **ECU MEMS Manager v1.0.14 / build #14** sur le même PC de test.
+
+**Précision d’architecture importante :** ce build historique de l’application est **32 bits**. Son `llama-server.exe` est un processus séparé **x64**. Ne pas présenter le build #14 comme une application x64.
 
 ### 10.1 IA locale
 
@@ -202,7 +267,7 @@ Build #14 :
 - réponses parfois hors sujet ou insuffisantes, qualité à améliorer ultérieurement, mais moteur IA réellement fonctionnel ;
 - l’IA reste stable également avec ECU connecté.
 
-Le build #14 prouve donc que **Qt x64 + onglet IA + base expert + llama.cpp + modèle Qwen peuvent fonctionner ensemble sur ce PC**.
+Le build #14 prouve donc que **l’architecture IA historique (application 32 bits + base expert + serveur llama.cpp x64 séparé + modèle Qwen) fonctionne réellement sur ce PC**.
 
 ### 10.2 Connexion ECU réelle
 
@@ -241,18 +306,35 @@ L’utilisateur a finalement aussi ouvert Injection pendant la série de capture
 
 Autres valeurs de captures à contact/moteur selon instant : MAP ≈ 100 kPa moteur arrêté, batterie ≈ 12,2 V, liquide ≈ 25 °C, air ≈ 29 °C, lambda ≈ 435 mV. Une autre capture montre moteur autour de 1195 tr/min et batterie 13,5 V, preuve que la session a aussi observé le moteur en fonctionnement à un moment du test.
 
-### 10.4 Points visibles mais secondaires
+### 10.4 Enregistrement réel de la session
+
+L’utilisateur a enregistré la session `2026-08-24_18.14.txt` pendant ce même essai.
+
+Points de référence observés :
+
+- avant démarrage : 0 tr/min, MAP ≈ 100 kPa, batterie ≈ 12,2 V, dwell ≈ 6,274 ms ;
+- lancement autour de 18:25:13 : régime ≈ 167 tr/min et chute batterie ≈ 11,3 V ;
+- démarrage : environ 1320 tr/min puis pointe ≈ 1657 tr/min ;
+- stabilisation ensuite autour de 1180–1200 tr/min ;
+- MAP moteur tournant ≈ 30–35 kPa ;
+- batterie remonte vers ≈ 13,8 V ;
+- dwell moteur tournant descend autour de ≈ 3,2–3,4 ms ;
+- `7D14-15` brut évolue réellement, donc l’erreur ralenti chaud n’est pas une donnée figée.
+
+Cette trace doit être conservée comme référence matérielle pour les comparaisons de futurs builds.
+
+### 10.5 Points visibles mais secondaires
 
 - L’IA répond encore à côté sur plusieurs questions générales (`quel jour`, nombre de données, câble, etc.).
 - Certaines interprétations/valeurs doivent être revues séparément ; ne pas les corriger pendant l’enquête de crash.
 - Le dwell affiché à contact/moteur arrêté n’est pas à comparer directement à la plage de contrôle ~1,9–3,1 ms vers 14 V moteur en fonctionnement.
 - Le désordre visuel de réinsertion des onglets au démarrage existe dans le code, mais le test d’attente >2 min montre qu’il n’est pas la cause principale de la fermeture IA du package récent.
 
-### 10.5 Conclusion de référence
+### 10.6 Conclusion de référence
 
-**Build #14 = dernière référence réelle actuellement prouvée stable pour : x64 + IA locale prête + base prête + connexion ECU AANMP002/MNE101150 + COM3 + navigation + 7D/80 + Mode 4 Injection.**
+**Build #14 = dernière référence historique réelle actuellement prouvée stable pour : IA locale prête + base prête + connexion ECU AANMP002/MNE101150 + COM3 + navigation + 7D/80 + Mode 4 Injection.**
 
-La recherche doit maintenant identifier le **premier changement après #14** qui introduit la fermeture de l’onglet IA dans le package récent.
+Il ne valide pas à lui seul l’EXE x64, car l’application du build #14 est 32 bits.
 
 ---
 
@@ -283,15 +365,19 @@ Le build #14 confirme qu’une connexion réelle fonctionne sur COM3, mais **la 
 
 ## 13. Prochaine action exacte
 
-**Priorité immédiate : identifier la régression apparue après le build #14.**
+**Priorité immédiate : essai utilisateur du package A/B `ECU-MEMS-Manager-x64-IA-AB-NO-UTF8` du run 32753372131.**
 
-Méthode :
+Test minimal :
 
-1. rattacher précisément le build #14 fonctionnel à son commit/workflow/artifact ;
-2. comparer les changements entre #14 et le package actuel ;
-3. isoler le premier changement qui fait fermer IA MEMS ;
-4. corriger uniquement cette régression, sans refonte graphique ni changement protocolaire parasite ;
-5. reconstruire un package x64 de test ;
-6. revalider sur le même PC : IA locale prête d’abord, puis connexion ECU réelle.
+1. extraire dans un nouveau dossier ;
+2. lancer `ecu_mems_manager.exe` ;
+3. ouvrir IA MEMS ;
+4. constater uniquement : reste ouvert ou ferme encore.
+
+Pas besoin d’ECU pour cet A/B.
+
+Si le package reste ouvert, construire ensuite le package x64 complet avec runtime/model et sans `/utf-8`, puis valider `IA locale prête` et les réponses réelles.
+
+Si le package ferme encore, ne pas multiplier les hypothèses : construire un diagnostic instrumenté autour de la séquence d’ouverture IA afin d’obtenir la dernière étape atteinte avant la fermeture.
 
 Ne pas reprendre pour l’instant la refonte responsive ou l’extension protocolaire tant que cette régression IA n’est pas localisée et corrigée.
