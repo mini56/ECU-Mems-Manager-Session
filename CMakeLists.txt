@@ -57,9 +57,9 @@ set(SOURCES
     database/MemsGlobalSearchIndex.cpp database/MemsGlobalSearchIndex.h database/MemsDatabaseExplorerV2.cpp
     database/MemsDatabaseUniversalAccess.cpp database/MemsReferenceLanguageSync.cpp
     database/MemsXmlRowIndexer.cpp database/MemsSearchCompletenessPatch.cpp database/MemsDatabaseBrowser.cpp database/MemsDatabaseBrowser.h
-    iamemstab.cpp iamemstab.h iamemsqualitypatch.cpp expert/ExpertEngine.cpp expert/ExpertEngine.h expert/ExpertKnowledgeReader.cpp expert/ExpertKnowledgeReader.h expert/ExpertRuntimeDatabase.cpp expert/ExpertRuntimeDatabase.h expert/ExpertTypes.h expert/LocalAiClient.cpp expert/LocalAiClient.h
+    iamemstab_clean.cpp iamemstab.h iamemsqualitypatch.cpp expert/ExpertEngine.cpp expert/ExpertEngine.h expert/ExpertKnowledgeReader.cpp expert/ExpertKnowledgeReader.h expert/ExpertRuntimeDatabase.cpp expert/ExpertRuntimeDatabase.h expert/ExpertTypes.h expert/LocalAiClient.cpp expert/LocalAiClient.h
     uirebuild.cpp overviewrebuild.cpp majorpagesrebuild.cpp errorsvisualpatch.cpp analysismodernizer.cpp
-    strictvisualrebuild.cpp dedicatedpagesrebuild.cpp visualcompletion.cpp taborderpatch.cpp navigationorderpatch.cpp darkstyle.cpp darkfixes.cpp
+    strictvisualrebuild.cpp dedicatedpagesrebuild.cpp visualcompletion.cpp navigationorderpatch.cpp darkstyle.cpp darkfixes.cpp
     settingstabdark.cpp sidebarbubblecleaner.cpp splashtextfix.cpp settingsvisualpatch.cpp readabilityfix.cpp mainwindowtitlebarfix.cpp systemstateconnectionfix.cpp)
 add_executable(${PNAME} ${SOURCES})
 target_sources(${PNAME} PRIVATE ${CMAKE_SOURCE_DIR}/desktopshortcut.cpp ${CMAKE_SOURCE_DIR}/desktopshortcut.h)
