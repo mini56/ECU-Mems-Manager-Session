@@ -7,7 +7,7 @@
 > Ce rapport est volontairement en **Markdown lisible directement sur GitHub**. Il ne doit pas être remplacé par un format encodé ou opaque.
 > La branche `RAPPORT` sert au suivi et à la transmission entre discussions. Elle ne doit pas servir à modifier le programme de production sauf demande explicite.
 
-Dernière mise à jour : **24 août 2026 — `mems_manager_x64.dll` validée AMD64 ; premier build complet x64 analysé, blocage MSVC identifié**
+Dernière mise à jour : **24 août 2026 — application ECU MEMS Manager x64 complète validée PE32+ AMD64 avec `mems_manager_x64.dll`**
 
 ---
 
@@ -193,7 +193,7 @@ Ces différences concernent les chemins d’erreur, pas la signification des com
 
 ---
 
-## 9. Validation de MEMS Manager complet en x64 — PREMIER RUN ANALYSÉ
+## 9. Validation de MEMS Manager complet en x64 — VALIDÉE
 
 Workflow : `.github/workflows/build-ecu-mems-x64-link-smoke.yml`.
 
@@ -204,7 +204,7 @@ Configuration utilisée :
 - `MEMS_USE_BUNDLED_LIBROSCO_X64=ON` ;
 - nouvelle `mems_manager_x64.dll`.
 
-Le contrôle final attendu reste :
+Le contrôle final demandé était :
 
 - `ecu_mems_manager.exe` PE32+ AMD64 ;
 - `mems_manager_x64.dll` PE32+ AMD64 ;
@@ -212,51 +212,70 @@ Le contrôle final attendu reste :
 - absence d’import de l’ancienne **`librosco.dll`** ;
 - conservation des 22 exports de compatibilité.
 
-Marqueur attendu : `ECU_MEMS_X64_LINK_VALIDATION.txt`.
+Marqueur : `ECU_MEMS_X64_LINK_VALIDATION.txt`.
 
-### 9.1 Run n° 32709187615
+### 9.1 Run n° 32709187615 — historique des blocages MSVC
 
-Premier run complet observé : **`32709187615`**.
-
-Résultats obtenus avant l’échec :
+Le premier passage du run **`32709187615`** a confirmé :
 
 - installation de Qt 5.15.2 MSVC x64 : **OK** ;
 - configuration CMake x64 : **OK** ;
 - compilation de `mems_manager_x64.dll` dans le build de l’application : **OK** ;
 - compilation du self-test de recherche : **OK** ;
-- compilation de nombreux fichiers C++ de MEMS Manager : **OK** ;
-- échec pendant la compilation de `mainwindow.cpp`.
+- compilation de nombreux fichiers C++ de MEMS Manager : **OK**.
 
-Le blocage précis est en **`mainwindow.cpp` ligne 902** :
+Le premier blocage était en `mainwindow.cpp` ligne ~902 : utilisation de l’opérateur alternatif `or` avec MSVC. Les nombreuses erreurs suivantes étaient des cascades syntaxiques.
 
-```cpp
-if (((data->idle_switch)!= 0) or ((data->uk3)!=16))
-```
+La reprise du 24 août 2026 a ensuite suivi strictement la règle : **une incompatibilité observée, une correction minimale, un nouveau build**.
 
-MSVC x64 ne traite pas ici `or` comme notre ancien environnement MinGW. Cela provoque ensuite plus de 100 erreurs en cascade à partir de cette ligne.
+Corrections appliquées dans `mainwindow.cpp`, sans changement de logique :
 
-Correction prévue, **sans changement de logique** :
+1. ligne ~902 : `or` → `||` dans la condition `idle_switch / uk3` ; commit **`5e53ef22c4b848397aa5abdd453378f76f1e3988`** — `Fix MSVC logical operator in mainwindow` ;
+2. ligne ~967 : les trois `and` → `&&` dans la condition IAC ; commit **`722a8278c5974e4b016a59ed6b1de70baee01f40`** — `Fix next MSVC logical and operators in mainwindow` ;
+3. ligne ~971 : les deux `or` → `||` dans la condition DTC ; commit **`09564db70f729e1a3d78f974918d0d24bafbc982`** — `Fix next MSVC logical or operators in mainwindow`.
 
-```cpp
-if (((data->idle_switch) != 0) || ((data->uk3) != 16))
-```
+### 9.2 Validation complète obtenue — VERT
 
-Le rapport brut d’échec a été sauvegardé sur `MEMSX64` sous :
+Après la troisième correction, le workflow **`Build ECU MEMS Manager x64 link smoke`**, run **`32709187615`**, est passé entièrement au vert :
 
-- `ECU_MEMS_X64_BUILD_FAILURE.txt`
+- installation Qt 5.15.2 MSVC 2019 x64 : **OK** ;
+- configuration CMake x64 : **OK** ;
+- compilation de `mems_manager_x64.dll` : **OK** ;
+- compilation et édition de liens de `ecu_mems_manager.exe` : **OK** ;
+- validation PE/imports : **OK** ;
+- upload de l’artefact `ecu-mems-manager-x64-link-smoke` : **OK** ;
+- écriture du marqueur final `ECU_MEMS_X64_LINK_VALIDATION.txt` : **OK**.
 
-Ne pas interpréter les nombreuses erreurs suivantes comme autant de problèmes indépendants : elles sont une cascade provoquée par la première erreur de syntaxe sur `or`.
+Validation finale enregistrée :
 
-**État actuel : l’application complète x64 n’est pas encore validée. La DLL x64 est verte, le premier blocage de compilation de l’EXE est identifié.**
+- `ecu_mems_manager.exe` : **PE32+ AMD64** ;
+- taille EXE : **1 823 744 octets** ;
+- SHA256 EXE : `3abcb0b6c3cb2982d642829cbd398dd1069da8a3d7bb1458ae8813dfa541a8cc` ;
+- DLL protocole : **`mems_manager_x64.dll` PE32+ AMD64** ;
+- taille DLL : **16 384 octets** ;
+- SHA256 DLL : `720f8c8448fea6a8da94ef3398a14a84abb515e7f2fbc33b6e8bb880cb8f0999` ;
+- l’EXE importe `mems_manager_x64.dll` : **oui** ;
+- l’EXE importe l’ancienne `librosco.dll` : **non** ;
+- exports de compatibilité de la DLL : **22**.
+
+Commit automatique du marqueur vert sur `MEMSX64` : **`2e2165b8001482647d4a3606df4f4051ac63cf03`** — `Validate ECU MEMS Manager native x64 link [skip ci]`.
+
+Artefact GitHub Actions :
+
+- nom : `ecu-mems-manager-x64-link-smoke` ;
+- artifact id : **`9514435735`** ;
+- taille ZIP côté GitHub : **689 020 octets** ;
+- digest : `sha256:ccc2e246de54cada01a3aef8c74b5d903ba8f62313560bfef98ae4b6404b873b`.
+
+**État actuel : la chaîne de compilation et de liaison native x64 est validée. Cela ne remplace pas encore la validation fonctionnelle sur PC et sur ECU réel.**
 
 ---
 
 ## 10. Prochaine action exacte
 
-1. Remplacer uniquement `or` par `||` à la ligne concernée de `mainwindow.cpp`, sans modifier la logique.
-2. Relancer le workflow x64.
-3. Corriger ensuite uniquement les incompatibilités MSVC/x64 réellement observées, une par une.
-4. Dès que le build complet est vert, vérifier l’EXE et la DLL produits et obtenir `ECU_MEMS_X64_LINK_VALIDATION.txt = OK`.
-5. Mettre immédiatement à jour ce rapport sur `RAPPORT`.
-6. Ensuite seulement préparer un package x64 autonome pour essai utilisateur, sans remplacer la version 32 bits actuelle.
-7. Après validation réelle sur PC et ECU, commencer l’extension du moteur protocolaire par profils MEMS/modes, sans limiter la nouvelle DLL aux fonctions actuellement utilisées par l’interface.
+1. Préparer un **package x64 autonome de test** à partir du build maintenant validé, sans remplacer ni supprimer la version 32 bits actuelle.
+2. Inclure les dépendances Qt/MSVC nécessaires et `mems_manager_x64.dll`, puis contrôler que le package ne contient pas l’ancienne `librosco.dll` x86.
+3. Ajouter un contrôle de package permettant de vérifier avant essai que l’EXE et la DLL sont AMD64 et que les dépendances essentielles sont présentes.
+4. Fournir ensuite ce package x64 pour essai utilisateur sous Windows.
+5. Après validation réelle du lancement, de l’interface et de la connexion à un ECU, consigner le résultat dans ce rapport.
+6. Ensuite seulement commencer l’extension du moteur protocolaire par profils MEMS/modes, sans limiter la nouvelle DLL aux fonctions actuellement utilisées par l’interface.
