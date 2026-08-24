@@ -1,49 +1,43 @@
-name: Build ECU MEMS Manager x64 BUILD 22
+name: ECU MEMS Manager x64
+run-name: BUILD #26 - v1.0.26 - ${{ github.sha }}
 
 on:
   workflow_dispatch:
   push:
     branches: [MEMSX64]
     paths:
-      - '.github/workflows/build-ecu-mems-x64-build22.yml'
+      - '.github/workflows/memsx64.yml'
+      - 'CMakeLists.txt'
+      - '**/*.cpp'
+      - '**/*.h'
+      - '**/*.ui'
+      - '**/*.qrc'
+      - 'database/**'
+      - 'librosco-x64/**'
+      - 'translations/**'
+
+concurrency:
+  group: memsx64-build-26
+  cancel-in-progress: true
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  build22:
+  build_x64:
     runs-on: windows-latest
     env:
-      MEMS_BUILD: '22'
-      MEMS_VERSION: '1.0.22'
-      MEMS_BUILD_NUMBER: '22'
+      MEMS_BUILD: '26'
+      MEMS_VERSION: '1.0.26'
+      MEMS_BUILD_NUMBER: '26'
 
     steps:
-      - name: Checkout MEMSX64
+      - name: Checkout exact source commit
         uses: actions/checkout@v4
         with:
-          ref: MEMSX64
+          ref: ${{ github.sha }}
 
-      - name: Mark BUILD 22 running
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          @(
-            'status=RUNNING',
-            'build=22',
-            'version=1.0.22',
-            "run_id=${{ github.run_id }}",
-            "run_number=${{ github.run_number }}",
-            "run_attempt=${{ github.run_attempt }}",
-            "source_commit=${{ github.sha }}"
-          ) | Set-Content -Encoding UTF8 ECU_MEMS_X64_BUILD22_STATUS.txt
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add ECU_MEMS_X64_BUILD22_STATUS.txt
-          git commit -m "Mark BUILD #22 x64 validation running [skip ci]"
-          git push origin HEAD:MEMSX64
-
-      - name: Setup Python
+      - name: Setup Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -54,12 +48,12 @@ jobs:
           $ErrorActionPreference = 'Stop'
           python -m pip install --disable-pip-version-check "aqtinstall==3.3.0" pefile
 
-      - name: Install Qt 5.15.2 MSVC 2019 x64 with external 7-Zip
+      - name: Install Qt 5.15.2 MSVC 2019 x64
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $sevenZip = (Get-Command 7z.exe -ErrorAction Stop).Source
-          Write-Host "Using external 7-Zip: $sevenZip"
+          Write-Host "7-Zip extraction backend: $sevenZip"
           if (Test-Path 'C:\Qt') { Remove-Item 'C:\Qt' -Recurse -Force -ErrorAction SilentlyContinue }
           python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
           if ($LASTEXITCODE -ne 0) { throw "aqtinstall failed: $LASTEXITCODE" }
@@ -68,7 +62,7 @@ jobs:
           if (-not (Test-Path "$qtRoot\plugins\sqldrivers\qsqlite.dll")) { throw 'Qt QSQLITE x64 plugin missing' }
           if (-not (Test-Path "$qtRoot\bin\Qt5SerialPort.dll")) { throw 'Qt SerialPort x64 runtime missing' }
 
-      - name: Validate deterministic 14-tab source
+      - name: Validate deterministic 14-tab navigation source
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -98,24 +92,24 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          cmake -S . -B build-clean-x64 -A x64 `
+          cmake -S . -B build-x64 -A x64 `
             -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
             -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
             -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF
 
-      - name: Controls 01-02 - compile full application and mems_manager_x64 DLL
+      - name: Controls 01-02 - compile application and native protocol DLL
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          cmake --build build-clean-x64 --config Release --target ecu_mems_manager rosco_abi_selftest
-          if (-not (Test-Path 'build-clean-x64\Release\ecu_mems_manager.exe')) { throw 'ecu_mems_manager.exe missing' }
-          if (-not (Test-Path 'build-clean-x64\librosco-x64\Release\mems_manager_x64.dll')) { throw 'mems_manager_x64.dll missing' }
+          cmake --build build-x64 --config Release --target ecu_mems_manager rosco_abi_selftest
+          if (-not (Test-Path 'build-x64\Release\ecu_mems_manager.exe')) { throw 'ecu_mems_manager.exe missing' }
+          if (-not (Test-Path 'build-x64\librosco-x64\Release\mems_manager_x64.dll')) { throw 'mems_manager_x64.dll missing' }
 
       - name: Control 11 - protocol ABI self-test
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          ctest --test-dir build-clean-x64/librosco-x64 -C Release --output-on-failure -R rosco_abi_selftest
+          ctest --test-dir build-x64/librosco-x64 -C Release --output-on-failure -R rosco_abi_selftest
 
       - name: Control 14A - MEMS reference SQLite semantic self-test
         shell: pwsh
@@ -124,20 +118,20 @@ jobs:
           $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
           $env:PATH = "$qtRoot\bin;$env:PATH"
           $env:QT_PLUGIN_PATH = "$qtRoot\plugins"
-          $selftest = '${{ github.workspace }}\build-clean-x64\Release\mems_search_selftest.exe'
-          $reference = '${{ github.workspace }}\build-clean-x64\Release\database\reference\manifest.json'
+          $selftest = '${{ github.workspace }}\build-x64\Release\mems_search_selftest.exe'
+          $reference = '${{ github.workspace }}\build-x64\Release\database\reference\manifest.json'
           if (-not (Test-Path $selftest)) { throw 'mems_search_selftest.exe missing' }
           if (-not (Test-Path $reference)) { throw 'MEMS reference resources missing beside self-test' }
           & $selftest
           if ($LASTEXITCODE -ne 0) { throw "MEMS reference semantic self-test failed: $LASTEXITCODE" }
 
-      - name: Assemble complete clean portable x64 package
+      - name: Assemble full portable x64 package
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
-          $build = '${{ github.workspace }}\build-clean-x64'
-          $dist = '${{ github.workspace }}\dist-clean-x64'
+          $build = '${{ github.workspace }}\build-x64'
+          $dist = '${{ github.workspace }}\dist-x64'
           if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }
           New-Item -ItemType Directory -Path $dist | Out-Null
           Copy-Item "$build\Release\ecu_mems_manager.exe" "$dist\ecu_mems_manager.exe" -Force
@@ -149,20 +143,20 @@ jobs:
           $forbidden = Get-ChildItem $dist -Recurse -File | Where-Object { $_.Name -ieq 'librosco.dll' -or $_.Name -ieq 'llama-server.exe' -or $_.Extension -ieq '.gguf' }
           if ($forbidden) { throw "Forbidden first-milestone runtime found: $($forbidden.FullName -join ', ')" }
           @(
-            'ECU MEMS MANAGER - FIRST CLEAN X64 MILESTONE',
-            'BUILD #22 - v1.0.22',
+            'ECU MEMS MANAGER - NATIVE X64 VALIDATION BUILD',
+            'BUILD #26 - v1.0.26',
             'Full MEMS Manager application compiled native x64',
             'Protocol DLL: mems_manager_x64.dll native x64',
             '14-tab application retained',
             'Local IA runtime/model intentionally absent from this first ECU-validation package',
             'Historical 32-bit librosco.dll intentionally absent'
-          ) | Set-Content "$dist\README_X64_CLEAN_TEST.txt" -Encoding UTF8
+          ) | Set-Content "$dist\README_X64.txt" -Encoding UTF8
 
       - name: Controls 03-10 and 15 - PE architecture imports exports inventory
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $env:DIST = '${{ github.workspace }}\dist-clean-x64'
+          $env:DIST = '${{ github.workspace }}\dist-x64'
           @'
           import os
           from pathlib import Path
@@ -193,11 +187,11 @@ jobs:
           print(f'PASS {len(inventory)} PE files AMD64; 22 protocol exports exact')
           '@ | python -
 
-      - name: Control 14B - package SQLite and indispensable resources
+      - name: Control 14B - packaged SQLite and indispensable resources
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $dist = '${{ github.workspace }}\dist-clean-x64'
+          $dist = '${{ github.workspace }}\dist-x64'
           $required = @(
             "$dist\database\reference\manifest.json",
             "$dist\translations\fr\fr.json",
@@ -209,25 +203,25 @@ jobs:
           foreach ($path in $required) { if (-not (Test-Path $path)) { throw "Missing indispensable resource: $path" } }
           Write-Host 'PASS packaged SQLite/reference/translation resources'
 
-      - name: Control 13 - smoke launch packaged full application
+      - name: Control 13 - smoke launch packaged application
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $dist = '${{ github.workspace }}\dist-clean-x64'
+          $dist = '${{ github.workspace }}\dist-x64'
           $proc = Start-Process "$dist\ecu_mems_manager.exe" -WorkingDirectory $dist -PassThru
           Start-Sleep -Seconds 5
           $proc.Refresh()
-          if ($proc.HasExited) { throw "Clean x64 application exited during smoke launch (code $($proc.ExitCode))" }
+          if ($proc.HasExited) { throw "x64 application exited during smoke launch (code $($proc.ExitCode))" }
           Stop-Process -Id $proc.Id -Force
           Write-Host 'PASS full application smoke launch'
 
-      - name: Write 15-control BUILD 22 report
+      - name: Write 15-control report
         shell: pwsh
         run: |
-          $dist = '${{ github.workspace }}\dist-clean-x64'
+          $dist = '${{ github.workspace }}\dist-x64'
           @(
-            'BUILD #22 - v1.0.22',
-            'ECU MEMS MANAGER CLEAN X64: 15/15 AUTOMATED CONTROLS PASSED',
+            'BUILD #26 - v1.0.26',
+            'ECU MEMS MANAGER NATIVE X64: 15/15 AUTOMATED CONTROLS PASSED',
             '01 PASS full x64 application compile',
             '02 PASS mems_manager_x64.dll compile',
             '03 PASS ecu_mems_manager.exe PE32+ AMD64',
@@ -247,51 +241,10 @@ jobs:
             'LOCAL IA RUNTIME intentionally absent from first ECU-validation package'
           ) | Set-Content "$dist\ECU_MEMS_X64_15_CONTROLS.txt" -Encoding UTF8
 
-      - name: Upload BUILD 22 artifact
+      - name: Upload BUILD 26 artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ECU-MEMS-Manager-x64-CLEAN-BUILD-22-v1.0.22
-          path: dist-clean-x64/
+          name: ECU-MEMS-Manager-x64-BUILD-26-v1.0.26
+          path: dist-x64/
           if-no-files-found: error
           compression-level: 0
-
-      - name: Mark BUILD 22 passed
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          @(
-            'status=PASSED',
-            'build=22',
-            'version=1.0.22',
-            "run_id=${{ github.run_id }}",
-            "run_number=${{ github.run_number }}",
-            "run_attempt=${{ github.run_attempt }}",
-            "source_commit=${{ github.sha }}",
-            'artifact=ECU-MEMS-Manager-x64-CLEAN-BUILD-22-v1.0.22',
-            'controls=15/15',
-            'navigation=14/14 deterministic',
-            'local_ai_runtime=absent',
-            'historical_librosco_x86=absent'
-          ) | Set-Content -Encoding UTF8 ECU_MEMS_X64_BUILD22_STATUS.txt
-          git add ECU_MEMS_X64_BUILD22_STATUS.txt
-          git commit -m "Validate BUILD #22 clean x64 milestone [skip ci]"
-          git push origin HEAD:MEMSX64
-
-      - name: Mark BUILD 22 failed
-        if: failure()
-        shell: pwsh
-        run: |
-          @(
-            'status=FAILED',
-            'build=22',
-            'version=1.0.22',
-            "run_id=${{ github.run_id }}",
-            "run_number=${{ github.run_number }}",
-            "run_attempt=${{ github.run_attempt }}",
-            "source_commit=${{ github.sha }}"
-          ) | Set-Content -Encoding UTF8 ECU_MEMS_X64_BUILD22_STATUS.txt
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add ECU_MEMS_X64_BUILD22_STATUS.txt
-          git commit -m "Record BUILD #22 x64 failure [skip ci]"
-          git push origin HEAD:MEMSX64

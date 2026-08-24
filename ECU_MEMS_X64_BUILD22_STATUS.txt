@@ -1,7 +1,0 @@
-status=RUNNING
-build=22
-version=1.0.22
-run_id=32773144854
-run_number=2
-run_attempt=2
-source_commit=c1d5576b3e6206772979936f86acb9146bfd3946
