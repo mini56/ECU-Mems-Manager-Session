@@ -4,10 +4,9 @@
 >
 > Au début de chaque nouvelle discussion concernant ECU MEMS Manager, ce fichier doit être relu avant de reprendre le travail.
 > L’assistant doit **mettre à jour ce rapport lui-même et le pousser régulièrement sur la branche `RAPPORT`**, au minimum après chaque étape technique importante, validation, découverte, changement de branche de travail ou décision d’architecture.
-> Ce rapport est volontairement en **Markdown lisible directement sur GitHub**. Il ne doit pas être remplacé par un format encodé ou opaque.
 > La branche `RAPPORT` sert au suivi et à la transmission entre discussions. Elle ne doit pas servir à modifier le programme de production sauf demande explicite.
 
-Dernière mise à jour : **24 août 2026 — essai étendu de la dernière x64 sur PC secondaire : application stable sur tous les onglets testés, IA locale absente du package, défauts d'encodage et responsive observés mais non traités pour l'instant**
+Dernière mise à jour : **24 août 2026 — package portable MEMSX64 avec IA locale complète validé au vert par GitHub Actions, runtime llama.cpp + modèle Qwen inclus et testés avant packaging**
 
 ---
 
@@ -17,390 +16,398 @@ Dernière mise à jour : **24 août 2026 — essai étendu de la dernière x64 s
 - Branche de travail x64 : **`MEMSX64`**.
 - Branche de transmission : **`RAPPORT`**.
 - L’utilisateur compile et teste via **GitHub Actions sous Windows**, pas avec Qt Creator.
-- Ne modifier que ce qui est explicitement demandé et ne pas faire régresser les fonctions existantes.
-- Conserver l’interface sombre et responsive.
+- Préserver la version 32 bits existante pendant le développement x64 parallèle.
+- Ne modifier que ce qui est demandé explicitement ou strictement nécessaire à la tâche en cours.
+- Conserver l’interface sombre et responsive ; ne pas engager de refonte graphique non demandée.
+- Ne pas modifier l’IA pendant un autre chantier sauf autorisation explicite.
 - Les familles MEMS **1.2 / 1.3 / 1.6 / 1.9** doivent rester distinguées.
-- Dans `memsinterface.h`, conserver impérativement `void onProtocolCommandRequested(quint8 command);`.
-- Ne pas confondre polling `0x7D/0x80`, RAM/Mode 4, calibrations/cartes et données externes.
+- Dans `memsinterface.h`, conserver impérativement : `void onProtocolCommandRequested(quint8 command);`.
+- Ne jamais confondre polling normal `0x7D/0x80`, RAM/Mode 4, calibrations/cartes et données externes.
 
 ---
 
-## 2. État IA MEMS validé avant le chantier x64
+## 2. Références historiques importantes
+
+### 2.1 IA MEMS avant x64
 
 Branche historique IA : `lab-expert-engine`.
 
-Derniers correctifs importants :
+Package IA complet déjà validé avant le chantier x64 :
 
-- `cbcb8a14189b1bc013cb3519b0ba33aa3f85c072` — `Fix IA MEMS history scroll and factual answers`
-- `896a59f762e648ce50023121491693ee70ad162d` — `Build IA MEMS quality patch`
+- modèle : **Qwen3-0.6B-Q8_0** ;
+- runtime : **llama.cpp b10516 Windows x64 CPU** ;
+- port local : **127.0.0.1:18089** ;
+- runtime ZIP : `llama-b10516-bin-win-cpu-x64.zip` ;
+- SHA256 runtime : `fbbbc55e0eb2e1b07f9dcb9488616c98ed47d9003b90e15e7c8c7812c4307cd3` ;
+- modèle final : `ai/models/ia-mems.gguf` ;
+- SHA256 modèle : `9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031`.
 
-Package IA complet validé :
+Derniers correctifs historiques importants :
 
-- modèle : `Qwen3-0.6B-Q8_0`
-- runtime : `llama.cpp b10516 Windows x64 CPU`
-- artefact : `ECU-MEMS-Manager-IA-MEMS-Windows-Lab`
-- taille : environ 798 Mo
-- SHA256 : `753550992b43fff6a569752f818f5b5d208de3210d734d6d38e381b830112ec3`
+- `cbcb8a14189b1bc013cb3519b0ba33aa3f85c072` — `Fix IA MEMS history scroll and factual answers` ;
+- `896a59f762e648ce50023121491693ee70ad162d` — `Build IA MEMS quality patch`.
 
-Ne pas modifier l’IA pendant le chantier x64 sauf demande explicite.
+### 2.2 Base Andrew Revill / MEMSTools
 
----
-
-## 3. Base Andrew Revill / MEMSTools — lot 1600
-
-Le lot complet est présent : `database/reference/research_enrichment_1600.qz64`, environ **33,3 Mo compressés**.
-
-Couche de conservation complète :
+Le lot brut complet 1600 reste conservé dans `database/reference/research_enrichment_1600.qz64`, environ 33,3 Mo compressés :
 
 - 478 730 propriétés DEF ;
 - 45 934 propriétés DIM ;
 - 3 524 519 cellules non vides de corrélations.
 
-Le générateur utilise `csv.reader`, donc les virgules/champs CSV ne sont plus le blocage principal.
-
-Le lot 1600 brut est livré et audité mais volontairement **non chargé dans le runtime SQLite 32 bits** pour éviter la saturation de l’espace d’adressage. Les éléments Andrew déjà compris sont intégrés sous forme sémantique dans les lots précédents, notamment 1500–1540.
-
-Même en x64, ne pas décider automatiquement de charger les 3,5 millions de cellules brutes : il faudra mesurer mémoire, temps de démarrage et intérêt réel pour la recherche IA.
+Il ne faut pas décider automatiquement de charger les 3,5 millions de cellules brutes même en x64 sans mesurer mémoire, temps de démarrage et intérêt réel.
 
 ---
 
-## 4. Pourquoi le chantier x64 a été lancé
+## 3. `librosco.dll` historique x86 — référence de compatibilité
 
-La version actuelle 32 bits fonctionne sur Windows 11 64 bits grâce à WOW64. Le problème principal du 32 bits n’est donc pas Windows 11 mais la limitation d’espace mémoire, devenue gênante avec les grosses bases et les futurs usages IA.
-
-Décision :
-
-- conserver le MEMS Manager 32 bits actuel comme version compatible/historique ;
-- développer en parallèle une vraie version **x64 native** ;
-- ne pas doubler systématiquement les builds de production : la x64 reste un chantier/lab tant qu’elle n’est pas validée.
-
----
-
-## 5. Audit complet de la `librosco.dll` historique — TERMINÉ
-
-Fichier actuel : `prebuilt-librosco/librosco.dll`.
+Fichier : `prebuilt-librosco/librosco.dll`.
 
 Identité vérifiée :
 
 - taille : **49 672 octets** ;
-- SHA-256 : `a5ad466f8f1a198a6f8259a5ea5ab59775815c8cbc9637aa584db9e9c811d38f` ;
-- architecture : **IMAGE_FILE_MACHINE_I386 / PE32 / x86 32 bits** ;
-- version interne retournée : **0.1.12** ;
-- structure `mems_data` réellement utilisée : **60 octets** ;
-- 22 exports nommés.
+- SHA256 : `a5ad466f8f1a198a6f8259a5ea5ab59775815c8cbc9637aa584db9e9c811d38f` ;
+- architecture : PE32 / x86 ;
+- version interne : **0.1.12** ;
+- `mems_data` : **60 octets** ;
+- **22 exports** nommés.
 
-Rapports techniques disponibles sur `RAPPORT` :
-
-- `RAPPORT_LIBROSCO_BINAIRE.md`
-- `RAPPORT_LIBROSCO_DESASSEMBLAGE.md`
-- `RAPPORT_LIBROSCO_LEOPOLD_COMPARAISON.md`
-
-### 5.1 Les 22 exports du vrai binaire
+Les 22 exports historiques :
 
 `mems_cleanup`, `mems_clear_faults`, `mems_connect`, `mems_disconnect`, `mems_get_lib_version`, `mems_heartbeat`, `mems_init`, `mems_init_link`, `mems_is_connected`, `mems_lock`, `mems_move_iac`, `mems_openserial`, `mems_read`, `mems_read_iac_position`, `mems_read_raw`, `mems_read_serial`, `mems_reset_ECU`, `mems_reset_adjustments`, `mems_send_command`, `mems_test_actuator`, `mems_unlock`, `mems_write_serial`.
 
-Le header Haro actuel déclare davantage de wrappers que la DLL n’en exporte. La primitive `mems_test_actuator()` permet néanmoins d’envoyer des commandes supplémentaires sans créer un wrapper pour chaque octet.
-
-### 5.2 Commandes directement confirmées par désassemblage
+Commandes directement confirmées par désassemblage du vrai binaire :
 
 - init : **`CA 75 F4 D0`** ;
 - polling : `0x80` puis `0x7D` ;
 - trame 80 : **28 octets** ;
 - trame 7D : **32 octets** ;
-- position IAC : `0xFB` ;
-- effacement défauts : `0xCC` ;
+- IAC : `0xFB` ;
+- clear faults : `0xCC` ;
 - heartbeat : `0xF4` ;
-- `mems_reset_ECU()` : **`0xFA`** ;
-- `mems_reset_adjustments()` : **`0x0F`**.
-
-Ces deux dernières valeurs sont la référence de compatibilité avec la DLL réellement utilisée, même lorsque certains forks externes attribuent d’autres significations à `FA` ou `0F`.
+- reset ECU : **`0xFA`** ;
+- reset adjustments : **`0x0F`**.
 
 ---
 
-## 6. Sources ROSCO/librosco retrouvées
+## 4. Nouvelle DLL protocole native x64 — VALIDÉE
 
-Sources principales à conserver dans la cartographie :
+Nom décidé : **`mems_manager_x64.dll`**.
 
-1. `colinbourassa/librosco` — source C historique ;
-2. `haro78/MEMS-Scan` — header correspondant à celui utilisé par ECU MEMS Manager ;
-3. `LeopoldG/Source-librosco` et dépôts associés — extensions nombreuses mais conflits sémantiques sur certaines commandes ;
-4. `james-portman/rover-mems-agent` — autre implémentation utile pour comparer MEMS 1.x et MEMS 1.9.
+- code source : `librosco-x64/` ;
+- DEF : `librosco-x64/mems_manager_x64.def` ;
+- target CMake interne conservé momentanément sous le nom `rosco` ;
+- output réel : `mems_manager_x64.dll`.
 
-La DLL publique Leopold examinée est une lignée plus étendue et ne doit pas être utilisée directement en remplacement de notre binaire historique sans contrôle commande par commande.
+Validation native obtenue :
 
----
+- architecture **IMAGE_FILE_MACHINE_AMD64** ;
+- format **PE32+** ;
+- `frame80` : 28 octets ;
+- `frame7d` : 32 octets ;
+- `mems_data` : 60 octets ;
+- les **22 exports historiques** sont présents.
 
-## 7. Cartographie protocolaire : règle d’architecture
+Améliorations de sûreté conservées par rapport à l’ancien code :
 
-Le fichier de travail `librosco-x64/ROSCO_COMMAND_CARTOGRAPHY.md` est maintenant présent sur `MEMSX64`.
+- refus d’une trame `0x7D` tronquée ;
+- clear/reset renvoient l’état réel de l’échange série au lieu de forcer un succès.
 
-Règle essentielle : **un octet de commande ne doit pas être interprété sans connaître la famille ECU et le mode diagnostic**.
-
-Certaines valeurs peuvent avoir des significations différentes en mode diagnostic normal et en Mode 4. Exemples à traiter avec prudence : `F4`, `F7`, `F8`, `D1`, `D3`, `FA`, `0F`, `7C`.
-
-Architecture cible :
-
-- transport série générique ;
-- moteur générique envoi/réception ;
-- profils MEMS 1.2 / 1.3 / 1.6 / 1.9 ;
-- contexte de mode explicite ;
-- commandes classées `confirmé`, `source externe`, `expérimental`, `conflit` ;
-- Mode 4/RAM/calibration/programming isolé du polling courant.
+Règle de cartographie : un octet de commande ne doit pas être interprété sans connaître la famille ECU et le mode. Les conflits potentiels `F4`, `F7`, `F8`, `D1`, `D3`, `FA`, `0F`, `7C` doivent rester contextualisés.
 
 ---
 
-## 8. Nouvelle DLL x64 — NOM DÉCIDÉ ET VALIDÉ
-
-Décision utilisateur : la nouvelle DLL ne doit pas s’appeler `librosco64.dll`.
-
-Nom retenu : **`mems_manager_x64.dll`**.
-
-Signification :
-
-- `librosco.dll` = ancienne DLL historique x86 32 bits ;
-- `mems_manager_x64.dll` = nouvelle DLL native x64 d’ECU MEMS Manager.
-
-Le code source se trouve actuellement dans le sous-dossier historique `librosco-x64/` pour éviter une migration de chemins inutile pendant les premiers tests. Le target CMake interne reste momentanément `rosco` pour préserver la compatibilité source, mais son `OUTPUT_NAME` est **`mems_manager_x64`**.
-
-Fichier d’exports : `librosco-x64/mems_manager_x64.def`.
-
-### 8.1 Validation GitHub Actions obtenue
-
-Marqueur : `MEMS_MANAGER_X64_DLL_VALIDATION.txt`.
-
-Résultat : **VERT**.
-
-- filename : `mems_manager_x64.dll`
-- architecture : **IMAGE_FILE_MACHINE_AMD64**
-- format : **PE32+**
-- `frame80` : 28 octets
-- `frame7d` : 32 octets
-- `mems_data` : 60 octets
-- exports : **22 noms historiques de compatibilité exactement présents**
-- taille de la DLL validée : **16 384 octets**
-- SHA256 : `eb524976bbd25ae7cebf01520c209e92b3ee35a40f42c8551d49e3ea222f532f`
-
-Commit automatique de validation : **`667bb8c9190d326de93b28314b2e2703fc1d9063`** — `Validate mems_manager_x64 native DLL [skip ci]`.
-
-### 8.2 Améliorations de sûreté conservées
-
-Deux comportements manifestement erronés de l’ancien code ne sont pas reproduits :
-
-- une trame `0x7D` tronquée est refusée ;
-- `clear/reset` renvoient l’état réel de l’échange série au lieu de forcer un succès après acquisition du mutex.
-
-Ces différences concernent les chemins d’erreur, pas la signification des commandes ECU.
-
----
-
-## 9. Validation de MEMS Manager complet en x64 — VALIDÉE
+## 5. Liaison de MEMS Manager complet en x64 — VALIDÉE
 
 Workflow : `.github/workflows/build-ecu-mems-x64-link-smoke.yml`.
 
-Configuration utilisée :
+Run de validation : **32709187615**.
 
-- Windows x64 ;
-- Qt 5.15.2 MSVC 2019 x64 ;
-- `MEMS_USE_BUNDLED_LIBROSCO_X64=ON` ;
-- nouvelle `mems_manager_x64.dll`.
+Corrections MSVC minimales appliquées dans `mainwindow.cpp`, sans changement de logique :
 
-Le contrôle final demandé était :
+- `5e53ef22c4b848397aa5abdd453378f76f1e3988` — `or` → `||` ;
+- `722a8278c5974e4b016a59ed6b1de70baee01f40` — `and` → `&&` ;
+- `09564db70f729e1a3d78f974918d0d24bafbc982` — autres `or` → `||`.
 
-- `ecu_mems_manager.exe` PE32+ AMD64 ;
-- `mems_manager_x64.dll` PE32+ AMD64 ;
-- import de **`mems_manager_x64.dll`** ;
-- absence d’import de l’ancienne **`librosco.dll`** ;
-- conservation des 22 exports de compatibilité.
+Résultat final :
 
-Marqueur : `ECU_MEMS_X64_LINK_VALIDATION.txt`.
+- `ecu_mems_manager.exe` : PE32+ AMD64 ;
+- `mems_manager_x64.dll` : PE32+ AMD64 ;
+- l’EXE importe `mems_manager_x64.dll` : oui ;
+- l’EXE importe l’ancienne `librosco.dll` : non.
 
-### 9.1 Run n° 32709187615 — historique des blocages MSVC
-
-Le premier passage du run **`32709187615`** a confirmé :
-
-- installation de Qt 5.15.2 MSVC x64 : **OK** ;
-- configuration CMake x64 : **OK** ;
-- compilation de `mems_manager_x64.dll` dans le build de l’application : **OK** ;
-- compilation du self-test de recherche : **OK** ;
-- compilation de nombreux fichiers C++ de MEMS Manager : **OK**.
-
-Le premier blocage était en `mainwindow.cpp` ligne ~902 : utilisation de l’opérateur alternatif `or` avec MSVC. Les nombreuses erreurs suivantes étaient des cascades syntaxiques.
-
-La reprise du 24 août 2026 a ensuite suivi strictement la règle : **une incompatibilité observée, une correction minimale, un nouveau build**.
-
-Corrections appliquées dans `mainwindow.cpp`, sans changement de logique :
-
-1. ligne ~902 : `or` → `||` dans la condition `idle_switch / uk3` ; commit **`5e53ef22c4b848397aa5abdd453378f76f1e3988`** — `Fix MSVC logical operator in mainwindow` ;
-2. ligne ~967 : les trois `and` → `&&` dans la condition IAC ; commit **`722a8278c5974e4b016a59ed6b1de70baee01f40`** — `Fix next MSVC logical and operators in mainwindow` ;
-3. ligne ~971 : les deux `or` → `||` dans la condition DTC ; commit **`09564db70f729e1a3d78f974918d0d24bafbc982`** — `Fix next MSVC logical or operators in mainwindow`.
-
-### 9.2 Validation complète obtenue — VERT
-
-Après la troisième correction, le workflow **`Build ECU MEMS Manager x64 link smoke`**, run **`32709187615`**, est passé entièrement au vert :
-
-- installation Qt 5.15.2 MSVC 2019 x64 : **OK** ;
-- configuration CMake x64 : **OK** ;
-- compilation de `mems_manager_x64.dll` : **OK** ;
-- compilation et édition de liens de `ecu_mems_manager.exe` : **OK** ;
-- validation PE/imports : **OK** ;
-- upload de l’artefact `ecu-mems-manager-x64-link-smoke` : **OK** ;
-- écriture du marqueur final `ECU_MEMS_X64_LINK_VALIDATION.txt` : **OK**.
-
-Validation finale enregistrée :
-
-- `ecu_mems_manager.exe` : **PE32+ AMD64** ;
-- taille EXE : **1 823 744 octets** ;
-- SHA256 EXE : `3abcb0b6c3cb2982d642829cbd398dd1069da8a3d7bb1458ae8813dfa541a8cc` ;
-- DLL protocole : **`mems_manager_x64.dll` PE32+ AMD64** ;
-- taille DLL : **16 384 octets** ;
-- SHA256 DLL : `720f8c8448fea6a8da94ef3398a14a84abb515e7f2fbc33b6e8bb880cb8f0999` ;
-- l’EXE importe `mems_manager_x64.dll` : **oui** ;
-- l’EXE importe l’ancienne `librosco.dll` : **non** ;
-- exports de compatibilité de la DLL : **22**.
-
-Commit automatique du marqueur vert sur `MEMSX64` : **`2e2165b8001482647d4a3606df4f4051ac63cf03`** — `Validate ECU MEMS Manager native x64 link [skip ci]`.
-
-Artefact GitHub Actions :
-
-- nom : `ecu-mems-manager-x64-link-smoke` ;
-- artifact id : **`9514435735`** ;
-- taille ZIP côté GitHub : **689 020 octets** ;
-- digest : `sha256:ccc2e246de54cada01a3aef8c74b5d903ba8f62313560bfef98ae4b6404b873b`.
-
-**État : la chaîne de compilation et de liaison native x64 est validée.**
+Marqueur final historique : commit `2e2165b8001482647d4a3606df4f4051ac63cf03`.
 
 ---
 
-## 10. Package portable x64 autonome — VALIDÉ
+## 6. Premier package portable x64 sans IA — VALIDÉ puis testé sur PC secondaire
 
 Workflow : `.github/workflows/build-ecu-mems-x64-package.yml`.
 
-Objectif : produire un dossier Windows x64 de test réellement autonome à partir de la branche `MEMSX64`, sans remplacer la version 32 bits et sans embarquer l’ancienne `librosco.dll` x86.
+Premier package x64 validé sans le gros runtime IA :
 
-### 10.1 Corrections du workflow de package
+- run **32713710308** ;
+- commit marqueur : `494c8993ffc218195639d974b7b2a7c81b3f8541` ;
+- 29 PE contrôlés, tous AMD64 ;
+- 243 fichiers ;
+- base : **85 ECU / 140 affectations / 91 commandes** ;
+- smoke launch 5 secondes : OK ;
+- aucune ancienne `librosco.dll` x86.
 
-Le premier essai a montré deux problèmes de validation du packaging, pas du programme :
+Essai réel utilisateur sur un PC secondaire qui n’avait jamais eu ECU MEMS Manager :
 
-1. sous Visual Studio/MSVC, les ressources générées/copées par CMake sont placées sous `build-package-x64/Release/`. Les chemins du workflow vers `translations` et `database` ont donc été corrigés vers `Release/translations` et `Release/database` ; commit **`fc13dd54ef4f148645b6c8258f8fdc288b322a83`** — `Fix x64 package Release resource paths` ;
-2. `Qt5Charts.dll` était exigée arbitrairement par le validateur alors que `windeployqt` et la table d’imports de l’EXE montrent qu’elle n’est pas une dépendance runtime de ce binaire. Cette fausse exigence a été retirée ; commit **`c6e2de29e746b074756be6bfa929d4824af80021`** — `Stop requiring unused Qt5Charts runtime DLL`.
+- l’application reste ouverte ;
+- navigation étendue dans pratiquement tous les onglets sans plantage ;
+- la base MEMS est disponible ;
+- l’onglet IA passe proprement en secours avec : `Moteur llama.cpp local absent du dossier IA.` ;
+- ceci était normal car ce premier ZIP x64 ne contenait ni dossier `ai/`, ni `llama-server.exe`, ni `.gguf` ;
+- défauts mojibake/UTF-8 visibles ;
+- défauts responsive/rognage visibles en 1920×1080 sur certaines pages ;
+- ces défauts ne sont pas la priorité actuelle et ne doivent pas déclencher une refonte sans demande explicite.
 
-Le workflow a aussi été rendu traçable avec un marqueur de démarrage et un marqueur d’échec ; commit **`9ea322a9faefbe11c1af5485afe4694dc9dbf4fa`** — `Add x64 package workflow run markers`.
+Conclusion obtenue : le noyau x64 et la navigation générale sont stables sur un PC propre lorsque l’IA locale n’est pas présente.
 
-`windeployqt` identifie comme dépendances directes de l’EXE : `Qt5Core`, `Qt5Gui`, `Qt5Network`, `Qt5SerialPort`, `Qt5Sql`, `Qt5Widgets`, et ajoute `Qt5Svg` pour les plugins SVG. Il déploie aussi les plugins Windows nécessaires, notamment `platforms/qwindows.dll` et `sqldrivers/qsqlite.dll`.
+---
 
-### 10.2 Run n° 32713710308 — VERT
+## 7. Persistance Windows et différence PC principal / PC secondaire
 
-Le run **`32713710308`** est entièrement passé au vert :
+L’utilisateur a précisé que chaque version est téléchargée, extraite et exécutée depuis **son propre dossier séparé**. Une contamination directe entre dossiers de versions est donc peu probable.
 
-- compilation native x64 : **OK** ;
-- assemblage du dossier portable : **OK** ;
-- validation architecture/contenu : **OK** ;
-- validation de la base MEMS hors ligne : **OK** ;
-- lancement fumée de l’application pendant 5 secondes : **OK** ;
-- upload de l’artefact : **OK** ;
-- écriture du marqueur `ECU_MEMS_X64_PACKAGE_VALIDATION.txt` : **OK**.
+En revanche, MEMS Manager utilise plusieurs états persistants hors dossier de l’EXE.
 
-Valeurs du marqueur final :
+### 7.1 QSettings partagé
 
-- application : **PE32+ AMD64** ;
-- DLL protocole : **`mems_manager_x64.dll` PE32+ AMD64** ;
-- l’EXE importe `mems_manager_x64.dll` : **oui** ;
-- l’EXE importe `librosco.dll` : **non** ;
-- le package contient `librosco.dll` : **non** ;
-- binaires PE contrôlés : **29**, tous AMD64 ;
-- nombre total de fichiers : **243** ;
-- taille totale avant ajout du rapport de validation : **90 988 029 octets** ;
-- SHA256 EXE : `2ee1635c62f3d51bbf9057dc368a9110353fa6631bd23c8e61998fabdac5197a` ;
-- SHA256 DLL : `0543a7355aa02d0c5c73b645b425c85cde211991d575ac12a9c53a79745907d2`.
+`main.cpp` configure :
 
-Contrôle de la base reconstruite depuis les quatre seeds `.qz64` :
+- application : `ECU Mems Manager` ;
+- organisation : `ECU Mems Manager` ;
+- `QSettings(QSettings::IniFormat, QSettings::UserScope, PROJECTNAME)`.
 
-- **85 ECU** ;
-- **140 fitments / affectations** ;
-- **91 commandes protocole**.
+Réglages persistants notamment :
 
-Le smoke-test a lancé `ecu_mems_manager.exe` depuis le dossier portable et vérifié qu’il restait actif pendant 5 secondes : **OK**.
+- `SerialDevice` ;
+- `TemperatureUnits` ;
+- `Theme` ;
+- `Language` ;
+- `LanguageConfigured` ;
+- `DesktopShortcut`.
 
-Commit automatique du marqueur vert sur `MEMSX64` : **`494c8993ffc218195639d974b7b2a7c81b3f8541`** — `Validate ECU MEMS Manager portable x64 package [skip ci]`.
+Des versions situées dans des dossiers différents peuvent donc partager ces réglages utilisateur.
 
-Artefact GitHub Actions prêt pour essai utilisateur :
+### 7.2 AppLocalData partagé
+
+Base/cache référence :
+
+- `QStandardPaths::AppLocalDataLocation/reference` ;
+- index global : `reference/mems_global_search_r1.sqlite`.
+
+Cache IA :
+
+- `QStandardPaths::AppLocalDataLocation/ia-mems` ;
+- DB : `ia_mems_reference_r<manifestRevision>.sqlite`.
+
+Point important : si la DB IA exacte existe déjà, `ExpertRuntimeDatabase::buildOrOpen()` peut la réutiliser directement. C’est une différence plausible entre PC principal et PC propre même si SQLite lui-même n’est pas lié à x86/x64.
+
+La base principale modifiable reste en revanche dossier-local : `<appdir>/database/ecu_mems_manager.sqlite`.
+
+### 7.3 Variables d’environnement et serveur externe
+
+`LocalAiClient::discoverAssets()` cherche d’abord :
+
+- `MEMS_AI_SERVER` ;
+- `MEMS_AI_MODEL` ;
+
+puis dans le dossier courant de l’application.
+
+Un ancien chemin stocké dans une variable d’environnement peut donc faire utiliser à une nouvelle version un runtime/modèle situé ailleurs. MEMS Manager ne scanne toutefois pas arbitrairement le disque à la recherche d’anciens dossiers.
+
+Un serveur déjà actif sur **127.0.0.1:18089** peut également influer sur le comportement.
+
+### 7.4 Désinstalleur
+
+Le désinstalleur actuel coche par défaut **conserver le profil utilisateur**.
+
+- en gardant le profil : QSettings/AppLocalData ne sont pas supprimés ;
+- si la suppression du profil est explicitement activée : le QSettings utilisateur et l’AppLocalData peuvent être supprimés ;
+- les variables d’environnement `MEMS_AI_SERVER` / `MEMS_AI_MODEL` ne sont pas effacées par le désinstalleur ;
+- un runtime externe arbitraire n’est pas supprimé ;
+- un `llama-server.exe` externe déjà lancé n’est pas automatiquement neutralisé.
+
+Comme plusieurs versions partagent la même identité Qt, supprimer le profil depuis une version installée peut toucher des données partagées par d’autres versions. Préférer une isolation/rénommage réversible plutôt qu’une suppression brutale pour le diagnostic.
+
+---
+
+## 8. Diagnostics GitHub x64 IA du 24 août 2026
+
+Plusieurs workflows de diagnostic ont été ajoutés sur `MEMSX64` pour reproduire le comportement sans modifier la logique normale du programme.
+
+### 8.1 Run 32717558263 — affiché rouge mais test IA réellement PASS
+
+Workflow IA x64 smoke :
+
+- compilation x64 : OK ;
+- lancement IA forcé pour le test : OK ;
+- résultat réel : **`IA_X64_SMOKE=PASS`** ;
+- application encore vivante après **20 secondes**.
+
+Le run a été marqué rouge uniquement parce que l’étape finale d’enregistrement Git a échoué : le workflow avait des modifications locales de test non commitées, puis un autre commit avait avancé la branche. Le `git pull --rebase` a refusé de travailler avec les changements locaux et le push est ensuite devenu non-fast-forward.
+
+Donc ce rouge **n’indique pas un crash IA**.
+
+### 8.2 Run 32718093195 — diagnostic sélection IA par barre latérale : VERT
+
+Le workflow a compilé l’application et sélectionné l’IA via le chemin de navigation latérale. Toutes les étapes sont passées au vert.
+
+### 8.3 Run 32721284999 — cache `ExpertRuntimeDatabase` x64 : VERT
+
+Le self-test a construit le cache IA puis rouvert/réutilisé le même cache en x64 : **succès**.
+
+Cette validation réduit la probabilité qu’une simple réutilisation d’un SQLite IA existant soit intrinsèquement incompatible avec le binaire x64.
+
+### 8.4 Run 32721873137 — rouge de permissions, pas erreur de package
+
+Le workflow temporaire a correctement généré localement la modification du workflow de package, mais le push a été refusé par GitHub :
+
+`refusing to allow a GitHub App to create or update workflow ... without workflows permission`
+
+Cause exacte : le token `GITHUB_TOKEN` du bot du workflow ne peut pas modifier un autre fichier `.github/workflows/...` de cette manière.
+
+La correction a ensuite été appliquée directement par l’assistant via GitHub, sans passer par ce bot auto-modificateur.
+
+---
+
+## 9. Package MEMSX64 avec IA locale complète — VALIDÉ AU VERT
+
+### 9.1 Modification du workflow
+
+Commit direct sur `MEMSX64` :
+
+**`58bd6a1f74da991ddf3b831fcfb55d2716755084` — `Bundle validated local IA runtime in x64 package`**.
+
+Le workflow `.github/workflows/build-ecu-mems-x64-package.yml` télécharge désormais pendant le build :
+
+- le runtime historique validé **llama.cpp b10516 Windows x64 CPU** ;
+- le modèle historique validé **Qwen3-0.6B-Q8_0** ;
+- vérifie les SHA256 attendus ;
+- copie les DLL VC++ x64 app-local nécessaires ;
+- ajoute les licences llama.cpp et Qwen ;
+- lance réellement `llama-server.exe` avec `ai-mems.gguf` ;
+- attend `/health` sur `127.0.0.1:18089` ;
+- n’assemble le package que si le moteur IA a réellement chargé le modèle ;
+- vérifie ensuite la présence du runtime, du modèle, des DLL VC++ et des licences dans le package final.
+
+### 9.2 Run 32741977123 — VERT COMPLET
+
+Résultat GitHub Actions : **SUCCESS**.
+
+Étapes explicitement validées :
+
+- Qt x64 : OK ;
+- configuration x64 : OK ;
+- compilation application : OK ;
+- téléchargement + SHA256 runtime IA : OK ;
+- téléchargement + SHA256 modèle IA : OK ;
+- **llama-server x64 lancé et modèle chargé : OK** ;
+- assemblage portable : OK ;
+- architecture/contenu : OK ;
+- base MEMS hors ligne : OK ;
+- lancement fumée de l’application : OK ;
+- upload artefact : OK ;
+- marqueur final : OK.
+
+Marqueur final `ECU_MEMS_X64_PACKAGE_VALIDATION.txt` :
+
+- `workflow_run_id=32741977123` ;
+- application = **PE32+ AMD64** ;
+- DLL protocole = **PE32+ AMD64** ;
+- import `mems_manager_x64.dll` = oui ;
+- import historique `librosco.dll` = non ;
+- package contient historique `librosco.dll` = non ;
+- PE contrôlés : **90** ;
+- nombre de fichiers : **309** ;
+- taille totale avant rapport : **779 909 977 octets** ;
+- SHA256 EXE : `6884c89fa25c061173de5094c0322a71f9cee51da90efb824cf2d9208cf6279a` ;
+- SHA256 DLL protocole : `6c3369525398f548d745c7d2769c75c59d2bf7834d660fb108ea3878baa23482`.
+
+Commit automatique du marqueur final :
+
+**`ef2bbcafac348abcb9ac4c8edbb53b5772718849` — `Validate ECU MEMS Manager portable x64 package [skip ci]`**.
+
+### 9.3 Artefact prêt pour essai utilisateur
 
 - nom : **`ECU-MEMS-Manager-x64-Windows-Test`** ;
-- artifact id : **`9515199032`** ;
-- taille ZIP : **46 258 185 octets** ;
-- digest ZIP : `sha256:89e27ba769279d9568a913211dc62d5bdb6b8026a500ea98c3b9fa78acba0fde` ;
+- artifact id : **`9525708940`** ;
+- taille GitHub : **779 959 273 octets** ;
+- digest ZIP GitHub : **`sha256:d2127078f8a4db92103ecebd4fd9585f419b81edb6197ab7ce68265637c9d6c7`** ;
+- run : **32741977123** ;
 - expiration GitHub annoncée : **22 novembre 2026**.
 
-Le package x64 de test n’intègre pas volontairement le gros package IA local ; le chantier x64 actuel n’a pas modifié l’IA.
-
-**État actuel : compilation x64, liaison x64 et package portable autonome sont validés par GitHub Actions. Il reste la validation fonctionnelle réelle sur le PC de l’utilisateur et sur un ECU.**
+Le connecteur utilisé par l’assistant ne peut pas rapatrier localement cet artefact car il dépasse sa limite de téléchargement de 512 Mio. Cela ne remet pas en cause l’artefact GitHub : l’upload du workflow est vert et l’artefact est bien présent dans le run.
 
 ---
 
-## 11. Prochaine action exacte
+## 10. Ce qui reste à valider sur une vraie machine
 
-1. Faire télécharger et extraire l’artefact **`ECU-MEMS-Manager-x64-Windows-Test`** du run **`32713710308`**.
-2. Sur le PC utilisateur, lancer `ecu_mems_manager.exe` directement depuis le dossier extrait, sans toucher à l’installation 32 bits actuelle.
-3. Vérifier d’abord : démarrage, interface sombre/responsive, traductions, onglets, base MEMS, absence d’erreur DLL.
-4. Vérifier ensuite la détection du câble/port COM et la connexion à un ECU réel, puis les lectures normales déjà connues.
-5. Ne considérer la x64 comme fonctionnellement validée qu’après ce test PC + ECU.
-6. Consigner immédiatement le résultat de ce test dans ce rapport.
-7. Ensuite seulement reprendre l’extension du moteur protocolaire par profils MEMS/modes, sans limiter `mems_manager_x64.dll` aux seules fonctions actuellement utilisées par l’interface.
+Le package x64 complet avec IA est maintenant validé côté build et packaging, mais il reste les essais réels :
 
----
+1. télécharger l’artefact du run **32741977123** ;
+2. l’extraire dans son propre dossier ;
+3. lancer `ecu_mems_manager.exe` ;
+4. vérifier que l’application reste ouverte ;
+5. ouvrir **IA MEMS** et vérifier que le statut passe bien à IA locale prête et non plus `Moteur llama.cpp local absent...` ;
+6. poser une ou deux questions simples à l’IA et vérifier la réponse réelle ;
+7. ensuite seulement tester câble/COM + ECU réel.
 
-## 12. Premier essai utilisateur x64 sur un PC vierge — 24 août 2026
+Si le PC principal ferme encore alors que le PC secondaire reste stable avec exactement le même package, isoler sans destruction :
 
-L’utilisateur a testé le package **`ECU-MEMS-Manager-x64-Windows-Test`** sur un PC qui n’avait jamais eu ECU MEMS Manager auparavant.
+- variables `MEMS_AI_SERVER` / `MEMS_AI_MODEL` ;
+- éventuel `llama-server.exe` déjà actif / port 18089 ;
+- QSettings partagé ;
+- AppLocalData référence/search ;
+- AppLocalData `ia-mems` ;
+- puis seulement les différences machine (VC runtime, antivirus/EDR, pilote/graphique, etc.).
 
-Résultat observé sur deux captures de l’onglet **IA MEMS** :
-
-- l’application x64 **reste ouverte et ne plante pas** sur ce PC vierge ;
-- la base de connaissances MEMS se charge et affiche qu’elle est prête en lecture seule ;
-- l’IA conversationnelle ne fonctionne pas et indique explicitement : **`Moteur llama.cpp local absent du dossier IA.`** ;
-- ce comportement est cohérent avec le package x64 de test actuel : le ZIP contient **243 fichiers mais aucun dossier `ai/`, aucun `llama-server.exe` et aucun modèle `.gguf`** ;
-- l’interface IA montre également un problème d’encodage visible (`intÃ©grÃ©`, `prÃªte`, `connectÃ©`, etc.). Ce défaut visuel est distinct du plantage et n’est pas corrigé tant qu’aucune modification n’est explicitement demandée.
-
-Lecture technique importante :
-
-- `LocalAiClient::discoverAssets()` cherche en priorité les variables d’environnement **`MEMS_AI_SERVER`** et **`MEMS_AI_MODEL`**, puis `ai/llama-server.exe`, `ai/runtime/llama-server.exe`, `llama-server.exe` et les emplacements équivalents du modèle ;
-- si aucun runtime n’est trouvé, le code passe proprement en état `MissingRuntime` et ne lance aucun moteur IA ; c’est exactement ce que montre le PC vierge ;
-- cela **ne prouve pas encore** que le plantage du PC principal vient de l’IA, mais cela réduit fortement le champ : le noyau x64 peut rester stable quand aucun runtime IA local/externe n’est découvert ;
-- sur le PC principal, il faut maintenant vérifier si un ancien runtime/modèle est découvert via un dossier résiduel, une variable d’environnement, un `llama-server.exe` déjà présent ou un serveur déjà actif sur `127.0.0.1:18089`.
-
-**Prochaine vérification diagnostique avant toute modification du programme : comparer le comportement du PC principal avec le moteur IA totalement neutralisé, puis seulement si nécessaire isoler la cause exacte dans le runtime IA / environnement Windows.**
+Ne supprimer aucun profil/cache avant d’avoir essayé un renommage/isolation réversible.
 
 ---
 
-## 13. Essai étendu de la dernière x64 sur le PC secondaire — 24 août 2026
+## 11. Détection automatique câble / port COM — exigence future à conserver
 
-L’utilisateur a ensuite parcouru pratiquement toute l’interface de la dernière version x64 **v1.0.4** sur le même PC secondaire, en affichage **1920×1080**.
+La détection automatique doit être générale à MEMS Manager, pas réservée au MEMS 1.9.
 
-Captures fournies pour les onglets :
+Comportement cible :
 
-- Aperçu ;
-- Injection ;
-- Réglages ;
-- Actionneurs ;
-- Erreurs ;
-- Diagnostic automatique ;
-- IA MEMS ;
-- Analyse ;
-- Toutes les mesures ;
-- ECU / ROSCO ;
-- Toutes les données ;
-- Base de données ;
-- Mode interactif ;
-- Test ECU 1.9.
+- détecter automatiquement les interfaces branchées ;
+- afficher par exemple `COM5 — FTDI FT232 — câble détecté` ;
+- si plusieurs interfaces existent, afficher COM + type d’interface ;
+- lors de **Connecter**, vérifier que l’interface répond au protocole attendu ;
+- messages explicites selon le cas : `câble incompatible`, `aucun ECU détecté`, `mauvais type d’interface`.
 
-Résultat principal :
+La validation câble/ECU de la x64 reste en attente d’un test physique utilisateur.
 
-- l’application **reste ouverte pendant cette navigation étendue** ;
-- aucun plantage n’est observé pendant le passage entre ces onglets ;
-- la base de données affiche bien **85 références ECU**, **140 affectations véhicule** et **91 commandes**, cohérents avec les validations du package ;
-- l’onglet IA reste en mode de secours car le package ne contient toujours pas le runtime llama.cpp : `Moteur llama.cpp local absent du dossier IA.` ;
-- malgré l’absence du LLM local, certaines réponses déterministes fonctionnent, notamment la date courante et la plage de dwell bobine **1,9 à 3,1 ms vers 14 V** ;
-- les défauts d'encodage UTF-8/mojibake sont largement visibles dans l’IA et aussi dans certaines chaînes ECU/ROSCO ;
-- en **1920×1080**, plusieurs zones montrent encore des problèmes de responsive / largeur / rognage, notamment certaines pages Réglages, Actionneurs, ECU/ROSCO et des titres de l’onglet Injection. L’utilisateur précise que ce défaut est bien réel mais **ce n’est pas la priorité actuelle** : ne pas engager de refonte responsive maintenant.
+---
 
-Cette série de captures renforce donc la conclusion suivante : **sur le PC secondaire propre, le binaire x64 lui-même et la navigation générale sont stables ; le problème de fermeture observé sur le PC principal reste à isoler séparément, avec priorité au contexte local du PC principal et à l’environnement IA.**
+## 12. Injection / RAM — règles à ne pas perdre
+
+- Ne jamais calculer le temps d’injection à partir du polling normal `0x7D/0x80`.
+- Les trames normales ne contiennent pas les adresses RAM étudiées pour l’injection.
+- Adresses RAM importantes déjà identifiées dans les recherches : **`0x03C8`, `0x026E`, `0x0280`**.
+- L’onglet Injection est placé entre **Aperçu** et **Réglage**.
+- Le dwell / temps bobine appartient à cet onglet.
+- Éviter de mélanger des modes de lecture différents dans la même page si cela augmente inutilement le trafic et ralentit le polling.
+- Plage dwell de référence affichée : environ **1,9 à 3,1 ms vers 14 V**.
+
+---
+
+## 13. Prochaine action exacte
+
+**Priorité immédiate : essai utilisateur du nouvel artefact x64 complet avec IA du run 32741977123.**
+
+Ne pas reprendre pour l’instant l’extension protocolaire ni la refonte responsive tant que ce package n’a pas été essayé sur le PC utilisateur.
+
+Après validation application + IA sur PC réel :
+
+1. test câble et détection COM ;
+2. test connexion ECU ;
+3. contrôle des mesures normales déjà connues ;
+4. ensuite seulement reprendre l’extension du moteur protocolaire par familles/modes ou la tâche explicitement demandée par l’utilisateur.
