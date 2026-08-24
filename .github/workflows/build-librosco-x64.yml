@@ -1,4 +1,4 @@
-name: Build librosco x64 compatibility
+name: Build mems_manager_x64 protocol DLL
 
 on:
   push:
@@ -12,7 +12,7 @@ permissions:
   contents: write
 
 jobs:
-  build-librosco-x64:
+  build-mems-manager-x64-dll:
     runs-on: windows-latest
 
     steps:
@@ -37,19 +37,21 @@ jobs:
         shell: pwsh
         run: python -m pip install --disable-pip-version-check pefile
 
-      - name: Validate PE32+ AMD64 and exact exports
+      - name: Validate PE32+ AMD64 name and exact exports
         shell: pwsh
         run: |
-          $env:ROSCO_DLL = "${{ github.workspace }}\build-librosco-x64\Release\librosco.dll"
+          $env:MEMS_DLL = "${{ github.workspace }}\build-librosco-x64\Release\mems_manager_x64.dll"
           @'
           import hashlib
           import os
           import pathlib
           import pefile
 
-          path = pathlib.Path(os.environ['ROSCO_DLL'])
+          path = pathlib.Path(os.environ['MEMS_DLL'])
           if not path.exists():
               raise SystemExit(f'DLL missing: {path}')
+          if path.name.lower() != 'mems_manager_x64.dll':
+              raise SystemExit(f'Unexpected DLL name: {path.name}')
 
           data = path.read_bytes()
           pe = pefile.PE(str(path), fast_load=False)
@@ -95,21 +97,23 @@ jobs:
               raise SystemExit(f'Export mismatch. Missing={missing} Extra={extra} Actual={actual}')
 
           sha256 = hashlib.sha256(data).hexdigest()
+          print('mems_manager_x64.dll: OK')
           print('PE32+ AMD64: OK')
-          print('Exact 22-export contract: OK')
+          print('Exact 22-export compatibility contract: OK')
           print(f'Size: {len(data)} bytes')
           print(f'SHA256: {sha256}')
 
-          report = pathlib.Path('build-librosco-x64/LIBROSCO_X64_VALIDATION.txt')
+          report = pathlib.Path('build-librosco-x64/MEMS_MANAGER_X64_DLL_VALIDATION.txt')
           report.write_text(
-              'LIBROSCO X64 COMPATIBILITY: OK\n'
+              'MEMS MANAGER X64 PROTOCOL DLL: OK\n'
+              'filename=mems_manager_x64.dll\n'
               'machine=IMAGE_FILE_MACHINE_AMD64\n'
               'format=PE32+\n'
               'abi_frame80=28\n'
               'abi_frame7d=32\n'
               'abi_mems_data=60\n'
-              'compat_version=0.1.12\n'
-              'exports=22 exact historical names\n'
+              'compat_origin=librosco-0.1.12-lineage\n'
+              'exports=22 exact historical compatibility names\n'
               f'size={len(data)}\n'
               f'sha256={sha256}\n',
               encoding='utf-8'
@@ -119,31 +123,31 @@ jobs:
       - name: Stage validation package
         shell: pwsh
         run: |
-          $dist = "${{ github.workspace }}\dist-librosco-x64"
+          $dist = "${{ github.workspace }}\dist-mems-manager-x64-dll"
           New-Item -ItemType Directory -Force -Path $dist | Out-Null
-          Copy-Item "build-librosco-x64\Release\librosco.dll" "$dist\librosco.dll" -Force
-          Copy-Item "build-librosco-x64\Release\librosco.lib" "$dist\librosco.lib" -Force
+          Copy-Item "build-librosco-x64\Release\mems_manager_x64.dll" "$dist\mems_manager_x64.dll" -Force
+          Copy-Item "build-librosco-x64\Release\mems_manager_x64.lib" "$dist\mems_manager_x64.lib" -Force
           Copy-Item "librosco-x64\rosco.h" "$dist\rosco.h" -Force
           Copy-Item "librosco-x64\README.md" "$dist\README.md" -Force
-          Copy-Item "build-librosco-x64\LIBROSCO_X64_VALIDATION.txt" "$dist\LIBROSCO_X64_VALIDATION.txt" -Force
+          Copy-Item "build-librosco-x64\MEMS_MANAGER_X64_DLL_VALIDATION.txt" "$dist\MEMS_MANAGER_X64_DLL_VALIDATION.txt" -Force
 
-      - name: Upload validated x64 library
+      - name: Upload validated x64 protocol DLL
         uses: actions/upload-artifact@v4
         with:
-          name: librosco-x64-compatibility
-          path: dist-librosco-x64
+          name: mems-manager-x64-protocol-dll
+          path: dist-mems-manager-x64-dll
           if-no-files-found: error
 
       - name: Persist green validation marker
         shell: pwsh
         run: |
-          Copy-Item "build-librosco-x64\LIBROSCO_X64_VALIDATION.txt" "LIBROSCO_X64_VALIDATION.txt" -Force
+          Copy-Item "build-librosco-x64\MEMS_MANAGER_X64_DLL_VALIDATION.txt" "MEMS_MANAGER_X64_DLL_VALIDATION.txt" -Force
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add LIBROSCO_X64_VALIDATION.txt
+          git add MEMS_MANAGER_X64_DLL_VALIDATION.txt
           if (git diff --cached --quiet) {
             Write-Host "Validation marker already current"
           } else {
-            git commit -m "Validate native librosco x64 compatibility [skip ci]"
+            git commit -m "Validate mems_manager_x64 native DLL [skip ci]"
             git push origin MEMSX64
           }
