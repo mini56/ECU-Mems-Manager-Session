@@ -45,7 +45,7 @@ endif()
 configure_file("${CMAKE_SOURCE_DIR}/help.html.in" "${CMAKE_SOURCE_DIR}/help.html")
 configure_file("${CMAKE_SOURCE_DIR}/help_en.html.in" "${CMAKE_SOURCE_DIR}/help_en.html")
 set(SOURCES
-    main.cpp singleinstanceforce.cpp i18n.cpp i18n.h memsinterface_dispatch.cpp memsinterface.h overviewramlive.cpp mappedinjection.cpp injectionramtest.cpp injectionramtestlogger.cpp memslogic.cpp database/DatabaseSeed.cpp
+    main.cpp diagnosticlogger.cpp diagnosticlogger.h singleinstanceforce.cpp i18n.cpp i18n.h memsinterface_dispatch.cpp memsinterface.h overviewramlive.cpp mappedinjection.cpp injectionramtest.cpp injectionramtestlogger.cpp memslogic.cpp database/DatabaseSeed.cpp
     helpviewer.cpp logger.cpp serialdevenumerator.cpp splashprogress.cpp mainwindow.cpp aboutbox.cpp
     optionsdialog.cpp summarytab.cpp diagnosticpanel.cpp analysistab.cpp captureviewer.cpp captureviewer.h
     tooltipbubblemanager.cpp tooltipbubblemanager.h scr/ecu/ecumanager.cpp scr/ecu/ecumanager.h
