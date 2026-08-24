@@ -29,6 +29,23 @@ jobs:
         with:
           ref: MEMSX64
 
+      - name: Publish workflow run id
+        shell: pwsh
+        run: |
+          @(
+            'ECU MEMS MANAGER X64 WORKFLOW: STARTED',
+            'run_id=${{ github.run_id }}',
+            'run_number=${{ github.run_number }}',
+            'workflow_commit=${{ github.sha }}',
+            ('utc=' + [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ'))
+          ) | Set-Content -Encoding UTF8 ECU_MEMS_X64_WORKFLOW_STARTED.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin MEMSX64
+          git add ECU_MEMS_X64_WORKFLOW_STARTED.txt
+          git commit -m "Record ECU MEMS Manager x64 workflow run [skip ci]"
+          git push origin HEAD:MEMSX64
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -72,6 +89,7 @@ jobs:
         run: |
           $parts = @()
           $parts += 'ECU MEMS MANAGER X64 BUILD: FAILED'
+          $parts += ('run_id=' + '${{ github.run_id }}')
           $parts += ('utc=' + [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ'))
           $parts += ('workflow_commit=' + '${{ github.sha }}')
           foreach ($file in @('x64-qt-install.log','x64-configure.log','x64-build.log')) {
@@ -143,6 +161,7 @@ jobs:
           report = pathlib.Path('ECU_MEMS_X64_LINK_VALIDATION.txt')
           report.write_text(
               'ECU MEMS MANAGER X64 LINK: OK\n'
+              'run_id=${{ github.run_id }}\n'
               'application=PE32+ AMD64\n'
               'protocol_dll=mems_manager_x64.dll\n'
               'protocol_dll_format=PE32+ AMD64\n'
@@ -174,8 +193,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git pull --rebase origin MEMSX64
-          if (Test-Path ECU_MEMS_X64_BUILD_FAILURE.txt) {
-            git rm -f ECU_MEMS_X64_BUILD_FAILURE.txt
+          foreach ($stale in @('ECU_MEMS_X64_BUILD_FAILURE.txt','ECU_MEMS_X64_WORKFLOW_STARTED.txt')) {
+            if (Test-Path $stale) { git rm -f $stale }
           }
           git add ECU_MEMS_X64_LINK_VALIDATION.txt
           if (git diff --cached --quiet) {
