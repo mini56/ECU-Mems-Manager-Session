@@ -20,24 +20,6 @@ jobs:
         with:
           ref: MEMSX64
 
-      - name: Publish run id
-        shell: pwsh
-        run: |
-          $ErrorActionPreference='Stop'
-          @(
-            'MEMSX64 IA STAGE: STARTED',
-            'run_id=${{ github.run_id }}',
-            'run_number=${{ github.run_number }}',
-            'workflow_sha=${{ github.sha }}',
-            ('utc=' + [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ'))
-          ) | Set-Content -Encoding UTF8 IA_STAGE_PROVEN_STARTED.txt
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git pull --rebase origin MEMSX64
-          git add IA_STAGE_PROVEN_STARTED.txt
-          git commit -m "Record IA staged diagnostic run [skip ci]"
-          git push origin HEAD:MEMSX64
-
       - name: Inject runner-only stage modes and trace
         shell: pwsh
         run: |
@@ -175,6 +157,7 @@ void iaDiagTrace(const QString &message)
 
       - name: Persist result
         if: always()
+        continue-on-error: true
         shell: pwsh
         run: |
           $ErrorActionPreference='Continue'
@@ -191,7 +174,6 @@ void iaDiagTrace(const QString &message)
           ) | Set-Content -Encoding UTF8 IA_STAGE_PROVEN_RESULT.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git rm -f IA_STAGE_PROVEN_STARTED.txt 2>$null
           git add IA_STAGE_PROVEN_RESULT.txt
           git commit -m "Record IA staged diagnostic result [skip ci]"
           git push origin HEAD:MEMSX64
