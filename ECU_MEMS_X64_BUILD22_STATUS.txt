@@ -1,4 +1,4 @@
-status=RUNNING
+status=FAILED
 build=22
 version=1.0.22
 run_id=32773144854
