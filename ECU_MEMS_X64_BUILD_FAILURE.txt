@@ -1,97 +1,97 @@
 ECU MEMS MANAGER X64 BUILD: FAILED
 run_id=32709187615
-utc=2026-08-24T09:22:23Z
+utc=2026-08-24T09:27:02Z
 workflow_commit=8ec78f177baa019b762b5efd4b2e6f759723918a
 
 ===== x64-qt-install.log =====
 INFO    : aqtinstall(aqt) v3.3.0 on Python 3.11.9 [CPython MSC v.1938 64 bit (AMD64)]
-INFO    : Downloading qtcharts...
 INFO    : Downloading qtconnectivity...
-INFO    : Downloading qtmultimedia...
 INFO    : Downloading qtgraphicaleffects...
+INFO    : Downloading qtcharts...
+INFO    : Downloading qtmultimedia...
 INFO    : Redirected: qt.mirror.constant.com
 INFO    : Redirected: qt.mirror.constant.com
 INFO    : Redirected: qt.mirror.constant.com
 INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qtgraphicaleffects-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.63831820
-INFO    : Finished installation of qtconnectivity-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 3.43823190
+INFO    : Finished installation of qtgraphicaleffects-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.95493230
+INFO    : Finished installation of qtconnectivity-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 3.81726940
 INFO    : Downloading qtsvg...
-INFO    : Finished installation of qtmultimedia-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 3.69389630
-INFO    : Finished installation of qtcharts-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 3.81784030
-INFO    : Downloading qtactiveqt...
+INFO    : Finished installation of qtmultimedia-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 4.16288820
+INFO    : Finished installation of qtcharts-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 4.18685380
 INFO    : Redirected: qt.mirror.constant.com
+INFO    : Downloading qtactiveqt...
 INFO    : Downloading qttranslations...
 INFO    : Downloading qtbase...
-INFO    : Finished installation of qtsvg-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.37342770
+INFO    : Finished installation of qtsvg-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.51164350
 INFO    : Redirected: qt.mirror.constant.com
 INFO    : Redirected: qt.mirror.constant.com
 INFO    : Redirected: qt.mirror.constant.com
 INFO    : Downloading qtdeclarative...
-INFO    : Finished installation of qtactiveqt-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.68226400
+INFO    : Finished installation of qtactiveqt-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.84865250
 INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qttranslations-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 3.06423100
 INFO    : Downloading qtimageformats...
+INFO    : Finished installation of qttranslations-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 3.85764280
+INFO    : Redirected: qt.mirror.constant.com
 INFO    : Downloading qtxmlpatterns...
+INFO    : Finished installation of qtimageformats-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.61870330
 INFO    : Redirected: qt.mirror.constant.com
-INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qtimageformats-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.60110530
 INFO    : Downloading qttools...
 INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qtxmlpatterns-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 11.49358560
+INFO    : Finished installation of qtxmlpatterns-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 4.38422320
 INFO    : Downloading qtsensors...
+INFO    : Finished installation of qtdeclarative-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 8.99241830
 INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qtsensors-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 3.49229060
-INFO    : Finished installation of qtdeclarative-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 16.78230500
-INFO    : Downloading qtwebsockets...
 INFO    : Downloading qtwinextras...
 INFO    : Redirected: qt.mirror.constant.com
-INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qtwebsockets-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.75111310
-INFO    : Finished installation of qtwinextras-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.70668620
-INFO    : Finished installation of qttools-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 15.81401960
-INFO    : Downloading qtwebchannel...
-INFO    : Downloading qtquickcontrols...
+INFO    : Finished installation of qtsensors-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 3.78288500
+INFO    : Finished installation of qttools-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 7.18467300
+INFO    : Downloading qtwebsockets...
 INFO    : Downloading qtlocation...
+INFO    : Finished installation of qtwinextras-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.98663420
 INFO    : Redirected: qt.mirror.constant.com
 INFO    : Redirected: qt.mirror.constant.com
+INFO    : Downloading qtquickcontrols...
+INFO    : Finished installation of qtwebsockets-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.54998420
 INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qtwebchannel-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 3.00732290
-INFO    : Downloading qt3d...
+INFO    : Downloading qtwebchannel...
+INFO    : Finished installation of qtlocation-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 3.89285110
 INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qtquickcontrols-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 5.01829190
-INFO    : Finished installation of qtlocation-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 5.05782920
-INFO    : Downloading qtquickcontrols2...
+INFO    : Finished installation of qtquickcontrols-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 3.44118240
 INFO    : Downloading qtserialport...
+INFO    : Downloading qtquickcontrols2...
+INFO    : Finished installation of qtwebchannel-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.94109900
 INFO    : Redirected: qt.mirror.constant.com
+INFO    : Finished installation of qtbase-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 18.21516180
 INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qtbase-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 28.03789340
-INFO    : Finished installation of qtserialport-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.68622110
+INFO    : Downloading qt3d...
+INFO    : Finished installation of qtserialport-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.70450020
 INFO    : Downloading qtserialbus...
+INFO    : Redirected: qt.mirror.constant.com
 INFO    : Downloading qtgamepad...
 INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qtquickcontrols2-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 4.21554760
+INFO    : Finished installation of qtquickcontrols2-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 3.79094580
 INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qtserialbus-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.65713490
+INFO    : Finished installation of qtserialbus-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.66961640
 INFO    : Downloading qtremoteobjects...
-INFO    : Finished installation of qtgamepad-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.53353920
-INFO    : Finished installation of qt3d-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 7.36791760
+INFO    : Finished installation of qtgamepad-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.54161690
 INFO    : Downloading qtscxml...
 INFO    : Redirected: qt.mirror.constant.com
 INFO    : Downloading qtspeech...
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Finished installation of qtremoteobjects-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.72403400
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Finished installation of qtscxml-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.53084460
+INFO    : Finished installation of qt3d-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 6.23873570
+INFO    : Finished installation of qtspeech-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.71518460
+INFO    : Downloading d3dcompiler_47...
+INFO    : Downloading opengl32sw...
 INFO    : Downloading qtwebview...
 INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qtremoteobjects-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.44503710
 INFO    : Redirected: qt.mirror.constant.com
+INFO    : Finished installation of qtwebview-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.08349120
 INFO    : Redirected: qt.mirror.constant.com
-INFO    : Downloading d3dcompiler_47...
-INFO    : Finished installation of qtspeech-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.31811270
-INFO    : Finished installation of qtwebview-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.26413360
-INFO    : Finished installation of qtscxml-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.75170070
-INFO    : Redirected: qt.mirror.constant.com
-INFO    : Downloading opengl32sw...
-INFO    : Finished installation of d3dcompiler_47-x64.7z in 2.44081930
-INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of opengl32sw-64-mesa_12_0_rc2.7z in 2.72145870
+INFO    : Finished installation of opengl32sw-64-mesa_12_0_rc2.7z in 2.98899700
+INFO    : Finished installation of d3dcompiler_47-x64.7z in 3.51672120
 INFO    : Patching C:\Qt\5.15.2\msvc2019_64\bin\qmake.exe
 INFO    : Patching C:\Qt\5.15.2\msvc2019_64\lib\libEGL.prl
 INFO    : Patching C:\Qt\5.15.2\msvc2019_64\lib\libEGLd.prl
@@ -258,7 +258,7 @@ INFO    : Patching C:\Qt\5.15.2\msvc2019_64\lib\qtlibpngd.prl
 INFO    : Patching C:\Qt\5.15.2\msvc2019_64\lib\qtmain.prl
 INFO    : Patching C:\Qt\5.15.2\msvc2019_64\lib\qtmaind.prl
 INFO    : Finished installation
-INFO    : Time elapsed: 42.41267250 second
+INFO    : Time elapsed: 33.45011650 second
 
 ===== x64-configure.log =====
 -- Building for: Visual Studio 18 2026
@@ -276,7 +276,7 @@ INFO    : Time elapsed: 42.41267250 second
 -- Detecting C compile features - done
 -- Plateforme Windows détectée (MSVC / MinGW).
 -- Using source-controlled bundled librosco target
--- Configuring done (16.7s)
+-- Configuring done (12.6s)
 -- Generating done (0.3s)
 -- Build files have been written to: D:/a/ECU-Mems-Manager-Session/ECU-Mems-Manager-Session/build-app-x64
 
@@ -326,19 +326,12 @@ MSBuild version 18.9.1+a81b43525 for .NET Framework
   splashprogress.cpp
   mainwindow.cpp
   aboutbox.cpp
-  optionsdialog.cpp
-  summarytab.cpp
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(967,30): error C2146: syntax error: missing ')' before identifier 'and' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(967,30): error C3861: 'and': identifier not found [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(967,57): error C2146: syntax error: missing ';' before identifier 'and' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(967,57): error C3861: 'and': identifier not found [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(967,84): error C2146: syntax error: missing ';' before identifier 'and' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(967,84): error C3861: 'and': identifier not found [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(967,102): error C2059: syntax error: ')' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(969,20): error C2059: syntax error: ';' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(971,5): error C2059: syntax error: 'if' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(972,5): error C2143: syntax error: missing ';' before '{' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(972,5): error C2447: '{': missing function header (old-style formal list?) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(971,28): error C2146: syntax error: missing ')' before identifier 'or' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(971,28): error C3861: 'or': identifier not found [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(971,50): error C2146: syntax error: missing ';' before identifier 'or' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(971,50): error C3861: 'or': identifier not found [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(971,71): error C2059: syntax error: ')' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(973,45): error C2059: syntax error: ';' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
 D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(975,5): error C2059: syntax error: 'else' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
 D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(976,5): error C2143: syntax error: missing ';' before '{' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
 D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(976,5): error C2447: '{': missing function header (old-style formal list?) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
@@ -466,7 +459,17 @@ D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1135,5): e
 D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1136,5): error C2059: syntax error: 'else' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
 D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1137,5): error C2143: syntax error: missing ';' before '{' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
 D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1137,5): error C2447: '{': missing function header (old-style formal list?) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1137,5): error C1003: error count exceeds 100; stopping compilation [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1138,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1138,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1138,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1138,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1112,2):
+      see declaration of 'm_ui'
+  
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1138,8): error C2146: syntax error: missing ';' before identifier 'm_7D_06' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1138,8): error C1003: error count exceeds 100; stopping compilation [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+  optionsdialog.cpp
+  summarytab.cpp
   diagnosticpanel.cpp
   analysistab.cpp
   Generating Code...
