@@ -1,0 +1,128 @@
+name: Rapport Leopold librosco comparison
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/rapport-librosco-leopold-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+
+      - name: Download public Leopold librosco DLL
+        shell: pwsh
+        run: |
+          $url = 'https://raw.githubusercontent.com/LeopoldG/mems-rosco/main/librosco.dll'
+          Invoke-WebRequest -Uri $url -OutFile Leopold-librosco.dll
+          if ((Get-Item Leopold-librosco.dll).Length -le 0) { throw 'Downloaded DLL is empty' }
+
+      - name: Install PE parser
+        shell: pwsh
+        run: python -m pip install --disable-pip-version-check pefile
+
+      - name: Build readable comparison
+        shell: pwsh
+        run: |
+          @'
+          import hashlib
+          import pathlib
+          import pefile
+
+          current_expected = {
+              'mems_cleanup','mems_clear_faults','mems_connect','mems_disconnect',
+              'mems_get_lib_version','mems_heartbeat','mems_init','mems_init_link',
+              'mems_is_connected','mems_lock','mems_move_iac','mems_openserial',
+              'mems_read','mems_read_iac_position','mems_read_raw','mems_read_serial',
+              'mems_reset_ECU','mems_reset_adjustments','mems_send_command',
+              'mems_test_actuator','mems_unlock','mems_write_serial'
+          }
+
+          path = pathlib.Path('Leopold-librosco.dll')
+          data = path.read_bytes()
+          pe = pefile.PE(str(path), fast_load=False)
+          exports = []
+          if hasattr(pe, 'DIRECTORY_ENTRY_EXPORT'):
+              for s in pe.DIRECTORY_ENTRY_EXPORT.symbols:
+                  if s.name:
+                      exports.append(s.name.decode('ascii', errors='replace'))
+          exports = sorted(exports)
+          exp_set = set(exports)
+          shared = sorted(exp_set & current_expected)
+          extra = sorted(exp_set - current_expected)
+          missing = sorted(current_expected - exp_set)
+
+          machine = {
+              0x14c: 'I386 / x86 32 bits',
+              0x8664: 'AMD64 / x64'
+          }.get(pe.FILE_HEADER.Machine, f'0x{pe.FILE_HEADER.Machine:04X}')
+          fmt = {0x10b:'PE32',0x20b:'PE32+'}.get(pe.OPTIONAL_HEADER.Magic, hex(pe.OPTIONAL_HEADER.Magic))
+          imports = sorted(entry.dll.decode('ascii', errors='replace') for entry in getattr(pe,'DIRECTORY_ENTRY_IMPORT',[]))
+
+          lines = []
+          lines.append('# Comparaison binaire — LeopoldG `librosco.dll`')
+          lines.append('')
+          lines.append('> Rapport de comparaison uniquement. Cette DLL externe ne remplace pas la DLL validée d’ECU MEMS Manager et ses significations de commandes ne sont pas promues automatiquement.')
+          lines.append('')
+          lines.append('## Identité')
+          lines.append('')
+          lines.append(f'- Source publique : `LeopoldG/mems-rosco/main/librosco.dll`')
+          lines.append(f'- Taille : **{len(data)} octets**')
+          lines.append(f'- SHA-256 : `{hashlib.sha256(data).hexdigest()}`')
+          lines.append(f'- Architecture : **{machine} / {fmt}**')
+          lines.append(f'- Nombre d’exports nommés : **{len(exports)}**')
+          lines.append(f'- DLL importées : {", ".join(f"`{x}`" for x in imports)}')
+          lines.append('')
+          lines.append('## Comparaison avec les 22 exports de notre DLL historique')
+          lines.append('')
+          lines.append(f'- Exports communs : **{len(shared)}**')
+          lines.append(f'- Exports supplémentaires Leopold : **{len(extra)}**')
+          lines.append(f'- Exports historiques absents chez Leopold : **{len(missing)}**')
+          lines.append('')
+          lines.append('### Exports communs')
+          lines.append('')
+          lines.extend(f'- `{x}`' for x in shared)
+          lines.append('')
+          lines.append('### Exports supplémentaires Leopold')
+          lines.append('')
+          lines.extend(f'- `{x}`' for x in extra) if extra else lines.append('- aucun')
+          lines.append('')
+          lines.append('### Exports historiques absents')
+          lines.append('')
+          lines.extend(f'- `{x}`' for x in missing) if missing else lines.append('- aucun')
+          lines.append('')
+          lines.append('## Table complète des exports Leopold')
+          lines.append('')
+          for i,x in enumerate(exports,1):
+              lines.append(f'{i}. `{x}`')
+          lines.append('')
+          lines.append('## Interprétation')
+          lines.append('')
+          lines.append('- Une API plus large ne signifie pas que les sémantiques sont compatibles avec notre binaire Haro. Les conflits `0x0F`, `0xFA` et `0xAF` restent explicitement bloquants pour un remplacement direct.')
+          lines.append('- Cette comparaison sert à identifier des capacités à préserver dans la cartographie, pas à choisir Leopold 3.0 comme base automatique de la DLL x64.')
+          lines.append('')
+
+          pathlib.Path('RAPPORT_LIBROSCO_LEOPOLD_COMPARAISON.md').write_text('\n'.join(lines)+'\n', encoding='utf-8')
+          print('\n'.join(lines))
+          '@ | python -
+
+      - name: Commit readable comparison
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RAPPORT_LIBROSCO_LEOPOLD_COMPARAISON.md
+          if (git diff --cached --quiet) {
+            Write-Host 'No comparison change'
+          } else {
+            git commit -m "Update Leopold librosco binary comparison [skip ci]"
+            git push origin RAPPORT
+          }
