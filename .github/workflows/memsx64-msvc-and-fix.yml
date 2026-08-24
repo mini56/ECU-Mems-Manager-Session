@@ -1,0 +1,47 @@
+name: Apply isolated MEMSX64 MSVC and fix
+
+on:
+  push:
+    branches: [MEMSX64]
+    paths:
+      - '.github/workflows/memsx64-msvc-and-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout MEMSX64
+        uses: actions/checkout@v4
+        with:
+          ref: MEMSX64
+
+      - name: Replace only the recorded failing and operators
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('mainwindow.cpp')
+          text = path.read_text(encoding='utf-8')
+          old = 'if ((data->iac_position==0) and (data->idle_error>=50) and (data->idle_switch==0) and (data->uk3!=0))'
+          new = 'if ((data->iac_position==0) && (data->idle_error>=50) && (data->idle_switch==0) && (data->uk3!=0))'
+          count = text.count(old)
+          if count != 1:
+              raise SystemExit(f'Expected exactly one recorded expression, found {count}')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8', newline='')
+          PY
+          git diff --check
+          test "$(git diff --numstat -- mainwindow.cpp)" = $'1\t1\tmainwindow.cpp'
+
+      - name: Commit only the one-line program fix and remove this helper
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/memsx64-msvc-and-fix.yml
+          git add -- mainwindow.cpp
+          git diff --cached --check
+          git commit -m "Fix next MSVC logical and operators in mainwindow"
+          git push origin HEAD:MEMSX64
