@@ -46,12 +46,21 @@ void ensureTranscriptScrollBar(QTextBrowser *browser)
 {
     if (!browser)
         return;
+
+    // Configure the transcript only once.  This function is called from the
+    // global event filter while Show/Polish/Resize events are being delivered.
+    // Reapplying scrollbar policy/geometry during Resize can synchronously
+    // trigger another Resize and re-enter the filter before IA MEMS has even
+    // finished showing.  Mark the browser first so any nested event is a no-op.
+    static const char kConfiguredProperty[] = "iaTranscriptScrollConfigured";
+    if (browser->property(kConfiguredProperty).toBool())
+        return;
+    browser->setProperty(kConfiguredProperty, true);
+
     browser->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     browser->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    if (QScrollBar *bar = browser->verticalScrollBar()) {
+    if (QScrollBar *bar = browser->verticalScrollBar())
         bar->setMinimumWidth(14);
-        bar->show();
-    }
 }
 
 QString databaseCountAnswer()
