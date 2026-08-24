@@ -7,7 +7,7 @@
 > Ce rapport est volontairement en **Markdown lisible directement sur GitHub**. Il ne doit pas être remplacé par un format encodé ou opaque.
 > La branche `RAPPORT` sert au suivi et à la transmission entre discussions. Elle ne doit pas servir à modifier le programme de production sauf demande explicite.
 
-Dernière mise à jour : **24 août 2026 — application ECU MEMS Manager x64 complète validée PE32+ AMD64 avec `mems_manager_x64.dll`**
+Dernière mise à jour : **24 août 2026 — package portable ECU MEMS Manager x64 validé, prêt pour essai utilisateur Windows/ECU**
 
 ---
 
@@ -267,15 +267,82 @@ Artefact GitHub Actions :
 - taille ZIP côté GitHub : **689 020 octets** ;
 - digest : `sha256:ccc2e246de54cada01a3aef8c74b5d903ba8f62313560bfef98ae4b6404b873b`.
 
-**État actuel : la chaîne de compilation et de liaison native x64 est validée. Cela ne remplace pas encore la validation fonctionnelle sur PC et sur ECU réel.**
+**État : la chaîne de compilation et de liaison native x64 est validée.**
 
 ---
 
-## 10. Prochaine action exacte
+## 10. Package portable x64 autonome — VALIDÉ
 
-1. Préparer un **package x64 autonome de test** à partir du build maintenant validé, sans remplacer ni supprimer la version 32 bits actuelle.
-2. Inclure les dépendances Qt/MSVC nécessaires et `mems_manager_x64.dll`, puis contrôler que le package ne contient pas l’ancienne `librosco.dll` x86.
-3. Ajouter un contrôle de package permettant de vérifier avant essai que l’EXE et la DLL sont AMD64 et que les dépendances essentielles sont présentes.
-4. Fournir ensuite ce package x64 pour essai utilisateur sous Windows.
-5. Après validation réelle du lancement, de l’interface et de la connexion à un ECU, consigner le résultat dans ce rapport.
-6. Ensuite seulement commencer l’extension du moteur protocolaire par profils MEMS/modes, sans limiter la nouvelle DLL aux fonctions actuellement utilisées par l’interface.
+Workflow : `.github/workflows/build-ecu-mems-x64-package.yml`.
+
+Objectif : produire un dossier Windows x64 de test réellement autonome à partir de la branche `MEMSX64`, sans remplacer la version 32 bits et sans embarquer l’ancienne `librosco.dll` x86.
+
+### 10.1 Corrections du workflow de package
+
+Le premier essai a montré deux problèmes de validation du packaging, pas du programme :
+
+1. sous Visual Studio/MSVC, les ressources générées/copées par CMake sont placées sous `build-package-x64/Release/`. Les chemins du workflow vers `translations` et `database` ont donc été corrigés vers `Release/translations` et `Release/database` ; commit **`fc13dd54ef4f148645b6c8258f8fdc288b322a83`** — `Fix x64 package Release resource paths` ;
+2. `Qt5Charts.dll` était exigée arbitrairement par le validateur alors que `windeployqt` et la table d’imports de l’EXE montrent qu’elle n’est pas une dépendance runtime de ce binaire. Cette fausse exigence a été retirée ; commit **`c6e2de29e746b074756be6bfa929d4824af80021`** — `Stop requiring unused Qt5Charts runtime DLL`.
+
+Le workflow a aussi été rendu traçable avec un marqueur de démarrage et un marqueur d’échec ; commit **`9ea322a9faefbe11c1af5485afe4694dc9dbf4fa`** — `Add x64 package workflow run markers`.
+
+`windeployqt` identifie comme dépendances directes de l’EXE : `Qt5Core`, `Qt5Gui`, `Qt5Network`, `Qt5SerialPort`, `Qt5Sql`, `Qt5Widgets`, et ajoute `Qt5Svg` pour les plugins SVG. Il déploie aussi les plugins Windows nécessaires, notamment `platforms/qwindows.dll` et `sqldrivers/qsqlite.dll`.
+
+### 10.2 Run n° 32713710308 — VERT
+
+Le run **`32713710308`** est entièrement passé au vert :
+
+- compilation native x64 : **OK** ;
+- assemblage du dossier portable : **OK** ;
+- validation architecture/contenu : **OK** ;
+- validation de la base MEMS hors ligne : **OK** ;
+- lancement fumée de l’application pendant 5 secondes : **OK** ;
+- upload de l’artefact : **OK** ;
+- écriture du marqueur `ECU_MEMS_X64_PACKAGE_VALIDATION.txt` : **OK**.
+
+Valeurs du marqueur final :
+
+- application : **PE32+ AMD64** ;
+- DLL protocole : **`mems_manager_x64.dll` PE32+ AMD64** ;
+- l’EXE importe `mems_manager_x64.dll` : **oui** ;
+- l’EXE importe `librosco.dll` : **non** ;
+- le package contient `librosco.dll` : **non** ;
+- binaires PE contrôlés : **29**, tous AMD64 ;
+- nombre total de fichiers : **243** ;
+- taille totale avant ajout du rapport de validation : **90 988 029 octets** ;
+- SHA256 EXE : `2ee1635c62f3d51bbf9057dc368a9110353fa6631bd23c8e61998fabdac5197a` ;
+- SHA256 DLL : `0543a7355aa02d0c5c73b645b425c85cde211991d575ac12a9c53a79745907d2`.
+
+Contrôle de la base reconstruite depuis les quatre seeds `.qz64` :
+
+- **85 ECU** ;
+- **140 fitments / affectations** ;
+- **91 commandes protocole**.
+
+Le smoke-test a lancé `ecu_mems_manager.exe` depuis le dossier portable et vérifié qu’il restait actif pendant 5 secondes : **OK**.
+
+Commit automatique du marqueur vert sur `MEMSX64` : **`494c8993ffc218195639d974b7b2a7c81b3f8541`** — `Validate ECU MEMS Manager portable x64 package [skip ci]`.
+
+Artefact GitHub Actions prêt pour essai utilisateur :
+
+- nom : **`ECU-MEMS-Manager-x64-Windows-Test`** ;
+- artifact id : **`9515199032`** ;
+- taille ZIP : **46 258 185 octets** ;
+- digest ZIP : `sha256:89e27ba769279d9568a913211dc62d5bdb6b8026a500ea98c3b9fa78acba0fde` ;
+- expiration GitHub annoncée : **22 novembre 2026**.
+
+Le package x64 de test n’intègre pas volontairement le gros package IA local ; le chantier x64 actuel n’a pas modifié l’IA.
+
+**État actuel : compilation x64, liaison x64 et package portable autonome sont validés par GitHub Actions. Il reste la validation fonctionnelle réelle sur le PC de l’utilisateur et sur un ECU.**
+
+---
+
+## 11. Prochaine action exacte
+
+1. Faire télécharger et extraire l’artefact **`ECU-MEMS-Manager-x64-Windows-Test`** du run **`32713710308`**.
+2. Sur le PC utilisateur, lancer `ecu_mems_manager.exe` directement depuis le dossier extrait, sans toucher à l’installation 32 bits actuelle.
+3. Vérifier d’abord : démarrage, interface sombre/responsive, traductions, onglets, base MEMS, absence d’erreur DLL.
+4. Vérifier ensuite la détection du câble/port COM et la connexion à un ECU réel, puis les lectures normales déjà connues.
+5. Ne considérer la x64 comme fonctionnellement validée qu’après ce test PC + ECU.
+6. Consigner immédiatement le résultat de ce test dans ce rapport.
+7. Ensuite seulement reprendre l’extension du moteur protocolaire par profils MEMS/modes, sans limiter `mems_manager_x64.dll` aux seules fonctions actuellement utilisées par l’interface.
