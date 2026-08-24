@@ -147,7 +147,6 @@ jobs:
               root / 'Qt5Widgets.dll',
               root / 'Qt5Sql.dll',
               root / 'Qt5SerialPort.dll',
-              root / 'Qt5Charts.dll',
               root / 'platforms' / 'qwindows.dll',
               root / 'sqldrivers' / 'qsqlite.dll',
               root / 'translations' / 'fr' / 'fr.json',
