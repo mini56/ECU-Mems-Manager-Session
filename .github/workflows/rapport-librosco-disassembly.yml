@@ -1,0 +1,154 @@
+name: Rapport librosco disassembly
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/rapport-librosco-disassembly.yml'
+      - 'prebuilt-librosco/librosco.dll'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  disassemble:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+
+      - name: Install parsers
+        shell: pwsh
+        run: python -m pip install --disable-pip-version-check pefile capstone
+
+      - name: Disassemble exports and extract exact command constants
+        shell: pwsh
+        run: |
+          @'
+          import pathlib
+          import pefile
+          from capstone import Cs, CS_ARCH_X86, CS_MODE_32
+          from capstone.x86 import X86_OP_IMM
+
+          dll = pathlib.Path('prebuilt-librosco/librosco.dll')
+          out = pathlib.Path('RAPPORT_LIBROSCO_DESASSEMBLAGE.md')
+          pe = pefile.PE(str(dll), fast_load=False)
+          image_base = pe.OPTIONAL_HEADER.ImageBase
+          data = dll.read_bytes()
+
+          exports = []
+          for s in pe.DIRECTORY_ENTRY_EXPORT.symbols:
+              if s.name:
+                  exports.append((s.address, s.name.decode('ascii', errors='replace'), s.ordinal))
+          exports.sort()
+          export_by_va = {image_base+rva:name for rva,name,_ in exports}
+
+          md = Cs(CS_ARCH_X86, CS_MODE_32)
+          md.detail = True
+
+          def rva_to_offset(rva):
+              return pe.get_offset_from_rva(rva)
+
+          # Determine conservative end bound: next export RVA or +256 bytes, whichever is nearer,
+          # but keep at least 64 bytes. This is audit output, not a decompiler.
+          blocks = {}
+          for i,(rva,name,ordinal) in enumerate(exports):
+              next_rva = exports[i+1][0] if i+1 < len(exports) else rva + 256
+              length = max(64, min(256, next_rva-rva))
+              off = rva_to_offset(rva)
+              code = data[off:off+length]
+              insns = list(md.disasm(code, image_base+rva))
+              blocks[name] = insns
+
+          lines=[]
+          lines.append('# Désassemblage ciblé de la `librosco.dll` 32 bits')
+          lines.append('')
+          lines.append('> Rapport de vérification binaire. Il sert à contrôler ce que fait réellement la DLL, indépendamment des commentaires et des headers des différents forks.')
+          lines.append('')
+
+          targets = ['mems_get_lib_version','mems_init_link','mems_reset_ECU','mems_reset_adjustments','mems_clear_faults','mems_heartbeat','mems_test_actuator']
+          lines.append('## Fonctions critiques')
+          lines.append('')
+          for name in targets:
+              insns=blocks.get(name,[])
+              lines.append(f'### `{name}`')
+              lines.append('')
+              lines.append('```asm')
+              for ins in insns:
+                  comment=''
+                  # annotate direct calls into named exports
+                  if ins.mnemonic == 'call' and ins.operands and ins.operands[0].type == X86_OP_IMM:
+                      target = ins.operands[0].imm
+                      if target in export_by_va:
+                          comment=f' ; -> {export_by_va[target]}'
+                  lines.append(f'{ins.address:08X}: {ins.mnemonic:<8} {ins.op_str}{comment}')
+                  if ins.mnemonic == 'ret':
+                      break
+              lines.append('```')
+              lines.append('')
+
+          # Heuristic readable summary for command wrappers. In MinGW 32-bit cdecl code,
+          # constants are usually written into [esp] immediately before calling mems_send_command.
+          send_va = next((image_base+rva for rva,n,_ in exports if n=='mems_send_command'), None)
+          lines.append('## Constantes immédiatement préparées avant `mems_send_command`')
+          lines.append('')
+          lines.append('| Fonction | Valeurs immédiates 8-bit/32-bit observées dans les ~12 instructions avant un appel direct à `mems_send_command` |')
+          lines.append('|---|---|')
+          for name in targets:
+              insns=blocks.get(name,[])
+              vals=[]
+              for idx,ins in enumerate(insns):
+                  if ins.mnemonic=='call' and ins.operands and ins.operands[0].type==X86_OP_IMM and ins.operands[0].imm==send_va:
+                      for prev in insns[max(0,idx-12):idx]:
+                          for op in prev.operands:
+                              if op.type==X86_OP_IMM:
+                                  v=op.imm & 0xFFFFFFFF
+                                  if v <= 0xFF:
+                                      vals.append(f'0x{v:02X}')
+                  
+              uniq=[]
+              for v in vals:
+                  if v not in uniq: uniq.append(v)
+              lines.append(f'| `{name}` | {", ".join(uniq) if uniq else "—"} |')
+          lines.append('')
+          lines.append('**Attention :** cette colonne est une aide de lecture du désassemblage, pas une preuve sémantique à elle seule. La preuve est la séquence assembleur affichée au-dessus et doit être rapprochée de la source C.')
+          lines.append('')
+
+          lines.append('## Désassemblage de tous les exports')
+          lines.append('')
+          for rva,name,ordinal in exports:
+              lines.append(f'### Ordinal {ordinal} — `{name}` — RVA `0x{rva:08X}`')
+              lines.append('')
+              lines.append('```asm')
+              for ins in blocks[name]:
+                  comment=''
+                  if ins.mnemonic == 'call' and ins.operands and ins.operands[0].type == X86_OP_IMM:
+                      target = ins.operands[0].imm
+                      if target in export_by_va:
+                          comment=f' ; -> {export_by_va[target]}'
+                  lines.append(f'{ins.address:08X}: {ins.mnemonic:<8} {ins.op_str}{comment}')
+                  if ins.mnemonic == 'ret':
+                      break
+              lines.append('```')
+              lines.append('')
+
+          out.write_text('\n'.join(lines)+'\n', encoding='utf-8')
+          print(out.read_text(encoding='utf-8'))
+          '@ | Set-Content -Encoding UTF8 disasm_librosco.py
+          python disasm_librosco.py
+
+      - name: Commit readable disassembly report
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RAPPORT_LIBROSCO_DESASSEMBLAGE.md
+          if (git diff --cached --quiet) {
+            Write-Host "No disassembly changes"
+          } else {
+            git commit -m "Update librosco disassembly audit [skip ci]"
+            git push origin RAPPORT
+          }
