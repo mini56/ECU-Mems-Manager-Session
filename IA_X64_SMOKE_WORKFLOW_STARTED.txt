@@ -1,0 +1,5 @@
+MEMSX64 IA CRASH DIAGNOSTIC: STARTED
+run_id=32717558263
+run_number=1
+workflow_commit=8358ff00dd9006615cfbbd8cc6dd95fc1bcf225d
+utc=2026-08-24T10:35:46Z
