@@ -1,5 +1,8 @@
 #include "diagnosticlogger.h"
 
+#include <cstdio>
+#include <string>
+
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDir>
@@ -10,6 +13,7 @@
 #include <QMutexLocker>
 #include <QProcess>
 #include <QProcessEnvironment>
+#include <QRegExp>
 #include <QSettings>
 #include <QStandardPaths>
 #include <QSysInfo>
