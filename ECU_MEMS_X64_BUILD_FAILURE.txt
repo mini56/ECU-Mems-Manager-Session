@@ -1,4 +1,114 @@
 ECU MEMS MANAGER X64 BUILD: FAILED
-run_id=32767851939
-utc=2026-08-24T19:23:34Z
-workflow_commit=68211586cd5abd98b505b8fd0a83490f9a1763c5
+run_id=32767934818
+utc=2026-08-24T19:25:04Z
+workflow_commit=e2187983720386867b728d1c34cfa178bb90939c
+
+===== x64-qt-install.log =====
+INFO    : aqtinstall(aqt) v3.3.0 on Python 3.11.9 [CPython MSC v.1938 64 bit (AMD64)]
+INFO    : Downloading qtcharts...
+INFO    : Downloading qtconnectivity...
+INFO    : Downloading qtgraphicaleffects...
+INFO    : Downloading qtmultimedia...
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Finished installation of qtgraphicaleffects-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.23036270
+INFO    : Downloading qtdeclarative...
+INFO    : Downloading qtsvg...
+INFO    : Finished installation of qtmultimedia-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 3.14996320
+INFO    : Finished installation of qtcharts-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 3.20702870
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Downloading qttranslations...
+INFO    : Downloading qtbase...
+INFO    : Finished installation of qtsvg-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.23082490
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Downloading qtimageformats...
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Finished installation of qtimageformats-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 1.94586230
+INFO    : Downloading qttools...
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Finished installation of qttranslations-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 5.15978720
+INFO    : Downloading qtxmlpatterns...
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Finished installation of qtdeclarative-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 9.32070460
+INFO    : Downloading qtwinextras...
+INFO    : Finished installation of qtxmlpatterns-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 3.92038380
+INFO    : Downloading qtsensors...
+INFO    : Finished installation of qttools-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 6.92595730
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Finished installation of qtsensors-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.05269410
+INFO    : Downloading qtwebsockets...
+INFO    : Downloading qtlocation...
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Finished installation of qtwinextras-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 4.24118110
+INFO    : Finished installation of qtwebsockets-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.70704640
+INFO    : Downloading qtwebchannel...
+INFO    : Downloading qtquickcontrols...
+INFO    : Finished installation of qtlocation-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 3.14402290
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Downloading qtserialport...
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Finished installation of qtwebchannel-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.38362710
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Downloading qt3d...
+INFO    : Finished installation of qtserialport-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.15951230
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Finished installation of qtquickcontrols-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 4.64830160
+INFO    : Finished installation of qtbase-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 17.20374750
+INFO    : Downloading qtserialbus...
+INFO    : Downloading qtgamepad...
+INFO    : Downloading qtquickcontrols2...
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Finished installation of qtserialbus-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.15482840
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Finished installation of qtgamepad-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.05690910
+INFO    : Downloading qtscxml...
+INFO    : Downloading qtspeech...
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Finished installation of qtscxml-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.05771070
+INFO    : Finished installation of qtspeech-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 1.90622150
+INFO    : Finished installation of qtquickcontrols2-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 4.02409490
+INFO    : Finished installation of qt3d-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 5.97158130
+INFO    : Downloading qtremoteobjects...
+INFO    : Downloading opengl32sw...
+INFO    : Downloading qtwebview...
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Finished installation of qtwebview-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 1.72442040
+INFO    : Finished installation of qtremoteobjects-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 1.99877530
+INFO    : Finished installation of opengl32sw-64-mesa_12_0_rc2.7z in 2.18596460
+INFO    : Downloading d3dcompiler_47...
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Finished installation of d3dcompiler_47-x64.7z in 1.78610170
+WARNING : Caught Bad7zFile, terminating installer workers
+ERROR   : Specified path is bad: 5.15.2/msvc2019_64/qml
+Traceback (most recent call last):
+  File "C:\hostedtoolcache\windows\Python\3.11.9\x64\Lib\site-packages\aqt\installer.py", line 203, in run
+    args.func(args)
+  File "C:\hostedtoolcache\windows\Python\3.11.9\x64\Lib\site-packages\aqt\installer.py", line 476, in run_install_qt
+    run_installer(qt_archives.get_packages(), base_dir, sevenzip, keep, _archive_dest, dry_run=dry_run)
+  File "C:\hostedtoolcache\windows\Python\3.11.9\x64\Lib\site-packages\aqt\installer.py", line 1624, in run_installer
+    raise e from e
+  File "C:\hostedtoolcache\windows\Python\3.11.9\x64\Lib\site-packages\aqt\installer.py", line 1577, in run_installer
+    pool.starmap(installer, tasks)
+  File "C:\hostedtoolcache\windows\Python\3.11.9\x64\Lib\multiprocessing\pool.py", line 375, in starmap
+    return self._map_async(func, iterable, starmapstar, chunksize).get()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\hostedtoolcache\windows\Python\3.11.9\x64\Lib\multiprocessing\pool.py", line 774, in get
+    raise self._value
+py7zr.exceptions.Bad7zFile: Specified path is bad: 5.15.2/msvc2019_64/qml
+ERROR   : aqtinstall(aqt) v3.3.0 on Python 3.11.9 [CPython MSC v.1938 64 bit (AMD64)]
+Working dir: `D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session`
+Arguments: `['C:\\hostedtoolcache\\windows\\Python\\3.11.9\\x64\\Lib\\site-packages\\aqt\\__main__.py', 'install-qt', 'windows', 'desktop', '5.15.2', 'win64_msvc2019_64', '-m', 'qtcharts', '-O', 'C:\\Qt']` Host: `uname_result(system='Windows', node='runnervm6iq3x', release='10', version='10.0.26100', machine='AMD64')`
+===========================PLEASE FILE A BUG REPORT===========================
+You have discovered a bug in aqt.
+Please file a bug report at https://github.com/miurahr/aqtinstall/issues
+Please remember to include a copy of this program's output in your report.
