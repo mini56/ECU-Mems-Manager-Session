@@ -96,6 +96,28 @@ jobs:
           if (-not $server) { throw "llama-server.exe missing" }
           Copy-Item -Path (Join-Path $server.Directory.FullName "*") -Destination ai -Recurse -Force
 
+          # App-local Microsoft Visual C++ x64 redistributable. This makes the
+          # llama.cpp process independent of a separately installed VC++ runtime
+          # on the end-user PC.
+          $vcRoots = @(
+            "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Redist\MSVC",
+            "C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Redist\MSVC",
+            "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Redist\MSVC"
+          )
+          $vcCrt = $null
+          foreach ($root in $vcRoots) {
+            if (-not (Test-Path $root)) { continue }
+            $candidate = Get-ChildItem $root -Directory | Sort-Object Name -Descending | ForEach-Object {
+              Join-Path $_.FullName "x64\Microsoft.VC143.CRT"
+            } | Where-Object { Test-Path $_ } | Select-Object -First 1
+            if ($candidate) { $vcCrt = $candidate; break }
+          }
+          if (-not $vcCrt) { throw "Microsoft.VC143.CRT x64 redistributable directory not found" }
+          Copy-Item (Join-Path $vcCrt "*.dll") ai -Force
+          foreach ($requiredCrt in @("vcruntime140.dll","msvcp140.dll")) {
+            if (-not (Test-Path (Join-Path "ai" $requiredCrt))) { throw "VC++ runtime file missing: $requiredCrt" }
+          }
+
           curl.exe -L --fail --retry 4 --retry-delay 3 -o ai/models/ia-mems.gguf $modelUrl
           if ($LASTEXITCODE -ne 0) { throw "Qwen model download failed" }
           $actual = (Get-FileHash ai/models/ia-mems.gguf -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -110,7 +132,8 @@ jobs:
           $ErrorActionPreference = "Stop"
           $server = (Resolve-Path ai/llama-server.exe).Path
           $model = (Resolve-Path ai/models/ia-mems.gguf).Path
-          $process = Start-Process -FilePath $server -ArgumentList @("-m",$model,"--alias","ia-mems","--host","127.0.0.1","--port","18089","-c","4096","-np","1") -PassThru -WindowStyle Hidden
+          $runtimeDirectory = Split-Path $server -Parent
+          $process = Start-Process -FilePath $server -WorkingDirectory $runtimeDirectory -ArgumentList @("-m",$model,"--alias","ia-mems","--host","127.0.0.1","--port","18089","-c","4096","-np","1") -PassThru -WindowStyle Hidden
           try {
             $ready = $false
             for ($i=0; $i -lt 180; $i++) {
@@ -119,7 +142,7 @@ jobs:
                 $health = Invoke-RestMethod -Method Get -Uri "http://127.0.0.1:18089/health" -TimeoutSec 3
                 if ($health.status -eq "ok") { $ready=$true; break }
               } catch {
-                if ($process.HasExited) { throw "llama-server exited during loading" }
+                if ($process.HasExited) { throw "llama-server exited during loading with code $($process.ExitCode)" }
               }
             }
             if (-not $ready) { throw "local IA model not ready" }
@@ -175,6 +198,7 @@ jobs:
           $required = @(
             "ecu_mems_manager.exe","Qt5Network.dll","librosco.dll","platforms\qwindows.dll","sqldrivers\qsqlite.dll",
             "database\reference\manifest.json","ai\llama-server.exe","ai\models\ia-mems.gguf","ai\runtime_manifest.json",
+            "ai\vcruntime140.dll","ai\msvcp140.dll",
             "ai\LICENSE_llama.cpp.txt","ai\LICENSE_Qwen3.txt","ai\LOCAL_AI_VALIDATED_DIALOGUE.txt"
           )
           foreach($item in $required){$p=Join-Path $dist $item;if(-not(Test-Path $p)){throw "Required package file missing: $item"};if((Get-Item $p).Length -le 0){throw "Required package file empty: $item"}}
@@ -192,7 +216,7 @@ jobs:
           source_commit=${{ github.sha }}
           run=${{ github.run_id }}
           model=Qwen3-0.6B-Q8_0
-          runtime=llama.cpp b10516 Windows x64 CPU
+          runtime=llama.cpp b10516 Windows x64 CPU + app-local VC++ CRT
           "@ | Set-Content -Encoding UTF8 IA_MEMS_FINAL_PACKAGE_OK.txt
           Copy-Item IA_MEMS_FINAL_PACKAGE_OK.txt "$dist\IA_MEMS_FINAL_PACKAGE_OK.txt" -Force
 
