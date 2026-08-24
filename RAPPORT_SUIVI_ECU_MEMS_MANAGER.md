@@ -6,7 +6,7 @@
 > L’assistant doit **mettre à jour ce rapport lui-même et le pousser régulièrement sur la branche `RAPPORT`**, au minimum après chaque étape technique importante, validation, découverte, changement de branche de travail ou décision d’architecture.
 > La branche `RAPPORT` sert au suivi et à la transmission entre discussions. Elle ne doit pas servir à modifier le programme de production sauf demande explicite.
 
-Dernière mise à jour : **24 août 2026 — l’IA historique du build #14 fonctionne réellement avec l’ECU AANMP002/MNE101150. Le package MEMSX64 complet ferme à l’ouverture de IA MEMS même sans runtime llama actif. Les fichiers centraux IA sont identiques entre la branche historique et MEMSX64. Entre le premier package x64 stable sans IA locale et le package x64 actuel, le seul changement persistant affectant la compilation de l’EXE est l’ajout de `/utf-8` à MSVC. Un package A/B x64 sans `/utf-8`, sans runtime IA, a été construit au vert (run 32753372131) et doit maintenant être essayé sur le PC utilisateur.**
+Dernière mise à jour : **24 août 2026 — le build historique #14 reste la référence réelle fonctionnelle : IA locale prête + base prête + ECU AANMP002/MNE101150. Le package MEMSX64 récent ferme à l’ouverture de IA MEMS. Le test A/B x64 sans `/utf-8` ferme exactement pareil : `/utf-8` est donc exclu comme cause. Plusieurs workflows de diagnostic suivants sont devenus rouges à cause de leurs propres erreurs de workflow, avant ou indépendamment du test du programme ; ces rouges ne constituent pas des régressions de MEMS Manager. Un diagnostic minimal “IA interface seule” a été préparé pour isoler `showEvent` de la base expert et de LocalAiClient. Règle utilisateur obligatoire : pour chaque version à tester, toujours annoncer d’abord le numéro de build/run lisible (`build #XX`) ; les hashes Git ne sont que des références techniques secondaires.**
 
 ---
 
@@ -22,6 +22,7 @@ Dernière mise à jour : **24 août 2026 — l’IA historique du build #14 fonc
 - Les familles MEMS **1.2 / 1.3 / 1.6 / 1.9** doivent rester distinguées.
 - Dans `memsinterface.h`, conserver impérativement : `void onProtocolCommandRequested(quint8 command);`.
 - Ne jamais confondre polling normal `0x7D/0x80`, RAM/Mode 4, calibrations/cartes et données externes.
+- **Règle de communication build :** quand un artefact/version doit être testé par l’utilisateur, toujours donner **le numéro de build/run lisible en premier**, sous une forme du type **`build #14`** ou **`build #XX — run 327...`**. Ne jamais demander à l’utilisateur d’identifier une version uniquement avec un hash Git du type `890f68e...`. Le commit peut être indiqué ensuite, uniquement comme référence technique secondaire.
 
 ---
 
@@ -136,7 +137,7 @@ Run **32713710308**, marqueur `494c8993ffc218195639d974b7b2a7c81b3f8541`.
 
 Sur PC secondaire propre : navigation générale stable, base disponible, **onglet IA MEMS stable**, avec secours déterministe normal car runtime local absent. Défauts mojibake et responsive visibles mais non prioritaires.
 
-Ce package est une référence A importante : **l’EXE x64 sait ouvrir IA MEMS sans fermeture lorsqu’il est compilé dans l’état antérieur à l’ajout de `/utf-8`.**
+Ce package est une référence A importante : **l’EXE x64 sait ouvrir IA MEMS sans fermeture dans ce package ancien.**
 
 ---
 
@@ -164,6 +165,8 @@ Le package x64 actuel est **portable** : il n’y a pas de désinstalleur à uti
 - Run **32721873137** : rouge uniquement parce que le bot GitHub n’avait pas la permission `workflows` pour modifier un autre workflow.
 
 Ces succès CI ne reproduisent pas la fermeture observée sur le package utilisateur récent.
+
+Les tentatives de diagnostic “staged” suivantes ont ensuite produit plusieurs runs rouges **à cause des workflows eux-mêmes** : logique de persistance Git, déclenchement/écriture de marqueur et instrumentation trop complexe. Ces rouges ne doivent pas être interprétés comme des crashes supplémentaires de MEMS Manager. La stratégie est désormais de revenir à des workflows de diagnostic minimaux, une seule hypothèse à la fois.
 
 ---
 
@@ -194,7 +197,7 @@ Sur le PC secondaire :
 - après vérification dans le Gestionnaire des tâches, **aucun `llama-server.exe` n’est actif** ;
 - avec `ai_OFF` + aucun serveur actif, l’ouverture IA ferme encore l’application.
 
-Conclusion : **le crash récent n’est pas causé directement par le runtime llama.cpp ni par le modèle Qwen**. Il faut chercher une différence dans l’EXE x64 / compilation / environnement déclenché par l’ouverture de IA.
+Conclusion : **le crash récent n’est pas causé directement par le runtime llama.cpp ni par le modèle Qwen**. Il faut chercher une différence dans l’EXE x64 / environnement déclenché par l’ouverture de IA.
 
 ### 9.2 Comparaison des sources IA — aucune dérive du cœur IA
 
@@ -206,48 +209,59 @@ Comparaison directe `lab-expert-engine` ↔ `MEMSX64` :
 
 Donc **le cœur de l’onglet IA, le client llama et la construction/ouverture de la base expert n’ont pas été modifiés entre ces branches**.
 
-### 9.3 Différence entre le premier x64 stable et le x64 actuel
+### 9.3 Piste `/utf-8` — ÉLIMINÉE PAR TEST RÉEL
 
-Comparaison Git entre le marqueur du premier package x64 stable `494c8993ffc218195639d974b7b2a7c81b3f8541` et le commit de packaging IA `58bd6a1f74da991ddf3b831fcfb55d2716755084` :
-
-- 25 commits intermédiaires, presque tous workflows/diagnostics/marqueurs ;
-- aucun changement du code IA central ;
-- **seule différence persistante affectant la compilation de l’application :**
-  - avant : `target_compile_options(${PNAME} PRIVATE /permissive)` ;
-  - après : `target_compile_options(${PNAME} PRIVATE /permissive /utf-8)`.
-
-Ajout de `/utf-8` :
+Entre le premier package x64 stable et le package x64 récent, l’ajout de `/utf-8` à MSVC avait été identifié comme différence persistante de compilation :
 
 - `7217b58b8236bceac83cf9a002da801459ab271c` — `Compile MEMSX64 application source strings as UTF-8` ;
 - `5598ae99376912c4dfc2c902006a598290a2629d` — `Keep only MSVC UTF-8 source encoding fix`.
 
-**Hypothèse prioritaire à tester, pas encore conclusion :** `/utf-8` peut être la différence responsable ou associée à la fermeture réelle. L’A/B utilisateur est nécessaire.
+Un package A/B x64 sans `/utf-8` a donc été construit.
 
-### 9.4 Package A/B x64 SANS `/utf-8` — prêt à tester
+**Résultat utilisateur : le package sans `/utf-8` ferme exactement pareil à l’ouverture de IA MEMS.**
+
+Conclusion : **`/utf-8` n’est pas la cause du crash IA et cette piste est fermée.** Ne pas y revenir sauf nouvel élément concret.
+
+### 9.4 Package A/B x64 SANS `/utf-8` — TESTÉ, ÉCHEC IDENTIQUE
 
 Workflow diagnostic : `.github/workflows/memsx64-ia-ab-no-utf8-package.yml`.
 
-- workflow commit : **`321ffd0e2beca268116a97a369ff484966f06dd6`** ;
 - run : **32753372131** ;
 - résultat CI : **SUCCESS** ;
 - artefact : **`ECU-MEMS-Manager-x64-IA-AB-NO-UTF8`** ;
 - artifact id : **9530010669** ;
 - taille : **91 027 767 octets** ;
-- digest : **`sha256:deb57015a6fccb4d9e142603c1281be400fb161a16b8bf8ec1fdb6a977acef1a`** ;
-- expiration GitHub : **22 novembre 2026**.
+- digest : **`sha256:deb57015a6fccb4d9e142603c1281be400fb161a16b8bf8ec1fdb6a977acef1a`**.
 
-Construction :
+Test réel sur le PC utilisateur :
 
-- même branche MEMSX64 actuelle ;
-- `/utf-8` retiré **uniquement dans le workspace du runner**, donc aucun retour arrière permanent dans le code normal ;
-- application et `mems_manager_x64.dll` restent AMD64 ;
-- base de référence incluse ;
-- runtime llama.cpp + modèle volontairement **omis** pour ce premier A/B, puisque le crash du package actuel a déjà été reproduit avec `ai_OFF` et aucun serveur actif.
+- lancement normal ;
+- ouverture IA MEMS ;
+- **fermeture identique**.
 
-Test demandé : lancer ce package sur le même PC et ouvrir **IA MEMS**. Le message « moteur llama.cpp absent » est normal. Le seul résultat important est : **l’application reste ouverte ou elle ferme encore**.
+Ce résultat exclut `/utf-8` et confirme qu’il faut isoler les étapes réellement exécutées par l’ouverture de l’onglet IA.
 
-- si elle reste ouverte : `/utf-8` devient la cause/association principale à corriger, puis reconstruire immédiatement un package complet avec vraie IA sans ce flag ;
-- si elle ferme encore : `/utf-8` est exclu, puis produire un build instrumenté avec traces/breadcrumbs autour de `showEvent`, `startKnowledgeLoad`, `ExpertRuntimeDatabase::buildOrOpen` et `LocalAiClient::initialize` pour localiser l’instruction exacte avant la fermeture.
+### 9.5 Diagnostic minimal “IA interface seule” — PROCHAINE ISOLATION
+
+Après plusieurs workflows staged rouges pour des raisons de workflow, un diagnostic beaucoup plus simple a été préparé sur `MEMSX64`.
+
+Objectif : compiler un package où `IaMemsTab::showEvent()` appelle seulement `QWidget::showEvent(event)` puis retourne immédiatement :
+
+- **pas de `startKnowledgeLoad()`** ;
+- **pas de `ExpertRuntimeDatabase` lancé par l’onglet** ;
+- **pas de `LocalAiClient::initialize()`** ;
+- **pas de runtime llama/modèle dans le package**.
+
+Nom d’artefact prévu : **`ECU-MEMS-Manager-x64-IA-UI-ONLY-DIAG`**.
+
+Référence technique du workflow : commit `890f68e1eeff270acabda0ba3b2169a7e2765946`.
+
+**Important : ne pas présenter ce hash comme le nom du build à l’utilisateur. Attendre que GitHub Actions attribue le numéro de build/run, puis annoncer d’abord `build #XX` au moment du test.**
+
+Interprétation attendue :
+
+- si IA interface seule reste ouverte : le crash est dans la base expert ou LocalAiClient, pas dans le simple affichage de l’onglet ;
+- si IA interface seule ferme encore : chercher dans le cycle de vie de l’onglet/navigation/widget lui-même.
 
 ---
 
@@ -365,19 +379,27 @@ Le build #14 confirme qu’une connexion réelle fonctionne sur COM3, mais **la 
 
 ## 13. Prochaine action exacte
 
-**Priorité immédiate : essai utilisateur du package A/B `ECU-MEMS-Manager-x64-IA-AB-NO-UTF8` du run 32753372131.**
+**Priorité immédiate : obtenir un build GitHub Actions vert du diagnostic minimal `IA interface seule`.**
 
-Test minimal :
+Ne pas demander de nouveau test utilisateur tant que ce diagnostic n’est pas vert et que son artefact n’est pas disponible.
 
-1. extraire dans un nouveau dossier ;
-2. lancer `ecu_mems_manager.exe` ;
-3. ouvrir IA MEMS ;
-4. constater uniquement : reste ouvert ou ferme encore.
+Une fois l’artefact produit :
 
-Pas besoin d’ECU pour cet A/B.
+1. annoncer à l’utilisateur **le numéro de build/run en premier : `build #XX`** ;
+2. donner éventuellement le run GitHub complet ensuite ;
+3. le hash Git n’est qu’une référence secondaire ;
+4. extraire le package dans un nouveau dossier ;
+5. lancer `ecu_mems_manager.exe` ;
+6. ouvrir IA MEMS et attendre 15–20 s ;
+7. constater uniquement : reste ouvert ou ferme encore.
 
-Si le package reste ouvert, construire ensuite le package x64 complet avec runtime/model et sans `/utf-8`, puis valider `IA locale prête` et les réponses réelles.
+Pas besoin d’ECU pour ce diagnostic.
 
-Si le package ferme encore, ne pas multiplier les hypothèses : construire un diagnostic instrumenté autour de la séquence d’ouverture IA afin d’obtenir la dernière étape atteinte avant la fermeture.
+Si IA interface seule reste ouverte, isoler ensuite séparément :
+
+- **base expert seule** ;
+- puis **LocalAiClient seul**.
+
+Si IA interface seule ferme encore, concentrer l’enquête sur le cycle de vie de l’onglet/navigation/widget, sans toucher au protocole ECU.
 
 Ne pas reprendre pour l’instant la refonte responsive ou l’extension protocolaire tant que cette régression IA n’est pas localisée et corrigée.
