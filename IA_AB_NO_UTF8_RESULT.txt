@@ -1,0 +1,8 @@
+MEMSX64 IA A-B NO UTF8: SUCCESS
+artifact=ECU-MEMS-Manager-x64-IA-AB-NO-UTF8
+local_ai_bundle=omitted
+msvc_utf8_flag=removed_in_runner_only
+run_id=32753372131
+run_number=2
+workflow_sha=321ffd0e2beca268116a97a369ff484966f06dd6
+utc=2026-08-24T16:56:39Z
