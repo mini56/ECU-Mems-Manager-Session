@@ -13,6 +13,9 @@ on:
       - 'CMakeLists.txt'
       - '.github/workflows/build-ecu-mems-x64-diagnostic.yml'
 
+permissions:
+  contents: write
+
 jobs:
   build-diagnostic-x64:
     runs-on: windows-latest
@@ -169,3 +172,45 @@ jobs:
           name: ECU-MEMS-Manager-x64-Diagnostic-PC
           path: dist-diag-x64/
           if-no-files-found: error
+
+      - name: Persist diagnostic success marker
+        if: success()
+        shell: pwsh
+        run: |
+          @(
+            'ECU MEMS MANAGER X64 DIAGNOSTIC PACKAGE: OK',
+            'run_id=${{ github.run_id }}',
+            'run_number=${{ github.run_number }}',
+            'commit=${{ github.sha }}',
+            'artifact=ECU-MEMS-Manager-x64-Diagnostic-PC',
+            ('utc=' + [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ'))
+          ) | Set-Content -Encoding UTF8 ECU_MEMS_X64_DIAGNOSTIC_VALIDATION.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin MEMSX64-DIAG
+          if (Test-Path ECU_MEMS_X64_DIAGNOSTIC_FAILURE.txt) { git rm -f ECU_MEMS_X64_DIAGNOSTIC_FAILURE.txt }
+          git add ECU_MEMS_X64_DIAGNOSTIC_VALIDATION.txt
+          if (-not (git diff --cached --quiet)) {
+            git commit -m "Validate x64 diagnostic package [skip ci]"
+            git push origin HEAD:MEMSX64-DIAG
+          }
+
+      - name: Persist diagnostic failure marker
+        if: failure()
+        shell: pwsh
+        run: |
+          @(
+            'ECU MEMS MANAGER X64 DIAGNOSTIC PACKAGE: FAILED',
+            'run_id=${{ github.run_id }}',
+            'run_number=${{ github.run_number }}',
+            'commit=${{ github.sha }}',
+            ('utc=' + [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ'))
+          ) | Set-Content -Encoding UTF8 ECU_MEMS_X64_DIAGNOSTIC_FAILURE.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin MEMSX64-DIAG
+          git add ECU_MEMS_X64_DIAGNOSTIC_FAILURE.txt
+          if (-not (git diff --cached --quiet)) {
+            git commit -m "Record x64 diagnostic package failure [skip ci]"
+            git push origin HEAD:MEMSX64-DIAG
+          }
