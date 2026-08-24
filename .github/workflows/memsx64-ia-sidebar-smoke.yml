@@ -44,11 +44,8 @@ jobs:
           from pathlib import Path
           p = Path('iamemstab.cpp')
           s = p.read_text(encoding='utf-8')
-          old = '''    if (tabs->currentWidget() == tab)
-              navigation->setCurrentRow(insertRow);
-          }'''
-          new = '''    if (tabs->currentWidget() == tab)
-              navigation->setCurrentRow(insertRow);
+          old = '    navigation->insertItem(insertRow, item);'
+          new = '''    navigation->insertItem(insertRow, item);
           if (qEnvironmentVariableIsSet("MEMS_SMOKE_CLICK_IA")
               && !navigation->property("iaSmokeClickScheduled").toBool()) {
               navigation->setProperty("iaSmokeClickScheduled", true);
@@ -63,7 +60,6 @@ jobs:
                       }
                   }
               });
-          }
           }'''
           if s.count(old) != 1:
               raise SystemExit(f'Expected one IA navigation insertion point, found {s.count(old)}')
