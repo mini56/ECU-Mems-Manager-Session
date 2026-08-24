@@ -1,4 +1,4 @@
-name: MEMSX64 IA A-B package without UTF-8 compile flag
+name: MEMSX64 IA staged crash isolation via proven workflow
 
 on:
   workflow_dispatch:
@@ -11,7 +11,7 @@ permissions:
   contents: write
 
 jobs:
-  build-ia-ab-no-utf8:
+  build-ia-stage:
     runs-on: windows-latest
 
     steps:
@@ -20,206 +20,178 @@ jobs:
         with:
           ref: MEMSX64
 
-      - name: Patch runner workspace only - remove MSVC UTF-8 flag
+      - name: Publish run id
         shell: pwsh
         run: |
-          $ErrorActionPreference = 'Stop'
-          $path = 'CMakeLists.txt'
-          $text = Get-Content $path -Raw
-          $old = 'target_compile_options(${PNAME} PRIVATE /permissive /utf-8)'
-          $new = 'target_compile_options(${PNAME} PRIVATE /permissive)'
-          $count = ([regex]::Matches($text, [regex]::Escape($old))).Count
-          if ($count -ne 1) { throw "Expected exactly one UTF-8 compile option, found $count" }
-          $text = $text.Replace($old, $new)
-          Set-Content -Path $path -Value $text -Encoding UTF8
-          Write-Host 'A/B diagnostic: MSVC /utf-8 removed in runner workspace only.'
-          git diff -- CMakeLists.txt
+          $ErrorActionPreference='Stop'
+          @(
+            'MEMSX64 IA STAGE: STARTED',
+            'run_id=${{ github.run_id }}',
+            'run_number=${{ github.run_number }}',
+            'workflow_sha=${{ github.sha }}',
+            ('utc=' + [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ'))
+          ) | Set-Content -Encoding UTF8 IA_STAGE_PROVEN_STARTED.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin MEMSX64
+          git add IA_STAGE_PROVEN_STARTED.txt
+          git commit -m "Record IA staged diagnostic run [skip ci]"
+          git push origin HEAD:MEMSX64
+
+      - name: Inject runner-only stage modes and trace
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          @'
+          from pathlib import Path
+          p=Path('iamemstab.cpp')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('#include <QEvent>\n','#include <QEvent>\n#include <QCoreApplication>\n#include <QFile>\n',1)
+          anchor='static const int kTabPtrRole = Qt::UserRole + 60;\n\n'
+          helper=r'''static const int kTabPtrRole = Qt::UserRole + 60;
+
+QString iaDiagMode()
+{
+    return qEnvironmentVariable("MEMS_IA_DIAG_MODE").trimmed().toLower();
+}
+
+void iaDiagTrace(const QString &message)
+{
+    QFile file(QCoreApplication::applicationDirPath()+QStringLiteral("/IA_DIAG_TRACE.txt"));
+    if (!file.open(QIODevice::WriteOnly|QIODevice::Append|QIODevice::Text)) return;
+    file.write((QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd HH:mm:ss.zzz"))+QStringLiteral(" | ")+message+QLatin1Char('\n')).toUtf8());
+    file.flush();
+}
+
+'''
+          if s.count(anchor)!=1: raise SystemExit('helper anchor mismatch')
+          s=s.replace(anchor,helper,1)
+          old=r'''void IaMemsTab::showEvent(QShowEvent *event)
+{
+    QWidget::showEvent(event);
+
+    // Keep the main ECU program light: the knowledge cache and the local
+    // language model are started only when IA MEMS is actually opened.
+    QTimer::singleShot(0, this, &IaMemsTab::startKnowledgeLoad);
+    if (m_localAi)
+        QTimer::singleShot(0, m_localAi, &LocalAiClient::initialize);
+}
+'''
+          new=r'''void IaMemsTab::showEvent(QShowEvent *event)
+{
+    const QString mode=iaDiagMode();
+    iaDiagTrace(QStringLiteral("showEvent ENTER mode=%1").arg(mode.isEmpty()?QStringLiteral("original"):mode));
+    QWidget::showEvent(event);
+    iaDiagTrace(QStringLiteral("QWidget::showEvent returned"));
+    if (mode==QStringLiteral("ui_only")) { iaDiagTrace(QStringLiteral("UI_ONLY return")); return; }
+    if (mode!=QStringLiteral("local_only")) {
+        iaDiagTrace(QStringLiteral("schedule KNOWLEDGE"));
+        QTimer::singleShot(0,this,&IaMemsTab::startKnowledgeLoad);
+    }
+    if (mode!=QStringLiteral("knowledge_only") && m_localAi) {
+        iaDiagTrace(QStringLiteral("schedule LOCAL_AI"));
+        QTimer::singleShot(0,m_localAi,&LocalAiClient::initialize);
+    }
+    iaDiagTrace(QStringLiteral("showEvent EXIT"));
+}
+'''
+          if s.count(old)!=1: raise SystemExit('showEvent mismatch')
+          s=s.replace(old,new,1)
+          a='void IaMemsTab::startKnowledgeLoad()\n{\n'
+          if s.count(a)!=1: raise SystemExit('start anchor mismatch')
+          s=s.replace(a,a+'    iaDiagTrace(QStringLiteral("startKnowledgeLoad ENTER"));\n',1)
+          a='    QThread *thread = QThread::create([guard]() {\n'
+          if s.count(a)!=1: raise SystemExit('thread create mismatch')
+          s=s.replace(a,'    iaDiagTrace(QStringLiteral("before QThread::create"));\n'+a+'        iaDiagTrace(QStringLiteral("knowledge worker ENTER"));\n',1)
+          a='        const bool ok = reference.buildOrOpen();\n'
+          if s.count(a)!=1: raise SystemExit('buildOrOpen mismatch')
+          s=s.replace(a,'        iaDiagTrace(QStringLiteral("before buildOrOpen"));\n'+a+'        iaDiagTrace(QStringLiteral("after buildOrOpen ok=%1 error=%2").arg(ok).arg(reference.lastError().left(300)));\n',1)
+          a='    thread->start();\n'
+          if s.count(a)!=1: raise SystemExit('thread start mismatch')
+          s=s.replace(a,'    iaDiagTrace(QStringLiteral("before thread start"));\n'+a+'    iaDiagTrace(QStringLiteral("after thread start"));\n',1)
+          a='void IaMemsTab::finishKnowledgeLoad(bool ok,\n                                    const QString &databasePath,\n                                    const QString &errorText)\n{\n'
+          if s.count(a)!=1: raise SystemExit('finish anchor mismatch')
+          s=s.replace(a,a+'    iaDiagTrace(QStringLiteral("finishKnowledgeLoad ENTER ok=%1 path=%2 error=%3").arg(ok).arg(databasePath).arg(errorText.left(300)));\n',1)
+          p.write_text(s,encoding='utf-8')
+          '@ | python -
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install build tools
+      - name: Install tools
         shell: pwsh
-        run: |
-          python -m pip install --disable-pip-version-check aqtinstall pefile
+        run: python -m pip install --disable-pip-version-check aqtinstall pefile
 
-      - name: Install Qt 5.15.2 MSVC 2019 x64
+      - name: Install Qt x64
         shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt
-          if (-not (Test-Path 'C:\Qt\5.15.2\msvc2019_64\lib\cmake\Qt5\Qt5Config.cmake')) {
-            throw 'Qt 5.15.2 MSVC x64 installation incomplete'
-          }
+        run: python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt
 
-      - name: Configure native x64 diagnostic
+      - name: Configure x64
         shell: pwsh
         run: |
-          $ErrorActionPreference = 'Stop'
-          cmake -S . -B build-ia-ab-no-utf8 -A x64 `
+          cmake -S . -B build-ia-stage -A x64 `
             -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
             -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
             -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF
 
-      - name: Build native x64 diagnostic
+      - name: Build x64
+        shell: pwsh
+        run: cmake --build build-ia-stage --config Release --target ecu_mems_manager
+
+      - name: Assemble staged package
         shell: pwsh
         run: |
-          $ErrorActionPreference = 'Stop'
-          cmake --build build-ia-ab-no-utf8 --config Release --target ecu_mems_manager
-
-      - name: Assemble small A-B portable package without local AI runtime
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
-          $qtBin = Join-Path $qtRoot 'bin'
-          $qtPlugins = Join-Path $qtRoot 'plugins'
-          $build = '${{ github.workspace }}\build-ia-ab-no-utf8'
-          $dist = '${{ github.workspace }}\dist-ia-ab-no-utf8'
-          $app = Join-Path $build 'Release\ecu_mems_manager.exe'
-          $protocol = Join-Path $build 'librosco-x64\Release\mems_manager_x64.dll'
-
-          if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }
-          New-Item -ItemType Directory -Path $dist | Out-Null
-
-          foreach ($src in @($app, $protocol)) {
-            if (-not (Test-Path $src)) { throw "Required x64 binary missing: $src" }
+          $ErrorActionPreference='Stop'
+          $build='${{ github.workspace }}\build-ia-stage'
+          $dist='${{ github.workspace }}\dist-ia-stage'
+          if(Test-Path $dist){Remove-Item $dist -Recurse -Force}
+          New-Item -ItemType Directory $dist | Out-Null
+          Copy-Item (Join-Path $build 'Release\ecu_mems_manager.exe') $dist
+          Copy-Item (Join-Path $build 'librosco-x64\Release\mems_manager_x64.dll') $dist
+          & 'C:\Qt\5.15.2\msvc2019_64\bin\windeployqt.exe' --release --compiler-runtime --no-translations --dir $dist (Join-Path $dist 'ecu_mems_manager.exe')
+          if($LASTEXITCODE -ne 0){throw 'windeployqt failed'}
+          Copy-Item (Join-Path $build 'Release\translations') (Join-Path $dist 'translations') -Recurse -Force
+          Copy-Item (Join-Path $build 'Release\database') (Join-Path $dist 'database') -Recurse -Force
+          if(-not(Test-Path (Join-Path $dist 'sqldrivers\qsqlite.dll'))){
+            New-Item -ItemType Directory -Force (Join-Path $dist 'sqldrivers') | Out-Null
+            Copy-Item 'C:\Qt\5.15.2\msvc2019_64\plugins\sqldrivers\qsqlite.dll' (Join-Path $dist 'sqldrivers\qsqlite.dll') -Force
           }
-          Copy-Item $app (Join-Path $dist 'ecu_mems_manager.exe') -Force
-          Copy-Item $protocol (Join-Path $dist 'mems_manager_x64.dll') -Force
-
-          & (Join-Path $qtBin 'windeployqt.exe') `
-            --release `
-            --compiler-runtime `
-            --no-translations `
-            --dir $dist `
-            (Join-Path $dist 'ecu_mems_manager.exe')
-          if ($LASTEXITCODE -ne 0) { throw "windeployqt failed with code $LASTEXITCODE" }
-
-          $translations = Join-Path $build 'Release\translations'
-          Copy-Item $translations (Join-Path $dist 'translations') -Recurse -Force
-
-          $database = Join-Path $build 'Release\database'
-          if (-not (Test-Path (Join-Path $database 'reference'))) { throw 'Generated offline MEMS database is missing' }
-          Copy-Item $database (Join-Path $dist 'database') -Recurse -Force
-
-          $sqliteDst = Join-Path $dist 'sqldrivers\qsqlite.dll'
-          if (-not (Test-Path $sqliteDst)) {
-            New-Item -ItemType Directory -Path (Split-Path $sqliteDst) -Force | Out-Null
-            Copy-Item (Join-Path $qtPlugins 'sqldrivers\qsqlite.dll') $sqliteDst -Force
+          if(Test-Path (Join-Path $dist 'ai')){Remove-Item (Join-Path $dist 'ai') -Recurse -Force}
+          $m=@{'TEST_1_UI_ONLY.bat'='ui_only';'TEST_2_LOCAL_AI_ONLY.bat'='local_only';'TEST_3_KNOWLEDGE_ONLY.bat'='knowledge_only';'TEST_4_ORIGINAL_BOTH.bat'=''}
+          foreach($n in $m.Keys){
+            @('@echo off','cd /d "%~dp0"','del IA_DIAG_TRACE.txt 2>nul',('set MEMS_IA_DIAG_MODE='+$m[$n]),'start "" ecu_mems_manager.exe') | Set-Content -Encoding ASCII (Join-Path $dist $n)
           }
+          @('1 UI only','2 LocalAiClient only','3 Knowledge DB only','4 Original both','Open IA MEMS after each launch and wait 15 seconds.','After any crash send IA_DIAG_TRACE.txt.','No llama/model is included.') | Set-Content -Encoding UTF8 (Join-Path $dist 'README_IA_STAGE.txt')
 
-          # Deliberately omit the local llama.cpp/model bundle. The real-PC crash
-          # already reproduces with ai renamed to ai_OFF, so this isolates the EXE.
-          if (Test-Path (Join-Path $dist 'ai')) { Remove-Item (Join-Path $dist 'ai') -Recurse -Force }
-
-          @(
-            'ECU MEMS MANAGER X64 IA A-B DIAGNOSTIC',
-            'Purpose: test the only persistent application-build delta after the first stable x64 package.',
-            'MSVC /utf-8: REMOVED for this runner build only.',
-            'Local llama.cpp/model: intentionally NOT packaged.',
-            'Test: launch app, open IA MEMS, observe whether the application remains open.'
-          ) | Set-Content -Path (Join-Path $dist 'IA_AB_NO_UTF8_README.txt') -Encoding UTF8
-
-      - name: Validate diagnostic package
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $env:DIST = '${{ github.workspace }}\dist-ia-ab-no-utf8'
-          @'
-          import os
-          import pathlib
-          import pefile
-
-          root = pathlib.Path(os.environ['DIST'])
-          required = [
-              root / 'ecu_mems_manager.exe',
-              root / 'mems_manager_x64.dll',
-              root / 'Qt5Core.dll',
-              root / 'Qt5Gui.dll',
-              root / 'Qt5Widgets.dll',
-              root / 'Qt5Sql.dll',
-              root / 'Qt5Network.dll',
-              root / 'platforms' / 'qwindows.dll',
-              root / 'sqldrivers' / 'qsqlite.dll',
-              root / 'database' / 'reference' / 'manifest.json',
-              root / 'IA_AB_NO_UTF8_README.txt',
-          ]
-          missing = [str(p.relative_to(root)) for p in required if not p.exists() or p.stat().st_size <= 0]
-          if missing:
-              raise SystemExit('Missing required files: ' + ', '.join(missing))
-          if (root / 'ai' / 'llama-server.exe').exists() or (root / 'ai' / 'models' / 'ia-mems.gguf').exists():
-              raise SystemExit('A/B package unexpectedly contains local AI runtime/model')
-          for p in [root / 'ecu_mems_manager.exe', root / 'mems_manager_x64.dll']:
-              pe = pefile.PE(str(p), fast_load=True)
-              if pe.FILE_HEADER.Machine != 0x8664 or pe.OPTIONAL_HEADER.Magic != 0x20B:
-                  raise SystemExit(f'{p.name} is not PE32+ AMD64')
-          print('OK: A/B no-UTF8 x64 diagnostic package assembled')
-          '@ | python -
-
-      - name: Smoke launch diagnostic package
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $dist = '${{ github.workspace }}\dist-ia-ab-no-utf8'
-          $exe = Join-Path $dist 'ecu_mems_manager.exe'
-          $proc = Start-Process $exe -WorkingDirectory $dist -PassThru
-          Start-Sleep -Seconds 6
-          if ($proc.HasExited) {
-            throw "A/B diagnostic application exited during basic smoke launch (code $($proc.ExitCode))"
-          }
-          Stop-Process -Id $proc.Id -Force
-          Write-Host 'OK: basic x64 diagnostic launch remained alive'
-
-      - name: Upload A-B diagnostic artifact
+      - name: Upload staged artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ECU-MEMS-Manager-x64-IA-AB-NO-UTF8
-          path: dist-ia-ab-no-utf8/
+          name: ECU-MEMS-Manager-x64-IA-STAGE-DIAG
+          path: dist-ia-stage/
           if-no-files-found: error
           compression-level: 0
 
-      - name: Persist A-B success marker
-        if: success()
+      - name: Persist result
+        if: always()
         shell: pwsh
         run: |
-          $ErrorActionPreference = 'Stop'
+          $ErrorActionPreference='Continue'
           git reset --hard HEAD
           git pull --rebase origin MEMSX64
+          $state='${{ job.status }}'
           @(
-            'MEMSX64 IA A-B NO UTF8: SUCCESS',
-            'artifact=ECU-MEMS-Manager-x64-IA-AB-NO-UTF8',
-            'local_ai_bundle=omitted',
-            'msvc_utf8_flag=removed_in_runner_only',
+            ('MEMSX64 IA STAGE: '+$state.ToUpperInvariant()),
+            'artifact=ECU-MEMS-Manager-x64-IA-STAGE-DIAG',
             'run_id=${{ github.run_id }}',
             'run_number=${{ github.run_number }}',
             'workflow_sha=${{ github.sha }}',
-            ('utc=' + [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ'))
-          ) | Set-Content -Encoding UTF8 IA_AB_NO_UTF8_RESULT.txt
+            ('utc='+[DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ'))
+          ) | Set-Content -Encoding UTF8 IA_STAGE_PROVEN_RESULT.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add IA_AB_NO_UTF8_RESULT.txt
-          git commit -m "Record x64 IA A-B no-UTF8 success [skip ci]"
-          git push origin HEAD:MEMSX64
-
-      - name: Persist A-B failure marker
-        if: failure()
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Continue'
-          git reset --hard HEAD
-          git pull --rebase origin MEMSX64
-          @(
-            'MEMSX64 IA A-B NO UTF8: FAILED',
-            'run_id=${{ github.run_id }}',
-            'run_number=${{ github.run_number }}',
-            'workflow_sha=${{ github.sha }}',
-            ('utc=' + [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ'))
-          ) | Set-Content -Encoding UTF8 IA_AB_NO_UTF8_RESULT.txt
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add IA_AB_NO_UTF8_RESULT.txt
-          git commit -m "Record x64 IA A-B no-UTF8 failure [skip ci]"
+          git rm -f IA_STAGE_PROVEN_STARTED.txt 2>$null
+          git add IA_STAGE_PROVEN_RESULT.txt
+          git commit -m "Record IA staged diagnostic result [skip ci]"
           git push origin HEAD:MEMSX64
