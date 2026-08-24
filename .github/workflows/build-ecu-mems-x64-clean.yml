@@ -14,7 +14,7 @@ on:
       - 'librosco-x64/**'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   clean-x64-milestone:
@@ -29,13 +29,35 @@ jobs:
       - name: Publish build identity
         shell: pwsh
         run: |
-          $build = [int]'${{ github.run_number }}'
+          # This workflow was introduced after historical BUILD #15. The two
+          # setup runs created while wiring the workflow are intentionally not
+          # published; workflow run #3 is the first official clean x64 BUILD #16.
+          $build = 13 + [int]'${{ github.run_number }}'
           $minor = [math]::Floor($build / 100)
           $patch = $build % 100
           $version = "1.$minor.$patch"
           "MEMS_BUILD=$build" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "MEMS_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "MEMS_BUILD_NUMBER=$build" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           Write-Host "BUILD #$build — v$version"
+
+      - name: Mark clean x64 build running
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          @(
+            'status=RUNNING',
+            "build=${{ env.MEMS_BUILD }}",
+            "version=${{ env.MEMS_VERSION }}",
+            "run_id=${{ github.run_id }}",
+            "run_number=${{ github.run_number }}",
+            "source_commit=${{ github.sha }}"
+          ) | Set-Content -Encoding UTF8 ECU_MEMS_X64_CLEAN_STATUS.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ECU_MEMS_X64_CLEAN_STATUS.txt
+          git commit -m "Mark BUILD #${{ env.MEMS_BUILD }} clean x64 validation running [skip ci]"
+          git push origin HEAD:MEMSX64
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -352,3 +374,42 @@ jobs:
           path: dist-clean-x64/
           if-no-files-found: error
           compression-level: 0
+
+      - name: Mark clean x64 build passed
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          @(
+            'status=PASSED',
+            "build=${{ env.MEMS_BUILD }}",
+            "version=${{ env.MEMS_VERSION }}",
+            "run_id=${{ github.run_id }}",
+            "run_number=${{ github.run_number }}",
+            "source_commit=${{ github.sha }}",
+            "artifact=ECU-MEMS-Manager-x64-CLEAN-BUILD-${{ env.MEMS_BUILD }}-v${{ env.MEMS_VERSION }}",
+            'controls=15/15',
+            'navigation=14/14 deterministic',
+            'local_ai_runtime=absent',
+            'historical_librosco_x86=absent'
+          ) | Set-Content -Encoding UTF8 ECU_MEMS_X64_CLEAN_STATUS.txt
+          git add ECU_MEMS_X64_CLEAN_STATUS.txt
+          git commit -m "Validate BUILD #${{ env.MEMS_BUILD }} clean x64 milestone [skip ci]"
+          git push origin HEAD:MEMSX64
+
+      - name: Mark clean x64 build failed
+        if: failure()
+        shell: pwsh
+        run: |
+          @(
+            'status=FAILED',
+            "build=${{ env.MEMS_BUILD }}",
+            "version=${{ env.MEMS_VERSION }}",
+            "run_id=${{ github.run_id }}",
+            "run_number=${{ github.run_number }}",
+            "source_commit=${{ github.sha }}"
+          ) | Set-Content -Encoding UTF8 ECU_MEMS_X64_CLEAN_STATUS.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ECU_MEMS_X64_CLEAN_STATUS.txt
+          git commit -m "Record BUILD #${{ env.MEMS_BUILD }} clean x64 failure [skip ci]"
+          git push origin HEAD:MEMSX64
