@@ -58,7 +58,7 @@ set(SOURCES
     database/MemsDatabaseUniversalAccess.cpp database/MemsReferenceLanguageSync.cpp
     database/MemsXmlRowIndexer.cpp database/MemsSearchCompletenessPatch.cpp database/MemsDatabaseBrowser.cpp database/MemsDatabaseBrowser.h
     iamemstab.cpp iamemstab.h iamemsqualitypatch.cpp expert/ExpertEngine.cpp expert/ExpertEngine.h expert/ExpertKnowledgeReader.cpp expert/ExpertKnowledgeReader.h expert/ExpertRuntimeDatabase.cpp expert/ExpertRuntimeDatabase.h expert/ExpertTypes.h expert/LocalAiClient.cpp expert/LocalAiClient.h
-    uirebuild.cpp overviewrebuild.cpp majorpagesrebuild.cpp errorsvisualpatch.cpp analysismodernizer.cpp
+    uirebuild.cpp overviewrebuild.cpp majorpagesrebuild.cpp errorsvisualpatch.cpp analysismodernizer.cpp captureviewer.cpp captureviewer.h
     strictvisualrebuild.cpp dedicatedpagesrebuild.cpp visualcompletion.cpp taborderpatch.cpp navigationorderpatch.cpp darkstyle.cpp darkfixes.cpp
     settingstabdark.cpp sidebarbubblecleaner.cpp splashtextfix.cpp settingsvisualpatch.cpp readabilityfix.cpp mainwindowtitlebarfix.cpp systemstateconnectionfix.cpp)
 add_executable(${PNAME} ${SOURCES})
@@ -103,7 +103,7 @@ endif()
 
 if(MSVC)
     add_compile_definitions(_HAS_STD_BYTE=0)
-    target_compile_options(${PNAME} PRIVATE /permissive)
+    target_compile_options(${PNAME} PRIVATE /permissive /utf-8)
 endif()
 if(WIN32)
     message(STATUS "Plateforme Windows détectée (MSVC / MinGW).")
