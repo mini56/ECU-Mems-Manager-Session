@@ -1,8 +1,8 @@
 #include "navigationorderpatch.h"
 
 #include <QApplication>
+#include <QDebug>
 #include <QEvent>
-#include <QFrame>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QIcon>
@@ -17,10 +17,8 @@
 #include <QSizePolicy>
 #include <QTabWidget>
 #include <QTextEdit>
-#include <QVariant>
 #include <QVBoxLayout>
 #include <QWidget>
-#include <QDebug>
 
 #include "analysistab.h"
 #include "database/MemsDatabaseBrowser.h"
@@ -33,8 +31,6 @@
 
 namespace {
 
-static const int kTextRole = Qt::UserRole + 42;
-static const int kTabPtrRole = Qt::UserRole + 60;
 static const int kFinalTabCount = 14;
 
 struct TabSpec
@@ -44,20 +40,20 @@ struct TabSpec
 };
 
 static const TabSpec kTabs[kFinalTabCount] = {
-    {"overview",     1001}, // Aperçu
-    {"injection",    7900}, // Injection
-    {"settings",     2001}, // Réglages
-    {"actuators",    4001}, // Actionneurs
-    {"errors",       3001}, // Erreurs
-    {"diagnostic",   7013}, // Diagnostic automatique
-    {"ia_mems",      7940}, // IA MEMS
-    {"analysis",     7018}, // Analyse
-    {"measurements", 7017}, // Toutes les mesures
-    {"ecu_rosco",    7012}, // ECU/ROSCO
-    {"raw",          5001}, // Toutes les données
-    {"database",     7152}, // Base de données
-    {"interactive",  6002}, // Interactif
-    {"mems19_test",  7930}  // Test ECU 1.9
+    {"overview",     1001},
+    {"injection",    7900},
+    {"settings",     2001},
+    {"actuators",    4001},
+    {"errors",       3001},
+    {"diagnostic",   7013},
+    {"ia_mems",      7940},
+    {"analysis",     7018},
+    {"measurements", 7017},
+    {"ecu_rosco",    7012},
+    {"raw",          5001},
+    {"database",     7152},
+    {"interactive",  6002},
+    {"mems19_test", 19000}
 };
 
 static QWidget *realPage(QWidget *tab)
@@ -73,9 +69,12 @@ static QString translatedTitle(int rank)
 {
     if (rank < 0 || rank >= kFinalTabCount)
         return QString();
+
     QString title = I18n::text(kTabs[rank].translationKey).trimmed();
     if (rank == 6 && (title.isEmpty() || title.startsWith(QLatin1Char('['))))
         title = QStringLiteral("IA MEMS");
+    if (rank == 13 && (title.isEmpty() || title.startsWith(QLatin1Char('['))))
+        title = QStringLiteral("Test ECU 1.9");
     return title;
 }
 
@@ -91,64 +90,64 @@ static QIcon iconForRank(int rank)
 
     switch (rank)
     {
-    case 0: // Aperçu
+    case 0:
         p.drawRoundedRect(QRectF(3,4,7,6),1.2,1.2);
         p.drawRoundedRect(QRectF(12,4,7,6),1.2,1.2);
         p.drawRoundedRect(QRectF(3,12,7,6),1.2,1.2);
         p.drawRoundedRect(QRectF(12,12,7,6),1.2,1.2);
         break;
-    case 1: // Injection
+    case 1:
         p.drawLine(5,17,16,6); p.drawLine(7,19,18,8);
         p.drawLine(13,5,19,11); p.drawLine(4,14,9,19);
         p.drawLine(4,18,2.5,19.5);
         break;
-    case 2: // Réglages
+    case 2:
         p.drawLine(4,6,18,6); p.drawLine(4,11,18,11); p.drawLine(4,16,18,16);
         p.drawEllipse(QPointF(9,6),2,2); p.drawEllipse(QPointF(14,11),2,2); p.drawEllipse(QPointF(7,16),2,2);
         break;
-    case 3: // Actionneurs
+    case 3:
         p.drawEllipse(QRectF(6,6,10,10)); p.drawEllipse(QPointF(11,11),2.4,2.4);
         p.drawLine(11,3,11,6); p.drawLine(11,16,11,19); p.drawLine(3,11,6,11); p.drawLine(16,11,19,11);
         break;
-    case 4: { // Erreurs
+    case 4: {
         QPolygonF q; q << QPointF(11,3.5) << QPointF(19,18) << QPointF(3,18);
         p.drawPolygon(q); p.drawLine(11,8,11,13); p.drawPoint(QPointF(11,16));
         break;
     }
-    case 5: // Diagnostic automatique
+    case 5:
         p.drawEllipse(QRectF(4,4,11,11)); p.drawLine(14,14,19,19);
         p.drawLine(7,10,9.5,12.5); p.drawLine(9.5,12.5,13,8);
         break;
-    case 6: // IA MEMS
+    case 6:
         p.drawRoundedRect(QRectF(3,4,16,11),3,3);
         p.drawLine(QPointF(8,15),QPointF(6,19)); p.drawLine(QPointF(8,15),QPointF(12,15));
         p.drawEllipse(QPointF(8,9.5),0.7,0.7); p.drawEllipse(QPointF(11,9.5),0.7,0.7); p.drawEllipse(QPointF(14,9.5),0.7,0.7);
         break;
-    case 7: { // Analyse
+    case 7: {
         p.drawLine(4,18,4,5); p.drawLine(4,18,19,18);
         QPolygonF q; q << QPointF(5,15) << QPointF(9,10) << QPointF(12,12) << QPointF(18,6);
         p.drawPolyline(q);
         break;
     }
-    case 8: // Toutes les mesures
+    case 8:
         p.drawRoundedRect(QRectF(4,12,3,6),.8,.8); p.drawRoundedRect(QRectF(9.5,8,3,10),.8,.8);
         p.drawRoundedRect(QRectF(15,4,3,14),.8,.8); p.drawLine(3,18.5,19,18.5);
         break;
-    case 9: // ECU/ROSCO
+    case 9:
         p.drawRoundedRect(QRectF(3,7,9,8),4,4); p.drawRoundedRect(QRectF(10,7,9,8),4,4); p.drawLine(8,11,14,11);
         break;
-    case 10: // Toutes les données
+    case 10:
         p.drawRoundedRect(QRectF(3.5,3.5,15,15),1.5,1.5);
         p.drawLine(8.5,4,8.5,18); p.drawLine(13.5,4,13.5,18); p.drawLine(4,8.5,18,8.5); p.drawLine(4,13.5,18,13.5);
         break;
-    case 11: // Base de données
+    case 11:
         p.drawEllipse(QRectF(4,4,14,5)); p.drawLine(4,6.5,4,16); p.drawLine(18,6.5,18,16);
         p.drawArc(QRectF(4,13.5,14,5),180*16,180*16); p.drawArc(QRectF(4,9,14,5),180*16,180*16);
         break;
-    case 12: // Interactif
+    case 12:
         p.drawRoundedRect(QRectF(3,4,16,14),2,2); p.drawLine(6,8,9,11); p.drawLine(9,11,6,14); p.drawLine(11.5,14,16,14);
         break;
-    case 13: // Test ECU 1.9
+    case 13:
         p.drawRoundedRect(QRectF(3,5,10,12),2,2); p.drawLine(13,9,18,9); p.drawLine(13,13,18,13); p.drawLine(18,7,18,15);
         p.drawLine(5,8,10,8); p.drawLine(5,11,10,11); p.drawLine(5,14,10,14);
         break;
@@ -343,14 +342,6 @@ static void fitRawSpacing(QMainWindow *window)
     fitBlock(right,rightGrid);
 }
 
-static QWidget *tabFromItem(QListWidgetItem *item)
-{
-    if (!item)
-        return nullptr;
-    const qulonglong raw = item->data(kTabPtrRole).toULongLong();
-    return reinterpret_cast<QWidget*>(static_cast<quintptr>(raw));
-}
-
 static void installMappedConnections(QMainWindow *window, QTabWidget *tabs, QListWidget *nav)
 {
     if (!window || !tabs || !nav || nav->property("deterministicNavigationMapped").toBool())
@@ -360,32 +351,21 @@ static void installMappedConnections(QMainWindow *window, QTabWidget *tabs, QLis
                         tabs, &QTabWidget::setCurrentIndex);
     QObject::disconnect(tabs, nullptr, nav, nullptr);
 
+    // The official tab order is fixed 1:1 with the sidebar rows. Do not store
+    // QWidget pointers in QListWidgetItem data: later visual-only refreshes may
+    // replace the items while the row order remains valid.
     QObject::connect(nav, &QListWidget::currentRowChanged, window,
-                     [nav,tabs](int row) {
-        if (row < 0 || row >= nav->count())
-            return;
-        QWidget *target = tabFromItem(nav->item(row));
-        if (!target)
-            return;
-        const int index = tabs->indexOf(target);
-        if (index >= 0 && tabs->currentIndex() != index)
-            tabs->setCurrentIndex(index);
+                     [tabs](int row) {
+        if (row >= 0 && row < tabs->count() && tabs->currentIndex() != row)
+            tabs->setCurrentIndex(row);
     });
 
     QObject::connect(tabs, &QTabWidget::currentChanged, window,
-                     [nav,tabs](int index) {
-        if (index < 0 || index >= tabs->count())
+                     [nav](int index) {
+        if (index < 0 || index >= nav->count())
             return;
-        QWidget *current = tabs->widget(index);
-        for (int row = 0; row < nav->count(); ++row)
-        {
-            if (tabFromItem(nav->item(row)) == current)
-            {
-                const QSignalBlocker blocker(nav);
-                nav->setCurrentRow(row);
-                break;
-            }
-        }
+        const QSignalBlocker blocker(nav);
+        nav->setCurrentRow(index);
     });
 
     nav->setProperty("deterministicNavigationMapped", true);
@@ -459,7 +439,6 @@ static bool applyDeterministicNavigation(MainWindow *window)
             tabs->setCurrentIndex(0);
     }
 
-    int currentRow = -1;
     {
         const QSignalBlocker blocker(nav);
         nav->clear();
@@ -468,15 +447,9 @@ static bool applyDeterministicNavigation(MainWindow *window)
         {
             const QString title = translatedTitle(rank);
             QListWidgetItem *item = new QListWidgetItem(iconForRank(rank), title, nav);
-            item->setData(kTextRole, title);
-            item->setData(kTabPtrRole,
-                          static_cast<qulonglong>(reinterpret_cast<quintptr>(official[rank])));
             item->setToolTip(title);
-            if (official[rank] == tabs->currentWidget())
-                currentRow = rank;
         }
-        if (currentRow >= 0)
-            nav->setCurrentRow(currentRow);
+        nav->setCurrentRow(qBound(0, tabs->currentIndex(), kFinalTabCount - 1));
     }
 
     installMappedConnections(window,tabs,nav);
@@ -518,10 +491,6 @@ void installFinalNavigation(QApplication *app, QMainWindow *window)
     if (!app || !mainWindow || mainWindow->property("deterministicNavigationInstalled").toBool())
         return;
 
-    // UiRebuild and Injection each perform one zero-delay creation on the first
-    // MainWindow show. Drain that initial event queue once, then freeze all 14
-    // identities into the official order. No delayed/repeated menu patching is
-    // used after this point.
     app->processEvents();
 
     mainWindow->setProperty("deterministicNavigationInstalled", true);
