@@ -41,23 +41,56 @@ jobs:
       - name: Install Qt 5.15.2 MSVC 2019 x64
         shell: pwsh
         run: |
-          $ErrorActionPreference = 'Stop'
-          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt
+          $ErrorActionPreference = 'Continue'
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt 2>&1 | Tee-Object -FilePath x64-qt-install.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           if (-not (Test-Path 'C:\Qt\5.15.2\msvc2019_64\lib\cmake\Qt5\Qt5Config.cmake')) {
-            throw 'Qt 5.15.2 MSVC x64 installation incomplete'
+            'Qt 5.15.2 MSVC x64 installation incomplete' | Tee-Object -FilePath x64-qt-install.log -Append
+            exit 2
           }
 
       - name: Configure application x64 with bundled protocol DLL
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Continue'
           cmake -S . -B build-app-x64 -A x64 `
             -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
             -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
-            -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF
+            -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF 2>&1 | Tee-Object -FilePath x64-configure.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Build application x64
         shell: pwsh
-        run: cmake --build build-app-x64 --config Release --target ecu_mems_manager
+        run: |
+          $ErrorActionPreference = 'Continue'
+          cmake --build build-app-x64 --config Release --target ecu_mems_manager 2>&1 | Tee-Object -FilePath x64-build.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Persist readable x64 failure report
+        if: failure()
+        shell: pwsh
+        run: |
+          $parts = @()
+          $parts += 'ECU MEMS MANAGER X64 BUILD: FAILED'
+          $parts += ('utc=' + [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ'))
+          $parts += ('commit=' + '${{ github.sha }}')
+          foreach ($file in @('x64-qt-install.log','x64-configure.log','x64-build.log')) {
+            if (Test-Path $file) {
+              $parts += ''
+              $parts += ('===== ' + $file + ' =====')
+              $lines = Get-Content $file
+              if ($lines.Count -gt 300) { $lines = $lines[-300..-1] }
+              $parts += $lines
+            }
+          }
+          $parts | Set-Content -Encoding UTF8 ECU_MEMS_X64_BUILD_FAILURE.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ECU_MEMS_X64_BUILD_FAILURE.txt
+          if (-not (git diff --cached --quiet)) {
+            git commit -m "Record ECU MEMS Manager x64 build failure [skip ci]"
+            git push origin MEMSX64
+          }
 
       - name: Install PE validator
         shell: pwsh
@@ -139,6 +172,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if (Test-Path ECU_MEMS_X64_BUILD_FAILURE.txt) {
+            git rm -f ECU_MEMS_X64_BUILD_FAILURE.txt
+          }
           git add ECU_MEMS_X64_LINK_VALIDATION.txt
           if (git diff --cached --quiet) {
             Write-Host 'Application x64 validation marker already current'
