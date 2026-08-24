@@ -1,17 +1,20 @@
 cmake_minimum_required(VERSION 3.20)
-project(librosco_compat_x64 LANGUAGES C)
+project(mems_manager_x64_compat LANGUAGES C)
 
 if(NOT WIN32)
-    message(FATAL_ERROR "This compatibility target currently validates the Windows librosco ABI only.")
+    message(FATAL_ERROR "This compatibility target currently validates the Windows MEMS Manager protocol DLL ABI only.")
 endif()
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
+# Keep the internal CMake target name 'rosco' for source/API compatibility with
+# the existing application while giving the new native x64 binary its own clear
+# product identity. The historical 32-bit binary remains librosco.dll.
 add_library(rosco SHARED
     setup.c
     protocol.c
-    librosco.def
+    mems_manager_x64.def
 )
 
 target_include_directories(rosco PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -29,7 +32,7 @@ else()
 endif()
 
 set_target_properties(rosco PROPERTIES
-    OUTPUT_NAME "librosco"
+    OUTPUT_NAME "mems_manager_x64"
     PREFIX ""
 )
 
