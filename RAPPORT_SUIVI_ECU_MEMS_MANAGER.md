@@ -6,7 +6,7 @@
 > Il constitue la source de vérité de continuité du projet.
 > La branche `RAPPORT` sert uniquement au suivi/transmission ; le développement x64 se fait sur `MEMSX64`.
 
-Dernière mise à jour : **24 août 2026 — REMISE À PLAT APRÈS DÉSORDRE DES WORKFLOWS X64.**
+Dernière mise à jour : **24 août 2026 — BUILD #26 VERT EN CI, MAIS NON VALIDÉ FONCTIONNELLEMENT SUR ECU.**
 
 ---
 
@@ -17,11 +17,13 @@ Dernière mise à jour : **24 août 2026 — REMISE À PLAT APRÈS DÉSORDRE DES
 - Branche de rapport : **`RAPPORT`**.
 - Branche 32 bits historique : **`lab-expert-engine`**, à laisser intacte.
 - Référence matérielle 32 bits : **BUILD #14 — v1.0.14**.
-- **SEUL BUILD X64 ACTIF : BUILD #26 — v1.0.26.**
-- Commit source x64 actuellement visé : **`3c4102eca34a2426970ee03e01830a6317b9db07`**.
+- **BUILD X64 COURANT : BUILD #26 — v1.0.26.**
+- Commit source x64 : **`3c4102eca34a2426970ee03e01830a6317b9db07`**.
 - Workflow x64 unique sur `MEMSX64` : **`.github/workflows/memsx64.yml`**.
-- Il ne doit plus exister plusieurs workflows x64 concurrents sur `MEMSX64`.
-- **Aucun BUILD #27 ne doit être créé tant que BUILD #26 n’a pas donné un résultat complet et analysé.**
+- **BUILD #26 EST VERT EN GITHUB ACTIONS.**
+- **ATTENTION : cela signifie uniquement que la construction/les contrôles automatiques ont réussi. Cela ne prouve pas que le programme fonctionne réellement sur l’ECU.**
+- **BUILD #26 n’est pas encore validé fonctionnellement.**
+- **Aucun BUILD #27 ne doit être créé avant le test réel de #26 et l’analyse de son résultat.**
 
 ### Règle BUILD / VERSION
 
@@ -91,20 +93,20 @@ L’historique Git conserve les anciens fichiers et workflows ; ils ne sont pas 
 ## 3. DISCIPLINE DE BUILD OBLIGATOIRE À PARTIR DE MAINTENANT
 
 1. **Un seul BUILD actif à la fois.**
-2. Le BUILD actif actuel est **#26 — v1.0.26**.
-3. S’il échoue : identifier la première erreur réelle.
-4. Classer l’erreur : infrastructure / build / code / package / test.
-5. Corriger uniquement cette cause.
-6. Relancer **le même BUILD #26**.
-7. Ne pas créer #27 pour essayer une variante.
-8. Ne pas créer #28/#29/etc. en parallèle.
-9. Ne pas modifier le protocole pour corriger une erreur CI, Qt, SQLite, packaging ou navigation.
+2. Le BUILD courant est **#26 — v1.0.26**.
+3. BUILD vert en CI ≠ programme validé sur ECU.
+4. Tant que le test ECU réel n’est pas passé, #26 reste **non validé fonctionnellement**.
+5. Si le test réel échoue : identifier la première erreur réelle.
+6. Classer l’erreur : protocole / connexion / runtime / UI / données / autre.
+7. Corriger uniquement cette cause.
+8. Relancer **le même BUILD #26** tant que le jalon #26 n’est pas validé fonctionnellement.
+9. Ne pas créer #27 pour essayer une variante.
 10. Ne pas modifier le 32 bits de référence.
 11. Le workflow ne doit pas écrire dans `MEMSX64` pendant son exécution.
 12. Le workflow doit compiler le commit exact qui l’a déclenché.
-13. Les corrections de code peuvent produire de nouveaux commits Git tout en restant **BUILD #26 — v1.0.26** tant que le jalon #26 n’est pas validé.
+13. Les corrections peuvent produire de nouveaux commits Git tout en restant **BUILD #26 — v1.0.26** tant que le jalon #26 n’est pas validé.
 14. `concurrency` doit empêcher deux exécutions de BUILD #26 de tourner simultanément.
-15. Une exécution annulée par `cancel-in-progress` après une correction n’est pas un nouvel échec fonctionnel ; elle est remplacée par l’exécution du même BUILD sur le dernier commit.
+15. Une exécution annulée par `cancel-in-progress` après une correction n’est pas un nouvel échec fonctionnel.
 
 ### Workflow actuel
 
@@ -252,31 +254,6 @@ Contraintes conservées :
 - `mems_data = 60` octets ;
 - exactement 22 exports historiques.
 
-Exports attendus :
-
-- `mems_cleanup`
-- `mems_clear_faults`
-- `mems_connect`
-- `mems_disconnect`
-- `mems_get_lib_version`
-- `mems_heartbeat`
-- `mems_init`
-- `mems_init_link`
-- `mems_is_connected`
-- `mems_lock`
-- `mems_move_iac`
-- `mems_openserial`
-- `mems_read`
-- `mems_read_iac_position`
-- `mems_read_raw`
-- `mems_read_serial`
-- `mems_reset_ECU`
-- `mems_reset_adjustments`
-- `mems_send_command`
-- `mems_test_actuator`
-- `mems_unlock`
-- `mems_write_serial`
-
 Commandes historiques importantes :
 
 - init : `CA 75 F4 D0` ;
@@ -311,7 +288,19 @@ Le workflow doit échouer si l’un de ces contrôles échoue :
 14. SQLite + ressources indispensables ;
 15. inventaire final de tous les PE : AMD64 uniquement.
 
-Un CI vert prouve une construction x64 cohérente, **pas encore le comportement réel sur ECU**.
+**BUILD #26 a passé ces contrôles CI.**
+
+Mais :
+
+**15/15 automatiques ne prouvent pas :**
+
+- que le port COM réel fonctionne ;
+- que la DLL x64 dialogue correctement avec un vrai ECU ;
+- que l’identification AANMP002/MNE101150 est correcte en conditions réelles ;
+- que le polling 7D/80 est stable sur véhicule ;
+- que Mode 4 fonctionne réellement ;
+- que déconnexion/reconnexion sont fiables ;
+- que la navigation reste stable pendant communication réelle.
 
 ---
 
@@ -323,8 +312,6 @@ Le premier BUILD #22 avait échoué avant compilation de MEMS Manager pendant l�
 
 `py7zr.exceptions.Bad7zFile: Specified path is bad: 5.15.2/msvc2019_64/include`
 
-Cette erreur provenait de la chaîne d’extraction Qt, pas du code MEMS Manager.
-
 Correction propre retenue :
 
 - Python 3.11 ;
@@ -334,29 +321,13 @@ Correction propre retenue :
 - pas de vieux `py7zr` épinglé ;
 - pas de modification du programme pour contourner l’outil.
 
-Cette correction a permis de passer :
-
-- installation Qt ;
-- validation navigation ;
-- garde-fous protocole ;
-- configuration x64 ;
-- compilation application ;
-- compilation `mems_manager_x64.dll` ;
-- test ABI.
-
 ### 9.2 Self-test SQLite 14A
 
 Le test sémantique renvoyait :
 
 `FAIL search 'temperature air' category 'wiring': expected relationship not found`
 
-alors que les résultats retournés étaient bien pertinents :
-
-- MEMS 1.9 — Signal IAT / température air admission ;
-- MEMS 1.6 — Sonde température air ;
-- MEMS 1.2 — Sonde température air d’admission.
-
-La recherche fonctionnait ; le test était fragile parce que l’attente utilisait le littéral accentué `température air` dans un contexte MSVC alors que le moteur normalise déjà les accents.
+alors que les résultats retournés étaient bien pertinents.
 
 Correction appliquée dans `database/MemsSearchSelfTest.cpp` :
 
@@ -383,33 +354,21 @@ Ce dernier commit retire le fallback CMake vers `GITHUB_RUN_NUMBER`.
 
 ## 10. BUILD #26 — v1.0.26 — ÉTAT ACTUEL
 
-**C’est le seul jalon x64 actif.**
+### CI / compilation
 
-Source actuelle :
+- GitHub Actions : **VERT**.
+- Les contrôles automatiques x64 ont terminé sans erreur bloquante.
+- Le package/artifact de BUILD #26 est produit par le workflow unique `memsx64.yml`.
 
-**`3c4102eca34a2426970ee03e01830a6317b9db07`**
+### Validation fonctionnelle
 
-Workflow :
-
-**`.github/workflows/memsx64.yml`**
-
-Une exécution précédente de #26 a été annulée avec :
-
-`START MEMS search semantic self-test`
-
-puis :
-
-`Error: The operation was canceled.`
-
-Cette annulation n’était pas un nouvel échec du self-test MEMS. Elle a été provoquée par `cancel-in-progress: true` après le push du correctif de numérotation `3c4102e...`.
-
-Le principe est volontaire : lorsqu’une correction du même BUILD #26 arrive, l’ancienne exécution devient obsolète et est annulée afin qu’une seule exécution de #26 reste active.
+- **NON EFFECTUÉE À CE STADE.**
+- **BUILD #26 NE DOIT PAS ENCORE ÊTRE CONSIDÉRÉ COMME FONCTIONNEL OU COMME NOUVELLE BASE MATÉRIELLE.**
+- Le prochain critère est le test réel ECU.
 
 ### Règle immédiate
 
-**Ne plus toucher au code pendant qu’une exécution #26 courante est en cours, sauf si elle a terminé avec une première erreur réelle identifiée.**
-
-Aucun #27.
+**Ne pas créer BUILD #27. Tester d’abord BUILD #26 sur le vrai ECU.**
 
 ---
 
@@ -437,18 +396,9 @@ Injection RAM Mode 4 :
 
 Trace de référence : `2026-08-24_18.14.txt`.
 
-- 705 lignes ;
-- ~5 min 40 s ;
-- RPM 0 → 1657 puis ~1180–1200 ;
-- MAP ~100 → ~30–35 kPa ;
-- batterie ~12,2 V → ~11,0 V lancement puis ~13,8 V ;
-- dwell ~6,274 ms arrêté, ~7,170 ms lancement, ~3,2–3,4 ms moteur tournant.
-
-Cette référence 32 bits sert uniquement à comparer le comportement x64 réel.
-
 ---
 
-## 12. TEST MATÉRIEL X64 PRIORITAIRE QUAND #26 EST VERT
+## 12. TEST MATÉRIEL X64 PRIORITAIRE
 
 Sur AANMP002 / MNE101150 :
 
@@ -466,7 +416,7 @@ Sur AANMP002 / MNE101150 :
 12. reconnexion ;
 13. navigation sans perte de communication.
 
-Si ce test est valide, BUILD #26 devient la nouvelle base x64 principale.
+**Seulement si ce test est valide, BUILD #26 devient la nouvelle base x64 principale.**
 
 ---
 
@@ -479,7 +429,6 @@ Si ce test est valide, BUILD #26 devient la nouvelle base x64 principale.
 - Adresses RAM Injection importantes : `0x03C8`, `0x026E`, `0x0280`.
 - Injection reste entre Aperçu et Réglages.
 - Dwell/temps bobine reste dans l’onglet Injection.
-- Éviter de mélanger inutilement plusieurs modes de lecture dans une même page.
 - Conserver le style dark et responsive.
 - Ne pas engager de refonte graphique non demandée.
 
@@ -538,8 +487,6 @@ Dès validation du cœur x64 :
 4. mesurer RAM, CPU, démarrage, stabilité, temps de réponse ;
 5. améliorer ensuite pertinence diagnostique et performance.
 
-Objectif : **la meilleure IA diagnostique possible, mais seulement sur une base ECU x64 fiable.**
-
 ---
 
 ## 17. PROCHAINE ACTION EXACTE
@@ -547,23 +494,16 @@ Objectif : **la meilleure IA diagnostique possible, mais seulement sur une base 
 1. Lire ce rapport avant toute modification.
 2. Ne pas toucher à `lab-expert-engine` / BUILD #14.
 3. Travailler uniquement sur `MEMSX64` pour la x64.
-4. **BUILD #26 — v1.0.26 est le seul build actif.**
-5. Ne pas créer #27 tant que #26 n’est pas terminé et analysé.
-6. Vérifier le résultat de l’exécution courante #26 sur le commit `3c4102eca34a2426970ee03e01830a6317b9db07`.
-7. Si échec : prendre la première erreur réelle et corriger uniquement cette cause.
-8. Relancer le même BUILD #26 après correction.
-9. Ne jamais revenir à #16/#22/#23/#24/#25 comme cible active.
-10. Conserver un seul workflow x64 : `.github/workflows/memsx64.yml`.
-11. Ne pas recréer de fichiers de statut auto-commités par le workflow.
-12. Ne pas utiliser `GITHUB_RUN_NUMBER` comme version du programme.
-13. Ne pas toucher au protocole pour corriger un problème CI/build/package/navigation.
-14. Exécuter les 15 contrôles x64.
-15. Quand #26 est vert et l’artefact disponible, faire le test ECU réel AANMP002/MNE101150.
-16. Si validé matériellement, faire de #26 la nouvelle base x64.
-17. Réintégrer ensuite l’IA locale x64 et reprendre l’amélioration IA.
+4. **BUILD #26 — v1.0.26 est VERT EN CI mais NON VALIDÉ FONCTIONNELLEMENT.**
+5. **Ne pas créer #27.**
+6. Télécharger/utiliser l’artefact BUILD #26.
+7. Faire le test ECU réel AANMP002/MNE101150 suivant la section 12.
+8. Si le test réel échoue : identifier la première erreur réelle, corriger uniquement cette cause et rester sur BUILD #26.
+9. Si le test réel est valide : seulement alors déclarer BUILD #26 comme nouvelle base x64 fonctionnelle.
+10. Réintégrer ensuite l’IA locale x64.
 
 ---
 
 ## PRINCIPE DIRECTEUR
 
-**32 bits figé comme référence ; avenir en x64 natif et propre ; un seul build/version actif ; BUILD #26 = v1.0.26 ; aucune multiplication de numéros ; aucun workflow parallèle ; aucune architecture hybride ; aucune rustine ; programme complet ; ECU d’abord ; 15 contrôles stricts ; test matériel ; IA locale ensuite.**
+**VERT CI ≠ FONCTIONNEL ECU. 32 bits figé comme référence ; BUILD #26 = v1.0.26 ; un seul build actif ; aucun #27 avant test réel ; x64 natif propre ; programme complet ; 15 contrôles automatiques ; validation matérielle obligatoire ; IA locale ensuite.**
