@@ -23,6 +23,7 @@
 #include "database/MemsReferenceDatabase.h"
 #include "database/MemsGlobalSearchIndex.h"
 #include "database/MemsReferencePackageRefresh.h"
+#include "diagnosticlogger.h"
 #include "i18n.h"
 #include "navigationorderpatch.h"
 
@@ -247,11 +248,23 @@ int main(int argc, char *argv[])
     QApplication::setApplicationVersion(QStringLiteral(APP_VERSION));
     QApplication::setOrganizationName("ECU Mems Manager");
 
+    DiagnosticLogger::initialize();
+    DiagnosticLogger::checkpoint(QStringLiteral("QApplication created; application identity set"));
+
+    QObject::connect(&app, &QCoreApplication::aboutToQuit, []() {
+        DiagnosticLogger::checkpoint(QStringLiteral("QCoreApplication::aboutToQuit emitted"));
+    });
+
+    DiagnosticLogger::checkpoint(QStringLiteral("Opening user QSettings for language/profile"));
     QSettings languageSettings(QSettings::IniFormat, QSettings::UserScope, PROJECTNAME);
     languageSettings.beginGroup("Settings");
     const bool languageConfigured = languageSettings.value("LanguageConfigured", false).toBool();
     QString language = languageSettings.value("Language", "fr").toString().toLower();
     languageSettings.endGroup();
+    DiagnosticLogger::log(QStringLiteral("PROFILE: languageConfigured=%1 language=%2 settingsFile=%3")
+                              .arg(languageConfigured ? QStringLiteral("yes") : QStringLiteral("no"),
+                                   language,
+                                   languageSettings.fileName()));
 
     const QStringList supportedLanguages = {
         QStringLiteral("fr"), QStringLiteral("en"), QStringLiteral("es"),
@@ -262,6 +275,7 @@ int main(int argc, char *argv[])
 
     if (!languageConfigured)
     {
+        DiagnosticLogger::checkpoint(QStringLiteral("Initial language dialog required"));
         I18n::load(QStringLiteral("en"));
         language = chooseInitialLanguage();
         languageSettings.beginGroup("Settings");
@@ -273,19 +287,24 @@ int main(int argc, char *argv[])
 
     I18n::load(language);
     I18n::install(&app);
+    DiagnosticLogger::checkpoint(QStringLiteral("Translations loaded and installed"));
 
     DesktopShortcut::ensureIfEnabled();
+    DiagnosticLogger::checkpoint(QStringLiteral("Desktop shortcut check completed"));
 
     QSplashScreen *splash = createStartupSplash();
     splash->show();
     app.processEvents();
+    DiagnosticLogger::checkpoint(QStringLiteral("Startup splash displayed"));
 
     setStep(g_profileStep, StartupStepState::Active, I18n::text(15));
     setStartupProgress(5);
     setStep(g_profileStep, StartupStepState::Done, I18n::text(16));
     setStartupProgress(12);
 
+    DiagnosticLogger::checkpoint(QStringLiteral("Checking reference package action"));
     MemsReferencePackageAction referenceAction = memsReferencePackageAction();
+    DiagnosticLogger::log(QStringLiteral("REFERENCE: packageAction=%1").arg(static_cast<int>(referenceAction)));
     if (referenceAction == MemsReferencePackageAction::Install)
         setStep(g_databaseStep, StartupStepState::Active, I18n::text(18));
     else if (referenceAction == MemsReferencePackageAction::Update)
@@ -294,18 +313,23 @@ int main(int argc, char *argv[])
         setStep(g_databaseStep, StartupStepState::Active, I18n::text(17));
     setStartupProgress(20);
 
+    DiagnosticLogger::checkpoint(QStringLiteral("Refreshing reference package"));
     if (!refreshMemsReferencePackage(&referenceAction))
     {
+        DiagnosticLogger::checkpoint(QStringLiteral("ERROR refreshMemsReferencePackage failed"));
         setStep(g_databaseStep, StartupStepState::Error, I18n::text(27));
         QMessageBox::critical(nullptr, I18n::text(12), I18n::text(27));
         splash->close();
         delete splash;
         return 1;
     }
+    DiagnosticLogger::checkpoint(QStringLiteral("Reference package refresh completed"));
 
+    DiagnosticLogger::checkpoint(QStringLiteral("Opening MEMS reference database"));
     MemsReferenceDatabase referenceDatabase;
     if (!referenceDatabase.open())
     {
+        DiagnosticLogger::checkpoint(QStringLiteral("ERROR MemsReferenceDatabase::open failed"));
         setStep(g_databaseStep, StartupStepState::Error, I18n::text(27));
         QMessageBox::critical(nullptr, I18n::text(12), I18n::text(27));
         splash->close();
@@ -313,26 +337,31 @@ int main(int argc, char *argv[])
         return 1;
     }
     referenceDatabase.close();
+    DiagnosticLogger::checkpoint(QStringLiteral("MEMS reference database opened and closed successfully"));
 
+    DiagnosticLogger::checkpoint(QStringLiteral("Opening application DatabaseManager"));
     DatabaseManager database;
     if (!database.open())
     {
+        DiagnosticLogger::checkpoint(QStringLiteral("ERROR DatabaseManager::open failed"));
         setStep(g_databaseStep, StartupStepState::Error, I18n::text(13));
         QMessageBox::critical(nullptr, I18n::text(12), I18n::text(13));
         splash->close();
         delete splash;
         return 1;
     }
+    DiagnosticLogger::log(QStringLiteral("DATABASE: path=%1").arg(database.databasePath()));
 
     setStep(g_databaseStep, StartupStepState::Done, I18n::text(20));
     setStartupProgress(42);
 
     setStep(g_indexStep, StartupStepState::Active, I18n::text(21));
     setStartupProgress(50);
+    DiagnosticLogger::checkpoint(QStringLiteral("Ensuring global search index"));
     QString indexError;
     if (!MemsGlobalSearchIndex::ensureBuilt(&indexError))
     {
-        Q_UNUSED(indexError);
+        DiagnosticLogger::log(QStringLiteral("ERROR MemsGlobalSearchIndex::ensureBuilt failed: %1").arg(indexError));
         setStep(g_indexStep, StartupStepState::Error, I18n::text(28));
         QMessageBox::critical(nullptr, I18n::text(12), I18n::text(28));
         database.close();
@@ -340,6 +369,7 @@ int main(int argc, char *argv[])
         delete splash;
         return 1;
     }
+    DiagnosticLogger::checkpoint(QStringLiteral("Global search index ready"));
     setStep(g_indexStep, StartupStepState::Done, I18n::text(22));
     setStartupProgress(68);
 
@@ -348,10 +378,14 @@ int main(int argc, char *argv[])
     setStartupProgress(70);
     g_splashProgressCallback = updateStartupProgress;
 
+    DiagnosticLogger::checkpoint(QStringLiteral("Constructing MainWindow"));
     MainWindow window;
+    DiagnosticLogger::checkpoint(QStringLiteral("MainWindow constructed"));
     QObject::connect(&app, &QCoreApplication::aboutToQuit, &window, [&window]() {
+        DiagnosticLogger::checkpoint(QStringLiteral("MainWindow aboutToQuit handler entered"));
         if (window.isVisible())
             window.close();
+        DiagnosticLogger::checkpoint(QStringLiteral("MainWindow aboutToQuit handler completed"));
     });
 
     if (QObject *injectorGauge = window.findChild<QObject*>(QStringLiteral("m_injector_time")))
@@ -368,6 +402,10 @@ int main(int argc, char *argv[])
     if (screen)
     {
         const QRect available = screen->availableGeometry();
+        DiagnosticLogger::log(QStringLiteral("SCREEN: available=%1x%2 at %3,%4 DPR=%5")
+                                  .arg(available.width()).arg(available.height())
+                                  .arg(available.x()).arg(available.y())
+                                  .arg(screen->devicePixelRatio()));
         const int width = qMin(1300, qMax(760, available.width() - 40));
         const int height = qMin(690, qMax(480, available.height() - 80));
         window.resize(width, height);
@@ -385,10 +423,15 @@ int main(int argc, char *argv[])
     g_portsStep = nullptr;
     g_interfaceStep = nullptr;
     g_splashProgressCallback = nullptr;
+    DiagnosticLogger::checkpoint(QStringLiteral("Startup splash destroyed"));
 
     window.showMaximized();
     installFinalNavigation(&app, &window);
+    DiagnosticLogger::checkpoint(QStringLiteral("MainWindow shown maximized; navigation installed"));
+    DiagnosticLogger::checkpoint(QStringLiteral("Entering QApplication event loop"));
     const int result = app.exec();
+    DiagnosticLogger::log(QStringLiteral("QApplication event loop returned result=%1").arg(result));
     database.close();
+    DiagnosticLogger::checkpoint(QStringLiteral("Database closed; normal process return"));
     return result;
 }
