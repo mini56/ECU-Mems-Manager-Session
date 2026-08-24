@@ -1,0 +1,12 @@
+ECU MEMS MANAGER X64 LINK: OK
+run_id=32709187615
+application=PE32+ AMD64
+protocol_dll=mems_manager_x64.dll
+protocol_dll_format=PE32+ AMD64
+application_imports_mems_manager_x64.dll=yes
+application_imports_historical_librosco.dll=no
+protocol_dll_exports=22
+application_size=1823744
+application_sha256=3abcb0b6c3cb2982d642829cbd398dd1069da8a3d7bb1458ae8813dfa541a8cc
+protocol_dll_size=16384
+protocol_dll_sha256=720f8c8448fea6a8da94ef3398a14a84abb515e7f2fbc33b6e8bb880cb8f0999
