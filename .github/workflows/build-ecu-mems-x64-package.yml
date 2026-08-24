@@ -20,6 +20,23 @@ jobs:
         with:
           ref: MEMSX64
 
+      - name: Publish package workflow run id
+        shell: pwsh
+        run: |
+          @(
+            'ECU MEMS MANAGER X64 PACKAGE WORKFLOW: STARTED',
+            'run_id=${{ github.run_id }}',
+            'run_number=${{ github.run_number }}',
+            'workflow_commit=${{ github.sha }}',
+            ('utc=' + [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ'))
+          ) | Set-Content -Encoding UTF8 ECU_MEMS_X64_PACKAGE_WORKFLOW_STARTED.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin MEMSX64
+          git add ECU_MEMS_X64_PACKAGE_WORKFLOW_STARTED.txt
+          git commit -m "Record ECU MEMS Manager x64 package workflow run [skip ci]"
+          git push origin HEAD:MEMSX64
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -75,7 +92,6 @@ jobs:
           Copy-Item $app (Join-Path $dist 'ecu_mems_manager.exe') -Force
           Copy-Item $protocol (Join-Path $dist 'mems_manager_x64.dll') -Force
 
-          # Deploy Qt and the Microsoft compiler runtime for a portable Windows test folder.
           & (Join-Path $qtBin 'windeployqt.exe') `
             --release `
             --compiler-runtime `
@@ -84,24 +100,20 @@ jobs:
             (Join-Path $dist 'ecu_mems_manager.exe')
           if ($LASTEXITCODE -ne 0) { throw "windeployqt failed with code $LASTEXITCODE" }
 
-          # The application expects its own JSON translations generated/copied by CMake.
           $translations = Join-Path $build 'Release\translations'
           if (-not (Test-Path $translations)) { throw 'Generated application translations are missing' }
           Copy-Item $translations (Join-Path $dist 'translations') -Recurse -Force
 
-          # The offline MEMS reference database generated/copied by CMake must travel with the application.
           $database = Join-Path $build 'Release\database'
           if (-not (Test-Path (Join-Path $database 'reference'))) { throw 'Generated offline MEMS database is missing' }
           Copy-Item $database (Join-Path $dist 'database') -Recurse -Force
 
-          # Ensure SQLite plugin is present even if windeployqt did not infer it.
           $sqliteDst = Join-Path $dist 'sqldrivers\qsqlite.dll'
           if (-not (Test-Path $sqliteDst)) {
             New-Item -ItemType Directory -Path (Split-Path $sqliteDst) -Force | Out-Null
             Copy-Item (Join-Path $qtPlugins 'sqldrivers\qsqlite.dll') $sqliteDst -Force
           }
 
-          # This x64 package must never contain the historical x86 protocol DLL.
           $oldRosco = Get-ChildItem $dist -Recurse -File -Filter 'librosco.dll' -ErrorAction SilentlyContinue
           if ($oldRosco) { throw "Historical x86 librosco.dll found in x64 package: $($oldRosco.FullName -join ', ')" }
 
@@ -261,6 +273,26 @@ jobs:
           Stop-Process -Id $proc.Id -Force
           Write-Host 'OK: x64 portable application remained running during smoke launch'
 
+      - name: Persist readable package failure marker
+        if: failure()
+        shell: pwsh
+        run: |
+          @(
+            'ECU MEMS MANAGER X64 PACKAGE: FAILED',
+            'run_id=${{ github.run_id }}',
+            'run_number=${{ github.run_number }}',
+            'workflow_commit=${{ github.sha }}',
+            ('utc=' + [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ'))
+          ) | Set-Content -Encoding UTF8 ECU_MEMS_X64_PACKAGE_FAILURE.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin MEMSX64
+          git add ECU_MEMS_X64_PACKAGE_FAILURE.txt
+          if (-not (git diff --cached --quiet)) {
+            git commit -m "Record ECU MEMS Manager x64 package failure [skip ci]"
+            git push origin HEAD:MEMSX64
+          }
+
       - name: Upload portable x64 test package
         uses: actions/upload-artifact@v4
         with:
@@ -276,6 +308,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git pull --rebase origin MEMSX64
+          foreach ($stale in @('ECU_MEMS_X64_PACKAGE_FAILURE.txt','ECU_MEMS_X64_PACKAGE_WORKFLOW_STARTED.txt')) {
+            if (Test-Path $stale) { git rm -f $stale }
+          }
           git add ECU_MEMS_X64_PACKAGE_VALIDATION.txt
           if (-not (git diff --cached --quiet)) {
             git commit -m "Validate ECU MEMS Manager portable x64 package [skip ci]"
