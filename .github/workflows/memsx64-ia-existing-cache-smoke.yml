@@ -1,4 +1,4 @@
-name: TEMP MEMSX64 IA existing cache diagnostic
+name: TEMP MEMSX64 IA runtime database x64 diagnostic
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   contents: write
 
 jobs:
-  ia-existing-cache-x64:
+  ia-runtime-db-x64:
     runs-on: windows-latest
     steps:
       - name: Checkout MEMSX64
@@ -19,11 +19,11 @@ jobs:
         with:
           ref: MEMSX64
 
-      - name: Publish cache diagnostic run id
+      - name: Publish diagnostic run id
         shell: pwsh
         run: |
           @(
-            'MEMSX64 IA EXISTING CACHE DIAGNOSTIC: STARTED',
+            'MEMSX64 IA RUNTIME DB X64 DIAGNOSTIC: STARTED',
             'run_id=${{ github.run_id }}',
             'run_number=${{ github.run_number }}',
             'workflow_commit=${{ github.sha }}',
@@ -32,206 +32,91 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add IA_X64_CACHE_WORKFLOW_STARTED.txt
-          git commit -m "Record IA x64 cache diagnostic run [skip ci]"
+          git commit -m "Record IA x64 runtime DB diagnostic run [skip ci]"
           git push origin HEAD:MEMSX64
-
-      - name: Inject test-only IA opening and cache path probe
-        shell: pwsh
-        run: |
-          @'
-          from pathlib import Path
-
-          p = Path('iamemstab.cpp')
-          s = p.read_text(encoding='utf-8')
-          old = '''    tabs->addTab(tab, iaMemsIcon(), QStringLiteral("IA MEMS"));
-              return tab;'''
-          new = '''    tabs->addTab(tab, iaMemsIcon(), QStringLiteral("IA MEMS"));
-              if (qEnvironmentVariableIsSet("MEMS_SMOKE_OPEN_IA"))
-                  tabs->setCurrentWidget(tab);
-              return tab;'''
-          if s.count(old) != 1:
-              raise SystemExit(f'Expected one IA insertion point, found {s.count(old)}')
-          p.write_text(s.replace(old, new, 1), encoding='utf-8')
-
-          p = Path('expert/ExpertRuntimeDatabase.cpp')
-          s = p.read_text(encoding='utf-8')
-          old = '''QString ExpertRuntimeDatabase::cacheRoot() const
-          {
-              return QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)
-                  + QStringLiteral("/ia-mems");
-          }'''
-          new = '''QString ExpertRuntimeDatabase::cacheRoot() const
-          {
-              const QString root = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)
-                  + QStringLiteral("/ia-mems");
-              const QString probe = qEnvironmentVariable("MEMS_SMOKE_CACHE_ROOT_FILE");
-              if (!probe.isEmpty()) {
-                  QFile file(probe);
-                  if (file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text))
-                      file.write(root.toUtf8());
-              }
-              return root;
-          }'''
-          if s.count(old) != 1:
-              raise SystemExit(f'Expected one cacheRoot implementation, found {s.count(old)}')
-          p.write_text(s.replace(old, new, 1), encoding='utf-8')
-          '@ | python -
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install build tools
-        shell: pwsh
-        run: python -m pip install --disable-pip-version-check aqtinstall
-
       - name: Install Qt x64
         shell: pwsh
         run: |
-          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt
+          python -m pip install --disable-pip-version-check aqtinstall
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -O C:\Qt
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Configure and build x64
+      - name: Use deterministic self-test cache identity
         shell: pwsh
         run: |
-          cmake -S . -B build-ia-cache-x64 -A x64 `
+          @'
+          from pathlib import Path
+          p = Path('expert/ExpertReferenceIntegrationSelfTest.cpp')
+          s = p.read_text(encoding='utf-8')
+          old = 'QCoreApplication::setApplicationName(QStringLiteral("runtime-selftest-%1").arg(QUuid::createUuid().toString()));'
+          new = 'QCoreApplication::setApplicationName(QStringLiteral("runtime-selftest-memsx64-x64"));'
+          if s.count(old) != 1:
+              raise SystemExit(f'Expected one self-test application-name anchor, found {s.count(old)}')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          '@ | python -
+
+      - name: Configure and build ExpertRuntimeDatabase x64 self-test
+        shell: pwsh
+        run: |
+          cmake -S expert -B expert-build-x64 -A x64 `
             -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
-            -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
-            -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF
+            -DCMAKE_CXX_FLAGS="/utf-8"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cmake --build build-ia-cache-x64 --config Release --target ecu_mems_manager
+          cmake --build expert-build-x64 --config Release --target mems_expert_reference_selftest
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Assemble runtime
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $build = '${{ github.workspace }}\build-ia-cache-x64'
-          $dist = '${{ github.workspace }}\dist-ia-cache-x64'
-          if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }
-          New-Item -ItemType Directory -Path $dist | Out-Null
-          Copy-Item (Join-Path $build 'Release\ecu_mems_manager.exe') (Join-Path $dist 'ecu_mems_manager.exe') -Force
-          Copy-Item (Join-Path $build 'librosco-x64\Release\mems_manager_x64.dll') (Join-Path $dist 'mems_manager_x64.dll') -Force
-          & 'C:\Qt\5.15.2\msvc2019_64\bin\windeployqt.exe' --release --compiler-runtime --no-translations --dir $dist (Join-Path $dist 'ecu_mems_manager.exe')
-          if ($LASTEXITCODE -ne 0) { throw "windeployqt failed: $LASTEXITCODE" }
-          Copy-Item (Join-Path $build 'Release\translations') (Join-Path $dist 'translations') -Recurse -Force
-          Copy-Item (Join-Path $build 'Release\database') (Join-Path $dist 'database') -Recurse -Force
-
-      - name: First IA opening - build local cache
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $dist = '${{ github.workspace }}\dist-ia-cache-x64'
-          $result = Join-Path $dist 'IA_X64_CACHE_RESULT.txt'
-          $events = Join-Path $dist 'IA_X64_CACHE_EVENTS.txt'
-          $rootProbe = Join-Path $dist 'IA_X64_CACHE_ROOT.txt'
-          'IA_X64_FIRST_CACHE=STARTED' | Set-Content -Encoding UTF8 $result
-          ('localappdata=' + $env:LOCALAPPDATA) | Add-Content -Encoding UTF8 $result
-          $env:MEMS_SMOKE_OPEN_IA = '1'
-          $env:MEMS_SMOKE_CACHE_ROOT_FILE = $rootProbe
-          $start = Get-Date
-          $proc = Start-Process (Join-Path $dist 'ecu_mems_manager.exe') -WorkingDirectory $dist -PassThru
-          $deadline = (Get-Date).AddSeconds(240)
-          $cache = $null
-          $cacheRoot = $null
-          while ((Get-Date) -lt $deadline) {
-            Start-Sleep -Seconds 2
-            $proc.Refresh()
-            if ($proc.HasExited) {
-              $hex = ('0x{0:X8}' -f ([uint32]$proc.ExitCode))
-              'FIRST_PROCESS_EXIT' | Add-Content -Encoding UTF8 $result
-              ('exit_code=' + $proc.ExitCode) | Add-Content -Encoding UTF8 $result
-              ('exit_code_hex=' + $hex) | Add-Content -Encoding UTF8 $result
-              ('elapsed_seconds=' + [int]((Get-Date) - $start).TotalSeconds) | Add-Content -Encoding UTF8 $result
-              break
-            }
-            if (-not $cacheRoot -and (Test-Path $rootProbe)) {
-              $cacheRoot = (Get-Content $rootProbe -Raw).Trim()
-              ('cache_root=' + $cacheRoot) | Add-Content -Encoding UTF8 $result
-            }
-            if ($cacheRoot -and (Test-Path $cacheRoot)) {
-              $cache = Get-ChildItem $cacheRoot -File -Filter 'ia_mems_reference_r*.sqlite' -ErrorAction SilentlyContinue | Select-Object -First 1
-              if ($cache -and $cache.Length -gt 0) { break }
-            }
-          }
-
-          if ($proc.HasExited) {
-            try {
-              Get-WinEvent -FilterHashtable @{LogName='Application'; StartTime=$start} -ErrorAction Stop |
-                Where-Object { $_.ProviderName -in @('Application Error','Windows Error Reporting','.NET Runtime') -or $_.Message -match 'ecu_mems_manager|llama-server' } |
-                Select-Object TimeCreated, ProviderName, Id, LevelDisplayName, Message |
-                Format-List | Out-String -Width 240 | Set-Content -Encoding UTF8 $events
-            } catch {
-              ('Event log read failed: ' + $_.Exception.Message) | Set-Content -Encoding UTF8 $events
-            }
-            throw 'FIRST_PROCESS_EXIT'
-          }
-
-          if (-not $cache) {
-            'FIRST_CACHE_TIMEOUT' | Add-Content -Encoding UTF8 $result
-            ('elapsed_seconds=' + [int]((Get-Date) - $start).TotalSeconds) | Add-Content -Encoding UTF8 $result
-            if ($cacheRoot -and (Test-Path $cacheRoot)) {
-              Get-ChildItem $cacheRoot -Force -ErrorAction SilentlyContinue |
-                ForEach-Object { 'cache_file=' + $_.Name + ';size=' + $(if ($_.PSIsContainer) { 'DIR' } else { $_.Length }) } |
-                Add-Content -Encoding UTF8 $result
-            } else {
-              'cache_root_not_created=1' | Add-Content -Encoding UTF8 $result
-            }
-            if (-not $proc.HasExited) { Stop-Process -Id $proc.Id -Force }
-            throw 'FIRST_CACHE_TIMEOUT'
-          }
-
-          'CACHE_READY' | Add-Content -Encoding UTF8 $result
-          ('cache_path=' + $cache.FullName) | Add-Content -Encoding UTF8 $result
-          ('cache_size=' + $cache.Length) | Add-Content -Encoding UTF8 $result
-          ('elapsed_seconds=' + [int]((Get-Date) - $start).TotalSeconds) | Add-Content -Encoding UTF8 $result
-          Stop-Process -Id $proc.Id -Force
-          Start-Sleep -Seconds 2
-
-      - name: Second IA opening - reuse existing cache
+      - name: Build cache then reuse same cache
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Continue'
-          $dist = '${{ github.workspace }}\dist-ia-cache-x64'
-          $result = Join-Path $dist 'IA_X64_CACHE_RESULT.txt'
-          $events = Join-Path $dist 'IA_X64_CACHE_EVENTS.txt'
-          $rootProbe = Join-Path $dist 'IA_X64_CACHE_ROOT.txt'
-          $env:MEMS_SMOKE_OPEN_IA = '1'
-          $env:MEMS_SMOKE_CACHE_ROOT_FILE = $rootProbe
-          $start = Get-Date
-          $proc = Start-Process (Join-Path $dist 'ecu_mems_manager.exe') -WorkingDirectory $dist -PassThru
-          Start-Sleep -Seconds 45
-          $proc.Refresh()
-          if ($proc.HasExited) {
-            $hex = ('0x{0:X8}' -f ([uint32]$proc.ExitCode))
-            'RESTART_PROCESS_EXIT' | Add-Content -Encoding UTF8 $result
-            ('restart_exit_code=' + $proc.ExitCode) | Add-Content -Encoding UTF8 $result
-            ('restart_exit_code_hex=' + $hex) | Add-Content -Encoding UTF8 $result
-          } else {
-            'RESTART_PASS' | Add-Content -Encoding UTF8 $result
-            'alive_after_seconds=45' | Add-Content -Encoding UTF8 $result
-            Stop-Process -Id $proc.Id -Force
-          }
-          try {
-            Get-WinEvent -FilterHashtable @{LogName='Application'; StartTime=$start} -ErrorAction Stop |
-              Where-Object { $_.ProviderName -in @('Application Error','Windows Error Reporting','.NET Runtime') -or $_.Message -match 'ecu_mems_manager|llama-server' } |
-              Select-Object TimeCreated, ProviderName, Id, LevelDisplayName, Message |
-              Format-List | Out-String -Width 240 | Set-Content -Encoding UTF8 $events
-          } catch {
-            ('Event log read failed: ' + $_.Exception.Message) | Set-Content -Encoding UTF8 $events
-          }
-          Get-Content $result
-          if (Test-Path $events) { Get-Content $events }
-          if ($proc.HasExited) { throw 'RESTART_PROCESS_EXIT' }
+          $env:PATH = "C:\Qt\5.15.2\msvc2019_64\bin;$env:PATH"
+          $exe = '${{ github.workspace }}\expert-build-x64\Release\mems_expert_reference_selftest.exe'
+          $result = '${{ github.workspace }}\IA_X64_RUNTIME_DB_RESULT.txt'
+          $firstLog = '${{ github.workspace }}\IA_X64_RUNTIME_DB_FIRST.txt'
+          $secondLog = '${{ github.workspace }}\IA_X64_RUNTIME_DB_SECOND.txt'
 
-      - name: Upload cache diagnostic evidence
+          'IA_X64_RUNTIME_DB=STARTED' | Set-Content -Encoding UTF8 $result
+          $start = Get-Date
+          $firstOutput = & $exe 2>&1
+          $firstCode = $LASTEXITCODE
+          $firstOutput | Tee-Object -FilePath $firstLog | ForEach-Object { Write-Host $_ }
+          ('first_exit_code=' + $firstCode) | Add-Content -Encoding UTF8 $result
+          ('first_elapsed_seconds=' + [math]::Round(((Get-Date) - $start).TotalSeconds, 2)) | Add-Content -Encoding UTF8 $result
+
+          if ($firstCode -eq 0) {
+            'FIRST_BUILD=PASS' | Add-Content -Encoding UTF8 $result
+            $start2 = Get-Date
+            $secondOutput = & $exe 2>&1
+            $secondCode = $LASTEXITCODE
+            $secondOutput | Tee-Object -FilePath $secondLog | ForEach-Object { Write-Host $_ }
+            ('second_exit_code=' + $secondCode) | Add-Content -Encoding UTF8 $result
+            ('second_elapsed_seconds=' + [math]::Round(((Get-Date) - $start2).TotalSeconds, 2)) | Add-Content -Encoding UTF8 $result
+            if ($secondCode -eq 0) {
+              'REUSE_CACHE=PASS' | Add-Content -Encoding UTF8 $result
+            } else {
+              'REUSE_CACHE=FAIL' | Add-Content -Encoding UTF8 $result
+            }
+          } else {
+            'FIRST_BUILD=FAIL' | Add-Content -Encoding UTF8 $result
+            $secondCode = 999
+          }
+
+          Get-Content $result
+          if ($firstCode -ne 0 -or $secondCode -ne 0) { exit 1 }
+
+      - name: Upload runtime database diagnostic
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: memsx64-ia-existing-cache-diagnostic
+          name: memsx64-ia-runtime-db-diagnostic
           path: |
-            dist-ia-cache-x64/IA_X64_CACHE_RESULT.txt
-            dist-ia-cache-x64/IA_X64_CACHE_EVENTS.txt
-            dist-ia-cache-x64/IA_X64_CACHE_ROOT.txt
+            IA_X64_RUNTIME_DB_RESULT.txt
+            IA_X64_RUNTIME_DB_FIRST.txt
+            IA_X64_RUNTIME_DB_SECOND.txt
           if-no-files-found: warn
