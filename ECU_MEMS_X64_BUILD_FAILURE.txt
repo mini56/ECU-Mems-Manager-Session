@@ -1,97 +1,97 @@
 ECU MEMS MANAGER X64 BUILD: FAILED
 run_id=32709187615
-utc=2026-08-24T09:05:10Z
+utc=2026-08-24T09:22:23Z
 workflow_commit=8ec78f177baa019b762b5efd4b2e6f759723918a
 
 ===== x64-qt-install.log =====
 INFO    : aqtinstall(aqt) v3.3.0 on Python 3.11.9 [CPython MSC v.1938 64 bit (AMD64)]
+INFO    : Downloading qtcharts...
 INFO    : Downloading qtconnectivity...
 INFO    : Downloading qtmultimedia...
 INFO    : Downloading qtgraphicaleffects...
-INFO    : Downloading qtcharts...
 INFO    : Redirected: qt.mirror.constant.com
 INFO    : Redirected: qt.mirror.constant.com
 INFO    : Redirected: qt.mirror.constant.com
 INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qtgraphicaleffects-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.56682250
+INFO    : Finished installation of qtgraphicaleffects-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.63831820
+INFO    : Finished installation of qtconnectivity-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 3.43823190
 INFO    : Downloading qtsvg...
-INFO    : Finished installation of qtconnectivity-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 3.72349260
-INFO    : Finished installation of qtcharts-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 4.06080740
-INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qtmultimedia-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 4.46518690
+INFO    : Finished installation of qtmultimedia-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 3.69389630
+INFO    : Finished installation of qtcharts-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 3.81784030
 INFO    : Downloading qtactiveqt...
-INFO    : Downloading qtbase...
-INFO    : Finished installation of qtsvg-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.48374180
+INFO    : Redirected: qt.mirror.constant.com
 INFO    : Downloading qttranslations...
+INFO    : Downloading qtbase...
+INFO    : Finished installation of qtsvg-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.37342770
+INFO    : Redirected: qt.mirror.constant.com
 INFO    : Redirected: qt.mirror.constant.com
 INFO    : Redirected: qt.mirror.constant.com
 INFO    : Downloading qtdeclarative...
+INFO    : Finished installation of qtactiveqt-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.68226400
 INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qtactiveqt-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.73889730
-INFO    : Redirected: qt.mirror.constant.com
+INFO    : Finished installation of qttranslations-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 3.06423100
 INFO    : Downloading qtimageformats...
-INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qtimageformats-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.85182000
-INFO    : Downloading qttools...
-INFO    : Finished installation of qttranslations-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 6.04092470
-INFO    : Redirected: qt.mirror.constant.com
 INFO    : Downloading qtxmlpatterns...
 INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qtxmlpatterns-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 5.66328910
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Finished installation of qtimageformats-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.60110530
+INFO    : Downloading qttools...
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Finished installation of qtxmlpatterns-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 11.49358560
 INFO    : Downloading qtsensors...
 INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qtdeclarative-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 13.05929870
+INFO    : Finished installation of qtsensors-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 3.49229060
+INFO    : Finished installation of qtdeclarative-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 16.78230500
+INFO    : Downloading qtwebsockets...
 INFO    : Downloading qtwinextras...
 INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qtwinextras-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 7.17483990
-INFO    : Finished installation of qttools-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 16.04214410
-INFO    : Downloading qtwebsockets...
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Finished installation of qtwebsockets-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.75111310
+INFO    : Finished installation of qtwinextras-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.70668620
+INFO    : Finished installation of qttools-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 15.81401960
+INFO    : Downloading qtwebchannel...
+INFO    : Downloading qtquickcontrols...
 INFO    : Downloading qtlocation...
 INFO    : Redirected: qt.mirror.constant.com
 INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qtsensors-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 11.72364900
-INFO    : Downloading qtquickcontrols...
-INFO    : Finished installation of qtwebsockets-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 3.50589920
 INFO    : Redirected: qt.mirror.constant.com
-INFO    : Downloading qtwebchannel...
-INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qtwebchannel-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 5.06653560
+INFO    : Finished installation of qtwebchannel-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 3.00732290
 INFO    : Downloading qt3d...
 INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qtlocation-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 23.40006090
+INFO    : Finished installation of qtquickcontrols-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 5.01829190
+INFO    : Finished installation of qtlocation-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 5.05782920
+INFO    : Downloading qtquickcontrols2...
 INFO    : Downloading qtserialport...
 INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qtquickcontrols-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 23.77160500
-INFO    : Downloading qtquickcontrols2...
 INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qtserialport-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 5.02202660
+INFO    : Finished installation of qtbase-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 28.03789340
+INFO    : Finished installation of qtserialport-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.68622110
 INFO    : Downloading qtserialbus...
-INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qtserialbus-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 5.25100060
-INFO    : Downloading qtscxml...
-INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qtscxml-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 5.16821500
 INFO    : Downloading qtgamepad...
 INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qtgamepad-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.36986990
-INFO    : Finished installation of qtquickcontrols2-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 15.78562130
-INFO    : Downloading qtspeech...
-INFO    : Finished installation of qtbase-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 64.23321000
+INFO    : Finished installation of qtquickcontrols2-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 4.21554760
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Finished installation of qtserialbus-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.65713490
 INFO    : Downloading qtremoteobjects...
+INFO    : Finished installation of qtgamepad-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.53353920
+INFO    : Finished installation of qt3d-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 7.36791760
+INFO    : Downloading qtscxml...
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Downloading qtspeech...
+INFO    : Downloading qtwebview...
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Finished installation of qtremoteobjects-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.44503710
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Redirected: qt.mirror.constant.com
+INFO    : Downloading d3dcompiler_47...
+INFO    : Finished installation of qtspeech-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.31811270
+INFO    : Finished installation of qtwebview-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.26413360
+INFO    : Finished installation of qtscxml-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.75170070
 INFO    : Redirected: qt.mirror.constant.com
 INFO    : Downloading opengl32sw...
+INFO    : Finished installation of d3dcompiler_47-x64.7z in 2.44081930
 INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qt3d-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 35.78327470
-INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qtremoteobjects-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.76536040
-INFO    : Downloading qtwebview...
-INFO    : Finished installation of qtspeech-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 3.74936040
-INFO    : Downloading d3dcompiler_47...
-INFO    : Finished installation of opengl32sw-64-mesa_12_0_rc2.7z in 2.92450430
-INFO    : Redirected: qt.mirror.constant.com
-INFO    : Redirected: qt.mirror.constant.com
-INFO    : Finished installation of qtwebview-Windows-Windows_10-MSVC2019-Windows-Windows_10-X86_64.7z in 2.21154390
-INFO    : Finished installation of d3dcompiler_47-x64.7z in 2.37344830
+INFO    : Finished installation of opengl32sw-64-mesa_12_0_rc2.7z in 2.72145870
 INFO    : Patching C:\Qt\5.15.2\msvc2019_64\bin\qmake.exe
 INFO    : Patching C:\Qt\5.15.2\msvc2019_64\lib\libEGL.prl
 INFO    : Patching C:\Qt\5.15.2\msvc2019_64\lib\libEGLd.prl
@@ -258,7 +258,7 @@ INFO    : Patching C:\Qt\5.15.2\msvc2019_64\lib\qtlibpngd.prl
 INFO    : Patching C:\Qt\5.15.2\msvc2019_64\lib\qtmain.prl
 INFO    : Patching C:\Qt\5.15.2\msvc2019_64\lib\qtmaind.prl
 INFO    : Finished installation
-INFO    : Time elapsed: 75.15305840 second
+INFO    : Time elapsed: 42.41267250 second
 
 ===== x64-configure.log =====
 -- Building for: Visual Studio 18 2026
@@ -276,7 +276,7 @@ INFO    : Time elapsed: 75.15305840 second
 -- Detecting C compile features - done
 -- Plateforme Windows détectée (MSVC / MinGW).
 -- Using source-controlled bundled librosco target
--- Configuring done (37.4s)
+-- Configuring done (16.7s)
 -- Generating done (0.3s)
 -- Build files have been written to: D:/a/ECU-Mems-Manager-Session/ECU-Mems-Manager-Session/build-app-x64
 
@@ -326,166 +326,147 @@ MSBuild version 18.9.1+a81b43525 for .NET Framework
   splashprogress.cpp
   mainwindow.cpp
   aboutbox.cpp
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(902,32): error C2146: syntax error: missing ')' before identifier 'or' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(902,32): error C3861: 'or': identifier not found [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(902,52): error C2059: syntax error: ')' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(903,37): error C2059: syntax error: ';' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(904,2): error C2059: syntax error: 'else' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(905,2): error C2143: syntax error: missing ';' before '{' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(905,2): error C2447: '{': missing function header (old-style formal list?) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(906,5): error C2059: syntax error: 'else' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(907,5): error C2143: syntax error: missing ';' before '{' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(907,5): error C2447: '{': missing function header (old-style formal list?) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(908,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(908,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(908,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(908,8): error C2146: syntax error: missing ';' before identifier 'e_ignition_advance' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(909,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(909,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(909,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(909,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(908,2):
-      see declaration of 'm_ui'
-  
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(909,8): error C2146: syntax error: missing ';' before identifier 'e_short_term_fuel_trim' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(910,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(910,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(910,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(910,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(908,2):
-      see declaration of 'm_ui'
-  
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(910,8): error C2146: syntax error: missing ';' before identifier 'e_lambda' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(911,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(911,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(911,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(911,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(908,2):
-      see declaration of 'm_ui'
-  
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(911,8): error C2146: syntax error: missing ';' before identifier 'm_throttle_pos' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(912,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(912,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(912,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(912,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(908,2):
-      see declaration of 'm_ui'
-  
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(912,8): error C2146: syntax error: missing ';' before identifier 'm_idle_position' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(913,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(913,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(913,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(913,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(908,2):
-      see declaration of 'm_ui'
-  
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(913,8): error C2146: syntax error: missing ';' before identifier 'm_battery' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(914,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(914,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(914,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(914,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(908,2):
-      see declaration of 'm_ui'
-  
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(914,8): error C2146: syntax error: missing ';' before identifier 'm_mapGauge' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(915,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(915,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(915,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(915,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(908,2):
-      see declaration of 'm_ui'
-  
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(915,8): error C2146: syntax error: missing ';' before identifier 'm_ignition_advance' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(916,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(916,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(916,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(916,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(908,2):
-      see declaration of 'm_ui'
-  
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(916,8): error C2146: syntax error: missing ';' before identifier 'm_waterTempGauge' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(917,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(917,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(917,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(917,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(908,2):
-      see declaration of 'm_ui'
-  
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(917,8): error C2146: syntax error: missing ';' before identifier 'm_airTempGauge' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(918,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(918,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(918,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(918,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(908,2):
-      see declaration of 'm_ui'
-  
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(918,8): error C2146: syntax error: missing ';' before identifier 'm_faultLedCTS' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(919,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(919,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(919,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(919,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(908,2):
-      see declaration of 'm_ui'
-  
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(919,8): error C2146: syntax error: missing ';' before identifier 'm_faultLedATS' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(920,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(920,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(920,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(920,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(908,2):
-      see declaration of 'm_ui'
-  
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(920,8): error C2146: syntax error: missing ';' before identifier 'm_faultLed03' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(921,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(921,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(921,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(921,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(908,2):
-      see declaration of 'm_ui'
-  
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(921,8): error C2146: syntax error: missing ';' before identifier 'm_faultLed04' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(922,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(922,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(922,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(922,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(908,2):
-      see declaration of 'm_ui'
-  
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(922,8): error C2146: syntax error: missing ';' before identifier 'm_faultLed05' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(923,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(923,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(923,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(923,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(908,2):
-      see declaration of 'm_ui'
-  
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(923,8): error C2146: syntax error: missing ';' before identifier 'm_faultLedFTS' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(924,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(924,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(924,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(924,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(908,2):
-      see declaration of 'm_ui'
-  
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(924,8): error C2146: syntax error: missing ';' before identifier 'm_faultLed07' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(925,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(925,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(925,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(925,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(908,2):
-      see declaration of 'm_ui'
-  
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(925,8): error C2146: syntax error: missing ';' before identifier 'm_faultLed08' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(926,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(926,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(926,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(926,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
-      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(908,2):
-      see declaration of 'm_ui'
-  
-D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(926,2): error C1003: error count exceeds 100; stopping compilation [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
   optionsdialog.cpp
   summarytab.cpp
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(967,30): error C2146: syntax error: missing ')' before identifier 'and' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(967,30): error C3861: 'and': identifier not found [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(967,57): error C2146: syntax error: missing ';' before identifier 'and' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(967,57): error C3861: 'and': identifier not found [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(967,84): error C2146: syntax error: missing ';' before identifier 'and' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(967,84): error C3861: 'and': identifier not found [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(967,102): error C2059: syntax error: ')' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(969,20): error C2059: syntax error: ';' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(971,5): error C2059: syntax error: 'if' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(972,5): error C2143: syntax error: missing ';' before '{' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(972,5): error C2447: '{': missing function header (old-style formal list?) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(975,5): error C2059: syntax error: 'else' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(976,5): error C2143: syntax error: missing ';' before '{' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(976,5): error C2447: '{': missing function header (old-style formal list?) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(979,5): error C2059: syntax error: 'if' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(980,5): error C2143: syntax error: missing ';' before '{' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(980,5): error C2447: '{': missing function header (old-style formal list?) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(984,5): error C2059: syntax error: 'else' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(985,5): error C2143: syntax error: missing ';' before '{' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(985,5): error C2447: '{': missing function header (old-style formal list?) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(989,5): error C2059: syntax error: 'if' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(990,5): error C2143: syntax error: missing ';' before '{' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(990,5): error C2447: '{': missing function header (old-style formal list?) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(994,5): error C2059: syntax error: 'else' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(995,5): error C2143: syntax error: missing ';' before '{' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(995,5): error C2447: '{': missing function header (old-style formal list?) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1112,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1112,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1112,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1112,8): error C2146: syntax error: missing ';' before identifier 'e_FuelTrim_lcd' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1113,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1113,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1113,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1113,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1112,2):
+      see declaration of 'm_ui'
+  
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1113,8): error C2146: syntax error: missing ';' before identifier 'e_IdleDecay_lcd' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1114,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1114,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1114,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1114,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1112,2):
+      see declaration of 'm_ui'
+  
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1114,8): error C2146: syntax error: missing ';' before identifier 'e_IdleSpeed_lcd' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1115,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1115,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1115,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1115,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1112,2):
+      see declaration of 'm_ui'
+  
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1115,8): error C2146: syntax error: missing ';' before identifier 'e_IgnitionAdvance_lcd' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1119,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1119,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1119,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1119,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1112,2):
+      see declaration of 'm_ui'
+  
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1119,8): error C2146: syntax error: missing ';' before identifier 'm_long_trim' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1120,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1120,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1120,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1120,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1112,2):
+      see declaration of 'm_ui'
+  
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1120,8): error C2146: syntax error: missing ';' before identifier 'm_lambda_voltage' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1123,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1123,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1123,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1123,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1112,2):
+      see declaration of 'm_ui'
+  
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1123,8): error C2146: syntax error: missing ';' before identifier 'm_7D_01' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1124,2): error C2059: syntax error: 'if' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1125,5): error C2143: syntax error: missing ';' before '{' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1125,5): error C2447: '{': missing function header (old-style formal list?) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1126,5): error C2059: syntax error: 'else' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1127,5): error C2143: syntax error: missing ';' before '{' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1127,5): error C2447: '{': missing function header (old-style formal list?) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1128,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1128,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1128,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1128,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1112,2):
+      see declaration of 'm_ui'
+  
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1128,8): error C2146: syntax error: missing ';' before identifier 'm_7D_02' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1129,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1129,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1129,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1129,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1112,2):
+      see declaration of 'm_ui'
+  
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1129,8): error C2146: syntax error: missing ';' before identifier 'r_7D_02' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1130,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1130,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1130,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1130,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1112,2):
+      see declaration of 'm_ui'
+  
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1130,8): error C2146: syntax error: missing ';' before identifier 'm_7D_03' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1131,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1131,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1131,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1131,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1112,2):
+      see declaration of 'm_ui'
+  
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1131,8): error C2146: syntax error: missing ';' before identifier 'm_7D_04' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1132,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1132,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1132,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1132,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1112,2):
+      see declaration of 'm_ui'
+  
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1132,8): error C2146: syntax error: missing ';' before identifier 'r_7D_04' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1133,2): error C3927: '->': trailing return type is not allowed after a non-function declarator [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1133,8): error C3613: missing return type after '->' ('int' assumed) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1133,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1133,2): error C2086: 'int m_ui': redefinition [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+      D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1112,2):
+      see declaration of 'm_ui'
+  
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1133,8): error C2146: syntax error: missing ';' before identifier 'm_7D_05' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1134,4): error C2059: syntax error: 'if' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1135,5): error C2143: syntax error: missing ';' before '{' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1135,5): error C2447: '{': missing function header (old-style formal list?) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1136,5): error C2059: syntax error: 'else' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1137,5): error C2143: syntax error: missing ';' before '{' [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1137,5): error C2447: '{': missing function header (old-style formal list?) [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
+D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\mainwindow.cpp(1137,5): error C1003: error count exceeds 100; stopping compilation [D:\a\ECU-Mems-Manager-Session\ECU-Mems-Manager-Session\build-app-x64\ecu_mems_manager.vcxproj]
   diagnosticpanel.cpp
   analysistab.cpp
   Generating Code...
