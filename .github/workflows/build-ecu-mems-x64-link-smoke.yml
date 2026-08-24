@@ -1,0 +1,144 @@
+name: Build ECU MEMS Manager x64 link smoke
+
+on:
+  push:
+    branches: [MEMSX64]
+    paths:
+      - 'CMakeLists.txt'
+      - 'rosco.h'
+      - 'librosco-x64/**'
+      - '.github/workflows/build-ecu-mems-x64-link-smoke.yml'
+      - '*.cpp'
+      - '*.h'
+      - 'database/**.cpp'
+      - 'database/**.h'
+      - 'expert/**.cpp'
+      - 'expert/**.h'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-app-x64:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout MEMSX64
+        uses: actions/checkout@v4
+        with:
+          ref: MEMSX64
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install aqtinstall
+        shell: pwsh
+        run: python -m pip install --disable-pip-version-check aqtinstall
+
+      - name: Install Qt 5.15.2 MSVC 2019 x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt
+          if (-not (Test-Path 'C:\Qt\5.15.2\msvc2019_64\lib\cmake\Qt5\Qt5Config.cmake')) {
+            throw 'Qt 5.15.2 MSVC x64 installation incomplete'
+          }
+
+      - name: Configure application x64 with bundled librosco
+        shell: pwsh
+        run: |
+          cmake -S . -B build-app-x64 -A x64 `
+            -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
+            -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
+            -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF
+
+      - name: Build application x64
+        shell: pwsh
+        run: cmake --build build-app-x64 --config Release --target ecu_mems_manager
+
+      - name: Install PE validator
+        shell: pwsh
+        run: python -m pip install --disable-pip-version-check pefile
+
+      - name: Validate x64 executable and x64 librosco import
+        shell: pwsh
+        run: |
+          $env:APP_EXE = "${{ github.workspace }}\build-app-x64\Release\ecu_mems_manager.exe"
+          $env:ROSCO_DLL = "${{ github.workspace }}\build-app-x64\librosco-x64\Release\librosco.dll"
+          @'
+          import hashlib
+          import os
+          import pathlib
+          import pefile
+
+          app = pathlib.Path(os.environ['APP_EXE'])
+          dll = pathlib.Path(os.environ['ROSCO_DLL'])
+          if not app.exists():
+              raise SystemExit(f'Application missing: {app}')
+          if not dll.exists():
+              raise SystemExit(f'librosco missing: {dll}')
+
+          def validate_amd64(path):
+              pe = pefile.PE(str(path), fast_load=False)
+              if pe.FILE_HEADER.Machine != 0x8664 or pe.OPTIONAL_HEADER.Magic != 0x20B:
+                  raise SystemExit(f'{path.name} is not PE32+ AMD64')
+              return pe
+
+          app_pe = validate_amd64(app)
+          dll_pe = validate_amd64(dll)
+
+          imported = []
+          for entry in getattr(app_pe, 'DIRECTORY_ENTRY_IMPORT', []):
+              imported.append(entry.dll.decode('ascii', errors='replace').lower())
+          if 'librosco.dll' not in imported:
+              raise SystemExit(f'Application does not import librosco.dll. Imports={imported}')
+
+          exports = sorted(
+              s.name.decode('ascii') for s in dll_pe.DIRECTORY_ENTRY_EXPORT.symbols if s.name
+          )
+          if len(exports) != 22:
+              raise SystemExit(f'Expected 22 librosco exports, found {len(exports)}')
+
+          app_sha = hashlib.sha256(app.read_bytes()).hexdigest()
+          dll_sha = hashlib.sha256(dll.read_bytes()).hexdigest()
+          report = pathlib.Path('ECU_MEMS_X64_LINK_VALIDATION.txt')
+          report.write_text(
+              'ECU MEMS MANAGER X64 LINK: OK\n'
+              'application=PE32+ AMD64\n'
+              'librosco=PE32+ AMD64\n'
+              'application_imports_librosco.dll=yes\n'
+              'librosco_exports=22\n'
+              f'application_size={app.stat().st_size}\n'
+              f'application_sha256={app_sha}\n'
+              f'librosco_size={dll.stat().st_size}\n'
+              f'librosco_sha256={dll_sha}\n',
+              encoding='utf-8'
+          )
+          print(report.read_text(encoding='utf-8'))
+          '@ | python -
+
+      - name: Upload x64 link-smoke binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: ecu-mems-manager-x64-link-smoke
+          path: |
+            build-app-x64/Release/ecu_mems_manager.exe
+            build-app-x64/librosco-x64/Release/librosco.dll
+            ECU_MEMS_X64_LINK_VALIDATION.txt
+          if-no-files-found: error
+
+      - name: Persist green application x64 marker
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ECU_MEMS_X64_LINK_VALIDATION.txt
+          if (git diff --cached --quiet) {
+            Write-Host 'Application x64 validation marker already current'
+          } else {
+            git commit -m "Validate ECU MEMS Manager native x64 link [skip ci]"
+            git push origin MEMSX64
+          }
