@@ -242,7 +242,9 @@ void initialize()
     appendRaw(QStringLiteral("ECU MEMS MANAGER x64 DIAGNOSTIC SESSION"));
     appendRaw(QStringLiteral("started=%1").arg(stamp()));
     appendRaw(QStringLiteral("version=%1 build=%2 commit=%3")
-                  .arg(QStringLiteral(APP_VERSION), QStringLiteral(APP_BUILD_NUMBER), QStringLiteral(APP_COMMIT_SHA)));
+                  .arg(QStringLiteral(APP_VERSION))
+                  .arg(QStringLiteral(APP_BUILD_NUMBER))
+                  .arg(QStringLiteral(APP_COMMIT_SHA)));
     appendRaw(QStringLiteral("pid=%1").arg(QCoreApplication::applicationPid()));
     appendRaw(QStringLiteral("applicationFilePath=%1").arg(QCoreApplication::applicationFilePath()));
     appendRaw(QStringLiteral("applicationDirPath=%1").arg(appDir));
