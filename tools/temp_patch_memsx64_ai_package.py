@@ -1,0 +1,110 @@
+#!/usr/bin/env python3
+from pathlib import Path
+import textwrap
+
+p = Path('.github/workflows/build-ecu-mems-x64-package.yml')
+s = p.read_text(encoding='utf-8')
+
+if 'Download and verify local IA runtime' in s:
+    print('IA package correction already applied')
+    raise SystemExit(0)
+
+block = textwrap.dedent(r'''
+- name: Download and verify local IA runtime
+  shell: pwsh
+  run: |
+    $ErrorActionPreference = 'Stop'
+    $runtimeUrl = 'https://github.com/ggml-org/llama.cpp/releases/download/b10516/llama-b10516-bin-win-cpu-x64.zip'
+    $runtimeSha = 'fbbbc55e0eb2e1b07f9dcb9488616c98ed47d9003b90e15e7c8c7812c4307cd3'
+    $modelUrl = 'https://huggingface.co/Qwen/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-Q8_0.gguf?download=true'
+    $modelSha = '9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031'
+
+    Remove-Item -Recurse -Force ai-runtime-download, ai/models -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Force ai-runtime-download, ai/models | Out-Null
+    curl.exe -L --fail --retry 4 --retry-delay 3 -o llama-runtime.zip $runtimeUrl
+    if ($LASTEXITCODE -ne 0) { throw 'llama.cpp download failed' }
+    $actual = (Get-FileHash llama-runtime.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($actual -ne $runtimeSha) { throw "llama.cpp SHA256 mismatch: $actual" }
+    Expand-Archive llama-runtime.zip ai-runtime-download -Force
+    $server = Get-ChildItem ai-runtime-download -Recurse -Filter llama-server.exe | Select-Object -First 1
+    if (-not $server) { throw 'llama-server.exe missing' }
+    Copy-Item -Path (Join-Path $server.Directory.FullName '*') -Destination ai -Recurse -Force
+
+    $visualStudioRoots = @('C:\Program Files\Microsoft Visual Studio','C:\Program Files (x86)\Microsoft Visual Studio')
+    $vcCrt = $null
+    foreach ($vsRoot in $visualStudioRoots) {
+      if (-not (Test-Path $vsRoot)) { continue }
+      $candidate = Get-ChildItem $vsRoot -Directory -Recurse -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -like 'Microsoft.VC*.CRT' -and $_.Parent -and $_.Parent.Name -eq 'x64' } |
+        Sort-Object FullName -Descending | Select-Object -First 1
+      if ($candidate) { $vcCrt = $candidate.FullName; break }
+    }
+    if (-not $vcCrt) { throw 'Microsoft Visual C++ x64 app-local redistributable directory not found' }
+    Copy-Item (Join-Path $vcCrt '*.dll') ai -Force
+    foreach ($requiredCrt in @('vcruntime140.dll','msvcp140.dll')) {
+      if (-not (Test-Path (Join-Path 'ai' $requiredCrt))) { throw "VC++ runtime file missing: $requiredCrt" }
+    }
+
+    curl.exe -L --fail --retry 4 --retry-delay 3 -o ai/models/ia-mems.gguf $modelUrl
+    if ($LASTEXITCODE -ne 0) { throw 'Qwen model download failed' }
+    $actual = (Get-FileHash ai/models/ia-mems.gguf -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($actual -ne $modelSha) { throw "Qwen model SHA256 mismatch: $actual" }
+    curl.exe -L --fail -o ai/LICENSE_llama.cpp.txt https://raw.githubusercontent.com/ggml-org/llama.cpp/master/LICENSE
+    if ($LASTEXITCODE -ne 0) { throw 'llama.cpp license download failed' }
+    curl.exe -L --fail -o ai/LICENSE_Qwen3.txt https://huggingface.co/Qwen/Qwen3-0.6B-GGUF/raw/main/LICENSE
+    if ($LASTEXITCODE -ne 0) { throw 'Qwen3 license download failed' }
+
+- name: Validate local IA runtime and model
+  shell: pwsh
+  run: |
+    $ErrorActionPreference = 'Stop'
+    $server = (Resolve-Path ai/llama-server.exe).Path
+    $model = (Resolve-Path ai/models/ia-mems.gguf).Path
+    $runtimeDirectory = Split-Path $server -Parent
+    $process = Start-Process -FilePath $server -WorkingDirectory $runtimeDirectory -ArgumentList @('-m',$model,'--alias','ia-mems','--host','127.0.0.1','--port','18089','-c','4096','-np','1') -PassThru -WindowStyle Hidden
+    try {
+      $ready = $false
+      for ($i=0; $i -lt 180; $i++) {
+        Start-Sleep -Milliseconds 750
+        try {
+          $health = Invoke-RestMethod -Method Get -Uri 'http://127.0.0.1:18089/health' -TimeoutSec 3
+          if ($health.status -eq 'ok') { $ready = $true; break }
+        } catch {
+          $process.Refresh()
+          if ($process.HasExited) { throw "llama-server exited during loading with code $($process.ExitCode)" }
+        }
+      }
+      if (-not $ready) { throw 'local IA model not ready' }
+      Write-Host 'OK: packaged llama-server x64 loads IA MEMS model'
+    }
+    finally {
+      $process.Refresh()
+      if (-not $process.HasExited) { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue }
+    }
+''').strip('\n') + '\n\n'
+
+runtime_steps = textwrap.indent(block, '      ')
+anchor = '      - name: Assemble portable x64 test package\n'
+if s.count(anchor) != 1:
+    raise SystemExit(f'assemble anchor count={s.count(anchor)}')
+s = s.replace(anchor, runtime_steps + anchor, 1)
+
+db_anchor = "          Copy-Item $database (Join-Path $dist 'database') -Recurse -Force\n"
+ai_copy = "\n          $ai = Join-Path $env:GITHUB_WORKSPACE 'ai'\n          if (-not (Test-Path (Join-Path $ai 'llama-server.exe'))) { throw 'Prepared IA runtime is missing' }\n          if (-not (Test-Path (Join-Path $ai 'models\\ia-mems.gguf'))) { throw 'Prepared IA model is missing' }\n          Copy-Item $ai (Join-Path $dist 'ai') -Recurse -Force\n"
+if s.count(db_anchor) != 1:
+    raise SystemExit(f'database anchor count={s.count(db_anchor)}')
+s = s.replace(db_anchor, db_anchor + ai_copy, 1)
+
+required_anchor = "              root / 'database' / 'reference' / 'mems_reference_seed_1.qz64',\n"
+required_ai = "              root / 'ai' / 'runtime_manifest.json',\n              root / 'ai' / 'llama-server.exe',\n              root / 'ai' / 'models' / 'ia-mems.gguf',\n              root / 'ai' / 'vcruntime140.dll',\n              root / 'ai' / 'msvcp140.dll',\n              root / 'ai' / 'LICENSE_llama.cpp.txt',\n              root / 'ai' / 'LICENSE_Qwen3.txt',\n"
+if s.count(required_anchor) != 1:
+    raise SystemExit(f'required-list anchor count={s.count(required_anchor)}')
+s = s.replace(required_anchor, required_anchor + required_ai, 1)
+
+upload_anchor = "          if-no-files-found: error\n"
+if s.count(upload_anchor) != 1:
+    raise SystemExit(f'upload anchor count={s.count(upload_anchor)}')
+s = s.replace(upload_anchor, upload_anchor + "          compression-level: 0\n", 1)
+
+p.write_text(s, encoding='utf-8')
+print('MEMSX64 complete IA package workflow patch applied')
