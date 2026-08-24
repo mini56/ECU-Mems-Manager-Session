@@ -1,5 +1,0 @@
-ECU MEMS MANAGER X64 PACKAGE: FAILED
-run_id=32713182176
-run_number=3
-workflow_commit=9ea322a9faefbe11c1af5485afe4694dc9dbf4fa
-utc=2026-08-24T09:48:39Z
