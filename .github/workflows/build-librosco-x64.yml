@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-librosco-x64:
@@ -18,6 +18,8 @@ jobs:
     steps:
       - name: Checkout MEMSX64
         uses: actions/checkout@v4
+        with:
+          ref: MEMSX64
 
       - name: Configure native AMD64 build
         shell: pwsh
@@ -93,8 +95,8 @@ jobs:
               raise SystemExit(f'Export mismatch. Missing={missing} Extra={extra} Actual={actual}')
 
           sha256 = hashlib.sha256(data).hexdigest()
-          print(f'PE32+ AMD64: OK')
-          print(f'Exact 22-export contract: OK')
+          print('PE32+ AMD64: OK')
+          print('Exact 22-export contract: OK')
           print(f'Size: {len(data)} bytes')
           print(f'SHA256: {sha256}')
 
@@ -131,3 +133,17 @@ jobs:
           name: librosco-x64-compatibility
           path: dist-librosco-x64
           if-no-files-found: error
+
+      - name: Persist green validation marker
+        shell: pwsh
+        run: |
+          Copy-Item "build-librosco-x64\LIBROSCO_X64_VALIDATION.txt" "LIBROSCO_X64_VALIDATION.txt" -Force
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add LIBROSCO_X64_VALIDATION.txt
+          if (git diff --cached --quiet) {
+            Write-Host "Validation marker already current"
+          } else {
+            git commit -m "Validate native librosco x64 compatibility [skip ci]"
+            git push origin MEMSX64
+          }
