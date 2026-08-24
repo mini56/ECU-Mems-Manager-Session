@@ -239,7 +239,7 @@ int main(int argc,char **argv)
     ok=requireSearch(QStringLiteral("IAT"),QStringLiteral("wiring"),
                      {QStringLiteral("IAT")}) && ok;
     ok=requireSearch(QStringLiteral("temperature air"),QStringLiteral("wiring"),
-                     {QStringLiteral("température air"),QStringLiteral("Vert / Rouge")}) && ok;
+                     {QStringLiteral("temperature air"),QStringLiteral("Vert / Rouge")}) && ok;
     ok=requireSearch(QStringLiteral("D0"),QStringLiteral("command"),
                      {QStringLiteral("D0")}) && ok;
     ok=requireSearch(QStringLiteral("P0115"),QStringLiteral("dtc"),
