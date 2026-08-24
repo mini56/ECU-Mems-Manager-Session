@@ -899,7 +899,7 @@ void MainWindow::onDataReady()
  m_ui->m_short_term_correction->setValue(data->short_term_fuel_trim - 100);
  m_ui->m_revCounter->setValue(data->engine_rpm);
  m_ui->m_revCounter_exhaust->setValue(data->engine_rpm);
- if (((data->idle_switch)!= 0) or ((data->uk3)!=16))
+ if (((data->idle_switch) != 0) || ((data->uk3) != 16))
     {m_ui->e_idle_error->setValue(0);}
 	else if ((data->idle_error)>=200)
 	{m_ui->e_idle_error->setValue(200);}
