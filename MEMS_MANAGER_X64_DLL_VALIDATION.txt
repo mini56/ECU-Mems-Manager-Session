@@ -1,0 +1,11 @@
+MEMS MANAGER X64 PROTOCOL DLL: OK
+filename=mems_manager_x64.dll
+machine=IMAGE_FILE_MACHINE_AMD64
+format=PE32+
+abi_frame80=28
+abi_frame7d=32
+abi_mems_data=60
+compat_origin=librosco-0.1.12-lineage
+exports=22 exact historical compatibility names
+size=16384
+sha256=eb524976bbd25ae7cebf01520c209e92b3ee35a40f42c8551d49e3ea222f532f
