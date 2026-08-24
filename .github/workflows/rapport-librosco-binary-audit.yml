@@ -1,0 +1,241 @@
+name: Rapport librosco binary audit
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/rapport-librosco-binary-audit.yml'
+      - 'prebuilt-librosco/librosco.dll'
+      - 'rosco.h'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout RAPPORT
+        uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+
+      - name: Install PE parser
+        shell: pwsh
+        run: python -m pip install --disable-pip-version-check pefile
+
+      - name: Analyse librosco DLL
+        shell: pwsh
+        run: |
+          @'
+          import hashlib
+          import pathlib
+          import re
+          import struct
+          import datetime
+          import pefile
+
+          dll_path = pathlib.Path('prebuilt-librosco/librosco.dll')
+          hdr_path = pathlib.Path('rosco.h')
+          out_path = pathlib.Path('RAPPORT_LIBROSCO_BINAIRE.md')
+
+          data = dll_path.read_bytes()
+          sha256 = hashlib.sha256(data).hexdigest()
+          sha1 = hashlib.sha1(data).hexdigest()
+          md5 = hashlib.md5(data).hexdigest()
+          pe = pefile.PE(str(dll_path), fast_load=False)
+
+          machine_names = {
+              0x014c: 'IMAGE_FILE_MACHINE_I386 (x86 / 32 bits)',
+              0x8664: 'IMAGE_FILE_MACHINE_AMD64 (x64 / 64 bits)',
+              0x01c4: 'IMAGE_FILE_MACHINE_ARMNT',
+              0xaa64: 'IMAGE_FILE_MACHINE_ARM64',
+          }
+          magic_names = {0x10b: 'PE32 (32 bits)', 0x20b: 'PE32+ (64 bits)'}
+          machine = machine_names.get(pe.FILE_HEADER.Machine, f'0x{pe.FILE_HEADER.Machine:04X}')
+          magic = magic_names.get(pe.OPTIONAL_HEADER.Magic, f'0x{pe.OPTIONAL_HEADER.Magic:04X}')
+          timestamp = datetime.datetime.fromtimestamp(pe.FILE_HEADER.TimeDateStamp, datetime.timezone.utc).isoformat()
+
+          exports = []
+          if hasattr(pe, 'DIRECTORY_ENTRY_EXPORT'):
+              for sym in pe.DIRECTORY_ENTRY_EXPORT.symbols:
+                  name = sym.name.decode('ascii', errors='replace') if sym.name else ''
+                  exports.append((sym.ordinal, sym.address, name, sym.forwarder.decode('ascii', errors='replace') if sym.forwarder else ''))
+          exports.sort(key=lambda x: x[0])
+
+          imports = []
+          if hasattr(pe, 'DIRECTORY_ENTRY_IMPORT'):
+              for entry in pe.DIRECTORY_ENTRY_IMPORT:
+                  dll = entry.dll.decode('ascii', errors='replace')
+                  names = []
+                  for imp in entry.imports:
+                      if imp.name:
+                          names.append(imp.name.decode('ascii', errors='replace'))
+                      else:
+                          names.append(f'ordinal:{imp.ordinal}')
+                  imports.append((dll, names))
+
+          header = hdr_path.read_text(encoding='utf-8', errors='replace')
+          # Public C API declarations beginning with mems_.
+          header_funcs = sorted(set(re.findall(r'\b(mems_[A-Za-z0-9_]+)\s*\(', header)))
+          export_names = sorted(name for _, _, name, _ in exports if name)
+          export_set = set(export_names)
+          header_set = set(header_funcs)
+          exported_not_header = sorted(export_set - header_set)
+          header_not_exported = sorted(header_set - export_set)
+          common = sorted(export_set & header_set)
+
+          sections = []
+          for sec in pe.sections:
+              name = sec.Name.rstrip(b'\x00').decode('ascii', errors='replace')
+              sections.append((name, sec.VirtualAddress, sec.Misc_VirtualSize, sec.SizeOfRawData, sec.Characteristics))
+
+          characteristics = pe.FILE_HEADER.Characteristics
+          dll_chars = pe.OPTIONAL_HEADER.DllCharacteristics
+          is_dll = bool(characteristics & 0x2000)
+          has_reloc = any(s[0] == '.reloc' for s in sections)
+          sec_dir = pe.OPTIONAL_HEADER.DATA_DIRECTORY[pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_SECURITY']]
+          has_signature = bool(sec_dir.VirtualAddress and sec_dir.Size)
+
+          debug_info = []
+          try:
+              if hasattr(pe, 'DIRECTORY_ENTRY_DEBUG'):
+                  for dbg in pe.DIRECTORY_ENTRY_DEBUG:
+                      typ = dbg.struct.Type
+                      ptr = dbg.struct.PointerToRawData
+                      size = dbg.struct.SizeOfData
+                      if typ == 2 and ptr and size:
+                          raw = data[ptr:ptr+size]
+                          if raw.startswith(b'RSDS') and len(raw) > 24:
+                              pdb = raw[24:].split(b'\x00',1)[0].decode('utf-8', errors='replace')
+                              debug_info.append(f'CodeView RSDS / PDB : `{pdb}`')
+                          elif raw.startswith(b'NB10'):
+                              debug_info.append('CodeView NB10 présent')
+                      else:
+                          debug_info.append(f'Debug directory type {typ}, taille {size}')
+          except Exception as exc:
+              debug_info.append(f'Lecture debug impossible : {exc}')
+
+          compiler_hints = []
+          section_names = {x[0] for x in sections}
+          if any(n.startswith('/4') or n.startswith('/14') or n.startswith('/29') or n.startswith('/41') or n.startswith('/55') or n.startswith('/67') for n in section_names):
+              compiler_hints.append('Sections de type `/NN` typiques d’un binaire GNU/MinGW avec chaînes/constantes fractionnées.')
+          imported_dlls = {dll.lower() for dll, _ in imports}
+          if 'msvcrt.dll' in imported_dlls and not any(x.startswith('vcruntime') or x.startswith('msvcp') for x in imported_dlls):
+              compiler_hints.append('Import de `msvcrt.dll` sans VCRUNTIME/MSVCP : cohérent avec un build MinGW/GCC ancien ou statiquement lié côté libgcc.')
+          if any('libgcc' in dll.lower() or 'libwinpthread' in dll.lower() or 'libstdc++' in dll.lower() for dll, _ in imports):
+              compiler_hints.append('Dépendances MinGW explicites détectées.')
+
+          lines = []
+          lines.append('# Audit binaire de `prebuilt-librosco/librosco.dll`')
+          lines.append('')
+          lines.append('> Généré automatiquement sur la branche `RAPPORT` afin de conserver un état lisible et transmissible entre discussions.')
+          lines.append('')
+          lines.append('## Identité du binaire')
+          lines.append('')
+          lines.append(f'- Taille : **{len(data):,} octets**'.replace(',', ' '))
+          lines.append(f'- SHA-256 : `{sha256}`')
+          lines.append(f'- SHA-1 : `{sha1}`')
+          lines.append(f'- MD5 : `{md5}`')
+          lines.append(f'- Machine PE : **{machine}**')
+          lines.append(f'- Optional Header : **{magic}**')
+          lines.append(f'- ImageBase : `0x{pe.OPTIONAL_HEADER.ImageBase:X}`')
+          lines.append(f'- EntryPoint RVA : `0x{pe.OPTIONAL_HEADER.AddressOfEntryPoint:X}`')
+          lines.append(f'- Horodatage COFF brut interprété UTC : `{timestamp}`')
+          lines.append(f'- Flag DLL : **{"oui" if is_dll else "non"}**')
+          lines.append(f'- Section relocations présente : **{"oui" if has_reloc else "non"}**')
+          lines.append(f'- Signature Authenticode embarquée : **{"oui" if has_signature else "non"}**')
+          lines.append('')
+
+          lines.append('## Correspondance API `rosco.h` / exports DLL')
+          lines.append('')
+          lines.append(f'- Fonctions `mems_*` déclarées dans le header : **{len(header_funcs)}**')
+          lines.append(f'- Noms exportés par la DLL : **{len(export_names)}**')
+          lines.append(f'- Noms communs header + DLL : **{len(common)}**')
+          lines.append(f'- Exports DLL absents du header : **{len(exported_not_header)}**')
+          lines.append(f'- Déclarations du header absentes des exports : **{len(header_not_exported)}**')
+          lines.append('')
+          if exported_not_header:
+              lines.append('### Exports présents dans la DLL mais absents de `rosco.h`')
+              lines.append('')
+              for n in exported_not_header:
+                  lines.append(f'- `{n}`')
+              lines.append('')
+          if header_not_exported:
+              lines.append('### Fonctions déclarées dans `rosco.h` mais non exportées')
+              lines.append('')
+              for n in header_not_exported:
+                  lines.append(f'- `{n}`')
+              lines.append('')
+
+          lines.append('## Table exacte des exports')
+          lines.append('')
+          lines.append('| Ordinal | RVA | Nom | Forwarder |')
+          lines.append('|---:|---:|---|---|')
+          for ordinal, rva, name, fwd in exports:
+              lines.append(f'| {ordinal} | `0x{rva:08X}` | `{name}` | `{fwd}` |')
+          lines.append('')
+
+          lines.append('## DLL importées et fonctions utilisées')
+          lines.append('')
+          for dll, names in imports:
+              lines.append(f'### `{dll}` — {len(names)} imports')
+              lines.append('')
+              for n in names:
+                  lines.append(f'- `{n}`')
+              lines.append('')
+
+          lines.append('## Sections PE')
+          lines.append('')
+          lines.append('| Section | RVA | VirtualSize | RawSize | Characteristics |')
+          lines.append('|---|---:|---:|---:|---:|')
+          for name, va, vs, raw, chars in sections:
+              lines.append(f'| `{name}` | `0x{va:08X}` | {vs} | {raw} | `0x{chars:08X}` |')
+          lines.append('')
+
+          lines.append('## Indices de chaîne de compilation')
+          lines.append('')
+          if compiler_hints:
+              for h in compiler_hints:
+                  lines.append(f'- {h}')
+          else:
+              lines.append('- Aucun indice suffisamment discriminant produit automatiquement.')
+          if debug_info:
+              for d in debug_info:
+                  lines.append(f'- {d}')
+          lines.append('')
+
+          lines.append('## Conclusion automatique')
+          lines.append('')
+          if pe.FILE_HEADER.Machine == 0x014c and pe.OPTIONAL_HEADER.Magic == 0x10b:
+              lines.append('- **La DLL analysée est bien une DLL Windows x86 32 bits (PE32).** Elle ne peut pas être chargée directement par un processus Windows x64 natif.')
+          elif pe.FILE_HEADER.Machine == 0x8664 and pe.OPTIONAL_HEADER.Magic == 0x20b:
+              lines.append('- **La DLL analysée est une DLL Windows x64 native (PE32+).**')
+          else:
+              lines.append('- Architecture inhabituelle : vérifier manuellement avant toute décision de migration.')
+          if not exported_not_header and not header_not_exported:
+              lines.append('- **Le `rosco.h` actuel et la table d’exports nommés sont alignés à 100 % pour les symboles `mems_*`.**')
+          else:
+              lines.append('- Le header et le binaire ne sont pas parfaitement alignés : les écarts listés ci-dessus doivent être traités avant migration x64.')
+          lines.append('- Cet audit décrit le contrat binaire. La signification protocolaire des commandes reste à comparer aux sources Colin/Haro/Leopold avant de reconstruire la DLL x64.')
+          lines.append('')
+
+          out_path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+          print(out_path.read_text(encoding='utf-8'))
+          '@ | Set-Content -Encoding UTF8 audit_librosco.py
+          python audit_librosco.py
+
+      - name: Commit readable audit
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RAPPORT_LIBROSCO_BINAIRE.md
+          if (git diff --cached --quiet) {
+            Write-Host "No audit changes"
+          } else {
+            git commit -m "Update librosco binary audit [skip ci]"
+            git push origin RAPPORT
+          }
