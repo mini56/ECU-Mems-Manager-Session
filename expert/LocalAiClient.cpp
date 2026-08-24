@@ -239,12 +239,25 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
 
     QString userContent = question.trimmed();
     userContent += QStringLiteral("\n\n/no_think\n\n");
-    if (!groundingContext.trimmed().isEmpty()) {
+
+    QString grounding = groundingContext.trimmed();
+    // The deterministic router has a deliberately conservative generic fallback.
+    // It is useful when the local model is unavailable, but it must not force a
+    // working conversational model to reject ordinary dialogue or a question it
+    // can answer naturally.
+    if (grounding.startsWith(QStringLiteral(
+            "Je n'ai pas assez d'éléments pour relier cette question à une mesure ou à un fait MEMS précis.")))
+        grounding.clear();
+
+    if (!grounding.isEmpty()) {
         userContent += QStringLiteral(
-            "CONTEXTE FIABLE FOURNI PAR MEMS MANAGER :\n%1\n\n"
-            "Utilise ce contexte comme source prioritaire. S'il ne suffit pas, dis-le clairement. "
+            "CONTEXTE CANDIDAT FOURNI PAR MEMS MANAGER :\n%1\n\n"
+            "Réponds d'abord à la question exacte de l'utilisateur. "
+            "N'utilise que les éléments de ce contexte qui répondent directement à cette question et ignore les éléments hors sujet, même s'ils sont vrais. "
+            "Pour les faits techniques MEMS ou les mesures ECU, ce contexte pertinent est prioritaire sur tes connaissances générales. "
+            "Ne cite pas un auteur, un site, un dépôt ou une source seulement parce que son nom apparaît dans le contexte : cite-le uniquement si l'utilisateur demande la source, l'historique ou si ce nom est indispensable à la réponse. "
             "N'invente pas de mesure, de panne, de fonction du logiciel ni de niveau de certitude.")
-                           .arg(groundingContext.trimmed());
+                           .arg(grounding);
     }
 
     QJsonObject currentUser;
@@ -256,9 +269,9 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
     payload.insert(QStringLiteral("model"), QStringLiteral("ia-mems"));
     payload.insert(QStringLiteral("messages"), messages);
     payload.insert(QStringLiteral("stream"), false);
-    payload.insert(QStringLiteral("temperature"), 0.7);
-    payload.insert(QStringLiteral("top_p"), 0.8);
-    payload.insert(QStringLiteral("max_tokens"), 520);
+    payload.insert(QStringLiteral("temperature"), 0.25);
+    payload.insert(QStringLiteral("top_p"), 0.9);
+    payload.insert(QStringLiteral("max_tokens"), 460);
 
     QNetworkRequest request(
         QUrl(QStringLiteral("http://127.0.0.1:%1/v1/chat/completions").arg(kAiPort)));
@@ -358,14 +371,19 @@ QString LocalAiClient::systemPrompt() const
     return QStringLiteral(
         "Tu es IA MEMS, l'assistant conversationnel intégré à ECU MEMS Manager. "
         "Tu parles naturellement en français, avec courtoisie et sans familiarité excessive. "
-        "Tu peux saluer l'utilisateur et entretenir un vrai dialogue. "
-        "Ton rôle est d'expliquer MEMS Manager, d'aider à interpréter les mesures ECU et d'exposer les hypothèses du moteur expert. "
-        "Les faits techniques fournis par MEMS Manager sont prioritaires sur tes connaissances générales. "
+        "Réponds toujours d'abord à la question réellement posée, sans dériver vers un sujet voisin. "
+        "Tolère les fautes d'orthographe et de frappe ; si le sens reste clair, ne les commente pas. "
+        "Pour une conversation courante sans enjeu technique MEMS, réponds naturellement sans forcer un lien avec l'ECU. "
+        "Pour une question sur le logiciel, explique directement la fonction demandée avant tout détail technique. "
+        "Pour une question technique MEMS, les faits pertinents fournis par MEMS Manager sont prioritaires sur tes connaissances générales. "
+        "Le contexte fourni peut contenir plusieurs éléments : ignore strictement tout élément qui ne répond pas directement à la question. "
+        "Ne cite pas de nom de personne, de site, de dépôt ou de source sauf si l'utilisateur le demande ou si cette provenance est nécessaire pour qualifier la fiabilité d'un fait. "
         "Tu ne dois jamais inventer une mesure ECU, un défaut, une adresse, une fonction du logiciel ou une source. "
         "Tu distingues clairement une mesure observée, une hypothèse, une information externe et une information incertaine. "
         "Tu ne condamnes jamais une pièce sur une seule mesure. "
-        "Quand les données sont insuffisantes ou contradictoires, dis exactement que tu ne peux pas conclure. "
-        "Réponds de façon claire et assez concise, sauf si l'utilisateur demande des détails. /no_think");
+        "Quand les données techniques sont insuffisantes ou contradictoires, dis que tu ne peux pas conclure et précise brièvement ce qui manque. "
+        "Si la question est ambiguë au point de changer la réponse, demande une seule précision utile au lieu de deviner. "
+        "Réponds de façon claire, naturelle et concise, sauf si l'utilisateur demande des détails. /no_think");
 }
 
 QString LocalAiClient::cleanModelReply(QString text) const
