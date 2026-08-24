@@ -90,6 +90,353 @@
 6EC81B77: call     0x6ec83220
 6EC81B7C: mov      eax, 0
 6EC81B81: jmp      0x6ec81bf8
+6EC81B83: movzx    eax, byte ptr [ebp - 0xc]
+6EC81B87: mov      dword ptr [esp + 4], eax
+6EC81B8B: mov      eax, dword ptr [ebp + 8]
+6EC81B8E: mov      dword ptr [esp], eax
+6EC81B91: call     0x6ec819c6 ; -> mems_send_command
+6EC81B96: xor      eax, 1
+6EC81B99: test     al, al
+6EC81B9B: je       0x6ec81bb8
+6EC81B9D: movzx    eax, byte ptr [ebp - 0xc]
+6EC81BA1: mov      dword ptr [esp + 4], eax
+6EC81BA5: mov      dword ptr [esp], 0x6ec85158
+6EC81BAC: call     0x6ec83220
+6EC81BB1: mov      eax, 0
+6EC81BB6: jmp      0x6ec81bf8
+6EC81BB8: mov      dword ptr [esp + 8], 4
+6EC81BC0: mov      eax, dword ptr [ebp + 0xc]
+6EC81BC3: mov      dword ptr [esp + 4], eax
+6EC81BC7: mov      eax, dword ptr [ebp + 8]
+6EC81BCA: mov      dword ptr [esp], eax
+6EC81BCD: call     0x6ec81874 ; -> mems_read_serial
+6EC81BD2: cmp      ax, 4
+6EC81BD6: je       0x6ec81bf3
+6EC81BD8: movzx    eax, byte ptr [ebp - 0xc]
+6EC81BDC: mov      dword ptr [esp + 4], eax
+6EC81BE0: mov      dword ptr [esp], 0x6ec851cc
+6EC81BE7: call     0x6ec83220
+6EC81BEC: mov      eax, 0
+6EC81BF1: jmp      0x6ec81bf8
+6EC81BF3: mov      eax, 1
+6EC81BF8: leave    
+6EC81BF9: ret      
+```
+
+### `mems_read_raw`
+
+```asm
+6EC81C49: push     ebp
+6EC81C4A: mov      ebp, esp
+6EC81C4C: sub      esp, 0x28
+6EC81C4F: mov      byte ptr [ebp - 9], 0
+6EC81C53: mov      eax, dword ptr [ebp + 8]
+6EC81C56: mov      dword ptr [esp], eax
+6EC81C59: call     0x6ec81bfa ; -> mems_lock
+6EC81C5E: test     al, al
+6EC81C60: je       0x6ec81d11
+6EC81C66: mov      dword ptr [esp + 4], 0x80
+6EC81C6E: mov      eax, dword ptr [ebp + 8]
+6EC81C71: mov      dword ptr [esp], eax
+6EC81C74: call     0x6ec819c6 ; -> mems_send_command
+6EC81C79: test     al, al
+6EC81C7B: je       0x6ec81cb1
+6EC81C7D: mov      dword ptr [esp + 8], 0x1c
+6EC81C85: mov      eax, dword ptr [ebp + 0xc]
+6EC81C88: mov      dword ptr [esp + 4], eax
+6EC81C8C: mov      eax, dword ptr [ebp + 8]
+6EC81C8F: mov      dword ptr [esp], eax
+6EC81C92: call     0x6ec81874 ; -> mems_read_serial
+6EC81C97: cmp      ax, 0x1c
+6EC81C9B: jne      0x6ec81ca3
+6EC81C9D: mov      byte ptr [ebp - 9], 1
+6EC81CA1: jmp      0x6ec81cbd
+6EC81CA3: mov      dword ptr [esp], 0x6ec8521c
+6EC81CAA: call     0x6ec83218
+6EC81CAF: jmp      0x6ec81cbd
+6EC81CB1: mov      dword ptr [esp], 0x6ec85260
+6EC81CB8: call     0x6ec83218
+6EC81CBD: cmp      byte ptr [ebp - 9], 0
+6EC81CC1: je       0x6ec81d06
+6EC81CC3: mov      dword ptr [esp + 4], 0x7d
+6EC81CCB: mov      eax, dword ptr [ebp + 8]
+6EC81CCE: mov      dword ptr [esp], eax
+6EC81CD1: call     0x6ec819c6 ; -> mems_send_command
+6EC81CD6: test     al, al
+6EC81CD8: je       0x6ec81cf6
+6EC81CDA: mov      dword ptr [esp + 8], 0x20
+6EC81CE2: mov      eax, dword ptr [ebp + 0x10]
+6EC81CE5: mov      dword ptr [esp + 4], eax
+6EC81CE9: mov      eax, dword ptr [ebp + 8]
+6EC81CEC: mov      dword ptr [esp], eax
+6EC81CEF: call     0x6ec81874 ; -> mems_read_serial
+6EC81CF4: jmp      0x6ec81d06
+6EC81CF6: mov      dword ptr [esp], 0x6ec85294
+6EC81CFD: call     0x6ec83218
+6EC81D02: mov      byte ptr [ebp - 9], 0
+6EC81D06: mov      eax, dword ptr [ebp + 8]
+6EC81D09: mov      dword ptr [esp], eax
+6EC81D0C: call     0x6ec81c2d ; -> mems_unlock
+6EC81D11: movzx    eax, byte ptr [ebp - 9]
+6EC81D15: leave    
+6EC81D16: ret      
+```
+
+### `mems_read`
+
+```asm
+6EC81D17: push     ebp
+6EC81D18: mov      ebp, esp
+6EC81D1A: sub      esp, 0x58
+6EC81D1D: mov      byte ptr [ebp - 9], 0
+6EC81D21: lea      eax, [ebp - 0x45]
+6EC81D24: mov      dword ptr [esp + 8], eax
+6EC81D28: lea      eax, [ebp - 0x25]
+6EC81D2B: mov      dword ptr [esp + 4], eax
+6EC81D2F: mov      eax, dword ptr [ebp + 8]
+6EC81D32: mov      dword ptr [esp], eax
+6EC81D35: call     0x6ec81c49 ; -> mems_read_raw
+6EC81D3A: test     al, al
+6EC81D3C: je       0x6ec82043
+6EC81D42: mov      dword ptr [esp + 8], 0x3c
+6EC81D4A: mov      dword ptr [esp + 4], 0
+6EC81D52: mov      eax, dword ptr [ebp + 0xc]
+6EC81D55: mov      dword ptr [esp], eax
+6EC81D58: call     0x6ec83228
+6EC81D5D: movzx    eax, byte ptr [ebp - 0x24]
+6EC81D61: movzx    eax, al
+6EC81D64: shl      eax, 8
+6EC81D67: mov      edx, eax
+6EC81D69: movzx    eax, byte ptr [ebp - 0x23]
+6EC81D6D: movzx    eax, al
+6EC81D70: or       eax, edx
+6EC81D72: mov      edx, eax
+6EC81D74: mov      eax, dword ptr [ebp + 0xc]
+6EC81D77: mov      word ptr [eax], dx
+6EC81D7A: movzx    edx, byte ptr [ebp - 0x22]
+6EC81D7E: mov      eax, dword ptr [ebp + 0xc]
+6EC81D81: mov      byte ptr [eax + 2], dl
+6EC81D84: movzx    edx, byte ptr [ebp - 0x21]
+6EC81D88: mov      eax, dword ptr [ebp + 0xc]
+6EC81D8B: mov      byte ptr [eax + 3], dl
+6EC81D8E: movzx    edx, byte ptr [ebp - 0x20]
+6EC81D92: mov      eax, dword ptr [ebp + 0xc]
+6EC81D95: mov      byte ptr [eax + 4], dl
+6EC81D98: movzx    edx, byte ptr [ebp - 0x1f]
+6EC81D9C: mov      eax, dword ptr [ebp + 0xc]
+6EC81D9F: mov      byte ptr [eax + 5], dl
+6EC81DA2: movzx    edx, byte ptr [ebp - 0x1e]
+6EC81DA6: mov      eax, dword ptr [ebp + 0xc]
+6EC81DA9: mov      byte ptr [eax + 6], dl
+6EC81DAC: movzx    edx, byte ptr [ebp - 0x1d]
+6EC81DB0: mov      eax, dword ptr [ebp + 0xc]
+6EC81DB3: mov      byte ptr [eax + 7], dl
+6EC81DB6: movzx    edx, byte ptr [ebp - 0x1c]
+6EC81DBA: mov      eax, dword ptr [ebp + 0xc]
+6EC81DBD: mov      byte ptr [eax + 8], dl
+6EC81DC0: movzx    edx, byte ptr [ebp - 0x1b]
+6EC81DC4: mov      eax, dword ptr [ebp + 0xc]
+6EC81DC7: mov      byte ptr [eax + 9], dl
+6EC81DCA: movzx    edx, byte ptr [ebp - 0x1a]
+6EC81DCE: mov      eax, dword ptr [ebp + 0xc]
+6EC81DD1: mov      byte ptr [eax + 0xa], dl
+6EC81DD4: movzx    edx, byte ptr [ebp - 0x19]
+6EC81DD8: mov      eax, dword ptr [ebp + 0xc]
+6EC81DDB: mov      byte ptr [eax + 0xb], dl
+6EC81DDE: mov      eax, dword ptr [ebp + 0xc]
+6EC81DE1: mov      byte ptr [eax + 0xc], 0
+6EC81DE5: movzx    edx, byte ptr [ebp - 0x16]
+6EC81DE9: mov      eax, dword ptr [ebp + 0xc]
+6EC81DEC: mov      byte ptr [eax + 0xd], dl
+6EC81DEF: movzx    edx, byte ptr [ebp - 0x15]
+6EC81DF3: mov      eax, dword ptr [ebp + 0xc]
+6EC81DF6: mov      byte ptr [eax + 0xe], dl
+6EC81DF9: movzx    edx, byte ptr [ebp - 0x14]
+6EC81DFD: mov      eax, dword ptr [ebp + 0xc]
+6EC81E00: mov      byte ptr [eax + 0xf], dl
+6EC81E03: movzx    edx, byte ptr [ebp - 0x13]
+6EC81E07: mov      eax, dword ptr [ebp + 0xc]
+6EC81E0A: mov      byte ptr [eax + 0x10], dl
+6EC81E0D: movzx    eax, byte ptr [ebp - 0x12]
+6EC81E11: movzx    eax, al
+6EC81E14: shl      eax, 8
+6EC81E17: mov      edx, eax
+6EC81E19: movzx    eax, byte ptr [ebp - 0x11]
+6EC81E1D: movzx    eax, al
+6EC81E20: or       eax, edx
+6EC81E22: mov      edx, eax
+6EC81E24: mov      eax, dword ptr [ebp + 0xc]
+6EC81E27: mov      word ptr [eax + 0x12], dx
+6EC81E2B: movzx    edx, byte ptr [ebp - 0x10]
+6EC81E2F: mov      eax, dword ptr [ebp + 0xc]
+6EC81E32: mov      byte ptr [eax + 0x14], dl
+6EC81E35: movzx    edx, byte ptr [ebp - 0xf]
+6EC81E39: mov      eax, dword ptr [ebp + 0xc]
+6EC81E3C: mov      byte ptr [eax + 0x15], dl
+6EC81E3F: movzx    eax, byte ptr [ebp - 0xe]
+6EC81E43: movzx    eax, al
+6EC81E46: shl      eax, 8
+6EC81E49: mov      edx, eax
+6EC81E4B: movzx    eax, byte ptr [ebp - 0xd]
+6EC81E4F: movzx    eax, al
+6EC81E52: or       eax, edx
+6EC81E54: mov      edx, eax
+6EC81E56: mov      eax, dword ptr [ebp + 0xc]
+6EC81E59: mov      word ptr [eax + 0x16], dx
+6EC81E5D: movzx    edx, byte ptr [ebp - 0xc]
+6EC81E61: mov      eax, dword ptr [ebp + 0xc]
+6EC81E64: mov      byte ptr [eax + 0x18], dl
+6EC81E67: movzx    edx, byte ptr [ebp - 0xb]
+6EC81E6B: mov      eax, dword ptr [ebp + 0xc]
+6EC81E6E: mov      byte ptr [eax + 0x19], dl
+6EC81E71: movzx    edx, byte ptr [ebp - 0xa]
+6EC81E75: mov      eax, dword ptr [ebp + 0xc]
+6EC81E78: mov      byte ptr [eax + 0x1a], dl
+6EC81E7B: movzx    edx, byte ptr [ebp - 0x44]
+6EC81E7F: mov      eax, dword ptr [ebp + 0xc]
+6EC81E82: mov      byte ptr [eax + 0x1b], dl
+6EC81E85: movzx    edx, byte ptr [ebp - 0x43]
+6EC81E89: mov      eax, dword ptr [ebp + 0xc]
+6EC81E8C: mov      byte ptr [eax + 0x1c], dl
+6EC81E8F: movzx    edx, byte ptr [ebp - 0x42]
+6EC81E93: mov      eax, dword ptr [ebp + 0xc]
+6EC81E96: mov      byte ptr [eax + 0x1d], dl
+6EC81E99: movzx    edx, byte ptr [ebp - 0x41]
+6EC81E9D: mov      eax, dword ptr [ebp + 0xc]
+6EC81EA0: mov      byte ptr [eax + 0x1e], dl
+6EC81EA3: movzx    edx, byte ptr [ebp - 0x40]
+6EC81EA7: mov      eax, dword ptr [ebp + 0xc]
+6EC81EAA: mov      byte ptr [eax + 0x1f], dl
+6EC81EAD: movzx    edx, byte ptr [ebp - 0x3f]
+6EC81EB1: mov      eax, dword ptr [ebp + 0xc]
+6EC81EB4: mov      byte ptr [eax + 0x20], dl
+6EC81EB7: movzx    edx, byte ptr [ebp - 0x3e]
+6EC81EBB: mov      eax, dword ptr [ebp + 0xc]
+6EC81EBE: mov      byte ptr [eax + 0x21], dl
+6EC81EC1: movzx    edx, byte ptr [ebp - 0x3d]
+6EC81EC5: mov      eax, dword ptr [ebp + 0xc]
+6EC81EC8: mov      byte ptr [eax + 0x22], dl
+6EC81ECB: movzx    edx, byte ptr [ebp - 0x3c]
+6EC81ECF: mov      eax, dword ptr [ebp + 0xc]
+6EC81ED2: mov      byte ptr [eax + 0x23], dl
+6EC81ED5: movzx    edx, byte ptr [ebp - 0x3b]
+6EC81ED9: mov      eax, dword ptr [ebp + 0xc]
+6EC81EDC: mov      byte ptr [eax + 0x24], dl
+6EC81EDF: movzx    edx, byte ptr [ebp - 0x3a]
+6EC81EE3: mov      eax, dword ptr [ebp + 0xc]
+6EC81EE6: mov      byte ptr [eax + 0x25], dl
+6EC81EE9: movzx    edx, byte ptr [ebp - 0x39]
+6EC81EED: mov      eax, dword ptr [ebp + 0xc]
+6EC81EF0: mov      byte ptr [eax + 0x26], dl
+6EC81EF3: movzx    edx, byte ptr [ebp - 0x38]
+6EC81EF7: mov      eax, dword ptr [ebp + 0xc]
+6EC81EFA: mov      byte ptr [eax + 0x27], dl
+6EC81EFD: movzx    edx, byte ptr [ebp - 0x37]
+6EC81F01: mov      eax, dword ptr [ebp + 0xc]
+6EC81F04: mov      byte ptr [eax + 0x28], dl
+6EC81F07: movzx    edx, byte ptr [ebp - 0x36]
+6EC81F0B: mov      eax, dword ptr [ebp + 0xc]
+6EC81F0E: mov      byte ptr [eax + 0x29], dl
+6EC81F11: movzx    edx, byte ptr [ebp - 0x35]
+6EC81F15: mov      eax, dword ptr [ebp + 0xc]
+6EC81F18: mov      byte ptr [eax + 0x2a], dl
+6EC81F1B: movzx    edx, byte ptr [ebp - 0x34]
+6EC81F1F: mov      eax, dword ptr [ebp + 0xc]
+6EC81F22: mov      byte ptr [eax + 0x2b], dl
+6EC81F25: movzx    edx, byte ptr [ebp - 0x33]
+6EC81F29: mov      eax, dword ptr [ebp + 0xc]
+6EC81F2C: mov      byte ptr [eax + 0x2c], dl
+6EC81F2F: movzx    edx, byte ptr [ebp - 0x32]
+6EC81F33: mov      eax, dword ptr [ebp + 0xc]
+6EC81F36: mov      byte ptr [eax + 0x2d], dl
+6EC81F39: movzx    edx, byte ptr [ebp - 0x31]
+6EC81F3D: mov      eax, dword ptr [ebp + 0xc]
+6EC81F40: mov      byte ptr [eax + 0x2e], dl
+6EC81F43: movzx    edx, byte ptr [ebp - 0x30]
+6EC81F47: mov      eax, dword ptr [ebp + 0xc]
+6EC81F4A: mov      byte ptr [eax + 0x2f], dl
+6EC81F4D: movzx    edx, byte ptr [ebp - 0x2f]
+6EC81F51: mov      eax, dword ptr [ebp + 0xc]
+6EC81F54: mov      byte ptr [eax + 0x30], dl
+6EC81F57: movzx    edx, byte ptr [ebp - 0x2e]
+6EC81F5B: mov      eax, dword ptr [ebp + 0xc]
+6EC81F5E: mov      byte ptr [eax + 0x31], dl
+6EC81F61: movzx    edx, byte ptr [ebp - 0x2d]
+6EC81F65: mov      eax, dword ptr [ebp + 0xc]
+6EC81F68: mov      byte ptr [eax + 0x32], dl
+6EC81F6B: movzx    edx, byte ptr [ebp - 0x2c]
+6EC81F6F: mov      eax, dword ptr [ebp + 0xc]
+6EC81F72: mov      byte ptr [eax + 0x33], dl
+6EC81F75: movzx    edx, byte ptr [ebp - 0x2b]
+6EC81F79: mov      eax, dword ptr [ebp + 0xc]
+6EC81F7C: mov      byte ptr [eax + 0x34], dl
+6EC81F7F: movzx    edx, byte ptr [ebp - 0x2a]
+6EC81F83: mov      eax, dword ptr [ebp + 0xc]
+6EC81F86: mov      byte ptr [eax + 0x35], dl
+6EC81F89: movzx    edx, byte ptr [ebp - 0x29]
+6EC81F8D: mov      eax, dword ptr [ebp + 0xc]
+6EC81F90: mov      byte ptr [eax + 0x36], dl
+6EC81F93: movzx    edx, byte ptr [ebp - 0x28]
+6EC81F97: mov      eax, dword ptr [ebp + 0xc]
+6EC81F9A: mov      byte ptr [eax + 0x37], dl
+6EC81F9D: movzx    edx, byte ptr [ebp - 0x27]
+6EC81FA1: mov      eax, dword ptr [ebp + 0xc]
+6EC81FA4: mov      byte ptr [eax + 0x38], dl
+6EC81FA7: movzx    edx, byte ptr [ebp - 0x26]
+6EC81FAB: mov      eax, dword ptr [ebp + 0xc]
+6EC81FAE: mov      byte ptr [eax + 0x39], dl
+6EC81FB1: movzx    edx, byte ptr [ebp - 0x18]
+6EC81FB5: mov      eax, dword ptr [ebp + 0xc]
+6EC81FB8: mov      byte ptr [eax + 0x3a], dl
+6EC81FBB: movzx    edx, byte ptr [ebp - 0x17]
+6EC81FBF: mov      eax, dword ptr [ebp + 0xc]
+6EC81FC2: mov      byte ptr [eax + 0x3b], dl
+6EC81FC5: movzx    eax, byte ptr [ebp - 0x18]
+6EC81FC9: movzx    eax, al
+6EC81FCC: and      eax, 1
+6EC81FCF: test     eax, eax
+6EC81FD1: je       0x6ec81fe5
+6EC81FD3: mov      eax, dword ptr [ebp + 0xc]
+6EC81FD6: movzx    eax, byte ptr [eax + 0xc]
+6EC81FDA: or       eax, 1
+6EC81FDD: mov      edx, eax
+6EC81FDF: mov      eax, dword ptr [ebp + 0xc]
+6EC81FE2: mov      byte ptr [eax + 0xc], dl
+6EC81FE5: movzx    eax, byte ptr [ebp - 0x18]
+6EC81FE9: movzx    eax, al
+6EC81FEC: and      eax, 2
+6EC81FEF: test     eax, eax
+6EC81FF1: je       0x6ec82005
+6EC81FF3: mov      eax, dword ptr [ebp + 0xc]
+6EC81FF6: movzx    eax, byte ptr [eax + 0xc]
+6EC81FFA: or       eax, 2
+6EC81FFD: mov      edx, eax
+6EC81FFF: mov      eax, dword ptr [ebp + 0xc]
+6EC82002: mov      byte ptr [eax + 0xc], dl
+6EC82005: movzx    eax, byte ptr [ebp - 0x17]
+6EC82009: movzx    eax, al
+6EC8200C: and      eax, 2
+6EC8200F: test     eax, eax
+6EC82011: je       0x6ec82025
+6EC82013: mov      eax, dword ptr [ebp + 0xc]
+6EC82016: movzx    eax, byte ptr [eax + 0xc]
+6EC8201A: or       eax, 4
+6EC8201D: mov      edx, eax
+6EC8201F: mov      eax, dword ptr [ebp + 0xc]
+6EC82022: mov      byte ptr [eax + 0xc], dl
+6EC82025: movzx    eax, byte ptr [ebp - 0x17]
+6EC82029: test     al, al
+6EC8202B: jns      0x6ec8203f
+6EC8202D: mov      eax, dword ptr [ebp + 0xc]
+6EC82030: movzx    eax, byte ptr [eax + 0xc]
+6EC82034: or       eax, 8
+6EC82037: mov      edx, eax
+6EC82039: mov      eax, dword ptr [ebp + 0xc]
+6EC8203C: mov      byte ptr [eax + 0xc], dl
+6EC8203F: mov      byte ptr [ebp - 9], 1
+6EC82043: movzx    eax, byte ptr [ebp - 9]
+6EC82047: leave    
+6EC82048: ret      
 ```
 
 ### `mems_reset_ECU`
@@ -299,7 +646,9 @@
 | Fonction | Valeurs immédiates 8-bit/32-bit observées dans les ~12 instructions avant un appel direct à `mems_send_command` |
 |---|---|
 | `mems_get_lib_version` | — |
-| `mems_init_link` | 0x28, 0xCA, 0x75, 0xF4, 0xD0, 0x00 |
+| `mems_init_link` | 0x28, 0xCA, 0x75, 0xF4, 0xD0, 0x00, 0x01 |
+| `mems_read_raw` | 0x28, 0x00, 0x80, 0x01, 0x7D |
+| `mems_read` | — |
 | `mems_reset_ECU` | 0x28, 0x00, 0xFF, 0xFA |
 | `mems_reset_adjustments` | 0x28, 0x00, 0xFF, 0x0F |
 | `mems_clear_faults` | 0x28, 0x00, 0xFF, 0xCC |
@@ -537,6 +886,34 @@
 6EC81800: call     eax
 6EC81802: sub      esp, 8
 6EC81805: cmp      eax, 1
+6EC81808: jne      0x6ec81841
+6EC8180A: mov      dword ptr [ebp - 0x3c], 0x64
+6EC81811: mov      dword ptr [ebp - 0x38], 0
+6EC81818: mov      dword ptr [ebp - 0x34], 0x64
+6EC8181F: mov      eax, dword ptr [ebp + 8]
+6EC81822: mov      eax, dword ptr [eax]
+6EC81824: lea      edx, [ebp - 0x3c]
+6EC81827: mov      dword ptr [esp + 4], edx
+6EC8182B: mov      dword ptr [esp], eax
+6EC8182E: mov      eax, dword ptr [0x6ec8916c]
+6EC81833: call     eax
+6EC81835: sub      esp, 8
+6EC81838: cmp      eax, 1
+6EC8183B: jne      0x6ec81841
+6EC8183D: mov      byte ptr [ebp - 9], 1
+6EC81841: movzx    eax, byte ptr [ebp - 9]
+6EC81845: xor      eax, 1
+6EC81848: test     al, al
+6EC8184A: je       0x6ec8185e
+6EC8184C: mov      eax, dword ptr [ebp + 8]
+6EC8184F: mov      eax, dword ptr [eax]
+6EC81851: mov      dword ptr [esp], eax
+6EC81854: mov      eax, dword ptr [0x6ec89110]
+6EC81859: call     eax
+6EC8185B: sub      esp, 4
+6EC8185E: movzx    eax, byte ptr [ebp - 9]
+6EC81862: leave    
+6EC81863: ret      
 ```
 
 ### Ordinal 9 — `mems_is_connected` — RVA `0x00001864`
@@ -784,6 +1161,37 @@
 6EC81B77: call     0x6ec83220
 6EC81B7C: mov      eax, 0
 6EC81B81: jmp      0x6ec81bf8
+6EC81B83: movzx    eax, byte ptr [ebp - 0xc]
+6EC81B87: mov      dword ptr [esp + 4], eax
+6EC81B8B: mov      eax, dword ptr [ebp + 8]
+6EC81B8E: mov      dword ptr [esp], eax
+6EC81B91: call     0x6ec819c6 ; -> mems_send_command
+6EC81B96: xor      eax, 1
+6EC81B99: test     al, al
+6EC81B9B: je       0x6ec81bb8
+6EC81B9D: movzx    eax, byte ptr [ebp - 0xc]
+6EC81BA1: mov      dword ptr [esp + 4], eax
+6EC81BA5: mov      dword ptr [esp], 0x6ec85158
+6EC81BAC: call     0x6ec83220
+6EC81BB1: mov      eax, 0
+6EC81BB6: jmp      0x6ec81bf8
+6EC81BB8: mov      dword ptr [esp + 8], 4
+6EC81BC0: mov      eax, dword ptr [ebp + 0xc]
+6EC81BC3: mov      dword ptr [esp + 4], eax
+6EC81BC7: mov      eax, dword ptr [ebp + 8]
+6EC81BCA: mov      dword ptr [esp], eax
+6EC81BCD: call     0x6ec81874 ; -> mems_read_serial
+6EC81BD2: cmp      ax, 4
+6EC81BD6: je       0x6ec81bf3
+6EC81BD8: movzx    eax, byte ptr [ebp - 0xc]
+6EC81BDC: mov      dword ptr [esp + 4], eax
+6EC81BE0: mov      dword ptr [esp], 0x6ec851cc
+6EC81BE7: call     0x6ec83220
+6EC81BEC: mov      eax, 0
+6EC81BF1: jmp      0x6ec81bf8
+6EC81BF3: mov      eax, 1
+6EC81BF8: leave    
+6EC81BF9: ret      
 ```
 
 ### Ordinal 10 — `mems_lock` — RVA `0x00001BFA`
@@ -962,6 +1370,183 @@
 6EC81E0D: movzx    eax, byte ptr [ebp - 0x12]
 6EC81E11: movzx    eax, al
 6EC81E14: shl      eax, 8
+6EC81E17: mov      edx, eax
+6EC81E19: movzx    eax, byte ptr [ebp - 0x11]
+6EC81E1D: movzx    eax, al
+6EC81E20: or       eax, edx
+6EC81E22: mov      edx, eax
+6EC81E24: mov      eax, dword ptr [ebp + 0xc]
+6EC81E27: mov      word ptr [eax + 0x12], dx
+6EC81E2B: movzx    edx, byte ptr [ebp - 0x10]
+6EC81E2F: mov      eax, dword ptr [ebp + 0xc]
+6EC81E32: mov      byte ptr [eax + 0x14], dl
+6EC81E35: movzx    edx, byte ptr [ebp - 0xf]
+6EC81E39: mov      eax, dword ptr [ebp + 0xc]
+6EC81E3C: mov      byte ptr [eax + 0x15], dl
+6EC81E3F: movzx    eax, byte ptr [ebp - 0xe]
+6EC81E43: movzx    eax, al
+6EC81E46: shl      eax, 8
+6EC81E49: mov      edx, eax
+6EC81E4B: movzx    eax, byte ptr [ebp - 0xd]
+6EC81E4F: movzx    eax, al
+6EC81E52: or       eax, edx
+6EC81E54: mov      edx, eax
+6EC81E56: mov      eax, dword ptr [ebp + 0xc]
+6EC81E59: mov      word ptr [eax + 0x16], dx
+6EC81E5D: movzx    edx, byte ptr [ebp - 0xc]
+6EC81E61: mov      eax, dword ptr [ebp + 0xc]
+6EC81E64: mov      byte ptr [eax + 0x18], dl
+6EC81E67: movzx    edx, byte ptr [ebp - 0xb]
+6EC81E6B: mov      eax, dword ptr [ebp + 0xc]
+6EC81E6E: mov      byte ptr [eax + 0x19], dl
+6EC81E71: movzx    edx, byte ptr [ebp - 0xa]
+6EC81E75: mov      eax, dword ptr [ebp + 0xc]
+6EC81E78: mov      byte ptr [eax + 0x1a], dl
+6EC81E7B: movzx    edx, byte ptr [ebp - 0x44]
+6EC81E7F: mov      eax, dword ptr [ebp + 0xc]
+6EC81E82: mov      byte ptr [eax + 0x1b], dl
+6EC81E85: movzx    edx, byte ptr [ebp - 0x43]
+6EC81E89: mov      eax, dword ptr [ebp + 0xc]
+6EC81E8C: mov      byte ptr [eax + 0x1c], dl
+6EC81E8F: movzx    edx, byte ptr [ebp - 0x42]
+6EC81E93: mov      eax, dword ptr [ebp + 0xc]
+6EC81E96: mov      byte ptr [eax + 0x1d], dl
+6EC81E99: movzx    edx, byte ptr [ebp - 0x41]
+6EC81E9D: mov      eax, dword ptr [ebp + 0xc]
+6EC81EA0: mov      byte ptr [eax + 0x1e], dl
+6EC81EA3: movzx    edx, byte ptr [ebp - 0x40]
+6EC81EA7: mov      eax, dword ptr [ebp + 0xc]
+6EC81EAA: mov      byte ptr [eax + 0x1f], dl
+6EC81EAD: movzx    edx, byte ptr [ebp - 0x3f]
+6EC81EB1: mov      eax, dword ptr [ebp + 0xc]
+6EC81EB4: mov      byte ptr [eax + 0x20], dl
+6EC81EB7: movzx    edx, byte ptr [ebp - 0x3e]
+6EC81EBB: mov      eax, dword ptr [ebp + 0xc]
+6EC81EBE: mov      byte ptr [eax + 0x21], dl
+6EC81EC1: movzx    edx, byte ptr [ebp - 0x3d]
+6EC81EC5: mov      eax, dword ptr [ebp + 0xc]
+6EC81EC8: mov      byte ptr [eax + 0x22], dl
+6EC81ECB: movzx    edx, byte ptr [ebp - 0x3c]
+6EC81ECF: mov      eax, dword ptr [ebp + 0xc]
+6EC81ED2: mov      byte ptr [eax + 0x23], dl
+6EC81ED5: movzx    edx, byte ptr [ebp - 0x3b]
+6EC81ED9: mov      eax, dword ptr [ebp + 0xc]
+6EC81EDC: mov      byte ptr [eax + 0x24], dl
+6EC81EDF: movzx    edx, byte ptr [ebp - 0x3a]
+6EC81EE3: mov      eax, dword ptr [ebp + 0xc]
+6EC81EE6: mov      byte ptr [eax + 0x25], dl
+6EC81EE9: movzx    edx, byte ptr [ebp - 0x39]
+6EC81EED: mov      eax, dword ptr [ebp + 0xc]
+6EC81EF0: mov      byte ptr [eax + 0x26], dl
+6EC81EF3: movzx    edx, byte ptr [ebp - 0x38]
+6EC81EF7: mov      eax, dword ptr [ebp + 0xc]
+6EC81EFA: mov      byte ptr [eax + 0x27], dl
+6EC81EFD: movzx    edx, byte ptr [ebp - 0x37]
+6EC81F01: mov      eax, dword ptr [ebp + 0xc]
+6EC81F04: mov      byte ptr [eax + 0x28], dl
+6EC81F07: movzx    edx, byte ptr [ebp - 0x36]
+6EC81F0B: mov      eax, dword ptr [ebp + 0xc]
+6EC81F0E: mov      byte ptr [eax + 0x29], dl
+6EC81F11: movzx    edx, byte ptr [ebp - 0x35]
+6EC81F15: mov      eax, dword ptr [ebp + 0xc]
+6EC81F18: mov      byte ptr [eax + 0x2a], dl
+6EC81F1B: movzx    edx, byte ptr [ebp - 0x34]
+6EC81F1F: mov      eax, dword ptr [ebp + 0xc]
+6EC81F22: mov      byte ptr [eax + 0x2b], dl
+6EC81F25: movzx    edx, byte ptr [ebp - 0x33]
+6EC81F29: mov      eax, dword ptr [ebp + 0xc]
+6EC81F2C: mov      byte ptr [eax + 0x2c], dl
+6EC81F2F: movzx    edx, byte ptr [ebp - 0x32]
+6EC81F33: mov      eax, dword ptr [ebp + 0xc]
+6EC81F36: mov      byte ptr [eax + 0x2d], dl
+6EC81F39: movzx    edx, byte ptr [ebp - 0x31]
+6EC81F3D: mov      eax, dword ptr [ebp + 0xc]
+6EC81F40: mov      byte ptr [eax + 0x2e], dl
+6EC81F43: movzx    edx, byte ptr [ebp - 0x30]
+6EC81F47: mov      eax, dword ptr [ebp + 0xc]
+6EC81F4A: mov      byte ptr [eax + 0x2f], dl
+6EC81F4D: movzx    edx, byte ptr [ebp - 0x2f]
+6EC81F51: mov      eax, dword ptr [ebp + 0xc]
+6EC81F54: mov      byte ptr [eax + 0x30], dl
+6EC81F57: movzx    edx, byte ptr [ebp - 0x2e]
+6EC81F5B: mov      eax, dword ptr [ebp + 0xc]
+6EC81F5E: mov      byte ptr [eax + 0x31], dl
+6EC81F61: movzx    edx, byte ptr [ebp - 0x2d]
+6EC81F65: mov      eax, dword ptr [ebp + 0xc]
+6EC81F68: mov      byte ptr [eax + 0x32], dl
+6EC81F6B: movzx    edx, byte ptr [ebp - 0x2c]
+6EC81F6F: mov      eax, dword ptr [ebp + 0xc]
+6EC81F72: mov      byte ptr [eax + 0x33], dl
+6EC81F75: movzx    edx, byte ptr [ebp - 0x2b]
+6EC81F79: mov      eax, dword ptr [ebp + 0xc]
+6EC81F7C: mov      byte ptr [eax + 0x34], dl
+6EC81F7F: movzx    edx, byte ptr [ebp - 0x2a]
+6EC81F83: mov      eax, dword ptr [ebp + 0xc]
+6EC81F86: mov      byte ptr [eax + 0x35], dl
+6EC81F89: movzx    edx, byte ptr [ebp - 0x29]
+6EC81F8D: mov      eax, dword ptr [ebp + 0xc]
+6EC81F90: mov      byte ptr [eax + 0x36], dl
+6EC81F93: movzx    edx, byte ptr [ebp - 0x28]
+6EC81F97: mov      eax, dword ptr [ebp + 0xc]
+6EC81F9A: mov      byte ptr [eax + 0x37], dl
+6EC81F9D: movzx    edx, byte ptr [ebp - 0x27]
+6EC81FA1: mov      eax, dword ptr [ebp + 0xc]
+6EC81FA4: mov      byte ptr [eax + 0x38], dl
+6EC81FA7: movzx    edx, byte ptr [ebp - 0x26]
+6EC81FAB: mov      eax, dword ptr [ebp + 0xc]
+6EC81FAE: mov      byte ptr [eax + 0x39], dl
+6EC81FB1: movzx    edx, byte ptr [ebp - 0x18]
+6EC81FB5: mov      eax, dword ptr [ebp + 0xc]
+6EC81FB8: mov      byte ptr [eax + 0x3a], dl
+6EC81FBB: movzx    edx, byte ptr [ebp - 0x17]
+6EC81FBF: mov      eax, dword ptr [ebp + 0xc]
+6EC81FC2: mov      byte ptr [eax + 0x3b], dl
+6EC81FC5: movzx    eax, byte ptr [ebp - 0x18]
+6EC81FC9: movzx    eax, al
+6EC81FCC: and      eax, 1
+6EC81FCF: test     eax, eax
+6EC81FD1: je       0x6ec81fe5
+6EC81FD3: mov      eax, dword ptr [ebp + 0xc]
+6EC81FD6: movzx    eax, byte ptr [eax + 0xc]
+6EC81FDA: or       eax, 1
+6EC81FDD: mov      edx, eax
+6EC81FDF: mov      eax, dword ptr [ebp + 0xc]
+6EC81FE2: mov      byte ptr [eax + 0xc], dl
+6EC81FE5: movzx    eax, byte ptr [ebp - 0x18]
+6EC81FE9: movzx    eax, al
+6EC81FEC: and      eax, 2
+6EC81FEF: test     eax, eax
+6EC81FF1: je       0x6ec82005
+6EC81FF3: mov      eax, dword ptr [ebp + 0xc]
+6EC81FF6: movzx    eax, byte ptr [eax + 0xc]
+6EC81FFA: or       eax, 2
+6EC81FFD: mov      edx, eax
+6EC81FFF: mov      eax, dword ptr [ebp + 0xc]
+6EC82002: mov      byte ptr [eax + 0xc], dl
+6EC82005: movzx    eax, byte ptr [ebp - 0x17]
+6EC82009: movzx    eax, al
+6EC8200C: and      eax, 2
+6EC8200F: test     eax, eax
+6EC82011: je       0x6ec82025
+6EC82013: mov      eax, dword ptr [ebp + 0xc]
+6EC82016: movzx    eax, byte ptr [eax + 0xc]
+6EC8201A: or       eax, 4
+6EC8201D: mov      edx, eax
+6EC8201F: mov      eax, dword ptr [ebp + 0xc]
+6EC82022: mov      byte ptr [eax + 0xc], dl
+6EC82025: movzx    eax, byte ptr [ebp - 0x17]
+6EC82029: test     al, al
+6EC8202B: jns      0x6ec8203f
+6EC8202D: mov      eax, dword ptr [ebp + 0xc]
+6EC82030: movzx    eax, byte ptr [eax + 0xc]
+6EC82034: or       eax, 8
+6EC82037: mov      edx, eax
+6EC82039: mov      eax, dword ptr [ebp + 0xc]
+6EC8203C: mov      byte ptr [eax + 0xc], dl
+6EC8203F: mov      byte ptr [ebp - 9], 1
+6EC82043: movzx    eax, byte ptr [ebp - 9]
+6EC82047: leave    
+6EC82048: ret      
 ```
 
 ### Ordinal 14 — `mems_read_iac_position` — RVA `0x00002049`
