@@ -7,7 +7,7 @@
 > Ce rapport est volontairement en **Markdown lisible directement sur GitHub**. Il ne doit pas être remplacé par un format encodé ou opaque.
 > La branche `RAPPORT` sert au suivi et à la transmission entre discussions. Elle ne doit pas servir à modifier le programme de production sauf demande explicite.
 
-Dernière mise à jour : **24 août 2026 — premier essai réel x64 sur PC vierge : application stable, IA locale absente comme prévu ; piste environnement/IA pour le plantage du PC principal**
+Dernière mise à jour : **24 août 2026 — essai étendu de la dernière x64 sur PC secondaire : application stable sur tous les onglets testés, IA locale absente du package, défauts d'encodage et responsive observés mais non traités pour l'instant**
 
 ---
 
@@ -369,3 +369,38 @@ Lecture technique importante :
 - sur le PC principal, il faut maintenant vérifier si un ancien runtime/modèle est découvert via un dossier résiduel, une variable d’environnement, un `llama-server.exe` déjà présent ou un serveur déjà actif sur `127.0.0.1:18089`.
 
 **Prochaine vérification diagnostique avant toute modification du programme : comparer le comportement du PC principal avec le moteur IA totalement neutralisé, puis seulement si nécessaire isoler la cause exacte dans le runtime IA / environnement Windows.**
+
+---
+
+## 13. Essai étendu de la dernière x64 sur le PC secondaire — 24 août 2026
+
+L’utilisateur a ensuite parcouru pratiquement toute l’interface de la dernière version x64 **v1.0.4** sur le même PC secondaire, en affichage **1920×1080**.
+
+Captures fournies pour les onglets :
+
+- Aperçu ;
+- Injection ;
+- Réglages ;
+- Actionneurs ;
+- Erreurs ;
+- Diagnostic automatique ;
+- IA MEMS ;
+- Analyse ;
+- Toutes les mesures ;
+- ECU / ROSCO ;
+- Toutes les données ;
+- Base de données ;
+- Mode interactif ;
+- Test ECU 1.9.
+
+Résultat principal :
+
+- l’application **reste ouverte pendant cette navigation étendue** ;
+- aucun plantage n’est observé pendant le passage entre ces onglets ;
+- la base de données affiche bien **85 références ECU**, **140 affectations véhicule** et **91 commandes**, cohérents avec les validations du package ;
+- l’onglet IA reste en mode de secours car le package ne contient toujours pas le runtime llama.cpp : `Moteur llama.cpp local absent du dossier IA.` ;
+- malgré l’absence du LLM local, certaines réponses déterministes fonctionnent, notamment la date courante et la plage de dwell bobine **1,9 à 3,1 ms vers 14 V** ;
+- les défauts d'encodage UTF-8/mojibake sont largement visibles dans l’IA et aussi dans certaines chaînes ECU/ROSCO ;
+- en **1920×1080**, plusieurs zones montrent encore des problèmes de responsive / largeur / rognage, notamment certaines pages Réglages, Actionneurs, ECU/ROSCO et des titres de l’onglet Injection. L’utilisateur précise que ce défaut est bien réel mais **ce n’est pas la priorité actuelle** : ne pas engager de refonte responsive maintenant.
+
+Cette série de captures renforce donc la conclusion suivante : **sur le PC secondaire propre, le binaire x64 lui-même et la navigation générale sont stables ; le problème de fermeture observé sur le PC principal reste à isoler séparément, avec priorité au contexte local du PC principal et à l’environnement IA.**
