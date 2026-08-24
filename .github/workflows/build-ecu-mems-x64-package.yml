@@ -1,0 +1,283 @@
+name: Build ECU MEMS Manager x64 portable test package
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [MEMSX64]
+    paths:
+      - '.github/workflows/build-ecu-mems-x64-package.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build-package-x64:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout MEMSX64
+        uses: actions/checkout@v4
+        with:
+          ref: MEMSX64
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install build and PE validation tools
+        shell: pwsh
+        run: |
+          python -m pip install --disable-pip-version-check aqtinstall pefile
+
+      - name: Install Qt 5.15.2 MSVC 2019 x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt
+          if (-not (Test-Path 'C:\Qt\5.15.2\msvc2019_64\lib\cmake\Qt5\Qt5Config.cmake')) {
+            throw 'Qt 5.15.2 MSVC x64 installation incomplete'
+          }
+
+      - name: Configure native x64 application
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake -S . -B build-package-x64 -A x64 `
+            -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
+            -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
+            -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF
+
+      - name: Build native x64 application
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake --build build-package-x64 --config Release --target ecu_mems_manager
+
+      - name: Assemble portable x64 test package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
+          $qtBin = Join-Path $qtRoot 'bin'
+          $qtPlugins = Join-Path $qtRoot 'plugins'
+          $build = '${{ github.workspace }}\build-package-x64'
+          $dist = '${{ github.workspace }}\dist-x64'
+          $app = Join-Path $build 'Release\ecu_mems_manager.exe'
+          $protocol = Join-Path $build 'librosco-x64\Release\mems_manager_x64.dll'
+
+          if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }
+          New-Item -ItemType Directory -Path $dist | Out-Null
+
+          foreach ($src in @($app, $protocol)) {
+            if (-not (Test-Path $src)) { throw "Required x64 binary missing: $src" }
+          }
+          Copy-Item $app (Join-Path $dist 'ecu_mems_manager.exe') -Force
+          Copy-Item $protocol (Join-Path $dist 'mems_manager_x64.dll') -Force
+
+          # Deploy Qt and the Microsoft compiler runtime for a portable Windows test folder.
+          & (Join-Path $qtBin 'windeployqt.exe') `
+            --release `
+            --compiler-runtime `
+            --no-translations `
+            --dir $dist `
+            (Join-Path $dist 'ecu_mems_manager.exe')
+          if ($LASTEXITCODE -ne 0) { throw "windeployqt failed with code $LASTEXITCODE" }
+
+          # The application expects its own JSON translations generated/copied by CMake.
+          $translations = Join-Path $build 'translations'
+          if (-not (Test-Path $translations)) { throw 'Generated application translations are missing' }
+          Copy-Item $translations (Join-Path $dist 'translations') -Recurse -Force
+
+          # The offline MEMS reference database generated/copied by CMake must travel with the application.
+          $database = Join-Path $build 'database'
+          if (-not (Test-Path (Join-Path $database 'reference'))) { throw 'Generated offline MEMS database is missing' }
+          Copy-Item $database (Join-Path $dist 'database') -Recurse -Force
+
+          # Ensure SQLite plugin is present even if windeployqt did not infer it.
+          $sqliteDst = Join-Path $dist 'sqldrivers\qsqlite.dll'
+          if (-not (Test-Path $sqliteDst)) {
+            New-Item -ItemType Directory -Path (Split-Path $sqliteDst) -Force | Out-Null
+            Copy-Item (Join-Path $qtPlugins 'sqldrivers\qsqlite.dll') $sqliteDst -Force
+          }
+
+          # This x64 package must never contain the historical x86 protocol DLL.
+          $oldRosco = Get-ChildItem $dist -Recurse -File -Filter 'librosco.dll' -ErrorAction SilentlyContinue
+          if ($oldRosco) { throw "Historical x86 librosco.dll found in x64 package: $($oldRosco.FullName -join ', ')" }
+
+          @(
+            'ECU MEMS MANAGER x64 TEST PACKAGE',
+            'This is a portable x64 validation package.',
+            'It does not replace the current 32-bit installation.',
+            'Protocol DLL: mems_manager_x64.dll',
+            'Historical librosco.dll: intentionally absent'
+          ) | Set-Content -Path (Join-Path $dist 'README_X64_TEST.txt') -Encoding UTF8
+
+      - name: Validate package architecture and required content
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:DIST = '${{ github.workspace }}\dist-x64'
+          @'
+          import hashlib
+          import os
+          import pathlib
+          import pefile
+
+          root = pathlib.Path(os.environ['DIST'])
+          app = root / 'ecu_mems_manager.exe'
+          dll = root / 'mems_manager_x64.dll'
+          required = [
+              app,
+              dll,
+              root / 'Qt5Core.dll',
+              root / 'Qt5Gui.dll',
+              root / 'Qt5Widgets.dll',
+              root / 'Qt5Sql.dll',
+              root / 'Qt5SerialPort.dll',
+              root / 'Qt5Charts.dll',
+              root / 'platforms' / 'qwindows.dll',
+              root / 'sqldrivers' / 'qsqlite.dll',
+              root / 'translations' / 'fr' / 'fr.json',
+              root / 'translations' / 'en' / 'en.json',
+              root / 'database' / 'reference' / 'manifest.json',
+              root / 'database' / 'reference' / 'mems_reference_seed_1.qz64',
+          ]
+          missing = [str(p.relative_to(root)) for p in required if not p.exists() or p.stat().st_size <= 0]
+          if missing:
+              raise SystemExit('Missing/empty required package files: ' + ', '.join(missing))
+          if any(p.name.lower() == 'librosco.dll' for p in root.rglob('*') if p.is_file()):
+              raise SystemExit('Historical x86 librosco.dll is present in the x64 package')
+
+          def pe(path):
+              return pefile.PE(str(path), fast_load=False)
+
+          app_pe = pe(app)
+          dll_pe = pe(dll)
+          for path, obj in [(app, app_pe), (dll, dll_pe)]:
+              if obj.FILE_HEADER.Machine != 0x8664 or obj.OPTIONAL_HEADER.Magic != 0x20B:
+                  raise SystemExit(f'{path.name} is not PE32+ AMD64')
+
+          imports = [e.dll.decode('ascii', errors='replace').lower() for e in app_pe.DIRECTORY_ENTRY_IMPORT]
+          if 'mems_manager_x64.dll' not in imports:
+              raise SystemExit('ecu_mems_manager.exe does not import mems_manager_x64.dll')
+          if 'librosco.dll' in imports:
+              raise SystemExit('ecu_mems_manager.exe still imports historical librosco.dll')
+
+          wrong_machine = []
+          checked = 0
+          for path in sorted(root.rglob('*')):
+              if not path.is_file() or path.suffix.lower() not in {'.exe', '.dll'}:
+                  continue
+              try:
+                  obj = pe(path)
+              except pefile.PEFormatError:
+                  continue
+              checked += 1
+              if obj.FILE_HEADER.Machine != 0x8664:
+                  wrong_machine.append(str(path.relative_to(root)))
+          if wrong_machine:
+              raise SystemExit('Non-AMD64 PE binaries found: ' + ', '.join(wrong_machine))
+
+          app_sha = hashlib.sha256(app.read_bytes()).hexdigest()
+          dll_sha = hashlib.sha256(dll.read_bytes()).hexdigest()
+          total_size = sum(p.stat().st_size for p in root.rglob('*') if p.is_file())
+          file_count = sum(1 for p in root.rglob('*') if p.is_file())
+          report = root / 'ECU_MEMS_X64_PACKAGE_VALIDATION.txt'
+          report.write_text(
+              'ECU MEMS MANAGER x64 PORTABLE PACKAGE: OK\n'
+              f'workflow_run_id=${{ github.run_id }}\n'
+              'application=PE32+ AMD64\n'
+              'protocol_dll=mems_manager_x64.dll\n'
+              'protocol_dll_format=PE32+ AMD64\n'
+              'application_imports_mems_manager_x64.dll=yes\n'
+              'application_imports_historical_librosco.dll=no\n'
+              'package_contains_historical_librosco.dll=no\n'
+              f'checked_pe_files={checked}\n'
+              f'package_file_count={file_count + 1}\n'
+              f'package_total_size_before_report={total_size}\n'
+              f'application_sha256={app_sha}\n'
+              f'protocol_dll_sha256={dll_sha}\n',
+              encoding='utf-8'
+          )
+          print(report.read_text(encoding='utf-8'))
+          '@ | python -
+
+      - name: Validate offline MEMS database in package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:MEMS_REFERENCE_DIR = '${{ github.workspace }}\dist-x64\database\reference'
+          @'
+          import base64
+          import os
+          import pathlib
+          import sqlite3
+          import tempfile
+          import zlib
+
+          root = pathlib.Path(os.environ['MEMS_REFERENCE_DIR'])
+          parts = [root / f'mems_reference_seed_{i}.qz64' for i in range(1, 5)]
+          missing = [p.name for p in parts if not p.exists()]
+          if missing:
+              raise SystemExit('Missing MEMS seed parts: ' + ', '.join(missing))
+          encoded = b''.join(p.read_bytes().strip() for p in parts)
+          packed = base64.b64decode(encoded)
+          expected = int.from_bytes(packed[:4], 'big')
+          sql_bytes = zlib.decompress(packed[4:])
+          if len(sql_bytes) != expected:
+              raise SystemExit(f'Invalid MEMS seed: {len(sql_bytes)} bytes reconstructed, {expected} expected')
+          smoke = pathlib.Path(tempfile.gettempdir()) / 'ecu_mems_x64_package_reference.sqlite'
+          if smoke.exists(): smoke.unlink()
+          con = sqlite3.connect(smoke)
+          try:
+              for statement in sql_bytes.decode('utf-8').splitlines():
+                  statement = statement.strip()
+                  if statement:
+                      con.execute(statement)
+              con.commit()
+              ecu_count = con.execute('SELECT COUNT(*) FROM ecu_target').fetchone()[0]
+              fitment_count = con.execute('SELECT COUNT(*) FROM ecu_fitment_target').fetchone()[0]
+              command_count = con.execute('SELECT COUNT(*) FROM protocol_commands').fetchone()[0]
+              if min(ecu_count, fitment_count, command_count) <= 0:
+                  raise SystemExit('Reconstructed MEMS database is empty')
+              print(f'OK MEMS database: {ecu_count} ECU, {fitment_count} fitments, {command_count} commands')
+          finally:
+              con.close()
+              if smoke.exists(): smoke.unlink()
+          '@ | python -
+
+      - name: Smoke launch portable x64 application
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $dist = '${{ github.workspace }}\dist-x64'
+          $exe = Join-Path $dist 'ecu_mems_manager.exe'
+          $proc = Start-Process $exe -WorkingDirectory $dist -PassThru
+          Start-Sleep -Seconds 5
+          if ($proc.HasExited) {
+            throw "x64 portable application exited during smoke launch (code $($proc.ExitCode))"
+          }
+          Stop-Process -Id $proc.Id -Force
+          Write-Host 'OK: x64 portable application remained running during smoke launch'
+
+      - name: Upload portable x64 test package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ECU-MEMS-Manager-x64-Windows-Test
+          path: dist-x64/
+          if-no-files-found: error
+
+      - name: Persist package validation marker
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Copy-Item '${{ github.workspace }}\dist-x64\ECU_MEMS_X64_PACKAGE_VALIDATION.txt' '${{ github.workspace }}\ECU_MEMS_X64_PACKAGE_VALIDATION.txt' -Force
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin MEMSX64
+          git add ECU_MEMS_X64_PACKAGE_VALIDATION.txt
+          if (-not (git diff --cached --quiet)) {
+            git commit -m "Validate ECU MEMS Manager portable x64 package [skip ci]"
+            git push origin HEAD:MEMSX64
+          }
