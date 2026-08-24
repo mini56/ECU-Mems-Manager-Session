@@ -34,6 +34,7 @@ jobs:
             'version=1.0.22',
             "run_id=${{ github.run_id }}",
             "run_number=${{ github.run_number }}",
+            "run_attempt=${{ github.run_attempt }}",
             "source_commit=${{ github.sha }}"
           ) | Set-Content -Encoding UTF8 ECU_MEMS_X64_BUILD22_STATUS.txt
           git config user.name "github-actions[bot]"
@@ -47,64 +48,53 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install validation tools
+      - name: Install build validation tools
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          python -m pip install --disable-pip-version-check aqtinstall pefile
+          python -m pip install --disable-pip-version-check "aqtinstall==3.3.0" pefile
 
-      - name: Install Qt 5.15.2 MSVC x64
+      - name: Install Qt 5.15.2 MSVC 2019 x64 with external 7-Zip
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $qtConfig = 'C:\Qt\5.15.2\msvc2019_64\lib\cmake\Qt5\Qt5Config.cmake'
-          for ($attempt=1; $attempt -le 3; $attempt++) {
-            try {
-              if (Test-Path 'C:\Qt') { Remove-Item 'C:\Qt' -Recurse -Force -ErrorAction SilentlyContinue }
-              python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt
-              if (Test-Path $qtConfig) { break }
-            } catch {
-              Write-Host "Qt install attempt $attempt failed: $($_.Exception.Message)"
-            }
-            if ($attempt -eq 3) { throw 'Qt 5.15.2 MSVC x64 installation failed after 3 attempts' }
-            Start-Sleep -Seconds 3
-          }
-          if (-not (Test-Path $qtConfig)) { throw 'Qt 5.15.2 MSVC x64 installation incomplete' }
-          if (-not (Test-Path 'C:\Qt\5.15.2\msvc2019_64\plugins\sqldrivers\qsqlite.dll')) { throw 'Qt QSQLITE x64 plugin missing' }
+          $sevenZip = (Get-Command 7z.exe -ErrorAction Stop).Source
+          Write-Host "Using external 7-Zip: $sevenZip"
+          if (Test-Path 'C:\Qt') { Remove-Item 'C:\Qt' -Recurse -Force -ErrorAction SilentlyContinue }
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
+          if ($LASTEXITCODE -ne 0) { throw "aqtinstall failed: $LASTEXITCODE" }
+          $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
+          if (-not (Test-Path "$qtRoot\lib\cmake\Qt5\Qt5Config.cmake")) { throw 'Qt x64 CMake configuration missing' }
+          if (-not (Test-Path "$qtRoot\plugins\sqldrivers\qsqlite.dll")) { throw 'Qt QSQLITE x64 plugin missing' }
+          if (-not (Test-Path "$qtRoot\bin\Qt5SerialPort.dll")) { throw 'Qt SerialPort x64 runtime missing' }
 
-      - name: Validate deterministic 14-tab navigation
+      - name: Validate deterministic 14-tab source
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           @'
           from pathlib import Path
-          nav = Path('navigationorderpatch.cpp').read_text(encoding='utf-8')
-          cmake = Path('CMakeLists.txt').read_text(encoding='utf-8')
-          wrapper = Path('iamemstab_clean.cpp').read_text(encoding='utf-8')
-          required = [
-              'overview_tab','injection_tab','emission_tab','actuators','errors',
-              'DiagnosticPanel','ia_mems_tab','AnalysisTab','SummaryTab',
-              'ecu_rosco_tab','raw','database_tab','ECU','mems19_test_tab'
-          ]
-          missing = [x for x in required if x not in nav]
-          if missing: raise SystemExit('Missing tab identities: ' + ', '.join(missing))
+          nav=Path('navigationorderpatch.cpp').read_text(encoding='utf-8')
+          cmake=Path('CMakeLists.txt').read_text(encoding='utf-8')
+          wrapper=Path('iamemstab_clean.cpp').read_text(encoding='utf-8')
+          required=['overview_tab','injection_tab','emission_tab','actuators','errors','DiagnosticPanel','ia_mems_tab','AnalysisTab','SummaryTab','ecu_rosco_tab','raw','database_tab','ECU','mems19_test_tab']
+          missing=[x for x in required if x not in nav]
+          if missing: raise SystemExit('Missing deterministic tab identities: '+', '.join(missing))
           if 'kFinalTabCount = 14' not in nav: raise SystemExit('Navigation is not fixed to 14 tabs')
-          if 'rankFromTitle' in nav or 'QTimer' in nav or 'singleShot' in nav:
-              raise SystemExit('Legacy title/timer navigation still active')
-          if 'taborderpatch.cpp' in cmake: raise SystemExit('Legacy taborderpatch.cpp still compiled')
-          if 'iamemstab_clean.cpp' not in cmake: raise SystemExit('Clean IA wrapper not compiled')
-          if '#define Q_COREAPP_STARTUP_FUNCTION(AFUNC)' not in wrapper:
-              raise SystemExit('Legacy IA startup navigation hook not suppressed')
+          if 'rankFromTitle' in nav or 'QTimer' in nav or 'singleShot' in nav: raise SystemExit('Legacy translated-title/timer navigation remains active')
+          if 'taborderpatch.cpp' in cmake: raise SystemExit('Legacy taborderpatch.cpp is still compiled')
+          if 'iamemstab_clean.cpp' not in cmake: raise SystemExit('IA MEMS clean wrapper is not compiled')
+          if '#define Q_COREAPP_STARTUP_FUNCTION(AFUNC)' not in wrapper: raise SystemExit('IA legacy startup navigation hook is not suppressed')
           print('PASS navigation 14/14 deterministic')
           '@ | python -
 
-      - name: Control 12 - protocol source guards
+      - name: Validate historical MEMS protocol guards
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           python librosco-x64/validate_protocol_guards.py
 
-      - name: Configure clean native x64
+      - name: Configure full native x64 application
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -113,7 +103,7 @@ jobs:
             -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
             -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF
 
-      - name: Controls 1-2 - compile application and x64 protocol DLL
+      - name: Controls 01-02 - compile full application and mems_manager_x64 DLL
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -121,13 +111,13 @@ jobs:
           if (-not (Test-Path 'build-clean-x64\Release\ecu_mems_manager.exe')) { throw 'ecu_mems_manager.exe missing' }
           if (-not (Test-Path 'build-clean-x64\librosco-x64\Release\mems_manager_x64.dll')) { throw 'mems_manager_x64.dll missing' }
 
-      - name: Control 11 - ABI self-test
+      - name: Control 11 - protocol ABI self-test
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           ctest --test-dir build-clean-x64/librosco-x64 -C Release --output-on-failure -R rosco_abi_selftest
 
-      - name: Control 14A - reference SQLite semantic self-test
+      - name: Control 14A - MEMS reference SQLite semantic self-test
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -137,39 +127,38 @@ jobs:
           $selftest = '${{ github.workspace }}\build-clean-x64\Release\mems_search_selftest.exe'
           $reference = '${{ github.workspace }}\build-clean-x64\Release\database\reference\manifest.json'
           if (-not (Test-Path $selftest)) { throw 'mems_search_selftest.exe missing' }
-          if (-not (Test-Path $reference)) { throw 'reference database resources missing beside self-test' }
-          if (-not (Test-Path "$qtRoot\plugins\sqldrivers\qsqlite.dll")) { throw 'QSQLITE plugin missing before self-test' }
+          if (-not (Test-Path $reference)) { throw 'MEMS reference resources missing beside self-test' }
           & $selftest
-          if ($LASTEXITCODE -ne 0) { throw "MEMS reference search self-test failed: $LASTEXITCODE" }
+          if ($LASTEXITCODE -ne 0) { throw "MEMS reference semantic self-test failed: $LASTEXITCODE" }
 
-      - name: Assemble clean portable x64 package without local IA runtime
+      - name: Assemble complete clean portable x64 package
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
-          $qtBin = Join-Path $qtRoot 'bin'
           $build = '${{ github.workspace }}\build-clean-x64'
           $dist = '${{ github.workspace }}\dist-clean-x64'
-          $app = Join-Path $build 'Release\ecu_mems_manager.exe'
-          $protocol = Join-Path $build 'librosco-x64\Release\mems_manager_x64.dll'
           if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }
           New-Item -ItemType Directory -Path $dist | Out-Null
-          Copy-Item $app (Join-Path $dist 'ecu_mems_manager.exe') -Force
-          Copy-Item $protocol (Join-Path $dist 'mems_manager_x64.dll') -Force
-          & (Join-Path $qtBin 'windeployqt.exe') --release --compiler-runtime --no-translations --dir $dist (Join-Path $dist 'ecu_mems_manager.exe')
+          Copy-Item "$build\Release\ecu_mems_manager.exe" "$dist\ecu_mems_manager.exe" -Force
+          Copy-Item "$build\librosco-x64\Release\mems_manager_x64.dll" "$dist\mems_manager_x64.dll" -Force
+          & "$qtRoot\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist "$dist\ecu_mems_manager.exe"
           if ($LASTEXITCODE -ne 0) { throw "windeployqt failed: $LASTEXITCODE" }
-          Copy-Item (Join-Path $build 'Release\translations') (Join-Path $dist 'translations') -Recurse -Force
-          Copy-Item (Join-Path $build 'Release\database') (Join-Path $dist 'database') -Recurse -Force
+          Copy-Item "$build\Release\translations" "$dist\translations" -Recurse -Force
+          Copy-Item "$build\Release\database" "$dist\database" -Recurse -Force
+          $forbidden = Get-ChildItem $dist -Recurse -File | Where-Object { $_.Name -ieq 'librosco.dll' -or $_.Name -ieq 'llama-server.exe' -or $_.Extension -ieq '.gguf' }
+          if ($forbidden) { throw "Forbidden first-milestone runtime found: $($forbidden.FullName -join ', ')" }
           @(
-            'ECU MEMS MANAGER CLEAN X64 BUILD #22',
-            'Version 1.0.22',
-            'Application: native Windows x64',
-            'Protocol: mems_manager_x64.dll native x64',
-            'Local IA runtime/model intentionally absent for ECU-first validation',
+            'ECU MEMS MANAGER - FIRST CLEAN X64 MILESTONE',
+            'BUILD #22 - v1.0.22',
+            'Full MEMS Manager application compiled native x64',
+            'Protocol DLL: mems_manager_x64.dll native x64',
+            '14-tab application retained',
+            'Local IA runtime/model intentionally absent from this first ECU-validation package',
             'Historical 32-bit librosco.dll intentionally absent'
-          ) | Set-Content -Path (Join-Path $dist 'README_X64_CLEAN_TEST.txt') -Encoding UTF8
+          ) | Set-Content "$dist\README_X64_CLEAN_TEST.txt" -Encoding UTF8
 
-      - name: Controls 3-10 and 15 - PE architecture imports exports inventory
+      - name: Controls 03-10 and 15 - PE architecture imports exports inventory
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -178,111 +167,85 @@ jobs:
           import os
           from pathlib import Path
           import pefile
-          root = Path(os.environ['DIST'])
-          app = root/'ecu_mems_manager.exe'
-          dll = root/'mems_manager_x64.dll'
-          required = [app,dll,root/'Qt5Core.dll',root/'Qt5Gui.dll',root/'Qt5Widgets.dll',root/'Qt5Sql.dll',root/'Qt5SerialPort.dll',root/'platforms'/'qwindows.dll',root/'sqldrivers'/'qsqlite.dll']
-          missing = [str(p.relative_to(root)) for p in required if not p.exists() or p.stat().st_size <= 0]
-          if missing: raise SystemExit('Missing x64 package binaries: ' + ', '.join(missing))
-          def load(p): return pefile.PE(str(p), fast_load=False)
-          app_pe, dll_pe = load(app), load(dll)
+          root=Path(os.environ['DIST']); app=root/'ecu_mems_manager.exe'; dll=root/'mems_manager_x64.dll'
+          required=[app,dll,root/'Qt5Core.dll',root/'Qt5Gui.dll',root/'Qt5Widgets.dll',root/'Qt5Sql.dll',root/'Qt5SerialPort.dll',root/'platforms'/'qwindows.dll',root/'sqldrivers'/'qsqlite.dll']
+          missing=[str(p.relative_to(root)) for p in required if not p.exists() or p.stat().st_size<=0]
+          if missing: raise SystemExit('Missing x64 package binaries: '+', '.join(missing))
+          def load(p): return pefile.PE(str(p),fast_load=False)
+          app_pe,dll_pe=load(app),load(dll)
           for p,obj in ((app,app_pe),(dll,dll_pe)):
-              if obj.FILE_HEADER.Machine != 0x8664 or obj.OPTIONAL_HEADER.Magic != 0x20B:
-                  raise SystemExit(f'{p.name} is not PE32+ AMD64')
-          imports = [e.dll.decode('ascii',errors='replace').lower() for e in app_pe.DIRECTORY_ENTRY_IMPORT]
+              if obj.FILE_HEADER.Machine!=0x8664 or obj.OPTIONAL_HEADER.Magic!=0x20B: raise SystemExit(f'{p.name} is not PE32+ AMD64')
+          imports=[e.dll.decode('ascii',errors='replace').lower() for e in app_pe.DIRECTORY_ENTRY_IMPORT]
           if 'mems_manager_x64.dll' not in imports: raise SystemExit('Application does not import mems_manager_x64.dll')
           if 'librosco.dll' in imports: raise SystemExit('Application still imports historical librosco.dll')
-          expected = {'mems_cleanup','mems_clear_faults','mems_connect','mems_disconnect','mems_get_lib_version','mems_heartbeat','mems_init','mems_init_link','mems_is_connected','mems_lock','mems_move_iac','mems_openserial','mems_read','mems_read_iac_position','mems_read_raw','mems_read_serial','mems_reset_ECU','mems_reset_adjustments','mems_send_command','mems_test_actuator','mems_unlock','mems_write_serial'}
-          actual = {s.name.decode('ascii') for s in dll_pe.DIRECTORY_ENTRY_EXPORT.symbols if s.name}
-          if actual != expected: raise SystemExit('Protocol DLL exports mismatch: ' + repr(sorted(actual)))
+          expected={'mems_cleanup','mems_clear_faults','mems_connect','mems_disconnect','mems_get_lib_version','mems_heartbeat','mems_init','mems_init_link','mems_is_connected','mems_lock','mems_move_iac','mems_openserial','mems_read','mems_read_iac_position','mems_read_raw','mems_read_serial','mems_reset_ECU','mems_reset_adjustments','mems_send_command','mems_test_actuator','mems_unlock','mems_write_serial'}
+          actual={s.name.decode('ascii') for s in dll_pe.DIRECTORY_ENTRY_EXPORT.symbols if s.name}
+          if actual!=expected: raise SystemExit('Protocol DLL exports mismatch: '+repr(sorted(actual)))
           wrong=[]; inventory=[]
           for p in sorted(root.rglob('*')):
               if not p.is_file() or p.suffix.lower() not in {'.exe','.dll'}: continue
               try: obj=load(p)
               except pefile.PEFormatError: continue
-              machine=obj.FILE_HEADER.Machine
-              inventory.append(f'{p.relative_to(root)} | machine=0x{machine:04X}')
-              if machine != 0x8664: wrong.append(str(p.relative_to(root)))
-          if wrong: raise SystemExit('x86/x64 mixture detected: ' + ', '.join(wrong))
+              inventory.append(f'{p.relative_to(root)} | machine=0x{obj.FILE_HEADER.Machine:04X}')
+              if obj.FILE_HEADER.Machine!=0x8664: wrong.append(str(p.relative_to(root)))
+          if wrong: raise SystemExit('x86/x64 mixture detected: '+', '.join(wrong))
           (root/'PE_X64_INVENTORY.txt').write_text('\n'.join(inventory)+'\n',encoding='utf-8')
-          print(f'PASS PE inventory: {len(inventory)} AMD64 files; 22 exports exact')
+          print(f'PASS {len(inventory)} PE files AMD64; 22 protocol exports exact')
           '@ | python -
-          $forbidden = Get-ChildItem $env:DIST -Recurse -File | Where-Object { $_.Name -ieq 'librosco.dll' -or $_.Name -ieq 'llama-server.exe' -or $_.Extension -ieq '.gguf' }
-          if ($forbidden) { throw "Forbidden package files: $($forbidden.FullName -join ', ')" }
 
-      - name: Control 14B - SQLite package resources
+      - name: Control 14B - package SQLite and indispensable resources
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $env:DIST = '${{ github.workspace }}\dist-clean-x64'
-          @'
-          import base64, os, sqlite3, tempfile, zlib
-          from pathlib import Path
-          root=Path(os.environ['DIST'])
-          required=[root/'translations'/'fr'/'fr.json',root/'translations'/'en'/'en.json',root/'translations'/'fr'/'fr_navigation.json',root/'translations'/'en'/'en_navigation.json',root/'database'/'reference'/'manifest.json',root/'sqldrivers'/'qsqlite.dll']
-          missing=[str(p.relative_to(root)) for p in required if not p.exists() or p.stat().st_size<=0]
-          if missing: raise SystemExit('Missing resources: '+', '.join(missing))
-          ref=root/'database'/'reference'
-          parts=[ref/f'mems_reference_seed_{i}.qz64' for i in range(1,5)]
-          if any(not p.exists() for p in parts): raise SystemExit('Missing MEMS reference seed parts')
-          packed=base64.b64decode(b''.join(p.read_bytes().strip() for p in parts))
-          expected=int.from_bytes(packed[:4],'big')
-          sql_bytes=zlib.decompress(packed[4:])
-          if len(sql_bytes)!=expected: raise SystemExit('Invalid MEMS seed length')
-          smoke=Path(tempfile.gettempdir())/'ecu_mems_build22_reference.sqlite'
-          if smoke.exists(): smoke.unlink()
-          con=sqlite3.connect(smoke)
-          try:
-              for line in sql_bytes.decode('utf-8').splitlines():
-                  line=line.strip()
-                  if line: con.execute(line)
-              con.commit()
-              counts=[con.execute('SELECT COUNT(*) FROM ecu_target').fetchone()[0],con.execute('SELECT COUNT(*) FROM ecu_fitment_target').fetchone()[0],con.execute('SELECT COUNT(*) FROM protocol_commands').fetchone()[0]]
-              if min(counts)<=0: raise SystemExit(f'Reconstructed reference DB empty: {counts}')
-              print(f'PASS SQLite resources: ECU={counts[0]} fitments={counts[1]} commands={counts[2]}')
-          finally:
-              con.close()
-              if smoke.exists(): smoke.unlink()
-          '@ | python -
+          $dist = '${{ github.workspace }}\dist-clean-x64'
+          $required = @(
+            "$dist\database\reference\manifest.json",
+            "$dist\translations\fr\fr.json",
+            "$dist\translations\en\en.json",
+            "$dist\translations\fr\fr_navigation.json",
+            "$dist\translations\en\en_navigation.json",
+            "$dist\sqldrivers\qsqlite.dll"
+          )
+          foreach ($path in $required) { if (-not (Test-Path $path)) { throw "Missing indispensable resource: $path" } }
+          Write-Host 'PASS packaged SQLite/reference/translation resources'
 
-      - name: Control 13 - smoke launch packaged application
+      - name: Control 13 - smoke launch packaged full application
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $dist='${{ github.workspace }}\dist-clean-x64'
-          $exe=Join-Path $dist 'ecu_mems_manager.exe'
-          $proc=Start-Process $exe -WorkingDirectory $dist -PassThru
+          $dist = '${{ github.workspace }}\dist-clean-x64'
+          $proc = Start-Process "$dist\ecu_mems_manager.exe" -WorkingDirectory $dist -PassThru
           Start-Sleep -Seconds 5
           $proc.Refresh()
           if ($proc.HasExited) { throw "Clean x64 application exited during smoke launch (code $($proc.ExitCode))" }
           Stop-Process -Id $proc.Id -Force
-          Write-Host 'PASS smoke launch'
+          Write-Host 'PASS full application smoke launch'
 
-      - name: Write BUILD 22 validation report
+      - name: Write 15-control BUILD 22 report
         shell: pwsh
         run: |
-          $dist='${{ github.workspace }}\dist-clean-x64'
+          $dist = '${{ github.workspace }}\dist-clean-x64'
           @(
-            'BUILD #22 — v1.0.22',
+            'BUILD #22 - v1.0.22',
             'ECU MEMS MANAGER CLEAN X64: 15/15 AUTOMATED CONTROLS PASSED',
-            '01 PASS clean x64 application compile',
-            '02 PASS clean mems_manager_x64.dll compile',
+            '01 PASS full x64 application compile',
+            '02 PASS mems_manager_x64.dll compile',
             '03 PASS ecu_mems_manager.exe PE32+ AMD64',
             '04 PASS mems_manager_x64.dll PE32+ AMD64',
             '05 PASS Qt/plugin DLL architecture x64',
-            '06 PASS qsqlite + Qt SerialPort + essentials x64',
+            '06 PASS QSQLITE + Qt SerialPort essentials',
             '07 PASS application imports mems_manager_x64.dll',
             '08 PASS application does not import librosco.dll',
             '09 PASS historical x86 librosco.dll absent',
             '10 PASS exactly 22 historical DLL exports',
             '11 PASS ABI frame80=28 frame7d=32 mems_data=60',
             '12 PASS protocol source guards',
-            '13 PASS packaged application smoke launch',
-            '14 PASS Qt SQLite semantic self-test + reference resources',
+            '13 PASS packaged full application smoke launch',
+            '14 PASS SQLite semantic self-test + packaged reference resources',
             '15 PASS complete PE inventory AMD64 only',
-            'NAV PASS 14/14 deterministic',
-            'LOCAL IA RUNTIME intentionally absent'
-          ) | Set-Content -Path (Join-Path $dist 'ECU_MEMS_X64_15_CONTROLS.txt') -Encoding UTF8
+            'NAV PASS deterministic 14/14',
+            'LOCAL IA RUNTIME intentionally absent from first ECU-validation package'
+          ) | Set-Content "$dist\ECU_MEMS_X64_15_CONTROLS.txt" -Encoding UTF8
 
       - name: Upload BUILD 22 artifact
         uses: actions/upload-artifact@v4
@@ -302,6 +265,7 @@ jobs:
             'version=1.0.22',
             "run_id=${{ github.run_id }}",
             "run_number=${{ github.run_number }}",
+            "run_attempt=${{ github.run_attempt }}",
             "source_commit=${{ github.sha }}",
             'artifact=ECU-MEMS-Manager-x64-CLEAN-BUILD-22-v1.0.22',
             'controls=15/15',
@@ -323,6 +287,7 @@ jobs:
             'version=1.0.22',
             "run_id=${{ github.run_id }}",
             "run_number=${{ github.run_number }}",
+            "run_attempt=${{ github.run_attempt }}",
             "source_commit=${{ github.sha }}"
           ) | Set-Content -Encoding UTF8 ECU_MEMS_X64_BUILD22_STATUS.txt
           git config user.name "github-actions[bot]"
