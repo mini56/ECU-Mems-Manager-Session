@@ -968,7 +968,7 @@ void MainWindow::onDataReady()
 	{
 		emit IACMinOnce();
 	}
-    if (((data->dtc0)!= 0) or ((data->dtc1)!= 0) or ((data->dtc2)!= 0))
+    if (((data->dtc0)!= 0) || ((data->dtc1)!= 0) || ((data->dtc2)!= 0))
     {
       m_ui->m_engine_error->setChecked(true);
     }
