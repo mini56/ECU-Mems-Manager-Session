@@ -73,7 +73,7 @@ jobs:
           $parts = @()
           $parts += 'ECU MEMS MANAGER X64 BUILD: FAILED'
           $parts += ('utc=' + [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ'))
-          $parts += ('commit=' + '${{ github.sha }}')
+          $parts += ('workflow_commit=' + '${{ github.sha }}')
           foreach ($file in @('x64-qt-install.log','x64-configure.log','x64-build.log')) {
             if (Test-Path $file) {
               $parts += ''
@@ -86,10 +86,11 @@ jobs:
           $parts | Set-Content -Encoding UTF8 ECU_MEMS_X64_BUILD_FAILURE.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin MEMSX64
           git add ECU_MEMS_X64_BUILD_FAILURE.txt
           if (-not (git diff --cached --quiet)) {
             git commit -m "Record ECU MEMS Manager x64 build failure [skip ci]"
-            git push origin MEMSX64
+            git push origin HEAD:MEMSX64
           }
 
       - name: Install PE validator
@@ -172,6 +173,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin MEMSX64
           if (Test-Path ECU_MEMS_X64_BUILD_FAILURE.txt) {
             git rm -f ECU_MEMS_X64_BUILD_FAILURE.txt
           }
@@ -180,5 +182,5 @@ jobs:
             Write-Host 'Application x64 validation marker already current'
           } else {
             git commit -m "Validate ECU MEMS Manager native x64 link [skip ci]"
-            git push origin MEMSX64
+            git push origin HEAD:MEMSX64
           }
