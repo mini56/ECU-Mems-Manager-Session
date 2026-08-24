@@ -10,8 +10,13 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: memsx64-ia-ui-only
+  cancel-in-progress: true
+
 jobs:
   build-ia-ui-only:
+    name: BUILD #${{ github.run_number }} - IA UI ONLY
     runs-on: windows-latest
 
     steps:
@@ -20,24 +25,7 @@ jobs:
         with:
           ref: MEMSX64
 
-      - name: Publish readable build number
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          @(
-            'IA UI-ONLY DIAGNOSTIC',
-            'build_number=#${{ github.run_number }}',
-            'run_id=${{ github.run_id }}',
-            'status=STARTED',
-            ('utc=' + [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ'))
-          ) | Set-Content -Encoding UTF8 IA_UI_ONLY_BUILD.txt
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add IA_UI_ONLY_BUILD.txt
-          git commit -m "Record IA UI-only build #${{ github.run_number }} [skip ci]"
-          git push origin HEAD:MEMSX64
-
-      - name: Patch runner workspace - IA UI only
+      - name: Patch runner workspace - disable IA backends only
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -46,32 +34,6 @@ jobs:
 
           p = Path('iamemstab.cpp')
           s = p.read_text(encoding='utf-8')
-
-          include_anchor = '#include <QEvent>\n'
-          include_new = '#include <QEvent>\n#include <QCoreApplication>\n#include <QFile>\n'
-          if s.count(include_anchor) != 1:
-              raise SystemExit('QEvent include anchor mismatch')
-          s = s.replace(include_anchor, include_new, 1)
-
-          ns_anchor = 'static const int kTabPtrRole = Qt::UserRole + 60;\n\n'
-          helper = r'''static const int kTabPtrRole = Qt::UserRole + 60;
-
-void iaUiDiagTrace(const QString &message)
-{
-    QFile file(QCoreApplication::applicationDirPath() + QStringLiteral("/IA_UI_ONLY_TRACE.txt"));
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text))
-        return;
-    const QByteArray line = (QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd HH:mm:ss.zzz"))
-                             + QStringLiteral(" | ") + message + QLatin1Char('\n')).toUtf8();
-    file.write(line);
-    file.flush();
-}
-
-'''
-          if s.count(ns_anchor) != 1:
-              raise SystemExit('namespace anchor mismatch')
-          s = s.replace(ns_anchor, helper, 1)
-
           old = r'''void IaMemsTab::showEvent(QShowEvent *event)
 {
     QWidget::showEvent(event);
@@ -85,19 +47,14 @@ void iaUiDiagTrace(const QString &message)
 '''
           new = r'''void IaMemsTab::showEvent(QShowEvent *event)
 {
-    iaUiDiagTrace(QStringLiteral("IA MEMS showEvent ENTER - UI ONLY"));
     QWidget::showEvent(event);
-    iaUiDiagTrace(QStringLiteral("QWidget::showEvent returned"));
-    iaUiDiagTrace(QStringLiteral("knowledge load DISABLED"));
-    iaUiDiagTrace(QStringLiteral("local AI initialization DISABLED"));
-    iaUiDiagTrace(QStringLiteral("IA MEMS showEvent EXIT - UI ONLY"));
 }
 '''
           if s.count(old) != 1:
               raise SystemExit('showEvent block mismatch')
           s = s.replace(old, new, 1)
           p.write_text(s, encoding='utf-8')
-          print('OK: IA UI-only runner patch applied')
+          print('OK: IA knowledge load and LocalAiClient initialization disabled for runner build only')
           '@ | python -
 
       - name: Setup Python
@@ -107,8 +64,7 @@ void iaUiDiagTrace(const QString &message)
 
       - name: Install build tools
         shell: pwsh
-        run: |
-          python -m pip install --disable-pip-version-check aqtinstall pefile
+        run: python -m pip install --disable-pip-version-check aqtinstall pefile
 
       - name: Install Qt 5.15.2 MSVC 2019 x64
         shell: pwsh
@@ -130,9 +86,7 @@ void iaUiDiagTrace(const QString &message)
 
       - name: Build native x64 diagnostic
         shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          cmake --build build-ia-ui-only --config Release --target ecu_mems_manager
+        run: cmake --build build-ia-ui-only --config Release --target ecu_mems_manager
 
       - name: Assemble UI-only portable package
         shell: pwsh
@@ -180,11 +134,11 @@ void iaUiDiagTrace(const QString &message)
             'ECU MEMS MANAGER X64 - IA UI ONLY DIAGNOSTIC',
             'BUILD #${{ github.run_number }}',
             'RUN ID ${{ github.run_id }}',
-            'The IA MEMS page is present, but knowledge loading and LocalAiClient initialization are disabled.',
+            'Knowledge loading: DISABLED',
+            'LocalAiClient initialization: DISABLED',
             'No llama.cpp runtime or model is included.',
             'Test: launch ecu_mems_manager.exe, open IA MEMS, wait at least 20 seconds.',
-            'If the application closes, send IA_UI_ONLY_TRACE.txt from this folder.',
-            'If it remains open, report: UI ONLY STABLE.'
+            'Expected diagnostic result: application remains open.'
           ) | Set-Content -Path (Join-Path $dist 'README_IA_UI_ONLY.txt') -Encoding UTF8
 
       - name: Validate UI-only diagnostic package
@@ -243,13 +197,15 @@ void iaUiDiagTrace(const QString &message)
           if-no-files-found: error
           compression-level: 0
 
-      - name: Persist UI-only diagnostic result
+      - name: Persist readable result marker
         if: always()
         continue-on-error: true
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Continue'
+          git fetch origin MEMSX64
+          git reset --hard origin/MEMSX64
           $state = '${{ job.status }}'.ToUpperInvariant()
-          git reset --hard HEAD
           @(
             'IA UI-ONLY DIAGNOSTIC',
             'build_number=#${{ github.run_number }}',
