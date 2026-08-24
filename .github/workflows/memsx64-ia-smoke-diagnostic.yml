@@ -1,0 +1,148 @@
+name: TEMP MEMSX64 IA crash diagnostic
+
+on:
+  push:
+    branches: [MEMSX64]
+    paths:
+      - '.github/workflows/memsx64-ia-smoke-diagnostic.yml'
+  workflow_dispatch:
+
+jobs:
+  ia-x64-smoke:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout MEMSX64
+        uses: actions/checkout@v4
+        with:
+          ref: MEMSX64
+
+      - name: Inject test-only automatic IA opening
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          @'
+          from pathlib import Path
+          p = Path('iamemstab.cpp')
+          s = p.read_text(encoding='utf-8')
+          old = '''    tabs->addTab(tab, iaMemsIcon(), QStringLiteral("IA MEMS"));
+              return tab;'''
+          new = '''    tabs->addTab(tab, iaMemsIcon(), QStringLiteral("IA MEMS"));
+              if (qEnvironmentVariableIsSet("MEMS_SMOKE_OPEN_IA"))
+                  tabs->setCurrentWidget(tab);
+              return tab;'''
+          if s.count(old) != 1:
+              raise SystemExit(f'Expected one IA insertion point, found {s.count(old)}')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          '@ | python -
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Qt installer
+        shell: pwsh
+        run: python -m pip install --disable-pip-version-check aqtinstall
+
+      - name: Install Qt 5.15.2 MSVC 2019 x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt
+
+      - name: Configure diagnostic x64 build
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake -S . -B build-ia-smoke-x64 -A x64 `
+            -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
+            -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
+            -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF
+
+      - name: Build diagnostic x64 application
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake --build build-ia-smoke-x64 --config Release --target ecu_mems_manager
+
+      - name: Assemble runtime for IA smoke
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $qtBin = 'C:\Qt\5.15.2\msvc2019_64\bin'
+          $build = '${{ github.workspace }}\build-ia-smoke-x64'
+          $dist = '${{ github.workspace }}\dist-ia-smoke-x64'
+          if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }
+          New-Item -ItemType Directory -Path $dist | Out-Null
+          Copy-Item (Join-Path $build 'Release\ecu_mems_manager.exe') (Join-Path $dist 'ecu_mems_manager.exe') -Force
+          Copy-Item (Join-Path $build 'librosco-x64\Release\mems_manager_x64.dll') (Join-Path $dist 'mems_manager_x64.dll') -Force
+          & (Join-Path $qtBin 'windeployqt.exe') --release --compiler-runtime --no-translations --dir $dist (Join-Path $dist 'ecu_mems_manager.exe')
+          if ($LASTEXITCODE -ne 0) { throw "windeployqt failed: $LASTEXITCODE" }
+          Copy-Item (Join-Path $build 'Release\translations') (Join-Path $dist 'translations') -Recurse -Force
+          Copy-Item (Join-Path $build 'Release\database') (Join-Path $dist 'database') -Recurse -Force
+          if (Test-Path (Join-Path $build 'Release\ai')) {
+            Copy-Item (Join-Path $build 'Release\ai') (Join-Path $dist 'ai') -Recurse -Force
+          }
+
+      - name: Open IA MEMS and capture crash information
+        id: smoke
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $dist = '${{ github.workspace }}\dist-ia-smoke-x64'
+          $exe = Join-Path $dist 'ecu_mems_manager.exe'
+          $result = Join-Path $dist 'IA_X64_SMOKE_RESULT.txt'
+          $events = Join-Path $dist 'IA_X64_WINDOWS_EVENTS.txt'
+          $env:MEMS_SMOKE_OPEN_IA = '1'
+          $start = Get-Date
+          $proc = Start-Process $exe -WorkingDirectory $dist -PassThru
+          Start-Sleep -Seconds 20
+          $proc.Refresh()
+          if ($proc.HasExited) {
+            $signed = [int64]$proc.ExitCode
+            $hex = ('0x{0:X8}' -f ([uint32]$proc.ExitCode))
+            @(
+              'IA_X64_SMOKE=CRASH',
+              ('exit_code=' + $proc.ExitCode),
+              ('exit_code_hex=' + $hex),
+              ('started=' + $start.ToString('o')),
+              ('ended=' + (Get-Date).ToString('o'))
+            ) | Set-Content -Encoding UTF8 $result
+          } else {
+            @(
+              'IA_X64_SMOKE=PASS',
+              'alive_after_seconds=20',
+              ('started=' + $start.ToString('o')),
+              ('checked=' + (Get-Date).ToString('o'))
+            ) | Set-Content -Encoding UTF8 $result
+            Stop-Process -Id $proc.Id -Force
+          }
+          try {
+            Get-WinEvent -FilterHashtable @{LogName='Application'; StartTime=$start} -ErrorAction Stop |
+              Where-Object { $_.ProviderName -in @('Application Error','Windows Error Reporting','.NET Runtime') -or $_.Message -match 'ecu_mems_manager|llama-server' } |
+              Select-Object TimeCreated, ProviderName, Id, LevelDisplayName, Message |
+              Format-List | Out-String -Width 240 | Set-Content -Encoding UTF8 $events
+          } catch {
+            ('Event log read failed: ' + $_.Exception.Message) | Set-Content -Encoding UTF8 $events
+          }
+          Get-Content $result
+          if (Test-Path $events) { Get-Content $events }
+
+      - name: Upload IA x64 diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: memsx64-ia-crash-diagnostic
+          path: |
+            dist-ia-smoke-x64/IA_X64_SMOKE_RESULT.txt
+            dist-ia-smoke-x64/IA_X64_WINDOWS_EVENTS.txt
+          if-no-files-found: warn
+
+      - name: Assert IA smoke survived
+        shell: pwsh
+        run: |
+          $result = '${{ github.workspace }}\dist-ia-smoke-x64\IA_X64_SMOKE_RESULT.txt'
+          if (-not (Test-Path $result)) { throw 'IA smoke result missing' }
+          if (-not (Select-String -Path $result -Pattern '^IA_X64_SMOKE=PASS$' -Quiet)) {
+            throw 'IA MEMS x64 smoke crashed; inspect diagnostic artifact'
+          }
