@@ -319,7 +319,7 @@ bool buildRuntimeDatabase(const QString &referenceRoot,
 
     // 1600 is a loss-preserving archive of 3.5M raw correlation cells. The
     // understood semantic tables are already in 1500-1540. Keeping 1600 out of
-    // the 32-bit runtime avoids a very large transient SQL allocation while the
+    // the runtime avoids a very large transient SQL allocation while the
     // original qz64 remains shipped, audited and available for future tooling.
     const QString archiveOnly = QStringLiteral("research_enrichment_1600.qz64");
     if (ok) {
@@ -395,6 +395,20 @@ bool ExpertRuntimeDatabase::buildOrOpen()
     if (m_manifestRevision <= 0) {
         m_lastError = QStringLiteral("Révision de base MEMS invalide");
         return false;
+    }
+
+    // Normal packaged BUILD path: GitHub Actions prepares the expert SQLite
+    // database once and ships it read-only beside the application. This avoids
+    // rebuilding/decompressing the knowledge database when the IA tab opens,
+    // while Qwen is also resident in memory. The historical runtime builder is
+    // retained below only as a fallback for development/legacy packages.
+    const QString packagedDatabase = QDir(QCoreApplication::applicationDirPath())
+        .filePath(QStringLiteral("database/expert/ia_mems_reference_r%1.sqlite")
+                      .arg(m_manifestRevision));
+    const QFileInfo packagedInfo(packagedDatabase);
+    if (packagedInfo.exists() && packagedInfo.isFile() && packagedInfo.size() > 0) {
+        m_databasePath = packagedInfo.absoluteFilePath();
+        return true;
     }
 
     const QString root = cacheRoot();
