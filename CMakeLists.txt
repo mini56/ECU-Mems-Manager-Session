@@ -57,7 +57,7 @@ set(SOURCES
     database/MemsGlobalSearchIndex.cpp database/MemsGlobalSearchIndex.h database/MemsDatabaseExplorerV2.cpp
     database/MemsDatabaseUniversalAccess.cpp database/MemsReferenceLanguageSync.cpp
     database/MemsXmlRowIndexer.cpp database/MemsSearchCompletenessPatch.cpp database/MemsDatabaseBrowser.cpp database/MemsDatabaseBrowser.h
-    iamemstab_clean.cpp iamemstab.h iamemsqualitypatch.cpp expert/ExpertEngine.cpp expert/ExpertEngine.h expert/ExpertKnowledgeReader.cpp expert/ExpertKnowledgeReader.h expert/ExpertRuntimeDatabase.cpp expert/ExpertRuntimeDatabase.h expert/ExpertTypes.h expert/LocalAiClient.cpp expert/LocalAiClient.h
+    iamemstab_clean.cpp iamemstab.h iamemsqualitypatch.cpp expert/IaResponseLogic.h expert/ExpertEngine.cpp expert/ExpertEngine.h expert/ExpertKnowledgeReader.cpp expert/ExpertKnowledgeReader.h expert/ExpertRuntimeDatabase.cpp expert/ExpertRuntimeDatabase.h expert/ExpertTypes.h expert/LocalAiClient.cpp expert/LocalAiClient.h
     uirebuild.cpp overviewrebuild.cpp majorpagesrebuild.cpp errorsvisualpatch.cpp analysismodernizer.cpp
     strictvisualrebuild.cpp dedicatedpagesrebuild.cpp visualcompletion.cpp navigationorderpatch.cpp darkstyle.cpp darkfixes.cpp
     settingstabdark.cpp sidebarbubblecleaner.cpp splashtextfix.cpp settingsvisualpatch.cpp readabilityfix.cpp mainwindowtitlebarfix.cpp systemstateconnectionfix.cpp)
@@ -70,6 +70,16 @@ add_executable(protocol_context_selftest protocolcontext_test.cpp protocolcontex
 add_dependencies(${PNAME} protocol_context_selftest)
 add_custom_command(TARGET ${PNAME} POST_BUILD
     COMMAND "$<TARGET_FILE:protocol_context_selftest>")
+
+# BUILD #29 IA response self-test: reproduce the exact user questions that
+# exposed over-broad and non-actionable fallback answers without needing an ECU.
+add_executable(ia_response_selftest
+    expert/IaResponseLogicTest.cpp
+    expert/IaResponseLogic.h)
+target_link_libraries(ia_response_selftest PRIVATE Qt5::Core)
+add_dependencies(${PNAME} ia_response_selftest)
+add_custom_command(TARGET ${PNAME} POST_BUILD
+    COMMAND "$<TARGET_FILE:ia_response_selftest>")
 
 # Functional search self-test: exercises the same reference DB + global index code
 # used by the application, without starting the GUI.
@@ -107,7 +117,6 @@ if(MEMS_RUN_REFERENCE_SELFTEST_POST_BUILD)
     add_custom_command(TARGET ${PNAME} POST_BUILD
         COMMAND "$<TARGET_FILE:mems_search_selftest>")
 endif()
-
 if(MSVC)
     add_compile_definitions(_HAS_STD_BYTE=0)
     target_compile_options(${PNAME} PRIVATE /permissive /utf-8)
