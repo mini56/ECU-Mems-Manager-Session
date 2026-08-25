@@ -23,6 +23,7 @@
 #undef connectToECU
 
 #include <QElapsedTimer>
+#include <QVariant>
 #include <QSerialPort>
 #include "serialadapterdetector.h"
 
