@@ -1,8 +1,14 @@
 BUILD #30 / v1.0.30
 
-Clean x64 IA integration baseline:
-- Qwen3-0.6B-Q8_0
-- llama.cpp b10516 conservative static x64 runtime
-- prebuilt expert database r20
-- application-scope IA sidecar lifetime
-- packaged uninstaller + install manifest
+Clean IA architecture baseline:
+- navigationorderpatch.cpp is the single IA tab creator and preserves the official 14-tab order
+- iamemstab.cpp is a view only; no global IA installer, wrapper or event filter
+- IaMemsService is the single application-scoped IA service
+- LocalAiClient is owned by IaMemsService from creation; no Show-time reparenting
+- packaged expert database r20 is opened read-only; no production runtime database rebuild
+- Qwen3-0.6B-Q8_0 runs through the separate llama.cpp b10516 x64 sidecar
+- Qwen reasoning remains active in the real application; /no_think is not injected
+- CI smoke validation may use --reasoning off only for its short deterministic API check
+- IA observes already-acquired ECU measurements only and has no ECU command or mutation authority
+- legacy iamemstab_clean.cpp, iamemsqualitypatch.cpp and iaresponsecontextpatch.cpp are removed
+- packaged uninstaller and install manifest are retained
