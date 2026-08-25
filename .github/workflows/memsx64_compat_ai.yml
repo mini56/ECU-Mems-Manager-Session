@@ -134,10 +134,11 @@ jobs:
             -DLLAMA_BUILD_SERVER=ON `
             -DLLAMA_BUILD_EXAMPLES=OFF `
             -DLLAMA_BUILD_TESTS=OFF `
-            -DLLAMA_BUILD_TOOLS=OFF `
+            -DLLAMA_BUILD_TOOLS=ON `
+            -DLLAMA_BUILD_APP=OFF `
             -DLLAMA_BUILD_BORINGSSL=OFF
           if ($LASTEXITCODE -ne 0) { throw "conservative llama configure failed: $LASTEXITCODE" }
-          cmake --build $build --config Release --parallel 4
+          cmake --build $build --config Release --target llama-server --parallel 4
           if ($LASTEXITCODE -ne 0) { throw "conservative llama build failed: $LASTEXITCODE" }
 
           $server = Get-ChildItem $build -Recurse -File -Filter 'llama-server.exe' | Where-Object { $_.FullName -match '\\Release\\' } | Select-Object -First 1
@@ -145,7 +146,7 @@ jobs:
           if (-not $server) { throw 'conservative llama-server.exe missing' }
 
           $cache = Get-Content (Join-Path $build 'CMakeCache.txt') -Raw
-          foreach ($required in @('BUILD_SHARED_LIBS:BOOL=OFF','GGML_NATIVE:BOOL=OFF','GGML_BACKEND_DL:BOOL=OFF','GGML_CPU_ALL_VARIANTS:BOOL=OFF','GGML_OPENMP:BOOL=OFF','GGML_SSE42:BOOL=OFF','GGML_AVX:BOOL=OFF','GGML_AVX2:BOOL=OFF','GGML_BMI2:BOOL=OFF')) {
+          foreach ($required in @('BUILD_SHARED_LIBS:BOOL=OFF','GGML_NATIVE:BOOL=OFF','GGML_BACKEND_DL:BOOL=OFF','GGML_CPU_ALL_VARIANTS:BOOL=OFF','GGML_OPENMP:BOOL=OFF','GGML_SSE42:BOOL=OFF','GGML_AVX:BOOL=OFF','GGML_AVX2:BOOL=OFF','GGML_BMI2:BOOL=OFF','LLAMA_BUILD_TOOLS:BOOL=ON','LLAMA_BUILD_APP:BOOL=OFF')) {
             if (-not $cache.Contains($required)) { throw "Conservative llama build flag missing: $required" }
           }
           $ggmlDlls = @(Get-ChildItem $server.Directory.FullName -File -Filter 'ggml-*.dll' -ErrorAction SilentlyContinue)
