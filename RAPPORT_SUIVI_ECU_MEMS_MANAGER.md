@@ -54,9 +54,19 @@
 - Il doit refuser de désinstaller si `ecu_mems_manager.exe` est encore actif.
 - Les fichiers étrangers ajoutés manuellement dans le dossier d’installation doivent rester préservés ; le dossier racine ne doit être supprimé que s’il devient vide.
 
-### Étape en cours — préparation et push BUILD #30
+### Étape terminée : inspection exacte du HEAD #29 avant modification BUILD #30
 
-**Objectif exact :** transformer le HEAD actuel `MEMSX64` en BUILD #30 / v1.0.30 selon l’architecture ci-dessus, corriger le packaging de la base experte et du désinstalleur, pousser le commit sur `MEMSX64`, puis contrôler les GitHub Actions. Aucun BUILD #31 n’est autorisé sans demande explicite utilisateur.
+- **Résultat packaging base :** le checkout contient la vraie source experte sous `database/reference/` avec `manifest.json`, `mems_reference_seed_*.qz64` et les `research_enrichment_*.qz64`. Le chemin `expert/base_connaissance_ia` utilisé par le workflow COMPAT #29 n’existe pas. Le rouge #29 est donc bien un défaut de chemin de staging/packaging.
+- **Résultat désinstalleur :** `uninstaller.cpp` existe et le CMake crée déjà la cible Windows `ecu_mems_uninstaller`. Le workflow #29 construit explicitement `ecu_mems_manager` et `rosco_abi_selftest`, mais pas `ecu_mems_uninstaller`, et l’assemblage du package ne copie pas ce binaire. Le défaut utilisateur vient du packaging, pas d’une disparition du code de désinstallation.
+- **Résultat comportement désinstalleur :** le code existant repose sur `install_manifest.txt`, refuse d’agir si `ecu_mems_manager.exe` est actif, préserve le profil par défaut, peut supprimer les données locales sur choix explicite, supprime seulement les fichiers listés et ne retire les dossiers que s’ils deviennent vides. Il correspond donc au comportement demandé et doit surtout être construit/emballé avec un manifeste complet.
+- **Résultat IA :** `IaMemsTab` contient encore `LocalAiClient *m_localAi` et crée le client avec le widget comme parent ; `showEvent()` programme simultanément `startKnowledgeLoad()` et `LocalAiClient::initialize()` ; `startKnowledgeLoad()` crée un `QThread` qui appelle `ExpertRuntimeDatabase::buildOrOpen()`. C’est exactement la divergence architecturale identifiée par la recherche externe.
+- **Résultat base runtime :** `ExpertRuntimeDatabase::buildOrOpen()` préfère déjà `database/expert/ia_mems_reference_r<revision>.sqlite`. Si cette base est réellement présente dans le package, il n’effectue pas la reconstruction lourde. Le BUILD #30 doit donc garantir cette présence et vérifier qu’aucun chemin de fallback n’est déclenché dans le package final.
+- **Résultat lecteur expert :** `ExpertKnowledgeReader` ouvre déjà SQLite avec `QSQLITE_OPEN_READONLY` puis `PRAGMA query_only=ON`; cette partie est conforme et doit être conservée.
+- **Résultat runtime IA :** le workflow COMPAT #29 contient le profil llama.cpp b10516 le plus conservateur déjà validé : statique, `LLAMA_OPENSSL=OFF`, sans backends dynamiques/OpenMP/AVX2 etc. Ce profil est la base à retenir pour l’artefact #30, plutôt que de revenir au runtime officiel qui avait déjà produit un crash sur le PC réel.
+
+### Étape en cours — implémentation et push BUILD #30
+
+**Objectif exact :** produire un seul artefact x64 BUILD #30 / v1.0.30 fondé sur le runtime COMPAT déjà éprouvé, avec base experte r20 générée depuis `database/reference`, désinstalleur + manifeste installés, et cycle de vie IA nettoyé sans toucher au protocole ECU. Puis pousser sur `MEMSX64` et contrôler la CI. Aucun BUILD #31 sans demande explicite.
 
 ---
 
@@ -260,17 +270,7 @@ Aucune commande mutante ECU pendant la validation IA BUILD #30.
 
 **BUILD #30 / v1.0.30 est officiellement ouvert.**
 
-Étape immédiate : inspecter le packaging actuel et les classes IA du HEAD `fee195e8...`, puis appliquer les modifications minimales nécessaires pour :
-
-- versionner le workflow en #30 ;
-- corriger le chemin de génération/packaging de la base experte ;
-- rendre le runtime base experte open-only ;
-- sortir le démarrage du serveur IA et toute initialisation lourde de `IaMemsTab::showEvent()` ;
-- conserver un seul service IA applicatif ;
-- durcir localhost / identité serveur ;
-- livrer et valider `ecu_mems_uninstaller.exe` + `install_manifest.txt` ;
-- pousser sur `MEMSX64` ;
-- contrôler les Actions et inscrire chaque résultat ici avant l’étape suivante.
+Étape en cours : implémenter et pousser le package #30 à partir du HEAD `fee195e8...` en conservant le protocole/UI existants. Le premier commit #30 doit au minimum : utiliser la source `database/reference` pour générer la base experte, embarquer cette base r20, utiliser le runtime llama COMPAT validé, construire/emballer le désinstalleur et son manifeste, supprimer la concurrence lourde base+Qwen dans le chemin utilisateur, puis déclencher une CI #30 dédiée.
 
 ---
 
