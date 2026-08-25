@@ -64,6 +64,13 @@ set(SOURCES
 add_executable(${PNAME} ${SOURCES})
 target_sources(${PNAME} PRIVATE ${CMAKE_SOURCE_DIR}/desktopshortcut.cpp ${CMAKE_SOURCE_DIR}/desktopshortcut.h)
 
+# BUILD #27 safety policy self-test. It is intentionally independent of the
+# serial transport and proves the family/mode command authorization matrix.
+add_executable(protocol_context_selftest protocolcontext_test.cpp protocolcontext.h)
+add_dependencies(${PNAME} protocol_context_selftest)
+add_custom_command(TARGET ${PNAME} POST_BUILD
+    COMMAND "$<TARGET_FILE:protocol_context_selftest>")
+
 # Functional search self-test: exercises the same reference DB + global index code
 # used by the application, without starting the GUI.
 add_executable(mems_search_selftest
