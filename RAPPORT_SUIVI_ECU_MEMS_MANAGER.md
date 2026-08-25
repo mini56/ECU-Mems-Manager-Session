@@ -82,9 +82,29 @@ L’échec survient seulement après cette génération : le workflow cherche en
 - Le workflow ne devine plus l’emplacement SQLite : il capture la sortie de `expert_runtime_selftest.exe`, extrait la valeur annoncée par `EXPERT_RUNTIME_DATABASE=...`, vérifie que ce fichier existe et n’est pas vide, puis l’utilise pour `integrity_check`, révision r20 et packaging.
 - Aucun changement protocole ECU, Qwen, llama.cpp ou UI.
 
-### Étape en cours — validation CI du correctif r20
+### ECU MEMS Manager x64 #44 — Commit `879077a`
 
-Objectif exact : identifier le nouveau run déclenché par le commit `879077a678f4c203124907dabdeb42b532c9d337`, suivre BUILD #30 jusqu’au résultat, puis consigner immédiatement chaque nouveau blocage ou le succès complet.
+Résultat exact du run GitHub `32890600398`, job `97941378322` : **ROUGE** à l’étape 17 `Validate packaged llama server model and API`.
+
+Toutes les étapes 1 à 16 sont **VERTES**, notamment :
+- protections protocole ;
+- compilation application + désinstalleur + self-tests ;
+- réponses IA déterministes ;
+- ABI protocole ;
+- base de référence ;
+- génération et validation de la base experte r20 ;
+- compilation du runtime llama.cpp b10516 ;
+- téléchargement/vérification Qwen3-0.6B-Q8_0 ;
+- assemblage du package ;
+- validation architecture du package.
+
+Erreur exacte du test API empaqueté :
+`Empty chat completion from packaged Qwen`.
+Le serveur empaqueté démarre (`version: 0.1.2-dev`, commit llama.cpp `b95502b`, MSVC x64) et la requête atteint l’API, mais le contrôle de `choices[0].message.content` obtient une chaîne vide. Le test impose une enveloppe de génération courte alors que le raisonnement Qwen3 est actif par défaut ; le texte visible peut donc rester vide dans cette enveloppe.
+
+### Étape autorisée — correction minimale du smoke-test Qwen
+
+Objectif exact : modifier **uniquement** le lancement de `llama-server.exe` dans le smoke-test GitHub empaqueté afin d’y ajouter `--reasoning off`, puis relancer la validation. Cette option est réservée au serveur lancé par le CI : **le serveur lancé par ECU MEMS Manager et la fonction de raisonnement de l’IA réelle restent inchangés et actifs**. Aucun changement protocole ECU, UI, base experte, modèle Qwen ou code `LocalAiClient` n’est autorisé dans cette correction.
 
 ---
 
@@ -131,4 +151,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Suivre le nouveau run BUILD #30 déclenché par `879077a678f4c203124907dabdeb42b532c9d337`. Si un nouveau rouge apparaît, consigner sa cause exacte avant toute correction.**
+**Ajouter `--reasoning off` uniquement au `llama-server.exe` lancé dans l’étape GitHub `Validate packaged llama server model and API`, sans modifier le serveur lancé par l’application, puis pousser sur `MEMSX64` et suivre la nouvelle exécution.**
