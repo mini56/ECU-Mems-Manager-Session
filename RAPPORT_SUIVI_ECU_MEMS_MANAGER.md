@@ -113,12 +113,22 @@ Objectif exact : modifier **uniquement** le lancement de `llama-server.exe` dans
 - Le code de l’application n’a pas été modifié : `LocalAiClient` et le serveur réellement lancé par ECU MEMS Manager ne reçoivent pas cette option. **Le raisonnement de l’IA MEMS reste actif.**
 - Aucun changement protocole ECU, UI, base experte, modèle Qwen ou packaging hors argument du smoke-test.
 
-### ECU MEMS Manager x64 #45 — Commit `414ea52`
+### ECU MEMS Manager x64 #45 — Commit `414ea52` — VERT
 
-- Run GitHub : `32893817192`.
-- Déclenché par le push du commit `414ea52970e02fb6077c94ca2aa7aec3e92d7383`.
-- État au dernier contrôle : **EN COURS**.
-- Cette exécution valide le correctif limité au smoke-test Qwen ; aucune autre modification n’a été introduite.
+- Run GitHub : **`32893817192`** ; job : **`97951667159`**.
+- Commit exact : **`414ea52970e02fb6077c94ca2aa7aec3e92d7383`**.
+- Résultat final : **SUCCESS / VERT**.
+- Les étapes 1 à 20 sont toutes vertes, notamment : protections protocole, compilation x64, `ecu_mems_uninstaller.exe`, self-tests IA/ABI/base, génération SQLite experte r20, llama.cpp b10516, vérification Qwen3-0.6B-Q8_0, assemblage package, architecture x64, API Qwen empaquetée, smoke launch de l’application, hashes et upload.
+- Le correctif `--reasoning off` n’existe que dans le smoke-test CI ; **le raisonnement de l’IA MEMS réelle reste actif**.
+
+### Artefact officiel BUILD #30 / v1.0.30
+
+- Nom : **`ECU-MEMS-Manager-x64-BUILD-30-v1.0.30`**.
+- Artifact ID : **`9580850077`**.
+- Taille : **668890922 octets**.
+- SHA-256 de l’archive GitHub : **`1db3438593c65f7f77176910e55e9de0a428208f9c3a7732b74d6e35290ed3d0`**.
+- Créé le 25 août 2026 à 20:22:33Z ; expiration prévue le 8 septembre 2026.
+- Cet artefact correspond exactement au HEAD `MEMSX64` `414ea52970e02fb6077c94ca2aa7aec3e92d7383`.
 
 ---
 
@@ -138,6 +148,7 @@ Objectif exact : modifier **uniquement** le lancement de `llama-server.exe` dans
 - #27 `a6f9b209f32b6dd77774832e8c84469c53deca47`, run `32832192437` SUCCESS, AANMP002/MNE101150, COM3 FTDI, ROSCO 1.3/1.6, Injection RAM Mode4 ≈2,63 ms.
 - #28 `0533adaf50cf2c4d62a1ba5241a0100dfa1b48e8`, run `32842049458` SUCCESS, artifact `9561033224`, SHA256 `50407002f1368be30a163714ab8765a4ea7fe283fa8fd46cb1dcbd4015025e1b`.
 - #29 final `fee195e88d3615613b8f92de83209da2cf8247c2`; runtime COMPAT run `32878926411` vert ; Qwen chargé sur PC et statut `IA locale prête` atteint ; dernier rouge #29 limité au packaging expert.
+- #30 `414ea52970e02fb6077c94ca2aa7aec3e92d7383`, ECU MEMS Manager x64 #45 / run `32893817192` SUCCESS, artifact `9580850077`, archive SHA-256 `1db3438593c65f7f77176910e55e9de0a428208f9c3a7732b74d6e35290ed3d0`.
 
 ## VERSIONNAGE
 
@@ -165,4 +176,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Suivre ECU MEMS Manager x64 #45 — Commit `414ea52`. Si l’exécution devient rouge, consigner la cause exacte avant toute nouvelle correction ; si elle devient verte, consigner le succès et l’artifact.**
+**Tester sur le PC réel l’artefact officiel BUILD #30 / v1.0.30 (`9580850077`) : démarrage x64, présence des 14 onglets, ouverture IA MEMS sans crash, passage à `IA locale prête`, réponse Qwen réelle avec raisonnement actif, puis fonctionnement du désinstalleur. Ne lancer aucune commande ECU mutante pendant cette validation.**
