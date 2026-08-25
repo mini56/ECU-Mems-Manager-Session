@@ -1,5 +1,5 @@
 name: ECU MEMS Manager x64
-run-name: BUILD #27 - v1.0.27 - ${{ github.sha }}
+run-name: BUILD #28 - v1.0.28 - ${{ github.sha }}
 
 on:
   workflow_dispatch:
@@ -17,7 +17,7 @@ on:
       - 'translations/**'
 
 concurrency:
-  group: memsx64-build-27
+  group: memsx64-build-28
   cancel-in-progress: true
 
 permissions:
@@ -27,9 +27,9 @@ jobs:
   build_x64:
     runs-on: windows-latest
     env:
-      MEMS_BUILD: '27'
-      MEMS_VERSION: '1.0.27'
-      MEMS_BUILD_NUMBER: '27'
+      MEMS_BUILD: '28'
+      MEMS_VERSION: '1.0.28'
+      MEMS_BUILD_NUMBER: '28'
 
     steps:
       - name: Checkout exact source commit
@@ -62,7 +62,7 @@ jobs:
           if (-not (Test-Path "$qtRoot\plugins\sqldrivers\qsqlite.dll")) { throw 'Qt QSQLITE x64 plugin missing' }
           if (-not (Test-Path "$qtRoot\bin\Qt5SerialPort.dll")) { throw 'Qt SerialPort x64 runtime missing' }
 
-      - name: Validate deterministic 14-tab navigation source
+      - name: Validate deterministic navigation and BUILD 28 regressions
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -71,6 +71,8 @@ jobs:
           nav=Path('navigationorderpatch.cpp').read_text(encoding='utf-8')
           cmake=Path('CMakeLists.txt').read_text(encoding='utf-8')
           wrapper=Path('iamemstab_clean.cpp').read_text(encoding='utf-8')
+          visual=Path('visualcompletion.cpp').read_text(encoding='utf-8')
+          dispatch=Path('memsinterface_dispatch.cpp').read_text(encoding='utf-8')
           required=['overview_tab','injection_tab','emission_tab','actuators','errors','DiagnosticPanel','ia_mems_tab','AnalysisTab','SummaryTab','ecu_rosco_tab','raw','database_tab','ECU','mems19_test_tab']
           missing=[x for x in required if x not in nav]
           if missing: raise SystemExit('Missing deterministic tab identities: '+', '.join(missing))
@@ -79,7 +81,13 @@ jobs:
           if 'taborderpatch.cpp' in cmake: raise SystemExit('Legacy taborderpatch.cpp is still compiled')
           if 'iamemstab_clean.cpp' not in cmake: raise SystemExit('IA MEMS clean wrapper is not compiled')
           if '#define Q_COREAPP_STARTUP_FUNCTION(AFUNC)' not in wrapper: raise SystemExit('IA legacy startup navigation hook is not suppressed')
-          print('PASS navigation 14/14 deterministic')
+          if 'nav->viewport()->height()' not in visual or 'Qt::ScrollBarAlwaysOff' not in visual:
+              raise SystemExit('BUILD 28 sidebar is not fitted from the real window viewport')
+          if '(raw7d1415-32768)-hotIdleCorrection' not in visual:
+              raise SystemExit('BUILD 28 hot-idle sign correction is missing')
+          if 'disconnect-requested' not in dispatch or 'm_disconnectRequested.loadAcquire()!=0' not in dispatch:
+              raise SystemExit('BUILD 28 disconnect cancellation guard is missing')
+          print('PASS navigation 14/14 + BUILD 28 regression guards')
           '@ | python -
 
       - name: Validate historical MEMS protocol guards
@@ -164,7 +172,7 @@ jobs:
           if ($forbidden) { throw "Forbidden first-milestone runtime found: $($forbidden.FullName -join ', ')" }
           @(
             'ECU MEMS MANAGER - NATIVE X64 VALIDATION BUILD',
-            'BUILD #27 - v1.0.27',
+            'BUILD #28 - v1.0.28',
             'Full MEMS Manager application compiled native x64',
             'Protocol DLL: mems_manager_x64.dll native x64',
             'MSVC x64 runtime deployed locally with application',
@@ -244,7 +252,7 @@ jobs:
         run: |
           $dist = '${{ github.workspace }}\dist-x64'
           @(
-            'BUILD #27 - v1.0.27',
+            'BUILD #28 - v1.0.28',
             'ECU MEMS MANAGER NATIVE X64: 15/15 AUTOMATED CONTROLS PASSED',
             '01 PASS full x64 application compile',
             '02 PASS mems_manager_x64.dll compile',
@@ -261,14 +269,14 @@ jobs:
             '13 PASS packaged full application smoke launch',
             '14 PASS SQLite semantic self-test + packaged reference resources + local MSVC x64 runtime',
             '15 PASS complete PE inventory AMD64 only',
-            'NAV PASS deterministic 14/14',
+            'NAV PASS deterministic 14/14 + BUILD 28 regression guards',
             'LOCAL IA RUNTIME intentionally absent from first ECU-validation package'
           ) | Set-Content "$dist\ECU_MEMS_X64_15_CONTROLS.txt" -Encoding UTF8
 
-      - name: Upload BUILD 27 artifact
+      - name: Upload BUILD 28 artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ECU-MEMS-Manager-x64-BUILD-27-v1.0.27
+          name: ECU-MEMS-Manager-x64-BUILD-28-v1.0.28
           path: dist-x64/
           if-no-files-found: error
           compression-level: 0
