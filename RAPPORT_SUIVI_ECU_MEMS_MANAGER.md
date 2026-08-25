@@ -100,7 +100,26 @@ Changements réalisés :
 - SHA-256 archive GitHub : **`ee7f12e933a17c884c6ca081c583a542f45569f556a68a50f124b58b5f13fcff`**.
 - Créé le **25 août 2026 à 21:15:31Z** ; expiration prévue le **8 septembre 2026 à 21:15:04Z**.
 - Cet artefact correspond exactement au HEAD `776fc647a874564c932bf09e8871cb771a0ed258`.
-- Le CI valide désormais la reconstruction propre et le package, mais **le crash à l’ouverture de l’onglet IA ne peut être considéré corrigé qu’après test réel sur le PC utilisateur**, car le smoke launch CI n’ouvre toujours pas cet onglet.
+
+### Test PC réel — ECU MEMS Manager x64 #59 — Commit `776fc64`
+
+Résultat utilisateur constaté sur les captures du 25 août 2026 :
+
+- **le crash à l’ouverture de l’onglet IA MEMS est supprimé** ;
+- statut visible : `ECU non connecté • base prête • IA locale prête` ; la base r20 et Qwen sont donc réellement démarrés sur le PC ;
+- défaut restant : l’IA ne fournit pas de réponse utile. Exemple exact : question utilisateur `quel jour somme nous?` puis réponse IA `Quel jour sommes-nous ?`, c’est-à-dire une simple reformulation/correction de la question ;
+- l’utilisateur indique que le même comportement non-répondant est observé sur les questions testées.
+
+### Isolation du défaut question/réponse après reconstruction
+
+Le câblage propre `IaMemsTab -> IaMemsService -> LocalAiClient -> responseReady -> IaMemsTab` est vérifié : la question part bien et une chaîne Qwen revient bien dans la vue. Le défaut n’est donc plus un problème de signal Qt ni de démarrage du sidecar.
+
+Deux défauts concrets ont été identifiés avant correction :
+
+1. le nettoyage de l’ancien `iamemsqualitypatch.cpp` a retiré avec lui le traitement déterministe de la date courante ; `IaMemsService::groundingFor()` ne fournit actuellement aucune date locale pour une question comme « quel jour sommes-nous ? », et Qwen seul ne possède pas l’heure/date runtime du PC ;
+2. le raisonnement Qwen3 est maintenant actif, mais `LocalAiClient` utilise encore `temperature=0.25`, `top_p=0.9` et aucun `top_k`. La documentation officielle Qwen3 recommande en thinking `temperature=0.6`, `top_p=0.95`, `top_k=20`, `min_p=0` et déconseille les réglages favorisant les répétitions. Ces paramètres doivent être appliqués au mode raisonnement réel.
+
+Garde-fou également requis : une sortie qui n’est qu’une reformulation normalisée de la question ne doit plus être acceptée comme réponse valide. Si un contexte déterministe fiable existe, il doit servir de repli ; sinon l’échec doit être explicite plutôt que d’afficher un écho.
 
 ---
 
@@ -108,7 +127,7 @@ Changements réalisés :
 
 - Dépôt : `mini56/ECU-Mems-Manager-Session`.
 - Branche x64 : `MEMSX64`.
-- HEAD actuel : **`776fc647a874564c932bf09e8871cb771a0ed258`**.
+- HEAD actuel avant correction question/réponse : **`776fc647a874564c932bf09e8871cb771a0ed258`**.
 - Rapport : `RAPPORT`.
 - 32 bits : `lab-expert-engine`, ne pas toucher.
 - Rollback x64 : `MEMSX64-BUILD26-BASE`, ne pas toucher.
@@ -121,7 +140,7 @@ Changements réalisés :
 - #28 `0533adaf50cf2c4d62a1ba5241a0100dfa1b48e8`, run `32842049458` SUCCESS, artifact `9561033224`, SHA256 `50407002f1368be30a163714ab8765a4ea7fe283fa8fd46cb1dcbd4015025e1b`.
 - #29 final `fee195e88d3615613b8f92de83209da2cf8247c2`; runtime COMPAT validé séparément ; Qwen avait atteint `IA locale prête` sur PC.
 - #30 pré-reconstruction `414ea52970e02fb6077c94ca2aa7aec3e92d7383`, ECU MEMS Manager x64 #45 SUCCESS CI mais crash PC réel à l’ouverture IA.
-- #30 reconstruction propre : HEAD `776fc647a874564c932bf09e8871cb771a0ed258`, ECU MEMS Manager x64 #59 SUCCESS, artifact `9582674702`, SHA-256 `ee7f12e933a17c884c6ca081c583a542f45569f556a68a50f124b58b5f13fcff` ; test PC réel de l’ouverture IA encore requis.
+- #30 reconstruction propre : HEAD `776fc647a874564c932bf09e8871cb771a0ed258`, ECU MEMS Manager x64 #59 SUCCESS, artifact `9582674702`; crash d’ouverture corrigé sur PC, défaut question/réponse restant.
 
 ## VERSIONNAGE
 
@@ -149,4 +168,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Tester sur le PC réel l’artefact de ECU MEMS Manager x64 #59 — Commit `776fc64`, en priorité l’ouverture de l’onglet IA MEMS. Vérifier successivement : absence de crash à l’ouverture, base experte prête, démarrage puis état prêt de l’IA locale, et réponse à une question simple. Si un crash ou une erreur apparaît, consigner le comportement exact avant toute nouvelle correction. Aucun BUILD #31.**
+**Corriger uniquement le chemin question/réponse du BUILD #30 : ajouter la date locale comme contexte déterministe pour les questions de date, appliquer les paramètres thinking recommandés à Qwen3 (`temperature=0.6`, `top_p=0.95`, `top_k=20`, `min_p=0`), ajouter un garde-fou anti-écho/reformulation avec repli sur le contexte fiable, puis pousser sur `MEMSX64` et suivre la nouvelle Action GitHub sans créer BUILD #31.**
