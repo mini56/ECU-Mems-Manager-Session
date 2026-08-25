@@ -9,6 +9,7 @@
 #include <QMutex>
 #include "rosco.h"
 #include "commonunits.h"
+#include "protocolcontext.h"
 
 class MEMSInterface : public QObject
 {
@@ -26,6 +27,8 @@ public:
     mems_data* getData();
     librosco_version getVersion() { return mems_get_lib_version(); }
     void cancelRead();
+    MemsEcuFamily ecuFamily() const;
+    MemsDiagnosticMode diagnosticMode() const;
 
 public slots:
     void onParentThreadStarted();
@@ -147,14 +150,27 @@ private:
     QAtomicInteger<int> m_shutdownRequested{0};
     QAtomicInteger<int> m_connectedState{0};
     QAtomicInteger<int> m_mappedInjectionRequested{0};
+    QAtomicInteger<int> m_ecuFamily{static_cast<int>(MemsEcuFamily::Unknown)};
+    QAtomicInteger<int> m_diagnosticMode{static_cast<int>(MemsDiagnosticMode::Unknown)};
     uint8_t m_d0_response_buffer[4];
+
     void runServiceLoop();
     bool connectToECU();
     bool connectToECULegacy();
     void onStartPollingRequestLegacy();
+    void onProtocolCommandRequestedLegacy(quint8 command);
     bool tryRoscoConnect(const QString &devicePath);
     bool performMems19Wakeup(const QString &qtPortName, QString *detail = nullptr);
     bool actuatorOnOffDelayTest(actuator_cmd onCmd, actuator_cmd offCmd);
+
+    void setEcuFamily(MemsEcuFamily family);
+    void setDiagnosticMode(MemsDiagnosticMode mode);
+    void resetProtocolContext();
+    bool guardedMemsTestActuator(actuator_cmd cmd, uint8_t *data);
+    bool guardedMemsMoveIac(uint8_t desiredPos);
+    bool guardedClearFaults();
+    bool guardedResetAdjustments();
+    bool guardedResetEcu();
 };
 
 #endif // MEMSINTERFACE_H
