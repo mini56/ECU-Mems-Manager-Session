@@ -141,13 +141,33 @@ Objectif exact : modifier **uniquement** le lancement de `llama-server.exe` dans
 
 Objectif exact : comparer le chemin d’ouverture IA du commit `414ea52970e02fb6077c94ca2aa7aec3e92d7383` avec le dernier état confirmé sans crash sur PC (`12fef48c68807bc59d2f45f9cd8d86d2a42856ca`, BUILD #26), puis isoler l’objet, callback ou thread responsable **avant toute correction**. Ne modifier ni protocole ECU, ni UI, ni modèle Qwen, ni fonction de raisonnement ; ne pas créer BUILD #31.
 
+### Décision utilisateur — reconstruction IA réellement propre
+
+L’utilisateur confirme explicitement qu’il avait demandé de **refaire l’IA sur une architecture propre** et autorise maintenant la reconstruction immédiate puis le push sur `MEMSX64`, toujours dans BUILD #30 / v1.0.30.
+
+Constats techniques avant modification :
+- `navigationorderpatch.cpp` crée déjà directement `IaMemsTab` et garantit sa place officielle n°7 ; l’ancien installateur `Q_COREAPP_STARTUP_FUNCTION` contenu dans `iamemstab.cpp` est donc redondant.
+- `iamemstab_clean.cpp` ne constitue pas une implémentation propre : il réinclut `iamemstab.cpp` puis ajoute un `eventFilter` global qui reparente `LocalAiClient` pendant l’événement `Show`.
+- `iamemsqualitypatch.cpp` et `iaresponsecontextpatch.cpp` ajoutent encore d’autres `eventFilter` globaux autour de l’IA ; cette superposition doit disparaître.
+- Le BUILD #26 stable n’embarquait pas le vrai runtime Qwen ; son succès PC ne validait donc pas le chemin de démarrage du sidecar actuel.
+- Le code actuel de `LocalAiClient` contient encore `/no_think` dans la requête et dans le prompt système ; contrairement à l’intention annoncée, cela désactive le raisonnement Qwen dans l’application. Cette incohérence doit être supprimée dans la reconstruction propre.
+
+Architecture à appliquer maintenant :
+- `navigationorderpatch.cpp` reste l’unique créateur/intégrateur visuel de l’onglet IA ;
+- `iamemstab.cpp` devient l’unique implémentation de la vue IA et est compilé directement ; aucun wrapper ni installateur IA global ;
+- `LocalAiClient` devient un **service unique à durée de vie application dès sa création**, sans reparentage au `Show` ;
+- ouverture IA : chargement/connexion de la base experte read-only, puis démarrage du sidecar Qwen ; pas de double démarrage concurrent au premier `Show` ;
+- suppression de `iamemstab_clean.cpp`, `iamemsqualitypatch.cpp` et `iaresponsecontextpatch.cpp` de la cible x64 ; les comportements nécessaires sont intégrés directement dans les composants réels, pas interceptés globalement ;
+- raisonnement Qwen actif dans l’application : suppression de `/no_think` côté application ; le `--reasoning off` reste uniquement dans le smoke-test CI rapide ;
+- aucun changement protocole ECU, ordre des 14 onglets, style dark/responsive, base experte r20, modèle Qwen, branche 32 bits ou rollback.
+
 ---
 
 ## ÉTAT DE RÉFÉRENCE
 
 - Dépôt : `mini56/ECU-Mems-Manager-Session`.
 - Branche x64 : `MEMSX64`.
-- HEAD : `414ea52970e02fb6077c94ca2aa7aec3e92d7383`.
+- HEAD avant reconstruction propre : `414ea52970e02fb6077c94ca2aa7aec3e92d7383`.
 - Rapport : `RAPPORT`.
 - 32 bits : `lab-expert-engine`, ne pas toucher.
 - Rollback x64 : `MEMSX64-BUILD26-BASE`, ne pas toucher.
@@ -155,7 +175,7 @@ Objectif exact : comparer le chemin d’ouverture IA du commit `414ea52970e02fb6
 
 ### Références historiques
 
-- #26 `12fef48c68807bc59d2f45f9cd8d86d2a42856ca`, run `32816285887` SUCCESS, IA/navigation PC validées.
+- #26 `12fef48c68807bc59d2f45f9cd8d86d2a42856ca`, run `32816285887` SUCCESS, IA/navigation PC validées sans runtime Qwen emballé.
 - #27 `a6f9b209f32b6dd77774832e8c84469c53deca47`, run `32832192437` SUCCESS, AANMP002/MNE101150, COM3 FTDI, ROSCO 1.3/1.6, Injection RAM Mode4 ≈2,63 ms.
 - #28 `0533adaf50cf2c4d62a1ba5241a0100dfa1b48e8`, run `32842049458` SUCCESS, artifact `9561033224`, SHA256 `50407002f1368be30a163714ab8765a4ea7fe283fa8fd46cb1dcbd4015025e1b`.
 - #29 final `fee195e88d3615613b8f92de83209da2cf8247c2`; runtime COMPAT run `32878926411` vert ; Qwen chargé sur PC et statut `IA locale prête` atteint ; dernier rouge #29 limité au packaging expert.
@@ -165,7 +185,7 @@ Objectif exact : comparer le chemin d’ouverture IA du commit `414ea52970e02fb6
 
 - #29 = v1.0.29 ; #30 = v1.0.30 ; #100 = v1.1.0.
 - Formule `1.(build / 100).(build % 100)`.
-- Un rerun du même commit n’est pas un nouveau BUILD.
+- Un rerun ou correctif du même BUILD #30 ne devient pas BUILD #31.
 
 ## UI OFFICIELLE À PRÉSERVER
 
@@ -187,4 +207,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Comparer le chemin d’ouverture de l’onglet IA MEMS entre `414ea52970e02fb6077c94ca2aa7aec3e92d7383` et `12fef48c68807bc59d2f45f9cd8d86d2a42856ca`, en priorité `iamemstab.cpp`, `iamemstab_clean.cpp`, `iamemsqualitypatch.cpp` et `expert/LocalAiClient.cpp`, puis consigner la cause isolée avant toute correction.**
+**Reconstruire maintenant l’intégration IA propre sur `MEMSX64` : compiler directement `iamemstab.cpp`, retirer les wrappers/patches IA globaux, rendre `LocalAiClient` application-scoped dès sa création, séquencer base experte puis Qwen, supprimer `/no_think` côté application, vérifier que le protocole et les 14 onglets restent intacts, puis pousser et suivre la nouvelle exécution GitHub du BUILD #30.**
