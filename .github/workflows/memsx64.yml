@@ -138,6 +138,26 @@ jobs:
           Copy-Item "$build\librosco-x64\Release\mems_manager_x64.dll" "$dist\mems_manager_x64.dll" -Force
           & "$qtRoot\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist "$dist\ecu_mems_manager.exe"
           if ($LASTEXITCODE -ne 0) { throw "windeployqt failed: $LASTEXITCODE" }
+
+          # windeployqt does not reliably copy the MSVC CRT when Qt is installed by aqt.
+          # Deploy the exact x64 VC runtime shipped with the Visual Studio toolchain used by this runner.
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          if (-not (Test-Path $vswhere)) { throw "vswhere.exe missing: $vswhere" }
+          $vsRoot = (& $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath | Select-Object -First 1).Trim()
+          if (-not $vsRoot) { throw 'Visual Studio C++ toolchain installation not found' }
+          $redistRoot = Join-Path $vsRoot 'VC\Redist\MSVC'
+          $crtDir = Get-ChildItem $redistRoot -Directory -ErrorAction Stop |
+            Sort-Object Name -Descending |
+            ForEach-Object { Join-Path $_.FullName 'x64\Microsoft.VC143.CRT' } |
+            Where-Object { Test-Path $_ } |
+            Select-Object -First 1
+          if (-not $crtDir) { throw "Microsoft.VC143.CRT x64 redistributable directory not found below $redistRoot" }
+          Write-Host "Deploying MSVC x64 runtime from: $crtDir"
+          Copy-Item (Join-Path $crtDir '*.dll') $dist -Force
+          foreach ($runtimeDll in @('MSVCP140.dll','VCRUNTIME140.dll','VCRUNTIME140_1.dll')) {
+            if (-not (Test-Path (Join-Path $dist $runtimeDll))) { throw "Required MSVC x64 runtime missing from package: $runtimeDll" }
+          }
+
           Copy-Item "$build\Release\translations" "$dist\translations" -Recurse -Force
           Copy-Item "$build\Release\database" "$dist\database" -Recurse -Force
           $forbidden = Get-ChildItem $dist -Recurse -File | Where-Object { $_.Name -ieq 'librosco.dll' -or $_.Name -ieq 'llama-server.exe' -or $_.Extension -ieq '.gguf' }
@@ -147,6 +167,7 @@ jobs:
             'BUILD #26 - v1.0.26',
             'Full MEMS Manager application compiled native x64',
             'Protocol DLL: mems_manager_x64.dll native x64',
+            'MSVC x64 runtime deployed locally with application',
             '14-tab application retained',
             'Local IA runtime/model intentionally absent from this first ECU-validation package',
             'Historical 32-bit librosco.dll intentionally absent'
@@ -162,7 +183,7 @@ jobs:
           from pathlib import Path
           import pefile
           root=Path(os.environ['DIST']); app=root/'ecu_mems_manager.exe'; dll=root/'mems_manager_x64.dll'
-          required=[app,dll,root/'Qt5Core.dll',root/'Qt5Gui.dll',root/'Qt5Widgets.dll',root/'Qt5Sql.dll',root/'Qt5SerialPort.dll',root/'platforms'/'qwindows.dll',root/'sqldrivers'/'qsqlite.dll']
+          required=[app,dll,root/'Qt5Core.dll',root/'Qt5Gui.dll',root/'Qt5Widgets.dll',root/'Qt5Sql.dll',root/'Qt5SerialPort.dll',root/'MSVCP140.dll',root/'VCRUNTIME140.dll',root/'VCRUNTIME140_1.dll',root/'platforms'/'qwindows.dll',root/'sqldrivers'/'qsqlite.dll']
           missing=[str(p.relative_to(root)) for p in required if not p.exists() or p.stat().st_size<=0]
           if missing: raise SystemExit('Missing x64 package binaries: '+', '.join(missing))
           def load(p): return pefile.PE(str(p),fast_load=False)
@@ -198,10 +219,13 @@ jobs:
             "$dist\translations\en\en.json",
             "$dist\translations\fr\fr_navigation.json",
             "$dist\translations\en\en_navigation.json",
-            "$dist\sqldrivers\qsqlite.dll"
+            "$dist\sqldrivers\qsqlite.dll",
+            "$dist\MSVCP140.dll",
+            "$dist\VCRUNTIME140.dll",
+            "$dist\VCRUNTIME140_1.dll"
           )
           foreach ($path in $required) { if (-not (Test-Path $path)) { throw "Missing indispensable resource: $path" } }
-          Write-Host 'PASS packaged SQLite/reference/translation resources'
+          Write-Host 'PASS packaged SQLite/reference/translation/MSVC runtime resources'
 
       - name: Control 13 - smoke launch packaged application
         shell: pwsh
@@ -235,7 +259,7 @@ jobs:
             '11 PASS ABI frame80=28 frame7d=32 mems_data=60',
             '12 PASS protocol source guards',
             '13 PASS packaged full application smoke launch',
-            '14 PASS SQLite semantic self-test + packaged reference resources',
+            '14 PASS SQLite semantic self-test + packaged reference resources + local MSVC x64 runtime',
             '15 PASS complete PE inventory AMD64 only',
             'NAV PASS deterministic 14/14',
             'LOCAL IA RUNTIME intentionally absent from first ECU-validation package'
