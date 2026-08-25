@@ -6,7 +6,7 @@
 > Il constitue la source de vérité de continuité du projet.
 > La branche `RAPPORT` sert uniquement au suivi/transmission ; le développement x64 se fait sur `MEMSX64`.
 
-Dernière mise à jour : **25 août 2026 — BUILD #28 / v1.0.28 compilé entièrement vert après le test véhicule du BUILD #27. Le #28 corrige trois points observés : responsive de la sidebar 14 onglets, signe du calcul ralenti chaud, annulation d’une reconnexion déjà engagée lors d’un clic volontaire sur Déconnecter. Ces trois corrections sont compilées/contrôlées en CI mais doivent encore être validées sur le PC utilisateur et, pour les deux points ECU, sur véhicule réel.**
+Dernière mise à jour : **25 août 2026 — BUILD #29 / v1.0.29 COMPAT IA recompilé avec runtime llama.cpp b10516 Windows x64 autonome sans OpenSSL. Le diagnostic PowerShell réel a isolé un code `-1073741515 / 0xC0000135` sur `llama-server.exe --version`, cohérent avec une dépendance DLL manquante et avec un incident upstream llama.cpp lié à OpenSSL. Le nouveau CI est entièrement vert, y compris `llama-server --version` avec PATH isolé et démarrage Qwen local. IMPORTANT : le nouvel artefact n’est pas encore testé sur le PC utilisateur et reste donc à valider matériellement.**
 
 ---
 
@@ -14,17 +14,19 @@ Dernière mise à jour : **25 août 2026 — BUILD #28 / v1.0.28 compilé entiè
 
 - Dépôt : `mini56/ECU-Mems-Manager-Session`.
 - Branche x64 active : **`MEMSX64`**.
-- HEAD x64 actuel : **`0533adaf50cf2c4d62a1ba5241a0100dfa1b48e8`**.
+- HEAD x64 actuel : **`1bbe9923a7a655dcf51d7cd73f1b0e46ad8f1fd0`**.
 - Branche rapport : **`RAPPORT`**.
 - Branche 32 bits de référence : **`lab-expert-engine`**, à laisser intacte.
 - Branche de sauvegarde x64 validée : **`MEMSX64-BUILD26-BASE`**.
 - Référence matérielle 32 bits : **BUILD #14 — v1.0.14**.
 - Référence x64 UI/IA/navigation figée : **BUILD #26 — v1.0.26**.
 - Premier BUILD x64 testé sur véhicule : **BUILD #27 — v1.0.27**.
-- BUILD x64 actuel à tester : **BUILD #28 — v1.0.28**.
+- BUILD x64 actuel : **BUILD #29 — v1.0.29**, voie COMPAT IA en validation.
+- BUILD #28 reste le dernier rollback x64 stable disponible avant le lot IA #29.
 - Règle utilisateur : **un BUILD = une version**.
 - Un rerun d’un même commit/build ne change pas la version.
-- Workflow x64 unique : `.github/workflows/memsx64.yml`.
+- Workflow x64 principal : `.github/workflows/memsx64.yml`.
+- Workflow temporaire de compatibilité IA #29 : `.github/workflows/memsx64_compat_ai.yml`.
 - Le workflow compile le commit exact qui le déclenche.
 - `GITHUB_RUN_NUMBER` ne décide jamais de la version logicielle.
 
@@ -235,6 +237,7 @@ Le numéro de BUILD est le numéro de version :
 - BUILD #26 = v1.0.26
 - BUILD #27 = v1.0.27
 - BUILD #28 = v1.0.28
+- BUILD #29 = v1.0.29
 - BUILD #100 = v1.1.0
 - BUILD #588 = v1.5.88
 - BUILD #662 = v1.6.62
@@ -255,7 +258,7 @@ Règles :
 10. ne pas neutraliser une fonction pour masquer un crash ;
 11. identifier une cause concrète avant modification ;
 12. ne pas revenir sur une piste éliminée sans nouvelle preuve ;
-13. CI vert signifie compilation/tests automatisés verts, pas validation ECU réel.
+13. CI vert signifie compilation/tests automatisés verts, pas validation PC/ECU réel.
 
 Commits historiques de discipline :
 
@@ -357,7 +360,7 @@ Commits principaux du bloc :
 - `bab88302036730089a89b597d0da2b4a5e4b242b`
 - `a6f9b209f32b6dd77774832e8c84469c53deca47`
 
-Le BUILD #28 conserve ces protections ; le CI #28 a repassé les garde-fous historiques avec succès.
+Le BUILD #28 conserve ces protections ; les CI #28 et #29 ont repassé les garde-fous historiques avec succès.
 
 ---
 
@@ -454,11 +457,11 @@ Base : `<appdir>/database/ecu_mems_manager.sqlite`.
 
 Cache IA : `%LOCALAPPDATA%\ECU Mems Manager\ECU Mems Manager\ia-mems\ia_mems_reference_r20.sqlite`.
 
-Runtime IA de référence : llama.cpp Windows x64 CPU, `llama-server.exe`, Qwen3-0.6B-Q8_0 GGUF, HTTP `127.0.0.1:18089`.
+Runtime IA actuel en BUILD #29 : llama.cpp b10516, `llama-server.exe` Windows x64 CPU recompilé en profil statique conservateur, Qwen3-0.6B-Q8_0 GGUF, HTTP local `127.0.0.1:18089`.
 
-Le package x64 #27/#28 omet le runtime/modèle lourds. Onglet IA + moteur expert + fallback fonctionnent sans crash ; absence llama signalée proprement.
+Le modèle Qwen GGUF n’est pas spécifique à Windows ou Linux. La plateforme dépend du moteur qui l’exécute. Pour MEMS Manager, `llama-server.exe` est construit spécifiquement pour Windows x64.
 
-Amélioration IA non bloquante observée pendant le test #27 : `ETAT MOTEUR ?` / `DIAGNOSTIQUE ?` peut être trop vague et `TENSION BATTERIE ?` retourne trop de mesures. À traiter après validation du cœur #28.
+Améliorations IA #29 : réponses déterministes ciblées pour batterie, état moteur, diagnostic, captures, suivi de la date/heure de dernière mesure ECU et routage multilingue `fr/en/es/it/pt/de`.
 
 ---
 
@@ -498,24 +501,25 @@ Toujours NO-GO : famille exacte + mode exact + commande exacte + timeout/failsaf
 
 ## 15. PROCHAINE ACTION EXACTE
 
-**BUILD #28 / v1.0.28 est maintenant compilé vert et son artefact est prêt. Ne pas créer BUILD #29 avant le résultat du test #28 sauf demande explicite de l’utilisateur.**
+**La voie active est désormais BUILD #29 / v1.0.29 COMPAT IA. Le nouvel artefact du commit `1bbe9923a7a655dcf51d7cd73f1b0e46ad8f1fd0` est compilé vert mais n’est pas encore testé sur le PC utilisateur. Ne pas créer BUILD #30 sans demande explicite.**
 
-Ordre du prochain test :
+Ordre du prochain test IA :
 
-1. lancer `ECU-MEMS-Manager-x64-BUILD-28-v1.0.28` et vérifier `v1.0.28` ;
-2. sans véhicule, redimensionner la fenêtre à une hauteur proche du PC problématique puis cliquer sur `Test ECU 1.9` : **les 14 onglets doivent rester visibles et `Aperçu` ne doit plus sortir du haut** ;
-3. vérifier rapidement IA MEMS et fermeture/réouverture pour s’assurer qu’aucune régression n’a été introduite ;
-4. sur véhicule AANMP002, vérifier la connexion normale et les mesures ;
-5. contrôler le calcul ralenti chaud selon `raw - 32768 - correction` ; exemple de référence : raw `32772`, correction `-3` => attendu `7` ;
-6. tester la séquence réelle de déconnexion : moteur arrêté → contact coupé → clic `Déconnecter`, **câble USB laissé branché** ; `Connecter` doit redevenir orange/actif et aucune reconnexion/clignotement résiduel ne doit apparaître ;
-7. ne pas lancer actionneur, reset, clear faults ou écriture ECU pendant ce test ;
-8. après retour utilisateur, documenter le verdict dans `RAPPORT` avant toute nouvelle étape.
+1. télécharger/extrait le nouvel artefact `ECU-MEMS-Manager-x64-BUILD-29-v1.0.29-COMPAT-IA` provenant du run `32878926411` ;
+2. ouvrir PowerShell dans le dossier `ai` ;
+3. exécuter `./llama-server.exe --version` puis `$LASTEXITCODE` ;
+4. attendu pour ce nouvel artefact : sortie normale de version et code `0` ;
+5. seulement si ce test est bon, lancer MEMS Manager puis ouvrir l’onglet IA ;
+6. vérifier que le statut passe à **IA locale prête** et que l’application ne se ferme pas ;
+7. si `--version` échoue encore, relever exactement le nouveau code avant toute autre modification ;
+8. si `--version` fonctionne mais que MEMS Manager plante à l’ouverture de l’onglet, concentrer alors le diagnostic sur l’intégration `QProcess`/cycle de vie IA ;
+9. ne pas modifier le protocole ECU, le 32 bits, Qwen3-0.6B-Q8_0 ou créer BUILD #30 pendant cette validation.
 
 ---
 
 ## PRINCIPE DIRECTEUR
 
-**BUILD #26 reste la base x64 figée. BUILD #27 / v1.0.27 est le premier build x64 réellement testé sur AANMP002 avec connexion, polling 7D/80 et Injection RAM Mode4 fonctionnels. BUILD #28 / v1.0.28 est compilé vert et contient les corrections ciblées issues de ce test : responsive vertical des 14 onglets, signe du ralenti chaud et annulation d’une reconnexion déjà engagée lors d’une déconnexion volontaire. Ces corrections restent à valider sur PC/véhicule. Toute commande susceptible de modifier l’ECU reste fail-closed si famille ou mode ne sont pas prouvés. La référence 32 bits reste intacte.**
+**BUILD #26 reste la base x64 figée. BUILD #27 / v1.0.27 est le premier build x64 réellement testé sur AANMP002 avec connexion, polling 7D/80 et Injection RAM Mode4 fonctionnels. BUILD #28 / v1.0.28 reste le rollback x64 stable avant l’intégration complète de l’IA. BUILD #29 / v1.0.29 conserve Qwen3-0.6B-Q8_0 et llama.cpp b10516 mais utilise maintenant un runtime Windows x64 statique de compatibilité sans OpenSSL, après diagnostic PowerShell d’un `0xC0000135`. Le nouveau CI #29 est entièrement vert mais le nouvel artefact doit encore être testé sur le PC utilisateur avant toute déclaration de correction réelle. Toute commande susceptible de modifier l’ECU reste fail-closed si famille ou mode ne sont pas prouvés. La référence 32 bits reste intacte.**
 
 ---
 
@@ -577,23 +581,9 @@ Deuxième erreur : compilation globale entraînant `llama-app`, qui échouait su
 
 Commit : **`6b0df9c34a456b7c59af00bcab0acf82abcd7b80`** — `BUILD #29 build only llama-server compatibility target`.
 
-Run compat final : **`32874029233` — SUCCESS COMPLET**.
+Run compat : **`32874029233` — SUCCESS COMPLET**.
 
 Job : **`97887567623` — SUCCESS**.
-
-Étapes vertes importantes :
-
-- build MEMS Manager x64 ;
-- self-test IA déterministe ;
-- ABI protocole ;
-- SQLite sémantique ;
-- compilation runtime llama.cpp b10516 statique de compatibilité ;
-- téléchargement et SHA du Qwen3-0.6B-Q8_0 ;
-- assemblage package ;
-- contrôle architecture/imports du serveur ;
-- **démarrage réel du llama-server avec Qwen et réponse locale sur GitHub Actions** ;
-- smoke launch de MEMS Manager ;
-- upload artefact.
 
 Artefact : **`ECU-MEMS-Manager-x64-BUILD-29-v1.0.29-COMPAT-IA`**.
 
@@ -603,31 +593,152 @@ Taille : **`743 102 004` octets**.
 
 SHA256 : **`73ef0fd55d700608696623aa3960879cab4cbc17f75d6bd2244eac25e3f6b977`**.
 
-### Test utilisateur du package COMPAT — NO-GO actuel
+### Test utilisateur PowerShell décisif sur ce premier package COMPAT
 
-Le workflow est entièrement vert mais l’utilisateur rapporte que **MEMS Manager plante dès l’ouverture de l’onglet IA** sur son PC. Le package COMPAT n’est donc **pas validé fonctionnellement sur le PC utilisateur**.
+Le package COMPAT précédent a ensuite été testé manuellement depuis PowerShell, directement dans son dossier `ai`.
 
-Le workflow GitHub ne reproduit pas l’ouverture interactive de l’onglet IA : il démarre le serveur directement puis effectue un smoke launch général de l’application. Il est donc possible que le problème soit encore dans le runtime sur la machine utilisateur ou dans l’intégration au moment précis où l’onglet initialise `LocalAiClient`.
+Commande :
 
-Vérification source #29 : `LocalAiClient::startServer()` conserve bien le correctif historique :
+```powershell
+.\llama-server.exe --version
+```
 
-- `WorkingDirectory` = dossier de `llama-server.exe` ;
-- ce dossier est préfixé au `PATH` du processus ;
-- `QProcess::MergedChannels` actif ;
-- arguments `-m <model> --alias ia-mems --host 127.0.0.1 --port 18089 -c 4096 -np 1`.
+Observation réelle : **aucune sortie**, retour immédiat à l’invite PowerShell.
 
-Donc **ne pas réappliquer le vieux correctif WorkingDirectory/PATH : il est déjà présent**.
+Commande suivante :
 
-### PROCHAINE ACTION EXACTE BUILD #29 IA
+```powershell
+$LASTEXITCODE
+```
 
-Avant toute nouvelle modification de code ou changement de modèle :
+Résultat réel utilisateur :
 
-1. extraire l’artefact `ECU-MEMS-Manager-x64-BUILD-29-v1.0.29-COMPAT-IA` ;
-2. ouvrir une fenêtre PowerShell directement dans son dossier `ai` ;
-3. exécuter **uniquement** `./llama-server.exe --version` ;
-4. relever exactement sortie / code / éventuel crash ;
-5. si `--version` fonctionne, seulement ensuite lancer le serveur avec `ai/models/ia-mems.gguf` et les mêmes arguments que MEMS Manager ;
-6. si le serveur fonctionne directement avec le modèle mais que l’onglet IA ferme l’application, concentrer le diagnostic sur l’intégration `QProcess` / cycle de vie de l’onglet ;
-7. ne pas modifier Qwen3-0.6B-Q8_0, le protocole ECU, la branche 32 bits ou créer BUILD #30 tant que ce test d’isolation n’est pas obtenu.
+```text
+-1073741515
+```
 
-**État : BUILD #29 CI vert, runtime COMPAT validé sur GitHub Actions, mais NO-GO fonctionnel sur PC utilisateur jusqu’au résultat du test PowerShell.**
+Conversion Windows : **`0xC0000135` = STATUS_DLL_NOT_FOUND / DLL requise introuvable**.
+
+Cette observation est différente du premier `0xC0000005` vu via QProcess. Le test direct PowerShell permet de conclure que, sur ce package, **`llama-server.exe` échoue déjà seul avant le chargement de Qwen et avant l’intégration MEMS Manager**.
+
+Ce test doit être conservé comme méthode standard de diagnostic des runtimes Windows de l’IA.
+
+### Corrélation avec llama.cpp upstream
+
+Recherche dans le dépôt officiel `ggml-org/llama.cpp` : issue **#19236**, intitulée `llama-server and llama-cli exit immediately without any output or error message`.
+
+Éléments concordants :
+
+- Windows ;
+- `llama-server.exe --version` ou `--help` se ferme sans sortie ;
+- un utilisateur rapporte exactement **`0xC0000135 (-1073741515)`** ;
+- le premier mauvais commit identifié dans le ticket est lié au changement vers OpenSSL ;
+- un utilisateur confirme que la présence des DLL OpenSSL corrige le problème dans sa configuration.
+
+Le CMake de llama.cpp b10516 confirme que l’option réelle est :
+
+`LLAMA_OPENSSL` — **ON par défaut**.
+
+Le workflow COMPAT utilisait auparavant `LLAMA_BUILD_BORINGSSL=OFF`, option qui ne supprimait pas cette dépendance OpenSSL dans b10516.
+
+### Correction appliquée au runtime COMPAT
+
+Commit : **`1bbe9923a7a655dcf51d7cd73f1b0e46ad8f1fd0`** — `BUILD #29 make COMPAT IA runtime self-contained`.
+
+Modification principale :
+
+```text
+-DLLAMA_OPENSSL=OFF
+```
+
+Justification : MEMS Manager utilise uniquement le serveur en HTTP local sur `127.0.0.1:18089`. Le support HTTPS/OpenSSL n’est donc pas nécessaire pour ce fonctionnement local.
+
+Contrôles ajoutés :
+
+- vérification `LLAMA_OPENSSL:BOOL=OFF` dans `CMakeCache.txt` ;
+- inspection des imports PE de `llama-server.exe` ;
+- rejet si import `libssl`, `libcrypto`, `ggml-*`, OpenMP ou runtime VC externe non empaqueté ;
+- affichage explicite des imports directs de `llama-server.exe` dans le CI ;
+- lancement de **l’exécutable réellement placé dans le package final** ;
+- test `llama-server.exe --version` avec `PATH` réduit à Windows (`System32` + `SystemRoot`) afin d’éviter qu’une DLL installée sur le runner masque une dépendance non livrée ;
+- le test exige un code de sortie `0` ;
+- démarrage ensuite du serveur avec le Qwen emballé, `/health` et requête `/v1/chat/completions` ;
+- smoke launch de MEMS Manager.
+
+### Nouveau CI après suppression OpenSSL
+
+Run : **`32878926411` — SUCCESS COMPLET**.
+
+Job : **`97903478715` — SUCCESS**.
+
+Toutes les étapes sont vertes, notamment :
+
+- protections protocole ;
+- compilation MEMS Manager x64 ;
+- self-test IA déterministe ;
+- ABI protocole ;
+- base SQLite ;
+- compilation statique conservatrice de llama.cpp b10516 ;
+- téléchargement et SHA du Qwen3-0.6B-Q8_0 ;
+- assemblage package ;
+- **validation architecture/imports** ;
+- **`llama-server.exe --version` du package avec PATH isolé** ;
+- **démarrage réel du serveur et réponse Qwen locale** ;
+- smoke launch MEMS Manager ;
+- upload artefact.
+
+Nouvel artefact : **`ECU-MEMS-Manager-x64-BUILD-29-v1.0.29-COMPAT-IA`**.
+
+Artifact ID : **`9575488580`**.
+
+Taille : **`743 059 094` octets**.
+
+SHA256 : **`8c821b90e676507ca0e3d7cc53950fca5c2a3668fa9e05ee394094a91d8f78aa`**.
+
+Expiration GitHub : `23 novembre 2026`.
+
+### ÉTAT DE VALIDATION — NE PAS SURINTERPRÉTER LE CI VERT
+
+**Le nouvel artefact `9575488580` n’a pas encore été testé sur le PC utilisateur.**
+
+Le CI prouve que :
+
+- le serveur final empaqueté n’a plus besoin d’OpenSSL ;
+- il démarre avec un PATH Windows minimal sur le runner ;
+- il charge Qwen3-0.6B-Q8_0 ;
+- il répond localement ;
+- MEMS Manager démarre en smoke test.
+
+Le CI **ne prouve pas encore** que l’ouverture réelle de l’onglet IA fonctionne sur le PC utilisateur.
+
+Verdict actuel : **BUILD #29 COMPAT IA / commit `1bbe9923...` = CI GO, validation PC réelle EN ATTENTE.**
+
+---
+
+## 17. MÉTHODE WINDOWS / POWERSHELL À UTILISER PLUS SYSTÉMATIQUEMENT
+
+Le diagnostic BUILD #29 montre que PowerShell est particulièrement utile pour distinguer rapidement :
+
+1. crash de l’exécutable runtime lui-même ;
+2. dépendance Windows manquante ;
+3. problème au chargement du modèle GGUF ;
+4. problème d’intégration dans MEMS Manager/QProcess.
+
+Séquence standard recommandée pour un futur incident IA Windows :
+
+```powershell
+.\llama-server.exe --version
+$LASTEXITCODE
+```
+
+Interprétation actuelle connue :
+
+- code `0` : runtime seul démarre correctement ;
+- `-1073741515 / 0xC0000135` : dépendance DLL manquante ;
+- autre code : relever exactement avant toute modification.
+
+Seulement après un `--version` réussi : lancer le serveur avec le modèle et ses arguments réels. Seulement après ce deuxième test réussi : investiguer MEMS Manager/QProcess.
+
+Cette méthode ne cible pas un PC particulier : elle sert à vérifier qu’un package Windows x64 est autonome et ne dépend pas silencieusement de logiciels installés sur la machine de compilation.
+
+**Prochain verdict attendu : test du nouvel artefact `9575488580` sur le PC utilisateur. Tant que ce test n’est pas fait, ne pas écrire dans le rapport que le crash IA est corrigé matériellement.**
