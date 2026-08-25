@@ -416,7 +416,7 @@ jobs:
           & $server --version
           if ($LASTEXITCODE -ne 0) { throw "Packaged llama-server --version failed: $LASTEXITCODE" }
 
-          $arguments = @('-m', $model, '--alias', 'ia-mems', '--host', '127.0.0.1', '--port', '18089', '-c', '4096', '-np', '1', '--no-webui', '--offline')
+          $arguments = @('-m', $model, '--alias', 'ia-mems', '--host', '127.0.0.1', '--port', '18089', '-c', '4096', '-np', '1', '--no-webui', '--offline', '--reasoning', 'off')
           $process = Start-Process -FilePath $server -ArgumentList $arguments -PassThru -WindowStyle Hidden
           try {
             $ready = $false
