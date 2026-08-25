@@ -106,13 +106,20 @@ Le serveur empaqueté démarre (`version: 0.1.2-dev`, commit llama.cpp `b95502b`
 
 Objectif exact : modifier **uniquement** le lancement de `llama-server.exe` dans le smoke-test GitHub empaqueté afin d’y ajouter `--reasoning off`, puis relancer la validation. Cette option est réservée au serveur lancé par le CI : **le serveur lancé par ECU MEMS Manager et la fonction de raisonnement de l’IA réelle restent inchangés et actifs**. Aucun changement protocole ECU, UI, base experte, modèle Qwen ou code `LocalAiClient` n’est autorisé dans cette correction.
 
+### Correction smoke-test Qwen poussée
+
+- Nouveau HEAD `MEMSX64` : **`414ea52970e02fb6077c94ca2aa7aec3e92d7383`** — `BUILD #30 fix packaged Qwen smoke reasoning`.
+- Modification unique : dans l’étape GitHub `Validate packaged llama server model and API`, les arguments du `llama-server.exe` de test incluent maintenant `--reasoning off`.
+- Le code de l’application n’a pas été modifié : `LocalAiClient` et le serveur réellement lancé par ECU MEMS Manager ne reçoivent pas cette option. **Le raisonnement de l’IA MEMS reste actif.**
+- Aucun changement protocole ECU, UI, base experte, modèle Qwen ou packaging hors argument du smoke-test.
+
 ---
 
 ## ÉTAT DE RÉFÉRENCE
 
 - Dépôt : `mini56/ECU-Mems-Manager-Session`.
 - Branche x64 : `MEMSX64`.
-- HEAD : `879077a678f4c203124907dabdeb42b532c9d337`.
+- HEAD : `414ea52970e02fb6077c94ca2aa7aec3e92d7383`.
 - Rapport : `RAPPORT`.
 - 32 bits : `lab-expert-engine`, ne pas toucher.
 - Rollback x64 : `MEMSX64-BUILD26-BASE`, ne pas toucher.
@@ -151,4 +158,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Ajouter `--reasoning off` uniquement au `llama-server.exe` lancé dans l’étape GitHub `Validate packaged llama server model and API`, sans modifier le serveur lancé par l’application, puis pousser sur `MEMSX64` et suivre la nouvelle exécution.**
+**Identifier et suivre la nouvelle exécution GitHub déclenchée par le commit `414ea52970e02fb6077c94ca2aa7aec3e92d7383`. Si elle devient rouge, consigner la cause exacte avant toute nouvelle correction ; si elle devient verte, consigner le succès et l’artifact.**
