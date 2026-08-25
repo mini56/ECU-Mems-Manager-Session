@@ -5,6 +5,24 @@
 > Ce fichier doit être relu avant toute modification d’ECU MEMS Manager.
 > Il constitue la source de vérité de continuité du projet.
 > La branche `RAPPORT` sert uniquement au suivi/transmission ; le développement x64 se fait sur `MEMSX64`.
+>
+> **RÈGLE DE SUIVI IMMÉDIAT : AVANT CHAQUE NOUVELLE ÉTAPE, inscrire dans ce rapport l’étape exacte qui va être exécutée et son objectif. Dès que cette étape produit un résultat, inscrire immédiatement ce résultat dans le rapport AVANT de commencer l’étape suivante. Ne jamais attendre la fin d’un lot, d’un build ou d’une discussion.**
+
+## JOURNAL IMMÉDIAT — 25 août 2026
+
+### Étape : recherche externe sur la bonne architecture d’intégration d’une IA locale dans une application desktop Qt
+
+- **Étape inscrite / objectif :** ne plus chercher une succession de petits correctifs locaux au hasard ; vérifier sur les documentations et applications existantes comment une IA locale basée sur `llama.cpp` doit être intégrée proprement à une application desktop, puis comparer cette architecture à ECU MEMS Manager.
+- **Sources externes consultées :** documentation officielle `llama.cpp`/`llama-server`, documentation Qt 5.15 `QProcess` et `QNetworkAccessManager`, documentation Qt sur le threading SQL, documentation Jan Local API Server, LM Studio headless/local service et exemples RAG locaux.
+- **Résultat n°1 :** `llama.cpp` fournit officiellement `llama-server` comme serveur HTTP local séparé, avec API OpenAI-compatible et endpoint `/health`. Pendant le chargement du modèle `/health` répond 503 ; une fois le modèle prêt il répond 200 `{"status":"ok"}`. C’est exactement le modèle d’intégration prévu pour qu’une autre application consomme l’IA via HTTP.
+- **Résultat n°2 :** Jan et LM Studio suivent la même séparation : moteur local/service séparé du GUI, exposé sur localhost. LM Studio va jusqu’à proposer un service headless distinct de l’interface. Cette séparation évite que le cycle de vie du moteur d’inférence soit mélangé au cycle de vie des widgets.
+- **Résultat n°3 :** Qt 5.15 recommande `QProcess` pour lancer un programme externe et recevoir ses signaux `started`, `finished`, `errorOccurred`; `QNetworkAccessManager` fournit une API réseau asynchrone et doit rester dans son thread d’appartenance. L’utilisation de `QProcess` + HTTP localhost dans `LocalAiClient` est donc architecturalement correcte.
+- **Résultat n°4 :** Qt impose qu’une connexion `QSqlDatabase` soit utilisée uniquement depuis le thread qui l’a créée. Toute construction/indexation SQL exécutée en parallèle doit donc rester strictement isolée par connexion/thread et ne doit pas être mélangée à l’interface ou à une autre connexion active.
+- **Résultat n°5 :** les architectures RAG locales consultées séparent l’ingestion/indexation de la phase de question/réponse : les documents sont indexés avant les requêtes, puis le chat fait seulement `recherche -> contexte -> modèle`. Le chargement du LLM n’est pas utilisé comme moment pour reconstruire l’index documentaire.
+- **Comparaison avec ECU MEMS Manager :** `LocalAiClient` suit déjà le bon schéma : `QProcess` séparé pour `llama-server`, HTTP `127.0.0.1:18089`, `/health`, puis `/v1/chat/completions` avec `QNetworkAccessManager` asynchrone. Le problème structurel restant n’est donc pas « Qwen est mal embarqué dans Qt ».
+- **Écart architectural identifié :** dans `IaMemsTab::showEvent()`, le clic/ouverture de l’onglet déclenche actuellement deux initialisations lourdes en parallèle : `startKnowledgeLoad()` qui lance `ExpertRuntimeDatabase::buildOrOpen()` dans un `QThread`, ET `LocalAiClient::initialize()` qui démarre/charge `llama-server` + Qwen. Cette simultanéité n’est pas le modèle utilisé par les intégrations locales robustes étudiées.
+- **Conclusion de cette étape :** la voie correcte pour ECU MEMS Manager est de conserver `llama-server` comme processus séparé supervisé par Qt, d’attendre sa disponibilité via `/health`, et de traiter la base experte comme un index préparé/préconstruit puis ouvert en lecture seule au runtime. La reconstruction de la base experte ne doit pas être une charge lourde concurrente au chargement du modèle lors du simple affichage de l’onglet.
+- **Niveau de preuve :** cette recherche établit une divergence architecturale concrète et une cause structurelle prioritaire à éliminer. Elle ne prouve pas encore à elle seule quelle instruction exacte déclenche le `0xC0000005` sur le PC utilisateur ; le prochain diagnostic doit vérifier la séparation stricte entre service IA, base experte préconstruite et GUI, sans modifier Qwen ni llama.cpp.
 
 Dernière mise à jour : **25 août 2026 — BUILD #29 / v1.0.29. État CI actuel : DEUX WORKFLOWS DISTINCTS, un vert et un rouge. Le workflow principal `memsx64.yml` est vert sur `209da29d3870fe34aec21c29f1b4182e2cb9372e`. Le workflow COMPAT IA `memsx64_compat_ai.yml` est rouge sur le HEAD actuel `fee195e88d3615613b8f92de83209da2cf8247c2`, uniquement au nouveau contrôle de génération/packaging de la base experte IA. Les tests PC ont déjà prouvé que le runtime llama.cpp et Qwen peuvent démarrer et que MEMS Manager atteint `IA locale prête`, mais un crash reste à éliminer dans le chemin d’ouverture/initialisation de l’onglet IA. Ne pas créer BUILD #30 sans demande explicite.**
 
@@ -189,7 +207,8 @@ Règles :
 10. identifier une cause concrète avant modification ;
 11. ne pas revenir sur une piste éliminée sans nouvelle preuve ;
 12. CI vert signifie compilation/tests automatisés verts, pas validation PC/ECU réel ;
-13. **ne pas créer BUILD #30 sans demande explicite utilisateur**.
+13. **ne pas créer BUILD #30 sans demande explicite utilisateur** ;
+14. **avant chaque nouvelle étape, inscrire l’étape et son objectif dans le rapport ; dès qu’elle produit un résultat, inscrire le résultat avant l’étape suivante**.
 
 ---
 
@@ -540,11 +559,12 @@ Une fois un nouvel artefact COMPAT final produit et vert :
 - validation source déjà réussie = **2134 entrées / 433 concepts sémantiques** ;
 - runtime llama.cpp/Qwen a déjà été observé fonctionnel en PowerShell ;
 - MEMS Manager a déjà atteint **`IA locale prête`** avant le crash restant ;
-- l’objectif immédiat est donc de terminer le packaging/chargement de la base experte sans reconstruire inutilement la base avec Qwen résident, puis de refaire le test réel d’ouverture de l’onglet IA ;
+- recherche externe architecture IA : `LocalAiClient` suit déjà le bon modèle `QProcess + localhost HTTP + /health`; la divergence à éliminer est la reconstruction/initialisation lourde de la base experte en parallèle du chargement Qwen au simple affichage de l’onglet ;
+- l’objectif immédiat est donc de terminer le packaging d’une base experte préconstruite et d’ouvrir cette base en lecture seule au runtime, afin que l’ouverture de l’onglet ne lance plus une reconstruction lourde concurrente au modèle ;
 - ne pas modifier le protocole ECU, `lab-expert-engine`, `MEMSX64-BUILD26-BASE`, Qwen3-0.6B-Q8_0 ou llama.cpp b10516 pendant cette étape.
 
 ---
 
 ## PRINCIPE DIRECTEUR
 
-**BUILD #26 reste la base x64 figée. BUILD #27 est le premier x64 réellement testé sur AANMP002 avec connexion, polling 7D/80 et Injection RAM Mode4 fonctionnels. BUILD #28 reste le rollback x64 stable avant le lot IA. BUILD #29 conserve Qwen3-0.6B-Q8_0, llama.cpp b10516 et les six langues. Le runtime et Qwen ont maintenant été observés en fonctionnement sur le PC utilisateur, mais l’ouverture/initialisation IA reste à stabiliser. À l’instant du présent rapport, le workflow principal est vert et le workflow COMPAT est rouge uniquement au nouveau contrôle de la base experte. Toute commande susceptible de modifier l’ECU reste fail-closed si famille ou mode ne sont pas prouvés. La référence 32 bits reste intacte.**
+**BUILD #26 reste la base x64 figée. BUILD #27 est le premier x64 réellement testé sur AANMP002 avec connexion, polling 7D/80 et Injection RAM Mode4 fonctionnels. BUILD #28 reste le rollback x64 stable avant le lot IA. BUILD #29 conserve Qwen3-0.6B-Q8_0, llama.cpp b10516 et les six langues. Le runtime et Qwen ont maintenant été observés en fonctionnement sur le PC utilisateur. La recherche externe confirme que le schéma correct est un moteur `llama-server` séparé du GUI, consommé en HTTP asynchrone, avec la base de connaissances préparée/indexée séparément puis ouverte en lecture seule ; la reconstruction de cette base ne doit pas être concurrente au chargement du modèle lors du simple affichage de l’onglet. Toute commande susceptible de modifier l’ECU reste fail-closed si famille ou mode ne sont pas prouvés. La référence 32 bits reste intacte.**
