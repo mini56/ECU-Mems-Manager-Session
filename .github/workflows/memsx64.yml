@@ -184,6 +184,8 @@ jobs:
           Expand-Archive -Path $runtimeZip -DestinationPath $runtimeExtract -Force
           $server = Get-ChildItem $runtimeExtract -Recurse -File -Filter 'llama-server.exe' | Select-Object -First 1
           if (-not $server) { throw 'llama-server.exe missing from verified runtime archive' }
+          $safeCpu = Get-ChildItem $server.Directory.FullName -File -Filter 'ggml-cpu-x64.dll' | Select-Object -First 1
+          if (-not $safeCpu) { throw 'Generic llama.cpp CPU backend ggml-cpu-x64.dll missing from verified runtime archive' }
 
           $modelUrl = 'https://huggingface.co/Qwen/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-Q8_0.gguf?download=true'
           $modelSha = '9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031'
@@ -195,7 +197,7 @@ jobs:
 
           "AI_RUNTIME_DIR=$($server.Directory.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "AI_MODEL_PATH=$modelPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          Write-Host "PASS verified llama.cpp b10516 CPU x64 + Qwen3-0.6B-Q8_0"
+          Write-Host "PASS verified llama.cpp b10516 CPU x64 + generic ggml-cpu-x64 backend + Qwen3-0.6B-Q8_0"
 
       - name: Assemble full portable x64 package with local IA
         shell: pwsh
@@ -236,6 +238,15 @@ jobs:
           New-Item -ItemType Directory -Path $aiModels -Force | Out-Null
           Copy-Item '${{ github.workspace }}\ai\*' $aiDir -Recurse -Force
           Copy-Item "$env:AI_RUNTIME_DIR\*" $aiDir -Recurse -Force
+          $safeCpu = Join-Path $aiDir 'ggml-cpu-x64.dll'
+          if (-not (Test-Path $safeCpu)) { throw 'Packaged generic llama.cpp CPU backend ggml-cpu-x64.dll missing' }
+          Get-ChildItem $aiDir -File -Filter 'ggml-cpu-*.dll' |
+            Where-Object { $_.Name -ine 'ggml-cpu-x64.dll' } |
+            Remove-Item -Force
+          $cpuBackends = @(Get-ChildItem $aiDir -File -Filter 'ggml-cpu-*.dll')
+          if ($cpuBackends.Count -ne 1 -or $cpuBackends[0].Name -ine 'ggml-cpu-x64.dll') {
+            throw "Unsafe llama.cpp optimized CPU backend remains in package: $($cpuBackends.Name -join ', ')"
+          }
           Copy-Item $env:AI_MODEL_PATH (Join-Path $aiModels 'ia-mems.gguf') -Force
           if (-not (Test-Path (Join-Path $aiDir 'llama-server.exe'))) { throw 'Packaged llama-server.exe missing' }
           if (-not (Test-Path (Join-Path $aiModels 'ia-mems.gguf'))) { throw 'Packaged Qwen model missing' }
@@ -249,7 +260,7 @@ jobs:
             'Protocol DLL: mems_manager_x64.dll native x64',
             'MSVC x64 runtime deployed locally with application',
             '14-tab application retained',
-            'Local IA INCLUDED: llama.cpp b10516 Windows CPU x64',
+            'Local IA INCLUDED: llama.cpp b10516 Windows CPU x64 with generic ggml-cpu-x64 backend only',
             'Local model INCLUDED: Qwen3-0.6B-Q8_0 as ai/models/ia-mems.gguf',
             'IA languages: fr, en, es, it, pt, de',
             'Historical 32-bit librosco.dll intentionally absent'
@@ -265,7 +276,7 @@ jobs:
           from pathlib import Path
           import pefile
           root=Path(os.environ['DIST']); app=root/'ecu_mems_manager.exe'; dll=root/'mems_manager_x64.dll'
-          required=[app,dll,root/'Qt5Core.dll',root/'Qt5Gui.dll',root/'Qt5Widgets.dll',root/'Qt5Sql.dll',root/'Qt5SerialPort.dll',root/'MSVCP140.dll',root/'VCRUNTIME140.dll',root/'VCRUNTIME140_1.dll',root/'platforms'/'qwindows.dll',root/'sqldrivers'/'qsqlite.dll',root/'ai'/'llama-server.exe']
+          required=[app,dll,root/'Qt5Core.dll',root/'Qt5Gui.dll',root/'Qt5Widgets.dll',root/'Qt5Sql.dll',root/'Qt5SerialPort.dll',root/'MSVCP140.dll',root/'VCRUNTIME140.dll',root/'VCRUNTIME140_1.dll',root/'platforms'/'qwindows.dll',root/'sqldrivers'/'qsqlite.dll',root/'ai'/'llama-server.exe',root/'ai'/'ggml-cpu-x64.dll']
           missing=[str(p.relative_to(root)) for p in required if not p.exists() or p.stat().st_size<=0]
           if missing: raise SystemExit('Missing x64 package binaries: '+', '.join(missing))
           def load(p): return pefile.PE(str(p),fast_load=False)
@@ -307,6 +318,7 @@ jobs:
             "$dist\VCRUNTIME140_1.dll",
             "$dist\ai\runtime_manifest.json",
             "$dist\ai\llama-server.exe",
+            "$dist\ai\ggml-cpu-x64.dll",
             "$dist\ai\models\ia-mems.gguf"
           )
           foreach ($path in $required) { if (-not (Test-Path $path)) { throw "Missing indispensable resource: $path" } }
@@ -314,7 +326,9 @@ jobs:
           $modelHash = (Get-FileHash "$dist\ai\models\ia-mems.gguf" -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($runtimeHash -ne 'fbbbc55e0eb2e1b07f9dcb9488616c98ed47d9003b90e15e7c8c7812c4307cd3') { throw 'Packaged IA runtime source hash mismatch' }
           if ($modelHash -ne '9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031') { throw 'Packaged IA model hash mismatch' }
-          Write-Host 'PASS packaged SQLite/reference/translation/MSVC runtime + verified local IA resources'
+          $cpuBackends = @(Get-ChildItem "$dist\ai" -File -Filter 'ggml-cpu-*.dll')
+          if ($cpuBackends.Count -ne 1 -or $cpuBackends[0].Name -ine 'ggml-cpu-x64.dll') { throw 'Packaged IA CPU backend is not generic-only' }
+          Write-Host 'PASS packaged SQLite/reference/translation/MSVC runtime + verified generic-only local IA resources'
 
       - name: Control IA - start llama Qwen and answer locally
         shell: pwsh
@@ -400,7 +414,7 @@ jobs:
             '15 PASS complete PE inventory AMD64 only',
             'NAV PASS deterministic 14/14 + BUILD 28 regression guards',
             'IA PASS targeted response self-test + six-language routing + last-measurement timestamp',
-            'LOCAL IA PASS llama.cpp b10516 + Qwen3-0.6B-Q8_0 health and chat completion'
+            'LOCAL IA PASS llama.cpp b10516 generic ggml-cpu-x64 + Qwen3-0.6B-Q8_0 health and chat completion'
           ) | Set-Content "$dist\ECU_MEMS_X64_15_CONTROLS.txt" -Encoding UTF8
 
       - name: Upload BUILD 29 artifact
