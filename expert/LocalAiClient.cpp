@@ -144,7 +144,9 @@ void LocalAiClient::startServer()
          << QStringLiteral("--host") << QStringLiteral("127.0.0.1")
          << QStringLiteral("--port") << QString::number(kAiPort)
          << QStringLiteral("-c") << QStringLiteral("4096")
-         << QStringLiteral("-np") << QStringLiteral("1");
+         << QStringLiteral("-np") << QStringLiteral("1")
+         << QStringLiteral("--no-webui")
+         << QStringLiteral("--offline");
 
     const QString runtimeDirectory = QFileInfo(m_runtimePath).absolutePath();
     m_server->setProgram(m_runtimePath);
@@ -195,9 +197,8 @@ void LocalAiClient::handleHealthReply(QNetworkReply *reply)
         return;
     }
 
-    // llama.cpp deliberately returns HTTP 503 while a model is loading. If a
-    // server already owns our loopback port, simply keep waiting instead of
-    // trying to spawn a competing process.
+    // llama.cpp returns HTTP 503 while the model is loading. If a server already
+    // owns the loopback port, keep waiting rather than starting a competing one.
     if (httpStatus == 503) {
         scheduleHealthCheck();
         return;
@@ -249,7 +250,6 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
     }
 
     QString userContent = question.trimmed();
-    userContent += QStringLiteral("\n\n/no_think\n\n");
 
     QString grounding = groundingContext.trimmed();
     // The deterministic router has a deliberately conservative generic fallback.
@@ -262,7 +262,7 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
 
     if (!grounding.isEmpty()) {
         userContent += QStringLiteral(
-            "CONTEXTE CANDIDAT FOURNI PAR MEMS MANAGER :\n%1\n\n"
+            "\n\nCONTEXTE CANDIDAT FOURNI PAR MEMS MANAGER :\n%1\n\n"
             "Réponds d'abord à la question exacte de l'utilisateur. "
             "N'utilise que les éléments de ce contexte qui répondent directement à cette question et ignore les éléments hors sujet, même s'ils sont vrais. "
             "Pour les faits techniques MEMS ou les mesures ECU, ce contexte pertinent est prioritaire sur tes connaissances générales. "
@@ -282,7 +282,9 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
     payload.insert(QStringLiteral("stream"), false);
     payload.insert(QStringLiteral("temperature"), 0.25);
     payload.insert(QStringLiteral("top_p"), 0.9);
-    payload.insert(QStringLiteral("max_tokens"), 460);
+    // Qwen3 keeps its native reasoning mode active in the real application.
+    // The larger budget leaves room for reasoning plus the final visible answer.
+    payload.insert(QStringLiteral("max_tokens"), 1024);
 
     QNetworkRequest request(
         QUrl(QStringLiteral("http://127.0.0.1:%1/v1/chat/completions").arg(kAiPort)));
@@ -402,7 +404,7 @@ QString LocalAiClient::systemPrompt() const
         "When technical data is insufficient or contradictory, say that you cannot conclude and briefly state what is missing. "
         "If ambiguity would materially change the answer, ask one useful clarification rather than guessing. "
         "Keep ECU numbers, units and factual values unchanged when changing language. "
-        "Be clear, natural and concise unless the user asks for detail. /no_think")
+        "Be clear, natural and concise unless the user asks for detail.")
         .arg(languageName, languageCode);
 }
 
