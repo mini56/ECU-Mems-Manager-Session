@@ -75,6 +75,7 @@ jobs:
           cmake --build build-x64 --config Release --target ecu_mems_manager rosco_abi_selftest
           if (-not (Test-Path 'build-x64\Release\ecu_mems_manager.exe')) { throw 'ecu_mems_manager.exe missing' }
           if (-not (Test-Path 'build-x64\librosco-x64\Release\mems_manager_x64.dll')) { throw 'mems_manager_x64.dll missing' }
+          if (-not (Test-Path 'build-x64\Release\expert_runtime_selftest.exe')) { throw 'expert_runtime_selftest.exe missing' }
 
       - name: Run IA deterministic response self-test
         shell: pwsh
@@ -100,6 +101,34 @@ jobs:
           $env:QT_PLUGIN_PATH = "$qtRoot\plugins"
           & '${{ github.workspace }}\build-x64\Release\mems_search_selftest.exe'
           if ($LASTEXITCODE -ne 0) { throw "MEMS reference semantic self-test failed: $LASTEXITCODE" }
+
+      - name: Build and validate packaged IA expert database
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
+          $cacheRoot = '${{ github.workspace }}\expert-runtime-cache'
+          if (Test-Path $cacheRoot) { Remove-Item $cacheRoot -Recurse -Force }
+          New-Item -ItemType Directory -Path $cacheRoot | Out-Null
+          $env:PATH = "$qtRoot\bin;$env:PATH"
+          $env:QT_PLUGIN_PATH = "$qtRoot\plugins"
+          $savedLocalAppData = $env:LOCALAPPDATA
+          $savedAppData = $env:APPDATA
+          try {
+            $env:LOCALAPPDATA = $cacheRoot
+            $env:APPDATA = $cacheRoot
+            & '${{ github.workspace }}\build-x64\Release\expert_runtime_selftest.exe'
+            if ($LASTEXITCODE -ne 0) { throw "Expert runtime database self-test failed: $LASTEXITCODE" }
+          }
+          finally {
+            $env:LOCALAPPDATA = $savedLocalAppData
+            $env:APPDATA = $savedAppData
+          }
+          $expertDb = Get-ChildItem $cacheRoot -Recurse -File -Filter 'ia_mems_reference_r20.sqlite' | Select-Object -First 1
+          if (-not $expertDb) { throw 'Generated expert runtime database r20 not found' }
+          if ($expertDb.Length -le 0) { throw 'Generated expert runtime database is empty' }
+          "AI_EXPERT_DB=$($expertDb.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "PASS packaged expert database source: $($expertDb.FullName) ($($expertDb.Length) bytes)"
 
       - name: Build conservative static llama.cpp b10516 runtime
         shell: pwsh
@@ -189,6 +218,10 @@ jobs:
 
           Copy-Item "$build\Release\translations" "$dist\translations" -Recurse -Force
           Copy-Item "$build\Release\database" "$dist\database" -Recurse -Force
+          $expertDir = Join-Path $dist 'database\expert'
+          New-Item -ItemType Directory -Path $expertDir -Force | Out-Null
+          Copy-Item $env:AI_EXPERT_DB (Join-Path $expertDir 'ia_mems_reference_r20.sqlite') -Force
+          if (-not (Test-Path (Join-Path $expertDir 'ia_mems_reference_r20.sqlite'))) { throw 'Packaged expert IA database missing' }
 
           $aiDir = Join-Path $dist 'ai'
           $aiModels = Join-Path $aiDir 'models'
@@ -235,17 +268,19 @@ jobs:
             'llama.cpp b10516 exact source commit b95502ba9aa0eb73a2f4fc8878d7fbe6a847a0b9',
             'Static CPU x64 runtime, no dynamic ggml CPU backend selection',
             'Local HTTP only: OpenSSL/HTTPS disabled so no external OpenSSL DLL is required',
+            'Packaged expert SQLite database: runtime opens the prebuilt r20 DB read-only instead of rebuilding it with Qwen resident',
             'SSE4.2 / AVX / AVX2 / BMI2 disabled for broad CPU compatibility',
             'Qwen3-0.6B-Q8_0 unchanged'
           ) | Set-Content "$dist\README_IA_COMPAT.txt" -Encoding UTF8
 
-      - name: Validate conservative IA package architecture and imports
+      - name: Validate conservative IA package architecture imports and expert database
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $env:DIST = '${{ github.workspace }}\dist-x64-compat'
           @'
           import os
+          import sqlite3
           from pathlib import Path
           import pefile
           root=Path(os.environ['DIST'])
@@ -264,6 +299,16 @@ jobs:
           if bad: raise SystemExit('Conservative llama-server still imports unpackaged native runtime DLLs: '+', '.join(bad))
           model=root/'ai'/'models'/'ia-mems.gguf'
           if not model.exists() or model.stat().st_size < 500_000_000: raise SystemExit('Qwen model missing or unexpectedly small')
+          expert=root/'database'/'expert'/'ia_mems_reference_r20.sqlite'
+          if not expert.exists() or expert.stat().st_size <= 0: raise SystemExit('Packaged expert database missing or empty')
+          db=sqlite3.connect(str(expert))
+          try:
+              revision=db.execute('PRAGMA user_version').fetchone()[0]
+              tables=db.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table'").fetchone()[0]
+          finally:
+              db.close()
+          if revision != 20 or tables <= 0: raise SystemExit(f'Packaged expert database invalid: revision={revision} tables={tables}')
+          print(f'PASS packaged expert SQLite r{revision} tables={tables} size={expert.stat().st_size}')
           print('PASS conservative static llama-server AMD64 with no ggml/OpenMP/OpenSSL/VC runtime DLL imports')
           '@ | python -
 
