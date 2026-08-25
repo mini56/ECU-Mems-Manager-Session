@@ -10,6 +10,7 @@
 #include <QListWidget>
 #include <QMainWindow>
 #include <QMenuBar>
+#include <QPlainTextEdit>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSignalBlocker>
@@ -20,6 +21,7 @@
 #include <QTimer>
 #include <QWidget>
 #include "i18n.h"
+#include "mainwindow.h"
 
 namespace {
 
@@ -38,6 +40,74 @@ static qreal scaleFor(QMainWindow *w)
         ? workspace->size()
         : (w->centralWidget()?w->centralWidget()->size():w->size());
     return qBound<qreal>(0.64,qMin(a.width()/1450.0,a.height()/720.0),1.30);
+}
+
+static void applyBuild28HotIdleCorrection(MainWindow *w)
+{
+    if (!w) return;
+    MEMSInterface *mems=w->memsInterface();
+    if (!mems || !mems->isConnected()) return;
+    mems_data *data=mems->getData();
+    if (!data) return;
+
+    const int raw7d1415=(static_cast<int>(data->idle_error2)<<8)|static_cast<int>(data->uk10);
+    const int hotIdleCorrection=static_cast<int>(data->idle_hot)-35;
+    const int hotIdleErrorCorrected=(raw7d1415-32768)-hotIdleCorrection;
+
+    if (QLabel *label=w->findChild<QLabel*>(QStringLiteral("m_7D_15"))) {
+        label->setText(QString::number(hotIdleErrorCorrected));
+        QString tip=I18n::text(7033);
+        tip.replace(QStringLiteral(" + "),QStringLiteral(" - "));
+        label->setToolTip(tip.arg(raw7d1415).arg(hotIdleCorrection).arg(hotIdleErrorCorrected));
+    }
+
+    // DiagnosticPanel historically adds the configured correction. Feed only
+    // this diagnostic view an equivalent mirrored correction so its existing
+    // score/rebuild path evaluates the requested formula without changing the
+    // real ECU data or the Settings value. Then restore the displayed sign.
+    if (DiagnosticPanel *panel=w->findChild<DiagnosticPanel*>()) {
+        mems_data diagnosticData=*data;
+        const int mirroredIdleHot=qBound(0,35-hotIdleCorrection,255);
+        diagnosticData.idle_hot=static_cast<decltype(diagnosticData.idle_hot)>(mirroredIdleHot);
+        panel->updateData(&diagnosticData);
+
+        if (QTableWidget *checks=panel->findChild<QTableWidget*>()) {
+            for (int row=0;row<checks->rowCount();++row) {
+                QTableWidgetItem *name=checks->item(row,0);
+                if (!name || name->text()!=I18n::text(6859)) continue;
+                if (QTableWidgetItem *value=checks->item(row,1))
+                    value->setText(I18n::text(6860).arg(hotIdleErrorCorrected).arg(raw7d1415).arg(hotIdleCorrection));
+                if (QTableWidgetItem *advice=checks->item(row,3)) {
+                    QString text=I18n::text(6897);
+                    text.replace(QStringLiteral(" + "),QStringLiteral(" - "));
+                    advice->setText(text);
+                }
+                break;
+            }
+        }
+
+        if (QPlainTextEdit *report=panel->findChild<QPlainTextEdit*>()) {
+            QString text=report->toPlainText();
+            const QString wrongLine=I18n::text(6884)
+                .arg(raw7d1415).arg(-hotIdleCorrection).arg(hotIdleErrorCorrected);
+            const QString rightLine=I18n::text(6884)
+                .arg(raw7d1415).arg(hotIdleCorrection).arg(hotIdleErrorCorrected);
+            text.replace(wrongLine,rightLine);
+            report->setPlainText(text);
+        }
+    }
+}
+
+static void bindBuild28LiveFixes(QMainWindow *w)
+{
+    MainWindow *main=qobject_cast<MainWindow*>(w);
+    if (!main || main->property("build28LiveFixesBound").toBool()) return;
+    MEMSInterface *mems=main->memsInterface();
+    if (!mems) return;
+    main->setProperty("build28LiveFixesBound",true);
+    QObject::connect(mems,&MEMSInterface::dataReady,main,[main](){
+        QTimer::singleShot(0,main,[main](){applyBuild28HotIdleCorrection(main);});
+    },Qt::QueuedConnection);
 }
 
 static QPushButton *buttonByText(QMainWindow *w,const QString &text,QWidget *exclude=nullptr)
@@ -295,8 +365,28 @@ static void fitChrome(QMainWindow *w,qreal s)
     QWidget *workspace=w->findChild<QWidget*>(QStringLiteral("uiRebuildWorkspace"));
     const QSize a=(workspace && workspace->width()>0)?workspace->size():(w->centralWidget()?w->centralWidget()->size():w->size());
     if (QListWidget *nav=w->findChild<QListWidget*>(QStringLiteral("uiRebuildNav"))) {
-        nav->setFixedWidth(qBound(142,qRound(a.width()*0.12),214));
-        nav->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+        const int navWidth=qBound(142,qRound(a.width()*0.12),214);
+        nav->setFixedWidth(navWidth);
+        nav->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        nav->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        nav->setSpacing(0);
+
+        // The navigation is physically constrained between the top header and
+        // the bottom tools/status bar. Size its 14 rows from the actual list
+        // viewport height, not from screen resolution or a fixed design size.
+        const int count=qMax(1,nav->count());
+        const int available=qMax(1,nav->viewport()->height()-10);
+        const int preferred=qBound(18,qRound(34.0*s),40);
+        const int rowHeight=qMax(16,qMin(preferred,available/count));
+        const int pad=qBound(6,qRound(11.0*s),14);
+        nav->setStyleSheet(QStringLiteral(
+            "#uiRebuildNav{background:#0d1318;color:#c7d0d6;border:0;border-right:1px solid #29343e;padding:5px 0;}"
+            "#uiRebuildNav::item{height:%1px;min-height:0px;padding:0 %2px;border-left:3px solid transparent;font-weight:650;}"
+            "#uiRebuildNav::item:hover{background:#161d23;color:white;}"
+            "#uiRebuildNav::item:selected{background:#1c211f;color:#ff9828;border-left:3px solid #ff7a00;}")
+            .arg(rowHeight).arg(pad));
+        for (int i=0;i<nav->count();++i)
+            if (QListWidgetItem *item=nav->item(i)) item->setSizeHint(QSize(navWidth,rowHeight));
     }
     if (QFrame *header=w->findChild<QFrame*>(QStringLiteral("uiRebuildHeader")))
         header->setFixedHeight(qBound(41,qRound(52*s),62));
@@ -315,6 +405,7 @@ static void apply(QMainWindow *w)
     fitOverviewAndSettings(w,s);
     fitAnalysis(w,s);
     fitDedicatedPages(w,s);
+    bindBuild28LiveFixes(w);
 }
 
 class VisualCompletionInstaller : public QObject
@@ -333,6 +424,7 @@ protected:
             QTimer::singleShot(900,w,[w](){apply(w);});
         } else if (event->type()==QEvent::Resize && w->property("visualCompletionScheduled").toBool()) {
             QTimer::singleShot(0,w,[w](){apply(w);});
+            QTimer::singleShot(40,w,[w](){apply(w);});
         }
         return QObject::eventFilter(watched,event);
     }
