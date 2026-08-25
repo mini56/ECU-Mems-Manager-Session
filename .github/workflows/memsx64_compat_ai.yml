@@ -137,7 +137,7 @@ jobs:
             -DLLAMA_BUILD_TOOLS=OFF `
             -DLLAMA_BUILD_BORINGSSL=OFF
           if ($LASTEXITCODE -ne 0) { throw "conservative llama configure failed: $LASTEXITCODE" }
-          cmake --build $build --config Release --target llama-server --parallel 4
+          cmake --build $build --config Release --parallel 4
           if ($LASTEXITCODE -ne 0) { throw "conservative llama build failed: $LASTEXITCODE" }
 
           $server = Get-ChildItem $build -Recurse -File -Filter 'llama-server.exe' | Where-Object { $_.FullName -match '\\Release\\' } | Select-Object -First 1
