@@ -1,17 +1,115 @@
-// Connection dispatcher layered around the historical MEMSInterface implementation.
-// The existing 1.3/1.6 code remains byte-for-byte in memsinterface.cpp; only the two
-// connection entry points are renamed while this translation unit includes it.
+// Connection and safety dispatcher layered around the historical MEMSInterface implementation.
+// The historical transport/command code stays in memsinterface.cpp. BUILD #27
+// routes every mutating legacy call through a central family/mode policy before
+// the historical C API can transmit it.
 #include "memsinterface.h"
 
 #define connectToECU connectToECULegacy
 #define onStartPollingRequest onStartPollingRequestLegacy
+#define onProtocolCommandRequested onProtocolCommandRequestedLegacy
+#define mems_test_actuator(info, cmd, data) guardedMemsTestActuator((cmd), (data))
+#define mems_move_iac(info, desiredPos) guardedMemsMoveIac((desiredPos))
+#define mems_clear_faults(info) guardedClearFaults()
+#define mems_reset_adjustments(info) guardedResetAdjustments()
+#define mems_reset_ECU(info) guardedResetEcu()
 #include "memsinterface.cpp"
+#undef mems_reset_ECU
+#undef mems_reset_adjustments
+#undef mems_clear_faults
+#undef mems_move_iac
+#undef mems_test_actuator
+#undef onProtocolCommandRequested
 #undef onStartPollingRequest
 #undef connectToECU
 
 #include <QElapsedTimer>
 #include <QSerialPort>
 #include "serialadapterdetector.h"
+
+MemsEcuFamily MEMSInterface::ecuFamily() const
+{
+    return static_cast<MemsEcuFamily>(m_ecuFamily.loadAcquire());
+}
+
+MemsDiagnosticMode MEMSInterface::diagnosticMode() const
+{
+    return static_cast<MemsDiagnosticMode>(m_diagnosticMode.loadAcquire());
+}
+
+void MEMSInterface::setEcuFamily(MemsEcuFamily family)
+{
+    m_ecuFamily.storeRelease(static_cast<int>(family));
+}
+
+void MEMSInterface::setDiagnosticMode(MemsDiagnosticMode mode)
+{
+    m_diagnosticMode.storeRelease(static_cast<int>(mode));
+}
+
+void MEMSInterface::resetProtocolContext()
+{
+    setDiagnosticMode(MemsDiagnosticMode::Unknown);
+    setEcuFamily(MemsEcuFamily::Unknown);
+}
+
+bool MEMSInterface::guardedMemsTestActuator(actuator_cmd cmd, uint8_t *data)
+{
+    const quint8 command = static_cast<quint8>(cmd);
+    if (!MemsProtocolSafety::allowsMutation(ecuFamily(), diagnosticMode(), command))
+        return false;
+    return ::mems_test_actuator(&m_memsinfo, cmd, data);
+}
+
+bool MEMSInterface::guardedMemsMoveIac(uint8_t desiredPos)
+{
+    // mems_move_iac() can send either FD or FE depending on the current IAC
+    // position, therefore both possible mutations must be legal first.
+    if (!MemsProtocolSafety::allowsMutation(ecuFamily(), diagnosticMode(), 0xFDu) ||
+        !MemsProtocolSafety::allowsMutation(ecuFamily(), diagnosticMode(), 0xFEu))
+        return false;
+    return ::mems_move_iac(&m_memsinfo, desiredPos);
+}
+
+bool MEMSInterface::guardedClearFaults()
+{
+    if (!MemsProtocolSafety::allowsMutation(ecuFamily(), diagnosticMode(), 0xCCu))
+        return false;
+    return ::mems_clear_faults(&m_memsinfo);
+}
+
+bool MEMSInterface::guardedResetAdjustments()
+{
+    if (!MemsProtocolSafety::allowsMutation(ecuFamily(), diagnosticMode(), 0x0Fu))
+        return false;
+    return ::mems_reset_adjustments(&m_memsinfo);
+}
+
+bool MEMSInterface::guardedResetEcu()
+{
+    if (!MemsProtocolSafety::allowsMutation(ecuFamily(), diagnosticMode(), 0xFAu))
+        return false;
+    return ::mems_reset_ECU(&m_memsinfo);
+}
+
+void MEMSInterface::onProtocolCommandRequested(quint8 command)
+{
+    if (m_shutdownRequested.loadAcquire() != 0)
+        return;
+
+    if (!(m_initComplete && mems_is_connected(&m_memsinfo)))
+    {
+        emit notConnected();
+        return;
+    }
+
+    if (!MemsProtocolSafety::allowsGenericCommand(ecuFamily(), diagnosticMode(), command))
+    {
+        emit errorSendingCommand();
+        return;
+    }
+
+    onProtocolCommandRequestedLegacy(command);
+}
 
 bool MEMSInterface::tryRoscoConnect(const QString &devicePath)
 {
@@ -24,6 +122,7 @@ bool MEMSInterface::tryRoscoConnect(const QString &devicePath)
         m_connectedState.storeRelease(0);
     }
 
+    resetProtocolContext();
     m_deviceName = devicePath;
     return connectToECULegacy();
 }
@@ -220,6 +319,8 @@ bool MEMSInterface::connectToECU()
 
         if (tryRoscoConnect(adapter.devicePath))
         {
+            setEcuFamily(MemsEcuFamily::Rosco13_16);
+            setDiagnosticMode(MemsDiagnosticMode::Normal);
             emit serialInterfaceDetected(adapter.portName,
                                          adapter.adapterFamily,
                                          QStringLiteral("ROSCO 1.3/1.6"));
@@ -229,6 +330,7 @@ bool MEMSInterface::connectToECU()
         {
             mems_disconnect(&m_memsinfo);
             m_connectedState.storeRelease(0);
+            resetProtocolContext();
         }
     }
 
@@ -249,6 +351,8 @@ bool MEMSInterface::connectToECU()
 
         if (tryRoscoConnect(adapter.devicePath))
         {
+            setEcuFamily(MemsEcuFamily::Mems19);
+            setDiagnosticMode(MemsDiagnosticMode::Normal);
             emit serialInterfaceDetected(adapter.portName,
                                          adapter.adapterFamily,
                                          QStringLiteral("MEMS 1.9 K-Line"));
@@ -258,11 +362,13 @@ bool MEMSInterface::connectToECU()
         {
             mems_disconnect(&m_memsinfo);
             m_connectedState.storeRelease(0);
+            resetProtocolContext();
         }
     }
 
     m_deviceName = configuredDevice;
     m_connectedState.storeRelease(0);
+    resetProtocolContext();
     return false;
 }
 
@@ -270,8 +376,40 @@ void MEMSInterface::onStartPollingRequest()
 {
     if (m_shutdownRequested.loadAcquire() != 0)
     {
+        resetProtocolContext();
         QThread::currentThread()->quit();
         return;
+    }
+
+    // Bind once: an F0 read is allowed in every known mode and immediately
+    // corrects the central state if the ECU reports a different mode.
+    if (!property("protocolContextTrackingBound").toBool())
+    {
+        setProperty("protocolContextTrackingBound", true);
+        QObject::connect(this, &MEMSInterface::protocolResponse, this,
+                         [this](quint8 command, const QByteArray &response) {
+            if (command != quint8(0xF0) || response.isEmpty())
+                return;
+            for (int i = response.size() - 1; i >= 0; --i)
+            {
+                const quint8 value = quint8(static_cast<unsigned char>(response.at(i)));
+                if (value == 0x50u)
+                {
+                    setDiagnosticMode(MemsDiagnosticMode::Normal);
+                    return;
+                }
+                if (value == 0x14u)
+                {
+                    setDiagnosticMode(MemsDiagnosticMode::Mode3);
+                    return;
+                }
+                if (value == 0x1Eu)
+                {
+                    setDiagnosticMode(MemsDiagnosticMode::Mode4);
+                    return;
+                }
+            }
+        }, Qt::DirectConnection);
     }
 
     // Prevent a second queued connection request from entering while a slow
@@ -283,6 +421,7 @@ void MEMSInterface::onStartPollingRequest()
     m_disconnectRequested.storeRelease(0);
     m_stopPolling = false;
     m_shutdownThread = false;
+    resetProtocolContext();
 
     if (connectToECU())
     {
@@ -291,6 +430,7 @@ void MEMSInterface::onStartPollingRequest()
             if (m_initComplete && mems_is_connected(&m_memsinfo))
                 mems_disconnect(&m_memsinfo);
             m_connectedState.storeRelease(0);
+            resetProtocolContext();
             m_connectionAttemptActive = false;
             QThread::currentThread()->quit();
             return;
@@ -298,11 +438,13 @@ void MEMSInterface::onStartPollingRequest()
 
         emit connected();
         runServiceLoop();
+        resetProtocolContext();
         m_connectionAttemptActive = false;
         return;
     }
 
     m_connectionAttemptActive = false;
+    resetProtocolContext();
     if (m_shutdownRequested.loadAcquire() != 0)
     {
         QThread::currentThread()->quit();
