@@ -86,10 +86,21 @@ Changements réalisés :
 ### Push final reconstruction propre
 
 - HEAD final `MEMSX64` : **`776fc647a874564c932bf09e8871cb771a0ed258`** — `BUILD #30 rebuild IA on clean application service`.
-- Les commits intermédiaires produits pendant la reconstruction restent des commits du même BUILD #30 et leurs Actions ont été/seront annulées par `cancel-in-progress`; ils ne sont pas des BUILD logiciels supplémentaires.
-- Run final déclenché : **ECU MEMS Manager x64 #59 — Commit `776fc64`**.
+- Les commits intermédiaires produits pendant la reconstruction restent des commits du même BUILD #30 et leurs Actions ont été annulées par `cancel-in-progress`; ils ne sont pas des BUILD logiciels supplémentaires.
+- Run final : **ECU MEMS Manager x64 #59 — Commit `776fc64`**.
 - Run ID : **`32898631148`** ; job : **`97967053552`**.
-- Au dernier contrôle : checkout, Python, outils, Qt, protections protocole et configuration CMake sont verts ; étape `Build application uninstaller and self-tests` en cours.
+
+### ECU MEMS Manager x64 #59 — Commit `776fc64` — VERT
+
+- Résultat GitHub : **SUCCESS / VERT**.
+- Les 20 étapes fonctionnelles sont vertes : protections protocole, configuration/compilation x64, application + désinstalleur + self-tests, réponses IA déterministes, ABI protocole, base de référence, génération SQLite experte r20, runtime llama.cpp b10516, Qwen3-0.6B-Q8_0, assemblage package, validation architecture x64, API Qwen empaquetée, smoke launch application, hashes et upload.
+- Artifact : **`ECU-MEMS-Manager-x64-BUILD-30-v1.0.30`**.
+- Artifact ID : **`9582674702`**.
+- Taille : **668863270 octets**.
+- SHA-256 archive GitHub : **`ee7f12e933a17c884c6ca081c583a542f45569f556a68a50f124b58b5f13fcff`**.
+- Créé le **25 août 2026 à 21:15:31Z** ; expiration prévue le **8 septembre 2026 à 21:15:04Z**.
+- Cet artefact correspond exactement au HEAD `776fc647a874564c932bf09e8871cb771a0ed258`.
+- Le CI valide désormais la reconstruction propre et le package, mais **le crash à l’ouverture de l’onglet IA ne peut être considéré corrigé qu’après test réel sur le PC utilisateur**, car le smoke launch CI n’ouvre toujours pas cet onglet.
 
 ---
 
@@ -110,7 +121,7 @@ Changements réalisés :
 - #28 `0533adaf50cf2c4d62a1ba5241a0100dfa1b48e8`, run `32842049458` SUCCESS, artifact `9561033224`, SHA256 `50407002f1368be30a163714ab8765a4ea7fe283fa8fd46cb1dcbd4015025e1b`.
 - #29 final `fee195e88d3615613b8f92de83209da2cf8247c2`; runtime COMPAT validé séparément ; Qwen avait atteint `IA locale prête` sur PC.
 - #30 pré-reconstruction `414ea52970e02fb6077c94ca2aa7aec3e92d7383`, ECU MEMS Manager x64 #45 SUCCESS CI mais crash PC réel à l’ouverture IA.
-- #30 reconstruction propre : HEAD `776fc647a874564c932bf09e8871cb771a0ed258`, ECU MEMS Manager x64 #59 en validation.
+- #30 reconstruction propre : HEAD `776fc647a874564c932bf09e8871cb771a0ed258`, ECU MEMS Manager x64 #59 SUCCESS, artifact `9582674702`, SHA-256 `ee7f12e933a17c884c6ca081c583a542f45569f556a68a50f124b58b5f13fcff` ; test PC réel de l’ouverture IA encore requis.
 
 ## VERSIONNAGE
 
@@ -138,4 +149,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Suivre ECU MEMS Manager x64 #59 — Commit `776fc64`. Si la compilation ou une étape ultérieure devient rouge, consigner la cause exacte avant toute correction et corriger uniquement cette cause sans réintroduire les anciens patches IA. Si l’exécution devient verte, consigner l’artifact puis tester en priorité l’ouverture de l’onglet IA sur le PC réel.**
+**Tester sur le PC réel l’artefact de ECU MEMS Manager x64 #59 — Commit `776fc64`, en priorité l’ouverture de l’onglet IA MEMS. Vérifier successivement : absence de crash à l’ouverture, base experte prête, démarrage puis état prêt de l’IA locale, et réponse à une question simple. Si un crash ou une erreur apparaît, consigner le comportement exact avant toute nouvelle correction. Aucun BUILD #31.**
