@@ -113,6 +113,13 @@ Objectif exact : modifier **uniquement** le lancement de `llama-server.exe` dans
 - Le code de l’application n’a pas été modifié : `LocalAiClient` et le serveur réellement lancé par ECU MEMS Manager ne reçoivent pas cette option. **Le raisonnement de l’IA MEMS reste actif.**
 - Aucun changement protocole ECU, UI, base experte, modèle Qwen ou packaging hors argument du smoke-test.
 
+### ECU MEMS Manager x64 #45 — Commit `414ea52`
+
+- Run GitHub : `32893817192`.
+- Déclenché par le push du commit `414ea52970e02fb6077c94ca2aa7aec3e92d7383`.
+- État au dernier contrôle : **EN COURS**.
+- Cette exécution valide le correctif limité au smoke-test Qwen ; aucune autre modification n’a été introduite.
+
 ---
 
 ## ÉTAT DE RÉFÉRENCE
@@ -158,4 +165,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Identifier et suivre la nouvelle exécution GitHub déclenchée par le commit `414ea52970e02fb6077c94ca2aa7aec3e92d7383`. Si elle devient rouge, consigner la cause exacte avant toute nouvelle correction ; si elle devient verte, consigner le succès et l’artifact.**
+**Suivre ECU MEMS Manager x64 #45 — Commit `414ea52`. Si l’exécution devient rouge, consigner la cause exacte avant toute nouvelle correction ; si elle devient verte, consigner le succès et l’artifact.**
