@@ -164,13 +164,26 @@ Architecture de réponse à appliquer :
 - ne plus injecter automatiquement tout l'historique à chaque requête ; n'utiliser le tour précédent que lorsqu'une question est clairement une relance dépendante du contexte ;
 - conserver le raisonnement Qwen disponible et actif pour les tâches qui le nécessitent ; le routage rapide n'est pas une désactivation globale du raisonnement.
 
+### Routage IA rapide poussé — BUILD #30
+
+- Nouveau HEAD `MEMSX64` : **`126cc638d584975a78d0101430d61bdc435c5879`** — `BUILD #30 route IA fast and reasoning responses`.
+- Modification unique : `expert/LocalAiClient.cpp` ; aucune modification du protocole, de l'UI, de la base r20, du modèle ou de l'architecture de service.
+- Date courante : réponse immédiate depuis le runtime, sans appel Qwen.
+- Définition IAC : réponse contrôlée `Idle Air Control`, sans possibilité d'inventer un autre développement.
+- Tout contexte déterministe non-diagnostique fourni par MEMS Manager est retourné directement au lieu d'être paraphrasé par le petit modèle.
+- Question générale simple sans contexte déterministe : Qwen3 utilise `/no_think`, paramètres non-thinking recommandés et `max_tokens=256`.
+- Diagnostic/analyse complexe : Qwen3 utilise explicitement `/think`, paramètres thinking conservés et budget borné à `max_tokens=768`.
+- Historique : un nouveau sujet démarre sans ancien tour ; seul le dernier tour est transmis lorsqu'une relance dépendante est détectée.
+- Le raisonnement Qwen reste donc disponible et actif pour les diagnostics ; il n'est plus payé sur les questions triviales.
+- Prompt renforcé : interdiction d'inventer le développement d'un acronyme automobile/MEMS.
+
 ---
 
 ## ÉTAT DE RÉFÉRENCE
 
 - Dépôt : `mini56/ECU-Mems-Manager-Session`.
 - Branche x64 : `MEMSX64`.
-- HEAD actuel avant routage rapide : **`be4916a53321e36573729e123b14c2cf120fd734`**.
+- HEAD actuel : **`126cc638d584975a78d0101430d61bdc435c5879`**.
 - Rapport : `RAPPORT`.
 - 32 bits : `lab-expert-engine`, ne pas toucher.
 - Rollback x64 : `MEMSX64-BUILD26-BASE`, ne pas toucher.
@@ -185,6 +198,7 @@ Architecture de réponse à appliquer :
 - #30 pré-reconstruction `414ea52970e02fb6077c94ca2aa7aec3e92d7383`, ECU MEMS Manager x64 #45 SUCCESS CI mais crash PC réel à l'ouverture IA.
 - #30 reconstruction propre : HEAD `776fc647a874564c932bf09e8871cb771a0ed258`, ECU MEMS Manager x64 #59 SUCCESS ; crash d'ouverture corrigé sur PC.
 - #30 correction réponses Qwen : HEAD `be4916a53321e36573729e123b14c2cf120fd734`, ECU MEMS Manager x64 #60 SUCCESS ; date corrigée, mais latence, contamination d'historique et hallucination IAC confirmées sur PC.
+- #30 routage rapide : HEAD `126cc638d584975a78d0101430d61bdc435c5879`, validation GitHub à suivre.
 
 ## VERSIONNAGE
 
@@ -212,4 +226,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Implémenter sur `MEMSX64` le routage IA autorisé : réponse immédiate pour les faits runtime, mode rapide sans thinking pour les questions simples, priorité base/glossaire pour les définitions MEMS, thinking réservé au diagnostic/analyse complexe, et historique uniquement pour les vraies relances. Vérifier compilation/self-tests puis pousser et suivre la nouvelle Action GitHub du BUILD #30.**
+**Suivre l'Action GitHub déclenchée par le HEAD `126cc638d584975a78d0101430d61bdc435c5879`. Si rouge, consigner la cause exacte avant toute correction. Si verte, consigner l'artifact puis tester sur PC : date immédiate, moteur 4 temps sans contamination, IAC correct et rapide, puis une vraie question de diagnostic pour vérifier que le thinking reste actif. Aucun BUILD #31.**
