@@ -42,7 +42,7 @@ if(MEMS_USE_BUNDLED_LIBROSCO_X64)
     add_subdirectory(librosco-x64)
 endif()
 
-configure_file("${CMAKE_SOURCE_DIR}/help.html.in" "${CMAKE_SOURCE_DIR}/help.html")
+configure_file("${CMAKE_SOURCE_DIR}/help.html.in" "${CMAKE_SOURCE_SOURCE_DIR}/help.html")
 configure_file("${CMAKE_SOURCE_DIR}/help_en.html.in" "${CMAKE_SOURCE_DIR}/help_en.html")
 set(SOURCES
     main.cpp singleinstanceforce.cpp i18n.cpp i18n.h memsinterface_dispatch.cpp memsinterface.h overviewramlive.cpp mappedinjection.cpp injectionramtest.cpp injectionramtestlogger.cpp memslogic.cpp database/DatabaseSeed.cpp
@@ -73,15 +73,13 @@ add_custom_command(TARGET ${PNAME} POST_BUILD
 
 # BUILD #29 IA response self-test: reproduce the exact user questions that
 # exposed over-broad and non-actionable fallback answers without needing an ECU.
+# It is compiled here and executed explicitly by GitHub Actions after the build,
+# with the Qt runtime configured by PowerShell rather than from MSBuild POST_BUILD.
 add_executable(ia_response_selftest
     expert/IaResponseLogicTest.cpp
     expert/IaResponseLogic.h)
 target_link_libraries(ia_response_selftest PRIVATE Qt5::Core)
 add_dependencies(${PNAME} ia_response_selftest)
-add_custom_command(TARGET ${PNAME} POST_BUILD
-    # Run with the full Qt runtime directory on PATH. Copying Qt5Core.dll alone
-    # is insufficient when the official Qt runtime has transitive DLL dependencies.
-    COMMAND ${CMAKE_COMMAND} -E env "PATH=$<TARGET_FILE_DIR:Qt5::Core>\;$ENV{PATH}" "$<TARGET_FILE:ia_response_selftest>")
 
 # Functional search self-test: exercises the same reference DB + global index code
 # used by the application, without starting the GUI.
