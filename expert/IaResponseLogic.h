@@ -59,13 +59,10 @@ inline Intent classify(const QString &question)
 
     if (hasAny(text, {"capture", "captures", "capture ecran", "captures ecran"}))
         return Intent::Captures;
-
     if (hasAny(text, {"etat moteur", "etat du moteur", "comment est le moteur", "moteur tourne"}))
         return Intent::EngineState;
-
     if (hasAny(text, {"diagnostic", "diagnostique", "anormal", "anomalie", "panne", "probleme moteur", "probleme ecu"}))
         return Intent::Diagnostic;
-
     if (hasAny(text, {"batterie", "tension batterie", "voltage batterie"}))
         return Intent::Battery;
     if (hasAny(text, {"regime", "rpm", "tr/min"}))
@@ -84,7 +81,6 @@ inline Intent classify(const QString &question)
         return Intent::Idle;
     if (hasAny(text, {"papillon", "tps"}))
         return Intent::Throttle;
-
     return Intent::None;
 }
 
@@ -95,20 +91,24 @@ inline QString number(double value, int decimals)
     return QString::number(value, 'f', decimals);
 }
 
-inline QString availabilityPrefix(bool connected)
+inline QString availabilityPrefix(bool connected, const QString &timestampText)
 {
-    return connected ? QStringLiteral("Mesure ECU actuelle")
-                     : QStringLiteral("Dernière mesure ECU disponible");
+    if (connected)
+        return QStringLiteral("Mesure ECU actuelle");
+    if (!timestampText.trimmed().isEmpty())
+        return QStringLiteral("Dernière mesure ECU disponible le %1").arg(timestampText.trimmed());
+    return QStringLiteral("Dernière mesure ECU disponible");
 }
 
 inline QString metricAnswer(Intent intent,
                             const QHash<QString, double> &values,
-                            bool connected)
+                            bool connected,
+                            const QString &timestampText = QString())
 {
     if (values.isEmpty())
         return QStringLiteral("Je n'ai encore aucune mesure ECU disponible.");
 
-    const QString prefix = availabilityPrefix(connected);
+    const QString prefix = availabilityPrefix(connected, timestampText);
     switch (intent) {
     case Intent::Battery:
         return QStringLiteral("%1 : tension batterie %2 V.")
@@ -146,16 +146,16 @@ inline QString metricAnswer(Intent intent,
 }
 
 inline QString engineStateAnswer(const QHash<QString, double> &values,
-                                 bool connected)
+                                 bool connected,
+                                 const QString &timestampText = QString())
 {
     if (values.isEmpty())
         return QStringLiteral("Je n'ai encore aucune mesure ECU disponible pour décrire l'état du moteur.");
 
     const double rpm = values.value(QStringLiteral("rpm"));
     QStringList lines;
-    lines << (connected
-        ? QStringLiteral("État moteur d'après les mesures ECU actuelles :")
-        : QStringLiteral("État moteur d'après la dernière mesure ECU disponible :"));
+    lines << QStringLiteral("État moteur d'après %1 :")
+                 .arg(availabilityPrefix(connected, timestampText).toLower());
     lines << (rpm > 0.5
         ? QStringLiteral("• Moteur en marche à %1 tr/min.").arg(number(rpm, 0))
         : QStringLiteral("• Moteur à l'arrêt selon le régime reçu : 0 tr/min."));
@@ -174,7 +174,8 @@ inline QString engineStateAnswer(const QHash<QString, double> &values,
 }
 
 inline QString diagnosticAnswer(const QHash<QString, double> &values,
-                                bool connected)
+                                bool connected,
+                                const QString &timestampText = QString())
 {
     if (values.isEmpty())
         return QStringLiteral("Je ne peux pas établir de diagnostic sans mesure ECU disponible.");
@@ -185,10 +186,9 @@ inline QString diagnosticAnswer(const QHash<QString, double> &values,
     const double dwell = values.value(QStringLiteral("coil_time_ms"));
     const double hotIdle = values.value(QStringLiteral("idle_error_hot_corrected"));
 
-    if (faultMask != 0.0)
-        findings << QStringLiteral("• Des bits défaut sont actifs dans les DTC 7D/80 surveillés.");
-    else
-        findings << QStringLiteral("• Aucun bit défaut actif dans les DTC 7D/80 surveillés.");
+    findings << (faultMask != 0.0
+        ? QStringLiteral("• Des bits défaut sont actifs dans les DTC 7D/80 surveillés.")
+        : QStringLiteral("• Aucun bit défaut actif dans les DTC 7D/80 surveillés."));
 
     if (battery < 11.5)
         findings << QStringLiteral("• Batterie basse : %1 V.").arg(number(battery, 1));
@@ -219,9 +219,8 @@ inline QString diagnosticAnswer(const QHash<QString, double> &values,
         findings << QStringLiteral("• Erreur de ralenti chaud corrigée à surveiller : %1 ECU.").arg(number(hotIdle, 0));
 
     QStringList lines;
-    lines << (connected
-        ? QStringLiteral("Diagnostic direct à partir des mesures ECU actuelles :")
-        : QStringLiteral("Diagnostic direct à partir de la dernière mesure ECU disponible :"));
+    lines << QStringLiteral("Diagnostic direct à partir de %1 :")
+                 .arg(availabilityPrefix(connected, timestampText).toLower());
     lines.append(findings);
     lines << QStringLiteral("Ces contrôles sont des vérifications de cohérence de MEMS Manager ; ils ne remplacent pas une spécification constructeur.");
     return lines.join(QLatin1Char('\n'));
