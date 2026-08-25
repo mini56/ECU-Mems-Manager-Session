@@ -54,6 +54,10 @@ void MEMSInterface::resetProtocolContext()
 
 bool MEMSInterface::guardedMemsTestActuator(actuator_cmd cmd, uint8_t *data)
 {
+    if (property("injectionRamTestRunning").toBool() ||
+        property("mappedInjectionModeActive").toBool())
+        return false;
+
     const quint8 command = static_cast<quint8>(cmd);
     if (!MemsProtocolSafety::allowsMutation(ecuFamily(), diagnosticMode(), command))
         return false;
@@ -62,6 +66,10 @@ bool MEMSInterface::guardedMemsTestActuator(actuator_cmd cmd, uint8_t *data)
 
 bool MEMSInterface::guardedMemsMoveIac(uint8_t desiredPos)
 {
+    if (property("injectionRamTestRunning").toBool() ||
+        property("mappedInjectionModeActive").toBool())
+        return false;
+
     // mems_move_iac() can send either FD or FE depending on the current IAC
     // position, therefore both possible mutations must be legal first.
     if (!MemsProtocolSafety::allowsMutation(ecuFamily(), diagnosticMode(), 0xFDu) ||
@@ -72,6 +80,9 @@ bool MEMSInterface::guardedMemsMoveIac(uint8_t desiredPos)
 
 bool MEMSInterface::guardedClearFaults()
 {
+    if (property("injectionRamTestRunning").toBool() ||
+        property("mappedInjectionModeActive").toBool())
+        return false;
     if (!MemsProtocolSafety::allowsMutation(ecuFamily(), diagnosticMode(), 0xCCu))
         return false;
     return ::mems_clear_faults(&m_memsinfo);
@@ -79,6 +90,9 @@ bool MEMSInterface::guardedClearFaults()
 
 bool MEMSInterface::guardedResetAdjustments()
 {
+    if (property("injectionRamTestRunning").toBool() ||
+        property("mappedInjectionModeActive").toBool())
+        return false;
     if (!MemsProtocolSafety::allowsMutation(ecuFamily(), diagnosticMode(), 0x0Fu))
         return false;
     return ::mems_reset_adjustments(&m_memsinfo);
@@ -86,6 +100,9 @@ bool MEMSInterface::guardedResetAdjustments()
 
 bool MEMSInterface::guardedResetEcu()
 {
+    if (property("injectionRamTestRunning").toBool() ||
+        property("mappedInjectionModeActive").toBool())
+        return false;
     if (!MemsProtocolSafety::allowsMutation(ecuFamily(), diagnosticMode(), 0xFAu))
         return false;
     return ::mems_reset_ECU(&m_memsinfo);
@@ -99,6 +116,16 @@ void MEMSInterface::onProtocolCommandRequested(quint8 command)
     if (!(m_initComplete && mems_is_connected(&m_memsinfo)))
     {
         emit notConnected();
+        return;
+    }
+
+    // The dedicated RAM readers own the serial session while they are active.
+    // No generic ECU/ROSCO byte is allowed to interleave with their controlled
+    // Mode-4 transition/read/restore transaction.
+    if (property("injectionRamTestRunning").toBool() ||
+        property("mappedInjectionModeActive").toBool())
+    {
+        emit errorSendingCommand();
         return;
     }
 
@@ -309,9 +336,10 @@ bool MEMSInterface::connectToECU()
     const QList<DetectedSerialAdapter> adapters =
         SerialAdapterDetector::availableAdapters(configuredDevice);
 
-    // First use the historical ROSCO path on every candidate. This preserves
-    // MEMS 1.3/1.6 behaviour and also fixes the common "wrong COM port" case:
-    // the configured port is tried first, then the other detected serial ports.
+    // First use the historical ROSCO path on every candidate. A successful
+    // transport handshake proves a normal session, but it does NOT by itself
+    // prove the ECU generation. Family therefore remains Unknown until an
+    // identification path can establish it from evidence.
     for (const DetectedSerialAdapter &adapter : adapters)
     {
         if (m_shutdownRequested.loadAcquire() != 0)
@@ -319,7 +347,7 @@ bool MEMSInterface::connectToECU()
 
         if (tryRoscoConnect(adapter.devicePath))
         {
-            setEcuFamily(MemsEcuFamily::Rosco13_16);
+            setEcuFamily(MemsEcuFamily::Unknown);
             setDiagnosticMode(MemsDiagnosticMode::Normal);
             emit serialInterfaceDetected(adapter.portName,
                                          adapter.adapterFamily,
@@ -381,8 +409,8 @@ void MEMSInterface::onStartPollingRequest()
         return;
     }
 
-    // Bind once: an F0 read is allowed in every known mode and immediately
-    // corrects the central state if the ECU reports a different mode.
+    // Bind once: F0 can recover/confirm the central diagnostic mode, while the
+    // mapped Injection reader also publishes transition/Mode4/normal changes.
     if (!property("protocolContextTrackingBound").toBool())
     {
         setProperty("protocolContextTrackingBound", true);
@@ -409,6 +437,17 @@ void MEMSInterface::onStartPollingRequest()
                     return;
                 }
             }
+        }, Qt::DirectConnection);
+        QObject::connect(this, &MEMSInterface::readModeChanged, this,
+                         [this](const QString &mode) {
+            if (mode == QStringLiteral("diagnostic"))
+                setDiagnosticMode(MemsDiagnosticMode::Normal);
+            else if (mode == QStringLiteral("injection"))
+                setDiagnosticMode(MemsDiagnosticMode::Mode4);
+            else if (mode == QStringLiteral("mode3"))
+                setDiagnosticMode(MemsDiagnosticMode::Mode3);
+            else if (mode == QStringLiteral("transition"))
+                setDiagnosticMode(MemsDiagnosticMode::Transition);
         }, Qt::DirectConnection);
     }
 
