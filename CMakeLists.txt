@@ -42,7 +42,7 @@ if(MEMS_USE_BUNDLED_LIBROSCO_X64)
     add_subdirectory(librosco-x64)
 endif()
 
-configure_file("${CMAKE_SOURCE_DIR}/help.html.in" "${CMAKE_SOURCE_SOURCE_DIR}/help.html")
+configure_file("${CMAKE_SOURCE_DIR}/help.html.in" "${CMAKE_SOURCE_DIR}/help.html")
 configure_file("${CMAKE_SOURCE_DIR}/help_en.html.in" "${CMAKE_SOURCE_DIR}/help_en.html")
 set(SOURCES
     main.cpp singleinstanceforce.cpp i18n.cpp i18n.h memsinterface_dispatch.cpp memsinterface.h overviewramlive.cpp mappedinjection.cpp injectionramtest.cpp injectionramtestlogger.cpp memslogic.cpp database/DatabaseSeed.cpp
