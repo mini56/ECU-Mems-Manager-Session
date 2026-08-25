@@ -1,10 +1,16 @@
+#include "mainwindow.h"
+#include "memsinterface.h"
+#include "expert/IaResponseLogic.h"
+
 #include <QApplication>
 #include <QDate>
 #include <QEvent>
+#include <QHash>
 #include <QKeyEvent>
 #include <QLineEdit>
 #include <QLocale>
 #include <QMouseEvent>
+#include <QPointer>
 #include <QPushButton>
 #include <QScrollBar>
 #include <QSet>
@@ -47,11 +53,6 @@ void ensureTranscriptScrollBar(QTextBrowser *browser)
     if (!browser)
         return;
 
-    // Configure the transcript only once.  This function is called from the
-    // global event filter while Show/Polish/Resize events are being delivered.
-    // Reapplying scrollbar policy/geometry during Resize can synchronously
-    // trigger another Resize and re-enter the filter before IA MEMS has even
-    // finished showing.  Mark the browser first so any nested event is a no-op.
     static const char kConfiguredProperty[] = "iaTranscriptScrollConfigured";
     if (browser->property(kConfiguredProperty).toBool())
         return;
@@ -120,6 +121,11 @@ public:
 protected:
     bool eventFilter(QObject *watched, QEvent *event) override
     {
+        if (MainWindow *window = qobject_cast<MainWindow*>(watched)) {
+            if (event->type() == QEvent::Show || event->type() == QEvent::Polish)
+                bindMainWindow(window);
+        }
+
         if (QTextBrowser *browser = qobject_cast<QTextBrowser*>(watched)) {
             if (browser->objectName() == QStringLiteral("iaMemsTranscript")
                 && (event->type() == QEvent::Show
@@ -167,6 +173,73 @@ protected:
     }
 
 private:
+    void bindMainWindow(MainWindow *window)
+    {
+        if (!window || m_boundWindow == window)
+            return;
+
+        m_boundWindow = window;
+        MEMSInterface *mems = window->memsInterface();
+        if (!mems)
+            return;
+
+        m_connected = mems->isConnected();
+        if (m_connected)
+            captureSnapshot(mems);
+
+        connect(mems, &MEMSInterface::dataReady, this, [this, mems]() {
+            m_connected = true;
+            captureSnapshot(mems);
+        }, Qt::QueuedConnection);
+        connect(mems, &MEMSInterface::connected, this, [this, mems]() {
+            m_connected = true;
+            captureSnapshot(mems);
+        }, Qt::QueuedConnection);
+        connect(mems, &MEMSInterface::disconnected, this, [this]() {
+            m_connected = false;
+        }, Qt::QueuedConnection);
+    }
+
+    void captureSnapshot(MEMSInterface *mems)
+    {
+        if (!mems)
+            return;
+        mems_data *data = mems->getData();
+        if (!data)
+            return;
+
+        QHash<QString, double> values;
+        values.insert(QStringLiteral("rpm"), data->engine_rpm);
+        values.insert(QStringLiteral("coolant_c"), static_cast<int>(data->coolant_temp) - 55.0);
+        values.insert(QStringLiteral("intake_air_c"), static_cast<int>(data->intake_air_temp) - 55.0);
+        values.insert(QStringLiteral("map_kpa"), data->map_kpa);
+        values.insert(QStringLiteral("battery_v"), data->battery_voltage / 10.0);
+        values.insert(QStringLiteral("lambda_mv"), data->lambda_voltage * 5.0);
+        values.insert(QStringLiteral("ignition_advance_deg"), data->ignition_advance * 0.5 - 24.0);
+        values.insert(QStringLiteral("coil_time_ms"), data->coil_time * 0.002);
+        values.insert(QStringLiteral("closed_loop"), data->closed_loop != 0 ? 1.0 : 0.0);
+        values.insert(QStringLiteral("iac_position"), data->iac_position);
+        values.insert(QStringLiteral("idle_error_raw"), data->idle_error);
+        values.insert(QStringLiteral("throttle_pot_raw"), data->throttle_pot);
+
+        const int rawHotIdleError = (static_cast<int>(data->idle_error2) << 8) | static_cast<int>(data->uk10);
+        const int hotIdleCorrection = static_cast<int>(data->idle_hot) - 35;
+        values.insert(QStringLiteral("idle_error_hot_corrected"),
+                      (rawHotIdleError - 32768) - hotIdleCorrection);
+
+        values.insert(QStringLiteral("lambda_fault_active"),
+                      ((data->dtc2 & 0x04) || (data->dtc2 & 0x08)) ? 1.0 : 0.0);
+        values.insert(QStringLiteral("tps_fault_active"),
+                      ((data->dtc1 & 0x80) || (data->dtc2 & 0x01)) ? 1.0 : 0.0);
+        values.insert(QStringLiteral("fault_mask"),
+                      static_cast<double>(static_cast<quint32>(data->dtc0)
+                      | (static_cast<quint32>(data->dtc1) << 8)
+                      | (static_cast<quint32>(data->dtc2) << 16)));
+
+        m_latestValues = values;
+        m_haveSnapshot = true;
+    }
+
     bool handleKnownQuestion(QLineEdit *line)
     {
         if (!line)
@@ -223,7 +296,39 @@ private:
             answer = QStringLiteral(
                 "Vous avez raison : l'historique IA doit rester consultable. La barre de défilement verticale de cette zone est maintenant forcée visible afin de pouvoir remonter aux anciennes questions et réponses.");
         } else {
-            return false;
+            const IaResponseLogic::Intent intent = IaResponseLogic::classify(question);
+            const bool softwareQuestion = hasAny(text, {"onglet", "a quoi sert", "logiciel", "programme", "mems manager"});
+            const bool referenceQuestion = hasAny(text, {"bonne valeur", "valeur correcte", "normal", "normale", "reference", "mini spi", "pour un moteur"});
+
+            if (intent == IaResponseLogic::Intent::Captures && !softwareQuestion) {
+                topic = QStringLiteral("captures");
+                answer = IaResponseLogic::capturesAnswer();
+            } else if (intent != IaResponseLogic::Intent::None && !softwareQuestion
+                       && !(referenceQuestion
+                            && intent != IaResponseLogic::Intent::EngineState
+                            && intent != IaResponseLogic::Intent::Diagnostic)) {
+                if (m_boundWindow && m_connected)
+                    captureSnapshot(m_boundWindow->memsInterface());
+
+                topic = QStringLiteral("ecu-live");
+                if (!m_haveSnapshot) {
+                    answer = QStringLiteral(
+                        "Je n'ai encore aucune mesure ECU disponible. Connectez l'ECU et laissez MEMS Manager recevoir quelques trames ; "
+                        "je pourrai ensuite répondre directement à cette question.");
+                } else if (intent == IaResponseLogic::Intent::EngineState) {
+                    topic = QStringLiteral("engine-state");
+                    answer = IaResponseLogic::engineStateAnswer(m_latestValues, m_connected);
+                } else if (intent == IaResponseLogic::Intent::Diagnostic) {
+                    topic = QStringLiteral("diagnostic");
+                    answer = IaResponseLogic::diagnosticAnswer(m_latestValues, m_connected);
+                } else {
+                    answer = IaResponseLogic::metricAnswer(intent, m_latestValues, m_connected);
+                    if (answer.isEmpty())
+                        return false;
+                }
+            } else {
+                return false;
+            }
         }
 
         QTextBrowser *browser = line->window()->findChild<QTextBrowser*>(QStringLiteral("iaMemsTranscript"));
@@ -254,7 +359,11 @@ private:
     }
 
 private:
+    QPointer<MainWindow> m_boundWindow;
+    QHash<QString, double> m_latestValues;
     QString m_lastTopic;
+    bool m_haveSnapshot = false;
+    bool m_connected = false;
     bool m_suppressButtonRelease = false;
 };
 
