@@ -133,6 +133,17 @@ jobs:
           if (-not (Test-Path 'build-x64\Release\ecu_mems_manager.exe')) { throw 'ecu_mems_manager.exe missing' }
           if (-not (Test-Path 'build-x64\librosco-x64\Release\mems_manager_x64.dll')) { throw 'mems_manager_x64.dll missing' }
 
+      - name: Control IA response self-test
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
+          $env:PATH = "$qtRoot\bin;$env:PATH"
+          $selftest = '${{ github.workspace }}\build-x64\Release\ia_response_selftest.exe'
+          if (-not (Test-Path $selftest)) { throw 'ia_response_selftest.exe missing' }
+          & $selftest
+          if ($LASTEXITCODE -ne 0) { throw "IA response self-test failed: $LASTEXITCODE" }
+
       - name: Control 11 - protocol ABI self-test
         shell: pwsh
         run: |
