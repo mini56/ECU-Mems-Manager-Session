@@ -121,13 +121,35 @@ Deux défauts concrets ont été identifiés avant correction :
 
 Garde-fou également requis : une sortie qui n’est qu’une reformulation normalisée de la question ne doit plus être acceptée comme réponse valide. Si un contexte déterministe fiable existe, il doit servir de repli ; sinon l’échec doit être explicite plutôt que d’afficher un écho.
 
+### Correction question/réponse poussée — BUILD #30
+
+- Nouveau HEAD `MEMSX64` : **`be4916a53321e36573729e123b14c2cf120fd734`** — `BUILD #30 fix Qwen thinking responses`.
+- Modification ciblée sur `expert/LocalAiClient.cpp` uniquement.
+- Paramètres de génération du mode thinking alignés sur Qwen3 : `temperature=0.6`, `top_p=0.95`, `top_k=20`, `min_p=0`.
+- La date/heure locale du PC est désormais injectée dans le contexte runtime afin qu’une question de date ne repose pas sur la mémoire figée du modèle.
+- Un garde-fou rejette les sorties qui ne font que reformuler/faire écho à la question ; le contexte déterministe sert alors de repli lorsqu’il existe.
+- Le raisonnement Qwen reste actif dans l’application ; `--reasoning off` reste réservé au smoke-test CI.
+- Aucun changement protocole ECU, UI, base experte r20, modèle Qwen ou architecture propre.
+
+### ECU MEMS Manager x64 #60 — Commit `be4916a` — VERT
+
+- Run GitHub : **`32901653203`** ; job : **`97976653225`**.
+- Résultat final : **SUCCESS / VERT**.
+- Les 20 étapes fonctionnelles sont vertes, y compris compilation application + désinstalleur + self-tests, base experte r20, runtime llama.cpp b10516, Qwen3-0.6B-Q8_0, API empaquetée, smoke launch, hashes et upload.
+- Artifact : **`ECU-MEMS-Manager-x64-BUILD-30-v1.0.30`**.
+- Artifact ID : **`9583795907`**.
+- Taille : **668866141 octets**.
+- SHA-256 archive GitHub : **`b03616086bc7bba254b8b089bff474ce275f28cc92b19a30db7300aeb6be9f4a`**.
+- Créé le **25 août 2026 à 21:49:42Z** ; expiration prévue le **8 septembre 2026 à 21:49:13Z**.
+- Cet artefact correspond exactement au HEAD `be4916a53321e36573729e123b14c2cf120fd734`.
+
 ---
 
 ## ÉTAT DE RÉFÉRENCE
 
 - Dépôt : `mini56/ECU-Mems-Manager-Session`.
 - Branche x64 : `MEMSX64`.
-- HEAD actuel avant correction question/réponse : **`776fc647a874564c932bf09e8871cb771a0ed258`**.
+- HEAD actuel : **`be4916a53321e36573729e123b14c2cf120fd734`**.
 - Rapport : `RAPPORT`.
 - 32 bits : `lab-expert-engine`, ne pas toucher.
 - Rollback x64 : `MEMSX64-BUILD26-BASE`, ne pas toucher.
@@ -140,7 +162,8 @@ Garde-fou également requis : une sortie qui n’est qu’une reformulation norm
 - #28 `0533adaf50cf2c4d62a1ba5241a0100dfa1b48e8`, run `32842049458` SUCCESS, artifact `9561033224`, SHA256 `50407002f1368be30a163714ab8765a4ea7fe283fa8fd46cb1dcbd4015025e1b`.
 - #29 final `fee195e88d3615613b8f92de83209da2cf8247c2`; runtime COMPAT validé séparément ; Qwen avait atteint `IA locale prête` sur PC.
 - #30 pré-reconstruction `414ea52970e02fb6077c94ca2aa7aec3e92d7383`, ECU MEMS Manager x64 #45 SUCCESS CI mais crash PC réel à l’ouverture IA.
-- #30 reconstruction propre : HEAD `776fc647a874564c932bf09e8871cb771a0ed258`, ECU MEMS Manager x64 #59 SUCCESS, artifact `9582674702`; crash d’ouverture corrigé sur PC, défaut question/réponse restant.
+- #30 reconstruction propre : HEAD `776fc647a874564c932bf09e8871cb771a0ed258`, ECU MEMS Manager x64 #59 SUCCESS ; crash d’ouverture corrigé sur PC, défaut question/réponse observé.
+- #30 correction réponses Qwen : HEAD `be4916a53321e36573729e123b14c2cf120fd734`, ECU MEMS Manager x64 #60 SUCCESS, artifact `9583795907` ; test PC réel des réponses encore requis.
 
 ## VERSIONNAGE
 
@@ -168,4 +191,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Corriger uniquement le chemin question/réponse du BUILD #30 : ajouter la date locale comme contexte déterministe pour les questions de date, appliquer les paramètres thinking recommandés à Qwen3 (`temperature=0.6`, `top_p=0.95`, `top_k=20`, `min_p=0`), ajouter un garde-fou anti-écho/reformulation avec repli sur le contexte fiable, puis pousser sur `MEMSX64` et suivre la nouvelle Action GitHub sans créer BUILD #31.**
+**Tester sur le PC réel l’artefact de ECU MEMS Manager x64 #60 — Commit `be4916a`, en priorité : ouverture de l’onglet sans crash, statut `base prête` + `IA locale prête`, puis réponses utiles à une question de date et à plusieurs questions générales/MEMS simples. Consigner le résultat exact avant toute nouvelle correction. Aucun BUILD #31.**
