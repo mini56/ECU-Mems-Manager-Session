@@ -62,12 +62,20 @@ Résultats **VERTS** avant l’échec :
 
 **Premier échec concret :**
 - étape `Generate and validate packaged expert database r20` : **ROUGE** ;
-- toutes les étapes suivantes (build llama, Qwen, packaging, API, smoke, upload) ont été sautées ;
-- aucun changement de code n’est encore entrepris.
+- toutes les étapes suivantes (build llama, Qwen, packaging, API, smoke, upload) ont été sautées.
 
-### Étape en cours — diagnostic du seul rouge du run `32889430143`
+### Diagnostic exact du rouge r20
 
-Objectif exact : lire le log de l’étape `Generate and validate packaged expert database r20`, identifier la ligne/erreur exacte, inscrire ce diagnostic au rapport, puis corriger uniquement cette cause dans le même BUILD #30.
+Le log du run `32889430143` montre que `expert_runtime_selftest.exe` **génère correctement** la base :
+- `EXPERT_RUNTIME_REVISION=20` ;
+- `EXPERT_RUNTIME_TABLES=63` ;
+- chemin réel produit : `C:/Users/runneradmin/AppData/Local/ECU Mems Manager/ECU Mems Manager/ia-mems/ia_mems_reference_r20.sqlite`.
+
+L’échec survient seulement après cette génération : le workflow cherche ensuite `ia_mems_reference_r20.sqlite` sous `${{ github.workspace }}\\expert-runtime-cache`, mais Qt `QStandardPaths` n’a pas suivi cette redirection comme supposé et a conservé le LocalAppData Windows réel. Le générateur n’est donc pas en cause ; **seule la récupération du fichier utilise le mauvais chemin**.
+
+### Étape en cours — correction minimale du chemin r20
+
+Objectif exact : modifier uniquement `.github/workflows/memsx64.yml` afin de récupérer la base depuis le chemin effectivement annoncé par `expert_runtime_selftest.exe` / LocalAppData, puis relancer BUILD #30. Ne modifier ni protocole ECU, ni Qwen, ni llama.cpp, ni UI.
 
 ---
 
@@ -114,4 +122,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Lire le log du job `97937586271`, étape `Generate and validate packaged expert database r20`. Ne corriger qu’après avoir consigné la cause exacte.**
+**Corriger uniquement la récupération de `ia_mems_reference_r20.sqlite` dans `.github/workflows/memsx64.yml`, pousser sur `MEMSX64`, puis vérifier le nouveau run BUILD #30.**
