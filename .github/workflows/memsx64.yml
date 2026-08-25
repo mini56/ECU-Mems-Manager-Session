@@ -15,6 +15,7 @@ on:
       - 'database/**'
       - 'librosco-x64/**'
       - 'translations/**'
+      - 'ai/**'
 
 concurrency:
   group: memsx64-build-29
@@ -62,7 +63,7 @@ jobs:
           if (-not (Test-Path "$qtRoot\plugins\sqldrivers\qsqlite.dll")) { throw 'Qt QSQLITE x64 plugin missing' }
           if (-not (Test-Path "$qtRoot\bin\Qt5SerialPort.dll")) { throw 'Qt SerialPort x64 runtime missing' }
 
-      - name: Validate deterministic navigation and BUILD 28 regressions
+      - name: Validate navigation BUILD 28 and BUILD 29 IA regressions
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -73,6 +74,11 @@ jobs:
           wrapper=Path('iamemstab_clean.cpp').read_text(encoding='utf-8')
           visual=Path('visualcompletion.cpp').read_text(encoding='utf-8')
           dispatch=Path('memsinterface_dispatch.cpp').read_text(encoding='utf-8')
+          local_ai=Path('expert/LocalAiClient.cpp').read_text(encoding='utf-8')
+          ia_logic=Path('expert/IaResponseLogic.h').read_text(encoding='utf-8')
+          ia_test=Path('expert/IaResponseLogicTest.cpp').read_text(encoding='utf-8')
+          context_patch=Path('iaresponsecontextpatch.cpp').read_text(encoding='utf-8')
+          manifest=Path('ai/runtime_manifest.json').read_text(encoding='utf-8')
           required=['overview_tab','injection_tab','emission_tab','actuators','errors','DiagnosticPanel','ia_mems_tab','AnalysisTab','SummaryTab','ecu_rosco_tab','raw','database_tab','ECU','mems19_test_tab']
           missing=[x for x in required if x not in nav]
           if missing: raise SystemExit('Missing deterministic tab identities: '+', '.join(missing))
@@ -87,7 +93,21 @@ jobs:
               raise SystemExit('BUILD 28 hot-idle sign correction is missing')
           if 'disconnect-requested' not in dispatch or 'm_disconnectRequested.loadAcquire()!=0' not in dispatch:
               raise SystemExit('BUILD 28 disconnect cancellation guard is missing')
-          print('PASS navigation 14/14 + BUILD 28 regression guards')
+          if 'I18n::language()' not in local_ai:
+              raise SystemExit('BUILD 29 local IA is not bound to the active MEMS Manager language')
+          for token in ['fr','en','es','it','pt','de']:
+              if f'QStringLiteral("{token}")' not in local_ai:
+                  raise SystemExit('Missing local IA language: '+token)
+          for phrase in ['TENSION DE LA BATTERIE?','ETAT MOTEUR?','DIAGNOSTIQUE?','QUE PEUX-TU ME DIRE SUR LES CAPTURES?']:
+              if phrase not in ia_test:
+                  raise SystemExit('Missing IA regression phrase: '+phrase)
+          if 'noteMeasurementTimestamp' not in ia_logic or 'noteMeasurementTimestamp' not in context_patch:
+              raise SystemExit('BUILD 29 last ECU measurement timestamp tracking missing')
+          if 'iaresponsecontextpatch.cpp' not in cmake or 'IaResponseLogicTest.cpp' not in cmake:
+              raise SystemExit('BUILD 29 IA response code/self-test is not compiled')
+          if 'Qwen3-0.6B-Q8_0' not in manifest or 'b10516' not in manifest:
+              raise SystemExit('Pinned BUILD 29 local IA manifest mismatch')
+          print('PASS navigation 14/14 + BUILD 28 guards + BUILD 29 IA static guards')
           '@ | python -
 
       - name: Validate historical MEMS protocol guards
@@ -133,7 +153,40 @@ jobs:
           & $selftest
           if ($LASTEXITCODE -ne 0) { throw "MEMS reference semantic self-test failed: $LASTEXITCODE" }
 
-      - name: Assemble full portable x64 package
+      - name: Download and verify local IA runtime and model
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $stage = '${{ github.workspace }}\ai-stage'
+          if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
+          New-Item -ItemType Directory -Path $stage | Out-Null
+
+          $runtimeUrl = 'https://github.com/ggml-org/llama.cpp/releases/download/b10516/llama-b10516-bin-win-cpu-x64.zip'
+          $runtimeSha = 'fbbbc55e0eb2e1b07f9dcb9488616c98ed47d9003b90e15e7c8c7812c4307cd3'
+          $runtimeZip = Join-Path $stage 'llama-b10516-bin-win-cpu-x64.zip'
+          & curl.exe -L --fail --retry 3 --retry-delay 2 -o $runtimeZip $runtimeUrl
+          if ($LASTEXITCODE -ne 0) { throw "llama.cpp runtime download failed: $LASTEXITCODE" }
+          $runtimeActual = (Get-FileHash $runtimeZip -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($runtimeActual -ne $runtimeSha) { throw "llama.cpp SHA256 mismatch: $runtimeActual" }
+
+          $runtimeExtract = Join-Path $stage 'runtime'
+          Expand-Archive -Path $runtimeZip -DestinationPath $runtimeExtract -Force
+          $server = Get-ChildItem $runtimeExtract -Recurse -File -Filter 'llama-server.exe' | Select-Object -First 1
+          if (-not $server) { throw 'llama-server.exe missing from verified runtime archive' }
+
+          $modelUrl = 'https://huggingface.co/Qwen/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-Q8_0.gguf?download=true'
+          $modelSha = '9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031'
+          $modelPath = Join-Path $stage 'ia-mems.gguf'
+          & curl.exe -L --fail --retry 3 --retry-delay 3 -o $modelPath $modelUrl
+          if ($LASTEXITCODE -ne 0) { throw "Qwen model download failed: $LASTEXITCODE" }
+          $modelActual = (Get-FileHash $modelPath -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($modelActual -ne $modelSha) { throw "Qwen model SHA256 mismatch: $modelActual" }
+
+          "AI_RUNTIME_DIR=$($server.Directory.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "AI_MODEL_PATH=$modelPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "PASS verified llama.cpp b10516 CPU x64 + Qwen3-0.6B-Q8_0"
+
+      - name: Assemble full portable x64 package with local IA
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -147,8 +200,6 @@ jobs:
           & "$qtRoot\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist "$dist\ecu_mems_manager.exe"
           if ($LASTEXITCODE -ne 0) { throw "windeployqt failed: $LASTEXITCODE" }
 
-          # windeployqt does not reliably copy the MSVC CRT when Qt is installed by aqt.
-          # Deploy the exact x64 VC runtime shipped with the Visual Studio toolchain used by this runner.
           $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
           if (-not (Test-Path $vswhere)) { throw "vswhere.exe missing: $vswhere" }
           $vsRoot = (& $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath | Select-Object -First 1).Trim()
@@ -168,8 +219,18 @@ jobs:
 
           Copy-Item "$build\Release\translations" "$dist\translations" -Recurse -Force
           Copy-Item "$build\Release\database" "$dist\database" -Recurse -Force
-          $forbidden = Get-ChildItem $dist -Recurse -File | Where-Object { $_.Name -ieq 'librosco.dll' -or $_.Name -ieq 'llama-server.exe' -or $_.Extension -ieq '.gguf' }
-          if ($forbidden) { throw "Forbidden first-milestone runtime found: $($forbidden.FullName -join ', ')" }
+
+          $aiDir = Join-Path $dist 'ai'
+          $aiModels = Join-Path $aiDir 'models'
+          New-Item -ItemType Directory -Path $aiModels -Force | Out-Null
+          Copy-Item '${{ github.workspace }}\ai\*' $aiDir -Recurse -Force
+          Copy-Item "$env:AI_RUNTIME_DIR\*" $aiDir -Recurse -Force
+          Copy-Item $env:AI_MODEL_PATH (Join-Path $aiModels 'ia-mems.gguf') -Force
+          if (-not (Test-Path (Join-Path $aiDir 'llama-server.exe'))) { throw 'Packaged llama-server.exe missing' }
+          if (-not (Test-Path (Join-Path $aiModels 'ia-mems.gguf'))) { throw 'Packaged Qwen model missing' }
+
+          $forbidden = Get-ChildItem $dist -Recurse -File | Where-Object { $_.Name -ieq 'librosco.dll' }
+          if ($forbidden) { throw "Historical x86 runtime found: $($forbidden.FullName -join ', ')" }
           @(
             'ECU MEMS MANAGER - NATIVE X64 VALIDATION BUILD',
             'BUILD #29 - v1.0.29',
@@ -177,7 +238,9 @@ jobs:
             'Protocol DLL: mems_manager_x64.dll native x64',
             'MSVC x64 runtime deployed locally with application',
             '14-tab application retained',
-            'Local IA runtime/model intentionally absent from this first ECU-validation package',
+            'Local IA INCLUDED: llama.cpp b10516 Windows CPU x64',
+            'Local model INCLUDED: Qwen3-0.6B-Q8_0 as ai/models/ia-mems.gguf',
+            'IA languages: fr, en, es, it, pt, de',
             'Historical 32-bit librosco.dll intentionally absent'
           ) | Set-Content "$dist\README_X64.txt" -Encoding UTF8
 
@@ -191,7 +254,7 @@ jobs:
           from pathlib import Path
           import pefile
           root=Path(os.environ['DIST']); app=root/'ecu_mems_manager.exe'; dll=root/'mems_manager_x64.dll'
-          required=[app,dll,root/'Qt5Core.dll',root/'Qt5Gui.dll',root/'Qt5Widgets.dll',root/'Qt5Sql.dll',root/'Qt5SerialPort.dll',root/'MSVCP140.dll',root/'VCRUNTIME140.dll',root/'VCRUNTIME140_1.dll',root/'platforms'/'qwindows.dll',root/'sqldrivers'/'qsqlite.dll']
+          required=[app,dll,root/'Qt5Core.dll',root/'Qt5Gui.dll',root/'Qt5Widgets.dll',root/'Qt5Sql.dll',root/'Qt5SerialPort.dll',root/'MSVCP140.dll',root/'VCRUNTIME140.dll',root/'VCRUNTIME140_1.dll',root/'platforms'/'qwindows.dll',root/'sqldrivers'/'qsqlite.dll',root/'ai'/'llama-server.exe']
           missing=[str(p.relative_to(root)) for p in required if not p.exists() or p.stat().st_size<=0]
           if missing: raise SystemExit('Missing x64 package binaries: '+', '.join(missing))
           def load(p): return pefile.PE(str(p),fast_load=False)
@@ -216,7 +279,7 @@ jobs:
           print(f'PASS {len(inventory)} PE files AMD64; 22 protocol exports exact')
           '@ | python -
 
-      - name: Control 14B - packaged SQLite and indispensable resources
+      - name: Control 14B - packaged SQLite IA and indispensable resources
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -230,10 +293,65 @@ jobs:
             "$dist\sqldrivers\qsqlite.dll",
             "$dist\MSVCP140.dll",
             "$dist\VCRUNTIME140.dll",
-            "$dist\VCRUNTIME140_1.dll"
+            "$dist\VCRUNTIME140_1.dll",
+            "$dist\ai\runtime_manifest.json",
+            "$dist\ai\llama-server.exe",
+            "$dist\ai\models\ia-mems.gguf"
           )
           foreach ($path in $required) { if (-not (Test-Path $path)) { throw "Missing indispensable resource: $path" } }
-          Write-Host 'PASS packaged SQLite/reference/translation/MSVC runtime resources'
+          $runtimeHash = (Get-FileHash '${{ github.workspace }}\ai-stage\llama-b10516-bin-win-cpu-x64.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          $modelHash = (Get-FileHash "$dist\ai\models\ia-mems.gguf" -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($runtimeHash -ne 'fbbbc55e0eb2e1b07f9dcb9488616c98ed47d9003b90e15e7c8c7812c4307cd3') { throw 'Packaged IA runtime source hash mismatch' }
+          if ($modelHash -ne '9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031') { throw 'Packaged IA model hash mismatch' }
+          Write-Host 'PASS packaged SQLite/reference/translation/MSVC runtime + verified local IA resources'
+
+      - name: Control IA - start llama Qwen and answer locally
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $dist = '${{ github.workspace }}\dist-x64'
+          $server = "$dist\ai\llama-server.exe"
+          $model = "$dist\ai\models\ia-mems.gguf"
+          $stdout = "$dist\IA_LLAMA_STDOUT.txt"
+          $stderr = "$dist\IA_LLAMA_STDERR.txt"
+          $args = @('-m', $model, '--alias', 'ia-mems', '--host', '127.0.0.1', '--port', '18089', '-c', '4096', '-np', '1')
+          $proc = Start-Process -FilePath $server -ArgumentList $args -WorkingDirectory "$dist\ai" -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru
+          try {
+            $ready = $false
+            for ($i = 0; $i -lt 120; $i++) {
+              $proc.Refresh()
+              if ($proc.HasExited) { break }
+              try {
+                $health = Invoke-RestMethod -Uri 'http://127.0.0.1:18089/health' -Method Get -TimeoutSec 2
+                if ($health.status -eq 'ok') { $ready = $true; break }
+              } catch { }
+              Start-Sleep -Seconds 1
+            }
+            if (-not $ready) {
+              $outText = if (Test-Path $stdout) { Get-Content $stdout -Raw } else { '' }
+              $errText = if (Test-Path $stderr) { Get-Content $stderr -Raw } else { '' }
+              throw "Local IA did not become healthy. STDOUT=$outText STDERR=$errText"
+            }
+
+            $payload = @{
+              model = 'ia-mems'
+              messages = @(
+                @{ role = 'system'; content = 'Answer briefly in English. Do not think aloud. /no_think' },
+                @{ role = 'user'; content = 'Reply with a short confirmation that the MEMS29 local AI test works. /no_think' }
+              )
+              stream = $false
+              temperature = 0.0
+              max_tokens = 30
+            } | ConvertTo-Json -Depth 8
+            $response = Invoke-RestMethod -Uri 'http://127.0.0.1:18089/v1/chat/completions' -Method Post -ContentType 'application/json' -Body $payload -TimeoutSec 90
+            $answer = [string]$response.choices[0].message.content
+            if ([string]::IsNullOrWhiteSpace($answer)) { throw 'Local Qwen returned an empty answer' }
+            Write-Host "PASS local IA response: $answer"
+          }
+          finally {
+            $proc.Refresh()
+            if (-not $proc.HasExited) { Stop-Process -Id $proc.Id -Force }
+          }
 
       - name: Control 13 - smoke launch packaged application
         shell: pwsh
@@ -253,12 +371,12 @@ jobs:
           $dist = '${{ github.workspace }}\dist-x64'
           @(
             'BUILD #29 - v1.0.29',
-            'ECU MEMS MANAGER NATIVE X64: 15/15 AUTOMATED CONTROLS PASSED',
+            'ECU MEMS MANAGER NATIVE X64: 15/15 AUTOMATED CONTROLS PASSED + LOCAL IA SMOKE PASSED',
             '01 PASS full x64 application compile',
             '02 PASS mems_manager_x64.dll compile',
             '03 PASS ecu_mems_manager.exe PE32+ AMD64',
             '04 PASS mems_manager_x64.dll PE32+ AMD64',
-            '05 PASS Qt/plugin DLL architecture x64',
+            '05 PASS Qt/plugin/llama DLL architecture x64',
             '06 PASS QSQLITE + Qt SerialPort essentials',
             '07 PASS application imports mems_manager_x64.dll',
             '08 PASS application does not import librosco.dll',
@@ -270,7 +388,8 @@ jobs:
             '14 PASS SQLite semantic self-test + packaged reference resources + local MSVC x64 runtime',
             '15 PASS complete PE inventory AMD64 only',
             'NAV PASS deterministic 14/14 + BUILD 28 regression guards',
-            'LOCAL IA RUNTIME intentionally absent from first ECU-validation package'
+            'IA PASS targeted response self-test + six-language routing + last-measurement timestamp',
+            'LOCAL IA PASS llama.cpp b10516 + Qwen3-0.6B-Q8_0 health and chat completion'
           ) | Set-Content "$dist\ECU_MEMS_X64_15_CONTROLS.txt" -Encoding UTF8
 
       - name: Upload BUILD 29 artifact
