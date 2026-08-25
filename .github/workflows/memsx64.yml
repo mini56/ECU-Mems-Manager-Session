@@ -144,19 +144,26 @@ jobs:
           $env:QT_PLUGIN_PATH = "$qtRoot\plugins"
           $savedLocalAppData = $env:LOCALAPPDATA
           $savedAppData = $env:APPDATA
+          $generatorOutput = @()
           try {
             $env:LOCALAPPDATA = $cacheRoot
             $env:APPDATA = $cacheRoot
-            & (Join-Path $releaseRoot 'expert_runtime_selftest.exe')
-            if ($LASTEXITCODE -ne 0) { throw "Expert runtime database generator failed: $LASTEXITCODE" }
+            & (Join-Path $releaseRoot 'expert_runtime_selftest.exe') 2>&1 | Tee-Object -Variable generatorOutput
+            $generatorExitCode = $LASTEXITCODE
+            if ($generatorExitCode -ne 0) { throw "Expert runtime database generator failed: $generatorExitCode" }
           }
           finally {
             $env:LOCALAPPDATA = $savedLocalAppData
             $env:APPDATA = $savedAppData
           }
 
-          $expertDb = Get-ChildItem $cacheRoot -Recurse -File -Filter 'ia_mems_reference_r20.sqlite' | Select-Object -First 1
-          if (-not $expertDb) { throw 'Generated ia_mems_reference_r20.sqlite not found' }
+          $databaseLine = $generatorOutput | ForEach-Object { [string]$_ } | Where-Object { $_ -like 'EXPERT_RUNTIME_DATABASE=*' } | Select-Object -Last 1
+          if (-not $databaseLine) { throw 'Expert runtime generator did not report EXPERT_RUNTIME_DATABASE' }
+          $expertDbPath = $databaseLine.Substring('EXPERT_RUNTIME_DATABASE='.Length).Trim()
+          if (-not (Test-Path -LiteralPath $expertDbPath -PathType Leaf)) {
+            throw "Generated ia_mems_reference_r20.sqlite not found at reported path: $expertDbPath"
+          }
+          $expertDb = Get-Item -LiteralPath $expertDbPath
           if ($expertDb.Length -le 0) { throw 'Generated expert database is empty' }
           "AI_EXPERT_DB=$($expertDb.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
