@@ -41,7 +41,7 @@ QString activeLanguageName(const QString &code)
     return QStringLiteral("Français");
 }
 
-QString normalizedEchoText(QString text)
+QString normalizedPlainText(QString text)
 {
     text = text.toLower().normalized(QString::NormalizationForm_D);
     QString result;
@@ -52,6 +52,20 @@ QString normalizedEchoText(QString text)
             || category == QChar::Mark_SpacingCombining
             || category == QChar::Mark_Enclosing)
             continue;
+        if (ch.isLetterOrNumber())
+            result.append(ch);
+        else
+            result.append(QLatin1Char(' '));
+    }
+    return result.simplified();
+}
+
+QString normalizedEchoText(QString text)
+{
+    const QString plain = normalizedPlainText(text);
+    QString result;
+    result.reserve(plain.size());
+    for (const QChar ch : plain) {
         if (ch.isLetterOrNumber())
             result.append(ch);
     }
@@ -73,18 +87,7 @@ bool isGenericGrounding(const QString &grounding)
 
 bool asksCurrentDate(const QString &question)
 {
-    QString text = question.toLower().normalized(QString::NormalizationForm_D);
-    QString plain;
-    plain.reserve(text.size());
-    for (const QChar ch : text) {
-        const QChar::Category category = ch.category();
-        if (category == QChar::Mark_NonSpacing
-            || category == QChar::Mark_SpacingCombining
-            || category == QChar::Mark_Enclosing)
-            continue;
-        plain.append(ch);
-    }
-    plain = plain.simplified();
+    const QString plain = normalizedPlainText(question);
 
     return plain.contains(QStringLiteral("quel jour"))
         || plain.contains(QStringLiteral("quelle date"))
@@ -93,7 +96,7 @@ bool asksCurrentDate(const QString &question)
         || plain.contains(QStringLiteral("date sommes"))
         || plain.contains(QStringLiteral("what day"))
         || plain.contains(QStringLiteral("what date"))
-        || plain.contains(QStringLiteral("today's date"))
+        || plain.contains(QStringLiteral("today s date"))
         || plain.contains(QStringLiteral("todays date"))
         || plain.contains(QStringLiteral("que dia"))
         || plain.contains(QStringLiteral("que fecha"))
@@ -131,6 +134,96 @@ QString currentDateAnswer()
 
     const QLocale locale(QLocale::French, QLocale::France);
     return QStringLiteral("Nous sommes le %1.").arg(locale.toString(today, QStringLiteral("dddd d MMMM yyyy")));
+}
+
+QString controlledTechnicalAnswer(const QString &question)
+{
+    const QString plain = normalizedPlainText(question);
+    static const QRegularExpression iacRx(QStringLiteral("(^|\\s)iacv?(\\s|$)"));
+    if (!iacRx.match(plain).hasMatch())
+        return QString();
+
+    const QString code = I18n::language().trimmed().toLower();
+    if (code == QStringLiteral("en"))
+        return QStringLiteral("IAC means Idle Air Control. It is the idle-air regulation system used by the ECU to adjust the air needed to stabilise idle speed. Depending on the MEMS installation, the physical idle actuator can differ.");
+    if (code == QStringLiteral("es"))
+        return QStringLiteral("IAC significa Idle Air Control: es el sistema de regulación del aire de ralentí que utiliza la ECU para estabilizar el régimen. El actuador físico puede variar según la instalación MEMS.");
+    if (code == QStringLiteral("it"))
+        return QStringLiteral("IAC significa Idle Air Control: è il sistema di regolazione dell'aria al minimo usato dalla ECU per stabilizzare il regime. L'attuatore fisico può variare secondo l'installazione MEMS.");
+    if (code == QStringLiteral("pt"))
+        return QStringLiteral("IAC significa Idle Air Control: é o sistema de controlo do ar de ralenti usado pela ECU para estabilizar a rotação. O atuador físico pode variar consoante a instalação MEMS.");
+    if (code == QStringLiteral("de"))
+        return QStringLiteral("IAC bedeutet Idle Air Control. Damit regelt das ECU-System die Leerlaufluft, um die Leerlaufdrehzahl zu stabilisieren. Der konkrete Leerlaufsteller kann je nach MEMS-Ausführung unterschiedlich sein.");
+
+    return QStringLiteral("IAC signifie « Idle Air Control » : c'est le système de régulation de l'air de ralenti utilisé par l'ECU pour stabiliser le régime. L'actionneur physique de ralenti peut varier selon le montage MEMS.");
+}
+
+bool isFollowUpQuestion(const QString &question)
+{
+    const QString plain = normalizedPlainText(question);
+    return plain.startsWith(QStringLiteral("et "))
+        || plain.startsWith(QStringLiteral("et si "))
+        || plain.startsWith(QStringLiteral("et pour "))
+        || plain.startsWith(QStringLiteral("et pourquoi "))
+        || plain.startsWith(QStringLiteral("pourquoi ca"))
+        || plain.startsWith(QStringLiteral("pourquoi cela"))
+        || plain.startsWith(QStringLiteral("comment ca"))
+        || plain.startsWith(QStringLiteral("et ca"))
+        || plain.startsWith(QStringLiteral("et cela"))
+        || plain.startsWith(QStringLiteral("dans ce cas"))
+        || plain.startsWith(QStringLiteral("tu peux preciser"))
+        || plain.startsWith(QStringLiteral("peux tu preciser"))
+        || plain.startsWith(QStringLiteral("peux tu detailler"))
+        || plain.startsWith(QStringLiteral("plus de details"))
+        || plain.startsWith(QStringLiteral("cette valeur"))
+        || plain.startsWith(QStringLiteral("ce resultat"))
+        || plain.startsWith(QStringLiteral("ce moteur"))
+        || plain.startsWith(QStringLiteral("cet ecu"));
+}
+
+bool requiresReasoning(const QString &question, const QString &grounding)
+{
+    const QString plain = normalizedPlainText(question);
+    const QString ground = normalizedPlainText(grounding);
+
+    if (plain.contains(QStringLiteral("diagnostic"))
+        || plain.contains(QStringLiteral("diagnostique"))
+        || plain.contains(QStringLiteral("analyse"))
+        || plain.contains(QStringLiteral("analyser"))
+        || plain.contains(QStringLiteral("anormal"))
+        || plain.contains(QStringLiteral("panne"))
+        || plain.contains(QStringLiteral("probleme"))
+        || plain.contains(QStringLiteral("hypothese"))
+        || plain.contains(QStringLiteral("oscill"))
+        || plain.contains(QStringLiteral("instable")))
+        return true;
+
+    if (plain.contains(QStringLiteral("pourquoi"))) {
+        static const QStringList ecuTerms = {
+            QStringLiteral("ralenti"), QStringLiteral("ecu"), QStringLiteral("mems"),
+            QStringLiteral("lambda"), QStringLiteral("injection"), QStringLiteral("avance"),
+            QStringLiteral("bobine"), QStringLiteral("capteur"), QStringLiteral("map"),
+            QStringLiteral("temperature"), QStringLiteral("batterie"), QStringLiteral("regime"),
+            QStringLiteral("moteur")
+        };
+        for (const QString &term : ecuTerms) {
+            if (plain.contains(term))
+                return true;
+        }
+    }
+
+    return ground.contains(QStringLiteral("hypotheses actuelles"))
+        || ground.contains(QStringLiteral("confiance"))
+        || ground.contains(QStringLiteral("preuve"));
+}
+
+void rememberTurn(QVector<QPair<QString, QString>> &conversation,
+                  const QString &question,
+                  const QString &answer)
+{
+    conversation.append(qMakePair(question.trimmed(), answer.trimmed()));
+    if (conversation.size() > kMaximumTurns)
+        conversation.remove(0, conversation.size() - kMaximumTurns);
 }
 }
 
@@ -322,6 +415,41 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
         return;
     }
 
+    const QString trimmedQuestion = question.trimmed();
+    if (trimmedQuestion.isEmpty())
+        return;
+
+    // Runtime facts and controlled technical definitions must not pay the cost
+    // of an LLM generation and must never be guessed by the model.
+    if (asksCurrentDate(trimmedQuestion)) {
+        const QString answer = currentDateAnswer();
+        rememberTurn(m_conversation, trimmedQuestion, answer);
+        emit responseReady(answer);
+        return;
+    }
+
+    const QString controlled = controlledTechnicalAnswer(trimmedQuestion);
+    if (!controlled.isEmpty()) {
+        rememberTurn(m_conversation, trimmedQuestion, controlled);
+        emit responseReady(controlled);
+        return;
+    }
+
+    QString grounding = groundingContext.trimmed();
+    if (isGenericGrounding(grounding))
+        grounding.clear();
+
+    const bool reasoning = requiresReasoning(trimmedQuestion, grounding);
+
+    // The deterministic engine/database already owns many exact answers. For a
+    // simple lookup, software question or decoded measurement, return that fact
+    // immediately instead of asking a 0.6B model to paraphrase or corrupt it.
+    if (!reasoning && !grounding.isEmpty()) {
+        rememberTurn(m_conversation, trimmedQuestion, grounding);
+        emit responseReady(grounding);
+        return;
+    }
+
     setState(Busy);
 
     QJsonArray messages;
@@ -330,33 +458,22 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
     system.insert(QStringLiteral("content"), systemPrompt());
     messages.append(system);
 
-    const int first = qMax(0, m_conversation.size() - kMaximumTurns);
-    for (int i = first; i < m_conversation.size(); ++i) {
+    // Independent questions start with a clean conversational context. Only a
+    // clearly dependent follow-up receives the immediately previous turn.
+    if (isFollowUpQuestion(trimmedQuestion) && !m_conversation.isEmpty()) {
+        const QPair<QString, QString> &turn = m_conversation.constLast();
         QJsonObject user;
         user.insert(QStringLiteral("role"), QStringLiteral("user"));
-        user.insert(QStringLiteral("content"), m_conversation.at(i).first);
+        user.insert(QStringLiteral("content"), turn.first);
         messages.append(user);
 
         QJsonObject assistant;
         assistant.insert(QStringLiteral("role"), QStringLiteral("assistant"));
-        assistant.insert(QStringLiteral("content"), m_conversation.at(i).second);
+        assistant.insert(QStringLiteral("content"), turn.second);
         messages.append(assistant);
     }
 
-    QString userContent = question.trimmed();
-
-    QString grounding = groundingContext.trimmed();
-    if (asksCurrentDate(question)) {
-        grounding = QStringLiteral(
-            "FAIT RUNTIME FIABLE : %1 Utilise cette date locale pour répondre directement à la question de date.")
-                        .arg(currentDateAnswer());
-    } else if (isGenericGrounding(grounding)) {
-        // The deterministic router has a deliberately conservative generic fallback.
-        // It is useful when the local model is unavailable, but it must not force a
-        // working conversational model to reject ordinary dialogue.
-        grounding.clear();
-    }
-
+    QString userContent = trimmedQuestion;
     if (!grounding.isEmpty()) {
         userContent += QStringLiteral(
             "\n\nCONTEXTE CANDIDAT FOURNI PAR MEMS MANAGER :\n%1\n\n"
@@ -368,6 +485,11 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
                            .arg(grounding);
     }
 
+    // Qwen3 keeps its reasoning capability available, but only complex ECU
+    // analysis pays for it. Simple questions use the documented soft switch.
+    userContent += reasoning ? QStringLiteral("\n\n/think")
+                             : QStringLiteral("\n\n/no_think");
+
     QJsonObject currentUser;
     currentUser.insert(QStringLiteral("role"), QStringLiteral("user"));
     currentUser.insert(QStringLiteral("content"), userContent);
@@ -377,25 +499,30 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
     payload.insert(QStringLiteral("model"), QStringLiteral("ia-mems"));
     payload.insert(QStringLiteral("messages"), messages);
     payload.insert(QStringLiteral("stream"), false);
-
-    // Qwen3 thinking-mode sampling recommended by the Qwen project.
-    payload.insert(QStringLiteral("temperature"), 0.6);
-    payload.insert(QStringLiteral("top_p"), 0.95);
     payload.insert(QStringLiteral("top_k"), 20);
     payload.insert(QStringLiteral("min_p"), 0.0);
-    payload.insert(QStringLiteral("presence_penalty"), 0.5);
 
-    // Reasoning remains enabled in the real application. This budget leaves
-    // enough room for the reasoning phase and a useful visible answer while
-    // remaining within the 4096-token server context.
-    payload.insert(QStringLiteral("max_tokens"), 1536);
+    if (reasoning) {
+        // Qwen3 thinking-mode sampling. The budget is deliberately bounded for
+        // an interactive CPU application while preserving real reasoning.
+        payload.insert(QStringLiteral("temperature"), 0.6);
+        payload.insert(QStringLiteral("top_p"), 0.95);
+        payload.insert(QStringLiteral("presence_penalty"), 0.3);
+        payload.insert(QStringLiteral("max_tokens"), 768);
+    } else {
+        // Qwen3 non-thinking settings recommended for direct, fast answers.
+        payload.insert(QStringLiteral("temperature"), 0.7);
+        payload.insert(QStringLiteral("top_p"), 0.8);
+        payload.insert(QStringLiteral("presence_penalty"), 0.2);
+        payload.insert(QStringLiteral("max_tokens"), 256);
+    }
 
     QNetworkRequest request(
         QUrl(QStringLiteral("http://127.0.0.1:%1/v1/chat/completions").arg(kAiPort)));
     request.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/json"));
 
     QNetworkReply *reply = m_network->post(request, QJsonDocument(payload).toJson(QJsonDocument::Compact));
-    connect(reply, &QNetworkReply::finished, this, [this, reply, question, groundingContext]() {
+    connect(reply, &QNetworkReply::finished, this, [this, reply, trimmedQuestion, grounding]() {
         if (reply->error() != QNetworkReply::NoError) {
             const QString error = reply->errorString();
             reply->deleteLater();
@@ -419,30 +546,22 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
         answer = cleanModelReply(answer);
         setState(Ready);
 
-        // A grammatical rewrite of the user's sentence is not a valid answer.
-        // Prefer a deterministic fact already supplied by MEMS Manager; for the
-        // current-date question the application itself owns the authoritative date.
-        if (isQuestionEcho(question, answer)) {
-            if (asksCurrentDate(question)) {
-                answer = currentDateAnswer();
-            } else {
-                const QString deterministic = groundingContext.trimmed();
-                if (!deterministic.isEmpty() && !isGenericGrounding(deterministic))
-                    answer = deterministic;
-                else
-                    answer.clear();
-            }
+        // If the model only echoes the question or exhausts its reasoning budget,
+        // a reliable MEMS Manager fact wins. Otherwise fail explicitly.
+        if (answer.isEmpty() || isQuestionEcho(trimmedQuestion, answer)) {
+            if (!grounding.isEmpty())
+                answer = grounding;
+            else
+                answer.clear();
         }
 
         if (answer.isEmpty()) {
             emit responseError(QStringLiteral(
-                "Le modèle local n'a pas produit de réponse exploitable et a seulement reformulé la question."));
+                "Le modèle local n'a pas produit de réponse exploitable."));
             return;
         }
 
-        m_conversation.append(qMakePair(question.trimmed(), answer));
-        if (m_conversation.size() > kMaximumTurns)
-            m_conversation.remove(0, m_conversation.size() - kMaximumTurns);
+        rememberTurn(m_conversation, trimmedQuestion, answer);
         emit responseReady(answer);
     });
 }
@@ -521,6 +640,7 @@ QString LocalAiClient::systemPrompt() const
         "For ordinary conversation, answer naturally without forcing a link to the ECU. "
         "For software questions, explain the requested function directly before technical detail. "
         "For MEMS technical questions, relevant facts supplied by MEMS Manager take priority over general knowledge. "
+        "For automotive or MEMS acronyms, never invent an expansion. If no reliable expansion is supplied and you are uncertain, say so. "
         "The supplied context may contain several facts: strictly ignore facts that do not answer the current question. "
         "Never invent an ECU measurement, fault, protocol address, software function, source or confidence level. "
         "Clearly distinguish observed measurements, hypotheses, external information and uncertain information. "
@@ -537,5 +657,6 @@ QString LocalAiClient::cleanModelReply(QString text) const
     text.remove(QRegularExpression(QStringLiteral("<think>.*?</think>"),
                                    QRegularExpression::DotMatchesEverythingOption));
     text.replace(QStringLiteral("/no_think"), QString());
+    text.replace(QStringLiteral("/think"), QString());
     return text.trimmed();
 }
