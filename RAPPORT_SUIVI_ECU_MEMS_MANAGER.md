@@ -143,13 +143,34 @@ Garde-fou également requis : une sortie qui n’est qu’une reformulation norm
 - Créé le **25 août 2026 à 21:49:42Z** ; expiration prévue le **8 septembre 2026 à 21:49:13Z**.
 - Cet artefact correspond exactement au HEAD `be4916a53321e36573729e123b14c2cf120fd734`.
 
+### Test PC réel — ECU MEMS Manager x64 #60 — Commit `be4916a`
+
+- Le crash reste supprimé ; `base prête` et `IA locale prête` sont atteints.
+- La question de date répond désormais correctement.
+- Défaut de contexte : après la date, la question générale `C'est quoi un moteur 4 temps ?` reçoit encore la réponse précédente sur la date. Le petit modèle reçoit les anciens tours et se laisse contaminer par un sujet sans rapport.
+- Défaut de connaissance/routage : `C'est quoi l'IAC ?` produit `Intégration Automatique Contrôlée`, réponse fausse/hallucinée. Dans le contexte automobile visé, IAC signifie `Idle Air Control`, système de régulation d'air de ralenti ; une définition technique doit venir de la base/glossaire contrôlé avant de laisser Qwen improviser.
+- Latence jugée trop longue par l'utilisateur ; l'interface reste longtemps sur `IA locale en réponse`.
+- Cause de latence identifiée : le chemin actuel autorise jusqu'à 1536 tokens en thinking même pour une question triviale, ce qui est disproportionné pour Qwen3-0.6B local sur CPU.
+
+### Étape autorisée — routage IA rapide et raisonnement ciblé
+
+Objectif exact autorisé par l'utilisateur (`GO`) : corriger ces trois défauts dans le même BUILD #30, sans réintroduire les anciens patches et sans toucher au protocole ECU.
+
+Architecture de réponse à appliquer :
+- faits déterministes possédés par l'application (date/heure, états runtime) : réponse immédiate sans génération LLM ;
+- questions générales simples et définitions courantes : Qwen en mode rapide non-thinking, budget court ;
+- définitions techniques MEMS connues : base experte/glossaire contrôlé prioritaire, puis formulation courte ; ne jamais laisser Qwen inventer le développement d'un acronyme MEMS ;
+- diagnostic, analyse de mesures, hypothèses et questions réellement complexes : Qwen thinking actif avec base + moteur expert + mesures ECU ;
+- ne plus injecter automatiquement tout l'historique à chaque requête ; n'utiliser le tour précédent que lorsqu'une question est clairement une relance dépendante du contexte ;
+- conserver le raisonnement Qwen disponible et actif pour les tâches qui le nécessitent ; le routage rapide n'est pas une désactivation globale du raisonnement.
+
 ---
 
 ## ÉTAT DE RÉFÉRENCE
 
 - Dépôt : `mini56/ECU-Mems-Manager-Session`.
 - Branche x64 : `MEMSX64`.
-- HEAD actuel : **`be4916a53321e36573729e123b14c2cf120fd734`**.
+- HEAD actuel avant routage rapide : **`be4916a53321e36573729e123b14c2cf120fd734`**.
 - Rapport : `RAPPORT`.
 - 32 bits : `lab-expert-engine`, ne pas toucher.
 - Rollback x64 : `MEMSX64-BUILD26-BASE`, ne pas toucher.
@@ -161,9 +182,9 @@ Garde-fou également requis : une sortie qui n’est qu’une reformulation norm
 - #27 `a6f9b209f32b6dd77774832e8c84469c53deca47`, run `32832192437` SUCCESS ; AANMP002/MNE101150, COM3 FTDI, ROSCO 1.3/1.6, Injection RAM Mode4 ≈2,63 ms.
 - #28 `0533adaf50cf2c4d62a1ba5241a0100dfa1b48e8`, run `32842049458` SUCCESS, artifact `9561033224`, SHA256 `50407002f1368be30a163714ab8765a4ea7fe283fa8fd46cb1dcbd4015025e1b`.
 - #29 final `fee195e88d3615613b8f92de83209da2cf8247c2`; runtime COMPAT validé séparément ; Qwen avait atteint `IA locale prête` sur PC.
-- #30 pré-reconstruction `414ea52970e02fb6077c94ca2aa7aec3e92d7383`, ECU MEMS Manager x64 #45 SUCCESS CI mais crash PC réel à l’ouverture IA.
-- #30 reconstruction propre : HEAD `776fc647a874564c932bf09e8871cb771a0ed258`, ECU MEMS Manager x64 #59 SUCCESS ; crash d’ouverture corrigé sur PC, défaut question/réponse observé.
-- #30 correction réponses Qwen : HEAD `be4916a53321e36573729e123b14c2cf120fd734`, ECU MEMS Manager x64 #60 SUCCESS, artifact `9583795907` ; test PC réel des réponses encore requis.
+- #30 pré-reconstruction `414ea52970e02fb6077c94ca2aa7aec3e92d7383`, ECU MEMS Manager x64 #45 SUCCESS CI mais crash PC réel à l'ouverture IA.
+- #30 reconstruction propre : HEAD `776fc647a874564c932bf09e8871cb771a0ed258`, ECU MEMS Manager x64 #59 SUCCESS ; crash d'ouverture corrigé sur PC.
+- #30 correction réponses Qwen : HEAD `be4916a53321e36573729e123b14c2cf120fd734`, ECU MEMS Manager x64 #60 SUCCESS ; date corrigée, mais latence, contamination d'historique et hallucination IAC confirmées sur PC.
 
 ## VERSIONNAGE
 
@@ -191,4 +212,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Tester sur le PC réel l’artefact de ECU MEMS Manager x64 #60 — Commit `be4916a`, en priorité : ouverture de l’onglet sans crash, statut `base prête` + `IA locale prête`, puis réponses utiles à une question de date et à plusieurs questions générales/MEMS simples. Consigner le résultat exact avant toute nouvelle correction. Aucun BUILD #31.**
+**Implémenter sur `MEMSX64` le routage IA autorisé : réponse immédiate pour les faits runtime, mode rapide sans thinking pour les questions simples, priorité base/glossaire pour les définitions MEMS, thinking réservé au diagnostic/analyse complexe, et historique uniquement pour les vraies relances. Vérifier compilation/self-tests puis pousser et suivre la nouvelle Action GitHub du BUILD #30.**
