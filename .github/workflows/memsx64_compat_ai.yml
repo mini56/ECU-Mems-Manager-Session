@@ -136,7 +136,7 @@ jobs:
             -DLLAMA_BUILD_TESTS=OFF `
             -DLLAMA_BUILD_TOOLS=ON `
             -DLLAMA_BUILD_APP=OFF `
-            -DLLAMA_BUILD_BORINGSSL=OFF
+            -DLLAMA_OPENSSL=OFF
           if ($LASTEXITCODE -ne 0) { throw "conservative llama configure failed: $LASTEXITCODE" }
           cmake --build $build --config Release --target llama-server --parallel 4
           if ($LASTEXITCODE -ne 0) { throw "conservative llama build failed: $LASTEXITCODE" }
@@ -146,7 +146,7 @@ jobs:
           if (-not $server) { throw 'conservative llama-server.exe missing' }
 
           $cache = Get-Content (Join-Path $build 'CMakeCache.txt') -Raw
-          foreach ($required in @('BUILD_SHARED_LIBS:BOOL=OFF','GGML_NATIVE:BOOL=OFF','GGML_BACKEND_DL:BOOL=OFF','GGML_CPU_ALL_VARIANTS:BOOL=OFF','GGML_OPENMP:BOOL=OFF','GGML_SSE42:BOOL=OFF','GGML_AVX:BOOL=OFF','GGML_AVX2:BOOL=OFF','GGML_BMI2:BOOL=OFF','LLAMA_BUILD_TOOLS:BOOL=ON','LLAMA_BUILD_APP:BOOL=OFF')) {
+          foreach ($required in @('BUILD_SHARED_LIBS:BOOL=OFF','GGML_NATIVE:BOOL=OFF','GGML_BACKEND_DL:BOOL=OFF','GGML_CPU_ALL_VARIANTS:BOOL=OFF','GGML_OPENMP:BOOL=OFF','GGML_SSE42:BOOL=OFF','GGML_AVX:BOOL=OFF','GGML_AVX2:BOOL=OFF','GGML_BMI2:BOOL=OFF','LLAMA_BUILD_TOOLS:BOOL=ON','LLAMA_BUILD_APP:BOOL=OFF','LLAMA_OPENSSL:BOOL=OFF')) {
             if (-not $cache.Contains($required)) { throw "Conservative llama build flag missing: $required" }
           }
           $ggmlDlls = @(Get-ChildItem $server.Directory.FullName -File -Filter 'ggml-*.dll' -ErrorAction SilentlyContinue)
@@ -207,7 +207,7 @@ jobs:
               "name": "llama.cpp",
               "release": "b10516",
               "source_commit": "b95502ba9aa0eb73a2f4fc8878d7fbe6a847a0b9",
-              "build_profile": "MEMS static CPU x64 compatibility: no dynamic backends, no OpenMP, SSE4.2/AVX/AVX2/BMI2 disabled",
+              "build_profile": "MEMS static CPU x64 compatibility: no dynamic backends, no OpenMP, no OpenSSL/HTTPS, SSE4.2/AVX/AVX2/BMI2 disabled",
               "license": "MIT"
             },
             "model": {
@@ -234,6 +234,7 @@ jobs:
             'Compatibility IA runtime test package',
             'llama.cpp b10516 exact source commit b95502ba9aa0eb73a2f4fc8878d7fbe6a847a0b9',
             'Static CPU x64 runtime, no dynamic ggml CPU backend selection',
+            'Local HTTP only: OpenSSL/HTTPS disabled so no external OpenSSL DLL is required',
             'SSE4.2 / AVX / AVX2 / BMI2 disabled for broad CPU compatibility',
             'Qwen3-0.6B-Q8_0 unchanged'
           ) | Set-Content "$dist\README_IA_COMPAT.txt" -Encoding UTF8
@@ -258,12 +259,30 @@ jobs:
                   raise SystemExit(f'Not AMD64 PE32+: {p}')
           spe=pefile.PE(str(server), fast_load=False)
           imports=[e.dll.decode('ascii',errors='replace').lower() for e in spe.DIRECTORY_ENTRY_IMPORT]
-          bad=[x for x in imports if x.startswith('ggml-') or 'libomp' in x or 'vcomp' in x]
-          if bad: raise SystemExit('Conservative llama-server still imports dynamic CPU/OpenMP runtime: '+', '.join(bad))
+          print('llama-server direct imports: '+', '.join(imports))
+          bad=[x for x in imports if x.startswith('ggml-') or 'libomp' in x or 'vcomp' in x or 'libssl' in x or 'libcrypto' in x or x.startswith('vcruntime') or x.startswith('msvcp')]
+          if bad: raise SystemExit('Conservative llama-server still imports unpackaged native runtime DLLs: '+', '.join(bad))
           model=root/'ai'/'models'/'ia-mems.gguf'
           if not model.exists() or model.stat().st_size < 500_000_000: raise SystemExit('Qwen model missing or unexpectedly small')
-          print('PASS conservative static llama-server AMD64 with no ggml/OpenMP DLL imports')
+          print('PASS conservative static llama-server AMD64 with no ggml/OpenMP/OpenSSL/VC runtime DLL imports')
           '@ | python -
+
+          $portableServer = Join-Path $env:DIST 'ai\llama-server.exe'
+          $savedPath = $env:PATH
+          $savedLocation = Get-Location
+          $portableExit = $null
+          try {
+            Set-Location (Split-Path $portableServer -Parent)
+            $env:PATH = "$env:SystemRoot\System32;$env:SystemRoot"
+            & $portableServer --version
+            $portableExit = $LASTEXITCODE
+          }
+          finally {
+            $env:PATH = $savedPath
+            Set-Location $savedLocation
+          }
+          if ($portableExit -ne 0) { throw "Packaged llama-server --version failed with isolated PATH: $portableExit" }
+          Write-Host 'PASS packaged llama-server --version with isolated PATH'
 
       - name: Control IA - start conservative llama Qwen and answer locally
         shell: pwsh
