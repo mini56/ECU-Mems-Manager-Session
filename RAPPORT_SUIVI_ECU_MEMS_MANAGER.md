@@ -130,6 +130,17 @@ Objectif exact : modifier **uniquement** le lancement de `llama-server.exe` dans
 - Créé le 25 août 2026 à 20:22:33Z ; expiration prévue le 8 septembre 2026.
 - Cet artefact correspond exactement au HEAD `MEMSX64` `414ea52970e02fb6077c94ca2aa7aec3e92d7383`.
 
+### Test PC réel — ECU MEMS Manager x64 #45 — Commit `414ea52`
+
+- Résultat utilisateur : **CRASH immédiat à l’ouverture de l’onglet IA MEMS**, identique au crash observé précédemment.
+- Le succès CI #45 ne valide donc pas ce chemin d’exécution réel.
+- L’étape GitHub `Smoke launch ECU MEMS Manager` démarre l’application et vérifie qu’elle reste ouverte, mais **n’ouvre pas l’onglet IA MEMS** ; elle ne pouvait donc pas détecter ce crash.
+- Les validations séparées du package, de `llama-server.exe`, de Qwen et de la base experte restent vertes. Le défaut à isoler est désormais l’intégration déclenchée par l’ouverture de l’onglet IA sur le PC réel.
+
+### Étape en cours — isolation du crash à l’ouverture IA
+
+Objectif exact : comparer le chemin d’ouverture IA du commit `414ea52970e02fb6077c94ca2aa7aec3e92d7383` avec le dernier état confirmé sans crash sur PC (`12fef48c68807bc59d2f45f9cd8d86d2a42856ca`, BUILD #26), puis isoler l’objet, callback ou thread responsable **avant toute correction**. Ne modifier ni protocole ECU, ni UI, ni modèle Qwen, ni fonction de raisonnement ; ne pas créer BUILD #31.
+
 ---
 
 ## ÉTAT DE RÉFÉRENCE
@@ -148,7 +159,7 @@ Objectif exact : modifier **uniquement** le lancement de `llama-server.exe` dans
 - #27 `a6f9b209f32b6dd77774832e8c84469c53deca47`, run `32832192437` SUCCESS, AANMP002/MNE101150, COM3 FTDI, ROSCO 1.3/1.6, Injection RAM Mode4 ≈2,63 ms.
 - #28 `0533adaf50cf2c4d62a1ba5241a0100dfa1b48e8`, run `32842049458` SUCCESS, artifact `9561033224`, SHA256 `50407002f1368be30a163714ab8765a4ea7fe283fa8fd46cb1dcbd4015025e1b`.
 - #29 final `fee195e88d3615613b8f92de83209da2cf8247c2`; runtime COMPAT run `32878926411` vert ; Qwen chargé sur PC et statut `IA locale prête` atteint ; dernier rouge #29 limité au packaging expert.
-- #30 `414ea52970e02fb6077c94ca2aa7aec3e92d7383`, ECU MEMS Manager x64 #45 / run `32893817192` SUCCESS, artifact `9580850077`, archive SHA-256 `1db3438593c65f7f77176910e55e9de0a428208f9c3a7732b74d6e35290ed3d0`.
+- #30 `414ea52970e02fb6077c94ca2aa7aec3e92d7383`, ECU MEMS Manager x64 #45 / run `32893817192` SUCCESS, artifact `9580850077`, archive SHA-256 `1db3438593c65f7f77176910e55e9de0a428208f9c3a7732b74d6e35290ed3d0`, mais crash PC réel à l’ouverture de l’onglet IA MEMS.
 
 ## VERSIONNAGE
 
@@ -176,4 +187,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Tester sur le PC réel l’artefact officiel BUILD #30 / v1.0.30 (`9580850077`) : démarrage x64, présence des 14 onglets, ouverture IA MEMS sans crash, passage à `IA locale prête`, réponse Qwen réelle avec raisonnement actif, puis fonctionnement du désinstalleur. Ne lancer aucune commande ECU mutante pendant cette validation.**
+**Comparer le chemin d’ouverture de l’onglet IA MEMS entre `414ea52970e02fb6077c94ca2aa7aec3e92d7383` et `12fef48c68807bc59d2f45f9cd8d86d2a42856ca`, en priorité `iamemstab.cpp`, `iamemstab_clean.cpp`, `iamemsqualitypatch.cpp` et `expert/LocalAiClient.cpp`, puis consigner la cause isolée avant toute correction.**
