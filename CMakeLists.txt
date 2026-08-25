@@ -57,7 +57,10 @@ set(SOURCES
     database/MemsGlobalSearchIndex.cpp database/MemsGlobalSearchIndex.h database/MemsDatabaseExplorerV2.cpp
     database/MemsDatabaseUniversalAccess.cpp database/MemsReferenceLanguageSync.cpp
     database/MemsXmlRowIndexer.cpp database/MemsSearchCompletenessPatch.cpp database/MemsDatabaseBrowser.cpp database/MemsDatabaseBrowser.h
-    iamemstab_clean.cpp iamemstab.h iamemsqualitypatch.cpp iaresponsecontextpatch.cpp expert/IaResponseLogic.h expert/ExpertEngine.cpp expert/ExpertEngine.h expert/ExpertKnowledgeReader.cpp expert/ExpertKnowledgeReader.h expert/ExpertRuntimeDatabase.cpp expert/ExpertRuntimeDatabase.h expert/ExpertTypes.h expert/LocalAiClient.cpp expert/LocalAiClient.h
+    iamemstab.cpp iamemstab.h
+    expert/IaResponseLogic.h expert/IaMemsService.cpp expert/IaMemsService.h
+    expert/ExpertEngine.cpp expert/ExpertEngine.h expert/ExpertKnowledgeReader.cpp expert/ExpertKnowledgeReader.h
+    expert/ExpertTypes.h expert/LocalAiClient.cpp expert/LocalAiClient.h
     uirebuild.cpp overviewrebuild.cpp majorpagesrebuild.cpp errorsvisualpatch.cpp analysismodernizer.cpp
     strictvisualrebuild.cpp dedicatedpagesrebuild.cpp visualcompletion.cpp navigationorderpatch.cpp darkstyle.cpp darkfixes.cpp
     settingstabdark.cpp sidebarbubblecleaner.cpp splashtextfix.cpp settingsvisualpatch.cpp readabilityfix.cpp mainwindowtitlebarfix.cpp systemstateconnectionfix.cpp)
@@ -90,10 +93,9 @@ add_executable(mems_search_selftest
 target_link_libraries(mems_search_selftest PRIVATE Qt5::Core Qt5::Sql)
 add_dependencies(${PNAME} mems_search_selftest)
 
-# BUILD #29 packaged expert DB generator. It executes the exact
-# ExpertRuntimeDatabase code used by IA MEMS once in CI, validates the resulting
-# SQLite file, then the workflow ships that immutable DB read-only. Runtime
-# reconstruction remains only as a fallback when the packaged DB is absent.
+# Packaged expert DB generator used only by CI. The production application no
+# longer builds the expert database at runtime: it opens the CI-generated r20
+# SQLite database read-only through IaMemsService.
 add_executable(expert_runtime_selftest
     expert/ExpertRuntimeDatabaseSelfTest.cpp
     expert/ExpertRuntimeDatabase.cpp expert/ExpertRuntimeDatabase.h)
