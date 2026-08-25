@@ -79,10 +79,9 @@ add_executable(ia_response_selftest
 target_link_libraries(ia_response_selftest PRIVATE Qt5::Core)
 add_dependencies(${PNAME} ia_response_selftest)
 add_custom_command(TARGET ${PNAME} POST_BUILD
-    # The self-test is executed before windeployqt. Put its direct Qt runtime
-    # beside it first, otherwise Windows aborts with STATUS_DLL_NOT_FOUND.
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:Qt5::Core>" "$<TARGET_FILE_DIR:ia_response_selftest>"
-    COMMAND "$<TARGET_FILE:ia_response_selftest>")
+    # Run with the full Qt runtime directory on PATH. Copying Qt5Core.dll alone
+    # is insufficient when the official Qt runtime has transitive DLL dependencies.
+    COMMAND ${CMAKE_COMMAND} -E env "PATH=$<TARGET_FILE_DIR:Qt5::Core>\;$ENV{PATH}" "$<TARGET_FILE:ia_response_selftest>")
 
 # Functional search self-test: exercises the same reference DB + global index code
 # used by the application, without starting the GUI.
