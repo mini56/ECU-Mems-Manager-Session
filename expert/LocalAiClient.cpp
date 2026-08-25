@@ -2,11 +2,13 @@
 #include "i18n.h"
 
 #include <QCoreApplication>
+#include <QDate>
 #include <QDir>
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLocale>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
@@ -37,6 +39,98 @@ QString activeLanguageName(const QString &code)
     if (code == QStringLiteral("pt")) return QStringLiteral("Português");
     if (code == QStringLiteral("de")) return QStringLiteral("Deutsch");
     return QStringLiteral("Français");
+}
+
+QString normalizedEchoText(QString text)
+{
+    text = text.toLower().normalized(QString::NormalizationForm_D);
+    QString result;
+    result.reserve(text.size());
+    for (const QChar ch : text) {
+        const QChar::Category category = ch.category();
+        if (category == QChar::Mark_NonSpacing
+            || category == QChar::Mark_SpacingCombining
+            || category == QChar::Mark_Enclosing)
+            continue;
+        if (ch.isLetterOrNumber())
+            result.append(ch);
+    }
+    return result;
+}
+
+bool isQuestionEcho(const QString &question, const QString &answer)
+{
+    const QString q = normalizedEchoText(question);
+    const QString a = normalizedEchoText(answer);
+    return !q.isEmpty() && q == a;
+}
+
+bool isGenericGrounding(const QString &grounding)
+{
+    return grounding.startsWith(QStringLiteral(
+        "Je n'ai pas assez d'éléments pour relier cette question à une mesure ou à un fait MEMS précis."));
+}
+
+bool asksCurrentDate(const QString &question)
+{
+    QString text = question.toLower().normalized(QString::NormalizationForm_D);
+    QString plain;
+    plain.reserve(text.size());
+    for (const QChar ch : text) {
+        const QChar::Category category = ch.category();
+        if (category == QChar::Mark_NonSpacing
+            || category == QChar::Mark_SpacingCombining
+            || category == QChar::Mark_Enclosing)
+            continue;
+        plain.append(ch);
+    }
+    plain = plain.simplified();
+
+    return plain.contains(QStringLiteral("quel jour"))
+        || plain.contains(QStringLiteral("quelle date"))
+        || plain.contains(QStringLiteral("date aujourd"))
+        || plain.contains(QStringLiteral("jour sommes"))
+        || plain.contains(QStringLiteral("date sommes"))
+        || plain.contains(QStringLiteral("what day"))
+        || plain.contains(QStringLiteral("what date"))
+        || plain.contains(QStringLiteral("today's date"))
+        || plain.contains(QStringLiteral("todays date"))
+        || plain.contains(QStringLiteral("que dia"))
+        || plain.contains(QStringLiteral("que fecha"))
+        || plain.contains(QStringLiteral("che giorno"))
+        || plain.contains(QStringLiteral("che data"))
+        || plain.contains(QStringLiteral("welcher tag"))
+        || plain.contains(QStringLiteral("welches datum"));
+}
+
+QString currentDateAnswer()
+{
+    const QDate today = QDate::currentDate();
+    const QString code = I18n::language().trimmed().toLower();
+
+    if (code == QStringLiteral("en")) {
+        const QLocale locale(QLocale::English, QLocale::UnitedKingdom);
+        return QStringLiteral("Today is %1.").arg(locale.toString(today, QStringLiteral("dddd d MMMM yyyy")));
+    }
+    if (code == QStringLiteral("es")) {
+        const QLocale locale(QLocale::Spanish, QLocale::Spain);
+        return QStringLiteral("Hoy es %1.").arg(locale.toString(today, QStringLiteral("dddd d 'de' MMMM 'de' yyyy")));
+    }
+    if (code == QStringLiteral("it")) {
+        const QLocale locale(QLocale::Italian, QLocale::Italy);
+        return QStringLiteral("Oggi è %1.").arg(locale.toString(today, QStringLiteral("dddd d MMMM yyyy")));
+    }
+    if (code == QStringLiteral("pt")) {
+        const QLocale locale(QLocale::Portuguese, QLocale::Portugal);
+        return QStringLiteral("Hoje é %1.").arg(locale.toString(today, QStringLiteral("dddd d 'de' MMMM 'de' yyyy")));
+    }
+    if (code == QStringLiteral("de")) {
+        const QLocale locale(QLocale::German, QLocale::Germany);
+        return QStringLiteral("Heute ist %1.").arg(locale.toString(today, QStringLiteral("dddd, d. MMMM yyyy")));
+    }
+
+    const QLocale locale(QLocale::French, QLocale::France);
+    return QStringLiteral("Nous sommes le %1.").arg(locale.toString(today, QStringLiteral("dddd d MMMM yyyy")));
 }
 }
 
@@ -252,13 +346,16 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
     QString userContent = question.trimmed();
 
     QString grounding = groundingContext.trimmed();
-    // The deterministic router has a deliberately conservative generic fallback.
-    // It is useful when the local model is unavailable, but it must not force a
-    // working conversational model to reject ordinary dialogue or a question it
-    // can answer naturally.
-    if (grounding.startsWith(QStringLiteral(
-            "Je n'ai pas assez d'éléments pour relier cette question à une mesure ou à un fait MEMS précis.")))
+    if (asksCurrentDate(question)) {
+        grounding = QStringLiteral(
+            "FAIT RUNTIME FIABLE : %1 Utilise cette date locale pour répondre directement à la question de date.")
+                        .arg(currentDateAnswer());
+    } else if (isGenericGrounding(grounding)) {
+        // The deterministic router has a deliberately conservative generic fallback.
+        // It is useful when the local model is unavailable, but it must not force a
+        // working conversational model to reject ordinary dialogue.
         grounding.clear();
+    }
 
     if (!grounding.isEmpty()) {
         userContent += QStringLiteral(
@@ -280,18 +377,25 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
     payload.insert(QStringLiteral("model"), QStringLiteral("ia-mems"));
     payload.insert(QStringLiteral("messages"), messages);
     payload.insert(QStringLiteral("stream"), false);
-    payload.insert(QStringLiteral("temperature"), 0.25);
-    payload.insert(QStringLiteral("top_p"), 0.9);
-    // Qwen3 keeps its native reasoning mode active in the real application.
-    // The larger budget leaves room for reasoning plus the final visible answer.
-    payload.insert(QStringLiteral("max_tokens"), 1024);
+
+    // Qwen3 thinking-mode sampling recommended by the Qwen project.
+    payload.insert(QStringLiteral("temperature"), 0.6);
+    payload.insert(QStringLiteral("top_p"), 0.95);
+    payload.insert(QStringLiteral("top_k"), 20);
+    payload.insert(QStringLiteral("min_p"), 0.0);
+    payload.insert(QStringLiteral("presence_penalty"), 0.5);
+
+    // Reasoning remains enabled in the real application. This budget leaves
+    // enough room for the reasoning phase and a useful visible answer while
+    // remaining within the 4096-token server context.
+    payload.insert(QStringLiteral("max_tokens"), 1536);
 
     QNetworkRequest request(
         QUrl(QStringLiteral("http://127.0.0.1:%1/v1/chat/completions").arg(kAiPort)));
     request.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/json"));
 
     QNetworkReply *reply = m_network->post(request, QJsonDocument(payload).toJson(QJsonDocument::Compact));
-    connect(reply, &QNetworkReply::finished, this, [this, reply, question]() {
+    connect(reply, &QNetworkReply::finished, this, [this, reply, question, groundingContext]() {
         if (reply->error() != QNetworkReply::NoError) {
             const QString error = reply->errorString();
             reply->deleteLater();
@@ -314,8 +418,25 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
 
         answer = cleanModelReply(answer);
         setState(Ready);
+
+        // A grammatical rewrite of the user's sentence is not a valid answer.
+        // Prefer a deterministic fact already supplied by MEMS Manager; for the
+        // current-date question the application itself owns the authoritative date.
+        if (isQuestionEcho(question, answer)) {
+            if (asksCurrentDate(question)) {
+                answer = currentDateAnswer();
+            } else {
+                const QString deterministic = groundingContext.trimmed();
+                if (!deterministic.isEmpty() && !isGenericGrounding(deterministic))
+                    answer = deterministic;
+                else
+                    answer.clear();
+            }
+        }
+
         if (answer.isEmpty()) {
-            emit responseError(QStringLiteral("Le modèle local n'a produit aucune réponse exploitable."));
+            emit responseError(QStringLiteral(
+                "Le modèle local n'a pas produit de réponse exploitable et a seulement reformulé la question."));
             return;
         }
 
@@ -387,13 +508,16 @@ QString LocalAiClient::systemPrompt() const
     if (!supported.contains(languageCode))
         languageCode = QStringLiteral("fr");
     const QString languageName = activeLanguageName(languageCode);
+    const QString runtimeDate = QDate::currentDate().toString(Qt::ISODate);
 
     return QStringLiteral(
         "You are IA MEMS, the conversational assistant integrated into ECU MEMS Manager. "
         "The active MEMS Manager interface language is %1 (%2). Answer in that language by default. "
+        "The local runtime date of this computer is %3. If the user asks for today's date or day, use this date and do not guess another one. "
         "If the user explicitly asks for another language, follow that request. "
         "Understand spelling and typing mistakes when the meaning is clear; do not comment on them unnecessarily. "
         "Answer the exact question first and do not drift to a neighbouring topic. "
+        "Never answer by merely repeating, correcting, translating or reformulating the user's question. "
         "For ordinary conversation, answer naturally without forcing a link to the ECU. "
         "For software questions, explain the requested function directly before technical detail. "
         "For MEMS technical questions, relevant facts supplied by MEMS Manager take priority over general knowledge. "
@@ -405,7 +529,7 @@ QString LocalAiClient::systemPrompt() const
         "If ambiguity would materially change the answer, ask one useful clarification rather than guessing. "
         "Keep ECU numbers, units and factual values unchanged when changing language. "
         "Be clear, natural and concise unless the user asks for detail.")
-        .arg(languageName, languageCode);
+        .arg(languageName, languageCode, runtimeDate);
 }
 
 QString LocalAiClient::cleanModelReply(QString text) const
