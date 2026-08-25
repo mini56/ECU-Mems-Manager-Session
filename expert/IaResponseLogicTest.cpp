@@ -5,13 +5,17 @@
 #include <QDateTime>
 #include <QDebug>
 
+#include <cstdio>
+
 namespace {
 QString g_testLanguage = QStringLiteral("fr");
 
 bool require(bool condition, const char *message)
 {
-    if (!condition)
-        qCritical().noquote() << "IA RESPONSE SELFTEST FAIL:" << message;
+    if (!condition) {
+        std::fprintf(stdout, "IA RESPONSE SELFTEST FAIL: %s\n", message);
+        std::fflush(stdout);
+    }
     return condition;
 }
 }
