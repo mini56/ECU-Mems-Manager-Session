@@ -41,7 +41,7 @@
 
 ### Premier push BUILD #30
 
-- HEAD `MEMSX64` : **`600b8ef8607eb3dc7d591f675e9f33be0cdb0911`** — `BUILD #30 clean x64 IA package and uninstaller`.
+- HEAD initial `MEMSX64` #30 : **`600b8ef8607eb3dc7d591f675e9f33be0cdb0911`** — `BUILD #30 clean x64 IA package and uninstaller`.
 - Commit intermédiaire `2fd0ad91ec905690b07aefc23104be1571f2eeb1` = marqueur temporaire supersédé, pas un build distinct.
 - Workflow expérimental COMPAT supprimé ; `.github/workflows/memsx64.yml` devient le workflow unique #30.
 - `iamemstab_clean.cpp` reparente `LocalAiClient` vers `QApplication` avant `showEvent()` : le sidecar n’est plus possédé par le widget.
@@ -73,9 +73,16 @@ Le log du run `32889430143` montre que `expert_runtime_selftest.exe` **génère 
 
 L’échec survient seulement après cette génération : le workflow cherche ensuite `ia_mems_reference_r20.sqlite` sous `${{ github.workspace }}\\expert-runtime-cache`, mais Qt `QStandardPaths` n’a pas suivi cette redirection comme supposé et a conservé le LocalAppData Windows réel. Le générateur n’est donc pas en cause ; **seule la récupération du fichier utilise le mauvais chemin**.
 
-### Étape en cours — correction minimale du chemin r20
+### Correction du chemin r20 poussée
 
-Objectif exact : modifier uniquement `.github/workflows/memsx64.yml` afin de récupérer la base depuis le chemin effectivement annoncé par `expert_runtime_selftest.exe` / LocalAppData, puis relancer BUILD #30. Ne modifier ni protocole ECU, ni Qwen, ni llama.cpp, ni UI.
+- Nouveau HEAD `MEMSX64` : **`879077a678f4c203124907dabdeb42b532c9d337`** — `BUILD #30 fix expert database output path`.
+- Modification limitée à `.github/workflows/memsx64.yml`.
+- Le workflow ne devine plus l’emplacement SQLite : il capture la sortie de `expert_runtime_selftest.exe`, extrait la valeur annoncée par `EXPERT_RUNTIME_DATABASE=...`, vérifie que ce fichier existe et n’est pas vide, puis l’utilise pour `integrity_check`, révision r20 et packaging.
+- Aucun changement protocole ECU, Qwen, llama.cpp ou UI.
+
+### Étape en cours — validation CI du correctif r20
+
+Objectif exact : identifier le nouveau run déclenché par le commit `879077a678f4c203124907dabdeb42b532c9d337`, suivre BUILD #30 jusqu’au résultat, puis consigner immédiatement chaque nouveau blocage ou le succès complet.
 
 ---
 
@@ -83,7 +90,7 @@ Objectif exact : modifier uniquement `.github/workflows/memsx64.yml` afin de ré
 
 - Dépôt : `mini56/ECU-Mems-Manager-Session`.
 - Branche x64 : `MEMSX64`.
-- HEAD : `600b8ef8607eb3dc7d591f675e9f33be0cdb0911`.
+- HEAD : `879077a678f4c203124907dabdeb42b532c9d337`.
 - Rapport : `RAPPORT`.
 - 32 bits : `lab-expert-engine`, ne pas toucher.
 - Rollback x64 : `MEMSX64-BUILD26-BASE`, ne pas toucher.
@@ -122,4 +129,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Corriger uniquement la récupération de `ia_mems_reference_r20.sqlite` dans `.github/workflows/memsx64.yml`, pousser sur `MEMSX64`, puis vérifier le nouveau run BUILD #30.**
+**Suivre le nouveau run BUILD #30 déclenché par `879077a678f4c203124907dabdeb42b532c9d337`. Si un nouveau rouge apparaît, consigner sa cause exacte avant toute correction.**
