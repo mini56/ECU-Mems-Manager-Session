@@ -1,1 +1,8 @@
-noop
+BUILD #30 / v1.0.30
+
+Clean x64 IA integration baseline:
+- Qwen3-0.6B-Q8_0
+- llama.cpp b10516 conservative static x64 runtime
+- prebuilt expert database r20
+- application-scope IA sidecar lifetime
+- packaged uninstaller + install manifest
