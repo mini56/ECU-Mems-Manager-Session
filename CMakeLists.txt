@@ -90,6 +90,16 @@ add_executable(mems_search_selftest
 target_link_libraries(mems_search_selftest PRIVATE Qt5::Core Qt5::Sql)
 add_dependencies(${PNAME} mems_search_selftest)
 
+# BUILD #29 packaged expert DB generator. It executes the exact
+# ExpertRuntimeDatabase code used by IA MEMS once in CI, validates the resulting
+# SQLite file, then the workflow ships that immutable DB read-only. Runtime
+# reconstruction remains only as a fallback when the packaged DB is absent.
+add_executable(expert_runtime_selftest
+    expert/ExpertRuntimeDatabaseSelfTest.cpp
+    expert/ExpertRuntimeDatabase.cpp expert/ExpertRuntimeDatabase.h)
+target_link_libraries(expert_runtime_selftest PRIVATE Qt5::Core Qt5::Sql)
+add_dependencies(${PNAME} expert_runtime_selftest)
+
 if(WIN32)
     target_sources(${PNAME} PRIVATE ${CMAKE_SOURCE_DIR}/appicon.rc)
     target_link_libraries(${PNAME} PRIVATE ole32 shell32 uuid)
