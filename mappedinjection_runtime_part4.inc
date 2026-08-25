@@ -19,10 +19,23 @@
     const bool mems19ScheduledRead=mems19NormalScheduledRead||mems19Tbp7f015ScheduledRead;
     const bool directFinalRead=(!mems19ScheduledRead&&map.transientSourceAddress==0u&&map.transientCounterAddress==0u);
 
-    setProperty("mappedInjectionModeActive",true);emit readModeChanged(QStringLiteral("transition"));
-    bool entered=false;bool ok=ensureNormalSession(&m_memsinfo);
-    if(ok&&m_mappedInjectionRequested.loadAcquire()!=0)ok=enterMode4(&m_memsinfo);
-    if(ok&&m_mappedInjectionRequested.loadAcquire()!=0){entered=true;emit readModeChanged(QStringLiteral("injection"));}
+    setProperty("mappedInjectionModeActive",true);
+    setDiagnosticMode(MemsDiagnosticMode::Transition);
+    emit readModeChanged(QStringLiteral("transition"));
+    bool entered=false;
+    bool ok=ensureNormalSession(&m_memsinfo);
+    if(ok)setDiagnosticMode(MemsDiagnosticMode::Normal);
+    if(ok&&m_mappedInjectionRequested.loadAcquire()!=0)
+    {
+        setDiagnosticMode(MemsDiagnosticMode::Transition);
+        ok=enterMode4(&m_memsinfo);
+    }
+    if(ok&&m_mappedInjectionRequested.loadAcquire()!=0)
+    {
+        entered=true;
+        setDiagnosticMode(MemsDiagnosticMode::Mode4);
+        emit readModeChanged(QStringLiteral("injection"));
+    }
 
     int failures=0;
     bool havePreviousCounter=false;
@@ -112,11 +125,20 @@
         QThread::msleep(8);
     }
 
+    setDiagnosticMode(MemsDiagnosticMode::Transition);
     emit readModeChanged(QStringLiteral("transition"));
     const bool restored=entered?restoreNormalSession(&m_memsinfo):ensureNormalSession(&m_memsinfo);
     onMappedInjectionRequestState(false);setProperty("mappedInjectionModeActive",false);
-    if(restored)emit readModeChanged(QStringLiteral("diagnostic"));
-    else {emit readError();m_stopPolling=true;}
+    if(restored)
+    {
+        setDiagnosticMode(MemsDiagnosticMode::Normal);
+        emit readModeChanged(QStringLiteral("diagnostic"));
+    }
+    else
+    {
+        setDiagnosticMode(MemsDiagnosticMode::Unknown);
+        emit readError();m_stopPolling=true;
+    }
 }
 
 Q_COREAPP_STARTUP_FUNCTION(installMappedInjectionUi)
