@@ -30,19 +30,20 @@ inline bool allowsGenericCommand(MemsEcuFamily family,
                                  MemsDiagnosticMode mode,
                                  std::uint8_t command)
 {
-    if (!familyKnown(family))
-        return false;
+    (void)family;
 
-    // F0 only reads the current diagnostic mode and is the sole generic
-    // command allowed while outside the normal diagnostic session.
+    // F0 is a read-only mode query. It is needed specifically to recover from
+    // an unknown mode, therefore it remains available independently of family.
     if (command == 0xF0u)
         return true;
 
     if (mode != MemsDiagnosticMode::Normal)
         return false;
 
-    // Generic ECU/ROSCO access is deliberately read-only. D1 is safe here
-    // only because Mode 4 is rejected above; in Mode 4 D1 programs ROM.
+    // D0/D1/D2 are identification/status reads in the confirmed normal
+    // diagnostic session. D1 is refused in Mode 4 above because there it can
+    // program calibration RAM to ROM. These reads are also what allow the
+    // application to establish the exact ECU family after connection.
     return command == 0xD0u || command == 0xD1u || command == 0xD2u;
 }
 
@@ -79,8 +80,9 @@ inline bool allowsMutation(MemsEcuFamily family,
                            MemsDiagnosticMode mode,
                            std::uint8_t command)
 {
-    // Until a family-specific command table is proven, MEMS 1.9 writes and
-    // actuator commands are refused. This is intentionally fail-closed.
+    // Mutating commands are fail-closed: merely reaching the legacy ROSCO
+    // transport does not prove the ECU generation. A proven family and normal
+    // diagnostic mode are both mandatory.
     if (family != MemsEcuFamily::Rosco13_16 ||
         mode != MemsDiagnosticMode::Normal)
         return false;
