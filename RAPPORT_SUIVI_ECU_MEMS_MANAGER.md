@@ -168,6 +168,26 @@ Sans créer BUILD #31 et sans toucher au protocole ECU :
 - Créé le **26 août 2026 à 06:11:21Z** ; expiration prévue le **9 septembre 2026 à 06:10:59Z**.
 - Cet artefact correspond exactement au HEAD `7a8085cef236e00091d8a053cdb97293568d97d0`.
 
+### Test PC réel — ECU MEMS Manager x64 #63 — Commit `7a8085c`
+
+Résultat utilisateur sur PC réel, captures du 26 août 2026 :
+
+- **La navigation responsive est corrigée sur ce PC** : les 14 entrées sont visibles simultanément, de `Aperçu` à `Test ECU 1.9`; la sélection du bas de la navigation ne masque plus `Aperçu`.
+- `base prête` et `IA locale prête` restent atteints ; aucun crash d’ouverture IA.
+- Le garde-fou de domaine fonctionne sur les questions `MEMS` / `MEMS 1.9` : l’IA reste dans le contexte Rover/Lucas/Mini-Rover et ne développe plus MEMS comme `Micro-Electro-Mechanical Systems`.
+- Défaut majeur restant : **latence utilisateur entre environ 30 secondes et 2 minutes pour obtenir certaines réponses**, ce qui est inacceptable pour un usage interactif.
+- Les réponses déterministes contrôlées doivent normalement être quasi immédiates ; la forte latence concerne surtout les questions qui tombent encore sur Qwen local.
+- Qualité encore insuffisante sur plusieurs définitions : `C'EST QUOI LE MAP ?` est confondu avec une demande de mesure live (`Je n'ai encore aucune mesure ECU disponible.`) ; `C'EST QUOI L'INJECTEUR ?` produit une fausse définition d'« injection d'huile » ; `C'EST QUOI SPI SUR LES MOTEUR ROVER ?` produit une hallucination `Signal Pulse Intensité` alors que, dans ce domaine automobile, SPI doit être traité comme **Single Point Injection**.
+
+### Isolation performance après test PC #63
+
+- Le workflow BUILD #30 compile actuellement llama.cpp b10516 en profil **statique ultra-conservateur** avec `GGML_NATIVE=OFF`, `GGML_BACKEND_DL=OFF`, `GGML_CPU_ALL_VARIANTS=OFF`, `GGML_SSE42=OFF`, `GGML_AVX=OFF`, `GGML_AVX2=OFF`, `GGML_BMI2=OFF` et les variantes AVX512 désactivées.
+- Sur x86/MSVC, le CMake exact de llama.cpp b10516 n'active les chemins `/arch:SSE4.2`, `/arch:AVX` ou `/arch:AVX2` que lorsque les options correspondantes sont actives. Le runtime #63 force donc le backend CPU x64 de base sans ces optimisations SIMD.
+- Le même commit llama.cpp b10516 fournit officiellement un mode `GGML_CPU_ALL_VARIANTS` qui exige `GGML_BACKEND_DL` et construit plusieurs backends x86 (`x64`, `sse42`, `sandybridge`, `haswell`, `skylakex`, etc.). Le chargeur dynamique examine leur fonction `ggml_backend_score`, écarte les backends non supportés par la machine et charge celui qui obtient le meilleur score ; le backend x64 de base reste disponible comme repli.
+- Conclusion : **la compilation volontairement sans SIMD est une cause majeure et directement démontrée de la lenteur Qwen sur le PC réel**. Elle avait été choisie pour maximiser la compatibilité lors de la stabilisation des crashes, mais elle n'est pas adaptée aux performances finales.
+- Une correction propre de performance ne doit pas imposer AVX2 à tous les PC. La voie sûre est le runtime multi-variantes de llama.cpp : `GGML_NATIVE=OFF`, `GGML_BACKEND_DL=ON`, `GGML_CPU_ALL_VARIANTS=ON`, packaging des DLL CPU générées avec `llama-server.exe`, puis validation CI que le backend de base fonctionne et que le serveur sélectionne automatiquement le meilleur backend supporté.
+- En parallèle, les définitions MAP/injecteur/SPI doivent être routées vers les réponses/base techniques contrôlées afin d'éviter à la fois les hallucinations et un appel Qwen inutile.
+
 ---
 
 ## ÉTAT DE RÉFÉRENCE
@@ -189,7 +209,7 @@ Sans créer BUILD #31 et sans toucher au protocole ECU :
 - #30 reconstruction propre `776fc647a874564c932bf09e8871cb771a0ed258`, #59 SUCCESS.
 - #30 réponses Qwen `be4916a53321e36573729e123b14c2cf120fd734`, #60 SUCCESS.
 - #30 routage rapide `126cc638d584975a78d0101430d61bdc435c5879`, #61 SUCCESS ; test PC : vitesse améliorée, mais langue/domaine MEMS/qualité et navigation responsive encore à corriger.
-- #30 langue/domaine/navigation : HEAD `7a8085cef236e00091d8a053cdb97293568d97d0`, #63 SUCCESS ; test PC de validation finale de ce lot encore requis.
+- #30 langue/domaine/navigation : HEAD `7a8085cef236e00091d8a053cdb97293568d97d0`, #63 SUCCESS ; navigation PC corrigée, domaine MEMS mieux verrouillé, mais latence Qwen 30 s à 2 min et définitions MAP/injecteur/SPI encore incorrectes.
 
 ## VERSIONNAGE
 
@@ -217,4 +237,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Tester sur le PC réel l’artefact de ECU MEMS Manager x64 #63 — Commit `7a8085c` : vérifier français strict, réponse `MEMS 1.6`, rôle ECU, valeur bobine, relance IAC `où il est placé ?`, puis sélectionner `Test ECU 1.9` et confirmer qu’`Aperçu` reste visible. Consigner le résultat exact avant toute nouvelle correction. Aucun BUILD #31.**
+**Après autorisation utilisateur : dans le même BUILD #30, remplacer le runtime llama.cpp CPU ultra-conservateur par le mode multi-variantes officiel (`GGML_NATIVE=OFF`, `GGML_BACKEND_DL=ON`, `GGML_CPU_ALL_VARIANTS=ON`) avec backend x64 de repli et packaging de toutes les DLL CPU requises ; ajouter les validations CI du chargement automatique du meilleur backend supporté ; corriger en même temps le routage des définitions MAP, injecteur et SPI pour éviter appels Qwen inutiles et hallucinations. Aucun changement protocole ECU, aucun BUILD #31.**
