@@ -2,8 +2,32 @@
 #include "i18n.h"
 
 #include <QCoreApplication>
+#include <QDate>
 #include <QTextStream>
 #include <QTimer>
+
+namespace {
+bool containsInternalLeak(const QString &text)
+{
+    const QString lower = text.toLower();
+    const QStringList markers = {
+        QStringLiteral("<think>"),
+        QStringLiteral("</think>"),
+        QStringLiteral("<|im_"),
+        QStringLiteral("langage obligatoire"),
+        QStringLiteral("mandatory language"),
+        QStringLiteral("domaine obligatoire"),
+        QStringLiteral("contexte candidat fourni par mems manager"),
+        QStringLiteral("mode diagnostic rapide"),
+        QStringLiteral("you are ia mems, the local assistant")
+    };
+    for (const QString &marker : markers) {
+        if (lower.contains(marker))
+            return true;
+    }
+    return false;
+}
+}
 
 int main(int argc, char *argv[])
 {
@@ -16,8 +40,9 @@ int main(int argc, char *argv[])
     err.setCodec("UTF-8");
 
     LocalAiClient client;
-    bool questionSent = false;
+    bool started = false;
     bool finished = false;
+    int stage = 0;
 
     const auto fail = [&](const QString &message) {
         if (finished)
@@ -27,13 +52,22 @@ int main(int argc, char *argv[])
         app.exit(1);
     };
 
+    const auto rejectLeak = [&](const QString &answer) -> bool {
+        if (!containsInternalLeak(answer))
+            return false;
+        fail(QStringLiteral("Une directive interne ou une balise Qwen a fui dans la réponse : %1")
+                 .arg(answer.left(180)));
+        return true;
+    };
+
     QObject::connect(&client, &LocalAiClient::stateChanged, &app, [&]() {
         out << "STATE=" << client.statusText() << Qt::endl;
         switch (client.state()) {
         case LocalAiClient::Ready:
-            if (!questionSent) {
-                questionSent = true;
-                client.ask(QStringLiteral("Réponds uniquement par OK."), QString());
+            if (!started) {
+                started = true;
+                stage = 0;
+                client.ask(QStringLiteral("C'EST QUOI LA BOBINE ?"), QString());
             }
             break;
         case LocalAiClient::MissingRuntime:
@@ -54,14 +88,46 @@ int main(int argc, char *argv[])
         if (finished)
             return;
         const QString answer = text.trimmed();
-        out << "ANSWER=" << answer << Qt::endl;
-        if (answer.isEmpty() || !answer.contains(QStringLiteral("OK"), Qt::CaseInsensitive)) {
-            fail(QStringLiteral("La génération native ne contient pas le marqueur OK attendu."));
+        out << "ANSWER_STAGE_" << stage << "=" << answer << Qt::endl;
+        if (answer.isEmpty()) {
+            fail(QStringLiteral("Réponse vide à l'étape %1.").arg(stage));
             return;
         }
-        finished = true;
-        out << "PASS LocalAiClient native ONNX Runtime GenAI" << Qt::endl;
-        app.exit(0);
+        if (rejectLeak(answer))
+            return;
+
+        if (stage == 0) {
+            if (!answer.contains(QStringLiteral("bobine"), Qt::CaseInsensitive)
+                || !answer.contains(QStringLiteral("haute tension"), Qt::CaseInsensitive)
+                || !answer.contains(QStringLiteral("bougie"), Qt::CaseInsensitive)) {
+                fail(QStringLiteral("La définition déterministe de la bobine n'est pas exploitable."));
+                return;
+            }
+            stage = 1;
+            client.ask(QStringLiteral("QUELLE JOURS SOMME NOUS ?"), QString());
+            return;
+        }
+
+        if (stage == 1) {
+            if (!answer.contains(QString::number(QDate::currentDate().year()))
+                || !answer.contains(QStringLiteral("Nous sommes"), Qt::CaseInsensitive)) {
+                fail(QStringLiteral("La question de date avec faute de frappe n'est pas reconnue."));
+                return;
+            }
+            stage = 2;
+            client.ask(QStringLiteral("Réponds uniquement par OK."), QString());
+            return;
+        }
+
+        if (stage == 2) {
+            if (!answer.contains(QStringLiteral("OK"), Qt::CaseInsensitive)) {
+                fail(QStringLiteral("La génération native ne contient pas le marqueur OK attendu."));
+                return;
+            }
+            finished = true;
+            out << "PASS LocalAiClient native ONNX response quality" << Qt::endl;
+            app.exit(0);
+        }
     });
 
     QTimer::singleShot(180000, &app, [&]() {
