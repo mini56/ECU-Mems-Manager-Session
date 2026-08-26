@@ -1,240 +1,153 @@
 # RAPPORT DE CONTINUITÉ — ECU MEMS MANAGER
 
-> **RÈGLE OBLIGATOIRE POUR LES PROCHAINES DISCUSSIONS**
+> **RÈGLE OBLIGATOIRE** : relire ce fichier avant toute modification. Branche rapport : `RAPPORT`. Branche x64 active : `MEMSX64`.
 >
-> Ce fichier doit être relu avant toute modification d’ECU MEMS Manager. Il constitue la source de vérité de continuité du projet.
+> **SUIVI IMMÉDIAT** : avant chaque nouvelle étape, inscrire ici l’étape et son objectif ; après chaque résultat, l’inscrire avant la suite.
 >
-> Branche rapport : `RAPPORT`. Branche de développement x64 : `MEMSX64`.
->
-> **RÈGLE DE SUIVI IMMÉDIAT : AVANT CHAQUE NOUVELLE ÉTAPE, inscrire ici l’étape exacte et son objectif. Dès que cette étape produit un résultat, inscrire immédiatement ce résultat AVANT de commencer l’étape suivante. Ne jamais attendre la fin d’un lot, d’un build ou d’une discussion.**
+> **NOMMAGE UTILISATEUR** : `ECU MEMS Manager x64 #NN — Commit xxxxxxx`. `#NN` est le numéro GitHub Actions, pas le BUILD logiciel.
 
-> **RÈGLE DE NOMMAGE GITHUB POUR LES ÉCHANGES AVEC L’UTILISATEUR : annoncer une exécution sous la forme `ECU MEMS Manager x64 #NN — Commit xxxxxxx`. Le `#NN` affiché par GitHub est le numéro d’exécution du workflow, pas le numéro de BUILD logiciel. Éviter les formulations ambiguës du type « build #44 » pour parler d’une Action GitHub.**
-
-## JOURNAL IMMÉDIAT — 25/26 août 2026
-
-### Architecture IA x64 retenue
-
-- `llama-server.exe` sidecar x64 hors processus ; ne pas lier libllama/ggml dans l’exécutable ECU.
-- Durée de vie IA application, pas widget ; IA MEMS reste une vue/client.
-- Loopback local ; base experte r20 préconstruite en CI puis lue `QSQLITE_OPEN_READONLY` + `PRAGMA query_only=ON`.
-- RAG : mesures ECU read-only -> moteur expert -> faits pertinents -> Qwen -> texte ; aucun accès LLM aux commandes ECU.
-- Qwen3-0.6B-Q8_0 + llama.cpp b10516 conservés.
-
-### BUILD #30 ouvert explicitement par l’utilisateur
-
-- BUILD actif : **#30 / v1.0.30**.
-- Aucun BUILD #31 sans demande explicite.
-- `lab-expert-engine` et `MEMSX64-BUILD26-BASE` restent intacts.
-- Aucun changement protocole ECU autorisé pendant la stabilisation IA.
-
-### Désinstallation BUILD #30
-
-- `uninstaller.cpp` existe et CMake crée `ecu_mems_uninstaller`.
-- #30 doit livrer `ecu_mems_uninstaller.exe` + `install_manifest.txt` complet.
-- Le code existant refuse si l’app tourne, conserve le profil par défaut, supprime les données locales seulement sur choix explicite, et préserve les fichiers étrangers.
-
-### BUILD #30 avant reconstruction propre
-
-- HEAD initial #30 : `600b8ef8607eb3dc7d591f675e9f33be0cdb0911` — `BUILD #30 clean x64 IA package and uninstaller`.
-- Correction chemin base r20 : `879077a678f4c203124907dabdeb42b532c9d337`.
-- ECU MEMS Manager x64 #44 / run `32890600398` : base r20, runtime, Qwen et package valides ; rouge uniquement au smoke API car `message.content` était vide avec une enveloppe courte.
-- Correction smoke-test CI : `414ea52970e02fb6077c94ca2aa7aec3e92d7383`, `--reasoning off` uniquement pour le serveur du test GitHub.
-- ECU MEMS Manager x64 #45 / run `32893817192` : **SUCCESS / VERT** jusqu’à l’upload.
-- Artifact #45 : `ECU-MEMS-Manager-x64-BUILD-30-v1.0.30`, ID `9580850077`, taille `668890922`, archive SHA-256 `1db3438593c65f7f77176910e55e9de0a428208f9c3a7732b74d6e35290ed3d0`.
-
-### Test PC réel — ECU MEMS Manager x64 #45 — Commit `414ea52`
-
-- Résultat utilisateur : **CRASH immédiat à l’ouverture de l’onglet IA MEMS**, identique au crash précédemment observé.
-- Le smoke launch CI n’ouvrait pas l’onglet IA et ne pouvait donc pas détecter ce défaut.
-- Les validations séparées de `llama-server.exe`, Qwen, SQLite r20 et du package restaient vertes.
-
-### Constat architectural après le crash PC
-
-L’utilisateur rappelle qu’il avait demandé de **refaire l’IA sur une architecture propre**, et non d’empiler les anciens correctifs. Inspection effectuée :
-
-- `navigationorderpatch.cpp` crée déjà directement `IaMemsTab` à la position officielle n°7 ; l’ancien installateur IA global était redondant.
-- `iamemstab_clean.cpp` réincluait `iamemstab.cpp` puis ajoutait un `eventFilter` global qui reparente `LocalAiClient` pendant `QEvent::Show`.
-- `iamemsqualitypatch.cpp` et `iaresponsecontextpatch.cpp` ajoutaient encore d’autres filtres globaux autour de l’IA.
-- L’application mélangeait donc une vue IA, des wrappers, plusieurs hooks de démarrage et des patches globaux.
-- Le code de `LocalAiClient` injectait encore `/no_think` dans les requêtes et dans le prompt système : le raisonnement Qwen n’était donc pas réellement actif dans l’application, contrairement à l’intention annoncée.
-- Le BUILD #26 PC stable n’embarquait pas le vrai runtime Qwen ; sa stabilité ne validait pas le chemin sidecar complet actuel.
-
-### Reconstruction IA propre — effectuée sur `MEMSX64`
-
-Architecture désormais appliquée :
-
-`navigationorderpatch.cpp -> IaMemsTab (vue) -> IaMemsService (service application) -> ExpertEngine + ExpertKnowledgeReader(read-only) -> LocalAiClient -> llama-server.exe -> Qwen3`
-
-Changements réalisés :
-
-- `navigationorderpatch.cpp` reste l’unique créateur/intégrateur de l’onglet IA ; ordre officiel des 14 onglets inchangé.
-- `iamemstab.cpp` est compilé directement et devient une vue simple : aucun installateur global, aucun wrapper, aucun `eventFilter` IA, aucun propriétaire direct de `LocalAiClient`, aucun thread de reconstruction SQLite.
-- Nouveau `expert/IaMemsService.h/.cpp` : service IA unique, parenté à l’application dès sa création ; il possède `LocalAiClient`, `ExpertEngine`, `ExpertKnowledgeReader`, contexte et historique.
-- La base de production utilisée par l’application est directement `database/expert/ia_mems_reference_r20.sqlite` du package, ouverte en lecture seule. `ExpertRuntimeDatabase` reste uniquement dans le self-test/générateur CI.
-- L’ouverture de l’onglet active le service : ouverture read-only de la base empaquetée puis démarrage du sidecar ; aucun reparentage pendant `Show`.
-- `iamemstab_clean.cpp` supprimé du dépôt.
-- `iamemsqualitypatch.cpp` supprimé du dépôt ; la barre de défilement du transcript est configurée directement dans la vraie vue.
-- `iaresponsecontextpatch.cpp` supprimé du dépôt ; l’horodatage des mesures est traité directement dans le service.
-- `CMakeLists.txt` ne compile plus aucun de ces anciens patches/wrappers IA.
-- `/no_think` supprimé des requêtes et du prompt de l’application ; Qwen garde son raisonnement natif actif dans MEMS Manager.
-- Le serveur réel utilise `--no-webui --offline`; le `--reasoning off` reste exclusivement dans le smoke-test CI court.
-- IA reste lecture seule vis-à-vis de l’ECU : elle reçoit uniquement les mesures déjà acquises par `MEMSInterface` et n’a aucune autorité de commande/mutation.
-- Formule ralenti chaud conservée selon la règle validée : `raw - 32768 - correction`.
-- Aucun changement du protocole ECU, de la branche 32 bits, du rollback, du modèle Qwen ou du style dark/responsive.
-
-### Push final reconstruction propre
-
-- HEAD final reconstruction : **`776fc647a874564c932bf09e8871cb771a0ed258`** — `BUILD #30 rebuild IA on clean application service`.
-- Run : **ECU MEMS Manager x64 #59 — Commit `776fc64`** / `32898631148`.
-- Résultat : **VERT** ; artifact `9582674702` ; SHA-256 `ee7f12e933a17c884c6ca081c583a542f45569f556a68a50f124b58b5f13fcff`.
-- Test PC : crash d’ouverture IA supprimé ; `base prête` + `IA locale prête` atteints.
-
-### Correction question/réponse — #60
-
-- HEAD : **`be4916a53321e36573729e123b14c2cf120fd734`** — `BUILD #30 fix Qwen thinking responses`.
-- Date locale injectée ; anti-écho ; paramètres thinking Qwen3.
-- **ECU MEMS Manager x64 #60 — Commit `be4916a` — VERT** / run `32901653203` / artifact `9583795907` / SHA-256 `b03616086bc7bba254b8b089bff474ce275f28cc92b19a30db7300aeb6be9f4a`.
-- Test PC : date correcte, mais latence, contamination d’historique et hallucination IAC confirmées.
-
-### Routage IA rapide — #61
-
-- HEAD `MEMSX64` : **`126cc638d584975a78d0101430d61bdc435c5879`** — `BUILD #30 route IA fast and reasoning responses`.
-- Modification unique : `expert/LocalAiClient.cpp`.
-- Date courante : réponse immédiate sans Qwen.
-- IAC : réponse contrôlée `Idle Air Control`.
-- Question générale simple : `/no_think`, budget 256 tokens.
-- Diagnostic/analyse : `/think`, budget 768 tokens.
-- Historique : dernier tour uniquement pour une vraie relance détectée.
-- Raisonnement Qwen conservé pour les tâches complexes.
-
-### ECU MEMS Manager x64 #61 — Commit `126cc63` — VERT
-
-- Run GitHub : **`32904830665`** ; job : **`97986482796`**.
-- Les 20 étapes fonctionnelles sont vertes, jusqu’au smoke launch, hashes et upload.
-- Artifact : **`ECU-MEMS-Manager-x64-BUILD-30-v1.0.30`**.
-- Artifact ID : **`9584843179`**.
-- Taille : **668869675 octets**.
-- SHA-256 archive GitHub : **`cc9cd0e2f299d563e469cac08c2d86bfe7ab52f998c7f4568d86ca3fe53aa207`**.
-
-### Test PC réel — ECU MEMS Manager x64 #61 — Commit `126cc63`
-
-Résultat utilisateur sur PC réel, captures du 26 août 2026 :
-
-- **Les réponses simples sont un peu plus rapides.** Le routage rapide apporte donc un gain perceptible, mais encore insuffisant pour considérer l’IA finalisée.
-- IAC : la définition contrôlée est maintenant correcte et en français : `Idle Air Control`, régulation de l’air de ralenti.
-- Relance `OU IL EST PLACÉ ?` après IAC : réponse inutile `IL EST PLACÉ.` ; le petit modèle ne traite pas correctement cette relance. Le routage des suivis doit utiliser le fait précédent/base plutôt que laisser Qwen improviser sans information de localisation.
-- Question `QUEL VALEUR POUR LA BOBINE ?` : réponse `Je n'ai encore reçu aucune mesure ECU.`. Cause isolée dans `IaMemsService::groundingFor()` : le mot `valeur` déclenche `currentValuesAnswer()` avant la recherche de connaissance. Une demande de **valeur de référence** est donc confondue avec une demande de **mesure actuelle**. La référence validée dwell bobine ≈ **1,9–3,1 ms vers 14 V** doit être routée comme connaissance/référence, pas comme mesure live.
-- Date : réponse immédiate correcte (`2026-08-26`).
-- Question générale `C'EST QUOI UN MOTEUR 4 TEMPS ?` : réponse en français et plus rapide, mais formulation médiocre (`temps fourni`) ; qualité générale limitée du Qwen3 0.6B confirmée.
-- Question `EXPLIQUE MOI LE ROLE DE L'ECU ?` : réponse française mais contient des fonctions automobiles inventées/hors sujet (`gestion des voies`, `auto-stop`, `auto-accélération`, `auto-remise de la clé`). Il faut donc davantage de réponses contrôlées/base pour le domaine automobile au lieu de confier ces définitions au modèle général.
-- `QUEL TYPE D'ECU MEMS EXISTE ?` : réponse trop vague et non exploitable.
-- `1.6` seul : le routeur produit le fallback générique puis le modèle ne produit pas de réponse exploitable.
-- `MEMS 1.6` : **réponse en anglais et techniquement fausse pour notre domaine**, Qwen interprétant MEMS comme `Micro-Electro-Mechanical System`. C’est un défaut critique de routage de domaine : dans IA MEMS, `MEMS` doit signifier en priorité le système de gestion moteur Rover/Lucas MEMS, jamais le domaine générique des microsystèmes, sauf demande explicite de l’utilisateur.
-- `REPOND EN FRANCAIS` : le modèle n’arrive pas à se recaler de façon fiable et finit par un échec exploitable. La langue ne doit pas dépendre seulement d’une consigne système en anglais au petit modèle ; le français doit être **imposé par le routeur** lorsque l’interface est française.
-- **Défaut navigation responsive sur ce PC** : lorsque l’utilisateur sélectionne `Test ECU 1.9`, `Aperçu` disparaît visuellement du haut de la barre latérale. Inspection de `navigationorderpatch.cpp` : `tabs.currentChanged` appelle `nav->setCurrentRow(index)` ; `QListWidget` fait alors défiler automatiquement l’élément courant dans sa fenêtre. Sur ce PC, la hauteur disponible n’affiche pas simultanément les 14 lignes, donc la sélection de la ligne 14 décale la liste d’une ligne et masque `Aperçu`. **Aperçu n’est pas supprimé ; la liste est simplement scrollée.** Ce comportement viole l’exigence responsive : les 14 onglets doivent rester visibles dans le panneau latéral quand la résolution le permet, sans faire disparaître le premier onglet lors de la sélection du dernier.
-
-### Corrections requises avant nouvelle validation PC
-
-Sans créer BUILD #31 et sans toucher au protocole ECU :
-
-1. **Langue** : imposer la langue active de l’interface au niveau de chaque requête/réponse ; en français, une réponse anglaise non demandée doit être refusée/reformulée ou remplacée par une réponse contrôlée.
-2. **Domaine MEMS** : ajouter un garde-fou fort `MEMS = Rover/Lucas engine management` dans le contexte IA MEMS et utiliser la base experte avant le savoir général ; ne jamais laisser Qwen développer MEMS comme `Micro-Electro-Mechanical System` dans ce contexte.
-3. **Références techniques** : distinguer demande de valeur de référence et demande de mesure actuelle ; pour la bobine/dwell, fournir la référence validée 1,9–3,1 ms vers 14 V lorsqu’elle est demandée.
-4. **Définitions automobile/MEMS** : augmenter les réponses contrôlées/base pour ECU, familles MEMS, IAC et autres notions centrales afin d’éviter les hallucinations du 0.6B.
-5. **Relances** : les relances courtes (`où il est placé ?`, `et pourquoi ?`) doivent conserver le fait technique précédent pertinent, pas seulement le texte brut du dernier tour.
-6. **Navigation** : adapter la hauteur/hauteur de lignes de `uiRebuildNav` à l’espace disponible pour que les 14 entrées restent visibles ; ne pas corriger en réordonnant les onglets ni en supprimant le comportement responsive.
-
-### Étape autorisée et poussée — corrections langue/domaine/relances/navigation
-
-- Autorisation utilisateur reçue : **GO**.
-- Correction IA poussée : commit **`8a793a7f9d660a729e12cf32c2f888161cad6598`** — `BUILD #30 harden IA French MEMS domain answers`.
-- `LocalAiClient` impose désormais la langue active à chaque requête Qwen et ajoute un garde-fou de domaine : dans IA MEMS, `MEMS` signifie par défaut le système de gestion moteur Rover/Lucas/Mini-Rover, jamais `Micro-Electro-Mechanical Systems` sauf demande explicite.
-- En interface française, une sortie manifestement anglaise est rejetée ; un contexte déterministe fiable reste prioritaire.
-- Réponses contrôlées françaises ajoutées pour : moteur 4 temps, rôle ECU, familles MEMS 1.2/1.3/1.6/1.9, question `1.6`/`MEMS 1.6`, valeur de référence dwell bobine 1,9–3,1 ms vers 14 V, et confirmation `réponds en français`.
-- Relance IAC de localisation : réponse contextualisée prudente ; emplacement exact demandé via véhicule/moteur/référence ECU lorsqu’il varie selon le montage.
-- Correction navigation poussée : HEAD final **`7a8085cef236e00091d8a053cdb97293568d97d0`** — `BUILD #30 keep all navigation tabs visible`.
-- `uiRebuildNav` ajuste désormais dynamiquement la hauteur de ses 14 lignes à la hauteur réelle du viewport, désactive le scroll vertical lorsque les 14 lignes peuvent tenir et recale systématiquement la liste en haut ; sélectionner `Test ECU 1.9` ne doit plus masquer `Aperçu` sur le PC concerné.
-- Ordre officiel des 14 onglets inchangé ; style dark/responsive conservé ; aucun changement protocole ECU, 32 bits, modèle Qwen ou base experte.
-
-### ECU MEMS Manager x64 #63 — Commit `7a8085c` — VERT
-
-- Run GitHub : **`32936048218`** ; job : **`98077364424`**.
-- Résultat final : **SUCCESS / VERT**.
-- Les 20 étapes fonctionnelles sont vertes : protections protocole, configuration et compilation x64, application + désinstalleur + self-tests, IA déterministe, ABI protocole, base de référence, génération base experte r20, llama.cpp b10516, Qwen3-0.6B-Q8_0, assemblage package, validation architecture, API Qwen empaquetée, smoke launch, hashes et upload.
-- Artifact : **`ECU-MEMS-Manager-x64-BUILD-30-v1.0.30`**.
-- Artifact ID : **`9595181353`**.
-- Taille : **668875356 octets**.
-- SHA-256 archive GitHub : **`995efda2b49768457ad3ec8f2f31b137c671b722c80465831b2ef00d47c559d4`**.
-- Créé le **26 août 2026 à 06:11:21Z** ; expiration prévue le **9 septembre 2026 à 06:10:59Z**.
-- Cet artefact correspond exactement au HEAD `7a8085cef236e00091d8a053cdb97293568d97d0`.
-
-### Test PC réel — ECU MEMS Manager x64 #63 — Commit `7a8085c`
-
-Résultat utilisateur sur PC réel, captures du 26 août 2026 :
-
-- **La navigation responsive est corrigée sur ce PC** : les 14 entrées sont visibles simultanément, de `Aperçu` à `Test ECU 1.9`; la sélection du bas de la navigation ne masque plus `Aperçu`.
-- `base prête` et `IA locale prête` restent atteints ; aucun crash d’ouverture IA.
-- Le garde-fou de domaine fonctionne sur les questions `MEMS` / `MEMS 1.9` : l’IA reste dans le contexte Rover/Lucas/Mini-Rover et ne développe plus MEMS comme `Micro-Electro-Mechanical Systems`.
-- Défaut majeur restant : **latence utilisateur entre environ 30 secondes et 2 minutes pour obtenir certaines réponses**, ce qui est inacceptable pour un usage interactif.
-- Les réponses déterministes contrôlées doivent normalement être quasi immédiates ; la forte latence concerne surtout les questions qui tombent encore sur Qwen local.
-- Qualité encore insuffisante sur plusieurs définitions : `C'EST QUOI LE MAP ?` est confondu avec une demande de mesure live (`Je n'ai encore aucune mesure ECU disponible.`) ; `C'EST QUOI L'INJECTEUR ?` produit une fausse définition d'« injection d'huile » ; `C'EST QUOI SPI SUR LES MOTEUR ROVER ?` produit une hallucination `Signal Pulse Intensité` alors que, dans ce domaine automobile, SPI doit être traité comme **Single Point Injection**.
-
-### Isolation performance après test PC #63
-
-- Le workflow BUILD #30 compile actuellement llama.cpp b10516 en profil **statique ultra-conservateur** avec `GGML_NATIVE=OFF`, `GGML_BACKEND_DL=OFF`, `GGML_CPU_ALL_VARIANTS=OFF`, `GGML_SSE42=OFF`, `GGML_AVX=OFF`, `GGML_AVX2=OFF`, `GGML_BMI2=OFF` et les variantes AVX512 désactivées.
-- Sur x86/MSVC, le CMake exact de llama.cpp b10516 n'active les chemins `/arch:SSE4.2`, `/arch:AVX` ou `/arch:AVX2` que lorsque les options correspondantes sont actives. Le runtime #63 force donc le backend CPU x64 de base sans ces optimisations SIMD.
-- Le même commit llama.cpp b10516 fournit officiellement un mode `GGML_CPU_ALL_VARIANTS` qui exige `GGML_BACKEND_DL` et construit plusieurs backends x86 (`x64`, `sse42`, `sandybridge`, `haswell`, `skylakex`, etc.). Le chargeur dynamique examine leur fonction `ggml_backend_score`, écarte les backends non supportés par la machine et charge celui qui obtient le meilleur score ; le backend x64 de base reste disponible comme repli.
-- Conclusion : **la compilation volontairement sans SIMD est une cause majeure et directement démontrée de la lenteur Qwen sur le PC réel**. Elle avait été choisie pour maximiser la compatibilité lors de la stabilisation des crashes, mais elle n'est pas adaptée aux performances finales.
-- Une correction propre de performance ne doit pas imposer AVX2 à tous les PC. La voie sûre est le runtime multi-variantes de llama.cpp : `GGML_NATIVE=OFF`, `GGML_BACKEND_DL=ON`, `GGML_CPU_ALL_VARIANTS=ON`, packaging des DLL CPU générées avec `llama-server.exe`, puis validation CI que le backend de base fonctionne et que le serveur sélectionne automatiquement le meilleur backend supporté.
-- En parallèle, les définitions MAP/injecteur/SPI doivent être routées vers les réponses/base techniques contrôlées afin d'éviter à la fois les hallucinations et un appel Qwen inutile.
-
----
-
-## ÉTAT DE RÉFÉRENCE
+## ÉTAT ACTUEL
 
 - Dépôt : `mini56/ECU-Mems-Manager-Session`.
 - Branche x64 : `MEMSX64`.
-- HEAD actuel : **`7a8085cef236e00091d8a053cdb97293568d97d0`**.
-- Rapport : `RAPPORT`.
-- 32 bits : `lab-expert-engine`, ne pas toucher.
-- Rollback x64 : `MEMSX64-BUILD26-BASE`, ne pas toucher.
-- BUILD actif : #30 / v1.0.30.
+- HEAD validé avant optimisation performance : `7a8085cef236e00091d8a053cdb97293568d97d0`.
+- BUILD logiciel actif : **#30 / v1.0.30**.
+- Aucun BUILD #31 sans demande explicite.
+- 32 bits : `lab-expert-engine` — **NE PAS TOUCHER**.
+- Rollback x64 : `MEMSX64-BUILD26-BASE` — **NE PAS TOUCHER**.
+- Aucun changement protocole ECU pendant la stabilisation IA.
 
-### Références historiques
+## ARCHITECTURE IA PROPRE RETENUE
 
-- #26 `12fef48c68807bc59d2f45f9cd8d86d2a42856ca`, run `32816285887` SUCCESS ; navigation/onglet IA PC stables sans runtime Qwen emballé.
-- #27 `a6f9b209f32b6dd77774832e8c84469c53deca47`, run `32832192437` SUCCESS ; AANMP002/MNE101150, COM3 FTDI, ROSCO 1.3/1.6, Injection RAM Mode4 ≈2,63 ms.
-- #28 `0533adaf50cf2c4d62a1ba5241a0100dfa1b48e8`, run `32842049458` SUCCESS.
-- #29 final `fee195e88d3615613b8f92de83209da2cf8247c2`.
-- #30 reconstruction propre `776fc647a874564c932bf09e8871cb771a0ed258`, #59 SUCCESS.
-- #30 réponses Qwen `be4916a53321e36573729e123b14c2cf120fd734`, #60 SUCCESS.
-- #30 routage rapide `126cc638d584975a78d0101430d61bdc435c5879`, #61 SUCCESS ; test PC : vitesse améliorée, mais langue/domaine MEMS/qualité et navigation responsive encore à corriger.
-- #30 langue/domaine/navigation : HEAD `7a8085cef236e00091d8a053cdb97293568d97d0`, #63 SUCCESS ; navigation PC corrigée, domaine MEMS mieux verrouillé, mais latence Qwen 30 s à 2 min et définitions MAP/injecteur/SPI encore incorrectes.
+`navigationorderpatch.cpp -> IaMemsTab (vue) -> IaMemsService (service application) -> ExpertEngine + ExpertKnowledgeReader(read-only) -> LocalAiClient -> llama-server.exe -> Qwen3`
 
-## VERSIONNAGE
+Règles :
+- `llama-server.exe` sidecar x64 hors processus ; ne pas lier libllama/ggml dans `ecu_mems_manager.exe`.
+- Durée de vie IA application, pas onglet.
+- Base experte r20 préconstruite en CI et ouverte `QSQLITE_OPEN_READONLY` + `PRAGMA query_only=ON`.
+- Mesures ECU transmises en lecture seule ; aucune autorité LLM sur commandes ou mutations ECU.
+- Qwen3-0.6B-Q8_0 + llama.cpp b10516 conservés.
+- Ancien empilement supprimé : `iamemstab_clean.cpp`, `iamemsqualitypatch.cpp`, `iaresponsecontextpatch.cpp` ne doivent pas revenir.
 
-- #29 = v1.0.29 ; #30 = v1.0.30 ; #100 = v1.1.0.
-- Formule `1.(build / 100).(build % 100)`.
-- Les correctifs et reruns actuels restent BUILD #30 ; aucun BUILD #31 sans demande explicite.
+## DÉSINSTALLATION BUILD #30
+
+- `ecu_mems_uninstaller.exe` doit être compilé et empaqueté.
+- `install_manifest.txt` complet requis.
+- Refuse l’uninstall si l’app tourne, conserve le profil par défaut, supprime les données locales seulement sur choix explicite, préserve les fichiers étrangers.
+
+## HISTORIQUE BUILD #30 / IA
+
+### Pré-reconstruction
+- HEAD initial : `600b8ef8607eb3dc7d591f675e9f33be0cdb0911`.
+- Correction chemin base r20 : `879077a678f4c203124907dabdeb42b532c9d337`.
+- **ECU MEMS Manager x64 #44** / run `32890600398` : rouge uniquement au smoke Qwen, `Empty chat completion from packaged Qwen`.
+- Correction smoke CI uniquement : `414ea52970e02fb6077c94ca2aa7aec3e92d7383`, ajout `--reasoning off` au serveur du smoke GitHub seulement.
+- **#45 — `414ea52` — VERT**, artifact `9580850077`, SHA-256 `1db3438593c65f7f77176910e55e9de0a428208f9c3a7732b74d6e35290ed3d0`.
+- Test PC #45 : crash immédiat à l’ouverture IA ; CI ne testait pas l’ouverture de l’onglet.
+
+### Reconstruction propre
+- HEAD : `776fc647a874564c932bf09e8871cb771a0ed258`.
+- `IaMemsTab` devient une vue simple ; `IaMemsService` service unique application ; base r20 lue directement ; plus de reparentage lors de `Show`, plus de wrappers/patches globaux.
+- **#59 — `776fc64` — VERT**, run `32898631148`, artifact `9582674702`, SHA-256 `ee7f12e933a17c884c6ca081c583a542f45569f556a68a50f124b58b5f13fcff`.
+- Test PC #59 : crash d’ouverture supprimé ; `base prête` + `IA locale prête`.
+
+### Réponses Qwen / routage
+- `be4916a53321e36573729e123b14c2cf120fd734` : date locale, anti-écho, paramètres thinking Qwen3.
+- **#60 — VERT**, run `32901653203`, artifact `9583795907`, SHA-256 `b03616086bc7bba254b8b089bff474ce275f28cc92b19a30db7300aeb6be9f4a`.
+- Test PC #60 : date correcte mais historique contaminant, hallucination IAC, latence forte.
+
+- `126cc638d584975a78d0101430d61bdc435c5879` : routage rapide ; date immédiate ; IAC contrôlé ; simple `/no_think` max 256 tokens ; diagnostic `/think` max 768 ; historique limité aux vraies relances.
+- **#61 — VERT**, run `32904830665`, artifact `9584843179`, SHA-256 `cc9cd0e2f299d563e469cac08c2d86bfe7ab52f998c7f4568d86ca3fe53aa207`.
+- Test PC #61 : réponses simples un peu plus rapides ; IAC correct ; relance IAC mauvaise ; bobine confondue avec mesure live ; rôle ECU halluciné ; MEMS 1.6 interprété hors domaine et parfois en anglais ; navigation masquait `Aperçu` quand `Test ECU 1.9` sélectionné.
+
+### Langue / domaine / navigation
+- `8a793a7f9d660a729e12cf32c2f888161cad6598` : langue active imposée, domaine Rover/Lucas MEMS verrouillé, réponses contrôlées moteur 4 temps / ECU / familles MEMS / dwell, relance IAC.
+- HEAD final : `7a8085cef236e00091d8a053cdb97293568d97d0` : sidebar responsive, 14 entrées visibles, liste recalée en haut.
+- **ECU MEMS Manager x64 #63 — `7a8085c` — VERT** ; run `32936048218`, job `98077364424`.
+- Artifact : `ECU-MEMS-Manager-x64-BUILD-30-v1.0.30`, ID `9595181353`, taille `668875356`, SHA-256 `995efda2b49768457ad3ec8f2f31b137c671b722c80465831b2ef00d47c559d4`.
+
+## TEST PC RÉEL #63 — 26 AOÛT 2026
+
+Validé :
+- aucun crash d’ouverture IA ; `base prête` + `IA locale prête` ;
+- 14 onglets visibles simultanément ; `Aperçu` reste visible lorsque `Test ECU 1.9` est sélectionné ;
+- garde-fou Rover/Lucas MEMS actif sur `MEMS` / `MEMS 1.9`.
+
+Défauts restants :
+- **latence entre ~30 secondes et 2 minutes** pour certaines réponses Qwen : inacceptable ;
+- `C'EST QUOI LE MAP ?` est routé vers une mesure live absente au lieu d’une définition ;
+- `C'EST QUOI L'INJECTEUR ?` produit une fausse définition d’injection d’huile ;
+- `C'EST QUOI SPI SUR LES MOTEUR ROVER ?` hallucine `Signal Pulse Intensité` ; dans ce domaine SPI = **Single Point Injection**.
+
+## CAUSE PERFORMANCE ISOLÉE
+
+Le workflow #63 compile llama.cpp b10516 en profil CPU ultra-conservateur :
+- `GGML_NATIVE=OFF`
+- `GGML_BACKEND_DL=OFF`
+- `GGML_CPU_ALL_VARIANTS=OFF`
+- `GGML_SSE42=OFF`
+- `GGML_AVX=OFF`
+- `GGML_AVX2=OFF`
+- `GGML_BMI2=OFF`
+- variantes AVX512 OFF.
+
+Sur x86/MSVC, ce profil force le backend x64 de base sans SIMD avancé. Il a été choisi pendant la stabilisation crash mais explique une part majeure de la lenteur.
+
+Le même llama.cpp b10516 supporte officiellement le mode :
+- `GGML_NATIVE=OFF`
+- `GGML_BACKEND_DL=ON`
+- `GGML_CPU_ALL_VARIANTS=ON`
+
+Ce mode construit plusieurs backends (`x64`, `sse42`, `sandybridge`, `haswell`, `skylakex`, etc.). Le chargeur teste leur compatibilité, choisit automatiquement le meilleur backend supporté et conserve `x64` comme repli. **Ne pas imposer AVX2 à tous les PC.**
+
+## ÉTAPE AUTORISÉE — PERFORMANCE IA + DÉFINITIONS
+
+Autorisation utilisateur : **GO**.
+
+Objectif exact dans le même BUILD #30 :
+1. remplacer le runtime ultra-conservateur par le runtime llama.cpp **multi-variantes CPU** (`GGML_BACKEND_DL=ON`, `GGML_CPU_ALL_VARIANTS=ON`, `GGML_NATIVE=OFF`) ;
+2. empaqueter `llama-server.exe` avec toutes les DLL ggml/CPU requises ;
+3. conserver le backend x64 comme repli et la sélection automatique du meilleur backend compatible ;
+4. ajouter des validations CI : présence des DLL variantes, démarrage serveur, `/health`, `/v1/models`, chat Qwen ;
+5. ajouter des réponses contrôlées immédiates en français pour **MAP**, **injecteur essence** et **SPI = Single Point Injection**, afin d’éviter les hallucinations et les appels Qwen inutiles ;
+6. aucun changement protocole ECU, aucune branche 32 bits, aucun BUILD #31.
 
 ## UI OFFICIELLE À PRÉSERVER
 
-Aperçu, Injection, Réglages, Actionneurs, Erreurs, Diagnostic automatique, IA MEMS, Analyse, Toutes les mesures, ECU/ROSCO, Toutes les données, Base de données, Interactif, Test ECU 1.9. Style dark/responsive inchangé.
+1. Aperçu
+2. Injection
+3. Réglages
+4. Actionneurs
+5. Erreurs
+6. Diagnostic automatique
+7. IA MEMS
+8. Analyse
+9. Toutes les mesures
+10. ECU/ROSCO
+11. Toutes les données
+12. Base de données
+13. Interactif
+14. Test ECU 1.9
+
+Style dark/responsive inchangé.
 
 ## SÉCURITÉ PROTOCOLE À PRÉSERVER
 
 - `MemsEcuFamily::{Unknown, Rosco13_16, Mems19}` ; `MemsDiagnosticMode::{Unknown, Normal, Mode3, Mode4, Transition}`.
-- D0/D1/D2 normal seulement ; D1 bloqué Mode4 ; D3/F3/F4/F5 bloqués interface générique ; mutations Rosco13_16 prouvé + Normal ; unknown fail-closed ; MEMS1.9 mutations bloquées ; F7/EF bloqués sans sous-type ; RAM transaction bloque commandes génériques.
+- D0/D1/D2 : session normale seulement ; D1 bloqué Mode4.
+- D3/F3/F4/F5 bloqués interface générique.
+- Mutations uniquement Rosco13_16 prouvé + mode Normal ; famille inconnue fail-closed ; mutations MEMS1.9 bloquées.
+- F7/EF injecteurs bloqués sans sous-type prouvé ; transaction RAM bloque commandes génériques.
 - Conserver `void onProtocolCommandRequested(quint8 command);`.
-- D0 `D0 98 00 02 02`, D1 `AANMP002`, F0 `F0 50`, D2 `D2 00 01`, F4 `F4 00`.
-- Ralenti chaud : `raw - 32768 - correction` avec correction Réglages réelle ; jamais -3 hardcodé.
-- Dwell ≈1,9–3,1 ms vers 14 V.
-- Aucune mutation ECU pendant validation #30.
+- Réponses : D0 `D0 98 00 02 02`, D1 `AANMP002`, F0 `F0 50`, D2 `D2 00 01`, F4 `F4 00`.
+- Ralenti chaud : `raw - 32768 - correction`, correction issue de Réglages, jamais `-3` hardcodé.
+- Dwell référence : ~1,9–3,1 ms vers 14 V.
+- Aucune mutation ECU pendant validation BUILD #30.
 
 ## BLOQUEURS NO-GO
 
-MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneurs, ports série arbitraires, profils RAM non validés, reset/clear faults/trims/écritures pendant #30.
+MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneurs, ports série arbitraires, profils RAM non validés, reset/clear faults/trims/écritures pendant BUILD #30.
 
 ## PROCHAINE ACTION EXACTE
 
-**Après autorisation utilisateur : dans le même BUILD #30, remplacer le runtime llama.cpp CPU ultra-conservateur par le mode multi-variantes officiel (`GGML_NATIVE=OFF`, `GGML_BACKEND_DL=ON`, `GGML_CPU_ALL_VARIANTS=ON`) avec backend x64 de repli et packaging de toutes les DLL CPU requises ; ajouter les validations CI du chargement automatique du meilleur backend supporté ; corriger en même temps le routage des définitions MAP, injecteur et SPI pour éviter appels Qwen inutiles et hallucinations. Aucun changement protocole ECU, aucun BUILD #31.**
+**Modifier `LocalAiClient.cpp` pour MAP/injecteur/SPI puis `.github/workflows/memsx64.yml` pour le runtime llama.cpp multi-variantes et son packaging/validation. Pousser sur `MEMSX64`, suivre l’Action du HEAD final et consigner son résultat avant tout test PC. Aucun BUILD #31.**
