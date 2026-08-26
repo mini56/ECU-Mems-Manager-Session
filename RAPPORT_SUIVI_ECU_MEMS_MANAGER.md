@@ -12,19 +12,22 @@
 
 - Dépôt : `mini56/ECU-Mems-Manager-Session`.
 - Branche x64 : `MEMSX64`.
-- HEAD courant avant probe ONNX : **`bdd7de2da64cb1308852e0900c3e20287cbf128b`**.
+- HEAD courant : **`c7164e420204eef0f07300f6fe2dd4746c42119f`**.
 - BUILD logiciel actif : **#30 / v1.0.30**.
 - Aucun BUILD #31 sans demande explicite.
 - 32 bits : `lab-expert-engine` — **NE PAS TOUCHER**.
 - Rollback x64 : `MEMSX64-BUILD26-BASE` — **NE PAS TOUCHER**.
 - Aucun changement protocole ECU pendant la stabilisation IA.
+- Décision runtime IA : abandon de la reconstruction/staging llama.cpp maison ; cible retenue = **archive officielle llama.cpp b10516 Windows x64 CPU intacte**, vérifiée par SHA-256.
 
-## ARCHITECTURE IA PROPRE RETENUE JUSQU’AU CHANGEMENT DE MOTEUR
+## ARCHITECTURE IA PROPRE RETENUE
 
-`navigationorderpatch.cpp -> IaMemsTab (vue) -> IaMemsService (service application) -> ExpertEngine + ExpertKnowledgeReader(read-only) -> LocalAiClient -> moteur local -> modèle local`
+`navigationorderpatch.cpp -> IaMemsTab (vue) -> IaMemsService (service application) -> ExpertEngine + ExpertKnowledgeReader(read-only) -> LocalAiClient -> llama-server.exe -> Qwen3`
 
+- Sidecar llama.cpp hors processus ; durée de vie IA application.
 - Base experte r20 préconstruite, lecture seule.
 - Mesures ECU read-only ; aucune commande ou mutation accessible au LLM.
+- Qwen3-0.6B-Q8_0 + llama.cpp b10516.
 - Ne pas réintroduire `iamemstab_clean.cpp`, `iamemsqualitypatch.cpp`, `iaresponsecontextpatch.cpp`.
 
 ## HISTORIQUE BUILD #30 / IA
@@ -113,92 +116,237 @@ Correction limitée à `.github/workflows/memsx64.yml` :
 
 ### Étape 4 — isolement runtime x64 partagé — POUSSÉE, VOIE ABANDONNÉE
 
+Autorisation utilisateur historique : **`OK TU POUSSE SUR GITHUB`**.
+
 Commit **`634fce02bd92b3048cd402c147ce3e9cc84a2103`** — `BUILD #30 isolate shared llama x64 backend`.
 
-Cette voie d’isolement est **ABANDONNÉE** : elle constitue un contournement matériel temporaire et ne répond pas à l’exigence d’un MEMS Manager x64 général pour des PC Intel/AMD différents.
+Correction limitée à `.github/workflows/memsx64.yml` :
+- la compilation conserve `BUILD_SHARED_LIBS=ON`, `GGML_BACKEND_DL=ON` et `GGML_CPU_ALL_VARIANTS=ON` afin de ne pas modifier le profil de build #66 ;
+- CI vérifie toujours que plusieurs variantes ont bien été produites ;
+- le dossier runtime ne reçoit plus que `llama.dll`, `ggml.dll`, `ggml-base.dll` et **`ggml-cpu-x64.dll`** ;
+- aucune DLL CPU `haswell`, `skylakex`, `sandybridge`, etc. n’est exposée au chargeur pendant ce test ;
+- validations package, manifest, hashes et smoke imposent exactement un backend CPU : `ggml-cpu-x64.dll` ;
+- le modèle Qwen, l’application, la base, l’UI, le protocole ECU, le 32 bits et le numéro BUILD restent inchangés.
+
+Cette voie d’isolement est désormais **ABANDONNÉE** : elle constitue un contournement matériel temporaire et ne répond pas à l’exigence d’un MEMS Manager x64 général pour des PC Intel/AMD différents.
 
 ### ECU MEMS Manager x64 #67 — Commit `634fce0` — ROUGE
 
 - Run GitHub : **`32955046246`** ; job : **`98134767273`**.
-- `llama-server.exe --version` échoue avec **`0xC0000135` = `STATUS_DLL_NOT_FOUND`** car le staging partagé excluait des DLL non-CPU obligatoires (`llama-common.dll`, `mtmd.dll`, `llama-server-impl.dll`).
+- Étapes 1 à 12 : **VERTES**.
+- Échec unique : étape 13 `Build pinned llama.cpp b10516`.
+- La compilation CMake/MSVC de `llama-server.exe` se termine correctement ; l’échec survient seulement ensuite lors du test du runtime copié dans `llama-runtime-b10516`.
+- Commande en échec : `llama-server.exe --version` depuis le dossier staged.
+- Code Windows : **`-1073741515` = `0xC0000135` = `STATUS_DLL_NOT_FOUND`**.
+- Le log de build montre que le profil `BUILD_SHARED_LIBS=ON` produit notamment `llama-common.dll`, `mtmd.dll` et `llama-server-impl.dll` en plus des DLL GGML/llama.
+- Le staging #67 ne copie pourtant que `ggml.dll`, `ggml-base.dll`, `llama.dll` et `ggml-cpu-x64.dll` autour de `llama-server.exe`.
+- **Cause retenue : runtime staged incomplet en DLLs partagées non-CPU.** Le resserrement destiné à exclure les variantes CPU incompatibles a aussi exclu des dépendances obligatoires du serveur.
+- Étapes 14 à 20 sautées ; aucun artefact #67.
+- Aucune correction du workflow/source n’est appliquée à ce stade ; le résultat est consigné avant toute nouvelle modification.
 
-### ECU MEMS Manager x64 #68 — Commit `c7164e4` — CI VERT / TEST PC RÉEL ÉCHEC
+### Décision utilisateur — runtime officiel llama.cpp b10516 — AUTORISÉE
 
+Décision utilisateur du 26 août 2026 : **prendre l’officiel et ne plus appliquer de rustine**.
+
+Recherche amont recoupée :
+- llama.cpp b10516 publie officiellement **`llama-b10516-bin-win-cpu-x64.zip`** pour Windows x64 ;
+- SHA-256 officiel de l’archive : **`fbbbc55e0eb2e1b07f9dcb9488616c98ed47d9003b90e15e7c8c7812c4307cd3`** ;
+- ce package officiel utilise le mécanisme multi-variantes prévu par llama.cpp pour les processeurs x64 Intel/AMD ;
+- la release officielle conserve le runtime complet et laisse llama.cpp sélectionner le backend CPU compatible ;
+- notre reconstruction/staging maison a divergé de la recette officielle, notamment par `CMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded` (`/MT`) dans un ensemble de DLL partagées et par le filtrage manuel des DLL ; ces choix sont abandonnés.
+
+Règle de mise en œuvre :
+- télécharger l’archive officielle b10516 depuis la release llama.cpp ;
+- vérifier obligatoirement son SHA-256 avant utilisation ;
+- extraire et conserver **intact** le runtime Windows CPU x64 officiel nécessaire à MEMS Manager ;
+- ne supprimer aucune variante CPU pour faire passer un test ;
+- ne reconstruire aucune liste manuelle de DLL supposées nécessaires ;
+- vérifier `llama-server --version`, le chargement Qwen, `/health`, `/v1/models` et une réponse chat avant packaging final ;
+- si le runtime officiel échoue, arrêter et rechercher la cause exacte avant toute modification ; aucune nouvelle rustine n’est autorisée ;
+- aucun changement application, protocole ECU, modèle Qwen, base, UI, 32 bits ou numéro BUILD dans cette étape.
+
+### ECU MEMS Manager x64 #68 — Commit `c7164e4` — VERT
+
+- HEAD x64 : **`c7164e420204eef0f07300f6fe2dd4746c42119f`**.
 - Run GitHub : **`32962220202`** ; job : **`98156880259`**.
-- Artifact : **`9598541996`**.
-- Runtime officiel `llama-b10516-bin-win-cpu-x64.zip` conservé intact en CI ; Qwen/API verts sur runner GitHub.
-- **Test PC réel utilisateur : échec au démarrage de l’IA avec `QProcess 0 / FailedToStart`.**
-- Conclusion : un VERT runner GitHub ne suffit pas à valider le moteur sur les PC utilisateurs réels.
+- Artifact : **`9598541996`** — `ECU-MEMS-Manager-x64-BUILD-30-v1.0.30`.
+- Taille artifact : **147 504 305 octets**.
+- Artifact digest SHA-256 : **`39507831b6a5ceba22d315617938093fe24250789986c30ff208fc2dc1f4494b`**.
+- Runtime : archive officielle `llama-b10516-bin-win-cpu-x64.zip`, SHA-256 vérifié **`fbbbc55e0eb2e1b07f9dcb9488616c98ed47d9003b90e15e7c8c7812c4307cd3`**, contenu conservé intact.
+- Plus aucune compilation/staging manuel de llama.cpp dans le workflow.
+- Ensemble officiel multi-variantes CPU conservé ; aucun backend CPU supprimé.
+- `llama-server --version` : **VERT**.
+- Qwen3-0.6B-Q8_0 chargé avec le runtime officiel : **VERT**.
+- `/health`, `/v1/models` et chat API : **VERTS**.
+- Contrôle d’intégrité par SHA-256 des fichiers runtime officiels extraits vers le package : **VERT**.
+- Smoke launch ECU MEMS Manager : **VERT**.
+- Le crash #66 `0xC0000409` n’est pas reproduit avec la distribution officielle.
+- Le problème #67 `0xC0000135` disparaît avec le runtime officiel complet.
+- La divergence `/MT` / DLLs partagées / staging manuel reste une **cause plausible** de #66 mais n’est pas classée comme preuve définitive.
+- BUILD logiciel reste **#30 / v1.0.30** ; aucun BUILD #31.
+- Aucun changement application, protocole ECU, modèle Qwen, base, UI ou 32 bits.
 
-### ECU MEMS Manager x64 #72 — Commit `6284a2e` — CI VERT / TEST PC RÉEL ÉCHEC
+## AUDIT IA DES QUESTIONS POSSIBLES — DÉMARRÉ EN LECTURE SEULE
 
-- ajout du runtime VC++ app-local autour de llama-server ;
-- CI verte ;
-- **test PC réel : même `QProcess 0 / FailedToStart`**.
+Autorisation utilisateur reçue pendant l’exécution #66 : **commencer immédiatement l’audit sans modifier le code**.
 
-### ECU MEMS Manager x64 #73 — Commit `bdd7de2` — ROUGE
+Principe retenu : **toute connaissance certaine déjà présente dans le logiciel, ses libellés/aides, son décodage ou la base experte doit produire une réponse immédiate, sans appel Qwen**. Qwen est réservé au croisement de plusieurs faits, au raisonnement diagnostic, aux questions générales ou aux cas où la réponse n’existe pas sous forme déterministe fiable.
 
-- Run GitHub : **`32972550911`**.
-- retour expérimental au runtime llama.cpp compilé depuis les sources ;
-- `llama-server --version` démarre, donc le problème de DLL manquante #67 est corrigé ;
-- au chargement de Qwen, crash **`-1073740791 = 0xC0000409`** ;
-- cette voie réintroduit en plus une compilation/staging maison déjà jugée non souhaitable ; elle est donc **arrêtée**.
+### Phase A — inventaire initial constaté
 
-## DÉCISION UTILISATEUR — CHANGEMENT DE MOTEUR IA — 26 AOÛT 2026
+**Aperçu / cadrans actuellement présents** : régime moteur, température liquide, MAP, position papillon, tension batterie, correction carburant court terme, tension lambda, temps injecteur, température air admission, position IAC, avance allumage et état système. L’ancien UI contient aussi l’état contact de ralenti, boucle fermée et fonctions d’enregistrement.
 
-Constat utilisateur : l’intégration llama.cpp fait tourner le projet en rond depuis plusieurs jours. Autorisation explicite : **changer de moteur IA et tester directement sous Windows x64**.
+**Connaissances déjà intégrées à l’UI** à exploiter en réponse immédiate :
+- lambda : 0–200 mV indiqué comme mélange pauvre ; 700–900 mV comme mélange riche ;
+- MAP : moteur arrêté ~100 kPa ; ralenti ~25–40 kPa ; valeur anormale → vérifier notamment les durites/dépressions ;
+- affichage Aperçu : plages visuelles déjà codées pour batterie, liquide, air admission, avance et régime ; ces plages doivent être distinguées des spécifications constructeur lorsqu’elles ne sont que des seuils/repères MEMS Manager.
 
-### Cible de probe retenue
+**Réglages réels présents** : correction carburant, position ralenti chaud, vitesse de ralenti, correction d’avance, remise à zéro réglages et reset ECU. Aides déjà codées :
+- vitesse ralenti réglable par pas de 50 tr/min ; `0` = valeur MEMS d’origine ; exemple documenté A+ SPi chaud = 850 tr/min ; agit sur ralenti froid et chaud ;
+- correction carburant : agit sur les émissions au ralenti si non régulé lambda ; les moteurs régulés lambda réadaptent cette valeur ;
+- position ralenti chaud : MEMS la réapprend avec le temps, donc une correction manuelle n’est pas nécessairement permanente ;
+- avance : cartes historiques adaptées à des carburants 91/95 RON ; trop d’avance peut endommager le moteur ; ce réglage n’agit pas sur l’avance au ralenti ;
+- aide écran : régime jusqu’à 2000 tr/min pour réglage fin du ralenti.
 
-- **ONNX Runtime GenAI 0.14.0**, release officielle Microsoft non-prerelease ;
-- package officiel Windows CPU x64 : **`onnxruntime-genai-0.14.0-win-x64.zip`** ;
-- digest release officiel : **SHA-256 `8a303e52dc7be8fb2a5331929af451a25ac59774102d7fd09ef673adc85c5ebf`** ;
-- premier probe **CPU x64 uniquement**, afin de couvrir les PC Intel/AMD Windows sans imposer de GPU ;
-- moteur testé séparément avant toute réécriture de `IaMemsService` / `LocalAiClient` ;
-- aucun `QProcess`, aucun `llama-server.exe`, aucun serveur HTTP dans ce probe ;
-- modèle candidat pour le probe : **Qwen3-0.6B ONNX INT4 CPU**, révision figée `e6bf97818c142808967a48cbab4f0aef18b64621`, dossier `cpu_and_mobile/cpu-int4-rtn-block-32-acc-level-4` ;
-- gros fichiers figés : `model.onnx` SHA-256 `b52cfcd91e6ed3caa34c670d4831d96cda3da5eb07ef95bc8ba06547b4f3b86f`, `model.onnx.data` SHA-256 `8539cf4fbc3b5b331fd78ca8cd5b025ce537dfc2f993451f5c474b2f9fb7cd6c`, `tokenizer.json` SHA-256 `be75606093db2094d7cd20f3c2f385c212750648bd6ea4fb2bf507a6a4c55506`.
+**Actionneurs réels présents** : chauffage collecteur/PTC, pompe à carburant, chauffage sonde O2/lambda, électrovanne purge canister, embrayage de climatisation, électrovanne de pression/boost, ventilateurs 1/2/3, injecteur, bobine d’allumage, moteur IAC et remise à zéro de tous les actionneurs. IAC : déplacement demandé par pas de 25 %. Avertissement déjà codé pour le chauffage lambda : durée limitée et ne pas démarrer immédiatement le moteur après chauffage avant refroidissement suffisant.
 
-### Probe Windows autorisé — objectif exact
+**Erreurs mémorisées affichées** :
+01 température liquide ; 02 température air admission ; 03 non documenté dans l’UI ; 04 pression boost élevée ; 05 température air ambiant ; 06 température carburant ; 07 cliquetis détecté ; 08 non documenté ; 09 jauge température ; 10 circuit pompe carburant ; 11 non documenté ; 12 commande embrayage climatisation ; 13 vanne purge ; 14 capteur MAP ; 15 vanne de contrôle boost ; 16 circuit capteur position papillon ; 17/18/19 non documentés ; 20 alimentation chauffage lambda ; 21 synchronisation vilebrequin ; 22 commande ventilateur 1 ; 23 commande antidémarrage ; 24 commande ventilateur 2.
 
-1. conserver BUILD logiciel **#30 / v1.0.30** ;
-2. compiler d’abord l’application et les self-tests actuels sous Windows x64 pour vérifier qu’aucune régression hors IA n’est introduite ;
-3. installer **`onnxruntime-genai==0.14.0` CPU** sur le runner Windows ;
-4. télécharger le modèle Qwen3-0.6B ONNX INT4 à la révision figée et vérifier les hashes connus ;
-5. charger le modèle avec ONNX Runtime GenAI ;
-6. générer une réponse locale à une consigne déterministe de type `Réponds uniquement : OK` ;
-7. mesurer au minimum temps de chargement et temps de génération ;
-8. si ce probe échoue, **ne pas modifier l’application** : diagnostiquer le moteur/modèle ;
-9. si ce probe est vert, seulement alors remplacer proprement `LocalAiClient` et supprimer la dépendance llama.cpp ;
-10. aucun changement protocole ECU, aucun 32 bits, aucun BUILD #31.
+**Anomalies live déjà documentées** :
+- signal régime / capteur vilebrequin : indicateur attendu dès que le volant moteur tourne ;
+- erreur signal lambda ;
+- lambda anormalement haute : peut notamment orienter vers sonde usée ou câblage signal mal blindé, particulièrement près alternateur/HT ;
+- lambda anormalement basse ;
+- IAC en position minimale : peut indiquer que l’ECU peine à obtenir un ralenti assez bas ; vérifier réglage câble papillon et prises d’air admission ;
+- compteur Jack au maximum : retour à zéro uniquement par reset ECU complet, puis surveillance dans Toutes les mesures.
 
-## AUDIT IA DES QUESTIONS POSSIBLES — DÉMARRÉ
+**Réponses immédiates déjà codées aujourd’hui** : batterie, régime, température liquide, MAP, lambda, avance, dwell, ralenti/IAC, papillon, état moteur et diagnostic de cohérence. Le service sait aussi fournir valeurs courantes/historique et rechercher des faits dans la base experte.
 
-Principe retenu : toute connaissance certaine déjà présente dans le logiciel, ses libellés/aides, son décodage ou la base experte doit produire une réponse immédiate, sans appel au modèle génératif. Le modèle est réservé au croisement de plusieurs faits, au raisonnement diagnostic, aux questions générales ou aux cas où la réponse n’existe pas sous forme déterministe fiable.
+### Premier écart majeur identifié
 
-## SOUS-AUDIT DOCUMENTAIRE — RAVE / MINI SPI / MPI — EN COURS
+L’IA immédiate ne couvre actuellement qu’une **fraction** de ce que MEMS Manager sait déjà. Sont notamment absents comme familles déterministes complètes : correction carburant court terme, temps injecteur, température air admission, états boucle fermée/contact ralenti, explication de tous les réglages, explication de chaque actionneur, et couche structurée par erreur/DTC avec `signification → rôle → symptômes → causes → contrôles`.
 
-Règles :
+### Grille de questions à construire pour chaque élément
+
+Pour chaque mesure/cadran, réglage, actionneur et DTC connu, l’audit doit vérifier la disponibilité d’une réponse immédiate aux formulations :
+- `C’est quoi ?` / `À quoi ça sert ?`
+- `Qu’est-ce que ça mesure ?` / `Comment c’est mesuré ou décodé ?`
+- `Quelle unité ?` / `Quelle valeur normale ou de référence ?`
+- `Pourquoi cette valeur monte/baisse ?`
+- `Si c’est trop haut / trop bas, ça veut dire quoi ?`
+- `Qu’est-ce que ça peut provoquer ?`
+- `Quelles causes possibles ?`
+- `Qu’est-ce que je contrôle en premier ?`
+- pour Réglages : `si j’augmente/diminue, qu’est-ce que ça change ?`, `valeur d’origine ?`, `est-ce que MEMS la réapprend ?`, `quel risque ?` ;
+- pour Actionneurs : `qu’est-ce que le test doit faire ?`, `qu'est-ce que je dois entendre/voir ?`, `si rien ne se passe, quelles causes ?`, `quelles conséquences en fonctionnement ?` ;
+- pour DTC : `j’ai cette erreur, ça fait quoi ?`, `ça peut provoquer quoi ?`, `le moteur peut-il continuer ?`, `quels contrôles en premier ?`.
+
+### Suite exacte de l’audit
+
+1. lire l’implémentation `MEMSInterface` des réglages/actionneurs pour connaître précisément les pas, commandes et limites sans les inventer ;
+2. inventorier les faits déjà présents dans `ExpertRuntimeDatabase.cpp` et la base de référence ;
+3. terminer l’inventaire complet des champs `7D/80` / Toutes les mesures / Toutes les données ;
+4. comparer chaque famille de question à ce qui est déjà routé par `IaMemsService` / `IaResponseLogic` ;
+5. produire la matrice finale `question → source fiable → réponse immédiate possible → donnée manquante → Qwen nécessaire ou non → niveau de preuve` ;
+6. **aucune implémentation de l’audit avant validation du résultat avec l’utilisateur**.
+
+## SOUS-AUDIT DOCUMENTAIRE — RAVE / MINI SPI / MPI — DÉMARRÉ
+
+Demande utilisateur : rechercher sur le Web les documents constructeur Rover/Mini disponibles publiquement, en priorité **RAVE**, manuels d’atelier Mini **SPi** et **MPi**, et intégrer à la base uniquement les informations techniques vérifiables utiles aux réponses IA.
+
+Règles de classement :
 - ne pas stocker un manuel complet ou du texte copyrighté dans la base ; extraire uniquement des faits techniques structurés ;
 - chaque fait doit conserver `source`, `document`, `famille/variant`, `rubrique`, `page/section si disponible`, `niveau de preuve` et `notes/conflits` ;
 - priorité au niveau **`verifie_constructeur`** quand la donnée vient directement d’un manuel Rover/MG/RAVE identifiable ;
 - ne pas écraser les données projet déjà validées ; en cas de divergence, conserver le conflit explicitement ;
 - cibles prioritaires : valeurs normales/de contrôle, valeurs d’origine de réglages, procédures de test, rôle des capteurs/actionneurs, symptômes et conséquences d’un défaut, contrôles électriques/mécaniques, conditions de test, DTC et stratégie ECU lorsqu’elle est documentée ;
-- les données spécifiques SPi et MPi doivent rester séparées ; ne pas généraliser une valeur d’un système à l’autre sans preuve ;
-- **toute donnée RAVE vérifiée utile doit être intégrée à la base de connaissances**, pas seulement au rapport documentaire.
+- les données spécifiques SPi et MPi doivent rester séparées ; ne pas généraliser une valeur d’un système à l’autre sans preuve.
 
-Lots déjà intégrés sur `MEMSX64` :
-- `research_enrichment_1660.qz64` : réglage câble/papillon et premier ensemble de faits RAVE constructeur ;
-- `research_enrichment_1670.qz64` : brochages Mini MPi 97MY RCL0194 exacts ;
-- base experte reste en révision r20, avec lots d’enrichissement versionnés.
+Objectif : enrichir la matrice des **réponses immédiates** avec des données constructeur fiables et traçables, sans faire dépendre ces réponses de Qwen.
+
+### Phase B — poursuite RAVE / Rover Mini SPi-MPi — EN COURS
+
+Autorisation utilisateur : **`ok continue avec rave`**.
+
+Objectif immédiat : retrouver et vérifier les publications Rover/MG identifiables (notamment `AKM7169ENG`, `RCL0193ENG`, `RCL0194ENG`, `RCL0213ENG` ou équivalents), séparer strictement les faits **SPi**, **MPi** et **communs**, puis construire un premier lot de faits constructeur classés pour les réponses immédiates. Pendant #67, cette phase reste documentaire/read-only : aucun changement de code, protocole, modèle ou base runtime n’est mélangé au test Qwen.
+
+### Phase B — résultat du premier lot classé
+
+Commit documentaire **`bda4ad6a593fb5a786e517ebd448dfd8a73c56bd`** : création de **`AUDIT_RAVE_MINI_SPI_MPI.md`** sur la branche `RAPPORT`.
+
+Le fichier classe déjà, avec document/page/variante/niveau de preuve :
+- ralenti constructeur **SPi 1993–96 : 850 ±25 tr/min** selon variantes AKM7169 ;
+- ralenti **SPi 1997+ et MPi : 900 ±50 tr/min** dans RCL0193 ;
+- pression carburant : **SPi ~1 bar**, **MPi 3,0 ±0,2 bar**, avec tolérances propres aux documents ;
+- tensions TP/papillon ;
+- IACV : rôle, apprentissage et plage RCL0193 **20–40 pas moteur en fonctionnement** ;
+- rôle CKP, CMP, MAP, ECT, TP, IAT, HO2S/lambda ;
+- architecture injecteurs SPi/MPi et pulse width ;
+- pompe à carburant, purge canister et ventilateur ;
+- seuils ventilateur **MPi 97MY 105 °C ON / 98 °C OFF** et **SPi Japon 98/93 °C**, maintenus comme variantes distinctes ;
+- apprentissage ECM de la référence IAC et de la correction carburant ;
+- interdiction constructeur de régler le ralenti avec la vis de butée papillon ;
+- conflits conservés explicitement, notamment bobine : AKM7169 `0,71–0,81 Ω`, tableau RCL0193 `0,41–0,61 Ω`, description RCL0193 `0,63–0,77 Ω` à 20 °C.
+
+### Phase B — résultat lot pannes / stratégies de secours
+
+Commit documentaire **`3275769a8ba789719d13e306084d15c4c7aaf19a`** — `RAPPORT classify RAVE failure strategies and DTC status`.
+
+Le fichier `AUDIT_RAVE_MINI_SPI_MPI.md` contient maintenant un lot séparé `PANNES / STRATÉGIES DE SECOURS / CONSÉQUENCES` :
+- stratégie générale ECM : certaines entrées défaillantes peuvent être remplacées par une stratégie de secours avec **performances réduites**, sans inventer de valeur de substitution ;
+- CKP : entrée primaire critique pour position/régime moteur ;
+- CMP MPi : panne moteur déjà en marche → fonctionnement maintenu ; panne présente avant démarrage → démarrage possible avec limite de régime réduite par rapport à 6500 tr/min ;
+- antidémarrage : absence d'autorisation codée empêche le démarrage ;
+- coupe-circuit à inertie : coupe la pompe après décélération/choc et doit être contrôlé avant de condamner la pompe ;
+- lambda/HO2S : alimentation/chauffage/câblage/état physique à contrôler avant de conclure à un défaut de richesse ;
+- purge ouverte dans de mauvaises conditions : peut enrichir, perturber le ralenti et retarder le fonctionnement efficace du catalyseur ;
+- IAC hors plage : vérifier contexte/admission/apprentissage ; ne pas régler le ralenti par la vis de butée papillon ;
+- certains défauts intermittents d'entrée peuvent être mémorisés par l'ECM.
+
+**État DTC important** : les publications RCL0193/RCL0213 consultées ne fournissent pas à ce stade une table explicite permettant de certifier la correspondance numérique des erreurs **01–24** affichées par MEMS Manager. Ces numéros restent donc **non vérifiés RAVE** ; leur fonction et leurs conséquences peuvent être documentées par RAVE, mais la correspondance numérique doit être recoupée séparément avec TestBook/documentation MEMS/ROSCO.
+
+Aucune de ces données n’a encore été injectée dans la base runtime ou dans le code de réponse IA.
+
+### Phase C — TestBook / codes protocole / brochages — PREMIER LOT CLASSÉ
+
+Commit documentaire **`364cb7220fa5341b8752d6ba7cabf5fc1bf31c89`** : création de **`AUDIT_TESTBOOK_MEMS_CODES_PINOUTS.md`**.
+
+Résultats classés par niveau de preuve :
+- le Diagnose-Handbuch Rover/TestBook distingue les générations Mini **MEMS 1.3 SPi**, **MEMS 1.6 SPi** et **MEMS 2J MPi** ; ne pas assimiler automatiquement Mini MPi à MEMS 1.9 ;
+- le paquet `0x80`, bytes DTC `0x0D/0x0E`, confirme fortement sur Mini SPi les codes **1 = température liquide**, **2 = température air admission**, **10 = circuit pompe carburant**, **16 = circuit potentiomètre papillon** ; les autres positions du bitfield restent à associer au support réel de la variante ;
+- le paquet `0x7D`, byte DTC `0x05`, recoupe les positions **20 = chauffage lambda**, **21 = synchro vilebrequin**, **22 = ventilateur 1**, **24 = ventilateur 2** ;
+- **Code 23 / commande antidémarrage n'est pas confirmé** : le bit correspondant reste non documenté dans la source protocole consultée et aucune occurrence `faultCode23` n'a été retrouvée dans MEMSFCR public ; ce libellé passe au statut **`preuve_insuffisante`** pendant l'audit ;
+- la documentation professionnelle Blackbox indique que certains défauts MEMS sont dynamiques : un signal absent moteur arrêté (ex. vilebrequin) peut apparaître comme défaut sans être une panne permanente ; certaines fonctions supportées par l'ECU peuvent aussi ne pas être montées sur le véhicule ;
+- valeurs diagnostiques secondaires classées : Hot Idle IAC **10–50 pas**, coil charge **~2–3 ms vers 14 V**, circuit ouvert ECT pouvant afficher environ **60 °C**, erreur ralenti > **100 tr/min** comme indice de perte de contrôle dans cette source ;
+- premier brochage MEMS 1.6 professionnel classé séparément, mais **interdit comme brochage Mini exact** tant qu'il n'est pas recoupé par RCL0194/AKM7169.
+
+Aucune correction du libellé Code 23 ni aucun changement de base/code n'est effectué à ce stade.
 
 ## EXIGENCE UI IA — FICHIERS CSV/TXT
 
-À intégrer dans l’onglet **IA MEMS** après validation du runtime, sans changer le style dark/responsive : glisser-déposer `.csv/.txt`, bouton `+`, lecture locale read-only, aucune commande ECU issue d’un fichier importé.
+À intégrer dans l’onglet **IA MEMS** après validation du runtime, sans changer le style dark/responsive :
+- accepter le **glisser-déposer** d’un fichier `.csv` ou `.txt` dans la zone de saisie / conversation IA ;
+- ajouter un petit bouton **`+`** près de la zone où l’utilisateur tape le texte ;
+- bulle d’aide du bouton : **`Sélectionner un fichier`** ;
+- clic sur `+` : ouvrir le gestionnaire/explorateur de fichiers Windows avec filtre `Fichiers CSV/TXT (*.csv *.txt)` ;
+- afficher le fichier sélectionné dans la zone de saisie sous forme compacte avec son nom et possibilité de le retirer avant analyse ;
+- lecture/analyse locale en **lecture seule** ; aucun fichier importé ne doit pouvoir déclencher une commande ECU ou une mutation ;
+- l’objectif est notamment d’analyser des logs, traces et exports de mesures puis de les croiser avec la base MEMS et, lorsque nécessaire, avec le raisonnement Qwen ;
+- pour ce besoin, le périmètre demandé est **CSV et TXT**. Aucun autre format n’est ajouté sans demande explicite.
 
 ## EXIGENCE UI IA — NOUVELLE ZONE DE SAISIE
 
-Zone de saisie type composeur moderne, dark/responsive, multiligne, bouton `+` à gauche et bouton rond orange/flèche vers le haut à droite. Ne pas changer le thème global.
+Refaire la zone de saisie de **IA MEMS** dans l’esprit d’un composeur de chat moderne, tout en conservant le style dark/responsive propre à MEMS Manager :
+- conteneur principal **arrondi aux deux extrémités**, type capsule lorsque la saisie tient sur une ligne ;
+- saisie **multiligne** : la zone grandit verticalement lorsque le texte prend plusieurs lignes, sans perdre les coins arrondis ;
+- le texte reste lisible et la zone ne doit pas écraser le transcript ni casser le responsive ;
+- bouton **`+`** intégré à gauche de la zone pour la sélection `.csv` / `.txt`, avec bulle **`Sélectionner un fichier`** ;
+- à droite, remplacer le bouton texte `Envoyer` par un **bouton rond orange** cohérent avec les accents actuels de MEMS Manager ;
+- dans ce rond orange : **flèche orientée vers le haut** pour envoyer le message ;
+- le bouton d’envoi reste accessible lorsque la saisie devient multiligne ;
+- conserver la possibilité d’envoyer au clavier de manière cohérente avec une saisie multiligne : `Entrée` ne doit pas empêcher l’écriture sur plusieurs lignes ; le comportement exact du raccourci d’envoi sera validé avec l’utilisateur avant codage si nécessaire ;
+- aucun changement global de thème : conserver le dark, le responsive et l’identité visuelle actuelle du programme.
 
 ## DÉSINSTALLATION BUILD #30
 
@@ -226,4 +374,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Exécuter le probe Windows x64 ONNX Runtime GenAI 0.14.0 + Qwen3-0.6B ONNX INT4 CPU, sans modifier encore `IaMemsService`/`LocalAiClient`. Si et seulement si le chargement + génération `OK` sont verts sous Windows, remplacer ensuite proprement llama.cpp par ONNX Runtime GenAI dans l’application. Continuer RAVE après stabilisation du moteur. Aucun changement protocole ECU, aucun 32 bits et aucun BUILD #31.**
+**Runtime IA #68 validé avec la distribution officielle llama.cpp b10516 Windows x64 CPU. Ne plus revenir au staging/compilation maison ni à l’isolement `ggml-cpu-x64.dll`. Continuer l’audit RAVE en lecture seule : recouper RCL0194/AKM7169 pour les brochages Mini exacts SPi/MPi et rechercher une preuve indépendante pour le Code 23 / bit 6 de `0x7D:0x05`. Aucun changement protocole ECU et aucun BUILD #31 sans demande explicite.**
