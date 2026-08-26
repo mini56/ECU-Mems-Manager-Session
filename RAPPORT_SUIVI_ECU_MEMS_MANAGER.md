@@ -12,7 +12,8 @@
 
 - Dépôt : `mini56/ECU-Mems-Manager-Session`.
 - Branche x64 active : **`MEMSX64`**.
-- HEAD x64 courant avant optimisation qualité : **`8671275bc77eb1fdbdefc0b0158254efdf86df5c`**.
+- Base stable validée utilisateur : **#81 / `8671275bc77eb1fdbdefc0b0158254efdf86df5c`**.
+- HEAD qualité courant : **`e20eb3ac94807e8a65e901f1413621e4dbec7fd8`**.
 - BUILD logiciel actif : **#30 / v1.0.30**.
 - Aucun BUILD #31 sans demande explicite.
 - 32 bits : `lab-expert-engine` — **NE PAS TOUCHER**.
@@ -55,134 +56,115 @@ Défauts de qualité encore visibles :
 
 ## ÉTAPE EN COURS — OPTIMISATION QUALITÉ DES RÉPONSES IA
 
-Autorisation utilisateur : **oui — « donc on travaille là-dessus »**.
+Autorisation utilisateur : **oui — « donc on travaille là-dessus »**, puis **« OK fait ça ensuite optimise les réponses »**.
 
-Objectif exact avant toute autre évolution :
-1. empêcher toute fuite de `<think>` / balises Qwen / prompt interne / consignes système ;
-2. faire répondre Qwen à la question utilisateur, pas commenter les instructions de contexte ;
-3. conserver les réponses déterministes immédiates déjà fiables ;
-4. améliorer la couverture déterministe des notions MEMS déjà connues quand la base/logiciel contient une réponse certaine (ex. bobine) ;
-5. conserver le mode rapide #81 (`/no_think`, budgets courts) ;
-6. ajouter des tests de non-régression sur ces défauts avant packaging ;
-7. aucun changement protocole ECU, UI, 32 bits, base r20 ou numéro BUILD pendant cette correction.
+Objectif :
+1. empêcher toute fuite de `<think>` / balises Qwen / prompt interne ;
+2. faire répondre Qwen à la question au lieu de commenter les instructions ;
+3. conserver les réponses déterministes immédiates fiables ;
+4. améliorer la couverture déterministe des notions sûres ;
+5. conserver `/no_think` et les budgets #81 ;
+6. améliorer la pertinence et la présentation des réponses issues de la base r20 ;
+7. ajouter des tests de non-régression ;
+8. aucun changement protocole ECU, UI, 32 bits, base r20 ou BUILD.
 
-### DIAGNOSTIC RACINE AVANT MODIFICATION
+### DIAGNOSTIC RACINE — LocalAiClient #81
 
-Inspection du `LocalAiClient` de #81 :
-- les directives internes `LANGUE OBLIGATOIRE`, `DOMAINE OBLIGATOIRE`, contexte candidat et format diagnostic sont encore concaténées dans le **message user** envoyé à Qwen ; cela augmente le risque que le petit modèle les répète au lieu de répondre ;
-- `cleanModelReply()` ne supprime que la forme **fermée** `<think>...</think>` ; une sortie tronquée commençant par `<think>` sans `</think>` reste donc visible telle quelle ;
-- aucun filtre ne rejette actuellement une réponse qui recopie explicitement les directives internes ;
-- la définition simple de **bobine** n'est pas interceptée : seule une question demandant la valeur/référence/normal du dwell reçoit la réponse déterministe ;
-- la détection de date ne couvre pas certaines fautes simples vues au test, par exemple `QUELLE JOURS SOMME NOUS?` (`jours/somme`).
+- directives internes encore concaténées dans le message `user` envoyé à Qwen ;
+- `cleanModelReply()` ne supprimait que `<think>...</think>` fermé : un `<think>` tronqué restait affiché ;
+- aucun filtre de fuite explicite ;
+- définition simple de bobine absente ; seulement le cas valeur/référence dwell ;
+- détection date insuffisamment tolérante à `QUELLE JOURS SOMME NOUS?`.
 
-Correction retenue : simplifier le message utilisateur transmis à Qwen, renforcer le nettoyage et la détection de fuite, ajouter les réponses déterministes sûres manquantes (bobine/date tolérante aux fautes), puis étendre le self-test production sans modifier moteur, runtime, protocole, UI ou 32 bits.
+### CORRECTIONS DÉJÀ POUSSÉES — EN VALIDATION
+
+Commit **`a53fd13c6249d0c0711e88842d0b3e00a5167773`** — `BUILD #30 improve native IA response quality` :
+- message utilisateur Qwen simplifié ;
+- consignes principales déplacées/concentrées dans le system prompt ;
+- interdiction de révéler prompt/raisonnement ;
+- nettoyage `<think>` fermé **et tronqué** + balises ChatML ;
+- filtre des marqueurs de fuite interne ;
+- définition déterministe de la bobine ;
+- date tolérante aux fautes `jours/somme` ;
+- latence #81 conservée (128/192 tokens, `/no_think`).
+
+Commit **`e20eb3ac94807e8a65e901f1413621e4dbec7fd8`** — `BUILD #30 test IA response quality regressions` :
+- self-test production étendu : définition bobine ; date avec faute ; génération ONNX réelle `OK` ;
+- échec si `<think>`, ChatML ou directive interne apparaît.
+- GitHub Actions **#83** lancé sur ce HEAD ; ne pas présenter le commit intermédiaire #82 à l'utilisateur.
+
+### SOUS-ÉTAPE SUIVANTE — QUALITÉ DES RÉPONSES BASE r20
+
+Diagnostic : `IaMemsService::knowledgeAnswer()` sélectionne actuellement jusqu'à **6 faits** dès qu'**un seul terme** correspond, dans l'ordre brut de la base, puis affiche systématiquement `source_key` et `notes`. Risques : faits moins pertinents en tête, bruit, réponse trop technique/brute.
+
+Objectif avant modification :
+- classer les faits par nombre/qualité de correspondances avec la question ;
+- favoriser contexte famille/firmware et niveau de preuve élevé ;
+- limiter la réponse aux meilleurs faits ;
+- conserver le niveau de preuve visible mais n'afficher la source détaillée que si l'utilisateur la demande ;
+- ne jamais faire passer cette amélioration par Qwen : réponse base doit rester immédiate ;
+- nettoyer le fallback générique afin qu'il ne contienne plus une instruction adressée au modèle.
 
 ## ARCHITECTURE IA COURANTE — À CONSERVER
 
 `navigationorderpatch.cpp -> IaMemsTab -> IaMemsService -> ExpertEngine + ExpertKnowledgeReader(read-only) -> LocalAiClient -> ONNX Runtime GenAI natif -> Qwen3 ONNX`
 
-- moteur génératif dans le processus MEMS Manager ;
-- aucun `QProcess` IA ;
-- aucun `llama-server.exe` ;
-- aucun HTTP localhost / port 18089 ;
-- chargement/génération hors thread UI ;
-- base experte r20 préconstruite, lecture seule ;
-- mesures ECU read-only dans le contexte ;
-- aucune commande/mutation ECU accessible au LLM ;
-- Qwen3-0.6B ONNX INT4 CPU ;
-- ONNX Runtime GenAI 0.14.0 + ONNX Runtime app-local.
+- moteur génératif dans le processus ; aucun `QProcess`, `llama-server`, HTTP localhost ou port 18089 ;
+- génération hors thread UI ;
+- base r20 read-only ; mesures ECU read-only ; aucune commande/mutation accessible au LLM ;
+- Qwen3-0.6B ONNX INT4 CPU ; ONNX Runtime GenAI 0.14.0 + runtime app-local.
 
 ## OPTIMISATION LATENCE #81 — À PRÉSERVER
 
-Commit `8671275bc77eb1fdbdefc0b0158254efdf86df5c` :
 - `/no_think` ;
 - réponses normales : **128 tokens max** ;
-- diagnostics génératifs : **192 tokens max** ;
-- réponses déterministes/base experte servies sans appel Qwen lorsqu'elles sont connues.
+- diagnostics : **192 tokens max** ;
+- réponses déterministes/base experte sans Qwen quand elles sont connues.
 
 ## HISTORIQUE ONNX — NE PAS REFAIRE
 
-- #74 : modèle chargé/génération OK ; rouge uniquement `UnicodeEncodeError` console CP1252.
-- #75 : probe ONNX Windows x64 VERT, runtime officiel et Qwen snapshot/hashes vérifiés ; artefact 659 octets = probe seulement.
-- #79 (`9e105623...`) : compilation/tests/base/modèle VERTS, échec unique du self-test production `LocalAiClient`; aucun package final.
-- #80 (`e460586c140d2f87cbcbbe45740ef666c7923395`) : runtime ONNX app-local corrigé, chaîne complète VERT.
+- #74 : modèle/génération OK ; rouge uniquement `UnicodeEncodeError` CP1252.
+- #75 : probe ONNX Windows x64 VERT ; artefact 659 octets = probe seulement.
+- #79 (`9e105623...`) : compilation/tests/base/modèle VERTS, échec self-test production ; aucun package.
+- #80 (`e460586...`) : runtime app-local corrigé, chaîne complète VERT.
 - #81 (`8671275...`) : optimisation latence, chaîne complète VERT + test utilisateur fonctionnel.
 
 ## HISTORIQUE LLAMA — VOIE ABANDONNÉE
 
-Ne pas revenir à llama.cpp sans décision explicite utilisateur.
-
-- #63 : fonctionnel mais Qwen 30 s à 2 min ; défauts MAP/injecteur/SPI ensuite corrigés.
-- `f860749...` : réponses contrôlées MAP / injecteur / SPI.
-- #65 : `GGML_BACKEND_DL requires BUILD_SHARED_LIBS`.
-- #66 : crash modèle `0xC0000409`.
-- #67 : staging incomplet `0xC0000135 STATUS_DLL_NOT_FOUND`.
-- #68 et #72 : CI verte mais `QProcess 0 / FailedToStart` sur test réel.
-- #73 : nouveau `0xC0000409`.
-- décision : remplacement par ONNX natif.
+Ne pas revenir à llama.cpp sans décision explicite utilisateur. #63 lent 30 s–2 min ; #65 CMake ; #66 `0xC0000409` ; #67 `0xC0000135`; #68/#72 `QProcess FailedToStart` réel ; #73 `0xC0000409`. Décision : ONNX natif.
 
 ## PRINCIPE IA / BASE EXPERTE
 
-**Toute connaissance certaine déjà présente dans le logiciel, ses aides/décodages ou la base experte doit produire une réponse immédiate sans modèle génératif.**
+**Toute connaissance certaine déjà présente dans le logiciel, aides/décodages ou base experte doit produire une réponse immédiate sans Qwen.** Qwen = croisement de faits, diagnostic, questions générales MEMS, cas sans réponse déterministe fiable.
 
-Qwen est réservé au croisement de faits, au raisonnement diagnostic, aux questions générales MEMS et aux cas sans réponse déterministe fiable.
-
-Réponses immédiates à préserver : batterie, régime, température liquide, MAP, lambda, avance, dwell, ralenti/IAC, papillon, état moteur, cohérence, MAP/injecteur/SPI.
-
-Définitions contrôlées :
-- MAP = `Manifold Absolute Pressure`, pression absolue collecteur / charge ;
-- injecteur = électrovanne essence commandée ECU, SPI/MPI, jamais injection d'huile ;
-- SPI = `Single Point Injection`, injection monopoint Rover/Mini MEMS.
+Définitions contrôlées : MAP = Manifold Absolute Pressure ; injecteur = électrovanne essence ; SPI = Single Point Injection ; bobine = allumage/haute tension, dwell = temps de charge primaire.
 
 ## CONNAISSANCES / AUDIT À PRÉSERVER
 
 Aperçu : RPM, LDR, MAP, TPS, batterie, correction carburant, lambda, temps injecteur, IAT, IAC, avance, état système. Repères : lambda 0–200 mV pauvre, 700–900 mV riche ; MAP moteur arrêté ~100 kPa, ralenti ~25–40 kPa.
 
-Réglages : correction carburant, ralenti chaud, vitesse ralenti, correction avance, remises à zéro.
-
-Actionneurs : PTC/collecteur, pompe, chauffage lambda, purge, clim, pression/boost, ventilateurs 1/2/3, injecteur, bobine, IAC, reset actionneurs.
-
-Codes : 01–24 ; code 23/antidémarrage reste non prouvé.
-
-### RAVE / MINI SPi / MPi
-- ralenti SPi 1993–96 : 850 ±25 tr/min ; SPi 1997+ et MPi : 900 ±50 tr/min ;
-- pression carburant SPi ~1 bar ; MPi 3,0 ±0,2 bar ;
-- ventilateur MPi 97MY 105 °C ON / 98 °C OFF ; SPi Japon 98/93 °C ;
-- ne pas régler ralenti par vis de butée papillon ;
-- conflits résistance bobine conservés sans arbitrage non prouvé ;
-- lots base 1660/1670 déjà poussés ; r20 régénérée sans changement de schéma ;
-- Rover distingue MEMS 1.3 SPi, 1.6 SPi, 2J MPi ; ne pas appeler automatiquement MPi « MEMS 1.9 » ;
-- DTC fortement supportés : `0x80` code 1 ECT, 2 IAT, 10 pompe, 16 TPS ; `0x7D:0x05` 20 chauffage lambda, 21 synchro, 22 fan1, 24 fan2 ;
-- code 23 / bit6 = preuve insuffisante ;
-- RCL0194 MPi 97MY : MAP C159-8, retour capteurs C159-13, IAT C159-14, ECT C159-36, pompe C159-30, antidémarrage C159-17.
+RAVE : ralenti SPi 1993–96 850 ±25 ; SPi 1997+ et MPi 900 ±50 ; pression SPi ~1 bar, MPi 3,0 ±0,2 bar ; fan MPi97 105/98 °C ; SPi Japon 98/93 ; pas de réglage ralenti par butée ; conflits résistance bobine non arbitrés ; lots 1660/1670 dans r20 ; MEMS1.3 SPi / 1.6 SPi / 2J MPi distingués ; DTC supportés 1 ECT,2 IAT,10 pompe,16 TPS,20 lambda heater,21 synchro,22 fan1,24 fan2 ; code23 preuve insuffisante ; pins RCL0194 conservés.
 
 ## SÉCURITÉ PROTOCOLE — NE PAS MODIFIER PENDANT BUILD #30 IA
 
-- `MemsEcuFamily::{Unknown, Rosco13_16, Mems19}` ; `MemsDiagnosticMode::{Unknown, Normal, Mode3, Mode4, Transition}` ;
-- D0/D1/D2 normal uniquement ; D1 bloqué Mode4 ; D3/F3/F4/F5 bloqués interface générique ;
-- mutations uniquement Rosco13_16 prouvé + Normal ; Unknown fail-closed ; MEMS1.9 mutations bloquées ; F7/EF bloqués sans sous-type ; transaction RAM bloque commandes génériques ;
-- conserver `void onProtocolCommandRequested(quint8 command);` ;
-- traces D0 `D0 98 00 02 02`, D1 `AANMP002`, F0 `F0 50`, D2 `D2 00 01`, F4 `F4 00` ;
-- ralenti chaud `raw - 32768 - correction` réelle ; jamais -3 hardcodé ;
-- dwell repère ~1,9–3,1 ms vers 14 V ;
-- aucune mutation ECU pendant BUILD #30.
+`MemsEcuFamily`/`MemsDiagnosticMode` existants ; D0/D1/D2 normal ; D1 bloqué Mode4 ; D3/F3/F4/F5 bloqués générique ; mutations Rosco13_16 prouvé+Normal seulement ; Unknown fail-closed ; MEMS1.9 mutations bloquées ; F7/EF bloqués ; transaction RAM bloque commandes ; conserver `onProtocolCommandRequested(quint8)` ; ralenti chaud `raw-32768-correction` ; dwell ~1,9–3,1 ms vers14V ; aucune mutation ECU BUILD30.
 
 ## BLOQUEURS NO-GO
 
-MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneurs, ports série arbitraires, profils RAM non validés, reset/clear faults/trims/écritures pendant BUILD #30.
+MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion1.9, failsafe actionneurs, ports arbitraires, profils RAM non validés, reset/clear faults/trims/écritures BUILD30.
 
 ## UI OFFICIELLE À PRÉSERVER
 
-Aperçu, Injection, Réglages, Actionneurs, Erreurs, Diagnostic automatique, IA MEMS, Analyse, Toutes les mesures, ECU/ROSCO, Toutes les données, Base de données, Interactif, Test ECU 1.9. Style dark/responsive inchangé. Injection reste entre Aperçu et Réglages.
+Aperçu, Injection, Réglages, Actionneurs, Erreurs, Diagnostic automatique, IA MEMS, Analyse, Toutes les mesures, ECU/ROSCO, Toutes les données, Base de données, Interactif, Test ECU 1.9. Dark/responsive inchangé. Injection entre Aperçu et Réglages.
 
 ## EXIGENCES IA FUTURES — PAS MAINTENANT
 
-Après stabilisation qualité moteur : CSV/TXT local read-only (drag/drop, `+`, filtre, suppression du fichier sélectionné) et nouveau composeur dark/responsive. Aucune commande ECU.
+Après stabilisation qualité : CSV/TXT local read-only + nouveau composeur dark/responsive. Aucune commande ECU.
 
 ## DÉSINSTALLATION BUILD #30
 
-`ecu_mems_uninstaller.exe` + `install_manifest.txt` ; refus si app active ; profil conservé par défaut ; données locales supprimées seulement sur choix explicite ; fichiers étrangers préservés.
+`ecu_mems_uninstaller.exe` + `install_manifest.txt` ; refus si app active ; profil conservé ; suppression données seulement explicite ; fichiers étrangers préservés.
 
 ## PROCHAINE ACTION EXACTE
 
-**Reprendre sur `MEMSX64`, BUILD logiciel #30/v1.0.30, base stable #81 `8671275bc77eb1fdbdefc0b0158254efdf86df5c`. L'intégration ONNX est validée en CI et fonctionne dans le test utilisateur. Travailler uniquement sur la QUALITÉ DES RÉPONSES : supprimer les fuites `<think>`/prompt interne, empêcher le méta-discours, améliorer le nettoyage et ajouter les réponses déterministes sûres déjà connues (notamment bobine) sans dégrader la latence #81. Ajouter des tests de non-régression, pousser sur `MEMSX64`, suivre GitHub Actions jusqu'au package complet. Aucun BUILD #31, aucun changement protocole ECU, 32 bits ou UI.**
+**Reprendre sur `MEMSX64`, BUILD logiciel #30/v1.0.30. Base stable validée : #81 `8671275...`. Travail qualité courant : HEAD `e20eb3a...`, Actions #83 en validation. Après validation du filtre/prompt/self-test, poursuivre immédiatement l'optimisation `IaMemsService::knowledgeAnswer()` : classement de pertinence, preuve concise, sources uniquement sur demande, fallback générique propre. Aucun BUILD #31, changement protocole, 32 bits ou UI. Puis suivre le dernier run jusqu'au package complet avant tout nouveau test utilisateur.**
