@@ -275,6 +275,31 @@ static void ensureDynamicPages(MainWindow *window, QTabWidget *tabs)
     }
 }
 
+static void fitNavigationRows(QListWidget *nav)
+{
+    if (!nav || nav->count() <= 0)
+        return;
+
+    const int viewportHeight = nav->viewport() ? nav->viewport()->height() : nav->height();
+    if (viewportHeight <= 0)
+        return;
+
+    // On smaller screens the original 14 rows can exceed the viewport by only
+    // a few pixels. Compress the row height just enough to keep every official
+    // tab visible; never solve this by scrolling the first tab out of view.
+    const int rowHeight = qBound(21, viewportHeight / kFinalTabCount, 26);
+    nav->setIconSize(QSize(qMin(20, rowHeight - 2), qMin(20, rowHeight - 2)));
+    nav->setSpacing(0);
+    nav->setUniformItemSizes(true);
+    nav->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    nav->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    for (int row = 0; row < nav->count(); ++row) {
+        if (QListWidgetItem *item = nav->item(row))
+            item->setSizeHint(QSize(0, rowHeight));
+    }
+    nav->scrollToTop();
+}
+
 static void fitRawSpacing(QMainWindow *window)
 {
     if (!window)
@@ -351,9 +376,6 @@ static void installMappedConnections(QMainWindow *window, QTabWidget *tabs, QLis
                         tabs, &QTabWidget::setCurrentIndex);
     QObject::disconnect(tabs, nullptr, nav, nullptr);
 
-    // The official tab order is fixed 1:1 with the sidebar rows. Do not store
-    // QWidget pointers in QListWidgetItem data: later visual-only refreshes may
-    // replace the items while the row order remains valid.
     QObject::connect(nav, &QListWidget::currentRowChanged, window,
                      [tabs](int row) {
         if (row >= 0 && row < tabs->count() && tabs->currentIndex() != row)
@@ -366,6 +388,7 @@ static void installMappedConnections(QMainWindow *window, QTabWidget *tabs, QLis
             return;
         const QSignalBlocker blocker(nav);
         nav->setCurrentRow(index);
+        fitNavigationRows(nav);
     });
 
     nav->setProperty("deterministicNavigationMapped", true);
@@ -442,7 +465,6 @@ static bool applyDeterministicNavigation(MainWindow *window)
     {
         const QSignalBlocker blocker(nav);
         nav->clear();
-        nav->setIconSize(QSize(20,20));
         for (int rank = 0; rank < kFinalTabCount; ++rank)
         {
             const QString title = translatedTitle(rank);
@@ -450,9 +472,11 @@ static bool applyDeterministicNavigation(MainWindow *window)
             item->setToolTip(title);
         }
         nav->setCurrentRow(qBound(0, tabs->currentIndex(), kFinalTabCount - 1));
+        fitNavigationRows(nav);
     }
 
     installMappedConnections(window,tabs,nav);
+    fitNavigationRows(nav);
     fitRawSpacing(window);
     window->setProperty("deterministicNavigationApplied", true);
     window->setProperty("deterministicNavigationCount", kFinalTabCount);
@@ -473,8 +497,11 @@ protected:
             if (event->type() == QEvent::LanguageChange)
                 applyDeterministicNavigation(m_window);
             else if (event->type() == QEvent::Resize &&
-                     m_window->property("deterministicNavigationApplied").toBool())
+                     m_window->property("deterministicNavigationApplied").toBool()) {
                 fitRawSpacing(m_window);
+                if (QListWidget *nav = m_window->findChild<QListWidget*>(QStringLiteral("uiRebuildNav")))
+                    fitNavigationRows(nav);
+            }
         }
         return QObject::eventFilter(watched,event);
     }
