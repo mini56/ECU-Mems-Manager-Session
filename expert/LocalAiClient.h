@@ -3,14 +3,11 @@
 
 #include <QObject>
 #include <QPair>
-#include <QPointer>
 #include <QString>
 #include <QVector>
 
-class QNetworkAccessManager;
-class QNetworkReply;
-class QProcess;
-class QTimer;
+class QThread;
+class LocalAiWorker;
 
 class LocalAiClient final : public QObject
 {
@@ -51,23 +48,17 @@ signals:
 private:
     void setState(State state, const QString &error = QString());
     void discoverAssets();
-    void startServer();
-    void scheduleHealthCheck();
-    void checkHealth();
-    void handleHealthReply(QNetworkReply *reply);
     QString systemPrompt() const;
     QString cleanModelReply(QString text) const;
 
 private:
-    QNetworkAccessManager *m_network = nullptr;
-    QProcess *m_server = nullptr;
-    QTimer *m_healthTimer = nullptr;
+    QThread *m_workerThread = nullptr;
+    LocalAiWorker *m_worker = nullptr;
     State m_state = NotStarted;
     QString m_runtimePath;
     QString m_modelPath;
     QString m_lastError;
-    int m_healthAttempts = 0;
-    bool m_startedServer = false;
+    quint64 m_epoch = 0;
     QVector<QPair<QString, QString>> m_conversation;
 };
 

@@ -35,11 +35,24 @@ if(MEMS_USE_BUNDLED_LIBROSCO_X64)
         message(FATAL_ERROR "MEMS_USE_BUNDLED_LIBROSCO_X64 currently targets Windows only")
     endif()
     enable_language(C)
-    # Historical source files use WIN32 while MSVC guarantees _WIN32. Define
-    # WIN32 for the compatibility build so the unchanged application code takes
-    # the same Windows paths as the old MinGW build.
     add_compile_definitions(WIN32)
     add_subdirectory(librosco-x64)
+endif()
+
+option(MEMS_USE_ONNX_GENAI "Use native ONNX Runtime GenAI for IA MEMS" OFF)
+set(ORT_GENAI_INCLUDE_DIR "" CACHE PATH "Directory containing ort_genai_c.h")
+set(ORT_GENAI_LIBRARY "" CACHE FILEPATH "ONNX Runtime GenAI import library")
+if(MEMS_USE_ONNX_GENAI)
+    if(NOT WIN32)
+        message(FATAL_ERROR "MEMS_USE_ONNX_GENAI currently targets Windows x64 only")
+    endif()
+    if(NOT EXISTS "${ORT_GENAI_INCLUDE_DIR}/ort_genai_c.h")
+        message(FATAL_ERROR "ORT_GENAI_INCLUDE_DIR does not contain ort_genai_c.h: ${ORT_GENAI_INCLUDE_DIR}")
+    endif()
+    if(NOT EXISTS "${ORT_GENAI_LIBRARY}")
+        message(FATAL_ERROR "ORT_GENAI_LIBRARY not found: ${ORT_GENAI_LIBRARY}")
+    endif()
+    message(STATUS "IA MEMS native engine: ONNX Runtime GenAI C API")
 endif()
 
 configure_file("${CMAKE_SOURCE_DIR}/help.html.in" "${CMAKE_SOURCE_DIR}/help.html")
@@ -67,25 +80,32 @@ set(SOURCES
 add_executable(${PNAME} ${SOURCES})
 target_sources(${PNAME} PRIVATE ${CMAKE_SOURCE_DIR}/desktopshortcut.cpp ${CMAKE_SOURCE_DIR}/desktopshortcut.h)
 
-# BUILD #27 safety policy self-test. It is intentionally independent of the
-# serial transport and proves the family/mode command authorization matrix.
+if(MEMS_USE_ONNX_GENAI)
+    target_compile_definitions(${PNAME} PRIVATE MEMS_USE_ONNX_GENAI=1)
+    target_include_directories(${PNAME} PRIVATE "${ORT_GENAI_INCLUDE_DIR}")
+    target_link_libraries(${PNAME} PRIVATE "${ORT_GENAI_LIBRARY}")
+
+    add_executable(local_ai_onnx_selftest
+        expert/LocalAiOnnxSelfTest.cpp
+        expert/LocalAiClient.cpp expert/LocalAiClient.h
+        i18n.cpp i18n.h)
+    target_compile_definitions(local_ai_onnx_selftest PRIVATE MEMS_USE_ONNX_GENAI=1)
+    target_include_directories(local_ai_onnx_selftest PRIVATE "${CMAKE_SOURCE_DIR}" "${ORT_GENAI_INCLUDE_DIR}")
+    target_link_libraries(local_ai_onnx_selftest PRIVATE Qt5::Widgets "${ORT_GENAI_LIBRARY}")
+    add_dependencies(${PNAME} local_ai_onnx_selftest)
+endif()
+
 add_executable(protocol_context_selftest protocolcontext_test.cpp protocolcontext.h)
 add_dependencies(${PNAME} protocol_context_selftest)
 add_custom_command(TARGET ${PNAME} POST_BUILD
     COMMAND "$<TARGET_FILE:protocol_context_selftest>")
 
-# BUILD #29 IA response self-test: reproduce the exact user questions that
-# exposed over-broad and non-actionable fallback answers without needing an ECU.
-# It is compiled here and executed explicitly by GitHub Actions after the build,
-# with the Qt runtime configured by PowerShell rather than from MSBuild POST_BUILD.
 add_executable(ia_response_selftest
     expert/IaResponseLogicTest.cpp
     expert/IaResponseLogic.h)
 target_link_libraries(ia_response_selftest PRIVATE Qt5::Core)
 add_dependencies(${PNAME} ia_response_selftest)
 
-# Functional search self-test: exercises the same reference DB + global index code
-# used by the application, without starting the GUI.
 add_executable(mems_search_selftest
     database/MemsSearchSelfTest.cpp
     database/MemsReferenceDatabase.cpp database/MemsReferenceDatabase.h
@@ -93,9 +113,6 @@ add_executable(mems_search_selftest
 target_link_libraries(mems_search_selftest PRIVATE Qt5::Core Qt5::Sql)
 add_dependencies(${PNAME} mems_search_selftest)
 
-# Packaged expert DB generator used only by CI. The production application no
-# longer builds the expert database at runtime: it opens the CI-generated r20
-# SQLite database read-only through IaMemsService.
 add_executable(expert_runtime_selftest
     expert/ExpertRuntimeDatabaseSelfTest.cpp
     expert/ExpertRuntimeDatabase.cpp expert/ExpertRuntimeDatabase.h)
@@ -133,6 +150,9 @@ if(MSVC)
     add_compile_definitions(_HAS_STD_BYTE=0)
     target_compile_options(${PNAME} PRIVATE /permissive /utf-8)
     target_compile_options(ia_response_selftest PRIVATE /utf-8)
+    if(TARGET local_ai_onnx_selftest)
+        target_compile_options(local_ai_onnx_selftest PRIVATE /permissive /utf-8)
+    endif()
 endif()
 if(WIN32)
     message(STATUS "Plateforme Windows détectée (MSVC / MinGW).")

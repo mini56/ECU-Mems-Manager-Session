@@ -5,28 +5,40 @@
 #include <QDate>
 #include <QDir>
 #include <QFileInfo>
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
 #include <QLocale>
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
-#include <QNetworkRequest>
-#include <QProcess>
+#include <QMetaObject>
 #include <QProcessEnvironment>
 #include <QRegularExpression>
-#include <QTimer>
-#include <QUrl>
+#include <QThread>
+
+#include <atomic>
+#include <string>
+
+#ifdef MEMS_USE_ONNX_GENAI
+#include <ort_genai_c.h>
+#endif
 
 namespace {
-const quint16 kAiPort = 18089;
 const int kMaximumTurns = 8;
 
-QString firstExisting(const QStringList &paths)
+QString firstExistingFile(const QStringList &paths)
 {
     for (const QString &path : paths) {
-        if (QFileInfo::exists(path) && QFileInfo(path).isFile())
+        if (!path.trimmed().isEmpty() && QFileInfo::exists(path) && QFileInfo(path).isFile())
             return QDir::cleanPath(path);
+    }
+    return QString();
+}
+
+QString firstExistingModelDirectory(const QStringList &paths)
+{
+    for (const QString &path : paths) {
+        if (path.trimmed().isEmpty())
+            continue;
+        const QFileInfo info(path);
+        const QString directory = info.isFile() ? info.absolutePath() : info.absoluteFilePath();
+        if (QFileInfo(QDir(directory).filePath(QStringLiteral("genai_config.json"))).isFile())
+            return QDir::cleanPath(directory);
     }
     return QString();
 }
@@ -98,7 +110,6 @@ bool isGenericGrounding(const QString &grounding)
 bool asksCurrentDate(const QString &question)
 {
     const QString plain = normalizedPlainText(question);
-
     return plain.contains(QStringLiteral("quel jour"))
         || plain.contains(QStringLiteral("quelle date"))
         || plain.contains(QStringLiteral("date aujourd"))
@@ -387,50 +398,195 @@ void rememberTurn(QVector<QPair<QString, QString>> &conversation,
 }
 }
 
-LocalAiClient::LocalAiClient(QObject *parent)
-    : QObject(parent),
-      m_network(new QNetworkAccessManager(this)),
-      m_server(new QProcess(this)),
-      m_healthTimer(new QTimer(this))
+class LocalAiWorker final : public QObject
 {
-    m_healthTimer->setSingleShot(true);
-    connect(m_healthTimer, &QTimer::timeout, this, &LocalAiClient::checkHealth);
+public:
+    explicit LocalAiWorker(QObject *parent = nullptr) : QObject(parent) {}
+    ~LocalAiWorker() override
+    {
+        reset();
+#ifdef MEMS_USE_ONNX_GENAI
+        OgaShutdown();
+#endif
+    }
 
-    connect(m_server,
-            QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-            this,
-            [this](int exitCode, QProcess::ExitStatus exitStatus) {
-                if (m_startedServer && m_state != NotStarted && m_state != MissingModel
-                    && m_state != MissingRuntime) {
-                    const quint32 nativeCode = static_cast<quint32>(exitCode);
-                    QString detail = QStringLiteral("llama-server s'est arrêté (code %1 / 0x%2, statut %3).")
-                        .arg(exitCode)
-                        .arg(QString::number(nativeCode, 16).toUpper())
-                        .arg(exitStatus == QProcess::NormalExit ? QStringLiteral("normal")
-                                                               : QStringLiteral("crash"));
-                    const QString output = QString::fromUtf8(m_server->readAll()).trimmed();
-                    if (!output.isEmpty())
-                        detail += QStringLiteral(" ") + output.right(1200);
-                    setState(Error, detail);
-                }
-            });
+    bool load(const QString &modelPath, QString *error)
+    {
+#ifdef MEMS_USE_ONNX_GENAI
+        reset();
+        const QByteArray pathUtf8 = QDir::cleanPath(modelPath).toUtf8();
+        if (!check(OgaCreateModel(pathUtf8.constData(), &m_model), error)) {
+            reset();
+            return false;
+        }
+        if (!check(OgaCreateTokenizer(m_model, &m_tokenizer), error)) {
+            reset();
+            return false;
+        }
+        m_loadedPath = modelPath;
+        return true;
+#else
+        Q_UNUSED(modelPath)
+        if (error)
+            *error = QStringLiteral("ONNX Runtime GenAI n'est pas activé dans cette compilation.");
+        return false;
+#endif
+    }
 
-    connect(m_server, &QProcess::errorOccurred, this, [this](QProcess::ProcessError error) {
-        if (!m_startedServer || m_state == NotStarted)
-            return;
-        QString detail = QStringLiteral("Impossible de démarrer llama-server (erreur QProcess %1) : %2")
-            .arg(static_cast<int>(error))
-            .arg(m_server->errorString());
-        const QString output = QString::fromUtf8(m_server->readAll()).trimmed();
-        if (!output.isEmpty())
-            detail += QStringLiteral(" ") + output.right(1200);
-        setState(Error, detail);
-    });
+    QString generate(const QString &prompt, bool reasoning, QString *error)
+    {
+#ifdef MEMS_USE_ONNX_GENAI
+        if (!m_model || !m_tokenizer) {
+            if (error)
+                *error = QStringLiteral("Le modèle ONNX n'est pas chargé.");
+            return QString();
+        }
+
+        m_cancelRequested.store(false, std::memory_order_release);
+        OgaSequences *sequences = nullptr;
+        OgaGeneratorParams *params = nullptr;
+        OgaGenerator *generator = nullptr;
+        OgaTokenizerStream *stream = nullptr;
+
+        const auto cleanup = [&]() {
+            if (stream) OgaDestroyTokenizerStream(stream);
+            if (generator) OgaDestroyGenerator(generator);
+            if (params) OgaDestroyGeneratorParams(params);
+            if (sequences) OgaDestroySequences(sequences);
+        };
+
+        const QByteArray promptUtf8 = prompt.toUtf8();
+        if (!check(OgaCreateSequences(&sequences), error)
+            || !check(OgaTokenizerEncode(m_tokenizer, promptUtf8.constData(), sequences), error)) {
+            cleanup();
+            return QString();
+        }
+
+        if (OgaSequencesCount(sequences) == 0 || OgaSequencesGetSequenceCount(sequences, 0) == 0) {
+            if (error)
+                *error = QStringLiteral("Le tokenizer ONNX n'a produit aucun token d'entrée.");
+            cleanup();
+            return QString();
+        }
+
+        const size_t promptTokens = OgaSequencesGetSequenceCount(sequences, 0);
+        const int maxNewTokens = reasoning ? 768 : 256;
+        if (!check(OgaCreateGeneratorParams(m_model, &params), error)
+            || !check(OgaGeneratorParamsSetSearchNumber(params, "max_length", static_cast<double>(promptTokens + maxNewTokens)), error)
+            || !check(OgaGeneratorParamsSetSearchNumber(params, "batch_size", 1.0), error)
+            || !check(OgaGeneratorParamsSetSearchBool(params, "do_sample", true), error)
+            || !check(OgaGeneratorParamsSetSearchNumber(params, "temperature", reasoning ? 0.6 : 0.7), error)
+            || !check(OgaGeneratorParamsSetSearchNumber(params, "top_p", reasoning ? 0.95 : 0.8), error)
+            || !check(OgaGeneratorParamsSetSearchNumber(params, "top_k", 20.0), error)
+            || !check(OgaCreateGenerator(m_model, params, &generator), error)
+            || !check(OgaGenerator_AppendTokenSequences(generator, sequences), error)
+            || !check(OgaCreateTokenizerStream(m_tokenizer, &stream), error)) {
+            cleanup();
+            return QString();
+        }
+
+        std::string output;
+        int generated = 0;
+        while (!OgaGenerator_IsDone(generator) && generated < maxNewTokens
+               && !m_cancelRequested.load(std::memory_order_acquire)) {
+            if (!check(OgaGenerator_GenerateNextToken(generator), error)) {
+                cleanup();
+                return QString();
+            }
+            const int32_t *tokens = nullptr;
+            size_t tokenCount = 0;
+            if (!check(OgaGenerator_GetNextTokens(generator, &tokens, &tokenCount), error)) {
+                cleanup();
+                return QString();
+            }
+            if (!tokens || tokenCount == 0)
+                break;
+            const char *chunk = nullptr;
+            if (!check(OgaTokenizerStreamDecode(stream, tokens[0], &chunk), error)) {
+                cleanup();
+                return QString();
+            }
+            if (chunk)
+                output += chunk;
+            ++generated;
+        }
+
+        if (m_cancelRequested.load(std::memory_order_acquire)) {
+            if (error)
+                *error = QStringLiteral("Génération annulée.");
+            cleanup();
+            return QString();
+        }
+
+        const QString answer = QString::fromUtf8(output.data(), static_cast<int>(output.size()));
+        cleanup();
+        return answer;
+#else
+        Q_UNUSED(prompt)
+        Q_UNUSED(reasoning)
+        if (error)
+            *error = QStringLiteral("ONNX Runtime GenAI n'est pas activé dans cette compilation.");
+        return QString();
+#endif
+    }
+
+    void requestCancel() { m_cancelRequested.store(true, std::memory_order_release); }
+
+    void reset()
+    {
+        m_cancelRequested.store(true, std::memory_order_release);
+#ifdef MEMS_USE_ONNX_GENAI
+        if (m_tokenizer) {
+            OgaDestroyTokenizer(m_tokenizer);
+            m_tokenizer = nullptr;
+        }
+        if (m_model) {
+            OgaDestroyModel(m_model);
+            m_model = nullptr;
+        }
+#endif
+        m_loadedPath.clear();
+    }
+
+private:
+#ifdef MEMS_USE_ONNX_GENAI
+    static bool check(OgaResult *result, QString *error)
+    {
+        if (!result)
+            return true;
+        if (error) {
+            const char *message = OgaResultGetError(result);
+            *error = message ? QString::fromUtf8(message) : QStringLiteral("Erreur ONNX Runtime GenAI sans message.");
+        }
+        OgaDestroyResult(result);
+        return false;
+    }
+#endif
+
+    std::atomic_bool m_cancelRequested{false};
+    QString m_loadedPath;
+#ifdef MEMS_USE_ONNX_GENAI
+    OgaModel *m_model = nullptr;
+    OgaTokenizer *m_tokenizer = nullptr;
+#endif
+};
+
+LocalAiClient::LocalAiClient(QObject *parent)
+    : QObject(parent), m_workerThread(new QThread(this)), m_worker(new LocalAiWorker)
+{
+    m_worker->moveToThread(m_workerThread);
+    connect(m_workerThread, &QThread::finished, m_worker, &QObject::deleteLater);
+    m_workerThread->start();
 }
 
 LocalAiClient::~LocalAiClient()
 {
     shutdown();
+    if (m_workerThread && m_workerThread->isRunning()) {
+        m_workerThread->quit();
+        m_workerThread->wait();
+    }
+    m_worker = nullptr;
 }
 
 void LocalAiClient::initialize()
@@ -440,9 +596,40 @@ void LocalAiClient::initialize()
 
     discoverAssets();
 
-    m_healthAttempts = 0;
+#ifndef MEMS_USE_ONNX_GENAI
+    setState(MissingRuntime, QStringLiteral("Cette compilation ne contient pas ONNX Runtime GenAI."));
+    return;
+#endif
+
+    if (m_runtimePath.isEmpty()) {
+        setState(MissingRuntime, QStringLiteral("Runtime ONNX Runtime GenAI absent du package."));
+        return;
+    }
+    if (m_modelPath.isEmpty()) {
+        setState(MissingModel, QStringLiteral("Modèle Qwen ONNX IA MEMS absent du dossier IA."));
+        return;
+    }
+    if (!m_workerThread || !m_workerThread->isRunning() || !m_worker) {
+        setState(Error, QStringLiteral("Thread du moteur IA local indisponible."));
+        return;
+    }
+
+    const quint64 epoch = ++m_epoch;
+    const QString modelPath = m_modelPath;
     setState(Starting);
-    checkHealth();
+
+    QMetaObject::invokeMethod(m_worker, [this, epoch, modelPath]() {
+        QString error;
+        const bool ok = m_worker->load(modelPath, &error);
+        QMetaObject::invokeMethod(this, [this, epoch, ok, error]() {
+            if (epoch != m_epoch)
+                return;
+            if (ok)
+                setState(Ready);
+            else
+                setState(Error, QStringLiteral("Chargement ONNX impossible : %1").arg(error));
+        }, Qt::QueuedConnection);
+    }, Qt::QueuedConnection);
 }
 
 void LocalAiClient::discoverAssets()
@@ -450,119 +637,22 @@ void LocalAiClient::discoverAssets()
     const QString root = QCoreApplication::applicationDirPath();
     const QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
 
-    const QString envRuntime = env.value(QStringLiteral("MEMS_AI_SERVER"));
+    QString envRuntime = env.value(QStringLiteral("MEMS_AI_RUNTIME"));
+    if (QFileInfo(envRuntime).isDir())
+        envRuntime = QDir(envRuntime).filePath(QStringLiteral("onnxruntime-genai.dll"));
     const QString envModel = env.value(QStringLiteral("MEMS_AI_MODEL"));
 
-    m_runtimePath = firstExisting({
+    m_runtimePath = firstExistingFile({
         envRuntime,
-        QDir(root).filePath(QStringLiteral("ai/llama-server.exe")),
-        QDir(root).filePath(QStringLiteral("ai/runtime/llama-server.exe")),
-        QDir(root).filePath(QStringLiteral("llama-server.exe"))
+        QDir(root).filePath(QStringLiteral("onnxruntime-genai.dll")),
+        QDir(root).filePath(QStringLiteral("ai/onnxruntime-genai.dll"))
     });
-
-    m_modelPath = firstExisting({
+    m_modelPath = firstExistingModelDirectory({
         envModel,
-        QDir(root).filePath(QStringLiteral("ai/models/ia-mems.gguf")),
-        QDir(root).filePath(QStringLiteral("ai/ia-mems.gguf")),
-        QDir(root).filePath(QStringLiteral("models/ia-mems.gguf"))
+        QDir(root).filePath(QStringLiteral("ai/models/qwen3-0.6b-int4")),
+        QDir(root).filePath(QStringLiteral("ai/models/ia-mems-onnx")),
+        QDir(root).filePath(QStringLiteral("models/qwen3-0.6b-int4"))
     });
-}
-
-void LocalAiClient::startServer()
-{
-    if (m_runtimePath.isEmpty()) {
-        setState(MissingRuntime,
-                 QStringLiteral("Moteur llama.cpp local absent du dossier IA."));
-        return;
-    }
-    if (m_modelPath.isEmpty()) {
-        setState(MissingModel,
-                 QStringLiteral("Modèle GGUF IA MEMS absent du dossier IA."));
-        return;
-    }
-
-    if (m_server->state() != QProcess::NotRunning)
-        return;
-
-    QStringList args;
-    args << QStringLiteral("-m") << m_modelPath
-         << QStringLiteral("--alias") << QStringLiteral("ia-mems")
-         << QStringLiteral("--host") << QStringLiteral("127.0.0.1")
-         << QStringLiteral("--port") << QString::number(kAiPort)
-         << QStringLiteral("-c") << QStringLiteral("4096")
-         << QStringLiteral("-np") << QStringLiteral("1")
-         << QStringLiteral("--no-webui")
-         << QStringLiteral("--offline");
-
-    const QString runtimeDirectory = QFileInfo(m_runtimePath).absolutePath();
-    m_server->setProgram(m_runtimePath);
-    m_server->setArguments(args);
-    m_server->setWorkingDirectory(runtimeDirectory);
-    QProcessEnvironment processEnvironment = QProcessEnvironment::systemEnvironment();
-    const QString currentPath = processEnvironment.value(QStringLiteral("PATH"));
-    processEnvironment.insert(QStringLiteral("PATH"),
-                              runtimeDirectory + QDir::listSeparator() + currentPath);
-    m_server->setProcessEnvironment(processEnvironment);
-    m_server->setProcessChannelMode(QProcess::MergedChannels);
-    m_startedServer = true;
-    m_server->start();
-    m_healthAttempts = 0;
-    scheduleHealthCheck();
-}
-
-void LocalAiClient::scheduleHealthCheck()
-{
-    if (m_healthAttempts >= 150) {
-        setState(Error,
-                 QStringLiteral("Le modèle local n'a pas terminé son démarrage."));
-        return;
-    }
-    m_healthTimer->start(600);
-}
-
-void LocalAiClient::checkHealth()
-{
-    ++m_healthAttempts;
-    QNetworkRequest request(QUrl(QStringLiteral("http://127.0.0.1:%1/health").arg(kAiPort)));
-    QNetworkReply *reply = m_network->get(request);
-    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
-        handleHealthReply(reply);
-        reply->deleteLater();
-    });
-}
-
-void LocalAiClient::handleHealthReply(QNetworkReply *reply)
-{
-    const int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-    const QByteArray body = reply->readAll();
-    const QJsonDocument document = QJsonDocument::fromJson(body);
-
-    if (httpStatus == 200 && document.isObject()
-        && document.object().value(QStringLiteral("status")).toString() == QStringLiteral("ok")) {
-        setState(Ready);
-        return;
-    }
-
-    if (httpStatus == 503) {
-        scheduleHealthCheck();
-        return;
-    }
-
-    if (!m_startedServer) {
-        startServer();
-        return;
-    }
-
-    if (m_server->state() == QProcess::NotRunning) {
-        const QString output = QString::fromUtf8(m_server->readAll()).trimmed();
-        setState(Error,
-                 output.isEmpty()
-                     ? QStringLiteral("Impossible de démarrer le moteur d'IA locale.")
-                     : output.right(900));
-        return;
-    }
-
-    scheduleHealthCheck();
 }
 
 void LocalAiClient::ask(const QString &question, const QString &groundingContext)
@@ -602,32 +692,10 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
         grounding.clear();
 
     const bool reasoning = requiresReasoning(trimmedQuestion, grounding);
-
     if (!reasoning && !grounding.isEmpty()) {
         rememberTurn(m_conversation, trimmedQuestion, grounding);
         emit responseReady(grounding);
         return;
-    }
-
-    setState(Busy);
-
-    QJsonArray messages;
-    QJsonObject system;
-    system.insert(QStringLiteral("role"), QStringLiteral("system"));
-    system.insert(QStringLiteral("content"), systemPrompt());
-    messages.append(system);
-
-    if (isFollowUpQuestion(trimmedQuestion) && !m_conversation.isEmpty()) {
-        const QPair<QString, QString> &turn = m_conversation.constLast();
-        QJsonObject user;
-        user.insert(QStringLiteral("role"), QStringLiteral("user"));
-        user.insert(QStringLiteral("content"), turn.first);
-        messages.append(user);
-
-        QJsonObject assistant;
-        assistant.insert(QStringLiteral("role"), QStringLiteral("assistant"));
-        assistant.insert(QStringLiteral("content"), turn.second);
-        messages.append(assistant);
     }
 
     QString userContent = languageDirective() + QStringLiteral("\n\n") + trimmedQuestion;
@@ -649,102 +717,59 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
                            .arg(grounding);
     }
 
-    userContent += reasoning ? QStringLiteral("\n\n/think")
-                             : QStringLiteral("\n\n/no_think");
+    userContent += reasoning ? QStringLiteral("\n\n/think") : QStringLiteral("\n\n/no_think");
 
-    QJsonObject currentUser;
-    currentUser.insert(QStringLiteral("role"), QStringLiteral("user"));
-    currentUser.insert(QStringLiteral("content"), userContent);
-    messages.append(currentUser);
-
-    QJsonObject payload;
-    payload.insert(QStringLiteral("model"), QStringLiteral("ia-mems"));
-    payload.insert(QStringLiteral("messages"), messages);
-    payload.insert(QStringLiteral("stream"), false);
-    payload.insert(QStringLiteral("top_k"), 20);
-    payload.insert(QStringLiteral("min_p"), 0.0);
-
-    if (reasoning) {
-        payload.insert(QStringLiteral("temperature"), 0.6);
-        payload.insert(QStringLiteral("top_p"), 0.95);
-        payload.insert(QStringLiteral("presence_penalty"), 0.3);
-        payload.insert(QStringLiteral("max_tokens"), 768);
-    } else {
-        payload.insert(QStringLiteral("temperature"), 0.7);
-        payload.insert(QStringLiteral("top_p"), 0.8);
-        payload.insert(QStringLiteral("presence_penalty"), 0.2);
-        payload.insert(QStringLiteral("max_tokens"), 256);
+    QString prompt = QStringLiteral("<|im_start|>system\n%1<|im_end|>\n").arg(systemPrompt());
+    if (isFollowUpQuestion(trimmedQuestion) && !m_conversation.isEmpty()) {
+        const QPair<QString, QString> &turn = m_conversation.constLast();
+        prompt += QStringLiteral("<|im_start|>user\n%1<|im_end|>\n").arg(turn.first);
+        prompt += QStringLiteral("<|im_start|>assistant\n%1<|im_end|>\n").arg(turn.second);
     }
+    prompt += QStringLiteral("<|im_start|>user\n%1<|im_end|>\n<|im_start|>assistant\n").arg(userContent);
 
-    QNetworkRequest request(
-        QUrl(QStringLiteral("http://127.0.0.1:%1/v1/chat/completions").arg(kAiPort)));
-    request.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/json"));
+    const quint64 epoch = m_epoch;
+    setState(Busy);
 
-    QNetworkReply *reply = m_network->post(request, QJsonDocument(payload).toJson(QJsonDocument::Compact));
-    connect(reply, &QNetworkReply::finished, this, [this, reply, trimmedQuestion, grounding]() {
-        if (reply->error() != QNetworkReply::NoError) {
-            const QString error = reply->errorString();
-            reply->deleteLater();
+    QMetaObject::invokeMethod(m_worker, [this, epoch, prompt, reasoning, trimmedQuestion, grounding]() {
+        QString generationError;
+        const QString rawAnswer = m_worker->generate(prompt, reasoning, &generationError);
+        QMetaObject::invokeMethod(this, [this, epoch, rawAnswer, generationError, trimmedQuestion, grounding]() {
+            if (epoch != m_epoch)
+                return;
+
+            QString answer = cleanModelReply(rawAnswer);
             setState(Ready);
-            emit responseError(QStringLiteral("Erreur du moteur d'IA locale : %1").arg(error));
-            return;
-        }
-
-        const QJsonDocument document = QJsonDocument::fromJson(reply->readAll());
-        reply->deleteLater();
-        QString answer;
-        if (document.isObject()) {
-            const QJsonArray choices = document.object().value(QStringLiteral("choices")).toArray();
-            if (!choices.isEmpty()) {
-                answer = choices.first().toObject()
-                             .value(QStringLiteral("message")).toObject()
-                             .value(QStringLiteral("content")).toString();
+            if (!generationError.isEmpty() && answer.isEmpty()) {
+                emit responseError(QStringLiteral("Erreur du moteur d'IA locale ONNX : %1").arg(generationError));
+                return;
             }
-        }
-
-        answer = cleanModelReply(answer);
-        setState(Ready);
-
-        if (likelyWrongLanguage(answer))
-            answer.clear();
-
-        if (answer.isEmpty() || isQuestionEcho(trimmedQuestion, answer)) {
-            if (!grounding.isEmpty())
-                answer = grounding;
-            else
+            if (likelyWrongLanguage(answer))
                 answer.clear();
-        }
-
-        if (answer.isEmpty()) {
-            emit responseError(QStringLiteral(
-                "Le modèle local n'a pas produit de réponse exploitable dans la langue active."));
-            return;
-        }
-
-        rememberTurn(m_conversation, trimmedQuestion, answer);
-        emit responseReady(answer);
-    });
+            if (answer.isEmpty() || isQuestionEcho(trimmedQuestion, answer))
+                answer = grounding;
+            if (answer.isEmpty()) {
+                emit responseError(QStringLiteral("Le modèle local n'a pas produit de réponse exploitable dans la langue active."));
+                return;
+            }
+            rememberTurn(m_conversation, trimmedQuestion, answer);
+            emit responseReady(answer);
+        }, Qt::QueuedConnection);
+    }, Qt::QueuedConnection);
 }
 
-void LocalAiClient::clearConversation()
-{
-    m_conversation.clear();
-}
+void LocalAiClient::clearConversation() { m_conversation.clear(); }
 
 void LocalAiClient::shutdown()
 {
-    if (m_healthTimer)
-        m_healthTimer->stop();
-
-    m_state = NotStarted;
-    if (m_startedServer && m_server && m_server->state() != QProcess::NotRunning) {
-        m_server->terminate();
-        if (!m_server->waitForFinished(1200)) {
-            m_server->kill();
-            m_server->waitForFinished(500);
-        }
+    ++m_epoch;
+    if (m_worker)
+        m_worker->requestCancel();
+    if (m_worker && m_workerThread && m_workerThread->isRunning()
+        && QThread::currentThread() != m_workerThread) {
+        QMetaObject::invokeMethod(m_worker, [this]() { m_worker->reset(); }, Qt::BlockingQueuedConnection);
     }
-    m_startedServer = false;
+    m_state = NotStarted;
+    m_lastError.clear();
 }
 
 void LocalAiClient::setState(State state, const QString &error)
@@ -753,7 +778,6 @@ void LocalAiClient::setState(State state, const QString &error)
         m_lastError = error;
     else if (state == Ready || state == Starting)
         m_lastError.clear();
-
     if (m_state == state && error.isEmpty())
         return;
     m_state = state;
@@ -770,10 +794,8 @@ QString LocalAiClient::statusText() const
     case Ready: return QStringLiteral("IA locale prête");
     case Busy: return QStringLiteral("IA locale en réponse");
     case Error:
-        if (m_lastError.isEmpty())
-            return QStringLiteral("erreur IA locale");
-        return QStringLiteral("erreur IA locale : %1")
-            .arg(m_lastError.simplified().left(140));
+        if (m_lastError.isEmpty()) return QStringLiteral("erreur IA locale");
+        return QStringLiteral("erreur IA locale : %1").arg(m_lastError.simplified().left(140));
     }
     return QStringLiteral("IA locale");
 }
@@ -783,7 +805,6 @@ QString LocalAiClient::systemPrompt() const
     const QString languageCode = activeLanguageCode();
     const QString languageName = activeLanguageName(languageCode);
     const QString runtimeDate = QDate::currentDate().toString(Qt::ISODate);
-
     return QStringLiteral(
         "You are IA MEMS, the conversational assistant integrated into ECU MEMS Manager. "
         "The active MEMS Manager interface language is %1 (%2). Answer strictly in that language unless the user explicitly asks for another language. "
@@ -809,8 +830,7 @@ QString LocalAiClient::systemPrompt() const
 
 QString LocalAiClient::cleanModelReply(QString text) const
 {
-    text.remove(QRegularExpression(QStringLiteral("<think>.*?</think>"),
-                                   QRegularExpression::DotMatchesEverythingOption));
+    text.remove(QRegularExpression(QStringLiteral("<think>.*?</think>"), QRegularExpression::DotMatchesEverythingOption));
     text.replace(QStringLiteral("/no_think"), QString());
     text.replace(QStringLiteral("/think"), QString());
     return text.trimmed();
