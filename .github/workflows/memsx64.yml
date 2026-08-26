@@ -184,7 +184,7 @@ jobs:
           print(f'PASS expert SQLite r{revision}: tables={tables}')
           '@ | python -
 
-      - name: Build adaptive shared multi-variant llama.cpp b10516 runtime
+      - name: Build shared llama.cpp b10516 runtime with x64 backend isolation
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -223,23 +223,33 @@ jobs:
           $server = Get-ChildItem $build -Recurse -File -Filter 'llama-server.exe' | Where-Object { $_.FullName -match '\\Release\\' } | Select-Object -First 1
           if (-not $server) { $server = Get-ChildItem $build -Recurse -File -Filter 'llama-server.exe' | Select-Object -First 1 }
           if (-not $server) { throw 'llama-server.exe missing after build' }
-
           Copy-Item $server.FullName (Join-Path $runtimeStage 'llama-server.exe') -Force
 
-          $runtimeDlls = @(Get-ChildItem $build -Recurse -File -Filter '*.dll' |
+          $allCpuBackends = @(Get-ChildItem $build -Recurse -File -Filter 'ggml-cpu-*.dll' |
             Where-Object { $_.FullName -match '\\Release\\' } |
             Sort-Object -Property Name -Unique)
-          if ($runtimeDlls.Count -lt 6) { throw "Shared llama runtime DLL set unexpectedly small: $($runtimeDlls.Count)" }
-          foreach ($dll in $runtimeDlls) {
-            Copy-Item $dll.FullName (Join-Path $runtimeStage $dll.Name) -Force
+          if ($allCpuBackends.Count -lt 3) { throw "Expected multi-variant build outputs, found $($allCpuBackends.Count) CPU backends" }
+          if (@($allCpuBackends | Where-Object { $_.Name.ToLowerInvariant() -eq 'ggml-cpu-x64.dll' }).Count -ne 1) {
+            throw 'Baseline ggml-cpu-x64.dll backend missing or duplicated in build outputs'
           }
 
-          $runtimeNames = @(Get-ChildItem $runtimeStage -File | ForEach-Object { $_.Name.ToLowerInvariant() })
-          foreach ($requiredName in @('llama.dll','ggml.dll','ggml-base.dll','ggml-cpu-x64.dll','ggml-cpu-haswell.dll')) {
-            if ($runtimeNames -notcontains $requiredName) { throw "Required shared llama runtime file missing: $requiredName" }
+          foreach ($requiredName in @('llama.dll','ggml.dll','ggml-base.dll','ggml-cpu-x64.dll')) {
+            $candidate = Get-ChildItem $build -Recurse -File -Filter $requiredName |
+              Where-Object { $_.FullName -match '\\Release\\' } |
+              Select-Object -First 1
+            if (-not $candidate) { throw "Required shared llama runtime file missing from build: $requiredName" }
+            Copy-Item $candidate.FullName (Join-Path $runtimeStage $requiredName) -Force
+          }
+
+          $runtimeDlls = @(Get-ChildItem $runtimeStage -File -Filter '*.dll')
+          $runtimeNames = @($runtimeDlls | ForEach-Object { $_.Name.ToLowerInvariant() })
+          foreach ($requiredName in @('llama.dll','ggml.dll','ggml-base.dll','ggml-cpu-x64.dll')) {
+            if ($runtimeNames -notcontains $requiredName) { throw "Required isolated runtime file missing: $requiredName" }
           }
           $cpuBackends = @(Get-ChildItem $runtimeStage -File -Filter 'ggml-cpu-*.dll')
-          if ($cpuBackends.Count -lt 3) { throw "Expected multiple ggml CPU backends, found $($cpuBackends.Count)" }
+          if ($cpuBackends.Count -ne 1 -or $cpuBackends[0].Name.ToLowerInvariant() -ne 'ggml-cpu-x64.dll') {
+            throw "x64 isolation failed: packaged runtime CPU backends = $($cpuBackends.Name -join ', ')"
+          }
 
           $cache = Get-Content (Join-Path $build 'CMakeCache.txt') -Raw
           foreach ($required in @(
@@ -264,7 +274,7 @@ jobs:
             $env:PATH = $savedPath
           }
 
-          Write-Host "PASS adaptive shared llama runtime: $($cpuBackends.Count) CPU backends, $($runtimeDlls.Count) DLLs"
+          Write-Host "PASS shared llama x64 isolation: build backends=$($allCpuBackends.Count), runtime backends=1, runtime DLLs=$($runtimeDlls.Count)"
           Write-Host ((Get-ChildItem $runtimeStage -File | ForEach-Object { $_.Name }) -join ', ')
           "AI_RUNTIME_DIR=$runtimeStage" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
@@ -333,7 +343,7 @@ jobs:
               "name": "llama.cpp",
               "release": "b10516",
               "source_commit": "b95502ba9aa0eb73a2f4fc8878d7fbe6a847a0b9",
-              "profile": "adaptive shared x64 CPU backends; BUILD_SHARED_LIBS=ON; GGML_NATIVE=OFF; GGML_BACKEND_DL=ON; GGML_CPU_ALL_VARIANTS=ON; x64 baseline fallback; no OpenMP; no OpenSSL"
+              "profile": "diagnostic shared x64 isolation; BUILD_SHARED_LIBS=ON; GGML_NATIVE=OFF; GGML_BACKEND_DL=ON; only ggml-cpu-x64.dll exposed at runtime; no OpenMP; no OpenSSL"
             },
             "model": {
               "name": "Qwen3-0.6B-Q8_0",
@@ -351,7 +361,7 @@ jobs:
           @(
             'ECU MEMS Manager BUILD #30 / v1.0.30',
             'IA locale: Qwen3-0.6B-Q8_0 + llama.cpp b10516',
-            'Runtime x64 adaptatif partagé: sélection automatique du meilleur backend CPU compatible, avec x64 de repli',
+            'Runtime diagnostic partagé x64: seul ggml-cpu-x64.dll est exposé afin d’isoler le crash du chargeur multi-variantes',
             'Base experte r20 préconstruite par CI et emballée sous database/expert',
             'Le désinstalleur ecu_mems_uninstaller.exe est inclus.',
             'Le profil utilisateur est conservé par défaut pendant la désinstallation.'
@@ -387,7 +397,6 @@ jobs:
               root/'ai'/'ggml.dll',
               root/'ai'/'ggml-base.dll',
               root/'ai'/'ggml-cpu-x64.dll',
-              root/'ai'/'ggml-cpu-haswell.dll',
               root/'ai'/'models'/'ia-mems.gguf',
               root/'ai'/'runtime_manifest.json',
               root/'database'/'reference'/'manifest.json',
@@ -403,12 +412,10 @@ jobs:
                   raise SystemExit(f'{name} is not AMD64: 0x{pe.FILE_HEADER.Machine:04X}')
 
           runtime_dlls=sorted((root/'ai').glob('*.dll'))
-          if len(runtime_dlls) < 6:
-              raise SystemExit(f'Shared llama runtime DLL set incomplete: {len(runtime_dlls)}')
           runtime_names={p.name.lower() for p in runtime_dlls}
-          for required_dll in ('llama.dll','ggml.dll','ggml-base.dll','ggml-cpu-x64.dll','ggml-cpu-haswell.dll'):
-              if required_dll not in runtime_names:
-                  raise SystemExit('Required shared runtime DLL missing: '+required_dll)
+          required_runtime={'llama.dll','ggml.dll','ggml-base.dll','ggml-cpu-x64.dll'}
+          if runtime_names != required_runtime:
+              raise SystemExit('x64 isolated runtime DLL set mismatch: '+', '.join(sorted(runtime_names)))
           for dll in runtime_dlls:
               pe=pefile.PE(str(dll))
               if pe.FILE_HEADER.Machine != 0x8664:
@@ -419,8 +426,8 @@ jobs:
                   raise SystemExit(f'{dll.name} has forbidden dependencies: '+', '.join(forbidden))
 
           cpu_backends=sorted((root/'ai').glob('ggml-cpu-*.dll'))
-          if len(cpu_backends) < 3:
-              raise SystemExit(f'Expected multi-variant CPU backends, found {len(cpu_backends)}')
+          if len(cpu_backends) != 1 or cpu_backends[0].name.lower() != 'ggml-cpu-x64.dll':
+              raise SystemExit('Expected only ggml-cpu-x64.dll, found: '+', '.join(p.name for p in cpu_backends))
 
           server=pefile.PE(str(root/'ai'/'llama-server.exe'))
           server_imports=[entry.dll.decode(errors='replace').lower() for entry in getattr(server,'DIRECTORY_ENTRY_IMPORT',[])]
@@ -444,15 +451,15 @@ jobs:
           required_manifest={
               'ecu_mems_manager.exe','ecu_mems_uninstaller.exe','mems_manager_x64.dll',
               'ai/llama-server.exe','ai/llama.dll','ai/ggml.dll','ai/ggml-base.dll',
-              'ai/ggml-cpu-x64.dll','ai/ggml-cpu-haswell.dll','ai/models/ia-mems.gguf',
+              'ai/ggml-cpu-x64.dll','ai/models/ia-mems.gguf',
               'database/expert/ia_mems_reference_r20.sqlite','install_manifest.txt'
           }
           absent=sorted(required_manifest-normalized)
           if absent: raise SystemExit('install_manifest missing: '+', '.join(absent))
-          print(f'PASS BUILD 30 package: expert r{revision}, tables={tables}, runtime DLLs={len(runtime_dlls)}, CPU backends={len(cpu_backends)}, manifest files={len(normalized)}')
+          print(f'PASS BUILD 30 package: expert r{revision}, tables={tables}, isolated runtime DLLs={len(runtime_dlls)}, CPU backends={len(cpu_backends)}, manifest files={len(normalized)}')
           '@ | python -
 
-      - name: Validate packaged adaptive llama server model and API
+      - name: Validate packaged x64-isolated llama server model and API
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -460,7 +467,9 @@ jobs:
           $server = Join-Path $aiDir 'llama-server.exe'
           $model = Join-Path $aiDir 'models\ia-mems.gguf'
           $backends = @(Get-ChildItem $aiDir -File -Filter 'ggml-cpu-*.dll')
-          if ($backends.Count -lt 3) { throw "Packaged CPU backend set incomplete: $($backends.Count)" }
+          if ($backends.Count -ne 1 -or $backends[0].Name.ToLowerInvariant() -ne 'ggml-cpu-x64.dll') {
+            throw "Packaged x64 isolation invalid: $($backends.Name -join ', ')"
+          }
 
           $savedPath = $env:PATH
           $env:PATH = "$aiDir;$savedPath"
@@ -471,8 +480,8 @@ jobs:
           }
           finally { Pop-Location }
 
-          $stdoutLog = Join-Path $env:RUNNER_TEMP 'llama-adaptive-stdout.log'
-          $stderrLog = Join-Path $env:RUNNER_TEMP 'llama-adaptive-stderr.log'
+          $stdoutLog = Join-Path $env:RUNNER_TEMP 'llama-x64-isolation-stdout.log'
+          $stderrLog = Join-Path $env:RUNNER_TEMP 'llama-x64-isolation-stderr.log'
           Remove-Item $stdoutLog,$stderrLog -Force -ErrorAction SilentlyContinue
           $arguments = @('-m', $model, '--alias', 'ia-mems', '--host', '127.0.0.1', '--port', '18089', '-c', '4096', '-np', '1', '--no-webui', '--offline', '--reasoning', 'off')
           $process = Start-Process -FilePath $server -WorkingDirectory $aiDir -ArgumentList $arguments -RedirectStandardOutput $stdoutLog -RedirectStandardError $stderrLog -PassThru -WindowStyle Hidden
@@ -513,12 +522,12 @@ jobs:
           }
 
           $runtimeLog = ((Get-Content $stdoutLog -Raw -ErrorAction SilentlyContinue) + "`n" + (Get-Content $stderrLog -Raw -ErrorAction SilentlyContinue))
-          if ($runtimeLog -notmatch 'ggml-cpu-[A-Za-z0-9_.-]+\.dll') {
+          $selected = [regex]::Matches($runtimeLog, 'ggml-cpu-[A-Za-z0-9_.-]+\.dll') | ForEach-Object { $_.Value.ToLowerInvariant() } | Select-Object -Unique
+          if ($selected.Count -ne 1 -or $selected[0] -ne 'ggml-cpu-x64.dll') {
             Write-Host $runtimeLog
-            throw 'Adaptive runtime did not report loading a ggml CPU backend DLL'
+            throw "x64 isolation runtime loaded unexpected CPU backend set: $($selected -join ', ')"
           }
-          $selected = [regex]::Matches($runtimeLog, 'ggml-cpu-[A-Za-z0-9_.-]+\.dll') | ForEach-Object { $_.Value } | Select-Object -Unique
-          Write-Host "PASS adaptive CPU backend loader: $($selected -join ', ')"
+          Write-Host 'PASS x64-isolated CPU backend loader: ggml-cpu-x64.dll'
 
       - name: Smoke launch ECU MEMS Manager
         shell: pwsh
@@ -547,7 +556,6 @@ jobs:
             'ai\ggml.dll',
             'ai\ggml-base.dll',
             'ai\ggml-cpu-x64.dll',
-            'ai\ggml-cpu-haswell.dll',
             'ai\models\ia-mems.gguf',
             'database\expert\ia_mems_reference_r20.sqlite'
           )
