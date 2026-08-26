@@ -10,7 +10,7 @@
 
 > **RÈGLE DE NOMMAGE GITHUB POUR LES ÉCHANGES AVEC L’UTILISATEUR : annoncer une exécution sous la forme `ECU MEMS Manager x64 #NN — Commit xxxxxxx`. Le `#NN` affiché par GitHub est le numéro d’exécution du workflow, pas le numéro de BUILD logiciel. Éviter les formulations ambiguës du type « build #44 » pour parler d’une Action GitHub.**
 
-## JOURNAL IMMÉDIAT — 25 août 2026
+## JOURNAL IMMÉDIAT — 25/26 août 2026
 
 ### Architecture IA x64 retenue
 
@@ -77,7 +77,6 @@ Changements réalisés :
 - `iaresponsecontextpatch.cpp` supprimé du dépôt ; l’horodatage des mesures est traité directement dans le service.
 - `CMakeLists.txt` ne compile plus aucun de ces anciens patches/wrappers IA.
 - `/no_think` supprimé des requêtes et du prompt de l’application ; Qwen garde son raisonnement natif actif dans MEMS Manager.
-- Budget de réponse réel porté à 1024 tokens pour laisser de la place au raisonnement puis à la réponse visible.
 - Le serveur réel utilise `--no-webui --offline`; le `--reasoning off` reste exclusivement dans le smoke-test CI court.
 - IA reste lecture seule vis-à-vis de l’ECU : elle reçoit uniquement les mesures déjà acquises par `MEMSInterface` et n’a aucune autorité de commande/mutation.
 - Formule ralenti chaud conservée selon la règle validée : `raw - 32768 - correction`.
@@ -85,97 +84,65 @@ Changements réalisés :
 
 ### Push final reconstruction propre
 
-- HEAD final `MEMSX64` : **`776fc647a874564c932bf09e8871cb771a0ed258`** — `BUILD #30 rebuild IA on clean application service`.
-- Les commits intermédiaires produits pendant la reconstruction restent des commits du même BUILD #30 et leurs Actions ont été annulées par `cancel-in-progress`; ils ne sont pas des BUILD logiciels supplémentaires.
-- Run final : **ECU MEMS Manager x64 #59 — Commit `776fc64`**.
-- Run ID : **`32898631148`** ; job : **`97967053552`**.
+- HEAD final reconstruction : **`776fc647a874564c932bf09e8871cb771a0ed258`** — `BUILD #30 rebuild IA on clean application service`.
+- Run : **ECU MEMS Manager x64 #59 — Commit `776fc64`** / `32898631148`.
+- Résultat : **VERT** ; artifact `9582674702` ; SHA-256 `ee7f12e933a17c884c6ca081c583a542f45569f556a68a50f124b58b5f13fcff`.
+- Test PC : crash d’ouverture IA supprimé ; `base prête` + `IA locale prête` atteints.
 
-### ECU MEMS Manager x64 #59 — Commit `776fc64` — VERT
+### Correction question/réponse — #60
 
-- Résultat GitHub : **SUCCESS / VERT**.
-- Les 20 étapes fonctionnelles sont vertes : protections protocole, configuration/compilation x64, application + désinstalleur + self-tests, réponses IA déterministes, ABI protocole, base de référence, génération SQLite experte r20, runtime llama.cpp b10516, Qwen3-0.6B-Q8_0, assemblage package, validation architecture x64, API Qwen empaquetée, smoke launch application, hashes et upload.
+- HEAD : **`be4916a53321e36573729e123b14c2cf120fd734`** — `BUILD #30 fix Qwen thinking responses`.
+- Date locale injectée ; anti-écho ; paramètres thinking Qwen3.
+- **ECU MEMS Manager x64 #60 — Commit `be4916a` — VERT** / run `32901653203` / artifact `9583795907` / SHA-256 `b03616086bc7bba254b8b089bff474ce275f28cc92b19a30db7300aeb6be9f4a`.
+- Test PC : date correcte, mais latence, contamination d’historique et hallucination IAC confirmées.
+
+### Routage IA rapide — #61
+
+- HEAD `MEMSX64` : **`126cc638d584975a78d0101430d61bdc435c5879`** — `BUILD #30 route IA fast and reasoning responses`.
+- Modification unique : `expert/LocalAiClient.cpp`.
+- Date courante : réponse immédiate sans Qwen.
+- IAC : réponse contrôlée `Idle Air Control`.
+- Question générale simple : `/no_think`, budget 256 tokens.
+- Diagnostic/analyse : `/think`, budget 768 tokens.
+- Historique : dernier tour uniquement pour une vraie relance détectée.
+- Raisonnement Qwen conservé pour les tâches complexes.
+
+### ECU MEMS Manager x64 #61 — Commit `126cc63` — VERT
+
+- Run GitHub : **`32904830665`** ; job : **`97986482796`**.
+- Les 20 étapes fonctionnelles sont vertes, jusqu’au smoke launch, hashes et upload.
 - Artifact : **`ECU-MEMS-Manager-x64-BUILD-30-v1.0.30`**.
-- Artifact ID : **`9582674702`**.
-- Taille : **668863270 octets**.
-- SHA-256 archive GitHub : **`ee7f12e933a17c884c6ca081c583a542f45569f556a68a50f124b58b5f13fcff`**.
-- Créé le **25 août 2026 à 21:15:31Z** ; expiration prévue le **8 septembre 2026 à 21:15:04Z**.
-- Cet artefact correspond exactement au HEAD `776fc647a874564c932bf09e8871cb771a0ed258`.
+- Artifact ID : **`9584843179`**.
+- Taille : **668869675 octets**.
+- SHA-256 archive GitHub : **`cc9cd0e2f299d563e469cac08c2d86bfe7ab52f998c7f4568d86ca3fe53aa207`**.
 
-### Test PC réel — ECU MEMS Manager x64 #59 — Commit `776fc64`
+### Test PC réel — ECU MEMS Manager x64 #61 — Commit `126cc63`
 
-Résultat utilisateur constaté sur les captures du 25 août 2026 :
+Résultat utilisateur sur PC réel, captures du 26 août 2026 :
 
-- **le crash à l’ouverture de l’onglet IA MEMS est supprimé** ;
-- statut visible : `ECU non connecté • base prête • IA locale prête` ; la base r20 et Qwen sont donc réellement démarrés sur le PC ;
-- défaut restant : l’IA ne fournit pas de réponse utile. Exemple exact : question utilisateur `quel jour somme nous?` puis réponse IA `Quel jour sommes-nous ?`, c’est-à-dire une simple reformulation/correction de la question ;
-- l’utilisateur indique que le même comportement non-répondant est observé sur les questions testées.
+- **Les réponses simples sont un peu plus rapides.** Le routage rapide apporte donc un gain perceptible, mais encore insuffisant pour considérer l’IA finalisée.
+- IAC : la définition contrôlée est maintenant correcte et en français : `Idle Air Control`, régulation de l’air de ralenti.
+- Relance `OU IL EST PLACÉ ?` après IAC : réponse inutile `IL EST PLACÉ.` ; le petit modèle ne traite pas correctement cette relance. Le routage des suivis doit utiliser le fait précédent/base plutôt que laisser Qwen improviser sans information de localisation.
+- Question `QUEL VALEUR POUR LA BOBINE ?` : réponse `Je n'ai encore reçu aucune mesure ECU.`. Cause isolée dans `IaMemsService::groundingFor()` : le mot `valeur` déclenche `currentValuesAnswer()` avant la recherche de connaissance. Une demande de **valeur de référence** est donc confondue avec une demande de **mesure actuelle**. La référence validée dwell bobine ≈ **1,9–3,1 ms vers 14 V** doit être routée comme connaissance/référence, pas comme mesure live.
+- Date : réponse immédiate correcte (`2026-08-26`).
+- Question générale `C'EST QUOI UN MOTEUR 4 TEMPS ?` : réponse en français et plus rapide, mais formulation médiocre (`temps fourni`) ; qualité générale limitée du Qwen3 0.6B confirmée.
+- Question `EXPLIQUE MOI LE ROLE DE L'ECU ?` : réponse française mais contient des fonctions automobiles inventées/hors sujet (`gestion des voies`, `auto-stop`, `auto-accélération`, `auto-remise de la clé`). Il faut donc davantage de réponses contrôlées/base pour le domaine automobile au lieu de confier ces définitions au modèle général.
+- `QUEL TYPE D'ECU MEMS EXISTE ?` : réponse trop vague et non exploitable.
+- `1.6` seul : le routeur produit le fallback générique puis le modèle ne produit pas de réponse exploitable.
+- `MEMS 1.6` : **réponse en anglais et techniquement fausse pour notre domaine**, Qwen interprétant MEMS comme `Micro-Electro-Mechanical System`. C’est un défaut critique de routage de domaine : dans IA MEMS, `MEMS` doit signifier en priorité le système de gestion moteur Rover/Lucas MEMS, jamais le domaine générique des microsystèmes, sauf demande explicite de l’utilisateur.
+- `REPOND EN FRANCAIS` : le modèle n’arrive pas à se recaler de façon fiable et finit par un échec exploitable. La langue ne doit pas dépendre seulement d’une consigne système en anglais au petit modèle ; le français doit être **imposé par le routeur** lorsque l’interface est française.
+- **Défaut navigation responsive sur ce PC** : lorsque l’utilisateur sélectionne `Test ECU 1.9`, `Aperçu` disparaît visuellement du haut de la barre latérale. Inspection de `navigationorderpatch.cpp` : `tabs.currentChanged` appelle `nav->setCurrentRow(index)` ; `QListWidget` fait alors défiler automatiquement l’élément courant dans sa fenêtre. Sur ce PC, la hauteur disponible n’affiche pas simultanément les 14 lignes, donc la sélection de la ligne 14 décale la liste d’une ligne et masque `Aperçu`. **Aperçu n’est pas supprimé ; la liste est simplement scrollée.** Ce comportement viole l’exigence responsive : les 14 onglets doivent rester visibles dans le panneau latéral quand la résolution le permet, sans faire disparaître le premier onglet lors de la sélection du dernier.
 
-### Isolation du défaut question/réponse après reconstruction
+### Corrections requises avant nouvelle validation PC
 
-Le câblage propre `IaMemsTab -> IaMemsService -> LocalAiClient -> responseReady -> IaMemsTab` est vérifié : la question part bien et une chaîne Qwen revient bien dans la vue. Le défaut n’est donc plus un problème de signal Qt ni de démarrage du sidecar.
+Sans créer BUILD #31 et sans toucher au protocole ECU :
 
-Deux défauts concrets ont été identifiés avant correction :
-
-1. le nettoyage de l’ancien `iamemsqualitypatch.cpp` a retiré avec lui le traitement déterministe de la date courante ; `IaMemsService::groundingFor()` ne fournit actuellement aucune date locale pour une question comme « quel jour sommes-nous ? », et Qwen seul ne possède pas l’heure/date runtime du PC ;
-2. le raisonnement Qwen3 est maintenant actif, mais `LocalAiClient` utilise encore `temperature=0.25`, `top_p=0.9` et aucun `top_k`. La documentation officielle Qwen3 recommande en thinking `temperature=0.6`, `top_p=0.95`, `top_k=20`, `min_p=0` et déconseille les réglages favorisant les répétitions. Ces paramètres doivent être appliqués au mode raisonnement réel.
-
-Garde-fou également requis : une sortie qui n’est qu’une reformulation normalisée de la question ne doit plus être acceptée comme réponse valide. Si un contexte déterministe fiable existe, il doit servir de repli ; sinon l’échec doit être explicite plutôt que d’afficher un écho.
-
-### Correction question/réponse poussée — BUILD #30
-
-- Nouveau HEAD `MEMSX64` : **`be4916a53321e36573729e123b14c2cf120fd734`** — `BUILD #30 fix Qwen thinking responses`.
-- Modification ciblée sur `expert/LocalAiClient.cpp` uniquement.
-- Paramètres de génération du mode thinking alignés sur Qwen3 : `temperature=0.6`, `top_p=0.95`, `top_k=20`, `min_p=0`.
-- La date/heure locale du PC est désormais injectée dans le contexte runtime afin qu’une question de date ne repose pas sur la mémoire figée du modèle.
-- Un garde-fou rejette les sorties qui ne font que reformuler/faire écho à la question ; le contexte déterministe sert alors de repli lorsqu’il existe.
-- Le raisonnement Qwen reste actif dans l’application ; `--reasoning off` reste réservé au smoke-test CI.
-- Aucun changement protocole ECU, UI, base experte r20, modèle Qwen ou architecture propre.
-
-### ECU MEMS Manager x64 #60 — Commit `be4916a` — VERT
-
-- Run GitHub : **`32901653203`** ; job : **`97976653225`**.
-- Résultat final : **SUCCESS / VERT**.
-- Les 20 étapes fonctionnelles sont vertes, y compris compilation application + désinstalleur + self-tests, base experte r20, runtime llama.cpp b10516, Qwen3-0.6B-Q8_0, API empaquetée, smoke launch, hashes et upload.
-- Artifact : **`ECU-MEMS-Manager-x64-BUILD-30-v1.0.30`**.
-- Artifact ID : **`9583795907`**.
-- Taille : **668866141 octets**.
-- SHA-256 archive GitHub : **`b03616086bc7bba254b8b089bff474ce275f28cc92b19a30db7300aeb6be9f4a`**.
-- Créé le **25 août 2026 à 21:49:42Z** ; expiration prévue le **8 septembre 2026 à 21:49:13Z**.
-- Cet artefact correspond exactement au HEAD `be4916a53321e36573729e123b14c2cf120fd734`.
-
-### Test PC réel — ECU MEMS Manager x64 #60 — Commit `be4916a`
-
-- Le crash reste supprimé ; `base prête` et `IA locale prête` sont atteints.
-- La question de date répond désormais correctement.
-- Défaut de contexte : après la date, la question générale `C'est quoi un moteur 4 temps ?` reçoit encore la réponse précédente sur la date. Le petit modèle reçoit les anciens tours et se laisse contaminer par un sujet sans rapport.
-- Défaut de connaissance/routage : `C'est quoi l'IAC ?` produit `Intégration Automatique Contrôlée`, réponse fausse/hallucinée. Dans le contexte automobile visé, IAC signifie `Idle Air Control`, système de régulation d'air de ralenti ; une définition technique doit venir de la base/glossaire contrôlé avant de laisser Qwen improviser.
-- Latence jugée trop longue par l'utilisateur ; l'interface reste longtemps sur `IA locale en réponse`.
-- Cause de latence identifiée : le chemin actuel autorise jusqu'à 1536 tokens en thinking même pour une question triviale, ce qui est disproportionné pour Qwen3-0.6B local sur CPU.
-
-### Étape autorisée — routage IA rapide et raisonnement ciblé
-
-Objectif exact autorisé par l'utilisateur (`GO`) : corriger ces trois défauts dans le même BUILD #30, sans réintroduire les anciens patches et sans toucher au protocole ECU.
-
-Architecture de réponse à appliquer :
-- faits déterministes possédés par l'application (date/heure, états runtime) : réponse immédiate sans génération LLM ;
-- questions générales simples et définitions courantes : Qwen en mode rapide non-thinking, budget court ;
-- définitions techniques MEMS connues : base experte/glossaire contrôlé prioritaire, puis formulation courte ; ne jamais laisser Qwen inventer le développement d'un acronyme MEMS ;
-- diagnostic, analyse de mesures, hypothèses et questions réellement complexes : Qwen thinking actif avec base + moteur expert + mesures ECU ;
-- ne plus injecter automatiquement tout l'historique à chaque requête ; n'utiliser le tour précédent que lorsqu'une question est clairement une relance dépendante du contexte ;
-- conserver le raisonnement Qwen disponible et actif pour les tâches qui le nécessitent ; le routage rapide n'est pas une désactivation globale du raisonnement.
-
-### Routage IA rapide poussé — BUILD #30
-
-- Nouveau HEAD `MEMSX64` : **`126cc638d584975a78d0101430d61bdc435c5879`** — `BUILD #30 route IA fast and reasoning responses`.
-- Modification unique : `expert/LocalAiClient.cpp` ; aucune modification du protocole, de l'UI, de la base r20, du modèle ou de l'architecture de service.
-- Date courante : réponse immédiate depuis le runtime, sans appel Qwen.
-- Définition IAC : réponse contrôlée `Idle Air Control`, sans possibilité d'inventer un autre développement.
-- Tout contexte déterministe non-diagnostique fourni par MEMS Manager est retourné directement au lieu d'être paraphrasé par le petit modèle.
-- Question générale simple sans contexte déterministe : Qwen3 utilise `/no_think`, paramètres non-thinking recommandés et `max_tokens=256`.
-- Diagnostic/analyse complexe : Qwen3 utilise explicitement `/think`, paramètres thinking conservés et budget borné à `max_tokens=768`.
-- Historique : un nouveau sujet démarre sans ancien tour ; seul le dernier tour est transmis lorsqu'une relance dépendante est détectée.
-- Le raisonnement Qwen reste donc disponible et actif pour les diagnostics ; il n'est plus payé sur les questions triviales.
-- Prompt renforcé : interdiction d'inventer le développement d'un acronyme automobile/MEMS.
+1. **Langue** : imposer la langue active de l’interface au niveau de chaque requête/réponse ; en français, une réponse anglaise non demandée doit être refusée/reformulée ou remplacée par une réponse contrôlée.
+2. **Domaine MEMS** : ajouter un garde-fou fort `MEMS = Rover/Lucas engine management` dans le contexte IA MEMS et utiliser la base experte avant le savoir général ; ne jamais laisser Qwen développer MEMS comme `Micro-Electro-Mechanical System` dans ce contexte.
+3. **Références techniques** : distinguer demande de valeur de référence et demande de mesure actuelle ; pour la bobine/dwell, fournir la référence validée 1,9–3,1 ms vers 14 V lorsqu’elle est demandée.
+4. **Définitions automobile/MEMS** : augmenter les réponses contrôlées/base pour ECU, familles MEMS, IAC et autres notions centrales afin d’éviter les hallucinations du 0.6B.
+5. **Relances** : les relances courtes (`où il est placé ?`, `et pourquoi ?`) doivent conserver le fait technique précédent pertinent, pas seulement le texte brut du dernier tour.
+6. **Navigation** : adapter la hauteur/hauteur de lignes de `uiRebuildNav` à l’espace disponible pour que les 14 entrées restent visibles ; ne pas corriger en réordonnant les onglets ni en supprimant le comportement responsive.
 
 ---
 
@@ -193,12 +160,11 @@ Architecture de réponse à appliquer :
 
 - #26 `12fef48c68807bc59d2f45f9cd8d86d2a42856ca`, run `32816285887` SUCCESS ; navigation/onglet IA PC stables sans runtime Qwen emballé.
 - #27 `a6f9b209f32b6dd77774832e8c84469c53deca47`, run `32832192437` SUCCESS ; AANMP002/MNE101150, COM3 FTDI, ROSCO 1.3/1.6, Injection RAM Mode4 ≈2,63 ms.
-- #28 `0533adaf50cf2c4d62a1ba5241a0100dfa1b48e8`, run `32842049458` SUCCESS, artifact `9561033224`, SHA256 `50407002f1368be30a163714ab8765a4ea7fe283fa8fd46cb1dcbd4015025e1b`.
-- #29 final `fee195e88d3615613b8f92de83209da2cf8247c2`; runtime COMPAT validé séparément ; Qwen avait atteint `IA locale prête` sur PC.
-- #30 pré-reconstruction `414ea52970e02fb6077c94ca2aa7aec3e92d7383`, ECU MEMS Manager x64 #45 SUCCESS CI mais crash PC réel à l'ouverture IA.
-- #30 reconstruction propre : HEAD `776fc647a874564c932bf09e8871cb771a0ed258`, ECU MEMS Manager x64 #59 SUCCESS ; crash d'ouverture corrigé sur PC.
-- #30 correction réponses Qwen : HEAD `be4916a53321e36573729e123b14c2cf120fd734`, ECU MEMS Manager x64 #60 SUCCESS ; date corrigée, mais latence, contamination d'historique et hallucination IAC confirmées sur PC.
-- #30 routage rapide : HEAD `126cc638d584975a78d0101430d61bdc435c5879`, validation GitHub à suivre.
+- #28 `0533adaf50cf2c4d62a1ba5241a0100dfa1b48e8`, run `32842049458` SUCCESS.
+- #29 final `fee195e88d3615613b8f92de83209da2cf8247c2`.
+- #30 reconstruction propre `776fc647a874564c932bf09e8871cb771a0ed258`, #59 SUCCESS.
+- #30 réponses Qwen `be4916a53321e36573729e123b14c2cf120fd734`, #60 SUCCESS.
+- #30 routage rapide `126cc638d584975a78d0101430d61bdc435c5879`, #61 SUCCESS ; test PC : vitesse améliorée, mais langue/domaine MEMS/qualité et navigation responsive encore à corriger.
 
 ## VERSIONNAGE
 
@@ -226,4 +192,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Suivre l'Action GitHub déclenchée par le HEAD `126cc638d584975a78d0101430d61bdc435c5879`. Si rouge, consigner la cause exacte avant toute correction. Si verte, consigner l'artifact puis tester sur PC : date immédiate, moteur 4 temps sans contamination, IAC correct et rapide, puis une vraie question de diagnostic pour vérifier que le thinking reste actif. Aucun BUILD #31.**
+**Après autorisation utilisateur : corriger dans le même BUILD #30 les six points issus du test PC #61 : langue active imposée, garde-fou domaine Rover/Lucas MEMS, distinction valeur de référence/mesure live, définitions techniques contrôlées, relances contextualisées, et sidebar responsive gardant les 14 onglets visibles. Aucun changement protocole ECU et aucun BUILD #31.**
