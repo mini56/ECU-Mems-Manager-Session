@@ -31,6 +31,16 @@ QString firstExisting(const QStringList &paths)
     return QString();
 }
 
+QString activeLanguageCode()
+{
+    QString code = I18n::language().trimmed().toLower();
+    const QStringList supported = {QStringLiteral("fr"), QStringLiteral("en"), QStringLiteral("es"),
+                                   QStringLiteral("it"), QStringLiteral("pt"), QStringLiteral("de")};
+    if (!supported.contains(code))
+        code = QStringLiteral("fr");
+    return code;
+}
+
 QString activeLanguageName(const QString &code)
 {
     if (code == QStringLiteral("en")) return QStringLiteral("English");
@@ -52,7 +62,7 @@ QString normalizedPlainText(QString text)
             || category == QChar::Mark_SpacingCombining
             || category == QChar::Mark_Enclosing)
             continue;
-        if (ch.isLetterOrNumber())
+        if (ch.isLetterOrNumber() || ch == QLatin1Char('.'))
             result.append(ch);
         else
             result.append(QLatin1Char(' '));
@@ -109,7 +119,7 @@ bool asksCurrentDate(const QString &question)
 QString currentDateAnswer()
 {
     const QDate today = QDate::currentDate();
-    const QString code = I18n::language().trimmed().toLower();
+    const QString code = activeLanguageCode();
 
     if (code == QStringLiteral("en")) {
         const QLocale locale(QLocale::English, QLocale::UnitedKingdom);
@@ -136,32 +146,110 @@ QString currentDateAnswer()
     return QStringLiteral("Nous sommes le %1.").arg(locale.toString(today, QStringLiteral("dddd d MMMM yyyy")));
 }
 
+bool asksLocation(const QString &question)
+{
+    const QString plain = normalizedPlainText(question);
+    return plain.startsWith(QStringLiteral("ou il est"))
+        || plain.startsWith(QStringLiteral("ou est"))
+        || plain.startsWith(QStringLiteral("ou se trouve"))
+        || plain.contains(QStringLiteral("ou est place"))
+        || plain.contains(QStringLiteral("ou est situe"))
+        || plain.contains(QStringLiteral("quel emplacement"));
+}
+
+bool isMemsDomainQuestion(const QString &question, const QString &grounding)
+{
+    const QString plain = normalizedPlainText(question);
+    return plain.contains(QStringLiteral("mems"))
+        || plain.contains(QStringLiteral("ecu"))
+        || plain.contains(QStringLiteral("rosco"))
+        || plain.contains(QStringLiteral("firmware"))
+        || plain.contains(QStringLiteral("iac"))
+        || plain.contains(QStringLiteral("lambda"))
+        || plain.contains(QStringLiteral("injection"))
+        || plain.contains(QStringLiteral("bobine"))
+        || plain.contains(QStringLiteral("dwell"))
+        || !grounding.trimmed().isEmpty();
+}
+
 QString controlledTechnicalAnswer(const QString &question)
 {
     const QString plain = normalizedPlainText(question);
+    const QString code = activeLanguageCode();
+
     static const QRegularExpression iacRx(QStringLiteral("(^|\\s)iacv?(\\s|$)"));
-    if (!iacRx.match(plain).hasMatch())
+    if (iacRx.match(plain).hasMatch()) {
+        if (code == QStringLiteral("en"))
+            return QStringLiteral("IAC means Idle Air Control. It is the idle-air regulation system used by the ECU to adjust the air needed to stabilise idle speed. Depending on the MEMS installation, the physical idle actuator can differ.");
+        if (code == QStringLiteral("es"))
+            return QStringLiteral("IAC significa Idle Air Control: es el sistema de regulación del aire de ralentí que utiliza la ECU para estabilizar el régimen. El actuador físico puede variar según la instalación MEMS.");
+        if (code == QStringLiteral("it"))
+            return QStringLiteral("IAC significa Idle Air Control: è il sistema di regolazione dell'aria al minimo usato dalla ECU per stabilizzare il regime. L'attuatore fisico può variare secondo l'installazione MEMS.");
+        if (code == QStringLiteral("pt"))
+            return QStringLiteral("IAC significa Idle Air Control: é o sistema de controlo do ar de ralenti usado pela ECU para estabilizar a rotação. O atuador físico pode variar consoante a instalação MEMS.");
+        if (code == QStringLiteral("de"))
+            return QStringLiteral("IAC bedeutet Idle Air Control. Damit regelt das ECU-System die Leerlaufluft, um die Leerlaufdrehzahl zu stabilisieren. Der konkrete Leerlaufsteller kann je nach MEMS-Ausführung unterschiedlich sein.");
+        return QStringLiteral("IAC signifie « Idle Air Control » : c'est le système de régulation de l'air de ralenti utilisé par l'ECU pour stabiliser le régime. L'actionneur physique de ralenti peut varier selon le montage MEMS.");
+    }
+
+    if (code != QStringLiteral("fr"))
         return QString();
 
-    const QString code = I18n::language().trimmed().toLower();
-    if (code == QStringLiteral("en"))
-        return QStringLiteral("IAC means Idle Air Control. It is the idle-air regulation system used by the ECU to adjust the air needed to stabilise idle speed. Depending on the MEMS installation, the physical idle actuator can differ.");
-    if (code == QStringLiteral("es"))
-        return QStringLiteral("IAC significa Idle Air Control: es el sistema de regulación del aire de ralentí que utiliza la ECU para estabilizar el régimen. El actuador físico puede variar según la instalación MEMS.");
-    if (code == QStringLiteral("it"))
-        return QStringLiteral("IAC significa Idle Air Control: è il sistema di regolazione dell'aria al minimo usato dalla ECU per stabilizzare il regime. L'attuatore fisico può variare secondo l'installazione MEMS.");
-    if (code == QStringLiteral("pt"))
-        return QStringLiteral("IAC significa Idle Air Control: é o sistema de controlo do ar de ralenti usado pela ECU para estabilizar a rotação. O atuador físico pode variar consoante a instalação MEMS.");
-    if (code == QStringLiteral("de"))
-        return QStringLiteral("IAC bedeutet Idle Air Control. Damit regelt das ECU-System die Leerlaufluft, um die Leerlaufdrehzahl zu stabilisieren. Der konkrete Leerlaufsteller kann je nach MEMS-Ausführung unterschiedlich sein.");
+    if (plain.contains(QStringLiteral("repond en francais"))
+        || plain.contains(QStringLiteral("reponds en francais")))
+        return QStringLiteral("D'accord. Je répondrai en français.");
 
-    return QStringLiteral("IAC signifie « Idle Air Control » : c'est le système de régulation de l'air de ralenti utilisé par l'ECU pour stabiliser le régime. L'actionneur physique de ralenti peut varier selon le montage MEMS.");
+    if (plain.contains(QStringLiteral("moteur 4 temps"))
+        || plain.contains(QStringLiteral("moteur quatre temps")))
+        return QStringLiteral("Un moteur 4 temps réalise successivement l'admission, la compression, la combustion/détente puis l'échappement. Un cycle complet se fait sur deux tours de vilebrequin.");
+
+    if (plain.contains(QStringLiteral("ecu"))
+        && (plain.contains(QStringLiteral("role"))
+            || plain.contains(QStringLiteral("sert"))
+            || plain.contains(QStringLiteral("c est quoi"))))
+        return QStringLiteral("L'ECU est le calculateur moteur. Il lit les capteurs, calcule notamment l'injection et l'avance à l'allumage, pilote les actionneurs prévus par la version MEMS et gère les fonctions de diagnostic disponibles. Il ne faut pas lui attribuer de fonctions non documentées pour l'ECU concerné.");
+
+    if ((plain.contains(QStringLiteral("bobine")) || plain.contains(QStringLiteral("dwell")))
+        && (plain.contains(QStringLiteral("valeur"))
+            || plain.contains(QStringLiteral("reference"))
+            || plain.contains(QStringLiteral("normal"))))
+        return QStringLiteral("Pour le dwell primaire de bobine, la plage de contrôle retenue dans MEMS Manager est d'environ 1,9 à 3,1 ms vers 14 V. C'est une valeur de référence, pas une mesure du véhicule tant que l'ECU n'est pas connecté.");
+
+    const bool asksMemsTypes = plain.contains(QStringLiteral("type"))
+        && plain.contains(QStringLiteral("ecu"))
+        && plain.contains(QStringLiteral("mems"));
+    if (asksMemsTypes)
+        return QStringLiteral("Dans le périmètre d'ECU MEMS Manager, les familles de travail sont MEMS 1.2, 1.3, 1.6 et 1.9. Elles ne partagent pas toutes le même protocole ni la même interface ; les fonctions disponibles dépendent donc de la famille, du calculateur et du firmware réellement identifiés.");
+
+    static const QRegularExpression versionRx(QStringLiteral("(^|\\s)(?:mems\\s*)?(1\\.[2369])($|\\s)"));
+    const QRegularExpressionMatch versionMatch = versionRx.match(plain);
+    if (versionMatch.hasMatch()) {
+        const QString version = versionMatch.captured(2);
+        return QStringLiteral("Dans IA MEMS, MEMS %1 désigne une génération du système de gestion moteur Rover/Lucas utilisé sur les véhicules concernés par le projet. Ici, MEMS ne signifie pas « Micro-Electro-Mechanical Systems ». Les capacités exactes dépendent de l'ECU, du firmware et du protocole réellement identifiés.").arg(version);
+    }
+
+    return QString();
+}
+
+QString controlledFollowUpAnswer(const QString &question,
+                                 const QVector<QPair<QString, QString>> &conversation)
+{
+    if (activeLanguageCode() != QStringLiteral("fr") || conversation.isEmpty() || !asksLocation(question))
+        return QString();
+
+    const QPair<QString, QString> &turn = conversation.constLast();
+    const QString previous = normalizedPlainText(turn.first + QLatin1Char(' ') + turn.second);
+    if (previous.contains(QStringLiteral("iac")) || previous.contains(QStringLiteral("idle air control")))
+        return QStringLiteral("Sur un système MEMS, l'organe de régulation de ralenti est monté sur le boîtier papillon ou relié à son circuit de dérivation d'air selon le montage. L'emplacement exact varie avec le moteur et la version MEMS ; donne-moi le véhicule, le moteur ou la référence ECU si tu veux l'emplacement précis.");
+
+    return QString();
 }
 
 bool isFollowUpQuestion(const QString &question)
 {
     const QString plain = normalizedPlainText(question);
-    return plain.startsWith(QStringLiteral("et "))
+    return asksLocation(question)
+        || plain.startsWith(QStringLiteral("et "))
         || plain.startsWith(QStringLiteral("et si "))
         || plain.startsWith(QStringLiteral("et pour "))
         || plain.startsWith(QStringLiteral("et pourquoi "))
@@ -215,6 +303,50 @@ bool requiresReasoning(const QString &question, const QString &grounding)
     return ground.contains(QStringLiteral("hypotheses actuelles"))
         || ground.contains(QStringLiteral("confiance"))
         || ground.contains(QStringLiteral("preuve"));
+}
+
+QString languageDirective()
+{
+    const QString code = activeLanguageCode();
+    if (code == QStringLiteral("fr"))
+        return QStringLiteral("LANGUE OBLIGATOIRE : réponds uniquement en français, sauf si l'utilisateur demande explicitement une autre langue.");
+    if (code == QStringLiteral("en"))
+        return QStringLiteral("MANDATORY LANGUAGE: answer only in English unless the user explicitly requests another language.");
+    if (code == QStringLiteral("es"))
+        return QStringLiteral("IDIOMA OBLIGATORIO: responde únicamente en español salvo que el usuario pida explícitamente otro idioma.");
+    if (code == QStringLiteral("it"))
+        return QStringLiteral("LINGUA OBBLIGATORIA: rispondi solo in italiano salvo richiesta esplicita di un'altra lingua.");
+    if (code == QStringLiteral("pt"))
+        return QStringLiteral("IDIOMA OBRIGATÓRIO: responde apenas em português, salvo pedido explícito de outro idioma.");
+    return QStringLiteral("VERBINDLICHE SPRACHE: antworte nur auf Deutsch, außer der Benutzer verlangt ausdrücklich eine andere Sprache.");
+}
+
+bool likelyWrongLanguage(const QString &answer)
+{
+    if (activeLanguageCode() != QStringLiteral("fr"))
+        return false;
+
+    const QString plain = QStringLiteral(" ") + normalizedPlainText(answer) + QStringLiteral(" ");
+    const QStringList englishMarkers = {
+        QStringLiteral(" the "), QStringLiteral(" this "), QStringLiteral(" that "),
+        QStringLiteral(" is "), QStringLiteral(" are "), QStringLiteral(" used "),
+        QStringLiteral(" with "), QStringLiteral(" for "), QStringLiteral(" please "),
+        QStringLiteral(" refer "), QStringLiteral(" version "), QStringLiteral(" commonly ")
+    };
+    const QStringList frenchMarkers = {
+        QStringLiteral(" le "), QStringLiteral(" la "), QStringLiteral(" les "),
+        QStringLiteral(" est "), QStringLiteral(" sont "), QStringLiteral(" une "),
+        QStringLiteral(" un "), QStringLiteral(" des "), QStringLiteral(" pour "),
+        QStringLiteral(" avec "), QStringLiteral(" dans "), QStringLiteral(" cette ")
+    };
+
+    int english = 0;
+    int french = 0;
+    for (const QString &marker : englishMarkers)
+        if (plain.contains(marker)) ++english;
+    for (const QString &marker : frenchMarkers)
+        if (plain.contains(marker)) ++french;
+    return english >= 3 && french <= 1;
 }
 
 void rememberTurn(QVector<QPair<QString, QString>> &conversation,
@@ -280,7 +412,6 @@ void LocalAiClient::initialize()
 
     discoverAssets();
 
-    // Reuse a server that is already listening on the dedicated loopback port.
     m_healthAttempts = 0;
     setState(Starting);
     checkHealth();
@@ -384,8 +515,6 @@ void LocalAiClient::handleHealthReply(QNetworkReply *reply)
         return;
     }
 
-    // llama.cpp returns HTTP 503 while the model is loading. If a server already
-    // owns the loopback port, keep waiting rather than starting a competing one.
     if (httpStatus == 503) {
         scheduleHealthCheck();
         return;
@@ -419,8 +548,6 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
     if (trimmedQuestion.isEmpty())
         return;
 
-    // Runtime facts and controlled technical definitions must not pay the cost
-    // of an LLM generation and must never be guessed by the model.
     if (asksCurrentDate(trimmedQuestion)) {
         const QString answer = currentDateAnswer();
         rememberTurn(m_conversation, trimmedQuestion, answer);
@@ -435,15 +562,19 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
         return;
     }
 
+    const QString controlledFollowUp = controlledFollowUpAnswer(trimmedQuestion, m_conversation);
+    if (!controlledFollowUp.isEmpty()) {
+        rememberTurn(m_conversation, trimmedQuestion, controlledFollowUp);
+        emit responseReady(controlledFollowUp);
+        return;
+    }
+
     QString grounding = groundingContext.trimmed();
     if (isGenericGrounding(grounding))
         grounding.clear();
 
     const bool reasoning = requiresReasoning(trimmedQuestion, grounding);
 
-    // The deterministic engine/database already owns many exact answers. For a
-    // simple lookup, software question or decoded measurement, return that fact
-    // immediately instead of asking a 0.6B model to paraphrase or corrupt it.
     if (!reasoning && !grounding.isEmpty()) {
         rememberTurn(m_conversation, trimmedQuestion, grounding);
         emit responseReady(grounding);
@@ -458,8 +589,6 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
     system.insert(QStringLiteral("content"), systemPrompt());
     messages.append(system);
 
-    // Independent questions start with a clean conversational context. Only a
-    // clearly dependent follow-up receives the immediately previous turn.
     if (isFollowUpQuestion(trimmedQuestion) && !m_conversation.isEmpty()) {
         const QPair<QString, QString> &turn = m_conversation.constLast();
         QJsonObject user;
@@ -473,7 +602,14 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
         messages.append(assistant);
     }
 
-    QString userContent = trimmedQuestion;
+    QString userContent = languageDirective() + QStringLiteral("\n\n") + trimmedQuestion;
+    if (isMemsDomainQuestion(trimmedQuestion, grounding)) {
+        userContent += QStringLiteral(
+            "\n\nDOMAINE OBLIGATOIRE : dans IA MEMS, le terme MEMS désigne par défaut le système de gestion moteur Rover/Lucas/Mini-Rover concerné par ECU MEMS Manager. "
+            "Ne l'interprète jamais comme Micro-Electro-Mechanical Systems sauf si l'utilisateur demande explicitement ce domaine. "
+            "Pour une information technique Rover/Lucas MEMS, préfère le contexte fourni et reconnais ton incertitude plutôt que d'inventer.");
+    }
+
     if (!grounding.isEmpty()) {
         userContent += QStringLiteral(
             "\n\nCONTEXTE CANDIDAT FOURNI PAR MEMS MANAGER :\n%1\n\n"
@@ -485,8 +621,6 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
                            .arg(grounding);
     }
 
-    // Qwen3 keeps its reasoning capability available, but only complex ECU
-    // analysis pays for it. Simple questions use the documented soft switch.
     userContent += reasoning ? QStringLiteral("\n\n/think")
                              : QStringLiteral("\n\n/no_think");
 
@@ -503,14 +637,11 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
     payload.insert(QStringLiteral("min_p"), 0.0);
 
     if (reasoning) {
-        // Qwen3 thinking-mode sampling. The budget is deliberately bounded for
-        // an interactive CPU application while preserving real reasoning.
         payload.insert(QStringLiteral("temperature"), 0.6);
         payload.insert(QStringLiteral("top_p"), 0.95);
         payload.insert(QStringLiteral("presence_penalty"), 0.3);
         payload.insert(QStringLiteral("max_tokens"), 768);
     } else {
-        // Qwen3 non-thinking settings recommended for direct, fast answers.
         payload.insert(QStringLiteral("temperature"), 0.7);
         payload.insert(QStringLiteral("top_p"), 0.8);
         payload.insert(QStringLiteral("presence_penalty"), 0.2);
@@ -546,8 +677,9 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
         answer = cleanModelReply(answer);
         setState(Ready);
 
-        // If the model only echoes the question or exhausts its reasoning budget,
-        // a reliable MEMS Manager fact wins. Otherwise fail explicitly.
+        if (likelyWrongLanguage(answer))
+            answer.clear();
+
         if (answer.isEmpty() || isQuestionEcho(trimmedQuestion, answer)) {
             if (!grounding.isEmpty())
                 answer = grounding;
@@ -557,7 +689,7 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
 
         if (answer.isEmpty()) {
             emit responseError(QStringLiteral(
-                "Le modèle local n'a pas produit de réponse exploitable."));
+                "Le modèle local n'a pas produit de réponse exploitable dans la langue active."));
             return;
         }
 
@@ -576,7 +708,6 @@ void LocalAiClient::shutdown()
     if (m_healthTimer)
         m_healthTimer->stop();
 
-    // Prevent a deliberate shutdown from being reported as an engine failure.
     m_state = NotStarted;
     if (m_startedServer && m_server && m_server->state() != QProcess::NotRunning) {
         m_server->terminate();
@@ -621,19 +752,15 @@ QString LocalAiClient::statusText() const
 
 QString LocalAiClient::systemPrompt() const
 {
-    QString languageCode = I18n::language().trimmed().toLower();
-    const QStringList supported = {QStringLiteral("fr"), QStringLiteral("en"), QStringLiteral("es"),
-                                   QStringLiteral("it"), QStringLiteral("pt"), QStringLiteral("de")};
-    if (!supported.contains(languageCode))
-        languageCode = QStringLiteral("fr");
+    const QString languageCode = activeLanguageCode();
     const QString languageName = activeLanguageName(languageCode);
     const QString runtimeDate = QDate::currentDate().toString(Qt::ISODate);
 
     return QStringLiteral(
         "You are IA MEMS, the conversational assistant integrated into ECU MEMS Manager. "
-        "The active MEMS Manager interface language is %1 (%2). Answer in that language by default. "
+        "The active MEMS Manager interface language is %1 (%2). Answer strictly in that language unless the user explicitly asks for another language. "
+        "In this application, MEMS means the Rover/Lucas engine-management family by default, never Micro-Electro-Mechanical Systems unless the user explicitly asks about that unrelated field. "
         "The local runtime date of this computer is %3. If the user asks for today's date or day, use this date and do not guess another one. "
-        "If the user explicitly asks for another language, follow that request. "
         "Understand spelling and typing mistakes when the meaning is clear; do not comment on them unnecessarily. "
         "Answer the exact question first and do not drift to a neighbouring topic. "
         "Never answer by merely repeating, correcting, translating or reformulating the user's question. "
