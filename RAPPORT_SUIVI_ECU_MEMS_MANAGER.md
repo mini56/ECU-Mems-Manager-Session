@@ -10,7 +10,7 @@
 
 - Dépôt : `mini56/ECU-Mems-Manager-Session`.
 - Branche x64 : `MEMSX64`.
-- HEAD courant : **`20772b8ef5571cc0d0063c1e0d9b6f7e2f0866ef`**.
+- HEAD courant : **`87cb4cdfd2f16ed98f0787454f7f9aec4f041e1f`**.
 - BUILD logiciel actif : **#30 / v1.0.30**.
 - Aucun BUILD #31 sans demande explicite.
 - 32 bits : `lab-expert-engine` — **NE PAS TOUCHER**.
@@ -77,23 +77,27 @@ HEAD **`20772b8ef5571cc0d0063c1e0d9b6f7e2f0866ef`** — `BUILD #30 enable adapti
 ### ECU MEMS Manager x64 #65 — Commit `20772b8` — ROUGE
 
 - Run GitHub : **`32946087349`** ; job : **`98107022158`**.
-- Étapes 1 à 12 : **VERTES**, y compris protections protocole, compilation application/self-tests, tests IA déterministes, ABI et base experte r20.
-- Échec unique : étape **13 `Build adaptive multi-variant llama.cpp b10516 runtime`**.
-- Erreur CMake exacte de llama.cpp b10516 : **`GGML_BACKEND_DL requires BUILD_SHARED_LIBS`**.
-- Cause : le workflow demandait simultanément `GGML_BACKEND_DL=ON`, `GGML_CPU_ALL_VARIANTS=ON` et `BUILD_SHARED_LIBS=OFF`. Cette combinaison n’est pas supportée par le commit b10516.
-- Les étapes 14 à 20 ont été sautées ; aucun nouvel artefact #65 n’a été produit.
-- Aucun défaut n’est constaté dans `LocalAiClient.cpp`, les réponses MAP/injecteur/SPI, l’application, le protocole ou la base ; le rouge est strictement un défaut de configuration du runtime llama.cpp.
+- Étapes 1 à 12 : **VERTES**.
+- Échec unique : étape 13 `Build adaptive multi-variant llama.cpp b10516 runtime`.
+- Erreur CMake exacte : **`GGML_BACKEND_DL requires BUILD_SHARED_LIBS`**.
+- Cause : combinaison invalide `GGML_BACKEND_DL=ON` + `GGML_CPU_ALL_VARIANTS=ON` + `BUILD_SHARED_LIBS=OFF`.
+- Étapes 14 à 20 sautées ; aucun artefact #65.
+- Aucun défaut constaté dans l’application, `LocalAiClient.cpp`, les réponses MAP/injecteur/SPI, le protocole ou la base.
 
-### CORRECTION EXACTE AUTORISÉE APRÈS #65
+### Étape 3 — correction runtime partagé — POUSSÉE
 
-Corriger uniquement `.github/workflows/memsx64.yml` :
-- passer le runtime llama.cpp à **`BUILD_SHARED_LIBS=ON`**, exigé par `GGML_BACKEND_DL=ON` ;
-- conserver `GGML_NATIVE=OFF`, `GGML_BACKEND_DL=ON`, `GGML_CPU_ALL_VARIANTS=ON`, `GGML_OPENMP=OFF`, `LLAMA_OPENSSL=OFF` ;
-- regrouper dans un dossier runtime CI unique `llama-server.exe` + DLL cœur nécessaires (`llama.dll`, `ggml.dll`, `ggml-base.dll`) + toutes les DLL `ggml-cpu-*.dll` ;
-- exécuter `llama-server --version` depuis ce dossier avant packaging pour valider les dépendances ;
-- empaqueter ce dossier complet sous `ai/` ;
-- adapter la validation PE : les dépendances `llama.dll` / `ggml.dll` / `ggml-base.dll` deviennent normales et obligatoires, tout en continuant d’interdire OpenMP/OpenSSL ;
-- conserver la vérification de `ggml-cpu-x64.dll` de repli et d’au moins une variante optimisée, puis `/health`, `/v1/models`, chat Qwen et smoke app.
+HEAD **`87cb4cdfd2f16ed98f0787454f7f9aec4f041e1f`** — `BUILD #30 fix shared adaptive llama runtime`.
+
+Correction limitée à `.github/workflows/memsx64.yml` :
+- `BUILD_SHARED_LIBS=ON` ; `GGML_NATIVE=OFF` ; `GGML_BACKEND_DL=ON` ; `GGML_CPU_ALL_VARIANTS=ON` ; `GGML_OPENMP=OFF` ; `LLAMA_OPENSSL=OFF` ;
+- création d’un dossier CI autonome `llama-runtime-stage` ;
+- copie dans ce dossier de `llama-server.exe`, `llama.dll`, `ggml.dll`, `ggml-base.dll` et de toutes les DLL produites en Release, dont `ggml-cpu-*.dll` ;
+- validation obligatoire de `ggml-cpu-x64.dll` comme repli et `ggml-cpu-haswell.dll` comme variante optimisée ;
+- `llama-server --version` exécuté depuis le dossier autonome avant packaging ;
+- packaging du dossier runtime complet sous `ai/` ;
+- validation PE de toutes les DLL runtime x64 ; OpenMP/OpenSSL restent interdits ;
+- `install_manifest.txt` et hashes étendus aux DLL cœur et aux backends ;
+- smoke Qwen conservé : chargement backend dynamique, `/health`, `/v1/models`, chat, puis smoke application.
 - Aucun changement métier, UI, modèle Qwen, protocole ECU ou 32 bits.
 
 ## AUDIT IA À FAIRE APRÈS VALIDATION RUNTIME
@@ -162,4 +166,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Corriger uniquement le packaging/configuration llama.cpp de #65 : `BUILD_SHARED_LIBS=ON` avec runtime partagé complet + backends CPU dynamiques, pousser sur `MEMSX64`, puis suivre uniquement l’Action GitHub du nouveau HEAD. Si rouge, consigner la cause exacte avant toute autre correction. Aucun BUILD #31.**
+**Suivre uniquement l’Action GitHub déclenchée par le HEAD `87cb4cdfd2f16ed98f0787454f7f9aec4f041e1f`. Si rouge : consigner la cause exacte avant toute correction. Si verte : consigner l’artefact puis tester sur PC MAP/injecteur/SPI et mesurer la latence Qwen avec le runtime adaptatif partagé. Aucun BUILD #31.**
