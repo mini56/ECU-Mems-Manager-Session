@@ -25,6 +25,7 @@ jobs:
       LLAMA_COMMIT: 'b95502ba9aa0eb73a2f4fc8878d7fbe6a847a0b9'
       LLAMA_WIN_CPU_SHA256: 'fbbbc55e0eb2e1b07f9dcb9488616c98ed47d9003b90e15e7c8c7812c4307cd3'
       QWEN_SHA256: '9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031'
+      VC_REDIST_URL: 'https://aka.ms/vc14/vc_redist.x64.exe'
 
     steps:
       - name: Checkout exact BUILD 30 source
@@ -142,16 +143,19 @@ jobs:
           '@ | python -
           "AI_EXPERT_DB=$expertDbPath" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - name: Download verified official llama.cpp b10516 Windows x64 CPU runtime
+      - name: Download official llama.cpp and stage required Microsoft VC++ v14 runtime
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $archive = Join-Path $env:RUNNER_TEMP "llama-$env:LLAMA_RELEASE-bin-win-cpu-x64.zip"
           $runtime = '${{ github.workspace }}\llama-runtime-official-b10516'
+          $msvcRuntime = '${{ github.workspace }}\llama-msvc-v14-app-local'
           $url = "https://github.com/ggml-org/llama.cpp/releases/download/$env:LLAMA_RELEASE/llama-$env:LLAMA_RELEASE-bin-win-cpu-x64.zip"
 
           if (Test-Path $runtime) { Remove-Item $runtime -Recurse -Force }
+          if (Test-Path $msvcRuntime) { Remove-Item $msvcRuntime -Recurse -Force }
           New-Item -ItemType Directory -Path $runtime -Force | Out-Null
+          New-Item -ItemType Directory -Path $msvcRuntime -Force | Out-Null
           & curl.exe -L --fail --retry 3 --retry-delay 3 -o $archive $url
           if ($LASTEXITCODE -ne 0) { throw "Official llama.cpp runtime download failed: $LASTEXITCODE" }
 
@@ -165,15 +169,108 @@ jobs:
           $backends = @(Get-ChildItem $runtime -File -Filter 'ggml-cpu-*.dll')
           if ($backends.Count -lt 3) { throw "Official multi-variant backend set incomplete: $($backends.Count)" }
 
-          $savedPath=$env:PATH; $env:PATH="$runtime;$savedPath"
+          # llama.cpp b10516 Windows x64 is built with the MSVC v14 toolchain.
+          # Install Microsoft's current supported v14 x64 Redistributable on the CI host,
+          # then stage only the VC++ DLLs actually imported by the official llama binaries.
+          $vcRedist = Join-Path $env:RUNNER_TEMP 'vc_redist.x64.exe'
+          & curl.exe -L --fail --retry 3 --retry-delay 3 -o $vcRedist $env:VC_REDIST_URL
+          if ($LASTEXITCODE -ne 0) { throw "Microsoft VC++ v14 Redistributable download failed: $LASTEXITCODE" }
+          $vcSha = (Get-FileHash $vcRedist -Algorithm SHA256).Hash.ToLowerInvariant()
+          $vcFileVersion = (Get-Item $vcRedist).VersionInfo.FileVersion
+          $vcInstall = Start-Process -FilePath $vcRedist -ArgumentList '/install','/quiet','/norestart' -Wait -PassThru
+          if (@(0,1638,3010) -notcontains $vcInstall.ExitCode) {
+            throw "Microsoft VC++ v14 Redistributable install failed: $($vcInstall.ExitCode)"
+          }
+
+          $env:LLAMA_RUNTIME_STAGE = $runtime
+          $env:MSVC_RUNTIME_STAGE = $msvcRuntime
+          @'
+          import os,re,shutil
+          from pathlib import Path
+          import pefile
+
+          runtime=Path(os.environ["LLAMA_RUNTIME_STAGE"])
+          stage=Path(os.environ["MSVC_RUNTIME_STAGE"])
+          system32=Path(os.environ["WINDIR"])/"System32"
+          stage.mkdir(parents=True, exist_ok=True)
+          redistributable=re.compile(r"^(?:msvcp|vcruntime|concrt)\d.*\.dll$", re.I)
+
+          queue=[p for p in runtime.rglob("*") if p.is_file() and p.suffix.lower() in (".exe",".dll")]
+          scanned=set()
+          copied={}
+
+          def imports(path):
+              try:
+                  pe=pefile.PE(str(path), fast_load=True)
+                  pe.parse_data_directories(
+                      directories=[
+                          pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_IMPORT"],
+                          pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT"],
+                      ]
+                  )
+              except Exception as exc:
+                  raise SystemExit(f"PE import scan failed for {path}: {exc}")
+              names=[]
+              for attr in ("DIRECTORY_ENTRY_IMPORT","DIRECTORY_ENTRY_DELAY_IMPORT"):
+                  for entry in getattr(pe, attr, []):
+                      try:
+                          names.append(entry.dll.decode("ascii"))
+                      except Exception:
+                          pass
+              pe.close()
+              return names
+
+          while queue:
+              binary=queue.pop()
+              key=str(binary).lower()
+              if key in scanned:
+                  continue
+              scanned.add(key)
+              for name in imports(binary):
+                  if not redistributable.match(name):
+                      continue
+                  lower=name.lower()
+                  if lower in copied:
+                      continue
+                  src=system32/name
+                  if not src.is_file():
+                      raise SystemExit(f"Required Microsoft VC++ runtime DLL not found after vc_redist install: {name}")
+                  dst=stage/name
+                  shutil.copy2(src,dst)
+                  copied[lower]=dst
+                  queue.append(dst)
+
+          if not copied:
+              raise SystemExit("No Microsoft VC++ v14 imports detected in official llama.cpp runtime")
+
+          for name,path in sorted(copied.items()):
+              pe=pefile.PE(str(path), fast_load=True)
+              if pe.FILE_HEADER.Machine != 0x8664:
+                  raise SystemExit(f"Microsoft runtime is not AMD64: {path.name}")
+              pe.close()
+              print(f"MSVC_APP_LOCAL={path.name}")
+          print(f"PASS Microsoft VC++ app-local closure: {len(copied)} DLL(s)")
+          '@ | python -
+
+          $vcruntime = Join-Path $msvcRuntime 'vcruntime140.dll'
+          if (-not (Test-Path $vcruntime -PathType Leaf)) { throw 'vcruntime140.dll was not staged for llama-server' }
+          $runtimeVersion = (Get-Item $vcruntime).VersionInfo.FileVersion
+          Write-Host "Microsoft VC++ source installer: version=$vcFileVersion sha256=$vcSha"
+          Write-Host "Microsoft VC++ staged vcruntime140.dll: version=$runtimeVersion"
+
+          $savedPath=$env:PATH; $env:PATH="$runtime;$msvcRuntime;$savedPath"
           Push-Location $runtime
           try {
             & (Join-Path $runtime 'llama-server.exe') --version
-            if ($LASTEXITCODE -ne 0) { throw "Official llama-server --version failed: $LASTEXITCODE" }
+            if ($LASTEXITCODE -ne 0) { throw "Official llama-server --version failed with staged Microsoft runtime: $LASTEXITCODE" }
           } finally { Pop-Location; $env:PATH=$savedPath }
 
           Write-Host "PASS official llama.cpp b10516 runtime: SHA256=$actual; CPU backends=$($backends.Count)"
           "AI_RUNTIME_DIR=$runtime" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "AI_MSVC_RUNTIME_DIR=$msvcRuntime" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "VC_REDIST_SHA256=$vcSha" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "VC_REDIST_FILE_VERSION=$vcFileVersion" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "VC_RUNTIME_FILE_VERSION=$runtimeVersion" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Download and verify Qwen3-0.6B-Q8_0
         shell: pwsh
@@ -216,6 +313,7 @@ jobs:
 
           New-Item -ItemType Directory -Path "$dist\ai\models" -Force | Out-Null
           Copy-Item "$env:AI_RUNTIME_DIR\*" "$dist\ai" -Recurse -Force
+          Copy-Item "$env:AI_MSVC_RUNTIME_DIR\*" "$dist\ai" -Force
           Copy-Item $env:AI_MODEL "$dist\ai\models\ia-mems.gguf" -Force
 
           & curl.exe -L --fail --retry 3 --retry-delay 3 -o "$dist\ai\LLAMA_CPP_LICENSE.txt" "https://raw.githubusercontent.com/ggml-org/llama.cpp/$env:LLAMA_COMMIT/LICENSE"
@@ -234,7 +332,8 @@ jobs:
               "source_commit": "b95502ba9aa0eb73a2f4fc8878d7fbe6a847a0b9",
               "distribution": "official llama-b10516-bin-win-cpu-x64.zip",
               "archive_sha256": "fbbbc55e0eb2e1b07f9dcb9488616c98ed47d9003b90e15e7c8c7812c4307cd3",
-              "profile": "official Windows x64 CPU multi-variant runtime kept intact; automatic compatible CPU backend selection"
+              "profile": "official Windows x64 CPU multi-variant runtime kept intact; automatic compatible CPU backend selection",
+              "msvc_deployment": "Microsoft Visual C++ v14 runtime dependencies required by llama-server are deployed app-local beside llama-server.exe"
             },
             "model": {
               "name": "Qwen3-0.6B-Q8_0",
@@ -250,10 +349,20 @@ jobs:
           '@ | Set-Content "$dist\ai\runtime_manifest.json" -Encoding UTF8
 
           @(
+            'Source: Microsoft Visual C++ v14 x64 Redistributable',
+            "URL: $env:VC_REDIST_URL",
+            "Installer file version: $env:VC_REDIST_FILE_VERSION",
+            "Installer SHA-256 used by this build: $env:VC_REDIST_SHA256",
+            "Staged vcruntime140.dll file version: $env:VC_RUNTIME_FILE_VERSION",
+            'Deployment: app-local DLL closure derived from PE imports of the official llama.cpp b10516 runtime'
+          ) | Set-Content "$dist\ai\MSVC_RUNTIME_SOURCE.txt" -Encoding UTF8
+
+          @(
             'ECU MEMS Manager BUILD #30 / v1.0.30',
             'IA locale: Qwen3-0.6B-Q8_0 + llama.cpp b10516',
             'Runtime: archive officielle Windows x64 CPU b10516, SHA-256 vérifié, contenu conservé intact',
             'CPU: sélection multi-variantes officielle llama.cpp pour PC x64 Intel/AMD',
+            'MSVC: dépendances Visual C++ v14 requises par llama-server déployées localement dans ai/',
             '32 bits et protocole ECU inchangés'
           ) | Set-Content "$dist\README_BUILD30.txt" -Encoding UTF8
 
@@ -268,13 +377,14 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $env:DIST_ROOT=$env:DIST
           @'
-          import hashlib,os,sqlite3
+          import hashlib,os,re,sqlite3
           from pathlib import Path
           import pefile
 
           root=Path(os.environ["DIST_ROOT"]); ai=root/"ai"; src=Path(os.environ["AI_RUNTIME_DIR"])
           must=[root/"ecu_mems_manager.exe",root/"ecu_mems_uninstaller.exe",root/"mems_manager_x64.dll",
                 ai/"llama-server.exe",ai/"llama.dll",ai/"ggml.dll",ai/"ggml-base.dll",ai/"ggml-cpu-x64.dll",
+                ai/"vcruntime140.dll",ai/"MSVC_RUNTIME_SOURCE.txt",
                 ai/"models"/"ia-mems.gguf",root/"database"/"expert"/"ia_mems_reference_r20.sqlite",root/"install_manifest.txt"]
           missing=[str(p.relative_to(root)) for p in must if not p.is_file()]
           if missing: raise SystemExit("Missing BUILD 30 files: "+", ".join(missing))
@@ -291,8 +401,47 @@ jobs:
               q=ai/p.relative_to(src)
               if not q.is_file() or h(p)!=h(q): raise SystemExit("Official llama runtime changed/missing: "+p.relative_to(src).as_posix())
 
-          for p in [root/"ecu_mems_manager.exe",root/"ecu_mems_uninstaller.exe",root/"mems_manager_x64.dll"]+[ai/p.relative_to(src) for p in official if p.suffix.lower() in (".exe",".dll")]:
-              if pefile.PE(str(p)).FILE_HEADER.Machine != 0x8664: raise SystemExit(p.name+" is not AMD64")
+          official_pe=[p for p in official if p.suffix.lower() in (".exe",".dll")]
+          for p in [root/"ecu_mems_manager.exe",root/"ecu_mems_uninstaller.exe",root/"mems_manager_x64.dll"]+[ai/p.relative_to(src) for p in official_pe]:
+              pe=pefile.PE(str(p), fast_load=True)
+              if pe.FILE_HEADER.Machine != 0x8664: raise SystemExit(p.name+" is not AMD64")
+              pe.close()
+
+          redistributable=re.compile(r"^(?:msvcp|vcruntime|concrt)\d.*\.dll$", re.I)
+          required=set()
+          queue=[ai/p.relative_to(src) for p in official_pe]
+          scanned=set()
+          while queue:
+              p=queue.pop()
+              key=str(p).lower()
+              if key in scanned: continue
+              scanned.add(key)
+              pe=pefile.PE(str(p), fast_load=True)
+              pe.parse_data_directories(
+                  directories=[
+                      pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_IMPORT"],
+                      pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT"],
+                  ]
+              )
+              names=[]
+              for attr in ("DIRECTORY_ENTRY_IMPORT","DIRECTORY_ENTRY_DELAY_IMPORT"):
+                  for entry in getattr(pe,attr,[]):
+                      try: names.append(entry.dll.decode("ascii"))
+                      except Exception: pass
+              pe.close()
+              for name in names:
+                  if not redistributable.match(name): continue
+                  required.add(name.lower())
+                  local=ai/name
+                  if not local.is_file(): raise SystemExit("Missing app-local Microsoft VC++ dependency: "+name)
+                  queue.append(local)
+
+          if not required: raise SystemExit("No Microsoft VC++ app-local dependency closure found")
+          for name in sorted(required):
+              p=ai/name
+              pe=pefile.PE(str(p), fast_load=True)
+              if pe.FILE_HEADER.Machine != 0x8664: raise SystemExit(p.name+" is not AMD64")
+              pe.close()
 
           backends=list(ai.glob("ggml-cpu-*.dll"))
           if len(backends)<3 or "ggml-cpu-x64.dll" not in {p.name.lower() for p in backends}: raise SystemExit("Official CPU backend set invalid")
@@ -302,7 +451,7 @@ jobs:
           finally: db.close()
           if str(ok).lower()!="ok" or rev!=20: raise SystemExit(f"Invalid expert DB: {ok} r{rev}")
 
-          print(f"PASS package: official llama files={len(official)}, CPU backends={len(backends)}, expert r{rev}")
+          print(f"PASS package: official llama files={len(official)}, CPU backends={len(backends)}, MSVC app-local={len(required)}, expert r{rev}")
           '@ | python -
 
       - name: Validate packaged official llama server model and API
