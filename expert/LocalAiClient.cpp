@@ -20,6 +20,8 @@
 
 namespace {
 const int kMaximumTurns = 8;
+const int kFastMaxNewTokens = 128;
+const int kDiagnosticMaxNewTokens = 192;
 
 QString firstExistingFile(const QStringList &paths)
 {
@@ -325,20 +327,6 @@ bool requiresReasoning(const QString &question, const QString &grounding)
         || plain.contains(QStringLiteral("instable")))
         return true;
 
-    if (plain.contains(QStringLiteral("pourquoi"))) {
-        static const QStringList ecuTerms = {
-            QStringLiteral("ralenti"), QStringLiteral("ecu"), QStringLiteral("mems"),
-            QStringLiteral("lambda"), QStringLiteral("injection"), QStringLiteral("avance"),
-            QStringLiteral("bobine"), QStringLiteral("capteur"), QStringLiteral("map"),
-            QStringLiteral("temperature"), QStringLiteral("batterie"), QStringLiteral("regime"),
-            QStringLiteral("moteur")
-        };
-        for (const QString &term : ecuTerms) {
-            if (plain.contains(term))
-                return true;
-        }
-    }
-
     return ground.contains(QStringLiteral("hypotheses actuelles"))
         || ground.contains(QStringLiteral("confiance"))
         || ground.contains(QStringLiteral("preuve"));
@@ -470,13 +458,13 @@ public:
         }
 
         const size_t promptTokens = OgaSequencesGetSequenceCount(sequences, 0);
-        const int maxNewTokens = reasoning ? 768 : 256;
+        const int maxNewTokens = reasoning ? kDiagnosticMaxNewTokens : kFastMaxNewTokens;
         if (!check(OgaCreateGeneratorParams(m_model, &params), error)
             || !check(OgaGeneratorParamsSetSearchNumber(params, "max_length", static_cast<double>(promptTokens + maxNewTokens)), error)
             || !check(OgaGeneratorParamsSetSearchNumber(params, "batch_size", 1.0), error)
             || !check(OgaGeneratorParamsSetSearchBool(params, "do_sample", true), error)
             || !check(OgaGeneratorParamsSetSearchNumber(params, "temperature", reasoning ? 0.6 : 0.7), error)
-            || !check(OgaGeneratorParamsSetSearchNumber(params, "top_p", reasoning ? 0.95 : 0.8), error)
+            || !check(OgaGeneratorParamsSetSearchNumber(params, "top_p", reasoning ? 0.9 : 0.8), error)
             || !check(OgaGeneratorParamsSetSearchNumber(params, "top_k", 20.0), error)
             || !check(OgaCreateGenerator(m_model, params, &generator), error)
             || !check(OgaGenerator_AppendTokenSequences(generator, sequences), error)
@@ -717,7 +705,12 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
                            .arg(grounding);
     }
 
-    userContent += reasoning ? QStringLiteral("\n\n/think") : QStringLiteral("\n\n/no_think");
+    if (reasoning) {
+        userContent += QStringLiteral(
+            "\n\nMODE DIAGNOSTIC RAPIDE : analyse uniquement les faits pertinents, donne les hypothèses les plus probables dans l'ordre, puis les contrôles prioritaires. "
+            "Reste concis et ne développe pas de raisonnement interne visible.");
+    }
+    userContent += QStringLiteral("\n\n/no_think");
 
     QString prompt = QStringLiteral("<|im_start|>system\n%1<|im_end|>\n").arg(systemPrompt());
     if (isFollowUpQuestion(trimmedQuestion) && !m_conversation.isEmpty()) {
