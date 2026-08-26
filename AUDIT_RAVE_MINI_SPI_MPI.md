@@ -308,9 +308,88 @@ La question « valeur de ralenti d'origine » **ne doit jamais recevoir une seul
 
 ---
 
+# LOT 6 — PANNES / STRATÉGIES DE SECOURS / CONSÉQUENCES DOCUMENTÉES
+
+## RAVE-FAIL-001 — stratégie de secours ECM générale
+- Famille : `Mini_RCL0193_MEMS`
+- Fait constructeur : pour **certaines** entrées système défaillantes, l'ECM met en œuvre une stratégie de secours permettant de continuer à fonctionner, mais avec un niveau de performance réduit.
+- Source : `RCL0193ENG`, page PDF 107, description générale MEMS.
+- Preuve : `verifie_constructeur`.
+- Règle IA : ne jamais affirmer qu'un défaut de capteur entraîne nécessairement l'arrêt moteur ; vérifier s'il existe une stratégie spécifique documentée. Inversement, ne pas inventer la valeur de substitution utilisée par l'ECM si le manuel ne la donne pas.
+
+## RAVE-FAIL-002 — absence de signal CKP
+- Famille : `Mini_RCL0193_MEMS`
+- Le CKP fournit position vilebrequin et régime ; le manuel le qualifie d'entrée primaire nécessaire au fonctionnement du moteur.
+- Source : `RCL0193ENG`, page PDF 108.
+- Preuve : `verifie_constructeur`.
+- Réponse immédiate visée : une anomalie CKP est **critique** car l'ECM dépend de ce signal pour connaître vitesse/position moteur. Pour un cas réel, contrôler d'abord présence du signal, capteur, entrefer critique, connecteur et câblage avant de condamner l'ECM.
+- Prudence : la conséquence exacte « jamais de démarrage dans tous les cas » ne doit être formulée qu'en restant dans le contexte couvert par le manuel.
+
+## RAVE-FAIL-003 — défaillance CMP
+- Famille : `MPi_RCL0193`
+- Si le CMP tombe en panne alors que le moteur tourne : le manuel indique que le moteur continue à fonctionner.
+- Si le défaut est présent avant démarrage : le moteur peut démarrer mais avec une limite de régime réduite par rapport à la limite normale de **6500 tr/min**.
+- Identification du défaut : TestBook selon le manuel.
+- Source : `RCL0193ENG`, page PDF 108.
+- Preuve : `verifie_constructeur`.
+
+## RAVE-FAIL-004 — antidémarrage / absence d'autorisation
+- Famille : `Mini_RCL0193_MEMS`
+- Fait constructeur : l'ECM est immobilisé électroniquement et empêche le démarrage s'il ne reçoit pas le signal codé de l'unité antivol.
+- Après remplacement de l'ECM, le code antivol doit être programmé avec TestBook avant démarrage.
+- Source : `RCL0193ENG`, pages PDF 107 et 127.
+- Preuve : `verifie_constructeur`.
+- Réponse immédiate visée : pour un défaut d'antidémarrage, distinguer le système d'autorisation de démarrage des défauts de carburant/allumage ordinaires.
+
+## RAVE-FAIL-005 — coupe-circuit à inertie / pompe
+- Famille : `Mini_RCL0193_MEMS`
+- Fait constructeur : lors d'une décélération brutale, l'IFS coupe le circuit de pompe afin d'empêcher l'alimentation carburant du moteur.
+- Le manuel exige de vérifier fuites et intégrité des connexions carburant avant de réarmer le contacteur.
+- Source : `RCL0193ENG`, page PDF 116.
+- Preuve : `verifie_constructeur`.
+- Réponse immédiate visée : si la pompe ne fonctionne pas après choc/forte décélération, inclure l'IFS dans les contrôles avant de condamner la pompe.
+
+## RAVE-FAIL-006 — HO2S / lambda non opérationnelle
+- Famille : `Mini_97MY_MEMS`
+- Le manuel électrique indique qu'une sonde oxygène ne fonctionnera pas si son alimentation est absente ; chute/choc ou produits de nettoyage peuvent également l'endommager.
+- Source : `RCL0213ENG`, pages PDF 37–38.
+- Preuve : `verifie_constructeur`.
+- Réponse immédiate visée : pour une erreur lambda/chauffage lambda, contrôler alimentation/chauffage, câblage et état physique avant de conclure que le signal traduit réellement un mélange moteur anormal.
+
+## RAVE-FAIL-007 — purge ouverte dans de mauvaises conditions
+- Famille : `Mini_97MY_MEMS`
+- RCL0193 explique que l'ouverture de purge moteur froid ou au ralenti enrichirait le mélange, retarderait la mise en température efficace du catalyseur et pourrait provoquer un ralenti irrégulier.
+- RCL0213 confirme que la vanne reste normalement fermée moteur froid et au ralenti.
+- Source : `RCL0193ENG`, page PDF 98 ; `RCL0213ENG`, page PDF 38.
+- Preuve : `verifie_constructeur`.
+- Réponse immédiate visée : une purge qui reste ouverte peut être reliée à un ralenti perturbé et à une gestion mélange/catalyseur anormale, sans présenter cela comme la seule cause possible.
+
+## RAVE-FAIL-008 — IAC hors plage de référence
+- Famille : `Mini_RCL0193_MEMS`
+- Référence : 20–40 pas moteur en fonctionnement dans ce corpus.
+- Si l'IAC est identifié hors plage, le manuel prévoit une correction de la **position apprise** via TestBook et déconseille un réglage arbitraire.
+- La butée papillon est préréglée en usine et ne doit pas servir au réglage du ralenti.
+- Source : `RCL0193ENG`, page PDF 114.
+- Preuve : `verifie_constructeur`.
+- Réponse immédiate visée : une position IAC hors plage doit conduire à vérifier contexte/charge/admission et apprentissage ; ne pas conseiller de toucher la vis de butée.
+
+## RAVE-FAIL-009 — stockage de défauts intermittents
+- Famille : `Mini_RCL0193_MEMS`
+- L'ECM possède une protection contre les courts-circuits et peut mémoriser certains défauts intermittents d'entrées ; TestBook peut interroger ces défauts stockés.
+- Source : `RCL0193ENG`, page PDF 107.
+- Preuve : `verifie_constructeur`.
+- Impact IA : distinguer une erreur mémorisée d'un défaut nécessairement actif au moment de la lecture.
+
+## RAVE-DTC-STATUS-001 — codes numériques 01–24 de MEMS Manager
+- Les recherches dans `RCL0193ENG` et `RCL0213ENG` n'ont pas retrouvé de table littérale `fault code` / `diagnostic trouble code` reliant directement les numéros **01–24** affichés aujourd'hui par MEMS Manager aux libellés du logiciel.
+- Décision : **ne pas marquer ces numéros comme « vérifiés RAVE » à ce stade**.
+- Les fonctions des organes, leurs conséquences documentées et leurs circuits peuvent déjà être enrichis avec RAVE ; la correspondance numérique doit être recoupée séparément avec documentation TestBook/ROSCO/MEMS dédiée avant classement constructeur.
+
+---
+
 # IMPACT SUR LES QUESTIONS IA
 
-Ce premier lot permet déjà des réponses déterministes immédiates à des questions comme :
+Ce premier ensemble permet déjà des réponses déterministes immédiates à des questions comme :
 
 - « Quel est le ralenti d'origine de ma SPi ? » → réponse variant selon génération/ECU, pas valeur universelle.
 - « Quelle pression d'essence sur SPi / MPi ? » → 1 bar SPi, 3 bar MPi avec tolérances et contexte source.
@@ -321,14 +400,17 @@ Ce premier lot permet déjà des réponses déterministes immédiates à des que
 - « Est-ce normal que l'avance bouge au ralenti ? » → oui, l'ECM l'utilise avec IAC pour stabiliser le régime.
 - « Que fait le test pompe à essence ? » → permet de vérifier l'action de la pompe/relais/circuit ; absence de réaction doit lancer un contrôle structuré plutôt que condamner la pompe.
 - « Pourquoi la purge canister est fermée au ralenti ? » → protection du réglage moteur/catalyseur selon documentation.
+- « Ma purge bloquée ouverte peut faire quoi ? » → ralenti irrégulier et perturbation du mélange/catalyseur sont documentés comme conséquences possibles dans ce contexte.
 - « Mon CMP est en défaut, le moteur peut-il tourner ? » → réponse spécifique MPi/RCL0193 avec distinction panne avant/après démarrage.
+- « Une erreur capteur veut-elle dire que le moteur s'arrête ? » → non systématiquement ; RAVE documente une stratégie de secours pour certaines entrées, avec performances réduites.
+- « Pourquoi la pompe ne tourne plus après un choc ? » → contrôler le coupe-circuit à inertie et l'intégrité du circuit avant réarmement.
 - « À combien démarre le ventilateur MPi ? » → 105 °C / arrêt 98 °C pour MPi 97MY.
 
 # PROCHAINE PHASE DOCUMENTAIRE
 
 1. compléter les **connecteurs/pinouts** utiles à MAP, ECT, IAT, TP, IACV, HO2S, purge et pompe ;
-2. extraire les **conditions de secours / stratégie de panne** documentées pour chaque capteur ;
-3. rechercher les sections **diagnostic / fault finding / TestBook** permettant de relier défaut → symptômes → contrôles ;
-4. recouper les DTC/erreurs déjà affichés dans MEMS Manager avec les publications Rover disponibles ;
+2. rechercher davantage de **stratégies de panne spécifiques** capteur par capteur sans déduire les valeurs de substitution ;
+3. rechercher les publications **TestBook / diagnostic MEMS** susceptibles de documenter les codes numériques de défaut ;
+4. recouper les DTC/erreurs déjà affichés dans MEMS Manager avec les sources Rover, ROSCO et protocoles déjà validés ;
 5. rechercher les valeurs constructeur manquantes pour actionneurs et réglages ;
 6. seulement après validation utilisateur : transformer ces faits en entrées structurées de la base experte et en routage de réponses immédiates.
