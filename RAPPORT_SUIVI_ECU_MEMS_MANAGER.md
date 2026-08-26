@@ -184,7 +184,7 @@ Pour chaque mesure/cadran, réglage, actionneur et DTC connu, l’audit doit vé
 - `Quelles causes possibles ?`
 - `Qu’est-ce que je contrôle en premier ?`
 - pour Réglages : `si j’augmente/diminue, qu’est-ce que ça change ?`, `valeur d’origine ?`, `est-ce que MEMS la réapprend ?`, `quel risque ?` ;
-- pour Actionneurs : `qu’est-ce que le test doit faire ?`, `qu’est-ce que je dois entendre/voir ?`, `si rien ne se passe, quelles causes ?`, `quelles conséquences en fonctionnement ?` ;
+- pour Actionneurs : `qu’est-ce que le test doit faire ?`, `qu'est-ce que je dois entendre/voir ?`, `si rien ne se passe, quelles causes ?`, `quelles conséquences en fonctionnement ?` ;
 - pour DTC : `j’ai cette erreur, ça fait quoi ?`, `ça peut provoquer quoi ?`, `le moteur peut-il continuer ?`, `quels contrôles en premier ?`.
 
 ### Suite exacte de l’audit
@@ -215,6 +215,26 @@ Objectif : enrichir la matrice des **réponses immédiates** avec des données c
 Autorisation utilisateur : **`ok continue avec rave`**.
 
 Objectif immédiat : retrouver et vérifier les publications Rover/MG identifiables (notamment `AKM7169ENG`, `RCL0193ENG`, `RCL0194ENG`, `RCL0213ENG` ou équivalents), séparer strictement les faits **SPi**, **MPi** et **communs**, puis construire un premier lot de faits constructeur classés pour les réponses immédiates. Pendant #67, cette phase reste documentaire/read-only : aucun changement de code, protocole, modèle ou base runtime n’est mélangé au test Qwen.
+
+### Phase B — résultat du premier lot classé
+
+Commit documentaire **`bda4ad6a593fb5a786e517ebd448dfd8a73c56bd`** : création de **`AUDIT_RAVE_MINI_SPI_MPI.md`** sur la branche `RAPPORT`.
+
+Le fichier classe déjà, avec document/page/variante/niveau de preuve :
+- ralenti constructeur **SPi 1993–96 : 850 ±25 tr/min** selon variantes AKM7169 ;
+- ralenti **SPi 1997+ et MPi : 900 ±50 tr/min** dans RCL0193 ;
+- pression carburant : **SPi ~1 bar**, **MPi 3,0 ±0,2 bar**, avec tolérances propres aux documents ;
+- tensions TP/papillon ;
+- IACV : rôle, apprentissage et plage RCL0193 **20–40 pas moteur en fonctionnement** ;
+- rôle CKP, CMP, MAP, ECT, TP, IAT, HO2S/lambda ;
+- architecture injecteurs SPi/MPi et pulse width ;
+- pompe à carburant, purge canister et ventilateur ;
+- seuils ventilateur **MPi 97MY 105 °C ON / 98 °C OFF** et **SPi Japon 98/93 °C**, maintenus comme variantes distinctes ;
+- apprentissage ECM de la référence IAC et de la correction carburant ;
+- interdiction constructeur de régler le ralenti avec la vis de butée papillon ;
+- conflits conservés explicitement, notamment bobine : AKM7169 `0,71–0,81 Ω`, tableau RCL0193 `0,41–0,61 Ω`, description RCL0193 `0,63–0,77 Ω` à 20 °C.
+
+Aucune de ces données n’a encore été injectée dans la base runtime ou dans le code de réponse IA. Étape suivante documentaire : rechercher **stratégies de secours/défaillance, symptômes, contrôles et DTC**, puis recouper les erreurs déjà affichées par MEMS Manager.
 
 ## EXIGENCE UI IA — FICHIERS CSV/TXT
 
@@ -267,4 +287,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Suivre ECU MEMS Manager x64 #67 — Commit `634fce0`. Si rouge, consigner l’étape et l’erreur exactes avant toute nouvelle correction. Si vert, consigner l’artefact puis décider du retour contrôlé des variantes optimisées. En parallèle, poursuivre Phase B RAVE/SPi/MPi en lecture seule et classer les faits constructeur vérifiables. Aucun BUILD #31.**
+**Suivre ECU MEMS Manager x64 #67 — Commit `634fce0`. Si rouge, consigner l’étape et l’erreur exactes avant toute nouvelle correction. Si vert, consigner l’artefact puis décider du retour contrôlé des variantes optimisées. En parallèle, poursuivre Phase B RAVE/SPi/MPi en lecture seule : stratégies de secours/défaillance, symptômes, contrôles et DTC. Aucun BUILD #31.**
