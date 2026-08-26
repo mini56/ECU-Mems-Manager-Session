@@ -144,13 +144,26 @@ Sans créer BUILD #31 et sans toucher au protocole ECU :
 5. **Relances** : les relances courtes (`où il est placé ?`, `et pourquoi ?`) doivent conserver le fait technique précédent pertinent, pas seulement le texte brut du dernier tour.
 6. **Navigation** : adapter la hauteur/hauteur de lignes de `uiRebuildNav` à l’espace disponible pour que les 14 entrées restent visibles ; ne pas corriger en réordonnant les onglets ni en supprimant le comportement responsive.
 
+### Étape autorisée et poussée — corrections langue/domaine/relances/navigation
+
+- Autorisation utilisateur reçue : **GO**.
+- Correction IA poussée : commit **`8a793a7f9d660a729e12cf32c2f888161cad6598`** — `BUILD #30 harden IA French MEMS domain answers`.
+- `LocalAiClient` impose désormais la langue active à chaque requête Qwen et ajoute un garde-fou de domaine : dans IA MEMS, `MEMS` signifie par défaut le système de gestion moteur Rover/Lucas/Mini-Rover, jamais `Micro-Electro-Mechanical Systems` sauf demande explicite.
+- En interface française, une sortie manifestement anglaise est rejetée ; un contexte déterministe fiable reste prioritaire.
+- Réponses contrôlées françaises ajoutées pour : moteur 4 temps, rôle ECU, familles MEMS 1.2/1.3/1.6/1.9, question `1.6`/`MEMS 1.6`, valeur de référence dwell bobine 1,9–3,1 ms vers 14 V, et confirmation `réponds en français`.
+- Relance IAC de localisation : réponse contextualisée prudente ; emplacement exact demandé via véhicule/moteur/référence ECU lorsqu’il varie selon le montage.
+- Correction navigation poussée : HEAD final **`7a8085cef236e00091d8a053cdb97293568d97d0`** — `BUILD #30 keep all navigation tabs visible`.
+- `uiRebuildNav` ajuste désormais dynamiquement la hauteur de ses 14 lignes à la hauteur réelle du viewport, désactive le scroll vertical lorsque les 14 lignes peuvent tenir et recale systématiquement la liste en haut ; sélectionner `Test ECU 1.9` ne doit plus masquer `Aperçu` sur le PC concerné.
+- Ordre officiel des 14 onglets inchangé ; style dark/responsive conservé ; aucun changement protocole ECU, 32 bits, modèle Qwen ou base experte.
+- Nouvelle exécution : **ECU MEMS Manager x64 #63 — Commit `7a8085c`** / run `32936048218` — **en cours** au moment de cette mise à jour.
+
 ---
 
 ## ÉTAT DE RÉFÉRENCE
 
 - Dépôt : `mini56/ECU-Mems-Manager-Session`.
 - Branche x64 : `MEMSX64`.
-- HEAD actuel : **`126cc638d584975a78d0101430d61bdc435c5879`**.
+- HEAD actuel : **`7a8085cef236e00091d8a053cdb97293568d97d0`**.
 - Rapport : `RAPPORT`.
 - 32 bits : `lab-expert-engine`, ne pas toucher.
 - Rollback x64 : `MEMSX64-BUILD26-BASE`, ne pas toucher.
@@ -165,6 +178,7 @@ Sans créer BUILD #31 et sans toucher au protocole ECU :
 - #30 reconstruction propre `776fc647a874564c932bf09e8871cb771a0ed258`, #59 SUCCESS.
 - #30 réponses Qwen `be4916a53321e36573729e123b14c2cf120fd734`, #60 SUCCESS.
 - #30 routage rapide `126cc638d584975a78d0101430d61bdc435c5879`, #61 SUCCESS ; test PC : vitesse améliorée, mais langue/domaine MEMS/qualité et navigation responsive encore à corriger.
+- #30 langue/domaine/navigation : HEAD `7a8085cef236e00091d8a053cdb97293568d97d0`, ECU MEMS Manager x64 #63 en cours.
 
 ## VERSIONNAGE
 
@@ -192,4 +206,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Après autorisation utilisateur : corriger dans le même BUILD #30 les six points issus du test PC #61 : langue active imposée, garde-fou domaine Rover/Lucas MEMS, distinction valeur de référence/mesure live, définitions techniques contrôlées, relances contextualisées, et sidebar responsive gardant les 14 onglets visibles. Aucun changement protocole ECU et aucun BUILD #31.**
+**Suivre ECU MEMS Manager x64 #63 — Commit `7a8085c`. Si rouge, consigner la cause exacte avant toute correction. Si vert, consigner l’artifact puis tester sur le PC réel : français strict, `MEMS 1.6`, rôle ECU, valeur bobine, relance IAC `où il est placé ?`, puis sélectionner `Test ECU 1.9` et vérifier qu’`Aperçu` reste visible. Aucun BUILD #31.**
