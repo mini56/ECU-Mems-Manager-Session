@@ -25,6 +25,8 @@ jobs:
       PYTHONIOENCODING: 'utf-8'
       ORT_GENAI_VERSION: '0.14.0'
       ORT_GENAI_WIN_X64_SHA256: '8a303e52dc7be8fb2a5331929af451a25ac59774102d7fd09ef673adc85c5ebf'
+      ORT_VERSION: '1.24.4'
+      ORT_WIN_X64_SHA256: 'd2319fddfb6ea4db99ccc4b60c85c517bcd855721f5daa6a06d40d7cb2ee2357'
       ONNX_MODEL_REPO: 'xiaoyao9184/Qwen3-0.6B-onnx-genai'
       ONNX_MODEL_REVISION: 'e6bf97818c142808967a48cbab4f0aef18b64621'
       ONNX_MODEL_SUBDIR: 'cpu_and_mobile/cpu-int4-rtn-block-32-acc-level-4'
@@ -58,45 +60,58 @@ jobs:
           python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
           if ($LASTEXITCODE -ne 0) { throw "aqtinstall failed: $LASTEXITCODE" }
 
-      - name: Download and stage official ONNX Runtime GenAI Windows x64 CPU runtime
+      - name: Download and stage official ONNX Runtime GenAI plus ONNX Runtime Windows x64 CPU
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $archive = Join-Path $env:RUNNER_TEMP "onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
-          $extract = '${{ github.workspace }}\onnx-genai-release'
+          $genaiArchive = Join-Path $env:RUNNER_TEMP "onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          $ortArchive = Join-Path $env:RUNNER_TEMP "onnxruntime-win-x64-$env:ORT_VERSION.zip"
+          $genaiExtract = '${{ github.workspace }}\onnx-genai-release'
+          $ortExtract = '${{ github.workspace }}\onnxruntime-release'
           $stage = '${{ github.workspace }}\onnx-runtime-stage'
-          $url = "https://github.com/microsoft/onnxruntime-genai/releases/download/v$env:ORT_GENAI_VERSION/onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          $genaiUrl = "https://github.com/microsoft/onnxruntime-genai/releases/download/v$env:ORT_GENAI_VERSION/onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          $ortUrl = "https://github.com/microsoft/onnxruntime/releases/download/v$env:ORT_VERSION/onnxruntime-win-x64-$env:ORT_VERSION.zip"
 
-          if (Test-Path $extract) { Remove-Item $extract -Recurse -Force }
-          if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
-          New-Item -ItemType Directory -Path $extract,$stage -Force | Out-Null
+          foreach ($dir in @($genaiExtract,$ortExtract,$stage)) {
+            if (Test-Path $dir) { Remove-Item $dir -Recurse -Force }
+            New-Item -ItemType Directory -Path $dir -Force | Out-Null
+          }
 
-          & curl.exe -L --fail --retry 3 --retry-delay 3 -o $archive $url
+          & curl.exe -L --fail --retry 3 --retry-delay 3 -o $genaiArchive $genaiUrl
           if ($LASTEXITCODE -ne 0) { throw "ONNX Runtime GenAI package download failed: $LASTEXITCODE" }
-          $actual = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($actual -ne $env:ORT_GENAI_WIN_X64_SHA256) { throw "ONNX Runtime GenAI SHA256 mismatch: $actual" }
-          Expand-Archive -LiteralPath $archive -DestinationPath $extract -Force
+          $genaiHash = (Get-FileHash $genaiArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($genaiHash -ne $env:ORT_GENAI_WIN_X64_SHA256) { throw "ONNX Runtime GenAI SHA256 mismatch: $genaiHash" }
+          Expand-Archive -LiteralPath $genaiArchive -DestinationPath $genaiExtract -Force
 
-          $header = Get-ChildItem $extract -Recurse -File -Filter 'ort_genai_c.h' | Select-Object -First 1
-          $import = Get-ChildItem $extract -Recurse -File -Filter 'onnxruntime-genai.lib' | Select-Object -First 1
-          $runtimeDll = Get-ChildItem $extract -Recurse -File -Filter 'onnxruntime-genai.dll' | Select-Object -First 1
-          if (-not $header -or -not $import -or -not $runtimeDll) {
-            throw 'Official ONNX Runtime GenAI C runtime package layout is incomplete'
+          & curl.exe -L --fail --retry 3 --retry-delay 3 -o $ortArchive $ortUrl
+          if ($LASTEXITCODE -ne 0) { throw "ONNX Runtime package download failed: $LASTEXITCODE" }
+          $ortHash = (Get-FileHash $ortArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($ortHash -ne $env:ORT_WIN_X64_SHA256) { throw "ONNX Runtime SHA256 mismatch: $ortHash" }
+          Expand-Archive -LiteralPath $ortArchive -DestinationPath $ortExtract -Force
+
+          $header = Get-ChildItem $genaiExtract -Recurse -File -Filter 'ort_genai_c.h' | Select-Object -First 1
+          $import = Get-ChildItem $genaiExtract -Recurse -File -Filter 'onnxruntime-genai.lib' | Select-Object -First 1
+          $genaiDll = Get-ChildItem $genaiExtract -Recurse -File -Filter 'onnxruntime-genai.dll' | Select-Object -First 1
+          $ortDll = Get-ChildItem $ortExtract -Recurse -File -Filter 'onnxruntime.dll' | Select-Object -First 1
+          if (-not $header -or -not $import -or -not $genaiDll -or -not $ortDll) {
+            throw 'Official ONNX Runtime GenAI / ONNX Runtime package layout is incomplete'
           }
 
           $seen = @{}
-          foreach ($dll in Get-ChildItem $extract -Recurse -File -Filter '*.dll') {
-            $key = $dll.Name.ToLowerInvariant()
-            $hash = (Get-FileHash $dll.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-            if ($seen.ContainsKey($key)) {
-              if ($seen[$key] -ne $hash) { throw "Conflicting duplicate ONNX DLL: $($dll.Name)" }
-              continue
+          foreach ($root in @($genaiExtract,$ortExtract)) {
+            foreach ($dll in Get-ChildItem $root -Recurse -File -Filter '*.dll') {
+              $key = $dll.Name.ToLowerInvariant()
+              $hash = (Get-FileHash $dll.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+              if ($seen.ContainsKey($key)) {
+                if ($seen[$key] -ne $hash) { throw "Conflicting duplicate ONNX DLL: $($dll.Name)" }
+                continue
+              }
+              Copy-Item $dll.FullName (Join-Path $stage $dll.Name) -Force
+              $seen[$key] = $hash
             }
-            Copy-Item $dll.FullName (Join-Path $stage $dll.Name) -Force
-            $seen[$key] = $hash
           }
-          if (-not (Test-Path (Join-Path $stage 'onnxruntime-genai.dll') -PathType Leaf)) {
-            throw 'onnxruntime-genai.dll was not staged'
+          foreach ($required in @('onnxruntime-genai.dll','onnxruntime.dll')) {
+            if (-not (Test-Path (Join-Path $stage $required) -PathType Leaf)) { throw "$required was not staged" }
           }
 
           $env:ORT_STAGE = $stage
@@ -153,7 +168,8 @@ jobs:
           "ORT_GENAI_INCLUDE_DIR=$($header.DirectoryName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
           "ORT_GENAI_LIBRARY=$($import.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
           "ORT_GENAI_RUNTIME_STAGE=$stage" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-          Write-Host "PASS official ONNX Runtime GenAI $env:ORT_GENAI_VERSION Windows x64 CPU SHA256=$actual"
+          Write-Host "PASS ONNX Runtime GenAI $env:ORT_GENAI_VERSION SHA256=$genaiHash"
+          Write-Host "PASS ONNX Runtime $env:ORT_VERSION Windows x64 CPU SHA256=$ortHash"
 
       - name: Validate protocol guards before build
         shell: pwsh
@@ -286,12 +302,20 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
+          $selftest = Join-Path $env:ORT_GENAI_RUNTIME_STAGE 'local_ai_onnx_selftest.exe'
+          Copy-Item '${{ github.workspace }}\build-x64\Release\local_ai_onnx_selftest.exe' $selftest -Force
           $env:PATH = "$qtRoot\bin;$env:ORT_GENAI_RUNTIME_STAGE;$env:PATH"
           $env:QT_PLUGIN_PATH = "$qtRoot\plugins"
           $env:MEMS_AI_RUNTIME = Join-Path $env:ORT_GENAI_RUNTIME_STAGE 'onnxruntime-genai.dll'
           $env:MEMS_AI_MODEL = $env:ONNX_MODEL_DIR
-          & '${{ github.workspace }}\build-x64\Release\local_ai_onnx_selftest.exe'
-          if ($LASTEXITCODE -ne 0) { throw "Production LocalAiClient ONNX self-test failed: $LASTEXITCODE" }
+          Push-Location $env:ORT_GENAI_RUNTIME_STAGE
+          try {
+            & $selftest
+            if ($LASTEXITCODE -ne 0) { throw "Production LocalAiClient ONNX self-test failed: $LASTEXITCODE" }
+          } finally {
+            Pop-Location
+            Remove-Item $selftest -Force -ErrorAction SilentlyContinue
+          }
           Write-Host 'PASS production LocalAiClient: native ONNX model load and generation'
 
       - name: Assemble BUILD 30 portable ONNX package
@@ -329,10 +353,12 @@ jobs:
 
           & curl.exe -L --fail --retry 3 --retry-delay 3 -o "$dist\ai\ONNX_RUNTIME_GENAI_LICENSE.txt" "https://raw.githubusercontent.com/microsoft/onnxruntime-genai/v0.14.0/LICENSE"
           if ($LASTEXITCODE -ne 0) { throw "ONNX Runtime GenAI LICENSE download failed: $LASTEXITCODE" }
+          & curl.exe -L --fail --retry 3 --retry-delay 3 -o "$dist\ai\ONNX_RUNTIME_LICENSE.txt" "https://raw.githubusercontent.com/microsoft/onnxruntime/v$env:ORT_VERSION/LICENSE"
+          if ($LASTEXITCODE -ne 0) { throw "ONNX Runtime LICENSE download failed: $LASTEXITCODE" }
 
           @(
             'ECU MEMS Manager BUILD #30 / v1.0.30',
-            'IA locale x64: ONNX Runtime GenAI 0.14.0 CPU + Qwen3-0.6B ONNX INT4',
+            "IA locale x64: ONNX Runtime GenAI $env:ORT_GENAI_VERSION + ONNX Runtime $env:ORT_VERSION CPU + Qwen3-0.6B ONNX INT4",
             'Integration: native in-process, worker thread Qt',
             'QProcess/llama-server/HTTP local: supprimés de la voie IA x64',
             'Base experte r20: préconstruite, lecture seule',
@@ -367,7 +393,8 @@ jobs:
           ort=Path(os.environ['ORT_STAGE_VALIDATE'])
           required=[
               root/'ecu_mems_manager.exe', root/'ecu_mems_uninstaller.exe', root/'mems_manager_x64.dll',
-              root/'onnxruntime-genai.dll', model/'genai_config.json', model/'model.onnx', model/'model.onnx.data',
+              root/'onnxruntime-genai.dll', root/'onnxruntime.dll',
+              model/'genai_config.json', model/'model.onnx', model/'model.onnx.data',
               model/'tokenizer.json', model/'tokenizer_config.json', model/'chat_template.jinja',
               root/'database'/'expert'/'ia_mems_reference_r20.sqlite', ai/'runtime_manifest.json', ai/'README.md'
           ]
