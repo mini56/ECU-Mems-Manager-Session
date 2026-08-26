@@ -210,6 +210,12 @@ Règles de classement :
 
 Objectif : enrichir la matrice des **réponses immédiates** avec des données constructeur fiables et traçables, sans faire dépendre ces réponses de Qwen.
 
+### Phase B — poursuite RAVE / Rover Mini SPi-MPi — EN COURS
+
+Autorisation utilisateur : **`ok continue avec rave`**.
+
+Objectif immédiat : retrouver et vérifier les publications Rover/MG identifiables (notamment `AKM7169ENG`, `RCL0193ENG`, `RCL0194ENG`, `RCL0213ENG` ou équivalents), séparer strictement les faits **SPi**, **MPi** et **communs**, puis construire un premier lot de faits constructeur classés pour les réponses immédiates. Pendant #67, cette phase reste documentaire/read-only : aucun changement de code, protocole, modèle ou base runtime n’est mélangé au test Qwen.
+
 ## EXIGENCE UI IA — FICHIERS CSV/TXT
 
 À intégrer dans l’onglet **IA MEMS** après validation du runtime, sans changer le style dark/responsive :
@@ -261,4 +267,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Suivre ECU MEMS Manager x64 #67 — Commit `634fce0`. Si rouge, consigner l’étape et l’erreur exactes avant toute nouvelle correction. Si vert, consigner l’artefact puis décider du retour contrôlé des variantes optimisées. Audit IA/RAVE reste en lecture seule. Aucun BUILD #31.**
+**Suivre ECU MEMS Manager x64 #67 — Commit `634fce0`. Si rouge, consigner l’étape et l’erreur exactes avant toute nouvelle correction. Si vert, consigner l’artefact puis décider du retour contrôlé des variantes optimisées. En parallèle, poursuivre Phase B RAVE/SPi/MPi en lecture seule et classer les faits constructeur vérifiables. Aucun BUILD #31.**
