@@ -12,82 +12,138 @@
 
 - Dépôt : `mini56/ECU-Mems-Manager-Session`.
 - Branche x64 active : **`MEMSX64`**.
-- Base stable validée utilisateur : **#81 / `8671275bc77eb1fdbdefc0b0158254efdf86df5c`**.
-- HEAD qualité courant : **`4f12bb6fa32df71bb9893865f2ad6acc568a7a48`**.
-- GitHub Actions courant : **#84**, intermédiaire qui sera remplacé par le dernier HEAD après complétion des définitions déterministes.
+- HEAD x64 courant : **`50af0a0cd4614302794e464b9e1b4c675d1adff4`**.
 - BUILD logiciel actif : **#30 / v1.0.30**.
+- GitHub Actions courant validé : **#86 — SUCCESS**.
 - Aucun BUILD #31 sans demande explicite.
 - 32 bits : `lab-expert-engine` — **NE PAS TOUCHER**.
 - Rollback x64 : `MEMSX64-BUILD26-BASE` — **NE PAS TOUCHER**.
 - Aucun changement protocole ECU pendant la stabilisation IA.
 - UI dark/responsive officielle à préserver.
 
-## DERNIER BUILD COMPLET VALIDÉ
+## DERNIER ÉTAT RÉEL UTILISATEUR
 
-### ECU MEMS Manager x64 #81 — Commit `8671275` — VERT CI + TEST UTILISATEUR FONCTIONNEL
-
-- Run GitHub Actions : **`33001002041`** (#81), conclusion **SUCCESS**.
-- Artifact : **`ECU-MEMS-Manager-x64-BUILD-30-v1.0.30`**.
-- Artifact ID : **`9618786882`**.
-- Taille : **386 739 081 octets**.
-- Digest : **`sha256:17f8b0d3b81ff0a7d02b964ef265b38e5746fa70ff1cf754675d9d14ced3265e`**.
-
-CI #81 validée : compilation MSVC x64, tests déterministes, base r20, Qwen ONNX, vrai self-test `LocalAiClient`, package complet, validation depuis package final, smoke launch, manifeste/hashes et artefact.
-
-### TEST UTILISATEUR #81 — RÉSULTAT IMPORTANT
+### ECU MEMS Manager x64 #81 — Commit `8671275` — FONCTIONNEL
 
 Le 26 août 2026, l'utilisateur confirme : **« bon ça fonctionne »**.
 
-Constaté sur les captures : application lancée ; IA MEMS ouverte ; `base prête` ; `IA locale prête` ; réponse IAC correcte et immédiate ; moteur ONNX/Qwen opérationnel.
+Captures constatées :
+- application lancée ;
+- onglet IA MEMS ouvert ;
+- `base prête` ;
+- `IA locale prête` ;
+- réponse IAC correcte et immédiate ;
+- moteur ONNX/Qwen réellement opérationnel.
 
-Défauts qualité visibles : fuite `<think>` ; fuite de consignes internes ; méta-discours ; « C'EST QUOI LA BOBINE ? » sans vraie définition ; nettoyage insuffisant ; question date avec faute mal gérée.
+Défauts observés sur #81 qui ont motivé le lot qualité :
+- fuite `<think>` ;
+- fuite de consignes internes ;
+- méta-discours ;
+- « C'EST QUOI LA BOBINE ? » ne répondait pas à la question ;
+- nettoyage de sortie insuffisant ;
+- question de date avec faute mal gérée.
 
-**Conclusion : l'intégration ONNX fonctionne. Ne plus changer de moteur. Travail actif = qualité des réponses.**
+## NOUVEAU BUILD QUALITÉ VALIDÉ CI
 
-## ÉTAPE EN COURS — OPTIMISATION QUALITÉ DES RÉPONSES IA
+### ECU MEMS Manager x64 #86 — Commit `50af0a0` — VERT COMPLET
 
-Autorisation utilisateur : **« donc on travaille là-dessus »**, puis **« OK fait ça ensuite optimise les réponses »**.
+- Run GitHub Actions : **`33004859269`**.
+- Job : **`98296030990`**.
+- Conclusion : **SUCCESS**.
+- HEAD complet : **`50af0a0cd4614302794e464b9e1b4c675d1adff4`**.
+- Artifact : **`ECU-MEMS-Manager-x64-BUILD-30-v1.0.30`**.
+- Artifact ID : **`9620325660`**.
+- Taille : **386 747 323 octets**.
+- Digest : **`sha256:1e398c4832ed2fc2b162d8eac59b5f2f43c368de2d7e041deae6606c2fd70962`**.
+- Expiration GitHub actuelle : **9 septembre 2026**.
 
-### Diagnostic racine LocalAiClient #81
+Validations #86 :
+- compilation MSVC x64 : VERT ;
+- protections protocole : VERT ;
+- tests déterministes, y compris définition ≠ mesure actuelle : VERT ;
+- base experte r20 : VERT ;
+- modèle Qwen + hashes : VERT ;
+- vrai self-test production `LocalAiClient` : VERT en ~7 s ;
+- ce self-test contrôle bobine, date avec faute, absence de fuite `<think>`/ChatML/directives internes et vraie génération Qwen ;
+- assemblage package complet : VERT ;
+- validation package : VERT ;
+- self-test `LocalAiClient` depuis package final : VERT en ~7 s ;
+- smoke launch MEMS Manager : VERT ;
+- manifeste/hashes : VERT ;
+- artefact : VERT.
 
-- directives internes dans le message `user` ;
-- nettoyage `<think>` seulement si balise fermée ;
-- aucun filtre de fuite explicite ;
-- définition bobine simple absente ;
-- date peu tolérante aux fautes.
+**#86 est le candidat qualité à tester ensuite en usage réel. #81 reste la dernière preuve utilisateur de fonctionnement ; #86 ajoute les corrections de réponses sans changement de moteur, protocole, UI ou 32 bits.**
 
-### Corrections poussées
+## LOT QUALITÉ #81 → #86
 
-**`a53fd13c6249d0c0711e88842d0b3e00a5167773`** — qualité native : prompt utilisateur simplifié, filtre anti-fuite, nettoyage `<think>` tronqué/ChatML, définition bobine, date tolérante, latence 128/192 + `/no_think` préservée.
+### `a53fd13c6249d0c0711e88842d0b3e00a5167773` — qualité native
 
-**`e20eb3ac94807e8a65e901f1413621e4dbec7fd8`** — self-test production : bobine, date fautive, vraie génération ONNX `OK`, rejet `<think>`/ChatML/directives internes. #83 annulé automatiquement car remplacé par HEAD plus récent.
+- message Qwen simplifié ;
+- directives principales concentrées dans le system prompt au lieu d'être injectées comme texte utilisateur ;
+- interdiction de révéler prompt / raisonnement interne ;
+- nettoyage `<think>` fermé **et tronqué** ;
+- nettoyage ChatML et `/think`/`/no_think` visibles ;
+- filtre de fuite interne ;
+- définition déterministe bobine ;
+- date tolérante à `QUELLE JOURS SOMME NOUS ?` ;
+- latence #81 conservée : normal 128 tokens, diagnostic 192, `/no_think`.
 
-**`4f12bb6fa32df71bb9893865f2ad6acc568a7a48`** — réponses base r20 : classement par pertinence, preuve, famille/firmware ; maximum 3 faits ; source/notes seulement sur demande ; fallback générique nettoyé. Actions #84 lancé.
+### `e20eb3ac94807e8a65e901f1413621e4dbec7fd8` — non-régression LocalAiClient
 
-### NOUVEAU SOUS-AUDIT AVANT FIGEAGE — DÉFINITIONS VS MESURES
+- self-test bobine ;
+- date fautive ;
+- vraie génération Qwen `OK` ;
+- rejet de `<think>`, ChatML et marqueurs de directives internes.
 
-Cause identifiée : `IaMemsService::groundingFor()` classe plusieurs termes techniques comme intentions de **mesure** via `IaResponseLogic::classify()`. Ainsi une question de définition telle que « c'est quoi la lambda ? », « c'est quoi le TPS ? », « c'est quoi le dwell ? », « c'est quoi l'avance ? » ou « c'est quoi le régime ? » peut recevoir « aucune mesure ECU disponible » au lieu d'expliquer le concept lorsque l'ECU est déconnecté.
+### `4f12bb6fa32df71bb9893865f2ad6acc568a7a48` — qualité base r20
 
-Objectif avant le dernier HEAD : compléter `LocalAiClient::controlledTechnicalAnswer()` pour les **définitions certaines déjà connues** et uniquement lorsqu'une question demande le rôle/sens/définition : lambda/sonde O2, TPS/papillon, dwell, avance à l'allumage, régime/RPM, température liquide/ECT, température d'air/IAT et batterie/tension. Ne jamais intercepter une demande de valeur actuelle, diagnostic, normalité ou panne. Ces réponses restent instantanées sans Qwen et ne dépendent d'aucune mesure inventée.
+`IaMemsService::knowledgeAnswer()` :
+- classement des faits par pertinence ;
+- bonus famille/firmware ;
+- prise en compte du niveau de preuve ;
+- maximum 3 meilleurs faits au lieu de 6 faits bruts ;
+- source et notes affichées seulement si l'utilisateur les demande ;
+- fallback générique nettoyé ;
+- réponse base reste immédiate, sans Qwen supplémentaire.
 
-Après ce lot : étendre le self-test déterministe sur un échantillon représentatif, laisser le dernier run complet aller jusqu'au package et ne plus pousser d'autre optimisation avant son verdict.
+### `e6a4b704a4f4538bf5237faaccac62a54dc008f8` + `50af0a0cd4614302794e464b9e1b4c675d1adff4` — définition ≠ mesure
+
+Cause : des questions comme « c'est quoi la lambda ? », « à quoi sert le TPS ? » ou « c'est quoi le dwell ? » pouvaient être classées comme demandes de mesure et répondre « aucune mesure ECU » si l'ECU était déconnecté.
+
+Correction propre dans le routeur `IaResponseLogic` :
+- une question de **définition / rôle / signification** sur un paramètre n'est plus classée comme mesure live ;
+- elle poursuit le chemin réponse contrôlée → base r20 classée → Qwen si nécessaire ;
+- une demande explicite de **valeur / mesure / valeur actuelle** reste bien classée comme mesure ECU ;
+- tests ajoutés : lambda définition, TPS rôle, dwell définition = pas mesure ; valeur lambda et mesure TPS actuelle = mesure.
 
 ## ARCHITECTURE IA COURANTE — À CONSERVER
 
 `navigationorderpatch.cpp -> IaMemsTab -> IaMemsService -> ExpertEngine + ExpertKnowledgeReader(read-only) -> LocalAiClient -> ONNX Runtime GenAI natif -> Qwen3 ONNX`
 
-- moteur dans le processus ; aucun `QProcess`, `llama-server`, HTTP localhost ou port 18089 ;
-- génération hors thread UI ; base r20 read-only ; mesures ECU read-only ; aucune commande/mutation LLM ;
-- Qwen3-0.6B ONNX INT4 CPU ; ONNX Runtime GenAI 0.14.0 + runtime app-local.
+- moteur dans le processus ;
+- aucun `QProcess`, `llama-server`, HTTP localhost ou port 18089 ;
+- génération hors thread UI ;
+- base r20 read-only ;
+- mesures ECU read-only ;
+- aucune commande/mutation ECU accessible au LLM ;
+- Qwen3-0.6B ONNX INT4 CPU ;
+- ONNX Runtime GenAI 0.14.0 + ONNX Runtime app-local.
 
-## OPTIMISATION LATENCE #81 — À PRÉSERVER
+## OPTIMISATION LATENCE — À PRÉSERVER
 
-- `/no_think` ; normal **128 tokens max** ; diagnostic **192 tokens max** ;
+- `/no_think` ;
+- réponses normales : **128 tokens max** ;
+- diagnostics : **192 tokens max** ;
 - réponses déterministes/base experte sans Qwen quand connues.
 
 ## HISTORIQUE ONNX — NE PAS REFAIRE
 
-- #74 : génération OK, rouge CP1252 ; #75 probe ONNX VERT ; #79 self-test production rouge ; #80 runtime app-local corrigé VERT ; #81 latence optimisée VERT + fonctionnement utilisateur confirmé.
+- #74 : génération OK, rouge CP1252 ;
+- #75 : probe ONNX VERT ;
+- #79 : self-test production rouge ;
+- #80 : runtime ONNX app-local corrigé, chaîne complète VERT ;
+- #81 : latence optimisée, chaîne complète VERT + fonctionnement utilisateur confirmé ;
+- #82 à #85 : intermédiaires du lot qualité, remplacés/annulés par le HEAD final #86 ; ne pas les proposer au test.
 
 ## HISTORIQUE LLAMA — VOIE ABANDONNÉE
 
@@ -119,7 +175,7 @@ Aperçu, Injection, Réglages, Actionneurs, Erreurs, Diagnostic automatique, IA 
 
 ## EXIGENCES IA FUTURES — PAS MAINTENANT
 
-Après stabilisation qualité : CSV/TXT local read-only + nouveau composeur dark/responsive. Aucune commande ECU.
+Après validation qualité en usage réel : CSV/TXT local read-only + nouveau composeur dark/responsive. Aucune commande ECU.
 
 ## DÉSINSTALLATION BUILD #30
 
@@ -127,4 +183,4 @@ Après stabilisation qualité : CSV/TXT local read-only + nouveau composeur dark
 
 ## PROCHAINE ACTION EXACTE
 
-**Reprendre sur `MEMSX64`, BUILD logiciel #30/v1.0.30. Base stable #81 `8671275...`. HEAD courant avant dernier lot définitions `4f12bb6...`. Compléter les définitions déterministes sûres sans intercepter les demandes de mesures/diagnostics, étendre le self-test, puis suivre uniquement le dernier Actions run jusqu'au package complet. Aucun BUILD #31, changement protocole, 32 bits, UI ou moteur ONNX.**
+**Reprendre sur `MEMSX64`, BUILD logiciel #30/v1.0.30, HEAD `50af0a0cd4614302794e464b9e1b4c675d1adff4`, GitHub Actions #86 VERT COMPLET, artifact `ECU-MEMS-Manager-x64-BUILD-30-v1.0.30` ID `9620325660`, digest `sha256:1e398c4832ed2fc2b162d8eac59b5f2f43c368de2d7e041deae6606c2fd70962`. Prochaine étape : test utilisateur ciblé de la qualité #86, sans ECU obligatoire : bobine, date avec faute, lambda/TPS/dwell définition, une question demandant une valeur actuelle, une question technique base r20 et une question réellement générative. Relever uniquement les réponses encore mauvaises puis corriger leur cause. Aucun BUILD #31, changement protocole, 32 bits, UI ou moteur ONNX.**
