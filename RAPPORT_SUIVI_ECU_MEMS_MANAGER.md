@@ -12,7 +12,7 @@
 
 - Dépôt : `mini56/ECU-Mems-Manager-Session`.
 - Branche x64 : `MEMSX64`.
-- HEAD courant : **`634fce02bd92b3048cd402c147ce3e9cc84a2103`**.
+- HEAD courant : **`c7164e420204eef0f07300f6fe2dd4746c42119f`**.
 - BUILD logiciel actif : **#30 / v1.0.30**.
 - Aucun BUILD #31 sans demande explicite.
 - 32 bits : `lab-expert-engine` — **NE PAS TOUCHER**.
@@ -164,6 +164,27 @@ Règle de mise en œuvre :
 - vérifier `llama-server --version`, le chargement Qwen, `/health`, `/v1/models` et une réponse chat avant packaging final ;
 - si le runtime officiel échoue, arrêter et rechercher la cause exacte avant toute modification ; aucune nouvelle rustine n’est autorisée ;
 - aucun changement application, protocole ECU, modèle Qwen, base, UI, 32 bits ou numéro BUILD dans cette étape.
+
+### ECU MEMS Manager x64 #68 — Commit `c7164e4` — VERT
+
+- HEAD x64 : **`c7164e420204eef0f07300f6fe2dd4746c42119f`**.
+- Run GitHub : **`32962220202`** ; job : **`98156880259`**.
+- Artifact : **`9598541996`** — `ECU-MEMS-Manager-x64-BUILD-30-v1.0.30`.
+- Taille artifact : **147 504 305 octets**.
+- Artifact digest SHA-256 : **`39507831b6a5ceba22d315617938093fe24250789986c30ff208fc2dc1f4494b`**.
+- Runtime : archive officielle `llama-b10516-bin-win-cpu-x64.zip`, SHA-256 vérifié **`fbbbc55e0eb2e1b07f9dcb9488616c98ed47d9003b90e15e7c8c7812c4307cd3`**, contenu conservé intact.
+- Plus aucune compilation/staging manuel de llama.cpp dans le workflow.
+- Ensemble officiel multi-variantes CPU conservé ; aucun backend CPU supprimé.
+- `llama-server --version` : **VERT**.
+- Qwen3-0.6B-Q8_0 chargé avec le runtime officiel : **VERT**.
+- `/health`, `/v1/models` et chat API : **VERTS**.
+- Contrôle d’intégrité par SHA-256 des fichiers runtime officiels extraits vers le package : **VERT**.
+- Smoke launch ECU MEMS Manager : **VERT**.
+- Le crash #66 `0xC0000409` n’est pas reproduit avec la distribution officielle.
+- Le problème #67 `0xC0000135` disparaît avec le runtime officiel complet.
+- La divergence `/MT` / DLLs partagées / staging manuel reste une **cause plausible** de #66 mais n’est pas classée comme preuve définitive.
+- BUILD logiciel reste **#30 / v1.0.30** ; aucun BUILD #31.
+- Aucun changement application, protocole ECU, modèle Qwen, base, UI ou 32 bits.
 
 ## AUDIT IA DES QUESTIONS POSSIBLES — DÉMARRÉ EN LECTURE SEULE
 
@@ -353,4 +374,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Remplacer dans `MEMSX64` la reconstruction/staging llama.cpp maison par le runtime officiel `llama-b10516-bin-win-cpu-x64.zip`, vérifier obligatoirement le SHA-256 `fbbbc55e0eb2e1b07f9dcb9488616c98ed47d9003b90e15e7c8c7812c4307cd3`, conserver le contenu runtime officiel intact, puis exécuter les mêmes validations `--version` + chargement Qwen + `/health` + `/v1/models` + chat + smoke application. Aucun filtrage de backend CPU, aucune rustine, aucun changement protocole/32 bits/UI/modèle/base, aucun BUILD #31. En parallèle, l’audit RAVE reste en lecture seule : recouper RCL0194/AKM7169 pour les pinouts Mini exacts et rechercher une preuve indépendante pour le Code 23 / bit 6 de `0x7D:0x05`.**
+**Runtime IA #68 validé avec la distribution officielle llama.cpp b10516 Windows x64 CPU. Ne plus revenir au staging/compilation maison ni à l’isolement `ggml-cpu-x64.dll`. Continuer l’audit RAVE en lecture seule : recouper RCL0194/AKM7169 pour les brochages Mini exacts SPi/MPi et rechercher une preuve indépendante pour le Code 23 / bit 6 de `0x7D:0x05`. Aucun changement protocole ECU et aucun BUILD #31 sans demande explicite.**
