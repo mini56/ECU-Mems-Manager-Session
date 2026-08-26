@@ -2,6 +2,8 @@
 
 > **RÈGLE OBLIGATOIRE** : relire ce fichier avant toute modification. Branche rapport : `RAPPORT`. Branche x64 active : `MEMSX64`.
 >
+> **RÈGLE QUALITÉ — AUCUNE RUSTINE** : ne jamais corriger un symptôme par un patch provisoire, une suppression de capacité, un contournement matériel ou une sélection arbitraire destinée uniquement à faire passer le build. Rechercher la cause réelle, utiliser en priorité l’architecture officiellement supportée par le composant amont et produire une solution propre, générale et maintenable. Quand un runtime officiel existe pour le besoin visé, il doit être préféré à une reconstruction/staging maison sauf nécessité technique démontrée et validée par l’utilisateur.
+>
 > **SUIVI IMMÉDIAT** : avant chaque nouvelle étape, inscrire ici l’étape et son objectif ; après chaque résultat, l’inscrire avant la suite.
 >
 > **NOMMAGE UTILISATEUR** : `ECU MEMS Manager x64 #NN — Commit xxxxxxx`. `#NN` est le numéro GitHub Actions, pas le BUILD logiciel.
@@ -16,6 +18,7 @@
 - 32 bits : `lab-expert-engine` — **NE PAS TOUCHER**.
 - Rollback x64 : `MEMSX64-BUILD26-BASE` — **NE PAS TOUCHER**.
 - Aucun changement protocole ECU pendant la stabilisation IA.
+- Décision runtime IA : abandon de la reconstruction/staging llama.cpp maison ; cible retenue = **archive officielle llama.cpp b10516 Windows x64 CPU intacte**, vérifiée par SHA-256.
 
 ## ARCHITECTURE IA PROPRE RETENUE
 
@@ -111,9 +114,9 @@ Correction limitée à `.github/workflows/memsx64.yml` :
 - Étapes 18 à 20 sautées ; aucun artefact #66.
 - Le changement nouveau par rapport au runtime stable #63 est le runtime partagé + chargeur de backends CPU multi-variantes.
 
-### Étape 4 — isolement runtime x64 partagé — POUSSÉE
+### Étape 4 — isolement runtime x64 partagé — POUSSÉE, VOIE ABANDONNÉE
 
-Autorisation utilisateur : **`OK TU POUSSE SUR GITHUB`**.
+Autorisation utilisateur historique : **`OK TU POUSSE SUR GITHUB`**.
 
 Commit **`634fce02bd92b3048cd402c147ce3e9cc84a2103`** — `BUILD #30 isolate shared llama x64 backend`.
 
@@ -124,6 +127,8 @@ Correction limitée à `.github/workflows/memsx64.yml` :
 - aucune DLL CPU `haswell`, `skylakex`, `sandybridge`, etc. n’est exposée au chargeur pendant ce test ;
 - validations package, manifest, hashes et smoke imposent exactement un backend CPU : `ggml-cpu-x64.dll` ;
 - le modèle Qwen, l’application, la base, l’UI, le protocole ECU, le 32 bits et le numéro BUILD restent inchangés.
+
+Cette voie d’isolement est désormais **ABANDONNÉE** : elle constitue un contournement matériel temporaire et ne répond pas à l’exigence d’un MEMS Manager x64 général pour des PC Intel/AMD différents.
 
 ### ECU MEMS Manager x64 #67 — Commit `634fce0` — ROUGE
 
@@ -139,15 +144,26 @@ Correction limitée à `.github/workflows/memsx64.yml` :
 - Étapes 14 à 20 sautées ; aucun artefact #67.
 - Aucune correction du workflow/source n’est appliquée à ce stade ; le résultat est consigné avant toute nouvelle modification.
 
-### Étape suivante proposée — correction minimale du staging llama.cpp
+### Décision utilisateur — runtime officiel llama.cpp b10516 — AUTORISÉE
 
-Objectif, uniquement après autorisation utilisateur :
-- conserver le profil de compilation partagé #67 ;
-- copier dans le runtime **toutes les DLL non `ggml-cpu-*`** produites avec `llama-server.exe` ;
-- parmi les backends CPU, copier **uniquement `ggml-cpu-x64.dll`** ;
-- ne pas réintroduire `ggml-cpu-icelake.dll`, `ggml-cpu-skylakex.dll`, `ggml-cpu-haswell.dll`, etc. dans ce test d’isolement ;
-- refaire `llama-server --version` depuis le dossier staged avant le téléchargement/chargement Qwen ;
-- aucun changement application, protocole ECU, modèle, base, UI, 32 bits ou numéro BUILD.
+Décision utilisateur du 26 août 2026 : **prendre l’officiel et ne plus appliquer de rustine**.
+
+Recherche amont recoupée :
+- llama.cpp b10516 publie officiellement **`llama-b10516-bin-win-cpu-x64.zip`** pour Windows x64 ;
+- SHA-256 officiel de l’archive : **`fbbbc55e0eb2e1b07f9dcb9488616c98ed47d9003b90e15e7c8c7812c4307cd3`** ;
+- ce package officiel utilise le mécanisme multi-variantes prévu par llama.cpp pour les processeurs x64 Intel/AMD ;
+- la release officielle conserve le runtime complet et laisse llama.cpp sélectionner le backend CPU compatible ;
+- notre reconstruction/staging maison a divergé de la recette officielle, notamment par `CMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded` (`/MT`) dans un ensemble de DLL partagées et par le filtrage manuel des DLL ; ces choix sont abandonnés.
+
+Règle de mise en œuvre :
+- télécharger l’archive officielle b10516 depuis la release llama.cpp ;
+- vérifier obligatoirement son SHA-256 avant utilisation ;
+- extraire et conserver **intact** le runtime Windows CPU x64 officiel nécessaire à MEMS Manager ;
+- ne supprimer aucune variante CPU pour faire passer un test ;
+- ne reconstruire aucune liste manuelle de DLL supposées nécessaires ;
+- vérifier `llama-server --version`, le chargement Qwen, `/health`, `/v1/models` et une réponse chat avant packaging final ;
+- si le runtime officiel échoue, arrêter et rechercher la cause exacte avant toute modification ; aucune nouvelle rustine n’est autorisée ;
+- aucun changement application, protocole ECU, modèle Qwen, base, UI, 32 bits ou numéro BUILD dans cette étape.
 
 ## AUDIT IA DES QUESTIONS POSSIBLES — DÉMARRÉ EN LECTURE SEULE
 
@@ -337,4 +353,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Attendre l’autorisation utilisateur avant toute correction de #67. Si GO : modifier uniquement le staging llama.cpp du BUILD #30 pour conserver toutes les DLL partagées non `ggml-cpu-*` nécessaires à `llama-server.exe`, tout en n’exposant que `ggml-cpu-x64.dll` comme backend CPU ; relancer ensuite le même BUILD #30. En parallèle, l’audit RAVE peut continuer en lecture seule : recouper RCL0194/AKM7169 pour les pinouts Mini exacts et rechercher une preuve indépendante pour le Code 23 / bit 6 de `0x7D:0x05`. Aucun BUILD #31.**
+**Remplacer dans `MEMSX64` la reconstruction/staging llama.cpp maison par le runtime officiel `llama-b10516-bin-win-cpu-x64.zip`, vérifier obligatoirement le SHA-256 `fbbbc55e0eb2e1b07f9dcb9488616c98ed47d9003b90e15e7c8c7812c4307cd3`, conserver le contenu runtime officiel intact, puis exécuter les mêmes validations `--version` + chargement Qwen + `/health` + `/v1/models` + chat + smoke application. Aucun filtrage de backend CPU, aucune rustine, aucun changement protocole/32 bits/UI/modèle/base, aucun BUILD #31. En parallèle, l’audit RAVE reste en lecture seule : recouper RCL0194/AKM7169 pour les pinouts Mini exacts et rechercher une preuve indépendante pour le Code 23 / bit 6 de `0x7D:0x05`.**
