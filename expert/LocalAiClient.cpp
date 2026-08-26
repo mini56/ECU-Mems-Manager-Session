@@ -167,6 +167,9 @@ bool isMemsDomainQuestion(const QString &question, const QString &grounding)
         || plain.contains(QStringLiteral("iac"))
         || plain.contains(QStringLiteral("lambda"))
         || plain.contains(QStringLiteral("injection"))
+        || plain.contains(QStringLiteral("injecteur"))
+        || plain.contains(QStringLiteral("spi"))
+        || plain.contains(QStringLiteral("map"))
         || plain.contains(QStringLiteral("bobine"))
         || plain.contains(QStringLiteral("dwell"))
         || !grounding.trimmed().isEmpty();
@@ -194,6 +197,31 @@ QString controlledTechnicalAnswer(const QString &question)
 
     if (code != QStringLiteral("fr"))
         return QString();
+
+    static const QRegularExpression mapRx(QStringLiteral("(^|\\s)map(\\s|$)"));
+    if (mapRx.match(plain).hasMatch()
+        && (plain == QStringLiteral("map")
+            || plain.contains(QStringLiteral("c est quoi"))
+            || plain.contains(QStringLiteral("signifie"))
+            || plain.contains(QStringLiteral("capteur"))
+            || plain.contains(QStringLiteral("sert"))))
+        return QStringLiteral("MAP signifie « Manifold Absolute Pressure ». Le capteur MAP mesure la pression absolue dans le collecteur d'admission. L'ECU utilise notamment cette information pour estimer la charge moteur et adapter ses calculs de gestion moteur. Une valeur MAP réelle n'est disponible ici que lorsque l'ECU la fournit.");
+
+    if (plain.contains(QStringLiteral("injecteur"))
+        && (plain == QStringLiteral("injecteur")
+            || plain.contains(QStringLiteral("c est quoi"))
+            || plain.contains(QStringLiteral("role"))
+            || plain.contains(QStringLiteral("sert"))))
+        return QStringLiteral("Un injecteur d'essence est une électrovanne commandée par l'ECU qui dose et pulvérise le carburant dans l'admission. Sur un système SPI il y a une injection monopoint centralisée ; sur un système MPI, plusieurs injecteurs alimentent les cylindres. Ce n'est pas un système d'injection d'huile.");
+
+    static const QRegularExpression spiRx(QStringLiteral("(^|\\s)spi(\\s|$)"));
+    if (spiRx.match(plain).hasMatch()
+        && (plain == QStringLiteral("spi")
+            || plain.contains(QStringLiteral("rover"))
+            || plain.contains(QStringLiteral("mems"))
+            || plain.contains(QStringLiteral("c est quoi"))
+            || plain.contains(QStringLiteral("signifie"))))
+        return QStringLiteral("Dans le contexte Rover/Mini MEMS, SPI signifie « Single Point Injection », c'est-à-dire injection monopoint. Le dosage de carburant est centralisé au niveau du boîtier papillon, contrairement au MPI où plusieurs injecteurs sont utilisés. SPI ne signifie pas « Signal Pulse Intensité ».");
 
     if (plain.contains(QStringLiteral("repond en francais"))
         || plain.contains(QStringLiteral("reponds en francais")))
