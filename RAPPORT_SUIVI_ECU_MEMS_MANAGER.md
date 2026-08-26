@@ -100,6 +100,13 @@ Correction limitée à `.github/workflows/memsx64.yml` :
 - smoke Qwen conservé : chargement backend dynamique, `/health`, `/v1/models`, chat, puis smoke application.
 - Aucun changement métier, UI, modèle Qwen, protocole ECU ou 32 bits.
 
+### ECU MEMS Manager x64 #66 — Commit `87cb4cd` — EN COURS
+
+- Run GitHub : **`32948276603`** ; job : **`98113701995`**.
+- Checkout, Python, outils, Qt, protections protocole et configuration application sont **VERTS**.
+- Compilation application/self-tests en cours au dernier contrôle.
+- Étape critique à valider ensuite : `Build adaptive shared multi-variant llama.cpp b10516 runtime`, puis package/PE/Qwen/smoke/upload.
+
 ## AUDIT IA À FAIRE APRÈS VALIDATION RUNTIME
 
 L’utilisateur demande un audit complet des questions pouvant être posées à IA MEMS à partir de tout ce que contient déjà ECU MEMS Manager.
@@ -166,4 +173,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Suivre uniquement l’Action GitHub déclenchée par le HEAD `87cb4cdfd2f16ed98f0787454f7f9aec4f041e1f`. Si rouge : consigner la cause exacte avant toute correction. Si verte : consigner l’artefact puis tester sur PC MAP/injecteur/SPI et mesurer la latence Qwen avec le runtime adaptatif partagé. Aucun BUILD #31.**
+**Suivre uniquement ECU MEMS Manager x64 #66 — Commit `87cb4cd`. Si rouge : consigner la cause exacte avant toute correction. Si verte : consigner l’artefact puis tester sur PC MAP/injecteur/SPI et mesurer la latence Qwen avec le runtime adaptatif partagé. Aucun BUILD #31.**
