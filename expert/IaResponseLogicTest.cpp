@@ -42,8 +42,22 @@ int main(int argc, char **argv)
     ok &= require(IaResponseLogic::classify(QStringLiteral("QUE PEUX-TU ME DIRE SUR LES CAPTURES?")) == IaResponseLogic::Intent::Captures,
                   "captures intent fr");
 
+    // A definition must not be mistaken for a request for a live ECU value.
+    ok &= require(IaResponseLogic::classify(QStringLiteral("C'EST QUOI LA LAMBDA ?")) == IaResponseLogic::Intent::None,
+                  "lambda definition is not a live measurement");
+    ok &= require(IaResponseLogic::classify(QStringLiteral("A QUOI SERT LE TPS ?")) == IaResponseLogic::Intent::None,
+                  "TPS definition is not a live measurement");
+    ok &= require(IaResponseLogic::classify(QStringLiteral("C'EST QUOI LE DWELL ?")) == IaResponseLogic::Intent::None,
+                  "dwell definition is not a live measurement");
+    ok &= require(IaResponseLogic::classify(QStringLiteral("QUELLE EST LA VALEUR LAMBDA ?")) == IaResponseLogic::Intent::Lambda,
+                  "lambda value request stays a live measurement");
+    ok &= require(IaResponseLogic::classify(QStringLiteral("MESURE TPS ACTUELLE ?")) == IaResponseLogic::Intent::Throttle,
+                  "TPS current measurement stays a live measurement");
+
     ok &= require(IaResponseLogic::classify(QStringLiteral("battery voltage?")) == IaResponseLogic::Intent::Battery,
                   "battery intent en");
+    ok &= require(IaResponseLogic::classify(QStringLiteral("what is the battery voltage?")) == IaResponseLogic::Intent::None,
+                  "english battery definition is not a live measurement");
     ok &= require(IaResponseLogic::classify(QStringLiteral("estado del motor?")) == IaResponseLogic::Intent::EngineState,
                   "engine state intent es");
     ok &= require(IaResponseLogic::classify(QStringLiteral("diagnosi motore?")) == IaResponseLogic::Intent::Diagnostic,
@@ -113,6 +127,6 @@ int main(int argc, char **argv)
     if (!ok)
         return 1;
 
-    qInfo().noquote() << "PASS IA response intents, multilingual answers and last-measurement timestamp";
+    qInfo().noquote() << "PASS IA response intents, definition routing, multilingual answers and last-measurement timestamp";
     return 0;
 }
