@@ -234,7 +234,24 @@ Le fichier classe déjà, avec document/page/variante/niveau de preuve :
 - interdiction constructeur de régler le ralenti avec la vis de butée papillon ;
 - conflits conservés explicitement, notamment bobine : AKM7169 `0,71–0,81 Ω`, tableau RCL0193 `0,41–0,61 Ω`, description RCL0193 `0,63–0,77 Ω` à 20 °C.
 
-Aucune de ces données n’a encore été injectée dans la base runtime ou dans le code de réponse IA. Étape suivante documentaire : rechercher **stratégies de secours/défaillance, symptômes, contrôles et DTC**, puis recouper les erreurs déjà affichées par MEMS Manager.
+### Phase B — résultat lot pannes / stratégies de secours
+
+Commit documentaire **`3275769a8ba789719d13e306084d15c4c7aaf19a`** — `RAPPORT classify RAVE failure strategies and DTC status`.
+
+Le fichier `AUDIT_RAVE_MINI_SPI_MPI.md` contient maintenant un lot séparé `PANNES / STRATÉGIES DE SECOURS / CONSÉQUENCES` :
+- stratégie générale ECM : certaines entrées défaillantes peuvent être remplacées par une stratégie de secours avec **performances réduites**, sans inventer de valeur de substitution ;
+- CKP : entrée primaire critique pour position/régime moteur ;
+- CMP MPi : panne moteur déjà en marche → fonctionnement maintenu ; panne présente avant démarrage → démarrage possible avec limite de régime réduite par rapport à 6500 tr/min ;
+- antidémarrage : absence d'autorisation codée empêche le démarrage ;
+- coupe-circuit à inertie : coupe la pompe après décélération/choc et doit être contrôlé avant de condamner la pompe ;
+- lambda/HO2S : alimentation/chauffage/câblage/état physique à contrôler avant de conclure à un défaut de richesse ;
+- purge ouverte dans de mauvaises conditions : peut enrichir, perturber le ralenti et retarder le fonctionnement efficace du catalyseur ;
+- IAC hors plage : vérifier contexte/admission/apprentissage ; ne pas régler le ralenti par la vis de butée papillon ;
+- certains défauts intermittents d'entrée peuvent être mémorisés par l'ECM.
+
+**État DTC important** : les publications RCL0193/RCL0213 consultées ne fournissent pas à ce stade une table explicite permettant de certifier la correspondance numérique des erreurs **01–24** affichées par MEMS Manager. Ces numéros restent donc **non vérifiés RAVE** ; leur fonction et leurs conséquences peuvent être documentées par RAVE, mais la correspondance numérique doit être recoupée séparément avec TestBook/documentation MEMS/ROSCO.
+
+Aucune de ces données n’a encore été injectée dans la base runtime ou dans le code de réponse IA.
 
 ## EXIGENCE UI IA — FICHIERS CSV/TXT
 
@@ -287,4 +304,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Suivre ECU MEMS Manager x64 #67 — Commit `634fce0`. Si rouge, consigner l’étape et l’erreur exactes avant toute nouvelle correction. Si vert, consigner l’artefact puis décider du retour contrôlé des variantes optimisées. En parallèle, poursuivre Phase B RAVE/SPi/MPi en lecture seule : stratégies de secours/défaillance, symptômes, contrôles et DTC. Aucun BUILD #31.**
+**Suivre ECU MEMS Manager x64 #67 — Commit `634fce0`. En parallèle, poursuivre RAVE/SPi/MPi en lecture seule : rechercher TestBook/documentation MEMS permettant de recouper les codes défaut 01–24, puis compléter les pinouts et contrôles associés. Si #67 change d'état, consigner son verdict avant toute correction. Aucun BUILD #31.**
