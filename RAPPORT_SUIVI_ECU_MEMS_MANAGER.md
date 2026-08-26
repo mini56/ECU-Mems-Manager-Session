@@ -75,21 +75,21 @@ Commit **`f860749313447e224f63b99801f7e7d6a1839a49`** — `BUILD #30 add control
 HEAD **`20772b8ef5571cc0d0063c1e0d9b6f7e2f0866ef`** — `BUILD #30 enable adaptive llama CPU backends`.
 
 Workflow `.github/workflows/memsx64.yml` :
-- `GGML_NATIVE=OFF` ;
-- `GGML_BACKEND_DL=ON` ;
-- `GGML_CPU_ALL_VARIANTS=ON` ;
-- `GGML_OPENMP=OFF`, `LLAMA_OPENSSL=OFF`, build core toujours `BUILD_SHARED_LIBS=OFF` ;
-- validation CI de `ggml-cpu-x64.dll` comme backend de repli et `ggml-cpu-haswell.dll` comme variante optimisée ;
-- packaging de **toutes** les DLL `ggml-cpu-*.dll` dans `ai/` avec `llama-server.exe` ;
-- manifest runtime passé en schéma 3, profil `adaptive x64 CPU backends` ;
-- validation PE x64 des DLL CPU, absence libomp/OpenSSL ;
-- validation du `install_manifest.txt` pour les backends ;
-- smoke package exécuté depuis le dossier `ai` ;
-- logs serveur vérifiés pour confirmer le chargement d’un `ggml-cpu-*.dll` ;
-- `/health`, `/v1/models`, chat Qwen et smoke app conservés ;
-- hashes BUILD #30 incluent désormais `ggml-cpu-x64.dll` et `ggml-cpu-haswell.dll`.
+- `GGML_NATIVE=OFF` ; `GGML_BACKEND_DL=ON` ; `GGML_CPU_ALL_VARIANTS=ON` ;
+- `GGML_OPENMP=OFF`, `LLAMA_OPENSSL=OFF`, core `BUILD_SHARED_LIBS=OFF` ;
+- backend `ggml-cpu-x64.dll` requis comme repli + `ggml-cpu-haswell.dll` requis comme variante optimisée ;
+- toutes les DLL `ggml-cpu-*.dll` empaquetées dans `ai/` ;
+- manifest runtime schéma 3 `adaptive x64 CPU backends` ;
+- validation PE x64, absence libomp/OpenSSL, install_manifest, logs de chargement backend, `/health`, `/v1/models`, chat Qwen et smoke app ;
+- hashes incluent `ggml-cpu-x64.dll` et `ggml-cpu-haswell.dll`.
 
 Aucun changement protocole ECU, 32 bits ou modèle Qwen.
+
+### ECU MEMS Manager x64 #65 — Commit `20772b8` — EN COURS
+
+- Run GitHub : **`32946087349`** ; job : **`98107022158`**.
+- Checkout, Python et outils de validation sont déjà verts ; installation Qt est en cours au dernier contrôle.
+- Étape critique à suivre : `Build adaptive multi-variant llama.cpp b10516 runtime`, puis packaging et smoke du backend adaptatif.
 
 ## DÉSINSTALLATION BUILD #30
 
@@ -117,4 +117,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Suivre uniquement l’Action GitHub déclenchée par le HEAD `20772b8ef5571cc0d0063c1e0d9b6f7e2f0866ef`. Si rouge : consigner la cause exacte avant toute correction. Si verte : consigner l’artifact puis tester sur PC MAP/injecteur/SPI et mesurer la latence Qwen avec le runtime adaptatif. Aucun BUILD #31.**
+**Suivre ECU MEMS Manager x64 #65 — Commit `20772b8`. Si rouge : consigner la cause exacte avant toute correction. Si verte : consigner l’artifact puis tester sur PC MAP/injecteur/SPI et mesurer la latence Qwen avec le runtime adaptatif. Aucun BUILD #31.**
