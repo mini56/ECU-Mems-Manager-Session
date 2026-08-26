@@ -103,24 +103,73 @@ Correction limitée à `.github/workflows/memsx64.yml` :
 ### ECU MEMS Manager x64 #66 — Commit `87cb4cd` — EN COURS
 
 - Run GitHub : **`32948276603`** ; job : **`98113701995`**.
-- Checkout, Python, outils, Qt, protections protocole et configuration application sont **VERTS**.
-- Compilation application/self-tests en cours au dernier contrôle.
-- Étape critique à valider ensuite : `Build adaptive shared multi-variant llama.cpp b10516 runtime`, puis package/PE/Qwen/smoke/upload.
+- Checkout, Python, outils, Qt, protections protocole et configuration application sont **VERTS** au dernier contrôle.
+- Étape critique à valider : `Build adaptive shared multi-variant llama.cpp b10516 runtime`, puis package/PE/Qwen/smoke/upload.
 
-## AUDIT IA À FAIRE APRÈS VALIDATION RUNTIME
+## AUDIT IA DES QUESTIONS POSSIBLES — DÉMARRÉ EN LECTURE SEULE
 
-L’utilisateur demande un audit complet des questions pouvant être posées à IA MEMS à partir de tout ce que contient déjà ECU MEMS Manager.
+Autorisation utilisateur reçue pendant l’exécution #66 : **commencer immédiatement l’audit sans modifier le code**.
 
-Principe retenu : **toute connaissance certaine déjà présente dans le logiciel ou la base doit produire une réponse immédiate, sans appel Qwen**. Qwen est réservé aux questions nécessitant croisement, raisonnement ou diagnostic multi-facteurs.
+Principe retenu : **toute connaissance certaine déjà présente dans le logiciel, ses libellés/aides, son décodage ou la base experte doit produire une réponse immédiate, sans appel Qwen**. Qwen est réservé au croisement de plusieurs faits, au raisonnement diagnostic, aux questions générales ou aux cas où la réponse n’existe pas sous forme déterministe fiable.
 
-Périmètre à couvrir au minimum :
-- tous les cadrans/mesures : ce que la valeur mesure, comment elle est obtenue/décodée, son unité, son rôle, ce que signifie une valeur trop haute/trop basse, causes possibles et conséquences ;
-- onglet Réglages : fonction de chaque réglage, valeur d’origine/référence lorsque connue et validée, effet d’une augmentation ou diminution, risques/limites et contexte d’application ;
-- tests Actionneurs : rôle de chaque actionneur, ce que le test commande, résultat attendu, conséquences possibles si l’actionneur ne fonctionne pas, contrôles électriques/mécaniques pertinents ;
-- Erreurs/DTC : signification de chaque erreur connue, organe concerné, rôle, symptômes possibles, stratégie ECU/fallback si connue, causes possibles et ordre de contrôle ;
-- familles MEMS/ECU/ROSCO, capteurs, actionneurs, protocoles, valeurs de référence, fonctions du logiciel et autres données déjà documentées.
+### Phase A — inventaire initial constaté
 
-Pour les Erreurs/DTC, IA MEMS doit pouvoir répondre immédiatement à des formulations du type : `J'ai cette erreur, ça fait quoi ?`, `Ça peut provoquer quoi ?`, `Quelles causes possibles ?`, `Qu'est-ce que je contrôle en premier ?`, puis croiser avec les mesures ECU disponibles si une analyse plus poussée est demandée.
+**Aperçu / cadrans actuellement présents** : régime moteur, température liquide, MAP, position papillon, tension batterie, correction carburant court terme, tension lambda, temps injecteur, température air admission, position IAC, avance allumage et état système. L’ancien UI contient aussi l’état contact de ralenti, boucle fermée et fonctions d’enregistrement.
+
+**Connaissances déjà intégrées à l’UI** à exploiter en réponse immédiate :
+- lambda : 0–200 mV indiqué comme mélange pauvre ; 700–900 mV comme mélange riche ;
+- MAP : moteur arrêté ~100 kPa ; ralenti ~25–40 kPa ; valeur anormale → vérifier notamment les durites/dépressions ;
+- affichage Aperçu : plages visuelles déjà codées pour batterie, liquide, air admission, avance et régime ; ces plages doivent être distinguées des spécifications constructeur lorsqu’elles ne sont que des seuils/repères MEMS Manager.
+
+**Réglages réels présents** : correction carburant, position ralenti chaud, vitesse de ralenti, correction d’avance, remise à zéro réglages et reset ECU. Aides déjà codées :
+- vitesse ralenti réglable par pas de 50 tr/min ; `0` = valeur MEMS d’origine ; exemple documenté A+ SPi chaud = 850 tr/min ; agit sur ralenti froid et chaud ;
+- correction carburant : agit sur les émissions au ralenti si non régulé lambda ; les moteurs régulés lambda réadaptent cette valeur ;
+- position ralenti chaud : MEMS la réapprend avec le temps, donc une correction manuelle n’est pas nécessairement permanente ;
+- avance : cartes historiques adaptées à des carburants 91/95 RON ; trop d’avance peut endommager le moteur ; ce réglage n’agit pas sur l’avance au ralenti ;
+- aide écran : régime jusqu’à 2000 tr/min pour réglage fin du ralenti.
+
+**Actionneurs réels présents** : chauffage collecteur/PTC, pompe à carburant, chauffage sonde O2/lambda, électrovanne purge canister, embrayage de climatisation, électrovanne de pression/boost, ventilateurs 1/2/3, injecteur, bobine d’allumage, moteur IAC et remise à zéro de tous les actionneurs. IAC : déplacement demandé par pas de 25 %. Avertissement déjà codé pour le chauffage lambda : durée limitée et ne pas démarrer immédiatement le moteur après chauffage avant refroidissement suffisant.
+
+**Erreurs mémorisées affichées** :
+01 température liquide ; 02 température air admission ; 03 non documenté dans l’UI ; 04 pression boost élevée ; 05 température air ambiant ; 06 température carburant ; 07 cliquetis détecté ; 08 non documenté ; 09 jauge température ; 10 circuit pompe carburant ; 11 non documenté ; 12 commande embrayage climatisation ; 13 vanne purge ; 14 capteur MAP ; 15 vanne de contrôle boost ; 16 circuit capteur position papillon ; 17/18/19 non documentés ; 20 alimentation chauffage lambda ; 21 synchronisation vilebrequin ; 22 commande ventilateur 1 ; 23 commande antidémarrage ; 24 commande ventilateur 2.
+
+**Anomalies live déjà documentées** :
+- signal régime / capteur vilebrequin : indicateur attendu dès que le volant moteur tourne ;
+- erreur signal lambda ;
+- lambda anormalement haute : peut notamment orienter vers sonde usée ou câblage signal mal blindé, particulièrement près alternateur/HT ;
+- lambda anormalement basse ;
+- IAC en position minimale : peut indiquer que l’ECU peine à obtenir un ralenti assez bas ; vérifier réglage câble papillon et prises d’air admission ;
+- compteur Jack au maximum : retour à zéro uniquement par reset ECU complet, puis surveillance dans Toutes les mesures.
+
+**Réponses immédiates déjà codées aujourd’hui** : batterie, régime, température liquide, MAP, lambda, avance, dwell, ralenti/IAC, papillon, état moteur et diagnostic de cohérence. Le service sait aussi fournir valeurs courantes/historique et rechercher des faits dans la base experte.
+
+### Premier écart majeur identifié
+
+L’IA immédiate ne couvre actuellement qu’une **fraction** de ce que MEMS Manager sait déjà. Sont notamment absents comme familles déterministes complètes : correction carburant court terme, temps injecteur, température air admission, états boucle fermée/contact ralenti, explication de tous les réglages, explication de chaque actionneur, et couche structurée par erreur/DTC avec `signification → rôle → symptômes → causes → contrôles`.
+
+### Grille de questions à construire pour chaque élément
+
+Pour chaque mesure/cadran, réglage, actionneur et DTC connu, l’audit doit vérifier la disponibilité d’une réponse immédiate aux formulations :
+- `C’est quoi ?` / `À quoi ça sert ?`
+- `Qu’est-ce que ça mesure ?` / `Comment c’est mesuré ou décodé ?`
+- `Quelle unité ?` / `Quelle valeur normale ou de référence ?`
+- `Pourquoi cette valeur monte/baisse ?`
+- `Si c’est trop haut / trop bas, ça veut dire quoi ?`
+- `Qu’est-ce que ça peut provoquer ?`
+- `Quelles causes possibles ?`
+- `Qu’est-ce que je contrôle en premier ?`
+- pour Réglages : `si j’augmente/diminue, qu’est-ce que ça change ?`, `valeur d’origine ?`, `est-ce que MEMS la réapprend ?`, `quel risque ?` ;
+- pour Actionneurs : `qu’est-ce que le test doit faire ?`, `qu’est-ce que je dois entendre/voir ?`, `si rien ne se passe, quelles causes ?`, `quelles conséquences en fonctionnement ?` ;
+- pour DTC : `j’ai cette erreur, ça fait quoi ?`, `ça peut provoquer quoi ?`, `le moteur peut-il continuer ?`, `quels contrôles en premier ?`.
+
+### Suite exacte de l’audit
+
+1. lire l’implémentation `MEMSInterface` des réglages/actionneurs pour connaître précisément les pas, commandes et limites sans les inventer ;
+2. inventorier les faits déjà présents dans `ExpertRuntimeDatabase.cpp` et la base de référence ;
+3. terminer l’inventaire complet des champs `7D/80` / Toutes les mesures / Toutes les données ;
+4. comparer chaque famille de question à ce qui est déjà routé par `IaMemsService` / `IaResponseLogic` ;
+5. produire la matrice finale `question → source fiable → réponse immédiate possible → donnée manquante → Qwen nécessaire ou non → niveau de preuve` ;
+6. **aucune implémentation de l’audit avant validation du résultat avec l’utilisateur**.
 
 ## EXIGENCE UI IA — FICHIERS CSV/TXT
 
@@ -173,4 +222,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Suivre uniquement ECU MEMS Manager x64 #66 — Commit `87cb4cd`. Si rouge : consigner la cause exacte avant toute correction. Si verte : consigner l’artefact puis tester sur PC MAP/injecteur/SPI et mesurer la latence Qwen avec le runtime adaptatif partagé. Aucun BUILD #31.**
+**Deux voies en parallèle, sans modifier le code métier pendant l’audit : (1) suivre ECU MEMS Manager x64 #66 — Commit `87cb4cd` et consigner son verdict ; (2) poursuivre l’audit read-only par `MEMSInterface`, base experte r20 et inventaire 7D/80. Aucun BUILD #31.**
