@@ -23,9 +23,7 @@ jobs:
       MEMS_BUILD_NUMBER: '30'
       LLAMA_RELEASE: 'b10516'
       LLAMA_COMMIT: 'b95502ba9aa0eb73a2f4fc8878d7fbe6a847a0b9'
-      LLAMA_WIN_CPU_SHA256: 'fbbbc55e0eb2e1b07f9dcb9488616c98ed47d9003b90e15e7c8c7812c4307cd3'
       QWEN_SHA256: '9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031'
-      VC_REDIST_URL: 'https://aka.ms/vc14/vc_redist.x64.exe'
 
     steps:
       - name: Checkout exact BUILD 30 source
@@ -143,134 +141,131 @@ jobs:
           '@ | python -
           "AI_EXPERT_DB=$expertDbPath" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - name: Download official llama.cpp and stage required Microsoft VC++ v14 runtime
+      - name: Build llama.cpp b10516 generic x64 runtime and stage complete DLL closure
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $archive = Join-Path $env:RUNNER_TEMP "llama-$env:LLAMA_RELEASE-bin-win-cpu-x64.zip"
-          $runtime = '${{ github.workspace }}\llama-runtime-official-b10516'
-          $msvcRuntime = '${{ github.workspace }}\llama-msvc-v14-app-local'
-          $url = "https://github.com/ggml-org/llama.cpp/releases/download/$env:LLAMA_RELEASE/llama-$env:LLAMA_RELEASE-bin-win-cpu-x64.zip"
-
-          if (Test-Path $runtime) { Remove-Item $runtime -Recurse -Force }
-          if (Test-Path $msvcRuntime) { Remove-Item $msvcRuntime -Recurse -Force }
+          $src='${{ github.workspace }}\llama-b10516-src'
+          $build='${{ github.workspace }}\llama-b10516-build'
+          $runtime='${{ github.workspace }}\llama-runtime-stage'
+          foreach($path in @($src,$build,$runtime)) {
+            if(Test-Path $path) { Remove-Item $path -Recurse -Force }
+          }
           New-Item -ItemType Directory -Path $runtime -Force | Out-Null
-          New-Item -ItemType Directory -Path $msvcRuntime -Force | Out-Null
-          & curl.exe -L --fail --retry 3 --retry-delay 3 -o $archive $url
-          if ($LASTEXITCODE -ne 0) { throw "Official llama.cpp runtime download failed: $LASTEXITCODE" }
 
-          $actual = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($actual -ne $env:LLAMA_WIN_CPU_SHA256) { throw "Official llama.cpp SHA256 mismatch: $actual" }
-          Expand-Archive -LiteralPath $archive -DestinationPath $runtime -Force
+          git clone --depth 1 --branch $env:LLAMA_RELEASE https://github.com/ggml-org/llama.cpp.git $src
+          if($LASTEXITCODE -ne 0) { throw "llama.cpp clone failed: $LASTEXITCODE" }
+          $actualCommit=(git -C $src rev-parse HEAD).Trim().ToLowerInvariant()
+          if($actualCommit -ne $env:LLAMA_COMMIT.ToLowerInvariant()) { throw "llama.cpp commit mismatch: $actualCommit" }
 
-          foreach ($name in @('llama-server.exe','llama.dll','ggml.dll','ggml-base.dll','ggml-cpu-x64.dll')) {
-            if (-not (Test-Path (Join-Path $runtime $name) -PathType Leaf)) { throw "Official runtime missing: $name" }
+          cmake -S $src -B $build -A x64 `
+            -DBUILD_SHARED_LIBS=ON `
+            -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded `
+            -DGGML_NATIVE=OFF `
+            -DGGML_BACKEND_DL=ON `
+            -DGGML_CPU_ALL_VARIANTS=ON `
+            -DGGML_OPENMP=OFF `
+            -DGGML_RPC=OFF `
+            -DLLAMA_BUILD_SERVER=ON `
+            -DLLAMA_BUILD_EXAMPLES=OFF `
+            -DLLAMA_BUILD_TESTS=OFF `
+            -DLLAMA_BUILD_TOOLS=ON `
+            -DLLAMA_BUILD_APP=OFF `
+            -DLLAMA_OPENSSL=OFF
+          if($LASTEXITCODE -ne 0) { throw "llama.cpp configure failed: $LASTEXITCODE" }
+
+          cmake --build $build --config Release --target llama-server --parallel 4
+          if($LASTEXITCODE -ne 0) { throw "llama-server build failed: $LASTEXITCODE" }
+
+          $server=Get-ChildItem $build -Recurse -File -Filter 'llama-server.exe' |
+            Where-Object { $_.FullName -match '\\Release\\' } | Select-Object -First 1
+          if(-not $server) { throw 'llama-server.exe missing after build' }
+          Copy-Item $server.FullName (Join-Path $runtime 'llama-server.exe') -Force
+
+          $releaseDlls=Get-ChildItem $build -Recurse -File -Filter '*.dll' |
+            Where-Object { $_.FullName -match '\\Release\\' } |
+            Sort-Object Name,FullName
+          $seen=@{}
+          foreach($dll in $releaseDlls) {
+            $name=$dll.Name.ToLowerInvariant()
+            if($seen.ContainsKey($name)) { continue }
+            if($name -like 'ggml-cpu-*.dll' -and $name -ne 'ggml-cpu-x64.dll') { continue }
+            Copy-Item $dll.FullName (Join-Path $runtime $dll.Name) -Force
+            $seen[$name]=$true
           }
-          $backends = @(Get-ChildItem $runtime -File -Filter 'ggml-cpu-*.dll')
-          if ($backends.Count -lt 3) { throw "Official multi-variant backend set incomplete: $($backends.Count)" }
 
-          # llama.cpp b10516 Windows x64 is built with the MSVC v14 toolchain.
-          # Install Microsoft's current supported v14 x64 Redistributable on the CI host,
-          # then stage only the VC++ DLLs actually imported by the official llama binaries.
-          $vcRedist = Join-Path $env:RUNNER_TEMP 'vc_redist.x64.exe'
-          & curl.exe -L --fail --retry 3 --retry-delay 3 -o $vcRedist $env:VC_REDIST_URL
-          if ($LASTEXITCODE -ne 0) { throw "Microsoft VC++ v14 Redistributable download failed: $LASTEXITCODE" }
-          $vcSha = (Get-FileHash $vcRedist -Algorithm SHA256).Hash.ToLowerInvariant()
-          $vcFileVersion = (Get-Item $vcRedist).VersionInfo.FileVersion
-          $vcInstall = Start-Process -FilePath $vcRedist -ArgumentList '/install','/quiet','/norestart' -Wait -PassThru
-          if (@(0,1638,3010) -notcontains $vcInstall.ExitCode) {
-            throw "Microsoft VC++ v14 Redistributable install failed: $($vcInstall.ExitCode)"
+          $required=@('llama.dll','ggml.dll','ggml-base.dll','ggml-cpu-x64.dll','llama-server-impl.dll','llama-common.dll','mtmd.dll')
+          foreach($name in $required) {
+            if(-not(Test-Path (Join-Path $runtime $name) -PathType Leaf)) { throw "Required staged llama DLL missing: $name" }
+          }
+          $cpuBackends=@(Get-ChildItem $runtime -File -Filter 'ggml-cpu-*.dll')
+          if($cpuBackends.Count -ne 1 -or $cpuBackends[0].Name.ToLowerInvariant() -ne 'ggml-cpu-x64.dll') {
+            throw "Generic x64 isolation failed: $($cpuBackends.Name -join ', ')"
           }
 
-          $env:LLAMA_RUNTIME_STAGE = $runtime
-          $env:MSVC_RUNTIME_STAGE = $msvcRuntime
+          $cache=Get-Content (Join-Path $build 'CMakeCache.txt') -Raw
+          foreach($requiredFlag in @(
+            'BUILD_SHARED_LIBS:BOOL=ON',
+            'GGML_NATIVE:BOOL=OFF',
+            'GGML_BACKEND_DL:BOOL=ON',
+            'GGML_CPU_ALL_VARIANTS:BOOL=ON',
+            'GGML_OPENMP:BOOL=OFF',
+            'LLAMA_OPENSSL:BOOL=OFF')) {
+            if(-not $cache.Contains($requiredFlag)) { throw "Required llama build flag missing: $requiredFlag" }
+          }
+
+          $env:LLAMA_RUNTIME_STAGE=$runtime
           @'
-          import os,re,shutil
+          import os,re
           from pathlib import Path
           import pefile
 
-          runtime=Path(os.environ["LLAMA_RUNTIME_STAGE"])
-          stage=Path(os.environ["MSVC_RUNTIME_STAGE"])
-          system32=Path(os.environ["WINDIR"])/"System32"
-          stage.mkdir(parents=True, exist_ok=True)
-          redistributable=re.compile(r"^(?:msvcp|vcruntime|concrt)\d.*\.dll$", re.I)
-
-          queue=[p for p in runtime.rglob("*") if p.is_file() and p.suffix.lower() in (".exe",".dll")]
-          scanned=set()
-          copied={}
-
-          def imports(path):
-              try:
-                  pe=pefile.PE(str(path), fast_load=True)
-                  pe.parse_data_directories(
-                      directories=[
-                          pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_IMPORT"],
-                          pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT"],
-                      ]
-                  )
-              except Exception as exc:
-                  raise SystemExit(f"PE import scan failed for {path}: {exc}")
-              names=[]
-              for attr in ("DIRECTORY_ENTRY_IMPORT","DIRECTORY_ENTRY_DELAY_IMPORT"):
-                  for entry in getattr(pe, attr, []):
-                      try:
-                          names.append(entry.dll.decode("ascii"))
-                      except Exception:
-                          pass
-              pe.close()
-              return names
-
-          while queue:
-              binary=queue.pop()
-              key=str(binary).lower()
-              if key in scanned:
-                  continue
-              scanned.add(key)
-              for name in imports(binary):
-                  if not redistributable.match(name):
-                      continue
-                  lower=name.lower()
-                  if lower in copied:
-                      continue
-                  src=system32/name
-                  if not src.is_file():
-                      raise SystemExit(f"Required Microsoft VC++ runtime DLL not found after vc_redist install: {name}")
-                  dst=stage/name
-                  shutil.copy2(src,dst)
-                  copied[lower]=dst
-                  queue.append(dst)
-
-          if not copied:
-              raise SystemExit("No Microsoft VC++ v14 imports detected in official llama.cpp runtime")
-
-          for name,path in sorted(copied.items()):
-              pe=pefile.PE(str(path), fast_load=True)
+          root=Path(os.environ['LLAMA_RUNTIME_STAGE'])
+          system32=Path(os.environ['WINDIR'])/'System32'
+          pefiles=[p for p in root.iterdir() if p.is_file() and p.suffix.lower() in ('.exe','.dll')]
+          local={p.name.lower():p for p in pefiles}
+          vc=re.compile(r'^(?:msvcp|vcruntime|concrt)\d.*\.dll$',re.I)
+          missing=[]
+          for p in pefiles:
+              pe=pefile.PE(str(p),fast_load=True)
               if pe.FILE_HEADER.Machine != 0x8664:
-                  raise SystemExit(f"Microsoft runtime is not AMD64: {path.name}")
+                  raise SystemExit(f'Not AMD64: {p.name}')
+              pe.parse_data_directories(directories=[
+                  pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_IMPORT'],
+                  pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT']])
+              names=[]
+              for attr in ('DIRECTORY_ENTRY_IMPORT','DIRECTORY_ENTRY_DELAY_IMPORT'):
+                  for entry in getattr(pe,attr,[]):
+                      try: names.append(entry.dll.decode('ascii'))
+                      except Exception: pass
               pe.close()
-              print(f"MSVC_APP_LOCAL={path.name}")
-          print(f"PASS Microsoft VC++ app-local closure: {len(copied)} DLL(s)")
+              for name in names:
+                  lower=name.lower()
+                  if lower in local: continue
+                  if vc.match(name):
+                      missing.append(f'{p.name}->{name} (VC runtime must not be external)')
+                      continue
+                  if lower.startswith(('api-ms-win-','ext-ms-win-')): continue
+                  if not (system32/name).is_file(): missing.append(f'{p.name}->{name}')
+          if missing:
+              raise SystemExit('Unresolved staged llama imports: '+', '.join(sorted(set(missing))))
+          print(f'PASS llama PE closure: {len(pefiles)} AMD64 binaries, CPU backend=ggml-cpu-x64.dll')
           '@ | python -
 
-          $vcruntime = Join-Path $msvcRuntime 'vcruntime140.dll'
-          if (-not (Test-Path $vcruntime -PathType Leaf)) { throw 'vcruntime140.dll was not staged for llama-server' }
-          $runtimeVersion = (Get-Item $vcruntime).VersionInfo.FileVersion
-          Write-Host "Microsoft VC++ source installer: version=$vcFileVersion sha256=$vcSha"
-          Write-Host "Microsoft VC++ staged vcruntime140.dll: version=$runtimeVersion"
-
-          $savedPath=$env:PATH; $env:PATH="$runtime;$msvcRuntime;$savedPath"
+          $savedPath=$env:PATH
+          $env:PATH="$runtime;$env:SystemRoot\System32;$env:SystemRoot"
           Push-Location $runtime
           try {
             & (Join-Path $runtime 'llama-server.exe') --version
-            if ($LASTEXITCODE -ne 0) { throw "Official llama-server --version failed with staged Microsoft runtime: $LASTEXITCODE" }
-          } finally { Pop-Location; $env:PATH=$savedPath }
+            if($LASTEXITCODE -ne 0) { throw "Staged llama-server --version failed: $LASTEXITCODE" }
+          } finally {
+            Pop-Location
+            $env:PATH=$savedPath
+          }
 
-          Write-Host "PASS official llama.cpp b10516 runtime: SHA256=$actual; CPU backends=$($backends.Count)"
+          Write-Host "PASS source-built llama.cpp b10516 generic x64 runtime; staged DLLs=$($seen.Count); CPU backends=1"
+          Write-Host ((Get-ChildItem $runtime -File | Sort-Object Name | ForEach-Object { $_.Name }) -join ', ')
           "AI_RUNTIME_DIR=$runtime" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-          "AI_MSVC_RUNTIME_DIR=$msvcRuntime" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-          "VC_REDIST_SHA256=$vcSha" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-          "VC_REDIST_FILE_VERSION=$vcFileVersion" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-          "VC_RUNTIME_FILE_VERSION=$runtimeVersion" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Download and verify Qwen3-0.6B-Q8_0
         shell: pwsh
@@ -312,8 +307,7 @@ jobs:
           Copy-Item $env:AI_EXPERT_DB "$dist\database\expert\ia_mems_reference_r20.sqlite" -Force
 
           New-Item -ItemType Directory -Path "$dist\ai\models" -Force | Out-Null
-          Copy-Item "$env:AI_RUNTIME_DIR\*" "$dist\ai" -Recurse -Force
-          Copy-Item "$env:AI_MSVC_RUNTIME_DIR\*" "$dist\ai" -Force
+          Copy-Item "$env:AI_RUNTIME_DIR\*" "$dist\ai" -Force
           Copy-Item $env:AI_MODEL "$dist\ai\models\ia-mems.gguf" -Force
 
           & curl.exe -L --fail --retry 3 --retry-delay 3 -o "$dist\ai\LLAMA_CPP_LICENSE.txt" "https://raw.githubusercontent.com/ggml-org/llama.cpp/$env:LLAMA_COMMIT/LICENSE"
@@ -330,10 +324,9 @@ jobs:
               "name": "llama.cpp",
               "release": "b10516",
               "source_commit": "b95502ba9aa0eb73a2f4fc8878d7fbe6a847a0b9",
-              "distribution": "official llama-b10516-bin-win-cpu-x64.zip",
-              "archive_sha256": "fbbbc55e0eb2e1b07f9dcb9488616c98ed47d9003b90e15e7c8c7812c4307cd3",
-              "profile": "official Windows x64 CPU multi-variant runtime kept intact; automatic compatible CPU backend selection",
-              "msvc_deployment": "Microsoft Visual C++ v14 runtime dependencies required by llama-server are deployed app-local beside llama-server.exe"
+              "distribution": "source-built by BUILD 30 from exact llama.cpp b10516 commit",
+              "profile": "generic Windows AMD64 CPU backend only; GGML_NATIVE=OFF; ggml-cpu-x64.dll; all required non-CPU shared DLLs staged",
+              "msvc_deployment": "llama runtime built with static MultiThreaded MSVC runtime"
             },
             "model": {
               "name": "Qwen3-0.6B-Q8_0",
@@ -349,20 +342,11 @@ jobs:
           '@ | Set-Content "$dist\ai\runtime_manifest.json" -Encoding UTF8
 
           @(
-            'Source: Microsoft Visual C++ v14 x64 Redistributable',
-            "URL: $env:VC_REDIST_URL",
-            "Installer file version: $env:VC_REDIST_FILE_VERSION",
-            "Installer SHA-256 used by this build: $env:VC_REDIST_SHA256",
-            "Staged vcruntime140.dll file version: $env:VC_RUNTIME_FILE_VERSION",
-            'Deployment: app-local DLL closure derived from PE imports of the official llama.cpp b10516 runtime'
-          ) | Set-Content "$dist\ai\MSVC_RUNTIME_SOURCE.txt" -Encoding UTF8
-
-          @(
             'ECU MEMS Manager BUILD #30 / v1.0.30',
             'IA locale: Qwen3-0.6B-Q8_0 + llama.cpp b10516',
-            'Runtime: archive officielle Windows x64 CPU b10516, SHA-256 vérifié, contenu conservé intact',
-            'CPU: sélection multi-variantes officielle llama.cpp pour PC x64 Intel/AMD',
-            'MSVC: dépendances Visual C++ v14 requises par llama-server déployées localement dans ai/',
+            'Runtime: compilé par BUILD #30 depuis le commit b10516 exact',
+            'CPU: backend générique x64 uniquement (ggml-cpu-x64.dll), sans variantes icelake/skylakex/haswell',
+            'DLL: toutes les DLL partagées non-CPU produites et requises par llama-server sont livrées dans ai/',
             '32 bits et protocole ECU inchangés'
           ) | Set-Content "$dist\README_BUILD30.txt" -Encoding UTF8
 
@@ -371,126 +355,85 @@ jobs:
           ($files + 'install_manifest.txt') | Sort-Object -Unique | Set-Content $manifest -Encoding UTF8
           "DIST=$dist" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - name: Validate package and official llama runtime integrity
+      - name: Validate package and isolated llama runtime integrity
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $env:DIST_ROOT=$env:DIST
           @'
-          import hashlib,os,re,sqlite3
+          import os,sqlite3
           from pathlib import Path
           import pefile
 
-          root=Path(os.environ["DIST_ROOT"]); ai=root/"ai"; src=Path(os.environ["AI_RUNTIME_DIR"])
-          must=[root/"ecu_mems_manager.exe",root/"ecu_mems_uninstaller.exe",root/"mems_manager_x64.dll",
-                ai/"llama-server.exe",ai/"llama.dll",ai/"ggml.dll",ai/"ggml-base.dll",ai/"ggml-cpu-x64.dll",
-                ai/"vcruntime140.dll",ai/"MSVC_RUNTIME_SOURCE.txt",
-                ai/"models"/"ia-mems.gguf",root/"database"/"expert"/"ia_mems_reference_r20.sqlite",root/"install_manifest.txt"]
+          root=Path(os.environ['DIST_ROOT']); ai=root/'ai'
+          must=[root/'ecu_mems_manager.exe',root/'ecu_mems_uninstaller.exe',root/'mems_manager_x64.dll',
+                ai/'llama-server.exe',ai/'llama.dll',ai/'ggml.dll',ai/'ggml-base.dll',ai/'ggml-cpu-x64.dll',
+                ai/'llama-server-impl.dll',ai/'llama-common.dll',ai/'mtmd.dll',
+                ai/'models'/'ia-mems.gguf',root/'database'/'expert'/'ia_mems_reference_r20.sqlite',root/'install_manifest.txt']
           missing=[str(p.relative_to(root)) for p in must if not p.is_file()]
-          if missing: raise SystemExit("Missing BUILD 30 files: "+", ".join(missing))
+          if missing: raise SystemExit('Missing BUILD 30 files: '+', '.join(missing))
 
-          def h(p):
-              x=hashlib.sha256()
-              with open(p,"rb") as f:
-                  for b in iter(lambda:f.read(1048576),b""): x.update(b)
-              return x.hexdigest()
-
-          official=[p for p in src.rglob("*") if p.is_file()]
-          if not official: raise SystemExit("Official llama runtime stage empty")
-          for p in official:
-              q=ai/p.relative_to(src)
-              if not q.is_file() or h(p)!=h(q): raise SystemExit("Official llama runtime changed/missing: "+p.relative_to(src).as_posix())
-
-          official_pe=[p for p in official if p.suffix.lower() in (".exe",".dll")]
-          for p in [root/"ecu_mems_manager.exe",root/"ecu_mems_uninstaller.exe",root/"mems_manager_x64.dll"]+[ai/p.relative_to(src) for p in official_pe]:
-              pe=pefile.PE(str(p), fast_load=True)
-              if pe.FILE_HEADER.Machine != 0x8664: raise SystemExit(p.name+" is not AMD64")
+          pefiles=[root/'ecu_mems_manager.exe',root/'ecu_mems_uninstaller.exe',root/'mems_manager_x64.dll'] + \
+                  [p for p in ai.iterdir() if p.is_file() and p.suffix.lower() in ('.exe','.dll')]
+          for p in pefiles:
+              pe=pefile.PE(str(p),fast_load=True)
+              if pe.FILE_HEADER.Machine != 0x8664: raise SystemExit(p.name+' is not AMD64')
               pe.close()
 
-          redistributable=re.compile(r"^(?:msvcp|vcruntime|concrt)\d.*\.dll$", re.I)
-          required=set()
-          queue=[ai/p.relative_to(src) for p in official_pe]
-          scanned=set()
-          while queue:
-              p=queue.pop()
-              key=str(p).lower()
-              if key in scanned: continue
-              scanned.add(key)
-              pe=pefile.PE(str(p), fast_load=True)
-              pe.parse_data_directories(
-                  directories=[
-                      pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_IMPORT"],
-                      pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT"],
-                  ]
-              )
-              names=[]
-              for attr in ("DIRECTORY_ENTRY_IMPORT","DIRECTORY_ENTRY_DELAY_IMPORT"):
-                  for entry in getattr(pe,attr,[]):
-                      try: names.append(entry.dll.decode("ascii"))
-                      except Exception: pass
-              pe.close()
-              for name in names:
-                  if not redistributable.match(name): continue
-                  required.add(name.lower())
-                  local=ai/name
-                  if not local.is_file(): raise SystemExit("Missing app-local Microsoft VC++ dependency: "+name)
-                  queue.append(local)
+          backends=list(ai.glob('ggml-cpu-*.dll'))
+          if len(backends)!=1 or backends[0].name.lower()!='ggml-cpu-x64.dll':
+              raise SystemExit('Packaged CPU backend isolation invalid: '+', '.join(p.name for p in backends))
 
-          if not required: raise SystemExit("No Microsoft VC++ app-local dependency closure found")
-          for name in sorted(required):
-              p=ai/name
-              pe=pefile.PE(str(p), fast_load=True)
-              if pe.FILE_HEADER.Machine != 0x8664: raise SystemExit(p.name+" is not AMD64")
-              pe.close()
-
-          backends=list(ai.glob("ggml-cpu-*.dll"))
-          if len(backends)<3 or "ggml-cpu-x64.dll" not in {p.name.lower() for p in backends}: raise SystemExit("Official CPU backend set invalid")
-
-          db=sqlite3.connect(str(root/"database"/"expert"/"ia_mems_reference_r20.sqlite"))
-          try: ok=db.execute("PRAGMA integrity_check").fetchone()[0]; rev=db.execute("PRAGMA user_version").fetchone()[0]
+          db=sqlite3.connect(str(root/'database'/'expert'/'ia_mems_reference_r20.sqlite'))
+          try: ok=db.execute('PRAGMA integrity_check').fetchone()[0]; rev=db.execute('PRAGMA user_version').fetchone()[0]
           finally: db.close()
-          if str(ok).lower()!="ok" or rev!=20: raise SystemExit(f"Invalid expert DB: {ok} r{rev}")
-
-          print(f"PASS package: official llama files={len(official)}, CPU backends={len(backends)}, MSVC app-local={len(required)}, expert r{rev}")
+          if str(ok).lower()!='ok' or rev!=20: raise SystemExit(f'Invalid expert DB: {ok} r{rev}')
+          print(f'PASS package: isolated llama AMD64 files={len(pefiles)-3}, CPU backend=ggml-cpu-x64.dll, expert r{rev}')
           '@ | python -
 
-      - name: Validate packaged official llama server model and API
+      - name: Validate packaged llama server model and API with clean PATH
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $ai="$env:DIST\ai"; $server="$ai\llama-server.exe"; $model="$ai\models\ia-mems.gguf"
           $backends=@(Get-ChildItem $ai -File -Filter 'ggml-cpu-*.dll')
-          if ($backends.Count -lt 3) { throw "Official multi-variant backend set incomplete: $($backends.Count)" }
+          if($backends.Count -ne 1 -or $backends[0].Name.ToLowerInvariant() -ne 'ggml-cpu-x64.dll') {
+            throw "Unexpected packaged CPU backends: $($backends.Name -join ', ')"
+          }
 
-          $savedPath=$env:PATH; $env:PATH="$ai;$savedPath"
+          $savedPath=$env:PATH
+          $env:PATH="$ai;$env:SystemRoot\System32;$env:SystemRoot"
           Push-Location $ai
           try {
             & $server --version
-            if ($LASTEXITCODE -ne 0) { throw "Official llama-server --version failed: $LASTEXITCODE" }
+            if($LASTEXITCODE -ne 0) { throw "Packaged llama-server --version failed: $LASTEXITCODE" }
           } finally { Pop-Location }
 
-          $out="$env:RUNNER_TEMP\llama-official-out.log"; $err="$env:RUNNER_TEMP\llama-official-err.log"
+          $out="$env:RUNNER_TEMP\llama-isolated-out.log"; $err="$env:RUNNER_TEMP\llama-isolated-err.log"
           Remove-Item $out,$err -Force -ErrorAction SilentlyContinue
           $args=@('-m',$model,'--alias','ia-mems','--host','127.0.0.1','--port','18089','-c','4096','-np','1','--no-webui','--offline','--reasoning','off')
           $p=Start-Process -FilePath $server -WorkingDirectory $ai -ArgumentList $args -RedirectStandardOutput $out -RedirectStandardError $err -PassThru -WindowStyle Hidden
           try {
             $ready=$false
-            for($i=0;$i-lt180;$i++){
+            for($i=0;$i-lt180;$i++) {
               Start-Sleep -Milliseconds 500
-              if($p.HasExited){ throw "Official llama-server exited during Qwen load: $($p.ExitCode)" }
+              if($p.HasExited) {
+                $detail=((Get-Content $err -Raw -ErrorAction SilentlyContinue) + "`n" + (Get-Content $out -Raw -ErrorAction SilentlyContinue)).Trim()
+                throw "Packaged llama-server exited during Qwen load: $($p.ExitCode) $detail"
+              }
               try { $health=Invoke-RestMethod 'http://127.0.0.1:18089/health' -TimeoutSec 2; if($health.status-eq'ok'){$ready=$true;break} } catch {}
             }
-            if(-not $ready){ throw 'Official llama-server did not become ready' }
+            if(-not $ready) { throw 'Packaged llama-server did not become ready' }
 
             $models=Invoke-RestMethod 'http://127.0.0.1:18089/v1/models' -TimeoutSec 10
-            if(@($models.data|ForEach-Object{$_.id}) -notcontains 'ia-mems'){ throw 'Unexpected /v1/models response' }
+            if(@($models.data|ForEach-Object{$_.id}) -notcontains 'ia-mems') { throw 'Unexpected /v1/models response' }
 
             $body=@{model='ia-mems';messages=@(@{role='user';content='Reponds uniquement: OK'});stream=$false;max_tokens=24;temperature=0.2}|ConvertTo-Json -Depth 8
             $reply=Invoke-RestMethod -Method Post 'http://127.0.0.1:18089/v1/chat/completions' -ContentType 'application/json' -Body $body -TimeoutSec 60
-            if([string]::IsNullOrWhiteSpace([string]$reply.choices[0].message.content)){ throw 'Empty Qwen chat completion' }
-            Write-Host "PASS official llama.cpp API"
+            if([string]::IsNullOrWhiteSpace([string]$reply.choices[0].message.content)) { throw 'Empty Qwen chat completion' }
+            Write-Host 'PASS isolated source-built llama.cpp API'
           } finally {
-            if($p -and -not $p.HasExited){ Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue; $p.WaitForExit() }
+            if($p -and -not $p.HasExited) { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue; $p.WaitForExit() }
             $env:PATH=$savedPath
           }
 
@@ -500,9 +443,9 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $p=Start-Process -FilePath "$env:DIST\ecu_mems_manager.exe" -WorkingDirectory $env:DIST -PassThru
           Start-Sleep -Seconds 8
-          if($p.HasExited){ throw "ECU MEMS Manager exited during smoke launch: $($p.ExitCode)" }
+          if($p.HasExited) { throw "ECU MEMS Manager exited during smoke launch: $($p.ExitCode)" }
           $null=$p.CloseMainWindow()
-          if(-not $p.WaitForExit(5000)){ Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }
+          if(-not $p.WaitForExit(5000)) { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }
           Write-Host 'PASS ECU MEMS Manager BUILD 30 smoke launch'
 
       - name: Generate BUILD 30 file hashes
@@ -510,8 +453,8 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $hashFile="$env:DIST\BUILD30_SHA256.txt"; $manifest="$env:DIST\install_manifest.txt"
-          if(-not((Get-Content $manifest)-contains'BUILD30_SHA256.txt')){ Add-Content $manifest 'BUILD30_SHA256.txt' -Encoding UTF8 }
-          $lines=foreach($f in Get-ChildItem $env:DIST -Recurse -File | Where-Object{$_.FullName-ne$hashFile} | Sort-Object FullName){
+          if(-not((Get-Content $manifest)-contains'BUILD30_SHA256.txt')) { Add-Content $manifest 'BUILD30_SHA256.txt' -Encoding UTF8 }
+          $lines=foreach($f in Get-ChildItem $env:DIST -Recurse -File | Where-Object{$_.FullName-ne$hashFile} | Sort-Object FullName) {
             $r=$f.FullName.Substring($env:DIST.Length+1).Replace('\','/')
             "$((Get-FileHash $f.FullName -Algorithm SHA256).Hash.ToLowerInvariant())  $r"
           }
