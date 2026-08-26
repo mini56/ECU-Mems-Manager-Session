@@ -171,6 +171,20 @@ Pour chaque mesure/cadran, réglage, actionneur et DTC connu, l’audit doit vé
 5. produire la matrice finale `question → source fiable → réponse immédiate possible → donnée manquante → Qwen nécessaire ou non → niveau de preuve` ;
 6. **aucune implémentation de l’audit avant validation du résultat avec l’utilisateur**.
 
+## SOUS-AUDIT DOCUMENTAIRE — RAVE / MINI SPI / MPI — DÉMARRÉ
+
+Demande utilisateur : rechercher sur le Web les documents constructeur Rover/Mini disponibles publiquement, en priorité **RAVE**, manuels d’atelier Mini **SPi** et **MPi**, et intégrer à la base uniquement les informations techniques vérifiables utiles aux réponses IA.
+
+Règles de classement :
+- ne pas stocker un manuel complet ou du texte copyrighté dans la base ; extraire uniquement des faits techniques structurés ;
+- chaque fait doit conserver `source`, `document`, `famille/variant`, `rubrique`, `page/section si disponible`, `niveau de preuve` et `notes/conflits` ;
+- priorité au niveau **`verifie_constructeur`** quand la donnée vient directement d’un manuel Rover/MG/RAVE identifiable ;
+- ne pas écraser les données projet déjà validées ; en cas de divergence, conserver le conflit explicitement ;
+- cibles prioritaires : valeurs normales/de contrôle, valeurs d’origine de réglages, procédures de test, rôle des capteurs/actionneurs, symptômes et conséquences d’un défaut, contrôles électriques/mécaniques, conditions de test, DTC et stratégie ECU lorsqu’elle est documentée ;
+- les données spécifiques SPi et MPi doivent rester séparées ; ne pas généraliser une valeur d’un système à l’autre sans preuve.
+
+Objectif : enrichir la matrice des **réponses immédiates** avec des données constructeur fiables et traçables, sans faire dépendre ces réponses de Qwen.
+
 ## EXIGENCE UI IA — FICHIERS CSV/TXT
 
 À intégrer dans l’onglet **IA MEMS** après validation du runtime, sans changer le style dark/responsive :
@@ -222,4 +236,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Deux voies en parallèle, sans modifier le code métier pendant l’audit : (1) suivre ECU MEMS Manager x64 #66 — Commit `87cb4cd` et consigner son verdict ; (2) poursuivre l’audit read-only par `MEMSInterface`, base experte r20 et inventaire 7D/80. Aucun BUILD #31.**
+**Trois voies en parallèle, sans modifier le code métier pendant l’audit : (1) suivre ECU MEMS Manager x64 #66 — Commit `87cb4cd` et consigner son verdict ; (2) poursuivre l’audit read-only des questions ; (3) rechercher/classer les données constructeur RAVE/Mini SPi/MPi et n’intégrer que des faits techniques traçables. Aucun BUILD #31.**
