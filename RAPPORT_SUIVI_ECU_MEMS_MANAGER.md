@@ -100,11 +100,24 @@ Correction limitée à `.github/workflows/memsx64.yml` :
 - smoke Qwen conservé : chargement backend dynamique, `/health`, `/v1/models`, chat, puis smoke application.
 - Aucun changement métier, UI, modèle Qwen, protocole ECU ou 32 bits.
 
-### ECU MEMS Manager x64 #66 — Commit `87cb4cd` — EN COURS
+### ECU MEMS Manager x64 #66 — Commit `87cb4cd` — ROUGE
 
 - Run GitHub : **`32948276603`** ; job : **`98113701995`**.
-- Checkout, Python, outils, Qt, protections protocole et configuration application sont **VERTS** au dernier contrôle.
-- Étape critique à valider : `Build adaptive shared multi-variant llama.cpp b10516 runtime`, puis package/PE/Qwen/smoke/upload.
+- Étapes 1 à 16 : **VERTES**.
+- Échec unique : étape 17 `Validate packaged adaptive llama server model and API`.
+- `llama-server.exe --version` fonctionne : `0.1.2-dev (build 1, commit b95502b)`, MSVC x64.
+- Au lancement avec Qwen, le processus quitte pendant le chargement du modèle avec **`-1073740791`**, soit **`0xC0000409`** sous Windows.
+- Le crash intervient donc après démarrage du serveur et avant disponibilité `/health` ; ce n’est pas un échec CMake, ni une absence simple de `llama-server.exe`.
+- Étapes 18 à 20 sautées ; aucun artefact #66.
+- Le changement nouveau par rapport au runtime stable #63 est le runtime partagé + chargeur de backends CPU multi-variantes.
+
+### Étape 4 — isolement runtime x64 partagé — AUTORISÉE
+
+Autorisation utilisateur : **`OK TU POUSSE SUR GITHUB`**.
+
+Objectif exact avant toute autre optimisation : conserver le runtime partagé nécessaire à `GGML_BACKEND_DL`, mais **ne rendre disponible au runtime que `ggml-cpu-x64.dll`**. Les variantes `haswell`, `skylakex`, etc. restent construites par CI mais ne sont ni placées dans le dossier runtime, ni emballées dans l’artefact de ce test.
+
+Ce test doit répondre à une seule question : **le crash `0xC0000409` disparaît-il quand le chargeur dynamique n’a que le backend x64 de base à charger ?** Aucun changement IA métier, modèle Qwen, UI, protocole ECU, base, 32 bits ou BUILD logiciel n’est autorisé dans ce lot.
 
 ## AUDIT IA DES QUESTIONS POSSIBLES — DÉMARRÉ EN LECTURE SEULE
 
@@ -236,4 +249,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Trois voies en parallèle, sans modifier le code métier pendant l’audit : (1) suivre ECU MEMS Manager x64 #66 — Commit `87cb4cd` et consigner son verdict ; (2) poursuivre l’audit read-only des questions ; (3) rechercher/classer les données constructeur RAVE/Mini SPi/MPi et n’intégrer que des faits techniques traçables. Aucun BUILD #31.**
+**Pousser sur `MEMSX64` un test d’isolement limité au runtime Qwen : garder le runtime partagé b10516 mais n’exposer que `ggml-cpu-x64.dll`, lancer le GitHub Actions suivant, puis consigner son verdict avant toute autre correction. Audit IA/RAVE reste en lecture seule. Aucun BUILD #31.**
