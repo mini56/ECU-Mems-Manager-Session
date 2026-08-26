@@ -118,6 +118,19 @@ Pour les Erreurs/DTC, IA MEMS doit pouvoir répondre immédiatement à des formu
 - l’objectif est notamment d’analyser des logs, traces et exports de mesures puis de les croiser avec la base MEMS et, lorsque nécessaire, avec le raisonnement Qwen ;
 - pour ce besoin, le périmètre demandé est **CSV et TXT**. Aucun autre format n’est ajouté sans demande explicite.
 
+## EXIGENCE UI IA — NOUVELLE ZONE DE SAISIE
+
+Refaire la zone de saisie de **IA MEMS** dans l’esprit d’un composeur de chat moderne, tout en conservant le style dark/responsive propre à MEMS Manager :
+- conteneur principal **arrondi aux deux extrémités**, type capsule lorsque la saisie tient sur une ligne ;
+- saisie **multiligne** : la zone grandit verticalement lorsque le texte prend plusieurs lignes, sans perdre les coins arrondis ;
+- le texte reste lisible et la zone ne doit pas écraser le transcript ni casser le responsive ;
+- bouton **`+`** intégré à gauche de la zone pour la sélection `.csv` / `.txt`, avec bulle **`Sélectionner un fichier`** ;
+- à droite, remplacer le bouton texte `Envoyer` par un **bouton rond orange** cohérent avec les accents actuels de MEMS Manager ;
+- dans ce rond orange : **flèche orientée vers le haut** pour envoyer le message ;
+- le bouton d’envoi reste accessible lorsque la saisie devient multiligne ;
+- conserver la possibilité d’envoyer au clavier de manière cohérente avec une saisie multiligne : `Entrée` ne doit pas empêcher l’écriture sur plusieurs lignes ; le comportement exact du raccourci d’envoi sera validé avec l’utilisateur avant codage si nécessaire ;
+- aucun changement global de thème : conserver le dark, le responsive et l’identité visuelle actuelle du programme.
+
 ## DÉSINSTALLATION BUILD #30
 
 - `ecu_mems_uninstaller.exe` + `install_manifest.txt` requis.
@@ -144,4 +157,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Suivre ECU MEMS Manager x64 #65 — Commit `20772b8`. Si rouge : consigner la cause exacte avant toute correction. Si verte : consigner l’artifact puis tester sur PC MAP/injecteur/SPI et mesurer la latence Qwen avec le runtime adaptatif. Ensuite seulement lancer l’audit complet des réponses immédiates et traiter l’UI de sélection/glisser-déposer CSV/TXT. Aucun BUILD #31.**
+**Suivre ECU MEMS Manager x64 #65 — Commit `20772b8`. Si rouge : consigner la cause exacte avant toute correction. Si verte : consigner l’artifact puis tester sur PC MAP/injecteur/SPI et mesurer la latence Qwen avec le runtime adaptatif. Ensuite seulement lancer l’audit complet des réponses immédiates et traiter l’UI IA : nouveau composeur multiligne arrondi, bouton `+` CSV/TXT et bouton rond orange avec flèche vers le haut. Aucun BUILD #31.**
