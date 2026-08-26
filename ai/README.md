@@ -10,6 +10,7 @@ Cette couche fournit la conversation locale de l'onglet **IA MEMS** sur la voie 
 - MEMS Manager prépare le contexte technique depuis le moteur expert et la base MEMS avant de solliciter le modèle.
 - Les réponses déterministes restent prioritaires ; le modèle ne doit pas inventer les faits ECU.
 - Le package x64 n'est publiable que si le self-test du `LocalAiClient` de production charge le modèle ONNX et génère une réponse réelle depuis le package assemblé.
+- La CI `MEMSX64` assemble le runtime officiel, le modèle épinglé et l'application complète avant publication de l'artefact de test.
 
 ## Arborescence d'exécution attendue
 
