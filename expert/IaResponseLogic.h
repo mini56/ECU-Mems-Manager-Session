@@ -96,9 +96,47 @@ inline QString lastMeasurementTimestampText()
     return QDateTime::fromMSecsSinceEpoch(timestampMs).toString(QStringLiteral("dd/MM/yyyy HH:mm:ss"));
 }
 
+inline bool isMetricDefinitionQuestion(const QString &text)
+{
+    const bool definition = hasAny(text, {
+        "c'est quoi", "c est quoi", "qu'est-ce", "qu est ce", "que signifie", "signifie quoi",
+        "a quoi sert", "quel est le role", "quel role",
+        "what is", "meaning of", "what does", "what is the purpose",
+        "que es", "que significa", "para que sirve",
+        "cos'e", "cos e", "cosa significa", "a cosa serve",
+        "o que e", "o que significa", "para que serve",
+        "was ist", "was bedeutet", "wozu dient"
+    });
+    if (!definition)
+        return false;
+
+    const bool asksMeasurement = hasAny(text, {
+        "valeur", "mesure", "combien", "actuel", "actuelle", "en direct", "valeur normale",
+        "current value", "measurement", "reading", "live value", "normal value",
+        "valor", "medicion", "medicao", "misura", "wert", "messwert"
+    });
+    if (asksMeasurement)
+        return false;
+
+    return hasAny(text, {
+        "batterie", "tension batterie", "battery", "bateria", "batteria", "batteriespannung",
+        "regime", "rpm", "tr/min", "engine speed", "revoluciones", "revolucoes", "giri motore", "motordrehzahl",
+        "temperature liquide", "temperature moteur", "liquide refroidissement", "ldr", "coolant", "refrigerante", "kuehlmittel",
+        "map", "pression collecteur", "pression admission", "manifold pressure", "saugrohrdruck",
+        "lambda", "sonde o2", "sonde oxygene", "oxygen sensor", "o2 sensor", "lambdasonde",
+        "avance", "allumage", "ignition advance", "timing advance", "zuendwinkel",
+        "dwell", "temps bobine", "charge bobine", "coil time", "coil charge", "spulenladezeit",
+        "ralenti", "idle", "marcha lenta", "minimo", "leerlauf",
+        "papillon", "tps", "throttle", "mariposa", "borboleta", "farfalla", "drosselklappe"
+    });
+}
+
 inline Intent classify(const QString &question)
 {
     const QString text = normalize(question);
+
+    if (isMetricDefinitionQuestion(text))
+        return Intent::None;
 
     if (hasAny(text, {"capture", "captures", "screenshot", "screenshots", "captura", "capturas",
                       "schermata", "schermate", "captura de tela", "capturas de tela", "bildschirmfoto", "screenshots"}))
