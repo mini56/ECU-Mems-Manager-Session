@@ -9,6 +9,7 @@ Cette couche fournit la conversation locale de l'onglet **IA MEMS** sur la voie 
 - Le modèle et la génération s'exécutent sur un thread dédié afin de ne pas bloquer l'interface Qt.
 - MEMS Manager prépare le contexte technique depuis le moteur expert et la base MEMS avant de solliciter le modèle.
 - Les réponses déterministes restent prioritaires ; le modèle ne doit pas inventer les faits ECU.
+- Le package x64 n'est publiable que si le self-test du `LocalAiClient` de production charge le modèle ONNX et génère une réponse réelle depuis le package assemblé.
 
 ## Arborescence d'exécution attendue
 
