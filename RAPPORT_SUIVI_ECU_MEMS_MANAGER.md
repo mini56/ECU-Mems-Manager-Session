@@ -91,6 +91,33 @@ Aucun changement protocole ECU, 32 bits ou modèle Qwen.
 - Checkout, Python et outils de validation sont déjà verts ; installation Qt est en cours au dernier contrôle.
 - Étape critique à suivre : `Build adaptive multi-variant llama.cpp b10516 runtime`, puis packaging et smoke du backend adaptatif.
 
+## AUDIT IA À FAIRE APRÈS #65
+
+L’utilisateur demande un audit complet des questions pouvant être posées à IA MEMS à partir de tout ce que contient déjà ECU MEMS Manager.
+
+Principe retenu : **toute connaissance certaine déjà présente dans le logiciel ou la base doit produire une réponse immédiate, sans appel Qwen**. Qwen est réservé aux questions nécessitant croisement, raisonnement ou diagnostic multi-facteurs.
+
+Périmètre à couvrir au minimum :
+- tous les cadrans/mesures : ce que la valeur mesure, comment elle est obtenue/décodée, son unité, son rôle, ce que signifie une valeur trop haute/trop basse, causes possibles et conséquences ;
+- onglet Réglages : fonction de chaque réglage, valeur d’origine/référence lorsque connue et validée, effet d’une augmentation ou diminution, risques/limites et contexte d’application ;
+- tests Actionneurs : rôle de chaque actionneur, ce que le test commande, résultat attendu, conséquences possibles si l’actionneur ne fonctionne pas, contrôles électriques/mécaniques pertinents ;
+- Erreurs/DTC : signification de chaque erreur connue, organe concerné, rôle, symptômes possibles, stratégie ECU/fallback si connue, causes possibles et ordre de contrôle ;
+- familles MEMS/ECU/ROSCO, capteurs, actionneurs, protocoles, valeurs de référence, fonctions du logiciel et autres données déjà documentées.
+
+Pour les Erreurs/DTC, IA MEMS doit pouvoir répondre immédiatement à des formulations du type : `J'ai cette erreur, ça fait quoi ?`, `Ça peut provoquer quoi ?`, `Quelles causes possibles ?`, `Qu'est-ce que je contrôle en premier ?`, puis croiser avec les mesures ECU disponibles si une analyse plus poussée est demandée.
+
+## EXIGENCE UI IA — FICHIERS CSV/TXT
+
+À intégrer dans l’onglet **IA MEMS** après validation de #65, sans changer le style dark/responsive :
+- accepter le **glisser-déposer** d’un fichier `.csv` ou `.txt` dans la zone de saisie / conversation IA ;
+- ajouter un petit bouton **`+`** près de la zone où l’utilisateur tape le texte ;
+- bulle d’aide du bouton : **`Sélectionner un fichier`** ;
+- clic sur `+` : ouvrir le gestionnaire/explorateur de fichiers Windows avec filtre `Fichiers CSV/TXT (*.csv *.txt)` ;
+- afficher le fichier sélectionné dans la zone de saisie sous forme compacte avec son nom et possibilité de le retirer avant analyse ;
+- lecture/analyse locale en **lecture seule** ; aucun fichier importé ne doit pouvoir déclencher une commande ECU ou une mutation ;
+- l’objectif est notamment d’analyser des logs, traces et exports de mesures puis de les croiser avec la base MEMS et, lorsque nécessaire, avec le raisonnement Qwen ;
+- pour ce besoin, le périmètre demandé est **CSV et TXT**. Aucun autre format n’est ajouté sans demande explicite.
+
 ## DÉSINSTALLATION BUILD #30
 
 - `ecu_mems_uninstaller.exe` + `install_manifest.txt` requis.
@@ -117,4 +144,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Suivre ECU MEMS Manager x64 #65 — Commit `20772b8`. Si rouge : consigner la cause exacte avant toute correction. Si verte : consigner l’artifact puis tester sur PC MAP/injecteur/SPI et mesurer la latence Qwen avec le runtime adaptatif. Aucun BUILD #31.**
+**Suivre ECU MEMS Manager x64 #65 — Commit `20772b8`. Si rouge : consigner la cause exacte avant toute correction. Si verte : consigner l’artifact puis tester sur PC MAP/injecteur/SPI et mesurer la latence Qwen avec le runtime adaptatif. Ensuite seulement lancer l’audit complet des réponses immédiates et traiter l’UI de sélection/glisser-déposer CSV/TXT. Aucun BUILD #31.**
