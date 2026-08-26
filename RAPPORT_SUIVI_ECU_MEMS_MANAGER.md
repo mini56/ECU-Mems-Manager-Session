@@ -70,28 +70,33 @@ Commit **`f860749313447e224f63b99801f7e7d6a1839a49`** — `BUILD #30 add control
 - réponses interceptées avant Qwen ; `map`, `injecteur`, `spi` ajoutés au domaine MEMS ;
 - aucun changement protocole ECU/UI/32 bits.
 
-### Étape 2 — runtime multi-variantes — TERMINÉE ET POUSSÉE
+### Étape 2 — runtime multi-variantes — PREMIÈRE TENTATIVE #65 ROUGE
 
 HEAD **`20772b8ef5571cc0d0063c1e0d9b6f7e2f0866ef`** — `BUILD #30 enable adaptive llama CPU backends`.
 
-Workflow `.github/workflows/memsx64.yml` :
-- `GGML_NATIVE=OFF` ; `GGML_BACKEND_DL=ON` ; `GGML_CPU_ALL_VARIANTS=ON` ;
-- `GGML_OPENMP=OFF`, `LLAMA_OPENSSL=OFF`, core `BUILD_SHARED_LIBS=OFF` ;
-- backend `ggml-cpu-x64.dll` requis comme repli + `ggml-cpu-haswell.dll` requis comme variante optimisée ;
-- toutes les DLL `ggml-cpu-*.dll` empaquetées dans `ai/` ;
-- manifest runtime schéma 3 `adaptive x64 CPU backends` ;
-- validation PE x64, absence libomp/OpenSSL, install_manifest, logs de chargement backend, `/health`, `/v1/models`, chat Qwen et smoke app ;
-- hashes incluent `ggml-cpu-x64.dll` et `ggml-cpu-haswell.dll`.
-
-Aucun changement protocole ECU, 32 bits ou modèle Qwen.
-
-### ECU MEMS Manager x64 #65 — Commit `20772b8` — EN COURS
+### ECU MEMS Manager x64 #65 — Commit `20772b8` — ROUGE
 
 - Run GitHub : **`32946087349`** ; job : **`98107022158`**.
-- Checkout, Python et outils de validation sont déjà verts ; installation Qt est en cours au dernier contrôle.
-- Étape critique à suivre : `Build adaptive multi-variant llama.cpp b10516 runtime`, puis packaging et smoke du backend adaptatif.
+- Étapes 1 à 12 : **VERTES**, y compris protections protocole, compilation application/self-tests, tests IA déterministes, ABI et base experte r20.
+- Échec unique : étape **13 `Build adaptive multi-variant llama.cpp b10516 runtime`**.
+- Erreur CMake exacte de llama.cpp b10516 : **`GGML_BACKEND_DL requires BUILD_SHARED_LIBS`**.
+- Cause : le workflow demandait simultanément `GGML_BACKEND_DL=ON`, `GGML_CPU_ALL_VARIANTS=ON` et `BUILD_SHARED_LIBS=OFF`. Cette combinaison n’est pas supportée par le commit b10516.
+- Les étapes 14 à 20 ont été sautées ; aucun nouvel artefact #65 n’a été produit.
+- Aucun défaut n’est constaté dans `LocalAiClient.cpp`, les réponses MAP/injecteur/SPI, l’application, le protocole ou la base ; le rouge est strictement un défaut de configuration du runtime llama.cpp.
 
-## AUDIT IA À FAIRE APRÈS #65
+### CORRECTION EXACTE AUTORISÉE APRÈS #65
+
+Corriger uniquement `.github/workflows/memsx64.yml` :
+- passer le runtime llama.cpp à **`BUILD_SHARED_LIBS=ON`**, exigé par `GGML_BACKEND_DL=ON` ;
+- conserver `GGML_NATIVE=OFF`, `GGML_BACKEND_DL=ON`, `GGML_CPU_ALL_VARIANTS=ON`, `GGML_OPENMP=OFF`, `LLAMA_OPENSSL=OFF` ;
+- regrouper dans un dossier runtime CI unique `llama-server.exe` + DLL cœur nécessaires (`llama.dll`, `ggml.dll`, `ggml-base.dll`) + toutes les DLL `ggml-cpu-*.dll` ;
+- exécuter `llama-server --version` depuis ce dossier avant packaging pour valider les dépendances ;
+- empaqueter ce dossier complet sous `ai/` ;
+- adapter la validation PE : les dépendances `llama.dll` / `ggml.dll` / `ggml-base.dll` deviennent normales et obligatoires, tout en continuant d’interdire OpenMP/OpenSSL ;
+- conserver la vérification de `ggml-cpu-x64.dll` de repli et d’au moins une variante optimisée, puis `/health`, `/v1/models`, chat Qwen et smoke app.
+- Aucun changement métier, UI, modèle Qwen, protocole ECU ou 32 bits.
+
+## AUDIT IA À FAIRE APRÈS VALIDATION RUNTIME
 
 L’utilisateur demande un audit complet des questions pouvant être posées à IA MEMS à partir de tout ce que contient déjà ECU MEMS Manager.
 
@@ -108,7 +113,7 @@ Pour les Erreurs/DTC, IA MEMS doit pouvoir répondre immédiatement à des formu
 
 ## EXIGENCE UI IA — FICHIERS CSV/TXT
 
-À intégrer dans l’onglet **IA MEMS** après validation de #65, sans changer le style dark/responsive :
+À intégrer dans l’onglet **IA MEMS** après validation du runtime, sans changer le style dark/responsive :
 - accepter le **glisser-déposer** d’un fichier `.csv` ou `.txt` dans la zone de saisie / conversation IA ;
 - ajouter un petit bouton **`+`** près de la zone où l’utilisateur tape le texte ;
 - bulle d’aide du bouton : **`Sélectionner un fichier`** ;
@@ -157,4 +162,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Suivre ECU MEMS Manager x64 #65 — Commit `20772b8`. Si rouge : consigner la cause exacte avant toute correction. Si verte : consigner l’artifact puis tester sur PC MAP/injecteur/SPI et mesurer la latence Qwen avec le runtime adaptatif. Ensuite seulement lancer l’audit complet des réponses immédiates et traiter l’UI IA : nouveau composeur multiligne arrondi, bouton `+` CSV/TXT et bouton rond orange avec flèche vers le haut. Aucun BUILD #31.**
+**Corriger uniquement le packaging/configuration llama.cpp de #65 : `BUILD_SHARED_LIBS=ON` avec runtime partagé complet + backends CPU dynamiques, pousser sur `MEMSX64`, puis suivre uniquement l’Action GitHub du nouveau HEAD. Si rouge, consigner la cause exacte avant toute autre correction. Aucun BUILD #31.**
