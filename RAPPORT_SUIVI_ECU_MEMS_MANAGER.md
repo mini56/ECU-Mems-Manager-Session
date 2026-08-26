@@ -66,6 +66,17 @@ Objectif exact avant toute autre évolution :
 6. ajouter des tests de non-régression sur ces défauts avant packaging ;
 7. aucun changement protocole ECU, UI, 32 bits, base r20 ou numéro BUILD pendant cette correction.
 
+### DIAGNOSTIC RACINE AVANT MODIFICATION
+
+Inspection du `LocalAiClient` de #81 :
+- les directives internes `LANGUE OBLIGATOIRE`, `DOMAINE OBLIGATOIRE`, contexte candidat et format diagnostic sont encore concaténées dans le **message user** envoyé à Qwen ; cela augmente le risque que le petit modèle les répète au lieu de répondre ;
+- `cleanModelReply()` ne supprime que la forme **fermée** `<think>...</think>` ; une sortie tronquée commençant par `<think>` sans `</think>` reste donc visible telle quelle ;
+- aucun filtre ne rejette actuellement une réponse qui recopie explicitement les directives internes ;
+- la définition simple de **bobine** n'est pas interceptée : seule une question demandant la valeur/référence/normal du dwell reçoit la réponse déterministe ;
+- la détection de date ne couvre pas certaines fautes simples vues au test, par exemple `QUELLE JOURS SOMME NOUS?` (`jours/somme`).
+
+Correction retenue : simplifier le message utilisateur transmis à Qwen, renforcer le nettoyage et la détection de fuite, ajouter les réponses déterministes sûres manquantes (bobine/date tolérante aux fautes), puis étendre le self-test production sans modifier moteur, runtime, protocole, UI ou 32 bits.
+
 ## ARCHITECTURE IA COURANTE — À CONSERVER
 
 `navigationorderpatch.cpp -> IaMemsTab -> IaMemsService -> ExpertEngine + ExpertKnowledgeReader(read-only) -> LocalAiClient -> ONNX Runtime GenAI natif -> Qwen3 ONNX`
