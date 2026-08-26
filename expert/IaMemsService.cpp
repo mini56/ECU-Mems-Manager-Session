@@ -10,6 +10,7 @@
 #include <QPointer>
 #include <QRegularExpression>
 #include <QSet>
+#include <QVector>
 
 #include <algorithm>
 #include <cmath>
@@ -37,6 +38,12 @@ QString number(double value, int decimals = 1)
     return QString::number(value, 'f', decimals);
 }
 
+void appendUniqueTerm(QStringList &terms, const QString &term)
+{
+    if (!term.isEmpty() && !terms.contains(term) && terms.size() < 10)
+        terms.append(term);
+}
+
 QStringList knowledgeTerms(const QString &question)
 {
     QString text = normalized(question);
@@ -47,7 +54,9 @@ QStringList knowledgeTerms(const QString &question)
         QStringLiteral("avec"), QStringLiteral("est"), QStringLiteral("sais"), QStringLiteral("sait"),
         QStringLiteral("peux"), QStringLiteral("dire"), QStringLiteral("cette"), QStringLiteral("ce"),
         QStringLiteral("cet"), QStringLiteral("mon"), QStringLiteral("ma"), QStringLiteral("mes"),
-        QStringLiteral("mems")
+        QStringLiteral("mems"), QStringLiteral("source"), QStringLiteral("sources"),
+        QStringLiteral("preuve"), QStringLiteral("preuves"), QStringLiteral("document"),
+        QStringLiteral("documentation")
     };
 
     QStringList result;
@@ -55,12 +64,60 @@ QStringList knowledgeTerms(const QString &question)
     for (const QString &word : words) {
         if (word.size() < 3 || stopWords.contains(word))
             continue;
-        if (!result.contains(word))
-            result.append(word);
-        if (result.size() >= 5)
+        appendUniqueTerm(result, word);
+        if (result.size() >= 6)
             break;
     }
+
+    const QStringList original = result;
+    for (const QString &term : original) {
+        if (term == QStringLiteral("bobine")) {
+            appendUniqueTerm(result, QStringLiteral("dwell"));
+            appendUniqueTerm(result, QStringLiteral("coil"));
+            appendUniqueTerm(result, QStringLiteral("allumage"));
+        } else if (term == QStringLiteral("papillon")) {
+            appendUniqueTerm(result, QStringLiteral("tps"));
+            appendUniqueTerm(result, QStringLiteral("throttle"));
+        } else if (term == QStringLiteral("ralenti")) {
+            appendUniqueTerm(result, QStringLiteral("iac"));
+            appendUniqueTerm(result, QStringLiteral("iacv"));
+            appendUniqueTerm(result, QStringLiteral("idle"));
+        } else if (term == QStringLiteral("liquide") || term == QStringLiteral("refroidissement")) {
+            appendUniqueTerm(result, QStringLiteral("ect"));
+            appendUniqueTerm(result, QStringLiteral("coolant"));
+        } else if (term == QStringLiteral("admission")) {
+            appendUniqueTerm(result, QStringLiteral("iat"));
+        } else if (term == QStringLiteral("vilebrequin")) {
+            appendUniqueTerm(result, QStringLiteral("ckp"));
+        } else if (term == QStringLiteral("cames")) {
+            appendUniqueTerm(result, QStringLiteral("cmp"));
+        } else if (term == QStringLiteral("lambda")) {
+            appendUniqueTerm(result, QStringLiteral("oxygen"));
+        }
+    }
     return result;
+}
+
+int verificationScore(const QString &level)
+{
+    if (level == QStringLiteral("verifie_constructeur")) return 8;
+    if (level == QStringLiteral("decoded_by_project")) return 7;
+    if (level == QStringLiteral("recoupee")) return 6;
+    if (level == QStringLiteral("source_externe")) return 4;
+    if (level == QStringLiteral("plausible")) return 2;
+    if (level == QStringLiteral("non_verifie")) return 0;
+    if (level == QStringLiteral("conflit_a_verifier")) return -2;
+    return 0;
+}
+
+bool asksForSourceDetails(const QString &question)
+{
+    const QString text = normalized(question);
+    return containsAny(text, {
+        QStringLiteral("source"), QStringLiteral("preuve"), QStringLiteral("document"),
+        QStringLiteral("documentation"), QStringLiteral("d ou vient"),
+        QStringLiteral("origine de l information"), QStringLiteral("reference constructeur")
+    });
 }
 
 } // namespace
@@ -334,8 +391,7 @@ QString IaMemsService::groundingFor(const QString &question)
         return knowledge;
 
     return QStringLiteral(
-        "Je n'ai pas assez d'éléments pour relier cette question à une mesure ou à un fait MEMS précis. "
-        "Réponds naturellement à la question si elle est générale ; pour un fait technique MEMS, n'invente rien si le contexte ne suffit pas.");
+        "Je n'ai pas assez d'éléments pour relier cette question à une mesure ou à un fait MEMS précis.");
 }
 
 QString IaMemsService::softwareAnswer(const QString &question) const
@@ -489,36 +545,92 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
     if (terms.isEmpty())
         return QString();
 
+    struct RankedFact {
+        ExpertFact fact;
+        int score = 0;
+        int matches = 0;
+    };
+
+    const QString questionText = normalized(question);
+    const bool sourceDetails = asksForSourceDetails(question);
     const QList<ExpertFact> facts = m_reader.facts(m_context);
-    QStringList answers;
+    QVector<RankedFact> ranked;
+    ranked.reserve(facts.size());
+
     for (const ExpertFact &fact : facts) {
-        const QString haystack = normalized(QStringLiteral("%1 %2 %3 %4 %5 %6")
-                                                .arg(fact.factKey, fact.family, fact.firmware,
-                                                     fact.topic, fact.statement, fact.notes));
-        bool match = false;
+        const QString identity = normalized(QStringLiteral("%1 %2 %3")
+                                                .arg(fact.factKey, fact.topic, fact.firmware));
+        const QString body = normalized(QStringLiteral("%1 %2 %3")
+                                            .arg(fact.statement, fact.notes, fact.family));
+        RankedFact candidate;
+        candidate.fact = fact;
+
         for (const QString &term : terms) {
-            if (haystack.contains(term)) {
-                match = true;
-                break;
+            if (identity.contains(term)) {
+                candidate.score += 5;
+                ++candidate.matches;
+            } else if (body.contains(term)) {
+                candidate.score += 2;
+                ++candidate.matches;
             }
         }
-        if (!match)
+        if (candidate.matches == 0)
             continue;
 
-        QString line = QStringLiteral("• %1 [preuve : %2; source : %3]")
-                           .arg(fact.statement,
-                                verificationLabel(fact.verificationLevel),
-                                fact.sourceKey);
-        if (!fact.notes.trimmed().isEmpty())
-            line += QStringLiteral(" — %1").arg(fact.notes.trimmed());
-        answers << line;
-        if (answers.size() >= 6)
-            break;
+        candidate.score += qMin(candidate.matches, 4) * 3;
+        candidate.score += verificationScore(fact.verificationLevel);
+
+        if (!m_context.family.trimmed().isEmpty()
+            && fact.family.compare(m_context.family, Qt::CaseInsensitive) == 0)
+            candidate.score += 4;
+        if (!m_context.firmware.trimmed().isEmpty()
+            && fact.firmware.compare(m_context.firmware, Qt::CaseInsensitive) == 0)
+            candidate.score += 6;
+
+        const QString topic = normalized(fact.topic);
+        if (topic.size() >= 3 && questionText.contains(topic))
+            candidate.score += 4;
+
+        ranked.append(candidate);
     }
 
-    if (answers.isEmpty())
+    if (ranked.isEmpty())
         return QString();
-    answers.prepend(QStringLiteral("Voici ce que la base MEMS contient de pertinent :"));
+
+    std::sort(ranked.begin(), ranked.end(), [](const RankedFact &left, const RankedFact &right) {
+        if (left.score != right.score)
+            return left.score > right.score;
+        if (left.matches != right.matches)
+            return left.matches > right.matches;
+        return left.fact.factKey < right.fact.factKey;
+    });
+
+    const int maximum = qMin(3, ranked.size());
+    if (maximum == 1) {
+        const ExpertFact &fact = ranked.constFirst().fact;
+        QString answer = fact.statement.trimmed();
+        if (!fact.verificationLevel.trimmed().isEmpty())
+            answer += QStringLiteral("\nNiveau de preuve : %1.").arg(verificationLabel(fact.verificationLevel));
+        if (sourceDetails && !fact.sourceKey.trimmed().isEmpty())
+            answer += QStringLiteral("\nSource : %1.").arg(fact.sourceKey.trimmed());
+        if (sourceDetails && !fact.notes.trimmed().isEmpty())
+            answer += QStringLiteral("\nNote : %1").arg(fact.notes.trimmed());
+        return answer;
+    }
+
+    QStringList answers;
+    answers << QStringLiteral("Les faits les plus pertinents de la base MEMS sont :");
+    for (int i = 0; i < maximum; ++i) {
+        const ExpertFact &fact = ranked.at(i).fact;
+        QString line = QStringLiteral("• %1").arg(fact.statement.trimmed());
+        if (!fact.verificationLevel.trimmed().isEmpty())
+            line += QStringLiteral(" — preuve : %1").arg(verificationLabel(fact.verificationLevel));
+        if (sourceDetails && !fact.sourceKey.trimmed().isEmpty())
+            line += QStringLiteral(" ; source : %1").arg(fact.sourceKey.trimmed());
+        answers << line;
+        if (sourceDetails && !fact.notes.trimmed().isEmpty())
+            answers << QStringLiteral("  Note : %1").arg(fact.notes.trimmed());
+    }
     return answers.join(QLatin1Char('\n'));
 }
 
