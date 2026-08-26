@@ -1,5 +1,5 @@
 name: ECU MEMS Manager x64 BUILD 30
-run-name: BUILD #30 - v1.0.30 - native ONNX IA - ${{ github.sha }}
+run-name: BUILD #30 - v1.0.30 - native ONNX IA package - ${{ github.sha }}
 
 on:
   workflow_dispatch:
@@ -99,9 +99,6 @@ jobs:
             throw 'onnxruntime-genai.dll was not staged'
           }
 
-          # App-local closure for the Microsoft C++ runtime actually imported by
-          # the official ONNX binaries. This avoids relying on developer tools
-          # installed on the GitHub runner and keeps the portable package whole.
           $env:ORT_STAGE = $stage
           @'
           import os,re,shutil
