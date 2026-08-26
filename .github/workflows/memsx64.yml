@@ -1,5 +1,5 @@
 name: ECU MEMS Manager x64 BUILD 30
-run-name: BUILD #30 - v1.0.30 - ${{ github.sha }}
+run-name: BUILD #30 - v1.0.30 - ONNX Windows probe - ${{ github.sha }}
 
 on:
   workflow_dispatch:
@@ -21,9 +21,14 @@ jobs:
       MEMS_BUILD: '30'
       MEMS_VERSION: '1.0.30'
       MEMS_BUILD_NUMBER: '30'
-      LLAMA_RELEASE: 'b10516'
-      LLAMA_COMMIT: 'b95502ba9aa0eb73a2f4fc8878d7fbe6a847a0b9'
-      QWEN_SHA256: '9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031'
+      ORT_GENAI_VERSION: '0.14.0'
+      ORT_GENAI_WIN_X64_SHA256: '8a303e52dc7be8fb2a5331929af451a25ac59774102d7fd09ef673adc85c5ebf'
+      ONNX_MODEL_REPO: 'xiaoyao9184/Qwen3-0.6B-onnx-genai'
+      ONNX_MODEL_REVISION: 'e6bf97818c142808967a48cbab4f0aef18b64621'
+      ONNX_MODEL_SUBDIR: 'cpu_and_mobile/cpu-int4-rtn-block-32-acc-level-4'
+      ONNX_MODEL_ONNX_SHA256: 'b52cfcd91e6ed3caa34c670d4831d96cda3da5eb07ef95bc8ba06547b4f3b86f'
+      ONNX_MODEL_DATA_SHA256: '8539cf4fbc3b5b331fd78ca8cd5b025ce537dfc2f993451f5c474b2f9fb7cd6c'
+      ONNX_TOKENIZER_SHA256: 'be75606093db2094d7cd20f3c2f385c212750648bd6ea4fb2bf507a6a4c55506'
 
     steps:
       - name: Checkout exact BUILD 30 source
@@ -97,13 +102,11 @@ jobs:
           $releaseRoot = '${{ github.workspace }}\build-x64\Release'
           $referenceSource = '${{ github.workspace }}\database\reference'
           $referenceRuntime = Join-Path $releaseRoot 'database\reference'
-          $expertRuntime = Join-Path $releaseRoot 'database\expert'
           $cacheRoot = '${{ github.workspace }}\expert-runtime-cache'
 
           if (Test-Path $referenceRuntime) { Remove-Item $referenceRuntime -Recurse -Force }
           New-Item -ItemType Directory -Path (Split-Path $referenceRuntime -Parent) -Force | Out-Null
           Copy-Item $referenceSource $referenceRuntime -Recurse -Force
-          if (Test-Path $expertRuntime) { Remove-Item $expertRuntime -Recurse -Force }
           if (Test-Path $cacheRoot) { Remove-Item $cacheRoot -Recurse -Force }
           New-Item -ItemType Directory -Path $cacheRoot -Force | Out-Null
 
@@ -130,341 +133,150 @@ jobs:
 
           $env:EXPERT_DB = $expertDbPath
           @'
-          import os,sqlite3
-          p=os.environ["EXPERT_DB"]; db=sqlite3.connect(p)
+          import os, sqlite3
+          p=os.environ['EXPERT_DB']
+          db=sqlite3.connect(p)
           try:
-              ok=db.execute("PRAGMA integrity_check").fetchone()[0]
-              rev=db.execute("PRAGMA user_version").fetchone()[0]
-          finally: db.close()
-          if str(ok).lower()!="ok" or rev!=20: raise SystemExit(f"Invalid expert DB: integrity={ok} revision={rev}")
-          print("PASS expert SQLite r20")
-          '@ | python -
-          "AI_EXPERT_DB=$expertDbPath" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-
-      - name: Build llama.cpp b10516 generic x64 runtime and stage complete DLL closure
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $src='${{ github.workspace }}\llama-b10516-src'
-          $build='${{ github.workspace }}\llama-b10516-build'
-          $runtime='${{ github.workspace }}\llama-runtime-stage'
-          foreach($path in @($src,$build,$runtime)) {
-            if(Test-Path $path) { Remove-Item $path -Recurse -Force }
-          }
-          New-Item -ItemType Directory -Path $runtime -Force | Out-Null
-
-          git clone --depth 1 --branch $env:LLAMA_RELEASE https://github.com/ggml-org/llama.cpp.git $src
-          if($LASTEXITCODE -ne 0) { throw "llama.cpp clone failed: $LASTEXITCODE" }
-          $actualCommit=(git -C $src rev-parse HEAD).Trim().ToLowerInvariant()
-          if($actualCommit -ne $env:LLAMA_COMMIT.ToLowerInvariant()) { throw "llama.cpp commit mismatch: $actualCommit" }
-
-          cmake -S $src -B $build -A x64 `
-            -DBUILD_SHARED_LIBS=ON `
-            -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded `
-            -DGGML_NATIVE=OFF `
-            -DGGML_BACKEND_DL=ON `
-            -DGGML_CPU_ALL_VARIANTS=ON `
-            -DGGML_OPENMP=OFF `
-            -DGGML_RPC=OFF `
-            -DLLAMA_BUILD_SERVER=ON `
-            -DLLAMA_BUILD_EXAMPLES=OFF `
-            -DLLAMA_BUILD_TESTS=OFF `
-            -DLLAMA_BUILD_TOOLS=ON `
-            -DLLAMA_BUILD_APP=OFF `
-            -DLLAMA_OPENSSL=OFF
-          if($LASTEXITCODE -ne 0) { throw "llama.cpp configure failed: $LASTEXITCODE" }
-
-          cmake --build $build --config Release --target llama-server --parallel 4
-          if($LASTEXITCODE -ne 0) { throw "llama-server build failed: $LASTEXITCODE" }
-
-          $server=Get-ChildItem $build -Recurse -File -Filter 'llama-server.exe' |
-            Where-Object { $_.FullName -match '\\Release\\' } | Select-Object -First 1
-          if(-not $server) { throw 'llama-server.exe missing after build' }
-          Copy-Item $server.FullName (Join-Path $runtime 'llama-server.exe') -Force
-
-          $releaseDlls=Get-ChildItem $build -Recurse -File -Filter '*.dll' |
-            Where-Object { $_.FullName -match '\\Release\\' } |
-            Sort-Object Name,FullName
-          $seen=@{}
-          foreach($dll in $releaseDlls) {
-            $name=$dll.Name.ToLowerInvariant()
-            if($seen.ContainsKey($name)) { continue }
-            if($name -like 'ggml-cpu-*.dll' -and $name -ne 'ggml-cpu-x64.dll') { continue }
-            Copy-Item $dll.FullName (Join-Path $runtime $dll.Name) -Force
-            $seen[$name]=$true
-          }
-
-          $required=@('llama.dll','ggml.dll','ggml-base.dll','ggml-cpu-x64.dll','llama-server-impl.dll','llama-common.dll','mtmd.dll')
-          foreach($name in $required) {
-            if(-not(Test-Path (Join-Path $runtime $name) -PathType Leaf)) { throw "Required staged llama DLL missing: $name" }
-          }
-          $cpuBackends=@(Get-ChildItem $runtime -File -Filter 'ggml-cpu-*.dll')
-          if($cpuBackends.Count -ne 1 -or $cpuBackends[0].Name.ToLowerInvariant() -ne 'ggml-cpu-x64.dll') {
-            throw "Generic x64 isolation failed: $($cpuBackends.Name -join ', ')"
-          }
-
-          $cache=Get-Content (Join-Path $build 'CMakeCache.txt') -Raw
-          foreach($requiredFlag in @(
-            'BUILD_SHARED_LIBS:BOOL=ON',
-            'GGML_NATIVE:BOOL=OFF',
-            'GGML_BACKEND_DL:BOOL=ON',
-            'GGML_CPU_ALL_VARIANTS:BOOL=ON',
-            'GGML_OPENMP:BOOL=OFF',
-            'LLAMA_OPENSSL:BOOL=OFF')) {
-            if(-not $cache.Contains($requiredFlag)) { throw "Required llama build flag missing: $requiredFlag" }
-          }
-
-          $env:LLAMA_RUNTIME_STAGE=$runtime
-          @'
-          import os,re
-          from pathlib import Path
-          import pefile
-
-          root=Path(os.environ['LLAMA_RUNTIME_STAGE'])
-          system32=Path(os.environ['WINDIR'])/'System32'
-          pefiles=[p for p in root.iterdir() if p.is_file() and p.suffix.lower() in ('.exe','.dll')]
-          local={p.name.lower():p for p in pefiles}
-          vc=re.compile(r'^(?:msvcp|vcruntime|concrt)\d.*\.dll$',re.I)
-          missing=[]
-          for p in pefiles:
-              pe=pefile.PE(str(p),fast_load=True)
-              if pe.FILE_HEADER.Machine != 0x8664:
-                  raise SystemExit(f'Not AMD64: {p.name}')
-              pe.parse_data_directories(directories=[
-                  pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_IMPORT'],
-                  pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT']])
-              names=[]
-              for attr in ('DIRECTORY_ENTRY_IMPORT','DIRECTORY_ENTRY_DELAY_IMPORT'):
-                  for entry in getattr(pe,attr,[]):
-                      try: names.append(entry.dll.decode('ascii'))
-                      except Exception: pass
-              pe.close()
-              for name in names:
-                  lower=name.lower()
-                  if lower in local: continue
-                  if vc.match(name):
-                      missing.append(f'{p.name}->{name} (VC runtime must not be external)')
-                      continue
-                  if lower.startswith(('api-ms-win-','ext-ms-win-')): continue
-                  if not (system32/name).is_file(): missing.append(f'{p.name}->{name}')
-          if missing:
-              raise SystemExit('Unresolved staged llama imports: '+', '.join(sorted(set(missing))))
-          print(f'PASS llama PE closure: {len(pefiles)} AMD64 binaries, CPU backend=ggml-cpu-x64.dll')
+              ok=db.execute('PRAGMA integrity_check').fetchone()[0]
+              rev=db.execute('PRAGMA user_version').fetchone()[0]
+          finally:
+              db.close()
+          if str(ok).lower()!='ok' or rev!=20:
+              raise SystemExit(f'Invalid expert DB: integrity={ok} revision={rev}')
+          print('PASS expert SQLite r20')
           '@ | python -
 
-          $savedPath=$env:PATH
-          $env:PATH="$runtime;$env:SystemRoot\System32;$env:SystemRoot"
-          Push-Location $runtime
-          try {
-            & (Join-Path $runtime 'llama-server.exe') --version
-            if($LASTEXITCODE -ne 0) { throw "Staged llama-server --version failed: $LASTEXITCODE" }
-          } finally {
-            Pop-Location
-            $env:PATH=$savedPath
-          }
-
-          Write-Host "PASS source-built llama.cpp b10516 generic x64 runtime; staged DLLs=$($seen.Count); CPU backends=1"
-          Write-Host ((Get-ChildItem $runtime -File | Sort-Object Name | ForEach-Object { $_.Name }) -join ', ')
-          "AI_RUNTIME_DIR=$runtime" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-
-      - name: Download and verify Qwen3-0.6B-Q8_0
+      - name: Verify official ONNX Runtime GenAI Windows x64 package
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $stage='${{ github.workspace }}\ai-model-stage'
-          if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
-          New-Item -ItemType Directory -Path $stage -Force | Out-Null
-          $model=Join-Path $stage 'ia-mems.gguf'
-          & curl.exe -L --fail --retry 3 --retry-delay 3 -o $model 'https://huggingface.co/Qwen/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-Q8_0.gguf?download=true'
-          if ($LASTEXITCODE -ne 0) { throw "Qwen model download failed: $LASTEXITCODE" }
-          $actual=(Get-FileHash $model -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($actual -ne $env:QWEN_SHA256) { throw "Qwen SHA256 mismatch: $actual" }
-          "AI_MODEL=$model" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          $archive = Join-Path $env:RUNNER_TEMP "onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          $url = "https://github.com/microsoft/onnxruntime-genai/releases/download/v$env:ORT_GENAI_VERSION/onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          & curl.exe -L --fail --retry 3 --retry-delay 3 -o $archive $url
+          if ($LASTEXITCODE -ne 0) { throw "ONNX Runtime GenAI package download failed: $LASTEXITCODE" }
+          $actual = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $env:ORT_GENAI_WIN_X64_SHA256) { throw "ONNX Runtime GenAI SHA256 mismatch: $actual" }
+          $extract = '${{ github.workspace }}\onnx-genai-release'
+          if (Test-Path $extract) { Remove-Item $extract -Recurse -Force }
+          Expand-Archive -LiteralPath $archive -DestinationPath $extract -Force
+          $headers = @(Get-ChildItem $extract -Recurse -File -Filter 'ort_genai*.h')
+          $libs = @(Get-ChildItem $extract -Recurse -File | Where-Object { $_.Extension -in @('.dll','.lib') })
+          if ($headers.Count -eq 0 -or $libs.Count -eq 0) { throw 'Official ONNX Runtime GenAI C/C++ package layout is incomplete' }
+          Write-Host "PASS official ONNX Runtime GenAI $env:ORT_GENAI_VERSION Windows x64 package SHA256=$actual"
+          Write-Host "Headers=$($headers.Count) native libraries=$($libs.Count)"
 
-      - name: Assemble BUILD 30 portable package
+      - name: Install ONNX Runtime GenAI CPU Python runtime
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $qtRoot='C:\Qt\5.15.2\msvc2019_64'
-          $releaseRoot='${{ github.workspace }}\build-x64\Release'
-          $dist='${{ github.workspace }}\dist-x64'
-          if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }
-          New-Item -ItemType Directory -Path $dist -Force | Out-Null
-
-          Copy-Item "$releaseRoot\ecu_mems_manager.exe" $dist -Force
-          Copy-Item "$releaseRoot\ecu_mems_uninstaller.exe" $dist -Force
-          Copy-Item '${{ github.workspace }}\build-x64\librosco-x64\Release\mems_manager_x64.dll' $dist -Force
-          & "$qtRoot\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist "$dist\ecu_mems_manager.exe"
-          if ($LASTEXITCODE -ne 0) { throw "windeployqt app failed: $LASTEXITCODE" }
-          & "$qtRoot\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist "$dist\ecu_mems_uninstaller.exe"
-          if ($LASTEXITCODE -ne 0) { throw "windeployqt uninstaller failed: $LASTEXITCODE" }
-
-          foreach ($folder in @('translations','database')) {
-            if (Test-Path "$releaseRoot\$folder") { Copy-Item "$releaseRoot\$folder" "$dist\$folder" -Recurse -Force }
-          }
-
-          New-Item -ItemType Directory -Path "$dist\database\expert" -Force | Out-Null
-          Copy-Item $env:AI_EXPERT_DB "$dist\database\expert\ia_mems_reference_r20.sqlite" -Force
-
-          New-Item -ItemType Directory -Path "$dist\ai\models" -Force | Out-Null
-          Copy-Item "$env:AI_RUNTIME_DIR\*" "$dist\ai" -Force
-          Copy-Item $env:AI_MODEL "$dist\ai\models\ia-mems.gguf" -Force
-
-          & curl.exe -L --fail --retry 3 --retry-delay 3 -o "$dist\ai\LLAMA_CPP_LICENSE.txt" "https://raw.githubusercontent.com/ggml-org/llama.cpp/$env:LLAMA_COMMIT/LICENSE"
-          if ($LASTEXITCODE -ne 0) { throw "llama.cpp LICENSE download failed: $LASTEXITCODE" }
-
+          python -m pip install --disable-pip-version-check "onnxruntime-genai==$env:ORT_GENAI_VERSION" "huggingface_hub>=0.34,<1" hf_xet
           @'
-          {
-            "schema_version": 4,
-            "build": 30,
-            "version": "1.0.30",
-            "mode": "offline_local_only",
-            "listen_address": "127.0.0.1",
-            "runtime": {
-              "name": "llama.cpp",
-              "release": "b10516",
-              "source_commit": "b95502ba9aa0eb73a2f4fc8878d7fbe6a847a0b9",
-              "distribution": "source-built by BUILD 30 from exact llama.cpp b10516 commit",
-              "profile": "generic Windows AMD64 CPU backend only; GGML_NATIVE=OFF; ggml-cpu-x64.dll; all required non-CPU shared DLLs staged",
-              "msvc_deployment": "llama runtime built with static MultiThreaded MSVC runtime"
-            },
-            "model": {
-              "name": "Qwen3-0.6B-Q8_0",
-              "runtime_filename": "models/ia-mems.gguf",
-              "sha256": "9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031"
-            },
-            "expert_database": {
-              "filename": "../database/expert/ia_mems_reference_r20.sqlite",
-              "revision": 20,
-              "runtime_mode": "read_only_prebuilt"
-            }
-          }
-          '@ | Set-Content "$dist\ai\runtime_manifest.json" -Encoding UTF8
-
-          @(
-            'ECU MEMS Manager BUILD #30 / v1.0.30',
-            'IA locale: Qwen3-0.6B-Q8_0 + llama.cpp b10516',
-            'Runtime: compilé par BUILD #30 depuis le commit b10516 exact',
-            'CPU: backend générique x64 uniquement (ggml-cpu-x64.dll), sans variantes icelake/skylakex/haswell',
-            'DLL: toutes les DLL partagées non-CPU produites et requises par llama-server sont livrées dans ai/',
-            '32 bits et protocole ECU inchangés'
-          ) | Set-Content "$dist\README_BUILD30.txt" -Encoding UTF8
-
-          $manifest="$dist\install_manifest.txt"
-          $files=Get-ChildItem $dist -Recurse -File | ForEach-Object { $_.FullName.Substring($dist.Length+1).Replace('\','/') } | Sort-Object -Unique
-          ($files + 'install_manifest.txt') | Sort-Object -Unique | Set-Content $manifest -Encoding UTF8
-          "DIST=$dist" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-
-      - name: Validate package and isolated llama runtime integrity
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $env:DIST_ROOT=$env:DIST
-          @'
-          import os,sqlite3
-          from pathlib import Path
-          import pefile
-
-          root=Path(os.environ['DIST_ROOT']); ai=root/'ai'
-          must=[root/'ecu_mems_manager.exe',root/'ecu_mems_uninstaller.exe',root/'mems_manager_x64.dll',
-                ai/'llama-server.exe',ai/'llama.dll',ai/'ggml.dll',ai/'ggml-base.dll',ai/'ggml-cpu-x64.dll',
-                ai/'llama-server-impl.dll',ai/'llama-common.dll',ai/'mtmd.dll',
-                ai/'models'/'ia-mems.gguf',root/'database'/'expert'/'ia_mems_reference_r20.sqlite',root/'install_manifest.txt']
-          missing=[str(p.relative_to(root)) for p in must if not p.is_file()]
-          if missing: raise SystemExit('Missing BUILD 30 files: '+', '.join(missing))
-
-          pefiles=[root/'ecu_mems_manager.exe',root/'ecu_mems_uninstaller.exe',root/'mems_manager_x64.dll'] + \
-                  [p for p in ai.iterdir() if p.is_file() and p.suffix.lower() in ('.exe','.dll')]
-          for p in pefiles:
-              pe=pefile.PE(str(p),fast_load=True)
-              if pe.FILE_HEADER.Machine != 0x8664: raise SystemExit(p.name+' is not AMD64')
-              pe.close()
-
-          backends=list(ai.glob('ggml-cpu-*.dll'))
-          if len(backends)!=1 or backends[0].name.lower()!='ggml-cpu-x64.dll':
-              raise SystemExit('Packaged CPU backend isolation invalid: '+', '.join(p.name for p in backends))
-
-          db=sqlite3.connect(str(root/'database'/'expert'/'ia_mems_reference_r20.sqlite'))
-          try: ok=db.execute('PRAGMA integrity_check').fetchone()[0]; rev=db.execute('PRAGMA user_version').fetchone()[0]
-          finally: db.close()
-          if str(ok).lower()!='ok' or rev!=20: raise SystemExit(f'Invalid expert DB: {ok} r{rev}')
-          print(f'PASS package: isolated llama AMD64 files={len(pefiles)-3}, CPU backend=ggml-cpu-x64.dll, expert r{rev}')
+          import platform, onnxruntime_genai as og
+          print('Python:', platform.python_version())
+          print('Platform:', platform.platform())
+          print('Machine:', platform.machine())
+          print('ONNX Runtime GenAI:', getattr(og, '__version__', 'unknown'))
+          if platform.machine().lower() not in ('amd64','x86_64'):
+              raise SystemExit('Windows probe is not running on x64')
           '@ | python -
 
-      - name: Validate packaged llama server model and API with clean PATH
+      - name: Download pinned Qwen3-0.6B ONNX INT4 CPU model and verify hashes
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $ai="$env:DIST\ai"; $server="$ai\llama-server.exe"; $model="$ai\models\ia-mems.gguf"
-          $backends=@(Get-ChildItem $ai -File -Filter 'ggml-cpu-*.dll')
-          if($backends.Count -ne 1 -or $backends[0].Name.ToLowerInvariant() -ne 'ggml-cpu-x64.dll') {
-            throw "Unexpected packaged CPU backends: $($backends.Name -join ', ')"
+          $modelRoot = '${{ github.workspace }}\onnx-model-probe'
+          if (Test-Path $modelRoot) { Remove-Item $modelRoot -Recurse -Force }
+          $env:MODEL_ROOT = $modelRoot
+          @'
+          import os
+          from huggingface_hub import snapshot_download
+          root = snapshot_download(
+              repo_id=os.environ['ONNX_MODEL_REPO'],
+              revision=os.environ['ONNX_MODEL_REVISION'],
+              allow_patterns=[os.environ['ONNX_MODEL_SUBDIR'] + '/*'],
+              local_dir=os.environ['MODEL_ROOT'],
+          )
+          print('MODEL_SNAPSHOT=' + root)
+          '@ | python -
+
+          $modelDir = Join-Path $modelRoot $env:ONNX_MODEL_SUBDIR
+          foreach ($name in @('genai_config.json','model.onnx','model.onnx.data','tokenizer.json','tokenizer_config.json','chat_template.jinja')) {
+            if (-not (Test-Path (Join-Path $modelDir $name) -PathType Leaf)) { throw "ONNX model file missing: $name" }
           }
+          $modelHash = (Get-FileHash (Join-Path $modelDir 'model.onnx') -Algorithm SHA256).Hash.ToLowerInvariant()
+          $dataHash = (Get-FileHash (Join-Path $modelDir 'model.onnx.data') -Algorithm SHA256).Hash.ToLowerInvariant()
+          $tokenizerHash = (Get-FileHash (Join-Path $modelDir 'tokenizer.json') -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($modelHash -ne $env:ONNX_MODEL_ONNX_SHA256) { throw "model.onnx hash mismatch: $modelHash" }
+          if ($dataHash -ne $env:ONNX_MODEL_DATA_SHA256) { throw "model.onnx.data hash mismatch: $dataHash" }
+          if ($tokenizerHash -ne $env:ONNX_TOKENIZER_SHA256) { throw "tokenizer.json hash mismatch: $tokenizerHash" }
+          "ONNX_MODEL_DIR=$modelDir" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host 'PASS pinned Qwen3-0.6B ONNX INT4 CPU model hashes'
 
-          $savedPath=$env:PATH
-          $env:PATH="$ai;$env:SystemRoot\System32;$env:SystemRoot"
-          Push-Location $ai
-          try {
-            & $server --version
-            if($LASTEXITCODE -ne 0) { throw "Packaged llama-server --version failed: $LASTEXITCODE" }
-          } finally { Pop-Location }
-
-          $out="$env:RUNNER_TEMP\llama-isolated-out.log"; $err="$env:RUNNER_TEMP\llama-isolated-err.log"
-          Remove-Item $out,$err -Force -ErrorAction SilentlyContinue
-          $args=@('-m',$model,'--alias','ia-mems','--host','127.0.0.1','--port','18089','-c','4096','-np','1','--no-webui','--offline','--reasoning','off')
-          $p=Start-Process -FilePath $server -WorkingDirectory $ai -ArgumentList $args -RedirectStandardOutput $out -RedirectStandardError $err -PassThru -WindowStyle Hidden
-          try {
-            $ready=$false
-            for($i=0;$i-lt180;$i++) {
-              Start-Sleep -Milliseconds 500
-              if($p.HasExited) {
-                $detail=((Get-Content $err -Raw -ErrorAction SilentlyContinue) + "`n" + (Get-Content $out -Raw -ErrorAction SilentlyContinue)).Trim()
-                throw "Packaged llama-server exited during Qwen load: $($p.ExitCode) $detail"
-              }
-              try { $health=Invoke-RestMethod 'http://127.0.0.1:18089/health' -TimeoutSec 2; if($health.status-eq'ok'){$ready=$true;break} } catch {}
-            }
-            if(-not $ready) { throw 'Packaged llama-server did not become ready' }
-
-            $models=Invoke-RestMethod 'http://127.0.0.1:18089/v1/models' -TimeoutSec 10
-            if(@($models.data|ForEach-Object{$_.id}) -notcontains 'ia-mems') { throw 'Unexpected /v1/models response' }
-
-            $body=@{model='ia-mems';messages=@(@{role='user';content='Reponds uniquement: OK'});stream=$false;max_tokens=24;temperature=0.2}|ConvertTo-Json -Depth 8
-            $reply=Invoke-RestMethod -Method Post 'http://127.0.0.1:18089/v1/chat/completions' -ContentType 'application/json' -Body $body -TimeoutSec 60
-            if([string]::IsNullOrWhiteSpace([string]$reply.choices[0].message.content)) { throw 'Empty Qwen chat completion' }
-            Write-Host 'PASS isolated source-built llama.cpp API'
-          } finally {
-            if($p -and -not $p.HasExited) { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue; $p.WaitForExit() }
-            $env:PATH=$savedPath
-          }
-
-      - name: Smoke launch ECU MEMS Manager
+      - name: Windows x64 ONNX Runtime GenAI Qwen generation probe
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $p=Start-Process -FilePath "$env:DIST\ecu_mems_manager.exe" -WorkingDirectory $env:DIST -PassThru
-          Start-Sleep -Seconds 8
-          if($p.HasExited) { throw "ECU MEMS Manager exited during smoke launch: $($p.ExitCode)" }
-          $null=$p.CloseMainWindow()
-          if(-not $p.WaitForExit(5000)) { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }
-          Write-Host 'PASS ECU MEMS Manager BUILD 30 smoke launch'
+          $env:PROBE_REPORT = '${{ github.workspace }}\onnx_probe_report.txt'
+          @'
+          import os, platform, time
+          import onnxruntime_genai as og
 
-      - name: Generate BUILD 30 file hashes
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $hashFile="$env:DIST\BUILD30_SHA256.txt"; $manifest="$env:DIST\install_manifest.txt"
-          if(-not((Get-Content $manifest)-contains'BUILD30_SHA256.txt')) { Add-Content $manifest 'BUILD30_SHA256.txt' -Encoding UTF8 }
-          $lines=foreach($f in Get-ChildItem $env:DIST -Recurse -File | Where-Object{$_.FullName-ne$hashFile} | Sort-Object FullName) {
-            $r=$f.FullName.Substring($env:DIST.Length+1).Replace('\','/')
-            "$((Get-FileHash $f.FullName -Algorithm SHA256).Hash.ToLowerInvariant())  $r"
-          }
-          $lines | Set-Content $hashFile -Encoding UTF8
+          model_dir = os.environ['ONNX_MODEL_DIR']
+          report = []
+          report.append('ECU MEMS Manager BUILD #30 - ONNX Windows x64 probe')
+          report.append('platform=' + platform.platform())
+          report.append('machine=' + platform.machine())
+          report.append('ort_genai=' + str(getattr(og, '__version__', 'unknown')))
+          report.append('model_dir=' + model_dir)
 
-      - name: Upload ECU MEMS Manager BUILD 30
+          started = time.perf_counter()
+          model = og.Model(model_dir)
+          load_seconds = time.perf_counter() - started
+          tokenizer = og.Tokenizer(model)
+          stream = tokenizer.create_stream()
+
+          prompt = (
+              '<|im_start|>system\n'
+              'Tu es un moteur de test local. Reponds sans raisonnement visible.<|im_end|>\n'
+              '<|im_start|>user\n'
+              'Reponds uniquement par OK. /no_think<|im_end|>\n'
+              '<|im_start|>assistant\n'
+          )
+          input_tokens = tokenizer.encode(prompt)
+          params = og.GeneratorParams(model)
+          params.set_search_options(max_length=len(input_tokens) + 48, do_sample=False)
+          generator = og.Generator(model, params)
+          generator.append_tokens(input_tokens)
+
+          generated = []
+          generation_started = time.perf_counter()
+          while not generator.is_done() and len(generated) < 48:
+              generator.generate_next_token()
+              token = generator.get_next_tokens()[0]
+              generated.append(token)
+          generation_seconds = time.perf_counter() - generation_started
+          text = ''.join(stream.decode(t) for t in generated).strip()
+
+          report.append(f'load_seconds={load_seconds:.3f}')
+          report.append(f'generation_seconds={generation_seconds:.3f}')
+          report.append(f'new_tokens={len(generated)}')
+          report.append('output=' + text.replace('\r',' ').replace('\n','\\n'))
+          with open(os.environ['PROBE_REPORT'], 'w', encoding='utf-8') as f:
+              f.write('\n'.join(report) + '\n')
+
+          print('\n'.join(report))
+          if not text:
+              raise SystemExit('ONNX Runtime GenAI returned an empty response')
+          if 'OK' not in text.upper():
+              raise SystemExit('ONNX Runtime GenAI did not produce the expected OK marker')
+          print('PASS Windows x64 ONNX Runtime GenAI model load and generation')
+          '@ | python -
+
+      - name: Upload ONNX Windows probe report
         uses: actions/upload-artifact@v4
         with:
-          name: ECU-MEMS-Manager-x64-BUILD-30-v1.0.30
-          path: dist-x64/
+          name: ONNX-Windows-x64-Probe-BUILD-30
+          path: onnx_probe_report.txt
           if-no-files-found: error
-          compression-level: 6
+          compression-level: 0
           retention-days: 14
