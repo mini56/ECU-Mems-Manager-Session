@@ -155,7 +155,18 @@ Sans créer BUILD #31 et sans toucher au protocole ECU :
 - Correction navigation poussée : HEAD final **`7a8085cef236e00091d8a053cdb97293568d97d0`** — `BUILD #30 keep all navigation tabs visible`.
 - `uiRebuildNav` ajuste désormais dynamiquement la hauteur de ses 14 lignes à la hauteur réelle du viewport, désactive le scroll vertical lorsque les 14 lignes peuvent tenir et recale systématiquement la liste en haut ; sélectionner `Test ECU 1.9` ne doit plus masquer `Aperçu` sur le PC concerné.
 - Ordre officiel des 14 onglets inchangé ; style dark/responsive conservé ; aucun changement protocole ECU, 32 bits, modèle Qwen ou base experte.
-- Nouvelle exécution : **ECU MEMS Manager x64 #63 — Commit `7a8085c`** / run `32936048218` — **en cours** au moment de cette mise à jour.
+
+### ECU MEMS Manager x64 #63 — Commit `7a8085c` — VERT
+
+- Run GitHub : **`32936048218`** ; job : **`98077364424`**.
+- Résultat final : **SUCCESS / VERT**.
+- Les 20 étapes fonctionnelles sont vertes : protections protocole, configuration et compilation x64, application + désinstalleur + self-tests, IA déterministe, ABI protocole, base de référence, génération base experte r20, llama.cpp b10516, Qwen3-0.6B-Q8_0, assemblage package, validation architecture, API Qwen empaquetée, smoke launch, hashes et upload.
+- Artifact : **`ECU-MEMS-Manager-x64-BUILD-30-v1.0.30`**.
+- Artifact ID : **`9595181353`**.
+- Taille : **668875356 octets**.
+- SHA-256 archive GitHub : **`995efda2b49768457ad3ec8f2f31b137c671b722c80465831b2ef00d47c559d4`**.
+- Créé le **26 août 2026 à 06:11:21Z** ; expiration prévue le **9 septembre 2026 à 06:10:59Z**.
+- Cet artefact correspond exactement au HEAD `7a8085cef236e00091d8a053cdb97293568d97d0`.
 
 ---
 
@@ -178,7 +189,7 @@ Sans créer BUILD #31 et sans toucher au protocole ECU :
 - #30 reconstruction propre `776fc647a874564c932bf09e8871cb771a0ed258`, #59 SUCCESS.
 - #30 réponses Qwen `be4916a53321e36573729e123b14c2cf120fd734`, #60 SUCCESS.
 - #30 routage rapide `126cc638d584975a78d0101430d61bdc435c5879`, #61 SUCCESS ; test PC : vitesse améliorée, mais langue/domaine MEMS/qualité et navigation responsive encore à corriger.
-- #30 langue/domaine/navigation : HEAD `7a8085cef236e00091d8a053cdb97293568d97d0`, ECU MEMS Manager x64 #63 en cours.
+- #30 langue/domaine/navigation : HEAD `7a8085cef236e00091d8a053cdb97293568d97d0`, #63 SUCCESS ; test PC de validation finale de ce lot encore requis.
 
 ## VERSIONNAGE
 
@@ -206,4 +217,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Suivre ECU MEMS Manager x64 #63 — Commit `7a8085c`. Si rouge, consigner la cause exacte avant toute correction. Si vert, consigner l’artifact puis tester sur le PC réel : français strict, `MEMS 1.6`, rôle ECU, valeur bobine, relance IAC `où il est placé ?`, puis sélectionner `Test ECU 1.9` et vérifier qu’`Aperçu` reste visible. Aucun BUILD #31.**
+**Tester sur le PC réel l’artefact de ECU MEMS Manager x64 #63 — Commit `7a8085c` : vérifier français strict, réponse `MEMS 1.6`, rôle ECU, valeur bobine, relance IAC `où il est placé ?`, puis sélectionner `Test ECU 1.9` et confirmer qu’`Aperçu` reste visible. Consigner le résultat exact avant toute nouvelle correction. Aucun BUILD #31.**
