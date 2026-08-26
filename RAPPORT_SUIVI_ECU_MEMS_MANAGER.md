@@ -10,7 +10,7 @@
 
 - Dépôt : `mini56/ECU-Mems-Manager-Session`.
 - Branche x64 : `MEMSX64`.
-- HEAD courant : **`87cb4cdfd2f16ed98f0787454f7f9aec4f041e1f`**.
+- HEAD courant : **`634fce02bd92b3048cd402c147ce3e9cc84a2103`**.
 - BUILD logiciel actif : **#30 / v1.0.30**.
 - Aucun BUILD #31 sans demande explicite.
 - 32 bits : `lab-expert-engine` — **NE PAS TOUCHER**.
@@ -111,13 +111,25 @@ Correction limitée à `.github/workflows/memsx64.yml` :
 - Étapes 18 à 20 sautées ; aucun artefact #66.
 - Le changement nouveau par rapport au runtime stable #63 est le runtime partagé + chargeur de backends CPU multi-variantes.
 
-### Étape 4 — isolement runtime x64 partagé — AUTORISÉE
+### Étape 4 — isolement runtime x64 partagé — POUSSÉE
 
 Autorisation utilisateur : **`OK TU POUSSE SUR GITHUB`**.
 
-Objectif exact avant toute autre optimisation : conserver le runtime partagé nécessaire à `GGML_BACKEND_DL`, mais **ne rendre disponible au runtime que `ggml-cpu-x64.dll`**. Les variantes `haswell`, `skylakex`, etc. restent construites par CI mais ne sont ni placées dans le dossier runtime, ni emballées dans l’artefact de ce test.
+Commit **`634fce02bd92b3048cd402c147ce3e9cc84a2103`** — `BUILD #30 isolate shared llama x64 backend`.
 
-Ce test doit répondre à une seule question : **le crash `0xC0000409` disparaît-il quand le chargeur dynamique n’a que le backend x64 de base à charger ?** Aucun changement IA métier, modèle Qwen, UI, protocole ECU, base, 32 bits ou BUILD logiciel n’est autorisé dans ce lot.
+Correction limitée à `.github/workflows/memsx64.yml` :
+- la compilation conserve `BUILD_SHARED_LIBS=ON`, `GGML_BACKEND_DL=ON` et `GGML_CPU_ALL_VARIANTS=ON` afin de ne pas modifier le profil de build #66 ;
+- CI vérifie toujours que plusieurs variantes ont bien été produites ;
+- le dossier runtime ne reçoit plus que `llama.dll`, `ggml.dll`, `ggml-base.dll` et **`ggml-cpu-x64.dll`** ;
+- aucune DLL CPU `haswell`, `skylakex`, `sandybridge`, etc. n’est exposée au chargeur pendant ce test ;
+- validations package, manifest, hashes et smoke imposent exactement un backend CPU : `ggml-cpu-x64.dll` ;
+- le modèle Qwen, l’application, la base, l’UI, le protocole ECU, le 32 bits et le numéro BUILD restent inchangés.
+
+### ECU MEMS Manager x64 #67 — Commit `634fce0` — EN COURS
+
+- Run GitHub : **`32955046246`**.
+- État au premier contrôle : **queued**.
+- Objectif du run : déterminer si Qwen charge correctement avec le runtime partagé quand **seul le backend x64 de base** est disponible.
 
 ## AUDIT IA DES QUESTIONS POSSIBLES — DÉMARRÉ EN LECTURE SEULE
 
@@ -249,4 +261,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Pousser sur `MEMSX64` un test d’isolement limité au runtime Qwen : garder le runtime partagé b10516 mais n’exposer que `ggml-cpu-x64.dll`, lancer le GitHub Actions suivant, puis consigner son verdict avant toute autre correction. Audit IA/RAVE reste en lecture seule. Aucun BUILD #31.**
+**Suivre ECU MEMS Manager x64 #67 — Commit `634fce0`. Si rouge, consigner l’étape et l’erreur exactes avant toute nouvelle correction. Si vert, consigner l’artefact puis décider du retour contrôlé des variantes optimisées. Audit IA/RAVE reste en lecture seule. Aucun BUILD #31.**
