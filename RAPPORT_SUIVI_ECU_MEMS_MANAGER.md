@@ -125,11 +125,29 @@ Correction limitée à `.github/workflows/memsx64.yml` :
 - validations package, manifest, hashes et smoke imposent exactement un backend CPU : `ggml-cpu-x64.dll` ;
 - le modèle Qwen, l’application, la base, l’UI, le protocole ECU, le 32 bits et le numéro BUILD restent inchangés.
 
-### ECU MEMS Manager x64 #67 — Commit `634fce0` — EN COURS
+### ECU MEMS Manager x64 #67 — Commit `634fce0` — ROUGE
 
-- Run GitHub : **`32955046246`**.
-- État au premier contrôle : **queued**.
-- Objectif du run : déterminer si Qwen charge correctement avec le runtime partagé quand **seul le backend x64 de base** est disponible.
+- Run GitHub : **`32955046246`** ; job : **`98134767273`**.
+- Étapes 1 à 12 : **VERTES**.
+- Échec unique : étape 13 `Build pinned llama.cpp b10516`.
+- La compilation CMake/MSVC de `llama-server.exe` se termine correctement ; l’échec survient seulement ensuite lors du test du runtime copié dans `llama-runtime-b10516`.
+- Commande en échec : `llama-server.exe --version` depuis le dossier staged.
+- Code Windows : **`-1073741515` = `0xC0000135` = `STATUS_DLL_NOT_FOUND`**.
+- Le log de build montre que le profil `BUILD_SHARED_LIBS=ON` produit notamment `llama-common.dll`, `mtmd.dll` et `llama-server-impl.dll` en plus des DLL GGML/llama.
+- Le staging #67 ne copie pourtant que `ggml.dll`, `ggml-base.dll`, `llama.dll` et `ggml-cpu-x64.dll` autour de `llama-server.exe`.
+- **Cause retenue : runtime staged incomplet en DLLs partagées non-CPU.** Le resserrement destiné à exclure les variantes CPU incompatibles a aussi exclu des dépendances obligatoires du serveur.
+- Étapes 14 à 20 sautées ; aucun artefact #67.
+- Aucune correction du workflow/source n’est appliquée à ce stade ; le résultat est consigné avant toute nouvelle modification.
+
+### Étape suivante proposée — correction minimale du staging llama.cpp
+
+Objectif, uniquement après autorisation utilisateur :
+- conserver le profil de compilation partagé #67 ;
+- copier dans le runtime **toutes les DLL non `ggml-cpu-*`** produites avec `llama-server.exe` ;
+- parmi les backends CPU, copier **uniquement `ggml-cpu-x64.dll`** ;
+- ne pas réintroduire `ggml-cpu-icelake.dll`, `ggml-cpu-skylakex.dll`, `ggml-cpu-haswell.dll`, etc. dans ce test d’isolement ;
+- refaire `llama-server --version` depuis le dossier staged avant le téléchargement/chargement Qwen ;
+- aucun changement application, protocole ECU, modèle, base, UI, 32 bits ou numéro BUILD.
 
 ## AUDIT IA DES QUESTIONS POSSIBLES — DÉMARRÉ EN LECTURE SEULE
 
@@ -319,4 +337,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Suivre ECU MEMS Manager x64 #67 — Commit `634fce0`. En parallèle, poursuivre l'audit documentaire en lecture seule : recouper RCL0194/AKM7169 pour les pinouts Mini exacts et rechercher une preuve indépendante pour le Code 23 / bit 6 de `0x7D:0x05`. Si #67 change d'état, consigner son verdict avant toute correction. Aucun BUILD #31.**
+**Attendre l’autorisation utilisateur avant toute correction de #67. Si GO : modifier uniquement le staging llama.cpp du BUILD #30 pour conserver toutes les DLL partagées non `ggml-cpu-*` nécessaires à `llama-server.exe`, tout en n’exposant que `ggml-cpu-x64.dll` comme backend CPU ; relancer ensuite le même BUILD #30. En parallèle, l’audit RAVE peut continuer en lecture seule : recouper RCL0194/AKM7169 pour les pinouts Mini exacts et rechercher une preuve indépendante pour le Code 23 / bit 6 de `0x7D:0x05`. Aucun BUILD #31.**
