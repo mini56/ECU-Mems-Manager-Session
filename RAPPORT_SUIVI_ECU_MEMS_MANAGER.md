@@ -10,7 +10,7 @@
 
 - Dépôt : `mini56/ECU-Mems-Manager-Session`.
 - Branche x64 : `MEMSX64`.
-- HEAD courant après correction définitions : **`f860749313447e224f63b99801f7e7d6a1839a49`**.
+- HEAD courant : **`20772b8ef5571cc0d0063c1e0d9b6f7e2f0866ef`**.
 - BUILD logiciel actif : **#30 / v1.0.30**.
 - Aucun BUILD #31 sans demande explicite.
 - 32 bits : `lab-expert-engine` — **NE PAS TOUCHER**.
@@ -21,91 +21,80 @@
 
 `navigationorderpatch.cpp -> IaMemsTab (vue) -> IaMemsService (service application) -> ExpertEngine + ExpertKnowledgeReader(read-only) -> LocalAiClient -> llama-server.exe -> Qwen3`
 
-- `llama-server.exe` sidecar x64 hors processus ; ne pas lier libllama/ggml dans `ecu_mems_manager.exe`.
-- Durée de vie IA application, pas onglet.
-- Base experte r20 préconstruite en CI et ouverte en lecture seule.
-- Mesures ECU transmises en lecture seule ; aucune autorité LLM sur commandes/mutations ECU.
-- Qwen3-0.6B-Q8_0 + llama.cpp b10516 conservés.
-- Ancien empilement supprimé : `iamemstab_clean.cpp`, `iamemsqualitypatch.cpp`, `iaresponsecontextpatch.cpp` ne doivent pas revenir.
+- Sidecar llama.cpp hors processus ; durée de vie IA application.
+- Base experte r20 préconstruite, lecture seule.
+- Mesures ECU read-only ; aucune commande ou mutation accessible au LLM.
+- Qwen3-0.6B-Q8_0 + llama.cpp b10516.
+- Ne pas réintroduire `iamemstab_clean.cpp`, `iamemsqualitypatch.cpp`, `iaresponsecontextpatch.cpp`.
 
 ## HISTORIQUE BUILD #30 / IA
 
-### Pré-reconstruction
-- `600b8ef8607eb3dc7d591f675e9f33be0cdb0911` : base BUILD #30.
-- `879077a678f4c203124907dabdeb42b532c9d337` : correction chemin base r20.
-- #44 / run `32890600398` : rouge au smoke Qwen (`Empty chat completion from packaged Qwen`).
-- `414ea52970e02fb6077c94ca2aa7aec3e92d7383` : `--reasoning off` uniquement pour le smoke CI.
-- #45 — VERT ; artifact `9580850077`, SHA-256 `1db3438593c65f7f77176910e55e9de0a428208f9c3a7732b74d6e35290ed3d0`.
-- Test PC #45 : crash immédiat ouverture IA.
-
-### Reconstruction propre
-- `776fc647a874564c932bf09e8871cb771a0ed258` : service IA unique application, vue simple, base r20 directe read-only, suppression wrappers/patches globaux.
-- #59 — VERT ; run `32898631148`, artifact `9582674702`, SHA-256 `ee7f12e933a17c884c6ca081c583a542f45569f556a68a50f124b58b5f13fcff`.
-- Test PC #59 : crash supprimé ; `base prête` + `IA locale prête`.
-
-### Réponses/routage
-- `be4916a53321e36573729e123b14c2cf120fd734` : date locale, anti-écho, thinking Qwen3 ; #60 VERT, artifact `9583795907`.
-- Test PC #60 : date correcte, contamination historique, hallucination IAC, latence forte.
-- `126cc638d584975a78d0101430d61bdc435c5879` : routage rapide ; date immédiate ; IAC contrôlé ; simple `/no_think` 256 tokens ; diagnostic `/think` 768 ; #61 VERT, artifact `9584843179`.
-- Test PC #61 : vitesse un peu meilleure ; IAC correct ; défauts langue/domaine/relances/navigation.
-- `8a793a7f9d660a729e12cf32c2f888161cad6598` : français/domaine Rover-LUCAS, réponses contrôlées ECU/MEMS/dwell.
-- `7a8085cef236e00091d8a053cdb97293568d97d0` : navigation responsive 14 onglets.
-- #63 — VERT ; run `32936048218`, job `98077364424`, artifact `9595181353`, SHA-256 `995efda2b49768457ad3ec8f2f31b137c671b722c80465831b2ef00d47c559d4`.
+- `600b8ef...` base BUILD #30 ; `879077a...` correction chemin base r20.
+- #44 rouge au smoke Qwen ; `414ea52...` corrige uniquement le smoke CI ; #45 VERT mais crash PC à l’ouverture IA.
+- `776fc64...` reconstruction propre ; #59 VERT ; test PC : crash supprimé, base + IA prêtes.
+- `be4916a...` date/anti-écho/thinking ; #60 VERT ; test PC : date correcte mais contamination/hallucination/latence.
+- `126cc63...` routage rapide ; #61 VERT ; test PC : vitesse un peu meilleure mais défauts langue/domaine/relances/navigation.
+- `8a793a7...` français/domaine Rover-LUCAS/réponses contrôlées ; `7a8085c...` navigation responsive.
+- #63 VERT : run `32936048218`, job `98077364424`, artifact `9595181353`, SHA-256 `995efda2b49768457ad3ec8f2f31b137c671b722c80465831b2ef00d47c559d4`.
 
 ## TEST PC RÉEL #63 — 26 AOÛT 2026
 
 Validé :
-- aucun crash d’ouverture IA ;
-- `base prête` + `IA locale prête` ;
-- 14 onglets visibles simultanément, `Aperçu` reste visible avec `Test ECU 1.9` ;
+- aucun crash d’ouverture IA ; `base prête` + `IA locale prête` ;
+- 14 onglets visibles simultanément ; `Aperçu` reste visible avec `Test ECU 1.9` ;
 - domaine Rover/Lucas MEMS mieux verrouillé.
 
 Défauts :
 - **latence ~30 s à 2 min** pour certaines réponses Qwen ;
-- MAP confondu avec mesure live ;
+- MAP confondu avec une mesure live ;
 - injecteur défini à tort comme injection d’huile ;
 - SPI halluciné alors que Rover/MEMS SPI = **Single Point Injection**.
 
 ## CAUSE PERFORMANCE ISOLÉE
 
-Le runtime #63 utilise : `GGML_NATIVE=OFF`, `GGML_BACKEND_DL=OFF`, `GGML_CPU_ALL_VARIANTS=OFF`, `GGML_SSE42=OFF`, `GGML_AVX=OFF`, `GGML_AVX2=OFF`, `GGML_BMI2=OFF`, AVX512 OFF. Il force donc le backend x64 de base sans SIMD avancé.
+Le runtime #63 force le CPU x64 de base : `GGML_NATIVE=OFF`, `GGML_BACKEND_DL=OFF`, `GGML_CPU_ALL_VARIANTS=OFF`, SSE4.2/AVX/AVX2/BMI2/AVX512 désactivés.
 
-llama.cpp b10516 fournit le mode multi-variantes officiel :
-- `GGML_NATIVE=OFF`
-- `GGML_BACKEND_DL=ON`
-- `GGML_CPU_ALL_VARIANTS=ON`
-
-Il construit des backends `x64`, `sse42`, `sandybridge`, `haswell`, `skylakex`, etc. Le chargeur sélectionne automatiquement le meilleur compatible et conserve `x64` comme repli. **Ne pas imposer AVX2 à tous les PC.**
+llama.cpp b10516 supporte officiellement `GGML_BACKEND_DL=ON` + `GGML_CPU_ALL_VARIANTS=ON` + `GGML_NATIVE=OFF`, produisant plusieurs backends (`x64`, `sse42`, `sandybridge`, `haswell`, `skylakex`, etc.) et choisissant automatiquement le meilleur compatible, avec `x64` comme repli. **Ne pas imposer AVX2 à tous les PC.**
 
 ## ÉTAPE AUTORISÉE — PERFORMANCE IA + DÉFINITIONS
 
 Autorisation utilisateur : **GO**.
 
-### Résultat étape 1 — définitions contrôlées
+### Étape 1 — définitions contrôlées — TERMINÉE
 
 Commit **`f860749313447e224f63b99801f7e7d6a1839a49`** — `BUILD #30 add controlled MAP injector SPI answers`.
 
-`LocalAiClient.cpp` :
-- MAP : réponse immédiate contrôlée, `Manifold Absolute Pressure`, pression absolue collecteur, rôle charge moteur ;
-- injecteur : électrovanne essence commandée ECU, distinction SPI/MPI, exclusion explicite de l’injection d’huile ;
-- SPI : `Single Point Injection`, injection monopoint Rover/Mini MEMS, distinction MPI ;
-- ces réponses sont interceptées avant l’appel Qwen ;
-- `map`, `injecteur`, `spi` ajoutés au garde-fou domaine MEMS ;
-- aucun changement protocole ECU, UI ou 32 bits.
+- MAP : `Manifold Absolute Pressure`, pression absolue du collecteur, rôle charge moteur ;
+- injecteur : électrovanne essence commandée ECU, distinction SPI/MPI, exclusion injection d’huile ;
+- SPI : `Single Point Injection`, injection monopoint Rover/Mini MEMS ;
+- réponses interceptées avant Qwen ; `map`, `injecteur`, `spi` ajoutés au domaine MEMS ;
+- aucun changement protocole ECU/UI/32 bits.
 
-### Étape 2 à exécuter
+### Étape 2 — runtime multi-variantes — TERMINÉE ET POUSSÉE
 
-Modifier `.github/workflows/memsx64.yml` pour :
-1. runtime llama.cpp multi-variantes (`GGML_BACKEND_DL=ON`, `GGML_CPU_ALL_VARIANTS=ON`, `GGML_NATIVE=OFF`) ;
-2. empaqueter `llama-server.exe` + toutes DLL ggml/CPU nécessaires ;
-3. vérifier présence backend `x64` de repli et variantes optimisées ;
-4. valider démarrage, `/health`, `/v1/models`, chat Qwen dans le package ;
-5. garder BUILD #30, aucun changement protocole ECU.
+HEAD **`20772b8ef5571cc0d0063c1e0d9b6f7e2f0866ef`** — `BUILD #30 enable adaptive llama CPU backends`.
+
+Workflow `.github/workflows/memsx64.yml` :
+- `GGML_NATIVE=OFF` ;
+- `GGML_BACKEND_DL=ON` ;
+- `GGML_CPU_ALL_VARIANTS=ON` ;
+- `GGML_OPENMP=OFF`, `LLAMA_OPENSSL=OFF`, build core toujours `BUILD_SHARED_LIBS=OFF` ;
+- validation CI de `ggml-cpu-x64.dll` comme backend de repli et `ggml-cpu-haswell.dll` comme variante optimisée ;
+- packaging de **toutes** les DLL `ggml-cpu-*.dll` dans `ai/` avec `llama-server.exe` ;
+- manifest runtime passé en schéma 3, profil `adaptive x64 CPU backends` ;
+- validation PE x64 des DLL CPU, absence libomp/OpenSSL ;
+- validation du `install_manifest.txt` pour les backends ;
+- smoke package exécuté depuis le dossier `ai` ;
+- logs serveur vérifiés pour confirmer le chargement d’un `ggml-cpu-*.dll` ;
+- `/health`, `/v1/models`, chat Qwen et smoke app conservés ;
+- hashes BUILD #30 incluent désormais `ggml-cpu-x64.dll` et `ggml-cpu-haswell.dll`.
+
+Aucun changement protocole ECU, 32 bits ou modèle Qwen.
 
 ## DÉSINSTALLATION BUILD #30
 
 - `ecu_mems_uninstaller.exe` + `install_manifest.txt` requis.
-- Refuse si app active, conserve profil par défaut, données locales supprimées seulement sur choix explicite, fichiers étrangers préservés.
+- Refuse si app active ; profil conservé par défaut ; données locales uniquement sur choix explicite ; fichiers étrangers préservés.
 
 ## UI OFFICIELLE À PRÉSERVER
 
@@ -118,7 +107,7 @@ Aperçu, Injection, Réglages, Actionneurs, Erreurs, Diagnostic automatique, IA 
 - Mutations : Rosco13_16 prouvé + Normal uniquement ; unknown fail-closed ; MEMS1.9 mutations bloquées ; F7/EF bloqués sans sous-type ; transaction RAM bloque commandes génériques.
 - Conserver `void onProtocolCommandRequested(quint8 command);`.
 - D0 `D0 98 00 02 02`, D1 `AANMP002`, F0 `F0 50`, D2 `D2 00 01`, F4 `F4 00`.
-- Ralenti chaud : `raw - 32768 - correction` avec correction Réglages réelle ; jamais -3 hardcodé.
+- Ralenti chaud : `raw - 32768 - correction`, correction Réglages réelle ; jamais -3 hardcodé.
 - Dwell référence ~1,9–3,1 ms vers 14 V.
 - Aucune mutation ECU pendant BUILD #30.
 
@@ -128,4 +117,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Modifier maintenant `.github/workflows/memsx64.yml` pour le runtime multi-variantes, packaging et validations. Pousser sur `MEMSX64`, consigner le HEAD final puis suivre uniquement son Action GitHub. Aucun BUILD #31.**
+**Suivre uniquement l’Action GitHub déclenchée par le HEAD `20772b8ef5571cc0d0063c1e0d9b6f7e2f0866ef`. Si rouge : consigner la cause exacte avant toute correction. Si verte : consigner l’artifact puis tester sur PC MAP/injecteur/SPI et mesurer la latence Qwen avec le runtime adaptatif. Aucun BUILD #31.**
