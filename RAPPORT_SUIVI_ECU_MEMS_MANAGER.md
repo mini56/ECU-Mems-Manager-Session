@@ -253,6 +253,21 @@ Le fichier `AUDIT_RAVE_MINI_SPI_MPI.md` contient maintenant un lot séparé `PAN
 
 Aucune de ces données n’a encore été injectée dans la base runtime ou dans le code de réponse IA.
 
+### Phase C — TestBook / codes protocole / brochages — PREMIER LOT CLASSÉ
+
+Commit documentaire **`364cb7220fa5341b8752d6ba7cabf5fc1bf31c89`** : création de **`AUDIT_TESTBOOK_MEMS_CODES_PINOUTS.md`**.
+
+Résultats classés par niveau de preuve :
+- le Diagnose-Handbuch Rover/TestBook distingue les générations Mini **MEMS 1.3 SPi**, **MEMS 1.6 SPi** et **MEMS 2J MPi** ; ne pas assimiler automatiquement Mini MPi à MEMS 1.9 ;
+- le paquet `0x80`, bytes DTC `0x0D/0x0E`, confirme fortement sur Mini SPi les codes **1 = température liquide**, **2 = température air admission**, **10 = circuit pompe carburant**, **16 = circuit potentiomètre papillon** ; les autres positions du bitfield restent à associer au support réel de la variante ;
+- le paquet `0x7D`, byte DTC `0x05`, recoupe les positions **20 = chauffage lambda**, **21 = synchro vilebrequin**, **22 = ventilateur 1**, **24 = ventilateur 2** ;
+- **Code 23 / commande antidémarrage n'est pas confirmé** : le bit correspondant reste non documenté dans la source protocole consultée et aucune occurrence `faultCode23` n'a été retrouvée dans MEMSFCR public ; ce libellé passe au statut **`preuve_insuffisante`** pendant l'audit ;
+- la documentation professionnelle Blackbox indique que certains défauts MEMS sont dynamiques : un signal absent moteur arrêté (ex. vilebrequin) peut apparaître comme défaut sans être une panne permanente ; certaines fonctions supportées par l'ECU peuvent aussi ne pas être montées sur le véhicule ;
+- valeurs diagnostiques secondaires classées : Hot Idle IAC **10–50 pas**, coil charge **~2–3 ms vers 14 V**, circuit ouvert ECT pouvant afficher environ **60 °C**, erreur ralenti > **100 tr/min** comme indice de perte de contrôle dans cette source ;
+- premier brochage MEMS 1.6 professionnel classé séparément, mais **interdit comme brochage Mini exact** tant qu'il n'est pas recoupé par RCL0194/AKM7169.
+
+Aucune correction du libellé Code 23 ni aucun changement de base/code n'est effectué à ce stade.
+
 ## EXIGENCE UI IA — FICHIERS CSV/TXT
 
 À intégrer dans l’onglet **IA MEMS** après validation du runtime, sans changer le style dark/responsive :
@@ -304,4 +319,4 @@ MEMS1.9 F7/EF, tailles 7D/80, W4 25–50 ms, reconnexion 1.9, failsafe actionneu
 
 ## PROCHAINE ACTION EXACTE
 
-**Suivre ECU MEMS Manager x64 #67 — Commit `634fce0`. En parallèle, poursuivre RAVE/SPi/MPi en lecture seule : rechercher TestBook/documentation MEMS permettant de recouper les codes défaut 01–24, puis compléter les pinouts et contrôles associés. Si #67 change d'état, consigner son verdict avant toute correction. Aucun BUILD #31.**
+**Suivre ECU MEMS Manager x64 #67 — Commit `634fce0`. En parallèle, poursuivre l'audit documentaire en lecture seule : recouper RCL0194/AKM7169 pour les pinouts Mini exacts et rechercher une preuve indépendante pour le Code 23 / bit 6 de `0x7D:0x05`. Si #67 change d'état, consigner son verdict avant toute correction. Aucun BUILD #31.**
