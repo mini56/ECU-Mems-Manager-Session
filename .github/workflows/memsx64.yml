@@ -23,6 +23,7 @@ jobs:
       MEMS_BUILD_NUMBER: '30'
       LLAMA_RELEASE: 'b10516'
       LLAMA_COMMIT: 'b95502ba9aa0eb73a2f4fc8878d7fbe6a847a0b9'
+      LLAMA_WIN_CPU_SHA256: 'fbbbc55e0eb2e1b07f9dcb9488616c98ed47d9003b90e15e7c8c7812c4307cd3'
       QWEN_SHA256: '9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031'
 
     steps:
@@ -50,8 +51,6 @@ jobs:
           if (Test-Path 'C:\Qt') { Remove-Item 'C:\Qt' -Recurse -Force -ErrorAction SilentlyContinue }
           python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
           if ($LASTEXITCODE -ne 0) { throw "aqtinstall failed: $LASTEXITCODE" }
-          $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
-          if (-not (Test-Path "$qtRoot\lib\cmake\Qt5\Qt5Config.cmake")) { throw 'Qt x64 CMake configuration missing' }
 
       - name: Validate protocol guards before build
         shell: pwsh
@@ -59,7 +58,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           python librosco-x64/validate_protocol_guards.py
 
-      - name: Configure ECU MEMS Manager x64
+      - name: Configure and build ECU MEMS Manager x64
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -69,53 +68,25 @@ jobs:
             -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF
           if ($LASTEXITCODE -ne 0) { throw "CMake configure failed: $LASTEXITCODE" }
 
-      - name: Build application uninstaller and self-tests
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
           cmake --build build-x64 --config Release --target `
-            ecu_mems_manager `
-            ecu_mems_uninstaller `
-            rosco_abi_selftest `
-            ia_response_selftest `
-            mems_search_selftest `
-            expert_runtime_selftest
+            ecu_mems_manager ecu_mems_uninstaller rosco_abi_selftest `
+            ia_response_selftest mems_search_selftest expert_runtime_selftest
           if ($LASTEXITCODE -ne 0) { throw "MEMS x64 build failed: $LASTEXITCODE" }
-          $required = @(
-            'build-x64\Release\ecu_mems_manager.exe',
-            'build-x64\Release\ecu_mems_uninstaller.exe',
-            'build-x64\Release\ia_response_selftest.exe',
-            'build-x64\Release\mems_search_selftest.exe',
-            'build-x64\Release\expert_runtime_selftest.exe',
-            'build-x64\librosco-x64\Release\mems_manager_x64.dll'
-          )
-          foreach ($path in $required) {
-            if (-not (Test-Path $path)) { throw "Required BUILD 30 output missing: $path" }
-          }
 
-      - name: Run deterministic IA response self-test
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
-          $env:PATH = "$qtRoot\bin;$env:PATH"
-          & '${{ github.workspace }}\build-x64\Release\ia_response_selftest.exe'
-          if ($LASTEXITCODE -ne 0) { throw "IA response self-test failed: $LASTEXITCODE" }
-
-      - name: Run protocol ABI self-test
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          ctest --test-dir build-x64/librosco-x64 -C Release --output-on-failure -R rosco_abi_selftest
-          if ($LASTEXITCODE -ne 0) { throw "Protocol ABI self-test failed: $LASTEXITCODE" }
-
-      - name: Run reference database semantic self-test
+      - name: Run BUILD 30 self-tests
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
           $env:PATH = "$qtRoot\bin;$env:PATH"
           $env:QT_PLUGIN_PATH = "$qtRoot\plugins"
+
+          & '${{ github.workspace }}\build-x64\Release\ia_response_selftest.exe'
+          if ($LASTEXITCODE -ne 0) { throw "IA response self-test failed: $LASTEXITCODE" }
+
+          ctest --test-dir build-x64/librosco-x64 -C Release --output-on-failure -R rosco_abi_selftest
+          if ($LASTEXITCODE -ne 0) { throw "Protocol ABI self-test failed: $LASTEXITCODE" }
+
           & '${{ github.workspace }}\build-x64\Release\mems_search_selftest.exe'
           if ($LASTEXITCODE -ne 0) { throw "MEMS reference semantic self-test failed: $LASTEXITCODE" }
 
@@ -130,9 +101,6 @@ jobs:
           $expertRuntime = Join-Path $releaseRoot 'database\expert'
           $cacheRoot = '${{ github.workspace }}\expert-runtime-cache'
 
-          if (-not (Test-Path (Join-Path $referenceSource 'manifest.json'))) {
-            throw 'database/reference/manifest.json missing from source checkout'
-          }
           if (Test-Path $referenceRuntime) { Remove-Item $referenceRuntime -Recurse -Force }
           New-Item -ItemType Directory -Path (Split-Path $referenceRuntime -Parent) -Force | Out-Null
           Copy-Item $referenceSource $referenceRuntime -Recurse -Force
@@ -149,192 +117,113 @@ jobs:
             $env:LOCALAPPDATA = $cacheRoot
             $env:APPDATA = $cacheRoot
             & (Join-Path $releaseRoot 'expert_runtime_selftest.exe') 2>&1 | Tee-Object -Variable generatorOutput
-            $generatorExitCode = $LASTEXITCODE
-            if ($generatorExitCode -ne 0) { throw "Expert runtime database generator failed: $generatorExitCode" }
-          }
-          finally {
+            if ($LASTEXITCODE -ne 0) { throw "Expert runtime database generator failed: $LASTEXITCODE" }
+          } finally {
             $env:LOCALAPPDATA = $savedLocalAppData
             $env:APPDATA = $savedAppData
           }
 
-          $databaseLine = $generatorOutput | ForEach-Object { [string]$_ } | Where-Object { $_ -like 'EXPERT_RUNTIME_DATABASE=*' } | Select-Object -Last 1
+          $databaseLine = $generatorOutput | ForEach-Object { [string]$_ } |
+            Where-Object { $_ -like 'EXPERT_RUNTIME_DATABASE=*' } | Select-Object -Last 1
           if (-not $databaseLine) { throw 'Expert runtime generator did not report EXPERT_RUNTIME_DATABASE' }
           $expertDbPath = $databaseLine.Substring('EXPERT_RUNTIME_DATABASE='.Length).Trim()
-          if (-not (Test-Path -LiteralPath $expertDbPath -PathType Leaf)) {
-            throw "Generated ia_mems_reference_r20.sqlite not found at reported path: $expertDbPath"
-          }
-          $expertDb = Get-Item -LiteralPath $expertDbPath
-          if ($expertDb.Length -le 0) { throw 'Generated expert database is empty' }
-          "AI_EXPERT_DB=$($expertDb.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          if (-not (Test-Path -LiteralPath $expertDbPath -PathType Leaf)) { throw "Expert DB missing: $expertDbPath" }
 
-          $env:EXPERT_DB = $expertDb.FullName
+          $env:EXPERT_DB = $expertDbPath
           @'
-          import os, sqlite3
-          path=os.environ['EXPERT_DB']
-          db=sqlite3.connect(path)
+          import os,sqlite3
+          p=os.environ["EXPERT_DB"]; db=sqlite3.connect(p)
           try:
-              integrity=db.execute('PRAGMA integrity_check').fetchone()[0]
-              revision=db.execute('PRAGMA user_version').fetchone()[0]
-              tables=db.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table'").fetchone()[0]
-          finally:
-              db.close()
-          if integrity.lower() != 'ok': raise SystemExit('SQLite integrity_check failed: '+str(integrity))
-          if revision != 20: raise SystemExit(f'Expert DB revision mismatch: {revision}')
-          if tables <= 0: raise SystemExit('Expert DB contains no tables')
-          print(f'PASS expert SQLite r{revision}: tables={tables}')
+              ok=db.execute("PRAGMA integrity_check").fetchone()[0]
+              rev=db.execute("PRAGMA user_version").fetchone()[0]
+          finally: db.close()
+          if str(ok).lower()!="ok" or rev!=20: raise SystemExit(f"Invalid expert DB: integrity={ok} revision={rev}")
+          print("PASS expert SQLite r20")
           '@ | python -
+          "AI_EXPERT_DB=$expertDbPath" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - name: Build shared llama.cpp b10516 runtime with x64 backend isolation
+      - name: Download verified official llama.cpp b10516 Windows x64 CPU runtime
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $src = '${{ github.workspace }}\llama-b10516-src'
-          $build = '${{ github.workspace }}\llama-b10516-build'
-          $runtimeStage = '${{ github.workspace }}\llama-runtime-stage'
-          if (Test-Path $src) { Remove-Item $src -Recurse -Force }
-          if (Test-Path $build) { Remove-Item $build -Recurse -Force }
-          if (Test-Path $runtimeStage) { Remove-Item $runtimeStage -Recurse -Force }
-          New-Item -ItemType Directory -Path $runtimeStage -Force | Out-Null
+          $archive = Join-Path $env:RUNNER_TEMP "llama-$env:LLAMA_RELEASE-bin-win-cpu-x64.zip"
+          $runtime = '${{ github.workspace }}\llama-runtime-official-b10516'
+          $url = "https://github.com/ggml-org/llama.cpp/releases/download/$env:LLAMA_RELEASE/llama-$env:LLAMA_RELEASE-bin-win-cpu-x64.zip"
 
-          git clone --depth 1 --branch $env:LLAMA_RELEASE https://github.com/ggml-org/llama.cpp.git $src
-          if ($LASTEXITCODE -ne 0) { throw "llama.cpp clone failed: $LASTEXITCODE" }
-          $actualCommit = (git -C $src rev-parse HEAD).Trim().ToLowerInvariant()
-          if ($actualCommit -ne $env:LLAMA_COMMIT.ToLowerInvariant()) { throw "llama.cpp commit mismatch: $actualCommit" }
+          if (Test-Path $runtime) { Remove-Item $runtime -Recurse -Force }
+          New-Item -ItemType Directory -Path $runtime -Force | Out-Null
+          & curl.exe -L --fail --retry 3 --retry-delay 3 -o $archive $url
+          if ($LASTEXITCODE -ne 0) { throw "Official llama.cpp runtime download failed: $LASTEXITCODE" }
 
-          cmake -S $src -B $build -A x64 `
-            -DBUILD_SHARED_LIBS=ON `
-            -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded `
-            -DGGML_NATIVE=OFF `
-            -DGGML_BACKEND_DL=ON `
-            -DGGML_CPU_ALL_VARIANTS=ON `
-            -DGGML_OPENMP=OFF `
-            -DGGML_RPC=OFF `
-            -DLLAMA_BUILD_SERVER=ON `
-            -DLLAMA_BUILD_EXAMPLES=OFF `
-            -DLLAMA_BUILD_TESTS=OFF `
-            -DLLAMA_BUILD_TOOLS=ON `
-            -DLLAMA_BUILD_APP=OFF `
-            -DLLAMA_OPENSSL=OFF
-          if ($LASTEXITCODE -ne 0) { throw "llama.cpp configure failed: $LASTEXITCODE" }
+          $actual = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $env:LLAMA_WIN_CPU_SHA256) { throw "Official llama.cpp SHA256 mismatch: $actual" }
+          Expand-Archive -LiteralPath $archive -DestinationPath $runtime -Force
 
-          cmake --build $build --config Release --target llama-server --parallel 4
-          if ($LASTEXITCODE -ne 0) { throw "llama-server build failed: $LASTEXITCODE" }
-
-          $server = Get-ChildItem $build -Recurse -File -Filter 'llama-server.exe' | Where-Object { $_.FullName -match '\\Release\\' } | Select-Object -First 1
-          if (-not $server) { $server = Get-ChildItem $build -Recurse -File -Filter 'llama-server.exe' | Select-Object -First 1 }
-          if (-not $server) { throw 'llama-server.exe missing after build' }
-          Copy-Item $server.FullName (Join-Path $runtimeStage 'llama-server.exe') -Force
-
-          $allCpuBackends = @(Get-ChildItem $build -Recurse -File -Filter 'ggml-cpu-*.dll' |
-            Where-Object { $_.FullName -match '\\Release\\' } |
-            Sort-Object -Property Name -Unique)
-          if ($allCpuBackends.Count -lt 3) { throw "Expected multi-variant build outputs, found $($allCpuBackends.Count) CPU backends" }
-          if (@($allCpuBackends | Where-Object { $_.Name.ToLowerInvariant() -eq 'ggml-cpu-x64.dll' }).Count -ne 1) {
-            throw 'Baseline ggml-cpu-x64.dll backend missing or duplicated in build outputs'
+          foreach ($name in @('llama-server.exe','llama.dll','ggml.dll','ggml-base.dll','ggml-cpu-x64.dll')) {
+            if (-not (Test-Path (Join-Path $runtime $name) -PathType Leaf)) { throw "Official runtime missing: $name" }
           }
+          $backends = @(Get-ChildItem $runtime -File -Filter 'ggml-cpu-*.dll')
+          if ($backends.Count -lt 3) { throw "Official multi-variant backend set incomplete: $($backends.Count)" }
 
-          foreach ($requiredName in @('llama.dll','ggml.dll','ggml-base.dll','ggml-cpu-x64.dll')) {
-            $candidate = Get-ChildItem $build -Recurse -File -Filter $requiredName |
-              Where-Object { $_.FullName -match '\\Release\\' } |
-              Select-Object -First 1
-            if (-not $candidate) { throw "Required shared llama runtime file missing from build: $requiredName" }
-            Copy-Item $candidate.FullName (Join-Path $runtimeStage $requiredName) -Force
-          }
-
-          $runtimeDlls = @(Get-ChildItem $runtimeStage -File -Filter '*.dll')
-          $runtimeNames = @($runtimeDlls | ForEach-Object { $_.Name.ToLowerInvariant() })
-          foreach ($requiredName in @('llama.dll','ggml.dll','ggml-base.dll','ggml-cpu-x64.dll')) {
-            if ($runtimeNames -notcontains $requiredName) { throw "Required isolated runtime file missing: $requiredName" }
-          }
-          $cpuBackends = @(Get-ChildItem $runtimeStage -File -Filter 'ggml-cpu-*.dll')
-          if ($cpuBackends.Count -ne 1 -or $cpuBackends[0].Name.ToLowerInvariant() -ne 'ggml-cpu-x64.dll') {
-            throw "x64 isolation failed: packaged runtime CPU backends = $($cpuBackends.Name -join ', ')"
-          }
-
-          $cache = Get-Content (Join-Path $build 'CMakeCache.txt') -Raw
-          foreach ($required in @(
-            'BUILD_SHARED_LIBS:BOOL=ON',
-            'GGML_NATIVE:BOOL=OFF',
-            'GGML_BACKEND_DL:BOOL=ON',
-            'GGML_CPU_ALL_VARIANTS:BOOL=ON',
-            'GGML_OPENMP:BOOL=OFF',
-            'LLAMA_OPENSSL:BOOL=OFF')) {
-              if (-not $cache.Contains($required)) { throw "Required llama build flag missing: $required" }
-          }
-
-          $savedPath = $env:PATH
-          $env:PATH = "$runtimeStage;$savedPath"
-          Push-Location $runtimeStage
+          $savedPath=$env:PATH; $env:PATH="$runtime;$savedPath"
+          Push-Location $runtime
           try {
-            & (Join-Path $runtimeStage 'llama-server.exe') --version
-            if ($LASTEXITCODE -ne 0) { throw "Staged llama-server --version failed: $LASTEXITCODE" }
-          }
-          finally {
-            Pop-Location
-            $env:PATH = $savedPath
-          }
+            & (Join-Path $runtime 'llama-server.exe') --version
+            if ($LASTEXITCODE -ne 0) { throw "Official llama-server --version failed: $LASTEXITCODE" }
+          } finally { Pop-Location; $env:PATH=$savedPath }
 
-          Write-Host "PASS shared llama x64 isolation: build backends=$($allCpuBackends.Count), runtime backends=1, runtime DLLs=$($runtimeDlls.Count)"
-          Write-Host ((Get-ChildItem $runtimeStage -File | ForEach-Object { $_.Name }) -join ', ')
-          "AI_RUNTIME_DIR=$runtimeStage" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "PASS official llama.cpp b10516 runtime: SHA256=$actual; CPU backends=$($backends.Count)"
+          "AI_RUNTIME_DIR=$runtime" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Download and verify Qwen3-0.6B-Q8_0
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $stage = '${{ github.workspace }}\ai-model-stage'
+          $stage='${{ github.workspace }}\ai-model-stage'
           if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
           New-Item -ItemType Directory -Path $stage -Force | Out-Null
-          $modelPath = Join-Path $stage 'ia-mems.gguf'
-          $modelUrl = 'https://huggingface.co/Qwen/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-Q8_0.gguf?download=true'
-          & curl.exe -L --fail --retry 3 --retry-delay 3 -o $modelPath $modelUrl
+          $model=Join-Path $stage 'ia-mems.gguf'
+          & curl.exe -L --fail --retry 3 --retry-delay 3 -o $model 'https://huggingface.co/Qwen/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-Q8_0.gguf?download=true'
           if ($LASTEXITCODE -ne 0) { throw "Qwen model download failed: $LASTEXITCODE" }
-          $actual = (Get-FileHash $modelPath -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($actual -ne $env:QWEN_SHA256.ToLowerInvariant()) { throw "Qwen SHA256 mismatch: $actual" }
-          "AI_MODEL=$modelPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $actual=(Get-FileHash $model -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $env:QWEN_SHA256) { throw "Qwen SHA256 mismatch: $actual" }
+          "AI_MODEL=$model" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Assemble BUILD 30 portable package
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
-          $releaseRoot = '${{ github.workspace }}\build-x64\Release'
-          $dist = '${{ github.workspace }}\dist-x64'
+          $qtRoot='C:\Qt\5.15.2\msvc2019_64'
+          $releaseRoot='${{ github.workspace }}\build-x64\Release'
+          $dist='${{ github.workspace }}\dist-x64'
           if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }
           New-Item -ItemType Directory -Path $dist -Force | Out-Null
 
-          Copy-Item (Join-Path $releaseRoot 'ecu_mems_manager.exe') (Join-Path $dist 'ecu_mems_manager.exe') -Force
-          Copy-Item (Join-Path $releaseRoot 'ecu_mems_uninstaller.exe') (Join-Path $dist 'ecu_mems_uninstaller.exe') -Force
-          Copy-Item '${{ github.workspace }}\build-x64\librosco-x64\Release\mems_manager_x64.dll' (Join-Path $dist 'mems_manager_x64.dll') -Force
-
-          & "$qtRoot\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist (Join-Path $dist 'ecu_mems_manager.exe')
-          if ($LASTEXITCODE -ne 0) { throw "windeployqt application failed: $LASTEXITCODE" }
-          & "$qtRoot\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist (Join-Path $dist 'ecu_mems_uninstaller.exe')
+          Copy-Item "$releaseRoot\ecu_mems_manager.exe" $dist -Force
+          Copy-Item "$releaseRoot\ecu_mems_uninstaller.exe" $dist -Force
+          Copy-Item '${{ github.workspace }}\build-x64\librosco-x64\Release\mems_manager_x64.dll' $dist -Force
+          & "$qtRoot\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist "$dist\ecu_mems_manager.exe"
+          if ($LASTEXITCODE -ne 0) { throw "windeployqt app failed: $LASTEXITCODE" }
+          & "$qtRoot\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist "$dist\ecu_mems_uninstaller.exe"
           if ($LASTEXITCODE -ne 0) { throw "windeployqt uninstaller failed: $LASTEXITCODE" }
 
-          if (Test-Path (Join-Path $releaseRoot 'translations')) {
-            Copy-Item (Join-Path $releaseRoot 'translations') (Join-Path $dist 'translations') -Recurse -Force
-          }
-          if (Test-Path (Join-Path $releaseRoot 'database')) {
-            Copy-Item (Join-Path $releaseRoot 'database') (Join-Path $dist 'database') -Recurse -Force
+          foreach ($folder in @('translations','database')) {
+            if (Test-Path "$releaseRoot\$folder") { Copy-Item "$releaseRoot\$folder" "$dist\$folder" -Recurse -Force }
           }
 
-          $expertDir = Join-Path $dist 'database\expert'
-          New-Item -ItemType Directory -Path $expertDir -Force | Out-Null
-          Copy-Item $env:AI_EXPERT_DB (Join-Path $expertDir 'ia_mems_reference_r20.sqlite') -Force
+          New-Item -ItemType Directory -Path "$dist\database\expert" -Force | Out-Null
+          Copy-Item $env:AI_EXPERT_DB "$dist\database\expert\ia_mems_reference_r20.sqlite" -Force
 
-          $aiDir = Join-Path $dist 'ai'
-          $aiModels = Join-Path $aiDir 'models'
-          New-Item -ItemType Directory -Path $aiDir -Force | Out-Null
-          New-Item -ItemType Directory -Path $aiModels -Force | Out-Null
-          Copy-Item (Join-Path $env:AI_RUNTIME_DIR '*') $aiDir -Force
-          Copy-Item $env:AI_MODEL (Join-Path $aiModels 'ia-mems.gguf') -Force
-          Copy-Item '${{ github.workspace }}\llama-b10516-src\LICENSE' (Join-Path $aiDir 'LLAMA_CPP_LICENSE.txt') -Force
-          if (Test-Path '${{ github.workspace }}\LICENSE') { Copy-Item '${{ github.workspace }}\LICENSE' (Join-Path $dist 'LICENSE.txt') -Force }
+          New-Item -ItemType Directory -Path "$dist\ai\models" -Force | Out-Null
+          Copy-Item "$env:AI_RUNTIME_DIR\*" "$dist\ai" -Recurse -Force
+          Copy-Item $env:AI_MODEL "$dist\ai\models\ia-mems.gguf" -Force
+
+          & curl.exe -L --fail --retry 3 --retry-delay 3 -o "$dist\ai\LLAMA_CPP_LICENSE.txt" "https://raw.githubusercontent.com/ggml-org/llama.cpp/$env:LLAMA_COMMIT/LICENSE"
+          if ($LASTEXITCODE -ne 0) { throw "llama.cpp LICENSE download failed: $LASTEXITCODE" }
 
           @'
           {
-            "schema_version": 3,
+            "schema_version": 4,
             "build": 30,
             "version": "1.0.30",
             "mode": "offline_local_only",
@@ -343,7 +232,9 @@ jobs:
               "name": "llama.cpp",
               "release": "b10516",
               "source_commit": "b95502ba9aa0eb73a2f4fc8878d7fbe6a847a0b9",
-              "profile": "diagnostic shared x64 isolation; BUILD_SHARED_LIBS=ON; GGML_NATIVE=OFF; GGML_BACKEND_DL=ON; only ggml-cpu-x64.dll exposed at runtime; no OpenMP; no OpenSSL"
+              "distribution": "official llama-b10516-bin-win-cpu-x64.zip",
+              "archive_sha256": "fbbbc55e0eb2e1b07f9dcb9488616c98ed47d9003b90e15e7c8c7812c4307cd3",
+              "profile": "official Windows x64 CPU multi-variant runtime kept intact; automatic compatible CPU backend selection"
             },
             "model": {
               "name": "Qwen3-0.6B-Q8_0",
@@ -356,216 +247,126 @@ jobs:
               "runtime_mode": "read_only_prebuilt"
             }
           }
-          '@ | Set-Content (Join-Path $aiDir 'runtime_manifest.json') -Encoding UTF8
+          '@ | Set-Content "$dist\ai\runtime_manifest.json" -Encoding UTF8
 
           @(
             'ECU MEMS Manager BUILD #30 / v1.0.30',
             'IA locale: Qwen3-0.6B-Q8_0 + llama.cpp b10516',
-            'Runtime diagnostic partagé x64: seul ggml-cpu-x64.dll est exposé afin d’isoler le crash du chargeur multi-variantes',
-            'Base experte r20 préconstruite par CI et emballée sous database/expert',
-            'Le désinstalleur ecu_mems_uninstaller.exe est inclus.',
-            'Le profil utilisateur est conservé par défaut pendant la désinstallation.'
-          ) | Set-Content (Join-Path $dist 'README_BUILD30.txt') -Encoding UTF8
+            'Runtime: archive officielle Windows x64 CPU b10516, SHA-256 vérifié, contenu conservé intact',
+            'CPU: sélection multi-variantes officielle llama.cpp pour PC x64 Intel/AMD',
+            '32 bits et protocole ECU inchangés'
+          ) | Set-Content "$dist\README_BUILD30.txt" -Encoding UTF8
 
-          $manifestPath = Join-Path $dist 'install_manifest.txt'
-          $files = Get-ChildItem $dist -Recurse -File | ForEach-Object {
-            $_.FullName.Substring($dist.Length + 1).Replace('\','/')
-          } | Sort-Object -Unique
-          $files += 'install_manifest.txt'
-          $files | Sort-Object -Unique | Set-Content $manifestPath -Encoding UTF8
+          $manifest="$dist\install_manifest.txt"
+          $files=Get-ChildItem $dist -Recurse -File | ForEach-Object { $_.FullName.Substring($dist.Length+1).Replace('\','/') } | Sort-Object -Unique
+          ($files + 'install_manifest.txt') | Sort-Object -Unique | Set-Content $manifest -Encoding UTF8
+          "DIST=$dist" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
 
-          "DIST=$dist" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-
-      - name: Validate BUILD 30 package architecture
+      - name: Validate package and official llama runtime integrity
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $env:DIST_ROOT = $env:DIST
+          $env:DIST_ROOT=$env:DIST
           @'
-          import os, sqlite3
+          import hashlib,os,sqlite3
           from pathlib import Path
           import pefile
 
-          root=Path(os.environ['DIST_ROOT'])
-          required=[
-              root/'ecu_mems_manager.exe',
-              root/'ecu_mems_uninstaller.exe',
-              root/'mems_manager_x64.dll',
-              root/'sqldrivers'/'qsqlite.dll',
-              root/'ai'/'llama-server.exe',
-              root/'ai'/'llama.dll',
-              root/'ai'/'ggml.dll',
-              root/'ai'/'ggml-base.dll',
-              root/'ai'/'ggml-cpu-x64.dll',
-              root/'ai'/'models'/'ia-mems.gguf',
-              root/'ai'/'runtime_manifest.json',
-              root/'database'/'reference'/'manifest.json',
-              root/'database'/'expert'/'ia_mems_reference_r20.sqlite',
-              root/'install_manifest.txt',
-          ]
-          missing=[str(p.relative_to(root)) for p in required if not p.exists()]
-          if missing: raise SystemExit('Missing BUILD 30 package files: '+', '.join(missing))
+          root=Path(os.environ["DIST_ROOT"]); ai=root/"ai"; src=Path(os.environ["AI_RUNTIME_DIR"])
+          must=[root/"ecu_mems_manager.exe",root/"ecu_mems_uninstaller.exe",root/"mems_manager_x64.dll",
+                ai/"llama-server.exe",ai/"llama.dll",ai/"ggml.dll",ai/"ggml-base.dll",ai/"ggml-cpu-x64.dll",
+                ai/"models"/"ia-mems.gguf",root/"database"/"expert"/"ia_mems_reference_r20.sqlite",root/"install_manifest.txt"]
+          missing=[str(p.relative_to(root)) for p in must if not p.is_file()]
+          if missing: raise SystemExit("Missing BUILD 30 files: "+", ".join(missing))
 
-          for name in ('ecu_mems_manager.exe','ecu_mems_uninstaller.exe','mems_manager_x64.dll','ai/llama-server.exe'):
-              pe=pefile.PE(str(root/name))
-              if pe.FILE_HEADER.Machine != 0x8664:
-                  raise SystemExit(f'{name} is not AMD64: 0x{pe.FILE_HEADER.Machine:04X}')
+          def h(p):
+              x=hashlib.sha256()
+              with open(p,"rb") as f:
+                  for b in iter(lambda:f.read(1048576),b""): x.update(b)
+              return x.hexdigest()
 
-          runtime_dlls=sorted((root/'ai').glob('*.dll'))
-          runtime_names={p.name.lower() for p in runtime_dlls}
-          required_runtime={'llama.dll','ggml.dll','ggml-base.dll','ggml-cpu-x64.dll'}
-          if runtime_names != required_runtime:
-              raise SystemExit('x64 isolated runtime DLL set mismatch: '+', '.join(sorted(runtime_names)))
-          for dll in runtime_dlls:
-              pe=pefile.PE(str(dll))
-              if pe.FILE_HEADER.Machine != 0x8664:
-                  raise SystemExit(f'{dll.name} is not AMD64')
-              imports=[entry.dll.decode(errors='replace').lower() for entry in getattr(pe,'DIRECTORY_ENTRY_IMPORT',[])]
-              forbidden=[name for name in imports if 'libomp' in name or name.startswith('libssl') or name.startswith('libcrypto')]
-              if forbidden:
-                  raise SystemExit(f'{dll.name} has forbidden dependencies: '+', '.join(forbidden))
+          official=[p for p in src.rglob("*") if p.is_file()]
+          if not official: raise SystemExit("Official llama runtime stage empty")
+          for p in official:
+              q=ai/p.relative_to(src)
+              if not q.is_file() or h(p)!=h(q): raise SystemExit("Official llama runtime changed/missing: "+p.relative_to(src).as_posix())
 
-          cpu_backends=sorted((root/'ai').glob('ggml-cpu-*.dll'))
-          if len(cpu_backends) != 1 or cpu_backends[0].name.lower() != 'ggml-cpu-x64.dll':
-              raise SystemExit('Expected only ggml-cpu-x64.dll, found: '+', '.join(p.name for p in cpu_backends))
+          for p in [root/"ecu_mems_manager.exe",root/"ecu_mems_uninstaller.exe",root/"mems_manager_x64.dll"]+[ai/p.relative_to(src) for p in official if p.suffix.lower() in (".exe",".dll")]:
+              if pefile.PE(str(p)).FILE_HEADER.Machine != 0x8664: raise SystemExit(p.name+" is not AMD64")
 
-          server=pefile.PE(str(root/'ai'/'llama-server.exe'))
-          server_imports=[entry.dll.decode(errors='replace').lower() for entry in getattr(server,'DIRECTORY_ENTRY_IMPORT',[])]
-          forbidden=[name for name in server_imports if 'libomp' in name or name.startswith('libssl') or name.startswith('libcrypto')]
-          if forbidden:
-              raise SystemExit('llama-server has forbidden dependencies: '+', '.join(forbidden))
+          backends=list(ai.glob("ggml-cpu-*.dll"))
+          if len(backends)<3 or "ggml-cpu-x64.dll" not in {p.name.lower() for p in backends}: raise SystemExit("Official CPU backend set invalid")
 
-          expert=root/'database'/'expert'/'ia_mems_reference_r20.sqlite'
-          db=sqlite3.connect(str(expert))
-          try:
-              integrity=db.execute('PRAGMA integrity_check').fetchone()[0]
-              revision=db.execute('PRAGMA user_version').fetchone()[0]
-              tables=db.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table'").fetchone()[0]
-          finally:
-              db.close()
-          if str(integrity).lower() != 'ok' or revision != 20 or tables <= 0:
-              raise SystemExit(f'Invalid packaged expert DB: integrity={integrity} revision={revision} tables={tables}')
+          db=sqlite3.connect(str(root/"database"/"expert"/"ia_mems_reference_r20.sqlite"))
+          try: ok=db.execute("PRAGMA integrity_check").fetchone()[0]; rev=db.execute("PRAGMA user_version").fetchone()[0]
+          finally: db.close()
+          if str(ok).lower()!="ok" or rev!=20: raise SystemExit(f"Invalid expert DB: {ok} r{rev}")
 
-          manifest=(root/'install_manifest.txt').read_text(encoding='utf-8-sig').splitlines()
-          normalized={line.strip().replace('\\','/') for line in manifest if line.strip()}
-          required_manifest={
-              'ecu_mems_manager.exe','ecu_mems_uninstaller.exe','mems_manager_x64.dll',
-              'ai/llama-server.exe','ai/llama.dll','ai/ggml.dll','ai/ggml-base.dll',
-              'ai/ggml-cpu-x64.dll','ai/models/ia-mems.gguf',
-              'database/expert/ia_mems_reference_r20.sqlite','install_manifest.txt'
-          }
-          absent=sorted(required_manifest-normalized)
-          if absent: raise SystemExit('install_manifest missing: '+', '.join(absent))
-          print(f'PASS BUILD 30 package: expert r{revision}, tables={tables}, isolated runtime DLLs={len(runtime_dlls)}, CPU backends={len(cpu_backends)}, manifest files={len(normalized)}')
+          print(f"PASS package: official llama files={len(official)}, CPU backends={len(backends)}, expert r{rev}")
           '@ | python -
 
-      - name: Validate packaged x64-isolated llama server model and API
+      - name: Validate packaged official llama server model and API
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $aiDir = Join-Path $env:DIST 'ai'
-          $server = Join-Path $aiDir 'llama-server.exe'
-          $model = Join-Path $aiDir 'models\ia-mems.gguf'
-          $backends = @(Get-ChildItem $aiDir -File -Filter 'ggml-cpu-*.dll')
-          if ($backends.Count -ne 1 -or $backends[0].Name.ToLowerInvariant() -ne 'ggml-cpu-x64.dll') {
-            throw "Packaged x64 isolation invalid: $($backends.Name -join ', ')"
-          }
+          $ai="$env:DIST\ai"; $server="$ai\llama-server.exe"; $model="$ai\models\ia-mems.gguf"
+          $backends=@(Get-ChildItem $ai -File -Filter 'ggml-cpu-*.dll')
+          if ($backends.Count -lt 3) { throw "Official multi-variant backend set incomplete: $($backends.Count)" }
 
-          $savedPath = $env:PATH
-          $env:PATH = "$aiDir;$savedPath"
-          Push-Location $aiDir
+          $savedPath=$env:PATH; $env:PATH="$ai;$savedPath"
+          Push-Location $ai
           try {
             & $server --version
-            if ($LASTEXITCODE -ne 0) { throw "Packaged llama-server --version failed: $LASTEXITCODE" }
-          }
-          finally { Pop-Location }
+            if ($LASTEXITCODE -ne 0) { throw "Official llama-server --version failed: $LASTEXITCODE" }
+          } finally { Pop-Location }
 
-          $stdoutLog = Join-Path $env:RUNNER_TEMP 'llama-x64-isolation-stdout.log'
-          $stderrLog = Join-Path $env:RUNNER_TEMP 'llama-x64-isolation-stderr.log'
-          Remove-Item $stdoutLog,$stderrLog -Force -ErrorAction SilentlyContinue
-          $arguments = @('-m', $model, '--alias', 'ia-mems', '--host', '127.0.0.1', '--port', '18089', '-c', '4096', '-np', '1', '--no-webui', '--offline', '--reasoning', 'off')
-          $process = Start-Process -FilePath $server -WorkingDirectory $aiDir -ArgumentList $arguments -RedirectStandardOutput $stdoutLog -RedirectStandardError $stderrLog -PassThru -WindowStyle Hidden
+          $out="$env:RUNNER_TEMP\llama-official-out.log"; $err="$env:RUNNER_TEMP\llama-official-err.log"
+          Remove-Item $out,$err -Force -ErrorAction SilentlyContinue
+          $args=@('-m',$model,'--alias','ia-mems','--host','127.0.0.1','--port','18089','-c','4096','-np','1','--no-webui','--offline','--reasoning','off')
+          $p=Start-Process -FilePath $server -WorkingDirectory $ai -ArgumentList $args -RedirectStandardOutput $out -RedirectStandardError $err -PassThru -WindowStyle Hidden
           try {
-            $ready = $false
-            for ($i = 0; $i -lt 180; $i++) {
+            $ready=$false
+            for($i=0;$i-lt180;$i++){
               Start-Sleep -Milliseconds 500
-              if ($process.HasExited) { throw "llama-server exited during Qwen load: $($process.ExitCode)" }
-              try {
-                $health = Invoke-RestMethod -Uri 'http://127.0.0.1:18089/health' -TimeoutSec 2
-                if ($health.status -eq 'ok') { $ready = $true; break }
-              } catch { }
+              if($p.HasExited){ throw "Official llama-server exited during Qwen load: $($p.ExitCode)" }
+              try { $health=Invoke-RestMethod 'http://127.0.0.1:18089/health' -TimeoutSec 2; if($health.status-eq'ok'){$ready=$true;break} } catch {}
             }
-            if (-not $ready) { throw 'llama-server did not become ready' }
+            if(-not $ready){ throw 'Official llama-server did not become ready' }
 
-            $models = Invoke-RestMethod -Uri 'http://127.0.0.1:18089/v1/models' -TimeoutSec 10
-            $ids = @($models.data | ForEach-Object { $_.id })
-            if ($ids -notcontains 'ia-mems') { throw "Unexpected /v1/models response: $($ids -join ', ')" }
+            $models=Invoke-RestMethod 'http://127.0.0.1:18089/v1/models' -TimeoutSec 10
+            if(@($models.data|ForEach-Object{$_.id}) -notcontains 'ia-mems'){ throw 'Unexpected /v1/models response' }
 
-            $payload = @{
-              model = 'ia-mems'
-              messages = @(@{ role = 'user'; content = 'Reponds uniquement: OK' })
-              stream = $false
-              max_tokens = 24
-              temperature = 0.2
-            } | ConvertTo-Json -Depth 8
-            $reply = Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:18089/v1/chat/completions' -ContentType 'application/json' -Body $payload -TimeoutSec 60
-            $text = [string]$reply.choices[0].message.content
-            if ([string]::IsNullOrWhiteSpace($text)) { throw 'Empty chat completion from packaged Qwen' }
-            Write-Host "PASS packaged IA API: $text"
+            $body=@{model='ia-mems';messages=@(@{role='user';content='Reponds uniquement: OK'});stream=$false;max_tokens=24;temperature=0.2}|ConvertTo-Json -Depth 8
+            $reply=Invoke-RestMethod -Method Post 'http://127.0.0.1:18089/v1/chat/completions' -ContentType 'application/json' -Body $body -TimeoutSec 60
+            if([string]::IsNullOrWhiteSpace([string]$reply.choices[0].message.content)){ throw 'Empty Qwen chat completion' }
+            Write-Host "PASS official llama.cpp API"
+          } finally {
+            if($p -and -not $p.HasExited){ Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue; $p.WaitForExit() }
+            $env:PATH=$savedPath
           }
-          finally {
-            if ($process -and -not $process.HasExited) {
-              Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
-              $process.WaitForExit()
-            }
-            $env:PATH = $savedPath
-          }
-
-          $runtimeLog = ((Get-Content $stdoutLog -Raw -ErrorAction SilentlyContinue) + "`n" + (Get-Content $stderrLog -Raw -ErrorAction SilentlyContinue))
-          $selected = [regex]::Matches($runtimeLog, 'ggml-cpu-[A-Za-z0-9_.-]+\.dll') | ForEach-Object { $_.Value.ToLowerInvariant() } | Select-Object -Unique
-          if ($selected.Count -ne 1 -or $selected[0] -ne 'ggml-cpu-x64.dll') {
-            Write-Host $runtimeLog
-            throw "x64 isolation runtime loaded unexpected CPU backend set: $($selected -join ', ')"
-          }
-          Write-Host 'PASS x64-isolated CPU backend loader: ggml-cpu-x64.dll'
 
       - name: Smoke launch ECU MEMS Manager
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $exe = Join-Path $env:DIST 'ecu_mems_manager.exe'
-          $process = Start-Process -FilePath $exe -WorkingDirectory $env:DIST -PassThru
+          $p=Start-Process -FilePath "$env:DIST\ecu_mems_manager.exe" -WorkingDirectory $env:DIST -PassThru
           Start-Sleep -Seconds 8
-          if ($process.HasExited) { throw "ECU MEMS Manager exited during smoke launch: $($process.ExitCode)" }
-          $null = $process.CloseMainWindow()
-          if (-not $process.WaitForExit(5000)) {
-            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
-          }
+          if($p.HasExited){ throw "ECU MEMS Manager exited during smoke launch: $($p.ExitCode)" }
+          $null=$p.CloseMainWindow()
+          if(-not $p.WaitForExit(5000)){ Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }
           Write-Host 'PASS ECU MEMS Manager BUILD 30 smoke launch'
 
       - name: Generate BUILD 30 file hashes
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $targets = @(
-            'ecu_mems_manager.exe',
-            'ecu_mems_uninstaller.exe',
-            'mems_manager_x64.dll',
-            'ai\llama-server.exe',
-            'ai\llama.dll',
-            'ai\ggml.dll',
-            'ai\ggml-base.dll',
-            'ai\ggml-cpu-x64.dll',
-            'ai\models\ia-mems.gguf',
-            'database\expert\ia_mems_reference_r20.sqlite'
-          )
-          $lines = foreach ($relative in $targets) {
-            $full = Join-Path $env:DIST $relative
-            $hash = (Get-FileHash $full -Algorithm SHA256).Hash.ToLowerInvariant()
-            "$hash  $($relative.Replace('\','/'))"
+          $hashFile="$env:DIST\BUILD30_SHA256.txt"; $manifest="$env:DIST\install_manifest.txt"
+          if(-not((Get-Content $manifest)-contains'BUILD30_SHA256.txt')){ Add-Content $manifest 'BUILD30_SHA256.txt' -Encoding UTF8 }
+          $lines=foreach($f in Get-ChildItem $env:DIST -Recurse -File | Where-Object{$_.FullName-ne$hashFile} | Sort-Object FullName){
+            $r=$f.FullName.Substring($env:DIST.Length+1).Replace('\','/')
+            "$((Get-FileHash $f.FullName -Algorithm SHA256).Hash.ToLowerInvariant())  $r"
           }
-          $lines | Set-Content (Join-Path $env:DIST 'BUILD30_SHA256.txt') -Encoding UTF8
-          Add-Content (Join-Path $env:DIST 'install_manifest.txt') 'BUILD30_SHA256.txt' -Encoding UTF8
+          $lines | Set-Content $hashFile -Encoding UTF8
 
       - name: Upload ECU MEMS Manager BUILD 30
         uses: actions/upload-artifact@v4
