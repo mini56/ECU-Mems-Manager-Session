@@ -17,9 +17,25 @@
 
 namespace {
 
+enum class KnowledgeQueryKind {
+    General,
+    WireColor,
+    Pinout
+};
+
 QString normalized(const QString &text)
 {
-    return IaResponseLogic::normalize(text);
+    QString value = IaResponseLogic::normalize(text);
+    // Narrow corrections for real AZERTY typing mistakes observed in IA MEMS.
+    // Do not globally translate digit 4: protocol commands such as D4 must stay intact.
+    value.replace(QRegularExpression(QStringLiteral("\\bc4est\\b")), QStringLiteral("c est"));
+    value.replace(QRegularExpression(QStringLiteral("\\bl4onglet\\b")), QStringLiteral("l onglet"));
+    value.replace(QRegularExpression(QStringLiteral("\\bl4apercu\\b")), QStringLiteral("l apercu"));
+    if (value.contains(QStringLiteral("cadran"))
+        || value.contains(QStringLiteral("regime"))
+        || value.contains(QStringLiteral("tr/min")))
+        value.replace(QRegularExpression(QStringLiteral("\\btpm\\b")), QStringLiteral("rpm"));
+    return value.simplified();
 }
 
 bool containsAny(const QString &text, const QStringList &needles)
@@ -31,6 +47,63 @@ bool containsAny(const QString &text, const QStringList &needles)
     return false;
 }
 
+bool containsWord(const QString &text, const QString &word)
+{
+    const QRegularExpression rx(QStringLiteral("(^|[^a-z0-9_])%1([^a-z0-9_]|$)")
+                                    .arg(QRegularExpression::escape(word)));
+    return rx.match(text).hasMatch();
+}
+
+KnowledgeQueryKind knowledgeQueryKind(const QString &questionText)
+{
+    const bool asksColor = questionText.contains(QStringLiteral("couleur"))
+        && (containsWord(questionText, QStringLiteral("fil"))
+            || questionText.contains(QStringLiteral("cable"))
+            || questionText.contains(QStringLiteral("cablage")));
+    if (asksColor
+        || questionText.contains(QStringLiteral("wire color"))
+        || questionText.contains(QStringLiteral("wire colour")))
+        return KnowledgeQueryKind::WireColor;
+
+    if (containsWord(questionText, QStringLiteral("broche"))
+        || questionText.contains(QStringLiteral("pinout"))
+        || questionText.contains(QStringLiteral("connecteur"))
+        || containsWord(questionText, QStringLiteral("prise"))
+        || containsWord(questionText, QStringLiteral("obd"))
+        || questionText.contains(QStringLiteral("cablage"))
+        || questionText.contains(QStringLiteral("wiring")))
+        return KnowledgeQueryKind::Pinout;
+
+    return KnowledgeQueryKind::General;
+}
+
+bool hasWireColorEvidence(const QString &text)
+{
+    return text.contains(QStringLiteral("wire_color"))
+        || text.contains(QStringLiteral("wire color"))
+        || text.contains(QStringLiteral("wire colour"))
+        || text.contains(QStringLiteral("couleur de fil"))
+        || text.contains(QStringLiteral("couleur du fil"))
+        || text.contains(QStringLiteral("couleur fil"))
+        || text.contains(QStringLiteral("code couleur"))
+        || containsWord(text, QStringLiteral("fil"));
+}
+
+bool hasPinoutEvidence(const QString &text)
+{
+    return text.contains(QStringLiteral("wiring"))
+        || containsWord(text, QStringLiteral("broche"))
+        || text.contains(QStringLiteral("pinout"))
+        || text.contains(QStringLiteral("connector"))
+        || text.contains(QStringLiteral("connecteur"))
+        || text.contains(QStringLiteral("socket"))
+        || text.contains(QStringLiteral("diagnostic_socket"))
+        || containsWord(text, QStringLiteral("obd"))
+        || text.contains(QStringLiteral("c159"))
+        || text.contains(QStringLiteral("c549"))
+        || containsWord(text, QStringLiteral("prise"));
+}
+
 QString number(double value, int decimals = 1)
 {
     if (!std::isfinite(value))
@@ -40,7 +113,7 @@ QString number(double value, int decimals = 1)
 
 void appendUniqueTerm(QStringList &terms, const QString &term)
 {
-    if (!term.isEmpty() && !terms.contains(term) && terms.size() < 10)
+    if (!term.isEmpty() && !terms.contains(term) && terms.size() < 12)
         terms.append(term);
 }
 
@@ -65,7 +138,7 @@ QStringList knowledgeTerms(const QString &question)
         if (word.size() < 3 || stopWords.contains(word))
             continue;
         appendUniqueTerm(result, word);
-        if (result.size() >= 6)
+        if (result.size() >= 7)
             break;
     }
 
@@ -85,6 +158,9 @@ QStringList knowledgeTerms(const QString &question)
         } else if (term == QStringLiteral("liquide") || term == QStringLiteral("refroidissement")) {
             appendUniqueTerm(result, QStringLiteral("ect"));
             appendUniqueTerm(result, QStringLiteral("coolant"));
+        } else if (term == QStringLiteral("temperature")) {
+            appendUniqueTerm(result, QStringLiteral("ect"));
+            appendUniqueTerm(result, QStringLiteral("iat"));
         } else if (term == QStringLiteral("admission")) {
             appendUniqueTerm(result, QStringLiteral("iat"));
         } else if (term == QStringLiteral("vilebrequin")) {
@@ -93,6 +169,10 @@ QStringList knowledgeTerms(const QString &question)
             appendUniqueTerm(result, QStringLiteral("cmp"));
         } else if (term == QStringLiteral("lambda")) {
             appendUniqueTerm(result, QStringLiteral("oxygen"));
+        } else if (term == QStringLiteral("broche") || term == QStringLiteral("connecteur")
+                   || term == QStringLiteral("obd")) {
+            appendUniqueTerm(result, QStringLiteral("wiring"));
+            appendUniqueTerm(result, QStringLiteral("pin"));
         }
     }
     return result;
@@ -311,13 +391,16 @@ QString IaMemsService::lastError() const
 void IaMemsService::updateContextFromQuestion(const QString &question)
 {
     const QString text = normalized(question);
-    if (text.contains(QStringLiteral("mems 1.2")) || text.contains(QStringLiteral("mems1.2")))
+    const bool versionContext = containsAny(text, {
+        QStringLiteral("mems"), QStringLiteral("ecu"), QStringLiteral("obd"), QStringLiteral("rosco")
+    });
+    if (versionContext && text.contains(QStringLiteral("1.2")))
         m_context.family = QStringLiteral("1.2");
-    else if (text.contains(QStringLiteral("mems 1.3")) || text.contains(QStringLiteral("mems1.3")))
+    else if (versionContext && text.contains(QStringLiteral("1.3")))
         m_context.family = QStringLiteral("1.3");
-    else if (text.contains(QStringLiteral("mems 1.6")) || text.contains(QStringLiteral("mems1.6")))
+    else if (versionContext && text.contains(QStringLiteral("1.6")))
         m_context.family = QStringLiteral("1.6");
-    else if (text.contains(QStringLiteral("mems 1.9")) || text.contains(QStringLiteral("mems1.9")))
+    else if (versionContext && text.contains(QStringLiteral("1.9")))
         m_context.family = QStringLiteral("1.9");
 
     static const QRegularExpression firmwareRx(QStringLiteral("\\b([A-Z]{4,}[A-Z0-9]*[0-9]{3,})\\b"));
@@ -398,7 +481,7 @@ QString IaMemsService::softwareAnswer(const QString &question) const
 {
     const QString text = normalized(question);
     const bool softwareIntent = containsAny(text, {
-        QStringLiteral("onglet"), QStringLiteral("mems manager"),
+        QStringLiteral("onglet"), QStringLiteral("cadran"), QStringLiteral("mems manager"),
         QStringLiteral("logiciel"), QStringLiteral("programme"),
         QStringLiteral("a quoi sert"), QStringLiteral("comment fonctionne"),
         QStringLiteral("c'est quoi"), QStringLiteral("c est quoi")
@@ -415,6 +498,35 @@ QString IaMemsService::softwareAnswer(const QString &question) const
                            QStringLiteral("auteur"), QStringLiteral("developpe par")}))
         return QStringLiteral(
             "ECU MEMS Manager a été conçu et développé par Claude Lespagnol. Les sources comme Andrew Revill ou RoverMEMS sont des références techniques intégrées au projet, pas les concepteurs de MEMS Manager.");
+
+    if (text.contains(QStringLiteral("apercu")) && text.contains(QStringLiteral("cadran")))
+        return QStringLiteral(
+            "L'onglet Aperçu contient 11 cadrans : régime moteur, température du liquide, MAP, position papillon, tension batterie, correction court terme, tension lambda, temps d'injection, température d'air, position de ralenti/IAC et avance à l'allumage. Un indicateur d'état système complète ces cadrans.");
+
+    if (text.contains(QStringLiteral("cadran"))
+        && !containsAny(text, {QStringLiteral("valeur"), QStringLiteral("mesure"),
+                               QStringLiteral("actuel"), QStringLiteral("actuelle")})) {
+        if (containsAny(text, {QStringLiteral("rpm"), QStringLiteral("regime"), QStringLiteral("tr/min")}))
+            return QStringLiteral("Le cadran Régime affiche la vitesse de rotation du moteur en tr/min (RPM).");
+        if (containsAny(text, {QStringLiteral("map"), QStringLiteral("pression collecteur")}))
+            return QStringLiteral("Le cadran MAP affiche la pression absolue du collecteur d'admission en kPa.");
+        if (containsAny(text, {QStringLiteral("temperature liquide"), QStringLiteral("liquide refroidissement")}))
+            return QStringLiteral("Le cadran Température liquide affiche la température du liquide de refroidissement en °C.");
+        if (containsAny(text, {QStringLiteral("papillon"), QStringLiteral("tps")}))
+            return QStringLiteral("Le cadran Papillon affiche la position du papillon en pourcentage.");
+        if (text.contains(QStringLiteral("batterie")))
+            return QStringLiteral("Le cadran Batterie affiche la tension d'alimentation en volts.");
+        if (text.contains(QStringLiteral("lambda")))
+            return QStringLiteral("Le cadran Lambda affiche la tension de la sonde lambda en mV.");
+        if (text.contains(QStringLiteral("injection")))
+            return QStringLiteral("Le cadran Temps d'injection affiche la durée d'injection disponible dans le mode d'acquisition prévu.");
+        if (containsAny(text, {QStringLiteral("temperature air"), QStringLiteral("iat")}))
+            return QStringLiteral("Le cadran Température d'air affiche la température d'air d'admission en °C.");
+        if (containsAny(text, {QStringLiteral("ralenti"), QStringLiteral("iac")}))
+            return QStringLiteral("Le cadran Position de ralenti affiche la position de commande IAC disponible.");
+        if (containsAny(text, {QStringLiteral("avance"), QStringLiteral("allumage")}))
+            return QStringLiteral("Le cadran Avance affiche l'avance à l'allumage en degrés.");
+    }
 
     if (text.contains(QStringLiteral("analyse")))
         return QStringLiteral("L'onglet Analyse étudie les journaux de diagnostic CSV/TXT et permet de visualiser l'évolution des canaux de mesure.");
@@ -541,6 +653,8 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
     if (!m_knowledgeReady || !m_reader.isOpen())
         return QString();
 
+    const QString questionText = normalized(question);
+    const KnowledgeQueryKind queryKind = knowledgeQueryKind(questionText);
     const QStringList terms = knowledgeTerms(question);
     if (terms.isEmpty())
         return QString();
@@ -551,7 +665,6 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
         int matches = 0;
     };
 
-    const QString questionText = normalized(question);
     const bool sourceDetails = asksForSourceDetails(question);
     const QList<ExpertFact> facts = m_reader.facts(m_context);
     QVector<RankedFact> ranked;
@@ -562,6 +675,13 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
                                                 .arg(fact.factKey, fact.topic, fact.firmware));
         const QString body = normalized(QStringLiteral("%1 %2 %3")
                                             .arg(fact.statement, fact.notes, fact.family));
+        const QString searchable = identity + QLatin1Char(' ') + body;
+
+        if (queryKind == KnowledgeQueryKind::WireColor && !hasWireColorEvidence(searchable))
+            continue;
+        if (queryKind == KnowledgeQueryKind::Pinout && !hasPinoutEvidence(searchable))
+            continue;
+
         RankedFact candidate;
         candidate.fact = fact;
 
@@ -579,6 +699,10 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
 
         candidate.score += qMin(candidate.matches, 4) * 3;
         candidate.score += verificationScore(fact.verificationLevel);
+        if (queryKind == KnowledgeQueryKind::WireColor)
+            candidate.score += 24;
+        else if (queryKind == KnowledgeQueryKind::Pinout)
+            candidate.score += 16;
 
         if (!m_context.family.trimmed().isEmpty()
             && fact.family.compare(m_context.family, Qt::CaseInsensitive) == 0)
@@ -594,8 +718,19 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
         ranked.append(candidate);
     }
 
-    if (ranked.isEmpty())
+    if (ranked.isEmpty()) {
+        if (queryKind == KnowledgeQueryKind::WireColor) {
+            if (questionText.contains(QStringLiteral("temperature")))
+                return QStringLiteral(
+                    "Je n'ai pas de couleur de fil vérifiée correspondant exactement à cette demande dans la base. Je ne vais pas en inventer une. Sur les montages MEMS, « capteur de température » peut désigner l'ECT (liquide de refroidissement) ou l'IAT (air d'admission) : précise lequel et, si possible, le véhicule ou la variante ECU.");
+            return QStringLiteral(
+                "Je n'ai pas de couleur de fil vérifiée correspondant exactement à cette demande dans la base. Je ne vais pas en inventer une ; précise le capteur, le véhicule ou la variante ECU recherchée.");
+        }
+        if (queryKind == KnowledgeQueryKind::Pinout)
+            return QStringLiteral(
+                "Je n'ai pas de brochage vérifié correspondant exactement à cette demande dans le contexte MEMS sélectionné. Précise le signal, le capteur ou le connecteur recherché ; je ne vais pas inventer une broche.");
         return QString();
+    }
 
     std::sort(ranked.begin(), ranked.end(), [](const RankedFact &left, const RankedFact &right) {
         if (left.score != right.score)
@@ -605,7 +740,7 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
         return left.fact.factKey < right.fact.factKey;
     });
 
-    const int maximum = qMin(3, ranked.size());
+    const int maximum = qMin(queryKind == KnowledgeQueryKind::General ? 3 : 4, ranked.size());
     if (maximum == 1) {
         const ExpertFact &fact = ranked.constFirst().fact;
         QString answer = fact.statement.trimmed();
@@ -619,7 +754,13 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
     }
 
     QStringList answers;
-    answers << QStringLiteral("Les faits les plus pertinents de la base MEMS sont :");
+    if (queryKind == KnowledgeQueryKind::WireColor)
+        answers << QStringLiteral("Couleurs de fil vérifiées les plus pertinentes :");
+    else if (queryKind == KnowledgeQueryKind::Pinout)
+        answers << QStringLiteral("Brochage vérifié le plus pertinent :");
+    else
+        answers << QStringLiteral("Les faits les plus pertinents de la base MEMS sont :");
+
     for (int i = 0; i < maximum; ++i) {
         const ExpertFact &fact = ranked.at(i).fact;
         QString line = QStringLiteral("• %1").arg(fact.statement.trimmed());
