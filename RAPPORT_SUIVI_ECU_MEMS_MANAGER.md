@@ -171,6 +171,18 @@ Audit effectué sur le HEAD `MEMSX64` `16b99c3f`, après relecture du présent r
 
 Sur **`tmp-ia-schema-proposal` uniquement**, appliquer ces deux durcissements sans modifier aucun autre comportement ni fichier interdit. Ensuite contrôler à nouveau le diff complet contre `16b99c3f`. Ne pas pousser sur `MEMSX64` à cette étape.
 
+## POINT 3 — CONTRÔLE FINAL AVANT BUILD #93
+
+- Les deux durcissements ont été appliqués sur `tmp-ia-schema-proposal` : inclusion explicite de `QByteArray` dans le self-test et revalidation complète manifeste/fichier lors du clic.
+- HEAD candidat temporaire : **`5ad520dc5ef4b5ec6eb7096233d7a7a1d7f916f3`**.
+- Comparaison finale contre `16b99c3f` : exactement **7 fichiers** modifiés/ajoutés. Les six fichiers fonctionnels schéma sont `CMakeLists.txt`, `iamemstab.cpp`, `iamemstab.h`, `expert/IaMemsDiagramCatalog.cpp`, `expert/IaMemsDiagramCatalog.h`, `expert/IaMemsDiagramSelfTest.cpp`; le septième est uniquement `.github/workflows/memsx64.yml` pour la validation et le versionnement.
+- Aucun fichier `IaMemsService`, `LocalAiClient`, Qwen/ONNX, protocole, ECU, RAVE ou 32 bits n'est modifié. `iamemstab.cpp` et `iamemstab.h` n'ont aucune suppression par rapport au HEAD #92.
+- Le workflow historique utilisait provisoirement `BUILD 30` / `1.0.30` en dur. Retour à la méthode générale : le numéro de build et la version sont maintenant dérivés de **`github.run_number`**. Le run #92 a été contrôlé via l'API GitHub et possède bien `run_number: 92`; le prochain run de ce workflow doit donc produire **#93 / v1.0.93**, puis #94 / v1.0.94, etc.
+- Le workflow ne contient plus d'occurrence active de `1.0.30`. `MEMS_BUILD`, `MEMS_BUILD_NUMBER`, `MEMS_VERSION`, le README, les noms de fichiers de hash et le nom d'artefact utilisent la valeur dynamique.
+- Le nouveau `ia_mems_diagram_selftest` est explicitement compilé puis exécuté dans GitHub Actions.
+- La validation du package exige désormais le manifeste de référence, les six SVG, `Qt5Svg.dll` et `imageformats/qsvg.dll`, en plus des validations ONNX/expert déjà présentes.
+- Le workflow reste déclenché par push uniquement sur **`MEMSX64`** ; aucun run n'a été consommé pendant la préparation temporaire.
+
 ## PROCHAINE ACTION EXACTE
 
-**Durcir le candidat temporaire uniquement sur `tmp-ia-schema-proposal` : inclusion explicite `QByteArray` dans le self-test et revalidation manifeste/fichier au clic du bouton. Puis comparer de nouveau le diff contre `16b99c3f`, vérifier qu’aucun fichier interdit n’a bougé, et préparer seulement ensuite la synchronisation de version #93 = v1.0.93 sur la branche temporaire. Aucun push `MEMSX64` avant le contrôle complet du candidat. Après validation des points 1 à 4 et du build #93, reprendre RAVE 1720.**
+**Fast-forward sans force de `MEMSX64` depuis `16b99c3f` vers le candidat contrôlé `5ad520dc5ef4b5ec6eb7096233d7a7a1d7f916f3`. Vérifier immédiatement que GitHub Actions crée le run #93 avec la version v1.0.93. Ne reprendre RAVE 1720 qu'après validation complète du build #93 et de son artefact.**
