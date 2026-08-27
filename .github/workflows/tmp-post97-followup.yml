@@ -1,0 +1,39 @@
+name: TEMP POST97 FOLLOWUP
+
+on:
+  push:
+    branches: [tmp-ia-post97-audit-fix]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.head_commit.message != 'TEMP align post97 diagnostic routing'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-ia-post97-audit-fix
+      - name: Align LocalAiClient with testable routing helper
+        shell: python
+        run: |
+          from pathlib import Path
+          def one(path, old, new):
+              p=Path(path); t=p.read_text(encoding='utf-8')
+              if t.count(old)!=1: raise SystemExit(f'{path}: match count {t.count(old)}')
+              p.write_text(t.replace(old,new,1),encoding='utf-8')
+          one('expert/LocalAiClient.cpp', '#include "LocalAiClient.h"\n', '#include "LocalAiClient.h"\n#include "IaMemsConversationRouting.h"\n')
+          old='''bool requiresReasoning(const QString &question, const QString &grounding)\n{\n    const QString plain = normalizedPlainText(question);\n    const QString ground = normalizedPlainText(grounding);\n\n    if (plain.contains(QStringLiteral("diagnostic"))\n        || plain.contains(QStringLiteral("diagnostique"))\n        || plain.contains(QStringLiteral("analyse"))\n        || plain.contains(QStringLiteral("analyser"))\n        || plain.contains(QStringLiteral("anormal"))\n        || plain.contains(QStringLiteral("panne"))\n        || plain.contains(QStringLiteral("probleme"))\n        || plain.contains(QStringLiteral("hypothese"))\n        || plain.contains(QStringLiteral("oscill"))\n        || plain.contains(QStringLiteral("instable")))\n        return true;\n\n    return ground.contains(QStringLiteral("hypotheses actuelles"))\n        || ground.contains(QStringLiteral("confiance"));\n}\n'''
+          new='''bool requiresReasoning(const QString &question, const QString &grounding)\n{\n    return IaMemsConversationRouting::shouldUseDiagnosticGeneration(question, grounding);\n}\n'''
+          one('expert/LocalAiClient.cpp', old, new)
+          needle='''    ok &= require(IaMemsConversationRouting::requestedGeneration(QStringLiteral("Je cherche la documentation MEMS 1.9")) == QStringLiteral("1.9"),\n                  "documentation generation extraction");\n'''
+          addition=needle+'''    ok &= require(!IaMemsConversationRouting::shouldUseDiagnosticGeneration(\n                      QStringLiteral("Couple de serrage sonde température ECT"),\n                      QStringLiteral("Couple ECT : 15 Nm. Niveau de preuve : constructeur.")),\n                  "documentary proof metadata does not trigger diagnostic generation");\n    ok &= require(!IaMemsConversationRouting::shouldUseDiagnosticGeneration(\n                      QStringLiteral("Couleur des fils sonde lambda"),\n                      QStringLiteral("Fils lambda gris — preuve : constructeur.")),\n                  "lambda documentary proof does not trigger diagnostic generation");\n    ok &= require(IaMemsConversationRouting::shouldUseDiagnosticGeneration(\n                      QStringLiteral("diagnostic moteur instable"),\n                      QStringLiteral("Hypothèses actuelles : alimentation.")),\n                  "real diagnostic still uses diagnostic generation");\n'''
+          one('expert/IaResponseLogicTest.cpp', needle, addition)
+      - name: Commit helper alignment
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add expert/LocalAiClient.cpp expert/IaResponseLogicTest.cpp
+          git commit -m "TEMP align post97 diagnostic routing"
+          git push origin HEAD:tmp-ia-post97-audit-fix
