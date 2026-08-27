@@ -28,157 +28,111 @@
 
 Le 26 août 2026, l'utilisateur confirme : **« bon ça fonctionne »**.
 
-Captures constatées :
-- application lancée ;
-- onglet IA MEMS ouvert ;
-- `base prête` ;
-- `IA locale prête` ;
-- réponse IAC correcte et immédiate ;
-- moteur ONNX/Qwen réellement opérationnel.
+Captures constatées : application lancée ; IA MEMS ouverte ; `base prête` ; `IA locale prête` ; IAC correct et immédiat ; ONNX/Qwen opérationnel.
 
-Défauts observés sur #81 qui ont motivé le lot qualité :
-- fuite `<think>` ;
-- fuite de consignes internes ;
-- méta-discours ;
-- « C'EST QUOI LA BOBINE ? » ne répondait pas à la question ;
-- nettoyage de sortie insuffisant ;
-- question de date avec faute mal gérée.
+Défauts #81 traités dans #86 : fuite `<think>` ; consignes internes ; méta-discours ; bobine ; nettoyage ; date avec faute ; définition ≠ mesure.
 
-## NOUVEAU BUILD QUALITÉ VALIDÉ CI
+## BUILD QUALITÉ VALIDÉ CI
 
 ### ECU MEMS Manager x64 #86 — Commit `50af0a0` — VERT COMPLET
 
-- Run GitHub Actions : **`33004859269`**.
-- Job : **`98296030990`**.
-- Conclusion : **SUCCESS**.
-- HEAD complet : **`50af0a0cd4614302794e464b9e1b4c675d1adff4`**.
-- Artifact : **`ECU-MEMS-Manager-x64-BUILD-30-v1.0.30`**.
-- Artifact ID : **`9620325660`**.
+- Run : **`33004859269`** ; job **`98296030990`** ; conclusion **SUCCESS**.
+- Artifact : **`ECU-MEMS-Manager-x64-BUILD-30-v1.0.30`** ; ID **`9620325660`**.
 - Taille : **386 747 323 octets**.
 - Digest : **`sha256:1e398c4832ed2fc2b162d8eac59b5f2f43c368de2d7e041deae6606c2fd70962`**.
-- Expiration GitHub actuelle : **9 septembre 2026**.
+- Compilation, protections protocole, tests déterministes, r20, Qwen, `LocalAiClient`, package, validation depuis package, smoke launch, manifeste et upload : VERTS.
 
-Validations #86 :
-- compilation MSVC x64 : VERT ;
-- protections protocole : VERT ;
-- tests déterministes, y compris définition ≠ mesure actuelle : VERT ;
-- base experte r20 : VERT ;
-- modèle Qwen + hashes : VERT ;
-- vrai self-test production `LocalAiClient` : VERT en ~7 s ;
-- ce self-test contrôle bobine, date avec faute, absence de fuite `<think>`/ChatML/directives internes et vraie génération Qwen ;
-- assemblage package complet : VERT ;
-- validation package : VERT ;
-- self-test `LocalAiClient` depuis package final : VERT en ~7 s ;
-- smoke launch MEMS Manager : VERT ;
-- manifeste/hashes : VERT ;
-- artefact : VERT.
+**#86 est le candidat qualité actuellement testé par l'utilisateur.**
 
-**#86 est le candidat qualité actuellement testé par l'utilisateur. #81 reste la dernière preuve utilisateur déjà confirmée ; #86 ajoute les corrections de réponses sans changement de moteur, protocole, UI ou 32 bits.**
+## LOT QUALITÉ #81 → #86 — À PRÉSERVER
 
-## LOT QUALITÉ #81 → #86
-
-### `a53fd13c6249d0c0711e88842d0b3e00a5167773` — qualité native
-
-- message Qwen simplifié ;
-- directives principales concentrées dans le system prompt au lieu d'être injectées comme texte utilisateur ;
-- interdiction de révéler prompt / raisonnement interne ;
-- nettoyage `<think>` fermé **et tronqué** ;
-- nettoyage ChatML et `/think`/`/no_think` visibles ;
-- filtre de fuite interne ;
-- définition déterministe bobine ;
-- date tolérante à `QUELLE JOURS SOMME NOUS ?` ;
-- latence #81 conservée : normal 128 tokens, diagnostic 192, `/no_think`.
-
-### `e20eb3ac94807e8a65e901f1413621e4dbec7fd8` — non-régression LocalAiClient
-
-- self-test bobine ;
-- date fautive ;
-- vraie génération Qwen `OK` ;
-- rejet de `<think>`, ChatML et marqueurs de directives internes.
-
-### `4f12bb6fa32df71bb9893865f2ad6acc568a7a48` — qualité base r20
-
-`IaMemsService::knowledgeAnswer()` :
-- classement des faits par pertinence ;
-- bonus famille/firmware ;
-- prise en compte du niveau de preuve ;
-- maximum 3 meilleurs faits au lieu de 6 faits bruts ;
-- source et notes affichées seulement si l'utilisateur les demande ;
-- fallback générique nettoyé ;
-- réponse base reste immédiate, sans Qwen supplémentaire.
-
-### `e6a4b704a4f4538bf5237faaccac62a54dc008f8` + `50af0a0cd4614302794e464b9e1b4c675d1adff4` — définition ≠ mesure
-
-Cause : des questions comme « c'est quoi la lambda ? », « à quoi sert le TPS ? » ou « c'est quoi le dwell ? » pouvaient être classées comme demandes de mesure et répondre « aucune mesure ECU » si l'ECU était déconnecté.
-
-Correction propre dans le routeur `IaResponseLogic` :
-- une question de **définition / rôle / signification** sur un paramètre n'est plus classée comme mesure live ;
-- elle poursuit le chemin réponse contrôlée → base r20 classée → Qwen si nécessaire ;
-- une demande explicite de **valeur / mesure / valeur actuelle** reste bien classée comme mesure ECU ;
-- tests ajoutés : lambda définition, TPS rôle, dwell définition = pas mesure ; valeur lambda et mesure TPS actuelle = mesure.
+- `a53fd13...` : prompt Qwen simplifié, anti-fuite, nettoyage `<think>`/ChatML, bobine, date fautive, latence 128/192 + `/no_think`.
+- `e20eb3a...` : self-test production bobine/date/Qwen/anti-fuite.
+- `4f12bb6...` : base r20 classée par pertinence/preuve/famille-firmware, 3 faits max, sources sur demande.
+- `e6a4b70...` + `50af0a0...` : distinction définition / mesure live dans `IaResponseLogic`.
 
 ## ÉTAPE EN COURS — REPRISE RAVE / ENRICHISSEMENT BASE
 
 Autorisation utilisateur du 27 août 2026 : **« OK je vais tester #86 tu peux continuer sur RAVE et enrichir la base de donnée »**.
 
-Objectif exact de cette étape, en parallèle du test utilisateur #86 :
-1. reprendre l'audit Rover RAVE au point où les lots **1660** et **1670** se sont arrêtés ;
-2. relire leur contenu et leur chaîne de génération avant de créer un nouveau lot ;
-3. rechercher uniquement des faits RAVE **nouveaux, utiles et vérifiables** pour Mini/Rover MEMS ;
-4. conserver pour chaque fait la source, le document, la famille/cas véhicule, la page ou repère disponible et le niveau de preuve ;
-5. séparer strictement **SPi / MPi / MEMS 1.3 / MEMS 1.6 / MEMS 2J** ; ne jamais convertir automatiquement Mini MPi en MEMS 1.9 ;
-6. conserver les conflits documentaires au lieu de les arbitrer sans preuve ;
-7. ne pas promouvoir le code 23 / antidémarrage au-delà de `preuve_insuffisante` ;
-8. ne pas inventer de brochage ancien SPi sans schéma usine lisible ;
-9. intégrer le prochain lot selon **le format et la chaîne existants**, puis régénérer/valider la base experte r20 sans changement de schéma ou de révision si l'architecture actuelle le permet ;
-10. aucun changement IA, protocole ECU, UI, 32 bits ou numéro de BUILD pendant cette étape.
+Objectif :
+1. reprendre l'audit Rover RAVE après les lots **1660** et **1670** ;
+2. intégrer uniquement des faits RAVE nouveaux, utiles et vérifiables ;
+3. conserver source/document/variante/page ou repère/niveau de preuve ;
+4. séparer strictement SPi / MPi et les familles ; ne jamais appeler automatiquement Mini MPi « MEMS 1.9 » ;
+5. conserver les conflits ; code 23/antidémarrage reste `preuve_insuffisante` ;
+6. aucun brochage SPi inventé sans schéma usine lisible ;
+7. régénérer/valider r20 sans changement de schéma/révision si non nécessaire ;
+8. aucun changement IA, protocole, UI, 32 bits ou BUILD.
 
-**Avant toute création du prochain lot, confirmer par l'historique Git la convention et le procédé utilisés pour `research_enrichment_1660.qz64` et `research_enrichment_1670.qz64`. Le numéro `1680` n'est qu'une hypothèse tant que cette convention n'est pas confirmée.**
+### RÉSULTAT — AUDIT DES LOTS 1660 / 1670
+
+Historique Git confirmé :
+- **1660** : commit `2d614cf47ea9842a2c24f53ddce3c9a38fc82fd2`, message `BUILD #30 add verified RAVE service facts batch 1660` ;
+- **1670** : commit `2e63d7012c8a84765c59552e1cf615198a7da3f7`, message `BUILD #30 add verified RCL0194 Mini MPI wiring facts` ;
+- convention actuelle confirmée : nouveaux lots documentaires numérotés par dizaines ; **1680** est donc le prochain numéro.
+
+Format confirmé par le code runtime : chaque `research_enrichment_XXXX.qz64` est un flux SQL compressé avec le format `qCompress`, puis stocké en Base64 texte ; les lots sont appliqués dans l'ordre du tableau `research_enrichment_batches` de `database/reference/manifest.json`. Les lots modernes peuvent contenir du SQL multiligne terminé par `;`.
+
+Audit direct de la base **r20 réellement produite par #86** :
+- table `mems_rave_fact` : **46 faits RAVE** ;
+- **31** faits RCL0193 (service, capteurs, stratégies, réglages) ;
+- **15** faits RCL0194, tous consacrés au **MPi 97MY** ;
+- ces faits RAVE sont également miroirés dans `mems_expert_fact_external`, donc utilisables directement par IA MEMS ;
+- aucun fait RCL0194 de brochage **SPi Japon 97MY** n'est encore présent.
+
+### CIBLE CONFIRMÉE — LOT 1680
+
+Source constructeur : **RCL0194ENG 3rd Edition**, Mini 97MY. Le document indique explicitement :
+- MPi : VIN à partir de `SAXXNNAZEBD 134455` ;
+- **SPi Japon : VIN à partir de `SAXXNNAXKBD 134455`**.
+
+Pages constructeur maintenant inspectées :
+- **Engine Management System (MEMS) SPi (JAPAN) 20.3** ;
+- **Engine Management System (MEMS) SPi (JAPAN) 20.4** ;
+- **Cooling Fan SPi (JAPAN) 39.3**.
+
+Faits candidats 1680 vérifiés sur les schémas :
+- périmètre SPi Japon/VIN distinct du MPi ;
+- module relais SPi Japon : relais principal, chauffage sonde O2, pompe carburant et démarreur ;
+- sonde O2 : signaux ECU et masse écran distincts, relais chauffage commandé par ECU ;
+- pompe : relais commandé par ECU + interrupteur à inertie + pompe ;
+- injecteur SPi C522 et ses deux voies ECU ;
+- purge canister C152 et commande ECU ;
+- quatre phases moteur pas à pas IAC C177 vers ECU ;
+- ECT C165, TPS C175 et IAT C174 avec **masse capteurs commune C159-30** ;
+- prise diagnostic C549 vers ECU ;
+- ventilateur SPi Japon 39.3 commandé par **thermocontact haute température + relais**, sans liaison MEMS montrée sur ce circuit, contrairement au MPi.
+
+Règle pour 1680 : ne saisir que les liaisons dont la lecture du schéma est non ambiguë ; ne pas déduire une génération MEMS précise du seul schéma RCL0194 ; conserver la variante explicite `SPi_Japan_97MY_from_VIN_SAXXNNAXKBD_134455` dans chaque fait.
 
 ## ARCHITECTURE IA COURANTE — À CONSERVER
 
 `navigationorderpatch.cpp -> IaMemsTab -> IaMemsService -> ExpertEngine + ExpertKnowledgeReader(read-only) -> LocalAiClient -> ONNX Runtime GenAI natif -> Qwen3 ONNX`
 
-- moteur dans le processus ;
-- aucun `QProcess`, `llama-server`, HTTP localhost ou port 18089 ;
-- génération hors thread UI ;
-- base r20 read-only ;
-- mesures ECU read-only ;
-- aucune commande/mutation ECU accessible au LLM ;
-- Qwen3-0.6B ONNX INT4 CPU ;
-- ONNX Runtime GenAI 0.14.0 + ONNX Runtime app-local.
+- aucun `QProcess`, `llama-server`, HTTP localhost ou port 18089 ; génération hors thread UI ; r20 read-only ; aucune mutation ECU accessible au LLM ; Qwen3-0.6B ONNX INT4 CPU ; ONNX Runtime GenAI 0.14.0 app-local.
 
 ## OPTIMISATION LATENCE — À PRÉSERVER
 
-- `/no_think` ;
-- réponses normales : **128 tokens max** ;
-- diagnostics : **192 tokens max** ;
-- réponses déterministes/base experte sans Qwen quand connues.
+- `/no_think` ; normal **128 tokens max** ; diagnostic **192 tokens max** ; réponses déterministes/base sans Qwen quand connues.
 
 ## HISTORIQUE ONNX — NE PAS REFAIRE
 
-- #74 : génération OK, rouge CP1252 ;
-- #75 : probe ONNX VERT ;
-- #79 : self-test production rouge ;
-- #80 : runtime ONNX app-local corrigé, chaîne complète VERT ;
-- #81 : latence optimisée, chaîne complète VERT + fonctionnement utilisateur confirmé ;
-- #82 à #85 : intermédiaires du lot qualité, remplacés/annulés par le HEAD final #86 ; ne pas les proposer au test.
+#74 génération OK/CP1252 ; #75 probe VERT ; #79 self-test rouge ; #80 runtime app-local VERT ; #81 latence VERT + fonctionnement utilisateur ; #82-#85 intermédiaires remplacés par #86.
 
 ## HISTORIQUE LLAMA — VOIE ABANDONNÉE
 
-Ne pas revenir à llama.cpp sans décision explicite utilisateur. #63 lent 30 s–2 min ; #65 CMake ; #66 `0xC0000409` ; #67 `0xC0000135`; #68/#72 `QProcess FailedToStart` réel ; #73 `0xC0000409`. Décision : ONNX natif.
+Ne pas revenir à llama.cpp sans décision explicite. #63 lent ; #65 CMake ; #66 `0xC0000409` ; #67 `0xC0000135` ; #68/#72 `QProcess FailedToStart` réel ; #73 `0xC0000409`.
 
 ## PRINCIPE IA / BASE EXPERTE
 
-**Toute connaissance certaine déjà présente dans le logiciel, aides/décodages ou base experte doit produire une réponse immédiate sans Qwen.** Qwen = croisement de faits, diagnostic, questions générales MEMS, cas sans réponse déterministe fiable.
-
-Définitions contrôlées : MAP = Manifold Absolute Pressure ; injecteur = électrovanne essence ; SPI = Single Point Injection ; bobine = allumage/haute tension ; dwell = temps de charge primaire.
+**Toute connaissance certaine déjà présente dans le logiciel, aides/décodages ou base experte doit produire une réponse immédiate sans Qwen.**
 
 ## CONNAISSANCES / AUDIT À PRÉSERVER
 
 Aperçu : RPM, LDR, MAP, TPS, batterie, correction carburant, lambda, temps injecteur, IAT, IAC, avance, état système. Repères : lambda 0–200 mV pauvre, 700–900 mV riche ; MAP moteur arrêté ~100 kPa, ralenti ~25–40 kPa.
 
-RAVE : ralenti SPi 1993–96 850 ±25 ; SPi 1997+ et MPi 900 ±50 ; pression SPi ~1 bar, MPi 3,0 ±0,2 bar ; fan MPi97 105/98 °C ; SPi Japon 98/93 ; pas de réglage ralenti par butée ; conflits résistance bobine non arbitrés ; lots 1660/1670 r20 ; MEMS1.3 SPi / 1.6 SPi / 2J MPi distingués ; DTC supportés 1 ECT,2 IAT,10 pompe,16 TPS,20 lambda heater,21 synchro,22 fan1,24 fan2 ; code23 preuve insuffisante ; pins RCL0194 MPi97 : MAP `C159-8`, retour capteurs `C159-13`, IAT `C159-14`, ECT `C159-36`, relais pompe `C159-30`, antidémarrage `C159-17`.
+RAVE existant : ralenti SPi 1993–96 850 ±25 ; SPi 1997+ et MPi 900 ±50 ; pression SPi ~1 bar, MPi 3,0 ±0,2 bar ; fan MPi97 105/98 °C ; SPi Japon 98/93 ; pas de réglage ralenti par butée ; conflits résistance bobine non arbitrés ; MEMS1.3 SPi / 1.6 SPi / 2J MPi distingués ; DTC supportés 1 ECT,2 IAT,10 pompe,16 TPS,20 lambda heater,21 synchro,22 fan1,24 fan2 ; code23 preuve insuffisante ; pins RCL0194 MPi97 conservés.
 
 ## SÉCURITÉ PROTOCOLE — NE PAS MODIFIER PENDANT BUILD #30
 
@@ -202,4 +156,4 @@ Après validation qualité en usage réel : CSV/TXT local read-only + nouveau co
 
 ## PROCHAINE ACTION EXACTE
 
-**Pendant que l'utilisateur teste #86, reprendre RAVE sans modifier IA/protocole/UI : inspecter l'historique et le contenu des lots `1660`/`1670`, confirmer leur format et leur procédé de génération, identifier le prochain ensemble de faits Rover RAVE vérifiés non encore présents, puis créer/intégrer le lot suivant dans la base et valider la r20. Conserver strictement les séparations SPi/MPi/familles et les niveaux de preuve. Aucun BUILD #31.**
+**Créer le lot `research_enrichment_1680.qz64` à partir des pages constructeur RCL0194ENG 20.3/20.4/39.3, avec uniquement les liaisons SPi Japon 97MY non ambiguës, les insérer à la fois dans `mems_rave_fact` et `mems_expert_fact_external`, ajouter 1680 au manifeste sans changer la révision, valider le SQL contre une copie de la r20 #86, pousser sur `MEMSX64`, puis suivre la CI. #86 reste le build utilisateur testé en parallèle. Aucun BUILD #31.**
