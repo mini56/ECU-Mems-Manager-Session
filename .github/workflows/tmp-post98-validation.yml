@@ -1,0 +1,146 @@
+name: TEMP POST98 VALIDATION
+
+on:
+  push:
+    branches: [tmp-post98-realtest-fixes]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: 'utf-8'
+
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate post98 source invariants and diff scope
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          @'
+          from pathlib import Path
+          import subprocess
+
+          base='d7836e86930e107d8a68563a6fce3643f27c5748'
+          allowed={
+            'expert/IaMemsConversationRouting.h',
+            'expert/IaMemsService.cpp',
+            'expert/IaResponseLogicTest.cpp',
+            'database/MemsReferenceSheetRenderer.h',
+            '.github/workflows/tmp-post98-validation.yml',
+          }
+          changed=set(subprocess.check_output(
+              ['git','diff','--name-only',base+'...HEAD'], text=True).splitlines())
+          unexpected=changed-allowed
+          required={
+            'expert/IaMemsConversationRouting.h',
+            'expert/IaMemsService.cpp',
+            'expert/IaResponseLogicTest.cpp',
+            'database/MemsReferenceSheetRenderer.h',
+          }
+          if unexpected:
+              raise SystemExit('UNEXPECTED DIFF FILES: '+', '.join(sorted(unexpected)))
+          if not required.issubset(changed):
+              raise SystemExit('MISSING REQUIRED DIFF FILES: '+', '.join(sorted(required-changed)))
+
+          checks={
+            'expert/IaMemsConversationRouting.h':[
+              'explicitVariantLabelsCompatible',
+              'QStringLiteral("mini")',
+              'hasDirectWireColourEvidence',
+              'hasTorqueEvidence',
+              'knowledgeStatementSignature',
+            ],
+            'expert/IaMemsService.cpp':[
+              'factMatchesScopeRequest(fact, requestedScope, questionText)',
+              'hasWireColorEvidence(directEvidence)',
+              'hasTorqueEvidence(directEvidence)',
+              'knowledgeStatementSignature(candidate.fact.statement)',
+              'La base ne donne pas directement les couleurs des fils de la sonde lambda',
+            ],
+            'database/MemsReferenceSheetRenderer.h':[
+              "class='wirebox'",
+              'background:#555d64',
+              'border:1px solid #7a838b',
+            ],
+            'expert/IaResponseLogicTest.cpp':[
+              'explicit MPi rejects primary SPi Japan fact',
+              'Mini is context and cannot make CKP/bobine relevant to MAP',
+              'generic HO2S description is not wire-colour evidence',
+              'ECT 15 Nm procedure is torque evidence',
+              'identical statements dedupe across family/source mirrors',
+              'custom XML keeps colours inside grey wire enclosure',
+            ],
+          }
+          for path,needles in checks.items():
+              text=Path(path).read_text(encoding='utf-8')
+              for needle in needles:
+                  if needle not in text:
+                      raise SystemExit(f'MISSING {needle!r} in {path}')
+
+          protocol_names=[p for p in changed if
+              'memsinterface' in p.lower() or 'librosco' in p.lower()
+              or 'protocol' in p.lower() or 'rosco' in p.lower()]
+          if protocol_names:
+              raise SystemExit('PROTOCOL FILE TOUCHED: '+', '.join(protocol_names))
+          print('POST98_SOURCE_DIFF_PASS')
+          '@ | python -
+
+      - name: Install Qt 5.15.2 MSVC 2019 x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install --disable-pip-version-check 'aqtinstall==3.3.0'
+          $sevenZip = (Get-Command 7z.exe -ErrorAction Stop).Source
+          if (Test-Path 'C:\Qt') { Remove-Item 'C:\Qt' -Recurse -Force -ErrorAction SilentlyContinue }
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
+          if ($LASTEXITCODE -ne 0) { throw "aqtinstall failed: $LASTEXITCODE" }
+
+      - name: Configure candidate x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake -S . -B build-x64 -A x64 `
+            -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
+            -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
+            -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF `
+            -DMEMS_USE_ONNX_GENAI=OFF
+          if ($LASTEXITCODE -ne 0) { throw "CMake configure failed: $LASTEXITCODE" }
+
+      - name: Compile application and touched self-tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake --build build-x64 --config Release --target `
+            ecu_mems_manager ia_response_selftest ia_mems_diagram_selftest mems_search_selftest
+          if ($LASTEXITCODE -ne 0) { throw "Candidate x64 build failed: $LASTEXITCODE" }
+
+      - name: Run deterministic regression tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
+          $env:PATH = "$qtRoot\bin;$env:PATH"
+          $env:QT_PLUGIN_PATH = "$qtRoot\plugins"
+
+          & '${{ github.workspace }}\build-x64\Release\ia_response_selftest.exe'
+          if ($LASTEXITCODE -ne 0) { throw "IA response self-test failed: $LASTEXITCODE" }
+          & '${{ github.workspace }}\build-x64\Release\ia_mems_diagram_selftest.exe'
+          if ($LASTEXITCODE -ne 0) { throw "IA diagram self-test failed: $LASTEXITCODE" }
+          & '${{ github.workspace }}\build-x64\Release\mems_search_selftest.exe'
+          if ($LASTEXITCODE -ne 0) { throw "MEMS reference search self-test failed: $LASTEXITCODE" }
+          Write-Host 'POST98_WINDOWS_X64_VALIDATION_PASS'
