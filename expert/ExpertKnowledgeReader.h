@@ -17,11 +17,23 @@ public:
     bool isOpen() const;
     QString lastError() const;
 
+    // Unified read path used by IA MEMS.  It preserves the historical expert
+    // tables and transparently adds the extensible RAVE knowledge foundation
+    // plus packaged reference assets.
     QList<ExpertFact> facts(const ExpertContext &context) const;
     QList<ExpertRule> rules(const ExpertContext &context) const;
 
 private:
     bool tableExists(const QString &tableName) const;
+    QList<ExpertFact> historicalFacts(const ExpertContext &context) const;
+    QList<ExpertFact> foundationFacts(const ExpertContext &context) const;
+    QList<ExpertFact> packagedAssetFacts(const ExpertContext &context) const;
+    QString specificationText(const QString &knowledgeKey) const;
+    QString procedureText(const QString &knowledgeKey) const;
+    QString scopeText(const QString &knowledgeKey,
+                      const ExpertContext &context,
+                      bool *compatible,
+                      QString *resolvedFamily) const;
     QList<ExpertRuleCondition> conditionsForRule(const QString &ruleKey) const;
     QStringList recommendationsForRule(const QString &ruleKey) const;
     static bool familyMatches(const QString &ruleFamily, const QString &contextFamily);
