@@ -12,7 +12,7 @@
 
 - Dépôt : `mini56/ECU-Mems-Manager-Session`.
 - Branche x64 active : **`MEMSX64`**.
-- HEAD x64 courant : **`5e707530352f5e4da3a04e832f62acfa7054ef2f`**.
+- HEAD x64 courant avant push 1690 : **`5e707530352f5e4da3a04e832f62acfa7054ef2f`**.
 - BUILD logiciel actif : **#30 / v1.0.30**.
 - GitHub Actions qualité : **#88 — SUCCESS**, run **`33042796844`**, job `98419961592`.
 - Artefact #88 : `ECU-MEMS-Manager-x64-BUILD-30-v1.0.30`, ID **`9634616803`**, taille **386 761 108** octets, SHA-256 **`bf646347db27b0406483196f3057c0828d5a1a7645d4c3eaeee06dcb854c825a`**.
@@ -49,20 +49,23 @@ Validation complète #88 : compilation, protections protocole, tests déterminis
 7. IAT C174-2 ↔ C159-16 : **GB = vert/noir**.
 
 ### Validation locale avant push
-Le SQL 1690 a été appliqué sur une copie de la base experte r20 issue de l’artefact #88.
-
 - `RAVE-COLOR-SPIJ-*` dans `mems_rave_fact` : **7**.
-- miroirs `RAVE-COLOR-SPIJ-*` dans `mems_expert_fact_external` : **7**.
-- total RAVE : **60 → 67**.
-- total expert : **72 → 79**.
-- `PRAGMA integrity_check` : **ok**.
-- `PRAGMA user_version` : **20**.
-- tous les faits 1690 : `verifie_constructeur`.
-- variante unique : `SPi_Japan_97MY_from_VIN_SAXXNNAXKBD_134455`.
-- SQL décompressé : **8708 octets**.
-- SHA-256 SQL : **`aef8a4c9d808267188c76c25c53dac254cba57f434a16badf7791023ffcfa97a`**.
-- fichier qz64 : **1397 octets**.
-- SHA-256 qz64 : **`7288e46b99caf41e14751ab5690a7bf17fd35941e1e17527af472bf8bad3ec19`**.
+- miroirs dans `mems_expert_fact_external` : **7**.
+- total RAVE : **60 → 67** ; total expert : **72 → 79**.
+- SQLite integrity : **ok** ; user_version : **20**.
+- tous `verifie_constructeur` ; variante unique `SPi_Japan_97MY_from_VIN_SAXXNNAXKBD_134455`.
+- SQL : **8708 octets**, SHA-256 `aef8a4c9d808267188c76c25c53dac254cba57f434a16badf7791023ffcfa97a`.
+- qz64 : **1397 octets**, SHA-256 `7288e46b99caf41e14751ab5690a7bf17fd35941e1e17527af472bf8bad3ec19`.
+
+### Lot temporaire prêt
+Branche `tmp-rave-1690`, créée depuis `MEMSX64`.
+
+Comparaison `MEMSX64` → `tmp-rave-1690` : **ahead 3, behind 0**, exactement trois fichiers documentaires/base :
+- `database/reference/research_enrichment_1690.qz64` : ajouté ;
+- `database/reference/audits/rave_1690_audit.md` : ajouté ;
+- `database/reference/manifest.json` : seulement enregistrement du batch 1690.
+
+**Aucun code IA, protocole, UI, packaging, 32 bits ou changement de BUILD.**
 
 ### Règle de prudence
 Ne pas généraliser ces couleurs aux autres SPi/MEMS ou au MPi. Ne pas déduire une couleur à partir d’un ordre de texte ambigu. Seules les liaisons explicitement rattachées sur RCL0194 20.4 entrent en 1690.
@@ -75,4 +78,4 @@ Ne pas modifier protections protocole BUILD #30, MEMS1.9 F7/EF, 7D/80, W4, recon
 
 ## PROCHAINE ACTION EXACTE
 
-**Créer un lot documentaire atomique 1690 sur une branche temporaire depuis `MEMSX64` : ajouter `research_enrichment_1690.qz64`, mettre à jour `database/reference/manifest.json`, ajouter l’audit de provenance 1690, comparer le diff, puis fast-forward `MEMSX64` une seule fois. Suivre ensuite le GitHub Actions jusqu’à la base/package, puis préparer le lot RAVE suivant. Aucun BUILD #31.**
+**Fast-forward `MEMSX64` une seule fois sur `tmp-rave-1690` HEAD `84e677a87067ae43054df7fc534d84a70b6908b7`, identifier le GitHub Actions déclenché, vérifier que la base r20 contient 67 faits RAVE / 79 faits experts et que le package reste vert. Ensuite préparer RAVE 1700 séparément. Aucun BUILD #31.**
