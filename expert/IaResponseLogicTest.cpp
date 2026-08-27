@@ -54,6 +54,23 @@ int main(int argc, char **argv)
     ok &= require(IaResponseLogic::classify(QStringLiteral("MESURE TPS ACTUELLE ?")) == IaResponseLogic::Intent::Throttle,
                   "TPS current measurement stays a live measurement");
 
+    ok &= require(IaResponseLogic::classify(QStringLiteral("Broche MAP Mini MPi 1997")) == IaResponseLogic::Intent::None,
+                  "MAP pinout is documentation, not a live MAP reading");
+    ok &= require(IaResponseLogic::classify(QStringLiteral("Couleur des fils sonde lambda")) == IaResponseLogic::Intent::None,
+                  "lambda wire colours are documentation, not a live lambda reading");
+    ok &= require(IaResponseLogic::classify(QStringLiteral("Couple de serrage sonde température ECT")) == IaResponseLogic::Intent::None,
+                  "ECT torque is documentation, not a live coolant reading");
+    ok &= require(IaResponseLogic::classify(QStringLiteral("Valeur MAP ?")) == IaResponseLogic::Intent::Map,
+                  "explicit MAP value request stays live");
+    ok &= require(IaMemsConversationRouting::needsInductionClarification(QStringLiteral("Broche MAP Mini")),
+                  "ambiguous Mini pinout requests SPi/MPi clarification");
+    ok &= require(!IaMemsConversationRouting::needsInductionClarification(QStringLiteral("Broche MAP Mini MPi 1997")),
+                  "explicit MPi does not ask again");
+    ok &= require(IaMemsConversationRouting::isSearchDirective(QStringLiteral("cherche")),
+                  "search directive is recognised");
+    ok &= require(IaMemsConversationRouting::requestedGeneration(QStringLiteral("Je cherche la documentation MEMS 1.9")) == QStringLiteral("1.9"),
+                  "documentation generation extraction");
+
     ok &= require(IaResponseLogic::classify(QStringLiteral("battery voltage?")) == IaResponseLogic::Intent::Battery,
                   "battery intent en");
     ok &= require(IaResponseLogic::classify(QStringLiteral("what is the battery voltage?")) == IaResponseLogic::Intent::None,

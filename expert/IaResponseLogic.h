@@ -2,6 +2,7 @@
 #define IA_RESPONSE_LOGIC_H
 
 #include "i18n.h"
+#include "IaMemsConversationRouting.h"
 
 #include <QDateTime>
 #include <QHash>
@@ -134,6 +135,11 @@ inline bool isMetricDefinitionQuestion(const QString &text)
 inline Intent classify(const QString &question)
 {
     const QString text = normalize(question);
+
+    // A technical-document request has priority over a live-value intent.
+    // Example: "broche MAP" is documentation, not a request for the MAP reading.
+    if (IaMemsConversationRouting::isDocumentationQuestion(question))
+        return Intent::None;
 
     if (isMetricDefinitionQuestion(text))
         return Intent::None;

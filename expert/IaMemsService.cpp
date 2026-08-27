@@ -1,6 +1,7 @@
 #include "IaMemsService.h"
 
 #include "IaResponseLogic.h"
+#include "IaMemsConversationRouting.h"
 #include "LocalAiClient.h"
 
 #include <QCoreApplication>
@@ -584,6 +585,13 @@ QString IaMemsService::groundingFor(const QString &question)
                            QStringLiteral("que peux-tu"), QStringLiteral("comment te parler")}))
         return helpAnswer();
 
+    if (IaMemsConversationRouting::isDocumentationQuestion(question)) {
+        const QString documentaryKnowledge = knowledgeAnswer(question);
+        if (!documentaryKnowledge.isEmpty())
+            return documentaryKnowledge;
+        return QStringLiteral("Je n\'ai pas trouvé de donnée documentaire vérifiée correspondant exactement à cette demande. Je peux préciser la recherche si vous me donnez le véhicule, la génération MEMS ou la variante SPi/MPi lorsqu\'elle est pertinente.");
+    }
+
     const IaResponseLogic::Intent intent = IaResponseLogic::classify(question);
     if (intent == IaResponseLogic::Intent::Captures)
         return IaResponseLogic::capturesAnswer();
@@ -799,6 +807,8 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
 
     const QString questionText = normalized(question);
     const KnowledgeQueryKind queryKind = knowledgeQueryKind(questionText);
+    const bool explicitEct = containsWord(questionText, QStringLiteral("ect"));
+    const bool explicitIat = containsWord(questionText, QStringLiteral("iat"));
     const QStringList terms = knowledgeTerms(question);
     if (terms.isEmpty())
         return QString();
@@ -834,6 +844,11 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
             ? normalized(QStringLiteral("%1 %2").arg(fact.statement, fact.family))
             : normalized(QStringLiteral("%1 %2 %3").arg(fact.statement, fact.notes, fact.family));
         const QString searchable = identity + QLatin1Char(' ') + body;
+
+        if (explicitEct && !knowledgeTermMatches(searchable, QStringLiteral("ect")))
+            continue;
+        if (explicitIat && !knowledgeTermMatches(searchable, QStringLiteral("iat")))
+            continue;
 
         if (queryKind == KnowledgeQueryKind::WireColor && !hasWireColorEvidence(searchable))
             continue;
@@ -901,6 +916,19 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
             return left.matches > right.matches;
         return left.fact.factKey < right.fact.factKey;
     });
+
+    QVector<RankedFact> uniqueRanked;
+    uniqueRanked.reserve(ranked.size());
+    QSet<QString> seenStatements;
+    for (const RankedFact &candidate : ranked) {
+        const QString signature = normalized(candidate.fact.statement)
+            + QLatin1Char('|') + normalized(candidate.fact.family);
+        if (signature.trimmed().isEmpty() || seenStatements.contains(signature))
+            continue;
+        seenStatements.insert(signature);
+        uniqueRanked.append(candidate);
+    }
+    ranked = uniqueRanked;
 
     const int maximum = qMin(queryKind == KnowledgeQueryKind::General ? 3 : 4, ranked.size());
     if (maximum == 1) {

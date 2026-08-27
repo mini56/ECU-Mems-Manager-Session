@@ -3,10 +3,13 @@
 #include "mainwindow.h"
 #include "memsinterface.h"
 #include "expert/IaMemsDiagramCatalog.h"
+#include "expert/IaMemsConversationRouting.h"
 #include "expert/IaMemsService.h"
+#include "database/MemsReferenceDatabase.h"
 
 #include <QDateTime>
 #include <QDialog>
+#include <QFile>
 #include <QDialogButtonBox>
 #include <QFileInfo>
 #include <QHBoxLayout>
@@ -14,11 +17,108 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QScrollBar>
+#include <QSet>
 #include <QShowEvent>
 #include <QTextBrowser>
 #include <QTimer>
 #include <QUrl>
 #include <QVBoxLayout>
+#include <QVariantMap>
+#include <QXmlStreamReader>
+#include <QRegularExpression>
+
+
+namespace {
+
+QString iaReferenceXmlHtml(const QString &path)
+{
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        return QStringLiteral("<p>Impossible d'ouvrir la fiche XML locale.</p>");
+
+    QXmlStreamReader xml(&file);
+    QString html = QStringLiteral(
+        "<style>body{background:#0a1015;color:#dce3e8;font-family:'Segoe UI',Arial,sans-serif;font-size:9pt;}"
+        "h1{color:#ff9828;font-size:16pt;margin:0 0 5px 0;}"
+        "h2{color:#ff9828;font-size:10.5pt;border-bottom:1px solid #34414b;padding-bottom:4px;margin-top:14px;}"
+        "p{margin:4px 0 7px 0;line-height:1.35}.muted{color:#94a1ab}.note{background:#15100b;border:1px solid #60401f;color:#ffd0a0;padding:7px;}"
+        "table{border-collapse:collapse;width:100%;margin:5px 0 8px 0}th{background:#151e25;color:#ff9828;border-bottom:2px solid #ff7a00;text-align:left;padding:5px}"
+        "td{border-bottom:1px solid #26323b;padding:5px;vertical-align:top}</style>");
+    bool firstRow = true;
+    while (!xml.atEnd()) {
+        xml.readNext();
+        if (xml.isEndElement()) {
+            if (xml.name() == QStringLiteral("ligne")) {
+                html += QStringLiteral("</tr>");
+                firstRow = false;
+            } else if (xml.name() == QStringLiteral("table")) {
+                html += QStringLiteral("</table>");
+            }
+            continue;
+        }
+        if (!xml.isStartElement())
+            continue;
+        const QStringRef name = xml.name();
+        if (name == QStringLiteral("titre"))
+            html += QStringLiteral("<h1>%1</h1>").arg(xml.readElementText(QXmlStreamReader::IncludeChildElements).toHtmlEscaped());
+        else if (name == QStringLiteral("sous-titre"))
+            html += QStringLiteral("<p class='muted'>%1</p>").arg(xml.readElementText(QXmlStreamReader::IncludeChildElements).toHtmlEscaped());
+        else if (name == QStringLiteral("section"))
+            html += QStringLiteral("<h2>%1</h2>").arg(xml.attributes().value(QStringLiteral("titre")).toString().toHtmlEscaped());
+        else if (name == QStringLiteral("p")) {
+            QString text = xml.readElementText(QXmlStreamReader::IncludeChildElements).toHtmlEscaped();
+            text.replace(QStringLiteral("\n"), QStringLiteral("<br>"));
+            html += QStringLiteral("<p>%1</p>").arg(text);
+        } else if (name == QStringLiteral("note")) {
+            QString text = xml.readElementText(QXmlStreamReader::IncludeChildElements).toHtmlEscaped();
+            text.replace(QStringLiteral("\n"), QStringLiteral("<br>"));
+            html += QStringLiteral("<div class='note'>%1</div>").arg(text);
+        } else if (name == QStringLiteral("table")) {
+            firstRow = true;
+            html += QStringLiteral("<table>");
+        } else if (name == QStringLiteral("ligne")) {
+            html += QStringLiteral("<tr>");
+        } else if (name == QStringLiteral("cellule")) {
+            const QString text = xml.readElementText(QXmlStreamReader::IncludeChildElements).trimmed().toHtmlEscaped();
+            const QString tag = firstRow ? QStringLiteral("th") : QStringLiteral("td");
+            html += QStringLiteral("<%1>%2</%1>").arg(tag, text);
+        }
+    }
+    if (xml.hasError())
+        html += QStringLiteral("<div class='note'>Fiche XML invalide ou incomplète.</div>");
+    return html;
+}
+
+QString printableFirmware(QByteArray response)
+{
+    QByteArray printable;
+    for (char byte : response) {
+        const unsigned char c = static_cast<unsigned char>(byte);
+        if (c >= 0x20 && c <= 0x7e)
+            printable.append(byte);
+    }
+    QString text = QString::fromLatin1(printable).trimmed();
+    if (text.size() >= 8 && text.size() % 2 == 0) {
+        const int half = text.size() / 2;
+        if (text.left(half) == text.mid(half))
+            text = text.left(half);
+    }
+    return text;
+}
+
+QString injectionLabel(const QString &raw)
+{
+    const QString text = IaMemsConversationRouting::normalize(raw);
+    if (text.contains(QStringLiteral("spi")) || text.contains(QStringLiteral("monopoint"))
+        || text.contains(QStringLiteral("single point")))
+        return QStringLiteral("SPi");
+    if (text.contains(QStringLiteral("mpi")) || text.contains(QStringLiteral("multipoint"))
+        || text.contains(QStringLiteral("multi point")))
+        return QStringLiteral("MPi");
+    return QString();
+}
+
+} // namespace
 
 IaMemsTab::IaMemsTab(MainWindow *mainWindow, QWidget *parent)
     : QWidget(parent),
@@ -69,6 +169,11 @@ IaMemsTab::IaMemsTab(MainWindow *mainWindow, QWidget *parent)
     m_diagramButton->setVisible(false);
     root->addWidget(m_diagramButton, 0, Qt::AlignLeft);
 
+    m_documentButton = new QPushButton(this);
+    m_documentButton->setObjectName(QStringLiteral("iaMemsDocumentButton"));
+    m_documentButton->setVisible(false);
+    root->addWidget(m_documentButton, 0, Qt::AlignLeft);
+
     QHBoxLayout *input = new QHBoxLayout;
     m_question = new QLineEdit(this);
     m_question->setObjectName(QStringLiteral("iaMemsQuestion"));
@@ -88,6 +193,8 @@ IaMemsTab::IaMemsTab(MainWindow *mainWindow, QWidget *parent)
             this, &IaMemsTab::sendQuestion);
     connect(m_diagramButton, &QPushButton::clicked,
             this, &IaMemsTab::openSuggestedDiagram);
+    connect(m_documentButton, &QPushButton::clicked,
+            this, &IaMemsTab::openSuggestedDocument);
 
     if (m_service) {
         connect(m_service, &IaMemsService::responseReady,
@@ -125,8 +232,31 @@ IaMemsTab::IaMemsTab(MainWindow *mainWindow, QWidget *parent)
                         context.family = QStringLiteral("1.3");
                     else if (protocol.contains(QStringLiteral("1.2")))
                         context.family = QStringLiteral("1.2");
-                    if (!context.family.isEmpty())
+                    if (!context.family.isEmpty()) {
+                        m_detectedFamily = context.family;
+                        context.firmware = m_firmwareIdentifier;
                         m_service->setContext(context);
+                    }
+                },
+                Qt::QueuedConnection);
+
+        connect(m_mems, &MEMSInterface::protocolResponse,
+                this,
+                [this](quint8 command, const QByteArray &response) {
+                    if (command == 0xD0 && !response.isEmpty())
+                        m_ecuIdHex = QString::fromLatin1(response.toHex(' ')).toUpper();
+                    if (command != 0xD1)
+                        return;
+                    const QString firmware = printableFirmware(response);
+                    if (firmware.isEmpty())
+                        return;
+                    m_firmwareIdentifier = firmware;
+                    if (m_service) {
+                        ExpertContext context;
+                        context.family = m_detectedFamily;
+                        context.firmware = m_firmwareIdentifier;
+                        m_service->setContext(context);
+                    }
                 },
                 Qt::QueuedConnection);
     }
@@ -247,6 +377,131 @@ void IaMemsTab::openSuggestedDiagram()
     viewer.exec();
 }
 
+
+void IaMemsTab::updateDocumentSuggestion(const QString &question)
+{
+    m_documentGeneration.clear();
+    if (!m_documentButton)
+        return;
+
+    if (!IaMemsConversationRouting::isDocumentationQuestion(question)) {
+        m_documentButton->setVisible(false);
+        m_documentButton->setText(QString());
+        return;
+    }
+
+    QString generation = IaMemsConversationRouting::requestedGeneration(question);
+    if (generation.isEmpty())
+        generation = m_detectedFamily;
+    if (generation.isEmpty()) {
+        m_documentButton->setVisible(false);
+        m_documentButton->setText(QString());
+        return;
+    }
+
+    m_documentGeneration = generation;
+    m_documentButton->setText(QStringLiteral("Ouvrir la fiche XML MEMS %1").arg(generation));
+    m_documentButton->setVisible(true);
+}
+
+void IaMemsTab::openSuggestedDocument()
+{
+    if (m_documentGeneration.isEmpty())
+        return;
+
+    MemsReferenceDatabase database;
+    if (!database.open()) {
+        appendSystemMessage(QStringLiteral("La base documentaire locale n'a pas pu être ouverte."));
+        return;
+    }
+    const QString path = database.generationXmlPath(QStringLiteral("MEMS %1").arg(m_documentGeneration));
+    if (path.isEmpty() || !QFileInfo::exists(path)) {
+        appendSystemMessage(QStringLiteral("La fiche XML MEMS %1 n'est pas disponible dans le package.").arg(m_documentGeneration));
+        return;
+    }
+
+    QDialog viewer(this);
+    viewer.setObjectName(QStringLiteral("iaMemsDocumentViewer"));
+    viewer.setWindowTitle(QStringLiteral("IA MEMS — Fiche XML MEMS %1").arg(m_documentGeneration));
+    viewer.resize(qBound(520, width() - 40, 1000), qBound(380, height() - 40, 700));
+
+    QVBoxLayout *layout = new QVBoxLayout(&viewer);
+    QTextBrowser *browser = new QTextBrowser(&viewer);
+    browser->setObjectName(QStringLiteral("iaMemsDocumentBrowser"));
+    browser->setOpenExternalLinks(false);
+    browser->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    browser->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    browser->setHtml(iaReferenceXmlHtml(path));
+    layout->addWidget(browser, 1);
+
+    QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Close, &viewer);
+    connect(buttons, &QDialogButtonBox::rejected, &viewer, &QDialog::reject);
+    layout->addWidget(buttons);
+    viewer.exec();
+}
+
+QString IaMemsTab::resolveInductionFromKnownContext(const QString &question) const
+{
+    MemsReferenceDatabase database;
+    if (!database.open())
+        return QString();
+
+    QStringList probes;
+    if (!m_firmwareIdentifier.trimmed().isEmpty())
+        probes << m_firmwareIdentifier.trimmed();
+    if (IaMemsConversationRouting::mentionsMini(question))
+        probes << QStringLiteral("Mini");
+    if (probes.isEmpty())
+        return QString();
+
+    int requestedYear = 0;
+    const QRegularExpression yearRx(QStringLiteral("\\b(19[89][0-9]|20[0-2][0-9])\\b"));
+    const QRegularExpressionMatch yearMatch = yearRx.match(question);
+    if (yearMatch.hasMatch())
+        requestedYear = yearMatch.captured(1).toInt();
+
+    for (const QString &probe : probes) {
+        const QVariantList rows = database.searchEcus(probe, m_detectedFamily, 250);
+        QSet<QString> inductions;
+        for (const QVariant &item : rows) {
+            const QVariantMap row = item.toMap();
+            if (requestedYear > 0) {
+                const int from = row.value(QStringLiteral("year_from")).toInt();
+                const int to = row.value(QStringLiteral("year_to")).toInt();
+                if ((from > 0 && requestedYear < from) || (to > 0 && requestedYear > to))
+                    continue;
+            }
+            const QString injection = injectionLabel(row.value(QStringLiteral("injection")).toString());
+            if (!injection.isEmpty())
+                inductions.insert(injection);
+        }
+        if (inductions.size() == 1)
+            return *inductions.constBegin();
+    }
+    return QString();
+}
+
+QString IaMemsTab::clarificationPrompt(const QString &question) const
+{
+    if (IaMemsConversationRouting::needsInductionClarification(question))
+        return QStringLiteral("Pour éviter de mélanger les brochages Mini, est-ce une SPi ou une MPi ? Si tu ne sais pas, réponds « cherche » : j'utiliserai l'ECU connecté et la base avant de te redemander une information.");
+    if (IaMemsConversationRouting::needsGenerationClarification(question, m_detectedFamily))
+        return QStringLiteral("Quelle génération MEMS faut-il utiliser : 1.2, 1.3, 1.6 ou 1.9 ? Si tu ne sais pas, réponds « cherche » et j'utiliserai d'abord le contexte ECU disponible.");
+    return QString();
+}
+
+void IaMemsTab::answerLocally(const QString &text)
+{
+    appendMessage(QStringLiteral("IA MEMS"), text);
+    if (m_sendButton)
+        m_sendButton->setEnabled(true);
+    if (m_question) {
+        m_question->setEnabled(true);
+        m_question->setFocus();
+    }
+    updateStatus();
+}
+
 void IaMemsTab::sendQuestion()
 {
     if (!m_question || !m_service)
@@ -258,13 +513,53 @@ void IaMemsTab::sendQuestion()
 
     m_question->clear();
     appendMessage(QStringLiteral("Vous"), question);
-    updateDiagramSuggestion(question);
+
+    QString effectiveQuestion = question;
+    if (!m_pendingClarificationQuestion.isEmpty()) {
+        const QString pending = m_pendingClarificationQuestion;
+        if (IaMemsConversationRouting::isSearchDirective(question)
+            || IaMemsConversationRouting::isUnknownDirective(question)) {
+            if (IaMemsConversationRouting::needsInductionClarification(pending)) {
+                const QString resolved = resolveInductionFromKnownContext(pending);
+                if (resolved.isEmpty()) {
+                    answerLocally(QStringLiteral("J'ai cherché dans le contexte ECU connu et dans la base, mais je ne peux pas trancher SPi/MPi sans risque. Donne-moi l'année du véhicule ou la référence inscrite sur le calculateur."));
+                    return;
+                }
+                effectiveQuestion = QStringLiteral("%1 %2").arg(pending, resolved);
+                answerLocally(QStringLiteral("J'ai identifié %1 à partir des informations disponibles. Je poursuis la recherche initiale.").arg(resolved));
+            } else if (IaMemsConversationRouting::needsGenerationClarification(pending, m_detectedFamily)) {
+                if (m_detectedFamily.isEmpty()) {
+                    answerLocally(QStringLiteral("J'ai cherché dans le contexte disponible, mais la génération MEMS n'est pas déterminée. Donne-moi l'année, la référence ECU ou connecte l'ECU pour que je puisse continuer sans deviner."));
+                    return;
+                }
+                effectiveQuestion = QStringLiteral("%1 MEMS %2").arg(pending, m_detectedFamily);
+                answerLocally(QStringLiteral("L'ECU connecté indique MEMS %1. Je poursuis donc avec cette documentation.").arg(m_detectedFamily));
+            } else {
+                effectiveQuestion = pending;
+            }
+        } else {
+            effectiveQuestion = QStringLiteral("%1 %2").arg(pending, question).simplified();
+        }
+        m_pendingClarificationQuestion.clear();
+    }
+
+    effectiveQuestion = IaMemsConversationRouting::enrichWithKnownGeneration(effectiveQuestion, m_detectedFamily);
+
+    const QString prompt = clarificationPrompt(effectiveQuestion);
+    if (!prompt.isEmpty()) {
+        m_pendingClarificationQuestion = effectiveQuestion;
+        answerLocally(prompt);
+        return;
+    }
+
+    updateDiagramSuggestion(effectiveQuestion);
+    updateDocumentSuggestion(effectiveQuestion);
 
     if (m_sendButton)
         m_sendButton->setEnabled(false);
     m_question->setEnabled(false);
 
-    m_service->ask(question);
+    m_service->ask(IaMemsConversationRouting::focusedQuestion(effectiveQuestion));
 }
 
 void IaMemsTab::onServiceResponse(const QString &text)

@@ -41,11 +41,16 @@ private slots:
     void onServiceSystemMessage(const QString &text);
     void updateStatus();
     void openSuggestedDiagram();
+    void openSuggestedDocument();
 
 private:
     void appendMessage(const QString &speaker, const QString &text);
     void appendSystemMessage(const QString &text);
     void updateDiagramSuggestion(const QString &question);
+    void updateDocumentSuggestion(const QString &question);
+    QString resolveInductionFromKnownContext(const QString &question) const;
+    QString clarificationPrompt(const QString &question) const;
+    void answerLocally(const QString &text);
 
 private:
     MainWindow *m_mainWindow = nullptr;
@@ -56,9 +61,15 @@ private:
     QLineEdit *m_question = nullptr;
     QPushButton *m_sendButton = nullptr;
     QPushButton *m_diagramButton = nullptr;
+    QPushButton *m_documentButton = nullptr;
     QLabel *m_status = nullptr;
     QString m_diagramTitle;
     QString m_diagramQuestion;
+    QString m_documentGeneration;
+    QString m_pendingClarificationQuestion;
+    QString m_detectedFamily;
+    QString m_firmwareIdentifier;
+    QString m_ecuIdHex;
 
     bool m_connected = false;
     bool m_haveInjection = false;
