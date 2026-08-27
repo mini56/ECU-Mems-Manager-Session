@@ -200,6 +200,136 @@ bool asksForSourceDetails(const QString &question)
     });
 }
 
+struct KnowledgeScopeRequest
+{
+    QString induction;
+    QString market;
+    QString transmission;
+    bool highCompression = false;
+};
+
+KnowledgeScopeRequest knowledgeScopeRequest(const QString &questionText)
+{
+    KnowledgeScopeRequest request;
+    if (containsWord(questionText, QStringLiteral("spi"))
+        || questionText.contains(QStringLiteral("monopoint")))
+        request.induction = QStringLiteral("spi");
+    else if (containsWord(questionText, QStringLiteral("mpi"))
+             || questionText.contains(QStringLiteral("multipoint")))
+        request.induction = QStringLiteral("mpi");
+
+    if (questionText.contains(QStringLiteral("japon"))
+        || questionText.contains(QStringLiteral("japan")))
+        request.market = QStringLiteral("japan");
+    else if (containsWord(questionText, QStringLiteral("uk"))
+             || questionText.contains(QStringLiteral("royaume uni"))
+             || questionText.contains(QStringLiteral("britannique")))
+        request.market = QStringLiteral("uk");
+    else if (questionText.contains(QStringLiteral("europe"))
+             || questionText.contains(QStringLiteral("europeen")))
+        request.market = QStringLiteral("europe");
+
+    if (questionText.contains(QStringLiteral("automatique"))
+        || questionText.contains(QStringLiteral("automatic")))
+        request.transmission = QStringLiteral("automatic");
+    else if (questionText.contains(QStringLiteral("manuelle"))
+             || containsWord(questionText, QStringLiteral("manual")))
+        request.transmission = QStringLiteral("manual");
+
+    request.highCompression = questionText.contains(QStringLiteral("haute compression"))
+        || questionText.contains(QStringLiteral("high compression"));
+    return request;
+}
+
+bool factMatchesScopeRequest(const ExpertFact &fact, const KnowledgeScopeRequest &request)
+{
+    const QString scope = normalized(fact.notes);
+    if (!scope.contains(QStringLiteral("portee")))
+        return true;
+
+    const bool scopeSpi = containsWord(scope, QStringLiteral("spi"));
+    const bool scopeMpi = containsWord(scope, QStringLiteral("mpi"));
+    if (request.induction == QStringLiteral("spi") && scopeMpi && !scopeSpi)
+        return false;
+    if (request.induction == QStringLiteral("mpi") && scopeSpi && !scopeMpi)
+        return false;
+
+    const bool scopeJapan = scope.contains(QStringLiteral("japan"))
+        || scope.contains(QStringLiteral("japon"));
+    const bool scopeEurope = scope.contains(QStringLiteral("europe"));
+    const bool scopeUk = containsWord(scope, QStringLiteral("uk"))
+        || scope.contains(QStringLiteral("royaume uni"));
+    if (request.market == QStringLiteral("japan") && (scopeEurope || scopeUk) && !scopeJapan)
+        return false;
+    if ((request.market == QStringLiteral("europe") || request.market == QStringLiteral("uk"))
+        && scopeJapan && !scopeEurope && !scopeUk)
+        return false;
+
+    const bool scopeAutomatic = scope.contains(QStringLiteral("automatic"))
+        || scope.contains(QStringLiteral("automatique"));
+    const bool scopeManual = containsWord(scope, QStringLiteral("manual"))
+        || scope.contains(QStringLiteral("manuelle"));
+    if (request.transmission == QStringLiteral("automatic") && scopeManual && !scopeAutomatic)
+        return false;
+    if (request.transmission == QStringLiteral("manual") && scopeAutomatic && !scopeManual)
+        return false;
+
+    return true;
+}
+
+bool scopeQualifierTerm(const QString &term)
+{
+    static const QSet<QString> qualifiers = {
+        QStringLiteral("spi"), QStringLiteral("mpi"), QStringLiteral("monopoint"),
+        QStringLiteral("multipoint"), QStringLiteral("japan"), QStringLiteral("japon"),
+        QStringLiteral("europe"), QStringLiteral("europeen"), QStringLiteral("uk"),
+        QStringLiteral("automatic"), QStringLiteral("automatique"), QStringLiteral("manual"),
+        QStringLiteral("manuelle"), QStringLiteral("1993"), QStringLiteral("1994"),
+        QStringLiteral("1995"), QStringLiteral("1996"), QStringLiteral("1997"),
+        QStringLiteral("1998"), QStringLiteral("1999"), QStringLiteral("2000")
+    };
+    return qualifiers.contains(term);
+}
+
+bool genericIntentTerm(const QString &term, KnowledgeQueryKind kind)
+{
+    if (kind == KnowledgeQueryKind::Pinout) {
+        return term == QStringLiteral("broche") || term == QStringLiteral("broches")
+            || term == QStringLiteral("pinout") || term == QStringLiteral("connecteur")
+            || term == QStringLiteral("connector") || term == QStringLiteral("cablage")
+            || term == QStringLiteral("wiring") || term == QStringLiteral("pin")
+            || term == QStringLiteral("prise");
+    }
+    if (kind == KnowledgeQueryKind::WireColor) {
+        return term == QStringLiteral("couleur") || term == QStringLiteral("color")
+            || term == QStringLiteral("colour") || term == QStringLiteral("wire")
+            || term == QStringLiteral("wiring") || term == QStringLiteral("fil");
+    }
+    return false;
+}
+
+int scopeMatchBonus(const ExpertFact &fact, const KnowledgeScopeRequest &request)
+{
+    const QString scope = normalized(fact.notes);
+    if (!scope.contains(QStringLiteral("portee")))
+        return 0;
+    int bonus = 0;
+    if (!request.induction.isEmpty() && containsWord(scope, request.induction))
+        bonus += 4;
+    if (request.market == QStringLiteral("japan")
+        && (scope.contains(QStringLiteral("japan")) || scope.contains(QStringLiteral("japon"))))
+        bonus += 4;
+    if (request.transmission == QStringLiteral("automatic")
+        && (scope.contains(QStringLiteral("automatic")) || scope.contains(QStringLiteral("automatique"))))
+        bonus += 3;
+    if (request.transmission == QStringLiteral("manual")
+        && (containsWord(scope, QStringLiteral("manual")) || scope.contains(QStringLiteral("manuelle"))))
+        bonus += 3;
+    if (request.highCompression && scope.contains(QStringLiteral("high compression")))
+        bonus += 3;
+    return bonus;
+}
+
 } // namespace
 
 IaMemsService *IaMemsService::instance()
@@ -659,6 +789,14 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
     if (terms.isEmpty())
         return QString();
 
+    QStringList specificTerms;
+    for (const QString &term : terms) {
+        if (!scopeQualifierTerm(term) && !genericIntentTerm(term, queryKind))
+            specificTerms.append(term);
+    }
+    if (specificTerms.isEmpty())
+        specificTerms = terms;
+
     struct RankedFact {
         ExpertFact fact;
         int score = 0;
@@ -666,15 +804,21 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
     };
 
     const bool sourceDetails = asksForSourceDetails(question);
+    const KnowledgeScopeRequest requestedScope = knowledgeScopeRequest(questionText);
     const QList<ExpertFact> facts = m_reader.facts(m_context);
     QVector<RankedFact> ranked;
     ranked.reserve(facts.size());
 
     for (const ExpertFact &fact : facts) {
+        if (!factMatchesScopeRequest(fact, requestedScope))
+            continue;
+
+        const bool foundationFact = normalized(fact.notes).contains(QStringLiteral("portee"));
         const QString identity = normalized(QStringLiteral("%1 %2 %3")
                                                 .arg(fact.factKey, fact.topic, fact.firmware));
-        const QString body = normalized(QStringLiteral("%1 %2 %3")
-                                            .arg(fact.statement, fact.notes, fact.family));
+        const QString body = foundationFact
+            ? normalized(QStringLiteral("%1 %2").arg(fact.statement, fact.family))
+            : normalized(QStringLiteral("%1 %2 %3").arg(fact.statement, fact.notes, fact.family));
         const QString searchable = identity + QLatin1Char(' ') + body;
 
         if (queryKind == KnowledgeQueryKind::WireColor && !hasWireColorEvidence(searchable))
@@ -685,7 +829,10 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
         RankedFact candidate;
         candidate.fact = fact;
 
-        for (const QString &term : terms) {
+        // Scope words are deliberately not sufficient to make a result relevant.
+        // At least one component/topic term must match first; scope is then used
+        // only to reject incompatibilities and to prefer an exact proved scope.
+        for (const QString &term : specificTerms) {
             if (identity.contains(term)) {
                 candidate.score += 5;
                 ++candidate.matches;
@@ -699,6 +846,7 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
 
         candidate.score += qMin(candidate.matches, 4) * 3;
         candidate.score += verificationScore(fact.verificationLevel);
+        candidate.score += scopeMatchBonus(fact, requestedScope);
         if (queryKind == KnowledgeQueryKind::WireColor)
             candidate.score += 24;
         else if (queryKind == KnowledgeQueryKind::Pinout)
