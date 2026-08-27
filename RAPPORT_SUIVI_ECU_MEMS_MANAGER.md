@@ -14,9 +14,11 @@
 
 - Dépôt : `mini56/ECU-Mems-Manager-Session`.
 - Branche active : **`MEMSX64`**.
-- HEAD x64 courant : **`39543d694507d4c01c16d54cf2f6b01f3043fd6f`**.
-- Dernier run entièrement validé : **#94 = v1.0.94 — SUCCESS**, run `33068860732`, commit `39543d69`.
-- Artefact #94 : ID **`9645083399`**, nom **`ECU-MEMS-Manager-x64-BUILD-94-v1.0.94`**, taille **386 779 885 octets**, SHA-256 **`11503728fc75dbbff8104d68f6876cdca82cc8f41e234c939e65b7913fe698db`**.
+- HEAD x64 courant : **`f2e97b3e3a432785e159d30bbeca7b7bef2fdcb4`**.
+- Dernier run entièrement validé : **#95 = v1.0.95 — SUCCESS**, run `33076089248`, commit `f2e97b3e`.
+- Artefact #95 : ID **`9650580667`**, nom **`ECU-MEMS-Manager-x64-BUILD-95-v1.0.95`**, taille **386 782 286 octets**, SHA-256 **`71778a16b9d673b1b76da8637d36fada4eb844846661ed4b04543ea6c253a34c`**.
+- #95 intègre le lot RAVE 1720 Classic SPi / AKM7169 sans changement de code : génération base expert r20, IA native, IA packagée Qwen, package complet et smoke launch tous SUCCESS.
+- Run **#94 = v1.0.94 — SUCCESS**, run `33068860732`, commit `39543d69` : fonction schémas IA MEMS stabilisée et validée sur PC réel.
 - Run **#93 = v1.0.93 — FAILURE**, run `33066459991`, commit `5ad520dc` : échec de lancement prématuré du nouveau self-test schéma Qt en `POST_BUILD`; incident corrigé et validé par #94.
 - Run **#92 = v1.0.30 — SUCCESS**, run `33058810115`, commit `16b99c3f` : LocalAiClient natif + packagé validés.
 - Run **#91 — FAILURE**, run `33047008070`, commit `897b51c8` : ancien incident de réponse générative rejetée, clos par #92.
@@ -240,6 +242,102 @@ Audit effectué sur le HEAD `MEMSX64` `16b99c3f`, après relecture du présent r
 - Diff final #94 `39543d69` → candidat : **exactement 3 fichiers** : ajout du qz64, ajout de `database/reference/audits/rave_1720_audit.md`, mise à jour de `database/reference/manifest.json`. Aucun code, moteur IA, protocole, ECU, UI ou 32 bits modifié.
 - Les anciens candidats RCL0194 SPi Japon ne sont pas supprimés ; ils deviennent un lot Japon séparé ultérieur.
 
+## BUILD #95 — VALIDATION DU LOT RAVE 1720 CLASSIC SPi
+
+- `MEMSX64` avancée sans force sur **`f2e97b3e3a432785e159d30bbeca7b7bef2fdcb4`**.
+- GitHub Actions : **#95 / v1.0.95 — SUCCESS**, run **`33076089248`**.
+- Le diff #94 → #95 contient uniquement les 3 fichiers RAVE/base du lot 1720 ; **aucun fichier UI, responsive, IA, protocole ou code applicatif** n’a changé.
+- Génération et validation de la base expert r20 : **SUCCESS**.
+- Self-tests déterministes : **SUCCESS**.
+- Production LocalAiClient native ONNX : **SUCCESS**.
+- Production LocalAiClient packagée Qwen : **SUCCESS**.
+- Package complet, smoke launch et upload artefact : **SUCCESS**.
+- Artefact : ID **`9650580667`**, nom **`ECU-MEMS-Manager-x64-BUILD-95-v1.0.95`**, taille **386 782 286 octets**, SHA-256 **`71778a16b9d673b1b76da8637d36fada4eb844846661ed4b04543ea6c253a34c`**.
+- Les comptages validés avant push sont **93 faits RAVE / 105 faits experts**, `PRAGMA integrity_check = ok`, `user_version = 20`. Ne pas présenter ces deux nombres comme provenant textuellement du log CI tant que les lignes correspondantes du journal ne sont pas extraites.
+
+### OBSERVATIONS UTILISATEUR SUR IA MEMS #95
+
+- L’enrichissement SPi classique produit un effet visible : à la question générale sur la Mini SPi, l’IA remonte désormais les nouveaux faits AKM7169 (pression carburant, portée VIN, TPS) au lieu de partir immédiatement vers la SPi Japon.
+- Cas de pertinence à corriger ultérieurement : **`C'est quoi le CKP ?`** peut produire une définition erronée malgré des faits CKP corrects présents dans la base ; la sélection/grounding doit être auditée avant toute correction.
+- **Couleurs de fils de sonde de température** : réponse parfois méta ou incomplète au lieu de restituer directement les couleurs/broches compatibles.
+- **`FICHE MEMS 1.3 XML` / `MEMS 1.3 XML`** : réponses hors sujet et observation d’une phrase ressemblant à une consigne interne dans la sortie utilisateur ; à auditer précisément avant correction, sans supposer la cause.
+- L’utilisateur a observé un déplacement/chamboulement visuel des onglets/responsive sur #95. Contrôle du diff : #94 → #95 ne touche aucun fichier UI ; **ne pas qualifier cela de régression introduite par #95 sans preuve**. Point UI différé.
+- Priorité active demandée par l’utilisateur : **base de données + RAVE + amélioration de la pertinence IA**. UI et qualité graphique des SVG seront traitées plus tard.
+
+## AUDIT STRUCTUREL — LIMITATION DU CLASSEMENT ACTUEL DES FAITS
+
+- Le nombre de tables n’est pas le problème : la base possède déjà de nombreuses tables spécialisées et une table de compatibilité `ecu_fitment` avec des axes séparés tels que injection, modèle, variante, transmission, moteur, marché, années et VIN.
+- La limitation critique est au niveau des faits RAVE : une partie de la portée est aujourd’hui compactée dans le texte libre `variant` (ex. `SPi_Japan_97MY_from_VIN_...`). Cela est lisible par un humain mais insuffisamment structuré pour un filtrage déterministe.
+- Les faits recopiés vers `mems_expert_fact_external` portent principalement `family`, `firmware_code`, `topic`, `statement`, `verification_level`, etc. Le `ExpertContext` utilisé par le moteur expert ne contient actuellement que **famille MEMS + firmware**.
+- Conséquence : l’IA peut disposer d’un fait correct mais recevoir en même temps des faits d’une autre injection, année ou marché parce que ces dimensions ne sont pas encore des critères de compatibilité de premier niveau.
+- **Décision utilisateur et projet : corriger le socle maintenant avant d’ajouter massivement AKM6799**, afin de ne pas devoir reclasser des centaines de faits supplémentaires plus tard.
+
+## ÉTAPE STRUCTURANTE AUTORISÉE — SOCLE RAVE COMPLET ET ÉVOLUTIF
+
+### Objectif
+Construire un socle de connaissances durable capable d’intégrer **tout ce qui est utile dans RAVE**, pas uniquement l’ECU : électricité, diagnostic, mécanique, couples de serrage, procédures de dépose/repose, réglages, tolérances, capacités, lubrifiants, outillage, précautions, contrôles et spécifications.
+
+### Principes obligatoires
+
+1. **Aucune destruction de l’existant.** Les tables/faits actuels restent compatibles ; migration additive et contrôlée uniquement. Ne pas casser les générateurs r20, les faits RAVE existants ni les fonctions IA déjà validées.
+2. **Séparer le fait de sa portée.** Le contenu technique ne doit plus dépendre d’une chaîne `variant` qui mélange injection, année, marché et VIN.
+3. **Portée véhicule/moteur commune à tous les domaines.** Elle doit pouvoir représenter, lorsque la source les précise : marque, modèle, moteur, cylindrée, variante moteur, alimentation/injection (carburateur/SPi/MPi/etc.), famille ECU/MEMS si pertinente, année début/fin, VIN début/fin, marché, transmission, niveau de compression/variante, catalyseur, climatisation et autres équipements discriminants.
+4. **Valeur non précisée ≠ valeur universelle.** Si Rover ne donne pas un marché, une transmission ou une année, conserver explicitement `non précisé` / NULL selon le schéma ; ne jamais transformer l’absence d’information en « toutes variantes ».
+5. **Une même connaissance peut viser plusieurs portées.** Prévoir une relation plusieurs-à-plusieurs plutôt que recopier artificiellement le même fait.
+6. **Traçabilité constructeur permanente.** Toute donnée doit pouvoir conserver source, document/publication, section/page, niveau de vérification, notes et éventuellement image/schéma associé.
+7. **Extensible sans refaire le schéma à chaque nouveau manuel.** Le noyau doit accepter de nouveaux types de connaissance et de nouvelles portées sans multiplier des colonnes spécifiques à chaque cas particulier.
+
+### Domaines de connaissance à supporter explicitement
+
+- ECU / protocole / commandes / mémoire / firmware.
+- Câblage / connecteurs / broches / couleurs de fils / masses / alimentations.
+- Capteurs / actionneurs / valeurs de contrôle / formes de signal.
+- Diagnostic / DTC / symptômes / contrôles / causes / solutions.
+- Spécifications moteur et mécanique.
+- **Couples de serrage** et séquences de serrage.
+- Réglages, jeux, tolérances et limites d’usure.
+- Capacités, fluides, lubrifiants et consommables.
+- **Procédures de dépose, repose, démontage, remontage et réglage.**
+- Étapes ordonnées d’une procédure.
+- Outillage spécial et outils requis.
+- Avertissements, précautions et conditions préalables.
+- Contrôles après remontage / vérifications finales.
+- Illustrations, schémas et références de figures lorsque disponibles.
+
+### Structure mécanique minimale à prévoir
+
+Pour une question telle que **« quel couple de serrage pour la culasse ? »**, la base doit pouvoir distinguer au minimum : composant, fixation/élément concerné, opération, valeur, unité, étape de serrage, angle complémentaire éventuel, ordre/séquence, condition d’application et portée véhicule/moteur. Une valeur multi-étapes ne doit pas être écrasée en une seule phrase ou un seul nombre.
+
+Pour **« quelle procédure pour déposer la culasse ? »**, prévoir une entité procédure reliée à des **étapes ordonnées**, avec possibilité d’associer à chaque étape un avertissement, un outil, une valeur/couple, une figure ou une condition. Dépose et repose doivent pouvoir être distinctes et reliées.
+
+### Routage IA visé
+
+Le fonctionnement cible doit devenir :
+**question utilisateur → type de connaissance demandé → portée véhicule/moteur → élimination déterministe des incompatibilités → classement par source/niveau de preuve/pertinence → grounding → Qwen.**
+
+Exemples :
+- question Mini SPi 1995 → ne pas fournir automatiquement des faits MPi ou Japon-only incompatibles ;
+- question sur couple de culasse → chercher d’abord une spécification mécanique compatible, pas des faits ECU ;
+- question de dépose culasse → fournir la procédure Rover ordonnée compatible ;
+- si aucune valeur/procédure constructeur compatible n’existe, l’IA doit le dire clairement **et ne pas inventer** un couple ou une procédure.
+
+### Migration des données existantes
+
+- Ne pas reclasser aveuglément les 93 faits RAVE.
+- Extraire les dimensions de `variant` uniquement lorsqu’elles sont déjà prouvées par la source/audit ; sinon laisser le champ correspondant non précisé.
+- Conserver `variant` pendant la transition pour rétrocompatibilité et audit.
+- Réutiliser les données structurées déjà présentes (`ecu_fitment`, véhicules, ECU, sources, etc.) lorsqu’elles sont fiables, au lieu de créer des doublons.
+- Ajouter des tests d’intégrité et de compatibilité avant tout passage sur `MEMSX64`.
+- Toute évolution du `user_version` SQLite doit être volontaire, documentée et testée ; ne pas augmenter le numéro uniquement pour marquer une étape.
+
+### Contraintes pendant cette étape
+
+- Travail sur **branche temporaire créée depuis #95** ; aucun changement direct `MEMSX64`.
+- **Pas de #96** avant audit du schéma, prototype/migration contrôlée, self-tests et comparaison complète du diff.
+- Ne pas toucher au protocole ECU, protections MEMS1.9, acquisition, calculs RAM, UI, responsive, schémas SVG, Qwen/ONNX ou paramètres de génération pendant la construction du socle.
+- La recherche AKM6799 peut continuer en **lecture seule**, mais ne pas injecter massivement de nouveaux faits dans l’ancien classement pendant cette étape.
+- Les anciens candidats Japon RCL0194 restent séparés et en attente.
+
 ## PROCHAINE ACTION EXACTE
 
-**Fast-forward sans force de `MEMSX64` depuis `39543d69` vers le candidat contrôlé `f2e97b3e3a432785e159d30bbeca7b7bef2fdcb4`. Le workflow doit créer #95 = v1.0.95. Valider le build complet et l’artefact, notamment la génération de la base expert qui doit intégrer le nouveau batch sans régression. Après #95 vert, poursuivre la recherche de couverture Mini SPi classique, en priorité AKM6799 1991–1996 ; le lot Japon RCL0194 reste séparé et reporté.**
+**Depuis le HEAD #95 `f2e97b3e`, créer une branche temporaire dédiée au socle RAVE. Auditer précisément le générateur de base r20, les schémas `mems_rave_fact`, `mems_expert_fact_external`, `ecu_fitment`, les tables mécaniques/procédures existantes et les lecteurs IA. Définir ensuite la plus petite migration additive permettant la portée structurée + mécanique/couples/procédures, sans supprimer ni casser les champs actuels. Documenter le schéma retenu dans le présent rapport AVANT de modifier la base. AKM6799 reste en recherche lecture seule jusqu’à validation de ce socle.**
