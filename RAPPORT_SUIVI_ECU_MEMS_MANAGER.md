@@ -122,6 +122,18 @@ Correction ciblée retenue : **conserver `do_sample=true`, les températures, `t
 - About, aide, métadonnées et toute autre occurrence du numéro de version doivent utiliser la même valeur ; éviter plusieurs numéros incohérents dans le même package.
 - Cette règle remplace pour les futurs pushes la conservation en v1.0.30. Elle ne modifie pas rétroactivement #92.
 
+## ORDRE DE TRAVAIL VALIDÉ APRÈS #92
+
+L’ordre demandé est désormais strictement :
+1. **Consigner #92 vert** et conserver la validation LocalAiClient native + packagée — fait.
+2. **Auditer `IaMemsTab` / `IaMemsService`** avant modification pour comprendre l’intégration actuelle et éviter toute régression.
+3. **Ajouter la fonction de proposition de schéma local** : lorsqu’un schéma réellement présent correspond à la demande, proposer explicitement un bouton « Ouvrir le schéma … », sans ouverture automatique et sans dépendre du LLM.
+4. **Respecter toutes les contraintes de séparation et de sécurité** : ne pas modifier Qwen, ONNX, `LocalAiClient`, le protocole, l’ECU, RAVE ni le 32 bits pendant cette fonction ; préparer et tester proprement avant intégration.
+
+**L’ancien point 5 “rester BUILD #30 / v1.0.30” est supprimé pour les futurs pushes.** Il est remplacé par la règle active de synchronisation : **#93 = v1.0.93**, puis #94 = v1.0.94, etc.
+
+**Après validation complète des points 1 à 4 et du build correspondant, revenir à RAVE.** Le lot en attente est **RAVE 1720**, à reprendre séparément après stabilisation de la fonction schémas.
+
 ## PROCHAINE ACTION EXACTE
 
-**#92 étant vert et l'incident #91 étant clos, reprendre l'audit `IaMemsTab` / `IaMemsService` pour la fonction de schémas, sans toucher à Qwen/ONNX/LocalAiClient, au protocole, à l'ECU, à RAVE ni au 32 bits. Avant le prochain push sur `MEMSX64`, appliquer obligatoirement la reprise de version : le prochain run #93 doit être compilé et affiché comme v1.0.93, puis conserver cette synchronisation pour les runs suivants.**
+**Point 2 : auditer `IaMemsTab` / `IaMemsService` pour la fonction de schémas, sans modifier le code avant d’avoir compris le mécanisme existant. Les points 3 et 4 viennent ensuite. Au prochain push sur `MEMSX64`, appliquer obligatoirement la reprise de version : #93 = v1.0.93. Après validation des points 1 à 4, reprendre RAVE 1720.**
