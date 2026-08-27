@@ -8,17 +8,18 @@
 >
 > **NOMMAGE UTILISATEUR** : `ECU MEMS Manager x64 #NN — Commit xxxxxxx`. `#NN` = GitHub Actions, pas le BUILD logiciel.
 
-## ÉTAT COURANT — 26 AOÛT 2026
+## ÉTAT COURANT — 27 AOÛT 2026
 
 - Dépôt : `mini56/ECU-Mems-Manager-Session`.
 - Branche x64 active : **`MEMSX64`**.
 - HEAD x64 courant : **`50af0a0cd4614302794e464b9e1b4c675d1adff4`**.
 - BUILD logiciel actif : **#30 / v1.0.30**.
 - GitHub Actions courant validé : **#86 — SUCCESS**.
+- L'utilisateur teste **#86** en usage réel pendant la reprise RAVE.
 - Aucun BUILD #31 sans demande explicite.
 - 32 bits : `lab-expert-engine` — **NE PAS TOUCHER**.
 - Rollback x64 : `MEMSX64-BUILD26-BASE` — **NE PAS TOUCHER**.
-- Aucun changement protocole ECU pendant la stabilisation IA.
+- Aucun changement protocole ECU pendant l'enrichissement documentaire.
 - UI dark/responsive officielle à préserver.
 
 ## DERNIER ÉTAT RÉEL UTILISATEUR
@@ -72,7 +73,7 @@ Validations #86 :
 - manifeste/hashes : VERT ;
 - artefact : VERT.
 
-**#86 est le candidat qualité à tester ensuite en usage réel. #81 reste la dernière preuve utilisateur de fonctionnement ; #86 ajoute les corrections de réponses sans changement de moteur, protocole, UI ou 32 bits.**
+**#86 est le candidat qualité actuellement testé par l'utilisateur. #81 reste la dernière preuve utilisateur déjà confirmée ; #86 ajoute les corrections de réponses sans changement de moteur, protocole, UI ou 32 bits.**
 
 ## LOT QUALITÉ #81 → #86
 
@@ -115,6 +116,24 @@ Correction propre dans le routeur `IaResponseLogic` :
 - elle poursuit le chemin réponse contrôlée → base r20 classée → Qwen si nécessaire ;
 - une demande explicite de **valeur / mesure / valeur actuelle** reste bien classée comme mesure ECU ;
 - tests ajoutés : lambda définition, TPS rôle, dwell définition = pas mesure ; valeur lambda et mesure TPS actuelle = mesure.
+
+## ÉTAPE EN COURS — REPRISE RAVE / ENRICHISSEMENT BASE
+
+Autorisation utilisateur du 27 août 2026 : **« OK je vais tester #86 tu peux continuer sur RAVE et enrichir la base de donnée »**.
+
+Objectif exact de cette étape, en parallèle du test utilisateur #86 :
+1. reprendre l'audit Rover RAVE au point où les lots **1660** et **1670** se sont arrêtés ;
+2. relire leur contenu et leur chaîne de génération avant de créer un nouveau lot ;
+3. rechercher uniquement des faits RAVE **nouveaux, utiles et vérifiables** pour Mini/Rover MEMS ;
+4. conserver pour chaque fait la source, le document, la famille/cas véhicule, la page ou repère disponible et le niveau de preuve ;
+5. séparer strictement **SPi / MPi / MEMS 1.3 / MEMS 1.6 / MEMS 2J** ; ne jamais convertir automatiquement Mini MPi en MEMS 1.9 ;
+6. conserver les conflits documentaires au lieu de les arbitrer sans preuve ;
+7. ne pas promouvoir le code 23 / antidémarrage au-delà de `preuve_insuffisante` ;
+8. ne pas inventer de brochage ancien SPi sans schéma usine lisible ;
+9. intégrer le prochain lot selon **le format et la chaîne existants**, puis régénérer/valider la base experte r20 sans changement de schéma ou de révision si l'architecture actuelle le permet ;
+10. aucun changement IA, protocole ECU, UI, 32 bits ou numéro de BUILD pendant cette étape.
+
+**Avant toute création du prochain lot, confirmer par l'historique Git la convention et le procédé utilisés pour `research_enrichment_1660.qz64` et `research_enrichment_1670.qz64`. Le numéro `1680` n'est qu'une hypothèse tant que cette convention n'est pas confirmée.**
 
 ## ARCHITECTURE IA COURANTE — À CONSERVER
 
@@ -159,9 +178,9 @@ Définitions contrôlées : MAP = Manifold Absolute Pressure ; injecteur = élec
 
 Aperçu : RPM, LDR, MAP, TPS, batterie, correction carburant, lambda, temps injecteur, IAT, IAC, avance, état système. Repères : lambda 0–200 mV pauvre, 700–900 mV riche ; MAP moteur arrêté ~100 kPa, ralenti ~25–40 kPa.
 
-RAVE : ralenti SPi 1993–96 850 ±25 ; SPi 1997+ et MPi 900 ±50 ; pression SPi ~1 bar, MPi 3,0 ±0,2 bar ; fan MPi97 105/98 °C ; SPi Japon 98/93 ; pas de réglage ralenti par butée ; conflits résistance bobine non arbitrés ; lots 1660/1670 r20 ; MEMS1.3 SPi / 1.6 SPi / 2J MPi distingués ; DTC supportés 1 ECT,2 IAT,10 pompe,16 TPS,20 lambda heater,21 synchro,22 fan1,24 fan2 ; code23 preuve insuffisante ; pins RCL0194 conservés.
+RAVE : ralenti SPi 1993–96 850 ±25 ; SPi 1997+ et MPi 900 ±50 ; pression SPi ~1 bar, MPi 3,0 ±0,2 bar ; fan MPi97 105/98 °C ; SPi Japon 98/93 ; pas de réglage ralenti par butée ; conflits résistance bobine non arbitrés ; lots 1660/1670 r20 ; MEMS1.3 SPi / 1.6 SPi / 2J MPi distingués ; DTC supportés 1 ECT,2 IAT,10 pompe,16 TPS,20 lambda heater,21 synchro,22 fan1,24 fan2 ; code23 preuve insuffisante ; pins RCL0194 MPi97 : MAP `C159-8`, retour capteurs `C159-13`, IAT `C159-14`, ECT `C159-36`, relais pompe `C159-30`, antidémarrage `C159-17`.
 
-## SÉCURITÉ PROTOCOLE — NE PAS MODIFIER PENDANT BUILD #30 IA
+## SÉCURITÉ PROTOCOLE — NE PAS MODIFIER PENDANT BUILD #30
 
 `MemsEcuFamily`/`MemsDiagnosticMode` existants ; D0/D1/D2 normal ; D1 bloqué Mode4 ; D3/F3/F4/F5 bloqués générique ; mutations Rosco13_16 prouvé+Normal seulement ; Unknown fail-closed ; MEMS1.9 mutations bloquées ; F7/EF bloqués ; transaction RAM bloque commandes ; conserver `onProtocolCommandRequested(quint8)` ; ralenti chaud `raw-32768-correction` ; dwell ~1,9–3,1 ms vers14V ; aucune mutation ECU BUILD30.
 
@@ -183,4 +202,4 @@ Après validation qualité en usage réel : CSV/TXT local read-only + nouveau co
 
 ## PROCHAINE ACTION EXACTE
 
-**Reprendre sur `MEMSX64`, BUILD logiciel #30/v1.0.30, HEAD `50af0a0cd4614302794e464b9e1b4c675d1adff4`, GitHub Actions #86 VERT COMPLET, artifact `ECU-MEMS-Manager-x64-BUILD-30-v1.0.30` ID `9620325660`, digest `sha256:1e398c4832ed2fc2b162d8eac59b5f2f43c368de2d7e041deae6606c2fd70962`. Prochaine étape : test utilisateur ciblé de la qualité #86, sans ECU obligatoire : bobine, date avec faute, lambda/TPS/dwell définition, une question demandant une valeur actuelle, une question technique base r20 et une question réellement générative. Relever uniquement les réponses encore mauvaises puis corriger leur cause. Aucun BUILD #31, changement protocole, 32 bits, UI ou moteur ONNX.**
+**Pendant que l'utilisateur teste #86, reprendre RAVE sans modifier IA/protocole/UI : inspecter l'historique et le contenu des lots `1660`/`1670`, confirmer leur format et leur procédé de génération, identifier le prochain ensemble de faits Rover RAVE vérifiés non encore présents, puis créer/intégrer le lot suivant dans la base et valider la r20. Conserver strictement les séparations SPi/MPi/familles et les niveaux de preuve. Aucun BUILD #31.**
