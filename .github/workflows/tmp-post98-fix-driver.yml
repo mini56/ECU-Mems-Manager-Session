@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   patch:
-    if: github.event.head_commit.message == 'TEMP post98 fix driver'
+    if: github.event.head_commit.message == 'TEMP fix post98 driver matching'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,22 +20,29 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
+          import re
 
-          def rep(path, old, new):
+          def replace_once(path, old, new):
               p = Path(path)
               s = p.read_text(encoding='utf-8')
               if old not in s:
-                  raise SystemExit('TARGET MISSING ' + path + ' :: ' + old[:100].replace('\n', ' '))
+                  raise SystemExit('TARGET MISSING ' + path + ' :: ' + old[:120].replace('\n',' '))
               p.write_text(s.replace(old, new, 1), encoding='utf-8')
 
-          rep('expert/IaMemsConversationRouting.h',
-              '#include <QStringList>\n#include <QRegularExpression>\n',
-              '#include <QStringList>\n#include <QRegularExpression>\n#include <QSet>\n')
+          def regex_once(path, pattern, repl):
+              p = Path(path)
+              s = p.read_text(encoding='utf-8')
+              out, count = re.subn(pattern, repl, s, count=1, flags=re.S)
+              if count != 1:
+                  raise SystemExit('REGEX TARGET count=' + str(count) + ' ' + path + ' :: ' + pattern[:120])
+              p.write_text(out, encoding='utf-8')
 
-          marker = '''inline bool needsInductionClarification(const QString &question)
-          {
-          '''
-          helpers = '''inline bool explicitVariantLabelsCompatible(const QString &question, const QString &factScopeText)
+          # Shared, directly testable routing helpers.
+          replace_once('expert/IaMemsConversationRouting.h',
+                       '#include <QRegularExpression>\n',
+                       '#include <QRegularExpression>\n#include <QSet>\n')
+          marker = 'inline bool needsInductionClarification(const QString &question)\n{\n'
+          helpers = r'''inline bool explicitVariantLabelsCompatible(const QString &question, const QString &factScopeText)
           {
               const QString requestedInduction = explicitInduction(question);
               const QString fact = normalize(factScopeText);
@@ -121,171 +128,57 @@ jobs:
               return normalize(statement);
           }
 
-          ''' + marker
-          rep('expert/IaMemsConversationRouting.h', marker, helpers)
-
-          rep('expert/IaMemsService.cpp', '''bool hasWireColorEvidence(const QString &text)
-          {
-              return text.contains(QStringLiteral("wire_color"))
-                  || text.contains(QStringLiteral("wire color"))
-                  || text.contains(QStringLiteral("wire colour"))
-                  || text.contains(QStringLiteral("couleur de fil"))
-                  || text.contains(QStringLiteral("couleur du fil"))
-                  || text.contains(QStringLiteral("couleur fil"))
-                  || text.contains(QStringLiteral("code couleur"))
-                  || containsWord(text, QStringLiteral("fil"));
-          }
-          ''', '''bool hasWireColorEvidence(const QString &text)
-          {
-              return IaMemsConversationRouting::hasDirectWireColourEvidence(text);
-          }
-          ''')
-
-          rep('expert/IaMemsService.cpp', '''bool factMatchesScopeRequest(const ExpertFact &fact, const KnowledgeScopeRequest &request)
-          {
-              const QString structuredScope = normalized(fact.notes);
-              const QString explicitScope = normalized(QStringLiteral("%1 %2 %3 %4 %5")
-                  .arg(fact.factKey, fact.topic, fact.statement, fact.notes, fact.family));
-          ''', '''bool factMatchesScopeRequest(const ExpertFact &fact,
-                                       const KnowledgeScopeRequest &request,
-                                       const QString &questionText)
-          {
-              const QString structuredScope = normalized(fact.notes);
-              const QString primaryScope = normalized(QStringLiteral("%1 %2 %3 %4")
-                  .arg(fact.factKey, fact.topic, fact.statement, fact.firmware));
-              if (!IaMemsConversationRouting::explicitVariantLabelsCompatible(questionText, primaryScope))
-                  return false;
-
-              const QString explicitScope = normalized(QStringLiteral("%1 %2 %3 %4 %5")
-                  .arg(fact.factKey, fact.topic, fact.statement, fact.notes, fact.family));
-          ''')
-
-          rep('expert/IaMemsService.cpp', '''bool scopeQualifierTerm(const QString &term)
-          {
-              static const QSet<QString> qualifiers = {
-                  QStringLiteral("spi"), QStringLiteral("mpi"), QStringLiteral("monopoint"),
-                  QStringLiteral("multipoint"), QStringLiteral("japan"), QStringLiteral("japon"),
-                  QStringLiteral("europe"), QStringLiteral("europeen"), QStringLiteral("uk"),
-                  QStringLiteral("automatic"), QStringLiteral("automatique"), QStringLiteral("manual"),
-                  QStringLiteral("manuelle"), QStringLiteral("1993"), QStringLiteral("1994"),
-                  QStringLiteral("1995"), QStringLiteral("1996"), QStringLiteral("1997"),
-                  QStringLiteral("1998"), QStringLiteral("1999"), QStringLiteral("2000")
-              };
-              return qualifiers.contains(term);
-          }
-          ''', '''bool scopeQualifierTerm(const QString &term)
-          {
-              return IaMemsConversationRouting::isKnowledgeContextQualifier(term);
-          }
-          ''')
-
-          rep('expert/IaMemsService.cpp', '''    if (kind == KnowledgeQueryKind::WireColor) {
-              return term == QStringLiteral("couleur") || term == QStringLiteral("color")
-                  || term == QStringLiteral("colour") || term == QStringLiteral("wire")
-                  || term == QStringLiteral("wiring") || term == QStringLiteral("fil");
-              }
-          ''', '''    if (kind == KnowledgeQueryKind::WireColor) {
-              return term == QStringLiteral("couleur") || term == QStringLiteral("color")
-                  || term == QStringLiteral("colour") || term == QStringLiteral("wire")
-                  || term == QStringLiteral("wiring") || term == QStringLiteral("fil")
-                  || term == QStringLiteral("fils") || term == QStringLiteral("sonde")
-                  || term == QStringLiteral("capteur");
-              }
-          ''')
-
-          rep('expert/IaMemsService.cpp', '''    const bool explicitEct = containsWord(questionText, QStringLiteral("ect"));
-              const bool explicitIat = containsWord(questionText, QStringLiteral("iat"));
-              const QStringList terms = knowledgeTerms(question);
-          ''', '''    const bool explicitEct = containsWord(questionText, QStringLiteral("ect"));
-              const bool explicitIat = containsWord(questionText, QStringLiteral("iat"));
-              const bool asksTorque = containsAny(questionText, {
-                  QStringLiteral("couple"), QStringLiteral("serrage"), QStringLiteral("torque")
-              });
-              const QStringList terms = knowledgeTerms(question);
-          ''')
-
-          rep('expert/IaMemsService.cpp', '''        if (!factMatchesScopeRequest(fact, requestedScope))
-                  continue;
-          ''', '''        if (!factMatchesScopeRequest(fact, requestedScope, questionText))
-                  continue;
-          ''')
-
-          rep('expert/IaMemsService.cpp', '''        const QString searchable = identity + QLatin1Char(' ') + body;
-
-              if (explicitEct && !knowledgeTermMatches(searchable, QStringLiteral("ect")))
-          ''', '''        const QString searchable = identity + QLatin1Char(' ') + body;
-              const QString directEvidence = normalized(QStringLiteral("%1 %2 %3")
-                                                           .arg(fact.factKey, fact.topic, fact.statement));
-
-              if (explicitEct && !knowledgeTermMatches(searchable, QStringLiteral("ect")))
-          ''')
-
-          rep('expert/IaMemsService.cpp', '''        if (queryKind == KnowledgeQueryKind::WireColor && !hasWireColorEvidence(searchable))
-                  continue;
-              if (queryKind == KnowledgeQueryKind::Pinout && !hasPinoutEvidence(searchable))
-                  continue;
-          ''', '''        if (queryKind == KnowledgeQueryKind::WireColor && !hasWireColorEvidence(directEvidence))
-                  continue;
-              if (queryKind == KnowledgeQueryKind::Pinout && !hasPinoutEvidence(searchable))
-                  continue;
-              if (asksTorque && !IaMemsConversationRouting::hasTorqueEvidence(directEvidence))
-                  continue;
-          ''')
-
-          rep('expert/IaMemsService.cpp', '''        const QString signature = normalized(candidate.fact.statement)
-                  + QLatin1Char('|') + normalized(candidate.fact.family);
-          ''', '''        const QString signature =
-                  IaMemsConversationRouting::knowledgeStatementSignature(candidate.fact.statement);
-          ''')
-
-          rep('expert/IaMemsService.cpp', '''    QStringList answers;
-              if (queryKind == KnowledgeQueryKind::WireColor)
-                  answers << QStringLiteral("Couleurs de fil vérifiées les plus pertinentes :");
-              else if (queryKind == KnowledgeQueryKind::Pinout)
-          ''', '''    QStringList answers;
-              bool relayOnlyLambdaWiring = queryKind == KnowledgeQueryKind::WireColor
-                  && (questionText.contains(QStringLiteral("lambda"))
-                      || questionText.contains(QStringLiteral("oxygen")));
-              if (relayOnlyLambdaWiring) {
-                  const int checked = qMin(4, ranked.size());
-                  for (int i = 0; i < checked; ++i) {
-                      if (!normalized(ranked.at(i).fact.statement).contains(QStringLiteral("relais"))) {
-                          relayOnlyLambdaWiring = false;
-                          break;
-                      }
-                  }
-              }
-              if (relayOnlyLambdaWiring)
-                  answers << QStringLiteral("La base ne donne pas directement les couleurs des fils de la sonde lambda pour ce contexte. Fait de câblage vérifié le plus proche :");
-              else if (queryKind == KnowledgeQueryKind::WireColor)
-                  answers << QStringLiteral("Couleurs de fil vérifiées les plus pertinentes :");
-              else if (queryKind == KnowledgeQueryKind::Pinout)
-          ''')
-
-          rep('database/MemsReferenceSheetRenderer.h', '"td{border-bottom:1px solid #26323b;padding:5px;vertical-align:top}.wire{font-size:14pt;line-height:10px;margin-right:2px}</style>");', '"td{border-bottom:1px solid #26323b;padding:5px;vertical-align:top}.wirebox{display:inline-block;background:#555d64;border:1px solid #7a838b;padding:1px 2px;margin-right:4px;line-height:10px}.wire{font-size:14pt;line-height:10px;margin-right:1px}</style>");')
-
-          rep('database/MemsReferenceSheetRenderer.h', '''    QString html;
-              for (const QString &fill : content.fills) {
-                  html += QStringLiteral("<span class='wire' style='color:%1'>&#9632;</span>")
-                              .arg(fill.toHtmlEscaped());
-              }
-              QString text = content.text.simplified().toHtmlEscaped();
-          ''', '''    QString html;
-              if (!content.fills.isEmpty())
-                  html += QStringLiteral("<span class='wirebox'>");
-              for (const QString &fill : content.fills) {
-                  html += QStringLiteral("<span class='wire' style='color:%1'>&#9632;</span>")
-                              .arg(fill.toHtmlEscaped());
-              }
-              if (!content.fills.isEmpty())
-                  html += QStringLiteral("</span>");
-              QString text = content.text.simplified().toHtmlEscaped();
-          ''')
-
-          test_marker = '''    ok &= require(IaMemsConversationRouting::inductionEvidenceProbes(
-                                QStringLiteral("Broche MAP Mini"), false, QString()).isEmpty(),
           '''
-          tests = '''    ok &= require(!IaMemsConversationRouting::explicitVariantLabelsCompatible(
+          replace_once('expert/IaMemsConversationRouting.h', marker, helpers + marker)
+
+          # Service: reject incompatible explicit primary scope before legacy notes can dilute it.
+          regex_once('expert/IaMemsService.cpp',
+                     r'bool hasWireColorEvidence\(const QString &text\)\n\{.*?\n\}',
+                     'bool hasWireColorEvidence(const QString &text)\n{\n    return IaMemsConversationRouting::hasDirectWireColourEvidence(text);\n}')
+          replace_once('expert/IaMemsService.cpp',
+                       'bool factMatchesScopeRequest(const ExpertFact &fact, const KnowledgeScopeRequest &request)\n{\n    const QString structuredScope = normalized(fact.notes);\n    const QString explicitScope = normalized(QStringLiteral("%1 %2 %3 %4 %5")\n        .arg(fact.factKey, fact.topic, fact.statement, fact.notes, fact.family));\n',
+                       'bool factMatchesScopeRequest(const ExpertFact &fact,\n                             const KnowledgeScopeRequest &request,\n                             const QString &questionText)\n{\n    const QString structuredScope = normalized(fact.notes);\n    const QString primaryScope = normalized(QStringLiteral("%1 %2 %3 %4")\n        .arg(fact.factKey, fact.topic, fact.statement, fact.firmware));\n    if (!IaMemsConversationRouting::explicitVariantLabelsCompatible(questionText, primaryScope))\n        return false;\n\n    const QString explicitScope = normalized(QStringLiteral("%1 %2 %3 %4 %5")\n        .arg(fact.factKey, fact.topic, fact.statement, fact.notes, fact.family));\n')
+          regex_once('expert/IaMemsService.cpp',
+                     r'bool scopeQualifierTerm\(const QString &term\)\n\{.*?\n\}',
+                     'bool scopeQualifierTerm(const QString &term)\n{\n    return IaMemsConversationRouting::isKnowledgeContextQualifier(term);\n}')
+          regex_once('expert/IaMemsService.cpp',
+                     r'if \(kind == KnowledgeQueryKind::WireColor\) \{\n\s*return term == QStringLiteral\("couleur"\).*?;\n\s*\}',
+                     'if (kind == KnowledgeQueryKind::WireColor) {\n        return term == QStringLiteral("couleur") || term == QStringLiteral("color")\n            || term == QStringLiteral("colour") || term == QStringLiteral("wire")\n            || term == QStringLiteral("wiring") || term == QStringLiteral("fil")\n            || term == QStringLiteral("fils") || term == QStringLiteral("sonde")\n            || term == QStringLiteral("capteur");\n    }')
+          replace_once('expert/IaMemsService.cpp',
+                       '    const bool explicitEct = containsWord(questionText, QStringLiteral("ect"));\n    const bool explicitIat = containsWord(questionText, QStringLiteral("iat"));\n    const QStringList terms = knowledgeTerms(question);\n',
+                       '    const bool explicitEct = containsWord(questionText, QStringLiteral("ect"));\n    const bool explicitIat = containsWord(questionText, QStringLiteral("iat"));\n    const bool asksTorque = containsAny(questionText, {\n        QStringLiteral("couple"), QStringLiteral("serrage"), QStringLiteral("torque")\n    });\n    const QStringList terms = knowledgeTerms(question);\n')
+          replace_once('expert/IaMemsService.cpp',
+                       '        if (!factMatchesScopeRequest(fact, requestedScope))\n            continue;\n',
+                       '        if (!factMatchesScopeRequest(fact, requestedScope, questionText))\n            continue;\n')
+          replace_once('expert/IaMemsService.cpp',
+                       "        const QString searchable = identity + QLatin1Char(' ') + body;\n\n        if (explicitEct && !knowledgeTermMatches(searchable, QStringLiteral(\"ect\")))\n",
+                       "        const QString searchable = identity + QLatin1Char(' ') + body;\n        const QString directEvidence = normalized(QStringLiteral(\"%1 %2 %3\")\n                                                   .arg(fact.factKey, fact.topic, fact.statement));\n\n        if (explicitEct && !knowledgeTermMatches(searchable, QStringLiteral(\"ect\")))\n")
+          replace_once('expert/IaMemsService.cpp',
+                       '        if (queryKind == KnowledgeQueryKind::WireColor && !hasWireColorEvidence(searchable))\n            continue;\n        if (queryKind == KnowledgeQueryKind::Pinout && !hasPinoutEvidence(searchable))\n            continue;\n',
+                       '        if (queryKind == KnowledgeQueryKind::WireColor && !hasWireColorEvidence(directEvidence))\n            continue;\n        if (queryKind == KnowledgeQueryKind::Pinout && !hasPinoutEvidence(searchable))\n            continue;\n        if (asksTorque && !IaMemsConversationRouting::hasTorqueEvidence(directEvidence))\n            continue;\n')
+          replace_once('expert/IaMemsService.cpp',
+                       "        const QString signature = normalized(candidate.fact.statement)\n            + QLatin1Char('|') + normalized(candidate.fact.family);\n",
+                       '        const QString signature =\n            IaMemsConversationRouting::knowledgeStatementSignature(candidate.fact.statement);\n')
+
+          # Make the lambda relay-only limitation explicit even if only one fact survives.
+          replace_once('expert/IaMemsService.cpp',
+                       '        QString answer = fact.statement.trimmed();\n        if (!fact.verificationLevel.trimmed().isEmpty())\n',
+                       '        QString answer = fact.statement.trimmed();\n        if (queryKind == KnowledgeQueryKind::WireColor\n            && (questionText.contains(QStringLiteral("lambda")) || questionText.contains(QStringLiteral("oxygen")))\n            && normalized(fact.statement).contains(QStringLiteral("relais"))) {\n            answer.prepend(QStringLiteral("La base ne donne pas directement les couleurs des fils de la sonde lambda pour ce contexte. Fait de câblage vérifié le plus proche :\\n"));\n        }\n        if (!fact.verificationLevel.trimmed().isEmpty())\n')
+          replace_once('expert/IaMemsService.cpp',
+                       '    QStringList answers;\n    if (queryKind == KnowledgeQueryKind::WireColor)\n        answers << QStringLiteral("Couleurs de fil vérifiées les plus pertinentes :");\n    else if (queryKind == KnowledgeQueryKind::Pinout)\n',
+                       '    QStringList answers;\n    bool relayOnlyLambdaWiring = queryKind == KnowledgeQueryKind::WireColor\n        && (questionText.contains(QStringLiteral("lambda")) || questionText.contains(QStringLiteral("oxygen")));\n    if (relayOnlyLambdaWiring) {\n        const int checked = qMin(4, ranked.size());\n        for (int i = 0; i < checked; ++i) {\n            if (!normalized(ranked.at(i).fact.statement).contains(QStringLiteral("relais"))) {\n                relayOnlyLambdaWiring = false;\n                break;\n            }\n        }\n    }\n    if (relayOnlyLambdaWiring)\n        answers << QStringLiteral("La base ne donne pas directement les couleurs des fils de la sonde lambda pour ce contexte. Fait de câblage vérifié le plus proche :");\n    else if (queryKind == KnowledgeQueryKind::WireColor)\n        answers << QStringLiteral("Couleurs de fil vérifiées les plus pertinentes :");\n    else if (queryKind == KnowledgeQueryKind::Pinout)\n')
+
+          # XML: one grey enclosure around the one/two colour squares.
+          replace_once('database/MemsReferenceSheetRenderer.h',
+                       '"td{border-bottom:1px solid #26323b;padding:5px;vertical-align:top}.wire{font-size:14pt;line-height:10px;margin-right:2px}</style>");',
+                       '"td{border-bottom:1px solid #26323b;padding:5px;vertical-align:top}.wirebox{display:inline-block;background:#555d64;border:1px solid #7a838b;padding:1px 2px;margin-right:4px;line-height:10px}.wire{font-size:14pt;line-height:10px;margin-right:1px}</style>");')
+          replace_once('database/MemsReferenceSheetRenderer.h',
+                       '    QString html;\n    for (const QString &fill : content.fills) {\n        html += QStringLiteral("<span class=\'wire\' style=\'color:%1\'>&#9632;</span>")\n                    .arg(fill.toHtmlEscaped());\n    }\n    QString text = content.text.simplified().toHtmlEscaped();\n',
+                       '    QString html;\n    if (!content.fills.isEmpty())\n        html += QStringLiteral("<span class=\'wirebox\'>");\n    for (const QString &fill : content.fills) {\n        html += QStringLiteral("<span class=\'wire\' style=\'color:%1\'>&#9632;</span>")\n                    .arg(fill.toHtmlEscaped());\n    }\n    if (!content.fills.isEmpty())\n        html += QStringLiteral("</span>");\n    QString text = content.text.simplified().toHtmlEscaped();\n')
+
+          # Deterministic regression tests copied from the exact real failures.
+          test_marker = '    ok &= require(IaMemsConversationRouting::inductionEvidenceProbes(\n                      QStringLiteral("Broche MAP Mini"), false, QString()).isEmpty(),\n'
+          tests = r'''    ok &= require(!IaMemsConversationRouting::explicitVariantLabelsCompatible(
                                 QStringLiteral("Broche MAP Mini MPi 1997"),
                                 QStringLiteral("RCL0194ENG gestion moteur MEMS SPi Japon 97MY")),
                             "explicit MPi rejects primary SPi Japan fact");
@@ -310,31 +203,22 @@ jobs:
                             "generic HO2S description is not wire-colour evidence");
               ok &= require(IaMemsConversationRouting::hasDirectWireColourEvidence(
                                 QStringLiteral("Couleur de fil SPi Japon : fil BG noir/vert vers C159-36.")),
-                            "actual lambda relay wire-colour fact is wire evidence");
+                            "actual relay wire colour is direct wire evidence");
               ok &= require(IaMemsConversationRouting::hasTorqueEvidence(
                                 QStringLiteral("Serrer la sonde ECT à 15 Nm.")),
                             "ECT 15 Nm procedure is torque evidence");
               ok &= require(!IaMemsConversationRouting::hasTorqueEvidence(
                                 QStringLiteral("L'ECT est une thermistance surveillée par l'ECM.")),
                             "generic ECT description is not torque evidence");
-              ok &= require(IaMemsConversationRouting::knowledgeStatementSignature(
-                                QStringLiteral("  Même fait ECT. ")) ==
-                            IaMemsConversationRouting::knowledgeStatementSignature(
-                                QStringLiteral("Même fait ECT.")),
-                            "identical statements dedupe regardless source family");
+              ok &= require(IaMemsConversationRouting::knowledgeStatementSignature(QStringLiteral("  Même fait ECT. "))
+                                == IaMemsConversationRouting::knowledgeStatementSignature(QStringLiteral("Même fait ECT.")),
+                            "identical statements dedupe across family/source mirrors");
 
-          ''' + test_marker
-          rep('expert/IaResponseLogicTest.cpp', test_marker, tests)
-
-          rep('expert/IaResponseLogicTest.cpp', '''        ok &= require(rendered.contains(QStringLiteral("MAP")) && rendered.contains(QStringLiteral("Rose / Noir"))
-                                && rendered.contains(QStringLiteral("#f2a5bc")) && rendered.contains(QStringLiteral("#050505")),
-                                "custom broche/fonction/couleur XML keeps data and visual colours");
-          ''', '''        ok &= require(rendered.contains(QStringLiteral("MAP")) && rendered.contains(QStringLiteral("Rose / Noir"))
-                                && rendered.contains(QStringLiteral("#f2a5bc")) && rendered.contains(QStringLiteral("#050505"))
-                                && rendered.contains(QStringLiteral("class='wirebox'"))
-                                && rendered.contains(QStringLiteral("background:#555d64")),
-                                "custom XML keeps colours inside the grey wire enclosure");
-          ''')
+          '''
+          replace_once('expert/IaResponseLogicTest.cpp', test_marker, tests + test_marker)
+          replace_once('expert/IaResponseLogicTest.cpp',
+                       '        ok &= require(rendered.contains(QStringLiteral("MAP")) && rendered.contains(QStringLiteral("Rose / Noir"))\n                      && rendered.contains(QStringLiteral("#f2a5bc")) && rendered.contains(QStringLiteral("#050505")),\n                      "custom broche/fonction/couleur XML keeps data and visual colours");\n',
+                       '        ok &= require(rendered.contains(QStringLiteral("MAP")) && rendered.contains(QStringLiteral("Rose / Noir"))\n                      && rendered.contains(QStringLiteral("#f2a5bc")) && rendered.contains(QStringLiteral("#050505"))\n                      && rendered.contains(QStringLiteral("class=\'wirebox\'"))\n                      && rendered.contains(QStringLiteral("background:#555d64")),\n                      "custom XML keeps colours inside grey wire enclosure");\n')
 
           print('POST98_PATCH_APPLIED')
       - name: Commit focused fixes
