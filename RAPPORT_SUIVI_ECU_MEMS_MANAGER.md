@@ -14,9 +14,10 @@
 
 - Dépôt : `mini56/ECU-Mems-Manager-Session`.
 - Branche active : **`MEMSX64`**.
-- HEAD x64 courant : **`16b99c3f40985b7ef5439ee8834eb5e8dd8126bf`**.
-- Version logicielle actuellement validée dans l’artefact #92 : **v1.0.30**. À partir du prochain push, appliquer la règle de reprise : **#93 = v1.0.93**.
-- Dernier run entièrement validé : **#92 — SUCCESS**, run `33058810115`, commit `16b99c3f`.
+- HEAD x64 courant : **`5ad520dc5ef4b5ec6eb7096233d7a7a1d7f916f3`**.
+- Dernière version logicielle entièrement validée : **#92 = v1.0.30**, commit `16b99c3f`, run `33058810115`.
+- Run **#93 = v1.0.93 — FAILURE**, run `33066459991`, commit `5ad520dc` : échec pendant l’étape de build parce que le nouveau `ia_mems_diagram_selftest.exe`, lié à `Qt5::Core`, est lancé en `POST_BUILD` avant que le runtime Qt soit disponible dans le `PATH`. Le programme principal est bien généré et le test protocole passe avant cet échec.
+- Le prochain push sur `MEMSX64` doit produire **#94 = v1.0.94** selon la règle dynamique `github.run_number`.
 - Run **#91 — FAILURE**, run `33047008070`, commit `897b51c8` : échec uniquement à `Validate packaged production LocalAiClient with Qwen` après assemblage ; moteur ONNX et réponses déterministes prêts, puis réponse générative rejetée par le contrôle de langue active.
 - Run **#92 — SUCCESS**, run `33058810115`, commit `16b99c3f` : correction de déterminisme ONNX validée ; LocalAiClient natif + packagé passent.
 - Artefact #90 : ID `9635406628`, taille `386 768 840`, SHA-256 `125e27658bba577efdf5d22a7cb3fa26670cddadd8383e8f4e7d907d765f6d6d`.
@@ -183,6 +184,24 @@ Sur **`tmp-ia-schema-proposal` uniquement**, appliquer ces deux durcissements sa
 - La validation du package exige désormais le manifeste de référence, les six SVG, `Qt5Svg.dll` et `imageformats/qsvg.dll`, en plus des validations ONNX/expert déjà présentes.
 - Le workflow reste déclenché par push uniquement sur **`MEMSX64`** ; aucun run n'a été consommé pendant la préparation temporaire.
 
+## INCIDENT #93 — SELF-TEST SCHÉMA LANCÉ AVANT LE RUNTIME QT
+
+- `MEMSX64` a été avancée sans force sur le candidat contrôlé `5ad520dc5ef4b5ec6eb7096233d7a7a1d7f916f3`.
+- GitHub Actions a créé correctement **#93 / v1.0.93**, run `33066459991` : la nouvelle règle de version dynamique fonctionne.
+- Le log fourni montre `ecu_mems_manager.exe` généré puis `PASS protocol context safety policy`.
+- L’échec survient immédiatement lorsque le `POST_BUILD` de `ecu_mems_manager` tente d’exécuter `Release\ia_mems_diagram_selftest.exe`; MSBuild remonte **`-1073741515`** (`0xC0000135`, runtime DLL introuvable).
+- `ia_mems_diagram_selftest` est lié à `Qt5::Core`. Au moment du `POST_BUILD`, le workflow n’a pas encore ajouté `C:\Qt\5.15.2\msvc2019_64\bin` au `PATH` et n’a pas encore déployé Qt dans `Release`.
+- Le workflow possède déjà une étape séparée `Run deterministic self-tests` qui ajoute explicitement le répertoire Qt au `PATH`, puis exécute `ia_mems_diagram_selftest.exe`. Le test est donc déjà prévu au bon endroit.
+- Cause réelle : **ordre d’exécution du self-test**, pas erreur de compilation du catalogue, pas protocole, pas Qwen/ONNX, pas packaging.
+
+### ÉTAPE AUTORISÉE AVANT MODIFICATION DU CODE — CORRECTION #93
+
+1. Créer une nouvelle branche temporaire depuis `5ad520dc` ; ne pas modifier directement `MEMSX64`.
+2. Dans `CMakeLists.txt`, supprimer uniquement la commande `POST_BUILD` qui lance `ia_mems_diagram_selftest` trop tôt.
+3. Conserver intégralement la cible `ia_mems_diagram_selftest`, sa compilation, `Qt5::Core`, `add_dependencies(${PNAME} ia_mems_diagram_selftest)` et son exécution explicite dans `Run deterministic self-tests` du workflow.
+4. Ne modifier aucun fichier IA moteur, protocole, ECU, RAVE, 32 bits ou interface.
+5. Contrôler le diff complet contre `5ad520dc`. Si et seulement si le diff est cette suppression CMake ciblée, intégrer sans force sur `MEMSX64` ; le push suivant doit produire **#94 / v1.0.94**.
+
 ## PROCHAINE ACTION EXACTE
 
-**Fast-forward sans force de `MEMSX64` depuis `16b99c3f` vers le candidat contrôlé `5ad520dc5ef4b5ec6eb7096233d7a7a1d7f916f3`. Vérifier immédiatement que GitHub Actions crée le run #93 avec la version v1.0.93. Ne reprendre RAVE 1720 qu'après validation complète du build #93 et de son artefact.**
+**Préparer la correction #93 sur branche temporaire depuis `5ad520dc`, avec uniquement la suppression du lancement `POST_BUILD` prématuré de `ia_mems_diagram_selftest`. Contrôler le diff avant toute intégration `MEMSX64`. RAVE 1720 reste en attente.**
