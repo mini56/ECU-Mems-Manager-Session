@@ -4,6 +4,7 @@
 #include <QString>
 #include <QStringList>
 #include <QRegularExpression>
+#include <QSet>
 
 namespace IaMemsConversationRouting {
 
@@ -166,6 +167,92 @@ inline bool isUnknownDirective(const QString &answer)
         || text == QStringLiteral("j en sais rien")
         || text == QStringLiteral("aucune idee")
         || text == QStringLiteral("inconnu");
+}
+
+inline bool explicitVariantLabelsCompatible(const QString &question, const QString &factScopeText)
+{
+    const QString requestedInduction = explicitInduction(question);
+    const QString fact = normalize(factScopeText);
+    const bool factSpi = containsWord(fact, QStringLiteral("spi"));
+    const bool factMpi = containsWord(fact, QStringLiteral("mpi"));
+    if (requestedInduction == QStringLiteral("SPi") && factMpi && !factSpi)
+        return false;
+    if (requestedInduction == QStringLiteral("MPi") && factSpi && !factMpi)
+        return false;
+
+    const QString requested = normalize(question);
+    const bool wantsJapan = requested.contains(QStringLiteral("japan"))
+        || requested.contains(QStringLiteral("japon"));
+    const bool wantsEurope = requested.contains(QStringLiteral("europe"));
+    const bool wantsUk = containsWord(requested, QStringLiteral("uk"))
+        || requested.contains(QStringLiteral("royaume uni"))
+        || requested.contains(QStringLiteral("britannique"));
+    const bool factJapan = fact.contains(QStringLiteral("japan"))
+        || fact.contains(QStringLiteral("japon"));
+    const bool factEurope = fact.contains(QStringLiteral("europe"));
+    const bool factUk = containsWord(fact, QStringLiteral("uk"))
+        || fact.contains(QStringLiteral("royaume uni"));
+    if (wantsJapan && (factEurope || factUk) && !factJapan)
+        return false;
+    if ((wantsEurope || wantsUk) && factJapan && !factEurope && !factUk)
+        return false;
+    return true;
+}
+
+inline bool isKnowledgeContextQualifier(const QString &term)
+{
+    const QString value = normalize(term);
+    static const QSet<QString> qualifiers = {
+        QStringLiteral("spi"), QStringLiteral("mpi"), QStringLiteral("monopoint"),
+        QStringLiteral("multipoint"), QStringLiteral("japan"), QStringLiteral("japon"),
+        QStringLiteral("europe"), QStringLiteral("europeen"), QStringLiteral("uk"),
+        QStringLiteral("automatic"), QStringLiteral("automatique"), QStringLiteral("manual"),
+        QStringLiteral("manuelle"), QStringLiteral("mini"), QStringLiteral("97my"),
+        QStringLiteral("1993"), QStringLiteral("1994"), QStringLiteral("1995"),
+        QStringLiteral("1996"), QStringLiteral("1997"), QStringLiteral("1998"),
+        QStringLiteral("1999"), QStringLiteral("2000")
+    };
+    return qualifiers.contains(value);
+}
+
+inline bool hasDirectWireColourEvidence(const QString &factText)
+{
+    const QString text = normalize(factText);
+    if (containsAny(text, {
+            QStringLiteral("wire_color"), QStringLiteral("wire color"),
+            QStringLiteral("wire colour"), QStringLiteral("couleur de fil"),
+            QStringLiteral("couleur du fil"), QStringLiteral("couleur des fils"),
+            QStringLiteral("couleur fil"), QStringLiteral("code couleur")
+        }))
+        return true;
+    const bool mentionsWire = containsWord(text, QStringLiteral("fil"))
+        || containsWord(text, QStringLiteral("fils"))
+        || containsWord(text, QStringLiteral("wire"));
+    const bool mentionsColour = containsAny(text, {
+        QStringLiteral("noir"), QStringLiteral("blanc"), QStringLiteral("vert"),
+        QStringLiteral("bleu"), QStringLiteral("rouge"), QStringLiteral("jaune"),
+        QStringLiteral("rose"), QStringLiteral("violet"), QStringLiteral("gris"),
+        QStringLiteral("orange"), QStringLiteral("marron"), QStringLiteral("black"),
+        QStringLiteral("white"), QStringLiteral("green"), QStringLiteral("blue"),
+        QStringLiteral("red"), QStringLiteral("yellow"), QStringLiteral("pink"),
+        QStringLiteral("purple"), QStringLiteral("grey"), QStringLiteral("gray"),
+        QStringLiteral("brown")
+    });
+    return mentionsWire && mentionsColour;
+}
+
+inline bool hasTorqueEvidence(const QString &factText)
+{
+    const QString text = normalize(factText);
+    return text.contains(QStringLiteral(" nm"))
+        || text.contains(QStringLiteral("serrer"))
+        || text.contains(QStringLiteral("serrage"))
+        || text.contains(QStringLiteral("torque"));
+}
+
+inline QString knowledgeStatementSignature(const QString &statement)
+{
+    return normalize(statement);
 }
 
 inline bool needsInductionClarification(const QString &question)

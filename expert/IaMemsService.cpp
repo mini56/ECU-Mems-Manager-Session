@@ -94,14 +94,7 @@ KnowledgeQueryKind knowledgeQueryKind(const QString &questionText)
 
 bool hasWireColorEvidence(const QString &text)
 {
-    return text.contains(QStringLiteral("wire_color"))
-        || text.contains(QStringLiteral("wire color"))
-        || text.contains(QStringLiteral("wire colour"))
-        || text.contains(QStringLiteral("couleur de fil"))
-        || text.contains(QStringLiteral("couleur du fil"))
-        || text.contains(QStringLiteral("couleur fil"))
-        || text.contains(QStringLiteral("code couleur"))
-        || containsWord(text, QStringLiteral("fil"));
+    return IaMemsConversationRouting::hasDirectWireColourEvidence(text);
 }
 
 bool hasPinoutEvidence(const QString &text)
@@ -256,9 +249,16 @@ KnowledgeScopeRequest knowledgeScopeRequest(const QString &questionText)
     return request;
 }
 
-bool factMatchesScopeRequest(const ExpertFact &fact, const KnowledgeScopeRequest &request)
+bool factMatchesScopeRequest(const ExpertFact &fact,
+                             const KnowledgeScopeRequest &request,
+                             const QString &questionText)
 {
     const QString structuredScope = normalized(fact.notes);
+    const QString primaryScope = normalized(QStringLiteral("%1 %2 %3 %4")
+        .arg(fact.factKey, fact.topic, fact.statement, fact.firmware));
+    if (!IaMemsConversationRouting::explicitVariantLabelsCompatible(questionText, primaryScope))
+        return false;
+
     const QString explicitScope = normalized(QStringLiteral("%1 %2 %3 %4 %5")
         .arg(fact.factKey, fact.topic, fact.statement, fact.notes, fact.family));
 
@@ -329,16 +329,7 @@ bool factMatchesScopeRequest(const ExpertFact &fact, const KnowledgeScopeRequest
 
 bool scopeQualifierTerm(const QString &term)
 {
-    static const QSet<QString> qualifiers = {
-        QStringLiteral("spi"), QStringLiteral("mpi"), QStringLiteral("monopoint"),
-        QStringLiteral("multipoint"), QStringLiteral("japan"), QStringLiteral("japon"),
-        QStringLiteral("europe"), QStringLiteral("europeen"), QStringLiteral("uk"),
-        QStringLiteral("automatic"), QStringLiteral("automatique"), QStringLiteral("manual"),
-        QStringLiteral("manuelle"), QStringLiteral("1993"), QStringLiteral("1994"),
-        QStringLiteral("1995"), QStringLiteral("1996"), QStringLiteral("1997"),
-        QStringLiteral("1998"), QStringLiteral("1999"), QStringLiteral("2000")
-    };
-    return qualifiers.contains(term);
+    return IaMemsConversationRouting::isKnowledgeContextQualifier(term);
 }
 
 bool genericIntentTerm(const QString &term, KnowledgeQueryKind kind)
@@ -353,7 +344,9 @@ bool genericIntentTerm(const QString &term, KnowledgeQueryKind kind)
     if (kind == KnowledgeQueryKind::WireColor) {
         return term == QStringLiteral("couleur") || term == QStringLiteral("color")
             || term == QStringLiteral("colour") || term == QStringLiteral("wire")
-            || term == QStringLiteral("wiring") || term == QStringLiteral("fil");
+            || term == QStringLiteral("wiring") || term == QStringLiteral("fil")
+            || term == QStringLiteral("fils") || term == QStringLiteral("sonde")
+            || term == QStringLiteral("capteur");
     }
     return false;
 }
@@ -844,6 +837,9 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
     const KnowledgeQueryKind queryKind = knowledgeQueryKind(questionText);
     const bool explicitEct = containsWord(questionText, QStringLiteral("ect"));
     const bool explicitIat = containsWord(questionText, QStringLiteral("iat"));
+    const bool asksTorque = containsAny(questionText, {
+        QStringLiteral("couple"), QStringLiteral("serrage"), QStringLiteral("torque")
+    });
     const QStringList terms = knowledgeTerms(question);
     if (terms.isEmpty())
         return QString();
@@ -869,7 +865,7 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
     ranked.reserve(facts.size());
 
     for (const ExpertFact &fact : facts) {
-        if (!factMatchesScopeRequest(fact, requestedScope))
+        if (!factMatchesScopeRequest(fact, requestedScope, questionText))
             continue;
 
         const bool foundationFact = normalized(fact.notes).contains(QStringLiteral("portee"));
@@ -879,15 +875,19 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
             ? normalized(QStringLiteral("%1 %2").arg(fact.statement, fact.family))
             : normalized(QStringLiteral("%1 %2 %3").arg(fact.statement, fact.notes, fact.family));
         const QString searchable = identity + QLatin1Char(' ') + body;
+        const QString directEvidence = normalized(QStringLiteral("%1 %2 %3")
+                                                   .arg(fact.factKey, fact.topic, fact.statement));
 
         if (explicitEct && !knowledgeTermMatches(searchable, QStringLiteral("ect")))
             continue;
         if (explicitIat && !knowledgeTermMatches(searchable, QStringLiteral("iat")))
             continue;
 
-        if (queryKind == KnowledgeQueryKind::WireColor && !hasWireColorEvidence(searchable))
+        if (queryKind == KnowledgeQueryKind::WireColor && !hasWireColorEvidence(directEvidence))
             continue;
         if (queryKind == KnowledgeQueryKind::Pinout && !hasPinoutEvidence(searchable))
+            continue;
+        if (asksTorque && !IaMemsConversationRouting::hasTorqueEvidence(directEvidence))
             continue;
 
         RankedFact candidate;
@@ -956,8 +956,8 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
     uniqueRanked.reserve(ranked.size());
     QSet<QString> seenStatements;
     for (const RankedFact &candidate : ranked) {
-        const QString signature = normalized(candidate.fact.statement)
-            + QLatin1Char('|') + normalized(candidate.fact.family);
+        const QString signature =
+            IaMemsConversationRouting::knowledgeStatementSignature(candidate.fact.statement);
         if (signature.trimmed().isEmpty() || seenStatements.contains(signature))
             continue;
         seenStatements.insert(signature);
@@ -969,6 +969,11 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
     if (maximum == 1) {
         const ExpertFact &fact = ranked.constFirst().fact;
         QString answer = fact.statement.trimmed();
+        if (queryKind == KnowledgeQueryKind::WireColor
+            && (questionText.contains(QStringLiteral("lambda")) || questionText.contains(QStringLiteral("oxygen")))
+            && normalized(fact.statement).contains(QStringLiteral("relais"))) {
+            answer.prepend(QStringLiteral("La base ne donne pas directement les couleurs des fils de la sonde lambda pour ce contexte. Fait de câblage vérifié le plus proche :\n"));
+        }
         if (!fact.verificationLevel.trimmed().isEmpty())
             answer += QStringLiteral("\nNiveau de preuve : %1.").arg(verificationLabel(fact.verificationLevel));
         if (sourceDetails && !fact.sourceKey.trimmed().isEmpty())
@@ -979,7 +984,20 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
     }
 
     QStringList answers;
-    if (queryKind == KnowledgeQueryKind::WireColor)
+    bool relayOnlyLambdaWiring = queryKind == KnowledgeQueryKind::WireColor
+        && (questionText.contains(QStringLiteral("lambda")) || questionText.contains(QStringLiteral("oxygen")));
+    if (relayOnlyLambdaWiring) {
+        const int checked = qMin(4, ranked.size());
+        for (int i = 0; i < checked; ++i) {
+            if (!normalized(ranked.at(i).fact.statement).contains(QStringLiteral("relais"))) {
+                relayOnlyLambdaWiring = false;
+                break;
+            }
+        }
+    }
+    if (relayOnlyLambdaWiring)
+        answers << QStringLiteral("La base ne donne pas directement les couleurs des fils de la sonde lambda pour ce contexte. Fait de câblage vérifié le plus proche :");
+    else if (queryKind == KnowledgeQueryKind::WireColor)
         answers << QStringLiteral("Couleurs de fil vérifiées les plus pertinentes :");
     else if (queryKind == KnowledgeQueryKind::Pinout)
         answers << QStringLiteral("Brochage vérifié le plus pertinent :");

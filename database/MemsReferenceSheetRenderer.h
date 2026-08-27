@@ -18,7 +18,7 @@ inline QString htmlStyle()
         "h2{color:#ff9828;font-size:10.5pt;border-bottom:1px solid #34414b;padding-bottom:4px;margin-top:14px;}"
         "p{margin:4px 0 7px 0;line-height:1.35}.muted{color:#94a1ab}.note{background:#15100b;border:1px solid #60401f;color:#ffd0a0;padding:7px;}"
         "table{border-collapse:collapse;width:100%;margin:5px 0 8px 0}th{background:#151e25;color:#ff9828;border-bottom:2px solid #ff7a00;text-align:left;padding:5px}"
-        "td{border-bottom:1px solid #26323b;padding:5px;vertical-align:top}.wire{font-size:14pt;line-height:10px;margin-right:2px}</style>");
+        "td{border-bottom:1px solid #26323b;padding:5px;vertical-align:top}.wirebox{display:inline-block;background:#555d64;border:1px solid #7a838b;padding:1px 2px;margin-right:4px;line-height:10px}.wire{font-size:14pt;line-height:10px;margin-right:1px}</style>");
 }
 
 struct ElementContent
@@ -64,10 +64,14 @@ inline ElementContent readElementContent(QXmlStreamReader &xml)
 inline QString renderElementContent(const ElementContent &content)
 {
     QString html;
+    if (!content.fills.isEmpty())
+        html += QStringLiteral("<span class='wirebox'>");
     for (const QString &fill : content.fills) {
         html += QStringLiteral("<span class='wire' style='color:%1'>&#9632;</span>")
                     .arg(fill.toHtmlEscaped());
     }
+    if (!content.fills.isEmpty())
+        html += QStringLiteral("</span>");
     QString text = content.text.simplified().toHtmlEscaped();
     if (!text.isEmpty()) {
         if (!html.isEmpty())
