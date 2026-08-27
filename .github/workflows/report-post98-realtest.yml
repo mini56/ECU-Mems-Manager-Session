@@ -1,0 +1,149 @@
+name: REPORT POST98 REAL TEST
+
+on:
+  push:
+    branches:
+      - RAPPORT
+
+permissions:
+  contents: write
+
+jobs:
+  append_report:
+    if: github.event.head_commit.message == 'REPORT post98 real test driver'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append post98 history
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md')
+          text = r'''
+
+# PASSAGE EN PRODUCTION ET TEST RÉEL BUILD #98
+
+## PROMOTION PRODUCTION APRÈS VALIDATION TEMPORAIRE
+
+- Commit production propre : **`d7836e86930e107d8a68563a6fce3643f27c5748`** — `Fix post97 IA routing and XML rendering`.
+- Parent direct : BUILD #97 **`2b211554abdbb127fd4d472f9ce687394b2d4608`**.
+- Arbre : **`3dca12167987495e265fcb232b66d63100fb4126`**, identique à l'arbre candidat validé.
+- `MEMSX64` a été avancée **sans force**.
+- Aucun fichier protocole ECU ni voie 32 bits n'a été modifié par cette promotion.
+
+## BUILD #98 OFFICIEL — VERT
+
+- Workflow : **BUILD** (`341566505`).
+- Run : **`33115741255`**, run number **98**.
+- Branche : `MEMSX64`.
+- HEAD : **`d7836e86930e107d8a68563a6fce3643f27c5748`**.
+- Début : `2026-08-27T20:56:15Z`.
+- Fin / mise à jour finale : `2026-08-27T21:03:07Z`.
+- Conclusion : **SUCCESS**.
+- Artefact : **`ECU-MEMS-Manager-x64-BUILD-98-v1.0.98`**.
+- ID artefact : **`9664609350`**.
+- Taille : **386 848 692 octets**.
+- Digest : **`sha256:dd230381c5afcd2a52d29f71d412ebdea8c21134b75f912ab8ecbeeeaf283b52`**.
+
+## INCIDENT DU MÉCANISME DE RAPPORT — CONSIGNÉ
+
+Après la validation temporaire post-#97, un premier workflow temporaire destiné uniquement à ajouter le compte-rendu au rapport a produit le run **`33115448894` — FAILURE sans job**, à cause d'une indentation Python/YAML invalide dans ce workflow de rapport. Cet échec n'a touché ni `MEMSX64`, ni l'application, ni le code ECU.
+
+- Workflow de rapport corrigé au commit **`cea4596848a508d95f33ad17fa59f6a582f5fb53`**.
+- Run corrigé **`33115661734`**, job **`98669527587`** : **SUCCESS**.
+- Workflow temporaire ensuite supprimé de `RAPPORT` au commit **`22d05221ff7859c93965fba086758ab03adc664a`**.
+
+## TEST INSTALLATION PROPRE #98 SUR PC RÉEL
+
+Avant installation, l'ancienne version a été désinstallée puis les restes applicatifs identifiés dans le code ont été supprimés : ancien dossier `database`, données locales de l'application et profil utilisateur. Le test #98 ne réutilise donc pas volontairement l'ancien cache/base/profil.
+
+- Installation complète après décompression : **1 minute 10 secondes**.
+- Premier lancement et base locale : fonctionnels.
+- Interface : aucun défaut nouveau signalé pendant cette séquence de test.
+
+## TESTS IA RÉELS #98 — ECU DÉCONNECTÉ
+
+### `Broche MAP Mini` puis `cherche`
+
+Résultat : **CORRIGÉ**. Après la clarification SPi/MPi, `cherche` ne conclut plus arbitrairement SPi lorsque l'ECU est déconnecté et qu'aucune preuve forte n'est disponible. Réponse observée : impossibilité de trancher SPi/MPi sans preuve suffisante, avec demande de référence ECU ou année/marché.
+
+### `Broche MAP Mini MPi 1997`
+
+Résultat : **PARTIEL / DÉFAUT RESTANT**.
+- Les faits MAP MPi utiles sont bien retrouvés, notamment le capteur MAP C186 et les liaisons vers C159-36, C159-8 et C159-13.
+- Un fait **SPi Japon 97MY** apparaît encore à la fin de la réponse malgré la demande explicitement MPi.
+- Le filtrage final de variante doit donc encore être durci.
+
+### `Broche MAP Mini SPi Japan 1997`
+
+Résultat : **DÉFAUT RESTANT**.
+- Le fait d'applicabilité SPi Japon est retrouvé.
+- Un fait MPi apparaît encore.
+- Des faits CKP et bobine sans rapport direct avec la broche MAP sont également remontés.
+- Le filtrage doit donc être strict à la fois sur la variante et sur le sujet demandé.
+
+### `Couleur des fils sonde lambda ?`
+
+Résultat : **FUITE INTERNE CORRIGÉE**, pertinence encore à améliorer.
+- Aucune consigne interne du prompt n'est affichée.
+- Un même fait HO2S apparaît deux fois.
+- Les faits descriptifs HO2S généraux passent avant le fait réellement lié au câblage.
+- Le fait de couleur disponible concerne la commande du relais de sonde oxygène SPi Japon 97MY (`BG`, noir/vert), ce qui ne doit pas être présenté comme si cela prouvait directement toutes les couleurs des fils de la sonde elle-même.
+
+### `Couple de serrage sonde ECT ?`
+
+Résultat : **CORRECT SUR LE FOND**.
+- Valeur constructeur retrouvée : **15 Nm**.
+- Procédure ECT pertinente.
+- Aucune fuite de prompt interne.
+- Défaut restant : le même fait ECT est affiché deux fois ; un fait descriptif secondaire est ajouté alors que la demande est ciblée sur le couple.
+
+## TESTS FICHES XML RÉELS #98
+
+### MEMS 1.6
+
+- Proposition du bouton **`Ouvrir la fiche XML MEMS 1.6`** : fonctionnelle.
+- Fiche complète : **25 broches ECU présentes**.
+- Fonctions présentes.
+- Couleurs interprétées et affichées graphiquement.
+- Sources présentes en bas du document.
+- Défilement complet fonctionnel.
+- Défaut graphique restant : les carrés de couleur ne sont pas englobés par un petit rectangle gris ; une couleur noire devient donc presque invisible sur le fond noir.
+
+### MEMS 1.9
+
+- Fiche complète : **36 broches présentes**.
+- Fonctions présentes.
+- Couleurs graphiques présentes.
+- Sources documentaires présentes en bas.
+- Même défaut graphique : absence du cadre/fond gris englobant les couleurs de fil.
+
+## TEST ECU CONNECTÉ
+
+Le véhicule n'est pas disponible au moment de ce test. **Aucune validation #98 avec ECU réellement connecté n'est déclarée.** Ce test est volontairement reporté ; il ne doit pas être simulé ni considéré comme acquis.
+
+# PROCHAINE ACTION EXACTE — APRÈS TEST RÉEL #98
+
+Partir strictement de **BUILD #98 `d7836e86930e107d8a68563a6fce3643f27c5748`** sur une branche temporaire. Ne toucher ni au protocole ECU ni au 32 bits.
+
+Corriger uniquement les défauts reproduits sur le PC réel :
+1. filtrage strict **MPi/SPi/Japan** avant classement et affichage ;
+2. pertinence stricte du sujet : une demande **MAP** ne doit pas sortir CKP/bobine et une demande de **couleur lambda** doit privilégier un vrai fait de câblage compatible ;
+3. déduplication des faits identiques dans la réponse finale ;
+4. petit **cadre/fond gris commun autour des carrés de couleur de fil** dans le renderer XML 1.6/1.9.
+
+Ajouter des tests déterministes correspondant aux défauts réellement reproduits, compiler/valider x64 sur GitHub Actions en branche temporaire, contrôler le diff et avancer `MEMSX64` sans force uniquement si la validation est verte. Le test ECU connecté restera en attente de la disponibilité du véhicule.
+'''
+          with path.open('a', encoding='utf-8', newline='\n') as f:
+              f.write(text)
+      - name: Commit report
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Document BUILD 98 real clean-PC tests"
+          git push origin RAPPORT
