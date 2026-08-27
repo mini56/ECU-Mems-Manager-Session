@@ -140,6 +140,25 @@ inline QStringList inductionEvidenceProbes(const QString &question,
     return probes;
 }
 
+inline bool shouldUseDiagnosticGeneration(const QString &question, const QString &grounding)
+{
+    const QString text = normalize(question);
+    const QString facts = normalize(grounding);
+    if (containsAny(text, {
+            QStringLiteral("diagnostic"), QStringLiteral("diagnostique"),
+            QStringLiteral("analyse"), QStringLiteral("analyser"),
+            QStringLiteral("anormal"), QStringLiteral("panne"),
+            QStringLiteral("probleme"), QStringLiteral("hypothese"),
+            QStringLiteral("oscill"), QStringLiteral("instable")
+        }))
+        return true;
+
+    // A documentary answer often contains "preuve : constructeur".  That is
+    // provenance, not a request to ask Qwen for diagnostic reasoning.
+    return facts.contains(QStringLiteral("hypotheses actuelles"))
+        || facts.contains(QStringLiteral("confiance"));
+}
+
 inline bool isUnknownDirective(const QString &answer)
 {
     const QString text = normalize(answer);
