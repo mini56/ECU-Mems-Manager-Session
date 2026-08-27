@@ -14,7 +14,8 @@
 - Branche x64 active : **`MEMSX64`**.
 - HEAD x64 courant : **`5e707530352f5e4da3a04e832f62acfa7054ef2f`**.
 - BUILD logiciel actif : **#30 / v1.0.30**.
-- Dernier GitHub Actions validé avant ce push : **#87 — SUCCESS**, run `33041407944`, commit `d156469...`.
+- GitHub Actions qualité courant : **#88**, run **`33042796844`**, commit `5e707530...`, état au dernier contrôle : **in_progress**.
+- Dernier run entièrement validé : **#87 — SUCCESS**, run `33041407944`, commit `d156469...`.
 - Artefact #87 : ID `9634135544`, taille `386 753 794`, SHA-256 `ad01bbef0f82cdb59e8d2ed2cb99f606534f140a75db82a04f18aef38c0060a7`.
 - Aucun BUILD #31 sans demande explicite.
 - 32 bits `lab-expert-engine` et rollback `MEMSX64-BUILD26-BASE` : **NE PAS TOUCHER**.
@@ -25,32 +26,30 @@
 
 ## LOT QUALITÉ POUSSÉ SUR MEMSX64
 
-Le lot a été préparé sur `tmp-ia-targeting-86`, comparé au HEAD #87, puis `MEMSX64` a été avancée **une seule fois en fast-forward** sur `5e707530...`.
+Le lot a été préparé sur `tmp-ia-targeting-86`, comparé au HEAD #87, puis `MEMSX64` a été avancée une seule fois en fast-forward sur `5e707530...`.
 
-Diff validé avant push : **exactement 3 fichiers IA**, aucun protocole/UI/RAVE/packaging/32 bits/BUILD :
+Diff : exactement 3 fichiers IA, aucun protocole/UI/RAVE/packaging/32 bits/BUILD :
 - `expert/IaMemsService.cpp` : +153/-12 ;
 - `expert/LocalAiClient.cpp` : +41/-9 ;
 - `expert/LocalAiOnnxSelfTest.cpp` : +28/-4.
 
-Corrections incluses :
-- `C4EST`→`C EST`, `L4ONGLET`→`L ONGLET` de façon étroite, sans conversion globale du chiffre 4 ;
+Corrections :
+- `C4EST`→`C EST`, `L4ONGLET`→`L ONGLET` de façon étroite ;
 - intentions `General/WireColor/Pinout` avant recherche experte ;
-- une demande de couleur exige une vraie information de fil/couleur et ne peut plus ressortir une procédure de dépose ;
-- une demande de brochage exige un fait câblage/connecteur/broche ;
-- aucune couleur/broche inventée si absence de donnée vérifiée ;
-- `ECU 1.3` / `OBD 1.9` peuvent fixer le contexte famille ;
-- les définitions génériques MEMS 1.x ne détournent plus les demandes de brochage ;
+- couleur de fil : seuls des faits contenant réellement une information de fil/couleur peuvent répondre ; sinon absence vérifiée annoncée sans invention ;
+- brochage : seuls faits câblage/connecteur/broche retenus ;
+- `ECU 1.3` / `OBD 1.9` fixent le contexte famille ;
+- définition générique MEMS 1.x ne détourne plus une demande de broche ;
 - `TPM`→`RPM` uniquement en contexte cadran/régime ;
-- réponse `quel cadran dans l'onglet Aperçu` depuis le code réel : 11 cadrans + indicateur état système ;
-- self-test réel : `C4EST QUOI LA BOBINE ?`, date fautive, `BROCHE ECU 1.3`, `BROCHE OBD 1.9`, Qwen réel, anti-fuite.
+- `quel cadran dans l'onglet Aperçu` répond depuis le code réel : 11 cadrans + indicateur état système ;
+- self-test exact : `C4EST QUOI LA BOBINE ?`, date fautive, `BROCHE ECU 1.3`, `BROCHE OBD 1.9`, Qwen réel, anti-fuite.
 
 ## RAVE / BASE — LOT 1680 VALIDÉ
 
 - 1660 : faits service RAVE ; 1670 : RCL0194 Mini MPi wiring ; 1680 : RCL0194ENG SPi Japon 97MY depuis VIN `SAXXNNAXKBD 134455`, pages 20.3/20.4/39.3.
 - 1680 : 14 faits constructeur + 14 miroirs experts ; total RAVE 60, expert 72 ; tous `verifie_constructeur`.
 - Brochages vérifiés : O2, pompe, injecteur, purge, IAC, ECT, TPS, IAT, masse capteurs, prise diagnostic, etc.
-- **Aucune couleur de fil n'est inventée** : 1680 ne conserve que les relations de circuit non ambiguës.
-- #87 SUCCESS.
+- Aucune couleur de fil inventée.
 
 ## CONNAISSANCES / SÉCURITÉ À PRÉSERVER
 
@@ -60,4 +59,4 @@ Ne pas modifier protections protocole BUILD #30, MEMS1.9 F7/EF, 7D/80, W4, recon
 
 ## PROCHAINE ACTION EXACTE
 
-**Identifier le GitHub Actions déclenché par `5e707530...`, suivre compilation + tests exacts + base r20 + vrai Qwen + package + lancement jusqu'au verdict complet, enregistrer le résultat, puis reprendre RAVE sur un lot séparé. Aucun BUILD #31.**
+**Suivre le run #88 (`33042796844`) jusqu'au verdict complet : compilation, tests exacts, base r20, Qwen, package, lancement, artefact. Enregistrer chaque résultat significatif. Puis reprendre RAVE sur un lot séparé. Aucun BUILD #31.**
