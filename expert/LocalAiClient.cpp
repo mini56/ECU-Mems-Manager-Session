@@ -523,6 +523,7 @@ public:
             || !check(OgaGeneratorParamsSetSearchNumber(params, "max_length", static_cast<double>(promptTokens + maxNewTokens)), error)
             || !check(OgaGeneratorParamsSetSearchNumber(params, "batch_size", 1.0), error)
             || !check(OgaGeneratorParamsSetSearchBool(params, "do_sample", true), error)
+            || !check(OgaGeneratorParamsSetSearchNumber(params, "random_seed", 42.0), error)
             || !check(OgaGeneratorParamsSetSearchNumber(params, "temperature", reasoning ? 0.6 : 0.7), error)
             || !check(OgaGeneratorParamsSetSearchNumber(params, "top_p", reasoning ? 0.9 : 0.8), error)
             || !check(OgaGeneratorParamsSetSearchNumber(params, "top_k", 20.0), error)
