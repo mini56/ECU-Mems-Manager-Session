@@ -2,9 +2,13 @@
 
 #include "mainwindow.h"
 #include "memsinterface.h"
+#include "expert/IaMemsDiagramCatalog.h"
 #include "expert/IaMemsService.h"
 
 #include <QDateTime>
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QFileInfo>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
@@ -13,6 +17,7 @@
 #include <QShowEvent>
 #include <QTextBrowser>
 #include <QTimer>
+#include <QUrl>
 #include <QVBoxLayout>
 
 IaMemsTab::IaMemsTab(MainWindow *mainWindow, QWidget *parent)
@@ -59,6 +64,11 @@ IaMemsTab::IaMemsTab(MainWindow *mainWindow, QWidget *parent)
         bar->setMinimumWidth(14);
     root->addWidget(m_transcript, 1);
 
+    m_diagramButton = new QPushButton(this);
+    m_diagramButton->setObjectName(QStringLiteral("iaMemsDiagramButton"));
+    m_diagramButton->setVisible(false);
+    root->addWidget(m_diagramButton, 0, Qt::AlignLeft);
+
     QHBoxLayout *input = new QHBoxLayout;
     m_question = new QLineEdit(this);
     m_question->setObjectName(QStringLiteral("iaMemsQuestion"));
@@ -76,6 +86,8 @@ IaMemsTab::IaMemsTab(MainWindow *mainWindow, QWidget *parent)
             this, &IaMemsTab::sendQuestion);
     connect(m_question, &QLineEdit::returnPressed,
             this, &IaMemsTab::sendQuestion);
+    connect(m_diagramButton, &QPushButton::clicked,
+            this, &IaMemsTab::openSuggestedDiagram);
 
     if (m_service) {
         connect(m_service, &IaMemsService::responseReady,
@@ -161,6 +173,75 @@ void IaMemsTab::appendSystemMessage(const QString &text)
     appendMessage(QStringLiteral("IA MEMS"), text);
 }
 
+void IaMemsTab::updateDiagramSuggestion(const QString &question)
+{
+    m_diagramTitle.clear();
+    m_diagramPath.clear();
+
+    if (!m_diagramButton)
+        return;
+
+    const IaMemsDiagramSuggestion suggestion =
+        IaMemsDiagramCatalog::suggestionForQuestion(question);
+    if (!suggestion.isValid()) {
+        m_diagramButton->setVisible(false);
+        m_diagramButton->setText(QString());
+        return;
+    }
+
+    m_diagramTitle = suggestion.key;
+    m_diagramPath = suggestion.absolutePath;
+    m_diagramButton->setText(QStringLiteral("Ouvrir le schéma %1").arg(m_diagramTitle));
+    m_diagramButton->setVisible(true);
+}
+
+void IaMemsTab::openSuggestedDiagram()
+{
+    if (m_diagramTitle.isEmpty() || m_diagramPath.isEmpty())
+        return;
+
+    const QFileInfo fileInfo(m_diagramPath);
+    if (!fileInfo.exists() || !fileInfo.isFile()) {
+        m_diagramTitle.clear();
+        m_diagramPath.clear();
+        if (m_diagramButton)
+            m_diagramButton->setVisible(false);
+        appendSystemMessage(QStringLiteral("Le schéma local proposé n'est plus disponible dans le package."));
+        return;
+    }
+
+    QDialog viewer(this);
+    viewer.setObjectName(QStringLiteral("iaMemsDiagramViewer"));
+    viewer.setWindowTitle(QStringLiteral("IA MEMS — %1").arg(m_diagramTitle));
+    viewer.resize(qBound(480, width() - 40, 900),
+                  qBound(360, height() - 40, 650));
+
+    QVBoxLayout *layout = new QVBoxLayout(&viewer);
+    QTextBrowser *browser = new QTextBrowser(&viewer);
+    browser->setObjectName(QStringLiteral("iaMemsDiagramBrowser"));
+    browser->setOpenExternalLinks(false);
+    browser->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    browser->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+
+    const QString localUrl = QUrl::fromLocalFile(fileInfo.canonicalFilePath())
+                                 .toString()
+                                 .toHtmlEscaped();
+    const QString title = m_diagramTitle.toHtmlEscaped();
+    browser->setHtml(QStringLiteral(
+        "<style>body{background:#0a1015;color:#dce3e8;font-family:'Segoe UI',Arial,sans-serif;}"
+        "h1{color:#ff9828;font-size:16pt;margin:0 0 10px 0;}"
+        ".diagram{background:#0d151b;border:1px solid #34414b;padding:10px;text-align:center;}"
+        ".diagram img{max-width:100%;height:auto;}</style>"
+        "<h1>%1</h1><div class='diagram'><img src='%2'></div>")
+        .arg(title, localUrl));
+    layout->addWidget(browser, 1);
+
+    QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Close, &viewer);
+    connect(buttons, &QDialogButtonBox::rejected, &viewer, &QDialog::reject);
+    layout->addWidget(buttons);
+    viewer.exec();
+}
+
 void IaMemsTab::sendQuestion()
 {
     if (!m_question || !m_service)
@@ -172,6 +253,7 @@ void IaMemsTab::sendQuestion()
 
     m_question->clear();
     appendMessage(QStringLiteral("Vous"), question);
+    updateDiagramSuggestion(question);
 
     if (m_sendButton)
         m_sendButton->setEnabled(false);
