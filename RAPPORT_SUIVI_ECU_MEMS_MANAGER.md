@@ -15,7 +15,7 @@
 - HEAD x64 courant : **`897b51c8382513e15f236c18446d1cffc2352c31`**.
 - BUILD logiciel : **#30 / v1.0.30**. Aucun BUILD #31 sans demande explicite.
 - Dernier run entièrement validé : **#90 — SUCCESS**, run `33044945315`, commit `fab2e4cf`.
-- Run #91 sur le lot RAVE 1710 : en cours au dernier contrôle.
+- Run **#91 — FAILURE**, run `33047008070`, commit `897b51c8` : échec uniquement à `Validate packaged production LocalAiClient with Qwen` après assemblage ; moteur ONNX et réponses déterministes prêts, puis réponse générative rejetée par le contrôle de langue active.
 - Artefact #90 : ID `9635406628`, taille `386 768 840`, SHA-256 `125e27658bba577efdf5d22a7cb3fa26670cddadd8383e8f4e7d907d765f6d6d`.
 - 32 bits `lab-expert-engine` et rollback `MEMSX64-BUILD26-BASE` : **NE PAS TOUCHER**.
 
@@ -50,13 +50,30 @@ Validation locale : +11 RAVE +11 experts, integrity `ok`, user_version20, tous `
 - `MEMSX64` avancée en fast-forward sur **`897b51c8382513e15f236c18446d1cffc2352c31`**.
 - Aucun code IA, protocole, UI, packaging, 32 bits ou BUILD modifié.
 
+## INCIDENT #91 — VALIDATION IA PACKAGÉE
+
+### Résultat observé
+Le journal complet fourni et le run GitHub montrent :
+- `STATE=IA locale en démarrage` puis `STATE=IA locale prête` ;
+- les étapes déterministes 0 à 3 répondent correctement, y compris date et faits de brochage de test ;
+- le passage génératif entre bien en `STATE=IA locale en réponse` puis revient prêt ;
+- l'échec final est : **`Le modèle local n'a pas produit de réponse exploitable dans la langue active.`** ;
+- le processus sort avec code 1 uniquement dans la validation packagée.
+
+La comparaison **#90 `fab2e4cf` → #91 `897b51c8`** ne contient aucun changement de `LocalAiClient`, du self-test, d'ONNX ou du packaging IA : le lot 1710 est documentaire/base. Le défaut à traiter est donc la robustesse/déterminisme du chemin génératif + validation de langue, pas un crash ONNX ni une régression de code IA introduite par RAVE 1710.
+
+### OBJECTIF AVANT MODIFICATION
+Identifier exactement le prompt génératif, les paramètres de génération et le contrôle `réponse exploitable dans la langue active`. Corriger la cause générale qui peut rejeter de manière non déterministe une génération valide, **sans supprimer ni affaiblir le garde de langue de production** et sans masquer l'échec par une simple boucle de relance. Valider ensuite le self-test natif ET packagé sur GitHub Actions en restant BUILD #30 / v1.0.30.
+
+Aucun changement protocole, ECU, UI, 32 bits, Qwen/ONNX de version ou BUILD logiciel n'est autorisé dans cette correction.
+
 ## NOUVELLE ACTION AUTORISÉE — SCHÉMAS PROPOSÉS PAR IA MEMS
 
 ### Objectif avant toute modification
 Ajouter à IA MEMS une capacité **séparée du moteur IA** : lorsqu’une question correspond à un schéma local connu (ex. brochage MEMS 1.3, connecteur MEMS 1.9, ROSCO 3 broches), l’onglet IA peut proposer un bouton explicite **« Ouvrir le schéma … »** pour visualiser le fichier local correspondant.
 
 ### Contraintes obligatoires
-- **NE PAS MODIFIER** Qwen, ONNX, `LocalAiClient`, le prompt, les budgets de tokens ou la génération qui fonctionne.
+- **NE PAS MODIFIER** Qwen, ONNX, `LocalAiClient`, le prompt, les budgets de tokens ou la génération qui fonctionne, hors correction ciblée de l'incident #91 ci-dessus nécessaire pour rétablir le HEAD vert.
 - La détection de schéma doit être déterministe et locale, indépendante du LLM.
 - Réutiliser le mécanisme d’affichage de schéma existant s’il existe ; sinon créer le plus petit composant de visualisation local possible.
 - Aucun accès réseau nécessaire pour ouvrir un schéma.
@@ -75,4 +92,4 @@ Ne pas modifier protections protocole BUILD #30, MEMS1.9 F7/EF, 7D/80, W4, recon
 
 ## PROCHAINE ACTION EXACTE
 
-**Auditer `IaMemsTab`, `IaMemsService` et les fonctions existantes de visualisation des SVG/schémas. Concevoir une proposition de schéma déterministe qui n'altère pas `LocalAiClient`. Préparer le changement sur une branche temporaire, avec self-test, et ne fast-forward `MEMSX64` qu'après validation du diff et du build complet. Ensuite reprendre RAVE 1720.**
+**Priorité : rétablir `MEMSX64` vert après #91. Auditer le self-test génératif et le contrôle de langue de `LocalAiClient`, comparer avec le succès #90, corriger la cause générale sans affaiblir la sécurité linguistique, pousser sur BUILD #30 et vérifier le run complet. Une fois le HEAD vert, reprendre l'audit `IaMemsTab` / `IaMemsService` pour la fonction de schémas, puis RAVE 1720.**
