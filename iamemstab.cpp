@@ -176,7 +176,7 @@ void IaMemsTab::appendSystemMessage(const QString &text)
 void IaMemsTab::updateDiagramSuggestion(const QString &question)
 {
     m_diagramTitle.clear();
-    m_diagramPath.clear();
+    m_diagramQuestion.clear();
 
     if (!m_diagramButton)
         return;
@@ -190,29 +190,34 @@ void IaMemsTab::updateDiagramSuggestion(const QString &question)
     }
 
     m_diagramTitle = suggestion.key;
-    m_diagramPath = suggestion.absolutePath;
+    m_diagramQuestion = question;
     m_diagramButton->setText(QStringLiteral("Ouvrir le schéma %1").arg(m_diagramTitle));
     m_diagramButton->setVisible(true);
 }
 
 void IaMemsTab::openSuggestedDiagram()
 {
-    if (m_diagramTitle.isEmpty() || m_diagramPath.isEmpty())
+    if (m_diagramTitle.isEmpty() || m_diagramQuestion.isEmpty())
         return;
 
-    const QFileInfo fileInfo(m_diagramPath);
-    if (!fileInfo.exists() || !fileInfo.isFile()) {
+    const IaMemsDiagramSuggestion suggestion =
+        IaMemsDiagramCatalog::suggestionForQuestion(m_diagramQuestion);
+    if (!suggestion.isValid() || suggestion.key != m_diagramTitle) {
         m_diagramTitle.clear();
-        m_diagramPath.clear();
-        if (m_diagramButton)
+        m_diagramQuestion.clear();
+        if (m_diagramButton) {
+            m_diagramButton->setText(QString());
             m_diagramButton->setVisible(false);
-        appendSystemMessage(QStringLiteral("Le schéma local proposé n'est plus disponible dans le package."));
+        }
+        appendSystemMessage(QStringLiteral(
+            "Le schéma local proposé n'est plus disponible ou déclaré dans le package."));
         return;
     }
 
+    const QFileInfo fileInfo(suggestion.absolutePath);
     QDialog viewer(this);
     viewer.setObjectName(QStringLiteral("iaMemsDiagramViewer"));
-    viewer.setWindowTitle(QStringLiteral("IA MEMS — %1").arg(m_diagramTitle));
+    viewer.setWindowTitle(QStringLiteral("IA MEMS — %1").arg(suggestion.key));
     viewer.resize(qBound(480, width() - 40, 900),
                   qBound(360, height() - 40, 650));
 
@@ -226,7 +231,7 @@ void IaMemsTab::openSuggestedDiagram()
     const QString localUrl = QUrl::fromLocalFile(fileInfo.canonicalFilePath())
                                  .toString()
                                  .toHtmlEscaped();
-    const QString title = m_diagramTitle.toHtmlEscaped();
+    const QString title = suggestion.key.toHtmlEscaped();
     browser->setHtml(QStringLiteral(
         "<style>body{background:#0a1015;color:#dce3e8;font-family:'Segoe UI',Arial,sans-serif;}"
         "h1{color:#ff9828;font-size:16pt;margin:0 0 10px 0;}"
