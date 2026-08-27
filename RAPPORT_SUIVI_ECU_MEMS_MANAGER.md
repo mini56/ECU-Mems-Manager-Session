@@ -134,6 +134,29 @@ L’ordre demandé est désormais strictement :
 
 **Après validation complète des points 1 à 4 et du build correspondant, revenir à RAVE.** Le lot en attente est **RAVE 1720**, à reprendre séparément après stabilisation de la fonction schémas.
 
+## POINT 2 — AUDIT IA MEMS / SCHÉMAS TERMINÉ AVANT CODE
+
+Audit effectué sur le HEAD `MEMSX64` `16b99c3f`, après relecture du présent rapport et **avant toute modification du code** :
+- `IaMemsTab` est une vue simple : `sendQuestion()` transmet la question à `IaMemsService::ask()`, puis `onServiceResponse()` affiche la réponse. Aucun mécanisme de schéma n’est actuellement couplé au service IA.
+- `IaMemsService` gère le contexte, le grounding, le moteur expert et `LocalAiClient`. Il n’a pas besoin d’être modifié pour proposer un schéma ; il doit rester inchangé afin de préserver Qwen/ONNX et le chemin IA validé dans #92.
+- `database/reference/manifest.json` contient déjà exactement six schémas locaux déclarés : MEMS 1.2 ECU, MEMS 1.3 ECU, MEMS 1.6 ECU, MEMS 1.9 ECU, ROSCO 3 broches et MEMS 1.9 OBD 16 broches. La future proposition devra être limitée à ces entrées réellement déclarées.
+- `database/MemsDatabaseDiagramSearchPatch.cpp` possède déjà une méthode d’affichage SVG local dans un `QTextBrowser`, avec contrôle d’existence du fichier. `MemsDatabaseBrowser` n’expose cependant pas de méthode publique permettant à `IaMemsTab` d’ouvrir directement un schéma sans couplage artificiel.
+- Le choix retenu est donc de laisser le navigateur de base intact et d’ajouter un **petit composant déterministe local** dédié à la résolution et à l’affichage des schémas pour l’onglet IA, en réutilisant la même technique Qt/SVG déjà validée.
+- Le bouton sera caché par défaut, calculé localement à partir de la question, affiché uniquement si un schéma manifeste correspondant existe, et ne s’ouvrira que sur clic utilisateur. Il sera placé dans `IaMemsTab` entre la zone de réponse et la zone de saisie afin de ne pas perturber le dialogue.
+- Aucun schéma ne pourra être inventé : résolution par clé/chemin du manifeste + contrôle d’existence du fichier local. Aucun accès réseau.
+- Le `CMakeLists.txt` copie déjà tout `database/reference` dans le dossier du programme ; aucun nouveau mécanisme de packaging des SVG n’est nécessaire.
+- Le workflow `.github/workflows/memsx64.yml` ne se déclenche sur push que pour `MEMSX64`. Une branche temporaire peut donc être utilisée sans consommer le prochain numéro GitHub Actions #93.
+- Le calcul de version CMake utilise déjà `MEMS_BUILD_NUMBER` : avec la valeur `93`, `APP_VERSION` devient correctement `1.0.93`. `About` et l’aide utilisent déjà `APP_VERSION`; le splash utilise `APP_BUILD_NUMBER`. Le push final devra donc mettre le workflow à `93` / `1.0.93` pour respecter la nouvelle règle.
+- Un self-test spécifique sera ajouté pour vérifier au minimum : MEMS 1.3 ECU, MEMS 1.9 OBD, ROSCO 3 broches, absence de suggestion sur une question non liée à un schéma, et refus d’un chemin absent/non déclaré.
+
+### PLAN AUTORISÉ POUR LE POINT 3
+
+1. Créer une branche temporaire depuis `16b99c3f`, sans déclencher le workflow x64.
+2. Ajouter le résolveur de schémas local déterministe + le petit visualiseur local ; ne pas modifier `IaMemsService` ni `LocalAiClient`.
+3. Intégrer dans `IaMemsTab` uniquement le bouton de proposition et son clic d’ouverture.
+4. Ajouter le self-test spécifique et son intégration CMake, puis contrôler le diff complet de la branche temporaire.
+5. Après validation du diff et des tests, préparer **un seul passage vers `MEMSX64`** avec synchronisation workflow/version **#93 = v1.0.93** afin d’éviter tout build intermédiaire désynchronisé.
+
 ## PROCHAINE ACTION EXACTE
 
-**Point 2 : auditer `IaMemsTab` / `IaMemsService` pour la fonction de schémas, sans modifier le code avant d’avoir compris le mécanisme existant. Les points 3 et 4 viennent ensuite. Au prochain push sur `MEMSX64`, appliquer obligatoirement la reprise de version : #93 = v1.0.93. Après validation des points 1 à 4, reprendre RAVE 1720.**
+**Point 3 : créer la branche temporaire depuis `16b99c3f` et implémenter la proposition de schéma locale selon le plan d’audit ci-dessus. `IaMemsService`, Qwen, ONNX, `LocalAiClient`, le protocole, l’ECU, RAVE et le 32 bits restent intouchés. Ajouter le self-test spécifique et contrôler le diff avant toute intégration sur `MEMSX64`. Le premier prochain push sur `MEMSX64` devra être #93 = v1.0.93. Après validation complète des points 1 à 4, reprendre RAVE 1720.**
