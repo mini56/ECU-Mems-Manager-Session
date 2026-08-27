@@ -40,10 +40,12 @@ private slots:
     void onServiceResponse(const QString &text);
     void onServiceSystemMessage(const QString &text);
     void updateStatus();
+    void openSuggestedDiagram();
 
 private:
     void appendMessage(const QString &speaker, const QString &text);
     void appendSystemMessage(const QString &text);
+    void updateDiagramSuggestion(const QString &question);
 
 private:
     MainWindow *m_mainWindow = nullptr;
@@ -53,7 +55,10 @@ private:
     QTextBrowser *m_transcript = nullptr;
     QLineEdit *m_question = nullptr;
     QPushButton *m_sendButton = nullptr;
+    QPushButton *m_diagramButton = nullptr;
     QLabel *m_status = nullptr;
+    QString m_diagramTitle;
+    QString m_diagramPath;
 
     bool m_connected = false;
     bool m_haveInjection = false;
