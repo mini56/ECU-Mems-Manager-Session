@@ -6,6 +6,7 @@
 #include "expert/IaMemsConversationRouting.h"
 #include "expert/IaMemsService.h"
 #include "database/MemsReferenceDatabase.h"
+#include "database/MemsReferenceSheetRenderer.h"
 
 #include <QDateTime>
 #include <QDialog>
@@ -32,61 +33,8 @@ namespace {
 
 QString iaReferenceXmlHtml(const QString &path)
 {
-    QFile file(path);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-        return QStringLiteral("<p>Impossible d'ouvrir la fiche XML locale.</p>");
-
-    QXmlStreamReader xml(&file);
-    QString html = QStringLiteral(
-        "<style>body{background:#0a1015;color:#dce3e8;font-family:'Segoe UI',Arial,sans-serif;font-size:9pt;}"
-        "h1{color:#ff9828;font-size:16pt;margin:0 0 5px 0;}"
-        "h2{color:#ff9828;font-size:10.5pt;border-bottom:1px solid #34414b;padding-bottom:4px;margin-top:14px;}"
-        "p{margin:4px 0 7px 0;line-height:1.35}.muted{color:#94a1ab}.note{background:#15100b;border:1px solid #60401f;color:#ffd0a0;padding:7px;}"
-        "table{border-collapse:collapse;width:100%;margin:5px 0 8px 0}th{background:#151e25;color:#ff9828;border-bottom:2px solid #ff7a00;text-align:left;padding:5px}"
-        "td{border-bottom:1px solid #26323b;padding:5px;vertical-align:top}</style>");
-    bool firstRow = true;
-    while (!xml.atEnd()) {
-        xml.readNext();
-        if (xml.isEndElement()) {
-            if (xml.name() == QStringLiteral("ligne")) {
-                html += QStringLiteral("</tr>");
-                firstRow = false;
-            } else if (xml.name() == QStringLiteral("table")) {
-                html += QStringLiteral("</table>");
-            }
-            continue;
-        }
-        if (!xml.isStartElement())
-            continue;
-        const QStringRef name = xml.name();
-        if (name == QStringLiteral("titre"))
-            html += QStringLiteral("<h1>%1</h1>").arg(xml.readElementText(QXmlStreamReader::IncludeChildElements).toHtmlEscaped());
-        else if (name == QStringLiteral("sous-titre"))
-            html += QStringLiteral("<p class='muted'>%1</p>").arg(xml.readElementText(QXmlStreamReader::IncludeChildElements).toHtmlEscaped());
-        else if (name == QStringLiteral("section"))
-            html += QStringLiteral("<h2>%1</h2>").arg(xml.attributes().value(QStringLiteral("titre")).toString().toHtmlEscaped());
-        else if (name == QStringLiteral("p")) {
-            QString text = xml.readElementText(QXmlStreamReader::IncludeChildElements).toHtmlEscaped();
-            text.replace(QStringLiteral("\n"), QStringLiteral("<br>"));
-            html += QStringLiteral("<p>%1</p>").arg(text);
-        } else if (name == QStringLiteral("note")) {
-            QString text = xml.readElementText(QXmlStreamReader::IncludeChildElements).toHtmlEscaped();
-            text.replace(QStringLiteral("\n"), QStringLiteral("<br>"));
-            html += QStringLiteral("<div class='note'>%1</div>").arg(text);
-        } else if (name == QStringLiteral("table")) {
-            firstRow = true;
-            html += QStringLiteral("<table>");
-        } else if (name == QStringLiteral("ligne")) {
-            html += QStringLiteral("<tr>");
-        } else if (name == QStringLiteral("cellule")) {
-            const QString text = xml.readElementText(QXmlStreamReader::IncludeChildElements).trimmed().toHtmlEscaped();
-            const QString tag = firstRow ? QStringLiteral("th") : QStringLiteral("td");
-            html += QStringLiteral("<%1>%2</%1>").arg(tag, text);
-        }
-    }
-    if (xml.hasError())
-        html += QStringLiteral("<div class='note'>Fiche XML invalide ou incomplète.</div>");
-    return html;
+    return MemsReferenceSheetRenderer::renderFile(
+        path, QStringLiteral("Impossible d'ouvrir ou de lire la fiche XML locale."));
 }
 
 QString printableFirmware(QByteArray response)
@@ -440,17 +388,17 @@ void IaMemsTab::openSuggestedDocument()
     viewer.exec();
 }
 
-QString IaMemsTab::resolveInductionFromKnownContext(const QString &question) const
+QString IaMemsTab::resolveInductionFromKnownContext(const QString &question, QString *evidence) const
 {
+    if (evidence)
+        evidence->clear();
+
     MemsReferenceDatabase database;
     if (!database.open())
         return QString();
 
-    QStringList probes;
-    if (!m_firmwareIdentifier.trimmed().isEmpty())
-        probes << m_firmwareIdentifier.trimmed();
-    if (IaMemsConversationRouting::mentionsMini(question))
-        probes << QStringLiteral("Mini");
+    const QStringList probes = IaMemsConversationRouting::inductionEvidenceProbes(
+        question, m_connected, m_firmwareIdentifier);
     if (probes.isEmpty())
         return QString();
 
@@ -475,8 +423,11 @@ QString IaMemsTab::resolveInductionFromKnownContext(const QString &question) con
             if (!injection.isEmpty())
                 inductions.insert(injection);
         }
-        if (inductions.size() == 1)
+        if (inductions.size() == 1) {
+            if (evidence)
+                *evidence = probe;
             return *inductions.constBegin();
+        }
     }
     return QString();
 }
@@ -520,13 +471,14 @@ void IaMemsTab::sendQuestion()
         if (IaMemsConversationRouting::isSearchDirective(question)
             || IaMemsConversationRouting::isUnknownDirective(question)) {
             if (IaMemsConversationRouting::needsInductionClarification(pending)) {
-                const QString resolved = resolveInductionFromKnownContext(pending);
+                QString evidence;
+                const QString resolved = resolveInductionFromKnownContext(pending, &evidence);
                 if (resolved.isEmpty()) {
-                    answerLocally(QStringLiteral("J'ai cherché dans le contexte ECU connu et dans la base, mais je ne peux pas trancher SPi/MPi sans risque. Donne-moi l'année du véhicule ou la référence inscrite sur le calculateur."));
+                    answerLocally(QStringLiteral("J'ai cherché dans les références ECU réellement disponibles, mais je ne peux pas trancher SPi/MPi sans preuve suffisante. Donne-moi la référence inscrite sur le calculateur, ou l'année et le marché du véhicule."));
                     return;
                 }
                 effectiveQuestion = QStringLiteral("%1 %2").arg(pending, resolved);
-                answerLocally(QStringLiteral("J'ai identifié %1 à partir des informations disponibles. Je poursuis la recherche initiale.").arg(resolved));
+                answerLocally(QStringLiteral("J'ai identifié %1 à partir de la référence ECU/firmware %2 retrouvée dans la base. Je poursuis la recherche initiale.").arg(resolved, evidence));
             } else if (IaMemsConversationRouting::needsGenerationClarification(pending, m_detectedFamily)) {
                 if (m_detectedFamily.isEmpty()) {
                     answerLocally(QStringLiteral("J'ai cherché dans le contexte disponible, mais la génération MEMS n'est pas déterminée. Donne-moi l'année, la référence ECU ou connecte l'ECU pour que je puisse continuer sans deviner."));

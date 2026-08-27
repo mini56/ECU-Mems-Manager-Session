@@ -3,6 +3,7 @@
 
 #include <QString>
 #include <QStringList>
+#include <QRegularExpression>
 
 namespace IaMemsConversationRouting {
 
@@ -113,6 +114,49 @@ inline bool isSearchDirective(const QString &answer)
         || text == QStringLiteral("cherche toi-meme")
         || text == QStringLiteral("trouve")
         || text == QStringLiteral("a toi de chercher");
+}
+
+inline QStringList inductionEvidenceProbes(const QString &question,
+                                           bool ecuConnected,
+                                           const QString &firmware)
+{
+    QStringList probes;
+    const auto appendUnique = [&probes](const QString &value) {
+        const QString trimmed = value.trimmed().toUpper();
+        if (!trimmed.isEmpty() && !probes.contains(trimmed, Qt::CaseInsensitive))
+            probes.append(trimmed);
+    };
+
+    if (ecuConnected)
+        appendUnique(firmware);
+
+    static const QRegularExpression ecuReferenceRx(
+        QStringLiteral("\\b(?:MNE|MKC|NNN)[A-Z0-9-]{3,}\\b|\\bAANMP[0-9]{3,}\\b"),
+        QRegularExpression::CaseInsensitiveOption);
+    QRegularExpressionMatchIterator iterator = ecuReferenceRx.globalMatch(question);
+    while (iterator.hasNext())
+        appendUnique(iterator.next().captured(0));
+
+    return probes;
+}
+
+inline bool shouldUseDiagnosticGeneration(const QString &question, const QString &grounding)
+{
+    const QString text = normalize(question);
+    const QString facts = normalize(grounding);
+    if (containsAny(text, {
+            QStringLiteral("diagnostic"), QStringLiteral("diagnostique"),
+            QStringLiteral("analyse"), QStringLiteral("analyser"),
+            QStringLiteral("anormal"), QStringLiteral("panne"),
+            QStringLiteral("probleme"), QStringLiteral("hypothese"),
+            QStringLiteral("oscill"), QStringLiteral("instable")
+        }))
+        return true;
+
+    // A documentary answer often contains "preuve : constructeur".  That is
+    // provenance, not a request to ask Qwen for diagnostic reasoning.
+    return facts.contains(QStringLiteral("hypotheses actuelles"))
+        || facts.contains(QStringLiteral("confiance"));
 }
 
 inline bool isUnknownDirective(const QString &answer)

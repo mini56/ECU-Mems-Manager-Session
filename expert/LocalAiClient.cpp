@@ -1,4 +1,5 @@
 #include "LocalAiClient.h"
+#include "IaMemsConversationRouting.h"
 #include "i18n.h"
 
 #include <QCoreApplication>
@@ -134,7 +135,12 @@ bool containsInternalInstructionLeak(const QString &answer)
         QStringLiteral("je reconnais que ce contexte est pertinent"),
         QStringLiteral("je ne vais pas enrichir le contexte"),
         QStringLiteral("je ne vais pas inventer de mesure"),
-        QStringLiteral("reponds uniquement en francais sauf si l utilisateur")
+        QStringLiteral("reponds uniquement en francais sauf si l utilisateur"),
+        QStringLiteral("reponse attendue"),
+        QStringLiteral("diagnostic bref hypotheses les plus probables"),
+        QStringLiteral("ne montre aucun raisonnement interne"),
+        QStringLiteral("faits fournis par mems manager"),
+        QStringLiteral("a utiliser seulement s ils repondent a la question")
     };
     for (const QString &marker : markers) {
         if (plain.contains(marker))
@@ -388,24 +394,7 @@ bool isFollowUpQuestion(const QString &question)
 
 bool requiresReasoning(const QString &question, const QString &grounding)
 {
-    const QString plain = normalizedPlainText(question);
-    const QString ground = normalizedPlainText(grounding);
-
-    if (plain.contains(QStringLiteral("diagnostic"))
-        || plain.contains(QStringLiteral("diagnostique"))
-        || plain.contains(QStringLiteral("analyse"))
-        || plain.contains(QStringLiteral("analyser"))
-        || plain.contains(QStringLiteral("anormal"))
-        || plain.contains(QStringLiteral("panne"))
-        || plain.contains(QStringLiteral("probleme"))
-        || plain.contains(QStringLiteral("hypothese"))
-        || plain.contains(QStringLiteral("oscill"))
-        || plain.contains(QStringLiteral("instable")))
-        return true;
-
-    return ground.contains(QStringLiteral("hypotheses actuelles"))
-        || ground.contains(QStringLiteral("confiance"))
-        || ground.contains(QStringLiteral("preuve"));
+    return IaMemsConversationRouting::shouldUseDiagnosticGeneration(question, grounding);
 }
 
 bool likelyWrongLanguage(const QString &answer)

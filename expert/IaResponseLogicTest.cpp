@@ -1,9 +1,11 @@
 #include "IaResponseLogic.h"
+#include "../database/MemsReferenceSheetRenderer.h"
 #include "i18n.h"
 
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDebug>
+#include <QTemporaryFile>
 
 #include <cstdio>
 
@@ -70,6 +72,58 @@ int main(int argc, char **argv)
                   "search directive is recognised");
     ok &= require(IaMemsConversationRouting::requestedGeneration(QStringLiteral("Je cherche la documentation MEMS 1.9")) == QStringLiteral("1.9"),
                   "documentation generation extraction");
+    ok &= require(!IaMemsConversationRouting::shouldUseDiagnosticGeneration(
+                      QStringLiteral("Couple de serrage sonde température ECT"),
+                      QStringLiteral("Couple ECT : 15 Nm. Niveau de preuve : constructeur.")),
+                  "documentary proof metadata does not trigger diagnostic generation");
+    ok &= require(!IaMemsConversationRouting::shouldUseDiagnosticGeneration(
+                      QStringLiteral("Couleur des fils sonde lambda"),
+                      QStringLiteral("Fils lambda gris — preuve : constructeur.")),
+                  "lambda documentary proof does not trigger diagnostic generation");
+    ok &= require(IaMemsConversationRouting::shouldUseDiagnosticGeneration(
+                      QStringLiteral("diagnostic moteur instable"),
+                      QStringLiteral("Hypothèses actuelles : alimentation.")),
+                  "real diagnostic still uses diagnostic generation");
+
+    ok &= require(IaMemsConversationRouting::inductionEvidenceProbes(
+                      QStringLiteral("Broche MAP Mini"), false, QString()).isEmpty(),
+                  "generic Mini while disconnected is not SPi/MPi evidence");
+    const QStringList connectedProbes = IaMemsConversationRouting::inductionEvidenceProbes(
+        QStringLiteral("Broche MAP Mini"), true, QStringLiteral("AANMP002"));
+    ok &= require(connectedProbes.size() == 1
+                      && connectedProbes.at(0) == QStringLiteral("AANMP002"),
+                  "connected firmware is strong SPi/MPi evidence");
+    ok &= require(IaMemsConversationRouting::inductionEvidenceProbes(
+                      QStringLiteral("Broche MAP Mini MKC104341"), false, QString()).contains(QStringLiteral("MKC104341")),
+                  "explicit ECU reference in the question is strong evidence");
+
+    QTemporaryFile customSheet;
+    ok &= require(customSheet.open(), "open temporary custom XML sheet");
+    if (customSheet.isOpen()) {
+        const QByteArray xml = QByteArrayLiteral(
+            "<fiche><table><ligne><broche>BROCHE</broche><fonction>FONCTION</fonction><couleur>COULEUR</couleur></ligne>"
+            "<ligne><broche>8</broche><fonction>MAP</fonction><couleur><svg><rect fill='#f2a5bc'/><path fill='#050505'/></svg><texte>Rose / Noir</texte></couleur></ligne></table></fiche>");
+        customSheet.write(xml);
+        customSheet.flush();
+        const QString rendered = MemsReferenceSheetRenderer::renderFile(customSheet.fileName(), QStringLiteral("erreur"));
+        ok &= require(rendered.contains(QStringLiteral("MAP")) && rendered.contains(QStringLiteral("Rose / Noir"))
+                      && rendered.contains(QStringLiteral("#f2a5bc")) && rendered.contains(QStringLiteral("#050505")),
+                      "custom broche/fonction/couleur XML keeps data and visual colours");
+    }
+
+    QTemporaryFile genericSheet;
+    ok &= require(genericSheet.open(), "open temporary generic XML sheet");
+    if (genericSheet.isOpen()) {
+        const QByteArray xml = QByteArrayLiteral(
+            "<fiche><table><ligne><cellule>BROCHE</cellule><cellule>COULEUR</cellule></ligne>"
+            "<ligne><cellule>7</cellule><cellule><svg><rect fill='#1769e8'/><path fill='#ed2224'/></svg><texte>Bleu / Rouge</texte></cellule></ligne></table></fiche>");
+        genericSheet.write(xml);
+        genericSheet.flush();
+        const QString rendered = MemsReferenceSheetRenderer::renderFile(genericSheet.fileName(), QStringLiteral("erreur"));
+        ok &= require(rendered.contains(QStringLiteral("Bleu / Rouge"))
+                      && rendered.contains(QStringLiteral("#1769e8")) && rendered.contains(QStringLiteral("#ed2224")),
+                      "generic cellule XML keeps embedded visual colours");
+    }
 
     ok &= require(IaResponseLogic::classify(QStringLiteral("battery voltage?")) == IaResponseLogic::Intent::Battery,
                   "battery intent en");

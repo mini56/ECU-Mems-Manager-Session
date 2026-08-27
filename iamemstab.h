@@ -48,7 +48,7 @@ private:
     void appendSystemMessage(const QString &text);
     void updateDiagramSuggestion(const QString &question);
     void updateDocumentSuggestion(const QString &question);
-    QString resolveInductionFromKnownContext(const QString &question) const;
+    QString resolveInductionFromKnownContext(const QString &question, QString *evidence = nullptr) const;
     QString clarificationPrompt(const QString &question) const;
     void answerLocally(const QString &text);
 

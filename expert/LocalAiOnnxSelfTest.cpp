@@ -19,7 +19,12 @@ bool containsInternalLeak(const QString &text)
         QStringLiteral("domaine obligatoire"),
         QStringLiteral("contexte candidat fourni par mems manager"),
         QStringLiteral("mode diagnostic rapide"),
-        QStringLiteral("you are ia mems, the local assistant")
+        QStringLiteral("you are ia mems, the local assistant"),
+        QStringLiteral("réponse attendue"),
+        QStringLiteral("reponse attendue"),
+        QStringLiteral("diagnostic bref"),
+        QStringLiteral("ne montre aucun raisonnement interne"),
+        QStringLiteral("faits fournis par mems manager")
     };
     for (const QString &marker : markers) {
         if (lower.contains(marker))
@@ -139,17 +144,41 @@ int main(int argc, char *argv[])
                 return;
             }
             stage = 4;
-            client.ask(QStringLiteral("Réponds uniquement par OK."), QString());
+            client.ask(QStringLiteral("Couple de serrage sonde température ECT"),
+                       QStringLiteral("Couple ECT vérifié : 15 Nm.\nNiveau de preuve : constructeur."));
             return;
         }
 
         if (stage == 4) {
+            if (!answer.contains(QStringLiteral("15 Nm"), Qt::CaseInsensitive)) {
+                fail(QStringLiteral("Le fait documentaire ECT a été remplacé au lieu d'être rendu directement."));
+                return;
+            }
+            stage = 5;
+            client.ask(QStringLiteral("Couleur des fils sonde lambda"),
+                       QStringLiteral("Fils sonde lambda : gris et vert clair/gris — preuve : constructeur."));
+            return;
+        }
+
+        if (stage == 5) {
+            if (!answer.contains(QStringLiteral("gris"), Qt::CaseInsensitive)
+                || answer.contains(QStringLiteral("réponse attendue"), Qt::CaseInsensitive)
+                || answer.contains(QStringLiteral("diagnostic bref"), Qt::CaseInsensitive)) {
+                fail(QStringLiteral("La réponse documentaire lambda fuit encore une consigne interne."));
+                return;
+            }
+            stage = 6;
+            client.ask(QStringLiteral("Réponds uniquement par OK."), QString());
+            return;
+        }
+
+        if (stage == 6) {
             if (!answer.contains(QStringLiteral("OK"), Qt::CaseInsensitive)) {
                 fail(QStringLiteral("La génération native ne contient pas le marqueur OK attendu."));
                 return;
             }
             finished = true;
-            out << "PASS LocalAiClient native ONNX response quality and real targeting cases" << Qt::endl;
+            out << "PASS LocalAiClient native ONNX response quality, documentary grounding and leak guards" << Qt::endl;
             app.exit(0);
         }
     });
