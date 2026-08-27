@@ -90,6 +90,19 @@ Candidats déjà identifiés à confirmer dans RCL0194 avant intégration : sign
 
 Ne pas modifier protections protocole BUILD #30, MEMS1.9 F7/EF, 7D/80, W4, reconnexion1.9, RAM non validée, reset/clear/writes, `onProtocolCommandRequested(quint8)`, formule `raw-32768-correction`. UI dark/responsive inchangée. ONNX natif inchangé. 32 bits inchangé.
 
+## SUIVI INCIDENT #91 — AUDIT AVANT CORRECTION
+
+Audit effectué après relecture obligatoire du présent rapport, sans modification préalable du code :
+- `expert/LocalAiOnnxSelfTest.cpp` : les étapes 0 à 3 sont déterministes ; l'étape 4 est le vrai passage Qwen avec `Réponds uniquement par OK.` et sans grounding de secours.
+- `expert/LocalAiClient.cpp` : la génération active `do_sample=true`, `temperature=0.7` en mode rapide, `top_p=0.8`, `top_k=20`. Aucun `random_seed` n'est fixé ; deux exécutions identiques peuvent donc diverger.
+- Le garde français `likelyWrongLanguage()` est conservé : rejet uniquement si au moins trois marqueurs anglais sont détectés et au plus un marqueur français. `containsInternalInstructionLeak()` reste également obligatoire.
+- L'ancien probe ONNX Python antérieur à l'intégration C++ utilisait `do_sample=False`, donc était déterministe ; l'intégration C++ a introduit l'échantillonnage aléatoire.
+- La documentation officielle ONNX Runtime GenAI expose `random_seed` comme option numérique de recherche ; `-1` signifie graine aléatoire.
+
+### ÉTAPE AUTORISÉE AVANT MODIFICATION DU CODE
+
+Correction ciblée retenue : **conserver `do_sample=true`, les températures, `top_p`, `top_k`, le prompt, les budgets de tokens et tous les gardes de production, mais fixer `random_seed=42` dans les paramètres ONNX GenAI**. Cela rend une même requête reproductible sans transformer la génération en greedy, sans affaiblir le contrôle de langue et sans ajouter de boucle de relance. Modification limitée à `expert/LocalAiClient.cpp`, puis contrôle du diff et push sur `MEMSX64` en restant BUILD #30 / v1.0.30. Le run complet devra valider le self-test natif et le self-test packagé avant toute autre fonction.
+
 ## PROCHAINE ACTION EXACTE
 
 **Priorité : rétablir `MEMSX64` vert après #91. Auditer le self-test génératif et le contrôle de langue de `LocalAiClient`, comparer avec le succès #90, corriger la cause générale sans affaiblir la sécurité linguistique, pousser sur BUILD #30 et vérifier le run complet. Une fois le HEAD vert, reprendre l'audit `IaMemsTab` / `IaMemsService` pour la fonction de schémas, puis RAVE 1720.**
