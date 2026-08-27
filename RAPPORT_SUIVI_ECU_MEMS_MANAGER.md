@@ -85,9 +85,9 @@ Ajouter à IA MEMS une capacité **séparée du moteur IA** : lorsqu’une quest
 - Préparer sur branche temporaire, ajouter un self-test spécifique, comparer le diff, puis seulement envisager `MEMSX64` après validation.
 - Aucun changement protocole, ECU, RAVE ou 32 bits.
 
-## RAVE 1720 — EN ATTENTE PENDANT LA MODIFICATION SCHÉMAS
+## RAVE 1720 — ANCIENS CANDIDATS JAPON REPORTÉS
 
-Candidats déjà identifiés à confirmer dans RCL0194 avant intégration : signal jauge température C159-5 GU, commande bobine C159-25 WB et liaison C161-18 WS, ligne A/C C159-19 RW. Reprendre ce lot séparément après stabilisation de la fonction schémas.
+Candidats déjà identifiés dans RCL0194 : signal jauge température C159-5 GU, commande bobine C159-25 WB et liaison C161-18 WS, ligne A/C C159-19 RW. Ils restent conservés mais sont reportés dans un lot Japon séparé après rééquilibrage de la couverture SPi classique.
 
 ## SÉCURITÉ À PRÉSERVER
 
@@ -129,7 +129,7 @@ L’ordre demandé était strictement :
 3. **Ajouter la fonction de proposition de schéma local** — fait et validé dans #94.
 4. **Respecter toutes les contraintes de séparation et de sécurité** — fait : aucun changement Qwen, ONNX, `LocalAiClient`, protocole, ECU, RAVE ou 32 bits pour cette fonction.
 
-**La fonction schémas est maintenant stabilisée par le build #94. Le lot suivant redevient RAVE 1720, à traiter séparément.**
+**La fonction schémas est maintenant stabilisée par le build #94. Le travail est revenu à RAVE.**
 
 ## POINT 2 — AUDIT IA MEMS / SCHÉMAS TERMINÉ AVANT CODE
 
@@ -166,8 +166,8 @@ Audit effectué sur le HEAD `MEMSX64` `16b99c3f`, après relecture du présent r
 - `MEMSX64` avancée sans force sur `5ad520dc5ef4b5ec6eb7096233d7a7a1d7f916f3`.
 - GitHub Actions a créé correctement **#93 / v1.0.93**, run `33066459991` : la nouvelle règle de version dynamique fonctionne.
 - Le log fourni montre `ecu_mems_manager.exe` généré puis `PASS protocol context safety policy`.
-- L’échec survient lorsque le `POST_BUILD` tente d’exécuter `Release\\ia_mems_diagram_selftest.exe`; MSBuild remonte **`-1073741515`** (`0xC0000135`, runtime DLL introuvable).
-- `ia_mems_diagram_selftest` est lié à `Qt5::Core`. Au moment du `POST_BUILD`, le workflow n’a pas encore ajouté `C:\\Qt\\5.15.2\\msvc2019_64\\bin` au `PATH`.
+- L’échec survient lorsque le `POST_BUILD` tente d’exécuter `Release\ia_mems_diagram_selftest.exe`; MSBuild remonte **`-1073741515`** (`0xC0000135`, runtime DLL introuvable).
+- `ia_mems_diagram_selftest` est lié à `Qt5::Core`. Au moment du `POST_BUILD`, le workflow n’a pas encore ajouté `C:\Qt\5.15.2\msvc2019_64\bin` au `PATH`.
 - Le workflow possède déjà `Run deterministic self-tests`, qui ajoute le répertoire Qt au `PATH` puis exécute ce test. Cause réelle : **ordre d’exécution**, pas compilation du catalogue, protocole, Qwen/ONNX ou packaging.
 
 ## CORRECTION #93 — DIFF TEMPORAIRE VALIDÉ
@@ -205,7 +205,7 @@ Audit effectué sur le HEAD `MEMSX64` `16b99c3f`, après relecture du présent r
 - Conclusion : la Mini **SPi classique non-Japon est nettement sous-couverte** par rapport à la SPi Japon ; la fréquence des réponses IA mentionnant le Japon est cohérente avec cette répartition documentaire et ne doit pas être corrigée en masquant les faits Japan.
 - Les 86 faits RAVE portent déjà un millésime, une année ou une plage d’années dans leur variante ; le déficit principal concerne la **portée marché explicite** pour les faits non-Japon et le manque de faits constructeur sur les SPi 1991–1996.
 - Le sommaire constructeur `RCL0194ENG` 97MY sépare lui-même `Engine Management System: MPi 20.1` et `SPi (JAPAN) 20.3`, avec une portée VIN `Japan only — SAXXNNAXKBD 134455` et `All other vehicles — SAXXNNAZEBD 134455`. Continuer 20.3/20.4 augmenterait donc mécaniquement la surreprésentation SPi Japon.
-- Publication Rover à rechercher en priorité pour la SPi classique : **AKM6799 — Mini Single Point Injection 1991 to 1996**. `AKM7169` (Mini All Models 1993 on) pourra être utilisé en recoupement si ses pages donnent une portée constructeur exploitable.
+- Publication Rover prioritaire pour la SPi classique : **AKM6799 — Mini Single Point Injection 1991 to 1996**. `AKM7169` couvre les Mini tous modèles 1993 et suivants et fournit des pages SPi exploitables.
 
 ## RAVE — RÈGLE DE PORTÉE VARIANTE / ANNÉE / MARCHÉ
 
@@ -215,6 +215,23 @@ Audit effectué sur le HEAD `MEMSX64` `16b99c3f`, après relecture du présent r
 - Les faits Japon doivent rester explicitement Japon dans la variante et dans le contexte restitué par IA MEMS ; ils ne doivent pas être présentés comme une vérité universelle SPi.
 - Les sources secondaires (MEMS FCR, catalogues de pièces, sites techniques, forums) peuvent servir à orienter la recherche ou à signaler une divergence, mais **ne deviennent pas `verifie_constructeur`** sans recoupement avec une documentation Rover primaire correspondante.
 
+## RAVE 1720 CLASSIC SPi — CANDIDAT TEMPORAIRE VALIDÉ
+
+- Source constructeur exploitée : **Rover Group Limited `AKM7169ENG`, Mini Repair Manual, publication AKM7169, 1993**.
+- Portée générale explicitement donnée par le manuel : Mini fabriquées à partir du VIN **`049349`**.
+- Pages utilisées : `Engine Tuning Data 3` (SPi boîte manuelle), `Engine Tuning Data 4` (SPi automatique), `Engine Tuning Data 5` (SPi moteur haute compression).
+- Les pages utilisées ne donnent pas de marché : portée enregistrée **`market_non_precise`** ; aucune supposition UK/Europe/Japon.
+- 7 faits constructeur retenus : portée document/VIN, ECU manuel `MNE101040`, ECU automatique `MNE101060`, ECU haute compression `MNE101070`, principe speed/density, TPS 0–1 V fermé / 4–5 V ouvert, pression carburant 1,0 bar ±4,0 % constante.
+- `High compression engine` reste tel quel : **ne pas le transformer automatiquement en Cooper**.
+- La tolérance de pression AKM7169 reste distincte du fait RCL0193 1997+ `1,0 ±0,2 bar` ; ne pas fusionner les portées tant qu’elles ne sont pas recoupées.
+- Branche temporaire : **`tmp-rave-1720-classic-spi`**, créée depuis exactement `39543d69` (#94 vert).
+- HEAD candidat temporaire : **`f2e97b3e3a432785e159d30bbeca7b7bef2fdcb4`**.
+- Payload : `database/reference/research_enrichment_1720.qz64` ; SQL décompressé **10086 octets**, SHA-256 `2b68af4bd031908a5a46f4f9acae65e673edb2ee17772e6afdc2c9d4cfe43bb9` ; qz64 **2161 octets**, SHA-256 `e9d91ad14edf8340131050df933459b05b889927a4310db5235c657ba4862e77`.
+- Contrôle du blob GitHub après correction : **`ea933e26eacea5bcacbd62428e9d67b424de347d`**, identique au Git blob calculé sur le fichier local validé.
+- Validation sur copie exacte de la DB r20 de l’artefact #94 : **86→93 RAVE**, **98→105 experts**, exactement 7 + 7 faits `SRC-AKM7169`, aucun `RAVE-SPI93-*` préexistant, tous `verifie_constructeur`, `PRAGMA integrity_check = ok`, `user_version = 20`.
+- Diff final #94 `39543d69` → candidat : **exactement 3 fichiers** : ajout du qz64, ajout de `database/reference/audits/rave_1720_audit.md`, mise à jour de `database/reference/manifest.json`. Aucun code, moteur IA, protocole, ECU, UI ou 32 bits modifié.
+- Les anciens candidats RCL0194 SPi Japon ne sont pas supprimés ; ils deviennent un lot Japon séparé ultérieur.
+
 ## PROCHAINE ACTION EXACTE
 
-**Suspendre temporairement les anciens candidats RAVE 1720 Japon (C159-5 GU, C159-25 WB / C161-18 WS et C159-19 RW) sans les supprimer. Avant d’ajouter davantage de faits Japan, rechercher puis lire une source Rover primaire couvrant la Mini SPi classique 1991–1996, en priorité AKM6799 puis AKM7169 si pertinent. Extraire un premier lot uniquement si les relations techniques et leur portée année/marché/VIN sont directement vérifiables. Préparer ce lot sur une branche temporaire, valider la base, l’intégrité et le diff, puis seulement envisager `MEMSX64`. Reprendre ensuite le RAVE 1720 Japon séparément.**
+**Fast-forward sans force de `MEMSX64` depuis `39543d69` vers le candidat contrôlé `f2e97b3e3a432785e159d30bbeca7b7bef2fdcb4`. Le workflow doit créer #95 = v1.0.95. Valider le build complet et l’artefact, notamment la génération de la base expert qui doit intégrer le nouveau batch sans régression. Après #95 vert, poursuivre la recherche de couverture Mini SPi classique, en priorité AKM6799 1991–1996 ; le lot Japon RCL0194 reste séparé et reporté.**
