@@ -114,8 +114,6 @@ target_compile_definitions(ia_mems_diagram_selftest PRIVATE
     MEMS_SOURCE_REFERENCE_DIR="${CMAKE_SOURCE_DIR}/database/reference")
 target_link_libraries(ia_mems_diagram_selftest PRIVATE Qt5::Core)
 add_dependencies(${PNAME} ia_mems_diagram_selftest)
-add_custom_command(TARGET ${PNAME} POST_BUILD
-    COMMAND "$<TARGET_FILE:ia_mems_diagram_selftest>")
 
 add_executable(mems_search_selftest
     database/MemsSearchSelfTest.cpp
