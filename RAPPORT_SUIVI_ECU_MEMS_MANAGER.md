@@ -202,6 +202,15 @@ Sur **`tmp-ia-schema-proposal` uniquement**, appliquer ces deux durcissements sa
 4. Ne modifier aucun fichier IA moteur, protocole, ECU, RAVE, 32 bits ou interface.
 5. Contrôler le diff complet contre `5ad520dc`. Si et seulement si le diff est cette suppression CMake ciblée, intégrer sans force sur `MEMSX64` ; le push suivant doit produire **#94 / v1.0.94**.
 
+## CORRECTION #93 — DIFF TEMPORAIRE VALIDÉ
+
+- Branche temporaire : **`tmp-fix-93-diagram-selftest`**, créée exactement depuis `5ad520dc`.
+- Commit candidat : **`39543d694507d4c01c16d54cf2f6b01f3043fd6f`** (`Fix diagram selftest execution order`).
+- Comparaison `5ad520dc` → `39543d69` : **1 seul fichier**, `CMakeLists.txt`, **0 ajout / 2 suppressions**.
+- Le patch supprime exactement : `add_custom_command(TARGET ${PNAME} POST_BUILD` et `COMMAND "$<TARGET_FILE:ia_mems_diagram_selftest>")`.
+- La cible `ia_mems_diagram_selftest`, son lien `Qt5::Core`, sa dépendance de build et son exécution explicite dans `Run deterministic self-tests` restent inchangés.
+- Aucun autre fichier ni comportement n’est modifié.
+
 ## PROCHAINE ACTION EXACTE
 
-**Préparer la correction #93 sur branche temporaire depuis `5ad520dc`, avec uniquement la suppression du lancement `POST_BUILD` prématuré de `ia_mems_diagram_selftest`. Contrôler le diff avant toute intégration `MEMSX64`. RAVE 1720 reste en attente.**
+**Fast-forward sans force de `MEMSX64` depuis `5ad520dc` vers `39543d694507d4c01c16d54cf2f6b01f3043fd6f`, puis vérifier immédiatement que GitHub Actions crée #94 / v1.0.94. Inspecter le verdict de compilation et du self-test schéma avant toute autre modification. RAVE 1720 reste en attente.**
