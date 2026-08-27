@@ -6,17 +6,19 @@
 >
 > **SUIVI IMMÉDIAT** : avant chaque nouvelle étape, inscrire ici l’étape et son objectif ; après chaque résultat, l’inscrire avant la suite.
 >
-> **NOMMAGE UTILISATEUR** : `ECU MEMS Manager x64 #NN — Commit xxxxxxx`. `#NN` = GitHub Actions, pas le BUILD logiciel.
+> **NOMMAGE UTILISATEUR** : `ECU MEMS Manager x64 #NN — Commit xxxxxxx`. `#NN` = GitHub Actions.
+>
+> **VERSIONNAGE REPRIS À PARTIR DU PROCHAIN PUSH** : à partir du prochain push sur `MEMSX64`, le numéro de version du programme doit suivre le numéro du run/build GitHub Actions visible par l’utilisateur. Exemple obligatoire : **#93 => v1.0.93**, puis **#94 => v1.0.94**, etc. La fenêtre de démarrage/splash doit afficher ce même numéro ; About, aide et toute autre occurrence de version doivent rester synchronisés. **#92 reste historiquement v1.0.30** ; la reprise de numérotation commence au prochain push. Ne pas repartir en v1.0.31.
 
 ## ÉTAT COURANT — 27 AOÛT 2026
 
 - Dépôt : `mini56/ECU-Mems-Manager-Session`.
 - Branche active : **`MEMSX64`**.
 - HEAD x64 courant : **`16b99c3f40985b7ef5439ee8834eb5e8dd8126bf`**.
-- BUILD logiciel : **#30 / v1.0.30**. Aucun BUILD #31 sans demande explicite.
-- Dernier run entièrement validé : **#90 — SUCCESS**, run `33044945315`, commit `fab2e4cf`.
+- Version logicielle actuellement validée dans l’artefact #92 : **v1.0.30**. À partir du prochain push, appliquer la règle de reprise : **#93 = v1.0.93**.
+- Dernier run entièrement validé : **#92 — SUCCESS**, run `33058810115`, commit `16b99c3f`.
 - Run **#91 — FAILURE**, run `33047008070`, commit `897b51c8` : échec uniquement à `Validate packaged production LocalAiClient with Qwen` après assemblage ; moteur ONNX et réponses déterministes prêts, puis réponse générative rejetée par le contrôle de langue active.
-- Run **#92 — EN COURS**, run `33058810115`, commit `16b99c3f` : validation de la correction de déterminisme ONNX.
+- Run **#92 — SUCCESS**, run `33058810115`, commit `16b99c3f` : correction de déterminisme ONNX validée ; LocalAiClient natif + packagé passent.
 - Artefact #90 : ID `9635406628`, taille `386 768 840`, SHA-256 `125e27658bba577efdf5d22a7cb3fa26670cddadd8383e8f4e7d907d765f6d6d`.
 - 32 bits `lab-expert-engine` et rollback `MEMSX64-BUILD26-BASE` : **NE PAS TOUCHER**.
 
@@ -64,9 +66,9 @@ Le journal complet fourni et le run GitHub montrent :
 La comparaison **#90 `fab2e4cf` → #91 `897b51c8`** ne contient aucun changement de `LocalAiClient`, du self-test, d'ONNX ou du packaging IA : le lot 1710 est documentaire/base. Le défaut à traiter est donc la robustesse/déterminisme du chemin génératif + validation de langue, pas un crash ONNX ni une régression de code IA introduite par RAVE 1710.
 
 ### OBJECTIF AVANT MODIFICATION
-Identifier exactement le prompt génératif, les paramètres de génération et le contrôle `réponse exploitable dans la langue active`. Corriger la cause générale qui peut rejeter de manière non déterministe une génération valide, **sans supprimer ni affaiblir le garde de langue de production** et sans masquer l'échec par une simple boucle de relance. Valider ensuite le self-test natif ET packagé sur GitHub Actions en restant BUILD #30 / v1.0.30.
+Identifier exactement le prompt génératif, les paramètres de génération et le contrôle `réponse exploitable dans la langue active`. Corriger la cause générale qui peut rejeter de manière non déterministe une génération valide, **sans supprimer ni affaiblir le garde de langue de production** et sans masquer l'échec par une simple boucle de relance. Valider ensuite le self-test natif ET packagé sur GitHub Actions en restant BUILD #30 / v1.0.30 pour cette correction #91.
 
-Aucun changement protocole, ECU, UI, 32 bits, Qwen/ONNX de version ou BUILD logiciel n'est autorisé dans cette correction.
+Aucun changement protocole, ECU, UI, 32 bits, Qwen/ONNX de version ou BUILD logiciel n'était autorisé dans cette correction.
 
 ## NOUVELLE ACTION AUTORISÉE — SCHÉMAS PROPOSÉS PAR IA MEMS
 
@@ -74,14 +76,14 @@ Aucun changement protocole, ECU, UI, 32 bits, Qwen/ONNX de version ou BUILD logi
 Ajouter à IA MEMS une capacité **séparée du moteur IA** : lorsqu’une question correspond à un schéma local connu (ex. brochage MEMS 1.3, connecteur MEMS 1.9, ROSCO 3 broches), l’onglet IA peut proposer un bouton explicite **« Ouvrir le schéma … »** pour visualiser le fichier local correspondant.
 
 ### Contraintes obligatoires
-- **NE PAS MODIFIER** Qwen, ONNX, `LocalAiClient`, le prompt, les budgets de tokens ou la génération qui fonctionne, hors correction ciblée de l'incident #91 ci-dessus nécessaire pour rétablir le HEAD vert.
+- **NE PAS MODIFIER** Qwen, ONNX, `LocalAiClient`, le prompt, les budgets de tokens ou la génération qui fonctionne.
 - La détection de schéma doit être déterministe et locale, indépendante du LLM.
 - Réutiliser le mécanisme d’affichage de schéma existant s’il existe ; sinon créer le plus petit composant de visualisation local possible.
 - Aucun accès réseau nécessaire pour ouvrir un schéma.
 - Ne jamais ouvrir automatiquement : seulement proposer, puis ouvrir sur clic utilisateur.
 - Ne jamais inventer de schéma ; n’utiliser que des fichiers réellement présents dans le package / manifeste.
 - Préparer sur branche temporaire, ajouter un self-test spécifique, comparer le diff, puis seulement envisager `MEMSX64` après validation.
-- Aucun changement protocole, ECU, RAVE, 32 bits ou BUILD logiciel.
+- Aucun changement protocole, ECU, RAVE ou 32 bits. Le seul changement de version autorisé/obligatoire au prochain push est la synchronisation de version définie plus haut : **run #93 => v1.0.93**.
 
 ## RAVE 1720 — EN ATTENTE PENDANT LA MODIFICATION SCHÉMAS
 
@@ -102,15 +104,24 @@ Audit effectué après relecture obligatoire du présent rapport, sans modificat
 
 ### ÉTAPE AUTORISÉE AVANT MODIFICATION DU CODE
 
-Correction ciblée retenue : **conserver `do_sample=true`, les températures, `top_p`, `top_k`, le prompt, les budgets de tokens et tous les gardes de production, mais fixer `random_seed=42` dans les paramètres ONNX GenAI**. Cela rend une même requête reproductible sans transformer la génération en greedy, sans affaiblir le contrôle de langue et sans ajouter de boucle de relance. Modification limitée à `expert/LocalAiClient.cpp`, puis contrôle du diff et push sur `MEMSX64` en restant BUILD #30 / v1.0.30. Le run complet devra valider le self-test natif et le self-test packagé avant toute autre fonction.
+Correction ciblée retenue : **conserver `do_sample=true`, les températures, `top_p`, `top_k`, le prompt, les budgets de tokens et tous les gardes de production, mais fixer `random_seed=42` dans les paramètres ONNX GenAI**. Cela rend une même requête reproductible sans transformer la génération en greedy, sans affaiblir le contrôle de langue et sans ajouter de boucle de relance. Modification limitée à `expert/LocalAiClient.cpp`, puis contrôle du diff et push sur `MEMSX64` en restant BUILD #30 / v1.0.30 pour cette correction.
 
 ### RÉSULTAT DE LA CORRECTION
 
 - Commit `MEMSX64` : **`16b99c3f40985b7ef5439ee8834eb5e8dd8126bf`** (`BUILD #30 make ONNX sampling reproducible`).
 - Diff contrôlé après push : **exactement une ligne ajoutée** dans `expert/LocalAiClient.cpp`, `OgaGeneratorParamsSetSearchNumber(params, "random_seed", 42.0)` ; aucun autre fichier ni aucune autre ligne de code modifiée.
 - Le garde `likelyWrongLanguage()`, `containsInternalInstructionLeak()`, le prompt, `do_sample=true`, `temperature`, `top_p`, `top_k`, les budgets de tokens et les fallbacks restent inchangés.
-- GitHub Actions **#92**, run `33058810115`, a démarré sur ce commit et est actuellement en cours. Ne reprendre aucune autre modification avant son verdict, en particulier les étapes natives et packagées LocalAiClient/Qwen.
+- GitHub Actions **#92 — SUCCESS**, run `33058810115`, commit `16b99c3f`. Les validations LocalAiClient native et packagée passent ; l'incident #91 est clos.
+
+## REPRISE DU VERSIONNAGE — RÈGLE ACTIVE
+
+- État historique actuel : **ECU MEMS Manager x64 #92 = v1.0.30**.
+- **Prochain push : #93 doit produire v1.0.93.**
+- Ensuite le numéro reste synchronisé : #94 = v1.0.94, #95 = v1.0.95, etc.
+- La version affichée dans la fenêtre de démarrage/splash est la référence visible par l’utilisateur et doit correspondre au run/build livré.
+- About, aide, métadonnées et toute autre occurrence du numéro de version doivent utiliser la même valeur ; éviter plusieurs numéros incohérents dans le même package.
+- Cette règle remplace pour les futurs pushes la conservation en v1.0.30. Elle ne modifie pas rétroactivement #92.
 
 ## PROCHAINE ACTION EXACTE
 
-**Attendre le verdict complet de GitHub Actions #92 sur `16b99c3f`. Si #92 est vert, consigner les étapes LocalAiClient native + packagée et reprendre ensuite l'audit `IaMemsTab` / `IaMemsService` pour la fonction de schémas. Si #92 est rouge, analyser précisément l'étape fautive et son journal avant toute nouvelle modification. Rester BUILD #30 / v1.0.30.**
+**#92 étant vert et l'incident #91 étant clos, reprendre l'audit `IaMemsTab` / `IaMemsService` pour la fonction de schémas, sans toucher à Qwen/ONNX/LocalAiClient, au protocole, à l'ECU, à RAVE ni au 32 bits. Avant le prochain push sur `MEMSX64`, appliquer obligatoirement la reprise de version : le prochain run #93 doit être compilé et affiché comme v1.0.93, puis conserver cette synchronisation pour les runs suivants.**
