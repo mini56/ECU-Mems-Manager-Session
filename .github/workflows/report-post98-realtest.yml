@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   append_report:
-    if: github.event.head_commit.message == 'REPORT post98 real test driver'
+    if: github.event.head_commit.message == 'REPORT fix post98 report append workflow'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,125 +20,12 @@ jobs:
       - name: Append post98 history
         shell: python
         run: |
+          import base64
           from pathlib import Path
+          data = base64.b64decode("CgojIFBBU1NBR0UgRU4gUFJPRFVDVElPTiBFVCBURVNUIFLDiUVMIEJVSUxEICM5OAoKIyMgUFJPTU9USU9OIFBST0RVQ1RJT04gRVQgQlVJTEQgT0ZGSUNJRUwKCi0gQ29tbWl0IHByb2R1Y3Rpb24gcHJvcHJlIDogKipgZDc4MzZlODY5MzBlMTA3ZDhhNjg1NjNhNmZjZTM2NDNmMjdjNTc0OGAqKiDigJQgYEZpeCBwb3N0OTcgSUEgcm91dGluZyBhbmQgWE1MIHJlbmRlcmluZ2AuCi0gUGFyZW50IGRpcmVjdCA6IEJVSUxEICM5NyAqKmAyYjIxMTU1NGFiZGJiMTI3ZmQ0ZDQ3MmY5Y2U2ODczOTRiMmQ0NjA4YCoqLgotIEFyYnJlIDogKipgM2RjYTEyMTY3OTg3NDk1ZTI2NWZjYjIzMmI2NmQ2MzEwMGZiNDEyNmAqKiwgaWRlbnRpcXVlIMOgIGwnYXJicmUgY2FuZGlkYXQgdmFsaWTDqS4KLSBgTUVNU1g2NGAgYXZhbmPDqWUgKipzYW5zIGZvcmNlKiogOyBhdWN1biBmaWNoaWVyIHByb3RvY29sZSBFQ1Ugbmkgdm9pZSAzMiBiaXRzIG1vZGlmacOpLgotIFdvcmtmbG93IG9mZmljaWVsICoqQlVJTEQqKiAoYDM0MTU2NjUwNWApIDogcnVuICoqYDMzMTE1NzQxMjU1YCoqLCBydW4gbnVtYmVyICoqOTgqKiwgYnJhbmNoZSBgTUVNU1g2NGAsIEhFQUQgKipgZDc4MzZlODY5MzBlMTA3ZDhhNjg1NjNhNmZjZTM2NDNmMjdjNTc0OGAqKi4KLSBEw6lidXQgOiBgMjAyNi0wOC0yN1QyMDo1NjoxNVpgIDsgZmluIDogYDIwMjYtMDgtMjdUMjE6MDM6MDdaYCA7IGNvbmNsdXNpb24gOiAqKlNVQ0NFU1MqKi4KLSBBcnRlZmFjdCA6ICoqYEVDVS1NRU1TLU1hbmFnZXIteDY0LUJVSUxELTk4LXYxLjAuOThgKiosIElEICoqYDk2NjQ2MDkzNTBgKiosIHRhaWxsZSAqKjM4NiA4NDggNjkyIG9jdGV0cyoqLCBkaWdlc3QgKipgc2hhMjU2OmRkMjMwMzgxYzVhZmNkMmE1MmQyOWY3MWQ0MTJlYmRlYThjMjExMzRiNzVmOTEyYWI4ZWNiZWVlYWYyODNiNTJgKiouCgojIyBJTkNJREVOVFMgRFUgTcOJQ0FOSVNNRSBERSBSQVBQT1JUCgotIEFwcsOocyBsYSB2YWxpZGF0aW9uIHBvc3QtIzk3LCBsZSBwcmVtaWVyIHdvcmtmbG93IHRlbXBvcmFpcmUgZCdham91dCBhdSByYXBwb3J0IGEgcHJvZHVpdCAqKmAzMzExNTQ0ODg5NGAg4oCUIEZBSUxVUkUgc2FucyBqb2IqKiDDoCBjYXVzZSBkJ3VuZSBpbmRlbnRhdGlvbiBQeXRob24vWUFNTCBpbnZhbGlkZS4gQXVjdW4gaW1wYWN0IHN1ciBgTUVNU1g2NGAsIGwnYXBwbGljYXRpb24gb3UgbCdFQ1UuCi0gQ29ycmVjdGlvbiBhdSBjb21taXQgKipgY2VhNDU5Njg0OGE1MDhkOTVmMzNhZDE3ZmE1OWY2YTU4MmY1ZmI1M2AqKiwgcHVpcyBydW4gKipgMzMxMTU2NjE3MzRgKiosIGpvYiAqKmA5ODY2OTUyNzU4N2AqKiA6ICoqU1VDQ0VTUyoqLgotIFdvcmtmbG93IHRlbXBvcmFpcmUgc3VwcHJpbcOpIGF1IGNvbW1pdCAqKmAyMmQwNTIyMWZmNzg1OWM5Mzk2NWZiYTA4Njc1OGFiMDNhZGM2NjRhYCoqLgotIExlIHByZW1pZXIgZXNzYWkgZCdham91dCBkdSBwcsOpc2VudCBjb21wdGUtcmVuZHUgIzk4IGEgcmVwcm9kdWl0IGxhIG3Dqm1lIGVycmV1ciBkJ2luZGVudGF0aW9uIFlBTUwgOiBydW4gKipgMzMxMTkzNzU4MjRgIOKAlCBGQUlMVVJFIHNhbnMgam9iKiouIENldHRlIGVycmV1ciBjb25jZXJuZSB1bmlxdWVtZW50IGxlIG3DqWNhbmlzbWUgZGUgcmFwcG9ydCBldCBkb2l0IHJlc3RlciBjb25zaWduw6llLgoKIyMgVEVTVCBJTlNUQUxMQVRJT04gUFJPUFJFICM5OCBTVVIgUEMgUsOJRUwKCkF2YW50IGluc3RhbGxhdGlvbiwgbCdhbmNpZW5uZSB2ZXJzaW9uIGV0IGxlcyBkb25uw6llcyBsb2NhbGVzIGlkZW50aWZpw6llcyBkYW5zIGxlIGNvZGUgb250IMOpdMOpIHN1cHByaW3DqWVzIDogYW5jaWVuIGRvc3NpZXIgYGRhdGFiYXNlYCwgZG9ubsOpZXMgbG9jYWxlcyBkZSBsJ2FwcGxpY2F0aW9uIGV0IHByb2ZpbCB1dGlsaXNhdGV1ci4gTGUgdGVzdCAjOTggbmUgcsOpdXRpbGlzZSBkb25jIHBhcyB2b2xvbnRhaXJlbWVudCBsJ2FuY2llbiBjYWNoZS9iYXNlL3Byb2ZpbC4KCi0gSW5zdGFsbGF0aW9uIGNvbXBsw6h0ZSBhcHLDqHMgZMOpY29tcHJlc3Npb24gOiAqKjEgbWludXRlIDEwIHNlY29uZGVzKiouCi0gUHJlbWllciBsYW5jZW1lbnQgZXQgYmFzZSBsb2NhbGUgOiBmb25jdGlvbm5lbHMuCi0gSW50ZXJmYWNlIDogYXVjdW4gZMOpZmF1dCBub3V2ZWF1IHNpZ25hbMOpIHBlbmRhbnQgY2V0dGUgc8OpcXVlbmNlLgoKIyMgVEVTVFMgSUEgUsOJRUxTICM5OCDigJQgRUNVIETDiUNPTk5FQ1TDiQoKIyMjIGBCcm9jaGUgTUFQIE1pbmlgIHB1aXMgYGNoZXJjaGVgCioqQ09SUklHw4kqKiA6IGFwcsOocyBjbGFyaWZpY2F0aW9uIFNQaS9NUGksIGBjaGVyY2hlYCBuZSBjb25jbHV0IHBsdXMgYXJiaXRyYWlyZW1lbnQgU1BpIHNhbnMgcHJldXZlIGZvcnRlIGV0IGRlbWFuZGUgdW5lIHLDqWbDqXJlbmNlIEVDVSBvdSBhbm7DqWUvbWFyY2jDqS4KCiMjIyBgQnJvY2hlIE1BUCBNaW5pIE1QaSAxOTk3YAoqKlBBUlRJRUwqKiA6IGxlcyBmYWl0cyBNQVAgTVBpIHV0aWxlcyBzb250IHJldHJvdXbDqXMgKEMxODYsIEMxNTktMzYsIEMxNTktOCwgQzE1OS0xMyksIG1haXMgdW4gZmFpdCAqKlNQaSBKYXBvbiA5N01ZKiogYXBwYXJhw650IGVuY29yZSBtYWxncsOpIGxhIGRlbWFuZGUgZXhwbGljaXRlbWVudCBNUGkuCgojIyMgYEJyb2NoZSBNQVAgTWluaSBTUGkgSmFwYW4gMTk5N2AKKipEw4lGQVVUKiogOiBsZSBmYWl0IFNQaSBKYXBvbiBlc3QgcmV0cm91dsOpLCBtYWlzIHVuIGZhaXQgTVBpIGV0IGRlcyBmYWl0cyBDS1AvYm9iaW5lIHNhbnMgcmFwcG9ydCBkaXJlY3QgYXZlYyBNQVAgYXBwYXJhaXNzZW50IMOpZ2FsZW1lbnQuCgojIyMgYENvdWxldXIgZGVzIGZpbHMgc29uZGUgbGFtYmRhID9gCioqRlVJVEUgSU5URVJORSBDT1JSSUfDiUUqKiwgcGVydGluZW5jZSBlbmNvcmUgaW5zdWZmaXNhbnRlIDogYXVjdW4gcHJvbXB0IGludGVybmUgYWZmaWNow6kgOyB1biBtw6ptZSBmYWl0IEhPMlMgYXBwYXJhw650IGRldXggZm9pcyA7IGRlcyBmYWl0cyBkZXNjcmlwdGlmcyBwYXNzZW50IGF2YW50IGxlIGPDomJsYWdlIDsgbGUgZmFpdCBgQkdgIG5vaXIvdmVydCBjb25jZXJuZSBsYSBjb21tYW5kZSBkdSByZWxhaXMgZGUgc29uZGUgb3h5Z8OobmUgU1BpIEphcG9uIDk3TVkgZXQgbmUgZG9pdCBwYXMgw6p0cmUgcHLDqXNlbnTDqSBjb21tZSBwcmV1dmUgZGlyZWN0ZSBkZSB0b3V0ZXMgbGVzIGNvdWxldXJzIGRlIGxhIHNvbmRlLgoKIyMjIGBDb3VwbGUgZGUgc2VycmFnZSBzb25kZSBFQ1QgP2AKKipDT1JSRUNUIFNVUiBMRSBGT05EKiogOiAqKjE1IE5tKiosIHByb2PDqWR1cmUgcGVydGluZW50ZSwgYXVjdW5lIGZ1aXRlIGludGVybmUuIETDqWZhdXQgcmVzdGFudCA6IGxlIGZhaXQgRUNUIGVzdCBkdXBsaXF1w6kgZXQgdW4gZmFpdCBzZWNvbmRhaXJlIGVzdCBham91dMOpIG1hbGdyw6kgbGEgcXVlc3Rpb24gY2libMOpZS4KCiMjIFRFU1RTIEZJQ0hFUyBYTUwgUsOJRUxTICM5OAoKIyMjIE1FTVMgMS42Ci0gQm91dG9uIGBPdXZyaXIgbGEgZmljaGUgWE1MIE1FTVMgMS42YCBmb25jdGlvbm5lbC4KLSBGaWNoZSBjb21wbMOodGUgOiAqKjI1IGJyb2NoZXMgRUNVKiosIGZvbmN0aW9ucywgY291bGV1cnMgZ3JhcGhpcXVlcywgc291cmNlcyBlbiBiYXMsIGTDqWZpbGVtZW50IGNvbXBsZXQuCi0gRMOpZmF1dCByZXN0YW50IDogYWJzZW5jZSBkdSBwZXRpdCAqKmNhZHJlL2ZvbmQgZ3JpcyBjb21tdW4gYXV0b3VyIGRlcyBjYXJyw6lzIGRlIGNvdWxldXIqKiwgcmVuZGFudCBsZSBub2lyIHByZXNxdWUgaW52aXNpYmxlIHN1ciBmb25kIHNvbWJyZS4KCiMjIyBNRU1TIDEuOQotIEZpY2hlIGNvbXBsw6h0ZSA6ICoqMzYgYnJvY2hlcyoqLCBmb25jdGlvbnMsIGNvdWxldXJzIGdyYXBoaXF1ZXMsIHNvdXJjZXMgZG9jdW1lbnRhaXJlcyBlbiBiYXMuCi0gTcOqbWUgZMOpZmF1dCBkZSBjYWRyZS9mb25kIGdyaXMgYXV0b3VyIGRlcyBjb3VsZXVycy4KCiMjIFRFU1QgRUNVIENPTk5FQ1TDiQoKTGUgdsOpaGljdWxlIG4nZXN0IHBhcyBkaXNwb25pYmxlLiAqKkF1Y3VuZSB2YWxpZGF0aW9uICM5OCBhdmVjIEVDVSByw6llbGxlbWVudCBjb25uZWN0w6kgbidlc3QgZMOpY2xhcsOpZS4qKiBDZSB0ZXN0IHJlc3RlIGVuIGF0dGVudGUgZXQgbmUgZG9pdCBwYXMgw6p0cmUgc2ltdWzDqS4KCiMgUFJPQ0hBSU5FIEFDVElPTiBFWEFDVEUg4oCUIEFQUsOIUyBURVNUIFLDiUVMICM5OAoKUGFydGlyIHN0cmljdGVtZW50IGRlICoqQlVJTEQgIzk4IGBkNzgzNmU4NjkzMGUxMDdkOGE2ODU2M2E2ZmNlMzY0M2YyN2M1NzQ4YCoqIHN1ciB1bmUgYnJhbmNoZSB0ZW1wb3JhaXJlLiBOZSB0b3VjaGVyIG5pIGF1IHByb3RvY29sZSBFQ1UgbmkgYXUgMzIgYml0cy4KCkNvcnJpZ2VyIHVuaXF1ZW1lbnQgOgoxLiBmaWx0cmFnZSBzdHJpY3QgKipNUGkvU1BpL0phcGFuKiogOwoyLiBwZXJ0aW5lbmNlIGR1IHN1amV0IDogKipNQVAqKiBuZSBkb2l0IHBhcyBzb3J0aXIgQ0tQL2JvYmluZSA7IHVuZSBkZW1hbmRlIGRlICoqY291bGV1ciBsYW1iZGEqKiBkb2l0IHByaXZpbMOpZ2llciB1biB2cmFpIGZhaXQgZGUgY8OiYmxhZ2UgY29tcGF0aWJsZSA7CjMuIGTDqWR1cGxpY2F0aW9uIGRlcyBmYWl0cyBpZGVudGlxdWVzIDsKNC4gcGV0aXQgKipjYWRyZS9mb25kIGdyaXMgY29tbXVuKiogYXV0b3VyIGRlcyBjYXJyw6lzIGRlIGNvdWxldXIgZGFucyBsZSByZW5kZXJlciBYTUwgMS42LzEuOS4KCkFqb3V0ZXIgbGVzIHRlc3RzIGTDqXRlcm1pbmlzdGVzIGNvcnJlc3BvbmRhbnQgYXV4IGTDqWZhdXRzIHJlcHJvZHVpdHMsIHZhbGlkZXIgeDY0IHN1ciBHaXRIdWIgQWN0aW9ucyBlbiBicmFuY2hlIHRlbXBvcmFpcmUsIGNvbnRyw7RsZXIgbGUgZGlmZiBldCBhdmFuY2VyIGBNRU1TWDY0YCBzYW5zIGZvcmNlIHVuaXF1ZW1lbnQgc2kgbGEgdmFsaWRhdGlvbiBlc3QgdmVydGUuIExlIHRlc3QgRUNVIGNvbm5lY3TDqSByZXN0ZXJhIGVuIGF0dGVudGUgZGUgbGEgdm9pdHVyZS4K").decode('utf-8')
           path = Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md')
-          text = r'''
-
-# PASSAGE EN PRODUCTION ET TEST RÉEL BUILD #98
-
-## PROMOTION PRODUCTION APRÈS VALIDATION TEMPORAIRE
-
-- Commit production propre : **`d7836e86930e107d8a68563a6fce3643f27c5748`** — `Fix post97 IA routing and XML rendering`.
-- Parent direct : BUILD #97 **`2b211554abdbb127fd4d472f9ce687394b2d4608`**.
-- Arbre : **`3dca12167987495e265fcb232b66d63100fb4126`**, identique à l'arbre candidat validé.
-- `MEMSX64` a été avancée **sans force**.
-- Aucun fichier protocole ECU ni voie 32 bits n'a été modifié par cette promotion.
-
-## BUILD #98 OFFICIEL — VERT
-
-- Workflow : **BUILD** (`341566505`).
-- Run : **`33115741255`**, run number **98**.
-- Branche : `MEMSX64`.
-- HEAD : **`d7836e86930e107d8a68563a6fce3643f27c5748`**.
-- Début : `2026-08-27T20:56:15Z`.
-- Fin / mise à jour finale : `2026-08-27T21:03:07Z`.
-- Conclusion : **SUCCESS**.
-- Artefact : **`ECU-MEMS-Manager-x64-BUILD-98-v1.0.98`**.
-- ID artefact : **`9664609350`**.
-- Taille : **386 848 692 octets**.
-- Digest : **`sha256:dd230381c5afcd2a52d29f71d412ebdea8c21134b75f912ab8ecbeeeaf283b52`**.
-
-## INCIDENT DU MÉCANISME DE RAPPORT — CONSIGNÉ
-
-Après la validation temporaire post-#97, un premier workflow temporaire destiné uniquement à ajouter le compte-rendu au rapport a produit le run **`33115448894` — FAILURE sans job**, à cause d'une indentation Python/YAML invalide dans ce workflow de rapport. Cet échec n'a touché ni `MEMSX64`, ni l'application, ni le code ECU.
-
-- Workflow de rapport corrigé au commit **`cea4596848a508d95f33ad17fa59f6a582f5fb53`**.
-- Run corrigé **`33115661734`**, job **`98669527587`** : **SUCCESS**.
-- Workflow temporaire ensuite supprimé de `RAPPORT` au commit **`22d05221ff7859c93965fba086758ab03adc664a`**.
-
-## TEST INSTALLATION PROPRE #98 SUR PC RÉEL
-
-Avant installation, l'ancienne version a été désinstallée puis les restes applicatifs identifiés dans le code ont été supprimés : ancien dossier `database`, données locales de l'application et profil utilisateur. Le test #98 ne réutilise donc pas volontairement l'ancien cache/base/profil.
-
-- Installation complète après décompression : **1 minute 10 secondes**.
-- Premier lancement et base locale : fonctionnels.
-- Interface : aucun défaut nouveau signalé pendant cette séquence de test.
-
-## TESTS IA RÉELS #98 — ECU DÉCONNECTÉ
-
-### `Broche MAP Mini` puis `cherche`
-
-Résultat : **CORRIGÉ**. Après la clarification SPi/MPi, `cherche` ne conclut plus arbitrairement SPi lorsque l'ECU est déconnecté et qu'aucune preuve forte n'est disponible. Réponse observée : impossibilité de trancher SPi/MPi sans preuve suffisante, avec demande de référence ECU ou année/marché.
-
-### `Broche MAP Mini MPi 1997`
-
-Résultat : **PARTIEL / DÉFAUT RESTANT**.
-- Les faits MAP MPi utiles sont bien retrouvés, notamment le capteur MAP C186 et les liaisons vers C159-36, C159-8 et C159-13.
-- Un fait **SPi Japon 97MY** apparaît encore à la fin de la réponse malgré la demande explicitement MPi.
-- Le filtrage final de variante doit donc encore être durci.
-
-### `Broche MAP Mini SPi Japan 1997`
-
-Résultat : **DÉFAUT RESTANT**.
-- Le fait d'applicabilité SPi Japon est retrouvé.
-- Un fait MPi apparaît encore.
-- Des faits CKP et bobine sans rapport direct avec la broche MAP sont également remontés.
-- Le filtrage doit donc être strict à la fois sur la variante et sur le sujet demandé.
-
-### `Couleur des fils sonde lambda ?`
-
-Résultat : **FUITE INTERNE CORRIGÉE**, pertinence encore à améliorer.
-- Aucune consigne interne du prompt n'est affichée.
-- Un même fait HO2S apparaît deux fois.
-- Les faits descriptifs HO2S généraux passent avant le fait réellement lié au câblage.
-- Le fait de couleur disponible concerne la commande du relais de sonde oxygène SPi Japon 97MY (`BG`, noir/vert), ce qui ne doit pas être présenté comme si cela prouvait directement toutes les couleurs des fils de la sonde elle-même.
-
-### `Couple de serrage sonde ECT ?`
-
-Résultat : **CORRECT SUR LE FOND**.
-- Valeur constructeur retrouvée : **15 Nm**.
-- Procédure ECT pertinente.
-- Aucune fuite de prompt interne.
-- Défaut restant : le même fait ECT est affiché deux fois ; un fait descriptif secondaire est ajouté alors que la demande est ciblée sur le couple.
-
-## TESTS FICHES XML RÉELS #98
-
-### MEMS 1.6
-
-- Proposition du bouton **`Ouvrir la fiche XML MEMS 1.6`** : fonctionnelle.
-- Fiche complète : **25 broches ECU présentes**.
-- Fonctions présentes.
-- Couleurs interprétées et affichées graphiquement.
-- Sources présentes en bas du document.
-- Défilement complet fonctionnel.
-- Défaut graphique restant : les carrés de couleur ne sont pas englobés par un petit rectangle gris ; une couleur noire devient donc presque invisible sur le fond noir.
-
-### MEMS 1.9
-
-- Fiche complète : **36 broches présentes**.
-- Fonctions présentes.
-- Couleurs graphiques présentes.
-- Sources documentaires présentes en bas.
-- Même défaut graphique : absence du cadre/fond gris englobant les couleurs de fil.
-
-## TEST ECU CONNECTÉ
-
-Le véhicule n'est pas disponible au moment de ce test. **Aucune validation #98 avec ECU réellement connecté n'est déclarée.** Ce test est volontairement reporté ; il ne doit pas être simulé ni considéré comme acquis.
-
-# PROCHAINE ACTION EXACTE — APRÈS TEST RÉEL #98
-
-Partir strictement de **BUILD #98 `d7836e86930e107d8a68563a6fce3643f27c5748`** sur une branche temporaire. Ne toucher ni au protocole ECU ni au 32 bits.
-
-Corriger uniquement les défauts reproduits sur le PC réel :
-1. filtrage strict **MPi/SPi/Japan** avant classement et affichage ;
-2. pertinence stricte du sujet : une demande **MAP** ne doit pas sortir CKP/bobine et une demande de **couleur lambda** doit privilégier un vrai fait de câblage compatible ;
-3. déduplication des faits identiques dans la réponse finale ;
-4. petit **cadre/fond gris commun autour des carrés de couleur de fil** dans le renderer XML 1.6/1.9.
-
-Ajouter des tests déterministes correspondant aux défauts réellement reproduits, compiler/valider x64 sur GitHub Actions en branche temporaire, contrôler le diff et avancer `MEMSX64` sans force uniquement si la validation est verte. Le test ECU connecté restera en attente de la disponibilité du véhicule.
-'''
           with path.open('a', encoding='utf-8', newline='\n') as f:
-              f.write(text)
+              f.write(data)
       - name: Commit report
         shell: bash
         run: |
