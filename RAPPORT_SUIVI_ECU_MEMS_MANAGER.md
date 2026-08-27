@@ -166,8 +166,8 @@ Audit effectué sur le HEAD `MEMSX64` `16b99c3f`, après relecture du présent r
 - `MEMSX64` avancée sans force sur `5ad520dc5ef4b5ec6eb7096233d7a7a1d7f916f3`.
 - GitHub Actions a créé correctement **#93 / v1.0.93**, run `33066459991` : la nouvelle règle de version dynamique fonctionne.
 - Le log fourni montre `ecu_mems_manager.exe` généré puis `PASS protocol context safety policy`.
-- L’échec survient lorsque le `POST_BUILD` tente d’exécuter `Release\ia_mems_diagram_selftest.exe`; MSBuild remonte **`-1073741515`** (`0xC0000135`, runtime DLL introuvable).
-- `ia_mems_diagram_selftest` est lié à `Qt5::Core`. Au moment du `POST_BUILD`, le workflow n’a pas encore ajouté `C:\Qt\5.15.2\msvc2019_64\bin` au `PATH`.
+- L’échec survient lorsque le `POST_BUILD` tente d’exécuter `Release\\ia_mems_diagram_selftest.exe`; MSBuild remonte **`-1073741515`** (`0xC0000135`, runtime DLL introuvable).
+- `ia_mems_diagram_selftest` est lié à `Qt5::Core`. Au moment du `POST_BUILD`, le workflow n’a pas encore ajouté `C:\\Qt\\5.15.2\\msvc2019_64\\bin` au `PATH`.
 - Le workflow possède déjà `Run deterministic self-tests`, qui ajoute le répertoire Qt au `PATH` puis exécute ce test. Cause réelle : **ordre d’exécution**, pas compilation du catalogue, protocole, Qwen/ONNX ou packaging.
 
 ## CORRECTION #93 — DIFF TEMPORAIRE VALIDÉ
@@ -198,6 +198,23 @@ Audit effectué sur le HEAD `MEMSX64` `16b99c3f`, après relecture du présent r
 - Artefact : ID **`9645083399`**, nom **`ECU-MEMS-Manager-x64-BUILD-94-v1.0.94`**, taille **386 779 885 octets**, SHA-256 **`11503728fc75dbbff8104d68f6876cdca82cc8f41e234c939e65b7913fe698db`**.
 - **Incident #93 clos. Fonction de proposition/ouverture des schémas IA MEMS stabilisée sur #94.**
 
+## RAVE — AUDIT DE COUVERTURE MARCHÉ / ANNÉE APRÈS #94
+
+- Base de l’artefact #94 inspectée directement : **86 faits RAVE / 98 faits experts**.
+- Répartition RAVE par variante : **40** `SPi_Japan_97MY_from_VIN_SAXXNNAXKBD_134455`, **26** `Mini_1997_2000`, **15** `MPi_97MY_from_VIN_SAXXNNAZEBD_134455`, **3** `MPi_1997_plus`, **2** `SPi_1997_plus`.
+- Conclusion : la Mini **SPi classique non-Japon est nettement sous-couverte** par rapport à la SPi Japon ; la fréquence des réponses IA mentionnant le Japon est cohérente avec cette répartition documentaire et ne doit pas être corrigée en masquant les faits Japan.
+- Les 86 faits RAVE portent déjà un millésime, une année ou une plage d’années dans leur variante ; le déficit principal concerne la **portée marché explicite** pour les faits non-Japon et le manque de faits constructeur sur les SPi 1991–1996.
+- Le sommaire constructeur `RCL0194ENG` 97MY sépare lui-même `Engine Management System: MPi 20.1` et `SPi (JAPAN) 20.3`, avec une portée VIN `Japan only — SAXXNNAXKBD 134455` et `All other vehicles — SAXXNNAZEBD 134455`. Continuer 20.3/20.4 augmenterait donc mécaniquement la surreprésentation SPi Japon.
+- Publication Rover à rechercher en priorité pour la SPi classique : **AKM6799 — Mini Single Point Injection 1991 to 1996**. `AKM7169` (Mini All Models 1993 on) pourra être utilisé en recoupement si ses pages donnent une portée constructeur exploitable.
+
+## RAVE — RÈGLE DE PORTÉE VARIANTE / ANNÉE / MARCHÉ
+
+- Chaque nouveau fait Mini doit conserver **exactement la portée disponible dans la source constructeur** : type d’injection (SPi/MPi), millésime/année ou plage VIN, marché (UK/Europe/Japon/export/etc.) et, lorsqu’ils sont distingués, transmission, Cooper/non-Cooper, climatisation ou autre équipement.
+- **Ne jamais inférer un marché** et ne jamais généraliser un fait spécifique à une autre variante.
+- Si la source constructeur ne précise pas un axe, noter **`non précisé`** plutôt que de supposer UK, Europe, Japon ou « toutes Mini ».
+- Les faits Japon doivent rester explicitement Japon dans la variante et dans le contexte restitué par IA MEMS ; ils ne doivent pas être présentés comme une vérité universelle SPi.
+- Les sources secondaires (MEMS FCR, catalogues de pièces, sites techniques, forums) peuvent servir à orienter la recherche ou à signaler une divergence, mais **ne deviennent pas `verifie_constructeur`** sans recoupement avec une documentation Rover primaire correspondante.
+
 ## PROCHAINE ACTION EXACTE
 
-**Ne plus modifier la fonction schémas ni le moteur IA après #94 vert. Le prochain lot prévu est RAVE 1720, à reprendre séparément depuis `RCL0194ENG` avec confirmation constructeur des candidats C159-5 GU, C159-25 WB / C161-18 WS et C159-19 RW avant toute intégration. Relire le présent rapport avant cette nouvelle étape.**
+**Suspendre temporairement les anciens candidats RAVE 1720 Japon (C159-5 GU, C159-25 WB / C161-18 WS et C159-19 RW) sans les supprimer. Avant d’ajouter davantage de faits Japan, rechercher puis lire une source Rover primaire couvrant la Mini SPi classique 1991–1996, en priorité AKM6799 puis AKM7169 si pertinent. Extraire un premier lot uniquement si les relations techniques et leur portée année/marché/VIN sont directement vérifiables. Préparer ce lot sur une branche temporaire, valider la base, l’intégrité et le diff, puis seulement envisager `MEMSX64`. Reprendre ensuite le RAVE 1720 Japon séparément.**
