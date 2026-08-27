@@ -258,32 +258,67 @@ KnowledgeScopeRequest knowledgeScopeRequest(const QString &questionText)
 
 bool factMatchesScopeRequest(const ExpertFact &fact, const KnowledgeScopeRequest &request)
 {
-    const QString scope = normalized(fact.notes);
-    if (!scope.contains(QStringLiteral("portee")))
+    const QString structuredScope = normalized(fact.notes);
+    const QString explicitScope = normalized(QStringLiteral("%1 %2 %3 %4 %5")
+        .arg(fact.factKey, fact.topic, fact.statement, fact.notes, fact.family));
+
+    // Legacy facts do not always carry the new structured "Portee" note.  An
+    // explicit incompatible label in their own statement/topic is still a
+    // proved incompatibility and must be rejected before ranking/Qwen.
+    const bool explicitSpi = containsWord(explicitScope, QStringLiteral("spi"));
+    const bool explicitMpi = containsWord(explicitScope, QStringLiteral("mpi"));
+    if (request.induction == QStringLiteral("spi") && explicitMpi && !explicitSpi)
+        return false;
+    if (request.induction == QStringLiteral("mpi") && explicitSpi && !explicitMpi)
+        return false;
+
+    const bool explicitJapan = explicitScope.contains(QStringLiteral("japan"))
+        || explicitScope.contains(QStringLiteral("japon"));
+    const bool explicitEurope = explicitScope.contains(QStringLiteral("europe"));
+    const bool explicitUk = containsWord(explicitScope, QStringLiteral("uk"))
+        || explicitScope.contains(QStringLiteral("royaume uni"));
+    if (request.market == QStringLiteral("japan")
+        && (explicitEurope || explicitUk) && !explicitJapan)
+        return false;
+    if ((request.market == QStringLiteral("europe") || request.market == QStringLiteral("uk"))
+        && explicitJapan && !explicitEurope && !explicitUk)
+        return false;
+
+    const bool explicitAutomatic = explicitScope.contains(QStringLiteral("automatic"))
+        || explicitScope.contains(QStringLiteral("automatique"));
+    const bool explicitManual = containsWord(explicitScope, QStringLiteral("manual"))
+        || explicitScope.contains(QStringLiteral("manuelle"));
+    if (request.transmission == QStringLiteral("automatic") && explicitManual && !explicitAutomatic)
+        return false;
+    if (request.transmission == QStringLiteral("manual") && explicitAutomatic && !explicitManual)
+        return false;
+
+    if (!structuredScope.contains(QStringLiteral("portee")))
         return true;
 
-    const bool scopeSpi = containsWord(scope, QStringLiteral("spi"));
-    const bool scopeMpi = containsWord(scope, QStringLiteral("mpi"));
+    // Keep the stricter structured-scope checks for foundation facts.
+    const bool scopeSpi = containsWord(structuredScope, QStringLiteral("spi"));
+    const bool scopeMpi = containsWord(structuredScope, QStringLiteral("mpi"));
     if (request.induction == QStringLiteral("spi") && scopeMpi && !scopeSpi)
         return false;
     if (request.induction == QStringLiteral("mpi") && scopeSpi && !scopeMpi)
         return false;
 
-    const bool scopeJapan = scope.contains(QStringLiteral("japan"))
-        || scope.contains(QStringLiteral("japon"));
-    const bool scopeEurope = scope.contains(QStringLiteral("europe"));
-    const bool scopeUk = containsWord(scope, QStringLiteral("uk"))
-        || scope.contains(QStringLiteral("royaume uni"));
+    const bool scopeJapan = structuredScope.contains(QStringLiteral("japan"))
+        || structuredScope.contains(QStringLiteral("japon"));
+    const bool scopeEurope = structuredScope.contains(QStringLiteral("europe"));
+    const bool scopeUk = containsWord(structuredScope, QStringLiteral("uk"))
+        || structuredScope.contains(QStringLiteral("royaume uni"));
     if (request.market == QStringLiteral("japan") && (scopeEurope || scopeUk) && !scopeJapan)
         return false;
     if ((request.market == QStringLiteral("europe") || request.market == QStringLiteral("uk"))
         && scopeJapan && !scopeEurope && !scopeUk)
         return false;
 
-    const bool scopeAutomatic = scope.contains(QStringLiteral("automatic"))
-        || scope.contains(QStringLiteral("automatique"));
-    const bool scopeManual = containsWord(scope, QStringLiteral("manual"))
-        || scope.contains(QStringLiteral("manuelle"));
+    const bool scopeAutomatic = structuredScope.contains(QStringLiteral("automatic"))
+        || structuredScope.contains(QStringLiteral("automatique"));
+    const bool scopeManual = containsWord(structuredScope, QStringLiteral("manual"))
+        || structuredScope.contains(QStringLiteral("manuelle"));
     if (request.transmission == QStringLiteral("automatic") && scopeManual && !scopeAutomatic)
         return false;
     if (request.transmission == QStringLiteral("manual") && scopeAutomatic && !scopeManual)

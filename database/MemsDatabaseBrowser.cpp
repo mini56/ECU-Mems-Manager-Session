@@ -1,5 +1,6 @@
 #include "MemsDatabaseBrowser.h"
 #include "MemsReferenceDatabase.h"
+#include "MemsReferenceSheetRenderer.h"
 #include "../i18n.h"
 
 #include <QAbstractItemView>
@@ -288,22 +289,7 @@ QString MemsDatabaseBrowser::renderEcuHtml(const QString &partNumber) const
 
 QString MemsDatabaseBrowser::renderGenerationXml(const QString &path) const
 {
-    QFile file(path); if(!file.open(QIODevice::ReadOnly|QIODevice::Text)) return htmlStyle()+QStringLiteral("<p class='note'>%1</p>").arg(I18n::text(7232).toHtmlEscaped());
-    QXmlStreamReader xml(&file); QString h=htmlStyle(); bool firstRow=true;
-    while(!xml.atEnd()){
-        xml.readNext();
-        if(xml.isEndElement()){if(xml.name()==QStringLiteral("ligne")){h+=QStringLiteral("</tr>");firstRow=false;}else if(xml.name()==QStringLiteral("table"))h+=QStringLiteral("</table>");continue;}
-        if(!xml.isStartElement()) continue; const QStringRef name=xml.name();
-        if(name==QStringLiteral("titre")) h+=QStringLiteral("<h1>%1</h1>").arg(xml.readElementText(QXmlStreamReader::IncludeChildElements).toHtmlEscaped());
-        else if(name==QStringLiteral("sous-titre")) h+=QStringLiteral("<p class='muted'>%1</p>").arg(xml.readElementText(QXmlStreamReader::IncludeChildElements).toHtmlEscaped());
-        else if(name==QStringLiteral("section")) h+=QStringLiteral("<h2>%1</h2>").arg(xml.attributes().value(QStringLiteral("titre")).toString().toHtmlEscaped());
-        else if(name==QStringLiteral("p")){QString t=xml.readElementText(QXmlStreamReader::IncludeChildElements).toHtmlEscaped();t.replace(QStringLiteral("\n"),QStringLiteral("<br>"));h+=QStringLiteral("<p>%1</p>").arg(t);}
-        else if(name==QStringLiteral("note")){QString t=xml.readElementText(QXmlStreamReader::IncludeChildElements).toHtmlEscaped();t.replace(QStringLiteral("\n"),QStringLiteral("<br>"));h+=QStringLiteral("<div class='note'>%1</div>").arg(t);}
-        else if(name==QStringLiteral("table")){firstRow=true;h+=QStringLiteral("<table>");}
-        else if(name==QStringLiteral("ligne")) h+=QStringLiteral("<tr>");
-        else if(name==QStringLiteral("cellule")){const QString t=xml.readElementText(QXmlStreamReader::IncludeChildElements).trimmed().toHtmlEscaped();const QString tag=firstRow?QStringLiteral("th"):QStringLiteral("td");h+=QStringLiteral("<%1>%2</%1>").arg(tag,t);}
-    }
-    return h;
+    return MemsReferenceSheetRenderer::renderFile(path, I18n::text(7232));
 }
 
 void MemsDatabaseBrowser::showGenerationSheet()

@@ -134,7 +134,12 @@ bool containsInternalInstructionLeak(const QString &answer)
         QStringLiteral("je reconnais que ce contexte est pertinent"),
         QStringLiteral("je ne vais pas enrichir le contexte"),
         QStringLiteral("je ne vais pas inventer de mesure"),
-        QStringLiteral("reponds uniquement en francais sauf si l utilisateur")
+        QStringLiteral("reponds uniquement en francais sauf si l utilisateur"),
+        QStringLiteral("reponse attendue"),
+        QStringLiteral("diagnostic bref hypotheses les plus probables"),
+        QStringLiteral("ne montre aucun raisonnement interne"),
+        QStringLiteral("faits fournis par mems manager"),
+        QStringLiteral("a utiliser seulement s ils repondent a la question")
     };
     for (const QString &marker : markers) {
         if (plain.contains(marker))
@@ -404,8 +409,7 @@ bool requiresReasoning(const QString &question, const QString &grounding)
         return true;
 
     return ground.contains(QStringLiteral("hypotheses actuelles"))
-        || ground.contains(QStringLiteral("confiance"))
-        || ground.contains(QStringLiteral("preuve"));
+        || ground.contains(QStringLiteral("confiance"));
 }
 
 bool likelyWrongLanguage(const QString &answer)
