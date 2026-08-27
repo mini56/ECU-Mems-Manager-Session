@@ -433,7 +433,7 @@ QList<ExpertFact> ExpertKnowledgeReader::foundationFacts(const ExpertContext &co
             statement << procedures;
         if (!query.value(11).toString().trimmed().isEmpty())
             statement << QStringLiteral("Illustration locale: %1").arg(query.value(11).toString().trimmed());
-        fact.statement = joinedNonEmpty(statement, QLatin1Char('\n'));
+        fact.statement = joinedNonEmpty(statement, QStringLiteral("\n"));
 
         QStringList notes;
         notes << scope;
