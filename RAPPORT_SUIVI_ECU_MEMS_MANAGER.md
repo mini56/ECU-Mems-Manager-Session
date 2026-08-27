@@ -16,8 +16,9 @@
 - Branche active : **`MEMSX64`**.
 - HEAD x64 courant : **`f2e97b3e3a432785e159d30bbeca7b7bef2fdcb4`**.
 - Dernier run entièrement validé : **#95 = v1.0.95 — SUCCESS**, run `33076089248`, commit `f2e97b3e`.
-- Artefact #95 : ID **`9650580667`**, nom **`ECU-MEMS-Manager-x64-BUILD-95-v1.0.95`**, taille **386 782 286 octets**, SHA-256 **`71778a16b9d673b1b76da8637d36fada4eb844846661ed4b04543ea6c253a34c`**.
+- Artefact #95 réel vérifié via l’API GitHub du run `33076089248` : ID **`9648135346`**, nom **`ECU-MEMS-Manager-x64-BUILD-95-v1.0.95`**, taille **386 785 918 octets**, SHA-256 **`6491cd545d4770476f13ce31929aa665fabe15a6068cd28e5c2619cc1db444af`**. Le ZIP téléchargé a été contrôlé localement avec le même SHA-256.
 - #95 intègre le lot RAVE 1720 Classic SPi / AKM7169 sans changement de code : génération base expert r20, IA native, IA packagée Qwen, package complet et smoke launch tous SUCCESS.
+- Inspection directe de la SQLite réellement livrée dans #95 : **93 faits RAVE / 105 faits experts**, `PRAGMA integrity_check = ok`, `user_version = 20`.
 - Run **#94 = v1.0.94 — SUCCESS**, run `33068860732`, commit `39543d69` : fonction schémas IA MEMS stabilisée et validée sur PC réel.
 - Run **#93 = v1.0.93 — FAILURE**, run `33066459991`, commit `5ad520dc` : échec de lancement prématuré du nouveau self-test schéma Qt en `POST_BUILD`; incident corrigé et validé par #94.
 - Run **#92 = v1.0.30 — SUCCESS**, run `33058810115`, commit `16b99c3f` : LocalAiClient natif + packagé validés.
@@ -252,8 +253,8 @@ Audit effectué sur le HEAD `MEMSX64` `16b99c3f`, après relecture du présent r
 - Production LocalAiClient native ONNX : **SUCCESS**.
 - Production LocalAiClient packagée Qwen : **SUCCESS**.
 - Package complet, smoke launch et upload artefact : **SUCCESS**.
-- Artefact : ID **`9650580667`**, nom **`ECU-MEMS-Manager-x64-BUILD-95-v1.0.95`**, taille **386 782 286 octets**, SHA-256 **`71778a16b9d673b1b76da8637d36fada4eb844846661ed4b04543ea6c253a34c`**.
-- Les comptages validés avant push sont **93 faits RAVE / 105 faits experts**, `PRAGMA integrity_check = ok`, `user_version = 20`. Ne pas présenter ces deux nombres comme provenant textuellement du log CI tant que les lignes correspondantes du journal ne sont pas extraites.
+- Artefact réel du run #95 : ID **`9648135346`**, nom **`ECU-MEMS-Manager-x64-BUILD-95-v1.0.95`**, taille **386 785 918 octets**, SHA-256 **`6491cd545d4770476f13ce31929aa665fabe15a6068cd28e5c2619cc1db444af`**.
+- Inspection directe de la SQLite du ZIP #95 : **93 faits RAVE / 105 faits experts**, `PRAGMA integrity_check = ok`, `user_version = 20`.
 
 ### OBSERVATIONS UTILISATEUR SUR IA MEMS #95
 
@@ -338,6 +339,69 @@ Exemples :
 - La recherche AKM6799 peut continuer en **lecture seule**, mais ne pas injecter massivement de nouveaux faits dans l’ancien classement pendant cette étape.
 - Les anciens candidats Japon RCL0194 restent séparés et en attente.
 
-## PROCHAINE ACTION EXACTE
+## AUDIT TECHNIQUE DU SOCLE — TERMINÉ AVANT MODIFICATION SQL
 
-**Depuis le HEAD #95 `f2e97b3e`, créer une branche temporaire dédiée au socle RAVE. Auditer précisément le générateur de base r20, les schémas `mems_rave_fact`, `mems_expert_fact_external`, `ecu_fitment`, les tables mécaniques/procédures existantes et les lecteurs IA. Définir ensuite la plus petite migration additive permettant la portée structurée + mécanique/couples/procédures, sans supprimer ni casser les champs actuels. Documenter le schéma retenu dans le présent rapport AVANT de modifier la base. AKM6799 reste en recherche lecture seule jusqu’à validation de ce socle.**
+- Branche temporaire **`tmp-rave-knowledge-foundation`** créée exactement depuis #95 `f2e97b3e`; `MEMSX64` n’a pas bougé et aucun #96 n’a été déclenché.
+- Le générateur r20 est additif : seeds historiques puis application ordonnée des `research_enrichment_*.qz64`; un nouveau lot peut donc créer le socle sans réécrire les anciens lots.
+- Le workflow #95 vérifie déjà `PRAGMA integrity_check` et `user_version=20`; les nouveaux self-tests devront ajouter les invariants de portée/procédures sans affaiblir ces contrôles.
+- SQLite #95 : 63 tables métier + table SQLite interne, 93 RAVE, 105 experts, intégrité `ok`, user_version 20.
+- `mems_rave_fact` : `fact_key, source_key, document, variant, topic, statement, source_section, verification_level, image_ref, notes`.
+- `mems_expert_fact_external` : `source_key, fact_key, family, firmware_code, topic, statement, verification_level, notes`.
+- `ecu_fitment` possède déjà injection, modèle, transmission, moteur, marché, année et VIN, mais est attachée aux références ECU : elle sera réutilisée lorsque possible sans devenir le socle mécanique général.
+- Aucune table dédiée aux procédures, couples, outils ou avertissements n’existe actuellement. Les valeurs/procédures mécaniques RAVE déjà présentes seront conservées comme preuves brutes puis structurées progressivement.
+
+## SCHÉMA EXACT VALIDÉ AVANT MIGRATION
+
+Le schéma SQL exact, les colonnes, relations, index, règles de compatibilité, stratégie de migration et self-tests sont figés dans le fichier **`RAPPORT_SCHEMA_SOCLE_RAVE_EXACT.md`** sur la branche `RAPPORT`, créé au commit **`9100c1c535924cba4cee84f987ca54d137e3e49e`**.
+
+Ce fichier fait partie intégrante du rapport de continuité et doit être lu **immédiatement après le présent rapport** avant toute modification de la base.
+
+Le socle retenu comporte 11 tables additives :
+1. `mems_applicability_scope` — portée véhicule/moteur/système ;
+2. `mems_scope_constraint` — exclusions, ANY explicite et dimensions futures ;
+3. `mems_knowledge_item` — connaissance atomique avec provenance ;
+4. `mems_knowledge_scope` — relation plusieurs-à-plusieurs fait ↔ portée ;
+5. `mems_specification` — en-tête couple/réglage/pression/capacité/etc. ;
+6. `mems_specification_value` — valeurs, plages, tolérances et séquences multi-étapes ;
+7. `mems_procedure` — dépose/repose/réglage/inspection/etc. ;
+8. `mems_procedure_step` — étapes ordonnées avec lien possible vers une spécification ;
+9. `mems_procedure_requirement` — avertissement, outil, consommable, prérequis, post-contrôle ;
+10. `mems_knowledge_relation` — relations/conflits/liaisons entre connaissances ;
+11. `mems_term_alias` — synonymes et terminologie multilingue pour routage déterministe.
+
+### Règle de compatibilité figée
+
+Pour chaque dimension connue de la question, le futur filtre produit trois états :
+- **EXACT** : portée explicitement compatible ;
+- **UNKNOWN** : la source ne précise pas cette dimension, donc candidat secondaire seulement ;
+- **INCOMPATIBLE** : portée explicitement opposée, donc élimination avant grounding/Qwen.
+
+**NULL = UNKNOWN, jamais ANY.** Une universalité doit être explicitement documentée avec une contrainte `operator=any`.
+
+### Migration figée
+
+- Premier lot prévu : **`research_enrichment_1730.qz64`**, tables + index uniquement au départ.
+- Aucun historique supprimé ou renommé.
+- Les 93 `mems_rave_fact` et 105 `mems_expert_fact_external` doivent rester inchangés.
+- Après validation du schéma seul : créer exactement un miroir `mems_knowledge_item` par fait RAVE historique avec `legacy_rave_fact_key`.
+- Les portées ne sont remplies qu’avec des dimensions déjà prouvées par source/audit ; aucune déduction libre depuis le nom `variant`.
+- Conversion mécanique pilote manuelle/explicite avant toute extraction de masse : quelques couples simples + au moins une vraie procédure dépose/repose.
+- Aucun lecteur IA ne bascule sur le nouveau socle tant que couverture, compatibilité et self-tests ne sont pas validés.
+- Après validation du socle, reprendre AKM6799 et injecter directement les nouveaux faits dans cette structure au lieu d’accumuler des variantes textuelles.
+
+## PROCHAINE ACTION EXACTE — À EFFECTUER DANS UNE NOUVELLE DISCUSSION
+
+**Ne plus modifier la base dans cette discussion.** Ouvrir une nouvelle discussion afin d’éviter une coupure pendant la migration.
+
+Ordre obligatoire dans la nouvelle discussion :
+1. lire `RAPPORT_SUIVI_ECU_MEMS_MANAGER.md` sur `RAPPORT` ;
+2. lire immédiatement `RAPPORT_SCHEMA_SOCLE_RAVE_EXACT.md` sur `RAPPORT` ;
+3. vérifier que `MEMSX64` est toujours #95 `f2e97b3e3a432785e159d30bbeca7b7bef2fdcb4` ;
+4. reprendre exclusivement `tmp-rave-knowledge-foundation` ;
+5. construire `research_enrichment_1730.qz64` avec les **11 tables + index uniquement**, sans suppression ni modification des tables historiques ;
+6. reconstruire localement la base r20 et vérifier au minimum 93 RAVE / 105 experts / `integrity_check=ok` / `user_version=20` ;
+7. ajouter le self-test de fondation ;
+8. seulement ensuite migrer les 93 faits et leurs portées prouvées ;
+9. ne pas avancer `MEMSX64` et ne pas lancer #96 avant validation complète du candidat temporaire.
+
+AKM6799 reste en recherche lecture seule jusqu’à validation de ce socle. Les anciens candidats Japon RCL0194 restent séparés et en attente.
