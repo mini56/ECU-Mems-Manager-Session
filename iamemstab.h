@@ -58,7 +58,7 @@ private:
     QPushButton *m_diagramButton = nullptr;
     QLabel *m_status = nullptr;
     QString m_diagramTitle;
-    QString m_diagramPath;
+    QString m_diagramQuestion;
 
     bool m_connected = false;
     bool m_haveInjection = false;
