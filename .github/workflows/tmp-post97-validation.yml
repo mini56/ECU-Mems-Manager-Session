@@ -1,0 +1,132 @@
+name: TEMP POST97 VALIDATION
+
+on:
+  push:
+    branches: [tmp-ia-post97-audit-fix]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: 'utf-8'
+
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate post97 source invariants and real QZ64 content
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          @'
+          from pathlib import Path
+          import base64,zlib,struct,xml.etree.ElementTree as ET
+
+          checks={
+            'iamemstab.cpp':[
+              'inductionEvidenceProbes(',
+              'sans preuve suffisante',
+              'MemsReferenceSheetRenderer::renderFile',
+            ],
+            'expert/LocalAiClient.cpp':[
+              'shouldUseDiagnosticGeneration(question, grounding)',
+              'QStringLiteral("reponse attendue")',
+              'QStringLiteral("faits fournis par mems manager")',
+            ],
+            'expert/IaMemsService.cpp':[
+              'explicit incompatible label',
+              'request.induction == QStringLiteral("mpi") && explicitSpi && !explicitMpi',
+            ],
+            'database/MemsDatabaseBrowser.cpp':[
+              'MemsReferenceSheetRenderer::renderFile(path, I18n::text(7232))',
+            ],
+            'expert/IaResponseLogicTest.cpp':[
+              'generic Mini while disconnected is not SPi/MPi evidence',
+              'documentary proof metadata does not trigger diagnostic generation',
+              'custom broche/fonction/couleur XML keeps data and visual colours',
+            ],
+          }
+          for p, needles in checks.items():
+            text=Path(p).read_text(encoding='utf-8')
+            for n in needles:
+              if n not in text: raise SystemExit(f'MISSING {n!r} in {p}')
+          local=Path('expert/LocalAiClient.cpp').read_text(encoding='utf-8')
+          if 'ground.contains(QStringLiteral("preuve"))' in local:
+            raise SystemExit('Old preuve=>diagnostic trigger is still present')
+          tab=Path('iamemstab.cpp').read_text(encoding='utf-8')
+          if 'probes.append(QStringLiteral("Mini"))' in tab:
+            raise SystemExit('Generic Mini is still used as induction proof')
+
+          for name, expected_pins in [('mems_1_6.xml.qz64',25),('mems_1_9.xml.qz64',0)]:
+            p=Path('database/reference/fiches')/name
+            packed=base64.b64decode(p.read_bytes().strip())
+            expected=struct.unpack('>I',packed[:4])[0]
+            raw=zlib.decompress(packed[4:])
+            if len(raw)!=expected: raise SystemExit(f'{name}: qz size mismatch')
+            root=ET.fromstring(raw.decode('utf-8'))
+            svgs=[e for e in root.iter() if e.tag.endswith('svg')]
+            if not svgs: raise SystemExit(f'{name}: no embedded colour SVG')
+            if expected_pins:
+              ecu_sections=[s for s in root.findall('section') if 'CÔTÉ ECU' in s.attrib.get('titre','')]
+              if not ecu_sections: raise SystemExit('MEMS 1.6 ECU pin section missing')
+              pins=[e.text.strip() for e in ecu_sections[0].iter('broche') if e.text and e.text.strip().isdigit()]
+              if len(pins)!=expected_pins: raise SystemExit(f'MEMS 1.6 ECU pins={len(pins)} expected={expected_pins}')
+          print('POST97_SOURCE_AND_QZ64_PASS')
+          '@ | python -
+
+      - name: Install Qt 5.15.2 MSVC 2019 x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install --disable-pip-version-check 'aqtinstall==3.3.0'
+          $sevenZip = (Get-Command 7z.exe -ErrorAction Stop).Source
+          if (Test-Path 'C:\Qt') { Remove-Item 'C:\Qt' -Recurse -Force -ErrorAction SilentlyContinue }
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
+          if ($LASTEXITCODE -ne 0) { throw "aqtinstall failed: $LASTEXITCODE" }
+
+      - name: Configure candidate x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake -S . -B build-x64 -A x64 `
+            -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
+            -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
+            -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF `
+            -DMEMS_USE_ONNX_GENAI=OFF
+          if ($LASTEXITCODE -ne 0) { throw "CMake configure failed: $LASTEXITCODE" }
+
+      - name: Compile application and touched self-tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake --build build-x64 --config Release --target `
+            ecu_mems_manager ia_response_selftest ia_mems_diagram_selftest mems_search_selftest
+          if ($LASTEXITCODE -ne 0) { throw "Candidate x64 build failed: $LASTEXITCODE" }
+
+      - name: Run deterministic regression tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
+          $env:PATH = "$qtRoot\bin;$env:PATH"
+          $env:QT_PLUGIN_PATH = "$qtRoot\plugins"
+
+          & '${{ github.workspace }}\build-x64\Release\ia_response_selftest.exe'
+          if ($LASTEXITCODE -ne 0) { throw "IA response self-test failed: $LASTEXITCODE" }
+          & '${{ github.workspace }}\build-x64\Release\ia_mems_diagram_selftest.exe'
+          if ($LASTEXITCODE -ne 0) { throw "IA diagram self-test failed: $LASTEXITCODE" }
+          & '${{ github.workspace }}\build-x64\Release\mems_search_selftest.exe'
+          if ($LASTEXITCODE -ne 0) { throw "MEMS reference search self-test failed: $LASTEXITCODE" }
+          Write-Host 'POST97_WINDOWS_X64_VALIDATION_PASS'
