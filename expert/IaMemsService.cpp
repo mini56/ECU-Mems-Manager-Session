@@ -54,6 +54,20 @@ bool containsWord(const QString &text, const QString &word)
     return rx.match(text).hasMatch();
 }
 
+bool knowledgeTermMatches(const QString &text, const QString &term)
+{
+    static const QSet<QString> tokenTerms = {
+        QStringLiteral("ect"), QStringLiteral("iat"), QStringLiteral("map"),
+        QStringLiteral("tps"), QStringLiteral("ckp"), QStringLiteral("cmp"),
+        QStringLiteral("iac"), QStringLiteral("iacv"), QStringLiteral("obd"),
+        QStringLiteral("spi"), QStringLiteral("mpi"), QStringLiteral("rpm"),
+        QStringLiteral("pin")
+    };
+    if (tokenTerms.contains(term) || term.size() <= 3)
+        return containsWord(text, term);
+    return text.contains(term);
+}
+
 KnowledgeQueryKind knowledgeQueryKind(const QString &questionText)
 {
     const bool asksColor = questionText.contains(QStringLiteral("couleur"))
@@ -833,10 +847,10 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
         // At least one component/topic term must match first; scope is then used
         // only to reject incompatibilities and to prefer an exact proved scope.
         for (const QString &term : specificTerms) {
-            if (identity.contains(term)) {
+            if (knowledgeTermMatches(identity, term)) {
                 candidate.score += 5;
                 ++candidate.matches;
-            } else if (body.contains(term)) {
+            } else if (knowledgeTermMatches(body, term)) {
                 candidate.score += 2;
                 ++candidate.matches;
             }
