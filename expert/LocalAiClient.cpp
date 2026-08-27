@@ -1,4 +1,5 @@
 #include "LocalAiClient.h"
+#include "IaMemsConversationRouting.h"
 #include "i18n.h"
 
 #include <QCoreApplication>
@@ -393,23 +394,7 @@ bool isFollowUpQuestion(const QString &question)
 
 bool requiresReasoning(const QString &question, const QString &grounding)
 {
-    const QString plain = normalizedPlainText(question);
-    const QString ground = normalizedPlainText(grounding);
-
-    if (plain.contains(QStringLiteral("diagnostic"))
-        || plain.contains(QStringLiteral("diagnostique"))
-        || plain.contains(QStringLiteral("analyse"))
-        || plain.contains(QStringLiteral("analyser"))
-        || plain.contains(QStringLiteral("anormal"))
-        || plain.contains(QStringLiteral("panne"))
-        || plain.contains(QStringLiteral("probleme"))
-        || plain.contains(QStringLiteral("hypothese"))
-        || plain.contains(QStringLiteral("oscill"))
-        || plain.contains(QStringLiteral("instable")))
-        return true;
-
-    return ground.contains(QStringLiteral("hypotheses actuelles"))
-        || ground.contains(QStringLiteral("confiance"));
+    return IaMemsConversationRouting::shouldUseDiagnosticGeneration(question, grounding);
 }
 
 bool likelyWrongLanguage(const QString &answer)

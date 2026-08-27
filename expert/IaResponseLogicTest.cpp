@@ -72,6 +72,18 @@ int main(int argc, char **argv)
                   "search directive is recognised");
     ok &= require(IaMemsConversationRouting::requestedGeneration(QStringLiteral("Je cherche la documentation MEMS 1.9")) == QStringLiteral("1.9"),
                   "documentation generation extraction");
+    ok &= require(!IaMemsConversationRouting::shouldUseDiagnosticGeneration(
+                      QStringLiteral("Couple de serrage sonde température ECT"),
+                      QStringLiteral("Couple ECT : 15 Nm. Niveau de preuve : constructeur.")),
+                  "documentary proof metadata does not trigger diagnostic generation");
+    ok &= require(!IaMemsConversationRouting::shouldUseDiagnosticGeneration(
+                      QStringLiteral("Couleur des fils sonde lambda"),
+                      QStringLiteral("Fils lambda gris — preuve : constructeur.")),
+                  "lambda documentary proof does not trigger diagnostic generation");
+    ok &= require(IaMemsConversationRouting::shouldUseDiagnosticGeneration(
+                      QStringLiteral("diagnostic moteur instable"),
+                      QStringLiteral("Hypothèses actuelles : alimentation.")),
+                  "real diagnostic still uses diagnostic generation");
 
     ok &= require(IaMemsConversationRouting::inductionEvidenceProbes(
                       QStringLiteral("Broche MAP Mini"), false, QString()).isEmpty(),
