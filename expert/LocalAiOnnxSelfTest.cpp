@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
             if (!started) {
                 started = true;
                 stage = 0;
-                client.ask(QStringLiteral("C'EST QUOI LA BOBINE ?"), QString());
+                client.ask(QStringLiteral("C4EST QUOI LA BOBINE ?"), QString());
             }
             break;
         case LocalAiClient::MissingRuntime:
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
             if (!answer.contains(QStringLiteral("bobine"), Qt::CaseInsensitive)
                 || !answer.contains(QStringLiteral("haute tension"), Qt::CaseInsensitive)
                 || !answer.contains(QStringLiteral("bougie"), Qt::CaseInsensitive)) {
-                fail(QStringLiteral("La définition déterministe de la bobine n'est pas exploitable."));
+                fail(QStringLiteral("La définition déterministe de la bobine avec C4EST n'est pas exploitable."));
                 return;
             }
             stage = 1;
@@ -115,17 +115,41 @@ int main(int argc, char *argv[])
                 return;
             }
             stage = 2;
-            client.ask(QStringLiteral("Réponds uniquement par OK."), QString());
+            client.ask(QStringLiteral("BROCHE ECU 1.3"),
+                       QStringLiteral("BROCHAGE_TEST_ECU_13 : information de brochage vérifiée fournie par la base."));
             return;
         }
 
         if (stage == 2) {
+            if (!answer.contains(QStringLiteral("BROCHAGE_TEST_ECU_13"))
+                || answer.contains(QStringLiteral("Micro-Electro-Mechanical"), Qt::CaseInsensitive)) {
+                fail(QStringLiteral("BROCHE ECU 1.3 est encore détourné par la définition générique MEMS."));
+                return;
+            }
+            stage = 3;
+            client.ask(QStringLiteral("BROCHE OBD 1.9 ?"),
+                       QStringLiteral("BROCHAGE_TEST_OBD_19 : information OBD vérifiée fournie par la base."));
+            return;
+        }
+
+        if (stage == 3) {
+            if (!answer.contains(QStringLiteral("BROCHAGE_TEST_OBD_19"))
+                || answer.contains(QStringLiteral("Micro-Electro-Mechanical"), Qt::CaseInsensitive)) {
+                fail(QStringLiteral("BROCHE OBD 1.9 est encore détourné par la définition générique MEMS."));
+                return;
+            }
+            stage = 4;
+            client.ask(QStringLiteral("Réponds uniquement par OK."), QString());
+            return;
+        }
+
+        if (stage == 4) {
             if (!answer.contains(QStringLiteral("OK"), Qt::CaseInsensitive)) {
                 fail(QStringLiteral("La génération native ne contient pas le marqueur OK attendu."));
                 return;
             }
             finished = true;
-            out << "PASS LocalAiClient native ONNX response quality" << Qt::endl;
+            out << "PASS LocalAiClient native ONNX response quality and real targeting cases" << Qt::endl;
             app.exit(0);
         }
     });
