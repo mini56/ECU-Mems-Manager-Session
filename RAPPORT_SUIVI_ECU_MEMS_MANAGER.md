@@ -4,21 +4,24 @@
 >
 > **RÈGLE QUALITÉ — AUCUNE RUSTINE** : rechercher la cause réelle et produire une solution propre, générale et maintenable. Ne pas supprimer une capacité juste pour faire passer un test.
 >
-> **SUIVI IMMÉDIAT** : avant chaque nouvelle étape, inscrire ici l’étape et son objectif ; après chaque résultat, l’inscrire avant la suite.
+> **SUIVI IMMÉDIAT** : avant chaque nouvelle étape, inscrire ici l’étape et son objectif ; après chaque résultat, l’inscrire avant la suite. **Toute modification, validation, échec, test réel et décision doit être ajouté au rapport au fur et à mesure afin de conserver l’historique complet entre les discussions.**
 >
 > **NOMMAGE UTILISATEUR** : `ECU MEMS Manager x64 #NN — Commit xxxxxxx`. `#NN` = GitHub Actions.
 >
-> **VERSIONNAGE ACTIF** : le numéro de version du programme suit désormais le numéro du run/build GitHub Actions visible par l’utilisateur : **#94 => v1.0.94**, #95 => v1.0.95, etc. La fenêtre de démarrage/splash, About, l’aide et toute autre occurrence de version doivent rester synchronisés. **#92 reste historiquement v1.0.30** ; #93 a inauguré la reprise dynamique avec v1.0.93.
+> **VERSIONNAGE ACTIF** : le numéro de version du programme suit désormais le numéro du run/build GitHub Actions visible par l’utilisateur : **#94 => v1.0.94**, #95 => v1.0.95, #96 => v1.0.96, #97 => v1.0.97, etc. La fenêtre de démarrage/splash, About, l’aide et toute autre occurrence de version doivent rester synchronisés. **#92 reste historiquement v1.0.30** ; #93 a inauguré la reprise dynamique avec v1.0.93.
 
-## ÉTAT COURANT — 27 AOÛT 2026
+## ÉTAT COURANT — 27 AOÛT 2026 — APRÈS TEST RÉEL BUILD #97
 
 - Dépôt : `mini56/ECU-Mems-Manager-Session`.
 - Branche active : **`MEMSX64`**.
-- HEAD x64 courant : **`f2e97b3e3a432785e159d30bbeca7b7bef2fdcb4`**.
-- Dernier run entièrement validé : **#95 = v1.0.95 — SUCCESS**, run `33076089248`, commit `f2e97b3e`.
-- Artefact #95 réel vérifié via l’API GitHub du run `33076089248` : ID **`9648135346`**, nom **`ECU-MEMS-Manager-x64-BUILD-95-v1.0.95`**, taille **386 785 918 octets**, SHA-256 **`6491cd545d4770476f13ce31929aa665fabe15a6068cd28e5c2619cc1db444af`**. Le ZIP téléchargé a été contrôlé localement avec le même SHA-256.
-- #95 intègre le lot RAVE 1720 Classic SPi / AKM7169 sans changement de code : génération base expert r20, IA native, IA packagée Qwen, package complet et smoke launch tous SUCCESS.
-- Inspection directe de la SQLite réellement livrée dans #95 : **93 faits RAVE / 105 faits experts**, `PRAGMA integrity_check = ok`, `user_version = 20`.
+- HEAD x64 courant : **`2b211554abdbb127fd4d472f9ce687394b2d4608`**.
+- Dernier run GitHub entièrement vert : **#97 = v1.0.97 — SUCCESS**, run **`33107904830`**, commit **`2b211554abdbb127fd4d472f9ce687394b2d4608`**.
+- Artefact #97 : ID **`9661453251`**, nom **`ECU-MEMS-Manager-x64-BUILD-97-v1.0.97`**, taille **386 847 391 octets**, SHA-256 **`7bf9ea11fb5ca7c8f7d3a500efe5bf04fa94e16d38a8a25d5c0aa972f41b14c7`**.
+- #97 a été testé sur le PC réel utilisateur : **aucune régression visuelle constatée sur l’environnement et les onglets**, clarification SPi/MPi et boutons XML fonctionnels, mais plusieurs défauts IA restent ouverts et sont détaillés en fin de rapport. **#97 est vert côté build, mais la qualité conversationnelle IA n’est pas encore validée comme terminée.**
+- Run **#96 = v1.0.96 — SUCCESS**, run **`33097323011`**, commit **`fea27058773fc3535c3ea40f7b9a36151b792ac1`**.
+- Artefact #96 : ID **`9657131155`**, nom **`ECU-MEMS-Manager-x64-BUILD-96-v1.0.96`**, taille **386 836 238 octets**, SHA-256 **`a9677cdcead198e36f8fbcf9efccc6d55e493bede88c545683abaeffd8ca4124`**.
+- #96 a été validé sur véhicule réel pour la connexion ECU x64, acquisition 7D/80, identification ECU/firmware/COM, RAM injection Mode 4, retour diagnostic et enregistrement TXT. Les défauts IA documentaires observés dans #96 ont conduit au lot #97.
+- Run **#95 = v1.0.95 — SUCCESS**, run `33076089248`, commit `f2e97b3e` : lot RAVE 1720 Classic SPi / AKM7169.
 - Run **#94 = v1.0.94 — SUCCESS**, run `33068860732`, commit `39543d69` : fonction schémas IA MEMS stabilisée et validée sur PC réel.
 - Run **#93 = v1.0.93 — FAILURE**, run `33066459991`, commit `5ad520dc` : échec de lancement prématuré du nouveau self-test schéma Qt en `POST_BUILD`; incident corrigé et validé par #94.
 - Run **#92 = v1.0.30 — SUCCESS**, run `33058810115`, commit `16b99c3f` : LocalAiClient natif + packagé validés.
@@ -120,7 +123,7 @@ Correction ciblée retenue : **conserver `do_sample=true`, les températures, `t
 
 - État historique : **ECU MEMS Manager x64 #92 = v1.0.30**.
 - Reprise dynamique appliquée : **#93 = v1.0.93**, puis **#94 = v1.0.94**.
-- À partir de maintenant : #95 = v1.0.95, #96 = v1.0.96, etc., via `github.run_number`.
+- À partir de maintenant : #95 = v1.0.95, #96 = v1.0.96, #97 = v1.0.97, etc., via `github.run_number`.
 - La version affichée dans la fenêtre de démarrage/splash est la référence visible par l’utilisateur et doit correspondre au run/build livré.
 - About, aide, métadonnées et toute autre occurrence du numéro de version doivent utiliser la même valeur ; éviter plusieurs numéros incohérents dans le même package.
 
@@ -389,11 +392,11 @@ Pour chaque dimension connue de la question, le futur filtre produit trois état
 - Aucun lecteur IA ne bascule sur le nouveau socle tant que couverture, compatibilité et self-tests ne sont pas validés.
 - Après validation du socle, reprendre AKM6799 et injecter directement les nouveaux faits dans cette structure au lieu d’accumuler des variantes textuelles.
 
-## PROCHAINE ACTION EXACTE — À EFFECTUER DANS UNE NOUVELLE DISCUSSION
+## PROCHAINE ACTION EXACTE — HISTORIQUE AVANT #96
 
-**Ne plus modifier la base dans cette discussion.** Ouvrir une nouvelle discussion afin d’éviter une coupure pendant la migration.
+Cette section est conservée comme **point de reprise historique** tel qu’il existait à la fin de #95. Elle a depuis été exécutée et est remplacée par les sections #96/#97 ci-dessous.
 
-Ordre obligatoire dans la nouvelle discussion :
+Ordre historique prévu :
 1. lire `RAPPORT_SUIVI_ECU_MEMS_MANAGER.md` sur `RAPPORT` ;
 2. lire immédiatement `RAPPORT_SCHEMA_SOCLE_RAVE_EXACT.md` sur `RAPPORT` ;
 3. vérifier que `MEMSX64` est toujours #95 `f2e97b3e3a432785e159d30bbeca7b7bef2fdcb4` ;
@@ -404,4 +407,350 @@ Ordre obligatoire dans la nouvelle discussion :
 8. seulement ensuite migrer les 93 faits et leurs portées prouvées ;
 9. ne pas avancer `MEMSX64` et ne pas lancer #96 avant validation complète du candidat temporaire.
 
-AKM6799 reste en recherche lecture seule jusqu’à validation de ce socle. Les anciens candidats Japon RCL0194 restent séparés et en attente.
+AKM6799 restait alors en recherche lecture seule. Les anciens candidats Japon RCL0194 restaient séparés et en attente.
+
+# HISTORIQUE AJOUTÉ — DU DERNIER POINT DE RAPPORT À BUILD #96
+
+## EXÉCUTION DU SOCLE RAVE / BASE UNIFIÉE
+
+Le point de reprise #95 a été exécuté sur branche temporaire, sans toucher au 32 bits ni au protocole ECU.
+
+### `research_enrichment_1730.qz64`
+- Mise en place additive du **socle de connaissances RAVE complet** défini dans `RAPPORT_SCHEMA_SOCLE_RAVE_EXACT.md`.
+- Création des **11 tables** prévues et des index associés, sans suppression ni renommage des tables historiques.
+- Conservation de `user_version=20`.
+- Règle conservée : `NULL = UNKNOWN`, jamais ANY ; universalité uniquement si elle est explicitement prouvée.
+
+### `research_enrichment_1740.qz64`
+- Migration contrôlée des **93 faits RAVE historiques** dans le nouveau socle.
+- Un miroir `mems_knowledge_item` par fait RAVE historique avec traçabilité vers le fait legacy.
+- Portées remplies uniquement lorsque les dimensions sont prouvées par la source/audit ; aucune généralisation libre depuis le nom de variante.
+- Aucun fait historique supprimé.
+
+### Lecteurs / moteur expert adaptés au nouveau socle
+Le diff #95 → #96 représente **16 commits** et exactement 10 fichiers finaux modifiés/ajoutés :
+- `database/reference/manifest.json` ;
+- `database/reference/research_enrichment_1730.qz64` ;
+- `database/reference/research_enrichment_1740.qz64` ;
+- `expert/ExpertKnowledgeReader.cpp` ;
+- `expert/ExpertKnowledgeReader.h` ;
+- `expert/ExpertRuntimeDatabase.cpp` ;
+- `expert/IaMemsDiagramCatalog.cpp` ;
+- `expert/IaMemsService.cpp` ;
+- `tools/validate_rave_knowledge_foundation.py` ;
+- `tools/validate_unified_ia_knowledge.py`.
+
+Fonctions ajoutées/étendues :
+- `ExpertKnowledgeReader` conserve la lecture historique et ajoute la lecture générique du nouveau socle, des spécifications/procédures et des portées explicites.
+- `ExpertRuntimeDatabase` découvre automatiquement les futurs `research_enrichment_*.qz64` par suffixe numérique, tout en excluant les lots archive-only.
+- `IaMemsDiagramCatalog` devient un résolveur générique basé sur le manifeste, avec protection contre l’ambiguïté et les chemins non sûrs.
+- `IaMemsService` ajoute le filtrage déterministe des portées (SPi/MPi, Japon/UK/Europe, boîte auto/manuelle, compression, etc.) avant classement et Qwen, ainsi que des protections contre la réutilisation d’un fait explicitement incompatible.
+- Les termes de brochage génériques ne suffisent plus à inventer une variante ; les faits absents doivent conduire à une réponse contrôlée.
+- Le classement a été durci pour éviter des collisions de tokens, notamment ECT/injecteur.
+
+### Validation fondation / unification
+- `validate_rave_knowledge_foundation.py` vérifie l’intégrité du nouveau socle, sa migration et les règles de portée.
+- `validate_unified_ia_knowledge.py` valide le chemin unifié vers les 93 faits, les assets et des recherches représentatives.
+- Validation déterministe obtenue avant push : **93 knowledge items**, assets locaux détectés, ECT priorisé, MAP MPi priorisé, SPi MAP non inventé lorsqu’aucun pinout constructeur compatible n’est disponible.
+
+### Correction de compilation pendant le candidat #96
+- MSVC a signalé un `C2664` sur un appel à `joinedNonEmpty` utilisant `QLatin1Char('\n')` alors que la signature attendait un `QString`.
+- Correction minimale : `QStringLiteral("\n")`.
+- Commit de correction connu : **`e1d402477f35f42e4cc5341bd2e0a32535e0277f`**.
+- Aucun changement fonctionnel protocole/ECU lié à cette correction.
+
+## BUILD #96 — SOCLE RAVE + CONNAISSANCE UNIFIÉE
+
+- `MEMSX64` avancée après validation du candidat.
+- HEAD #96 : **`fea27058773fc3535c3ea40f7b9a36151b792ac1`** (`Remove temporary RAVE validation workflow`).
+- GitHub Actions : **#96 / v1.0.96 — SUCCESS**, run **`33097323011`**, démarré le 27/08/2026 à 17:13:45Z et terminé à 17:20:07Z.
+- Artefact : ID **`9657131155`**, **`ECU-MEMS-Manager-x64-BUILD-96-v1.0.96`**, 386 836 238 octets, SHA-256 **`a9677cdcead198e36f8fbcf9efccc6d55e493bede88c545683abaeffd8ca4124`**.
+- Compilation x64 MSVC, protections protocole, self-tests déterministes, base expert r20, Qwen3-0.6B ONNX INT4, LocalAiClient production, package, validation package et smoke launch : **SUCCESS**.
+- Le workflow de validation temporaire RAVE a été retiré avant le HEAD de production.
+
+## VALIDATION UTILISATEUR RÉELLE BUILD #96
+
+Une série de **28 captures** et un journal TXT réel ont été analysés. Résolution de toutes les captures : **1366 × 697** ; cette résolution est donc validée, pas encore l’ensemble des résolutions responsive.
+
+### ECU / acquisition — validé sur véhicule réel
+- Connexion réelle ECU : **VALIDÉE**.
+- Identification affichée : **`AANMP002 — MNE101150`**.
+- Port : **COM3 — FTDI FT232 — ROSCO 1.3/1.6**.
+- D0 : `98 00 02 02` ; D1 : `AANMP002` répété en ASCII.
+- Live 7D/80 : **VALIDÉ**.
+- RAM Injection Mode 4 : **VALIDÉE**.
+- Retour Mode 4 → diagnostic : cohérent.
+- Enregistrement TXT : **VALIDÉ**.
+- Valeurs live globalement cohérentes pendant le test réel : régime, liquide, MAP, batterie, TPS, lambda, ralenti, dwell.
+- Valeurs brutes `255` de températures ambiante/carburant affichées comme `200 °C` : affichage sentinelle trompeur à traiter plus tard.
+- Dwell observé autour de 3,23–3,30 ms : le warning actuel 1,9–3,1 ms à ~14 V doit être revu séparément avec source avant toute modification ; ne pas conclure à une panne ECU sur cette seule base.
+
+### UI — #96
+- Aucun problème nouveau majeur observé dans l’environnement/onglets sur les captures.
+- Styles dark et structures principales cohérents.
+- La validation multi-résolution reste à faire ultérieurement ; seule la résolution 1366 × 697 a été réellement observée dans cette série.
+
+### IA — défauts réels découverts dans #96
+Malgré les validateurs offline verts, la production UI présentait un défaut de routage important :
+- `Broche MAP Mini MPi 1997` pouvait répondre **« Je n'ai encore aucune mesure ECU disponible. »** ;
+- `Broche MAP Mini SPi Japan 1997` pouvait subir le même détournement ;
+- `Couleur des fils sonde lambda ?` pouvait être interprété comme une demande de mesure lambda ;
+- `schema sonde broche ecu 1.3` pouvait faire ressortir une phrase de type instruction interne ;
+- le schéma MEMS 1.6 pouvait être trouvé lorsque l’utilisateur connaissait déjà le nom exact `mems_1_6_ecu_connector.svg`, mais l’IA ne guidait pas suffisamment l’utilisateur vers ce document ;
+- les réponses ECT pouvaient contenir un fait IAT non demandé ou des doublons.
+
+### Cause exacte du détournement MAP/lambda identifiée dans le code #96
+Dans `IaMemsService::groundingFor(...)`, le chemin faisait d’abord :
+`IaResponseLogic::classify(question)` → `metricAnswer(...)`, puis seulement plus tard `knowledgeAnswer(question)`.
+
+`IaResponseLogic::classify()` classait la simple présence de `map`, `lambda`, etc. comme une intention de mesure live, sans exiger `valeur`, `mesure`, `actuel`, etc. Une question documentaire contenant MAP/lambda était donc interceptée **avant** la recherche documentaire.
+
+C’est la cause concrète des réponses « aucune mesure ECU disponible » sur des demandes de broche/couleur.
+
+## DÉCOUVERTE / VÉRIFICATION DES FICHES XML QZ64 AVANT #97
+
+Les fiches documentation sont bien présentes dans le package/base :
+- `database/reference/fiches/mems_1_2.xml.qz64`
+- `database/reference/fiches/mems_1_3.xml.qz64`
+- `database/reference/fiches/mems_1_6.xml.qz64`
+- `database/reference/fiches/mems_1_9.xml.qz64`
+
+Le `manifest.json` mappe explicitement :
+- `MEMS 1.2` → `fiches/mems_1_2.xml.qz64`
+- `MEMS 1.3` → `fiches/mems_1_3.xml.qz64`
+- `MEMS 1.6` → `fiches/mems_1_6.xml.qz64`
+- `MEMS 1.9` → `fiches/mems_1_9.xml.qz64`
+
+Il existe également des variantes de langue `.de/.en/.es/.it/.pt.xml.qz64`.
+
+L’onglet **Base de données** sait déjà retrouver ces fiches et proposer **« Fiche XML complète »**. Une capture utilisateur a confirmé `MEMS 1.3 XML — Génération 1.3 — Documentation`. Conclusion avant #97 : le document existe et le programme sait l’ouvrir, mais **IA MEMS ne savait pas encore exploiter/proposer proprement la documentation XML de manière naturelle**.
+
+# HISTORIQUE BUILD #97 — ROUTAGE CONVERSATIONNEL / CLARIFICATION / XML
+
+## OBJECTIF AUTORISÉ PAR L’UTILISATEUR
+
+Corriger la couche d’orchestration IA sans toucher au protocole ECU ni au 32 bits :
+1. donner priorité aux intentions documentaires (`broche`, `câblage`, `couleur`, `schéma`, `connecteur`, `XML`, `fiche`, `documentation`, `couple`, etc.) avant les mesures live ;
+2. ajouter une clarification lorsque l’information manquante change réellement la réponse ;
+3. conserver la question précédente pour comprendre une réponse courte telle que `MPi`, `SPi` ou `cherche` ;
+4. si l’utilisateur répond `cherche`, exploiter le contexte ECU/firmware/base avant de demander à nouveau une information ;
+5. proposer les fiches XML MEMS 1.2/1.3/1.6/1.9 comme ressources ouvrables depuis l’onglet IA ;
+6. préserver `Valeur MAP ?` comme vraie demande de mesure ECU ;
+7. ne jamais recycler un brochage MPi pour une SPi Japan lorsque la donnée constructeur manque.
+
+## BRANCHE TEMPORAIRE #97
+
+- Branche : **`tmp-ia-conversation-routing`**.
+- Créée exactement depuis #96 **`fea27058773fc3535c3ea40f7b9a36151b792ac1`**.
+- Aucun changement initial sur `MEMSX64`.
+- Un workflow et un applicateur temporaires ont été utilisés uniquement pour la validation, puis supprimés avant le HEAD final.
+
+### Diff final #96 → candidat #97
+Exactement **6 fichiers fonctionnels** restent dans le diff final :
+- `expert/IaMemsConversationRouting.h` — nouveau ;
+- `expert/IaMemsService.cpp` ;
+- `expert/IaResponseLogic.h` ;
+- `expert/IaResponseLogicTest.cpp` ;
+- `iamemstab.cpp` ;
+- `iamemstab.h`.
+
+Aucun fichier protocole, acquisition, RAM, 32 bits, base RAVE ou Qwen/ONNX n’a été modifié par ce lot.
+
+### Fonctions introduites dans le candidat #97
+- Reconnaissance d’une intention documentaire avant le détournement vers une métrique live.
+- Clarification déterministe SPi/MPi pour une demande ambiguë comme `Broche MAP Mini`.
+- Conservation d’une requête en attente pour pouvoir reprendre après `MPi`, `SPi` ou `cherche`.
+- Traitement spécial de `cherche` visant à utiliser d’abord les informations déjà disponibles.
+- Proposition d’un bouton **`Ouvrir la fiche XML MEMS X.X`** en réutilisant le mécanisme existant de `MemsReferenceDatabase` plutôt qu’un nouveau décodeur QZ64.
+- Déduplication/filtrage supplémentaire de résultats documentaires.
+- Tests ajoutés pour MAP/lambda/ECT et distinction documentaire/mesure.
+
+### Validation temporaire avant production
+- Configuration MSVC x64 : **VERTE**.
+- Compilation complète `ecu_mems_manager` x64 : **VERTE**.
+- Tests IA existants : **VERTS**.
+- Tests de schémas : **VERTS**.
+- Tests recherche base MEMS : **VERTS**.
+- Nouveaux tests de routage MAP/lambda/ECT : **VERTS**.
+- Clarification SPi/MPi : **VERTE**.
+- Reconnaissance de `cherche` : **VERTE**.
+- Identification documentation MEMS 1.9 : **VERTE**.
+- Après validation, le workflow et le script d’application temporaires ont été supprimés.
+
+## PUSH ET BUILD #97
+
+- `MEMSX64` avancée en **fast-forward sans force** sur **`2b211554abdbb127fd4d472f9ce687394b2d4608`**.
+- GitHub Actions : **#97 / v1.0.97 — SUCCESS**, run **`33107904830`**.
+- Run démarré le 27/08/2026 à 19:19:43Z, terminé à 19:26:41Z.
+- Artefact : ID **`9661453251`**, nom **`ECU-MEMS-Manager-x64-BUILD-97-v1.0.97`**, taille **386 847 391 octets**, SHA-256 **`7bf9ea11fb5ca7c8f7d3a500efe5bf04fa94e16d38a8a25d5c0aa972f41b14c7`**.
+- Build vert = compilation/tests/package validés ; **cela ne vaut pas validation définitive de la qualité conversationnelle réelle**, qui doit être contrôlée sur le PC utilisateur.
+
+# TEST RÉEL UTILISATEUR BUILD #97 — CAPTURES DU 27 AOÛT 2026
+
+L’utilisateur a testé #97 sans pouvoir connecter le véhicule à cet instant et a fourni une série de captures de l’onglet IA MEMS.
+
+## UI / ENVIRONNEMENT
+- **Aucun changement constaté** au niveau de l’environnement et des onglets par rapport à l’état précédent.
+- Version visible : **v1.0.97**.
+- Aucun problème de responsive nouveau identifié dans cette série de captures.
+
+## TEST 1 — `Broche MAP Mini` puis `cherche`
+
+### Ce qui fonctionne
+- `Broche MAP Mini` déclenche correctement une clarification : **« est-ce une SPi ou une MPi ? »**.
+- Le message propose aussi de répondre `cherche` si l’utilisateur ne sait pas.
+- C’est le comportement conversationnel demandé.
+
+### Défaut critique découvert
+Après `cherche`, IA MEMS répond :
+**« J’ai identifié SPi à partir des informations disponibles. Je poursuis la recherche initiale. »**
+
+Or, dans ce test :
+- l’écran indique **ECU non connecté** ;
+- aucune preuve visible ne justifie cette conclusion SPi ;
+- l’utilisateur lui-même ne sait pas sur quelle information ce choix repose.
+
+**Conclusion : le mécanisme `cherche` existe mais son choix SPi n’est pas acceptable sans justification vérifiable.** Il faut auditer exactement la source de cette conclusion. Si plusieurs possibilités subsistent, l’IA doit le dire et demander l’information discriminante au lieu de choisir.
+
+## FUITE DE CONSIGNES INTERNES — DÉFAUT MAJEUR #97
+
+Après certaines questions/réponses, des textes destinés au guidage interne apparaissent dans l’interface utilisateur, notamment :
+- **« La réponse attendue est la suivante »** ;
+- **« Réponse attendue : diagnostic bref, hypothèses les plus probables dans l’ordre, puis contrôles prioritaires. Ne montre aucun raisonnement interne. »** ;
+- **« La réponse attendue est une critique bref »** ;
+- des formulations méta du type **« la réponse est donnée par la mention des faits fournis par MEMS Manager… »**.
+
+C’est **non acceptable**. Les consignes internes ne doivent jamais devenir la réponse utilisateur.
+
+Ce défaut explique plusieurs échecs visibles de lambda et ECT malgré un routage documentaire amélioré. Les tests automatiques #97 n’ont pas suffisamment vérifié **le texte final réellement affiché après passage dans Qwen**.
+
+## TEST 2 — `Broche MAP Mini MPi 1997`
+
+### Amélioration validée
+La requête n’est plus détournée vers « aucune mesure ECU ».
+
+Le moteur remonte bien un fait constructeur MPi pertinent :
+- capteur MAP MPi ;
+- connecteur **C186** ;
+- fils **RG/YP/KB** ;
+- ECU **C159-36**, **C159-8** ;
+- retour commun capteurs **C159-13** ;
+- `C159-8` identifié comme voie MAP et `C159-13` comme SENSOR EARTH.
+
+### Défaut restant
+La même réponse ajoute ensuite un fait **SPi Japan** alors que la question demande explicitement **MPi**.
+
+**Conclusion : la recherche documentaire MAP MPi fonctionne enfin, mais le filtrage de portée SPi/MPi n’est pas encore strict jusqu’au texte final.** Un fait explicitement incompatible ne doit pas entrer dans la réponse finale.
+
+## TEST 3 — `Broche MAP Mini SPi Japan 1997`
+
+### Point positif
+- #97 ne recycle pas directement le brochage MAP MPi comme s’il était SPi Japan.
+
+### Défaut
+- La réponse finale est une phrase générique/méta et n’apporte pas une réponse technique utile.
+
+### Règle à conserver
+S’il n’existe pas de brochage MAP SPi Japan vérifié dans le socle, la bonne réponse doit être contrôlée et claire : **aucune donnée constructeur compatible trouvée**, sans utiliser les broches MPi.
+
+## TEST 4 — `Couleur des fils sonde lambda`
+
+### Amélioration
+- La question n’est plus transformée en demande de valeur lambda live / « aucune mesure ECU ».
+
+### Défaut
+- Le texte final est remplacé par la consigne interne **« Réponse attendue : diagnostic bref… »** au lieu de restituer les faits de câblage/couleurs disponibles.
+
+**Conclusion : routage documentaire amélioré, génération finale non fiable.**
+
+## TEST 5 — `Couple de serrage sonde température ECT`
+
+- La réponse attendue techniquement doit exploiter la donnée ECT constructeur compatible (le cas de test connu est **15 Nm**).
+- #97 affiche **« La réponse attendue est une critique bref »**.
+- Le défaut n’est donc plus seulement le classement ECT/IAT : **la réponse finale générée masque le fait exact**.
+
+## TESTS 6/7/8 — DOCUMENTATION XML MEMS 1.6 ET 1.9
+
+### Fonction réussie
+- `Je cherche la documentation MEMS 1.6` fait apparaître le bouton **`Ouvrir la fiche XML MEMS 1.6`**.
+- Le bouton ouvre effectivement la fiche sur le PC utilisateur.
+- `Je cherche la documentation MEMS 1.9` fait apparaître le bouton **`Ouvrir la fiche XML MEMS 1.9`**.
+- La fiche 1.9 s’ouvre également.
+
+### Contenu/rendu à vérifier
+L’utilisateur signale :
+- pour la fiche 1.6, il s’attend à retrouver **toutes les broches ECU et les couleurs de fils** présentes dans la fiche d’origine, mais ce n’est pas ce qu’il observe dans la fiche ouverte ;
+- pour la fiche 1.9, les **descriptions/codes de couleurs** semblent présentes, mais les couleurs ne paraissent pas réellement représentées visuellement comme dans la fiche d’origine.
+
+**Ne pas corriger avant audit.** Il faut comparer :
+1. contenu XML/QZ64 réellement embarqué ;
+2. contenu de la fiche d’origine ;
+3. décodage par `MemsReferenceDatabase` ;
+4. rendu par le viewer.
+
+Il faut déterminer si l’information manque dans le fichier QZ64 ou si elle est perdue/neutralisée uniquement lors de l’affichage.
+
+## TEST 9 — `Valeur MAP ?`
+
+Le véhicule n’était pas connectable lors du test. #97 répond :
+**« Je n’ai encore aucune mesure ECU disponible. »**
+
+C’est **le comportement correct ECU déconnecté** et cela confirme que la correction documentaire n’a pas supprimé le chemin mesure live.
+
+# BILAN TECHNIQUE BUILD #97
+
+## Réussites
+- Build x64 complet vert.
+- Pas de régression environnement/onglets constatée.
+- `Broche MAP Mini` déclenche enfin une clarification SPi/MPi.
+- La réponse courte `cherche` est reconnue et reprend la recherche précédente.
+- Une question documentaire MAP n’est plus systématiquement détournée vers la mesure MAP live.
+- Une question documentaire lambda n’est plus systématiquement détournée vers la mesure lambda live.
+- Le fait MAP MPi constructeur est effectivement retrouvable et affichable.
+- Le chemin mesure live (`Valeur MAP ?`) est conservé.
+- Les fiches XML MEMS 1.6 et 1.9 peuvent être proposées et ouvertes depuis IA MEMS sans connaître le nom de fichier.
+
+## Défauts ouverts — ordre de priorité
+1. **Fuite de consignes internes dans la réponse utilisateur** : priorité critique.
+2. **`cherche` choisit SPi sans preuve/journalisation suffisante** : auditer la provenance et empêcher toute conclusion non justifiée.
+3. **Filtrage de portée final insuffisant** : une question MPi peut encore inclure un fait SPi Japan.
+4. **Réponses factuelles exactes trop dépendantes de Qwen** : un fait déterministe disponible (broche, couleur, couple, référence) peut être remplacé par une phrase méta/instruction interne.
+5. **ECT** : doit restituer directement le fait constructeur compatible et exclure IAT lorsque ECT est explicite.
+6. **Lambda couleurs** : doit restituer les couleurs/broches disponibles, pas une instruction de diagnostic.
+7. **SPi Japan MAP** : réponse contrôlée utile si aucune donnée vérifiée compatible n’existe.
+8. **Fiches XML** : vérifier exhaustivité 1.6 et représentation visuelle des couleurs 1.9 par comparaison source → QZ64 → viewer.
+9. **Tests automatiques** : ajouter des tests end-to-end sur le texte utilisateur final, pas seulement sur classification/routage.
+
+# ORIENTATION DE CORRECTION RETENUE APRÈS TEST #97
+
+Ne pas refaire l’architecture ni changer de modèle IA. Le socle contient déjà de nombreuses données utiles. La priorité est de fiabiliser la chaîne **question → sélection déterministe → réponse utilisateur**.
+
+Pour les requêtes factuelles vérifiables telles que broche, couleur de fil, couple de serrage, référence, fiche ou schéma :
+- si le moteur expert possède un fait exact compatible et vérifié, **produire d’abord une réponse déterministe sûre** ;
+- Qwen peut servir à expliquer/reformuler ensuite si cela apporte quelque chose, mais **ne doit pas pouvoir remplacer ou masquer la donnée factuelle vérifiée** par une consigne interne ou une phrase générique ;
+- les incompatibilités SPi/MPi/Japon/année/transmission doivent être éliminées avant le texte final ;
+- si l’information manque réellement, répondre clairement qu’elle n’est pas vérifiée/disponible pour cette variante au lieu d’inventer.
+
+# PROCHAINE ACTION EXACTE — APRÈS BUILD #97
+
+**Ne rien pousser avant cet audit. Ne pas toucher au protocole ECU ni au 32 bits. Partir strictement de `MEMSX64` #97 `2b211554abdbb127fd4d472f9ce687394b2d4608`.**
+
+Ordre obligatoire :
+1. **Auditer le chemin `cherche`** dans `IaMemsConversationRouting` / `IaMemsTab` / contexte service et déterminer exactement pourquoi le test réel ECU déconnecté conclut SPi. Identifier la source utilisée et définir une règle de preuve avant toute correction.
+2. **Auditer la fuite de consignes internes** : retrouver dans `IaMemsService` / `LocalAiClient` / prompt/grounding la chaîne exacte qui produit `La réponse attendue...`, `Diagnostic bref...`, `Ne montre aucun raisonnement interne`, etc. Ne pas supprimer aveuglément du texte ; corriger la séparation instruction/contenu et ajouter un garde testable.
+3. **Auditer le filtrage final de portée** sur `Broche MAP Mini MPi 1997` afin de comprendre pourquoi un fait SPi Japan survit encore après un fait MPi exact.
+4. **Auditer les réponses factuelles ECT et lambda** avec les faits exacts actuellement disponibles. Vérifier la sélection avant Qwen et le texte final après Qwen.
+5. **Auditer les fiches XML 1.6 et 1.9** : décoder/inspecter le contenu QZ64 avec le mécanisme réel du programme, comparer aux fiches sources et au rendu. Vérifier précisément brochage complet et représentation des couleurs.
+6. Sur branche temporaire créée depuis #97, préparer une correction minimale et générale : réponse déterministe pour faits exacts, filtre de portée strict, `cherche` fondé sur preuve, aucun leak interne, sans changement protocole/ECU/32 bits.
+7. Ajouter des **tests end-to-end du texte final affiché** pour les scénarios réels :
+   - `Broche MAP Mini` → clarification ;
+   - `cherche` ECU déconnecté sans preuve → ne pas choisir SPi/MPi arbitrairement ;
+   - `Broche MAP Mini MPi 1997` → MAP MPi, aucun fait SPi ;
+   - `Broche MAP Mini SPi Japan 1997` → donnée compatible ou indisponibilité contrôlée, jamais MPi recyclé ;
+   - `Couleur des fils sonde lambda` → faits de câblage, aucune consigne interne ;
+   - `Couple de serrage sonde température ECT` → donnée ECT compatible, aucune IAT et aucune consigne interne ;
+   - `Je cherche la documentation MEMS 1.6/1.9` → bouton XML correct ;
+   - `Valeur MAP ?` → mesure live si disponible, message d’absence si ECU déconnecté.
+8. Compiler/valider sur GitHub Actions en branche temporaire, comparer le diff, puis seulement proposer un nouveau push `MEMSX64`.
+
+**État de référence à conserver : BUILD #97 est la base active. Le build est vert et apporte de vraies améliorations de routage/clarification/XML, mais le lot IA n’est pas considéré terminé tant que les défauts de réponse finale ci-dessus ne sont pas corrigés et retestés sur le PC réel.**
