@@ -873,3 +873,75 @@ Les tests couvrent notamment :
 6. Rejouer les scénarios réels #97 après installation propre : `Broche MAP Mini` → `cherche`, MAP MPi, MAP SPi Japan, couleurs lambda, couple ECT, XML 1.6/1.9 et `Valeur MAP ?` lorsque le véhicule pourra être connecté.
 
 **Ne pas toucher au protocole ECU, au 32 bits ou à l’acquisition dans cette suite.**
+
+
+# PASSAGE EN PRODUCTION ET TEST RÉEL BUILD #98
+
+## PROMOTION PRODUCTION ET BUILD OFFICIEL
+
+- Commit production propre : **`d7836e86930e107d8a68563a6fce3643f27c5748`** — `Fix post97 IA routing and XML rendering`.
+- Parent direct : BUILD #97 **`2b211554abdbb127fd4d472f9ce687394b2d4608`**.
+- Arbre : **`3dca12167987495e265fcb232b66d63100fb4126`**, identique à l'arbre candidat validé.
+- `MEMSX64` avancée **sans force** ; aucun fichier protocole ECU ni voie 32 bits modifié.
+- Workflow officiel **BUILD** (`341566505`) : run **`33115741255`**, run number **98**, branche `MEMSX64`, HEAD **`d7836e86930e107d8a68563a6fce3643f27c5748`**.
+- Début : `2026-08-27T20:56:15Z` ; fin : `2026-08-27T21:03:07Z` ; conclusion : **SUCCESS**.
+- Artefact : **`ECU-MEMS-Manager-x64-BUILD-98-v1.0.98`**, ID **`9664609350`**, taille **386 848 692 octets**, digest **`sha256:dd230381c5afcd2a52d29f71d412ebdea8c21134b75f912ab8ecbeeeaf283b52`**.
+
+## INCIDENTS DU MÉCANISME DE RAPPORT
+
+- Après la validation post-#97, le premier workflow temporaire d'ajout au rapport a produit **`33115448894` — FAILURE sans job** à cause d'une indentation Python/YAML invalide. Aucun impact sur `MEMSX64`, l'application ou l'ECU.
+- Correction au commit **`cea4596848a508d95f33ad17fa59f6a582f5fb53`**, puis run **`33115661734`**, job **`98669527587`** : **SUCCESS**.
+- Workflow temporaire supprimé au commit **`22d05221ff7859c93965fba086758ab03adc664a`**.
+- Le premier essai d'ajout du présent compte-rendu #98 a reproduit la même erreur d'indentation YAML : run **`33119375824` — FAILURE sans job**. Cette erreur concerne uniquement le mécanisme de rapport et doit rester consignée.
+
+## TEST INSTALLATION PROPRE #98 SUR PC RÉEL
+
+Avant installation, l'ancienne version et les données locales identifiées dans le code ont été supprimées : ancien dossier `database`, données locales de l'application et profil utilisateur. Le test #98 ne réutilise donc pas volontairement l'ancien cache/base/profil.
+
+- Installation complète après décompression : **1 minute 10 secondes**.
+- Premier lancement et base locale : fonctionnels.
+- Interface : aucun défaut nouveau signalé pendant cette séquence.
+
+## TESTS IA RÉELS #98 — ECU DÉCONNECTÉ
+
+### `Broche MAP Mini` puis `cherche`
+**CORRIGÉ** : après clarification SPi/MPi, `cherche` ne conclut plus arbitrairement SPi sans preuve forte et demande une référence ECU ou année/marché.
+
+### `Broche MAP Mini MPi 1997`
+**PARTIEL** : les faits MAP MPi utiles sont retrouvés (C186, C159-36, C159-8, C159-13), mais un fait **SPi Japon 97MY** apparaît encore malgré la demande explicitement MPi.
+
+### `Broche MAP Mini SPi Japan 1997`
+**DÉFAUT** : le fait SPi Japon est retrouvé, mais un fait MPi et des faits CKP/bobine sans rapport direct avec MAP apparaissent également.
+
+### `Couleur des fils sonde lambda ?`
+**FUITE INTERNE CORRIGÉE**, pertinence encore insuffisante : aucun prompt interne affiché ; un même fait HO2S apparaît deux fois ; des faits descriptifs passent avant le câblage ; le fait `BG` noir/vert concerne la commande du relais de sonde oxygène SPi Japon 97MY et ne doit pas être présenté comme preuve directe de toutes les couleurs de la sonde.
+
+### `Couple de serrage sonde ECT ?`
+**CORRECT SUR LE FOND** : **15 Nm**, procédure pertinente, aucune fuite interne. Défaut restant : le fait ECT est dupliqué et un fait secondaire est ajouté malgré la question ciblée.
+
+## TESTS FICHES XML RÉELS #98
+
+### MEMS 1.6
+- Bouton `Ouvrir la fiche XML MEMS 1.6` fonctionnel.
+- Fiche complète : **25 broches ECU**, fonctions, couleurs graphiques, sources en bas, défilement complet.
+- Défaut restant : absence du petit **cadre/fond gris commun autour des carrés de couleur**, rendant le noir presque invisible sur fond sombre.
+
+### MEMS 1.9
+- Fiche complète : **36 broches**, fonctions, couleurs graphiques, sources documentaires en bas.
+- Même défaut de cadre/fond gris autour des couleurs.
+
+## TEST ECU CONNECTÉ
+
+Le véhicule n'est pas disponible. **Aucune validation #98 avec ECU réellement connecté n'est déclarée.** Ce test reste en attente et ne doit pas être simulé.
+
+# PROCHAINE ACTION EXACTE — APRÈS TEST RÉEL #98
+
+Partir strictement de **BUILD #98 `d7836e86930e107d8a68563a6fce3643f27c5748`** sur une branche temporaire. Ne toucher ni au protocole ECU ni au 32 bits.
+
+Corriger uniquement :
+1. filtrage strict **MPi/SPi/Japan** ;
+2. pertinence du sujet : **MAP** ne doit pas sortir CKP/bobine ; une demande de **couleur lambda** doit privilégier un vrai fait de câblage compatible ;
+3. déduplication des faits identiques ;
+4. petit **cadre/fond gris commun** autour des carrés de couleur dans le renderer XML 1.6/1.9.
+
+Ajouter les tests déterministes correspondant aux défauts reproduits, valider x64 sur GitHub Actions en branche temporaire, contrôler le diff et avancer `MEMSX64` sans force uniquement si la validation est verte. Le test ECU connecté restera en attente de la voiture.
