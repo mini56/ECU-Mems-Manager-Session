@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Deterministic self-test for the additive RAVE knowledge foundation.
 
-This validator is intentionally independent from the application UI.  It checks
+This validator is intentionally independent from the application UI. It checks
 only the packaged r20 SQLite contract introduced by research_enrichment_1730.
 It accepts the schema-only foundation stage (0 mirrors) and, once migration is
-performed, the complete first migration stage (93 mirrors).  Any partial state
+performed, the complete first migration stage (93 mirrors). Any partial state
 fails.
 """
 
@@ -104,6 +104,185 @@ def require_schema_guard(db: sqlite3.Connection) -> None:
         scratch.close()
 
 
+def require_migrated_contract(db: sqlite3.Connection) -> None:
+    require_equal(
+        "non-NULL legacy_rave_fact_key mirrors",
+        int(
+            scalar(
+                db,
+                "SELECT COUNT(*) FROM mems_knowledge_item "
+                "WHERE legacy_rave_fact_key IS NOT NULL AND trim(legacy_rave_fact_key)<>''",
+            )
+        ),
+        EXPECTED_RAVE_FACTS,
+    )
+    require_equal(
+        "unique legacy_rave_fact_key mirrors",
+        int(scalar(db, "SELECT COUNT(DISTINCT legacy_rave_fact_key) FROM mems_knowledge_item")),
+        EXPECTED_RAVE_FACTS,
+    )
+    require_equal(
+        "orphan legacy_rave_fact_key mirrors",
+        int(
+            scalar(
+                db,
+                "SELECT COUNT(*) FROM mems_knowledge_item k "
+                "LEFT JOIN mems_rave_fact r ON r.fact_key=k.legacy_rave_fact_key "
+                "WHERE r.fact_key IS NULL",
+            )
+        ),
+        0,
+    )
+    require_equal(
+        "source trace mismatches",
+        int(
+            scalar(
+                db,
+                "SELECT COUNT(*) FROM mems_knowledge_item k "
+                "JOIN mems_rave_fact r ON r.fact_key=k.legacy_rave_fact_key "
+                "WHERE k.source_key IS NOT r.source_key "
+                "OR k.document IS NOT r.document "
+                "OR k.topic IS NOT r.topic "
+                "OR k.source_text IS NOT r.statement "
+                "OR k.source_section IS NOT r.source_section "
+                "OR k.verification_level IS NOT r.verification_level "
+                "OR k.image_ref IS NOT r.image_ref "
+                "OR k.notes IS NOT r.notes",
+            )
+        ),
+        0,
+    )
+    require_equal(
+        "knowledge items without scope",
+        int(
+            scalar(
+                db,
+                "SELECT COUNT(*) FROM mems_knowledge_item k "
+                "LEFT JOIN mems_knowledge_scope ks ON ks.knowledge_key=k.knowledge_key "
+                "WHERE ks.knowledge_key IS NULL",
+            )
+        ),
+        0,
+    )
+    require_equal(
+        "orphan knowledge/scope links",
+        int(
+            scalar(
+                db,
+                "SELECT COUNT(*) FROM mems_knowledge_scope ks "
+                "LEFT JOIN mems_applicability_scope s ON s.scope_key=ks.scope_key "
+                "WHERE s.scope_key IS NULL",
+            )
+        ),
+        0,
+    )
+
+    # Proven incompatibilities must be explicit in the normalized scopes.
+    require_equal(
+        "Japan-only facts without Japan scope",
+        int(
+            scalar(
+                db,
+                "SELECT COUNT(*) FROM mems_knowledge_item k "
+                "JOIN mems_rave_fact r ON r.fact_key=k.legacy_rave_fact_key "
+                "JOIN mems_knowledge_scope ks ON ks.knowledge_key=k.knowledge_key "
+                "JOIN mems_applicability_scope s ON s.scope_key=ks.scope_key "
+                "WHERE r.variant='SPi_Japan_97MY_from_VIN_SAXXNNAXKBD_134455' "
+                "AND s.market IS NOT 'Japan'",
+            )
+        ),
+        0,
+    )
+    require_equal(
+        "MPi facts without MPi scope",
+        int(
+            scalar(
+                db,
+                "SELECT COUNT(*) FROM mems_knowledge_item k "
+                "JOIN mems_rave_fact r ON r.fact_key=k.legacy_rave_fact_key "
+                "JOIN mems_knowledge_scope ks ON ks.knowledge_key=k.knowledge_key "
+                "JOIN mems_applicability_scope s ON s.scope_key=ks.scope_key "
+                "WHERE (r.variant LIKE 'MPi_%') AND s.induction IS NOT 'MPi'",
+            )
+        ),
+        0,
+    )
+    require_equal(
+        "SPi facts without SPi scope",
+        int(
+            scalar(
+                db,
+                "SELECT COUNT(*) FROM mems_knowledge_item k "
+                "JOIN mems_rave_fact r ON r.fact_key=k.legacy_rave_fact_key "
+                "JOIN mems_knowledge_scope ks ON ks.knowledge_key=k.knowledge_key "
+                "JOIN mems_applicability_scope s ON s.scope_key=ks.scope_key "
+                "WHERE (r.variant LIKE 'SPi_%' OR r.variant LIKE 'Mini_SPi_%') "
+                "AND s.induction IS NOT 'SPi'",
+            )
+        ),
+        0,
+    )
+
+    # "market_non_precise" must remain NULL/unknown, never be promoted to ANY.
+    require_equal(
+        "unspecified-market facts promoted to a market",
+        int(
+            scalar(
+                db,
+                "SELECT COUNT(*) FROM mems_knowledge_item k "
+                "JOIN mems_rave_fact r ON r.fact_key=k.legacy_rave_fact_key "
+                "JOIN mems_knowledge_scope ks ON ks.knowledge_key=k.knowledge_key "
+                "JOIN mems_applicability_scope s ON s.scope_key=ks.scope_key "
+                "WHERE r.variant LIKE '%market_non_precise%' AND s.market IS NOT NULL",
+            )
+        ),
+        0,
+    )
+    require_equal(
+        "Mini_1997_2000 induction over-inference",
+        int(
+            scalar(
+                db,
+                "SELECT COUNT(*) FROM mems_knowledge_item k "
+                "JOIN mems_rave_fact r ON r.fact_key=k.legacy_rave_fact_key "
+                "JOIN mems_knowledge_scope ks ON ks.knowledge_key=k.knowledge_key "
+                "JOIN mems_applicability_scope s ON s.scope_key=ks.scope_key "
+                "WHERE r.variant='Mini_1997_2000' AND s.induction IS NOT NULL",
+            )
+        ),
+        0,
+    )
+
+    require_equal(
+        "automatic-only SPi Japan fact transmission",
+        str(
+            scalar(
+                db,
+                "SELECT s.transmission FROM mems_knowledge_item k "
+                "JOIN mems_knowledge_scope ks ON ks.knowledge_key=k.knowledge_key "
+                "JOIN mems_applicability_scope s ON s.scope_key=ks.scope_key "
+                "WHERE k.legacy_rave_fact_key='RAVE-COLOR-SPIJ-019'",
+            )
+        ),
+        "automatic",
+    )
+    for fact_key in ("RAVE-COLOR-SPIJ-023", "RAVE-COLOR-SPIJ-024"):
+        require_equal(
+            f"manual-only SPi Japan fact transmission {fact_key}",
+            str(
+                scalar(
+                    db,
+                    "SELECT s.transmission FROM mems_knowledge_item k "
+                    "JOIN mems_knowledge_scope ks ON ks.knowledge_key=k.knowledge_key "
+                    "JOIN mems_applicability_scope s ON s.scope_key=ks.scope_key "
+                    "WHERE k.legacy_rave_fact_key=?",
+                    (fact_key,),
+                )
+            ),
+            "manual",
+        )
+
+
 def validate(database_path: Path) -> str:
     if not database_path.is_file() or database_path.stat().st_size <= 0:
         fail(f"SQLite database missing or empty: {database_path}")
@@ -161,27 +340,7 @@ def validate(database_path: Path) -> str:
                 fail("schema-only foundation contains unexpected rows: " + ", ".join(non_empty))
         elif mirror_count == EXPECTED_RAVE_FACTS:
             phase = "migrated"
-            require_equal(
-                "non-NULL legacy_rave_fact_key mirrors",
-                int(
-                    scalar(
-                        db,
-                        "SELECT COUNT(*) FROM mems_knowledge_item "
-                        "WHERE legacy_rave_fact_key IS NOT NULL AND trim(legacy_rave_fact_key)<>''",
-                    )
-                ),
-                EXPECTED_RAVE_FACTS,
-            )
-            require_equal(
-                "unique legacy_rave_fact_key mirrors",
-                int(
-                    scalar(
-                        db,
-                        "SELECT COUNT(DISTINCT legacy_rave_fact_key) FROM mems_knowledge_item",
-                    )
-                ),
-                EXPECTED_RAVE_FACTS,
-            )
+            require_migrated_contract(db)
         else:
             fail(
                 "partial knowledge migration: expected 0 or 93 mems_knowledge_item rows, "
