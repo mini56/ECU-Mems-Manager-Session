@@ -198,6 +198,14 @@ Audit effectué sur le HEAD `MEMSX64` `16b99c3f`, après relecture du présent r
 - Artefact : ID **`9645083399`**, nom **`ECU-MEMS-Manager-x64-BUILD-94-v1.0.94`**, taille **386 779 885 octets**, SHA-256 **`11503728fc75dbbff8104d68f6876cdca82cc8f41e234c939e65b7913fe698db`**.
 - **Incident #93 clos. Fonction de proposition/ouverture des schémas IA MEMS stabilisée sur #94.**
 
+### VALIDATION UTILISATEUR #94 — FONCTION SCHÉMAS
+
+- Test effectué sur le PC réel utilisateur avec **ECU MEMS Manager v1.0.94**.
+- Le bouton de proposition de schéma apparaît correctement pour une demande explicite de brochage, notamment **« COULEUR DES FILS DE LA BROCHE ECU 1.6 »** → **« Ouvrir le schéma MEMS 1.6 ECU »**.
+- Le clic et l’ouverture du schéma fonctionnent : **fonction schémas validée sur le PC réel**.
+- Les SVG actuels sont jugés graphiquement perfectibles ; amélioration visuelle reportée à plus tard, sans toucher au mécanisme validé.
+- Des réponses IA restent parfois à côté de la question (ex. contrôle sonde lambda routé vers « aucune mesure ECU disponible », couleurs de fils parfois incomplètes ou mélangeant les variantes). Ces défauts sont consignés pour un lot ultérieur **qualité/routage IA** ; ne pas modifier maintenant `LocalAiClient`, Qwen/ONNX ou la fonction schémas pour les traiter.
+
 ## RAVE — AUDIT DE COUVERTURE MARCHÉ / ANNÉE APRÈS #94
 
 - Base de l’artefact #94 inspectée directement : **86 faits RAVE / 98 faits experts**.
