@@ -1,5 +1,5 @@
-name: ECU MEMS Manager x64 BUILD 30
-run-name: BUILD #30 - v1.0.30 - native ONNX IA package - ${{ github.sha }}
+name: ECU MEMS Manager x64
+run-name: BUILD #${{ github.run_number }} - v1.0.${{ github.run_number }} - native ONNX IA package - ${{ github.sha }}
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ on:
     branches: [MEMSX64]
 
 concurrency:
-  group: memsx64-build-30
+  group: memsx64-build
   cancel-in-progress: true
 
 permissions:
@@ -18,9 +18,9 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 120
     env:
-      MEMS_BUILD: '30'
-      MEMS_VERSION: '1.0.30'
-      MEMS_BUILD_NUMBER: '30'
+      MEMS_BUILD: '${{ github.run_number }}'
+      MEMS_VERSION: '1.0.${{ github.run_number }}'
+      MEMS_BUILD_NUMBER: '${{ github.run_number }}'
       PYTHONUTF8: '1'
       PYTHONIOENCODING: 'utf-8'
       ORT_GENAI_VERSION: '0.14.0'
@@ -35,7 +35,7 @@ jobs:
       ONNX_TOKENIZER_SHA256: 'be75606093db2094d7cd20f3c2f385c212750648bd6ea4fb2bf507a6a4c55506'
 
     steps:
-      - name: Checkout exact BUILD 30 source
+      - name: Checkout exact source
         uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
@@ -192,10 +192,10 @@ jobs:
 
           cmake --build build-x64 --config Release --target `
             ecu_mems_manager ecu_mems_uninstaller rosco_abi_selftest `
-            ia_response_selftest mems_search_selftest expert_runtime_selftest local_ai_onnx_selftest
+            ia_response_selftest ia_mems_diagram_selftest mems_search_selftest expert_runtime_selftest local_ai_onnx_selftest
           if ($LASTEXITCODE -ne 0) { throw "MEMS x64 ONNX build failed: $LASTEXITCODE" }
 
-      - name: Run BUILD 30 deterministic self-tests
+      - name: Run deterministic self-tests
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -205,6 +205,9 @@ jobs:
 
           & '${{ github.workspace }}\build-x64\Release\ia_response_selftest.exe'
           if ($LASTEXITCODE -ne 0) { throw "IA response self-test failed: $LASTEXITCODE" }
+
+          & '${{ github.workspace }}\build-x64\Release\ia_mems_diagram_selftest.exe'
+          if ($LASTEXITCODE -ne 0) { throw "IA MEMS diagram self-test failed: $LASTEXITCODE" }
 
           ctest --test-dir build-x64/librosco-x64 -C Release --output-on-failure -R rosco_abi_selftest
           if ($LASTEXITCODE -ne 0) { throw "Protocol ABI self-test failed: $LASTEXITCODE" }
@@ -318,7 +321,7 @@ jobs:
           }
           Write-Host 'PASS production LocalAiClient: native ONNX model load and generation'
 
-      - name: Assemble BUILD 30 portable ONNX package
+      - name: Assemble portable ONNX package
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -356,14 +359,15 @@ jobs:
           & curl.exe -L --fail --retry 3 --retry-delay 3 -o "$dist\ai\ONNX_RUNTIME_LICENSE.txt" "https://raw.githubusercontent.com/microsoft/onnxruntime/v$env:ORT_VERSION/LICENSE"
           if ($LASTEXITCODE -ne 0) { throw "ONNX Runtime LICENSE download failed: $LASTEXITCODE" }
 
+          $readmeName = 'README_BUILD' + $env:MEMS_BUILD + '.txt'
           @(
-            'ECU MEMS Manager BUILD #30 / v1.0.30',
+            "ECU MEMS Manager BUILD #$env:MEMS_BUILD / v$env:MEMS_VERSION",
             "IA locale x64: ONNX Runtime GenAI $env:ORT_GENAI_VERSION + ONNX Runtime $env:ORT_VERSION CPU + Qwen3-0.6B ONNX INT4",
             'Integration: native in-process, worker thread Qt',
             'QProcess/llama-server/HTTP local: supprimés de la voie IA x64',
             'Base experte r20: préconstruite, lecture seule',
             '32 bits et protocole ECU inchangés'
-          ) | Set-Content "$dist\README_BUILD30.txt" -Encoding UTF8
+          ) | Set-Content (Join-Path $dist $readmeName) -Encoding UTF8
 
           @(
             "Repository: $env:ONNX_MODEL_REPO",
@@ -393,13 +397,20 @@ jobs:
           ort=Path(os.environ['ORT_STAGE_VALIDATE'])
           required=[
               root/'ecu_mems_manager.exe', root/'ecu_mems_uninstaller.exe', root/'mems_manager_x64.dll',
-              root/'onnxruntime-genai.dll', root/'onnxruntime.dll',
+              root/'onnxruntime-genai.dll', root/'onnxruntime.dll', root/'Qt5Svg.dll', root/'imageformats'/'qsvg.dll',
               model/'genai_config.json', model/'model.onnx', model/'model.onnx.data',
               model/'tokenizer.json', model/'tokenizer_config.json', model/'chat_template.jinja',
-              root/'database'/'expert'/'ia_mems_reference_r20.sqlite', ai/'runtime_manifest.json', ai/'README.md'
+              root/'database'/'expert'/'ia_mems_reference_r20.sqlite', ai/'runtime_manifest.json', ai/'README.md',
+              root/'database'/'reference'/'manifest.json',
+              root/'database'/'reference'/'images'/'mems_1_2_ecu_connector.svg',
+              root/'database'/'reference'/'images'/'mems_1_3_ecu_connectors.svg',
+              root/'database'/'reference'/'images'/'mems_1_6_ecu_connector.svg',
+              root/'database'/'reference'/'images'/'mems_1_9_ecu_connector.svg',
+              root/'database'/'reference'/'images'/'rover_rosco_3pin_black.svg',
+              root/'database'/'reference'/'images'/'mems_1_9_obd_16pin.svg'
           ]
           missing=[str(p.relative_to(root)) for p in required if not p.is_file()]
-          if missing: raise SystemExit('Missing BUILD 30 ONNX files: '+', '.join(missing))
+          if missing: raise SystemExit('Missing packaged ONNX/IA diagram files: '+', '.join(missing))
           if (ai/'llama-server.exe').exists() or any(ai.rglob('*.gguf')):
               raise SystemExit('Obsolete llama.cpp/GGUF runtime leaked into ONNX package')
 
@@ -471,27 +482,28 @@ jobs:
           if($p.HasExited){ throw "ECU MEMS Manager exited during smoke launch: $($p.ExitCode)" }
           $null=$p.CloseMainWindow()
           if(-not $p.WaitForExit(5000)){ Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }
-          Write-Host 'PASS ECU MEMS Manager BUILD 30 native ONNX smoke launch'
+          Write-Host "PASS ECU MEMS Manager BUILD $env:MEMS_BUILD native ONNX smoke launch"
 
-      - name: Generate BUILD 30 manifest and file hashes
+      - name: Generate manifest and file hashes
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $manifest="$env:DIST\install_manifest.txt"
+          $hashName = 'BUILD' + $env:MEMS_BUILD + '_SHA256.txt'
           $files=Get-ChildItem $env:DIST -Recurse -File | ForEach-Object { $_.FullName.Substring($env:DIST.Length+1).Replace('\','/') } | Sort-Object -Unique
-          ($files + 'install_manifest.txt' + 'BUILD30_SHA256.txt') | Sort-Object -Unique | Set-Content $manifest -Encoding UTF8
+          ($files + 'install_manifest.txt' + $hashName) | Sort-Object -Unique | Set-Content $manifest -Encoding UTF8
 
-          $hashFile="$env:DIST\BUILD30_SHA256.txt"
+          $hashFile=Join-Path $env:DIST $hashName
           $lines=foreach($f in Get-ChildItem $env:DIST -Recurse -File | Where-Object{$_.FullName-ne$hashFile} | Sort-Object FullName){
             $r=$f.FullName.Substring($env:DIST.Length+1).Replace('\','/')
             "$((Get-FileHash $f.FullName -Algorithm SHA256).Hash.ToLowerInvariant())  $r"
           }
           $lines | Set-Content $hashFile -Encoding UTF8
 
-      - name: Upload ECU MEMS Manager BUILD 30 native ONNX
+      - name: Upload ECU MEMS Manager native ONNX
         uses: actions/upload-artifact@v4
         with:
-          name: ECU-MEMS-Manager-x64-BUILD-30-v1.0.30
+          name: ECU-MEMS-Manager-x64-BUILD-${{ github.run_number }}-v1.0.${{ github.run_number }}
           path: dist-x64/
           if-no-files-found: error
           compression-level: 6
