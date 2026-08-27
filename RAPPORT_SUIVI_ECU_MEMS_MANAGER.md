@@ -19,29 +19,11 @@
 - Aucun BUILD #31 sans demande explicite.
 - 32 bits `lab-expert-engine` et rollback `MEMSX64-BUILD26-BASE` : **NE PAS TOUCHER**.
 
-## TEST UTILISATEUR #86 — DÉFAUTS OBSERVÉS
+## QUALITÉ IA #88 — VALIDÉE
 
-#86 fonctionne réellement, IA/base prêtes, réponses plus rapides, mais les captures montrent des défauts de ciblage : `C4EST QUOI LA BOBINE?`, couleur de fil température SPi, `BROCHE ECU 1.3`, `BROCHE OBD 1.9`, `CADRAN TPM?`, liste des cadrans dans `L4ONGLET APERCU`, ainsi que d'anciennes fuites `<think>`/consignes internes.
+#88 corrige le ciblage observé sur les captures utilisateur : `C4EST QUOI LA BOBINE?`, couleur de fil température SPi, `BROCHE ECU 1.3`, `BROCHE OBD 1.9`, `CADRAN TPM?`, et liste des cadrans dans `L4ONGLET APERCU`.
 
-## LOT QUALITÉ #88 — `5e707530...`
-
-Diff validé avant push : exactement 3 fichiers IA, aucun protocole/UI/RAVE/packaging/32 bits/BUILD.
-
-Corrections incluses :
-- normalisation étroite `C4EST`→`C EST`, `L4ONGLET`→`L ONGLET`, sans conversion globale du chiffre 4 ;
-- intentions `General/WireColor/Pinout` avant recherche experte ;
-- une question de couleur de fil ne peut plus être satisfaite par une procédure de dépose ou un fait sans information couleur/fil ;
-- si aucune couleur vérifiée n'existe, l'IA le dit sans en inventer ;
-- une demande de brochage exige un fait câblage/connecteur/broche ;
-- `ECU 1.3` / `OBD 1.9` peuvent fixer le contexte famille ;
-- la définition générique MEMS 1.x ne détourne plus une demande de broche ;
-- `TPM`→`RPM` uniquement en contexte cadran/régime ;
-- `quel cadran dans l'onglet Aperçu` répond depuis le code réel : 11 cadrans + indicateur état système ;
-- self-test exact avec les formulations utilisateur.
-
-### Validation #88 complète
-
-Compilation, protections protocole, tests déterministes, base r20/RAVE 1680, modèle Qwen, vrai `LocalAiClient` natif et packagé, package, smoke launch, manifeste et artefact : **SUCCESS**. Le self-test natif prend 7 s, le packagé 8 s.
+Validation complète #88 : compilation, protections protocole, tests déterministes, base r20/RAVE 1680, Qwen, vrai `LocalAiClient` natif et packagé, package, smoke launch, manifeste et artefact : **SUCCESS**. Aucun changement protocole/UI/32 bits.
 
 ## RAVE / BASE — LOT 1680 VALIDÉ
 
@@ -49,27 +31,41 @@ Compilation, protections protocole, tests déterministes, base r20/RAVE 1680, mo
 - 1680 ajoute 14 faits constructeur + 14 miroirs experts ; total RAVE 60, expert 72 ; tous `verifie_constructeur`.
 - Brochages vérifiés : O2, pompe, injecteur, purge, IAC, ECT, TPS, IAT, masse capteurs, prise diagnostic, etc.
 
-## RAVE 1690 — OBJECTIF EN COURS AVANT MODIFICATION
+## RAVE 1690 — COULEURS DE FILS SPi JAPON 97MY
 
-Une recherche dédiée aux couleurs de fils a été lancée après les captures #86.
-
-### Source primaire retrouvée
+### Source primaire
 - **Rover Technical Communication — MINI Electrical Circuit Diagrams, publication RCL0194ENG, 3rd Edition**.
-- Périmètre du schéma retenu : **SPi (Japan), MINI 97 Model Year from VIN `SAXXNNAXKBD 134455`**.
-- La page de légende `COLOUR CODES / CODES DES COULEURS DES FILS` donne notamment : B=noir, G=vert, K=rose, LG=vert clair, N=brun, O=orange, P=violet, R=rouge, S=gris ardoise, U=bleu, W=blanc, Y=jaune.
-- Page **20.4** associe directement code couleur + broche + fonction pour plusieurs signaux ; ces associations sont assez précises pour `verifie_constructeur`.
+- Périmètre retenu : **SPi (Japan), MINI 97 Model Year from VIN `SAXXNNAXKBD 134455`**.
+- La légende constructeur donne les codes : B=noir, G=vert, K=rose, LG=vert clair, N=brun, O=orange, P=violet, R=rouge, S=gris ardoise, U=bleu, W=blanc, Y=jaune.
+- Page **20.4** : associations directes code couleur + connecteur + fonction.
 
-### Faits candidats 1690 retenus uniquement lorsqu'ils sont directement lisibles
-- `C159-10` / prise diagnostic `C549-2` : **WY = blanc/jaune**.
-- `C159-15` / prise diagnostic `C549-3` : **BG = noir/vert**.
-- `C159-33` / capteur ECT : **KG = rose/vert**.
-- `C159-30` / masse capteurs : **KB = rose/noir**.
-- `C159-8` / TPS : **YG = jaune/vert**.
-- `C159-9` / TPS : **YP = jaune/violet**.
-- `C159-16` / IAT : **GB = vert/noir**.
+### 7 faits retenus
+1. Diagnostic C549-2 ↔ C159-10 : **WY = blanc/jaune**.
+2. Diagnostic C549-3 ↔ C159-15 : **BG = noir/vert**.
+3. ECT C165-2 ↔ C159-33 : **KG = rose/vert**.
+4. Masse capteurs commune ↔ C159-30 : **KB = rose/noir** ; ECT/TPS/IAT via SJ5.
+5. TPS C175-2 ↔ C159-8 : **YG = jaune/vert**.
+6. TPS C175-3 ↔ C159-9 : **YP = jaune/violet**.
+7. IAT C174-2 ↔ C159-16 : **GB = vert/noir**.
 
-### Règle de prudence 1690
-Ne pas déduire les autres couleurs simplement à partir de l'ordre du texte extrait du schéma. N'intégrer que les relations où le code couleur est visiblement rattaché au connecteur/fonction dans RCL0194 20.4. Ne pas généraliser ces couleurs aux MEMS 1.2/1.3/1.6 hors cette variante SPi Japon 97MY.
+### Validation locale avant push
+Le SQL 1690 a été appliqué sur une copie de la base experte r20 issue de l’artefact #88.
+
+- `RAVE-COLOR-SPIJ-*` dans `mems_rave_fact` : **7**.
+- miroirs `RAVE-COLOR-SPIJ-*` dans `mems_expert_fact_external` : **7**.
+- total RAVE : **60 → 67**.
+- total expert : **72 → 79**.
+- `PRAGMA integrity_check` : **ok**.
+- `PRAGMA user_version` : **20**.
+- tous les faits 1690 : `verifie_constructeur`.
+- variante unique : `SPi_Japan_97MY_from_VIN_SAXXNNAXKBD_134455`.
+- SQL décompressé : **8708 octets**.
+- SHA-256 SQL : **`aef8a4c9d808267188c76c25c53dac254cba57f434a16badf7791023ffcfa97a`**.
+- fichier qz64 : **1397 octets**.
+- SHA-256 qz64 : **`7288e46b99caf41e14751ab5690a7bf17fd35941e1e17527af472bf8bad3ec19`**.
+
+### Règle de prudence
+Ne pas généraliser ces couleurs aux autres SPi/MEMS ou au MPi. Ne pas déduire une couleur à partir d’un ordre de texte ambigu. Seules les liaisons explicitement rattachées sur RCL0194 20.4 entrent en 1690.
 
 ## CONNAISSANCES / SÉCURITÉ À PRÉSERVER
 
@@ -79,4 +75,4 @@ Ne pas modifier protections protocole BUILD #30, MEMS1.9 F7/EF, 7D/80, W4, recon
 
 ## PROCHAINE ACTION EXACTE
 
-**Construire et valider localement un lot documentaire RAVE 1690 contenant uniquement les 7 associations de couleur SPi Japon 97MY directement vérifiées dans RCL0194ENG 20.4, les miroiter dans la table experte, mettre à jour manifeste + audit de provenance, vérifier absence de doublons/conflits, puis pousser un seul commit documentaire sur `MEMSX64`. Aucun BUILD #31.**
+**Créer un lot documentaire atomique 1690 sur une branche temporaire depuis `MEMSX64` : ajouter `research_enrichment_1690.qz64`, mettre à jour `database/reference/manifest.json`, ajouter l’audit de provenance 1690, comparer le diff, puis fast-forward `MEMSX64` une seule fois. Suivre ensuite le GitHub Actions jusqu’à la base/package, puis préparer le lot RAVE suivant. Aucun BUILD #31.**
