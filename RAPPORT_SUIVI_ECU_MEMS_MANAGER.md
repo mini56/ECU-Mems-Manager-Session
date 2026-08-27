@@ -15,6 +15,7 @@
 - HEAD x64 courant : **`897b51c8382513e15f236c18446d1cffc2352c31`**.
 - BUILD logiciel : **#30 / v1.0.30**. Aucun BUILD #31 sans demande explicite.
 - Dernier run entièrement validé : **#90 — SUCCESS**, run `33044945315`, commit `fab2e4cf`.
+- Run #91 sur le lot RAVE 1710 : en cours au dernier contrôle.
 - Artefact #90 : ID `9635406628`, taille `386 768 840`, SHA-256 `125e27658bba577efdf5d22a7cb3fa26670cddadd8383e8f4e7d907d765f6d6d`.
 - 32 bits `lab-expert-engine` et rollback `MEMSX64-BUILD26-BASE` : **NE PAS TOUCHER**.
 
@@ -49,11 +50,24 @@ Validation locale : +11 RAVE +11 experts, integrity `ok`, user_version20, tous `
 - `MEMSX64` avancée en fast-forward sur **`897b51c8382513e15f236c18446d1cffc2352c31`**.
 - Aucun code IA, protocole, UI, packaging, 32 bits ou BUILD modifié.
 
-## RAVE 1720 — OBJECTIF EN COURS AVANT MODIFICATION
+## NOUVELLE ACTION AUTORISÉE — SCHÉMAS PROPOSÉS PAR IA MEMS
 
-Poursuivre l’enrichissement à partir de RCL0194 sans inférence. Candidats à confirmer dans la source primaire avant intégration : signal jauge température C159-5 GU, commande bobine C159-25 WB et liaison C161-18 WS, ligne A/C C159-19 RW, plus tout autre circuit dont fonction + connecteur + couleur + variante sont directement lisibles.
+### Objectif avant toute modification
+Ajouter à IA MEMS une capacité **séparée du moteur IA** : lorsqu’une question correspond à un schéma local connu (ex. brochage MEMS 1.3, connecteur MEMS 1.9, ROSCO 3 broches), l’onglet IA peut proposer un bouton explicite **« Ouvrir le schéma … »** pour visualiser le fichier local correspondant.
 
-Règle : ne pas intégrer un candidat si la relation exacte n’est pas visuellement certaine dans RCL0194. Ne pas généraliser à d’autres variantes MEMS.
+### Contraintes obligatoires
+- **NE PAS MODIFIER** Qwen, ONNX, `LocalAiClient`, le prompt, les budgets de tokens ou la génération qui fonctionne.
+- La détection de schéma doit être déterministe et locale, indépendante du LLM.
+- Réutiliser le mécanisme d’affichage de schéma existant s’il existe ; sinon créer le plus petit composant de visualisation local possible.
+- Aucun accès réseau nécessaire pour ouvrir un schéma.
+- Ne jamais ouvrir automatiquement : seulement proposer, puis ouvrir sur clic utilisateur.
+- Ne jamais inventer de schéma ; n’utiliser que des fichiers réellement présents dans le package / manifeste.
+- Préparer sur branche temporaire, ajouter un self-test spécifique, comparer le diff, puis seulement envisager `MEMSX64` après validation.
+- Aucun changement protocole, ECU, RAVE, 32 bits ou BUILD logiciel.
+
+## RAVE 1720 — EN ATTENTE PENDANT LA MODIFICATION SCHÉMAS
+
+Candidats déjà identifiés à confirmer dans RCL0194 avant intégration : signal jauge température C159-5 GU, commande bobine C159-25 WB et liaison C161-18 WS, ligne A/C C159-19 RW. Reprendre ce lot séparément après stabilisation de la fonction schémas.
 
 ## SÉCURITÉ À PRÉSERVER
 
@@ -61,4 +75,4 @@ Ne pas modifier protections protocole BUILD #30, MEMS1.9 F7/EF, 7D/80, W4, recon
 
 ## PROCHAINE ACTION EXACTE
 
-**Identifier le run déclenché par `897b51c8` et suivre #91 jusqu’au package. Vérifier ensuite directement la base de l’artefact (86 RAVE / 98 experts, 11 faits 1710 + 11 miroirs). En parallèle, vérifier les candidats RAVE 1720 dans la source primaire puis construire un nouveau lot séparé uniquement avec les relations certaines.**
+**Auditer `IaMemsTab`, `IaMemsService` et les fonctions existantes de visualisation des SVG/schémas. Concevoir une proposition de schéma déterministe qui n'altère pas `LocalAiClient`. Préparer le changement sur une branche temporaire, avec self-test, et ne fast-forward `MEMSX64` qu'après validation du diff et du build complet. Ensuite reprendre RAVE 1720.**
