@@ -754,3 +754,122 @@ Ordre obligatoire :
 8. Compiler/valider sur GitHub Actions en branche temporaire, comparer le diff, puis seulement proposer un nouveau push `MEMSX64`.
 
 **État de référence à conserver : BUILD #97 est la base active. Le build est vert et apporte de vraies améliorations de routage/clarification/XML, mais le lot IA n’est pas considéré terminé tant que les défauts de réponse finale ci-dessus ne sont pas corrigés et retestés sur le PC réel.**
+
+# AUDIT ET CORRECTION APRÈS TEST RÉEL #97 — CANDIDAT VALIDÉ AVANT PRODUCTION
+
+## POINT DE DÉPART
+
+- Base obligatoire : **`MEMSX64` BUILD #97**, HEAD **`2b211554abdbb127fd4d472f9ce687394b2d4608`**.
+- Branche de travail créée depuis exactement #97 : **`tmp-ia-post97-audit-fix`**.
+- Aucun changement protocole ECU, acquisition, RAM, 32 bits ou protections de connexion dans ce lot.
+- Objectif : corriger uniquement les défauts observés dans les captures #97 : `cherche` concluant SPi sans preuve suffisante, fuite de consignes internes, mélange MPi/SPi, réponses factuelles ECT/lambda et rendu incomplet des fiches XML.
+
+## CAUSE 1 — `cherche` POUVAIT CONCLURE SPi SANS PREUVE SUFFISANTE
+
+L’audit du code a montré que le chemin de résolution SPi/MPi utilisait une recherche générique sur **`Mini`** lorsque le firmware n’était pas disponible. Si les résultats renvoyés à cet instant ne contenaient qu’un type d’injection, ce résultat pouvait être traité comme une preuve et produire **« J’ai identifié SPi »**, y compris ECU déconnecté.
+
+Correction retenue :
+- le mot générique `Mini` n’est plus une preuve SPi/MPi ;
+- les sondes de preuve sont limitées à des éléments forts : **firmware ECU réellement connu lorsque l’ECU est connecté** et/ou **référence ECU explicite présente dans la question** (`MNE`, `MKC`, `NNN`, `AANMP...`) ;
+- si aucune preuve forte ne permet de trancher, la réponse reste contrôlée et demande l’information discriminante au lieu de choisir arbitrairement.
+
+## CAUSE 2 — FUITE `RÉPONSE ATTENDUE / DIAGNOSTIC BREF / NE MONTRE AUCUN RAISONNEMENT INTERNE`
+
+La cause exacte a été retrouvée dans `LocalAiClient` : le grounding documentaire contient naturellement des mentions de **niveau de preuve**. Le code utilisait la présence du mot **`preuve`** dans le grounding comme un signal suffisant pour passer en génération de type diagnostic et ajouter au prompt des consignes telles que **`Réponse attendue : diagnostic bref...`**. Le petit modèle pouvait alors recopier cette consigne dans la réponse utilisateur.
+
+Correction retenue :
+- suppression de la règle `grounding contient preuve => diagnostic` ;
+- ajout d’une décision testable `shouldUseDiagnosticGeneration(question, grounding)` basée sur une vraie intention de diagnostic/raisonnement, pas sur les métadonnées de vérification d’un fait documentaire ;
+- une question factuelle telle que **couple ECT**, **couleur de fils lambda**, **broche**, **fiche** ou **documentation** ne doit plus entrer dans ce mode uniquement parce que le fait comporte `preuve : constructeur` ;
+- les vrais diagnostics conservent le chemin génératif diagnostic.
+
+## CAUSE 3 — UN FAIT SPi POUVAIT SURVIVRE À UNE QUESTION MPi
+
+Le filtre de portée existant s’appuyait surtout sur les nouvelles notes structurées contenant `Portee`. Certains faits historiques/legacy portent pourtant leur variante explicitement dans le `topic`, le `statement`, la clé, les notes ou la famille sans avoir encore cette note structurée.
+
+Correction retenue dans `IaMemsService` :
+- détection d’un label explicite SPi/MPi dans l’ensemble des champs du fait ;
+- une demande MPi rejette un fait explicitement SPi s’il n’est pas également explicitement MPi ;
+- une demande SPi rejette symétriquement un fait explicitement MPi ;
+- le même durcissement est appliqué aux incompatibilités explicites de marché et de transmission avant le classement/Qwen ;
+- le filtre structuré `Portee` reste conservé pour les nouveaux faits du socle.
+
+## CAUSE 4 — LES FICHES XML CONTENAIENT LES BROCHES/COULEURS MAIS LE VIEWER IA LES JETAIT
+
+Audit direct des QZ64 réels :
+- **MEMS 1.6 contient bien 25 broches côté ECU**, en plus des éléments ROSCO, et des représentations de couleurs intégrées ;
+- les couleurs sont stockées avec de vrais **SVG intégrés** dans le XML ;
+- **MEMS 1.9 contient également des SVG de couleurs intégrés**.
+
+Le viewer ajouté dans #97 reconstruisait son propre HTML et ne traitait que quelques balises génériques (`titre`, `section`, `p`, `note`, `table`, `ligne`, `cellule`). Il ignorait les balises spécifiques **`broche`**, **`fonction`**, **`couleur`** de la fiche 1.6 et détruisait le SVG imbriqué lors du rendu des cellules génériques de la fiche 1.9.
+
+Correction retenue :
+- création d’un renderer commun **`database/MemsReferenceSheetRenderer.h`** ;
+- prise en charge des deux structures XML réellement présentes ;
+- conservation et rendu des SVG de couleur intégrés ;
+- lecture des balises `broche`, `fonction`, `couleur`, `cellule` et de leur contenu imbriqué ;
+- réutilisation du même renderer dans **Base de données** et **IA MEMS**, afin d’éviter deux implémentations divergentes du rendu XML.
+
+## DIFF FINAL DU CANDIDAT APRÈS NETTOYAGE
+
+Après suppression de tous les workflows/scripts temporaires, la comparaison #97 → candidat final contient **exactement 9 fichiers** :
+1. `database/MemsDatabaseBrowser.cpp` ;
+2. `database/MemsReferenceSheetRenderer.h` — nouveau renderer commun ;
+3. `expert/IaMemsConversationRouting.h` ;
+4. `expert/IaMemsService.cpp` ;
+5. `expert/IaResponseLogicTest.cpp` ;
+6. `expert/LocalAiClient.cpp` ;
+7. `expert/LocalAiOnnxSelfTest.cpp` ;
+8. `iamemstab.cpp` ;
+9. `iamemstab.h`.
+
+Aucun fichier temporaire, aucun workflow temporaire, aucun protocole ECU et aucun fichier 32 bits ne reste dans le diff final.
+
+## VALIDATION GITHUB TEMPORAIRE — ÉCHEC INTERMÉDIAIRE CONSIGNÉ
+
+Premier run Windows x64 de validation : **`33114280638` — FAILURE**.
+
+L’échec ne venait pas du code applicatif corrigé mais d’un **nouveau self-test** : comparaison directe `QStringList == QStringList{...}` provoquant sous Qt 5.15.2 / runner MSVC 2026 une erreur dans `qlist.h` (`stdext::make_checked_array_iterator`).
+
+Correction appliquée uniquement au test : vérification de la taille puis comparaison élément par élément. Aucun comportement applicatif modifié pour contourner cet échec.
+
+## VALIDATION GITHUB TEMPORAIRE FINALE — VERTE
+
+Run corrigé : **`33114572801` — SUCCESS**.
+
+Toutes les étapes sont vertes :
+- checkout candidat ;
+- validation des invariants source et du contenu QZ64 réel ;
+- installation Qt 5.15.2 MSVC x64 ;
+- configuration x64 ;
+- **compilation de l’application et des self-tests touchés : SUCCESS** ;
+- **tests déterministes : SUCCESS** ;
+- cleanup : SUCCESS.
+
+Les tests couvrent notamment :
+- `Broche MAP Mini` + ECU déconnecté sans firmware => aucune preuve SPi/MPi automatique ;
+- firmware connecté `AANMP002` => preuve forte disponible ;
+- référence ECU explicite => utilisable comme preuve ;
+- `preuve : constructeur` dans un grounding documentaire => ne déclenche pas le mode diagnostic ;
+- vrai diagnostic => conserve le mode diagnostic ;
+- rendu XML spécifique `broche/fonction/couleur` avec couleurs SVG ;
+- rendu XML générique `cellule` avec SVG imbriqué ;
+- routage documentaire MAP/lambda/ECT conservé.
+
+## ÉTAT AVANT PUSH PRODUCTION
+
+- #97 reste à cet instant la production active.
+- Candidat final nettoyé : **`tmp-ia-post97-audit-fix`**, arbre final au commit **`e1d3ed416c41a5dd71f01871592e73a107a81e07`**.
+- Le candidat est strictement en avance sur #97 et ne contient plus de fichier temporaire dans son arbre final.
+- Pour ne pas importer l’historique des workflows temporaires dans la branche de production, le push production doit utiliser **un commit propre basé sur l’arbre final validé avec #97 comme parent**, puis avancer `MEMSX64` sans force.
+
+# PROCHAINE ACTION EXACTE — APRÈS VALIDATION POST-#97
+
+1. Créer le **commit production propre** à partir de l’arbre final validé, parent direct #97 `2b211554...`.
+2. Avancer `MEMSX64` **sans force** sur ce commit propre.
+3. Attendre le vrai workflow `BUILD` et ne déclarer le nouveau build validé qu’après résultat GitHub réel.
+4. Si le BUILD est vert, consigner run/commit/artefact dans le présent rapport.
+5. Test utilisateur recommandé : **désinstallation locale complète + suppression des données/profil/cache MEMS Manager réellement utilisés sur le PC**, puis installation du nouvel artefact afin d’écarter tout reste d’une ancienne base/profil.
+6. Rejouer les scénarios réels #97 après installation propre : `Broche MAP Mini` → `cherche`, MAP MPi, MAP SPi Japan, couleurs lambda, couple ECT, XML 1.6/1.9 et `Valeur MAP ?` lorsque le véhicule pourra être connecté.
+
+**Ne pas toucher au protocole ECU, au 32 bits ou à l’acquisition dans cette suite.**
