@@ -88,9 +88,10 @@ int main(int argc, char **argv)
     ok &= require(IaMemsConversationRouting::inductionEvidenceProbes(
                       QStringLiteral("Broche MAP Mini"), false, QString()).isEmpty(),
                   "generic Mini while disconnected is not SPi/MPi evidence");
-    ok &= require(IaMemsConversationRouting::inductionEvidenceProbes(
-                      QStringLiteral("Broche MAP Mini"), true, QStringLiteral("AANMP002"))
-                      == QStringList{QStringLiteral("AANMP002")},
+    const QStringList connectedProbes = IaMemsConversationRouting::inductionEvidenceProbes(
+        QStringLiteral("Broche MAP Mini"), true, QStringLiteral("AANMP002"));
+    ok &= require(connectedProbes.size() == 1
+                      && connectedProbes.at(0) == QStringLiteral("AANMP002"),
                   "connected firmware is strong SPi/MPi evidence");
     ok &= require(IaMemsConversationRouting::inductionEvidenceProbes(
                       QStringLiteral("Broche MAP Mini MKC104341"), false, QString()).contains(QStringLiteral("MKC104341")),
