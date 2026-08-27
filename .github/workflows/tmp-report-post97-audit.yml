@@ -7,6 +7,9 @@ on:
 permissions:
   contents: write
 
+env:
+  REPORT_BLOCK_B64: CiMgQVVESVQgRVQgQ09SUkVDVElPTiBBUFLDiFMgVEVTVCBSw4lFTCAjOTcg4oCUIENBTkRJREFUIFZBTElEw4kgQVZBTlQgUFJPRFVDVElPTgoKIyMgUE9JTlQgREUgRMOJUEFSVAoKLSBCYXNlIG9ibGlnYXRvaXJlIDogKipgTUVNU1g2NGAgQlVJTEQgIzk3KiosIEhFQUQgKipgMmIyMTE1NTRhYmRiYjEyN2ZkNGQ0NzJmOWNlNjg3Mzk0YjJkNDYwOGAqKi4KLSBCcmFuY2hlIGRlIHRyYXZhaWwgY3LDqcOpZSBkZXB1aXMgZXhhY3RlbWVudCAjOTcgOiAqKmB0bXAtaWEtcG9zdDk3LWF1ZGl0LWZpeGAqKi4KLSBBdWN1biBjaGFuZ2VtZW50IHByb3RvY29sZSBFQ1UsIGFjcXVpc2l0aW9uLCBSQU0sIDMyIGJpdHMgb3UgcHJvdGVjdGlvbnMgZGUgY29ubmV4aW9uIGRhbnMgY2UgbG90LgotIE9iamVjdGlmIDogY29ycmlnZXIgdW5pcXVlbWVudCBsZXMgZMOpZmF1dHMgb2JzZXJ2w6lzIGRhbnMgbGVzIGNhcHR1cmVzICM5NyA6IGBjaGVyY2hlYCBjb25jbHVhbnQgU1BpIHNhbnMgcHJldXZlIHN1ZmZpc2FudGUsIGZ1aXRlIGRlIGNvbnNpZ25lcyBpbnRlcm5lcywgbcOpbGFuZ2UgTVBpL1NQaSwgcsOpcG9uc2VzIGZhY3R1ZWxsZXMgRUNUL2xhbWJkYSBldCByZW5kdSBpbmNvbXBsZXQgZGVzIGZpY2hlcyBYTUwuCgojIyBDQVVTRSAxIOKAlCBgY2hlcmNoZWAgUE9VVkFJVCBDT05DTFVSRSBTUGkgU0FOUyBQUkVVVkUgU1VGRklTQU5URQoKTOKAmWF1ZGl0IGR1IGNvZGUgYSBtb250csOpIHF1ZSBsZSBjaGVtaW4gZGUgcsOpc29sdXRpb24gU1BpL01QaSB1dGlsaXNhaXQgdW5lIHJlY2hlcmNoZSBnw6luw6lyaXF1ZSBzdXIgKipgTWluaWAqKiBsb3JzcXVlIGxlIGZpcm13YXJlIG7igJnDqXRhaXQgcGFzIGRpc3BvbmlibGUuIFNpIGxlcyByw6lzdWx0YXRzIHJlbnZvecOpcyDDoCBjZXQgaW5zdGFudCBuZSBjb250ZW5haWVudCBxdeKAmXVuIHR5cGUgZOKAmWluamVjdGlvbiwgY2UgcsOpc3VsdGF0IHBvdXZhaXQgw6p0cmUgdHJhaXTDqSBjb21tZSB1bmUgcHJldXZlIGV0IHByb2R1aXJlICoqwqsgSuKAmWFpIGlkZW50aWZpw6kgU1BpIMK7KiosIHkgY29tcHJpcyBFQ1UgZMOpY29ubmVjdMOpLgoKQ29ycmVjdGlvbiByZXRlbnVlIDoKLSBsZSBtb3QgZ8OpbsOpcmlxdWUgYE1pbmlgIG7igJllc3QgcGx1cyB1bmUgcHJldXZlIFNQaS9NUGkgOwotIGxlcyBzb25kZXMgZGUgcHJldXZlIHNvbnQgbGltaXTDqWVzIMOgIGRlcyDDqWzDqW1lbnRzIGZvcnRzIDogKipmaXJtd2FyZSBFQ1UgcsOpZWxsZW1lbnQgY29ubnUgbG9yc3F1ZSBs4oCZRUNVIGVzdCBjb25uZWN0w6kqKiBldC9vdSAqKnLDqWbDqXJlbmNlIEVDVSBleHBsaWNpdGUgcHLDqXNlbnRlIGRhbnMgbGEgcXVlc3Rpb24qKiAoYE1ORWAsIGBNS0NgLCBgTk5OYCwgYEFBTk1QLi4uYCkgOwotIHNpIGF1Y3VuZSBwcmV1dmUgZm9ydGUgbmUgcGVybWV0IGRlIHRyYW5jaGVyLCBsYSByw6lwb25zZSByZXN0ZSBjb250csO0bMOpZSBldCBkZW1hbmRlIGzigJlpbmZvcm1hdGlvbiBkaXNjcmltaW5hbnRlIGF1IGxpZXUgZGUgY2hvaXNpciBhcmJpdHJhaXJlbWVudC4KCiMjIENBVVNFIDIg4oCUIEZVSVRFIGBSw4lQT05TRSBBVFRFTkRVRSAvIERJQUdOT1NUSUMgQlJFRiAvIE5FIE1PTlRSRSBBVUNVTiBSQUlTT05ORU1FTlQgSU5URVJORWAKCkxhIGNhdXNlIGV4YWN0ZSBhIMOpdMOpIHJldHJvdXbDqWUgZGFucyBgTG9jYWxBaUNsaWVudGAgOiBsZSBncm91bmRpbmcgZG9jdW1lbnRhaXJlIGNvbnRpZW50IG5hdHVyZWxsZW1lbnQgZGVzIG1lbnRpb25zIGRlICoqbml2ZWF1IGRlIHByZXV2ZSoqLiBMZSBjb2RlIHV0aWxpc2FpdCBsYSBwcsOpc2VuY2UgZHUgbW90ICoqYHByZXV2ZWAqKiBkYW5zIGxlIGdyb3VuZGluZyBjb21tZSB1biBzaWduYWwgc3VmZmlzYW50IHBvdXIgcGFzc2VyIGVuIGfDqW7DqXJhdGlvbiBkZSB0eXBlIGRpYWdub3N0aWMgZXQgYWpvdXRlciBhdSBwcm9tcHQgZGVzIGNvbnNpZ25lcyB0ZWxsZXMgcXVlICoqYFLDqXBvbnNlIGF0dGVuZHVlIDogZGlhZ25vc3RpYyBicmVmLi4uYCoqLiBMZSBwZXRpdCBtb2TDqGxlIHBvdXZhaXQgYWxvcnMgcmVjb3BpZXIgY2V0dGUgY29uc2lnbmUgZGFucyBsYSByw6lwb25zZSB1dGlsaXNhdGV1ci4KCkNvcnJlY3Rpb24gcmV0ZW51ZSA6Ci0gc3VwcHJlc3Npb24gZGUgbGEgcsOoZ2xlIGBncm91bmRpbmcgY29udGllbnQgcHJldXZlID0+IGRpYWdub3N0aWNgIDsKLSBham91dCBk4oCZdW5lIGTDqWNpc2lvbiB0ZXN0YWJsZSBgc2hvdWxkVXNlRGlhZ25vc3RpY0dlbmVyYXRpb24ocXVlc3Rpb24sIGdyb3VuZGluZylgIGJhc8OpZSBzdXIgdW5lIHZyYWllIGludGVudGlvbiBkZSBkaWFnbm9zdGljL3JhaXNvbm5lbWVudCwgcGFzIHN1ciBsZXMgbcOpdGFkb25uw6llcyBkZSB2w6lyaWZpY2F0aW9uIGTigJl1biBmYWl0IGRvY3VtZW50YWlyZSA7Ci0gdW5lIHF1ZXN0aW9uIGZhY3R1ZWxsZSB0ZWxsZSBxdWUgKipjb3VwbGUgRUNUKiosICoqY291bGV1ciBkZSBmaWxzIGxhbWJkYSoqLCAqKmJyb2NoZSoqLCAqKmZpY2hlKiogb3UgKipkb2N1bWVudGF0aW9uKiogbmUgZG9pdCBwbHVzIGVudHJlciBkYW5zIGNlIG1vZGUgdW5pcXVlbWVudCBwYXJjZSBxdWUgbGUgZmFpdCBjb21wb3J0ZSBgcHJldXZlIDogY29uc3RydWN0ZXVyYCA7Ci0gbGVzIHZyYWlzIGRpYWdub3N0aWNzIGNvbnNlcnZlbnQgbGUgY2hlbWluIGfDqW7DqXJhdGlmIGRpYWdub3N0aWMuCgojIyBDQVVTRSAzIOKAlCBVTiBGQUlUIFNQaSBQT1VWQUlUIFNVUlZJVlJFIMOAIFVORSBRVUVTVElPTiBNUGkKCkxlIGZpbHRyZSBkZSBwb3J0w6llIGV4aXN0YW50IHPigJlhcHB1eWFpdCBzdXJ0b3V0IHN1ciBsZXMgbm91dmVsbGVzIG5vdGVzIHN0cnVjdHVyw6llcyBjb250ZW5hbnQgYFBvcnRlZWAuIENlcnRhaW5zIGZhaXRzIGhpc3RvcmlxdWVzL2xlZ2FjeSBwb3J0ZW50IHBvdXJ0YW50IGxldXIgdmFyaWFudGUgZXhwbGljaXRlbWVudCBkYW5zIGxlIGB0b3BpY2AsIGxlIGBzdGF0ZW1lbnRgLCBsYSBjbMOpLCBsZXMgbm90ZXMgb3UgbGEgZmFtaWxsZSBzYW5zIGF2b2lyIGVuY29yZSBjZXR0ZSBub3RlIHN0cnVjdHVyw6llLgoKQ29ycmVjdGlvbiByZXRlbnVlIGRhbnMgYElhTWVtc1NlcnZpY2VgIDoKLSBkw6l0ZWN0aW9uIGTigJl1biBsYWJlbCBleHBsaWNpdGUgU1BpL01QaSBkYW5zIGzigJllbnNlbWJsZSBkZXMgY2hhbXBzIGR1IGZhaXQgOwotIHVuZSBkZW1hbmRlIE1QaSByZWpldHRlIHVuIGZhaXQgZXhwbGljaXRlbWVudCBTUGkgc+KAmWlsIG7igJllc3QgcGFzIMOpZ2FsZW1lbnQgZXhwbGljaXRlbWVudCBNUGkgOwotIHVuZSBkZW1hbmRlIFNQaSByZWpldHRlIHN5bcOpdHJpcXVlbWVudCB1biBmYWl0IGV4cGxpY2l0ZW1lbnQgTVBpIDsKLSBsZSBtw6ptZSBkdXJjaXNzZW1lbnQgZXN0IGFwcGxpcXXDqSBhdXggaW5jb21wYXRpYmlsaXTDqXMgZXhwbGljaXRlcyBkZSBtYXJjaMOpIGV0IGRlIHRyYW5zbWlzc2lvbiBhdmFudCBsZSBjbGFzc2VtZW50L1F3ZW4gOwotIGxlIGZpbHRyZSBzdHJ1Y3R1csOpIGBQb3J0ZWVgIHJlc3RlIGNvbnNlcnbDqSBwb3VyIGxlcyBub3V2ZWF1eCBmYWl0cyBkdSBzb2NsZS4KCiMjIENBVVNFIDQg4oCUIExFUyBGSUNIRVMgWE1MIENPTlRFTkFJRU5UIExFUyBCUk9DSEVTL0NPVUxFVVJTIE1BSVMgTEUgVklFV0VSIElBIExFUyBKRVRBSVQKCkF1ZGl0IGRpcmVjdCBkZXMgUVo2NCByw6llbHMgOgotICoqTUVNUyAxLjYgY29udGllbnQgYmllbiAyNSBicm9jaGVzIGPDtHTDqSBFQ1UqKiwgZW4gcGx1cyBkZXMgw6lsw6ltZW50cyBST1NDTywgZXQgZGVzIHJlcHLDqXNlbnRhdGlvbnMgZGUgY291bGV1cnMgaW50w6lncsOpZXMgOwotIGxlcyBjb3VsZXVycyBzb250IHN0b2Nrw6llcyBhdmVjIGRlIHZyYWlzICoqU1ZHIGludMOpZ3LDqXMqKiBkYW5zIGxlIFhNTCA7Ci0gKipNRU1TIDEuOSBjb250aWVudCDDqWdhbGVtZW50IGRlcyBTVkcgZGUgY291bGV1cnMgaW50w6lncsOpcyoqLgoKTGUgdmlld2VyIGFqb3V0w6kgZGFucyAjOTcgcmVjb25zdHJ1aXNhaXQgc29uIHByb3ByZSBIVE1MIGV0IG5lIHRyYWl0YWl0IHF1ZSBxdWVscXVlcyBiYWxpc2VzIGfDqW7DqXJpcXVlcyAoYHRpdHJlYCwgYHNlY3Rpb25gLCBgcGAsIGBub3RlYCwgYHRhYmxlYCwgYGxpZ25lYCwgYGNlbGx1bGVgKS4gSWwgaWdub3JhaXQgbGVzIGJhbGlzZXMgc3DDqWNpZmlxdWVzICoqYGJyb2NoZWAqKiwgKipgZm9uY3Rpb25gKiosICoqYGNvdWxldXJgKiogZGUgbGEgZmljaGUgMS42IGV0IGTDqXRydWlzYWl0IGxlIFNWRyBpbWJyaXF1w6kgbG9ycyBkdSByZW5kdSBkZXMgY2VsbHVsZXMgZ8OpbsOpcmlxdWVzIGRlIGxhIGZpY2hlIDEuOS4KCkNvcnJlY3Rpb24gcmV0ZW51ZSA6Ci0gY3LDqWF0aW9uIGTigJl1biByZW5kZXJlciBjb21tdW4gKipgZGF0YWJhc2UvTWVtc1JlZmVyZW5jZVNoZWV0UmVuZGVyZXIuaGAqKiA7Ci0gcHJpc2UgZW4gY2hhcmdlIGRlcyBkZXV4IHN0cnVjdHVyZXMgWE1MIHLDqWVsbGVtZW50IHByw6lzZW50ZXMgOwotIGNvbnNlcnZhdGlvbiBldCByZW5kdSBkZXMgU1ZHIGRlIGNvdWxldXIgaW50w6lncsOpcyA7Ci0gbGVjdHVyZSBkZXMgYmFsaXNlcyBgYnJvY2hlYCwgYGZvbmN0aW9uYCwgYGNvdWxldXJgLCBgY2VsbHVsZWAgZXQgZGUgbGV1ciBjb250ZW51IGltYnJpcXXDqSA7Ci0gcsOpdXRpbGlzYXRpb24gZHUgbcOqbWUgcmVuZGVyZXIgZGFucyAqKkJhc2UgZGUgZG9ubsOpZXMqKiBldCAqKklBIE1FTVMqKiwgYWZpbiBk4oCZw6l2aXRlciBkZXV4IGltcGzDqW1lbnRhdGlvbnMgZGl2ZXJnZW50ZXMgZHUgcmVuZHUgWE1MLgoKIyMgRElGRiBGSU5BTCBEVSBDQU5ESURBVCBBUFLDiFMgTkVUVE9ZQUdFCgpBcHLDqHMgc3VwcHJlc3Npb24gZGUgdG91cyBsZXMgd29ya2Zsb3dzL3NjcmlwdHMgdGVtcG9yYWlyZXMsIGxhIGNvbXBhcmFpc29uICM5NyDihpIgY2FuZGlkYXQgZmluYWwgY29udGllbnQgKipleGFjdGVtZW50IDkgZmljaGllcnMqKiA6CjEuIGBkYXRhYmFzZS9NZW1zRGF0YWJhc2VCcm93c2VyLmNwcGAgOwoyLiBgZGF0YWJhc2UvTWVtc1JlZmVyZW5jZVNoZWV0UmVuZGVyZXIuaGAg4oCUIG5vdXZlYXUgcmVuZGVyZXIgY29tbXVuIDsKMy4gYGV4cGVydC9JYU1lbXNDb252ZXJzYXRpb25Sb3V0aW5nLmhgIDsKNC4gYGV4cGVydC9JYU1lbXNTZXJ2aWNlLmNwcGAgOwo1LiBgZXhwZXJ0L0lhUmVzcG9uc2VMb2dpY1Rlc3QuY3BwYCA7CjYuIGBleHBlcnQvTG9jYWxBaUNsaWVudC5jcHBgIDsKNy4gYGV4cGVydC9Mb2NhbEFpT25ueFNlbGZUZXN0LmNwcGAgOwo4LiBgaWFtZW1zdGFiLmNwcGAgOwo5LiBgaWFtZW1zdGFiLmhgLgoKQXVjdW4gZmljaGllciB0ZW1wb3JhaXJlLCBhdWN1biB3b3JrZmxvdyB0ZW1wb3JhaXJlLCBhdWN1biBwcm90b2NvbGUgRUNVIGV0IGF1Y3VuIGZpY2hpZXIgMzIgYml0cyBuZSByZXN0ZSBkYW5zIGxlIGRpZmYgZmluYWwuCgojIyBWQUxJREFUSU9OIEdJVEhVQiBURU1QT1JBSVJFIOKAlCDDiUNIRUMgSU5URVJNw4lESUFJUkUgQ09OU0lHTsOJCgpQcmVtaWVyIHJ1biBXaW5kb3dzIHg2NCBkZSB2YWxpZGF0aW9uIDogKipgMzMxMTQyODA2MzhgIOKAlCBGQUlMVVJFKiouCgpM4oCZw6ljaGVjIG5lIHZlbmFpdCBwYXMgZHUgY29kZSBhcHBsaWNhdGlmIGNvcnJpZ8OpIG1haXMgZOKAmXVuICoqbm91dmVhdSBzZWxmLXRlc3QqKiA6IGNvbXBhcmFpc29uIGRpcmVjdGUgYFFTdHJpbmdMaXN0ID09IFFTdHJpbmdMaXN0ey4uLn1gIHByb3ZvcXVhbnQgc291cyBRdCA1LjE1LjIgLyBydW5uZXIgTVNWQyAyMDI2IHVuZSBlcnJldXIgZGFucyBgcWxpc3QuaGAgKGBzdGRleHQ6Om1ha2VfY2hlY2tlZF9hcnJheV9pdGVyYXRvcmApLgoKQ29ycmVjdGlvbiBhcHBsaXF1w6llIHVuaXF1ZW1lbnQgYXUgdGVzdCA6IHbDqXJpZmljYXRpb24gZGUgbGEgdGFpbGxlIHB1aXMgY29tcGFyYWlzb24gw6lsw6ltZW50IHBhciDDqWzDqW1lbnQuIEF1Y3VuIGNvbXBvcnRlbWVudCBhcHBsaWNhdGlmIG1vZGlmacOpIHBvdXIgY29udG91cm5lciBjZXQgw6ljaGVjLgoKIyMgVkFMSURBVElPTiBHSVRIVUIgVEVNUE9SQUlSRSBGSU5BTEUg4oCUIFZFUlRFCgpSdW4gY29ycmlnw6kgOiAqKmAzMzExNDU3MjgwMWAg4oCUIFNVQ0NFU1MqKi4KClRvdXRlcyBsZXMgw6l0YXBlcyBzb250IHZlcnRlcyA6Ci0gY2hlY2tvdXQgY2FuZGlkYXQgOwotIHZhbGlkYXRpb24gZGVzIGludmFyaWFudHMgc291cmNlIGV0IGR1IGNvbnRlbnUgUVo2NCByw6llbCA7Ci0gaW5zdGFsbGF0aW9uIFF0IDUuMTUuMiBNU1ZDIHg2NCA7Ci0gY29uZmlndXJhdGlvbiB4NjQgOwotICoqY29tcGlsYXRpb24gZGUgbOKAmWFwcGxpY2F0aW9uIGV0IGRlcyBzZWxmLXRlc3RzIHRvdWNow6lzIDogU1VDQ0VTUyoqIDsKLSAqKnRlc3RzIGTDqXRlcm1pbmlzdGVzIDogU1VDQ0VTUyoqIDsKLSBjbGVhbnVwIDogU1VDQ0VTUy4KCkxlcyB0ZXN0cyBjb3V2cmVudCBub3RhbW1lbnQgOgotIGBCcm9jaGUgTUFQIE1pbmlgICsgRUNVIGTDqWNvbm5lY3TDqSBzYW5zIGZpcm13YXJlID0+IGF1Y3VuZSBwcmV1dmUgU1BpL01QaSBhdXRvbWF0aXF1ZSA7Ci0gZmlybXdhcmUgY29ubmVjdMOpIGBBQU5NUDAwMmAgPT4gcHJldXZlIGZvcnRlIGRpc3BvbmlibGUgOwotIHLDqWbDqXJlbmNlIEVDVSBleHBsaWNpdGUgPT4gdXRpbGlzYWJsZSBjb21tZSBwcmV1dmUgOwotIGBwcmV1dmUgOiBjb25zdHJ1Y3RldXJgIGRhbnMgdW4gZ3JvdW5kaW5nIGRvY3VtZW50YWlyZSA9PiBuZSBkw6ljbGVuY2hlIHBhcyBsZSBtb2RlIGRpYWdub3N0aWMgOwotIHZyYWkgZGlhZ25vc3RpYyA9PiBjb25zZXJ2ZSBsZSBtb2RlIGRpYWdub3N0aWMgOwotIHJlbmR1IFhNTCBzcMOpY2lmaXF1ZSBgYnJvY2hlL2ZvbmN0aW9uL2NvdWxldXJgIGF2ZWMgY291bGV1cnMgU1ZHIDsKLSByZW5kdSBYTUwgZ8OpbsOpcmlxdWUgYGNlbGx1bGVgIGF2ZWMgU1ZHIGltYnJpcXXDqSA7Ci0gcm91dGFnZSBkb2N1bWVudGFpcmUgTUFQL2xhbWJkYS9FQ1QgY29uc2VydsOpLgoKIyMgw4lUQVQgQVZBTlQgUFVTSCBQUk9EVUNUSU9OCgotICM5NyByZXN0ZSDDoCBjZXQgaW5zdGFudCBsYSBwcm9kdWN0aW9uIGFjdGl2ZS4KLSBDYW5kaWRhdCBmaW5hbCBuZXR0b3nDqSA6ICoqYHRtcC1pYS1wb3N0OTctYXVkaXQtZml4YCoqLCBhcmJyZSBmaW5hbCBhdSBjb21taXQgKipgZTFkM2VkNDE2YzQxYTVkZDcxZjAxODcxNTkyZTczYTEwN2E4MWUwN2AqKi4KLSBMZSBjYW5kaWRhdCBlc3Qgc3RyaWN0ZW1lbnQgZW4gYXZhbmNlIHN1ciAjOTcgZXQgbmUgY29udGllbnQgcGx1cyBkZSBmaWNoaWVyIHRlbXBvcmFpcmUgZGFucyBzb24gYXJicmUgZmluYWwuCi0gUG91ciBuZSBwYXMgaW1wb3J0ZXIgbOKAmWhpc3RvcmlxdWUgZGVzIHdvcmtmbG93cyB0ZW1wb3JhaXJlcyBkYW5zIGxhIGJyYW5jaGUgZGUgcHJvZHVjdGlvbiwgbGUgcHVzaCBwcm9kdWN0aW9uIGRvaXQgdXRpbGlzZXIgKip1biBjb21taXQgcHJvcHJlIGJhc8OpIHN1ciBs4oCZYXJicmUgZmluYWwgdmFsaWTDqSBhdmVjICM5NyBjb21tZSBwYXJlbnQqKiwgcHVpcyBhdmFuY2VyIGBNRU1TWDY0YCBzYW5zIGZvcmNlLgoKIyBQUk9DSEFJTkUgQUNUSU9OIEVYQUNURSDigJQgQVBSw4hTIFZBTElEQVRJT04gUE9TVC0jOTcKCjEuIENyw6llciBsZSAqKmNvbW1pdCBwcm9kdWN0aW9uIHByb3ByZSoqIMOgIHBhcnRpciBkZSBs4oCZYXJicmUgZmluYWwgdmFsaWTDqSwgcGFyZW50IGRpcmVjdCAjOTcgYDJiMjExNTU0Li4uYC4KMi4gQXZhbmNlciBgTUVNU1g2NGAgKipzYW5zIGZvcmNlKiogc3VyIGNlIGNvbW1pdCBwcm9wcmUuCjMuIEF0dGVuZHJlIGxlIHZyYWkgd29ya2Zsb3cgYEJVSUxEYCBldCBuZSBkw6ljbGFyZXIgbGUgbm91dmVhdSBidWlsZCB2YWxpZMOpIHF14oCZYXByw6hzIHLDqXN1bHRhdCBHaXRIdWIgcsOpZWwuCjQuIFNpIGxlIEJVSUxEIGVzdCB2ZXJ0LCBjb25zaWduZXIgcnVuL2NvbW1pdC9hcnRlZmFjdCBkYW5zIGxlIHByw6lzZW50IHJhcHBvcnQuCjUuIFRlc3QgdXRpbGlzYXRldXIgcmVjb21tYW5kw6kgOiAqKmTDqXNpbnN0YWxsYXRpb24gbG9jYWxlIGNvbXBsw6h0ZSArIHN1cHByZXNzaW9uIGRlcyBkb25uw6llcy9wcm9maWwvY2FjaGUgTUVNUyBNYW5hZ2VyIHLDqWVsbGVtZW50IHV0aWxpc8OpcyBzdXIgbGUgUEMqKiwgcHVpcyBpbnN0YWxsYXRpb24gZHUgbm91dmVsIGFydGVmYWN0IGFmaW4gZOKAmcOpY2FydGVyIHRvdXQgcmVzdGUgZOKAmXVuZSBhbmNpZW5uZSBiYXNlL3Byb2ZpbC4KNi4gUmVqb3VlciBsZXMgc2PDqW5hcmlvcyByw6llbHMgIzk3IGFwcsOocyBpbnN0YWxsYXRpb24gcHJvcHJlIDogYEJyb2NoZSBNQVAgTWluaWAg4oaSIGBjaGVyY2hlYCwgTUFQIE1QaSwgTUFQIFNQaSBKYXBhbiwgY291bGV1cnMgbGFtYmRhLCBjb3VwbGUgRUNULCBYTUwgMS42LzEuOSBldCBgVmFsZXVyIE1BUCA/YCBsb3JzcXVlIGxlIHbDqWhpY3VsZSBwb3VycmEgw6p0cmUgY29ubmVjdMOpLgoKKipOZSBwYXMgdG91Y2hlciBhdSBwcm90b2NvbGUgRUNVLCBhdSAzMiBiaXRzIG91IMOgIGzigJlhY3F1aXNpdGlvbiBkYW5zIGNldHRlIHN1aXRlLioqCg==
+
 jobs:
   append_report:
     if: github.event.head_commit.message != 'REPORT append post97 audit validation'
@@ -17,140 +20,23 @@ jobs:
           ref: RAPPORT
           persist-credentials: true
       - name: Append post97 audit history
-        shell: python
+        shell: bash
         run: |
+          python - <<'PY'
+          import base64, os
           from pathlib import Path
           path = Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md')
           text = path.read_text(encoding='utf-8')
           marker = '# AUDIT ET CORRECTION APRÈS TEST RÉEL #97 — CANDIDAT VALIDÉ AVANT PRODUCTION'
-          if marker in text:
-              raise SystemExit(0)
-          block = r'''
-
-# AUDIT ET CORRECTION APRÈS TEST RÉEL #97 — CANDIDAT VALIDÉ AVANT PRODUCTION
-
-## POINT DE DÉPART
-
-- Base obligatoire : **`MEMSX64` BUILD #97**, HEAD **`2b211554abdbb127fd4d472f9ce687394b2d4608`**.
-- Branche de travail créée depuis exactement #97 : **`tmp-ia-post97-audit-fix`**.
-- Aucun changement protocole ECU, acquisition, RAM, 32 bits ou protections de connexion dans ce lot.
-- Objectif : corriger uniquement les défauts observés dans les captures #97 : `cherche` concluant SPi sans preuve suffisante, fuite de consignes internes, mélange MPi/SPi, réponses factuelles ECT/lambda et rendu incomplet des fiches XML.
-
-## CAUSE 1 — `cherche` POUVAIT CONCLURE SPi SANS PREUVE SUFFISANTE
-
-L’audit du code a montré que le chemin de résolution SPi/MPi utilisait une recherche générique sur **`Mini`** lorsque le firmware n’était pas disponible. Si les résultats renvoyés à cet instant ne contenaient qu’un type d’injection, ce résultat pouvait être traité comme une preuve et produire **« J’ai identifié SPi »**, y compris ECU déconnecté.
-
-Correction retenue :
-- le mot générique `Mini` n’est plus une preuve SPi/MPi ;
-- les sondes de preuve sont limitées à des éléments forts : **firmware ECU réellement connu lorsque l’ECU est connecté** et/ou **référence ECU explicite présente dans la question** (`MNE`, `MKC`, `NNN`, `AANMP...`) ;
-- si aucune preuve forte ne permet de trancher, la réponse reste contrôlée et demande l’information discriminante au lieu de choisir arbitrairement.
-
-## CAUSE 2 — FUITE `RÉPONSE ATTENDUE / DIAGNOSTIC BREF / NE MONTRE AUCUN RAISONNEMENT INTERNE`
-
-La cause exacte a été retrouvée dans `LocalAiClient` : le grounding documentaire contient naturellement des mentions de **niveau de preuve**. Le code utilisait la présence du mot **`preuve`** dans le grounding comme un signal suffisant pour passer en génération de type diagnostic et ajouter au prompt des consignes telles que **`Réponse attendue : diagnostic bref...`**. Le petit modèle pouvait alors recopier cette consigne dans la réponse utilisateur.
-
-Correction retenue :
-- suppression de la règle `grounding contient preuve => diagnostic` ;
-- ajout d’une décision testable `shouldUseDiagnosticGeneration(question, grounding)` basée sur une vraie intention de diagnostic/raisonnement, pas sur les métadonnées de vérification d’un fait documentaire ;
-- une question factuelle telle que **couple ECT**, **couleur de fils lambda**, **broche**, **fiche** ou **documentation** ne doit plus entrer dans ce mode uniquement parce que le fait comporte `preuve : constructeur` ;
-- les vrais diagnostics conservent le chemin génératif diagnostic.
-
-## CAUSE 3 — UN FAIT SPi POUVAIT SURVIVRE À UNE QUESTION MPi
-
-Le filtre de portée existant s’appuyait surtout sur les nouvelles notes structurées contenant `Portee`. Certains faits historiques/legacy portent pourtant leur variante explicitement dans le `topic`, le `statement`, la clé, les notes ou la famille sans avoir encore cette note structurée.
-
-Correction retenue dans `IaMemsService` :
-- détection d’un label explicite SPi/MPi dans l’ensemble des champs du fait ;
-- une demande MPi rejette un fait explicitement SPi s’il n’est pas également explicitement MPi ;
-- une demande SPi rejette symétriquement un fait explicitement MPi ;
-- le même durcissement est appliqué aux incompatibilités explicites de marché et de transmission avant le classement/Qwen ;
-- le filtre structuré `Portee` reste conservé pour les nouveaux faits du socle.
-
-## CAUSE 4 — LES FICHES XML CONTENAIENT LES BROCHES/COULEURS MAIS LE VIEWER IA LES JETAIT
-
-Audit direct des QZ64 réels :
-- **MEMS 1.6 contient bien 25 broches côté ECU**, en plus des éléments ROSCO, et des représentations de couleurs intégrées ;
-- les couleurs sont stockées avec de vrais **SVG intégrés** dans le XML ;
-- **MEMS 1.9 contient également des SVG de couleurs intégrés**.
-
-Le viewer ajouté dans #97 reconstruisait son propre HTML et ne traitait que quelques balises génériques (`titre`, `section`, `p`, `note`, `table`, `ligne`, `cellule`). Il ignorait les balises spécifiques **`broche`**, **`fonction`**, **`couleur`** de la fiche 1.6 et détruisait le SVG imbriqué lors du rendu des cellules génériques de la fiche 1.9.
-
-Correction retenue :
-- création d’un renderer commun **`database/MemsReferenceSheetRenderer.h`** ;
-- prise en charge des deux structures XML réellement présentes ;
-- conservation et rendu des SVG de couleur intégrés ;
-- lecture des balises `broche`, `fonction`, `couleur`, `cellule` et de leur contenu imbriqué ;
-- réutilisation du même renderer dans **Base de données** et **IA MEMS**, afin d’éviter deux implémentations divergentes du rendu XML.
-
-## DIFF FINAL DU CANDIDAT APRÈS NETTOYAGE
-
-Après suppression de tous les workflows/scripts temporaires, la comparaison #97 → candidat final contient **exactement 9 fichiers** :
-1. `database/MemsDatabaseBrowser.cpp` ;
-2. `database/MemsReferenceSheetRenderer.h` — nouveau renderer commun ;
-3. `expert/IaMemsConversationRouting.h` ;
-4. `expert/IaMemsService.cpp` ;
-5. `expert/IaResponseLogicTest.cpp` ;
-6. `expert/LocalAiClient.cpp` ;
-7. `expert/LocalAiOnnxSelfTest.cpp` ;
-8. `iamemstab.cpp` ;
-9. `iamemstab.h`.
-
-Aucun fichier temporaire, aucun workflow temporaire, aucun protocole ECU et aucun fichier 32 bits ne reste dans le diff final.
-
-## VALIDATION GITHUB TEMPORAIRE — ÉCHEC INTERMÉDIAIRE CONSIGNÉ
-
-Premier run Windows x64 de validation : **`33114280638` — FAILURE**.
-
-L’échec ne venait pas du code applicatif corrigé mais d’un **nouveau self-test** : comparaison directe `QStringList == QStringList{...}` provoquant sous Qt 5.15.2 / runner MSVC 2026 une erreur dans `qlist.h` (`stdext::make_checked_array_iterator`).
-
-Correction appliquée uniquement au test : vérification de la taille puis comparaison élément par élément. Aucun comportement applicatif modifié pour contourner cet échec.
-
-## VALIDATION GITHUB TEMPORAIRE FINALE — VERTE
-
-Run corrigé : **`33114572801` — SUCCESS**.
-
-Toutes les étapes sont vertes :
-- checkout candidat ;
-- validation des invariants source et du contenu QZ64 réel ;
-- installation Qt 5.15.2 MSVC x64 ;
-- configuration x64 ;
-- **compilation de l’application et des self-tests touchés : SUCCESS** ;
-- **tests déterministes : SUCCESS** ;
-- cleanup : SUCCESS.
-
-Les tests couvrent notamment :
-- `Broche MAP Mini` + ECU déconnecté sans firmware => aucune preuve SPi/MPi automatique ;
-- firmware connecté `AANMP002` => preuve forte disponible ;
-- référence ECU explicite => utilisable comme preuve ;
-- `preuve : constructeur` dans un grounding documentaire => ne déclenche pas le mode diagnostic ;
-- vrai diagnostic => conserve le mode diagnostic ;
-- rendu XML spécifique `broche/fonction/couleur` avec couleurs SVG ;
-- rendu XML générique `cellule` avec SVG imbriqué ;
-- routage documentaire MAP/lambda/ECT conservé.
-
-## ÉTAT AVANT PUSH PRODUCTION
-
-- #97 reste à cet instant la production active.
-- Candidat final nettoyé : **`tmp-ia-post97-audit-fix`**, arbre final au commit **`e1d3ed416c41a5dd71f01871592e73a107a81e07`**.
-- Le candidat est strictement en avance sur #97 et ne contient plus de fichier temporaire dans son arbre final.
-- Pour ne pas importer l’historique des workflows temporaires dans la branche de production, le push production doit utiliser **un commit propre basé sur l’arbre final validé avec #97 comme parent**, puis avancer `MEMSX64` sans force.
-
-# PROCHAINE ACTION EXACTE — APRÈS VALIDATION POST-#97
-
-1. Créer le **commit production propre** à partir de l’arbre final validé, parent direct #97 `2b211554...`.
-2. Avancer `MEMSX64` **sans force** sur ce commit propre.
-3. Attendre le vrai workflow `BUILD` et ne déclarer le nouveau build validé qu’après résultat GitHub réel.
-4. Si le BUILD est vert, consigner run/commit/artefact dans le présent rapport.
-5. Test utilisateur recommandé : **désinstallation locale complète + suppression des données/profil/cache MEMS Manager réellement utilisés sur le PC**, puis installation du nouvel artefact afin d’écarter tout reste d’une ancienne base/profil.
-6. Rejouer les scénarios réels #97 après installation propre : `Broche MAP Mini` → `cherche`, MAP MPi, MAP SPi Japan, couleurs lambda, couple ECT, XML 1.6/1.9 et `Valeur MAP ?` lorsque le véhicule pourra être connecté.
-
-**Ne pas toucher au protocole ECU, au 32 bits ou à l’acquisition dans cette suite.**
-'''
-          path.write_text(text.rstrip() + block + '\n', encoding='utf-8')
+          if marker not in text:
+              block = base64.b64decode(os.environ['REPORT_BLOCK_B64']).decode('utf-8')
+              path.write_text(text.rstrip() + '\n\n' + block.strip() + '\n', encoding='utf-8')
+          PY
       - name: Commit report
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          if git diff --cached --quiet; then exit 0; fi
           git commit -m "REPORT append post97 audit validation"
           git push origin HEAD:RAPPORT
