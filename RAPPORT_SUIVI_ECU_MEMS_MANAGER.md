@@ -14,49 +14,54 @@
 - Branche x64 active : **`MEMSX64`**.
 - HEAD x64 courant : **`5e707530352f5e4da3a04e832f62acfa7054ef2f`**.
 - BUILD logiciel actif : **#30 / v1.0.30**.
-- GitHub Actions qualité courant : **#88**, run **`33042796844`**, commit `5e707530...`, état au dernier contrôle : **in_progress**.
-- Dernier run entièrement validé : **#87 — SUCCESS**, run `33041407944`, commit `d156469...`.
-- Artefact #87 : ID `9634135544`, taille `386 753 794`, SHA-256 `ad01bbef0f82cdb59e8d2ed2cb99f606534f140a75db82a04f18aef38c0060a7`.
-- Aucun BUILD #31 sans demande explicite.
-- 32 bits `lab-expert-engine` et rollback `MEMSX64-BUILD26-BASE` : **NE PAS TOUCHER**.
+- GitHub Actions qualité courant : **#88**, run **`33042796844`**, commit `5e707530...`, état : **in_progress**.
+- Dernier run entièrement validé : **#87 — SUCCESS**, commit `d156469...`.
+- Aucun BUILD #31 sans demande explicite. 32 bits et rollback BUILD26 : NE PAS TOUCHER.
 
-## TEST UTILISATEUR RÉEL #86
+## TEST UTILISATEUR #86 — DÉFAUTS À CORRIGER
 
-#86 fonctionne réellement, IA/base prêtes, réponses plus rapides, mais captures mal ciblées : `C4EST QUOI LA BOBINE?`, couleur de fil température SPi, `BROCHE ECU 1.3`, `BROCHE OBD 1.9`, `CADRAN TPM?`, liste des cadrans dans `L4ONGLET APERCU`. Des sorties `<think>` / consignes internes avaient aussi été observées.
+#86 fonctionne, IA/base prêtes et plus rapide, mais les captures montrent : `C4EST QUOI LA BOBINE?`, couleur de fil température SPi, `BROCHE ECU 1.3`, `BROCHE OBD 1.9`, `CADRAN TPM?`, liste des cadrans dans `L4ONGLET APERCU`, et anciennes fuites `<think>`/consignes internes.
 
-## LOT QUALITÉ POUSSÉ SUR MEMSX64
+## LOT QUALITÉ `5e707530...`
 
-Le lot a été préparé sur `tmp-ia-targeting-86`, comparé au HEAD #87, puis `MEMSX64` a été avancée une seule fois en fast-forward sur `5e707530...`.
-
-Diff : exactement 3 fichiers IA, aucun protocole/UI/RAVE/packaging/32 bits/BUILD :
-- `expert/IaMemsService.cpp` : +153/-12 ;
-- `expert/LocalAiClient.cpp` : +41/-9 ;
-- `expert/LocalAiOnnxSelfTest.cpp` : +28/-4.
+Diff validé avant push : exactement 3 fichiers IA, aucun protocole/UI/RAVE/packaging/32 bits/BUILD.
 
 Corrections :
-- `C4EST`→`C EST`, `L4ONGLET`→`L ONGLET` de façon étroite ;
-- intentions `General/WireColor/Pinout` avant recherche experte ;
-- couleur de fil : seuls des faits contenant réellement une information de fil/couleur peuvent répondre ; sinon absence vérifiée annoncée sans invention ;
-- brochage : seuls faits câblage/connecteur/broche retenus ;
+- normalisation étroite `C4EST`→`C EST`, `L4ONGLET`→`L ONGLET` ;
+- intentions `General/WireColor/Pinout` ;
+- couleur de fil exige une vraie information couleur/fil, sinon réponse d'absence sans invention ;
+- brochage exige un fait câblage/connecteur/broche ;
 - `ECU 1.3` / `OBD 1.9` fixent le contexte famille ;
-- définition générique MEMS 1.x ne détourne plus une demande de broche ;
-- `TPM`→`RPM` uniquement en contexte cadran/régime ;
-- `quel cadran dans l'onglet Aperçu` répond depuis le code réel : 11 cadrans + indicateur état système ;
-- self-test exact : `C4EST QUOI LA BOBINE ?`, date fautive, `BROCHE ECU 1.3`, `BROCHE OBD 1.9`, Qwen réel, anti-fuite.
+- définition générique MEMS 1.x ne détourne plus les demandes de broche ;
+- `TPM`→`RPM` seulement en contexte cadran/régime ;
+- liste Aperçu depuis le code réel : 11 cadrans + état système ;
+- self-test exact avec les formulations utilisateur.
+
+## RUN #88 — RÉSULTATS INTERMÉDIAIRES VALIDÉS
+
+Au dernier contrôle :
+- runtime ONNX officiel : SUCCESS ;
+- protections protocole : SUCCESS ;
+- compilation complète : **SUCCESS** ;
+- tests déterministes BUILD30 : **SUCCESS** ;
+- génération/validation base experte r20 avec RAVE 1680 : **SUCCESS** ;
+- modèle Qwen épinglé + hashes : **SUCCESS** ;
+- vrai `LocalAiClient` natif ONNX : **SUCCESS** en 7 s, incluant `C4EST QUOI LA BOBINE ?`, `BROCHE ECU 1.3`, `BROCHE OBD 1.9` et Qwen réel ;
+- assemblage package : **SUCCESS** ;
+- validation package : **SUCCESS** ;
+- vrai `LocalAiClient` depuis le package : **SUCCESS** en 8 s ;
+- smoke launch application : en cours au dernier contrôle.
 
 ## RAVE / BASE — LOT 1680 VALIDÉ
 
-- 1660 : faits service RAVE ; 1670 : RCL0194 Mini MPi wiring ; 1680 : RCL0194ENG SPi Japon 97MY depuis VIN `SAXXNNAXKBD 134455`, pages 20.3/20.4/39.3.
-- 1680 : 14 faits constructeur + 14 miroirs experts ; total RAVE 60, expert 72 ; tous `verifie_constructeur`.
-- Brochages vérifiés : O2, pompe, injecteur, purge, IAC, ECT, TPS, IAT, masse capteurs, prise diagnostic, etc.
-- Aucune couleur de fil inventée.
+1660 service RAVE ; 1670 RCL0194 MPi wiring ; 1680 RCL0194ENG SPi Japon 97MY depuis VIN `SAXXNNAXKBD 134455`. 1680 ajoute 14 faits constructeur + 14 miroirs experts ; total RAVE 60, expert 72 ; tous `verifie_constructeur`. Aucun code couleur de fil inventé.
 
 ## CONNAISSANCES / SÉCURITÉ À PRÉSERVER
 
-Ralenti SPi 1993–96 850 ±25 ; SPi 1997+ et MPi 900 ±50 ; pression SPi ~1 bar, MPi 3,0 ±0,2 bar ; fan MPi97 105/98 °C ; SPi Japon 98/93 °C ; MEMS1.3 SPi / MEMS1.6 SPi / MEMS2J MPi distingués ; DTC fortement supportés 1 ECT, 2 IAT, 10 pompe, 16 TPS, 20 chauffage lambda, 21 synchro, 22 fan1, 24 fan2 ; code23 preuve insuffisante.
+Ralenti SPi 1993–96 850 ±25 ; SPi 1997+ et MPi 900 ±50 ; pression SPi ~1 bar, MPi 3,0 ±0,2 bar ; fan MPi97 105/98 °C ; SPi Japon 98/93 °C ; MEMS1.3 SPi / MEMS1.6 SPi / MEMS2J MPi distingués ; DTC supportés 1 ECT, 2 IAT, 10 pompe, 16 TPS, 20 chauffage lambda, 21 synchro, 22 fan1, 24 fan2 ; code23 preuve insuffisante.
 
 Ne pas modifier protections protocole BUILD #30, MEMS1.9 F7/EF, 7D/80, W4, reconnexion1.9, RAM non validée, reset/clear/writes, `onProtocolCommandRequested(quint8)`, formule `raw-32768-correction`. UI dark/responsive inchangée. ONNX natif inchangé, aucun QProcess/llama/HTTP, base r20 read-only, aucune mutation ECU par LLM.
 
 ## PROCHAINE ACTION EXACTE
 
-**Suivre le run #88 (`33042796844`) jusqu'au verdict complet : compilation, tests exacts, base r20, Qwen, package, lancement, artefact. Enregistrer chaque résultat significatif. Puis reprendre RAVE sur un lot séparé. Aucun BUILD #31.**
+**Terminer le suivi #88 : smoke launch, manifeste, upload, récupérer métadonnées artefact et enregistrer le verdict complet. Ensuite reprendre RAVE sur un lot séparé. Aucun BUILD #31.**
