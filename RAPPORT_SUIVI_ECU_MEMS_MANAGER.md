@@ -12,90 +12,48 @@
 
 - Dépôt : `mini56/ECU-Mems-Manager-Session`.
 - Branche x64 active : **`MEMSX64`**.
-- HEAD x64 courant : **`d156469af53b4ba20e084439e2d62b691c9e199b`**.
+- HEAD x64 courant avant push qualité : **`d156469af53b4ba20e084439e2d62b691c9e199b`**.
 - BUILD logiciel actif : **#30 / v1.0.30**.
-- Dernier GitHub Actions validé : **#87 — SUCCESS**.
-- Run #87 : `33041407944`, commit `d156469...`.
-- Artefact #87 : `ECU-MEMS-Manager-x64-BUILD-30-v1.0.30`, ID `9634135544`, taille `386 753 794` octets, digest `sha256:ad01bbef0f82cdb59e8d2ed2cb99f606534f140a75db82a04f18aef38c0060a7`.
+- Dernier GitHub Actions validé : **#87 — SUCCESS**, run `33041407944`.
+- Artefact #87 : ID `9634135544`, taille `386 753 794`, SHA-256 `ad01bbef0f82cdb59e8d2ed2cb99f606534f140a75db82a04f18aef38c0060a7`.
 - Aucun BUILD #31 sans demande explicite.
-- 32 bits `lab-expert-engine` : **NE PAS TOUCHER**.
-- Rollback `MEMSX64-BUILD26-BASE` : **NE PAS TOUCHER**.
+- 32 bits `lab-expert-engine` et rollback `MEMSX64-BUILD26-BASE` : **NE PAS TOUCHER**.
 
-## TEST UTILISATEUR RÉEL #86 — 27 AOÛT 2026
+## TEST UTILISATEUR RÉEL #86
 
-L'utilisateur confirme : **« #86 fonctionne, les réponses arrivent un peu plus vite mais pas encore vraiment bien ciblées »** et fournit plusieurs captures réelles.
+#86 fonctionne réellement, IA/base prêtes, et répond plus vite, mais les captures montrent des réponses mal ciblées : `C4EST QUOI LA BOBINE?`, couleur de fil température SPi, `BROCHE ECU 1.3`, `BROCHE OBD 1.9`, `CADRAN TPM?`, et liste des cadrans dans `L4ONGLET APERCU`. Des sorties `<think>` / consignes internes avaient aussi été observées. Ces défauts sont à corriger sans changer ONNX, l'UI ou le protocole.
 
-Défauts confirmés par captures :
-1. `C4EST QUOI LA BOBINE?` peut échapper à la définition contrôlée ;
-2. une sortie Qwen peut encore montrer `<think>` / consignes internes dans certains cas observés ;
-3. `COULEUR DE FIL DU CAPTEUR DE TEMPERATURE SPI ?` renvoie des procédures ECT/IAT/MAP sans couleur ;
-4. `BROCHE ECU 1.3` et `BROCHE OBD 1.9 ?` renvoient la définition générique de la famille au lieu du brochage ;
-5. `CADRAN TPM?` n'est pas compris comme RPM ;
-6. `QUEL CADRAN DANS L4ONGLET APERCU?` renvoie seulement la description générale de l'onglet ;
-7. le fallback « modèle local n'a pas produit de réponse exploitable » apparaît encore lorsque des questions structurées tombent inutilement sur Qwen.
+## LOT QUALITÉ PRÉPARÉ — `tmp-ia-targeting-86`
 
-Conclusion : **#86 fonctionne et est plus rapide, mais le ciblage des réponses doit être corrigé.**
+Branche temporaire créée depuis `d156469...` pour éviter plusieurs builds intermédiaires.
 
-## CORRECTION QUALITÉ EN PRÉPARATION — `tmp-ia-targeting-86`
+- `LocalAiClient.cpp` — commit `a221b3696ea2f7bc0331fecb0cca16773ffd0a33` : correction étroite `C4EST`/`L4ONGLET`, détection câblage/broche/OBD/ROSCO, définitions contrôlées interdites de court-circuiter une intention câblage, définition générique MEMS 1.x restreinte aux vraies demandes de définition/version.
+- `IaMemsService.cpp` — commit `ea6bbc2f3d60ea0a7715fd1f906e5eab6cbccb46` : classification `General/WireColor/Pinout`, filtrage strict des faits par intention, aucune couleur/broche inventée, contexte `ECU 1.3` / `OBD 1.9`, correction contextuelle `TPM`→`RPM`, `L4ONGLET`, réponse exacte depuis le code réel pour les **11 cadrans Aperçu** + état système.
+- `LocalAiOnnxSelfTest.cpp` — commit `5e707530352f5e4da3a04e832f62acfa7054ef2f` : couvre `C4EST QUOI LA BOBINE ?`, date fautive, `BROCHE ECU 1.3`, `BROCHE OBD 1.9`, Qwen réel et absence de fuite interne.
 
-Branche temporaire créée depuis `d156469...` afin de préparer le lot complet sans déclencher plusieurs builds `MEMSX64`.
+### DIFF VALIDÉ AVANT PUSH
 
-### Production préparée
+Comparaison `d156469...` → `5e707530...` : **ahead 3, behind 0, exactement 3 fichiers modifiés** :
+- `expert/IaMemsService.cpp` : +153/-12 ;
+- `expert/LocalAiClient.cpp` : +41/-9 ;
+- `expert/LocalAiOnnxSelfTest.cpp` : +28/-4.
 
-- `LocalAiClient.cpp` — commit **`a221b3696ea2f7bc0331fecb0cca16773ffd0a33`** :
-  - normalisation étroite `C4EST`→`C EST`, `L4ONGLET`→`L ONGLET`, sans conversion globale du chiffre 4 ;
-  - détection explicite câblage/broche/OBD/ROSCO ;
-  - les réponses contrôlées MAP/IAC/SPI/ECU/bobine ne court-circuitent plus une demande de câblage ;
-  - la définition générique MEMS 1.x n'est déclenchée que par une demande de définition/version.
-- `IaMemsService.cpp` — commit **`ea6bbc2f3d60ea0a7715fd1f906e5eab6cbccb46`** :
-  - classification `General / WireColor / Pinout` avant recherche experte ;
-  - une demande de couleur exige un fait contenant réellement une information de fil/couleur ;
-  - une demande de brochage exige un fait de câblage/connecteur/broche ;
-  - aucune couleur/broche inventée : absence de donnée vérifiée signalée explicitement ;
-  - `ECU 1.3` / `OBD 1.9` peuvent fixer le contexte famille ;
-  - `TPM`→`RPM` seulement dans un contexte cadran/régime ;
-  - `L4ONGLET` normalisé ;
-  - réponse cadrans Aperçu tirée du code réel : **11 cadrans** (RPM, liquide, MAP, papillon, batterie, correction court terme, lambda, temps injection, température air, position IAC, avance) + indicateur état système.
-
-### Self-test exact ajouté
-
-- `LocalAiOnnxSelfTest.cpp` — commit temporaire **`5e707530352f5e4da3a04e832f62acfa7054ef2f`**.
-- Le vrai `LocalAiClient` doit maintenant réussir successivement :
-  1. `C4EST QUOI LA BOBINE ?` → définition bobine déterministe exploitable ;
-  2. question de date fautive ;
-  3. `BROCHE ECU 1.3` + grounding brochage → le grounding gagne, aucune définition MEMS générique ;
-  4. `BROCHE OBD 1.9 ?` + grounding OBD → idem ;
-  5. génération Qwen réelle `OK` ;
-  6. aucune fuite `<think>`/ChatML/directive interne.
-
-### PROCHAINE ÉTAPE AVANT PUSH MEMSX64
-
-**Comparer `d156469...` à `tmp-ia-targeting-86` et vérifier que seuls les 3 fichiers IA prévus ont changé. Si le diff est propre, déplacer `MEMSX64` une seule fois sur `5e707530...`, puis suivre le run complet.**
-
-## BUILD QUALITÉ #86 — À PRÉSERVER
-
-- Commit `50af0a0`, run `33004859269`, SUCCESS.
-- Artefact ID `9620325660`, taille `386 747 323`, SHA-256 `1e398c4832ed2fc2b162d8eac59b5f2f43c368de2d7e041deae6606c2fd70962`.
-- ONNX natif, `/no_think`, 128 tokens normal / 192 diagnostic, base r20 read-only, package complet et smoke launch validés.
+**Aucun fichier protocole, UI, RAVE, packaging, 32 bits ou BUILD n'est modifié.** Le lot est propre pour un unique fast-forward de `MEMSX64`.
 
 ## RAVE / BASE — LOT 1680 VALIDÉ
 
-- 1660 : faits service RAVE.
-- 1670 : RCL0194 Mini MPi wiring.
-- 1680 : RCL0194ENG, SPi Japon 97MY depuis VIN `SAXXNNAXKBD 134455`, pages 20.3/20.4/39.3.
-- 14 faits constructeur dans `mems_rave_fact` + 14 miroirs experts ; total RAVE 60, expert 72 ; tous `verifie_constructeur`.
-- Brochages vérifiés 1680 : O2, pompe, injecteur, purge, IAC, ECT, TPS, IAT, masse capteurs, prise diagnostic, etc.
-- **Aucune couleur de fil ne doit être inventée** : 1680 n'a conservé que les relations de circuit visuellement non ambiguës.
-- Commit `d156469...`; GitHub Actions **#87 SUCCESS** et artefact publié.
+- 1660 : faits service RAVE ; 1670 : RCL0194 Mini MPi wiring ; 1680 : RCL0194ENG SPi Japon 97MY depuis VIN `SAXXNNAXKBD 134455`, pages 20.3/20.4/39.3.
+- 1680 ajoute 14 faits constructeur + 14 miroirs experts ; total RAVE 60, expert 72 ; tous `verifie_constructeur`.
+- Brochages vérifiés : O2, pompe, injecteur, purge, IAC, ECT, TPS, IAT, masse capteurs, prise diagnostic, etc.
+- **Aucune couleur de fil n'est inventée** : 1680 ne conserve que les relations de circuit non ambiguës.
+- Commit `d156469...`, GitHub Actions #87 SUCCESS.
 
-## CONNAISSANCES RAVE À PRÉSERVER
+## CONNAISSANCES / SÉCURITÉ À PRÉSERVER
 
-Ralenti SPi 1993–96 850 ±25 ; SPi 1997+ et MPi 900 ±50 ; pression SPi ~1 bar, MPi 3,0 ±0,2 bar ; fan MPi97 105/98 °C ; SPi Japon 98/93 °C ; pas de réglage ralenti par butée ; conflits résistance bobine conservés ; MEMS1.3 SPi / MEMS1.6 SPi / MEMS2J MPi distingués ; DTC fortement supportés 1 ECT, 2 IAT, 10 pompe, 16 TPS, 20 chauffage lambda, 21 synchro, 22 fan1, 24 fan2 ; code23 preuve insuffisante ; brochages MPi97 (1670) et SPi Japon 97MY (1680) séparés.
+Ralenti SPi 1993–96 850 ±25 ; SPi 1997+ et MPi 900 ±50 ; pression SPi ~1 bar, MPi 3,0 ±0,2 bar ; fan MPi97 105/98 °C ; SPi Japon 98/93 °C ; MEMS1.3 SPi / MEMS1.6 SPi / MEMS2J MPi distingués ; DTC fortement supportés 1 ECT, 2 IAT, 10 pompe, 16 TPS, 20 chauffage lambda, 21 synchro, 22 fan1, 24 fan2 ; code23 preuve insuffisante.
 
-## SÉCURITÉ / UI / IA — INCHANGÉS
-
-Ne pas modifier les protections protocole BUILD #30, MEMS1.9 F7/EF, tailles 7D/80, W4, reconnexion1.9, failsafes, ports, RAM non validée, reset/clear/writes. Conserver `onProtocolCommandRequested(quint8)` et `raw-32768-correction`. UI dark/responsive inchangée. ONNX natif inchangé ; aucun QProcess/llama/HTTP ; base r20 read-only ; aucune mutation ECU accessible au LLM. Aucun BUILD #31 sans demande explicite.
+Ne pas modifier protections protocole BUILD #30, MEMS1.9 F7/EF, 7D/80, W4, reconnexion1.9, RAM non validée, reset/clear/writes, `onProtocolCommandRequested(quint8)`, formule `raw-32768-correction`. UI dark/responsive inchangée. ONNX natif inchangé, aucun QProcess/llama/HTTP, base r20 read-only, aucune mutation ECU par LLM.
 
 ## PROCHAINE ACTION EXACTE
 
-**Comparer le lot temporaire aux 3 fichiers attendus. Si propre, avancer `MEMSX64` une seule fois sur `5e707530...`, suivre le prochain GitHub Actions jusqu'au package complet, enregistrer le résultat, puis reprendre RAVE sur un lot séparé.**
+**Faire un unique fast-forward de `MEMSX64` sur `5e707530352f5e4da3a04e832f62acfa7054ef2f`, suivre le GitHub Actions complet jusqu'au package, enregistrer le résultat, puis reprendre RAVE sur un lot séparé. Aucun BUILD #31.**
