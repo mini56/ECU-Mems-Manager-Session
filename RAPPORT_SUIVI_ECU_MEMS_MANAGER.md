@@ -14,7 +14,8 @@
 - Branche x64 active : **`MEMSX64`**.
 - HEAD x64 courant : **`84e677a87067ae43054df7fc534d84a70b6908b7`**.
 - BUILD logiciel actif : **#30 / v1.0.30**.
-- Dernier GitHub Actions entièrement validé avant 1690 : **#88 — SUCCESS**, run `33042796844`.
+- GitHub Actions RAVE 1690 : **#89**, run **`33044364773`**, commit `84e677a8`, état au dernier contrôle : **in_progress**.
+- Dernier GitHub Actions entièrement validé : **#88 — SUCCESS**, run `33042796844`.
 - Artefact #88 : `ECU-MEMS-Manager-x64-BUILD-30-v1.0.30`, ID `9634616803`, taille `386 761 108`, SHA-256 `bf646347db27b0406483196f3057c0828d5a1a7645d4c3eaeee06dcb854c825a`.
 - Aucun BUILD #31 sans demande explicite.
 - 32 bits `lab-expert-engine` et rollback `MEMSX64-BUILD26-BASE` : **NE PAS TOUCHER**.
@@ -53,10 +54,24 @@ Validation complète #88 : compilation, protections protocole, tests déterminis
 - Préparation sur `tmp-rave-1690` depuis le HEAD #88.
 - Diff : exactement trois fichiers documentaires/base : payload 1690, audit 1690, manifeste.
 - `MEMSX64` avancée en fast-forward sur **`84e677a87067ae43054df7fc534d84a70b6908b7`**.
+- GitHub Actions déclenché : **#89**, run `33044364773`.
 - Aucun code IA, protocole, UI, packaging, 32 bits ou changement de BUILD.
 
 ### Règle de prudence
 Ne pas généraliser ces couleurs aux autres SPi/MEMS ou au MPi. Ne pas déduire une couleur à partir d’un ordre de texte ambigu.
+
+## RAVE 1700 — OBJECTIF AVANT RECHERCHE/MODIFICATION
+
+Pendant que #89 valide 1690, préparer un lot **1700 séparé** à partir de RCL0194ENG 20.4, uniquement pour des liaisons couleur + connecteur + fonction directement lisibles et non déjà explicitées en toutes lettres dans 1690.
+
+Candidats à vérifier en priorité sur le schéma SPi Japon 97MY :
+- injecteur C522-1/C522-2 et couleurs SU/YN ;
+- purge C152 et couleurs NK/BW ;
+- moteur pas à pas IAC C177 et couleurs OS/OU/OG/KU ;
+- bobine/allumage si chaque liaison est clairement associée ;
+- alimentation ECU / relais uniquement si la lecture de la ligne est sans ambiguïté.
+
+**Ne pas intégrer un candidat tant que code couleur, connecteur, broche ECU et fonction ne sont pas directement cohérents sur la source.**
 
 ## CONNAISSANCES / SÉCURITÉ À PRÉSERVER
 
@@ -66,4 +81,4 @@ Ne pas modifier protections protocole BUILD #30, MEMS1.9 F7/EF, 7D/80, W4, recon
 
 ## PROCHAINE ACTION EXACTE
 
-**Identifier le GitHub Actions déclenché par `84e677a8`, suivre génération base r20 et package jusqu’au verdict, vérifier 67 faits RAVE / 79 faits experts. Ensuite préparer RAVE 1700 séparément avec d’autres liaisons couleur directement lisibles dans RCL0194, sans généralisation. Aucun BUILD #31.**
+**Suivre #89 jusqu’au verdict base/package. En parallèle, vérifier les candidats RAVE 1700 sur RCL0194ENG 20.4, construire seulement les faits non ambigus, valider localement sur la base r20 issue de #89/#88, puis pousser 1700 comme lot documentaire séparé. Aucun BUILD #31.**
