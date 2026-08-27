@@ -12,10 +12,11 @@
 
 - Dépôt : `mini56/ECU-Mems-Manager-Session`.
 - Branche active : **`MEMSX64`**.
-- HEAD x64 courant : **`897b51c8382513e15f236c18446d1cffc2352c31`**.
+- HEAD x64 courant : **`16b99c3f40985b7ef5439ee8834eb5e8dd8126bf`**.
 - BUILD logiciel : **#30 / v1.0.30**. Aucun BUILD #31 sans demande explicite.
 - Dernier run entièrement validé : **#90 — SUCCESS**, run `33044945315`, commit `fab2e4cf`.
 - Run **#91 — FAILURE**, run `33047008070`, commit `897b51c8` : échec uniquement à `Validate packaged production LocalAiClient with Qwen` après assemblage ; moteur ONNX et réponses déterministes prêts, puis réponse générative rejetée par le contrôle de langue active.
+- Run **#92 — EN COURS**, run `33058810115`, commit `16b99c3f` : validation de la correction de déterminisme ONNX.
 - Artefact #90 : ID `9635406628`, taille `386 768 840`, SHA-256 `125e27658bba577efdf5d22a7cb3fa26670cddadd8383e8f4e7d907d765f6d6d`.
 - 32 bits `lab-expert-engine` et rollback `MEMSX64-BUILD26-BASE` : **NE PAS TOUCHER**.
 
@@ -47,8 +48,8 @@ Validation locale : +11 RAVE +11 experts, integrity `ok`, user_version20, tous `
 - SQL 1710 : 12903 octets, SHA-256 `a1d1283c0f38a1b3f65994abd7f8d2ce5c34d9e1f0798c447c5862114316c6de`.
 - qz64 1710 : 1945 octets, SHA-256 `fa9ec2dbdf2178c30f47a1f6cc356c97035c46b780d1e5adced765335af412dc`.
 - Préparé sur `tmp-rave-1710`, exactement trois fichiers documentaires/base.
-- `MEMSX64` avancée en fast-forward sur **`897b51c8382513e15f236c18446d1cffc2352c31`**.
-- Aucun code IA, protocole, UI, packaging, 32 bits ou BUILD modifié.
+- `MEMSX64` avancée en fast-forward sur **`897b51c8382513e15f236c18446d1cffc2352c31`** avant correction #91.
+- Aucun code IA, protocole, UI, packaging, 32 bits ou BUILD modifié par RAVE 1710.
 
 ## INCIDENT #91 — VALIDATION IA PACKAGÉE
 
@@ -103,6 +104,13 @@ Audit effectué après relecture obligatoire du présent rapport, sans modificat
 
 Correction ciblée retenue : **conserver `do_sample=true`, les températures, `top_p`, `top_k`, le prompt, les budgets de tokens et tous les gardes de production, mais fixer `random_seed=42` dans les paramètres ONNX GenAI**. Cela rend une même requête reproductible sans transformer la génération en greedy, sans affaiblir le contrôle de langue et sans ajouter de boucle de relance. Modification limitée à `expert/LocalAiClient.cpp`, puis contrôle du diff et push sur `MEMSX64` en restant BUILD #30 / v1.0.30. Le run complet devra valider le self-test natif et le self-test packagé avant toute autre fonction.
 
+### RÉSULTAT DE LA CORRECTION
+
+- Commit `MEMSX64` : **`16b99c3f40985b7ef5439ee8834eb5e8dd8126bf`** (`BUILD #30 make ONNX sampling reproducible`).
+- Diff contrôlé après push : **exactement une ligne ajoutée** dans `expert/LocalAiClient.cpp`, `OgaGeneratorParamsSetSearchNumber(params, "random_seed", 42.0)` ; aucun autre fichier ni aucune autre ligne de code modifiée.
+- Le garde `likelyWrongLanguage()`, `containsInternalInstructionLeak()`, le prompt, `do_sample=true`, `temperature`, `top_p`, `top_k`, les budgets de tokens et les fallbacks restent inchangés.
+- GitHub Actions **#92**, run `33058810115`, a démarré sur ce commit et est actuellement en cours. Ne reprendre aucune autre modification avant son verdict, en particulier les étapes natives et packagées LocalAiClient/Qwen.
+
 ## PROCHAINE ACTION EXACTE
 
-**Priorité : rétablir `MEMSX64` vert après #91. Auditer le self-test génératif et le contrôle de langue de `LocalAiClient`, comparer avec le succès #90, corriger la cause générale sans affaiblir la sécurité linguistique, pousser sur BUILD #30 et vérifier le run complet. Une fois le HEAD vert, reprendre l'audit `IaMemsTab` / `IaMemsService` pour la fonction de schémas, puis RAVE 1720.**
+**Attendre le verdict complet de GitHub Actions #92 sur `16b99c3f`. Si #92 est vert, consigner les étapes LocalAiClient native + packagée et reprendre ensuite l'audit `IaMemsTab` / `IaMemsService` pour la fonction de schémas. Si #92 est rouge, analyser précisément l'étape fautive et son journal avant toute nouvelle modification. Rester BUILD #30 / v1.0.30.**
