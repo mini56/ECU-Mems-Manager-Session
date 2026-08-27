@@ -85,6 +85,42 @@ int main(int argc, char **argv)
                       QStringLiteral("Hypothèses actuelles : alimentation.")),
                   "real diagnostic still uses diagnostic generation");
 
+    ok &= require(!IaMemsConversationRouting::explicitVariantLabelsCompatible(
+                      QStringLiteral("Broche MAP Mini MPi 1997"),
+                      QStringLiteral("RCL0194ENG gestion moteur MEMS SPi Japon 97MY")),
+                  "explicit MPi rejects primary SPi Japan fact");
+    ok &= require(IaMemsConversationRouting::explicitVariantLabelsCompatible(
+                      QStringLiteral("Broche MAP Mini MPi 1997"),
+                      QStringLiteral("RCL0194ENG capteur MAP MPi C159-8")),
+                  "explicit MPi accepts primary MPi MAP fact");
+    ok &= require(!IaMemsConversationRouting::explicitVariantLabelsCompatible(
+                      QStringLiteral("Broche MAP Mini SPi Japan 1997"),
+                      QStringLiteral("RCL0194ENG gestion moteur MEMS MPi Mini 97MY")),
+                  "explicit SPi Japan rejects primary MPi fact");
+    ok &= require(IaMemsConversationRouting::explicitVariantLabelsCompatible(
+                      QStringLiteral("Broche MAP Mini SPi Japan 1997"),
+                      QStringLiteral("RCL0194ENG gestion moteur MEMS SPi Japon 97MY")),
+                  "explicit SPi Japan accepts matching primary fact");
+    ok &= require(IaMemsConversationRouting::isKnowledgeContextQualifier(QStringLiteral("mini")),
+                  "Mini is context and cannot make CKP/bobine relevant to MAP");
+    ok &= require(!IaMemsConversationRouting::isKnowledgeContextQualifier(QStringLiteral("map")),
+                  "MAP remains a required subject term");
+    ok &= require(!IaMemsConversationRouting::hasDirectWireColourEvidence(
+                      QStringLiteral("La sonde HO2S mesure l'oxygène et son chauffage est commandé par le relais HO2S.")),
+                  "generic HO2S description is not wire-colour evidence");
+    ok &= require(IaMemsConversationRouting::hasDirectWireColourEvidence(
+                      QStringLiteral("Couleur de fil SPi Japon : fil BG noir/vert vers C159-36.")),
+                  "actual relay wire colour is direct wire evidence");
+    ok &= require(IaMemsConversationRouting::hasTorqueEvidence(
+                      QStringLiteral("Serrer la sonde ECT à 15 Nm.")),
+                  "ECT 15 Nm procedure is torque evidence");
+    ok &= require(!IaMemsConversationRouting::hasTorqueEvidence(
+                      QStringLiteral("L'ECT est une thermistance surveillée par l'ECM.")),
+                  "generic ECT description is not torque evidence");
+    ok &= require(IaMemsConversationRouting::knowledgeStatementSignature(QStringLiteral("  Même fait ECT. "))
+                      == IaMemsConversationRouting::knowledgeStatementSignature(QStringLiteral("Même fait ECT.")),
+                  "identical statements dedupe across family/source mirrors");
+
     ok &= require(IaMemsConversationRouting::inductionEvidenceProbes(
                       QStringLiteral("Broche MAP Mini"), false, QString()).isEmpty(),
                   "generic Mini while disconnected is not SPi/MPi evidence");
@@ -107,8 +143,10 @@ int main(int argc, char **argv)
         customSheet.flush();
         const QString rendered = MemsReferenceSheetRenderer::renderFile(customSheet.fileName(), QStringLiteral("erreur"));
         ok &= require(rendered.contains(QStringLiteral("MAP")) && rendered.contains(QStringLiteral("Rose / Noir"))
-                      && rendered.contains(QStringLiteral("#f2a5bc")) && rendered.contains(QStringLiteral("#050505")),
-                      "custom broche/fonction/couleur XML keeps data and visual colours");
+                      && rendered.contains(QStringLiteral("#f2a5bc")) && rendered.contains(QStringLiteral("#050505"))
+                      && rendered.contains(QStringLiteral("class='wirebox'"))
+                      && rendered.contains(QStringLiteral("background:#555d64")),
+                      "custom XML keeps colours inside grey wire enclosure");
     }
 
     QTemporaryFile genericSheet;
