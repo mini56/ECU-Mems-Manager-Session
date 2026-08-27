@@ -72,6 +72,7 @@ set(SOURCES
     database/MemsXmlRowIndexer.cpp database/MemsSearchCompletenessPatch.cpp database/MemsDatabaseBrowser.cpp database/MemsDatabaseBrowser.h
     iamemstab.cpp iamemstab.h
     expert/IaResponseLogic.h expert/IaMemsService.cpp expert/IaMemsService.h
+    expert/IaMemsDiagramCatalog.cpp expert/IaMemsDiagramCatalog.h
     expert/ExpertEngine.cpp expert/ExpertEngine.h expert/ExpertKnowledgeReader.cpp expert/ExpertKnowledgeReader.h
     expert/ExpertTypes.h expert/LocalAiClient.cpp expert/LocalAiClient.h
     uirebuild.cpp overviewrebuild.cpp majorpagesrebuild.cpp errorsvisualpatch.cpp analysismodernizer.cpp
@@ -105,6 +106,16 @@ add_executable(ia_response_selftest
     expert/IaResponseLogic.h)
 target_link_libraries(ia_response_selftest PRIVATE Qt5::Core)
 add_dependencies(${PNAME} ia_response_selftest)
+
+add_executable(ia_mems_diagram_selftest
+    expert/IaMemsDiagramSelfTest.cpp
+    expert/IaMemsDiagramCatalog.cpp expert/IaMemsDiagramCatalog.h)
+target_compile_definitions(ia_mems_diagram_selftest PRIVATE
+    MEMS_SOURCE_REFERENCE_DIR="${CMAKE_SOURCE_DIR}/database/reference")
+target_link_libraries(ia_mems_diagram_selftest PRIVATE Qt5::Core)
+add_dependencies(${PNAME} ia_mems_diagram_selftest)
+add_custom_command(TARGET ${PNAME} POST_BUILD
+    COMMAND "$<TARGET_FILE:ia_mems_diagram_selftest>")
 
 add_executable(mems_search_selftest
     database/MemsSearchSelfTest.cpp
@@ -150,6 +161,7 @@ if(MSVC)
     add_compile_definitions(_HAS_STD_BYTE=0)
     target_compile_options(${PNAME} PRIVATE /permissive /utf-8)
     target_compile_options(ia_response_selftest PRIVATE /utf-8)
+    target_compile_options(ia_mems_diagram_selftest PRIVATE /utf-8)
     if(TARGET local_ai_onnx_selftest)
         target_compile_options(local_ai_onnx_selftest PRIVATE /permissive /utf-8)
     endif()
