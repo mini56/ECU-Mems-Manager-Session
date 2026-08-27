@@ -81,6 +81,13 @@ QString normalizedPlainText(QString text)
         else
             result.append(QLatin1Char(' '));
     }
+
+    result = result.simplified();
+    // Frequent AZERTY apostrophe substitutions seen in real IA MEMS questions.
+    // Keep this deliberately narrow so protocol tokens such as D4 are untouched.
+    result.replace(QRegularExpression(QStringLiteral("\\bc4est\\b")), QStringLiteral("c est"));
+    result.replace(QRegularExpression(QStringLiteral("\\bl4onglet\\b")), QStringLiteral("l onglet"));
+    result.replace(QRegularExpression(QStringLiteral("\\bl4apercu\\b")), QStringLiteral("l apercu"));
     return result.simplified();
 }
 
@@ -205,6 +212,22 @@ bool asksLocation(const QString &question)
         || plain.contains(QStringLiteral("quel emplacement"));
 }
 
+bool asksWiringOrPinout(const QString &plain)
+{
+    return plain.contains(QStringLiteral("couleur de fil"))
+        || plain.contains(QStringLiteral("couleur fil"))
+        || plain.contains(QStringLiteral("wire color"))
+        || plain.contains(QStringLiteral("wire colour"))
+        || plain.contains(QStringLiteral("cablage"))
+        || plain.contains(QStringLiteral("broche"))
+        || plain.contains(QStringLiteral("pinout"))
+        || plain.contains(QStringLiteral("connecteur"))
+        || plain.contains(QStringLiteral("prise rosco"))
+        || plain.contains(QStringLiteral("prise obd"))
+        || plain.contains(QStringLiteral(" obd "))
+        || plain.startsWith(QStringLiteral("obd "));
+}
+
 bool isMemsDomainQuestion(const QString &question, const QString &grounding)
 {
     const QString plain = normalizedPlainText(question);
@@ -227,9 +250,10 @@ QString controlledTechnicalAnswer(const QString &question)
 {
     const QString plain = normalizedPlainText(question);
     const QString code = activeLanguageCode();
+    const bool wiringIntent = asksWiringOrPinout(plain);
 
     static const QRegularExpression iacRx(QStringLiteral("(^|\\s)iacv?(\\s|$)"));
-    if (iacRx.match(plain).hasMatch()) {
+    if (!wiringIntent && iacRx.match(plain).hasMatch()) {
         if (code == QStringLiteral("en"))
             return QStringLiteral("IAC means Idle Air Control. It is the idle-air regulation system used by the ECU to adjust the air needed to stabilise idle speed. Depending on the MEMS installation, the physical idle actuator can differ.");
         if (code == QStringLiteral("es"))
@@ -247,7 +271,7 @@ QString controlledTechnicalAnswer(const QString &question)
         return QString();
 
     static const QRegularExpression mapRx(QStringLiteral("(^|\\s)map(\\s|$)"));
-    if (mapRx.match(plain).hasMatch()
+    if (!wiringIntent && mapRx.match(plain).hasMatch()
         && (plain == QStringLiteral("map")
             || plain.contains(QStringLiteral("c est quoi"))
             || plain.contains(QStringLiteral("signifie"))
@@ -255,7 +279,7 @@ QString controlledTechnicalAnswer(const QString &question)
             || plain.contains(QStringLiteral("sert"))))
         return QStringLiteral("MAP signifie « Manifold Absolute Pressure ». Le capteur MAP mesure la pression absolue dans le collecteur d'admission. L'ECU utilise notamment cette information pour estimer la charge moteur et adapter ses calculs de gestion moteur. Une valeur MAP réelle n'est disponible ici que lorsque l'ECU la fournit.");
 
-    if (plain.contains(QStringLiteral("injecteur"))
+    if (!wiringIntent && plain.contains(QStringLiteral("injecteur"))
         && (plain == QStringLiteral("injecteur")
             || plain.contains(QStringLiteral("c est quoi"))
             || plain.contains(QStringLiteral("role"))
@@ -263,7 +287,7 @@ QString controlledTechnicalAnswer(const QString &question)
         return QStringLiteral("Un injecteur d'essence est une électrovanne commandée par l'ECU qui dose et pulvérise le carburant dans l'admission. Sur un système SPI il y a une injection monopoint centralisée ; sur un système MPI, plusieurs injecteurs alimentent les cylindres. Ce n'est pas un système d'injection d'huile.");
 
     static const QRegularExpression spiRx(QStringLiteral("(^|\\s)spi(\\s|$)"));
-    if (spiRx.match(plain).hasMatch()
+    if (!wiringIntent && spiRx.match(plain).hasMatch()
         && (plain == QStringLiteral("spi")
             || plain.contains(QStringLiteral("rover"))
             || plain.contains(QStringLiteral("mems"))
@@ -279,13 +303,13 @@ QString controlledTechnicalAnswer(const QString &question)
         || plain.contains(QStringLiteral("moteur quatre temps")))
         return QStringLiteral("Un moteur 4 temps réalise successivement l'admission, la compression, la combustion/détente puis l'échappement. Un cycle complet se fait sur deux tours de vilebrequin.");
 
-    if (plain.contains(QStringLiteral("ecu"))
+    if (!wiringIntent && plain.contains(QStringLiteral("ecu"))
         && (plain.contains(QStringLiteral("role"))
             || plain.contains(QStringLiteral("sert"))
             || plain.contains(QStringLiteral("c est quoi"))))
         return QStringLiteral("L'ECU est le calculateur moteur. Il lit les capteurs, calcule notamment l'injection et l'avance à l'allumage, pilote les actionneurs prévus par la version MEMS et gère les fonctions de diagnostic disponibles. Il ne faut pas lui attribuer de fonctions non documentées pour l'ECU concerné.");
 
-    if (plain.contains(QStringLiteral("bobine"))
+    if (!wiringIntent && plain.contains(QStringLiteral("bobine"))
         && (plain == QStringLiteral("bobine")
             || plain.contains(QStringLiteral("c est quoi"))
             || plain.contains(QStringLiteral("qu est ce"))
@@ -294,7 +318,7 @@ QString controlledTechnicalAnswer(const QString &question)
             || plain.contains(QStringLiteral("fonction"))))
         return QStringLiteral("La bobine d'allumage transforme la basse tension de la batterie en haute tension nécessaire pour créer l'étincelle aux bougies. L'ECU commande la charge du circuit primaire ; le dwell correspond au temps de charge primaire de la bobine. Le nombre et le montage des bobines dépendent du système d'allumage du véhicule.");
 
-    if ((plain.contains(QStringLiteral("bobine")) || plain.contains(QStringLiteral("dwell")))
+    if (!wiringIntent && (plain.contains(QStringLiteral("bobine")) || plain.contains(QStringLiteral("dwell")))
         && (plain.contains(QStringLiteral("valeur"))
             || plain.contains(QStringLiteral("reference"))
             || plain.contains(QStringLiteral("normal"))))
@@ -308,9 +332,17 @@ QString controlledTechnicalAnswer(const QString &question)
 
     static const QRegularExpression versionRx(QStringLiteral("(^|\\s)(?:mems\\s*)?(1\\.[2369])($|\\s)"));
     const QRegularExpressionMatch versionMatch = versionRx.match(plain);
-    if (versionMatch.hasMatch()) {
+    if (!wiringIntent && versionMatch.hasMatch()) {
         const QString version = versionMatch.captured(2);
-        return QStringLiteral("Dans IA MEMS, MEMS %1 désigne une génération du système de gestion moteur Rover/Lucas utilisé sur les véhicules concernés par le projet. Ici, MEMS ne signifie pas « Micro-Electro-Mechanical Systems ». Les capacités exactes dépendent de l'ECU, du firmware et du protocole réellement identifiés.").arg(version);
+        const bool definitionIntent = plain == version
+            || plain == QStringLiteral("mems %1").arg(version)
+            || plain.contains(QStringLiteral("c est quoi"))
+            || plain.contains(QStringLiteral("qu est ce"))
+            || plain.contains(QStringLiteral("que signifie"))
+            || plain.contains(QStringLiteral("definition"))
+            || plain.contains(QStringLiteral("version"));
+        if (definitionIntent)
+            return QStringLiteral("Dans IA MEMS, MEMS %1 désigne une génération du système de gestion moteur Rover/Lucas utilisé sur les véhicules concernés par le projet. Ici, MEMS ne signifie pas « Micro-Electro-Mechanical Systems ». Les capacités exactes dépendent de l'ECU, du firmware et du protocole réellement identifiés.").arg(version);
     }
 
     return QString();
