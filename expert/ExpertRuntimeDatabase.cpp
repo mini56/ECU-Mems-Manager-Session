@@ -10,6 +10,7 @@
 #include <QJsonObject>
 #include <QLockFile>
 #include <QRegularExpression>
+#include <QSet>
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
@@ -250,12 +251,52 @@ bool readManifest(const QString &root, int *revision, QStringList *batches, QStr
         batches->clear();
         const QJsonArray array = object.value(QStringLiteral("research_enrichment_batches")).toArray();
         for (const QJsonValue &value : array) {
-            const QString name = value.toString().trimmed();
-            if (!name.isEmpty())
-                batches->append(name);
+            const QString name = QDir::cleanPath(value.toString().trimmed())
+                                     .replace(QLatin1Char('\\'), QLatin1Char('/'));
+            if (name.isEmpty() || name == QStringLiteral("..")
+                || name.startsWith(QStringLiteral("../")) || QDir::isAbsolutePath(name))
+                continue;
+            batches->append(name);
         }
     }
     return true;
+}
+
+QStringList completeEnrichmentBatches(const QString &root, const QStringList &manifestBatches)
+{
+    QStringList result;
+    QSet<QString> seen;
+
+    // Preserve explicit manifest order first for historical reproducibility.
+    for (const QString &batch : manifestBatches) {
+        const QString normalized = QDir::cleanPath(batch).replace(QLatin1Char('\\'), QLatin1Char('/'));
+        if (normalized.isEmpty() || seen.contains(normalized))
+            continue;
+        result.append(normalized);
+        seen.insert(normalized);
+    }
+
+    // Future enrichment lots are then discovered automatically. This makes a
+    // newly packaged 1750/1760/... visible to the expert SQLite generator even
+    // if the manifest has not yet been extended, preventing silent data loss.
+    QDir dir(root);
+    QStringList discovered = dir.entryList(
+        QStringList() << QStringLiteral("research_enrichment*.qz64"),
+        QDir::Files, QDir::Name);
+    std::sort(discovered.begin(), discovered.end(), [](const QString &a, const QString &b) {
+        const int na = numericSuffix(a);
+        const int nb = numericSuffix(b);
+        if (na != nb)
+            return na < nb;
+        return a < b;
+    });
+    for (const QString &name : discovered) {
+        if (seen.contains(name))
+            continue;
+        result.append(name);
+        seen.insert(name);
+    }
+    return result;
 }
 
 bool buildRuntimeDatabase(const QString &referenceRoot,
@@ -389,13 +430,14 @@ bool ExpertRuntimeDatabase::buildOrOpen()
     m_databasePath.clear();
     m_manifestRevision = 0;
 
-    QStringList batches;
-    if (!readManifest(referenceRoot(), &m_manifestRevision, &batches, &m_lastError))
+    QStringList manifestBatches;
+    if (!readManifest(referenceRoot(), &m_manifestRevision, &manifestBatches, &m_lastError))
         return false;
     if (m_manifestRevision <= 0) {
         m_lastError = QStringLiteral("Révision de base MEMS invalide");
         return false;
     }
+    const QStringList batches = completeEnrichmentBatches(referenceRoot(), manifestBatches);
 
     // Normal packaged BUILD path: GitHub Actions prepares the expert SQLite
     // database once and ships it read-only beside the application. This avoids
