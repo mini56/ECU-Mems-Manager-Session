@@ -157,6 +157,20 @@ Audit effectué sur le HEAD `MEMSX64` `16b99c3f`, après relecture du présent r
 4. Ajouter le self-test spécifique et son intégration CMake, puis contrôler le diff complet de la branche temporaire.
 5. Après validation du diff et des tests, préparer **un seul passage vers `MEMSX64`** avec synchronisation workflow/version **#93 = v1.0.93** afin d’éviter tout build intermédiaire désynchronisé.
 
+## POINT 3 — CANDIDAT TEMPORAIRE ET CONTRÔLE SVG
+
+- Branche temporaire créée depuis exactement `16b99c3f` : **`tmp-ia-schema-proposal`**. Aucun push sur `MEMSX64`, donc aucun run #93 consommé.
+- Candidat actuel limité à six fichiers : `CMakeLists.txt`, `iamemstab.cpp`, `iamemstab.h`, plus les nouveaux `expert/IaMemsDiagramCatalog.cpp`, `expert/IaMemsDiagramCatalog.h` et `expert/IaMemsDiagramSelfTest.cpp`. Aucun fichier `IaMemsService`, `LocalAiClient`, Qwen/ONNX, protocole, ECU, RAVE ou 32 bits modifié.
+- Le résolveur est déterministe et local : intention de schéma + famille explicite, lecture exclusive de `database/reference/manifest.json`, rejet des chemins absolus/traversants, contrôle du fichier réel et du chemin canonique.
+- Les six entrées du manifeste sont couvertes par le self-test : MEMS 1.2 ECU, MEMS 1.3 ECU, MEMS 1.6 ECU, MEMS 1.9 ECU, ROSCO 3 broches et MEMS 1.9 OBD 16 broches. Le test couvre également une question ordinaire, une demande OBD ambiguë, une prise diagnostic ambiguë, un SVG absent et un SVG local non déclaré dans le manifeste.
+- Les six fichiers SVG déclarés ont été vérifiés physiquement présents dans `database/reference/images`.
+- Contrôle direct de l’artefact **#92**, ID **`9640959766`**, nom `ECU-MEMS-Manager-x64-BUILD-30-v1.0.30` : le package contient bien les six SVG ainsi que **`imageformats/qsvg.dll`**, **`iconengines/qsvgicon.dll`** et **`Qt5Svg.dll`**. Le rendu SVG local par Qt est donc déjà une capacité réellement packagée et validée ; aucune nouvelle dépendance SVG ni modification de packaging n’est nécessaire.
+- Revue avant intégration : deux durcissements minimes sont retenus avant le diff final : (1) ajouter l’inclusion explicite de `QByteArray` dans le self-test ; (2) au clic, revalider la suggestion via le manifeste et le fichier local au lieu de se contenter du chemin mémorisé, afin qu’un manifeste/fichier modifié après la question ne puisse jamais ouvrir une proposition devenue invalide.
+
+### ÉTAPE AUTORISÉE AVANT LA PROCHAINE MODIFICATION DU CODE
+
+Sur **`tmp-ia-schema-proposal` uniquement**, appliquer ces deux durcissements sans modifier aucun autre comportement ni fichier interdit. Ensuite contrôler à nouveau le diff complet contre `16b99c3f`. Ne pas pousser sur `MEMSX64` à cette étape.
+
 ## PROCHAINE ACTION EXACTE
 
-**Point 3 : créer la branche temporaire depuis `16b99c3f` et implémenter la proposition de schéma locale selon le plan d’audit ci-dessus. `IaMemsService`, Qwen, ONNX, `LocalAiClient`, le protocole, l’ECU, RAVE et le 32 bits restent intouchés. Ajouter le self-test spécifique et contrôler le diff avant toute intégration sur `MEMSX64`. Le premier prochain push sur `MEMSX64` devra être #93 = v1.0.93. Après validation complète des points 1 à 4, reprendre RAVE 1720.**
+**Durcir le candidat temporaire uniquement sur `tmp-ia-schema-proposal` : inclusion explicite `QByteArray` dans le self-test et revalidation manifeste/fichier au clic du bouton. Puis comparer de nouveau le diff contre `16b99c3f`, vérifier qu’aucun fichier interdit n’a bougé, et préparer seulement ensuite la synchronisation de version #93 = v1.0.93 sur la branche temporaire. Aucun push `MEMSX64` avant le contrôle complet du candidat. Après validation des points 1 à 4 et du build #93, reprendre RAVE 1720.**
