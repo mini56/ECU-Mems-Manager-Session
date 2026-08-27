@@ -34,14 +34,39 @@ Constats confirmés :
 - la réponse obtenue peut parler de son propre contexte au lieu de répondre directement.
 
 Nouvelles captures utilisateur à traiter comme défauts réels :
-1. **`COULEUR DE FIL DU CAPTEUR DE TEMPERATURE SPI ?`** → renvoie des faits de dépose ECT/IAT/MAP, sans aucune couleur de fil. Cause fonctionnelle probable : la recherche experte classe sur mots génériques (`température`, `capteur`) sans priorité forte pour l'intention `câblage/couleur`.
+1. **`COULEUR DE FIL DU CAPTEUR DE TEMPERATURE SPI ?`** → renvoie des faits de dépose ECT/IAT/MAP, sans aucune couleur de fil. Cause fonctionnelle : la recherche experte classait sur mots génériques (`température`, `capteur`) sans contrainte d'intention `câblage/couleur`.
 2. **`BROCHE ECU 1.3`** → renvoie une définition générique de MEMS 1.3 au lieu du brochage/connecteur.
 3. **`BROCHE OBD 1.9 ?`** → renvoie une définition générique de MEMS 1.9 au lieu du brochage OBD/diagnostic.
 4. **`CADRAN TPM?`** → aucune réponse utile ; la faute probable `TPM`→`RPM` n'est pas reconnue.
 5. **`QUEL CADRAN DANS L4ONGLET APERCU?`** → répète la description générale de l'onglet Aperçu au lieu de lister les cadrans réellement présents.
-6. Le message **« Moteur conversationnel local indisponible : le modèle local n'a pas produit de réponse exploitable dans la langue active »** apparaît encore sur certaines questions ; ces questions techniques structurées devraient autant que possible être résolues par routage/base avant d'appeler Qwen.
+6. Le message **« Moteur conversationnel local indisponible : le modèle local n'a pas produit de réponse exploitable dans la langue active »** apparaît encore sur certaines questions ; ces questions techniques structurées doivent autant que possible être résolues par routage/base avant Qwen.
 
 Conclusion : **#86 est fonctionnel et plus rapide, mais la qualité conversationnelle n'est pas validée.** Les défauts sont maintenant suffisamment précis pour corriger le routage par intention et la sélection de faits, sans changer ONNX ni l'UI.
+
+## CORRECTION QUALITÉ EN PRÉPARATION — BRANCHE TEMPORAIRE
+
+Pour éviter plusieurs builds intermédiaires sur `MEMSX64`, une branche temporaire **`tmp-ia-targeting-86`** a été créée depuis `d156469...`. Rien de cette section n'est encore présenté comme build utilisateur.
+
+### Résultat production déjà préparé
+
+- `LocalAiClient.cpp` : commit temporaire **`a221b3696ea2f7bc0331fecb0cca16773ffd0a33`**.
+  - normalisation étroite `C4EST`→`C EST`, `L4ONGLET`→`L ONGLET`, sans conversion globale du chiffre 4 ;
+  - détection explicite des intentions câblage/broche/OBD/ROSCO ;
+  - les définitions contrôlées MAP/IAC/SPI/ECU/bobine ne peuvent plus court-circuiter une demande de câblage ;
+  - la définition générique MEMS 1.x n'est plus déclenchée par toute mention `1.x`, seulement par une vraie demande de définition/version.
+- `IaMemsService.cpp` : commit temporaire **`ea6bbc2f3d60ea0a7715fd1f906e5eab6cbccb46`**.
+  - classification `General / WireColor / Pinout` avant sélection de faits ;
+  - une demande de couleur exige désormais une preuve contenant réellement une information de fil/couleur ; une procédure de dépose ne peut plus satisfaire cette intention ;
+  - une demande de brochage exige un fait de câblage/connecteur/broche ;
+  - si aucune couleur ou broche vérifiée n'existe, réponse explicite **sans invention** ;
+  - `ECU 1.3` / `OBD 1.9` peuvent maintenant fixer le contexte famille ;
+  - `TPM`→`RPM` uniquement dans un contexte cadran/régime ;
+  - `L4ONGLET` normalisé ;
+  - la question sur les cadrans de l'onglet Aperçu répond depuis le code réel : 11 cadrans (RPM, liquide, MAP, papillon, batterie, correction court terme, lambda, temps injection, température air, position IAC, avance) + indicateur état système.
+
+### PROCHAINE ÉTAPE AVANT TOUT PUSH MEMSX64
+
+Ajouter le self-test exact des formulations utilisateur, au minimum **`C4EST QUOI LA BOBINE ?`** et **`BROCHE ECU 1.3` avec un grounding de brochage**, vérifier le diff de la branche temporaire, puis seulement déplacer `MEMSX64` une fois sur le lot complet.
 
 ## BUILD QUALITÉ #86 — À PRÉSERVER
 
@@ -77,19 +102,6 @@ Ralenti SPi 1993–96 850 ±25 ; SPi 1997+ et MPi 900 ±50 ; pression SPi ~1 bar
 
 Ne pas modifier les protections protocole BUILD #30, MEMS1.9 F7/EF, tailles 7D/80, W4, reconnexion1.9, failsafes, ports, RAM non validée, reset/clear/writes. Conserver `onProtocolCommandRequested(quint8)` et `raw-32768-correction`. UI dark/responsive inchangée. ONNX natif inchangé ; aucun QProcess/llama/HTTP ; base r20 read-only ; aucune mutation ECU accessible au LLM.
 
-## PROCHAINE CORRECTION QUALITÉ — OBJECTIF AVANT MODIFICATION
-
-Corriger sur le HEAD `d156469...` après #87, sans changer BUILD :
-1. normaliser les fautes clavier fréquentes de manière contextuelle, notamment `C4EST`→`C EST` et `L4ONGLET`→`L ONGLET`, sans remplacer arbitrairement tous les chiffres ;
-2. renforcer le filtre final : toute sortie contenant `<think>`, ChatML ou une consigne interne doit être nettoyée/rejetée avant affichage, même si la balise est incomplète ;
-3. ajouter une **classification d'intention structurée** avant la recherche experte : `définition`, `mesure live`, `câblage/couleur`, `brochage/connecteur`, `interface/onglet`, `diagnostic` ;
-4. pour `câblage/couleur` et `brochage/connecteur`, donner un poids dominant aux faits contenant explicitement `wire/câble/fil/couleur/broche/pin/connecteur/OBD/diagnostic` et empêcher une simple définition de famille de prendre la priorité ;
-5. ne jamais inventer une couleur ou une broche : si aucun fait vérifié ne contient réellement l'information demandée, répondre clairement que la base ne possède pas encore cette donnée pour la variante identifiée ;
-6. traiter `TPM` comme faute probable de `RPM` uniquement dans le contexte `cadran/mesure/régime`, pas globalement ;
-7. pour `quel cadran dans l'onglet Aperçu`, répondre depuis les métadonnées/structure UI réelle, pas depuis Qwen ;
-8. étendre les tests déterministes avec exactement les formulations utilisateur ci-dessus ;
-9. préserver la latence #86, ONNX natif, RAVE 1680, protocole, UI, 32 bits et BUILD #30.
-
 ## PROCHAINE ACTION EXACTE
 
-**Modifier uniquement la chaîne IA/routage sur le HEAD incluant RAVE 1680, ajouter les tests correspondant aux captures utilisateur, pousser un seul lot qualité, puis suivre le run complet jusqu'au package. Continuer ensuite RAVE sur un lot séparé. Aucun BUILD #31.**
+**Sur `tmp-ia-targeting-86`, ajouter les tests correspondant aux captures utilisateur et vérifier les 3 fichiers qualité ensemble. Si le diff est propre, déplacer `MEMSX64` une seule fois sur le commit final temporaire et suivre le run complet jusqu'au package. Continuer ensuite RAVE sur un lot séparé. Aucun BUILD #31.**
