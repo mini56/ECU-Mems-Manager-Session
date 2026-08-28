@@ -16,7 +16,7 @@
 - Branche active : **`MEMSX64`**.
 - HEAD x64 courant : **`2b211554abdbb127fd4d472f9ce687394b2d4608`**.
 - Dernier run GitHub entièrement vert : **#97 = v1.0.97 — SUCCESS**, run **`33107904830`**, commit **`2b211554abdbb127fd4d472f9ce687394b2d4608`**.
-- Artefact #97 : ID **`9661453251`**, nom **`ECU-MEMS-Manager-x64-BUILD-97-v1.0.97`**, taille **386 847 391 octets**, SHA-256 **`7bf9ea11fb5ca7c8f7d3a500efe5bf04fa94e16d38a8a25d5c0aa972f41b14c7`**.
+- Artefact #97 : ID **`9661453251`**, nom **`ECU-MEMS-Manager-x64-BUILD-97-v1.0.97`**, taille **386 847 391 octets**, SHA-256 **`7bf9ea11fb5ca7c8f7d3a500efe5bf04e16d38a8a25d5c0aa972f41b14c7`**.
 - #97 a été testé sur le PC réel utilisateur : **aucune régression visuelle constatée sur l’environnement et les onglets**, clarification SPi/MPi et boutons XML fonctionnels, mais plusieurs défauts IA restent ouverts et sont détaillés en fin de rapport. **#97 est vert côté build, mais la qualité conversationnelle IA n’est pas encore validée comme terminée.**
 - Run **#96 = v1.0.96 — SUCCESS**, run **`33097323011`**, commit **`fea27058773fc3535c3ea40f7b9a36151b792ac1`**.
 - Artefact #96 : ID **`9657131155`**, nom **`ECU-MEMS-Manager-x64-BUILD-96-v1.0.96`**, taille **386 836 238 octets**, SHA-256 **`a9677cdcead198e36f8fbcf9efccc6d55e493bede88c545683abaeffd8ca4124`**.
@@ -945,3 +945,94 @@ Corriger uniquement :
 4. petit **cadre/fond gris commun** autour des carrés de couleur dans le renderer XML 1.6/1.9.
 
 Ajouter les tests déterministes correspondant aux défauts reproduits, valider x64 sur GitHub Actions en branche temporaire, contrôler le diff et avancer `MEMSX64` sans force uniquement si la validation est verte. Le test ECU connecté restera en attente de la voiture.
+
+# CONTINUITÉ AJOUTÉE — BUILDS #99 ET #100 — 28 AOÛT 2026
+
+Cette section **supplante comme état courant** la section historique `PROCHAINE ACTION EXACTE — APRÈS TEST RÉEL #98`. Les sections antérieures restent conservées pour l’historique.
+
+## ÉTAT DE DÉPART VÉRIFIÉ AVANT #100
+
+- Branche de production x64 : **`MEMSX64`**.
+- HEAD vérifié avant l’action #100 : **`35336ce820c3ef09153878bd918f7710c89552a4`** — `Fix post98 IA filtering and XML wire visibility`.
+- Ce HEAD correspond au **BUILD #99**, workflow `BUILD`, run **`33120718004`**, conclusion **SUCCESS**.
+- #99 reste le parent direct de #100 ; aucun retour arrière ni force-push n’a été utilisé.
+- Le protocole ECU, l’acquisition, la RAM, le 32 bits et les protections de connexion n’ont pas été modifiés dans l’action #100.
+
+## ACTION EFFECTUÉE — PROMOTION IA BUILD #100
+
+Objectif exécuté : transférer sur la production x64 **uniquement les trois fichiers IA déjà validés dans le candidat temporaire**, sans importer de workflow/helper temporaire et sans toucher au reste du programme.
+
+Commit production créé :
+- **`cd6e52c714ee35a3fffb405797f14a58c2da4fa5`** — `Build #100: fix IA documentary precision` ;
+- parent direct : **#99 `35336ce820c3ef09153878bd918f7710c89552a4`** ;
+- arbre : **`5e2468947254aa6ccb54d154ce4d2a0a62c35c2d`**.
+
+Comparaison #99 → #100 contrôlée : **1 seul commit et exactement 3 fichiers modifiés** :
+1. `expert/IaMemsConversationRouting.h` — **+40 / -1** ;
+2. `expert/IaMemsService.cpp` — **+39 / -16** ;
+3. `expert/IaResponseLogicTest.cpp` — **+23 / -0**.
+
+Aucun autre fichier n’est présent dans le diff :
+- aucun protocole ECU ;
+- aucune acquisition/RAM ;
+- aucune UI ou responsive ;
+- aucun `CMakeLists.txt` ;
+- aucun workflow GitHub ;
+- aucun helper temporaire ;
+- aucun fichier 32 bits.
+
+`MEMSX64` a été avancée **sans force** sur `cd6e52c714ee35a3fffb405797f14a58c2da4fa5`.
+
+## BUILD #100 — VALIDATION GITHUB ACTIONS COMPLÈTE
+
+Workflow officiel : **BUILD**, run **`33165636478`**, run number **100**, branche `MEMSX64`, HEAD **`cd6e52c714ee35a3fffb405797f14a58c2da4fa5`**.
+
+Conclusion finale : **SUCCESS**.
+
+Étapes validées :
+- installation des outils de validation : **SUCCESS** ;
+- Qt 5.15.2 MSVC 2019 x64 : **SUCCESS** ;
+- ONNX Runtime GenAI + ONNX Runtime Windows x64 CPU : **SUCCESS** ;
+- `Validate protocol guards before build` : **SUCCESS** ;
+- compilation **ECU MEMS Manager x64 avec IA ONNX native** : **SUCCESS** ;
+- `Run deterministic self-tests` : **SUCCESS** ;
+- génération/validation base expert r20 : **SUCCESS** ;
+- téléchargement Qwen3-0.6B ONNX INT4 CPU + vérification des hashes : **SUCCESS** ;
+- `Run production LocalAiClient native ONNX self-test` : **SUCCESS** ;
+- assemblage du package portable ONNX : **SUCCESS** ;
+- validation du package portable complet : **SUCCESS** ;
+- `Validate packaged production LocalAiClient with Qwen` : **SUCCESS** ;
+- smoke launch ECU MEMS Manager avec runtime ONNX natif : **SUCCESS** ;
+- génération manifeste/hashes : **SUCCESS** ;
+- upload artefact : **SUCCESS**.
+
+Le job `build_x64` s’est terminé le **28/08/2026 à 11:13:55Z** avec conclusion **SUCCESS**.
+
+## ARTEFACT OFFICIEL BUILD #100
+
+- ID artefact : **`9683725737`**.
+- Nom : **`ECU-MEMS-Manager-x64-BUILD-100-v1.0.100`**.
+- Taille : **386 852 374 octets**.
+- Digest : **`sha256:c875ec951a9cb9aba4c0d332bf26dc4fc240ca98002c3bb5ec2675e39c2616d1`**.
+- Branche : `MEMSX64`.
+- HEAD : `cd6e52c714ee35a3fffb405797f14a58c2da4fa5`.
+
+## ÉTAT COURANT APRÈS #100
+
+- **Production x64 active : BUILD #100 / v1.0.100**.
+- HEAD `MEMSX64` : **`cd6e52c714ee35a3fffb405797f14a58c2da4fa5`**.
+- #100 est **validé côté compilation, self-tests, IA ONNX/Qwen, package et smoke launch GitHub Actions**.
+- **#100 n’est pas encore déclaré validé sur le PC réel utilisateur** : aucun test réel post-#100 n’a encore été consigné.
+- Les protections protocole sont passées vertes et aucun code protocole n’a changé dans ce lot.
+- Le test ECU réellement connecté reste indépendant et ne doit être déclaré que lorsqu’un véhicule est disponible.
+
+# PROCHAINE ACTION EXACTE — APRÈS BUILD #100 VERT
+
+1. **Ne pas lancer #101 avant le test utilisateur de #100**, sauf demande explicite contraire.
+2. Installer/tester l’artefact **`ECU-MEMS-Manager-x64-BUILD-100-v1.0.100`** sur le PC réel.
+3. Rejouer en priorité les scénarios IA documentaires qui ont motivé le lot : filtrage MPi/SPi/Japan, pertinence MAP, couleurs lambda, déduplication et réponses factuelles ciblées.
+4. Vérifier que les corrections #99 restent intactes, notamment le rendu/visibilité des couleurs XML et l’absence de régression UI.
+5. Consigner immédiatement dans ce rapport les résultats réels, captures ou défauts observés avant toute nouvelle modification.
+6. Ne pas toucher au protocole ECU, acquisition, RAM ou 32 bits sans nouvelle demande explicite.
+
+**Référence de reprise obligatoire : `MEMSX64` BUILD #100 `cd6e52c714ee35a3fffb405797f14a58c2da4fa5`, GitHub Actions run `33165636478`, artefact `9683725737`.**
