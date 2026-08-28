@@ -122,6 +122,9 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
+          $qtBin='C:\Qt\5.15.2\msvc2019_64\bin'
+          if (-not (Test-Path "$qtBin\Qt5Core.dll")) { throw "Qt5Core.dll missing from $qtBin" }
+          $env:PATH = "$qtBin;$env:PATH"
           & .\build-post99\Release\ia_response_selftest.exe
           if ($LASTEXITCODE -ne 0) { throw "IA response self-test failed: $LASTEXITCODE" }
 
