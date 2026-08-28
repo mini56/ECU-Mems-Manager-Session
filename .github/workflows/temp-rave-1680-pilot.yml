@@ -1,0 +1,133 @@
+name: TEMP RAVE 1680 ILLUSTRATION PILOT
+run-name: RAVE 1680 PILOT from BUILD #101 - ${{ github.sha }}
+
+on:
+  push:
+    branches: [tmp-rave-1680-illustrations]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: temp-rave-1680-illustrations
+  cancel-in-progress: true
+
+jobs:
+  package_pilot:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout pilot source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Download official BUILD #101 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ECU-MEMS-Manager-x64-BUILD-101-v1.0.101
+          path: dist-x64
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: mini56/ECU-Mems-Manager-Session
+          run-id: 33178021830
+
+      - name: Verify exact #101 base
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (-not (Test-Path 'dist-x64\ecu_mems_manager.exe' -PathType Leaf)) { throw 'BUILD #101 executable missing' }
+          if (-not (Test-Path 'dist-x64\database\reference\manifest.json' -PathType Leaf)) { throw 'BUILD #101 reference manifest missing' }
+          if (-not (Test-Path 'dist-x64\database\expert\ia_mems_reference_r20.sqlite' -PathType Leaf)) { throw 'BUILD #101 expert DB missing' }
+          $meta = Get-Content 'dist-x64\build_manifest.json' -Raw -ErrorAction SilentlyContinue
+          if ($meta) { Write-Host $meta }
+          Write-Host 'PASS exact official BUILD #101 artifact downloaded'
+
+      - name: Install pinned PDF renderer
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install --disable-pip-version-check 'PyMuPDF==1.26.4'
+          if ($LASTEXITCODE -ne 0) { throw "PyMuPDF install failed: $LASTEXITCODE" }
+
+      - name: Download Rover RCL0194ENG source PDF
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $url = 'https://www.goclassic.eu/upload/content/e68ce7_9c0fd6a5b3a14a3585ecddb02b3ceb9d.pdf'
+          & curl.exe -L --fail --retry 3 --retry-delay 3 -o 'RCL0194ENG.pdf' $url
+          if ($LASTEXITCODE -ne 0) { throw "RCL0194ENG download failed: $LASTEXITCODE" }
+          if (-not (Test-Path 'RCL0194ENG.pdf' -PathType Leaf)) { throw 'RCL0194ENG.pdf missing after download' }
+
+      - name: Add only RAVE lot 1680 illustrations and additive links
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python tools/prepare_rave_1680_pilot.py --pdf RCL0194ENG.pdf --dist dist-x64
+          if ($LASTEXITCODE -ne 0) { throw "RAVE 1680 pilot preparation failed: $LASTEXITCODE" }
+
+      - name: Validate pilot package integrity and scope
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:DIST = (Resolve-Path 'dist-x64').Path
+          @'
+          import base64,hashlib,json,os,sqlite3,struct,zlib
+          from pathlib import Path
+          root=Path(os.environ['DIST'])
+          meta=json.loads((root/'RAVE1680_PILOT.json').read_text(encoding='utf-8'))
+          if meta['base']!='MEMSX64 BUILD #101 22dbe75ed14e0a61e694159d505ef72245116b48':
+              raise SystemExit('Pilot base is not exact BUILD #101')
+          if meta['database_revision']!=20 or meta['historical_tables_modified'] is not False:
+              raise SystemExit('Pilot violated additive database rule')
+          if len(meta['assets'])!=3:
+              raise SystemExit('Pilot must contain exactly three RAVE illustrations')
+          labels={a['page'] for a in meta['assets']}
+          if labels!={'20.3','20.4','39.3'}:
+              raise SystemExit('Unexpected RAVE pages: '+repr(labels))
+          for a in meta['assets']:
+              p=root/a['path']
+              if not p.is_file(): raise SystemExit('Missing illustration '+a['path'])
+              h=hashlib.sha256(p.read_bytes()).hexdigest()
+              if h!=a['sha256']: raise SystemExit('Illustration hash mismatch '+a['path'])
+          qz=root/'database'/'reference'/'research_enrichment_1750.qz64'
+          packed=base64.b64decode(qz.read_bytes())
+          expected=struct.unpack('>I',packed[:4])[0]
+          sql=zlib.decompress(packed[4:])
+          if len(sql)!=expected: raise SystemExit('qz64 length mismatch')
+          text=sql.decode('utf-8')
+          required=['mems_rave_illustration','mems_rave_illustration_link','mems_rave_fact_illustration_view']
+          if any(x not in text for x in required): raise SystemExit('Additive SQL incomplete')
+          manifest=json.loads((root/'database'/'reference'/'manifest.json').read_text(encoding='utf-8'))
+          if manifest.get('database_revision')!=20: raise SystemExit('database_revision changed')
+          if 'research_enrichment_1750.qz64' not in manifest.get('research_enrichment_batches',[]):
+              raise SystemExit('Pilot enrichment absent from manifest')
+          rave=[(k,v) for k,v in manifest.get('diagrams',{}).items() if 'RCL0194ENG' in k]
+          if len(rave)!=3: raise SystemExit('Expected exactly three RCL0194ENG manifest diagrams')
+          print('PASS pilot integrity: exact #101 executable + 3 original RAVE pages + additive links')
+          '@ | python -
+
+      - name: Generate pilot SHA256 manifest
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root = (Resolve-Path 'dist-x64').Path
+          $lines = Get-ChildItem $root -Recurse -File | Sort-Object FullName | ForEach-Object {
+            $rel = $_.FullName.Substring($root.Length + 1).Replace('\\','/')
+            "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant())  $rel"
+          }
+          $lines | Set-Content (Join-Path $root 'SHA256SUMS_RAVE1680_PILOT.txt') -Encoding UTF8
+
+      - name: Upload RAVE 1680 pilot artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ECU-MEMS-Manager-x64-TEST-RAVE1680-FROM-101
+          path: dist-x64/
+          if-no-files-found: error
+          compression-level: 6
