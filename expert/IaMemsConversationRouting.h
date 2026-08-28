@@ -252,7 +252,46 @@ inline bool hasTorqueEvidence(const QString &factText)
 
 inline QString knowledgeStatementSignature(const QString &statement)
 {
-    return normalize(statement);
+    QString signature = normalize(statement);
+    const int illustration = signature.indexOf(QStringLiteral("illustration locale:"));
+    if (illustration >= 0)
+        signature = signature.left(illustration).trimmed();
+    return signature;
+}
+
+inline bool isMiniSpiMapPinoutQuestion(const QString &question)
+{
+    const QString text = normalize(question);
+    return mentionsMini(question)
+        && explicitInduction(question) == QStringLiteral("SPi")
+        && containsWord(text, QStringLiteral("map"))
+        && (containsWord(text, QStringLiteral("broche"))
+            || text.contains(QStringLiteral("brochage"))
+            || text.contains(QStringLiteral("pinout"))
+            || text.contains(QStringLiteral("connecteur"))
+            || text.contains(QStringLiteral("cablage"))
+            || text.contains(QStringLiteral("wiring")));
+}
+
+inline QString miniSpiMapPinoutAnswer()
+{
+    return QStringLiteral(
+        "Sur les Mini SPi documentées, le capteur MAP est intégré au calculateur MEMS et relié au collecteur d'admission par une durite de dépression. "
+        "Il n'existe donc pas de broche de signal MAP externe comparable au montage MPi. Je ne vais pas inventer une broche.");
+}
+
+inline QString wireColourRoleLabel(const QString &statement)
+{
+    const QString text = normalize(statement);
+    if (containsAny(text, {QStringLiteral("screen ground"), QStringLiteral("blindage"),
+                           QStringLiteral("masse ecran"), QStringLiteral("ecran")}))
+        return QStringLiteral("Blindage / masse écran");
+    if (text.contains(QStringLiteral("relais")))
+        return QStringLiteral("Commande relais/chauffage");
+    if (containsAny(text, {QStringLiteral("+ve"), QStringLiteral("-ve"),
+                           QStringLiteral("signal sonde"), QStringLiteral("signal lambda")}))
+        return QStringLiteral("Signal sonde");
+    return QString();
 }
 
 inline bool needsInductionClarification(const QString &question)
