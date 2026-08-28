@@ -120,6 +120,29 @@ int main(int argc, char **argv)
     ok &= require(IaMemsConversationRouting::knowledgeStatementSignature(QStringLiteral("  Même fait ECT. "))
                       == IaMemsConversationRouting::knowledgeStatementSignature(QStringLiteral("Même fait ECT.")),
                   "identical statements dedupe across family/source mirrors");
+    ok &= require(IaMemsConversationRouting::knowledgeStatementSignature(
+                      QStringLiteral("Capteur MAP vérifié.\nIllustration locale: RCL0194ENG:20.2"))
+                      == IaMemsConversationRouting::knowledgeStatementSignature(QStringLiteral("Capteur MAP vérifié.")),
+                  "illustration suffix does not defeat mirror deduplication");
+    ok &= require(IaMemsConversationRouting::isMiniSpiMapPinoutQuestion(
+                      QStringLiteral("Broche MAP Mini SPi Japan 1997")),
+                  "Mini SPi MAP pinout gets the architecture fallback");
+    ok &= require(!IaMemsConversationRouting::isMiniSpiMapPinoutQuestion(
+                      QStringLiteral("Broche MAP Mini MPi 1997")),
+                  "Mini MPi MAP pinout keeps the external MPi database path");
+    const QString miniSpiMapAnswer = IaMemsConversationRouting::miniSpiMapPinoutAnswer();
+    ok &= require(miniSpiMapAnswer.contains(QStringLiteral("intégré au calculateur"))
+                      && miniSpiMapAnswer.contains(QStringLiteral("durite de dépression"))
+                      && miniSpiMapAnswer.contains(QStringLiteral("pas de broche de signal MAP externe")),
+                  "Mini SPi MAP fallback explains internal sensor without inventing a pin");
+    ok &= require(IaMemsConversationRouting::wireColourRoleLabel(
+                      QStringLiteral("Commande du relais de sonde oxygène par fil BG noir/vert"))
+                      == QStringLiteral("Commande relais/chauffage"),
+                  "lambda relay colour is labelled as relay/heater wiring");
+    ok &= require(IaMemsConversationRouting::wireColourRoleLabel(
+                      QStringLiteral("SCREEN GROUND de la sonde par fil B noir"))
+                      == QStringLiteral("Blindage / masse écran"),
+                  "lambda screen colour is labelled as shielding");
 
     ok &= require(IaMemsConversationRouting::inductionEvidenceProbes(
                       QStringLiteral("Broche MAP Mini"), false, QString()).isEmpty(),

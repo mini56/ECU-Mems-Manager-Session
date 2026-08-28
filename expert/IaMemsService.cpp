@@ -883,7 +883,7 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
         if (explicitIat && !knowledgeTermMatches(searchable, QStringLiteral("iat")))
             continue;
 
-        if (queryKind == KnowledgeQueryKind::WireColor && !hasWireColorEvidence(directEvidence))
+        if (queryKind == KnowledgeQueryKind::WireColor && !hasWireColorEvidence(fact.statement))
             continue;
         if (queryKind == KnowledgeQueryKind::Pinout && !hasPinoutEvidence(searchable))
             continue;
@@ -938,9 +938,12 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
             return QStringLiteral(
                 "Je n'ai pas de couleur de fil vérifiée correspondant exactement à cette demande dans la base. Je ne vais pas en inventer une ; précise le capteur, le véhicule ou la variante ECU recherchée.");
         }
-        if (queryKind == KnowledgeQueryKind::Pinout)
+        if (queryKind == KnowledgeQueryKind::Pinout) {
+            if (IaMemsConversationRouting::isMiniSpiMapPinoutQuestion(question))
+                return IaMemsConversationRouting::miniSpiMapPinoutAnswer();
             return QStringLiteral(
                 "Je n'ai pas de brochage vérifié correspondant exactement à cette demande dans le contexte MEMS sélectionné. Précise le signal, le capteur ou le connecteur recherché ; je ne vais pas inventer une broche.");
+        }
         return QString();
     }
 
@@ -965,8 +968,12 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
     }
     ranked = uniqueRanked;
 
+    const bool lambdaWireColour = queryKind == KnowledgeQueryKind::WireColor
+        && (questionText.contains(QStringLiteral("lambda"))
+            || questionText.contains(QStringLiteral("oxygen"))
+            || questionText.contains(QStringLiteral("o2")));
     const int maximum = qMin(queryKind == KnowledgeQueryKind::General ? 3 : 4, ranked.size());
-    if (maximum == 1) {
+    if (maximum == 1 && !lambdaWireColour) {
         const ExpertFact &fact = ranked.constFirst().fact;
         QString answer = fact.statement.trimmed();
         if (queryKind == KnowledgeQueryKind::WireColor
@@ -984,20 +991,31 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
     }
 
     QStringList answers;
-    bool relayOnlyLambdaWiring = queryKind == KnowledgeQueryKind::WireColor
-        && (questionText.contains(QStringLiteral("lambda")) || questionText.contains(QStringLiteral("oxygen")));
-    if (relayOnlyLambdaWiring) {
-        const int checked = qMin(4, ranked.size());
-        for (int i = 0; i < checked; ++i) {
-            if (!normalized(ranked.at(i).fact.statement).contains(QStringLiteral("relais"))) {
-                relayOnlyLambdaWiring = false;
-                break;
-            }
+    if (lambdaWireColour) {
+        bool topFactsAreSpiJapan = true;
+        bool hasSignalColour = false;
+        bool hasRelayColour = false;
+        bool hasShieldColour = false;
+        for (int i = 0; i < maximum; ++i) {
+            const QString statement = normalized(ranked.at(i).fact.statement);
+            const bool spiJapan = containsWord(statement, QStringLiteral("spi"))
+                && (statement.contains(QStringLiteral("japan")) || statement.contains(QStringLiteral("japon")));
+            if (!spiJapan)
+                topFactsAreSpiJapan = false;
+            const QString role = IaMemsConversationRouting::wireColourRoleLabel(ranked.at(i).fact.statement);
+            if (role == QStringLiteral("Signal sonde"))
+                hasSignalColour = true;
+            else if (role == QStringLiteral("Commande relais/chauffage"))
+                hasRelayColour = true;
+            else if (role == QStringLiteral("Blindage / masse écran"))
+                hasShieldColour = true;
         }
-    }
-    if (relayOnlyLambdaWiring)
-        answers << QStringLiteral("La base ne donne pas directement les couleurs des fils de la sonde lambda pour ce contexte. Fait de câblage vérifié le plus proche :");
-    else if (queryKind == KnowledgeQueryKind::WireColor)
+        answers << QStringLiteral("Couleurs de fil vérifiées disponibles :");
+        if (requestedScope.induction.isEmpty() && requestedScope.market.isEmpty() && topFactsAreSpiJapan)
+            answers << QStringLiteral("Portée des faits trouvés : Mini SPi Japon 97MY.");
+        if (!hasSignalColour && (hasRelayColour || hasShieldColour))
+            answers << QStringLiteral("La base ne fournit pas la couleur des deux voies de signal +VE/-VE de la sonde. Les faits ci-dessous concernent uniquement les liaisons directement vérifiées ; je ne complète pas par déduction.");
+    } else if (queryKind == KnowledgeQueryKind::WireColor)
         answers << QStringLiteral("Couleurs de fil vérifiées les plus pertinentes :");
     else if (queryKind == KnowledgeQueryKind::Pinout)
         answers << QStringLiteral("Brochage vérifié le plus pertinent :");
@@ -1007,6 +1025,11 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
     for (int i = 0; i < maximum; ++i) {
         const ExpertFact &fact = ranked.at(i).fact;
         QString line = QStringLiteral("• %1").arg(fact.statement.trimmed());
+        if (lambdaWireColour) {
+            const QString role = IaMemsConversationRouting::wireColourRoleLabel(fact.statement);
+            if (!role.isEmpty())
+                line = QStringLiteral("• %1 — %2").arg(role, fact.statement.trimmed());
+        }
         if (!fact.verificationLevel.trimmed().isEmpty())
             line += QStringLiteral(" — preuve : %1").arg(verificationLabel(fact.verificationLevel));
         if (sourceDetails && !fact.sourceKey.trimmed().isEmpty())
