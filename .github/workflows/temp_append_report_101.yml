@@ -1,0 +1,34 @@
+name: TEMP APPEND REPORT 101
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/temp_append_report_101.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  append_report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout RAPPORT
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Append verified #100/#101 continuity block
+        run: python tools/temp_append_report_101.py
+
+      - name: Commit report only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          if git diff --cached --quiet; then
+            echo 'No report change needed'
+            exit 0
+          fi
+          git commit -m 'Record #100 real test and BUILD #101 correction'
+          git push origin HEAD:RAPPORT
