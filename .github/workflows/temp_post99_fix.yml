@@ -1,0 +1,144 @@
+name: TEMP POST99 FIX VALIDATION
+
+on:
+  push:
+    branches: [tmp-post99-realtest-fixes]
+
+permissions:
+  contents: write
+
+jobs:
+  validate_post99:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: 'utf-8'
+      BASE99: '35336ce820c3ef09153878bd918f7710c89552a4'
+
+    steps:
+      - name: Checkout exact temporary branch commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Apply idempotent post99 source patch
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python tools/temp_post99_fix.py
+          if ($LASTEXITCODE -ne 0) { throw "post99 patch driver failed: $LASTEXITCODE" }
+
+      - name: Guard source scope and protocol invariants
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          @'
+          import os, subprocess
+          from pathlib import Path
+
+          base=os.environ['BASE99']
+          allowed={
+              'expert/IaMemsConversationRouting.h',
+              'expert/IaMemsService.cpp',
+              'expert/IaResponseLogicTest.cpp',
+              '.github/workflows/temp_post99_fix.yml',
+              'tools/temp_post99_fix.py',
+          }
+          out=subprocess.check_output(['git','diff','--name-only',base], text=True).splitlines()
+          work=subprocess.check_output(['git','diff','--name-only'], text=True).splitlines()
+          changed=set(out)|set(work)
+          unexpected=sorted(changed-allowed)
+          if unexpected:
+              raise SystemExit('Unexpected post99 changed files: '+', '.join(unexpected))
+          source={p for p in changed if p.startswith('expert/')}
+          expected={
+              'expert/IaMemsConversationRouting.h',
+              'expert/IaMemsService.cpp',
+              'expert/IaResponseLogicTest.cpp',
+          }
+          if source != expected:
+              raise SystemExit(f'Expected exactly three expert source files, got {sorted(source)}')
+          protocol_tokens=('memsinterface','librosco','protocolcontext','rosco')
+          for p in source:
+              if any(token in p.lower() for token in protocol_tokens):
+                  raise SystemExit('Protocol path changed: '+p)
+          header=Path('memsinterface.h').read_text(encoding='utf-8')
+          if 'void onProtocolCommandRequested(quint8 command);' not in header:
+              raise SystemExit('Required onProtocolCommandRequested declaration missing')
+          service=Path('expert/IaMemsService.cpp').read_text(encoding='utf-8')
+          if '!hasWireColorEvidence(fact.statement)' not in service:
+              raise SystemExit('Wire-colour statement-only filter missing')
+          if 'miniSpiMapPinoutAnswer' not in service:
+              raise SystemExit('Mini SPi MAP architecture fallback missing')
+          routing=Path('expert/IaMemsConversationRouting.h').read_text(encoding='utf-8')
+          if 'illustration locale:' not in routing or 'wireColourRoleLabel' not in routing:
+              raise SystemExit('Dedup/role helpers missing')
+          print('PASS post99 source scope and protocol invariants')
+          '@ | python -
+
+      - name: Validate existing protocol guards
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python librosco-x64/validate_protocol_guards.py
+          if ($LASTEXITCODE -ne 0) { throw "protocol guard validation failed: $LASTEXITCODE" }
+
+      - name: Install Qt 5.15.2 MSVC 2019 x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install --disable-pip-version-check "aqtinstall==3.3.0"
+          $sevenZip = (Get-Command 7z.exe -ErrorAction Stop).Source
+          if (Test-Path 'C:\Qt') { Remove-Item 'C:\Qt' -Recurse -Force -ErrorAction SilentlyContinue }
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
+          if ($LASTEXITCODE -ne 0) { throw "aqtinstall failed: $LASTEXITCODE" }
+
+      - name: Configure x64 without ONNX packaging
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $qt='C:\Qt\5.15.2\msvc2019_64'
+          cmake -S . -B build-post99 -G "Visual Studio 17 2022" -A x64 `
+            -DCMAKE_PREFIX_PATH="$qt" `
+            -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
+            -DMEMS_USE_ONNX_GENAI=OFF `
+            -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF
+          if ($LASTEXITCODE -ne 0) { throw "CMake configure failed: $LASTEXITCODE" }
+
+      - name: Compile application and deterministic IA self-test
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake --build build-post99 --config Release --target ecu_mems_manager ia_response_selftest --parallel 2
+          if ($LASTEXITCODE -ne 0) { throw "x64 build failed: $LASTEXITCODE" }
+
+      - name: Run deterministic IA response tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & .\build-post99\Release\ia_response_selftest.exe
+          if ($LASTEXITCODE -ne 0) { throw "IA response self-test failed: $LASTEXITCODE" }
+
+      - name: Commit validated source patch if needed
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $paths=@('expert/IaMemsConversationRouting.h','expert/IaMemsService.cpp','expert/IaResponseLogicTest.cpp')
+          $dirty = git status --porcelain -- $paths
+          if (-not $dirty) {
+            Write-Host 'No source commit needed; validated patch is already committed.'
+            exit 0
+          }
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- $paths
+          git commit -m 'Fix post99 IA documentary precision'
+          if ($LASTEXITCODE -ne 0) { throw "git commit failed: $LASTEXITCODE" }
+          git push origin HEAD:tmp-post99-realtest-fixes
+          if ($LASTEXITCODE -ne 0) { throw "git push failed: $LASTEXITCODE" }
