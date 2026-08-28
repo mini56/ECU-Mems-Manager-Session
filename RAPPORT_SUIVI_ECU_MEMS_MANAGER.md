@@ -16,7 +16,7 @@
 - Branche active : **`MEMSX64`**.
 - HEAD x64 courant : **`2b211554abdbb127fd4d472f9ce687394b2d4608`**.
 - Dernier run GitHub entièrement vert : **#97 = v1.0.97 — SUCCESS**, run **`33107904830`**, commit **`2b211554abdbb127fd4d472f9ce687394b2d4608`**.
-- Artefact #97 : ID **`9661453251`**, nom **`ECU-MEMS-Manager-x64-BUILD-97-v1.0.97`**, taille **386 847 391 octets**, SHA-256 **`7bf9ea11fb5ca7c8f7d3a500efe5bf04e16d38a8a25d5c0aa972f41b14c7`**.
+- Artefact #97 : ID **`9661453251`**, nom **`ECU-MEMS-Manager-x64-BUILD-97-v1.0.97`**, taille **386 847 391 octets**, SHA-256 **`7bf9ea11fb5ca7c8f7d3a500efe5bf04fa94e16d38a8a25d5c0aa972f41b14c7`**.
 - #97 a été testé sur le PC réel utilisateur : **aucune régression visuelle constatée sur l’environnement et les onglets**, clarification SPi/MPi et boutons XML fonctionnels, mais plusieurs défauts IA restent ouverts et sont détaillés en fin de rapport. **#97 est vert côté build, mais la qualité conversationnelle IA n’est pas encore validée comme terminée.**
 - Run **#96 = v1.0.96 — SUCCESS**, run **`33097323011`**, commit **`fea27058773fc3535c3ea40f7b9a36151b792ac1`**.
 - Artefact #96 : ID **`9657131155`**, nom **`ECU-MEMS-Manager-x64-BUILD-96-v1.0.96`**, taille **386 836 238 octets**, SHA-256 **`a9677cdcead198e36f8fbcf9efccc6d55e493bede88c545683abaeffd8ca4124`**.
