@@ -468,6 +468,7 @@ void IaMemsTab::sendQuestion()
     QString effectiveQuestion = question;
     if (!m_pendingClarificationQuestion.isEmpty()) {
         const QString pending = m_pendingClarificationQuestion;
+        m_pendingClarificationQuestion.clear();
         if (IaMemsConversationRouting::isSearchDirective(question)
             || IaMemsConversationRouting::isUnknownDirective(question)) {
             if (IaMemsConversationRouting::needsInductionClarification(pending)) {

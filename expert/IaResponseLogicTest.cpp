@@ -72,6 +72,12 @@ int main(int argc, char **argv)
                   "search directive is recognised");
     ok &= require(IaMemsConversationRouting::requestedGeneration(QStringLiteral("Je cherche la documentation MEMS 1.9")) == QStringLiteral("1.9"),
                   "documentation generation extraction");
+    ok &= require(IaMemsConversationRouting::isReferenceSheetRequest(QStringLiteral("Je cherche la documentation MEMS 1.9")),
+                  "MEMS 1.9 documentation is a single reference-sheet request");
+    ok &= require(IaMemsConversationRouting::isWireColourQuestion(QStringLiteral("Couleur des fils sonde lambda")),
+                  "plural French fils is recognised as a wire-colour request");
+    ok &= require(!IaMemsConversationRouting::needsInductionClarification(QStringLiteral("Valeur MAP ?")),
+                  "standalone MAP value request never asks SPi/MPi pinout clarification");
     ok &= require(!IaMemsConversationRouting::shouldUseDiagnosticGeneration(
                       QStringLiteral("Couple de serrage sonde température ECT"),
                       QStringLiteral("Couple ECT : 15 Nm. Niveau de preuve : constructeur.")),

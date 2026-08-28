@@ -71,13 +71,7 @@ bool knowledgeTermMatches(const QString &text, const QString &term)
 
 KnowledgeQueryKind knowledgeQueryKind(const QString &questionText)
 {
-    const bool asksColor = questionText.contains(QStringLiteral("couleur"))
-        && (containsWord(questionText, QStringLiteral("fil"))
-            || questionText.contains(QStringLiteral("cable"))
-            || questionText.contains(QStringLiteral("cablage")));
-    if (asksColor
-        || questionText.contains(QStringLiteral("wire color"))
-        || questionText.contains(QStringLiteral("wire colour")))
+    if (IaMemsConversationRouting::isWireColourQuestion(questionText))
         return KnowledgeQueryKind::WireColor;
 
     if (containsWord(questionText, QStringLiteral("broche"))
@@ -614,6 +608,11 @@ QString IaMemsService::groundingFor(const QString &question)
         return helpAnswer();
 
     if (IaMemsConversationRouting::isDocumentationQuestion(question)) {
+        if (IaMemsConversationRouting::isReferenceSheetRequest(question)) {
+            const QString generation = IaMemsConversationRouting::requestedGeneration(question);
+            return QStringLiteral("La fiche XML MEMS %1 est disponible dans le package local. Utilisez le bouton proposé pour l'ouvrir.")
+                .arg(generation);
+        }
         const QString documentaryKnowledge = knowledgeAnswer(question);
         if (!documentaryKnowledge.isEmpty())
             return documentaryKnowledge;

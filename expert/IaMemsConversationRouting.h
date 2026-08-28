@@ -65,6 +65,19 @@ inline bool isDocumentationQuestion(const QString &question)
     });
 }
 
+inline bool isWireColourQuestion(const QString &question)
+{
+    const QString text = normalize(question);
+    const bool frenchColour = text.contains(QStringLiteral("couleur"))
+        && (containsWord(text, QStringLiteral("fil"))
+            || containsWord(text, QStringLiteral("fils"))
+            || text.contains(QStringLiteral("cable"))
+            || text.contains(QStringLiteral("cablage")));
+    return frenchColour
+        || text.contains(QStringLiteral("wire color"))
+        || text.contains(QStringLiteral("wire colour"));
+}
+
 inline bool isVariantSensitiveQuestion(const QString &question)
 {
     const QString text = normalize(question);
@@ -89,6 +102,17 @@ inline QString requestedGeneration(const QString &question)
             return generation;
     }
     return QString();
+}
+
+inline bool isReferenceSheetRequest(const QString &question)
+{
+    if (requestedGeneration(question).isEmpty())
+        return false;
+    const QString text = normalize(question);
+    return containsAny(text, {
+        QStringLiteral("documentation"), QStringLiteral("fiche xml"),
+        QStringLiteral(".xml"), QStringLiteral(" xml")
+    });
 }
 
 inline QString explicitInduction(const QString &question)
