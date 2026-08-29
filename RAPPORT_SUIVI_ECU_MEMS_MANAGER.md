@@ -2237,3 +2237,33 @@ Incident connecteur pendant cette reprise: une branche tmp-do-not-use a ete cree
 - Production MEMSX64 reste BUILD #101; aucun #102.
 
 Prochaine pousse autorisee apres cette journalisation: modifier uniquement .github/workflows/temp-routing-mechanical-v2.yml pour surveiller aussi tools/patch_rave_visual_routing_auto.py et declencher une nouvelle validation V2. Le test doit compiler puis executer ia_mems_diagram_selftest seulement dans Run deterministic regression tests avec PATH/QT_PLUGIN_PATH prepares.
+
+## 2026-08-29 - ROUTAGE V2 - RUN 33257301351 - ECHEC GARDE DE PERIMETRE
+
+- Branche testee: tmp-rave-visual-backfill.
+- HEAD: 305c6597dedfa609315f35240fee62a997645212.
+- Workflow: TEMP ROUTING MECHANICAL V2.
+- Run: 33257301351.
+- Job: 99113159653.
+- Verdict global: ECHEC.
+- Apply generic visual routing patch: PASS.
+- Download exact RCL0193 factory PDF: PASS.
+- Measure missing mechanical scope: PASS.
+- Install Qt 5.15.2 MSVC x64: PASS.
+- Configure and build automatic routing guard: PASS.
+- Run deterministic regression tests: PASS.
+- Guard candidate scope: FAIL.
+- Upload validated candidate files: SKIPPED a cause du garde de perimetre.
+
+Conclusion importante:
+- La correction du runtime Qt est validee en CI: ia_mems_diagram_selftest demarre reellement apres preparation de PATH et QT_PLUGIN_PATH.
+- Le probleme precedent 0xC0000135 DLL_NOT_FOUND est donc corrige dans ce workflow temporaire.
+- Les tests deterministes de routage passent tous dans ce run; cela reste une validation CI et non un test reel PC de l interface utilisateur.
+- Le seul echec restant est le garde de perimetre des fichiers candidats.
+- Le detail exact Allowed/Actual du garde n a pas encore pu etre restitue par l interface de logs disponible; aucune cause precise ne doit etre inventee avant reproduction ou lecture exacte.
+- Aucune correction du routage, aucune integration mecanique et aucun nouvel asset ne sont autorises avant diagnostic exact de ce garde.
+- Production MEMSX64 reste strictement BUILD #101; aucun #102.
+
+PROCHAINE ACTION EXACTE:
+- Diagnostiquer en lecture seule ou reproduire le git status candidat produit par tools/patch_rave_visual_routing_auto.py et tools/audit_rcl0193_mechanical_scope.py afin d identifier exactement la difference Allowed/Actual.
+- Puis consigner la cause avant toute pousse de correction du garde.
