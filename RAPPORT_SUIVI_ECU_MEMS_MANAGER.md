@@ -1824,3 +1824,19 @@ Cet autre script a ensuite echoue sur une attente codee en dur de **26 pages**, 
 La conclusion factuelle est donc: **31/31 faits RCL0193 historiques -> 25 pages PDF physiques uniques actuellement citees**. Un seul cas a faible recouvrement lexical (`WEAK_CASES 1`) reste a identifier/revoir avant creation du lot visuel. `MEMSX64` reste #101 inchange; aucun #102.
 
 Prochaine action exacte avant toute nouvelle pousse de donnees: inspecter les helpers temporaires encore presents sur `tmp-rave-visual-backfill`; modifier le run principal uniquement pour afficher le `git status --porcelain --untracked-files=all` exact, supprimer seulement les artefacts temporaires identifies (notamment cache Python si confirme), conserver le garde strict, puis recommencer la cartographie. Le workflow parallele errone ne doit pas servir de source de verite pour la page 170.
+
+## 2026-08-29 - RCL0193 MAPPING V2 - RUN VERT MAIS AUDIT SEMANTIQUE NON VALIDE
+
+Run `33251081226`, job `99096744789`: GitHub **SUCCESS** et commit d'audit `8f228440529f02e2b9b1bc3ff85da0c64ce2d837`. Cependant une relecture immediate de l'audit avant toute creation d'asset a revele un defaut semantique du parseur de references de pages. Le run ne doit donc PAS etre considere comme validation finale du mapping RCL0193.
+
+Cause exacte: la regex `PDF p.N(-M)?` sait developper une plage contigue comme `p.38-39`, mais ne collecte que la premiere occurrence lorsqu'un `source_section` contient plusieurs references non contigues avec `et p.N`.
+
+Deux cas deja verifies dans les 31 faits historiques:
+- `RAVE-CAUTION-THROTTLE-STOP-001`: source `PDF p.118 et p.114 / Throttle cable + TP/IACV`; le V2 n'a lie que p.118, alors que p.114 doit aussi etre conserve.
+- `RAVE-REP-INJECTORS-001`: source `PDF p.135 et p.170 / Fuel injectors + inlet manifold`; le V2 n'a lie que p.135, alors que p.170 doit aussi etre conserve.
+
+Consequence: la conclusion V2 `25 pages uniques` est invalide. La page `170` est bien citee par un fait RCL0193 et la couverture attendue redevient **26 pages uniques**. L'ancienne conclusion 26 pages n'etait donc pas necessairement une erreur; l'erreur venait de la nouvelle extraction qui ignorait les references secondaires non contigues.
+
+Aucun PNG, qz64 de donnees, manifeste RCL0193 ou fait historique n'a ete pousse a partir de ce mapping incomplet. L'erreur est detectee avant enrichissement effectif.
+
+Correction obligatoire avant toute suite: parser **toutes** les occurrences `p.N` et toutes les plages `p.N-M` dans chaque `source_section`, developper les plages et conserver les references non contigues. Recalculer les 31 mappings, verifier que `RAVE-CAUTION-THROTTLE-STOP-001` contient 114+118 et `RAVE-REP-INJECTORS-001` contient 135+170, puis verifier les 26 pages constructeur. Rapport obligatoire avant toute creation d'assets.
