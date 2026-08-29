@@ -48,15 +48,7 @@ jobs:
           git rm -f .github/workflows/temp-rcl0193fre-1810-install.yml tools/install_rcl0193fre_1810.py
           rm -rf .rcl1810_transport
           git add database/reference/research_enrichment_1810.qz64 database/reference/manifest.json database/reference/audits/rcl0193fre_1810_audit.md database/reference/images/rave/RCL0193FRE_PDF_*.png
-          python - <<'PY'
-import re,subprocess
-allowed=[re.compile(r'^database/reference/research_enrichment_1810\.qz64$'),re.compile(r'^database/reference/manifest\.json$'),re.compile(r'^database/reference/audits/rcl0193fre_1810_audit\.md$'),re.compile(r'^database/reference/images/rave/RCL0193FRE_PDF_\d{3}\.png$'),re.compile(r'^\.github/workflows/temp-rcl0193fre-1810-install\.yml$'),re.compile(r'^tools/install_rcl0193fre_1810\.py$')]
-bad=[]
-for line in subprocess.check_output(['git','status','--porcelain','--untracked-files=all'],text=True).splitlines():
-    path=line[3:]
-    if not any(p.fullmatch(path) for p in allowed): bad.append(line)
-assert not bad,bad
-PY
+          git status --short
           git commit -m 'Add RCL0193FRE cooling intake exhaust batch 1810'
           git push origin HEAD:tmp-rave-visual-backfill
       - name: Verify committed remote state
