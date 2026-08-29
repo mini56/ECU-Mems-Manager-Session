@@ -1978,3 +1978,16 @@ Informations preservees pour verification future: references moteur/application,
 Cette pousse realise la regle fondamentale de conservation des recherches Internet: une information utile trouvee mais non encore verifiable n'est plus perdue; elle reste dans un backlog trace avec sa provenance et son niveau de confiance.
 
 Aucun qz64, PNG, manifeste, fait historique ni code ECU n'a ete modifie. Prochaine action: continuer la recherche d'un binaire AKM7169ENG exact/reproductible et, en parallele, verifier si une source anterieure du lot 1720 peut etre retrouvee dans l'historique du depot ou les artefacts de recherche. Rapport avant toute nouvelle pousse.
+
+
+## 2026-08-29 - AKM7169 / 1720 - HISTORIQUE SOURCE RETROUVE, VISUELS BLOQUES SUR BINAIRE EXACT
+
+Verification de l'historique GitHub du lot 1720 terminee avant toute nouvelle donnee. Les commits d'origine sont `540872a658292a9e51fa30cdab52183613f0d079` (ajout qz64), `51dc4cd77e61786402602e48d6ead2f7e5ea0f81` (audit source) puis `d32c34a9f3b3e8921ee10a0e2d9fdde4a224c316` / `f2e97b3e3a432785e159d30bbeca7b7bef2fdcb4` (enregistrement/correction payload).
+
+Conclusion historique confirmee : l'audit original 1720 indique explicitement que le texte primaire avait ete consulte via **un scan indexe de AKM7169ENG**. Aucun PDF/scan binaire exact, hashable et reproductible n'avait ete conserve dans le depot. Les recherches actuelles retrouvent des representations Scribd annoncees a 482 pages et une edition commerciale OTP annoncee a 463 pages; cette divergence interdit toute inference d'index physique.
+
+Statut AKM7169 : les 7 faits historiques structures restent valides/consultatifs et inchanges; le backlog de recherches est preserve; **0 asset visuel AKM est cree tant qu'un binaire constructeur exact n'est pas acquis et hashe**. Le bloc AKM est donc clos pour l'instant en statut `STRUCTURED_DATA_PRESENT / VISUAL_BACKFILL_BLOCKED_ON_EXACT_SOURCE_BINARY`, sans invention de capture.
+
+Prochaine action autorisee demandee par l'utilisateur : produire un **audit global de couverture visuelle de la base** apres ce bloc, avec au minimum le nombre total d'images/pages/vues ajoutees, leur document source, le nombre de faits relies, les supports accessibles directement dans MEMS Manager, ceux presents mais non accessibles par l'interface, les references sans fichier, les reutilisations/doublons evites et les documents encore bloques. Ce bilan doit etre mesure sur `tmp-rave-visual-backfill` et consigne avant toute nouvelle pousse technique.
+
+Production `MEMSX64` reste strictement BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`. Base/IA/RAVE consultatives uniquement; aucune donnee documentaire ne prend la main sur la communication ECU.
