@@ -1679,3 +1679,14 @@ Artefact : `RCL0194-1750-DETERMINISTIC-CANDIDATE`, ID `9713857193`, 1,356,869 oc
 Production reste `MEMSX64` #101 `22dbe75ed14e0a61e694159d505ef72245116b48`; aucun #102. Communication ECU et 32 bits intacts.
 
 **Prochaine action exacte :** vérifier `SHA256SUMS.txt` de l'artefact puis pousser exactement qz64 1750 + manifeste + audit + 8 PNG sur `tmp-rave-visual-backfill`, nettoyer les workflows temporaires, puis lancer une validation post-pousse et l'inscrire au rapport avant le lot suivant.
+
+## 2026-08-29 — Vérification artefact RCL0194 1750 après PASS
+
+Après le PASS du run `33249367487`, l'artefact `9713857193` a été téléchargé et son `SHA256SUMS.txt` vérifié avant toute pousse.
+
+**Verdict artefact : ❌ à refaire pour un défaut d'emballage uniquement.**
+Les 12 fichiers utiles vérifiés correspondent tous à leurs SHA-256 déclarés : qz64 1750, manifeste, audit, 8 PNG et résumé de validation. Le qz64 reste `200b2d7ec0ba24d93d7192fdf63f86845c53f49ad4a28cb997ede9d39fb5f51d`.
+
+Seul défaut : `SHA256SUMS.txt` s'inclut lui-même dans la commande `find`; sa ligne propre contient donc le SHA-256 du fichier vide avant remplissage et devient invalide après écriture. Aucune donnée n'a été poussée.
+
+**Prochaine action exacte :** corriger uniquement la construction de `SHA256SUMS.txt` pour exclure `SHA256SUMS.txt` lui-même, relancer le même test déterministe, puis revalider l'artefact avant toute pousse. Production #101 et communication ECU inchangées.
