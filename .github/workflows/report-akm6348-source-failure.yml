@@ -1,0 +1,34 @@
+name: REPORT AKM6348 SOURCE FAILURE
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/report-akm6348-source-failure.yml'
+permissions:
+  contents: write
+jobs:
+  append:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Record exact AKM6348 source verification failure
+        shell: bash
+        run: |
+          git pull --rebase origin RAPPORT
+          printf '\n## 2026-08-29 - AKM6348 FR - ECHEC SOURCE DIRECTE, FAUX PDF REJETE\n\n' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          printf '%s\n' '- Workflow TEMP AKM6348 FR SOURCE VERIFY, run 33260157930, job 99120597137: FAILURE volontaire du garde identite/page count.' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          printf '%s\n' '- Le curl de l URL Les Chroniques de Goliath a reussi HTTP mais a retourne un document HTML, pas le PDF attendu.' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          printf '%s\n' '- Fichier recu: 114725 octets, type HTML Unicode UTF-8, SHA-256 16650d54b4fd5fda67c6b1242cf69f41b5b3623e2e46da6e50051d19ce1f04f0.' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          printf '%s\n' '- PyMuPDF a rapporte 22 pages sur ce contenu et le garde attendait 320-335: AssertionError 22. Ce hash ne doit jamais etre enregistre comme hash AKM6348.' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          printf '%s\n' '- Aucun binaire PDF, aucune capture, aucun qz64 supplementaire et aucune donnee technique de page n ont ete pousses par ce run.' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          printf '%s\n' '- Prochaine action: rechercher une autre source directement reproductible du vrai AKM6348 FR, ou obtenir le vrai binaire via une URL/chapitres alternatifs, puis hasher avant toute extraction.' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          printf '%s\n' '- MEMSX64 reste BUILD #101 inchange.' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git rm .github/workflows/report-akm6348-source-failure.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m 'Record rejected AKM6348 false PDF response'
+          git push origin RAPPORT
