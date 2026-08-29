@@ -1,0 +1,55 @@
+name: TEMP AKM6348 CH86 PAGE PREVIEWS
+on:
+  push:
+    branches: [tmp-rave-visual-backfill]
+    paths:
+      - '.github/workflows/temp-akm6348-ch86-page-previews.yml'
+permissions:
+  contents: read
+jobs:
+  render_pages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-visual-backfill
+          fetch-depth: 0
+      - name: Verify production remains BUILD 101
+        shell: bash
+        run: |
+          git fetch origin MEMSX64
+          test "$(git rev-parse origin/MEMSX64)" = "22dbe75ed14e0a61e694159d505ef72245116b48"
+      - name: Install render dependencies
+        shell: bash
+        run: python -m pip install --disable-pip-version-check --quiet PyMuPDF==1.26.4 Pillow
+      - name: Download verified CH86 and render page previews
+        shell: bash
+        run: |
+          curl -L --fail --retry 3 --retry-delay 2 -A 'Mozilla/5.0' \
+            'http://virgyl.f.free.fr/Download/Manuel/CH86.pdf' -o /tmp/CH86.pdf
+          test "$(sha256sum /tmp/CH86.pdf | awk '{print $1}')" = '14fcb88e3f450cab47129b2acc8df948e1d4002418deef63a95ce45157be0594'
+          mkdir -p /tmp/akm6348-ch86-pages
+          python - <<'PY'
+          import fitz
+          from PIL import Image
+          from pathlib import Path
+          pdf=fitz.open('/tmp/CH86.pdf')
+          out=Path('/tmp/akm6348-ch86-pages')
+          assert pdf.page_count==53
+          for i in range(pdf.page_count):
+              page=pdf.load_page(i)
+              scale=min(2.0, 1500.0/page.rect.width)
+              pix=page.get_pixmap(matrix=fitz.Matrix(scale,scale),alpha=False)
+              im=Image.frombytes('RGB',[pix.width,pix.height],pix.samples)
+              im.save(out/f'CH86_PDF_{i+1:03d}.jpg',quality=88,optimize=True)
+          pdf.close()
+          print('PAGE_PREVIEWS',len(list(out.glob('*.jpg'))))
+          PY
+          rm -f /tmp/CH86.pdf
+          du -sh /tmp/akm6348-ch86-pages
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AKM6348-CH86-PAGE-PREVIEWS
+          path: /tmp/akm6348-ch86-pages/*.jpg
+          if-no-files-found: error
+          retention-days: 1
