@@ -52,7 +52,8 @@
     "research_enrichment_1740.qz64",
     "research_enrichment_1750.qz64",
     "research_enrichment_1760.qz64",
-    "research_enrichment_1770.qz64"
+    "research_enrichment_1770.qz64",
+    "research_enrichment_1780.qz64"
   ],
   "verification_levels": [
     "verifie_constructeur",
@@ -109,7 +110,59 @@
     "RAVE RCL0193ENG PDF 130 CKP crankshaft position sensor refit": "images/rave/RCL0193ENG_PDF_130.png",
     "RAVE RCL0193ENG PDF 131 MAP and TP sensor repair": "images/rave/RCL0193ENG_PDF_131.png",
     "RAVE RCL0193ENG PDF 135 Fuel injectors and fuel rail service": "images/rave/RCL0193ENG_PDF_135.png",
-    "RAVE RCL0193ENG PDF 170 Inlet manifold injector related service": "images/rave/RCL0193ENG_PDF_170.png"
+    "RAVE RCL0193ENG PDF 170 Inlet manifold injector related service": "images/rave/RCL0193ENG_PDF_170.png",
+    "AKM6348 FR CH86 86-1": "images/rave/AKM6348_FR_CH86_86_01.png",
+    "AKM6348 FR CH86 86-2": "images/rave/AKM6348_FR_CH86_86_02.png",
+    "AKM6348 FR CH86 86-3": "images/rave/AKM6348_FR_CH86_86_03.png",
+    "AKM6348 FR CH86 86-4": "images/rave/AKM6348_FR_CH86_86_04.png",
+    "AKM6348 FR CH86 86-5": "images/rave/AKM6348_FR_CH86_86_05.png",
+    "AKM6348 FR CH86 86-6": "images/rave/AKM6348_FR_CH86_86_06.png",
+    "AKM6348 FR CH86 86-7": "images/rave/AKM6348_FR_CH86_86_07.png",
+    "AKM6348 FR CH86 86-8": "images/rave/AKM6348_FR_CH86_86_08.png",
+    "AKM6348 FR CH86 86-9": "images/rave/AKM6348_FR_CH86_86_09.png",
+    "AKM6348 FR CH86 86-10": "images/rave/AKM6348_FR_CH86_86_10.png",
+    "AKM6348 FR CH86 86-11": "images/rave/AKM6348_FR_CH86_86_11.png",
+    "AKM6348 FR CH86 86-12": "images/rave/AKM6348_FR_CH86_86_12.png",
+    "AKM6348 FR CH86 86-13": "images/rave/AKM6348_FR_CH86_86_13.png",
+    "AKM6348 FR CH86 86-14": "images/rave/AKM6348_FR_CH86_86_14.png",
+    "AKM6348 FR CH86 86-15": "images/rave/AKM6348_FR_CH86_86_15.png",
+    "AKM6348 FR CH86 86-16": "images/rave/AKM6348_FR_CH86_86_16.png",
+    "AKM6348 FR CH86 86-17": "images/rave/AKM6348_FR_CH86_86_17.png",
+    "AKM6348 FR CH86 86-18": "images/rave/AKM6348_FR_CH86_86_18.png",
+    "AKM6348 FR CH86 86-19": "images/rave/AKM6348_FR_CH86_86_19.png",
+    "AKM6348 FR CH86 86-20": "images/rave/AKM6348_FR_CH86_86_20.png",
+    "AKM6348 FR CH86 86-21": "images/rave/AKM6348_FR_CH86_86_21.png",
+    "AKM6348 FR CH86 86-22": "images/rave/AKM6348_FR_CH86_86_22.png",
+    "AKM6348 FR CH86 86-23": "images/rave/AKM6348_FR_CH86_86_23.png",
+    "AKM6348 FR CH86 86-24": "images/rave/AKM6348_FR_CH86_86_24.png",
+    "AKM6348 FR CH86 86-25": "images/rave/AKM6348_FR_CH86_86_25.png",
+    "AKM6348 FR CH86 86-26": "images/rave/AKM6348_FR_CH86_86_26.png",
+    "AKM6348 FR CH86 86-27": "images/rave/AKM6348_FR_CH86_86_27.png",
+    "AKM6348 FR CH86 86-28": "images/rave/AKM6348_FR_CH86_86_28.png",
+    "AKM6348 FR CH86 86-29": "images/rave/AKM6348_FR_CH86_86_29.png",
+    "AKM6348 FR CH86 86-30": "images/rave/AKM6348_FR_CH86_86_30.png",
+    "AKM6348 FR CH86 86-31": "images/rave/AKM6348_FR_CH86_86_31.png",
+    "AKM6348 FR CH86 86-32": "images/rave/AKM6348_FR_CH86_86_32.png",
+    "AKM6348 FR CH86 86-33": "images/rave/AKM6348_FR_CH86_86_33.png",
+    "AKM6348 FR CH86 86-34": "images/rave/AKM6348_FR_CH86_86_34.png",
+    "AKM6348 FR CH86 86-35": "images/rave/AKM6348_FR_CH86_86_35.png",
+    "AKM6348 FR CH86 86-36": "images/rave/AKM6348_FR_CH86_86_36.png",
+    "AKM6348 FR CH86 86-37": "images/rave/AKM6348_FR_CH86_86_37.png",
+    "AKM6348 FR CH86 86-38": "images/rave/AKM6348_FR_CH86_86_38.png",
+    "AKM6348 FR CH86 86-39": "images/rave/AKM6348_FR_CH86_86_39.png",
+    "AKM6348 FR CH86 86-40": "images/rave/AKM6348_FR_CH86_86_40.png",
+    "AKM6348 FR CH86 86-41": "images/rave/AKM6348_FR_CH86_86_41.png",
+    "AKM6348 FR CH86 86-42": "images/rave/AKM6348_FR_CH86_86_42.png",
+    "AKM6348 FR CH86 86-43": "images/rave/AKM6348_FR_CH86_86_43.png",
+    "AKM6348 FR CH86 86-44": "images/rave/AKM6348_FR_CH86_86_44.png",
+    "AKM6348 FR CH86 86-45 segment 1": "images/rave/AKM6348_FR_CH86_86_45_SEG1.png",
+    "AKM6348 FR CH86 86-45 segment 2": "images/rave/AKM6348_FR_CH86_86_45_SEG2.png",
+    "AKM6348 FR CH86 86-45 segment 3": "images/rave/AKM6348_FR_CH86_86_45_SEG3.png",
+    "AKM6348 FR CH86 86-45 segment 4": "images/rave/AKM6348_FR_CH86_86_45_SEG4.png",
+    "AKM6348 FR CH86 86-46": "images/rave/AKM6348_FR_CH86_86_46.png",
+    "AKM6348 FR CH86 86-47": "images/rave/AKM6348_FR_CH86_86_47.png",
+    "AKM6348 FR CH86 86-48": "images/rave/AKM6348_FR_CH86_86_48.png",
+    "AKM6348 FR CH86 86-49": "images/rave/AKM6348_FR_CH86_86_49.png"
   },
   "visual_assets": {
     "rave:RCL0194ENG:COLOUR_CODES": {
@@ -383,6 +436,422 @@
       "source_page": "PDF p.170",
       "pdf_index": 170,
       "sha256": "732bf9fc49254db52908659c575fc508a1afce555a4c98706f738f5a66f03ef8"
+    },
+    "rave:AKM6348-FR-CH86:PDF:1": {
+      "path": "images/rave/AKM6348_FR_CH86_86_01.png",
+      "asset_kind": "service_page",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-1",
+      "pdf_index": 1,
+      "sha256": "de57e8775314281e656b9cf7e9dd9722da9498397aaee049774340d3ab7f0cbd"
+    },
+    "rave:AKM6348-FR-CH86:PDF:2": {
+      "path": "images/rave/AKM6348_FR_CH86_86_02.png",
+      "asset_kind": "wiring",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-2",
+      "pdf_index": 2,
+      "sha256": "e98c50c25fe387023aec926d4a057fc72192789be7cd1222a619cfb32043500d"
+    },
+    "rave:AKM6348-FR-CH86:PDF:3": {
+      "path": "images/rave/AKM6348_FR_CH86_86_03.png",
+      "asset_kind": "wiring",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-3",
+      "pdf_index": 3,
+      "sha256": "4d9fabae548bd9cdefbcb52db17846af684b0bc5e8b8b74d8bb921662dbbcb3d"
+    },
+    "rave:AKM6348-FR-CH86:PDF:4": {
+      "path": "images/rave/AKM6348_FR_CH86_86_04.png",
+      "asset_kind": "wiring",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-4",
+      "pdf_index": 4,
+      "sha256": "bc209bbf22cef26c7365cbe80c2b82ce714fb245fab11d5f2ba583994fed63ef"
+    },
+    "rave:AKM6348-FR-CH86:PDF:5": {
+      "path": "images/rave/AKM6348_FR_CH86_86_05.png",
+      "asset_kind": "wiring",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-5",
+      "pdf_index": 5,
+      "sha256": "bea330e538d1dac6dd801aadae73d5db616d63ec95a44c90cb59940974e00d00"
+    },
+    "rave:AKM6348-FR-CH86:PDF:6": {
+      "path": "images/rave/AKM6348_FR_CH86_86_06.png",
+      "asset_kind": "wiring",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-6",
+      "pdf_index": 6,
+      "sha256": "0eed8e62492886cb51d18aa4c71d85c311ad36699322c2bbae28ae3b4655b6ee"
+    },
+    "rave:AKM6348-FR-CH86:PDF:7": {
+      "path": "images/rave/AKM6348_FR_CH86_86_07.png",
+      "asset_kind": "wiring",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-7",
+      "pdf_index": 7,
+      "sha256": "8bbc465f913960a9411b49df605635eb87138f536f4536c8a098172d2db306e5"
+    },
+    "rave:AKM6348-FR-CH86:PDF:8": {
+      "path": "images/rave/AKM6348_FR_CH86_86_08.png",
+      "asset_kind": "wiring",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-8",
+      "pdf_index": 8,
+      "sha256": "9de9a7e5d1e0ad77bf11f75de33c5408c90dd27211ec632252934c72a93222c5"
+    },
+    "rave:AKM6348-FR-CH86:PDF:9": {
+      "path": "images/rave/AKM6348_FR_CH86_86_09.png",
+      "asset_kind": "wiring",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-9",
+      "pdf_index": 9,
+      "sha256": "82e1bc2f94e56da624ab624f215eb8b3b23b6ac0b69559e88d81aad41239629e"
+    },
+    "rave:AKM6348-FR-CH86:PDF:10": {
+      "path": "images/rave/AKM6348_FR_CH86_86_10.png",
+      "asset_kind": "wiring",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-10",
+      "pdf_index": 10,
+      "sha256": "af33c974c891ff4dfe555df31a58a674fa82a0239c842712c5cf67faa34c5395"
+    },
+    "rave:AKM6348-FR-CH86:PDF:11": {
+      "path": "images/rave/AKM6348_FR_CH86_86_11.png",
+      "asset_kind": "wiring",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-11",
+      "pdf_index": 11,
+      "sha256": "5536b77b1cfec253081d2241368365687636d4766d3f99c5546196a089a1460a"
+    },
+    "rave:AKM6348-FR-CH86:PDF:12": {
+      "path": "images/rave/AKM6348_FR_CH86_86_12.png",
+      "asset_kind": "wiring",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-12",
+      "pdf_index": 12,
+      "sha256": "38375c03c2f5e587ffb8c334c5f9025b23e908d046fb257ba8e6c498f5e6fd33"
+    },
+    "rave:AKM6348-FR-CH86:PDF:13": {
+      "path": "images/rave/AKM6348_FR_CH86_86_13.png",
+      "asset_kind": "wiring",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-13",
+      "pdf_index": 13,
+      "sha256": "e15425674b350418f65dff265dc69c1a490ff4cfc9e226d73eff32489f51e970"
+    },
+    "rave:AKM6348-FR-CH86:PDF:14": {
+      "path": "images/rave/AKM6348_FR_CH86_86_14.png",
+      "asset_kind": "service_page",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-14",
+      "pdf_index": 14,
+      "sha256": "91d7d7872b6c69cbeededfd7bd8a2254bd219d178cc40db0858d42265bbcf861"
+    },
+    "rave:AKM6348-FR-CH86:PDF:15": {
+      "path": "images/rave/AKM6348_FR_CH86_86_15.png",
+      "asset_kind": "service_page",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-15",
+      "pdf_index": 15,
+      "sha256": "be80b829d49977d6c0c97aa429efc4eb541575e5b51856b2a4a7c602a5d5bcdb"
+    },
+    "rave:AKM6348-FR-CH86:PDF:16": {
+      "path": "images/rave/AKM6348_FR_CH86_86_16.png",
+      "asset_kind": "service_page",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-16",
+      "pdf_index": 16,
+      "sha256": "f16fe72fc6ffd222ee995413028e2ecdb894907c173c7ea57e2b462215f020c4"
+    },
+    "rave:AKM6348-FR-CH86:PDF:17": {
+      "path": "images/rave/AKM6348_FR_CH86_86_17.png",
+      "asset_kind": "service_page",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-17",
+      "pdf_index": 17,
+      "sha256": "63f12b5e86e761591761fc7487502e96850716ba66e0d7644517280945fdcf1a"
+    },
+    "rave:AKM6348-FR-CH86:PDF:18": {
+      "path": "images/rave/AKM6348_FR_CH86_86_18.png",
+      "asset_kind": "service_page",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-18",
+      "pdf_index": 18,
+      "sha256": "877505abf912b0ae1712fb50e2f7b4c6ada426b1ad49bd4a0d10fd2fff7e5d11"
+    },
+    "rave:AKM6348-FR-CH86:PDF:19": {
+      "path": "images/rave/AKM6348_FR_CH86_86_19.png",
+      "asset_kind": "service_page",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-19",
+      "pdf_index": 19,
+      "sha256": "27fecaf9d686df203530181abf9211a89773c859f5d0d155a1b82d1d54f013f5"
+    },
+    "rave:AKM6348-FR-CH86:PDF:20": {
+      "path": "images/rave/AKM6348_FR_CH86_86_20.png",
+      "asset_kind": "service_page",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-20",
+      "pdf_index": 20,
+      "sha256": "043e46552f98a3ab561c8e2fa6a1124bf4c06255efc474b0bca8ab9189ba9821"
+    },
+    "rave:AKM6348-FR-CH86:PDF:21": {
+      "path": "images/rave/AKM6348_FR_CH86_86_21.png",
+      "asset_kind": "service_page",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-21",
+      "pdf_index": 21,
+      "sha256": "feb5560a2141a67eea9a8630ab61f281ec96c90cfaee527ea842e2b5c67e04b6"
+    },
+    "rave:AKM6348-FR-CH86:PDF:22": {
+      "path": "images/rave/AKM6348_FR_CH86_86_22.png",
+      "asset_kind": "service_page",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-22",
+      "pdf_index": 22,
+      "sha256": "36d460c5e2bdad3484ff7352a6880ab688dc69aac05ef74df05e65880e94d82a"
+    },
+    "rave:AKM6348-FR-CH86:PDF:23": {
+      "path": "images/rave/AKM6348_FR_CH86_86_23.png",
+      "asset_kind": "service_page",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-23",
+      "pdf_index": 23,
+      "sha256": "b14a048db98c504c73411dbefc570260763e3d8ea3136f5c80a338d948fabcd7"
+    },
+    "rave:AKM6348-FR-CH86:PDF:24": {
+      "path": "images/rave/AKM6348_FR_CH86_86_24.png",
+      "asset_kind": "service_page",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-24",
+      "pdf_index": 24,
+      "sha256": "b5b5885838bf93027008420765b7088e4260399b96d0d9575f076db348e0d8c4"
+    },
+    "rave:AKM6348-FR-CH86:PDF:25": {
+      "path": "images/rave/AKM6348_FR_CH86_86_25.png",
+      "asset_kind": "service_page",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-25",
+      "pdf_index": 25,
+      "sha256": "dee45ae01220d01248cefd684866013cee6db7d4c2435f702232b443236c0dc4"
+    },
+    "rave:AKM6348-FR-CH86:PDF:26": {
+      "path": "images/rave/AKM6348_FR_CH86_86_26.png",
+      "asset_kind": "service_page",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-26",
+      "pdf_index": 26,
+      "sha256": "2651a08bf512d81207cd820485c673ffbdef0ea0ae51dd676bb28507b59376f3"
+    },
+    "rave:AKM6348-FR-CH86:PDF:27": {
+      "path": "images/rave/AKM6348_FR_CH86_86_27.png",
+      "asset_kind": "diagram",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-27",
+      "pdf_index": 27,
+      "sha256": "2091a131fea66ca01f5551e700a68bd7f79e16ff8f4a2d04e70e82322b690569"
+    },
+    "rave:AKM6348-FR-CH86:PDF:28": {
+      "path": "images/rave/AKM6348_FR_CH86_86_28.png",
+      "asset_kind": "service_page",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-28",
+      "pdf_index": 28,
+      "sha256": "b3a9ddb4324a97de79d3ad2e9932ed84a415e0cd20275ab273c87c895745350a"
+    },
+    "rave:AKM6348-FR-CH86:PDF:29": {
+      "path": "images/rave/AKM6348_FR_CH86_86_29.png",
+      "asset_kind": "diagram",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-29",
+      "pdf_index": 29,
+      "sha256": "96d7dc1d0841987e8693138b1e9822fba5f1896f5d1eba0c53be9cbc10682f3d"
+    },
+    "rave:AKM6348-FR-CH86:PDF:30": {
+      "path": "images/rave/AKM6348_FR_CH86_86_30.png",
+      "asset_kind": "wiring",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-30",
+      "pdf_index": 30,
+      "sha256": "7e8d5f458795dbc6ad13178478c15b8aaa5f5be1fdbe2881ef39959e3780dda3"
+    },
+    "rave:AKM6348-FR-CH86:PDF:31": {
+      "path": "images/rave/AKM6348_FR_CH86_86_31.png",
+      "asset_kind": "wiring",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-31",
+      "pdf_index": 31,
+      "sha256": "6532da941ff876744f8e3049bf18a916f9e5c4d51cebf7ead4505f6a96235f0a"
+    },
+    "rave:AKM6348-FR-CH86:PDF:32": {
+      "path": "images/rave/AKM6348_FR_CH86_86_32.png",
+      "asset_kind": "wiring",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-32",
+      "pdf_index": 32,
+      "sha256": "ea36a58c8fe2a2c22eeb13f36d48c0bed9116ec84c47aa7e5eb0d4790704715d"
+    },
+    "rave:AKM6348-FR-CH86:PDF:33": {
+      "path": "images/rave/AKM6348_FR_CH86_86_33.png",
+      "asset_kind": "wiring",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-33",
+      "pdf_index": 33,
+      "sha256": "976d483efb1a4d5668d2a1f9caebd04b2b88f36d9c7fb357efdbd11a3157a97c"
+    },
+    "rave:AKM6348-FR-CH86:PDF:34": {
+      "path": "images/rave/AKM6348_FR_CH86_86_34.png",
+      "asset_kind": "diagram",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-34",
+      "pdf_index": 34,
+      "sha256": "f6c792298842f566f3055627e7163ef2b7d54cfe8f44fad3318f9c18b3606b97"
+    },
+    "rave:AKM6348-FR-CH86:PDF:35": {
+      "path": "images/rave/AKM6348_FR_CH86_86_35.png",
+      "asset_kind": "table",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-35",
+      "pdf_index": 35,
+      "sha256": "1ce9a73a72b34a2a0c453468c33088fb85121cf5a9a0975d14a4aad2e359b548"
+    },
+    "rave:AKM6348-FR-CH86:PDF:36": {
+      "path": "images/rave/AKM6348_FR_CH86_86_36.png",
+      "asset_kind": "service_page",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-36",
+      "pdf_index": 36,
+      "sha256": "95e3a6299a7db7ae368e4623ba0e21dccf53380cf6a8d94b3b5156461b63e142"
+    },
+    "rave:AKM6348-FR-CH86:PDF:37": {
+      "path": "images/rave/AKM6348_FR_CH86_86_37.png",
+      "asset_kind": "service_page",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-37",
+      "pdf_index": 37,
+      "sha256": "6c60bdb81895ab63d58e3a83b811d909abbcda845cd28a5de445c6f8892a34c1"
+    },
+    "rave:AKM6348-FR-CH86:PDF:38": {
+      "path": "images/rave/AKM6348_FR_CH86_86_38.png",
+      "asset_kind": "service_page",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-38",
+      "pdf_index": 38,
+      "sha256": "135dfe2498097a6563171a1f3af4f9a35fcbcc3f328cb4eb38ab24598d46b014"
+    },
+    "rave:AKM6348-FR-CH86:PDF:39": {
+      "path": "images/rave/AKM6348_FR_CH86_86_39.png",
+      "asset_kind": "service_page",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-39",
+      "pdf_index": 39,
+      "sha256": "5517ff89b543e89c6f7f10800643aff26a38294067583de802ee91bc6a533287"
+    },
+    "rave:AKM6348-FR-CH86:PDF:40": {
+      "path": "images/rave/AKM6348_FR_CH86_86_40.png",
+      "asset_kind": "service_page",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-40",
+      "pdf_index": 40,
+      "sha256": "f5087a2bba6990a181c4096d70d297a3593936e596903de94c21726d7ad2dfa4"
+    },
+    "rave:AKM6348-FR-CH86:PDF:41": {
+      "path": "images/rave/AKM6348_FR_CH86_86_41.png",
+      "asset_kind": "service_page",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-41",
+      "pdf_index": 41,
+      "sha256": "ffbab300b81c3a1bfc1d6f5ae7eba3f7076a2cfbe99189a7ab26dc0893a1182c"
+    },
+    "rave:AKM6348-FR-CH86:PDF:42": {
+      "path": "images/rave/AKM6348_FR_CH86_86_42.png",
+      "asset_kind": "table",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-42",
+      "pdf_index": 42,
+      "sha256": "6b7071e5d20912ad82be65b2422b47dc44a48e6284e6579c824b3318e96ecba1"
+    },
+    "rave:AKM6348-FR-CH86:PDF:43": {
+      "path": "images/rave/AKM6348_FR_CH86_86_43.png",
+      "asset_kind": "table",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-43",
+      "pdf_index": 43,
+      "sha256": "57d33af0524bccce86356302c0cbec3bc6a15c7dbcffe63636385d234a70087f"
+    },
+    "rave:AKM6348-FR-CH86:PDF:44": {
+      "path": "images/rave/AKM6348_FR_CH86_86_44.png",
+      "asset_kind": "table",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-44",
+      "pdf_index": 44,
+      "sha256": "abb05c2ff5b0109b2673533703973f10611ed7714319580a79b82c66c5c90bde"
+    },
+    "rave:AKM6348-FR-CH86:PDF:45": {
+      "path": "images/rave/AKM6348_FR_CH86_86_45_SEG1.png",
+      "asset_kind": "wiring",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-45",
+      "pdf_index": 45,
+      "sha256": "5dc3d47cfc64dc5c6c4f4e35f4d295cc16a74871b01ce65860b1ce8ef20c2629"
+    },
+    "rave:AKM6348-FR-CH86:PDF:46": {
+      "path": "images/rave/AKM6348_FR_CH86_86_45_SEG2.png",
+      "asset_kind": "wiring",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-45",
+      "pdf_index": 46,
+      "sha256": "6cc65f449893e5dab712aa6e935a595535ac433c8d8e94be58ec77230cb46cee"
+    },
+    "rave:AKM6348-FR-CH86:PDF:47": {
+      "path": "images/rave/AKM6348_FR_CH86_86_45_SEG3.png",
+      "asset_kind": "wiring",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-45",
+      "pdf_index": 47,
+      "sha256": "8517d78777cb14289fbf5d02b0b954bf8315f33e1718abe7a8ef85b56863f20d"
+    },
+    "rave:AKM6348-FR-CH86:PDF:48": {
+      "path": "images/rave/AKM6348_FR_CH86_86_45_SEG4.png",
+      "asset_kind": "wiring",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-45",
+      "pdf_index": 48,
+      "sha256": "9e8f5da89b1ff3bffc82e6e2b75c61521a88ef13b95f437f71bdfcc966aec068"
+    },
+    "rave:AKM6348-FR-CH86:PDF:50": {
+      "path": "images/rave/AKM6348_FR_CH86_86_46.png",
+      "asset_kind": "wiring",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-46",
+      "pdf_index": 50,
+      "sha256": "137e151f126a84751b5a9d5427b41d4cb653f24b03168fccd8d5c0fb57493452"
+    },
+    "rave:AKM6348-FR-CH86:PDF:51": {
+      "path": "images/rave/AKM6348_FR_CH86_86_47.png",
+      "asset_kind": "wiring",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-47",
+      "pdf_index": 51,
+      "sha256": "63a2b94664456aecdd949f9bc781b38e21ff79a989edac140c3d575ab4b6561d"
+    },
+    "rave:AKM6348-FR-CH86:PDF:52": {
+      "path": "images/rave/AKM6348_FR_CH86_86_48.png",
+      "asset_kind": "wiring",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-48",
+      "pdf_index": 52,
+      "sha256": "34705f7021bfb31ed54cdbe083074966112260b7c7c3b96928cac6b18f974516"
+    },
+    "rave:AKM6348-FR-CH86:PDF:53": {
+      "path": "images/rave/AKM6348_FR_CH86_86_49.png",
+      "asset_kind": "service_page",
+      "document": "AKM6348-FR-CH86",
+      "source_page": "86-49",
+      "pdf_index": 53,
+      "sha256": "b582bc9fad48fa04418338bfa7515b24f37c4b1441aca6f25a4bf27d3dd9a6bd"
     }
   }
 }

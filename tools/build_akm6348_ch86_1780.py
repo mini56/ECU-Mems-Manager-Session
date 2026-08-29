@@ -9,9 +9,9 @@ EXPECTED_ASSETS=52
 EXPECTED_HIST_RAVE=93
 EXPECTED_HIST_EXPERT=105
 EXPECTED_USER_VERSION=20
-GENERAL_SCOPE='SCOPE-MINI-AKM6348-FR-1976-ON'
+GENERAL_SCOPE='SCOPE-AKM6348-FR-MINI-1976-03-PLUS'
 DOCUMENT='AKM6348-FR-CH86'
-SOURCE_KEY='AKM6348-FR'
+SOURCE_KEY='SRC-AKM6348-FR-WEB-20260829'
 
 
 def sha256_bytes(data:bytes)->str:return hashlib.sha256(data).hexdigest()
@@ -31,8 +31,14 @@ def qt_uncompress(data:bytes)->bytes:
     raise AssertionError('cannot qUncompress payload')
 
 def decode_qz64(path:Path)->bytes:
-    compact=b''.join(path.read_bytes().split())
-    return qt_uncompress(base64.b64decode(compact))
+    raw=path.read_bytes()
+    # Historical enrichment files use both raw Qt qCompress bytes and
+    # Base64-wrapped qCompress. Preserve both historical encodings.
+    try:
+        return qt_uncompress(raw)
+    except Exception:
+        compact=b''.join(raw.split())
+        return qt_uncompress(base64.b64decode(compact))
 
 def encode_qz64(sql_raw:bytes)->bytes:
     packed=len(sql_raw).to_bytes(4,'big')+zlib.compress(sql_raw,9)
@@ -148,7 +154,7 @@ def update_manifest(reference:Path,assets):
 def validate(db_path:Path,reference:Path,assets,link_count:int):
     db=sqlite3.connect(str(db_path))
     try:
-        integrity=db.execute('PRAGMA integrity_check').fetchone()[0];uv=db.execute('PRAGMA user_version').fetchone()[0];rave=db.execute('SELECT COUNT(*) FROM mems_rave_fact').fetchone()[0];expert=db.execute('SELECT COUNT(*) FROM mems_expert_fact_external').fetchone()[0];reg=db.execute("SELECT COUNT(*) FROM mems_knowledge_item WHERE knowledge_key='KNOW-AKM6348-FR-DOC-SCOPE'").fetchone()[0];assets_db=db.execute("SELECT COUNT(*) FROM mems_rave_illustration WHERE document=?",(DOCUMENT,)).fetchone()[0];pages_db=db.execute("SELECT COUNT(DISTINCT source_page) FROM mems_rave_illustration WHERE document=?",(DOCUMENT,)).fetchone()[0];fold=db.execute("SELECT COUNT(*) FROM mems_rave_illustration WHERE document=? AND source_page='86-45'",(DOCUMENT,)).fetchone()[0];knowledge=db.execute("SELECT COUNT(*) FROM mems_knowledge_item WHERE document=?",(DOCUMENT,)).fetchone()[0];links=db.execute("SELECT COUNT(*) FROM mems_rave_illustration_link l JOIN mems_rave_illustration i ON i.illustration_key=l.illustration_key WHERE i.document=?",(DOCUMENT,)).fetchone()[0];scopes=db.execute("SELECT COUNT(*) FROM mems_applicability_scope WHERE scope_key LIKE 'SCOPE-AKM6348-%'").fetchone()[0]
+        integrity=db.execute('PRAGMA integrity_check').fetchone()[0];uv=db.execute('PRAGMA user_version').fetchone()[0];rave=db.execute('SELECT COUNT(*) FROM mems_rave_fact').fetchone()[0];expert=db.execute('SELECT COUNT(*) FROM mems_expert_fact_external').fetchone()[0];reg=db.execute("SELECT COUNT(*) FROM mems_knowledge_item WHERE knowledge_key='KNOW-DOC-AKM6348-FR'").fetchone()[0];assets_db=db.execute("SELECT COUNT(*) FROM mems_rave_illustration WHERE document=?",(DOCUMENT,)).fetchone()[0];pages_db=db.execute("SELECT COUNT(DISTINCT source_page) FROM mems_rave_illustration WHERE document=?",(DOCUMENT,)).fetchone()[0];fold=db.execute("SELECT COUNT(*) FROM mems_rave_illustration WHERE document=? AND source_page='86-45'",(DOCUMENT,)).fetchone()[0];knowledge=db.execute("SELECT COUNT(*) FROM mems_knowledge_item WHERE document=?",(DOCUMENT,)).fetchone()[0];links=db.execute("SELECT COUNT(*) FROM mems_rave_illustration_link l JOIN mems_rave_illustration i ON i.illustration_key=l.illustration_key WHERE i.document=?",(DOCUMENT,)).fetchone()[0];scopes=db.execute("SELECT COUNT(*) FROM mems_applicability_scope WHERE scope_key LIKE 'SCOPE-AKM6348-%'").fetchone()[0]
         assert str(integrity).lower()=='ok';assert uv==20;assert rave==93;assert expert==105;assert reg==1;assert assets_db==EXPECTED_ASSETS;assert pages_db==EXPECTED_FACTORY_PAGES;assert fold==4;assert knowledge==len(K);assert links==link_count
         for a in assets:
             f=reference/a['path'];assert f.is_file() and sha256_file(f)==a['sha256']
@@ -164,7 +170,7 @@ def write_audit(reference:Path,qz:Path,sql_raw:bytes,assets,validation,alias_cou
 def main():
     ap=argparse.ArgumentParser();ap.add_argument('--root',type=Path,default=Path('.'));ap.add_argument('--pdf',type=Path,required=True);ap.add_argument('--work',type=Path,default=Path('.tmp-akm6348-ch86-1780'));args=ap.parse_args();root=args.root.resolve();reference=root/'database'/'reference';work=(root/args.work).resolve();work.mkdir(parents=True,exist_ok=True);baseline=work/'baseline.sqlite';candidate=work/'candidate.sqlite';rebuild_reference_database(reference,baseline)
     db=sqlite3.connect(str(baseline))
-    try:assert db.execute("SELECT COUNT(*) FROM mems_knowledge_item WHERE knowledge_key='KNOW-AKM6348-FR-DOC-SCOPE'").fetchone()[0]==1;assert db.execute("SELECT COUNT(*) FROM mems_applicability_scope WHERE scope_key=?",(GENERAL_SCOPE,)).fetchone()[0]==1
+    try:assert db.execute("SELECT COUNT(*) FROM mems_knowledge_item WHERE knowledge_key='KNOW-DOC-AKM6348-FR'").fetchone()[0]==1;assert db.execute("SELECT COUNT(*) FROM mems_applicability_scope WHERE scope_key=?",(GENERAL_SCOPE,)).fetchone()[0]==1
     finally:db.close()
     assets=render_assets(args.pdf.resolve(),reference);sql_raw,link_count,alias_count=build_sql(assets);qz=reference/'research_enrichment_1780.qz64';qz.write_bytes(encode_qz64(sql_raw));assert decode_qz64(qz)==sql_raw;shutil.copy2(baseline,candidate);db=sqlite3.connect(str(candidate))
     try:execute_project_sql(db,sql_raw);db.execute('PRAGMA user_version=20');db.commit()
