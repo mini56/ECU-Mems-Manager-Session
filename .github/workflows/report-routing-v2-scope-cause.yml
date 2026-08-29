@@ -1,0 +1,49 @@
+name: REPORT ROUTING V2 SCOPE CAUSE
+
+on:
+  push:
+    branches:
+      - RAPPORT
+    paths:
+      - '.github/workflows/report-routing-v2-scope-cause.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  append:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append exact V2 scope cause
+        shell: bash
+        run: |
+          set -e
+          git pull --rebase origin RAPPORT
+          {
+            echo ''
+            echo '## 2026-08-29 - ROUTAGE V2 - CAUSE EXACTE DU GARDE DE PERIMETRE'
+            echo ''
+            echo '- Diagnostic effectue en lecture seule sur le HEAD exact 305c6597dedfa609315f35240fee62a997645212.'
+            echo '- Aucun routage, aucune base, aucun protocole, aucun asset et aucun fichier MEMSX64 modifies pendant le diagnostic.'
+            echo '- Le garde final attend exactement 7 fichiers candidats: CMakeLists.txt, les deux audits RCL0193, IaMemsConversationRouting.h, IaMemsDiagramCatalog.cpp, IaMemsDiagramSelfTest.cpp et iamemstab.cpp.'
+            echo '- Cause exacte du surplus Actual: pendant Configure and build automatic routing guard, CMake execute configure_file vers les fichiers suivis help.html et help_en.html situes dans l arbre source.'
+            echo '- Au HEAD teste, help.html et help_en.html sont tous deux des fichiers suivis vides; la configuration CMake les regenere depuis help.html.in et help_en.html.in, donc git status les marque modifies.'
+            echo '- Ces deux fichiers sont des effets de generation du build et ne font pas partie du candidat de routage. Le routage lui-meme n est pas en cause; ses self-tests deterministes sont PASS dans le run 33257301351.'
+            echo '- Difference Allowed/Actual caracterisee: Actual contient les 7 fichiers attendus plus help.html et help_en.html.'
+            echo '- Correction autorisee: modifier uniquement le garde CI afin de restaurer help.html et help_en.html juste avant la comparaison du perimetre, puis relancer TEMP ROUTING MECHANICAL V2.'
+            echo '- Production MEMSX64 reste strictement BUILD #101; aucun #102.'
+            echo ''
+            echo 'PROCHAINE ACTION EXACTE:'
+            echo '- Sur tmp-rave-visual-backfill, modifier uniquement .github/workflows/temp-routing-mechanical-v2.yml dans Guard candidate scope: restaurer help.html et help_en.html avant git status, sans toucher au routage ni a la liste des 7 fichiers candidats.'
+            echo '- Puis relancer V2 et consigner immediatement son resultat.'
+          } >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          rm .github/workflows/report-routing-v2-scope-cause.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md .github/workflows/report-routing-v2-scope-cause.yml
+          git commit -m 'Record exact V2 candidate scope cause'
+          git push origin RAPPORT
