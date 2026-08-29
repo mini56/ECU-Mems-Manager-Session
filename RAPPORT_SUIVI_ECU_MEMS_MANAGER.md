@@ -2204,3 +2204,23 @@ Verdict : ECHEC DU GARDE AUTOMATIQUE, PAS DU COMPILATEUR NI DU LINKER.
 - Aucun contenu du rapport, code, base, image ou production modifie par cette tentative.
 - Reparation : helper minimal avec lignes printf, auto-suppression, puis relecture obligatoire du rapport.
 - Toute progression technique reste suspendue jusqu a verification du rapport.
+
+## 2026-08-29 - RECTIFICATION RUN V2 33254169110 - DLL RUNTIME QT
+
+Le log reel fourni par l utilisateur corrige la conclusion precedente sur ce run.
+- Le programme principal compile et linke correctement.
+- Le self-test protocole affiche PASS protocol context safety policy.
+- L echec arrive au lancement de ia_mems_diagram_selftest.exe pendant le POST_BUILD.
+- Code Windows: -1073741515 = 0xC0000135 = DLL_NOT_FOUND.
+- Cause: le patch temporaire tools/patch_rave_visual_routing_auto.py ajoute un POST_BUILD pour ia_mems_diagram_selftest alors que ce test depend de Qt5::Core et que le PATH Qt n est ajoute que dans l etape GitHub suivante Run deterministic regression tests.
+- La precedente mention de deux erreurs logiques du self-test n est donc pas demontree par ce run et ne doit pas etre retenue comme resultat de 33254169110.
+- Les warnings C4828 d encodage ne sont pas la cause de l arret.
+
+Correction generale prevue avant prochaine pousse technique:
+1. ne plus lancer le self-test Qt en POST_BUILD; conserver uniquement sa compilation comme dependance;
+2. executer ia_mems_diagram_selftest dans l etape deterministe ou le PATH et QT_PLUGIN_PATH sont deja prepares;
+3. garder le garde automatique: un echec logique du self-test devra toujours faire echouer le workflow, mais seulement apres demarrage correct du runtime Qt;
+4. relancer le V2 et ne conclure sur les erreurs de logique de routage qu a partir de la sortie reelle du self-test;
+5. production MEMSX64 reste strictement BUILD #101, aucun #102.
+
+Incident connecteur pendant cette reprise: une branche tmp-do-not-use a ete creee par erreur depuis RAPPORT. Aucun fichier ni commit n y a ete modifie. Le connecteur disponible ne propose pas de suppression de branche; cette branche parasite doit rester ignoree et ne constitue aucune source de verite du projet.
