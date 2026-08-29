@@ -19,7 +19,7 @@ jobs:
           ref: RAPPORT
           fetch-depth: 0
 
-      - name: Append weak-case resolution
+      - name: Append weak-case resolution and report-channel incident
         shell: bash
         run: |
           cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
@@ -37,7 +37,13 @@ jobs:
 
           Conclusion: **✅ mapping `RAVE-REP-ECM-001` confirme sur p.126-127**. Le `WEAK_CASES 1` etait uniquement un faux faible score lexical cause par les termes francais du topic face au texte anglais de la source; ce n'est ni une mauvaise page ni une provenance douteuse. Les **31/31 faits RCL0193 sont donc maintenant couverts par une cartographie source verifiee**, sur **25 pages physiques uniques**.
 
-          Prochaine action exacte avant pousse technique: inspecter le dernier numero de lot additif disponible et le generateur RCL0194 1750 valide; preparer un generateur RCL0193 strictement additif qui capture une seule fois les 25 pages exactes, calcule leurs SHA-256, cree les metadonnees `mems_rave_illustration` et liens `mems_rave_illustration_link` vers les 31 faits sans reecrire `mems_rave_fact`, garde `user_version=20`, et produit un audit de reproductibilite. `MEMSX64` reste BUILD #101 inchange; aucun #102.
+          ### Incident de journalisation sur la premiere tentative
+
+          La premiere tentative d'ecriture de cette conclusion, run RAPPORT `33251235882`, job `99097148820`, a correctement ajoute et verifie le texte localement mais son `git push origin RAPPORT` a ete **rejete en non-fast-forward**: pendant le run, la branche distante a avance sur `cbeaa0ed5007863ae5a4f7a9fb518d81ce49e781` (`Record complete RCL0193 mapping V3 validation`). Conformement a la regle de tracabilite, toute progression technique a ete suspendue. Aucun changement technique n'a ete pousse apres cet echec de journalisation.
+
+          Cause: concurrence de deux ecritures sur `RAPPORT`, et non erreur du contenu. Cette seconde tentative utilise `git fetch` + `git rebase origin/RAPPORT` avant le push afin de conserver les deux historiques sans ecrasement.
+
+          Prochaine action exacte apres confirmation de cette ecriture: inspecter le dernier numero de lot additif disponible et le generateur RCL0194 1750 valide; preparer un generateur RCL0193 strictement additif qui capture une seule fois les 25 pages exactes, calcule leurs SHA-256, cree les metadonnees `mems_rave_illustration` et liens `mems_rave_illustration_link` vers les 31 faits sans reecrire `mems_rave_fact`, garde `user_version=20`, et produit un audit de reproductibilite. `MEMSX64` reste BUILD #101 inchange; aucun #102.
           EOF
 
       - name: Verify report entry
@@ -45,14 +51,18 @@ jobs:
         run: |
           grep -F 'RCL0193 WEAK_CASES 1 - RESOLU PAR VERIFICATION DIRECTE DU MANUEL' RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
           grep -F 'RAVE-REP-ECM-001' RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          grep -F '33251235882' RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
           grep -F '31/31 faits RCL0193 sont donc maintenant couverts' RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
 
-      - name: Commit report and remove helper
+      - name: Commit, rebase on concurrent report updates, push and remove helper
         shell: bash
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git rm .github/workflows/temp-report-rcl0193-weakcase-resolved.yml
           git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
           git commit -m "Record resolved RCL0193 ECM visual mapping"
+          git fetch origin RAPPORT
+          git rebase origin/RAPPORT
           git push origin RAPPORT
