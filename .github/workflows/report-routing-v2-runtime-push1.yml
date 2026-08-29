@@ -1,0 +1,46 @@
+name: REPORT ROUTING V2 RUNTIME PUSH1
+
+on:
+  push:
+    branches:
+      - RAPPORT
+    paths:
+      - '.github/workflows/report-routing-v2-runtime-push1.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  append:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append push result
+        shell: bash
+        run: |
+          set -e
+          git pull --rebase origin RAPPORT
+          {
+            echo ''
+            echo '## 2026-08-29 - ROUTAGE V2 - CORRECTION ORDRE RUNTIME QT - POUSSE 1'
+            echo ''
+            echo '- Branche: tmp-rave-visual-backfill.'
+            echo '- Commit: f0e19c5b140f59617903577f52cbb8e07f94c700 - Fix V2 routing guard Qt runtime order.'
+            echo '- Pousse limitee a tools/patch_rave_visual_routing_auto.py.'
+            echo '- Relecture distante du commit exact: PASS.'
+            echo '- Le script refuse maintenant explicitement tout COMMAND $<TARGET_FILE:ia_mems_diagram_selftest> dans un POST_BUILD.'
+            echo '- Il conserve la compilation du self-test comme dependance et annote CMake pour rappeler que son execution doit avoir lieu seulement dans l etape deterministe apres preparation du runtime Qt.'
+            echo '- Aucun workflow V2 n a ete relance par cette pousse car le trigger actuel ne surveille encore que son propre fichier.'
+            echo '- Production MEMSX64 reste BUILD #101; aucun #102.'
+            echo ''
+            echo 'Prochaine pousse autorisee apres cette journalisation: modifier uniquement .github/workflows/temp-routing-mechanical-v2.yml pour surveiller aussi tools/patch_rave_visual_routing_auto.py et declencher une nouvelle validation V2. Le test doit compiler puis executer ia_mems_diagram_selftest seulement dans Run deterministic regression tests avec PATH/QT_PLUGIN_PATH prepares.'
+          } >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          rm .github/workflows/report-routing-v2-runtime-push1.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md .github/workflows/report-routing-v2-runtime-push1.yml
+          git commit -m 'Record V2 Qt runtime guard push 1'
+          git push origin RAPPORT
