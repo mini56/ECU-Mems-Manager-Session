@@ -1492,3 +1492,15 @@ L'outillage devra egalement reutiliser les assets pilotes `20.3`, `20.4`, `39.3`
 Cette pousse d'outillage ne doit modifier aucun fait historique, aucun protocole ECU, aucune acquisition/RAM, aucune commande ECU, aucune protection et aucun fichier 32 bits. `MEMSX64` reste strictement #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.
 
 La divergence legacy `39.1` / source reelle `39.2` reste auditee ; aucune correction silencieuse du fait historique n'est autorisee.
+
+# INCIDENT OUTILLAGE BRANCHE TEMPORAIRE — 29 AOUT 2026
+
+Pendant la preparation de la pousse atomique de l'outillage RCL0194, une mauvaise action du connecteur GitHub a cree le commit parasite `9f7c0041572fa2d3c26543c5968b0fdaf38a5883` sur `tmp-rave-visual-backfill`.
+
+Audit immediat : comparaison avec le parent `939a18d1b197cd8a2277180b9aa7384e05225807` = **un seul fichier ajoute, `dummy`, une ligne**. Aucun code applicatif, aucune base, aucun protocole ECU, aucune acquisition/RAM, aucune protection et aucun fichier 32 bits n'ont ete modifies.
+
+Le vrai commit atomique prepare avant l'incident est `5342d25536a0c71354fe6ed6d1f366957494f75a`, parent direct `939a18d1...`, et contient uniquement :
+- `tools/extract_rcl0194_visual_assets.py` ;
+- `.github/workflows/temp-rcl0194-visual-extract.yml`.
+
+Action de nettoyage autorisee sur la branche temporaire uniquement : replacer `tmp-rave-visual-backfill` sur `5342d255...`, ce qui supprime le commit parasite de la tete active de cette branche de travail. `MEMSX64` reste strictement #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.
