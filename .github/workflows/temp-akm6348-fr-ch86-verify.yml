@@ -1,0 +1,64 @@
+name: TEMP AKM6348 FR CH86 VERIFY
+on:
+  push:
+    branches: [tmp-rave-visual-backfill]
+    paths:
+      - '.github/workflows/temp-akm6348-fr-ch86-verify.yml'
+permissions:
+  contents: read
+jobs:
+  verify_chapter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-visual-backfill
+          fetch-depth: 0
+      - name: Verify production remains BUILD 101
+        shell: bash
+        run: |
+          git fetch origin MEMSX64
+          test "$(git rev-parse origin/MEMSX64)" = "22dbe75ed14e0a61e694159d505ef72245116b48"
+      - name: Install PDF inspection dependency
+        shell: bash
+        run: python -m pip install --disable-pip-version-check --quiet PyMuPDF==1.26.4
+      - name: Download historical AKM6348 chapter 86 mirror
+        shell: bash
+        run: |
+          curl -L --fail --retry 3 --retry-delay 2 \
+            -A 'Mozilla/5.0' \
+            'http://virgyl.f.free.fr/Download/Manuel/CH86.pdf' \
+            -o /tmp/CH86.pdf
+          test -s /tmp/CH86.pdf
+          file /tmp/CH86.pdf
+          stat -c 'SIZE_BYTES=%s' /tmp/CH86.pdf
+          sha256sum /tmp/CH86.pdf
+          head -c 5 /tmp/CH86.pdf | grep -q '%PDF-'
+      - name: Inspect chapter identity and page labels
+        shell: bash
+        run: |
+          python - <<'PY'
+          import fitz, hashlib, re
+          p='/tmp/CH86.pdf'
+          data=open(p,'rb').read()
+          doc=fitz.open(p)
+          print('SHA256='+hashlib.sha256(data).hexdigest())
+          print('SIZE_BYTES='+str(len(data)))
+          print('PAGE_COUNT='+str(doc.page_count))
+          assert doc.page_count >= 20
+          hits=[]
+          for i in range(doc.page_count):
+              text=doc.load_page(i).get_text('text')
+              norm=re.sub(r'\s+',' ',text)
+              if i < 4 or '86.32' in norm or '86/32' in norm or 'ELECTR' in norm.upper():
+                  print(f'PAGE_{i+1}_TEXT='+norm[:1200])
+              if re.search(r'86[./ ]32',norm):
+                  hits.append(i+1)
+          print('PAGE_LABEL_86_32_HITS='+','.join(map(str,hits)))
+          doc.close()
+          PY
+      - name: Remove downloaded source and prove repository clean except helpers
+        shell: bash
+        run: |
+          rm -f /tmp/CH86.pdf
+          git status --porcelain --untracked-files=all
