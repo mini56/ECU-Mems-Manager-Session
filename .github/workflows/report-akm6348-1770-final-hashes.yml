@@ -1,0 +1,33 @@
+name: REPORT AKM6348 1770 FINAL HASHES
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/report-akm6348-1770-final-hashes.yml'
+permissions:
+  contents: write
+jobs:
+  append:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append final validated 1770 fingerprints
+        shell: bash
+        run: |
+          git pull --rebase origin RAPPORT
+          printf '\n### AKM6348 1770 - EMPREINTES FINALES AVANT POUSSE\n\n' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          printf '%s\n' '- Le payload a ete regenere apres verification stricte des colonnes du schema 1730 et de la formulation documentaire finale.' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          printf '%s\n' '- SQL final: 2715 octets, SHA-256 4222b2c99d7030350a06043fee9c80e927f2db6b3131cb7545fed6f0d81e3336.' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          printf '%s\n' '- Flux qCompress interne: 1122 octets, SHA-256 15eefdc56643540d068a28eb8747be5a859bdd9c1bf88adbdf35a087c6acd1f4.' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          printf '%s\n' '- Fichier research_enrichment_1770.qz64 final Base64 + newline: 1497 octets, SHA-256 0de7f667adda6e4b4770f3c9426ec3cbc7299a9606eff533e2f015690d6b5ca0.' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          printf '%s\n' '- Validation schema: foreign_keys=ON, integrity_check=ok, comptes ajoutes 1 scope / 1 constraint / 1 knowledge / 1 knowledge_scope / 5 aliases.' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          printf '%s\n' '- Les empreintes precedemment notees dans les deux entrees preparatoires sont supersedees par celles-ci. Aucun fichier 1770 n avait encore ete pousse.' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git rm .github/workflows/report-akm6348-1770-final-hashes.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m 'Record final AKM6348 1770 fingerprints'
+          git push origin RAPPORT
