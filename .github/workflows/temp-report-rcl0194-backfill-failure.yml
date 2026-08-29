@@ -1,0 +1,46 @@
+name: TEMP REPORT RCL0194 BACKFILL FAILURE
+
+on:
+  push:
+    branches: [RAPPORT]
+
+permissions:
+  contents: write
+
+jobs:
+  update_report:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append failed packaging attempt
+        shell: bash
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+          # ECHEC INTERMEDIAIRE PACKAGING RCL0194 1750 — 29 AOUT 2026
+
+          Workflow temporaire : `TEMP RCL0194 COMMIT BACKFILL`, run `33248437871`, job `99089830021` — **FAILURE avant tout commit de donnees**.
+
+          Etapes confirmees vertes avant l'echec : checkout, Python, PyMuPDF 1.26.4, telechargement du PDF constructeur avec SHA-256 exact, puis rendu/verifications des **8 images RCL0194**. Les huit assets ont retrouve exactement les SHA-256 deja valides, incluant les trois assets du pilote.
+
+          L'echec survient uniquement a l'etape `Install validated batch 1750 payload` : le qz64 recopie dans un heredoc du workflow ne reproduit pas exactement le SHA-256 attendu `969c2b23b8e33e9bcac4ff653752186fad2fde8b5952439bf808d1ac2b56de02`. Le garde de hash a donc correctement bloque la suite. Aucun manifeste, audit ou commit de donnees n'a ete pousse par ce run.
+
+          Conclusion : les assets visuels sont valides ; le defaut concerne seulement le mecanisme de transfert du petit fichier qz64 dans le helper. Ne pas regenerer le SQL ni modifier les donnees pour contourner le garde.
+
+          Correction retenue avant nouvelle tentative : ajouter le **qz64 exact deja valide** comme blob GitHub, verifier son hash dans le workflow, puis ne plus le reconstruire par heredoc. Apres succes, produire un commit candidat propre base directement sur l'etat de chantier avant helpers, afin que l'etat final ne conserve que les donnees/audits voulus et pas l'outillage temporaire.
+
+          `MEMSX64` reste strictement BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48` et n'a subi aucun changement.
+          EOF
+      - name: Commit report and remove helper
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/temp-report-rcl0194-backfill-failure.yml
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Record failed RCL0194 1750 packaging attempt"
+          git push origin RAPPORT
