@@ -1,0 +1,104 @@
+name: TEMP RCL0194 DETERMINISTIC 1750 VALIDATE
+
+on:
+  push:
+    branches: [tmp-rave-visual-backfill]
+    paths:
+      - tools/build_rcl0194_visual_backfill_1750.py
+      - .github/workflows/temp-rcl0194-deterministic-1750-validate.yml
+
+permissions:
+  contents: read
+
+jobs:
+  validate_candidate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-visual-backfill
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install pinned PDF renderer
+        run: python -m pip install PyMuPDF==1.26.4
+
+      - name: Download exact Rover RCL0194ENG source
+        shell: bash
+        run: |
+          curl --fail --location --retry 3 \
+            --output RCL0194ENG.pdf \
+            'https://www.goclassic.eu/upload/content/e68ce7_9c0fd6a5b3a14a3585ecddb02b3ceb9d.pdf'
+          echo '64e64f8a7c24f362913e2661403bc474e4e7ef07f96db618ef661645e0d0f051  RCL0194ENG.pdf' | sha256sum -c -
+
+      - name: Rebuild batch 1750 deterministically and validate on reconstructed BUILD 101 database
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f database/reference/research_enrichment_1750.qz64
+          rm -rf .tmp-rcl0194-1750
+          python tools/build_rcl0194_visual_backfill_1750.py \
+            --root . \
+            --pdf RCL0194ENG.pdf \
+            --work .tmp-rcl0194-1750 | tee validation_summary.txt
+
+      - name: Guard documentary-only candidate scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git status --short
+          python - <<'PY'
+          import subprocess
+          allowed_prefixes = (
+              'database/reference/',
+              'validation_summary.txt',
+          )
+          changed = subprocess.check_output(
+              ['git','status','--porcelain'], text=True
+          ).splitlines()
+          bad=[]
+          for line in changed:
+              path=line[3:].strip()
+              if ' -> ' in path:
+                  path=path.split(' -> ',1)[1]
+              if not path.startswith(allowed_prefixes):
+                  bad.append(path)
+          if bad:
+              raise SystemExit('Unexpected candidate paths: ' + ', '.join(bad))
+          print('DOCUMENTARY_SCOPE_GUARD_PASS')
+          PY
+
+      - name: Build exact candidate payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf candidate_payload
+          mkdir -p candidate_payload/database/reference/images/rave
+          mkdir -p candidate_payload/database/reference/audits
+          cp database/reference/research_enrichment_1750.qz64 candidate_payload/database/reference/
+          cp database/reference/manifest.json candidate_payload/database/reference/
+          cp database/reference/audits/rcl0194_visual_backfill_1750_audit.md candidate_payload/database/reference/audits/
+          cp database/reference/images/rave/RCL0194ENG_COLOUR_CODES.png candidate_payload/database/reference/images/rave/
+          cp database/reference/images/rave/RCL0194ENG_15_1.png candidate_payload/database/reference/images/rave/
+          cp database/reference/images/rave/RCL0194ENG_20_1.png candidate_payload/database/reference/images/rave/
+          cp database/reference/images/rave/RCL0194ENG_20_2.png candidate_payload/database/reference/images/rave/
+          cp database/reference/images/rave/RCL0194ENG_20_3.png candidate_payload/database/reference/images/rave/
+          cp database/reference/images/rave/RCL0194ENG_20_4.png candidate_payload/database/reference/images/rave/
+          cp database/reference/images/rave/RCL0194ENG_39_2.png candidate_payload/database/reference/images/rave/
+          cp database/reference/images/rave/RCL0194ENG_39_3.png candidate_payload/database/reference/images/rave/
+          cp validation_summary.txt candidate_payload/
+          (
+            cd candidate_payload
+            find . -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
+          )
+          cat candidate_payload/SHA256SUMS.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RCL0194-1750-DETERMINISTIC-CANDIDATE
+          path: candidate_payload/
+          if-no-files-found: error
+          retention-days: 30
