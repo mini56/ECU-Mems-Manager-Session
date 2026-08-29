@@ -1956,3 +1956,13 @@ Recherche dans la File Library utilisateur: aucun PDF/scan complet AKM7169ENG re
 Prochaine pousse autorisee sur `tmp-rave-visual-backfill`: ajouter uniquement un audit textuel AKM7169 de provenance/etat-source et un backlog des informations complementaires visibles dans le scan indexe mais absentes de la base, sans qz64 ni image tant que le scan exact n'est pas acquis. Continuer en parallele la recherche d'une source constructeur directement reproductible. Toute future source doit etre hashee avant capture.
 
 Base/IA/RAVE restent consultatives et ne prennent jamais la main sur la communication ECU.
+
+## 2026-08-29 - AKM7169 SOURCE AUDIT - POUSSE ET RELECTURE DISTANTE VALIDEES
+
+Pousse documentaire sur `tmp-rave-visual-backfill`: commit `a8e31f5831bf2831468a1dfffffdf3d4c9390661`, ajout unique `database/reference/audits/akm7169_1720_source_backfill_audit.md`.
+
+Test apres pousse: relecture directe du fichier depuis la branche distante **✅ PASS**. Blob SHA GitHub `9bb417f81ad289ddaf793aa093d1727c2dc1b4ef`. Le fichier confirme l'identite constructeur AKM7169ENG, les sources publiques/commerciales trouvees, la divergence de pagination 482/463, l'absence de source binaire reproductible selectionnee et l'interdiction de fabriquer un index physique ou un asset tant que le PDF exact n'est pas hashe.
+
+Aucun qz64, PNG, manifeste, fait historique, code programme ou protocole ECU n'a ete modifie par cette pousse.
+
+Prochaine pousse autorisee: conserver dans un fichier backlog separe les informations techniques complementaires visibles dans le texte indexe AKM7169 mais non encore integrees, avec statut explicite `OCR/indexed-scan candidate - primary page verification required`. Ce backlog ne doit pas modifier la base. Apres cette pousse: relecture + rapport avant toute autre action.
