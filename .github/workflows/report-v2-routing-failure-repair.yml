@@ -1,11 +1,11 @@
-name: Record V2 routing failure and report helper incident
+name: Record V2 routing and report failures
 
 on:
   push:
     branches:
       - RAPPORT
     paths:
-      - '.github/workflows/report-v2-routing-failure-repair.yml'
+      - .github/workflows/report-v2-routing-failure-repair.yml
 
 permissions:
   contents: write
@@ -14,67 +14,47 @@ jobs:
   report:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout RAPPORT
+      - name: Checkout report branch
         uses: actions/checkout@v4
         with:
           ref: RAPPORT
           fetch-depth: 0
 
-      - name: Append exact incidents to continuity report
+      - name: Append incident record
         shell: bash
         run: |
-          python - <<'PY'
-          from pathlib import Path
-          import os
+          FILE=RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          if ! grep -q "INCIDENT ROUTAGE VISUEL V2 - RUN 33254169110" "$FILE"; then
+            printf '%s\n' '' >> "$FILE"
+            printf '%s\n' '## INCIDENT ROUTAGE VISUEL V2 - RUN 33254169110' >> "$FILE"
+            printf '%s\n' '' >> "$FILE"
+            printf '%s\n' 'Verdict : ECHEC DU GARDE AUTOMATIQUE, PAS DU COMPILATEUR NI DU LINKER.' >> "$FILE"
+            printf '%s\n' '- Branche temporaire : tmp-rave-visual-backfill.' >> "$FILE"
+            printf '%s\n' '- Commit teste : 2de3d17347be86fbfd0377bf1b21c6779169019e.' >> "$FILE"
+            printf '%s\n' '- Run : 33254169110. Job : 99104882089.' >> "$FILE"
+            printf '%s\n' '- Checkout, base officielle #101, patch visuel, audit mecanique RCL0193, Qt, CMake configure/generate, compilation et link du self-test : OK.' >> "$FILE"
+            printf '%s\n' '- POST_BUILD self-test : ECHEC avec exactement 2 erreurs logiques.' >> "$FILE"
+            printf '%s\n' '- Erreur 1 : la requete illustration injecteur IAC TPS Mini SPi Japon 1997 ne resout pas correctement RCL0194ENG:20.4.' >> "$FILE"
+            printf '%s\n' '- Erreur 2 : schema Mini 1997 est ambigu et doit demander une clarification, mais V2 le laisse actuellement contourner cette clarification.' >> "$FILE"
+            printf '%s\n' '- Message final : IaMemsDiagramCatalog self-test failed with 2 error(s).' >> "$FILE"
+            printf '%s\n' '- Aucun fait mecanique, aucune image nouvelle et aucune modification de MEMSX64 ne sont issus de ce run.' >> "$FILE"
+            printf '%s\n' '- Conclusion : distinguer suggestion valide et correspondance a haute confiance avant de contourner une clarification ; correction generale, pas codee pour deux phrases.' >> "$FILE"
+            printf '%s\n' '' >> "$FILE"
+            printf '%s\n' '## INCIDENT DE TRACABILITE DISTINCT - RUN 33254853871' >> "$FILE"
+            printf '%s\n' '' >> "$FILE"
+            printf '%s\n' '- Workflow report-routing-mechanical-workflow-failure.yml invalide en YAML ligne 25.' >> "$FILE"
+            printf '%s\n' '- Aucun job demarre. Cet incident est distinct du run V2 33254169110 et ne le cause pas.' >> "$FILE"
+            printf '%s\n' '' >> "$FILE"
+            printf '%s\n' '## INCIDENT DE REPARATION DU RAPPORT - RUN 33256380157' >> "$FILE"
+            printf '%s\n' '' >> "$FILE"
+            printf '%s\n' '- Premier helper report-v2-routing-failure-repair.yml rejete avant job ; jobs vide.' >> "$FILE"
+            printf '%s\n' '- Cause : texte Python multilignes sorti de indentation du bloc YAML run, donc workflow invalide avant execution.' >> "$FILE"
+            printf '%s\n' '- Aucun contenu du rapport, code, base, image ou production modifie par cette tentative.' >> "$FILE"
+            printf '%s\n' '- Reparation : helper minimal avec lignes printf, auto-suppression, puis relecture obligatoire du rapport.' >> "$FILE"
+            printf '%s\n' '- Toute progression technique reste suspendue jusqu a verification du rapport.' >> "$FILE"
+          fi
 
-          path = Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md')
-          text = path.read_text(encoding='utf-8')
-          marker = '## INCIDENT ROUTAGE VISUEL V2 — RUN 33254169110'
-          if marker not in text:
-              block = r'''## INCIDENT ROUTAGE VISUEL V2 — RUN 33254169110
-
-### Verdict
-❌ **ÉCHEC DU GARDE AUTOMATIQUE — PAS UN ÉCHEC DE COMPILATION/LINK.**
-
-- Branche de travail : `tmp-rave-visual-backfill`.
-- Commit testé : `2de3d17347be86fbfd0377bf1b21c6779169019e` (`Prepare robust routing guard and mechanical audit V2`).
-- Workflow run : `33254169110`.
-- Job : `99104882089`.
-- Les étapes checkout, restauration de la base officielle #101, application du patch de routage visuel, audit mécanique RCL0193 et installation Qt ont réussi.
-- CMake configure/generate a réussi.
-- `ia_mems_diagram_selftest.exe` a été compilé et lié correctement.
-- Le `POST_BUILD` a ensuite exécuté le self-test et a volontairement bloqué la build avec **exactement deux erreurs logiques** :
-  1. `illustration injecteur IAC TPS Mini SPi Japon 1997` ne résout pas correctement l'illustration attendue `RCL0194ENG:20.4`.
-  2. `schema Mini 1997` est ambigu et doit encore demander une clarification d'induction ; le routage V2 le considère actuellement comme suffisamment précis pour contourner cette clarification.
-- Message final du garde : `IaMemsDiagramCatalog self-test failed with 2 error(s).`
-- L'erreur MSBuild `IaMemsDiagramCatalog POST_BUILD self-test failed` est donc la conséquence du garde en échec, pas d'une erreur compilateur ou linker.
-- Aucun nouveau fait mécanique, aucune nouvelle image documentaire et aucune modification de `MEMSX64` n'ont été intégrés par ce run.
-
-### Conclusion technique
-Le garde automatique a joué son rôle : le routage générique proposé est **trop permissif** pour les formulations visuelles ambiguës et son score/ses mots-clés ne suffisent pas encore à garantir la résolution naturelle exacte de `20.4`. La correction doit distinguer une simple suggestion valide d'une correspondance **exacte / suffisamment confiante pour contourner une clarification**. Elle doit rester générale et ne pas être codée uniquement pour les deux phrases du test.
-
-### Prochaine action après rétablissement complet du rapport
-Auditer le score/confiance de `IaMemsDiagramCatalog` pour les deux cas, définir un critère général de haute confiance (spécificité + marge éventuelle entre candidats), conserver la clarification pour les requêtes ambiguës, puis relancer le garde automatique sur la branche temporaire uniquement.
-
-## INCIDENT DE TRAÇABILITÉ DISTINCT — RUN 33254853871
-
-### Verdict
-❌ **WORKFLOW DE RAPPORT INVALIDE AVANT CRÉATION DE JOB.**
-
-- Workflow : `.github/workflows/report-routing-mechanical-workflow-failure.yml`.
-- Run : `33254853871`.
-- Branche : `RAPPORT`.
-- GitHub a rejeté le fichier avec : `Invalid workflow file ... You have an error in your yaml syntax on line 25`.
-- Cet incident est **distinct** du run V2 `33254169110` et n'en est pas la cause.
-- Aucun job n'a démarré et ce run n'a modifié ni le programme, ni la base, ni `MEMSX64`.
-
-### Application de la règle fondamentale de traçabilité
-Dès identification de cet échec de journalisation, toute progression technique est suspendue. La réparation du rapport devient la priorité absolue. Le présent bloc est ajouté par un helper minimal auto-supprimant afin de ne pas laisser de workflow de rapport parasite. Le travail technique ne reprend qu'après relecture du rapport confirmant la présence des deux incidents ci-dessus.
-'''
-              path.write_text(text.rstrip() + '\n\n' + block + '\n', encoding='utf-8')
-          PY
-
-      - name: Remove temporary repair helper
+      - name: Remove temporary helper
         shell: bash
         run: rm -f .github/workflows/report-v2-routing-failure-repair.yml
 
@@ -88,5 +68,5 @@ Dès identification de cet échec de journalisation, toute progression technique
             echo "Nothing to commit"
             exit 0
           fi
-          git commit -m "Record V2 routing and report workflow failures"
+          git commit -m "Record routing V2 and report failures"
           git push origin HEAD:RAPPORT
