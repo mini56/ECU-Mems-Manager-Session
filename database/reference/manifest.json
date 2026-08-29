@@ -50,7 +50,8 @@
     "research_enrichment_1720.qz64",
     "research_enrichment_1730.qz64",
     "research_enrichment_1740.qz64",
-    "research_enrichment_1750.qz64"
+    "research_enrichment_1750.qz64",
+    "research_enrichment_1760.qz64"
   ],
   "verification_levels": [
     "verifie_constructeur",
@@ -81,7 +82,33 @@
     "RAVE RCL0194ENG 39.2 Mini MPi 97MY ventilateur refroidissement ECT": "images/rave/RCL0194ENG_39_2.png",
     "RAVE RCL0194ENG 20.3 Mini SPi Japon 97MY MEMS lambda relais vilebrequin": "images/rave/RCL0194ENG_20_3.png",
     "RAVE RCL0194ENG 20.4 Mini SPi Japon 97MY MEMS injecteur IAC TPS ECT IAT": "images/rave/RCL0194ENG_20_4.png",
-    "RAVE RCL0194ENG 39.3 Mini SPi Japon 97MY ventilateur refroidissement": "images/rave/RCL0194ENG_39_3.png"
+    "RAVE RCL0194ENG 39.3 Mini SPi Japon 97MY ventilateur refroidissement": "images/rave/RCL0194ENG_39_3.png",
+    "RAVE RCL0193ENG PDF 38 Engine Tuning Data SPi manual fuel pressure lost motion throttle": "images/rave/RCL0193ENG_PDF_038.png",
+    "RAVE RCL0193ENG PDF 39 Engine Tuning Data SPi automatic fuel pressure throttle": "images/rave/RCL0193ENG_PDF_039.png",
+    "RAVE RCL0193ENG PDF 40 Engine Tuning Data MPi fuel pressure throttle TP": "images/rave/RCL0193ENG_PDF_040.png",
+    "RAVE RCL0193ENG PDF 98 Emission Control EVAP canister purge system": "images/rave/RCL0193ENG_PDF_098.png",
+    "RAVE RCL0193ENG PDF 101 Emission canister purge valve repair": "images/rave/RCL0193ENG_PDF_101.png",
+    "RAVE RCL0193ENG PDF 107 MEMS engine management strategy ECM backup": "images/rave/RCL0193ENG_PDF_107.png",
+    "RAVE RCL0193ENG PDF 108 CKP crankshaft position basic ignition timing": "images/rave/RCL0193ENG_PDF_108.png",
+    "RAVE RCL0193ENG PDF 109 MAP manifold absolute pressure and ECT sensors": "images/rave/RCL0193ENG_PDF_109.png",
+    "RAVE RCL0193ENG PDF 112 IAT intake air temperature and MPi injectors": "images/rave/RCL0193ENG_PDF_112.png",
+    "RAVE RCL0193ENG PDF 113 Throttle housing and throttle position TPS": "images/rave/RCL0193ENG_PDF_113.png",
+    "RAVE RCL0193ENG PDF 114 IACV idle air control valve throttle TP": "images/rave/RCL0193ENG_PDF_114.png",
+    "RAVE RCL0193ENG PDF 117 Heated oxygen lambda sensor overrun overspeed fuel cut-off": "images/rave/RCL0193ENG_PDF_117.png",
+    "RAVE RCL0193ENG PDF 118 Throttle cable adjustment and throttle stop caution": "images/rave/RCL0193ENG_PDF_118.png",
+    "RAVE RCL0193ENG PDF 120 Throttle cable removal and refit": "images/rave/RCL0193ENG_PDF_120.png",
+    "RAVE RCL0193ENG PDF 121 Throttle pedal removal refit torque": "images/rave/RCL0193ENG_PDF_121.png",
+    "RAVE RCL0193ENG PDF 122 Throttle housing removal refit": "images/rave/RCL0193ENG_PDF_122.png",
+    "RAVE RCL0193ENG PDF 123 Throttle housing TP sensor removal refit": "images/rave/RCL0193ENG_PDF_123.png",
+    "RAVE RCL0193ENG PDF 125 Ignition coil spark plug service": "images/rave/RCL0193ENG_PDF_125.png",
+    "RAVE RCL0193ENG PDF 126 Ignition coil refit and ECM service": "images/rave/RCL0193ENG_PDF_126.png",
+    "RAVE RCL0193ENG PDF 127 ECM refit and IACV service": "images/rave/RCL0193ENG_PDF_127.png",
+    "RAVE RCL0193ENG PDF 128 IAT and ECT sensor service": "images/rave/RCL0193ENG_PDF_128.png",
+    "RAVE RCL0193ENG PDF 129 ECT and CKP sensor service": "images/rave/RCL0193ENG_PDF_129.png",
+    "RAVE RCL0193ENG PDF 130 CKP crankshaft position sensor refit": "images/rave/RCL0193ENG_PDF_130.png",
+    "RAVE RCL0193ENG PDF 131 MAP and TP sensor repair": "images/rave/RCL0193ENG_PDF_131.png",
+    "RAVE RCL0193ENG PDF 135 Fuel injectors and fuel rail service": "images/rave/RCL0193ENG_PDF_135.png",
+    "RAVE RCL0193ENG PDF 170 Inlet manifold injector related service": "images/rave/RCL0193ENG_PDF_170.png"
   },
   "visual_assets": {
     "rave:RCL0194ENG:COLOUR_CODES": {
@@ -147,6 +174,214 @@
       "source_page": "39.3",
       "pdf_index": 26,
       "sha256": "b8da82236a56034cd3afde692752ae6ccdef2bc792f5dacfe14392ffc0f00188"
+    },
+    "rave:RCL0193ENG:PDF:38": {
+      "path": "images/rave/RCL0193ENG_PDF_038.png",
+      "asset_kind": "table_page",
+      "document": "RCL0193ENG",
+      "source_page": "PDF p.38",
+      "pdf_index": 38,
+      "sha256": "a390767a247972909140568093539c1c3370edad63cdd010b1f8ce2a5cfb8d98"
+    },
+    "rave:RCL0193ENG:PDF:39": {
+      "path": "images/rave/RCL0193ENG_PDF_039.png",
+      "asset_kind": "table_page",
+      "document": "RCL0193ENG",
+      "source_page": "PDF p.39",
+      "pdf_index": 39,
+      "sha256": "d881fbd4d315eb9c9e87e0e2958b6ec6fe4754cfb64e4eab8794330a04b15dd1"
+    },
+    "rave:RCL0193ENG:PDF:40": {
+      "path": "images/rave/RCL0193ENG_PDF_040.png",
+      "asset_kind": "table_page",
+      "document": "RCL0193ENG",
+      "source_page": "PDF p.40",
+      "pdf_index": 40,
+      "sha256": "65d280e6676529d10da5b48cb401e2ac4e53cdd5b6a6f8a3743b512bf119bb04"
+    },
+    "rave:RCL0193ENG:PDF:98": {
+      "path": "images/rave/RCL0193ENG_PDF_098.png",
+      "asset_kind": "technical_description_page",
+      "document": "RCL0193ENG",
+      "source_page": "PDF p.98",
+      "pdf_index": 98,
+      "sha256": "d8d4812a42700f9f3f2ce39d8e2aa3ec44a1704e86f76e2f0ba0c35bf324c9f3"
+    },
+    "rave:RCL0193ENG:PDF:101": {
+      "path": "images/rave/RCL0193ENG_PDF_101.png",
+      "asset_kind": "procedure_page",
+      "document": "RCL0193ENG",
+      "source_page": "PDF p.101",
+      "pdf_index": 101,
+      "sha256": "aa9db58404ba918f17db025348cd355965029efa0bd99895adf974860ff92a0e"
+    },
+    "rave:RCL0193ENG:PDF:107": {
+      "path": "images/rave/RCL0193ENG_PDF_107.png",
+      "asset_kind": "technical_description_page",
+      "document": "RCL0193ENG",
+      "source_page": "PDF p.107",
+      "pdf_index": 107,
+      "sha256": "7295cced222821c1cf43b4ddc001b6e9d892d5293c6bd504741302cc3dbe919a"
+    },
+    "rave:RCL0193ENG:PDF:108": {
+      "path": "images/rave/RCL0193ENG_PDF_108.png",
+      "asset_kind": "technical_description_page",
+      "document": "RCL0193ENG",
+      "source_page": "PDF p.108",
+      "pdf_index": 108,
+      "sha256": "7ac5fd15a19ebd554e4bc68230eb3fb78f5d1d2293b50d4a86a4c0e760a15dfe"
+    },
+    "rave:RCL0193ENG:PDF:109": {
+      "path": "images/rave/RCL0193ENG_PDF_109.png",
+      "asset_kind": "technical_description_page",
+      "document": "RCL0193ENG",
+      "source_page": "PDF p.109",
+      "pdf_index": 109,
+      "sha256": "6eab041c321b21d3a709654690b1080fd03f42ef18b494ddc9efe6ec102c5456"
+    },
+    "rave:RCL0193ENG:PDF:112": {
+      "path": "images/rave/RCL0193ENG_PDF_112.png",
+      "asset_kind": "technical_description_page",
+      "document": "RCL0193ENG",
+      "source_page": "PDF p.112",
+      "pdf_index": 112,
+      "sha256": "faff199daf138675bd4b119fbc97d4e80390267b95788de36c4fc5f6634f8293"
+    },
+    "rave:RCL0193ENG:PDF:113": {
+      "path": "images/rave/RCL0193ENG_PDF_113.png",
+      "asset_kind": "technical_description_page",
+      "document": "RCL0193ENG",
+      "source_page": "PDF p.113",
+      "pdf_index": 113,
+      "sha256": "d4f83143b698784c9012461c3b32f282562dd20b6e25930000fdb6cdea1f0830"
+    },
+    "rave:RCL0193ENG:PDF:114": {
+      "path": "images/rave/RCL0193ENG_PDF_114.png",
+      "asset_kind": "technical_description_page",
+      "document": "RCL0193ENG",
+      "source_page": "PDF p.114",
+      "pdf_index": 114,
+      "sha256": "9337a1b44946f74f800da84b9128adb7bc2fa06c2a04fbe21869da237058166f"
+    },
+    "rave:RCL0193ENG:PDF:117": {
+      "path": "images/rave/RCL0193ENG_PDF_117.png",
+      "asset_kind": "technical_description_page",
+      "document": "RCL0193ENG",
+      "source_page": "PDF p.117",
+      "pdf_index": 117,
+      "sha256": "d2458744736adaf240e2afee10ede3f7a6bed7ced3ad3c7ed14982a41166693e"
+    },
+    "rave:RCL0193ENG:PDF:118": {
+      "path": "images/rave/RCL0193ENG_PDF_118.png",
+      "asset_kind": "procedure_page",
+      "document": "RCL0193ENG",
+      "source_page": "PDF p.118",
+      "pdf_index": 118,
+      "sha256": "a10faab6394433096be2069a6301bbfa1ebea9c7db4ce59eb150728edbc9888a"
+    },
+    "rave:RCL0193ENG:PDF:120": {
+      "path": "images/rave/RCL0193ENG_PDF_120.png",
+      "asset_kind": "procedure_page",
+      "document": "RCL0193ENG",
+      "source_page": "PDF p.120",
+      "pdf_index": 120,
+      "sha256": "39f05ded8e37cb7447bf5e7504c7673d6106deefb0c7fbaaf2da5c6fabedd165"
+    },
+    "rave:RCL0193ENG:PDF:121": {
+      "path": "images/rave/RCL0193ENG_PDF_121.png",
+      "asset_kind": "procedure_page",
+      "document": "RCL0193ENG",
+      "source_page": "PDF p.121",
+      "pdf_index": 121,
+      "sha256": "879b10b867da77bd59c9f1ff8a13d81377692ce7e9b5a6174f5d7bf982f9b40a"
+    },
+    "rave:RCL0193ENG:PDF:122": {
+      "path": "images/rave/RCL0193ENG_PDF_122.png",
+      "asset_kind": "procedure_page",
+      "document": "RCL0193ENG",
+      "source_page": "PDF p.122",
+      "pdf_index": 122,
+      "sha256": "43f288b733cf74169f1bcc3c4284d6a949dfb1a46a7db434185b2bc78a1f89de"
+    },
+    "rave:RCL0193ENG:PDF:123": {
+      "path": "images/rave/RCL0193ENG_PDF_123.png",
+      "asset_kind": "procedure_page",
+      "document": "RCL0193ENG",
+      "source_page": "PDF p.123",
+      "pdf_index": 123,
+      "sha256": "8977f0918a5ae78c7eef27d96265297b30e6f1021c10241afc9696b97a350412"
+    },
+    "rave:RCL0193ENG:PDF:125": {
+      "path": "images/rave/RCL0193ENG_PDF_125.png",
+      "asset_kind": "procedure_page",
+      "document": "RCL0193ENG",
+      "source_page": "PDF p.125",
+      "pdf_index": 125,
+      "sha256": "232f50c99af2802b56a8d4cb086329d7eafe946083222940f3a0ae15e3ce3728"
+    },
+    "rave:RCL0193ENG:PDF:126": {
+      "path": "images/rave/RCL0193ENG_PDF_126.png",
+      "asset_kind": "procedure_page",
+      "document": "RCL0193ENG",
+      "source_page": "PDF p.126",
+      "pdf_index": 126,
+      "sha256": "6745b1b239e58d4af63ce2835f44f5dc6ca53db06d8be493f6a888c28e2ea83f"
+    },
+    "rave:RCL0193ENG:PDF:127": {
+      "path": "images/rave/RCL0193ENG_PDF_127.png",
+      "asset_kind": "procedure_page",
+      "document": "RCL0193ENG",
+      "source_page": "PDF p.127",
+      "pdf_index": 127,
+      "sha256": "3095ec02dc93966b5f0904ca286b17fdf2e1cb91fd6f1c80b6f1590a611bba77"
+    },
+    "rave:RCL0193ENG:PDF:128": {
+      "path": "images/rave/RCL0193ENG_PDF_128.png",
+      "asset_kind": "procedure_page",
+      "document": "RCL0193ENG",
+      "source_page": "PDF p.128",
+      "pdf_index": 128,
+      "sha256": "a98c69e7270ecbc075111775fe4859c319d22286e464d0737cb8d841e782f720"
+    },
+    "rave:RCL0193ENG:PDF:129": {
+      "path": "images/rave/RCL0193ENG_PDF_129.png",
+      "asset_kind": "procedure_page",
+      "document": "RCL0193ENG",
+      "source_page": "PDF p.129",
+      "pdf_index": 129,
+      "sha256": "6d0048fc01b70c42ef5c9dcf33e9c213866b84a48cffd295b740181d5705c250"
+    },
+    "rave:RCL0193ENG:PDF:130": {
+      "path": "images/rave/RCL0193ENG_PDF_130.png",
+      "asset_kind": "procedure_page",
+      "document": "RCL0193ENG",
+      "source_page": "PDF p.130",
+      "pdf_index": 130,
+      "sha256": "0c5e859a1331dbb95cf26e6864a965043ca5c08c7860961608facf7a9a22edaf"
+    },
+    "rave:RCL0193ENG:PDF:131": {
+      "path": "images/rave/RCL0193ENG_PDF_131.png",
+      "asset_kind": "procedure_page",
+      "document": "RCL0193ENG",
+      "source_page": "PDF p.131",
+      "pdf_index": 131,
+      "sha256": "80f518f28b7d98809ce2cb1a4e5e87239c8722089c64dde9b04698324a91960f"
+    },
+    "rave:RCL0193ENG:PDF:135": {
+      "path": "images/rave/RCL0193ENG_PDF_135.png",
+      "asset_kind": "procedure_page",
+      "document": "RCL0193ENG",
+      "source_page": "PDF p.135",
+      "pdf_index": 135,
+      "sha256": "b552668f5dd879b1fdc7a141a48cc2990ff46b8b363f3b6f262c413030c506f8"
+    },
+    "rave:RCL0193ENG:PDF:170": {
+      "path": "images/rave/RCL0193ENG_PDF_170.png",
+      "asset_kind": "procedure_page",
+      "document": "RCL0193ENG",
+      "source_page": "PDF p.170",
+      "pdf_index": 170,
+      "sha256": "732bf9fc49254db52908659c575fc508a1afce555a4c98706f738f5a66f03ef8"
     }
   }
 }
