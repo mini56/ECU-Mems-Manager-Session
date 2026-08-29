@@ -1,0 +1,95 @@
+name: TEMP RCL0193 1760 VALIDATE
+
+on:
+  push:
+    branches: [tmp-rave-visual-backfill]
+    paths:
+      - .github/workflows/temp-rcl0193-1760-validate.yml
+
+permissions:
+  contents: read
+
+jobs:
+  validate_candidate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-visual-backfill
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pinned PDF renderer
+        run: python -m pip install PyMuPDF==1.26.4
+      - name: Verify production remains exact BUILD 101
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROD=$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')
+          test "$PROD" = "22dbe75ed14e0a61e694159d505ef72245116b48"
+          echo "PRODUCTION_BUILD_101_UNCHANGED=$PROD"
+      - name: Download exact RCL0193 factory PDF
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --output /tmp/RCL0193ENG.pdf 'https://www.uscars.biz/uscars/mini-documents/Rave_CD_wmxn990e.pdf'
+          echo 'c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715  /tmp/RCL0193ENG.pdf' | sha256sum -c -
+      - name: Build and validate RCL0193 1760 candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .tmp-rcl0193-1760
+          python tools/build_rcl0193_visual_backfill_1760.py --root . --pdf /tmp/RCL0193ENG.pdf --work .tmp-rcl0193-1760 | tee /tmp/rcl0193_1760_validation.txt
+          grep -F 'RCL0193_1760_CANDIDATE_PASS' /tmp/rcl0193_1760_validation.txt
+          grep -F 'rcl0193_assets=26' /tmp/rcl0193_1760_validation.txt
+          grep -F 'rcl0193_fact_coverage=31' /tmp/rcl0193_1760_validation.txt
+          grep -F 'rcl0193_links=43' /tmp/rcl0193_1760_validation.txt
+          grep -F 'rcl0194_assets_preserved=8' /tmp/rcl0193_1760_validation.txt
+      - name: Guard candidate scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .tmp-rcl0193-1760
+          python - <<'PY'
+          import subprocess
+          exact={
+            'database/reference/research_enrichment_1760.qz64',
+            'database/reference/manifest.json',
+            'database/reference/audits/rcl0193_visual_backfill_1760_audit.md',
+          }
+          prefix='database/reference/images/rave/RCL0193ENG_PDF_'
+          paths=[]
+          for line in subprocess.check_output(['git','status','--porcelain'],text=True).splitlines():
+              p=line[3:].strip().split(' -> ',1)[-1];paths.append(p)
+          bad=[p for p in paths if p not in exact and not (p.startswith(prefix) and p.endswith('.png'))]
+          if bad:raise SystemExit('Unexpected candidate paths: '+', '.join(bad))
+          png=[p for p in paths if p.startswith(prefix) and p.endswith('.png')]
+          if len(png)!=26:raise SystemExit(f'Expected 26 generated PNG, got {len(png)}')
+          for p in exact:
+              if p not in paths:raise SystemExit('Expected generated path missing: '+p)
+          print('RCL0193_1760_SCOPE_PASS files=',len(paths))
+          PY
+      - name: Build verification artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/RCL0193-1760-CANDIDATE
+          mkdir -p /tmp/RCL0193-1760-CANDIDATE/database/reference/images/rave
+          mkdir -p /tmp/RCL0193-1760-CANDIDATE/database/reference/audits
+          cp database/reference/research_enrichment_1760.qz64 /tmp/RCL0193-1760-CANDIDATE/database/reference/
+          cp database/reference/manifest.json /tmp/RCL0193-1760-CANDIDATE/database/reference/
+          cp database/reference/audits/rcl0193_visual_backfill_1760_audit.md /tmp/RCL0193-1760-CANDIDATE/database/reference/audits/
+          cp database/reference/images/rave/RCL0193ENG_PDF_*.png /tmp/RCL0193-1760-CANDIDATE/database/reference/images/rave/
+          cp /tmp/rcl0193_1760_validation.txt /tmp/RCL0193-1760-CANDIDATE/VALIDATION.txt
+          cd /tmp/RCL0193-1760-CANDIDATE
+          find . -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+          echo "FILE_COUNT=$(find . -type f | wc -l)"
+          echo "PNG_COUNT=$(find database/reference/images/rave -name 'RCL0193ENG_PDF_*.png' | wc -l)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RCL0193-1760-DETERMINISTIC-CANDIDATE
+          path: /tmp/RCL0193-1760-CANDIDATE
+          if-no-files-found: error
+          compression-level: 6
