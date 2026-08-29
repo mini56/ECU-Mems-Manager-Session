@@ -1656,3 +1656,26 @@ The previous qz64 transport problem is solved by deterministic reconstruction: t
 
 ### Exact next action
 Before any new data push, correct only the temporary validation workflow so that `.tmp-rcl0194-1750/` and `RCL0194ENG.pdf` are removed after generation and before the Git scope guard. Re-run the same deterministic validation unchanged. If it passes, record that test in this report before committing the generated 1750/PNG/manifest/audit candidate.
+
+## 2026-08-29 — RCL0194 backfill 1750 — PASS déterministe
+
+Test GitHub Actions : `TEMP RCL0194 DETERMINISTIC 1750 VALIDATE`, run `33249367487`, job `99092252320`, HEAD `11e891e15ce761201f1b649d4ae18949d7dc4ca7`.
+
+**Verdict : ✅ PASS.** La seule correction depuis le run précédent a été la suppression des fichiers temporaires `.tmp-rcl0194-1750/` et `RCL0194ENG.pdf` avant le garde de périmètre.
+
+Validations :
+- `PRAGMA integrity_check = ok`, `user_version = 20`;
+- 93 faits RAVE et 105 faits expert historiques inchangés;
+- 8 visuels RCL0194;
+- couverture visuelle directe/effective 55/55 faits RCL0194;
+- 26/26 faits couleurs SPi Japon reliés à la légende constructeur;
+- 3 corrections additives `39.1 -> 39.2`, sans réécrire les faits historiques;
+- qz64 SHA-256 `200b2d7ec0ba24d93d7192fdf63f86845c53f49ad4a28cb997ede9d39fb5f51d`;
+- SQL SHA-256 `e9b10b33b67165dc14effc81fb8a62308ab5340ed8a5d38b0d7f6aec43191090`;
+- garde documentaire ✅; artefact candidat ✅.
+
+Artefact : `RCL0194-1750-DETERMINISTIC-CANDIDATE`, ID `9713857193`, 1,356,869 octets, digest `sha256:5f82d02140edb7a1232f3372b2da269db4db3b5b6f025dcdb370f31fa8b86201`.
+
+Production reste `MEMSX64` #101 `22dbe75ed14e0a61e694159d505ef72245116b48`; aucun #102. Communication ECU et 32 bits intacts.
+
+**Prochaine action exacte :** vérifier `SHA256SUMS.txt` de l'artefact puis pousser exactement qz64 1750 + manifeste + audit + 8 PNG sur `tmp-rave-visual-backfill`, nettoyer les workflows temporaires, puis lancer une validation post-pousse et l'inscrire au rapport avant le lot suivant.
