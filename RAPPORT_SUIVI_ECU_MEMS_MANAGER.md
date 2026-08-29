@@ -1578,3 +1578,17 @@ Aucun code de communication ECU, protocole, acquisition/RAM, UI de production, Q
 Pour garantir que le vrai lot de donnees soit conserve en un commit coherent malgre les PNG binaires, la prochaine pousse sur `tmp-rave-visual-backfill` ajoute uniquement un workflow temporaire auto-supprimant de packaging. Ce helper reconstruira les 8 PNG depuis le PDF Rover exact avec PyMuPDF 1.26.4, verifiera tous les SHA-256 deja valides, installera le `research_enrichment_1750.qz64`, mettra a jour le manifeste et ajoutera l'audit, puis creera un seul commit de donnees.
 
 Le helper n'est pas un changement de production : aucun protocole ECU, aucune acquisition/RAM, aucun code IA/communication, aucun 32 bits et aucun `MEMSX64` ne sont modifies. Le commit de donnees resultant doit contenir uniquement les 8 images RCL0194, le lot 1750, le manifeste, l'audit, plus la suppression du helper temporaire lui-meme. Toute difference de hash doit faire echouer le workflow avant commit.
+
+# ECHEC INTERMEDIAIRE PACKAGING RCL0194 1750 — 29 AOUT 2026
+
+Workflow temporaire : `TEMP RCL0194 COMMIT BACKFILL`, run `33248437871`, job `99089830021` — **FAILURE avant tout commit de donnees**.
+
+Etapes confirmees vertes avant l'echec : checkout, Python, PyMuPDF 1.26.4, telechargement du PDF constructeur avec SHA-256 exact, puis rendu/verifications des **8 images RCL0194**. Les huit assets ont retrouve exactement les SHA-256 deja valides, incluant les trois assets du pilote.
+
+L'echec survient uniquement a l'etape `Install validated batch 1750 payload` : le qz64 recopie dans un heredoc du workflow ne reproduit pas exactement le SHA-256 attendu `969c2b23b8e33e9bcac4ff653752186fad2fde8b5952439bf808d1ac2b56de02`. Le garde de hash a donc correctement bloque la suite. Aucun manifeste, audit ou commit de donnees n'a ete pousse par ce run.
+
+Conclusion : les assets visuels sont valides ; le defaut concerne seulement le mecanisme de transfert du petit fichier qz64 dans le helper. Ne pas regenerer le SQL ni modifier les donnees pour contourner le garde.
+
+Correction retenue avant nouvelle tentative : ajouter le **qz64 exact deja valide** comme blob GitHub, verifier son hash dans le workflow, puis ne plus le reconstruire par heredoc. Apres succes, produire un commit candidat propre base directement sur l'etat de chantier avant helpers, afin que l'etat final ne conserve que les donnees/audits voulus et pas l'outillage temporaire.
+
+`MEMSX64` reste strictement BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48` et n'a subi aucun changement.
