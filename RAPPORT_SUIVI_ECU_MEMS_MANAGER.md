@@ -2310,3 +2310,13 @@ PROCHAINE ACTION EXACTE:
 - Fichier research_enrichment_1770.qz64 final Base64 + newline: 1497 octets, SHA-256 0de7f667adda6e4b4770f3c9426ec3cbc7299a9606eff533e2f015690d6b5ca0.
 - Validation schema: foreign_keys=ON, integrity_check=ok, comptes ajoutes 1 scope / 1 constraint / 1 knowledge / 1 knowledge_scope / 5 aliases.
 - Les empreintes precedemment notees dans les deux entrees preparatoires sont supersedees par celles-ci. Aucun fichier 1770 n avait encore ete pousse.
+
+## 2026-08-29 - AKM6348 FR 1770 - LOT DOCUMENTAIRE VALIDE ET COMMITE
+
+- Workflow TEMP AKM6348 FR 1770, run 33260083810, job 99120398324: SUCCESS complet.
+- Commit final tmp-rave-visual-backfill: 7c51c14031753a48d83024a410a49287a02dca9d - Register AKM6348 French manual source batch 1770.
+- Reconstruction base complete PASS: integrity_check=ok, user_version=20, 93 faits RAVE et 105 faits expert historiques inchanges.
+- Ajouts 1770 verifies: 1 scope, 1 contrainte production_date >= 1976-03, 1 knowledge documentaire, 1 liaison scope, 5 alias francais.
+- research_enrichment_1770.qz64 SHA-256 0de7f667adda6e4b4770f3c9426ec3cbc7299a9606eff533e2f015690d6b5ca0; octets distants relus et verifies.
+- Aucun fait technique de page n est encore marque constructeur: prochaine etape = acquerir/hash le PDF AKM6348 FR exact, verifier pagination et commencer les captures/pages utiles.
+- Production MEMSX64 reste strictement BUILD #101 22dbe75ed14e0a61e694159d505ef72245116b48; aucun #102.
