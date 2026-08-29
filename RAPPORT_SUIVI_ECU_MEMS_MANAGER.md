@@ -2283,3 +2283,13 @@ PROCHAINE ACTION EXACTE:
 PROCHAINE ACTION EXACTE:
 - Sur tmp-rave-visual-backfill, modifier uniquement .github/workflows/temp-routing-mechanical-v2.yml dans Guard candidate scope: restaurer help.html et help_en.html avant git status, sans toucher au routage ni a la liste des 7 fichiers candidats.
 - Puis relancer V2 et consigner immediatement son resultat.
+
+## 2026-08-29 - AKM6348 FR - LOT 1770 AVANT POUSSE
+
+- Demande utilisateur: intégrer le manuel français AKM 6348 dans la base et poursuivre son exploitation par captures/pages vérifiées.
+- Source identifiée: AKM 6348 - FRENCH, manuel de réparation Mini en français; la représentation Scribd consultée annonce 328 pages et une portée à partir de mars 1976.
+- Le PDF direct public repéré fait 13 083 374 octets, mais le binaire exact n est pas encore retenu/hashé dans le dépôt; aucune valeur technique de page ne sera donc marquée verifie_constructeur dans ce premier lot.
+- Lot prévu: research_enrichment_1770.qz64 sur tmp-rave-visual-backfill, strictement additif: 1 portée véhicule, 1 contrainte de date de production, 1 connaissance documentaire, 1 liaison de portée et 5 alias français.
+- Validation locale avant pousse: schéma 1730 + lot 1770 appliqués avec foreign_keys=ON; PRAGMA integrity_check=ok. Tables historiques non modifiées.
+- Empreintes préparées: SQL 2907 octets SHA-256 7b9880ec1c9a18b0ad0c01cf8aab7ed4a243b06ae40e6583d3753294f71cd1e5; qz64 1177 octets SHA-256 d5179a162c11ef20efadabaad5daab50b9927317ae552ad37d2c5387f0ef2cd4.
+- Prochaine action exacte: pousser uniquement qz64 1770 + audit AKM6348 + manifest sur tmp-rave-visual-backfill, relire le commit distant, puis poursuivre la recherche/capture des pages exactes. MEMSX64 reste BUILD #101.
