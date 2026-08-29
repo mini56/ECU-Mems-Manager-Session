@@ -2301,3 +2301,12 @@ PROCHAINE ACTION EXACTE:
 - Empreinte correcte du fichier research_enrichment_1770.qz64 final: 1573 octets, SHA-256 a7411aba56d61627f482297ede3913f2123ca5c832aecdb702aa1b505a10d531.
 - SQL decompresse inchange: 2907 octets, SHA-256 7b9880ec1c9a18b0ad0c01cf8aab7ed4a243b06ae40e6583d3753294f71cd1e5.
 - Validation SQLite reste PASS. Aucune donnee technique AKM6348 non verifiee n est ajoutee; le lot enregistre uniquement source/portee/aliases documentaires.
+
+### AKM6348 1770 - EMPREINTES FINALES AVANT POUSSE
+
+- Le payload a ete regenere apres verification stricte des colonnes du schema 1730 et de la formulation documentaire finale.
+- SQL final: 2715 octets, SHA-256 4222b2c99d7030350a06043fee9c80e927f2db6b3131cb7545fed6f0d81e3336.
+- Flux qCompress interne: 1122 octets, SHA-256 15eefdc56643540d068a28eb8747be5a859bdd9c1bf88adbdf35a087c6acd1f4.
+- Fichier research_enrichment_1770.qz64 final Base64 + newline: 1497 octets, SHA-256 0de7f667adda6e4b4770f3c9426ec3cbc7299a9606eff533e2f015690d6b5ca0.
+- Validation schema: foreign_keys=ON, integrity_check=ok, comptes ajoutes 1 scope / 1 constraint / 1 knowledge / 1 knowledge_scope / 5 aliases.
+- Les empreintes precedemment notees dans les deux entrees preparatoires sont supersedees par celles-ci. Aucun fichier 1770 n avait encore ete pousse.
