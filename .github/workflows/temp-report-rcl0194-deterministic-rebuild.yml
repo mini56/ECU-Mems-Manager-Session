@@ -1,0 +1,44 @@
+name: TEMP REPORT RCL0194 DETERMINISTIC REBUILD
+
+on:
+  push:
+    branches: [RAPPORT]
+
+permissions:
+  contents: write
+
+jobs:
+  update_report:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append third transfer failure and deterministic plan
+        shell: bash
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+          # TROISIEME ECHEC DE TRANSFERT QZ64 ET CHANGEMENT DE METHODE — 29 AOUT 2026
+
+          La relance du run `33248530197` apres tentative de transfert binaire/base64 du qz64 s'est de nouveau arretee sur le garde SHA-256 avant toute autre etape. Aucun asset/manifeste/audit n'a ete pousse par cette tentative.
+
+          Decision technique : **ne pas affaiblir le garde et ne plus transporter le qz64 a travers la conversation**. La nouvelle tentative reconstruira deterministement `research_enrichment_1750.qz64` dans GitHub Actions a partir de la SQLite officielle BUILD #101 et des 55 faits `RCL0194ENG` reels. Le workflow utilisera les `image_ref` historiques comme entree, appliquera explicitement l'audit `39.1 -> 39.2` uniquement aux trois faits identifies, ajoutera la legende couleurs aux 26 faits `RAVE-COLOR-SPIJ-*`, puis generera le qCompress/qz64 localement.
+
+          Avant commit, le SQL genere sera applique a une copie exacte de `ia_mems_reference_r20.sqlite` #101 et devra verifier au minimum : `integrity_check=ok`, `user_version=20`, 93 faits RAVE, 105 faits experts, 8 assets RCL0194, 55/55 faits RCL0194 lies, 26 liens de legende couleurs et exactement 3 corrections de provenance. Les 8 PNG devront egalement retrouver leurs SHA-256 deja valides.
+
+          Cette methode peut produire un qz64 de bytes/hash differents du candidat local precedent en raison du formatage deterministe regenere, mais **les donnees et invariants cibles ne changent pas**. Le nouveau hash sera enregistre apres validation ; aucun fait historique ne sera reecrit.
+
+          `MEMSX64` reste strictement BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.
+          EOF
+      - name: Commit report and remove helper
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/temp-report-rcl0194-deterministic-rebuild.yml
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Record deterministic rebuild plan after qz64 transfer failures"
+          git push origin RAPPORT
