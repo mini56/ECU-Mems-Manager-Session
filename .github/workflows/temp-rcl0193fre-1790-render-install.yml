@@ -1,0 +1,60 @@
+name: TEMP RCL0193FRE 1790 FINAL INSTALL
+on:
+  push:
+    branches: [tmp-rave-visual-backfill]
+    paths:
+      - '.github/workflows/temp-rcl0193fre-1790-render-install.yml'
+      - 'tools/install_rcl0193fre_1790_render.py'
+permissions:
+  contents: write
+concurrency:
+  group: rcl0193fre-1790-final
+  cancel-in-progress: false
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-visual-backfill
+          fetch-depth: 0
+      - name: Verify production remains BUILD 101
+        shell: bash
+        run: |
+          test "$(git ls-remote origin refs/heads/MEMSX64 | cut -f1)" = "22dbe75ed14e0a61e694159d505ef72245116b48"
+      - name: Install renderer dependency
+        run: python -m pip install --disable-pip-version-check pillow
+      - name: Fetch exact validated RCL0193FRE 1790 transport
+        shell: bash
+        env:
+          G4_URL: 'https://tmpfiles.org/dl/1788030418.af549ec88469d238/wlwjBzGX66CD/rcl0193fre_1790_g4.tif.xz'
+          QZ_URL: 'https://tmpfiles.org/dl/1788030419.111dc0c830f757d3/wkwbB6Gz6785/research_enrichment_1790.qz64'
+        run: |
+          mkdir -p .rcl1790_transport
+          curl -fL --retry 4 --retry-delay 2 "$G4_URL" -o .rcl1790_transport/rcl0193fre_1790_g4.tif.xz
+          curl -fL --retry 4 --retry-delay 2 "$QZ_URL" -o .rcl1790_transport/research_enrichment_1790.qz64
+          echo '90d618af4491938699940b8d019e95c468a626fbf02ccd421567da9b0424f929  .rcl1790_transport/rcl0193fre_1790_g4.tif.xz' | sha256sum -c -
+          echo '165d3bedb57b38b7fa1550a4360c9f484828209beea51b63b4aab20c5f9885da  .rcl1790_transport/research_enrichment_1790.qz64' | sha256sum -c -
+      - name: Install and validate batch 1790
+        shell: bash
+        run: |
+          cp tools/install_rcl0193fre_1790_render.py /tmp/install_rcl0193fre_1790_render.py
+          python /tmp/install_rcl0193fre_1790_render.py install "$GITHUB_WORKSPACE"
+      - name: Commit complete RCL0193FRE batch 1790
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git rm -f .github/workflows/temp-rcl0193fre-1790-render-install.yml tools/install_rcl0193fre_1790_render.py
+          git rm -r -f --ignore-unmatch .rcl1790_transport
+          rm -rf .rcl1790_transport
+          git add database/reference/research_enrichment_1790.qz64 database/reference/manifest.json database/reference/audits/rcl0193fre_1790_audit.md database/reference/images/rave/RCL0193FRE_PDF_*.png
+          test -z "$(git status --porcelain | grep -v -E '^([AMD?]{2}) (database/reference/research_enrichment_1790.qz64|database/reference/manifest.json|database/reference/audits/rcl0193fre_1790_audit.md|database/reference/images/rave/RCL0193FRE_PDF_[0-9]{3}.png|.github/workflows/temp-rcl0193fre-1790-render-install.yml|tools/install_rcl0193fre_1790_render.py|.rcl1790_transport/)')"
+          git commit -m 'Add RCL0193FRE maximum extraction batch 1790'
+          git push origin HEAD:tmp-rave-visual-backfill
+      - name: Verify committed remote state
+        shell: bash
+        run: |
+          git fetch origin tmp-rave-visual-backfill
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/tmp-rave-visual-backfill)"
+          python /tmp/install_rcl0193fre_1790_render.py post "$GITHUB_WORKSPACE"
