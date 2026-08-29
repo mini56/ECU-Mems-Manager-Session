@@ -1,0 +1,33 @@
+name: REPORT ROUTING MECHANICAL RECOVERY
+
+on:
+  push:
+    branches:
+      - RAPPORT
+    paths:
+      - '.github/workflows/report-routing-mechanical-recovery.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  append-report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append recovery chronology
+        env:
+          REPORT_APPEND_B64: 'CiMjIDIwMjYtMDgtMjkgLSBQUklPUklURSBSQVBQT1JUIEFQUkVTIERFVVggRUNIRUNTIEFWQU5UIEpPQgoKUnVuIHRlY2huaXF1ZSBgMzMyNTM2NTE5NzVgIHN1ciBgdG1wLXJhdmUtdmlzdWFsLWJhY2tmaWxsYDogKirinYwgRkFJTFVSRSBhdmFudCB0b3V0IGpvYioqIChgam9icz1bXWApLiBBdWN1biBzY3JpcHQsIGJ1aWxkLCBhdWRpdCwgY29tbWl0IGRlIGRvbm5lZXMgb3UgY2hhbmdlbWVudCBwcm9ncmFtbWUgbidhIGV0ZSBleGVjdXRlLgoKVGVudGF0aXZlIGRlIGpvdXJuYWxpc2F0aW9uIGAzMzI1Mzc3MzYxNWA6ICoq4p2MIEZBSUxVUkUgYXZhbnQgdG91dCBqb2IqKiAoYGpvYnM9W11gKS4gQ29uZm9ybWVtZW50IGEgbGEgcmVnbGUgZm9uZGFtZW50YWxlLCB0b3V0ZSBwcm9ncmVzc2lvbiB0ZWNobmlxdWUgYSBldGUgYXJyZXRlZS4KCkNhdXNlIGV4cGxvaXRhYmxlOiBsZXMgbm91dmVsbGVzIGRlZmluaXRpb25zIGRlIHdvcmtmbG93IG9udCBldGUgcmVqZXRlZXMgYXZhbnQgcGxhbmlmaWNhdGlvbiBldCBuZSBwcm9kdWlzZW50IGF1Y3VuIGxvZyBkJ2V0YXBlLiBMYSBtZXRob2RlIFlBTUwgdm9sdW1pbmV1c2UgZXN0IGFiYW5kb25uZWUuIExlIGNoYW50aWVyIHJlcHJlbmRyYSB1bmlxdWVtZW50IGF2ZWMgZGVzIHNjcmlwdHMgdmVyc2lvbm5lcyBjb3VydHMgZXQgdW4gd29ya2Zsb3cgbWluaW1hbC4KCkFyY2hpdGVjdHVyZSBkb2N1bWVudGFpcmUgcmV0ZW51ZSBhIGNlIHN0YWRlOiBwYXMgZGUgbm91dmVsIG9uZ2xldCBNZWNhbmlxdWUgbWFpbnRlbmFudCBldCBwYXMgZGUgc3RvY2thZ2UgUkFWRSBlbiB2cmFjLiBMZXMgZG9ubmVlcyBzZXJvbnQgc3RydWN0dXJlZXMgZGFucyBsZXMgdGFibGVzIGNvbm5haXNzYW5jZS9zcGVjaWZpY2F0aW9ucy9wcm9jZWR1cmVzL2V0YXBlcy9leGlnZW5jZXMvcmVsYXRpb25zL2lsbHVzdHJhdGlvbnMgZXhpc3RhbnRlczsgdW5lIHN0cnVjdHVyZSBhZGRpdGl2ZSBzZXJhIGNyZWVlIHNpIHVuIHR5cGUgZGUgZG9ubmVlIG5lIHBldXQgcGFzIGV0cmUgcmVwcmVzZW50ZSBjb3JyZWN0ZW1lbnQuIEFjY2VzIGluaXRpYWwgcGFyIElBICsgcmVjaGVyY2hlIGRvY3VtZW50YWlyZS4gVW4gb25nbGV0IE1lY2FuaXF1ZSBwb3VycmEgZXRyZSBldmFsdWUgcGx1cyB0YXJkIHN1ciB1biBjb3JwdXMgcmVlbCBlbnJpY2hpLgoKQXVkaXQgcHJlbGltaW5haXJlOiBsZXMgMzEgZmFpdHMgUkNMMDE5MyBleGlzdGFudHMgb250IGxldXJzIGNhcHR1cmVzOyBsYSBsYWN1bmUgdmllbnQgc3VydG91dCBkZSBub21icmV1c2VzIHByb2NlZHVyZXMsIHNwZWNpZmljYXRpb25zIGV0IHZ1ZXMgbWVjYW5pcXVlcyBkdSBtYW51ZWwgMzcyIHBhZ2VzIHF1aSBuJ29udCBqYW1haXMgZXRlIHN0cnVjdHVyZWVzLgoKUHJvZHVjdGlvbiBgTUVNU1g2NGAgcmVzdGUgQlVJTEQgIzEwMSBgMjJkYmU3NWVkMTRlMGE2MWU2OTQxNTlkNTA1ZWY3MjI0NTExNmI0OGAuCg=='
+        run: |
+          python -c "import os,base64; open('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md','ab').write(base64.b64decode(os.environ['REPORT_APPEND_B64']))"
+      - name: Commit report update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git diff --cached --quiet && exit 1
+          git commit -m "Report routing/mechanical recovery chronology"
+          git push origin HEAD:RAPPORT
