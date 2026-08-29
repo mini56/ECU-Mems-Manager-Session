@@ -1718,3 +1718,15 @@ Objectif de la prochaine pousse technique: remplacer uniquement ce helper sur la
 Validation obligatoire apres cette pousse: le meme run doit faire un `fetch` du nouveau commit distant, se replacer exactement dessus, regenerer 1750 depuis la base BUILD #101 et le PDF Rover verifie, refaire les invariants SQLite et exiger un diff nul entre les fichiers regeneres et les fichiers reellement committes. Cette validation post-pousse doit etre inscrite au rapport avant toute etape suivante.
 
 Perimetre interdit: aucune modification de `MEMSX64`, communication/protocole/acquisition/RAM/ecriture/reset ECU, Qwen/ONNX, UI ou voie 32 bits. Base/IA/RAVE restent consultatives et ne prennent jamais la main sur la communication ECU.
+
+## 2026-08-29 - RCL0194 visual backfill 1750 - PUSH + POST-VALIDATION COMPLETE
+
+Branche de travail: `tmp-rave-visual-backfill`. Commit documentaire final: `6fcb3da9ac6b4d433108194639f568cd1f4717f6` (`Add deterministic RCL0194 visual backfill 1750`). Run GitHub `33249974116`, job `99093873039`: **✅ SUCCESS complet**.
+
+Tous les controles ont passe: production verifiee encore exactement `MEMSX64` BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`; PDF Rover exact verifie; candidat 1750 regenere; hashes run #3 exiges; garde de perimetre documentaire; commit/push; relecture du commit distant; verification des octets reellement committes; reproduction de 1750 depuis le commit distant avec **diff nul**.
+
+Etat valide du lot RCL0194: `research_enrichment_1750.qz64` SHA-256 `200b2d7ec0ba24d93d7192fdf63f86845c53f49ad4a28cb997ede9d39fb5f51d`; 8 supports visuels constructeur; 55/55 faits RCL0194 avec preuve visuelle directe/effective; 26/26 faits couleur SPi Japon relies a la legende; 3 corrections additives explicites `39.1 -> 39.2`; faits historiques RAVE/expert non reecrits; `user_version=20`; integrity=ok.
+
+Conclusion: **RCL0194 1750 est valide sur la branche de chantier.** Les PNG restent des preuves/illustrations associees a la base structuree, jamais un remplacement de la connaissance structuree. La base/IA/RAVE reste strictement consultative et ne prend jamais la main sur la communication ECU.
+
+Prochaine action exacte: commencer en lecture seule l'inventaire visuel de `RCL0193ENG`, qui porte 31 faits RAVE deja presents. Identifier toutes les pages/figures/tableaux/vues correspondant a ces 31 faits, detecter les references composites ou erronees, puis mettre le rapport a jour **avant toute pousse** du lot RCL0193. Aucun #102 et aucune modification `MEMSX64`, protocole ECU, acquisition, RAM, ecriture/reset, Qwen/ONNX, UI ou 32 bits.
