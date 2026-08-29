@@ -1966,3 +1966,15 @@ Test apres pousse: relecture directe du fichier depuis la branche distante **✅
 Aucun qz64, PNG, manifeste, fait historique, code programme ou protocole ECU n'a ete modifie par cette pousse.
 
 Prochaine pousse autorisee: conserver dans un fichier backlog separe les informations techniques complementaires visibles dans le texte indexe AKM7169 mais non encore integrees, avec statut explicite `OCR/indexed-scan candidate - primary page verification required`. Ce backlog ne doit pas modifier la base. Apres cette pousse: relecture + rapport avant toute autre action.
+
+## 2026-08-29 - AKM7169 RESEARCH BACKLOG - POUSSE ET RELECTURE VALIDEES
+
+Pousse sur `tmp-rave-visual-backfill`: commit `a4c1dea0b4bae048a1deabd676de54ac12dd978a`, ajout `database/reference/research_backlog/akm7169_indexed_scan_candidates.md`.
+
+Relecture directe depuis GitHub: **✅ PASS**, blob SHA `ed9419da5810647b9efab77a52f7cf6ea348a443`. Le fichier porte explicitement le statut global `OCR_INDEXED_SCAN_CANDIDATE — PRIMARY PAGE VERIFICATION REQUIRED` et separe les 7 faits 1720 deja presents des informations supplementaires uniquement candidates.
+
+Informations preservees pour verification future: references moteur/application, ralenti/CO, allumage/capteurs/coil/plugs, unite injecteur-regulateur, carburant, General Data pompe/pression, outillage Microcheck/Cobest, vue Underbonnet SPi et plusieurs couples de serrage. Les OCR ambigus sont explicitement marques et ne sont pas devines. Aucun de ces candidats n'est ajoute a la base comme fait constructeur a ce stade.
+
+Cette pousse realise la regle fondamentale de conservation des recherches Internet: une information utile trouvee mais non encore verifiable n'est plus perdue; elle reste dans un backlog trace avec sa provenance et son niveau de confiance.
+
+Aucun qz64, PNG, manifeste, fait historique ni code ECU n'a ete modifie. Prochaine action: continuer la recherche d'un binaire AKM7169ENG exact/reproductible et, en parallele, verifier si une source anterieure du lot 1720 peut etre retrouvee dans l'historique du depot ou les artefacts de recherche. Rapport avant toute nouvelle pousse.
