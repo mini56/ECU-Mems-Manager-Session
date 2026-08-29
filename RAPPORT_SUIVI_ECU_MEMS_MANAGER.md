@@ -1991,3 +1991,44 @@ Statut AKM7169 : les 7 faits historiques structures restent valides/consultatifs
 Prochaine action autorisee demandee par l'utilisateur : produire un **audit global de couverture visuelle de la base** apres ce bloc, avec au minimum le nombre total d'images/pages/vues ajoutees, leur document source, le nombre de faits relies, les supports accessibles directement dans MEMS Manager, ceux presents mais non accessibles par l'interface, les references sans fichier, les reutilisations/doublons evites et les documents encore bloques. Ce bilan doit etre mesure sur `tmp-rave-visual-backfill` et consigne avant toute nouvelle pousse technique.
 
 Production `MEMSX64` reste strictement BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`. Base/IA/RAVE consultatives uniquement; aucune donnee documentaire ne prend la main sur la communication ECU.
+
+
+## 2026-08-29 - AUDIT GLOBAL VISUEL - MESURES AVANT POUSSE DU BILAN
+
+Audit en lecture seule effectue sur `tmp-rave-visual-backfill`, HEAD `a4c1dea0b4bae048a1deabd676de54ac12dd978a`. Production `MEMSX64` reste strictement BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.
+
+### Mesures physiques et manifest
+
+- fichiers image physiques sous `database/reference/images`: **40** = 6 SVG generiques historiques + **34 PNG RAVE**;
+- `manifest.json / diagrams`: j*40 entrees** pointant vers ces ressources;
+- `manifest.json / visual_assets`: **34 entrees RAVE**;
+- RCL0194ENG: **8 assets RAVE** (7 schemas/pages techniques + 1 legende COLOUR CODES);
+- RCL0193ENG: **26 pages RAVE**;
+- AKM7169ENG: **0 asset**, volontairement bloque faute de binaire source exact/reproductible.
+
+### Couverture des faits RAVE
+
+- RCL0194ENG: **55/55 faits** couverts visuellement; lot 1750 contient **88 liens fait->illustration** et 3 corrections additives de provenance `39.1 -> 39.2`;
+- RCL0193ENG: **31/31 faits** couverts visuellement; lot 1760 contient **43 liens fait->page**;
+- AKM7169ENG: **0/7 faits** couverts visuellement;
+- total historique: **86/93 faits RAVE** possedent au moins un support visuel, soit **92,47 %**;
+- total de liens visuels additifs 1750+1760: **131**;
+- les **34/34 assets RAVE physiques** sont utilises par la couverture et declares dans le manifeste; aucun asset AKM fictif n'est cree.
+
+### Niveaux d'accessibilite a ne pas confondre
+
+1. **Present physiquement**: 40/40 ressources declarees existent dans le package de la branche.
+2. **Declare au catalogue**: 40/40 sont dans `manifest.diagrams`; `IaMemsDiagramCatalog` solutionne dynamiquement une entree seulement si le fichier existe et si une demande a une intention de schema/cablage/brochage suffisamment probante.
+3. **Relie a la connaissance RAVE**: 34/34 nouveaux PNG RAVE sont enregistres dans `visual_assets`; 86/93 faits historiques sont couverts via 131 liens.
+4. **Valide de bout en bout sur PC reel**: parmi les nouveaux RAVE, `RCL0194ENG:20.3` est explicitement valide par l'utilisateur (proposition exacte, clic et ouverture correcte). Les 33 autres nouveaux assets RAVE ne sont pas declares individuellement valides sur PC reel simplement parce qu'ils existent.
+5. **Non accessible faute d'asset**: les 7 faits AKM7169 restent sans image jusqu'a acquisition/hash du scan constructeur exact.
+
+### Decouverte importante pour une evolution future du programme
+
+Le code actuellement commite sur `tmp-rave-visual-backfill` conserve l'ordre #101 dans `IaMemsTab::sendQuestion`: `clarificationPrompt(effectiveQuestion)` est execute **before** `updateDiagramSuggestion(effectiveQuestion)`. Une clarification de generation peut donc encore bloquer la proposition d'un visuel pourtant present dans le manifeste.
+
+Le pilote V2 RAVE 1680 a demontre sur PC reel qu'un routage corrige permettant a un schema local exact de ne pas etre bloque par une clarification inutile rend la chaine naturelle fonctionnelle. Cette amelioration n'est **pas generalisee ici** et ne doit pas etre introduite en production sans validation/accord. Elle est a signaler comme evolution programme distincte du backfill documentaire.
+
+### Prochaine pousse autorisee
+
+Ajouter uniquement `database/reference/audits/visual_coverage_global_audit.md` sur `tmp-rave-visual-backfill` avec ces mesures, la ventilation accessible/non accessible et les limites de validation. Aucun qz64, PNG, code, protocole ECU, acquisition/RAM, UI, Qwen/ONNX, 32 bits ou `MEMSX64` ne doit etre modifie. Relecture distante obligatoire apres pousse, puis rapport immediat.
