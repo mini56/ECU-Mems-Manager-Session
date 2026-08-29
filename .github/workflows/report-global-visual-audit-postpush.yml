@@ -1,0 +1,33 @@
+name: REPORT GLOBAL VISUAL AUDIT POSTPUSH
+
+on:
+  push:
+    branches:
+      - RAPPORT
+    paths:
+      - '.github/workflows/report-global-visual-audit-postpush.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  append-report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append visual audit postpush result
+        env:
+          REPORT_APPEND_B64: 'CgojIyAyMDI2LTA4LTI5IC0gQVVESVQgR0xPQkFMIFZJU1VFTCAtIFBPVVNTRSBFVCBSRUxFQ1RVUkUgRElTVEFOVEUgVkFMSURFRVMKClBvdXNzZSBkb2N1bWVudGFpcmUgc3VyIGB0bXAtcmF2ZS12aXN1YWwtYmFja2ZpbGxgOiBjb21taXQgYDc0NmJiNjUyNDI0MWMwNmUyNjUzOTZjZjZhMmIyMTZmMzk1MmRkMGVgLCBham91dCB1bmlxdWUgYGRhdGFiYXNlL3JlZmVyZW5jZS9hdWRpdHMvdmlzdWFsX2NvdmVyYWdlX2dsb2JhbF9hdWRpdC5tZGAuCgpUZXN0IGFwcmVzIHBvdXNzZTogcmVsZWN0dXJlIGRpcmVjdGUgZGVwdWlzIGxlIGNvbW1pdCBleGFjdCAqKuechSBQQVNTKiouIEJsb2IgR2l0SHViIGBkOGNiNDU0ZDY2NmZmMTE3ZGZkODNmMTNkOGVmZWFlZGZlNTdlNjdiYC4KCkNoaWZmcmVzIGF1ZGl0ZXMgZXQgcHJlc2VydmVzOgotIDQwIHJlc3NvdXJjZXMgaW1hZ2Uvc2NoZW1hIHBoeXNpcXVlcyBkYW5zIGxlIHBhY2thZ2UgZGUgcmVmZXJlbmNlID0gNiBTVkcgZ2VuZXJpcXVlcyBwcmVleGlzdGFudHMgKyAzNCBQTkcgUkFWRSBham91dGVzL2NvbnNvbGlkZXM7Ci0gNDAgZW50cmVlcyBgbWFuaWZlc3QuZGlhZ3JhbXNgLCAzNCBlbnRyZWVzIGBtYW5pZmVzdC52aXN1YWxfYXNzZXRzYDsKLSBSQ0wwMTk0OiA4IGFzc2V0cywgNTUvNTUgZmFpdHMgdmlzdWVsbGVtZW50IGNvdXZlcnRzLCA4OCBsaWVuczsKLSBSQ0wwMTkzOiAyNiBhc3NldHMsIDMxLzMxIGZhaXRzIHZpc3VlbGxlbWVudCBjb3V2ZXJ0cywgNDMgbGllbnM7Ci0gQUtNNzE2OTogMCBhc3NldCwgMC83IGZhaXRzIHZpc3VlbGxlbWVudCBjb3V2ZXJ0cywgYmxvY2FnZSB2b2xvbnRhaXJlIHN1ciBhYnNlbmNlIGR1IGJpbmFpcmUgc291cmNlIGV4YWN0OwotIHRvdGFsOiA4Ni85MyBmYWl0cyBSQVZFIGNvdXZlcnRzID0gOTIsNDcgJSwgMTMxIGxpZW5zIGZhaXQtPnZpc3VlbDsKLSAzNC8zNCBub3V2ZWF1eCBhc3NldHMgUkFWRSBzb250IHBoeXNpcXVlbWVudCBwcmVzZW50cywgZGVjbGFyZXMgYXUgY2F0YWxvZ3VlIGV0IHV0aWxpc2VzIHBhciBsYSBjb3V2ZXJ0dXJlOwotIGBSQ0wwMTk0RU5HOjIwLjNgIHJlc3RlIGxlIG5vdXZlbCBhc3NldCBSQVZFIGV4cGxpY2l0ZW1lbnQgdmFsaWRlIGRlIGJvdXQgZW4gYm91dCBzdXIgbGUgUEMgcmVlbDsgbGVzIDMzIGF1dHJlcyBuZSBzb250IHBhcyBkZWNsYXJlcyBpbmRpdmlkdWVsbGVtZW50IHRlc3RlcyBwYXIgY2xpYy4KCkwJYXVkaXQgc2lnbmFsZSBhdXNzaSBleHBsaWNpdGVtZW50IHVuZS bZXZvbHV0aW9uIHByb2dyYW1tZSBkaXN0aW5jdGU6IGxlIGNvZGUgY29tbWl0ZSBkdSBiYWNrZmlsbCBnYXJkZSBsJ29yZHJlICMxMDEgYGN sYXJpZmljYXRpb25Qcm9tcHRgIGF2YW50IGB1cGRhdGVEaWFncmFtU3VnZ2VzdGlvbmA7IGxlIGNvbXBvcnRlbWVudCBWMiBheWFudCBwZXJtaXMgbGUgc3VjY2VzIG5hdHVyZWwgMjAuMyBuJ2VzdCBwYXMgZW5jb3JlIGdlbmVyYWxpc2UuIE5lIHBhcyBjb25mb25kcmUgYWNjZXNzaWJpbGl0ZSBkdSBjYXRhbG9ndWUgZXQgcHJvcG9zaXRpb24gZ2FyYW50aWUgcG91ciB0b3V0ZSBmb3JtdWxhdGlvbiBuYXR1cmVsbGUuIEF1Y3VuIGNoYW5nZW1lbnQgZm9uY3Rpb25uZWwgbidlc3QgZWZmZWN0dWUgcGFyIGNldCBhdWRpdC4KClByb2R1Y3Rpb24gYE1FTVNYNjRgIHJlc3RlIHN0cmljdGVtZW50IEJVSUxEICMxMDEgYDIyZGJlNzVlZDE0ZTBhNjFlNjk0MTU5ZDUwNWVmNzIyNDUxMTZiNDhgLiBBdWN1biBjb2RlIEVDVS9wcm90b2NvbGUvYWNxdWlzaXRpb24vUkFNL1VJL1F3ZW4vT05OWC8zMiBiaXRzIG4nYSBldGUgbW9kaWZpZS4K'
+        run: |
+          python -c "import os,base64; open('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md','ab').write(base64.b64decode(os.environ['REPORT_APPEND_B64']))"
+      - name: Commit report update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git diff --cached --quiet && exit 1
+          git commit -m "Report global visual audit post-push validation"
+          git push origin HEAD:RAPPORT
