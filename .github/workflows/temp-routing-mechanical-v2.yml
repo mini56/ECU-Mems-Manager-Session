@@ -107,6 +107,8 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           Remove-Item 'RCL0193ENG.pdf' -Force
+          git restore -- help.html help_en.html
+          if ($LASTEXITCODE -ne 0) { throw 'Failed to restore CMake-generated help files before candidate scope check' }
           $allowed = @(
             'CMakeLists.txt',
             'database/reference/audits/rcl0193_mechanical_scope_audit.json',
