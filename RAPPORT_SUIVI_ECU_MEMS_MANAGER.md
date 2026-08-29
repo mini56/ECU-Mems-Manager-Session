@@ -1804,3 +1804,23 @@ Cause exacte de l'echec: le garde comparait la liste des pages issue du parseur 
 Conclusion: l'ancienne mention `26 pages` / page `170` provenait de l'inventaire initial imparfait qui analysait les statements SQL sans parser correctement les chaines contenant des points-virgules. Cette ancienne conclusion est desormais remplacee par le resultat du parseur structure 31/31: **25 pages uniques pour les 31 faits historiques RCL0193 du lot 1660**. Aucun fait historique n'est modifie par cette correction d'audit.
 
 Correction autorisee avant relance: modifier uniquement le garde du workflow temporaire pour exiger les 25 pages reellement extraites, conserver les controles durs de contenu et poursuivre la verification page/sujet. Si une autre divergence apparait, arret + rapport avant toute correction suivante.
+
+## 2026-08-29 - RCL0193 CARTOGRAPHIE RUN #3 + WORKFLOW PARALLELE - ECHECS JOURNALISES
+
+### Run principal de cartographie #3
+
+Commit declencheur `8291a0764b62562afad403b016daae5f2bc63a82` (`Fix RCL0193 mapping temporary workspace guard`), run `33251020966`, job `99096588037`: **⚠️ mapping reussi, garde final FAILURE**.
+
+Le coeur de la cartographie repasse exactement: `FACTS_PASS 31`, `STATEMENTS_PASS 31`, `UNIQUE_PAGES 25 [38,39,40,98,101,107,108,109,112,113,114,117,118,120,121,122,123,125,126,127,128,129,130,131,135]`, `WEAK_CASES 1`. Les assertions PDF/1660 et le document historique exact passent. Apres suppression de `.tmp-rcl0193-map`, le test strict `git status --porcelain --untracked-files=all` echoue encore. Les logs de ce run ne montrent pas le chemin supplementaire; il reste donc a l'identifier explicitement avant de modifier le garde. Aucun audit final, aucune image et aucune donnee RCL0193 n'ont ete commis par ce run.
+
+### Workflow parallele `TEMP RCL0193 MAP 1660`
+
+Commit `bf6c4126ca5f6044f00496c72412e2fba56cc244`, run `33251002269`, job `99096541223`: **❌ FAILURE avant commit**. Les entrees immuables passent: production `MEMSX64` toujours exactement BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`, qz64 1660 exact, PDF RCL0193 exact, 31 faits parses, 31 cles uniques, tous `verifie_constructeur`, 31 `image_ref` historiques vides.
+
+Cet autre script a ensuite echoue sur une attente codee en dur de **26 pages**, parce qu'il ajoutait la page `170`. L'extraction reelle des 31 `source_section` donne la meme liste de **25 pages** que le run principal et ne contient pas `170`. Conclusion actuelle: **page 170 exclue**; elle ne doit pas etre ajoutee sans nouvelle preuve constructeur explicite. Le workflow parallele n'a pousse ni audit ni donnee.
+
+### Etat de travail apres ces tests
+
+La conclusion factuelle est donc: **31/31 faits RCL0193 historiques -> 25 pages PDF physiques uniques actuellement citees**. Un seul cas a faible recouvrement lexical (`WEAK_CASES 1`) reste a identifier/revoir avant creation du lot visuel. `MEMSX64` reste #101 inchange; aucun #102.
+
+Prochaine action exacte avant toute nouvelle pousse de donnees: inspecter les helpers temporaires encore presents sur `tmp-rave-visual-backfill`; modifier le run principal uniquement pour afficher le `git status --porcelain --untracked-files=all` exact, supprimer seulement les artefacts temporaires identifies (notamment cache Python si confirme), conserver le garde strict, puis recommencer la cartographie. Le workflow parallele errone ne doit pas servir de source de verite pour la page 170.
