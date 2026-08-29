@@ -1,0 +1,59 @@
+name: TEMP RCL0193FRE 1820 FINAL INSTALL
+on:
+  push:
+    branches: [tmp-rave-visual-backfill]
+    paths:
+      - '.github/workflows/temp-rcl0193fre-1820-install.yml'
+      - 'tools/install_rcl0193fre_1820.py'
+permissions:
+  contents: write
+concurrency:
+  group: rcl0193fre-1820-final
+  cancel-in-progress: false
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-visual-backfill
+          fetch-depth: 0
+      - name: Verify production remains BUILD 101
+        shell: bash
+        run: |
+          test "$(git ls-remote origin refs/heads/MEMSX64 | cut -f1)" = "22dbe75ed14e0a61e694159d505ef72245116b48"
+      - name: Install Pillow
+        run: python -m pip install --disable-pip-version-check pillow
+      - name: Fetch exact validated 1820 transport
+        shell: bash
+        env:
+          G4_URL: 'https://tmpfiles.org/dl/1788032688.428aac742f1b0aca/wkwoBzG99Lk3/rcl0193fre_1820_g4_150.tif.xz'
+          QZ_URL: 'https://tmpfiles.org/dl/1788032688.de03b58e449143cb/wUwPBfGt9G4j/research_enrichment_1820.qz64'
+        run: |
+          mkdir -p .rcl1820_transport
+          curl -fL --retry 4 --retry-delay 2 "$G4_URL" -o .rcl1820_transport/rcl0193fre_1820_g4_150.tif.xz
+          curl -fL --retry 4 --retry-delay 2 "$QZ_URL" -o .rcl1820_transport/research_enrichment_1820.qz64
+          echo '2f73a5b6009b8b2607439752bb65290d39744d9b27081e99a496b35a026b50a3  .rcl1820_transport/rcl0193fre_1820_g4_150.tif.xz' | sha256sum -c -
+          echo 'a54409e1e2cf4ddfe5db91e98a94ae5260dad933feb3a8c0c0c870d665dee3a0  .rcl1820_transport/research_enrichment_1820.qz64' | sha256sum -c -
+      - name: Install and validate 1820
+        shell: bash
+        run: |
+          cp tools/install_rcl0193fre_1820.py /tmp/install_rcl0193fre_1820.py
+          python /tmp/install_rcl0193fre_1820.py install "$GITHUB_WORKSPACE"
+      - name: Commit complete 1820
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git rm -f .github/workflows/temp-rcl0193fre-1820-install.yml tools/install_rcl0193fre_1820.py
+          rm -rf .rcl1820_transport
+          git add database/reference/research_enrichment_1820.qz64 database/reference/manifest.json database/reference/audits/rcl0193fre_1820_audit.md database/reference/images/rave/RCL0193FRE_PDF_*.png
+          git status --short
+          git commit -m 'Add RCL0193FRE clutch gearbox driveshaft steering batch 1820'
+          git push origin HEAD:tmp-rave-visual-backfill
+      - name: Verify committed remote state
+        shell: bash
+        run: |
+          git fetch origin tmp-rave-visual-backfill
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/tmp-rave-visual-backfill)"
+          python /tmp/install_rcl0193fre_1820.py post "$GITHUB_WORKSPACE"
