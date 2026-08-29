@@ -1,0 +1,61 @@
+name: TEMP REPORT TRACEABILITY PRIORITY RULE
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - .github/workflows/temp-report-traceability-priority-rule.yml
+
+permissions:
+  contents: write
+
+jobs:
+  update_report:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+
+      - name: Insert fundamental traceability priority rule
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md')
+          text = path.read_text(encoding='utf-8')
+          marker = '> **RÈGLE DE JOURNALISATION OBLIGATOIRE — 29 AOÛT 2026**'
+          rule = (
+              '> **RÈGLE FONDAMENTALE — PRIORITÉ ABSOLUE À LA TRAÇABILITÉ** : '
+              'si une tentative de mise à jour du rapport échoue, **toute autre action est immédiatement suspendue**. '
+              'La cause de cet échec de journalisation devient la priorité n°1 : elle doit être diagnostiquée et corrigée, '
+              'puis le rapport doit être effectivement écrit et vérifié avant toute nouvelle pousse, correction, migration, test ou build. '
+              'L’échec de journalisation lui-même doit être consigné dès que le canal de rapport est rétabli. '
+              '**Aucune progression technique ne doit contourner un rapport en échec.**\n>\n'
+          )
+          if 'RÈGLE FONDAMENTALE — PRIORITÉ ABSOLUE À LA TRAÇABILITÉ' not in text:
+              pos = text.find(marker)
+              if pos < 0:
+                  raise SystemExit('Journalisation marker not found')
+              text = text[:pos] + rule + text[pos:]
+              path.write_text(text, encoding='utf-8', newline='\n')
+          PY
+
+      - name: Verify rule is present
+        shell: bash
+        run: |
+          grep -F "RÈGLE FONDAMENTALE — PRIORITÉ ABSOLUE À LA TRAÇABILITÉ" RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          grep -F "Aucune progression technique ne doit contourner un rapport en échec" RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+
+      - name: Commit report and remove helper
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/temp-report-traceability-priority-rule.yml
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Make report failure a blocking traceability priority"
+          git push origin RAPPORT
