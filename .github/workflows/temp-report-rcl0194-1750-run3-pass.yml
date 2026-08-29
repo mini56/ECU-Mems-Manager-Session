@@ -20,15 +20,23 @@ jobs:
           fetch-depth: 0
       - name: Append run3 and artifact PASS
         shell: bash
-        env:
-          REPORT_APPEND_B64: CiMjIDIwMjYtMDgtMjkg4oCUIFJDTDAxOTQgYmFja2ZpbGwgMTc1MCDigJQgdmFsaWRhdGlvbiBydW4gIzMgKyBhcnRpZmFjdCB2ZXJpZmljYXRpb24KCiMjIyBUZXN0IEdpdEh1YgpXb3JrZmxvdyBgVEVNUCBSQ0wwMTk0IERFVEVSTUlOSVNUSUMgMTc1MCBWQUxJREFURWAsIHJ1biBgMzMyNDk1Mzk5NTJgLCBqb2IgYDk5MDkyNzE0MDcyYCwgSEVBRCAgYGNkNWVjOWZiZWY0Njg3Y2ZhYTc4MmY4YWUzMTRjNmZhNTBlNDgxYjFgLgoKKipWZXJkaWN0IEdpdEh1YiA6IOKchSBQQVNTLioqClRvdXRlcyBsZXMgZXRhcGVzIHNvbnQgdmVydGVzIDogcmVjb25zdHJ1Y3Rpb24gZGV0ZXJtaW5pc3RpcXVlIGRlIGxhIFNRTGl0ZSBCVUlMRCAjMTAxLCBnZW5lcmF0aW9uL2FwcGxpY2F0aW9ucyBkdSBxejY0IDE3NTAsIHJlbmR1IGV0IGhhc2ggZGVzIDggUE5HIFJDTDAxOTQsIHN1cHByZXNzaW9uIGRlcyBmaWNoaWVycyB0ZW1wb3JhaXJlcywgZ2FyZGUgZG9jdW1lbnRhaXJlLCBjb25zdHJ1Y3Rpb24gZHUgY2FuZGlkYXQgZXQgdXBsb2FkIGFydGVmYWN0LgoKTGVzIGludmFyaWFudHMgcmVzdGVudCBjZXV4IHZhbGlkZXMgYXUgcnVuIHByZWNlZGVudCA6IGludGVncml0eT1vaywgdXNlcl92ZXJzaW9uPTIwLCA5MyBmYWl0cyBSQVZFIGhpc3RvcmlxdWVzLCAxMDUgZmFpdHMgZXhwZXJ0IGhpc3RvcmlxdWVzLCA4IHZpc3VlbHMgUkNMMDE5NCwgY291dmVydHVyZSBkaXJlY3RlL2VmZmVjdGl2ZSA1NS81NSwgbGVnZW5kZSBjb3VsZXVycyAyNi8yNiwgMyBjb3JyZWN0aW9ucyBhZGRpdGl2ZXMgMzkuMSAtPiAzOS4yLiBMZXMgZmFpdHMgaGlzdG9yaXF1ZXMgbmUgc29udCBwYXMgcmVld3JpdHMuCgojIyMgQXJ0ZWZhY3QgY2FuZGlkYXQKLSBub20gOiBgUkNMMDE5NC0xNzUwLURFVEVSTUlOSVNUSUMtQ0FORElEQVRFYAotIElEIDogYDk3MTM5MDg2NDFgCi0gdGFpbGxlIDogYDEsMzU2LDgxOGAgb2N0ZXRzCi0gZGlnZXN0IEdpdEh1YiA6IGBzaGEyNTY6ZjVmMGM4NjQzMTRhMmFkZGIwZTk0NjQwZThlY2QyZDE1MjE2YjFhNTljZGJhN2QzMDhhMDk3MGVjMjZmZjUyNWAotIHF6NjQgU0hBLTI1NiA6IGAyMDBiMmQ3ZWMwYmEyNGQ5M2Q3MTkyZmRmNjNmODY4NDVjNTNmNDlhZDRhMjhjYjk5N2VkZTlkMzlmYjVmNTFkYAoKIyMjIFZlcmlmaWNhdGlvbiBsb2NhbGUgZGUgbCdhcnRlZmFjdAoqKlZlcmRpY3QgOiDinIUgUEFTUy4qKgpgaGFzaDI1c3VtIC1jIFNIQTI1NlNVTVMudHh0YCByZXRvdXJuZSBPSyBwb3VyIDEyLzEyIDogYXVkaXQsIG1hbmlmZXN0ZSwgcXo2NCwgdmFsaWRhdGlvbl9zdW1tYXJ5IGV0IGxlcyA4IFBORy4gYFNIQTI1NlNVTVMudHh0YCBuZSBzZSByZWZlcmVuY2UgcGx1cyBsdWktbWVtZS4gTGVzIGhhc2hlcyBQTkcIGNvcnJlc3BvbmRlbnQgdG91cyBhdXggdmFsZXVycyBjb25zdHJ1Y3RldXIgZGVqYSB2ZXJpZmllZXMuCgojIyMgQ29uY2x1c2lvbgpMZSBkZWZhdXQgZCdlbWJhbGxhZ2UgZHUgcHJlY2VkZW50IGFydGVmYWN0IGVzdCBjb3JyaWdlLiBMZSBjYW5kaWRhdCAxNzUwIGVzdCBkZXNvcm1haXMgcmVwcm9kdWN0aWJsZSBldCB2ZXJpZmllIGRlIGJvdXQgZW4gYm91dCBhdmFudCBjb21taXQuIExhIGJhc2Ugc3RydWN0dXJlZSByZXN0ZSBsZSBjb2V1ciBpbnRlcnJvZ2VhYmxlIDsgbGVzIFBORyByZXN0ZW50IGRlcyBwcmV1dmVzL2lsbHVzdHJhdGlvbnMgYXNzb2NpZWVzLiBMYSBiYXNlL0lBIHJlc3RlIGNvbnN1bHRhdGl2ZSBldCBuZSBwcmVuZCBqYW1haXMgbGEgbWFpbiBzdXIgbGEgY29tbXVuaWNhdGlvbiBFQ1UuCgojIyMgUHJvY2hhaW5lIGFjdGlvbiBleGFjdGUKUG91c3NlciBhdG9taXF1ZW1lbnQgc3VyIGB0bXAtcmF2ZS12aXN1YWwtYmFja2ZpbGxgIGxlcyBvY3RldHMgZXhhY3RzIHZhbGlkZXMgZGUgYHJlc2VhcmNoX2VucmljaG1lbnRfMTc1MC5xejY0YCwgYG1hbmlmZXN0Lmpzb25gLCBsJ2F1ZGl0IGV0IGxlcyA4IFBORywIGNvbnNlcnZlciBsZSBnZW5lcmF0ZXVyIHJlcHJvZHVjdGlibGUsIHJldGlyZXIgbGVzIHdvcmtmbG93cyB0ZW1wb3JhaXJlcyBkZXZlbnVzIGludXRpbGVzLCBwdWlzIGxhbmNlciB1bmUgdmFsaWRhdGlvbiBwb3N0LXBvdXNzZSBhIHBhcnRpciBkZXMgZmljaGllcnMgcmVlbGxlbWVudCBjb21taXRlcy4gTWV0dHJlIGxlIHJhcHBvcnQgYSBqb3VyIGFwcmVzIGNldHRlIHZhbGlkYXRpb24gYXZhbnQgZGUgcGFzc2VyIGF1IGRvY3VtZW50IHN1aXZhbnQuIGBNRU1TWDY0YCByZXN0ZSBCVUlMRCAjMTAxIGAyMmRiZTc1ZWQxNGUwYTYxZTY5NDE1OWQ1MDVlZjcyMjQ1MTE2YjQ4YDsgYXVjdW4gIzEwMi4K
         run: |
-          python - <<'PY'
-          import base64, os
-          from pathlib import Path
-          with Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md').open('ab') as f:
-              f.write(base64.b64decode(os.environ['REPORT_APPEND_B64']))
-          PY
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+          ## 2026-08-29 - RCL0194 1750 - run3 + artefact PASS
+
+          Test: workflow `TEMP RCL0194 DETERMINISTIC 1750 VALIDATE`, run `33249539952`, job `99092714072`, HEAD `cd5ec9fbef4687cfaa782f8ae314c6fa50e481b1`.
+
+          Verdict: PASS. Toutes les etapes GitHub sont vertes. Invariants: integrity=ok, user_version=20, 93 faits RAVE historiques, 105 faits expert historiques, 8 visuels RCL0194, couverture 55/55, legende couleurs 26/26, 3 corrections additives 39.1 -> 39.2, sans reecriture des faits historiques.
+
+          Artefact `RCL0194-1750-DETERMINISTIC-CANDIDATE`, ID `9713908641`, taille `1,356,818` octets, digest GitHub `sha256:f5f0c864314a2addb0e94640e8ecd2d15216b1a59cdba7d308a0970ec26ff525`. Qz64 SHA-256 `200b2d7ec0ba24d93d7192fdf63f86845c53f49ad4a28cb997ede9d39fb5f51d`.
+
+          Verification locale de l'artefact: PASS. `sha256sum -c SHA256SUMS.txt` retourne OK pour 12/12 fichiers utiles. `SHA256SUMS.txt` ne se reference plus lui-meme. Les 8 PNG correspondent aux hashes deja verifies.
+
+          Conclusion: le candidat 1750 est reproductible et verifie de bout en bout avant commit. Les PNG restent des preuves visuelles associees a la base structuree. La base/IA reste consultative et ne prend jamais la main sur la communication ECU.
+
+          Prochaine action exacte: pousser atomiquement les octets valides du qz64 1750, manifeste, audit et 8 PNG sur `tmp-rave-visual-backfill`, conserver le generateur, retirer les workflows temporaires inutiles, puis lancer une validation post-pousse depuis les fichiers reellement commites et mettre le rapport a jour avant le lot suivant. Production reste MEMSX64 BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`; aucun #102.
+          EOF
       - name: Commit report and remove helper
         shell: bash
         run: |
