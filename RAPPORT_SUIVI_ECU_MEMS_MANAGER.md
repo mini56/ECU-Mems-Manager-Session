@@ -1475,3 +1475,20 @@ Quand une information, anomalie ou possibilite d'evolution necessite une reponse
 et attendre cette reponse avant de franchir la decision concernee. Pour un point notable sans decision obligatoire, utiliser **🔴 IMPORTANT** sans bloquer le travail.
 
 Ces regles sont permanentes et s'ajoutent aux regles de journalisation, provenance, securite protocole et conservation maximale des informations.
+
+# AVANT POUSSE — OUTILLAGE D'EXTRACTION VISUELLE RCL0194 — 29 AOUT 2026
+
+Prochaine pousse autorisee uniquement sur `tmp-rave-visual-backfill`.
+
+Objectif : ajouter un outillage temporaire et deterministe pour extraire depuis le PDF constructeur exact RCL0194ENG les supports visuels manquants deja verifies dans l'audit :
+- page de legende `COLOUR CODES` — PDF index 5 ;
+- `15.1` — PDF index 13 ;
+- `20.1` — PDF index 15 ;
+- `20.2` — PDF index 16 ;
+- `39.2` Cooling Fan MPi — PDF index 25.
+
+L'outillage devra egalement reutiliser les assets pilotes `20.3`, `20.4`, `39.3` sans duplication et verifier le SHA-256 du PDF source.
+
+Cette pousse d'outillage ne doit modifier aucun fait historique, aucun protocole ECU, aucune acquisition/RAM, aucune commande ECU, aucune protection et aucun fichier 32 bits. `MEMSX64` reste strictement #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.
+
+La divergence legacy `39.1` / source reelle `39.2` reste auditee ; aucune correction silencieuse du fait historique n'est autorisee.
