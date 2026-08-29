@@ -1730,3 +1730,13 @@ Etat valide du lot RCL0194: `research_enrichment_1750.qz64` SHA-256 `200b2d7ec0b
 Conclusion: **RCL0194 1750 est valide sur la branche de chantier.** Les PNG restent des preuves/illustrations associees a la base structuree, jamais un remplacement de la connaissance structuree. La base/IA/RAVE reste strictement consultative et ne prend jamais la main sur la communication ECU.
 
 Prochaine action exacte: commencer en lecture seule l'inventaire visuel de `RCL0193ENG`, qui porte 31 faits RAVE deja presents. Identifier toutes les pages/figures/tableaux/vues correspondant a ces 31 faits, detecter les references composites ou erronees, puis mettre le rapport a jour **avant toute pousse** du lot RCL0193. Aucun #102 et aucune modification `MEMSX64`, protocole ECU, acquisition, RAM, ecriture/reset, Qwen/ONNX, UI ou 32 bits.
+
+## 2026-08-29 - DEMARRAGE LOT RCL0193 - INVENTAIRE AVANT ENRICHISSEMENT
+
+Autorisation utilisateur: continuer l'enrichissement de la base. La prochaine source traitee est `RCL0193ENG` (Mini Workshop Manual), qui correspond a **31 faits RAVE deja presents** dans le lot historique `research_enrichment_1660.qz64`.
+
+Objectif avant toute pousse de donnees: extraire exactement ces 31 faits existants et leurs `source_section/image_ref`, retrouver le PDF constructeur RCL0193 exact, cartographier chaque fait vers la vraie page/figure/tableau, detecter les references composites, incompletes ou erronees, puis seulement preparer un lot additif de supports visuels/metadonnees. Aucune reecriture des faits historiques.
+
+Contraintes: `MEMSX64` reste strictement sur BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`; aucun #102; aucune modification protocole ECU, acquisition 7D/80, RAM Mode 4, ecriture/reset, IA Qwen/ONNX, UI, packaging production ou 32 bits. Les illustrations restent des preuves associees a la connaissance structuree et ne la remplacent jamais.
+
+Prochaine action exacte: sur `tmp-rave-visual-backfill`, produire un inventaire RCL0193 reproductible a partir du `1660` commite et du manuel constructeur, sans modifier la base de production; verifier cet inventaire avant de creer le nouveau lot additif.
