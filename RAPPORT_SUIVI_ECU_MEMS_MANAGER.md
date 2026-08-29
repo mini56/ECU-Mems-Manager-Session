@@ -2108,3 +2108,54 @@ Architecture documentaire retenue a ce stade: pas de nouvel onglet Mecanique mai
 Audit preliminaire: les 31 faits RCL0193 existants ont leurs captures; la lacune vient surtout de nombreuses procedures, specifications et vues mecaniques du manuel 372 pages qui n'ont jamais ete structurees.
 
 Production `MEMSX64` reste BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.
+
+
+## 2026-08-29 - REGLE PERMANENTE - TRADUCTION DES ILLUSTRATIONS CONSTRUCTEUR PAR CALQUE
+
+Regle fondamentale validee par l'utilisateur pour toutes les illustrations RAVE/constructeur et, par extension, les futures sources visuelles de reference.
+
+### Principe de fidelite
+
+- Lorsqu'une illustration, vue, schema, tableau ou page constructeur originale existe, **ne jamais la reconstruire graphiquement** si cela peut etre evite.
+- Conserver l'image/source constructeur originale **strictement intacte** comme preuve documentaire. Son fichier et son SHA-256 restent la reference.
+- Une traduction ne doit jamais modifier, retoucher, redessiner ou remplacer l'image source originale.
+
+### Principe du calque de traduction
+
+Pour traduire le texte visible dans une image constructeur, utiliser un **calque textuel superpose et desactivable** au-dessus de l'image originale.
+
+Chaque zone de traduction devra pouvoir conserver au minimum :
+- coordonnees relatives a l'image (`x`, `y`, largeur, hauteur) afin de rester adaptables a l'affichage;
+- texte original;
+- cle de traduction;
+- texte traduit dans la langue utilisateur;
+- langue;
+- reference document/page/illustration;
+- etat/niveau de validation de la traduction.
+
+L'image originale demeure le fond immuable. Le calque est additif et independant.
+
+### Modes utilisateur
+
+MEMS Manager devra pouvoir distinguer au minimum :
+1. **Original constructeur** : image totalement intacte, sans calque;
+2. **Traduction** : meme image originale + calque textuel dans la langue de l'utilisateur.
+
+Si un calque est absent, incomplet ou mal positionne, l'original constructeur doit toujours rester accessible.
+
+### Elements a ne pas alterer
+
+Les identifiants techniques ne doivent pas etre traduits ou changes par le calque : references de composants, numeros de reperes, broches, connecteurs, codes fils, valeurs numeriques, unites et autres identifiants constructeur, sauf libelle naturel explicitement traduisible.
+
+### Stockage et securite
+
+- Une seule image constructeur originale est conservee; ne pas creer une copie raster differente par langue.
+- Les calques/traductions sont stockes comme donnees legeres et additives, distinctes du fichier source.
+- Le hash de l'image constructeur ne change jamais lorsqu'une traduction est ajoutee ou corrigee.
+- Toute traduction doit rester documentaire/consultative et ne prend jamais la main sur la communication ECU, le protocole, l'acquisition, la RAM ou les ecritures ECU.
+- Cette architecture est la solution de reference pour le multilingue visuel tant qu'une source constructeur originale peut etre conservee.
+
+### Priorite projet associee
+
+Cette regle doit etre prise en compte lors de la poursuite du backfill visuel complet : lorsqu'une vue utile est capturee, conserver l'original et preparer une structure de calque traduisible au lieu de reconstruire la vue en SVG.
+
