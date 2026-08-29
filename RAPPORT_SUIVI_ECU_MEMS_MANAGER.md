@@ -1792,3 +1792,15 @@ Resultats de l'etape de cartographie avant le garde: `FACTS_PASS 31`; `STATEMENT
 Le garde a ensuite echoue parce que la reconstruction de la base cree volontairement le workspace local `.tmp-rcl0193-map/` avec le SQLite temporaire, alors que le garde exigeait que le seul fichier non suivi soit l'audit Markdown. Le commit final a ete saute: **aucun audit de mapping, aucune image et aucune donnee RCL0193 n'ont ete pousses par ce run**.
 
 Correction suivante autorisee: supprimer uniquement `.tmp-rcl0193-map/` apres construction de l'audit et avant `git status --porcelain`, puis conserver exactement le meme mapping et les memes assertions. Le cas `WEAK_CASES 1` devra etre identifie dans l'audit commite avant de generer le lot visuel additif.
+
+## 2026-08-29 - RCL0193 MAPPING 31/31 RUN #1 - ECHEC UTILE / ANCIEN INVENTAIRE CORRIGE
+
+Run `33251002269`, job `99096541223`, declencheur `bf6c4126ca5f6044f00496c72412e2fba56cc244`: **❌ FAILURE avant tout commit d'audit**. Aucune donnee, image, qz64 ni fait historique RCL0193 n'a ete pousse.
+
+Etapes validees avant l'echec: production encore exactement MEMSX64 #101; qz64 1660 SHA-256 valide; PDF constructeur RCL0193 372 pages et SHA-256 valide; decodage SQL 41443 octets et hash valide; parseur SQL robuste respectant les apostrophes doublees et points-virgules internes; exactement **31 faits mems_rave_fact RCL0193 uniques** retrouves, tous `verifie_constructeur` et tous avec `image_ref` historique vide.
+
+Cause exacte de l'echec: le garde comparait la liste des pages issue du parseur robuste avec l'ancienne liste d'inventaire qui contenait `170`. Le parseur 31/31 retourne en realite les pages uniques suivantes: `38,39,40,98,101,107,108,109,112,113,114,117,118,120,121,122,123,125,126,127,128,129,130,131,135`, soit **25 pages uniques**. La page `170` n'est citee par aucun des 31 faits RCL0193 correctement parses.
+
+Conclusion: l'ancienne mention `26 pages` / page `170` provenait de l'inventaire initial imparfait qui analysait les statements SQL sans parser correctement les chaines contenant des points-virgules. Cette ancienne conclusion est desormais remplacee par le resultat du parseur structure 31/31: **25 pages uniques pour les 31 faits historiques RCL0193 du lot 1660**. Aucun fait historique n'est modifie par cette correction d'audit.
+
+Correction autorisee avant relance: modifier uniquement le garde du workflow temporaire pour exiger les 25 pages reellement extraites, conserver les controles durs de contenu et poursuivre la verification page/sujet. Si une autre divergence apparait, arret + rapport avant toute correction suivante.
