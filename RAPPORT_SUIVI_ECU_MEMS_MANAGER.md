@@ -2330,3 +2330,13 @@ PROCHAINE ACTION EXACTE:
 - Aucun binaire PDF, aucune capture, aucun qz64 supplementaire et aucune donnee technique de page n ont ete pousses par ce run.
 - Prochaine action: rechercher une autre source directement reproductible du vrai AKM6348 FR, ou obtenir le vrai binaire via une URL/chapitres alternatifs, puis hasher avant toute extraction.
 - MEMSX64 reste BUILD #101 inchange.
+
+## 2026-08-29 - AKM6348 FR - CHAPITRE 86 BINAIRE REPRODUCTIBLE TROUVE
+
+- Source historique retrouvee via AutoPassion: le manuel Rover AKM6348 chapitre 86 etait distribue a http://virgyl.f.free.fr/Download/Manuel/CH86.pdf.
+- Workflow TEMP AKM6348 FR CH86 VERIFY, run 33260257940, job 99120858948: SUCCESS complet.
+- Le serveur virgyl.f.free.fr repond encore et fournit un vrai PDF 1.4: 7 626 962 octets, 53 pages, SHA-256 14fcb88e3f450cab47129b2acc8df948e1d4002418deef63a95ce45157be0594.
+- Le PDF est un scan image sans couche texte exploitable: PyMuPDF renvoie du texte vide sur les pages testees; aucun numero 86.xx ne doit donc etre deduit par OCR approximatif ou offset.
+- Le binaire complet n est pas conserve dans le depot. Seuls son URL, son hash et les futures pages utiles selectionnees/capturees seront traces.
+- Prochaine action exacte: rendre une planche-contact basse resolution des 53 pages hors depot, identifier visuellement les etiquettes/pages utiles puis ne conserver que les vues necessaires a la base avec leur index physique exact.
+- MEMSX64 reste BUILD #101 inchange; la base/documentation reste consultative.
