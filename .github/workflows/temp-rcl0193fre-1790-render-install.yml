@@ -49,7 +49,26 @@ jobs:
           git rm -r -f --ignore-unmatch .rcl1790_transport
           rm -rf .rcl1790_transport
           git add database/reference/research_enrichment_1790.qz64 database/reference/manifest.json database/reference/audits/rcl0193fre_1790_audit.md database/reference/images/rave/RCL0193FRE_PDF_*.png
-          test -z "$(git status --porcelain | grep -v -E '^([AMD?]{2}) (database/reference/research_enrichment_1790.qz64|database/reference/manifest.json|database/reference/audits/rcl0193fre_1790_audit.md|database/reference/images/rave/RCL0193FRE_PDF_[0-9]{3}.png|.github/workflows/temp-rcl0193fre-1790-render-install.yml|tools/install_rcl0193fre_1790_render.py|.rcl1790_transport/)')"
+          python - <<'PY'
+          import subprocess
+          status=subprocess.check_output(['git','status','--porcelain','--untracked-files=all'],text=True)
+          bad=[]
+          for line in status.splitlines():
+              path=line[3:]
+              ok=(
+                  path=='database/reference/research_enrichment_1790.qz64' or
+                  path=='database/reference/manifest.json' or
+                  path=='database/reference/audits/rcl0193fre_1790_audit.md' or
+                  path.startswith('database/reference/images/rave/RCL0193FRE_PDF_') or
+                  path=='.github/workflows/temp-rcl0193fre-1790-render-install.yml' or
+                  path=='tools/install_rcl0193fre_1790_render.py' or
+                  path.startswith('.rcl1790_transport/')
+              )
+              if not ok:
+                  bad.append(line)
+          assert not bad,bad
+          print('COMMIT_SCOPE_PASS')
+          PY
           git commit -m 'Add RCL0193FRE maximum extraction batch 1790'
           git push origin HEAD:tmp-rave-visual-backfill
       - name: Verify committed remote state
