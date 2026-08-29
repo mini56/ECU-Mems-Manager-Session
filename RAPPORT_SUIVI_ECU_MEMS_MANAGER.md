@@ -2062,3 +2062,35 @@ Conformement a la regle fondamentale, toute autre progression a ete suspendue im
 L'audit signale aussi une evolution programme distincte: le code commite du backfill garde l'ordre #101 `clarificationPrompt` avant `updateDiagramSuggestion`; le comportement V2 ayant permis le succes naturel 20.3 n'est pas encore generalise. Ne pas confondre accessibilite du catalogue et proposition garantie pour toute formulation naturelle. Aucun changement fonctionnel n'est effectue par cet audit.
 
 Production `MEMSX64` reste strictement BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`. Aucun code ECU/protocole/acquisition/RAM/UI/Qwen/ONNX/32 bits n'a ete modifie.
+
+
+## 2026-08-29 - ROUTAGE VISUEL V2 A GENERALISER + AUDIT MECANIQUE RCL0193 AVANT POUSSE
+
+Demande utilisateur: corriger maintenant le point de routage qui peut empêcher une image RAVE pourtant présente d'être proposée avec une formulation naturelle, rendre cette correction automatique/générique pour les futurs visuels si possible, puis vérifier pourquoi le volume de données RAVE structurées reste faible au regard du contenu des manuels et rechercher un éventuel oubli des faits mécaniques et de leurs vues/illustrations.
+
+Etat vérifié avant toute pousse technique:
+- branche de chantier `tmp-rave-visual-backfill`, HEAD `746bb6524241c06e265396cf6a2b216f3952dd0e`;
+- production `MEMSX64` reste strictement BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`;
+- `iamemstab.cpp` du backfill conserve encore l'ordre #101: `clarificationPrompt()` peut retourner avant `updateDiagramSuggestion()`;
+- le pilote V2 validé sur PC réel appliquait dynamiquement la règle suivante: après la clarification SPi/MPi prioritaire, si `IaMemsDiagramCatalog::suggestionForQuestion()` résout un visuel local exact, ne pas demander inutilement une génération MEMS;
+- le catalogue est déjà piloté par `manifest.diagrams`; la règle peut donc être généralisée aux futurs visuels sans coder un cas par image.
+
+Correction technique prévue, uniquement sur branche temporaire:
+1. centraliser la priorité de clarification dans `IaMemsConversationRouting` avec une décision déterministe: `SPi/MPi ambigu -> clarification induction`; sinon `visuel local exact résolu -> aucune clarification génération`; sinon clarification génération si nécessaire;
+2. faire utiliser cette décision par `IaMemsTab::clarificationPrompt`;
+3. ajouter des tests de régression automatiques couvrant le cas naturel RAVE SPi Japon sans génération explicite, le maintien de la protection SPi/MPi, le cas sans image exacte qui doit encore demander la génération, et l'intégrité du catalogue;
+4. construire/tester sur GitHub Actions avant tout build réel; aucune promotion `MEMSX64` sans validation.
+
+Audit documentaire préliminaire RCL0193:
+- le PDF constructeur exact utilisé par le lot 1760 possède **372 pages**;
+- la base historique RCL0193 ne contient que **31 faits**, reliés à **26 pages**;
+- les 31/31 faits existants ont bien leurs visuels: il ne s'agit donc pas d'un oubli de capture sur des faits déjà présents;
+- en revanche, l'extraction historique a été fortement ciblée MEMS/ECU et **de nombreux faits mécaniques n'ont jamais été créés dans la base**;
+- le manuel annonce explicitement des sections ENGINE, EMISSION CONTROL, ENGINE MANAGEMENT SYSTEM, FUEL DELIVERY SYSTEM, COOLING SYSTEM et MANIFOLD & EXHAUST SYSTEMS, puis de nombreuses autres sections véhicule;
+- exemples vérifiés hors couverture structurée actuelle: FUEL DELIVERY SYSTEM p.142 avec procédure pompe/réservoir et dessins repérés; COOLING SYSTEM avec composants, flow diagram, vidange/remplissage, pompe, ventilateur/relais, radiateur et thermostat; MANIFOLD & EXHAUST avec vues composants et procédures collecteurs/HO2S; ENGINE avec culasse, soupapes, culbuteurs, moteur/boîte et couples.
+Conclusion provisoire: **oui, il existe un manque documentaire important, mais il est en amont des captures: de nombreux faits/procédures/vues mécaniques du RAVE n'ont jamais été extraits ni structurés.**
+
+Prochaine pousse autorisée après cette journalisation:
+- sur `tmp-rave-visual-backfill`, correction générique du routage + garde automatique de régression;
+- ajout d'un audit reproductible en lecture seule du PDF RCL0193 qui mesurera par section les pages, procédures, vues/illustrations, couples et pages actuellement non couvertes, sans créer encore de faits mécaniques tant que le périmètre exact n'est pas mesuré.
+Aucun changement protocole ECU, acquisition, RAM, write/reset, Qwen/ONNX, 32 bits ou production.
