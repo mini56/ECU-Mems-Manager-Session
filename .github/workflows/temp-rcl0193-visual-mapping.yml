@@ -98,7 +98,6 @@ jobs:
           if unresolved:
               raise AssertionError('Facts without PDF provenance: '+repr(unresolved))
 
-          # Sanity-check the historical convention against actual source content.
           stop={'engine','system','systems','description','operation','service','repair','data','pdf','mini','rcl0193','mems','the','and','for','with','from','type','models','model','page','fuel','management','section','input','inputs'}
           weak=[]
           for r,idxs in rows:
@@ -147,6 +146,7 @@ jobs:
           grep -F 'historical RCL0193 facts reconstructed from BUILD #101 knowledge set: **31**' database/reference/audits/rcl0193_visual_mapping_audit.md
           grep -F 'complete RCL0193 `mems_rave_fact` SQL statements in historical 1660: **31**' database/reference/audits/rcl0193_visual_mapping_audit.md
           git diff -- database/reference/research_enrichment_1660.qz64 --exit-code
+          rm -rf .tmp-rcl0193-map
           test "$(git status --porcelain --untracked-files=all)" = "?? database/reference/audits/rcl0193_visual_mapping_audit.md"
 
       - name: Commit mapping audit and remove helper
