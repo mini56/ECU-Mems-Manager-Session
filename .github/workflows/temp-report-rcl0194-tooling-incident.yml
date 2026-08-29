@@ -1,0 +1,44 @@
+name: TEMP REPORT RCL0194 TOOLING INCIDENT
+
+on:
+  push:
+    branches: [RAPPORT]
+
+permissions:
+  contents: write
+
+jobs:
+  update_report:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append tooling incident
+        shell: bash
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+          # INCIDENT OUTILLAGE BRANCHE TEMPORAIRE — 29 AOUT 2026
+
+          Pendant la preparation de la pousse atomique de l'outillage RCL0194, une mauvaise action du connecteur GitHub a cree le commit parasite `9f7c0041572fa2d3c26543c5968b0fdaf38a5883` sur `tmp-rave-visual-backfill`.
+
+          Audit immediat : comparaison avec le parent `939a18d1b197cd8a2277180b9aa7384e05225807` = **un seul fichier ajoute, `dummy`, une ligne**. Aucun code applicatif, aucune base, aucun protocole ECU, aucune acquisition/RAM, aucune protection et aucun fichier 32 bits n'ont ete modifies.
+
+          Le vrai commit atomique prepare avant l'incident est `5342d25536a0c71354fe6ed6d1f366957494f75a`, parent direct `939a18d1...`, et contient uniquement :
+          - `tools/extract_rcl0194_visual_assets.py` ;
+          - `.github/workflows/temp-rcl0194-visual-extract.yml`.
+
+          Action de nettoyage autorisee sur la branche temporaire uniquement : replacer `tmp-rave-visual-backfill` sur `5342d255...`, ce qui supprime le commit parasite de la tete active de cette branche de travail. `MEMSX64` reste strictement #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.
+          EOF
+      - name: Commit report and remove helper
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/temp-report-rcl0194-tooling-incident.yml
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Record temporary RCL0194 tooling incident"
+          git push origin RAPPORT
