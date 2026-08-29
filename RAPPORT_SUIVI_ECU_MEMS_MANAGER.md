@@ -1592,3 +1592,13 @@ Conclusion : les assets visuels sont valides ; le defaut concerne seulement le m
 Correction retenue avant nouvelle tentative : ajouter le **qz64 exact deja valide** comme blob GitHub, verifier son hash dans le workflow, puis ne plus le reconstruire par heredoc. Apres succes, produire un commit candidat propre base directement sur l'etat de chantier avant helpers, afin que l'etat final ne conserve que les donnees/audits voulus et pas l'outillage temporaire.
 
 `MEMSX64` reste strictement BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48` et n'a subi aucun changement.
+
+# SECOND ECHEC INTERMEDIAIRE QZ64 RCL0194 1750 — 29 AOUT 2026
+
+Run temporaire `33248530197` — **FAILURE avant extraction/commit de donnees**. Le workflow s'est arrete sur le premier garde `Verify exact batch 1750 payload already committed` : le blob envoye via la voie texte UTF-8 ne reproduisait toujours pas les octets exacts du qz64 valide.
+
+Aucun asset, manifeste, audit ou commit de donnees n'a ete produit par ce run. L'echec confirme que le probleme est strictement le transport octet-par-octet du qz64, pas son SQL ni sa validation semantique.
+
+Correction suivante : utiliser l'API GitHub `create_blob` en **encoding base64** a partir des octets exacts du fichier local valide, puis verifier le SHA-256 `969c2b23b8e33e9bcac4ff653752186fad2fde8b5952439bf808d1ac2b56de02` avant toute autre etape. Ne pas modifier/regenerer les donnees pour faire passer le test.
+
+`MEMSX64` reste #101 `22dbe75ed14e0a61e694159d505ef72245116b48` sans modification.
