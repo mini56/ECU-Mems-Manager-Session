@@ -1264,3 +1264,62 @@ La capture réelle prouve donc pour la première fois la chaîne :
 - Prochaine validation minimale avant toute nouvelle pousse fonctionnelle : cliquer le bouton RAVE `RCL0194ENG 20.3` exact et confirmer que l'illustration originale correspondante s'ouvre correctement ; poursuivre ensuite quelques formulations naturelles non préparées pour vérifier la robustesse du routage.
 - Conformément à la règle du 29 août : **aucune nouvelle pousse de code ne doit avoir lieu avant que ce résultat soit présent dans le rapport.**
 
+# VALIDATION COMPLÈTE PILOTE VISUEL RAVE ET RÈGLE FONDAMENTALE — 29 AOÛT 2026
+
+## VALIDATION RÉELLE DE L'OUVERTURE RAVE 20.3
+
+Après la validation précédente de la sélection/proposition de `RCL0194ENG:20.3`, l'utilisateur confirme explicitement sur le PC réel que **le bouton ouvre correctement l'image RAVE 20.3 elle-même**.
+
+Verdict : **✅ PILOTE VISUEL RAVE VALIDÉ DE BOUT EN BOUT**.
+
+Chaîne réellement validée :
+**formulation naturelle utilisateur → faits RAVE compatibles → référence d'illustration → asset RAVE original local → bouton exact → ouverture correcte de l'illustration RAVE**.
+
+Le principe d'ajouter les captures/pages/illustrations/supports visuels issus de RAVE pour les rendre accessibles à l'utilisateur final est donc **VALIDÉ**.
+
+## RÈGLE FONDAMENTALE PERMANENTE — CONSERVATION MAXIMALE DE L'INFORMATION
+
+Cette règle devient une règle de fond du projet **ECU MEMS Manager** et doit survivre à toute coupure/changement de discussion :
+
+1. **But produit** : rendre accessible à l'utilisateur final le maximum d'informations techniques utiles et traçables disponibles.
+2. Pour les lots RAVE déjà intégrés dans la base, reprendre les sources et ajouter leurs supports visuels utiles : pages, schémas, illustrations, tableaux, vues techniques et tout autre support pertinent, avec liaison à la connaissance et à la source.
+3. Pour les futurs lots RAVE, capturer dans la même passe autant que possible : **données structurées + portée véhicule/moteur + source/page + texte + tableaux + schémas + illustrations + vues + autres supports visuels**.
+4. Si une information utile ne rentre pas dans le schéma actuel, **ne jamais l'abandonner** : créer de manière additive la table, relation, champ, index, type d'asset ou structure nécessaire pour la conserver correctement et la rendre accessible au programme.
+5. Les tables historiques ne doivent pas être détruites ni réécrites arbitrairement ; les extensions doivent rester additives, traçables et testées.
+6. Toute information technique utile découverte pendant des recherches externes/Internet et absente de la base doit être **conservée pour intégration future**, avec URL/source, date de consultation, niveau de preuve, portée connue et contenu exploitable. Elle ne doit pas disparaître à la fin de la conversation.
+7. Les découvertes externes peuvent être accumulées au fil de l'eau sur une branche/dépôt de travail de type **recherche à ajouter dans la base**, puis intégrées par lots après validation ; il n'est pas nécessaire de modifier la production à chaque découverte.
+8. Une information trouvée mais non encore intégrée doit conserver un statut explicite (`à vérifier`, `source secondaire`, `constructeur`, `contradictoire`, etc.) ; une source Internet secondaire ne devient jamais automatiquement `verifie_constructeur`.
+9. Lorsqu'une source contient à la fois texte et preuve visuelle, conserver les deux et les relier ; le support visuel ne remplace pas la donnée structurée et inversement.
+10. Le mécanisme utilisateur doit, autant que possible, permettre de retrouver et ouvrir la preuve/source visuelle pertinente depuis la connaissance affichée, comme validé avec `RCL0194ENG:20.3`.
+
+Cette règle complète les règles existantes de portée, provenance, `NULL = UNKNOWN`, absence d'invention, sécurité protocole et journalisation.
+
+## CHANTIER AUTORISÉ — REPRISE DES LOTS RAVE DÉJÀ PRÉSENTS
+
+Prochaine action autorisée par l'utilisateur : **préparer puis exécuter sur branche temporaire la reprise des lots RAVE déjà présents dans la base afin d'ajouter leurs captures/illustrations/supports visuels utiles selon le mécanisme validé par le pilote 20.3.**
+
+Ordre obligatoire :
+1. inventorier les lots/faits RAVE déjà présents, leurs documents, `image_ref`/pages/figures et les supports déjà packagés ;
+2. identifier les références visuelles manquantes et les doublons afin de ne stocker qu'une fois un même asset source ;
+3. récupérer les sources constructeur correspondantes et capturer les pages/figures utiles ;
+4. rattacher additivement les assets aux faits/knowledge items sans modifier les faits historiques ;
+5. conserver SHA-256, document, page/figure, chemin local et provenance ;
+6. vérifier visuellement les supports pendant la reprise et signaler toute divergence entre un fait historique et ce que montre réellement la source ;
+7. ajouter/étendre le schéma uniquement lorsqu'un type de donnée/support n'est pas représentable proprement ;
+8. ajouter des validations d'intégrité, d'existence des fichiers, de hashes, de liens fait↔asset et de résolution utilisateur ;
+9. travailler uniquement sur branche temporaire ; **`MEMSX64` reste #101 `22dbe75ed14e0a61e694159d505ef72245116b48` tant que ce chantier n'est pas validé** ;
+10. respecter la règle : **rapport avant chaque pousse, test réel, rapport immédiat après test**.
+
+## INCIDENT DU MÉCANISME DE RAPPORT — 29 AOÛT 2026
+
+- Tentative de mise à jour persistante au commit temporaire `08aadc95a524b4ea1c9560d11681b17994d58c14`.
+- Run GitHub Actions `33245879771` : **FAILURE sans job**, YAML invalide du helper temporaire de rapport (contenu multiligne insuffisamment indenté).
+- Aucun impact sur `MEMSX64`, le pilote, la base, le programme ou l'ECU.
+- Cet échec d'outillage est conservé avant sa correction conformément à la règle de journalisation.
+
+## ÉTAT AU DÉMARRAGE DU CHANTIER
+
+- Production : `MEMSX64` **BUILD #101** `22dbe75ed14e0a61e694159d505ef72245116b48` — inchangée.
+- Pilote V2 validé : branche `tmp-rave-1680-illustrations`, HEAD de build `2bede1ff5704c42dd65d2d6337bf79f991cad1a9`, run `33241431317`, artefact `9711539092`.
+- `RCL0194ENG:20.3` : **sélection, proposition, clic et ouverture sur PC réel VALIDÉS**.
+- Le chantier de reprise doit réutiliser le mécanisme validé, pas reconstruire une architecture parallèle.
