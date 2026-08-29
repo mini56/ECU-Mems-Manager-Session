@@ -1,0 +1,55 @@
+name: TEMP REPORT RCL0193 MAP V2 SEMANTIC DEFECT
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - .github/workflows/temp-report-rcl0193-map-v2-semantic-defect.yml
+
+permissions:
+  contents: write
+
+jobs:
+  update_report:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Record semantic defect found after green RCL0193 V2
+        shell: bash
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+          ## 2026-08-29 - RCL0193 MAPPING V2 - RUN VERT MAIS AUDIT SEMANTIQUE NON VALIDE
+
+          Run `33251081226`, job `99096744789`: GitHub **SUCCESS** et commit d'audit `8f228440529f02e2b9b1bc3ff85da0c64ce2d837`. Cependant une relecture immediate de l'audit avant toute creation d'asset a revele un defaut semantique du parseur de references de pages. Le run ne doit donc PAS etre considere comme validation finale du mapping RCL0193.
+
+          Cause exacte: la regex `PDF p.N(-M)?` sait developper une plage contigue comme `p.38-39`, mais ne collecte que la premiere occurrence lorsqu'un `source_section` contient plusieurs references non contigues avec `et p.N`.
+
+          Deux cas deja verifies dans les 31 faits historiques:
+          - `RAVE-CAUTION-THROTTLE-STOP-001`: source `PDF p.118 et p.114 / Throttle cable + TP/IACV`; le V2 n'a lie que p.118, alors que p.114 doit aussi etre conserve.
+          - `RAVE-REP-INJECTORS-001`: source `PDF p.135 et p.170 / Fuel injectors + inlet manifold`; le V2 n'a lie que p.135, alors que p.170 doit aussi etre conserve.
+
+          Consequence: la conclusion V2 `25 pages uniques` est invalide. La page `170` est bien citee par un fait RCL0193 et la couverture attendue redevient **26 pages uniques**. L'ancienne conclusion 26 pages n'etait donc pas necessairement une erreur; l'erreur venait de la nouvelle extraction qui ignorait les references secondaires non contigues.
+
+          Aucun PNG, qz64 de donnees, manifeste RCL0193 ou fait historique n'a ete pousse a partir de ce mapping incomplet. L'erreur est detectee avant enrichissement effectif.
+
+          Correction obligatoire avant toute suite: parser **toutes** les occurrences `p.N` et toutes les plages `p.N-M` dans chaque `source_section`, developper les plages et conserver les references non contigues. Recalculer les 31 mappings, verifier que `RAVE-CAUTION-THROTTLE-STOP-001` contient 114+118 et `RAVE-REP-INJECTORS-001` contient 135+170, puis verifier les 26 pages constructeur. Rapport obligatoire avant toute creation d'assets.
+          EOF
+      - name: Verify report entry
+        run: |
+          grep -F "RCL0193 MAPPING V2 - RUN VERT MAIS AUDIT SEMANTIQUE NON VALIDE" RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          grep -F "135+170" RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          grep -F "26 pages uniques" RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+      - name: Commit report and remove helper
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/temp-report-rcl0193-map-v2-semantic-defect.yml
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Record RCL0193 V2 semantic page-reference defect"
+          git push origin RAPPORT
