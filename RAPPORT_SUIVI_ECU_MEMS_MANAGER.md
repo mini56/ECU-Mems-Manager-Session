@@ -2293,3 +2293,11 @@ PROCHAINE ACTION EXACTE:
 - Validation locale avant pousse: schéma 1730 + lot 1770 appliqués avec foreign_keys=ON; PRAGMA integrity_check=ok. Tables historiques non modifiées.
 - Empreintes préparées: SQL 2907 octets SHA-256 7b9880ec1c9a18b0ad0c01cf8aab7ed4a243b06ae40e6583d3753294f71cd1e5; qz64 1177 octets SHA-256 d5179a162c11ef20efadabaad5daab50b9927317ae552ad37d2c5387f0ef2cd4.
 - Prochaine action exacte: pousser uniquement qz64 1770 + audit AKM6348 + manifest sur tmp-rave-visual-backfill, relire le commit distant, puis poursuivre la recherche/capture des pages exactes. MEMSX64 reste BUILD #101.
+
+### CORRECTION AVANT POUSSE - CONTRAT QZ64 1770
+
+- Verification du generateur projet tools/build_rcl0193_visual_backfill_1760.py: un fichier qz64 final est Base64(4 octets longueur big-endian + zlib SQL) suivi d un saut de ligne.
+- Le hash d5179a... consigne juste avant correspondait au flux binaire interne de 1177 octets et ne doit PAS etre utilise comme hash du fichier qz64 final.
+- Empreinte correcte du fichier research_enrichment_1770.qz64 final: 1573 octets, SHA-256 a7411aba56d61627f482297ede3913f2123ca5c832aecdb702aa1b505a10d531.
+- SQL decompresse inchange: 2907 octets, SHA-256 7b9880ec1c9a18b0ad0c01cf8aab7ed4a243b06ae40e6583d3753294f71cd1e5.
+- Validation SQLite reste PASS. Aucune donnee technique AKM6348 non verifiee n est ajoutee; le lot enregistre uniquement source/portee/aliases documentaires.
