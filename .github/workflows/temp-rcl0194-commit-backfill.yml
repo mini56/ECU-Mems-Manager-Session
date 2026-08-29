@@ -1,0 +1,186 @@
+name: TEMP RCL0194 COMMIT BACKFILL
+
+on:
+  push:
+    branches: [tmp-rave-visual-backfill]
+    paths:
+      - .github/workflows/temp-rcl0194-commit-backfill.yml
+
+permissions:
+  contents: write
+
+jobs:
+  package_and_commit:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-visual-backfill
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install pinned PDF renderer
+        run: python -m pip install PyMuPDF==1.26.4
+
+      - name: Download exact Rover source
+        shell: bash
+        run: |
+          curl --fail --location --retry 3 --output RCL0194ENG.pdf 'https://www.goclassic.eu/upload/content/e68ce7_9c0fd6a5b3a14a3585ecddb02b3ceb9d.pdf'
+          echo '64e64f8a7c24f362913e2661403bc474e4e7ef07f96db618ef661645e0d0f051  RCL0194ENG.pdf' | sha256sum -c -
+
+      - name: Render and verify all eight RCL0194 assets
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          import fitz
+
+          expected = {
+              5:  ('RCL0194ENG_COLOUR_CODES.png', '718af9c48d7cc466b5c50278680ecb286de81a869d8e2293207796afe08833d3', ['COLOUR CODES','BLACK','GREEN','SLATE']),
+              13: ('RCL0194ENG_15_1.png', 'fa3a9f7620b660dc1405adf5bb330f74b9cf627e6ebc7bf2e3ac1b7a42016eeb', ['CHARGING','STARTING','MPi']),
+              15: ('RCL0194ENG_20_1.png', '334eea87abb0b9b5692c18ef157f51aa4a2edcc1580dd3d911ba7c3262bb9052', ['ENGINE MANAGEMENT','MEMS','MPi']),
+              16: ('RCL0194ENG_20_2.png', '3736908a793e46a5e3bee32d1d51544caf52557475317a2a5f96ca3d16177c9e', ['ENGINE MANAGEMENT','MEMS','MPi']),
+              17: ('RCL0194ENG_20_3.png', '2988614881aa2d713788eac084c97ae148595bbb19da21fd92b484041ef3e4c8', ['ENGINE MANAGEMENT','MEMS','SPi']),
+              18: ('RCL0194ENG_20_4.png', '7a04d84ee0296ab41333650f369aa3624f3ac7988a528584237a7b8fb021bea0', ['ENGINE MANAGEMENT','MEMS','SPi']),
+              25: ('RCL0194ENG_39_2.png', 'e3e4c30e318aca2f9aeeb6984840397ec0bc5432d3c15034e2e68e6b2c0a6d22', ['COOLING FAN','MPi']),
+              26: ('RCL0194ENG_39_3.png', 'b8da82236a56034cd3afde692752ae6ccdef2bc792f5dacfe14392ffc0f00188', ['COOLING FAN','SPi']),
+          }
+          out = Path('database/reference/images/rave')
+          out.mkdir(parents=True, exist_ok=True)
+          doc = fitz.open('RCL0194ENG.pdf')
+          assert doc.page_count == 41, doc.page_count
+          try:
+              for idx, (name, wanted, tokens) in expected.items():
+                  page = doc.load_page(idx)
+                  text = ' '.join(page.get_text('text').split())
+                  for token in tokens:
+                      assert token.lower() in text.lower(), (idx, token)
+                  pix = page.get_pixmap(matrix=fitz.Matrix(2.0,2.0), alpha=False)
+                  target = out / name
+                  pix.save(target)
+                  got = hashlib.sha256(target.read_bytes()).hexdigest()
+                  assert got == wanted, (name, got, wanted)
+                  print('PASS', idx, name, got, pix.width, pix.height)
+          finally:
+              doc.close()
+          PY
+
+      - name: Install validated batch 1750 payload
+        shell: bash
+        run: |
+          cat > database/reference/research_enrichment_1750.qz64 <<'EOF'
+          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
+          EOF
+          echo '969c2b23b8e33e9bcac4ff653752186fad2fde8b5952439bf808d1ac2b56de02  database/reference/research_enrichment_1750.qz64' | sha256sum -c -
+
+      - name: Update reference manifest additively
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('database/reference/manifest.json')
+          data = json.loads(p.read_text(encoding='utf-8-sig'))
+          batch = 'research_enrichment_1750.qz64'
+          batches = data.setdefault('research_enrichment_batches', [])
+          if batch not in batches:
+              batches.append(batch)
+          diagrams = data.setdefault('diagrams', {})
+          entries = {
+              'RAVE RCL0194ENG COLOUR CODES Rover codes couleurs fils': 'images/rave/RCL0194ENG_COLOUR_CODES.png',
+              'RAVE RCL0194ENG 15.1 Mini MPi 97MY charge demarrage relais MEMS': 'images/rave/RCL0194ENG_15_1.png',
+              'RAVE RCL0194ENG 20.1 Mini MPi 97MY MEMS lambda CKP CMP pompe relais': 'images/rave/RCL0194ENG_20_1.png',
+              'RAVE RCL0194ENG 20.2 Mini MPi 97MY MEMS injecteurs IAC MAP TPS ECT IAT ventilateur': 'images/rave/RCL0194ENG_20_2.png',
+              'RAVE RCL0194ENG 39.2 Mini MPi 97MY ventilateur refroidissement ECT': 'images/rave/RCL0194ENG_39_2.png',
+              'RAVE RCL0194ENG 20.3 Mini SPi Japon 97MY MEMS lambda relais vilebrequin': 'images/rave/RCL0194ENG_20_3.png',
+              'RAVE RCL0194ENG 20.4 Mini SPi Japon 97MY MEMS injecteur IAC TPS ECT IAT': 'images/rave/RCL0194ENG_20_4.png',
+              'RAVE RCL0194ENG 39.3 Mini SPi Japon 97MY ventilateur refroidissement': 'images/rave/RCL0194ENG_39_3.png',
+          }
+          diagrams.update(entries)
+          meta = [
+              ('COLOUR_CODES','COLOUR CODES',5,'legend','RCL0194ENG_COLOUR_CODES.png','718af9c48d7cc466b5c50278680ecb286de81a869d8e2293207796afe08833d3'),
+              ('15.1','15.1',13,'wiring_diagram','RCL0194ENG_15_1.png','fa3a9f7620b660dc1405adf5bb330f74b9cf627e6ebc7bf2e3ac1b7a42016eeb'),
+              ('20.1','20.1',15,'wiring_diagram','RCL0194ENG_20_1.png','334eea87abb0b9b5692c18ef157f51aa4a2edcc1580dd3d911ba7c3262bb9052'),
+              ('20.2','20.2',16,'wiring_diagram','RCL0194ENG_20_2.png','3736908a793e46a5e3bee32d1d51544caf52557475317a2a5f96ca3d16177c9e'),
+              ('39.2','39.2',25,'wiring_diagram','RCL0194ENG_39_2.png','e3e4c30e318aca2f9aeeb6984840397ec0bc5432d3c15034e2e68e6b2c0a6d22'),
+              ('20.3','20.3',17,'wiring_diagram','RCL0194ENG_20_3.png','2988614881aa2d713788eac084c97ae148595bbb19da21fd92b484041ef3e4c8'),
+              ('20.4','20.4',18,'wiring_diagram','RCL0194ENG_20_4.png','7a04d84ee0296ab41333650f369aa3624f3ac7988a528584237a7b8fb021bea0'),
+              ('39.3','39.3',26,'wiring_diagram','RCL0194ENG_39_3.png','b8da82236a56034cd3afde692752ae6ccdef2bc792f5dacfe14392ffc0f00188'),
+          ]
+          va = data.setdefault('visual_assets', {})
+          for key,page,index,kind,name,digest in meta:
+              va[f'rave:RCL0194ENG:{key}'] = {
+                  'path': f'images/rave/{name}', 'asset_kind': kind,
+                  'document': 'RCL0194ENG', 'source_page': page,
+                  'pdf_index': index, 'sha256': digest,
+              }
+          assert data.get('database_revision') == 20
+          p.write_text(json.dumps(data, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+          PY
+
+      - name: Add visual backfill audit
+        shell: bash
+        run: |
+          cat > database/reference/audits/rcl0194_visual_backfill_1750_audit.md <<'EOF'
+          # RCL0194 visual backfill — batch 1750 audit
+
+          Date: 2026-08-29
+
+          ## Scope
+          Production remains `MEMSX64` BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`. This batch is documentary only: no ECU communication/protocol/acquisition/RAM/write/reset safety/Qwen/ONNX/32-bit code is changed. Historical RAVE/expert facts are not rewritten.
+
+          ## Primary source
+          Rover `RCL0194ENG`, MINI Electrical Circuit Diagrams, 3rd Edition, 41 PDF pages. Exact PDF SHA-256: `64e64f8a7c24f362913e2661403bc474e4e7ef07f96db618ef661645e0d0f051`.
+
+          ## Assets
+          Eight original source visuals are retained once: `COLOUR CODES` (index 5), `15.1` (13), `20.1` (15), `20.2` (16), `20.3` (17), `20.4` (18), `39.2` (25), `39.3` (26). The pilot assets 20.3/20.4/39.3 are reused byte-for-byte.
+
+          ## Source audit findings
+          `20.2` directly confirms an external MAP SENSOR (204) on MPi, connector C186, with visible ECM links including C159-36 RG, C159-8 YP and sensor return C159-13 KB. This remains distinct from SPi integrated MAP.
+
+          Factory page `39.1` is HEATER BLOWER. Factory page `39.2` is `COOLING FAN — MPi`. Three legacy facts (`RAVE-WIR-MPI-006`, `RAVE-WIR-MPI-008`, `RAVE-WIR-MPI-012`) therefore retain their historical 39.1 reference for audit but receive an additive effective-source correction to `RCL0194ENG:39.2` and link to the real 39.2 visual. No fake 39.1 Cooling Fan asset is created.
+
+          ## Additive model
+          `research_enrichment_1750.qz64` adds `mems_rave_illustration`, `mems_rave_illustration_link`, `mems_rave_source_reference_correction`, indexes and a resolution view. It supports one fact to multiple pages and typed assets such as `wiring_diagram` and `legend`. Composite refs 20.1-20.2 / 20.3-20.4 are linked to both source pages. All 26 `RAVE-COLOR-SPIJ-*` facts also link `COLOUR CODES` as a supporting legend.
+
+          ## Validation on exact BUILD #101 SQLite copy
+          `PRAGMA integrity_check = ok`; `user_version = 20`; RAVE facts remain 93; expert facts remain 105; 8 RCL0194 assets; 55/55 RCL0194 historical facts have direct/corrected visual evidence; 26 colour facts have the supporting legend; 3 explicit 39.1 -> 39.2 source-reference corrections.
+
+          Payload: `research_enrichment_1750.qz64` = 3105 bytes, SHA-256 `969c2b23b8e33e9bcac4ff653752186fad2fde8b5952439bf808d1ac2b56de02`; decompressed SQL = 36596 bytes, SHA-256 `6ca6a2f82e948bacdd6995615fbea98d80571b3f87f80f8b93f46869a5bb0174`.
+
+          ## Safety boundary
+          Database/IA/RAVE information remains consultative and never takes control of ECU communication. A documentary row may not trigger or alter an ECU command, communication mode or safety guard.
+          EOF
+
+      - name: Validate final tree inputs
+        shell: bash
+        run: |
+          test "$(sha256sum database/reference/research_enrichment_1750.qz64 | cut -d' ' -f1)" = '969c2b23b8e33e9bcac4ff653752186fad2fde8b5952439bf808d1ac2b56de02'
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path('database/reference/manifest.json').read_text(encoding='utf-8'))
+          assert m['database_revision']==20
+          assert 'research_enrichment_1750.qz64' in m['research_enrichment_batches']
+          assert len([k for k in m.get('visual_assets',{}) if k.startswith('rave:RCL0194ENG:')]) == 8
+          for item in m['visual_assets'].values():
+              if item.get('document') == 'RCL0194ENG':
+                  assert Path('database/reference', item['path']).is_file()
+          print('PASS final RCL0194 manifest/assets')
+          PY
+
+      - name: Commit exact backfill and remove helper
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/temp-rcl0194-commit-backfill.yml
+          git add database/reference/images/rave database/reference/research_enrichment_1750.qz64 database/reference/manifest.json database/reference/audits/rcl0194_visual_backfill_1750_audit.md
+          git diff --cached --stat
+          git commit -m "Add RCL0194 visual backfill batch 1750"
+          git push origin tmp-rave-visual-backfill
