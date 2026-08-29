@@ -49,7 +49,8 @@
     "research_enrichment_1710.qz64",
     "research_enrichment_1720.qz64",
     "research_enrichment_1730.qz64",
-    "research_enrichment_1740.qz64"
+    "research_enrichment_1740.qz64",
+    "research_enrichment_1750.qz64"
   ],
   "verification_levels": [
     "verifie_constructeur",
@@ -72,6 +73,80 @@
     "MEMS 1.6 ECU": "images/mems_1_6_ecu_connector.svg",
     "MEMS 1.9 ECU": "images/mems_1_9_ecu_connector.svg",
     "ROSCO 3 broches": "images/rover_rosco_3pin_black.svg",
-    "MEMS 1.9 OBD 16 broches": "images/mems_1_9_obd_16pin.svg"
+    "MEMS 1.9 OBD 16 broches": "images/mems_1_9_obd_16pin.svg",
+    "RAVE RCL0194ENG COLOUR CODES Rover codes couleurs fils": "images/rave/RCL0194ENG_COLOUR_CODES.png",
+    "RAVE RCL0194ENG 15.1 Mini MPi 97MY charge demarrage relais MEMS": "images/rave/RCL0194ENG_15_1.png",
+    "RAVE RCL0194ENG 20.1 Mini MPi 97MY MEMS lambda CKP CMP pompe relais": "images/rave/RCL0194ENG_20_1.png",
+    "RAVE RCL0194ENG 20.2 Mini MPi 97MY MEMS injecteurs IAC MAP TPS ECT IAT ventilateur": "images/rave/RCL0194ENG_20_2.png",
+    "RAVE RCL0194ENG 39.2 Mini MPi 97MY ventilateur refroidissement ECT": "images/rave/RCL0194ENG_39_2.png",
+    "RAVE RCL0194ENG 20.3 Mini SPi Japon 97MY MEMS lambda relais vilebrequin": "images/rave/RCL0194ENG_20_3.png",
+    "RAVE RCL0194ENG 20.4 Mini SPi Japon 97MY MEMS injecteur IAC TPS ECT IAT": "images/rave/RCL0194ENG_20_4.png",
+    "RAVE RCL0194ENG 39.3 Mini SPi Japon 97MY ventilateur refroidissement": "images/rave/RCL0194ENG_39_3.png"
+  },
+  "visual_assets": {
+    "rave:RCL0194ENG:COLOUR_CODES": {
+      "path": "images/rave/RCL0194ENG_COLOUR_CODES.png",
+      "asset_kind": "legend",
+      "document": "RCL0194ENG",
+      "source_page": "COLOUR CODES",
+      "pdf_index": 5,
+      "sha256": "718af9c48d7cc466b5c50278680ecb286de81a869d8e2293207796afe08833d3"
+    },
+    "rave:RCL0194ENG:15.1": {
+      "path": "images/rave/RCL0194ENG_15_1.png",
+      "asset_kind": "wiring_diagram",
+      "document": "RCL0194ENG",
+      "source_page": "15.1",
+      "pdf_index": 13,
+      "sha256": "fa3a9f7620b660dc1405adf5bb330f74b9cf627e6ebc7bf2e3ac1b7a42016eeb"
+    },
+    "rave:RCL0194ENG:20.1": {
+      "path": "images/rave/RCL0194ENG_20_1.png",
+      "asset_kind": "wiring_diagram",
+      "document": "RCL0194ENG",
+      "source_page": "20.1",
+      "pdf_index": 15,
+      "sha256": "334eea87abb0b9b5692c18ef157f51aa4a2edcc1580dd3d911ba7c3262bb9052"
+    },
+    "rave:RCL0194ENG:20.2": {
+      "path": "images/rave/RCL0194ENG_20_2.png",
+      "asset_kind": "wiring_diagram",
+      "document": "RCL0194ENG",
+      "source_page": "20.2",
+      "pdf_index": 16,
+      "sha256": "3736908a793e46a5e3bee32d1d51544caf52557475317a2a5f96ca3d16177c9e"
+    },
+    "rave:RCL0194ENG:20.3": {
+      "path": "images/rave/RCL0194ENG_20_3.png",
+      "asset_kind": "wiring_diagram",
+      "document": "RCL0194ENG",
+      "source_page": "20.3",
+      "pdf_index": 17,
+      "sha256": "2988614881aa2d713788eac084c97ae148595bbb19da21fd92b484041ef3e4c8"
+    },
+    "rave:RCL0194ENG:20.4": {
+      "path": "images/rave/RCL0194ENG_20_4.png",
+      "asset_kind": "wiring_diagram",
+      "document": "RCL0194ENG",
+      "source_page": "20.4",
+      "pdf_index": 18,
+      "sha256": "7a04d84ee0296ab41333650f369aa3624f3ac7988a528584237a7b8fb021bea0"
+    },
+    "rave:RCL0194ENG:39.2": {
+      "path": "images/rave/RCL0194ENG_39_2.png",
+      "asset_kind": "wiring_diagram",
+      "document": "RCL0194ENG",
+      "source_page": "39.2",
+      "pdf_index": 25,
+      "sha256": "e3e4c30e318aca2f9aeeb6984840397ec0bc5432d3c15034e2e68e6b2c0a6d22"
+    },
+    "rave:RCL0194ENG:39.3": {
+      "path": "images/rave/RCL0194ENG_39_3.png",
+      "asset_kind": "wiring_diagram",
+      "document": "RCL0194ENG",
+      "source_page": "39.3",
+      "pdf_index": 26,
+      "sha256": "b8da82236a56034cd3afde692752ae6ccdef2bc792f5dacfe14392ffc0f00188"
+    }
   }
 }
