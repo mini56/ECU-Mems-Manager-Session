@@ -1323,3 +1323,75 @@ Ordre obligatoire :
 - Pilote V2 validé : branche `tmp-rave-1680-illustrations`, HEAD de build `2bede1ff5704c42dd65d2d6337bf79f991cad1a9`, run `33241431317`, artefact `9711539092`.
 - `RCL0194ENG:20.3` : **sélection, proposition, clic et ouverture sur PC réel VALIDÉS**.
 - Le chantier de reprise doit réutiliser le mécanisme validé, pas reconstruire une architecture parallèle.
+
+# CHANTIER RAVE VISUEL — INVENTAIRE DES LOTS EXISTANTS — 29 AOÛT 2026
+
+## POUSSE INVENTAIRE / RÉSULTAT
+
+- Branche temporaire créée exactement depuis la production #101 : `tmp-rave-visual-backfill`.
+- Base de départ : `MEMSX64` #101 `22dbe75ed14e0a61e694159d505ef72245116b48`, inchangée.
+- Premier commit du chantier : `4a5a9f3173496bcd6cfe5aab6d3cc2788ac0e490` — `Inventory existing RAVE facts for visual backfill`.
+- Fichier ajouté : `database/reference/audits/rave_visual_backfill_inventory.md`.
+- Cette pousse ne réécrit aucun fait RAVE historique, ne touche pas le protocole, l'IA, l'UI, la RAM ni le 32 bits ; elle enregistre uniquement l'inventaire du chantier.
+
+## INVENTAIRE EXACT DE LA BASE #101
+
+L'inspection directe de la SQLite officielle #101 confirme **93 faits RAVE** provenant de sept lots documentaires :
+
+- `1660` : `RCL0193ENG` — 31 faits ;
+- `1670` : `RCL0194ENG MPi 97MY` — 15 faits ;
+- `1680` : `RCL0194ENG SPi Japon 97MY wiring` — 14 faits ;
+- `1690` : `RCL0194ENG SPi Japon couleurs` — 7 faits ;
+- `1700` : `RCL0194ENG SPi Japon injecteur/purge/IAC couleurs` — 8 faits ;
+- `1710` : `RCL0194ENG 20.3 couleurs` — 11 faits ;
+- `1720` : `AKM7169ENG SPi classique` — 7 faits.
+
+Total : **93 faits**.
+
+### `RCL0193ENG` — 31 faits
+
+Aucun des 31 faits ne porte actuellement d'`image_ref`. Les `source_section` conservent cependant les pages PDF utilisées. Les 31 faits renvoient à **26 pages PDF distinctes** :
+
+`38, 39, 40, 98, 101, 107, 108, 109, 112, 113, 114, 117, 118, 120, 121, 122, 123, 125, 126, 127, 128, 129, 130, 131, 135, 170`.
+
+Ces pages couvrent notamment données de réglage moteur, pression carburant, TPS, EVAP, CKP, MAP, ECT, IAT, HO2S, IACV, injecteurs, câble/pédale/papillon, bobine, ECM et procédures de dépose/repose.
+
+### `RCL0194ENG` — 55 faits
+
+Les 55 faits portent déjà des références visuelles textuelles. Les **sept pages constructeur uniques** requises par les faits existants sont :
+
+`15.1`, `20.1`, `20.2`, `20.3`, `20.4`, `39.1`, `39.3`.
+
+Le pilote a déjà extrait et validé `20.3`, `20.4` et `39.3` ; elles doivent être réutilisées, sans duplication.
+
+Les pages directes restant à capturer sont donc :
+`15.1`, `20.1`, `20.2`, `39.1`.
+
+Les lots 1690–1710 utilisent en plus la **légende constructeur des codes couleurs**. Cette page doit être identifiée précisément, capturée une seule fois puis reliée comme preuve complémentaire.
+
+### `AKM7169ENG` — 7 faits
+
+Les références logiques existantes sont :
+- `Introduction / publication scope`;
+- `Engine Tuning Data 3`;
+- `Engine Tuning Data 4`;
+- `Engine Tuning Data 5`;
+- faits communs `Tuning Data 3–5`.
+
+Les index PDF exacts doivent être vérifiés contre le scan constructeur retenu avant toute extraction. Aucun numéro de page ne sera inventé.
+
+## INCIDENT DU MÉCANISME DE RAPPORT APRÈS L'INVENTAIRE
+
+- Première tentative d'ajout de cette section : commit temporaire `cec4d5ad89318573513bf24a9c59614172903856`.
+- Run `33246383027` : **FAILURE sans job** à cause d'un contenu encodé incorrect dans le helper temporaire de rapport.
+- Aucun impact sur `MEMSX64`, `tmp-rave-visual-backfill`, la base, le programme ou l'ECU.
+- L'incident est conservé conformément à la règle de journalisation avant sa correction.
+
+## PROCHAINE ACTION EXACTE
+
+1. Compléter d'abord `RCL0194ENG`, dont la cartographie est déjà explicite.
+2. Vérifier dans le PDF constructeur exact les index physiques correspondant à `15.1`, `20.1`, `20.2`, `39.1` et à la légende couleurs.
+3. Préparer ensuite l'extraction additive de ces quatre pages + légende, tout en réutilisant `20.3`, `20.4`, `39.3` déjà validées par le pilote.
+4. Vérifier fichiers, SHA-256, document/page, liens fait→asset et résolution utilisateur.
+5. Mettre le rapport à jour avant la prochaine pousse du chantier.
+6. Aucun build officiel #102 : `MEMSX64` reste strictement #101.
