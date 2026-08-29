@@ -1,0 +1,51 @@
+name: TEMP REPORT RCL0193 1760 CANDIDATE PASS
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - .github/workflows/temp-report-rcl0193-1760-candidate-pass.yml
+permissions:
+  contents: write
+jobs:
+  update_report:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Record validated RCL0193 1760 candidate
+        shell: bash
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+          ## 2026-08-29 - RCL0193 1760 - CANDIDAT DETERMINISTE VALIDE AVANT COMMIT DES DONNEES
+
+          Workflow `TEMP RCL0193 1760 VALIDATE`, run `33251336531`, job `99097421134`, declencheur `71fd91d7d8a0f3882994321f0454daccb527cfaf`: **✅ SUCCESS complet**. Aucune donnee candidate n'a ete commitee par ce run.
+
+          Validations: production `MEMSX64` toujours exactement #101 `22dbe75ed14e0a61e694159d505ef72245116b48`; PDF RCL0193 exact SHA-256 `c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715`; 26 pages rendues en PNG 1190x1682; garde de perimetre = 29 chemins generes attendus; `PRAGMA integrity_check=ok`; `user_version=20`; 93 faits RAVE et 105 faits experts historiques inchanges; 26 assets RCL0193; couverture visuelle 31/31 faits; 43 liens source fait->page; 8 assets RCL0194 du lot 1750 preserves.
+
+          Empreintes candidat: `research_enrichment_1760.qz64` SHA-256 `d3c3580d9f32d92e42db6eeb81e92a3e0be591b007ec1071d1a95baf6057ebc8`; SQL decode SHA-256 `ce6e1ba2b441f1102f78e49ea87f81dadb3db66ccbf64d63b76fd0e1974d8173`; manifeste candidat SHA-256 `59c9e212d9a656668969ac71dde1c8159f51c4ff44b0d4785d4dcce7749f23cd`; audit candidat SHA-256 `9a148d1706252b312ed2e1e524314e7ca7fe6e79be76436cf9064ecf085d32b0`.
+
+          Les 26 PNG ont chacun passe leur SHA-256 et `SHA256SUMS.txt` de l'artefact passe integralement. Artefact `RCL0193-1760-DETERMINISTIC-CANDIDATE`: ID `9714454237`, taille `5986424` octets, digest archive `sha256:c0b6bcc1d8d17f519bb4992ba9fc797fbc87d7b2e04ea9eb6efd003a235f242f`, 31 fichiers au total dont 26 PNG.
+
+          Prochaine pousse technique autorisee: commit atomique sur `tmp-rave-visual-backfill` des 26 PNG, `research_enrichment_1760.qz64`, manifeste et audit, avec suppression du workflow temporaire de validation. Le mecanisme doit regenerer le candidat depuis le PDF exact, exiger les hashes ci-dessus AVANT commit, pousser, relire le commit distant, regenerer depuis ce commit et exiger un diff nul. Rapport obligatoire apres ce test post-pousse avant toute suite.
+
+          Aucun changement de protocole/communication ECU, acquisition, RAM, write/reset, UI, Qwen/ONNX ou 32 bits. Base/IA/RAVE consultatives uniquement.
+          EOF
+      - name: Verify report entry
+        run: |
+          grep -F "RCL0193 1760 - CANDIDAT DETERMINISTE VALIDE AVANT COMMIT" RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          grep -F "d3c3580d9f32d92e42db6eeb81e92a3e0be591b007ec1071d1a95baf6057ebc8" RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          grep -F "9714454237" RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+      - name: Commit report and remove helper
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/temp-report-rcl0193-1760-candidate-pass.yml
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Record validated RCL0193 1760 candidate"
+          git push origin RAPPORT
