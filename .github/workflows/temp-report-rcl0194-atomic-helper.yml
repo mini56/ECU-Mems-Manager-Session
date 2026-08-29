@@ -1,0 +1,38 @@
+name: TEMP REPORT RCL0194 ATOMIC HELPER
+
+on:
+  push:
+    branches: [RAPPORT]
+
+permissions:
+  contents: write
+
+jobs:
+  update_report:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append atomic helper plan
+        shell: bash
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+          # AVANT POUSSE — MECANISME ATOMIQUE DES ASSETS BINAIRES RCL0194 — 29 AOUT 2026
+
+          Pour garantir que le vrai lot de donnees soit conserve en un commit coherent malgre les PNG binaires, la prochaine pousse sur `tmp-rave-visual-backfill` ajoute uniquement un workflow temporaire auto-supprimant de packaging. Ce helper reconstruira les 8 PNG depuis le PDF Rover exact avec PyMuPDF 1.26.4, verifiera tous les SHA-256 deja valides, installera le `research_enrichment_1750.qz64`, mettra a jour le manifeste et ajoutera l'audit, puis creera un seul commit de donnees.
+
+          Le helper n'est pas un changement de production : aucun protocole ECU, aucune acquisition/RAM, aucun code IA/communication, aucun 32 bits et aucun `MEMSX64` ne sont modifies. Le commit de donnees resultant doit contenir uniquement les 8 images RCL0194, le lot 1750, le manifeste, l'audit, plus la suppression du helper temporaire lui-meme. Toute difference de hash doit faire echouer le workflow avant commit.
+          EOF
+      - name: Commit report and remove helper
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/temp-report-rcl0194-atomic-helper.yml
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Record atomic RCL0194 binary asset packaging plan"
+          git push origin RAPPORT
