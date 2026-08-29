@@ -9,136 +9,117 @@ Date: 2026-08-29
 - Working branch: `tmp-rave-visual-backfill`.
 - Official packaged SQLite inspected from BUILD #101: `database/expert/ia_mems_reference_r20.sqlite`.
 - Current RAVE facts: **93**.
-- Current historical RAVE facts must remain unchanged; visual backfill is additive only.
-- The validated RAVE 1680 pilot mechanism is the architectural reference: local original asset + additive fact↔asset link + source/page/hash + manifest resolver + user-openable resource.
+- Current historical RAVE facts remain untouched by this inventory/audit step.
+- The validated RAVE 1680 pilot mechanism is the architectural reference: original local asset + additive fact↔asset link + source/page/hash + manifest resolver + user-openable resource.
 
 ## Exact provenance of the 93 existing RAVE facts
 
 | Batch | Source | Facts | Current visual-reference state | Visual backfill target |
 |---|---|---:|---|---|
-| 1660 | `RCL0193ENG` Mini Workshop Manual 1997–2000 | 31 | `image_ref` empty on all 31 facts; `source_section` identifies PDF pages/sections | Capture the 26 distinct cited PDF pages and link each fact to all pages needed by its source section |
-| 1670 | `RCL0194ENG` MPi 97MY | 15 | `image_ref` already records factory page labels | Capture `15.1`, `20.1`, `20.2`, `39.1` and resolve combined refs without duplicating assets |
-| 1680 | `RCL0194ENG` SPi Japan 97MY wiring | 14 | `image_ref` covers `20.3`, `20.4`, `39.3` | Already proven by pilot; reuse the same three original assets and links |
-| 1690 | `RCL0194ENG` SPi Japan wire colours | 7 | all facts point to `20.4`; colour-code legend is cited by audit but not separately linked | Reuse `20.4`; also capture/link the exact Rover colour-code legend page once identified |
-| 1700 | `RCL0194ENG` injector/purge/IAC colours | 8 | all facts point to `20.4`; colour-code legend cited by audit | Reuse `20.4`; reuse the single colour-code legend asset |
-| 1710 | `RCL0194ENG` SPi Japan 20.3 colours | 11 | all facts point to `20.3`; colour-code legend cited by audit | Reuse `20.3`; reuse the single colour-code legend asset |
-| 1720 | `AKM7169ENG` Mini SPi classic 1993+ | 7 | `image_ref` empty; logical source sections recorded | Capture Introduction/publication scope and `Engine Tuning Data 3`, `4`, `5`; exact PDF page indexes to be verified against the source scan before extraction |
+| 1660 | `RCL0193ENG` Mini Workshop Manual 1997–2000 | 31 | `image_ref` empty; `source_section` identifies PDF pages/sections | Capture the 26 distinct cited PDF pages and link every fact to all pages required by its source section |
+| 1670 | `RCL0194ENG` MPi 97MY | 15 | factory page labels present, but 3 legacy facts incorrectly cite `39.1` for Cooling Fan MPi | Capture `15.1`, `20.1`, `20.2`, **`39.2`**; preserve an explicit audit of legacy `39.1` before correction |
+| 1680 | `RCL0194ENG` SPi Japan 97MY wiring | 14 | `20.3`, `20.4`, `39.3` | Reuse the three validated pilot assets |
+| 1690 | `RCL0194ENG` SPi Japan wire colours | 7 | `20.4`; colour legend used but not separately linked | Reuse `20.4`; capture/link Rover colour-code legend |
+| 1700 | `RCL0194ENG` injector/purge/IAC colours | 8 | `20.4`; colour legend used but not separately linked | Reuse `20.4`; reuse colour-code legend |
+| 1710 | `RCL0194ENG` 20.3 wire colours | 11 | `20.3`; colour legend used but not separately linked | Reuse `20.3`; reuse colour-code legend |
+| 1720 | `AKM7169ENG` Mini SPi classic 1993+ | 7 | `image_ref` empty; logical sections recorded | Capture Introduction/publication scope and `Engine Tuning Data 3`, `4`, `5` after exact PDF-index verification |
 
 Total: **31 + 15 + 14 + 7 + 8 + 11 + 7 = 93 facts**.
 
-## Document-level inventory
+## 1. RCL0193ENG — 31 facts / batch 1660
 
-### 1. RCL0193ENG — 31 facts / batch 1660
+None of the 31 facts currently carries an `image_ref`.
 
-The BUILD #101 SQLite records 31 facts from `Mini Workshop Manual — RCL0193ENG`. None currently carries an `image_ref`.
-
-Distinct cited PDF pages extracted from the 31 `source_section` values:
+Distinct PDF pages cited by the existing `source_section` fields:
 
 `38, 39, 40, 98, 101, 107, 108, 109, 112, 113, 114, 117, 118, 120, 121, 122, 123, 125, 126, 127, 128, 129, 130, 131, 135, 170`
 
-That is **26 distinct PDF pages** for the existing knowledge only.
+That is **26 distinct PDF pages** for the existing knowledge.
 
-Topics covered by those pages include:
-- Engine Tuning Data (SPi/MPi fuel pressure, TPS, lost-motion gap);
-- EVAP purge;
-- engine-management strategy;
-- CKP, MAP, ECT, IAT, TPS, HO2S, IACV and injectors;
-- throttle cable adjustment/removal;
-- throttle pedal/housing/TP sensor;
-- ignition coil;
-- ECM;
-- IACV/IAT/ECT/CKP/MAP removal-refit procedures;
-- injector service.
+Topics include tuning data, fuel pressure, TPS, EVAP, CKP, MAP, ECT, IAT, HO2S, IACV, injectors, throttle cable/pedal/housing, ignition coil, ECM and removal/refit procedures.
 
-Important: some facts cite two pages or page ranges. Backfill must link the fact to **all necessary source pages**, not arbitrarily choose only the first page.
+Some facts cite multiple pages: the final relation must support **one fact → several assets**.
 
-Source status before capture:
-- publication identity `RCL0193ENG` 5th Edition is verified;
-- a public 372-page RAVE PDF source has been located and identifies itself as RCL0193ENG / Rover Technical Communication;
-- mapping between the historical `PDF p.xxx` references and the chosen source file must be checked before committing any image asset/hash.
+Before capture, the historical `PDF p.xxx` references must be mapped against the exact retained RCL0193 factory scan; no page offset may be guessed.
 
-### 2. RCL0194ENG — 55 facts / batches 1670–1710
+## 2. RCL0194ENG — 55 facts / batches 1670–1710
 
-All 55 RCL0194 facts already contain textual `image_ref` values. The **seven unique factory page labels** required by existing facts are:
+Factory PDF retained by the validated pilot:
+- `RCL0194ENG`, MINI Electrical Circuit Diagrams, 3rd Edition;
+- 41 PDF pages;
+- source PDF SHA-256: `64e64f8a7c24f362913e2661403bc474e4e7ef07f96db618ef661645e0d0f051`.
 
-`15.1`, `20.1`, `20.2`, `20.3`, `20.4`, `39.1`, `39.3`
+Verified physical mapping:
 
-In addition, batches 1690–1710 explicitly use the Rover factory **wire-colour legend** to expand abbreviations. Its exact page/figure label is not yet represented by `image_ref`; it must be identified and stored as an additional supporting asset rather than inferred.
+| Source page | PDF index | Meaning | State |
+|---|---:|---|---|
+| colour legend | 5 | `COLOUR CODES` / Rover `RCL 0145` | to add once |
+| `15.1` | 13 | Charging and Starting — MPi | to add |
+| `20.1` | 15 | Engine Management System (MEMS) — MPi | to add |
+| `20.2` | 16 | Engine Management System (MEMS) — MPi | to add |
+| `20.3` | 17 | Engine Management System (MEMS) — SPi Japan | pilot asset validated |
+| `20.4` | 18 | Engine Management System (MEMS) — SPi Japan | pilot asset available |
+| `39.1` | 24 | **Heater Blower** | not a Cooling Fan MPi source |
+| `39.2` | 25 | **Cooling Fan — MPi** | to add; correct target for 3 MPi facts |
+| `39.3` | 26 | Cooling Fan — SPi Japan | pilot asset available |
 
-Current state:
-- `20.3`, `20.4`, `39.3` were extracted as original page images in the validated RAVE 1680 pilot;
-- `20.3` was selected automatically from a natural user query, proposed as an exact RAVE resource, clicked and opened successfully on the real PC;
-- the backfill must **reuse** these assets rather than store duplicate copies;
-- remaining direct fact pages to add: `15.1`, `20.1`, `20.2`, `39.1`;
-- supporting legend page remains to be identified/captured once.
+### Legacy source-reference divergence
 
-### 3. AKM7169ENG — 7 facts / batch 1720
+Exactly three historical MPi facts currently cite `39.1` even though the correct factory page is `39.2`:
 
-The BUILD #101 SQLite records seven facts from `Rover Mini Repair Manual — AKM7169ENG`. Their current `image_ref` values are empty.
+- `RAVE-WIR-MPI-006` — cooling fan wiring;
+- `RAVE-WIR-MPI-008` — coolant sensor wiring;
+- `RAVE-WIR-MPI-012` — sensor ground.
 
-Logical sections already recorded:
+Their technical content matches the real `39.2` page (including C159-28 / C019 / C005 and C169 / C159-15 / C159-13).
+
+**Do not silently rewrite them.** The wrong legacy ref and the verified replacement must remain auditable.
+
+## 3. AKM7169ENG — 7 facts / batch 1720
+
+Current logical source sections:
 - `Introduction / publication scope`;
-- `Engine Tuning Data 3` — SPi manual / MNE101040;
-- `Engine Tuning Data 4` — SPi automatic / MNE101060;
-- `Engine Tuning Data 5` — SPi high-compression / MNE101070;
-- facts common to Tuning Data 3–5: speed/density, TPS range, fuel pressure.
+- `Engine Tuning Data 3`;
+- `Engine Tuning Data 4`;
+- `Engine Tuning Data 5`;
+- common `Tuning Data 3–5`.
 
-Before capture, the exact PDF page indexes of these four logical visual targets must be verified against the selected factory scan. No page number is to be invented from the section name.
+Exact PDF indexes must be verified against the selected factory scan before any visual extraction.
 
-## Current packaged visual coverage before backfill
+## Current production visual coverage
 
-BUILD #101 contains six generic local SVG diagrams only:
-- MEMS 1.2 ECU;
-- MEMS 1.3 ECU;
-- MEMS 1.6 ECU;
-- MEMS 1.9 ECU;
-- ROSCO 3-pin;
-- MEMS 1.9 OBD 16-pin.
+Official BUILD #101 includes only the six generic local SVG diagrams.
 
-The original RAVE pages are not present in official #101. The validated pilot added only:
+The validated pilot V2 adds original RAVE pages:
 - `RCL0194ENG 20.3`;
 - `RCL0194ENG 20.4`;
 - `RCL0194ENG 39.3`.
 
-## Backfill architecture to reuse
+`20.3` has been selected from a natural user question, proposed, clicked and opened correctly on the real PC.
 
-The chantier must keep the pilot principles and generalise them, not create a second parallel system:
+## Architecture / data rule
 
-1. one physical source asset per unique document/page/figure;
-2. SHA-256 and source-document identity retained;
-3. additive relation allowing multiple facts/knowledge items to point to the same asset;
-4. one fact may point to multiple assets when its source section spans several pages;
-5. exact source page/figure label kept separately from the rendered filename;
-6. no historical `mems_rave_fact` statement is silently rewritten during visual backfill;
-7. if visual inspection contradicts an existing fact, record a divergence/audit item first — do not silently alter the fact;
-8. original source visual and structured fact remain complementary;
-9. resolver/UI must only propose assets physically present and declared;
-10. future source types (tables, figures, exploded views, procedure illustrations) must be representable without forcing them all into a generic `diagram` meaning.
+1. One physical asset per unique document/page/figure; no duplicate copies.
+2. Preserve source document, page/figure label, physical PDF index and SHA-256.
+3. Multiple facts may share one asset.
+4. One fact may link to multiple assets.
+5. Keep legacy source fields for audit; corrections must be explicit and traceable.
+6. Visual source and structured fact complement each other.
+7. If visual inspection contradicts existing data, record the divergence before correcting anything.
+8. Resolver/UI may only expose physically present, declared assets.
+9. Non-diagram visual types (table, procedure page, exploded view, photo, chart, warning panel, cover/scope page) must be representable; extend schema additively if needed.
+10. No useful source information may be discarded because the current schema lacks a slot.
 
-## Schema check triggered by the fundamental rule
+## Execution order
 
-The pilot tables are sufficient for a simple page illustration, but the full chantier must audit whether an additional generic asset layer is needed for non-diagram material such as:
-- table;
-- procedure illustration;
-- exploded view;
-- photograph;
-- chart/graph;
-- warning/caution panel;
-- multi-page procedure;
-- source-document cover/scope page.
-
-If `mems_rave_illustration` cannot represent one of these cleanly, the schema must be extended **additively** before data is lost. No type of useful source material may be discarded only because the present schema has no slot for it.
-
-## First execution order
-
-1. Preserve/reuse the three validated RCL0194 pilot assets.
-2. Complete RCL0194 because its mapping is already explicit: `15.1`, `20.1`, `20.2`, `39.1`, plus exact colour-code legend.
-3. Backfill RCL0193 using the 26 verified historical PDF page references, after page-index/source validation.
-4. Backfill AKM7169 after exact source scan/page mapping is established.
-5. Run integrity/hash/link/manifest/resolver checks after each document group.
-6. Build a temporary test artifact only after the visual backfill candidate is internally consistent.
-7. Use natural/free user questions for real-PC validation; do not validate only with prompts designed around known manifest keys.
+1. Complete RCL0194: add `15.1`, `20.1`, `20.2`, `39.2` and colour legend; reuse `20.3`, `20.4`, `39.3`.
+2. Establish a traceable correction path for the three legacy `39.1` references.
+3. Validate hashes, links and user resolution for RCL0194.
+4. Backfill RCL0193 26 pages after exact scan/index mapping.
+5. Backfill AKM7169 after exact scan/index mapping.
+6. Build a temporary test artifact only after internal consistency checks.
+7. Validate with natural/free user wording, not only prompts designed around manifest keys.
 
 ## Production guard
 
-`MEMSX64` must remain exactly on BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48` until the backfill candidate has been audited, built on a temporary branch and validated. No #102 is authorised by this inventory step.
+`MEMSX64` remains exactly BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`. No #102 is authorised by this inventory/audit step.
