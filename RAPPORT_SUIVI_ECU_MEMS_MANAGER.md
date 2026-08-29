@@ -1614,3 +1614,45 @@ Avant commit, le SQL genere sera applique a une copie exacte de `ia_mems_referen
 Cette methode peut produire un qz64 de bytes/hash differents du candidat local precedent en raison du formatage deterministe regenere, mais **les donnees et invariants cibles ne changent pas**. Le nouveau hash sera enregistre apres validation ; aucun fait historique ne sera reecrit.
 
 `MEMSX64` reste strictement BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.
+
+## 2026-08-29 — RCL0194 visual backfill 1750 — deterministic validation run 33249238690
+
+### State before test
+- Production remains strictly `MEMSX64`_ BUILD #101 / `22dbe75ed14e0a61e694159d505ef72245116b48`.
+- Working branch: `tmp-rave-visual-backfill`.
+- Validation commit: `55ada9d9f7296e88d4d04a66802647efc5c946e3`.
+- No production build #102 was started.
+- Scope remains documentary/database only; ECU communication/protocol/acquisition/write safety and 32-bit path are untouched.
+
+### Test executed
+GitHub Actions workflow `TEMP RCL0194 DETERMINISTIC 1750 VALIDATE`, run `33249238690`, job `99091921358`.
+The workflow rebuilt the reference SQLite from the shipped BUILD #101 seed/enrichment set, regenerated `research_enrichment_1750.qz64` using the Qt qCompress-compatible framing expected by MEMS Manager, applied the generated lot to a copy of that reconstructed SQLite, rendered the eight exact RCL0194 source visuals from the verified Rover PDF, then ran invariants and a documentary-scope guard.
+
+### Actual result
+**Overall verdict: ❌ FAIL at the final scope guard, with the actual 1750 generation/database validation itself ✅ PASS.**
+
+Successful deterministic checks before the guard failure:
+- `RCL0194_1750_PASS`;
+- `PRAGMA integrity_check = ok`;
+- `PRAGMA user_version = 20`;
+- historical `mems_rave_fact` count remains **93**;
+- historical expert fact count remains **105**;
+- RCL0194 source assets = **8**;
+- direct/effective visual coverage = **55/55 RCL0194 facts**;
+- SPi Japan colour-code legend links = **26/26**;
+- explicit additive source corrections `39.1 -> 39.2` = **3**;
+- all eight PNGs reproduced their previously verified SHA-256 values exactly;
+- generated qz64 SHA-256 = `200b2d7ec0ba24d93d7192fdf63f86845c53f49ad4a28cb997ede9d39fb5f51d`;
+- decompressed SQL SHA-256 = `e9b10b33b67165dc14effc81fb8a62308ab5340ed8a5d38b0d7f6aec43191090`.
+
+Failure cause:
+- the documentary-scope guard also saw two **ephemeral runner work products**: `.tmp-rcl0194-1750/` and `RCL0194ENG.pdf`;
+- it therefore returned `Unexpected candidate paths: .tmp-rcl0194-1750/, RCL0194ENG.pdf`;
+- artifact creation/upload was consequently skipped;
+- **no 1750 data commit and no RCL0194 PNG commit occurred**.
+
+### Technical conclusion
+The previous qz64 transport problem is solved by deterministic reconstruction: the generated lot round-trips and applies correctly using the project qz64 contract. The failure is isolated to the guard seeing temporary build inputs, not to the database, SQL, qz64, RAVE mapping, visual hashes, or historical-data preservation.
+
+### Exact next action
+Before any new data push, correct only the temporary validation workflow so that `.tmp-rcl0194-1750/` and `RCL0194ENG.pdf` are removed after generation and before the Git scope guard. Re-run the same deterministic validation unchanged. If it passes, record that test in this report before committing the generated 1750/PNG/manifest/audit candidate.
