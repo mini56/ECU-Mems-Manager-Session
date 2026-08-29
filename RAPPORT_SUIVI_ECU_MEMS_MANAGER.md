@@ -1782,3 +1782,13 @@ Objectif de la prochaine pousse sur `tmp-rave-visual-backfill`: ajouter uniqueme
 Le mapping ne doit jamais supposer un offset de page: pour chaque reference `PDF p.N` ou plage, le workflow doit verifier le contenu de la page candidate par rapport au sujet/section attendu et signaler toute divergence. Il doit produire un audit textuel lisible listant les 31 faits, leurs pages, types de support utiles (tableau, procedure, illustration, vue, avertissement) et la liste unique des assets a capturer.
 
 Aucun qz64 de donnees, aucune image et aucun fait historique ne doivent etre modifies par cette etape. La base/IA/RAVE reste consultative et ne prend jamais la main sur la communication ECU. Toute decouverte pouvant justifier une evolution du programme sera signalee explicitement a l'utilisateur.
+
+## 2026-08-29 - RCL0193 CARTOGRAPHIE RUN #2 - MAPPING OK, GARDE FINAL EN ECHEC
+
+Run temporaire `33250967976`, job `99096454241`, correction declencheur `c85a8022d657bc16a5a469c29d6b683c1438734c`: **⚠️ cartographie technique reussie, workflow final FAILURE au garde de perimetre**.
+
+Resultats de l'etape de cartographie avant le garde: `FACTS_PASS 31`; `STATEMENTS_PASS 31` avec `sqlite3.complete_statement`; **25 pages PDF uniques** indexes `[38,39,40,98,101,107,108,109,112,113,114,117,118,120,121,122,123,125,126,127,128,129,130,131,135]`; `WEAK_CASES 1`. Le PDF exact et les assertions documentaires sont passes.
+
+Le garde a ensuite echoue parce que la reconstruction de la base cree volontairement le workspace local `.tmp-rcl0193-map/` avec le SQLite temporaire, alors que le garde exigeait que le seul fichier non suivi soit l'audit Markdown. Le commit final a ete saute: **aucun audit de mapping, aucune image et aucune donnee RCL0193 n'ont ete pousses par ce run**.
+
+Correction suivante autorisee: supprimer uniquement `.tmp-rcl0193-map/` apres construction de l'audit et avant `git status --porcelain`, puis conserver exactement le meme mapping et les memes assertions. Le cas `WEAK_CASES 1` devra etre identifie dans l'audit commite avant de generer le lot visuel additif.
