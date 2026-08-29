@@ -1,0 +1,33 @@
+name: REPORT AKM6348 CH86 CONTACT PASS
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/report-akm6348-ch86-contact-pass.yml'
+permissions:
+  contents: write
+jobs:
+  append:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Record CH86 visual contact-sheet inspection
+        shell: bash
+        run: |
+          git pull --rebase origin RAPPORT
+          printf '\n## 2026-08-29 - AKM6348 CH86 - PLANCHES CONTACT VISUELLES VALIDEES\n\n' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          printf '%s\n' '- Workflow TEMP AKM6348 CH86 CONTACT SHEET, run 33260313978: SUCCESS; artefact temporaire AKM6348-CH86-CONTACT-SHEETS ID 9717059833.' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          printf '%s\n' '- 4 planches contact couvrent les 53 pages du PDF hashé 14fcb88e... sans conserver le chapitre complet dans le depot.' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          printf '%s\n' '- Inspection visuelle: debut du chapitre = plusieurs schemas de cablage alternant avec leurs legendes/codes; milieu = procedures et composants electriques; fin = implantations/tableaux et schemas complementaires.' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          printf '%s\n' '- La planche confirme notamment qu autour des index PDF 30-33 se trouvent schema/legende/schema/legende, et l index 32 est un schema de cablage. Le numero constructeur exact doit encore etre lu sur rendu haute definition avant liaison DB.' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          printf '%s\n' '- Prochaine action: rendre en haute definition uniquement les pages candidates utiles (notamment 30-33 et pages d implantation/tableaux) pour relever titre exact, etiquette 86.xx, variante/annee et preuves techniques avant creation de faits/assets.' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          printf '%s\n' '- Aucun fait, asset ou qz64 de page AKM6348 ajoute a ce stade. MEMSX64 #101 inchange.' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git rm .github/workflows/report-akm6348-ch86-contact-pass.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m 'Record AKM6348 CH86 visual contact-sheet pass'
+          git push origin RAPPORT
