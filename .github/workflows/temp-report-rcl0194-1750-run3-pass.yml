@@ -1,0 +1,40 @@
+name: TEMP REPORT RCL0194 1750 RUN3 PASS
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - .github/workflows/temp-report-rcl0194-1750-run3-pass.yml
+
+permissions:
+  contents: write
+
+jobs:
+  update_report:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append run3 and artifact PASS
+        shell: bash
+        env:
+          REPORT_APPEND_B64: CiMjIDIwMjYtMDgtMjkg4oCUIFJDTDAxOTQgYmFja2ZpbGwgMTc1MCDigJQgdmFsaWRhdGlvbiBydW4gIzMgKyBhcnRpZmFjdCB2ZXJpZmljYXRpb24KCiMjIyBUZXN0IEdpdEh1YgpXb3JrZmxvdyBgVEVNUCBSQ0wwMTk0IERFVEVSTUlOSVNUSUMgMTc1MCBWQUxJREFURWAsIHJ1biBgMzMyNDk1Mzk5NTJgLCBqb2IgYDk5MDkyNzE0MDcyYCwgSEVBRCAgYGNkNWVjOWZiZWY0Njg3Y2ZhYTc4MmY4YWUzMTRjNmZhNTBlNDgxYjFgLgoKKipWZXJkaWN0IEdpdEh1YiA6IOKchSBQQVNTLioqClRvdXRlcyBsZXMgZXRhcGVzIHNvbnQgdmVydGVzIDogcmVjb25zdHJ1Y3Rpb24gZGV0ZXJtaW5pc3RpcXVlIGRlIGxhIFNRTGl0ZSBCVUlMRCAjMTAxLCBnZW5lcmF0aW9uL2FwcGxpY2F0aW9ucyBkdSBxejY0IDE3NTAsIHJlbmR1IGV0IGhhc2ggZGVzIDggUE5HIFJDTDAxOTQsIHN1cHByZXNzaW9uIGRlcyBmaWNoaWVycyB0ZW1wb3JhaXJlcywgZ2FyZGUgZG9jdW1lbnRhaXJlLCBjb25zdHJ1Y3Rpb24gZHUgY2FuZGlkYXQgZXQgdXBsb2FkIGFydGVmYWN0LgoKTGVzIGludmFyaWFudHMgcmVzdGVudCBjZXV4IHZhbGlkZXMgYXUgcnVuIHByZWNlZGVudCA6IGludGVncml0eT1vaywgdXNlcl92ZXJzaW9uPTIwLCA5MyBmYWl0cyBSQVZFIGhpc3RvcmlxdWVzLCAxMDUgZmFpdHMgZXhwZXJ0IGhpc3RvcmlxdWVzLCA4IHZpc3VlbHMgUkNMMDE5NCwgY291dmVydHVyZSBkaXJlY3RlL2VmZmVjdGl2ZSA1NS81NSwgbGVnZW5kZSBjb3VsZXVycyAyNi8yNiwgMyBjb3JyZWN0aW9ucyBhZGRpdGl2ZXMgMzkuMSAtPiAzOS4yLiBMZXMgZmFpdHMgaGlzdG9yaXF1ZXMgbmUgc29udCBwYXMgcmVld3JpdHMuCgojIyMgQXJ0ZWZhY3QgY2FuZGlkYXQKLSBub20gOiBgUkNMMDE5NC0xNzUwLURFVEVSTUlOSVNUSUMtQ0FORElEQVRFYAotIElEIDogYDk3MTM5MDg2NDFgCi0gdGFpbGxlIDogYDEsMzU2LDgxOGAgb2N0ZXRzCi0gZGlnZXN0IEdpdEh1YiA6IGBzaGEyNTY6ZjVmMGM4NjQzMTRhMmFkZGIwZTk0NjQwZThlY2QyZDE1MjE2YjFhNTljZGJhN2QzMDhhMDk3MGVjMjZmZjUyNWAotIHF6NjQgU0hBLTI1NiA6IGAyMDBiMmQ3ZWMwYmEyNGQ5M2Q3MTkyZmRmNjNmODY4NDVjNTNmNDlhZDRhMjhjYjk5N2VkZTlkMzlmYjVmNTFkYAoKIyMjIFZlcmlmaWNhdGlvbiBsb2NhbGUgZGUgbCdhcnRlZmFjdAoqKlZlcmRpY3QgOiDinIUgUEFTUy4qKgpgaGFzaDI1c3VtIC1jIFNIQTI1NlNVTVMudHh0YCByZXRvdXJuZSBPSyBwb3VyIDEyLzEyIDogYXVkaXQsIG1hbmlmZXN0ZSwgcXo2NCwgdmFsaWRhdGlvbl9zdW1tYXJ5IGV0IGxlcyA4IFBORy4gYFNIQTI1NlNVTVMudHh0YCBuZSBzZSByZWZlcmVuY2UgcGx1cyBsdWktbWVtZS4gTGVzIGhhc2hlcyBQTkcIGNvcnJlc3BvbmRlbnQgdG91cyBhdXggdmFsZXVycyBjb25zdHJ1Y3RldXIgZGVqYSB2ZXJpZmllZXMuCgojIyMgQ29uY2x1c2lvbgpMZSBkZWZhdXQgZCdlbWJhbGxhZ2UgZHUgcHJlY2VkZW50IGFydGVmYWN0IGVzdCBjb3JyaWdlLiBMZSBjYW5kaWRhdCAxNzUwIGVzdCBkZXNvcm1haXMgcmVwcm9kdWN0aWJsZSBldCB2ZXJpZmllIGRlIGJvdXQgZW4gYm91dCBhdmFudCBjb21taXQuIExhIGJhc2Ugc3RydWN0dXJlZSByZXN0ZSBsZSBjb2V1ciBpbnRlcnJvZ2VhYmxlIDsgbGVzIFBORyByZXN0ZW50IGRlcyBwcmV1dmVzL2lsbHVzdHJhdGlvbnMgYXNzb2NpZWVzLiBMYSBiYXNlL0lBIHJlc3RlIGNvbnN1bHRhdGl2ZSBldCBuZSBwcmVuZCBqYW1haXMgbGEgbWFpbiBzdXIgbGEgY29tbXVuaWNhdGlvbiBFQ1UuCgojIyMgUHJvY2hhaW5lIGFjdGlvbiBleGFjdGUKUG91c3NlciBhdG9taXF1ZW1lbnQgc3VyIGB0bXAtcmF2ZS12aXN1YWwtYmFja2ZpbGxgIGxlcyBvY3RldHMgZXhhY3RzIHZhbGlkZXMgZGUgYHJlc2VhcmNoX2VucmljaG1lbnRfMTc1MC5xejY0YCwgYG1hbmlmZXN0Lmpzb25gLCBsJ2F1ZGl0IGV0IGxlcyA4IFBORywIGNvbnNlcnZlciBsZSBnZW5lcmF0ZXVyIHJlcHJvZHVjdGlibGUsIHJldGlyZXIgbGVzIHdvcmtmbG93cyB0ZW1wb3JhaXJlcyBkZXZlbnVzIGludXRpbGVzLCBwdWlzIGxhbmNlciB1bmUgdmFsaWRhdGlvbiBwb3N0LXBvdXNzZSBhIHBhcnRpciBkZXMgZmljaGllcnMgcmVlbGxlbWVudCBjb21taXRlcy4gTWV0dHJlIGxlIHJhcHBvcnQgYSBqb3VyIGFwcmVzIGNldHRlIHZhbGlkYXRpb24gYXZhbnQgZGUgcGFzc2VyIGF1IGRvY3VtZW50IHN1aXZhbnQuIGBNRU1TWDY0YCByZXN0ZSBCVUlMRCAjMTAxIGAyMmRiZTc1ZWQxNGUwYTYxZTY5NDE1OWQ1MDVlZjcyMjQ1MTE2YjQ4YDsgYXVjdW4gIzEwMi4K
+        run: |
+          python - <<'PY'
+          import base64, os
+          from pathlib import Path
+          with Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md').open('ab') as f:
+              f.write(base64.b64decode(os.environ['REPORT_APPEND_B64']))
+          PY
+      - name: Commit report and remove helper
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/temp-report-rcl0194-1750-run3-pass.yml
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Record RCL0194 1750 run3 artifact pass"
+          git push origin RAPPORT
