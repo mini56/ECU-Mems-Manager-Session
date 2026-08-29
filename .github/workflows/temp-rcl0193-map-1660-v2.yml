@@ -1,0 +1,175 @@
+name: TEMP RCL0193 MAP 1660 V2
+
+on:
+  push:
+    branches: [tmp-rave-visual-backfill]
+    paths:
+      - .github/workflows/temp-rcl0193-map-1660-v2.yml
+
+permissions:
+  contents: write
+
+jobs:
+  map_sources:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-visual-backfill
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pinned PDF renderer
+        run: python -m pip install PyMuPDF==1.26.4
+      - name: Verify immutable inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROD=$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')
+          test "$PROD" = "22dbe75ed14e0a61e694159d505ef72245116b48"
+          echo '5d56f198a6f5ccaf36d7f94646e3b9af4efd465e7f80da0ebea3d74f3d894093  database/reference/research_enrichment_1660.qz64' | sha256sum -c -
+          curl --fail --location --retry 3 --output /tmp/RCL0193ENG.pdf 'https://www.uscars.biz/uscars/mini-documents/Rave_CD_wmxn990e.pdf'
+          echo 'c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715  /tmp/RCL0193ENG.pdf' | sha256sum -c -
+      - name: Parse exact 31 rows and verify physical source mapping
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import base64,hashlib,re,zlib
+          from pathlib import Path
+          import fitz
+
+          raw=base64.b64decode(''.join(Path('database/reference/research_enrichment_1660.qz64').read_text('ascii').split()))
+          sqlb=zlib.decompress(raw[4:]); assert int.from_bytes(raw[:4],'big')==len(sqlb)==41443
+          assert hashlib.sha256(sqlb).hexdigest()=='b978f7e73487c6243c8a6c355b4e5dedd90cf449bee223e9c1eb81e08eb0a7cd'
+          sql=sqlb.decode('utf-8')
+
+          def value_exprs(text,marker):
+              pos=0
+              while True:
+                  s=text.find(marker,pos)
+                  if s<0:return
+                  v=text.find('VALUES',s); lp=text.find('(',v); i=lp+1; quoted=False
+                  while i<len(text)-1:
+                      if text[i]=="'":
+                          if quoted and i+1<len(text) and text[i+1]=="'": i+=2; continue
+                          quoted=not quoted; i+=1; continue
+                      if not quoted and text[i:i+2]==');':
+                          yield text[lp+1:i]; pos=i+2; break
+                      i+=1
+
+          def fields(expr):
+              out=[]; buf=[]; i=0; q=False
+              while i<len(expr):
+                  c=expr[i]
+                  if c=="'":
+                      if q and i+1<len(expr) and expr[i+1]=="'": buf.append("'"); i+=2; continue
+                      q=not q; i+=1; continue
+                  if c==',' and not q: out.append(''.join(buf).strip()); buf=[]; i+=1; continue
+                  buf.append(c); i+=1
+              out.append(''.join(buf).strip()); return out
+
+          rows=[]
+          for expr in value_exprs(sql,'INSERT OR REPLACE INTO mems_rave_fact'):
+              f=fields(expr); assert len(f)==10,(len(f),f[:2])
+              if 'RCL0193ENG' in f[2]:
+                  rows.append(dict(zip(['fact_key','source_key','document','variant','topic','statement','source_section','verification_level','image_ref','notes'],f)))
+          assert len(rows)==31 and len({r['fact_key'] for r in rows})==31
+          assert all(r['verification_level']=='verifie_constructeur' and r['image_ref']=='' for r in rows)
+
+          rx=re.compile(r'PDF\s+p\.(\d+)(?:-(\d+))?',re.I); cited=[]
+          for r in rows:
+              m=rx.search(r['source_section']); assert m,(r['fact_key'],r['source_section'])
+              a=int(m.group(1)); b=int(m.group(2) or a); r['pages']=list(range(a,b+1)); cited+=r['pages']
+          pages=sorted(set(cited))
+          expected=[38,39,40,98,101,107,108,109,112,113,114,117,118,120,121,122,123,125,126,127,128,129,130,131,135]
+          assert pages==expected,(pages,expected)
+
+          doc=fitz.open('/tmp/RCL0193ENG.pdf'); assert doc.page_count==372
+          hard={38:['engine tuning data','fuel pressure','lost motion gap'],40:['engine tuning data','mpi','fuel pressure'],109:['map sensor'],118:['throttle cable'],127:['iacv'],128:['iat sensor'],129:['ckp sensor']}
+          for p,toks in hard.items():
+              t=' '.join(doc[p].get_text('text').lower().split()); miss=[x for x in toks if x not in t]
+              if miss: raise SystemExit(f'page {p} content mismatch: {miss}')
+
+          stop={'pdf','engine','management','system','mems','repairs','repair','adjustments','adjustment','description','operation','sensor','model','data','page','and'}
+          def anchors(s):
+              tail=s.split('/',1)[1] if '/' in s else s
+              return [w for w in re.findall(r'[A-Za-z][A-Za-z0-9]+',tail.lower()) if len(w)>=3 and w not in stop and not w.isdigit()]
+          unresolved=[]
+          for r in rows:
+              text=' '.join(' '.join(doc[p].get_text('text').lower().split()) for p in r['pages'])
+              a=anchors(r['source_section']); h=sorted({x for x in a if x in text}); r['hits']=h
+              if a and not h: unresolved.append((r['fact_key'],r['source_section'],a,r['pages']))
+              if len(text)<80: unresolved.append((r['fact_key'],'tiny page',[],r['pages']))
+          if unresolved:
+              print('UNRESOLVED_ROWS')
+              for x in unresolved: print(x)
+              raise SystemExit(f'{len(unresolved)} unresolved mappings')
+
+          meta={}
+          for p in pages:
+              pg=doc[p]; txt=' '.join(pg.get_text('text').split())
+              meta[p]=(len(pg.get_images(full=True)),len(pg.get_drawings()),len(txt),txt[:170].replace('|','/'))
+          doc.close()
+
+          def kind(r):
+              s=r['source_section'].lower()
+              if 'tuning data' in s:return 'table_page'
+              if any(x in s for x in ['repairs','adjustments','18.','19.']):return 'procedure_page'
+              return 'technical_description_page'
+
+          L=['# RCL0193ENG — mapping source vérifié des 31 faits historiques 1660','',
+             'Date: 2026-08-29','',
+             'Audit uniquement : aucun fait historique, qz64 de données ou asset visuel n’est modifié.','',
+             '- faits RCL0193 parsés: **31/31**; clés uniques **31/31**; `image_ref` vide **31/31**',
+             '- pages physiques uniques réellement citées: **25**',
+             '- qz64 1660 SHA-256 `5d56f198a6f5ccaf36d7f94646e3b9af4efd465e7f80da0ebea3d74f3d894093`',
+             '- SQL SHA-256 `b978f7e73487c6243c8a6c355b4e5dedd90cf449bee223e9c1eb81e08eb0a7cd`',
+             '- PDF constructeur: 372 pages, SHA-256 `c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715`','',
+             '## Correction de l’inventaire initial','',
+             'Le parseur SQL structure confirme que la page 170 ne fait partie d’aucun `source_section` des 31 faits `mems_rave_fact` RCL0193. La couverture correcte est donc 25 pages uniques, pas 26.','',
+             '## Preuve de l’index PDF','',
+             'Les références historiques `PDF p.N` correspondent directement à l’index physique N du PDF retenu. Contrôles durs passés sur p.38, p.40, p.109, p.118, p.127, p.128 et p.129; aucun offset n’est appliqué.','',
+             '## Mapping 31/31','',
+             '| Fact key | Variante | Source section | Pages | Type visuel | Ancres vues |','|---|---|---|---|---|---|']
+          for r in rows:
+              L.append(f"| `{r['fact_key']}` | `{r['variant']}` | {r['source_section'].replace('|','/')} | `{','.join(map(str,r['pages']))}` | `{kind(r)}` | {', '.join(r['hits']).replace('|','/')} |")
+          L+=['','## 25 pages physiques à conserver','','| Index | Images | Dessins | Texte | Aperçu |','|---:|---:|---:|---:|---|']
+          for p in pages:
+              im,dr,ch,pr=meta[p]; L.append(f'| {p} | {im} | {dr} | {ch} | {pr} |')
+          L+=['','Liste exacte:','', '`'+','.join(map(str,pages))+'`','',
+              '## Prochaine action exacte','',
+              'Préparer un lot visuel additif RCL0193 qui rend une seule fois ces 25 pages du PDF constructeur exact, calcule leurs SHA-256, les déclare dans le manifeste et relie les 31 faits à une ou plusieurs pages via les tables additives d’illustrations. Les faits historiques restent inchangés.','',
+              'La base/IA/RAVE reste consultative et ne prend jamais la main sur la communication ECU.','']
+          Path('database/reference/audits/rcl0193_1660_source_map.md').write_text('\n'.join(L),encoding='utf-8')
+          print('RCL0193_MAP_V2_PASS facts=31 pages=25')
+          PY
+      - name: Guard audit-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import subprocess
+          allowed={'.github/workflows/temp-rcl0193-map-1660.yml','.github/workflows/temp-rcl0193-map-1660-v2.yml','database/reference/audits/rcl0193_1660_source_map.md'}
+          paths=[]
+          for line in subprocess.check_output(['git','status','--porcelain'],text=True).splitlines():
+              p=line[3:].strip(); p=p.split(' -> ',1)[-1]
+              paths.append(p)
+          bad=[p for p in paths if p not in allowed]
+          if bad: raise SystemExit('Unexpected paths: '+','.join(bad))
+          assert 'database/reference/audits/rcl0193_1660_source_map.md' in paths
+          print('AUDIT_SCOPE_PASS')
+          PY
+      - name: Commit verified mapping and remove both helpers
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/temp-rcl0193-map-1660.yml
+          git rm .github/workflows/temp-rcl0193-map-1660-v2.yml
+          git add database/reference/audits/rcl0193_1660_source_map.md
+          git commit -m "Map all 31 RCL0193 facts to 25 verified source pages"
+          git push origin tmp-rave-visual-backfill
