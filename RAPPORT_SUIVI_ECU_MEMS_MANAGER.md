@@ -1504,3 +1504,71 @@ Le vrai commit atomique prepare avant l'incident est `5342d25536a0c71354fe6ed6d1
 - `.github/workflows/temp-rcl0194-visual-extract.yml`.
 
 Action de nettoyage autorisee sur la branche temporaire uniquement : replacer `tmp-rave-visual-backfill` sur `5342d255...`, ce qui supprime le commit parasite de la tete active de cette branche de travail. `MEMSX64` reste strictement #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.
+
+# RCL0194 — EXTRACTION VISUELLE VERTE ET CANDIDAT BACKFILL 1750 — 29 AOUT 2026
+
+## RESULTAT OUTILLAGE D'EXTRACTION
+
+Branche temporaire : `tmp-rave-visual-backfill`.
+Commit outillage propre : `5342d25536a0c71354fe6ed6d1f366957494f75a`.
+Workflow `TEMP RCL0194 VISUAL EXTRACT` : run `33248136914`, job `99089056030` — **SUCCESS**.
+Artefact : `RCL0194-VISUAL-ASSETS-BACKFILL-PREP`, ID `9713497504`, taille 854907 octets, digest `sha256:e55c5e37ab97d12ee60648036e67e5c9239d489b4655250d6df9bfec463d60de`.
+
+Source constructeur utilisee : `RCL0194ENG`, MINI Electrical Circuit Diagrams, 3rd Edition, 41 pages PDF.
+SHA-256 du PDF exact : `64e64f8a7c24f362913e2661403bc474e4e7ef07f96db618ef661645e0d0f051`.
+
+Cinq nouveaux supports ont ete extraits et verifies :
+- `COLOUR CODES`, index PDF 5, 1700x696, SHA-256 `718af9c48d7cc466b5c50278680ecb286de81a869d8e2293207796afe08833d3` ;
+- `15.1`, index 13, 1696x1190, SHA-256 `fa3a9f7620b660dc1405adf5bb330f74b9cf627e6ebc7bf2e3ac1b7a42016eeb` ;
+- `20.1`, index 15, 1696x1190, SHA-256 `334eea87abb0b9b5692c18ef157f51aa4a2edcc1580dd3d911ba7c3262bb9052` ;
+- `20.2`, index 16, 1696x1190, SHA-256 `3736908a793e46a5e3bee32d1d51544caf52557475317a2a5f96ca3d16177c9e` ;
+- `39.2`, index 25, 1696x1190, SHA-256 `e3e4c30e318aca2f9aeeb6984840397ec0bc5432d3c15034e2e68e6b2c0a6d22`.
+
+Reutilisation sans duplication des trois assets deja valides par le pilote :
+- `20.3` SHA-256 `2988614881aa2d713788eac084c97ae148595bbb19da21fd92b484041ef3e4c8` ;
+- `20.4` SHA-256 `7a04d84ee0296ab41333650f369aa3624f3ac7988a528584237a7b8fb021bea0` ;
+- `39.3` SHA-256 `b8da82236a56034cd3afde692752ae6ccdef2bc792f5dacfe14392ffc0f00188`.
+
+Les cinq nouveaux supports ont ete controles visuellement. La legende couleurs est bien la page Rover `COLOUR CODES`; `20.1`/`20.2` sont bien les schemas MEMS MPi; `39.2` porte bien le titre `COOLING FAN — MPi`.
+
+## CONFIRMATION TECHNIQUE MAP MPi PAR SOURCE PRIMAIRE
+
+L'inspection directe de `RCL0194ENG:20.2` confirme un **MAP SENSOR externe (204) sur le MPi**, connecteur C186, avec les liaisons visibles vers l'ECM notamment C159-36 (RG), C159-8 (YP) et retour capteurs C159-13 (KB). Cette preuve constructeur confirme la distinction avec la SPi, dont le MAP est integre. Aucun changement du programme ECU n'est deduit ni applique automatiquement de cette confirmation.
+
+## CANDIDAT ADDITIF `research_enrichment_1750.qz64`
+
+Un candidat local complet a ete genere a partir de la base officielle #101, sans modifier les faits historiques.
+
+Le lot 1750 ajoute :
+- `mems_rave_illustration` avec type d'asset (`wiring_diagram`, `legend`) et provenance/hash ;
+- `mems_rave_illustration_link` permettant un fait vers plusieurs supports ;
+- `mems_rave_source_reference_correction` pour enregistrer les corrections de provenance sans reecrire silencieusement l'historique ;
+- index et vue de resolution fait-vers-support.
+
+La divergence historique `39.1` est conservee dans le fait legacy et corrigee additivement vers la vraie source `39.2` pour `RAVE-WIR-MPI-006`, `RAVE-WIR-MPI-008` et `RAVE-WIR-MPI-012`.
+
+Les references composites (`20.1-20.2`, `20.3-20.4`) sont liees aux deux pages correspondantes. Les 26 faits couleur SPi Japon recoivent en plus la page `COLOUR CODES` comme legende de preuve complementaire.
+
+Validation sur copie exacte de la SQLite officielle #101 :
+- `PRAGMA integrity_check = ok` ;
+- `user_version = 20` ;
+- 93 faits RAVE conserves ;
+- 105 faits experts conserves ;
+- 8 assets RCL0194 ;
+- 55 faits RCL0194 possedent au moins un lien visuel direct/corrige ;
+- 26 faits couleur possedent la legende complementaire ;
+- 3 corrections de reference `39.1 -> 39.2` ;
+- aucune image physique `39.1` n'est creee comme faux support de Cooling Fan MPi.
+
+`research_enrichment_1750.qz64` : 3105 octets, SHA-256 `969c2b23b8e33e9bcac4ff653752186fad2fde8b5952439bf808d1ac2b56de02`.
+SQL decompresse : 36596 octets, SHA-256 `6ca6a2f82e948bacdd6995615fbea98d80571b3f87f80f8b93f46869a5bb0174`.
+
+## AVANT PROCHAINE POUSSE — PERIMETRE EXACT
+
+Prochaine pousse autorisee uniquement sur `tmp-rave-visual-backfill`, en un commit atomique :
+1. les 8 images RCL0194 sous `database/reference/images/rave/` ;
+2. `database/reference/research_enrichment_1750.qz64` ;
+3. mise a jour additive de `database/reference/manifest.json` ;
+4. audit `database/reference/audits/rcl0194_visual_backfill_1750_audit.md`.
+
+Aucun code de communication ECU, protocole, acquisition/RAM, UI de production, Qwen/ONNX, 32 bits ni branche `MEMSX64` ne doit etre modifie par cette pousse. `MEMSX64` reste strictement BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.
