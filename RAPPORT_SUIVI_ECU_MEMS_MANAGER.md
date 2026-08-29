@@ -1452,3 +1452,26 @@ Avant toute extraction d'images supplémentaires, la prochaine pousse sur `tmp-r
 Après cette pousse documentaire et sa consignation au rapport, le chantier pourra préparer les assets RCL0194 manquants : `15.1`, `20.1`, `20.2`, `39.2` et la légende couleurs, en réutilisant `20.3`, `20.4`, `39.3`.
 
 `MEMSX64` reste strictement BUILD #101.
+
+# REGLES PERMANENTES — SEPARATION BASE / COMMUNICATION ECU ET SIGNALEMENT DES EVOLUTIONS — 29 AOUT 2026
+
+## SEPARATION ABSOLUE BASE DOCUMENTAIRE / COMMUNICATION ECU
+
+Regle fondamentale fixee par l'utilisateur :
+- Les informations de la base de donnees, RAVE, recherches externes, illustrations, procedures, tableaux ou connaissances IA sont documentaires et consultatives.
+- Elles ne doivent jamais prendre la main sur le programme de communication avec l'ECU.
+- La connexion, detection, protocole, trames, polling 7D/80, Mode 4, commandes diagnostic, securites, ecritures, resets et protections restent pilotes exclusivement par le code/protocole valide.
+- Une donnee documentaire ne peut pas, a elle seule, declencher une commande ECU, modifier un mode de communication, choisir une commande dangereuse ou contourner une protection.
+- Toute future integration base/IA doit preserver cette frontiere d'architecture et etre testee comme telle.
+
+## SIGNALEMENT DES EVOLUTIONS POSSIBLES
+
+Lorsqu'une recherche RAVE, Internet, un audit de base ou une comparaison de source revele une information qui pourrait permettre une evolution du programme lui-meme, l'assistant doit conserver l'information, la signaler explicitement a l'utilisateur, expliquer brievement l'evolution possible et ne pas modifier le programme sans autorisation explicite.
+
+## MARQUEUR DE DECISION IMPORTANTE
+
+Quand une information, anomalie ou possibilite d'evolution necessite une reponse/decision de l'utilisateur, utiliser le marqueur :
+**🟥 IMPORTANT — REPONSE DE TA PART NECESSAIRE**
+et attendre cette reponse avant de franchir la decision concernee. Pour un point notable sans decision obligatoire, utiliser **🔴 IMPORTANT** sans bloquer le travail.
+
+Ces regles sont permanentes et s'ajoutent aux regles de journalisation, provenance, securite protocole et conservation maximale des informations.
