@@ -45,6 +45,13 @@ jobs:
             --pdf RCL0194ENG.pdf \
             --work .tmp-rcl0194-1750 | tee validation_summary.txt
 
+      - name: Remove only ephemeral validation inputs before Git scope guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .tmp-rcl0194-1750
+          rm -f RCL0194ENG.pdf
+
       - name: Guard documentary-only candidate scope
         shell: bash
         run: |
