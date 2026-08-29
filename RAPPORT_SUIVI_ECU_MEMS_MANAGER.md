@@ -6,6 +6,8 @@
 >
 > **SUIVI IMMÉDIAT** : avant chaque nouvelle étape, inscrire ici l’étape et son objectif ; après chaque résultat, l’inscrire avant la suite. **Toute modification, validation, échec, test réel et décision doit être ajouté au rapport au fur et à mesure afin de conserver l’historique complet entre les discussions.**
 >
+> **RÈGLE FONDAMENTALE — PRIORITÉ ABSOLUE À LA TRAÇABILITÉ** : si une tentative de mise à jour du rapport échoue, **toute autre action est immédiatement suspendue**. La cause de cet échec de journalisation devient la priorité n°1 : elle doit être diagnostiquée et corrigée, puis le rapport doit être effectivement écrit et vérifié avant toute nouvelle pousse, correction, migration, test ou build. L’échec de journalisation lui-même doit être consigné dès que le canal de rapport est rétabli. **Aucune progression technique ne doit contourner un rapport en échec.**
+>
 > **RÈGLE DE JOURNALISATION OBLIGATOIRE — 29 AOÛT 2026** : pour ECU MEMS Manager, l’ordre est strict : **RAPPORT AVANT CHAQUE POUSSE → POUSSE → TEST RÉEL → RAPPORT IMMÉDIAT → correction éventuelle → RAPPORT AVANT LA POUSSE SUIVANTE**. Chaque test doit conserver la question/manipulation réelle, la réponse observée, le verdict ✅/⚠️/❌, les régressions, la conclusion et la prochaine action. Un échec ne doit jamais être recouvert par une correction sans avoir été consigné.
 >
 > **NOMMAGE UTILISATEUR** : `ECU MEMS Manager x64 #NN — Commit xxxxxxx`. `#NN` = GitHub Actions.
