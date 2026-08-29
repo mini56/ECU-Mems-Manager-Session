@@ -142,12 +142,21 @@ jobs:
       - name: Guard audit scope
         shell: bash
         run: |
+          set -euo pipefail
           test -s database/reference/audits/rcl0193_visual_mapping_audit.md
           grep -F 'historical RCL0193 facts reconstructed from BUILD #101 knowledge set: **31**' database/reference/audits/rcl0193_visual_mapping_audit.md
           grep -F 'complete RCL0193 `mems_rave_fact` SQL statements in historical 1660: **31**' database/reference/audits/rcl0193_visual_mapping_audit.md
           git diff -- database/reference/research_enrichment_1660.qz64 --exit-code
+          echo '--- STATUS BEFORE TEMP CLEANUP ---'
+          git status --porcelain --untracked-files=all
+          echo '--- PYTHON CACHE DIRECTORIES ---'
+          find tools -type d -name '__pycache__' -print || true
           rm -rf .tmp-rcl0193-map
-          test "$(git status --porcelain --untracked-files=all)" = "?? database/reference/audits/rcl0193_visual_mapping_audit.md"
+          find tools -type d -name '__pycache__' -prune -exec rm -rf {} +
+          echo '--- STATUS AFTER TEMP CLEANUP ---'
+          STATUS="$(git status --porcelain --untracked-files=all)"
+          printf '%s\n' "$STATUS"
+          test "$STATUS" = "?? database/reference/audits/rcl0193_visual_mapping_audit.md"
 
       - name: Commit mapping audit and remove helper
         shell: bash
