@@ -1,0 +1,33 @@
+name: REPORT AKM FINAL AND VISUAL AUDIT PLAN
+
+on:
+  push:
+    branches:
+      - RAPPORT
+    paths:
+      - '.github/workflows/report-akm-final-and-visual-audit-plan.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  append-report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append verified AKM conclusion and next audit
+        env:
+          REPORT_APPEND_B64: 'CgojIyAyMDI2LTA4LTI5IC0gQUtNNzE2OSAvIDE3MjAgLSBISVNUT1JJUVVFIFNPVVJDRSBSRVRST1VWRSwgVklTVUVMUyBCTE9RVUVTIFNVUiBCSU5BSVJFIEVYQUNUCgpWZXJpZmljYXRpb24gZGUgbCdoaXN0b3JpcXVlIEdpdEh1YiBkdSBsb3QgMTcyMCB0ZXJtaW5lZSBhdmFudCB0b3V0ZSBub3V2ZWxsZSBkb25uZWUuIExlcyBjb21taXRzIGQnb3JpZ2luZSBzb250IGA1NDA4NzJhNjU4MjkyYTllNTFmYTMwY2RhYjUyMTgzNjEzZjBkMDc5YCAoYWpvdXQgcXo2NCksIGA1MWRjNGNkNzdlNjE3ODY0MDI2MDJlNDhkNmVhZDJmN2U1ZWEwZjgxYCAoYXVkaXQgc291cmNlKSBwdWlzIGBkMzJjMzRhOWYzYjNlODkyMWVlMTBhMGUyZDlmZGRlNGEyMjRjMzE2YCAvIGBmMmU5N2IzZTNhNDMyNzg1ZTE1OWQzMGJiZWNhN2I3YmVmMmZkY2I0YCAoZW5yZWdpc3RyZW1lbnQvY29ycmVjdGlvbiBwYXlsb2FkKS4KCkNvbmNsdXNpb24gaGlzdG9yaXF1ZSBjb25maXJtZWUgOiBsJ2F1ZGl0IG9yaWdpbmFsIDE3MjAgaW5kaXF1ZSBleHBsaWNpdGVtZW50IHF1ZSBsZSB0ZXh0ZSBwcmltYWlyZSBhdmFpdCBldGUgY29uc3VsdGUgdmlhICoqdW4gc2NhbiBpbmRleGUgZGUgQUtNNzE2OUVORyoqLiBBdWN1biBQREYvc2NhbiBiaW5haXJlIGV4YWN0LCBoYXNoYWJsZSBldCByZXByb2R1Y3RpYmxlIG4nYXZhaXQgZXRlIGNvbnNlcnZlIGRhbnMgbGUgZGVwb3QuIExlcyByZWNoZXJjaGVzIGFjdHVlbGxlcyByZXRyb3V2ZW50IGRlcyByZXByZXNlbnRhdGlvbnMgU2NyaWJkIGFubm9uY2VlcyBhIDQ4MiBwYWdlcyBldCB1bmUgZWRpdGlvbiBjb21tZXJjaWFsZSBPVFAgYW5ub25jZWUgYSA0NjMgcGFnZXM7IGNldHRlIGRpdmVyZ2VuY2UgaW50ZXJkaXQgdG91dGUgaW5mZXJlbmNlIGQnaW5kZXggcGh5c2lxdWUuCgpTdGF0dXQgQUtNNzE2OSA6IGxlcyA3IGZhaXRzIGhpc3RvcmlxdWVzIHN0cnVjdHVyZXMgcmVzdGVudCB2YWxpZGVzL2NvbnN1bHRhdGlmcyBldCBpbmNoYW5nZXM7IGxlIGJhY2tsb2cgZGUgcmVjaGVyY2hlcyBlc3QgcHJlc2VydmU7ICoqMCBhc3NldCB2aXN1ZWwgQUtNIGVzdCBjcmVlIHRhbnQgcXUndW4gYmluYWlyZSBjb25zdHJ1Y3RldXIgZXhhY3Qgbidlc3QgcGFzIGFjcXVpcyBldCBoYXNoZSoqLiBMZSBibG9jIEFLTSBlc3QgZG9uYyBjbG9zIHBvdXIgbCdpbnN0YW50IGVuIHN0YXR1dCBgU1RSVUNUVVJFRF9EQVRBX1BSRVNFTlQgLyBWSVNVQUxfQkFDS0ZJTExfQkxPQ0tFRF9PTl9FWEFDVF9TT1VSQ0VfQklOQVJZYCwgc2FucyBpbnZlbnRpb24gZGUgY2FwdHVyZS4KClByb2NoYWluZSBhY3Rpb24gYXV0b3Jpc2VlIGRlbWFuZGVlIHBhciBsJ3V0aWxpc2F0ZXVyIDogcHJvZHVpcmUgdW4gKiphdWRpdCBnbG9iYWwgZGUgY291dmVydHVyZSB2aXN1ZWxsZSBkZSBsYSBiYXNlKiogYXByZXMgY2UgYmxvYywgYXZlYyBhdSBtaW5pbXVtIGxlIG5vbWJyZSB0b3RhbCBkJ2ltYWdlcy9wYWdlcy92dWVzIGFqb3V0ZWVzLCBsZXVyIGRvY3VtZW50IHNvdXJjZSwgbGUgbm9tYnJlIGRlIGZhaXRzIHJlbGllcywgbGVzIHN1cHBvcnRzIGFjY2Vzc2libGVzIGRpcmVjdGVtZW50IGRhbnMgTUVNUyBNYW5hZ2VyLCBjZXV4IHByZXNlbnRzIG1haXMgbm9uIGFjY2Vzc2libGVzIHBhciBsJ2ludGVyZmFjZSwgbGVzIHJlZmVyZW5jZXMgc2FucyBmaWNoaWVyLCBsZXMgcmV1dGlsaXNhdGlvbnMvZG91YmxvbnMgZXZpdGVzIGV0IGxlcyBkb2N1bWVudHMgZW5jb3JlIGJsb3F1ZXMuIENlIGJpbGFuIGRvaXQgZXRyZSBtZXN1cmUgc3VyIGB0bXAtcmF2ZS12aXN1YWwtYmFja2ZpbGxgIGV0IGNvbnNpZ25lIGF2YW50IHRvdXRlIG5vdXZlbGxlIHBvdXNzZSB0ZWNobmlxdWUuCgpQcm9kdWN0aW9uIGBNRU1TWDY0YCByZXN0ZSBzdHJpY3RlbWVudCBCVUlMRCAjMTAxIGAyMmRiZTc1ZWQxNGUwYTYxZTY5NDE1OWQ1MDVlZjcyMjQ1MTE2YjQ4YC4gQmFzZS9JQS9SQVZFIGNvbnN1bHRhdGl2ZXMgdW5pcXVlbWVudDsgYXVjdW5lIGRvbm5lZSBkb2N1bWVudGFpcmUgbmUgcHJlbmQgbGEgbWFpbiBzdXIgbGEgY29tbXVuaWNhdGlvbiBFQ1UuCg=='
+        run: |
+          python -c "import os,base64; open('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md','ab').write(base64.b64decode(os.environ['REPORT_APPEND_B64']))"
+      - name: Commit report update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git diff --cached --quiet && exit 1
+          git commit -m "Report AKM final source status and visual audit plan"
+          git push origin HEAD:RAPPORT
