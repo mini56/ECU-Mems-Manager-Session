@@ -1933,3 +1933,26 @@ Etat du chantier historique apres 1750+1760: couverture visuelle complete des 55
 Prochaine action exacte: audit en lecture seule AKM7169ENG, verification du document/edition/hash et des index physiques des vues/tables necessaires; aucune capture ou qz64 AKM avant cartographie validee.
 
 Production `MEMSX64` reste strictement BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`; aucun #102. La base/IA/RAVE reste consultative et ne prend jamais la main sur la communication ECU.
+
+## 2026-08-29 - AKM7169ENG / 1720 - RECHERCHE SOURCE AVANT CAPTURE
+
+Etat: les backfills visuels RCL0194/1750 et RCL0193/1760 sont termines et post-valides sur `tmp-rave-visual-backfill`. Production reste `MEMSX64` #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.
+
+Recherche en lecture seule effectuee pour le dernier bloc historique `AKM7169ENG` / batch 1720 (7 faits). Identite constructeur recoupee: Rover Group Limited, `AKM7169ENG`, Mini Repair Manual, Publication Part No. AKM7169, 1993, porte globale annoncee a partir du VIN `049349`.
+
+Sources trouvees:
+- scan indexe Scribd `Rover Mini 1992-1996 Repair Manual`, document 734770360, annonce **482 pages**; son texte indexe montre directement la couverture `AKM7169ENG`, le VIN 049349, puis les pages `ENGINE TUNING DATA 3`, `4`, `5` avec les donnees SPi;
+- autre scan Scribd `Mini Repair Manual 92-96 (Autom)`, document 625575179, egalement annonce 482 pages et meme identite AKM7169ENG;
+- Original Technical Publications, `Service Manual - Mini All Models 1993 on (AKM7169)`, annonce **463 pages**;
+- eManual/eManualOnline propose un PDF commercial 1992-1996 de **41.87 MB**;
+- plusieurs vendeurs Tradebit proposent le PDF AKM7169ENG, acces payant.
+
+Point de securite documentaire: la divergence 482 pages / 463 pages montre qu'un numero d'index physique ne peut pas etre transpose d'un scan a un autre. Aucun index de page ne sera devine. Aucun asset AKM ne doit etre cree avant possession d'un scan exact, telechargeable/reproductible, avec SHA-256 et verification de ses pages physiques.
+
+Le texte indexe du scan confirme toutefois sans ambiguite la sequence utile du lot 1720: `Engine Tuning Data 3` = SPi boite manuelle avec `MNE 101040`; `Engine Tuning Data 4` = SPi automatique avec `MNE 101060`; `Engine Tuning Data 5` = SPi high compression avec `MNE 101070`. Il confirme aussi speed/density, pression carburant 1.0 bar +/-4.0% constante et TPS 0-1 V ferme / 4-5 V ouvert. Ces elements correspondent aux 7 faits deja integres et ne doivent pas etre dupliques comme nouveaux faits simplement parce qu'ils ont ete retrouves sur le Web.
+
+Recherche dans la File Library utilisateur: aucun PDF/scan complet AKM7169ENG retrouve. Les fichiers trouves sont des travaux MEMS derives, pas la source constructeur complete.
+
+Prochaine pousse autorisee sur `tmp-rave-visual-backfill`: ajouter uniquement un audit textuel AKM7169 de provenance/etat-source et un backlog des informations complementaires visibles dans le scan indexe mais absentes de la base, sans qz64 ni image tant que le scan exact n'est pas acquis. Continuer en parallele la recherche d'une source constructeur directement reproductible. Toute future source doit etre hashee avant capture.
+
+Base/IA/RAVE restent consultatives et ne prennent jamais la main sur la communication ECU.
