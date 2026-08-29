@@ -1395,3 +1395,60 @@ Les index PDF exacts doivent être vérifiés contre le scan constructeur retenu
 4. Vérifier fichiers, SHA-256, document/page, liens fait→asset et résolution utilisateur.
 5. Mettre le rapport à jour avant la prochaine pousse du chantier.
 6. Aucun build officiel #102 : `MEMSX64` reste strictement #101.
+
+# AUDIT VISUEL RCL0194ENG AVANT BACKFILL — 29 AOÛT 2026
+
+## SOURCE CONSTRUCTEUR ET CARTOGRAPHIE PHYSIQUE VÉRIFIÉE
+
+Le document constructeur retenu est `RCL0194ENG`, MINI Electrical Circuit Diagrams, 3rd Edition, 41 pages PDF. Le PDF est le même que celui utilisé avec succès par le pilote V2 ; son SHA-256 déjà enregistré par le pilote est :
+
+`64e64f8a7c24f362913e2661403bc474e4e7ef07f96db618ef661645e0d0f051`.
+
+La cartographie physique vérifiée dans ce PDF est :
+
+- index PDF `5` : **COLOUR CODES**, page de légende Rover `RCL 0145` ;
+- index PDF `13` : **Charging and Starting — MPi — 15.1** ;
+- index PDF `15` : **Engine Management System (MEMS) — MPi — 20.1** ;
+- index PDF `16` : **Engine Management System (MEMS) — MPi — 20.2** ;
+- index PDF `17` : **Engine Management System (MEMS) — SPi Japan — 20.3** — déjà validé par le pilote ;
+- index PDF `18` : **Engine Management System (MEMS) — SPi Japan — 20.4** — déjà extrait par le pilote ;
+- index PDF `24` : **Heater Blower — 39.1** ;
+- index PDF `25` : **Cooling Fan — MPi — 39.2** ;
+- index PDF `26` : **Cooling Fan — SPi Japan — 39.3** — déjà extrait par le pilote.
+
+## DIVERGENCE HISTORIQUE DÉCOUVERTE GRÂCE AU BACKFILL VISUEL
+
+L'inventaire initial indiquait `39.1` parce que trois faits historiques de la base portent actuellement cette référence. La lecture directe du document constructeur prouve cependant que :
+
+**`39.1` = HEATER BLOWER**  
+**`39.2` = COOLING FAN MPi**
+
+Les trois faits historiques concernés sont exactement :
+
+- `RAVE-WIR-MPI-006` — `cooling_fan_wiring` — référence actuelle `RCL0194ENG:20.1,39.1` ;
+- `RAVE-WIR-MPI-008` — `coolant_sensor_wiring` — référence actuelle `RCL0194ENG:20.2,39.1` ;
+- `RAVE-WIR-MPI-012` — `sensor_ground` — référence actuelle `RCL0194ENG:20.2,39.1`.
+
+Le contenu technique de ces faits correspond bien à la vraie page **39.2** : le circuit Cooling Fan MPi y montre notamment `C159-28`, le relais `C019`, le ventilateur `C005`, ainsi que le capteur `C169` relié à `C159-15` / `C159-13`.
+
+### Décision de traçabilité
+
+- **Aucune correction silencieuse n'est effectuée.**
+- Les qz64 historiques restent inchangés à ce stade.
+- La divergence est enregistrée avant toute correction, conformément à la règle fondamentale.
+- Le backfill doit capturer la vraie page `39.2`, pas `39.1`.
+- La manière de corriger la référence historique devra conserver l'audit de l'ancienne valeur et de la nouvelle valeur vérifiée.
+
+Cette découverte confirme l'intérêt majeur de la règle décidée par l'utilisateur : rattacher les supports visuels originaux permet aussi de contrôler les faits déjà enregistrés et de détecter des erreurs de provenance qui resteraient invisibles avec du texte seul.
+
+## PROCHAINE POUSSE AUTORISÉE DU CHANTIER
+
+Avant toute extraction d'images supplémentaires, la prochaine pousse sur `tmp-rave-visual-backfill` sera limitée à la documentation du chantier :
+
+1. ajouter un audit de cartographie RCL0194 avec les index ci-dessus ;
+2. corriger dans l'inventaire de chantier la cible visuelle `39.1` → **`39.2`**, tout en mentionnant explicitement que les trois faits legacy portent encore `39.1` ;
+3. ne modifier encore aucun qz64, fait historique, code IA, protocole, UI ou build.
+
+Après cette pousse documentaire et sa consignation au rapport, le chantier pourra préparer les assets RCL0194 manquants : `15.1`, `20.1`, `20.2`, `39.2` et la légende couleurs, en réutilisant `20.3`, `20.4`, `39.3`.
+
+`MEMSX64` reste strictement BUILD #101.
