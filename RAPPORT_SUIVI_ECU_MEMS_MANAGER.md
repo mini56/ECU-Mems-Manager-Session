@@ -1572,3 +1572,9 @@ Prochaine pousse autorisee uniquement sur `tmp-rave-visual-backfill`, en un comm
 4. audit `database/reference/audits/rcl0194_visual_backfill_1750_audit.md`.
 
 Aucun code de communication ECU, protocole, acquisition/RAM, UI de production, Qwen/ONNX, 32 bits ni branche `MEMSX64` ne doit etre modifie par cette pousse. `MEMSX64` reste strictement BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.
+
+# AVANT POUSSE — MECANISME ATOMIQUE DES ASSETS BINAIRES RCL0194 — 29 AOUT 2026
+
+Pour garantir que le vrai lot de donnees soit conserve en un commit coherent malgre les PNG binaires, la prochaine pousse sur `tmp-rave-visual-backfill` ajoute uniquement un workflow temporaire auto-supprimant de packaging. Ce helper reconstruira les 8 PNG depuis le PDF Rover exact avec PyMuPDF 1.26.4, verifiera tous les SHA-256 deja valides, installera le `research_enrichment_1750.qz64`, mettra a jour le manifeste et ajoutera l'audit, puis creera un seul commit de donnees.
+
+Le helper n'est pas un changement de production : aucun protocole ECU, aucune acquisition/RAM, aucun code IA/communication, aucun 32 bits et aucun `MEMSX64` ne sont modifies. Le commit de donnees resultant doit contenir uniquement les 8 images RCL0194, le lot 1750, le manifeste, l'audit, plus la suppression du helper temporaire lui-meme. Toute difference de hash doit faire echouer le workflow avant commit.
