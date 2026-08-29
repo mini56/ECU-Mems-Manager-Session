@@ -1,0 +1,48 @@
+name: TEMP REPORT RCL0193 MAPPING FAILURE
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - .github/workflows/temp-report-rcl0193-mapping-failure.yml
+
+permissions:
+  contents: write
+
+jobs:
+  update_report:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append mapping failure
+        shell: bash
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+          ## 2026-08-29 - RCL0193 CARTOGRAPHIE RUN #1 - FILTRE DOCUMENT TROP STRICT
+
+          Run temporaire `33250884473`, job `99096243600`, declencheur `09d3160ad18b6b06717e4f8bc7c4d01406fd2fa0`: **❌ FAILURE**, avant toute ecriture de l'audit ou de la base.
+
+          Les etapes checkout et PyMuPDF sont passees. La reconstruction de la base de reference a fonctionne, mais le script a exige `document='RCL0193ENG'` et a obtenu 0 ligne. Verification directe du lot historique 1660: le champ `document` reel des faits vaut **`Mini Workshop Manual — RCL0193ENG`**. Exemple confirme: `RAVE-ADJ-THROTTLE-CABLE-001`, source `SRC-RCL0193`, document `Mini Workshop Manual — RCL0193ENG`.
+
+          Conclusion: les 31 faits historiques ne sont pas absents; c'est uniquement le filtre de cartographie qui etait trop strict. Aucun fait historique, aucun qz64, aucune image et aucun fichier production n'ont ete modifies ou pousses par ce run.
+
+          Correction suivante autorisee: remplacer uniquement le filtre SQL par la valeur documentaire historique exacte `Mini Workshop Manual — RCL0193ENG`, conserver l'assertion de 31 faits et tous les autres controles. Continuer a parser le 1660 avec `sqlite3.complete_statement` afin de ne plus couper sur les points-virgules contenus dans les textes.
+          EOF
+      - name: Verify entry
+        run: |
+          grep -F 'RCL0193 CARTOGRAPHIE RUN #1 - FILTRE DOCUMENT TROP STRICT' RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          grep -F '33250884473' RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          grep -F 'Mini Workshop Manual — RCL0193ENG' RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+      - name: Commit report and remove helper
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/temp-report-rcl0193-mapping-failure.yml
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Record RCL0193 mapping filter failure"
+          git push origin RAPPORT
