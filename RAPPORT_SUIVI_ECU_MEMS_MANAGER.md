@@ -2032,3 +2032,33 @@ Le pilote V2 RAVE 1680 a demontre sur PC reel qu'un routage corrige permettant a
 ### Prochaine pousse autorisee
 
 Ajouter uniquement `database/reference/audits/visual_coverage_global_audit.md` sur `tmp-rave-visual-backfill` avec ces mesures, la ventilation accessible/non accessible et les limites de validation. Aucun qz64, PNG, code, protocole ECU, acquisition/RAM, UI, Qwen/ONNX, 32 bits ou `MEMSX64` ne doit etre modifie. Relecture distante obligatoire apres pousse, puis rapport immediat.
+
+
+## 2026-08-29 - AUDIT GLOBAL VISUEL - POUSSE, TEST ET INCIDENT DE RAPPORT
+
+Pousse documentaire sur `tmp-rave-visual-backfill`: commit `746bb6524241c06e265396cf6a2b216f3952dd0e`, ajout unique `database/reference/audits/visual_coverage_global_audit.md`.
+
+Test apres pousse: relecture directe depuis le commit exact **✅ PASS**. Blob GitHub `d8cb454d666ff117dfd83f13d8efeaedfe57e67b`. Le fichier distant contient correctement le bilan 40 ressources / 34 nouveaux RAVE / 86 sur 93 faits / 131 liens ainsi que la distinction entre presence, catalogue, liaison DB et validation PC reel.
+
+### Incident de journalisation apres ce test
+
+Premiere tentative de rapport post-test: workflow `REPORT GLOBAL VISUAL AUDIT POSTPUSH`, run `33252524631`, job `99100558485` — **❌ FAILURE** a l'etape `Append visual audit postpush result`; le commit du rapport a ete saute.
+
+Cause exacte relevee dans les logs: `binascii.Error: Incorrect padding`. La variable Base64 du helper contenait deux espaces parasites introduits lors de la copie manuelle. Aucun octet n'a ete ajoute a `RAPPORT_SUIVI_ECU_MEMS_MANAGER.md` par ce run.
+
+Conformement a la regle fondamentale, toute autre progression a ete suspendue immediatement. Correction limitee au helper de rapport: remplacer la chaine par un Base64 genere automatiquement sans modification manuelle, puis verifier le nouveau run avant toute suite.
+
+### Chiffres audites
+
+- 40 ressources image/schema physiques = 6 SVG generiques preexistants + 34 PNG RAVE ajoutes/consolides;
+- 40 entrees `manifest.diagrams`, 34 entrees `manifest.visual_assets`;
+- RCL0194: 8 assets, 55/55 faits couverts, 88 liens;
+- RCL0193: 26 assets, 31/31 faits couverts, 43 liens;
+- AKM7169: 0 asset, 0/7 faits couverts, blocage volontaire sur absence du binaire source exact;
+- total: 86/93 faits RAVE couverts = 92,47 %, 131 liens fait->visuel;
+- 34/34 nouveaux assets RAVE sont physiquement presents, declares au catalogue et utilises par la couverture;
+- `RCL0194ENG:20.3` est le nouvel asset RAVE explicitement valide de bout en bout sur PC reel; les 33 autres ne sont pas declares individuellement testes par clic.
+
+L'audit signale aussi une evolution programme distincte: le code commite du backfill garde l'ordre #101 `clarificationPrompt` avant `updateDiagramSuggestion`; le comportement V2 ayant permis le succes naturel 20.3 n'est pas encore generalise. Ne pas confondre accessibilite du catalogue et proposition garantie pour toute formulation naturelle. Aucun changement fonctionnel n'est effectue par cet audit.
+
+Production `MEMSX64` reste strictement BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`. Aucun code ECU/protocole/acquisition/RAM/UI/Qwen/ONNX/32 bits n'a ete modifie.
