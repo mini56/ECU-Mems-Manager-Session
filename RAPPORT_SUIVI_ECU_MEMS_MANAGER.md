@@ -2267,3 +2267,19 @@ Conclusion importante:
 PROCHAINE ACTION EXACTE:
 - Diagnostiquer en lecture seule ou reproduire le git status candidat produit par tools/patch_rave_visual_routing_auto.py et tools/audit_rcl0193_mechanical_scope.py afin d identifier exactement la difference Allowed/Actual.
 - Puis consigner la cause avant toute pousse de correction du garde.
+
+## 2026-08-29 - ROUTAGE V2 - CAUSE EXACTE DU GARDE DE PERIMETRE
+
+- Diagnostic effectue en lecture seule sur le HEAD exact 305c6597dedfa609315f35240fee62a997645212.
+- Aucun routage, aucune base, aucun protocole, aucun asset et aucun fichier MEMSX64 modifies pendant le diagnostic.
+- Le garde final attend exactement 7 fichiers candidats: CMakeLists.txt, les deux audits RCL0193, IaMemsConversationRouting.h, IaMemsDiagramCatalog.cpp, IaMemsDiagramSelfTest.cpp et iamemstab.cpp.
+- Cause exacte du surplus Actual: pendant Configure and build automatic routing guard, CMake execute configure_file vers les fichiers suivis help.html et help_en.html situes dans l arbre source.
+- Au HEAD teste, help.html et help_en.html sont tous deux des fichiers suivis vides; la configuration CMake les regenere depuis help.html.in et help_en.html.in, donc git status les marque modifies.
+- Ces deux fichiers sont des effets de generation du build et ne font pas partie du candidat de routage. Le routage lui-meme n est pas en cause; ses self-tests deterministes sont PASS dans le run 33257301351.
+- Difference Allowed/Actual caracterisee: Actual contient les 7 fichiers attendus plus help.html et help_en.html.
+- Correction autorisee: modifier uniquement le garde CI afin de restaurer help.html et help_en.html juste avant la comparaison du perimetre, puis relancer TEMP ROUTING MECHANICAL V2.
+- Production MEMSX64 reste strictement BUILD #101; aucun #102.
+
+PROCHAINE ACTION EXACTE:
+- Sur tmp-rave-visual-backfill, modifier uniquement .github/workflows/temp-routing-mechanical-v2.yml dans Guard candidate scope: restaurer help.html et help_en.html avant git status, sans toucher au routage ni a la liste des 7 fichiers candidats.
+- Puis relancer V2 et consigner immediatement son resultat.
