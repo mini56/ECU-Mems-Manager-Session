@@ -1,0 +1,53 @@
+name: TEMP REPORT RCL0193 1760 FINAL PASS
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - .github/workflows/temp-report-rcl0193-1760-final-pass.yml
+permissions:
+  contents: write
+jobs:
+  update_report:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Record committed and postvalidated RCL0193 1760
+        shell: bash
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+          ## 2026-08-29 - RCL0193 1760 - LOT VISUEL COMMITTE ET POST-VALIDE
+
+          Workflow `TEMP RCL0193 COMMIT VALIDATED 1760`, run `33251420230`, job `99097640866`: **✅ SUCCESS complet**. Commit final sur `tmp-rave-visual-backfill`: `6d92a286e4b423b2a6cc391056fc7694a1a6dbf6` (`Add deterministic RCL0193 visual backfill 1760`).
+
+          Toutes les etapes critiques ont passe: production #101 inchangee; source PDF exacte; regeneration candidat; verification des 29 empreintes attendues (qz64 + manifeste + audit + 26 PNG); garde de perimetre; commit/push; relecture exacte du commit distant; controle des octets effectivement committes; regeneration complete depuis le commit distant; `integrity_check=ok`; couverture RCL0193 31/31; 43 liens source; 8 assets RCL0194 preserves; **diff final nul**.
+
+          Le lot RCL0193 historique 1660 dispose maintenant sur la branche temporaire de 26 pages constructeur originales associees additivement a ses 31 faits. Les faits a sources multiples conservent toutes leurs pages: notamment 114+118 et 135+170. Aucune ligne historique `mems_rave_fact` n'a ete reecrite.
+
+          Empreintes principales conservees: `research_enrichment_1760.qz64` SHA-256 `d3c3580d9f32d92e42db6eeb81e92a3e0be591b007ec1071d1a95baf6057ebc8`; manifeste `59c9e212d9a656668969ac71dde1c8159f51c4ff44b0d4785d4dcce7749f23cd`; audit `9a148d1706252b312ed2e1e524314e7ca7fe6e79be76436cf9064ecf085d32b0`. Le run candidat precedent `33251336531` / artefact `9714454237` reste la preuve independante avant commit.
+
+          Etat du chantier historique apres 1750+1760: couverture visuelle complete des 55 faits RCL0194 existants et des 31 faits RCL0193 existants. Le bloc historique restant a reprendre est `AKM7169ENG` / batch 1720, 7 faits, avec sections `Introduction / publication scope`, `Engine Tuning Data 3`, `4`, `5` et `Tuning Data 3-5` a mapper sur le scan constructeur exact avant capture.
+
+          Prochaine action exacte: audit en lecture seule AKM7169ENG, verification du document/edition/hash et des index physiques des vues/tables necessaires; aucune capture ou qz64 AKM avant cartographie validee.
+
+          Production `MEMSX64` reste strictement BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`; aucun #102. La base/IA/RAVE reste consultative et ne prend jamais la main sur la communication ECU.
+          EOF
+      - name: Verify report entry
+        run: |
+          grep -F "RCL0193 1760 - LOT VISUEL COMMITTE ET POST-VALIDE" RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          grep -F "6d92a286e4b423b2a6cc391056fc7694a1a6dbf6" RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          grep -F "diff final nul" RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+      - name: Commit report and remove helper
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/temp-report-rcl0193-1760-final-pass.yml
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Record complete RCL0193 1760 post-validation"
+          git push origin RAPPORT
