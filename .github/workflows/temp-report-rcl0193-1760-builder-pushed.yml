@@ -1,0 +1,48 @@
+name: TEMP REPORT RCL0193 1760 BUILDER PUSHED
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - .github/workflows/temp-report-rcl0193-1760-builder-pushed.yml
+permissions:
+  contents: write
+jobs:
+  update_report:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Record builder push before validation workflow
+        shell: bash
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+          ## 2026-08-29 - RCL0193 1760 - GENERATEUR REPRODUCTIBLE POUSSE, DONNEES NON ENCORE GENEREES
+
+          Pousse technique effectuee apres validation V3: commit `4fe8ea77bae5b1651b4ef9256a2090562531184b` sur `tmp-rave-visual-backfill`, fichier unique `tools/build_rcl0193_visual_backfill_1760.py`.
+
+          Ce commit ne contient encore aucun PNG RCL0193, aucun `research_enrichment_1760.qz64`, aucune modification de manifeste ni de fait historique. Il ajoute uniquement le generateur documentaire reproductible.
+
+          Fonction prevue: reconstruire la base de reference jusqu'au lot 1750 inclus, exiger 31 faits RCL0193 et le mapping V3 complet, rendre les 26 pages constructeur exactes, calculer leurs SHA-256, creer 43 liens fait->page additifs, generer le qz64 1760, appliquer le candidat a une copie SQLite puis verifier `integrity_check`, `user_version=20`, 93 faits RAVE et 105 faits experts inchanges, couverture RCL0193 31/31 et preservation des 8 assets RCL0194.
+
+          Prochaine pousse autorisee: ajouter uniquement un workflow temporaire de validation du generateur. Ce workflow devra utiliser le PDF constructeur exact SHA-256 `c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715`, garder les sorties hors commit, verifier strictement le perimetre, produire un artefact candidat avec SHA256SUMS et ne committer aucune donnee 1760. Le resultat doit etre rapporte avant toute pousse des assets.
+
+          Production `MEMSX64` reste BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`. Base/IA/RAVE consultatives uniquement.
+          EOF
+      - name: Verify report entry
+        run: |
+          grep -F "RCL0193 1760 - GENERATEUR REPRODUCTIBLE POUSSE" RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          grep -F "4fe8ea77bae5b1651b4ef9256a2090562531184b" RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+      - name: Commit report and remove helper
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/temp-report-rcl0193-1760-builder-pushed.yml
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Record RCL0193 1760 builder push"
+          git push origin RAPPORT
