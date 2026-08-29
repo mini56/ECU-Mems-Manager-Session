@@ -1,0 +1,48 @@
+name: TEMP REPORT RCL0193 MAPPING GUARD FAILURE
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - .github/workflows/temp-report-rcl0193-mapping-guard-failure.yml
+
+permissions:
+  contents: write
+
+jobs:
+  update_report:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append mapping guard failure
+        shell: bash
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+          ## 2026-08-29 - RCL0193 CARTOGRAPHIE RUN #2 - MAPPING OK, GARDE FINAL EN ECHEC
+
+          Run temporaire `33250967976`, job `99096454241`, correction declencheur `c85a8022d657bc16a5a469c29d6b683c1438734c`: **⚠️ cartographie technique reussie, workflow final FAILURE au garde de perimetre**.
+
+          Resultats de l'etape de cartographie avant le garde: `FACTS_PASS 31`; `STATEMENTS_PASS 31` avec `sqlite3.complete_statement`; **25 pages PDF uniques** indexes `[38,39,40,98,101,107,108,109,112,113,114,117,118,120,121,122,123,125,126,127,128,129,130,131,135]`; `WEAK_CASES 1`. Le PDF exact et les assertions documentaires sont passes.
+
+          Le garde a ensuite echoue parce que la reconstruction de la base cree volontairement le workspace local `.tmp-rcl0193-map/` avec le SQLite temporaire, alors que le garde exigeait que le seul fichier non suivi soit l'audit Markdown. Le commit final a ete saute: **aucun audit de mapping, aucune image et aucune donnee RCL0193 n'ont ete pousses par ce run**.
+
+          Correction suivante autorisee: supprimer uniquement `.tmp-rcl0193-map/` apres construction de l'audit et avant `git status --porcelain`, puis conserver exactement le meme mapping et les memes assertions. Le cas `WEAK_CASES 1` devra etre identifie dans l'audit commite avant de generer le lot visuel additif.
+          EOF
+      - name: Verify entry
+        run: |
+          grep -F 'RCL0193 CARTOGRAPHIE RUN #2 - MAPPING OK, GARDE FINAL EN ECHEC' RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          grep -F '33250967976' RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          grep -F '25 pages PDF uniques' RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+      - name: Commit report and remove helper
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/temp-report-rcl0193-mapping-guard-failure.yml
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Record RCL0193 mapping guard failure"
+          git push origin RAPPORT
