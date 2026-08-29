@@ -2159,3 +2159,21 @@ Les identifiants techniques ne doivent pas etre traduits ou changes par le calqu
 
 Cette regle doit etre prise en compte lors de la poursuite du backfill visuel complet : lorsqu'une vue utile est capturee, conserver l'original et preparer une structure de calque traduisible au lieu de reconstruire la vue en SVG.
 
+
+
+## 2026-08-29 - INCIDENT HELPER RAPPORT PARASITE APRES REGLE CALQUE
+
+La regle permanente de traduction des illustrations constructeur par **calque textuel superpose** a ete ecrite avec succes sur `RAPPORT`, commit `923765c60d00605141b63624e74da8c5f98ee0eae` (`Record permanent visual translation overlay rule`).
+
+Sur la meme pousse, un ancien helper invalide `.github/workflows/report-routing-mechanical-workflow-failure.yml` s'est redeclenche: run `33254853871` = **FAILURE avant tout job**, avec `jobs=[]`. Conformement a la regle de priorite absolue a la tracabilite, toute progression technique a ete suspendue.
+
+Cause: ancien workflow de rapport invalide reste sur la branche `RAPPORT`; GitHub le rejetait avant planification de job. Reparation du canal de rapport: suppression de ce helper parasite au commit `0536bae0d101cd743a34c9c4f0ec03fcf5871bec`. Aucun fichier programme/base/ECU n'a ete modifie par cette reparation.
+
+La regle calque reste validee et durable:
+- original constructeur immuable et conserve avec son hash;
+- traduction uniquement par calque textuel desactivable;
+- modes Original constructeur / Traduction;
+- identifiants techniques non alteres;
+- calques additifs et consultatifs, sans aucun controle ECU.
+
+Prochaine action apres validation de cette journalisation: priorite 1 = corriger/generaliser le routage visuel V2 avec garde automatique anti-regression; priorite 2 = si l'utilisateur fournit le binaire exact AKM7169ENG, le hasher et completer les 7 faits/visuels AKM; priorite 3 = reprendre RCL0193 comme corpus mecanique complet et extraire les faits/procedures/valeurs/vues manquants par blocs coherents, en appliquant la regle du calque aux illustrations.
