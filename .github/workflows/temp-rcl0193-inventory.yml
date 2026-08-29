@@ -1,0 +1,113 @@
+name: TEMP RCL0193 INVENTORY
+
+on:
+  push:
+    branches: [tmp-rave-visual-backfill]
+    paths:
+      - .github/workflows/temp-rcl0193-inventory.yml
+
+permissions:
+  contents: write
+
+jobs:
+  inventory:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-visual-backfill
+          fetch-depth: 0
+
+      - name: Install PDF tooling
+        run: python -m pip install --disable-pip-version-check pymupdf==1.26.4
+
+      - name: Decode 1660 and inventory RCL0193
+        shell: bash
+        run: |
+          python - <<'PY'
+          import base64, hashlib, pathlib, re, urllib.request, zlib
+          import fitz
+
+          root = pathlib.Path('.')
+          qz = root/'database/reference/research_enrichment_1660.qz64'
+          text = qz.read_text(encoding='utf-8').strip()
+          packed = base64.b64decode(text)
+          if len(packed) < 6:
+              raise SystemExit('1660 qz64 too short')
+          expected = int.from_bytes(packed[:4], 'big')
+          sql_bytes = zlib.decompress(packed[4:])
+          if len(sql_bytes) != expected:
+              raise SystemExit(f'qCompress length mismatch: expected={expected} actual={len(sql_bytes)}')
+          sql = sql_bytes.decode('utf-8')
+
+          # Extract complete SQL statements containing RCL0193ENG without altering source data.
+          statements = [s.strip()+';' for s in sql.split(';') if 'RCL0193ENG' in s]
+          refs = sorted(set(re.findall(r'RCL0193ENG:[^\s\'\",;)]+', sql)))
+          occurrences = sql.count('RCL0193ENG')
+
+          pdf_url = 'https://www.uscars.biz/uscars/mini-documents/Rave_CD_wmxn990e.pdf'
+          pdf_path = pathlib.Path('/tmp/RCL0193ENG.pdf')
+          urllib.request.urlretrieve(pdf_url, pdf_path)
+          pdf_sha = hashlib.sha256(pdf_path.read_bytes()).hexdigest()
+          doc = fitz.open(pdf_path)
+
+          # Build a deterministic page index. Capture printed footer/header hints and MEMS-relevant pages.
+          page_rows = []
+          relevant_terms = ('MEMS','ENGINE MANAGEMENT','OXYGEN SENSOR','INJECTOR','FUEL','ECM','ECU','THROTTLE','COOLANT','MANIFOLD','IDLE','CRANKSHAFT','LAMBDA','DIAGNOSTIC')
+          for i, page in enumerate(doc):
+              txt = page.get_text('text').replace('\r','')
+              up = txt.upper()
+              if any(t in up for t in relevant_terms):
+                  lines = [re.sub(r'\s+',' ', x).strip() for x in txt.splitlines() if x.strip()]
+                  excerpt = ' | '.join(lines[:14])[:1600]
+                  page_rows.append((i+1, excerpt))
+
+          out = root/'database/reference/audits/rcl0193_1660_inventory.md'
+          out.parent.mkdir(parents=True, exist_ok=True)
+          with out.open('w', encoding='utf-8', newline='\n') as f:
+              f.write('# RCL0193ENG — inventaire reproductible du lot historique 1660\n\n')
+              f.write('Cet audit est en lecture seule. Il ne reecrit aucun fait historique.\n\n')
+              f.write(f'- source lot: `database/reference/research_enrichment_1660.qz64`\n')
+              f.write(f'- SHA-256 qz64: `{hashlib.sha256(qz.read_bytes()).hexdigest()}`\n')
+              f.write(f'- taille SQL decodee: `{len(sql_bytes)}` octets\n')
+              f.write(f'- SHA-256 SQL decode: `{hashlib.sha256(sql_bytes).hexdigest()}`\n')
+              f.write(f'- occurrences `RCL0193ENG` dans le SQL: `{occurrences}`\n')
+              f.write(f'- nombre de statements SQL contenant RCL0193ENG: `{len(statements)}`\n')
+              f.write(f'- source PDF constructeur: `{pdf_url}`\n')
+              f.write(f'- SHA-256 PDF: `{pdf_sha}`\n')
+              f.write(f'- pages PDF: `{doc.page_count}`\n\n')
+              f.write('## References RCL0193ENG presentes dans 1660\n\n')
+              for r in refs:
+                  f.write(f'- `{r}`\n')
+              f.write('\n## Statements historiques contenant RCL0193ENG\n\n```sql\n')
+              for s in statements:
+                  f.write(s+'\n')
+              f.write('```\n\n## Index des pages PDF contenant des termes MEMS/moteur\n\n')
+              for p, ex in page_rows:
+                  f.write(f'- PDF {p}: {ex}\n')
+
+          print('RCL0193 occurrences:', occurrences)
+          print('RCL0193 statements:', len(statements))
+          print('RCL0193 refs:', refs)
+          print('PDF pages:', doc.page_count)
+          print('PDF sha256:', pdf_sha)
+          PY
+
+      - name: Guard scope
+        shell: bash
+        run: |
+          test -s database/reference/audits/rcl0193_1660_inventory.md
+          grep -F 'RCL0193ENG' database/reference/audits/rcl0193_1660_inventory.md
+          git diff -- database/reference/research_enrichment_1660.qz64 --exit-code
+          test "$(git diff --name-only | sort)" = "database/reference/audits/rcl0193_1660_inventory.md"
+
+      - name: Commit audit and remove helper
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/temp-rcl0193-inventory.yml
+          git add database/reference/audits/rcl0193_1660_inventory.md
+          git commit -m "Inventory RCL0193 visual backfill sources"
+          git push origin tmp-rave-visual-backfill
