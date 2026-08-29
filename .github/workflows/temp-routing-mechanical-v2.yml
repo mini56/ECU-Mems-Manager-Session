@@ -1,0 +1,137 @@
+name: TEMP ROUTING MECHANICAL V2
+
+on:
+  push:
+    branches:
+      - tmp-rave-visual-backfill
+    paths:
+      - '.github/workflows/temp-routing-mechanical-v2.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: 'utf-8'
+      RCL0193_SHA256: 'c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deterministic tools
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install --disable-pip-version-check 'aqtinstall==3.3.0' 'PyMuPDF==1.26.4'
+
+      - name: Apply generic visual routing patch
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python tools/patch_rave_visual_routing_auto.py
+          if ($LASTEXITCODE -ne 0) { throw 'Routing patch failed' }
+
+      - name: Download exact RCL0193 factory PDF
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & curl.exe -L --fail --retry 3 --retry-delay 3 -o 'RCL0193ENG.pdf' 'https://www.uscars.biz/uscars/mini-documents/Rave_CD_wmxn990e.pdf'
+          if ($LASTEXITCODE -ne 0) { throw 'RCL0193 download failed' }
+          $hash = (Get-FileHash 'RCL0193ENG.pdf' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($hash -ne $env:RCL0193_SHA256) { throw "RCL0193 SHA mismatch: $hash" }
+
+      - name: Measure missing mechanical scope
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python tools/audit_rcl0193_mechanical_scope.py --pdf RCL0193ENG.pdf
+          if ($LASTEXITCODE -ne 0) { throw 'Mechanical audit failed' }
+          $j = Get-Content 'database/reference/audits/rcl0193_mechanical_scope_audit.json' -Raw | ConvertFrom-Json
+          if ($j.pdf_pages -ne 372) { throw 'Unexpected PDF page count' }
+          if ($j.current_rcl0193_visual_pages -ne 26) { throw 'Unexpected current RCL0193 visual count' }
+          if ($j.historical_rcl0193_facts -ne 31) { throw 'Unexpected historical RCL0193 fact count' }
+          if ($j.scope_currently_uncaptured_pages -le 50) { throw 'Mechanical gap unexpectedly small' }
+          if ($j.unique_service_repair_numbers_in_scope -le 20) { throw 'Procedure gap unexpectedly small' }
+          Write-Host "PASS mechanical scope: $($j.scope_pages) pages, $($j.scope_currently_uncaptured_pages) uncaptured, $($j.unique_service_repair_numbers_in_scope) repair numbers"
+
+      - name: Install Qt 5.15.2 MSVC x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $sevenZip = (Get-Command 7z.exe -ErrorAction Stop).Source
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
+          if ($LASTEXITCODE -ne 0) { throw "Qt install failed: $LASTEXITCODE" }
+
+      - name: Configure and build automatic routing guard
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake -S . -B build-routing -A x64 `
+            -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
+            -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
+            -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF `
+            -DMEMS_USE_ONNX_GENAI=OFF
+          if ($LASTEXITCODE -ne 0) { throw "CMake configure failed: $LASTEXITCODE" }
+          cmake --build build-routing --config Release --target ecu_mems_manager ia_response_selftest mems_search_selftest
+          if ($LASTEXITCODE -ne 0) { throw "Build failed: $LASTEXITCODE" }
+
+      - name: Run deterministic regression tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
+          $env:PATH = "$qtRoot\bin;$env:PATH"
+          $env:QT_PLUGIN_PATH = "$qtRoot\plugins"
+          & '${{ github.workspace }}\build-routing\Release\ia_response_selftest.exe'
+          if ($LASTEXITCODE -ne 0) { throw 'IA response self-test failed' }
+          & '${{ github.workspace }}\build-routing\Release\ia_mems_diagram_selftest.exe'
+          if ($LASTEXITCODE -ne 0) { throw 'IA diagram/routing self-test failed' }
+          & '${{ github.workspace }}\build-routing\Release\mems_search_selftest.exe'
+          if ($LASTEXITCODE -ne 0) { throw 'MEMS search self-test failed' }
+
+      - name: Guard candidate scope
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Remove-Item 'RCL0193ENG.pdf' -Force
+          $allowed = @(
+            'CMakeLists.txt',
+            'database/reference/audits/rcl0193_mechanical_scope_audit.json',
+            'database/reference/audits/rcl0193_mechanical_scope_audit.md',
+            'expert/IaMemsConversationRouting.h',
+            'expert/IaMemsDiagramCatalog.cpp',
+            'expert/IaMemsDiagramSelfTest.cpp',
+            'iamemstab.cpp'
+          ) | Sort-Object
+          $actual = @(git status --short | ForEach-Object { $_.Substring(3).Trim() } | Where-Object { $_ -notlike 'build-routing*' } | Sort-Object)
+          if (($actual -join "`n") -ne ($allowed -join "`n")) {
+            Write-Host "Allowed:`n$($allowed -join "`n")"
+            Write-Host "Actual:`n$($actual -join "`n")"
+            throw 'Unexpected candidate scope'
+          }
+
+      - name: Upload validated candidate files
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAVE-ROUTING-MECHANICAL-V2-CANDIDATE
+          path: |
+            CMakeLists.txt
+            iamemstab.cpp
+            expert/IaMemsConversationRouting.h
+            expert/IaMemsDiagramCatalog.cpp
+            expert/IaMemsDiagramSelfTest.cpp
+            database/reference/audits/rcl0193_mechanical_scope_audit.md
+            database/reference/audits/rcl0193_mechanical_scope_audit.json
+          if-no-files-found: error
