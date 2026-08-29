@@ -1870,3 +1870,24 @@ Le mapping V2 reste conserve dans la chronologie comme run techniquement vert ma
 Prochaine pousse technique autorisee sur la branche temporaire: preparer un **candidat additif RCL0193 1760** qui rend une seule fois les 26 pages constructeur, calcule chaque SHA-256, ajoute les metadonnees/manifeste et relie les 31 faits a toutes leurs pages via `mems_rave_illustration` / `mems_rave_illustration_link`. Les faits historiques ne doivent pas etre reecrits. Le candidat doit etre applique a une reconstruction de la base #101 + 1750 et verifier integrity, user_version, comptes historiques et couverture 31/31 avant tout commit des assets.
 
 Production reste `MEMSX64` BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`; aucun #102. Base/IA/RAVE restent consultatives et ne prennent jamais la main sur la communication ECU.
+
+## 2026-08-29 - RCL0193 WEAK_CASES 1 - RESOLU PAR VERIFICATION DIRECTE DU MANUEL
+
+Audit commite examine: `database/reference/audits/rcl0193_visual_mapping_audit.md` au commit `a1efab597b8cce35072686490721cb5731d7c499`.
+
+Le seul cas a faible recouvrement lexical est `RAVE-REP-ECM-001`, source historique `PDF p.126-127 / ECM, 18.30.01`, topic francais `ECM ECU calculateur depose repose antidémarrage programmation`.
+
+Verification directe du PDF constructeur RCL0193 exact:
+- index PDF 126: titre `ENGINE CONTROL MODULE (ECM)`, service repair no `18.30.01`, procedure `Remove`, deconnexion batterie, desserrage/support, deconnexion des 2 multiplugs, retrait ECM;
+- index PDF 127: procedure `Refit`, reconnexion des 2 multiplugs, remise en place/fixation ECM, reconnexion batterie;
+- meme page 127: note constructeur indiquant que si un ECM neuf est monte, il doit etre programme avec le code de l'unite antivol (`anti-theft security unit`) avec TestBook avant que le moteur puisse demarrer.
+
+Conclusion: **✅ mapping `RAVE-REP-ECM-001` confirme sur p.126-127**. Le `WEAK_CASES 1` etait uniquement un faux faible score lexical cause par les termes francais du topic face au texte anglais de la source; ce n'est ni une mauvaise page ni une provenance douteuse. Les **31/31 faits RCL0193 sont donc maintenant couverts par une cartographie source verifiee**, sur **25 pages physiques uniques**.
+
+### Incident de journalisation sur la premiere tentative
+
+La premiere tentative d'ecriture de cette conclusion, run RAPPORT `33251235882`, job `99097148820`, a correctement ajoute et verifie le texte localement mais son `git push origin RAPPORT` a ete **rejete en non-fast-forward**: pendant le run, la branche distante a avance sur `cbeaa0ed5007863ae5a4f7a9fb518d81ce49e781` (`Record complete RCL0193 mapping V3 validation`). Conformement a la regle de tracabilite, toute progression technique a ete suspendue. Aucun changement technique n'a ete pousse apres cet echec de journalisation.
+
+Cause: concurrence de deux ecritures sur `RAPPORT`, et non erreur du contenu. Cette seconde tentative utilise `git fetch` + `git rebase origin/RAPPORT` avant le push afin de conserver les deux historiques sans ecrasement.
+
+Prochaine action exacte apres confirmation de cette ecriture: inspecter le dernier numero de lot additif disponible et le generateur RCL0194 1750 valide; preparer un generateur RCL0193 strictement additif qui capture une seule fois les 25 pages exactes, calcule leurs SHA-256, cree les metadonnees `mems_rave_illustration` et liens `mems_rave_illustration_link` vers les 31 faits sans reecrire `mems_rave_fact`, garde `user_version=20`, et produit un audit de reproductibilite. `MEMSX64` reste BUILD #101 inchange; aucun #102.
