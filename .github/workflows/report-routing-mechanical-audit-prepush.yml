@@ -1,0 +1,36 @@
+name: REPORT ROUTING MECHANICAL AUDIT PREPUSH
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths: ['.github/workflows/report-routing-mechanical-audit-prepush.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  append-report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append pre-push report
+        env:
+          REPORT_APPEND_B64: 'CgojIyAyMDI2LTA4LTI5IC0gUk9VVEFHRSBWSVNVRUwgVjIgQSBHRU5FUkFMSVNFUiArIEFVRElUIE1FQ0FOSVFVRSBSQ0wwMTkzIEFWQU5UIFBPVVNT…' 
+        run: |
+          python - <<'PY'
+          import os, base64
+          with open('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md','ab') as f:
+              f.write(base64.b64decode(os.environ['REPORT_APPEND_B64']))
+          PY
+      - name: Commit report and remove helper
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/report-routing-mechanical-audit-prepush.yml
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Report routing and mechanical audit pre-push"
+          git pull --rebase origin RAPPORT
+          git push origin HEAD:RAPPORT
