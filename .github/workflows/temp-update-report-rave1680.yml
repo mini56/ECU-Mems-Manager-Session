@@ -10,7 +10,6 @@ permissions:
 
 jobs:
   update_report:
-    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout RAPPORT
@@ -21,146 +20,22 @@ jobs:
 
       - name: Update continuity report after real RAVE 1680 tests
         shell: bash
+        env:
+          RULE_B64: PiAqKlLDiEdMRSBERSBKT1VSTkFMSVNBVElPTiBPQkxJR0FUT0lSRSDigJQgMjkgQU/Dm1QgMjAyNioqIDogcG91ciBFQ1UgTUVNUyBNYW5hZ2VyLCBs4oCZb3JkcmUgZXN0IHN0cmljdCA6ICoqUkFQUE9SVCBBVkFOVCBDSEFRVUUgUE9VU1NFIOKGkiBQT1VTU0Ug4oaSIFRFU1QgUsOJRUwg4oaSIFJBUFBPUlQgSU1Nw4lESUFUIOKGkiBjb3JyZWN0aW9uIMOpdmVudHVlbGxlIOKGkiBSQVBQT1JUIEFWQU5UIExBIFBPVVNTRSBTVUlWQU5URSoqLiBDaGFxdWUgdGVzdCBkb2l0IGNvbnNlcnZlciBsYSBxdWVzdGlvbi9tYW5pcHVsYXRpb24gcsOpZWxsZSwgbGEgcsOpcG9uc2Ugb2JzZXJ2w6llLCBsZSB2ZXJkaWN0IOKchS/imqDvuI8v4p2MLCBsZXMgcsOpZ3Jlc3Npb25zLCBsYSBjb25jbHVzaW9uIGV0IGxhIHByb2NoYWluZSBhY3Rpb24uIFVuIMOpY2hlYyBuZSBkb2l0IGphbWFpcyDDqnRyZSByZWNvdXZlcnQgcGFyIHVuZSBjb3JyZWN0aW9uIHNhbnMgYXZvaXIgw6l0w6kgY29uc2lnbsOpLgo+Cg==
+          SECTION_B64: CgojIFBJTE9URSBJTExVU1RSQVRJT05TIFJBVkUgMTY4MCDigJQgVEVTVFMgUsOJRUxTIOKAlCAyOSBBT8ObVCAyMDI2CgpDZXR0ZSBzZWN0aW9uICoqc3VwcGxhbnRlIGNvbW1lIHBvaW50IGRlIHN1aXZpIGNvdXJhbnQqKiBsYSBmaW4gcHLDqWPDqWRlbnRlIGR1IHJhcHBvcnQuIEVsbGUgZG9jdW1lbnRlIGxlcyDDqWNoYW5nZXMsIGTDqWNpc2lvbnMsIMOpY2hlY3MgZXQgcHJvZ3LDqHMgZHUgcGlsb3RlIGlsbHVzdHJhdGlvbnMgUkFWRS4gTGEgcHJvZHVjdGlvbiBgTUVNU1g2NGAgcmVzdGUgKipCVUlMRCAjMTAxKiogZXQgbidlc3QgcGFzIG1vZGlmacOpZSBwYXIgY2UgcGlsb3RlLgoKIyMgRMOJQ0lTSU9OIEQnQVJDSElURUNUVVJFIOKAlCBJTExVU1RSQVRJT05TIFJBVkUKCkNvbnN0YXQgY29uZmlybcOpIDogbGVzIHRhYmxlcyBSQVZFIGhpc3RvcmlxdWVzIGNvbnRpZW5uZW50IGRlcyByw6lmw6lyZW5jZXMgdGVsbGVzIHF1ZSBgaW1hZ2VfcmVmYCAvIGBmaWd1cmVfcmVmYCwgbWFpcyAqKmxlcyBpbGx1c3RyYXRpb25zIFJBVkUgb3JpZ2luYWxlcyBlbGxlcy1tw6ptZXMgbifDqXRhaWVudCBwYXMgc3RvY2vDqWVzIGRhbnMgbGEgU1FMaXRlKiouIExlcyByw6lmw6lyZW5jZXMgcGVybWV0dGFpZW50IGRlIHJldHJvdXZlciBsYSBwYWdlIHNvdXJjZSwgcGFzIGRlIHJlbGlyZSBsb2NhbGVtZW50IGxlIGRlc3NpbiBvcmlnaW5hbC4KCkTDqWNpc2lvbiB1dGlsaXNhdGV1ciB2YWxpZMOpZSA6Ci0gcG91ciBsYSBwYXJ0aWUgUkFWRSBkw6lqw6AgcHLDqXNlbnRlIGRhbnMgbGEgYmFzZSwgYWpvdXRlciBtYWludGVuYW50IGxlcyBpbGx1c3RyYXRpb25zIG9yaWdpbmFsZXMgY29ycmVzcG9uZGFudGVzIDsKLSBwb3VyIGxlcyBmdXR1cmVzIHBhcnRpZXMgUkFWRSBlbmNvcmUgbm9uIGV4dHJhaXRlcywgY2FwdHVyZXIgKipkb25uw6llcyBzdHJ1Y3R1csOpZXMgKyBwb3J0w6llICsgaWxsdXN0cmF0aW9uICsgcsOpZsOpcmVuY2UqKiBwZW5kYW50IGxhIG3Dqm1lIHBhc3NlIGQnZW5yaWNoaXNzZW1lbnQgOwotIGNvbnNlcnZlciBsZXMgaW1hZ2VzIGNvbW1lIGZpY2hpZXJzIGxvY2F1eCBkdSBwYWNrYWdlIGV0IHV0aWxpc2VyIHVuZSBjb3VjaGUgU1FMaXRlIGFkZGl0aXZlIGRlIGxpYWlzb24sIHBsdXTDtHQgcXVlIGdvbmZsZXIgbGVzIHRhYmxlcyBoaXN0b3JpcXVlcyBhdmVjIGRlcyBCTE9CIDsKLSBuZSBtb2RpZmllciBuaSBzdXBwcmltZXIgbGVzIGZhaXRzIGhpc3RvcmlxdWVzIDsKLSBwcm9maXRlciBkdSByYXR0YWNoZW1lbnQgdmlzdWVsIHBvdXIgYXVkaXRlciBsZXMgaW50ZXJwcsOpdGF0aW9ucyB0ZWNobmlxdWVzIGV4aXN0YW50ZXMuCgojIyBQSUxPVEUgTElNSVTDiSBBVSBMT1QgUkFWRSAxNjgwCgpCYXNlIGRlIHByb2R1Y3Rpb24gY29uc2VydsOpZSA6ICoqYE1FTVNYNjRgICMxMDEgYDIyZGJlNzVlZDE0ZTBhNjFlNjk0MTU5ZDUwNWVmNzIyNDUxMTZiNDhgKiouCgpCcmFuY2hlIHRlbXBvcmFpcmUgOiAqKmB0bXAtcmF2ZS0xNjgwLWlsbHVzdHJhdGlvbnNgKiouCgpQw6lyaW3DqHRyZSB2b2xvbnRhaXJlbWVudCBsaW1pdMOpIMOgIHRyb2lzIGlsbHVzdHJhdGlvbnMgb3JpZ2luYWxlcyBkdSBkb2N1bWVudCBjb25zdHJ1Y3RldXIgYFJDTDAxOTRFTkdgIGTDqWrDoCByw6lmw6lyZW5jw6llcyBwYXIgbGUgbG90IDoKLSBgUkNMMDE5NEVORzoyMC4zYCA7Ci0gYFJDTDAxOTRFTkc6MjAuNGAgOwotIGBSQ0wwMTk0RU5HOjM5LjNgLgoKTGUgcGlsb3RlIGV4dHJhaXQgbGVzIHBhZ2VzIG9yaWdpbmFsZXMgZHUgUERGIFJvdmVyIGV0IGxlcyBwbGFjZSBzb3VzIGBkYXRhYmFzZS9yZWZlcmVuY2UvaW1hZ2VzL3JhdmUvYC4gSWwgYWpvdXRlIGRlIGZhw6dvbiBhZGRpdGl2ZSA6Ci0gYG1lbXNfcmF2ZV9pbGx1c3RyYXRpb25gIDsKLSBgbWVtc19yYXZlX2lsbHVzdHJhdGlvbl9saW5rYCA7Ci0gbGEgdnVlIGBtZW1zX3JhdmVfZmFjdF9pbGx1c3RyYXRpb25fdmlld2AgOwotIGByZXNlYXJjaF9lbnJpY2htZW50XzE3NTAucXo2NGAgOwotIGxlcyBlbnRyw6llcyBjb3JyZXNwb25kYW50ZXMgZGFucyBsZSBtYW5pZmVzdGUuCgpgZGF0YWJhc2VfcmV2aXNpb25gIHJlc3RlICoqMjAqKiBldCBhdWN1bmUgdGFibGUgaGlzdG9yaXF1ZSBuJ2VzdCBtb2RpZmnDqWUuCgojIyBQUkVNSUVSIEFSVEVGQUNUIFBJTE9URSDigJQgQlVJTEQgVEVDSE5JUVVFIFZFUlQsIFRFU1QgUsOJRUwgw4lDSE9Vw4kKClByZW1pZXIgcnVuIHRlbXBvcmFpcmUgOiAqKmAzMzE5MDQ2MzI2OGAg4oCUIFNVQ0NFU1MqKi4KCkFydGVmYWN0IDoKLSAqKmBFQ1UtTUVNUy1NYW5hZ2VyLXg2NC1URVNULVJBVkUxNjgwLUZST00tMTAxYCoqIDsKLSBJRCAqKmA5NjkzNTMzNTUxYCoqIDsKLSBkaWdlc3QgKipgc2hhMjU2OjUyNjA0YjQ1MGJiNTlhMTM4NzIxZDVkMTc4MGE2MDNmODExMDkzYzMyMTkxZTk4NWNjNmFmZWI4MmI0OTZiMGNgKiouCgpMZSBwYWNrYWdlIGNvbnRlbmFpdCBiaWVuIGxlcyB0cm9pcyBpbGx1c3RyYXRpb25zIG9yaWdpbmFsZXMgZXQgbGV1cnMgbGlhaXNvbnMgYWRkaXRpdmVzLiAqKkNlbGEgbidhIHBhcyDDqXTDqSBjb25zaWTDqXLDqSBjb21tZSB2YWxpZGF0aW9uIHV0aWxpc2F0ZXVyLioqCgojIyMgVGVzdCByw6llbCB1dGlsaXNhdGV1ciDigJQgw6ljaGVjIGRlIHJvdXRhZ2UKCkZvcm11bGF0aW9ucyByw6llbGxlbWVudCB1dGlsaXPDqWVzLCB2b2xvbnRhaXJlbWVudCBkaWZmw6lyZW50ZXMgZGUgbGEgcGhyYXNlIGRlIHRlc3QgcHLDqXBhcsOpZSA6Ci0gYHNvbmRlIGxhbWJkYSBNaW5pIFNQaSBKYXBvbiAxOTk3YCDihpIgKipgSmUgbidhaSBlbmNvcmUgYXVjdW5lIG1lc3VyZSBFQ1UgZGlzcG9uaWJsZS5gKiogOwotIGBzY2jDqW1hIHNvbmRlIGxhbWJkYSBNaW5pIFNQaSBKYXBvbiAxOTk3YCDihpIgZGVtYW5kZSBpbnV0aWxlIGRlIGfDqW7DqXJhdGlvbiBNRU1TIGAxLjIgLyAxLjMgLyAxLjYgLyAxLjlgIDsKLSBgY2hlcmNoZWAg4oaSIGF1Y3VuZSBnw6luw6lyYXRpb24gZMOpdGVybWluw6llIDsKLSBgTW9udHJlIGxlIHNjaMOpbWEgc29uZGUgbGFtYmRhIE1pbmkgU1BpIEphcG9uIDE5OTdgIOKGkiBub3V2ZWxsZSBkZW1hbmRlIGRlIGfDqW7DqXJhdGlvbi4KClZlcmRpY3QgOiAqKuKdjCBQSUxPVEUgVjEgTk9OIFZBTElEw4kgU1VSIFBDIFLDiUVMKiouCgpDYXVzZSBhdWRpdMOpZSA6IGRhbnMgYElhTWVtc1RhYjo6c2VuZFF1ZXN0aW9uKClgLCBgY2xhcmlmaWNhdGlvblByb21wdCgpYCDDqXRhaXQgZXjDqWN1dMOpICoqYXZhbnQqKiBgdXBkYXRlRGlhZ3JhbVN1Z2dlc3Rpb24oKWAuIFVuZSByZXNzb3VyY2UgUkFWRSBleGFjdGUgcG91dmFpdCBkb25jIMOqdHJlIHByw6lzZW50ZSBldCByw6lzb2x1YmxlLCB0b3V0IGVuIMOpdGFudCBibG9xdcOpZSBwYXIgbGEgY2xhcmlmaWNhdGlvbiBhdmFudCBxdWUgbCdVSSBhaXQgbCdvY2Nhc2lvbiBkZSBsYSBwcm9wb3Nlci4KCiMjIyBSw6hnbGUgZGUgdGVzdCBkw6ljaWTDqWUgcGFyIGwndXRpbGlzYXRldXIKCkwndXRpbGlzYXRldXIgYSB2b2xvbnRhaXJlbWVudCBjaGFuZ8OpIGxlcyBmb3JtdWxhdGlvbnMgcHJvcG9zw6llcyBwYXIgbCdhc3Npc3RhbnQsIGF2ZWMgbGUgcHJpbmNpcGUgc3VpdmFudCA6ICoqdW5lIHBocmFzZSBwcsOpcGFyw6llIHNhY2hhbnQgZXhhY3RlbWVudCBsYSByw6lwb25zZSBhdHRlbmR1ZSBlc3QgdW4gdGVzdCB0cm9wIGZhY2lsZSoqLiBMZXMgdGVzdHMgSUEgZG9pdmVudCB1dGlsaXNlciBkZXMgZm9ybXVsYXRpb25zIG5hdHVyZWxsZXMgZXQgbGlicmVzIGFmaW4gZGUgbWVzdXJlciBsZSBjb21wb3J0ZW1lbnQgcsOpZWwsIHBhcyBzZXVsZW1lbnQgdW4gbW90LWNsw6kgcHLDqXZ1IHBhciBsZSBkw6l2ZWxvcHBldXIuCgpDZXR0ZSByw6hnbGUgZXN0IGFkb3B0w6llIHBvdXIgbGEgc3VpdGUgZGVzIHZhbGlkYXRpb25zIElBIE1FTVMuCgojIyBQSUxPVEUgVjIg4oCUIENPUlJFQ1RJT04gRFUgUk9VVEFHRSBFVCBCVUlMRCBURU1QT1JBSVJFCgpDb3JyZWN0aW9uIHByw6lwYXLDqWUgdW5pcXVlbWVudCBzdXIgbGEgYnJhbmNoZSBwaWxvdGUgOiBsb3JzcXUndW4gc2Now6ltYSBsb2NhbCBleGFjdCBwZXV0IMOqdHJlIHLDqXNvbHUgw6AgcGFydGlyIGRlIGxhIGRlbWFuZGUsIHNhIHByb3Bvc2l0aW9uIG5lIGRvaXQgcGFzIMOqdHJlIGJsb3F1w6llIHBhciB1bmUgY2xhcmlmaWNhdGlvbiBkZSBnw6luw6lyYXRpb24gaW51dGlsZS4gTGVzIGF1dHJlcyBkZW1hbmRlcyBhbWJpZ3XDq3MgY29uc2VydmVudCBsZXVyIGdhcmRlIGRlIGNsYXJpZmljYXRpb24uCgpIRUFEIGR1IGJ1aWxkIFYyIDogKipgMmJlZGUxZmY1NzA0YzQyZGQ2NWQyZDYzMzdiZjc5Zjk5MWNhZDFhOWAqKi4KClJ1biBWMiA6ICoqYDMzMjQxNDMxMzE3YCDigJQgU1VDQ0VTUyoqLCBqb2IgKipgOTkwNzEzNDE2NDlgKiouCgpUb3V0ZXMgbGVzIMOpdGFwZXMgZHUgYnVpbGQgcGlsb3RlIFYyIHNvbnQgdmVydGVzIDogY29tcGlsYXRpb24geDY0LCB0ZXN0cyBkw6l0ZXJtaW5pc3RlcywgcsOpY3Vww6lyYXRpb24gZGUgbGEgYmFzZSAjMTAxLCByZW1wbGFjZW1lbnQgbGltaXTDqSBkZSBsJ2V4w6ljdXRhYmxlIGRlIHRlc3QsIGV4dHJhY3Rpb24gZGVzIHRyb2lzIHBhZ2VzIFJBVkUsIHZhbGlkYXRpb24gZHUgcMOpcmltw6h0cmUgZXQgdXBsb2FkLgoKQXJ0ZWZhY3QgVjIgOgotICoqYEVDVS1NRU1TLU1hbmFnZXIteDY0LVRFU1QtUkFWRTE2ODAtVjJgKiogOwotIElEICoqYDk3MTE1MzkwOTJgKiogOwotIHRhaWxsZSAqKjM4NyAzNjQgMjUyIG9jdGV0cyoqIDsKLSBkaWdlc3QgKipgc2hhMjU2OjA1OGUwMTA1NGY4YmY1ODQ0MDA4OGE0OGVkNDFhYTQ2YjZkMWEyZGIwM2QzMGM2ZGIzMjU2MzcxNjM5M2M3MTNgKiouCgojIyBURVNUIFLDiUVMIFYyIOKAlCBBVkFOQ8OJRSBNQUpFVVJFIENPTkZJUk3DiUUKCkwndXRpbGlzYXRldXIgcG91cnN1aXQgdm9sb250YWlyZW1lbnQgbGVzIHRlc3RzIGF2ZWMgc2VzIHByb3ByZXMgZm9ybXVsYXRpb25zLgoKQXByw6hzIGRlcyBlc3NhaXMgcHLDqWPDqWRlbnRzIG/DuSBgaW1hZ2VgIC8gYDEuOWAgZmFpc2FpZW50IGVuY29yZSBwcm9wb3NlciBsZXMgcmVzc291cmNlcyBnw6luw6lyaXF1ZXMgYE1FTVMgMS45IEVDVWAgZXQgYGZpY2hlIFhNTCBNRU1TIDEuOWAsIGxhIGZvcm11bGF0aW9uIG5hdHVyZWxsZSBzdWl2YW50ZSBhIMOpdMOpIHV0aWxpc8OpZSA6CgoqKmBjYWJsYWdlIHNvbmRlIGxhbWJkYSBNaW5pIFNQaSBKYXBvbiAxOTk3YCoqCgpJQSBNRU1TIHLDqXBvbmQgYWxvcnMgYXZlYyB1biAqKmJyb2NoYWdlIHbDqXJpZmnDqSoqIGJhc8OpIHN1ciBsZXMgZmFpdHMgY29uc3RydWN0ZXVyIFNQaSBKYXBvbiA5N01ZLCBub3RhbW1lbnQgOgotIHJlbGFpcy9jaGF1ZmZhZ2Ugc29uZGUgOiBgQzE1OS0zNmAsIGBCR2Agbm9pci92ZXJ0IDsKLSBibGluZGFnZSAvIHNjcmVlbiBncm91bmQgOiBgQzE1OS0yOWAsIGBCYCBub2lyIDsKLSBzaWduYWwgYE9YWUdFTiBTRU5TT1IgK1ZFYCA6IGBDMTU5LTdgLCBgU2AgZ3JpcyBhcmRvaXNlL2dyaXMgOwotIGxhIHLDqXBvbnNlIGNpdGUgZXhwbGljaXRlbWVudCBwbHVzaWV1cnMgZm9pcyAqKmBJbGx1c3RyYXRpb24gbG9jYWxlOiBSQ0wwMTk0RU5HOjIwLjMg4oCUIHByZXV2ZSA6IGNvbnN0cnVjdGV1cmAqKi4KClN1cnRvdXQsIGwnaW50ZXJmYWNlIGFmZmljaGUgZMOpc29ybWFpcyBsZSBib3V0b24gZXhhY3QgOgoKKipgT3V2cmlyIGxlIHNjaMOpbWEgUkFWRSBSQ0wwMTk0RU5HIDIwLjMgTWluaSBTUGkgSmFwb24gOTdNWSBNRU1TIGxhbWJkYSByZWxhaXMgdmlsZWJyZXF1aW5gKioKCiMjIyBWZXJkaWN0IGV4YWN0CgrinIUgKipWQUxJRMOJIDogc8OpbGVjdGlvbiBldCBwcm9wb3NpdGlvbiBkZSBsYSBub3V2ZWxsZSBpbGx1c3RyYXRpb24gUkFWRSBgUkNMMDE5NEVORzoyMC4zYC4qKgoKQ2V0dGUgcmVzc291cmNlIG4nZXN0IHBhcyB1bmUgaW1hZ2UgZm91cm5pZSBtYW51ZWxsZW1lbnQgcGFyIGwndXRpbGlzYXRldXIgZXQgbidlc3QgcGFzIGxlIHNjaMOpbWEgZ8OpbsOpcmlxdWUgTUVNUyAxLjkgZMOpasOgIHByw6lzZW50LiBDJ2VzdCAqKmwndW5lIGRlcyB0cm9pcyBpbGx1c3RyYXRpb25zIG9yaWdpbmFsZXMgZXh0cmFpdGVzIGRlIFJBVkUgc3DDqWNpZmlxdWVtZW50IHBvdXIgY2UgcGlsb3RlKiogZXQgZW5yZWdpc3Ryw6llcyBkYW5zIGxlIHBhY2thZ2UvYmFzZSBkZSByw6lmw6lyZW5jZSBwZW5kYW50IGxlIHRlc3QuCgpMYSBjYXB0dXJlIHLDqWVsbGUgcHJvdXZlIGRvbmMgcG91ciBsYSBwcmVtacOocmUgZm9pcyBsYSBjaGHDrm5lIDoKKipxdWVzdGlvbiBuYXR1cmVsbGUgdXRpbGlzYXRldXIg4oaSIGZhaXRzIFJBVkUgY29tcGF0aWJsZXMg4oaSIHLDqWbDqXJlbmNlIGBSQ0wwMTk0RU5HOjIwLjNgIOKGkiBzw6lsZWN0aW9uIGRlIGwnYXNzZXQgUkFWRSBub3V2ZWxsZW1lbnQgZW5yZWdpc3Ryw6kg4oaSIHByb3Bvc2l0aW9uIGR1IGJvdXRvbiBkJ291dmVydHVyZSBleGFjdC4qKgoK4pqg77iPICoqTCdvdXZlcnR1cmUgZHUgYm91dG9uIFJBVkUgMjAuMyBleGFjdCBuJ2VzdCBwYXMgZW5jb3JlIGTDqWNsYXLDqWUgdmFsaWTDqWUgZGFucyBjZSB0ZXN0IHByw6ljaXMgdGFudCBxdWUgbCd1dGlsaXNhdGV1ciBuJ2EgcGFzIGNvbmZpcm3DqSBsZSBjbGljIGV0IGwnYWZmaWNoYWdlIGRlIGNldHRlIGltYWdlLioqIExlcyBib3V0b25zIGfDqW7DqXJpcXVlcyBNRU1TIDEuOSBFQ1UgZXQgZmljaGUgWE1MIDEuOSBvbnQsIGV1eCwgZMOpasOgIMOpdMOpIGNvbmZpcm3DqXMgZm9uY3Rpb25uZWxzLgoKIyMgUkVDVElGSUNBVElPTiBERSBUUkHDh0FCSUxJVMOJIE1BUCAvIGBDSEVSQ0hFYAoKLSBMYSBmb3JtdWxhdGlvbiBhbnTDqXJpZXVyZSBzZWxvbiBsYXF1ZWxsZSAqKmxlIE1BUCBpbnTDqWdyw6kgY29uY2VybmFpdCBuw6ljZXNzYWlyZW1lbnQgbGUgTVBpKiogbmUgZG9pdCBwYXMgw6p0cmUgcmV0ZW51ZSA6IGwndXRpbGlzYXRldXIgYSBwcsOpY2lzw6kgbGUgMjkgYW/Du3QgMjAyNiBxdWUgKipsZSBNQVAgaW50w6lncsOpIGNvbmNlcm5lIGxhIFNQaSoqIGV0IGEgZGVtYW5kw6kgdW5lIHbDqXJpZmljYXRpb24gZGlzdGluY3RlIGRlIGxhIGJhc2UgcG91ciBsZSBNUGkuCi0gTGUgc3RhdHV0IGRvY3VtZW50YWlyZSBNQVAgTVBpIGRvaXQgZG9uYyDDqnRyZSB2w6lyaWZpw6kgY29udHJlIGxhIGJhc2UvUkFWRSBhdmFudCB0b3V0ZSBub3V2ZWxsZSBjb25jbHVzaW9uIDsgbmUgcGFzIGTDqWR1aXJlIHNvbiBhcmNoaXRlY3R1cmUgZGUgbGEgcsOoZ2xlIFNQaS4KLSBEYW5zIGwnw6lwaXNvZGUgb3JpZ2luYWwgIzEwMCwgbGUgbW90IGBDSEVSQ0hFYCBhcHBhcmFpc3NhaXQgZGFucyBsYSByw6lwb25zZSBkZSBsJ0lBIDsgaWwgbmUgZmF1dCBwYXMgcsOpw6ljcmlyZSBsJ2hpc3RvcmlxdWUgY29tbWUgc2kgbCd1dGlsaXNhdGV1ciBsJ2F2YWl0IG7DqWNlc3NhaXJlbWVudCBzYWlzaS4gVW4gKip0ZXN0IGNvbnRyw7Rsw6kgdWx0w6lyaWV1ciAjMTAxKiogYSBiaWVuIHV0aWxpc8OpIGBDSEVSQ0hFYCwgbWFpcyBjJ2VzdCB1biB0ZXN0IGRpc3RpbmN0LgoKCiMjIElOQ0lERU5UIERVIE3DiUNBTklTTUUgREUgUkFQUE9SVCDigJQgQ09OU0lHTsOJCgotIFByZW1pw6hyZSB0ZW50YXRpdmUgZGUgbWlzZSDDoCBqb3VyIGF1dG9tYXRpcXVlIGR1IHByw6lzZW50IHJhcHBvcnQgYXByw6hzIGNlIHRlc3QgOiBjb21taXQgdGVtcG9yYWlyZSBgMGM0Mzc4MjNhN2YyZTQ0NGE1NjY0ZDEyMWE5NTE5MGE1NTNkZTYxYmAuCi0gV29ya2Zsb3cgcnVuICoqYDMzMjQzMDQ2MDg4YCDigJQgRkFJTFVSRSBzYW5zIGpvYioqIDogWUFNTCBpbnZhbGlkZSBkYW5zIGxlIGJsb2MgZGUgdGV4dGUgbXVsdGlsaWduZSBkdSBtw6ljYW5pc21lIHRlbXBvcmFpcmUgZGUgcmFwcG9ydC4KLSAqKkF1Y3VuIGltcGFjdCBzdXIgYE1FTVNYNjRgLCBsZSBwaWxvdGUsIGwnYXBwbGljYXRpb24sIGxhIGJhc2UgUkFWRSBvdSBsJ0VDVS4qKgotIExhIGNvcnJlY3Rpb24gY29uY2VybmUgdW5pcXVlbWVudCBsZSBtw6ljYW5pc21lIGQnw6ljcml0dXJlIGR1IHJhcHBvcnQgOyBsJ8OpY2hlYyBlc3QgY29uc2VydsOpIGljaSBhZmluIGRlIG5lIHBhcyBtYXNxdWVyIGxhIHByb2dyZXNzaW9uL3LDqWdyZXNzaW9uIGRlIGwnb3V0aWxsYWdlIGRlIHN1aXZpLgoKIyMgw4lUQVQgQ09VUkFOVCBBUFLDiFMgQ0UgVEVTVAoKLSBgTUVNU1g2NGAgcHJvZHVjdGlvbiByZXN0ZSBzdHJpY3RlbWVudCAqKiMxMDEgYDIyZGJlNzVlZDE0ZTBhNjFlNjk0MTU5ZDUwNWVmNzIyNDUxMTZiNDhgKiouCi0gQXVjdW5lIHByb21vdGlvbiAjMTAyIG4nZXN0IGF1dG9yaXPDqWUgc3VyIGxhIHNldWxlIGJhc2UgZGUgY2Ugc3VjY8OocyBwYXJ0aWVsLgotIExlIHBpbG90ZSBWMiBkw6ltb250cmUgdW5lICoqYXZhbmPDqWUgbWFqZXVyZSByw6llbGxlKiogOiBsJ0lBIHBldXQgbWFpbnRlbmFudCBwcm9wb3NlciB1bmUgaWxsdXN0cmF0aW9uIFJBVkUgbm91dmVsbGVtZW50IGVucmVnaXN0csOpZSDDoCBwYXJ0aXIgZCd1bmUgZm9ybXVsYXRpb24gbmF0dXJlbGxlIHF1ZSBsJ3V0aWxpc2F0ZXVyIGEgY2hvaXNpZSBsdWktbcOqbWUuCi0gUHJvY2hhaW5lIHZhbGlkYXRpb24gbWluaW1hbGUgYXZhbnQgdG91dGUgbm91dmVsbGUgcG91c3NlIGZvbmN0aW9ubmVsbGUgOiBjbGlxdWVyIGxlIGJvdXRvbiBSQVZFIGBSQ0wwMTk0RU5HIDIwLjNgIGV4YWN0IGV0IGNvbmZpcm1lciBxdWUgbCdpbGx1c3RyYXRpb24gb3JpZ2luYWxlIGNvcnJlc3BvbmRhbnRlIHMnb3V2cmUgY29ycmVjdGVtZW50IDsgcG91cnN1aXZyZSBlbnN1aXRlIHF1ZWxxdWVzIGZvcm11bGF0aW9ucyBuYXR1cmVsbGVzIG5vbiBwcsOpcGFyw6llcyBwb3VyIHbDqXJpZmllciBsYSByb2J1c3Rlc3NlIGR1IHJvdXRhZ2UuCi0gQ29uZm9ybcOpbWVudCDDoCBsYSByw6hnbGUgZHUgMjkgYW/Du3QgOiAqKmF1Y3VuZSBub3V2ZWxsZSBwb3Vzc2UgZGUgY29kZSBuZSBkb2l0IGF2b2lyIGxpZXUgYXZhbnQgcXVlIGNlIHLDqXN1bHRhdCBzb2l0IHByw6lzZW50IGRhbnMgbGUgcmFwcG9ydC4qKgo=
         run: |
           python - <<'PY'
+          import base64, os
           from pathlib import Path
-
           path = Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md')
           text = path.read_text(encoding='utf-8')
-
-          rule = '> **RÈGLE DE JOURNALISATION OBLIGATOIRE — 29 AOÛT 2026** : pour ECU MEMS Manager, l’ordre est strict : **RAPPORT AVANT CHAQUE POUSSE → POUSSE → TEST RÉEL → RAPPORT IMMÉDIAT → correction éventuelle → RAPPORT AVANT LA POUSSE SUIVANTE**. Chaque test doit conserver la question/manipulation réelle, la réponse observée, le verdict ✅/⚠️/❌, les régressions, la conclusion et la prochaine action. Un échec ne doit jamais être recouvert par une correction sans avoir été consigné.\n>\n'
+          rule = base64.b64decode(os.environ['RULE_B64']).decode('utf-8')
+          section = base64.b64decode(os.environ['SECTION_B64']).decode('utf-8')
           anchor = '> **SUIVI IMMÉDIAT** : avant chaque nouvelle étape, inscrire ici l’étape et son objectif ; après chaque résultat, l’inscrire avant la suite. **Toute modification, validation, échec, test réel et décision doit être ajouté au rapport au fur et à mesure afin de conserver l’historique complet entre les discussions.**\n>\n'
           if rule not in text:
               if anchor not in text:
                   raise SystemExit('SUIVI IMMÉDIAT anchor not found')
               text = text.replace(anchor, anchor + rule, 1)
-
-          section = r'''
-
-# PILOTE ILLUSTRATIONS RAVE 1680 — TESTS RÉELS — 29 AOÛT 2026
-
-Cette section **supplante comme point de suivi courant** la fin précédente du rapport. Elle documente les échanges, décisions, échecs et progrès du pilote illustrations RAVE. La production `MEMSX64` reste **BUILD #101** et n'est pas modifiée par ce pilote.
-
-## DÉCISION D'ARCHITECTURE — ILLUSTRATIONS RAVE
-
-Constat confirmé : les tables RAVE historiques contiennent des références telles que `image_ref` / `figure_ref`, mais **les illustrations RAVE originales elles-mêmes n'étaient pas stockées dans la SQLite**. Les références permettaient de retrouver la page source, pas de relire localement le dessin original.
-
-Décision utilisateur validée :
-- pour la partie RAVE déjà présente dans la base, ajouter maintenant les illustrations originales correspondantes ;
-- pour les futures parties RAVE encore non extraites, capturer **données structurées + portée + illustration + référence** pendant la même passe d'enrichissement ;
-- conserver les images comme fichiers locaux du package et utiliser une couche SQLite additive de liaison, plutôt que gonfler les tables historiques avec des BLOB ;
-- ne modifier ni supprimer les faits historiques ;
-- profiter du rattachement visuel pour auditer les interprétations techniques existantes.
-
-## PILOTE LIMITÉ AU LOT RAVE 1680
-
-Base de production conservée : **`MEMSX64` #101 `22dbe75ed14e0a61e694159d505ef72245116b48`**.
-
-Branche temporaire : **`tmp-rave-1680-illustrations`**.
-
-Périmètre volontairement limité à trois illustrations originales du document constructeur `RCL0194ENG` déjà référencées par le lot :
-- `RCL0194ENG:20.3` ;
-- `RCL0194ENG:20.4` ;
-- `RCL0194ENG:39.3`.
-
-Le pilote extrait les pages originales du PDF Rover et les place sous `database/reference/images/rave/`. Il ajoute de façon additive :
-- `mems_rave_illustration` ;
-- `mems_rave_illustration_link` ;
-- la vue `mems_rave_fact_illustration_view` ;
-- `research_enrichment_1750.qz64` ;
-- les entrées correspondantes dans le manifeste.
-
-`database_revision` reste **20** et aucune table historique n'est modifiée.
-
-## PREMIER ARTEFACT PILOTE — BUILD TECHNIQUE VERT, TEST RÉEL ÉCHOUÉ
-
-Premier run temporaire : **`33190463268` — SUCCESS**.
-
-Artefact :
-- **`ECU-MEMS-Manager-x64-TEST-RAVE1680-FROM-101`** ;
-- ID **`9693533551`** ;
-- digest **`sha256:52604b450bb59a138721d5d1780a603f811093c32191e985cc6afeb82b496b0c`**.
-
-Le package contenait bien les trois illustrations originales et leurs liaisons additives. **Cela n'a pas été considéré comme validation utilisateur.**
-
-### Test réel utilisateur — échec de routage
-
-Formulations réellement utilisées, volontairement différentes de la phrase de test préparée :
-- `sonde lambda Mini SPi Japon 1997` → **`Je n'ai encore aucune mesure ECU disponible.`** ;
-- `schéma sonde lambda Mini SPi Japon 1997` → demande inutile de génération MEMS `1.2 / 1.3 / 1.6 / 1.9` ;
-- `cherche` → aucune génération déterminée ;
-- `Montre le schéma sonde lambda Mini SPi Japon 1997` → nouvelle demande de génération.
-
-Verdict : **❌ PILOTE V1 NON VALIDÉ SUR PC RÉEL**.
-
-Cause auditée : dans `IaMemsTab::sendQuestion()`, `clarificationPrompt()` était exécuté **avant** `updateDiagramSuggestion()`. Une ressource RAVE exacte pouvait donc être présente et résoluble, tout en étant bloquée par la clarification avant que l'UI ait l'occasion de la proposer.
-
-### Règle de test décidée par l'utilisateur
-
-L'utilisateur a volontairement changé les formulations proposées par l'assistant, avec le principe suivant : **une phrase préparée sachant exactement la réponse attendue est un test trop facile**. Les tests IA doivent utiliser des formulations naturelles et libres afin de mesurer le comportement réel, pas seulement un mot-clé prévu par le développeur.
-
-Cette règle est adoptée pour la suite des validations IA MEMS.
-
-## PILOTE V2 — CORRECTION DU ROUTAGE ET BUILD TEMPORAIRE
-
-Correction préparée uniquement sur la branche pilote : lorsqu'un schéma local exact peut être résolu à partir de la demande, sa proposition ne doit pas être bloquée par une clarification de génération inutile. Les autres demandes ambiguës conservent leur garde de clarification.
-
-HEAD du build V2 : **`2bede1ff5704c42dd65d2d6337bf79f991cad1a9`**.
-
-Run V2 : **`33241431317` — SUCCESS**, job **`99071341649`**.
-
-Toutes les étapes du build pilote V2 sont vertes : compilation x64, tests déterministes, récupération de la base #101, remplacement limité de l'exécutable de test, extraction des trois pages RAVE, validation du périmètre et upload.
-
-Artefact V2 :
-- **`ECU-MEMS-Manager-x64-TEST-RAVE1680-V2`** ;
-- ID **`9711539092`** ;
-- taille **387 364 252 octets** ;
-- digest **`sha256:058e01054f8bf58440088a48ed41aa46b6d1a2db03d30c6db32563716393c713`**.
-
-## TEST RÉEL V2 — AVANCÉE MAJEURE CONFIRMÉE
-
-L'utilisateur poursuit volontairement les tests avec ses propres formulations.
-
-Après des essais précédents où `image` / `1.9` faisaient encore proposer les ressources génériques `MEMS 1.9 ECU` et `fiche XML MEMS 1.9`, la formulation naturelle suivante a été utilisée :
-
-**`cablage sonde lambda Mini SPi Japon 1997`**
-
-IA MEMS répond alors avec un **brochage vérifié** basé sur les faits constructeur SPi Japon 97MY, notamment :
-- relais/chauffage sonde : `C159-36`, `BG` noir/vert ;
-- blindage / screen ground : `C159-29`, `B` noir ;
-- signal `OXYGEN SENSOR +VE` : `C159-7`, `S` gris ardoise/gris ;
-- la réponse cite explicitement plusieurs fois **`Illustration locale: RCL0194ENG:20.3 — preuve : constructeur`**.
-
-Surtout, l'interface affiche désormais le bouton exact :
-
-**`Ouvrir le schéma RAVE RCL0194ENG 20.3 Mini SPi Japon 97MY MEMS lambda relais vilebrequin`**
-
-### Verdict exact
-
-✅ **VALIDÉ : sélection et proposition de la nouvelle illustration RAVE `RCL0194ENG:20.3`.**
-
-Cette ressource n'est pas une image fournie manuellement par l'utilisateur et n'est pas le schéma générique MEMS 1.9 déjà présent. C'est **l'une des trois illustrations originales extraites de RAVE spécifiquement pour ce pilote** et enregistrées dans le package/base de référence pendant le test.
-
-La capture réelle prouve donc pour la première fois la chaîne :
-**question naturelle utilisateur → faits RAVE compatibles → référence `RCL0194ENG:20.3` → sélection de l'asset RAVE nouvellement enregistré → proposition du bouton d'ouverture exact.**
-
-⚠️ **L'ouverture du bouton RAVE 20.3 exact n'est pas encore déclarée validée dans ce test précis tant que l'utilisateur n'a pas confirmé le clic et l'affichage de cette image.** Les boutons génériques MEMS 1.9 ECU et fiche XML 1.9 ont, eux, déjà été confirmés fonctionnels.
-
-## RECTIFICATION DE TRAÇABILITÉ MAP / `CHERCHE`
-
-- La formulation antérieure selon laquelle **le MAP intégré concernait nécessairement le MPi** ne doit pas être retenue : l'utilisateur a précisé le 29 août 2026 que **le MAP intégré concerne la SPi** et a demandé une vérification distincte de la base pour le MPi.
-- Le statut documentaire MAP MPi doit donc être vérifié contre la base/RAVE avant toute nouvelle conclusion ; ne pas déduire son architecture de la règle SPi.
-- Dans l'épisode original #100, le mot `CHERCHE` apparaissait dans la réponse de l'IA ; il ne faut pas réécrire l'historique comme si l'utilisateur l'avait nécessairement saisi. Un **test contrôlé ultérieur #101** a bien utilisé `CHERCHE`, mais c'est un test distinct.
-
-## ÉTAT COURANT APRÈS CE TEST
-
-- `MEMSX64` production reste strictement **#101 `22dbe75ed14e0a61e694159d505ef72245116b48`**.
-- Aucune promotion #102 n'est autorisée sur la seule base de ce succès partiel.
-- Le pilote V2 démontre une **avancée majeure réelle** : l'IA peut maintenant proposer une illustration RAVE nouvellement enregistrée à partir d'une formulation naturelle que l'utilisateur a choisie lui-même.
-- Prochaine validation minimale avant toute nouvelle pousse fonctionnelle : cliquer le bouton RAVE `RCL0194ENG 20.3` exact et confirmer que l'illustration originale correspondante s'ouvre correctement ; poursuivre ensuite quelques formulations naturelles non préparées pour vérifier la robustesse du routage.
-- Conformément à la règle du 29 août : **aucune nouvelle pousse de code ne doit avoir lieu avant que ce résultat soit présent dans le rapport.**
-'''
-
           marker = '# PILOTE ILLUSTRATIONS RAVE 1680 — TESTS RÉELS — 29 AOÛT 2026'
           if marker not in text:
               text = text.rstrip() + section + '\n'
@@ -170,8 +45,8 @@ La capture réelle prouve donc pour la première fois la chaîne :
       - name: Commit report and remove temporary workflow
         shell: bash
         run: |
-          git config user.name "mini56"
-          git config user.email "48644212+mini56@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git rm .github/workflows/temp-update-report-rave1680.yml
           git add -- RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
           git commit -m "Report RAVE 1680 real-test progression"
