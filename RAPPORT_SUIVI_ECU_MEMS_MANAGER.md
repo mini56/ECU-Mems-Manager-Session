@@ -2340,3 +2340,12 @@ PROCHAINE ACTION EXACTE:
 - Le binaire complet n est pas conserve dans le depot. Seuls son URL, son hash et les futures pages utiles selectionnees/capturees seront traces.
 - Prochaine action exacte: rendre une planche-contact basse resolution des 53 pages hors depot, identifier visuellement les etiquettes/pages utiles puis ne conserver que les vues necessaires a la base avec leur index physique exact.
 - MEMSX64 reste BUILD #101 inchange; la base/documentation reste consultative.
+
+## 2026-08-29 - AKM6348 CH86 - PLANCHES CONTACT VISUELLES VALIDEES
+
+- Workflow TEMP AKM6348 CH86 CONTACT SHEET, run 33260313978: SUCCESS; artefact temporaire AKM6348-CH86-CONTACT-SHEETS ID 9717059833.
+- 4 planches contact couvrent les 53 pages du PDF hashé 14fcb88e... sans conserver le chapitre complet dans le depot.
+- Inspection visuelle: debut du chapitre = plusieurs schemas de cablage alternant avec leurs legendes/codes; milieu = procedures et composants electriques; fin = implantations/tableaux et schemas complementaires.
+- La planche confirme notamment qu autour des index PDF 30-33 se trouvent schema/legende/schema/legende, et l index 32 est un schema de cablage. Le numero constructeur exact doit encore etre lu sur rendu haute definition avant liaison DB.
+- Prochaine action: rendre en haute definition uniquement les pages candidates utiles (notamment 30-33 et pages d implantation/tableaux) pour relever titre exact, etiquette 86.xx, variante/annee et preuves techniques avant creation de faits/assets.
+- Aucun fait, asset ou qz64 de page AKM6348 ajoute a ce stade. MEMSX64 #101 inchange.
