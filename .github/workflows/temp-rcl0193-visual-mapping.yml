@@ -26,15 +26,7 @@ jobs:
         shell: bash
         run: |
           python - <<'PY'
-          import base64
-          import hashlib
-          import importlib.util
-          import pathlib
-          import re
-          import sqlite3
-          import struct
-          import urllib.request
-          import zlib
+          import base64, hashlib, importlib.util, pathlib, re, sqlite3, struct, urllib.request, zlib
           import fitz
 
           ROOT = pathlib.Path('.').resolve()
@@ -43,11 +35,11 @@ jobs:
           PDF = pathlib.Path('/tmp/RCL0193ENG.pdf')
           PDF_URL = 'https://www.uscars.biz/uscars/mini-documents/Rave_CD_wmxn990e.pdf'
           PDF_SHA = 'c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715'
+          DOCUMENT = 'Mini Workshop Manual — RCL0193ENG'
           EXPECTED_FACTS = 31
 
-          # Rebuild the same reference knowledge database used by the already validated 1750 tooling.
-          mod_path = ROOT / 'tools' / 'build_rcl0194_visual_backfill_1750.py'
-          spec = importlib.util.spec_from_file_location('rcl0194_1750', mod_path)
+          spec = importlib.util.spec_from_file_location(
+              'rcl0194_1750', ROOT / 'tools' / 'build_rcl0194_visual_backfill_1750.py')
           mod = importlib.util.module_from_spec(spec)
           assert spec and spec.loader
           spec.loader.exec_module(mod)
@@ -56,140 +48,95 @@ jobs:
           db_path = work / 'baseline.sqlite'
           mod.rebuild_reference_database(REF, db_path)
 
-          db = sqlite3.connect(str(db_path))
-          db.row_factory = sqlite3.Row
+          db = sqlite3.connect(str(db_path)); db.row_factory = sqlite3.Row
           facts = db.execute(
               "SELECT fact_key,source_key,document,variant,topic,statement,source_section,"
               "verification_level,image_ref,notes FROM mems_rave_fact "
-              "WHERE document='RCL0193ENG' ORDER BY fact_key"
-          ).fetchall()
+              "WHERE document=? ORDER BY fact_key", (DOCUMENT,)).fetchall()
           assert len(facts) == EXPECTED_FACTS, len(facts)
-          assert all((r['image_ref'] or '') == '' for r in facts), 'Historical RCL0193 image_ref must remain empty'
+          assert all((r['image_ref'] or '') == '' for r in facts)
           db.close()
 
-          # Independently prove the historical 1660 SQL contains 31 complete RCL0193 mems_rave_fact statements.
           qz = REF / 'research_enrichment_1660.qz64'
           packed = base64.b64decode(qz.read_bytes().strip())
           expected_len = struct.unpack('>I', packed[:4])[0]
-          raw = zlib.decompress(packed[4:])
-          assert len(raw) == expected_len
-          buf = ''
-          complete = []
+          raw = zlib.decompress(packed[4:]); assert len(raw) == expected_len
+          buf = ''; complete = []
           for line in raw.decode('utf-8').splitlines(True):
               buf += line
               if sqlite3.complete_statement(buf):
-                  complete.append(buf.strip())
-                  buf = ''
-          if buf.strip():
-              raise AssertionError('Trailing incomplete SQL in 1660')
-          rave_statements = [
-              s for s in complete
-              if 'mems_rave_fact' in s.lower() and 'RCL0193ENG' in s
-          ]
+                  complete.append(buf.strip()); buf = ''
+          if buf.strip(): raise AssertionError('Trailing incomplete SQL in 1660')
+          rave_statements = [s for s in complete if 'mems_rave_fact' in s.lower() and DOCUMENT in s]
           assert len(rave_statements) == EXPECTED_FACTS, len(rave_statements)
 
           urllib.request.urlretrieve(PDF_URL, PDF)
           got_pdf_sha = hashlib.sha256(PDF.read_bytes()).hexdigest()
           assert got_pdf_sha == PDF_SHA, got_pdf_sha
-          doc = fitz.open(str(PDF))
-          assert doc.page_count == 372, doc.page_count
+          doc = fitz.open(str(PDF)); assert doc.page_count == 372
 
-          def page_indices(text: str) -> list[int]:
-              # Historical RCL0193 provenance deliberately records PDF p.N as the zero-based
-              # PDF index used during extraction. Thus p.38 => fitz index 38 => viewer page 39.
-              values = []
+          def pages(text):
+              vals = []
               for m in re.finditer(r'PDF\s*p\.\s*(\d+)(?:\s*[-–]\s*(\d+))?', text or '', re.I):
-                  start = int(m.group(1)); end = int(m.group(2) or start)
-                  if end < start or end - start > 12:
-                      raise AssertionError(f'Invalid PDF page range: {m.group(0)}')
-                  values.extend(range(start, end + 1))
-              return list(dict.fromkeys(values))
+                  a = int(m.group(1)); b = int(m.group(2) or a)
+                  if b < a or b-a > 12: raise AssertionError(m.group(0))
+                  vals.extend(range(a,b+1))
+              return list(dict.fromkeys(vals))
 
-          def compact(text: str, limit: int = 340) -> str:
-              x = ' '.join((text or '').replace('|','/').split())
-              return x[:limit]
+          def compact(text, limit=260):
+              return ' '.join((text or '').replace('|','/').split())[:limit]
 
-          rows = []
-          unique = set()
-          unresolved = []
+          rows=[]; unique=set(); unresolved=[]
           for r in facts:
-              provenance = ' | '.join(str(r[k] or '') for k in ('source_section','notes'))
-              idxs = page_indices(provenance)
+              idxs = pages(' | '.join(str(r[k] or '') for k in ('source_section','notes')))
               if not idxs:
-                  unresolved.append((r['fact_key'], r['source_section'], r['notes']))
-                  continue
+                  unresolved.append((r['fact_key'],r['source_section'],r['notes'])); continue
               for idx in idxs:
-                  assert 0 <= idx < doc.page_count, (r['fact_key'], idx)
+                  assert 0 <= idx < doc.page_count
                   unique.add(idx)
-              rows.append((r, idxs))
-
+              rows.append((r,idxs))
           if unresolved:
-              detail = '\n'.join(f'{a}: {b} / {c}' for a,b,c in unresolved)
-              raise AssertionError('RCL0193 facts without explicit PDF page provenance:\n' + detail)
+              raise AssertionError('Facts without PDF provenance: '+repr(unresolved))
 
-          # Content anchors provide a deterministic sanity check of the historical zero-based mapping.
-          # We do not rewrite any fact if a page is composite; instead the audit keeps all cited pages.
-          stop = {
-              'engine','system','systems','description','operation','service','repair','data','pdf',
-              'mini','rcl0193','mems','the','and','for','with','from','type','models','model','page',
-              'fuel','management','section','input','inputs'
-          }
-          weak = []
-          for r, idxs in rows:
-              source_tokens = set(re.findall(r'[a-z0-9]{4,}', (str(r['topic'])+' '+str(r['source_section'])).lower())) - stop
-              page_tokens = set()
-              for idx in idxs:
-                  page_tokens.update(re.findall(r'[a-z0-9]{4,}', doc.load_page(idx).get_text('text').lower()))
-              overlap = sorted(source_tokens & page_tokens)
-              # Keep low-overlap cases visible for manual review; they are not silently remapped.
-              if not overlap:
-                  weak.append((r['fact_key'], idxs, sorted(source_tokens)[:20]))
+          # Sanity-check the historical convention against actual source content.
+          stop={'engine','system','systems','description','operation','service','repair','data','pdf','mini','rcl0193','mems','the','and','for','with','from','type','models','model','page','fuel','management','section','input','inputs'}
+          weak=[]
+          for r,idxs in rows:
+              st=set(re.findall(r'[a-z0-9]{4,}',(str(r['topic'])+' '+str(r['source_section'])).lower()))-stop
+              pt=set()
+              for idx in idxs: pt.update(re.findall(r'[a-z0-9]{4,}',doc.load_page(idx).get_text('text').lower()))
+              if not (st & pt): weak.append((r['fact_key'],idxs,sorted(st)[:20]))
 
-          OUT.parent.mkdir(parents=True, exist_ok=True)
-          with OUT.open('w', encoding='utf-8', newline='\n') as f:
-              f.write('# RCL0193ENG visual source mapping audit\n\n')
-              f.write('Date: 2026-08-29  \n')
+          OUT.parent.mkdir(parents=True,exist_ok=True)
+          with OUT.open('w',encoding='utf-8',newline='\n') as f:
+              f.write('# RCL0193ENG visual source mapping audit\n\nDate: 2026-08-29  \n')
               f.write('Working branch: `tmp-rave-visual-backfill`  \n')
               f.write('Production reference: `MEMSX64` BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`\n\n')
               f.write('## Invariants\n\n')
               f.write(f'- historical RCL0193 facts reconstructed from BUILD #101 knowledge set: **{len(facts)}**\n')
+              f.write(f'- exact historical document value: `{DOCUMENT}`\n')
               f.write(f'- complete RCL0193 `mems_rave_fact` SQL statements in historical 1660: **{len(rave_statements)}**\n')
               f.write('- historical `image_ref`: **empty for all 31 facts**\n')
               f.write(f'- RCL0193 PDF: **{doc.page_count} pages**, SHA-256 `{got_pdf_sha}`\n')
-              f.write('- mapping convention verified here: historical `PDF p.N` = **zero-based PDF index N** = viewer page **N+1**\n')
+              f.write('- historical `PDF p.N` is treated as zero-based PDF index N; viewer page is N+1; the actual page excerpts below are retained for verification\n')
               f.write('- no historical fact or qz64 is modified by this audit\n\n')
-              f.write('## Exact 31 fact mappings\n\n')
-              f.write('| Fact key | Topic | Historical source section | PDF index(es) | Viewer page(s) |\n')
-              f.write('|---|---|---|---:|---:|\n')
-              for r, idxs in rows:
-                  idx_txt = ', '.join(str(x) for x in idxs)
-                  viewer = ', '.join(str(x+1) for x in idxs)
-                  f.write(f"| `{r['fact_key']}` | {compact(str(r['topic']),100)} | {compact(str(r['source_section']),220)} | {idx_txt} | {viewer} |\n")
-
+              f.write('## Exact 31 fact mappings\n\n| Fact key | Topic | Historical source section | PDF index(es) | Viewer page(s) |\n|---|---|---|---:|---:|\n')
+              for r,idxs in rows:
+                  f.write(f"| `{r['fact_key']}` | {compact(str(r['topic']),100)} | {compact(str(r['source_section']),220)} | {', '.join(map(str,idxs))} | {', '.join(str(x+1) for x in idxs)} |\n")
               f.write('\n## Unique source pages required\n\n')
               for idx in sorted(unique):
-                  text = doc.load_page(idx).get_text('text')
-                  lines = [compact(x,180) for x in text.splitlines() if x.strip()]
-                  excerpt = ' / '.join(lines[:12])[:1200]
-                  f.write(f'- PDF index **{idx}** / viewer page **{idx+1}**: {excerpt}\n')
-
+                  lines=[compact(x,180) for x in doc.load_page(idx).get_text('text').splitlines() if x.strip()]
+                  f.write(f"- PDF index **{idx}** / viewer page **{idx+1}**: {' / '.join(lines[:12])[:1200]}\n")
               f.write('\n## Low lexical-overlap cases retained for explicit review\n\n')
               if weak:
-                  for key, idxs, toks in weak:
-                      f.write(f'- `{key}` → indexes {idxs}; source tokens not found directly: `{toks}`\n')
-              else:
-                  f.write('- none\n')
-
+                  for key,idxs,toks in weak: f.write(f'- `{key}` → indexes {idxs}; source tokens not found directly: `{toks}`\n')
+              else: f.write('- none\n')
               f.write('\n## Consequence for additive visual backfill\n\n')
               f.write(f'- unique original PDF pages needed to cover all 31 facts: **{len(unique)}**\n')
               f.write('- each page will be retained once and linked to every supported fact\n')
               f.write('- composite/range provenance remains composite; no historical provenance is silently rewritten\n')
-              f.write('- next step is to verify the listed source pages/content, then generate the additive visual lot using the existing `mems_rave_illustration` and `mems_rave_illustration_link` schema\n')
-
-          print('FACTS_PASS', len(facts))
-          print('STATEMENTS_PASS', len(rave_statements))
-          print('UNIQUE_PAGES', len(unique), sorted(unique))
-          print('WEAK_CASES', len(weak))
+              f.write('- next step: verify the page list/content, then generate the additive visual lot with the existing `mems_rave_illustration` + `mems_rave_illustration_link` schema\n')
+          print('FACTS_PASS',len(facts)); print('STATEMENTS_PASS',len(rave_statements)); print('UNIQUE_PAGES',len(unique),sorted(unique)); print('WEAK_CASES',len(weak))
           doc.close()
           PY
 
