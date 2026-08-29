@@ -6,6 +6,7 @@ on:
       - tmp-rave-visual-backfill
     paths:
       - '.github/workflows/temp-routing-mechanical-v2.yml'
+      - 'tools/patch_rave_visual_routing_auto.py'
 
 permissions:
   contents: read
