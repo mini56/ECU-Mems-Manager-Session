@@ -2094,3 +2094,17 @@ Prochaine pousse autorisée après cette journalisation:
 - sur `tmp-rave-visual-backfill`, correction générique du routage + garde automatique de régression;
 - ajout d'un audit reproductible en lecture seule du PDF RCL0193 qui mesurera par section les pages, procédures, vues/illustrations, couples et pages actuellement non couvertes, sans créer encore de faits mécaniques tant que le périmètre exact n'est pas mesuré.
 Aucun changement protocole ECU, acquisition, RAM, write/reset, Qwen/ONNX, 32 bits ou production.
+
+## 2026-08-29 - PRIORITE RAPPORT APRES DEUX ECHECS AVANT JOB
+
+Run technique `33253651975` sur `tmp-rave-visual-backfill`: **❌ FAILURE avant tout job** (`jobs=[]`). Aucun script, build, audit, commit de donnees ou changement programme n'a ete execute.
+
+Tentative de journalisation `33253773615`: **❌ FAILURE avant tout job** (`jobs=[]`). Conformement a la regle fondamentale, toute progression technique a ete arretee.
+
+Cause exploitable: les nouvelles definitions de workflow ont ete rejetees avant planification et ne produisent aucun log d'etape. La methode YAML volumineuse est abandonnee. Le chantier reprendra uniquement avec des scripts versionnes courts et un workflow minimal.
+
+Architecture documentaire retenue a ce stade: pas de nouvel onglet Mecanique maintenant et pas de stockage RAVE en vrac. Les donnees seront structurees dans les tables connaissance/specifications/procedures/etapes/exigences/relations/illustrations existantes; une structure additive sera creee si un type de donnee ne peut pas etre represente correctement. Acces initial par IA + recherche documentaire. Un onglet Mecanique pourra etre evalue plus tard sur un corpus reel enrichi.
+
+Audit preliminaire: les 31 faits RCL0193 existants ont leurs captures; la lacune vient surtout de nombreuses procedures, specifications et vues mecaniques du manuel 372 pages qui n'ont jamais ete structurees.
+
+Production `MEMSX64` reste BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.
