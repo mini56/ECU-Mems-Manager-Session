@@ -226,16 +226,19 @@ test.write_text(text, encoding="utf-8", newline="\n")
 
 cmake = Path("CMakeLists.txt")
 text = cmake.read_text(encoding="utf-8")
+forbidden = 'COMMAND "$<TARGET_FILE:ia_mems_diagram_selftest>"'
+if forbidden in text:
+    raise SystemExit("CMake must not run the Qt-linked ia_mems_diagram_selftest in application POST_BUILD")
 anchor = '''add_dependencies(${PNAME} ia_mems_diagram_selftest)
 '''
-replacement = '''add_dependencies(${PNAME} ia_mems_diagram_selftest)
-add_custom_command(TARGET ${PNAME} POST_BUILD
-    COMMAND "$<TARGET_FILE:ia_mems_diagram_selftest>")
+annotated = '''# Qt-linked diagram self-test is compiled as a dependency but intentionally
+# executed by the deterministic GitHub test stage after Qt runtime PATH is prepared.
+add_dependencies(${PNAME} ia_mems_diagram_selftest)
 '''
-if 'COMMAND "$<TARGET_FILE:ia_mems_diagram_selftest>"' not in text:
+if "Qt-linked diagram self-test is compiled as a dependency" not in text:
     if text.count(anchor) != 1:
         raise SystemExit("CMake diagram self-test dependency anchor mismatch")
-    cmake.write_text(text.replace(anchor, replacement), encoding="utf-8", newline="\n")
-print("PASS: IA MEMS diagram/routing self-test is now an automatic post-build guard")
+    cmake.write_text(text.replace(anchor, annotated), encoding="utf-8", newline="\n")
+print("PASS: IA MEMS diagram/routing self-test stays build-only until the Qt runtime test stage")
 
 print("PASS: generic visual routing policy and automatic regression guards patched")
