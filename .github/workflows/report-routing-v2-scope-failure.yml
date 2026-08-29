@@ -1,0 +1,63 @@
+name: REPORT ROUTING V2 SCOPE FAILURE
+
+on:
+  push:
+    branches:
+      - RAPPORT
+    paths:
+      - '.github/workflows/report-routing-v2-scope-failure.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  append:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append V2 scope failure
+        shell: bash
+        run: |
+          set -e
+          git pull --rebase origin RAPPORT
+          {
+            echo ''
+            echo '## 2026-08-29 - ROUTAGE V2 - RUN 33257301351 - ECHEC GARDE DE PERIMETRE'
+            echo ''
+            echo '- Branche testee: tmp-rave-visual-backfill.'
+            echo '- HEAD: 305c6597dedfa609315f35240fee62a997645212.'
+            echo '- Workflow: TEMP ROUTING MECHANICAL V2.'
+            echo '- Run: 33257301351.'
+            echo '- Job: 99113159653.'
+            echo '- Verdict global: ECHEC.'
+            echo '- Apply generic visual routing patch: PASS.'
+            echo '- Download exact RCL0193 factory PDF: PASS.'
+            echo '- Measure missing mechanical scope: PASS.'
+            echo '- Install Qt 5.15.2 MSVC x64: PASS.'
+            echo '- Configure and build automatic routing guard: PASS.'
+            echo '- Run deterministic regression tests: PASS.'
+            echo '- Guard candidate scope: FAIL.'
+            echo '- Upload validated candidate files: SKIPPED a cause du garde de perimetre.'
+            echo ''
+            echo 'Conclusion importante:'
+            echo '- La correction du runtime Qt est validee en CI: ia_mems_diagram_selftest demarre reellement apres preparation de PATH et QT_PLUGIN_PATH.'
+            echo '- Le probleme precedent 0xC0000135 DLL_NOT_FOUND est donc corrige dans ce workflow temporaire.'
+            echo '- Les tests deterministes de routage passent tous dans ce run; cela reste une validation CI et non un test reel PC de l interface utilisateur.'
+            echo '- Le seul echec restant est le garde de perimetre des fichiers candidats.'
+            echo '- Le detail exact Allowed/Actual du garde n a pas encore pu etre restitue par l interface de logs disponible; aucune cause precise ne doit etre inventee avant reproduction ou lecture exacte.'
+            echo '- Aucune correction du routage, aucune integration mecanique et aucun nouvel asset ne sont autorises avant diagnostic exact de ce garde.'
+            echo '- Production MEMSX64 reste strictement BUILD #101; aucun #102.'
+            echo ''
+            echo 'PROCHAINE ACTION EXACTE:'
+            echo '- Diagnostiquer en lecture seule ou reproduire le git status candidat produit par tools/patch_rave_visual_routing_auto.py et tools/audit_rcl0193_mechanical_scope.py afin d identifier exactement la difference Allowed/Actual.'
+            echo '- Puis consigner la cause avant toute pousse de correction du garde.'
+          } >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          rm .github/workflows/report-routing-v2-scope-failure.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md .github/workflows/report-routing-v2-scope-failure.yml
+          git commit -m 'Record V2 candidate scope guard failure'
+          git push origin RAPPORT
