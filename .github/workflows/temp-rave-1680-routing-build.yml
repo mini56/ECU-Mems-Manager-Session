@@ -1,0 +1,176 @@
+name: TEMP RAVE 1680 ROUTING BUILD
+run-name: RAVE 1680 ROUTING TEST from BUILD #101 - ${{ github.sha }}
+
+on:
+  push:
+    branches: [tmp-rave-1680-illustrations]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: temp-rave-1680-routing-build
+  cancel-in-progress: true
+
+jobs:
+  build_test:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: 'utf-8'
+      MEMS_BUILD: '101'
+      MEMS_VERSION: '1.0.101'
+      MEMS_BUILD_NUMBER: '101'
+      ORT_GENAI_VERSION: '0.14.0'
+      ORT_GENAI_WIN_X64_SHA256: '8a303e52dc7be8fb2a5331929af451a25ac59774102d7fd09ef673adc85c5ebf'
+
+    steps:
+      - name: Checkout pilot source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install build and PDF tools
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install --disable-pip-version-check 'aqtinstall==3.3.0' 'PyMuPDF==1.26.4'
+
+      - name: Apply pilot routing patch
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python tools/patch_rave_1680_diagram_routing.py
+          if ($LASTEXITCODE -ne 0) { throw 'Pilot routing patch failed' }
+          Select-String -Path iamemstab.cpp -Pattern 'exact local diagram bypasses generation clarification' -SimpleMatch -Quiet | Out-Null
+
+      - name: Install Qt 5.15.2 MSVC x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $sevenZip = (Get-Command 7z.exe -ErrorAction Stop).Source
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
+          if ($LASTEXITCODE -ne 0) { throw "Qt install failed: $LASTEXITCODE" }
+
+      - name: Stage official ONNX Runtime GenAI import library
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $archive = Join-Path $env:RUNNER_TEMP "onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          $extract = '${{ github.workspace }}\onnx-genai-release'
+          $url = "https://github.com/microsoft/onnxruntime-genai/releases/download/v$env:ORT_GENAI_VERSION/onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          & curl.exe -L --fail --retry 3 --retry-delay 3 -o $archive $url
+          if ($LASTEXITCODE -ne 0) { throw 'ONNX Runtime GenAI download failed' }
+          $hash = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($hash -ne $env:ORT_GENAI_WIN_X64_SHA256) { throw "ONNX Runtime GenAI SHA256 mismatch: $hash" }
+          Expand-Archive -LiteralPath $archive -DestinationPath $extract -Force
+          $header = Get-ChildItem $extract -Recurse -File -Filter 'ort_genai_c.h' | Select-Object -First 1
+          $import = Get-ChildItem $extract -Recurse -File -Filter 'onnxruntime-genai.lib' | Select-Object -First 1
+          if (-not $header -or -not $import) { throw 'ONNX Runtime GenAI development files missing' }
+          "ORT_GENAI_INCLUDE_DIR=$($header.DirectoryName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "ORT_GENAI_LIBRARY=$($import.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Configure and build patched x64 executable
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake -S . -B build-rave1680 -A x64 `
+            -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
+            -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
+            -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF `
+            -DMEMS_USE_ONNX_GENAI=ON `
+            "-DORT_GENAI_INCLUDE_DIR=$env:ORT_GENAI_INCLUDE_DIR" `
+            "-DORT_GENAI_LIBRARY=$env:ORT_GENAI_LIBRARY"
+          if ($LASTEXITCODE -ne 0) { throw "CMake configure failed: $LASTEXITCODE" }
+          cmake --build build-rave1680 --config Release --target ecu_mems_manager ia_response_selftest ia_mems_diagram_selftest mems_search_selftest
+          if ($LASTEXITCODE -ne 0) { throw "Pilot build failed: $LASTEXITCODE" }
+
+      - name: Run deterministic regression tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
+          $env:PATH = "$qtRoot\bin;$env:PATH"
+          $env:QT_PLUGIN_PATH = "$qtRoot\plugins"
+          & '${{ github.workspace }}\build-rave1680\Release\ia_response_selftest.exe'
+          if ($LASTEXITCODE -ne 0) { throw 'IA response self-test failed' }
+          & '${{ github.workspace }}\build-rave1680\Release\ia_mems_diagram_selftest.exe'
+          if ($LASTEXITCODE -ne 0) { throw 'IA diagram self-test failed' }
+          & '${{ github.workspace }}\build-rave1680\Release\mems_search_selftest.exe'
+          if ($LASTEXITCODE -ne 0) { throw 'MEMS search self-test failed' }
+
+      - name: Download exact official BUILD #101 package
+        uses: actions/download-artifact@v4
+        with:
+          name: ECU-MEMS-Manager-x64-BUILD-101-v1.0.101
+          path: dist-x64
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: mini56/ECU-Mems-Manager-Session
+          run-id: 33178021830
+
+      - name: Replace only executable with patched test executable
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Copy-Item 'build-rave1680\Release\ecu_mems_manager.exe' 'dist-x64\ecu_mems_manager.exe' -Force
+          Write-Host 'PASS #101 package retained; only test executable replaced before RAVE asset addition'
+
+      - name: Download Rover RCL0194ENG source PDF
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & curl.exe -L --fail --retry 3 --retry-delay 3 -o 'RCL0194ENG.pdf' 'https://www.goclassic.eu/upload/content/e68ce7_9c0fd6a5b3a14a3585ecddb02b3ceb9d.pdf'
+          if ($LASTEXITCODE -ne 0) { throw 'RCL0194ENG download failed' }
+
+      - name: Add lot 1680 original illustrations and additive links
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python tools/prepare_rave_1680_pilot.py --pdf RCL0194ENG.pdf --dist dist-x64
+          if ($LASTEXITCODE -ne 0) { throw 'RAVE 1680 asset preparation failed' }
+
+      - name: Validate exact pilot scope
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:DIST = (Resolve-Path 'dist-x64').Path
+          @'
+          import base64,hashlib,json,os,struct,zlib
+          from pathlib import Path
+          root=Path(os.environ['DIST'])
+          meta=json.loads((root/'RAVE1680_PILOT.json').read_text(encoding='utf-8'))
+          if meta['base']!='MEMSX64 BUILD #101 22dbe75ed14e0a61e694159d505ef72245116b48': raise SystemExit('Wrong base')
+          if meta['database_revision']!=20 or meta['historical_tables_modified'] is not False: raise SystemExit('Non-additive DB change')
+          if {x['page'] for x in meta['assets']}!={'20.3','20.4','39.3'}: raise SystemExit('Wrong RAVE page set')
+          manifest=json.loads((root/'database/reference/manifest.json').read_text(encoding='utf-8'))
+          keys=[k for k in manifest['diagrams'] if 'RCL0194ENG' in k]
+          if len(keys)!=3: raise SystemExit('Expected exactly 3 RAVE diagrams')
+          exe=root/'ecu_mems_manager.exe'
+          if not exe.is_file(): raise SystemExit('Patched executable missing')
+          print('PASS RAVE1680 V2 package: patched routing + exact #101 base resources + 3 original RAVE pages')
+          '@ | python -
+
+      - name: Generate SHA256 manifest
+        shell: pwsh
+        run: |
+          $root = (Resolve-Path 'dist-x64').Path
+          Get-ChildItem $root -Recurse -File | Sort-Object FullName | ForEach-Object {
+            $rel = $_.FullName.Substring($root.Length + 1).Replace('\\','/')
+            "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant())  $rel"
+          } | Set-Content (Join-Path $root 'SHA256SUMS_RAVE1680_V2.txt') -Encoding UTF8
+
+      - name: Upload corrected RAVE 1680 test artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ECU-MEMS-Manager-x64-TEST-RAVE1680-V2
+          path: dist-x64/
+          if-no-files-found: error
+          compression-level: 6
