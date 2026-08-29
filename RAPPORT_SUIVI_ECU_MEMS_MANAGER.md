@@ -1706,3 +1706,15 @@ Verification locale de l'artefact: PASS. `sha256sum -c SHA256SUMS.txt` retourne 
 Conclusion: le candidat 1750 est reproductible et verifie de bout en bout avant commit. Les PNG restent des preuves visuelles associees a la base structuree. La base/IA reste consultative et ne prend jamais la main sur la communication ECU.
 
 Prochaine action exacte: pousser atomiquement les octets valides du qz64 1750, manifeste, audit et 8 PNG sur `tmp-rave-visual-backfill`, conserver le generateur, retirer les workflows temporaires inutiles, puis lancer une validation post-pousse depuis les fichiers reellement commites et mettre le rapport a jour avant le lot suivant. Production reste MEMSX64 BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`; aucun #102.
+
+## 2026-08-29 - RCL0194 1750 - plan exact avant pousse des donnees
+
+Etat: production `MEMSX64` reste BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`, aucun #102. Branche de travail `tmp-rave-visual-backfill`, HEAD avant nouvelle pousse `cd5ec9fbef4687cfaa782f8ae314c6fa50e481b1`. Le candidat du run #3 `33249539952` et son artefact `9713908641` ont ete valides, y compris 12/12 SHA-256.
+
+Constat avant pousse: l'ancien helper `.github/workflows/temp-rcl0194-commit-backfill.yml` est obsolete et contient encore l'ancien hash qz64 `969c2b...`; il ne doit pas etre utilise tel quel.
+
+Objectif de la prochaine pousse technique: remplacer uniquement ce helper sur la branche temporaire par un mecanisme qui regenere le candidat avec `tools/build_rcl0194_visual_backfill_1750.py`, exige les hashes valides du run #3 (`research_enrichment_1750.qz64` = `200b2d7ec0ba24d93d7192fdf63f86845c53f49ad4a28cb997ede9d39fb5f51d`), verifie manifeste/audit/8 PNG, committe uniquement le lot documentaire valide, supprime les helpers temporaires RCL0194 devenus inutiles, puis pousse sur `tmp-rave-visual-backfill`.
+
+Validation obligatoire apres cette pousse: le meme run doit faire un `fetch` du nouveau commit distant, se replacer exactement dessus, regenerer 1750 depuis la base BUILD #101 et le PDF Rover verifie, refaire les invariants SQLite et exiger un diff nul entre les fichiers regeneres et les fichiers reellement committes. Cette validation post-pousse doit etre inscrite au rapport avant toute etape suivante.
+
+Perimetre interdit: aucune modification de `MEMSX64`, communication/protocole/acquisition/RAM/ecriture/reset ECU, Qwen/ONNX, UI ou voie 32 bits. Base/IA/RAVE restent consultatives et ne prennent jamais la main sur la communication ECU.
