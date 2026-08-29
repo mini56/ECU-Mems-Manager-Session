@@ -1,0 +1,178 @@
+name: TEMP UPDATE REPORT RAVE1680
+
+on:
+  push:
+    branches: [RAPPORT]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update_report:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout RAPPORT
+        uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+
+      - name: Update continuity report after real RAVE 1680 tests
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md')
+          text = path.read_text(encoding='utf-8')
+
+          rule = '> **RÈGLE DE JOURNALISATION OBLIGATOIRE — 29 AOÛT 2026** : pour ECU MEMS Manager, l’ordre est strict : **RAPPORT AVANT CHAQUE POUSSE → POUSSE → TEST RÉEL → RAPPORT IMMÉDIAT → correction éventuelle → RAPPORT AVANT LA POUSSE SUIVANTE**. Chaque test doit conserver la question/manipulation réelle, la réponse observée, le verdict ✅/⚠️/❌, les régressions, la conclusion et la prochaine action. Un échec ne doit jamais être recouvert par une correction sans avoir été consigné.\n>\n'
+          anchor = '> **SUIVI IMMÉDIAT** : avant chaque nouvelle étape, inscrire ici l’étape et son objectif ; après chaque résultat, l’inscrire avant la suite. **Toute modification, validation, échec, test réel et décision doit être ajouté au rapport au fur et à mesure afin de conserver l’historique complet entre les discussions.**\n>\n'
+          if rule not in text:
+              if anchor not in text:
+                  raise SystemExit('SUIVI IMMÉDIAT anchor not found')
+              text = text.replace(anchor, anchor + rule, 1)
+
+          section = r'''
+
+# PILOTE ILLUSTRATIONS RAVE 1680 — TESTS RÉELS — 29 AOÛT 2026
+
+Cette section **supplante comme point de suivi courant** la fin précédente du rapport. Elle documente les échanges, décisions, échecs et progrès du pilote illustrations RAVE. La production `MEMSX64` reste **BUILD #101** et n'est pas modifiée par ce pilote.
+
+## DÉCISION D'ARCHITECTURE — ILLUSTRATIONS RAVE
+
+Constat confirmé : les tables RAVE historiques contiennent des références telles que `image_ref` / `figure_ref`, mais **les illustrations RAVE originales elles-mêmes n'étaient pas stockées dans la SQLite**. Les références permettaient de retrouver la page source, pas de relire localement le dessin original.
+
+Décision utilisateur validée :
+- pour la partie RAVE déjà présente dans la base, ajouter maintenant les illustrations originales correspondantes ;
+- pour les futures parties RAVE encore non extraites, capturer **données structurées + portée + illustration + référence** pendant la même passe d'enrichissement ;
+- conserver les images comme fichiers locaux du package et utiliser une couche SQLite additive de liaison, plutôt que gonfler les tables historiques avec des BLOB ;
+- ne modifier ni supprimer les faits historiques ;
+- profiter du rattachement visuel pour auditer les interprétations techniques existantes.
+
+## PILOTE LIMITÉ AU LOT RAVE 1680
+
+Base de production conservée : **`MEMSX64` #101 `22dbe75ed14e0a61e694159d505ef72245116b48`**.
+
+Branche temporaire : **`tmp-rave-1680-illustrations`**.
+
+Périmètre volontairement limité à trois illustrations originales du document constructeur `RCL0194ENG` déjà référencées par le lot :
+- `RCL0194ENG:20.3` ;
+- `RCL0194ENG:20.4` ;
+- `RCL0194ENG:39.3`.
+
+Le pilote extrait les pages originales du PDF Rover et les place sous `database/reference/images/rave/`. Il ajoute de façon additive :
+- `mems_rave_illustration` ;
+- `mems_rave_illustration_link` ;
+- la vue `mems_rave_fact_illustration_view` ;
+- `research_enrichment_1750.qz64` ;
+- les entrées correspondantes dans le manifeste.
+
+`database_revision` reste **20** et aucune table historique n'est modifiée.
+
+## PREMIER ARTEFACT PILOTE — BUILD TECHNIQUE VERT, TEST RÉEL ÉCHOUÉ
+
+Premier run temporaire : **`33190463268` — SUCCESS**.
+
+Artefact :
+- **`ECU-MEMS-Manager-x64-TEST-RAVE1680-FROM-101`** ;
+- ID **`9693533551`** ;
+- digest **`sha256:52604b450bb59a138721d5d1780a603f811093c32191e985cc6afeb82b496b0c`**.
+
+Le package contenait bien les trois illustrations originales et leurs liaisons additives. **Cela n'a pas été considéré comme validation utilisateur.**
+
+### Test réel utilisateur — échec de routage
+
+Formulations réellement utilisées, volontairement différentes de la phrase de test préparée :
+- `sonde lambda Mini SPi Japon 1997` → **`Je n'ai encore aucune mesure ECU disponible.`** ;
+- `schéma sonde lambda Mini SPi Japon 1997` → demande inutile de génération MEMS `1.2 / 1.3 / 1.6 / 1.9` ;
+- `cherche` → aucune génération déterminée ;
+- `Montre le schéma sonde lambda Mini SPi Japon 1997` → nouvelle demande de génération.
+
+Verdict : **❌ PILOTE V1 NON VALIDÉ SUR PC RÉEL**.
+
+Cause auditée : dans `IaMemsTab::sendQuestion()`, `clarificationPrompt()` était exécuté **avant** `updateDiagramSuggestion()`. Une ressource RAVE exacte pouvait donc être présente et résoluble, tout en étant bloquée par la clarification avant que l'UI ait l'occasion de la proposer.
+
+### Règle de test décidée par l'utilisateur
+
+L'utilisateur a volontairement changé les formulations proposées par l'assistant, avec le principe suivant : **une phrase préparée sachant exactement la réponse attendue est un test trop facile**. Les tests IA doivent utiliser des formulations naturelles et libres afin de mesurer le comportement réel, pas seulement un mot-clé prévu par le développeur.
+
+Cette règle est adoptée pour la suite des validations IA MEMS.
+
+## PILOTE V2 — CORRECTION DU ROUTAGE ET BUILD TEMPORAIRE
+
+Correction préparée uniquement sur la branche pilote : lorsqu'un schéma local exact peut être résolu à partir de la demande, sa proposition ne doit pas être bloquée par une clarification de génération inutile. Les autres demandes ambiguës conservent leur garde de clarification.
+
+HEAD du build V2 : **`2bede1ff5704c42dd65d2d6337bf79f991cad1a9`**.
+
+Run V2 : **`33241431317` — SUCCESS**, job **`99071341649`**.
+
+Toutes les étapes du build pilote V2 sont vertes : compilation x64, tests déterministes, récupération de la base #101, remplacement limité de l'exécutable de test, extraction des trois pages RAVE, validation du périmètre et upload.
+
+Artefact V2 :
+- **`ECU-MEMS-Manager-x64-TEST-RAVE1680-V2`** ;
+- ID **`9711539092`** ;
+- taille **387 364 252 octets** ;
+- digest **`sha256:058e01054f8bf58440088a48ed41aa46b6d1a2db03d30c6db32563716393c713`**.
+
+## TEST RÉEL V2 — AVANCÉE MAJEURE CONFIRMÉE
+
+L'utilisateur poursuit volontairement les tests avec ses propres formulations.
+
+Après des essais précédents où `image` / `1.9` faisaient encore proposer les ressources génériques `MEMS 1.9 ECU` et `fiche XML MEMS 1.9`, la formulation naturelle suivante a été utilisée :
+
+**`cablage sonde lambda Mini SPi Japon 1997`**
+
+IA MEMS répond alors avec un **brochage vérifié** basé sur les faits constructeur SPi Japon 97MY, notamment :
+- relais/chauffage sonde : `C159-36`, `BG` noir/vert ;
+- blindage / screen ground : `C159-29`, `B` noir ;
+- signal `OXYGEN SENSOR +VE` : `C159-7`, `S` gris ardoise/gris ;
+- la réponse cite explicitement plusieurs fois **`Illustration locale: RCL0194ENG:20.3 — preuve : constructeur`**.
+
+Surtout, l'interface affiche désormais le bouton exact :
+
+**`Ouvrir le schéma RAVE RCL0194ENG 20.3 Mini SPi Japon 97MY MEMS lambda relais vilebrequin`**
+
+### Verdict exact
+
+✅ **VALIDÉ : sélection et proposition de la nouvelle illustration RAVE `RCL0194ENG:20.3`.**
+
+Cette ressource n'est pas une image fournie manuellement par l'utilisateur et n'est pas le schéma générique MEMS 1.9 déjà présent. C'est **l'une des trois illustrations originales extraites de RAVE spécifiquement pour ce pilote** et enregistrées dans le package/base de référence pendant le test.
+
+La capture réelle prouve donc pour la première fois la chaîne :
+**question naturelle utilisateur → faits RAVE compatibles → référence `RCL0194ENG:20.3` → sélection de l'asset RAVE nouvellement enregistré → proposition du bouton d'ouverture exact.**
+
+⚠️ **L'ouverture du bouton RAVE 20.3 exact n'est pas encore déclarée validée dans ce test précis tant que l'utilisateur n'a pas confirmé le clic et l'affichage de cette image.** Les boutons génériques MEMS 1.9 ECU et fiche XML 1.9 ont, eux, déjà été confirmés fonctionnels.
+
+## RECTIFICATION DE TRAÇABILITÉ MAP / `CHERCHE`
+
+- La formulation antérieure selon laquelle **le MAP intégré concernait nécessairement le MPi** ne doit pas être retenue : l'utilisateur a précisé le 29 août 2026 que **le MAP intégré concerne la SPi** et a demandé une vérification distincte de la base pour le MPi.
+- Le statut documentaire MAP MPi doit donc être vérifié contre la base/RAVE avant toute nouvelle conclusion ; ne pas déduire son architecture de la règle SPi.
+- Dans l'épisode original #100, le mot `CHERCHE` apparaissait dans la réponse de l'IA ; il ne faut pas réécrire l'historique comme si l'utilisateur l'avait nécessairement saisi. Un **test contrôlé ultérieur #101** a bien utilisé `CHERCHE`, mais c'est un test distinct.
+
+## ÉTAT COURANT APRÈS CE TEST
+
+- `MEMSX64` production reste strictement **#101 `22dbe75ed14e0a61e694159d505ef72245116b48`**.
+- Aucune promotion #102 n'est autorisée sur la seule base de ce succès partiel.
+- Le pilote V2 démontre une **avancée majeure réelle** : l'IA peut maintenant proposer une illustration RAVE nouvellement enregistrée à partir d'une formulation naturelle que l'utilisateur a choisie lui-même.
+- Prochaine validation minimale avant toute nouvelle pousse fonctionnelle : cliquer le bouton RAVE `RCL0194ENG 20.3` exact et confirmer que l'illustration originale correspondante s'ouvre correctement ; poursuivre ensuite quelques formulations naturelles non préparées pour vérifier la robustesse du routage.
+- Conformément à la règle du 29 août : **aucune nouvelle pousse de code ne doit avoir lieu avant que ce résultat soit présent dans le rapport.**
+'''
+
+          marker = '# PILOTE ILLUSTRATIONS RAVE 1680 — TESTS RÉELS — 29 AOÛT 2026'
+          if marker not in text:
+              text = text.rstrip() + section + '\n'
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Commit report and remove temporary workflow
+        shell: bash
+        run: |
+          git config user.name "mini56"
+          git config user.email "48644212+mini56@users.noreply.github.com"
+          git rm .github/workflows/temp-update-report-rave1680.yml
+          git add -- RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Report RAVE 1680 real-test progression"
+          git push origin RAPPORT
