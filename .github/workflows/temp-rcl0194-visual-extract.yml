@@ -1,0 +1,50 @@
+name: TEMP RCL0194 VISUAL EXTRACT
+
+on:
+  push:
+    branches: [tmp-rave-visual-backfill]
+    paths:
+      - tools/extract_rcl0194_visual_assets.py
+      - .github/workflows/temp-rcl0194-visual-extract.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install pinned PDF renderer
+        run: python -m pip install PyMuPDF==1.26.4
+
+      - name: Download exact Rover RCL0194ENG source
+        shell: bash
+        run: |
+          curl --fail --location --retry 3 --output RCL0194ENG.pdf \
+            'https://www.goclassic.eu/upload/content/e68ce7_9c0fd6a5b3a14a3585ecddb02b3ceb9d.pdf'
+          sha256sum RCL0194ENG.pdf
+
+      - name: Extract and verify missing RCL0194 visual assets
+        run: |
+          python tools/extract_rcl0194_visual_assets.py \
+            --pdf RCL0194ENG.pdf \
+            --out rcl0194_visual_assets
+
+      - name: Show metadata
+        shell: bash
+        run: cat rcl0194_visual_assets/RCL0194_VISUAL_ASSETS.json
+
+      - name: Upload extracted visual assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: RCL0194-VISUAL-ASSETS-BACKFILL-PREP
+          path: rcl0194_visual_assets
+          if-no-files-found: error
+          compression-level: 6
