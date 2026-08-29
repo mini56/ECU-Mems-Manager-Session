@@ -1,0 +1,43 @@
+name: REPORT ROUTING MECHANICAL WORKFLOW FAILURE
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths: ['.github/workflows/report-routing-mechanical-workflow-failure.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append failure chronology
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+## 2026-08-29 - ROUTAGE VISUEL + AUDIT MECANIQUE - ECHEC DE DEFINITION WORKFLOW AVANT JOB
+
+Tentative technique sur `tmp-rave-visual-backfill`: commit declencheur `75c151cbabd00641fcddb5c95b88750383840aa1`, workflow `TEMP ROUTING AUTO GUARD AND RCL0193 MECHANICAL AUDIT`, run `33253651975`: **❌ FAILURE avant creation de tout job** (`jobs=[]`). Aucun script, build, audit, commit de donnees ou modification du programme n'a donc ete execute par ce run.
+
+Cause exploitable: GitHub Actions a rejete la **definition du workflow elle-meme avant planification du job**. Il n'existe donc aucun log d'etape a analyser. Le fichier temporaire etait volontairement tres volumineux et embarquait plusieurs scripts Python/PowerShell dans le YAML; cette approche n'est pas suffisamment robuste pour la tracabilite et doit etre abandonnee.
+
+Conformement a la regle fondamentale de journalisation, toute progression technique est suspendue jusqu'a correction de ce mecanisme. Correction retenue: **separer le code de travail dans des scripts versionnes courts et garder un workflow minimal qui ne fait que les invoquer**. Cela rendra aussi le routage et l'audit reproductibles et testables hors du YAML.
+
+Decision d'architecture documentaire retenue pour la suite du chantier, sans changement UI a ce stade: ne pas creer maintenant un onglet Mecanique et ne pas stocker les pages RAVE en vrac. Structurer d'abord les informations avec les tables de connaissance/specifications/procedures/etapes/exigences/relations/illustrations existantes; creer additivement une structure nouvelle uniquement lorsqu'un type de donnee ne peut pas etre represente correctement. Les nouvelles informations mecaniques seront accessibles par l'IA et la recherche documentaire existantes. Un eventuel onglet Mecanique sera evalue plus tard sur un corpus reel suffisamment riche.
+
+Production `MEMSX64` reste strictement BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`. Aucun changement de communication ECU, protocole, acquisition, RAM, write/reset, Qwen/ONNX ou 32 bits.
+EOF
+      - name: Commit report and remove helper
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/report-routing-mechanical-workflow-failure.yml
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Report routing/mechanical workflow definition failure"
+          git pull --rebase origin RAPPORT
+          git push origin HEAD:RAPPORT
