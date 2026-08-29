@@ -1750,3 +1750,15 @@ Resultat detaille: checkout ✅; installation PyMuPDF ✅; decodage reproductibl
 Cause identifiee: le garde utilisait `git diff --name-only` pour exiger que le seul changement soit le nouveau fichier `database/reference/audits/rcl0193_1660_inventory.md`. Or un fichier nouvellement cree et encore non suivi n'apparait pas dans `git diff --name-only`; le garde echoue donc meme si le perimetre est correct. Ce n'est pas un echec de decodage du lot 1660 ni du PDF constructeur.
 
 Correction autorisee avant nouvelle pousse: remplacer uniquement ce controle de perimetre par un controle `git status --porcelain` qui accepte exactement le nouveau fichier d'audit et refuse tout autre changement; conserver tous les autres controles et ne modifier aucune donnee historique.
+
+## 2026-08-29 - RCL0193 INVENTAIRE RUN #2 - SUCCESS
+
+Correction du garde appliquee apres journalisation de l'echec #1. Run `33250747167`, job `99095887607`, declencheur `28b39dd92e097401a83bb765345d39b0a7321b35`: **✅ SUCCESS**. Le workflow a decode `research_enrichment_1660.qz64`, telecharge/indexe le manuel constructeur RCL0193, valide le perimetre puis pousse uniquement l'audit et retire son helper.
+
+Commit final de l'audit sur `tmp-rave-visual-backfill`: `05497561d33e0407c4faac0e5d64c911d010b465` (`Inventory RCL0193 visual backfill sources`). Fichier: `database/reference/audits/rcl0193_1660_inventory.md`.
+
+Empreintes verifiees par l'audit: qz64 1660 SHA-256 `5d56f198a6f5ccaf36d7f94646e3b9af4efd465e7f80da0ebea3d74f3d894093`; SQL decode 41443 octets, SHA-256 `b978f7e73487c6243c8a6c355b4e5dedd90cf449bee223e9c1eb81e08eb0a7cd`; PDF RCL0193 372 pages, SHA-256 `c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715`.
+
+L'audit confirme que les faits RCL0193 historiques ont `image_ref` vide: le chantier visuel est donc bien additif. Aucun fait historique, aucune table historique et aucun fichier production n'ont ete modifies.
+
+Prochaine action exacte: parser proprement les 31 lignes `mems_rave_fact` RCL0193 (sans couper sur les points-virgules internes), resoudre chaque `source_section` vers la page PDF constructeur reelle et produire la liste unique des pages/figures necessaires. Apres verification et nouvelle journalisation, preparer le lot visuel additif RCL0193 en reutilisant `mems_rave_illustration` + `mems_rave_illustration_link`. `MEMSX64` reste #101 inchange.
