@@ -1740,3 +1740,13 @@ Objectif avant toute pousse de donnees: extraire exactement ces 31 faits existan
 Contraintes: `MEMSX64` reste strictement sur BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`; aucun #102; aucune modification protocole ECU, acquisition 7D/80, RAM Mode 4, ecriture/reset, IA Qwen/ONNX, UI, packaging production ou 32 bits. Les illustrations restent des preuves associees a la connaissance structuree et ne la remplacent jamais.
 
 Prochaine action exacte: sur `tmp-rave-visual-backfill`, produire un inventaire RCL0193 reproductible a partir du `1660` commite et du manuel constructeur, sans modifier la base de production; verifier cet inventaire avant de creer le nouveau lot additif.
+
+## 2026-08-29 - RCL0193 INVENTAIRE RUN #1 - ECHEC DU GARDE, DONNEES NON POUSSEES
+
+Run temporaire `33250697659`, job `99095759561`, commit declencheur `5906694b67dc9338958a9fd497618865e4836d57`: **❌ FAILURE**.
+
+Resultat detaille: checkout ✅; installation PyMuPDF ✅; decodage reproductible de `research_enrichment_1660.qz64` + telechargement/indexation du PDF RCL0193 ✅; etape `Guard scope` ❌; commit final saute, donc **aucun audit RCL0193 et aucune donnee RCL0193 n'ont ete pousses**.
+
+Cause identifiee: le garde utilisait `git diff --name-only` pour exiger que le seul changement soit le nouveau fichier `database/reference/audits/rcl0193_1660_inventory.md`. Or un fichier nouvellement cree et encore non suivi n'apparait pas dans `git diff --name-only`; le garde echoue donc meme si le perimetre est correct. Ce n'est pas un echec de decodage du lot 1660 ni du PDF constructeur.
+
+Correction autorisee avant nouvelle pousse: remplacer uniquement ce controle de perimetre par un controle `git status --porcelain` qui accepte exactement le nouveau fichier d'audit et refuse tout autre changement; conserver tous les autres controles et ne modifier aucune donnee historique.
