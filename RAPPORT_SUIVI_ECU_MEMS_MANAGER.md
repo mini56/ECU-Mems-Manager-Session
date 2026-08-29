@@ -1840,3 +1840,17 @@ Consequence: la conclusion V2 `25 pages uniques` est invalide. La page `170` est
 Aucun PNG, qz64 de donnees, manifeste RCL0193 ou fait historique n'a ete pousse a partir de ce mapping incomplet. L'erreur est detectee avant enrichissement effectif.
 
 Correction obligatoire avant toute suite: parser **toutes** les occurrences `p.N` et toutes les plages `p.N-M` dans chaque `source_section`, developper les plages et conserver les references non contigues. Recalculer les 31 mappings, verifier que `RAVE-CAUTION-THROTTLE-STOP-001` contient 114+118 et `RAVE-REP-INJECTORS-001` contient 135+170, puis verifier les 26 pages constructeur. Rapport obligatoire avant toute creation d'assets.
+
+## 2026-08-29 - RCL0193 CARTOGRAPHIE RUN #4 - SUCCESS COMPLET
+
+Commit declencheur `bfca3b9c3bc39e476e48d83a751b018c85ecd7eb`, run `33251145156`, job `99096912361`: **✅ SUCCESS complet**. Etapes cartographie, garde strict, commit et push toutes vertes.
+
+Resultats reproduits: `FACTS_PASS 31`; `STATEMENTS_PASS 31`; **25 pages PDF physiques uniques** `[38,39,40,98,101,107,108,109,112,113,114,117,118,120,121,122,123,125,126,127,128,129,130,131,135]`; `WEAK_CASES 1`. Le lot historique 1660 reste inchange et les 31 `image_ref` historiques restent vides.
+
+Le chemin parasite des runs precedents est maintenant confirme par le log, sans supposition: avant nettoyage, le workspace contenait uniquement le SQLite temporaire `.tmp-rcl0193-map/baseline.sqlite`, le futur audit Markdown et le cache Python genere par l'import `tools/__pycache__/build_rcl0194_visual_backfill_1750.cpython-312.pyc`. Apres suppression des deux artefacts temporaires autorises, le garde strict ne voyait plus que `database/reference/audits/rcl0193_visual_mapping_audit.md`.
+
+Commit final produit par le workflow sur `tmp-rave-visual-backfill`: `a1efab597b8cce35072686490721cb5731d7c499` (`Map RCL0193 facts to original PDF pages`). Le helper `.github/workflows/temp-rcl0193-visual-mapping.yml` a ete retire automatiquement. Aucun fichier production n'a ete modifie.
+
+Conclusion: la correspondance historique **31 faits RCL0193 -> 25 pages constructeur** est maintenant commitee et reproductible. La page `170` n'appartient pas a la liste extraite des 31 faits et reste exclue sans nouvelle preuve. Il reste exactement **1 cas a faible recouvrement lexical** a identifier et verifier dans l'audit avant de creer les images/liaisons additives.
+
+Prochaine action exacte: lire `database/reference/audits/rcl0193_visual_mapping_audit.md`, identifier le `WEAK_CASES 1`, verifier directement son `source_section`, son fait historique et le contenu de sa/ses page(s) PDF citee(s). Mettre ensuite le rapport a jour avec la conclusion avant toute pousse du lot visuel RCL0193. `MEMSX64` reste strictement BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`; aucun #102.
