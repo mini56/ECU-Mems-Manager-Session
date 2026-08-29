@@ -1,0 +1,52 @@
+name: TEMP REPORT RCL0193 START
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - .github/workflows/temp-report-rcl0193-start.yml
+
+permissions:
+  contents: write
+
+jobs:
+  update_report:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+
+      - name: Append RCL0193 start
+        shell: bash
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+          ## 2026-08-29 - DEMARRAGE LOT RCL0193 - INVENTAIRE AVANT ENRICHISSEMENT
+
+          Autorisation utilisateur: continuer l'enrichissement de la base. La prochaine source traitee est `RCL0193ENG` (Mini Workshop Manual), qui correspond a **31 faits RAVE deja presents** dans le lot historique `research_enrichment_1660.qz64`.
+
+          Objectif avant toute pousse de donnees: extraire exactement ces 31 faits existants et leurs `source_section/image_ref`, retrouver le PDF constructeur RCL0193 exact, cartographier chaque fait vers la vraie page/figure/tableau, detecter les references composites, incompletes ou erronees, puis seulement preparer un lot additif de supports visuels/metadonnees. Aucune reecriture des faits historiques.
+
+          Contraintes: `MEMSX64` reste strictement sur BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`; aucun #102; aucune modification protocole ECU, acquisition 7D/80, RAM Mode 4, ecriture/reset, IA Qwen/ONNX, UI, packaging production ou 32 bits. Les illustrations restent des preuves associees a la connaissance structuree et ne la remplacent jamais.
+
+          Prochaine action exacte: sur `tmp-rave-visual-backfill`, produire un inventaire RCL0193 reproductible a partir du `1660` commite et du manuel constructeur, sans modifier la base de production; verifier cet inventaire avant de creer le nouveau lot additif.
+          EOF
+
+      - name: Verify entry
+        shell: bash
+        run: |
+          grep -F "DEMARRAGE LOT RCL0193 - INVENTAIRE AVANT ENRICHISSEMENT" RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          grep -F "31 faits RAVE deja presents" RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+
+      - name: Commit report and remove helper
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/temp-report-rcl0193-start.yml
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Record RCL0193 inventory start"
+          git push origin RAPPORT
