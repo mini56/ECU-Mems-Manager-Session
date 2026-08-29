@@ -1602,3 +1602,15 @@ Aucun asset, manifeste, audit ou commit de donnees n'a ete produit par ce run. L
 Correction suivante : utiliser l'API GitHub `create_blob` en **encoding base64** a partir des octets exacts du fichier local valide, puis verifier le SHA-256 `969c2b23b8e33e9bcac4ff653752186fad2fde8b5952439bf808d1ac2b56de02` avant toute autre etape. Ne pas modifier/regenerer les donnees pour faire passer le test.
 
 `MEMSX64` reste #101 `22dbe75ed14e0a61e694159d505ef72245116b48` sans modification.
+
+# TROISIEME ECHEC DE TRANSFERT QZ64 ET CHANGEMENT DE METHODE — 29 AOUT 2026
+
+La relance du run `33248530197` apres tentative de transfert binaire/base64 du qz64 s'est de nouveau arretee sur le garde SHA-256 avant toute autre etape. Aucun asset/manifeste/audit n'a ete pousse par cette tentative.
+
+Decision technique : **ne pas affaiblir le garde et ne plus transporter le qz64 a travers la conversation**. La nouvelle tentative reconstruira deterministement `research_enrichment_1750.qz64` dans GitHub Actions a partir de la SQLite officielle BUILD #101 et des 55 faits `RCL0194ENG` reels. Le workflow utilisera les `image_ref` historiques comme entree, appliquera explicitement l'audit `39.1 -> 39.2` uniquement aux trois faits identifies, ajoutera la legende couleurs aux 26 faits `RAVE-COLOR-SPIJ-*`, puis generera le qCompress/qz64 localement.
+
+Avant commit, le SQL genere sera applique a une copie exacte de `ia_mems_reference_r20.sqlite` #101 et devra verifier au minimum : `integrity_check=ok`, `user_version=20`, 93 faits RAVE, 105 faits experts, 8 assets RCL0194, 55/55 faits RCL0194 lies, 26 liens de legende couleurs et exactement 3 corrections de provenance. Les 8 PNG devront egalement retrouver leurs SHA-256 deja valides.
+
+Cette methode peut produire un qz64 de bytes/hash differents du candidat local precedent en raison du formatage deterministe regenere, mais **les donnees et invariants cibles ne changent pas**. Le nouveau hash sera enregistre apres validation ; aucun fait historique ne sera reecrit.
+
+`MEMSX64` reste strictement BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.
