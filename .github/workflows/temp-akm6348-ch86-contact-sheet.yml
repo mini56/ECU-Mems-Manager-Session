@@ -1,0 +1,73 @@
+name: TEMP AKM6348 CH86 CONTACT SHEET
+on:
+  push:
+    branches: [tmp-rave-visual-backfill]
+    paths:
+      - '.github/workflows/temp-akm6348-ch86-contact-sheet.yml'
+permissions:
+  contents: read
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-visual-backfill
+          fetch-depth: 0
+      - name: Verify production remains BUILD 101
+        shell: bash
+        run: |
+          git fetch origin MEMSX64
+          test "$(git rev-parse origin/MEMSX64)" = "22dbe75ed14e0a61e694159d505ef72245116b48"
+      - name: Install render dependencies
+        shell: bash
+        run: python -m pip install --disable-pip-version-check --quiet PyMuPDF==1.26.4 Pillow
+      - name: Download and verify CH86
+        shell: bash
+        run: |
+          curl -L --fail --retry 3 --retry-delay 2 -A 'Mozilla/5.0' \
+            'http://virgyl.f.free.fr/Download/Manuel/CH86.pdf' -o /tmp/CH86.pdf
+          test "$(sha256sum /tmp/CH86.pdf | awk '{print $1}')" = '14fcb88e3f450cab47129b2acc8df948e1d4002418deef63a95ce45157be0594'
+      - name: Render low-resolution contact sheets
+        shell: bash
+        run: |
+          mkdir -p /tmp/akm6348-ch86-contact
+          python - <<'PY'
+          import fitz
+          from PIL import Image, ImageDraw
+          from pathlib import Path
+          pdf=fitz.open('/tmp/CH86.pdf')
+          out=Path('/tmp/akm6348-ch86-contact')
+          cols,rows=4,4
+          tw,th=280,396
+          label_h=34
+          margin=12
+          per=cols*rows
+          for chunk_start in range(0,pdf.page_count,per):
+              chunk_end=min(pdf.page_count,chunk_start+per)
+              sheet=Image.new('RGB',(cols*(tw+margin)+margin,rows*(th+label_h+margin)+margin),'white')
+              draw=ImageDraw.Draw(sheet)
+              for k,i in enumerate(range(chunk_start,chunk_end)):
+                  page=pdf.load_page(i)
+                  rect=page.rect
+                  scale=min(tw/rect.width,th/rect.height)
+                  pix=page.get_pixmap(matrix=fitz.Matrix(scale,scale),alpha=False)
+                  im=Image.frombytes('RGB',[pix.width,pix.height],pix.samples)
+                  x=margin+(k%cols)*(tw+margin)
+                  y=margin+(k//cols)*(th+label_h+margin)
+                  sheet.paste(im,(x,y))
+                  draw.rectangle((x,y+th,x+tw,y+th+label_h),fill='white')
+                  draw.text((x+6,y+th+8),f'PDF index {i+1}',fill='black')
+              n=chunk_start//per+1
+              sheet.save(out/f'CH86_contact_{n:02d}_pages_{chunk_start+1:02d}-{chunk_end:02d}.jpg',quality=88)
+          print('CONTACT_SHEETS',len(list(out.glob('*.jpg'))))
+          pdf.close()
+          PY
+          rm -f /tmp/CH86.pdf
+          ls -lh /tmp/akm6348-ch86-contact
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AKM6348-CH86-CONTACT-SHEETS
+          path: /tmp/akm6348-ch86-contact/*.jpg
+          if-no-files-found: error
+          retention-days: 1
