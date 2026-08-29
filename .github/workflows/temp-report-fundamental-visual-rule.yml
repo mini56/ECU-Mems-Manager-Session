@@ -20,62 +20,19 @@ jobs:
 
       - name: Append validated fundamental rule and next chantier
         shell: bash
+        env:
+          REPORT_APPEND_B64: IyBWQUxJREFUSU9OIENPTVBMw4hURSBQSUxPVEUgVklTVUVMIFJBVkUgRVQgUsOIR0xFIEZPTkRBTUVOVEFMRSDigJQgMjkgQU/Dm1QgMjAyNgoKIyMgVkFMSURBVElPTiBSw4lFTExFIERFIEwnT1VWRVJUVVJFIFJBVkUgMjAuMwoKQXByw6hzIGxhIHZhbGlkYXRpb24gcHLDqWPDqWRlbnRlIGRlIGxhIHPDqWxlY3Rpb24vcHJvcG9zaXRpb24gZGUgYFJDTDAxOTRFTkc6MjAuM2AsIGwndXRpbGlzYXRldXIgY29uZmlybWUgZXhwbGljaXRlbWVudCBzdXIgbGUgUEMgcsOpZWwgcXVlICoqbGUgYm91dG9uIG91dnJlIGNvcnJlY3RlbWVudCBsJ2ltYWdlIFJBVkUgMjAuMyBlbGxlLW3Dqm1lKiouCgpWZXJkaWN0IDogKirinIUgUElMT1RFIFZJU1VFTCBSQVZFIFZBTElEw4kgREUgQk9VVCBFTiBCT1VUKiouCgpDaGHDrm5lIHLDqWVsbGVtZW50IHZhbGlkw6llIDoKKipmb3JtdWxhdGlvbiBuYXR1cmVsbGUgdXRpbGlzYXRldXIg4oaSIGZhaXRzIFJBVkUgY29tcGF0aWJsZXMg4oaSIHLDqWbDqXJlbmNlIGQnaWxsdXN0cmF0aW9uIOKGkiBhc3NldCBSQVZFIG9yaWdpbmFsIGxvY2FsIOKGkiBib3V0b24gZXhhY3Qg4oaSIG91dmVydHVyZSBjb3JyZWN0ZSBkZSBsJ2lsbHVzdHJhdGlvbiBSQVZFKiouCgpMZSBwcmluY2lwZSBkJ2Fqb3V0ZXIgbGVzIGNhcHR1cmVzL3BhZ2VzL2lsbHVzdHJhdGlvbnMvc3VwcG9ydHMgdmlzdWVscyBpc3N1cyBkZSBSQVZFIHBvdXIgbGVzIHJlbmRyZSBhY2Nlc3NpYmxlcyDDoCBsJ3V0aWxpc2F0ZXVyIGZpbmFsIGVzdCBkb25jICoqVkFMSUTDiSoqLgoKIyMgUsOIR0xFIEZPTkRBTUVOVEFMRSBQRVJNQU5FTlRFIOKAlCBDT05TRVJWQVRJT04gTUFYSU1BTEUgREUgTCdJTkZPUk1BVElPTgoKQ2V0dGUgcsOoZ2xlIGRldmllbnQgdW5lIHLDqGdsZSBkZSBmb25kIGR1IHByb2pldCAqKkVDVSBNRU1TIE1hbmFnZXIqKiBldCBkb2l0IHN1cnZpdnJlIMOgIHRvdXRlIGNvdXB1cmUvY2hhbmdlbWVudCBkZSBkaXNjdXNzaW9uIDoKCjEuICoqQnV0IHByb2R1aXQqKiA6IHJlbmRyZSBhY2Nlc3NpYmxlIMOgIGwndXRpbGlzYXRldXIgZmluYWwgbGUgbWF4aW11bSBkJ2luZm9ybWF0aW9ucyB0ZWNobmlxdWVzIHV0aWxlcyBldCB0cmHDp2FibGVzIGRpc3BvbmlibGVzLgoyLiBQb3VyIGxlcyBsb3RzIFJBVkUgZMOpasOgIGludMOpZ3LDqXMgZGFucyBsYSBiYXNlLCByZXByZW5kcmUgbGVzIHNvdXJjZXMgZXQgYWpvdXRlciBsZXVycyBzdXBwb3J0cyB2aXN1ZWxzIHV0aWxlcyA6IHBhZ2VzLCBzY2jDqW1hcywgaWxsdXN0cmF0aW9ucywgdGFibGVhdXgsIHZ1ZXMgdGVjaG5pcXVlcyBldCB0b3V0IGF1dHJlIHN1cHBvcnQgcGVydGluZW50LCBhdmVjIGxpYWlzb24gw6AgbGEgY29ubmFpc3NhbmNlIGV0IMOgIGxhIHNvdXJjZS4KMy4gUG91ciBsZXMgZnV0dXJzIGxvdHMgUkFWRSwgY2FwdHVyZXIgZGFucyBsYSBtw6ptZSBwYXNzZSBhdXRhbnQgcXVlIHBvc3NpYmxlIDogKipkb25uw6llcyBzdHJ1Y3R1csOpZXMgKyBwb3J0w6llIHbDqWhpY3VsZS9tb3RldXIgKyBzb3VyY2UvcGFnZSArIHRleHRlICsgdGFibGVhdXggKyBzY2jDqW1hcyArIGlsbHVzdHJhdGlvbnMgKyB2dWVzICsgYXV0cmVzIHN1cHBvcnRzIHZpc3VlbHMqKi4KNC4gU2kgdW5lIGluZm9ybWF0aW9uIHV0aWxlIG5lIHJlbnRyZSBwYXMgZGFucyBsZSBzY2jDqW1hIGFjdHVlbCwgKipuZSBqYW1haXMgbCdhYmFuZG9ubmVyKiogOiBjcsOpZXIgZGUgbWFuacOocmUgYWRkaXRpdmUgbGEgdGFibGUsIHJlbGF0aW9uLCBjaGFtcCwgaW5kZXgsIHR5cGUgZCdhc3NldCBvdSBzdHJ1Y3R1cmUgbsOpY2Vzc2FpcmUgcG91ciBsYSBjb25zZXJ2ZXIgY29ycmVjdGVtZW50IGV0IGxhIHJlbmRyZSBhY2Nlc3NpYmxlIGF1IHByb2dyYW1tZS4KNS4gTGVzIHRhYmxlcyBoaXN0b3JpcXVlcyBuZSBkb2l2ZW50IHBhcyDDqnRyZSBkw6l0cnVpdGVzIG5pIHLDqcOpY3JpdGVzIGFyYml0cmFpcmVtZW50IDsgbGVzIGV4dGVuc2lvbnMgZG9pdmVudCByZXN0ZXIgYWRkaXRpdmVzLCB0cmHDp2FibGVzIGV0IHRlc3TDqWVzLgo2LiBUb3V0ZSBpbmZvcm1hdGlvbiB0ZWNobmlxdWUgdXRpbGUgZMOpY291dmVydGUgcGVuZGFudCBkZXMgcmVjaGVyY2hlcyBleHRlcm5lcy9JbnRlcm5ldCBldCBhYnNlbnRlIGRlIGxhIGJhc2UgZG9pdCDDqnRyZSAqKmNvbnNlcnbDqWUgcG91ciBpbnTDqWdyYXRpb24gZnV0dXJlKiosIGF2ZWMgVVJML3NvdXJjZSwgZGF0ZSBkZSBjb25zdWx0YXRpb24sIG5pdmVhdSBkZSBwcmV1dmUsIHBvcnTDqWUgY29ubnVlIGV0IGNvbnRlbnUgZXhwbG9pdGFibGUuIEVsbGUgbmUgZG9pdCBwYXMgZGlzcGFyYcOudHJlIMOgIGxhIGZpbiBkZSBsYSBjb252ZXJzYXRpb24uCjcuIExlcyBkw6ljb3V2ZXJ0ZXMgZXh0ZXJuZXMgcGV1dmVudCDDqnRyZSBhY2N1bXVsw6llcyBhdSBmaWwgZGUgbCdlYXUgc3VyIHVuZSBicmFuY2hlL2TDqXDDtHQgZGUgdHJhdmFpbCBkZSB0eXBlICoqcmVjaGVyY2hlIMOgIGFqb3V0ZXIgZGFucyBsYSBiYXNlKiosIHB1aXMgaW50w6lncsOpZXMgcGFyIGxvdHMgYXByw6hzIHZhbGlkYXRpb24gOyBpbCBuJ2VzdCBwYXMgbsOpY2Vzc2FpcmUgZGUgbW9kaWZpZXIgbGEgcHJvZHVjdGlvbiDDoCBjaGFxdWUgZMOpY291dmVydGUuCjguIFVuZSBpbmZvcm1hdGlvbiB0cm91dsOpZSBtYWlzIG5vbiBlbmNvcmUgaW50w6lncsOpZSBkb2l0IGNvbnNlcnZlciB1biBzdGF0dXQgZXhwbGljaXRlIChgw6AgdsOpcmlmaWVyYCwgYHNvdXJjZSBzZWNvbmRhaXJlYCwgYGNvbnN0cnVjdGV1cmAsIGBjb250cmFkaWN0b2lyZWAsIGV0Yy4pIDsgdW5lIHNvdXJjZSBJbnRlcm5ldCBzZWNvbmRhaXJlIG5lIGRldmllbnQgamFtYWlzIGF1dG9tYXRpcXVlbWVudCBgdmVyaWZpZV9jb25zdHJ1Y3RldXJgLgo5LiBMb3JzcXUndW5lIHNvdXJjZSBjb250aWVudCDDoCBsYSBmb2lzIHRleHRlIGV0IHByZXV2ZSB2aXN1ZWxsZSwgY29uc2VydmVyIGxlcyBkZXV4IGV0IGxlcyByZWxpZXIgOyBsZSBzdXBwb3J0IHZpc3VlbCBuZSByZW1wbGFjZSBwYXMgbGEgZG9ubsOpZSBzdHJ1Y3R1csOpZSBldCBpbnZlcnNlbWVudC4KMTAuIExlIG3DqWNhbmlzbWUgdXRpbGlzYXRldXIgZG9pdCwgYXV0YW50IHF1ZSBwb3NzaWJsZSwgcGVybWV0dHJlIGRlIHJldHJvdXZlciBldCBvdXZyaXIgbGEgcHJldXZlL3NvdXJjZSB2aXN1ZWxsZSBwZXJ0aW5lbnRlIGRlcHVpcyBsYSBjb25uYWlzc2FuY2UgYWZmaWNow6llLCBjb21tZSB2YWxpZMOpIGF2ZWMgYFJDTDAxOTRFTkc6MjAuM2AuCgpDZXR0ZSByw6hnbGUgY29tcGzDqHRlIGxlcyByw6hnbGVzIGV4aXN0YW50ZXMgZGUgcG9ydMOpZSwgcHJvdmVuYW5jZSwgYE5VTEwgPSBVTktOT1dOYCwgYWJzZW5jZSBkJ2ludmVudGlvbiwgc8OpY3VyaXTDqSBwcm90b2NvbGUgZXQgam91cm5hbGlzYXRpb24uCgojIyBDSEFOVElFUiBBVVRPUklTw4kg4oCUIFJFUFJJU0UgREVTIExPVFMgUkFWRSBEw4lKw4AgUFLDiVNFTlRTCgpQcm9jaGFpbmUgYWN0aW9uIGF1dG9yaXPDqWUgcGFyIGwndXRpbGlzYXRldXIgOiAqKnByw6lwYXJlciBwdWlzIGV4w6ljdXRlciBzdXIgYnJhbmNoZSB0ZW1wb3JhaXJlIGxhIHJlcHJpc2UgZGVzIGxvdHMgUkFWRSBkw6lqw6AgcHLDqXNlbnRzIGRhbnMgbGEgYmFzZSBhZmluIGQnYWpvdXRlciBsZXVycyBjYXB0dXJlcy9pbGx1c3RyYXRpb25zL3N1cHBvcnRzIHZpc3VlbHMgdXRpbGVzIHNlbG9uIGxlIG3DqWNhbmlzbWUgdmFsaWTDqSBwYXIgbGUgcGlsb3RlIDIwLjMuKioKCk9yZHJlIG9ibGlnYXRvaXJlIDoKMS4gaW52ZW50b3JpZXIgbGVzIGxvdHMvZmFpdHMgUkFWRSBkw6lqw6AgcHLDqXNlbnRzLCBsZXVycyBkb2N1bWVudHMsIGBpbWFnZV9yZWZgL3BhZ2VzL2ZpZ3VyZXMgZXQgbGVzIHN1cHBvcnRzIGTDqWrDoCBwYWNrYWfDqXMgOwoyLiBpZGVudGlmaWVyIGxlcyByw6lmw6lyZW5jZXMgdmlzdWVsbGVzIG1hbnF1YW50ZXMgZXQgbGVzIGRvdWJsb25zIGFmaW4gZGUgbmUgc3RvY2tlciBxdSd1bmUgZm9pcyB1biBtw6ptZSBhc3NldCBzb3VyY2UgOwozLiByw6ljdXDDqXJlciBsZXMgc291cmNlcyBjb25zdHJ1Y3RldXIgY29ycmVzcG9uZGFudGVzIGV0IGNhcHR1cmVyIGxlcyBwYWdlcy9maWd1cmVzIHV0aWxlcyA7CjQuIHJhdHRhY2hlciBhZGRpdGl2ZW1lbnQgbGVzIGFzc2V0cyBhdXggZmFpdHMva25vd2xlZGdlIGl0ZW1zIHNhbnMgbW9kaWZpZXIgbGVzIGZhaXRzIGhpc3RvcmlxdWVzIDsKNS4gY29uc2VydmVyIFNIQS0yNTYsIGRvY3VtZW50LCBwYWdlL2ZpZ3VyZSwgY2hlbWluIGxvY2FsIGV0IHByb3ZlbmFuY2UgOwo2LiB2w6lyaWZpZXIgdmlzdWVsbGVtZW50IGxlcyBzdXBwb3J0cyBwZW5kYW50IGxhIHJlcHJpc2UgZXQgc2lnbmFsZXIgdG91dGUgZGl2ZXJnZW5jZSBlbnRyZSB1biBmYWl0IGhpc3RvcmlxdWUgZXQgY2UgcXVlIG1vbnRyZSByw6llbGxlbWVudCBsYSBzb3VyY2UgOwo3LiBham91dGVyL8OpdGVuZHJlIGxlIHNjaMOpbWEgdW5pcXVlbWVudCBsb3JzcXUndW4gdHlwZSBkZSBkb25uw6llL3N1cHBvcnQgbidlc3QgcGFzIHJlcHLDqXNlbnRhYmxlIHByb3ByZW1lbnQgOwo4LiBham91dGVyIGRlcyB2YWxpZGF0aW9ucyBkJ2ludMOpZ3JpdMOpLCBkJ2V4aXN0ZW5jZSBkZXMgZmljaGllcnMsIGRlIGhhc2hlcywgZGUgbGllbnMgZmFpdOKGlGFzc2V0IGV0IGRlIHLDqXNvbHV0aW9uIHV0aWxpc2F0ZXVyIDsKOS4gdHJhdmFpbGxlciB1bmlxdWVtZW50IHN1ciBicmFuY2hlIHRlbXBvcmFpcmUgOyAqKmBNRU1TWDY0YCByZXN0ZSAjMTAxIGAyMmRiZTc1ZWQxNGUwYTYxZTY5NDE1OWQ1MDVlZjcyMjQ1MTE2YjQ4YCB0YW50IHF1ZSBjZSBjaGFudGllciBuJ2VzdCBwYXMgdmFsaWTDqSoqIDsKMTAuIHJlc3BlY3RlciBsYSByw6hnbGUgOiAqKnJhcHBvcnQgYXZhbnQgY2hhcXVlIHBvdXNzZSwgdGVzdCByw6llbCwgcmFwcG9ydCBpbW3DqWRpYXQgYXByw6hzIHRlc3QqKi4KCiMjIElOQ0lERU5UIERVIE3DiUNBTklTTUUgREUgUkFQUE9SVCDigJQgMjkgQU/Dm1QgMjAyNgoKLSBUZW50YXRpdmUgZGUgbWlzZSDDoCBqb3VyIHBlcnNpc3RhbnRlIGF1IGNvbW1pdCB0ZW1wb3JhaXJlIGAwOGFhZGM5NWE1MjRiNGVhMWM5NTYwZDExNjgxYjE3OTk0ZDU4YzE0YC4KLSBSdW4gR2l0SHViIEFjdGlvbnMgYDMzMjQ1ODc5NzcxYCA6ICoqRkFJTFVSRSBzYW5zIGpvYioqLCBZQU1MIGludmFsaWRlIGR1IGhlbHBlciB0ZW1wb3JhaXJlIGRlIHJhcHBvcnQgKGNvbnRlbnUgbXVsdGlsaWduZSBpbnN1ZmZpc2FtbWVudCBpbmRlbnTDqSkuCi0gQXVjdW4gaW1wYWN0IHN1ciBgTUVNU1g2NGAsIGxlIHBpbG90ZSwgbGEgYmFzZSwgbGUgcHJvZ3JhbW1lIG91IGwnRUNVLgotIENldCDDqWNoZWMgZCdvdXRpbGxhZ2UgZXN0IGNvbnNlcnbDqSBhdmFudCBzYSBjb3JyZWN0aW9uIGNvbmZvcm3DqW1lbnQgw6AgbGEgcsOoZ2xlIGRlIGpvdXJuYWxpc2F0aW9uLgoKIyMgw4lUQVQgQVUgRMOJTUFSUkFHRSBEVSBDSEFOVElFUgoKLSBQcm9kdWN0aW9uIDogYE1FTVNYNjRgICoqQlVJTEQgIzEwMSoqIGAyMmRiZTc1ZWQxNGUwYTYxZTY5NDE1OWQ1MDVlZjcyMjQ1MTE2YjQ4YCDigJQgaW5jaGFuZ8OpZS4KLSBQaWxvdGUgVjIgdmFsaWTDqSA6IGJyYW5jaGUgYHRtcC1yYXZlLTE2ODAtaWxsdXN0cmF0aW9uc2AsIEhFQUQgZGUgYnVpbGQgYDJiZWRlMWZmNTcwNGM0MmRkNjVkMmQ2MzM3YmY3OWY5OTFjYWQxYTlgLCBydW4gYDMzMjQxNDMxMzE3YCwgYXJ0ZWZhY3QgYDk3MTE1MzkwOTJgLgotIGBSQ0wwMTk0RU5HOjIwLjNgIDogKipzw6lsZWN0aW9uLCBwcm9wb3NpdGlvbiwgY2xpYyBldCBvdXZlcnR1cmUgc3VyIFBDIHLDqWVsIFZBTElEw4lTKiouCi0gTGUgY2hhbnRpZXIgZGUgcmVwcmlzZSBkb2l0IHLDqXV0aWxpc2VyIGxlIG3DqWNhbmlzbWUgdmFsaWTDqSwgcGFzIHJlY29uc3RydWlyZSB1bmUgYXJjaGl0ZWN0dXJlIHBhcmFsbMOobGUuCg==
         run: |
-          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
-
-# VALIDATION COMPLÈTE PILOTE VISUEL RAVE ET RÈGLE FONDAMENTALE — 29 AOÛT 2026
-
-## VALIDATION RÉELLE DE L'OUVERTURE RAVE 20.3
-
-Après la validation précédente de la sélection/proposition de `RCL0194ENG:20.3`, l'utilisateur confirme explicitement sur le PC réel que **le bouton ouvre correctement l'image RAVE 20.3 elle-même**.
-
-Verdict : **✅ PILOTE VISUEL RAVE VALIDÉ DE BOUT EN BOUT**.
-
-Chaîne réellement validée :
-**formulation naturelle utilisateur → faits RAVE compatibles → référence d'illustration → asset RAVE original local → bouton exact → ouverture correcte de l'illustration RAVE**.
-
-Le principe d'ajouter les captures/pages/illustrations/supports visuels issus de RAVE pour les rendre accessibles à l'utilisateur final est donc **VALIDÉ**.
-
-## RÈGLE FONDAMENTALE PERMANENTE — CONSERVATION MAXIMALE DE L'INFORMATION
-
-Cette règle devient une règle de fond du projet **ECU MEMS Manager** et doit survivre à toute coupure/changement de discussion :
-
-1. **But produit** : rendre accessible à l'utilisateur final le maximum d'informations techniques utiles et traçables disponibles.
-2. Pour les lots RAVE déjà intégrés dans la base, reprendre les sources et ajouter leurs supports visuels utiles : pages, schémas, illustrations, tableaux, vues techniques et tout autre support pertinent, avec liaison à la connaissance et à la source.
-3. Pour les futurs lots RAVE, capturer dans la même passe autant que possible : **données structurées + portée véhicule/moteur + source/page + texte + tableaux + schémas + illustrations + vues + autres supports visuels**.
-4. Si une information utile ne rentre pas dans le schéma actuel, **ne jamais l'abandonner** : créer de manière additive la table, relation, champ, index, type d'asset ou structure nécessaire pour la conserver correctement et la rendre accessible au programme.
-5. Les tables historiques ne doivent pas être détruites ni réécrites arbitrairement ; les extensions doivent rester additives, traçables et testées.
-6. Toute information technique utile découverte pendant des recherches externes/Internet et absente de la base doit être **conservée pour intégration future**, avec URL/source, date de consultation, niveau de preuve, portée connue et contenu exploitable. Elle ne doit pas disparaître à la fin de la conversation.
-7. Les découvertes externes peuvent être accumulées au fil de l'eau sur une branche/dépôt de travail de type **recherche à ajouter dans la base**, puis intégrées par lots après validation ; il n'est pas nécessaire de modifier la production à chaque découverte.
-8. Une information trouvée mais non encore intégrée doit conserver un statut explicite (`à vérifier`, `source secondaire`, `constructeur`, `contradictoire`, etc.) ; une source Internet secondaire ne devient jamais automatiquement `verifie_constructeur`.
-9. Lorsqu'une source contient à la fois texte et preuve visuelle, conserver les deux et les relier ; le support visuel ne remplace pas la donnée structurée et inversement.
-10. Le mécanisme utilisateur doit, autant que possible, permettre de retrouver et ouvrir la preuve/source visuelle pertinente depuis la connaissance affichée, comme validé avec `RCL0194ENG:20.3`.
-
-Cette règle complète les règles existantes de portée, provenance, `NULL = UNKNOWN`, absence d'invention, sécurité protocole et journalisation.
-
-## CHANTIER AUTORISÉ — REPRISE DES LOTS RAVE DÉJÀ PRÉSENTS
-
-Prochaine action autorisée par l'utilisateur : **préparer puis exécuter sur branche temporaire la reprise des lots RAVE déjà présents dans la base afin d'ajouter leurs captures/illustrations/supports visuels utiles selon le mécanisme validé par le pilote 20.3.**
-
-Ordre obligatoire :
-1. inventorier les lots/faits RAVE déjà présents, leurs documents, `image_ref`/pages/figures et les supports déjà packagés ;
-2. identifier les références visuelles manquantes et les doublons afin de ne stocker qu'une fois un même asset source ;
-3. récupérer les sources constructeur correspondantes et capturer les pages/figures utiles ;
-4. rattacher additivement les assets aux faits/knowledge items sans modifier les faits historiques ;
-5. conserver SHA-256, document, page/figure, chemin local et provenance ;
-6. vérifier visuellement les supports pendant la reprise et signaler toute divergence entre un fait historique et ce que montre réellement la source ;
-7. ajouter/étendre le schéma uniquement lorsqu'un type de donnée/support n'est pas représentable proprement ;
-8. ajouter des validations d'intégrité, d'existence des fichiers, de hashes, de liens fait↔asset et de résolution utilisateur ;
-9. travailler uniquement sur branche temporaire ; **`MEMSX64` reste #101 `22dbe75ed14e0a61e694159d505ef72245116b48` tant que ce chantier n'est pas validé** ;
-10. respecter la règle : **rapport avant chaque pousse, test réel, rapport immédiat après test**.
-
-## ÉTAT AU DÉMARRAGE DU CHANTIER
-
-- Production : `MEMSX64` **BUILD #101** `22dbe75ed14e0a61e694159d505ef72245116b48` — inchangée.
-- Pilote V2 validé : branche `tmp-rave-1680-illustrations`, HEAD de build `2bede1ff5704c42dd65d2d6337bf79f991cad1a9`, run `33241431317`, artefact `9711539092`.
-- `RCL0194ENG:20.3` : **sélection, proposition, clic et ouverture sur PC réel VALIDÉS**.
-- Le chantier de reprise doit réutiliser le mécanisme validé, pas reconstruire une architecture parallèle.
-EOF
+          python - <<'PY'
+          import base64, os
+          from pathlib import Path
+          p = Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md')
+          append = base64.b64decode(os.environ['REPORT_APPEND_B64']).decode('utf-8')
+          text = p.read_text(encoding='utf-8')
+          marker = '# VALIDATION COMPLÈTE PILOTE VISUEL RAVE ET RÈGLE FONDAMENTALE — 29 AOÛT 2026'
+          if marker not in text:
+              p.write_text(text.rstrip() + '\n\n' + append.rstrip() + '\n', encoding='utf-8')
+          PY
 
       - name: Commit report and remove helper
         shell: bash
