@@ -100,7 +100,7 @@ jobs:
           test -s database/reference/audits/rcl0193_1660_inventory.md
           grep -F 'RCL0193ENG' database/reference/audits/rcl0193_1660_inventory.md
           git diff -- database/reference/research_enrichment_1660.qz64 --exit-code
-          test "$(git diff --name-only | sort)" = "database/reference/audits/rcl0193_1660_inventory.md"
+          test "$(git status --porcelain --untracked-files=all)" = "?? database/reference/audits/rcl0193_1660_inventory.md"
 
       - name: Commit audit and remove helper
         shell: bash
