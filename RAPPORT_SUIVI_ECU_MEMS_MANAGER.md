@@ -1891,3 +1891,15 @@ La premiere tentative d'ecriture de cette conclusion, run RAPPORT `33251235882`,
 Cause: concurrence de deux ecritures sur `RAPPORT`, et non erreur du contenu. Cette seconde tentative utilise `git fetch` + `git rebase origin/RAPPORT` avant le push afin de conserver les deux historiques sans ecrasement.
 
 Prochaine action exacte apres confirmation de cette ecriture: inspecter le dernier numero de lot additif disponible et le generateur RCL0194 1750 valide; preparer un generateur RCL0193 strictement additif qui capture une seule fois les 25 pages exactes, calcule leurs SHA-256, cree les metadonnees `mems_rave_illustration` et liens `mems_rave_illustration_link` vers les 31 faits sans reecrire `mems_rave_fact`, garde `user_version=20`, et produit un audit de reproductibilite. `MEMSX64` reste BUILD #101 inchange; aucun #102.
+
+## 2026-08-29 - RCL0193 1760 - GENERATEUR REPRODUCTIBLE POUSSE, DONNEES NON ENCORE GENEREES
+
+Pousse technique effectuee apres validation V3: commit `4fe8ea77bae5b1651b4ef9256a2090562531184b` sur `tmp-rave-visual-backfill`, fichier unique `tools/build_rcl0193_visual_backfill_1760.py`.
+
+Ce commit ne contient encore aucun PNG RCL0193, aucun `research_enrichment_1760.qz64`, aucune modification de manifeste ni de fait historique. Il ajoute uniquement le generateur documentaire reproductible.
+
+Fonction prevue: reconstruire la base de reference jusqu'au lot 1750 inclus, exiger 31 faits RCL0193 et le mapping V3 complet, rendre les 26 pages constructeur exactes, calculer leurs SHA-256, creer 43 liens fait->page additifs, generer le qz64 1760, appliquer le candidat a une copie SQLite puis verifier `integrity_check`, `user_version=20`, 93 faits RAVE et 105 faits experts inchanges, couverture RCL0193 31/31 et preservation des 8 assets RCL0194.
+
+Prochaine pousse autorisee: ajouter uniquement un workflow temporaire de validation du generateur. Ce workflow devra utiliser le PDF constructeur exact SHA-256 `c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715`, garder les sorties hors commit, verifier strictement le perimetre, produire un artefact candidat avec SHA256SUMS et ne committer aucune donnee 1760. Le resultat doit etre rapporte avant toute pousse des assets.
+
+Production `MEMSX64` reste BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`. Base/IA/RAVE consultatives uniquement.
