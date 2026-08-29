@@ -2224,3 +2224,16 @@ Correction generale prevue avant prochaine pousse technique:
 5. production MEMSX64 reste strictement BUILD #101, aucun #102.
 
 Incident connecteur pendant cette reprise: une branche tmp-do-not-use a ete creee par erreur depuis RAPPORT. Aucun fichier ni commit n y a ete modifie. Le connecteur disponible ne propose pas de suppression de branche; cette branche parasite doit rester ignoree et ne constitue aucune source de verite du projet.
+
+## 2026-08-29 - ROUTAGE V2 - CORRECTION ORDRE RUNTIME QT - POUSSE 1
+
+- Branche: tmp-rave-visual-backfill.
+- Commit: f0e19c5b140f59617903577f52cbb8e07f94c700 - Fix V2 routing guard Qt runtime order.
+- Pousse limitee a tools/patch_rave_visual_routing_auto.py.
+- Relecture distante du commit exact: PASS.
+- Le script refuse maintenant explicitement tout COMMAND $<TARGET_FILE:ia_mems_diagram_selftest> dans un POST_BUILD.
+- Il conserve la compilation du self-test comme dependance et annote CMake pour rappeler que son execution doit avoir lieu seulement dans l etape deterministe apres preparation du runtime Qt.
+- Aucun workflow V2 n a ete relance par cette pousse car le trigger actuel ne surveille encore que son propre fichier.
+- Production MEMSX64 reste BUILD #101; aucun #102.
+
+Prochaine pousse autorisee apres cette journalisation: modifier uniquement .github/workflows/temp-routing-mechanical-v2.yml pour surveiller aussi tools/patch_rave_visual_routing_auto.py et declencher une nouvelle validation V2. Le test doit compiler puis executer ia_mems_diagram_selftest seulement dans Run deterministic regression tests avec PATH/QT_PLUGIN_PATH prepares.
