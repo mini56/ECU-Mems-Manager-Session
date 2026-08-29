@@ -1,0 +1,714 @@
+name: TEMP ROUTING AUTO GUARD AND RCL0193 MECHANICAL AUDIT
+run-name: Routing auto-guard + RCL0193 mechanical scope audit - ${{ github.sha }}
+
+on:
+  push:
+    branches: [tmp-rave-visual-backfill]
+    paths: ['.github/workflows/temp-routing-mechanical-audit.yml']
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: temp-routing-mechanical-audit
+  cancel-in-progress: true
+
+jobs:
+  patch_audit_build_commit:
+    runs-on: windows-latest
+    timeout-minutes: 75
+    env:
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: 'utf-8'
+      MEMS_BUILD_NUMBER: '101'
+      EXPECTED_BASE: '746bb6524241c06e265396cf6a2b216f3952dd0e'
+      RCL0193_SHA256: 'c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715'
+
+    steps:
+      - name: Checkout exact temporary branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Verify workflow-only trigger commit
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $parent = (git rev-parse HEAD^).Trim()
+          if ($parent -ne $env:EXPECTED_BASE) { throw "Unexpected parent: $parent" }
+          $changed = @(git diff --name-only HEAD^ HEAD)
+          if ($changed.Count -ne 1 -or $changed[0] -ne '.github/workflows/temp-routing-mechanical-audit.yml') {
+            throw "Trigger commit changed unexpected files: $($changed -join ', ')"
+          }
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deterministic audit/build helpers
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install --disable-pip-version-check 'aqtinstall==3.3.0' 'PyMuPDF==1.26.4'
+
+      - name: Apply generic routing policy and automatic regression guard
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          @'
+          from pathlib import Path
+
+          def replace_once(path, old, new, label):
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected one block, got {count}')
+              p.write_text(text.replace(old, new), encoding='utf-8', newline='\n')
+
+          routing = Path('expert/IaMemsConversationRouting.h')
+          text = routing.read_text(encoding='utf-8')
+          anchor = '''inline QString enrichWithKnownGeneration(const QString &question, const QString &knownGeneration)
+          {'''
+          insert = '''enum class ClarificationKind {
+              None,
+              Induction,
+              Generation
+          };
+
+          inline ClarificationKind clarificationKind(const QString &question,
+                                                     const QString &knownGeneration,
+                                                     bool hasResolvedLocalDiagram)
+          {
+              // Variant safety always wins: never let a visually plausible result mix
+              // Mini SPi and MPi when the user has not identified the induction type.
+              if (needsInductionClarification(question))
+                  return ClarificationKind::Induction;
+
+              // Any current or future local visual declared in manifest.diagrams can
+              // bypass an otherwise unnecessary MEMS-generation clarification once
+              // the deterministic catalog has resolved it with positive evidence.
+              if (hasResolvedLocalDiagram)
+                  return ClarificationKind::None;
+
+              if (needsGenerationClarification(question, knownGeneration))
+                  return ClarificationKind::Generation;
+              return ClarificationKind::None;
+          }
+
+          inline QString enrichWithKnownGeneration(const QString &question, const QString &knownGeneration)
+          {'''
+          if text.count(anchor) != 1:
+              raise SystemExit('routing insertion anchor mismatch')
+          routing.write_text(text.replace(anchor, insert), encoding='utf-8', newline='\n')
+
+          old_prompt = '''QString IaMemsTab::clarificationPrompt(const QString &question) const
+          {
+              if (IaMemsConversationRouting::needsInductionClarification(question))
+                  return QStringLiteral("Pour éviter de mélanger les brochages Mini, est-ce une SPi ou une MPi ? Si tu ne sais pas, réponds « cherche » : j'utiliserai l'ECU connecté et la base avant de te redemander une information.");
+              if (IaMemsConversationRouting::needsGenerationClarification(question, m_detectedFamily))
+                  return QStringLiteral("Quelle génération MEMS faut-il utiliser : 1.2, 1.3, 1.6 ou 1.9 ? Si tu ne sais pas, réponds « cherche » et j'utiliserai d'abord le contexte ECU disponible.");
+              return QString();
+          }
+          '''
+          new_prompt = '''QString IaMemsTab::clarificationPrompt(const QString &question) const
+          {
+              const IaMemsDiagramSuggestion diagram =
+                  IaMemsDiagramCatalog::suggestionForQuestion(question);
+              const IaMemsConversationRouting::ClarificationKind kind =
+                  IaMemsConversationRouting::clarificationKind(
+                      question, m_detectedFamily, diagram.isValid());
+
+              if (kind == IaMemsConversationRouting::ClarificationKind::Induction)
+                  return QStringLiteral("Pour éviter de mélanger les brochages Mini, est-ce une SPi ou une MPi ? Si tu ne sais pas, réponds « cherche » : j'utiliserai l'ECU connecté et la base avant de te redemander une information.");
+              if (kind == IaMemsConversationRouting::ClarificationKind::Generation)
+                  return QStringLiteral("Quelle génération MEMS faut-il utiliser : 1.2, 1.3, 1.6 ou 1.9 ? Si tu ne sais pas, réponds « cherche » et j'utiliserai d'abord le contexte ECU disponible.");
+              return QString();
+          }
+          '''
+          replace_once('iamemstab.cpp', old_prompt, new_prompt, 'clarificationPrompt')
+
+          catalog = Path('expert/IaMemsDiagramCatalog.cpp')
+          text = catalog.read_text(encoding='utf-8')
+          old_ignored = '''        QStringLiteral("schema"), QStringLiteral("diagramme"), QStringLiteral("diagram"),
+                  QStringLiteral("montre"), QStringLiteral("ouvrir"), QStringLiteral("ouvre"),'''
+          new_ignored = '''        QStringLiteral("schema"), QStringLiteral("diagramme"), QStringLiteral("diagram"),
+                  QStringLiteral("image"), QStringLiteral("images"),
+                  QStringLiteral("illustration"), QStringLiteral("illustrations"),
+                  QStringLiteral("vue"), QStringLiteral("vues"),
+                  QStringLiteral("dessin"), QStringLiteral("dessins"),
+                  QStringLiteral("figure"), QStringLiteral("figures"),
+                  QStringLiteral("montre"), QStringLiteral("ouvrir"), QStringLiteral("ouvre"),'''
+          if text.count(old_ignored) != 1:
+              raise SystemExit('catalog ignored-term block mismatch')
+          text = text.replace(old_ignored, new_ignored)
+          old_intent = '''        QStringLiteral("schema"), QStringLiteral("broch"), QStringLiteral("pinout"),
+                  QStringLiteral("connecteur"), QStringLiteral("connector"), QStringLiteral("prise"),
+                  QStringLiteral("cablage"), QStringLiteral("wiring"), QStringLiteral("socket"),
+                  QStringLiteral("pin "), QStringLiteral(" pins"), QStringLiteral("broche")
+              });'''
+          new_intent = '''        QStringLiteral("schema"), QStringLiteral("broch"), QStringLiteral("pinout"),
+                  QStringLiteral("connecteur"), QStringLiteral("connector"), QStringLiteral("prise"),
+                  QStringLiteral("cablage"), QStringLiteral("wiring"), QStringLiteral("socket"),
+                  QStringLiteral("image"), QStringLiteral("illustration"),
+                  QStringLiteral("vue"), QStringLiteral("dessin"), QStringLiteral("figure"),
+                  QStringLiteral("pin "), QStringLiteral(" pins"), QStringLiteral("broche")
+              });'''
+          if text.count(old_intent) != 1:
+              raise SystemExit('catalog intent block mismatch')
+          catalog.write_text(text.replace(old_intent, new_intent), encoding='utf-8', newline='\n')
+
+          test = Path('expert/IaMemsDiagramSelfTest.cpp')
+          text = test.read_text(encoding='utf-8')
+          if '#include "IaMemsConversationRouting.h"' not in text:
+              text = text.replace('#include "IaMemsDiagramCatalog.h"\n', '#include "IaMemsDiagramCatalog.h"\n#include "IaMemsConversationRouting.h"\n')
+          if '#include <QJsonDocument>' not in text:
+              text = text.replace('#include <QFileInfo>\n', '#include <QFileInfo>\n#include <QJsonDocument>\n#include <QJsonObject>\n')
+
+          helper_anchor = '\n} // namespace\n\nint main(int argc, char **argv)\n'
+          helpers = r'''
+          bool requireClarificationKind(const QString &root,
+                                        const QString &question,
+                                        IaMemsConversationRouting::ClarificationKind expected,
+                                        const QString &label)
+          {
+              const IaMemsDiagramSuggestion suggestion =
+                  IaMemsDiagramCatalog::suggestionForQuestion(question, root);
+              const auto actual = IaMemsConversationRouting::clarificationKind(
+                  question, QString(), suggestion.isValid());
+              if (actual != expected) {
+                  printLine(QStringLiteral("FAIL clarification policy: %1").arg(label));
+                  return false;
+              }
+              printLine(QStringLiteral("PASS clarification policy: %1").arg(label));
+              return true;
+          }
+
+          bool testAllDeclaredDiagramFilesExist(const QString &root)
+          {
+              QFile manifest(QDir(root).filePath(QStringLiteral("manifest.json")));
+              if (!manifest.open(QIODevice::ReadOnly)) {
+                  printLine(QStringLiteral("FAIL cannot open manifest for inventory guard"));
+                  return false;
+              }
+              QJsonParseError error;
+              const QJsonDocument document = QJsonDocument::fromJson(manifest.readAll(), &error);
+              if (error.error != QJsonParseError::NoError || !document.isObject()) {
+                  printLine(QStringLiteral("FAIL invalid manifest for inventory guard"));
+                  return false;
+              }
+              const QJsonObject diagrams = document.object().value(QStringLiteral("diagrams")).toObject();
+              if (diagrams.size() < 40) {
+                  printLine(QStringLiteral("FAIL diagram inventory unexpectedly shrank: %1").arg(diagrams.size()));
+                  return false;
+              }
+              for (auto it = diagrams.constBegin(); it != diagrams.constEnd(); ++it) {
+                  const QString relative = QDir::cleanPath(it.value().toString());
+                  if (!relative.startsWith(QStringLiteral("images/"))
+                      || !QFileInfo::exists(QDir(root).filePath(relative))) {
+                      printLine(QStringLiteral("FAIL declared diagram missing: %1 -> %2")
+                                    .arg(it.key(), relative));
+                      return false;
+                  }
+              }
+              printLine(QStringLiteral("PASS declared diagram inventory: %1 files").arg(diagrams.size()));
+              return true;
+          }
+          '''
+          if text.count(helper_anchor) != 1:
+              raise SystemExit('selftest helper anchor mismatch')
+          text = text.replace(helper_anchor, '\n' + helpers + helper_anchor)
+
+          call_anchor = '''    ok = requireSuggestion(referenceRoot,
+                                     QStringLiteral("Schéma de la prise OBD 16 broches MEMS 1.9 J1962"),
+                                     QStringLiteral("MEMS 1.9 OBD 16 broches"),
+                                     QStringLiteral("images/mems_1_9_obd_16pin.svg")) && ok;
+          '''
+          extra_calls = r'''    ok = requireSuggestion(referenceRoot,
+                                     QStringLiteral("cablage sonde lambda Mini SPi Japon 1997"),
+                                     QStringLiteral("RAVE RCL0194ENG 20.3 Mini SPi Japon 97MY MEMS lambda relais vilebrequin"),
+                                     QStringLiteral("images/rave/RCL0194ENG_20_3.png")) && ok;
+              ok = requireSuggestion(referenceRoot,
+                                     QStringLiteral("Montre la vue du ventilateur Mini SPi Japon 1997"),
+                                     QStringLiteral("RAVE RCL0194ENG 39.3 Mini SPi Japon 97MY ventilateur refroidissement"),
+                                     QStringLiteral("images/rave/RCL0194ENG_39_3.png")) && ok;
+              ok = requireSuggestion(referenceRoot,
+                                     QStringLiteral("illustration injecteur IAC TPS Mini SPi Japon 1997"),
+                                     QStringLiteral("RAVE RCL0194ENG 20.4 Mini SPi Japon 97MY MEMS injecteur IAC TPS ECT IAT"),
+                                     QStringLiteral("images/rave/RCL0194ENG_20_4.png")) && ok;
+
+              ok = requireClarificationKind(
+                       referenceRoot,
+                       QStringLiteral("Montre le schéma sonde lambda Mini SPi Japon 1997"),
+                       IaMemsConversationRouting::ClarificationKind::None,
+                       QStringLiteral("resolved RAVE visual bypasses generation clarification")) && ok;
+              ok = requireClarificationKind(
+                       referenceRoot,
+                       QStringLiteral("Montre le schéma sonde lambda Mini 1997"),
+                       IaMemsConversationRouting::ClarificationKind::Induction,
+                       QStringLiteral("SPi/MPi ambiguity remains higher priority than a visual")) && ok;
+              ok = requireClarificationKind(
+                       referenceRoot,
+                       QStringLiteral("Montre la documentation MEMS"),
+                       IaMemsConversationRouting::ClarificationKind::Generation,
+                       QStringLiteral("no exact visual still requests MEMS generation")) && ok;
+              ok = testAllDeclaredDiagramFilesExist(referenceRoot) && ok;
+          '''
+          if text.count(call_anchor) != 1:
+              raise SystemExit('selftest call anchor mismatch')
+          test.write_text(text.replace(call_anchor, call_anchor + extra_calls), encoding='utf-8', newline='\n')
+
+          print('PASS generic routing policy + future visual intent + automatic regression guard patched')
+          '@ | python -
+
+      - name: Create reproducible RCL0193 mechanical-scope audit tool
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          @'
+          #!/usr/bin/env python3
+          from __future__ import annotations
+          import argparse, hashlib, json, re
+          from pathlib import Path
+          import fitz
+
+          EXPECTED_SHA256 = 'c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715'
+          EXPECTED_PAGE_COUNT = 372
+          EXPECTED_CURRENT_PAGES = {38,39,40,98,101,107,108,109,112,113,114,117,118,120,121,122,123,125,126,127,128,129,130,131,135,170}
+          MAJOR_ORDER = [
+              'INFORMATION', 'ENGINE', 'EMISSION CONTROL',
+              'ENGINE MANAGEMENT SYSTEM - MEMS', 'FUEL DELIVERY SYSTEM',
+              'COOLING SYSTEM', 'MANIFOLD & EXHAUST SYSTEMS', 'CLUTCH'
+          ]
+          AUDIT_SCOPE = set(MAJOR_ORDER[:-1])
+
+          def sha256_file(path: Path) -> str:
+              h = hashlib.sha256()
+              with path.open('rb') as f:
+                  for chunk in iter(lambda: f.read(1024 * 1024), b''):
+                      h.update(chunk)
+              return h.hexdigest()
+
+          def exact_header(page, section: str) -> bool:
+              lines = [x.strip().upper() for x in page.get_text('text').splitlines() if x.strip()]
+              return section.upper() in lines[:5]
+
+          def procedure_titles(text: str) -> list[str]:
+              lines = [x.strip() for x in text.splitlines() if x.strip()]
+              out = []
+              for i, line in enumerate(lines):
+                  if re.search(r'Service\s+repair\s+no\s*-', line, re.I):
+                      for j in range(i - 1, max(-1, i - 5), -1):
+                          candidate = lines[j]
+                          if candidate and len(candidate) <= 90 and candidate.upper() not in {
+                              'REPAIRS','ADJUSTMENTS','DESCRIPTION AND OPERATION','CONTENTS PAGE'
+                          }:
+                              out.append(candidate)
+                              break
+              return out
+
+          def main() -> int:
+              ap = argparse.ArgumentParser()
+              ap.add_argument('--pdf', required=True)
+              ap.add_argument('--reference', default='database/reference')
+              ap.add_argument('--out-md', default='database/reference/audits/rcl0193_mechanical_scope_audit.md')
+              ap.add_argument('--out-json', default='database/reference/audits/rcl0193_mechanical_scope_audit.json')
+              args = ap.parse_args()
+              pdf = Path(args.pdf)
+              reference = Path(args.reference)
+              digest = sha256_file(pdf)
+              if digest != EXPECTED_SHA256:
+                  raise SystemExit(f'RCL0193 SHA mismatch: {digest}')
+              manifest = json.loads((reference/'manifest.json').read_text(encoding='utf-8-sig'))
+              covered = {
+                  int(v['pdf_index']) for v in manifest.get('visual_assets', {}).values()
+                  if v.get('document') == 'RCL0193ENG' and isinstance(v.get('pdf_index'), int)
+              }
+              if covered != EXPECTED_CURRENT_PAGES:
+                  raise SystemExit(f'Unexpected current RCL0193 visual set: {sorted(covered)}')
+
+              doc = fitz.open(str(pdf))
+              try:
+                  if doc.page_count != EXPECTED_PAGE_COUNT:
+                      raise SystemExit(f'Unexpected page count: {doc.page_count}')
+                  starts = {}
+                  for section in MAJOR_ORDER:
+                      matches = [i for i in range(20, doc.page_count) if exact_header(doc[i], section)]
+                      if not matches:
+                          raise SystemExit(f'Cannot locate section header: {section}')
+                      starts[section] = min(matches)
+                  if starts['FUEL DELIVERY SYSTEM'] != 136 or starts['COOLING SYSTEM'] != 146 or starts['MANIFOLD & EXHAUST SYSTEMS'] != 160 or starts['CLUTCH'] != 176:
+                      raise SystemExit(f'Unexpected known section starts: {starts}')
+
+                  ranges = {}
+                  for i, section in enumerate(MAJOR_ORDER[:-1]):
+                      ranges[section] = (starts[section], starts[MAJOR_ORDER[i+1]] - 1)
+
+                  per_section = {}
+                  scope_pages = set()
+                  all_procedures = set()
+                  total_torque = 0
+                  detected_graphic_pages = set()
+                  embedded_image_pages = set()
+                  vector_drawing_pages = set()
+                  for section, (a, b) in ranges.items():
+                      pages = list(range(a, b + 1))
+                      scope_pages.update(pages)
+                      proc = set()
+                      torque_count = 0
+                      embedded = 0
+                      vectors = 0
+                      graphics = 0
+                      for p in pages:
+                          page = doc[p]
+                          text = page.get_text('text')
+                          ids = re.findall(r'Service\s+repair\s+no\s*-\s*([^\n\r]+)', text, re.I)
+                          proc.update(x.strip() for x in ids if x.strip())
+                          torque_count += len(re.findall(r'\b\d+(?:\.\d+)?\s*Nm\b', text, re.I))
+                          image_count = len(page.get_images(full=True))
+                          drawing_count = len(page.get_drawings())
+                          if image_count:
+                              embedded += 1
+                              embedded_image_pages.add(p)
+                          if drawing_count:
+                              vectors += 1
+                              vector_drawing_pages.add(p)
+                          if image_count or drawing_count >= 12:
+                              graphics += 1
+                              detected_graphic_pages.add(p)
+                      all_procedures.update(proc)
+                      total_torque += torque_count
+                      per_section[section] = {
+                          'start': a, 'end': b, 'pages': len(pages),
+                          'currently_captured': len(set(pages) & covered),
+                          'currently_uncaptured': len(set(pages) - covered),
+                          'unique_service_repair_numbers': len(proc),
+                          'torque_occurrences': torque_count,
+                          'pages_with_embedded_images': embedded,
+                          'pages_with_vector_drawings': vectors,
+                          'pages_with_detected_graphics': graphics,
+                      }
+
+                  known = {
+                      64: ('ENGINE', 'ROCKER COVER GASKET'),
+                      142: ('FUEL DELIVERY SYSTEM', 'FUEL PUMP'),
+                      148: ('COOLING SYSTEM', 'COOLING SYSTEM COMPONENTS'),
+                      149: ('COOLING SYSTEM', 'Flow diagram'),
+                      154: ('COOLING SYSTEM', 'COOLANT EXPANSION TANK'),
+                      162: ('MANIFOLD & EXHAUST SYSTEMS', 'EXHAUST SYSTEM COMPONENTS'),
+                      163: ('MANIFOLD & EXHAUST SYSTEMS', 'EXHAUST MANIFOLD COMPONENTS'),
+                      164: ('MANIFOLD & EXHAUST SYSTEMS', 'INLET MANIFOLD COMPONENTS'),
+                      169: ('MANIFOLD & EXHAUST SYSTEMS', 'INLET MANIFOLD'),
+                  }
+                  known_rows = []
+                  for p, (section, token) in known.items():
+                      text = doc[p].get_text('text')
+                      if token.lower() not in text.lower():
+                          raise SystemExit(f'Known page token missing p.{p}: {token}')
+                      if p in covered:
+                          raise SystemExit(f'Known omitted mechanical page unexpectedly already covered: {p}')
+                      known_rows.append({'pdf_index': p, 'section': section, 'evidence': token,
+                                         'embedded_images': len(doc[p].get_images(full=True)),
+                                         'vector_drawings': len(doc[p].get_drawings())})
+
+                  scope_captured = scope_pages & covered
+                  stats = {
+                      'document': 'RCL0193ENG', 'sha256': digest, 'pdf_pages': doc.page_count,
+                      'audit_scope_sections': list(ranges),
+                      'scope_pages': len(scope_pages),
+                      'scope_currently_captured_pages': len(scope_captured),
+                      'scope_currently_uncaptured_pages': len(scope_pages - covered),
+                      'historical_rcl0193_facts': 31,
+                      'current_rcl0193_visual_pages': len(covered),
+                      'current_visual_page_indices': sorted(covered),
+                      'unique_service_repair_numbers_in_scope': len(all_procedures),
+                      'torque_occurrences_in_scope': total_torque,
+                      'pages_with_embedded_images_in_scope': len(embedded_image_pages & scope_pages),
+                      'pages_with_vector_drawings_in_scope': len(vector_drawing_pages & scope_pages),
+                      'pages_with_detected_graphics_in_scope': len(detected_graphic_pages & scope_pages),
+                      'uncaptured_pages_with_detected_graphics': len((detected_graphic_pages & scope_pages) - covered),
+                      'section_starts': starts,
+                      'sections': per_section,
+                      'known_uncaptured_examples': known_rows,
+                  }
+                  out_json = Path(args.out_json); out_json.parent.mkdir(parents=True, exist_ok=True)
+                  out_json.write_text(json.dumps(stats, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+
+                  rows = []
+                  for section, s in per_section.items():
+                      rows.append(f"| {section} | {s['start']}-{s['end']} | {s['pages']} | {s['currently_captured']} | {s['currently_uncaptured']} | {s['unique_service_repair_numbers']} | {s['torque_occurrences']} | {s['pages_with_detected_graphics']} |")
+                  examples = '\n'.join(
+                      f"- PDF p.{r['pdf_index']} — {r['section']} — `{r['evidence']}` — images={r['embedded_images']}, vector_drawings={r['vector_drawings']}"
+                      for r in known_rows)
+                  coverage = 100.0 * len(scope_captured) / len(scope_pages)
+                  md = f'''# RCL0193ENG — audit de couverture mécanique et visuelle
+
+Date: 2026-08-29
+
+Source vérifiée: RCL0193ENG, SHA-256 `{digest}`, **{doc.page_count} pages**. Audit en lecture seule: aucun fait historique, qz64 ou asset n'est modifié.
+
+## Conclusion
+
+Les **31 faits RCL0193 existants** sont bien reliés à leurs **26 pages sources actuelles**. Le manque n'est donc pas une perte de capture sur ces 31 faits. Le manque est **en amont**: une grande quantité de procédures, caractéristiques mécaniques et vues du manuel n'a jamais été transformée en faits structurés.
+
+Périmètre moteur/MEMS audité: INFORMATION, ENGINE, EMISSION CONTROL, ENGINE MANAGEMENT SYSTEM - MEMS, FUEL DELIVERY SYSTEM, COOLING SYSTEM, MANIFOLD & EXHAUST SYSTEMS.
+
+- pages physiques dans ce périmètre: **{len(scope_pages)}**;
+- pages déjà retenues par le backfill RCL0193 actuel: **{len(scope_captured)}**;
+- pages du périmètre non retenues: **{len(scope_pages - covered)}**;
+- couverture physique actuelle du périmètre: **{coverage:.2f}%**;
+- numéros uniques `Service repair no` détectés: **{len(all_procedures)}**;
+- occurrences de couples en Nm détectées: **{total_torque}**;
+- pages avec images embarquées: **{len(embedded_image_pages & scope_pages)}**;
+- pages avec dessins vectoriels: **{len(vector_drawing_pages & scope_pages)}**;
+- pages à contenu graphique détecté (image ou >=12 dessins vectoriels): **{len(detected_graphic_pages & scope_pages)}**;
+- pages graphiques du périmètre encore non capturées: **{len((detected_graphic_pages & scope_pages) - covered)}**.
+
+## Répartition par section
+
+| Section | PDF index | Pages | Capturées | Non capturées | Service repair no | Couples Nm | Pages graphiques |
+|---|---:|---:|---:|---:|---:|---:|---:|
+{chr(10).join(rows)}
+
+## Exemples vérifiés de pages mécaniques actuellement hors couverture
+
+{examples}
+
+Ces exemples sont des contrôles sentinelles, pas une sélection finale. Le futur enrichissement devra créer les faits/procédures/spécifications d'abord, puis lier les vues originales pertinentes sans dupliquer une page pour chaque fait.
+
+## Règle pour la suite
+
+Ne pas convertir automatiquement les {len(scope_pages - covered)} pages manquantes en autant de faits. Extraire de façon structurée: spécifications, procédures, étapes, exigences, couples, avertissements et relations; conserver chaque page/illustration originale une seule fois et la relier aux éléments qu'elle prouve. Toute donnée reste documentaire/consultative et ne prend jamais la main sur la communication ECU.
+'''
+                  Path(args.out_md).write_text(md, encoding='utf-8', newline='\n')
+                  print(json.dumps(stats, ensure_ascii=False))
+              finally:
+                  doc.close()
+              return 0
+
+          if __name__ == '__main__':
+              raise SystemExit(main())
+          '@ | Set-Content -LiteralPath 'tools/audit_rcl0193_mechanical_scope.py' -Encoding UTF8
+
+      - name: Download and verify exact RCL0193 factory PDF
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & curl.exe -L --fail --retry 3 --retry-delay 3 -o 'RCL0193ENG.pdf' 'https://www.uscars.biz/uscars/mini-documents/Rave_CD_wmxn990e.pdf'
+          if ($LASTEXITCODE -ne 0) { throw 'RCL0193 download failed' }
+          $hash = (Get-FileHash 'RCL0193ENG.pdf' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($hash -ne $env:RCL0193_SHA256) { throw "RCL0193 SHA mismatch: $hash" }
+
+      - name: Run mechanical coverage audit
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python tools/audit_rcl0193_mechanical_scope.py --pdf RCL0193ENG.pdf
+          if ($LASTEXITCODE -ne 0) { throw 'Mechanical scope audit failed' }
+          $j = Get-Content 'database/reference/audits/rcl0193_mechanical_scope_audit.json' -Raw | ConvertFrom-Json
+          if ($j.pdf_pages -ne 372) { throw 'Wrong PDF page count' }
+          if ($j.current_rcl0193_visual_pages -ne 26) { throw 'Wrong current visual count' }
+          if ($j.historical_rcl0193_facts -ne 31) { throw 'Wrong historical fact count' }
+          if ($j.scope_currently_uncaptured_pages -le 50) { throw 'Audit did not expose expected mechanical/documentary gap' }
+          if ($j.uncaptured_pages_with_detected_graphics -le 10) { throw 'Audit did not expose expected visual gap' }
+          Write-Host "PASS mechanical gap measured: scope=$($j.scope_pages), captured=$($j.scope_currently_captured_pages), uncaptured=$($j.scope_currently_uncaptured_pages), graphic_uncaptured=$($j.uncaptured_pages_with_detected_graphics)"
+
+      - name: Install Qt 5.15.2 MSVC x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $sevenZip = (Get-Command 7z.exe -ErrorAction Stop).Source
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
+          if ($LASTEXITCODE -ne 0) { throw "Qt install failed: $LASTEXITCODE" }
+
+      - name: Configure and build routing test executable
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake -S . -B build-routing -A x64 `
+            -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
+            -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
+            -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF `
+            -DMEMS_USE_ONNX_GENAI=OFF
+          if ($LASTEXITCODE -ne 0) { throw "CMake configure failed: $LASTEXITCODE" }
+          cmake --build build-routing --config Release --target ecu_mems_manager ia_response_selftest ia_mems_diagram_selftest mems_search_selftest
+          if ($LASTEXITCODE -ne 0) { throw "Build failed: $LASTEXITCODE" }
+
+      - name: Run deterministic regression tests before commit
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
+          $env:PATH = "$qtRoot\bin;$env:PATH"
+          $env:QT_PLUGIN_PATH = "$qtRoot\plugins"
+          & '${{ github.workspace }}\build-routing\Release\ia_response_selftest.exe'
+          if ($LASTEXITCODE -ne 0) { throw 'IA response self-test failed' }
+          & '${{ github.workspace }}\build-routing\Release\ia_mems_diagram_selftest.exe'
+          if ($LASTEXITCODE -ne 0) { throw 'IA diagram/routing self-test failed' }
+          & '${{ github.workspace }}\build-routing\Release\mems_search_selftest.exe'
+          if ($LASTEXITCODE -ne 0) { throw 'MEMS search self-test failed' }
+
+      - name: Report validated pre-commit gate before technical push
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          git fetch origin RAPPORT
+          git worktree add report-worktree origin/RAPPORT
+          $env:AUDIT_JSON = (Resolve-Path 'database/reference/audits/rcl0193_mechanical_scope_audit.json').Path
+          $env:REPORT_PATH = (Resolve-Path 'report-worktree/RAPPORT_SUIVI_ECU_MEMS_MANAGER.md').Path
+          @'
+          import json, os
+          from pathlib import Path
+          j=json.loads(Path(os.environ['AUDIT_JSON']).read_text(encoding='utf-8'))
+          text=f"""
+
+## 2026-08-29 - ROUTAGE VISUEL AUTO-GUARD + AUDIT MECANIQUE - TESTS AVANT POUSSE TECHNIQUE
+
+Tests réalisés sur le candidat non encore committé de `tmp-rave-visual-backfill`: **✅ PASS** compilation x64 et self-tests déterministes (`ia_response_selftest`, `ia_mems_diagram_selftest`, `mems_search_selftest`).
+
+La politique est maintenant centralisée: ambiguïté Mini SPi/MPi prioritaire; sinon un visuel local résolu par le catalogue supprime uniquement la clarification génération inutile; sinon la clarification génération reste active. Le self-test couvre explicitement la formulation naturelle RAVE 20.3, la protection SPi/MPi, le cas sans visuel exact, le mot naturel `vue`, et vérifie que toutes les entrées `manifest.diagrams` ont un fichier local.
+
+Audit RCL0193 exact SHA-256 `{j['sha256']}` / {j['pdf_pages']} pages: périmètre moteur/MEMS = **{j['scope_pages']} pages**, dont **{j['scope_currently_captured_pages']} actuellement capturées** et **{j['scope_currently_uncaptured_pages']} non capturées**. Procédures `Service repair no` uniques: **{j['unique_service_repair_numbers_in_scope']}**; occurrences de couples Nm: **{j['torque_occurrences_in_scope']}**; pages graphiques détectées encore non capturées: **{j['uncaptured_pages_with_detected_graphics']}**.
+
+Conclusion avant pousse: le faible volume RAVE est bien dû à un sous-périmètre d'extraction historique. Les 31 faits RCL0193 existants ne manquent pas de visuel; de nombreux faits/procédures/vues mécaniques n'ont jamais été créés. La pousse technique suivante reste limitée au routage/garde automatique + outil et audit de mesure; aucun nouveau fait mécanique/qz64/image n'est encore ajouté.
+
+Production `MEMSX64` reste BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.
+"""
+          with open(os.environ['REPORT_PATH'],'a',encoding='utf-8',newline='\n') as f: f.write(text)
+          '@ | python -
+          Push-Location report-worktree
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Report routing guard and mechanical audit pre-commit validation"
+          git push origin HEAD:RAPPORT
+          Pop-Location
+
+      - name: Commit routing guard and mechanical audit atomically
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Remove-Item 'RCL0193ENG.pdf' -Force
+          git rm '.github/workflows/temp-routing-mechanical-audit.yml'
+          $expected = @(
+            'database/reference/audits/rcl0193_mechanical_scope_audit.json',
+            'database/reference/audits/rcl0193_mechanical_scope_audit.md',
+            'expert/IaMemsConversationRouting.h',
+            'expert/IaMemsDiagramCatalog.cpp',
+            'expert/IaMemsDiagramSelfTest.cpp',
+            'iamemstab.cpp',
+            'tools/audit_rcl0193_mechanical_scope.py',
+            '.github/workflows/temp-routing-mechanical-audit.yml'
+          ) | Sort-Object
+          $actual = @(git status --short | ForEach-Object { $_.Substring(3).Trim() } | Sort-Object)
+          if (($actual -join "`n") -ne ($expected -join "`n")) {
+            Write-Host "Expected:`n$($expected -join "`n")"
+            Write-Host "Actual:`n$($actual -join "`n")"
+            throw 'Unexpected technical scope before commit'
+          }
+          git add expert/IaMemsConversationRouting.h expert/IaMemsDiagramCatalog.cpp expert/IaMemsDiagramSelfTest.cpp iamemstab.cpp tools/audit_rcl0193_mechanical_scope.py database/reference/audits/rcl0193_mechanical_scope_audit.md database/reference/audits/rcl0193_mechanical_scope_audit.json
+          git commit -am "Generalize RAVE visual routing and audit mechanical scope"
+          $commit = (git rev-parse HEAD).Trim()
+          "TECH_COMMIT=$commit" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          git push origin HEAD:tmp-rave-visual-backfill
+
+      - name: Verify exact remote technical commit
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          git fetch origin tmp-rave-visual-backfill
+          $remote = (git rev-parse origin/tmp-rave-visual-backfill).Trim()
+          if ($remote -ne $env:TECH_COMMIT) { throw "Remote mismatch: $remote vs $env:TECH_COMMIT" }
+          $expected = @(
+            '.github/workflows/temp-routing-mechanical-audit.yml',
+            'database/reference/audits/rcl0193_mechanical_scope_audit.json',
+            'database/reference/audits/rcl0193_mechanical_scope_audit.md',
+            'expert/IaMemsConversationRouting.h',
+            'expert/IaMemsDiagramCatalog.cpp',
+            'expert/IaMemsDiagramSelfTest.cpp',
+            'iamemstab.cpp',
+            'tools/audit_rcl0193_mechanical_scope.py'
+          ) | Sort-Object
+          $actual = @(git diff-tree --no-commit-id --name-only -r $env:TECH_COMMIT | Sort-Object)
+          if (($actual -join "`n") -ne ($expected -join "`n")) { throw "Remote commit scope mismatch: $($actual -join ', ')" }
+          if (-not (git show "$env:TECH_COMMIT`:iamemstab.cpp" | Select-String 'clarificationKind' -SimpleMatch -Quiet)) { throw 'Remote routing helper usage missing' }
+          if (-not (git show "$env:TECH_COMMIT`:expert/IaMemsDiagramCatalog.cpp" | Select-String 'QStringLiteral("vue")' -SimpleMatch -Quiet)) { throw 'Remote natural visual intent missing' }
+          Write-Host "PASS exact remote commit $env:TECH_COMMIT"
+
+      - name: Build temporary real-PC package from official BUILD 101
+        uses: actions/download-artifact@v4
+        with:
+          name: ECU-MEMS-Manager-x64-BUILD-101-v1.0.101
+          path: dist-x64
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: mini56/ECU-Mems-Manager-Session
+          run-id: 33178021830
+
+      - name: Replace test executable and reference package only
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Copy-Item 'build-routing\Release\ecu_mems_manager.exe' 'dist-x64\ecu_mems_manager.exe' -Force
+          if (Test-Path 'dist-x64\database\reference') { Remove-Item 'dist-x64\database\reference' -Recurse -Force }
+          Copy-Item 'database\reference' 'dist-x64\database\reference' -Recurse -Force
+          $manifest = Get-Content 'dist-x64\database\reference\manifest.json' -Raw | ConvertFrom-Json
+          if ($manifest.diagrams.PSObject.Properties.Count -lt 40) { throw 'Temporary package diagram inventory shrank' }
+          if ($manifest.visual_assets.PSObject.Properties.Count -ne 34) { throw 'Temporary package RAVE visual inventory mismatch' }
+          Write-Host 'PASS temporary package = official #101 runtime + patched executable + current 34 RAVE visual reference package'
+
+      - name: Upload temporary real-PC routing test package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ECU-MEMS-Manager-x64-TEST-RAVE-ROUTING-AUTO
+          path: dist-x64/
+          if-no-files-found: error
+          compression-level: 6
+
+      - name: Report post-push verification immediately
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Push-Location report-worktree
+          git fetch origin RAPPORT
+          git reset --hard origin/RAPPORT
+          Pop-Location
+          $env:AUDIT_JSON = (Resolve-Path 'database/reference/audits/rcl0193_mechanical_scope_audit.json').Path
+          $env:REPORT_PATH = (Resolve-Path 'report-worktree/RAPPORT_SUIVI_ECU_MEMS_MANAGER.md').Path
+          @'
+          import json, os
+          from pathlib import Path
+          j=json.loads(Path(os.environ['AUDIT_JSON']).read_text(encoding='utf-8'))
+          c=os.environ['TECH_COMMIT']
+          text=f"""
+
+## 2026-08-29 - ROUTAGE VISUEL AUTO-GUARD + AUDIT MECANIQUE - POUSSE ET TEST DISTANT
+
+Commit atomique sur `tmp-rave-visual-backfill`: `{c}` — **✅ relecture distante PASS**. Périmètre exact vérifié: politique de clarification centralisée, catalogue visuel naturel (`image/illustration/vue/dessin/figure`), self-test de non-régression, outil d'audit mécanique et résultats d'audit; le helper temporaire est supprimé.
+
+Tests avant pousse: compilation x64 + `ia_response_selftest` + `ia_mems_diagram_selftest` + `mems_search_selftest` **✅ PASS**. Le self-test garantit désormais automatiquement qu'un visuel local exact résolu par le catalogue ne redemande pas inutilement la génération MEMS, tout en conservant la clarification SPi/MPi prioritaire. Toutes les entrées `manifest.diagrams` doivent aussi pointer vers un fichier réellement présent.
+
+Audit RCL0193: **{j['scope_pages']} pages** dans le périmètre moteur/MEMS, **{j['scope_currently_captured_pages']} capturées**, **{j['scope_currently_uncaptured_pages']} non capturées**, **{j['unique_service_repair_numbers_in_scope']}** numéros de procédure uniques, **{j['torque_occurrences_in_scope']}** occurrences de couples Nm, **{j['uncaptured_pages_with_detected_graphics']}** pages graphiques encore non capturées. Cela confirme le sous-enrichissement mécanique en amont des captures.
+
+Un package temporaire réel-PC est produit depuis l'artefact officiel #101, avec uniquement l'exécutable test et le package de référence courant remplacés. Ce n'est pas #102 et aucune production n'est modifiée. Prochaine validation: test utilisateur en formulation naturelle avant toute promotion.
+"""
+          with open(os.environ['REPORT_PATH'],'a',encoding='utf-8',newline='\n') as f: f.write(text)
+          '@ | python -
+          Push-Location report-worktree
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Report routing guard and mechanical audit post-push validation"
+          git push origin HEAD:RAPPORT
+          Pop-Location
+
+      - name: Upload audit outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: RCL0193-MECHANICAL-SCOPE-AUDIT
+          path: |
+            database/reference/audits/rcl0193_mechanical_scope_audit.md
+            database/reference/audits/rcl0193_mechanical_scope_audit.json
+          if-no-files-found: error
