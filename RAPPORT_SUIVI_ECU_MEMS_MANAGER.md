@@ -2349,3 +2349,18 @@ PROCHAINE ACTION EXACTE:
 - La planche confirme notamment qu autour des index PDF 30-33 se trouvent schema/legende/schema/legende, et l index 32 est un schema de cablage. Le numero constructeur exact doit encore etre lu sur rendu haute definition avant liaison DB.
 - Prochaine action: rendre en haute definition uniquement les pages candidates utiles (notamment 30-33 et pages d implantation/tableaux) pour relever titre exact, etiquette 86.xx, variante/annee et preuves techniques avant creation de faits/assets.
 - Aucun fait, asset ou qz64 de page AKM6348 ajoute a ce stade. MEMSX64 #101 inchange.
+
+## 2026-08-29 - AKM6348 CH86 - PREMIER BLOC EXACT POUR LOT 1780
+
+- Inspection haute definition de l artefact temporaire des 53 pages effectuee; les index PDF 28 a 35 portent exactement les pages constructeur 86-28 a 86-35.
+- 86-28: Demarreur type M79 pre-engage, depose/repose Service Repair No 86.60.01; solenoide M79 depose/repose 86.60.08, avec vues RM2411/RM2410.
+- Anomalie source a conserver: dans la procedure solenoide, l etape 1 renvoie visuellement a 86.60.08 pour deposer le demarreur alors que la procedure demarreur affiche 86.60.01. Ne pas corriger silencieusement; marquer la reference interne a verifier.
+- 86-29: ensemble de reduction d intensite des feux de croisement, depose/repose 86.55.91; resistance de reduction, depose/repose 86.55.92; vues RM2668/RM2669.
+- 86-30: SCHEMA DE CABLAGE - Modeles a instrument simple - a partir de 1984; page imprimee 86-30.
+- 86-31: legende du schema instrument simple + code des couleurs des cables; regle constructeur: premiere lettre = couleur principale, seconde = filet.
+- 86-32: SCHEMA DE CABLAGE - Modeles a instruments multiples - a partir de 1984; page imprimee 86-32.
+- 86-33: legende modeles a groupe d instruments - a partir de 1984 + codes couleurs; inclut notamment indicateur temperature eau repere 46 et transmetteur temperature eau repere 47.
+- 86-34: faisceau compartiment moteur et faisceau tableau de bord, tous deux explicitement a partir des modeles de 1986, avec reperes de composants/connecteurs.
+- 86-35: faisceau de carrosserie a partir des modeles de 1986 + tableau constructeur des points de masse par element/systeme.
+- Lot 1780 prevu: rendre/conserver une seule fois ces 8 pages, ajouter scopes exacts, procedures et etapes paraphrasees, cablage/legendes/codes couleurs/faisceaux/points de masse structures dans le socle 1730, avec image_ref vers chaque preuve.
+- Aucun fait historique ne sera reecrit; MEMSX64 reste #101; le lot sera d abord genere et valide sur tmp-rave-visual-backfill avant commit des donnees.
