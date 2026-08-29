@@ -1690,3 +1690,17 @@ Les 12 fichiers utiles vérifiés correspondent tous à leurs SHA-256 déclarés
 Seul défaut : `SHA256SUMS.txt` s'inclut lui-même dans la commande `find`; sa ligne propre contient donc le SHA-256 du fichier vide avant remplissage et devient invalide après écriture. Aucune donnée n'a été poussée.
 
 **Prochaine action exacte :** corriger uniquement la construction de `SHA256SUMS.txt` pour exclure `SHA256SUMS.txt` lui-même, relancer le même test déterministe, puis revalider l'artefact avant toute pousse. Production #101 et communication ECU inchangées.
+
+## 2026-08-29 - RCL0194 1750 - run3 + artefact PASS
+
+Test: workflow `TEMP RCL0194 DETERMINISTIC 1750 VALIDATE`, run `33249539952`, job `99092714072`, HEAD `cd5ec9fbef4687cfaa782f8ae314c6fa50e481b1`.
+
+Verdict: PASS. Toutes les etapes GitHub sont vertes. Invariants: integrity=ok, user_version=20, 93 faits RAVE historiques, 105 faits expert historiques, 8 visuels RCL0194, couverture 55/55, legende couleurs 26/26, 3 corrections additives 39.1 -> 39.2, sans reecriture des faits historiques.
+
+Artefact `RCL0194-1750-DETERMINISTIC-CANDIDATE`, ID `9713908641`, taille `1,356,818` octets, digest GitHub `sha256:f5f0c864314a2addb0e94640e8ecd2d15216b1a59cdba7d308a0970ec26ff525`. Qz64 SHA-256 `200b2d7ec0ba24d93d7192fdf63f86845c53f49ad4a28cb997ede9d39fb5f51d`.
+
+Verification locale de l'artefact: PASS. `sha256sum -c SHA256SUMS.txt` retourne OK pour 12/12 fichiers utiles. `SHA256SUMS.txt` ne se reference plus lui-meme. Les 8 PNG correspondent aux hashes deja verifies.
+
+Conclusion: le candidat 1750 est reproductible et verifie de bout en bout avant commit. Les PNG restent des preuves visuelles associees a la base structuree. La base/IA reste consultative et ne prend jamais la main sur la communication ECU.
+
+Prochaine action exacte: pousser atomiquement les octets valides du qz64 1750, manifeste, audit et 8 PNG sur `tmp-rave-visual-backfill`, conserver le generateur, retirer les workflows temporaires inutiles, puis lancer une validation post-pousse depuis les fichiers reellement commites et mettre le rapport a jour avant le lot suivant. Production reste MEMSX64 BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`; aucun #102.
