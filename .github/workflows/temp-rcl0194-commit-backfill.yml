@@ -1,4 +1,4 @@
-name: TEMP RCL0194 COMMIT BACKFILL
+name: TEMP RCL0194 COMMIT VALIDATED 1750
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 jobs:
-  package_and_commit:
+  commit_and_postvalidate:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
@@ -26,130 +26,184 @@ jobs:
       - name: Install pinned PDF renderer
         run: python -m pip install PyMuPDF==1.26.4
 
-      - name: Verify exact batch 1750 payload already committed
+      - name: Verify production remains exact BUILD 101
         shell: bash
         run: |
-          echo '969c2b23b8e33e9bcac4ff653752186fad2fde8b5952439bf808d1ac2b56de02  database/reference/research_enrichment_1750.qz64' | sha256sum -c -
+          set -euo pipefail
+          PROD=$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')
+          test "$PROD" = "22dbe75ed14e0a61e694159d505ef72245116b48"
+          echo "PRODUCTION_BUILD_101_UNCHANGED=$PROD"
 
-      - name: Download exact Rover source
+      - name: Download exact Rover RCL0194ENG source
         shell: bash
         run: |
-          curl --fail --location --retry 3 --output RCL0194ENG.pdf 'https://www.goclassic.eu/upload/content/e68ce7_9c0fd6a5b3a14a3585ecddb02b3ceb9d.pdf'
+          set -euo pipefail
+          curl --fail --location --retry 3 \
+            --output RCL0194ENG.pdf \
+            'https://www.goclassic.eu/upload/content/e68ce7_9c0fd6a5b3a14a3585ecddb02b3ceb9d.pdf'
           echo '64e64f8a7c24f362913e2661403bc474e4e7ef07f96db618ef661645e0d0f051  RCL0194ENG.pdf' | sha256sum -c -
 
-      - name: Render and verify all eight RCL0194 assets
+      - name: Regenerate exact validated candidate from BUILD 101 reference data
         shell: bash
         run: |
-          python - <<'PY'
-          import hashlib
-          from pathlib import Path
-          import fitz
-          expected = {
-              5:  ('RCL0194ENG_COLOUR_CODES.png','718af9c48d7cc466b5c50278680ecb286de81a869d8e2293207796afe08833d3',['COLOUR CODES','BLACK','GREEN','SLATE']),
-              13: ('RCL0194ENG_15_1.png','fa3a9f7620b660dc1405adf5bb330f74b9cf627e6ebc7bf2e3ac1b7a42016eeb',['CHARGING','STARTING','MPi']),
-              15: ('RCL0194ENG_20_1.png','334eea87abb0b9b5692c18ef157f51aa4a2edcc1580dd3d911ba7c3262bb9052',['ENGINE MANAGEMENT','MEMS','MPi']),
-              16: ('RCL0194ENG_20_2.png','3736908a793e46a5e3bee32d1d51544caf52557475317a2a5f96ca3d16177c9e',['ENGINE MANAGEMENT','MEMS','MPi']),
-              17: ('RCL0194ENG_20_3.png','2988614881aa2d713788eac084c97ae148595bbb19da21fd92b484041ef3e4c8',['ENGINE MANAGEMENT','MEMS','SPi']),
-              18: ('RCL0194ENG_20_4.png','7a04d84ee0296ab41333650f369aa3624f3ac7988a528584237a7b8fb021bea0',['ENGINE MANAGEMENT','MEMS','SPi']),
-              25: ('RCL0194ENG_39_2.png','e3e4c30e318aca2f9aeeb6984840397ec0bc5432d3c15034e2e68e6b2c0a6d22',['COOLING FAN','MPi']),
-              26: ('RCL0194ENG_39_3.png','b8da82236a56034cd3afde692752ae6ccdef2bc792f5dacfe14392ffc0f00188',['COOLING FAN','SPi']),
-          }
-          out=Path('database/reference/images/rave'); out.mkdir(parents=True,exist_ok=True)
-          doc=fitz.open('RCL0194ENG.pdf'); assert doc.page_count==41
-          try:
-              for idx,(name,wanted,tokens) in expected.items():
-                  page=doc.load_page(idx); text=' '.join(page.get_text('text').split())
-                  for token in tokens: assert token.lower() in text.lower(), (idx,token)
-                  pix=page.get_pixmap(matrix=fitz.Matrix(2,2),alpha=False)
-                  target=out/name; pix.save(target)
-                  got=hashlib.sha256(target.read_bytes()).hexdigest(); assert got==wanted,(name,got,wanted)
-                  print('PASS',idx,name,got,pix.width,pix.height)
-          finally: doc.close()
-          PY
+          set -euo pipefail
+          rm -rf .tmp-rcl0194-1750
+          python tools/build_rcl0194_visual_backfill_1750.py \
+            --root . \
+            --pdf RCL0194ENG.pdf \
+            --work .tmp-rcl0194-1750 | tee /tmp/precommit_validation.txt
 
-      - name: Update reference manifest additively
+      - name: Require exact run3 hashes before commit
         shell: bash
         run: |
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          p=Path('database/reference/manifest.json'); data=json.loads(p.read_text(encoding='utf-8-sig'))
-          batch='research_enrichment_1750.qz64'; batches=data.setdefault('research_enrichment_batches',[])
-          if batch not in batches: batches.append(batch)
-          data.setdefault('diagrams',{}).update({
-              'RAVE RCL0194ENG COLOUR CODES Rover codes couleurs fils':'images/rave/RCL0194ENG_COLOUR_CODES.png',
-              'RAVE RCL0194ENG 15.1 Mini MPi 97MY charge demarrage relais MEMS':'images/rave/RCL0194ENG_15_1.png',
-              'RAVE RCL0194ENG 20.1 Mini MPi 97MY MEMS lambda CKP CMP pompe relais':'images/rave/RCL0194ENG_20_1.png',
-              'RAVE RCL0194ENG 20.2 Mini MPi 97MY MEMS injecteurs IAC MAP TPS ECT IAT ventilateur':'images/rave/RCL0194ENG_20_2.png',
-              'RAVE RCL0194ENG 39.2 Mini MPi 97MY ventilateur refroidissement ECT':'images/rave/RCL0194ENG_39_2.png',
-              'RAVE RCL0194ENG 20.3 Mini SPi Japon 97MY MEMS lambda relais vilebrequin':'images/rave/RCL0194ENG_20_3.png',
-              'RAVE RCL0194ENG 20.4 Mini SPi Japon 97MY MEMS injecteur IAC TPS ECT IAT':'images/rave/RCL0194ENG_20_4.png',
-              'RAVE RCL0194ENG 39.3 Mini SPi Japon 97MY ventilateur refroidissement':'images/rave/RCL0194ENG_39_3.png'})
-          rows=[
-              ('COLOUR_CODES','COLOUR CODES',5,'legend','RCL0194ENG_COLOUR_CODES.png','718af9c48d7cc466b5c50278680ecb286de81a869d8e2293207796afe08833d3'),
-              ('15.1','15.1',13,'wiring_diagram','RCL0194ENG_15_1.png','fa3a9f7620b660dc1405adf5bb330f74b9cf627e6ebc7bf2e3ac1b7a42016eeb'),
-              ('20.1','20.1',15,'wiring_diagram','RCL0194ENG_20_1.png','334eea87abb0b9b5692c18ef157f51aa4a2edcc1580dd3d911ba7c3262bb9052'),
-              ('20.2','20.2',16,'wiring_diagram','RCL0194ENG_20_2.png','3736908a793e46a5e3bee32d1d51544caf52557475317a2a5f96ca3d16177c9e'),
-              ('20.3','20.3',17,'wiring_diagram','RCL0194ENG_20_3.png','2988614881aa2d713788eac084c97ae148595bbb19da21fd92b484041ef3e4c8'),
-              ('20.4','20.4',18,'wiring_diagram','RCL0194ENG_20_4.png','7a04d84ee0296ab41333650f369aa3624f3ac7988a528584237a7b8fb021bea0'),
-              ('39.2','39.2',25,'wiring_diagram','RCL0194ENG_39_2.png','e3e4c30e318aca2f9aeeb6984840397ec0bc5432d3c15034e2e68e6b2c0a6d22'),
-              ('39.3','39.3',26,'wiring_diagram','RCL0194ENG_39_3.png','b8da82236a56034cd3afde692752ae6ccdef2bc792f5dacfe14392ffc0f00188')]
-          va=data.setdefault('visual_assets',{})
-          for key,page,index,kind,name,digest in rows:
-              va[f'rave:RCL0194ENG:{key}']={'path':f'images/rave/{name}','asset_kind':kind,'document':'RCL0194ENG','source_page':page,'pdf_index':index,'sha256':digest}
-          assert data.get('database_revision')==20
-          p.write_text(json.dumps(data,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
-          PY
-
-      - name: Add visual backfill audit
-        shell: bash
-        run: |
-          cat > database/reference/audits/rcl0194_visual_backfill_1750_audit.md <<'EOF'
-          # RCL0194 visual backfill — batch 1750 audit
-
-          Date: 2026-08-29
-
-          Production remains `MEMSX64` BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`. This batch is documentary only; no ECU communication/protocol/acquisition/RAM/write/reset safety/Qwen/ONNX/32-bit code is changed and historical RAVE/expert facts are not rewritten.
-
-          Primary source: Rover `RCL0194ENG`, MINI Electrical Circuit Diagrams, 3rd Edition, 41 PDF pages, SHA-256 `64e64f8a7c24f362913e2661403bc474e4e7ef07f96db618ef661645e0d0f051`.
-
-          Eight source visuals are retained once: COLOUR CODES (index 5), 15.1 (13), 20.1 (15), 20.2 (16), 20.3 (17), 20.4 (18), 39.2 (25), 39.3 (26). Pilot assets 20.3/20.4/39.3 are reused byte-for-byte.
-
-          Source audit: 20.2 directly confirms an external MAP SENSOR (204) on MPi, connector C186, with ECM links including C159-36 RG, C159-8 YP and sensor return C159-13 KB. This remains distinct from SPi integrated MAP.
-
-          Factory page 39.1 is HEATER BLOWER. Factory page 39.2 is `COOLING FAN — MPi`. Legacy facts `RAVE-WIR-MPI-006`, `RAVE-WIR-MPI-008`, `RAVE-WIR-MPI-012` retain their historical 39.1 reference for audit but receive an additive effective-source correction to `RCL0194ENG:39.2` and link to the real 39.2 visual. No fake 39.1 Cooling Fan asset is created.
-
-          `research_enrichment_1750.qz64` adds `mems_rave_illustration`, `mems_rave_illustration_link`, `mems_rave_source_reference_correction`, indexes and a resolution view. Composite refs 20.1-20.2 / 20.3-20.4 link both pages. All 26 `RAVE-COLOR-SPIJ-*` facts also link COLOUR CODES as supporting legend.
-
-          Validation on exact BUILD #101 SQLite copy: `PRAGMA integrity_check = ok`; `user_version = 20`; RAVE facts remain 93; expert facts remain 105; 8 RCL0194 assets; 55/55 RCL0194 facts have direct/corrected visual evidence; 26 colour facts have the legend; 3 explicit 39.1 -> 39.2 corrections.
-
-          Payload `research_enrichment_1750.qz64`: 3105 bytes, SHA-256 `969c2b23b8e33e9bcac4ff653752186fad2fde8b5952439bf808d1ac2b56de02`; decompressed SQL: 36596 bytes, SHA-256 `6ca6a2f82e948bacdd6995615fbea98d80571b3f87f80f8b93f46869a5bb0174`.
-
-          Safety: database/IA/RAVE information remains consultative and never takes control of ECU communication.
+          set -euo pipefail
+          cat > /tmp/RCL0194_EXPECTED_SHA256 <<'EOF'
+          200b2d7ec0ba24d93d7192fdf63f86845c53f49ad4a28cb997ede9d39fb5f51d  database/reference/research_enrichment_1750.qz64
+          70600d103365c652b2925a35158ae0963b123364befb3d3e346c3ad1015cb248  database/reference/manifest.json
+          128685b609550d3babf0e43bb7bc24886d0d5afa2e5c17c4715a5f85d312dcad  database/reference/audits/rcl0194_visual_backfill_1750_audit.md
+          718af9c48d7cc466b5c50278680ecb286de81a869d8e2293207796afe08833d3  database/reference/images/rave/RCL0194ENG_COLOUR_CODES.png
+          fa3a9f7620b660dc1405adf5bb330f74b9cf627e6ebc7bf2e3ac1b7a42016eeb  database/reference/images/rave/RCL0194ENG_15_1.png
+          334eea87abb0b9b5692c18ef157f51aa4a2edcc1580dd3d911ba7c3262bb9052  database/reference/images/rave/RCL0194ENG_20_1.png
+          3736908a793e46a5e3bee32d1d51544caf52557475317a2a5f96ca3d16177c9e  database/reference/images/rave/RCL0194ENG_20_2.png
+          2988614881aa2d713788eac084c97ae148595bbb19da21fd92b484041ef3e4c8  database/reference/images/rave/RCL0194ENG_20_3.png
+          7a04d84ee0296ab41333650f369aa3624f3ac7988a528584237a7b8fb021bea0  database/reference/images/rave/RCL0194ENG_20_4.png
+          e3e4c30e318aca2f9aeeb6984840397ec0bc5432d3c15034e2e68e6b2c0a6d22  database/reference/images/rave/RCL0194ENG_39_2.png
+          b8da82236a56034cd3afde692752ae6ccdef2bc792f5dacfe14392ffc0f00188  database/reference/images/rave/RCL0194ENG_39_3.png
           EOF
+          sha256sum -c /tmp/RCL0194_EXPECTED_SHA256
+          grep -F 'RCL0194_1750_PASS' /tmp/precommit_validation.txt
+          grep -F 'rcl0194_direct_visual_coverage=55' /tmp/precommit_validation.txt
+          grep -F 'color_legend_links=26' /tmp/precommit_validation.txt
+          grep -F 'source_corrections=3' /tmp/precommit_validation.txt
 
-      - name: Validate final inputs
+      - name: Guard generated scope before staging
         shell: bash
         run: |
-          echo '969c2b23b8e33e9bcac4ff653752186fad2fde8b5952439bf808d1ac2b56de02  database/reference/research_enrichment_1750.qz64' | sha256sum -c -
+          set -euo pipefail
+          rm -rf .tmp-rcl0194-1750
+          rm -f RCL0194ENG.pdf
+          python - <<'PY'
+          import subprocess
+          allowed = (
+              'database/reference/research_enrichment_1750.qz64',
+              'database/reference/manifest.json',
+              'database/reference/audits/rcl0194_visual_backfill_1750_audit.md',
+              'database/reference/images/rave/',
+          )
+          bad=[]
+          for line in subprocess.check_output(['git','status','--porcelain'], text=True).splitlines():
+              path=line[3:].strip()
+              if ' -> ' in path:
+                  path=path.split(' -> ',1)[1]
+              if not any(path == a or path.startswith(a) for a in allowed):
+                  bad.append(path)
+          if bad:
+              raise SystemExit('Unexpected generated paths before staging: '+', '.join(bad))
+          print('PRECOMMIT_SCOPE_GUARD_PASS')
+          PY
+
+      - name: Stage exact documentary lot and remove obsolete RCL0194 helpers
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/temp-rcl0194-commit-backfill.yml
+          git rm -f .github/workflows/temp-rcl0194-visual-extract.yml
+          git rm -f .github/workflows/temp-rcl0194-deterministic-1750-validate.yml
+          git add database/reference/research_enrichment_1750.qz64
+          git add database/reference/manifest.json
+          git add database/reference/audits/rcl0194_visual_backfill_1750_audit.md
+          git add database/reference/images/rave/
+          git diff --cached --name-status
+          python - <<'PY'
+          import subprocess
+          allowed_exact={
+              'database/reference/research_enrichment_1750.qz64',
+              'database/reference/manifest.json',
+              'database/reference/audits/rcl0194_visual_backfill_1750_audit.md',
+              '.github/workflows/temp-rcl0194-commit-backfill.yml',
+              '.github/workflows/temp-rcl0194-visual-extract.yml',
+              '.github/workflows/temp-rcl0194-deterministic-1750-validate.yml',
+          }
+          allowed_prefix='database/reference/images/rave/'
+          staged=subprocess.check_output(['git','diff','--cached','--name-only'], text=True).splitlines()
+          bad=[p for p in staged if p not in allowed_exact and not p.startswith(allowed_prefix)]
+          if bad:
+              raise SystemExit('Unexpected staged paths: '+', '.join(bad))
+          print('STAGED_SCOPE_GUARD_PASS')
+          PY
+
+      - name: Commit and push validated RCL0194 1750 lot
+        id: push
+        shell: bash
+        run: |
+          set -euo pipefail
+          git commit -m "Add deterministic RCL0194 visual backfill 1750"
+          NEW_SHA=$(git rev-parse HEAD)
+          echo "sha=$NEW_SHA" >> "$GITHUB_OUTPUT"
+          git push origin HEAD:tmp-rave-visual-backfill
+          echo "PUSHED_SHA=$NEW_SHA"
+
+      - name: Re-read exact remote commit after push
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin tmp-rave-visual-backfill
+          REMOTE_SHA=$(git rev-parse origin/tmp-rave-visual-backfill)
+          test "$REMOTE_SHA" = "${{ steps.push.outputs.sha }}"
+          git reset --hard "$REMOTE_SHA"
+          echo "REMOTE_COMMIT_CONFIRMED=$REMOTE_SHA"
+          test ! -e .github/workflows/temp-rcl0194-commit-backfill.yml
+          test ! -e .github/workflows/temp-rcl0194-visual-extract.yml
+          test ! -e .github/workflows/temp-rcl0194-deterministic-1750-validate.yml
+          test -e tools/build_rcl0194_visual_backfill_1750.py
+          PROD=$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')
+          test "$PROD" = "22dbe75ed14e0a61e694159d505ef72245116b48"
+
+      - name: Validate bytes actually committed on remote
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum -c /tmp/RCL0194_EXPECTED_SHA256
           python - <<'PY'
           import json
           from pathlib import Path
           m=json.loads(Path('database/reference/manifest.json').read_text(encoding='utf-8'))
           assert m['database_revision']==20
           assert 'research_enrichment_1750.qz64' in m['research_enrichment_batches']
-          r={k:v for k,v in m.get('visual_assets',{}).items() if k.startswith('rave:RCL0194ENG:')}; assert len(r)==8
-          for v in r.values(): assert Path('database/reference',v['path']).is_file()
-          print('PASS final RCL0194 candidate inputs')
+          assets={k:v for k,v in m.get('visual_assets',{}).items() if k.startswith('rave:RCL0194ENG:')}
+          assert len(assets)==8, len(assets)
+          for v in assets.values():
+              assert Path('database/reference',v['path']).is_file(), v['path']
+          print('REMOTE_BYTES_AND_MANIFEST_PASS')
           PY
 
-      - name: Commit exact backfill and remove helper
+      - name: Reproduce 1750 from exact remote commit and require zero diff
         shell: bash
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git rm .github/workflows/temp-rcl0194-commit-backfill.yml
-          git add database/reference/images/rave database/reference/research_enrichment_1750.qz64 database/reference/manifest.json database/reference/audits/rcl0194_visual_backfill_1750_audit.md
-          git diff --cached --stat
-          git commit -m "Add RCL0194 visual backfill batch 1750"
-          git push origin tmp-rave-visual-backfill
+          set -euo pipefail
+          curl --fail --location --retry 3 \
+            --output RCL0194ENG.pdf \
+            'https://www.goclassic.eu/upload/content/e68ce7_9c0fd6a5b3a14a3585ecddb02b3ceb9d.pdf'
+          echo '64e64f8a7c24f362913e2661403bc474e4e7ef07f96db618ef661645e0d0f051  RCL0194ENG.pdf' | sha256sum -c -
+          rm -rf .postpush-rcl0194-1750
+          python tools/build_rcl0194_visual_backfill_1750.py \
+            --root . \
+            --pdf RCL0194ENG.pdf \
+            --work .postpush-rcl0194-1750 | tee /tmp/postpush_validation.txt
+          git diff --exit-code -- \
+            database/reference/research_enrichment_1750.qz64 \
+            database/reference/manifest.json \
+            database/reference/audits/rcl0194_visual_backfill_1750_audit.md \
+            database/reference/images/rave/
+          grep -F 'RCL0194_1750_PASS' /tmp/postpush_validation.txt
+          grep -F 'integrity=ok' /tmp/postpush_validation.txt
+          grep -F 'rave_facts=93' /tmp/postpush_validation.txt
+          grep -F 'expert_facts=105' /tmp/postpush_validation.txt
+          grep -F 'rcl0194_direct_visual_coverage=55' /tmp/postpush_validation.txt
+          grep -F 'color_legend_links=26' /tmp/postpush_validation.txt
+          grep -F 'source_corrections=3' /tmp/postpush_validation.txt
+          rm -rf .postpush-rcl0194-1750 RCL0194ENG.pdf
+          test -z "$(git status --porcelain)"
+          echo 'REMOTE_POSTPUSH_REPRODUCIBILITY_PASS'
