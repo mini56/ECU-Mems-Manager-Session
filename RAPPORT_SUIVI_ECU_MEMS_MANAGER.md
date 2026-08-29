@@ -1772,3 +1772,13 @@ Les etapes checkout et PyMuPDF sont passees. La reconstruction de la base de ref
 Conclusion: les 31 faits historiques ne sont pas absents; c'est uniquement le filtre de cartographie qui etait trop strict. Aucun fait historique, aucun qz64, aucune image et aucun fichier production n'ont ete modifies ou pousses par ce run.
 
 Correction suivante autorisee: remplacer uniquement le filtre SQL par la valeur documentaire historique exacte `Mini Workshop Manual — RCL0193ENG`, conserver l'assertion de 31 faits et tous les autres controles. Continuer a parser le 1660 avec `sqlite3.complete_statement` afin de ne plus couper sur les points-virgules contenus dans les textes.
+
+## 2026-08-29 - RCL0193 - PLAN AVANT PARSING 31/31 ET CARTOGRAPHIE SOURCE
+
+Etat avant pousse technique: l'inventaire reproductible 1660 est valide et commite (`05497561d33e0407c4faac0e5d64c911d010b465`). Production reste strictement `MEMSX64` BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`; aucun #102.
+
+Objectif de la prochaine pousse sur `tmp-rave-visual-backfill`: ajouter uniquement un workflow temporaire d'audit qui decode `research_enrichment_1660.qz64`, parse proprement les INSERT `mems_rave_fact` en respectant les chaines SQL, apostrophes doublees et points-virgules internes, exige exactement 31 faits RCL0193 uniques, puis resout chaque `source_section` vers les pages physiques du PDF constructeur RCL0193 (372 pages, SHA-256 deja valide `c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715`).
+
+Le mapping ne doit jamais supposer un offset de page: pour chaque reference `PDF p.N` ou plage, le workflow doit verifier le contenu de la page candidate par rapport au sujet/section attendu et signaler toute divergence. Il doit produire un audit textuel lisible listant les 31 faits, leurs pages, types de support utiles (tableau, procedure, illustration, vue, avertissement) et la liste unique des assets a capturer.
+
+Aucun qz64 de donnees, aucune image et aucun fait historique ne doivent etre modifies par cette etape. La base/IA/RAVE reste consultative et ne prend jamais la main sur la communication ECU. Toute decouverte pouvant justifier une evolution du programme sera signalee explicitement a l'utilisateur.
