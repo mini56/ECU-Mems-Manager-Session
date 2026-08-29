@@ -1,0 +1,47 @@
+name: TEMP REPORT AKM7169 AUDIT PASS
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - .github/workflows/temp-report-akm7169-audit-pass.yml
+permissions:
+  contents: write
+jobs:
+  update_report:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Record AKM7169 audit push and remote verification
+        shell: bash
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+          ## 2026-08-29 - AKM7169 SOURCE AUDIT - POUSSE ET RELECTURE DISTANTE VALIDEES
+
+          Pousse documentaire sur `tmp-rave-visual-backfill`: commit `a8e31f5831bf2831468a1dfffffdf3d4c9390661`, ajout unique `database/reference/audits/akm7169_1720_source_backfill_audit.md`.
+
+          Test apres pousse: relecture directe du fichier depuis la branche distante **✅ PASS**. Blob SHA GitHub `9bb417f81ad289ddaf793aa093d1727c2dc1b4ef`. Le fichier confirme l'identite constructeur AKM7169ENG, les sources publiques/commerciales trouvees, la divergence de pagination 482/463, l'absence de source binaire reproductible selectionnee et l'interdiction de fabriquer un index physique ou un asset tant que le PDF exact n'est pas hashe.
+
+          Aucun qz64, PNG, manifeste, fait historique, code programme ou protocole ECU n'a ete modifie par cette pousse.
+
+          Prochaine pousse autorisee: conserver dans un fichier backlog separe les informations techniques complementaires visibles dans le texte indexe AKM7169 mais non encore integrees, avec statut explicite `OCR/indexed-scan candidate - primary page verification required`. Ce backlog ne doit pas modifier la base. Apres cette pousse: relecture + rapport avant toute autre action.
+          EOF
+      - name: Verify report entry
+        run: |
+          grep -F "AKM7169 SOURCE AUDIT - POUSSE ET RELECTURE DISTANTE VALIDEES" RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          grep -F "a8e31f5831bf2831468a1dfffffdf3d4c9390661" RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          grep -F "9bb417f81ad289ddaf793aa093d1727c2dc1b4ef" RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+      - name: Commit report and remove helper
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+mini56@users.noreply.github.com"
+          git rm .github/workflows/temp-report-akm7169-audit-pass.yml
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Record verified AKM7169 source audit push"
+          git push origin RAPPORT
