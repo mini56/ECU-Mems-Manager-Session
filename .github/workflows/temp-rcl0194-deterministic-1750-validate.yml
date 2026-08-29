@@ -99,7 +99,7 @@ jobs:
           cp validation_summary.txt candidate_payload/
           (
             cd candidate_payload
-            find . -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
+            find . -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
           )
           cat candidate_payload/SHA256SUMS.txt
 
