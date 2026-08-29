@@ -2320,3 +2320,13 @@ PROCHAINE ACTION EXACTE:
 - research_enrichment_1770.qz64 SHA-256 0de7f667adda6e4b4770f3c9426ec3cbc7299a9606eff533e2f015690d6b5ca0; octets distants relus et verifies.
 - Aucun fait technique de page n est encore marque constructeur: prochaine etape = acquerir/hash le PDF AKM6348 FR exact, verifier pagination et commencer les captures/pages utiles.
 - Production MEMSX64 reste strictement BUILD #101 22dbe75ed14e0a61e694159d505ef72245116b48; aucun #102.
+
+## 2026-08-29 - AKM6348 FR - ECHEC SOURCE DIRECTE, FAUX PDF REJETE
+
+- Workflow TEMP AKM6348 FR SOURCE VERIFY, run 33260157930, job 99120597137: FAILURE volontaire du garde identite/page count.
+- Le curl de l URL Les Chroniques de Goliath a reussi HTTP mais a retourne un document HTML, pas le PDF attendu.
+- Fichier recu: 114725 octets, type HTML Unicode UTF-8, SHA-256 16650d54b4fd5fda67c6b1242cf69f41b5b3623e2e46da6e50051d19ce1f04f0.
+- PyMuPDF a rapporte 22 pages sur ce contenu et le garde attendait 320-335: AssertionError 22. Ce hash ne doit jamais etre enregistre comme hash AKM6348.
+- Aucun binaire PDF, aucune capture, aucun qz64 supplementaire et aucune donnee technique de page n ont ete pousses par ce run.
+- Prochaine action: rechercher une autre source directement reproductible du vrai AKM6348 FR, ou obtenir le vrai binaire via une URL/chapitres alternatifs, puis hasher avant toute extraction.
+- MEMSX64 reste BUILD #101 inchange.
