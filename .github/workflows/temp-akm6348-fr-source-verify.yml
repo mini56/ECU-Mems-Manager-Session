@@ -1,0 +1,65 @@
+name: TEMP AKM6348 FR SOURCE VERIFY
+on:
+  push:
+    branches: [tmp-rave-visual-backfill]
+    paths:
+      - '.github/workflows/temp-akm6348-fr-source-verify.yml'
+permissions:
+  contents: read
+jobs:
+  verify_source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-visual-backfill
+          fetch-depth: 0
+      - name: Verify production remains BUILD 101
+        shell: bash
+        run: |
+          git fetch origin MEMSX64
+          test "$(git rev-parse origin/MEMSX64)" = "22dbe75ed14e0a61e694159d505ef72245116b48"
+      - name: Install PDF inspection dependency
+        shell: bash
+        run: python -m pip install --disable-pip-version-check --quiet PyMuPDF==1.26.4
+      - name: Download exact French AKM6348 candidate
+        shell: bash
+        run: |
+          curl -L --fail --retry 3 --retry-delay 2 \
+            'https://www.leschroniquesdegoliath.com/wp-content/uploads/2018/01/Rover-Mini-Manuel-atelier-fr.pdf' \
+            -o /tmp/AKM6348_FR.pdf
+          test -s /tmp/AKM6348_FR.pdf
+          file /tmp/AKM6348_FR.pdf
+          stat -c 'SIZE_BYTES=%s' /tmp/AKM6348_FR.pdf
+          sha256sum /tmp/AKM6348_FR.pdf
+      - name: Verify PDF identity and page count
+        shell: bash
+        run: |
+          python - <<'PY'
+          import fitz, hashlib, re
+          p='/tmp/AKM6348_FR.pdf'
+          data=open(p,'rb').read()
+          print('SHA256='+hashlib.sha256(data).hexdigest())
+          print('SIZE_BYTES='+str(len(data)))
+          doc=fitz.open(p)
+          print('PAGE_COUNT='+str(doc.page_count))
+          assert 320 <= doc.page_count <= 335, doc.page_count
+          samples=[]
+          for i in range(min(12,doc.page_count)):
+              t=doc.load_page(i).get_text('text')
+              samples.append(t)
+              print(f'PAGE_{i+1}_TEXT='+re.sub(r'\s+',' ',t)[:800])
+          joined='\n'.join(samples).lower()
+          identity_tokens=['mini','réparation']
+          assert all(tok in joined for tok in identity_tokens), joined[:4000]
+          # Accept spaced/OCR variants of the publication number if present in early pages.
+          normalized=re.sub(r'[^a-z0-9]','',joined)
+          print('HAS_AKM6348='+str('akm6348' in normalized).lower())
+          print('HAS_MARCH_1976='+str(('mars1976' in normalized) or ('march1976' in normalized)).lower())
+          doc.close()
+          PY
+      - name: Preserve no copyrighted binary in repository
+        shell: bash
+        run: |
+          rm -f /tmp/AKM6348_FR.pdf
+          test -z "$(git status --porcelain --untracked-files=all)"
