@@ -2177,3 +2177,30 @@ La regle calque reste validee et durable:
 - calques additifs et consultatifs, sans aucun controle ECU.
 
 Prochaine action apres validation de cette journalisation: priorite 1 = corriger/generaliser le routage visuel V2 avec garde automatique anti-regression; priorite 2 = si l'utilisateur fournit le binaire exact AKM7169ENG, le hasher et completer les 7 faits/visuels AKM; priorite 3 = reprendre RCL0193 comme corpus mecanique complet et extraire les faits/procedures/valeurs/vues manquants par blocs coherents, en appliquant la regle du calque aux illustrations.
+
+## INCIDENT ROUTAGE VISUEL V2 - RUN 33254169110
+
+Verdict : ECHEC DU GARDE AUTOMATIQUE, PAS DU COMPILATEUR NI DU LINKER.
+- Branche temporaire : tmp-rave-visual-backfill.
+- Commit teste : 2de3d17347be86fbfd0377bf1b21c6779169019e.
+- Run : 33254169110. Job : 99104882089.
+- Checkout, base officielle #101, patch visuel, audit mecanique RCL0193, Qt, CMake configure/generate, compilation et link du self-test : OK.
+- POST_BUILD self-test : ECHEC avec exactement 2 erreurs logiques.
+- Erreur 1 : la requete illustration injecteur IAC TPS Mini SPi Japon 1997 ne resout pas correctement RCL0194ENG:20.4.
+- Erreur 2 : schema Mini 1997 est ambigu et doit demander une clarification, mais V2 le laisse actuellement contourner cette clarification.
+- Message final : IaMemsDiagramCatalog self-test failed with 2 error(s).
+- Aucun fait mecanique, aucune image nouvelle et aucune modification de MEMSX64 ne sont issus de ce run.
+- Conclusion : distinguer suggestion valide et correspondance a haute confiance avant de contourner une clarification ; correction generale, pas codee pour deux phrases.
+
+## INCIDENT DE TRACABILITE DISTINCT - RUN 33254853871
+
+- Workflow report-routing-mechanical-workflow-failure.yml invalide en YAML ligne 25.
+- Aucun job demarre. Cet incident est distinct du run V2 33254169110 et ne le cause pas.
+
+## INCIDENT DE REPARATION DU RAPPORT - RUN 33256380157
+
+- Premier helper report-v2-routing-failure-repair.yml rejete avant job ; jobs vide.
+- Cause : texte Python multilignes sorti de indentation du bloc YAML run, donc workflow invalide avant execution.
+- Aucun contenu du rapport, code, base, image ou production modifie par cette tentative.
+- Reparation : helper minimal avec lignes printf, auto-suppression, puis relecture obligatoire du rapport.
+- Toute progression technique reste suspendue jusqu a verification du rapport.
