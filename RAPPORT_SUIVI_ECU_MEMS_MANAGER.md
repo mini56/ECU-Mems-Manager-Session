@@ -7847,3 +7847,46 @@ Objectif unique : terminer le lot documentaire 1860 sans modifier `MEMSX64`, le 
 6. `MEMSX64` doit rester exactement BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.
 
 PROCHAINE ACTION EXACTE : test diagnostique PyMuPDF 1.26.4 sur la seule page 324, puis rapport immediat du resultat avant toute pousse finale 1860.
+
+# CHECKPOINT RCL0193FRE 1860 — REGENERATION DETERMINISTE AVANT POUSSE — 30 AOUT 2026
+
+## Incident de journalisation avant ce checkpoint
+- Tentative de helper rapport run `33309274293` : FAILURE avant création de tout job, donc aucun contenu du rapport maître n'a été modifié par ce run.
+- Cause : helper GitHub Actions trop complexe / syntaxe de workflow refusée avant exécution.
+- Correction : payload texte temporaire + workflow minimal auto-supprimant ; aucun rapport secondaire permanent n'est créé.
+
+## Cause du blocage 1860 définitivement établie
+- Le transport 1860 historique du commit `908da678c67dcc6066a8991b69b0feb6e7923cdc` était tronqué : Base64 TIFF 15 000 octets et QZ64 6 000 octets seulement.
+- Probe GitHub Actions `33308468167` : le TIFF historique tronqué possède un premier IFD à 18 846 octets, alors que le rendu reproductible de la page 324 depuis la source exacte donne un premier IFD à 27 800 octets. Le candidat historique TIFF `d25fd347ccf9fd795c635fffff5a0dcc2800bbe33e185416c9a188d034b8f2c4` n'est donc pas le rendu reproductible de la source exacte et ne doit plus être forcé.
+- La méthode historique de rendu est prouvée par le lot 1850 : PyMuPDF 150 dpi gris -> Pillow `convert('1')` -> TIFF Group 4 150 dpi reproduit exactement le SHA 1850 `45281ba49806df725d4db980ed291461c6779dada7a153a3bed0a0b7559f21b4`.
+- Probe QZ64 `33308683680` : longueur SQL historique attendue 322 789 octets, seulement 26 340 octets récupérables (8,16 %), 33 INSERT, jusqu'à `KNOW-RCL0193FRE-1860-P358`. L'ancien SQL complet n'est pas récupérable bit-à-bit.
+
+## Décision technique
+Le lot 1860 est régénéré proprement depuis le PDF constructeur exact, sans OCR approximatif. Le texte PDF est extrait déterministement par positions de glyphes et décodage de la police de substitution. Les 45 pages restent exactement 324, 326, 328-358 sauf 325/327, puis 360-371 ; 325, 327 et 359 sont exclues comme blanches/intercalaires.
+
+## Résultat de régénération locale validé
+- Source `RCL0193FRE` : 67 009 217 octets, 371 pages, SHA-256 `0c7fef28d0d0f0673ba321d6625a019c005823103caa98afb3258114e1fec713`.
+- 45 connaissances de page + 50 opérations constructeur + 17 connaissances de spécification = **112 connaissances** et 112 portées.
+- **18 spécifications / 18 valeurs** explicites constructeur.
+- **50 opérations -> 100 phases** Dépose/Repose ou Contrôle/Réglage/Inspection.
+- **516 étapes numérotées**.
+- **29 exigences** : avertissements, outils spéciaux, remplacements, prérequis et contrôles post-opération.
+- **79 relations** documentaires/dépendances explicites.
+- **64 alias effectifs**.
+- Exécution du SQL sur le schéma exact du socle : PASS pour 112/112, 18/18, 100, 516, 29, 79, 64.
+
+## Nouveaux artefacts reproductibles
+- SQL : 384 852 octets — SHA-256 `d1927160d0c859949046b15ca93ce6b9a1c88a6377d883bcef5111abab91c265`.
+- QZ64 Base64 déterministe : 42 622 octets — SHA-256 `27fc75a0890b455ba7c0b51f84488b98dbc164c69209e115e403a2f1fb8d5d53`.
+- TIFF Group 4 150 dpi : 1 132 992 octets — SHA-256 `ef82512a85542de81b15ca51dbb5c0f36133350c0613837e1fc257fa425225c2`.
+- XZ TIFF, Python lzma FORMAT_XZ preset 6 : 816 448 octets — SHA-256 `254f8da5ad575abaee3ee0a0c20e54b8e04687a61f31fe7511c592b92afb870c`.
+
+## Barrières avant pousse
+- `MEMSX64` reste exactement BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48` ; aucun #102.
+- Branche documentaire uniquement `tmp-rave-visual-backfill`.
+- SAFE CHECKPOINT distant obligatoire contenant QZ64 complet, XZ complet et manifeste/générateur avant installation.
+- Contrôler SHA QZ/SQL/TIFF/XZ, 45 images, SQLite integrity, user_version 20, historiques 93 RAVE / 105 experts et compteurs 112/18/100/516/29/79/64.
+- Ne nettoyer le checkpoint temporaire qu'après validation et relecture distante.
+
+## PROCHAINE ACTION EXACTE
+Pousser le SAFE CHECKPOINT 1860 régénéré sur `tmp-rave-visual-backfill`, lancer l'installation finale avec ces nouveaux SHA reproductibles, vérifier le commit distant et le nettoyage, puis écrire immédiatement le POST-POUSSE dans CE rapport maître unique. `MEMSX64` reste #101.
