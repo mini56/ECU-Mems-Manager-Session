@@ -17,27 +17,27 @@ jobs:
           import base64,zlib,hashlib,re
           from pathlib import Path
           rawtxt=Path('.rcl1860_transport/research_enrichment_1860.qz64').read_bytes()
-          try:
-              raw=base64.b64decode(b''.join(rawtxt.split()),validate=False)
-              outer='base64'
-          except Exception:
-              raw=rawtxt; outer='binary'
+          clean=b''.join(rawtxt.split())
+          # keep only complete base64 quanta and tolerate missing final padding/tail
+          usable=clean[:len(clean)//4*4]
+          raw=base64.b64decode(usable+b'===',validate=False)
+          print('TEXT_HEAD',clean[:24], 'TEXT_TAIL', clean[-24:])
+          print('QZ_TEXT_BYTES',len(rawtxt),'BASE64_USABLE',len(usable),'QZ_DECODED_PREFIX_BYTES',len(raw))
           expected=int.from_bytes(raw[:4],'big')
           out=b''; used=None; eof=False
           for w in (zlib.MAX_WBITS,-zlib.MAX_WBITS):
               try:
                   d=zlib.decompressobj(w); out=d.decompress(raw[4:]); eof=d.eof; used=w; break
               except Exception as e:
-                  last=e
-          print('QZ_TEXT_BYTES',len(rawtxt),'QZ_DECODED_PREFIX_BYTES',len(raw),'OUTER',outer)
+                  print('ZLIB_FAIL',w,repr(str(e)))
           print('SQL_EXPECTED_BYTES',expected,'SQL_RECOVERED_PREFIX_BYTES',len(out),'PERCENT',round(100*len(out)/expected,2),'ZLIB_WBITS',used,'EOF',eof)
           print('SQL_PREFIX_SHA',hashlib.sha256(out).hexdigest())
           txt=out.decode('utf-8','replace')
           print('RECOVERED_INSERTS',len(re.findall(r'(?i)\bINSERT\b',txt)))
-          for pat in ['KNOW-RCL0193FRE-1860-','SPEC-RCL0193FRE-1860-','PROC-RCL0193FRE-1860-']:
+          for label,pat in [('KNOW','KNOW-RCL0193FRE-1860-'),('SPEC','SPEC-RCL0193FRE-1860-'),('PROC','PROC-RCL0193FRE-1860-')]:
               vals=re.findall(re.escape(pat)+r'[A-Z0-9_\-]+',txt)
-              print('LAST_'+pat.split('-')[0], vals[-5:] if vals else [])
+              print('LAST_'+label,vals[-10:] if vals else [])
           print('SQL_TAIL_BEGIN')
-          print(txt[-6000:])
+          print(txt[-10000:])
           print('SQL_TAIL_END')
           PY
