@@ -2364,3 +2364,97 @@ PROCHAINE ACTION EXACTE:
 - 86-35: faisceau de carrosserie a partir des modeles de 1986 + tableau constructeur des points de masse par element/systeme.
 - Lot 1780 prevu: rendre/conserver une seule fois ces 8 pages, ajouter scopes exacts, procedures et etapes paraphrasees, cablage/legendes/codes couleurs/faisceaux/points de masse structures dans le socle 1730, avec image_ref vers chaque preuve.
 - Aucun fait historique ne sera reecrit; MEMSX64 reste #101; le lot sera d abord genere et valide sur tmp-rave-visual-backfill avant commit des donnees.
+
+# REGLE CAPITALE PERMANENTE - SAUVEGARDE DES GROS FICHIERS ET LOTS COUTEUX - 30 AOUT 2026
+
+Cette regle est d importance **CAPITALE** pour ECU MEMS Manager. De nombreux autres gros manuels, PDF constructeur, lots RAVE, images, bases, qz64 et artefacts seront encore traites. La perte partielle du travail preparatoire du lot 1860 ne doit plus pouvoir se reproduire.
+
+## PRINCIPE ABSOLU
+
+Un travail volumineux, couteux a regenerer ou expose a une limite de transport ne doit **jamais exister uniquement dans un environnement temporaire de discussion, runner, notebook ou session assistant**. Une coupure de discussion, un changement de session ou un echec de connecteur ne doit plus pouvoir faire perdre un lot deja prepare.
+
+Un lot n est pas considere comme `prepare`, `sauvegarde`, `securise` ou `pret a pousser` tant que son **SAFE CHECKPOINT distant** n a pas ete cree puis relu et verifie.
+
+## BARRIERE BLOQUANTE AVANT TOUT TRAITEMENT COUTEUX
+
+Avant de commencer ou au plus tard avant de quitter une etape de travail couteuse, conserver de facon persistante :
+1. identite exacte de la source : document, edition/version, provenance, taille, nombre de pages si applicable et SHA-256 du binaire exact ;
+2. methode permettant de retrouver la source exacte ; si le binaire ne peut pas etre conserve dans GitHub, le rapport doit indiquer clairement ou il se trouve et son SHA-256 doit permettre de refuser toute autre version ;
+3. script/generateur reproductible utilise pour extraire, convertir, rendre ou construire le lot ;
+4. liste exacte des entrees retenues : pages, index PDF, figures, sections, plages, fichiers ou enregistrements ;
+5. inventaire des sorties attendues avec taille et SHA-256 lorsque les octets sont deja fixes ;
+6. SHA-256 du SQL decompresse, du qz64 final et de tout conteneur/intermediaire necessaire a une reconstruction exacte ;
+7. invariants de validation : nombres de connaissances, specifications, procedures, etapes, relations, assets, liens, comptes historiques a preserver, integrity_check, user_version et autres controles propres au lot ;
+8. prochaine action exacte permettant a une nouvelle discussion de reprendre sans reinterpretation.
+
+## TRANSPORT DES GROS BINAIRES - INTERDICTION DU FICHIER UNIQUE NON VERIFIE
+
+Lorsqu un fichier est trop gros ou susceptible d etre tronque par un connecteur, **ne jamais compter sur une seule ecriture texte/Base64 non verifiee**.
+
+Le transport doit utiliser des fragments texte numerotes et manifestes, par exemple `part001`, `part002`, etc. Le manifeste de transport doit conserver au minimum :
+- nombre total de fragments attendu ;
+- ordre exact ;
+- taille de chaque fragment ;
+- SHA-256 de chaque fragment ;
+- taille du fichier reassemble ;
+- SHA-256 du fichier reassemble ;
+- SHA-256 du binaire final/decompresse lorsqu il differe du transport.
+
+Le workflow doit **refuser de commencer l installation** si un seul fragment manque, est duplique, est hors ordre ou possede un hash incorrect.
+
+## RELECTURE DISTANTE OBLIGATOIRE
+
+Le simple retour `create_file`, `create_blob`, `git push` ou `workflow SUCCESS` ne suffit pas a declarer un transport sauvegarde.
+
+Avant de poursuivre :
+1. relire le commit/les fichiers depuis GitHub distant ;
+2. recompter les fragments/fichiers ;
+3. recalculer les SHA-256 ;
+4. reassembler le transport depuis les octets distants ;
+5. verifier le SHA-256 final ;
+6. si possible, regenerer le candidat depuis le commit distant et exiger un diff nul avec le candidat valide.
+
+Tant que ces controles ne sont pas passes, le lot reste **NON SECURISE** et aucune suppression de fichier temporaire n est autorisee.
+
+## INTERDICTION DE SUPPRIMER LE POINT DE REPRISE TROP TOT
+
+Les fragments de transport, le generateur, les metadonnees de reconstruction et le helper necessaire ne peuvent etre supprimes qu apres :
+- commit final de donnees cree ;
+- push distant confirme ;
+- relecture du commit distant ;
+- hashes et invariants repasses depuis l etat distant ;
+- rapport mis a jour avec commit final, hashes, resultat et prochaine action.
+
+Si le commit final est autonome et reproductible, les fragments de transport peuvent alors etre retires dans le commit final/nettoyage. Sinon ils doivent etre conserves jusqu a creation d un autre point de reprise equivalent.
+
+## REGLE EN CAS D ECHEC DE TRANSPORT
+
+Si un transport echoue ou si un SHA ne correspond pas :
+- **ARRET IMMEDIAT** avant installation ou remplacement de donnees ;
+- consigner l echec et les hashes Reel/Attendu dans le rapport ;
+- ne pas supprimer les morceaux deja valides ;
+- ne pas regenerer librement un nouveau lot pour faire passer le test ;
+- repartir de la source exacte + generateur + inventaire persistant ;
+- lorsque des hashes de reference existent, tenter d abord de reproduire exactement ces hashes ;
+- toute difference volontaire de bytes ou de contenu doit etre expliquee et validee comme un nouveau candidat, jamais masquee comme une recuperation identique.
+
+## SAFE CHECKPOINT OBLIGATOIRE ENTRE DEUX GROS LOTS
+
+Aucun gros lot suivant ne doit commencer tant que le lot courant ne dispose pas d un point de reprise distant clairement inscrit dans le rapport avec :
+- branche ;
+- commit SHA ;
+- source SHA-256 ;
+- generateur/script ;
+- hashes des sorties principales ;
+- resultat des validations ;
+- statut `SAFE CHECKPOINT = YES` ou raison explicite du blocage.
+
+Une nouvelle discussion doit pouvoir reprendre a partir de ce checkpoint **sans avoir besoin de la memoire de la conversation precedente**.
+
+## INCIDENT 1860 A NE PAS REPETER
+
+Le lot RCL0193FRE 1860 a montre la lacune que cette regle corrige : les gardes SHA ont correctement protege la base et MEMSX64, mais le travail preparatoire complet n avait pas encore atteint un stockage distant reproductible avant la perte de l environnement temporaire. Le fichier de transport image pousse sur `tmp-rave-visual-backfill` etait tronque/incomplet ; le garde a donc refuse son SHA, ce qui a evite une mauvaise integration mais n a pas empeche la perte du checkpoint intermediaire.
+
+A partir de maintenant, **protection contre la regression ET protection contre la perte de travail sont deux obligations distinctes et simultanees**.
+
+Cette regle est permanente et prioritaire pour tous les futurs gros PDF, manuels constructeur, lots d images, bases, modeles, archives et autres fichiers volumineux du projet.
