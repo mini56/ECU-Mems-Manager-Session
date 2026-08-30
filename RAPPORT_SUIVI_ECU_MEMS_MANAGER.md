@@ -8024,3 +8024,19 @@ Validation distante finale : run `33334199327` = SUCCESS. Reconstruction complet
 `MEMSX64` a ete re-verifie juste avant promotion et reste BUILD #102 `06eca1a478db3d32e9ae88d040e1a34e2cc98650`.
 
 PROCHAINE ACTION EXACTE : promouvoir uniquement les changements `database/reference/` du candidat `7ef308f1f726d3b091c98e7d65b4c35a4aa37f98` sur `MEMSX64`, produire BUILD #103, puis exiger workflow BUILD vert et artefact x64 complet avant validation finale.
+
+## 2026-08-30 - BUILD #103 - AKM7169ENG REINTEGRATION PRODUCTION VALIDEE
+
+Production `MEMSX64` : commit `1d6316bd1746d6f2b4cfb751cab88d18e27ef730` (`Build #103: fully reintegrate AKM7169ENG Rover Mini SPi reference`).
+
+GitHub Actions BUILD run `33334306835`, run_number `103` : **SUCCESS**. Compilation x64, gardes protocole, self-tests deterministes, generation/validation base expert r20, IA ONNX/Qwen, validation package portable et smoke launch sont tous PASS.
+
+Artefact produit : `ECU-MEMS-Manager-x64-BUILD-103-v1.0.103`, artifact id `9738640151`, taille 421 456 727 octets, SHA-256 `a18d80035368079c944627927cba23f46a844769b24a52607cfdde02a194b0d4`.
+
+Controle final directement dans le ZIP de production #103 : 40 PNG `AKM7169ENG_PDF_*`, `research_enrichment_1870.qz64`, manifeste et `database/expert/ia_mems_reference_r20.sqlite` presents. Le manifeste applique `research_enrichment_1720.qz64` avant 1730 et `research_enrichment_1870.qz64` est le dernier lot.
+
+Controle du SQLite effectivement emballe dans #103 : `integrity_check=ok`, `user_version=20`, FK=0; nouveaux faits AKM7169=91 et anciens RAVE-SPI93=0; miroirs expert nouveaux=91 et anciens=0; knowledge nouveaux=91 et anciens=0; specifications=81; procedures=13; etapes=160; illustrations=40; liens=135; faits couverts=91/91; anciennes sources diagnostic/documentation AKM7169=0.
+
+AKM7169ENG Rover Mini SPi est donc reintegre completement dans la base de production #103 a partir du manuel constructeur exact 482 pages / SHA-256 `c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0`.
+
+PROCHAINE ACTION EXACTE : utiliser BUILD #103 comme nouvel etat de production de reference. Ne pas reprendre les anciens essais AKM7169/1870 de la branche de transport; conserver `tmp-akm7169-1870-transport` uniquement comme historique temporaire jusqu'a nettoyage explicite.
