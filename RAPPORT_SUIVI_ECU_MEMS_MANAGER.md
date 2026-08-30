@@ -8040,3 +8040,17 @@ Controle du SQLite effectivement emballe dans #103 : `integrity_check=ok`, `user
 AKM7169ENG Rover Mini SPi est donc reintegre completement dans la base de production #103 a partir du manuel constructeur exact 482 pages / SHA-256 `c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0`.
 
 PROCHAINE ACTION EXACTE : utiliser BUILD #103 comme nouvel etat de production de reference. Ne pas reprendre les anciens essais AKM7169/1870 de la branche de transport; conserver `tmp-akm7169-1870-transport` uniquement comme historique temporaire jusqu'a nettoyage explicite.
+
+## REGLE GENERALE OBLIGATOIRE - TRAITEMENT DE TOUS LES DOCUMENTS DESTINES A LA BASE DE CONNAISSANCES
+
+Cette regle s'applique a TOUS les documents, manuels constructeur, RAVE, notes techniques, schemas, catalogues, procedures et sources documentaires traites pour integration dans la base de connaissances de MEMS Manager.
+
+La base de connaissances ne doit PAS etre limitee aux seules informations directement liees a l'ECU, au protocole MEMS, a la lecture temps reel ou a une seule famille de vehicule. La partie operationnelle de MEMS Manager (connexion, lecture, analyse, diagnostic et commandes ECU) reste distincte de la base documentaire destinee a l'utilisateur final.
+
+Pour chaque document traite, le critere de selection obligatoire est : « Cette information peut-elle etre utile a l'utilisateur final de MEMS Manager pour comprendre, identifier, diagnostiquer, controler, entretenir ou reparer le vehicule ou l'un de ses systemes ? » Si oui, l'information doit etre capturee, structuree, sourcee et integree dans la base, meme si elle ne concerne pas directement l'ECU.
+
+Cela inclut notamment, sans s'y limiter : caracteristiques et variantes vehicule/moteur, donnees de reglage, alimentation carburant, admission, echappement, refroidissement, electricite, faisceaux, relais, fusibles, masses et alimentations, implantation des composants, capteurs et actionneurs, valeurs de controle, tensions/resistances/pressions/jeux, couples de serrage, procedures d'atelier, recherche de panne, symptomes et causes, acces/demontage/remontage utile au diagnostic, schemas et connectique, VIN/annees/applicabilite, differences de versions et toute autre connaissance ayant une valeur pratique pour l'utilisateur final.
+
+Pour les gros documents, il est interdit de conclure qu'un document est « traite completement » sur la seule base d'une selection de pages. Il faut effectuer un inventaire page par page ou section par section suffisamment exhaustif pour classer les contenus en : utile a integrer / deja couvert / hors pertinence utilisateur. Les elements utiles doivent etre integres ou explicitement places dans un backlog trace. Toute affirmation d'exhaustivite doit etre appuyee par cet audit de couverture.
+
+Cette regle est transversale et permanente. Elle s'applique a AKM7169 comme a tous les documents futurs et a toute reprise de documents deja partiellement exploites.
