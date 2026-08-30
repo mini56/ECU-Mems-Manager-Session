@@ -1,4 +1,4 @@
-name: TEMP AKM7169 exact-source probe
+name: TEMP AKM7169 direct min.pdf probe
 on:
   push:
     branches: [tmp-akm7169-1870-transport]
@@ -10,55 +10,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Probe PDFCoffee exact binary
+      - name: Verify direct viewer PDF target
         shell: bash
         run: |
           python - <<'PY'
-          import urllib.request, urllib.parse, re, hashlib, sys
-          bases = [
-            'https://pdfcoffee.com/mini-repair-manual-92-96-2-pdf-free.html',
-            'https://pdfcoffee.com/mini-repair-manual-92-96-pdf-pdf-free.html',
-          ]
-          ua={'User-Agent':'Mozilla/5.0'}
-          candidates=[]
-          for base in bases:
-            for u in [base, base.replace('/mini-','/download/mini-')]:
-              if u not in candidates: candidates.append(u)
-            try:
-              req=urllib.request.Request(base,headers=ua)
-              data=urllib.request.urlopen(req,timeout=30).read()
-              print('PAGE',base,'bytes',len(data),'sha256',hashlib.sha256(data).hexdigest(),'prefix',data[:12])
-              text=data.decode('utf-8','ignore')
-              vals=[]
-              for pat in [r'''(?:href|src|action|data-href|data-src)=["']([^"']+)["']''', r'''https?://[^\s"'<>]+''']:
-                vals += re.findall(pat,text,re.I)
-              for v in vals:
-                v=v.replace('&amp;','&')
-                a=urllib.parse.urljoin(base,v)
-                if ('pdfcoffee' in a or '.pdf' in a.lower() or 'download' in a.lower()) and a not in candidates:
-                  candidates.append(a)
-            except Exception as e:
-              print('PAGE_ERROR',base,repr(e))
-          print('CANDIDATES',len(candidates))
-          for i,u in enumerate(candidates[:120]): print('URL',i,u)
-          exact='c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0'
-          found=False
-          for i,u in enumerate(candidates[:120]):
-            try:
-              req=urllib.request.Request(u,headers=ua)
-              with urllib.request.urlopen(req,timeout=45) as r:
-                ct=r.headers.get('content-type','')
-                data=r.read(50000000)
-              sha=hashlib.sha256(data).hexdigest()
-              print('FETCH',i,'bytes',len(data),'ct',ct,'sha256',sha,'prefix',data[:8])
-              if data.startswith(b'%PDF'):
-                open(f'candidate_{i}.pdf','wb').write(data)
-                if sha==exact and len(data)==43906518:
-                  print('EXACT_SOURCE_FOUND',i,u)
-                  found=True
-                  break
-            except Exception as e:
-              print('FETCH_ERROR',i,repr(e))
-          if not found:
-            print('EXACT_SOURCE_NOT_FOUND')
+          import urllib.request, hashlib
+          url='https://pdfcoffee.com/pdfcoffee/assets/pdf/min.pdf'
+          req=urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0'})
+          with urllib.request.urlopen(req,timeout=45) as r:
+              data=r.read(50000000)
+              print('CONTENT_TYPE',r.headers.get('content-type',''))
+          print('BYTES',len(data))
+          print('SHA256',hashlib.sha256(data).hexdigest())
+          print('PREFIX',data[:16])
+          open('min.pdf','wb').write(data)
+          exact=(data.startswith(b'%PDF') and len(data)==43906518 and hashlib.sha256(data).hexdigest()=='c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0')
+          print('EXACT_BINARY',exact)
+          if data.startswith(b'%PDF'):
+              try:
+                  import fitz
+              except Exception:
+                  raise SystemExit('PDF_RECEIVED_PYMUPDF_NOT_INSTALLED')
+              d=fitz.open('min.pdf')
+              print('PAGES',d.page_count)
+              print('EXACT_ALL', exact and d.page_count==482)
           PY
