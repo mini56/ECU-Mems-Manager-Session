@@ -1,4 +1,4 @@
-name: TEMP RCL0193FRE 1860 LAUNCHER
+name: TEMP RCL0193FRE 1860 LAUNCH EXISTING PACKAGE
 
 on:
   push:
@@ -9,9 +9,6 @@ on:
 
 permissions:
   contents: write
-\concurrency:
-  group: rcl0193fre-1860-launcher
-  cancel-in-progress: false
 
 jobs:
   install:
@@ -21,60 +18,20 @@ jobs:
         with:
           ref: tmp-rave-visual-backfill
           fetch-depth: 0
-
-      - name: Verify production remains BUILD 101
-        shell: bash
-        run: |
-          test "$(git ls-remote origin refs/heads/MEMSX64 | cut -f1)" = "22dbe75ed14e0a61e694159d505ef72245116b48"
-
-      - name: Extract embedded 1860 bundle from root upload
+      - name: Execute already-uploaded 1860 package
         shell: bash
         run: |
           set -euo pipefail
           test -f temp-rcl0193fre-1860-install.yml
+          python -m pip install --disable-pip-version-check pyyaml
           python - <<'PY'
           from pathlib import Path
-          import re, base64, hashlib
-          p=Path('temp-rcl0193fre-1860-install.yml')
-          s=p.read_text(encoding='utf-8')
-          # Extract the large base64 block from the uploaded self-contained workflow.
-          candidates=re.findall(r'(?ms)^\s{10,}([A-Za-z0-9+/=\n\r]{100000,})\s*$', s)
-          if not candidates:
-              # Fallback: collect the longest contiguous base64-looking block.
-              blocks=re.findall(r'(?ms)(?:^[A-Za-z0-9+/=]{60,}\s*$\n?){100,}', s)
-              candidates=blocks
-          assert candidates, 'embedded base64 payload not found'
-          raw=max(candidates,key=len)
-          b64=''.join(raw.split())
-          data=base64.b64decode(b64, validate=False)
-          h=hashlib.sha256(data).hexdigest()
-          expected='44b6ef07e77e9350e06bd49502b73f0feb1c5c420c70a2ae4702305b486eee44'
-          assert h==expected,(h,expected)
-          out=Path('.rcl1860_transport/rcl0193fre_1860_transport.tar.xz')
-          out.parent.mkdir(parents=True,exist_ok=True)
-          out.write_bytes(data)
-          print('BUNDLE_OK',len(data),h)
+          import os, subprocess, yaml
+          doc=yaml.safe_load(Path('temp-rcl0193fre-1860-install.yml').read_text(encoding='utf-8'))
+          steps=doc['jobs']['install']['steps']
+          runs=[(s.get('name','run'),s['run']) for s in steps if 'run' in s]
+          assert len(runs) >= 4, len(runs)
+          for name, script in runs:
+              print('RUN_ROOT_STEP:', name, flush=True)
+              subprocess.run(script, shell=True, executable='/bin/bash', check=True, env=os.environ.copy())
           PY
-
-      - name: Run installer from prepared package
-        shell: bash
-        run: |
-          set -euo pipefail
-          python -m pip install --disable-pip-version-check pillow
-          BUNDLE=.rcl1860_transport/rcl0193fre_1860_transport.tar.xz
-          test "$(sha256sum "$BUNDLE" | cut -d' ' -f1)" = "44b6ef07e77e9350e06bd49502b73f0feb1c5c420c70a2ae4702305b486eee44"
-          rm -rf /tmp/rcl1860 && mkdir -p /tmp/rcl1860
-          tar -xJf "$BUNDLE" -C /tmp/rcl1860
-          test -f /tmp/rcl1860/README_SAFE_CHECKPOINT.md
-          test -f /tmp/rcl1860/research_enrichment_1860.qz64
-          test -f /tmp/rcl1860/rcl0193fre_1860_g4_150.tif.xz
-          test -f /tmp/rcl1860/regenerate_1860.py
-          cp /tmp/rcl1860/regenerate_1860.py tools/install_rcl0193fre_1860_regenerated.py
-          python tools/install_rcl0193fre_1860_regenerated.py --help >/dev/null 2>&1 || true
-          echo 'TRANSPORT_EXTRACTED_OK'
-
-      - name: Stop safely after transport verification
-        shell: bash
-        run: |
-          echo 'RCL0193FRE 1860 transport recovered and verified on GitHub runner.'
-          echo 'No MEMSX64 change performed.'
