@@ -8010,3 +8010,17 @@ Run `33330880912` sur `tmp-akm7169-1870-transport` : le fichier direct revele pa
 Conclusion : PDFCoffee est abandonne comme moyen de transport de la source binaire exacte. Aucun autre crawl PDFCoffee ne sera lance. Aucune donnee candidate AKM7169 n'a ete modifiee. `tmp-akm7169-full-reintegration` et `MEMSX64` restent tous deux au commit #102 `06eca1a478db3d32e9ae88d040e1a34e2cc98650`.
 
 PROCHAINE ACTION EXACTE : utiliser uniquement un transport binaire isole et verifiable du candidat local deja valide (archive 1 621 037 octets, SHA-256 `43e0f2d3a84dd41b1ab737bcb354a4ba72baa328de35f5ad478732ca4b8b9210`), reconstituer les 43 fichiers sur runner, verifier 43/43 hashes/bytes, puis produire en une seule operation le commit atomique sur `tmp-akm7169-full-reintegration`.
+
+## 2026-08-30 - AKM7169ENG - REINTEGRATION COMPLETE VALIDEE AVANT PRODUCTION
+
+Source constructeur exacte : manuel Rover Mini SPi AKM7169ENG, 43 906 518 octets, 482 pages physiques, SHA-256 `c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0`.
+
+Le candidat complet est sur `tmp-akm7169-full-reintegration`, HEAD `7ef308f1f726d3b091c98e7d65b4c35a4aa37f98`. Il est strictement descendant de BUILD #102 `06eca1a478db3d32e9ae88d040e1a34e2cc98650` et la comparaison #102 -> candidat ne modifie que `database/reference/` : manifeste, lot `research_enrichment_1870.qz64`, audit AKM7169 et 40 PNG constructeur.
+
+Le premier rebuild complet a expose une anomalie historique : `research_enrichment_1720.qz64` existait sur disque mais n'etait pas inscrit dans `research_enrichment_batches`; l'auto-discovery l'appliquait donc apres 1870 et reinjectait 7 anciens `RAVE-SPI93-*` + 7 miroirs expert. Correction minimale : ajout de 1720 dans le manifeste avant 1730, 1870 restant le dernier lot effectif.
+
+Validation distante finale : run `33334199327` = SUCCESS. Reconstruction complete depuis les seeds + tous les lots effectifs, avec 1600 traite comme archive-only conformement au runtime. Resultats : `integrity_check=ok`, `user_version=20`, FK=0; nouveaux faits RAVE=91, anciens=0; miroirs expert=91, anciens=0; knowledge=91, anciens=0; scopes=5, anciens=0; specifications=81 + 81 valeurs; procedures=13, etapes=160, requirements=11; relations=9; illustrations AKM7169ENG=40; liens fait->page=135; couverture=91/91; source assets=40; diagnostic rows=8, anciennes=0; documentation source exacte=1, ancienne=0; fault knowledge corrige=1, ancien=0. Le lot 1870 est confirme dernier lot applique.
+
+`MEMSX64` a ete re-verifie juste avant promotion et reste BUILD #102 `06eca1a478db3d32e9ae88d040e1a34e2cc98650`.
+
+PROCHAINE ACTION EXACTE : promouvoir uniquement les changements `database/reference/` du candidat `7ef308f1f726d3b091c98e7d65b4c35a4aa37f98` sur `MEMSX64`, produire BUILD #103, puis exiger workflow BUILD vert et artefact x64 complet avant validation finale.
