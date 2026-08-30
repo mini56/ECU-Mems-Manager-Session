@@ -8122,3 +8122,15 @@ Perimetre : schema additif et prototype minimal pour connaissances independantes
 Interdictions : pas de colonnes figees par langue; pas de modification protocole ECU, lecture/analyse ECU, IA locale, ONNX ou production; pas de backfill massif RAVE/AKM7169/Mini MPi avant validation du socle.
 
 PROCHAINE ACTION EXACTE : creer la branche depuis #103, inventorier le schema actuel et preparer un premier lot additif de fondation sans toucher a `MEMSX64`.
+
+## 2026-08-30 - SOCLE MULTILINGUE V1 - PREMIER TEST DISTANT ECHEC DE HARNAIS UNIQUEMENT
+
+Branche : `tmp-multilingual-knowledge-foundation`.
+Commit teste : `c9f6c40f3a448d9da66176bc3597459dff4258dc` (`Prototype multilingual knowledge foundation v1`).
+Run GitHub Actions : `33338416926`.
+
+RESULTAT : ECHEC du workflow temporaire avant application du schema. Le telechargement de l'artefact officiel BUILD #103 a reussi, mais `gh run download` extrait directement le contenu dans le dossier cible. Le validateur cherchait ensuite a tort un fichier `*.zip` dans ce dossier et s'est arrete avec `unexpected BUILD103 zip count: 0`.
+
+Le schema V1, son QZ64 et les donnees de production n'ont pas ete mis en cause par ce run : aucune instruction d'application du schema n'a ete atteinte. `MEMSX64` reste strictement sur BUILD #103.
+
+CORRECTION AUTORISEE SUIVANTE : modifier uniquement le workflow temporaire de validation pour localiser directement `database/expert/ia_mems_reference_r20.sqlite` dans le contenu deja extrait de l'artefact #103, puis relancer le meme test. Ne modifier ni le SQL V1, ni le QZ64, ni le manifeste de production.
