@@ -1,0 +1,41 @@
+name: TEMP REPORT AKM7169 SOURCE PROBE
+on:
+  push:
+    branches: [RAPPORT]
+    paths: ['.github/workflows/temp-report-akm7169-source-probe.yml']
+permissions:
+  contents: write
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+      - name: Append probe result
+        shell: bash
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+## 2026-08-30 - AKM7169ENG 1870 - PROBE PDFCOFFEE APRES CHECKPOINT TRANSPORT
+
+Run diagnostique `33330638040` sur la branche jetable `tmp-akm7169-1870-transport` : **SUCCESS technique**, mais aucune source exacte acquise. Les deux pages PDFCoffee testees (`mini-repair-manual-92-96-2-pdf-free.html` et `mini-repair-manual-92-96-pdf-pdf-free.html`) ainsi que leurs endpoints `/download/...html` renvoient du HTML, pas le PDF constructeur de 43 906 518 octets / SHA-256 `c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0`.
+
+Le probe a inspecte 99 URL candidates sans trouver le binaire exact. Une information utile a toutefois ete decouverte dans le HTML : le viewer PDF.js reference explicitement `file=https://pdfcoffee.com/pdfcoffee/assets/pdf/min.pdf`. Ce fichier direct n'a pas encore ete teste dans ce run.
+
+Aucune donnee AKM7169, aucun manifeste, aucun qz64 et aucune image n'ont ete pousses sur `tmp-akm7169-full-reintegration`. `MEMSX64` reste strictement BUILD #102 `06eca1a478db3d32e9ae88d040e1a34e2cc98650`.
+
+PROCHAINE ACTION EXACTE : tester une seule fois l'URL directe `https://pdfcoffee.com/pdfcoffee/assets/pdf/min.pdf`, exiger simultanement `%PDF`, 43 906 518 octets, SHA-256 `c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0` et 482 pages. Si l'un de ces controles echoue, abandonner PDFCoffee comme transport du binaire exact et revenir au transport isole verifiable du candidat local.
+EOF
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m 'Journal AKM7169 PDFCoffee source probe'
+          git push
+      - name: Remove helper
+        shell: bash
+        run: |
+          git pull --rebase
+          git rm .github/workflows/temp-report-akm7169-source-probe.yml
+          git commit -m 'Remove temporary AKM7169 source-probe report helper'
+          git push
