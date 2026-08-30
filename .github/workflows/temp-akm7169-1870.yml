@@ -30,19 +30,72 @@ jobs:
           git fetch origin RAPPORT
           git worktree add -B report1870-pre /tmp/report-pre origin/RAPPORT
           cd /tmp/report-pre
-          printf '\n## 2026-08-30 - AKM7169ENG 1870 - PREMIER RUN ROUGE\n\nRun `33314251161`: echec avant toute generation. Cause: garde errone exigeant `HEAD == d1a69ede...` alors que le commit du workflow avait avance HEAD a `dc92dfd...`. Generation, commit et rapport final tous sautes; aucune donnee AKM modifiee. Correction: d1a69ede devient ancetre obligatoire, diff limite au seul workflow. `MEMSX64` reste #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.\n' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
-          git commit -m 'Record AKM7169 1870 failed guard and retry'
-          git push origin HEAD:RAPPORT
+          if ! grep -q '33314548784' RAPPORT_SUIVI_ECU_MEMS_MANAGER.md; then
+            printf '\n## 2026-08-30 - AKM7169ENG 1870 - DEUXIEME RUN ROUGE\n\nRun `33314548784`: garde corrige et valide, mais echec au telechargement de la source avant toute generation. Le endpoint PDFCoffee a retourne une page HTML de 30914 octets au lieu du PDF exact attendu de 43906518 octets; aucune image, qz64 ou donnee AKM n a ete modifiee. Correction: transport multi-source, avec acceptation uniquement si taille 43906518 et SHA-256 `c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0` correspondent exactement. `MEMSX64` reste #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.\n' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+            git commit -m 'Record AKM7169 1870 source transport failure'
+            git push origin HEAD:RAPPORT
+          fi
       - name: Fetch exact AKM7169ENG source
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail --location --retry 4 --output /tmp/AKM7169ENG.pdf 'https://pdfcoffee.com/download/mini-repair-manual-92-96-pdf-pdf-free.html'
-          test "$(stat -c%s /tmp/AKM7169ENG.pdf)" = "43906518"
-          echo 'c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0  /tmp/AKM7169ENG.pdf' | sha256sum -c -
+          EXPECTED_SIZE='43906518'
+          EXPECTED_SHA='c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0'
+          UA='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140 Safari/537.36'
+          rm -f /tmp/AKM7169ENG.pdf /tmp/akm-candidate.pdf
+          try_url() {
+            local url="$1"
+            echo "TRY_SOURCE=$url"
+            rm -f /tmp/akm-candidate.pdf
+            if ! curl --fail --location --retry 3 --connect-timeout 20 --max-time 240 --user-agent "$UA" --output /tmp/akm-candidate.pdf "$url"; then
+              echo 'DOWNLOAD_FAILED'
+              return 1
+            fi
+            local size sha
+            size="$(stat -c%s /tmp/akm-candidate.pdf)"
+            sha="$(sha256sum /tmp/akm-candidate.pdf | awk '{print $1}')"
+            echo "CANDIDATE_SIZE=$size CANDIDATE_SHA=$sha"
+            if [ "$size" = "$EXPECTED_SIZE" ] && [ "$sha" = "$EXPECTED_SHA" ]; then
+              mv /tmp/akm-candidate.pdf /tmp/AKM7169ENG.pdf
+              echo 'EXACT_SOURCE_PASS'
+              return 0
+            fi
+            return 1
+          }
+          FOUND=0
+          for URL in \
+            'https://www.tmsmini.com/cooper/pdf/AKM7169ENG_Rover_Mini_Repair_Manual_92-96.pdf' \
+            'http://benoit.dc.free.fr/technique/AKM7169%20-%20Manuel%20de%20Reparation%20Rover%20SPI.pdf' \
+            'https://pdfcoffee.com/download/mini-repair-manual-92-96-2-pdf-free.html' \
+            'https://pdfcoffee.com/download/mini-repair-manual-92-96-pdf-pdf-free.html'; do
+            if try_url "$URL"; then FOUND=1; break; fi
+          done
+          if [ "$FOUND" -ne 1 ]; then
+            echo 'Direct mirrors did not yield the exact binary; trying PDFCoffee cookie/referrer sessions.'
+            for SLUG in 'mini-repair-manual-92-96-2-pdf-free.html' 'mini-repair-manual-92-96-pdf-pdf-free.html'; do
+              rm -f /tmp/pdfcoffee.cookies /tmp/pdfcoffee-landing.html /tmp/akm-candidate.pdf
+              LANDING="https://pdfcoffee.com/$SLUG"
+              DOWNLOAD="https://pdfcoffee.com/download/$SLUG"
+              curl --fail --location --retry 2 --connect-timeout 20 --max-time 120 --user-agent "$UA" --cookie-jar /tmp/pdfcoffee.cookies --output /tmp/pdfcoffee-landing.html "$LANDING" || true
+              if curl --fail --location --retry 3 --connect-timeout 20 --max-time 240 --user-agent "$UA" --cookie /tmp/pdfcoffee.cookies --referer "$LANDING" --output /tmp/akm-candidate.pdf "$DOWNLOAD"; then
+                size="$(stat -c%s /tmp/akm-candidate.pdf)"
+                sha="$(sha256sum /tmp/akm-candidate.pdf | awk '{print $1}')"
+                echo "COOKIE_CANDIDATE_SIZE=$size COOKIE_CANDIDATE_SHA=$sha"
+                if [ "$size" = "$EXPECTED_SIZE" ] && [ "$sha" = "$EXPECTED_SHA" ]; then
+                  mv /tmp/akm-candidate.pdf /tmp/AKM7169ENG.pdf
+                  FOUND=1
+                  echo 'EXACT_SOURCE_COOKIE_PASS'
+                  break
+                fi
+              fi
+            done
+          fi
+          test "$FOUND" = '1'
+          test "$(stat -c%s /tmp/AKM7169ENG.pdf)" = "$EXPECTED_SIZE"
+          echo "$EXPECTED_SHA  /tmp/AKM7169ENG.pdf" | sha256sum -c -
           python -m pip install --disable-pip-version-check PyMuPDF==1.26.7 Pillow==12.3.0
       - name: Build five original pages and batch 1870
         shell: bash
