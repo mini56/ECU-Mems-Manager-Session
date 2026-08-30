@@ -30,73 +30,36 @@ jobs:
           git fetch origin RAPPORT
           git worktree add -B report1870-pre /tmp/report-pre origin/RAPPORT
           cd /tmp/report-pre
-          if ! grep -q '33314548784' RAPPORT_SUIVI_ECU_MEMS_MANAGER.md; then
-            printf '\n## 2026-08-30 - AKM7169ENG 1870 - DEUXIEME RUN ROUGE\n\nRun `33314548784`: garde corrige et valide, mais echec au telechargement de la source avant toute generation. Le endpoint PDFCoffee a retourne une page HTML de 30914 octets au lieu du PDF exact attendu de 43906518 octets; aucune image, qz64 ou donnee AKM n a ete modifiee. Correction: transport multi-source, avec acceptation uniquement si taille 43906518 et SHA-256 `c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0` correspondent exactement. `MEMSX64` reste #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.\n' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          if ! grep -q '33323299271' RAPPORT_SUIVI_ECU_MEMS_MANAGER.md; then
+            printf '\n## 2026-08-30 - AKM7169ENG 1870 - TROISIEME RUN ROUGE / SOURCE REPRODUCTIBLE TROUVEE\n\nRun `33323299271`: les gardes passent, mais aucun miroir ne restitue le binaire PDFCoffee de 43906518 octets / SHA c8bbb30d... PDFCoffee renvoie toujours de l HTML. En revanche le miroir direct `benoit.dc.free.fr` restitue un vrai PDF AKM7169 de 11240232 octets, SHA-256 `37cd0434347fe4009963d075e4b91b0b21ebc905bae5657519a8080c3026d4f5`. Ce binaire devient la source reproductible candidate; le run suivant doit exiger ce hash et 482 pages avant toute capture. Aucune image/qz64 AKM n a ete committee par le run rouge. `MEMSX64` reste #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.\n' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
             git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
-            git commit -m 'Record AKM7169 1870 source transport failure'
+            git commit -m 'Record AKM7169 reproducible source discovery'
             git push origin HEAD:RAPPORT
           fi
-      - name: Fetch exact AKM7169ENG source
+      - name: Fetch and validate reproducible AKM7169ENG source
         shell: bash
         run: |
           set -euo pipefail
-          EXPECTED_SIZE='43906518'
-          EXPECTED_SHA='c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0'
-          UA='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140 Safari/537.36'
-          rm -f /tmp/AKM7169ENG.pdf /tmp/akm-candidate.pdf
-          try_url() {
-            local url="$1"
-            echo "TRY_SOURCE=$url"
-            rm -f /tmp/akm-candidate.pdf
-            if ! curl --fail --location --retry 3 --connect-timeout 20 --max-time 240 --user-agent "$UA" --output /tmp/akm-candidate.pdf "$url"; then
-              echo 'DOWNLOAD_FAILED'
-              return 1
-            fi
-            local size sha
-            size="$(stat -c%s /tmp/akm-candidate.pdf)"
-            sha="$(sha256sum /tmp/akm-candidate.pdf | awk '{print $1}')"
-            echo "CANDIDATE_SIZE=$size CANDIDATE_SHA=$sha"
-            if [ "$size" = "$EXPECTED_SIZE" ] && [ "$sha" = "$EXPECTED_SHA" ]; then
-              mv /tmp/akm-candidate.pdf /tmp/AKM7169ENG.pdf
-              echo 'EXACT_SOURCE_PASS'
-              return 0
-            fi
-            return 1
-          }
-          FOUND=0
-          for URL in \
-            'https://www.tmsmini.com/cooper/pdf/AKM7169ENG_Rover_Mini_Repair_Manual_92-96.pdf' \
-            'http://benoit.dc.free.fr/technique/AKM7169%20-%20Manuel%20de%20Reparation%20Rover%20SPI.pdf' \
-            'https://pdfcoffee.com/download/mini-repair-manual-92-96-2-pdf-free.html' \
-            'https://pdfcoffee.com/download/mini-repair-manual-92-96-pdf-pdf-free.html'; do
-            if try_url "$URL"; then FOUND=1; break; fi
-          done
-          if [ "$FOUND" -ne 1 ]; then
-            echo 'Direct mirrors did not yield the exact binary; trying PDFCoffee cookie/referrer sessions.'
-            for SLUG in 'mini-repair-manual-92-96-2-pdf-free.html' 'mini-repair-manual-92-96-pdf-pdf-free.html'; do
-              rm -f /tmp/pdfcoffee.cookies /tmp/pdfcoffee-landing.html /tmp/akm-candidate.pdf
-              LANDING="https://pdfcoffee.com/$SLUG"
-              DOWNLOAD="https://pdfcoffee.com/download/$SLUG"
-              curl --fail --location --retry 2 --connect-timeout 20 --max-time 120 --user-agent "$UA" --cookie-jar /tmp/pdfcoffee.cookies --output /tmp/pdfcoffee-landing.html "$LANDING" || true
-              if curl --fail --location --retry 3 --connect-timeout 20 --max-time 240 --user-agent "$UA" --cookie /tmp/pdfcoffee.cookies --referer "$LANDING" --output /tmp/akm-candidate.pdf "$DOWNLOAD"; then
-                size="$(stat -c%s /tmp/akm-candidate.pdf)"
-                sha="$(sha256sum /tmp/akm-candidate.pdf | awk '{print $1}')"
-                echo "COOKIE_CANDIDATE_SIZE=$size COOKIE_CANDIDATE_SHA=$sha"
-                if [ "$size" = "$EXPECTED_SIZE" ] && [ "$sha" = "$EXPECTED_SHA" ]; then
-                  mv /tmp/akm-candidate.pdf /tmp/AKM7169ENG.pdf
-                  FOUND=1
-                  echo 'EXACT_SOURCE_COOKIE_PASS'
-                  break
-                fi
-              fi
-            done
-          fi
-          test "$FOUND" = '1'
+          URL='http://benoit.dc.free.fr/technique/AKM7169%20-%20Manuel%20de%20Reparation%20Rover%20SPI.pdf'
+          EXPECTED_SIZE='11240232'
+          EXPECTED_SHA='37cd0434347fe4009963d075e4b91b0b21ebc905bae5657519a8080c3026d4f5'
+          curl --fail --location --retry 4 --connect-timeout 20 --max-time 240 --user-agent 'Mozilla/5.0' --output /tmp/AKM7169ENG.pdf "$URL"
           test "$(stat -c%s /tmp/AKM7169ENG.pdf)" = "$EXPECTED_SIZE"
           echo "$EXPECTED_SHA  /tmp/AKM7169ENG.pdf" | sha256sum -c -
           python -m pip install --disable-pip-version-check PyMuPDF==1.26.7 Pillow==12.3.0
+          python - <<'PY'
+          import fitz
+          p='/tmp/AKM7169ENG.pdf'
+          d=fitz.open(p)
+          assert d.page_count == 482, d.page_count
+          for n in (2,7,24,25,26):
+              page=d[n-1]
+              assert page.rect.width > 0 and page.rect.height > 0
+          print('AKM_SOURCE_PASS pages=482 indexes=2,7,24,25,26')
+          d.close()
+          PY
       - name: Build five original pages and batch 1870
         shell: bash
         run: |
@@ -107,7 +70,7 @@ jobs:
           import fitz
           from PIL import Image
           R=Path('database/reference'); OUT=R/'images/rave'; OUT.mkdir(parents=True,exist_ok=True)
-          PDF=Path('/tmp/AKM7169ENG.pdf'); SOURCE='c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0'
+          PDF=Path('/tmp/AKM7169ENG.pdf'); SOURCE='37cd0434347fe4009963d075e4b91b0b21ebc905bae5657519a8080c3026d4f5'
           pages={2:('document_scope_page','Publication scope Mini Repair Manual AKM7169ENG'),7:('identification_page','VIN identification 049349'),24:('table_page','Engine Tuning Data 3 SPi manual MNE101040 speed density TPS fuel pressure'),25:('table_page','Engine Tuning Data 4 SPi automatic MNE101060 speed density TPS fuel pressure'),26:('table_page','Engine Tuning Data 5 SPi high compression MNE101070 speed density TPS fuel pressure')}
           links={'RAVE-SPI93-SCOPE-001':[2,7],'RAVE-SPI93-ECU-MANUAL-001':[24],'RAVE-SPI93-ECU-AUTO-001':[25],'RAVE-SPI93-ECU-HICOMP-001':[26],'RAVE-SPI93-SPEEDDENSITY-001':[24,25,26],'RAVE-SPI93-TPS-001':[24,25,26],'RAVE-SPI93-FUELPRESS-001':[24,25,26]}
           def sh(b): return hashlib.sha256(b).hexdigest()
@@ -117,15 +80,16 @@ jobs:
               pix=doc[p-1].get_pixmap(dpi=150,colorspace=fitz.csGRAY,alpha=False)
               im=Image.frombytes('L',(pix.width,pix.height),pix.samples).convert('1')
               fn=f'AKM7169ENG_PDF_{p:03d}.png'; target=OUT/fn; im.save(target,format='PNG',optimize=True)
+              assert target.stat().st_size > 1000
               assets[p]=(fn,kind,title,sh(target.read_bytes()))
           doc.close()
           lines=['-- AKM7169ENG visual backfill batch 1870',"CREATE TABLE IF NOT EXISTS mems_rave_illustration(illustration_key TEXT PRIMARY KEY,document TEXT NOT NULL,source_page TEXT NOT NULL,pdf_index INTEGER,asset_kind TEXT NOT NULL,relative_path TEXT NOT NULL UNIQUE,sha256 TEXT NOT NULL,notes TEXT);","CREATE TABLE IF NOT EXISTS mems_rave_illustration_link(fact_key TEXT NOT NULL,illustration_key TEXT NOT NULL,link_role TEXT NOT NULL DEFAULT 'source',notes TEXT,PRIMARY KEY(fact_key,illustration_key,link_role));","CREATE INDEX IF NOT EXISTS idx_rave_illustration_document_page ON mems_rave_illustration(document,source_page);","CREATE INDEX IF NOT EXISTS idx_rave_illustration_link_fact ON mems_rave_illustration_link(fact_key);","CREATE INDEX IF NOT EXISTS idx_rave_illustration_link_asset ON mems_rave_illustration_link(illustration_key);"]
           q=lambda s:"'"+s.replace("'","''")+"'"
           for p,(fn,kind,title,digest) in assets.items():
-              vals=[q(f'RAVE:AKM7169ENG:PDF:{p}'),q('AKM7169ENG'),q(f'PDF p.{p}'),str(p),q(kind),q('images/rave/'+fn),q(digest),q('Original Rover AKM7169ENG factory scan page; exact 482-page source SHA-256 '+SOURCE+'; documentary only.')]
+              vals=[q(f'RAVE:AKM7169ENG:PDF:{p}'),q('AKM7169ENG'),q(f'PDF p.{p}'),str(p),q(kind),q('images/rave/'+fn),q(digest),q('Original Rover AKM7169ENG factory scan page; reproducible 482-page source SHA-256 '+SOURCE+'; documentary only.')]
               lines.append('INSERT OR REPLACE INTO mems_rave_illustration(illustration_key,document,source_page,pdf_index,asset_kind,relative_path,sha256,notes) VALUES('+','.join(vals)+');')
           for fact,ps in links.items():
-              for p in ps: lines.append('INSERT OR IGNORE INTO mems_rave_illustration_link(fact_key,illustration_key,link_role,notes) VALUES('+','.join([q(fact),q(f'RAVE:AKM7169ENG:PDF:{p}'),q('source'),q('Exact factory source page; historical fact preserved unchanged.')])+');')
+              for p in ps: lines.append('INSERT OR IGNORE INTO mems_rave_illustration_link(fact_key,illustration_key,link_role,notes) VALUES('+','.join([q(fact),q(f'RAVE:AKM7169ENG:PDF:{p}'),q('source'),q('Exact manufacturer source page from reproducible 482-page AKM7169 scan; historical fact preserved unchanged.')])+');')
           assert sum(len(v) for v in links.values())==14
           sql=('\n'.join(lines)+'\n').encode(); payload=struct.pack('>I',len(sql))+zlib.compress(sql,9); (R/'research_enrichment_1870.qz64').write_bytes(base64.b64encode(payload)+b'\n')
           m=json.loads((R/'manifest.json').read_text(encoding='utf-8-sig')); batches=m.setdefault('research_enrichment_batches',[]); assert 'research_enrichment_1870.qz64' not in batches; batches.append('research_enrichment_1870.qz64'); diagrams=m.setdefault('diagrams',{}); visual=m.setdefault('visual_assets',{})
@@ -147,7 +111,7 @@ jobs:
           assert db.execute("select count(distinct l.fact_key) from mems_rave_illustration_link l join mems_rave_illustration i on i.illustration_key=l.illustration_key where i.document='AKM7169ENG' and l.link_role='source'").fetchone()[0]==7
           assert db.execute("select count(distinct l.fact_key) from mems_rave_illustration_link l where l.link_role='source'").fetchone()[0]==93
           db.close()
-          audit=R/'audits/akm7169_1870_visual_backfill_audit.md'; audit.write_text(f'''# AKM7169ENG visual backfill - batch 1870\n\nExact source: Rover AKM7169ENG, 482 pages, 43906518 bytes, SHA-256 `{SOURCE}`.\n\nOriginal retained pages: 2, 7, 24, 25, 26. Exactly 5 manufacturer pages cover the 7 existing AKM7169 historical facts through 14 additive source links. Historical facts are not rewritten.\n\nValidation: integrity `ok`; user_version 20; mems_rave_fact 93; mems_expert_fact_external 105; AKM assets 5; AKM links 14; AKM facts covered 7/7; global historical RAVE visual coverage **93/93 = 100%**.\n\nProduction `MEMSX64` remains BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`. Base/RAVE remains consultative only.\n''',encoding='utf-8')
+          audit=R/'audits/akm7169_1870_visual_backfill_audit.md'; audit.write_text(f'''# AKM7169ENG visual backfill - batch 1870\n\nReproducible source: Rover AKM7169ENG direct PDF mirror, 482 pages, 11240232 bytes, SHA-256 `{SOURCE}`. Source URL: `http://benoit.dc.free.fr/technique/AKM7169%20-%20Manuel%20de%20Reparation%20Rover%20SPI.pdf`.\n\nOriginal retained pages: 2, 7, 24, 25, 26. Exactly 5 manufacturer pages cover the 7 existing AKM7169 historical facts through 14 additive source links. Historical facts are not rewritten.\n\nValidation: source page count 482; integrity `ok`; user_version 20; mems_rave_fact 93; mems_expert_fact_external 105; AKM assets 5; AKM links 14; AKM facts covered 7/7; global historical RAVE visual coverage **93/93 = 100%**.\n\nProduction `MEMSX64` remains BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`. Base/RAVE remains consultative only.\n''',encoding='utf-8')
           print('AKM7169_1870_PASS assets=5 links=14 facts=7 global=93/93')
           PY
       - name: Commit exact documentary lot
@@ -171,7 +135,7 @@ jobs:
           test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "22dbe75ed14e0a61e694159d505ef72245116b48"
           git worktree add -B report1870-post /tmp/report-post origin/RAPPORT
           cd /tmp/report-post
-          printf '\n## 2026-08-30 - AKM7169ENG 1870 - VISUAL BACKFILL TERMINE\n\nSource exacte acquise: AKM7169ENG 482 pages, 43906518 octets, SHA-256 `c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0`. Pages originales 2, 7, 24, 25, 26 integrees. Lot 1870: 5 assets, 14 liens, 7/7 faits AKM couverts; couverture visuelle historique RAVE finale **93/93 = 100%%**. Commit documentaire `%s`, run `%s`. `MEMSX64` reste strictement #101 `22dbe75ed14e0a61e694159d505ef72245116b48`; aucun #102.\n' "$FINAL_SHA" "$GITHUB_RUN_ID" >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          printf '\n## 2026-08-30 - AKM7169ENG 1870 - VISUAL BACKFILL TERMINE\n\nSource constructeur AKM7169ENG reproductible acquise et hashee: 482 pages, 11240232 octets, SHA-256 `37cd0434347fe4009963d075e4b91b0b21ebc905bae5657519a8080c3026d4f5`. Pages originales 2, 7, 24, 25, 26 integrees. Lot 1870: 5 assets, 14 liens, 7/7 faits AKM couverts; couverture visuelle historique RAVE finale **93/93 = 100%%**. Commit documentaire `%s`, run `%s`. `MEMSX64` reste strictement #101 `22dbe75ed14e0a61e694159d505ef72245116b48`; aucun #102.\n' "$FINAL_SHA" "$GITHUB_RUN_ID" >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
