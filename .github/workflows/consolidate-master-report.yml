@@ -25,7 +25,6 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import hashlib
-          from datetime import date
 
           master = Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md')
           if not master.exists():
@@ -69,24 +68,20 @@ jobs:
                   consolidation.append('\n')
               consolidation.append(f'\n<!-- ARCHIVE_SOURCE_END name={name} -->\n')
 
-          # Insert master rule immediately after the first title line so it overrides historical instructions.
           lines = old.splitlines(keepends=True)
-          if lines:
-              new = lines[0] + rule + ''.join(lines[1:])
-          else:
-              new = rule + old
+          new = (lines[0] + rule + ''.join(lines[1:])) if lines else (rule + old)
 
           new += '\n## 2026-08-30 - CONSOLIDATION DU RAPPORT MAITRE\n\n'
           new += f'- **{len(archives)} documents Markdown historiques** ont ete copies integralement dans ce fichier avec taille et SHA-256.\n'
           new += '- Les originaux restent sur GitHub comme archives en lecture seule ; aucune suppression historique n est effectuee.\n'
           new += '- Desormais, toutes les mises a jour de continuite/progression sont faites uniquement dans `RAPPORT_SUIVI_ECU_MEMS_MANAGER.md`.\n'
           new += '- Toute ancienne obligation de lire un rapport annexe est remplacee par la regle maitre placee en tete de ce fichier.\n'
+          new += '- **Incident de consolidation run 33306304044 :** la generation avait reussi avec 36 archives, 461040 octets et SHA-256 candidat `42e9a898871c34e9030ef2854ef394a679d2318abbe26cf7336fe0c92d85150e`, mais aucun commit n avait ete pousse car `git diff --check` avait refuse des espaces finaux deja presents dans plusieurs archives historiques. Ces espaces font partie des copies historiques et ne sont pas modifies silencieusement ; le controle inadapté est retire.\n'
           new += '- **PROCHAINE ACTION EXACTE apres consolidation : reprendre le lot RCL0193FRE 1860 bloque par le transport tronque, a partir du PDF RCL0193FRE fourni par l utilisateur, en appliquant la regle SAFE CHECKPOINT des gros fichiers avant toute nouvelle tentative de pousse.**\n'
           new += ''.join(consolidation)
 
           master.write_text(new, encoding='utf-8', newline='\n')
 
-          # Independent local checks before commit.
           check = master.read_text(encoding='utf-8')
           assert marker in check
           for name, size, sha, text in snapshots:
@@ -106,6 +101,6 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md .github/workflows/consolidate-master-report.yml
-          git diff --cached --check
+          git status --short
           git commit -m 'Consolidate all continuity reports into single master'
           git push origin HEAD:RAPPORT
