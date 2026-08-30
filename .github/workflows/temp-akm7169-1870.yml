@@ -14,12 +14,32 @@ jobs:
         with:
           ref: tmp-rave-visual-backfill
           fetch-depth: 0
-      - name: Guard BUILD 101 and fetch exact AKM7169ENG
+      - name: Guard BUILD 101 and exact documentary scope
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "d1a69ede53d671972c3755152d83f31f4eae094b"
+          BASE='d1a69ede53d671972c3755152d83f31f4eae094b'
+          git merge-base --is-ancestor "$BASE" HEAD
           test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "22dbe75ed14e0a61e694159d505ef72245116b48"
+          test "$(git diff --name-only "$BASE"...HEAD | sort)" = ".github/workflows/temp-akm7169-1870.yml"
+          echo GUARD_PASS
+      - name: Journal previous red run before retry
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin RAPPORT
+          git worktree add -B report1870-pre /tmp/report-pre origin/RAPPORT
+          cd /tmp/report-pre
+          printf '\n## 2026-08-30 - AKM7169ENG 1870 - PREMIER RUN ROUGE\n\nRun `33314251161`: echec avant toute generation. Cause: garde errone exigeant `HEAD == d1a69ede...` alors que le commit du workflow avait avance HEAD a `dc92dfd...`. Generation, commit et rapport final tous sautes; aucune donnee AKM modifiee. Correction: d1a69ede devient ancetre obligatoire, diff limite au seul workflow. `MEMSX64` reste #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.\n' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m 'Record AKM7169 1870 failed guard and retry'
+          git push origin HEAD:RAPPORT
+      - name: Fetch exact AKM7169ENG source
+        shell: bash
+        run: |
+          set -euo pipefail
           curl --fail --location --retry 4 --output /tmp/AKM7169ENG.pdf 'https://pdfcoffee.com/download/mini-repair-manual-92-96-pdf-pdf-free.html'
           test "$(stat -c%s /tmp/AKM7169ENG.pdf)" = "43906518"
           echo 'c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0  /tmp/AKM7169ENG.pdf' | sha256sum -c -
@@ -36,7 +56,7 @@ jobs:
           R=Path('database/reference'); OUT=R/'images/rave'; OUT.mkdir(parents=True,exist_ok=True)
           PDF=Path('/tmp/AKM7169ENG.pdf'); SOURCE='c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0'
           pages={2:('document_scope_page','Publication scope Mini Repair Manual AKM7169ENG'),7:('identification_page','VIN identification 049349'),24:('table_page','Engine Tuning Data 3 SPi manual MNE101040 speed density TPS fuel pressure'),25:('table_page','Engine Tuning Data 4 SPi automatic MNE101060 speed density TPS fuel pressure'),26:('table_page','Engine Tuning Data 5 SPi high compression MNE101070 speed density TPS fuel pressure')}
-          links={'AKM7169_049349_SCOPE_001':[2,7],'AKM7169_MNE101040_001':[24],'AKM7169_MNE101060_001':[25],'AKM7169_MNE101070_001':[26],'AKM7169_SPEED_DENSITY_001':[24,25,26],'AKM7169_TPS_VOLTAGE_001':[24,25,26],'AKM7169_FUEL_PRESSURE_001':[24,25,26]}
+          links={'RAVE-SPI93-SCOPE-001':[2,7],'RAVE-SPI93-ECU-MANUAL-001':[24],'RAVE-SPI93-ECU-AUTO-001':[25],'RAVE-SPI93-ECU-HICOMP-001':[26],'RAVE-SPI93-SPEEDDENSITY-001':[24,25,26],'RAVE-SPI93-TPS-001':[24,25,26],'RAVE-SPI93-FUELPRESS-001':[24,25,26]}
           def sh(b): return hashlib.sha256(b).hexdigest()
           doc=fitz.open(PDF); assert doc.page_count==482
           assets={}
@@ -46,13 +66,14 @@ jobs:
               fn=f'AKM7169ENG_PDF_{p:03d}.png'; target=OUT/fn; im.save(target,format='PNG',optimize=True)
               assets[p]=(fn,kind,title,sh(target.read_bytes()))
           doc.close()
-          lines=['-- AKM7169ENG visual backfill batch 1870',"CREATE TABLE IF NOT EXISTS mems_rave_illustration(illustration_key TEXT PRIMARY KEY,document TEXT NOT NULL,source_page TEXT NOT NULL,pdf_index INTEGER,asset_kind TEXT NOT NULL,relative_path TEXT NOT NULL UNIQUE,sha256 TEXT NOT NULL,notes TEXT);","CREATE TABLE IF NOT EXISTS mems_rave_illustration_link(fact_key TEXT NOT NULL,illustration_key TEXT NOT NULL,link_role TEXT NOT NULL DEFAULT 'source',notes TEXT,PRIMARY KEY(fact_key,illustration_key,link_role));"]
+          lines=['-- AKM7169ENG visual backfill batch 1870',"CREATE TABLE IF NOT EXISTS mems_rave_illustration(illustration_key TEXT PRIMARY KEY,document TEXT NOT NULL,source_page TEXT NOT NULL,pdf_index INTEGER,asset_kind TEXT NOT NULL,relative_path TEXT NOT NULL UNIQUE,sha256 TEXT NOT NULL,notes TEXT);","CREATE TABLE IF NOT EXISTS mems_rave_illustration_link(fact_key TEXT NOT NULL,illustration_key TEXT NOT NULL,link_role TEXT NOT NULL DEFAULT 'source',notes TEXT,PRIMARY KEY(fact_key,illustration_key,link_role));","CREATE INDEX IF NOT EXISTS idx_rave_illustration_document_page ON mems_rave_illustration(document,source_page);","CREATE INDEX IF NOT EXISTS idx_rave_illustration_link_fact ON mems_rave_illustration_link(fact_key);","CREATE INDEX IF NOT EXISTS idx_rave_illustration_link_asset ON mems_rave_illustration_link(illustration_key);"]
           q=lambda s:"'"+s.replace("'","''")+"'"
           for p,(fn,kind,title,digest) in assets.items():
               vals=[q(f'RAVE:AKM7169ENG:PDF:{p}'),q('AKM7169ENG'),q(f'PDF p.{p}'),str(p),q(kind),q('images/rave/'+fn),q(digest),q('Original Rover AKM7169ENG factory scan page; exact 482-page source SHA-256 '+SOURCE+'; documentary only.')]
-              lines.append('INSERT OR REPLACE INTO mems_rave_illustration VALUES('+','.join(vals)+');')
+              lines.append('INSERT OR REPLACE INTO mems_rave_illustration(illustration_key,document,source_page,pdf_index,asset_kind,relative_path,sha256,notes) VALUES('+','.join(vals)+');')
           for fact,ps in links.items():
-              for p in ps: lines.append('INSERT OR IGNORE INTO mems_rave_illustration_link VALUES('+','.join([q(fact),q(f'RAVE:AKM7169ENG:PDF:{p}'),q('source'),q('Exact factory source page; historical fact preserved unchanged.')])+');')
+              for p in ps: lines.append('INSERT OR IGNORE INTO mems_rave_illustration_link(fact_key,illustration_key,link_role,notes) VALUES('+','.join([q(fact),q(f'RAVE:AKM7169ENG:PDF:{p}'),q('source'),q('Exact factory source page; historical fact preserved unchanged.')])+');')
+          assert sum(len(v) for v in links.values())==14
           sql=('\n'.join(lines)+'\n').encode(); payload=struct.pack('>I',len(sql))+zlib.compress(sql,9); (R/'research_enrichment_1870.qz64').write_bytes(base64.b64encode(payload)+b'\n')
           m=json.loads((R/'manifest.json').read_text(encoding='utf-8-sig')); batches=m.setdefault('research_enrichment_batches',[]); assert 'research_enrichment_1870.qz64' not in batches; batches.append('research_enrichment_1870.qz64'); diagrams=m.setdefault('diagrams',{}); visual=m.setdefault('visual_assets',{})
           for p,(fn,kind,title,digest) in assets.items():
@@ -62,18 +83,19 @@ jobs:
               x=re.search(r'_(\d+)\.qz64$',p.name); return int(x.group(1)) if x else 0
           def dec(p):
               d=base64.b64decode(p.read_bytes().strip()); n=struct.unpack('>I',d[:4])[0]; raw=zlib.decompress(d[4:]); assert len(raw)==n; return raw.decode()
-          db=sqlite3.connect('/tmp/akm1870.sqlite'); seeds=sorted(R.glob('mems_reference_seed_*.qz64'),key=lambda p:(num(p),p.name)); enc=b''.join(p.read_bytes().strip() for p in seeds); d=base64.b64decode(enc); raw=zlib.decompress(d[4:]); db.executescript(raw.decode())
+          db=sqlite3.connect('/tmp/akm1870.sqlite'); seeds=sorted(R.glob('mems_reference_seed_*.qz64'),key=lambda p:(num(p),p.name)); enc=b''.join(p.read_bytes().strip() for p in seeds); d=base64.b64decode(enc); n=struct.unpack('>I',d[:4])[0]; raw=zlib.decompress(d[4:]); assert len(raw)==n; db.executescript(raw.decode())
           for name in m['research_enrichment_batches']:
               p=R/name
               if p.is_file() and p.name!='research_enrichment_1600.qz64': db.executescript('\n'.join(x for x in dec(p).splitlines() if not x.strip().startswith('--'))+'\n')
           db.execute('PRAGMA user_version=20'); db.commit()
           assert db.execute('PRAGMA integrity_check').fetchone()[0]=='ok'; assert db.execute('select count(*) from mems_rave_fact').fetchone()[0]==93; assert db.execute('select count(*) from mems_expert_fact_external').fetchone()[0]==105
           assert db.execute("select count(*) from mems_rave_illustration where document='AKM7169ENG'").fetchone()[0]==5
-          akm=db.execute("select count(distinct l.fact_key) from mems_rave_illustration_link l join mems_rave_illustration i on i.illustration_key=l.illustration_key where i.document='AKM7169ENG' and l.link_role='source'").fetchone()[0]; assert akm==7
-          cov=db.execute("select count(distinct l.fact_key) from mems_rave_illustration_link l where l.link_role='source'").fetchone()[0]; assert cov==93
+          assert db.execute("select count(*) from mems_rave_illustration_link l join mems_rave_illustration i on i.illustration_key=l.illustration_key where i.document='AKM7169ENG' and l.link_role='source'").fetchone()[0]==14
+          assert db.execute("select count(distinct l.fact_key) from mems_rave_illustration_link l join mems_rave_illustration i on i.illustration_key=l.illustration_key where i.document='AKM7169ENG' and l.link_role='source'").fetchone()[0]==7
+          assert db.execute("select count(distinct l.fact_key) from mems_rave_illustration_link l where l.link_role='source'").fetchone()[0]==93
           db.close()
-          audit=R/'audits/akm7169_1870_visual_backfill_audit.md'; audit.write_text(f'''# AKM7169ENG visual backfill - batch 1870\n\nExact source: Rover AKM7169ENG, 482 pages, 43906518 bytes, SHA-256 `{SOURCE}`.\n\nOriginal retained pages: 2, 7, 24, 25, 26. Exactly 5 manufacturer pages cover the 7 existing AKM7169 historical facts through 14 additive source links. Historical facts are not rewritten.\n\nValidation: integrity `ok`; user_version 20; mems_rave_fact 93; mems_expert_fact_external 105; AKM assets 5; AKM facts covered 7/7; global historical RAVE visual coverage **93/93 = 100%**.\n\nProduction `MEMSX64` remains BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`. Base/RAVE remains consultative only.\n''',encoding='utf-8')
-          print('AKM7169_1870_PASS assets=5 facts=7 links=14 global=93/93')
+          audit=R/'audits/akm7169_1870_visual_backfill_audit.md'; audit.write_text(f'''# AKM7169ENG visual backfill - batch 1870\n\nExact source: Rover AKM7169ENG, 482 pages, 43906518 bytes, SHA-256 `{SOURCE}`.\n\nOriginal retained pages: 2, 7, 24, 25, 26. Exactly 5 manufacturer pages cover the 7 existing AKM7169 historical facts through 14 additive source links. Historical facts are not rewritten.\n\nValidation: integrity `ok`; user_version 20; mems_rave_fact 93; mems_expert_fact_external 105; AKM assets 5; AKM links 14; AKM facts covered 7/7; global historical RAVE visual coverage **93/93 = 100%**.\n\nProduction `MEMSX64` remains BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`. Base/RAVE remains consultative only.\n''',encoding='utf-8')
+          print('AKM7169_1870_PASS assets=5 links=14 facts=7 global=93/93')
           PY
       - name: Commit exact documentary lot
         shell: bash
@@ -94,9 +116,11 @@ jobs:
           git fetch origin tmp-rave-visual-backfill RAPPORT
           test "$(git rev-parse origin/tmp-rave-visual-backfill)" = "$FINAL_SHA"
           test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "22dbe75ed14e0a61e694159d505ef72245116b48"
-          git worktree add -B report1870 /tmp/report origin/RAPPORT
-          cd /tmp/report
+          git worktree add -B report1870-post /tmp/report-post origin/RAPPORT
+          cd /tmp/report-post
           printf '\n## 2026-08-30 - AKM7169ENG 1870 - VISUAL BACKFILL TERMINE\n\nSource exacte acquise: AKM7169ENG 482 pages, 43906518 octets, SHA-256 `c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0`. Pages originales 2, 7, 24, 25, 26 integrees. Lot 1870: 5 assets, 14 liens, 7/7 faits AKM couverts; couverture visuelle historique RAVE finale **93/93 = 100%%**. Commit documentaire `%s`, run `%s`. `MEMSX64` reste strictement #101 `22dbe75ed14e0a61e694159d505ef72245116b48`; aucun #102.\n' "$FINAL_SHA" "$GITHUB_RUN_ID" >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
           git commit -m 'Record AKM7169ENG 1870 completion'
           git push origin HEAD:RAPPORT
