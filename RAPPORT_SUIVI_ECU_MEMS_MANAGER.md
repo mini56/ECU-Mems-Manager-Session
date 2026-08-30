@@ -7898,3 +7898,7 @@ Run `33314251161`: echec avant toute generation. Cause: garde errone exigeant `H
 ## 2026-08-30 - AKM7169ENG 1870 - DEUXIEME RUN ROUGE
 
 Run `33314548784`: garde corrige et valide, mais echec au telechargement de la source avant toute generation. Le endpoint PDFCoffee a retourne une page HTML de 30914 octets au lieu du PDF exact attendu de 43906518 octets; aucune image, qz64 ou donnee AKM n a ete modifiee. Correction: transport multi-source, avec acceptation uniquement si taille 43906518 et SHA-256 `c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0` correspondent exactement. `MEMSX64` reste #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.
+
+## 2026-08-30 - AKM7169ENG 1870 - TROISIEME RUN ROUGE / SOURCE REPRODUCTIBLE TROUVEE
+
+Run `33323299271`: les gardes passent, mais aucun miroir ne restitue le binaire PDFCoffee de 43906518 octets / SHA c8bbb30d... PDFCoffee renvoie toujours de l HTML. En revanche le miroir direct `benoit.dc.free.fr` restitue un vrai PDF AKM7169 de 11240232 octets, SHA-256 `37cd0434347fe4009963d075e4b91b0b21ebc905bae5657519a8080c3026d4f5`. Ce binaire devient la source reproductible candidate; le run suivant doit exiger ce hash et 482 pages avant toute capture. Aucune image/qz64 AKM n a ete committee par le run rouge. `MEMSX64` reste #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.
