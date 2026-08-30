@@ -1,0 +1,26 @@
+name: REPORT MASTER CHECKPOINT MINIMAL
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/report-master-checkpoint-minimal.yml'
+permissions:
+  contents: write
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - run: python3 tools/report_append_master_checkpoint_1860.py
+      - run: |
+          git rm -f .github/workflows/report-master-checkpoint-minimal.yml
+          git rm -f .github/workflows/report-master-consolidation-success-and-1860-source.yml || true
+          git rm -f tools/report_append_master_checkpoint_1860.py
+          git config user.name github-actions-bot
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m 'Record master consolidation success and exact 1860 source'
+          git push origin HEAD:RAPPORT
