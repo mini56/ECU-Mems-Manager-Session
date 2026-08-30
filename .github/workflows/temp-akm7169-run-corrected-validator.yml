@@ -1,0 +1,31 @@
+name: TEMP AKM7169 validate corrected candidate
+on:
+  push:
+    branches: [tmp-akm7169-1870-transport]
+    paths:
+      - '.github/workflows/temp-akm7169-run-corrected-validator.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout corrected AKM target
+        uses: actions/checkout@v4
+        with:
+          ref: 7ef308f1f726d3b091c98e7d65b4c35a4aa37f98
+          path: target
+      - name: Checkout transport validator source
+        uses: actions/checkout@v4
+        with:
+          ref: tmp-akm7169-1870-transport
+          path: transport
+      - name: Execute existing full DB validator on corrected target
+        shell: bash
+        run: |
+          set -euo pipefail
+          awk '/^          python - <<'"'"'PY'"'"'/{flag=1;next} flag && /^          PY$/{exit} flag{sub(/^          /,""); print}' transport/.github/workflows/temp-akm7169-full-db-validate.yml > "$RUNNER_TEMP/validate.py"
+          test -s "$RUNNER_TEMP/validate.py"
+          cd target
+          python "$RUNNER_TEMP/validate.py"
