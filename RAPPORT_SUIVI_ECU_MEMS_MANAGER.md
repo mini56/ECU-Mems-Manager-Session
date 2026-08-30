@@ -8165,3 +8165,17 @@ Hashes du prototype : SQL SHA-256 `4a89004a556af7771a80592534c3b4e379733c7fe9c0f
 IMPORTANT : cette validation prouve le SOCLE DE DONNEES V1, pas encore l'affichage graphique dans MEMS Manager et pas encore le retraitement de RAVE. Le prototype reste hors manifeste sous `database/reference/prototypes/`; il n'est pas applique par la production. `MEMSX64` reste sur BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
 
 PROCHAINE ACTION EXACTE : conserver ce schema V1 comme base validee et construire le petit prototype de restitution/extraction sur un echantillon heterogene de ressources deja presentes, toujours sur `tmp-multilingual-knowledge-foundation`, avant tout backfill massif RAVE.
+
+## 2026-08-30 - SOCLE MULTILINGUE - AVANT POUSSE PROTOTYPE DE RESTITUTION/BACKFILL
+
+Suite autorisee apres validation distante du schema V1 : construire sur `tmp-multilingual-knowledge-foundation` un petit prototype de backfill/restitution utilisant uniquement des ressources deja presentes dans le SQLite officiel BUILD #103.
+
+Echantillon retenu : un fait de schema electrique RCL0194ENG 20.4 avec son visuel original, une procedure ECT RCL0193FRE 18.30.10 avec ses etapes, et deux specifications thermostat RCL0193FRE p.34 structurees en tableau/valeurs.
+
+Objectifs de preuve : importer par references legacy sans dupliquer ni modifier les tables historiques; restituer selon locale avec chaine de fallback; reutiliser un seul visuel constructeur par hash; traduire les labels separement; conserver le texte source exact et un texte d'affichage normalise distinct; conserver les nombres/unites independants de la langue; rendre l'import idempotent.
+
+Anomalie historique explicitement couverte par le prototype : certaines etapes existantes contiennent des residus d'en-tete de page, par exemple `SYSTEME DE GESTION MOTEUR - MEMS`. Le prototype doit conserver cette chaine dans le champ source de tracabilite tout en permettant un champ d'affichage nettoye, sans falsifier la source.
+
+Aucune traduction du prototype ne doit etre consideree comme contenu production valide : elles restent marquees `draft` sauf texte source/normalisation testee. Aucun manifeste production n'est modifie et `MEMSX64` reste BUILD #103.
+
+PROCHAINE ACTION EXACTE : pousser le script de demonstration + audit + validateur temporaire sur la branche de travail, puis executer le test contre le SQLite effectivement emballe dans BUILD #103.
