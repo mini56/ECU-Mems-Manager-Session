@@ -1,0 +1,39 @@
+name: TEMP REPORT AKM7169 FINAL PREPROD
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/temp-report-akm7169-final-preprod.yml'
+permissions:
+  contents: write
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+      - name: Append validated AKM7169 reintegration status
+        shell: bash
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+## 2026-08-30 - AKM7169ENG - REINTEGRATION COMPLETE VALIDEE AVANT PRODUCTION
+
+Source constructeur exacte : manuel Rover Mini SPi AKM7169ENG, 43 906 518 octets, 482 pages physiques, SHA-256 `c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0`.
+
+Le candidat complet est sur `tmp-akm7169-full-reintegration`, HEAD `7ef308f1f726d3b091c98e7d65b4c35a4aa37f98`. Il est strictement descendant de BUILD #102 `06eca1a478db3d32e9ae88d040e1a34e2cc98650` et la comparaison #102 -> candidat ne modifie que `database/reference/` : manifeste, lot `research_enrichment_1870.qz64`, audit AKM7169 et 40 PNG constructeur.
+
+Le premier rebuild complet a expose une anomalie historique : `research_enrichment_1720.qz64` existait sur disque mais n'etait pas inscrit dans `research_enrichment_batches`; l'auto-discovery l'appliquait donc apres 1870 et reinjectait 7 anciens `RAVE-SPI93-*` + 7 miroirs expert. Correction minimale : ajout de 1720 dans le manifeste avant 1730, 1870 restant le dernier lot effectif.
+
+Validation distante finale : run `33334199327` = SUCCESS. Reconstruction complete depuis les seeds + tous les lots effectifs, avec 1600 traite comme archive-only conformement au runtime. Resultats : `integrity_check=ok`, `user_version=20`, FK=0; nouveaux faits RAVE=91, anciens=0; miroirs expert=91, anciens=0; knowledge=91, anciens=0; scopes=5, anciens=0; specifications=81 + 81 valeurs; procedures=13, etapes=160, requirements=11; relations=9; illustrations AKM7169ENG=40; liens fait->page=135; couverture=91/91; source assets=40; diagnostic rows=8, anciennes=0; documentation source exacte=1, ancienne=0; fault knowledge corrige=1, ancien=0. Le lot 1870 est confirme dernier lot applique.
+
+`MEMSX64` a ete re-verifie juste avant promotion et reste BUILD #102 `06eca1a478db3d32e9ae88d040e1a34e2cc98650`.
+
+PROCHAINE ACTION EXACTE : promouvoir uniquement les changements `database/reference/` du candidat `7ef308f1f726d3b091c98e7d65b4c35a4aa37f98` sur `MEMSX64`, produire BUILD #103, puis exiger workflow BUILD vert et artefact x64 complet avant validation finale.
+EOF
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m 'Journal validated AKM7169 full reintegration'
+          git push
