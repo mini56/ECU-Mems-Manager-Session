@@ -2,7 +2,8 @@ name: TEMP REPORT 1860 REGEN CHECKPOINT
 on:
   push:
     branches: [RAPPORT]
-    paths: ['.github/workflows/temp-report-1860-regen.yml']
+    paths:
+      - '.github/workflows/temp-report-1860-regen.yml'
 permissions:
   contents: write
 jobs:
@@ -13,52 +14,13 @@ jobs:
         with:
           ref: RAPPORT
           fetch-depth: 0
-      - name: Append master report checkpoint and self clean
+      - name: Journal
         shell: bash
         run: |
-          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
-
-# CHECKPOINT RCL0193FRE 1860 — REGENERATION DETERMINISTE AVANT POUSSE — 30 AOUT 2026
-
-## Cause du blocage définitivement établie
-- Le transport 1860 historique du commit `908da678c67dcc6066a8991b69b0feb6e7923cdc` était tronqué : Base64 TIFF 15 000 octets et QZ64 6 000 octets seulement.
-- Le préfixe XZ historique encore présent a été décompressé lors du probe GitHub Actions `33308468167` : le TIFF historique commence avec un premier IFD à 18 846 octets, alors que le rendu reproductible de la page 324 depuis la source exacte donne un premier IFD à 27 800 octets. Le candidat TIFF historique SHA `d25fd347ccf9fd795c635fffff5a0dcc2800bbe33e185416c9a188d034b8f2c4` n'est donc pas le rendu reproductible de la source exacte et ne doit plus être forcé.
-- La méthode historique de rendu a été prouvée avec le lot 1850 : PyMuPDF 150 dpi gris -> Pillow `convert('1')` -> TIFF Group 4 150 dpi reproduit exactement le SHA 1850 `45281ba49806df725d4db980ed291461c6779dada7a153a3bed0a0b7559f21b4`.
-- Le QZ64 tronqué a été décodé partiellement par le probe `33308683680` : longueur SQL attendue 322 789 octets, seulement 26 340 octets récupérables (8,16 %), 33 INSERT, jusqu'à `KNOW-RCL0193FRE-1860-P358`. L'ancien SQL complet et son SHA historique ne sont pas récupérables bit-à-bit.
-
-## Décision technique
-Le lot 1860 est régénéré proprement depuis le PDF constructeur exact, sans OCR approximatif et sans inventer les compteurs. Le texte PDF est extrait déterministement en reconstituant les espaces à partir des positions de glyphes et en décodant la police de substitution du manuel. Les 45 pages source restent exactement : 324, 326, 328-358 sauf 325/327, puis 360-371 ; pages 325, 327 et 359 exclues comme blanches/intercalaires.
-
-## Résultat de régénération locale validé
-- Source `RCL0193FRE` : 67 009 217 octets, 371 pages, SHA-256 `0c7fef28d0d0f0673ba321d6625a019c005823103caa98afb3258114e1fec713`.
-- 45 connaissances de page + 50 opérations constructeur (48 lignes numérotées, le feu arrière comporte deux numéros gauche/droite, plus le lecteur CD 06/99 sans numéro imprimé) + 17 connaissances de spécification = **112 connaissances**.
-- **18 spécifications / 18 valeurs** explicites constructeur.
-- **50 opérations -> 100 phases** Dépose/Repose ou Contrôle/Réglage/Inspection.
-- **516 étapes numérotées**, retrouvées exactement par parsing des étapes constructeur.
-- **29 exigences** utiles : avertissements, outils spéciaux, remplacements, prérequis et contrôles post-opération.
-- **79 relations** documentaires et dépendances explicites.
-- **64 alias effectifs**.
-- Test d'exécution du SQL sur le schéma exact du socle : 112 scopes, 18/18 specs, 100 procédures, 516 étapes, 29 exigences, 79 relations, 64 alias — PASS.
-
-## Nouveaux artefacts reproductibles
-- SQL régénéré : 384 852 octets — SHA-256 `d1927160d0c859949046b15ca93ce6b9a1c88a6377d883bcef5111abab91c265`.
-- QZ64 Base64 déterministe : 42 622 octets — SHA-256 `27fc75a0890b455ba7c0b51f84488b98dbc164c69209e115e403a2f1fb8d5d53`.
-- TIFF Group 4 150 dpi des 45 pages : 1 132 992 octets — SHA-256 `ef82512a85542de81b15ca51dbb5c0f36133350c0613837e1fc257fa425225c2`.
-- XZ du TIFF, Python lzma FORMAT_XZ preset 6 : 816 448 octets — SHA-256 `254f8da5ad575abaee3ee0a0c20e54b8e04687a61f31fe7511c592b92afb870c`.
-
-## Invariants / barrières avant pousse
-- `MEMSX64` doit rester exactement BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48` ; aucun #102.
-- Branche documentaire uniquement : `tmp-rave-visual-backfill`.
-- Persister un SAFE CHECKPOINT distant contenant le QZ64 complet, le XZ complet et le générateur/manifeste de reproduction avant toute installation.
-- Vérifier SHA source/QZ/SQL/TIFF/XZ, 45 images, intégrité SQLite, `user_version=20`, historiques 93 RAVE / 105 experts, compteurs 112/18/100/516/29/79/64 et delta de fichiers autorisé.
-- Le workflow final ne doit committer le lot que si tous ces gardes passent ; le checkpoint ne doit être nettoyé qu'après relecture distante et validation.
-
-## PROCHAINE ACTION EXACTE
-Pousser le SAFE CHECKPOINT 1860 régénéré sur `tmp-rave-visual-backfill`, lancer l'installateur final avec les nouveaux SHA reproductibles, vérifier le commit distant complet et le nettoyage, puis inscrire immédiatement le POST-POUSSE dans CE rapport maître unique. `MEMSX64` reste #101.
-EOF
+          cat .tmp_report_1860_checkpoint.txt >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git rm .github/workflows/temp-report-1860-regen.yml
+          git rm .tmp_report_1860_checkpoint.txt .github/workflows/temp-report-1860-regen.yml
           git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
           git commit -m 'Record regenerated RCL0193FRE 1860 checkpoint'
           git push origin HEAD:RAPPORT
