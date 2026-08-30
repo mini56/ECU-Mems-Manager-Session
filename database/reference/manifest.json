@@ -60,7 +60,8 @@
     "research_enrichment_1820.qz64",
     "research_enrichment_1830.qz64",
     "research_enrichment_1840.qz64",
-    "research_enrichment_1850.qz64"
+    "research_enrichment_1850.qz64",
+    "research_enrichment_1860.qz64"
   ],
   "verification_levels": [
     "verifie_constructeur",
@@ -425,7 +426,52 @@
     "RAVE RCL0193FRE PDF 320 lot 1850": "images/rave/RCL0193FRE_PDF_320.png",
     "RAVE RCL0193FRE PDF 321 lot 1850": "images/rave/RCL0193FRE_PDF_321.png",
     "RAVE RCL0193FRE PDF 322 lot 1850": "images/rave/RCL0193FRE_PDF_322.png",
-    "RAVE RCL0193FRE PDF 323 lot 1850": "images/rave/RCL0193FRE_PDF_323.png"
+    "RAVE RCL0193FRE PDF 323 lot 1850": "images/rave/RCL0193FRE_PDF_323.png",
+    "RAVE RCL0193FRE PDF 324 lot 1860": "images/rave/RCL0193FRE_PDF_324.png",
+    "RAVE RCL0193FRE PDF 326 lot 1860": "images/rave/RCL0193FRE_PDF_326.png",
+    "RAVE RCL0193FRE PDF 328 lot 1860": "images/rave/RCL0193FRE_PDF_328.png",
+    "RAVE RCL0193FRE PDF 329 lot 1860": "images/rave/RCL0193FRE_PDF_329.png",
+    "RAVE RCL0193FRE PDF 330 lot 1860": "images/rave/RCL0193FRE_PDF_330.png",
+    "RAVE RCL0193FRE PDF 331 lot 1860": "images/rave/RCL0193FRE_PDF_331.png",
+    "RAVE RCL0193FRE PDF 332 lot 1860": "images/rave/RCL0193FRE_PDF_332.png",
+    "RAVE RCL0193FRE PDF 333 lot 1860": "images/rave/RCL0193FRE_PDF_333.png",
+    "RAVE RCL0193FRE PDF 334 lot 1860": "images/rave/RCL0193FRE_PDF_334.png",
+    "RAVE RCL0193FRE PDF 335 lot 1860": "images/rave/RCL0193FRE_PDF_335.png",
+    "RAVE RCL0193FRE PDF 336 lot 1860": "images/rave/RCL0193FRE_PDF_336.png",
+    "RAVE RCL0193FRE PDF 337 lot 1860": "images/rave/RCL0193FRE_PDF_337.png",
+    "RAVE RCL0193FRE PDF 338 lot 1860": "images/rave/RCL0193FRE_PDF_338.png",
+    "RAVE RCL0193FRE PDF 339 lot 1860": "images/rave/RCL0193FRE_PDF_339.png",
+    "RAVE RCL0193FRE PDF 340 lot 1860": "images/rave/RCL0193FRE_PDF_340.png",
+    "RAVE RCL0193FRE PDF 341 lot 1860": "images/rave/RCL0193FRE_PDF_341.png",
+    "RAVE RCL0193FRE PDF 342 lot 1860": "images/rave/RCL0193FRE_PDF_342.png",
+    "RAVE RCL0193FRE PDF 343 lot 1860": "images/rave/RCL0193FRE_PDF_343.png",
+    "RAVE RCL0193FRE PDF 344 lot 1860": "images/rave/RCL0193FRE_PDF_344.png",
+    "RAVE RCL0193FRE PDF 345 lot 1860": "images/rave/RCL0193FRE_PDF_345.png",
+    "RAVE RCL0193FRE PDF 346 lot 1860": "images/rave/RCL0193FRE_PDF_346.png",
+    "RAVE RCL0193FRE PDF 347 lot 1860": "images/rave/RCL0193FRE_PDF_347.png",
+    "RAVE RCL0193FRE PDF 348 lot 1860": "images/rave/RCL0193FRE_PDF_348.png",
+    "RAVE RCL0193FRE PDF 349 lot 1860": "images/rave/RCL0193FRE_PDF_349.png",
+    "RAVE RCL0193FRE PDF 350 lot 1860": "images/rave/RCL0193FRE_PDF_350.png",
+    "RAVE RCL0193FRE PDF 351 lot 1860": "images/rave/RCL0193FRE_PDF_351.png",
+    "RAVE RCL0193FRE PDF 352 lot 1860": "images/rave/RCL0193FRE_PDF_352.png",
+    "RAVE RCL0193FRE PDF 353 lot 1860": "images/rave/RCL0193FRE_PDF_353.png",
+    "RAVE RCL0193FRE PDF 354 lot 1860": "images/rave/RCL0193FRE_PDF_354.png",
+    "RAVE RCL0193FRE PDF 355 lot 1860": "images/rave/RCL0193FRE_PDF_355.png",
+    "RAVE RCL0193FRE PDF 356 lot 1860": "images/rave/RCL0193FRE_PDF_356.png",
+    "RAVE RCL0193FRE PDF 357 lot 1860": "images/rave/RCL0193FRE_PDF_357.png",
+    "RAVE RCL0193FRE PDF 358 lot 1860": "images/rave/RCL0193FRE_PDF_358.png",
+    "RAVE RCL0193FRE PDF 360 lot 1860": "images/rave/RCL0193FRE_PDF_360.png",
+    "RAVE RCL0193FRE PDF 361 lot 1860": "images/rave/RCL0193FRE_PDF_361.png",
+    "RAVE RCL0193FRE PDF 362 lot 1860": "images/rave/RCL0193FRE_PDF_362.png",
+    "RAVE RCL0193FRE PDF 363 lot 1860": "images/rave/RCL0193FRE_PDF_363.png",
+    "RAVE RCL0193FRE PDF 364 lot 1860": "images/rave/RCL0193FRE_PDF_364.png",
+    "RAVE RCL0193FRE PDF 365 lot 1860": "images/rave/RCL0193FRE_PDF_365.png",
+    "RAVE RCL0193FRE PDF 366 lot 1860": "images/rave/RCL0193FRE_PDF_366.png",
+    "RAVE RCL0193FRE PDF 367 lot 1860": "images/rave/RCL0193FRE_PDF_367.png",
+    "RAVE RCL0193FRE PDF 368 lot 1860": "images/rave/RCL0193FRE_PDF_368.png",
+    "RAVE RCL0193FRE PDF 369 lot 1860": "images/rave/RCL0193FRE_PDF_369.png",
+    "RAVE RCL0193FRE PDF 370 lot 1860": "images/rave/RCL0193FRE_PDF_370.png",
+    "RAVE RCL0193FRE PDF 371 lot 1860": "images/rave/RCL0193FRE_PDF_371.png"
   },
   "visual_assets": {
     "rave:RCL0194ENG:COLOUR_CODES": {
@@ -3163,6 +3209,366 @@
       "source_page": "PDF p.323",
       "pdf_index": 323,
       "sha256": "a7aa89488b249b517d9cd0361202fbaa7ed99f9adc740c55431fe2521a587b39"
+    },
+    "rave:RCL0193FRE:PDF:324": {
+      "path": "images/rave/RCL0193FRE_PDF_324.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.324",
+      "pdf_index": 324,
+      "sha256": "5078a5e29e02c76d2df31bef353d12c0eeb9f5f528e3ea1079533f4a73f214a4"
+    },
+    "rave:RCL0193FRE:PDF:326": {
+      "path": "images/rave/RCL0193FRE_PDF_326.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.326",
+      "pdf_index": 326,
+      "sha256": "b8e079f58a3d42de631efa0080b5ab2778de59b72842386179e92081896ed585"
+    },
+    "rave:RCL0193FRE:PDF:328": {
+      "path": "images/rave/RCL0193FRE_PDF_328.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.328",
+      "pdf_index": 328,
+      "sha256": "802b4a5c75f3ad2b77c5f60a80733de447ab850e3222bd6f5bb045d6682b214b"
+    },
+    "rave:RCL0193FRE:PDF:329": {
+      "path": "images/rave/RCL0193FRE_PDF_329.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.329",
+      "pdf_index": 329,
+      "sha256": "c67ebdf8946bec73966a3ab034860e79cfa24673516b460e79b50e9af4447e3a"
+    },
+    "rave:RCL0193FRE:PDF:330": {
+      "path": "images/rave/RCL0193FRE_PDF_330.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.330",
+      "pdf_index": 330,
+      "sha256": "e0f69db90f5f713593d1715a404a93db322b3a6d07ac03e80adddadba854896f"
+    },
+    "rave:RCL0193FRE:PDF:331": {
+      "path": "images/rave/RCL0193FRE_PDF_331.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.331",
+      "pdf_index": 331,
+      "sha256": "826dc4bb28e6b471ed7aa694a992615bbb9465ab9d59f96698252b87d8cc1793"
+    },
+    "rave:RCL0193FRE:PDF:332": {
+      "path": "images/rave/RCL0193FRE_PDF_332.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.332",
+      "pdf_index": 332,
+      "sha256": "120761bd7a43a084c046bda09915abb14c57d043b249c5101fcf50fda3d64de8"
+    },
+    "rave:RCL0193FRE:PDF:333": {
+      "path": "images/rave/RCL0193FRE_PDF_333.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.333",
+      "pdf_index": 333,
+      "sha256": "746c5875ad42a80b9d3a7a8ac39f0cdef9be2af783a6f523ed493a8922dfef9f"
+    },
+    "rave:RCL0193FRE:PDF:334": {
+      "path": "images/rave/RCL0193FRE_PDF_334.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.334",
+      "pdf_index": 334,
+      "sha256": "da901ff5b9a6afadbb373048dba363e74f7bae522a4e7f7fa994972d31874bb5"
+    },
+    "rave:RCL0193FRE:PDF:335": {
+      "path": "images/rave/RCL0193FRE_PDF_335.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.335",
+      "pdf_index": 335,
+      "sha256": "7c2636a7883eb3f6bda27c2f1f6ec3892330205885bb0fbf44da45daf0cae4b6"
+    },
+    "rave:RCL0193FRE:PDF:336": {
+      "path": "images/rave/RCL0193FRE_PDF_336.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.336",
+      "pdf_index": 336,
+      "sha256": "119b5c3c53aea99bfe4d24422b942cceeccaf293da31ff82ef1e0afd80d31e0c"
+    },
+    "rave:RCL0193FRE:PDF:337": {
+      "path": "images/rave/RCL0193FRE_PDF_337.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.337",
+      "pdf_index": 337,
+      "sha256": "cbbf788cbc9f0cd009bbc9bfb3b6d737231a537e8e89deba91c0c7ad6ab5fb70"
+    },
+    "rave:RCL0193FRE:PDF:338": {
+      "path": "images/rave/RCL0193FRE_PDF_338.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.338",
+      "pdf_index": 338,
+      "sha256": "fbbdf88369769fda3517495c22b3ef7848644eebe70b078d7deb7d9238ec4b49"
+    },
+    "rave:RCL0193FRE:PDF:339": {
+      "path": "images/rave/RCL0193FRE_PDF_339.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.339",
+      "pdf_index": 339,
+      "sha256": "6c7ab87a1d7c42828cd5ffceaf2ecab923f713ebc9891498c2add79fa21977c7"
+    },
+    "rave:RCL0193FRE:PDF:340": {
+      "path": "images/rave/RCL0193FRE_PDF_340.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.340",
+      "pdf_index": 340,
+      "sha256": "be2ed958e2c8041c329eba07d7de47119a41bde0af483a4e7358374385e8607b"
+    },
+    "rave:RCL0193FRE:PDF:341": {
+      "path": "images/rave/RCL0193FRE_PDF_341.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.341",
+      "pdf_index": 341,
+      "sha256": "338dc82bb7f4a1918d3643caa2b77353eb126b2dcc74256932a4b8449277960a"
+    },
+    "rave:RCL0193FRE:PDF:342": {
+      "path": "images/rave/RCL0193FRE_PDF_342.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.342",
+      "pdf_index": 342,
+      "sha256": "34f84b73233d931d9ae013c7372bc5d55d75eb3e5b208f77cd7177d165971aca"
+    },
+    "rave:RCL0193FRE:PDF:343": {
+      "path": "images/rave/RCL0193FRE_PDF_343.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.343",
+      "pdf_index": 343,
+      "sha256": "e6eaeff12367c0bae078295748cec5185a74b046de16e283de1a3ed37232c233"
+    },
+    "rave:RCL0193FRE:PDF:344": {
+      "path": "images/rave/RCL0193FRE_PDF_344.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.344",
+      "pdf_index": 344,
+      "sha256": "84d3ee6ee1e28acbccf6a52dc330d7c9a2b1c14e4f7cc1ba553bf429350b684a"
+    },
+    "rave:RCL0193FRE:PDF:345": {
+      "path": "images/rave/RCL0193FRE_PDF_345.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.345",
+      "pdf_index": 345,
+      "sha256": "a2db3ad322e59a143b71395e22eb6e043953bd96542e6751fab75f3ce262ee5a"
+    },
+    "rave:RCL0193FRE:PDF:346": {
+      "path": "images/rave/RCL0193FRE_PDF_346.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.346",
+      "pdf_index": 346,
+      "sha256": "e1dfb6052826ec86828bb0099b34e3ecb367870e24caad65b209cf83d3e18204"
+    },
+    "rave:RCL0193FRE:PDF:347": {
+      "path": "images/rave/RCL0193FRE_PDF_347.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.347",
+      "pdf_index": 347,
+      "sha256": "e9292105b6b09eb6cc3245bd0a11ee4a766dee1da91bd0f94a8159fa7ce39d51"
+    },
+    "rave:RCL0193FRE:PDF:348": {
+      "path": "images/rave/RCL0193FRE_PDF_348.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.348",
+      "pdf_index": 348,
+      "sha256": "bda73ec5e91ce619b0a0f3c012fc5b3d209a15dad3aa6e0b63ff9fd23dc57d17"
+    },
+    "rave:RCL0193FRE:PDF:349": {
+      "path": "images/rave/RCL0193FRE_PDF_349.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.349",
+      "pdf_index": 349,
+      "sha256": "4f45a0189d2336e80f54c597035652e14759ea2acb511f56541c3d492b5994b9"
+    },
+    "rave:RCL0193FRE:PDF:350": {
+      "path": "images/rave/RCL0193FRE_PDF_350.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.350",
+      "pdf_index": 350,
+      "sha256": "2987243f1c4ad7f7abfb0acbbeaae290f5aa8c1ee887be6d957ada4fca726760"
+    },
+    "rave:RCL0193FRE:PDF:351": {
+      "path": "images/rave/RCL0193FRE_PDF_351.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.351",
+      "pdf_index": 351,
+      "sha256": "7fc75e5dab75a6bd935d97442990fb8492de991fb537b7741a920bda30628c81"
+    },
+    "rave:RCL0193FRE:PDF:352": {
+      "path": "images/rave/RCL0193FRE_PDF_352.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.352",
+      "pdf_index": 352,
+      "sha256": "f0708f3a43ea978b5bacb39512c69fe2dd4551f3ba60d3d4869cf6697f85c74b"
+    },
+    "rave:RCL0193FRE:PDF:353": {
+      "path": "images/rave/RCL0193FRE_PDF_353.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.353",
+      "pdf_index": 353,
+      "sha256": "cc7a419d163046fce935921c6e4f16845394264a52f0005609fa61de61b1421b"
+    },
+    "rave:RCL0193FRE:PDF:354": {
+      "path": "images/rave/RCL0193FRE_PDF_354.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.354",
+      "pdf_index": 354,
+      "sha256": "7c5b4920951df5d28cc5607e271831f590224818dd868c6c83df4b5122eb4d5e"
+    },
+    "rave:RCL0193FRE:PDF:355": {
+      "path": "images/rave/RCL0193FRE_PDF_355.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.355",
+      "pdf_index": 355,
+      "sha256": "df0b76026e8eaa74f4388fd7294a3522d55318e796fe1c0426177b80b0511a03"
+    },
+    "rave:RCL0193FRE:PDF:356": {
+      "path": "images/rave/RCL0193FRE_PDF_356.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.356",
+      "pdf_index": 356,
+      "sha256": "e318dd3677539c7a41b13372e70bc2c614c116d5add5d28f2f6f9700e4bdabd5"
+    },
+    "rave:RCL0193FRE:PDF:357": {
+      "path": "images/rave/RCL0193FRE_PDF_357.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.357",
+      "pdf_index": 357,
+      "sha256": "1a0f76b8e02877cd436d7d4efed0b3a034f1a63d48bfd8139e63dc5703ad80d3"
+    },
+    "rave:RCL0193FRE:PDF:358": {
+      "path": "images/rave/RCL0193FRE_PDF_358.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.358",
+      "pdf_index": 358,
+      "sha256": "68fea76bcb29ee43e456a2e2370e7b8a14e343af7c50a6171ab5a9158dda71a9"
+    },
+    "rave:RCL0193FRE:PDF:360": {
+      "path": "images/rave/RCL0193FRE_PDF_360.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.360",
+      "pdf_index": 360,
+      "sha256": "c07bb93c1930a1203a14ea0d8012385e32d126ea24d03ca30035f97322df5d08"
+    },
+    "rave:RCL0193FRE:PDF:361": {
+      "path": "images/rave/RCL0193FRE_PDF_361.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.361",
+      "pdf_index": 361,
+      "sha256": "8b24f4583dbba53274819a938f4365c29ce5c1dfd654c878158a71a58b308083"
+    },
+    "rave:RCL0193FRE:PDF:362": {
+      "path": "images/rave/RCL0193FRE_PDF_362.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.362",
+      "pdf_index": 362,
+      "sha256": "b3d3c2e8e964a2cc94e110bab6acfa836309ed756feeba04c58ee907ff799e42"
+    },
+    "rave:RCL0193FRE:PDF:363": {
+      "path": "images/rave/RCL0193FRE_PDF_363.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.363",
+      "pdf_index": 363,
+      "sha256": "77e6950494ea49e484820deca7912b207f24b8f99621e1d56d1270cd87e819a3"
+    },
+    "rave:RCL0193FRE:PDF:364": {
+      "path": "images/rave/RCL0193FRE_PDF_364.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.364",
+      "pdf_index": 364,
+      "sha256": "3daf6dc2a3d6d4589c10e7b6c347f1d63a6c2b18bee95fdfee1d15406a7f276c"
+    },
+    "rave:RCL0193FRE:PDF:365": {
+      "path": "images/rave/RCL0193FRE_PDF_365.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.365",
+      "pdf_index": 365,
+      "sha256": "01b62664ffa0a8178ac6c6597e5e38da57eea8446b256aecd6e2c095389928de"
+    },
+    "rave:RCL0193FRE:PDF:366": {
+      "path": "images/rave/RCL0193FRE_PDF_366.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.366",
+      "pdf_index": 366,
+      "sha256": "75a1aea864998e140a14dfc288fc6ecef31623f56fbc56d3d58679dae225374f"
+    },
+    "rave:RCL0193FRE:PDF:367": {
+      "path": "images/rave/RCL0193FRE_PDF_367.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.367",
+      "pdf_index": 367,
+      "sha256": "81134aee10c2ab7367d25c9e0d6af1ca86e19dc8608b23e60fb80ddc9318a558"
+    },
+    "rave:RCL0193FRE:PDF:368": {
+      "path": "images/rave/RCL0193FRE_PDF_368.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.368",
+      "pdf_index": 368,
+      "sha256": "25e0adfbad57a8c7aef79687948045600aa96e0ecbb63dceafb05395eb7f9e52"
+    },
+    "rave:RCL0193FRE:PDF:369": {
+      "path": "images/rave/RCL0193FRE_PDF_369.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.369",
+      "pdf_index": 369,
+      "sha256": "c0d706481ef0d0fa9ff6467f82dd2001513206a069bcf16cc16fca98103f9aad"
+    },
+    "rave:RCL0193FRE:PDF:370": {
+      "path": "images/rave/RCL0193FRE_PDF_370.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.370",
+      "pdf_index": 370,
+      "sha256": "423bfd9f3f70ee3c407f41bfb666c5e838e49f1ba095b88cabd3129939b0682f"
+    },
+    "rave:RCL0193FRE:PDF:371": {
+      "path": "images/rave/RCL0193FRE_PDF_371.png",
+      "asset_kind": "manual_page",
+      "document": "RCL0193FRE",
+      "source_page": "PDF p.371",
+      "pdf_index": 371,
+      "sha256": "d25af33214224e83a721cc43476fb6cd42faffcc86e9d35b4c74301edd367c8f"
     }
   }
 }
