@@ -1,0 +1,28 @@
+name: TEMP AKM7169 retarget full validation
+on:
+  push:
+    branches: [tmp-akm7169-1870-transport]
+    paths:
+      - '.github/workflows/temp-akm7169-retarget-validation.yml'
+permissions:
+  contents: write
+jobs:
+  retarget:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-akm7169-1870-transport
+      - name: Retarget validator
+        shell: bash
+        run: |
+          set -euo pipefail
+          f=.github/workflows/temp-akm7169-full-db-validate.yml
+          grep -q '7dbe902a21efe35566f9d80e83fdb43b05f71dda' "$f"
+          sed -i 's/7dbe902a21efe35566f9d80e83fdb43b05f71dda/7ef308f1f726d3b091c98e7d65b4c35a4aa37f98/g' "$f"
+          git diff --check
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$f"
+          git commit -m 'Validate corrected AKM7169 candidate 7ef308f'
+          git push
