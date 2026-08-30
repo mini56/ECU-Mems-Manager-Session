@@ -7988,3 +7988,16 @@ Fragments Base64 :
 `MEMSX64` reste strictement #102 `06eca1a478db3d32e9ae88d040e1a34e2cc98650`.
 
 PROCHAINE ACTION EXACTE : creer la branche jetable `tmp-akm7169-1870-transport` depuis #102, pousser les quatre fragments et un workflow de reconstruction/verifications, obtenir le commit atomique candidat sur `tmp-akm7169-full-reintegration`, verifier le contenu distant et la base reconstruite, puis journaliser immediatement le POST-POUSSE avant toute promotion.
+
+
+## 2026-08-30 - AKM7169ENG 1870 - PROBE PDFCOFFEE + INCIDENT JOURNALISATION
+
+Run diagnostique `33330638040` sur la branche jetable `tmp-akm7169-1870-transport` : **SUCCESS technique**, mais aucune source exacte acquise. Les deux pages PDFCoffee testees (`mini-repair-manual-92-96-2-pdf-free.html` et `mini-repair-manual-92-96-pdf-pdf-free.html`) ainsi que leurs endpoints `/download/...html` renvoient du HTML, pas le PDF constructeur de 43 906 518 octets / SHA-256 `c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0`.
+
+Le probe a inspecte 99 URL candidates sans trouver le binaire exact. Une information utile a toutefois ete decouverte dans le HTML : le viewer PDF.js reference explicitement `file=https://pdfcoffee.com/pdfcoffee/assets/pdf/min.pdf`. Ce fichier direct n'a pas encore ete teste.
+
+Incident de journalisation obligatoire : la premiere tentative de consignation de ce resultat, workflow `TEMP REPORT AKM7169 SOURCE PROBE`, run `33330805640`, a echoue avant creation de tout job (workflow YAML invalide). Conformement a la regle maitre, aucune nouvelle pousse technique AKM n'a ete effectuee apres cet echec. La correction utilise un payload Base64 minimal, methode deja validee auparavant.
+
+Aucune donnee AKM7169, aucun manifeste, aucun qz64 et aucune image n'ont ete pousses sur `tmp-akm7169-full-reintegration`. `MEMSX64` reste strictement BUILD #102 `06eca1a478db3d32e9ae88d040e1a34e2cc98650`.
+
+PROCHAINE ACTION EXACTE : tester une seule fois l'URL directe `https://pdfcoffee.com/pdfcoffee/assets/pdf/min.pdf`, exiger simultanement `%PDF`, 43 906 518 octets, SHA-256 `c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0` et 482 pages. Si l'un de ces controles echoue, abandonner PDFCoffee comme transport du binaire exact et revenir au transport isole verifiable du candidat local.
