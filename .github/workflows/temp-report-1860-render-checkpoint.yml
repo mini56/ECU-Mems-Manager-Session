@@ -17,40 +17,10 @@ jobs:
         with:
           ref: RAPPORT
           fetch-depth: 0
-      - name: Append master report checkpoint
+      - name: Append checkpoint to master report
         shell: bash
         run: |
-          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
-
-## 2026-08-30 - RCL0193FRE 1860 - REPRODUCTION HISTORIQUE DU RENDU AVANT NOUVEAU TEST
-
-Objectif unique : terminer le lot documentaire 1860 sans modifier `MEMSX64`, le protocole, l UI, l IA ni le 32 bits.
-
-### Preuves nouvelles obtenues directement depuis la source exacte
-- Source locale recontrolee : `Manuel Rover MPI(2).pdf`, 67 009 217 octets, 371 pages, SHA-256 `0c7fef28d0d0f0673ba321d6625a019c005823103caa98afb3258114e1fec713`.
-- La methode historique de rendu des lots precedents est maintenant reproduite par preuve, pas par hypothese : PyMuPDF a 150 dpi en niveaux de gris, conversion Pillow `L -> 1`, puis PNG `optimize=True`.
-- Test de reference sur la page PDF 280 du lot 1850 : le PNG regenere donne exactement le SHA historique `e4a15ff35a8ed27c86eb655766b1df1f0d5138133bfdfae3240a7dc28e83620a`.
-- Les 39 pages du lot 1850 regenerees par cette chaine, puis assemblees avec Pillow en TIFF multipage `compression='group4'`, `dpi=(150,150)`, donnent exactement et octet pour octet le SHA TIFF historique `45281ba49806df725d4db980ed291461c6779dada7a153a3bed0a0b7559f21b4`.
-- Conclusion : la chaine de rendu et d encapsulation TIFF historique 1850 est identifiee avec certitude.
-
-### Blocage restant strictement localise au candidat 1860 historique
-- La meme chaine appliquee aux 45 pages 1860 selectionnees `[324,326,328-358,360-371]` produit actuellement un TIFF de 1 132 992 octets, SHA-256 `ef82512a85542de81b15ca51dbb5c0f36133350c0613837e1fc257fa425225c2`.
-- Ce resultat ne correspond pas au SHA TIFF 1860 consigne historiquement : `d25fd347ccf9fd795c635fffff5a0dcc2800bbe33e185416c9a188d034b8f2c4`.
-- Le PNG page 324 produit dans l environnement local courant donne SHA-256 `5078a5e29e02c76d2df31bef353d12c0eeb9f5f528e3ea1079533f4a73f214a`.
-- L environnement local courant est PyMuPDF `1.26.7` avec MuPDF `1.26.12` et Pillow `12.3.0`.
-- Le rapport historique prouve que des helpers du meme chantier utilisaient PyMuPDF `1.26.4`; cette version embarque une version MuPDF anterieure. Il reste donc possible que les pages 324+ aient un rendu binaire different selon cette version, alors que les pages 1850 testees restent identiques.
-- Le transport XZ historique 1860 commence par un en-tete compatible avec une compression XZ/LZMA preset 9. Le TIFF local courant compresse en preset 9 donne SHA-256 XZ `496eee62642a2d17e3dae3f19ff2c0aed15e33959f28936c772f38d4e11bf68c`, qui ne correspond pas au XZ historique `fbd982995304a41f978fc61280b83fbead120591e898bb66716ad70685da9a08`.
-
-### Prochaine action exacte autorisee avant toute correction de hash
-1. Ne modifier aucune donnee 1860 et ne changer aucun hash historique pour l instant.
-2. Lancer sur `tmp-rave-visual-backfill` un test temporaire minimal, sans commit de donnees, avec PyMuPDF exactement `1.26.4`, sur la seule page PDF 324 extraite de la source exacte.
-3. Comparer son PNG 150 dpi monochrome au SHA local courant et determiner si la difference `d25fd347...` est expliquee par la version du moteur de rendu.
-4. Si la version historique reproduit le candidat, regenerer les 45 pages avec cette version et valider les SHA historiques.
-5. Si elle reproduit exactement le rendu courant, consigner la contradiction et remplacer seulement alors le hash de transport 1860 par un candidat reproductible depuis la source exacte et la chaine historique prouvee.
-6. `MEMSX64` doit rester exactement BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.
-
-PROCHAINE ACTION EXACTE : test diagnostique PyMuPDF 1.26.4 sur la seule page 324, puis rapport immediat du resultat avant toute pousse finale 1860.
-EOF
+          python -c "import base64,pathlib; p=pathlib.Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md'); p.write_bytes(p.read_bytes()+base64.b64decode('CgojIyAyMDI2LTA4LTMwIC0gSk9VUk5BTElTQVRJT04gMTg2MCAtIEVDSEVDIEhFTFBFUiBQVUlTIENPUlJFQ1RJT04KCi0gVGVudGF0aXZlIGRlIGpvdXJuYWxpc2F0aW9uIDogd29ya2Zsb3cgdGVtcG9yYWlyZSBgVEVNUCBSRVBPUlQgMTg2MCBSRU5ERVIgQ0hFQ0tQT0lOVGAsIHJ1biBgMzMzMDc1NDc0NDVgLCBjb21taXQgZGVjbGVuY2hldXIgYGQ3OTA2MjgwMDM0MmQ2OTVmYjVlNGFmNzM3MTA2YmFkM2MyNzQ5ZDlgLgotIFJlc3VsdGF0IDogKipGQUlMVVJFIGF2YW50IGNyZWF0aW9uIGRlIHRvdXQgam9iKiouIExlIGNoZWNrcG9pbnQgbiBhIGRvbmMgcGFzIGV0ZSBlY3JpdCBwYXIgY2V0dGUgcHJlbWllcmUgdGVudGF0aXZlLgotIENhdXNlIDogWUFNTCBpbnZhbGlkZSBjYXIgbGUgY29ycHMgZHUgaGVyZWRvYyBkZXN0aW5lIGF1IE1hcmtkb3duIG4gZXRhaXQgcGFzIGluZGVudGUgY29tbWUgY29udGVudSBkdSBibG9jIGBydW5gLgotIEF1Y3VuZSBkb25uZWUgMTg2MCwgYXVjdW5lIGJyYW5jaGUgZG9jdW1lbnRhaXJlIGV0IGF1Y3VuIGBNRU1TWDY0YCBuIG9udCBldGUgbW9kaWZpZXMgcGFyIGNldCBlY2hlYy4KLSBDb3JyZWN0aW9uIDogaGVscGVyIGRlIGpvdXJuYWxpc2F0aW9uIHJlbXBsYWNlIHBhciB1bmUgZWNyaXR1cmUgQmFzZTY0IHNhbnMgaGVyZWRvYyBNYXJrZG93biwgcHVpcyBhdXRvLXN1cHByZXNzaW9uIGR1IGhlbHBlci4KCiMjIDIwMjYtMDgtMzAgLSBSQ0wwMTkzRlJFIDE4NjAgLSBSRVBST0RVQ1RJT04gSElTVE9SSVFVRSBEVSBSRU5EVSBBVkFOVCBOT1VWRUFVIFRFU1QKCk9iamVjdGlmIHVuaXF1ZSA6IHRlcm1pbmVyIGxlIGxvdCBkb2N1bWVudGFpcmUgMTg2MCBzYW5zIG1vZGlmaWVyIGBNRU1TWDY0YCwgbGUgcHJvdG9jb2xlLCBsIFVJLCBsIElBIG5pIGxlIDMyIGJpdHMuCgojIyMgUHJldXZlcyBub3V2ZWxsZXMgb2J0ZW51ZXMgZGlyZWN0ZW1lbnQgZGVwdWlzIGxhIHNvdXJjZSBleGFjdGUKLSBTb3VyY2UgbG9jYWxlIHJlY29udHJvbGVlIDogYE1hbnVlbCBSb3ZlciBNUEkoMikucGRmYCwgNjcgMDA5IDIxNyBvY3RldHMsIDM3MSBwYWdlcywgU0hBLTI1NiBgMGM3ZmVmMjhkMGQwZjA2NzNiYTMyMWQ2NjI1YTAxOWMwMDU4MjMxMDNjYWE5OGFmYjMyNTgxMTRlMWZlYzcxM2AuCi0gTGEgbWV0aG9kZSBoaXN0b3JpcXVlIGRlIHJlbmR1IGRlcyBsb3RzIHByZWNlZGVudHMgZXN0IG1haW50ZW5hbnQgcmVwcm9kdWl0ZSBwYXIgcHJldXZlLCBwYXMgcGFyIGh5cG90aGVzZSA6IFB5TXVQREYgYSAxNTAgZHBpIGVuIG5pdmVhdXggZGUgZ3JpcywgY29udmVyc2lvbiBQaWxsb3cgYEwgLT4gMWAsIHB1aXMgUE5HIGBvcHRpbWl6ZT1UcnVlYC4KLSBUZXN0IGRlIHJlZmVyZW5jZSBzdXIgbGEgcGFnZSBQREYgMjgwIGR1IGxvdCAxODUwIDogbGUgUE5HIHJlZ2VuZXJlIGRvbm5lIGV4YWN0ZW1lbnQgbGUgU0hBIGhpc3RvcmlxdWUgYGU0YTE1ZmYzNWE4ZWQyN2M4NmViNjU1NzY2YjFkZjFmMGQ1MTM4MTMzYmZkZmFlMzI0MGE3ZGMyOGU4MzYyMGFgLgotIExlcyAzOSBwYWdlcyBkdSBsb3QgMTg1MCByZWdlbmVyZWVzIHBhciBjZXR0ZSBjaGFpbmUsIHB1aXMgYXNzZW1ibGVlcyBhdmVjIFBpbGxvdyBlbiBUSUZGIG11bHRpcGFnZSBgY29tcHJlc3Npb249J2dyb3VwNCdgLCBgZHBpPSgxNTAsMTUwKWAsIGRvbm5lbnQgZXhhY3RlbWVudCBldCBvY3RldCBwb3VyIG9jdGV0IGxlIFNIQSBUSUZGIGhpc3RvcmlxdWUgYDQ1MjgxYmE0OTgwNmRmNzI1ZDRkYjk4MGVkMjkxNDYxYzY3NzlkYWRhN2ExNTNhM2JlZDBhMGI3NTU5ZjIxYjRgLgotIENvbmNsdXNpb24gOiBsYSBjaGFpbmUgZGUgcmVuZHUgZXQgZCBlbmNhcHN1bGF0aW9uIFRJRkYgaGlzdG9yaXF1ZSAxODUwIGVzdCBpZGVudGlmaWVlIGF2ZWMgY2VydGl0dWRlLgoKIyMjIEJsb2NhZ2UgcmVzdGFudCBzdHJpY3RlbWVudCBsb2NhbGlzZSBhdSBjYW5kaWRhdCAxODYwIGhpc3RvcmlxdWUKLSBMYSBtZW1lIGNoYWluZSBhcHBsaXF1ZWUgYXV4IDQ1IHBhZ2VzIDE4NjAgc2VsZWN0aW9ubmVlcyBgWzMyNCwzMjYsMzI4LTM1OCwzNjAtMzcxXWAgcHJvZHVpdCBhY3R1ZWxsZW1lbnQgdW4gVElGRiBkZSAxIDEzMiA5OTIgb2N0ZXRzLCBTSEEtMjU2IGBlZjgyNTEyYTg1NTQyZGU4MWIxNWNhNTFkYmI1YzBmMzYxMzMzNTBjMDYxMzgzN2UxZmMyNTdmYTQyNTIyNWMyYC4KLSBDZSByZXN1bHRhdCBuZSBjb3JyZXNwb25kIHBhcyBhdSBTSEEgVElGRiAxODYwIGNvbnNpZ25lIGhpc3RvcmlxdWVtZW50IDogYGQyNWZkMzQ3Y2NmOWZkNzk1YzYzNWZmZmZmNWEwZGNjMjgwMGJiZTMzZTE4NTQxNmM5YTE4OGQwMzRiOGYyYzRgLgotIExlIFBORyBwYWdlIDMyNCBwcm9kdWl0IGRhbnMgbCBlbnZpcm9ubmVtZW50IGxvY2FsIGNvdXJhbnQgZG9ubmUgU0hBLTI1NiBgNTA3OGE1ZTI5ZTAyYzc2ZDJkZjMxYmVmMzUzZDEyYzBlZWI5ZjVmNTI4ZTNlYTEwNzk1MzNmNGE3M2YyMTRhYC4KLSBMIGVudmlyb25uZW1lbnQgbG9jYWwgY291cmFudCBlc3QgUHlNdVBERiBgMS4yNi43YCBhdmVjIE11UERGIGAxLjI2LjEyYCBldCBQaWxsb3cgYDEyLjMuMGAuCi0gTGUgcmFwcG9ydCBoaXN0b3JpcXVlIHByb3V2ZSBxdWUgZGVzIGhlbHBlcnMgZHUgbWVtZSBjaGFudGllciB1dGlsaXNhaWVudCBQeU11UERGIGAxLjI2LjRgOyBjZXR0ZSB2ZXJzaW9uIGVtYmFycXVlIHVuZSB2ZXJzaW9uIE11UERGIGFudGVyaWV1cmUuIElsIHJlc3RlIGRvbmMgcG9zc2libGUgcXVlIGxlcyBwYWdlcyAzMjQrIGFpZW50IHVuIHJlbmR1IGJpbmFpcmUgZGlmZmVyZW50IHNlbG9uIGNldHRlIHZlcnNpb24sIGFsb3JzIHF1ZSBsZXMgcGFnZXMgMTg1MCB0ZXN0ZWVzIHJlc3RlbnQgaWRlbnRpcXVlcy4KLSBMZSB0cmFuc3BvcnQgWFogaGlzdG9yaXF1ZSAxODYwIGNvbW1lbmNlIHBhciB1biBlbi10ZXRlIGNvbXBhdGlibGUgYXZlYyB1bmUgY29tcHJlc3Npb24gWFovTFpNQSBwcmVzZXQgOS4gTGUgVElGRiBsb2NhbCBjb3VyYW50IGNvbXByZXNzZSBlbiBwcmVzZXQgOSBkb25uZSBTSEEtMjU2IFhaIGA0OTZlZWU2MjY0MmEyZDE3ZTNkYWUzZjE5ZmYyYzBhZWQxNWUzMzk1OWYyODkzNmM3NzJmMzhkNGUxMWJmNjhjYCwgcXVpIG5lIGNvcnJlc3BvbmQgcGFzIGF1IFhaIGhpc3RvcmlxdWUgYGZiZDk4Mjk5NTMwNGE0MWY5NzhmYzYxMjgwYjgzZmJlYWQxMjA1OTFlODk4YmI2NjcxNmFkNzA2ODVkYTlhMDhgLgoKIyMjIFByb2NoYWluZSBhY3Rpb24gZXhhY3RlIGF1dG9yaXNlZSBhdmFudCB0b3V0ZSBjb3JyZWN0aW9uIGRlIGhhc2gKMS4gTmUgbW9kaWZpZXIgYXVjdW5lIGRvbm5lZSAxODYwIGV0IG5lIGNoYW5nZXIgYXVjdW4gaGFzaCBoaXN0b3JpcXVlIHBvdXIgbCBpbnN0YW50LgoyLiBMYW5jZXIgc3VyIGB0bXAtcmF2ZS12aXN1YWwtYmFja2ZpbGxgIHVuIHRlc3QgdGVtcG9yYWlyZSBtaW5pbWFsLCBzYW5zIGNvbW1pdCBkZSBkb25uZWVzLCBhdmVjIFB5TXVQREYgZXhhY3RlbWVudCBgMS4yNi40YCwgc3VyIGxhIHNldWxlIHBhZ2UgUERGIDMyNCBleHRyYWl0ZSBkZSBsYSBzb3VyY2UgZXhhY3RlLgozLiBDb21wYXJlciBzb24gUE5HIDE1MCBkcGkgbW9ub2Nocm9tZSBhdSBTSEEgbG9jYWwgY291cmFudCBldCBkZXRlcm1pbmVyIHNpIGxhIGRpZmZlcmVuY2UgYGQyNWZkMzQ3Li4uYCBlc3QgZXhwbGlxdWVlIHBhciBsYSB2ZXJzaW9uIGR1IG1vdGV1ciBkZSByZW5kdS4KNC4gU2kgbGEgdmVyc2lvbiBoaXN0b3JpcXVlIHJlcHJvZHVpdCBsZSBjYW5kaWRhdCwgcmVnZW5lcmVyIGxlcyA0NSBwYWdlcyBhdmVjIGNldHRlIHZlcnNpb24gZXQgdmFsaWRlciBsZXMgU0hBIGhpc3RvcmlxdWVzLgo1LiBTaSBlbGxlIHJlcHJvZHVpdCBleGFjdGVtZW50IGxlIHJlbmR1IGNvdXJhbnQsIGNvbnNpZ25lciBsYSBjb250cmFkaWN0aW9uIGV0IHJlbXBsYWNlciBzZXVsZW1lbnQgYWxvcnMgbGUgaGFzaCBkZSB0cmFuc3BvcnQgMTg2MCBwYXIgdW4gY2FuZGlkYXQgcmVwcm9kdWN0aWJsZSBkZXB1aXMgbGEgc291cmNlIGV4YWN0ZSBldCBsYSBjaGFpbmUgaGlzdG9yaXF1ZSBwcm91dmVlLgo2LiBgTUVNU1g2NGAgZG9pdCByZXN0ZXIgZXhhY3RlbWVudCBCVUlMRCAjMTAxIGAyMmRiZTc1ZWQxNGUwYTYxZTY5NDE1OWQ1MDVlZjcyMjQ1MTE2YjQ4YC4KClBST0NIQUlORSBBQ1RJT04gRVhBQ1RFIDogdGVzdCBkaWFnbm9zdGlxdWUgUHlNdVBERiAxLjI2LjQgc3VyIGxhIHNldWxlIHBhZ2UgMzI0LCBwdWlzIHJhcHBvcnQgaW1tZWRpYXQgZHUgcmVzdWx0YXQgYXZhbnQgdG91dGUgcG91c3NlIGZpbmFsZSAxODYwLgo='))"
       - name: Commit checkpoint and remove helper
         shell: bash
         run: |
@@ -58,12 +28,8 @@ EOF
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git rm .github/workflows/temp-report-1860-render-checkpoint.yml
           git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
-          python - <<'PY'
-          import subprocess
-          lines=subprocess.check_output(['git','status','--porcelain'],text=True).splitlines()
-          allowed={'RAPPORT_SUIVI_ECU_MEMS_MANAGER.md','.github/workflows/temp-report-1860-render-checkpoint.yml'}
-          bad=[x for x in lines if x[3:] not in allowed]
-          assert not bad,bad
-          PY
+          git diff --cached --name-only | sort > /tmp/changed.txt
+          printf '%s\n' '.github/workflows/temp-report-1860-render-checkpoint.yml' 'RAPPORT_SUIVI_ECU_MEMS_MANAGER.md' | sort > /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/changed.txt
           git commit -m 'Record 1860 render reproduction checkpoint'
           git push origin HEAD:RAPPORT
