@@ -8054,3 +8054,34 @@ Cela inclut notamment, sans s'y limiter : caracteristiques et variantes vehicule
 Pour les gros documents, il est interdit de conclure qu'un document est « traite completement » sur la seule base d'une selection de pages. Il faut effectuer un inventaire page par page ou section par section suffisamment exhaustif pour classer les contenus en : utile a integrer / deja couvert / hors pertinence utilisateur. Les elements utiles doivent etre integres ou explicitement places dans un backlog trace. Toute affirmation d'exhaustivite doit etre appuyee par cet audit de couverture.
 
 Cette regle est transversale et permanente. Elle s'applique a AKM7169 comme a tous les documents futurs et a toute reprise de documents deja partiellement exploites.
+
+
+## PROCEDURE OBLIGATOIRE DE TRAITEMENT DOCUMENTAIRE ET DE TRANSPORT - ANTI-BOUCLE
+
+Cette procedure complete la regle generale ci-dessus. Elle doit etre appliquee a chaque document destine a la base de connaissances afin d'eviter les reprises, les selections partielles non tracees et les boucles de transport deja rencontrees avec les images/documentations.
+
+1. IDENTIFIER LA SOURCE AVANT EXTRACTION. Enregistrer le nom exact du document, son edition/langue si connue, sa taille, son nombre de pages et son SHA-256. Ne jamais remplacer silencieusement une source fournie par l'utilisateur par une copie trouvee ailleurs.
+
+2. PROTEGER LA PRODUCTION. Effectuer le travail documentaire sur une branche dediee issue du dernier etat de production valide. La branche de production reste intacte jusqu'a validation complete du candidat.
+
+3. INVENTORIER LE DOCUMENT COMPLET. Pour un PDF ou manuel important, parcourir toutes les pages/sections et classer chacune en : utile a integrer / deja couvert / hors pertinence utilisateur. Une simple selection de quelques pages ne permet jamais de declarer le document completement traite.
+
+4. EXTRAIRE POUR L'UTILISATEUR FINAL, PAS SEULEMENT POUR L'ECU. Retenir toute connaissance utile a la comprehension, au diagnostic, au controle, a l'entretien ou a la reparation. Chaque connaissance retenue doit conserver sa source exacte et, lorsque le document le permet, sa page physique/section et son illustration associee.
+
+5. CONSTRUIRE UN CANDIDAT COHERENT AVANT TRANSPORT. Regrouper le lot de donnees, le manifeste, l'audit et tous les assets visuels necessaires. Calculer les SHA-256 des fichiers et ne pas pousser une collection partielle d'images en plusieurs essais non controles.
+
+6. VALIDER LOCALEMENT SUR UNE COPIE DE LA BASE DE PRODUCTION. Exiger au minimum : `PRAGMA integrity_check=ok`, `foreign_key_check=0`, `user_version` attendu, absence des anciennes donnees explicitement remplacees, presence et couverture des nouvelles donnees/assets, et verification que les donnees hors perimetre n'ont pas ete modifiees. Tester aussi l'idempotence du lot lorsque le format le permet.
+
+7. REGLE ANTI-BOUCLE POUR LES BINAIRES. Si le connecteur GitHub refuse, tronque ou altere un gros binaire, ne pas repeter indefiniment la meme methode et ne pas partir chercher des copies aleatoires sur Internet. Apres le premier echec prouve, preparer un seul package compresse controle par SHA-256 et demander immediatement a l'utilisateur de l'uploader manuellement sur une branche de transport. C'est la methode de secours de reference. Apres l'upload, verifier taille + SHA-256 avant toute extraction ou utilisation.
+
+8. RECONSTRUIRE ET VALIDER A DISTANCE. Apres transport, reconstruire la base complete depuis les seeds et tous les lots effectifs, verifier leur ordre reel d'application, confirmer que le nouveau lot de remplacement est applique au bon endroit, puis refaire les controles d'integrite, de compteurs, de residus anciens et de couverture des assets.
+
+9. RAPPORT AVANT PROMOTION. Journaliser dans `RAPPORT_SUIVI_ECU_MEMS_MANAGER.md` la source, le perimetre, les hashes, les validations et toute anomalie/correction avant la pousse production. Apres le test reel, journaliser immediatement le resultat.
+
+10. PROMOTION UNIQUEMENT APRES PREUVES. Ne promouvoir sur `MEMSX64` qu'un candidat completement valide. Le build de production doit ensuite etre VERT, la base emballee doit etre controlee, et l'artefact final doit etre identifie par son nom, sa taille et son digest avant de declarer le travail termine.
+
+11. NETTOYAGE. Supprimer les workflows/helpers temporaires apres leur utilisation. Les branches/packages de transport ne sont pas des sources de verite et ne doivent jamais etre repris comme base technique sans validation explicite.
+
+REGLE SPECIFIQUE ISSUE DE L'INCIDENT DES IMAGES MANQUANTES : lorsqu'un document necessite plusieurs images/assets, preparer et verifier l'ensemble complet avant la pousse. Il est interdit de repartir dans une succession d'essais image par image sans manifeste, sans hash global et sans critere de fin. En cas de blocage de transport, utiliser directement le package unique + upload manuel controle ci-dessus.
+
+Cette procedure est permanente et s'applique a AKM7169 ainsi qu'a tous les documents deja partiellement traites ou futurs.
