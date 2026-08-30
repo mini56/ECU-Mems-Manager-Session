@@ -8134,3 +8134,34 @@ RESULTAT : ECHEC du workflow temporaire avant application du schema. Le telechar
 Le schema V1, son QZ64 et les donnees de production n'ont pas ete mis en cause par ce run : aucune instruction d'application du schema n'a ete atteinte. `MEMSX64` reste strictement sur BUILD #103.
 
 CORRECTION AUTORISEE SUIVANTE : modifier uniquement le workflow temporaire de validation pour localiser directement `database/expert/ia_mems_reference_r20.sqlite` dans le contenu deja extrait de l'artefact #103, puis relancer le meme test. Ne modifier ni le SQL V1, ni le QZ64, ni le manifeste de production.
+
+## 2026-08-30 - SOCLE GENERIQUE DOCUMENTAIRE MULTILINGUE V1 - VALIDATION DISTANTE REUSSIE
+
+Branche de travail : `tmp-multilingual-knowledge-foundation`.
+Commit de fondation : `c9f6c40f3a448d9da66176bc3597459dff4258dc`.
+Commit de correction du harnais uniquement : `97d8b3a8e2bbb0b9b86b086ab5f83c7f28621754`.
+Run GitHub Actions valide : `33338524873`, job `99329715087`, conclusion SUCCESS.
+
+Le premier run `33338416926` avait echoue uniquement parce que le validateur recherchait un ZIP apres `gh run download`, alors que l'artefact etait deja extrait. Le SQL V1 et le QZ64 n'ont pas ete modifies pour corriger ce point; seul le harnais de test a ete corrige pour localiser directement `ia_mems_reference_r20.sqlite`.
+
+Le run vert a telecharge l'artefact officiel `ECU-MEMS-Manager-x64-BUILD-103-v1.0.103` du run production #103 et a teste une copie du SQLite expert reellement emballe.
+
+Etat BUILD #103 controle avant application : `user_version=20`, 78 tables, `mems_knowledge_item=1113`, `mems_rave_illustration=126`, `mems_procedure=410`, `mems_specification=649`, integrite OK.
+
+Apres application du socle V1 sur la copie de test : `user_version=21`, 89 tables, donc exactement +11 tables; les compteurs historiques controles restent strictement identiques : knowledge=1113, illustrations=126, procedures=410, specifications=649. `integrity_check=ok` et `foreign_key_check=0`.
+
+Les 11 tables generiques validees sont : `mems_doc_locale`, `mems_doc_document`, `mems_doc_unit`, `mems_doc_entity`, `mems_doc_text`, `mems_doc_visual`, `mems_doc_visual_region`, `mems_doc_table`, `mems_doc_table_cell`, `mems_doc_value`, `mems_doc_relation`.
+
+Preuves fonctionnelles du modele obtenues dans le run :
+- locales actuelles FR/EN/ES/IT/PT/DE supportees sans colonnes fixes par langue;
+- ajout de locales futures `ja`, `zh-CN` et `hi` par simples donnees, sans `ALTER TABLE`;
+- un seul visuel original BUILD #103 reutilise avec labels traduisibles, sans duplication de l'image constructeur;
+- tableau et cellule structures avec valeur/unite;
+- procedure + etape + valeur structuree et relations entre entites;
+- QZ64 controle par SHA-256 et decode strictement identique au SQL audite.
+
+Hashes du prototype : SQL SHA-256 `4a89004a556af7771a80592534c3b4e379733c7fe9c0f0dc6f79761dfe304546`; QZ64 SHA-256 `0df680bd40450ce57be927e5ee3ec0ef40c8a2962d12c939e2f4f00202301487`.
+
+IMPORTANT : cette validation prouve le SOCLE DE DONNEES V1, pas encore l'affichage graphique dans MEMS Manager et pas encore le retraitement de RAVE. Le prototype reste hors manifeste sous `database/reference/prototypes/`; il n'est pas applique par la production. `MEMSX64` reste sur BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+PROCHAINE ACTION EXACTE : conserver ce schema V1 comme base validee et construire le petit prototype de restitution/extraction sur un echantillon heterogene de ressources deja presentes, toujours sur `tmp-multilingual-knowledge-foundation`, avant tout backfill massif RAVE.
