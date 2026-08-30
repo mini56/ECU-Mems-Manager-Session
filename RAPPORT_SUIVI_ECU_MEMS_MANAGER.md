@@ -7809,3 +7809,41 @@ Correction explicite des valeurs erronees inscrites dans le checkpoint precedent
 ### PROCHAINE ACTION EXACTE CORRIGEE
 
 Retrouver/reproduire le rendu historique des 45 pages 324-371 sauf 325, 327 et 359 a partir de la source exacte ci-dessus, et exiger d abord le TIFF SHA `d25fd347...` puis le XZ SHA `fbd98299...`. Aucun transport 1860 ne doit etre pousse avant creation et relecture distante du SAFE CHECKPOINT complet dans ce rapport maitre.
+
+
+## 2026-08-30 - JOURNALISATION 1860 - ECHEC HELPER PUIS CORRECTION
+
+- Tentative de journalisation : workflow temporaire `TEMP REPORT 1860 RENDER CHECKPOINT`, run `33307547445`, commit declencheur `d79062800342d695fb5e4af737106bad3c2749d9`.
+- Resultat : **FAILURE avant creation de tout job**. Le checkpoint n a donc pas ete ecrit par cette premiere tentative.
+- Cause : YAML invalide car le corps du heredoc destine au Markdown n etait pas indente comme contenu du bloc `run`.
+- Aucune donnee 1860, aucune branche documentaire et aucun `MEMSX64` n ont ete modifies par cet echec.
+- Correction : helper de journalisation remplace par une ecriture Base64 sans heredoc Markdown, puis auto-suppression du helper.
+
+## 2026-08-30 - RCL0193FRE 1860 - REPRODUCTION HISTORIQUE DU RENDU AVANT NOUVEAU TEST
+
+Objectif unique : terminer le lot documentaire 1860 sans modifier `MEMSX64`, le protocole, l UI, l IA ni le 32 bits.
+
+### Preuves nouvelles obtenues directement depuis la source exacte
+- Source locale recontrolee : `Manuel Rover MPI(2).pdf`, 67 009 217 octets, 371 pages, SHA-256 `0c7fef28d0d0f0673ba321d6625a019c005823103caa98afb3258114e1fec713`.
+- La methode historique de rendu des lots precedents est maintenant reproduite par preuve, pas par hypothese : PyMuPDF a 150 dpi en niveaux de gris, conversion Pillow `L -> 1`, puis PNG `optimize=True`.
+- Test de reference sur la page PDF 280 du lot 1850 : le PNG regenere donne exactement le SHA historique `e4a15ff35a8ed27c86eb655766b1df1f0d5138133bfdfae3240a7dc28e83620a`.
+- Les 39 pages du lot 1850 regenerees par cette chaine, puis assemblees avec Pillow en TIFF multipage `compression='group4'`, `dpi=(150,150)`, donnent exactement et octet pour octet le SHA TIFF historique `45281ba49806df725d4db980ed291461c6779dada7a153a3bed0a0b7559f21b4`.
+- Conclusion : la chaine de rendu et d encapsulation TIFF historique 1850 est identifiee avec certitude.
+
+### Blocage restant strictement localise au candidat 1860 historique
+- La meme chaine appliquee aux 45 pages 1860 selectionnees `[324,326,328-358,360-371]` produit actuellement un TIFF de 1 132 992 octets, SHA-256 `ef82512a85542de81b15ca51dbb5c0f36133350c0613837e1fc257fa425225c2`.
+- Ce resultat ne correspond pas au SHA TIFF 1860 consigne historiquement : `d25fd347ccf9fd795c635fffff5a0dcc2800bbe33e185416c9a188d034b8f2c4`.
+- Le PNG page 324 produit dans l environnement local courant donne SHA-256 `5078a5e29e02c76d2df31bef353d12c0eeb9f5f528e3ea1079533f4a73f214a`.
+- L environnement local courant est PyMuPDF `1.26.7` avec MuPDF `1.26.12` et Pillow `12.3.0`.
+- Le rapport historique prouve que des helpers du meme chantier utilisaient PyMuPDF `1.26.4`; cette version embarque une version MuPDF anterieure. Il reste donc possible que les pages 324+ aient un rendu binaire different selon cette version, alors que les pages 1850 testees restent identiques.
+- Le transport XZ historique 1860 commence par un en-tete compatible avec une compression XZ/LZMA preset 9. Le TIFF local courant compresse en preset 9 donne SHA-256 XZ `496eee62642a2d17e3dae3f19ff2c0aed15e33959f28936c772f38d4e11bf68c`, qui ne correspond pas au XZ historique `fbd982995304a41f978fc61280b83fbead120591e898bb66716ad70685da9a08`.
+
+### Prochaine action exacte autorisee avant toute correction de hash
+1. Ne modifier aucune donnee 1860 et ne changer aucun hash historique pour l instant.
+2. Lancer sur `tmp-rave-visual-backfill` un test temporaire minimal, sans commit de donnees, avec PyMuPDF exactement `1.26.4`, sur la seule page PDF 324 extraite de la source exacte.
+3. Comparer son PNG 150 dpi monochrome au SHA local courant et determiner si la difference `d25fd347...` est expliquee par la version du moteur de rendu.
+4. Si la version historique reproduit le candidat, regenerer les 45 pages avec cette version et valider les SHA historiques.
+5. Si elle reproduit exactement le rendu courant, consigner la contradiction et remplacer seulement alors le hash de transport 1860 par un candidat reproductible depuis la source exacte et la chaine historique prouvee.
+6. `MEMSX64` doit rester exactement BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.
+
+PROCHAINE ACTION EXACTE : test diagnostique PyMuPDF 1.26.4 sur la seule page 324, puis rapport immediat du resultat avant toute pousse finale 1860.
