@@ -7902,3 +7902,42 @@ Run `33314548784`: garde corrige et valide, mais echec au telechargement de la s
 ## 2026-08-30 - AKM7169ENG 1870 - TROISIEME RUN ROUGE / SOURCE REPRODUCTIBLE TROUVEE
 
 Run `33323299271`: les gardes passent, mais aucun miroir ne restitue le binaire PDFCoffee de 43906518 octets / SHA c8bbb30d... PDFCoffee renvoie toujours de l HTML. En revanche le miroir direct `benoit.dc.free.fr` restitue un vrai PDF AKM7169 de 11240232 octets, SHA-256 `37cd0434347fe4009963d075e4b91b0b21ebc905bae5657519a8080c3026d4f5`. Ce binaire devient la source reproductible candidate; le run suivant doit exiger ce hash et 482 pages avant toute capture. Aucune image/qz64 AKM n a ete committee par le run rouge. `MEMSX64` reste #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.
+
+
+## 2026-08-30 - AKM7169ENG - REINTEGRATION COMPLETE DEMANDEE / CHECKPOINT AVANT MODIFICATION BASE
+
+Decision utilisateur : l'integration AKM7169 precedente n'est plus consideree comme suffisamment fiable/complete. AKM7169 est le manuel Rover Mini SPi prioritaire pour MEMS Manager. Il doit etre purge de la base finale puis reintegre proprement depuis le binaire constructeur exact, avec toutes les donnees utiles au domaine MEMS/diagnostic et une preuve visuelle pour chaque connaissance issue du manuel.
+
+Point de retour fonctionnel protege :
+- `MEMSX64` = BUILD #102, commit `06eca1a478db3d32e9ae88d040e1a34e2cc98650`, run `33326675806` SUCCESS.
+- #102 contient toute la base validee jusqu'au lot 1860 et reste le rollback fonctionnel. Il ne doit pas etre modifie pendant le chantier AKM7169.
+- Branche de travail creee depuis exactement #102 : `tmp-akm7169-full-reintegration`. Aucun fichier de base n'a encore ete modifie sur cette branche au moment de ce checkpoint.
+
+Source primaire imposee et maintenant disponible :
+- fichier fourni par le proprietaire du projet : `toaz.info-mini-repair-manual-92-96-pdf-pr_a0f71dc9b68bd0365e8141310900faca.pdf`;
+- identite document : Rover Group Limited, Mini Repair Manual, publication `AKM7169ENG` / part no. AKM7169, 1993;
+- taille verifiee : 43 906 518 octets;
+- nombre de pages physiques verifie : 482;
+- SHA-256 exact : `c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0`;
+- le PDF est un scan image sans couche texte exploitable : toute extraction doit donc etre verifiee contre les pages rendues, sans invention OCR.
+
+Etat AKM7169 actuellement present dans #102 :
+- ancien lot structure 1720 : 7 faits RAVE / 7 connaissances associees, sans asset visuel AKM;
+- anciens identifiants principaux : `SRC-AKM7169`, `RAVE-SPI93-*`, scopes `SCOPE-RAVE-MINI-SPI-AKM7169-*`, ainsi que des lignes anterieures `akm7169fre` dans le socle de recherche;
+- l'ancien backfill visuel partiel 1870 n'est pas dans #102 et ne doit pas etre reutilise comme nouvelle base de confiance.
+
+Regle de reconstruction :
+1. travailler uniquement sur `tmp-akm7169-full-reintegration`;
+2. inventorier toutes les lignes AKM7169 actuelles et leurs relations avant suppression;
+3. la base finale candidate ne doit conserver aucune ancienne connaissance AKM7169 1720 comme source active : un nouveau lot doit supprimer proprement les anciennes lignes source/relations puis recreer les connaissances a partir du PDF exact;
+4. analyser le manuel complet et conserver toute information pertinente pour ECU MEMS Manager / Mini SPi : identite et applicabilite, specifications, MEMS/SPi, injection/carburant, allumage, capteurs/actionneurs, procedures de diagnostic/controle/reglage, couples et precautions directement utiles aux organes geres/diagnostiques, et leurs pages sources exactes;
+5. ne pas importer comme connaissance MEMS des procedures de carrosserie/chassis sans rapport avec le diagnostic/gestion moteur; elles restent dans le manuel source mais hors perimetre de la base ECU;
+6. chaque fait nouveau doit conserver la portee exacte constructeur (variante, transmission, moteur, VIN/marche uniquement lorsque la page le donne);
+7. chaque connaissance AKM7169 retenue doit etre reliee a au moins une page physique exacte du scan et a un asset visuel issu de ce meme binaire;
+8. aucune valeur issue d'OCR seul ne peut recevoir `verifie_constructeur` sans verification visuelle de la page;
+9. `PRAGMA integrity_check = ok` et `user_version = 20` obligatoires, sans regression des donnees non-AKM;
+10. aucun changement protocole, acquisition ECU, RAM, ecriture/reset, UI, IA/ONNX ou 32 bits pendant ce chantier.
+
+Incident de sequence : la branche de travail a ete creee avant l'ecriture de ce checkpoint, mais elle pointe encore exactement sur #102 et ne contient aucune modification de donnees. La presente journalisation corrige cette sequence avant toute premiere pousse technique AKM.
+
+PROCHAINE ACTION EXACTE : inventorier et tester localement la purge de toutes les donnees AKM7169 actives sur une copie de la SQLite #102, cartographier le scan 482 pages, puis preparer un nouveau lot `research_enrichment_1870.qz64` de remplacement complet avec assets/pages et audit. RAPPORT avant la premiere pousse technique.
