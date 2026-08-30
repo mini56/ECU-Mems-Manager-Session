@@ -1,0 +1,179 @@
+name: TEMP AKM7169 full expert DB validation
+on:
+  push:
+    branches: [tmp-akm7169-1870-transport]
+    paths:
+      - '.github/workflows/temp-akm7169-full-db-validate.yml'
+permissions:
+  contents: read
+jobs:
+  validate_db:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact AKM7169 candidate
+        uses: actions/checkout@v4
+        with:
+          ref: 7dbe902a21efe35566f9d80e83fdb43b05f71dda
+
+      - name: Rebuild complete expert SQLite and validate AKM7169
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import base64, json, pathlib, re, sqlite3, struct, zlib
+
+          root=pathlib.Path('database/reference')
+          manifest=json.loads((root/'manifest.json').read_text(encoding='utf-8'))
+          if manifest.get('database_revision') != 20:
+              raise SystemExit('database_revision must remain 20')
+
+          def numeric_suffix(name):
+              m=re.search(r'_(\d+)\.qz64$',name,re.I)
+              return int(m.group(1)) if m else 0
+
+          def q_uncompress(raw):
+              if len(raw)<5:
+                  raise ValueError('qCompress stream too short')
+              declared=struct.unpack('>I',raw[:4])[0]
+              data=zlib.decompress(raw[4:])
+              if declared != len(data):
+                  raise ValueError(f'qCompress size mismatch {declared}!={len(data)}')
+              return data
+
+          def looks_base64(raw):
+              t=raw.strip()
+              if not t: return False
+              allowed=b'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=\r\n\t '
+              aset=set(allowed)
+              return all(c in aset for c in t)
+
+          def decode_qz64(path):
+              raw=path.read_bytes()
+              if looks_base64(raw):
+                  raw=base64.b64decode(raw.strip())
+              return q_uncompress(raw)
+
+          def strip_comment_lines(text):
+              return '\n'.join(line for line in text.splitlines() if not line.strip().startswith('--'))+'\n'
+
+          def split_terminated(sql):
+              out=[]; buf=[]; single=False; double=False; i=0
+              while i < len(sql):
+                  ch=sql[i]
+                  if ch=="'" and not double:
+                      if single and i+1<len(sql) and sql[i+1]=="'":
+                          buf.extend([ch,sql[i+1]]); i+=2; continue
+                      single=not single; buf.append(ch); i+=1; continue
+                  if ch=='"' and not single:
+                      if double and i+1<len(sql) and sql[i+1]=='"':
+                          buf.extend([ch,sql[i+1]]); i+=2; continue
+                      double=not double; buf.append(ch); i+=1; continue
+                  if ch==';' and not single and not double:
+                      s=''.join(buf).strip(); buf=[]
+                      if s: out.append(s)
+                      i+=1; continue
+                  buf.append(ch); i+=1
+              if single or double:
+                  raise ValueError('Unclosed SQL quote')
+              tail=''.join(buf).strip()
+              if tail: out.append(tail)
+              return out
+
+          def has_terminator(sql):
+              return len(split_terminated(sql))>1 or ';' in sql
+
+          def exec_sql(db, payload, label):
+              text=strip_comment_lines(payload.decode('utf-8'))
+              if has_terminator(text):
+                  statements=split_terminated(text)
+              else:
+                  statements=[line.strip() for line in text.splitlines() if line.strip()]
+              for n,s in enumerate(statements,1):
+                  try:
+                      db.execute(s)
+                  except Exception as e:
+                      raise RuntimeError(f'{label} statement {n}: {e} | {s[:220]}') from e
+
+          seeds=sorted(root.glob('mems_reference_seed_*.qz64'), key=lambda p:(numeric_suffix(p.name),p.name))
+          if not seeds: raise SystemExit('No MEMS seed files')
+          encoded=b''.join(p.read_bytes().strip() for p in seeds)
+          seed_sql=q_uncompress(base64.b64decode(encoded))
+
+          listed=[]; seen=set()
+          for x in manifest.get('research_enrichment_batches',[]):
+              name=str(x).strip().replace('\\','/')
+              if name and name not in seen:
+                  listed.append(name); seen.add(name)
+          discovered=sorted(root.glob('research_enrichment*.qz64'), key=lambda p:(numeric_suffix(p.name),p.name))
+          for p in discovered:
+              if p.name not in seen:
+                  listed.append(p.name); seen.add(p.name)
+          if 'research_enrichment_1870.qz64' not in listed:
+              raise SystemExit('1870 absent from effective batch list')
+
+          dbpath=pathlib.Path('/tmp/akm1870_full.sqlite')
+          if dbpath.exists(): dbpath.unlink()
+          db=sqlite3.connect(dbpath, isolation_level=None)
+          try:
+              db.execute('PRAGMA foreign_keys=ON')
+              db.execute('PRAGMA journal_mode=MEMORY')
+              db.execute('PRAGMA synchronous=OFF')
+              db.execute('PRAGMA temp_store=MEMORY')
+              exec_sql(db,seed_sql,'seed')
+              applied=[]
+              for name in listed:
+                  if name=='research_enrichment_1600.qz64':
+                      continue
+                  p=root/name
+                  if not p.is_file(): raise SystemExit('Missing batch '+name)
+                  exec_sql(db,decode_qz64(p),name)
+                  applied.append(name)
+              db.execute('PRAGMA user_version=20')
+
+              checks={
+                'integrity': db.execute('PRAGMA integrity_check').fetchone()[0],
+                'user_version': db.execute('PRAGMA user_version').fetchone()[0],
+                'fk_violations': len(db.execute('PRAGMA foreign_key_check').fetchall()),
+                'rave_new': db.execute("SELECT COUNT(*) FROM mems_rave_fact WHERE fact_key LIKE 'AKM7169-%' AND source_key='SRC-AKM7169ENG-EXACT-482'").fetchone()[0],
+                'rave_old': db.execute("SELECT COUNT(*) FROM mems_rave_fact WHERE fact_key LIKE 'RAVE-SPI93-%' OR source_key='SRC-AKM7169'").fetchone()[0],
+                'expert_new': db.execute("SELECT COUNT(*) FROM mems_expert_fact_external WHERE fact_key LIKE 'AKM7169-%' AND source_key='SRC-AKM7169ENG-EXACT-482'").fetchone()[0],
+                'expert_old': db.execute("SELECT COUNT(*) FROM mems_expert_fact_external WHERE fact_key LIKE 'RAVE-SPI93-%' OR source_key='SRC-AKM7169'").fetchone()[0],
+                'knowledge_new': db.execute("SELECT COUNT(*) FROM mems_knowledge_item WHERE knowledge_key LIKE 'KNOW-AKM7169-%' AND source_key='SRC-AKM7169ENG-EXACT-482'").fetchone()[0],
+                'knowledge_old': db.execute("SELECT COUNT(*) FROM mems_knowledge_item WHERE knowledge_key LIKE 'KNOW-RAVE-SPI93-%' OR source_key='SRC-AKM7169'").fetchone()[0],
+                'scopes_new': db.execute("SELECT COUNT(*) FROM mems_applicability_scope WHERE scope_key LIKE 'SCOPE-AKM7169ENG-%'").fetchone()[0],
+                'scopes_old': db.execute("SELECT COUNT(*) FROM mems_applicability_scope WHERE scope_key LIKE 'SCOPE-RAVE-MINI-SPI-AKM7169-%'").fetchone()[0],
+                'specifications': db.execute("SELECT COUNT(*) FROM mems_specification WHERE spec_key LIKE 'SPEC-AKM7169-%'").fetchone()[0],
+                'spec_values': db.execute("SELECT COUNT(*) FROM mems_specification_value WHERE spec_key LIKE 'SPEC-AKM7169-%'").fetchone()[0],
+                'procedures': db.execute("SELECT COUNT(*) FROM mems_procedure WHERE procedure_key LIKE 'PROC-AKM7169-%'").fetchone()[0],
+                'procedure_steps': db.execute("SELECT COUNT(*) FROM mems_procedure_step WHERE procedure_key LIKE 'PROC-AKM7169-%'").fetchone()[0],
+                'procedure_requirements': db.execute("SELECT COUNT(*) FROM mems_procedure_requirement WHERE procedure_key LIKE 'PROC-AKM7169-%'").fetchone()[0],
+                'relations': db.execute("SELECT COUNT(*) FROM mems_knowledge_relation WHERE from_key LIKE 'KNOW-AKM7169-%' OR to_key LIKE 'KNOW-AKM7169-%'").fetchone()[0],
+                'illustrations': db.execute("SELECT COUNT(*) FROM mems_rave_illustration WHERE document='AKM7169ENG'").fetchone()[0],
+                'links': db.execute("SELECT COUNT(*) FROM mems_rave_illustration_link WHERE fact_key LIKE 'AKM7169-%'").fetchone()[0],
+                'covered_facts': db.execute("SELECT COUNT(DISTINCT fact_key) FROM mems_rave_illustration_link WHERE fact_key LIKE 'AKM7169-%'").fetchone()[0],
+                'source_assets': db.execute("SELECT COUNT(*) FROM mems_source_asset WHERE source_key='SRC-AKM7169ENG-EXACT-482'").fetchone()[0],
+                'diag_new': db.execute("SELECT COUNT(*) FROM diagnostic_reference_500 WHERE lower(source_id)='akm7169eng_exact_482'").fetchone()[0],
+                'diag_old': db.execute("SELECT COUNT(*) FROM diagnostic_reference_500 WHERE lower(source_id)='akm7169fre'").fetchone()[0],
+                'doc_source_new': db.execute("SELECT COUNT(*) FROM documentation_sources_500 WHERE lower(id)='akm7169eng_exact_482'").fetchone()[0],
+                'doc_source_old': db.execute("SELECT COUNT(*) FROM documentation_sources_500 WHERE lower(id)='akm7169fre'").fetchone()[0],
+                'fault_new': db.execute("SELECT COUNT(*) FROM fault_knowledge WHERE lower(source_reference) LIKE '%akm7169eng%'").fetchone()[0],
+                'fault_old': db.execute("SELECT COUNT(*) FROM fault_knowledge WHERE lower(source_reference) LIKE '%akm7169fre%'").fetchone()[0],
+              }
+              expected={
+                'integrity':'ok','user_version':20,'fk_violations':0,
+                'rave_new':91,'rave_old':0,'expert_new':91,'expert_old':0,
+                'knowledge_new':91,'knowledge_old':0,'scopes_new':5,'scopes_old':0,
+                'specifications':81,'spec_values':81,'procedures':13,'procedure_steps':160,
+                'procedure_requirements':11,'relations':9,'illustrations':40,'links':135,
+                'covered_facts':91,'source_assets':40,'diag_new':8,'diag_old':0,
+                'doc_source_new':1,'doc_source_old':0,'fault_new':1,'fault_old':0,
+              }
+              for k,v in checks.items(): print(f'{k}={v}')
+              bad={k:(checks.get(k),v) for k,v in expected.items() if checks.get(k)!=v}
+              if bad: raise SystemExit('AKM validation mismatch: '+repr(bad))
+              print('APPLIED_BATCHES',len(applied),applied[-5:])
+              print('PASS FULL AKM7169 EXPERT DATABASE')
+          finally:
+              db.close()
+          PY
