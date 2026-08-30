@@ -1,5 +1,26 @@
 # RAPPORT DE CONTINUITÉ — ECU MEMS MANAGER
 
+## REGLE MAITRE PERMANENTE - UN SEUL RAPPORT DE CONTINUITE
+
+**IMPORTANCE CAPITALE - REGLE DE TRAVAIL PERMANENTE A PARTIR DU 30 AOUT 2026.**
+
+`RAPPORT_SUIVI_ECU_MEMS_MANAGER.md` est desormais **l unique rapport maitre, l unique journal de continuite et l unique point de reprise obligatoire** du projet ECU MEMS Manager.
+
+A partir de cette consolidation :
+- toute progression du programme, recherche, decision, test reel, echec, correction, build, SHA, branche, checkpoint, prochaine action, audit, protocole, RAVE, IA, UI et regle de securite doit etre inscrite dans **ce fichier uniquement** ;
+- **aucun nouveau rapport de suivi separe ne doit etre cree ou complete** pour assurer la continuite ;
+- les anciens fichiers `RAPPORT_*`, `AUDIT_*`, `REPRISE_*`, `RECHERCHE_*`, `ETAPE_*` et autres Markdown historiques restent sur GitHub uniquement comme **archives en lecture seule** ;
+- toute ancienne instruction presente dans l historique demandant de lire un second rapport, audit ou document de reprise est **annulee et remplacee par la presente regle** ;
+- les informations de ces anciens documents sont consolidees integralement plus bas dans ce rapport maitre afin qu une seule lecture permette de retrouver l historique et les informations techniques ;
+- un ancien fichier peut etre consulte comme preuve historique, mais il ne doit plus devenir une dependance necessaire a la reprise ;
+- si une information indispensable est decouverte dans une archive ou une source externe, elle doit etre recopiere/consignee dans le rapport maitre avant de poursuivre ;
+- la regle preexistante `RAPPORT AVANT POUSSE -> POUSSE -> TEST REEL -> RAPPORT IMMEDIAT` continue de s appliquer, mais **RAPPORT signifie exclusivement ce fichier maitre**.
+
+**But de cette regle :** garantir une tracabilite complete et lisible aussi bien pour l utilisateur que pour l assistant, et faire qu une coupure de discussion ne puisse jamais exiger de deviner quels autres rapports doivent etre retrouves.
+
+**Instruction de reprise canonique :** `Lire RAPPORT_SUIVI_ECU_MEMS_MANAGER.md sur la branche RAPPORT, puis reprendre strictement a la PROCHAINE ACTION EXACTE.`
+
+
 > **RÈGLE OBLIGATOIRE** : relire ce fichier avant toute modification. Branche rapport : `RAPPORT`. Branche x64 active : `MEMSX64`.
 >
 > **RÈGLE QUALITÉ — AUCUNE RUSTINE** : rechercher la cause réelle et produire une solution propre, générale et maintenable. Ne pas supprimer une capacité juste pour faire passer un test.
@@ -2458,3 +2479,5290 @@ Le lot RCL0193FRE 1860 a montre la lacune que cette regle corrige : les gardes S
 A partir de maintenant, **protection contre la regression ET protection contre la perte de travail sont deux obligations distinctes et simultanees**.
 
 Cette regle est permanente et prioritaire pour tous les futurs gros PDF, manuels constructeur, lots d images, bases, modeles, archives et autres fichiers volumineux du projet.
+
+## 2026-08-30 - CONSOLIDATION DU RAPPORT MAITRE
+
+- **36 documents Markdown historiques** ont ete copies integralement dans ce fichier avec taille et SHA-256.
+- Les originaux restent sur GitHub comme archives en lecture seule ; aucune suppression historique n est effectuee.
+- Desormais, toutes les mises a jour de continuite/progression sont faites uniquement dans `RAPPORT_SUIVI_ECU_MEMS_MANAGER.md`.
+- Toute ancienne obligation de lire un rapport annexe est remplacee par la regle maitre placee en tete de ce fichier.
+- **Incident de consolidation run 33306304044 :** la generation avait reussi avec 36 archives, 461040 octets et SHA-256 candidat `42e9a898871c34e9030ef2854ef394a679d2318abbe26cf7336fe0c92d85150e`, mais aucun commit n avait ete pousse car `git diff --check` avait refuse des espaces finaux deja presents dans plusieurs archives historiques. Ces espaces font partie des copies historiques et ne sont pas modifies silencieusement ; le controle inadapté est retire.
+- **PROCHAINE ACTION EXACTE apres consolidation : reprendre le lot RCL0193FRE 1860 bloque par le transport tronque, a partir du PDF RCL0193FRE fourni par l utilisateur, en appliquant la regle SAFE CHECKPOINT des gros fichiers avant toute nouvelle tentative de pousse.**
+
+# ARCHIVES HISTORIQUES CONSOLIDEES DANS LE RAPPORT MAITRE - 30 AOUT 2026
+
+Cette section contient une copie integrale des documents Markdown historiques de suivi/audit/reprise presents a la racine de la branche `RAPPORT` au moment de la consolidation. Les fichiers originaux restent sur GitHub en lecture seule. **Leur contenu ci-dessous appartient desormais au rapport maitre ; ils ne doivent plus etre completes separement.**
+
+Nombre de documents archives consolides : **36**.
+
+## MANIFESTE DES ARCHIVES CONSOLIDEES
+- `AUDIT_RAVE_MINI_SPI_MPI.md` — 24741 octets — SHA-256 `34258861d0a3e6023304464d7378b42411c6f2e125e8451df5b72dabe97a4574`
+- `AUDIT_TESTBOOK_MEMS_CODES_PINOUTS.md` — 12887 octets — SHA-256 `a9eb22692335b5c99f2d3a251fcaa4dc507cb4118a9eb37b18ae18d84d21c4b0`
+- `ETAPE_ONNX_GENAI_BUILD30_2026-08-26.md` — 2571 octets — SHA-256 `b108cd515650533fb4449eb2daa5f004230214ae6a48521402d81ee1735f52f8`
+- `MEMS_MANAGER_FUTURE_FUNCTIONS.md` — 4335 octets — SHA-256 `18e91d2c7fd47f2b31e378898f4c1217ceb986acbe9f55765fbded482979d1ca`
+- `MEMS_RESEARCH_RULES.md` — 3775 octets — SHA-256 `04a42823c73f931fd65750f364b29d490f3fc4fbae5ce9c7a16436d9b67e83a2`
+- `RAPPORT_LIBROSCO_BINAIRE.md` — 5455 octets — SHA-256 `f2b95d3dfc31c5065694e447ff89e9569aa7eb6551324b0c42e8140ae2b4ca68`
+- `RAPPORT_LIBROSCO_DESASSEMBLAGE.md` — 67344 octets — SHA-256 `9c3f510224ba5e5ec7da3dfd0e43700e3156ae6ed8fe93357b46bb72359845ac`
+- `RAPPORT_LIBROSCO_LEOPOLD_COMPARAISON.md` — 3261 octets — SHA-256 `4ae62592db46424296c9cdc37f2cffe86a2899e8b8924f14a3bc8ba923348189`
+- `RAPPORT_RCL0193FRE_1790_BINARY_TRANSPORT_TEST_2026-08-29.md` — 426 octets — SHA-256 `3583f9ae6b6402f14efa216d0a09d9cc47afae36fb481facdd1406f69c35808d`
+- `RAPPORT_RCL0193FRE_1790_PRE_PUSH_2026-08-29.md` — 3462 octets — SHA-256 `d4bbc5ed9e5df2a6056ea7e1e83366c16ee6b053a162ca8861a535a7ca3c1b44`
+- `RAPPORT_RCL0193FRE_1790_PRE_PUSH_V5_2026-08-29.md` — 3385 octets — SHA-256 `aeb86aa675db942e8c52dcc96ba64ee882ac384906fcbd6431ad745c23ac72bf`
+- `RAPPORT_RCL0193FRE_1790_RED_RULE_NOTE_2026-08-29.md` — 372 octets — SHA-256 `34d80054eae7011931e3dde5f6a1e7acddb3e4ba3fe661d5d1bb462e6de40357`
+- `RAPPORT_RCL0193FRE_1790_TRANSPORT_METHOD_2026-08-29.md` — 360 octets — SHA-256 `40e51461fcd884d8ea26e915cc88c4b3d67081d3ce5b388f09250cc1e1e8bfb2`
+- `RAPPORT_RCL0193FRE_1790_TRANSPORT_STATUS_2026-08-29.md` — 228 octets — SHA-256 `97ef3d5f69ba71cd5387997cf098e2d7856470028992c42d49eb8c73dfab9939`
+- `RAPPORT_RCL0193FRE_1790_V5_PRE_PUSH_2026-08-29.md` — 3847 octets — SHA-256 `d798ccd77005c4290d33b5fb56e3c3d403a04a03787a83c8fdf9fe2856e36bec`
+- `RAPPORT_RCL0193FRE_1790_VALIDATION_FINALE_2026-08-29.md` — 3508 octets — SHA-256 `ed4550a305078231fb05e538e1537681fd5bedd8784c451a3c1834ccdb1be464`
+- `RAPPORT_RCL0193FRE_1800_MOTEUR_DEPOLLUTION_PRE_PUSH_2026-08-29.md` — 4971 octets — SHA-256 `caa3d767fb7b8ddbda97ba083c37a25db1e43e588949f1a3f1fdc3ac97017b0b`
+- `RAPPORT_RCL0193FRE_1800_VALIDATION_FINALE_2026-08-29.md` — 2455 octets — SHA-256 `190bc8a3b6f38955ff6a7856e1589c11d7ee50c22a5c85097f9d479f4833ef3f`
+- `RAPPORT_RCL0193FRE_1810_POST_PUSH.md` — 1294 octets — SHA-256 `4930bf1d08b191e0d2b4616c6ee4a4552ebcb5b76e0c49b5cc90985905da9ce3`
+- `RAPPORT_RCL0193FRE_1810_PRE_PUSH.md` — 2170 octets — SHA-256 `420b732152b0c00181149fc97aacb5a2ab622a71e57a7bbaba3a84b90b265261`
+- `RAPPORT_RCL0193FRE_1820_POST_PUSH.md` — 1376 octets — SHA-256 `1a94be973bb887824beaf7fb2f168503b0f8f8440f9121fa7f9051ded5d0700d`
+- `RAPPORT_RCL0193FRE_1820_PRE_PUSH.md` — 2742 octets — SHA-256 `07cd5f39e1cf52813f3d243a085b131d12a6526a20784c027d0786ae80e4f475`
+- `RAPPORT_RCL0193FRE_1830_POST_PUSH.md` — 1111 octets — SHA-256 `063f6e839a3fba2f55291ada3e57eddc7ccf0146390d6e3e02804def065cad37`
+- `RAPPORT_RCL0193FRE_1830_PRE_PUSH.md` — 2216 octets — SHA-256 `3c60b6d43aba9012ef9c427889e7e742c1e0aee9bd95606e3e9f1d799173cc14`
+- `RAPPORT_RCL0193FRE_1840_POST_PUSH.md` — 1255 octets — SHA-256 `00ca8ae1954ee8578c43607adc5aa8f69e518a1860e1d3b35a9ca7015e3b585e`
+- `RAPPORT_RCL0193FRE_1840_PRE_PUSH.md` — 2962 octets — SHA-256 `29f18cd164e61c0daeb17abbc6bc1952b3597dea7fb1b9374929711f60840ed4`
+- `RAPPORT_RCL0193FRE_1850_POST_PUSH.md` — 1346 octets — SHA-256 `bfff7dd460742ef154f6745bf1eee68512fda3749f57fd4ef11fc141aad27b2d`
+- `RAPPORT_RCL0193FRE_1850_PRE_PUSH.md` — 2903 octets — SHA-256 `cd87a140b4e3835e87f81d73bd7c4af4fe86b7c2eb69a0ee6d5320d43382980d`
+- `RAPPORT_RCL0193FRE_1860_CORRECTION_TRANSPORT_PRE_PUSH.md` — 2260 octets — SHA-256 `7973df55b9c6f3469a5e3963a5e3a13f33c7343e0bbaee6748af5d2cc5881d56`
+- `RAPPORT_RCL0193FRE_1860_PRE_PUSH_FINAL.md` — 2896 octets — SHA-256 `20c4a6d6762a6eee1c3a3a7fb7b5a66b7a13e31a2189028f42abfe1d6176b21e`
+- `RAPPORT_RCL0193FRE_1860_RUN1_FAILURE.md` — 1333 octets — SHA-256 `827e497b89d383915c990ceaddad61355a0801aafb637b952f647ff89b616c48`
+- `RAPPORT_RCL0193FRE_EXTRACTION_MAXIMALE_2026-08-29.md` — 7090 octets — SHA-256 `f4cb349627b99e46d2aa435d8b8ba231f65f74c75735ac7c933579874c9c894b`
+- `RAPPORT_SCHEMA_SOCLE_RAVE_EXACT.md` — 20597 octets — SHA-256 `398cc5dcd0ec24afb0f581aa7dbe4815f93d0193c3eb894e1d7e98757a69db02`
+- `RCL0193FRE_1860_PRE_PUSH_2026-08-30.md` — 2416 octets — SHA-256 `84770b46cc9aee3a0c3a7d76d7424ad63822a80cd62e9bccd836677533a281b3`
+- `RECHERCHE_MEMS_REPRISE_2026-08-17.md` — 10645 octets — SHA-256 `0418c12f7e4aba264b2dc26ab76038215f4ac009ce9dccf42685928b26738e73`
+- `REPRISE_UI_REBUILD.md` — 8553 octets — SHA-256 `a47387d7a0e78e42d5789d7248b06cb95f0112b5d64c7f9dd93ac0b9353d04fd`
+
+## COPIES INTEGRALES DES ARCHIVES
+
+<!-- ARCHIVE_SOURCE_BEGIN name=AUDIT_RAVE_MINI_SPI_MPI.md size=24741 sha256=34258861d0a3e6023304464d7378b42411c6f2e125e8451df5b72dabe97a4574 -->
+
+## ARCHIVE CONSOLIDEE - `AUDIT_RAVE_MINI_SPI_MPI.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `34258861d0a3e6023304464d7378b42411c6f2e125e8451df5b72dabe97a4574`.
+
+# AUDIT DOCUMENTAIRE — RAVE / ROVER MINI SPi / MPi
+
+> Branche documentaire : `RAPPORT`  
+> Statut : **audit / classement uniquement — aucune intégration runtime encore**  
+> Objectif : fournir des faits constructeur traçables aux futures réponses immédiates de IA MEMS.
+
+## Règles de classement
+
+- Ne pas recopier les manuels : conserver uniquement des faits techniques structurés.
+- Chaque fait doit garder son document, sa page/section, sa variante et son niveau de preuve.
+- Séparer strictement **SPi ancien**, **SPi 1997+**, **MPi** et **cas particuliers (ex. Japon)**.
+- Ne jamais transformer une valeur spécifique à un millésime/ECU en valeur universelle.
+- En cas de divergence entre deux pages constructeur, conserver le conflit au lieu de choisir arbitrairement.
+- Niveau utilisé ici : **`verifie_constructeur`** pour une donnée lue directement dans une publication Rover identifiable ; **`verifie_constructeur_copie_numerisee`** lorsque la publication Rover est identifiable mais consultée via une copie numérisée tierce.
+
+## Sources constructeur identifiées
+
+### SRC-RCL0193
+- Document : **Mini Workshop Manual — RCL0193ENG**.
+- Couverture : Mini 1997–2000 ; document indiqué comme supplément de AKM7169ENG.
+- PDF public consulté : `https://www.uscars.biz/uscars/mini-documents/Rave_CD_wmxn990e.pdf`
+- Niveau : `verifie_constructeur`.
+
+### SRC-RCL0213
+- Document : **Mini Electrical Reference Library — RCL0213ENG**.
+- Publication Rover Technical Communication, ©1997 Rover Group Limited.
+- À utiliser avec RCL0193ENG et RCL0194ENG.
+- PDF public consulté : `https://www.uscars.biz/uscars/mini-documents/Rave_CD_elxn970e.pdf`
+- Niveau : `verifie_constructeur`.
+
+### SRC-RCL0194
+- Document : **Mini Electrical Circuit Diagrams — RCL0194ENG**.
+- Schémas électriques Mini 97MY et amendements.
+- PDF public consulté : `https://www.goclassic.eu/upload/content/e68ce7_9c0fd6a5b3a14a3585ecddb02b3ceb9d.pdf`
+- Niveau : `verifie_constructeur`.
+
+### SRC-AKM7169
+- Document : **Mini Repair Manual — AKM7169ENG**, Rover Group Limited 1993.
+- Couvre les Mini à partir de VIN 049349 et contient la section `MEMS – SPi Fuel Delivery System`.
+- Copie numérisée publique consultée via Scribd : `https://www.scribd.com/document/625575179/Mini-Repair-Manual-92-96-Autom`
+- Niveau : `verifie_constructeur_copie_numerisee`.
+
+---
+
+# LOT 1 — VALEURS DE RÉFÉRENCE CONSTRUCTEUR
+
+## RAVE-VAL-001 — ralenti SPi ancien, boîte manuelle
+- Famille : `SPi_1993_1996`
+- Moteur : `12A2DF75 / 1275 cm3`
+- Valeur : **850 ± 25 tr/min**.
+- Condition : ralenti commandé par ECU.
+- Source : `AKM7169ENG`, Engine Tuning Data, modèle 1.3 Mini SPi manual gearbox.
+- Preuve : `verifie_constructeur_copie_numerisee`.
+- Réponse immédiate visée : « Quelle est la valeur d'origine du ralenti sur cette SPi ? ».
+
+## RAVE-VAL-002 — ralenti SPi ancien, boîte automatique
+- Famille : `SPi_1993_1996`
+- Moteur : `12A2DF76 / 1275 cm3`
+- Valeur : **850 ± 25 tr/min**.
+- Source : `AKM7169ENG`, Engine Tuning Data.
+- Preuve : `verifie_constructeur_copie_numerisee`.
+
+## RAVE-VAL-003 — ralenti SPi ancien, haute compression
+- Famille : `SPi_1993_1996`
+- Moteur : `12A2EF77 / 1275 cm3`
+- Valeur : **850 ± 25 tr/min**.
+- Source : `AKM7169ENG`, Engine Tuning Data.
+- Preuve : `verifie_constructeur_copie_numerisee`.
+
+## RAVE-VAL-004 — ralenti SPi 1997+
+- Famille : `SPi_1997_plus`
+- Moteurs RCL0193 : `12A2EK71` manuel et `12A2EK72` automatique.
+- Valeur : **900 ± 50 tr/min**.
+- Condition : pas de charge électrique ; ralenti contrôlé par ECM.
+- Source : `RCL0193ENG`, pages PDF 38–39, Engine Tuning Data.
+- Preuve : `verifie_constructeur`.
+
+## RAVE-VAL-005 — ralenti MPi
+- Famille : `MPi_1997_plus`
+- Moteur : `12A2LK70 / 1275 cm3`.
+- Valeur : **900 ± 50 tr/min**.
+- Condition : pas de charge électrique ; ralenti contrôlé par ECM.
+- Source : `RCL0193ENG`, page PDF 40, Engine Tuning Data.
+- Preuve : `verifie_constructeur`.
+
+### Règle IA issue de VAL-001 à VAL-005
+La question « valeur de ralenti d'origine » **ne doit jamais recevoir une seule valeur universelle** : les premiers SPi du manuel AKM7169 sont donnés à 850 ±25 tr/min, alors que RCL0193 donne 900 ±50 tr/min pour SPi 1997+ et MPi. Demander/tenir compte du véhicule, millésime, moteur ou ECU lorsque le contexte n'est pas identifié.
+
+## RAVE-VAL-006 — pression carburant SPi ancien
+- Famille : `SPi_1993_1996`
+- Valeur : **1,0 bar ± 4 %**, constante.
+- Source : `AKM7169ENG`, Engine Tuning Data.
+- Preuve : `verifie_constructeur_copie_numerisee`.
+
+## RAVE-VAL-007 — pression carburant SPi 1997+
+- Famille : `SPi_1997_plus`
+- Valeur : **1,0 ± 0,2 bar**, constante.
+- Source : `RCL0193ENG`, pages 38–39.
+- Preuve : `verifie_constructeur`.
+
+## RAVE-VAL-008 — pression carburant MPi 1997+
+- Famille : `MPi_1997_plus`
+- Valeur : **3,0 ± 0,2 bar**, constante (donnée de réglage constructeur).
+- Source : `RCL0193ENG`, page 40.
+- Preuve : `verifie_constructeur`.
+
+## RAVE-VAL-009 — tension capteur papillon
+- Famille : `SPi_1997_plus | MPi_1997_plus`
+- Fermé : **0 à 1 V**.
+- Ouvert 90° : **4 à 5 V**.
+- Ouvert 65° : **3 à 4 V**.
+- Source : `RCL0193ENG`, pages 38–40.
+- Preuve : `verifie_constructeur`.
+- Note : AKM7169 confirme également 0–1 V fermé et 4–5 V ouvert sur les SPi anciens.
+
+## RAVE-VAL-010 — position IACV en fonctionnement
+- Famille : `Mini_RCL0193_MEMS`
+- Valeur de contrôle : **20 à 40 pas** moteur en fonctionnement.
+- Source : `RCL0193ENG`, page PDF 114, Idle air control valve.
+- Preuve : `verifie_constructeur`.
+- Important : le manuel précise que l'ajustement porte sur la position **apprise**, pas sur la position instantanée de ralenti ; l'ajustement n'est pas recommandé hors procédure TestBook.
+
+## RAVE-VAL-011 — ventilateur MPi 97MY
+- Famille : `MPi_97MY`
+- Mise en marche : **105 °C**.
+- Arrêt : **98 °C**.
+- Commande : ECM via relais de ventilateur, retour ECT.
+- Source : `RCL0213ENG`, section Cooling Fan Operation, page PDF 48.
+- Preuve : `verifie_constructeur`.
+
+## RAVE-VAL-012 — ventilateur SPi Japon 97MY
+- Famille : `SPi_Japan_97MY`
+- Mise en marche : au-dessus de **98 °C**.
+- Arrêt : **93 °C**.
+- Commande : contacteur haute température du radiateur ; ventilateur auxiliaire de secours au ventilateur mécanique.
+- Source : `RCL0213ENG`, page PDF 48.
+- Preuve : `verifie_constructeur`.
+- Interdiction de généralisation : cette donnée est explicitement **SPi Japon uniquement**.
+
+---
+
+# LOT 2 — CAPTEURS : RÔLE / MESURE / CONSÉQUENCES LOGIQUES DOCUMENTÉES
+
+## RAVE-SEN-001 — CKP / capteur vilebrequin
+- Famille : `MEMS_RCL0193_97MY`
+- Mesure : position vilebrequin + régime moteur.
+- Principe : capteur inductif face à la couronne/reluctor du volant moteur.
+- Couronne : 32 pôles espacés de 10°, avec 4 pôles manquants aux positions 30°, 60°, 210° et 250°.
+- Importance : le manuel le décrit comme **entrée primaire nécessaire au fonctionnement du moteur**.
+- Source : `RCL0213ENG`, page PDF 34 ; `RCL0193ENG`, page PDF 108.
+- Preuve : `verifie_constructeur`.
+- Réponse immédiate possible : rôle, principe, pourquoi une absence de signal régime/CKP est critique.
+
+## RAVE-SEN-002 — CMP / capteur arbre à cames
+- Famille : `MPi_RCL0193`
+- Fonctions : permet le fonctionnement en injection séquentielle et mesure la période d'arbre à cames.
+- Défaillance moteur déjà en marche : le manuel indique que le moteur continue à fonctionner.
+- Défaillance avant démarrage : démarrage possible mais avec limite de régime réduite par rapport à la limite normale de **6500 tr/min**.
+- Source : `RCL0193ENG`, page PDF 108.
+- Preuve : `verifie_constructeur`.
+- Note : ne pas appliquer cette réponse au SPi sans preuve spécifique.
+
+## RAVE-SEN-003 — MAP
+- Famille : `Mini_97MY_MEMS`
+- Emplacement : directement sur le collecteur d'admission.
+- Mesure : pression absolue du collecteur ; représentation de la charge moteur.
+- Utilisation ECU : ajuste quantité de carburant injectée et avance à l'allumage.
+- Principe : variations de pression converties en signal électrique gradué.
+- Source : `RCL0213ENG`, page PDF 34.
+- Preuve : `verifie_constructeur`.
+
+## RAVE-SEN-004 — ECT / température liquide
+- Famille : `Mini_97MY_MEMS`
+- Emplacement : coude/sortie de liquide de refroidissement.
+- Type : thermistance.
+- Signal : varie inversement avec la température.
+- Utilisation ECU : notamment durée d'ouverture des injecteurs ; la documentation MEMS décrit aussi une compensation d'avance selon température.
+- Source : `RCL0213ENG`, page PDF 35 ; `RCL0193ENG`, page PDF 109.
+- Preuve : `verifie_constructeur`.
+
+## RAVE-SEN-005 — TP / capteur position papillon
+- Famille : `Mini_97MY_MEMS`
+- Type : potentiomètre couplé directement au papillon.
+- Alimentation : 5 V depuis ECM dans RCL0213.
+- Rôle : position papillon ; détection papillon fermé ; déclenche la régulation de ralenti via IACV.
+- La vitesse de variation du signal sert à l'enrichissement accélération, gestion décélération et coupure d'injection en décélération.
+- Source : `RCL0213ENG`, page PDF 35 ; `RCL0193ENG`, pages PDF 113–114.
+- Preuve : `verifie_constructeur`.
+
+## RAVE-SEN-006 — interdiction réglage butée papillon
+- Famille : `Mini_RCL0193_MEMS`
+- Fait : la position du papillon est préréglée en fabrication ; la vis de butée **ne doit pas être ajustée** pour régler le ralenti.
+- Source : `RCL0193ENG`, pages PDF 114 et 118.
+- Preuve : `verifie_constructeur`.
+- Réponse immédiate visée : « Je règle le ralenti avec la vis du papillon ? » → non, avec avertissement constructeur.
+
+## RAVE-SEN-007 — IAT / température air admission
+- Famille : `Mini_97MY_MEMS`
+- Emplacement : côté du collecteur d'admission.
+- Type : NTC, résistance diminue lorsque température augmente.
+- Utilisation ECU : combinée au MAP pour estimer la quantité/volume d'oxygène entrant et corriger finement l'injection.
+- Source : `RCL0213ENG`, page PDF 37 ; `RCL0193ENG`, page PDF 112.
+- Preuve : `verifie_constructeur`.
+
+## RAVE-SEN-008 — HO2S / lambda
+- Famille : `Mini_97MY_MEMS`
+- Système : boucle fermée.
+- Mélange pauvre : plus d'oxygène dans l'échappement → tension capteur plus faible.
+- Mélange riche : moins d'oxygène → tension plus élevée.
+- L'ECM utilise le signal pour corriger la quantité de carburant.
+- Chauffage : relais commandé pour accélérer l'atteinte de la température de fonctionnement.
+- Source : `RCL0213ENG`, pages PDF 37–38.
+- Preuve : `verifie_constructeur`.
+
+---
+
+# LOT 3 — ACTIONNEURS / TESTS : CE QUE LE SYSTÈME DOIT FAIRE
+
+## RAVE-ACT-001 — IACV / moteur pas à pas
+- Famille : `Mini_97MY_MEMS`
+- Emplacement : collecteur d'admission.
+- Fonction : ouvre un passage de dérivation autour du papillon ; contrôle l'air de ralenti et le débit supplémentaire au démarrage à froid.
+- À froid : l'ECM ouvre davantage l'IACV pour créer un ralenti accéléré ; cette ouverture diminue à mesure que le liquide chauffe.
+- Commande électrique RCL0213 : phases 1 à 4 contrôlées par ECM.
+- Source : `RCL0213ENG`, page PDF 37 ; `RCL0193ENG`, page PDF 114.
+- Preuve : `verifie_constructeur`.
+- Pour futur test actionneur : si la commande est envoyée et qu'aucun mouvement/variation n'apparaît, le diagnostic doit distinguer actionneur, alimentation, masse, phases/câblage et problème mécanique du passage d'air ; ne pas condamner l'IACV sans contrôle.
+
+## RAVE-ACT-002 — injecteur(s)
+- Famille : `SPi_97MY | MPi_97MY`
+- Architecture RCL0213 : **1 injecteur SPi**, **2 injecteurs MPi**.
+- Type : électrovannes/solénoïdes.
+- Grandeur de commande principale : temps d'ouverture, ou **pulse width**.
+- L'ECM détermine la quantité de carburant par la durée d'ouverture.
+- Entrées documentées : CKP, CMP selon version, MAP, IAT, ECT, TP, tension batterie, HO2S.
+- Source : `RCL0213ENG`, page PDF 36 ; `RCL0193ENG`, page PDF 112.
+- Preuve : `verifie_constructeur`.
+
+## RAVE-ACT-003 — pompe à carburant
+- Famille : `Mini_RCL0193_MEMS`
+- Emplacement : réservoir.
+- Commande : ECM via relais de pompe et coupe-circuit/inertia fuel cut-off switch.
+- Le relais de pompe est activé brièvement à la mise du contact, pendant le démarrage et moteur en marche.
+- Source : `RCL0193ENG`, pages PDF 114–115.
+- Preuve : `verifie_constructeur`.
+- Réponse immédiate possible : lors d'un test, expliquer ce que l'utilisateur doit normalement entendre/mesurer et les contrôles alimentation/relais/coupe-circuit/pompe si elle ne tourne pas.
+
+## RAVE-ACT-004 — purge canister
+- Famille : `Mini_97MY_MEMS`
+- Fonction : ouvre le circuit du canister vers l'admission pour brûler les vapeurs d'essence.
+- RCL0213 : la vanne reste fermée moteur froid et au ralenti afin de protéger le réglage moteur et le catalyseur.
+- RCL0193 / système EVAP : ouverture lorsque les conditions moteur le permettent ; sur la description EVAP, la purge est inhibée jusqu'à ce que la température moteur dépasse environ **70 °C**.
+- Source : `RCL0213ENG`, page PDF 38 ; `RCL0193ENG`, pages PDF 98 et 114.
+- Preuve : `verifie_constructeur`.
+- Note : conserver la condition 70 °C avec son contexte de section/millésime, ne pas la généraliser hors de ce corpus sans vérification.
+
+## RAVE-ACT-005 — ventilateur de refroidissement MPi
+- Famille : `MPi_97MY`
+- Commande : ECM via relais.
+- Référence : ON 105 °C / OFF 98 °C.
+- Source : `RCL0213ENG`, page PDF 48.
+- Preuve : `verifie_constructeur`.
+
+---
+
+# LOT 4 — ADAPTATION / RÉGLAGES
+
+## RAVE-SET-001 — apprentissage IAC
+- Famille : `Mini_RCL0193_MEMS`
+- À température normale, l'ECM apprend la position IAC nécessaire pour atteindre le ralenti spécifié et s'en sert comme référence lorsque la charge change.
+- Source : `RCL0193ENG`, page PDF 111 ; `RCL0213ENG`, page PDF 32.
+- Preuve : `verifie_constructeur`.
+- Réponse immédiate : oui, l'ECU apprend/adapte une référence IAC ; ne pas présenter un réglage manuel comme une position de ralenti absolue permanente.
+
+## RAVE-SET-002 — apprentissage correction carburant
+- Famille : `Mini_RCL0193_MEMS`
+- À température normale, l'ECM apprend un décalage de richesse nécessaire pour atteindre la cible de tension de sonde oxygène.
+- But documenté : éviter des corrections excessives susceptibles de dégrader émissions et agrément.
+- Source : `RCL0193ENG`, page PDF 111.
+- Preuve : `verifie_constructeur`.
+
+## RAVE-SET-003 — stabilisation du ralenti par avance + IAC
+- Famille : `Mini_97MY_MEMS`
+- L'ECM utilise simultanément l'IACV et des corrections rapides d'avance/retard à l'allumage pour maintenir le ralenti lorsque les charges changent.
+- Conséquence normale : l'avance affichée peut varier continuellement au ralenti ; ce n'est pas automatiquement un défaut.
+- Source : `RCL0213ENG`, page PDF 35 ; `RCL0193ENG`, page PDF 109.
+- Preuve : `verifie_constructeur`.
+
+---
+
+# LOT 5 — CONFLITS / POINTS À NE PAS RÉPONDRE COMME UNE CONSTANTE UNIQUE
+
+## RAVE-CONFLICT-001 — valeur de ralenti d'origine
+- AKM7169 SPi ancien : **850 ±25 tr/min**.
+- RCL0193 SPi 1997+ : **900 ±50 tr/min**.
+- RCL0193 MPi : **900 ±50 tr/min**.
+- Décision audit : indexer par moteur/millésime/ECU et demander le contexte si inconnu.
+
+## RAVE-CONFLICT-002 — résistance primaire de bobine
+- AKM7169 SPi ancien : **0,71 à 0,81 Ω à 20 °C**.
+- RCL0193, tableaux Engine Tuning Data pages 38–40 : **0,41 à 0,61 Ω à 20 °C**, bobine NEC1000710.
+- RCL0193, description MEMS page 110 : **0,63 à 0,77 Ω à 20 °C**.
+- Décision audit : **ne pas fusionner** ces trois plages. Elles doivent rester liées à leur source, variante/référence de bobine et section jusqu'à clarification complète.
+
+## RAVE-CONFLICT-003 — ventilateur SPi
+- La valeur 98/93 °C de RCL0213 concerne **SPi Japon uniquement** et un contacteur haute température dans le radiateur.
+- Décision audit : ne pas l'utiliser comme seuil SPi général.
+
+---
+
+# LOT 6 — PANNES / STRATÉGIES DE SECOURS / CONSÉQUENCES DOCUMENTÉES
+
+## RAVE-FAIL-001 — stratégie de secours ECM générale
+- Famille : `Mini_RCL0193_MEMS`
+- Fait constructeur : pour **certaines** entrées système défaillantes, l'ECM met en œuvre une stratégie de secours permettant de continuer à fonctionner, mais avec un niveau de performance réduit.
+- Source : `RCL0193ENG`, page PDF 107, description générale MEMS.
+- Preuve : `verifie_constructeur`.
+- Règle IA : ne jamais affirmer qu'un défaut de capteur entraîne nécessairement l'arrêt moteur ; vérifier s'il existe une stratégie spécifique documentée. Inversement, ne pas inventer la valeur de substitution utilisée par l'ECM si le manuel ne la donne pas.
+
+## RAVE-FAIL-002 — absence de signal CKP
+- Famille : `Mini_RCL0193_MEMS`
+- Le CKP fournit position vilebrequin et régime ; le manuel le qualifie d'entrée primaire nécessaire au fonctionnement du moteur.
+- Source : `RCL0193ENG`, page PDF 108.
+- Preuve : `verifie_constructeur`.
+- Réponse immédiate visée : une anomalie CKP est **critique** car l'ECM dépend de ce signal pour connaître vitesse/position moteur. Pour un cas réel, contrôler d'abord présence du signal, capteur, entrefer critique, connecteur et câblage avant de condamner l'ECM.
+- Prudence : la conséquence exacte « jamais de démarrage dans tous les cas » ne doit être formulée qu'en restant dans le contexte couvert par le manuel.
+
+## RAVE-FAIL-003 — défaillance CMP
+- Famille : `MPi_RCL0193`
+- Si le CMP tombe en panne alors que le moteur tourne : le manuel indique que le moteur continue à fonctionner.
+- Si le défaut est présent avant démarrage : le moteur peut démarrer mais avec une limite de régime réduite par rapport à la limite normale de **6500 tr/min**.
+- Identification du défaut : TestBook selon le manuel.
+- Source : `RCL0193ENG`, page PDF 108.
+- Preuve : `verifie_constructeur`.
+
+## RAVE-FAIL-004 — antidémarrage / absence d'autorisation
+- Famille : `Mini_RCL0193_MEMS`
+- Fait constructeur : l'ECM est immobilisé électroniquement et empêche le démarrage s'il ne reçoit pas le signal codé de l'unité antivol.
+- Après remplacement de l'ECM, le code antivol doit être programmé avec TestBook avant démarrage.
+- Source : `RCL0193ENG`, pages PDF 107 et 127.
+- Preuve : `verifie_constructeur`.
+- Réponse immédiate visée : pour un défaut d'antidémarrage, distinguer le système d'autorisation de démarrage des défauts de carburant/allumage ordinaires.
+
+## RAVE-FAIL-005 — coupe-circuit à inertie / pompe
+- Famille : `Mini_RCL0193_MEMS`
+- Fait constructeur : lors d'une décélération brutale, l'IFS coupe le circuit de pompe afin d'empêcher l'alimentation carburant du moteur.
+- Le manuel exige de vérifier fuites et intégrité des connexions carburant avant de réarmer le contacteur.
+- Source : `RCL0193ENG`, page PDF 116.
+- Preuve : `verifie_constructeur`.
+- Réponse immédiate visée : si la pompe ne fonctionne pas après choc/forte décélération, inclure l'IFS dans les contrôles avant de condamner la pompe.
+
+## RAVE-FAIL-006 — HO2S / lambda non opérationnelle
+- Famille : `Mini_97MY_MEMS`
+- Le manuel électrique indique qu'une sonde oxygène ne fonctionnera pas si son alimentation est absente ; chute/choc ou produits de nettoyage peuvent également l'endommager.
+- Source : `RCL0213ENG`, pages PDF 37–38.
+- Preuve : `verifie_constructeur`.
+- Réponse immédiate visée : pour une erreur lambda/chauffage lambda, contrôler alimentation/chauffage, câblage et état physique avant de conclure que le signal traduit réellement un mélange moteur anormal.
+
+## RAVE-FAIL-007 — purge ouverte dans de mauvaises conditions
+- Famille : `Mini_97MY_MEMS`
+- RCL0193 explique que l'ouverture de purge moteur froid ou au ralenti enrichirait le mélange, retarderait la mise en température efficace du catalyseur et pourrait provoquer un ralenti irrégulier.
+- RCL0213 confirme que la vanne reste normalement fermée moteur froid et au ralenti.
+- Source : `RCL0193ENG`, page PDF 98 ; `RCL0213ENG`, page PDF 38.
+- Preuve : `verifie_constructeur`.
+- Réponse immédiate visée : une purge qui reste ouverte peut être reliée à un ralenti perturbé et à une gestion mélange/catalyseur anormale, sans présenter cela comme la seule cause possible.
+
+## RAVE-FAIL-008 — IAC hors plage de référence
+- Famille : `Mini_RCL0193_MEMS`
+- Référence : 20–40 pas moteur en fonctionnement dans ce corpus.
+- Si l'IAC est identifié hors plage, le manuel prévoit une correction de la **position apprise** via TestBook et déconseille un réglage arbitraire.
+- La butée papillon est préréglée en usine et ne doit pas servir au réglage du ralenti.
+- Source : `RCL0193ENG`, page PDF 114.
+- Preuve : `verifie_constructeur`.
+- Réponse immédiate visée : une position IAC hors plage doit conduire à vérifier contexte/charge/admission et apprentissage ; ne pas conseiller de toucher la vis de butée.
+
+## RAVE-FAIL-009 — stockage de défauts intermittents
+- Famille : `Mini_RCL0193_MEMS`
+- L'ECM possède une protection contre les courts-circuits et peut mémoriser certains défauts intermittents d'entrées ; TestBook peut interroger ces défauts stockés.
+- Source : `RCL0193ENG`, page PDF 107.
+- Preuve : `verifie_constructeur`.
+- Impact IA : distinguer une erreur mémorisée d'un défaut nécessairement actif au moment de la lecture.
+
+## RAVE-DTC-STATUS-001 — codes numériques 01–24 de MEMS Manager
+- Les recherches dans `RCL0193ENG` et `RCL0213ENG` n'ont pas retrouvé de table littérale `fault code` / `diagnostic trouble code` reliant directement les numéros **01–24** affichés aujourd'hui par MEMS Manager aux libellés du logiciel.
+- Décision : **ne pas marquer ces numéros comme « vérifiés RAVE » à ce stade**.
+- Les fonctions des organes, leurs conséquences documentées et leurs circuits peuvent déjà être enrichis avec RAVE ; la correspondance numérique doit être recoupée séparément avec documentation TestBook/ROSCO/MEMS dédiée avant classement constructeur.
+
+---
+
+# IMPACT SUR LES QUESTIONS IA
+
+Ce premier ensemble permet déjà des réponses déterministes immédiates à des questions comme :
+
+- « Quel est le ralenti d'origine de ma SPi ? » → réponse variant selon génération/ECU, pas valeur universelle.
+- « Quelle pression d'essence sur SPi / MPi ? » → 1 bar SPi, 3 bar MPi avec tolérances et contexte source.
+- « À quoi sert le MAP ? » → charge moteur, injection + avance.
+- « Que fait le capteur ECT ? » → information température pour injection et compensation de gestion moteur.
+- « Que fait l'IAT ? » → estimation de l'oxygène avec MAP et correction injection.
+- « Quelle position IAC est normale ? » → 20–40 pas dans le contexte RCL0193 moteur en fonctionnement, avec mise en garde sur l'apprentissage.
+- « Est-ce normal que l'avance bouge au ralenti ? » → oui, l'ECM l'utilise avec IAC pour stabiliser le régime.
+- « Que fait le test pompe à essence ? » → permet de vérifier l'action de la pompe/relais/circuit ; absence de réaction doit lancer un contrôle structuré plutôt que condamner la pompe.
+- « Pourquoi la purge canister est fermée au ralenti ? » → protection du réglage moteur/catalyseur selon documentation.
+- « Ma purge bloquée ouverte peut faire quoi ? » → ralenti irrégulier et perturbation du mélange/catalyseur sont documentés comme conséquences possibles dans ce contexte.
+- « Mon CMP est en défaut, le moteur peut-il tourner ? » → réponse spécifique MPi/RCL0193 avec distinction panne avant/après démarrage.
+- « Une erreur capteur veut-elle dire que le moteur s'arrête ? » → non systématiquement ; RAVE documente une stratégie de secours pour certaines entrées, avec performances réduites.
+- « Pourquoi la pompe ne tourne plus après un choc ? » → contrôler le coupe-circuit à inertie et l'intégrité du circuit avant réarmement.
+- « À combien démarre le ventilateur MPi ? » → 105 °C / arrêt 98 °C pour MPi 97MY.
+
+# PROCHAINE PHASE DOCUMENTAIRE
+
+1. compléter les **connecteurs/pinouts** utiles à MAP, ECT, IAT, TP, IACV, HO2S, purge et pompe ;
+2. rechercher davantage de **stratégies de panne spécifiques** capteur par capteur sans déduire les valeurs de substitution ;
+3. rechercher les publications **TestBook / diagnostic MEMS** susceptibles de documenter les codes numériques de défaut ;
+4. recouper les DTC/erreurs déjà affichés dans MEMS Manager avec les sources Rover, ROSCO et protocoles déjà validés ;
+5. rechercher les valeurs constructeur manquantes pour actionneurs et réglages ;
+6. seulement après validation utilisateur : transformer ces faits en entrées structurées de la base experte et en routage de réponses immédiates.
+
+<!-- ARCHIVE_SOURCE_END name=AUDIT_RAVE_MINI_SPI_MPI.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=AUDIT_TESTBOOK_MEMS_CODES_PINOUTS.md size=12887 sha256=a9eb22692335b5c99f2d3a251fcaa4dc507cb4118a9eb37b18ae18d84d21c4b0 -->
+
+## ARCHIVE CONSOLIDEE - `AUDIT_TESTBOOK_MEMS_CODES_PINOUTS.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `a9eb22692335b5c99f2d3a251fcaa4dc507cb4118a9eb37b18ae18d84d21c4b0`.
+
+# AUDIT TESTBOOK / MEMS — CODES DÉFAUT, DIAGNOSTIC ET BROCHAGES
+
+> Branche : `RAPPORT`  
+> Statut : **audit documentaire uniquement — aucune modification runtime**  
+> Complément de `AUDIT_RAVE_MINI_SPI_MPI.md`.
+
+## Principe de preuve
+
+Les sources sont volontairement séparées en niveaux :
+
+- **constructeur Rover/TestBook** : documents Rover/MG/RAVE identifiables ;
+- **diagnostic professionnel secondaire** : documentation d'outils spécialisés (ex. Blackbox/Faultmate) ;
+- **reverse engineering protocole** : travaux MEMSFCR/RoverMEMS/ROSCO ;
+- **non confirmé** : information actuellement présente dans MEMS Manager mais non retrouvée dans les sources précédentes.
+
+Aucune correspondance ne doit être promue au niveau constructeur simplement parce qu'elle est cohérente avec le protocole.
+
+---
+
+# LOT T1 — TESTBOOK / IDENTIFICATION DES SYSTÈMES MINI
+
+## TB-SYS-001 — Diagnose-Handbuch Rover Deutschland
+
+- Document : **Diagnose-Handbuch, ROVER Deutschland GmbH, 3. Auflage Februar 1999**.
+- Le document contient une section Mini dédiée avec données systèmes, outils de diagnostic et connecteurs.
+- Il distingue explicitement plusieurs générations Mini à gestion Rover MEMS : **MEMS 1.3 (SPi)**, **MEMS 1.6 (SPi)** et, pour les Mini MPi tardives, **MEMS 2J (MPi)**.
+- Il décrit également le passage du connecteur diagnostic rond 3 broches près de l'ECU aux connecteurs de diagnostic plus récents, dont le connecteur 16 broches sur les modèles tardifs.
+- Niveau : `verifie_constructeur_copie_numerisee`.
+
+### Règle IA
+
+Ne pas répondre « Mini MPi = MEMS 1.9 » comme une vérité générale. La documentation Rover/TestBook consultée identifie la Mini MPi tardive comme **MEMS 2J**. Si une autre source classe une Mini/TBI sous MEMS 1.9, conserver le contexte de cette source et demander véhicule/ECU/VIN avant de conclure.
+
+## TB-SYS-002 — conflit de couverture Blackbox
+
+- La documentation professionnelle Blackbox SM002 classe **Rover Mini 94–97 SPI** sous MEMS 1.6 et mentionne aussi **Rover Mini 1.3 TBI 97>** dans la couverture MEMS 1.9.
+- Une autre liste Blackbox réserve explicitement le module **MEMS 2J (SM072)** à la **Mini 1300 MPi**.
+- Niveau : `diagnostic_professionnel_secondaire`.
+- Décision : ce n'est pas une raison pour fusionner MEMS 1.9 et MEMS 2J. Le type exact doit rester déterminé par l'ECU/variant identifié.
+
+---
+
+# LOT T2 — STRUCTURE DES CODES DÉFAUT DU PAQUET 0x80
+
+Sources : documentation protocole RoverMEMS/MEMSFCR/ROSCO. Niveau : `reverse_engineering_protocole`.
+
+## TB-DTC-001 — byte 0x0D du paquet 0x80
+
+Le byte `0x0D` est un bitfield de défauts. La numérotation naturelle des bits correspond aux positions **1 à 8** :
+
+- bit 0 → **Code 1 : température liquide** — explicitement confirmé Mini SPi ;
+- bit 1 → **Code 2 : température air admission** — explicitement confirmé Mini SPi ;
+- bit 2 → **Code 3 : non documenté** ;
+- bit 3 → position Code 4 : sur documentation protocole générique, `turbo overboosted` ;
+- bit 4 → position Code 5 : température ambiante ;
+- bit 5 → position Code 6 : température rail/carburant ;
+- bit 6 → position Code 7 : cliquetis ;
+- bit 7 → **Code 8 : non documenté**.
+
+### Prudence Mini SPi
+
+Les sources protocole précisent que, sur le Mini SPi étudié, seuls les défauts **1 et 2** étaient effectivement vérifiés/utilisés dans ce premier byte. Les libellés 4–7 sont donc des capacités MEMS plus générales et ne doivent pas être présentés comme des équipements nécessairement présents sur une Mini SPi.
+
+## TB-DTC-002 — byte 0x0E du paquet 0x80
+
+Le byte `0x0E` correspond aux positions **9 à 16** :
+
+- bit 0 → position Code 9 : circuit/jauge température, libellé encore incertain ;
+- bit 1 → **Code 10 : circuit pompe carburant** — explicitement confirmé Mini SPi ;
+- bit 2 → **Code 11 : non documenté** ;
+- bit 3 → position Code 12 : embrayage/relais climatisation ;
+- bit 4 → position Code 13 : purge canister ;
+- bit 5 → position Code 14 : MAP ;
+- bit 6 → position Code 15 : commande boost/wastegate ;
+- bit 7 → **Code 16 : circuit potentiomètre papillon** — explicitement confirmé Mini SPi.
+
+### Prudence Mini SPi
+
+Les travaux MEMSFCR/ROSCO indiquent que les quatre codes clairement observés/contrôlés sur Mini SPi sont **1, 2, 10 et 16**. Les autres positions existent dans le bitfield/gamme MEMS mais doivent rester liées à la configuration réellement supportée par l'ECU.
+
+---
+
+# LOT T3 — STRUCTURE DES CODES 17–24 DU PAQUET 0x7D
+
+Source : RoverMEMS technical / reverse engineering du paquet `0x7D`. Niveau : `reverse_engineering_protocole`.
+
+Le byte `0x05` du paquet `0x7D` est documenté comme byte DTC. Si on poursuit la numérotation des bits à partir de 17 :
+
+- bit 0 → **Code 17 : non documenté** ;
+- bit 1 → **Code 18 : non documenté** ;
+- bit 2 → **Code 19 : non documenté** ;
+- bit 3 → **Code 20 : chauffage lambda / relais** ;
+- bit 4 → **Code 21 : synchronisation vilebrequin** ;
+- bit 5 → **Code 22 : commande ventilateur 1** ;
+- bit 6 → **Code 23 : NON DOCUMENTÉ dans la source protocole consultée** ;
+- bit 7 → **Code 24 : commande ventilateur 2**.
+
+### Conclusion importante sur MEMS Manager
+
+Les libellés actuels **20, 21, 22 et 24** de MEMS Manager sont cohérents avec la structure `0x7D` retrouvée.
+
+En revanche, **`Code 23 = commande antidémarrage` n'est pas confirmé** par cette source : le bit 6 n'y possède pas de signification documentée. Les recherches dans MEMSFCR public n'ont pas retrouvé de `faultCode23`/immobiliser correspondant.
+
+Décision audit :
+- conserver le code actuel inchangé pendant l'audit ;
+- marquer **Code 23 / antidémarrage = `preuve_insuffisante`** ;
+- rechercher une source TestBook/MEMS/firmware supplémentaire avant toute correction du logiciel ou de la base.
+
+---
+
+# LOT T4 — NATURE DES DÉFAUTS MEMS SELON DOCUMENTATION PROFESSIONNELLE
+
+Source : Blackbox Solutions, module MEMS 1.6/1.9 SM002. Niveau : `diagnostic_professionnel_secondaire`.
+
+## TB-DIAG-001 — défaut mémorisé ≠ toujours défaut actif
+
+La mémoire défaut MEMS mélange :
+- des événements historiques qui restent mémorisés jusqu'à effacement ;
+- certains états internes dynamiques qui apparaissent lorsque l'entrée manque puis peuvent disparaître automatiquement lorsque le signal revient.
+
+Exemple documenté : un défaut lié au signal vilebrequin peut apparaître lorsque le moteur est arrêté parce que ce signal n'existe qu'en rotation.
+
+### Règle IA
+
+Quand l'utilisateur demande « j'ai cette erreur, qu'est-ce que ça veut dire ? », la réponse immédiate doit distinguer :
+1. défaut actuellement actif ;
+2. défaut mémorisé/intermittent ;
+3. état pouvant être normal dans les conditions de test (ex. moteur arrêté) ;
+4. fonction non montée/non supportée par la variante.
+
+## TB-DIAG-002 — fonctions optionnelles/non montées
+
+MEMS peut être configuré pour supporter des fonctions qui ne sont pas nécessairement montées sur le véhicule : sonde O2, purge, ventilateur, cliquetis, climatisation, CAM, groupes d'injecteurs, ventilateur compartiment, température carburant/ambiante, etc.
+
+Une erreur relative à une fonction absente ne doit donc pas être interprétée automatiquement comme une panne matérielle du véhicule sans vérifier la configuration ECU.
+
+---
+
+# LOT T5 — VALEURS DIAGNOSTIQUES PROFESSIONNELLES UTILES AUX RÉPONSES IMMÉDIATES
+
+Source : Blackbox SM002. Niveau : `diagnostic_professionnel_secondaire`, à recouper avec RAVE lorsque possible.
+
+## TB-VAL-001 — Hot idle / position IAC apprise
+- Valeur attendue indiquée : **10 à 50 pas**.
+- C'est une valeur **adaptative/apprise**.
+- Une valeur hors plage peut signaler défaut ou mauvais réglage.
+- Conflit/écart à conserver : RCL0193 donne une plage plus resserrée **20–40 pas** dans son contexte Mini.
+
+## TB-VAL-002 — coil charge / dwell
+- À environ **14 V**, la documentation diagnostique indique environ **2–3 ms**.
+- Une valeur élevée peut indiquer un problème dans le circuit primaire de bobine.
+- Cohérent avec la plage de contrôle projet ~1,9–3,1 ms ; conserver toutefois l'origine de chaque plage.
+
+## TB-VAL-003 — coolant open circuit
+- Un circuit ouvert du capteur température liquide peut conduire à une valeur de substitution affichée d'environ **60 °C**.
+- Symptômes associés indiqués : démarrage difficile, ralenti accéléré, consommation élevée, ventilateurs pouvant fonctionner en continu.
+
+## TB-VAL-004 — IAT
+- Un défaut IAT peut dégrader légèrement les performances et la correction à chaud ; une valeur fixe peut apparaître en circuit ouvert.
+- Ne pas inventer la valeur fixe sans source propre au variant.
+
+## TB-VAL-005 — idle speed error
+- Une erreur de ralenti supérieure à **100 tr/min** est présentée par cette source comme indice que l'ECU ne contrôle plus correctement le ralenti.
+- À conserver comme seuil diagnostic professionnel, pas comme valeur constructeur Rover universelle.
+
+---
+
+# LOT T6 — BROCHAGE MEMS 1.6 : PREMIER INVENTAIRE
+
+Source : Blackbox SM002, niveau `diagnostic_professionnel_secondaire`. Ce lot sert à préparer les contrôles « quoi mesurer et où », mais ne sera pas injecté comme brochage constructeur tant qu'il n'est pas recoupé avec schémas Rover.
+
+Broches explicitement listées dans la source consultée :
+
+- 1 : injecteur n°1 ;
+- 2 : IACV ;
+- 4 : masse ;
+- 5 : module coding plug, entrée ;
+- 6 : vitesse véhicule, entrée ;
+- 7 : capteur température liquide, entrée ;
+- 8 : pare-brise chauffant, entrée ;
+- 9 : ligne diagnostic ;
+- 10 : MIL, commande masse ;
+- 11 : injecteurs pairs 2/4/6/8, masse/commande ;
+- 12 : relais moteur, commande masse ;
+- 13 : injecteurs impairs 1/3/5/7, masse/commande ;
+- 14 : masse ;
+- 15 : tension batterie, entrée ;
+- 16 : relais pompe carburant, commande masse ;
+- 17 : vanne purge canister ;
+- 18 : diagnostic ;
+- 19 : contact d'allumage, entrée ;
+- 20 : capteur position papillon, entrée ;
+- 21 : pressostat climatisation, entrée ;
+- 22 : débitmètre MAF, entrée selon application ;
+- 23 : sonde oxygène gauche, entrée ;
+- 24 : sonde oxygène droite, entrée ;
+- 25 : température carburant, retour/masse selon source ;
+- 26/28/29 : voies IACV selon source ;
+- 27 : coding plug, masse sous contact.
+
+### Règle de sécurité
+
+Ce brochage est **générique MEMS 1.6 multi-application**. Il ne doit jamais être donné comme brochage exact d'une Mini sans recoupement par ECU/référence/variant et schéma Rover correspondant.
+
+---
+
+# LOT T7 — INFORMATIONS RAVE ÉLECTRIQUES DÉJÀ RECOUPÉES
+
+Source constructeur : `RCL0213ENG` / Mini Electrical Reference Library.
+
+- MAP : monté directement sur collecteur, information de charge utilisée pour carburant + avance ;
+- ECT : thermistance au circuit liquide, signal inverse de température ;
+- TP : potentiomètre 5 V, rôle ralenti/enrichissement/décélération ;
+- IAT : NTC, utilisée avec MAP pour correction densité d'air ;
+- IACV : quatre phases commandées par ECM, dérivation d'air autour du papillon ;
+- alimentation ECM/relais principal et alimentation des injecteurs, purge, stepper, bobine documentées par couleurs de fils dans RCL0213.
+
+Les schémas RCL0194 restent la source à privilégier pour transformer ces informations en **pinouts exacts Mini**, plutôt que de recopier un brochage MEMS 1.6 générique.
+
+---
+
+# CONSÉQUENCES POUR L'AUDIT DES QUESTIONS IA
+
+Les réponses immédiates doivent maintenant pouvoir distinguer plusieurs niveaux :
+
+- **« Que signifie Code 1/2/10/16 sur Mini SPi ? »** → correspondance protocole fortement établie ;
+- **« Que signifie Code 20/21/22/24 ? »** → correspondance `0x7D` documentée en reverse engineering, avec niveau de preuve affichable dans la base ;
+- **« Code 23 ? »** → ne pas affirmer antidémarrage comme vérité tant que la source manque ;
+- **« J'ai un défaut vilebrequin moteur arrêté »** → expliquer qu'un état dynamique sans signal peut être attendu selon outil/condition et demander si le défaut persiste pendant le lancement ;
+- **« J'ai une erreur d'un équipement absent »** → vérifier d'abord la configuration/support ECU ;
+- **« Quelle broche contrôler ? »** → ne fournir un numéro que si ECU/variant identifié et source correspondante disponible.
+
+# PROCHAINE RECHERCHE
+
+1. rechercher dans RCL0194/AKM7169 le **brochage Mini exact** pour CTS, IAT, TPS, MAP, lambda, IACV, pompe et purge ;
+2. rechercher une source supplémentaire pour **Code 23 / bit 6 du byte DTC 0x7D:0x05** ;
+3. recouper les codes 4–7 et 9,12–15 avec les variantes qui les supportent réellement ;
+4. rechercher les procédures de contrôle constructeur permettant d'alimenter `défaut → symptômes → contrôles` ;
+5. ne modifier ni base runtime ni code IA avant validation de l'audit.
+
+<!-- ARCHIVE_SOURCE_END name=AUDIT_TESTBOOK_MEMS_CODES_PINOUTS.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=ETAPE_ONNX_GENAI_BUILD30_2026-08-26.md size=2571 sha256=b108cd515650533fb4449eb2daa5f004230214ae6a48521402d81ee1735f52f8 -->
+
+## ARCHIVE CONSOLIDEE - `ETAPE_ONNX_GENAI_BUILD30_2026-08-26.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `b108cd515650533fb4449eb2daa5f004230214ae6a48521402d81ee1735f52f8`.
+
+# ÉTAPE BUILD #30 — REMPLACEMENT DU MOTEUR IA LOCAL
+
+Date : 2026-08-26
+
+Autorisation utilisateur : remplacer la voie llama.cpp qui tourne en boucle par une solution IA locale Windows x64 propre et testée sous Windows.
+
+## Constat avant étape
+
+- `MEMSX64` réel avant modification : `bdd7de2da64cb1308852e0900c3e20287cbf128b`.
+- GitHub Actions #73 : ROUGE.
+- `llama-server.exe --version` fonctionne, mais le chargement de Qwen replante avec `-1073740791 = 0xC0000409`.
+- Le retour à la reconstruction/staging llama.cpp de #73 est contraire à la voie propre précédemment retenue et est abandonné.
+- Les essais #68/#72 basés sur la distribution officielle llama.cpp étaient VERTS en CI mais échouaient sur le PC réel avec `QProcess 0 / FailedToStart`.
+
+## Décision autorisée
+
+Remplacer uniquement le backend génératif local par **ONNX Runtime GenAI**, sans modifier l'ExpertEngine, la base MEMS/RAVE, le protocole ECU, l'UI générale, le 32 bits ni le numéro BUILD.
+
+Architecture cible :
+
+`IaMemsService -> ExpertEngine + ExpertKnowledgeReader(read-only) -> LocalAiClient -> ONNX Runtime GenAI C/C++ in-process -> Qwen3 ONNX INT4 CPU`
+
+Conséquences recherchées :
+
+- suppression de `llama-server.exe` ;
+- suppression de `QProcess` pour l'IA ;
+- suppression du serveur HTTP local et du port associé ;
+- runtime CPU Windows x64 officiel et autonome ;
+- modèle Qwen3 ONNX CPU quantifié ;
+- génération dans un thread dédié afin de ne pas bloquer l'interface ;
+- conservation des réponses déterministes, du contexte MEMS et de la base experte RAVE.
+
+## Composants épinglés pour le premier test Windows
+
+- ONNX Runtime GenAI **0.14.0**, asset officiel `onnxruntime-genai-0.14.0-win-x64.zip`.
+- SHA-256 officiel : `8a303e52dc7be8fb2a5331929af451a25ac59774102d7fd09ef673adc85c5ebf`.
+- Modèle : Qwen3-0.6B ONNX GenAI INT4 CPU, révision immuable `e6bf97818c142808967a48cbab4f0aef18b64621`, dossier `cpu_and_mobile/cpu-int4-rtn-block-32-acc-level-4`.
+- Hashes critiques vérifiés avant packaging : `model.onnx`, `model.onnx.data`, `tokenizer.json`.
+
+## Critères GO
+
+Le workflow Windows doit obligatoirement vérifier : téléchargement/hash du runtime officiel, compilation MSVC x64, chargement réel du modèle ONNX, génération réelle d'au moins une réponse, validation du package autonome avec PATH Windows nettoyé, absence totale de `llama-server.exe`/GGML/GGUF, intégrité de la base experte r20 et smoke launch de MEMS Manager.
+
+Toujours **BUILD #30 / v1.0.30**. Aucun BUILD #31. Aucun changement protocole ECU. Aucun changement 32 bits.
+
+<!-- ARCHIVE_SOURCE_END name=ETAPE_ONNX_GENAI_BUILD30_2026-08-26.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=MEMS_MANAGER_FUTURE_FUNCTIONS.md size=4335 sha256=18e91d2c7fd47f2b31e378898f4c1217ceb986acbe9f55765fbded482979d1ca -->
+
+## ARCHIVE CONSOLIDEE - `MEMS_MANAGER_FUTURE_FUNCTIONS.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `18e91d2c7fd47f2b31e378898f4c1217ceb986acbe9f55765fbded482979d1ca`.
+
+# ECU MEMS Manager — fonctions futures issues des recherches
+
+Dernière consolidation : build #500 / v1.5.0
+
+Ce fichier conserve les pistes de fonctions trouvées pendant l'enrichissement MEMS 1.2 / 1.3 / 1.6 / 1.9. Il ne signifie pas que ces fonctions sont déjà actives.
+
+## Règles
+
+- Une fonction déjà présente dans ECU MEMS Manager reste attribuée en priorité à ECU MEMS Manager ; les projets externes ne servent que de recoupement.
+- Le décodage 7D octets 14–15 / uk10 et sa correction de ralenti chaud restent une découverte/définition ECU MEMS Manager.
+- Aucune commande potentiellement destructive n'est activée sur la seule base d'une source externe.
+- Les différences de transport restent séparées : ROSCO/UART 3 broches pour 1.2/1.3/1.6, K-Line pour 1.9.
+
+## Priorité haute
+
+### Lecture et sauvegarde ROM complète
+
+Andrew Revill documente la lecture/sauvegarde de ROM complète sur MEMS 1.2, 1.3, 1.6 et 1.9. `ECUManager::readROM()` existe actuellement mais n'est qu'un stub ; il s'agit donc d'une vraie fonction à implémenter.
+
+Ordre recommandé : lecture seule -> contrôle taille/checksum -> identification firmware/calibration -> sauvegarde. Aucun écriture stock avant validation indépendante de la procédure et des risques.
+
+### Identification firmware / calibration
+
+Exploiter D0/D1, les identifiants ASCII, les références ECU, les calibrations et la bibliothèque ROM pour reconnaître plus précisément le calculateur et le véhicule. Cette fonction viendra après constitution suffisante de la base.
+
+### Matrice de compatibilité des commandes
+
+Pour chaque commande, conserver : générations supportées, ECU/firmwares testés, réponse attendue, conditions, niveau de risque et source. Une commande ne devra être proposée que si son contexte est compatible.
+
+### Recherche tolérante aux fautes
+
+La recherche actuelle normalise déjà casse, accents et ponctuation, mais reste essentiellement basée sur les sous-chaînes. Ajouter un score de proximité/fuzzy pour éviter un résultat vide sur une faute simple d'orthographe.
+
+### Diagnostic assisté par la base
+
+Créer à terme un chemin : symptôme -> DTC -> paramètres à observer -> câblage/broches -> composants -> tests -> pannes connues -> causes plausibles, en affichant toujours le niveau de confiance et la source.
+
+## Priorité moyenne
+
+### Profils physiques de communication
+
+Séparer explicitement le noyau protocole commun et la couche physique : 1.2/1.3/1.6 en ROSCO/UART 5 V 3 broches ; 1.9 en K-Line avec réveil spécifique. Empêcher les choix de câble incompatibles.
+
+### Plages normales issues de traces réelles
+
+Exploiter des logs ECU réels pour construire des plages de référence par ECU, moteur, injection et conditions de fonctionnement. Ne jamais transformer une plage observée sur un véhicule en valeur universelle.
+
+### Navigateur firmware / calibration
+
+Afficher les correspondances véhicule, moteur, boîte, calibration, référence ECU, ROM connue et provenance. Permettre la recherche par référence, calibration ou identifiant D1.
+
+### Antidémarrage et réglages de service
+
+Les familles 1.2/1.3/1.6/1.9 sont documentées comme capables de fonctions d'appairage/statut antidémarrage, effacement adaptations et réglages de service. Avant activation, vérifier les commandes exactes et les conditions par génération/firmware.
+
+## Recherche avancée / désactivée tant que non maîtrisée
+
+### Modes diagnostic usine / lecture RAM-ROM
+
+Des sources publiques décrivent plusieurs modes diagnostic et commandes mémoire. Les conserver dans la base avec niveau de confiance, mais ne pas les activer avant compréhension complète des transitions de mode et des effets secondaires.
+
+### Comparaison librosco
+
+Comparer la `librosco.dll` de 63 161 octets trouvée dans `LeopoldG/mems-rosco` avec la DLL de 49 672 octets actuellement embarquée par ECU MEMS Manager. Examiner exports, fonctions réellement supplémentaires et compatibilité ABI avant toute substitution.
+
+### Écriture ROM / remapping
+
+MEMS 1.9 stock utilise une ROM OTP/interne : la lecture est possible, l'écriture stock n'est pas une opération normale. Toute fonction d'écriture/remapping doit rester hors interface standard tant que le matériel, le protocole et les sécurités ne sont pas parfaitement définis.
+
+<!-- ARCHIVE_SOURCE_END name=MEMS_MANAGER_FUTURE_FUNCTIONS.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=MEMS_RESEARCH_RULES.md size=3775 sha256=04a42823c73f931fd65750f364b29d490f3fc4fbae5ce9c7a16436d9b67e83a2 -->
+
+## ARCHIVE CONSOLIDEE - `MEMS_RESEARCH_RULES.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `04a42823c73f931fd65750f364b29d490f3fc4fbae5ce9c7a16436d9b67e83a2`.
+
+# Règles permanentes — recherche et enrichissement MEMS
+
+Ce fichier définit la méthode obligatoire pour toute recherche future destinée à enrichir la base de données d’ECU MEMS Manager.
+
+## Portée
+
+- Générations concernées : MEMS 1.2, 1.3, 1.6 et 1.9 uniquement.
+- Branche de travail : `ui-rebuild`.
+- La recherche documentaire ne doit pas modifier le comportement applicatif validé sans demande explicite.
+
+## Méthode obligatoire avant tout ajout
+
+Pour chaque information trouvée sur Internet, dans un logiciel tiers, dans un dépôt source, dans une documentation constructeur ou dans une capture de communication :
+
+1. Vérifier d’abord si l’information existe déjà dans le **code actuel d’ECU MEMS Manager**.
+2. Vérifier ensuite si elle existe déjà dans la **base de référence réellement reconstruite** à partir des `mems_reference_seed_*.qz64` et de tous les lots `research_enrichment*.qz64` du build courant.
+3. Comparer le **sens technique**, pas seulement le texte exact : une même commande, fonction, trame ou donnée peut déjà être présente sous un autre nom ou une autre traduction.
+4. Si l’information est déjà présente avec le même sens et le même niveau de précision : **ne rien ajouter**.
+5. Si la nouvelle source apporte une précision supplémentaire : enrichir ou compléter l’enregistrement existant au lieu de créer un doublon.
+6. Si une nouvelle source contredit une information existante : ne jamais écraser silencieusement l’ancienne. Enregistrer le désaccord comme **conflit à vérifier**, avec les deux sources.
+7. Si l’information est réellement nouvelle : l’ajouter avec sa source, la génération concernée, son contexte technique et son niveau de confiance.
+
+## Détection des doublons
+
+La comparaison doit au minimum prendre en compte :
+
+- génération MEMS ;
+- octet / commande hexadécimale ;
+- catégorie de commande ;
+- séquence d’initialisation ;
+- format et longueur de réponse ;
+- trame 0x7D / 0x80 et offsets ;
+- fonction / actionneur ;
+- paramètre ou réglage ;
+- DTC / défaut ;
+- broche / connecteur / couleur de fil ;
+- ECU / référence / véhicule / marché ;
+- source et observation matérielle.
+
+Deux lignes différentes en texte mais techniquement équivalentes ne doivent pas être comptées comme deux découvertes.
+
+## Niveaux de confiance et sources
+
+- Une donnée constructeur ou une donnée explicitement vérifiée par le projet doit rester distinguée d’une source externe.
+- Une observation réellement capturée doit être enregistrée comme observation, pas transformée automatiquement en règle universelle.
+- Une information non vérifiée sur toutes les variantes doit être marquée clairement comme telle.
+- Les contradictions doivent utiliser un statut de type `conflit_a_verifier` plutôt que choisir arbitrairement une version.
+- Ne jamais inventer une fonction, une commande, un brochage ou une couleur pour compléter une fiche.
+
+## Enrichissement de la base
+
+- Ne pas créer un nouveau lot pour chaque petite découverte.
+- Regrouper les vraies nouveautés dans un lot d’enrichissement cohérent.
+- Avant le push, reconstruire la base complète et vérifier les doublons une seconde fois.
+- Après ajout, contrôler l’intégrité SQLite, les compteurs attendus et le self-test de recherche.
+- Toute nouvelle information doit rester retrouvable par le moteur de recherche global avec son contexte réel.
+
+## Règle de non-régression
+
+**Recherche → comparaison avec MEMS Manager réel → suppression des doublons → ajout uniquement des informations nouvelles ou plus précises → source + niveau de confiance + conflit explicite si nécessaire.**
+
+Cette règle est obligatoire pour toutes les futures campagnes de recherche MEMS.
+
+<!-- ARCHIVE_SOURCE_END name=MEMS_RESEARCH_RULES.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RAPPORT_LIBROSCO_BINAIRE.md size=5455 sha256=f2b95d3dfc31c5065694e447ff89e9569aa7eb6551324b0c42e8140ae2b4ca68 -->
+
+## ARCHIVE CONSOLIDEE - `RAPPORT_LIBROSCO_BINAIRE.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `f2b95d3dfc31c5065694e447ff89e9569aa7eb6551324b0c42e8140ae2b4ca68`.
+
+# Audit binaire de `prebuilt-librosco/librosco.dll`
+
+> Généré automatiquement sur la branche `RAPPORT` afin de conserver un état lisible et transmissible entre discussions.
+
+## Identité du binaire
+
+- Taille : **49 672 octets**
+- SHA-256 : `a5ad466f8f1a198a6f8259a5ea5ab59775815c8cbc9637aa584db9e9c811d38f`
+- SHA-1 : `70b8bf3265510fe06cf9ac8921b3a07c344d9132`
+- MD5 : `b03655b490239a9d44c45babfa7de239`
+- Machine PE : **IMAGE_FILE_MACHINE_I386 (x86 / 32 bits)**
+- Optional Header : **PE32 (32 bits)**
+- ImageBase : `0x6EC80000`
+- EntryPoint RVA : `0x1410`
+- Horodatage COFF brut interprété UTC : `2018-04-07T08:26:27+00:00`
+- Flag DLL : **oui**
+- Section relocations présente : **oui**
+- Signature Authenticode embarquée : **non**
+
+## Correspondance API `rosco.h` / exports DLL
+
+- Fonctions `mems_*` déclarées dans le header : **35**
+- Noms exportés par la DLL : **22**
+- Noms communs header + DLL : **16**
+- Exports DLL absents du header : **6**
+- Déclarations du header absentes des exports : **19**
+
+### Exports présents dans la DLL mais absents de `rosco.h`
+
+- `mems_lock`
+- `mems_openserial`
+- `mems_read_serial`
+- `mems_send_command`
+- `mems_unlock`
+- `mems_write_serial`
+
+### Fonctions déclarées dans `rosco.h` mais non exportées
+
+- `mems_Boost_Valve_Off`
+- `mems_Boost_Valve_On`
+- `mems_Fan1_Off`
+- `mems_Fan1_On`
+- `mems_Fan2_Off`
+- `mems_Fan2_On`
+- `mems_O2Heater_Off`
+- `mems_O2Heater_On`
+- `mems_Purge_Valve_Off`
+- `mems_Purge_Valve_On`
+- `mems_fuel_trim_minus`
+- `mems_fuel_trim_plus`
+- `mems_idle_decay_minus`
+- `mems_idle_decay_plus`
+- `mems_idle_speed_minus`
+- `mems_idle_speed_plus`
+- `mems_ignition_advance_minus`
+- `mems_ignition_advance_plus`
+- `mems_interactive_mode`
+
+## Table exacte des exports
+
+| Ordinal | RVA | Nom | Forwarder |
+|---:|---:|---|---|
+| 1 | `0x000015BB` | `mems_cleanup` | `` |
+| 2 | `0x000021E4` | `mems_clear_faults` | `` |
+| 3 | `0x0000168E` | `mems_connect` | `` |
+| 4 | `0x00001629` | `mems_disconnect` | `` |
+| 5 | `0x00001601` | `mems_get_lib_version` | `` |
+| 6 | `0x00002358` | `mems_heartbeat` | `` |
+| 7 | `0x00001580` | `mems_init` | `` |
+| 8 | `0x00001A86` | `mems_init_link` | `` |
+| 9 | `0x00001864` | `mems_is_connected` | `` |
+| 10 | `0x00001BFA` | `mems_lock` | `` |
+| 11 | `0x000020BD` | `mems_move_iac` | `` |
+| 12 | `0x00001708` | `mems_openserial` | `` |
+| 13 | `0x00001D17` | `mems_read` | `` |
+| 14 | `0x00002049` | `mems_read_iac_position` | `` |
+| 15 | `0x00001C49` | `mems_read_raw` | `` |
+| 16 | `0x00001874` | `mems_read_serial` | `` |
+| 17 | `0x00002260` | `mems_reset_ECU` | `` |
+| 18 | `0x000022DC` | `mems_reset_adjustments` | `` |
+| 19 | `0x000019C6` | `mems_send_command` | `` |
+| 20 | `0x0000216A` | `mems_test_actuator` | `` |
+| 21 | `0x00001C2D` | `mems_unlock` | `` |
+| 22 | `0x00001949` | `mems_write_serial` | `` |
+
+## DLL importées et fonctions utilisées
+
+### `KERNEL32.dll` — 33 imports
+
+- `CloseHandle`
+- `CreateFileA`
+- `CreateMutexA`
+- `DeleteCriticalSection`
+- `EnterCriticalSection`
+- `FreeLibrary`
+- `GetCommState`
+- `GetCommTimeouts`
+- `GetCurrentProcess`
+- `GetCurrentProcessId`
+- `GetCurrentThreadId`
+- `GetLastError`
+- `GetModuleHandleA`
+- `GetProcAddress`
+- `GetSystemTimeAsFileTime`
+- `GetTickCount`
+- `InitializeCriticalSection`
+- `LeaveCriticalSection`
+- `LoadLibraryA`
+- `QueryPerformanceCounter`
+- `ReadFile`
+- `ReleaseMutex`
+- `SetCommState`
+- `SetCommTimeouts`
+- `SetUnhandledExceptionFilter`
+- `Sleep`
+- `TerminateProcess`
+- `TlsGetValue`
+- `UnhandledExceptionFilter`
+- `VirtualProtect`
+- `VirtualQuery`
+- `WaitForSingleObject`
+- `WriteFile`
+
+### `msvcrt.dll` — 18 imports
+
+- `__dllonexit`
+- `_amsg_exit`
+- `_initterm`
+- `_iob`
+- `_lock`
+- `_onexit`
+- `_unlock`
+- `abort`
+- `calloc`
+- `free`
+- `fwrite`
+- `malloc`
+- `memset`
+- `printf`
+- `puts`
+- `strlen`
+- `strncmp`
+- `vfprintf`
+
+## Sections PE
+
+| Section | RVA | VirtualSize | RawSize | Characteristics |
+|---|---:|---:|---:|---:|
+| `.text` | `0x00001000` | 8868 | 9216 | `0x60500060` |
+| `.data` | `0x00004000` | 32 | 512 | `0xC0300040` |
+| `.rdata` | `0x00005000` | 2252 | 2560 | `0x40300040` |
+| `/4` | `0x00006000` | 2796 | 3072 | `0x40300040` |
+| `.bss` | `0x00007000` | 1064 | 0 | `0xC0700080` |
+| `.edata` | `0x00008000` | 621 | 1024 | `0x40300040` |
+| `.idata` | `0x00009000` | 1524 | 1536 | `0xC0300040` |
+| `.CRT` | `0x0000A000` | 44 | 512 | `0xC0300040` |
+| `.tls` | `0x0000B000` | 32 | 512 | `0xC0300040` |
+| `.reloc` | `0x0000C000` | 612 | 1024 | `0x42300040` |
+| `/14` | `0x0000D000` | 56 | 512 | `0x42400040` |
+| `/29` | `0x0000E000` | 3559 | 3584 | `0x42100040` |
+| `/41` | `0x0000F000` | 137 | 512 | `0x42100040` |
+| `/55` | `0x00010000` | 297 | 512 | `0x42100040` |
+| `/67` | `0x00011000` | 56 | 512 | `0x42300040` |
+
+## Indices de chaîne de compilation
+
+- Sections de type `/NN` typiques d’un binaire GNU/MinGW avec chaînes/constantes fractionnées.
+- Import de `msvcrt.dll` sans VCRUNTIME/MSVCP : cohérent avec un build MinGW/GCC ancien ou statiquement lié côté libgcc.
+
+## Conclusion automatique
+
+- **La DLL analysée est bien une DLL Windows x86 32 bits (PE32).** Elle ne peut pas être chargée directement par un processus Windows x64 natif.
+- Le header et le binaire ne sont pas parfaitement alignés : les écarts listés ci-dessus doivent être traités avant migration x64.
+- Cet audit décrit le contrat binaire. La signification protocolaire des commandes reste à comparer aux sources Colin/Haro/Leopold avant de reconstruire la DLL x64.
+
+
+<!-- ARCHIVE_SOURCE_END name=RAPPORT_LIBROSCO_BINAIRE.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RAPPORT_LIBROSCO_DESASSEMBLAGE.md size=67344 sha256=9c3f510224ba5e5ec7da3dfd0e43700e3156ae6ed8fe93357b46bb72359845ac -->
+
+## ARCHIVE CONSOLIDEE - `RAPPORT_LIBROSCO_DESASSEMBLAGE.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `9c3f510224ba5e5ec7da3dfd0e43700e3156ae6ed8fe93357b46bb72359845ac`.
+
+# Désassemblage ciblé de la `librosco.dll` 32 bits
+
+> Rapport de vérification binaire. Il sert à contrôler ce que fait réellement la DLL, indépendamment des commentaires et des headers des différents forks.
+
+## Fonctions critiques
+
+### `mems_get_lib_version`
+
+```asm
+6EC81601: push     ebp
+6EC81602: mov      ebp, esp
+6EC81604: sub      esp, 0x10
+6EC81607: mov      byte ptr [ebp - 3], 0
+6EC8160B: mov      byte ptr [ebp - 2], 1
+6EC8160F: mov      byte ptr [ebp - 1], 0xc
+6EC81613: mov      eax, dword ptr [ebp + 8]
+6EC81616: movzx    edx, word ptr [ebp - 3]
+6EC8161A: mov      word ptr [eax], dx
+6EC8161D: movzx    edx, byte ptr [ebp - 1]
+6EC81621: mov      byte ptr [eax + 2], dl
+6EC81624: mov      eax, dword ptr [ebp + 8]
+6EC81627: leave    
+6EC81628: ret      
+```
+
+### `mems_init_link`
+
+```asm
+6EC81A86: push     ebp
+6EC81A87: mov      ebp, esp
+6EC81A89: sub      esp, 0x28
+6EC81A8C: mov      byte ptr [ebp - 9], 0xca
+6EC81A90: mov      byte ptr [ebp - 0xa], 0x75
+6EC81A94: mov      byte ptr [ebp - 0xb], 0xf4
+6EC81A98: mov      byte ptr [ebp - 0xc], 0xd0
+6EC81A9C: mov      byte ptr [ebp - 0xd], 0
+6EC81AA0: movzx    eax, byte ptr [ebp - 9]
+6EC81AA4: mov      dword ptr [esp + 4], eax
+6EC81AA8: mov      eax, dword ptr [ebp + 8]
+6EC81AAB: mov      dword ptr [esp], eax
+6EC81AAE: call     0x6ec819c6 ; -> mems_send_command
+6EC81AB3: xor      eax, 1
+6EC81AB6: test     al, al
+6EC81AB8: je       0x6ec81ad8
+6EC81ABA: movzx    eax, byte ptr [ebp - 9]
+6EC81ABE: mov      dword ptr [esp + 4], eax
+6EC81AC2: mov      dword ptr [esp], 0x6ec85158
+6EC81AC9: call     0x6ec83220
+6EC81ACE: mov      eax, 0
+6EC81AD3: jmp      0x6ec81bf8
+6EC81AD8: movzx    eax, byte ptr [ebp - 0xa]
+6EC81ADC: mov      dword ptr [esp + 4], eax
+6EC81AE0: mov      eax, dword ptr [ebp + 8]
+6EC81AE3: mov      dword ptr [esp], eax
+6EC81AE6: call     0x6ec819c6 ; -> mems_send_command
+6EC81AEB: xor      eax, 1
+6EC81AEE: test     al, al
+6EC81AF0: je       0x6ec81b10
+6EC81AF2: movzx    eax, byte ptr [ebp - 0xa]
+6EC81AF6: mov      dword ptr [esp + 4], eax
+6EC81AFA: mov      dword ptr [esp], 0x6ec85158
+6EC81B01: call     0x6ec83220
+6EC81B06: mov      eax, 0
+6EC81B0B: jmp      0x6ec81bf8
+6EC81B10: movzx    eax, byte ptr [ebp - 0xb]
+6EC81B14: mov      dword ptr [esp + 4], eax
+6EC81B18: mov      eax, dword ptr [ebp + 8]
+6EC81B1B: mov      dword ptr [esp], eax
+6EC81B1E: call     0x6ec819c6 ; -> mems_send_command
+6EC81B23: xor      eax, 1
+6EC81B26: test     al, al
+6EC81B28: je       0x6ec81b48
+6EC81B2A: movzx    eax, byte ptr [ebp - 0xb]
+6EC81B2E: mov      dword ptr [esp + 4], eax
+6EC81B32: mov      dword ptr [esp], 0x6ec85158
+6EC81B39: call     0x6ec83220
+6EC81B3E: mov      eax, 0
+6EC81B43: jmp      0x6ec81bf8
+6EC81B48: mov      dword ptr [esp + 8], 1
+6EC81B50: lea      eax, [ebp - 0xd]
+6EC81B53: mov      dword ptr [esp + 4], eax
+6EC81B57: mov      eax, dword ptr [ebp + 8]
+6EC81B5A: mov      dword ptr [esp], eax
+6EC81B5D: call     0x6ec81874 ; -> mems_read_serial
+6EC81B62: cmp      ax, 1
+6EC81B66: je       0x6ec81b83
+6EC81B68: movzx    eax, byte ptr [ebp - 0xb]
+6EC81B6C: mov      dword ptr [esp + 4], eax
+6EC81B70: mov      dword ptr [esp], 0x6ec8518c
+6EC81B77: call     0x6ec83220
+6EC81B7C: mov      eax, 0
+6EC81B81: jmp      0x6ec81bf8
+6EC81B83: movzx    eax, byte ptr [ebp - 0xc]
+6EC81B87: mov      dword ptr [esp + 4], eax
+6EC81B8B: mov      eax, dword ptr [ebp + 8]
+6EC81B8E: mov      dword ptr [esp], eax
+6EC81B91: call     0x6ec819c6 ; -> mems_send_command
+6EC81B96: xor      eax, 1
+6EC81B99: test     al, al
+6EC81B9B: je       0x6ec81bb8
+6EC81B9D: movzx    eax, byte ptr [ebp - 0xc]
+6EC81BA1: mov      dword ptr [esp + 4], eax
+6EC81BA5: mov      dword ptr [esp], 0x6ec85158
+6EC81BAC: call     0x6ec83220
+6EC81BB1: mov      eax, 0
+6EC81BB6: jmp      0x6ec81bf8
+6EC81BB8: mov      dword ptr [esp + 8], 4
+6EC81BC0: mov      eax, dword ptr [ebp + 0xc]
+6EC81BC3: mov      dword ptr [esp + 4], eax
+6EC81BC7: mov      eax, dword ptr [ebp + 8]
+6EC81BCA: mov      dword ptr [esp], eax
+6EC81BCD: call     0x6ec81874 ; -> mems_read_serial
+6EC81BD2: cmp      ax, 4
+6EC81BD6: je       0x6ec81bf3
+6EC81BD8: movzx    eax, byte ptr [ebp - 0xc]
+6EC81BDC: mov      dword ptr [esp + 4], eax
+6EC81BE0: mov      dword ptr [esp], 0x6ec851cc
+6EC81BE7: call     0x6ec83220
+6EC81BEC: mov      eax, 0
+6EC81BF1: jmp      0x6ec81bf8
+6EC81BF3: mov      eax, 1
+6EC81BF8: leave    
+6EC81BF9: ret      
+```
+
+### `mems_read_raw`
+
+```asm
+6EC81C49: push     ebp
+6EC81C4A: mov      ebp, esp
+6EC81C4C: sub      esp, 0x28
+6EC81C4F: mov      byte ptr [ebp - 9], 0
+6EC81C53: mov      eax, dword ptr [ebp + 8]
+6EC81C56: mov      dword ptr [esp], eax
+6EC81C59: call     0x6ec81bfa ; -> mems_lock
+6EC81C5E: test     al, al
+6EC81C60: je       0x6ec81d11
+6EC81C66: mov      dword ptr [esp + 4], 0x80
+6EC81C6E: mov      eax, dword ptr [ebp + 8]
+6EC81C71: mov      dword ptr [esp], eax
+6EC81C74: call     0x6ec819c6 ; -> mems_send_command
+6EC81C79: test     al, al
+6EC81C7B: je       0x6ec81cb1
+6EC81C7D: mov      dword ptr [esp + 8], 0x1c
+6EC81C85: mov      eax, dword ptr [ebp + 0xc]
+6EC81C88: mov      dword ptr [esp + 4], eax
+6EC81C8C: mov      eax, dword ptr [ebp + 8]
+6EC81C8F: mov      dword ptr [esp], eax
+6EC81C92: call     0x6ec81874 ; -> mems_read_serial
+6EC81C97: cmp      ax, 0x1c
+6EC81C9B: jne      0x6ec81ca3
+6EC81C9D: mov      byte ptr [ebp - 9], 1
+6EC81CA1: jmp      0x6ec81cbd
+6EC81CA3: mov      dword ptr [esp], 0x6ec8521c
+6EC81CAA: call     0x6ec83218
+6EC81CAF: jmp      0x6ec81cbd
+6EC81CB1: mov      dword ptr [esp], 0x6ec85260
+6EC81CB8: call     0x6ec83218
+6EC81CBD: cmp      byte ptr [ebp - 9], 0
+6EC81CC1: je       0x6ec81d06
+6EC81CC3: mov      dword ptr [esp + 4], 0x7d
+6EC81CCB: mov      eax, dword ptr [ebp + 8]
+6EC81CCE: mov      dword ptr [esp], eax
+6EC81CD1: call     0x6ec819c6 ; -> mems_send_command
+6EC81CD6: test     al, al
+6EC81CD8: je       0x6ec81cf6
+6EC81CDA: mov      dword ptr [esp + 8], 0x20
+6EC81CE2: mov      eax, dword ptr [ebp + 0x10]
+6EC81CE5: mov      dword ptr [esp + 4], eax
+6EC81CE9: mov      eax, dword ptr [ebp + 8]
+6EC81CEC: mov      dword ptr [esp], eax
+6EC81CEF: call     0x6ec81874 ; -> mems_read_serial
+6EC81CF4: jmp      0x6ec81d06
+6EC81CF6: mov      dword ptr [esp], 0x6ec85294
+6EC81CFD: call     0x6ec83218
+6EC81D02: mov      byte ptr [ebp - 9], 0
+6EC81D06: mov      eax, dword ptr [ebp + 8]
+6EC81D09: mov      dword ptr [esp], eax
+6EC81D0C: call     0x6ec81c2d ; -> mems_unlock
+6EC81D11: movzx    eax, byte ptr [ebp - 9]
+6EC81D15: leave    
+6EC81D16: ret      
+```
+
+### `mems_read`
+
+```asm
+6EC81D17: push     ebp
+6EC81D18: mov      ebp, esp
+6EC81D1A: sub      esp, 0x58
+6EC81D1D: mov      byte ptr [ebp - 9], 0
+6EC81D21: lea      eax, [ebp - 0x45]
+6EC81D24: mov      dword ptr [esp + 8], eax
+6EC81D28: lea      eax, [ebp - 0x25]
+6EC81D2B: mov      dword ptr [esp + 4], eax
+6EC81D2F: mov      eax, dword ptr [ebp + 8]
+6EC81D32: mov      dword ptr [esp], eax
+6EC81D35: call     0x6ec81c49 ; -> mems_read_raw
+6EC81D3A: test     al, al
+6EC81D3C: je       0x6ec82043
+6EC81D42: mov      dword ptr [esp + 8], 0x3c
+6EC81D4A: mov      dword ptr [esp + 4], 0
+6EC81D52: mov      eax, dword ptr [ebp + 0xc]
+6EC81D55: mov      dword ptr [esp], eax
+6EC81D58: call     0x6ec83228
+6EC81D5D: movzx    eax, byte ptr [ebp - 0x24]
+6EC81D61: movzx    eax, al
+6EC81D64: shl      eax, 8
+6EC81D67: mov      edx, eax
+6EC81D69: movzx    eax, byte ptr [ebp - 0x23]
+6EC81D6D: movzx    eax, al
+6EC81D70: or       eax, edx
+6EC81D72: mov      edx, eax
+6EC81D74: mov      eax, dword ptr [ebp + 0xc]
+6EC81D77: mov      word ptr [eax], dx
+6EC81D7A: movzx    edx, byte ptr [ebp - 0x22]
+6EC81D7E: mov      eax, dword ptr [ebp + 0xc]
+6EC81D81: mov      byte ptr [eax + 2], dl
+6EC81D84: movzx    edx, byte ptr [ebp - 0x21]
+6EC81D88: mov      eax, dword ptr [ebp + 0xc]
+6EC81D8B: mov      byte ptr [eax + 3], dl
+6EC81D8E: movzx    edx, byte ptr [ebp - 0x20]
+6EC81D92: mov      eax, dword ptr [ebp + 0xc]
+6EC81D95: mov      byte ptr [eax + 4], dl
+6EC81D98: movzx    edx, byte ptr [ebp - 0x1f]
+6EC81D9C: mov      eax, dword ptr [ebp + 0xc]
+6EC81D9F: mov      byte ptr [eax + 5], dl
+6EC81DA2: movzx    edx, byte ptr [ebp - 0x1e]
+6EC81DA6: mov      eax, dword ptr [ebp + 0xc]
+6EC81DA9: mov      byte ptr [eax + 6], dl
+6EC81DAC: movzx    edx, byte ptr [ebp - 0x1d]
+6EC81DB0: mov      eax, dword ptr [ebp + 0xc]
+6EC81DB3: mov      byte ptr [eax + 7], dl
+6EC81DB6: movzx    edx, byte ptr [ebp - 0x1c]
+6EC81DBA: mov      eax, dword ptr [ebp + 0xc]
+6EC81DBD: mov      byte ptr [eax + 8], dl
+6EC81DC0: movzx    edx, byte ptr [ebp - 0x1b]
+6EC81DC4: mov      eax, dword ptr [ebp + 0xc]
+6EC81DC7: mov      byte ptr [eax + 9], dl
+6EC81DCA: movzx    edx, byte ptr [ebp - 0x1a]
+6EC81DCE: mov      eax, dword ptr [ebp + 0xc]
+6EC81DD1: mov      byte ptr [eax + 0xa], dl
+6EC81DD4: movzx    edx, byte ptr [ebp - 0x19]
+6EC81DD8: mov      eax, dword ptr [ebp + 0xc]
+6EC81DDB: mov      byte ptr [eax + 0xb], dl
+6EC81DDE: mov      eax, dword ptr [ebp + 0xc]
+6EC81DE1: mov      byte ptr [eax + 0xc], 0
+6EC81DE5: movzx    edx, byte ptr [ebp - 0x16]
+6EC81DE9: mov      eax, dword ptr [ebp + 0xc]
+6EC81DEC: mov      byte ptr [eax + 0xd], dl
+6EC81DEF: movzx    edx, byte ptr [ebp - 0x15]
+6EC81DF3: mov      eax, dword ptr [ebp + 0xc]
+6EC81DF6: mov      byte ptr [eax + 0xe], dl
+6EC81DF9: movzx    edx, byte ptr [ebp - 0x14]
+6EC81DFD: mov      eax, dword ptr [ebp + 0xc]
+6EC81E00: mov      byte ptr [eax + 0xf], dl
+6EC81E03: movzx    edx, byte ptr [ebp - 0x13]
+6EC81E07: mov      eax, dword ptr [ebp + 0xc]
+6EC81E0A: mov      byte ptr [eax + 0x10], dl
+6EC81E0D: movzx    eax, byte ptr [ebp - 0x12]
+6EC81E11: movzx    eax, al
+6EC81E14: shl      eax, 8
+6EC81E17: mov      edx, eax
+6EC81E19: movzx    eax, byte ptr [ebp - 0x11]
+6EC81E1D: movzx    eax, al
+6EC81E20: or       eax, edx
+6EC81E22: mov      edx, eax
+6EC81E24: mov      eax, dword ptr [ebp + 0xc]
+6EC81E27: mov      word ptr [eax + 0x12], dx
+6EC81E2B: movzx    edx, byte ptr [ebp - 0x10]
+6EC81E2F: mov      eax, dword ptr [ebp + 0xc]
+6EC81E32: mov      byte ptr [eax + 0x14], dl
+6EC81E35: movzx    edx, byte ptr [ebp - 0xf]
+6EC81E39: mov      eax, dword ptr [ebp + 0xc]
+6EC81E3C: mov      byte ptr [eax + 0x15], dl
+6EC81E3F: movzx    eax, byte ptr [ebp - 0xe]
+6EC81E43: movzx    eax, al
+6EC81E46: shl      eax, 8
+6EC81E49: mov      edx, eax
+6EC81E4B: movzx    eax, byte ptr [ebp - 0xd]
+6EC81E4F: movzx    eax, al
+6EC81E52: or       eax, edx
+6EC81E54: mov      edx, eax
+6EC81E56: mov      eax, dword ptr [ebp + 0xc]
+6EC81E59: mov      word ptr [eax + 0x16], dx
+6EC81E5D: movzx    edx, byte ptr [ebp - 0xc]
+6EC81E61: mov      eax, dword ptr [ebp + 0xc]
+6EC81E64: mov      byte ptr [eax + 0x18], dl
+6EC81E67: movzx    edx, byte ptr [ebp - 0xb]
+6EC81E6B: mov      eax, dword ptr [ebp + 0xc]
+6EC81E6E: mov      byte ptr [eax + 0x19], dl
+6EC81E71: movzx    edx, byte ptr [ebp - 0xa]
+6EC81E75: mov      eax, dword ptr [ebp + 0xc]
+6EC81E78: mov      byte ptr [eax + 0x1a], dl
+6EC81E7B: movzx    edx, byte ptr [ebp - 0x44]
+6EC81E7F: mov      eax, dword ptr [ebp + 0xc]
+6EC81E82: mov      byte ptr [eax + 0x1b], dl
+6EC81E85: movzx    edx, byte ptr [ebp - 0x43]
+6EC81E89: mov      eax, dword ptr [ebp + 0xc]
+6EC81E8C: mov      byte ptr [eax + 0x1c], dl
+6EC81E8F: movzx    edx, byte ptr [ebp - 0x42]
+6EC81E93: mov      eax, dword ptr [ebp + 0xc]
+6EC81E96: mov      byte ptr [eax + 0x1d], dl
+6EC81E99: movzx    edx, byte ptr [ebp - 0x41]
+6EC81E9D: mov      eax, dword ptr [ebp + 0xc]
+6EC81EA0: mov      byte ptr [eax + 0x1e], dl
+6EC81EA3: movzx    edx, byte ptr [ebp - 0x40]
+6EC81EA7: mov      eax, dword ptr [ebp + 0xc]
+6EC81EAA: mov      byte ptr [eax + 0x1f], dl
+6EC81EAD: movzx    edx, byte ptr [ebp - 0x3f]
+6EC81EB1: mov      eax, dword ptr [ebp + 0xc]
+6EC81EB4: mov      byte ptr [eax + 0x20], dl
+6EC81EB7: movzx    edx, byte ptr [ebp - 0x3e]
+6EC81EBB: mov      eax, dword ptr [ebp + 0xc]
+6EC81EBE: mov      byte ptr [eax + 0x21], dl
+6EC81EC1: movzx    edx, byte ptr [ebp - 0x3d]
+6EC81EC5: mov      eax, dword ptr [ebp + 0xc]
+6EC81EC8: mov      byte ptr [eax + 0x22], dl
+6EC81ECB: movzx    edx, byte ptr [ebp - 0x3c]
+6EC81ECF: mov      eax, dword ptr [ebp + 0xc]
+6EC81ED2: mov      byte ptr [eax + 0x23], dl
+6EC81ED5: movzx    edx, byte ptr [ebp - 0x3b]
+6EC81ED9: mov      eax, dword ptr [ebp + 0xc]
+6EC81EDC: mov      byte ptr [eax + 0x24], dl
+6EC81EDF: movzx    edx, byte ptr [ebp - 0x3a]
+6EC81EE3: mov      eax, dword ptr [ebp + 0xc]
+6EC81EE6: mov      byte ptr [eax + 0x25], dl
+6EC81EE9: movzx    edx, byte ptr [ebp - 0x39]
+6EC81EED: mov      eax, dword ptr [ebp + 0xc]
+6EC81EF0: mov      byte ptr [eax + 0x26], dl
+6EC81EF3: movzx    edx, byte ptr [ebp - 0x38]
+6EC81EF7: mov      eax, dword ptr [ebp + 0xc]
+6EC81EFA: mov      byte ptr [eax + 0x27], dl
+6EC81EFD: movzx    edx, byte ptr [ebp - 0x37]
+6EC81F01: mov      eax, dword ptr [ebp + 0xc]
+6EC81F04: mov      byte ptr [eax + 0x28], dl
+6EC81F07: movzx    edx, byte ptr [ebp - 0x36]
+6EC81F0B: mov      eax, dword ptr [ebp + 0xc]
+6EC81F0E: mov      byte ptr [eax + 0x29], dl
+6EC81F11: movzx    edx, byte ptr [ebp - 0x35]
+6EC81F15: mov      eax, dword ptr [ebp + 0xc]
+6EC81F18: mov      byte ptr [eax + 0x2a], dl
+6EC81F1B: movzx    edx, byte ptr [ebp - 0x34]
+6EC81F1F: mov      eax, dword ptr [ebp + 0xc]
+6EC81F22: mov      byte ptr [eax + 0x2b], dl
+6EC81F25: movzx    edx, byte ptr [ebp - 0x33]
+6EC81F29: mov      eax, dword ptr [ebp + 0xc]
+6EC81F2C: mov      byte ptr [eax + 0x2c], dl
+6EC81F2F: movzx    edx, byte ptr [ebp - 0x32]
+6EC81F33: mov      eax, dword ptr [ebp + 0xc]
+6EC81F36: mov      byte ptr [eax + 0x2d], dl
+6EC81F39: movzx    edx, byte ptr [ebp - 0x31]
+6EC81F3D: mov      eax, dword ptr [ebp + 0xc]
+6EC81F40: mov      byte ptr [eax + 0x2e], dl
+6EC81F43: movzx    edx, byte ptr [ebp - 0x30]
+6EC81F47: mov      eax, dword ptr [ebp + 0xc]
+6EC81F4A: mov      byte ptr [eax + 0x2f], dl
+6EC81F4D: movzx    edx, byte ptr [ebp - 0x2f]
+6EC81F51: mov      eax, dword ptr [ebp + 0xc]
+6EC81F54: mov      byte ptr [eax + 0x30], dl
+6EC81F57: movzx    edx, byte ptr [ebp - 0x2e]
+6EC81F5B: mov      eax, dword ptr [ebp + 0xc]
+6EC81F5E: mov      byte ptr [eax + 0x31], dl
+6EC81F61: movzx    edx, byte ptr [ebp - 0x2d]
+6EC81F65: mov      eax, dword ptr [ebp + 0xc]
+6EC81F68: mov      byte ptr [eax + 0x32], dl
+6EC81F6B: movzx    edx, byte ptr [ebp - 0x2c]
+6EC81F6F: mov      eax, dword ptr [ebp + 0xc]
+6EC81F72: mov      byte ptr [eax + 0x33], dl
+6EC81F75: movzx    edx, byte ptr [ebp - 0x2b]
+6EC81F79: mov      eax, dword ptr [ebp + 0xc]
+6EC81F7C: mov      byte ptr [eax + 0x34], dl
+6EC81F7F: movzx    edx, byte ptr [ebp - 0x2a]
+6EC81F83: mov      eax, dword ptr [ebp + 0xc]
+6EC81F86: mov      byte ptr [eax + 0x35], dl
+6EC81F89: movzx    edx, byte ptr [ebp - 0x29]
+6EC81F8D: mov      eax, dword ptr [ebp + 0xc]
+6EC81F90: mov      byte ptr [eax + 0x36], dl
+6EC81F93: movzx    edx, byte ptr [ebp - 0x28]
+6EC81F97: mov      eax, dword ptr [ebp + 0xc]
+6EC81F9A: mov      byte ptr [eax + 0x37], dl
+6EC81F9D: movzx    edx, byte ptr [ebp - 0x27]
+6EC81FA1: mov      eax, dword ptr [ebp + 0xc]
+6EC81FA4: mov      byte ptr [eax + 0x38], dl
+6EC81FA7: movzx    edx, byte ptr [ebp - 0x26]
+6EC81FAB: mov      eax, dword ptr [ebp + 0xc]
+6EC81FAE: mov      byte ptr [eax + 0x39], dl
+6EC81FB1: movzx    edx, byte ptr [ebp - 0x18]
+6EC81FB5: mov      eax, dword ptr [ebp + 0xc]
+6EC81FB8: mov      byte ptr [eax + 0x3a], dl
+6EC81FBB: movzx    edx, byte ptr [ebp - 0x17]
+6EC81FBF: mov      eax, dword ptr [ebp + 0xc]
+6EC81FC2: mov      byte ptr [eax + 0x3b], dl
+6EC81FC5: movzx    eax, byte ptr [ebp - 0x18]
+6EC81FC9: movzx    eax, al
+6EC81FCC: and      eax, 1
+6EC81FCF: test     eax, eax
+6EC81FD1: je       0x6ec81fe5
+6EC81FD3: mov      eax, dword ptr [ebp + 0xc]
+6EC81FD6: movzx    eax, byte ptr [eax + 0xc]
+6EC81FDA: or       eax, 1
+6EC81FDD: mov      edx, eax
+6EC81FDF: mov      eax, dword ptr [ebp + 0xc]
+6EC81FE2: mov      byte ptr [eax + 0xc], dl
+6EC81FE5: movzx    eax, byte ptr [ebp - 0x18]
+6EC81FE9: movzx    eax, al
+6EC81FEC: and      eax, 2
+6EC81FEF: test     eax, eax
+6EC81FF1: je       0x6ec82005
+6EC81FF3: mov      eax, dword ptr [ebp + 0xc]
+6EC81FF6: movzx    eax, byte ptr [eax + 0xc]
+6EC81FFA: or       eax, 2
+6EC81FFD: mov      edx, eax
+6EC81FFF: mov      eax, dword ptr [ebp + 0xc]
+6EC82002: mov      byte ptr [eax + 0xc], dl
+6EC82005: movzx    eax, byte ptr [ebp - 0x17]
+6EC82009: movzx    eax, al
+6EC8200C: and      eax, 2
+6EC8200F: test     eax, eax
+6EC82011: je       0x6ec82025
+6EC82013: mov      eax, dword ptr [ebp + 0xc]
+6EC82016: movzx    eax, byte ptr [eax + 0xc]
+6EC8201A: or       eax, 4
+6EC8201D: mov      edx, eax
+6EC8201F: mov      eax, dword ptr [ebp + 0xc]
+6EC82022: mov      byte ptr [eax + 0xc], dl
+6EC82025: movzx    eax, byte ptr [ebp - 0x17]
+6EC82029: test     al, al
+6EC8202B: jns      0x6ec8203f
+6EC8202D: mov      eax, dword ptr [ebp + 0xc]
+6EC82030: movzx    eax, byte ptr [eax + 0xc]
+6EC82034: or       eax, 8
+6EC82037: mov      edx, eax
+6EC82039: mov      eax, dword ptr [ebp + 0xc]
+6EC8203C: mov      byte ptr [eax + 0xc], dl
+6EC8203F: mov      byte ptr [ebp - 9], 1
+6EC82043: movzx    eax, byte ptr [ebp - 9]
+6EC82047: leave    
+6EC82048: ret      
+```
+
+### `mems_reset_ECU`
+
+```asm
+6EC82260: push     ebp
+6EC82261: mov      ebp, esp
+6EC82263: sub      esp, 0x28
+6EC82266: mov      byte ptr [ebp - 9], 0
+6EC8226A: mov      byte ptr [ebp - 0xa], 0xff
+6EC8226E: mov      eax, dword ptr [ebp + 8]
+6EC82271: mov      dword ptr [esp], eax
+6EC82274: call     0x6ec81bfa ; -> mems_lock
+6EC82279: test     al, al
+6EC8227B: je       0x6ec822d6
+6EC8227D: mov      dword ptr [esp + 4], 0xfa
+6EC82285: mov      eax, dword ptr [ebp + 8]
+6EC82288: mov      dword ptr [esp], eax
+6EC8228B: call     0x6ec819c6 ; -> mems_send_command
+6EC82290: test     al, al
+6EC82292: je       0x6ec822bb
+6EC82294: mov      dword ptr [esp + 8], 1
+6EC8229C: lea      eax, [ebp - 0xa]
+6EC8229F: mov      dword ptr [esp + 4], eax
+6EC822A3: mov      eax, dword ptr [ebp + 8]
+6EC822A6: mov      dword ptr [esp], eax
+6EC822A9: call     0x6ec81874 ; -> mems_read_serial
+6EC822AE: cmp      ax, 1
+6EC822B2: jne      0x6ec822bb
+6EC822B4: mov      eax, 1
+6EC822B9: jmp      0x6ec822c0
+6EC822BB: mov      eax, 0
+6EC822C0: mov      byte ptr [ebp - 9], al
+6EC822C3: and      byte ptr [ebp - 9], 1
+6EC822C7: mov      byte ptr [ebp - 9], 1
+6EC822CB: mov      eax, dword ptr [ebp + 8]
+6EC822CE: mov      dword ptr [esp], eax
+6EC822D1: call     0x6ec81c2d ; -> mems_unlock
+6EC822D6: movzx    eax, byte ptr [ebp - 9]
+6EC822DA: leave    
+6EC822DB: ret      
+```
+
+### `mems_reset_adjustments`
+
+```asm
+6EC822DC: push     ebp
+6EC822DD: mov      ebp, esp
+6EC822DF: sub      esp, 0x28
+6EC822E2: mov      byte ptr [ebp - 9], 0
+6EC822E6: mov      byte ptr [ebp - 0xa], 0xff
+6EC822EA: mov      eax, dword ptr [ebp + 8]
+6EC822ED: mov      dword ptr [esp], eax
+6EC822F0: call     0x6ec81bfa ; -> mems_lock
+6EC822F5: test     al, al
+6EC822F7: je       0x6ec82352
+6EC822F9: mov      dword ptr [esp + 4], 0xf
+6EC82301: mov      eax, dword ptr [ebp + 8]
+6EC82304: mov      dword ptr [esp], eax
+6EC82307: call     0x6ec819c6 ; -> mems_send_command
+6EC8230C: test     al, al
+6EC8230E: je       0x6ec82337
+6EC82310: mov      dword ptr [esp + 8], 1
+6EC82318: lea      eax, [ebp - 0xa]
+6EC8231B: mov      dword ptr [esp + 4], eax
+6EC8231F: mov      eax, dword ptr [ebp + 8]
+6EC82322: mov      dword ptr [esp], eax
+6EC82325: call     0x6ec81874 ; -> mems_read_serial
+6EC8232A: cmp      ax, 1
+6EC8232E: jne      0x6ec82337
+6EC82330: mov      eax, 1
+6EC82335: jmp      0x6ec8233c
+6EC82337: mov      eax, 0
+6EC8233C: mov      byte ptr [ebp - 9], al
+6EC8233F: and      byte ptr [ebp - 9], 1
+6EC82343: mov      byte ptr [ebp - 9], 1
+6EC82347: mov      eax, dword ptr [ebp + 8]
+6EC8234A: mov      dword ptr [esp], eax
+6EC8234D: call     0x6ec81c2d ; -> mems_unlock
+6EC82352: movzx    eax, byte ptr [ebp - 9]
+6EC82356: leave    
+6EC82357: ret      
+```
+
+### `mems_clear_faults`
+
+```asm
+6EC821E4: push     ebp
+6EC821E5: mov      ebp, esp
+6EC821E7: sub      esp, 0x28
+6EC821EA: mov      byte ptr [ebp - 9], 0
+6EC821EE: mov      byte ptr [ebp - 0xa], 0xff
+6EC821F2: mov      eax, dword ptr [ebp + 8]
+6EC821F5: mov      dword ptr [esp], eax
+6EC821F8: call     0x6ec81bfa ; -> mems_lock
+6EC821FD: test     al, al
+6EC821FF: je       0x6ec8225a
+6EC82201: mov      dword ptr [esp + 4], 0xcc
+6EC82209: mov      eax, dword ptr [ebp + 8]
+6EC8220C: mov      dword ptr [esp], eax
+6EC8220F: call     0x6ec819c6 ; -> mems_send_command
+6EC82214: test     al, al
+6EC82216: je       0x6ec8223f
+6EC82218: mov      dword ptr [esp + 8], 1
+6EC82220: lea      eax, [ebp - 0xa]
+6EC82223: mov      dword ptr [esp + 4], eax
+6EC82227: mov      eax, dword ptr [ebp + 8]
+6EC8222A: mov      dword ptr [esp], eax
+6EC8222D: call     0x6ec81874 ; -> mems_read_serial
+6EC82232: cmp      ax, 1
+6EC82236: jne      0x6ec8223f
+6EC82238: mov      eax, 1
+6EC8223D: jmp      0x6ec82244
+6EC8223F: mov      eax, 0
+6EC82244: mov      byte ptr [ebp - 9], al
+6EC82247: and      byte ptr [ebp - 9], 1
+6EC8224B: mov      byte ptr [ebp - 9], 1
+6EC8224F: mov      eax, dword ptr [ebp + 8]
+6EC82252: mov      dword ptr [esp], eax
+6EC82255: call     0x6ec81c2d ; -> mems_unlock
+6EC8225A: movzx    eax, byte ptr [ebp - 9]
+6EC8225E: leave    
+6EC8225F: ret      
+```
+
+### `mems_heartbeat`
+
+```asm
+6EC82358: push     ebp
+6EC82359: mov      ebp, esp
+6EC8235B: sub      esp, 0x28
+6EC8235E: mov      byte ptr [ebp - 9], 0
+6EC82362: mov      byte ptr [ebp - 0xa], 0xff
+6EC82366: mov      eax, dword ptr [ebp + 8]
+6EC82369: mov      dword ptr [esp], eax
+6EC8236C: call     0x6ec81bfa ; -> mems_lock
+6EC82371: test     al, al
+6EC82373: je       0x6ec823bb
+6EC82375: mov      dword ptr [esp + 4], 0xf4
+6EC8237D: mov      eax, dword ptr [ebp + 8]
+6EC82380: mov      dword ptr [esp], eax
+6EC82383: call     0x6ec819c6 ; -> mems_send_command
+6EC82388: test     al, al
+6EC8238A: je       0x6ec823b0
+6EC8238C: mov      dword ptr [esp + 8], 1
+6EC82394: lea      eax, [ebp - 0xa]
+6EC82397: mov      dword ptr [esp + 4], eax
+6EC8239B: mov      eax, dword ptr [ebp + 8]
+6EC8239E: mov      dword ptr [esp], eax
+6EC823A1: call     0x6ec81874 ; -> mems_read_serial
+6EC823A6: cmp      ax, 1
+6EC823AA: jne      0x6ec823b0
+6EC823AC: mov      byte ptr [ebp - 9], 1
+6EC823B0: mov      eax, dword ptr [ebp + 8]
+6EC823B3: mov      dword ptr [esp], eax
+6EC823B6: call     0x6ec81c2d ; -> mems_unlock
+6EC823BB: movzx    eax, byte ptr [ebp - 9]
+6EC823BF: leave    
+6EC823C0: ret      
+```
+
+### `mems_test_actuator`
+
+```asm
+6EC8216A: push     ebp
+6EC8216B: mov      ebp, esp
+6EC8216D: sub      esp, 0x28
+6EC82170: mov      byte ptr [ebp - 9], 0
+6EC82174: mov      byte ptr [ebp - 0xa], 0
+6EC82178: mov      eax, dword ptr [ebp + 8]
+6EC8217B: mov      dword ptr [esp], eax
+6EC8217E: call     0x6ec81bfa ; -> mems_lock
+6EC82183: test     al, al
+6EC82185: je       0x6ec821de
+6EC82187: mov      eax, dword ptr [ebp + 0xc]
+6EC8218A: movzx    eax, al
+6EC8218D: mov      dword ptr [esp + 4], eax
+6EC82191: mov      eax, dword ptr [ebp + 8]
+6EC82194: mov      dword ptr [esp], eax
+6EC82197: call     0x6ec819c6 ; -> mems_send_command
+6EC8219C: test     al, al
+6EC8219E: je       0x6ec821d3
+6EC821A0: mov      dword ptr [esp + 8], 1
+6EC821A8: lea      eax, [ebp - 0xa]
+6EC821AB: mov      dword ptr [esp + 4], eax
+6EC821AF: mov      eax, dword ptr [ebp + 8]
+6EC821B2: mov      dword ptr [esp], eax
+6EC821B5: call     0x6ec81874 ; -> mems_read_serial
+6EC821BA: cmp      ax, 1
+6EC821BE: jne      0x6ec821d3
+6EC821C0: cmp      dword ptr [ebp + 0x10], 0
+6EC821C4: je       0x6ec821cf
+6EC821C6: movzx    edx, byte ptr [ebp - 0xa]
+6EC821CA: mov      eax, dword ptr [ebp + 0x10]
+6EC821CD: mov      byte ptr [eax], dl
+6EC821CF: mov      byte ptr [ebp - 9], 1
+6EC821D3: mov      eax, dword ptr [ebp + 8]
+6EC821D6: mov      dword ptr [esp], eax
+6EC821D9: call     0x6ec81c2d ; -> mems_unlock
+6EC821DE: movzx    eax, byte ptr [ebp - 9]
+6EC821E2: leave    
+6EC821E3: ret      
+```
+
+## Constantes immédiatement préparées avant `mems_send_command`
+
+| Fonction | Valeurs immédiates 8-bit/32-bit observées dans les ~12 instructions avant un appel direct à `mems_send_command` |
+|---|---|
+| `mems_get_lib_version` | — |
+| `mems_init_link` | 0x28, 0xCA, 0x75, 0xF4, 0xD0, 0x00, 0x01 |
+| `mems_read_raw` | 0x28, 0x00, 0x80, 0x01, 0x7D |
+| `mems_read` | — |
+| `mems_reset_ECU` | 0x28, 0x00, 0xFF, 0xFA |
+| `mems_reset_adjustments` | 0x28, 0x00, 0xFF, 0x0F |
+| `mems_clear_faults` | 0x28, 0x00, 0xFF, 0xCC |
+| `mems_heartbeat` | 0x28, 0x00, 0xFF, 0xF4 |
+| `mems_test_actuator` | 0x00 |
+
+**Attention :** cette colonne est une aide de lecture du désassemblage, pas une preuve sémantique à elle seule. La preuve est la séquence assembleur affichée au-dessus et doit être rapprochée de la source C.
+
+## Désassemblage de tous les exports
+
+### Ordinal 7 — `mems_init` — RVA `0x00001580`
+
+```asm
+6EC81580: push     ebp
+6EC81581: mov      ebp, esp
+6EC81583: sub      esp, 0x18
+6EC81586: mov      eax, dword ptr [ebp + 8]
+6EC81589: mov      dword ptr [eax], 0xffffffff
+6EC8158F: mov      dword ptr [esp + 8], 0
+6EC81597: mov      dword ptr [esp + 4], 1
+6EC8159F: mov      dword ptr [esp], 0
+6EC815A6: mov      eax, dword ptr [0x6ec89118]
+6EC815AB: call     eax
+6EC815AD: sub      esp, 0xc
+6EC815B0: mov      edx, eax
+6EC815B2: mov      eax, dword ptr [ebp + 8]
+6EC815B5: mov      dword ptr [eax + 4], edx
+6EC815B8: nop      
+6EC815B9: leave    
+6EC815BA: ret      
+```
+
+### Ordinal 1 — `mems_cleanup` — RVA `0x000015BB`
+
+```asm
+6EC815BB: push     ebp
+6EC815BC: mov      ebp, esp
+6EC815BE: sub      esp, 0x18
+6EC815C1: mov      eax, dword ptr [ebp + 8]
+6EC815C4: mov      dword ptr [esp], eax
+6EC815C7: call     0x6ec81864 ; -> mems_is_connected
+6EC815CC: test     al, al
+6EC815CE: je       0x6ec815eb
+6EC815D0: mov      eax, dword ptr [ebp + 8]
+6EC815D3: mov      eax, dword ptr [eax]
+6EC815D5: mov      dword ptr [esp], eax
+6EC815D8: mov      eax, dword ptr [0x6ec89110]
+6EC815DD: call     eax
+6EC815DF: sub      esp, 4
+6EC815E2: mov      eax, dword ptr [ebp + 8]
+6EC815E5: mov      dword ptr [eax], 0xffffffff
+6EC815EB: mov      eax, dword ptr [ebp + 8]
+6EC815EE: mov      eax, dword ptr [eax + 4]
+6EC815F1: mov      dword ptr [esp], eax
+6EC815F4: mov      eax, dword ptr [0x6ec89110]
+6EC815F9: call     eax
+6EC815FB: sub      esp, 4
+6EC815FE: nop      
+6EC815FF: leave    
+6EC81600: ret      
+```
+
+### Ordinal 5 — `mems_get_lib_version` — RVA `0x00001601`
+
+```asm
+6EC81601: push     ebp
+6EC81602: mov      ebp, esp
+6EC81604: sub      esp, 0x10
+6EC81607: mov      byte ptr [ebp - 3], 0
+6EC8160B: mov      byte ptr [ebp - 2], 1
+6EC8160F: mov      byte ptr [ebp - 1], 0xc
+6EC81613: mov      eax, dword ptr [ebp + 8]
+6EC81616: movzx    edx, word ptr [ebp - 3]
+6EC8161A: mov      word ptr [eax], dx
+6EC8161D: movzx    edx, byte ptr [ebp - 1]
+6EC81621: mov      byte ptr [eax + 2], dl
+6EC81624: mov      eax, dword ptr [ebp + 8]
+6EC81627: leave    
+6EC81628: ret      
+```
+
+### Ordinal 4 — `mems_disconnect` — RVA `0x00001629`
+
+```asm
+6EC81629: push     ebp
+6EC8162A: mov      ebp, esp
+6EC8162C: sub      esp, 0x18
+6EC8162F: mov      eax, dword ptr [ebp + 8]
+6EC81632: mov      eax, dword ptr [eax + 4]
+6EC81635: mov      dword ptr [esp + 4], 0xffffffff
+6EC8163D: mov      dword ptr [esp], eax
+6EC81640: mov      eax, dword ptr [0x6ec8918c]
+6EC81645: call     eax
+6EC81647: sub      esp, 8
+6EC8164A: test     eax, eax
+6EC8164C: jne      0x6ec8168b
+6EC8164E: mov      eax, dword ptr [ebp + 8]
+6EC81651: mov      dword ptr [esp], eax
+6EC81654: call     0x6ec81864 ; -> mems_is_connected
+6EC81659: test     al, al
+6EC8165B: je       0x6ec81678
+6EC8165D: mov      eax, dword ptr [ebp + 8]
+6EC81660: mov      eax, dword ptr [eax]
+6EC81662: mov      dword ptr [esp], eax
+6EC81665: mov      eax, dword ptr [0x6ec89110]
+6EC8166A: call     eax
+6EC8166C: sub      esp, 4
+6EC8166F: mov      eax, dword ptr [ebp + 8]
+6EC81672: mov      dword ptr [eax], 0xffffffff
+6EC81678: mov      eax, dword ptr [ebp + 8]
+6EC8167B: mov      eax, dword ptr [eax + 4]
+6EC8167E: mov      dword ptr [esp], eax
+6EC81681: mov      eax, dword ptr [0x6ec89164]
+6EC81686: call     eax
+6EC81688: sub      esp, 4
+6EC8168B: nop      
+6EC8168C: leave    
+6EC8168D: ret      
+```
+
+### Ordinal 3 — `mems_connect` — RVA `0x0000168E`
+
+```asm
+6EC8168E: push     ebp
+6EC8168F: mov      ebp, esp
+6EC81691: sub      esp, 0x28
+6EC81694: mov      byte ptr [ebp - 9], 0
+6EC81698: mov      eax, dword ptr [ebp + 8]
+6EC8169B: mov      eax, dword ptr [eax + 4]
+6EC8169E: mov      dword ptr [esp + 4], 0xffffffff
+6EC816A6: mov      dword ptr [esp], eax
+6EC816A9: mov      eax, dword ptr [0x6ec8918c]
+6EC816AE: call     eax
+6EC816B0: sub      esp, 8
+6EC816B3: test     eax, eax
+6EC816B5: jne      0x6ec81702
+6EC816B7: mov      eax, dword ptr [ebp + 8]
+6EC816BA: mov      dword ptr [esp], eax
+6EC816BD: call     0x6ec81864 ; -> mems_is_connected
+6EC816C2: test     al, al
+6EC816C4: jne      0x6ec816dc
+6EC816C6: mov      eax, dword ptr [ebp + 0xc]
+6EC816C9: mov      dword ptr [esp + 4], eax
+6EC816CD: mov      eax, dword ptr [ebp + 8]
+6EC816D0: mov      dword ptr [esp], eax
+6EC816D3: call     0x6ec81708 ; -> mems_openserial
+6EC816D8: test     al, al
+6EC816DA: je       0x6ec816e3
+6EC816DC: mov      eax, 1
+6EC816E1: jmp      0x6ec816e8
+6EC816E3: mov      eax, 0
+6EC816E8: mov      byte ptr [ebp - 9], al
+6EC816EB: and      byte ptr [ebp - 9], 1
+6EC816EF: mov      eax, dword ptr [ebp + 8]
+6EC816F2: mov      eax, dword ptr [eax + 4]
+6EC816F5: mov      dword ptr [esp], eax
+6EC816F8: mov      eax, dword ptr [0x6ec89164]
+6EC816FD: call     eax
+6EC816FF: sub      esp, 4
+6EC81702: movzx    eax, byte ptr [ebp - 9]
+6EC81706: leave    
+6EC81707: ret      
+```
+
+### Ordinal 12 — `mems_openserial` — RVA `0x00001708`
+
+```asm
+6EC81708: push     ebp
+6EC81709: mov      ebp, esp
+6EC8170B: sub      esp, 0x68
+6EC8170E: mov      byte ptr [ebp - 9], 0
+6EC81712: mov      dword ptr [esp + 0x18], 0
+6EC8171A: mov      dword ptr [esp + 0x14], 0x80
+6EC81722: mov      dword ptr [esp + 0x10], 3
+6EC8172A: mov      dword ptr [esp + 0xc], 0
+6EC81732: mov      dword ptr [esp + 8], 0
+6EC8173A: mov      dword ptr [esp + 4], 0xc0000000
+6EC81742: mov      eax, dword ptr [ebp + 0xc]
+6EC81745: mov      dword ptr [esp], eax
+6EC81748: mov      eax, dword ptr [0x6ec89114]
+6EC8174D: call     eax
+6EC8174F: sub      esp, 0x1c
+6EC81752: mov      edx, eax
+6EC81754: mov      eax, dword ptr [ebp + 8]
+6EC81757: mov      dword ptr [eax], edx
+6EC81759: mov      eax, dword ptr [ebp + 8]
+6EC8175C: mov      eax, dword ptr [eax]
+6EC8175E: cmp      eax, -1
+6EC81761: je       0x6ec8185e
+6EC81767: mov      eax, dword ptr [ebp + 8]
+6EC8176A: mov      eax, dword ptr [eax]
+6EC8176C: lea      edx, [ebp - 0x28]
+6EC8176F: mov      dword ptr [esp + 4], edx
+6EC81773: mov      dword ptr [esp], eax
+6EC81776: mov      eax, dword ptr [0x6ec89128]
+6EC8177B: call     eax
+6EC8177D: sub      esp, 8
+6EC81780: cmp      eax, 1
+6EC81783: jne      0x6ec81841
+6EC81789: mov      dword ptr [ebp - 0x24], 0x2580
+6EC81790: movzx    eax, byte ptr [ebp - 0x20]
+6EC81794: and      eax, 0xfffffffd
+6EC81797: mov      byte ptr [ebp - 0x20], al
+6EC8179A: movzx    eax, byte ptr [ebp - 0x20]
+6EC8179E: and      eax, 0xfffffffb
+6EC817A1: mov      byte ptr [ebp - 0x20], al
+6EC817A4: movzx    eax, byte ptr [ebp - 0x20]
+6EC817A8: and      eax, 0xfffffff7
+6EC817AB: mov      byte ptr [ebp - 0x20], al
+6EC817AE: movzx    eax, byte ptr [ebp - 0x20]
+6EC817B2: and      eax, 0xffffffcf
+6EC817B5: mov      byte ptr [ebp - 0x20], al
+6EC817B8: movzx    eax, byte ptr [ebp - 0x1f]
+6EC817BC: and      eax, 0xffffffcf
+6EC817BF: mov      byte ptr [ebp - 0x1f], al
+6EC817C2: mov      byte ptr [ebp - 0x16], 8
+6EC817C6: mov      byte ptr [ebp - 0x15], 0
+6EC817CA: mov      byte ptr [ebp - 0x14], 0
+6EC817CE: mov      eax, dword ptr [ebp + 8]
+6EC817D1: mov      eax, dword ptr [eax]
+6EC817D3: lea      edx, [ebp - 0x28]
+6EC817D6: mov      dword ptr [esp + 4], edx
+6EC817DA: mov      dword ptr [esp], eax
+6EC817DD: mov      eax, dword ptr [0x6ec89168]
+6EC817E2: call     eax
+6EC817E4: sub      esp, 8
+6EC817E7: cmp      eax, 1
+6EC817EA: jne      0x6ec81841
+6EC817EC: mov      eax, dword ptr [ebp + 8]
+6EC817EF: mov      eax, dword ptr [eax]
+6EC817F1: lea      edx, [ebp - 0x3c]
+6EC817F4: mov      dword ptr [esp + 4], edx
+6EC817F8: mov      dword ptr [esp], eax
+6EC817FB: mov      eax, dword ptr [0x6ec8912c]
+6EC81800: call     eax
+6EC81802: sub      esp, 8
+6EC81805: cmp      eax, 1
+6EC81808: jne      0x6ec81841
+6EC8180A: mov      dword ptr [ebp - 0x3c], 0x64
+6EC81811: mov      dword ptr [ebp - 0x38], 0
+6EC81818: mov      dword ptr [ebp - 0x34], 0x64
+6EC8181F: mov      eax, dword ptr [ebp + 8]
+6EC81822: mov      eax, dword ptr [eax]
+6EC81824: lea      edx, [ebp - 0x3c]
+6EC81827: mov      dword ptr [esp + 4], edx
+6EC8182B: mov      dword ptr [esp], eax
+6EC8182E: mov      eax, dword ptr [0x6ec8916c]
+6EC81833: call     eax
+6EC81835: sub      esp, 8
+6EC81838: cmp      eax, 1
+6EC8183B: jne      0x6ec81841
+6EC8183D: mov      byte ptr [ebp - 9], 1
+6EC81841: movzx    eax, byte ptr [ebp - 9]
+6EC81845: xor      eax, 1
+6EC81848: test     al, al
+6EC8184A: je       0x6ec8185e
+6EC8184C: mov      eax, dword ptr [ebp + 8]
+6EC8184F: mov      eax, dword ptr [eax]
+6EC81851: mov      dword ptr [esp], eax
+6EC81854: mov      eax, dword ptr [0x6ec89110]
+6EC81859: call     eax
+6EC8185B: sub      esp, 4
+6EC8185E: movzx    eax, byte ptr [ebp - 9]
+6EC81862: leave    
+6EC81863: ret      
+```
+
+### Ordinal 9 — `mems_is_connected` — RVA `0x00001864`
+
+```asm
+6EC81864: push     ebp
+6EC81865: mov      ebp, esp
+6EC81867: mov      eax, dword ptr [ebp + 8]
+6EC8186A: mov      eax, dword ptr [eax]
+6EC8186C: cmp      eax, -1
+6EC8186F: setne    al
+6EC81872: pop      ebp
+6EC81873: ret      
+```
+
+### Ordinal 16 — `mems_read_serial` — RVA `0x00001874`
+
+```asm
+6EC81874: push     ebp
+6EC81875: mov      ebp, esp
+6EC81877: sub      esp, 0x48
+6EC8187A: mov      eax, dword ptr [ebp + 0x10]
+6EC8187D: mov      word ptr [ebp - 0x1c], ax
+6EC81881: mov      word ptr [ebp - 0xa], 0
+6EC81887: mov      word ptr [ebp - 0xc], 0xffff
+6EC8188D: mov      eax, dword ptr [ebp + 0xc]
+6EC81890: mov      dword ptr [ebp - 0x10], eax
+6EC81893: mov      dword ptr [ebp - 0x14], 0
+6EC8189A: mov      eax, dword ptr [ebp + 8]
+6EC8189D: mov      dword ptr [esp], eax
+6EC818A0: call     0x6ec81864 ; -> mems_is_connected
+6EC818A5: test     al, al
+6EC818A7: je       0x6ec8191b
+6EC818A9: mov      dword ptr [ebp - 0x18], 0
+6EC818B0: movzx    edx, word ptr [ebp - 0x1c]
+6EC818B4: mov      eax, dword ptr [ebp + 8]
+6EC818B7: mov      eax, dword ptr [eax]
+6EC818B9: mov      dword ptr [esp + 0x10], 0
+6EC818C1: lea      ecx, [ebp - 0x18]
+6EC818C4: mov      dword ptr [esp + 0xc], ecx
+6EC818C8: mov      dword ptr [esp + 8], edx
+6EC818CC: mov      edx, dword ptr [ebp - 0x10]
+6EC818CF: mov      dword ptr [esp + 4], edx
+6EC818D3: mov      dword ptr [esp], eax
+6EC818D6: mov      eax, dword ptr [0x6ec89160]
+6EC818DB: call     eax
+6EC818DD: sub      esp, 0x14
+6EC818E0: cmp      eax, 1
+6EC818E3: jne      0x6ec818f3
+6EC818E5: mov      eax, dword ptr [ebp - 0x18]
+6EC818E8: test     eax, eax
+6EC818EA: je       0x6ec818f3
+6EC818EC: mov      eax, dword ptr [ebp - 0x18]
+6EC818EF: mov      word ptr [ebp - 0xc], ax
+6EC818F3: movzx    edx, word ptr [ebp - 0xa]
+6EC818F7: movzx    eax, word ptr [ebp - 0xc]
+6EC818FB: add      eax, edx
+6EC818FD: mov      word ptr [ebp - 0xa], ax
+6EC81901: movsx    eax, word ptr [ebp - 0xc]
+6EC81905: add      dword ptr [ebp - 0x10], eax
+6EC81908: cmp      word ptr [ebp - 0xc], 0
+6EC8190D: jle      0x6ec8191b
+6EC8190F: movsx    edx, word ptr [ebp - 0xa]
+6EC81913: movzx    eax, word ptr [ebp - 0x1c]
+6EC81917: cmp      edx, eax
+6EC81919: jl       0x6ec818a9
+6EC8191B: movsx    edx, word ptr [ebp - 0xa]
+6EC8191F: movzx    eax, word ptr [ebp - 0x1c]
+6EC81923: cmp      edx, eax
+6EC81925: jge      0x6ec81943
+6EC81927: movsx    edx, word ptr [ebp - 0xa]
+6EC8192B: movzx    eax, word ptr [ebp - 0x1c]
+6EC8192F: mov      dword ptr [esp + 8], edx
+6EC81933: mov      dword ptr [esp + 4], eax
+6EC81937: mov      dword ptr [esp], 0x6ec85064
+6EC8193E: call     0x6ec83220
+6EC81943: movzx    eax, word ptr [ebp - 0xa]
+6EC81947: leave    
+6EC81948: ret      
+```
+
+### Ordinal 22 — `mems_write_serial` — RVA `0x00001949`
+
+```asm
+6EC81949: push     ebp
+6EC8194A: mov      ebp, esp
+6EC8194C: sub      esp, 0x48
+6EC8194F: mov      eax, dword ptr [ebp + 0x10]
+6EC81952: mov      word ptr [ebp - 0x1c], ax
+6EC81956: mov      word ptr [ebp - 0xa], 0xffff
+6EC8195C: mov      dword ptr [ebp - 0x10], 0
+6EC81963: mov      eax, dword ptr [ebp + 8]
+6EC81966: mov      dword ptr [esp], eax
+6EC81969: call     0x6ec81864 ; -> mems_is_connected
+6EC8196E: test     al, al
+6EC81970: je       0x6ec819c0
+6EC81972: mov      dword ptr [ebp - 0x14], 0
+6EC81979: movzx    edx, word ptr [ebp - 0x1c]
+6EC8197D: mov      eax, dword ptr [ebp + 8]
+6EC81980: mov      eax, dword ptr [eax]
+6EC81982: mov      dword ptr [esp + 0x10], 0
+6EC8198A: lea      ecx, [ebp - 0x14]
+6EC8198D: mov      dword ptr [esp + 0xc], ecx
+6EC81991: mov      dword ptr [esp + 8], edx
+6EC81995: mov      edx, dword ptr [ebp + 0xc]
+6EC81998: mov      dword ptr [esp + 4], edx
+6EC8199C: mov      dword ptr [esp], eax
+6EC8199F: mov      eax, dword ptr [0x6ec89190]
+6EC819A4: call     eax
+6EC819A6: sub      esp, 0x14
+6EC819A9: cmp      eax, 1
+6EC819AC: jne      0x6ec819c0
+6EC819AE: movzx    edx, word ptr [ebp - 0x1c]
+6EC819B2: mov      eax, dword ptr [ebp - 0x14]
+6EC819B5: cmp      edx, eax
+6EC819B7: jne      0x6ec819c0
+6EC819B9: mov      eax, dword ptr [ebp - 0x14]
+6EC819BC: mov      word ptr [ebp - 0xa], ax
+6EC819C0: movzx    eax, word ptr [ebp - 0xa]
+6EC819C4: leave    
+6EC819C5: ret      
+```
+
+### Ordinal 19 — `mems_send_command` — RVA `0x000019C6`
+
+```asm
+6EC819C6: push     ebp
+6EC819C7: mov      ebp, esp
+6EC819C9: sub      esp, 0x38
+6EC819CC: mov      eax, dword ptr [ebp + 0xc]
+6EC819CF: mov      byte ptr [ebp - 0x1c], al
+6EC819D2: mov      byte ptr [ebp - 9], 0
+6EC819D6: mov      byte ptr [ebp - 0xa], 0xff
+6EC819DA: mov      dword ptr [esp + 8], 1
+6EC819E2: lea      eax, [ebp - 0x1c]
+6EC819E5: mov      dword ptr [esp + 4], eax
+6EC819E9: mov      eax, dword ptr [ebp + 8]
+6EC819EC: mov      dword ptr [esp], eax
+6EC819EF: call     0x6ec81949 ; -> mems_write_serial
+6EC819F4: cmp      ax, 1
+6EC819F8: jne      0x6ec81a69
+6EC819FA: mov      dword ptr [esp + 8], 1
+6EC81A02: lea      eax, [ebp - 0xa]
+6EC81A05: mov      dword ptr [esp + 4], eax
+6EC81A09: mov      eax, dword ptr [ebp + 8]
+6EC81A0C: mov      dword ptr [esp], eax
+6EC81A0F: call     0x6ec81874 ; -> mems_read_serial
+6EC81A14: cmp      ax, 1
+6EC81A18: jne      0x6ec81a50
+6EC81A1A: movzx    edx, byte ptr [ebp - 0xa]
+6EC81A1E: movzx    eax, byte ptr [ebp - 0x1c]
+6EC81A22: cmp      dl, al
+6EC81A24: jne      0x6ec81a2c
+6EC81A26: mov      byte ptr [ebp - 9], 1
+6EC81A2A: jmp      0x6ec81a80
+6EC81A2C: movzx    eax, byte ptr [ebp - 0x1c]
+6EC81A30: movzx    edx, al
+6EC81A33: movzx    eax, byte ptr [ebp - 0xa]
+6EC81A37: movzx    eax, al
+6EC81A3A: mov      dword ptr [esp + 8], edx
+6EC81A3E: mov      dword ptr [esp + 4], eax
+6EC81A42: mov      dword ptr [esp], 0x6ec85090
+6EC81A49: call     0x6ec83220
+6EC81A4E: jmp      0x6ec81a80
+6EC81A50: movzx    eax, byte ptr [ebp - 0x1c]
+6EC81A54: movzx    eax, al
+6EC81A57: mov      dword ptr [esp + 4], eax
+6EC81A5B: mov      dword ptr [esp], 0x6ec850e8
+6EC81A62: call     0x6ec83220
+6EC81A67: jmp      0x6ec81a80
+6EC81A69: movzx    eax, byte ptr [ebp - 0x1c]
+6EC81A6D: movzx    eax, al
+6EC81A70: mov      dword ptr [esp + 4], eax
+6EC81A74: mov      dword ptr [esp], 0x6ec85124
+6EC81A7B: call     0x6ec83220
+6EC81A80: movzx    eax, byte ptr [ebp - 9]
+6EC81A84: leave    
+6EC81A85: ret      
+```
+
+### Ordinal 8 — `mems_init_link` — RVA `0x00001A86`
+
+```asm
+6EC81A86: push     ebp
+6EC81A87: mov      ebp, esp
+6EC81A89: sub      esp, 0x28
+6EC81A8C: mov      byte ptr [ebp - 9], 0xca
+6EC81A90: mov      byte ptr [ebp - 0xa], 0x75
+6EC81A94: mov      byte ptr [ebp - 0xb], 0xf4
+6EC81A98: mov      byte ptr [ebp - 0xc], 0xd0
+6EC81A9C: mov      byte ptr [ebp - 0xd], 0
+6EC81AA0: movzx    eax, byte ptr [ebp - 9]
+6EC81AA4: mov      dword ptr [esp + 4], eax
+6EC81AA8: mov      eax, dword ptr [ebp + 8]
+6EC81AAB: mov      dword ptr [esp], eax
+6EC81AAE: call     0x6ec819c6 ; -> mems_send_command
+6EC81AB3: xor      eax, 1
+6EC81AB6: test     al, al
+6EC81AB8: je       0x6ec81ad8
+6EC81ABA: movzx    eax, byte ptr [ebp - 9]
+6EC81ABE: mov      dword ptr [esp + 4], eax
+6EC81AC2: mov      dword ptr [esp], 0x6ec85158
+6EC81AC9: call     0x6ec83220
+6EC81ACE: mov      eax, 0
+6EC81AD3: jmp      0x6ec81bf8
+6EC81AD8: movzx    eax, byte ptr [ebp - 0xa]
+6EC81ADC: mov      dword ptr [esp + 4], eax
+6EC81AE0: mov      eax, dword ptr [ebp + 8]
+6EC81AE3: mov      dword ptr [esp], eax
+6EC81AE6: call     0x6ec819c6 ; -> mems_send_command
+6EC81AEB: xor      eax, 1
+6EC81AEE: test     al, al
+6EC81AF0: je       0x6ec81b10
+6EC81AF2: movzx    eax, byte ptr [ebp - 0xa]
+6EC81AF6: mov      dword ptr [esp + 4], eax
+6EC81AFA: mov      dword ptr [esp], 0x6ec85158
+6EC81B01: call     0x6ec83220
+6EC81B06: mov      eax, 0
+6EC81B0B: jmp      0x6ec81bf8
+6EC81B10: movzx    eax, byte ptr [ebp - 0xb]
+6EC81B14: mov      dword ptr [esp + 4], eax
+6EC81B18: mov      eax, dword ptr [ebp + 8]
+6EC81B1B: mov      dword ptr [esp], eax
+6EC81B1E: call     0x6ec819c6 ; -> mems_send_command
+6EC81B23: xor      eax, 1
+6EC81B26: test     al, al
+6EC81B28: je       0x6ec81b48
+6EC81B2A: movzx    eax, byte ptr [ebp - 0xb]
+6EC81B2E: mov      dword ptr [esp + 4], eax
+6EC81B32: mov      dword ptr [esp], 0x6ec85158
+6EC81B39: call     0x6ec83220
+6EC81B3E: mov      eax, 0
+6EC81B43: jmp      0x6ec81bf8
+6EC81B48: mov      dword ptr [esp + 8], 1
+6EC81B50: lea      eax, [ebp - 0xd]
+6EC81B53: mov      dword ptr [esp + 4], eax
+6EC81B57: mov      eax, dword ptr [ebp + 8]
+6EC81B5A: mov      dword ptr [esp], eax
+6EC81B5D: call     0x6ec81874 ; -> mems_read_serial
+6EC81B62: cmp      ax, 1
+6EC81B66: je       0x6ec81b83
+6EC81B68: movzx    eax, byte ptr [ebp - 0xb]
+6EC81B6C: mov      dword ptr [esp + 4], eax
+6EC81B70: mov      dword ptr [esp], 0x6ec8518c
+6EC81B77: call     0x6ec83220
+6EC81B7C: mov      eax, 0
+6EC81B81: jmp      0x6ec81bf8
+6EC81B83: movzx    eax, byte ptr [ebp - 0xc]
+6EC81B87: mov      dword ptr [esp + 4], eax
+6EC81B8B: mov      eax, dword ptr [ebp + 8]
+6EC81B8E: mov      dword ptr [esp], eax
+6EC81B91: call     0x6ec819c6 ; -> mems_send_command
+6EC81B96: xor      eax, 1
+6EC81B99: test     al, al
+6EC81B9B: je       0x6ec81bb8
+6EC81B9D: movzx    eax, byte ptr [ebp - 0xc]
+6EC81BA1: mov      dword ptr [esp + 4], eax
+6EC81BA5: mov      dword ptr [esp], 0x6ec85158
+6EC81BAC: call     0x6ec83220
+6EC81BB1: mov      eax, 0
+6EC81BB6: jmp      0x6ec81bf8
+6EC81BB8: mov      dword ptr [esp + 8], 4
+6EC81BC0: mov      eax, dword ptr [ebp + 0xc]
+6EC81BC3: mov      dword ptr [esp + 4], eax
+6EC81BC7: mov      eax, dword ptr [ebp + 8]
+6EC81BCA: mov      dword ptr [esp], eax
+6EC81BCD: call     0x6ec81874 ; -> mems_read_serial
+6EC81BD2: cmp      ax, 4
+6EC81BD6: je       0x6ec81bf3
+6EC81BD8: movzx    eax, byte ptr [ebp - 0xc]
+6EC81BDC: mov      dword ptr [esp + 4], eax
+6EC81BE0: mov      dword ptr [esp], 0x6ec851cc
+6EC81BE7: call     0x6ec83220
+6EC81BEC: mov      eax, 0
+6EC81BF1: jmp      0x6ec81bf8
+6EC81BF3: mov      eax, 1
+6EC81BF8: leave    
+6EC81BF9: ret      
+```
+
+### Ordinal 10 — `mems_lock` — RVA `0x00001BFA`
+
+```asm
+6EC81BFA: push     ebp
+6EC81BFB: mov      ebp, esp
+6EC81BFD: sub      esp, 0x18
+6EC81C00: mov      eax, dword ptr [ebp + 8]
+6EC81C03: mov      eax, dword ptr [eax + 4]
+6EC81C06: mov      dword ptr [esp + 4], 0xffffffff
+6EC81C0E: mov      dword ptr [esp], eax
+6EC81C11: mov      eax, dword ptr [0x6ec8918c]
+6EC81C16: call     eax
+6EC81C18: sub      esp, 8
+6EC81C1B: test     eax, eax
+6EC81C1D: je       0x6ec81c26
+6EC81C1F: mov      eax, 0
+6EC81C24: jmp      0x6ec81c2b
+6EC81C26: mov      eax, 1
+6EC81C2B: leave    
+6EC81C2C: ret      
+```
+
+### Ordinal 21 — `mems_unlock` — RVA `0x00001C2D`
+
+```asm
+6EC81C2D: push     ebp
+6EC81C2E: mov      ebp, esp
+6EC81C30: sub      esp, 0x18
+6EC81C33: mov      eax, dword ptr [ebp + 8]
+6EC81C36: mov      eax, dword ptr [eax + 4]
+6EC81C39: mov      dword ptr [esp], eax
+6EC81C3C: mov      eax, dword ptr [0x6ec89164]
+6EC81C41: call     eax
+6EC81C43: sub      esp, 4
+6EC81C46: nop      
+6EC81C47: leave    
+6EC81C48: ret      
+```
+
+### Ordinal 15 — `mems_read_raw` — RVA `0x00001C49`
+
+```asm
+6EC81C49: push     ebp
+6EC81C4A: mov      ebp, esp
+6EC81C4C: sub      esp, 0x28
+6EC81C4F: mov      byte ptr [ebp - 9], 0
+6EC81C53: mov      eax, dword ptr [ebp + 8]
+6EC81C56: mov      dword ptr [esp], eax
+6EC81C59: call     0x6ec81bfa ; -> mems_lock
+6EC81C5E: test     al, al
+6EC81C60: je       0x6ec81d11
+6EC81C66: mov      dword ptr [esp + 4], 0x80
+6EC81C6E: mov      eax, dword ptr [ebp + 8]
+6EC81C71: mov      dword ptr [esp], eax
+6EC81C74: call     0x6ec819c6 ; -> mems_send_command
+6EC81C79: test     al, al
+6EC81C7B: je       0x6ec81cb1
+6EC81C7D: mov      dword ptr [esp + 8], 0x1c
+6EC81C85: mov      eax, dword ptr [ebp + 0xc]
+6EC81C88: mov      dword ptr [esp + 4], eax
+6EC81C8C: mov      eax, dword ptr [ebp + 8]
+6EC81C8F: mov      dword ptr [esp], eax
+6EC81C92: call     0x6ec81874 ; -> mems_read_serial
+6EC81C97: cmp      ax, 0x1c
+6EC81C9B: jne      0x6ec81ca3
+6EC81C9D: mov      byte ptr [ebp - 9], 1
+6EC81CA1: jmp      0x6ec81cbd
+6EC81CA3: mov      dword ptr [esp], 0x6ec8521c
+6EC81CAA: call     0x6ec83218
+6EC81CAF: jmp      0x6ec81cbd
+6EC81CB1: mov      dword ptr [esp], 0x6ec85260
+6EC81CB8: call     0x6ec83218
+6EC81CBD: cmp      byte ptr [ebp - 9], 0
+6EC81CC1: je       0x6ec81d06
+6EC81CC3: mov      dword ptr [esp + 4], 0x7d
+6EC81CCB: mov      eax, dword ptr [ebp + 8]
+6EC81CCE: mov      dword ptr [esp], eax
+6EC81CD1: call     0x6ec819c6 ; -> mems_send_command
+6EC81CD6: test     al, al
+6EC81CD8: je       0x6ec81cf6
+6EC81CDA: mov      dword ptr [esp + 8], 0x20
+6EC81CE2: mov      eax, dword ptr [ebp + 0x10]
+6EC81CE5: mov      dword ptr [esp + 4], eax
+6EC81CE9: mov      eax, dword ptr [ebp + 8]
+6EC81CEC: mov      dword ptr [esp], eax
+6EC81CEF: call     0x6ec81874 ; -> mems_read_serial
+6EC81CF4: jmp      0x6ec81d06
+6EC81CF6: mov      dword ptr [esp], 0x6ec85294
+6EC81CFD: call     0x6ec83218
+6EC81D02: mov      byte ptr [ebp - 9], 0
+6EC81D06: mov      eax, dword ptr [ebp + 8]
+6EC81D09: mov      dword ptr [esp], eax
+6EC81D0C: call     0x6ec81c2d ; -> mems_unlock
+6EC81D11: movzx    eax, byte ptr [ebp - 9]
+6EC81D15: leave    
+6EC81D16: ret      
+```
+
+### Ordinal 13 — `mems_read` — RVA `0x00001D17`
+
+```asm
+6EC81D17: push     ebp
+6EC81D18: mov      ebp, esp
+6EC81D1A: sub      esp, 0x58
+6EC81D1D: mov      byte ptr [ebp - 9], 0
+6EC81D21: lea      eax, [ebp - 0x45]
+6EC81D24: mov      dword ptr [esp + 8], eax
+6EC81D28: lea      eax, [ebp - 0x25]
+6EC81D2B: mov      dword ptr [esp + 4], eax
+6EC81D2F: mov      eax, dword ptr [ebp + 8]
+6EC81D32: mov      dword ptr [esp], eax
+6EC81D35: call     0x6ec81c49 ; -> mems_read_raw
+6EC81D3A: test     al, al
+6EC81D3C: je       0x6ec82043
+6EC81D42: mov      dword ptr [esp + 8], 0x3c
+6EC81D4A: mov      dword ptr [esp + 4], 0
+6EC81D52: mov      eax, dword ptr [ebp + 0xc]
+6EC81D55: mov      dword ptr [esp], eax
+6EC81D58: call     0x6ec83228
+6EC81D5D: movzx    eax, byte ptr [ebp - 0x24]
+6EC81D61: movzx    eax, al
+6EC81D64: shl      eax, 8
+6EC81D67: mov      edx, eax
+6EC81D69: movzx    eax, byte ptr [ebp - 0x23]
+6EC81D6D: movzx    eax, al
+6EC81D70: or       eax, edx
+6EC81D72: mov      edx, eax
+6EC81D74: mov      eax, dword ptr [ebp + 0xc]
+6EC81D77: mov      word ptr [eax], dx
+6EC81D7A: movzx    edx, byte ptr [ebp - 0x22]
+6EC81D7E: mov      eax, dword ptr [ebp + 0xc]
+6EC81D81: mov      byte ptr [eax + 2], dl
+6EC81D84: movzx    edx, byte ptr [ebp - 0x21]
+6EC81D88: mov      eax, dword ptr [ebp + 0xc]
+6EC81D8B: mov      byte ptr [eax + 3], dl
+6EC81D8E: movzx    edx, byte ptr [ebp - 0x20]
+6EC81D92: mov      eax, dword ptr [ebp + 0xc]
+6EC81D95: mov      byte ptr [eax + 4], dl
+6EC81D98: movzx    edx, byte ptr [ebp - 0x1f]
+6EC81D9C: mov      eax, dword ptr [ebp + 0xc]
+6EC81D9F: mov      byte ptr [eax + 5], dl
+6EC81DA2: movzx    edx, byte ptr [ebp - 0x1e]
+6EC81DA6: mov      eax, dword ptr [ebp + 0xc]
+6EC81DA9: mov      byte ptr [eax + 6], dl
+6EC81DAC: movzx    edx, byte ptr [ebp - 0x1d]
+6EC81DB0: mov      eax, dword ptr [ebp + 0xc]
+6EC81DB3: mov      byte ptr [eax + 7], dl
+6EC81DB6: movzx    edx, byte ptr [ebp - 0x1c]
+6EC81DBA: mov      eax, dword ptr [ebp + 0xc]
+6EC81DBD: mov      byte ptr [eax + 8], dl
+6EC81DC0: movzx    edx, byte ptr [ebp - 0x1b]
+6EC81DC4: mov      eax, dword ptr [ebp + 0xc]
+6EC81DC7: mov      byte ptr [eax + 9], dl
+6EC81DCA: movzx    edx, byte ptr [ebp - 0x1a]
+6EC81DCE: mov      eax, dword ptr [ebp + 0xc]
+6EC81DD1: mov      byte ptr [eax + 0xa], dl
+6EC81DD4: movzx    edx, byte ptr [ebp - 0x19]
+6EC81DD8: mov      eax, dword ptr [ebp + 0xc]
+6EC81DDB: mov      byte ptr [eax + 0xb], dl
+6EC81DDE: mov      eax, dword ptr [ebp + 0xc]
+6EC81DE1: mov      byte ptr [eax + 0xc], 0
+6EC81DE5: movzx    edx, byte ptr [ebp - 0x16]
+6EC81DE9: mov      eax, dword ptr [ebp + 0xc]
+6EC81DEC: mov      byte ptr [eax + 0xd], dl
+6EC81DEF: movzx    edx, byte ptr [ebp - 0x15]
+6EC81DF3: mov      eax, dword ptr [ebp + 0xc]
+6EC81DF6: mov      byte ptr [eax + 0xe], dl
+6EC81DF9: movzx    edx, byte ptr [ebp - 0x14]
+6EC81DFD: mov      eax, dword ptr [ebp + 0xc]
+6EC81E00: mov      byte ptr [eax + 0xf], dl
+6EC81E03: movzx    edx, byte ptr [ebp - 0x13]
+6EC81E07: mov      eax, dword ptr [ebp + 0xc]
+6EC81E0A: mov      byte ptr [eax + 0x10], dl
+6EC81E0D: movzx    eax, byte ptr [ebp - 0x12]
+6EC81E11: movzx    eax, al
+6EC81E14: shl      eax, 8
+6EC81E17: mov      edx, eax
+6EC81E19: movzx    eax, byte ptr [ebp - 0x11]
+6EC81E1D: movzx    eax, al
+6EC81E20: or       eax, edx
+6EC81E22: mov      edx, eax
+6EC81E24: mov      eax, dword ptr [ebp + 0xc]
+6EC81E27: mov      word ptr [eax + 0x12], dx
+6EC81E2B: movzx    edx, byte ptr [ebp - 0x10]
+6EC81E2F: mov      eax, dword ptr [ebp + 0xc]
+6EC81E32: mov      byte ptr [eax + 0x14], dl
+6EC81E35: movzx    edx, byte ptr [ebp - 0xf]
+6EC81E39: mov      eax, dword ptr [ebp + 0xc]
+6EC81E3C: mov      byte ptr [eax + 0x15], dl
+6EC81E3F: movzx    eax, byte ptr [ebp - 0xe]
+6EC81E43: movzx    eax, al
+6EC81E46: shl      eax, 8
+6EC81E49: mov      edx, eax
+6EC81E4B: movzx    eax, byte ptr [ebp - 0xd]
+6EC81E4F: movzx    eax, al
+6EC81E52: or       eax, edx
+6EC81E54: mov      edx, eax
+6EC81E56: mov      eax, dword ptr [ebp + 0xc]
+6EC81E59: mov      word ptr [eax + 0x16], dx
+6EC81E5D: movzx    edx, byte ptr [ebp - 0xc]
+6EC81E61: mov      eax, dword ptr [ebp + 0xc]
+6EC81E64: mov      byte ptr [eax + 0x18], dl
+6EC81E67: movzx    edx, byte ptr [ebp - 0xb]
+6EC81E6B: mov      eax, dword ptr [ebp + 0xc]
+6EC81E6E: mov      byte ptr [eax + 0x19], dl
+6EC81E71: movzx    edx, byte ptr [ebp - 0xa]
+6EC81E75: mov      eax, dword ptr [ebp + 0xc]
+6EC81E78: mov      byte ptr [eax + 0x1a], dl
+6EC81E7B: movzx    edx, byte ptr [ebp - 0x44]
+6EC81E7F: mov      eax, dword ptr [ebp + 0xc]
+6EC81E82: mov      byte ptr [eax + 0x1b], dl
+6EC81E85: movzx    edx, byte ptr [ebp - 0x43]
+6EC81E89: mov      eax, dword ptr [ebp + 0xc]
+6EC81E8C: mov      byte ptr [eax + 0x1c], dl
+6EC81E8F: movzx    edx, byte ptr [ebp - 0x42]
+6EC81E93: mov      eax, dword ptr [ebp + 0xc]
+6EC81E96: mov      byte ptr [eax + 0x1d], dl
+6EC81E99: movzx    edx, byte ptr [ebp - 0x41]
+6EC81E9D: mov      eax, dword ptr [ebp + 0xc]
+6EC81EA0: mov      byte ptr [eax + 0x1e], dl
+6EC81EA3: movzx    edx, byte ptr [ebp - 0x40]
+6EC81EA7: mov      eax, dword ptr [ebp + 0xc]
+6EC81EAA: mov      byte ptr [eax + 0x1f], dl
+6EC81EAD: movzx    edx, byte ptr [ebp - 0x3f]
+6EC81EB1: mov      eax, dword ptr [ebp + 0xc]
+6EC81EB4: mov      byte ptr [eax + 0x20], dl
+6EC81EB7: movzx    edx, byte ptr [ebp - 0x3e]
+6EC81EBB: mov      eax, dword ptr [ebp + 0xc]
+6EC81EBE: mov      byte ptr [eax + 0x21], dl
+6EC81EC1: movzx    edx, byte ptr [ebp - 0x3d]
+6EC81EC5: mov      eax, dword ptr [ebp + 0xc]
+6EC81EC8: mov      byte ptr [eax + 0x22], dl
+6EC81ECB: movzx    edx, byte ptr [ebp - 0x3c]
+6EC81ECF: mov      eax, dword ptr [ebp + 0xc]
+6EC81ED2: mov      byte ptr [eax + 0x23], dl
+6EC81ED5: movzx    edx, byte ptr [ebp - 0x3b]
+6EC81ED9: mov      eax, dword ptr [ebp + 0xc]
+6EC81EDC: mov      byte ptr [eax + 0x24], dl
+6EC81EDF: movzx    edx, byte ptr [ebp - 0x3a]
+6EC81EE3: mov      eax, dword ptr [ebp + 0xc]
+6EC81EE6: mov      byte ptr [eax + 0x25], dl
+6EC81EE9: movzx    edx, byte ptr [ebp - 0x39]
+6EC81EED: mov      eax, dword ptr [ebp + 0xc]
+6EC81EF0: mov      byte ptr [eax + 0x26], dl
+6EC81EF3: movzx    edx, byte ptr [ebp - 0x38]
+6EC81EF7: mov      eax, dword ptr [ebp + 0xc]
+6EC81EFA: mov      byte ptr [eax + 0x27], dl
+6EC81EFD: movzx    edx, byte ptr [ebp - 0x37]
+6EC81F01: mov      eax, dword ptr [ebp + 0xc]
+6EC81F04: mov      byte ptr [eax + 0x28], dl
+6EC81F07: movzx    edx, byte ptr [ebp - 0x36]
+6EC81F0B: mov      eax, dword ptr [ebp + 0xc]
+6EC81F0E: mov      byte ptr [eax + 0x29], dl
+6EC81F11: movzx    edx, byte ptr [ebp - 0x35]
+6EC81F15: mov      eax, dword ptr [ebp + 0xc]
+6EC81F18: mov      byte ptr [eax + 0x2a], dl
+6EC81F1B: movzx    edx, byte ptr [ebp - 0x34]
+6EC81F1F: mov      eax, dword ptr [ebp + 0xc]
+6EC81F22: mov      byte ptr [eax + 0x2b], dl
+6EC81F25: movzx    edx, byte ptr [ebp - 0x33]
+6EC81F29: mov      eax, dword ptr [ebp + 0xc]
+6EC81F2C: mov      byte ptr [eax + 0x2c], dl
+6EC81F2F: movzx    edx, byte ptr [ebp - 0x32]
+6EC81F33: mov      eax, dword ptr [ebp + 0xc]
+6EC81F36: mov      byte ptr [eax + 0x2d], dl
+6EC81F39: movzx    edx, byte ptr [ebp - 0x31]
+6EC81F3D: mov      eax, dword ptr [ebp + 0xc]
+6EC81F40: mov      byte ptr [eax + 0x2e], dl
+6EC81F43: movzx    edx, byte ptr [ebp - 0x30]
+6EC81F47: mov      eax, dword ptr [ebp + 0xc]
+6EC81F4A: mov      byte ptr [eax + 0x2f], dl
+6EC81F4D: movzx    edx, byte ptr [ebp - 0x2f]
+6EC81F51: mov      eax, dword ptr [ebp + 0xc]
+6EC81F54: mov      byte ptr [eax + 0x30], dl
+6EC81F57: movzx    edx, byte ptr [ebp - 0x2e]
+6EC81F5B: mov      eax, dword ptr [ebp + 0xc]
+6EC81F5E: mov      byte ptr [eax + 0x31], dl
+6EC81F61: movzx    edx, byte ptr [ebp - 0x2d]
+6EC81F65: mov      eax, dword ptr [ebp + 0xc]
+6EC81F68: mov      byte ptr [eax + 0x32], dl
+6EC81F6B: movzx    edx, byte ptr [ebp - 0x2c]
+6EC81F6F: mov      eax, dword ptr [ebp + 0xc]
+6EC81F72: mov      byte ptr [eax + 0x33], dl
+6EC81F75: movzx    edx, byte ptr [ebp - 0x2b]
+6EC81F79: mov      eax, dword ptr [ebp + 0xc]
+6EC81F7C: mov      byte ptr [eax + 0x34], dl
+6EC81F7F: movzx    edx, byte ptr [ebp - 0x2a]
+6EC81F83: mov      eax, dword ptr [ebp + 0xc]
+6EC81F86: mov      byte ptr [eax + 0x35], dl
+6EC81F89: movzx    edx, byte ptr [ebp - 0x29]
+6EC81F8D: mov      eax, dword ptr [ebp + 0xc]
+6EC81F90: mov      byte ptr [eax + 0x36], dl
+6EC81F93: movzx    edx, byte ptr [ebp - 0x28]
+6EC81F97: mov      eax, dword ptr [ebp + 0xc]
+6EC81F9A: mov      byte ptr [eax + 0x37], dl
+6EC81F9D: movzx    edx, byte ptr [ebp - 0x27]
+6EC81FA1: mov      eax, dword ptr [ebp + 0xc]
+6EC81FA4: mov      byte ptr [eax + 0x38], dl
+6EC81FA7: movzx    edx, byte ptr [ebp - 0x26]
+6EC81FAB: mov      eax, dword ptr [ebp + 0xc]
+6EC81FAE: mov      byte ptr [eax + 0x39], dl
+6EC81FB1: movzx    edx, byte ptr [ebp - 0x18]
+6EC81FB5: mov      eax, dword ptr [ebp + 0xc]
+6EC81FB8: mov      byte ptr [eax + 0x3a], dl
+6EC81FBB: movzx    edx, byte ptr [ebp - 0x17]
+6EC81FBF: mov      eax, dword ptr [ebp + 0xc]
+6EC81FC2: mov      byte ptr [eax + 0x3b], dl
+6EC81FC5: movzx    eax, byte ptr [ebp - 0x18]
+6EC81FC9: movzx    eax, al
+6EC81FCC: and      eax, 1
+6EC81FCF: test     eax, eax
+6EC81FD1: je       0x6ec81fe5
+6EC81FD3: mov      eax, dword ptr [ebp + 0xc]
+6EC81FD6: movzx    eax, byte ptr [eax + 0xc]
+6EC81FDA: or       eax, 1
+6EC81FDD: mov      edx, eax
+6EC81FDF: mov      eax, dword ptr [ebp + 0xc]
+6EC81FE2: mov      byte ptr [eax + 0xc], dl
+6EC81FE5: movzx    eax, byte ptr [ebp - 0x18]
+6EC81FE9: movzx    eax, al
+6EC81FEC: and      eax, 2
+6EC81FEF: test     eax, eax
+6EC81FF1: je       0x6ec82005
+6EC81FF3: mov      eax, dword ptr [ebp + 0xc]
+6EC81FF6: movzx    eax, byte ptr [eax + 0xc]
+6EC81FFA: or       eax, 2
+6EC81FFD: mov      edx, eax
+6EC81FFF: mov      eax, dword ptr [ebp + 0xc]
+6EC82002: mov      byte ptr [eax + 0xc], dl
+6EC82005: movzx    eax, byte ptr [ebp - 0x17]
+6EC82009: movzx    eax, al
+6EC8200C: and      eax, 2
+6EC8200F: test     eax, eax
+6EC82011: je       0x6ec82025
+6EC82013: mov      eax, dword ptr [ebp + 0xc]
+6EC82016: movzx    eax, byte ptr [eax + 0xc]
+6EC8201A: or       eax, 4
+6EC8201D: mov      edx, eax
+6EC8201F: mov      eax, dword ptr [ebp + 0xc]
+6EC82022: mov      byte ptr [eax + 0xc], dl
+6EC82025: movzx    eax, byte ptr [ebp - 0x17]
+6EC82029: test     al, al
+6EC8202B: jns      0x6ec8203f
+6EC8202D: mov      eax, dword ptr [ebp + 0xc]
+6EC82030: movzx    eax, byte ptr [eax + 0xc]
+6EC82034: or       eax, 8
+6EC82037: mov      edx, eax
+6EC82039: mov      eax, dword ptr [ebp + 0xc]
+6EC8203C: mov      byte ptr [eax + 0xc], dl
+6EC8203F: mov      byte ptr [ebp - 9], 1
+6EC82043: movzx    eax, byte ptr [ebp - 9]
+6EC82047: leave    
+6EC82048: ret      
+```
+
+### Ordinal 14 — `mems_read_iac_position` — RVA `0x00002049`
+
+```asm
+6EC82049: push     ebp
+6EC8204A: mov      ebp, esp
+6EC8204C: sub      esp, 0x28
+6EC8204F: mov      byte ptr [ebp - 9], 0
+6EC82053: mov      eax, dword ptr [ebp + 8]
+6EC82056: mov      dword ptr [esp], eax
+6EC82059: call     0x6ec81bfa ; -> mems_lock
+6EC8205E: test     al, al
+6EC82060: je       0x6ec820b7
+6EC82062: mov      dword ptr [esp + 4], 0xfb
+6EC8206A: mov      eax, dword ptr [ebp + 8]
+6EC8206D: mov      dword ptr [esp], eax
+6EC82070: call     0x6ec819c6 ; -> mems_send_command
+6EC82075: test     al, al
+6EC82077: je       0x6ec820a0
+6EC82079: mov      dword ptr [esp + 8], 1
+6EC82081: mov      eax, dword ptr [ebp + 0xc]
+6EC82084: mov      dword ptr [esp + 4], eax
+6EC82088: mov      eax, dword ptr [ebp + 8]
+6EC8208B: mov      dword ptr [esp], eax
+6EC8208E: call     0x6ec81874 ; -> mems_read_serial
+6EC82093: cmp      ax, 1
+6EC82097: jne      0x6ec820a0
+6EC82099: mov      eax, 1
+6EC8209E: jmp      0x6ec820a5
+6EC820A0: mov      eax, 0
+6EC820A5: mov      byte ptr [ebp - 9], al
+6EC820A8: and      byte ptr [ebp - 9], 1
+6EC820AC: mov      eax, dword ptr [ebp + 8]
+6EC820AF: mov      dword ptr [esp], eax
+6EC820B2: call     0x6ec81c2d ; -> mems_unlock
+6EC820B7: movzx    eax, byte ptr [ebp - 9]
+6EC820BB: leave    
+6EC820BC: ret      
+```
+
+### Ordinal 11 — `mems_move_iac` — RVA `0x000020BD`
+
+```asm
+6EC820BD: push     ebp
+6EC820BE: mov      ebp, esp
+6EC820C0: sub      esp, 0x38
+6EC820C3: mov      eax, dword ptr [ebp + 0xc]
+6EC820C6: mov      byte ptr [ebp - 0x1c], al
+6EC820C9: mov      byte ptr [ebp - 0xb], 0
+6EC820CD: mov      word ptr [ebp - 0xa], 0
+6EC820D3: mov      byte ptr [ebp - 0x11], 0
+6EC820D7: lea      eax, [ebp - 0x11]
+6EC820DA: mov      dword ptr [esp + 4], eax
+6EC820DE: mov      eax, dword ptr [ebp + 8]
+6EC820E1: mov      dword ptr [esp], eax
+6EC820E4: call     0x6ec82049 ; -> mems_read_iac_position
+6EC820E9: test     al, al
+6EC820EB: je       0x6ec82157
+6EC820ED: movzx    eax, byte ptr [ebp - 0x11]
+6EC820F1: cmp      byte ptr [ebp - 0x1c], al
+6EC820F4: jb       0x6ec82107
+6EC820F6: movzx    eax, byte ptr [ebp - 0x11]
+6EC820FA: cmp      byte ptr [ebp - 0x1c], al
+6EC820FD: jbe      0x6ec82157
+6EC820FF: movzx    eax, byte ptr [ebp - 0x11]
+6EC82103: cmp      al, 0xb3
+6EC82105: ja       0x6ec82157
+6EC82107: movzx    eax, byte ptr [ebp - 0x11]
+6EC8210B: cmp      byte ptr [ebp - 0x1c], al
+6EC8210E: jbe      0x6ec82117
+6EC82110: mov      eax, 0xfd
+6EC82115: jmp      0x6ec8211c
+6EC82117: mov      eax, 0xfe
+6EC8211C: mov      dword ptr [ebp - 0x10], eax
+6EC8211F: lea      eax, [ebp - 0x11]
+6EC82122: mov      dword ptr [esp + 8], eax
+6EC82126: mov      eax, dword ptr [ebp - 0x10]
+6EC82129: mov      dword ptr [esp + 4], eax
+6EC8212D: mov      eax, dword ptr [ebp + 8]
+6EC82130: mov      dword ptr [esp], eax
+6EC82133: call     0x6ec8216a ; -> mems_test_actuator
+6EC82138: mov      byte ptr [ebp - 0xb], al
+6EC8213B: add      word ptr [ebp - 0xa], 1
+6EC82140: cmp      byte ptr [ebp - 0xb], 0
+6EC82144: je       0x6ec82157
+6EC82146: movzx    eax, byte ptr [ebp - 0x11]
+6EC8214A: cmp      al, byte ptr [ebp - 0x1c]
+6EC8214D: je       0x6ec82157
+6EC8214F: cmp      word ptr [ebp - 0xa], 0x12b
+6EC82155: jbe      0x6ec8211f
+6EC82157: movzx    eax, byte ptr [ebp - 0x11]
+6EC8215B: cmp      byte ptr [ebp - 0x1c], al
+6EC8215E: sete     al
+6EC82161: mov      byte ptr [ebp - 0xb], al
+6EC82164: movzx    eax, byte ptr [ebp - 0xb]
+6EC82168: leave    
+6EC82169: ret      
+```
+
+### Ordinal 20 — `mems_test_actuator` — RVA `0x0000216A`
+
+```asm
+6EC8216A: push     ebp
+6EC8216B: mov      ebp, esp
+6EC8216D: sub      esp, 0x28
+6EC82170: mov      byte ptr [ebp - 9], 0
+6EC82174: mov      byte ptr [ebp - 0xa], 0
+6EC82178: mov      eax, dword ptr [ebp + 8]
+6EC8217B: mov      dword ptr [esp], eax
+6EC8217E: call     0x6ec81bfa ; -> mems_lock
+6EC82183: test     al, al
+6EC82185: je       0x6ec821de
+6EC82187: mov      eax, dword ptr [ebp + 0xc]
+6EC8218A: movzx    eax, al
+6EC8218D: mov      dword ptr [esp + 4], eax
+6EC82191: mov      eax, dword ptr [ebp + 8]
+6EC82194: mov      dword ptr [esp], eax
+6EC82197: call     0x6ec819c6 ; -> mems_send_command
+6EC8219C: test     al, al
+6EC8219E: je       0x6ec821d3
+6EC821A0: mov      dword ptr [esp + 8], 1
+6EC821A8: lea      eax, [ebp - 0xa]
+6EC821AB: mov      dword ptr [esp + 4], eax
+6EC821AF: mov      eax, dword ptr [ebp + 8]
+6EC821B2: mov      dword ptr [esp], eax
+6EC821B5: call     0x6ec81874 ; -> mems_read_serial
+6EC821BA: cmp      ax, 1
+6EC821BE: jne      0x6ec821d3
+6EC821C0: cmp      dword ptr [ebp + 0x10], 0
+6EC821C4: je       0x6ec821cf
+6EC821C6: movzx    edx, byte ptr [ebp - 0xa]
+6EC821CA: mov      eax, dword ptr [ebp + 0x10]
+6EC821CD: mov      byte ptr [eax], dl
+6EC821CF: mov      byte ptr [ebp - 9], 1
+6EC821D3: mov      eax, dword ptr [ebp + 8]
+6EC821D6: mov      dword ptr [esp], eax
+6EC821D9: call     0x6ec81c2d ; -> mems_unlock
+6EC821DE: movzx    eax, byte ptr [ebp - 9]
+6EC821E2: leave    
+6EC821E3: ret      
+```
+
+### Ordinal 2 — `mems_clear_faults` — RVA `0x000021E4`
+
+```asm
+6EC821E4: push     ebp
+6EC821E5: mov      ebp, esp
+6EC821E7: sub      esp, 0x28
+6EC821EA: mov      byte ptr [ebp - 9], 0
+6EC821EE: mov      byte ptr [ebp - 0xa], 0xff
+6EC821F2: mov      eax, dword ptr [ebp + 8]
+6EC821F5: mov      dword ptr [esp], eax
+6EC821F8: call     0x6ec81bfa ; -> mems_lock
+6EC821FD: test     al, al
+6EC821FF: je       0x6ec8225a
+6EC82201: mov      dword ptr [esp + 4], 0xcc
+6EC82209: mov      eax, dword ptr [ebp + 8]
+6EC8220C: mov      dword ptr [esp], eax
+6EC8220F: call     0x6ec819c6 ; -> mems_send_command
+6EC82214: test     al, al
+6EC82216: je       0x6ec8223f
+6EC82218: mov      dword ptr [esp + 8], 1
+6EC82220: lea      eax, [ebp - 0xa]
+6EC82223: mov      dword ptr [esp + 4], eax
+6EC82227: mov      eax, dword ptr [ebp + 8]
+6EC8222A: mov      dword ptr [esp], eax
+6EC8222D: call     0x6ec81874 ; -> mems_read_serial
+6EC82232: cmp      ax, 1
+6EC82236: jne      0x6ec8223f
+6EC82238: mov      eax, 1
+6EC8223D: jmp      0x6ec82244
+6EC8223F: mov      eax, 0
+6EC82244: mov      byte ptr [ebp - 9], al
+6EC82247: and      byte ptr [ebp - 9], 1
+6EC8224B: mov      byte ptr [ebp - 9], 1
+6EC8224F: mov      eax, dword ptr [ebp + 8]
+6EC82252: mov      dword ptr [esp], eax
+6EC82255: call     0x6ec81c2d ; -> mems_unlock
+6EC8225A: movzx    eax, byte ptr [ebp - 9]
+6EC8225E: leave    
+6EC8225F: ret      
+```
+
+### Ordinal 17 — `mems_reset_ECU` — RVA `0x00002260`
+
+```asm
+6EC82260: push     ebp
+6EC82261: mov      ebp, esp
+6EC82263: sub      esp, 0x28
+6EC82266: mov      byte ptr [ebp - 9], 0
+6EC8226A: mov      byte ptr [ebp - 0xa], 0xff
+6EC8226E: mov      eax, dword ptr [ebp + 8]
+6EC82271: mov      dword ptr [esp], eax
+6EC82274: call     0x6ec81bfa ; -> mems_lock
+6EC82279: test     al, al
+6EC8227B: je       0x6ec822d6
+6EC8227D: mov      dword ptr [esp + 4], 0xfa
+6EC82285: mov      eax, dword ptr [ebp + 8]
+6EC82288: mov      dword ptr [esp], eax
+6EC8228B: call     0x6ec819c6 ; -> mems_send_command
+6EC82290: test     al, al
+6EC82292: je       0x6ec822bb
+6EC82294: mov      dword ptr [esp + 8], 1
+6EC8229C: lea      eax, [ebp - 0xa]
+6EC8229F: mov      dword ptr [esp + 4], eax
+6EC822A3: mov      eax, dword ptr [ebp + 8]
+6EC822A6: mov      dword ptr [esp], eax
+6EC822A9: call     0x6ec81874 ; -> mems_read_serial
+6EC822AE: cmp      ax, 1
+6EC822B2: jne      0x6ec822bb
+6EC822B4: mov      eax, 1
+6EC822B9: jmp      0x6ec822c0
+6EC822BB: mov      eax, 0
+6EC822C0: mov      byte ptr [ebp - 9], al
+6EC822C3: and      byte ptr [ebp - 9], 1
+6EC822C7: mov      byte ptr [ebp - 9], 1
+6EC822CB: mov      eax, dword ptr [ebp + 8]
+6EC822CE: mov      dword ptr [esp], eax
+6EC822D1: call     0x6ec81c2d ; -> mems_unlock
+6EC822D6: movzx    eax, byte ptr [ebp - 9]
+6EC822DA: leave    
+6EC822DB: ret      
+```
+
+### Ordinal 18 — `mems_reset_adjustments` — RVA `0x000022DC`
+
+```asm
+6EC822DC: push     ebp
+6EC822DD: mov      ebp, esp
+6EC822DF: sub      esp, 0x28
+6EC822E2: mov      byte ptr [ebp - 9], 0
+6EC822E6: mov      byte ptr [ebp - 0xa], 0xff
+6EC822EA: mov      eax, dword ptr [ebp + 8]
+6EC822ED: mov      dword ptr [esp], eax
+6EC822F0: call     0x6ec81bfa ; -> mems_lock
+6EC822F5: test     al, al
+6EC822F7: je       0x6ec82352
+6EC822F9: mov      dword ptr [esp + 4], 0xf
+6EC82301: mov      eax, dword ptr [ebp + 8]
+6EC82304: mov      dword ptr [esp], eax
+6EC82307: call     0x6ec819c6 ; -> mems_send_command
+6EC8230C: test     al, al
+6EC8230E: je       0x6ec82337
+6EC82310: mov      dword ptr [esp + 8], 1
+6EC82318: lea      eax, [ebp - 0xa]
+6EC8231B: mov      dword ptr [esp + 4], eax
+6EC8231F: mov      eax, dword ptr [ebp + 8]
+6EC82322: mov      dword ptr [esp], eax
+6EC82325: call     0x6ec81874 ; -> mems_read_serial
+6EC8232A: cmp      ax, 1
+6EC8232E: jne      0x6ec82337
+6EC82330: mov      eax, 1
+6EC82335: jmp      0x6ec8233c
+6EC82337: mov      eax, 0
+6EC8233C: mov      byte ptr [ebp - 9], al
+6EC8233F: and      byte ptr [ebp - 9], 1
+6EC82343: mov      byte ptr [ebp - 9], 1
+6EC82347: mov      eax, dword ptr [ebp + 8]
+6EC8234A: mov      dword ptr [esp], eax
+6EC8234D: call     0x6ec81c2d ; -> mems_unlock
+6EC82352: movzx    eax, byte ptr [ebp - 9]
+6EC82356: leave    
+6EC82357: ret      
+```
+
+### Ordinal 6 — `mems_heartbeat` — RVA `0x00002358`
+
+```asm
+6EC82358: push     ebp
+6EC82359: mov      ebp, esp
+6EC8235B: sub      esp, 0x28
+6EC8235E: mov      byte ptr [ebp - 9], 0
+6EC82362: mov      byte ptr [ebp - 0xa], 0xff
+6EC82366: mov      eax, dword ptr [ebp + 8]
+6EC82369: mov      dword ptr [esp], eax
+6EC8236C: call     0x6ec81bfa ; -> mems_lock
+6EC82371: test     al, al
+6EC82373: je       0x6ec823bb
+6EC82375: mov      dword ptr [esp + 4], 0xf4
+6EC8237D: mov      eax, dword ptr [ebp + 8]
+6EC82380: mov      dword ptr [esp], eax
+6EC82383: call     0x6ec819c6 ; -> mems_send_command
+6EC82388: test     al, al
+6EC8238A: je       0x6ec823b0
+6EC8238C: mov      dword ptr [esp + 8], 1
+6EC82394: lea      eax, [ebp - 0xa]
+6EC82397: mov      dword ptr [esp + 4], eax
+6EC8239B: mov      eax, dword ptr [ebp + 8]
+6EC8239E: mov      dword ptr [esp], eax
+6EC823A1: call     0x6ec81874 ; -> mems_read_serial
+6EC823A6: cmp      ax, 1
+6EC823AA: jne      0x6ec823b0
+6EC823AC: mov      byte ptr [ebp - 9], 1
+6EC823B0: mov      eax, dword ptr [ebp + 8]
+6EC823B3: mov      dword ptr [esp], eax
+6EC823B6: call     0x6ec81c2d ; -> mems_unlock
+6EC823BB: movzx    eax, byte ptr [ebp - 9]
+6EC823BF: leave    
+6EC823C0: ret      
+```
+
+
+<!-- ARCHIVE_SOURCE_END name=RAPPORT_LIBROSCO_DESASSEMBLAGE.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RAPPORT_LIBROSCO_LEOPOLD_COMPARAISON.md size=3261 sha256=4ae62592db46424296c9cdc37f2cffe86a2899e8b8924f14a3bc8ba923348189 -->
+
+## ARCHIVE CONSOLIDEE - `RAPPORT_LIBROSCO_LEOPOLD_COMPARAISON.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `4ae62592db46424296c9cdc37f2cffe86a2899e8b8924f14a3bc8ba923348189`.
+
+# Comparaison binaire — LeopoldG `librosco.dll`
+
+> Rapport de comparaison uniquement. Cette DLL externe ne remplace pas la DLL validée d’ECU MEMS Manager et ses significations de commandes ne sont pas promues automatiquement.
+
+## Identité
+
+- Source publique : `LeopoldG/mems-rosco/main/librosco.dll`
+- Taille : **63161 octets**
+- SHA-256 : `8c3087e2ce0c453eb250caff6a2ace1928563d593584dabb255a107bf8195911`
+- Architecture : **I386 / x86 32 bits / PE32**
+- Nombre d’exports nommés : **45**
+- DLL importées : `KERNEL32.dll`, `msvcrt.dll`
+
+## Comparaison avec les 22 exports de notre DLL historique
+
+- Exports communs : **21**
+- Exports supplémentaires Leopold : **24**
+- Exports historiques absents chez Leopold : **1**
+
+### Exports communs
+
+- `mems_cleanup`
+- `mems_clear_faults`
+- `mems_connect`
+- `mems_disconnect`
+- `mems_get_lib_version`
+- `mems_heartbeat`
+- `mems_init`
+- `mems_init_link`
+- `mems_is_connected`
+- `mems_lock`
+- `mems_move_iac`
+- `mems_openserial`
+- `mems_read`
+- `mems_read_iac_position`
+- `mems_read_raw`
+- `mems_read_serial`
+- `mems_reset_ECU`
+- `mems_send_command`
+- `mems_test_actuator`
+- `mems_unlock`
+- `mems_write_serial`
+
+### Exports supplémentaires Leopold
+
+- `mems_Boost_Valve_Off`
+- `mems_Boost_Valve_On`
+- `mems_CloseIAC`
+- `mems_Fan1_Off`
+- `mems_Fan1_On`
+- `mems_Fan2_Off`
+- `mems_Fan2_On`
+- `mems_O2Heater_Off`
+- `mems_O2Heater_On`
+- `mems_OpenIAC`
+- `mems_Purge_Valve_Off`
+- `mems_Purge_Valve_On`
+- `mems_Save`
+- `mems_fuel_trim_minus`
+- `mems_fuel_trim_plus`
+- `mems_idle_decay_minus`
+- `mems_idle_decay_plus`
+- `mems_idle_speed_minus`
+- `mems_idle_speed_plus`
+- `mems_ignition_advance_minus`
+- `mems_ignition_advance_plus`
+- `mems_reset_ADJ`
+- `mems_reset_EMI`
+- `temperature_value_to_degrees_f`
+
+### Exports historiques absents
+
+- `mems_reset_adjustments`
+
+## Table complète des exports Leopold
+
+1. `mems_Boost_Valve_Off`
+2. `mems_Boost_Valve_On`
+3. `mems_CloseIAC`
+4. `mems_Fan1_Off`
+5. `mems_Fan1_On`
+6. `mems_Fan2_Off`
+7. `mems_Fan2_On`
+8. `mems_O2Heater_Off`
+9. `mems_O2Heater_On`
+10. `mems_OpenIAC`
+11. `mems_Purge_Valve_Off`
+12. `mems_Purge_Valve_On`
+13. `mems_Save`
+14. `mems_cleanup`
+15. `mems_clear_faults`
+16. `mems_connect`
+17. `mems_disconnect`
+18. `mems_fuel_trim_minus`
+19. `mems_fuel_trim_plus`
+20. `mems_get_lib_version`
+21. `mems_heartbeat`
+22. `mems_idle_decay_minus`
+23. `mems_idle_decay_plus`
+24. `mems_idle_speed_minus`
+25. `mems_idle_speed_plus`
+26. `mems_ignition_advance_minus`
+27. `mems_ignition_advance_plus`
+28. `mems_init`
+29. `mems_init_link`
+30. `mems_is_connected`
+31. `mems_lock`
+32. `mems_move_iac`
+33. `mems_openserial`
+34. `mems_read`
+35. `mems_read_iac_position`
+36. `mems_read_raw`
+37. `mems_read_serial`
+38. `mems_reset_ADJ`
+39. `mems_reset_ECU`
+40. `mems_reset_EMI`
+41. `mems_send_command`
+42. `mems_test_actuator`
+43. `mems_unlock`
+44. `mems_write_serial`
+45. `temperature_value_to_degrees_f`
+
+## Interprétation
+
+- Une API plus large ne signifie pas que les sémantiques sont compatibles avec notre binaire Haro. Les conflits `0x0F`, `0xFA` et `0xAF` restent explicitement bloquants pour un remplacement direct.
+- Cette comparaison sert à identifier des capacités à préserver dans la cartographie, pas à choisir Leopold 3.0 comme base automatique de la DLL x64.
+
+
+<!-- ARCHIVE_SOURCE_END name=RAPPORT_LIBROSCO_LEOPOLD_COMPARAISON.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RAPPORT_RCL0193FRE_1790_BINARY_TRANSPORT_TEST_2026-08-29.md size=426 sha256=3583f9ae6b6402f14efa216d0a09d9cc47afae36fb481facdd1406f69c35808d -->
+
+## ARCHIVE CONSOLIDEE - `RAPPORT_RCL0193FRE_1790_BINARY_TRANSPORT_TEST_2026-08-29.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `3583f9ae6b6402f14efa216d0a09d9cc47afae36fb481facdd1406f69c35808d`.
+
+# Test de transport binaire avant lot 1790
+
+Avant toute pousse du lot 1790, un test non attaché à l'arbre Git est autorisé pour vérifier si le connecteur GitHub sait accepter directement un chemin de fichier local dans `create_blob`. Aucun ref/commit/branche ne sera modifié par ce test. Si le connecteur ne supporte pas ce mode, le blob orphelin éventuel sera ignoré et aucune donnée de production ne sera affectée.
+
+<!-- ARCHIVE_SOURCE_END name=RAPPORT_RCL0193FRE_1790_BINARY_TRANSPORT_TEST_2026-08-29.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RAPPORT_RCL0193FRE_1790_PRE_PUSH_2026-08-29.md size=3462 sha256=d4bbc5ed9e5df2a6056ea7e1e83366c16ee6b053a162ca8861a535a7ca3c1b44 -->
+
+## ARCHIVE CONSOLIDEE - `RAPPORT_RCL0193FRE_1790_PRE_PUSH_2026-08-29.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `d4bbc5ed9e5df2a6056ea7e1e83366c16ee6b053a162ca8861a535a7ca3c1b44`.
+
+# RCL0193FRE — LOT 1790 — ÉTAT FINAL AVANT POUSSE
+
+Date : 2026-08-29
+
+## État à préserver
+- Production `MEMSX64` reste strictement BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.
+- Travail documentaire uniquement sur `tmp-rave-visual-backfill`.
+- Aucun #102, aucun changement protocole ECU, acquisition/RAM, write/reset, UI, Qwen/ONNX ou 32 bits.
+
+## Source exacte
+- `Manuel Rover MPI.pdf` fourni par l'utilisateur.
+- Publication vérifiée : `RCL0193FRE`, Mini Workshop Manual français, 5e édition / 1999.
+- 371 pages, 67 009 217 octets.
+- SHA-256 PDF : `0c7fef28d0d0f0673ba321d6625a019c005823103caa98afb3258114e1fec713`.
+- Portée générale : Mini construits depuis NIV `SAXXNNAZEBD134455`.
+
+## Lot 1790 final préparé
+52 pages constructeur françaises conservées comme captures originales :
+`34-40, 42-46, 48-49, 104, 106-118, 120-136, 138, 140-145`.
+Les pages blanches/intercalaires `41,47,105,119,137,139` sont exclues.
+
+Comptes du candidat V4 :
+- 52 assets PNG ;
+- 429 connaissances ;
+- 429 liaisons connaissance->portée ;
+- 350 spécifications ;
+- 351 valeurs structurées ;
+- 27 numéros d'opération constructeur ;
+- 51 phases de procédure dépose/repose/réglage/test ;
+- 344 étapes ordonnées ;
+- 50 exigences (avertissements, attentions, outils spéciaux, pièces à remplacer) ;
+- 379 relations de preuve/cross-check ;
+- 51 alias français.
+
+`research_enrichment_1790.qz64` : 84 037 octets, SHA-256 `169725ef043b03f776500f41508a46eeec9052411a3d1e4fec32ab47e1967e65`.
+SQL décompressé : 828 034 octets, SHA-256 `78bd0cbd02418d9c8f40acbe6a86b602c49eb84f1be619c167bd6cb7bbaba1eb`.
+Captures : 11 052 051 octets au total.
+
+## Corrections importantes avant pousse
+
+🔴 IMPORTANT — Le manuel n'est pas traité comme « tout MPi ». Les pages 38 et 39 restent explicitement SPi manuelle / SPi automatique. La page 40 est MPi. Le corps `Système de gestion moteur MEMS` + `Système d'alimentation` 104-145 est porté MPi, preuves internes cohérentes : MAP externe, CMP, deux injecteurs, rampe carburant.
+
+🔴 IMPORTANT — Aucune valeur `mems_family=1.9` ou `1.6` n'est inventée dans le scope : le manuel dit MEMS mais ne donne pas dans ces pages un numéro de version à utiliser comme preuve de classification. L'induction MPi/SPi est structurée ; la famille MEMS reste NULL/UNKNOWN tant qu'une source explicite ne la prouve pas.
+
+🔴 IMPORTANT — La culasse possède une séquence constructeur multi-étapes page 42 : `34 N.m`, puis `34 N.m de plus`. Elle est conservée en deux valeurs ordonnées ; aucun faux couple final n'est calculé.
+
+🔴 IMPORTANT — Page 45, le manuel imprime deux fois le même libellé `Boulon d'ancrage supérieur de ceinture avant`, une fois à 32 N.m et une fois à 30 N.m. Les deux valeurs sont conservées avec `conflit_a_verifier` + relation `conflicts_with`; aucune valeur n'est choisie arbitrairement.
+
+## Validation locale avant pousse
+- schéma additif 1730 exact : PASS ;
+- `PRAGMA foreign_keys=ON` ;
+- `PRAGMA integrity_check = ok` ;
+- `PRAGMA user_version = 20` ;
+- 0 connaissance sans portée ;
+- toutes les captures ont un SHA-256 ;
+- aucune table historique RAVE/expert n'est réécrite par le SQL 1790.
+
+## Prochaine action
+Pousser atomiquement le lot 1790 sur `tmp-rave-visual-backfill` : qz64 + 52 captures + audit + manifeste, puis relire les octets distants et reconstruire/valider la base complète. Ensuite poursuivre le manuel RCL0193FRE par blocs jusqu'aux 371 pages.
+
+<!-- ARCHIVE_SOURCE_END name=RAPPORT_RCL0193FRE_1790_PRE_PUSH_2026-08-29.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RAPPORT_RCL0193FRE_1790_PRE_PUSH_V5_2026-08-29.md size=3385 sha256=aeb86aa675db942e8c52dcc96ba64ee882ac384906fcbd6431ad745c23ac72bf -->
+
+## ARCHIVE CONSOLIDEE - `RAPPORT_RCL0193FRE_1790_PRE_PUSH_V5_2026-08-29.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `aeb86aa675db942e8c52dcc96ba64ee882ac384906fcbd6431ad745c23ac72bf`.
+
+# RCL0193FRE — LOT 1790 — PRE-POUSSE V5
+
+Date : 2026-08-29
+
+## Etat à préserver
+
+- Production `MEMSX64` vérifiée avant pousse : BUILD #101, HEAD `22dbe75ed14e0a61e694159d505ef72245116b48`.
+- Branche documentaire cible unique : `tmp-rave-visual-backfill`.
+- HEAD documentaire avant pousse : `dfb5b8525b1d5685d1070914eb78c64f30aa7ff6`.
+- Aucun changement ECU/protocole/UI/IA/build de production.
+
+## Source
+
+- Document utilisateur : `Manuel Rover MPI.pdf`.
+- Publication identifiée : `RCL0193FRE`, manuel atelier Mini français, 5e édition.
+- PDF source : 371 pages, 67 009 217 octets.
+- SHA-256 source : `0c7fef28d0d0f0673ba321d6625a019c005823103caa98afb3258114e1fec713`.
+- Couche texte décodée sans OCR approximatif.
+
+## Lot 1790 final préparé
+
+Premier bloc prioritaire :
+- Information / réglages / couples / fluides : PDF 34-49 ;
+- Gestion moteur MEMS : PDF 104-135 ;
+- Système d’alimentation : PDF 136-145.
+
+Pages utiles retenues : **52**. Les pages blanches/intercalaires ne sont pas conservées.
+
+Contenu structuré V5 :
+- `mems_applicability_scope` : +4 portées RCL0193FRE ;
+- connaissances : **429** ;
+- liaisons connaissance-portée : **429** ;
+- spécifications : **350** ;
+- valeurs de spécifications : **351** ;
+- procédures/phases : **51** pour **27 opérations constructeur** ;
+- étapes ordonnées : **344** ;
+- exigences/avertissements/outils/notes : **50** ;
+- relations : **379** ;
+- alias : **51**.
+
+## Corrections de portée avant pousse
+
+- PDF 38 : portée explicite **SPi boîte manuelle**.
+- PDF 39 : portée explicite **SPi boîte automatique**.
+- PDF 40 : portée explicite **MPi**.
+- Bloc gestion moteur PDF 104-135 : portée **MPi**.
+- Bloc alimentation PDF 136-145 : portée **MPi**.
+- Les tableaux généraux de couples restent Mini génériques lorsque le document ne donne pas une portée MPi.
+- Aucune génération MEMS (`1.6`, `1.9`, etc.) n’est inventée à partir du manuel : `mems_family` reste NULL dans les nouvelles portées tant que la source ne la nomme pas explicitement.
+
+## Contrôles particuliers conservés
+
+- Culasse : séquence constructeur structurée en deux étapes : `34 N.m`, puis `34 N.m de plus`.
+- PDF 45 : doublon imprimé « Boulon d’ancrage supérieur de ceinture avant » à **32 N.m** et **30 N.m** conservé comme conflit constructeur à vérifier ; aucune valeur choisie arbitrairement.
+- Dépose/repose appairées et ordre constructeur conservé.
+
+## Validation locale avant pousse
+
+Candidat reconstruit avec tous les lots antérieurs :
+- `PRAGMA integrity_check = ok` ;
+- `PRAGMA user_version = 20` ;
+- faits historiques `mems_rave_fact` : **93**, inchangés ;
+- faits historiques `mems_expert_fact_external` : **105**, inchangés ;
+- aucune connaissance RCL0193FRE sans portée ;
+- aucune table historique modifiée ;
+- `research_enrichment_1790.qz64` : 84 037 octets, SHA-256 `165d3bedb57b38b7fa1550a4360c9f484828209beea51b63b4aab20c5f9885da` ;
+- SQL décompressé : 828 045 octets, SHA-256 `28f0ffc78b957679672608731f0cb0faa3487d1646977304423e23d701465725`.
+
+## Autorisation technique suivante
+
+Pousser uniquement le lot documentaire 1790 sur `tmp-rave-visual-backfill`, faire reconstruire et revalider la base depuis les octets committés, vérifier que `MEMSX64` est toujours #101, journaliser le résultat immédiatement, puis poursuivre l’extraction des sections restantes de RCL0193FRE.
+
+<!-- ARCHIVE_SOURCE_END name=RAPPORT_RCL0193FRE_1790_PRE_PUSH_V5_2026-08-29.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RAPPORT_RCL0193FRE_1790_RED_RULE_NOTE_2026-08-29.md size=372 sha256=34d80054eae7011931e3dde5f6a1e7acddb3e4ba3fe661d5d1bb462e6de40357 -->
+
+## ARCHIVE CONSOLIDEE - `RAPPORT_RCL0193FRE_1790_RED_RULE_NOTE_2026-08-29.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `34d80054eae7011931e3dde5f6a1e7acddb3e4ba3fe661d5d1bb462e6de40357`.
+
+# Règle rouge rappelée pendant le lot 1790
+
+- `🟥 IMPORTANT — REPONSE DE TA PART NECESSAIRE` : blocage volontaire, décision utilisateur obligatoire avant de poursuivre le point concerné.
+- `🔴 IMPORTANT` : information notable à signaler, sans bloquer automatiquement le chantier.
+
+Cette règle reste active pendant l'extraction RCL0193FRE et les lots suivants.
+
+<!-- ARCHIVE_SOURCE_END name=RAPPORT_RCL0193FRE_1790_RED_RULE_NOTE_2026-08-29.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RAPPORT_RCL0193FRE_1790_TRANSPORT_METHOD_2026-08-29.md size=360 sha256=40e51461fcd884d8ea26e915cc88c4b3d67081d3ce5b388f09250cc1e1e8bfb2 -->
+
+## ARCHIVE CONSOLIDEE - `RAPPORT_RCL0193FRE_1790_TRANSPORT_METHOD_2026-08-29.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `40e51461fcd884d8ea26e915cc88c4b3d67081d3ce5b388f09250cc1e1e8bfb2`.
+
+# Méthode de transport binaire lot 1790
+
+La pousse finale doit conserver les captures constructeur sans réduction/destruction de détail. Avant le commit documentaire, le canal de transport binaire est testé séparément et sans modifier la branche de chantier. Aucun contournement par JPEG dégradé n'est autorisé simplement pour faciliter le transport.
+
+<!-- ARCHIVE_SOURCE_END name=RAPPORT_RCL0193FRE_1790_TRANSPORT_METHOD_2026-08-29.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RAPPORT_RCL0193FRE_1790_TRANSPORT_STATUS_2026-08-29.md size=228 sha256=97ef3d5f69ba71cd5387997cf098e2d7856470028992c42d49eb8c73dfab9939 -->
+
+## ARCHIVE CONSOLIDEE - `RAPPORT_RCL0193FRE_1790_TRANSPORT_STATUS_2026-08-29.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `97ef3d5f69ba71cd5387997cf098e2d7856470028992c42d49eb8c73dfab9939`.
+
+# Statut transport avant commit 1790
+
+Le contenu 1790 est validé localement en V5. La prochaine opération technique est uniquement le transport des octets binaires lossless vers la branche temporaire, sans modifier `MEMSX64`.
+
+<!-- ARCHIVE_SOURCE_END name=RAPPORT_RCL0193FRE_1790_TRANSPORT_STATUS_2026-08-29.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RAPPORT_RCL0193FRE_1790_V5_PRE_PUSH_2026-08-29.md size=3847 sha256=d798ccd77005c4290d33b5fb56e3c3d403a04a03787a83c8fdf9fe2856e36bec -->
+
+## ARCHIVE CONSOLIDEE - `RAPPORT_RCL0193FRE_1790_V5_PRE_PUSH_2026-08-29.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `d798ccd77005c4290d33b5fb56e3c3d403a04a03787a83c8fdf9fe2856e36bec`.
+
+# RCL0193FRE — LOT 1790 V5 — ÉTAT FINAL AVANT POUSSE
+
+Date : 2026-08-29
+
+## État à préserver
+- Production `MEMSX64` reste strictement BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.
+- Travail documentaire uniquement sur `tmp-rave-visual-backfill`.
+- Aucun #102, aucun changement protocole ECU, acquisition/RAM, write/reset, UI, Qwen/ONNX ou 32 bits.
+
+## Source
+- `RCL0193FRE`, manuel d'atelier Mini français, PDF fourni par l'utilisateur.
+- 371 pages, 67 009 217 octets.
+- SHA-256 PDF : `0c7fef28d0d0f0673ba321d6625a019c005823103caa98afb3258114e1fec713`.
+
+## Candidat 1790 V5
+- 52 captures constructeur originales.
+- 429 connaissances / 429 liaisons de portée.
+- 350 spécifications / 351 valeurs.
+- 27 numéros d'opération, 51 phases de procédure, 344 étapes, 50 exigences.
+- 379 relations de preuve/cross-check.
+- 51 alias français déclarés.
+- SQL : 828 045 octets, SHA-256 `28f0ffc78b957679672608731f0cb0faa3487d1646977304423e23d701465725`.
+- qz64 : 84 037 octets, SHA-256 `165d3bedb57b38b7fa1550a4360c9f484828209beea51b63b4aab20c5f9885da`.
+- Captures : 11 052 051 octets.
+
+## Corrections V5
+
+🔴 IMPORTANT — La page 43 est un tableau composite. Elle contient `CONTROLE DE DEPOLLUTION`, `SYSTEME DE GESTION MOTEUR`, `SYSTEME D'ALIMENTATION` et `REFROIDISSEMENT`. La page elle-même ainsi que dépollution/refroidissement restent dans la portée générale du manuel. Seules les rubriques gestion moteur et alimentation sont portées MPi. La V4 trop large est donc remplacée par V5 avant toute pousse.
+
+🔴 IMPORTANT — Les pages 38 et 39 restent SPi manuelle / SPi automatique ; la page 40 est MPi. Le bloc 104-145 est porté MPi sur preuve interne cohérente (MAP externe, CMP, deux injecteurs, rampe carburant).
+
+🔴 IMPORTANT — `mems_family` reste volontairement NULL/UNKNOWN. Le manuel emploie MEMS mais ces pages ne donnent pas un numéro de génération suffisant pour enregistrer 1.6 ou 1.9 comme fait constructeur.
+
+🔴 IMPORTANT — Culasse p.42 : séquence `34 N.m`, puis `34 N.m de plus`, conservée en deux valeurs ordonnées ; aucun faux couple final calculé.
+
+🔴 IMPORTANT — P.45 : le même libellé `Boulon d'ancrage supérieur de ceinture avant` apparaît à 32 N.m et 30 N.m. Les deux valeurs sont conservées en `conflit_a_verifier` avec relation `conflicts_with`, sans arbitrage.
+
+## Validation locale V5
+- schéma 1730 exact : PASS ;
+- `PRAGMA integrity_check = ok` ;
+- `user_version = 20` ;
+- 0 connaissance sans portée ;
+- 52/52 captures hashées ;
+- aucune table historique supprimée ou réécrite par le SQL 1790.
+
+## Transport/installateur temporaire prévu
+Pour éviter 52 pousses binaires séparées, le lot sera transporté sur la branche temporaire en trois fragments d'une archive vérifiée, avec un workflow d'installation auto-nettoyant. Il devra : vérifier les hashes, extraire qz64 + 52 PNG + audit, modifier le manifeste additivement, reconstruire la base complète, exiger 93 faits RAVE / 105 faits experts historiques, `integrity_check=ok`, `user_version=20`, vérifier les comptes 1790 et les invariants de portée, puis committer le lot final et supprimer fragments/helper. Aucun build officiel n'est déclenché.
+
+Archive V5 : 9 762 925 octets, SHA-256 `999e96c3e4554556078fe0036e51292ea02c593d15c9e64a1e96fe550a2cf4ac`.
+Fragments :
+- part01 : 3 500 000 octets, `cf92fc9a2da81ac46d97f7a56c025c46488d51e57a03da61d7a12579cd7217a7` ;
+- part02 : 3 500 000 octets, `2421620b00a8ce022cc9ce78537ee3bf8c83ad3020db8c8f0a916309fbc1a85a` ;
+- part03 : 2 762 925 octets, `0649e3cf843fb47355c4098ea762f6d782622e26b5482630facf55e6d1d5016a`.
+
+Prochaine action : pousser uniquement le transport/helper sur `tmp-rave-visual-backfill`, laisser la validation produire le commit documentaire final, puis journaliser immédiatement le résultat avant de poursuivre les pages 146-371.
+
+<!-- ARCHIVE_SOURCE_END name=RAPPORT_RCL0193FRE_1790_V5_PRE_PUSH_2026-08-29.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RAPPORT_RCL0193FRE_1790_VALIDATION_FINALE_2026-08-29.md size=3508 sha256=ed4550a305078231fb05e538e1537681fd5bedd8784c451a3c1834ccdb1be464 -->
+
+## ARCHIVE CONSOLIDEE - `RAPPORT_RCL0193FRE_1790_VALIDATION_FINALE_2026-08-29.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `ed4550a305078231fb05e538e1537681fd5bedd8784c451a3c1834ccdb1be464`.
+
+# RCL0193FRE — LOT 1790 — VALIDATION FINALE
+
+Date : 2026-08-29
+
+## Etat final
+
+Le lot documentaire `research_enrichment_1790.qz64` est validé et poussé sur `tmp-rave-visual-backfill`.
+
+- Commit final : `a47aa37ebf5ca22bb577f6e79b584ff196884568`
+- Message : `Add RCL0193FRE maximum extraction batch 1790`
+- GitHub Actions final : run `33269999194` — `TEMP RCL0193FRE 1790 FINAL INSTALL`
+- Conclusion : **success**
+- Production `MEMSX64` vérifiée après pousse : BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`, inchangée.
+
+## Source
+
+Manuel atelier Mini français `RCL0193FRE`, fichier utilisateur `Manuel Rover MPI.pdf`.
+
+- 371 pages
+- 67 009 217 octets
+- SHA-256 source : `0c7fef28d0d0f0673ba321d6625a019c005823103caa98afb3258114e1fec713`
+- aucune extraction OCR approximative ; couche texte décodée déterministement puis contrôlée contre les pages constructeur.
+
+## Périmètre 1790
+
+52 pages constructeur retenues :
+`34,35,36,37,38,39,40,42,43,44,45,46,48,49,104,106,107,108,109,110,111,112,113,114,115,116,117,118,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,138,140,141,142,143,144,145`.
+
+Le lot couvre :
+- réglages, caractéristiques, couples, contenances et lubrifiants ;
+- système de gestion moteur MEMS ;
+- capteurs/actionneurs associés ;
+- alimentation carburant ;
+- procédures constructeur, étapes, avertissements, outils et exigences ;
+- captures originales des tableaux, dessins et pages de procédure.
+
+Les portées SPi boîte manuelle, SPi boîte automatique et MPi sont séparées. Aucune génération MEMS n'a été inférée lorsque le constructeur ne l'indique pas.
+
+## Comptages finaux contrôlés par GitHub Actions
+
+- connaissances : 429
+- spécifications : 350
+- valeurs : 351
+- procédures/phases : 51 pour 27 opérations constructeur
+- étapes de procédures : 344
+- exigences : 50
+- relations : 379
+- alias : 51
+- captures constructeur : 52
+
+## Validation base
+
+Résultat final reproduit dans GitHub Actions :
+
+- `PRAGMA integrity_check = ok`
+- `PRAGMA user_version = 20`
+- `mems_rave_fact = 93` préservés
+- `mems_expert_fact_external = 105` préservés
+- 52/52 assets présents et hashés
+- QZ64 et SQL décodé conformes aux SHA attendus
+- absence de connaissances RCL0193FRE sans portée
+- portées PDF 38 SPi manuel / 39 SPi auto / 40 MPi contrôlées
+- pages MEMS/alimentation 104-145 portées MPi dans ce lot lorsque la section le prouve
+
+## Cas constructeur conservés sans arbitrage
+
+- culasse : séquence `34 N.m` puis `34 N.m de plus` conservée telle qu'imprimée ;
+- PDF 45 : le même libellé `Boulon d'ancrage supérieur de ceinture avant` apparaît avec 32 N.m et 30 N.m ; les deux valeurs restent enregistrées comme conflit constructeur à vérifier, aucune valeur n'est inventée ou supprimée.
+
+## Nettoyage
+
+Le workflow final a supprimé :
+- le workflow temporaire d'installation ;
+- le validateur temporaire ;
+- les fichiers de transport temporaires.
+
+L'état final de `tmp-rave-visual-backfill` ne contient donc que les données documentaires permanentes du lot 1790 : QZ64, manifest, audit et 52 captures RCL0193FRE.
+
+## Prochaine action exacte
+
+Continuer l'extraction maximale de `RCL0193FRE` avec le prochain lot additif, sans toucher à `MEMSX64`, en commençant par les sections **Moteur PDF 50-95** et **Contrôle de dépollution PDF 96-103**, avec conservation maximale des informations, tableaux, illustrations, procédures, valeurs, couples, outils, avertissements et portées exactes constructeur.
+
+<!-- ARCHIVE_SOURCE_END name=RAPPORT_RCL0193FRE_1790_VALIDATION_FINALE_2026-08-29.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RAPPORT_RCL0193FRE_1800_MOTEUR_DEPOLLUTION_PRE_PUSH_2026-08-29.md size=4971 sha256=caa3d767fb7b8ddbda97ba083c37a25db1e43e588949f1a3f1fdc3ac97017b0b -->
+
+## ARCHIVE CONSOLIDEE - `RAPPORT_RCL0193FRE_1800_MOTEUR_DEPOLLUTION_PRE_PUSH_2026-08-29.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `caa3d767fb7b8ddbda97ba083c37a25db1e43e588949f1a3f1fdc3ac97017b0b`.
+
+# RCL0193FRE — LOT 1800 MOTEUR + DEPOLLUTION — PRE-POUSSE
+
+Date : 2026-08-29
+
+## Etat à préserver
+
+- Production `MEMSX64` : BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48` — ne pas modifier.
+- Branche documentaire : `tmp-rave-visual-backfill`.
+- Dernier lot validé : 1790, commit `a47aa37ebf5ca22bb577f6e79b584ff196884568`.
+- Schéma additif : 11 tables, `PRAGMA user_version=20`.
+- Historiques à préserver : 93 faits RAVE / 105 faits experts externes.
+
+## Source
+
+Même PDF utilisateur `RCL0193FRE` validé pour 1790 :
+- 371 pages ;
+- 67 009 217 octets ;
+- SHA-256 `0c7fef28d0d0f0673ba321d6625a019c005823103caa98afb3258114e1fec713`.
+
+Aucun OCR approximatif : texte issu de la couche texte du PDF décodée déterministement et pages contrôlées visuellement.
+
+## Périmètre 1800
+
+Sections :
+- Moteur : PDF 50-95 ;
+- Contrôle de dépollution : PDF 96-103.
+
+Pages utiles conservées : 52. Les pages PDF 51 et 97 sont blanches et exclues.
+
+Liste : `50,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,98,99,100,101,102,103`.
+
+## Extraction structurée candidate validée localement
+
+- 52 connaissances page complètes avec texte source intégral et lien vers capture constructeur ;
+- 32 opérations de réparation constructeur ;
+- 60 phases de procédures ;
+- 699 étapes constructeur conservées dans leur ordre ;
+- 81 exigences : avertissements, attentions, remarques, outils spéciaux et remplacements explicites ;
+- 71 spécifications/valeurs structurées ;
+- 36 relations de provenance/cross-check ;
+- 22 nouveaux alias effectifs (24 proposés, deux déjà présents historiquement et donc ignorés sans duplication) ;
+- 4 sous-thèmes dépollution supplémentaires pour recherche : émissions du carter, EVAP, convertisseur catalytique, implantation EVAP.
+
+Les énoncés numériques génériques sont stockés avec le texte constructeur exact sans inventer un composant ou une sémantique qui ne seraient pas prouvés.
+
+Exemples directement prouvés dans le bloc :
+- jeu axial pignon primaire : `0,089 à 0,165 mm` ;
+- rondelles de butée : `2,79 à 3,04 mm`, incréments `0,05 mm` ;
+- jeu culbuteurs à froid : `0.30 mm` ;
+- plaque butée arbre à cames : `11 N.m` ;
+- poulie vilebrequin : `150 N.m` ;
+- culasse : serrage progressif `34 N.m` puis final `68 N.m` dans l'ordre illustré ;
+- le chapitre dépollution décrit la boucle de correction par sonde à oxygène chauffée / ECM / convertisseur catalytique ;
+- soupape de purge EVAP commandée par ECM et maintenue fermée jusqu'à ce que la température moteur dépasse `70°C` ;
+- avertissement constructeur contre le carburant plombé pour le convertisseur catalytique.
+
+## Opérations constructeur détectées
+
+32 opérations, dont : réglage jeu axial pignon primaire, réglage culbuteurs, plaque butée arbre à cames, poulie et joint avant vilebrequin, joint de culasse, couvre-culbuteurs, rampe culbuteurs, soupapes, moteur/boîte, silentblocs, barres d'appui, joints/carter volant, volant, filtre et pompe à huile, joint moteur/boîte, manocontact/soupape pression huile, distribution/tendeur, reniflard-séparateur, EVAP, soupape purge, convertisseur catalytique et bouclier thermique.
+
+## Portée
+
+Par prudence, ce lot est relié à la portée générale constructeur `SCOPE-RCL0193FRE-MINI-VIN134455` et **aucun numéro MEMS 1.6/1.9 n'est inventé**. Les pages peuvent mentionner ECM, ECT, CKP, EVAP etc., mais cela ne suffit pas à réétiqueter automatiquement toutes les opérations moteur en une famille MEMS précise.
+
+## Captures
+
+Les 52 pages sont préparées en rendu constructeur monochrome CCITT Group 4 **150 dpi**, 1240 x 1754 px, afin de mieux conserver dessins, légendes, tableaux et texte que le transport 120 dpi du lot précédent.
+
+Transport visuel local :
+- TIFF 52 pages SHA-256 `93aba01da598a2d9a610b8eee736baccbef0b0849ed5eb11dc5a64808cc2bf0a` ;
+- archive XZ SHA-256 `7dd7ae07169fe969e0877de871cc701fdd5f580fedd528527433602986610035`.
+
+QZ64 candidat :
+- SHA-256 `743d27910f60760e35f5efb81232a67a8488fc919f998a86e8d0d521128da0af` ;
+- SQL décodé SHA-256 `9168045f39f7e53d91b4eed079acc3fb5f79476bde0ecfe2f37ce98b2d0e9a53`.
+
+## Validation locale complète
+
+Reconstruction sur l'état final 1790 :
+- `integrity_check=ok` ;
+- `user_version=20` ;
+- historiques 93/105 inchangés ;
+- delta : +88 connaissances, +88 portées de connaissances, +71 specs, +71 valeurs, +60 procédures, +699 étapes, +81 exigences, +36 relations, +22 alias effectifs ;
+- aucune connaissance 1800 sans portée ;
+- aucune portée MEMS spécifique inventée.
+
+## Prochaine action exacte
+
+Pousser le lot additif `research_enrichment_1800.qz64`, les 52 captures constructeur, le manifest et l'audit sur `tmp-rave-visual-backfill`, valider la base reconstruite dans GitHub Actions, nettoyer tous les transports/workflows temporaires, puis consigner immédiatement la validation finale dans `RAPPORT`.
+
+<!-- ARCHIVE_SOURCE_END name=RAPPORT_RCL0193FRE_1800_MOTEUR_DEPOLLUTION_PRE_PUSH_2026-08-29.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RAPPORT_RCL0193FRE_1800_VALIDATION_FINALE_2026-08-29.md size=2455 sha256=190bc8a3b6f38955ff6a7856e1589c11d7ee50c22a5c85097f9d479f4833ef3f -->
+
+## ARCHIVE CONSOLIDEE - `RAPPORT_RCL0193FRE_1800_VALIDATION_FINALE_2026-08-29.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `190bc8a3b6f38955ff6a7856e1589c11d7ee50c22a5c85097f9d479f4833ef3f`.
+
+# RCL0193FRE — LOT 1800 MOTEUR + DEPOLLUTION — VALIDATION FINALE
+
+Date : 2026-08-29
+
+## Résultat
+
+Lot 1800 validé et poussé sur `tmp-rave-visual-backfill`.
+
+- Commit final : `4dcba0d7e8f26ff2fae772ef734ef6521d0abc5e`
+- Message : `Add RCL0193FRE motor emissions batch 1800`
+- GitHub Actions : run `33270387415` — `TEMP RCL0193FRE 1800 FINAL INSTALL`
+- Conclusion : **success**
+- Production `MEMSX64` vérifiée pendant le run : BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`, inchangée.
+
+## Périmètre intégré
+
+- Moteur : PDF 50-95
+- Contrôle de dépollution : PDF 96-103
+- 52 pages utiles ; pages blanches 51 et 97 exclues.
+
+## Contenu final validé
+
+- +88 connaissances : 52 pages complètes, 32 opérations constructeur, 4 sous-thèmes dépollution ;
+- +71 spécifications et +71 valeurs ;
+- +60 phases de procédures ;
+- +699 étapes ;
+- +81 exigences ;
+- +36 relations ;
+- +22 alias effectifs ;
+- 52 captures constructeur 150 dpi avec dessins/légendes/texte conservés.
+
+## Contrôles GitHub Actions
+
+Tous verts :
+- transport SHA exact ;
+- QZ64 exact ;
+- rendu 52/52 pages ;
+- manifest mis à jour ;
+- audit produit ;
+- `PRAGMA integrity_check=ok` ;
+- `PRAGMA user_version=20` ;
+- 93 faits RAVE historiques préservés ;
+- 105 faits experts externes préservés ;
+- 88/88 connaissances 1800 avec portée ;
+- aucune famille MEMS 1.6/1.9 inventée ;
+- vérification distante après commit réussie ;
+- workflow, installateur et transport temporaires supprimés de l'état final.
+
+## Valeurs et informations notables conservées
+
+- jeu axial pignon primaire : 0,089 à 0,165 mm ;
+- rondelles de butée : 2,79 à 3,04 mm par incréments de 0,05 mm ;
+- jeu culbuteurs : 0.30 mm ;
+- plaque de butée arbre à cames : 11 N.m ;
+- poulie vilebrequin : 150 N.m ;
+- culasse : 34 N.m puis serrage final 68 N.m dans l'ordre illustré ;
+- dépollution : ECM, sonde à oxygène chauffée, correction de richesse et convertisseur catalytique décrits par le constructeur ;
+- EVAP : boîte charbon actif, soupape de purge commandée par ECM, purge inhibée jusqu'à température moteur supérieure à 70°C ;
+- avertissement carburant plombé / détérioration catalyseur conservé.
+
+## Prochaine action exacte
+
+Continuer l'aspiration de `RCL0193FRE` sur les sections suivantes, toujours par lots additifs et sans toucher à `MEMSX64` : circuit de refroidissement PDF 146-159, collecteur/échappement PDF 160-175, puis embrayage et transmission.
+
+<!-- ARCHIVE_SOURCE_END name=RAPPORT_RCL0193FRE_1800_VALIDATION_FINALE_2026-08-29.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RAPPORT_RCL0193FRE_1810_POST_PUSH.md size=1294 sha256=4930bf1d08b191e0d2b4616c6ee4a4552ebcb5b76e0c49b5cc90985905da9ce3 -->
+
+## ARCHIVE CONSOLIDEE - `RAPPORT_RCL0193FRE_1810_POST_PUSH.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `4930bf1d08b191e0d2b4616c6ee4a4552ebcb5b76e0c49b5cc90985905da9ce3`.
+
+# RCL0193FRE — lot 1810 — POST-POUSSE
+
+Date : 2026-08-29
+
+## Résultat
+
+- GitHub Actions : VERT.
+- Run : `33271191835`.
+- Commit documentaire final : `060503f553313461cf9759a16326c621f88f2ff6` — `Add RCL0193FRE cooling intake exhaust batch 1810`.
+- Branche : `tmp-rave-visual-backfill`.
+- `MEMSX64` est resté strictement sur BUILD #101 / `22dbe75ed14e0a61e694159d505ef72245116b48`.
+
+## Contenu validé
+
+- 25 captures constructeur 150 dpi issues des vraies pages RCL0193FRE.
+- 44 connaissances.
+- 23 spécifications / 23 valeurs.
+- 30 phases de procédure.
+- 271 étapes.
+- 19 exigences.
+- 19 relations.
+- Thermostat 88 °C conservé comme valeur constructeur typée.
+- La dimension de clé HO2S 22 mm reste uniquement dans la procédure et n’est pas classée comme spécification véhicule.
+- Intégrité SQLite OK, user_version 20.
+- Historiques 93 `mems_rave_fact` / 105 `mems_expert_fact_external` intacts.
+- Transport temporaire, workflow et installateur supprimés de l’état final.
+
+## Prochaine action exacte
+
+Continuer l’aspiration de `RCL0193FRE` à partir de la page PDF 176, en conservant le même niveau d’extraction : pages constructeur, tableaux, valeurs, procédures, avertissements, outils, images et variantes, sans inférence de famille/protocole non prouvée.
+
+<!-- ARCHIVE_SOURCE_END name=RAPPORT_RCL0193FRE_1810_POST_PUSH.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RAPPORT_RCL0193FRE_1810_PRE_PUSH.md size=2170 sha256=420b732152b0c00181149fc97aacb5a2ab622a71e57a7bbaba3a84b90b265261 -->
+
+## ARCHIVE CONSOLIDEE - `RAPPORT_RCL0193FRE_1810_PRE_PUSH.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `420b732152b0c00181149fc97aacb5a2ab622a71e57a7bbaba3a84b90b265261`.
+
+# RCL0193FRE — lot 1810 — PRE-POUSSE
+
+Date : 2026-08-29
+Branche documentaire cible : `tmp-rave-visual-backfill`
+Production : `MEMSX64` doit rester strictement sur BUILD #101 / `22dbe75ed14e0a61e694159d505ef72245116b48`.
+
+## Périmètre
+
+RCL0193FRE PDF 146-175 : refroidissement + collecteurs/admission/échappement. Pages réellement utiles : 146, 148, 149, 150, 152, 154-160, 162-174. Pages vides/intercalaires non intégrées.
+
+## Validation locale avant pousse
+
+- 25 vraies pages constructeur conservées en captures 150 dpi.
+- 15 opérations de réparation constructeur.
+- 44 connaissances structurées.
+- 23 spécifications / 23 valeurs structurées.
+- 30 phases de procédure.
+- 271 étapes de procédure.
+- 19 exigences / avertissements / outils / remplacements.
+- 19 relations.
+- 10 familles d’alias français tentées, sans forcer de doublons existants.
+- `PRAGMA integrity_check = ok`.
+- `PRAGMA user_version = 20`.
+- Historiques préservés : 93 `mems_rave_fact`, 105 `mems_expert_fact_external`.
+- SHA-256 SQL : `acc515ffc12b680339f0319aa1c10d335108590120008cc2b777746d959a1ecb`.
+- SHA-256 QZ64 : `eb9e28913d2815b8a270ec4b3f4dd5fdfd69c23acf3a0cdbd3b07a1ab9365226`.
+- TIFF G4 150 dpi : `8edf3246dbf0d0dd7ce8a65c94c66768790241fc0e972d9e4ac070385d5166c1`.
+- Transport XZ : `dd4c5171b38f39b68f4b18e5002ae23c9234bc7f5ff9e27f963ae3388174c329`.
+
+## Contrôles techniques particuliers
+
+- Thermostat : température d’ouverture constructeur `88 °C` conservée comme spécification typée.
+- Les dimensions d’outils ne sont pas converties en spécifications : la clé de 22 mm de la sonde HO2S reste une étape/outillage de procédure.
+- Le bloc admission conserve explicitement MAP, IACV, IAT, rampe et injecteurs sans inférer une autre famille MEMS.
+- Aucune donnée SPi/MPi n’est mélangée hors de la portée réellement prouvée par le document.
+
+## Action suivante exacte
+
+Pousser uniquement le lot additif 1810 sur `tmp-rave-visual-backfill`, faire reconstruire et valider la base et les 25 captures par GitHub Actions, ne committer le lot final que si tous les contrôles passent, puis écrire le rapport post-pousse avant de continuer le manuel.
+
+<!-- ARCHIVE_SOURCE_END name=RAPPORT_RCL0193FRE_1810_PRE_PUSH.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RAPPORT_RCL0193FRE_1820_POST_PUSH.md size=1376 sha256=1a94be973bb887824beaf7fb2f168503b0f8f8440f9121fa7f9051ded5d0700d -->
+
+## ARCHIVE CONSOLIDEE - `RAPPORT_RCL0193FRE_1820_POST_PUSH.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `1a94be973bb887824beaf7fb2f168503b0f8f8440f9121fa7f9051ded5d0700d`.
+
+# RCL0193FRE — lot 1820 — POST-POUSSE
+
+Date : 2026-08-29
+
+## Résultat
+
+- GitHub Actions : VERT.
+- Run : `33271593661`.
+- Commit documentaire final : `f51fc838ae96174d045e0696034280951f9a42c3` — `Add RCL0193FRE clutch gearbox driveshaft steering batch 1820`.
+- Branche : `tmp-rave-visual-backfill`.
+- Production protégée : `MEMSX64` est resté strictement sur BUILD #101 / `22dbe75ed14e0a61e694159d505ef72245116b48`.
+
+## Contenu validé
+
+- 43 vraies captures constructeur 150 dpi.
+- 69 connaissances.
+- 43 spécifications / 43 valeurs.
+- 40 phases de procédure.
+- 509 étapes.
+- 51 exigences.
+- 26 relations.
+- Portée documentaire unique `SCOPE-RCL0193FRE-MINI-VIN134455` ; aucune famille MEMS inventée.
+- Jeu de butée embrayage : 6,5 mm.
+- Jeu axial pignon de renvoi : 0,101 à 0,177 mm.
+- Parallélisme avant : écartement 0°15′ ± 7,5′ par côté, conservé tel qu’imprimé.
+- Intégrité SQLite OK, user_version 20.
+- Historiques 93 `mems_rave_fact` / 105 `mems_expert_fact_external` intacts.
+- Workflow, installateur et transport temporaires supprimés de l’état final.
+
+## Prochaine action exacte
+
+Continuer `RCL0193FRE` avec le lot 1830 à partir de PDF 226 : suspension puis freins, en conservant les pages, tableaux, valeurs, procédures, avertissements, outillages et illustrations constructeur, sans inventer ni réinterpréter les variantes.
+
+<!-- ARCHIVE_SOURCE_END name=RAPPORT_RCL0193FRE_1820_POST_PUSH.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RAPPORT_RCL0193FRE_1820_PRE_PUSH.md size=2742 sha256=07cd5f39e1cf52813f3d243a085b131d12a6526a20784c027d0786ae80e4f475 -->
+
+## ARCHIVE CONSOLIDEE - `RAPPORT_RCL0193FRE_1820_PRE_PUSH.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `07cd5f39e1cf52813f3d243a085b131d12a6526a20784c027d0786ae80e4f475`.
+
+# RCL0193FRE — lot 1820 — PRE-POUSSE
+
+Date : 2026-08-29
+Branche documentaire cible : `tmp-rave-visual-backfill`
+Production : `MEMSX64` doit rester strictement sur BUILD #101 / `22dbe75ed14e0a61e694159d505ef72245116b48`.
+
+## Périmètre
+
+RCL0193FRE PDF 176-225 : embrayage, boîte de vitesses manuelle, arbres de transmission et direction.
+
+43 pages constructeur réellement utiles retenues : 176, 178-190, 192, 194-200, 202, 204-210, 212, 214-225. Les intercalaires/pages blanches sont exclus.
+
+## Validation locale avant pousse
+
+- 43 captures constructeur 150 dpi préparées à partir des vraies pages du manuel.
+- 22 opérations de réparation constructeur.
+- 69 connaissances structurées.
+- 43 spécifications / 43 valeurs structurées.
+- 40 phases de procédure.
+- 509 étapes de procédure.
+- 51 exigences / avertissements / outils / remplacements.
+- 26 relations.
+- 21 groupes d’alias français tentés, sans forcer les doublons existants.
+- `PRAGMA integrity_check = ok`.
+- `PRAGMA user_version = 20`.
+- Historiques préservés : 93 `mems_rave_fact`, 105 `mems_expert_fact_external`.
+- 69/69 connaissances possèdent une portée ; aucune portée incompatible n’est injectée.
+- Portée unique du lot : `SCOPE-RCL0193FRE-MINI-VIN134455`.
+
+## Hashes candidats
+
+- SQL SHA-256 : `1b282d86f7093b18e153079b102da8c87759d4343bfc7fddf0297675c6b427a8`.
+- QZ64 SHA-256 : `a54409e1e2cf4ddfe5db91e98a94ae5260dad933feb3a8c0c0c870d665dee3a0`.
+- TIFF G4 150 dpi SHA-256 : `82d307a598df5af48ec7ef58ae376633298e9412f413362c170ec0f665ee3f61`.
+- Transport TIFF XZ SHA-256 : `2f73a5b6009b8b2607439752bb65290d39744d9b27081e99a496b35a026b50a3`.
+
+## Contrôles techniques particuliers
+
+- Jeu de butée d’embrayage : `6,5 mm`, conservé comme valeur constructeur typée.
+- Jeu axial du pignon de renvoi : `0,101 à 0,177 mm`, conservé comme plage constructeur.
+- Parallélisme roues avant : écartement `0°15′ ± 7,5′ par côté`, conservé tel qu’imprimé.
+- Les tailles de clés, forets, piges et outils restent des informations de procédure/outillage et ne sont pas transformées en caractéristiques véhicule.
+- La procédure de volant conserve explicitement le renvoi au système SRS ; aucune procédure airbag n’est inventée dans ce lot.
+
+## Contrôle visuel
+
+Échantillons contrôlés manuellement : PDF 179, 195, 212 et 224. Texte, tableaux/dimensions et dessins sont lisibles et conformes aux pages constructeur.
+
+## Action suivante exacte
+
+Pousser uniquement le lot additif 1820 sur `tmp-rave-visual-backfill`, reconstruire et valider la base et les 43 captures dans GitHub Actions, ne committer le lot final que si tous les contrôles passent, puis écrire le rapport post-pousse avant de poursuivre avec suspension/freins.
+
+<!-- ARCHIVE_SOURCE_END name=RAPPORT_RCL0193FRE_1820_PRE_PUSH.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RAPPORT_RCL0193FRE_1830_POST_PUSH.md size=1111 sha256=063f6e839a3fba2f55291ada3e57eddc7ccf0146390d6e3e02804def065cad37 -->
+
+## ARCHIVE CONSOLIDEE - `RAPPORT_RCL0193FRE_1830_POST_PUSH.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `063f6e839a3fba2f55291ada3e57eddc7ccf0146390d6e3e02804def065cad37`.
+
+# RCL0193FRE - lot 1830 - POST-POUSSE
+
+Validation distante terminée avec succès.
+
+- Branche : `tmp-rave-visual-backfill`.
+- GitHub Actions : run `33272046590` - SUCCESS.
+- Commit final : `e9ca9b3c7691519a83c621f67c3704525e23385d` (`Add RCL0193FRE suspension brakes batch 1830`).
+- 25 captures constructeur committees.
+- `research_enrichment_1830.qz64` committe et revérifié.
+- `manifest.json` et audit 1830 commités.
+- Installateur, workflow et transport temporaire supprimés de l'état final.
+- SQLite : integrity ok, user_version 20.
+- Historiques preserves : 93 `mems_rave_fact`, 105 `mems_expert_fact_external`.
+- Contenu 1830 : 46 connaissances, 29 spécifications/valeurs, 37 phases de procédure, 332 étapes, 44 exigences, 21 relations.
+- Production `MEMSX64` reste sur BUILD #101 / `22dbe75ed14e0a61e694159d505ef72245116b48`.
+
+PROCHAINE ACTION EXACTE : poursuivre RCL0193FRE avec le lot 1840, section `SYSTEMES DE PROTECTION SUPPLEMENTAIRE` PDF 256-278, en conservant descriptions, précautions, déploiement manuel, SRS/airbag/prétensionneurs, procédures et vraies illustrations constructeur.
+
+<!-- ARCHIVE_SOURCE_END name=RAPPORT_RCL0193FRE_1830_POST_PUSH.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RAPPORT_RCL0193FRE_1830_PRE_PUSH.md size=2216 sha256=3c60b6d43aba9012ef9c427889e7e742c1e0aee9bd95606e3e9f1d799173cc14 -->
+
+## ARCHIVE CONSOLIDEE - `RAPPORT_RCL0193FRE_1830_PRE_PUSH.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `3c60b6d43aba9012ef9c427889e7e742c1e0aee9bd95606e3e9f1d799173cc14`.
+
+# RCL0193FRE - lot 1830 - PRE-POUSSE
+
+Branche documentaire cible : `tmp-rave-visual-backfill`.
+Production interdite : `MEMSX64` doit rester sur BUILD #101 / `22dbe75ed14e0a61e694159d505ef72245116b48`.
+
+## Périmètre exact
+
+- Manuel constructeur français `RCL0193FRE`.
+- PDF 226 a 254.
+- Sections : suspension + freins.
+- 25 pages utiles retenues ; intercalaires/pages blanches exclus.
+- Les captures sont des rendus des vraies pages constructeur a 150 dpi, aucune image generee ni redessinee.
+
+## Validation locale candidate
+
+- `PRAGMA integrity_check = ok`.
+- `PRAGMA user_version = 20`.
+- Historiques preserves : 93 `mems_rave_fact`, 105 `mems_expert_fact_external`.
+- 46 connaissances.
+- 29 specifications / 29 valeurs.
+- 19 operations constructeur structurees.
+- 37 phases de procedure.
+- 332 etapes.
+- 44 exigences.
+- 21 relations.
+- 25 captures constructeur.
+
+## Points constructeur importants conserves
+
+- Reglage d'amortisseur : references avant `68.15.16.01` et arriere `68.15.22.01` conservees avec la procedure commune.
+- Amortisseur arriere : references cote gauche `68.15.22` et cote droit `68.15.23`; la particularite cote gauche imposant la depose/repose du reservoir est conservee.
+- Purge des freins : schema A/B/C/D conserve sous forme de vraie page constructeur; aucune sequence non imprimee n'est inventee.
+- Tambour arriere : diametre interieur neuf `177,75 - 177,85 mm`, limite de service `179 mm`, ovalisation maxi `0,012 mm`.
+- Avertissements sur liquide de frein, poussiere de frein, remplacement des plaquettes/segments par essieu et pieces neuves conserves comme exigences.
+
+## Hashes candidats
+
+- SQL SHA-256 : `c9e390a0edb9da0e3108449affe1175943a2137972bbec0e1c1a0b0dbacaacd4`.
+- QZ64 SHA-256 : `e22d16708d23ac0cedaad6ad7e2811115025a218f6101ce9551a5c19917851c7`.
+- TIFF G4 150 dpi SHA-256 : `738d77d2041431b85fa4ab474562730d7f152db74189f681ddfd27c00b24b668`.
+- Archive TIFF XZ SHA-256 : `0528cb3bf3bdf7c67c8312729de2d822e63c439f5178899d4c0055ffefb21d2f`.
+
+PROCHAINE ACTION EXACTE : pousser uniquement le lot documentaire 1830 sur `tmp-rave-visual-backfill`, valider via GitHub Actions, verifier l'etat distant et nettoyer tous les fichiers temporaires avant de poursuivre le lot 1840.
+
+<!-- ARCHIVE_SOURCE_END name=RAPPORT_RCL0193FRE_1830_PRE_PUSH.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RAPPORT_RCL0193FRE_1840_POST_PUSH.md size=1255 sha256=00ca8ae1954ee8578c43607adc5aa8f69e518a1860e1d3b35a9ca7015e3b585e -->
+
+## ARCHIVE CONSOLIDEE - `RAPPORT_RCL0193FRE_1840_POST_PUSH.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `00ca8ae1954ee8578c43607adc5aa8f69e518a1860e1d3b35a9ca7015e3b585e`.
+
+# RCL0193FRE - lot 1840 - POST-POUSSE
+
+Validation distante terminée avec succès.
+
+- Branche : `tmp-rave-visual-backfill`.
+- GitHub Actions : run `33272468993` - SUCCESS.
+- Commit final : `0f05e92d7cd6724ee6d2656d8ce37a17c5202f7a` (`Add RCL0193FRE SRS airbag batch 1840`).
+- 20 captures constructeur commitées.
+- `research_enrichment_1840.qz64` commité et revérifié.
+- `manifest.json` et audit 1840 commités.
+- Installateur, workflow et transport temporaire supprimés de l'état final.
+- SQLite : integrity ok, user_version 20.
+- Historiques préservés : 93 `mems_rave_fact`, 105 `mems_expert_fact_external`.
+- Contenu 1840 : 34 connaissances, 19 spécifications/valeurs, 8 phases de procédure, 74 étapes, 9 exigences, 15 relations.
+- Divergence constructeur SRS conservée : ~5 s en Description/Fonctionnement contre 3 s dans les contrôles après réparation, relation `conflicts_with`, aucun arbitrage.
+- Production `MEMSX64` reste sur BUILD #101 / `22dbe75ed14e0a61e694159d505ef72245116b48`.
+
+PROCHAINE ACTION EXACTE : poursuivre RCL0193FRE après PDF 278, cartographier le prochain bloc documentaire exact, extraire le maximum d'informations, procédures, valeurs, tableaux et vraies illustrations constructeur, puis préparer le lot 1850.
+
+<!-- ARCHIVE_SOURCE_END name=RAPPORT_RCL0193FRE_1840_POST_PUSH.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RAPPORT_RCL0193FRE_1840_PRE_PUSH.md size=2962 sha256=29f18cd164e61c0daeb17abbc6bc1952b3597dea7fb1b9374929711f60840ed4 -->
+
+## ARCHIVE CONSOLIDEE - `RAPPORT_RCL0193FRE_1840_PRE_PUSH.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `29f18cd164e61c0daeb17abbc6bc1952b3597dea7fb1b9374929711f60840ed4`.
+
+# RCL0193FRE - lot 1840 - PRE-POUSSE
+
+Branche documentaire cible : `tmp-rave-visual-backfill`.
+Production interdite : `MEMSX64` doit rester sur BUILD #101 / `22dbe75ed14e0a61e694159d505ef72245116b48`.
+
+## Périmètre exact
+
+- Manuel constructeur français `RCL0193FRE`.
+- PDF 256 a 278.
+- Section : systèmes de protection supplémentaire SRS / airbag / prétensionneurs.
+- 20 pages utiles retenues ; pages blanches/intercalaires exclues.
+- Captures = vraies pages constructeur rendues à 150 dpi, aucune image générée ou redessinée.
+
+## Validation locale candidate
+
+- `PRAGMA integrity_check = ok`.
+- `PRAGMA user_version = 20`.
+- Historiques préservés : 93 `mems_rave_fact`, 105 `mems_expert_fact_external`.
+- 34 connaissances.
+- 19 spécifications / 19 valeurs.
+- 4 opérations de réparation constructeur.
+- 8 phases de procédure structurées.
+- 74 étapes.
+- 9 exigences de procédure.
+- 15 relations.
+- 4 procédures de déploiement manuel conservées textuellement avec ordre constructeur et pages exactes.
+- 20 captures constructeur.
+
+## Points importants conservés
+
+- Composants SRS et implantation : module airbag conducteur, prétensionneurs, témoin SRS, DCU, accouplement tournant, faisceau SRS jaune.
+- Après déploiement, les composants marqués et les faisceaux jaunes doivent être remplacés.
+- DCU non réparable ; surveillance continue et signal de déclenchement airbag/prétensionneurs.
+- Airbag : gonflage environ 30 ms ; cycle déploiement/dégonflement environ 0,1 s.
+- Témoin SRS : environ 5 s dans Description/Fonctionnement, mais 3 s dans les contrôles après réparation. Les deux valeurs sont conservées et liées par `conflicts_with`, sans arbitrage.
+- Avant intervention SRS : batterie déconnectée et attente 10 min pour décharge du circuit de secours.
+- Utiliser uniquement un appareil digital ; avertissement constructeur qu'un appareil analogique peut provoquer un déploiement accidentel.
+- Remisage airbag : éviter les sources de chaleur de plus de 85 °C.
+- Déploiement manuel : outil Rover SMD 4082/1, personnel à au moins 15 m ; attendre 5 min après prétensionneur et 30 min après airbag.
+- Prétensionneur de ceinture : remplacement tous les 15 ans.
+- Réparations structurées : 76.73.71 airbag conducteur, 76.73.31 prétensionneur avant, 76.73.72 système SRS/DCU, 76.73.73 faisceau SRS.
+
+## Hashes candidats
+
+- SQL SHA-256 : `a6730280d647b68dbdfe46a6b2bc286ea980d600bdc02b22b97f962f1113685a`.
+- QZ64 SHA-256 : `7a042d914c76657f0932e2b2f0cf70ba5533ca0e2e6b6dd1433fb167120ffd34`.
+- TIFF G4 150 dpi SHA-256 : `b0d1d952b2521d5efa84f96b7388a1137cb0c820674da873a375f7243f5c9bb8`.
+- Archive TIFF XZ SHA-256 : `484c776b67f12b3e922df8ad8cdd4c95a2ddbe74500242b7fcf665e80ecea46b`.
+
+PROCHAINE ACTION EXACTE : pousser uniquement le lot documentaire 1840 sur `tmp-rave-visual-backfill`, valider via GitHub Actions, vérifier l'état distant et nettoyer les fichiers temporaires avant de poursuivre le lot 1850.
+
+<!-- ARCHIVE_SOURCE_END name=RAPPORT_RCL0193FRE_1840_PRE_PUSH.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RAPPORT_RCL0193FRE_1850_POST_PUSH.md size=1346 sha256=bfff7dd460742ef154f6745bf1eee68512fda3749f57fd4ef11fc141aad27b2d -->
+
+## ARCHIVE CONSOLIDEE - `RAPPORT_RCL0193FRE_1850_POST_PUSH.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `bfff7dd460742ef154f6745bf1eee68512fda3749f57fd4ef11fc141aad27b2d`.
+
+# RCL0193FRE - lot 1850 - POST-POUSSE
+
+Validation distante terminée avec succès.
+
+- Branche : `tmp-rave-visual-backfill`.
+- GitHub Actions : run `33272726409` - SUCCESS.
+- Commit final : `dfcab839a7c66c132f95559e524f3765326217b2` (`Add RCL0193FRE body HVAC wipers batch 1850`).
+- 39 captures constructeur commitées.
+- `research_enrichment_1850.qz64` commité et revérifié.
+- `manifest.json` et audit 1850 commités.
+- Installateur, workflow et transport temporaire supprimés de l'état final.
+- SQLite : integrity ok, user_version 20.
+- Historiques préservés : 93 `mems_rave_fact`, 105 `mems_expert_fact_external`.
+- Contenu 1850 : 79 connaissances, 15 spécifications/valeurs, 71 phases de procédure, 444 étapes, 5 exigences, 41 relations.
+- Relation constructeur conservée entre la ceinture avant et le prétensionneur SRS (opération 76.73.31), qui doivent être remplacés ensemble.
+- Production `MEMSX64` reste sur BUILD #101 / `22dbe75ed14e0a61e694159d505ef72245116b48`.
+
+PROCHAINE ACTION EXACTE : terminer `RCL0193FRE` avec le lot 1860 couvrant l'équipement électrique et les instruments, PDF 324-371, en extrayant toutes les informations utiles, procédures, réglages, valeurs, tableaux et vraies illustrations constructeur, puis valider/pousser le lot et effectuer une vérification de couverture finale du manuel complet.
+
+<!-- ARCHIVE_SOURCE_END name=RAPPORT_RCL0193FRE_1850_POST_PUSH.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RAPPORT_RCL0193FRE_1850_PRE_PUSH.md size=2903 sha256=cd87a140b4e3835e87f81d73bd7c4af4fe86b7c2eb69a0ee6d5320d43382980d -->
+
+## ARCHIVE CONSOLIDEE - `RAPPORT_RCL0193FRE_1850_PRE_PUSH.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `cd87a140b4e3835e87f81d73bd7c4af4fe86b7c2eb69a0ee6d5320d43382980d`.
+
+# RCL0193FRE - lot 1850 - PRE-POUSSE
+
+Branche documentaire cible : `tmp-rave-visual-backfill`.
+Production interdite : `MEMSX64` doit rester sur BUILD #101 / `22dbe75ed14e0a61e694159d505ef72245116b48`.
+
+## Périmètre exact
+
+- Manuel constructeur français `RCL0193FRE`.
+- PDF 280 a 323.
+- Sections : carrosserie + chauffage/aération + essuie-glaces/lave-glaces.
+- 39 pages utiles retenues ; pages blanches/intercalaires exclues.
+- 37 opérations de réparation constructeur.
+- Captures = vraies pages constructeur rendues à 150 dpi, aucune image générée ni redessinée.
+
+## Validation locale candidate
+
+- `PRAGMA integrity_check = ok`.
+- `PRAGMA user_version = 20`.
+- Historiques préservés : 93 `mems_rave_fact`, 105 `mems_expert_fact_external`.
+- 79 connaissances.
+- 15 spécifications / valeurs de couple utiles.
+- 71 phases de procédure.
+- 444 étapes.
+- 5 exigences structurées.
+- 41 relations.
+- 14 alias français tentés.
+- 39 captures constructeur.
+
+## Points importants conservés
+
+- Carrosserie : accessoires extérieurs, garnitures intérieures, pare-brise, sièges et ceintures.
+- Tableau de bord : dépose/repose avec autoradio, aérateurs, câble d'indicateur de vitesse, réglage de niveau de phare, témoin d'alarme, faisceau principal, groupe d'instruments et compte-tours.
+- Opération constructeur `76.73.31` : la section Carrosserie indique explicitement que la ceinture avant et le prétensionneur doivent être remplacés ensemble et renvoie à la section SRS. Relation `related_to` ajoutée vers le lot 1840 portant le même numéro d'opération.
+- Chauffage/aération : câble et vanne de chauffage, commutateur, bloc chauffage, moteur/ventilateur, résistances, radiateur.
+- Essuie-glaces/lave-glaces : tube, bras, moteur, boîtiers à engrenage et câble à crémaillère, commutateur, temporisateur.
+- Les références au système MEMS dans les procédures d'essuie-glace (filtre à air, module de relais de gestion moteur, purge canister) sont conservées exactement dans le texte et les pages source, sans les transformer artificiellement en données protocole.
+- Les dimensions de foret/rivet ne sont pas promues en spécifications véhicule ; elles restent dans les étapes de procédure.
+
+## Hashes candidats
+
+- SQL SHA-256 : `33d31d20a8693d6d35ae8b6c2bbe34cf11f75c175c899c529b5f1f20db02a3a6`.
+- QZ64 SHA-256 : `f6995365e3d28de5d9c693d87d1399408edaa20c4f95bf839a557a17115b8662`.
+- TIFF G4 150 dpi SHA-256 : `45281ba49806df725d4db980ed291461c6779dada7a153a3bed0a0b7559f21b4`.
+- Archive TIFF XZ SHA-256 : `db9eddacab7a60d1241b3af7771490f406b5de4ea43f27600f574944e2848478`.
+
+PROCHAINE ACTION EXACTE : pousser uniquement le lot documentaire 1850 sur `tmp-rave-visual-backfill`, valider via GitHub Actions, vérifier l'état distant et nettoyer les fichiers temporaires. Ensuite traiter le dernier bloc RCL0193FRE : équipement électrique + instruments PDF 324-371.
+
+<!-- ARCHIVE_SOURCE_END name=RAPPORT_RCL0193FRE_1850_PRE_PUSH.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RAPPORT_RCL0193FRE_1860_CORRECTION_TRANSPORT_PRE_PUSH.md size=2260 sha256=7973df55b9c6f3469a5e3963a5e3a13f33c7343e0bbaee6748af5d2cc5881d56 -->
+
+## ARCHIVE CONSOLIDEE - `RAPPORT_RCL0193FRE_1860_CORRECTION_TRANSPORT_PRE_PUSH.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `7973df55b9c6f3469a5e3963a5e3a13f33c7343e0bbaee6748af5d2cc5881d56`.
+
+# RCL0193FRE — lot 1860 — CORRECTION TRANSPORT AVANT REPOUSSE
+
+Date : 2026-08-30.
+
+## Contexte
+Le run `33302467286` a échoué avant tout commit final 1860. Le garde SHA a détecté un transport TIFF incomplet : SHA obtenu `6a8f5c154a8b6c995d4c3f169d6dbb0e7581eff99a33df3a4a07d301e78c6eb6` au lieu du SHA attendu `fbd982995304a41f978fc61280b83fbead120591e898bb66716ad70685da9a08`.
+
+L'échec a été consigné séparément dans `RAPPORT_RCL0193FRE_1860_RUN1_FAILURE.md`. Aucun fichier final 1860 n'a été intégré par ce run.
+
+## Correction autorisée maintenant
+Correction strictement limitée au transport temporaire. Les données techniques 1860, le SQL, les compteurs, les pages sélectionnées et les règles de validation restent inchangés.
+
+Fichiers locaux exacts récupérés et revérifiés :
+- `research_enrichment_1860.sql` SHA-256 `1cf7cd58e71d436fc701401d841f0a4b521c9f386ff23a5720d8fb7a5b86fd54` ;
+- `research_enrichment_1860.qz64` SHA-256 `18e859c236a7e865b3416e0083f024e872bebda540c2dbf15ce233c0900c18be` ;
+- TIFF G4 150 dpi SHA-256 `d25fd347ccf9fd795c635fffff5a0dcc2800bbe33e185416c9a188d034b8f2c4` ;
+- TIFF G4 compressé XZ SHA-256 `fbd982995304a41f978fc61280b83fbead120591e898bb66716ad70685da9a08`.
+
+Le transport sera découpé en fragments texte Base64/ASCII, réassemblé dans GitHub Actions, puis les SHA ci-dessus seront vérifiés avant toute installation.
+
+## Invariants à conserver
+- `MEMSX64` exactement BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48` ;
+- 93 faits RAVE historiques et 105 faits experts historiques inchangés ;
+- `PRAGMA integrity_check = ok`, `user_version = 20` ;
+- lot 1860 : 112 connaissances, 18 spécifications/valeurs, 100 phases, 516 étapes, 29 exigences, 79 relations, 45 captures réelles constructeur ;
+- aucune modification protocole, UI, IA, 32 bits ou production.
+
+## Prochaine action exacte
+1. Remplacer uniquement le transport temporaire du commit `908da678c67dcc6066a8991b69b0feb6e7923cdc` par les fragments exacts.
+2. Relancer le validateur 1860.
+3. Si vert : commit final documentaire, nettoyage automatique, contrôle distant et rapport post-pousse immédiat.
+4. Ensuite seulement : audit final de couverture des 371 pages et éventuel backfill 1870 si un trou réel est détecté.
+
+<!-- ARCHIVE_SOURCE_END name=RAPPORT_RCL0193FRE_1860_CORRECTION_TRANSPORT_PRE_PUSH.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RAPPORT_RCL0193FRE_1860_PRE_PUSH_FINAL.md size=2896 sha256=20c4a6d6762a6eee1c3a3a7fb7b5a66b7a13e31a2189028f42abfe1d6176b21e -->
+
+## ARCHIVE CONSOLIDEE - `RAPPORT_RCL0193FRE_1860_PRE_PUSH_FINAL.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `20c4a6d6762a6eee1c3a3a7fb7b5a66b7a13e31a2189028f42abfe1d6176b21e`.
+
+# RCL0193FRE — lot 1860 — PRE-POUSSE FINAL
+
+Date de reprise : 2026-08-30.
+
+## Production gelée
+- `MEMSX64` doit rester exactement sur BUILD #101 : `22dbe75ed14e0a61e694159d505ef72245116b48`.
+- Aucune modification production, protocole, UI, IA ou 32 bits dans ce lot.
+
+## Branche documentaire
+- Branche autorisée : `tmp-rave-visual-backfill`.
+- Base avant 1860 : lot 1850 validé, HEAD `dfcab839a7c66c132f95559e524f3765326217b2`.
+
+## Source
+- Document : Rover Mini Workshop Manual `RCL0193FRE`, 5e édition, 1999.
+- PDF source exact : 371 pages.
+- SHA-256 source : `0c7fef28d0d0f0673ba321d6625a019c005823103caa98afb3258114e1fec713`.
+
+## Périmètre 1860
+- Equipement électrique + instruments, PDF 324–371.
+- 45 pages constructeur utiles conservées.
+- Pages blanches/intercalaires exclues : 325, 327, 359.
+- Captures réelles constructeur, monochromes 150 dpi ; aucune image générée/redessinée.
+
+## Contenu validé localement
+- 112 connaissances + 112 portées.
+- 18 spécifications + 18 valeurs.
+- 50 opérations constructeur, structurées en 100 phases de procédure.
+- 516 étapes ordonnées.
+- 29 exigences / outils / avertissements.
+- 79 relations.
+- 75 tentatives d'alias dans le SQL ; 64 alias effectifs après `INSERT OR IGNORE`.
+- `PRAGMA integrity_check = ok`.
+- `PRAGMA user_version = 20`.
+- Historiques attendus inchangés : 93 RAVE / 105 experts.
+
+## Hashes candidats
+- `research_enrichment_1860.sql` : `1cf7cd58e71d436fc701401d841f0a4b521c9f386ff23a5720d8fb7a5b86fd54`.
+- `research_enrichment_1860.qz64` : `18e859c236a7e865b3416e0083f024e872bebda540c2dbf15ce233c0900c18be`.
+- transport TIFF G4 xz : `fbd982995304a41f978fc61280b83fbead120591e898bb66716ad70685da9a08`.
+- TIFF G4 décompressé : `d25fd347ccf9fd795c635fffff5a0dcc2800bbe33e185416c9a188d034b8f2c4`.
+
+## Contrôles importants
+- Courroie auxiliaire : 10 kg, flèche 6–8 mm, écrou poulie de tension 25 N·m.
+- Réglage de phare : commutateur position 0, 1,4 % sous l’horizontale.
+- Alternateur : poulie 25 N·m ; outil Rover 18G 1653.
+- Démarreur : 37 N·m ; borne solénoïde 4 N·m.
+- Accouplement tournant SRS : déconnexion batterie masse en premier, attente 10 min, ensemble non démontable.
+- Sonde température d’huile : 60 N·m.
+- Révisions constructeur 06/99 et 11/98 conservées avec leurs pages.
+
+## Prochaine action exacte
+1. Pousser uniquement le transport temporaire + workflow 1860 sur `tmp-rave-visual-backfill`.
+2. GitHub Actions doit vérifier `MEMSX64` #101, les SHA du transport, reconstruire la SQLite complète, conserver 93/105, générer les 45 captures, valider les compteurs et l'intégrité.
+3. Le workflow ne committe 1860 que si tous les contrôles passent puis supprime transport/workflow temporaire.
+4. Après succès distant : rapport post-pousse immédiat.
+5. Ensuite : audit final de couverture des 371 pages ; si trou réel, backfill 1870, sinon clôture RCL0193FRE.
+
+<!-- ARCHIVE_SOURCE_END name=RAPPORT_RCL0193FRE_1860_PRE_PUSH_FINAL.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RAPPORT_RCL0193FRE_1860_RUN1_FAILURE.md size=1333 sha256=827e497b89d383915c990ceaddad61355a0801aafb637b952f647ff89b616c48 -->
+
+## ARCHIVE CONSOLIDEE - `RAPPORT_RCL0193FRE_1860_RUN1_FAILURE.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `827e497b89d383915c990ceaddad61355a0801aafb637b952f647ff89b616c48`.
+
+# RCL0193FRE — lot 1860 — échec run 1
+
+Date : 2026-08-30.
+
+## Run
+- GitHub Actions : `33302467286`.
+- Commit temporaire : `908da678c67dcc6066a8991b69b0feb6e7923cdc`.
+- `MEMSX64` vérifié intact sur BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.
+
+## Résultat
+- Checkout : ✅
+- Vérification production #101 : ✅
+- Pillow : ✅
+- Installation/validation 1860 : ❌ avant toute modification finale.
+- Commit final 1860 : non exécuté.
+- Vérification distante : non exécutée.
+
+## Cause exacte
+Le garde SHA du transport TIFF a correctement bloqué le lot :
+- SHA xz attendu : `fbd982995304a41f978fc61280b83fbead120591e898bb66716ad70685da9a08`.
+- SHA xz obtenu après décodage du blob transport : `6a8f5c154a8b6c995d4c3f169d6dbb0e7581eff99a33df3a4a07d301e78c6eb6`.
+
+Conclusion : le fichier Base64 rattaché au commit temporaire n'est pas le transport TIFF complet validé localement (fragment/incomplétude de transport). Les données 1860/QZ64 ne sont pas remises en cause et aucun fichier final n'a été committé.
+
+## Prochaine action
+Retrouver le transport TIFF G4 complet déjà généré localement, vérifier son SHA xz `fbd982...` et TIFF `d25fd3...`, remplacer uniquement le transport temporaire, journaliser avant nouvelle pousse, puis relancer le même validateur sans modifier le contenu technique 1860.
+
+<!-- ARCHIVE_SOURCE_END name=RAPPORT_RCL0193FRE_1860_RUN1_FAILURE.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RAPPORT_RCL0193FRE_EXTRACTION_MAXIMALE_2026-08-29.md size=7090 sha256=f4cb349627b99e46d2aa435d8b8ba231f65f74c75735ac7c933579874c9c894b -->
+
+## ARCHIVE CONSOLIDEE - `RAPPORT_RCL0193FRE_EXTRACTION_MAXIMALE_2026-08-29.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `f4cb349627b99e46d2aa435d8b8ba231f65f74c75735ac7c933579874c9c894b`.
+
+# RAPPORT RCL0193FRE — EXTRACTION MAXIMALE
+
+Date : 2026-08-29
+
+Ce rapport complète `RAPPORT_SUIVI_ECU_MEMS_MANAGER.md` pour le chantier documentaire RCL0193FRE. Il est écrit avant toute nouvelle pousse de données/captures.
+
+## Etat projet à préserver
+
+- Production `MEMSX64` : BUILD #101 `22dbe75ed14e0a61e694159d505ef72245116b48` — NE PAS MODIFIER.
+- Branche documentaire active : `tmp-rave-visual-backfill`.
+- HEAD vérifié avant ce chantier : `dfb5b8525b1d5685d1070914eb78c64f30aa7ff6`.
+- Dernier lot documentaire présent : `research_enrichment_1780.qz64` (AKM6348 CH86).
+- Tables historiques RAVE/expert : 93 / 105, à préserver strictement.
+- Schéma additif 1730 : 11 tables connaissance/portée/spécification/procédure/alias, `PRAGMA user_version=20`.
+
+## Source utilisateur
+
+Fichier fourni directement par l'utilisateur : `Manuel Rover MPI.pdf`.
+
+Identité vérifiée dans le document :
+- publication `RCL0193FRE` ;
+- manuel d'atelier Mini en français ;
+- amendements visibles 3e/4e édition, avec page d'amendement indiquant le passage à la 5e édition ;
+- 371 pages PDF ;
+- couvre les modifications des Mini à partir du NIV `SAXXNNAZEBD 134455` ;
+- doit être utilisé avec `AKM7169` et `RCL0194` ;
+- Rover Technical Communication / Rover Group Limited 1999.
+
+Le PDF possède une couche texte encodée avec des glyphes privés. Une conversion déterministe a été trouvée : les caractères privés U+F020..U+F0FF se décodent par `chr(0xF120-codepoint)`. La reconstruction des espaces par positions de glyphes permet de récupérer le texte français sans OCR. Aucun OCR approximatif n'est nécessaire.
+
+## Cartographie complète des 371 pages
+
+- Introduction : PDF 8-13
+- Renseignements généraux : 14-27
+- Information : 28-49
+- Moteur : 50-95
+- Contrôle de dépollution : 96-103
+- Système de gestion moteur - MEMS : 104-135
+- Système d'alimentation : 136-145
+- Circuit de refroidissement : 146-159
+- Collecteur et échappement : 160-175
+- Embrayage : 176-191
+- Boîte de vitesses manuelle : 192-201
+- Arbres de transmission : 202-209
+- Direction : 210-225
+- Suspension : 226-233
+- Freins : 234-255
+- SRS : 256-279
+- Carrosserie : 280-303
+- Chauffage et aération : 304-313
+- Essuie-glaces / lave-glaces : 314-323
+- Equipement électrique : 324-357
+- Instruments : 358-371
+
+## Mesure documentaire complète
+
+Extraction déterministe du texte des 371 pages :
+- opérations de réparation constructeur détectées : **201** ;
+- pages/occurrences d'avertissements, attentions et remarques réparties dans toutes les grandes sections ;
+- le manuel contient également caractéristiques, couples de serrage, contenances/fluides, tableaux, dessins techniques, implantations, procédures de dépose/repose, outils spéciaux, consommables et contrôles.
+
+Nombre d'opérations par grande section :
+- Moteur 27
+- Contrôle dépollution 5
+- Gestion moteur MEMS 20
+- Alimentation 7
+- Refroidissement 8
+- Collecteur/échappement 7
+- Embrayage 7
+- Boîte manuelle 6
+- Arbres de transmission 3
+- Direction 6
+- Suspension 3
+- Freins 14
+- SRS 4
+- Carrosserie 24
+- Chauffage/aération 7
+- Essuie/lave 6
+- Equipement électrique 33
+- Instruments 14
+
+Total = 201.
+
+## Point de portée essentiel — ne pas tout classer MPi
+
+Le manuel RCL0193FRE contient explicitement dans la section Information :
+- PDF 38 : `Modèle: SPi avec boîte de vitesses manuelle` ;
+- PDF 39 : `Modèle: SPi avec boîte automatique` ;
+- PDF 40 : `Modèle: MPi`.
+
+Ces trois portées doivent rester séparées. Le fait que le manuel soit central pour la Mini MPi ne permet pas de réétiqueter les pages SPi en MEMS 1.9.
+
+## Premier gros lot retenu — 1790
+
+Objectif : commencer par le bloc le plus utile au projet ECU/MEMS tout en conservant toutes les preuves visuelles utiles.
+
+Pages candidates :
+- Information / réglages / couples / fluides : PDF 34-49 ;
+- Système de gestion moteur MEMS : PDF 104-135 ;
+- Système d'alimentation : PDF 136-145.
+
+58 pages physiques dans la plage. Les pages réellement blanches/intercalaires seront exclues des assets. Les autres pages sont conservées comme captures constructeur françaises, y compris tableaux et illustrations.
+
+Le lot doit intégrer :
+- texte source français décodé page par page ;
+- capture originale de chaque page utile ;
+- portées exactes SPi manuel / SPi automatique / MPi / Mini à partir du NIV lorsque prouvées ;
+- spécifications et valeurs structurées ;
+- couples de serrage structurés ;
+- procédures de réparation avec numéro constructeur et étapes ordonnées ;
+- avertissements, attentions, remarques, outils spéciaux, pièces/joints à remplacer et contrôles ;
+- relations connaissance -> page/capture ;
+- alias français des composants ;
+- aucune réécriture des 93/105 lignes historiques.
+
+Valeurs déjà vérifiées visuellement/textuellement dans ce premier bloc incluent notamment :
+- MPi PDF 40 : moteur 12A2LK70, 1275 cm3, ordre 1-3-4-2, rapport 10.0:1, ralenti ECM 900 ±50 tr/min, CO ralenti <0,4 %, avance nominale 12° avant PMH, jeu soupapes à froid 0,27-0,33 mm ;
+- couples gestion moteur PDF 43 : ECT 15 N.m, MAP 6 N.m, IAT 7 N.m, TP 1,5 N.m, corps papillon 8 N.m, pédale accélérateur 25 N.m ;
+- contenances PDF 48 : carburant 34,0 L, moteur/boîte avec filtre 4,8 L, boîte auto 5,1 L, refroidissement 4,0 L, lave-glace 2,3 L ; carburant sans plomb 95 RON minimum ;
+- PDF 112 : deux injecteurs entre rampe pressurisée et collecteur d'admission ;
+- PDF 115 : pompe électrique dans réservoir, commande ECM via relais, régulateur mécanique référencé à la dépression ;
+- PDF 116 : interrupteur inertiel IFS et précaution de contrôle de fuite avant réarmement ;
+- PDF 125 : écartement bougie 0,85 mm, serrage 25 N.m ;
+- PDF 126 : bobine 10 N.m ;
+- PDF 127 : ECM de remplacement nécessitant TestBook pour programmer le code antivol avant démarrage ;
+- PDF 128 : IAT 7 N.m ;
+- PDF 129 : ECT 15 N.m ;
+- PDF 130 : CKP 6 N.m, fixation connecteur 3 N.m ;
+- PDF 133 : HO2S, clé 22 mm, rondelle neuve, serrage 55 N.m ;
+- PDF 138 : essai pression alimentation, outils 18G 1500-A / 18G 1500-5 / 18G 1500 ;
+- PDF 140 : vidange réservoir avec avertissements inflammabilité/explosion/toxicité ;
+- PDF 142 : pompe alimentation, joint neuf, écrous réservoir 9 N.m ;
+- PDF 144 : jaugeur avec outil 18G 1467 et joints neufs ;
+- PDF 145 : clapet deux voies/support 9 N.m.
+
+Ces éléments seront intégrés uniquement avec leur page/capture correspondante ; les pages restantes seront ensuite traitées par lots successifs jusqu'à couverture complète du manuel.
+
+## Prochaine action technique autorisée
+
+Construire et valider `research_enrichment_1790.qz64` + captures RCL0193FRE du premier bloc sur `tmp-rave-visual-backfill`, mettre à jour `manifest.json`, produire un audit reproductible, reconstruire la SQLite complète et vérifier : `integrity_check=ok`, `user_version=20`, 93 faits RAVE historiques, 105 faits experts historiques, absence de clés orphelines, images présentes et portées SPi/MPi non mélangées.
+
+Aucun #102, aucun changement protocole/ECU/RAM/UI/Qwen/ONNX/32 bits.
+
+<!-- ARCHIVE_SOURCE_END name=RAPPORT_RCL0193FRE_EXTRACTION_MAXIMALE_2026-08-29.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RAPPORT_SCHEMA_SOCLE_RAVE_EXACT.md size=20597 sha256=398cc5dcd0ec24afb0f581aa7dbe4815f93d0193c3eb894e1d7e98757a69db02 -->
+
+## ARCHIVE CONSOLIDEE - `RAPPORT_SCHEMA_SOCLE_RAVE_EXACT.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `398cc5dcd0ec24afb0f581aa7dbe4815f93d0193c3eb894e1d7e98757a69db02`.
+
+# SCHÉMA EXACT — SOCLE RAVE COMPLET ET ÉVOLUTIF
+
+> Projet : ECU MEMS Manager
+> État de départ : `MEMSX64` #95 / v1.0.95, commit `f2e97b3e3a432785e159d30bbeca7b7bef2fdcb4`.
+> Branche de travail autorisée : `tmp-rave-knowledge-foundation`.
+> Ce document est une spécification de migration. Il ne constitue pas encore une modification de la SQLite.
+
+## 1. BUT
+
+Construire un noyau de connaissances capable d’absorber progressivement **tout RAVE** : ECU/protocole, électricité, câblage, capteurs/actionneurs, diagnostic, mécanique, couples de serrage, réglages, tolérances, capacités, fluides, procédures de dépose/repose, outils, précautions, contrôles et illustrations.
+
+La structure doit résoudre deux problèmes distincts :
+1. **ce que dit la documentation** ;
+2. **à quelle variante véhicule/moteur cette information s’applique**.
+
+Ces deux dimensions ne doivent plus être confondues dans une chaîne libre telle que `SPi_Japan_97MY_from_VIN_...`.
+
+## 2. PRINCIPES NON NÉGOCIABLES
+
+- Migration **additive** : ne supprimer ni renommer `mems_rave_fact`, `mems_expert_fact_external`, `ecu_fitment` ou les autres tables existantes pendant la transition.
+- Les 93 faits RAVE #95 restent la référence brute/auditable.
+- `variant` reste conservé pour compatibilité et traçabilité, mais cesse progressivement d’être la seule source de portée.
+- Une absence d’information dans la source est stockée comme **NULL / non précisé**, jamais comme « toutes variantes ».
+- Une universalité explicitement écrite par Rover doit être représentée explicitement (`any`), et non déduite d’un NULL.
+- Un fait incompatible avec une variante demandée doit pouvoir être éliminé **avant Qwen**.
+- Un fait de marché non précisé peut rester candidat avec un rang inférieur ; il ne doit pas être traité comme « tous marchés ».
+- Toute donnée normalisée doit conserver un lien vers sa preuve brute et sa source.
+- Les sources constructeur, projet décodé, recoupé et source externe restent distinguées via `verification_level`.
+- Ne pas déduire `Cooper`, UK, Europe, Japon, boîte ou équipement si la source ne le dit pas.
+- Ne pas augmenter `PRAGMA user_version` uniquement parce que de nouvelles tables sont ajoutées. L’évolution de révision sera décidée séparément si un lecteur runtime incompatible l’exige.
+
+## 3. AUDIT #95 QUI JUSTIFIE LE SCHÉMA
+
+SQLite réelle de l’artefact #95 :
+- 64 tables au total en comptant la table SQLite interne ; 63 tables métier ;
+- 93 lignes `mems_rave_fact` ;
+- 105 lignes `mems_expert_fact_external` ;
+- `PRAGMA integrity_check = ok` ;
+- `PRAGMA user_version = 20`.
+
+`mems_rave_fact` possède actuellement : `fact_key, source_key, document, variant, topic, statement, source_section, verification_level, image_ref, notes`.
+
+`mems_expert_fact_external` possède principalement : `source_key, fact_key, family, firmware_code, topic, statement, verification_level, notes`.
+
+`ecu_fitment` possède déjà des axes utiles (`injection, make, model, variant, transmission, engine, market, year_from, year_to, vin_from, vin_to`), mais reste une table de compatibilité ECU et ne peut pas représenter à elle seule une procédure mécanique ou un couple de serrage.
+
+Aucune table dédiée `procedure`, `torque`, `mechanical`, `tool` ou `warning` n’existe actuellement. Pourtant des faits RAVE existants contiennent déjà des données mécaniques telles que CKP 6/3 Nm, bobine 10 Nm, ECT 15 Nm, IACV 7 Nm, IAT 7 Nm, MAP 6 Nm, boîtier papillon 8 Nm, pédale 25 Nm, TPS 1,5 Nm, ainsi que des instructions de dépose/repose.
+
+## 4. TABLE 1 — `mems_applicability_scope`
+
+Une ligne représente une portée réutilisable. Elle n’est pas liée uniquement à un ECU.
+
+```sql
+CREATE TABLE mems_applicability_scope (
+    scope_key TEXT PRIMARY KEY,
+    scope_kind TEXT NOT NULL,
+    make TEXT,
+    model TEXT,
+    engine_family TEXT,
+    engine_code TEXT,
+    displacement_cc INTEGER,
+    engine_variant TEXT,
+    induction TEXT,
+    mems_family TEXT,
+    transmission TEXT,
+    year_from INTEGER,
+    year_to INTEGER,
+    vin_from TEXT,
+    vin_to TEXT,
+    market TEXT,
+    compression_variant TEXT,
+    catalyst_state TEXT,
+    air_conditioning_state TEXT,
+    source_scope_text TEXT,
+    notes TEXT
+);
+```
+
+### Sémantique
+
+`scope_kind` : `vehicle`, `engine`, `system`, `general`.
+
+Valeurs communes :
+- `induction` : `carburettor`, `SPi`, `MPi`, NULL si non précisé ;
+- `transmission` : `manual`, `automatic`, NULL si non précisé ;
+- `market` : valeur explicite telle que `Japan`, `UK`, `Europe`, NULL si non précisé ;
+- `catalyst_state`, `air_conditioning_state` : `required`, `excluded`, NULL si non précisé.
+
+**NULL ne signifie jamais ANY.**
+
+## 5. TABLE 2 — `mems_scope_constraint`
+
+Cette table couvre les cas que les colonnes communes ne peuvent pas exprimer proprement : exclusion, « all other vehicles », plage inhabituelle, équipement particulier ou futurs axes RAVE.
+
+```sql
+CREATE TABLE mems_scope_constraint (
+    scope_key TEXT NOT NULL,
+    dimension TEXT NOT NULL,
+    operator TEXT NOT NULL,
+    value_text TEXT,
+    value_to_text TEXT,
+    value_num REAL,
+    value_to_num REAL,
+    unit TEXT,
+    source_text TEXT,
+    PRIMARY KEY (scope_key, dimension, operator, value_text, value_num),
+    FOREIGN KEY (scope_key) REFERENCES mems_applicability_scope(scope_key)
+);
+```
+
+Opérateurs autorisés au départ : `eq`, `neq`, `gte`, `lte`, `between`, `contains`, `any`.
+
+Exemples :
+- Japon uniquement : `dimension=market, operator=eq, value_text=Japan` ;
+- « All other vehicles » dans une section séparée Japon : `dimension=market, operator=neq, value_text=Japan` ;
+- à partir d’un VIN : `dimension=vin, operator=gte, value_text=...` ;
+- toutes transmissions explicitement indiquées : `dimension=transmission, operator=any`.
+
+Cette table est le mécanisme d’extension : une nouvelle discrimination RAVE ne doit pas obliger à refaire tout le schéma.
+
+## 6. TABLE 3 — `mems_knowledge_item`
+
+Table centrale : une connaissance atomique, quelle que soit sa nature.
+
+```sql
+CREATE TABLE mems_knowledge_item (
+    knowledge_key TEXT PRIMARY KEY,
+    domain TEXT NOT NULL,
+    knowledge_type TEXT NOT NULL,
+    topic TEXT NOT NULL,
+    component_key TEXT,
+    source_key TEXT,
+    document TEXT,
+    source_section TEXT,
+    verification_level TEXT NOT NULL,
+    legacy_rave_fact_key TEXT UNIQUE,
+    source_text TEXT,
+    image_ref TEXT,
+    notes TEXT
+);
+```
+
+### `domain` initial
+
+- `ecu_protocol`
+- `electrical`
+- `sensor_actuator`
+- `diagnostic`
+- `mechanical`
+- `service`
+- `fluids_consumables`
+- `documentation`
+
+### `knowledge_type` initial
+
+- `fact`
+- `wiring`
+- `specification`
+- `torque`
+- `adjustment`
+- `capacity`
+- `procedure`
+- `inspection`
+- `warning`
+- `tool_requirement`
+- `fluid`
+
+La combinaison domain/type évite de créer une table pour chaque thème tout en permettant un routage déterministe.
+
+`source_text` conserve le texte technique/source utile. Pour les 93 faits existants, `legacy_rave_fact_key` doit permettre de retrouver exactement la ligne `mems_rave_fact` d’origine.
+
+## 7. TABLE 4 — `mems_knowledge_scope`
+
+Relation plusieurs-à-plusieurs entre une connaissance et ses portées.
+
+```sql
+CREATE TABLE mems_knowledge_scope (
+    knowledge_key TEXT NOT NULL,
+    scope_key TEXT NOT NULL,
+    applicability TEXT NOT NULL DEFAULT 'applies',
+    PRIMARY KEY (knowledge_key, scope_key),
+    FOREIGN KEY (knowledge_key) REFERENCES mems_knowledge_item(knowledge_key),
+    FOREIGN KEY (scope_key) REFERENCES mems_applicability_scope(scope_key)
+);
+```
+
+`applicability` initial : `applies`. Les exclusions doivent de préférence être exprimées comme contraintes de portée plutôt que comme faits négatifs dupliqués.
+
+Un même couple ou une même procédure peut ainsi viser plusieurs véhicules sans dupliquer le contenu.
+
+## 8. TABLE 5 — `mems_specification`
+
+En-tête d’une valeur structurée : couple, jeu, pression, résistance, tension, capacité, température, tolérance, limite, etc.
+
+```sql
+CREATE TABLE mems_specification (
+    spec_key TEXT PRIMARY KEY,
+    knowledge_key TEXT NOT NULL,
+    component_key TEXT,
+    target_key TEXT,
+    operation TEXT,
+    parameter TEXT NOT NULL,
+    default_unit TEXT,
+    condition_text TEXT,
+    sequence_ref TEXT,
+    notes TEXT,
+    FOREIGN KEY (knowledge_key) REFERENCES mems_knowledge_item(knowledge_key)
+);
+```
+
+Exemples :
+- composant `cylinder_head`, opération `tighten`, paramètre `torque` ;
+- composant `fuel_system`, paramètre `fuel_pressure` ;
+- composant `cooling_system`, paramètre `capacity`.
+
+## 9. TABLE 6 — `mems_specification_value`
+
+Une spécification peut avoir une valeur simple, une plage ou plusieurs étapes de serrage.
+
+```sql
+CREATE TABLE mems_specification_value (
+    spec_key TEXT NOT NULL,
+    sequence_no INTEGER NOT NULL DEFAULT 1,
+    value_numeric REAL,
+    value_min REAL,
+    value_max REAL,
+    tolerance_minus REAL,
+    tolerance_plus REAL,
+    angle_deg REAL,
+    value_text TEXT,
+    unit TEXT,
+    instruction_text TEXT,
+    PRIMARY KEY (spec_key, sequence_no),
+    FOREIGN KEY (spec_key) REFERENCES mems_specification(spec_key)
+);
+```
+
+### Exemples représentables sans perte
+
+- `15 Nm` : `value_numeric=15, unit=Nm` ;
+- `1,0 bar ±4 %` : valeur + tolérance ou `value_text` si la forme constructeur doit rester exacte ;
+- `20 Nm puis 90° puis 90°` : trois lignes `sequence_no=1..3`, les deux dernières utilisant `angle_deg` ;
+- `0–1 V fermé / 4–5 V ouvert` : deux connaissances/spécifications conditionnées ou deux valeurs distinctes suivant la formulation source.
+
+Il est interdit d’écraser une séquence constructeur multi-étapes en une seule valeur.
+
+## 10. TABLE 7 — `mems_procedure`
+
+En-tête d’une procédure de service.
+
+```sql
+CREATE TABLE mems_procedure (
+    procedure_key TEXT PRIMARY KEY,
+    knowledge_key TEXT NOT NULL,
+    component_key TEXT NOT NULL,
+    operation TEXT NOT NULL,
+    paired_procedure_key TEXT,
+    title_source TEXT,
+    notes TEXT,
+    FOREIGN KEY (knowledge_key) REFERENCES mems_knowledge_item(knowledge_key)
+);
+```
+
+`operation` initial : `remove`, `install`, `disassemble`, `assemble`, `adjust`, `inspect`, `test`, `drain`, `fill`.
+
+`paired_procedure_key` permet par exemple de relier « dépose culasse » à « repose culasse » sans les fusionner.
+
+## 11. TABLE 8 — `mems_procedure_step`
+
+Étapes ordonnées : l’ordre constructeur est une donnée et ne doit jamais être confié au LLM.
+
+```sql
+CREATE TABLE mems_procedure_step (
+    procedure_key TEXT NOT NULL,
+    step_no INTEGER NOT NULL,
+    instruction_source TEXT NOT NULL,
+    condition_text TEXT,
+    figure_ref TEXT,
+    related_spec_key TEXT,
+    PRIMARY KEY (procedure_key, step_no),
+    FOREIGN KEY (procedure_key) REFERENCES mems_procedure(procedure_key),
+    FOREIGN KEY (related_spec_key) REFERENCES mems_specification(spec_key)
+);
+```
+
+Une étape peut donc pointer vers le couple exact applicable plutôt que répéter une valeur en texte libre.
+
+## 12. TABLE 9 — `mems_procedure_requirement`
+
+Table flexible pour précautions, outils, consommables et contrôles associés à une procédure ou à une étape.
+
+```sql
+CREATE TABLE mems_procedure_requirement (
+    procedure_key TEXT NOT NULL,
+    step_no INTEGER,
+    requirement_no INTEGER NOT NULL,
+    requirement_type TEXT NOT NULL,
+    requirement_source TEXT NOT NULL,
+    part_number TEXT,
+    quantity REAL,
+    unit TEXT,
+    figure_ref TEXT,
+    PRIMARY KEY (procedure_key, step_no, requirement_no),
+    FOREIGN KEY (procedure_key) REFERENCES mems_procedure(procedure_key)
+);
+```
+
+`requirement_type` initial : `warning`, `prerequisite`, `tool`, `special_tool`, `consumable`, `lubricant`, `replacement_part`, `postcheck`, `note`.
+
+Cela permet par exemple de conserver « toujours remplacer le joint », « utiliser l’outil Rover ... », ou un contrôle après repose sans inventer une nouvelle table à chaque fois.
+
+## 13. TABLE 10 — `mems_knowledge_relation`
+
+Relation générique entre connaissances.
+
+```sql
+CREATE TABLE mems_knowledge_relation (
+    from_key TEXT NOT NULL,
+    relation_type TEXT NOT NULL,
+    to_key TEXT NOT NULL,
+    notes TEXT,
+    PRIMARY KEY (from_key, relation_type, to_key)
+);
+```
+
+Relations initiales : `related_to`, `requires`, `uses_specification`, `supersedes`, `conflicts_with`, `cross_check`, `removal_pair`, `installation_pair`.
+
+Cette table est importante pour conserver les divergences entre manuels/plages sans écraser une ancienne valeur.
+
+## 14. TABLE 11 — `mems_term_alias`
+
+Pour que « culasse », « cylinder head », « CKP », « capteur PMH » ou des variantes orthographiques convergent vers la même clé technique sans laisser Qwen deviner le composant.
+
+```sql
+CREATE TABLE mems_term_alias (
+    entity_type TEXT NOT NULL,
+    entity_key TEXT NOT NULL,
+    language TEXT NOT NULL,
+    alias TEXT NOT NULL,
+    normalized_alias TEXT NOT NULL,
+    PRIMARY KEY (entity_type, entity_key, language, normalized_alias)
+);
+```
+
+`entity_type` peut viser `component`, `topic`, `operation`, `knowledge_type`.
+
+Cette table servira au routage déterministe et aux six langues sans multiplier les colonnes par langue dans toutes les nouvelles tables.
+
+## 15. INDEXES OBLIGATOIRES
+
+```sql
+CREATE INDEX idx_scope_vehicle ON mems_applicability_scope(make, model, year_from, year_to, market);
+CREATE INDEX idx_scope_powertrain ON mems_applicability_scope(engine_family, engine_code, induction, transmission, mems_family);
+CREATE INDEX idx_scope_constraint_lookup ON mems_scope_constraint(dimension, operator, value_text, value_num);
+CREATE INDEX idx_knowledge_class ON mems_knowledge_item(domain, knowledge_type, topic);
+CREATE INDEX idx_knowledge_component ON mems_knowledge_item(component_key);
+CREATE INDEX idx_knowledge_legacy ON mems_knowledge_item(legacy_rave_fact_key);
+CREATE INDEX idx_knowledge_scope_scope ON mems_knowledge_scope(scope_key, knowledge_key);
+CREATE INDEX idx_spec_lookup ON mems_specification(component_key, operation, parameter);
+CREATE INDEX idx_procedure_lookup ON mems_procedure(component_key, operation);
+CREATE INDEX idx_alias_lookup ON mems_term_alias(language, normalized_alias);
+```
+
+## 16. RÈGLE DE COMPATIBILITÉ — TROIS ÉTATS
+
+Le filtre de portée ne doit pas être binaire. Pour chaque dimension connue de la question :
+
+1. **MATCH EXACT** : même valeur/plage ou contrainte explicite compatible ;
+2. **UNKNOWN** : la source ne précise pas cette dimension ; le fait peut rester candidat mais doit être moins bien classé ;
+3. **INCOMPATIBLE** : valeur/contrainte explicitement opposée ; le fait est éliminé avant grounding/Qwen.
+
+Exemple : question « Mini SPi Europe 1995 » :
+- fait SPi Europe 1993–96 = exact ;
+- fait SPi marché non précisé 1993+ = unknown sur marché, donc candidat secondaire ;
+- fait SPi Japan-only 97MY = incompatible marché + année, donc exclu ;
+- fait MPi = incompatible injection, donc exclu.
+
+## 17. MIGRATION DES 93 FAITS RAVE #95
+
+La migration initiale doit être **reproductible et non destructive**.
+
+### Étape A — tables seulement
+
+Créer les 11 tables + indexes via un nouveau lot `research_enrichment_1730.qz64` temporaire. Ne modifier aucune ligne historique.
+
+### Étape B — miroir des 93 faits
+
+Créer exactement 93 `mems_knowledge_item`, chacun relié par `legacy_rave_fact_key` à son `fact_key` d’origine. Le texte `statement`, source, document, section et niveau de vérification doivent rester traçables sans altération.
+
+### Étape C — portées existantes
+
+Les variantes #95 sont seulement huit formes distinctes :
+- `SPi_Japan_97MY_from_VIN_SAXXNNAXKBD_134455` — 40 faits ;
+- `Mini_1997_2000` — 26 ;
+- `MPi_97MY_from_VIN_SAXXNNAZEBD_134455` — 15 ;
+- `Mini_SPi_AKM7169_1993_on_market_non_precise` — 4 ;
+- `MPi_1997_plus` — 3 ;
+- `SPi_1997_plus` — 2 ;
+- `Mini_SPi_automatic_AKM7169_1993_on_market_non_precise` — 1 ;
+- `Mini_SPi_high_compression_AKM7169_1993_on_market_non_precise` — 1 ;
+- `Mini_SPi_manual_AKM7169_1993_on_market_non_precise` — 1.
+
+Note : la liste textuelle comporte neuf libellés car les trois spécialisations AKM7169 sont distinctes du scope général. Le contrôle de migration doit compter les libellés réellement présents en SQLite, pas un nombre hardcodé dans le code.
+
+Ne remplir les dimensions qu’à partir des audits/sources déjà prouvés. Une chaîne `variant` n’est pas, à elle seule, une autorisation d’inventer une portée supplémentaire.
+
+### Étape D — mécanique structurée pilote
+
+Ne pas convertir automatiquement tous les paragraphes par regex. Structurer manuellement/explicitement un échantillon constructeur déjà vérifié : quelques couples simples + au moins une procédure dépose/repose. Vérifier que la donnée brute reste accessible et que la valeur structurée donne exactement la même information.
+
+### Étape E — extension progressive
+
+Après validation du pilote, convertir les autres données mécaniques RAVE par lots audités, puis reprendre AKM6799 en injectant directement les nouvelles données dans le socle structuré.
+
+## 18. TESTS AVANT TOUT #96
+
+Un self-test dédié au socle doit vérifier au minimum :
+
+- présence des 11 tables ;
+- `PRAGMA integrity_check = ok` ;
+- révision attendue ;
+- 93 faits RAVE historiques toujours présents et inchangés ;
+- 105 faits experts historiques toujours présents ;
+- exactement 93 miroirs `mems_knowledge_item` pour la première migration complète ;
+- aucun `legacy_rave_fact_key` orphelin ou dupliqué ;
+- chaque connaissance migrée possède au moins une portée ou une justification `general`/non précisée ;
+- aucune portée Japan-only ne matche Europe/UK ;
+- aucun fait MPi ne matche une requête SPi ;
+- une portée NULL produit `UNKNOWN`, pas `EXACT` ;
+- un `operator=any` explicite produit l’universalité ;
+- une spécification multi-étapes conserve l’ordre ;
+- une procédure conserve les numéros d’étapes sans trou/duplication ;
+- une étape référant un `spec_key` pointe vers une spécification existante ;
+- détection des conflits : deux valeurs différentes sur la même portée ne doivent pas être fusionnées silencieusement ;
+- le générateur r20 historique et la reconstruction fallback continuent de fonctionner.
+
+## 19. CE QUI NE CHANGE PAS PENDANT CETTE MIGRATION
+
+- `MEMSX64` reste sur #95 tant que le prototype n’est pas validé.
+- Aucun #96 avant validation du diff et des self-tests.
+- Aucun changement protocole MEMS, commandes sensibles, acquisition, RAM, calculs, UI, responsive ou SVG.
+- Aucun changement Qwen/ONNX, sampling, prompt ou budget de tokens.
+- `mems_rave_fact`, `mems_expert_fact_external`, `ecu_fitment` restent présents et lisibles.
+- AKM6799 reste en recherche lecture seule jusqu’à validation du socle.
+
+## 20. ROUTAGE IA CIBLE APRÈS MIGRATION DES DONNÉES
+
+Le futur lecteur doit suivre cet ordre :
+
+`question → normalisation/alias → domaine/type demandé → composant/opération → contexte véhicule/moteur → filtre EXACT/UNKNOWN/INCOMPATIBLE → niveau de preuve/source → grounding limité → Qwen`.
+
+Exemples attendus :
+- « couple de serrage de la culasse Mini SPi 1995 » → domaine mécanique + type torque + composant culasse + scope 1995/SPi ;
+- « comment déposer la culasse » → type procedure/remove + composant culasse, étapes Rover ordonnées ;
+- « couleur fils sonde température Mini SPi Japon 97 » → electrical/wiring + portée Japan 97 ;
+- « que sais-tu sur Mini SPi ? » → priorité aux faits SPi, sans laisser remonter MPi comme fait équivalent ;
+- si aucune donnée constructeur compatible : réponse explicite « donnée vérifiée non disponible », sans valeur ou procédure inventée.
+
+## 21. PROCHAINE ACTION EXACTE POUR LA NOUVELLE DISCUSSION
+
+1. Lire `RAPPORT_SUIVI_ECU_MEMS_MANAGER.md` puis ce fichier `RAPPORT_SCHEMA_SOCLE_RAVE_EXACT.md` sur la branche `RAPPORT`.
+2. Vérifier que `MEMSX64` est toujours exactement #95 `f2e97b3e3a432785e159d30bbeca7b7bef2fdcb4`.
+3. Reprendre uniquement `tmp-rave-knowledge-foundation`, créée depuis #95.
+4. Construire **le lot de schéma additif** `research_enrichment_1730.qz64` contenant d’abord les 11 tables + indexes, sans suppression/modification des tables historiques.
+5. Valider localement la reconstruction r20 et les invariants 93 RAVE / 105 experts avant de commencer la migration des 93 faits.
+6. Ajouter ensuite le self-test de fondation et seulement après migrer les portées prouvées.
+7. Ne pas pousser `MEMSX64` et ne pas lancer #96 avant validation complète du candidat temporaire.
+
+<!-- ARCHIVE_SOURCE_END name=RAPPORT_SCHEMA_SOCLE_RAVE_EXACT.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RCL0193FRE_1860_PRE_PUSH_2026-08-30.md size=2416 sha256=84770b46cc9aee3a0c3a7d76d7424ad63822a80cd62e9bccd836677533a281b3 -->
+
+## ARCHIVE CONSOLIDEE - `RCL0193FRE_1860_PRE_PUSH_2026-08-30.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `84770b46cc9aee3a0c3a7d76d7424ad63822a80cd62e9bccd836677533a281b3`.
+
+# RCL0193FRE — LOT 1860 — RAPPORT PRE-POUSSE
+
+Date: 2026-08-30
+
+## Etat de reference
+- Branche documentaire autorisee: `tmp-rave-visual-backfill`.
+- HEAD avant pousse: `dfcab839a7c66c132f95559e524f3765326217b2` (lot 1850).
+- Production `MEMSX64` verifiee inchangee sur BUILD #101: `22dbe75ed14e0a61e694159d505ef72245116b48`.
+- Aucun changement UI, protocole, IA, packaging ou 32 bits.
+
+## Source
+- Document: `RCL0193FRE`, manuel d'atelier Mini, 5e edition.
+- Fichier utilisateur: 371 pages.
+- SHA-256 PDF: `0c7fef28d0d0f0673ba321d6625a019c005823103caa98afb3258114e1fec713`.
+- Lot 1860: equipement electrique + instruments, PDF 324-371.
+- Pages utiles retenues: 45. Pages blanches/intercalaires exclues: 325, 327, 359.
+
+## Candidat 1860 valide localement
+- 112 connaissances.
+- 112 portees.
+- 18 specifications et 18 valeurs.
+- 100 phases de procedure.
+- 516 etapes ordonnees, sans trou.
+- 29 exigences/outils/avertissements.
+- 79 relations, sans cible orpheline.
+- 75 tentatives d'insertion d'alias; 64 alias effectifs apres `INSERT OR IGNORE`.
+- 45 references d'images constructeur distinctes.
+- `PRAGMA integrity_check = ok` sur la validation minimale du lot.
+
+## Hashes candidat
+- `research_enrichment_1860.qz64`: `18e859c236a7e865b3416e0083f024e872bebda540c2dbf15ce233c0900c18be`.
+- SQL decode: `1cf7cd58e71d436fc701401d841f0a4b521c9f386ff23a5720d8fb7a5b86fd54`.
+- Transport TIFF G4 150 dpi: `d25fd347ccf9fd795c635fffff5a0dcc2800bbe33e185416c9a188d034b8f2c4`.
+- Transport TIFF XZ: `fbd982995304a41f978fc61280b83fbead120591e898bb66716ad70685da9a08`.
+
+## Valeurs constructeur structurees confirmees
+- Courroie auxiliaire: effort 10 kg; fleche 6-8 mm; ecrou poulie tendeur 25 N.m.
+- Reglage phares: position 0; 1,4 % sous l'horizontale et parallele.
+- Poulie alternateur: 25 N.m.
+- Avertisseur/support: 10 N.m / 9 N.m.
+- Feux arriere: 9 N.m.
+- Demarreur: 37 N.m; borne solenoide: 4 N.m.
+- Accouplement tournant SRS: deconnexion batterie, masse en premier, attente 10 min.
+- Sonde temperature d'huile: 60 N.m.
+
+## Regles de pousse
+La pousse suivante doit uniquement installer le lot documentaire 1860 sur `tmp-rave-visual-backfill`, reconstruire/valider la base complete, verifier les historiques 93 RAVE / 105 experts et `user_version=20`, ajouter les 45 captures constructeur, mettre a jour le manifeste et l'audit, puis nettoyer tout transport/workflow temporaire. `MEMSX64` doit rester strictement sur #101.
+
+<!-- ARCHIVE_SOURCE_END name=RCL0193FRE_1860_PRE_PUSH_2026-08-30.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=RECHERCHE_MEMS_REPRISE_2026-08-17.md size=10645 sha256=0418c12f7e4aba264b2dc26ab76038215f4ac009ce9dccf42685928b26738e73 -->
+
+## ARCHIVE CONSOLIDEE - `RECHERCHE_MEMS_REPRISE_2026-08-17.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `0418c12f7e4aba264b2dc26ab76038215f4ac009ce9dccf42685928b26738e73`.
+
+# Reprise des recherches MEMS — 17 août 2026
+
+Ce fichier est un point de reprise persistant pour éviter toute perte des recherches en cas de coupure ou changement de discussion.
+
+## Cadre impératif
+
+- Branche de travail : `ui-rebuild` uniquement.
+- HEAD observé avant création de ce checkpoint : `2f00bfdca2b7d960e1f45dd3e21ddb0346704ee6`.
+- Ne jamais changer de branche sans demande explicite de l’utilisateur.
+- Référence fonctionnelle du moteur de recherche : build #518 / commit `9fba41d125030616c9eb35eef07a10a00a90e138`.
+- Les recherches ci-dessous ne doivent jamais provoquer de régression du moteur de recherche validé #518.
+- Pendant le test utilisateur du build en cours, ne pas modifier le code applicatif/la base sans nécessité ; ce fichier de documentation peut servir de sauvegarde de travail.
+
+## État de la base vérifié pendant cette recherche
+
+La base du package du build #533 a été reconstruite localement depuis les mêmes fichiers `qz64` que le build.
+
+Résultat :
+
+- `PRAGMA integrity_check` : `ok` ;
+- ECU : **85** ;
+- affectations : **140** ;
+- commandes protocole : **91**.
+
+Les candidats listés ci-dessous ont donc été comparés à une base réellement reconstruite, pas seulement aux archives Markdown.
+
+## Sources externes effectivement étudiées
+
+### Colin Bourassa — `librosco`
+
+Fichiers/commits importants :
+
+- `src/protocol.c` ;
+- `src/rosco.h` ;
+- commit `3a39534e6db18cb94daad8609962099dfc025968` — « Names for more fields in data frames 7D and 80 » ;
+- commit historique `63b15e35dd32bbf0120f846090ccc39a953bfa04` — ajout de la trame `0x7D`.
+
+### Andrew Jackson — `rosco`
+
+Fichiers/commits importants :
+
+- `commands.go` ;
+- `structures.go` ;
+- historique des commandes/réglages ;
+- commit `aee42148cec12ef652c13d1e6da540c67547ef4f` — fonctions de réglage ;
+- commit `08b204871d09a8b637d3b4c9b5979ea8051a86ba` — tests actionneurs/IAC ;
+- commit `18ee97650ffde9b58485644103a431cd6ebedb81` — position vilebrequin passée de booléen à `uint8`.
+
+### James Portman — `rover-mems-documentation`
+
+Arborescence inspectée :
+
+- `ECUs/1.3-ECU` ;
+- `ECUs/1.6-ECU` ;
+- `ECUs/1.x-ECU-all/diagnostics` ;
+- documentation câbles 3 broches / 16 broches ;
+- documentation immobiliseur 5AS ;
+- documents KWP/ISO présents dans le dépôt.
+
+### Blackbox Solutions
+
+Documentation de diagnostic MEMS 1.6 / 1.9 utilisée comme source indépendante pour des valeurs de service, fonctions de diagnostic et signification de certains paramètres. Quand Blackbox ne donne pas l’offset brut, ne pas inventer cet offset.
+
+## Résultats actuellement suffisamment solides
+
+### Trame `0x7D`
+
+Le code original de Colin et son commit 2022 donnent :
+
+- `7D:02` angle papillon : **brut × 0,6** ;
+- `7D:04` air/fuel ratio : **brut / 10** ;
+- `7D:06` tension lambda : **brut × 5 mV** ;
+- `7D:09` état circuit lambda ;
+- `7D:0A` boucle fermée ;
+- `7D:0B` long-term fuel trim ;
+- `7D:0C` short-term fuel trim ;
+- `7D:0D` duty cycle canister ;
+- `7D:0E` DTC3 ;
+- `7D:0F` idle base position ;
+- `7D:11` DTC4 ;
+- `7D:12` ignition advance 2 / offset selon implémentation ;
+- `7D:13` idle speed offset ;
+- `7D:14` idle error 2 dans Colin ;
+- `7D:16` DTC5 dans l’implémentation Andrew/MemsFCR ;
+- `7D:1F` `JackCount` dans l’implémentation Andrew/MemsFCR.
+
+### Point important : lambda
+
+Une ancienne page publique mentionne `0,5 mV/LSB`, mais le code original actuel de Colin applique explicitement `lambda_voltage * 5`, et le commit 2022 documente lui aussi « multiply by 5 for voltage ».
+
+Conclusion de recherche actuelle : **retenir ×5 mV**, tout en conservant la trace du conflit documentaire.
+
+### `7D:1F` — Jack Count
+
+- Andrew/MemsFCR le place à `7D:1F`.
+- Blackbox confirme indépendamment la **signification fonctionnelle** du Jack Count : nombre d’interventions/corrections du système de ralenti/stepper, utile pour diagnostiquer stepper, câble/papillon/réglage.
+- Blackbox ne confirme pas directement l’offset `1F`.
+
+Conclusion : signification fonctionnelle bien recoupée ; **offset `7D:1F` encore dépendant des implémentations Andrew/MemsFCR**.
+
+### Trame `0x80`
+
+Le code Colin 2022 nomme notamment :
+
+- `80:07` MAP ;
+- `80:08` tension batterie /10 ;
+- `80:09` TPS ×0,02 V ;
+- `80:0F` idle setpoint ;
+- `80:10` idle hot, correction `-35` ;
+- `80:12` IAC position ;
+- `80:13-14` idle error ;
+- `80:15` ignition advance offset ;
+- `80:16` avance ;
+- `80:17-18` coil time ×0,002 ;
+- `80:19` `crankshaft_pos`.
+
+Andrew Jackson a explicitement corrigé historiquement `80:19` de booléen vers `uint8` (commit `18ee976...`).
+
+Conclusion : **ne pas réduire `80:19` à un simple booléen sans preuve supplémentaire**.
+
+## Commandes/réglages retrouvés dans les implémentations
+
+Andrew Jackson documente :
+
+- `0x0F` : reset/clear adjustments ;
+- `0xFA` : reset ECU / valeurs calculées-apprises ;
+- `0xCC` : clear faults ;
+- `0xFB` : lecture position IAC ;
+- `0x79` / `0x7A` : réglage fuel trim court terme + / - ;
+- `0x7B` / `0x7C` : réglage fuel trim long terme + / - ;
+- `0x89` / `0x8A` : idle decay + / - ;
+- `0x91` / `0x92` : idle speed + / - ;
+- `0x93` / `0x94` : ignition advance offset + / - ;
+- `0xFD` / `0xFE` : mouvement/réglage IAC suivant l’implémentation.
+
+Ces commandes doivent être comparées à la base existante avant toute insertion et les conflits de sens doivent rester explicitement marqués.
+
+## Actionneurs : prudence obligatoire
+
+Dans `librosco` de Colin, plusieurs commandes sont présentes mais **désactivées par `#if 0` car non testées** : purge valve, O2 heater, boost valve, fan 1, fan 2.
+
+Ne jamais transformer leur présence dans le code en « fonction confirmée » sans autre source/essai.
+
+## DTC : conflit détecté, ne pas importer les masques aveuglément
+
+Les forks/implémentations externes ne sont pas tous cohérents sur certains masques DTC.
+
+Exemple : le code Colin utilise pour la faute potentiomètre papillon un masque différent de certaines structures Andrew.
+
+Règle de reprise :
+
+- ne pas importer les masques DTC d’un fork comme vérité ;
+- rechercher une source constructeur / documentation indépendante / plusieurs implémentations concordantes ;
+- conserver les conflits dans la base de recherche si utile, mais ne pas les rendre exécutables comme diagnostic certain.
+
+## Seuils/procédures Blackbox trouvés mais à recouper avant intégration
+
+Candidats absents de la base structurée #533 au moment de la comparaison :
+
+- MAP au ralenti : environ **25–40 kPa** ;
+- position IAC moteur chaud : environ **10–50 pas** ;
+- erreur/déviation de ralenti importante : **>100 tr/min** ;
+- réglage de service du ralenti : ordre de grandeur **49/50 tr/min par pas/offset selon contexte Blackbox** — formulation exacte à revérifier avant insertion ;
+- réapprentissage papillon : **5 appuis complets sur accélérateur en ≤10 s après mise du contact, puis attendre environ 20 s**.
+
+Ces éléments ne doivent être ajoutés qu’après comparaison avec le code existant et la génération concernée.
+
+## Référence ECU MEMS 1.2 candidate
+
+Une source de catalogue/remanufacturation classe :
+
+- `MNE10050` — Metro GTi 1.4 16V, environ 1991–1993 — MEMS 1.2.
+
+Cette référence était absente de la base #533 lors de la recherche.
+
+**Ne pas l’intégrer comme confirmée tant qu’une deuxième source indépendante n’a pas été trouvée.**
+
+Les références ECU qui restent `A_DETERMINER` doivent rester ainsi si aucune source fiable ne permet de les attribuer.
+
+## Problèmes découverts dans les fiches XML du package #533
+
+### MEMS 1.3
+
+Le SVG/connecteur visuel a été corrigé, mais l’ancienne fiche XML contient encore un tableau hérité intitulé **« connecteur ECU 25 broches »**.
+
+Or la règle de projet actuelle est : **MEMS 1.3 = 36 + 18 voies**.
+
+Le tableau 25 broches doit être **reconstruit/remplacé à partir de sources vérifiées**, pas simplement renommé.
+
+### MEMS 1.6
+
+Même problème : ancienne fiche XML avec tableau 25 broches, alors que la documentation externe consultée utilise un connecteur principal allant jusqu’à la broche **36**, avec second connecteur suivant version.
+
+Le tableau doit être remplacé, pas renommé.
+
+### MEMS 1.9
+
+Le tableau actuel de la fiche XML présente des divergences avec le brochage MGF/MEMS 1.9 documenté sur plusieurs broches, notamment autour des pins **1, 5, 10, 13, 31 et 32**.
+
+Conclusion : **revalider tout le tableau 1.9 ligne par ligne** avant correction.
+
+### MEMS 1.2
+
+La fiche 1.2 reste la fiche récemment validée visuellement avec **36 voies** et la règle de statut :
+
+- information confirmée ; ou
+- **« À vérifier suivant modèle du véhicule »**.
+
+Jamais « probable ».
+
+## Ce qui reste à résoudre en priorité
+
+1. Brochage MEMS **1.3** complet et fiable, source par source.
+2. Brochage MEMS **1.6** complet, distinction connecteur principal / second connecteur / variantes véhicule.
+3. Brochage MEMS **1.9** complet, comparaison ligne par ligne avec la fiche actuelle.
+4. Conflit exact autour de la commande `0x0F` et des fonctions de reset/réglage.
+5. Confirmation indépendante de l’offset `7D:1F` pour Jack Count.
+6. Validation finale du sens de `80:19` et de ses plages/usage diagnostic.
+7. Masques DTC : résoudre les contradictions avant intégration.
+8. Modes diagnostic et commandes encore ambiguës (`F0`, `F4`, autres séquences de mode/service) : ne rien figer tant que les sources divergent.
+9. Deuxième source pour `MNE10050` avant ajout.
+10. Comparer les seuils Blackbox au code d’analyse de MEMS Manager avant ajout en base.
+
+## Ordre exact de reprise si la discussion est coupée
+
+1. Ouvrir ce fichier et `REPRISE_UI_REBUILD.md`.
+2. Vérifier le HEAD courant de `ui-rebuild` ; **ne pas changer de branche**.
+3. Reprendre la recherche au point **brochage 1.3 / 1.6 / 1.9**, sans modifier immédiatement les XML.
+4. Construire un tableau de comparaison par génération : broche actuelle / source A / source B / statut / correction proposée.
+5. Résoudre ensuite les conflits protocole (`0x0F`, `7D:1F`, `80:19`, DTC, modes diagnostic).
+6. Seulement après validation des sources : préparer le nouveau lot d’enrichissement et les corrections XML.
+7. Faire passer les validations DB + self-test MEMS sans toucher au comportement de recherche validé #518.
+8. L’utilisateur teste le nouvel artefact Windows avant de considérer le lot fonctionnellement validé.
+
+## Interdiction de perte de contexte
+
+En cas de nouvelle discussion, ne pas demander à l’utilisateur de répéter ces recherches. Le présent fichier est la référence de reprise persistante pour ce lot.
+
+<!-- ARCHIVE_SOURCE_END name=RECHERCHE_MEMS_REPRISE_2026-08-17.md -->
+
+<!-- ARCHIVE_SOURCE_BEGIN name=REPRISE_UI_REBUILD.md size=8553 sha256=a47387d7a0e78e42d5789d7248b06cb95f0112b5d64c7f9dd93ac0b9353d04fd -->
+
+## ARCHIVE CONSOLIDEE - `REPRISE_UI_REBUILD.md`
+
+> Copie historique integrale. Source originale conservee sur GitHub en lecture seule. SHA-256 source : `a47387d7a0e78e42d5789d7248b06cb95f0112b5d64c7f9dd93ac0b9353d04fd`.
+
+# Reprise de travail — ECU MEMS Manager
+
+## Référence de travail VALIDÉE
+
+- Branche unique de travail : `ui-rebuild`.
+- **Dernier build validé fonctionnellement par l’utilisateur : #518.**
+- Commit applicatif validé : `9fba41d125030616c9eb35eef07a10a00a90e138`.
+- Le build #518 reste le **point de non-régression fonctionnel** pour l’explorateur et le moteur de recherche MEMS.
+- Ce fichier sert de point de reprise pour éviter toute perte de contexte lors d’un changement de discussion.
+- **Ne jamais repartir de #483 pour remplacer l’état actuel.** #483 reste seulement un ancien repère historique ; #518 est la référence fonctionnelle validée.
+
+## Moteur de recherche MEMS — comportement validé à conserver
+
+Le moteur de recherche de #518 fonctionne et son comportement doit être conservé dans toutes les modifications futures.
+
+### Indexation obligatoire
+
+- Indexer **tout le contenu technique réel de la base SQLite**.
+- Indexer **chaque ligne XML** avec son contexte technique.
+- Indexer le contenu **mot par mot** dans `search_terms`.
+- Un mot seul doit pouvoir retrouver toutes les lignes techniques concernées.
+- Une recherche multi-mots doit combiner les termes sans exiger une phrase exacte.
+- Recherche insensible à la casse et aux accents.
+- Ne jamais ajouter de faux synonymes ou mots artificiels dans toutes les lignes d’une catégorie.
+- Ne jamais ajouter d’exception codée en dur pour un mot particulier (`vert`, `rouge`, `IAT`, etc.).
+
+### Relations techniques à préserver
+
+Une ligne trouvée doit conserver son contexte réel :
+
+- génération MEMS ;
+- section XML ;
+- broche / pin ;
+- fonction / composant ;
+- couleur de fil ;
+- commande ;
+- valeur ;
+- paramètre ;
+- DTC ;
+- protocole ;
+- actionneur ;
+- mesure / donnée ;
+- documentation / référence / note.
+
+### Filtres
+
+- Les filtres de catégorie et de génération doivent uniquement **affiner** la recherche.
+- Le texte saisi reste toujours du **contenu à rechercher** ; il ne doit jamais être interprété automatiquement comme un changement de catégorie.
+- Le filtre Câblage ne doit pas lancer de requête cachée dans Documentation.
+- Le classement des tables doit rester cohérent : par exemple `protocol_profiles` appartient à **Protocole**, pas à Fichier.
+
+### Pertinence et affichage
+
+- Conserver l’ordre de pertinence fourni par le moteur de recherche ; ne pas retrier ensuite les résultats avec une priorité fixe de catégorie.
+- Utiliser des titres techniques utiles lorsqu’ils existent, jamais des identifiants numériques comme titre principal si un nom technique est disponible.
+- Les fiches XML doivent conserver le défilement vertical.
+- Les rectangles / pastilles de couleur des fils doivent rester visibles dans les fiches techniques, y compris lorsque la couleur provient d’une cellule XML générique.
+
+## Architecture de recherche validée
+
+- `MemsGlobalSearchIndex.cpp` est le **constructeur central de l’index**.
+- L’index doit être construit de manière déterministe avant utilisation de l’explorateur.
+- **Ne pas réintroduire d’indexation différée par `QTimer`.**
+- `MemsXmlRowIndexer` et `MemsSearchCompletenessPatch` ne doivent pas réécrire ou compléter tardivement l’index global.
+- Les modules secondaires peuvent conserver uniquement les fonctions d’affichage nécessaires (scroll, rendu XML, couleurs), sans mutation tardive de l’index.
+- La base de référence enrichie doit être conservée.
+- À chaque nouveau numéro de build, le cache généré de base/XML/index doit être renouvelé afin qu’un nouveau build ne réutilise pas silencieusement un ancien cache.
+
+## Self-test de non-régression — OBLIGATOIRE
+
+Le test `mems_search_selftest` fait partie du garde-fou fonctionnel et ne doit pas être supprimé ou rendu non bloquant.
+
+Le build #518 a validé automatiquement :
+
+- index : **950 documents** ;
+- `vert rouge` + catégorie `wiring` → **4 résultats** ;
+- `IAT` + `wiring` → **4 résultats** ;
+- `temperature air` + `wiring` → **2 résultats**, preuve de recherche sans accent ;
+- `D0` + `command` → **2 résultats** ;
+- `P0115` + `dtc` → **1 résultat** ;
+- `tension batterie` + `data` → **2 résultats** ;
+- `9600` + `protocol` → **8 résultats** ;
+- test de pertinence `IAT` : premier résultat validé = **`[wiring] 6 — IAT — Vert / Rouge`** ;
+- résultat final : **`PASS MEMS search semantic self-test`**.
+
+Le self-test contient désormais aussi un contrôle MEMS 1.2 : une recherche `connecteur 36 voies` dans `wiring` doit retrouver la fiche MEMS 1.2 avec son connecteur 36 voies.
+
+Une modification future du moteur de recherche qui casse l’un de ces contrôles doit faire échouer le build et être considérée comme une régression jusqu’à correction.
+
+Ces exemples sont des **tests de contrôle**, pas une liste exhaustive des mots que le moteur doit connaître. Le principe reste : **tout mot réel contenu dans la base SQLite ou les XML doit être indexé et retrouvable dans son contexte réel.**
+
+## Fiche MEMS 1.2 — VALIDÉE VISUELLEMENT
+
+- La fiche `database/reference/fiches/mems_1_2.xml.qz64` a été créée à partir de la fiche XML présentée visuellement à l’utilisateur puis validée avant intégration.
+- Elle comporte le connecteur ECU **36 voies** et les 36 lignes de brochage.
+- Les couleurs et affectations non universelles ne doivent jamais être présentées comme certaines : elles portent exactement **« À vérifier suivant modèle du véhicule »**.
+- Ne jamais utiliser le statut « probable » dans cette fiche.
+- La fiche contient aussi les informations ROSCO, la trame 0x80, les défauts documentés et les sources utilisées.
+
+### Connecteurs réels à conserver dans les schémas
+
+- **MEMS 1.2 : 1 connecteur ECU 36 voies.**
+- **MEMS 1.3 : 2 connecteurs ECU, 36 + 18 voies.**
+- **MEMS 1.6 : connecteur principal 36 voies ; variante 36 + 18 voies = « À vérifier suivant modèle du véhicule ».**
+- **MEMS 1.9 : 1 connecteur ECU 36 voies.**
+- **MEMS 1.2 / 1.3 / 1.6 : prise diagnostic Rover / ROSCO 3 broches.**
+- Le SVG ROSCO principal est **noir**, en **vue de face uniquement** ; pas de vue de côté.
+- La famille de prise 3 broches existe aussi en variante verte pour l’immobilisateur ; ne pas transformer la fiche générale en vert et ne pas confondre cette variante avec le connecteur ECU.
+- **MEMS 1.9 : prise diagnostic 16 broches type J1962 / OBD**, utilisée pour la communication MEMS/K-Line et à ne pas présenter comme une simple interface OBD-II générique.
+
+Les SVG intégrés sont stockés dans `database/reference/images/` et doivent conserver le style dark harmonisé noir/gris, texte blanc et accents orange.
+
+## Base de référence
+
+- Conserver la base enrichie/réparée actuelle.
+- Ne pas supprimer les enrichissements de recherche déjà intégrés.
+- Générations concernées : MEMS 1.2, 1.3, 1.6 et 1.9.
+- Les fiches XML présentes concernent désormais **1.2, 1.3, 1.6 et 1.9**.
+- Les informations MEMS 1.2 incertaines restent dans la fiche mais doivent être explicitement marquées **« À vérifier suivant modèle du véhicule »**.
+
+## Interdictions de modification
+
+- **Ne pas changer de branche : rester exclusivement sur `ui-rebuild`.**
+- **Ne pas revenir sur `ui-modernisation` ni travailler sur une autre branche.**
+- **Ne pas revenir en arrière sous #518 sur le moteur de recherche.**
+- **Ne pas supprimer l’indexation mot par mot.**
+- **Ne pas réintroduire les anciens indexeurs temporisés.**
+- **Ne pas remettre de faux mots/synonymes génériques dans les lignes indexées.**
+- **Ne pas remettre de tri fixe par catégorie après la recherche.**
+- **Ne pas supprimer ou contourner le self-test sémantique bloquant.**
+- **Ne pas modifier les éléments déjà validés sans demande explicite.**
+
+## Point de reprise actuel
+
+À toute reprise de travail :
+
+1. Partir de `ui-rebuild` et considérer **#518 / `9fba41d125030616c9eb35eef07a10a00a90e138`** comme référence fonctionnelle validée du moteur de recherche.
+2. Préserver toutes les fonctionnalités demandées avant et après #483 ; ne jamais faire un reset qui en supprimerait une partie.
+3. Conserver la fiche MEMS 1.2 et les schémas de connecteurs décrits ci-dessus.
+4. Vérifier que le self-test sémantique reste bloquant et vert après toute modification du moteur/base/XML.
+5. Ne modifier l’architecture de recherche qu’en conservant au minimum tous les comportements validés dans #518.
+6. Continuer les travaux futurs depuis ce socle sans régression.
+
+<!-- ARCHIVE_SOURCE_END name=REPRISE_UI_REBUILD.md -->
