@@ -1,0 +1,43 @@
+name: TEMP AKM7169 fix manifest batch order
+on:
+  push:
+    branches: [tmp-akm7169-1870-transport]
+    paths:
+      - '.github/workflows/temp-akm7169-fix-manifest-order.yml'
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-akm7169-full-reintegration
+          fetch-depth: 1
+      - name: Insert 1720 in historical manifest order
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '7dbe902a21efe35566f9d80e83fdb43b05f71dda'
+          python - <<'PY'
+          import json,pathlib
+          p=pathlib.Path('database/reference/manifest.json')
+          m=json.loads(p.read_text(encoding='utf-8'))
+          a=m.get('research_enrichment_batches')
+          if not isinstance(a,list): raise SystemExit('research_enrichment_batches missing')
+          target='research_enrichment_1720.qz64'
+          if target in a: raise SystemExit('1720 already in manifest unexpectedly')
+          anchor='research_enrichment_1730.qz64'
+          if anchor not in a: raise SystemExit('1730 anchor missing')
+          a.insert(a.index(anchor),target)
+          if a[-1] != 'research_enrichment_1870.qz64': raise SystemExit('1870 must remain final manifest batch')
+          p.write_text(json.dumps(m,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print('PASS manifest order',a.index(target),a.index(anchor),len(a))
+          PY
+          git diff --check
+          git diff -- database/reference/manifest.json | head -80
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add database/reference/manifest.json
+          git commit -m 'Fix enrichment order: apply 1720 before AKM7169 1870 replacement'
+          git push origin HEAD:tmp-akm7169-full-reintegration
