@@ -7894,3 +7894,7 @@ Pousser le SAFE CHECKPOINT 1860 régénéré sur `tmp-rave-visual-backfill`, lan
 ## 2026-08-30 - AKM7169ENG 1870 - PREMIER RUN ROUGE
 
 Run `33314251161`: echec avant toute generation. Cause: garde errone exigeant `HEAD == d1a69ede...` alors que le commit du workflow avait avance HEAD a `dc92dfd...`. Generation, commit et rapport final tous sautes; aucune donnee AKM modifiee. Correction: d1a69ede devient ancetre obligatoire, diff limite au seul workflow. `MEMSX64` reste #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.
+
+## 2026-08-30 - AKM7169ENG 1870 - DEUXIEME RUN ROUGE
+
+Run `33314548784`: garde corrige et valide, mais echec au telechargement de la source avant toute generation. Le endpoint PDFCoffee a retourne une page HTML de 30914 octets au lieu du PDF exact attendu de 43906518 octets; aucune image, qz64 ou donnee AKM n a ete modifiee. Correction: transport multi-source, avec acceptation uniquement si taille 43906518 et SHA-256 `c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0` correspondent exactement. `MEMSX64` reste #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.
