@@ -7890,3 +7890,7 @@ Le lot 1860 est régénéré proprement depuis le PDF constructeur exact, sans O
 
 ## PROCHAINE ACTION EXACTE
 Pousser le SAFE CHECKPOINT 1860 régénéré sur `tmp-rave-visual-backfill`, lancer l'installation finale avec ces nouveaux SHA reproductibles, vérifier le commit distant et le nettoyage, puis écrire immédiatement le POST-POUSSE dans CE rapport maître unique. `MEMSX64` reste #101.
+
+## 2026-08-30 - AKM7169ENG 1870 - PREMIER RUN ROUGE
+
+Run `33314251161`: echec avant toute generation. Cause: garde errone exigeant `HEAD == d1a69ede...` alors que le commit du workflow avait avance HEAD a `dc92dfd...`. Generation, commit et rapport final tous sautes; aucune donnee AKM modifiee. Correction: d1a69ede devient ancetre obligatoire, diff limite au seul workflow. `MEMSX64` reste #101 `22dbe75ed14e0a61e694159d505ef72245116b48`.
