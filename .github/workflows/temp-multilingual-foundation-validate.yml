@@ -32,16 +32,16 @@ jobs:
         run: |
           set -euo pipefail
           python - <<'PY'
-          import base64,hashlib,sqlite3,struct,zipfile,zlib
+          import base64,hashlib,sqlite3,struct,zlib
           from pathlib import Path
           qz=Path('database/reference/prototypes/multilingual_knowledge_foundation_v1.qz64')
           sqlp=Path('database/reference/prototypes/multilingual_knowledge_foundation_v1.sql')
           if hashlib.sha256(qz.read_bytes()).hexdigest()!='0df680bd40450ce57be927e5ee3ec0ef40c8a2962d12c939e2f4f00202301487': raise SystemExit('qz64 sha mismatch')
           raw=base64.b64decode(qz.read_bytes()); n=struct.unpack('>I',raw[:4])[0]; sql=zlib.decompress(raw[4:])
           if len(sql)!=n or sql!=sqlp.read_bytes(): raise SystemExit('qz64/sql mismatch')
-          zips=list(Path('build103').rglob('*.zip'))
-          if len(zips)!=1: raise SystemExit(f'unexpected BUILD103 zip count: {len(zips)}')
-          with zipfile.ZipFile(zips[0]) as z: Path('test.sqlite').write_bytes(z.read('database/expert/ia_mems_reference_r20.sqlite'))
+          dbs=list(Path('build103').rglob('ia_mems_reference_r20.sqlite'))
+          if len(dbs)!=1: raise SystemExit(f'unexpected BUILD103 expert DB count: {len(dbs)}')
+          Path('test.sqlite').write_bytes(dbs[0].read_bytes())
           db=sqlite3.connect('test.sqlite'); db.execute('pragma foreign_keys=on')
           def count(t): return db.execute(f'select count(*) from {t}').fetchone()[0]
           baseline=(db.execute('pragma user_version').fetchone()[0],count('mems_knowledge_item'),count('mems_rave_illustration'),count('mems_procedure'),count('mems_specification'),db.execute("select count(*) from sqlite_master where type='table'").fetchone()[0])
