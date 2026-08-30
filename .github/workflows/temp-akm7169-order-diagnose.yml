@@ -1,0 +1,48 @@
+name: TEMP AKM7169 batch order diagnosis
+on:
+  push:
+    branches: [tmp-akm7169-1870-transport]
+    paths:
+      - '.github/workflows/temp-akm7169-order-diagnose.yml'
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 7dbe902a21efe35566f9d80e83fdb43b05f71dda
+      - name: Print effective enrichment order
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json,pathlib,re
+          root=pathlib.Path('database/reference')
+          m=json.loads((root/'manifest.json').read_text(encoding='utf-8'))
+          def suffix(n):
+              x=re.search(r'_(\d+)\.qz64$',n,re.I)
+              return int(x.group(1)) if x else 0
+          listed=[]; seen=set()
+          for x in m.get('research_enrichment_batches',[]):
+              n=str(x).strip().replace('\\','/')
+              if n and n not in seen:
+                  listed.append(n); seen.add(n)
+          print('MANIFEST_COUNT',len(listed))
+          print('MANIFEST_LAST_20')
+          for i,n in list(enumerate(listed))[-20:]: print(i,n,'suffix',suffix(n))
+          discovered=sorted((p.name for p in root.glob('research_enrichment*.qz64')),key=lambda n:(suffix(n),n))
+          print('DISCOVERED_COUNT',len(discovered))
+          print('DISCOVERED_ALL')
+          for n in discovered: print(n,'suffix',suffix(n),'in_manifest',n in seen)
+          effective=list(listed)
+          for n in discovered:
+              if n not in seen:
+                  effective.append(n); seen.add(n)
+          print('EFFECTIVE_COUNT',len(effective))
+          print('EFFECTIVE_LAST_30')
+          for i,n in list(enumerate(effective))[-30:]: print(i,n,'suffix',suffix(n))
+          idx=effective.index('research_enrichment_1870.qz64')
+          print('INDEX_1870',idx)
+          print('AFTER_1870',effective[idx+1:])
+          PY
