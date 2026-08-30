@@ -8001,3 +8001,12 @@ Incident de journalisation obligatoire : la premiere tentative de consignation d
 Aucune donnee AKM7169, aucun manifeste, aucun qz64 et aucune image n'ont ete pousses sur `tmp-akm7169-full-reintegration`. `MEMSX64` reste strictement BUILD #102 `06eca1a478db3d32e9ae88d040e1a34e2cc98650`.
 
 PROCHAINE ACTION EXACTE : tester une seule fois l'URL directe `https://pdfcoffee.com/pdfcoffee/assets/pdf/min.pdf`, exiger simultanement `%PDF`, 43 906 518 octets, SHA-256 `c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0` et 482 pages. Si l'un de ces controles echoue, abandonner PDFCoffee comme transport du binaire exact et revenir au transport isole verifiable du candidat local.
+
+
+## 2026-08-30 - AKM7169ENG 1870 - PDFCOFFEE DEFINITIVEMENT REJETE COMME TRANSPORT
+
+Run `33330880912` sur `tmp-akm7169-1870-transport` : le fichier direct revele par le viewer, `https://pdfcoffee.com/pdfcoffee/assets/pdf/min.pdf`, est bien un PDF (`application/pdf`, prefixe `%PDF-1.4`) mais il ne fait que **254 458 octets**, SHA-256 `da87357207e5a07119ebc286967eb6ae2cefd41679fab1ceceadf13bd0f549bb`. Il ne correspond donc ni a la taille 43 906 518 octets ni au SHA-256 `c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0` de la source constructeur exacte. Le run termine en FAILURE uniquement parce que le controle exact a correctement rejete ce fichier et que PyMuPDF n'etait pas installe; le rejet est deja acquis avant ce point par taille+SHA.
+
+Conclusion : PDFCoffee est abandonne comme moyen de transport de la source binaire exacte. Aucun autre crawl PDFCoffee ne sera lance. Aucune donnee candidate AKM7169 n'a ete modifiee. `tmp-akm7169-full-reintegration` et `MEMSX64` restent tous deux au commit #102 `06eca1a478db3d32e9ae88d040e1a34e2cc98650`.
+
+PROCHAINE ACTION EXACTE : utiliser uniquement un transport binaire isole et verifiable du candidat local deja valide (archive 1 621 037 octets, SHA-256 `43e0f2d3a84dd41b1ab737bcb354a4ba72baa328de35f5ad478732ca4b8b9210`), reconstituer les 43 fichiers sur runner, verifier 43/43 hashes/bytes, puis produire en une seule operation le commit atomique sur `tmp-akm7169-full-reintegration`.
