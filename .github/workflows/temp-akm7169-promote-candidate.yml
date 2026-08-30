@@ -93,12 +93,12 @@ jobs:
           manifest=json.loads((ref/'manifest.json').read_text(encoding='utf-8'))
           if manifest.get('schema_version')!=1 or manifest.get('database_revision')!=20:
               raise SystemExit('Manifest schema/revision mismatch')
-          diagrams=manifest.get('diagrams',{})
+          assets=manifest.get('visual_assets',{})
           items=[]
-          for key,meta in diagrams.items():
+          for key,meta in assets.items():
               if isinstance(meta,dict) and meta.get('document')=='AKM7169ENG':
                   items.append((key,meta))
-          if len(items)!=40: raise SystemExit(f'Expected 40 AKM diagrams, got {len(items)}')
+          if len(items)!=40: raise SystemExit(f'Expected 40 AKM visual assets, got {len(items)}')
           seen=set()
           for key,meta in items:
               rel=meta.get('path','')
@@ -114,7 +114,7 @@ jobs:
           for marker in ['43906518','482 physical pages','c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0','91/91','PRAGMA integrity_check = ok']:
               if marker not in audit: raise SystemExit('Audit marker missing: '+marker)
           print('PASS QZ64 SQL bytes',len(sql))
-          print('PASS AKM diagrams/images',len(items))
+          print('PASS AKM visual assets/images',len(items))
           PY
 
       - name: Checkout exact untouched AKM target branch
