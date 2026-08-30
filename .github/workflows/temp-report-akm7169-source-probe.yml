@@ -12,25 +12,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: RAPPORT
-      - name: Append probe result
+      - name: Append corrected probe result
         shell: bash
         run: |
-          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
-
-## 2026-08-30 - AKM7169ENG 1870 - PROBE PDFCOFFEE APRES CHECKPOINT TRANSPORT
-
-Run diagnostique `33330638040` sur la branche jetable `tmp-akm7169-1870-transport` : **SUCCESS technique**, mais aucune source exacte acquise. Les deux pages PDFCoffee testees (`mini-repair-manual-92-96-2-pdf-free.html` et `mini-repair-manual-92-96-pdf-pdf-free.html`) ainsi que leurs endpoints `/download/...html` renvoient du HTML, pas le PDF constructeur de 43 906 518 octets / SHA-256 `c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0`.
-
-Le probe a inspecte 99 URL candidates sans trouver le binaire exact. Une information utile a toutefois ete decouverte dans le HTML : le viewer PDF.js reference explicitement `file=https://pdfcoffee.com/pdfcoffee/assets/pdf/min.pdf`. Ce fichier direct n'a pas encore ete teste dans ce run.
-
-Aucune donnee AKM7169, aucun manifeste, aucun qz64 et aucune image n'ont ete pousses sur `tmp-akm7169-full-reintegration`. `MEMSX64` reste strictement BUILD #102 `06eca1a478db3d32e9ae88d040e1a34e2cc98650`.
-
-PROCHAINE ACTION EXACTE : tester une seule fois l'URL directe `https://pdfcoffee.com/pdfcoffee/assets/pdf/min.pdf`, exiger simultanement `%PDF`, 43 906 518 octets, SHA-256 `c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0` et 482 pages. Si l'un de ces controles echoue, abandonner PDFCoffee comme transport du binaire exact et revenir au transport isole verifiable du candidat local.
-EOF
+          echo 'CgojIyAyMDI2LTA4LTMwIC0gQUtNNzE2OUVORyAxODcwIC0gUFJPQkUgUERGQ09GRkVFICsgSU5DSURFTlQgSk9VUk5BTElTQVRJT04KClJ1biBkaWFnbm9zdGlxdWUgYDMzMzMwNjM4MDQwYCBzdXIgbGEgYnJhbmNoZSBqZXRhYmxlIGB0bXAtYWttNzE2OS0xODcwLXRyYW5zcG9ydGAgOiAqKlNVQ0NFU1MgdGVjaG5pcXVlKiosIG1haXMgYXVjdW5lIHNvdXJjZSBleGFjdGUgYWNxdWlzZS4gTGVzIGRldXggcGFnZXMgUERGQ29mZmVlIHRlc3RlZXMgKGBtaW5pLXJlcGFpci1tYW51YWwtOTItOTYtMi1wZGYtZnJlZS5odG1sYCBldCBgbWluaS1yZXBhaXItbWFudWFsLTkyLTk2LXBkZi1wZGYtZnJlZS5odG1sYCkgYWluc2kgcXVlIGxldXJzIGVuZHBvaW50cyBgL2Rvd25sb2FkLy4uLmh0bWxgIHJlbnZvaWVudCBkdSBIVE1MLCBwYXMgbGUgUERGIGNvbnN0cnVjdGV1ciBkZSA0MyA5MDYgNTE4IG9jdGV0cyAvIFNIQS0yNTYgYGM4YmJiMzBkN2Q1YTUyOTMyZTdmOTI3MjNiYTVkYzcwNTIwMDEyYWMzY2VhYzIxZDE5YWIwYTM5YjRkNGM0ZTBgLgoKTGUgcHJvYmUgYSBpbnNwZWN0ZSA5OSBVUkwgY2FuZGlkYXRlcyBzYW5zIHRyb3V2ZXIgbGUgYmluYWlyZSBleGFjdC4gVW5lIGluZm9ybWF0aW9uIHV0aWxlIGEgdG91dGVmb2lzIGV0ZSBkZWNvdXZlcnRlIGRhbnMgbGUgSFRNTCA6IGxlIHZpZXdlciBQREYuanMgcmVmZXJlbmNlIGV4cGxpY2l0ZW1lbnQgYGZpbGU9aHR0cHM6Ly9wZGZjb2ZmZWUuY29tL3BkZmNvZmZlZS9hc3NldHMvcGRmL21pbi5wZGZgLiBDZSBmaWNoaWVyIGRpcmVjdCBuJ2EgcGFzIGVuY29yZSBldGUgdGVzdGUuCgpJbmNpZGVudCBkZSBqb3VybmFsaXNhdGlvbiBvYmxpZ2F0b2lyZSA6IGxhIHByZW1pZXJlIHRlbnRhdGl2ZSBkZSBjb25zaWduYXRpb24gZGUgY2UgcmVzdWx0YXQsIHdvcmtmbG93IGBURU1QIFJFUE9SVCBBS003MTY5IFNPVVJDRSBQUk9CRWAsIHJ1biBgMzMzMzA4MDU2NDBgLCBhIGVjaG91ZSBhdmFudCBjcmVhdGlvbiBkZSB0b3V0IGpvYiAod29ya2Zsb3cgWUFNTCBpbnZhbGlkZSkuIENvbmZvcm1lbWVudCBhIGxhIHJlZ2xlIG1haXRyZSwgYXVjdW5lIG5vdXZlbGxlIHBvdXNzZSB0ZWNobmlxdWUgQUtNIG4nYSBldGUgZWZmZWN0dWVlIGFwcmVzIGNldCBlY2hlYy4gTGEgY29ycmVjdGlvbiB1dGlsaXNlIHVuIHBheWxvYWQgQmFzZTY0IG1pbmltYWwsIG1ldGhvZGUgZGVqYSB2YWxpZGVlIGF1cGFyYXZhbnQuCgpBdWN1bmUgZG9ubmVlIEFLTTcxNjksIGF1Y3VuIG1hbmlmZXN0ZSwgYXVjdW4gcXo2NCBldCBhdWN1bmUgaW1hZ2UgbidvbnQgZXRlIHBvdXNzZXMgc3VyIGB0bXAtYWttNzE2OS1mdWxsLXJlaW50ZWdyYXRpb25gLiBgTUVNU1g2NGAgcmVzdGUgc3RyaWN0ZW1lbnQgQlVJTEQgIzEwMiBgMDZlY2ExYTQ3OGRiM2QzMmU5YWU4OGQwNDBlMWEzNGUyY2M5ODY1MGAuCgpQUk9DSEFJTkUgQUNUSU9OIEVYQUNURSA6IHRlc3RlciB1bmUgc2V1bGUgZm9pcyBsJ1VSTCBkaXJlY3RlIGBodHRwczovL3BkZmNvZmZlZS5jb20vcGRmY29mZmVlL2Fzc2V0cy9wZGYvbWluLnBkZmAsIGV4aWdlciBzaW11bHRhbmVtZW50IGAlUERGYCwgNDMgOTA2IDUxOCBvY3RldHMsIFNIQS0yNTYgYGM4YmJiMzBkN2Q1YTUyOTMyZTdmOTI3MjNiYTVkYzcwNTIwMDEyYWMzY2VhYzIxZDE5YWIwYTM5YjRkNGM0ZTBgIGV0IDQ4MiBwYWdlcy4gU2kgbCd1biBkZSBjZXMgY29udHJvbGVzIGVjaG91ZSwgYWJhbmRvbm5lciBQREZDb2ZmZWUgY29tbWUgdHJhbnNwb3J0IGR1IGJpbmFpcmUgZXhhY3QgZXQgcmV2ZW5pciBhdSB0cmFuc3BvcnQgaXNvbGUgdmVyaWZpYWJsZSBkdSBjYW5kaWRhdCBsb2NhbC4K' | base64 -d >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
-          git commit -m 'Journal AKM7169 PDFCoffee source probe'
+          git commit -m 'Journal AKM7169 source probe and report failure'
           git push
       - name: Remove helper
         shell: bash
