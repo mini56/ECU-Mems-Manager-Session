@@ -8108,3 +8108,17 @@ Decision validee : MEMS Manager ne doit pas devenir un lecteur de pages PDF. Les
 8. PRODUCTION PROTEGEE. BUILD #103 reste la base de production actuelle. Aucun backfill massif RAVE/AKM7169/Mini MPi ne doit etre pousse en production avant validation du socle generique sur un echantillon representatif et validation complete des migrations de schema necessaires.
 
 PROCHAINE ACTION EXACTE : concevoir le schema de donnees et le prototype minimal du socle generique d'extraction/affichage multilingue, en preservant BUILD #103, puis le valider sur un petit ensemble de ressources heterogenes avant toute reprise massive de RAVE.
+
+## 2026-08-30 - DEMARRAGE SOCLE GENERIQUE DOCUMENTAIRE MULTILINGUE
+
+Decision utilisateur : demarrer l'etape 1 validee avant toute reprise massive de RAVE.
+
+Base protegee : BUILD #103, commit `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`. `MEMSX64` reste intact.
+
+Branche cible : `tmp-multilingual-knowledge-foundation`, creee directement depuis le commit exact BUILD #103.
+
+Perimetre : schema additif et prototype minimal pour connaissances independantes de la langue, traductions par locale extensible, ressources visuelles originales, labels/zones traduisibles, tableaux structures, procedures/etapes, tracabilite source/page/section et couverture documentaire.
+
+Interdictions : pas de colonnes figees par langue; pas de modification protocole ECU, lecture/analyse ECU, IA locale, ONNX ou production; pas de backfill massif RAVE/AKM7169/Mini MPi avant validation du socle.
+
+PROCHAINE ACTION EXACTE : creer la branche depuis #103, inventorier le schema actuel et preparer un premier lot additif de fondation sans toucher a `MEMSX64`.
