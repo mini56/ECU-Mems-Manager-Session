@@ -7941,3 +7941,32 @@ Regle de reconstruction :
 Incident de sequence : la branche de travail a ete creee avant l'ecriture de ce checkpoint, mais elle pointe encore exactement sur #102 et ne contient aucune modification de donnees. La presente journalisation corrige cette sequence avant toute premiere pousse technique AKM.
 
 PROCHAINE ACTION EXACTE : inventorier et tester localement la purge de toutes les donnees AKM7169 actives sur une copie de la SQLite #102, cartographier le scan 482 pages, puis preparer un nouveau lot `research_enrichment_1870.qz64` de remplacement complet avec assets/pages et audit. RAPPORT avant la premiere pousse technique.
+
+
+## 2026-08-30 - AKM7169ENG 1870 - REINTEGRATION COMPLETE - CHECKPOINT PRE-POUSSE
+
+Le candidat local de reintegration complete AKM7169ENG est maintenant construit et valide sur une copie exacte de la base du BUILD #102. `MEMSX64` reste strictement sur #102 `06eca1a478db3d32e9ae88d040e1a34e2cc98650`; la branche de travail `tmp-akm7169-full-reintegration` pointe encore exactement sur ce meme commit avant la premiere pousse technique.
+
+Source constructeur unique : Rover Group Limited `AKM7169ENG`, 43 906 518 octets, 482 pages physiques, SHA-256 `c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0`.
+
+Purge validee localement : 0 ancienne ligne `SRC-AKM7169`, 0 `RAVE-SPI93-*`, 0 `KNOW-RAVE-SPI93-*`, 0 source legacy `akm7169fre`, 0 diagnostic legacy `akm7169fre`, 0 ancienne faute AKM7169FRE apres installation du nouveau lot. Le catalogue partage `otpubs_mini` reste conserve. Le manifeste retire `research_enrichment_1720.qz64` de la liste active et ajoute `research_enrichment_1870.qz64`; le fichier historique 1720 peut rester archive dans le depot mais n'est plus execute.
+
+Candidat 1870 valide :
+- 91 faits constructeur AKM7169ENG + 91 miroirs expert + 91 connaissances;
+- 5 portees exactes;
+- 81 specifications / 81 valeurs;
+- 13 procedures structurees / 160 etapes / 11 exigences-avertissements-outils;
+- 9 relations;
+- 40 pages constructeur exactes, 135 liens fait->page, couverture 91/91 faits, 0 asset AKM non lie;
+- 40 sources-assets correspondant exactement aux 40 PNG;
+- 8 references diagnostic legacy reconstruites avec la source ENG exacte et 1 connaissance de panne pression carburant corrigee.
+
+Pages retenues : `2, 7, 16, 24, 25, 26, 29, 36, 44, 114, 115, 116, 117, 118, 119, 120, 121, 122, 124, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 138, 140, 142, 143, 144, 145, 156, 158, 159, 459, 460`. Elles couvrent portee/VIN, General Data, Engine Tuning Data 3/4/5, couples, implantation SPi, Microcheck/Cobest, description/fonctionnement MEMS-SPi, injection/allumage/capteurs/actionneurs, procedures de diagnostic/service, circuit carburant, collecteurs/closed-loop et schema electrique constructeur.
+
+Validation locale : `PRAGMA integrity_check = ok`, `user_version = 20`, violations FK = 0; reappliquer le SQL une seconde fois donne les memes compteurs (idempotence PASS).
+
+Payload : SQL 396688 octets SHA-256 `0efab7667ccc6fccf3075140fc794e4a759bcc211909c4e3e1e4ac547ac7149e`; QZ64 40525 octets SHA-256 `f860cd1f3824ccfb8a91105bc2cd35d70d1d9bcd59cdaa3795dc503d3321394a`, round-trip qCompress = PASS; manifeste SHA-256 `c8056ffb69c44c10409a9a4f6ccacb79656e67519955d05c60b28bdc38801384`; audit SHA-256 `400b5d3824797a5697ceec507b4dda196dd25975bfcc39b3ebcb74cf5f6ce3f5`. Les 40 PNG ont ete rehashes individuellement contre leur manifeste local : 0 divergence.
+
+Securite : aucune modification protocole, communication ECU, RAM, ecriture/reset, UI, IA/ONNX ou 32 bits. Le schema page 460 stocke seulement les codes fils imprimes directement broche->couleur; aucune fonction de broche ambigue n'est inventee.
+
+PROCHAINE ACTION EXACTE : pousser en un commit atomique sur `tmp-akm7169-full-reintegration` le QZ64 1870, le manifeste, l'audit et les 40 PNG, verifier les Git blob SHA des binaires, relire le commit distant, reconstruire/valider la base depuis le contenu distant puis consigner immediatement le POST-POUSSE avant toute promotion vers `MEMSX64`.
