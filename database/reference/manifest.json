@@ -47,7 +47,6 @@
     "research_enrichment_1690.qz64",
     "research_enrichment_1700.qz64",
     "research_enrichment_1710.qz64",
-    "research_enrichment_1720.qz64",
     "research_enrichment_1730.qz64",
     "research_enrichment_1740.qz64",
     "research_enrichment_1750.qz64",
@@ -61,7 +60,8 @@
     "research_enrichment_1830.qz64",
     "research_enrichment_1840.qz64",
     "research_enrichment_1850.qz64",
-    "research_enrichment_1860.qz64"
+    "research_enrichment_1860.qz64",
+    "research_enrichment_1870.qz64"
   ],
   "verification_levels": [
     "verifie_constructeur",
@@ -471,7 +471,47 @@
     "RAVE RCL0193FRE PDF 368 lot 1860": "images/rave/RCL0193FRE_PDF_368.png",
     "RAVE RCL0193FRE PDF 369 lot 1860": "images/rave/RCL0193FRE_PDF_369.png",
     "RAVE RCL0193FRE PDF 370 lot 1860": "images/rave/RCL0193FRE_PDF_370.png",
-    "RAVE RCL0193FRE PDF 371 lot 1860": "images/rave/RCL0193FRE_PDF_371.png"
+    "RAVE RCL0193FRE PDF 371 lot 1860": "images/rave/RCL0193FRE_PDF_371.png",
+    "RAVE AKM7169ENG PDF 002 full reintegration 1870": "images/rave/AKM7169ENG_PDF_002.png",
+    "RAVE AKM7169ENG PDF 007 full reintegration 1870": "images/rave/AKM7169ENG_PDF_007.png",
+    "RAVE AKM7169ENG PDF 016 full reintegration 1870": "images/rave/AKM7169ENG_PDF_016.png",
+    "RAVE AKM7169ENG PDF 024 full reintegration 1870": "images/rave/AKM7169ENG_PDF_024.png",
+    "RAVE AKM7169ENG PDF 025 full reintegration 1870": "images/rave/AKM7169ENG_PDF_025.png",
+    "RAVE AKM7169ENG PDF 026 full reintegration 1870": "images/rave/AKM7169ENG_PDF_026.png",
+    "RAVE AKM7169ENG PDF 029 full reintegration 1870": "images/rave/AKM7169ENG_PDF_029.png",
+    "RAVE AKM7169ENG PDF 036 full reintegration 1870": "images/rave/AKM7169ENG_PDF_036.png",
+    "RAVE AKM7169ENG PDF 044 full reintegration 1870": "images/rave/AKM7169ENG_PDF_044.png",
+    "RAVE AKM7169ENG PDF 114 full reintegration 1870": "images/rave/AKM7169ENG_PDF_114.png",
+    "RAVE AKM7169ENG PDF 115 full reintegration 1870": "images/rave/AKM7169ENG_PDF_115.png",
+    "RAVE AKM7169ENG PDF 116 full reintegration 1870": "images/rave/AKM7169ENG_PDF_116.png",
+    "RAVE AKM7169ENG PDF 117 full reintegration 1870": "images/rave/AKM7169ENG_PDF_117.png",
+    "RAVE AKM7169ENG PDF 118 full reintegration 1870": "images/rave/AKM7169ENG_PDF_118.png",
+    "RAVE AKM7169ENG PDF 119 full reintegration 1870": "images/rave/AKM7169ENG_PDF_119.png",
+    "RAVE AKM7169ENG PDF 120 full reintegration 1870": "images/rave/AKM7169ENG_PDF_120.png",
+    "RAVE AKM7169ENG PDF 121 full reintegration 1870": "images/rave/AKM7169ENG_PDF_121.png",
+    "RAVE AKM7169ENG PDF 122 full reintegration 1870": "images/rave/AKM7169ENG_PDF_122.png",
+    "RAVE AKM7169ENG PDF 124 full reintegration 1870": "images/rave/AKM7169ENG_PDF_124.png",
+    "RAVE AKM7169ENG PDF 126 full reintegration 1870": "images/rave/AKM7169ENG_PDF_126.png",
+    "RAVE AKM7169ENG PDF 127 full reintegration 1870": "images/rave/AKM7169ENG_PDF_127.png",
+    "RAVE AKM7169ENG PDF 128 full reintegration 1870": "images/rave/AKM7169ENG_PDF_128.png",
+    "RAVE AKM7169ENG PDF 129 full reintegration 1870": "images/rave/AKM7169ENG_PDF_129.png",
+    "RAVE AKM7169ENG PDF 130 full reintegration 1870": "images/rave/AKM7169ENG_PDF_130.png",
+    "RAVE AKM7169ENG PDF 131 full reintegration 1870": "images/rave/AKM7169ENG_PDF_131.png",
+    "RAVE AKM7169ENG PDF 132 full reintegration 1870": "images/rave/AKM7169ENG_PDF_132.png",
+    "RAVE AKM7169ENG PDF 133 full reintegration 1870": "images/rave/AKM7169ENG_PDF_133.png",
+    "RAVE AKM7169ENG PDF 134 full reintegration 1870": "images/rave/AKM7169ENG_PDF_134.png",
+    "RAVE AKM7169ENG PDF 135 full reintegration 1870": "images/rave/AKM7169ENG_PDF_135.png",
+    "RAVE AKM7169ENG PDF 138 full reintegration 1870": "images/rave/AKM7169ENG_PDF_138.png",
+    "RAVE AKM7169ENG PDF 140 full reintegration 1870": "images/rave/AKM7169ENG_PDF_140.png",
+    "RAVE AKM7169ENG PDF 142 full reintegration 1870": "images/rave/AKM7169ENG_PDF_142.png",
+    "RAVE AKM7169ENG PDF 143 full reintegration 1870": "images/rave/AKM7169ENG_PDF_143.png",
+    "RAVE AKM7169ENG PDF 144 full reintegration 1870": "images/rave/AKM7169ENG_PDF_144.png",
+    "RAVE AKM7169ENG PDF 145 full reintegration 1870": "images/rave/AKM7169ENG_PDF_145.png",
+    "RAVE AKM7169ENG PDF 156 full reintegration 1870": "images/rave/AKM7169ENG_PDF_156.png",
+    "RAVE AKM7169ENG PDF 158 full reintegration 1870": "images/rave/AKM7169ENG_PDF_158.png",
+    "RAVE AKM7169ENG PDF 159 full reintegration 1870": "images/rave/AKM7169ENG_PDF_159.png",
+    "RAVE AKM7169ENG PDF 459 full reintegration 1870": "images/rave/AKM7169ENG_PDF_459.png",
+    "RAVE AKM7169ENG PDF 460 full reintegration 1870": "images/rave/AKM7169ENG_PDF_460.png"
   },
   "visual_assets": {
     "rave:RCL0194ENG:COLOUR_CODES": {
@@ -3569,6 +3609,326 @@
       "source_page": "PDF p.371",
       "pdf_index": 371,
       "sha256": "d25af33214224e83a721cc43476fb6cd42faffcc86e9d35b4c74301edd367c8f"
+    },
+    "rave:AKM7169ENG:PDF:2": {
+      "path": "images/rave/AKM7169ENG_PDF_002.png",
+      "asset_kind": "document_scope_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.2",
+      "pdf_index": 2,
+      "sha256": "181f2bef96a5678adf25124037cabf946316e47cddda05f0e262659bdc0835f0"
+    },
+    "rave:AKM7169ENG:PDF:7": {
+      "path": "images/rave/AKM7169ENG_PDF_007.png",
+      "asset_kind": "identification_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.7",
+      "pdf_index": 7,
+      "sha256": "64c2253ad553535c2513035c2c05fdbef1f9f0e5795312712c9dfa07449f424e"
+    },
+    "rave:AKM7169ENG:PDF:16": {
+      "path": "images/rave/AKM7169ENG_PDF_016.png",
+      "asset_kind": "general_data_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.16",
+      "pdf_index": 16,
+      "sha256": "5a16d197fd23d734d942dc81167688458beb4386a6a4af28699c32c13c3acfb1"
+    },
+    "rave:AKM7169ENG:PDF:24": {
+      "path": "images/rave/AKM7169ENG_PDF_024.png",
+      "asset_kind": "tuning_data_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.24",
+      "pdf_index": 24,
+      "sha256": "1191fb3f93b75349461002063b67a2db04539ae09ab93ec44c2ce8527c2bc148"
+    },
+    "rave:AKM7169ENG:PDF:25": {
+      "path": "images/rave/AKM7169ENG_PDF_025.png",
+      "asset_kind": "tuning_data_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.25",
+      "pdf_index": 25,
+      "sha256": "3846b6cce8c86893349790625212974c254fd06a921cc2154c27485b4d7643a5"
+    },
+    "rave:AKM7169ENG:PDF:26": {
+      "path": "images/rave/AKM7169ENG_PDF_026.png",
+      "asset_kind": "tuning_data_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.26",
+      "pdf_index": 26,
+      "sha256": "b1c3514fff0c092f3a4bfbde08f48409c6ff2b9343cf4522de0ad4b67bc7c9b0"
+    },
+    "rave:AKM7169ENG:PDF:29": {
+      "path": "images/rave/AKM7169ENG_PDF_029.png",
+      "asset_kind": "torque_data_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.29",
+      "pdf_index": 29,
+      "sha256": "ea1593248c86ccc5ea8525b9413f474548f9588b7c03b991c948a97c1c184f22"
+    },
+    "rave:AKM7169ENG:PDF:36": {
+      "path": "images/rave/AKM7169ENG_PDF_036.png",
+      "asset_kind": "component_location_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.36",
+      "pdf_index": 36,
+      "sha256": "80f4c2f70846bc4fc7b3fdcfb83e55f0a3ea71a2b091d01487cedf0699af2cd6"
+    },
+    "rave:AKM7169ENG:PDF:44": {
+      "path": "images/rave/AKM7169ENG_PDF_044.png",
+      "asset_kind": "diagnostic_tooling_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.44",
+      "pdf_index": 44,
+      "sha256": "eea74576222353e5ce2d99ea051792012c16841cac28966f2145205e61ad325e"
+    },
+    "rave:AKM7169ENG:PDF:114": {
+      "path": "images/rave/AKM7169ENG_PDF_114.png",
+      "asset_kind": "contents_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.114",
+      "pdf_index": 114,
+      "sha256": "419a7ee38b6399d72cc71ef26bbaf0403ea514c284dda3d253377bcde0cb0fc9"
+    },
+    "rave:AKM7169ENG:PDF:115": {
+      "path": "images/rave/AKM7169ENG_PDF_115.png",
+      "asset_kind": "system_diagram_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.115",
+      "pdf_index": 115,
+      "sha256": "5755edf78601c22f2840060218b2d223c779c2f85b2a28ed81bd57d366fd6912"
+    },
+    "rave:AKM7169ENG:PDF:116": {
+      "path": "images/rave/AKM7169ENG_PDF_116.png",
+      "asset_kind": "component_list_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.116",
+      "pdf_index": 116,
+      "sha256": "81cb188aac12989d276922d51f5a7405cb7dc6f7b75bf206e066e3304a15cfdf"
+    },
+    "rave:AKM7169ENG:PDF:117": {
+      "path": "images/rave/AKM7169ENG_PDF_117.png",
+      "asset_kind": "component_location_diagram",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.117",
+      "pdf_index": 117,
+      "sha256": "0c3367f9684f0071527e5c9e83f7f4028b919780f5751a6ff6289b74e6adbef0"
+    },
+    "rave:AKM7169ENG:PDF:118": {
+      "path": "images/rave/AKM7169ENG_PDF_118.png",
+      "asset_kind": "component_location_list",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.118",
+      "pdf_index": 118,
+      "sha256": "a1831742c13e193e821f551da76530028a15a4ccdca927b077c98e398aeb95d7"
+    },
+    "rave:AKM7169ENG:PDF:119": {
+      "path": "images/rave/AKM7169ENG_PDF_119.png",
+      "asset_kind": "system_operation_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.119",
+      "pdf_index": 119,
+      "sha256": "36fd4e7b2f88ce75e4ef1d334688dcaeabd9941ab3ebeb303c6d2220c638a3d9"
+    },
+    "rave:AKM7169ENG:PDF:120": {
+      "path": "images/rave/AKM7169ENG_PDF_120.png",
+      "asset_kind": "system_operation_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.120",
+      "pdf_index": 120,
+      "sha256": "bfd49c0e68d67d2ad58f05ca354e564e9a559aa888b229af61bb50fabe9dc2cd"
+    },
+    "rave:AKM7169ENG:PDF:121": {
+      "path": "images/rave/AKM7169ENG_PDF_121.png",
+      "asset_kind": "system_operation_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.121",
+      "pdf_index": 121,
+      "sha256": "a6263f94ed789c62bb817a1f16969d271205bfe7fb699d3cee14d720bc1b657d"
+    },
+    "rave:AKM7169ENG:PDF:122": {
+      "path": "images/rave/AKM7169ENG_PDF_122.png",
+      "asset_kind": "system_operation_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.122",
+      "pdf_index": 122,
+      "sha256": "14016c6bfcdb37726ade5119c4aa79089108db10f350fb0b620a69eb554d3e2e"
+    },
+    "rave:AKM7169ENG:PDF:124": {
+      "path": "images/rave/AKM7169ENG_PDF_124.png",
+      "asset_kind": "adjustment_procedure_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.124",
+      "pdf_index": 124,
+      "sha256": "fb067a856fc2c70dde9d65ce93cb716656ac7102d83f692412465955fabddb95"
+    },
+    "rave:AKM7169ENG:PDF:126": {
+      "path": "images/rave/AKM7169ENG_PDF_126.png",
+      "asset_kind": "service_procedure_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.126",
+      "pdf_index": 126,
+      "sha256": "ab326379ea359ed8cab7aa29b051caffaadabcfcd84a6befcff7a07d44ed66e6"
+    },
+    "rave:AKM7169ENG:PDF:127": {
+      "path": "images/rave/AKM7169ENG_PDF_127.png",
+      "asset_kind": "service_procedure_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.127",
+      "pdf_index": 127,
+      "sha256": "29e595eb3f5157d8e15581a83fd0135763387dcd8841625df87893229a1a02db"
+    },
+    "rave:AKM7169ENG:PDF:128": {
+      "path": "images/rave/AKM7169ENG_PDF_128.png",
+      "asset_kind": "service_procedure_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.128",
+      "pdf_index": 128,
+      "sha256": "289f87f5f3ca13fc47587606a9fa51580c611e5fa31f9662c1db76486a643810"
+    },
+    "rave:AKM7169ENG:PDF:129": {
+      "path": "images/rave/AKM7169ENG_PDF_129.png",
+      "asset_kind": "service_procedure_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.129",
+      "pdf_index": 129,
+      "sha256": "27c6b418b63db6daeec5a0d5d5242c3f3916621118b2971051ea41102ab4ecdc"
+    },
+    "rave:AKM7169ENG:PDF:130": {
+      "path": "images/rave/AKM7169ENG_PDF_130.png",
+      "asset_kind": "service_procedure_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.130",
+      "pdf_index": 130,
+      "sha256": "3d1e64ac840867b2fdc5682c40da10984b58da388b46579fdc2901224bfa4572"
+    },
+    "rave:AKM7169ENG:PDF:131": {
+      "path": "images/rave/AKM7169ENG_PDF_131.png",
+      "asset_kind": "service_procedure_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.131",
+      "pdf_index": 131,
+      "sha256": "37c3ba296cd436117950434856a18cf60100b5a6673e72d30d4f5f39f3d5cabf"
+    },
+    "rave:AKM7169ENG:PDF:132": {
+      "path": "images/rave/AKM7169ENG_PDF_132.png",
+      "asset_kind": "service_procedure_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.132",
+      "pdf_index": 132,
+      "sha256": "26cceb7169090800b24105aba1f5981bd7e0e6c577c255befb71e49e32773919"
+    },
+    "rave:AKM7169ENG:PDF:133": {
+      "path": "images/rave/AKM7169ENG_PDF_133.png",
+      "asset_kind": "service_procedure_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.133",
+      "pdf_index": 133,
+      "sha256": "f3c2d5f51aea2544fef6608b09e55eff86c12c08ca80adc04982c891bab2989e"
+    },
+    "rave:AKM7169ENG:PDF:134": {
+      "path": "images/rave/AKM7169ENG_PDF_134.png",
+      "asset_kind": "service_procedure_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.134",
+      "pdf_index": 134,
+      "sha256": "1cd26acd2878f22e4d5b1f74260b404dbde119b4ac2448a85c568f4bbcdaf6a5"
+    },
+    "rave:AKM7169ENG:PDF:135": {
+      "path": "images/rave/AKM7169ENG_PDF_135.png",
+      "asset_kind": "service_procedure_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.135",
+      "pdf_index": 135,
+      "sha256": "9f2c8b811ca67883c3083747956a1bc3bb4865c8d9ed3091e2a948d629ea48d2"
+    },
+    "rave:AKM7169ENG:PDF:138": {
+      "path": "images/rave/AKM7169ENG_PDF_138.png",
+      "asset_kind": "fuel_system_operation_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.138",
+      "pdf_index": 138,
+      "sha256": "1e4212b9ebb8bcee129cb4c974a4fef1fcc66f9bdefc6d57114c6bd81f1415da"
+    },
+    "rave:AKM7169ENG:PDF:140": {
+      "path": "images/rave/AKM7169ENG_PDF_140.png",
+      "asset_kind": "fuel_system_procedure_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.140",
+      "pdf_index": 140,
+      "sha256": "16edd81e7531da4b5ef90381cf23350de3b9ec49f21ae930b6a75c2d5b1eaafc"
+    },
+    "rave:AKM7169ENG:PDF:142": {
+      "path": "images/rave/AKM7169ENG_PDF_142.png",
+      "asset_kind": "fuel_system_procedure_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.142",
+      "pdf_index": 142,
+      "sha256": "b89807b41ab529f4555b050378c6184a7fe127b4a6833149547c0fec852736c8"
+    },
+    "rave:AKM7169ENG:PDF:143": {
+      "path": "images/rave/AKM7169ENG_PDF_143.png",
+      "asset_kind": "fuel_system_procedure_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.143",
+      "pdf_index": 143,
+      "sha256": "eda673091dbdf733b5f3ab519406e3d2026c805ff5cabf070f0adfa66142589b"
+    },
+    "rave:AKM7169ENG:PDF:144": {
+      "path": "images/rave/AKM7169ENG_PDF_144.png",
+      "asset_kind": "fuel_system_procedure_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.144",
+      "pdf_index": 144,
+      "sha256": "e78c8b272fdfef03f5a70d5d4565f09196db4199e4329cc0a16ce11e65576e0d"
+    },
+    "rave:AKM7169ENG:PDF:145": {
+      "path": "images/rave/AKM7169ENG_PDF_145.png",
+      "asset_kind": "fuel_system_procedure_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.145",
+      "pdf_index": 145,
+      "sha256": "e70e304fac056cbd43e3867e490baec38ed367ae05ae0cbb9805ccf0280ba1f5"
+    },
+    "rave:AKM7169ENG:PDF:156": {
+      "path": "images/rave/AKM7169ENG_PDF_156.png",
+      "asset_kind": "system_operation_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.156",
+      "pdf_index": 156,
+      "sha256": "5354dea59c4e086b39ec8763fd7f194aab0cdb416c69fe6a2ee4ec28babb8a8a"
+    },
+    "rave:AKM7169ENG:PDF:158": {
+      "path": "images/rave/AKM7169ENG_PDF_158.png",
+      "asset_kind": "service_procedure_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.158",
+      "pdf_index": 158,
+      "sha256": "37436b3cfdd70123b02536fac17b273b4783742bff1a2a76bf6373acfa7c3ac9"
+    },
+    "rave:AKM7169ENG:PDF:159": {
+      "path": "images/rave/AKM7169ENG_PDF_159.png",
+      "asset_kind": "service_procedure_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.159",
+      "pdf_index": 159,
+      "sha256": "800a3955354fb21ab8b0a9946ed9e1d973bfd9199ce9c2596023093ea41abbca"
+    },
+    "rave:AKM7169ENG:PDF:459": {
+      "path": "images/rave/AKM7169ENG_PDF_459.png",
+      "asset_kind": "wiring_legend_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.459",
+      "pdf_index": 459,
+      "sha256": "b966befdd45284f7b3b60625cc344ec487dddd5e13ca11777516164848b5db11"
+    },
+    "rave:AKM7169ENG:PDF:460": {
+      "path": "images/rave/AKM7169ENG_PDF_460.png",
+      "asset_kind": "wiring_diagram_page",
+      "document": "AKM7169ENG",
+      "source_page": "PDF p.460",
+      "pdf_index": 460,
+      "sha256": "adc7ec5aec156f895faa106e6425b5c718b2ecd3c3596b82149adf1a0ff07bdf"
     }
   }
 }
