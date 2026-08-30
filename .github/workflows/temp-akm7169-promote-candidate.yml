@@ -1,0 +1,160 @@
+name: TEMP AKM7169 validate and promote candidate
+on:
+  push:
+    branches: [tmp-akm7169-1870-transport]
+    paths:
+      - '.github/workflows/temp-akm7169-promote-candidate.yml'
+permissions:
+  contents: write
+jobs:
+  validate_promote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ARCHIVE_NAME: 'akm7169_1870_transport (1).tar.gz'
+      ARCHIVE_SHA256: '43e0f2d3a84dd41b1ab737bcb354a4ba72baa328de35f5ad478732ca4b8b9210'
+      ARCHIVE_SIZE: '1621037'
+      QZ64_SHA256: 'f860cd1f3824ccfb8a91105bc2cd35d70d1d9bcd59cdaa3795dc503d3321394a'
+      MANIFEST_SHA256: 'c8056ffb69c44c10409a9a4f6ccacb79656e67519955d05c60b28bdc38801384'
+      TARGET_BRANCH: 'tmp-akm7169-full-reintegration'
+      TARGET_BASE_SHA: '06eca1a478db3d32e9ae88d040e1a34e2cc98650'
+    steps:
+      - name: Checkout transport branch
+        uses: actions/checkout@v4
+        with:
+          ref: tmp-akm7169-1870-transport
+          path: transport
+
+      - name: Verify uploaded archive exactly
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$GITHUB_WORKSPACE/transport"
+          test -f "$ARCHIVE_NAME"
+          actual_size=$(stat -c '%s' "$ARCHIVE_NAME")
+          actual_sha=$(sha256sum "$ARCHIVE_NAME" | awk '{print $1}')
+          echo "ARCHIVE_SIZE=$actual_size"
+          echo "ARCHIVE_SHA256=$actual_sha"
+          test "$actual_size" = "$ARCHIVE_SIZE"
+          test "$actual_sha" = "$ARCHIVE_SHA256"
+
+      - name: Extract and validate 43-file AKM7169 candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          STAGE="$RUNNER_TEMP/akm7169-candidate"
+          rm -rf "$STAGE"
+          mkdir -p "$STAGE"
+          export STAGE
+          python - <<'PY'
+          import os, tarfile, pathlib
+          archive=pathlib.Path(os.environ['GITHUB_WORKSPACE'])/'transport'/os.environ['ARCHIVE_NAME']
+          stage=pathlib.Path(os.environ['STAGE'])
+          with tarfile.open(archive,'r:gz') as t:
+              members=t.getmembers()
+              if len(members)!=43:
+                  raise SystemExit(f'Expected 43 archive members, got {len(members)}')
+              for m in members:
+                  p=pathlib.PurePosixPath(m.name)
+                  if p.is_absolute() or '..' in p.parts or not m.isfile():
+                      raise SystemExit(f'Unsafe archive member: {m.name}')
+                  if not m.name.startswith('database/reference/'):
+                      raise SystemExit(f'Unexpected archive path: {m.name}')
+              t.extractall(stage)
+          print('PASS archive members=43')
+          PY
+          qz="$STAGE/database/reference/research_enrichment_1870.qz64"
+          man="$STAGE/database/reference/manifest.json"
+          audit="$STAGE/database/reference/audits/akm7169_1870_full_reintegration_audit.md"
+          test -f "$qz" && test -f "$man" && test -f "$audit"
+          test "$(sha256sum "$qz" | awk '{print $1}')" = "$QZ64_SHA256"
+          test "$(sha256sum "$man" | awk '{print $1}')" = "$MANIFEST_SHA256"
+
+      - name: Validate QZ64 round-trip and all 40 image hashes from manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          export STAGE="$RUNNER_TEMP/akm7169-candidate"
+          python - <<'PY'
+          import os, json, hashlib, base64, zlib, struct, pathlib
+          stage=pathlib.Path(os.environ['STAGE'])
+          ref=stage/'database/reference'
+          qz=ref/'research_enrichment_1870.qz64'
+          raw=base64.b64decode(qz.read_text().strip())
+          if len(raw)<5: raise SystemExit('QZ64 too short')
+          declared=struct.unpack('>I',raw[:4])[0]
+          sql=zlib.decompress(raw[4:])
+          if declared!=len(sql): raise SystemExit(f'QZ64 length mismatch {declared}!={len(sql)}')
+          if hashlib.sha256(sql).hexdigest()!='0efab7667ccc6fccf3075140fc794e4a759bcc211909c4e3e1e4ac547ac7149e':
+              raise SystemExit('SQL SHA256 mismatch')
+          text=sql.decode('utf-8')
+          for marker in ['SRC-AKM7169ENG-EXACT-482','AKM7169-','KNOW-AKM7169-','SCOPE-AKM7169ENG-']:
+              if marker not in text: raise SystemExit('Missing SQL marker '+marker)
+          manifest=json.loads((ref/'manifest.json').read_text(encoding='utf-8'))
+          if manifest.get('schema_version')!=1 or manifest.get('database_revision')!=20:
+              raise SystemExit('Manifest schema/revision mismatch')
+          diagrams=manifest.get('diagrams',{})
+          items=[]
+          for key,meta in diagrams.items():
+              if isinstance(meta,dict) and meta.get('document')=='AKM7169ENG':
+                  items.append((key,meta))
+          if len(items)!=40: raise SystemExit(f'Expected 40 AKM diagrams, got {len(items)}')
+          seen=set()
+          for key,meta in items:
+              rel=meta.get('path','')
+              p=ref/rel
+              if not p.is_file(): raise SystemExit('Missing image '+rel)
+              sha=hashlib.sha256(p.read_bytes()).hexdigest()
+              if sha!=meta.get('sha256'): raise SystemExit(f'Image SHA mismatch {rel}')
+              seen.add(rel)
+          pngs=sorted((ref/'images/rave').glob('AKM7169ENG_PDF_*.png'))
+          if len(pngs)!=40: raise SystemExit(f'Expected 40 AKM PNG files, got {len(pngs)}')
+          if set('images/rave/'+p.name for p in pngs)!=seen: raise SystemExit('Manifest/image set mismatch')
+          audit=(ref/'audits/akm7169_1870_full_reintegration_audit.md').read_text(encoding='utf-8')
+          for marker in ['43906518','482 physical pages','c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0','91/91','PRAGMA integrity_check = ok']:
+              if marker not in audit: raise SystemExit('Audit marker missing: '+marker)
+          print('PASS QZ64 SQL bytes',len(sql))
+          print('PASS AKM diagrams/images',len(items))
+          PY
+
+      - name: Checkout exact untouched AKM target branch
+        uses: actions/checkout@v4
+        with:
+          ref: tmp-akm7169-full-reintegration
+          path: target
+          fetch-depth: 1
+
+      - name: Guard target base and copy candidate atomically
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$GITHUB_WORKSPACE/target"
+          actual=$(git rev-parse HEAD)
+          echo "TARGET_HEAD_BEFORE=$actual"
+          test "$actual" = "$TARGET_BASE_SHA"
+          cp -a "$RUNNER_TEMP/akm7169-candidate/database/." "$GITHUB_WORKSPACE/target/database/"
+          git status --short
+          bad=$(git status --porcelain | awk '{print $2}' | grep -v '^database/reference/' || true)
+          if [ -n "$bad" ]; then echo "Unexpected changed path(s):"; echo "$bad"; exit 1; fi
+          test -n "$(git status --porcelain)"
+
+      - name: Commit and push full AKM7169 reintegration candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$GITHUB_WORKSPACE/target"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add database/reference
+          changed=$(git diff --cached --name-only | wc -l | tr -d ' ')
+          echo "CHANGED_FILES=$changed"
+          if [ "$changed" -lt 3 ] || [ "$changed" -gt 43 ]; then
+            echo "Unexpected staged file count: $changed"
+            exit 1
+          fi
+          git diff --cached --name-only | grep -qx 'database/reference/research_enrichment_1870.qz64'
+          git diff --cached --name-only | grep -qx 'database/reference/manifest.json'
+          git diff --cached --name-only | grep -qx 'database/reference/audits/akm7169_1870_full_reintegration_audit.md'
+          git commit -m 'Reintegrate AKM7169ENG from exact 482-page Rover Mini SPi manual'
+          git push origin HEAD:tmp-akm7169-full-reintegration
+          echo "TARGET_HEAD_AFTER=$(git rev-parse HEAD)"
