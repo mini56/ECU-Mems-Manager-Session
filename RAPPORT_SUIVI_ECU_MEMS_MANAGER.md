@@ -7970,3 +7970,21 @@ Payload : SQL 396688 octets SHA-256 `0efab7667ccc6fccf3075140fc794e4a759bcc21190
 Securite : aucune modification protocole, communication ECU, RAM, ecriture/reset, UI, IA/ONNX ou 32 bits. Le schema page 460 stocke seulement les codes fils imprimes directement broche->couleur; aucune fonction de broche ambigue n'est inventee.
 
 PROCHAINE ACTION EXACTE : pousser en un commit atomique sur `tmp-akm7169-full-reintegration` le QZ64 1870, le manifeste, l'audit et les 40 PNG, verifier les Git blob SHA des binaires, relire le commit distant, reconstruire/valider la base depuis le contenu distant puis consigner immediatement le POST-POUSSE avant toute promotion vers `MEMSX64`.
+
+## 2026-08-30 - AKM7169ENG 1870 - TRANSPORT BINAIRE ISOLE AVANT COMMIT ATOMIQUE
+
+Le checkpoint pre-pousse du candidat complet est valide. Une tentative de `create_blob` direct sur PNG a retourne un Git blob SHA ne correspondant pas au Git SHA calcule sur les octets locaux; le blob non conforme n'a ete reference par aucun tree/commit et aucune branche technique n'a bouge.
+
+Decision de transport avant toute pousse technique : ne pas continuer les essais blob directs. Utiliser une branche de transport jetable separee, creee depuis #102, contenant uniquement quatre fragments texte Base64 d'une archive tar.gz locale verifiee. Un workflow temporaire reassemblera l'archive, verifiera son SHA-256, verifiera chaque fichier extrait contre les SHA du candidat local, puis produira en une seule operation le commit atomique sur `tmp-akm7169-full-reintegration`. La branche de transport et le workflow ne seront jamais integres a `MEMSX64`.
+
+Archive locale verifiee : 1 621 037 octets, SHA-256 `43e0f2d3a84dd41b1ab737bcb354a4ba72baa328de35f5ad478732ca4b8b9210`, 43 membres = 40 PNG + QZ64 1870 + manifeste + audit. Verification extraction octet-par-octet : 43/43 PASS.
+
+Fragments Base64 :
+- part_00 : 550000 caracteres, SHA-256 `d031e261d7d509dd38a56fa2a0574c54b389841efbfeef7bb26ffd7d0c792658`;
+- part_01 : 550000, SHA-256 `33301a1f4c970c7eb66d46cc32b6dbaa811d943ec1d8f489bdc3732ae947793d`;
+- part_02 : 550000, SHA-256 `4300235b399680f519b0d72aa331ff272db38f0bbc18f015e34d77a57264a7b2`;
+- part_03 : 511384, SHA-256 `ca7e9f15bc3913c417bb771ffac826d6543cf1d411b678566db34cc539938d82`.
+
+`MEMSX64` reste strictement #102 `06eca1a478db3d32e9ae88d040e1a34e2cc98650`.
+
+PROCHAINE ACTION EXACTE : creer la branche jetable `tmp-akm7169-1870-transport` depuis #102, pousser les quatre fragments et un workflow de reconstruction/verifications, obtenir le commit atomique candidat sur `tmp-akm7169-full-reintegration`, verifier le contenu distant et la base reconstruite, puis journaliser immediatement le POST-POUSSE avant toute promotion.
