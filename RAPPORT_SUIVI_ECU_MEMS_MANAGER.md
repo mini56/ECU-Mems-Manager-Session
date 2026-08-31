@@ -9177,3 +9177,114 @@ Uniquement les trois fichiers du lot 105-136 ci-dessus sur `tmp-rave-complete-mu
 Aucune modification de `manifest.json`, aucune table historique, aucun protocole/ECU/UI/IA/ONNX. `MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
 
 PROCHAINE ACTION EXACTE : transporter le lot 105-136 par helper temporaire controle, verifier les SHA exacts, le roundtrip QZ64, SQLite applique deux fois, les invariants et le perimetre final, nettoyer tous les transports/workflows temporaires, committer uniquement les trois fichiers finaux, puis journaliser APRES POUSSE avant d'ouvrir la section anglaise suivante.
+
+
+## 2026-08-31 - RCL0193ENG PAGES 105-136 ENGINE MANAGEMENT SYSTEM - MEMS - VALIDATION FINALE ET SAFE CHECKPOINT
+
+Le lot documentaire multilingue RCL0193ENG pages physiques 105-136 est maintenant valide, nettoye et resquashe sur `tmp-rave-complete-multilingual-backfill`.
+
+### HISTORIQUE DES GARDES
+
+Journal AVANT POUSSE :
+- workflow `REPORT RCL0193ENG P105-136 PREPUSH`
+- run `33384599667`
+- job `99464261035`
+- conclusion **SUCCESS**
+- commit RAPPORT produit : `b516faf2950c4e2519b4e27979dfcc309934edac`.
+
+Installateur technique :
+- workflow `TEMP RCL0193ENG P105-136 INSTALL`
+- run `33385660949`
+- job `99467588641`
+- conclusion **SUCCESS**
+- `Verify transport and reconstruct exact lot` : PASS
+- `Validate SQLite twice and invariants` : PASS
+- `Clean transport and enforce final scope` : PASS
+- `Commit final lot` : PASS.
+
+Commit bot avant squash :
+`755b1ef7b0fcf7a7069488d039509175b001397f`
+
+Tree valide conserve sans modification :
+`1f1d44480da57541b119a3e3c27ea2c08dfae7a3`
+
+Safe checkpoint precedent / parent unique :
+`5289684f0e85031ba7d86d0288a5e4e1bc726218`
+
+Commit final resquashe :
+`8657aa8a9bdd13823f9b0a724999bf31556fd8e0`
+
+La comparaison `5289684f...8657aa8a` confirme :
+- status `ahead`
+- `ahead_by = 1`
+- `total_commits = 1`
+- exactement **3 fichiers ajoutes**, aucun autre diff.
+
+### FICHIERS FINAUX DISTANTS
+
+- `database/reference/prototypes/rcl0193eng_p105_136_multilingual_v1.sql`
+  - 608 775 octets
+  - SHA-256 `f911ede3f5e8e1ab6400c8448dbb61304562af3336bd965bf6c970b761261a17`
+  - Git blob distant `4487fd48fa21378cfc97389638ed7a2e9af4315e`
+
+- `database/reference/prototypes/rcl0193eng_p105_136_multilingual_v1.qz64`
+  - 42 385 octets
+  - SHA-256 `1d72492ec42b75b54a65b68d21b13afd2793ad77e8032e3f03713e77b22d1b7e`
+  - Git blob distant `71b9580edaba03fd6e8ef4d6f2712bbb1e333d9c`
+
+- `database/reference/audits/RCL0193ENG_P105_136_MULTILINGUAL_BACKFILL_V1.md`
+  - 2 485 octets
+  - SHA-256 `1e217a97fbf0b1d513c38493ad24e00d40552bb506c0b4ad80b6b3bec0e53d74`
+  - Git blob distant `fb761653838f9fb1b564ba3c1fce6570eedb75fc`.
+
+Les Git blobs distants correspondent exactement aux Git blobs calcules sur les candidats locaux. Les transports `.github/rcl0193eng-p105-136-transfer` et le workflow `temp-rcl0193eng-p105-136-install.yml` sont absents du tree final.
+
+### VALIDATION SQLITE ET EXHAUSTIVITE
+
+Validation depuis le socle multilingue + lots anglais valides p1-50, p51-96, p97-104, puis lot 105-136 applique **deux fois** :
+- QZ64 -> SQL byte pour byte exact ;
+- `PRAGMA integrity_check = ok` ;
+- `PRAGMA foreign_key_check = 0` ;
+- `PRAGMA user_version = 21` ;
+- idempotence : aucune duplication a la seconde application ;
+- 32/32 unites physiques p105-136 ;
+- p106 et p120 : `out_of_scope / not_required`, visuellement blanches ;
+- 30/30 pages non blanches avec texte source anglais ;
+- 30 candidats visuels ;
+- 20 operations / numeros constructeur ;
+- 32 faits `knowledge` ;
+- 37 entites `value` et 37 lignes `mems_doc_value` ;
+- 29 avertissements/cautions/notes/exigences ;
+- 1 exigence d'outillage HO2S 22 mm, non classee comme specification vehicule ;
+- 2 tables structurees :
+  - p107 `18M0222` : 28 cellules = 14 ancres numeriques + 14 libelles localisables ;
+  - p112 ECM I/O : 22 cellules = 12 entrees + 10 sorties ;
+- 498 textes anglais dans le lot.
+
+### SOURCE, DEDUPLICATION ET MULTILINGUE
+
+Source :
+- `rave/xn/wmxn990e.pdf`
+- RCL0193ENG Mini Workshop Manual, 5th Edition
+- 4 744 911 octets
+- 372 pages physiques
+- SHA-256 `c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715`.
+
+Perimetre confirme directement : p105-136 = `ENGINE MANAGEMENT SYSTEM - MEMS`, p106 et p120 blanches, p137 ouvre `FUEL DELIVERY SYSTEM`.
+
+Alignement controle avec le lot francais historique : RCL0193ENG p105-136 <-> RCL0193FRE p104-135. Le lot 1790 sert a dedupliquer la mecanique mais ne supprime jamais le texte source anglais ni sa provenance visuelle. Portee MPi ; `mems_family` reste volontairement NULL/UNKNOWN, sans invention MEMS 1.6/1.9.
+
+Architecture visuelle maintenue N-langues : un visuel constructeur source + ancres techniques immuables + couches de texte localisees separees via le socle multilingue.
+
+### PERIMETRE ET PROTECTION
+
+- `manifest.json` inchange ;
+- aucune table historique modifiee ;
+- aucun protocole/ECU/UI/IA/ONNX modifie ;
+- `MEMSX64` recontrole apres squash : BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`, inchange.
+
+### PROCHAINE ACTION EXACTE
+
+Inspecter **directement dans RCL0193ENG** la section qui commence page physique **137**, `FUEL DELIVERY SYSTEM`, determiner sa fin exacte et toutes ses pages blanches dans le PDF anglais avant toute classification. Comparer ensuite au RCL0193FRE / connaissances historiques pour dedupliquer sans perdre l'information anglaise, puis preparer le prochain lot additif multilingue N-langues avec visuels localisables.
+
+Aucune nouvelle pousse technique du bloc p137+ avant un nouveau journal AVANT POUSSE.
