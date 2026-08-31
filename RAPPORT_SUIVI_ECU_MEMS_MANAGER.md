@@ -9904,3 +9904,29 @@ Les neuf autres fichiers de transport sont conformes a leurs octets locaux :
 
 ### PROCHAINE ACTION EXACTE
 Apres validation GitHub Actions de ce journal, corriger **uniquement** `.github/rcl0193eng-p177-192-transfer/qz64.part07` en restaurant son LF final afin d'obtenir 2373 octets / Git blob `c8b0c6c6d0951b3dd939e370a0870a2ad6c38c82`. Recontroler ensuite les 10 blobs distants. Ne creer l'installateur que si les 10 transports sont exacts.
+
+## 2026-08-31 - RCL0193ENG P177-192 CLUTCH - TRANSPORT CORRIGE ET CONTROLE AVANT INSTALLATEUR
+
+L'incident de transport journalise precedemment est corrige sans ecriture de fichier documentaire final.
+
+- Journal d'echec : run `33398615551` - **SUCCESS**.
+- Correction limitee a `.github/rcl0193eng-p177-192-transfer/qz64.part07` : restauration du LF final uniquement.
+- Commit technique correctif : `d5ae31f72d33efa354ace9afbbfa730feb970b7d`.
+- `qz64.part07` est maintenant exactement **2373 octets**, Git blob `c8b0c6c6d0951b3dd939e370a0870a2ad6c38c82`, conforme au local.
+
+Controle distant integral des **10 fragments** :
+- `qz64.part00` 2500 / `423f759b73e4e60923f277bd223057daf45ac5cc` ;
+- `qz64.part01` 2500 / `00feac5a8a87c0f496a1a0bdeecdf964b6e92575` ;
+- `qz64.part02` 2500 / `7629efa3f3dab3ff0afff4610b23d0a2b08b2bb5` ;
+- `qz64.part03` 2500 / `23ff95f9c8865cc43ee17fb1bad5dc8356e19b26` ;
+- `qz64.part04` 2500 / `bc9acd6c79a14e301a7459387088b2f7b55ad61b` ;
+- `qz64.part05` 2500 / `a19b53e2ab989f0f36a0d2c34339d2d379a216b9` ;
+- `qz64.part06` 2500 / `c8ba94fa963bd89e4e9643d30317be0d7f36bf84` ;
+- `qz64.part07` 2373 / `c8b0c6c6d0951b3dd939e370a0870a2ad6c38c82` ;
+- `audit.part00` 2500 / `649848a6b66bec679a827c1bbf3dcbc758975c54` ;
+- `audit.part01` 380 / `d738e91a255dba279b873296038cfb8c2ebd2342`.
+
+Aucun installateur n'a encore ete execute et aucun SQL/QZ64/audit final p177-192 n'a encore ete ecrit. `MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+### PROCHAINE ACTION EXACTE
+Creer l'installateur temporaire p177-192. Il doit reconstruire le QZ64 et l'audit depuis ces 10 fragments, verifier tailles/SHA/Git blobs finaux, decoder le SQL exact, appliquer le socle puis toute la chaine anglaise p1-176 et le nouveau lot deux fois, verifier `integrity_check`, `foreign_key_check`, `user_version=21`, pages 177..192 et comptages attendus, recontroler `MEMSX64`, supprimer transport/workflow temporaire, imposer un diff final limite aux trois fichiers documentaires, puis committer/pousser uniquement si tous les gardes passent.
