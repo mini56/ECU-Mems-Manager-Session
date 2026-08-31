@@ -1,5 +1,5 @@
-run=17
+run=18
 source=main/rave/xn/wmxn990e.pdf
 exclude=193-202
 page=107
-mode=source-metadata-only-no-translation
+mode=source-metadata-plus-mems-display-simulation
