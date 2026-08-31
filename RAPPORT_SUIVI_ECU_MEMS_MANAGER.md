@@ -9986,3 +9986,58 @@ Le lot multilingue additif RCL0193ENG pages physiques 177-192 `CLUTCH` est valid
 
 ### PROCHAINE ACTION EXACTE
 Ouvrir RCL0193ENG page physique **193**, section `MANUAL GEARBOX`. Determiner la fin exacte de la section et confirmer visuellement les pages blanches/sans texte. Comparer au bloc francais correspondant du lot 1820, extraire exhaustivement toutes les donnees utiles utilisateur final et tous les visuels avec architecture N-langues, valider localement, ecrire le journal AVANT POUSSE, puis seulement transporter le lot suivant. Ne toucher ni a `MEMSX64`, ni protocole/ECU/UI/IA/ONNX.
+
+
+## 2026-08-31 - RCL0193ENG PAGES 193-202 MANUAL GEARBOX - JOURNAL AVANT POUSSE
+
+Reprise depuis le SAFE CHECKPOINT valide du lot 177-192 : branche `tmp-rave-complete-multilingual-backfill`, commit `f2ac8d5d7039d9d242b146882b4c29f25f2c468f`.
+
+### SOURCE ET PERIMETRE VERIFIES DIRECTEMENT
+- Source : `rave/xn/wmxn990e.pdf`, RCL0193ENG 5th Edition, 4 744 911 octets, 372 pages, SHA-256 `c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715`.
+- Bloc exact confirme visuellement : pages physiques **193-202 = MANUAL GEARBOX** ; p194 et p202 sont entierement blanches ; p203 ouvre `DRIVE SHAFTS`.
+- Alignement de deduplication : **ENG p193-202 <-> RCL0193FRE p192-201**, inclus dans le lot francais historique 1820 (`RCL0193FRE PDF 176-225 : embrayage, boite de vitesses manuelle, arbres de transmission et direction`).
+- La couverture francaise sert uniquement a eviter les doublons conceptuels : toute la couche source anglaise utile est conservee independamment.
+
+### EXHAUSTIVITE UTILISATEUR FINAL
+Candidat local valide :
+- 10/10 unites physiques ; 2 blanches ;
+- 8/8 pages non blanches avec texte source anglais integral ;
+- 8/8 candidats visuels ;
+- 6 operations constructeur : `37.20.10`, `37.16.25`, `37.20.02.99`, `37.25.01`, `37.25.05`, `37.27.01` ;
+- 9 faits structures ;
+- 8 valeurs/couples/reglages ;
+- 9 warnings/cautions/notes/exigences ;
+- 6 outils/equipements ;
+- 7 consommables/remplacements.
+
+Informations remarquables conservees : idler gear end-float **0.101 a 0.177 mm** avec outil **18G 1383** et feeler gauges ; cover plate **8 N.m** ; adaptor plate **25 N.m** ; engine mounting/adaptor **25 N.m** ; engine mounting/subframe **22 N.m** ; horn **9 N.m** ; speedometer pinion clamp **8 N.m** ; contacteur marche arriere neuf regle jusqu'a allumage puis **1/2 tour supplementaire** ; chandelles obligatoires ; soutien moteur par cric avec bloc bois/caoutchouc dur ; joints et oil seal neufs ; oil seal lubrifie a l'huile moteur propre et graisse.
+
+### TRADUCTION DES IMAGES / N LANGUES
+Une source visuelle constructeur par page/figure, avec reperes numeriques, figure IDs, identifiant Rover `18G 1383`, numeros de reparation, geometrie et fleches immuables. Titres, warnings, cautions, notes, legendes et procedures humaines restent localisables par locale. Aucun raster traduit duplique n'est cree. L'architecture n'est pas limitee aux six langues actuelles et reste compatible japonais, chinois, hindi et futures locales.
+
+### CANDIDAT LOCAL EXACT
+1. `database/reference/prototypes/rcl0193eng_p193_202_multilingual_v1.sql`
+   - 185272 octets
+   - SHA-256 `2f8c3ced48196e5e253ad1ae5c04084580bb178553bf8e38bd305c96ebee3cad`
+   - Git blob attendu `cf6d203cc743d68687fef07b903cda07a55b730d`
+2. `database/reference/prototypes/rcl0193eng_p193_202_multilingual_v1.qz64`
+   - 13585 octets
+   - SHA-256 `5ab3b858cde795c38fe49cd756ad796669f60345903514bbc7e37977dbb7589a`
+   - Git blob attendu `5fa27d2d5003e14996e921ab01ea210c934c3af9`
+3. `database/reference/audits/RCL0193ENG_P193_202_MULTILINGUAL_BACKFILL_V1.md`
+   - 2332 octets
+   - SHA-256 `cb083ed482b6384de81a414e9eddb22bda1c2883f006d46429ef6a7a760f8d65`
+   - Git blob attendu `e683260492496bf1ed32f72e97401ef37673f04c`
+
+### VALIDATION LOCALE
+- Base = checkpoint anglais p1-192 valide ; application du nouveau lot deux fois : SUCCESS / idempotence.
+- `PRAGMA integrity_check=ok` ; `PRAGMA foreign_key_check=0` ; `PRAGMA user_version=21`.
+- pages physiques exactes 193..202 ; p194/p202 `out_of_scope/not_required` car blanches.
+- QZ64 -> SQL byte-for-byte exact.
+- `manifest.json` non modifie ; aucune table historique.
+
+### PERIMETRE PROTEGE
+Uniquement les trois fichiers documentaires ci-dessus sont autorises sur `tmp-rave-complete-multilingual-backfill`. `MEMSX64` a ete recontrole avant cette etape et reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`. Aucun protocole/ECU/UI/IA/ONNX.
+
+### PROCHAINE ACTION EXACTE
+Apres SUCCESS GitHub Actions de ce journal, transporter uniquement le lot p193-202 par fragments temporaires controles ; verifier chaque Git blob avant installateur ; reconstruire QZ64/SQL/audit exacts ; appliquer toute la chaine anglaise p1-202 avec le nouveau lot deux fois ; verifier invariants et `MEMSX64` ; nettoyer tous transports/workflows ; imposer un diff final limite aux trois fichiers ; committer uniquement si tous les gardes passent ; journaliser avant compaction, compacter l'historique temporaire sans changer le tree valide, puis ecrire le SAFE CHECKPOINT avant p203 `DRIVE SHAFTS`.
