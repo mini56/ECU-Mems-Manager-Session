@@ -1,6 +1,16 @@
 {
   "locale": "fr",
   "page": 112,
+  "page_blocks": {
+    "RCL0193ENG_P112_B00": "SYSTÈME DE GESTION MOTEUR - MEMS",
+    "RCL0193ENG_P112_B01": "6 DESCRIPTION ET FONCTIONNEMENT",
+    "RCL0193ENG_P112_B02": "SYSTÈME D'ALIMENTATION",
+    "RCL0193ENG_P112_B03": "Module de commande moteur (ECM)",
+    "RCL0193ENG_P112_B05": "Le système modulaire de gestion moteur (MEMS) est piloté par un ECM monté dans le compartiment moteur. L’ECM est une unité adaptative qui apprend progressivement les caractéristiques de charge et d’usure du moteur qu’il commande. Lorsque le moteur fonctionne à sa température normale, l’ECM mémorise et met à jour deux exigences principales :",
+    "RCL0193ENG_P112_B06": "1. La position de la vanne de régulation d’air de ralenti (IAC) nécessaire pour obtenir le régime de ralenti spécifié. Elle sert ensuite de référence aux déplacements de la vanne IAC afin de maintenir le ralenti quelles que soient les charges.\n2. La correction ou le décalage d’alimentation nécessaire pour atteindre la tension définie de la sonde lambda. Le système peut ainsi fournir le bon dosage sans corrections excessives susceptibles de dégrader les émissions et l’agrément de conduite.",
+    "RCL0193ENG_P112_B08": "NOTE : après montage d’un ECM différent, TestBook est nécessaire pour reprogrammer l’ECM avec le code de l’unité de commande antivol et effectuer une procédure complète de réglage moteur.",
+    "RCL0193ENG_P112_B09": "Les entrées et sorties de l’ECM sont indiquées dans le schéma suivant :"
+  },
   "translations": {
     "RCL0193ENG_P112_T01": "ENTRÉES",
     "RCL0193ENG_P112_T02": "SORTIES",
