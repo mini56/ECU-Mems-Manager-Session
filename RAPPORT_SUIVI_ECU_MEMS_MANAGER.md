@@ -9742,3 +9742,46 @@ L'incident de transport journalise precedemment est corrige sans ecriture de fic
 Aucun installateur n'a encore ete execute et aucun SQL/QZ64/audit final p161-176 n'a encore ete ecrit. `MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
 
 PROCHAINE ACTION EXACTE : creer l'installateur temporaire p161-176. Il doit reconstruire le QZ64 et l'audit depuis ces 12 fragments, verifier les tailles/SHA/Git blobs finaux, decoder le SQL exact, appliquer le socle et tous les lots anglais p1-160 puis p161-176 deux fois, verifier les invariants et `MEMSX64`, supprimer tout transport/helper, imposer un diff final limite aux trois fichiers documentaires, puis committer/pousser uniquement si tous les gardes passent.
+
+## 2026-08-31 - RCL0193ENG P161-176 - VALIDATION INSTALLATEUR AVANT COMPACTION
+
+Relecture du rapport effectuee avant reprise : le dernier checkpoint persistant etait `TRANSPORT CORRIGE ET CONTROLE AVANT INSTALLATEUR`. Les controles GitHub suivants rattachent maintenant proprement la suite a ce checkpoint, avant toute reecriture d'historique.
+
+### VALIDATION GITHUB ACTIONS
+- Workflow temporaire : `TEMP RCL0193ENG P161-176 INSTALL`.
+- Run : `33394660033`.
+- Job : `99496194082`.
+- Conclusion : **SUCCESS**.
+- HEAD ayant declenche le run : `db11927a117b5617d622623e6c6094a7a16f9e7e`.
+- Toutes les etapes utiles sont PASS : reconstruction exacte du transport, validation SQLite deux fois et invariants, verification de la branche protegee, nettoyage du transport et garde de perimetre, commit final.
+
+### TREE ET COMMIT BOT VALIDES
+- Commit bot apres installateur : `bca2486b2e88747706b074f0842fb248f7bdb2fb`.
+- Tree valide : `103544a872226c049c708371ed9fec14692db4b3`.
+- Base propre precedente : `7744de40a8212da4080fe04c4f12fd9c43da8b9b`.
+- Compare `7744de40... -> bca2486b...` : `ahead_by=15`, `behind_by=0`, mais le **diff net contient exactement 3 fichiers ajoutes** et aucun autre fichier final.
+
+### TROIS FICHIERS FINAUX CONTROLES
+1. `database/reference/prototypes/rcl0193eng_p161_176_multilingual_v1.sql`
+   - 400987 octets
+   - SHA-256 `ccdf0a79b71c6d05dc085f2faa449cf5654de55fbc034266f9d2b70c325a59b6`
+   - Git blob distant `ede4d5c9e666d9dcfe79aa3cdb2a11f993c8f54a`
+2. `database/reference/prototypes/rcl0193eng_p161_176_multilingual_v1.qz64`
+   - 22657 octets
+   - SHA-256 `30e93fa1557c0005db54d4d7d6de7f086a07d9c5b2e204533e1f4a70a4f63b56`
+   - Git blob distant `c8603ec1c2f9d7296be0b5f3fa0763e4a0533cc6`
+3. `database/reference/audits/RCL0193ENG_P161_176_MULTILINGUAL_BACKFILL_V1.md`
+   - 3285 octets
+   - SHA-256 `3f48bcdca193a80305bbeccc8f32ca8a5fd4e961309218fd0ad127a06227a44a`
+   - Git blob distant `b2f98d81baf71ef8c55bf2ecfae0204bbf2e209b`
+
+Les Git blobs SQL et audit ont ete relus directement sur le commit bot ; le QZ64 avait deja ete controle a distance. Le run installateur a verifie tailles/SHA, reconstruction SQL depuis QZ64, double application SQLite et invariants avant le commit.
+
+### PERIMETRE PROTEGE
+- Le compare net ne contient que les trois fichiers documentaires ci-dessus : `manifest.json` reste inchange.
+- Le workflow installateur et les transports temporaires ont ete nettoyes par l'etape PASS `Clean transport and enforce final scope`.
+- `MEMSX64` a ete recontrole apres le run et reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+- Aucun protocole/ECU/UI/IA/ONNX n'est modifie.
+
+### PROCHAINE ACTION EXACTE
+Compacter uniquement les 15 commits temporaires en recreant un commit propre dont le tree est **strictement** `103544a872226c049c708371ed9fec14692db4b3` et dont le parent direct est `7744de40a8212da4080fe04c4f12fd9c43da8b9b`. Forcer ensuite `tmp-rave-complete-multilingual-backfill` sur ce commit, reverifier `ahead_by=1` et exactement les trois fichiers attendus, recontroler `MEMSX64`, puis ecrire le **CHECKPOINT APRES POUSSE / SAFE CHECKPOINT** avant d'ouvrir p177 `CLUTCH`.
