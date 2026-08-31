@@ -8231,3 +8231,17 @@ RESULTAT : ETAPE 1 DE L'ARCHITECTURE DOCUMENTAIRE MULTILINGUE = VALIDEE. Le mode
 ETAPE 2 AUTORISEE : reprendre RAVE COMPLETEMENT avec ce socle. Cela signifie inventorier tous les documents/sources RAVE disponibles, auditer toutes leurs pages/sections et extraire TOUT contenu utile a l'utilisateur final : connaissances, procedures, specifications, avertissements, tableaux, schemas, vues, images, implantations, connecteurs, diagnostic, entretien, reparation et autres domaines utiles. Il est interdit de recentrer ce backfill uniquement sur ECU/MEMS ou Mini SPi/MPI.
 
 PROCHAINE ACTION EXACTE : figer la branche du socle comme reference hors production, creer une branche RAVE dediee depuis ce socle valide, etablir l'inventaire auditable des documents RAVE disponibles (source exacte, langue, pages/sections, hash lorsqu'il est disponible, couverture actuelle), puis traiter les documents avec le nouveau pipeline sans declarer un document complet avant couverture explicite.
+
+## 2026-08-31 - RAVE COMPLET MULTILINGUE - AVANT INVENTAIRE AUDITABLE
+
+L'etape 1 du socle documentaire multilingue est validee. La branche de travail RAVE dediee est `tmp-rave-complete-multilingual-backfill`, creee depuis le socle valide hors production. `MEMSX64` reste BUILD #103.
+
+Avant toute nouvelle extraction de pages, l'etape 2 commence par un inventaire automatique et auditable de l'etat reel RAVE deja present : fichiers `database/reference/images/rave`, audits historiques, manifeste des enrichissements, lots QZ64, et contenu structure du SQLite effectivement emballe dans BUILD #103.
+
+Objectifs : identifier les sources/document codes deja representees, leur langue lorsqu'elle est deduisible/declaree, le nombre de visuels physiques par source/prefixe, les tables et comptes RAVE deja presents, les sources legacy/documentaires deja declarees, les pages/sections actuellement couvertes lorsqu'elles sont traçables, et les zones ou la couverture complete du document source n'est pas prouvee.
+
+Regle : cet inventaire ne doit pas conclure qu'un document est complet sur la seule presence d'images/facts. Il doit distinguer `present dans la base` de `document entier audite`. Aucun document ne sera marque complet sans couverture explicite de toutes ses pages/sections pertinentes.
+
+Aucune nouvelle donnee RAVE n'est encore integree pendant cette phase. Aucune modification protocole/ECU/IA/ONNX/UI. Aucun push production.
+
+PROCHAINE ACTION EXACTE : pousser un workflow temporaire sur `tmp-rave-complete-multilingual-backfill` qui genere `database/reference/audits/RAVE_COMPLETE_INVENTORY_V1.md` depuis la branche et le SQLite reel du BUILD #103, puis valider et journaliser le resultat avant toute extraction massive.
