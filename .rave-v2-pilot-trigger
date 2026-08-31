@@ -1,4 +1,4 @@
-run=2
+run=3
 source=main/rave/xn/wmxn990e.pdf
 exclude=193-202
-mode=auto-mixed-page
+mode=auto-mixed-page-native-diagram-labels
