@@ -1,1 +1,1 @@
-rerun TEST2 after preserving native Tesseract word order
+rerun TEST2 with bbox-clipped localized text rendering

@@ -272,13 +272,24 @@ def main():
         if not fitted:
             raise RuntimeError(f"translation would be clipped even at allowed minimum size: {op['text']!r} in {b}")
 
-        draw.rectangle(b, fill=(255, 255, 255))
-        y = b[1]
+        # Render into a bbox-sized patch first. PIL glyph antialiasing / negative
+        # left bearings must never be allowed to write outside the declared mask.
+        patch_w = b[2] - b[0]
+        patch_h = b[3] - b[1]
+        patch = Image.new("RGB", (patch_w, patch_h), (255, 255, 255))
+        patch_draw = ImageDraw.Draw(patch)
+        y = 0
         for line in lines:
-            draw.text((b[0], y), line, font=font, fill=(0, 0, 0))
+            probe = patch_draw.textbbox((0, y), line, font=font)
+            x = max(0, -probe[0])
+            bounds = patch_draw.textbbox((x, y), line, font=font)
+            if bounds[0] < 0 or bounds[1] < 0 or bounds[2] > patch_w or bounds[3] > patch_h:
+                raise RuntimeError(f"bounded text patch would clip: {line!r}, bounds={bounds}, patch={(patch_w, patch_h)}")
+            patch_draw.text((x, y), line, font=font, fill=(0, 0, 0))
             y += line_h + spacing
-        if y - spacing > b[3] + 1:
+        if y - spacing > patch_h + 1:
             raise RuntimeError(f"post-render overflow: {op['text']!r}")
+        rendered.paste(patch, (b[0], b[1]))
 
         replacement_masks.append(b)
         op_results.append({
