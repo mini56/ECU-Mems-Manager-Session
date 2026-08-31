@@ -33,6 +33,8 @@ jobs:
           python tools/rave_v2_apply_direct_render_patch.py
           python tools/rave_v2_preserve_pictograms_patch.py
           python -m py_compile tools/rave_v2_new_extraction.py
+          python -m py_compile tools/rave_v2_extract_callout_associations.py
+          python -m py_compile tools/rave_v2_mems_display_sim.py
 
       - name: Extract RAVE page 107 source and display metadata only
         id: extract
@@ -41,22 +43,34 @@ jobs:
           rm -rf rave_v2_pilot_output
           python tools/rave_v2_new_extraction.py --pdf rave/xn/wmxn990e.pdf --out rave_v2_pilot_output --exclude 193-202 --page 107
 
-      - name: Show extraction manifest
+      - name: Extract constructor callout associations
+        run: |
+          python tools/rave_v2_extract_callout_associations.py --dir rave_v2_pilot_output --document RCL0193ENG --page 107
+
+      - name: Simulate MEMS Manager French display layer
+        run: |
+          python tools/rave_v2_mems_display_sim.py --dir rave_v2_pilot_output --translations .github/rave_v2_page107_mems_sim_fr.json --out rave_v2_pilot_output/RCL0193ENG_P107_MEMS_SIM_FR.png
+
+      - name: Show source and display manifests
         if: always()
         run: |
-          if [ -f rave_v2_pilot_output/manifest.json ]; then
-            cat rave_v2_pilot_output/manifest.json
-          else
-            echo "manifest.json missing"
-          fi
+          cat rave_v2_pilot_output/manifest.json
+          cat rave_v2_pilot_output/mems_display_sim_manifest.json
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: rave-v2-page107-source-metadata
+          name: rave-v2-page107-mems-display-simulation
           path: rave_v2_pilot_output
           if-no-files-found: error
 
-      - name: Source extraction intentionally has no translations
-        if: always()
-        run: exit 0
+      - name: Enforce MEMS display simulation
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('rave_v2_pilot_output/mems_display_sim_manifest.json')
+          m=json.loads(p.read_text(encoding='utf-8'))
+          if not m.get('pass'):
+              raise SystemExit('MEMS display simulation did not pass')
+          PY
