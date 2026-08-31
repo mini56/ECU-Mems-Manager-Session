@@ -35,6 +35,26 @@ jobs:
           p = Path('tools/rave_v2_new_extraction.py')
           s = p.read_text(encoding='utf-8')
           s = s.replace("zone_rects=[fitz.Rect({['bbox']) for z in zones]", "zone_rects=[fitz.Rect(z['bbox']) for z in zones]")
+          s = s.replace("f=getfont(max(13,z.get('source_font_size',8)*scale*.92))", "f=getfont(max(13,min(14,z.get('source_font_size',8)*scale*.92)))")
+          s = s.replace("base=max(13,z.get('source_font_size',8)*scale*.92); f=getfont(base)", "base=max(13,min(14,z.get('source_font_size',8)*scale*.92)); f=getfont(base)")
+          needle = "    localized=out/f'RCL0193ENG_P{n:03d}_FR_DIRECT_TEXT.png'; canvas.save(localized)"
+          replacement = """    if n == 112 and block_translations.get('RCL0193ENG_P112_B08'):
+        bx0,by0,bx1,by1=[int(v*scale) for v in (320.5,339.3,551.06,401.07)]
+        bx0+=ox; bx1+=ox
+        d.rectangle((bx0-3,by0-3,bx1+3,by1+3),fill='white')
+        ix0,iy0,ix1,iy1=[int(v*scale) for v in (318.0,337.0,349.0,374.0)]
+        icon=img.crop((ix0,iy0,ix1,iy1))
+        canvas.paste(icon,(ox+ix0,iy0))
+        note=block_translations['RCL0193ENG_P112_B08']
+        nx0=int(350.5*scale)+ox; ny0=int(339.3*scale); nx1=int(551.06*scale)+ox; ny1=int(401.07*scale)
+        nf,nlines,nlh=fit_text(d,note,(nx0,ny0,nx1,ny1),10*scale*.88,bold=True,min_px=13)
+        yy=ny0
+        for line in nlines:
+            d.text((nx0,yy),line,fill=(0,170,90),font=nf); yy+=nlh
+    localized=out/f'RCL0193ENG_P{n:03d}_FR_DIRECT_TEXT.png'; canvas.save(localized)"""
+          if needle not in s:
+              raise SystemExit('localized render insertion point missing')
+          s = s.replace(needle, replacement)
           p.write_text(s, encoding='utf-8')
           PY
           python -m py_compile tools/rave_v2_new_extraction.py
