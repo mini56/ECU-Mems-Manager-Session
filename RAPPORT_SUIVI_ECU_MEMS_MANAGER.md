@@ -8275,3 +8275,17 @@ Controle important avant reutilisation des assets existants : les 26 images BUIL
 AVANT POUSSE : preparer sur `tmp-rave-complete-multilingual-backfill` un registre source avec chemin, pages, taille et SHA-256 des 47 PDF, un fichier de preuve de remappage des 26 assets RCL0193ENG et un ledger 372/372 pages de RCL0193ENG. Le ledger initial distingue contexte, contenu technique et pages separatrices ; aucune page ne sera declaree hors perimetre definitivement sans verification visuelle/documentaire.
 
 Aucune modification de `MEMSX64`, protocole, ECU, UI, IA ou ONNX. BUILD #103 reste la production protegee.
+
+## 2026-08-31 - RCL0193ENG - AVANT VALIDATION VISUELLE DES PAGES BLANCHES ET EXTRACTION 1-50
+
+Branche active : `tmp-rave-complete-multilingual-backfill`. Production protegee : `MEMSX64` reste BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+Source exacte : `rave/xn/wmxn990e.pdf`, Mini Workshop Manual RCL0193ENG 5th Edition, 372 pages physiques. Le registre source exact et le remappage 26/26 des assets historiques sont deja presents sur la branche de travail.
+
+Le ledger V1 avait isole 46 pages sans texte extractible comme candidates blanches/separatrices. Une passe visuelle directe sur les rendus des 46 pages a maintenant confirme que les 46 sont reellement blanches : `2, 8, 10, 14, 16, 18, 30, 34, 42, 48, 52, 98, 106, 120, 138, 140, 146, 148, 152, 154, 162, 176, 178, 192, 194, 202, 204, 212, 214, 228, 230, 234, 236, 256, 258, 262, 274, 280, 282, 298, 304, 306, 316, 326, 328, 360`.
+
+AVANT POUSSE : ajouter une preuve permanente `RCL0193ENG_VISUAL_BLANK_CONFIRMATION_V1.md` et mettre a jour `RCL0193ENG_PAGE_LEDGER_V1.md` pour remplacer `candidate/needs_visual_confirmation` par `visually_confirmed_blank` pour ces 46 pages. Le total reste 372/372 ; aucune page technique ou contextuelle n'est exclue.
+
+Ensuite, demarrer l'extraction section par section par les pages physiques 1-50 : front matter, Introduction et General Information. Extraire les avertissements/procedures de securite et atelier, specifications, reglages moteur SPi/MPi, couples de serrage, fluides/lubrifiants, dimensions/poids et tous visuels utiles. Les tableaux/nombres doivent devenir des donnees structurees ; les vues/schemas restent des assets originaux avec labels multilingues. Comparer avec BUILD #103 pour classer `already_covered` vs nouveau sans duplication aveugle.
+
+Aucun push production, aucune modification protocole/ECU/UI/IA/ONNX.
