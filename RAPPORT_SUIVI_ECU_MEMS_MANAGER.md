@@ -10041,3 +10041,15 @@ Uniquement les trois fichiers documentaires ci-dessus sont autorises sur `tmp-ra
 
 ### PROCHAINE ACTION EXACTE
 Apres SUCCESS GitHub Actions de ce journal, transporter uniquement le lot p193-202 par fragments temporaires controles ; verifier chaque Git blob avant installateur ; reconstruire QZ64/SQL/audit exacts ; appliquer toute la chaine anglaise p1-202 avec le nouveau lot deux fois ; verifier invariants et `MEMSX64` ; nettoyer tous transports/workflows ; imposer un diff final limite aux trois fichiers ; committer uniquement si tous les gardes passent ; journaliser avant compaction, compacter l'historique temporaire sans changer le tree valide, puis ecrire le SAFE CHECKPOINT avant p203 `DRIVE SHAFTS`.
+
+## 2026-08-31 - SOURCE RAVE COMPLETE DISPONIBLE DIRECTEMENT SUR GITHUB
+
+Confirmation utilisateur : le dossier `rave/` de la branche `main` contient le corpus RAVE complet fourni par l'utilisateur pour le developpement d'ECU MEMS Manager. Il constitue desormais la source RAVE complete de reference pour la poursuite du backfill documentaire.
+
+Adresse canonique : `https://github.com/mini56/ECU-Mems-Manager-Session/tree/main/rave`
+
+Consequence de travail : il n'est plus necessaire de redemander ou de re-uploader `rave.zip` pour reprendre RAVE. Les documents du corpus doivent etre lus directement depuis `main/rave/`, en conservant les controles de provenance, pages, sections, assets et couverture deja imposes par le socle multilingue.
+
+Etat de reprise inchange : branche technique `tmp-rave-complete-multilingual-backfill`; lot courant RCL0193ENG pages physiques 193-202 `MANUAL GEARBOX`; `MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+PROCHAINE ACTION EXACTE : reprendre sans reinterpretation le transport controle du lot RCL0193ENG p193-202 deja journalise AVANT POUSSE, verifier chaque Git blob, reconstruire QZ64/SQL/audit, appliquer la chaine anglaise p1-202 avec double application du nouveau lot, verifier invariants et MEMSX64, nettoyer les transports/workflows temporaires, imposer un diff final limite aux trois fichiers documentaires, puis journaliser avant compaction et ecrire le SAFE CHECKPOINT avant p203 `DRIVE SHAFTS`.
