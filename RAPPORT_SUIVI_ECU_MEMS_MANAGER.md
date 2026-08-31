@@ -10278,3 +10278,22 @@ Identifier dans `tools/ravemems_test2_raster_text.py` le helper OCR existant et 
 
 ### PROCHAINE ACTION EXACTE
 Pousser uniquement la factorisation OCR identique ci-dessus sur `tmp-rave-new-extraction-pilot`, compiler, relancer le meme TEST2 sur la page canonique, puis inspecter manuellement le PNG avant toute validation.
+
+
+## RAVEMEMS TEST2 - RUN VERT APRES FACTORISATION OCR + REVUE VISUELLE
+
+- Branche pilote : `tmp-rave-new-extraction-pilot`.
+- HEAD teste : `da77a94cfdd1a26ef4017a84f26ab391b180dfe0` (`Factor TEST2 OCR helper for completeness gate`).
+- Run TEST2 reutilise : `33442157473`, dernier job `99663920602`.
+- Resultat automatise : **SUCCESS** sur compilation, extraction OCR, rendu, manifeste, upload artefact et garde final.
+- Artefact : ID `9777901590`, nom `ravemems-test2-cdxn-page7-raster-text`, taille 343887 octets, SHA-256 ZIP `b17d0d8801164cc1c4f246e52073c7f013a6f45eedd7695dd4a02097aad9488c`.
+- Manifeste : `pass=true`, 490 mots OCR source, 45 regions, 34 operations de remplacement, 439 mots OCR sur l'image localisee.
+- Gardes verts : source canonique, cas raster-only, OCR fallback, tous remplacements ajustes, tokens techniques pixel-identiques, geometrie identique hors zones de texte, regions paragraphe uniques, phrases source humaines exigees absentes, aucune numerotation interne visible.
+- Tokens constructeur preserves pixel-identiques : `86M3823`, `86M3824`, `86M3825`, `86M3826`, `86M3827`, `86M3829`, `86M3830`, `86M3831`, `460`, `630`, `C24`.
+- Revue visuelle manuelle de l'artefact reel : les quatre defauts precedemment listes ne sont plus visibles : les lignes A/B sont en francais, `C24 EARTH 1` est devenu `C24 MASSE 1` en preservant `C24` et `1`, le bloc connecteur n'est plus ecrase par une seconde operation, et les libelles controles sont localises.
+- Les numeros constructeur et codes de fils restent volontairement inchanges.
+- Verdict actuel : **chaine technique verte et revue visuelle assistant propre pour les defauts connus, mais TEST2 n'est PAS encore valide par l'utilisateur**.
+- `MEMSX64` reste totalement inchange.
+
+### PROCHAINE ACTION EXACTE
+Montrer a l'utilisateur le PNG localise reel et l'original constructeur pour comparaison. Ne pas etendre cette methode au corpus RAVE tant que l'utilisateur n'a pas explicitement accepte ce TEST2 et demande de poursuivre.
