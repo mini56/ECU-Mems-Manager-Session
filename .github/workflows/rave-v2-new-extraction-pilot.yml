@@ -34,14 +34,14 @@ jobs:
           python tools/rave_v2_preserve_pictograms_patch.py
           python -m py_compile tools/rave_v2_new_extraction.py
 
-      - name: Extract real RAVE page 112 with direct translated text
+      - name: Discover another real mixed text and schematic RAVE page
         id: extract
         continue-on-error: true
         run: |
           rm -rf rave_v2_pilot_output
-          python tools/rave_v2_new_extraction.py --pdf rave/xn/wmxn990e.pdf --out rave_v2_pilot_output --exclude 193-202 --page 112 --translations .github/rave_v2_pilot_translations_fr.json
+          python tools/rave_v2_new_extraction.py --pdf rave/xn/wmxn990e.pdf --out rave_v2_pilot_output --exclude 112,193-202 --page auto
 
-      - name: Show completeness manifest
+      - name: Show discovery manifest
         if: always()
         run: |
           if [ -f rave_v2_pilot_output/manifest.json ]; then
@@ -53,10 +53,10 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: rave-v2-direct-text-page112
+          name: rave-v2-second-page-discovery
           path: rave_v2_pilot_output
           if-no-files-found: error
 
-      - name: Enforce extraction result
-        if: steps.extract.outcome != 'success'
-        run: exit 1
+      - name: Discovery expected to need translations
+        if: always()
+        run: exit 0
