@@ -1,0 +1,26 @@
+name: TEMP PATCH RAVEMEMS TEST2 BOUNDED RENDER
+on: [push]
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-new-extraction-pilot
+          fetch-depth: 0
+      - run: python tools/temp_patch_ravemems_test2_bounded_render.py
+      - shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' 'rerun TEST2 with bbox-clipped localized text rendering' > .ravemems-test2-trigger
+          git config user.name github-actions-bot
+          git config user.email github-actions@users.noreply.github.com
+          git rm .github/workflows/temp-patch-ravemems-test2-bounded-render.yml tools/temp_patch_ravemems_test2_bounded_render.py
+          git add tools/ravemems_test2_raster_text.py .ravemems-test2-trigger
+          expected="$(printf '%s\n' '.github/workflows/temp-patch-ravemems-test2-bounded-render.yml' '.ravemems-test2-trigger' 'tools/ravemems_test2_raster_text.py' 'tools/temp_patch_ravemems_test2_bounded_render.py' | sort)"
+          actual="$(git diff --cached --name-only | sort)"
+          test "$actual" = "$expected"
+          git commit -m "Clip TEST2 localized text rendering to declared bboxes"
+          git push origin HEAD:tmp-rave-new-extraction-pilot
