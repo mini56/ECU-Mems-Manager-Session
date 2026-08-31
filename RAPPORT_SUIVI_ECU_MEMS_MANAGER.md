@@ -8680,3 +8680,135 @@ Le tree temporaire de la branche peut contenir les fragments et le workflow de t
 ### PROCHAINE ACTION EXACTE
 
 Comparer les 7 fragments distants `qz.part00` a `qz.part06` byte pour byte avec les fragments locaux valides, identifier la divergence exacte ou l'erreur d'assemblage, corriger uniquement le transport/helper, puis relancer les gardes SHA/QZ64/SQLite/idempotence/perimetre. Ne jamais accepter ni pousser le lot final tant que tous les controles ne sont pas verts.
+
+
+## 2026-08-31 - RCL0193ENG PAGES 51-96 ENGINE - VALIDATION FINALE ET SAFE CHECKPOINT
+
+Le lot multilingue additif RCL0193ENG pages physiques 51-96 / ENGINE est maintenant valide, nettoye et resquashe sur `tmp-rave-complete-multilingual-backfill`.
+
+### GITHUB ACTIONS FINAL
+
+Premier installateur temporaire, deja journalise :
+- workflow `TEMP RCL0193ENG P051-096 INSTALL`
+- run `33376918664`
+- job `99440378021`
+- conclusion FAILURE
+- cause : transport QZ64, garde SHA bloque avant decompression SQL / SQLite / commit final
+- aucune donnee permanente 51-96 n'avait ete installee.
+
+Installateur corrige :
+- workflow `TEMP RCL0193ENG P051-096 INSTALL V2`
+- run `33378901170`
+- job `99446511978`
+- conclusion **SUCCESS**
+- reconstruction exacte QZ64 : PASS
+- reconstruction SQL + SHA : PASS
+- audit exact : PASS
+- double validation SQLite/idempotence : PASS
+- invariants documentaires : PASS
+- nettoyage transport/helpers : PASS
+- garde de perimetre final : PASS
+- commit final par le workflow : PASS
+
+Commit bot avant squash :
+`732fcf218b19f952dcd03ac63d7ed354e619c879`
+
+Tree valide par GitHub Actions :
+`08933a53b77fa4b165a7c461e32a926298a16e11`
+
+Le meme tree a ensuite ete resquashe sans modifier un octet.
+
+Commit technique propre final :
+`db19cce817fd61970a73cabc81905b917e3d8dcc`
+
+Parent direct :
+`440880fca821bc316c0dffc311b28b1faf2eb25f`
+
+Controle compare apres squash :
+- `ahead_by = 1`
+- `behind_by = 0`
+- `total_commits = 1`
+- exactement 3 fichiers permanents ajoutes :
+  1. `database/reference/audits/RCL0193ENG_P051_096_MULTILINGUAL_BACKFILL_V1.md`
+  2. `database/reference/prototypes/rcl0193eng_p051_096_multilingual_v1.qz64`
+  3. `database/reference/prototypes/rcl0193eng_p051_096_multilingual_v1.sql`
+- `manifest.json` inchange.
+
+### FICHIERS FINAUX EXACTS
+
+SQL :
+- taille : 612 976 octets
+- SHA-256 : `69c02b753f41cd9b710989b6a4015cdb3f651cc3ff8f64b367a878441e81aba3`
+- Git blob recalcule localement et relu a distance : `d8ccad22b043ad4db6c173192e3329c80131f06f`
+
+QZ64 :
+- taille : 42 993 octets
+- SHA-256 : `822fb3bfbb201b11af56d4cb0d7b1ee073a12b97300984dcd5fe30060494604f`
+- Git blob recalcule localement et relu a distance : `ebe0ec50dae958ebd35efb458731d3fcc000ac66`
+
+Audit :
+- taille : 5 105 octets
+- SHA-256 : `055f4ae1711eddc10fd26d3e867e8179b01901ed73c61cc10fbd7070764c1ea4`
+- Git blob recalcule localement et relu a distance : `45c5d3a1e2e6901ead62caff59f20f5eef195782`
+
+Important : des Git blob SHA intermediaires notes pendant le transport avaient ete mal calcules dans le bookkeeping local. Ils ne correspondaient pas aux octets finaux. Les trois valeurs ci-dessus ont ete recalculees directement sur les fichiers locaux finaux, puis comparees aux metadonnees GitHub du tree valide. Les SHA-256 des fichiers n'ont jamais change et sont ceux valides par le workflow V2.
+
+### VALIDATION DOCUMENTAIRE / SQLITE
+
+Apres application du socle multilingue, du lot 1-50 corrige et du lot 51-96 deux fois :
+- `PRAGMA integrity_check = ok`
+- `PRAGMA foreign_key_check = 0`
+- `PRAGMA user_version = 21`
+- pages physiques exactement 51..96 : 46 unites
+- p52 : page blanche confirmee, `out_of_scope / not_required`
+- 45/45 pages non blanches : texte source anglais integral
+- 45/45 candidats visuels
+- 27/27 operations constructeur avec `Service repair no` unique
+- 61 valeurs structurees
+- 14 outils speciaux
+- 23 avertissements/cautions/notes/exigences
+- 4 marquages physiques
+- seconde application sans doublon
+- QZ64 -> SQL : byte pour byte exact.
+
+### EXHAUSTIVITE UTILISATEUR FINAL ET MULTILINGUE
+
+Le rapprochement avec RCL0193FRE 50-95 ne sert qu'a eviter les doublons aveugles ; il ne sert jamais a eliminer une information utile. Le texte anglais complet, les procedures, valeurs, avertissements, outils, marquages et candidats visuels sont conserves pour permettre une restitution complete a l'utilisateur final.
+
+L'architecture visuelle reste volontairement N-langues :
+- un visuel technique source ;
+- zones/regions et textes localisables separes ;
+- aucune liste figee de six copies raster ;
+- compatibilite future avec japonais, chinois, hindi/autres langues indiennes et toute nouvelle locale ajoutee a `mems_doc_locale`.
+Les numeros de repere, numeros d'outil Rover, identifiants de figure et marquages physiques reels (`TOP`, `FRONT`, `FLYWHEEL SIDE`, `F`) restent des ancres non traduites ; leur explication utilisateur est localisable.
+
+### NETTOYAGE
+
+Au tree final et donc apres squash :
+- `.github/rcl0193eng-p051-096-transfer` absent ;
+- `.github/workflows/temp-rcl0193eng-p051-096-install.yml` absent ;
+- `.github/workflows/temp-rcl0193eng-p051-096-install-v2.yml` absent.
+
+### PRODUCTION PROTEGEE
+
+`MEMSX64` reverifie apres squash :
+- BUILD #103
+- commit `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`
+- inchange.
+
+`SAFE CHECKPOINT = YES`
+
+Branche :
+`tmp-rave-complete-multilingual-backfill`
+
+Commit :
+`db19cce817fd61970a73cabc81905b917e3d8dcc`
+
+Tree :
+`08933a53b77fa4b165a7c461e32a926298a16e11`
+
+### PROCHAINE ACTION EXACTE
+
+Verifier directement dans la source anglaise le bloc suivant a partir de la page physique 97, sans deduire le perimetre uniquement depuis le manuel francais. Confirmer les pages physiques et blanches du bloc **EMISSION CONTROL**, puis effectuer la meme extraction exhaustive utilisateur final + comparaison RCL0193FRE + preparation multilingue N-langues et visuels localisables. La correspondance attendue est probablement RCL0193ENG p097-104 avec p098 blanche, mais elle doit etre confirmee sur le PDF anglais avant toute classification ou pousse.
+
+Aucune nouvelle pousse technique avant un nouveau journal AVANT POUSSE. `MEMSX64` reste BUILD #103.
