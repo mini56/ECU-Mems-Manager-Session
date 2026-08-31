@@ -1,9 +1,6 @@
-name: TEMP RAVEMEMS REPORT APPEND
+name: TEMP RAVEMEMS REPORT APPEND V2
 
-on:
-  push:
-    branches: [RAPPORT]
-    paths: [.ravemems-report-trigger]
+on: [push]
 
 permissions:
   contents: write
@@ -16,42 +13,17 @@ jobs:
         with:
           ref: RAPPORT
           fetch-depth: 0
-      - name: Append TEST2 run 1 failure
-        shell: bash
-        run: |
-          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
-
-## 2026-08-31 - RAVEMEMS TEST2 - PREMIER RUN GITHUB EN ECHEC AVANT RENDU
-
-TEST2 a été lancé sur la branche `tmp-rave-new-extraction-pilot`, commit `a19b1aa233bc8870e15a1e9dd5b49a5cfbfce7ab` (`Add RAVEMEMS TEST2 raster embedded-text pilot`). Source canonique testée : `rave/xn/cdxn990e.pdf`, page physique 7, cas raster seul avec texte humain intégré dans les pixels et absence de couche texte PDF native.
-
-GitHub Actions : workflow `RAVEMEMS TEST2 raster embedded text`, run `33442157473`, run_number 1. Conclusion : **FAILURE avant génération du rendu localisé**. L'artefact de diagnostic a néanmoins été conservé : ID `9776650909`, nom `ravemems-test2-cdxn-page7-raster-text`, digest ZIP SHA-256 `1c80b9bccb187f6f23947d69486043c9663dd3ab6c65c16302974e7590c533d4`.
-
-Cause exacte : Tesseract a bien extrait le raster et du texte, mais sur le runner GitHub le titre `HOW TO USE THE CIRCUIT DIAGRAMS` n'a pas été regroupé en un unique paragraphe OCR. Le garde actuel `find_paragraph()` exigeait un bloc/paragraphe unique contenant le titre complet et a donc arrêté le test avec `expected 1 match, got 0`. Le test s'est arrêté avant tout masquage/rendu ; aucune page localisée n'est donc validée par ce run.
-
-Ce résultat ne remet pas en cause la règle `ravemems` ni le recours OCR de dernier ressort pour ce type de page : il montre que les zones raster ne doivent pas dépendre du découpage arbitraire `block_num/par_num` produit par Tesseract. La correction doit rendre l'association robuste au morcellement OCR en recherchant une séquence de mots/une zone géométrique, sans relâcher les gardes de conservation des repères techniques et sans changer la source ou la méthode de rendu.
-
-### PROCHAINE ACTION EXACTE
-
-Corriger uniquement la résolution des zones OCR du TEST2 pour accepter un titre/texte réparti sur plusieurs blocs Tesseract, puis relancer le même TEST2 sur `cdxn990e.pdf` page 7. Conserver les gardes : source canonique, zéro texte PDF natif, repères techniques immuables pixel-identiques, aucune numérotation artificielle visible, aucun texte tronqué et aucun changement hors zones de traduction. `MEMSX64` reste inchangé BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
-EOF
-          python - <<'PY'
-          from pathlib import Path
-          p=Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md')
-          s=p.read_text(encoding='utf-8', errors='strict')
-          assert 'RAVEMEMS TEST2 - PREMIER RUN GITHUB EN ECHEC AVANT RENDU' in s
-          assert '33442157473' in s
-          print('REPORT_APPEND_UTF8_OK')
-          PY
-      - name: Commit report and remove temporary trigger
+      - name: Append report entry
+        run: python tools/temp_append_ravemems_test2_report.py
+      - name: Commit report and remove temporary tooling
         shell: bash
         run: |
           set -euo pipefail
-          git rm .github/workflows/temp-ravemems-report-append.yml .ravemems-report-trigger
-          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
           git config user.name github-actions-bot
           git config user.email github-actions@users.noreply.github.com
-          expected="$(printf '%s\n' '.github/workflows/temp-ravemems-report-append.yml' '.ravemems-report-trigger' 'RAPPORT_SUIVI_ECU_MEMS_MANAGER.md' | sort)"
+          git rm .github/workflows/temp-ravemems-report-append.yml .ravemems-report-trigger tools/temp_append_ravemems_test2_report.py
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          expected="$(printf '%s\n' '.github/workflows/temp-ravemems-report-append.yml' '.ravemems-report-trigger' 'RAPPORT_SUIVI_ECU_MEMS_MANAGER.md' 'tools/temp_append_ravemems_test2_report.py' | sort)"
           actual="$(git diff --cached --name-only | sort)"
           test "$actual" = "$expected"
           git commit -m "Record RAVEMEMS TEST2 run 1 failure"
