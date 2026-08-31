@@ -1,0 +1,96 @@
+name: REPORT RCL0193ENG P051-096 PREPUSH
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/report-rcl0193eng-p051-096-prepush.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  append-report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append pre-push journal
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+
+## 2026-08-31 - RCL0193ENG PAGES 51-96 ENGINE - JOURNAL AVANT POUSSE
+
+Reprise apres le SAFE CHECKPOINT corrige du lot 1-50. La branche technique reste `tmp-rave-complete-multilingual-backfill` au commit `440880fca821bc316c0dffc311b28b1faf2eb25f` avant toute pousse du nouveau lot.
+
+### REGLE D'EXHAUSTIVITE UTILISATEUR FINAL
+
+Le fait qu'une information soit deja presente dans les anciens lots RCL0193FRE ne permet pas de l'ecarter. Le nouveau passage doit verifier et conserver toute information utile a l'utilisateur final : texte source, procedure, etape, avertissement, note, couple, tolerance, outil, consommable, reglage, marquage, schema et illustration.
+
+Le lot 51-96 conserve donc le texte source anglais complet meme lorsque la mecanique equivalente existe deja dans `research_enrichment_1800.qz64`.
+
+### ALIGNEMENT ANGLAIS / FRANCAIS VERIFIE
+
+- source anglaise exacte : `rave/xn/wmxn990e.pdf`
+- SHA-256 : `c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715`
+- RCL0193ENG p051-096 correspond exactement a RCL0193FRE p050-095 sur ce bloc ENGINE ;
+- RCL0193ENG p052 est blanche et correspond a RCL0193FRE p051, egalement blanche ;
+- le sommaire constructeur anglais contient 27 operations nommees, toutes ancrees par leur `Service repair no` dans le candidat.
+
+Le lot historique francais 1800 couvre deja la mecanique RCL0193FRE p050-095. Le lot anglais ne duplique pas aveuglement les anciennes tables ; il ajoute la couche source/multilingue et les elements explicitement utiles au controle d'exhaustivite.
+
+### PREPARATION MULTILINGUE ET VISUELS
+
+La base n'est pas concue comme une base "6 langues". Elle reste pilotee par `mems_doc_locale` et doit accepter N langues sans changement de schema. Les six langues actuelles du programme ne sont que les premieres actives ; l'architecture est preparee pour des locales futures (japonais, chinois, hindi/autres langues indiennes, etc.).
+
+Regle visuelle : **un visuel technique source + N couches de texte localisees**, jamais une liste figee de copies raster par langue. Les reperes numeriques, numeros d'outils Rover, identifiants de figure et marquages physiques restent des ancres non traduites. Les textes humains, legendes, avertissements et explications sont stockes separement et seront rattaches aux regions visuelles lors de la materialisation des images.
+
+Les marquages physiques `TOP`, `FRONT`, `FLYWHEEL SIDE` et `F` sont conserves litteralement sur le composant ; seule leur explication utilisateur est localisee.
+
+### CANDIDAT LOCAL VALIDE
+
+Fichiers prepares :
+- `database/reference/prototypes/rcl0193eng_p051_096_multilingual_v1.sql` - 612 976 octets - SHA-256 `69c02b753f41cd9b710989b6a4015cdb3f651cc3ff8f64b367a878441e81aba3`
+- `database/reference/prototypes/rcl0193eng_p051_096_multilingual_v1.qz64` - 42 993 octets - SHA-256 `822fb3bfbb201b11af56d4cb0d7b1ee073a12b97300984dcd5fe30060494604f`
+- `database/reference/audits/RCL0193ENG_P051_096_MULTILINGUAL_BACKFILL_V1.md` - 5 105 octets - SHA-256 `055f4ae1711eddc10fd26d3e867e8179b01901ed73c61cc10fbd7070764c1ea4`
+
+Validation locale apres application du socle + lot 1-50 corrige + lot 51-96 applique deux fois :
+- `PRAGMA integrity_check = ok`
+- `PRAGMA foreign_key_check = 0`
+- `PRAGMA user_version = 21`
+- 46/46 unites pages 51-96 ; pages exactes 51..96 ;
+- 45/45 pages non blanches avec texte source anglais integral ;
+- 45/45 `visual_candidate` ;
+- 27/27 ancres d'operations constructeur, numeros uniques ;
+- 61 valeurs structurees ;
+- 14 outils speciaux ;
+- 23 avertissements/notes/exigences ;
+- 4 marquages physiques ;
+- QZ64 redecompresse identique au SQL byte pour byte ;
+- seconde application sans doublon.
+
+### PERIMETRE DE POUSSE AUTORISE
+
+Uniquement les trois fichiers du lot 51-96 cites ci-dessus sur `tmp-rave-complete-multilingual-backfill`.
+
+Aucun changement `manifest.json`, aucune table historique, aucun protocole/ECU/UI/IA/ONNX et aucun changement `MEMSX64`.
+
+`MEMSX64` reste BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+PROCHAINE ACTION EXACTE : pousser et valider le lot RCL0193ENG p051-096 avec gardes SHA/QZ64/SQLite/idempotence/perimetre, puis journaliser le resultat APRES POUSSE avant de commencer le bloc suivant.
+EOF
+      - name: Remove helper and commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/report-rcl0193eng-p051-096-prepush.yml
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m 'Journal RCL0193ENG pages 51-96 before push'
+          git push origin RAPPORT
