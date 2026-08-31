@@ -17,11 +17,10 @@ Le corpus RAVE ne doit plus être redemandé ni rechargé dans ChatGPT. Toute g�
 
 ## État de reprise verrouillé
 - Branche technique : `tmp-rave-complete-multilingual-backfill`
-- SAFE CHECKPOINT courant : `686ecee774da47baafc65de3b7d30ed0b3eb8bc2`
-- Parent direct : `932b442fe0185368eff0a78b6caa552b427b6bd8`
-- Dernier lot validé : RCL0193ENG pages 203–210 `DRIVE SHAFTS`
-- Prochaine page : **211**, début `STEERING`
-- Frontière déjà vérifiée : **STEERING p211–226** ; p212 et p214 blanches ; p227 ouvre `SUSPENSION`
+- SAFE CHECKPOINT courant : `5932a6b046150648bce944f6f4befa690bd4a88f`
+- Parent direct : `686ecee774da47baafc65de3b7d30ed0b3eb8bc2`
+- Dernier lot validé : RCL0193ENG pages 211–226 `STEERING`
+- Prochaine page : **227**, début `SUSPENSION`
 - `MEMSX64` protégé : BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`
 
 ## Règle principale
@@ -196,10 +195,73 @@ Ces valeurs **supersèdent** les valeurs du candidat intermédiaire p193–202 j
 - diff final : exactement les trois fichiers documentaires p203–210
 - aucun helper/workflow/transport temporaire dans le tree final
 
-## PROCHAINE ACTION EXACTE
-Reprendre depuis le SAFE CHECKPOINT `686ecee774da47baafc65de3b7d30ed0b3eb8bc2`.
+## 2026-08-31 — RCL0193ENG p211–226 STEERING — VALIDATION DIRECTE
 
-Traiter directement **RCL0193ENG p211–226 `STEERING`** depuis `main/rave/xn/wmxn990e.pdf`. La frontière est déjà vérifiée : p212 et p214 sont blanches ; p227 ouvre `SUSPENSION`. Ne pas refaire un scan de frontière inutile. Faire directement l’inventaire exhaustif p211–226 puis une génération/validation/compaction directe selon la procédure ci-dessus. À la première anomalie : arrêt + retour au SAFE CHECKPOINT, aucune chaîne de patchs. Ne toucher ni à `MEMSX64`, ni protocole/ECU/UI/IA/ONNX.
+### Inventaire direct
+- workflow : `TEMP RCL0193ENG P211-226 INVENTORY`
+- run : `33419605195`
+- job : `99578469682`
+- conclusion : **SUCCESS**
+- source canonique taille/SHA : PASS
+- section exacte : **p211–226 STEERING**
+- p212 et p214 : blanches
+- p227 : début `SUSPENSION`
+
+### Génération + validation + compaction directe
+- workflow : `TEMP RCL0193ENG P211-226 DIRECT GENERATE`
+- run : `33419812438`
+- job : `99579163491`
+- conclusion : **SUCCESS**
+- QZ64 -> SQL byte-for-byte : **PASS**
+- double application SQLite / idempotence : **PASS**
+- `PRAGMA integrity_check=ok`
+- `foreign_key_check=0`
+- `user_version=21`
+- pages physiques exactes 211..226 ; p212/p214 `out_of_scope/not_required`
+- `manifest.json` inchangé
+- `MEMSX64` toujours BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`
+- tous workflows temporaires retirés du tree final
+
+### Fichiers finaux p211–226
+1. `database/reference/prototypes/rcl0193eng_p211_226_multilingual_v1.sql`
+   - taille : `288402` octets
+   - SHA-256 : `224345439bb3def62a105b35504d6155bbe9604cf3794862ea7bc0a2fd1ba24f`
+   - Git blob : `d1c1e344c4034f530ed852a9196fa2ef1cbd4c25`
+2. `database/reference/prototypes/rcl0193eng_p211_226_multilingual_v1.qz64`
+   - taille : `19532` octets
+   - SHA-256 : `419d921d3be7a356b97138ef0a1745205a73d7674981cef8d8b1ff799823d853`
+   - Git blob : `9fa722edd2279b55af165fa1bb7f5b3eb9107e16`
+3. `database/reference/audits/RCL0193ENG_P211_226_MULTILINGUAL_BACKFILL_V1.md`
+   - taille : `1730` octets
+   - SHA-256 : `a6f5c1e813897615034128c8405802b81ba6440c763979569ff73dc1f335f5ee`
+   - Git blob : `37d641617c44238509383cdca14b7f04c3ba019d`
+
+### Contenu validé p211–226
+- 16/16 unités physiques ; p212/p214 blanches ;
+- 14/14 pages utiles avec texte source anglais et candidat visuel ;
+- 6 opérations constructeur : `57.65.01`, `57.25.01`, `57.40.29`, `57.40.31`, `57.50.01`, `57.60.01` ;
+- 14 faits structurés ;
+- 22 valeurs/couples/dimensions/réglages ;
+- 15 warnings/cautions/notes/exigences ;
+- 10 outils/équipements ;
+- 7 consommables/remplacements ;
+- ancre Rover `18G 1584` immuable ; architecture N-langues conservée ;
+- valeurs remarquables : parallélisme source `Toe out 0° 15" ± 7.5" per side`, track-rod locknuts `52 N.m`, subframe clearance `≈20 mm`, `67/9/48/25/30/15/49 N.m`, rod `6 mm`, drill `5 mm`, SRS lamp `3 s`.
+
+### SAFE CHECKPOINT APRÈS POUSSE p211–226
+**SAFE CHECKPOINT = YES**
+
+- commit propre : `5932a6b046150648bce944f6f4befa690bd4a88f`
+- tree : `0f75c5facc74c5f4cd9ccf3390139bfb46d196b5`
+- parent direct : `686ecee774da47baafc65de3b7d30ed0b3eb8bc2`
+- compare : `ahead_by=1`, `behind_by=0`, `total_commits=1`
+- diff final : exactement les trois fichiers documentaires p211–226
+- aucun helper/workflow/transport temporaire dans le tree final
+
+## PROCHAINE ACTION EXACTE
+Reprendre depuis le SAFE CHECKPOINT `5932a6b046150648bce944f6f4befa690bd4a88f`.
+
+Ouvrir RCL0193ENG page physique **227**, section `SUSPENSION`, directement depuis `main/rave/xn/wmxn990e.pdf`. Déterminer automatiquement la fin exacte de section et les pages blanches, puis faire l’inventaire exhaustif et une génération/validation/compaction directe. À la première anomalie : arrêt + retour au SAFE CHECKPOINT, aucune chaîne de patchs. Ne toucher ni à `MEMSX64`, ni protocole/ECU/UI/IA/ONNX.
 
 ## But recherché
 La fiabilité ne dépend plus du montage de fichiers de ChatGPT ni du transport manuel de gros binaires. GitHub devient à la fois la source documentaire, l’environnement de génération, le contrôleur d’intégrité et le point de reprise vérifiable.
