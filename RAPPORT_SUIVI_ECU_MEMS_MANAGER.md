@@ -8893,3 +8893,22 @@ Uniquement les trois fichiers du lot 97-104 ci-dessus sur `tmp-rave-complete-mul
 Aucune modification de `manifest.json`, aucune table historique, aucun protocole/ECU/UI/IA/ONNX. `MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
 
 PROCHAINE ACTION EXACTE : pousser le lot 97-104 via un transport temporaire controle, valider SHA/QZ64/SQLite/idempotence/perimetre, nettoyer/squasher, puis journaliser APRES POUSSE avant le bloc anglais suivant.
+
+
+## 2026-08-31 - RCL0193ENG PAGES 97-104 - ECHEC PREMIER INSTALLATEUR, AUCUNE ECRITURE FINALE
+
+Le premier workflow temporaire d installation du lot 97-104 a ete arrete par un garde de reconstruction avant toute validation SQLite et avant tout commit permanent.
+
+- workflow : `TEMP RCL0193ENG P097-104 INSTALL`
+- run : `33380861499`
+- job : `99452676868`
+- conclusion : **FAILURE**
+- etape : `Reconstruct exact lot`
+- QZ64 transporte : 3/3 fragments verifies byte pour byte avant le run (6000 + 6000 + 3061 octets), SHA final attendu atteint avant la panne ;
+- SQL reconstruit : longueur 190681 et SHA-256 attendu controles avant la panne ;
+- cause exacte : l audit reconstruit a la bonne longueur 4056 octets mais echoue sur son garde SHA-256. Il s agit donc uniquement du transport Base64 de l audit embarque dans le helper, pas des donnees SQL/QZ64.
+- les etapes SQLite, nettoyage/perimetre et commit final ont ete SKIPPED ; aucune donnee finale 97-104 n a ete installee.
+
+Correction autorisee : conserver les 3 fragments QZ64 deja verifies, remplacer uniquement le transport de l audit par un transport fichier verifie byte pour byte, puis relancer les memes gardes SHA/QZ64/SQLite/idempotence/perimetre.
+
+`MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`. Aucun protocole/ECU/UI/IA/ONNX n est modifie.
