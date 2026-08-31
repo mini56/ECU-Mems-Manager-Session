@@ -1,0 +1,93 @@
+name: TEMP RAVE MASTER REPORT METHOD
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/temp-rave-master-report-method.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append canonical RAVE method to master report
+        shell: bash
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+## 2026-08-31 - REGLE RAVE COMPLETE UTILISATEUR FINAL - CORRECTION DE METHODE
+
+### CORRECTION DE CONTINUITE DU RAPPORT
+La regle maitre reste absolue : `RAPPORT_SUIVI_ECU_MEMS_MANAGER.md` est l'unique rapport de continuite. Les derniers checkpoints RAVE p193-226 avaient aussi ete ecrits dans `RAPPORT_RAVE_EXECUTION_FIABLE.md`; ce fichier separe ne doit plus etre utilise comme journal courant. Les informations indispensables sont reprises ici et toute future chaine RAVE doit journaliser ce rapport maitre avant/apres traitement.
+
+### CONSTAT A CORRIGER
+Les lots RCL0193ENG recents produits par la methode directe GitHub ont correctement conserve le texte source integral et de nombreuses valeurs/faits/outils/warnings, mais un `visual_candidate` ne garantit pas un asset image reel exploitable. Le cahier des charges utilisateur exige davantage : l'image, le tableau, la procedure complete et la portee vehicule/moteur font partie integrante de l'information finale.
+
+La branche technique `tmp-rave-complete-multilingual-backfill` est actuellement au commit `4bce12f4584d1a5a7d3fc798221fa1ea9b4bd889` apres le lot p227-234. Ce HEAD et les lots p193-234 ne sont donc PAS consideres complets au sens du nouveau garde tant que les supports visuels reels, tableaux, procedures et portees applicables n'ont pas ete repris et valides. `MEMSX64` reste strictement protege sur BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+### METHODE CANONIQUE RAVE A UTILISER DESORMAIS
+Source documentaire canonique : corpus `main/rave/` sur GitHub. Pour RCL0193ENG : `main/rave/xn/wmxn990e.pdf`, SHA-256 `c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715`, 372 pages.
+
+Un lot/page RAVE n'est complet que si tous les elements applicables suivants sont conserves :
+1. texte source integral et localisation exacte document/page/figure ;
+2. connaissances structurees : faits, valeurs, couples, reglages, warnings, cautions, notes, outils, consommables/remplacements ;
+3. procedures entierement structurees, ordre constructeur conserve, etapes numerotees, prealables, outils, warnings, consommables, pieces a remplacer, post-controles et specifications reliees ;
+4. tableaux structures en lignes/colonnes/cellules avec valeurs et unites, tout en conservant aussi leur preuve visuelle ;
+5. portee explicite vehicule/moteur/variante/marche/annee/transmission/induction/VIN lorsqu'elle est presente dans la source ; NULL reste inconnu et ne signifie jamais ANY ; aucune portee ne doit etre inventee ;
+6. tous les supports visuels utiles : schemas, figures, vues, pages, tableaux graphiques et illustrations, stockes comme assets locaux reels avec chemin, SHA-256, dimensions et liaison aux connaissances ;
+7. provenance et niveau de preuve conserves pour toute information.
+
+Si un type d'information utile ne rentre pas dans le schema courant, la chaine doit ajouter de maniere additive la table/relation/champ/index necessaire au lieu d'abandonner l'information.
+
+### REGLE UNIQUE POUR LES TEXTES DANS LES IMAGES - NUMEROS + LEGENDE TRADUITE DANS L'IMAGE
+Une seule methode d'affichage est autorisee afin d'eviter deux chemins de rendu et les regressions :
+- conserver l'image constructeur originale intacte comme preuve ;
+- detecter les zones de texte humain a traduire a partir des coordonnees PDF lorsque disponibles ;
+- ne jamais masquer/modifier les ancres techniques immuables : numeros de repere constructeur, references Rover/outils, valeurs, unites, dimensions, connecteurs, numeros de procedure, fleches et geometrie ;
+- chaque zone de texte humain recoit une cle stable, par exemple `RCL0193ENG_P213_T01`, et un numero visuel 1, 2, 3... ;
+- dans l'image presentee a l'utilisateur, le texte humain original est masque et remplace par son numero ;
+- une zone de legende fait partie du meme rendu image et affiche `1. texte traduit`, `2. texte traduit`, etc. dans la langue active ; la legende n'est donc pas une liste separee hors image ;
+- l'image source n'est stockee qu'une fois ; le rendu local compose image + masques numerotes + legende selon la locale active ;
+- les textes de zones sont stockes par locale et en Unicode.
+
+Locales actuellement prevues/presentes : francais `fr`, anglais `en`, espagnol `es`, italien `it`, portugais `pt`, allemand `de`. L'architecture doit accepter sans refonte les futures locales, notamment japonais `ja`, chinois `zh` et langues de l'Inde (par exemple hindi `hi`), ainsi que d'autres scripts Unicode.
+
+### AUTOMATISATION GITHUB OBLIGATOIRE
+La methode cible doit etre automatisee dans GitHub Actions autant que possible :
+- verification SHA/taille/page-count du PDF source ;
+- extraction texte + coordonnees PDF ;
+- rendu des pages/assets ;
+- detection/classification page : blank, text, visual, table, procedure, mixed ;
+- detection des zones de texte humain et generation des masques/cles numerotees ;
+- extraction des tableaux ;
+- extraction et structuration des procedures et etapes ;
+- extraction des portees explicites ;
+- generation SQL/QZ64/audit/assets ;
+- garde de completude par page ;
+- double application SQLite/idempotence, integrity_check, foreign_key_check et roundtrip QZ64->SQL ;
+- controle du perimetre et de `MEMSX64` ;
+- aucune page utile ne peut etre marquee complete si un element applicable manque.
+
+Si l'automatisation n'est pas certaine (tableau ambigu, zone graphique complexe, portee douteuse, procedure mal segmentee), la page doit passer en `needs_review`; elle est alors verifiee/corrigee page par page. Il est interdit de supprimer silencieusement un element difficile a extraire uniquement pour faire passer le lot.
+
+### REPRISE OBLIGATOIRE AVANT DE CONTINUER RAVE
+Reprendre les derniers lots traites avec la methode incomplete : RCL0193ENG pages physiques **193-234** (`MANUAL GEARBOX`, `DRIVE SHAFTS`, `STEERING`, `SUSPENSION`). Ne pas poursuivre p235 `BRAKES` avant que cette reprise ne dispose du nouveau garde de completude.
+
+Pour chaque page utile p193-234, re-auditer et completer au minimum : asset visuel reel, zones/masques de traduction, tableaux structures, procedures structurees et portee explicite. Conserver les donnees textuelles deja exactes et ne refaire que ce qui est necessaire, mais la validation finale doit porter sur le contenu complet.
+
+### PROCHAINE ACTION EXACTE
+Construire et valider une fonction/pipeline GitHub reproductible sur le premier bloc de reprise p193-202. Le pilote est valide uniquement s'il produit des assets visuels reels + masque numerote + donnees de traduction, structure les tableaux/procedures/portees applicables, conserve le texte source integral et passe tous les gardes SQLite/perimetre. Une fois le pilote conforme, reutiliser exactement la meme fonction sur p203-210, p211-226 et p227-234, puis seulement reprendre p235 `BRAKES`.
+EOF
+          rm -f .github/workflows/temp-rave-master-report-method.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md .github/workflows/temp-rave-master-report-method.yml
+          git commit -m "Record canonical complete RAVE extraction method"
+          git push origin RAPPORT
