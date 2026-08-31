@@ -239,6 +239,7 @@ def main():
     original = image.copy()
     replacement_masks = []
     op_results = []
+    paragraph_region_owners = {}
 
     for idx, op in enumerate(cfg["operations"], 1):
         mode = op["mode"]
@@ -249,6 +250,10 @@ def main():
             source_text = entry["text"]
             bbox = entry["bbox"]
             region_id = entry["region_id"]
+            previous = paragraph_region_owners.get(region_id)
+            if previous is not None:
+                raise RuntimeError(f"duplicate paragraph replacement for {region_id}: operations {previous} and {idx}")
+            paragraph_region_owners[region_id] = idx
         elif mode == "words":
             entry = find_paragraph(entries, op["paragraph_anchor"], False)
             chosen_words = find_word_sequence(entry, op["words"])
@@ -339,6 +344,17 @@ def main():
     localized_path = out / "CDXN990E_P007_MEMS_SIM_FR.png"
     rendered.save(localized_path)
 
+    # Completeness gate: OCR the localized raster again and ensure known human-language
+    # source phrases that must have been localized are no longer present. Technical
+    # constructor tokens are deliberately excluded from this list and remain immutable.
+    localized_words = ocr_words(rendered)
+    localized_ocr_text = " ".join(w["text"] for w in localized_words)
+    remaining_source_phrases = [
+        phrase for phrase in cfg.get("required_absent_source_phrases", [])
+        if norm(phrase) in norm(localized_ocr_text)
+    ]
+    source_human_phrases_removed = not remaining_source_phrases
+
     manifest = {
         "method": "ravemems",
         "test": "TEST2_raster_only_embedded_human_text",
@@ -366,6 +382,9 @@ def main():
             "immutable_tokens": immutable_results,
             "outside_translation_masks_pixel_identical": outside_identical,
             "artificial_visible_ids": False,
+            "paragraph_regions_unique": True,
+            "remaining_source_phrases": remaining_source_phrases,
+            "localized_ocr_words": len(localized_words),
             "output_width": rendered.width,
             "output_height": rendered.height,
             "localized_png_sha256": sha256(localized_path),
@@ -377,6 +396,8 @@ def main():
             "all_requested_replacements_fitted": all(x["fitted"] for x in op_results),
             "technical_tokens_pixel_identical": all(x["pixels_identical"] for x in immutable_results),
             "geometry_unchanged_outside_text_zones": outside_identical,
+            "paragraph_regions_unique": True,
+            "source_human_phrases_removed": source_human_phrases_removed,
             "no_visible_internal_numbering": True,
         },
     }
