@@ -10230,3 +10230,20 @@ Corriger uniquement la fixture/résolution de traduction TEST2 et renforcer le g
 - ajouter un garde empêchant deux opérations `paragraph` sur la même région et un contrôle de complétude pour ces régions humaines afin que le même défaut ne puisse plus produire un vert automatique.
 
 Ne modifier ni les bboxes techniques, ni les références constructeur, ni la géométrie, ni `MEMSX64`. Rapport avant la prochaine pousse, puis relancer exactement le même TEST2 et inspecter de nouveau le PNG réel avant toute validation utilisateur.
+
+
+## RAVEMEMS TEST2 - ECHEC DU CORRECTIF DE COMPLETUDE - RUN 33444635412
+
+- Branche pilote : `tmp-rave-new-extraction-pilot`.
+- HEAD avant tentative : `b4d59b6c7d80d8e9aee0514d31daf3f9d779f8f9`.
+- Objectif : corriger uniquement les quatre defauts visuels releves apres le run TEST2 vert mais refuse manuellement, puis ajouter un garde de completude linguistique.
+- Resultat reel : **ECHEC avant toute modification finale du pilote**.
+- Etape en echec : `Fix TEST2 translation fixture`.
+- Erreur exacte : `AssertionError: 34` sur `assert len(check['operations']) == 35`.
+- Cause : le garde de comptage du script temporaire etait faux. Le calcul exact est `33 operations initiales - 1 doublon R042 + 1 operation R026 + 1 remplacement EARTH = 34 operations`.
+- Aucun commit final de correction n'a ete cree par ce run.
+- Aucun nouveau TEST2 n'a ete execute apres cet echec.
+- `MEMSX64` reste totalement inchange.
+
+### PROCHAINE ACTION EXACTE
+Corriger uniquement le garde du script temporaire de `35` vers `34`, relancer le meme correctif de completude, verifier le commit final obtenu, puis relancer TEST2 sur la page raster canonique et inspecter manuellement le PNG avant toute validation.
