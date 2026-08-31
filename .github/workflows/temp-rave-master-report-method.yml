@@ -33,3 +33,5 @@ jobs:
           git add -u .github/scripts/temp_append_complete_rave_method.py
           git commit -m "Record canonical complete RAVE extraction method"
           git push origin RAPPORT
+
+# trigger after binary-safe report append fix
