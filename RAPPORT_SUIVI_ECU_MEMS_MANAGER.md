@@ -8179,3 +8179,25 @@ Anomalie historique explicitement couverte par le prototype : certaines etapes e
 Aucune traduction du prototype ne doit etre consideree comme contenu production valide : elles restent marquees `draft` sauf texte source/normalisation testee. Aucun manifeste production n'est modifie et `MEMSX64` reste BUILD #103.
 
 PROCHAINE ACTION EXACTE : pousser le script de demonstration + audit + validateur temporaire sur la branche de travail, puis executer le test contre le SQLite effectivement emballe dans BUILD #103.
+
+## 2026-08-31 - SOCLE MULTILINGUE - PROTOTYPE DE RESTITUTION/BACKFILL VALIDE
+
+Branche de travail : `tmp-multilingual-knowledge-foundation`. Production protegee : `MEMSX64` reste BUILD #103 commit `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+Validation reelle GitHub Actions : run `33358712055`, job `99385738579`, conclusion SUCCESS, sur le SQLite effectivement emballe dans l'artefact BUILD #103.
+
+Le validateur confirme : baseline #103 `(user_version=20, knowledge=1113, illustrations=126, procedures=410, specifications=649, tables=78)` ; socle additif V1 `(user_version=21, memes comptes historiques, tables=89)` ; les tables historiques controlees conservent exactement leurs comptes et SHA logiques avant/apres ; import demo idempotent `(entities=16, texts=30, relations=6, table_cells=6)` ; `foreign_key_check=0` et `integrity_check=ok`.
+
+Cas reel valide : schema constructeur `RCL0194ENG 20.4`, image unique `images/rave/RCL0194ENG_20_4.png`, SHA-256 `7a04d84ee0296ab41333650f369aa3624f3ac7988a528584237a7b8fb021bea0`, dimensions 1696x1190, original intact ; zone du libelle constructeur `COOLANT TEMPERATURE SENSOR (094)` stockee separement avec traduction FR draft et reutilisation du meme visuel pour toutes les locales.
+
+Cas procedure valide : `PROC-RCL0193FRE-18-30-10-remove-1`. L'etape 3 conserve exactement la chaine historique contenant le residu `SYSTEME DE GESTION MOTEUR - MEMS` dans `source_exact`, tandis que le champ `display` propre n'affiche pas ce residu. La source n'est donc jamais falsifiee par le nettoyage d'affichage.
+
+Cas donnees structurees valide : RCL0193FRE PDF p.159, ouverture thermostat 88 deg C et couple boitier superieur 11 N.m. Les nombres/unites restent independants de la langue et peuvent etre presentes dans un tableau traduit.
+
+Langues : restitution directe FR et EN validee ; fallback DE vers FR valide ; ajout futur JA et ZH-CN avec fallback EN valide sans ALTER TABLE. Le meme principe s'applique a toute nouvelle locale. Les traductions de demonstration restent `draft` et ne sont pas du contenu production approuve.
+
+CORRECTION DU JOURNAL PRE-POUSSE : la mention thermostat `p.34` etait erronee. Le controle du SQLite BUILD #103 prouve que les valeurs representatives utilisees ici proviennent de `PDF p.159`. Cette correction fait foi.
+
+RESULTAT : le modele de donnees + le backfill + la logique de restitution multilingue sont valides hors production. L'etape 1 n'est toutefois pas declaree totalement terminee tant que la restitution n'est pas exercee par un composant runtime de MEMS Manager sur ce meme echantillon.
+
+PROCHAINE ACTION EXACTE : ajouter sur la meme branche un lecteur runtime read-only du nouveau modele (resolution de locale/fallback, texte, visuel, region/label, tableau/valeur), avec self-test sur l'echantillon valide, sans modifier le protocole ECU ni pousser `MEMSX64`. Une fois ce composant runtime valide, commencer l'inventaire/backfill complet de RAVE selon la regle generale d'extraction de TOUT contenu utile.
