@@ -97,6 +97,35 @@ def fit_text(draw, text, bbox, start_size, min_ratio, bold):
     return font, lines, line_h, spacing, min_size, False
 
 
+def ocr_words(image):
+    data = pytesseract.image_to_data(image, lang="eng", config="--psm 3", output_type=Output.DICT)
+    words = []
+    for i, txt in enumerate(data["text"]):
+        txt = (txt or "").strip()
+        if not txt:
+            continue
+        try:
+            conf = float(data["conf"][i])
+        except Exception:
+            conf = -1
+        if conf < 25:
+            continue
+        x, y, w, h = (int(data[k][i]) for k in ("left", "top", "width", "height"))
+        words.append({
+            "text": txt,
+            "confidence": conf,
+            "left": x,
+            "top": y,
+            "width": w,
+            "height": h,
+            "bbox": (x, y, x + w, y + h),
+            "block": int(data["block_num"][i]),
+            "par": int(data["par_num"][i]),
+            "line": int(data["line_num"][i]),
+        })
+    return words
+
+
 def paragraph_entries(ocr):
     groups = defaultdict(list)
     for w in ocr:
@@ -190,31 +219,7 @@ def main():
     W, H = image.size
 
     # OCR is used only because this page has zero native text and all language is burned into pixels.
-    data = pytesseract.image_to_data(image, lang="eng", config="--psm 3", output_type=Output.DICT)
-    words = []
-    for i, txt in enumerate(data["text"]):
-        txt = (txt or "").strip()
-        if not txt:
-            continue
-        try:
-            conf = float(data["conf"][i])
-        except Exception:
-            conf = -1
-        if conf < 25:
-            continue
-        x, y, w, h = (int(data[k][i]) for k in ("left", "top", "width", "height"))
-        words.append({
-            "text": txt,
-            "confidence": conf,
-            "left": x,
-            "top": y,
-            "width": w,
-            "height": h,
-            "bbox": (x, y, x + w, y + h),
-            "block": int(data["block_num"][i]),
-            "par": int(data["par_num"][i]),
-            "line": int(data["line_num"][i]),
-        })
+    words = ocr_words(image)
 
     if len(words) < 120:
         raise SystemExit(f"OCR fallback recovered too few words: {len(words)}")
