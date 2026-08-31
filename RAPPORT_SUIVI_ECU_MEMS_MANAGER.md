@@ -8469,3 +8469,56 @@ Production protegee : `MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4
 Traiter le lot suivant **RCL0193ENG pages physiques 51-96 — section ENGINE**. Extraire toutes les informations utiles a l'utilisateur : specifications, couples, procedures moteur, controles, reglages, dimensions/tolerances, fluides, depose/repose et visuels techniques utiles. Comparer systematiquement avec BUILD #103 et les donnees RCL0193FRE deja structurees afin de classer `already_covered` versus contenu manquant, sans duplication aveugle.
 
 Avant toute nouvelle pousse technique, inscrire le journal AVANT POUSSE lce correspondant dans ce rapport. `MEMSX64` reste BUILD #103.
+
+
+## 2026-08-31 - RCL0193ENG PAGES 1-50 - CORRECTION DE PROVENANCE AVANT LOT 51-96
+
+Controle de source effectue immediatement avant de commencer RCL0193ENG pages 51-96. Une erreur de copie d'empreinte a ete detectee dans le lot 1-50 precedemment checkpointé.
+
+### SOURCE REVERIFIEE
+
+Upload utilisateur rematerialise directement depuis la conversation :
+- `rave.zip`
+- taille : **17 379 850 octets**
+- SHA-256 reel de l'upload : `01ff169b6929955c7cef92b250026d34071d57ad44e3ebb2e71d98400ebdf1be`
+
+Le registre `database/reference/audits/RAVE_SOURCE_REGISTRY_V1.md` contient actuellement un SHA d'archive different (`dd2536a7...`) qui doit etre corrige. En revanche, sa ligne 47 pour le PDF RCL0193ENG est exacte.
+
+PDF extrait directement de l'upload utilisateur :
+- `rave/xn/wmxn990e.pdf`
+- taille : **4 744 911 octets**
+- pages physiques : **372**
+- SHA-256 exact : `c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715`
+- ce SHA correspond exactement a la ligne 47 du registre RAVE_SOURCE_REGISTRY_V1.
+
+### ERREUR DETECTEE DANS LE LOT 1-50
+
+Le SQL et l'audit du lot 1-50 contiennent par erreur le SHA :
+`c050a3ee92e7ae867146b7e9d32ccbb1afd533a5d69b800677eef44295f06715`
+
+Cette valeur est une erreur de transcription. Le contenu technique extrait n'est pas remis en cause, mais la provenance `mems_doc_document.file_sha256` est fausse et doit etre corrigee avant le lot suivant.
+
+Correction locale preparee sans autre changement de contenu :
+- SQL corrige : **488 301 octets** — SHA-256 `a1d5d4d286d4c425ed83d4df667ffec2eaf0014f0d62f4463faba3c6024914dd`
+- QZ64 regenere depuis ce SQL : **23 017 octets** — SHA-256 `b8720f2c8f6d3718d829db757b00539de80da657a461f2dc407b69b4f9302f2e`
+- audit corrige : **5 644 octets** — SHA-256 `ab631da0fbd2d56fa48daecb8e8732dec5ffab86ec45b9911284063241056058`
+- round-trip QZM4 -> SQL : byte pour byte OK.
+
+### POUSSE DE CORRECTION AUTORISEE
+
+Sur `tmp-rave-complete-multilingual-backfill`, corriger uniquement :
+1. `database/reference/prototypes/rcl0193eng_p001_050_multilingual_v1.sql`
+2. `database/reference/prototypes/rcl0193eng_p001_050_multilingual_v1.qz64`
+3. `database/reference/audits/RCL0193ENG_P001_050_MULTILINGUAL_BACKFILL_V1.md`
+4. `database/reference/audits/RAVE_SOURCE_REGISTRY_V1.md` pour remplacer uniquement le SHA de l'archive `rave.zip` par le SHA reel de l'upload.
+
+Validation obligatoire avant commit final :
+- le SQL ne differe de l'ancien que par `file_sha256`;
+- QZM4 se redecompresse byte pour byte vers le SQL corrige;
+- double application SQLite conserve exactement 50 unites, 244 entites, 285 textes, 2 tableaux, 196 cellules, 8 valeurs et 3 relations;
+- `integrity_check=ok`, `foreign_key_check=0`. `user_version=21`;
+- aucune modification de `manifest.json`, protocole, ECU, UI, IA, ONNX ou `MEMSX64`.
+
+Le precedent `SAFE CHECKPOINT = YES` du lot 1-50 est temporairement **SUSPENDU** jusqu'a validation et relecture distante de cette correction de provenance. La branche production `MEMSX64` reste BUILD #103.
+
+PROCHAINE ACTION EXACTE APRES CORRECTION VERTE : retablir `SADE CHECKPOINT = YES`, puis commencer RCL0193ENG pages physiques 51-96 (ENGINE).
