@@ -1,0 +1,32 @@
+name: REPORT RCL0193ENG P161-176 TRANSPORT CORRECTED
+
+on:
+  push:
+    branches:
+      - RAPPORT
+    paths:
+      - '.github/workflows/report-rcl0193eng-p161-176-transport-corrected.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append corrected transport checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .github/report-rcl0193eng-p161-176-transport-corrected.txt >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          rm -f .github/report-rcl0193eng-p161-176-transport-corrected.txt
+          rm -f .github/workflows/report-rcl0193eng-p161-176-transport-corrected.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md .github/report-rcl0193eng-p161-176-transport-corrected.txt .github/workflows/report-rcl0193eng-p161-176-transport-corrected.yml
+          git commit -m 'Journal RCL0193ENG p161-176 corrected transport'
+          git push origin HEAD:RAPPORT
