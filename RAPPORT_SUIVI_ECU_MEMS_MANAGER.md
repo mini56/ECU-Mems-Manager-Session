@@ -8301,3 +8301,51 @@ Resultat : les 46 pages physiques sans texte extractible ont toutes ete inspecte
 PROCHAINE ACTION EXACTE : traiter le premier lot complet RCL0193ENG pages physiques 1-50. Extraire toutes les informations utiles (securite/atelier, specifications, reglages SPi/MPi, couples, fluides/lubrifiants, dimensions/poids, procedures et visuels utiles), comparer avec BUILD #103 pour distinguer `already_covered` et manquants, puis preparer un lot additif coherent avec le socle multilingue avant toute nouvelle pousse technique.
 
 `MEMSX64` reste BUILD #103 ; aucune modification protocole/ECU/UI/IA/ONNX.
+
+
+## 2026-08-31 - RCL0193ENG PAGES 1-50 - AVANT POUSSE TECHNIQUE DU LOT MULTILINGUE
+
+### SOURCE ET PERIMETRE CERTIFIES
+
+- Source exacte : `rave/xn/wmxn990e.pdf`, Mini Workshop Manual RCL0193ENG 5th Edition.
+- Taille : **4 744 911 octets** ; **372 pages physiques** ; SHA-256 `c050a3ee92e7ae867146b7e9d32ccbb1afd533a5d69b800677eef44295f06715`.
+- Branche technique cible : `tmp-rave-complete-multilingual-backfill`.
+- HEAD technique avant pousse : `f660a744bc8a0e991492b42a5f334ab59f949156`.
+- Production protegee : `MEMSX64` reste BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+- Perimetre du lot : pages physiques **1 a 50**.
+- Pages deja confirmees visuellement blanches dans ce perimetre : `2, 8, 10, 14, 16, 18, 30, 34, 42, 48`.
+- Les visuels anglais existants des pages physiques **39, 40 et 41** sont reutilises ; aucune duplication d'asset n'est autorisee.
+
+### COMPARAISON AVEC L'EXISTANT ET DEDUPLICATION
+
+Les pages anglaises physiques 35-50 ont ete comparees directement au manuel francais historique ayant alimente le lot 1790. Les tableaux/specifications structures correspondent valeur pour valeur, y compris la capacite de remplissage du circuit de refroidissement a **4,0 L**.
+
+Decision : ne pas recreer aveuglement les quelque 350 specifications deja structurees par le lot 1790. Le nouveau lot conserve la provenance anglaise, la page physique, le texte source et les relations necessaires dans le socle multilingue, tout en reutilisant les connaissances deja couvertes.
+
+Le contenu principalement nouveau du lot se situe pages 11-33 : securite atelier, carburant, electricite, regles de montage, levage/remorquage, identification vehicule et informations generales d'atelier. Toute information utile reste tracee page par page.
+
+### VALIDATION LOCALE DU CANDIDAT
+
+Le candidat additif a ete applique sur le socle multilingue V1 puis reapplique pour tester l'idempotence.
+
+Resultats :
+- **50/50** unites de page tracees ;
+- **244** entites ;
+- **285** textes source anglais ;
+- **2** tableaux structures / **196** cellules ;
+- **8** valeurs numeriques structurees ;
+- **3** relations ;
+- `PRAGMA integrity_check = ok` ;
+- `PRAGMA foreign_key_check = 0` ;
+- `PRAGMA user_version = 21` ;
+- seconde application : aucun doublon cree ;
+- `manifest.json` non modifie.
+
+Fichiers candidats exacts :
+- `database/reference/prototypes/rcl0193eng_p001_050_multilingual_backfill_v1.sql` — **488 301 octets** — SHA-256 `771c9ca0c486d3d336cbc83979da978cafe23ddc5894acb1d6d583c3ecacf897` ;
+- `database/reference/prototypes/rcl0193eng_p001_050_multilingual_backfill_v1.qz64` — **22 757 octets** — SHA-256 `f62cd980fe618c65002e3b8b347bbc312c57b44bdd34bf51287c376639dead45` ;
+- `database/reference/audits/RCL0193ENG_P001_050_BACKFILL_AUDIT_V1.md` — **2 700 octets** — SHA-256 `576b14c927575a2c47c0d2a915385013f280c1d73bcc92eef125da8b7e666bbb`.
+
+### PROCHAINE ACTION EXACTE
+
+Pousser **exactement ces trois fichiers** sur `tmp-rave-complete-multilingual-backfill`, sans modifier le manifeste, le protocole, l'ECU, l'UI, l'IA, ONNX ni `MEMSX64`. Relire ensuite le commit distant, comparer strictement `f660a744...` au nouveau HEAD, valider les controles GitHub disponibles et journaliser immediatement le resultat dans le present rapport **avant** de commencer RCL0193ENG pages physiques 51-96.
