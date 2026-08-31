@@ -64,10 +64,11 @@ Construire et valider sur p193-202 un pilote GitHub reproductible produisant eff
 '''
 
 p = Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md')
-text = p.read_text(encoding='utf-8')
-marker = '## 2026-08-31 - METHODE RAVE COMPLETE UTILISATEUR FINAL - REGLE CANONIQUE'
-if marker not in text:
-    if text and not text.endswith('\n'):
-        text += '\n'
-    text += REPORT
-    p.write_text(text, encoding='utf-8', newline='')
+marker = b'## 2026-08-31 - METHODE RAVE COMPLETE UTILISATEUR FINAL - REGLE CANONIQUE'
+data = p.read_bytes()
+if marker not in data:
+    addition = REPORT.encode('ascii')
+    with p.open('ab') as f:
+        if data and not data.endswith(b'\n'):
+            f.write(b'\n')
+        f.write(addition)
