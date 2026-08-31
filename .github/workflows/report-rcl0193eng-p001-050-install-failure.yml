@@ -1,0 +1,33 @@
+name: REPORT RCL0193ENG P001-050 INSTALL FAILURE
+
+on:
+  push:
+    branches:
+      - RAPPORT
+    paths:
+      - '.github/workflows/report-rcl0193eng-p001-050-install-failure.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  append-report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append failed install journal
+        env:
+          REPORT_APPEND_B64: 'CgojIyAyMDI2LTA4LTMxIC0gUkNMMDE5M0VORyBQQUdFUyAxLTUwIC0gRUNIRUMgRFUgUFJFTUlFUiBJTlNUQUxMQVRFVVIgVEVNUE9SQUlSRSwgQVVDVU5FIEVDUklUVVJFIEZJTkFMRQoKTGUgcHJlbWllciB0cmFuc3BvcnQgR2l0SHViIEFjdGlvbnMgZHUgbG90IHBhZ2VzIDEtNTAgYSBldGUgbGFuY2UgcGFyIGxlIHdvcmtmbG93IHRlbXBvcmFpcmUgYFRFTVAgUkNMMDE5M0VORyBQMDAxLTA1MCBJTlNUQUxMYC4KCi0gcnVuIDogYDMzMzcyMzg0NjA5YAotIGpvYiA6IGA5OTQyNjE5NDY5MmAKLSBldGFwZSBlbiBlY2hlYyA6IGBSZWJ1aWxkIGV4YWN0IGNhbmRpZGF0ZWAKLSBsZXMgZXRhcGVzIGRlIHZlcmlmaWNhdGlvbiBkZXMgaGFzaGVzIGZpbmF1eCwgU1FMaXRlIGV0IGNvbW1pdCBvbnQgdG91dGVzIGV0ZSBzYXV0ZWVzIDsKLSBhdWN1biBmaWNoaWVyIGZpbmFsIGR1IGxvdCBuJ2EgZG9uYyBldGUgY29tbWl0ZSBwYXIgY2UgcnVuLgoKQ29udHJvbGUgaW1tZWRpYXQgZHUgdHJhbnNwb3J0IDogbGVzIGNpbnEgYmxvYnMgdGVtcG9yYWlyZXMgZGlzdGFudHMgKDQgZnJhZ21lbnRzIGR1IGdlbmVyYXRldXIgKyBhdWRpdCBjb21wcmVzc2UpIG9udCBleGFjdGVtZW50IGxlcyBtZW1lcyB0YWlsbGVzIGV0IFNIQSBHaXQgcXVlIGxldXJzIG9jdGV0cyBsb2NhdXguIExlIHRyYW5zcG9ydCB0ZXh0ZSBuJ2VzdCBkb25jIG5pIHRyb25xdWUgbmkgYWx0ZXJlLgoKRGlhZ25vc3RpYyByZXByb2R1aXQgbG9jYWxlbWVudCA6IGxlIGdlbmVyYXRldXIgcmVjb25zdHJ1aXQgZGV0ZXJtaW5pc3RpcXVlbWVudCBsZSBTUUwgZXQgbGUgUVo2NCBmaW5hdXgsIG1haXMgc29uIGF1ZGl0IGJydXQgY29uc2VydmUgbGUgcGxhY2Vob2xkZXIgYHt7VkFMSURBVElPTl9CTE9DS319YCAoZXRhdCBhdmFudCBpbnNlcnRpb24gZGVzIHJlc3VsdGF0cyBkZSB2YWxpZGF0aW9uKSwgdGFuZGlzIHF1ZSBsJ2F1ZGl0IGZpbmFsIGNlcnRpZmllIGRlIDUgNjQ0IG9jdGV0cyBjb250aWVudCBjZSBibG9jIGNvbXBsZXRlLiBMZSBgY21wYCBwbGFjZSBkYW5zIGxlIHByZW1pZXIgaGVscGVyIGNvbXBhcmFpdCBjZXMgZGV1eCBldGF0cyBkaXN0aW5jdHMgZXQgZGV2YWl0IGRvbmMgZWNob3Vlci4gSWwgcydhZ2l0IGQndW5lIGVycmV1ciBkdSBoZWxwZXIgZGUgdHJhbnNwb3J0LCBwYXMgZCd1biBlY2hlYyBkdSBjb250ZW51IFNRTC9RWjY0IG5pIGR1IHNjaGVtYS4KClBST0NIQUlORSBBQ1RJT04gRVhBQ1RFIDogY29ycmlnZXIgdW5pcXVlbWVudCBsZSB3b3JrZmxvdyB0ZW1wb3JhaXJlIHBvdXIgdXRpbGlzZXIgbCdhdWRpdCBmaW5hbCBjZXJ0aWZpZSB0cmFuc3BvcnRlIChTSEEtMjU2IGA1NzZiMTRjOWQ3YTE2MmJhYTMyYWNlZWE4M2Q5ZWEyYjgwYWJjN2I0MjM2NDc5MTIxMDlhOTAyYzVkNjg2YmJiYCkgYXUgbGlldSBkZSBjb21wYXJlciBjZXQgYXVkaXQgYSBsJ2F1ZGl0IGJydXQgZHUgZ2VuZXJhdGV1ci4gQ29uc2VydmVyIHRvdXMgbGVzIGF1dHJlcyBnYXJkZXMgOiBTSEEgZHUgZ2VuZXJhdGV1ciwgaGFzaGVzL3RhaWxsZSBkZXMgdHJvaXMgZmljaGllcnMsIHJvdW5kLXRyaXAgUVo2NCwgZG91YmxlIGFwcGxpY2F0aW9uIFNRTGl0ZSwgNTAvNTAgcGFnZXMgZXQgcGVyaW1ldHJlIGZpbmFsIHN0cmljdGVtZW50IGxpbWl0ZSBhdXggdHJvaXMgZmljaGllcnMuIGBNRU1TWDY0YCByZXN0ZSBCVUlMRCAjMTAzIDsgYXVjdW5lIG1vZGlmaWNhdGlvbiBwcm90b2NvbGUvRUNVL1VJL0lBL09OTlguCg=='
+        run: |
+          python -c "import os,base64; open('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md','ab').write(base64.b64decode(os.environ['REPORT_APPEND_B64']))"
+      - name: Commit report update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git diff --cached --quiet && exit 1
+          git commit -m "Journal first RCL0193ENG pages 1-50 installer failure"
+          git push origin HEAD:RAPPORT
