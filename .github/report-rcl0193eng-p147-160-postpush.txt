@@ -1,0 +1,50 @@
+
+## 2026-08-31 - RCL0193ENG PAGES 147-160 COOLING SYSTEM - CHECKPOINT APRES POUSSE
+
+**SAFE CHECKPOINT = YES.**
+
+Le lot multilingue additif RCL0193ENG pages physiques 147-160 `COOLING SYSTEM` est valide, nettoye et compacte sur `tmp-rave-complete-multilingual-backfill`.
+
+### VALIDATION GITHUB ACTIONS
+- Installateur controle : run `33392238457`, job `99488355264` - **SUCCESS**.
+- Toutes les etapes ont passe : reconstruction exacte du transport, verification SHA/Git blobs, double application SQLite, invariants, controle de `MEMSX64`, nettoyage du transport/workflow, garde de perimetre et commit final.
+- Commit bot valide avant compaction : `062983ff198df29a823e2591ddbf82e88ed45423`.
+- Tree valide : `0713fce5ee4702adcc9d0a201fa8e2ab8c323b48`.
+- Journal avant compaction : run `33392552647`, job `99489368382` - **SUCCESS**.
+
+### COMMIT FINAL PROPRE
+- Commit final apres compaction : `7744de40a8212da4080fe04c4f12fd9c43da8b9b`.
+- Parent direct : `a2c14b49a1c12dcf9be82b06a531864733fc2029`.
+- Le commit final reutilise exactement le tree valide `0713fce5ee4702adcc9d0a201fa8e2ab8c323b48`; aucun octet documentaire valide n'a change pendant la compaction.
+- Compare `a2c14b49... -> 7744de40...` : **ahead_by=1, exactement 3 fichiers ajoutes** et aucun autre changement.
+
+### TROIS FICHIERS FINAUX EXACTS
+1. `database/reference/prototypes/rcl0193eng_p147_160_multilingual_v1.sql`
+   - 320990 octets
+   - SHA-256 `cf38ef4c64614328cf421a265193c50dffecceccb5e7bbe0b72735fb75868746`
+   - Git blob `07b707eab167b7c848e3db4432f20e367a91cafa`
+2. `database/reference/prototypes/rcl0193eng_p147_160_multilingual_v1.qz64`
+   - 19525 octets
+   - SHA-256 `2b3872fd3eba75f293cb7f8690e94e81fc767940c1384d9b2aa83b884a0b34e7`
+   - Git blob `81b7a7edb3d1261832110622f26a2b49a1a9c4fa`
+3. `database/reference/audits/RCL0193ENG_P147_160_MULTILINGUAL_BACKFILL_V1.md`
+   - 3006 octets
+   - SHA-256 `981d131cf5e7b13eaa5561805b65dce7b888620e4bc202e2d562dede93b3d346`
+   - Git blob `c354e5edebf83e2591c222cc30aeb71ef91ce61f`
+
+### CONTENU / EXHAUSTIVITE
+- 14/14 pages physiques suivies ; p148, p152 et p154 confirmees visuellement blanches.
+- 11/11 pages non blanches avec texte source anglais integral et candidat visuel.
+- 8 operations constructeur, 19 faits, 11 valeurs, 16 cautions/notes/exigences et 1 equipement de test distingue des specifications vehicule.
+- Correspondance de deduplication : ENG p147-160 <-> RCL0193FRE p146-159, couvert historiquement par le lot 1810 ; la couche anglaise complete est conservee.
+- p149 : 9 reperes + 9 libelles localisables ; p150 : 10 reperes de flux + etats A=COLD/B=HOT ; architecture images **N langues** conservee sans raster traduit duplique.
+- `PRAGMA integrity_check=ok`, `foreign_key_check=0`, `user_version=21`, double application idempotente et roundtrip QZ64->SQL exact.
+
+### PERIMETRE PROTEGE
+- `manifest.json` inchange.
+- Transports et workflows temporaires absents du tree final.
+- Aucun changement protocole/ECU/UI/IA/ONNX ni table historique.
+- `MEMSX64` reste strictement BUILD #103 commit `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+### PROCHAINE ACTION EXACTE
+Ouvrir directement RCL0193ENG page physique **161**, section `MANIFOLD & EXHAUST SYSTEMS`. Determiner d'abord la fin exacte de la section et confirmer visuellement toutes les pages blanches/sans texte. Ensuite comparer a RCL0193FRE/lot 1810 pour deduplication, extraire exhaustivement toute information utile utilisateur final (texte, valeurs, procedures, couples, avertissements, outils et visuels), preparer chaque visuel pour la traduction **N langues**, valider localement, ecrire le journal AVANT POUSSE, puis seulement pousser le lot additif suivant. Ne toucher ni a `MEMSX64`, ni protocole/ECU/UI/IA/ONNX.
