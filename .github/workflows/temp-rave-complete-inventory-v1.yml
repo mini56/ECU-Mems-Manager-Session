@@ -1,0 +1,292 @@
+name: TEMP RAVE COMPLETE INVENTORY V1
+on:
+  push:
+    branches: [tmp-rave-complete-multilingual-backfill]
+    paths:
+      - '.github/workflows/temp-rave-complete-inventory-v1.yml'
+permissions:
+  contents: write
+  actions: read
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-complete-multilingual-backfill
+          fetch-depth: 1
+      - name: Download exact BUILD 103 artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build103
+          gh run download 33334306835 -R mini56/ECU-Mems-Manager-Session \
+            -n ECU-MEMS-Manager-x64-BUILD-103-v1.0.103 -D build103
+      - name: Generate auditable RAVE inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          from collections import defaultdict
+          import hashlib, json, re, sqlite3
+
+          root=Path('.')
+          ref=root/'database/reference'
+          rave_dir=ref/'images/rave'
+          audit_dir=ref/'audits'
+          out=audit_dir/'RAVE_COMPLETE_INVENTORY_V1.md'
+          out.parent.mkdir(parents=True,exist_ok=True)
+
+          def sha256(path):
+              h=hashlib.sha256()
+              with open(path,'rb') as f:
+                  for chunk in iter(lambda:f.read(1024*1024),b''):
+                      h.update(chunk)
+              return h.hexdigest()
+
+          def natural_key(s):
+              return [int(x) if x.isdigit() else x.lower() for x in re.split(r'(\d+)',s)]
+
+          def image_group(name):
+              for p in ('AKM6348_FR','AKM7169ENG','RCL0193FRE','RCL0194ENG'):
+                  if name.startswith(p): return p
+              stem=Path(name).stem
+              return stem.split('_')[0]
+
+          def page_token(name,group):
+              stem=Path(name).stem
+              if '_PDF_' in stem:
+                  return stem.split('_PDF_',1)[1]
+              if group=='RCL0194ENG' and stem.startswith('RCL0194ENG_'):
+                  return stem[len('RCL0194ENG_'):].replace('_','.')
+              if group=='AKM6348_FR' and stem.startswith('AKM6348_FR_'):
+                  return stem[len('AKM6348_FR_'):]
+              prefix=group+'_'
+              return stem[len(prefix):] if stem.startswith(prefix) else stem
+
+          images=sorted([p for p in rave_dir.glob('*') if p.is_file()],key=lambda p:natural_key(p.name)) if rave_dir.exists() else []
+          groups=defaultdict(list)
+          for p in images: groups[image_group(p.name)].append(p)
+
+          repo_pdfs=sorted(root.rglob('*.pdf'))
+          qz64=sorted(ref.glob('research_enrichment*.qz64'),key=lambda p:natural_key(p.name))
+          audits=sorted([p for p in audit_dir.iterdir() if p.is_file()],key=lambda p:natural_key(p.name)) if audit_dir.exists() else []
+
+          manifest_path=ref/'manifest.json'
+          manifest_sha=sha256(manifest_path) if manifest_path.exists() else None
+          manifest_qz=[]
+          manifest_rave_strings=[]
+          manifest_top=[]
+          if manifest_path.exists():
+              manifest=json.loads(manifest_path.read_text(encoding='utf-8'))
+              manifest_top=list(manifest.keys()) if isinstance(manifest,dict) else [type(manifest).__name__]
+              def walk(x):
+                  if isinstance(x,dict):
+                      for k,v in x.items():
+                          walk(k); walk(v)
+                  elif isinstance(x,list):
+                      for v in x: walk(v)
+                  elif isinstance(x,str):
+                      if x.lower().endswith('.qz64'): manifest_qz.append(x)
+                      u=x.upper()
+                      if '/RAVE/' in u or any(c in u for c in ('RCL0193','RCL0194','AKM6348','AKM7169')):
+                          manifest_rave_strings.append(x)
+              walk(manifest)
+          manifest_qz=list(dict.fromkeys(manifest_qz))
+          manifest_rave_strings=list(dict.fromkeys(manifest_rave_strings))
+
+          dbs=list(Path('build103').rglob('ia_mems_reference_r20.sqlite'))
+          if len(dbs)!=1:
+              raise SystemExit(f'unexpected BUILD103 expert DB count: {len(dbs)}')
+          db_path=dbs[0]
+          db=sqlite3.connect(f'file:{db_path.as_posix()}?mode=ro',uri=True)
+          db.row_factory=sqlite3.Row
+          user_version=db.execute('pragma user_version').fetchone()[0]
+          integrity=db.execute('pragma integrity_check').fetchone()[0]
+          tables=[r[0] for r in db.execute("select name from sqlite_master where type='table' and name not like 'sqlite_%' order by name")]
+
+          def qident(s): return '"'+s.replace('"','""')+'"'
+          def table_count(t): return db.execute(f'select count(*) from {qident(t)}').fetchone()[0]
+          table_counts={t:table_count(t) for t in tables if ('rave' in t.lower() or t in {
+              'mems_knowledge_item','mems_expert_fact_external','mems_procedure','mems_procedure_step',
+              'mems_specification','mems_specification_value','mems_documentation_source','mems_reference_source',
+              'mems_applicability_scope','mems_knowledge_scope'})}
+
+          # Distinct source-like values from RAVE/source/document tables.
+          source_values=defaultdict(set)
+          for t in tables:
+              tl=t.lower()
+              if not any(k in tl for k in ('rave','source','document')): continue
+              cols=db.execute(f'pragma table_info({qident(t)})').fetchall()
+              for c in cols:
+                  name=c[1]
+                  if not any(k in name.lower() for k in ('source','document','publication','manual')): continue
+                  try:
+                      rows=db.execute(f'select distinct {qident(name)} from {qident(t)} where {qident(name)} is not null limit 300').fetchall()
+                  except sqlite3.Error:
+                      continue
+                  for r in rows:
+                      v=str(r[0]).strip()
+                      if v: source_values[f'{t}.{name}'].add(v)
+
+          # Candidate source codes: image groups plus codes found in source-like DB values.
+          codes=set(groups.keys())
+          code_re=re.compile(r'\b(?:RCL\d{4}(?:ENG|FRE)?|AKM\d{4}(?:ENG|FRE)?|AKM\d{4}_FR)\b',re.I)
+          for vals in source_values.values():
+              for v in vals:
+                  for m in code_re.findall(v): codes.add(m.upper())
+          codes=sorted(codes,key=natural_key)
+
+          # Row-level occurrence map across relevant technical tables.
+          hit_tables={c:{} for c in codes}
+          relevant=[t for t in tables if any(k in t.lower() for k in (
+              'rave','knowledge','expert','source','document','procedure','specification','illustration','fault','diagnostic','asset','scope','relation'))]
+          for t in relevant:
+              cols=db.execute(f'pragma table_info({qident(t)})').fetchall()
+              textcols=[c[1] for c in cols if (not c[2] or 'CHAR' in c[2].upper() or 'TEXT' in c[2].upper() or 'CLOB' in c[2].upper())]
+              if not textcols: continue
+              cond=' OR '.join([f'CAST({qident(c)} AS TEXT) LIKE ?' for c in textcols])
+              for code in codes:
+                  try:
+                      n=db.execute(f'select count(*) from {qident(t)} where {cond}',tuple('%'+code+'%' for _ in textcols)).fetchone()[0]
+                  except sqlite3.Error:
+                      n=0
+                  if n: hit_tables[code][t]=n
+
+          # RAVE illustration rows grouped by filename where possible.
+          db_visual_groups=defaultdict(int)
+          if 'mems_rave_illustration' in tables:
+              cols=[r[1] for r in db.execute('pragma table_info(mems_rave_illustration)')]
+              pathcol=next((c for c in cols if c.lower() in ('relative_path','path','file_path','image_path')),None)
+              if pathcol:
+                  for row in db.execute(f'select {qident(pathcol)} from mems_rave_illustration where {qident(pathcol)} is not null'):
+                      db_visual_groups[image_group(Path(str(row[0])).name)]+=1
+
+          lines=[]
+          add=lines.append
+          add('# RAVE COMPLETE INVENTORY V1')
+          add('')
+          add('- Branch: `tmp-rave-complete-multilingual-backfill`')
+          add('- Baseline production artifact: BUILD #103, run `33334306835`, database `ia_mems_reference_r20.sqlite`.')
+          add(f'- BUILD #103 SQLite: `user_version={user_version}`, `integrity_check={integrity}`, `{len(tables)}` user tables.')
+          add(f'- Reference manifest SHA-256: `{manifest_sha}`.' if manifest_sha else '- Reference manifest: absent.')
+          add('- IMPORTANT: this inventory proves what is currently present. It does **not** declare any source manual fully audited.')
+          add('')
+
+          add('## 1. Physical RAVE visual assets currently stored')
+          add('')
+          add(f'Total files in `database/reference/images/rave`: **{len(images)}**.')
+          add('')
+          add('| Group/source prefix | Files on branch | Rows in `mems_rave_illustration` grouped by path | Page/section tokens currently represented |')
+          add('|---|---:|---:|---|')
+          for g in sorted(groups,key=natural_key):
+              toks=sorted({page_token(p.name,g) for p in groups[g]},key=natural_key)
+              toktext=', '.join(toks)
+              if len(toktext)>5000: toktext=toktext[:5000]+' ...'
+              add(f'| `{g}` | {len(groups[g])} | {db_visual_groups.get(g,0)} | {toktext} |')
+          if not groups: add('| _none_ | 0 | 0 | |')
+          add('')
+          add('**Coverage rule:** the tokens above are only the pages/sections for which an image is presently stored. Missing tokens are not automatically irrelevant; complete source coverage must be established from the source document itself.')
+          add('')
+
+          add('## 2. Source PDFs physically stored in the repository')
+          add('')
+          if repo_pdfs:
+              for p in repo_pdfs: add(f'- `{p.as_posix()}` — {p.stat().st_size} bytes — SHA-256 `{sha256(p)}`')
+          else:
+              add('- **None.** The repository contains derived RAVE assets/data, but no `.pdf` source file is stored in this branch.')
+          add('')
+
+          add('## 3. Existing RAVE/source audit files')
+          add('')
+          related=[]
+          for p in audits:
+              u=p.name.upper()
+              if 'RAVE' in u or any(c.upper() in u for c in codes): related.append(p)
+          if related:
+              for p in related: add(f'- `{p.as_posix()}` — {p.stat().st_size} bytes — SHA-256 `{sha256(p)}`')
+          else: add('- None matched by name.')
+          add('')
+
+          add('## 4. Enrichment batches and manifest ordering evidence')
+          add('')
+          add(f'- `research_enrichment*.qz64` physically present: **{len(qz64)}**.')
+          add(f'- QZ64 references found recursively in manifest: **{len(manifest_qz)}**.')
+          add(f'- Manifest top-level keys: `{manifest_top}`.')
+          if manifest_qz:
+              add('- Manifest QZ64 order (as encountered recursively):')
+              for i,v in enumerate(manifest_qz,1): add(f'  {i}. `{v}`')
+          add('')
+
+          add('## 5. BUILD #103 SQLite counts for RAVE and related structured knowledge')
+          add('')
+          add('| Table | Rows |')
+          add('|---|---:|')
+          for t,n in sorted(table_counts.items()): add(f'| `{t}` | {n} |')
+          add('')
+
+          add('## 6. Source/document identifiers already visible in SQLite')
+          add('')
+          if source_values:
+              for key in sorted(source_values):
+                  vals=sorted(source_values[key],key=natural_key)
+                  interesting=[v for v in vals if ('RAVE' in v.upper() or any(c.upper() in v.upper() for c in codes))]
+                  if interesting:
+                      add(f'- `{key}`: ' + '; '.join(f'`{v}`' for v in interesting[:100]))
+          else: add('- No source-like fields detected.')
+          add('')
+
+          add('## 7. Row-level evidence by detected source code')
+          add('')
+          for code in codes:
+              add(f'### {code}')
+              add(f'- Physical images: **{len(groups.get(code,[]))}**.')
+              hits=hit_tables.get(code,{})
+              if hits:
+                  add('- SQLite tables containing this code (rows with at least one textual field match):')
+                  for t,n in sorted(hits.items()): add(f'  - `{t}`: {n}')
+              else:
+                  add('- No row-level textual match found in the scanned technical tables.')
+              audit_matches=[p.name for p in related if code.upper() in p.name.upper()]
+              add('- Named audit files: ' + (', '.join(f'`{x}`' for x in audit_matches) if audit_matches else 'none by filename.'))
+              add('- **Whole-document audit status: NOT PROVEN by this inventory.**')
+              add('')
+
+          add('## 8. RAVE-related strings referenced by manifest')
+          add('')
+          if manifest_rave_strings:
+              for v in manifest_rave_strings[:500]: add(f'- `{v}`')
+              if len(manifest_rave_strings)>500: add(f'- ... {len(manifest_rave_strings)-500} additional strings omitted from display.')
+          else: add('- None detected.')
+          add('')
+
+          add('## 9. Decision / next extraction gate')
+          add('')
+          add('1. This file is the baseline inventory of **what exists**, not a completeness certificate.')
+          add('2. Before extracting more data, exact source documents must be resolved for every detected RAVE family/source code.')
+          add('3. Each resolved source will receive a page/section ledger using the multilingual foundation statuses (`useful`, `already_covered`, `duplicate`, `out_of_scope`, `needs_review`).')
+          add('4. All user-useful content is in scope: text, procedures, specifications, tables, diagrams, views, images, component locations, connectors, diagnosis, service, maintenance and repair. ECU/MEMS-only filtering is forbidden.')
+          add('5. Existing facts/assets are reused and linked when correct; they are not blindly duplicated.')
+
+          out.write_text('\n'.join(lines)+'\n',encoding='utf-8')
+          db.close()
+          print('PASS GENERATED',out)
+          print('RAVE_IMAGES',len(images))
+          print('GROUPS', {g:len(v) for g,v in groups.items()})
+          print('CODES',codes)
+          print('QZ64_FILES',len(qz64),'MANIFEST_QZ64',len(manifest_qz))
+          print('SQLITE_USER_VERSION',user_version,'TABLES',len(tables),'INTEGRITY',integrity)
+          PY
+      - name: Commit inventory only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add database/reference/audits/RAVE_COMPLETE_INVENTORY_V1.md
+          git diff --cached --exit-code && { echo 'Inventory produced no change'; exit 1; } || true
+          git commit -m 'Audit current RAVE coverage before multilingual backfill'
+          git push origin HEAD:tmp-rave-complete-multilingual-backfill
