@@ -8349,3 +8349,22 @@ Fichiers candidats exacts :
 ### PROCHAINE ACTION EXACTE
 
 Pousser **exactement ces trois fichiers** sur `tmp-rave-complete-multilingual-backfill`, sans modifier le manifeste, le protocole, l'ECU, l'UI, l'IA, ONNX ni `MEMSX64`. Relire ensuite le commit distant, comparer strictement `f660a744...` au nouveau HEAD, valider les controles GitHub disponibles et journaliser immediatement le resultat dans le present rapport **avant** de commencer RCL0193ENG pages physiques 51-96.
+
+
+## 2026-08-31 - RCL0193ENG PAGES 1-50 - RECTIFICATION DU JOURNAL AVANT POUSSE
+
+Le garde local effectue **avant toute pousse technique** a detecte que l'entree pre-push precedente contenait des noms/hashes de travail qui ne correspondent pas aux octets finaux actuellement conserves par le generateur. Aucun fichier technique n'a ete pousse avec ces valeurs erronees ; `tmp-rave-complete-multilingual-backfill` reste donc encore sur `f660a744bc8a0e991492b42a5f334ab59f949156`.
+
+Les octets finaux ont ete retrouves dans `/mnt/data/rave_work/output/` et leur propre audit local contient les memes empreintes. La precedente liste de trois fichiers candidats est **supplantee avant pousse** par la liste exacte suivante :
+
+- `database/reference/prototypes/rcl0193eng_p001_050_multilingual_v1.sql` — **488 301 octets** — SHA-256 `771c9ca0a4a2e0b428f702d2492356a87295a9d5652e946599666ceb73acf897` ;
+- `database/reference/prototypes/rcl0193eng_p001_050_multilingual_v1.qz64` — **22 757 octets** — SHA-256 `f62cd980030a4b3e2b6b072001731ffdb12c449693edc08bcea4b84777c8ad45` ;
+- `database/reference/audits/RCL0193ENG_P001_050_MULTILINGUAL_BACKFILL_V1.md` — **5 644 octets** — SHA-256 `576b14c9d7a162baa32aceea83d9ea2b80abc7b423647912109a902c5d686bbb`.
+
+Le SQL final et le QZ64 final ont les memes tailles que celles annoncees precedemment mais des empreintes differentes : cela confirme qu'un hash ne doit jamais etre deduit d'une taille identique. Le garde SHA a donc bloque correctement la pousse.
+
+L'audit final confirme toujours les invariants fonctionnels : 50/50 pages, 244 entites, 285 textes anglais, 2 tableaux, 196 cellules, 8 valeurs, 3 relations, `integrity_check=ok`, `foreign_key_check=0`, `user_version=21`, idempotence et aucune modification du manifeste.
+
+### PROCHAINE ACTION EXACTE APRES CETTE RECTIFICATION
+
+Apres validation GitHub Actions de cette rectification du rapport, pousser **uniquement les trois fichiers ci-dessus avec ces octets et ces hashes exacts** sur `tmp-rave-complete-multilingual-backfill`, puis relire et reverifier le commit distant. `MEMSX64` reste BUILD #103 et aucune modification protocole/ECU/UI/IA/ONNX n'est autorisee.
