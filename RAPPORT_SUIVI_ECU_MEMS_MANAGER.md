@@ -8947,7 +8947,7 @@ Le schema exact verifie dans le SQL candidat utilise :
 - `mems_doc_table_cell.table_entity_key`
 - `mems_doc_table_cell.cell_entity_key`
 
-La requete du helper utilisait par erreur `table_key`, qui n�existe pas. La correction autorisee consiste uniquement a remplacer ce controle par une requete sur `table_entity_key` et a relancer les memes gardes.
+La requete du helper utilisait par erreur `table_key`, qui nàexiste pas. La correction autorisee consiste uniquement a remplacer ce controle par une requete sur `table_entity_key` et a relancer les memes gardes.
 
 Les etapes `Clean transport and enforce final scope` et `Commit final lot` ont ete SKIPPED : aucun commit permanent 97-104 n a ete cree.
 
@@ -10114,3 +10114,40 @@ Ne pas poursuivre p235 BRAKES avant validation du pilote p193-202 et preuve que 
 
 ### PROCHAINE ACTION EXACTE
 Construire et valider sur p193-202 un pilote GitHub reproductible produisant effectivement : assets visuels locaux reels, zones/masques numerotes et cles multilingues, legendes rendables dans l'image, tableaux structures, procedures entierement structurees, portees explicites et texte source integral. Ajouter un garde automatique qui refuse le lot si un element applicable est seulement `candidate` au lieu d'etre integre ou explicitement `needs_review`. Une fois le pilote vert et inspecte, appliquer exactement la meme fonction a p203-210, p211-226 et p227-234 avant p235 BRAKES.
+
+## 2026-08-31 - REPARATION UTF-8 DU RAPPORT MAITRE ET CHECKPOINT RAVEMEMS
+
+### Réparation du fichier maître
+
+Le fichier maître était devenu impossible à lire/mettre à jour par les outils UTF-8 stricts. État exact avant réparation : Git blob `c5397573c1b9a3ac371686338a455820c29e0144`, 643980 octets, SHA-256 brut `6c91b5ecde56f932f4eb4e8c3e1910be0066b7aec48785b0ad8da3373b6a297e`. La réparation est volontairement minimale : toutes les séquences déjà valides UTF-8 sont conservées ; seuls les octets réellement invalides sont récupérés avec leur caractère Windows-1252 correspondant, puis réencodés proprement en UTF-8. Zone(s) d'octets invalides détectée(s) avant réparation : `563518-563518:0xe0`.
+
+Gardes appliqués avant écriture : nombre de lignes inchangé avant ajout de cette section, nombre de backticks inchangé, mêmes ensembles de SHA-1/identifiants Git 40 hex, mêmes SHA-256 64 hex, mêmes URL et mêmes références techniques critiques. Le résultat est relu en UTF-8 strict sans caractère de remplacement. Les sections historiques ne sont pas supprimées : leurs anciennes méthodes restent comme historique mais peuvent être explicitement supplantées ci-dessous.
+
+### RAVEMEMS - méthode canonique actuelle pour RAVE
+
+Le nom canonique de la méthode décidée avec l'utilisateur est **`ravemems`**. Cette section supplante les anciennes règles graphiques qui imposaient un masque numéroté visible et une légende traduite dans l'image. **Les numéros artificiels visibles sont désormais interdits.**
+
+Séparation des rôles :
+- **GitHub** extrait et conserve la source constructeur, le texte source, les coordonnées, les vues/schémas/tableaux, les zones de texte humain traduisible, les repères constructeur existants, les associations repère -> texte, les couleurs/styles, les pictogrammes, les dimensions et la provenance. GitHub ne fabrique pas une image raster différente pour chaque langue et n'a pas à traduire lui-même toutes les langues finales.
+- **MEMS Manager** applique la langue choisie par l'utilisateur au moment du rendu. Il remplace uniquement le texte humain traduisible, à partir des données extraites, tout en conservant les éléments techniques immuables.
+
+Règles graphiques `ravemems` :
+1. L'original constructeur reste intact et disponible comme preuve/source.
+2. Si un numéro/repère constructeur existe déjà (`1`, `2`, `3`, etc.), **on garde ce numéro tel quel et on change uniquement le texte qui lui est associé**. Aucun second numéro n'est créé.
+3. S'il n'existe pas de numéro exploitable, une clé stable interne peut identifier la zone, mais cette clé reste invisible pour l'utilisateur.
+4. Dans une image qui contient directement du texte humain, le texte source est remplacé directement par le texte dans la langue utilisateur. Pas de mélange anglais/français et pas de légende artificielle numérotée.
+5. Les valeurs, unités, références Rover, numéros de pièce/procédure, connecteurs, broches, codes fils, flèches, géométrie et autres identifiants techniques ne sont pas traduits ni modifiés.
+6. **La couleur et le rôle graphique du texte sont conservés** : un texte vert reste vert, un texte noir reste noir, la graisse/style utile est conservée et les pictogrammes associés restent présents.
+7. Si la traduction prend plus de place, **agrandir la zone libre/le canevas autour de la vue** et repositionner proprement le bloc. Ne pas tronquer le texte, ne pas déformer le schéma et ne pas réduire abusivement la police.
+8. Un garde doit refuser un rendu où un texte humain source traduisible reste visible, où une traduction manque/déborde/se chevauche, où un identifiant interne apparaît à l'utilisateur ou où la géométrie technique est altérée.
+
+### État des deux premiers tests `ravemems`
+
+- **RAVE page physique 112** : cas page mixte texte + schéma avec remplacement direct des libellés. La méthode est presque correcte visuellement, mais le dernier contrôle utilisateur a signalé un détail non acceptable : le texte sous l'icône verte était tronqué. Cette page ne doit donc pas être déclarée validation graphique finale. La correction générale retenue est : texte jamais tronqué, couleur verte et pictogramme conservés, espace agrandi si nécessaire.
+- **RAVE page physique 107 - ENGINE COMPARTMENT COMPONENT LOCATIONS** : cas différent avec illustration portant déjà les repères constructeur `1` à `14` et liste de textes associée. Référence correcte : l'illustration/les numéros constructeur restent inchangés ; MEMS Manager traduit seulement les textes associés aux repères. Aucun numéro artificiel n'est ajouté.
+
+### TEST2 - prochaine action exacte après réparation du rapport
+
+Tester maintenant un troisième cas réel, sur une autre page RAVE : **vue/illustration dont le texte humain est réellement intégré dans la partie graphique**, et non simplement une liste externe ou un texte PDF natif facilement séparé. Le test doit vérifier extraction des zones par GitHub puis simulation du rendu par MEMS Manager avec remplacement direct, conservation des couleurs/pictogrammes/repères, agrandissement de l'espace si nécessaire et zéro texte tronqué.
+
+Ne pas industrialiser le retraitement complet de RAVE avant contrôle de ce TEST2. `main/rave/` reste la source canonique. Les anciennes pages/lots traités avec la méthode précédente ne valent pas validation sous `ravemems`. `MEMSX64` reste protégé et inchangé pendant ce test ; référence production à préserver : BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
