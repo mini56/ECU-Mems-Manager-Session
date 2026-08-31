@@ -1,0 +1,95 @@
+name: TEMP MULTILINGUAL RUNTIME READER VALIDATION
+
+on:
+  push:
+    branches: [tmp-multilingual-knowledge-foundation]
+    paths:
+      - 'database/MultilingualKnowledgeReader.h'
+      - 'database/MultilingualKnowledgeReader.cpp'
+      - 'database/MultilingualKnowledgeRuntimeSelfTest.cpp'
+      - 'CMakeLists.txt'
+      - '.github/workflows/temp-multilingual-runtime-reader-validate.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  validate_windows_x64:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: 'utf-8'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Qt tools
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install --disable-pip-version-check "aqtinstall==3.3.0"
+          $sevenZip = (Get-Command 7z.exe -ErrorAction Stop).Source
+          if (Test-Path 'C:\Qt') { Remove-Item 'C:\Qt' -Recurse -Force -ErrorAction SilentlyContinue }
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
+          if ($LASTEXITCODE -ne 0) { throw "aqtinstall failed: $LASTEXITCODE" }
+
+      - name: Configure and compile multilingual runtime self-test
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake -S . -B build-runtime -A x64 `
+            -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
+            -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF
+          if ($LASTEXITCODE -ne 0) { throw "CMake configure failed: $LASTEXITCODE" }
+          cmake --build build-runtime --config Release --target multilingual_knowledge_runtime_selftest
+          if ($LASTEXITCODE -ne 0) { throw "Runtime self-test compile failed: $LASTEXITCODE" }
+
+      - name: Download BUILD 103 and prepare exact test SQLite
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Path build103 -Force | Out-Null
+          gh run download 33334306835 -R mini56/ECU-Mems-Manager-Session `
+            -n ECU-MEMS-Manager-x64-BUILD-103-v1.0.103 -D build103
+          if ($LASTEXITCODE -ne 0) { throw "BUILD 103 artifact download failed: $LASTEXITCODE" }
+          @'
+          import shutil,sqlite3
+          from pathlib import Path
+          dbs=list(Path('build103').rglob('ia_mems_reference_r20.sqlite'))
+          if len(dbs)!=1:
+              raise SystemExit(f'unexpected BUILD103 expert DB count: {len(dbs)}')
+          shutil.copy2(dbs[0],'runtime-test.sqlite')
+          db=sqlite3.connect('runtime-test.sqlite')
+          try:
+              if db.execute('pragma user_version').fetchone()[0] != 20:
+                  raise SystemExit('BUILD103 user_version is not 20')
+              db.executescript(Path('database/reference/prototypes/multilingual_knowledge_foundation_v1.sql').read_text(encoding='utf-8'))
+              db.executescript(Path('database/reference/prototypes/multilingual_retrieval_demo_v1.sql').read_text(encoding='utf-8'))
+              if db.execute('pragma user_version').fetchone()[0] != 21:
+                  raise SystemExit('foundation user_version is not 21')
+              if db.execute('pragma integrity_check').fetchone()[0].lower() != 'ok':
+                  raise SystemExit('prepared SQLite integrity failed')
+              if db.execute('pragma foreign_key_check').fetchall():
+                  raise SystemExit('prepared SQLite foreign key violations')
+              print('PASS PREPARED BUILD103 + FOUNDATION + REAL DEMO SQLITE')
+          finally:
+              db.close()
+          '@ | python -
+          if ($LASTEXITCODE -ne 0) { throw "Runtime SQLite preparation failed: $LASTEXITCODE" }
+
+      - name: Execute multilingual runtime reader self-test
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
+          $env:PATH = "$qtRoot\bin;$env:PATH"
+          $env:QT_PLUGIN_PATH = "$qtRoot\plugins"
+          & '${{ github.workspace }}\build-runtime\Release\multilingual_knowledge_runtime_selftest.exe' `
+            '${{ github.workspace }}\runtime-test.sqlite'
+          if ($LASTEXITCODE -ne 0) { throw "Multilingual runtime reader self-test failed: $LASTEXITCODE" }
