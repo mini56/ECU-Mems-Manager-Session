@@ -8952,3 +8952,160 @@ La requete du helper utilisait par erreur `table_key`, qui nàexiste pas. La corr
 Les etapes `Clean transport and enforce final scope` et `Commit final lot` ont ete SKIPPED : aucun commit permanent 97-104 n a ete cree.
 
 Aucune donnee documentaire n est modifiee par ce correctif de helper. `MEMSX64` reste BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+
+## 2026-08-31 - RCL0193ENG PAGES 97-104 EMISSION CONTROL - VALIDATION FINALE ET SAFE CHECKPOINT
+
+Le lot documentaire multilingue RCL0193ENG pages physiques 97-104 est maintenant valide, nettoye et resquashe sur `tmp-rave-complete-multilingual-backfill`.
+
+### HISTORIQUE DES GARDES
+
+Journal AVANT POUSSE :
+- workflow `REPORT RCL0193ENG P097-104 PREPUSH`
+- run `33380285157`
+- job `99450881181`
+- conclusion **SUCCESS**
+
+Premier installateur :
+- workflow `TEMP RCL0193ENG P097-104 INSTALL`
+- run `33380861499`
+- job `99452676868`
+- conclusion **FAILURE**
+- le QZ64 et le SQL avaient franchi leurs gardes exacts ; l'echec etait limite au transport Base64 de l'audit ;
+- aucune validation SQLite, aucun nettoyage final et aucun commit permanent n'avaient ete executes ;
+- echec journalise sur RAPPORT par run `33380948662`, job `99452943200`, **SUCCESS**.
+
+Deuxieme installateur :
+- run `33381115844`
+- job `99453460489`
+- conclusion **FAILURE**
+- reconstruction exacte QZ64 + SQL + audit : **PASS**
+- les invariants SQLite ont passe jusqu'au controle de la table de legende ;
+- erreur exacte du helper : `sqlite3.OperationalError: no such column: table_key`
+- le schema reel utilise `mems_doc_table_cell.table_entity_key` ;
+- aucune etape de nettoyage/perimetre ni aucun commit permanent n'a ete execute ;
+- echec du validateur journalise sur RAPPORT par run `33381304229`, job `99454045012`, **SUCCESS**.
+
+Run final corrige :
+- workflow `TEMP RCL0193ENG P097-104 INSTALL`
+- run `33381388224`
+- job `99454307069`
+- conclusion **SUCCESS**
+- `Reconstruct exact lot` : PASS
+- `Validate SQLite twice and invariants` : PASS
+- `Clean transport and enforce final scope` : PASS
+- `Commit final lot` : PASS
+
+### SOURCE EXACTE
+
+- document : RCL0193ENG Mini Workshop Manual, 5th Edition
+- fichier : `rave/xn/wmxn990e.pdf`
+- taille : 4 744 911 octets
+- 372 pages physiques
+- SHA-256 `c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715`
+- perimetre : pages physiques 97-104, section **EMISSION CONTROL**
+- p98 : visuellement blanche, `out_of_scope / not_required`
+- alignement verifie : RCL0193ENG p097-104 <-> RCL0193FRE p096-103 ; RCL0193FRE p097 est egalement blanche.
+
+### CONTENU UTILISATEUR FINAL CONSERVE
+
+Le lot ne supprime aucune information anglaise au motif que le lot francais 1800 existe deja.
+
+Il conserve :
+- 8/8 unites physiques 97-104 ;
+- 7/7 pages non blanches avec texte anglais integral ;
+- 7/7 candidats visuels de page ;
+- 7 figures techniques granulaires ;
+- 5/5 operations constructeur avec `Service repair no` ;
+- 9 faits structures ;
+- 4 valeurs structurees et 4 lignes `mems_doc_value` ;
+- 9 avertissements/cautions/exigences ;
+- 2 renvois constructeur ;
+- figure 17M0112 : 1 table de legende, 20 cellules = 10 ancres numeriques immuables + 10 libelles anglais localisables.
+
+Les informations notables couvrent notamment le catalyseur, CO/NOx/hydrocarbures, palladium/rhodium, sonde O2 chauffee et correction ECM, EVAP/charbon actif/purge ECM, seuil de purge moteur >70 degC, ventilation de carter, carburant plombe, fragilite du catalyseur et chandelles de securite.
+
+Valeurs conservees :
+- seuil purge EVAP : temperature moteur >70 degC ;
+- reniflard/separateur d'huile : 18 N.m ;
+- catalyseur/tuyau avant : 45 N.m ;
+- catalyseur/tuyau arriere : 9 N.m.
+
+### PREPARATION TRADUCTION DES VISUELS - N LANGUES
+
+L'architecture reste volontairement extensible a N locales, et non limitee aux six langues actuelles du programme.
+
+Regle :
+- un dessin/visuel constructeur source ;
+- numeros de repere, identifiants de figure, fleches et autres ancres techniques conserves comme elements immuables ;
+- titres, legendes, avertissements et explications stockes separement par locale ;
+- futures langues (japonais, chinois, langues de l'Inde, etc.) ajoutables via `mems_doc_locale` sans recreer le schema ni fabriquer une copie raster fixe par langue.
+
+### FICHIERS FINAUX EXACTS
+
+1. `database/reference/prototypes/rcl0193eng_p097_104_multilingual_v1.sql`
+   - 190 681 octets
+   - SHA-256 `51dfb695c19fe450a7ea0db7fa23b93344c93f792c44eadca76405fb8458a961`
+   - Git blob `6ab956e4cd015634846766cfe782866d0c9eded2`
+
+2. `database/reference/prototypes/rcl0193eng_p097_104_multilingual_v1.qz64`
+   - 15 061 octets
+   - SHA-256 `8390eb844369f77ace3d7ed88d25c206c02c32f4eabcedb5296ba50688959d5a`
+   - Git blob `4ec5540c11e1527de0a7a25b534a11b431f421f6`
+
+3. `database/reference/audits/RCL0193ENG_P097_104_MULTILINGUAL_BACKFILL_V1.md`
+   - 4 056 octets
+   - SHA-256 `576436bae6c854efcb5b6306eedd53d69f62b96699754655473400c1ec3e25da`
+   - Git blob `629403471ac1e08c99178c65c888b2d08389ed0b`
+
+### VALIDATION BASE
+
+Apres application du socle multilingue + lots RCL0193ENG 1-50, 51-96 et 97-104 applique deux fois :
+- `PRAGMA integrity_check = ok`
+- `PRAGMA foreign_key_check = 0`
+- `PRAGMA user_version = 21`
+- seconde application sans doublon
+- QZ64 -> SQL byte pour byte exact
+- perimetre exact pages 97..104
+- p98 blanche correctement classee
+- table 17M0112 et ses 20 cellules validees avec la colonne schema correcte `table_entity_key`.
+
+### NETTOYAGE ET SQUASH
+
+Le run final a produit le commit bot pre-squash :
+`032556420c3d48d199a37e0fc442dc43d8129380`
+
+Tree valide exact :
+`f63ad13f417053c6ca055911564915e11d0cb1e8`
+
+Le workflow temporaire et le dossier `.github/rcl0193eng-p097-104-transfer` sont absents du tree valide.
+
+Le tree valide a ensuite ete resquashe sans changement d'octet avec parent direct :
+`db19cce817fd61970a73cabc81905b917e3d8dcc`
+
+Commit technique propre final :
+`5289684f0e85031ba7d86d0288a5e4e1bc726218`
+
+Controle compare final :
+- `ahead_by = 1`
+- `behind_by = 0`
+- `total_commits = 1`
+- exactement 3 fichiers ajoutes : SQL + QZ64 + audit 97-104
+- aucun changement de `manifest.json`
+- aucune table historique modifiee
+- aucun protocole/ECU/UI/IA/ONNX modifie.
+
+### SAFE CHECKPOINT
+
+`SAFE CHECKPOINT = YES`
+
+- branche : `tmp-rave-complete-multilingual-backfill`
+- commit : `5289684f0e85031ba7d86d0288a5e4e1bc726218`
+- dernier lot clos : RCL0193ENG pages physiques 97-104 EMISSION CONTROL
+- source PDF SHA-256 : `c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715`
+
+Production protegee : `MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+### PROCHAINE ACTION EXACTE
+
+Ouvrir directement le PDF anglais a partir de la page physique **105** pour determiner le prochain bloc reel sans l'inferer depuis le manuel francais. Continuer l'extraction exhaustive de toute information utile a l'utilisateur final, avec comparaison RCL0193FRE/BUILD #103 pour deduplication intelligente mais jamais pour ecarter la couche source anglaise. Continuer aussi la preparation des visuels et de leurs textes/regions pour une architecture N-langues.
