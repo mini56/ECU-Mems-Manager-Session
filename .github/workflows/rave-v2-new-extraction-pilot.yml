@@ -32,6 +32,7 @@ jobs:
         run: |
           python tools/rave_v2_apply_direct_render_patch.py
           python tools/rave_v2_preserve_pictograms_patch.py
+          python tools/rave_v2_fix_header_icon_crop.py
           python -m py_compile tools/rave_v2_new_extraction.py
           python -m py_compile tools/rave_v2_extract_callout_associations.py
           python -m py_compile tools/rave_v2_mems_display_sim.py
