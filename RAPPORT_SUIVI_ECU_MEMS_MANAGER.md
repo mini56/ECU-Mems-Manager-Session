@@ -10247,3 +10247,20 @@ Ne modifier ni les bboxes techniques, ni les références constructeur, ni la g�
 
 ### PROCHAINE ACTION EXACTE
 Corriger uniquement le garde du script temporaire de `35` vers `34`, relancer le meme correctif de completude, verifier le commit final obtenu, puis relancer TEST2 sur la page raster canonique et inspecter manuellement le PNG avant toute validation.
+
+
+## RAVEMEMS TEST2 - ECHEC GARDE DE COMPLETUDE - NAMEERROR
+
+- Branche pilote : `tmp-rave-new-extraction-pilot`.
+- HEAD teste : `9936c111e18bc01ec966346cdb43fc69c8fef2b5`.
+- Run TEST2 reutilise : `33442157473`, job `99662651982`.
+- Checkout confirme dans les logs : `9936c111e18bc01ec966346cdb43fc69c8fef2b5`.
+- Resultat : **ECHEC** pendant `Run RAVEMEMS TEST2 on canonical raster-only page`.
+- Erreur exacte : `NameError: name 'ocr_words' is not defined` a la ligne appelant `localized_words = ocr_words(rendered)`.
+- Le rendu avait ete execute jusqu'au nouveau controle de completude ; l'artefact a quand meme ete charge, ID `9777755805`, SHA-256 ZIP `9a522088d00f90cee11af0d36ead9d5efbae4b72a68c77ccceebf7e34f9bdd82`.
+- Ce defaut appartient au garde de completude ajoute, pas a une preuve de regression du dessin.
+- Aucun verdict visuel nouveau n'est possible tant que ce garde ne s'execute pas.
+- `MEMSX64` reste totalement inchange.
+
+### PROCHAINE ACTION EXACTE
+Identifier dans `tools/ravemems_test2_raster_text.py` le helper OCR existant et remplacer uniquement l'appel inexistant `ocr_words(rendered)` par l'appel correct, sans modifier le rendu ni les traductions. Relancer ensuite le meme TEST2 et inspecter manuellement l'artefact avant toute validation.
