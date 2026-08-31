@@ -8812,3 +8812,84 @@ Tree :
 Verifier directement dans la source anglaise le bloc suivant a partir de la page physique 97, sans deduire le perimetre uniquement depuis le manuel francais. Confirmer les pages physiques et blanches du bloc **EMISSION CONTROL**, puis effectuer la meme extraction exhaustive utilisateur final + comparaison RCL0193FRE + preparation multilingue N-langues et visuels localisables. La correspondance attendue est probablement RCL0193ENG p097-104 avec p098 blanche, mais elle doit etre confirmee sur le PDF anglais avant toute classification ou pousse.
 
 Aucune nouvelle pousse technique avant un nouveau journal AVANT POUSSE. `MEMSX64` reste BUILD #103.
+
+
+## 2026-08-31 - RCL0193ENG PAGES 97-104 EMISSION CONTROL - JOURNAL AVANT POUSSE
+
+Reprise depuis le SAFE CHECKPOINT valide du lot 51-96 : branche `tmp-rave-complete-multilingual-backfill`, commit `db19cce817fd61970a73cabc81905b917e3d8dcc`.
+
+### SOURCE ET PERIMETRE VERIFIES DIRECTEMENT
+
+Source anglaise exacte :
+- `rave/xn/wmxn990e.pdf`
+- RCL0193ENG Mini Workshop Manual, 5th Edition
+- 4 744 911 octets
+- 372 pages physiques
+- SHA-256 `c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715`
+
+Le bloc suivant a ete confirme directement dans le PDF anglais :
+- pages physiques **97-104** = **EMISSION CONTROL** ;
+- p97 = sommaire ;
+- p98 = **visuellement blanche** ;
+- p99-100 = description et fonctionnement ;
+- p101-104 = reparations.
+
+Correspondance francaise controlee : **RCL0193ENG p097-104 <-> RCL0193FRE p096-103** ; RCL0193FRE p097 est egalement blanche. Le lot historique francais `research_enrichment_1800.qz64` couvre deja la mecanique de ce bloc mais ne sert jamais de motif pour supprimer une information anglaise utile.
+
+### EXHAUSTIVITE UTILISATEUR FINAL
+
+Le candidat conserve :
+- texte anglais integral des **7 pages non blanches** ;
+- **5 operations constructeur** avec Service repair no : `17.10.03`, `17.15.13`, `17.15.39`, `17.50.01`, `17.50.05` ;
+- **9 faits** de fonctionnement antipollution ;
+- **4 valeurs** : purge EVAP >70 degC, reniflard/separateur 18 N.m, catalyseur/tuyau avant 45 N.m, catalyseur/tuyau arriere 9 N.m ;
+- **9 avertissements/cautions/exigences** ;
+- **2 renvois constructeur** ;
+- **7 figures techniques** avec identifiants 17M0112, 17M0105, 17M0102, 17M0103, 17M0101, 17M0100, 17M0117.
+
+La description conserve notamment : trois familles de controle (echappement, EVAP, carter), polluants CO/NOx/hydrocarbures, palladium/rhodium, fonction de la sonde O2 chauffee et correction ECM, emplacement/charbon actif EVAP, logique de purge, circuit de ventilation de carter, interdiction de modification selon legislation, carburant plombe, fragilite ceramique et chandelles de securite.
+
+### PREPARATION TRADUCTION DES IMAGES - N LANGUES
+
+La base ne doit jamais etre limitee aux six langues actuelles. Le schema reste pilote par `mems_doc_locale` et accepte N locales. Les futures langues (japonais, chinois, hindi/autres langues indiennes, etc.) doivent pouvoir etre ajoutees sans refaire les visuels.
+
+Regle : **un dessin constructeur source + ancres immuables + textes localises separes**.
+
+Pour la figure **17M0112** de p100, la legende est deja structuree en :
+- **10 ancres numeriques immuables** ;
+- **10 libelles anglais localisables** dans une table semantique.
+
+Les autres figures conservent leurs numeros de repere et identifiants constructeur comme ancres non traduites ; leurs titres, legendes, avertissements et explications seront attaches par locale lors de la materialisation future des assets/regions.
+
+### CANDIDAT LOCAL VALIDE
+
+Fichiers prepares :
+- `database/reference/prototypes/rcl0193eng_p097_104_multilingual_v1.sql` - 190 681 octets - SHA-256 `51dfb695c19fe450a7ea0db7fa23b93344c93f792c44eadca76405fb8458a961`
+- `database/reference/prototypes/rcl0193eng_p097_104_multilingual_v1.qz64` - 15 061 octets - SHA-256 `8390eb844369f77ace3d7ed88d25c206c02c32f4eabcedb5296ba50688959d5a`
+- `database/reference/audits/RCL0193ENG_P097_104_MULTILINGUAL_BACKFILL_V1.md` - 4 056 octets - SHA-256 `576436bae6c854efcb5b6306eedd53d69f62b96699754655473400c1ec3e25da`
+
+Validation locale apres socle + lot 1-50 corrige + lot 51-96 + lot 97-104 applique deux fois :
+- `PRAGMA integrity_check = ok`
+- `PRAGMA foreign_key_check = 0`
+- `PRAGMA user_version = 21`
+- 8/8 unites 97-104
+- p98 blank / out_of_scope / not_required
+- 7/7 pages source non blanches
+- 7/7 candidats visuels de page
+- 7 figures techniques granulaires
+- 5/5 operations constructeur
+- 9 faits
+- 4 valeurs
+- 9 alertes/exigences
+- 2 renvois
+- 1 table de legende / 20 cellules pour 17M0112
+- seconde application sans doublon
+- QZ64 -> SQL byte pour byte exact.
+
+### PERIMETRE DE POUSSE AUTORISE
+
+Uniquement les trois fichiers du lot 97-104 ci-dessus sur `tmp-rave-complete-multilingual-backfill`.
+
+Aucune modification de `manifest.json`, aucune table historique, aucun protocole/ECU/UI/IA/ONNX. `MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+PROCHAINE ACTION EXACTE : pousser le lot 97-104 via un transport temporaire controle, valider SHA/QZ64/SQLite/idempotence/perimetre, nettoyer/squasher, puis journaliser APRES POUSSE avant le bloc anglais suivant.
