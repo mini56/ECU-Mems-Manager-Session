@@ -1,0 +1,41 @@
+name: TEMP REPORT MULTILINGUAL RUNTIME SUCCESS
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/temp-report-multilingual-runtime-success.yml'
+permissions:
+  contents: write
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+      - name: Append multilingual runtime success
+        shell: bash
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+          ## 2026-08-31 - SOCLE MULTILINGUE - ETAPE 1 RUNTIME READ-ONLY VALIDEE
+
+          Branche validee hors production : `tmp-multilingual-knowledge-foundation`. Commit teste : `baf26a19925c8a3431c4b45d70f63c028b094755`. `MEMSX64` reste strictement sur BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+          Validation reelle Windows x64 : GitHub Actions run `33359080145`, job `99386802336`, conclusion SUCCESS. Le self-test a ete compile avec Qt 5.15.2 / MSVC x64 puis execute sur une copie du SQLite effectivement emballe dans BUILD #103, apres application du schema additif V1 et du petit backfill reel deja valide.
+
+          PASS observes : `RUNTIME OPEN READ-ONLY + FOUNDATION DETECTED`; `LOCALE RESOLUTION FR/EN + DE->FR + JA/ZH-CN->EN`; `ONE ORIGINAL VISUAL + TRANSLATABLE REGION LABEL`; `PROCEDURE SOURCE EXACT + CLEAN LOCALIZED DISPLAY`; `LANGUAGE-INDEPENDENT STRUCTURED VALUES 88C + 11Nm`; `LOCALIZED TABLE LABELS + LANGUAGE-INDEPENDENT CELLS`; `SQLITE BYTES UNCHANGED BY RUNTIME READER`; `MULTILINGUAL KNOWLEDGE RUNTIME SELFTEST`.
+
+          Le composant `MultilingualKnowledgeReader` est compile dans le projet mais n'est pas encore branche a une nouvelle UI. Il ouvre la base en `QSQLITE_OPEN_READONLY` + `PRAGMA query_only`, resout les textes par locale/fallback avec protection contre les boucles, lit visuels/regions/labels, procedures/etapes, valeurs et tableaux structures. Le self-test prouve que la lecture ne change aucun octet du SQLite teste.
+
+          RESULTAT : ETAPE 1 DE L'ARCHITECTURE DOCUMENTAIRE MULTILINGUE = VALIDEE. Le modele de donnees, le backfill representative, la logique de fallback et le lecteur runtime read-only fonctionnent ensemble sur des donnees reelles BUILD #103. Aucune fonction ECU/protocole/IA/ONNX/navigation/apparence n'a ete modifiee.
+
+          ETAPE 2 AUTORISEE : reprendre RAVE COMPLETEMENT avec ce socle. Cela signifie inventorier tous les documents/sources RAVE disponibles, auditer toutes leurs pages/sections et extraire TOUT contenu utile a l'utilisateur final : connaissances, procedures, specifications, avertissements, tableaux, schemas, vues, images, implantations, connecteurs, diagnostic, entretien, reparation et autres domaines utiles. Il est interdit de recentrer ce backfill uniquement sur ECU/MEMS ou Mini SPi/MPI.
+
+          PROCHAINE ACTION EXACTE : figer la branche du socle comme reference hors production, creer une branche RAVE dediee depuis ce socle valide, etablir l'inventaire auditable des documents RAVE disponibles (source exacte, langue, pages/sections, hash lorsqu'il est disponible, couverture actuelle), puis traiter les documents avec le nouveau pipeline sans declarer un document complet avant couverture explicite.
+          EOF
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m 'Journal validated multilingual runtime foundation'
+          git push
