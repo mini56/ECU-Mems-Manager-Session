@@ -2,9 +2,10 @@ name: TEMP RAVE MASTER REPORT METHOD
 
 on:
   push:
-    branches: [RAPPORT]
+    branches:
+      - RAPPORT
     paths:
-      - '.github/workflows/temp-rave-master-report-method.yml'
+      - .github/workflows/temp-rave-master-report-method.yml
 
 permissions:
   contents: write
@@ -17,77 +18,12 @@ jobs:
         with:
           ref: RAPPORT
           fetch-depth: 0
-      - name: Append canonical RAVE method to master report
-        shell: bash
+      - name: Append report and clean helper
         run: |
-          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
-
-## 2026-08-31 - REGLE RAVE COMPLETE UTILISATEUR FINAL - CORRECTION DE METHODE
-
-### CORRECTION DE CONTINUITE DU RAPPORT
-La regle maitre reste absolue : `RAPPORT_SUIVI_ECU_MEMS_MANAGER.md` est l'unique rapport de continuite. Les derniers checkpoints RAVE p193-226 avaient aussi ete ecrits dans `RAPPORT_RAVE_EXECUTION_FIABLE.md`; ce fichier separe ne doit plus etre utilise comme journal courant. Les informations indispensables sont reprises ici et toute future chaine RAVE doit journaliser ce rapport maitre avant/apres traitement.
-
-### CONSTAT A CORRIGER
-Les lots RCL0193ENG recents produits par la methode directe GitHub ont correctement conserve le texte source integral et de nombreuses valeurs/faits/outils/warnings, mais un `visual_candidate` ne garantit pas un asset image reel exploitable. Le cahier des charges utilisateur exige davantage : l'image, le tableau, la procedure complete et la portee vehicule/moteur font partie integrante de l'information finale.
-
-La branche technique `tmp-rave-complete-multilingual-backfill` est actuellement au commit `4bce12f4584d1a5a7d3fc798221fa1ea9b4bd889` apres le lot p227-234. Ce HEAD et les lots p193-234 ne sont donc PAS consideres complets au sens du nouveau garde tant que les supports visuels reels, tableaux, procedures et portees applicables n'ont pas ete repris et valides. `MEMSX64` reste strictement protege sur BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
-
-### METHODE CANONIQUE RAVE A UTILISER DESORMAIS
-Source documentaire canonique : corpus `main/rave/` sur GitHub. Pour RCL0193ENG : `main/rave/xn/wmxn990e.pdf`, SHA-256 `c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715`, 372 pages.
-
-Un lot/page RAVE n'est complet que si tous les elements applicables suivants sont conserves :
-1. texte source integral et localisation exacte document/page/figure ;
-2. connaissances structurees : faits, valeurs, couples, reglages, warnings, cautions, notes, outils, consommables/remplacements ;
-3. procedures entierement structurees, ordre constructeur conserve, etapes numerotees, prealables, outils, warnings, consommables, pieces a remplacer, post-controles et specifications reliees ;
-4. tableaux structures en lignes/colonnes/cellules avec valeurs et unites, tout en conservant aussi leur preuve visuelle ;
-5. portee explicite vehicule/moteur/variante/marche/annee/transmission/induction/VIN lorsqu'elle est presente dans la source ; NULL reste inconnu et ne signifie jamais ANY ; aucune portee ne doit etre inventee ;
-6. tous les supports visuels utiles : schemas, figures, vues, pages, tableaux graphiques et illustrations, stockes comme assets locaux reels avec chemin, SHA-256, dimensions et liaison aux connaissances ;
-7. provenance et niveau de preuve conserves pour toute information.
-
-Si un type d'information utile ne rentre pas dans le schema courant, la chaine doit ajouter de maniere additive la table/relation/champ/index necessaire au lieu d'abandonner l'information.
-
-### REGLE UNIQUE POUR LES TEXTES DANS LES IMAGES - NUMEROS + LEGENDE TRADUITE DANS L'IMAGE
-Une seule methode d'affichage est autorisee afin d'eviter deux chemins de rendu et les regressions :
-- conserver l'image constructeur originale intacte comme preuve ;
-- detecter les zones de texte humain a traduire a partir des coordonnees PDF lorsque disponibles ;
-- ne jamais masquer/modifier les ancres techniques immuables : numeros de repere constructeur, references Rover/outils, valeurs, unites, dimensions, connecteurs, numeros de procedure, fleches et geometrie ;
-- chaque zone de texte humain recoit une cle stable, par exemple `RCL0193ENG_P213_T01`, et un numero visuel 1, 2, 3... ;
-- dans l'image presentee a l'utilisateur, le texte humain original est masque et remplace par son numero ;
-- une zone de legende fait partie du meme rendu image et affiche `1. texte traduit`, `2. texte traduit`, etc. dans la langue active ; la legende n'est donc pas une liste separee hors image ;
-- l'image source n'est stockee qu'une fois ; le rendu local compose image + masques numerotes + legende selon la locale active ;
-- les textes de zones sont stockes par locale et en Unicode.
-
-Locales actuellement prevues/presentes : francais `fr`, anglais `en`, espagnol `es`, italien `it`, portugais `pt`, allemand `de`. L'architecture doit accepter sans refonte les futures locales, notamment japonais `ja`, chinois `zh` et langues de l'Inde (par exemple hindi `hi`), ainsi que d'autres scripts Unicode.
-
-### AUTOMATISATION GITHUB OBLIGATOIRE
-La methode cible doit etre automatisee dans GitHub Actions autant que possible :
-- verification SHA/taille/page-count du PDF source ;
-- extraction texte + coordonnees PDF ;
-- rendu des pages/assets ;
-- detection/classification page : blank, text, visual, table, procedure, mixed ;
-- detection des zones de texte humain et generation des masques/cles numerotees ;
-- extraction des tableaux ;
-- extraction et structuration des procedures et etapes ;
-- extraction des portees explicites ;
-- generation SQL/QZ64/audit/assets ;
-- garde de completude par page ;
-- double application SQLite/idempotence, integrity_check, foreign_key_check et roundtrip QZ64->SQL ;
-- controle du perimetre et de `MEMSX64` ;
-- aucune page utile ne peut etre marquee complete si un element applicable manque.
-
-Si l'automatisation n'est pas certaine (tableau ambigu, zone graphique complexe, portee douteuse, procedure mal segmentee), la page doit passer en `needs_review`; elle est alors verifiee/corrigee page par page. Il est interdit de supprimer silencieusement un element difficile a extraire uniquement pour faire passer le lot.
-
-### REPRISE OBLIGATOIRE AVANT DE CONTINUER RAVE
-Reprendre les derniers lots traites avec la methode incomplete : RCL0193ENG pages physiques **193-234** (`MANUAL GEARBOX`, `DRIVE SHAFTS`, `STEERING`, `SUSPENSION`). Ne pas poursuivre p235 `BRAKES` avant que cette reprise ne dispose du nouveau garde de completude.
-
-Pour chaque page utile p193-234, re-auditer et completer au minimum : asset visuel reel, zones/masques de traduction, tableaux structures, procedures structurees et portee explicite. Conserver les donnees textuelles deja exactes et ne refaire que ce qui est necessaire, mais la validation finale doit porter sur le contenu complet.
-
-### PROCHAINE ACTION EXACTE
-Construire et valider une fonction/pipeline GitHub reproductible sur le premier bloc de reprise p193-202. Le pilote est valide uniquement s'il produit des assets visuels reels + masque numerote + donnees de traduction, structure les tableaux/procedures/portees applicables, conserve le texte source integral et passe tous les gardes SQLite/perimetre. Une fois le pilote conforme, reutiliser exactement la meme fonction sur p203-210, p211-226 et p227-234, puis seulement reprendre p235 `BRAKES`.
-EOF
+          echo 'CiMjIDIwMjYtMDgtMzEgLSBSRUdMRSBSQVZFIENPTVBMRVRFIFVUSUxJU0FURVVSIEZJTkFMIC0gQ09SUkVDVElPTiBERSBNRVRIT0RFCgojIyMgQ09SUkVDVElPTiBERSBDT05USU5VSVRFIERVIFJBUFBPUlQKTGEgcmVnbGUgbWFpdHJlIHJlc3RlIGFic29sdWUgOiBgUkFQUE9SVF9TVUlWSV9FQ1VfTUVNU19NQU5BR0VSLm1kYCBlc3QgbCd1bmlxdWUgcmFwcG9ydCBkZSBjb250aW51aXRlLiBMZXMgZGVybmllcnMgY2hlY2twb2ludHMgUkFWRSBwMTkzLTIyNiBhdmFpZW50IGF1c3NpIGV0ZSBlY3JpdHMgZGFucyBgUkFQUE9SVF9SQVZFX0VYRUNVVElPTl9GSUFCTEUubWRgOyBjZSBmaWNoaWVyIHNlcGFyZSBuZSBkb2l0IHBsdXMgZXRyZSB1dGlsaXNlIGNvbW1lIGpvdXJuYWwgY291cmFudC4gTGVzIGluZm9ybWF0aW9ucyBpbmRpc3BlbnNhYmxlcyBzb250IHJlcHJpc2VzIGljaSBldCB0b3V0ZSBmdXR1cmUgY2hhaW5lIFJBVkUgZG9pdCBqb3VybmFsaXNlciBjZSByYXBwb3J0IG1haXRyZSBhdmFudC9hcHJlcyB0cmFpdGVtZW50LgoKIyMjIENPTlNUQVQgQSBDT1JSSUdFUgpMZXMgbG90cyBSQ0wwMTkzRU5HIHJlY2VudHMgcHJvZHVpdHMgcGFyIGxhIG1ldGhvZGUgZGlyZWN0ZSBHaXRIdWIgb250IGNvcnJlY3RlbWVudCBjb25zZXJ2ZSBsZSB0ZXh0ZSBzb3VyY2UgaW50ZWdyYWwgZXQgZGUgbm9tYnJldXNlcyB2YWxldXJzL2ZhaXRzL291dGlscy93YXJuaW5ncywgbWFpcyB1biBgdmlzdWFsX2NhbmRpZGF0ZWAgbmUgZ2FyYW50aXQgcGFzIHVuIGFzc2V0IGltYWdlIHJlZWwgZXhwbG9pdGFibGUuIExlIGNhaGllciBkZXMgY2hhcmdlcyB1dGlsaXNhdGV1ciBleGlnZSBkYXZhbnRhZ2UgOiBsJ2ltYWdlLCBsZSB0YWJsZWF1LCBsYSBwcm9jZWR1cmUgY29tcGxldGUgZXQgbGEgcG9ydGVlIHZlaGljdWxlL21vdGV1ciBmb250IHBhcnRpZSBpbnRlZ3JhbnRlIGRlIGwnaW5mb3JtYXRpb24gZmluYWxlLgoKTGEgYnJhbmNoZSB0ZWNobmlxdWUgYHRtcC1yYXZlLWNvbXBsZXRlLW11bHRpbGluZ3VhbC1iYWNrZmlsbGAgZXN0IGFjdHVlbGxlbWVudCBhdSBjb21taXQgYDRiY2UxMmY0NTg0ZDFhNWE3ZDNmYzc5ODIyMWZhMWVhOWI0YmQ4ODlgIGFwcmVzIGxlIGxvdCBwMjI3LTIzNC4gQ2UgSEVBRCBldCBsZXMgbG90cyBwMTkzLTIzNCBuZSBzb250IGRvbmMgUEFTIGNvbnNpZGVyZXMgY29tcGxldHMgYXUgc2VucyBkdSBub3V2ZWF1IGdhcmRlIHRhbnQgcXVlIGxlcyBzdXBwb3J0cyB2aXN1ZWxzIHJlZWxzLCB0YWJsZWF1eCwgcHJvY2VkdXJlcyBldCBwb3J0ZWVzIGFwcGxpY2FibGVzIG4nb250IHBhcyBldGUgcmVwcmlzIGV0IHZhbGlkZXMuIGBNRU1TWDY0YCByZXN0ZSBzdHJpY3RlbWVudCBwcm90ZWdlIHN1ciBCVUlMRCAjMTAzIGAxZDYzMTZiZDE3NDZkNmYyYjRjZmI3NTFjYWI4OGQxOGUyN2VmNzMwYC4KCiMjIyBNRVRIT0RFIENBTk9OSVFVRSBSQVZFIEEgVVRJTElTRVIgREVTT1JNQUlTClNvdXJjZSBkb2N1bWVudGFpcmUgY2Fub25pcXVlIDogY29ycHVzIGBtYWluL3JhdmUvYCBzdXIgR2l0SHViLiBQb3VyIFJDTDAxOTNFTkcgOiBgbWFpbi9yYXZlL3huL3dteG45OTBlLnBkZmAsIFNIQS0yNTYgYGMwNTBhM2VlYmU1MGM1YTg1YmY4YTY5Yjc3MjJiZDIwNTIwNzk5NDRlMDlkNTg1NzhhNDk4OTg0ZWNmMDY3MTVgLCAzNzIgcGFnZXMuCgpVbiBsb3QvcGFnZSBSQVZFIG4nZXN0IGNvbXBsZXQgcXVlIHNpIHRvdXMgbGVzIGVsZW1lbnRzIGFwcGxpY2FibGVzIHN1aXZhbnRzIHNvbnQgY29uc2VydmVzIDoKMS4gdGV4dGUgc291cmNlIGludGVncmFsIGV0IGxvY2FsaXNhdGlvbiBleGFjdGUgZG9jdW1lbnQvcGFnZS9maWd1cmUgOwoyLiBjb25uYWlzc2FuY2VzIHN0cnVjdHVyZWVzIDogZmFpdHMsIHZhbGV1cnMsIGNvdXBsZXMsIHJlZ2xhZ2VzLCB3YXJuaW5ncywgY2F1dGlvbnMsIG5vdGVzLCBvdXRpbHMsIGNvbnNvbW1hYmxlcy9yZW1wbGFjZW1lbnRzIDsKMy4gcHJvY2VkdXJlcyBlbnRpZXJlbWVudCBzdHJ1Y3R1cmVlcywgb3JkcmUgY29uc3RydWN0ZXVyIGNvbnNlcnZlLCBldGFwZXMgbnVtZXJvdGVlcywgcHJlYWxhYmxlcywgb3V0aWxzLCB3YXJuaW5ncywgY29uc29tbWFibGVzLCBwaWVjZXMgYSByZW1wbGFjZXIsIHBvc3QtY29udHJvbGVzIGV0IHNwZWNpZmljYXRpb25zIHJlbGllZXMgOwo0LiB0YWJsZWF1eCBzdHJ1Y3R1cmVzIGVuIGxpZ25lcy9jb2xvbm5lcy9jZWxsdWxlcyBhdmVjIHZhbGV1cnMgZXQgdW5pdGVzLCB0b3V0IGVuIGNvbnNlcnZhbnQgYXVzc2kgbGV1ciBwcmV1dmUgdmlzdWVsbGUgOwo1LiBwb3J0ZWUgZXhwbGljaXRlIHZlaGljdWxlL21vdGV1ci92YXJpYW50ZS9tYXJjaGUvYW5uZWUvdHJhbnNtaXNzaW9uL2luZHVjdGlvbi9WSU4gbG9yc3F1J2VsbGUgZXN0IHByZXNlbnRlIGRhbnMgbGEgc291cmNlIDsgTlVMTCByZXN0ZSBpbmNvbm51IGV0IG5lIHNpZ25pZmllIGphbWFpcyBBTlkgOyBhdWN1bmUgcG9ydGVlIG5lIGRvaXQgZXRyZSBpbnZlbnRlZSA7CjYuIHRvdXMgbGVzIHN1cHBvcnRzIHZpc3VlbHMgdXRpbGVzIDogc2NoZW1hcywgZmlndXJlcywgdnVlcywgcGFnZXMsIHRhYmxlYXV4IGdyYXBoaXF1ZXMgZXQgaWxsdXN0cmF0aW9ucywgc3RvY2tlcyBjb21tZSBhc3NldHMgbG9jYXV4IHJlZWxzIGF2ZWMgY2hlbWluLCBTSEEtMjU2LCBkaW1lbnNpb25zIGV0IGxpYWlzb24gYXV4IGNvbm5haXNzYW5jZXMgOwo3LiBwcm92ZW5hbmNlIGV0IG5pdmVhdSBkZSBwcmV1dmUgY29uc2VydmVzIHBvdXIgdG91dGUgaW5mb3JtYXRpb24uCgpTaSB1biB0eXBlIGQnaW5mb3JtYXRpb24gdXRpbGUgbmUgcmVudHJlIHBhcyBkYW5zIGxlIHNjaGVtYSBjb3VyYW50LCBsYSBjaGFpbmUgZG9pdCBham91dGVyIGRlIG1hbmllcmUgYWRkaXRpdmUgbGEgdGFibGUvcmVsYXRpb24vY2hhbXAvaW5kZXggbmVjZXNzYWlyZSBhdSBsaWV1IGQnYWJhbmRvbm5lciBsJ2luZm9ybWF0aW9uLgoKIyMjIFJFR0xFIFVOSVFVRSBQT1VSIExFUyBURVhURVMgREFOUyBMRSBJTUFHRVMgLSBOVU1FUk9TICsgTEVHRU5ERSBUUkFEVUlURSBEQU5TIExJTUFHRQpVbmUgc2V1bGUgbWV0aG9kZSBkJ2FmZmljaGFnZSBlc3QgYXV0b3Jpc2VlIGFmaW4gZCdldml0ZXIgZGV1eCBjaGVtaW5zIGRlIHJlbmR1IGV0IGxlcyByZWdyZXNzaW9ucyA6Ci0gY29uc2VydmVyIGwnaW1hZ2UgY29uc3RydWN0ZXVyIG9yaWdpbmFsZSBpbnRhY3RlIGNvbW1lIHByZXV2ZSA7Ci0gZGV0ZWN0ZXIgbGVzIHpvbmVzIGRlIHRleHRlIGh1bWFpbiBhIHRyYWR1aXJlIGEgcGFydGlyIGRlcyBjb29yZG9ubmVlcyBQREYgbG9yc3F1ZSBkaXNwb25pYmxlcyA7Ci0gbmUgamFtYWlzIG1hc3F1ZXIvbW9kaWZpZXIgbGVzIGFuY3JlcyB0ZWNobmlxdWVzIGltbXVhYmxlcyA6IG51bWVyb3MgZGUgcmVwZXJlIGNvbnN0cnVjdGV1ciwgcmVmZXJlbmNlcyBSb3Zlci9vdXRpbHMsIHZhbGV1cnMsIHVuaXRlcywgZGltZW5zaW9ucywgY29ubmVjdGV1cnMsIG51bWVyb3MgZGUgcHJvY2VkdXJlLCBmbGVjaGVzIGV0IGdlb21ldHJpZSA7Ci0gY2hhcXVlIHpvbmUgZGUgdGV4dGUgaHVtYWluIHJlY29pdCB1bmUgY2xlIHN0YWJsZSwgcGFyIGV4ZW1wbGUgYFJDTDAxOTNFTkdfUDIxM19UMDFgLCBldCB1biBudW1lcm8gdmlzdWVsIDEsIDIsIDMuLi4gOwotIGRhbnMgbCdpbWFnZSBwcmVzZW50ZWUgYSBsJ3V0aWxpc2F0ZXVyLCBsZSB0ZXh0ZSBodW1haW4gb3JpZ2luYWwgZXN0IG1hc3F1ZSBldCByZW1wbGFjZSBwYXIgc29uIG51bWVybyA7Ci0gdW5lIHpvbmUgZGUgbGVnZW5kZSBmYWl0IHBhcnRpZSBkdSBtZW1lIHJlbmR1IGltYWdlIGV0IGFmZmljaGUgYDEuIHRleHRlIHRyYWR1aXRgLCBgMi4gdGV4dGUgdHJhZHVpdGAsIGV0Yy4gZGFucyBsYSBsYW5ndWUgYWN0aXZlIDsgbGEgbGVnZW5kZSBuJ2VzdCBkb25jIHBhcyB1bmUgbGlzdGUgc2VwYXJlZSBob3JzIGltYWdlIDsKLSBsJ2ltYWdlIHNvdXJjZSBuJ2VzdCBzdG9ja2VlIHF1J3VuZSBmb2lzIDsgbGUgcmVuZHUgbG9jYWwgY29tcG9zZSBpbWFnZSArIG1hc3F1ZXMgbnVtZXJvdGVzICsgbGVnZW5kZSBzZWxvbiBsYSBsb2NhbGUgYWN0aXZlIDsKLSBsZXMgdGV4dGVzIGRlIHpvbmVzIHNvbnQgc3RvY2tlcyBwYXIgbG9jYWxlIGV0IGVuIFVuaWNvZGUuCgpMb2NhbGVzIGFjdHVlbGxlbWVudCBwcmV2dWVzL3ByZXNlbnRlcyA6IGZyYW5jYWlzIGBmcmAsIGFuZ2xhaXMgYGVuYCwgZXNwYWdub2wgYGVzYCwgaXRhbGllbiBgaXRgLCBwb3J0dWdYWlzIGBwdGAsIGFsbGVtYW5kIGBkZWAuIEwnYXJjaGl0ZWN0dXJlIGRvaXQgYWNjZXB0ZXIgc2FucyByZWZvbnRlIGxlcyBmdXR1cmVzIGxvY2FsZXMsIG5vdGFtbWVudCBqYXBvbmFpcyBgamFgLCBjaGlub2lzIGB6aGAgZXQgbGFuZ3VlcyBkZSBsJ0luZGUgKHBhciBleGVtcGxlIGhpbmRpIGBoaWApLCBhaW5zaSBxdWUgZCdhdXRyZXMgc2NyaXB0cyBVbmljb2RlLgoKIyMjIEFVVE9NQVRJU0FUSU9OIEdJVEhVQiBPQkxJR0FUT0lSRQpMYSBtZXRob2RlIGNpYmxlIGRvaXQgZXRyZSBhdXRvbWF0aXNlZSBkYW5zIEdpdEh1YiBBY3Rpb25zIGF1dGFudCBxdWUgcG9zc2libGUgOgotIHZlcmlmaWNhdGlvbiBTSEEvdGFpbGxlL3BhZ2UtY291bnQgZHUgUERGIHNvdXJjZSA7Ci0gZXh0cmFjdGlvbiB0ZXh0ZSArIGNvb3Jkb25uZWVzIFBERiA7Ci0gcmVuZHUgZGVzIHBhZ2VzL2Fzc2V0cyA7Ci0gZGV0ZWN0aW9uL2NsYXNzaWZpY2F0aW9uIHBhZ2UgOiBibGFuaywgdGV4dCwgdmlzdWFsLCB0YWJsZSwgcHJvY2VkdXJlLCBtaXhlZCA7Ci0gZGV0ZWN0aW9uIGRlcyB6b25lcyBkZSB0ZXh0ZSBodW1haW4gZXQgZ2VuZXJhdGlvbiBkZXMgbWFzcXVlcy9jbGVzIG51bWVyb3RlZXMgOwotIGV4dHJhY3Rpb24gZGVzIHRhYmxlYXV4IDsKLSBleHRyYWN0aW9uIGV0IHN0cnVjdHVyYXRpb24gZGVzIHByb2NlZHVyZXMgZXQgZXRhcGVzIDsKLSBleHRyYWN0aW9uIGRlcyBwb3J0ZWVzIGV4cGxpY2l0ZXMgOwotIGdlbmVyYXRpb24gU1FML1FaNjQvYXVkaXQvYXNzZXRzIDsKLSBnYXJkZSBkZSBjb21wbGV0dWRlIHBhciBwYWdlIDsKLSBkb3VibGUgYXBwbGljYXRpb24gU1FMaXRlL2lkZW1wb3RlbmNlLCBpbnRlZ3JpdHlfY2hlY2ssIGZvcmVpZ25fa2V5X2NoZWNrIGV0IHJvdW5kdHJpcCBRWjY0LT5TUUwgOwotIGNvbnRyb2xlIGR1IHBlcmltZXRyZSBldCBkZSBgTUVNU1g2NGAgOwotIGF1Y3VuZSBwYWdlIHV0aWxlIG5lIHBldXQgZXRyZSBtYXJxdWVlIGNvbXBsZXRlIHNpIHVuIGVsZW1lbnQgYXBwbGljYWJsZSBtYW5xdWUuCgpTaSBsJ2F1dG9tYXRpc2F0aW9uIG4nZXN0IHBhcyBjZXJ0YWluZSAodGFibGVhdSBhbWJpZ3UsIHpvbmUgZ3JhcGhpcXVlIGNvbXBsZXhlLCBwb3J0ZWUgZG91dGV1c2UsIHByb2NlZHVyZSBtYWwgc2VnbWVudGVlKSwgbGEgcGFnZSBkb2l0IHBhc3NlciBlbiBgbmVlZHNfcmV2aWV3YDsgZWxsZSBlc3QgYWxvcnMgdmVyaWZpZWUvY29ycmlnZWUgcGFnZSBwYXIgcGFnZS4gSWwgZXN0IGludGVyZGl0IGRlIHN1cHByaW1lciBzaWxlbmNpZXVzZW1lbnQgdW4gZWxlbWVudCBkaWZmaWNpbGUgYSBleHRyYWlyZSB1bmlxdWVtZW50IHBvdXIgZmFpcmUgcGFzc2VyIGxlIGxvdC4KCiMjIyBSRVBSSVNFIE9CTElHQVRPSVJFIEFWQU5UIERFIENPTlRJTlVFUiBSQVZFClJlcHJlbmRyZSBsZXMgZGVybmllcnMgbG90cyB0cmFpdGVzIGF2ZWMgbGEgbWV0aG9kZSBpbmNvbXBsZXRlIDogUkNMMDE5M0VORyBwYWdlcyBwaHlzaXF1ZXMgKioxOTMtMjM0KiogKGBNQU5VQUwgR0VBUkJPWGAsIGBEUklWRSBTSEFGVFNgLCBgU1RFRVJJTkdnLCBgU1VTUEVOU0lPTmApLiBOZSBwYXMgcG91cnN1aXZyZSBwMjM1IGBCUkFLRVNgIGF2YW50IHF1ZSBjZXR0ZSByZXByaXNlIG5lIGRpc3Bvc2UgZHUgbm91dmVhdSBnYXJkZSBkZSBjb21wbGV0dWRlLgoKUG91ciBjaGFxdWUgcGFnZSB1dGlsZSBwMTkzLTIzNCwgcmUtYXVkaXRlciBldCBjb21wbGV0ZXIgYXUgbWluaW11bSA6IGFzc2V0IHZpc3VlbCByZWVsLCB6b25lcy9tYXNxdWVzIGRlIHRyYWR1Y3Rpb24sIHRhYmxlYXV4IHN0cnVjdHVyZXMsIHByb2NlZHVyZXMgc3RydWN0dXJlZXMgZXQgcG9ydGVlIGV4cGxpY2l0ZS4gQ29uc2VydmVyIGxlcyBkb25uZWVzIHRleHR1ZWxsZXMgZGVqYSBleGFjdGVzIGV0IG5lIHJlZmFpcmUgcXVlIGNlIHF1aSBlc3QgbmVjZXNzYWlyZSwgbWFpcyBsYSB2YWxpZGF0aW9uIGZpbmFsZSBkb2l0IHBvcnRlciBzdXIgbGUgY29udGVudSBjb21wbGV0LgoKIyMjIFBST0NIQUlORSBBQ1RJT04gRVhBQ1RFCkNvbnN0cnVpcmUgZXQgdmFsaWRlciB1bmUgZm9uY3Rpb24vcGlwZWxpbmUgR2l0SHViIHJlcHJvZHVjdGlibGUgc3VyIGxlIHByZW1pZXIgYmxvYyBkZSByZXByaXNlIHAxOTMtMjAyLiBMZSBwaWxvdGUgZXN0IHZhbGlkZSB1bmlxdWVtZW50IHMnaWwgcHJvZHVpdCBkZXMgYXNzZXRzIHZpc3VlbHMgcmVlbHMgKyBtYXNxdWUgbnVtZXJvdGUgKyBkb25uZWVzIGRlIHRyYWR1Y3Rpb24sIHN0cnVjdHVyZSBsZXMgdGFibGVhdXgvcHJvY2VkdXJlcy9wb3J0ZWVzIGFwcGxpY2FibGVzLCBjb25zZXJ2ZSBsZSB0ZXh0ZSBzb3VyY2UgaW50ZWdyYWwgZXQgcGFzc2UgdG91cyBsZXMgZ2FyZGVzIFNRTGl0ZS9wZXJpbWV0cmUuIFVuZSBmb2lzIGxlIHBpbG90ZSBjb25mb3JtZSwgcmV1dGlsaXNlciBleGFjdGVtZW50IGxhIG1lbWUgZm9uY3Rpb24gc3VyIHAyMDMtMjEwLCBwMjExLTIyNiBldCBwMjI3LTIzNCwgcHVpcyBzZXVsZW1lbnQgcmVwcmVuZHJlIHAyMzUgYEJSQUtFU2AuCg==' | base64 -d >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
           rm -f .github/workflows/temp-rave-master-report-method.yml
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md .github/workflows/temp-rave-master-report-method.yml
-          git commit -m "Record canonical complete RAVE extraction method"
+          git commit -m 'Record canonical complete RAVE extraction method'
           git push origin RAPPORT
