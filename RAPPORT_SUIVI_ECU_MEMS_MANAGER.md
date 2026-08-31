@@ -8385,3 +8385,87 @@ Controle immediat du transport : les cinq blobs temporaires distants (4 fragment
 Diagnostic reproduit localement : le generateur reconstruit deterministiquement le SQL et le QZ64 finaux, mais son audit brut conserve le placeholder `{{VALIDATION_BLOCK}}` (etat avant insertion des resultats de validation), tandis que l'audit final certifie de 5 644 octets contient ce bloc complete. Le `cmp` place dans le premier helper comparait ces deux etats distincts et devait donc echouer. Il s'agit d'une erreur du helper de transport, pas d'un echec du contenu SQL/QZ64 ni du schema.
 
 PROCHAINE ACTION EXACTE : corriger uniquement le workflow temporaire pour utiliser l'audit final certifie transporte (SHA-256 `576b14c9d7a162baa32aceea83d9ea2b80abc7b423647912109a902c5d686bbb`) au lieu de comparer cet audit a l'audit brut du generateur. Conserver tous les autres gardes : SHA du generateur, hashes/taille des trois fichiers, round-trip QZ64, double application SQLite, 50/50 pages et perimetre final strictement limite aux trois fichiers. `MEMSX64` reste BUILD #103 ; aucune modification protocole/ECU/UI/IA/ONNX.
+
+
+## 2026-08-31 - RCL0193ENG PAGES 1-50 - VALIDATION FINALE, SQUASH ET SAFE FEEDKPOINT
+
+Le lot RCL0193ENG pages physiques 1-50 est maintenant valide et nettoye sur `tmp-rave-complete-multilingual-backfill`.
+
+### VALIDATION GITHUB ACTIONS
+
+- Workflow temporaire : `TEMP RCL0193ENG P001-050 INSTALL`.
+- Run de validation final : `33372611771`.
+- Job : `99426904133`.
+- Conclusion : **SUCCESS**.
+- Toutes les etapes ont passe : reconstruction exacte du candidat, verification des octets et du round-trip QZM, double validation SQLite/idempotence, puis garde de perimetre final.
+- Le premier run `33372384609` reste consigne comme echec de helper uniquement ; aucune donnee finale erronee n'avait ete installee.
+
+### CONTENU FINAL VALIDE
+
+Source exacte :
+- `rave/xn/wmxn990e.pdf`
+- RCL0193ENG Mini Workshop Manual, 5th Edition
+- 4 744 911 octets
+- 372 pages physiques
+- SHA-256 `c050a3ee92e7ae867146b7e9d32ccbb1afd533a5d69b800677eef44295f06715`
+
+Fichiers finaux :
+- `database/reference/prototypes/rcl0193eng_p001_050_multilingual_v1.sql` — 488 301 octets — SHA-256 `771c9ca0a4a2e0b428f702d2492356a87295a9d5652e946599666ceb73acf897`
+- `database/reference/prototypes/rcl0193eng_p001_050_multilingual_v1.qz64` — 22 757 octets — SHA-256 `f62cd980030a4b3e2b6b072001731ffdb12c449693edc08bce4b84777c8ad45`
+- `database/reference/audits/RCL0193ENG_P001_050_MULTILINGUAL_BACKFILL_V1.md` — 5 644 octets — SHA-256 `576b14c9d7a162baa32aceea83d9ea2b80abc7b423647912109a902c5d686bbb`
+
+Validation SQLite finale :
+- 50/50 unites de page
+- 244 entites
+- 285 textes source anglais
+- 2 tableaux
+- 196 cellules
+- 8 valeurs
+- 3 relations
+- `PRAGMA integrity_check = ok`
+- `PRAGMA foreign_key_check = 0`
+- `PRAGMA user_version = 21`
+- seconde application sans doublon
+- pages physiques exactement 1..50
+- QZ64 redecompresse identique au SQL byte pour byte
+- `manifest.json` inchange
+
+### NETTOYAGE ET SQUASH
+
+Le workflow valide avait produit le commit `1f7699657ecb1e1fe1356a6cfe02c8589ae41546` avec le tree final valide `b5b00dec014a96c25273411c9bad2204f393bb99`.
+
+Les commits temporaires de transport ont ensuite ete squashes sans modifier le tree. La branche pointe maintenant sur le commit propre :
+
+`93987d10522007aa399ba466d187bbaff7fd0e70`
+
+Parent direct : `f660a744bc8a0e991492b42a5f334ab59f949156`.
+
+Controle compare apres squash :
+- `ahead_by = 1`
+- `behind_by = 0`
+- `total_commits = 1`
+- exactement 3 fichiers ajoutes :
+  1. `database/reference/audits/RCL0193ENG_P001_050_MULTILINGUAL_BACKFILL_V1.md`
+  2. `database/reference/prototypes/rcl0193eng_p001_050_multilingual_v1.qz64`
+  3. `database/reference/prototypes/rcl0193eng_p001_050_multilingual_v1.sql`
+
+Le helper temporaire `.github/workflows/temp-rcl0193eng-p001-050-install.yml` et le dossier `.github/rcl0193eng-transfer` sont absents du tree final.
+
+### SAFE CHECKPOINT
+
+`SADE CHECKPOINT = YES`
+
+- branche : `tmp-rave-complete-multilingual-backfill`
+- commit : `93987d10522007aa399ba466d187bbaff7fd0e70`
+- source PDF SHA-256 : `c050a3ee92e7ae867146b7e9d32ccbb1afd533a5d69b800677eef44295f06715`
+- lot : RCL0193ENG pages physiques 1-50
+- validations : GitHub Actions SUCCESS + hashes + QZ64 + SQLite + idempotence + diff exact
+- reprise possible sans dependance a la session precedente.
+
+Production protegee : `MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`. Aucun protocole, ECU, UI, IA ou ONNX n'a ete modifie.
+
+### PROCHAINE ACTION EXACTE
+
+Traiter le lot suivant **RCL0193ENG pages physiques 51-96 — section ENGINE**. Extraire toutes les informations utiles a l'utilisateur : specifications, couples, procedures moteur, controles, reglages, dimensions/tolerances, fluides, depose/repose et visuels techniques utiles. Comparer systematiquement avec BUILD #103 et les donnees RCL0193FRE deja structurees afin de classer `already_covered` versus contenu manquant, sans duplication aveugle.
+
+Avant toute nouvelle pousse technique, inscrire le journal AVANT POUSSE lce correspondant dans ce rapport. `MEMSX64` reste BUILD #103.
