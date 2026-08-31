@@ -8522,3 +8522,61 @@ Validation obligatoire avant commit final :
 Le precedent `SAFE CHECKPOINT = YES` du lot 1-50 est temporairement **SUSPENDU** jusqu'a validation et relecture distante de cette correction de provenance. La branche production `MEMSX64` reste BUILD #103.
 
 PROCHAINE ACTION EXACTE APRES CORRECTION VERTE : retablir `SADE CHECKPOINT = YES`, puis commencer RCL0193ENG pages physiques 51-96 (ENGINE).
+
+
+## 2026-08-31 - RCL0193ENG PAGES 1-50 - PROVENANCE CORRIGEE ET SAFE FEEDKPOINT RETABLI
+
+La correction de provenance detectee avant le lot 51-96 est terminee et validee.
+
+Validation GitHub Actions :
+- workflow `TEMP RCL0193ENG P001-050 PROVENANCE FIX`
+- run `33373776371`
+- job `99430512532`
+- conclusion **SUCCESS**
+- patch exact provenance : PASS
+- double validation SQLite/idempotence : PASS
+- garde de perimetre final : PASS
+
+Source utilisateur exacte :
+- `rave.zip` : 17 379 850 octets, SHA-256 `01ff169b6929955c7cef92b250026d34071d57ad44e3ebb2e71d98400ebdf1be`
+- `rave/xn/wmxn990e.pdf` : 4 744 911 octets, 372 pages, SHA-256 `c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715`
+
+Fichiers 1-50 corriges :
+- SQL : 488 301 octets, SHA-256 `a1d5d4d286d4c425ed83d4df667ffec2eaf0014f0d62f4463faba3c6024914dd`
+- QZ64 : 23 017 octets, SHA-256 `b8720f2c8f6d3718d829db757b00539de80da657a461f2dc407b69b4f9302f2e`
+- audit : 5 644 octets, SHA-256 `ab631da0fbd2d56fa48daecb8e8732dec5ffab86ec45b9911284063241056058`
+- `RAVE_SOURCE_REGISTRY_V1.md` : SHA archive `rave.zip` corrige uniquement ; la ligne 47 RCL0193ENG conservait deja le bon SHA PDF.
+
+Invariants apres double application :
+- 50 unites
+- 244 entites
+- 285 textes anglais
+- 2 tableaux
+- 196 cellules
+- 8 valeurs
+- 3 relations
+- `integrity_check=ok`
+- `foreign_key_check=0`
+- `user_version=21`
+- QZ64 -> SQL byte pour byte OK.
+
+Nettoyage final : le tree valide a ete resquashe directement au-dessus de `f660a744bc8a0e991492b42a5f334ab59f949156`.
+
+Commit technique propre final :
+`440880fca821bc316c0dffc311b28b1faf2eb25f`
+
+Controle compare :
+- ahead_by=1`
+- `behind_by=0`
+- `total_commits=1`
+- exactement 4 fichiers : modification d'une ligne du registre source + ajout SQL/QZ64/audit 1-50.
+
+`SAFE FEEDKPOINT = YES**
+
+Branche : `tmp-rave-complete-multilingual-backfill`
+Commit : `440880fca821bc316c0dffc311b28b1faf2eb25f`
+Source PDF SHA-256 : `c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715`
+
+Production protegee : `MEMSX64` reste BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+PROCHAINE ACTION EXACTE : traiter RCL0193ENG pages physiques 51-96, section ENGINE, avec extraction complete, comparaison BUILD #103 / RCL0193FRE, reutilisation des donnees deja couvertes et preparation d'un lot additif multilingue avant toute pousse.
