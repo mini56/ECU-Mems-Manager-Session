@@ -9109,3 +9109,71 @@ Production protegee : `MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4
 ### PROCHAINE ACTION EXACTE
 
 Ouvrir directement le PDF anglais a partir de la page physique **105** pour determiner le prochain bloc reel sans l'inferer depuis le manuel francais. Continuer l'extraction exhaustive de toute information utile a l'utilisateur final, avec comparaison RCL0193FRE/BUILD #103 pour deduplication intelligente mais jamais pour ecarter la couche source anglaise. Continuer aussi la preparation des visuels et de leurs textes/regions pour une architecture N-langues.
+
+
+## 2026-08-31 - RCL0193ENG PAGES 105-136 ENGINE MANAGEMENT SYSTEM - MEMS - JOURNAL AVANT POUSSE
+
+Reprise depuis le SAFE CHECKPOINT valide du lot 97-104 : branche `tmp-rave-complete-multilingual-backfill`, commit `5289684f0e85031ba7d86d0288a5e4e1bc726218`.
+
+### SOURCE ET PERIMETRE VERIFIES DIRECTEMENT
+
+Source anglaise exacte :
+- `rave/xn/wmxn990e.pdf`
+- RCL0193ENG Mini Workshop Manual, 5th Edition
+- 4 744 911 octets
+- 372 pages physiques
+- SHA-256 `c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715`
+
+Bloc confirme directement dans le PDF anglais :
+- pages physiques **105-136** = **ENGINE MANAGEMENT SYSTEM - MEMS** ;
+- p106 et p120 = **visuellement blanches** ;
+- p137 ouvre la section suivante `FUEL DELIVERY SYSTEM`.
+
+Correspondance francaise controlee par le rapport historique V5 du lot 1790 : **RCL0193ENG p105-136 <-> RCL0193FRE, p104-135**. Le lot `research_enrichment_1790.qz64`
+couvre deja la mecanique francaise de la gestion moteur MEMS et porte ce bloc MPi. `mems_family` reste volontairement NULL/UNKNOWN: aucune generation MEMS 1.6/1.9 n'est inventee. Le lot anglais conserve quand meme l'integralite du texte et des visuels utiles.
+
+### EXHAUSTIVITE UTILIS@TEUR FINAL
+
+Le candidat conserve :
+- **32/32** unites physiques ;
+- p106/p120 blanches, marquees sans contenu invente ;
+- texte source anglais integral des **30/30 pages non blanches** ;
+- candidats visuels de page : **30/30** ;
+- **20 numeros constructeur** conserves comme ancres inter-langues ;
+- **32 faits MEMS** structures ;
+- **37 valeurs** structurees ;
+- **29 avertissements/cautions/notes/exigences** ;
+- outil HO2S 22 mm conserve comme outillage, jamais comme specification vehicule ;
+- p107 figure `18M0222` : **14 reperes numeriques immuables + 14 libelles anglais localisables** ;
+- p112 schema/tableau ECM : **12 entrees + 10 sorties localisables**.
+
+Donnees MEMS remarquables conservees : CKP 32 poles espaces de 10 degres avec positions manquantes 30/60/210/250 degres ; limite normale citee 6500 rpm ; bobine primaire 0,63-0,77 ohm a 20 degC ; enrichissement demarrage sous environ 400 rev/min ; TP alimente en 5 V ; IACV 20-40 pas ; coupure deceleration >1600 rev/min ; coupure surregime environ 6500 rev/min ; relais principal environ 30 s apres coupure contact ; surveillance LDR au moins 2 min ; logique ventilateurs jusqu'a 8 min ; couples/jeux de reparation jusqu'a 55 N.m et bougies 0,85 mm.
+
+### ARCHITECTURE MULTILINGUE DES VISUELS
+
+Regle conservee : **un visuel constructeur source + ancres techniques immuables + textes localises separes**. Numeros de reperes, figure IDs, geometrie, fleches et acronymes techniques servant d'ancres ne sont pas traduits. Les titres, legendes, notes, cautions et explications sont attaches par locale. Le schema reste N-langues via `mems_doc_locale`, sans limite aux langues deja presentes.
+
+### CANDIDAT LOCAL VALIDE
+
+Fichiers exacts prepares :
+- `database/reference/prototypes/rcl0193eng_p105_136_multilingual_v1.sql` - **608 775 octets** - SHA-256 `f911ede3f5e8e1ab6400c8448dbb61304562af3336bd965bf6c970b761261a17` ;
+- `database/reference/prototypes/rcl0193eng_p105_136_multilingual_v1.qz64` - **42 385 octets** - SHA-256 `1d72492ec42b75b54a65b68d21b13afd2793ad77e8032e3f03713e77b22d1b7e` ;
+- `database/reference/audits/RCL0193ENG_P105_136_MULTILINGUAL_BACKFILL_V1.md` - **2 485 octets** - SHA-256 `1e217a97fbf0b1d513c38493ad24e00d40552bb506c0b4ad80b6b3bec0e53d74`.
+
+Validation locale depuis l'etat valide p1-104, puis application du lot 105-136 **deux fois** :
+- `PRAGMA integrity_check = ok` ;
+- `PRAGMA foreign_key_check = 0` ;
+- `PRAGMA user_version = 21` ;
+- pages exactes 105..136 presentes ;
+- 30 textes source non blancs ;
+- 20 operations constructeur ;
+- seconde application sans doublon ;
+- QZ64 -> SQL byte pour byte exact.
+
+### PERIMETRE DE POUSSE AUTORISE
+
+Uniquement les trois fichiers du lot 105-136 ci-dessus sur `tmp-rave-complete-multilingual-backfill`.
+
+Aucune modification de `manifest.json`, aucune table historique, aucun protocole/ECU/UI/IA/ONNX. `MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+PROCHAINE ACTION EXACTE : transporter le lot 105-136 par helper temporaire controle, verifier les SHA exacts, le roundtrip QZ64, SQLite applique deux fois, les invariants et le perimetre final, nettoyer tous les transports/workflows temporaires, committer uniquement les trois fichiers finaux, puis journaliser APRES POUSSE avant d'ouvrir la section anglaise suivante.
