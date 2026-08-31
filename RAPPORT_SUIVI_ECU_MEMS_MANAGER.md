@@ -10264,3 +10264,17 @@ Corriger uniquement le garde du script temporaire de `35` vers `34`, relancer le
 
 ### PROCHAINE ACTION EXACTE
 Identifier dans `tools/ravemems_test2_raster_text.py` le helper OCR existant et remplacer uniquement l'appel inexistant `ocr_words(rendered)` par l'appel correct, sans modifier le rendu ni les traductions. Relancer ensuite le meme TEST2 et inspecter manuellement l'artefact avant toute validation.
+
+
+## RAVEMEMS TEST2 - DIAGNOSTIC DU HELPER OCR APRES NAMEERROR
+
+- Inspection de `tools/ravemems_test2_raster_text.py` au HEAD pilote `9936c111e18bc01ec966346cdb43fc69c8fef2b5`.
+- Resultat : **aucun helper OCR reutilisable n'existe actuellement**.
+- L'OCR source est code directement dans `main()` avec `pytesseract.image_to_data(image, lang="eng", config="--psm 3", output_type=Output.DICT)`, filtre de confiance `>= 25` et construction de la liste `words`.
+- Le nouvel appel `ocr_words(rendered)` est donc un appel vers une fonction inexistante.
+- Correction propre retenue : factoriser exactement ce bloc OCR existant dans une fonction `ocr_words(image)` sans changer langue, PSM, seuil, champs ou ordre ; utiliser ensuite cette meme fonction pour l'image source et pour le garde de completude sur l'image localisee.
+- Aucun changement de traduction, bbox, geometrie, reference technique ou logique de rendu n'est autorise dans cette correction.
+- `MEMSX64` reste totalement inchange.
+
+### PROCHAINE ACTION EXACTE
+Pousser uniquement la factorisation OCR identique ci-dessus sur `tmp-rave-new-extraction-pilot`, compiler, relancer le meme TEST2 sur la page canonique, puis inspecter manuellement le PNG avant toute validation.
