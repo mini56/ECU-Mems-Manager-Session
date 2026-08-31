@@ -1,0 +1,31 @@
+{
+  "locale": "fr",
+  "page": 112,
+  "translations": {
+    "RCL0193ENG_P112_T01": "ENTRÉES",
+    "RCL0193ENG_P112_T02": "SORTIES",
+    "RCL0193ENG_P112_T03": "Capteur de position du vilebrequin",
+    "RCL0193ENG_P112_T04": "Capteur de position de l'arbre à cames",
+    "RCL0193ENG_P112_T05": "Électrovanne de purge",
+    "RCL0193ENG_P112_T06": "Capteur de pression absolue du collecteur",
+    "RCL0193ENG_P112_T07": "Bobine d'allumage",
+    "RCL0193ENG_P112_T08": "Capteur de température du liquide de refroidissement",
+    "RCL0193ENG_P112_T09": "Injecteurs",
+    "RCL0193ENG_P112_T10": "Capteur de température d'air d'admission",
+    "RCL0193ENG_P112_T11": "Vanne de régulation d'air de ralenti",
+    "RCL0193ENG_P112_T12": "Sonde lambda chauffée",
+    "RCL0193ENG_P112_T13": "ECM",
+    "RCL0193ENG_P112_T14": "Relais de pompe à carburant",
+    "RCL0193ENG_P112_T15": "Capteur de position du papillon",
+    "RCL0193ENG_P112_T16": "Connecteur de diagnostic",
+    "RCL0193ENG_P112_T17": "Entrée de diagnostic",
+    "RCL0193ENG_P112_T18": "Relais de sonde lambda chauffée",
+    "RCL0193ENG_P112_T19": "Alimentation batterie",
+    "RCL0193ENG_P112_T20": "Relais principal",
+    "RCL0193ENG_P112_T21": "Signal de démarreur",
+    "RCL0193ENG_P112_T22": "Ventilateurs de refroidissement",
+    "RCL0193ENG_P112_T23": "Masse",
+    "RCL0193ENG_P112_T24": "Climatisation",
+    "RCL0193ENG_P112_T25": "Unité de commande antivol"
+  }
+}
