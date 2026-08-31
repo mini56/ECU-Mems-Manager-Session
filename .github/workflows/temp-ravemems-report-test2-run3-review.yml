@@ -1,0 +1,22 @@
+name: TEMP RAVEMEMS REPORT TEST2 RUN3 REVIEW
+on: [push]
+permissions:
+  contents: write
+jobs:
+  append:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - run: python tools/temp_append_ravemems_test2_run3_review.py
+      - shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions-bot
+          git config user.email github-actions@users.noreply.github.com
+          git rm .github/workflows/temp-ravemems-report-test2-run3-review.yml .ravemems-run3-review-trigger tools/temp_append_ravemems_test2_run3_review.py
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Record TEST2 run 3 manual rejection"
+          git push origin HEAD:RAPPORT
