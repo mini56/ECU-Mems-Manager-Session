@@ -9534,3 +9534,21 @@ Uniquement les trois fichiers du lot 147-160 ci-dessus sur `tmp-rave-complete-mu
 Aucune modification de `manifest.json`, aucune table historique, aucun protocole/ECU/UI/IA/ONNX. `MEMSX64` a ete recontrole avant cette etape et reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
 
 PROCHAINE ACTION EXACTE : transporter le lot 147-160 par helper temporaire controle, verifier les SHA exacts et Git blobs, le roundtrip QZ64, reconstruire SQLite depuis le socle puis tous les lots anglais p1-160 avec application du nouveau lot deux fois, verifier les invariants et le perimetre final, nettoyer transports/workflow temporaires, committer uniquement les trois fichiers finaux, compacter l'historique de transport si necessaire, puis journaliser APRES POUSSE avant d'ouvrir p161 `MANIFOLD & EXHAUST SYSTEMS`.
+
+## 2026-08-31 - RCL0193ENG P147-160 - ECHEC CONTROLE TRANSPORT AVANT INSTALLATEUR
+
+Le transport temporaire du candidat `COOLING SYSTEM` a ete controle immediatement apres l'envoi des cinq blobs et **avant la creation de tout installateur**.
+
+Resultat : quatre blobs sont exacts, mais `qz64.part03` est incomplet a distance :
+- attendu local : **4525 octets**, SHA-256 `c58ea8a81e342b4743d25c221b8d37e1b96574c4af83a4927a1222c2720d1e17`, Git blob `2c7031f3129fca61036596aa31d5b037bde6eab2` ;
+- observe GitHub : **4417 octets**, Git blob `9f50e8763cf97c66195d975a4600d3942d9d6387`.
+
+Les autres fichiers sont conformes :
+- `qz64.part00` 5000 octets, blob `01caf253d71e48c9f75a7f54b1fc709533ed9112` ;
+- `qz64.part01` 5000 octets, blob `2f2de30fe22d56ab2323e929ec70e0197e57dbe8` ;
+- `qz64.part02` 5000 octets, blob `81b01d70cee092366afaa0cd4142864fe2a7a16d` ;
+- `audit.md` 3006 octets, blob `c354e5edebf83e2591c222cc30aeb71ef91ce61f`.
+
+**Aucun fichier final p147-160 n'a ete ecrit, aucun installateur n'a ete cree, aucune validation SQLite distante n'a ete lancee, et `MEMSX64` n'a pas ete touche.**
+
+Cause limitee au transport texte du dernier fragment. Prochaine action exacte : corriger uniquement `qz64.part03`, reverifier les cinq tailles/blobs distants, et ne creer l'installateur que si les cinq transports sont exacts.
