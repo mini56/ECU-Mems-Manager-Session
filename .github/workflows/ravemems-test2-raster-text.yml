@@ -1,0 +1,74 @@
+name: RAVEMEMS TEST2 raster embedded text
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - tmp-rave-new-extraction-pilot
+    paths:
+      - .ravemems-test2-trigger
+
+permissions:
+  contents: read
+
+jobs:
+  ravemems-test2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-new-extraction-pilot
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install TEST2 extraction dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng fonts-dejavu-core
+          python -m pip install --disable-pip-version-check PyMuPDF Pillow pytesseract
+
+      - name: Compile TEST2 extractor
+        run: python -m py_compile tools/ravemems_test2_raster_text.py
+
+      - name: Run RAVEMEMS TEST2 on canonical raster-only page
+        run: |
+          rm -rf ravemems_test2_output
+          python tools/ravemems_test2_raster_text.py \
+            --pdf rave/xn/cdxn990e.pdf \
+            --page 7 \
+            --translations .github/ravemems_test2_page7_fr.json \
+            --out ravemems_test2_output
+
+      - name: Show TEST2 manifest
+        if: always()
+        run: |
+          if [ -f ravemems_test2_output/manifest.json ]; then
+            cat ravemems_test2_output/manifest.json
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ravemems-test2-cdxn-page7-raster-text
+          path: ravemems_test2_output
+          if-no-files-found: error
+
+      - name: Enforce RAVEMEMS TEST2 gate
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('ravemems_test2_output/manifest.json')
+          m = json.loads(p.read_text(encoding='utf-8'))
+          if not m.get('pass'):
+              raise SystemExit('RAVEMEMS TEST2 did not pass')
+          required = m['gate']
+          bad = [k for k, v in required.items() if not v]
+          if bad:
+              raise SystemExit('Failed TEST2 gates: ' + ', '.join(bad))
+          print('RAVEMEMS_TEST2_PASS')
+          PY
