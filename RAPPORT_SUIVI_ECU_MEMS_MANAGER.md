@@ -8263,3 +8263,15 @@ REGLE DE SUITE : avant toute extraction massive, resoudre les documents sources 
 Source deja certifiee : AKM7169ENG exact, 482 pages, SHA-256 `c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0`. Preuve historique disponible pour RCL0193FRE : source exacte 371 pages, 67 009 217 octets, SHA-256 `0c7fef28d0d0f0673ba321d6625a019c005823103caa98afb3258114e1fec713`; le fichier exact doit maintenant etre resolu dans les sources deja fournies avant utilisation.
 
 PROCHAINE ACTION EXACTE : identifier sans re-upload inutile les sources exactes RCL0193FRE/RCL0193ENG, RCL0194ENG et AKM6348, verifier leur identite/page count/hash, puis creer le registre source et commencer le ledger page par page du premier document resolu.
+
+## 2026-08-31 - RAVE COMPLET MULTILINGUE - CORPUS SOURCE EXACT RECU ET REMAPPAGE RCL0193ENG
+
+Le fichier utilisateur `rave.zip` est maintenant la source exacte du corpus RAVE courant pour l'etape de reprise complete. Identite locale verifiee : 17 379 850 octets, SHA-256 `dd2536a7e2800779c08d94b3edc7bda73f1797b7870dfc15aafe043ed2e55e78`.
+
+Inventaire du ZIP : 47 PDF, 1 359 pages physiques au total. Les sources principales identifiees comprennent notamment `rave/xn/wmxn990e.pdf` = Mini Workshop Manual RCL0193ENG, 372 pages physiques ; `rave/xn/cdxn990e.pdf` = Mini Electrical Circuit Diagrams RCL0194ENG, 41 pages ; `rave/xn/elxn970e.pdf` = Mini Electrical Reference Library RCL0213ENG, 212 pages ; ainsi que maintenance, repair operation times, owner handbooks, TestBook et 34 Technical Bulletins Mini. Le perimetre reste la regle generale : tout contenu utile a l'utilisateur final, et non le seul ECU/MEMS.
+
+Controle important avant reutilisation des assets existants : les 26 images BUILD #103 `RCL0193ENG_PDF_*.png` ont ete comparees a l'ensemble des 372 pages de `wmxn990e.pdf` par similarite d'image normalisee. Les 26 correspondances sont univoques et montrent une regle constante : le token historique du nom de fichier est egal a `page physique - 1`. Exemple : `RCL0193ENG_PDF_098.png` correspond exactement a la page physique 99 (Emission Control/EVAP), alors que la page physique 98 est un separateur blanc. Il est donc interdit de deduire la page physique directement du nom historique.
+
+AVANT POUSSE : preparer sur `tmp-rave-complete-multilingual-backfill` un registre source avec chemin, pages, taille et SHA-256 des 47 PDF, un fichier de preuve de remappage des 26 assets RCL0193ENG et un ledger 372/372 pages de RCL0193ENG. Le ledger initial distingue contexte, contenu technique et pages separatrices ; aucune page ne sera declaree hors perimetre definitivement sans verification visuelle/documentaire.
+
+Aucune modification de `MEMSX64`, protocole, ECU, UI, IA ou ONNX. BUILD #103 reste la production protegee.
