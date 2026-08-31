@@ -17,10 +17,11 @@ Le corpus RAVE ne doit plus être redemandé ni rechargé dans ChatGPT. Toute g�
 
 ## État de reprise verrouillé
 - Branche technique : `tmp-rave-complete-multilingual-backfill`
-- SAFE CHECKPOINT courant : `932b442fe0185368eff0a78b6caa552b427b6bd8`
-- Parent direct : `f2ac8d5d7039d9d242b146882b4c29f25f2c468f`
-- Dernier lot validé : RCL0193ENG pages 193–202 `MANUAL GEARBOX`
-- Prochaine page : **203**, début `DRIVE SHAFTS`
+- SAFE CHECKPOINT courant : `686ecee774da47baafc65de3b7d30ed0b3eb8bc2`
+- Parent direct : `932b442fe0185368eff0a78b6caa552b427b6bd8`
+- Dernier lot validé : RCL0193ENG pages 203–210 `DRIVE SHAFTS`
+- Prochaine page : **211**, début `STEERING`
+- Frontière déjà vérifiée : **STEERING p211–226** ; p212 et p214 blanches ; p227 ouvre `SUSPENSION`
 - `MEMSX64` protégé : BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`
 
 ## Règle principale
@@ -63,7 +64,7 @@ Une seule régénération complète est préférable à une suite de patchs loca
 ## Règle de périmètre projet
 Le backfill RAVE ne doit modifier ni protocole, ni ECU, ni UI, ni IA, ni ONNX, ni `MEMSX64`, ni les tables historiques. Toute modification hors documentation RAVE fait échouer le lot.
 
-## 2026-08-31 — Validation de la méthode directe GitHub
+## 2026-08-31 — Validation de la méthode directe GitHub — p193–202
 
 ### Préflight direct
 - workflow : `TEMP RCL0193ENG P193-202 DIRECT PREFLIGHT`
@@ -117,7 +118,7 @@ Ces valeurs **supersèdent** les valeurs du candidat intermédiaire p193–202 j
 - 7 consommables/remplacements ;
 - architecture N-langues conservée ; outil Rover `18G 1383` et ancres techniques immuables.
 
-### SAFE CHECKPOINT APRÈS POUSSE
+### SAFE CHECKPOINT APRÈS POUSSE p193–202
 **SAFE CHECKPOINT = YES**
 
 - commit propre : `932b442fe0185368eff0a78b6caa552b427b6bd8`
@@ -127,10 +128,78 @@ Ces valeurs **supersèdent** les valeurs du candidat intermédiaire p193–202 j
 - diff final : exactement les trois fichiers documentaires p193–202
 - aucun helper/workflow/transport temporaire dans le tree final
 
-## PROCHAINE ACTION EXACTE
-Reprendre depuis le SAFE CHECKPOINT `932b442fe0185368eff0a78b6caa552b427b6bd8`.
+## 2026-08-31 — RCL0193ENG p203–210 DRIVE SHAFTS — VALIDATION DIRECTE
 
-Ouvrir RCL0193ENG page physique **203**, section `DRIVE SHAFTS`, depuis la source canonique `main/rave/xn/wmxn990e.pdf`. Déterminer automatiquement et visuellement la fin exacte de la section et les éventuelles pages blanches, comparer au bloc français correspondant uniquement pour la déduplication, extraire exhaustivement les données utiles et les visuels avec l’architecture N-langues, puis exécuter la même chaîne GitHub directe. À la première anomalie : arrêt + retour au SAFE CHECKPOINT, aucune chaîne de patchs. Ne toucher ni à `MEMSX64`, ni protocole/ECU/UI/IA/ONNX.
+### Frontière et inventaire
+- workflow frontière : `TEMP RCL0193ENG P203 DRIVE SHAFTS BOUNDARY`
+- run : `33419029541`
+- job : `99576573124`
+- conclusion : **SUCCESS**
+- section exacte : **p203–210 DRIVE SHAFTS**
+- p204 : blanche
+- p211 : début `STEERING`
+- scan déjà étendu : `STEERING` p211–226 ; p212/p214 blanches ; p227 ouvre `SUSPENSION`
+
+- workflow inventaire : `TEMP RCL0193ENG P203-210 INVENTORY`
+- run : `33419123418`
+- job : `99576887448`
+- conclusion : **SUCCESS**
+
+### Génération + validation + compaction directe
+- workflow : `TEMP RCL0193ENG P203-210 DIRECT GENERATE`
+- run : `33419330403`
+- job : `99577571398`
+- conclusion : **SUCCESS**
+- QZ64 -> SQL byte-for-byte : **PASS**
+- double application SQLite / idempotence : **PASS**
+- `PRAGMA integrity_check=ok`
+- `foreign_key_check=0`
+- `user_version=21`
+- pages physiques exactes 203..210 ; p204 `out_of_scope/not_required`
+- `manifest.json` inchangé
+- `MEMSX64` toujours BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`
+- tous workflows temporaires retirés du tree final
+
+### Fichiers finaux p203–210
+1. `database/reference/prototypes/rcl0193eng_p203_210_multilingual_v1.sql`
+   - taille : `167061` octets
+   - SHA-256 : `94c7a0e8a53149bd4b33ebf736a7b64b1f13847f05dfa1763753a609219bbd9d`
+   - Git blob : `76d00e2a2543f949eb7ab1a3378a4ad045d3e713`
+2. `database/reference/prototypes/rcl0193eng_p203_210_multilingual_v1.qz64`
+   - taille : `11656` octets
+   - SHA-256 : `f7cd536a8f2fa3df2bac78561e33c2b4887efbd909ee629cbc1d1297a35eb365`
+   - Git blob : `86c0a4dd2a9073dd601c38ec6089b6782fecacd9`
+3. `database/reference/audits/RCL0193ENG_P203_210_MULTILINGUAL_BACKFILL_V1.md`
+   - taille : `1443` octets
+   - SHA-256 : `95ed05cac1e2d7d5dd988cbca7e63d526533ac6114a17412774fce7fdc2a8d76`
+   - Git blob : `ddfe418ba0a7f0c46f8ac1b28efe2c145fd4674c`
+
+### Contenu validé p203–210
+- 8/8 unités physiques ; p204 blanche ;
+- 7/7 pages utiles avec texte source anglais et candidat visuel ;
+- 3 opérations constructeur : `47.10.04`, `47.10.14`, `47.10.28` ;
+- 9 faits structurés ;
+- 5 valeurs/couples/dimensions ;
+- 10 warnings/cautions/notes/exigences ;
+- 10 outils/équipements ;
+- 7 consommables/remplacements ;
+- ancres Rover `18G 1240` et `18G 1584` immuables ; architecture N-langues conservée ;
+- valeurs remarquables : `A ≈ 6 mm`, `52 N.m`, `30 N.m`, `52 N.m`, `260 N.m`.
+
+### SAFE CHECKPOINT APRÈS POUSSE p203–210
+**SAFE CHECKPOINT = YES**
+
+- commit propre : `686ecee774da47baafc65de3b7d30ed0b3eb8bc2`
+- tree : `99a34e597f919bd965adfd4427014567f0decb34`
+- parent direct : `932b442fe0185368eff0a78b6caa552b427b6bd8`
+- compare : `ahead_by=1`, `behind_by=0`, `total_commits=1`
+- diff final : exactement les trois fichiers documentaires p203–210
+- aucun helper/workflow/transport temporaire dans le tree final
+
+## PROCHAINE ACTION EXACTE
+Reprendre depuis le SAFE CHECKPOINT `686ecee774da47baafc65de3b7d30ed0b3eb8bc2`.
+
+Traiter directement **RCL0193ENG p211–226 `STEERING`** depuis `main/rave/xn/wmxn990e.pdf`. La frontière est déjà vérifiée : p212 et p214 sont blanches ; p227 ouvre `SUSPENSION`. Ne pas refaire un scan de frontière inutile. Faire directement l’inventaire exhaustif p211–226 puis une génération/validation/compaction directe selon la procédure ci-dessus. À la première anomalie : arrêt + retour au SAFE CHECKPOINT, aucune chaîne de patchs. Ne toucher ni à `MEMSX64`, ni protocole/ECU/UI/IA/ONNX.
 
 ## But recherché
 La fiabilité ne dépend plus du montage de fichiers de ChatGPT ni du transport manuel de gros binaires. GitHub devient à la fois la source documentaire, l’environnement de génération, le contrôleur d’intégrité et le point de reprise vérifiable.
