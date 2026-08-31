@@ -9578,3 +9578,23 @@ Les trois fragments correctifs et leur workflow ont ensuite ete supprimes. Le re
 Aucun fichier final p147-160 n'est encore ecrit. `manifest.json`, les tables historiques et `MEMSX64` restent intacts.
 
 PROCHAINE ACTION EXACTE : creer l'installateur temporaire p147-160, reconstruire QZ64 et SQL exacts, appliquer toute la chaine anglaise p1-160 avec le nouveau lot deux fois, verifier les invariants, nettoyer tous les transports/helpers, puis committer uniquement les trois fichiers finaux si tous les controles passent.
+
+## 2026-08-31 - RCL0193ENG P147-160 - VALIDATION INSTALLATEUR AVANT COMPACTION
+
+Le run installateur temporaire `TEMP RCL0193ENG P147-160 INSTALL` est termine avec succes :
+- run `33392238457` ;
+- job `99488355264` ;
+- conclusion **SUCCESS** ;
+- commit bot valide avant compaction `062983ff198df29a823e2591ddbf82e88ed45423` ;
+- tree valide `0713fce5ee4702adcc9d0a201fa8e2ab8c323b48`.
+
+Toutes les etapes sont PASS : reconstruction exacte transport/QZ64/SQL, validation SQLite avec double application du nouveau lot, invariants, `MEMSX64` protege, nettoyage des transports et controle de perimetre.
+
+Le diff net depuis le checkpoint `a2c14b49a1c12dcf9be82b06a531864733fc2029` contient exactement trois fichiers :
+- `database/reference/audits/RCL0193ENG_P147_160_MULTILINGUAL_BACKFILL_V1.md` ;
+- `database/reference/prototypes/rcl0193eng_p147_160_multilingual_v1.qz64` ;
+- `database/reference/prototypes/rcl0193eng_p147_160_multilingual_v1.sql`.
+
+Git blobs finaux verifies a distance : SQL `07b707eab167b7c848e3db4432f20e367a91cafa`, QZ64 `81b7a7edb3d1261832110622f26a2b49a1a9c4fa`, audit `c354e5edebf83e2591c222cc30aeb71ef91ce61f`. Le workflow installateur et le repertoire de transport p147-160 sont absents du tree final valide. `manifest.json` est inchange puisque le compare net ne contient que ces trois fichiers.
+
+PROCHAINE ACTION EXACTE : compacter uniquement les commits temporaires de transport en recreant un commit dont le tree est strictement `0713fce5ee4702adcc9d0a201fa8e2ab8c323b48` et dont le parent direct est `a2c14b49a1c12dcf9be82b06a531864733fc2029`, puis reverifier le diff exact de trois fichiers avant le journal APRES POUSSE.
