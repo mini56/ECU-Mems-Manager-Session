@@ -1,0 +1,33 @@
+name: REPORT RCL0193ENG P001-050 PREPUSH CORRECTION
+
+on:
+  push:
+    branches:
+      - RAPPORT
+    paths:
+      - '.github/workflows/report-rcl0193eng-p001-050-prepush-correction.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  append-report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append corrected pre-push journal
+        env:
+          REPORT_APPEND_B64: 'CgojIyAyMDI2LTA4LTMxIC0gUkNMMDE5M0VORyBQQUdFUyAxLTUwIC0gUkVDVElGSUNBVElPTiBEVSBKT1VSTkFMIEFWQU5UIFBPVVNTRQoKTGUgZ2FyZGUgbG9jYWwgZWZmZWN0dWUgKiphdmFudCB0b3V0ZSBwb3Vzc2UgdGVjaG5pcXVlKiogYSBkZXRlY3RlIHF1ZSBsJ2VudHJlZSBwcmUtcHVzaCBwcmVjZWRlbnRlIGNvbnRlbmFpdCBkZXMgbm9tcy9oYXNoZXMgZGUgdHJhdmFpbCBxdWkgbmUgY29ycmVzcG9uZGVudCBwYXMgYXV4IG9jdGV0cyBmaW5hdXggYWN0dWVsbGVtZW50IGNvbnNlcnZlcyBwYXIgbGUgZ2VuZXJhdGV1ci4gQXVjdW4gZmljaGllciB0ZWNobmlxdWUgbidhIGV0ZSBwb3Vzc2UgYXZlYyBjZXMgdmFsZXVycyBlcnJvbmVlcyA7IGB0bXAtcmF2ZS1jb21wbGV0ZS1tdWx0aWxpbmd1YWwtYmFja2ZpbGxgIHJlc3RlIGRvbmMgZW5jb3JlIHN1ciBgZjY2MGE3NDRiYzhhMGU5OTE0OTJiNDJhNWYzMzRhYjU5Zjk0OTE1NmAuCgpMZXMgb2N0ZXRzIGZpbmF1eCBvbnQgZXRlIHJldHJvdXZlcyBkYW5zIGAvbW50L2RhdGEvcmF2ZV93b3JrL291dHB1dC9gIGV0IGxldXIgcHJvcHJlIGF1ZGl0IGxvY2FsIGNvbnRpZW50IGxlcyBtZW1lcyBlbXByZWludGVzLiBMYSBwcmVjZWRlbnRlIGxpc3RlIGRlIHRyb2lzIGZpY2hpZXJzIGNhbmRpZGF0cyBlc3QgKipzdXBwbGFudGVlIGF2YW50IHBvdXNzZSoqIHBhciBsYSBsaXN0ZSBleGFjdGUgc3VpdmFudGUgOgoKLSBgZGF0YWJhc2UvcmVmZXJlbmNlL3Byb3RvdHlwZXMvcmNsMDE5M2VuZ19wMDAxXzA1MF9tdWx0aWxpbmd1YWxfdjEuc3FsYCDigJQgKio0ODggMzAxIG9jdGV0cyoqIOKAlCBTSEEtMjU2IGA3NzFjOWNhMGE0YTJlMGI0MjhmNzAyZDI0OTIzNTZhODcyOTVhOWQ1NjUyZTk0NjU5OTY2NmNlYjczYWNmODk3YCA7Ci0gYGRhdGFiYXNlL3JlZmVyZW5jZS9wcm90b3R5cGVzL3JjbDAxOTNlbmdfcDAwMV8wNTBfbXVsdGlsaW5ndWFsX3YxLnF6NjRgIOKAlCAqKjIyIDc1NyBvY3RldHMqKiDigJQgU0hBLTI1NiBgZjYyY2Q5ODAwMzBhNGIzZTJiNmIwNzIwMDE3MzFmZmRiMTJjNDQ5NjkzZWRjMDhiY2VhNGI4NDc3N2M4YWQ0NWAgOwotIGBkYXRhYmFzZS9yZWZlcmVuY2UvYXVkaXRzL1JDTDAxOTNFTkdfUDAwMV8wNTBfTVVMVElMSU5HVUFMX0JBQ0tGSUxMX1YxLm1kYCDigJQgKio1IDY0NCBvY3RldHMqKiDigJQgU0hBLTI1NiBgNTc2YjE0YzlkN2ExNjJiYWEzMmFjZWVhODNkOWVhMmI4MGFiYzdiNDIzNjQ3OTEyMTA5YTkwMmM1ZDY4NmJiYmAuCgpMZSBTUUwgZmluYWwgZXQgbGUgUVo2NCBmaW5hbCBvbnQgbGVzIG1lbWVzIHRhaWxsZXMgcXVlIGNlbGxlcyBhbm5vbmNlZXMgcHJlY2VkZW1tZW50IG1haXMgZGVzIGVtcHJlaW50ZXMgZGlmZmVyZW50ZXMgOiBjZWxhIGNvbmZpcm1lIHF1J3VuIGhhc2ggbmUgZG9pdCBqYW1haXMgZXRyZSBkZWR1aXQgZCd1bmUgdGFpbGxlIGlkZW50aXF1ZS4gTGUgZ2FyZGUgU0hBIGEgZG9uYyBibG9xdWUgY29ycmVjdGVtZW50IGxhIHBvdXNzZS4KCkwnYXVkaXQgZmluYWwgY29uZmlybWUgdG91am91cnMgbGVzIGludmFyaWFudHMgZm9uY3Rpb25uZWxzIDogNTAvNTAgcGFnZXMsIDI0NCBlbnRpdGVzLCAyODUgdGV4dGVzIGFuZ2xhaXMsIDIgdGFibGVhdXgsIDE5NiBjZWxsdWxlcywgOCB2YWxldXJzLCAzIHJlbGF0aW9ucywgYGludGVncml0eV9jaGVjaz1va2AsIGBmb3JlaWduX2tleV9jaGVjaz0wYCwgYHVzZXJfdmVyc2lvbj0yMWAsIGlkZW1wb3RlbmNlIGV0IGF1Y3VuZSBtb2RpZmljYXRpb24gZHUgbWFuaWZlc3RlLgoKIyMjIFBST0NIQUlORSBBQ1RJT04gRVhBQ1RFIEFQUkVTIENFVFRFIFJFQ1RJRklDQVRJT04KCkFwcmVzIHZhbGlkYXRpb24gR2l0SHViIEFjdGlvbnMgZGUgY2V0dGUgcmVjdGlmaWNhdGlvbiBkdSByYXBwb3J0LCBwb3Vzc2VyICoqdW5pcXVlbWVudCBsZXMgdHJvaXMgZmljaGllcnMgY2ktZGVzc3VzIGF2ZWMgY2VzIG9jdGV0cyBldCBjZXMgaGFzaGVzIGV4YWN0cyoqIHN1ciBgdG1wLXJhdmUtY29tcGxldGUtbXVsdGlsaW5ndWFsLWJhY2tmaWxsYCwgcHVpcyByZWxpcmUgZXQgcmV2ZXJpZmllciBsZSBjb21taXQgZGlzdGFudC4gYE1FTVNYNjRgIHJlc3RlIEJVSUxEICMxMDMgZXQgYXVjdW5lIG1vZGlmaWNhdGlvbiBwcm90b2NvbGUvRUNVL1VJL0lBL09OTlggbidlc3QgYXV0b3Jpc2VlLgo='
+        run: |
+          python -c "import os,base64; open('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md','ab').write(base64.b64decode(os.environ['REPORT_APPEND_B64']))"
+      - name: Commit report correction
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git diff --cached --quiet && exit 1
+          git commit -m "Correct RCL0193ENG pages 1-50 pre-push hashes"
+          git push origin HEAD:RAPPORT
