@@ -103,7 +103,8 @@ def paragraph_entries(ocr):
         groups[(w["block"], w["par"])].append(w)
     entries = []
     for key, words in groups.items():
-        words = sorted(words, key=lambda x: (x["top"], x["left"]))
+        # Preserve Tesseract native token order. Re-sorting by pixel top/left can
+        # scramble words on the same visual line when glyph tops differ slightly.
         text = " ".join(w["text"] for w in words)
         b = bbox_union([w["bbox"] for w in words])
         entries.append({"key": key, "text": text, "bbox": b, "words": words})
