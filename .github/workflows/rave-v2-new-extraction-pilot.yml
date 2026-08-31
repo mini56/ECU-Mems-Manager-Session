@@ -28,20 +28,20 @@ jobs:
       - name: Install extraction dependencies
         run: python -m pip install --disable-pip-version-check PyMuPDF Pillow
 
-      - name: Apply direct-render pilot patches
+      - name: Apply extraction metadata patches
         run: |
           python tools/rave_v2_apply_direct_render_patch.py
           python tools/rave_v2_preserve_pictograms_patch.py
           python -m py_compile tools/rave_v2_new_extraction.py
 
-      - name: Discover another real technical mixed text and schematic RAVE page
+      - name: Extract RAVE page 107 source and display metadata only
         id: extract
         continue-on-error: true
         run: |
           rm -rf rave_v2_pilot_output
-          python tools/rave_v2_new_extraction.py --pdf rave/xn/wmxn990e.pdf --out rave_v2_pilot_output --exclude 1-20,112,193-202 --page auto
+          python tools/rave_v2_new_extraction.py --pdf rave/xn/wmxn990e.pdf --out rave_v2_pilot_output --exclude 193-202 --page 107
 
-      - name: Show discovery manifest
+      - name: Show extraction manifest
         if: always()
         run: |
           if [ -f rave_v2_pilot_output/manifest.json ]; then
@@ -53,10 +53,10 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: rave-v2-second-technical-page-discovery
+          name: rave-v2-page107-source-metadata
           path: rave_v2_pilot_output
           if-no-files-found: error
 
-      - name: Discovery expected to need translations
+      - name: Source extraction intentionally has no translations
         if: always()
         run: exit 0
