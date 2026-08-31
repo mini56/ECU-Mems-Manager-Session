@@ -1,0 +1,25 @@
+{
+  "locale": "fr",
+  "purpose": "MEMS Manager display simulation only - not RAVE source data",
+  "page_blocks": {
+    "RCL0193ENG_P107_B01": "SYSTÈME DE GESTION MOTEUR - MEMS",
+    "RCL0193ENG_P107_B02": "DESCRIPTION ET FONCTIONNEMENT    1",
+    "RCL0193ENG_P107_B03": "EMPLACEMENT DES COMPOSANTS DU COMPARTIMENT MOTEUR"
+  },
+  "callouts": {
+    "RCL0193ENG_P107_CALL01": "Module de commande moteur (ECM)",
+    "RCL0193ENG_P107_CALL02": "Module de relais",
+    "RCL0193ENG_P107_CALL03": "Vanne de régulation d'air de ralenti (IACV)",
+    "RCL0193ENG_P107_CALL04": "Régulateur de pression de carburant",
+    "RCL0193ENG_P107_CALL05": "Capteur de position du papillon (TP)",
+    "RCL0193ENG_P107_CALL06": "Filtre à air",
+    "RCL0193ENG_P107_CALL07": "Capteur de pression absolue du collecteur (MAP)",
+    "RCL0193ENG_P107_CALL08": "Capteur de température d'air d'admission (IAT)",
+    "RCL0193ENG_P107_CALL09": "Électrovanne de purge du canister d'émissions évaporatives",
+    "RCL0193ENG_P107_CALL10": "Capteur de position de l'arbre à cames (CMP)",
+    "RCL0193ENG_P107_CALL11": "Capteur de température du liquide de refroidissement (ECT)",
+    "RCL0193ENG_P107_CALL12": "Bobine d'allumage",
+    "RCL0193ENG_P107_CALL13": "Sonde lambda chauffée (HO2S)",
+    "RCL0193ENG_P107_CALL14": "Capteur de position du vilebrequin (CKP)"
+  }
+}
