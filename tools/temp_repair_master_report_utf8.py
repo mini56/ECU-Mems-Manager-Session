@@ -10,7 +10,6 @@ from ftfy import fix_text
 
 REPORT = Path("RAPPORT_SUIVI_ECU_MEMS_MANAGER.md")
 EXPECTED_BLOB = "c5397573c1b9a3ac371686338a455820c29e0144"
-EXPECTED_SIZE = 563927
 
 
 def git_blob(path: Path) -> str:
@@ -57,8 +56,8 @@ def urls(text: str) -> Counter:
 
 
 raw = REPORT.read_bytes()
-assert len(raw) == EXPECTED_SIZE, (len(raw), EXPECTED_SIZE)
-assert git_blob(REPORT) == EXPECTED_BLOB, (git_blob(REPORT), EXPECTED_BLOB)
+actual_blob = git_blob(REPORT)
+assert actual_blob == EXPECTED_BLOB, (actual_blob, EXPECTED_BLOB)
 raw_sha256 = hashlib.sha256(raw).hexdigest()
 spans = invalid_utf8_spans(raw)
 assert spans, "The expected invalid UTF-8 condition is no longer present; aborting rather than guessing."
@@ -98,7 +97,7 @@ appendix = f"""
 
 ### Réparation du fichier maître
 
-Le fichier maître était devenu impossible à lire/mettre à jour par les outils UTF-8 stricts. État exact avant réparation : Git blob `{EXPECTED_BLOB}`, {EXPECTED_SIZE} octets, SHA-256 brut `{raw_sha256}`. Les séquences UTF-8 valides ont été conservées ; seuls les octets réellement invalides ont été récupérés avec leur caractère Windows-1252 correspondant, puis les séquences de mojibake historiques ont été remises en Unicode lisible. Zone(s) d'octets invalides détectée(s) avant réparation : `{span_text}`.
+Le fichier maître était devenu impossible à lire/mettre à jour par les outils UTF-8 stricts. État exact avant réparation : Git blob `{EXPECTED_BLOB}`, {len(raw)} octets, SHA-256 brut `{raw_sha256}`. Les séquences UTF-8 valides ont été conservées ; seuls les octets réellement invalides ont été récupérés avec leur caractère Windows-1252 correspondant, puis les séquences de mojibake historiques ont été remises en Unicode lisible. Zone(s) d'octets invalides détectée(s) avant réparation : `{span_text}`.
 
 Gardes appliqués avant écriture : nombre de lignes inchangé avant ajout de cette section, nombre de backticks inchangé, mêmes ensembles de SHA-1/identifiants Git 40 hex, mêmes SHA-256 64 hex, mêmes URL et mêmes références techniques critiques. Le résultat est réencodé en UTF-8 strict sans caractère de remplacement. Les sections historiques ne sont pas supprimées : leurs anciennes méthodes restent lisibles comme historique mais peuvent être explicitement supplantées ci-dessous.
 
