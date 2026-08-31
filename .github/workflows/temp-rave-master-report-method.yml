@@ -2,10 +2,9 @@ name: TEMP RAVE MASTER REPORT METHOD
 
 on:
   push:
-    branches:
-      - RAPPORT
+    branches: [RAPPORT]
     paths:
-      - .github/workflows/temp-rave-master-report-method.yml
+      - '.github/workflows/temp-rave-master-report-method.yml'
 
 permissions:
   contents: write
@@ -18,42 +17,19 @@ jobs:
         with:
           ref: RAPPORT
           fetch-depth: 0
-      - name: Append canonical RAVE method and remove helper
+
+      - name: Append canonical complete RAVE method
+        run: python3 .github/scripts/temp_append_complete_rave_method.py
+
+      - name: Commit report and remove temporary helpers
         shell: bash
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          report = r'''
-
-## 2026-08-31 - METHODE RAVE COMPLETE UTILISATEUR FINAL - REGLE CANONIQUE
-
-Constat : les lots RCL0193ENG p193-234 generes par la methode directe GitHub ont conserve le texte source integral et les principales donnees techniques, mais `visual_candidate` ne garantit pas un asset image local reel. Ces lots doivent etre repris avant de poursuivre p235 BRAKES.
-
-### Contenu obligatoire pour qu'une page RAVE soit complete
-Pour chaque page utile, conserver tous les elements applicables : texte source integral et provenance exacte ; faits/valeurs/couples/reglages/warnings/cautions/notes/outils/consommables/remplacements ; procedures entierement structurees dans l'ordre constructeur avec etapes et dependances ; tableaux structures en lignes/colonnes/cellules avec preuve visuelle ; portee explicite vehicule/moteur/variante/marche/annee/transmission/induction/VIN lorsqu'elle existe ; tous les supports visuels utiles comme assets locaux reels avec chemin, SHA-256, dimensions et liaison a la connaissance. Une portee absente reste inconnue et ne doit jamais etre inventee. Si le schema courant ne sait pas representer une information utile, ajouter de maniere additive la structure necessaire au lieu d'abandonner l'information.
-
-### Regle unique pour les textes dans les images
-Une seule methode d'affichage est autorisee : IMAGE CONSTRUCTEUR CONSERVEE + MASQUE NUMEROTE + LEGENDE TRADUITE DANS LE MEME RENDU IMAGE. Conserver l'original intact comme preuve. Detecter les zones de texte humain via les coordonnees PDF lorsque disponibles. Ne jamais masquer/modifier les ancres techniques immuables : reperes constructeur, references Rover/outils, valeurs, unites, dimensions, connecteurs, numeros de procedure, fleches et geometrie. Chaque texte humain recoit une cle stable (ex. `RCL0193ENG_P193_T01`) et un numero stable. Dans le rendu utilisateur, le texte humain original est masque/remplace par son numero et la legende `1. texte traduit`, `2. texte traduit`, etc. est integree DANS LE MEME RENDU IMAGE selon la langue active. Stocker une seule image source + zones/masques/cles, pas une copie raster par langue.
-
-Locales actuelles/presentees : `fr`, `en`, `es`, `it`, `pt`, `de`. Architecture Unicode extensible sans refonte a `ja`, `zh`, `hi` et autres scripts.
-
-### Automatisation GitHub canonique
-Le pipeline doit lire directement le corpus `main/rave/` et : verifier SHA/taille/page-count ; extraire texte+coordonnees ; rendre les pages/assets ; classifier blank/text/visual/table/procedure/mixed ; detecter les zones traduisibles et creer masques numerotes+cles ; structurer tableaux ; structurer procedures completes ; extraire les portees explicites ; generer SQL/QZ64/audit/assets ; appliquer un garde de completude par page ; appliquer deux fois le SQL et verifier idempotence/integrity_check/foreign_key_check/roundtrip QZ64->SQL ; verifier le perimetre et que MEMSX64 reste BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`. Toute extraction incertaine passe en `needs_review` et doit etre revue page par page, jamais supprimee silencieusement.
-
-### Reprise obligatoire
-Reprendre avec cette methode : p193-202 MANUAL GEARBOX, p203-210 DRIVE SHAFTS, p211-226 STEERING, p227-234 SUSPENSION. Ne pas poursuivre p235 BRAKES avant validation du pilote p193-202 avec ce garde complet. Conserver les donnees textuelles deja exactes et completer seulement ce qui manque.
-
-### PROCHAINE ACTION EXACTE
-Construire et valider sur p193-202 un pilote GitHub reproductible produisant effectivement assets visuels reels, masques numerotes et cles de traduction, tableaux structures, procedures entierement structurees et portees explicites, tout en conservant le texte source integral. Si conforme, reutiliser exactement la meme fonction sur p203-210, p211-226 et p227-234 avant p235 BRAKES.
-'''
-          p = Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md')
-          with p.open('a', encoding='utf-8', newline='') as f:
-              f.write(report)
-          PY
           rm -f .github/workflows/temp-rave-master-report-method.yml
+          rm -f .github/scripts/temp_append_complete_rave_method.py
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
           git add -u .github/workflows/temp-rave-master-report-method.yml
-          git commit -m 'Record canonical complete RAVE extraction method'
+          git add -u .github/scripts/temp_append_complete_rave_method.py
+          git commit -m "Record canonical complete RAVE extraction method"
           git push origin RAPPORT
