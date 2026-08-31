@@ -8912,3 +8912,43 @@ Le premier workflow temporaire d installation du lot 97-104 a ete arrete par un 
 Correction autorisee : conserver les 3 fragments QZ64 deja verifies, remplacer uniquement le transport de l audit par un transport fichier verifie byte pour byte, puis relancer les memes gardes SHA/QZ64/SQLite/idempotence/perimetre.
 
 `MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`. Aucun protocole/ECU/UI/IA/ONNX n est modifie.
+
+
+## 2026-08-31 - RCL0193ENG PAGES 97-104 - ECHEC VALIDATEUR SQLITE, DONNEES RECONSTRUITES EXACTES
+
+Le second run du workflow temporaire d installation a franchi completement la reconstruction des trois fichiers candidats, puis s est arrete uniquement sur une requete erronee du validateur SQLite.
+
+- workflow : `TEMP RCL0193ENG P097-104 INSTALL`
+- run : `33381115844`
+- job : `99453460489`
+- conclusion : **FAILURE**
+- `Reconstruct exact lot` : **SUCCESS**
+- QZ64 : 15 661 octets, SHA-256 attendu valide
+- SQL : 190 681 octets, SHA-256 `51dfb695c19fe450a7ea0db7fa23b93344c93f792c44eadca76405fb8458a961` valide
+- audit : 4 056 octets, SHA-256 `576436bae6c854efcb5b6306eedd53d69f62b96699754655473400c1ec3e25da` valide
+
+La validation SQLite a ensuite verifie avec succes, avant la panne :
+- 8/8 unites physiques 97-104 ; pages exactes 97..104
+- p98 `out_of_scope / not_required`
+- 7/7 pages source non blanches
+- 7/7 candidats visuels de page
+- 7/7 figures techniques granulaires
+- 5/5 operations constructeur
+- 9 faits `knowledge`
+- 4 entites `value` et 4 lignes `mems_doc_value`
+- 9 avertissements/cautions/exigences
+- 2 renvois constructeur
+- 1 table de legende 17M0112
+
+Echec exact : `sqlite3.OperationalError: no such column: table_key` lors du controle des 20 cellules de la legende.
+
+Le schema exact verifie dans le SQL candidat utilise :
+- `mems_doc_table.entity_key`
+- `mems_doc_table_cell.table_entity_key`
+- `mems_doc_table_cell.cell_entity_key`
+
+La requete du helper utilisait par erreur `table_key`, qui nàexiste pas. La correction autorisee consiste uniquement a remplacer ce controle par une requete sur `table_entity_key` et a relancer les memes gardes.
+
+Les etapes `Clean transport and enforce final scope` et `Commit final lot` ont ete SKIPPED : aucun commit permanent 97-104 n a ete cree.
+
+Aucune donnee documentaire n est modifiee par ce correctif de helper. `MEMSX64` reste BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
