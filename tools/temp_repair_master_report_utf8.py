@@ -6,8 +6,6 @@ import subprocess
 from collections import Counter
 from pathlib import Path
 
-from ftfy import fix_text
-
 REPORT = Path("RAPPORT_SUIVI_ECU_MEMS_MANAGER.md")
 EXPECTED_BLOB = "c5397573c1b9a3ac371686338a455820c29e0144"
 
@@ -62,17 +60,21 @@ raw_sha256 = hashlib.sha256(raw).hexdigest()
 spans = invalid_utf8_spans(raw)
 assert spans, "The expected invalid UTF-8 condition is no longer present; aborting rather than guessing."
 
-mixed = decode_preserving_valid_utf8(raw)
-fixed_core = fix_text(mixed)
+# Minimal repair only: every valid UTF-8 sequence is preserved as-is. Only raw invalid bytes
+# are mapped to their Windows-1252 character, then the whole file is encoded as strict UTF-8.
+fixed_core = decode_preserving_valid_utf8(raw)
 
-# Structural guards: encoding repair may change Unicode characters, never technical ASCII identity.
 assert "\ufffd" not in fixed_core
 assert not any(0xD800 <= ord(ch) <= 0xDFFF for ch in fixed_core)
-assert fixed_core.count("\n") == mixed.count("\n")
-assert fixed_core.count("`") == mixed.count("`")
-assert long_hex_tokens(fixed_core, 40) == long_hex_tokens(mixed, 40)
-assert long_hex_tokens(fixed_core, 64) == long_hex_tokens(mixed, 64)
-assert urls(fixed_core) == urls(mixed)
+assert fixed_core.count("\n") == raw.count(b"\n")
+assert fixed_core.count("`") == raw.count(b"`")
+fixed_core.encode("utf-8", errors="strict")
+
+# Compare the technical ASCII identity against a surrogate-preserving view of the original.
+original_view = raw.decode("utf-8", errors="surrogateescape")
+assert long_hex_tokens(fixed_core, 40) == long_hex_tokens(original_view, 40)
+assert long_hex_tokens(fixed_core, 64) == long_hex_tokens(original_view, 64)
+assert urls(fixed_core) == urls(original_view)
 for token in (
     "RAPPORT_SUIVI_ECU_MEMS_MANAGER.md",
     "MEMSX64",
@@ -80,12 +82,7 @@ for token in (
     "c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715",
     "1d6316bd1746d6f2b4cfb751cab88d18e27ef730",
 ):
-    assert fixed_core.count(token) == mixed.count(token), token
-fixed_core.encode("utf-8", errors="strict")
-
-bad_markers_before = sum(mixed.count(x) for x in ("Ã", "Â", "â€", "ðŸ", "ï¸"))
-bad_markers_after = sum(fixed_core.count(x) for x in ("Ã", "Â", "â€", "ðŸ", "ï¸"))
-assert bad_markers_after < bad_markers_before, (bad_markers_before, bad_markers_after)
+    assert fixed_core.count(token) == original_view.count(token), token
 
 marker = "## 2026-08-31 - REPARATION UTF-8 DU RAPPORT MAITRE ET CHECKPOINT RAVEMEMS"
 assert marker not in fixed_core
@@ -97,9 +94,9 @@ appendix = f"""
 
 ### Réparation du fichier maître
 
-Le fichier maître était devenu impossible à lire/mettre à jour par les outils UTF-8 stricts. État exact avant réparation : Git blob `{EXPECTED_BLOB}`, {len(raw)} octets, SHA-256 brut `{raw_sha256}`. Les séquences UTF-8 valides ont été conservées ; seuls les octets réellement invalides ont été récupérés avec leur caractère Windows-1252 correspondant, puis les séquences de mojibake historiques ont été remises en Unicode lisible. Zone(s) d'octets invalides détectée(s) avant réparation : `{span_text}`.
+Le fichier maître était devenu impossible à lire/mettre à jour par les outils UTF-8 stricts. État exact avant réparation : Git blob `{EXPECTED_BLOB}`, {len(raw)} octets, SHA-256 brut `{raw_sha256}`. La réparation est volontairement minimale : toutes les séquences déjà valides UTF-8 sont conservées ; seuls les octets réellement invalides sont récupérés avec leur caractère Windows-1252 correspondant, puis réencodés proprement en UTF-8. Zone(s) d'octets invalides détectée(s) avant réparation : `{span_text}`.
 
-Gardes appliqués avant écriture : nombre de lignes inchangé avant ajout de cette section, nombre de backticks inchangé, mêmes ensembles de SHA-1/identifiants Git 40 hex, mêmes SHA-256 64 hex, mêmes URL et mêmes références techniques critiques. Le résultat est réencodé en UTF-8 strict sans caractère de remplacement. Les sections historiques ne sont pas supprimées : leurs anciennes méthodes restent lisibles comme historique mais peuvent être explicitement supplantées ci-dessous.
+Gardes appliqués avant écriture : nombre de lignes inchangé avant ajout de cette section, nombre de backticks inchangé, mêmes ensembles de SHA-1/identifiants Git 40 hex, mêmes SHA-256 64 hex, mêmes URL et mêmes références techniques critiques. Le résultat est relu en UTF-8 strict sans caractère de remplacement. Les sections historiques ne sont pas supprimées : leurs anciennes méthodes restent comme historique mais peuvent être explicitement supplantées ci-dessous.
 
 ### RAVEMEMS - méthode canonique actuelle pour RAVE
 
@@ -142,15 +139,11 @@ assert "**`ravemems`**" in new_text
 assert "on garde ce numéro tel quel et on change uniquement le texte qui lui est associé" in new_text
 assert "agrandir la zone libre/le canevas autour de la vue" in new_text
 assert "TEST2 - prochaine action exacte" in new_text
-assert long_hex_tokens(new_text, 40) >= long_hex_tokens(fixed_core, 40)
-assert long_hex_tokens(new_text, 64) >= long_hex_tokens(fixed_core, 64)
 
 print(f"OLD_GIT_BLOB={EXPECTED_BLOB}")
 print(f"OLD_BYTES={len(raw)}")
 print(f"OLD_SHA256={raw_sha256}")
 print(f"INVALID_UTF8_SPANS={spans}")
-print(f"MOJIBAKE_MARKERS_BEFORE={bad_markers_before}")
-print(f"MOJIBAKE_MARKERS_AFTER={bad_markers_after}")
 print(f"NEW_BYTES={len(new_bytes)}")
 print(f"NEW_SHA256={hashlib.sha256(new_bytes).hexdigest()}")
 print(f"NEW_GIT_BLOB={git_blob(REPORT)}")
