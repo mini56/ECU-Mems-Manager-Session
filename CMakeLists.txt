@@ -70,6 +70,7 @@ set(SOURCES
     database/MemsGlobalSearchIndex.cpp database/MemsGlobalSearchIndex.h database/MemsDatabaseExplorerV2.cpp
     database/MemsDatabaseUniversalAccess.cpp database/MemsReferenceLanguageSync.cpp
     database/MemsXmlRowIndexer.cpp database/MemsSearchCompletenessPatch.cpp database/MemsDatabaseBrowser.cpp database/MemsDatabaseBrowser.h
+    database/MultilingualKnowledgeReader.cpp database/MultilingualKnowledgeReader.h
     iamemstab.cpp iamemstab.h
     expert/IaResponseLogic.h expert/IaMemsService.cpp expert/IaMemsService.h
     expert/IaMemsDiagramCatalog.cpp expert/IaMemsDiagramCatalog.h
@@ -128,6 +129,12 @@ add_executable(expert_runtime_selftest
 target_link_libraries(expert_runtime_selftest PRIVATE Qt5::Core Qt5::Sql)
 add_dependencies(${PNAME} expert_runtime_selftest)
 
+add_executable(multilingual_knowledge_runtime_selftest
+    database/MultilingualKnowledgeRuntimeSelfTest.cpp
+    database/MultilingualKnowledgeReader.cpp database/MultilingualKnowledgeReader.h)
+target_link_libraries(multilingual_knowledge_runtime_selftest PRIVATE Qt5::Core Qt5::Sql)
+add_dependencies(${PNAME} multilingual_knowledge_runtime_selftest)
+
 if(WIN32)
     target_sources(${PNAME} PRIVATE ${CMAKE_SOURCE_DIR}/appicon.rc)
     target_link_libraries(${PNAME} PRIVATE ole32 shell32 uuid)
@@ -160,6 +167,7 @@ if(MSVC)
     target_compile_options(${PNAME} PRIVATE /permissive /utf-8)
     target_compile_options(ia_response_selftest PRIVATE /utf-8)
     target_compile_options(ia_mems_diagram_selftest PRIVATE /utf-8)
+    target_compile_options(multilingual_knowledge_runtime_selftest PRIVATE /utf-8)
     if(TARGET local_ai_onnx_selftest)
         target_compile_options(local_ai_onnx_selftest PRIVATE /permissive /utf-8)
     endif()
