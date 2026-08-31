@@ -8641,3 +8641,42 @@ Aucun changement `manifest.json`, aucune table historique, aucun protocole/ECU/U
 `MEMSX64` reste BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
 
 PROCHAINE ACTION EXACTE : pousser et valider le lot RCL0193ENG p051-096 avec gardes SHA/QZ64/SQLite/idempotence/perimetre, puis journaliser le resultat APRES POUSSE avant de commencer le bloc suivant.
+
+
+## 2026-08-31 - RCL0193ENG PAGES 51-96 ENGINE - ECHEC PREMIER INSTALLATEUR TEMPORAIRE, AUCUNE ECRITURE FINALE
+
+Le premier installateur temporaire du lot RCL0193ENG pages physiques 51-96 a echoue avant toute installation permanente.
+
+### IDENTIFIANTS GITHUB ACTIONS
+
+- workflow : `TEMP RCL0193ENG P051-096 INSTALL`
+- run : `33376918664`
+- job : `99440378021`
+- conclusion : **FAILURE**
+- etape en echec : `Reconstruct exact lot`
+- les etapes `Validate SQLite twice and invariants`, `Clean transport and enforce final scope` et `Commit final lot and remove helper` ont ete **SKIPPED**.
+
+### CAUSE EXACTE OBSERVEE
+
+Le helper a trouve les 7 fragments de transport, les a assembles, puis a echoue sur l'assertion SHA-256 du fichier QZ64 reconstruit, avant toute decompression SQL.
+
+Il n'y a donc eu :
+- aucune reconstruction SQL acceptee par le workflow ;
+- aucune application du lot 51-96 dans SQLite ;
+- aucun commit des trois fichiers documentaires finaux ;
+- aucune modification de `manifest.json`, des tables historiques, du protocole, ECU, UI, IA ou ONNX.
+
+Le contenu documentaire candidat valide localement n'est pas remis en cause a ce stade. Le diagnostic porte uniquement sur le transport/assemblage des fragments QZ64.
+
+### ETAT DE SECURITE
+
+La derniere base technique valide avant ce transport reste le commit propre :
+`440880fca821bc316c0dffc311b28b1faf2eb25f`
+
+Le tree temporaire de la branche peut contenir les fragments et le workflow de transport, mais ils ne constituent pas un lot final et devront etre supprimes avant le commit permanent.
+
+`MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+### PROCHAINE ACTION EXACTE
+
+Comparer les 7 fragments distants `qz.part00` a `qz.part06` byte pour byte avec les fragments locaux valides, identifier la divergence exacte ou l'erreur d'assemblage, corriger uniquement le transport/helper, puis relancer les gardes SHA/QZ64/SQLite/idempotence/perimetre. Ne jamais accepter ni pousser le lot final tant que tous les controles ne sont pas verts.
