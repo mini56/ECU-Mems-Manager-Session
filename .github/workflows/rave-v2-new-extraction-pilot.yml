@@ -34,12 +34,12 @@ jobs:
           python tools/rave_v2_preserve_pictograms_patch.py
           python -m py_compile tools/rave_v2_new_extraction.py
 
-      - name: Discover another real mixed text and schematic RAVE page
+      - name: Discover another real technical mixed text and schematic RAVE page
         id: extract
         continue-on-error: true
         run: |
           rm -rf rave_v2_pilot_output
-          python tools/rave_v2_new_extraction.py --pdf rave/xn/wmxn990e.pdf --out rave_v2_pilot_output --exclude 112,193-202 --page auto
+          python tools/rave_v2_new_extraction.py --pdf rave/xn/wmxn990e.pdf --out rave_v2_pilot_output --exclude 1-20,112,193-202 --page auto
 
       - name: Show discovery manifest
         if: always()
@@ -53,7 +53,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: rave-v2-second-page-discovery
+          name: rave-v2-second-technical-page-discovery
           path: rave_v2_pilot_output
           if-no-files-found: error
 
