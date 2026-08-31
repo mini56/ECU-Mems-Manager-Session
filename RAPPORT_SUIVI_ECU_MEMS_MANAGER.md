@@ -8201,3 +8201,17 @@ CORRECTION DU JOURNAL PRE-POUSSE : la mention thermostat `p.34` etait erronee. L
 RESULTAT : le modele de donnees + le backfill + la logique de restitution multilingue sont valides hors production. L'etape 1 n'est toutefois pas declaree totalement terminee tant que la restitution n'est pas exercee par un composant runtime de MEMS Manager sur ce meme echantillon.
 
 PROCHAINE ACTION EXACTE : ajouter sur la meme branche un lecteur runtime read-only du nouveau modele (resolution de locale/fallback, texte, visuel, region/label, tableau/valeur), avec self-test sur l'echantillon valide, sans modifier le protocole ECU ni pousser `MEMSX64`. Une fois ce composant runtime valide, commencer l'inventaire/backfill complet de RAVE selon la regle generale d'extraction de TOUT contenu utile.
+
+## 2026-08-31 - SOCLE MULTILINGUE - AVANT POUSSE LECTEUR RUNTIME READ-ONLY
+
+Suite de l'etape 1 validee : ajouter sur `tmp-multilingual-knowledge-foundation` un composant C++ read-only capable d'exercer le nouveau modele documentaire dans le runtime MEMS Manager, sans l'activer encore dans l'UI de production.
+
+Perimetre strict : nouveau lecteur `MultilingualKnowledgeReader` + self-test dedie + ajout CMake minimal. Fonctions testees : resolution texte par locale avec fallback en chaine et protection contre les boucles ; lecture d'un visuel original et de ses regions/labels traduits ; lecture des etapes de procedure en distinguant `source_exact` et `display` ; lecture de valeurs et tableaux structures avec nombres/unites independants de la langue.
+
+Echantillon de test : les 16 entites du prototype valide contre BUILD #103, notamment RCL0194ENG 20.4, la procedure ECT 18.30.10 et les valeurs thermostat RCL0193FRE p.159.
+
+Interdictions : aucun changement de protocole, aucune commande ECU, aucune modification de `memsinterface`, `librosco`, IA/ONNX, navigation ou apparence. Aucun push sur `MEMSX64`. BUILD #103 reste production.
+
+Critere de fin : compiler le self-test avec Qt 5.15.2 MSVC x64, preparer une copie du SQLite reel BUILD #103 + schema V1 + demo, executer le binaire runtime sur cette copie, obtenir tous les PASS puis journaliser immediatement le resultat.
+
+PROCHAINE ACTION EXACTE : pousser le lecteur runtime + self-test sur la branche de travail, lancer le workflow temporaire Windows x64 et ne declarer l'etape 1 terminee qu'apres succes reel.
