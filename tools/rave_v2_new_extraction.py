@@ -111,11 +111,13 @@ def render(page,zones,translations,out,n):
     img=Image.frombytes('RGB',[pix.width,pix.height],pix.samples)
     original=out/f'RCL0193ENG_P{n:03d}_ORIGINAL.png'; img.save(original)
     lw=max(560,int(img.width*.42)); canvas=Image.new('RGB',(img.width+lw,img.height),'white');canvas.paste(img,(0,0));d=ImageDraw.Draw(canvas)
-    nf=getfont(max(16,int(14*scale)),True);lf=getfont(max(16,int(12*scale)));hf=getfont(max(20,int(16*scale)),True)
+    nf=getfont(max(12,int(7*scale)),True);lf=getfont(max(16,int(12*scale)));hf=getfont(max(20,int(16*scale)),True)
     for i,z in enumerate(zones,1):
-        x0,y0,x1,y1=[int(v*scale) for v in z['bbox']]; pad=max(2,int(1.5*scale));d.rectangle((x0-pad,y0-pad,x1+pad,y1+pad),fill='white')
-        cx,cy=x0+max(10,int(7*scale)),y0+max(10,int(7*scale));rad=max(10,int(8*scale));d.ellipse((cx-rad,cy-rad,cx+rad,cy+rad),outline='black',width=max(1,int(scale)))
-        lab=str(i);bb=d.textbbox((0,0),lab,font=nf);d.text((cx-(bb[2]-bb[0])/2,cy-(bb[3]-bb[1])/2-1),lab,fill='black',font=nf)
+        x0,y0,x1,y1=[int(v*scale) for v in z['bbox']]
+        pad=max(1,int(.6*scale)); d.rectangle((x0-pad,y0-pad,x1+pad,y1+pad),fill='white')
+        label=str(i); bb=d.textbbox((0,0),label,font=nf); tw=bb[2]-bb[0]; th=bb[3]-bb[1]
+        tx=x0+2; ty=y0+max(0,((y1-y0)-th)//2)-1
+        d.text((tx,ty),label,fill='black',font=nf)
     x=img.width+24;y=24;d.text((x,y),'LÉGENDE TRADUITE — FR',fill='black',font=hf);y+=int(34*scale)
     for i,z in enumerate(zones,1):
         t=translations.get(z['key'],z['source_text'])
