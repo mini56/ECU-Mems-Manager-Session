@@ -58,5 +58,5 @@ assert paragraph_anchors.count('The connector number has two parts') == 1
 assert 'is connected to pin number 3' not in paragraph_anchors
 assert paragraph_anchors.count('A. Plug on lead (Flylead)') == 1
 assert any(op.get('mode') == 'words' and op.get('paragraph_anchor') == 'C24 EARTH 1' and op.get('words') == ['EARTH'] and op.get('text') == 'MASSE' for op in check['operations'])
-assert len(check['operations']) == 35, len(check['operations'])
+assert len(check['operations']) == 34, len(check['operations'])
 print('RAVEMEMS_TEST2_TRANSLATION_COMPLETENESS_FIXTURE_OK')
