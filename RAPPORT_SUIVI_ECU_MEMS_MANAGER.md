@@ -8245,3 +8245,21 @@ Regle : cet inventaire ne doit pas conclure qu'un document est complet sur la se
 Aucune nouvelle donnee RAVE n'est encore integree pendant cette phase. Aucune modification protocole/ECU/IA/ONNX/UI. Aucun push production.
 
 PROCHAINE ACTION EXACTE : pousser un workflow temporaire sur `tmp-rave-complete-multilingual-backfill` qui genere `database/reference/audits/RAVE_COMPLETE_INVENTORY_V1.md` depuis la branche et le SQLite reel du BUILD #103, puis valider et journaliser le resultat avant toute extraction massive.
+
+## 2026-08-31 - RAVE COMPLET MULTILINGUE - INVENTAIRE V1 VALIDE
+
+Branche de travail : `tmp-rave-complete-multilingual-backfill`. Production protegee : `MEMSX64` reste BUILD #103 commit `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+Validation reelle GitHub Actions : run `33359813710`, job `99388863470`, conclusion SUCCESS. Le workflow a telecharge l'artefact exact BUILD #103, analyse la branche et le SQLite emballe, puis produit `database/reference/audits/RAVE_COMPLETE_INVENTORY_V1.md`. Commit d'inventaire : `6a81ba1ffbd32d8ef08d19915ed6e6163550df4c`.
+
+Etat physique constate : 427 visuels dans `database/reference/images/rave` : `AKM6348_FR=52`, `AKM7169ENG=40`, `RCL0193ENG=26`, `RCL0193FRE=301`, `RCL0194ENG=8`. Aucun PDF source n'est stocke dans le depot. La presence d'un visuel ou d'une connaissance ne constitue pas une preuve d'audit complet du manuel.
+
+Etat structure BUILD #103 constate notamment : `mems_rave_fact=177`, `mems_rave_illustration=126`, `mems_rave_illustration_link=329`, `mems_knowledge_item=1113`, `mems_procedure=410`, `mems_procedure_step=3349`, `mems_specification=649`, `mems_specification_value=650`. Le SQLite est `user_version=20` et `integrity_check=ok`.
+
+RCL0193FRE est deja fortement represente (`901` connaissances, `397` procedures, `3189` etapes, `568` specifications, `569` valeurs, `301` images physiques), mais son audit complet page par page n'est PAS prouve. AKM7169ENG reste egalement non exhaustif : 40 pages/images integrees sur la source exacte connue de 482 pages.
+
+REGLE DE SUITE : avant toute extraction massive, resoudre les documents sources exacts et construire un registre source (publication, langue, nombre de pages/sections, taille/hash quand disponible). Ensuite seulement, audit de chaque page/section avec les statuts du socle multilingue. Tout contenu utile a l'utilisateur final est dans le perimetre, sans filtre ECU/MEMS-only.
+
+Source deja certifiee : AKM7169ENG exact, 482 pages, SHA-256 `c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0`. Preuve historique disponible pour RCL0193FRE : source exacte 371 pages, 67 009 217 octets, SHA-256 `0c7fef28d0d0f0673ba321d6625a019c005823103caa98afb3258114e1fec713`; le fichier exact doit maintenant etre resolu dans les sources deja fournies avant utilisation.
+
+PROCHAINE ACTION EXACTE : identifier sans re-upload inutile les sources exactes RCL0193FRE/RCL0193ENG, RCL0194ENG et AKM6348, verifier leur identite/page count/hash, puis creer le registre source et commencer le ledger page par page du premier document resolu.
