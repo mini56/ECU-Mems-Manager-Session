@@ -9835,3 +9835,44 @@ Le lot multilingue additif RCL0193ENG pages physiques 161-176 `MANIFOLD & EXHAUS
 
 ### PROCHAINE ACTION EXACTE
 Ouvrir directement RCL0193ENG page physique **177**, section `CLUTCH`. Determiner la fin exacte de la section et confirmer visuellement les pages blanches/sans texte. Comparer ensuite a RCL0193FRE/lot historique pour deduplication, extraire exhaustivement texte, procedures, couples, valeurs, warnings, outils et visuels utiles, conserver l'architecture de localisation N-langues, valider localement, ecrire le journal AVANT POUSSE, puis seulement transporter le lot suivant. Ne toucher ni a `MEMSX64`, ni protocole/ECU/UI/IA/ONNX.
+
+## 2026-08-31 - RCL0193ENG PAGES 177-192 CLUTCH - JOURNAL AVANT POUSSE
+
+Reprise depuis le SAFE CHECKPOINT valide du lot 161-176 : branche `tmp-rave-complete-multilingual-backfill`, commit `d758031a9598f45188469b1a6f9f220fbc3353d5`.
+
+### SOURCE ET PERIMETRE VERIFIES DIRECTEMENT
+- Source : `rave/xn/wmxn990e.pdf`, RCL0193ENG 5th Edition, 4 744 911 octets, 372 pages, SHA-256 `c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715`.
+- Bloc exact rendu et inspecte : pages physiques **177-192 = CLUTCH** ; p178 et p192 sont visuellement entierement blanches ; p193 ouvre `MANUAL GEARBOX`.
+- Rapport historique consolide : lot francais **1820**, `RCL0193FRE PDF 176-225 : embrayage, boite de vitesses manuelle, arbres de transmission et direction`; embrayage FRE **176-191**. Alignement de deduplication : **ENG p177-192 <-> FRE p176-191**.
+- La couverture francaise sert uniquement a eviter les doublons conceptuels ; le texte anglais, les pages, figures, procedures, valeurs et cautions sont conserves independamment.
+
+### CANDIDAT LOCAL VALIDE
+- 16/16 unites physiques ; 2 blanches ; 14/14 pages non blanches avec texte source anglais integral et candidat visuel.
+- 7 operations constructeur : `33.25.03`, `33.15.01`, `33.10.04.99`, `33.10.07`, `33.25.12`, `33.20.01`, `33.35.01`.
+- 12 faits, 16 valeurs/couples/parametres quantitatifs, 17 warnings/cautions/exigences, 7 outils/equipements, 7 consommables/remplacements.
+- Ancres visuelles N-langues : numeros de reparation, figures, geometrie et IDs Rover `18G 1303`, `18G 1381`, `18G 684` immuables ; textes humains localisables separement.
+- Valeurs principales : throw-out stop **6.5 mm** ; support ECM **10 N.m** ; purge **3/4 tour** ; steady bar **40 N.m** ; maitre-cylindre/servo **25 N.m** ; support slave M8 **37 N.m** / M5 **7 N.m** ; slave **37 N.m** ; support faisceau **25 N.m** ; masses **9 N.m** ; plateau/volant **25 N.m** ; boulon volant **150 N.m** ; unions hydrauliques **14 N.m**.
+- Securite/service : fluide purge jamais reutilise, niveau reservoir > moitie, proteger les peintures ; position vilebrequin correcte pour la rondelle C ; boulon volant neuf ; butee non lavee au solvant et O-ring neuf ; joint maitre-cylindre/goupille/rondelles d'etancheite neufs selon procedure.
+- Validation locale : double application idempotente sur le checkpoint anglais p1-176 ; `PRAGMA integrity_check=ok`, `foreign_key_check=0`, `user_version=21`, pages 177..192 exactes, QZ64 -> SQL byte-for-byte exact.
+
+### TROIS FICHIERS CANDIDATS
+1. `database/reference/prototypes/rcl0193eng_p177_192_multilingual_v1.sql`
+   - 283672 octets
+   - SHA-256 `44eaf5ff88d3a1aa467a08ad30b9349ca021e4b2f30fa98ee239d506a2c1e301`
+   - Git blob local `ceabd7bb556491e78ee760f7bdc01d5130825819`
+2. `database/reference/prototypes/rcl0193eng_p177_192_multilingual_v1.qz64`
+   - 19873 octets
+   - SHA-256 `3636c7fd88d0b3273d0042b6495da5ad0aaf0e54fd7da08877cda25caa0f26b0`
+   - Git blob local `4f39afa06e755772722043320020a0a717cbf898`
+3. `database/reference/audits/RCL0193ENG_P177_192_MULTILINGUAL_BACKFILL_V1.md`
+   - 2880 octets
+   - SHA-256 `72471b0115fb1463415d64cdeb3ae6b3b2fa90abcdbcd2d5744f58397c7905d4`
+   - Git blob local `f8b0efcaa19b5145c5e63a391758688e3224ed64`
+
+### PERIMETRE PROTEGE
+- Base technique avant transport : `d758031a9598f45188469b1a6f9f220fbc3353d5`.
+- `MEMSX64` recontrole avant pousse : strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+- Aucun `manifest.json`, aucune table historique, aucun protocole/ECU/UI/IA/ONNX.
+
+### PROCHAINE ACTION EXACTE
+Transporter uniquement QZ64 + audit par petits fragments texte controles sur `tmp-rave-complete-multilingual-backfill`; verifier taille + Git blob de chaque fragment avant installateur. L'installateur devra reconstruire le QZ64 et l'audit exacts, decoder le SQL exact, verifier tailles/SHA, appliquer le lot deux fois sur la chaine anglaise p1-176, verifier invariants et `MEMSX64`, supprimer transport/workflow temporaire, et committer uniquement les trois fichiers finaux. Aucun squash ni avance p193 avant journal du resultat installateur.
