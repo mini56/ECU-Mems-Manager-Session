@@ -1,0 +1,66 @@
+
+## 2026-08-31 - RCL0193ENG PAGES 161-176 MANIFOLD & EXHAUST SYSTEMS - JOURNAL AVANT POUSSE
+
+Reprise depuis le SAFE CHECKPOINT valide du lot 147-160 : branche `tmp-rave-complete-multilingual-backfill`, commit `7744de40a8212da4080fe04c4f12fd9c43da8b9b`.
+
+### SOURCE ET PERIMETRE VERIFIES DIRECTEMENT
+- Source : `rave/xn/wmxn990e.pdf`, RCL0193ENG 5th Edition, 4 744 911 octets, 372 pages, SHA-256 `c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715`.
+- Bloc exact : pages physiques **161-176 = MANIFOLD & EXHAUST SYSTEMS** ; p177 ouvre `CLUTCH`.
+- p162 et p176 ont ete rendues et confirmees visuellement **entierement blanches**.
+- Alignement de deduplication confirme par le rapport historique : **ENG p161-176 <-> RCL0193FRE p160-175**, bloc collecteur/echappement du lot `research_enrichment_1810.qz64`.
+- La couverture francaise historique sert uniquement a eviter les doublons conceptuels : la couche anglaise, les pages, figures, operations et textes utiles restent conserves independamment.
+
+### EXHAUSTIVITE UTILISATEUR FINAL
+Candidat local valide :
+- 16/16 unites physiques ; 2 blanches ;
+- 14/14 pages non blanches avec texte source anglais integral ;
+- 14/14 candidats visuels ;
+- 7 operations constructeur : `30.10.09`, `30.10.22`, `30.10.26`, `30.10.62`, `30.15.02`, `30.15.10`, `30.15.15` ;
+- 19 faits structures ;
+- 12 valeurs/couples ;
+- 16 warnings/cautions/exigences ;
+- 4 outils/equipements ;
+- 3 consommables/materiels de service ;
+- 3 legendes constructeur p163/p164/p165 avec **56 cellules** : ancres numeriques immuables + libelles anglais localisables.
+
+Informations remarquables conservees : admission aluminium avec throttle housing/MAP/IACV/IAT/rampe/injecteurs ; collecteur echappement fonte avec HO2S et repartition cylindres 2-3 / 1-4 ; boucle fermee HO2S->ECM->correction carburant ; front pipe/catalyseur 45 N.m ; tail pipe/catalyseur 9 N.m ; front pipe/collecteur 22 N.m ; bride vers differentiel 22 N.m ; IACV 7 N.m ; throttle body 8 N.m ; IAT 7 N.m ; MAP 6 N.m ; HO2S 55 N.m ; breather 9 N.m ; support filtre a air 9 N.m ; ecrous collecteurs 22 N.m selon sequence illustree ; cle plate 22 mm pour HO2S ; O-rings et rondelle HO2S neufs ; silicone grease ; precautions raccords rapides carburant et chandelles de securite.
+
+### TRADUCTION DES IMAGES / N LANGUES
+- Une seule source visuelle constructeur par page/figure.
+- Repères numeriques, figure IDs, numeros de reparation, sequences graphiques de serrage, geometrie, fleches et acronymes techniques restent immuables.
+- Titres, legendes, warnings, cautions, notes et textes humains sont localises par locale, sans limite fixee a 6 langues.
+- Architecture prevue pour les langues actuelles et les futures langues dont japonais, chinois, hindi et autres locales.
+- Aucun faux raster traduit n'est cree et aucune information visuelle utile n'est ecartee au motif qu'elle existe deja en francais.
+
+### CANDIDAT LOCAL EXACT
+1. `database/reference/prototypes/rcl0193eng_p161_176_multilingual_v1.sql`
+   - 400987 octets
+   - SHA-256 `ccdf0a79b71c6d05dc085f2faa449cf5654de55fbc034266f9d2b70c325a59b6`
+   - Git blob attendu `ede4d5c9e666d9dcfe79aa3cdb2a11f993c8f54a`
+2. `database/reference/prototypes/rcl0193eng_p161_176_multilingual_v1.qz64`
+   - 22657 octets
+   - SHA-256 `30e93fa1557c0005db54d4d7d6de7f086a07d9c5b2e204533e1f4a70a4f63b56`
+   - Git blob attendu `c8603ec1c2f9d7296be0b5f3fa0763e4a0533cc6`
+3. `database/reference/audits/RCL0193ENG_P161_176_MULTILINGUAL_BACKFILL_V1.md`
+   - 3285 octets
+   - SHA-256 `3f48bcdca193a80305bbeccc8f32ca8a5fd4e961309218fd0ad127a06227a44a`
+   - Git blob attendu `b2f98d81baf71ef8c55bf2ecfae0204bbf2e209b`
+
+### VALIDATION LOCALE
+- Base de validation = checkpoint anglais p1-160 valide.
+- Application du nouveau SQL deux fois : SUCCESS / idempotence.
+- `PRAGMA integrity_check = ok`.
+- `PRAGMA foreign_key_check` = 0 ligne.
+- `PRAGMA user_version = 21`.
+- pages physiques exactes 161..176 ; p162/p176 restent `out_of_scope/not_required` car blanches.
+- QZ64 -> SQL : identite byte-for-byte exacte.
+- Comptages controles : source_text=14, visual_candidate=14, operations=7, facts=19, values=12, alerts=16, tools=4, consumables=3, tables=3, cells=56.
+
+### PERIMETRE PROTEGE
+- Aucun `manifest.json`.
+- Aucune table historique modifiee.
+- Aucun protocole/ECU/UI/IA/ONNX.
+- `MEMSX64` recontrole avant cette etape : strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+### PROCHAINE ACTION EXACTE
+Transporter uniquement ce lot par fichiers temporaires controles sur `tmp-rave-complete-multilingual-backfill`; verifier chaque Git blob avant installateur; reconstruire SQL depuis QZ64; verifier tailles/SHA/Git blobs; appliquer la chaine anglaise p1-176 puis le nouveau lot une seconde fois; verifier invariants et perimetre; supprimer tous transports/workflows temporaires; committer uniquement les trois fichiers finaux; compacter l'historique de transport en un seul commit si necessaire; journaliser APRES POUSSE avant d'ouvrir p177 `CLUTCH`.
