@@ -9785,3 +9785,53 @@ Les Git blobs SQL et audit ont ete relus directement sur le commit bot ; le QZ64
 
 ### PROCHAINE ACTION EXACTE
 Compacter uniquement les 15 commits temporaires en recreant un commit propre dont le tree est **strictement** `103544a872226c049c708371ed9fec14692db4b3` et dont le parent direct est `7744de40a8212da4080fe04c4f12fd9c43da8b9b`. Forcer ensuite `tmp-rave-complete-multilingual-backfill` sur ce commit, reverifier `ahead_by=1` et exactement les trois fichiers attendus, recontroler `MEMSX64`, puis ecrire le **CHECKPOINT APRES POUSSE / SAFE CHECKPOINT** avant d'ouvrir p177 `CLUTCH`.
+
+## 2026-08-31 - RCL0193ENG PAGES 161-176 MANIFOLD & EXHAUST SYSTEMS - CHECKPOINT APRES POUSSE
+
+**SAFE CHECKPOINT = YES.**
+
+Le lot multilingue additif RCL0193ENG pages physiques 161-176 `MANIFOLD & EXHAUST SYSTEMS` est valide, nettoye et compacte sur `tmp-rave-complete-multilingual-backfill`.
+
+### VALIDATION GITHUB ACTIONS
+- Installateur controle : run `33394660033`, job `99496194082` - **SUCCESS**.
+- Etapes PASS : reconstruction exacte transport/QZ64/SQL, double validation SQLite et invariants, verification branche protegee, nettoyage transports/workflow, garde de perimetre et commit final.
+- Commit bot valide avant compaction : `bca2486b2e88747706b074f0842fb248f7bdb2fb`.
+- Tree valide : `103544a872226c049c708371ed9fec14692db4b3`.
+- Journal avant compaction : run `33395792972`, job `99499872683` - **SUCCESS**.
+
+### COMMIT FINAL PROPRE
+- Commit final apres compaction : `d758031a9598f45188469b1a6f9f220fbc3353d5`.
+- Parent direct : `7744de40a8212da4080fe04c4f12fd9c43da8b9b`.
+- Le commit final reutilise exactement le tree valide `103544a872226c049c708371ed9fec14692db4b3`; aucun octet documentaire valide n'a change pendant la compaction.
+- Compare `7744de40... -> d758031a...` : `ahead_by=1`, `behind_by=0`, `total_commits=1`, exactement **3 fichiers ajoutes** et aucun autre changement.
+
+### TROIS FICHIERS FINAUX EXACTS
+1. `database/reference/prototypes/rcl0193eng_p161_176_multilingual_v1.sql`
+   - 400987 octets
+   - SHA-256 `ccdf0a79b71c6d05dc085f2faa449cf5654de55fbc034266f9d2b70c325a59b6`
+   - Git blob `ede4d5c9e666d9dcfe79aa3cdb2a11f993c8f54a`
+2. `database/reference/prototypes/rcl0193eng_p161_176_multilingual_v1.qz64`
+   - 22657 octets
+   - SHA-256 `30e93fa1557c0005db54d4d7d6de7f086a07d9c5b2e204533e1f4a70a4f63b56`
+   - Git blob `c8603ec1c2f9d7296be0b5f3fa0763e4a0533cc6`
+3. `database/reference/audits/RCL0193ENG_P161_176_MULTILINGUAL_BACKFILL_V1.md`
+   - 3285 octets
+   - SHA-256 `3f48bcdca193a80305bbeccc8f32ca8a5fd4e961309218fd0ad127a06227a44a`
+   - Git blob `b2f98d81baf71ef8c55bf2ecfae0204bbf2e209b`
+
+### CONTENU / EXHAUSTIVITE
+- 16/16 pages physiques suivies ; p162 et p176 confirmees visuellement blanches.
+- 14/14 pages non blanches avec texte source anglais integral et candidat visuel.
+- 7 operations constructeur : `30.10.09`, `30.10.22`, `30.10.26`, `30.10.62`, `30.15.02`, `30.15.10`, `30.15.15`.
+- 19 faits, 12 valeurs/couples, 16 warnings/cautions/exigences, 4 outils/equipements, 3 consommables.
+- 3 legendes constructeur p163/p164/p165 avec 56 cellules et ancres numeriques immuables pour localisation N-langues.
+- `PRAGMA integrity_check=ok`, `foreign_key_check=0`, `user_version=21`, double application idempotente et roundtrip QZ64->SQL exact.
+
+### PERIMETRE PROTEGE
+- `manifest.json` inchange.
+- Transports et workflow temporaire absents du tree final valide.
+- Aucun changement protocole/ECU/UI/IA/ONNX ni table historique.
+- `MEMSX64` recontrole apres compaction : toujours strictement BUILD #103 commit `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+### PROCHAINE ACTION EXACTE
+Ouvrir directement RCL0193ENG page physique **177**, section `CLUTCH`. Determiner la fin exacte de la section et confirmer visuellement les pages blanches/sans texte. Comparer ensuite a RCL0193FRE/lot historique pour deduplication, extraire exhaustivement texte, procedures, couples, valeurs, warnings, outils et visuels utiles, conserver l'architecture de localisation N-langues, valider localement, ecrire le journal AVANT POUSSE, puis seulement transporter le lot suivant. Ne toucher ni a `MEMSX64`, ni protocole/ECU/UI/IA/ONNX.
