@@ -1,5 +1,5 @@
-run=16
+run=17
 source=main/rave/xn/wmxn990e.pdf
-exclude=1-20,112,193-202
-page=auto
-mode=second-technical-page-discovery
+exclude=193-202
+page=107
+mode=source-metadata-only-no-translation
