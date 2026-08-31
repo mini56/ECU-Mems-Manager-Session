@@ -1,0 +1,34 @@
+name: TEMP PATCH RAVEMEMS TEST2 OCR HELPER
+
+on:
+  push:
+    branches:
+      - tmp-rave-new-extraction-pilot
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-new-extraction-pilot
+          fetch-depth: 0
+      - name: Factor exact OCR helper
+        run: python tools/temp_patch_ravemems_ocr_helper.py
+      - name: Compile TEST2 extractor
+        run: python -m py_compile tools/ravemems_test2_raster_text.py
+      - name: Commit OCR helper factorization and remove temporary tooling
+        run: |
+          set -euo pipefail
+          git config user.name github-actions-bot
+          git config user.email github-actions@users.noreply.github.com
+          git rm .github/workflows/temp-patch-ravemems-test2-ocr-helper.yml tools/temp_patch_ravemems_ocr_helper.py
+          git add tools/ravemems_test2_raster_text.py
+          expected="$(printf '%s\n' '.github/workflows/temp-patch-ravemems-test2-ocr-helper.yml' 'tools/ravemems_test2_raster_text.py' 'tools/temp_patch_ravemems_ocr_helper.py' | sort)"
+          actual="$(git diff --cached --name-only | sort)"
+          test "$actual" = "$expected"
+          git commit -m "Factor TEST2 OCR helper for completeness gate"
+          git push origin HEAD:tmp-rave-new-extraction-pilot
