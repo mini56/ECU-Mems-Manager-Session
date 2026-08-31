@@ -9460,3 +9460,77 @@ Le premier helper de journal avait echoue avant tout commit sur `base64: invalid
 ### PROCHAINE ACTION EXACTE
 
 Ouvrir directement le PDF anglais RCL0193ENG a partir de la page physique **147**, section `COOLING SYSTEM`. Determiner d'abord la fin exacte de cette section et confirmer visuellement toutes les pages sans texte/blanches. Ensuite seulement : comparer au contenu francais/BUILD #103 pour deduplication, extraire exhaustivement texte, tableaux, valeurs, procedures, avertissements, outils et visuels, preparer leur architecture de traduction N-langues, valider localement, ecrire un nouveau journal AVANT POUSSE, puis pousser un lot additif. Aucun changement protocole/ECU/UI/IA/ONNX et aucun mouvement de `MEMSX64`.
+
+## 2026-08-31 - RCL0193ENG PAGES 147-160 COOLING SYSTEM - JOURNAL AVANT POUSSE
+
+Reprise depuis le SAFE CHECKPOINT valide du lot 137-146 : branche `tmp-rave-complete-multilingual-backfill`, commit `a2c14b49a1c12dcf9be82b06a531864733fc2029`.
+
+### SOURCE ET PERIMETRE VERIFIES DIRECTEMENT
+
+Source anglaise exacte :
+- `rave/xn/wmxn990e.pdf`
+- RCL0193ENG Mini Workshop Manual, 5th Edition
+- 4 744 911 octets
+- 372 pages physiques
+- SHA-256 `c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715`
+
+Bloc confirme directement dans le PDF anglais :
+- pages physiques **147-160** = **COOLING SYSTEM** ;
+- p148, p152 et p154 = **visuellement entierement blanches** ;
+- p161 ouvre la section suivante `MANIFOLD & EXHAUST SYSTEMS`.
+
+Correspondance francaise confirmee par le rapport historique consolide du lot 1810 : **RCL0193ENG p147-160 <-> RCL0193FRE p146-159**. Le lot `research_enrichment_1810.qz64` couvre deja la mecanique francaise du circuit de refroidissement. Le nouveau lot anglais conserve donc toute la provenance et la couche source anglaise, tout en utilisant cette correspondance pour la deduplication conceptuelle. Aucune famille MEMS ou variante non prouvee n'est inventee.
+
+### EXHAUSTIVITE UTILISATEUR FINAL
+
+Le candidat conserve :
+- **14/14** unites physiques ;
+- p148/p152/p154 blanches sans contenu invente ;
+- texte source anglais integral des **11/11 pages non blanches** ;
+- **11/11 candidats visuels** ;
+- **8 numeros de reparation constructeur** comme ancres inter-langues : `26.10.01`, `26.15.01`, `26.25.03`, `26.25.22`, `26.25.41`, `26.40.01`, `26.45.09`, `26.50.01` ;
+- **19 faits** structures ;
+- **11 valeurs** structurees ;
+- **16 cautions/notes/exigences** ;
+- **1 equipement de test** distingue des specifications vehicule : thermostat test equipment ;
+- p149 : **9 reperes numeriques + 9 libelles de composants localisables** ;
+- p150 : **10 reperes de flux + A=COLD / B=HOT** separes pour traduction ;
+- dessins p153/p155-p160 prepares pour traduction N-langues en conservant reperes, numeros de reparation, figure IDs, fleches et geometrie.
+
+Informations constructeur notables conservees : systeme de type bypass ; radiateur aluminium cross-flow ; ventilateur electrique declenche par ECM ; pompe rotor entrainee par poulie poly-V/courroie alternateur ; procedure de rincage/remplissage basse pression et chauffage maximum ; eau haute pression interdite car risque d'endommager le radiateur ; thermostat ouverture `88 degC` ; couples `10`, `7`, `9`, `11` et `22 N.m` selon operation ; joints thermostat et pompe remplaces lors du remontage.
+
+### ARCHITECTURE MULTILINGUE DES VISUELS
+
+Regle conservee : **un visuel constructeur source + ancres techniques immuables + textes localises separes**. Numeros de repere, service repair numbers, figure IDs, acronymes techniques, geometrie et fleches restent stables. Titres, legendes, cautions, notes et procedures sont localisables via le socle N-langues. Aucun faux raster traduit n'est cree.
+
+### CANDIDAT LOCAL VALIDE
+
+Fichiers exacts prepares :
+- `database/reference/prototypes/rcl0193eng_p147_160_multilingual_v1.sql` - **320 990 octets** - SHA-256 `cf38ef4c64614328cf421a265193c50dffecceccb5e7bbe0b72735fb75868746` - Git blob attendu `07b707eab167b7c848e3db4432f20e367a91cafa` ;
+- `database/reference/prototypes/rcl0193eng_p147_160_multilingual_v1.qz64` - **19 525 octets** - SHA-256 `2b3872fd3eba75f293cb7f8690e94e81fc767940c1384d9b2aa83b884a0b34e7` - Git blob attendu `81b7a7edb3d1261832110622f26a2b49a1a9c4fa` ;
+- `database/reference/audits/RCL0193ENG_P147_160_MULTILINGUAL_BACKFILL_V1.md` - **3 006 octets** - SHA-256 `981d131cf5e7b13eaa5561805b65dce7b888620e4bc202e2d562dede93b3d346` - Git blob attendu `c354e5edebf83e2591c222cc30aeb71ef91ce61f`.
+
+Validation locale depuis l'etat valide p1-146, puis application du lot p147-160 **deux fois** :
+- `PRAGMA integrity_check = ok` ;
+- `PRAGMA foreign_key_check = 0` ;
+- `PRAGMA user_version = 21` ;
+- pages exactes 147..160 presentes ;
+- 11 textes source ;
+- 11 candidats visuels ;
+- 8 procedures constructeur ;
+- 19 faits ;
+- 11 valeurs ;
+- 16 cautions/notes/exigences ;
+- 1 outil/equipement de test ;
+- 2 tables semantiques / 38 cellules ;
+- 2 regions visuelles A/B ;
+- seconde application sans doublon ;
+- QZ64 -> SQL byte pour byte exact.
+
+### PERIMETRE DE POUSSE AUTORISE
+
+Uniquement les trois fichiers du lot 147-160 ci-dessus sur `tmp-rave-complete-multilingual-backfill`.
+
+Aucune modification de `manifest.json`, aucune table historique, aucun protocole/ECU/UI/IA/ONNX. `MEMSX64` a ete recontrole avant cette etape et reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+PROCHAINE ACTION EXACTE : transporter le lot 147-160 par helper temporaire controle, verifier les SHA exacts et Git blobs, le roundtrip QZ64, reconstruire SQLite depuis le socle puis tous les lots anglais p1-160 avec application du nouveau lot deux fois, verifier les invariants et le perimetre final, nettoyer transports/workflow temporaires, committer uniquement les trois fichiers finaux, compacter l'historique de transport si necessaire, puis journaliser APRES POUSSE avant d'ouvrir p161 `MANIFOLD & EXHAUST SYSTEMS`.
