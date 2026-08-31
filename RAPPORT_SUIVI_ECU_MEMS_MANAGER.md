@@ -9876,3 +9876,31 @@ Reprise depuis le SAFE CHECKPOINT valide du lot 161-176 : branche `tmp-rave-comp
 
 ### PROCHAINE ACTION EXACTE
 Transporter uniquement QZ64 + audit par petits fragments texte controles sur `tmp-rave-complete-multilingual-backfill`; verifier taille + Git blob de chaque fragment avant installateur. L'installateur devra reconstruire le QZ64 et l'audit exacts, decoder le SQL exact, verifier tailles/SHA, appliquer le lot deux fois sur la chaine anglaise p1-176, verifier invariants et `MEMSX64`, supprimer transport/workflow temporaire, et committer uniquement les trois fichiers finaux. Aucun squash ni avance p193 avant journal du resultat installateur.
+
+## 2026-08-31 - RCL0193ENG P177-192 CLUTCH - ECHEC CONTROLE TRANSPORT AVANT INSTALLATEUR
+
+Le transport temporaire du candidat `CLUTCH` a ete controle integralement avant creation de tout installateur.
+
+Resultat : **9 fragments sur 10 sont exacts**, mais `qz64.part07` est incomplet d'un octet a distance :
+- attendu local : **2373 octets**, SHA-256 `d1192bb7842706dd567c6000e6f098d3046d72824711790190b917d1b0aceb48`, Git blob `c8b0c6c6d0951b3dd939e370a0870a2ad6c38c82` ;
+- observe GitHub : **2372 octets**, Git blob `6ff3b16afdcc0589c5dff9b857f839369095a218`.
+
+Cause identifiee localement : le fragment source se termine par un caractere LF (`0x0A`) ; ce dernier octet n'a pas ete inclus dans l'appel de creation GitHub. Le contenu Base64 utile n'est pas redecoupe ni regenere : la correction doit uniquement restaurer ce LF final.
+
+Les neuf autres fichiers de transport sont conformes a leurs octets locaux :
+- `qz64.part00` 2500 / `423f759b73e4e60923f277bd223057daf45ac5cc` ;
+- `qz64.part01` 2500 / `00feac5a8a87c0f496a1a0bdeecdf964b6e92575` ;
+- `qz64.part02` 2500 / `7629efa3f3dab3ff0afff4610b23d0a2b08b2bb5` ;
+- `qz64.part03` 2500 / `23ff95f9c8865cc43ee17fb1bad5dc8356e19b26` ;
+- `qz64.part04` 2500 / `bc9acd6c79a14e301a7459387088b2f7b55ad61b` ;
+- `qz64.part05` 2500 / `a19b53e2ab989f0f36a0d2c34339d2d379a216b9` ;
+- `qz64.part06` 2500 / `c8ba94fa963bd89e4e9643d30317be0d7f36bf84` ;
+- `audit.part00` 2500 / `649848a6b66bec679a827c1bbf3dcbc758975c54` ;
+- `audit.part01` 380 / `d738e91a255dba279b873296038cfb8c2ebd2342`.
+
+**Aucun installateur p177-192 n'a ete cree, aucun SQL/QZ64/audit final p177-192 n'a ete ecrit, et aucune validation finale n'a ete contournee.** La branche technique ne contient a ce stade que les fragments temporaires de transport au-dessus du SAFE CHECKPOINT `d758031a9598f45188469b1a6f9f220fbc3353d5`.
+
+`MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730` ; aucun protocole/ECU/UI/IA/ONNX n'est touche.
+
+### PROCHAINE ACTION EXACTE
+Apres validation GitHub Actions de ce journal, corriger **uniquement** `.github/rcl0193eng-p177-192-transfer/qz64.part07` en restaurant son LF final afin d'obtenir 2373 octets / Git blob `c8b0c6c6d0951b3dd939e370a0870a2ad6c38c82`. Recontroler ensuite les 10 blobs distants. Ne creer l'installateur que si les 10 transports sont exacts.
