@@ -8368,3 +8368,20 @@ L'audit final confirme toujours les invariants fonctionnels : 50/50 pages, 244 e
 ### PROCHAINE ACTION EXACTE APRES CETTE RECTIFICATION
 
 Apres validation GitHub Actions de cette rectification du rapport, pousser **uniquement les trois fichiers ci-dessus avec ces octets et ces hashes exacts** sur `tmp-rave-complete-multilingual-backfill`, puis relire et reverifier le commit distant. `MEMSX64` reste BUILD #103 et aucune modification protocole/ECU/UI/IA/ONNX n'est autorisee.
+
+
+## 2026-08-31 - RCL0193ENG PAGES 1-50 - ECHEC DU PREMIER INSTALLATEUR TEMPORAIRE, AUCUNE ECRITURE FINALE
+
+Le premier transport GitHub Actions du lot pages 1-50 a ete lance par le workflow temporaire `TEMP RCL0193ENG P001-050 INSTALL`.
+
+- run : `33372384609`
+- job : `99426194692`
+- etape en echec : `Rebuild exact candidate`
+- les etapes de verification des hashes finaux, SQLite et commit ont toutes ete sautees ;
+- aucun fichier final du lot n'a donc ete commite par ce run.
+
+Controle immediat du transport : les cinq blobs temporaires distants (4 fragments du generateur + audit compresse) ont exactement les memes tailles et SHA Git que leurs octets locaux. Le transport texte n'est donc ni tronque ni altere.
+
+Diagnostic reproduit localement : le generateur reconstruit deterministiquement le SQL et le QZ64 finaux, mais son audit brut conserve le placeholder `{{VALIDATION_BLOCK}}` (etat avant insertion des resultats de validation), tandis que l'audit final certifie de 5 644 octets contient ce bloc complete. Le `cmp` place dans le premier helper comparait ces deux etats distincts et devait donc echouer. Il s'agit d'une erreur du helper de transport, pas d'un echec du contenu SQL/QZ64 ni du schema.
+
+PROCHAINE ACTION EXACTE : corriger uniquement le workflow temporaire pour utiliser l'audit final certifie transporte (SHA-256 `576b14c9d7a162baa32aceea83d9ea2b80abc7b423647912109a902c5d686bbb`) au lieu de comparer cet audit a l'audit brut du generateur. Conserver tous les autres gardes : SHA du generateur, hashes/taille des trois fichiers, round-trip QZ64, double application SQLite, 50/50 pages et perimetre final strictement limite aux trois fichiers. `MEMSX64` reste BUILD #103 ; aucune modification protocole/ECU/UI/IA/ONNX.
