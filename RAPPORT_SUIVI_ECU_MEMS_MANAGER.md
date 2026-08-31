@@ -9288,3 +9288,91 @@ Architecture visuelle maintenue N-langues : un visuel constructeur source + ancr
 Inspecter **directement dans RCL0193ENG** la section qui commence page physique **137**, `FUEL DELIVERY SYSTEM`, determiner sa fin exacte et toutes ses pages blanches dans le PDF anglais avant toute classification. Comparer ensuite au RCL0193FRE / connaissances historiques pour dedupliquer sans perdre l'information anglaise, puis preparer le prochain lot additif multilingue N-langues avec visuels localisables.
 
 Aucune nouvelle pousse technique du bloc p137+ avant un nouveau journal AVANT POUSSE.
+
+
+## 2026-08-31 - RCL0193ENG PAGES 137-146 FUEL DELIVERY SYSTEM - JOURNAL AVANT POUSSE
+
+Reprise depuis le SAFE CHECKPOINT valide du lot 105-136 : branche `tmp-rave-complete-multilingual-backfill`, commit `8657aa8a9bdd13823f9b0a724999bf31556fd8e0`.
+
+### INCIDENT DU PREMIER HELPER DE JOURNAL - AUCUNE ECRITURE FINALE
+
+Le premier helper de journal `REPORT RCL0193ENG P137-146 PREPUSH` a echoue avant le commit du rapport :
+- run `33388717077` ;
+- job `99477124120` ;
+- etape `Append pre-push checkpoint` : FAILURE ;
+- erreur exacte : `base64: invalid input`.
+
+La commande etait sous `bash -e -o pipefail` : le script s'est arrete avant `git add`, `git commit` et `git push`. Le checkout ephemere du runner a donc ete jete ; aucune modification du rapport n'a ete poussee par ce run et aucune branche technique n'a ete touchee. La correction porte uniquement sur le transport du texte du journal.
+
+### SOURCE ET PERIMETRE VERIFIES DIRECTEMENT
+
+Source anglaise exacte :
+- `rave/xn/wmxn990e.pdf`
+- RCL0193ENG Mini Workshop Manual, 5th Edition
+- 4 744 911 octets
+- 372 pages physiques
+- SHA-256 `c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715`
+
+Bloc confirme directement dans le PDF anglais :
+- pages physiques **137-146** = **FUEL DELIVERY SYSTEM** ;
+- p138, p140 et p146 = **visuellement entierement blanches** ;
+- p147 ouvre la section suivante `COOLING SYSTEM`.
+
+Correspondance francaise controlee par le rapport historique V5 du lot 1790 : **RCL0193ENG p137-146 <-> RCL0193FRE p136-145**. Le lot `research_enrichment_1790.qz64` couvre deja la mecanique francaise du `SYSTEME D'ALIMENTATION`, portee MPi. Le lot anglais conserve quand meme l'integralite du texte et des visuels utiles. Aucune generation MEMS n'est inventee.
+
+### EXHAUSTIVITE UTILISATEUR FINAL
+
+Le candidat conserve :
+- **10/10** unites physiques ;
+- p138/p140/p146 blanches, marquees sans contenu invente ;
+- texte source anglais integral des **7/7 pages non blanches** ;
+- candidats visuels : **7/7** ;
+- **7 numeros constructeur** conserves comme ancres inter-langues : `19.50.13`, `19.55.02`, `19.22.09`, `19.25.02`, `19.45.08`, `19.55.01`, `19.55.25` ;
+- **10 faits** structures ;
+- **8 valeurs** structurees ;
+- **15 avertissements/cautions/exigences** ;
+- **5 outils/equipements** distingues des specifications vehicule : `18G 1500`, `18G 1500-A`, `18G 1500-5`, bowser et `18G 1467` ;
+- dessins p139/p141-p145 prepares pour traduction N-langues sans modifier numeros de repere, IDs d'outil, figure IDs ou geometrie.
+
+Informations notables conservees : test de pression carburant avec controle de la chute sur une minute ; vidange du reservoir en espace ouvert vers conteneur scelle ; risque essence inflammable/explosif/toxique ; reset IFS ; filtre avec deux cles et O-ring neuf lubrifie silicone ; flexible d'alimentation identifie par bande orange ; joints pompe/jauge/remplissage ; valve de mise a l'air deux voies.
+
+Valeurs conservees :
+- vis IFS : `2 N.m` ;
+- raccord adaptateur entree filtre : `30 N.m` ;
+- support filtre/subframe : `9 N.m` ;
+- raccords tuyaux filtre : `30 N.m` ;
+- ecrous pompe a carburant : `9 N.m` ;
+- ecrou valve de mise a l'air : `9 N.m` ;
+- ecrou support valve deux voies : `9 N.m`.
+
+### ARCHITECTURE MULTILINGUE DES VISUELS
+
+Regle conservee : **un visuel constructeur source + ancres techniques immuables + textes localises separes**. Numeros, figure IDs, outils `18G`, geometrie, fleches et connecteurs restent stables. Titres, avertissements, cautions, notes et procedures sont localisables via le socle N-langues. Aucun faux raster traduit n'est cree.
+
+### CANDIDAT LOCAL VALIDE
+
+Fichiers exacts prepares :
+- `database/reference/prototypes/rcl0193eng_p137_146_multilingual_v1.sql` - **171 496 octets** - SHA-256 `8c6ceb8bd268629ce4b82f5f8453ec7cce7a507a15629cb94efbda5dd8793a6c` - Git blob attendu `1973e141d0a8f240c1d8bfbb04676fd90b430d00` ;
+- `database/reference/prototypes/rcl0193eng_p137_146_multilingual_v1.qz64` - **13 393 octets** - SHA-256 `7f28500d33c41a8f48d92f193ad773e69792aeb03adfa661669cc9c7e2636b29` - Git blob attendu `a3a64276d78ab870473434371e963ddc778f7a14` ;
+- `database/reference/audits/RCL0193ENG_P137_146_MULTILINGUAL_BACKFILL_V1.md` - **2 446 octets** - SHA-256 `b9fb551208a2a54d8164ccbf6ded7d318a62f038fb366562ba687b1d11042acd` - Git blob attendu `46b31a09d42c1cedbeb1a32bab90ba744d2275e0`.
+
+Validation locale depuis l'etat valide p1-136, puis application du lot p137-146 **deux fois** :
+- `PRAGMA integrity_check = ok` ;
+- `PRAGMA foreign_key_check = 0` ;
+- `PRAGMA user_version = 21` ;
+- pages exactes 137..146 presentes ;
+- 7 textes source non blancs ;
+- 7 candidats visuels ;
+- 7 operations constructeur ;
+- 10 faits / 8 valeurs / 15 securites-exigences / 5 outils ;
+- 157 textes anglais du lot ;
+- seconde application sans doublon ;
+- QZ64 -> SQL byte pour byte exact.
+
+### PERIMETRE DE POUSSE AUTORISE
+
+Uniquement les trois fichiers du lot 137-146 ci-dessus sur `tmp-rave-complete-multilingual-backfill`.
+
+Aucune modification de `manifest.json`, aucune table historique, aucun protocole/ECU/UI/IA/ONNX. `MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+PROCHAINE ACTION EXACTE : transporter le lot 137-146 par helper temporaire controle, verifier les SHA exacts, le roundtrip QZ64, SQLite applique deux fois, les invariants et le perimetre final, nettoyer tous les transports/workflows temporaires, committer uniquement les trois fichiers finaux, puis journaliser APRES POUSSE avant d'ouvrir la section anglaise p147 `COOLING SYSTEM`.
