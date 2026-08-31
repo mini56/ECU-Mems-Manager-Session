@@ -1,5 +1,5 @@
-run=11
+run=13
 source=main/rave/xn/wmxn990e.pdf
 exclude=193-202
 page=112
-mode=direct-text-replacement-fr-preserve-source-style
+mode=direct-text-replacement-fr-preserve-style-and-pictograms
