@@ -1,5 +1,5 @@
-run=5
+run=6
 source=main/rave/xn/wmxn990e.pdf
 exclude=193-202
 page=112
-mode=real-text-plus-schematic-fr
+mode=real-text-plus-schematic-fr-compact-numbers
