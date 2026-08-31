@@ -1,0 +1,33 @@
+name: REPORT RCL0193ENG P097-104 VALIDATOR FAILURE
+
+on:
+  push:
+    branches:
+      - RAPPORT
+    paths:
+      - '.github/workflows/report-rcl0193eng-p097-104-validator-failure.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  append-report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append validator failure journal
+        env:
+          REPORT_APPEND_B64: 'CgojIyAyMDI2LTA4LTMxIC0gUkNMMDE5M0VORyBQQUdFUyA5Ny0xMDQgLSBFQ0hFQyBWQUxJREFURVVSIFNRTElURSwgRE9OTkVFUyBSRUNPTlNUUlVJVEVTIEVYQUNURVMKCkxlIHNlY29uZCBydW4gZHUgd29ya2Zsb3cgdGVtcG9yYWlyZSBkIGluc3RhbGxhdGlvbiBhIGZyYW5jaGkgY29tcGxldGVtZW50IGxhIHJlY29uc3RydWN0aW9uIGRlcyB0cm9pcyBmaWNoaWVycyBjYW5kaWRhdHMsIHB1aXMgcyBlc3QgYXJyZXRlIHVuaXF1ZW1lbnQgc3VyIHVuZSByZXF1ZXRlIGVycm9uZWUgZHUgdmFsaWRhdGV1ciBTUUxpdGUuCgotIHdvcmtmbG93IDogYFRFTVAgUkNMMDE5M0VORyBQMDk3LTEwNCBJTlNUQUxMYAotIHJ1biA6IGAzMzM4MTExNTg0NGAKLSBqb2IgOiBgOTk0NTM0NjA0ODlgCi0gY29uY2x1c2lvbiA6ICoqRkFJTFVSRSoqCi0gYFJlY29uc3RydWN0IGV4YWN0IGxvdGAgOiAqKlNVQ0NFU1MqKgotIFFaNjQgOiAxNSA2NjEgb2N0ZXRzLCBTSEEtMjU2IGF0dGVuZHUgdmFsaWRlCi0gU1FMIDogMTkwIDY4MSBvY3RldHMsIFNIQS0yNTYgYDUxZGZiNjk1YzE5ZmU0NTBhN2VhMGRiN2ZhMjNiOTMzNDRjOTNmNzkyYzQ0ZWFkY2E3NjQwNWZiODQ1OGE5NjFgIHZhbGlkZQotIGF1ZGl0IDogNCAwNTYgb2N0ZXRzLCBTSEEtMjU2IGA1NzY0MzZiYWU2Yzg1NGVmY2I1YjYzMDZlZWRkNTNkNjlmNjJiOTY2OTk3NTQ2NTU0NzM0MDBjMWVjM2UyNWRhYCB2YWxpZGUKCkxhIHZhbGlkYXRpb24gU1FMaXRlIGEgZW5zdWl0ZSB2ZXJpZmllIGF2ZWMgc3VjY2VzLCBhdmFudCBsYSBwYW5uZSA6Ci0gOC84IHVuaXRlcyBwaHlzaXF1ZXMgOTctMTA0IDsgcGFnZXMgZXhhY3RlcyA5Ny4uMTA0Ci0gcDk4IGBvdXRfb2Zfc2NvcGUgLyBub3RfcmVxdWlyZWRgCi0gNy83IHBhZ2VzIHNvdXJjZSBub24gYmxhbmNoZXMKLSA3LzcgY2FuZGlkYXRzIHZpc3VlbHMgZGUgcGFnZQotIDcvNyBmaWd1cmVzIHRlY2huaXF1ZXMgZ3JhbnVsYWlyZXMKLSA1LzUgb3BlcmF0aW9ucyBjb25zdHJ1Y3RldXIKLSA5IGZhaXRzIGBrbm93bGVkZ2VgCi0gNCBlbnRpdGVzIGB2YWx1ZWAgZXQgNCBsaWduZXMgYG1lbXNfZG9jX3ZhbHVlYAotIDkgYXZlcnRpc3NlbWVudHMvY2F1dGlvbnMvZXhpZ2VuY2VzCi0gMiByZW52b2lzIGNvbnN0cnVjdGV1cgotIDEgdGFibGUgZGUgbGVnZW5kZSAxN00wMTEyCgpFY2hlYyBleGFjdCA6IGBzcWxpdGUzLk9wZXJhdGlvbmFsRXJyb3I6IG5vIHN1Y2ggY29sdW1uOiB0YWJsZV9rZXlgIGxvcnMgZHUgY29udHJvbGUgZGVzIDIwIGNlbGx1bGVzIGRlIGxhIGxlZ2VuZGUuCgpMZSBzY2hlbWEgZXhhY3QgdmVyaWZpZSBkYW5zIGxlIFNRTCBjYW5kaWRhdCB1dGlsaXNlIDoKLSBgbWVtc19kb2NfdGFibGUuZW50aXR5X2tleWAKLSBgbWVtc19kb2NfdGFibGVfY2VsbC50YWJsZV9lbnRpdHlfa2V5YAotIGBtZW1zX2RvY190YWJsZV9jZWxsLmNlbGxfZW50aXR5X2tleWAKCkxhIHJlcXVldGUgZHUgaGVscGVyIHV0aWxpc2FpdCBwYXIgZXJyZXVyIGB0YWJsZV9rZXlgLCBxdWkgbuBleGlzdGUgcGFzLiBMYSBjb3JyZWN0aW9uIGF1dG9yaXNlZSBjb25zaXN0ZSB1bmlxdWVtZW50IGEgcmVtcGxhY2VyIGNlIGNvbnRyb2xlIHBhciB1bmUgcmVxdWV0ZSBzdXIgYHRhYmxlX2VudGl0eV9rZXlgIGV0IGEgcmVsYW5jZXIgbGVzIG1lbWVzIGdhcmRlcy4KCkxlcyBldGFwZXMgYENsZWFuIHRyYW5zcG9ydCBhbmQgZW5mb3JjZSBmaW5hbCBzY29wZWAgZXQgYENvbW1pdCBmaW5hbCBsb3RgIG9udCBldGUgU0tJUFBFRCA6IGF1Y3VuIGNvbW1pdCBwZXJtYW5lbnQgOTctMTA0IG4gYSBldGUgY3JlZS4KCkF1Y3VuZSBkb25uZWUgZG9jdW1lbnRhaXJlIG4gZXN0IG1vZGlmaWVlIHBhciBjZSBjb3JyZWN0aWYgZGUgaGVscGVyLiBgTUVNU1g2NGAgcmVzdGUgQlVJTEQgIzEwMyBgMWQ2MzE2YmQxNzQ2ZDZmMmI0Y2ZiNzUxY2FiODhkMThlMjdlZjczMGAuCg=='
+        run: |
+          python -c "import os,base64; open('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md','ab').write(base64.b64decode(os.environ['REPORT_APPEND_B64']))"
+      - name: Remove helper and commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm '.github/workflows/report-rcl0193eng-p097-104-validator-failure.yml'
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m 'Journal RCL0193ENG pages 97-104 SQLite validator failure'
+          git push origin HEAD:RAPPORT
