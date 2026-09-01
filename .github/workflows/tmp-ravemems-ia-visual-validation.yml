@@ -1,0 +1,175 @@
+name: TEMP RAVEMEMS IA visual integration validation
+on:
+  push:
+    branches: [tmp-ravemems-ia-visual-integration]
+    paths: ['.github/workflows/tmp-ravemems-ia-visual-validation.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  validate:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      BASE_COMMIT: 1d6316bd1746d6f2b4cfb751cab88d18e27ef730
+      SIM_RUN_ID: '33524210118'
+      SIM_ARTIFACT_ID: '9806972578'
+      SIM_ARTIFACT_NAME: ravemems-runtime-migration-simulation
+      SIM_DIGEST: sha256:bc8ceed9ea2a748fb23f2d2504f034c62010669d3d10f2a281cf675aea735642
+      CLEANUP_RUN_ID: '33524978067'
+      CLEANUP_ARTIFACT_ID: '9807286866'
+      CLEANUP_ARTIFACT_NAME: ravemems-controlled-legacy-cleanup-copy
+      CLEANUP_DIGEST: sha256:06746252cad5942ba00d6b8ea71b2fe17c71fd137161cb43d237e707219b5735
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout integration tree
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Verify protected production and exact artifacts
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $memsx64 = (git ls-remote origin refs/heads/MEMSX64).Split("`t")[0]
+          if ($memsx64 -ne $env:BASE_COMMIT) { throw "MEMSX64 moved: $memsx64" }
+          foreach ($spec in @(
+            @($env:SIM_ARTIFACT_ID,$env:SIM_ARTIFACT_NAME,$env:SIM_DIGEST),
+            @($env:CLEANUP_ARTIFACT_ID,$env:CLEANUP_ARTIFACT_NAME,$env:CLEANUP_DIGEST)
+          )) {
+            $json = gh api "repos/$env:GITHUB_REPOSITORY/actions/artifacts/$($spec[0])" | ConvertFrom-Json
+            if ($json.name -ne $spec[1]) { throw "Artifact name mismatch: $($json.name)" }
+            if ($json.digest -ne $spec[2]) { throw "Artifact digest mismatch: $($json.digest)" }
+            Write-Host "ARTIFACT_EXACT_PASS $($json.id) $($json.name) $($json.digest)"
+          }
+          Write-Host "PROTECTED_PRODUCTION_PASS $memsx64"
+
+      - name: Download validated runtime and cleanup copy
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP\sim","$env:RUNNER_TEMP\cleanup" | Out-Null
+          gh run download $env:SIM_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:SIM_ARTIFACT_NAME --dir "$env:RUNNER_TEMP\sim"
+          if ($LASTEXITCODE -ne 0) { throw "runtime artifact download failed" }
+          gh run download $env:CLEANUP_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:CLEANUP_ARTIFACT_NAME --dir "$env:RUNNER_TEMP\cleanup"
+          if ($LASTEXITCODE -ne 0) { throw "cleanup artifact download failed" }
+          $catalog = Get-ChildItem "$env:RUNNER_TEMP\sim" -Recurse -File -Filter runtime_visual_catalog.json | Select-Object -First 1
+          $runtimeFiles = Get-ChildItem "$env:RUNNER_TEMP\sim" -Recurse -Directory -Filter runtime_files | Select-Object -First 1
+          $cleanupDb = Get-ChildItem "$env:RUNNER_TEMP\cleanup" -Recurse -File -Filter cleanup_candidate.sqlite.gz | Select-Object -First 1
+          if (-not $catalog -or -not $runtimeFiles -or -not $cleanupDb) { throw 'Validated artifacts incomplete' }
+          "CATALOG_FILE=$($catalog.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "RUNTIME_FILES_DIR=$($runtimeFiles.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "CLEANUP_DB_GZ=$($cleanupDb.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Stage runtime catalog only on runner and verify all paths
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Copy-Item $env:CATALOG_FILE '${{ github.workspace }}\database\reference\runtime_visual_catalog.json' -Force
+          Copy-Item "$env:RUNTIME_FILES_DIR\*" '${{ github.workspace }}\database\reference' -Recurse -Force
+          @'
+          import gzip,hashlib,json,os,shutil,sqlite3
+          from collections import Counter
+          from pathlib import Path
+          root=Path(os.environ['GITHUB_WORKSPACE'])/'database'/'reference'
+          catalog=json.load(open(root/'runtime_visual_catalog.json',encoding='utf-8'))
+          assert catalog['viewer_entry_count']==1935
+          assert catalog['ravemems_occurrences']==1794
+          assert catalog['legacy_visible_kept']==141
+          assert catalog['legacy_replaced']==274
+          assert catalog['legacy_pure_text_hidden']==12
+          assert len(catalog['entries'])==1935
+          source=Counter()
+          seen=set()
+          for e in catalog['entries']:
+              assert e['ui_visible'] is True
+              assert e['ui_label']=='Voir le schéma'
+              assert e['source_type'] in ('ravemems','legacy')
+              if e['source_type']=='legacy': assert e.get('treatment')=='conserver_migrer_legacy'
+              rel=e['runtime_path'].replace('\\','/')
+              assert rel and not rel.startswith('/') and '..' not in Path(rel).parts
+              p=root/rel
+              assert p.is_file(), (e['runtime_key'],rel)
+              h=hashlib.sha256(p.read_bytes()).hexdigest()
+              assert h==e['sha256'], (e['runtime_key'],rel,h,e['sha256'])
+              source[e['source_type']]+=1
+              seen.add(rel)
+          assert source==Counter({'ravemems':1794,'legacy':141}),source
+          files=[p for p in Path(os.environ['RUNTIME_FILES_DIR']).rglob('*') if p.is_file()]
+          assert len(files)==1211,len(files)
+
+          db=Path(os.environ['RUNNER_TEMP'])/'cleaned.sqlite'
+          with gzip.open(os.environ['CLEANUP_DB_GZ'],'rb') as src, open(db,'wb') as dst: shutil.copyfileobj(src,dst)
+          con=sqlite3.connect(db)
+          assert con.execute('PRAGMA integrity_check').fetchone()[0].lower()=='ok'
+          assert con.execute('PRAGMA foreign_key_check').fetchall()==[]
+          checks={
+            'mems_rave_fact':177,
+            'mems_rave_illustration':102,
+            'mems_rave_illustration_link':288,
+            'mems_doc_visual':1070,
+            'mems_visual_runtime_source':1935,
+            'mems_visual_legacy_treatment':427,
+            'mems_visual_legacy_illustration_archive':24,
+            'mems_visual_legacy_link_archive':41,
+          }
+          for table,n in checks.items():
+              got=con.execute(f'SELECT COUNT(*) FROM {table}').fetchone()[0]
+              assert got==n,(table,got,n)
+          occ=con.execute("SELECT COUNT(*) FROM mems_doc_entity WHERE entity_kind='visual_occurrence'").fetchone()[0]
+          assert occ==1794,occ
+          con.close()
+          print('REAL_RUNTIME_CATALOG_PASS entries=1935 files=1211 ravemems=1794 legacy=141')
+          print('CLEANED_DATABASE_PASS illustrations=102 links=288 facts=177 assets=1070 occurrences=1794')
+          '@ | python -
+
+      - name: Install Qt 5.15.2 MSVC x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install --disable-pip-version-check "aqtinstall==3.3.0"
+          $sevenZip = (Get-Command 7z.exe -ErrorAction Stop).Source
+          if (Test-Path 'C:\Qt') { Remove-Item 'C:\Qt' -Recurse -Force -ErrorAction SilentlyContinue }
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
+          if ($LASTEXITCODE -ne 0) { throw "aqtinstall failed: $LASTEXITCODE" }
+
+      - name: Build IA MEMS diagram self-test x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake -S . -B build-visual-test -A x64 `
+            -DCMAKE_PREFIX_PATH='C:/Qt/5.15.2/msvc2019_64' `
+            -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF
+          if ($LASTEXITCODE -ne 0) { throw "CMake configure failed: $LASTEXITCODE" }
+          cmake --build build-visual-test --config Release --target ia_mems_diagram_selftest
+          if ($LASTEXITCODE -ne 0) { throw "IA diagram self-test build failed: $LASTEXITCODE" }
+
+      - name: Run IA MEMS diagram self-test against real runtime catalog
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:PATH = "C:\Qt\5.15.2\msvc2019_64\bin;$env:PATH"
+          & '${{ github.workspace }}\build-visual-test\Release\ia_mems_diagram_selftest.exe' 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP\ia_visual_selftest.log"
+          if ($LASTEXITCODE -ne 0) { throw "IA MEMS diagram self-test failed: $LASTEXITCODE" }
+          Write-Host 'IA_VISUAL_INTEGRATION_SELFTEST_PASS'
+
+      - name: Verify source scope
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          git checkout -- database/reference
+          git clean -fd -- database/reference
+          $changed = git diff --name-only $env:BASE_COMMIT..HEAD
+          $allowed = @('expert/IaMemsDiagramCatalog.cpp','expert/IaMemsDiagramSelfTest.cpp','.github/workflows/tmp-ravemems-ia-visual-validation.yml')
+          $unexpected = @($changed | Where-Object { $_ -notin $allowed })
+          if ($unexpected.Count -ne 0) { throw "Unexpected changed files: $($unexpected -join ', ')" }
+          Write-Host "SCOPE_PASS changed=$($changed.Count)"
+
+      - name: Upload validation evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ravemems-ia-visual-integration-validation
+          path: ${{ runner.temp }}/ia_visual_selftest.log
+          if-no-files-found: error
+          retention-days: 14
