@@ -1,0 +1,48 @@
+name: TEMP RAVEMEMS fix full corpus FK
+
+on:
+  push:
+    branches: ["tmp-rave-new-extraction-pilot"]
+    paths: [".github/workflows/tmp-ravemems-fix-full-corpus-fk.yml"]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-new-extraction-pilot
+          fetch-depth: 0
+      - name: Defer visual occurrences until page row exists
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('tools/ravemems_full_corpus.py')
+          s=p.read_text(encoding='utf-8')
+          old="p=doc[pi];pn=pi+1;pk=f'{dk}_P{pn:04d}';txt=p.get_text('text',sort=False);ls,bs=native(p) if txt.strip() else ([],[]);occ=0"
+          new=old+";occrows=[]"
+          assert old in s and new not in s
+          s=s.replace(old,new,1)
+          old2="for r in rects or [fitz.Rect(0,0,0,0)]:occ+=1;db.execute('INSERT INTO visual_occurrence VALUES(?,?,?,?)',(f'{pk}_VIS{occ:03d}',pk,assets[x],json.dumps(box(r))))"
+          new2="for r in rects or [fitz.Rect(0,0,0,0)]:occ+=1;occrows.append((f'{pk}_VIS{occ:03d}',pk,assets[x],json.dumps(box(r))))"
+          assert old2 in s
+          s=s.replace(old2,new2,1)
+          old3="db.execute('INSERT INTO page VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',(pk,dk,pn,cl,1 if txt.strip() else 0,oc,src,shab(src.encode()) if src else None,occ,vectors,rv,why))"
+          new3=old3+";db.executemany('INSERT INTO visual_occurrence VALUES(?,?,?,?)',occrows)"
+          assert old3 in s and new3 not in s
+          s=s.replace(old3,new3,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+          python -m py_compile tools/ravemems_full_corpus.py
+          printf 'RAVEMEMS full corpus FK retry 2026-09-01T09:29+02:00\n' > .ravemems-full-corpus-trigger
+          rm -f .github/workflows/tmp-ravemems-fix-full-corpus-fk.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/ravemems_full_corpus.py .ravemems-full-corpus-trigger .github/workflows/tmp-ravemems-fix-full-corpus-fk.yml
+          git diff --cached --check
+          git commit -m "Fix RAVEMEMS full corpus FK insertion order"
+          git push origin HEAD:tmp-rave-new-extraction-pilot
