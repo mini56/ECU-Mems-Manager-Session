@@ -1,0 +1,80 @@
+name: TEMP journal final RCL0194 two and pause
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/tmp-journal-rcl0194-final-two-pause.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    env:
+      REPORT_ENTRY: |
+        
+        ## 2026-09-01 — RCL0194ENG : deux derniers cas contrôlés, point de pause
+        
+        - Run read-only final : `33519213621` — **SUCCES**.
+        - Branche technique : `tmp-rave-new-extraction-pilot`.
+        - Commit : `65ea65dc23418d07c05a58af36f5ba8ea1861bd7`.
+        - Artefact : `ravemems-final-rcl0194-two-case-review`, ID `9804917692`, taille `139342`, digest `sha256:af43e108225518ef12dc57e18adcb94df51534331e5db83491194e37f35c0e72`.
+        - Source visuelle exacte vérifiée : `ravemems-visual-bundle-audit` ID `9801592148`, digest `sha256:8b0fb6d8ef3a7b98e67adf603479be584236cd451b7dda2b28a6d6bb548445b1`.
+        - `MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+        
+        ### RCL0194ENG 39.3 — RESOLU
+        
+        - Le sommaire page physique 5 contient bien `39.3`, mais ce n'est pas la page technique.
+        - Une unique unité technique réelle a été trouvée : page physique `27`, unité `RAVEMEMS::UNIT::DOC_0040_XN_CDXN990E_PDF_P0027`.
+        - Cette unité contient explicitement `COOLING FAN`, `39.3`, `MINI`, `SPI (JAPAN)` et le VIN 97MY correspondant.
+        - `visual_count=0` sur cette unité.
+        - Classification finale : `conserver_migrer_legacy`. RAVEMEMS apporte le texte/source du schéma mais pas une occurrence visuelle de remplacement.
+        
+        ### RCL0194ENG COLOUR CODES — TOUJOURS A REVOIR
+        
+        - Ancien fichier BUILD #103 : `database/reference/images/rave/RCL0194ENG_COLOUR_CODES.png`.
+        - Ancien SHA256 : `718af9c48d7cc466b5c50278680ecb286de81a869d8e2293207796afe08833d3`.
+        - Anciennes dimensions : `1700 x 696`.
+        - RAVEMEMS : page physique `7`, occurrence `RAVEMEMS::OCC::DOC_0040_XN_CDXN990E_PDF_P0007_VIS001`, asset `RAVEMEMS::VIS::DOC_0040_XN_CDXN990E_PDF_X62`.
+        - RAVEMEMS SHA256 : `e53278e031cf8180c8b6a88387c6bd44a9ea7303fddf4a7781b512a6ad660d4c`.
+        - RAVEMEMS dimensions : `3356 x 2320`.
+        - Les deux PNG ne sont pas identiques octet pour octet et n'ont pas les mêmes dimensions.
+        - L'outil de comparaison pixel normalisée n'était pas disponible sur le runner ; aucune équivalence visuelle ne peut donc être affirmée.
+        - Classification conservatrice : `a_revoir`. Aucune suppression ni substitution automatique autorisée.
+        
+        ### ETAT RCL0194ENG DES 8 VISUELS LEGACY
+        
+        - `15.1` -> page 14 -> aucun visuel RAVEMEMS -> `conserver_migrer_legacy`.
+        - `20.1` -> page 16 -> aucun visuel RAVEMEMS -> `conserver_migrer_legacy`.
+        - `20.2` -> page 17 -> aucun visuel RAVEMEMS -> `conserver_migrer_legacy`.
+        - `20.3` -> page 18 -> aucun visuel RAVEMEMS -> `conserver_migrer_legacy`.
+        - `20.4` -> page 19 -> aucun visuel RAVEMEMS -> `conserver_migrer_legacy`.
+        - `39.2` -> page 26 -> aucun visuel RAVEMEMS -> `conserver_migrer_legacy`.
+        - `39.3` -> page 27 -> aucun visuel RAVEMEMS -> `conserver_migrer_legacy`.
+        - `COLOUR CODES` -> page 7 -> une occurrence visuelle RAVEMEMS, mais équivalence avec le crop legacy non prouvée -> `a_revoir`.
+        
+        ### PAUSE DEMANDEE
+        
+        Le travail est volontairement arrêté ici après journalisation. Aucune matrice finale, migration, suppression, QZ64, installateur ou modification `MEMSX64` n'est lancée pendant cette pause.
+        
+        ### PROCHAINE ACTION EXACTE A LA REPRISE
+        
+        Reprendre par une comparaison visuelle normalisée read-only du seul cas restant `RCL0194ENG_COLOUR_CODES.png` contre l'asset RAVEMEMS page 7, en tenant compte du fait que l'ancien PNG est probablement un crop. Si et seulement si l'équivalence est prouvée, classer `remplacer_par_ravemems`; sinon conserver/migrer le legacy. Puis reconstruire la matrice de traitement 427 manifeste + 126 illustrations + 329 liens à partir de toutes les classifications autoritaires. Ne supprimer aucune donnée avant validation de cette matrice sur une copie. `MEMSX64` doit rester BUILD #103.
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append report and self-delete
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '\n%s\n' "$REPORT_ENTRY" >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git rm .github/workflows/tmp-journal-rcl0194-final-two-pause.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m 'Journal final RCL0194 review and pause point'
+          git push origin HEAD:RAPPORT
