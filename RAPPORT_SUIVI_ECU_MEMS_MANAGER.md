@@ -11808,3 +11808,17 @@ VERDICT : ECHEC FONCTIONNEL UTILISATEUR sur le routage d'une requête courte amb
 PROCHAINE ACTION EXACTE : sur `tmp-ravemems-ia-visual-integration` uniquement, auditer le traitement de la requête et le widget de réponse, puis corriger strictement : (1) limiter les requêtes courtes ambiguës au lieu d'agréger massivement, (2) proposer une clarification/choix utile avant d'afficher des procédures multiples, (3) rendre le défilement vertical de la zone de réponse toujours accessible. Ajouter des self-tests ciblés. Ne pas modifier le viewer de schéma, le protocole, Qwen/ONNX, les données historiques ni `MEMSX64`.
 
 `MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+## 2026-09-01 — INCIDENT JOURNAL IA SCROLL + REGLE AVANT CORRECTION
+
+Le premier workflow temporaire de journalisation du scroll/historique, run 33538684070, a echoue avant creation de job. Cause : YAML invalide, le corps du heredoc n etait pas indente dans le bloc run. Conformement a la regle maitre, aucune progression technique n a ete effectuee apres cet echec ; la journalisation est reparee en priorite.
+
+Retour utilisateur precise sur le test reel du package RAVEMEMS visuel : le scroll de la conversation IA est vital, notamment pour pouvoir remonter relire une reponse/clarification precedente, par exemple une reponse SPi donnee alors qu il fallait ensuite corriger en MPi.
+
+Audit direct de iamemstab.cpp sur MEMSX64 et sur tmp-ravemems-ia-visual-integration : QTextBrowser iaMemsTranscript possede deja une barre verticale ScrollBarAlwaysOn et l historique n est pas efface, mais appendMessage force actuellement la barre sur son maximum apres chaque message. Une reponse longue est donc positionnee artificiellement tout en bas au lieu d afficher son debut.
+
+Comportement obligatoire : nouvelle reponse IA = DEBUT visible ; descente libre pour lire toute la suite ; remontee libre dans TOUT l historique ; aucune troncature, aucun effacement ni remplacement des echanges precedents ; barre verticale toujours accessible.
+
+PROCHAINE ACTION EXACTE : sur tmp-ravemems-ia-visual-integration uniquement, corriger le positionnement de iaMemsTranscript afin d ancrer l affichage au debut de chaque nouvelle reponse IA tout en conservant l historique integral et le scroll bidirectionnel. Ajouter un self-test cible si le harnais existant le permet. Ne modifier ni Qwen/ONNX, ni viewer de schema, ni protocole, ni base, ni MEMSX64. Verifier le diff exact avant tout test/package.
+
+MEMSX64 doit rester strictement BUILD #103 1d6316bd1746d6f2b4cfb751cab88d18e27ef730.
