@@ -11053,3 +11053,9 @@ PROCHAINE ACTION EXACTE : auditer en lecture seule les visual_occurrence/visual_
 - Une operation de contenu incorrecte a ensuite cree le commit 71659779147aaa5306a3ff49e566887ddf5fb2c4 sur la branche temporaire avec tools/ravemems_visual_bundle_link.py vide.
 - Aucun workflow technique de visual bundle n a ete valide par ce commit incomplet ; aucune base SQLite n a ete modifiee ; MEMSX64 reste strictement BUILD #103.
 - PROCHAINE ACTION EXACTE : restaurer sur tmp-rave-new-extraction-pilot le contenu complet du script et ajouter le workflow ravemems-visual-bundle-audit.yml dans un commit correct, puis executer le test reel avant toute suite.
+
+## 1 SEPTEMBRE 2026 — SECOND INCIDENT TRANSPORT VISUAL BUNDLE — AVANT CORRECTION
+- Le commit 965cd971712d0b60265a543233b4a8303c13976d a ajoute le workflow ravemems-visual-bundle-audit.yml mais le script tools/ravemems_visual_bundle_link.py est reste vide depuis le commit incident 71659779.
+- Tout run declenche sur 965cd971 ne doit pas etre considere comme validation du visual bundle.
+- Aucune base SQLite ni MEMSX64 n a ete modifiee.
+- PROCHAINE ACTION EXACTE : restaurer uniquement le contenu complet du script sur tmp-rave-new-extraction-pilot, puis utiliser le run declenche par ce commit de restauration comme premier test reel du bundle visuel.
