@@ -11890,3 +11890,9 @@ La premiere tentative de journalisation, run 33545105482, a echoue avant creatio
 Demande exacte : ajouter un scroll vertical standard dans la fenetre IA, permettant simplement de monter et descendre dans tout le contenu. Aucun autre comportement de scroll a inventer.
 
 PROCHAINE ACTION EXACTE : sur `tmp-ravemems-ia-visual-integration`, modifier uniquement l'affichage de la zone IA pour fournir une barre de defilement verticale standard et explicite, sans toucher a `MEMSX64`, au protocole, a la base ou au viewer RAVEMEMS. Compiler ensuite le package x64 de test et refaire le test reel.
+
+## 2026-09-01 — Echec mecanisme application scroll standard
+
+Le workflow temporaire cree au commit 4bc5a59ffbf4c5c04cce267ee9bcaba1f77134d8 na cree aucun job en raison de sa syntaxe YAML. Aucun code applicatif na ete modifie.
+
+PROCHAINE ACTION EXACTE : corriger uniquement ce mecanisme temporaire puis appliquer le scroll vertical standard deja autorise dans iamemstab.cpp.
