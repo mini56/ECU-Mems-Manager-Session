@@ -11081,3 +11081,12 @@ PROCHAINE ACTION EXACTE : auditer en lecture seule les visual_occurrence/visual_
 - Aucun changement de `MEMSX64`, aucun QZ64/installateur et aucune suppression de production pendant cet audit.
 - PROCHAINE ACTION EXACTE : sur `tmp-rave-new-extraction-pilot`, produire un audit read-only de l'ancien RAVE du BUILD #103 contre le corpus/base RAVEMEMS validee. Sortir les comptes, cles, sources, images/manifest, recouvrements exacts et elements non couverts ; classer chaque categorie en `remplace par RAVEMEMS`, `a migrer/conserver`, `hors RAVE` ou `a revoir`. Ne supprimer aucune donnee avant rapport de verdict et validation.
 
+
+## 1 SEPTEMBRE 2026 — ECHEC AUDIT ANCIEN RAVE #103 — AVANT CORRECTION
+- Run technique `33514645963`, job `99878500284`, commit `00d0011e1970364db724e1cab93376ac54d78e22` : FAILURE.
+- Les gardes initiaux ont passe : `MEMSX64` est reste exactement BUILD #103, l artefact visuel RAVEMEMS exact a ete verifie/telecharge, et `manifest.json` + `database/reference/images/rave` ont ete extraits depuis le commit #103 exact.
+- Echec uniquement dans le nouvel auditeur read-only : `sqlite3.OperationalError: no such column: source_path` sur `mems_doc_document`.
+- Cause : hypothese incorrecte du script sur le nom d une colonne du schema multilingue ; aucune corruption ni divergence de donnees n est prouvee par cet echec.
+- Aucun artefact d audit final, aucune suppression, aucune ecriture SQLite, aucun changement `MEMSX64`.
+- PROCHAINE ACTION EXACTE : corriger uniquement l auditeur pour introspecter/selectionner les colonnes reelles de `mems_doc_document` au lieu de supposer `source_path`, puis relancer le meme audit read-only avec les memes sources exactes. Ne rien supprimer ni modifier dans la base.
+
