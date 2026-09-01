@@ -1,0 +1,29 @@
+name: TEMP journal standard scroll apply failure
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/tmp-journal-standard-scroll-apply-failure.yml'
+permissions:
+  contents: write
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append failure
+        shell: bash
+        run: |
+          printf '%s\n' '' '## 2026-09-01 — Echec mecanisme application scroll standard' '' 'Le workflow temporaire cree au commit 4bc5a59ffbf4c5c04cce267ee9bcaba1f77134d8 na cree aucun job en raison de sa syntaxe YAML. Aucun code applicatif na ete modifie.' '' 'PROCHAINE ACTION EXACTE : corriger uniquement ce mecanisme temporaire puis appliquer le scroll vertical standard deja autorise dans iamemstab.cpp.' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+      - name: Commit journal
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/tmp-journal-standard-scroll-apply-failure.yml
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Journal standard scroll apply failure"
+          git push origin HEAD:RAPPORT
