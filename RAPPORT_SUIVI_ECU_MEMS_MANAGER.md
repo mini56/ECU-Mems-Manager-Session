@@ -10805,3 +10805,32 @@ Objectif de la pousse suivante : ajouter uniquement un workflow temporaire de fi
 `MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
 
 PROCHAINE ACTION EXACTE : pousser le workflow temporaire de figement sur `tmp-rave-new-extraction-pilot`, lancer sa validation depuis l artefact exact du run 4, inspecter le paquet produit, puis journaliser le resultat avant toute etude QZ64/installateur.
+
+## 2026-09-01 - RAVEMEMS RUN4 - PREMIER ECHEC DU FIGEMENT SOURCE, AVANT CORRECTION
+
+Historique du canal de journalisation retabli :
+- tentative initiale `33489286046` : FAILURE sans job, cause YAML du workflow temporaire de journalisation mal forme par un heredoc ; aucune donnee technique RAVE n a ete touchee ;
+- correction limitee au transport de journal : run `33489426699`, job `99797127584` = SUCCESS ; l entree AVANT FIGEMENT a ete ajoutee au rapport maitre et le workflow temporaire de journalisation s est auto-supprime ;
+- branche `RAPPORT` apres journalisation : commit `3a46f714ce3746c6029f9b90b3cf8b325f0b397a`.
+
+Premiere pousse technique de figement :
+- branche `tmp-rave-new-extraction-pilot` ;
+- commit `00fd78a81991cd05000a002040eaf16ce3616481` ;
+- workflow `RAVEMEMS freeze validated run4 source package` ;
+- run `33489607163`, job `99797710302` : FAILURE.
+
+Resultat exact :
+- checkout du candidat : PASS ;
+- garde `MEMSX64` = BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730` : PASS ;
+- metadonnees source run `33484362718` / artefact `9791187684`, nom, taille, digest et commit extracteur : PASS (`RUN4_METADATA_PASS`) ;
+- echec dans l etape `Download exact run4 artifact without rerunning extraction`, apres le `curl` et avant tout `unzip`/validation SQLite ;
+- le script utilisait deux `test` silencieux successifs sur taille puis SHA du ZIP telecharge. Les logs ne permettent pas encore de distinguer lequel des deux gardes a echoue ;
+- toutes les etapes SQLite/assets/packaging/reouverture/upload ont ete SKIPPED ;
+- aucun paquet d integration n a ete produit ;
+- `tools/ravemems_full_corpus.py` n a pas ete relance ;
+- aucune donnee d extraction n a ete modifiee ;
+- `MEMSX64` reste strictement inchange.
+
+Controle independant de l artefact telecharge auparavant via le connecteur GitHub : `/mnt/data/ravemems-run4.zip` = `36 007 526` octets, SHA-256 `5570f9435de985872e13d55d9c2263e3c5190f12d6ef39cbc73587fb5ce946b8`, donc l artefact de reference lui-meme reste valide. L anomalie est limitee a la methode/verification du telechargement dans le workflow de figement.
+
+PROCHAINE ACTION EXACTE : corriger uniquement l etape de telechargement du workflow de figement pour utiliser la voie GitHub Actions `gh run download` deja validee pour recuperer le contenu de l artefact, tout en conservant la verification d identite par l API (ID/nom/taille/digest) et en affichant explicitement les valeurs observees. Ne pas affaiblir les autres gardes, ne pas relancer l extraction, puis relancer le figement. Aucun QZ64/installateur ni modification `MEMSX64` avant succes du paquet source.
