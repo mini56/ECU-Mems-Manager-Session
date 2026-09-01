@@ -11140,3 +11140,19 @@ PROCHAINE ACTION EXACTE : auditer en lecture seule les visual_occurrence/visual_
 - Aucune suppression, aucune ecriture SQLite, aucun changement `MEMSX64`; BUILD #103 reste `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
 - PROCHAINE ACTION EXACTE : faire une verification read-only ultra-ciblee des 8 entrees `RCL0194ENG` contre `mems_doc_unit`, `source_exact`, les contextes visuels et les occurrences RAVEMEMS de `cdxn990e.pdf`, afin d etablir pour chacune la page physique et le ou les assets visuels correspondants. Puis mettre a jour le verdict global 427/427. Aucune suppression avant ce resultat.
 
+
+
+## 2026-09-01 — RCL0194ENG : échec technique du résolveur des 8 anciens visuels
+
+- Run technique : `33516621119` — **ECHEC**.
+- Branche technique : `tmp-rave-new-extraction-pilot`.
+- Commit : `d6855cdadf3b4348f6815c2100a51643ad0009c0`.
+- Entrées exactes validées : `MEMSX64` reste `1d6316bd1746d6f2b4cfb751cab88d18e27ef730` (BUILD #103) et l'artefact RAVEMEMS visuel exact a été vérifié.
+- Le document RCL0194ENG est bien résolu comme `rave/xn/cdxn990e.pdf`, avec 41 unités.
+- Cause exacte de l'échec : le script a utilisé `e.sequence_no` dans une requête sur `mems_doc_entity`, mais cette colonne n'existe pas dans cette table (`sqlite3.OperationalError: no such column: e.sequence_no`).
+- Aucune donnée SQLite n'a été modifiée ; aucune suppression n'a été effectuée ; aucun changement sur `MEMSX64`.
+
+### PROCHAINE ACTION EXACTE
+
+Corriger uniquement le résolveur RCL0194ENG afin d'ordonner les entités avec des colonnes réellement présentes dans `mems_doc_entity` (après introspection du schéma), puis relancer la résolution read-only des 8 anciens visuels `15.1`, `20.1`, `20.2`, `20.3`, `20.4`, `39.2`, `39.3`, `COLOUR CODES`. Ne modifier aucune donnée, ne supprimer aucun ancien visuel, ne toucher ni QZ64, ni installateur, ni `MEMSX64`.
+
