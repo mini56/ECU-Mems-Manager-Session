@@ -243,7 +243,7 @@ void IaMemsTab::appendMessage(const QString &speaker, const QString &text)
 
     const QString messageAnchor = QStringLiteral("ia-message-%1")
                   .arg(m_transcript->document()->characterCount());
-    m_transcript->append(QStringLiteral("<a name="%1"></a><p><b>%2</b><br>%3</p>")
+    m_transcript->append(QStringLiteral("<a name='%1'></a><p><b>%2</b><br>%3</p>")
          .arg(messageAnchor, safeSpeaker, safeText));
 
     if (QScrollBar *bar = m_transcript->verticalScrollBar()) {
