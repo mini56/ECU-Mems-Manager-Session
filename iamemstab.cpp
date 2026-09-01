@@ -269,7 +269,7 @@ void IaMemsTab::updateDiagramSuggestion(const QString &question)
 
     m_diagramTitle = suggestion.key;
     m_diagramQuestion = question;
-    m_diagramButton->setText(QStringLiteral("Ouvrir le schéma %1").arg(m_diagramTitle));
+    m_diagramButton->setText(QStringLiteral("Voir le schéma"));
     m_diagramButton->setVisible(true);
 }
 
