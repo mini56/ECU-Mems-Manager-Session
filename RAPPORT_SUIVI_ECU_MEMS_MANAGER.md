@@ -11382,3 +11382,16 @@ Garde final : read-only, 0 modification SQLite, 0 suppression automatique, `dest
 
 PROCHAINE ACTION EXACTE : simuler sur une COPIE uniquement l'application de cette matrice au bundle visuel fusionne valide. Conserver/migrer tous les elements legacy uniques ; relier les elements remplaces uniquement aux visuels RAVEMEMS dont le remplacement est prouve ; retirer seulement de la proposition UI les captures legacy de pages purement texte tout en conservant leur provenance ; integrer les 1070 assets / 1794 occurrences RAVEMEMS. Verifier integrity/FK, absence d'orphelins, preservation des 177 faits et de toute connaissance historique utile, presence des fichiers legacy conserves et compatibilite avec le viewer #103. Aucune suppression production ni modification `MEMSX64` avant validation complete de cette simulation.
 
+
+## 2026-09-01 — SIMULATION MIGRATION RUNTIME — ECHEC GARDE SHA DU SIMULATEUR
+
+Premier run de simulation `33523709493`, job `99909062411` — **FAILURE** dans `Build migration and viewer runtime candidate on copy`.
+
+Les entrees exactes ont ete validees avant l'echec : matrice autoritaire artefact `9806574514` digest `sha256:4590cbae278b629d0710c99584229a384bca2e5039183fcbe5fa1b42b346e5bf`, bundle visuel artefact `9801592148` digest `sha256:8b0fb6d8ef3a7b98e67adf603479be584236cd451b7dda2b28a6d6bb548445b1`, et `MEMSX64` est reste strictement BUILD #103.
+
+Cause exacte : le simulateur a correctement copie 1070 fichiers RAVEMEMS puis a construit `sha_to_rave={sha256:path}` et a impose a tort `len(sha_to_rave)==1070`. Cette hypothese exigeait que les 1070 assets enregistres aient tous un contenu binaire unique. Or RAVEMEMS garantit 1070 assets enregistres et SHA-verifies, pas 1070 SHA necessairement distincts ; des assets distincts peuvent legalement partager les memes octets.
+
+Il s'agit donc d'un defaut du simulateur, pas d'une corruption du corpus ni de la matrice. Aucune table, aucun manifeste production, aucun fichier production et aucune branche `MEMSX64` n'ont ete modifies.
+
+PROCHAINE ACTION EXACTE : corriger uniquement la resolution fichier du simulateur pour utiliser le `stored_path` autoritaire de chaque entree RAVEMEMS, normalise du prefixe `ravemems_run4/`, puis verifier le SHA attendu sur ce fichier precis. Ne plus exiger l'unicite globale des SHA. Relancer exactement la meme simulation sur copie avec les memes gardes et les memes comptes cibles.
+
