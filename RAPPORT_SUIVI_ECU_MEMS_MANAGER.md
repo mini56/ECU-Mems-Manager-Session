@@ -11072,3 +11072,12 @@ PROCHAINE ACTION EXACTE : auditer en lecture seule les visual_occurrence/visual_
 - UI contract : pure_text_page_link_ui=false ; le seul libelle utilisateur prevu pour tous les visuels est « Voir le schema ».
 - MEMSX64 est reste strictement BUILD #103 commit 1d6316bd1746d6f2b4cfb751cab88d18e27ef730.
 - PROCHAINE ACTION EXACTE : auditer en lecture seule le chemin existant de proposition/ouverture de schema dans IA MEMS sur MEMSX64, puis preparer sur branche temporaire uniquement le branchement deterministe vers le manifeste visuel RAVEMEMS ; aucune modification de MEMSX64 avant validation complete.
+
+## 1 SEPTEMBRE 2026 — AVANT POUSSE — AUDIT ANCIEN RAVE #103 AVANT INTEGRATION RAVEMEMS
+- Decision utilisateur : avant d'ajouter le lot RAVEMEMS a la future base integree, auditer l'ancien contenu RAVE deja present dans BUILD #103 afin d'eviter de conserver deux couches redondantes.
+- Principe : ne supprimer aucun contenu historique par hypothese. Inventorier exactement tables/lignes RAVE historiques, faits experts miroirs, illustrations, liens, images locales et entrees `manifest.json`, puis comparer leur couverture avec RAVEMEMS.
+- Seuls les elements anciens RAVE prouves totalement remplaces/redondants pourront etre candidats a un retrait controle dans une copie de test. Toute connaissance enrichie, traduction, liaison ou information non equivalente doit etre preservee ou migree explicitement.
+- Le viewer et ses protections du BUILD #103 restent la cible d'affichage. Le futur bouton utilisateur unique reste `Voir le schema`.
+- Aucun changement de `MEMSX64`, aucun QZ64/installateur et aucune suppression de production pendant cet audit.
+- PROCHAINE ACTION EXACTE : sur `tmp-rave-new-extraction-pilot`, produire un audit read-only de l'ancien RAVE du BUILD #103 contre le corpus/base RAVEMEMS validee. Sortir les comptes, cles, sources, images/manifest, recouvrements exacts et elements non couverts ; classer chaque categorie en `remplace par RAVEMEMS`, `a migrer/conserver`, `hors RAVE` ou `a revoir`. Ne supprimer aucune donnee avant rapport de verdict et validation.
+
