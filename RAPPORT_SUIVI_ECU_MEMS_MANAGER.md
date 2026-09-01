@@ -11905,3 +11905,10 @@ La zone IA dispose maintenant dune barre verticale Qt standard explicite de 18 p
 MEMSX64 non modifie.
 
 PROCHAINE ACTION EXACTE : nettoyer le workflow temporaire, compiler le package x64 de test, puis valider reellement le scroll sur le PC utilisateur.
+
+## 2026-09-01 — Avant compilation package x64 avec scroll IA standard
+
+Branche de test verifiee : tmp-ravemems-ia-visual-integration HEAD d936ead712d64c22247953a209755f4efd09b5e1, descendant du commit applicatif 06bb3b8cdf4e0563d020c897dbc8faf22605b644 qui ajoute uniquement le scroll vertical standard dans iamemstab.cpp.
+MEMSX64 verifie intact : BUILD #103 commit 1d6316bd1746d6f2b4cfb751cab88d18e27ef730.
+
+PROCHAINE ACTION EXACTE : declencher le workflow RAVEMEMS VISUAL TEST from BUILD 103 sur la branche de test actuelle, sans changer sa logique de build, puis journaliser le verdict avant tout autre correctif.
