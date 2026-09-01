@@ -10783,3 +10783,25 @@ Ce run constitue la premiere extraction RAVEMEMS complete et coherentement audit
 ### PROCHAINE ACTION EXACTE
 
 Resoudre/documenter les deux reviews finales sans hardcode de traduction : CDXN p.7 peut etre marque comme controle positivement par le pilote TEST2 ; `libxn.pdf` p.1 doit rester preserve comme visuel de couverture sans texte OCR exploitable. Ensuite figer l'artefact RAVEMEMS run 4 comme source complete et preparer le paquet d'integration source (SQLite + assets + audit/manifest, puis format QZ64/installateur si necessaire) sans modifier `MEMSX64` avant validation du paquet.
+
+## 2026-09-01 - RAVEMEMS RUN4 - AVANT FIGEMENT DU PAQUET D'INTEGRATION SOURCE
+
+Incident de journalisation avant pousse technique : le rapport maitre est devenu trop volumineux pour une mise a jour directe sure via l API de contenu du connecteur, qui renvoie son contenu tronque. Remplacer le fichier a partir de cette reponse aurait risque de detruire une partie de l historique. Conformement a la regle de priorite absolue a la tracabilite, toute progression technique RAVE a ete suspendue. Le canal de journalisation est retabli uniquement par ce workflow temporaire auto-nettoyant sur `RAPPORT`, avant toute pousse sur la branche technique.
+
+Les deux reviews non fatales finales du run 4 ont ete controlees avant toute pousse technique :
+
+- `rave/xn/cdxn990e.pdf`, page physique 7 : controle visuel et comparaison avec le pilote TEST2. La page `HOW TO USE THE CIRCUIT DIAGRAMS` utilise correctement le raster natif ; les 45 regions OCR / 490 mots sont exploitables et correspondent au contenu technique de la page (codes couleurs, connecteurs, earth points, sealed joints, fusibles/diodes, etc.). Verdict : review controlee positivement. Le texte source OCR reste conserve tel quel, sans traduction hardcodee.
+- `rave/library/libxn.pdf`, page physique 1 : controle visuel direct. Il s agit d un visuel de couverture Mini preserve comme asset original, sans texte technique OCR exploitable. Verdict : absence de texte acceptee ; ce n est pas une erreur d extraction.
+
+Source RAVEMEMS a figer, sans nouvelle extraction :
+- run GitHub Actions `33484362718` = SUCCESS ;
+- commit extracteur `72dcaf04e84181669aa25c9103ea60bf47d9e1a7` ;
+- source canonique `main` = `643de091b474f4e27917a065bdf46d5a0c764276` ;
+- artefact `ravemems-full-corpus`, ID `9791187684`, taille ZIP `36 007 526` octets, digest `sha256:5570f9435de985872e13d55d9c2263e3c5190f12d6ef39cbc73587fb5ce946b8` ;
+- SQLite interne `ravemems_full_corpus.sqlite` : `33 222 656` octets, SHA-256 `8f2cb17525efb2c1b296bc675c781740a9db3e7de84f2e4150f3a3ebbe49a87b`.
+
+Objectif de la pousse suivante : ajouter uniquement un workflow temporaire de figement/packaging sur `tmp-rave-new-extraction-pilot`. Il doit telecharger l artefact exact `9791187684`, verifier son identite, ses SHA, ses compteurs, l integrite SQLite/FK et les 1070 assets par leur inventaire/hashes, puis produire un paquet source deterministe contenant SQLite + assets + manifest + audit + `needs_review.json` original + un enregistrement separe de resolution des deux reviews + inventaire SHA. Il est interdit de relancer `tools/ravemems_full_corpus.py` ou de modifier les donnees d extraction pour masquer les reviews.
+
+`MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+PROCHAINE ACTION EXACTE : pousser le workflow temporaire de figement sur `tmp-rave-new-extraction-pilot`, lancer sa validation depuis l artefact exact du run 4, inspecter le paquet produit, puis journaliser le resultat avant toute etude QZ64/installateur.
