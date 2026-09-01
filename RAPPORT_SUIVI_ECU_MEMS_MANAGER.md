@@ -11553,3 +11553,19 @@ Mesure corrective : ne pas laisser ce helper dans le tree final. Apres un nouvea
 
 PROCHAINE ACTION EXACTE : journaliser AVANT POUSSE cette orchestration de correction, puis appliquer strictement les deux corrections du run `33527558939`, supprimer tous les fichiers temporaires d orchestration et relancer le meme test x64. Aucun autre changement.
 
+
+## 2026-09-01 — IA VISUELLE — AVANT POUSSE ORCHESTRATION CORRECTIVE
+
+Le helper temporaire `tools/tmp_apply_ia_visual_correction.py` est present uniquement comme mecanisme de preparation, commit `ca63f04ca514b226a962a1e2f0c96aaf15106e09`, sans modification applicative appliquee.
+
+Prochaine pousse autorisee : ajouter un workflow d orchestration temporaire sur `tmp-ravemems-ia-visual-integration`. Son unique role sera d executer ce helper, verifier les trois changements autorises, supprimer dans le meme commit le helper et le workflow d orchestration, puis comparer le tree final au commit de validation precedent `717f5930377fc286dcc766b237ab91d32ab35209`.
+
+Le tree final doit differer de `717f593...` sur exactement trois chemins :
+- `expert/IaMemsDiagramCatalog.cpp` ;
+- `expert/IaMemsDiagramSelfTest.cpp` ;
+- `.github/workflows/tmp-ravemems-ia-visual-validation.yml`.
+
+Aucune autre difference n est autorisee. Le workflow de validation existant devra ensuite se declencher automatiquement grace au nouveau filtre paths et tester le catalogue reel/base nettoyee/compilation/self-tests/scope. `MEMSX64` reste BUILD #103.
+
+PROCHAINE ACTION EXACTE : pousser uniquement l orchestrateur temporaire, laisser celui-ci produire le commit correctif final propre et s auto-supprimer avec le helper, verifier le diff final exact de trois fichiers, puis attendre le nouveau run de validation avant toute autre action.
+
