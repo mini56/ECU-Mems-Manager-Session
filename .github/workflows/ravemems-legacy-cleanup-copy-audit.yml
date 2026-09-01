@@ -1,0 +1,315 @@
+name: RAVEMEMS controlled legacy cleanup on copy
+
+on:
+  push:
+    branches: [tmp-rave-new-extraction-pilot]
+    paths:
+      - '.github/workflows/ravemems-legacy-cleanup-copy-audit.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      BASE_COMMIT: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+      MATRIX_RUN_ID: '33523257264'
+      MATRIX_ARTIFACT_ID: '9806574514'
+      MATRIX_ARTIFACT_NAME: 'ravemems-authoritative-legacy-treatment-matrix'
+      MATRIX_DIGEST: 'sha256:4590cbae278b629d0710c99584229a384bca2e5039183fcbe5fa1b42b346e5bf'
+      SIM_RUN_ID: '33524210118'
+      SIM_ARTIFACT_ID: '9806972578'
+      SIM_ARTIFACT_NAME: 'ravemems-runtime-migration-simulation'
+      SIM_DIGEST: 'sha256:bc8ceed9ea2a748fb23f2d2504f034c62010669d3d10f2a281cf675aea735642'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-new-extraction-pilot
+          fetch-depth: 0
+
+      - name: Verify protected production and exact inputs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$BASE_COMMIT"
+          for spec in \
+            "$MATRIX_ARTIFACT_ID|$MATRIX_ARTIFACT_NAME|$MATRIX_DIGEST" \
+            "$SIM_ARTIFACT_ID|$SIM_ARTIFACT_NAME|$SIM_DIGEST"
+          do
+            IFS='|' read -r aid aname adigest <<< "$spec"
+            gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${aid}" > "$RUNNER_TEMP/artifact_${aid}.json"
+            python3 - "$RUNNER_TEMP/artifact_${aid}.json" "$aname" "$adigest" <<'PY'
+          import json,sys
+          p,name,digest=sys.argv[1:]
+          a=json.load(open(p,encoding='utf-8'))
+          assert a['name']==name,(a['name'],name)
+          assert a.get('digest')==digest,(a.get('digest'),digest)
+          print('ARTIFACT_EXACT_PASS',a['id'],a['name'],a.get('digest'))
+          PY
+          done
+          echo EXACT_CLEANUP_INPUTS_PASS
+
+      - name: Download matrix and successful runtime simulation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/matrix" "$RUNNER_TEMP/simsrc" "$RUNNER_TEMP/cleanup"
+          gh run download "$MATRIX_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$MATRIX_ARTIFACT_NAME" --dir "$RUNNER_TEMP/matrix"
+          gh run download "$SIM_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$SIM_ARTIFACT_NAME" --dir "$RUNNER_TEMP/simsrc"
+          MATRIX_ROOT="$(dirname "$(find "$RUNNER_TEMP/matrix" -name legacy_treatment_summary.json -print -quit)")"
+          SIM_ROOT="$(dirname "$(find "$RUNNER_TEMP/simsrc" -name runtime_migration_summary.json -print -quit)")"
+          test -f "$MATRIX_ROOT/legacy_illustration_treatment_126.json"
+          test -f "$MATRIX_ROOT/legacy_link_treatment_329.json"
+          test -f "$SIM_ROOT/runtime_candidate.sqlite.gz"
+          test -f "$SIM_ROOT/runtime_visual_catalog.json"
+          test -f "$SIM_ROOT/legacy_migration_provenance.json"
+          test -d "$SIM_ROOT/runtime_files"
+          echo "MATRIX_ROOT=$MATRIX_ROOT" >> "$GITHUB_ENV"
+          echo "SIM_ROOT=$SIM_ROOT" >> "$GITHUB_ENV"
+          gzip -dc "$SIM_ROOT/runtime_candidate.sqlite.gz" > "$RUNNER_TEMP/cleanup/cleanup_candidate.sqlite"
+          cp "$RUNNER_TEMP/cleanup/cleanup_candidate.sqlite" "$RUNNER_TEMP/cleanup/cleanup_before.sqlite"
+          echo DOWNLOAD_CLEANUP_INPUTS_PASS
+
+      - name: Preflight exact deletion set and dependency safety
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' | tee "$RUNNER_TEMP/cleanup/preflight.txt"
+          import collections,json,os,sqlite3
+          from pathlib import Path
+          root=Path(os.environ['RUNNER_TEMP']); mr=Path(os.environ['MATRIX_ROOT'])
+          db=root/'cleanup/cleanup_candidate.sqlite'
+          ill=json.load(open(mr/'legacy_illustration_treatment_126.json',encoding='utf-8'))
+          links=json.load(open(mr/'legacy_link_treatment_329.json',encoding='utf-8'))
+          assert len(ill)==126 and len(links)==329
+          keep_ill={x['index'] for x in ill if x['final_action']=='conserver_migrer_legacy'}
+          del_ill={x['index'] for x in ill if x['final_action'] in ('remplacer_par_ravemems','retirer_de_ui_conserver_provenance')}
+          keep_link={x['index'] for x in links if x['final_action']=='conserver_migrer_legacy'}
+          del_link={x['index'] for x in links if x['final_action'] in ('remplacer_par_ravemems','retirer_de_ui_conserver_provenance')}
+          assert (len(keep_ill),len(del_ill),len(keep_link),len(del_link))==(102,24,288,41)
+          assert keep_ill.isdisjoint(del_ill) and len(keep_ill|del_ill)==126
+          assert keep_link.isdisjoint(del_link) and len(keep_link|del_link)==329
+
+          # A kept link must not resolve exclusively to an illustration scheduled for deletion.
+          unsafe=[]
+          for x in links:
+              if x['index'] not in keep_link: continue
+              targets=set(x.get('legacy_illustration_indexes') or [])
+              if targets and not (targets & keep_ill):
+                  unsafe.append({'link_index':x['index'],'targets':sorted(targets),'row':x.get('row')})
+          assert not unsafe,unsafe
+
+          con=sqlite3.connect(db); con.row_factory=sqlite3.Row
+          assert con.execute('PRAGMA integrity_check').fetchone()[0].lower()=='ok'
+          assert con.execute('PRAGMA foreign_key_check').fetchall()==[]
+          assert con.execute('SELECT COUNT(*) FROM mems_rave_fact').fetchone()[0]==177
+          assert con.execute('SELECT COUNT(*) FROM mems_rave_illustration').fetchone()[0]==126
+          assert con.execute('SELECT COUNT(*) FROM mems_rave_illustration_link').fetchone()[0]==329
+          assert con.execute('SELECT COUNT(*) FROM mems_visual_runtime_source').fetchone()[0]==1935
+          assert con.execute('SELECT COUNT(*) FROM mems_visual_legacy_treatment').fetchone()[0]==427
+
+          # Prove matrix row ordering/data exactly matches the unchanged DB used to create it.
+          db_ill=[dict(r) for r in con.execute('SELECT * FROM mems_rave_illustration')]
+          db_links=[dict(r) for r in con.execute('SELECT * FROM mems_rave_illustration_link')]
+          assert all(x['row']==db_ill[x['index']] for x in ill)
+          assert all(x['row']==db_links[x['index']] for x in links)
+
+          # PKs for illustrations must resolve exactly one row each.
+          for x in ill:
+              pk=x.get('pk') or {}; assert pk
+              where=' AND '.join('"'+k.replace('"','""')+'" IS ?' for k in pk)
+              n=con.execute('SELECT COUNT(*) FROM mems_rave_illustration WHERE '+where,tuple(pk.values())).fetchone()[0]
+              assert n==1,(x['index'],pk,n)
+
+          # Full table FK inventory is saved for audit.
+          tables=[r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")]
+          fks={t:[dict(zip(['id','seq','table','from','to','on_update','on_delete','match'],r)) for r in con.execute(f'PRAGMA foreign_key_list("{t}")')] for t in tables}
+          con.close()
+          out={'keep_illustrations':102,'delete_illustrations':24,'keep_links':288,'delete_links':41,'unsafe_kept_links':unsafe,'foreign_keys':fks}
+          (root/'cleanup/preflight.json').write_text(json.dumps(out,ensure_ascii=False,indent=2,sort_keys=True),encoding='utf-8')
+          print('CLEANUP_PREFLIGHT_PASS',json.dumps({k:v for k,v in out.items() if k!='foreign_keys'},sort_keys=True))
+          PY
+
+      - name: Apply controlled legacy visual cleanup to copy only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' | tee "$RUNNER_TEMP/cleanup/cleanup_stdout.txt"
+          import hashlib,json,os,sqlite3
+          from pathlib import Path
+          root=Path(os.environ['RUNNER_TEMP']); mr=Path(os.environ['MATRIX_ROOT']); sr=Path(os.environ['SIM_ROOT'])
+          db=root/'cleanup/cleanup_candidate.sqlite'
+          ill=json.load(open(mr/'legacy_illustration_treatment_126.json',encoding='utf-8'))
+          links=json.load(open(mr/'legacy_link_treatment_329.json',encoding='utf-8'))
+          runtime_catalog=json.load(open(sr/'runtime_visual_catalog.json',encoding='utf-8'))
+          migration=json.load(open(sr/'legacy_migration_provenance.json',encoding='utf-8'))
+          assert runtime_catalog['viewer_entry_count']==1935
+          assert len(migration['replacement_rows'])==274 and len(migration['hidden_rows'])==12
+
+          del_ill=[x for x in ill if x['final_action'] in ('remplacer_par_ravemems','retirer_de_ui_conserver_provenance')]
+          del_links=[x for x in links if x['final_action'] in ('remplacer_par_ravemems','retirer_de_ui_conserver_provenance')]
+          assert len(del_ill)==24 and len(del_links)==41
+
+          con=sqlite3.connect(db); con.row_factory=sqlite3.Row
+          con.execute('PRAGMA foreign_keys=ON')
+          con.executescript('''
+          CREATE TABLE IF NOT EXISTS mems_visual_legacy_illustration_archive(
+            legacy_index INTEGER PRIMARY KEY, action TEXT NOT NULL, pk_json TEXT NOT NULL, row_json TEXT NOT NULL,
+            manifest_paths_json TEXT NOT NULL, archived_reason TEXT NOT NULL);
+          CREATE TABLE IF NOT EXISTS mems_visual_legacy_link_archive(
+            legacy_index INTEGER PRIMARY KEY, action TEXT NOT NULL, row_json TEXT NOT NULL,
+            legacy_illustration_indexes_json TEXT NOT NULL, archived_reason TEXT NOT NULL);
+          DELETE FROM mems_visual_legacy_illustration_archive;
+          DELETE FROM mems_visual_legacy_link_archive;
+          ''')
+
+          # Archive complete source rows before any deletion.
+          for x in del_ill:
+              con.execute('INSERT INTO mems_visual_legacy_illustration_archive VALUES(?,?,?,?,?,?)',(
+                  x['index'],x['final_action'],json.dumps(x.get('pk') or {},ensure_ascii=False,sort_keys=True),
+                  json.dumps(x['row'],ensure_ascii=False,sort_keys=True),json.dumps(x.get('manifest_paths') or [],ensure_ascii=False,sort_keys=True),
+                  'removed from active legacy visual layer on cleanup copy; full provenance retained'))
+          for x in del_links:
+              con.execute('INSERT INTO mems_visual_legacy_link_archive VALUES(?,?,?,?,?)',(
+                  x['index'],x['final_action'],json.dumps(x['row'],ensure_ascii=False,sort_keys=True),
+                  json.dumps(x.get('legacy_illustration_indexes') or [],sort_keys=True),
+                  'removed from active legacy visual layer on cleanup copy; full provenance retained'))
+
+          # Resolve link rowids from the exact unchanged row sequence before deleting anything.
+          live_link_rows=con.execute('SELECT rowid,* FROM mems_rave_illustration_link').fetchall()
+          link_cols=[r[1] for r in con.execute('PRAGMA table_info(mems_rave_illustration_link)')]
+          assert len(live_link_rows)==329
+          link_rowids={}
+          for x in links:
+              r=live_link_rows[x['index']]
+              current={c:r[c] for c in link_cols}
+              assert current==x['row'],(x['index'],current,x['row'])
+              link_rowids[x['index']]=r['rowid']
+
+          # Links first.
+          for x in del_links:
+              con.execute('DELETE FROM mems_rave_illustration_link WHERE rowid=?',(link_rowids[x['index']],))
+          assert con.execute('SELECT COUNT(*) FROM mems_rave_illustration_link').fetchone()[0]==288
+
+          # Then illustrations by their exact PK.
+          for x in del_ill:
+              pk=x['pk']; where=' AND '.join('"'+k.replace('"','""')+'" IS ?' for k in pk)
+              cur=con.execute('DELETE FROM mems_rave_illustration WHERE '+where,tuple(pk.values()))
+              assert cur.rowcount==1,(x['index'],pk,cur.rowcount)
+          assert con.execute('SELECT COUNT(*) FROM mems_rave_illustration').fetchone()[0]==102
+          con.commit()
+
+          # Safety gates after cleanup.
+          integrity=con.execute('PRAGMA integrity_check').fetchone()[0]
+          fk=con.execute('PRAGMA foreign_key_check').fetchall()
+          assert integrity.lower()=='ok' and not fk,(integrity,fk)
+          assert con.execute('SELECT COUNT(*) FROM mems_rave_fact').fetchone()[0]==177
+          assert con.execute('SELECT COUNT(*) FROM mems_visual_legacy_illustration_archive').fetchone()[0]==24
+          assert con.execute('SELECT COUNT(*) FROM mems_visual_legacy_link_archive').fetchone()[0]==41
+          assert con.execute('SELECT COUNT(*) FROM mems_doc_visual').fetchone()[0]==1070
+          assert con.execute("SELECT COUNT(*) FROM mems_doc_entity WHERE entity_kind='visual_occurrence'").fetchone()[0]==1794
+          assert con.execute('SELECT COUNT(*) FROM mems_visual_runtime_source').fetchone()[0]==1935
+          assert con.execute('SELECT COUNT(*) FROM mems_visual_legacy_treatment').fetchone()[0]==427
+
+          # All 102/288 rows classified keep must remain exactly.
+          remaining_ill=[dict(r) for r in con.execute('SELECT * FROM mems_rave_illustration')]
+          remaining_links=[dict(r) for r in con.execute('SELECT * FROM mems_rave_illustration_link')]
+          expected_ill=[x['row'] for x in ill if x['final_action']=='conserver_migrer_legacy']
+          expected_links=[x['row'] for x in links if x['final_action']=='conserver_migrer_legacy']
+          def canon(rows): return sorted(json.dumps(r,ensure_ascii=False,sort_keys=True,separators=(',',':')) for r in rows)
+          assert canon(remaining_ill)==canon(expected_ill)
+          assert canon(remaining_links)==canon(expected_links)
+          con.close()
+
+          # All runtime files from successful simulation remain present; cleanup is DB-only on this copy.
+          runtime_files=[p for p in (sr/'runtime_files').rglob('*') if p.is_file()]
+          assert len(runtime_files)==1211,len(runtime_files)
+
+          # Compare every pre-existing table except the two deliberately cleaned legacy visual tables.
+          before=sqlite3.connect(root/'cleanup/cleanup_before.sqlite'); after=sqlite3.connect(db)
+          def digest_table(conn,t):
+              cols=[r[1] for r in conn.execute(f'PRAGMA table_info("{t}")')]
+              q='SELECT '+','.join('"'+c.replace('"','""')+'"' for c in cols)+' FROM "'+t.replace('"','""')+'"'
+              if cols:q+=' ORDER BY '+','.join('"'+c.replace('"','""')+'"' for c in cols)
+              h=hashlib.sha256(); n=0
+              for row in conn.execute(q):
+                  h.update((json.dumps(row,ensure_ascii=False,default=lambda x:x.hex() if isinstance(x,bytes) else str(x),separators=(',',':'))+'\n').encode()); n+=1
+              return n,h.hexdigest()
+          pre_tables=[r[0] for r in before.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")]
+          excluded={'mems_rave_illustration','mems_rave_illustration_link'}
+          changed=[]
+          for t in pre_tables:
+              if t in excluded: continue
+              if digest_table(before,t)!=digest_table(after,t): changed.append(t)
+          before.close(); after.close()
+          assert changed==[],changed
+
+          summary={
+            'pass':True,'copy_only':True,'production_modifications':0,'memsx64_unchanged':True,
+            'legacy_facts_preserved':177,
+            'legacy_illustrations_before':126,'legacy_illustrations_removed':24,'legacy_illustrations_after':102,
+            'legacy_links_before':329,'legacy_links_removed':41,'legacy_links_after':288,
+            'archived_removed_illustrations':24,'archived_removed_links':41,
+            'ravemems_assets':1070,'ravemems_occurrences':1794,
+            'runtime_viewer_entries':1935,'runtime_files':1211,
+            'other_preexisting_tables_changed':changed,
+            'integrity_check':'ok','foreign_key_errors':0,
+            'destructive_cleanup_authorized_for_production':False,
+            'next_gate':'validate runtime/IA viewer behavior against this cleaned copy before any production integration',
+          }
+          (root/'cleanup/cleanup_summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2,sort_keys=True),encoding='utf-8')
+          print('CONTROLLED_CLEANUP_COPY_PASS')
+          print(json.dumps(summary,ensure_ascii=False,sort_keys=True))
+          PY
+
+      - name: Final verification and artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os,sqlite3
+          root=os.environ['RUNNER_TEMP']+'/cleanup'
+          s=json.load(open(root+'/cleanup_summary.json',encoding='utf-8'))
+          assert s['pass'] is True and s['copy_only'] is True and s['production_modifications']==0
+          assert s['legacy_facts_preserved']==177
+          assert (s['legacy_illustrations_before'],s['legacy_illustrations_removed'],s['legacy_illustrations_after'])==(126,24,102)
+          assert (s['legacy_links_before'],s['legacy_links_removed'],s['legacy_links_after'])==(329,41,288)
+          assert s['archived_removed_illustrations']==24 and s['archived_removed_links']==41
+          assert s['ravemems_assets']==1070 and s['ravemems_occurrences']==1794
+          assert s['runtime_viewer_entries']==1935 and s['runtime_files']==1211
+          assert s['other_preexisting_tables_changed']==[]
+          assert s['integrity_check']=='ok' and s['foreign_key_errors']==0
+          assert s['destructive_cleanup_authorized_for_production'] is False
+          con=sqlite3.connect(root+'/cleanup_candidate.sqlite')
+          assert con.execute('PRAGMA integrity_check').fetchone()[0].lower()=='ok'
+          assert con.execute('PRAGMA foreign_key_check').fetchall()==[]
+          con.close()
+          print('FINAL_CLEANUP_COPY_GATE_PASS')
+          PY
+          cd "$RUNNER_TEMP/cleanup"
+          gzip -n -9 -c cleanup_candidate.sqlite > cleanup_candidate.sqlite.gz
+          sha256sum cleanup_candidate.sqlite cleanup_candidate.sqlite.gz cleanup_summary.json preflight.json > cleanup_sha256.txt
+          cat cleanup_summary.json
+          cat cleanup_sha256.txt
+          rm cleanup_candidate.sqlite cleanup_before.sqlite
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ravemems-controlled-legacy-cleanup-copy
+          path: |
+            ${{ runner.temp }}/cleanup/cleanup_candidate.sqlite.gz
+            ${{ runner.temp }}/cleanup/cleanup_summary.json
+            ${{ runner.temp }}/cleanup/preflight.json
+            ${{ runner.temp }}/cleanup/preflight.txt
+            ${{ runner.temp }}/cleanup/cleanup_stdout.txt
+            ${{ runner.temp }}/cleanup/cleanup_sha256.txt
+          if-no-files-found: error
+          retention-days: 14
