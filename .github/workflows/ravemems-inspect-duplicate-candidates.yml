@@ -1,0 +1,42 @@
+name: RAVEMEMS inspect duplicate candidates
+on:
+  push:
+    branches:
+      - tmp-rave-new-extraction-pilot
+    paths:
+      - tools/ravemems_inspect_duplicate_candidates.py
+      - .github/workflows/ravemems-inspect-duplicate-candidates.yml
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-new-extraction-pilot
+          fetch-depth: 1
+      - name: Download exact additive audit artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/audit"
+          gh run download 33493009341 --repo "$GITHUB_REPOSITORY" --name ravemems-additive-merge-audit --dir "$RUNNER_TEMP/audit"
+          test -f "$RUNNER_TEMP/audit/duplicate_candidates.json"
+          test -f "$RUNNER_TEMP/audit/ia_mems_reference_r20_plus_ravemems_AUDIT.sqlite.gz"
+          gzip -dc "$RUNNER_TEMP/audit/ia_mems_reference_r20_plus_ravemems_AUDIT.sqlite.gz" > "$RUNNER_TEMP/audit/merged.sqlite"
+      - name: Inspect the four duplicate overlap candidates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/ravemems_inspect_duplicate_candidates.py --duplicates "$RUNNER_TEMP/audit/duplicate_candidates.json" --db "$RUNNER_TEMP/audit/merged.sqlite" --out "$RUNNER_TEMP/audit/duplicate_candidate_inspection.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ravemems-duplicate-candidate-inspection
+          path: ${{ runner.temp }}/audit/duplicate_candidate_inspection.json
+          if-no-files-found: error
+          retention-days: 14
