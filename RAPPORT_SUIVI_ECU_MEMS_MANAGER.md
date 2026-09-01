@@ -11749,3 +11749,28 @@ PROCHAINE ACTION EXACTE: creer sur `tmp-ravemems-ia-visual-integration` un workf
 
 MEMSX64 reste BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
 
+
+## 2026-09-01 — PACKAGE X64 TEST RAVEMEMS VISUEL : VERT
+
+Vérification réelle du package isolé dérivé du BUILD #103 terminée.
+
+- workflow run : `33533678990`
+- conclusion : `SUCCESS`
+- branche : `tmp-ravemems-ia-visual-integration`
+- head testé : `a7fd59f41a162cd6f1c9120122fd7426a83231be`
+- toutes les étapes sont vertes, notamment : protections BUILD #103, artefacts RAVEMEMS exacts, staging runtime visuel, Qt 5.15.2 x64, ONNX Runtime/GenAI, gardes protocole, compilation complète x64, self-tests protocole/référence/visuels, Qwen natif, assemblage package, validation package complet, smoke launch et upload.
+- catalogue viewer validé : 1 935 entrées = 1 794 occurrences RAVEMEMS + 141 legacy conservées.
+- fichiers runtime visuel : 1 211.
+- bouton IA : libellé unique `Voir le schéma`.
+- artefact : `ECU-MEMS-Manager-x64-RAVEMEMS-VISUAL-TEST-from-BUILD-103`
+- artifact ID : `9811065597`
+- taille : `488542827` octets
+- digest : `sha256:462bbe553028cda843003f02a3bdade794dfef0db3c043a95ebfaa4fa1519a36`
+- expiration GitHub annoncée : 2026-09-15.
+- `MEMSX64` revérifiée après le run : toujours exactement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+Aucune intégration production n'est encore faite. Le package est prêt pour test utilisateur réel.
+
+### PROCHAINE ACTION EXACTE
+Faire tester l'artefact isolé `9811065597` par l'utilisateur. Ne pas toucher à `MEMSX64` avant retour du test réel. Si le test utilisateur est concluant, journaliser ce retour avant toute décision d'intégration.
+
