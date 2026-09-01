@@ -10477,3 +10477,59 @@ Autorisation utilisateur du 2026-09-01 : **si cette verification finale confirme
 ### PROCHAINE ACTION EXACTE
 
 Verifier les runs et artefacts reels de `ravemems-test2-raster-text.yml` / `tools/ravemems_test2_raster_text.py`. Si le cas texte incruste dans une image/raster est effectivement passe avec preservation du contenu et des elements techniques, construire puis lancer le traitement complet RAVEMEMS sur les sources anglaises canoniques de `main/rave/`, avec conservation integrale et fallback `needs_review` plutot que perte de donnees. Ne pas toucher a `MEMSX64`.
+
+## 2026-09-01 - RAVEMEMS TEST2 RASTER - PREUVE FINALE ET GO TRAITEMENT COMPLET
+
+La verification factuelle du dernier cas bloquant RAVEMEMS est terminee.
+
+TEST2 raster reel :
+- workflow : `RAVEMEMS TEST2 raster embedded text` ;
+- run GitHub Actions : `33442157473` ;
+- tentative finale : **attempt 5** ;
+- job : `ravemems-test2`, ID `99663920602` ;
+- conclusion : **SUCCESS** ;
+- le checkout de cette tentative a explicitement utilise le HEAD corrige `da77a94cfdd1a26ef4017a84f26ab391b180dfe0` ;
+- source : `rave/xn/cdxn990e.pdf`, page physique 7 ;
+- SHA-256 source : `04f3854038cb48d7a761115ff69b0d5c121661d3a70a35fec6247d70c32db6f6` ;
+- couche texte PDF native sur la page : 0 caractere ;
+- raster embarque : 3356 x 2320 ;
+- OCR cible utilise uniquement car le texte humain est incruste dans les pixels ;
+- 490 mots OCR / 45 regions source ;
+- 34 operations de remplacement de simulation MEMS Manager ;
+- 11 tokens/references techniques controles pixel-identiques ;
+- contenu hors masques de texte pixel-identique ;
+- aucune phrase humaine source attendue restante ;
+- aucun identifiant interne artificiel visible ;
+- toutes les zones demandees ajustees sans debordement ;
+- sortie conservee en 3356 x 2320 ;
+- gate final : `RAVEMEMS_TEST2_PASS` ;
+- artefact final : `ravemems-test2-cdxn-page7-raster-text`, ID `9777901590` ;
+- digest artefact : `sha256:b17d0d8801164cc1c4f246e52073c7f013a6f45eedd7695dd4a02097aad9488c`.
+
+Les cas pilotes necessaires au traitement complet sont donc couverts :
+1. texte PDF natif structure avec conservation integrale, provenance, hierarchie, avertissements, renvois et relations visuelles ;
+2. illustration avec numeros constructeur/references existantes et texte associe ;
+3. texte humain reellement incruste dans les pixels d'un raster, avec fallback OCR cible et preservation technique.
+
+### REGLES OBLIGATOIRES DU TRAITEMENT COMPLET
+
+- traiter **TOUT RAVE**, sans filtre ECU ni filtre de domaine ;
+- utiliser **uniquement les sources/editions anglaises** pour eviter les doublons linguistiques ;
+- GitHub ne traduit rien : la localisation reste la responsabilite de MEMS Manager ;
+- conserver la provenance exacte document/page/bloc/ligne/bbox/image ;
+- preferer la couche texte PDF native ; OCR uniquement quand la langue humaine est vraiment rasterisee ;
+- conserver nombres, references, valeurs, unites, connecteurs, outils, couples, dimensions, geometrie et pictogrammes ;
+- conserver l'ordre source des procedures de facon deterministe ; jamais de reconstruction d'ordre par LLM ;
+- ne jamais transformer une applicabilite inconnue en ANY : inconnu reste NULL/non specifie ;
+- toute structure incertaine ou non reconnue doit etre conservee avec son contenu brut/provenance et marquee `needs_review`, jamais jetee ;
+- chaque document selectionne et chaque page doivent etre comptabilises dans le manifeste ;
+- chaque ligne native doit etre capturee exactement une fois ou faire l'objet d'une anomalie explicite ;
+- SQLite : `integrity_check=ok` et `foreign_key_check` vide obligatoires ;
+- produire inventaire, SQLite exploitable base/IA, JSON d'audit/completude et artefacts necessaires ;
+- ne pas modifier `MEMSX64`.
+
+L'utilisateur a explicitement donne le GO pour le traitement complet si RAVEMEMS etait pret. Cette condition est maintenant remplie par les preuves ci-dessus.
+
+### PROCHAINE ACTION EXACTE
+
+Construire sur `tmp-rave-new-extraction-pilot` le processeur generique de corpus RAVEMEMS et son workflow, puis le lancer sur les sources anglaises canoniques de `main/rave/`. Ne pas s'arreter sur une page non reconnue : la conserver et la marquer `needs_review`. Inspecter ensuite le manifeste global, les controles SQLite et les statistiques par document/page, puis consigner immediatement le resultat dans ce rapport. `MEMSX64` reste strictement au BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
