@@ -11156,3 +11156,39 @@ PROCHAINE ACTION EXACTE : auditer en lecture seule les visual_occurrence/visual_
 
 Corriger uniquement le résolveur RCL0194ENG afin d'ordonner les entités avec des colonnes réellement présentes dans `mems_doc_entity` (après introspection du schéma), puis relancer la résolution read-only des 8 anciens visuels `15.1`, `20.1`, `20.2`, `20.3`, `20.4`, `39.2`, `39.3`, `COLOUR CODES`. Ne modifier aucune donnée, ne supprimer aucun ancien visuel, ne toucher ni QZ64, ni installateur, ni `MEMSX64`.
 
+
+
+## 2026-09-01 — RCL0194ENG : résolution read-only des 8 anciens visuels
+
+- Run technique corrigé : `33517427496` — **SUCCES**.
+- Branche : `tmp-rave-new-extraction-pilot`.
+- Commit : `61f7ace4b7697f2157e4463b717a060ab9cd2aa2`.
+- Artefact : `ravemems-rcl0194-eight-resolution`, ID `9804179784`, taille `88507`, digest `sha256:eb8e279ed37b9fb02baf64c85e4a2a3b21a4d84c4c06d769490dca389cbbafcb`.
+- Entrées exactes vérifiées ; `MEMSX64` reste BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+- Document RAVEMEMS : `RCL0194ENG` = `rave/xn/cdxn990e.pdf`, 41 unités.
+- Résolutions déterministes section -> page -> une occurrence visuelle RAVEMEMS :
+  - `15.1` -> page physique 12 -> `remplacement_ravemems_prouve`.
+  - `20.1` -> page 17 -> `remplacement_ravemems_prouve`.
+  - `20.2` -> page 18 -> `remplacement_ravemems_prouve`.
+  - `20.3` -> page 19 -> `remplacement_ravemems_prouve`.
+  - `20.4` -> page 20 -> `remplacement_ravemems_prouve`.
+  - `39.2` -> page 28 -> `remplacement_ravemems_prouve`.
+  - `39.3` -> page 29 -> `remplacement_ravemems_prouve`.
+- `COLOUR CODES` -> page physique 41, une occurrence visuelle et les dix mots-couleurs attendus sont présents, mais aucun identifiant de section exact/meta n'a été trouvé : classification conservatrice `a_revoir` jusqu'à isolation du contexte visuel exact.
+- Gate : `RCL0194_EIGHT_EVIDENCE_PASS`.
+- Aucune donnée SQLite modifiée ; aucune suppression ; aucun changement de production.
+
+### ETAT DE L'AUDIT LEGACY RAVE
+
+- 177 faits structurés historiques : conserver/migrer.
+- 427 entrées visuelles historiques inventoriées.
+- 274 remplacements RAVEMEMS déjà prouvés par le mapping exhaustif, auxquels s'ajoutent les 7 sections RCL0194ENG ci-dessus.
+- 52 visuels `AKM6348 FR` et 40 visuels `AKM7169ENG` : contenu legacy unique absent des 47 documents RAVEMEMS, donc conserver/migrer.
+- 12 anciennes captures de pages texte sans visuel RAVEMEMS : retrait UI possible seulement via traitement explicite, provenance conservée.
+- 41 entrées à source résolue sans contenu visuel RAVEMEMS : ne pas supprimer automatiquement.
+- `COLOUR CODES` reste le seul des 100 cas précédemment non résolus encore à qualifier précisément.
+
+### PROCHAINE ACTION EXACTE
+
+Construire en lecture seule une matrice de traitement déterministe couvrant les 427 entrées de manifeste, 126 illustrations et 329 liens historiques, en combinant les artefacts de mapping exhaustif, de profil des cas non résolus et de résolution RCL0194ENG. Isoler aussi le contexte exact de `COLOUR CODES`. Produire pour chaque élément une action explicite `remplacer_par_ravemems`, `conserver_migrer_legacy`, `retirer_de_ui_conserver_provenance` ou `a_revoir`. Ne modifier aucune base et n'effectuer encore aucune suppression. Ne toucher ni QZ64, ni installateur, ni `MEMSX64`.
+
