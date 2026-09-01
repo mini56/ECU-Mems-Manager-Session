@@ -10355,3 +10355,21 @@ Perimetre de pousse autorise : uniquement le pilote `ravemems` texte plein et so
 ### PROCHAINE ACTION EXACTE
 
 Construire le pilote texte plein sur `tmp-rave-new-extraction-pilot`, le lancer sur la page physique 20 canonique, puis inspecter les artefacts reels et mesurer la completude avant toute extension a d'autres pages.
+
+## 2026-09-01 - RAVEMEMS - REGLE LINGUISTIQUE CANONIQUE : SOURCE ANGLAISE UNIQUEMENT
+
+Precision utilisateur obligatoire avant le pilote texte plein : certains ensembles RAVE contiennent deja plusieurs editions/langues du meme contenu. **RAVEMEMS ne doit pas retraiter chaque langue existante.**
+
+Regle canonique :
+- pour l'extraction RAVEMEMS, traiter **uniquement l'edition/source anglaise** des documents RAVE ;
+- extraire depuis cette source anglaise **TOUT le contenu**, sans filtre ECU ni filtre de domaine ;
+- ignorer les duplications linguistiques deja presentes dans RAVE (francais, allemand, italien, etc.) afin de ne pas dupliquer plusieurs fois la meme connaissance ;
+- conserver le texte source anglais integral avec sa provenance ;
+- MEMS Manager reste la couche qui fournit ensuite la traduction/localisation dans la langue choisie par l'utilisateur ;
+- cette regle de langue ne change pas la regle de portee : **TOUT RAVE doit rester accessible**, mais il est extrait une seule fois depuis l'anglais.
+
+Formule canonique : **TOUT RAVE -> SOURCE ANGLAISE UNIQUEMENT -> EXTRACTION INTEGRALE -> BASE/IA -> LOCALISATION PAR MEMS MANAGER.**
+
+### PROCHAINE ACTION EXACTE
+
+Reprendre le pilote `ravemems` texte plein deja cible sur `main/rave/xn/wmxn990e.pdf`, page physique 20, en appliquant explicitement la regle source anglaise uniquement. Produire et tester l'extraction structuree complete avant toute extension au corpus.
