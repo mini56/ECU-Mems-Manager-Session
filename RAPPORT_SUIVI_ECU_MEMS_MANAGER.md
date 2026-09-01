@@ -11104,3 +11104,17 @@ PROCHAINE ACTION EXACTE : auditer en lecture seule les visual_occurrence/visual_
 - `MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
 - PROCHAINE ACTION EXACTE : expliquer les 393 entrees non resolues et produire un mapping exhaustif `ancien visuel #103 -> document/page/occurrence RAVEMEMS` en exploitant noms de fichiers, publication, page/section, anciennes tables `mems_rave_illustration`/`link` et provenance, sans se limiter au SHA. Classer chaque ancienne entree en `remplacement RAVEMEMS prouve`, `ancienne valeur ajoutee a conserver/migrer` ou `a revoir`. Aucune suppression avant couverture 427/427 et audit des 126 illustrations/329 liens.
 
+
+## 1 SEPTEMBRE 2026 — MAPPING EXHAUSTIF ANCIENS VISUELS RAVE #103 -> RAVEMEMS
+- Commit technique `6192d5649a01e49219ed8463b9857e29d565cfc6` sur `tmp-rave-new-extraction-pilot`.
+- Run `33515878966`, job `99882640324` : SUCCESS, strictement read-only.
+- Artefact `ravemems-exhaustive-legacy-visual-mapping` : ID `9803548521`, taille `130409` octets, digest `sha256:bee37602bfdb3e4d17b8e99d65ef3884b0ae08a80ef00ac529f3598d463c4fa3`.
+- Couverture explicite : 427/427 entrees RAVE du `manifest.json`, 126/126 lignes `mems_rave_illustration`, 329/329 lignes `mems_rave_illustration_link` examinees.
+- Resultat 427 manifest : `remplacement_ravemems_prouve=274`; `ancienne_capture_page_texte_sans_visuel_ravemems=12`; `ancienne_entree_source_resolue_sans_contenu_visuel=41`; `a_revoir_document_resolu_page_non_resolue=8`; `a_revoir_document_non_resolu=92`. Donc 327/427 ont deja un traitement sans revue, 100 restent a resoudre.
+- Resultat 126 illustrations historiques : 21 `remplacement_ravemems_prouve`, 3 `ancienne_illustration_page_texte_sans_ui`, 102 `a_revoir_mapping_partiel`.
+- Resultat 329 liens historiques : 35 `lien_migrable_vers_ravemems`, 294 `lien_a_conserver_jusqua_resolution_illustration`.
+- Les premiers cas non resolus montrent notamment la serie `AKM6348 FR CH86 86-x` : le nom historique fournit bien la racine AKM6348 et la section 86-x, mais le document RAVEMEMS n est pas resolu par le nom/publication actuel. Ce point doit etre traite comme alias/provenance documentaire, pas comme absence de contenu.
+- `safe_to_delete_now=false` : aucune suppression autorisee a ce stade.
+- `MEMSX64` reste exactement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+- PROCHAINE ACTION EXACTE : analyser les 100 cas restants par familles de noms/sources, en premier `AKM6348 FR`, retrouver leur document RAVEMEMS par `file_name`, `source_key`, titre/source path et alias de publication plutot que le seul `publication_code`, puis refaire le mapping page/section. Sortir une ventilation des 100 cas et viser 427/427 traitements deterministes. Ne supprimer aucune donnee et ne toucher ni QZ64, ni installateur, ni `MEMSX64`.
+
