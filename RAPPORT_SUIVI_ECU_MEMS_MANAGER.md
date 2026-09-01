@@ -10854,3 +10854,34 @@ Les deux reviews ont egalement ete recontrolees directement dans le SQLite de l 
 Aucune donnee RAVEMEMS n est modifiee par ce preflight. `MEMSX64` reste BUILD #103 inchange.
 
 PROCHAINE ACTION EXACTE : modifier le workflow de figement uniquement sur ces deux points de harnais : (a) recuperation du contenu par `gh run download` avec metadonnees API toujours verrouillees et affichees ; (b) lire `visual_asset` depuis `database_counts` tout en gardant le controle SQLite/hashes des 1 070 assets. Relancer ensuite le meme figement complet sans re-extraire RAVE et sans toucher QZ64/installateur/MEMSX64.
+
+## 2026-09-01 - RAVEMEMS RUN4 - SECOND ECHEC DU FIGEMENT SOURCE, AVANT CORRECTION
+
+Relance apres correction preflight :
+- branche `tmp-rave-new-extraction-pilot` ;
+- commit `9b38af595e9dbefd4b366f9bdad74eee44d94ce2` ;
+- workflow `RAVEMEMS freeze validated run4 source package` ;
+- run `33490084929`, job `99799257625` : FAILURE .
+
+Resultat exact :
+- checkout : PASS ;
+- garde `MEMSX64` BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730` : PASS ;
+- metadata run/artefact : PASS avec valeurs observees exactes : run `33484362718` completed/success, head `72dcaf04e84181669aa25c9103ea60bf47d9e1a7`, artefact ID `9791187684`, nom `ravemems-full-corpus`, taille API `36 007 526`, digest `sha256:5570f9435de985872e13d55d9c2263e3c5190f12d6ef39cbc73587fb5ce946b8` ;
+- `gh run download` fonctionne et recupere bien l artefact sans relancer l extraction ;
+- contenu observe apres extraction par `gh` : `ravemems-full-corpus-output.tar.gz` a la racine, taille `36 022 794` octets ;
+- l echec survient ensuite sur le premier garde de chemin des JSON, parce que le workflow cherchait `manifest.json`, `document_audit.json`, `needs_review.json` a la racine ;
+- verification independante du ZIP exact montre que ces trois fichiers sont en realite sous `ravemems_full_corpus_output/`, tandis que `ravemems-full-corpus-output.tar.gz` est bien a la racine. Le contenu GitHub est donc correct ; seul le chemin attendu par le harnais est faux ;
+- toutes les etapes SQLite/assets/packaging/reouverture/upload sont SKIPPED ;
+- aucun paquet d integration produit ;
+- aucune re-extraction, aucune modification de donnees, aucun QZ64/installateur, aucun changement `MEMSX64`.
+
+Preflight local complet avant correction, effectue sur l artefact exact deja telecharge :
+- les trois JSON sous `ravemems_full_corpus_output/` sont byte-for-byte identiques aux copies incluses dans le tar complet ;
+- SQLite `33 222 656` octets / SHA-256 `8f2cb17525efb2c1b296bc675c781740a9db3e7de84f2e4150f3a3ebbe49a87b` : integrity `ok`, FK vides ;
+- `database_counts` = document 47, page 1359, line 54732, content 19039, visual_asset 1070, visual_occurrence 1794, ocr_region 45 ;
+- 1 134 fichiers physiques dans `assets/` ; exactement 1 070 assets enregistres dans SQLite ; les 1 070 chemins existent et leurs SHA correspondent tous ;
+- CDXN p.7 = `visual_ocr`, `native_raster`, 45 regions / 490 mots ;
+- `libxn.pdf` p.1 = `visual_no_ocr_text`, raster conserve, 0 region OCR ;
+- simulation locale du reste du packaging avec ces chemins corriges : inventaires SHA construits, deux archives deterministes produites byte-for-byte identiques. Ce test ne remplace pas la validation GitHub mais evite de pousser une correction non preflightee.
+
+PROCHAINE ACTION EXACTE : corriger uniquement les chemins des trois JSON du workflow vers `$RUNNER_TEMP/run4_artifact/ravemems_full_corpus_output/`, conserver le tar a la racine et les comparaisons byte-for-byte avec son contenu. Ne modifier aucun autre garde. Relancer ensuite le meme figement. Ne pas toucher QZ64/installateur/MEMSX64 avant succes complet du paquet source.
