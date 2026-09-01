@@ -1,0 +1,48 @@
+name: TEMP journal IA scroll history
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/tmp-journal-ia-scroll-history.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append master continuity report
+        shell: bash
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+## 2026-09-01 — IA MEMS — REGLE SCROLL/HISTORIQUE AVANT CORRECTION
+
+Retour utilisateur precise sur le test reel du package RAVEMEMS visuel : le scroll de la conversation IA est vital, notamment pour pouvoir remonter relire une reponse/clarification precedente (exemple reel : reponse `SPi` donnee alors qu'il fallait ensuite corriger en `MPi`).
+
+Audit direct de `iamemstab.cpp` sur `MEMSX64` et sur `tmp-ravemems-ia-visual-integration` : `QTextBrowser iaMemsTranscript` possede deja une barre verticale `Qt::ScrollBarAlwaysOn` et l'historique n'est pas efface, mais `appendMessage()` force actuellement `bar->setValue(bar->maximum())` apres chaque message. Une reponse longue est donc positionnee artificiellement tout en bas au lieu d'afficher son debut.
+
+Comportement obligatoire a obtenir :
+- lorsqu'une nouvelle reponse IA arrive, afficher le DEBUT de cette nouvelle reponse ;
+- permettre de descendre librement pour lire toute la suite de la reponse ;
+- permettre de remonter librement dans TOUT l'historique de la conversation ;
+- ne pas tronquer, effacer ou remplacer les echanges precedents ;
+- conserver une barre de defilement verticale toujours accessible ;
+- les messages utilisateur peuvent continuer a amener la vue sur le nouvel echange, mais une reponse IA ne doit plus forcer l'affichage de sa fin.
+
+PROCHAINE ACTION EXACTE : sur `tmp-ravemems-ia-visual-integration` uniquement, corriger le positionnement de `iaMemsTranscript` afin d'ancrer l'affichage au debut de chaque nouvelle reponse IA tout en conservant l'historique integral et le scroll bidirectionnel. Ajouter un self-test cible si le harnais existant permet de verifier ce comportement sans modifier Qwen/ONNX, le viewer de schema, le protocole, la base ni `MEMSX64`. Verifier le diff exact avant tout test/package.
+
+`MEMSX64` doit rester strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+EOF
+          git rm .github/workflows/tmp-journal-ia-scroll-history.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m 'Journal IA scroll history requirement'
+          git push origin HEAD:RAPPORT
