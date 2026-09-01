@@ -74,7 +74,8 @@ QStringList significantTerms(const QString &text)
         QStringLiteral("broches"), QStringLiteral("pins"), QStringLiteral("mems"),
         QStringLiteral("ecu"), QStringLiteral("de"), QStringLiteral("du"),
         QStringLiteral("la"), QStringLiteral("le"), QStringLiteral("les"),
-        QStringLiteral("un"), QStringLiteral("une"), QStringLiteral("des")
+        QStringLiteral("un"), QStringLiteral("une"), QStringLiteral("des"),
+        QStringLiteral("est")
     };
 
     QStringList result;
