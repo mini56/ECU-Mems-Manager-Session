@@ -116,6 +116,10 @@ jobs:
           assert (header["chapter"], header["section_group"], header["section"], header["subsection"]) == ("GENERAL INFORMATION", None, None, None)
           assert (footer["chapter"], footer["section_group"], footer["section"], footer["subsection"]) == ("GENERAL INFORMATION", "GENERAL PRECAUTIONS AND FITTING INSTRUCTIONS", None, None)
           assert page_no["subsection"] is None
+          knowledge = json.loads((out / "knowledge_items.json").read_text(encoding="utf-8"))
+          warning_knowledge = [x for x in knowledge if x["knowledge_type"] == "warning"]
+          assert len(warning_knowledge) == 2
+          assert all(x.get("associated_visual_key") for x in warning_knowledge)
 
           db = sqlite3.connect(out / "ravemems_full_text_pilot.sqlite")
           try:
@@ -123,7 +127,10 @@ jobs:
               assert db.execute("SELECT COUNT(*) FROM line").fetchone()[0] == m["native_line_count"]
               assert db.execute("SELECT COUNT(*) FROM content").fetchone()[0] == m["structured_item_count"]
               assert db.execute("SELECT COUNT(*) FROM visual").fetchone()[0] == 2
+              assert db.execute("SELECT COUNT(*) FROM content_visual_relation").fetchone()[0] == 2
               assert db.execute("SELECT COUNT(*) FROM crossref").fetchone()[0] == 2
+              assert db.execute("PRAGMA foreign_key_check").fetchall() == []
+              assert db.execute("SELECT COUNT(*) FROM content_visual_relation r JOIN content c ON c.item_key=r.item_key JOIN visual v ON v.visual_key=r.visual_key WHERE c.item_type='warning' AND r.relation_type='warning_pictogram'").fetchone()[0] == 2
               assert db.execute("SELECT chapter_title, section_group_title, section_title, subsection_title FROM content WHERE item_type='running_header'").fetchone() == ("GENERAL INFORMATION", None, None, None)
               assert db.execute("SELECT chapter_title, section_group_title, section_title, subsection_title FROM content WHERE item_type='running_footer_section'").fetchone() == ("GENERAL INFORMATION", "GENERAL PRECAUTIONS AND FITTING INSTRUCTIONS", None, None)
           finally:
