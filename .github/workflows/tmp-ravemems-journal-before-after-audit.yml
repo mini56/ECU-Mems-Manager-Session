@@ -1,4 +1,4 @@
-name: TEMP journal RAVEMEMS before-after database audit
+name: TEMP journal RAVEMEMS additive database audit
 
 on:
   push:
@@ -16,13 +16,34 @@ jobs:
         with:
           ref: RAPPORT
           fetch-depth: 1
-      - name: Append audit plan and self-clean
+      - name: Append additive audit rule and self-clean
         shell: bash
         run: |
-          python3 -c "import base64,pathlib; p=pathlib.Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md'); p.write_bytes(p.read_bytes()+base64.b64decode('CiMjIDIwMjYtMDktMDEgLSBBVURJVCBDT01QQVJBVElGIEJBU0UgQVZBTlQvQVBSRVMgUkFWRU1FTVMgLSBBVkFOVCBFWEVDVVRJT04KCkRlY2lzaW9uIHV0aWxpc2F0ZXVyIDogYXZhbnQgZGUgcG91cnN1aXZyIGxlIGZpZ2VtZW50L3BhY2thZ2luZyBSQVZFTUVNUywgZWZmZWN0dWVyIHVuIGF1ZGl0IGNvbXBhcmF0aWYgY29tcGxldCBlbnRyZSBsYSBiYXNlIGRlIGRvbm5lZXMgZGUgcHJvZHVjdGlvbiBhdmFudCBSQVZFTUVNUyBldCBsYSBiYXNlIGlzc3VlIGR1IGNvcnB1cyBSQVZFTUVNUyBmaW5hbCBhZmluIGRlIHZlcmlmaWVyIGxhIGZpbmFsaXRlIGV0IGRldGVjdGVyIHRvdXRlIHBlcnRlLCBkdXBsaWNhdGlvbiwgaW5jb2hlcmVuY2UgZGUgc2NoZW1hIG91IHJ1cHR1cmUgZGUgZG9ubmVlcy4KCkJhc2UgQVZBTlQgcmV0ZW51ZSBjb21tZSByZWZlcmVuY2UgY2Fub25pcXVlIDogU1FMaXRlIGVmZmVjdGl2ZW1lbnQgZW1iYWxsZSBkYW5zIEJVSUxEICMxMDMsIHJ1biBgMzMzMzQzMDY4MzVgLCBjb21taXQgYE1FTVNYNjRgIGAxZDYzMTZiZDE3NDZkNmYyYjRjZmI3NTFjYWI4OGQxOGUyN2VmNzMwYCwgYXJ0ZWZhY3QgYEVDVS1NRU1TLU1hbmFnZXIteDY0LUJVSUxELTEwMy12MS4wLjEwM2AgSUQgYDk3Mzg2NDAxNTFgLCBkaWdlc3QgYHNoYTI1NjphMThkODAwMzUzNjgwNzljOTQ0NjI3OTI3Y2JhMjNmNDZhODQ0NzY5YjI0YTUyNjA3Y2ZkZGUwMmExOTRiMGQ0YC4gQ2V0IGV0YXQgZXN0IGxlIGRlcm5pZXIgZXRhdCBwcm9kdWN0aW9uIHZhbGlkZSBhdmFudCBsZSByZXRyYWl0ZW1lbnQgbWFzc2lmIFJBVkVNRU1TLgoKQmFzZSBBUFJFUyByZXRlbnVlIDogU1FMaXRlIGByYXZlbWVtc19mdWxsX2NvcnB1cy5zcWxpdGVgIGR1IHJ1biBSQVZFTUVNUyBmaW5hbCBgMzM0ODQzNjI3MThgLCBhcnRlZmFjdCBJRCBgOTc5MTE4NzY4NGAsIFNIQS0yNTYgYDh mMmNiMTc1MjVlZmIyYzFiMjk2YmM2NzVjNzgxNzQwYTlkYjNlN2RlODRmMmU0MTUwZjNhM2ViYmU0OWE4N2JgLgoKQXVkaXQgYSBlZmZlY3R1ZXIgYXZhbnQgdG91dGUgcmVwcmlzZSBkdSBmaWdlbWVudCA6Ci0gaW50ZWdyaXRlIFNRTGl0ZSBldCBmb3JlaWduIGtleXMgZGVzIGRldXggYmFzZXMgOwotIHZlcnNpb24vc2NoZW1hLCB0YWJsZXMsIGluZGV4LCB0cmlnZ2VycywgdnVlcyBldCBjb2xvbm5lcyA7Ci0gY29tcHRldXJzIHBhciB0YWJsZSBldCBlY2FydHMgOwotIGludmVudGFpcmUgZGVzIHRhYmxlcyBoaXN0b3JpcXVlcyBkZSBCVUlMRC...'))"
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+## 2026-09-01 - REGLE FINALE RAVEMEMS : AJOUT A LA BASE EXISTANTE, JAMAIS REMPLACEMENT
+
+Correction utilisateur prioritaire : RAVEMEMS ne doit jamais remplacer le contenu existant de la base de donnees ECU MEMS Manager. La base de production BUILD #103 est la base mere a conserver. RAVEMEMS doit etre ajoute a une copie de cette base, puis les doublons et recouvrements doivent etre analyses et traites dans la base fusionnee.
+
+Incident de journalisation precedent : le run `33490537284` a echoue avant ecriture du rapport a cause d une chaine Base64 invalide (`Incorrect padding`). Conformement a la regle de tracabilite, aucune progression technique d audit/fusion n a ete effectuee apres cet echec. Le present workflow retablit le journal avant toute reprise.
+
+Architecture de validation obligatoire :
+1. BASE AVANT = SQLite reellement emballe dans BUILD #103, run `33334306835`, commit `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`, artefact `9738640151`.
+2. SOURCE RAVEMEMS = corpus final run `33484362718`, artefact `9791187684`, SQLite `ravemems_full_corpus.sqlite` SHA-256 `8f2cb17525efb2c1b296bc675c781740a9db3e7de84f2e4150f3a3ebbe49a87b` + assets/audits/manifestes.
+3. BASE APRES = copie de la base BUILD #103 dans laquelle les donnees RAVEMEMS sont importees de facon additive via le schema documentaire multilingue valide. Aucune table/connaissance/procedure/specification/fait/illustration historique ne doit etre supprimee pour faire place a RAVEMEMS.
+4. Une fois l ajout effectue, auditer les doublons exacts et semantiques : memes sources/pages, memes faits, procedures, specifications, illustrations/assets, textes/connaissances et relations. Les doublons doivent etre classes avant toute suppression ou fusion.
+5. Toute deduplication doit conserver la meilleure provenance et la tracabilite vers toutes les sources historiques/RAVEMEMS ; aucune suppression automatique basee seulement sur le texte ou un compteur.
+6. Audit final obligatoire AVANT/APRES/FUSION : schema, tables, index, compteurs, integrite/FK, historiques preserves, ajouts RAVEMEMS, doublons detectes/traites, orphelins, couverture documentaire et preuves SHA.
+
+Le SQLite RAVEMEMS seul n est donc PAS la base finale du logiciel. C est une source documentaire complete a integrer dans la base existante.
+
+Le figement source en cours, QZ64, installateur et toute modification `MEMSX64` restent suspendus jusqu a validation de cet audit et de la strategie de fusion additive.
+
+PROCHAINE ACTION EXACTE : construire un audit automatique en lecture seule qui telecharge le SQLite officiel BUILD #103 et le SQLite RAVEMEMS run 4, produit les inventaires AVANT et SOURCE_RAVEMEMS, puis simule l import additif dans une copie de BUILD #103 sans deduplication destructive. Produire ensuite le rapport de doublons/recouvrements et l audit de preservation AVANT/APRES. Ne supprimer ni fusionner aucun doublon avant inspection du rapport. Ne pas toucher `MEMSX64`.
+EOF
           rm .github/workflows/tmp-ravemems-journal-before-after-audit.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md .github/workflows/tmp-ravemems-journal-before-after-audit.yml
-          git commit -m "Record RAVEMEMS before-after database audit plan"
+          git commit -m "Record additive RAVEMEMS merge and audit rule"
           git push origin HEAD:RAPPORT
