@@ -10998,3 +10998,15 @@ Les connecteurs principaux des cinq cas RCL0194ENG partiels sont retrouves sur l
 Le run ne permet cependant pas encore de valider les couleurs de fils, les liaisons SJ5, la valeur 1,5 Nm ni les procedures sans ancre machine parce que le log compact na pas imprime toutes les lignes locales necessaires.
 
 PROCHAINE ACTION EXACTE : effectuer un dernier extracteur read-only limite aux pages RCL0193ENG 98,99,101,102,118,123,135,170 et RCL0194ENG 17,19. Imprimer les lignes source completes de ces pages afin de classer definitivement les 10 faits en confirme, complementaire, divergence, erreur historique ou a revoir. Ne modifier aucune base, ne supprimer/fusionner aucune ligne et ne pas toucher MEMSX64.
+
+## 2026-09-01 - RAVEMEMS - PREUVES PAGES COMPLETES DES 10 CAS
+
+Workflow read-only run 33508381801, job 99857827972, commit 2064a226eba649db7501bc2b296d78b5a14efb37 = SUCCESS.
+RCL0193ENG p.98 contient 0 ligne source ; le contenu EVAP historique attribue a p.98 est confirme exactement p.99 lignes 68-74, y compris commande ECM, seuil 70 C et consequences a froid/ralenti. Classification provisoire : fait CONFIRME, provenance page a corriger p.98 -> p.99.
+RAVE-REP-PURGE-001 est confirme sur p.102 : deconnexion multiplug/durite, depose et rejet du joint torique, puis joint neuf lubrifie a la graisse silicone et remontage. La reference historique p.101 est decalee dune page.
+RAVE-REP-INJECTORS-001 : p.135 confirme depose rampe et rejet des joints toriques injecteurs ; p.170 confirme depose rampe/injecteurs et rejet des joints. La partie repose/nettoyage/graisse silicone doit encore etre verifiee sur les pages suivantes.
+RAVE-ADJ-THROTTLE-CABLE-001 : p.118 est encore Description and Operation et ne contient pas la procedure de reglage ; la section 19.20 est localisee a partir de p.119. Verifier p.119.
+RAVE-REP-TP-SENSOR-001 : p.123 contient le debut de THROTTLE HOUSING et pas encore la procedure TP sensor ni 1,5 Nm. Verifier la page suivante p.124 avant de conclure.
+RCL0194ENG p.17 et p.19 confirment les sections 20.2 MPi et 20.4 SPi Japan, les connecteurs attendus, SENSOR EARTH, SJ5 et les codes couleur NK/BW/KB/GB. Le texte lineaire seul ne suffit toutefois pas a prouver la correspondance graphique fil par fil entre chaque connecteur et son code couleur ; cette association doit etre verifiee avec bbox/spans avant validation finale.
+
+PROCHAINE ACTION EXACTE : lire en lecture seule RCL0193ENG p.119,124,136,171 pour fermer cable, TP et repose injecteurs ; puis exploiter bbox/spans des lignes RCL0194ENG p.17 et p.19 afin de verifier les associations connecteur-couleur pour les cinq cas partiels. Classer ensuite les 10 faits definitivement et produire le plan non destructif de correction des seules provenances/erreurs prouvees. Aucune modification SQLite et aucun MEMSX64 avant ce verdict.
