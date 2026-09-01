@@ -1,0 +1,111 @@
+name: RAVEMEMS additive merge audit
+
+on:
+  push:
+    branches:
+      - tmp-rave-new-extraction-pilot
+    paths:
+      - tools/ravemems_additive_merge_audit.py
+      - .github/workflows/ravemems-additive-merge-audit.yml
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      BASE_RUN_ID: '33334306835'
+      BASE_ARTIFACT_ID: '9738640151'
+      BASE_ARTIFACT_NAME: 'ECU-MEMS-Manager-x64-BUILD-103-v1.0.103'
+      BASE_ARTIFACT_DIGEST: 'sha256:a18d80035368079c944627927cba23f46a844769b24a52607cfdde02a194b0d4'
+      BASE_COMMIT: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+      RAVE_RUN_ID: '33484362718'
+      RAVE_ARTIFACT_ID: '9791187684'
+      RAVE_ARTIFACT_NAME: 'ravemems-full-corpus'
+      RAVE_ARTIFACT_SIZE: '36007526'
+      RAVE_ARTIFACT_DIGEST: 'sha256:5570f9435de985872e13d55d9c2263e3c5190f12d6ef39cbc73587fb5ce946b8'
+      RAVE_COMMIT: '72dcaf04e84181669aa25c9103ea60bf47d9e1a7'
+      RAVE_SQLITE_SHA256: '8f2cb17525efb2c1b296bc675c781740a9db3e7de84f2e4150f3a3ebbe49a87b'
+      FOUNDATION_SQL_SHA256: '4a89004a556af7771a80592534c3b4e379733c7fe9c0f0dc6f79761dfe304546'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-new-extraction-pilot
+          fetch-depth: 1
+
+      - name: Verify protected production and exact artifact metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$BASE_COMMIT"
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${BASE_RUN_ID}" > "$RUNNER_TEMP/base_run.json"
+          gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${BASE_ARTIFACT_ID}" > "$RUNNER_TEMP/base_artifact.json"
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RAVE_RUN_ID}" > "$RUNNER_TEMP/rave_run.json"
+          gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${RAVE_ARTIFACT_ID}" > "$RUNNER_TEMP/rave_artifact.json"
+          python3 -c "import json,os; b=json.load(open(os.environ['RUNNER_TEMP']+'/base_run.json')); ba=json.load(open(os.environ['RUNNER_TEMP']+'/base_artifact.json')); r=json.load(open(os.environ['RUNNER_TEMP']+'/rave_run.json')); ra=json.load(open(os.environ['RUNNER_TEMP']+'/rave_artifact.json')); assert b['conclusion']=='success' and b['head_sha']==os.environ['BASE_COMMIT']; assert str(ba['id'])==os.environ['BASE_ARTIFACT_ID'] and ba['name']==os.environ['BASE_ARTIFACT_NAME'] and ba.get('digest')==os.environ['BASE_ARTIFACT_DIGEST']; assert r['conclusion']=='success' and r['head_sha']==os.environ['RAVE_COMMIT']; assert str(ra['id'])==os.environ['RAVE_ARTIFACT_ID'] and ra['name']==os.environ['RAVE_ARTIFACT_NAME'] and int(ra['size_in_bytes'])==int(os.environ['RAVE_ARTIFACT_SIZE']) and ra.get('digest')==os.environ['RAVE_ARTIFACT_DIGEST']; print('EXACT_ARTIFACT_METADATA_PASS')"
+
+      - name: Download exact BUILD 103 database and RAVEMEMS run4
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/build103" "$RUNNER_TEMP/rave_artifact" "$RUNNER_TEMP/rave_full"
+          gh run download "$BASE_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$BASE_ARTIFACT_NAME" --dir "$RUNNER_TEMP/build103"
+          mapfile -t base_dbs < <(find "$RUNNER_TEMP/build103" -type f -name 'ia_mems_reference_r20.sqlite' -print)
+          test "${#base_dbs[@]}" -eq 1
+          echo "BASE_DB=${base_dbs[0]}" >> "$GITHUB_ENV"
+          gh run download "$RAVE_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$RAVE_ARTIFACT_NAME" --dir "$RUNNER_TEMP/rave_artifact"
+          test -f "$RUNNER_TEMP/rave_artifact/ravemems-full-corpus-output.tar.gz"
+          tar -xzf "$RUNNER_TEMP/rave_artifact/ravemems-full-corpus-output.tar.gz" -C "$RUNNER_TEMP/rave_full"
+          test -f "$RUNNER_TEMP/rave_full/ravemems_full_corpus_output/ravemems_full_corpus.sqlite"
+          test "$(sha256sum "$RUNNER_TEMP/rave_full/ravemems_full_corpus_output/ravemems_full_corpus.sqlite" | awk '{print $1}')" = "$RAVE_SQLITE_SHA256"
+          echo "RAVE_ROOT=$RUNNER_TEMP/rave_full/ravemems_full_corpus_output" >> "$GITHUB_ENV"
+          echo EXACT_DATABASE_SOURCES_PASS
+
+      - name: Materialize validated multilingual foundation schema
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --depth=1 origin tmp-multilingual-knowledge-foundation
+          git show FETCH_HEAD:database/reference/prototypes/multilingual_knowledge_foundation_v1.sql > "$RUNNER_TEMP/multilingual_knowledge_foundation_v1.sql"
+          test "$(sha256sum "$RUNNER_TEMP/multilingual_knowledge_foundation_v1.sql" | awk '{print $1}')" = "$FOUNDATION_SQL_SHA256"
+          echo "FOUNDATION_SQL=$RUNNER_TEMP/multilingual_knowledge_foundation_v1.sql" >> "$GITHUB_ENV"
+          echo FOUNDATION_SCHEMA_EXACT_PASS
+
+      - name: Audit before then import RAVEMEMS additively and audit after
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$RUNNER_TEMP/ravemems_additive_audit"
+          python3 tools/ravemems_additive_merge_audit.py --base "$BASE_DB" --rave-root "$RAVE_ROOT" --foundation-sql "$FOUNDATION_SQL" --out "$RUNNER_TEMP/ravemems_additive_audit"
+          python3 -c "import json,os; p=os.environ['RUNNER_TEMP']+'/ravemems_additive_audit/audit_summary.json'; s=json.load(open(p)); assert s['pass'] is True; assert s['historical_tables_preserved'] is True; assert s['changed_historical_tables']==0; assert s['missing_historical_objects']==0; assert s['rave_source']['counts']['document']==47; assert s['rave_source']['counts']['page']==1359; assert s['additive_counts']['mems_doc_document']==47; assert s['additive_counts']['mems_doc_unit']==1359; assert s['additive_counts']['mems_doc_visual']==1070; assert s['automatic_deletions_performed']==0; print('ADDITIVE_AUDIT_GATE_PASS')"
+
+      - name: Compress audit database reproducibly
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/ravemems_additive_audit"
+          gzip -n -9 -c ia_mems_reference_r20_plus_ravemems_AUDIT.sqlite > ia_mems_reference_r20_plus_ravemems_AUDIT.sqlite.gz
+          sha256sum ia_mems_reference_r20_plus_ravemems_AUDIT.sqlite ia_mems_reference_r20_plus_ravemems_AUDIT.sqlite.gz > merged_database_sha256.txt
+          rm ia_mems_reference_r20_plus_ravemems_AUDIT.sqlite
+          echo ADDITIVE_AUDIT_ARTIFACT_READY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ravemems-additive-merge-audit
+          path: |
+            ${{ runner.temp }}/ravemems_additive_audit/audit_summary.json
+            ${{ runner.temp }}/ravemems_additive_audit/audit_before.json
+            ${{ runner.temp }}/ravemems_additive_audit/audit_after.json
+            ${{ runner.temp }}/ravemems_additive_audit/duplicate_candidates.json
+            ${{ runner.temp }}/ravemems_additive_audit/RAVEMEMS_ADDITIVE_MERGE_AUDIT.md
+            ${{ runner.temp }}/ravemems_additive_audit/merged_database_sha256.txt
+            ${{ runner.temp }}/ravemems_additive_audit/ia_mems_reference_r20_plus_ravemems_AUDIT.sqlite.gz
+          if-no-files-found: error
+          retention-days: 14
