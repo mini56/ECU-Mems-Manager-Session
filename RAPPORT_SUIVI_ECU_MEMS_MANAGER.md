@@ -10297,3 +10297,39 @@ Pousser uniquement la factorisation OCR identique ci-dessus sur `tmp-rave-new-ex
 
 ### PROCHAINE ACTION EXACTE
 Montrer a l'utilisateur le PNG localise reel et l'original constructeur pour comparaison. Ne pas etendre cette methode au corpus RAVE tant que l'utilisateur n'a pas explicitement accepte ce TEST2 et demande de poursuivre.
+
+## 2026-09-01 - RAVEMEMS - VALIDATION UTILISATEUR TEST2 + PORTEE CANONIQUE TOUT RAVE
+
+### VALIDATION UTILISATEUR DU TEST2
+
+L'utilisateur a controle le rendu final du TEST2 raster embarque (`cdxn990e.pdf`, page physique 7) et a confirme explicitement : **CORRECT**. Le TEST2 `ravemems` est donc valide a la fois par les gardes automatiques et par le controle visuel utilisateur. HEAD pilote valide : `da77a94cfdd1a26ef4017a84f26ab391b180dfe0`.
+
+### REGLE CANONIQUE DE PORTEE - CAPTURER TOUT RAVE
+
+Correction fondamentale demandee par l'utilisateur : **RAVEMEMS NE DOIT PAS FILTRER RAVE SUR CE QUI CONCERNE L'ECU. IL FAUT CAPTURER TOUT LE CONTENU RAVE.**
+
+Principe obligatoire : **TOUT EXTRAIRE -> TOUT CONSERVER -> TOUT RENDRE ACCESSIBLE A L'UTILISATEUR FINAL.**
+
+Cela couvre sans restriction ECU : mecanique, electricite, diagnostic, procedures, carrosserie, refroidissement, alimentation, freinage, transmission, couples, tolerances, outils, consommables, avertissements, cautions, notes, tableaux, schemas, illustrations, specifications, references, descriptions et toute autre information utile presente dans les manuels RAVE.
+
+L'applicabilite sert a classer et relier les donnees, jamais a les filtrer ou a les jeter :
+- si RAVE donne explicitement un modele, une annee, un moteur, SPi, MPi, MEMS ou un autre perimetre, le conserver ;
+- la hierarchie document/chapitre/section/systeme est aussi un contexte a conserver ;
+- si l'applicabilite exacte n'est pas determinee, conserver quand meme integralement l'information avec une portee inconnue/non precisee ;
+- ne jamais transformer une portee inconnue en `ANY` ou en universalite inventee ;
+- une information commune a plusieurs modeles peut rester commune ;
+- aucune information ne doit devenir inaccessible parce que son rattachement exact n'est pas encore determine.
+
+### PAGES DE TEXTE PLEIN - OBJECTIF BASE + IA
+
+Pour les pages composees principalement de texte, `ravemems` doit extraire la connaissance elle-meme, pas seulement produire une image : texte source integral, ordre de lecture, titres, sous-titres, paragraphes, listes, notes, avertissements/cautions, procedures et ordre exact des etapes, outils, consommables, remplacements, controles finaux, valeurs, unites, couples, tolerances, references, tables, relations, contexte/applicabilite et provenance exacte document/page/zone. Le texte anglais source reste conserve.
+
+Les pages mixtes cumulent les deux traitements : contenu narratif structure pour la base/IA + traitement graphique `ravemems` des vues/schemas/illustrations.
+
+Aucune donnee utile ne doit etre rejetee parce qu'elle ne rentre pas encore dans une table existante : si necessaire, le schema est etendu additivement. L'ordre des procedures est une donnee source et ne doit jamais etre reconstruit par le LLM.
+
+`MEMSX64` reste protege et inchange : BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+### PROCHAINE ACTION EXACTE
+
+Selectionner dans la source canonique `main/rave/` une vraie page RAVE de **texte plein avec couche texte PDF native**, puis construire sur `tmp-rave-new-extraction-pilot` un pilote `ravemems` qui extrait integralement et structure ce contenu pour la base et l'IA avec provenance exacte. Verifier qu'aucun paragraphe, titre, liste, valeur, note, avertissement ou autre contenu utile de la page n'est perdu. **Ne pas lancer le corpus complet** avant validation de ce pilote texte plein.
