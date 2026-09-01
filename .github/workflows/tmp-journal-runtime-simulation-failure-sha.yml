@@ -1,0 +1,43 @@
+name: TEMP journal runtime simulation SHA assumption failure
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/tmp-journal-runtime-simulation-failure-sha.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append report and self-delete
+        shell: bash
+        env:
+          REPORT_ENTRY: |
+            ## 2026-09-01 — SIMULATION MIGRATION RUNTIME — ECHEC GARDE SHA DU SIMULATEUR
+
+            Premier run de simulation `33523709493`, job `99909062411` — **FAILURE** dans `Build migration and viewer runtime candidate on copy`.
+
+            Les entrees exactes ont ete validees avant l'echec : matrice autoritaire artefact `9806574514` digest `sha256:4590cbae278b629d0710c99584229a384bca2e5039183fcbe5fa1b42b346e5bf`, bundle visuel artefact `9801592148` digest `sha256:8b0fb6d8ef3a7b98e67adf603479be584236cd451b7dda2b28a6d6bb548445b1`, et `MEMSX64` est reste strictement BUILD #103.
+
+            Cause exacte : le simulateur a correctement copie 1070 fichiers RAVEMEMS puis a construit `sha_to_rave={sha256:path}` et a impose a tort `len(sha_to_rave)==1070`. Cette hypothese exigeait que les 1070 assets enregistres aient tous un contenu binaire unique. Or RAVEMEMS garantit 1070 assets enregistres et SHA-verifies, pas 1070 SHA necessairement distincts ; des assets distincts peuvent legalement partager les memes octets.
+
+            Il s'agit donc d'un defaut du simulateur, pas d'une corruption du corpus ni de la matrice. Aucune table, aucun manifeste production, aucun fichier production et aucune branche `MEMSX64` n'ont ete modifies.
+
+            PROCHAINE ACTION EXACTE : corriger uniquement la resolution fichier du simulateur pour utiliser le `stored_path` autoritaire de chaque entree RAVEMEMS, normalise du prefixe `ravemems_run4/`, puis verifier le SHA attendu sur ce fichier precis. Ne plus exiger l'unicite globale des SHA. Relancer exactement la meme simulation sur copie avec les memes gardes et les memes comptes cibles.
+        run: |
+          set -euo pipefail
+          printf '\n%s\n' "$REPORT_ENTRY" >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git rm .github/workflows/tmp-journal-runtime-simulation-failure-sha.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m 'Journal runtime simulation SHA assumption failure'
+          git push origin HEAD:RAPPORT
