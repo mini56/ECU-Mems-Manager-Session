@@ -11822,3 +11822,13 @@ Comportement obligatoire : nouvelle reponse IA = DEBUT visible ; descente libre 
 PROCHAINE ACTION EXACTE : sur tmp-ravemems-ia-visual-integration uniquement, corriger le positionnement de iaMemsTranscript afin d ancrer l affichage au debut de chaque nouvelle reponse IA tout en conservant l historique integral et le scroll bidirectionnel. Ajouter un self-test cible si le harnais existant le permet. Ne modifier ni Qwen/ONNX, ni viewer de schema, ni protocole, ni base, ni MEMSX64. Verifier le diff exact avant tout test/package.
 
 MEMSX64 doit rester strictement BUILD #103 1d6316bd1746d6f2b4cfb751cab88d18e27ef730.
+
+## 2026-09-01 — IA SCROLL — INCIDENT SYNTAXE DETECTE AVANT COMPILATION
+
+Run de pousse controlee 33539066345 : SUCCESS pour le mecanisme de modification et le scope final. Nouveau HEAD temporaire 897d0202dc11d462a6d5ba82857b1f17ec355bbf. Le diff a7fd59f..897d020 contient uniquement iamemstab.cpp, 11 insertions et 3 suppressions ; MEMSX64 est reste #103.
+
+Inspection obligatoire du code pousse avant compilation : le litteral C++ de l ancre HTML contient des guillemets doubles non echappes autour de %1, ce qui rend la ligne syntaxiquement invalide. Ce commit ne doit donc pas etre compile ni considere comme candidat valide.
+
+Aucune autre correction technique n est effectuee avant cette journalisation. Le comportement vise reste identique : debut de nouvelle reponse IA visible, descente pour la suite, remontee dans tout l historique, aucun effacement.
+
+PROCHAINE ACTION EXACTE : corriger uniquement le litteral HTML de l ancre dans iamemstab.cpp sur tmp-ravemems-ia-visual-integration, utiliser une forme syntaxiquement sure, verifier le diff puis compiler/tester le code avant toute autre correction IA. Ne toucher ni Qwen/ONNX, ni viewer, ni base, ni protocole, ni MEMSX64.
