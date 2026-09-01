@@ -1,0 +1,68 @@
+name: TEMP RAVEMEMS report full-text run3
+
+on:
+  push:
+    branches: ["RAPPORT"]
+    paths: [".github/workflows/tmp-ravemems-report-full-text-run3.yml"]
+
+permissions:
+  contents: write
+
+jobs:
+  append-report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append RAVEMEMS full-text run3 result
+        shell: bash
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+          ## 2026-09-01 - RAVEMEMS TEXTE PLEIN - RUN 3 VALIDE ET PRET POUR VERIFICATION FINALE CORPUS
+
+          Le dernier defaut du pilote texte plein a ete corrige et teste reellement sur GitHub Actions.
+
+          Etat technique exact :
+          - branche pilote : `tmp-rave-new-extraction-pilot` ;
+          - commit : `173afde44db5178e13120192258d3dce1bab0be9` (`Persist RAVEMEMS warning visual relations`) ;
+          - workflow : `RAVEMEMS full-text native pilot` ;
+          - run : `33476036649` / run number 3 ;
+          - conclusion : **SUCCESS** ;
+          - artefact : `ravemems-full-text-page20`, ID `9788189764` ;
+          - digest artefact : `sha256:f413843fd6fa1fda5055b32325ecdb7da12920db9f9ba01cf30fd88635c495fb`.
+
+          Resultat reel page physique 20 de `rave/xn/wmxn990e.pdf` :
+          - source anglaise uniquement ;
+          - aucune traduction GitHub ; localisation reservee a MEMS Manager ;
+          - capture sans filtre ECU : `ALL_RAVE_CONTENT_NO_ECU_FILTER` ;
+          - couche texte native : oui ; OCR : non ;
+          - 70 lignes source sur 70 conservees, aucune ligne manquante ni dupliquee ;
+          - 24 elements structures ;
+          - 6 sous-sections conservees ;
+          - 2 avertissements ;
+          - 2 pictogrammes d'avertissement ;
+          - 2 renvois RAVE (`ELECTRICAL PRECAUTIONS`, `LIFTING AND TOWING`) ;
+          - hierarchie corrigee : les elements de marge n'heritent plus a tort de `SAFETY INSTRUCTIONS / Cleaning components` ;
+          - relations avertissement/pictogramme maintenant persistees dans les knowledge items ET dans SQLite : `RCL0193ENG_P020_I012 -> RCL0193ENG_P020_VIS01` et `RCL0193ENG_P020_I014 -> RCL0193ENG_P020_VIS02` ;
+          - table SQLite `warning_visual_relation` avec cles etrangeres vers `content` et `visual` ;
+          - `PRAGMA integrity_check = ok` ;
+          - `PRAGMA foreign_key_check` sans erreur.
+
+          Le pilote texte plein est donc valide pour ce cas reel. Le traitement complet ne doit toutefois demarrer qu'apres verification factuelle du dernier cas graphique/raster deja implemente sur la branche, afin de ne pas lancer des milliers de pages avec une categorie non couverte.
+
+          Autorisation utilisateur du 2026-09-01 : **si cette verification finale confirme que RAVEMEMS est pret, lancer directement le traitement complet de RAVE sans redemander une validation intermediaire.** `MEMSX64` doit rester strictement inchange au BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+          ### PROCHAINE ACTION EXACTE
+
+          Verifier les runs et artefacts reels de `ravemems-test2-raster-text.yml` / `tools/ravemems_test2_raster_text.py`. Si le cas texte incruste dans une image/raster est effectivement passe avec preservation du contenu et des elements techniques, construire puis lancer le traitement complet RAVEMEMS sur les sources anglaises canoniques de `main/rave/`, avec conservation integrale et fallback `needs_review` plutot que perte de donnees. Ne pas toucher a `MEMSX64`.
+          EOF
+          rm -f .github/workflows/tmp-ravemems-report-full-text-run3.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md .github/workflows/tmp-ravemems-report-full-text-run3.yml
+          git diff --cached --check
+          git commit -m "Record RAVEMEMS full-text page20 run3 validation"
+          git push origin HEAD:RAPPORT
