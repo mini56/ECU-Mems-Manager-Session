@@ -10623,3 +10623,56 @@ Correction limitee autorisee : differer l'insertion des `visual_occurrence` jusq
 ### PROCHAINE ACTION EXACTE
 
 Corriger uniquement l'ordre d'insertion FK `page -> visual_occurrence` dans `tools/ravemems_full_corpus.py`, changer le trigger, pousser sur `tmp-rave-new-extraction-pilot`, puis relancer le workflow complet et inspecter le manifeste reel. Aucun resultat du run 1 ne doit etre reutilise.
+
+## 2026-09-01 - RAVEMEMS CORPUS COMPLET - RUN 2 VERT MAIS DEFAUT OCR DETECTE A L'INSPECTION
+
+Relance apres correction de l'ordre FK `page -> visual_occurrence` :
+- branche `tmp-rave-new-extraction-pilot` ;
+- HEAD de declenchement `5e6530b0f6b0a6edc9745757cb1faa6bc0f826e3` ;
+- processeur corrige au commit `bc630e3919c2895f598adca20a0a57155471db42` ;
+- workflow `RAVEMEMS full corpus` ;
+- run `33482409042` : **SUCCESS** ;
+- source canonique `main` au commit `643de091b474f4e27917a065bdf46d5a0c764276` ;
+- artefact `ravemems-full-corpus`, ID `9790466787`, digest `sha256:e80466f41e13f9534befdeec0f80249db7669af257fd7876995b234cbeac9982`, taille ZIP 36 005 496 octets.
+
+Manifest global reel :
+- `documents_processed=47/47` ;
+- `pages_accounted=1359/1359` ;
+- `native_text_pages=1291` ;
+- `ocr_pages=64` ;
+- `blank_pages=4` ;
+- `visual_occurrences=1794` ;
+- `visual_asset=1070` ;
+- `vector_drawing_objects=55343` ;
+- `native_lines=54732` ;
+- `content_items=19039` ;
+- `integrity_check=ok` ;
+- `foreign_key_check` vide ;
+- gate workflow `RAVEMEMS_FULL_CORPUS_GATE_PASS` ;
+- `pass=true` dans le manifeste.
+
+Toutefois, inspection obligatoire de `needs_review.json` et de l'artefact apres le gate : **le corpus ne doit pas encore etre declare termine**.
+
+Defaut reel trouve :
+- `needs_review_pages=64` ;
+- 63 pages portent `ocr_returned_no_regions` ;
+- 1 page porte une vraie erreur d'execution : `rave/xn/cdxn990e.pdf`, page physique 7, `ocr_failed: FOREIGN KEY constraint failed` ;
+- cette page est justement le cas raster riche valide par TEST2 et contient du texte humain rasterise ;
+- le rendu source de la page est present et correct dans l'artefact, mais la table `ocr_region` du corpus contient **0 ligne** ;
+- cause : les lignes `ocr_region(page_key,...)` sont encore inserees avant la ligne `page`, exactement le meme type d'ordre FK que le defaut visuel precedent ;
+- le gate global ne classe actuellement pas un `ocr_failed:` conserve dans `needs_review` comme erreur fatale, ce qui explique le faux vert de completude sur ce point precis.
+
+Le resultat run 2 reste utile comme preuve de couverture globale, mais ne doit pas etre considere comme corpus RAVEMEMS final installable tant que cette erreur OCR n'est pas corrigee et le corpus regenere.
+
+Correction limitee et generale a effectuer :
+1. differer les insertions `ocr_region` jusqu'apres creation de la ligne `page` ;
+2. conserver les pages OCR incertaines en `needs_review` ;
+3. renforcer le gate pour qu'une raison d'execution `ocr_failed:` ou `image_extract_failed` ne puisse jamais produire `pass=true` ;
+4. relancer les 47 PDF depuis zero et verifier que `cdxn990e.pdf` p.7 produit bien ses regions OCR ;
+5. recontroler les 63 `ocr_returned_no_regions` sans les supprimer ni inventer de texte.
+
+`MEMSX64` reste strictement inchange au BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+### PROCHAINE ACTION EXACTE
+
+Corriger uniquement la persistance FK des `ocr_region` et renforcer le gate d'erreurs d'execution dans `tools/ravemems_full_corpus.py`, tester le correctif, pousser sur `tmp-rave-new-extraction-pilot`, declencher un run complet neuf, puis inspecter manifeste + `needs_review.json` + compte `ocr_region`. Ne pas toucher a `MEMSX64`.
