@@ -1,0 +1,28 @@
+name: TEMP journal RAVEMEMS before-after database audit
+
+on:
+  push:
+    branches: ["RAPPORT"]
+    paths: [".github/workflows/tmp-ravemems-journal-before-after-audit.yml"]
+
+permissions:
+  contents: write
+
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 1
+      - name: Append audit plan and self-clean
+        shell: bash
+        run: |
+          python3 -c "import base64,pathlib; p=pathlib.Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md'); p.write_bytes(p.read_bytes()+base64.b64decode('CiMjIDIwMjYtMDktMDEgLSBBVURJVCBDT01QQVJBVElGIEJBU0UgQVZBTlQvQVBSRVMgUkFWRU1FTVMgLSBBVkFOVCBFWEVDVVRJT04KCkRlY2lzaW9uIHV0aWxpc2F0ZXVyIDogYXZhbnQgZGUgcG91cnN1aXZyIGxlIGZpZ2VtZW50L3BhY2thZ2luZyBSQVZFTUVNUywgZWZmZWN0dWVyIHVuIGF1ZGl0IGNvbXBhcmF0aWYgY29tcGxldCBlbnRyZSBsYSBiYXNlIGRlIGRvbm5lZXMgZGUgcHJvZHVjdGlvbiBhdmFudCBSQVZFTUVNUyBldCBsYSBiYXNlIGlzc3VlIGR1IGNvcnB1cyBSQVZFTUVNUyBmaW5hbCBhZmluIGRlIHZlcmlmaWVyIGxhIGZpbmFsaXRlIGV0IGRldGVjdGVyIHRvdXRlIHBlcnRlLCBkdXBsaWNhdGlvbiwgaW5jb2hlcmVuY2UgZGUgc2NoZW1hIG91IHJ1cHR1cmUgZGUgZG9ubmVlcy4KCkJhc2UgQVZBTlQgcmV0ZW51ZSBjb21tZSByZWZlcmVuY2UgY2Fub25pcXVlIDogU1FMaXRlIGVmZmVjdGl2ZW1lbnQgZW1iYWxsZSBkYW5zIEJVSUxEICMxMDMsIHJ1biBgMzMzMzQzMDY4MzVgLCBjb21taXQgYE1FTVNYNjRgIGAxZDYzMTZiZDE3NDZkNmYyYjRjZmI3NTFjYWI4OGQxOGUyN2VmNzMwYCwgYXJ0ZWZhY3QgYEVDVS1NRU1TLU1hbmFnZXIteDY0LUJVSUxELTEwMy12MS4wLjEwM2AgSUQgYDk3Mzg2NDAxNTFgLCBkaWdlc3QgYHNoYTI1NjphMThkODAwMzUzNjgwNzljOTQ0NjI3OTI3Y2JhMjNmNDZhODQ0NzY5YjI0YTUyNjA3Y2ZkZGUwMmExOTRiMGQ0YC4gQ2V0IGV0YXQgZXN0IGxlIGRlcm5pZXIgZXRhdCBwcm9kdWN0aW9uIHZhbGlkZSBhdmFudCBsZSByZXRyYWl0ZW1lbnQgbWFzc2lmIFJBVkVNRU1TLgoKQmFzZSBBUFJFUyByZXRlbnVlIDogU1FMaXRlIGByYXZlbWVtc19mdWxsX2NvcnB1cy5zcWxpdGVgIGR1IHJ1biBSQVZFTUVNUyBmaW5hbCBgMzM0ODQzNjI3MThgLCBhcnRlZmFjdCBJRCBgOTc5MTE4NzY4NGAsIFNIQS0yNTYgYDh mMmNiMTc1MjVlZmIyYzFiMjk2YmM2NzVjNzgxNzQwYTlkYjNlN2RlODRmMmU0MTUwZjNhM2ViYmU0OWE4N2JgLgoKQXVkaXQgYSBlZmZlY3R1ZXIgYXZhbnQgdG91dGUgcmVwcmlzZSBkdSBmaWdlbWVudCA6Ci0gaW50ZWdyaXRlIFNRTGl0ZSBldCBmb3JlaWduIGtleXMgZGVzIGRldXggYmFzZXMgOwotIHZlcnNpb24vc2NoZW1hLCB0YWJsZXMsIGluZGV4LCB0cmlnZ2VycywgdnVlcyBldCBjb2xvbm5lcyA7Ci0gY29tcHRldXJzIHBhciB0YWJsZSBldCBlY2FydHMgOwotIGludmVudGFpcmUgZGVzIHRhYmxlcyBoaXN0b3JpcXVlcyBkZSBCVUlMRC...'))"
+          rm .github/workflows/tmp-ravemems-journal-before-after-audit.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md .github/workflows/tmp-ravemems-journal-before-after-audit.yml
+          git commit -m "Record RAVEMEMS before-after database audit plan"
+          git push origin HEAD:RAPPORT
