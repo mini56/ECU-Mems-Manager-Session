@@ -18,8 +18,8 @@ jobs:
       BASE_COMMIT: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
       VISUAL_RUN_ID: '33510951021'
       VISUAL_ARTIFACT_ID: '9801592148'
-      VISUAL_ARTIFACT_NAME: 'ravemems-visual-bundle-audit'
-      VISUAL_DIGEST: 'sha256:8b0fb6d8ef3a7b98e67adf603479be584236cd451b7dda2b28a6d6bb548445b1'
+      VISUAL_ARTIFACT_NAME: ravemems-visual-bundle-audit
+      VISUAL_DIGEST: sha256:8b0fb6d8ef3a7b98e67adf603479be584236cd451b7dda2b28a6d6bb548445b1
 
     steps:
       - uses: actions/checkout@v4
@@ -67,7 +67,7 @@ jobs:
               SELECT e.unit_key,e.entity_key,t.field_key,t.text_value,e.notes
               FROM mems_doc_entity e JOIN mems_doc_text t ON t.entity_key=e.entity_key
               WHERE e.document_key=? AND t.locale='en' AND t.field_key IN ('source_exact','visual_context')
-              ORDER BY e.unit_key,e.sequence_no,e.entity_key
+              ORDER BY e.unit_key,e.sort_order,e.entity_key
           ''',(dk,)):
               texts[r['unit_key']].append(dict(r))
           visuals=collections.defaultdict(list)
@@ -78,7 +78,7 @@ jobs:
               JOIN mems_doc_relation rel ON rel.from_entity_key=e.entity_key AND rel.relation_type='uses_visual'
               JOIN mems_doc_visual v ON v.entity_key=rel.to_entity_key
               WHERE e.document_key=? AND e.entity_kind='visual_occurrence'
-              ORDER BY e.unit_key,e.entity_key
+              ORDER BY e.unit_key,e.sort_order,e.entity_key
           ''',(dk,)):
               visuals[r['unit_key']].append(dict(r))
 
@@ -115,13 +115,13 @@ jobs:
                   u=p['unit']; raw=p['text']; nt=norm(raw)
                   exact_hits=[n for n in needles if n in nt]
                   kw_hits=[k for k in keyword_sets[key] if k in nt]
-                  meta=' '.join(str(u.get(k) or '') for k in ('printed_ref','section_ref','title_source','notes')).lower()
+                  meta=' '.join(str(u.get(k) or '') for k in ('printed_ref','section_ref','notes')).lower()
                   meta_hits=[n for n in needles if n in meta]
                   score=100*len(meta_hits)+80*len(exact_hits)+5*len(kw_hits)+(10 if p['visuals'] else 0)
                   if score:
                       candidates.append({'score':score,'physical_page':u.get('physical_page'),'sequence_no':u.get('sequence_no'),
                                          'unit_key':u.get('unit_key'),'printed_ref':u.get('printed_ref'),'section_ref':u.get('section_ref'),
-                                         'title_source':u.get('title_source'),'exact_hits':exact_hits,'meta_hits':meta_hits,'keyword_hits':kw_hits,
+                                         'exact_hits':exact_hits,'meta_hits':meta_hits,'keyword_hits':kw_hits,
                                          'visual_count':len(p['visuals']),'visuals':p['visuals'],'text_excerpt':raw[:3500]})
               candidates.sort(key=lambda x:(-x['score'], x['physical_page'] or 0))
               top=candidates[:8]
