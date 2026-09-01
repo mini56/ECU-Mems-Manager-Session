@@ -2,9 +2,13 @@
 
 #include <QByteArray>
 #include <QCoreApplication>
+#include <QCryptographicHash>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QTemporaryDir>
 
 #include <cstdio>
@@ -20,6 +24,20 @@ void printLine(const QString &line)
     const QByteArray bytes = line.toUtf8();
     std::fprintf(stderr, "%s\n", bytes.constData());
     std::fflush(stderr);
+}
+
+QString sha256Hex(const QByteArray &data)
+{
+    return QString::fromLatin1(QCryptographicHash::hash(data, QCryptographicHash::Sha256).toHex());
+}
+
+bool writeFile(const QString &path, const QByteArray &data)
+{
+    QDir().mkpath(QFileInfo(path).absolutePath());
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+        return false;
+    return file.write(data) == data.size();
 }
 
 bool requireSuggestion(const QString &root,
@@ -51,8 +69,8 @@ bool requireNoSuggestion(const QString &root, const QString &question, const QSt
     const IaMemsDiagramSuggestion suggestion =
         IaMemsDiagramCatalog::suggestionForQuestion(question, root);
     if (suggestion.isValid()) {
-        printLine(QStringLiteral("FAIL %1 unexpectedly resolved: %2")
-                      .arg(label, suggestion.key));
+        printLine(QStringLiteral("FAIL %1 unexpectedly resolved: %2 / %3")
+                      .arg(label, suggestion.key, suggestion.relativePath));
         return false;
     }
     printLine(QStringLiteral("PASS no diagram: %1").arg(label));
@@ -112,6 +130,155 @@ bool testUndeclaredDiagramIsRejected()
         QStringLiteral("local SVG absent from manifest"));
 }
 
+QJsonObject runtimeEntry(const QString &sourceType,
+                         const QString &runtimeKey,
+                         const QString &runtimePath,
+                         const QByteArray &bytes,
+                         const QString &context,
+                         bool visible,
+                         const QString &publication = QString(),
+                         int page = 0,
+                         const QString &treatment = QStringLiteral("ravemems_source"))
+{
+    QJsonObject entry;
+    entry.insert(QStringLiteral("source_type"), sourceType);
+    entry.insert(QStringLiteral("runtime_key"), runtimeKey);
+    entry.insert(QStringLiteral("runtime_path"), runtimePath);
+    entry.insert(QStringLiteral("sha256"), sha256Hex(bytes));
+    entry.insert(QStringLiteral("context_text"), context);
+    entry.insert(QStringLiteral("ui_label"), QStringLiteral("Voir le schéma"));
+    entry.insert(QStringLiteral("ui_visible"), visible);
+    entry.insert(QStringLiteral("publication_code"), publication);
+    if (page > 0)
+        entry.insert(QStringLiteral("physical_page"), page);
+    entry.insert(QStringLiteral("treatment"), treatment);
+    return entry;
+}
+
+bool testRuntimeCatalog()
+{
+    QTemporaryDir temporary;
+    if (!temporary.isValid()) {
+        printLine(QStringLiteral("FAIL cannot create runtime catalog temporary directory"));
+        return false;
+    }
+
+    const QByteArray raveBytes("PNG-RAVEMEMS-PURGE\n");
+    const QByteArray legacyBytes("PNG-LEGACY-AKM6348-HUB\n");
+    const QByteArray hiddenBytes("PNG-HIDDEN-TEXT-CAPTURE\n");
+    const QByteArray replacedBytes("PNG-REPLACED-LEGACY\n");
+    const QByteArray traversalBytes("PNG-OUTSIDE-ROOT\n");
+
+    if (!writeFile(QDir(temporary.path()).filePath(QStringLiteral("ravemems/purge.png")), raveBytes)
+        || !writeFile(QDir(temporary.path()).filePath(QStringLiteral("legacy/akm6348_hub.png")), legacyBytes)
+        || !writeFile(QDir(temporary.path()).filePath(QStringLiteral("hidden/text_page.png")), hiddenBytes)
+        || !writeFile(QDir(temporary.path()).filePath(QStringLiteral("legacy/replaced.png")), replacedBytes)
+        || !writeFile(QDir(temporary.path()).filePath(QStringLiteral("../outside.png")), traversalBytes)) {
+        printLine(QStringLiteral("FAIL cannot create runtime catalog fixture files"));
+        return false;
+    }
+
+    QJsonArray entries;
+    entries.append(runtimeEntry(
+        QStringLiteral("ravemems"),
+        QStringLiteral("RAVEMEMS::OCC::PURGE"),
+        QStringLiteral("ravemems/purge.png"),
+        raveBytes,
+        QStringLiteral("EVAP canister purge valve ECM wiring and hose routing"),
+        true,
+        QStringLiteral("RCL0193ENG"),
+        99));
+    entries.append(runtimeEntry(
+        QStringLiteral("legacy"),
+        QStringLiteral("LEGACY::AKM6348_FRONT_HUB"),
+        QStringLiteral("legacy/akm6348_hub.png"),
+        legacyBytes,
+        QStringLiteral("AKM6348 front hub exploded view wheel bearing"),
+        true,
+        QString(),
+        0,
+        QStringLiteral("conserver_migrer_legacy")));
+    entries.append(runtimeEntry(
+        QStringLiteral("legacy"),
+        QStringLiteral("LEGACY::TEXT_CAPTURE"),
+        QStringLiteral("hidden/text_page.png"),
+        hiddenBytes,
+        QStringLiteral("pure text page hidden capture uniquephrase"),
+        false,
+        QString(),
+        0,
+        QStringLiteral("retirer_de_ui_conserver_provenance")));
+    entries.append(runtimeEntry(
+        QStringLiteral("legacy"),
+        QStringLiteral("LEGACY::REPLACED"),
+        QStringLiteral("legacy/replaced.png"),
+        replacedBytes,
+        QStringLiteral("old purge legacy replaced uniqueold"),
+        true,
+        QString(),
+        0,
+        QStringLiteral("remplacer_par_ravemems")));
+    entries.append(runtimeEntry(
+        QStringLiteral("ravemems"),
+        QStringLiteral("RAVEMEMS::MISSING"),
+        QStringLiteral("ravemems/missing.png"),
+        QByteArray("missing"),
+        QStringLiteral("absent unique diagram missingfixture"),
+        true,
+        QStringLiteral("RCL0194ENG"),
+        17));
+    entries.append(runtimeEntry(
+        QStringLiteral("ravemems"),
+        QStringLiteral("RAVEMEMS::TRAVERSAL"),
+        QStringLiteral("../outside.png"),
+        traversalBytes,
+        QStringLiteral("traversal unique diagram escapeprobe"),
+        true,
+        QStringLiteral("RCL0194ENG"),
+        19));
+
+    QJsonObject root;
+    root.insert(QStringLiteral("ui_label"), QStringLiteral("Voir le schéma"));
+    root.insert(QStringLiteral("entries"), entries);
+    if (!writeFile(QDir(temporary.path()).filePath(QStringLiteral("runtime_visual_catalog.json")),
+                   QJsonDocument(root).toJson(QJsonDocument::Indented))) {
+        printLine(QStringLiteral("FAIL cannot write runtime visual catalog"));
+        return false;
+    }
+
+    bool ok = true;
+    ok = requireSuggestion(
+             temporary.path(),
+             QStringLiteral("Voir le schéma de la purge canister RCL0193ENG"),
+             QStringLiteral("RCL0193ENG p.99"),
+             QStringLiteral("ravemems/purge.png")) && ok;
+    ok = requireSuggestion(
+             temporary.path(),
+             QStringLiteral("Voir le schéma front hub AKM6348 wheel bearing"),
+             QStringLiteral("LEGACY::AKM6348_FRONT_HUB"),
+             QStringLiteral("legacy/akm6348_hub.png")) && ok;
+    ok = requireNoSuggestion(
+             temporary.path(),
+             QStringLiteral("Voir le schéma pure text page uniquephrase"),
+             QStringLiteral("runtime text-only capture hidden from UI")) && ok;
+    ok = requireNoSuggestion(
+             temporary.path(),
+             QStringLiteral("Voir le schéma old purge legacy uniqueold"),
+             QStringLiteral("legacy visual explicitly replaced by RAVEMEMS")) && ok;
+    ok = requireNoSuggestion(
+             temporary.path(),
+             QStringLiteral("Voir le schéma absent unique missingfixture"),
+             QStringLiteral("runtime path absent")) && ok;
+    ok = requireNoSuggestion(
+             temporary.path(),
+             QStringLiteral("Voir le schéma traversal unique escapeprobe"),
+             QStringLiteral("runtime path traversal")) && ok;
+
+    printLine(ok ? QStringLiteral("PASS runtime visual catalog fixture")
+                 : QStringLiteral("FAIL runtime visual catalog fixture"));
+    return ok;
+}
+
 } // namespace
 
 int main(int argc, char **argv)
@@ -161,6 +328,7 @@ int main(int argc, char **argv)
                              QStringLiteral("ambiguous diagnostic socket request")) && ok;
     ok = testMissingFilesAreRejected(referenceRoot) && ok;
     ok = testUndeclaredDiagramIsRejected() && ok;
+    ok = testRuntimeCatalog() && ok;
 
     printLine(ok ? QStringLiteral("PASS IA MEMS deterministic diagram self-test")
                  : QStringLiteral("FAIL IA MEMS deterministic diagram self-test"));
