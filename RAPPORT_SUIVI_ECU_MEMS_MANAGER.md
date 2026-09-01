@@ -10906,3 +10906,11 @@ Le SQLite RAVEMEMS seul n est PAS la base finale du logiciel : c est une source 
 QZ64, installateur, figement final et modification `MEMSX64` restent suspendus.
 
 PROCHAINE ACTION EXACTE : produire d abord les inventaires read-only AVANT et SOURCE RAVEMEMS, puis simuler l import additif dans une copie de BUILD #103 sans suppression ni deduplication. Produire ensuite le rapport de recouvrements/doublons et la preuve que tous les contenus historiques sont preserves. Ne supprimer/fusionner aucun doublon avant inspection du rapport. Ne pas toucher `MEMSX64`.
+
+## 2026-09-01 - RAVEMEMS - AVANT AUDIT DE FUSION ADDITIVE
+
+Regle utilisateur prioritaire : RAVEMEMS est ajoute a une copie de la base BUILD #103 et ne remplace aucune donnee historique. Import additif seulement, puis audit des doublons sans suppression automatique.
+
+Sources verrouillees : BUILD #103 artefact 9738640151 run 33334306835 commit 1d6316bd1746d6f2b4cfb751cab88d18e27ef730 ; RAVEMEMS artefact 9791187684 run 33484362718 SQLite 8f2cb17525efb2c1b296bc675c781740a9db3e7de84f2e4150f3a3ebbe49a87b.
+
+Action suivante : auditer la base #103 AVANT, creer une copie, appliquer le socle documentaire V1, importer les 47 documents et 1359 pages RAVEMEMS dans mems_doc_*, verifier que toutes les tables historiques restent identiques, puis produire les candidats doublons sans en supprimer aucun. Aucun QZ64 final, aucun MEMSX64.
