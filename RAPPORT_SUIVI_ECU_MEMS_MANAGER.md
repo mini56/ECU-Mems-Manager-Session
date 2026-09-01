@@ -11192,3 +11192,20 @@ Corriger uniquement le résolveur RCL0194ENG afin d'ordonner les entités avec d
 
 Construire en lecture seule une matrice de traitement déterministe couvrant les 427 entrées de manifeste, 126 illustrations et 329 liens historiques, en combinant les artefacts de mapping exhaustif, de profil des cas non résolus et de résolution RCL0194ENG. Isoler aussi le contexte exact de `COLOUR CODES`. Produire pour chaque élément une action explicite `remplacer_par_ravemems`, `conserver_migrer_legacy`, `retirer_de_ui_conserver_provenance` ou `a_revoir`. Ne modifier aucune base et n'effectuer encore aucune suppression. Ne toucher ni QZ64, ni installateur, ni `MEMSX64`.
 
+
+
+## 2026-09-01 — échec technique de la première matrice de traitement legacy
+
+- Run : `33518381899` — **ECHEC**.
+- Branche : `tmp-rave-new-extraction-pilot`.
+- Commit : `a700d069315b48650910803fdc0fec870f8ce9f5`.
+- Les trois artefacts exacts ont été vérifiés avec succès et téléchargés : mapping exhaustif `9803548521`, profil `9803718963`, résolution RCL0194 `9804179784`.
+- `MEMSX64` est resté strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+- Cause exacte : la matrice avait figé des numéros de pages RCL0194 provenant d'un résumé intermédiaire. L'artefact RCL0194 exact indique notamment `15.1` sur la page physique `14`, alors que la matrice attendait à tort `12` (`AssertionError: ('15.1', 14, 12)`).
+- Cette divergence prouve qu'aucun numéro de page ne doit être recopié/hardcodé depuis un résumé : l'artefact exact doit être la seule autorité.
+- Aucune base SQLite modifiée ; aucune suppression ; aucun changement de production.
+
+### PROCHAINE ACTION EXACTE
+
+Corriger uniquement la matrice pour supprimer tous les numéros de pages RCL0194 hardcodés. Consommer directement les 8 meilleurs candidats de l'artefact exact `9804179784`, vérifier leur présence, leur occurrence visuelle et, pour les 7 sections numérotées, les preuves `meta_hits` + `exact_hits`. Conserver `COLOUR CODES` en `a_revoir` tant qu'aucun identifiant exact/meta ne le prouve. Relancer la matrice read-only 427 + 126 + 329 sans aucune suppression ni modification de base. Ne toucher ni QZ64, ni installateur, ni `MEMSX64`.
+
