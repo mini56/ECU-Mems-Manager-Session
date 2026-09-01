@@ -1,0 +1,60 @@
+name: TEMP RAVEMEMS final ten-page evidence
+
+on:
+  push:
+    paths:
+      - .github/workflows/tmp-ravemems-final-ten-page-evidence.yml
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-new-extraction-pilot
+          fetch-depth: 1
+      - name: Download exact merged audit database
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/additive"
+          gh run download 33493009341 --repo "$GITHUB_REPOSITORY" --name ravemems-additive-merge-audit --dir "$RUNNER_TEMP/additive"
+          gzip -dc "$RUNNER_TEMP/additive/ia_mems_reference_r20_plus_ravemems_AUDIT.sqlite.gz" > "$RUNNER_TEMP/additive/merged.sqlite"
+      - name: Print exact source lines for final evidence pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - "$RUNNER_TEMP/additive/merged.sqlite" <<'PY'
+          import sqlite3, sys
+          db=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True)
+          db.row_factory=sqlite3.Row
+          assert db.execute('PRAGMA integrity_check').fetchone()[0].lower()=='ok'
+          assert not db.execute('PRAGMA foreign_key_check').fetchall()
+          pages={
+            'RCL0193ENG':[98,99,101,102,118,123,135,170],
+            'RCL0194ENG':[17,19],
+          }
+          for pub, plist in pages.items():
+            doc=db.execute('SELECT document_key,file_name FROM mems_doc_document WHERE publication_code=?',(pub,)).fetchone()
+            assert doc is not None, pub
+            print(f'===== DOCUMENT {pub} {doc["file_name"]} =====')
+            for p in plist:
+              rows=db.execute('''SELECT e.sort_order,t.text_value
+                                 FROM mems_doc_entity e
+                                 JOIN mems_doc_unit u ON u.unit_key=e.unit_key
+                                 JOIN mems_doc_text t ON t.entity_key=e.entity_key AND t.locale='en' AND t.field_key='source_exact'
+                                 WHERE e.document_key=? AND u.physical_page=? AND e.entity_kind='source_line'
+                                 ORDER BY e.sort_order''',(doc['document_key'],p)).fetchall()
+              print(f'----- {pub} PHYSICAL_PAGE {p} LINE_COUNT {len(rows)} -----')
+              for r in rows:
+                print(f'{r["sort_order"]:04d} {r["text_value"] or ""}')
+              print(f'----- END {pub} PHYSICAL_PAGE {p} -----')
+          print('FINAL_TEN_PAGE_EVIDENCE_COMPLETE')
+          db.close()
+          PY
