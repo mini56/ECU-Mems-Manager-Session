@@ -10914,3 +10914,11 @@ Regle utilisateur prioritaire : RAVEMEMS est ajoute a une copie de la base BUILD
 Sources verrouillees : BUILD #103 artefact 9738640151 run 33334306835 commit 1d6316bd1746d6f2b4cfb751cab88d18e27ef730 ; RAVEMEMS artefact 9791187684 run 33484362718 SQLite 8f2cb17525efb2c1b296bc675c781740a9db3e7de84f2e4150f3a3ebbe49a87b.
 
 Action suivante : auditer la base #103 AVANT, creer une copie, appliquer le socle documentaire V1, importer les 47 documents et 1359 pages RAVEMEMS dans mems_doc_*, verifier que toutes les tables historiques restent identiques, puis produire les candidats doublons sans en supprimer aucun. Aucun QZ64 final, aucun MEMSX64.
+
+## 2026-09-01 - RAVEMEMS - INCIDENT AVANT EXECUTION AUDIT ADDITIF
+
+Une pousse technique accidentelle a cree sur tmp-rave-new-extraction-pilot un fichier ravemems-additive-merge-audit.yml contenant uniquement placeholder, commit f6c75f9d9d425c7aa4efd263db3c312b99c9599e. Cette erreur a ete detectee immediatement.
+
+Aucun audit na ete execute par ce commit, aucune base na ete modifiee, aucun artefact de fusion na ete produit et MEMSX64 reste strictement BUILD #103.
+
+Correction autorisee : remettre sur la branche temporaire le script et le workflow auditifs deja prepares dans un commit correct, sans toucher MEMSX64, puis seulement executer audit AVANT / ajout RAVEMEMS / APRES / candidats doublons.
