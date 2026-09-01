@@ -1,0 +1,158 @@
+name: RAVEMEMS resolve eight legacy RCL0194 visuals
+
+on:
+  push:
+    branches: [tmp-rave-new-extraction-pilot]
+    paths:
+      - '.github/workflows/ravemems-resolve-rcl0194-eight.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BASE_COMMIT: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+      VISUAL_RUN_ID: '33510951021'
+      VISUAL_ARTIFACT_ID: '9801592148'
+      VISUAL_ARTIFACT_NAME: 'ravemems-visual-bundle-audit'
+      VISUAL_DIGEST: 'sha256:8b0fb6d8ef3a7b98e67adf603479be584236cd451b7dda2b28a6d6bb548445b1'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-new-extraction-pilot
+          fetch-depth: 0
+
+      - name: Verify exact inputs and download enriched visual DB
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$BASE_COMMIT"
+          gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${VISUAL_ARTIFACT_ID}" > "$RUNNER_TEMP/visual_artifact.json"
+          python3 - <<'PY'
+          import json,os
+          a=json.load(open(os.environ['RUNNER_TEMP']+'/visual_artifact.json'))
+          assert a['name']==os.environ['VISUAL_ARTIFACT_NAME']
+          assert a.get('digest')==os.environ['VISUAL_DIGEST']
+          print('EXACT_INPUT_PASS')
+          PY
+          mkdir -p "$RUNNER_TEMP/visual"
+          gh run download "$VISUAL_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$VISUAL_ARTIFACT_NAME" --dir "$RUNNER_TEMP/visual"
+          gzip -dc "$RUNNER_TEMP/visual/ia_mems_reference_r20_plus_ravemems_VISUAL.sqlite.gz" > "$RUNNER_TEMP/visual/visual.sqlite"
+
+      - name: Resolve exact RCL0194 section pages and visual occurrences
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' | tee "$RUNNER_TEMP/rcl0194_eight.jsonl"
+          import collections,json,os,re,sqlite3
+          db=os.environ['RUNNER_TEMP']+'/visual/visual.sqlite'
+          c=sqlite3.connect(db); c.row_factory=sqlite3.Row
+          d=c.execute("SELECT * FROM mems_doc_document WHERE publication_code='RCL0194ENG'").fetchall()
+          assert len(d)==1, len(d)
+          doc=dict(d[0]); dk=doc['document_key']
+          print('DOCUMENT',json.dumps({k:doc.get(k) for k in ('document_key','publication_code','file_name','title_source')},ensure_ascii=False,sort_keys=True))
+
+          units=[dict(r) for r in c.execute('SELECT * FROM mems_doc_unit WHERE document_key=? ORDER BY sequence_no,physical_page,unit_key',(dk,))]
+          print('UNIT_COUNT',len(units))
+          page_by_unit={u['unit_key']:u for u in units}
+          texts=collections.defaultdict(list)
+          for r in c.execute('''
+              SELECT e.unit_key,e.entity_key,t.field_key,t.text_value,e.notes
+              FROM mems_doc_entity e JOIN mems_doc_text t ON t.entity_key=e.entity_key
+              WHERE e.document_key=? AND t.locale='en' AND t.field_key IN ('source_exact','visual_context')
+              ORDER BY e.unit_key,e.sequence_no,e.entity_key
+          ''',(dk,)):
+              texts[r['unit_key']].append(dict(r))
+          visuals=collections.defaultdict(list)
+          for r in c.execute('''
+              SELECT e.unit_key,e.entity_key occurrence_key,e.notes occurrence_notes,
+                     v.entity_key asset_entity_key,v.relative_path,v.sha256,v.visual_kind,v.notes visual_notes
+              FROM mems_doc_entity e
+              JOIN mems_doc_relation rel ON rel.from_entity_key=e.entity_key AND rel.relation_type='uses_visual'
+              JOIN mems_doc_visual v ON v.entity_key=rel.to_entity_key
+              WHERE e.document_key=? AND e.entity_kind='visual_occurrence'
+              ORDER BY e.unit_key,e.entity_key
+          ''',(dk,)):
+              visuals[r['unit_key']].append(dict(r))
+
+          pages=[]
+          for u in units:
+              joined='\n'.join(x['text_value'] or '' for x in texts.get(u['unit_key'],[]))
+              pages.append({'unit':u,'text':joined,'visuals':visuals.get(u['unit_key'],[])})
+
+          targets={
+            '15.1':['15.1','15-1','15 1'],
+            '20.1':['20.1','20-1','20 1'],
+            '20.2':['20.2','20-2','20 2'],
+            '20.3':['20.3','20-3','20 3'],
+            '20.4':['20.4','20-4','20 4'],
+            '39.2':['39.2','39-2','39 2'],
+            '39.3':['39.3','39-3','39 3'],
+            'COLOUR CODES':['colour codes','color codes','wire colour','wire color','colour code'],
+          }
+          keyword_sets={
+            '15.1':['charge','starting','starter','relay','mpi'],
+            '20.1':['lambda','crankshaft','camshaft','fuel pump','mpi'],
+            '20.2':['injector','idle air','map','throttle','coolant','inlet air','mpi'],
+            '20.3':['lambda','crankshaft','relay','spi','japan'],
+            '20.4':['injector','idle air','throttle','coolant','inlet air','spi','japan'],
+            '39.2':['cooling fan','coolant','mpi'],
+            '39.3':['cooling fan','spi','japan'],
+            'COLOUR CODES':['black','blue','brown','green','orange','purple','red','slate','white','yellow'],
+          }
+          def norm(s): return re.sub(r'\s+',' ',str(s or '').lower()).strip()
+          out=[]
+          for key,needles in targets.items():
+              candidates=[]
+              for p in pages:
+                  u=p['unit']; raw=p['text']; nt=norm(raw)
+                  exact_hits=[n for n in needles if n in nt]
+                  kw_hits=[k for k in keyword_sets[key] if k in nt]
+                  meta=' '.join(str(u.get(k) or '') for k in ('printed_ref','section_ref','title_source','notes')).lower()
+                  meta_hits=[n for n in needles if n in meta]
+                  score=100*len(meta_hits)+80*len(exact_hits)+5*len(kw_hits)+(10 if p['visuals'] else 0)
+                  if score:
+                      candidates.append({'score':score,'physical_page':u.get('physical_page'),'sequence_no':u.get('sequence_no'),
+                                         'unit_key':u.get('unit_key'),'printed_ref':u.get('printed_ref'),'section_ref':u.get('section_ref'),
+                                         'title_source':u.get('title_source'),'exact_hits':exact_hits,'meta_hits':meta_hits,'keyword_hits':kw_hits,
+                                         'visual_count':len(p['visuals']),'visuals':p['visuals'],'text_excerpt':raw[:3500]})
+              candidates.sort(key=lambda x:(-x['score'], x['physical_page'] or 0))
+              top=candidates[:8]
+              result={'target':key,'candidates':top}
+              out.append(result)
+              print('TARGET',json.dumps(result,ensure_ascii=False,sort_keys=True))
+          open(os.environ['RUNNER_TEMP']+'/rcl0194_eight.json','w',encoding='utf-8').write(json.dumps(out,ensure_ascii=False,indent=2,sort_keys=True))
+          PY
+
+      - name: Validate eight targets have deterministic top evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os
+          p=os.environ['RUNNER_TEMP']+'/rcl0194_eight.json'
+          x=json.load(open(p,encoding='utf-8'))
+          assert len(x)==8
+          for t in x:
+              assert t['candidates'], t['target']
+              top=t['candidates'][0]
+              assert top['physical_page'], (t['target'],top)
+              print('TOP',t['target'],'PAGE',top['physical_page'],'SCORE',top['score'],'VISUALS',top['visual_count'],'META',top['meta_hits'],'EXACT',top['exact_hits'],'KW',top['keyword_hits'])
+          print('RCL0194_EIGHT_EVIDENCE_PASS')
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ravemems-rcl0194-eight-resolution
+          path: |
+            ${{ runner.temp }}/rcl0194_eight.json
+            ${{ runner.temp }}/rcl0194_eight.jsonl
+          if-no-files-found: error
+          retention-days: 14
