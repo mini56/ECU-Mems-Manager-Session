@@ -1,0 +1,312 @@
+name: RAVEMEMS freeze validated run4 source package
+
+on:
+  push:
+    branches: ["tmp-rave-new-extraction-pilot"]
+    paths: [".github/workflows/ravemems-freeze-source-package.yml"]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  freeze-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SOURCE_RUN_ID: "33484362718"
+      SOURCE_ARTIFACT_ID: "9791187684"
+      SOURCE_ARTIFACT_NAME: "ravemems-full-corpus"
+      SOURCE_ARTIFACT_SIZE: "36007526"
+      SOURCE_ARTIFACT_SHA256: "5570f9435de985872e13d55d9c2263e3c5190f12d6ef39cbc73587fb5ce946b8"
+      SOURCE_EXTRACTOR_COMMIT: "72dcaf04e84181669aa25c9103ea60bf47d9e1a7"
+      SOURCE_RAVE_COMMIT: "643de091b474f4e27917a065bdf46d5a0c764276"
+      SOURCE_SQLITE_SIZE: "33222656"
+      SOURCE_SQLITE_SHA256: "8f2cb17525efb2c1b296bc675c781740a9db3e7de84f2e4150f3a3ebbe49a87b"
+      PROTECTED_MEMSX64_COMMIT: "1d6316bd1746d6f2b4cfb751cab88d18e27ef730"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-new-extraction-pilot
+          fetch-depth: 1
+
+      - name: Verify protected production branch and source run metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          memsx64="$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')"
+          test "$memsx64" = "$PROTECTED_MEMSX64_COMMIT"
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}" > "$RUNNER_TEMP/source_run.json"
+          gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${SOURCE_ARTIFACT_ID}" > "$RUNNER_TEMP/source_artifact_meta.json"
+          python3 - <<'PY'
+          import json, os
+          run=json.load(open(os.environ['RUNNER_TEMP']+'/source_run.json', encoding='utf-8'))
+          art=json.load(open(os.environ['RUNNER_TEMP']+'/source_artifact_meta.json', encoding='utf-8'))
+          assert str(run['id']) == os.environ['SOURCE_RUN_ID']
+          assert run['status'] == 'completed' and run['conclusion'] == 'success'
+          assert run['head_sha'] == os.environ['SOURCE_EXTRACTOR_COMMIT']
+          assert str(art['id']) == os.environ['SOURCE_ARTIFACT_ID']
+          assert art['name'] == os.environ['SOURCE_ARTIFACT_NAME']
+          assert int(art['size_in_bytes']) == int(os.environ['SOURCE_ARTIFACT_SIZE'])
+          assert art.get('expired') is False
+          digest=art.get('digest')
+          if digest is not None:
+              assert digest == 'sha256:'+os.environ['SOURCE_ARTIFACT_SHA256']
+          print('RUN4_METADATA_PASS')
+          PY
+
+      - name: Download exact run4 artifact without rerunning extraction
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/${SOURCE_ARTIFACT_ID}/zip" \
+            -o "$RUNNER_TEMP/run4-artifact.zip"
+          test "$(stat -c%s "$RUNNER_TEMP/run4-artifact.zip")" = "$SOURCE_ARTIFACT_SIZE"
+          test "$(sha256sum "$RUNNER_TEMP/run4-artifact.zip" | awk '{print $1}')" = "$SOURCE_ARTIFACT_SHA256"
+          mkdir -p "$RUNNER_TEMP/run4_artifact"
+          unzip -q "$RUNNER_TEMP/run4-artifact.zip" -d "$RUNNER_TEMP/run4_artifact"
+          test -f "$RUNNER_TEMP/run4_artifact/manifest.json"
+          test -f "$RUNNER_TEMP/run4_artifact/document_audit.json"
+          test -f "$RUNNER_TEMP/run4_artifact/needs_review.json"
+          test -f "$RUNNER_TEMP/run4_artifact/ravemems-full-corpus-output.tar.gz"
+          mkdir -p "$RUNNER_TEMP/run4_full"
+          tar -xzf "$RUNNER_TEMP/run4_artifact/ravemems-full-corpus-output.tar.gz" -C "$RUNNER_TEMP/run4_full"
+          test -d "$RUNNER_TEMP/run4_full/ravemems_full_corpus_output"
+          echo RAVEMEMS_RUN4_EXACT_ARTIFACT_PASS
+
+      - name: Validate SQLite manifest reviews and every registered visual asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          export SRC="$RUNNER_TEMP/run4_full/ravemems_full_corpus_output"
+          python3 - <<'PY'
+          import hashlib, json, os, sqlite3
+          from pathlib import Path
+          src=Path(os.environ['SRC'])
+          dbp=src/'ravemems_full_corpus.sqlite'
+          assert dbp.stat().st_size == int(os.environ['SOURCE_SQLITE_SIZE'])
+          assert hashlib.sha256(dbp.read_bytes()).hexdigest() == os.environ['SOURCE_SQLITE_SHA256']
+          manifest=json.loads((src/'manifest.json').read_text(encoding='utf-8'))
+          assert manifest['pass'] is True
+          assert manifest['translation_performed_by_github'] is False
+          c=manifest['counts']
+          expected={
+            'documents_processed':47,
+            'pages_accounted':1359,
+            'native_text_pages':1291,
+            'ocr_pages':2,
+            'ocr_regions':45,
+            'blank_pages':66,
+            'blank_detected_render':62,
+            'ocr_native_raster_pages':1,
+            'visual_occurrences':1794,
+            'visual_asset':1070,
+            'native_lines':54732,
+            'content_items':19039,
+            'needs_review_pages':2,
+            'execution_failure_reviews':0,
+          }
+          for k,v in expected.items(): assert c[k] == v, (k,c.get(k),v)
+          assert c['pages_accounted'] == c['pages_expected_all_opened_documents']
+          assert manifest['checks']['sqlite_integrity_ok'] is True
+          assert manifest['checks']['sqlite_foreign_keys_ok'] is True
+          assert manifest.get('errors', []) == []
+          con=sqlite3.connect(dbp)
+          try:
+              assert con.execute('PRAGMA integrity_check').fetchone()[0].lower() == 'ok'
+              assert con.execute('PRAGMA foreign_key_check').fetchall() == []
+              assert con.execute('SELECT COUNT(*) FROM visual_asset').fetchone()[0] == 1070
+              rows=con.execute('SELECT relative_path, sha256 FROM visual_asset ORDER BY visual_key').fetchall()
+              for rel,sha in rows:
+                  p=src/rel
+                  assert p.is_file(), rel
+                  h=hashlib.sha256()
+                  with p.open('rb') as f:
+                      for chunk in iter(lambda:f.read(1024*1024), b''): h.update(chunk)
+                  assert h.hexdigest() == sha, rel
+              q='''SELECT p.page_class,p.ocr_used,p.ocr_source_kind,p.needs_review,p.review_reason,
+                          p.image_occurrence_count,
+                          (SELECT COUNT(*) FROM ocr_region r WHERE r.page_key=p.page_key),
+                          (SELECT COALESCE(SUM(word_count),0) FROM ocr_region r WHERE r.page_key=p.page_key)
+                   FROM page p JOIN document d ON d.document_key=p.document_key
+                   WHERE d.relative_path=? AND p.physical_page=?'''
+              cdx=con.execute(q,('rave/xn/cdxn990e.pdf',7)).fetchone()
+              assert cdx is not None
+              assert cdx[0]=='visual_ocr' and cdx[1]==1 and cdx[2]=='native_raster'
+              assert cdx[3]==1 and cdx[6]==45 and cdx[7]==490
+              lib=con.execute(q,('rave/library/libxn.pdf',1)).fetchone()
+              assert lib is not None
+              assert lib[0]=='visual_no_ocr_text' and lib[3]==1 and lib[5] > 0 and lib[6]==0
+          finally:
+              con.close()
+          reviews=json.loads((src/'needs_review.json').read_text(encoding='utf-8'))
+          pages={(x.get('document'),x.get('physical_page')) for x in reviews}
+          assert pages == {('rave/xn/cdxn990e.pdf',7),('rave/library/libxn.pdf',1)}, pages
+          print('RUN4_SQLITE_ASSETS_REVIEWS_PASS')
+          PY
+
+      - name: Build deterministic integration source package
+        shell: bash
+        run: |
+          set -euo pipefail
+          export SRC="$RUNNER_TEMP/run4_full/ravemems_full_corpus_output"
+          export PKG="$RUNNER_TEMP/ravemems_integration_source_run4"
+          rm -rf "$PKG"
+          mkdir -p "$PKG"
+          cp "$SRC/ravemems_full_corpus.sqlite" "$PKG/"
+          cp "$SRC/manifest.json" "$PKG/"
+          cp "$SRC/document_audit.json" "$PKG/"
+          cp "$SRC/needs_review.json" "$PKG/"
+          cp -a "$SRC/assets" "$PKG/assets"
+          cp "$RUNNER_TEMP/source_run.json" "$PKG/source_run_metadata.json"
+          cp "$RUNNER_TEMP/source_artifact_meta.json" "$PKG/source_artifact_metadata.json"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          pkg=Path(os.environ['PKG'])
+          resolution={
+            'source_run_id': int(os.environ['SOURCE_RUN_ID']),
+            'source_artifact_id': int(os.environ['SOURCE_ARTIFACT_ID']),
+            'source_extractor_commit': os.environ['SOURCE_EXTRACTOR_COMMIT'],
+            'reviews':[
+              {
+                'document':'rave/xn/cdxn990e.pdf','physical_page':7,
+                'status':'verified_positive_test2_equivalent',
+                'source_ocr_preserved_unchanged':True,
+                'ocr_regions':45,'ocr_words':490,'ocr_source_kind':'native_raster'
+              },
+              {
+                'document':'rave/library/libxn.pdf','physical_page':1,
+                'status':'accepted_visual_cover_no_exploitable_text',
+                'original_visual_asset_preserved':True
+              }
+            ]
+          }
+          (pkg/'review_resolution.json').write_text(json.dumps(resolution,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          PY
+          python3 - <<'PY'
+          import hashlib, os
+          from pathlib import Path
+          pkg=Path(os.environ['PKG'])
+          paths=sorted(p for p in pkg.rglob('*') if p.is_file() and p.name not in {'payload_sha256.txt','integration_manifest.json','package_inventory_sha256.txt'})
+          lines=[]
+          for p in paths:
+              h=hashlib.sha256()
+              with p.open('rb') as f:
+                  for c in iter(lambda:f.read(1024*1024),b''): h.update(c)
+              lines.append(f'{h.hexdigest()}  {p.relative_to(pkg).as_posix()}')
+          (pkg/'payload_sha256.txt').write_text('\n'.join(lines)+'\n',encoding='utf-8')
+          PY
+          export PAYLOAD_INVENTORY_SHA256="$(sha256sum "$PKG/payload_sha256.txt" | awk '{print $1}')"
+          export SOURCE_TAR_SHA256="$(sha256sum "$RUNNER_TEMP/run4_artifact/ravemems-full-corpus-output.tar.gz" | awk '{print $1}')"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          pkg=Path(os.environ['PKG'])
+          m={
+            'package_kind':'RAVEMEMS integration source freeze',
+            'package_version':1,
+            'source_run_id':int(os.environ['SOURCE_RUN_ID']),
+            'source_artifact_id':int(os.environ['SOURCE_ARTIFACT_ID']),
+            'source_artifact_name':os.environ['SOURCE_ARTIFACT_NAME'],
+            'source_artifact_zip_size':int(os.environ['SOURCE_ARTIFACT_SIZE']),
+            'source_artifact_zip_sha256':os.environ['SOURCE_ARTIFACT_SHA256'],
+            'source_extractor_commit':os.environ['SOURCE_EXTRACTOR_COMMIT'],
+            'source_rave_commit':os.environ['SOURCE_RAVE_COMMIT'],
+            'source_output_tar_sha256':os.environ['SOURCE_TAR_SHA256'],
+            'sqlite_file':'ravemems_full_corpus.sqlite',
+            'sqlite_size':int(os.environ['SOURCE_SQLITE_SIZE']),
+            'sqlite_sha256':os.environ['SOURCE_SQLITE_SHA256'],
+            'counts':{'documents':47,'pages':1359,'native_text_pages':1291,'blank_pages':66,'ocr_regions':45,'visual_assets_registered':1070,'visual_occurrences':1794,'native_lines':54732,'content_items':19039},
+            'original_needs_review_preserved':True,
+            'review_resolution_file':'review_resolution.json',
+            'payload_inventory_file':'payload_sha256.txt',
+            'payload_inventory_sha256':os.environ['PAYLOAD_INVENTORY_SHA256'],
+            'translation_performed_by_packaging':False,
+            'extraction_rerun_by_packaging':False,
+          }
+          (pkg/'integration_manifest.json').write_text(json.dumps(m,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          PY
+          python3 - <<'PY'
+          import hashlib, os
+          from pathlib import Path
+          pkg=Path(os.environ['PKG'])
+          paths=sorted(p for p in pkg.rglob('*') if p.is_file() and p.name!='package_inventory_sha256.txt')
+          lines=[]
+          for p in paths:
+              h=hashlib.sha256()
+              with p.open('rb') as f:
+                  for c in iter(lambda:f.read(1024*1024),b''): h.update(c)
+              lines.append(f'{h.hexdigest()}  {p.relative_to(pkg).as_posix()}')
+          (pkg/'package_inventory_sha256.txt').write_text('\n'.join(lines)+'\n',encoding='utf-8')
+          PY
+          rm -f ravemems-integration-source-run4.tar.gz ravemems-integration-source-run4-second.tar.gz
+          tar --sort=name --mtime='UTC 1970-01-01' --owner=0 --group=0 --numeric-owner -C "$RUNNER_TEMP" -cf - ravemems_integration_source_run4 | gzip -n > ravemems-integration-source-run4.tar.gz
+          tar --sort=name --mtime='UTC 1970-01-01' --owner=0 --group=0 --numeric-owner -C "$RUNNER_TEMP" -cf - ravemems_integration_source_run4 | gzip -n > ravemems-integration-source-run4-second.tar.gz
+          cmp ravemems-integration-source-run4.tar.gz ravemems-integration-source-run4-second.tar.gz
+          sha256sum ravemems-integration-source-run4.tar.gz | tee ravemems-integration-source-run4.sha256
+          rm ravemems-integration-source-run4-second.tar.gz
+          echo RAVEMEMS_DETERMINISTIC_PACKAGE_BUILD_PASS
+
+      - name: Reopen frozen package and enforce freeze gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$RUNNER_TEMP/reopen"
+          mkdir -p "$RUNNER_TEMP/reopen"
+          tar -xzf ravemems-integration-source-run4.tar.gz -C "$RUNNER_TEMP/reopen"
+          export RPKG="$RUNNER_TEMP/reopen/ravemems_integration_source_run4"
+          python3 - <<'PY'
+          import hashlib, json, os, sqlite3
+          from pathlib import Path
+          p=Path(os.environ['RPKG'])
+          inv=(p/'package_inventory_sha256.txt').read_text(encoding='utf-8').splitlines()
+          for line in inv:
+              sha,rel=line.split('  ',1)
+              f=p/rel
+              assert f.is_file(), rel
+              h=hashlib.sha256()
+              with f.open('rb') as fh:
+                  for c in iter(lambda:fh.read(1024*1024),b''): h.update(c)
+              assert h.hexdigest()==sha, rel
+          m=json.loads((p/'integration_manifest.json').read_text(encoding='utf-8'))
+          assert m['source_run_id']==33484362718 and m['source_artifact_id']==9791187684
+          assert m['source_artifact_zip_sha256']==os.environ['SOURCE_ARTIFACT_SHA256']
+          assert m['sqlite_sha256']==os.environ['SOURCE_SQLITE_SHA256']
+          assert m['counts']['documents']==47 and m['counts']['pages']==1359 and m['counts']['visual_assets_registered']==1070
+          assert m['original_needs_review_preserved'] is True
+          assert m['translation_performed_by_packaging'] is False
+          assert m['extraction_rerun_by_packaging'] is False
+          db=sqlite3.connect(p/'ravemems_full_corpus.sqlite')
+          try:
+              assert db.execute('PRAGMA integrity_check').fetchone()[0].lower()=='ok'
+              assert db.execute('PRAGMA foreign_key_check').fetchall()==[]
+              assert db.execute('SELECT COUNT(*) FROM document').fetchone()[0]==47
+              assert db.execute('SELECT COUNT(*) FROM page').fetchone()[0]==1359
+              assert db.execute('SELECT COUNT(*) FROM visual_asset').fetchone()[0]==1070
+          finally: db.close()
+          r=json.loads((p/'review_resolution.json').read_text(encoding='utf-8'))
+          assert len(r['reviews'])==2
+          print('RAVEMEMS_INTEGRATION_SOURCE_FREEZE_GATE_PASS')
+          PY
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64_COMMIT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ravemems-integration-source-run4
+          path: |
+            ravemems-integration-source-run4.tar.gz
+            ravemems-integration-source-run4.sha256
+            ${{ runner.temp }}/ravemems_integration_source_run4/integration_manifest.json
+            ${{ runner.temp }}/ravemems_integration_source_run4/review_resolution.json
+            ${{ runner.temp }}/ravemems_integration_source_run4/package_inventory_sha256.txt
+          if-no-files-found: error
+          compression-level: 0
