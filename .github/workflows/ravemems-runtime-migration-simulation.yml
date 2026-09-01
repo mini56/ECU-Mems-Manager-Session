@@ -105,25 +105,16 @@ jobs:
           rave_dst=runtime/'ravemems'; shutil.copytree(root/'visual/visuals',rave_dst)
           rave_files=[p for p in rave_dst.rglob('*') if p.is_file()]
           assert len(rave_files)==1070,len(rave_files)
-
           rave_occ_by_key={}; rave_runtime_entries=[]; resolved_asset_paths=set()
           for e in rave_manifest['entries']:
-              stored=e.get('stored_path') or ''
-              prefix='ravemems_run4/'
+              stored=e.get('stored_path') or ''; prefix='ravemems_run4/'
               rel=stored[len(prefix):] if stored.startswith(prefix) else stored
               p=rave_dst/rel
               assert rel and p.is_file(),(e['occurrence_entity_key'],stored,str(p))
-              assert sha256_file(p)==e['sha256'],(e['occurrence_entity_key'],stored,e['sha256'],sha256_file(p))
+              assert sha256_file(p)==e['sha256'],(e['occurrence_entity_key'],stored)
               resolved_asset_paths.add(p.relative_to(rave_dst).as_posix())
-              out={
-                  'source_type':'ravemems','runtime_key':e['occurrence_entity_key'],
-                  'source_occurrence_key':e.get('source_occurrence_key'),'asset_entity_key':e['asset_entity_key'],
-                  'runtime_path':p.relative_to(runtime).as_posix(),'sha256':e['sha256'],
-                  'publication_code':e.get('publication_code'),'physical_page':e.get('physical_page'),
-                  'context_text':e.get('context_text') or '','ui_label':'Voir le schéma','ui_visible':True,
-              }
-              rave_runtime_entries.append(out)
-              rave_occ_by_key[e['occurrence_entity_key']]=out
+              out={'source_type':'ravemems','runtime_key':e['occurrence_entity_key'],'source_occurrence_key':e.get('source_occurrence_key'),'asset_entity_key':e['asset_entity_key'],'runtime_path':p.relative_to(runtime).as_posix(),'sha256':e['sha256'],'publication_code':e.get('publication_code'),'physical_page':e.get('physical_page'),'context_text':e.get('context_text') or '','ui_label':'Voir le schéma','ui_visible':True}
+              rave_runtime_entries.append(out); rave_occ_by_key[e['occurrence_entity_key']]=out
               if e.get('source_occurrence_key'): rave_occ_by_key[e['source_occurrence_key']]=out
           assert len(resolved_asset_paths)==1070,len(resolved_asset_paths)
 
@@ -132,18 +123,25 @@ jobs:
           legacy_hide=[x for x in manifest if x['final_action']=='retirer_de_ui_conserver_provenance']
           assert (len(legacy_keep),len(legacy_replace),len(legacy_hide))==(141,274,12)
 
+          def read_legacy(old_path):
+              candidates=[old_path]
+              if not old_path.startswith('database/reference/'):
+                  candidates.append('database/reference/'+old_path)
+              for rp in candidates:
+                  try:
+                      data=subprocess.check_output(['git','show',f"{os.environ['BASE_COMMIT']}:{rp}"],stderr=subprocess.DEVNULL)
+                      return rp,data
+                  except subprocess.CalledProcessError:
+                      pass
+              raise RuntimeError(f'legacy file not found at BUILD #103 for manifest path: {old_path}')
+
           legacy_runtime_entries=[]; copied_legacy_paths=set()
           for x in legacy_keep:
               old_path=x['old_path']; assert old_path and old_path not in copied_legacy_paths,old_path
-              data=subprocess.check_output(['git','show',f"{os.environ['BASE_COMMIT']}:{old_path}"])
-              dst=runtime/'legacy'/old_path; dst.parent.mkdir(parents=True,exist_ok=True); dst.write_bytes(data)
+              repo_path,data=read_legacy(old_path)
+              dst=runtime/'legacy'/repo_path; dst.parent.mkdir(parents=True,exist_ok=True); dst.write_bytes(data)
               copied_legacy_paths.add(old_path)
-              legacy_runtime_entries.append({
-                  'source_type':'legacy','runtime_key':x.get('old_key') or old_path,
-                  'runtime_path':dst.relative_to(runtime).as_posix(),'sha256':hashlib.sha256(data).hexdigest(),
-                  'source_roots':x.get('source_roots') or [],'context_text':x.get('old_key') or '',
-                  'ui_label':'Voir le schéma','ui_visible':True,'treatment':'conserver_migrer_legacy',
-              })
+              legacy_runtime_entries.append({'source_type':'legacy','runtime_key':x.get('old_key') or old_path,'legacy_old_path':old_path,'legacy_repo_path':repo_path,'runtime_path':dst.relative_to(runtime).as_posix(),'sha256':hashlib.sha256(data).hexdigest(),'source_roots':x.get('source_roots') or [],'context_text':x.get('old_key') or '','ui_label':'Voir le schéma','ui_visible':True,'treatment':'conserver_migrer_legacy'})
           assert len(copied_legacy_paths)==141
 
           def collect_keys(obj):
@@ -160,12 +158,8 @@ jobs:
           replacement_rows=[]; missing_replacement=[]
           for x in legacy_replace:
               ev=x.get('final_evidence') or {}; occs=ev.get('ravemems_visual_occurrences') or []
-              resolved=[]
-              for key in collect_keys(occs):
-                  if key in rave_occ_by_key: resolved.append(rave_occ_by_key[key]['runtime_key'])
-              resolved=sorted(set(resolved))
-              if not resolved:
-                  missing_replacement.append({'old_key':x.get('old_key'),'old_path':x.get('old_path'),'raw_occurrences':occs})
+              resolved=sorted(set(rave_occ_by_key[key]['runtime_key'] for key in collect_keys(occs) if key in rave_occ_by_key))
+              if not resolved: missing_replacement.append({'old_key':x.get('old_key'),'old_path':x.get('old_path'),'raw_occurrences':occs})
               replacement_rows.append({'old_key':x.get('old_key'),'old_path':x.get('old_path'),'action':'remplacer_par_ravemems','replacement_runtime_keys':resolved,'legacy_file_packaged':False,'provenance_preserved':True})
           if missing_replacement:
               (sim/'missing_replacement_links.json').write_text(json.dumps(missing_replacement,ensure_ascii=False,indent=2,sort_keys=True),encoding='utf-8')
@@ -174,8 +168,7 @@ jobs:
           hidden_rows=[{'old_key':x.get('old_key'),'old_path':x.get('old_path'),'action':'retirer_de_ui_conserver_provenance','ui_visible':False,'legacy_file_packaged':False,'provenance_preserved':True} for x in legacy_hide]
           viewer_entries=rave_runtime_entries+legacy_runtime_entries
           assert len(viewer_entries)==1935
-          assert all(e['ui_visible'] and e['ui_label']=='Voir le schéma' for e in viewer_entries)
-          assert all((runtime/e['runtime_path']).is_file() for e in viewer_entries)
+          assert all(e['ui_visible'] and e['ui_label']=='Voir le schéma' and (runtime/e['runtime_path']).is_file() for e in viewer_entries)
           assert not any(x.get('old_path') in copied_legacy_paths for x in legacy_replace+legacy_hide)
 
           db=sim/'runtime_candidate.sqlite'; con=sqlite3.connect(db)
@@ -185,12 +178,11 @@ jobs:
           DELETE FROM mems_visual_runtime_source; DELETE FROM mems_visual_legacy_treatment;
           ''')
           for e in viewer_entries:
-              con.execute('INSERT INTO mems_visual_runtime_source VALUES(?,?,?,?,?,?,?,?,?)',(e['runtime_key'],e['source_type'],e['runtime_path'],e['sha256'],e.get('context_text') or '','Voir le schéma',1,e.get('treatment') or 'ravemems_source',json.dumps({'publication_code':e.get('publication_code'),'physical_page':e.get('physical_page')},ensure_ascii=False,sort_keys=True)))
+              con.execute('INSERT INTO mems_visual_runtime_source VALUES(?,?,?,?,?,?,?,?,?)',(e['runtime_key'],e['source_type'],e['runtime_path'],e['sha256'],e.get('context_text') or '','Voir le schéma',1,e.get('treatment') or 'ravemems_source',json.dumps({'publication_code':e.get('publication_code'),'physical_page':e.get('physical_page'),'legacy_old_path':e.get('legacy_old_path')},ensure_ascii=False,sort_keys=True)))
           for r in replacement_rows:
               con.execute('INSERT INTO mems_visual_legacy_treatment VALUES(?,?,?,?,?,?)',(r['old_key'],r['old_path'],r['action'],json.dumps(r['replacement_runtime_keys'],sort_keys=True),1,0))
           for e in legacy_runtime_entries:
-              old_path=e['runtime_path'][len('legacy/'):]
-              con.execute('INSERT INTO mems_visual_legacy_treatment VALUES(?,?,?,?,?,?)',(e['runtime_key'],old_path,'conserver_migrer_legacy','[]',1,1))
+              con.execute('INSERT INTO mems_visual_legacy_treatment VALUES(?,?,?,?,?,?)',(e['runtime_key'],e['legacy_old_path'],'conserver_migrer_legacy','[]',1,1))
           for r in hidden_rows:
               con.execute('INSERT INTO mems_visual_legacy_treatment VALUES(?,?,?,?,?,?)',(r['old_key'],r['old_path'],r['action'],'[]',1,0))
           con.commit()
