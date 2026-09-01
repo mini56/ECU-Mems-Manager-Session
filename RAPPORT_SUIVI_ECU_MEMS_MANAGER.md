@@ -11666,3 +11666,17 @@ PROCHAINE ACTION EXACTE: sur `tmp-ravemems-ia-visual-integration` uniquement, aj
 
 MEMSX64 doit rester strictement sur BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
 
+
+
+## IA VISUELLE RAVEMEMS - CORRECTION STOPWORD POUSSEE
+Date: 2026-09-01
+
+Branche: `tmp-ravemems-ia-visual-integration`.
+Commit correctif: `9aef21a85b2ba72ec02119f7e71a207e1c9eb795` (`Ignore non-technical French copula in visual routing`).
+Scope verifie par le diff GitHub: exactement `expert/IaMemsDiagramCatalog.cpp`; ajout unique de `QStringLiteral("est")` dans l'ensemble `ignored` de `significantTerms()`.
+Aucun autre code, viewer, base, catalogue runtime ou donnees RAVEMEMS modifies.
+
+PROCHAINE ACTION EXACTE: relancer exactement le workflow x64 `TEMP RAVEMEMS IA visual integration validation` contre le catalogue valide 1935 entrees / 1211 fichiers et la copie nettoyee. Exiger le passage du cas MEMS 1.3, de tous les cas RAVEMEMS/legacy, de la compilation MSVC x64 et des gardes de chemins. Journaliser le resultat avant toute action suivante.
+
+MEMSX64 reste interdit de modification et doit rester BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
