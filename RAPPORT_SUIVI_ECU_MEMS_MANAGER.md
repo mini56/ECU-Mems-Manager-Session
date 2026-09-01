@@ -11542,3 +11542,14 @@ La pousse sera creee en un seul commit Git atomique pour les trois fichiers. Auc
 
 PROCHAINE ACTION EXACTE : creer le commit correctif atomique sur `tmp-ravemems-ia-visual-integration`, attendre le nouveau run du meme workflow, verifier successivement catalogue reel/base nettoyee, compilation x64, self-tests et scope, puis journaliser immediatement le verdict avant toute etape de package utilisateur.
 
+
+## 2026-09-01 — INCIDENT DE METHODE — HELPER DE CORRECTION STAGE SUR BRANCHE
+
+Apres le journal AVANT POUSSE `33528120553`, la preparation du commit atomique a ajoute par erreur un fichier d orchestration temporaire `tools/tmp_apply_ia_visual_correction.py` sur `tmp-ravemems-ia-visual-integration`, commit `ca63f04ca514b226a962a1e2f0c96aaf15106e09`.
+
+Ce commit ne modifie aucun code applicatif, aucune base, aucun visuel et aucun workflow de validation ; il contient uniquement le helper texte qui decrit les trois remplacements deja autorises. Le workflow IA visuel n a pas ete declenche par ce chemin. `MEMSX64` reste strictement #103.
+
+Mesure corrective : ne pas laisser ce helper dans le tree final. Apres un nouveau RAPPORT AVANT POUSSE, utiliser un workflow d orchestration temporaire pour executer le helper sur la branche, verifier que seuls `expert/IaMemsDiagramCatalog.cpp`, `expert/IaMemsDiagramSelfTest.cpp` et le filtre paths du workflow de validation changent, supprimer le helper et le workflow d orchestration dans le meme commit Git, puis pousser ce commit. Le tree final ne doit contenir aucun helper/orchestrateur.
+
+PROCHAINE ACTION EXACTE : journaliser AVANT POUSSE cette orchestration de correction, puis appliquer strictement les deux corrections du run `33527558939`, supprimer tous les fichiers temporaires d orchestration et relancer le meme test x64. Aucun autre changement.
+
