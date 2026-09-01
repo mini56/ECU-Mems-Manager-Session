@@ -1,0 +1,179 @@
+name: TEMP RAVEMEMS targeted ten facts review
+
+on:
+  push:
+    branches:
+      - tmp-rave-new-extraction-pilot
+    paths:
+      - .github/workflows/tmp-ravemems-targeted-ten-facts-review.yml
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-new-extraction-pilot
+          fetch-depth: 1
+
+      - name: Download exact merged audit database
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/additive"
+          gh run download 33493009341 --repo "$GITHUB_REPOSITORY" --name ravemems-additive-merge-audit --dir "$RUNNER_TEMP/additive"
+          gzip -dc "$RUNNER_TEMP/additive/ia_mems_reference_r20_plus_ravemems_AUDIT.sqlite.gz" > "$RUNNER_TEMP/additive/merged.sqlite"
+
+      - name: Extract exact local evidence for ten unresolved facts
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/review"
+          python3 - "$RUNNER_TEMP/additive/merged.sqlite" "$RUNNER_TEMP/review/targeted_review.json" "$RUNNER_TEMP/review/targeted_review.md" <<'PY'
+          import json, re, sqlite3, sys
+          from pathlib import Path
+
+          dbp,outj,outm=map(Path,sys.argv[1:4])
+          db=sqlite3.connect(f'file:{dbp}?mode=ro',uri=True)
+          db.row_factory=sqlite3.Row
+          assert db.execute('PRAGMA integrity_check').fetchone()[0].lower()=='ok'
+          assert not db.execute('PRAGMA foreign_key_check').fetchall()
+
+          targets={
+            'RAVE-EVAP-PURGE-001':'RCL0193ENG',
+            'RAVE-REP-TP-SENSOR-001':'RCL0193ENG',
+            'RAVE-ADJ-THROTTLE-CABLE-001':'RCL0193ENG',
+            'RAVE-REP-INJECTORS-001':'RCL0193ENG',
+            'RAVE-REP-PURGE-001':'RCL0193ENG',
+            'RAVE-COLOR-SPIJ-004':'RCL0194ENG',
+            'RAVE-COLOR-SPIJ-007':'RCL0194ENG',
+            'RAVE-WIR-MPI-004':'RCL0194ENG',
+            'RAVE-WIR-MPI-012':'RCL0194ENG',
+            'RAVE-WIR-SPIJ-011':'RCL0194ENG',
+          }
+          source={'RCL0193ENG':'SRC-RCL0193','RCL0194ENG':'SRC-RCL0194'}
+          docs={}
+          for pub in source:
+            r=db.execute('SELECT document_key,file_name FROM mems_doc_document WHERE publication_code=?',(pub,)).fetchall()
+            assert len(r)==1
+            docs[pub]=dict(r[0])
+
+          def page_lines(pub,p):
+            dk=docs[pub]['document_key']
+            rows=db.execute('''SELECT e.sort_order,t.text_value,e.notes
+                FROM mems_doc_entity e JOIN mems_doc_unit u ON u.unit_key=e.unit_key
+                JOIN mems_doc_text t ON t.entity_key=e.entity_key AND t.locale='en' AND t.field_key='source_exact'
+                WHERE e.document_key=? AND u.physical_page=? AND e.entity_kind='source_line'
+                ORDER BY e.sort_order''',(dk,p)).fetchall()
+            return [{'order':r['sort_order'],'text':r['text_value'] or '','entity_notes':r['notes']} for r in rows]
+
+          all_pages={}
+          for pub in source:
+            dk=docs[pub]['document_key']
+            rows=db.execute('''SELECT DISTINCT u.physical_page FROM mems_doc_unit u WHERE u.document_key=? ORDER BY u.physical_page''',(dk,)).fetchall()
+            all_pages[pub]=[r[0] for r in rows]
+
+          def cited_pages(notes):
+            out=set()
+            for m in re.finditer(r'PDF\s*p\.?\s*(\d+)(?:\s*[-–]\s*(\d+))?',notes or '',re.I):
+              a=int(m.group(1)); b=int(m.group(2) or a)
+              if b<a:a,b=b,a
+              out.update(range(a,b+1))
+            return sorted(out)
+
+          def section_refs(notes,pub):
+            out=[]
+            for m in re.finditer(re.escape(pub)+r'\s*:\s*([0-9]+\.[0-9]+)',notes or '',re.I): out.append(m.group(1))
+            for m in re.finditer(r'(?:section|vue)[^;]*?\b(\d{1,2}\.\d{1,2})\b',notes or '',re.I): out.append(m.group(1))
+            return list(dict.fromkeys(out))
+
+          def section_pages(pub,refs):
+            found={r:[] for r in refs}
+            for p in all_pages[pub]:
+              lines=page_lines(pub,p)
+              joined='\n'.join(x['text'] for x in lines)
+              for ref in refs:
+                if re.search(r'(?<!\d)'+re.escape(ref)+r'(?!\d)',joined): found[ref].append(p)
+            return found
+
+          def tokens(statement,topic):
+            s=(statement or '')+' '+(topic or '')
+            pats=[r'\bC\d{3,4}(?:-\d+)?\b',r'\b\d+(?:[.,]\d+)?\s*(?:N\.?m|Nm|°C|V|mV|mm|kPa|rpm)\b',r'\b(?:IAT|ECT|EVAP|ECM|MAP|SENSOR EARTH|MPi|SPi)\b']
+            a=[]
+            for pat in pats:a+=re.findall(pat,s,re.I)
+            return list(dict.fromkeys(a))
+
+          def normalize_for_value(s):
+            return (s or '').casefold().replace(',','.').replace(' ','').replace('n.m','nm').replace('n·m','nm').replace('°','')
+
+          results=[]
+          for fk,pub in targets.items():
+            row=db.execute('SELECT * FROM mems_expert_fact_external WHERE source_key=? AND fact_key=?',(source[pub],fk)).fetchone()
+            assert row is not None,(pub,fk)
+            f=dict(row); cp=cited_pages(f.get('notes')); sr=section_refs(f.get('notes'),pub); sp=section_pages(pub,sr)
+            pages=set(cp)
+            for vv in sp.values(): pages.update(vv)
+            # Also add pages containing explicit connector/value tokens from the statement.
+            tt=tokens(f.get('statement'),f.get('topic'))
+            token_hits={t:[] for t in tt}
+            for p in all_pages[pub]:
+              lines=page_lines(pub,p)
+              for t in tt:
+                nt=normalize_for_value(t)
+                hh=[x for x in lines if nt and nt in normalize_for_value(x['text'])]
+                if hh:
+                  token_hits[t].append({'page':p,'lines':hh[:12]}); pages.add(p)
+            # Keep cited/section pages always, but for token-only pages keep only those with multiple target tokens to avoid glossary noise.
+            core=set(cp)
+            for vv in sp.values(): core.update(vv)
+            score={p:0 for p in pages}
+            for t,hits in token_hits.items():
+              for h in hits: score[h['page']]=score.get(h['page'],0)+1
+            selected=sorted(core | {p for p,n in score.items() if n>=2})
+            # If a target has no core pages, use strongest token pages.
+            if not selected and score:
+              mx=max(score.values()); selected=sorted(p for p,n in score.items() if n==mx and n>0)[:4]
+            evidence_pages=[]
+            for p in selected:
+              lines=page_lines(pub,p)
+              evidence_pages.append({'physical_page':p,'line_count':len(lines),'lines':lines})
+            results.append({'publication_code':pub,'document':docs[pub],'fact_key':fk,'topic':f.get('topic'),'statement':f.get('statement'),'notes':f.get('notes'),'cited_pdf_pages':cp,'section_refs':sr,'section_ref_physical_pages':sp,'tokens':tt,'token_hits':token_hits,'selected_evidence_pages':selected,'evidence_pages':evidence_pages})
+
+          out={'database_read_only':True,'source_run':33493009341,'facts':results}
+          outj.write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          md=['# Targeted review of 10 unresolved RAVEMEMS facts','']
+          for r in results:
+            md += [f"## {r['fact_key']} ({r['publication_code']})",'',f"Historical statement: {r['statement']}",'',f"Notes: {r['notes']}",'',f"Cited PDF pages: {r['cited_pdf_pages']}; sections: {r['section_refs']}; located section pages: {r['section_ref_physical_pages']}",'']
+            for ep in r['evidence_pages']:
+              md.append(f"### Physical page {ep['physical_page']}")
+              md.append('```text')
+              for x in ep['lines']: md.append(f"{x['order']:04d} {x['text']}")
+              md += ['```','']
+          outm.write_text('\n'.join(md)+'\n',encoding='utf-8')
+
+          print('TARGETED_REVIEW_BEGIN')
+          for r in results:
+            print('TARGET '+json.dumps({k:r[k] for k in ['publication_code','fact_key','statement','notes','cited_pdf_pages','section_refs','section_ref_physical_pages','tokens','selected_evidence_pages']},ensure_ascii=False))
+            # Print relevant lines only: lines containing any token, plus value-specific numeric lines on cited pages.
+            rel=[]
+            ntt=[normalize_for_value(t) for t in r['tokens']]
+            for ep in r['evidence_pages']:
+              for x in ep['lines']:
+                nx=normalize_for_value(x['text'])
+                if any(t and t in nx for t in ntt) or (r['fact_key']=='RAVE-EVAP-PURGE-001' and '70' in x['text']) or (r['fact_key']=='RAVE-REP-TP-SENSOR-001' and ('1.5' in nx or '15nm' in nx)):
+                  rel.append({'page':ep['physical_page'],'order':x['order'],'text':x['text']})
+            print('EVIDENCE '+r['fact_key']+' '+json.dumps(rel[:120],ensure_ascii=False))
+          print('TARGETED_REVIEW_END')
+          db.close()
+          PY
+
+      - name: Upload targeted evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ravemems-targeted-ten-facts-review
+          path: ${{ runner.temp }}/review
+          if-no-files-found: error
