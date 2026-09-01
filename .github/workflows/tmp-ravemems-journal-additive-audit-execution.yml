@@ -1,14 +1,10 @@
-name: TEMP journal RAVEMEMS additive merge audit execution
-
+name: TEMP RAVEMEMS additive audit journal
 on:
   push:
-    branches: [RAPPORT]
-    paths:
-      - .github/workflows/tmp-ravemems-journal-additive-audit-execution.yml
-
+    branches:
+      - RAPPORT
 permissions:
   contents: write
-
 jobs:
   journal:
     runs-on: ubuntu-latest
@@ -17,34 +13,14 @@ jobs:
         with:
           ref: RAPPORT
           fetch-depth: 1
-      - name: Journal additive audit execution
+      - name: Append journal
         shell: bash
         run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md')
-          text = """
-
-## 2026-09-01 - RAVEMEMS - AVANT AUDIT DE FUSION ADDITIVE DANS LA BASE #103
-
-Incident de journalisation : le run 33492421029 a echoue avant creation de job a cause du transport YAML du workflow temporaire. Aucune pousse technique RAVEMEMS n a ete effectuee apres cet echec. Ce workflow corrige uniquement le canal de journalisation.
-
-Regle utilisateur prioritaire : RAVEMEMS ne remplace jamais la base ECU MEMS Manager. La base SQLite effectivement emballee dans BUILD #103 reste la base mere. RAVEMEMS doit etre ajoute dans une copie de cette base, puis seulement les doublons/recouvrements doivent etre audites et traites de maniere controlee. Aucun contenu historique ne peut etre supprime pendant l import.
-
-Sources verrouillees : base mere = artefact BUILD #103 9738640151 / run 33334306835 / MEMSX64 1d6316bd1746d6f2b4cfb751cab88d18e27ef730. RAVEMEMS = artefact 9791187684 / run 33484362718 / extracteur 72dcaf04e84181669aa25c9103ea60bf47d9e1a7 / source RAVE 643de091b474f4e27917a065bdf46d5a0c764276 / SQLite SHA-256 8f2cb17525efb2c1b296bc675c781740a9db3e7de84f2e4150f3a3ebbe49a87b.
-
-Audit autorise sur copie uniquement : enregistrer l etat AVANT complet de #103 ; appliquer le socle documentaire V1 valide sans toucher les tables historiques ; importer additivement les 47 documents et 1359 pages RAVEMEMS dans les tables mems_doc_* avec provenance ; verifier que les tables historiques restent strictement identiques ; produire l etat APRES AJOUT ; produire des candidats doublons classes sans aucune suppression automatique ; fournir rapport et SQLite fusionne uniquement comme artefacts de test.
-
-Interdictions : aucun remplacement de base, aucune suppression automatique, aucun QZ64/installateur final, aucune modification MEMSX64/protocole/ECU/UI/IA/ONNX.
-
-PROCHAINE ACTION EXACTE : pousser uniquement le workflow/script temporaire d audit de fusion additive hors production, executer contre les deux artefacts exacts, puis journaliser le resultat avant toute decision de dedoublonnage.
-"""
-          p.write_text(p.read_text(encoding='utf-8') + text, encoding='utf-8')
-          PY
+          set -e
+          printf '%s\n' '' '## 2026-09-01 - RAVEMEMS - AVANT AUDIT DE FUSION ADDITIVE' '' 'Regle utilisateur prioritaire : RAVEMEMS est ajoute a une copie de la base BUILD #103 et ne remplace aucune donnee historique. Import additif seulement, puis audit des doublons sans suppression automatique.' '' 'Sources verrouillees : BUILD #103 artefact 9738640151 run 33334306835 commit 1d6316bd1746d6f2b4cfb751cab88d18e27ef730 ; RAVEMEMS artefact 9791187684 run 33484362718 SQLite 8f2cb17525efb2c1b296bc675c781740a9db3e7de84f2e4150f3a3ebbe49a87b.' '' 'Action suivante : auditer la base #103 AVANT, creer une copie, appliquer le socle documentaire V1, importer les 47 documents et 1359 pages RAVEMEMS dans mems_doc_*, verifier que toutes les tables historiques restent identiques, puis produire les candidats doublons sans en supprimer aucun. Aucun QZ64 final, aucun MEMSX64.' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
           rm .github/workflows/tmp-ravemems-journal-additive-audit-execution.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md .github/workflows/tmp-ravemems-journal-additive-audit-execution.yml
-          git commit -m 'Record RAVEMEMS additive merge audit execution plan'
+          git commit -m 'Record RAVEMEMS additive audit execution'
           git push origin HEAD:RAPPORT
