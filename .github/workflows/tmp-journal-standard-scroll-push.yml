@@ -1,0 +1,29 @@
+name: TEMP journal standard IA scroll push
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/tmp-journal-standard-scroll-push.yml'
+permissions:
+  contents: write
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append push result
+        shell: bash
+        run: |
+          printf '%s\n' '' '## 2026-09-01 — Scroll IA standard pousse sur branche de test' '' 'Commit applicatif : 06bb3b8cdf4e0563d020c897dbc8faf22605b644.' 'Diff applicatif : iamemstab.cpp uniquement.' 'La zone IA dispose maintenant dune barre verticale Qt standard explicite de 18 px, reliee directement au defilement du QTextBrowser. Monter et descendre agit sur tout le contenu.' 'MEMSX64 non modifie.' '' 'PROCHAINE ACTION EXACTE : nettoyer le workflow temporaire, compiler le package x64 de test, puis valider reellement le scroll sur le PC utilisateur.' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+      - name: Commit journal
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/tmp-journal-standard-scroll-push.yml
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Journal standard IA scroll push"
+          git push origin HEAD:RAPPORT
