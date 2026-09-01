@@ -11494,3 +11494,14 @@ Correction de methode : traiter ces deux commits comme un seul lot technique dej
 
 PROCHAINE ACTION EXACTE : sans aucune nouvelle modification de code, lancer maintenant la validation GitHub du tree `24678414227e0f73c4e97c26989b5e223f9fd8af` en utilisant d abord les self-tests deterministes existants et runtime catalog. Journaliser le resultat avant toute correction ou ajout de workflow/package. `MEMSX64` reste BUILD #103.
 
+
+## 2026-09-01 — IA VISUELLE — AVANT POUSSE WORKFLOW DE VALIDATION ISOLE
+
+Le lot de code a ete ecrit sur `tmp-ravemems-ia-visual-integration` et aucun test n a encore ete lance. Le prochain commit ne doit contenir aucun changement applicatif : uniquement un workflow temporaire de validation GitHub x64.
+
+Ce workflow doit telecharger l artefact runtime valide run `33524210118` / ID `9806972578` / digest `sha256:bc8ceed9ea2a748fb23f2d2504f034c62010669d3d10f2a281cf675aea735642`, verifier ses metadonnees, copier uniquement sur le runner `runtime_visual_catalog.json` et `runtime_files/**` sous `database/reference`, verifier les 1 935 entrees et 1 211 fichiers, puis compiler et executer `ia_mems_diagram_selftest` avec Qt 5.15.2 MSVC x64. Le tree Git ne doit pas etre modifie par l injection runtime.
+
+Gardes : `MEMSX64` doit rester exactement BUILD #103 ; aucun ONNX/Qwen/protocole/ECU/32 bits ; aucune pousse production ; le workflow doit echouer si le catalogue runtime, ses fichiers ou les self-tests ne passent pas.
+
+PROCHAINE ACTION EXACTE : pousser uniquement ce workflow temporaire sur la branche d integration, laisser le run tester le tree `24678414227e0f73c4e97c26989b5e223f9fd8af` + runtime reel, puis journaliser immediatement SUCCESS ou FAILURE avant toute correction.
+
