@@ -1,0 +1,42 @@
+name: TEMP journal scroll real test culasse
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/tmp-journal-scroll-realtest-culasse.yml'
+permissions:
+  contents: write
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append journal
+        shell: bash
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+## 2026-09-01 — TEST REEL PC — SCROLL IA ET PREMIERE QUESTION CULASSE
+
+Package de test issu du run GitHub Actions 33545999454 : SUCCESS. Artefact ECU-MEMS-Manager-x64-RAVEMEMS-VISUAL-TEST-from-BUILD-103, ID 9815810470, SHA-256 12c90ee438ff93fd1ea4e02dbd9b47948008c3d79d7c0ba57b2f0a36025b9b17. Production MEMSX64 reste BUILD #103 commit 1d6316bd1746d6f2b4cfb751cab88d18e27ef730.
+
+Test reel utilisateur sur PC : le scroll vertical standard de la fenetre IA fonctionne. Verdict scroll : PASS pour le debut de test reel.
+
+Premiere question de verification IA : `CULASSE`.
+Observation reelle : la base retrouve correctement la procedure constructeur de joint/culasse, notamment les etapes de depose/repose et les couples 34 N.m puis 68 N.m pour les ecrous de culasse. En revanche la restitution est beaucoup trop longue et expose du contenu brut/interne : procedure dupliquee, en-tetes de pages MOTEUR/REPARATIONS, marqueurs `[figure: ...]`, lignes `Exigence ...`, illustrations repetees et contamination `JOINT DE COUVRE-CULBUTEURS` a la fin d'une etape.
+Verdict question CULASSE : DONNEES TROUVEES, RESTITUTION IA A CORRIGER. Aucun correctif n'est encore applique.
+
+PROCHAINE ACTION EXACTE : poursuivre les questions du test reel utilisateur et consigner chaque resultat avant toute correction. Ne modifier ni MEMSX64 ni le protocole ECU pendant cette phase d'observation.
+EOF
+      - name: Commit journal
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/tmp-journal-scroll-realtest-culasse.yml
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Journal real IA scroll and culasse test"
+          git push origin HEAD:RAPPORT
