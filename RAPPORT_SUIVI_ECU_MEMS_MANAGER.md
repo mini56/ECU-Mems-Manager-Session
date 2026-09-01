@@ -11209,3 +11209,19 @@ Construire en lecture seule une matrice de traitement déterministe couvrant les
 
 Corriger uniquement la matrice pour supprimer tous les numéros de pages RCL0194 hardcodés. Consommer directement les 8 meilleurs candidats de l'artefact exact `9804179784`, vérifier leur présence, leur occurrence visuelle et, pour les 7 sections numérotées, les preuves `meta_hits` + `exact_hits`. Conserver `COLOUR CODES` en `a_revoir` tant qu'aucun identifiant exact/meta ne le prouve. Relancer la matrice read-only 427 + 126 + 329 sans aucune suppression ni modification de base. Ne toucher ni QZ64, ni installateur, ni `MEMSX64`.
 
+
+
+## 2026-09-01 — seconde correction nécessaire avant matrice legacy
+
+- Run matrice : `33518658073` — **ECHEC** dans un garde read-only.
+- Commit : `f86ac01beff9f9ade285525782f3a99517d7f85c`.
+- Les artefacts exacts et `MEMSX64` BUILD #103 ont de nouveau été vérifiés sans erreur.
+- Le hardcode de page avait bien été supprimé ; la matrice lisait désormais directement l'artefact RCL0194 `9804179784`.
+- Nouvelle constatation importante : le meilleur candidat exact de `15.1` est sur la page physique `14`, mais son champ `visual_count` vaut `0`. La matrice attendait encore à tort une occurrence visuelle (`AssertionError: ('15.1', 0)`).
+- Par conséquent, les 7 sections RCL0194 précédemment qualifiées de remplacement visuel prouvé ne doivent plus être considérées comme telles avant inspection brute des 8 candidats de l'artefact exact. Le résumé intermédiaire précédent était trop affirmatif sur ce point.
+- Aucune donnée SQLite modifiée ; aucune suppression ; aucun changement sur `MEMSX64`.
+
+### PROCHAINE ACTION EXACTE
+
+Avant de relancer la matrice, exécuter un inventaire read-only minimal de l'artefact exact `ravemems-rcl0194-eight-resolution` ID `9804179784` : pour chacun des 8 targets afficher le meilleur candidat avec page physique, score, `visual_count`, `meta_hits`, `exact_hits`, `keyword_hits`, liste des occurrences visuelles, et un court extrait texte. Ne faire aucune assertion d'équivalence visuelle et ne modifier aucune donnée. Reclasser ensuite individuellement les 8 anciens visuels selon cette preuve brute, puis seulement reconstruire la matrice 427 + 126 + 329. Ne toucher ni QZ64, ni installateur, ni `MEMSX64`.
+
