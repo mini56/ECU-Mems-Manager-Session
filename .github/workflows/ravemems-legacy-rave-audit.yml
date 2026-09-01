@@ -1,0 +1,113 @@
+name: RAVEMEMS legacy RAVE audit
+
+on:
+  push:
+    branches:
+      - tmp-rave-new-extraction-pilot
+    paths:
+      - tools/ravemems_audit_legacy_rave.py
+      - .github/workflows/ravemems-legacy-rave-audit.yml
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      BASE_COMMIT: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+      VISUAL_RUN_ID: '33510951021'
+      VISUAL_ARTIFACT_ID: '9801592148'
+      VISUAL_ARTIFACT_NAME: 'ravemems-visual-bundle-audit'
+      VISUAL_ARTIFACT_DIGEST: 'sha256:8b0fb6d8ef3a7b98e67adf603479be584236cd451b7dda2b28a6d6bb548445b1'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-new-extraction-pilot
+          fetch-depth: 0
+
+      - name: Verify protected production and exact visual source artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$BASE_COMMIT"
+          gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${VISUAL_ARTIFACT_ID}" > "$RUNNER_TEMP/visual_artifact.json"
+          python3 - <<'PY'
+          import json, os
+          a=json.load(open(os.environ['RUNNER_TEMP']+'/visual_artifact.json'))
+          assert a['name']==os.environ['VISUAL_ARTIFACT_NAME']
+          assert a.get('digest')==os.environ['VISUAL_ARTIFACT_DIGEST']
+          print('EXACT_VISUAL_ARTIFACT_PASS')
+          PY
+
+      - name: Download exact enriched visual database
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/visual_source"
+          gh run download "$VISUAL_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$VISUAL_ARTIFACT_NAME" --dir "$RUNNER_TEMP/visual_source"
+          test -f "$RUNNER_TEMP/visual_source/ia_mems_reference_r20_plus_ravemems_VISUAL.sqlite.gz"
+          gzip -dc "$RUNNER_TEMP/visual_source/ia_mems_reference_r20_plus_ravemems_VISUAL.sqlite.gz" > "$RUNNER_TEMP/visual_source/audit.sqlite"
+          echo VISUAL_DB_READY
+
+      - name: Extract exact legacy RAVE files from BUILD 103 commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/legacy103"
+          git archive "$BASE_COMMIT" database/reference/manifest.json database/reference/images/rave | tar -x -C "$RUNNER_TEMP/legacy103"
+          test -f "$RUNNER_TEMP/legacy103/database/reference/manifest.json"
+          test -d "$RUNNER_TEMP/legacy103/database/reference/images/rave"
+          echo LEGACY_103_FILES_READY
+
+      - name: Audit legacy RAVE against RAVEMEMS read-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$RUNNER_TEMP/legacy_audit"
+          python3 tools/ravemems_audit_legacy_rave.py \
+            --db "$RUNNER_TEMP/visual_source/audit.sqlite" \
+            --old-root "$RUNNER_TEMP/legacy103" \
+            --out "$RUNNER_TEMP/legacy_audit" | tee "$RUNNER_TEMP/legacy_audit_stdout.txt"
+          python3 - <<'PY'
+          import json, os
+          p=os.environ['RUNNER_TEMP']+'/legacy_audit/legacy_rave_audit_summary.json'
+          s=json.load(open(p, encoding='utf-8'))
+          assert s['pass'] is True
+          assert s['read_only'] is True
+          assert s['legacy_dedicated_counts']=={
+              'mems_rave_fact':177,
+              'mems_rave_illustration':126,
+              'mems_rave_illustration_link':329,
+          }
+          assert s['legacy_structured_fact_treatment']['a_migrer_conserver']==177
+          assert s['new_ravemems']['visual_assets']==1070
+          assert s['new_ravemems']['visual_occurrences']==1794
+          print('LEGACY_RAVE_AUDIT_GATE_PASS')
+          print(json.dumps(s, ensure_ascii=False, sort_keys=True))
+          PY
+
+      - name: Prepare audit checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/legacy_audit"
+          sha256sum *.json *.md > audit_sha256.txt
+          cat legacy_rave_audit.md
+          cat legacy_rave_audit_summary.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ravemems-legacy-rave-audit
+          path: |
+            ${{ runner.temp }}/legacy_audit/**
+            ${{ runner.temp }}/legacy_audit_stdout.txt
+          if-no-files-found: error
+          retention-days: 14
