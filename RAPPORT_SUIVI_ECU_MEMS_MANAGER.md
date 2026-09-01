@@ -10728,3 +10728,58 @@ Objectif du prochain run : ameliorer la qualite OCR sans changer le perimetre ni
 ### PROCHAINE ACTION EXACTE
 
 Modifier uniquement `tools/ravemems_full_corpus.py` afin de (1) preferer l'image raster native pour l'OCR d'une page sans texte PDF lorsqu'un raster significatif est disponible, et (2) detecter les rendus essentiellement blancs avant OCR/review afin de les classer `blank`. Tester localement sur le cas CDXN p.7 et sur une page blanche, puis pousser avec un nouveau trigger et relancer les 47 PDF depuis zero. Inspecter ensuite le nombre de regions OCR, les pages `needs_review`, SQLite et l'artefact avant de figer RAVEMEMS. Ne pas toucher a `MEMSX64`.
+
+## 2026-09-01 - RAVEMEMS CORPUS COMPLET - RUN 4 EXTRACTION COMPLETE ET GARDE QUALITE VERT
+
+Correction qualite appliquee au commit `72dcaf04e84181669aa25c9103ea60bf47d9e1a7` sur `tmp-rave-new-extraction-pilot` :
+- OCR d'une page sans texte PDF sur le raster natif significatif lorsqu'il existe ;
+- conversion des bboxes OCR en coordonnees page PDF (`PDF_PAGE_POINTS`) ;
+- provenance OCR `ocr_source_kind` + `ocr_source_visual_key` conservee ;
+- detection des rendus essentiellement blancs avant OCR ;
+- les pages blanches ne sont plus classees en anomalies OCR.
+
+Test local pre-pousse : raster CDXN de reference -> 45 regions / 490 mots ; page vectorielle blanche -> `blank`, sans OCR ni review ; `integrity_check=ok`, FK vides.
+
+Preuve GitHub Actions :
+- workflow `RAVEMEMS full corpus` ;
+- run `33484362718` : **SUCCESS** ;
+- job `99780910706` : **SUCCESS** ;
+- source canonique `main` : `643de091b474f4e27917a065bdf46d5a0c764276` ;
+- gate : `RAVEMEMS_FULL_CORPUS_GATE_PASS` ;
+- artefact `ravemems-full-corpus`, ID `9791187684`, digest `sha256:5570f9435de985872e13d55d9c2263e3c5190f12d6ef39cbc73587fb5ce946b8`, taille ZIP 36 007 526 octets.
+
+Manifest final run 4 :
+- `documents_processed=47/47` ;
+- `pages_accounted=1359/1359` ;
+- `native_text_pages=1291` ;
+- `ocr_pages=2` ;
+- `ocr_regions=45` ;
+- `blank_pages=66` ;
+- `blank_detected_render=62` ;
+- `ocr_native_raster_pages=1` ;
+- `visual_occurrences=1794` ;
+- `visual_asset=1070` ;
+- `vector_drawing_objects=55343` ;
+- `native_lines=54732` ;
+- `content_items=19039` ;
+- `needs_review_pages=2` ;
+- `execution_failure_reviews=0` ;
+- `integrity_check=ok` ;
+- `foreign_key_check=[]` ;
+- `errors=[]` ;
+- `pass=true`.
+
+Audit de l'artefact final :
+- `rave/xn/cdxn990e.pdf` p.7 est `visual_ocr`, source OCR `native_raster`, xref/asset `DOC_0040_XN_CDXN990E_PDF_X62`, **45 regions / 490 mots**, conforme au pilote TEST2 ;
+- ses premieres zones sont notamment `HOW TO USE THE CIRCUIT DIAGRAMS`, `Line types`, `Earth points`, etc. ;
+- les 62 pages visuellement blanches sont maintenant `blank` et ne polluent plus `needs_review` ;
+- il reste seulement deux reviews non fatales : CDXN p.7 parce que l'OCR fallback est volontairement signale pour controle, et `rave/library/libxn.pdf` p.1, image de couverture sans texte OCR detecte ;
+- aucune review n'est une erreur d'execution.
+
+Ce run constitue la premiere extraction RAVEMEMS complete et coherentement auditee du corpus `main/rave`. GitHub n'effectue aucune traduction ; la localisation reste la responsabilite de MEMS Manager.
+
+`MEMSX64` reste strictement inchange au BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+### PROCHAINE ACTION EXACTE
+
+Resoudre/documenter les deux reviews finales sans hardcode de traduction : CDXN p.7 peut etre marque comme controle positivement par le pilote TEST2 ; `libxn.pdf` p.1 doit rester preserve comme visuel de couverture sans texte OCR exploitable. Ensuite figer l'artefact RAVEMEMS run 4 comme source complete et preparer le paquet d'integration source (SQLite + assets + audit/manifest, puis format QZ64/installateur si necessaire) sans modifier `MEMSX64` avant validation du paquet.
