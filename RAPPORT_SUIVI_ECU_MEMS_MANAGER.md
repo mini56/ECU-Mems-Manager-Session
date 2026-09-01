@@ -11858,3 +11858,25 @@ HEAD avant cette action : `b0334968a0daec9990bd130fe6f26b143b2468d4`.
 
 ### PROCHAINE ACTION EXACTE
 Modifier uniquement la logique IA nécessaire au scroll/historique déjà préparé et au cas `injecteur MPI`, ajouter des contrôles ciblés, puis compiler/tester sur la branche temporaire avant tout nouveau package utilisateur.
+
+## 2026-09-01 — Échec de pousse du correctif IA scroll/MPi avant compilation
+
+Workflow temporaire : `TEMP apply IA scroll and MPI corrections`.
+Run : `33541542614`.
+Job : `99968748018`.
+Conclusion : **FAILURE**.
+
+Les étapes de modification et les contrôles source ont toutes réussi :
+- garde `MEMSX64` BUILD #103 OK ;
+- patch `iamemstab.cpp` appliqué dans le runner ;
+- scroll vertical et `scrollToAnchor(messageAnchor)` présents ;
+- logique de correction immédiate SPi -> MPi présente ;
+- réponse courte `injecteur MPI` présente ;
+- `git diff --check` OK.
+
+Échec exact au push final : GitHub a refusé que le `GITHUB_TOKEN` modifie `.github/workflows/tmp-ravemems-visual-test-package-x64.yml` pour déclencher le package : `refusing to allow a GitHub App to create or update workflow ... without workflows permission`.
+
+Impact : le commit local runner `38a3fd0` n'a **pas** été poussé ; la branche distante n'a reçu aucun changement de code issu de ce run. `MEMSX64` reste inchangé.
+
+### PROCHAINE ACTION EXACTE
+Refaire la pousse en ne modifiant que `iamemstab.cpp` depuis le runner. Le déclenchement de la compilation/package sera traité séparément, sans faire modifier un autre workflow par le `GITHUB_TOKEN`.
