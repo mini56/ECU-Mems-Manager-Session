@@ -55,7 +55,7 @@ jobs:
           gh run download "$MAP_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$MAP_ARTIFACT_NAME" --dir "$RUNNER_TEMP/map"
           gh run download "$VISUAL_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$VISUAL_ARTIFACT_NAME" --dir "$RUNNER_TEMP/visual"
           gzip -dc "$RUNNER_TEMP/visual/ia_mems_reference_r20_plus_ravemems_VISUAL.sqlite.gz" > "$RUNNER_TEMP/visual/visual.sqlite"
-          test -f "$RUNNER_TEMP/map/legacy_mapping_unresolved.json"
+          test -f "$RUNNER_TEMP/map/mapping/legacy_mapping_unresolved.json"
 
       - name: Profile all 100 unresolved cases and all 47 RAVEMEMS documents
         shell: bash
@@ -64,7 +64,7 @@ jobs:
           python3 - <<'PY' | tee "$RUNNER_TEMP/unresolved_profile.txt"
           import collections,json,os,re,sqlite3
           temp=os.environ['RUNNER_TEMP']
-          u=json.load(open(temp+'/map/legacy_mapping_unresolved.json',encoding='utf-8'))
+          u=json.load(open(temp+'/map/mapping/legacy_mapping_unresolved.json',encoding='utf-8'))
           assert len(u)==100
           conn=sqlite3.connect(temp+'/visual/visual.sqlite')
           conn.row_factory=sqlite3.Row
@@ -95,7 +95,6 @@ jobs:
                   nb=n(blob)
                   score=0
                   if nr and nr in nb: score=100
-                  # numeric publication family fallback, e.g. AKM6348 -> 6348
                   digits=''.join(re.findall(r'\d+',root))
                   if digits and digits in nb: score=max(score,70)
                   if score: candidates.append((score,d))
