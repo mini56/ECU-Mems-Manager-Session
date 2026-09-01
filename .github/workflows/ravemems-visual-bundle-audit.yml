@@ -1,0 +1,122 @@
+name: RAVEMEMS visual bundle audit
+
+on:
+  push:
+    branches:
+      - tmp-rave-new-extraction-pilot
+    paths:
+      - tools/ravemems_visual_bundle_link.py
+      - .github/workflows/ravemems-visual-bundle-audit.yml
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      BASE_COMMIT: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+      AUDIT_RUN_ID: '33493009341'
+      AUDIT_ARTIFACT_ID: '9794557538'
+      AUDIT_ARTIFACT_NAME: 'ravemems-additive-merge-audit'
+      AUDIT_ARTIFACT_DIGEST: 'sha256:3135bee4c05fa9acb9c88106a701622e1ac520868b10743e5bb794cdd11ba893'
+      RAVE_RUN_ID: '33484362718'
+      RAVE_ARTIFACT_ID: '9791187684'
+      RAVE_ARTIFACT_NAME: 'ravemems-full-corpus'
+      RAVE_ARTIFACT_DIGEST: 'sha256:5570f9435de985872e13d55d9c2263e3c5190f12d6ef39cbc73587fb5ce946b8'
+      RAVE_SQLITE_SHA256: '8f2cb17525efb2c1b296bc675c781740a9db3e7de84f2e4150f3a3ebbe49a87b'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-new-extraction-pilot
+          fetch-depth: 1
+
+      - name: Verify protected production and exact source artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$BASE_COMMIT"
+          gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${AUDIT_ARTIFACT_ID}" > "$RUNNER_TEMP/audit_artifact.json"
+          gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${RAVE_ARTIFACT_ID}" > "$RUNNER_TEMP/rave_artifact.json"
+          python3 - <<'PY'
+          import json, os
+          a=json.load(open(os.environ['RUNNER_TEMP']+'/audit_artifact.json'))
+          r=json.load(open(os.environ['RUNNER_TEMP']+'/rave_artifact.json'))
+          assert a['name']==os.environ['AUDIT_ARTIFACT_NAME'] and a.get('digest')==os.environ['AUDIT_ARTIFACT_DIGEST']
+          assert r['name']==os.environ['RAVE_ARTIFACT_NAME'] and r.get('digest')==os.environ['RAVE_ARTIFACT_DIGEST']
+          print('EXACT_VISUAL_SOURCE_ARTIFACTS_PASS')
+          PY
+
+      - name: Download merged database and full RAVEMEMS corpus
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/additive" "$RUNNER_TEMP/rave_artifact" "$RUNNER_TEMP/rave_full"
+          gh run download "$AUDIT_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$AUDIT_ARTIFACT_NAME" --dir "$RUNNER_TEMP/additive"
+          gzip -dc "$RUNNER_TEMP/additive/ia_mems_reference_r20_plus_ravemems_AUDIT.sqlite.gz" > "$RUNNER_TEMP/additive/merged.sqlite"
+          gh run download "$RAVE_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$RAVE_ARTIFACT_NAME" --dir "$RUNNER_TEMP/rave_artifact"
+          test -f "$RUNNER_TEMP/rave_artifact/ravemems-full-corpus-output.tar.gz"
+          tar -xzf "$RUNNER_TEMP/rave_artifact/ravemems-full-corpus-output.tar.gz" -C "$RUNNER_TEMP/rave_full"
+          test -f "$RUNNER_TEMP/rave_full/ravemems_full_corpus_output/ravemems_full_corpus.sqlite"
+          test "$(sha256sum "$RUNNER_TEMP/rave_full/ravemems_full_corpus_output/ravemems_full_corpus.sqlite" | awk '{print $1}')" = "$RAVE_SQLITE_SHA256"
+          echo "RAVE_ROOT=$RUNNER_TEMP/rave_full/ravemems_full_corpus_output" >> "$GITHUB_ENV"
+          echo VISUAL_SOURCE_DOWNLOAD_PASS
+
+      - name: Build and audit complete visual bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$RUNNER_TEMP/visual_bundle"
+          python3 tools/ravemems_visual_bundle_link.py \
+            --merged-db "$RUNNER_TEMP/additive/merged.sqlite" \
+            --rave-root "$RAVE_ROOT" \
+            --out "$RUNNER_TEMP/visual_bundle"
+          python3 - <<'PY'
+          import json, os
+          p=os.environ['RUNNER_TEMP']+'/visual_bundle/visual_bundle_summary.json'
+          s=json.load(open(p))
+          assert s['pass'] is True
+          assert s['historical_tables_preserved'] is True
+          assert s['idempotent_second_link_pass'] is True
+          assert s['first_validation']['assets']==1070
+          assert s['first_validation']['occurrences']==1794
+          assert s['first_validation']['visual_context_rows']==1794
+          assert s['bundle']['bundled_assets']==1070
+          assert s['manifest_occurrences']==1794
+          assert s['manifest_unique_assets']==1070
+          assert s['ui_label']=='Voir le schéma'
+          assert s['pure_text_page_link_ui'] is False
+          print('FULL_VISUAL_BUNDLE_GATE_PASS')
+          PY
+
+      - name: Prepare reproducible audit artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/visual_bundle"
+          gzip -n -9 -c ia_mems_reference_r20_plus_ravemems_VISUAL.sqlite > ia_mems_reference_r20_plus_ravemems_VISUAL.sqlite.gz
+          sha256sum ia_mems_reference_r20_plus_ravemems_VISUAL.sqlite ia_mems_reference_r20_plus_ravemems_VISUAL.sqlite.gz visual_bundle_manifest.json visual_bundle_summary.json > bundle_core_sha256.txt
+          find visuals -type f -print0 | sort -z | xargs -0 sha256sum > visuals_sha256.txt
+          rm ia_mems_reference_r20_plus_ravemems_VISUAL.sqlite
+          test "$(find visuals -type f | wc -l)" -eq 1070
+          echo FULL_VISUAL_BUNDLE_ARTIFACT_READY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ravemems-visual-bundle-audit
+          path: |
+            ${{ runner.temp }}/visual_bundle/visual_bundle_summary.json
+            ${{ runner.temp }}/visual_bundle/visual_bundle_manifest.json
+            ${{ runner.temp }}/visual_bundle/bundle_core_sha256.txt
+            ${{ runner.temp }}/visual_bundle/visuals_sha256.txt
+            ${{ runner.temp }}/visual_bundle/ia_mems_reference_r20_plus_ravemems_VISUAL.sqlite.gz
+            ${{ runner.temp }}/visual_bundle/visuals/**
+          if-no-files-found: error
+          retention-days: 14
