@@ -1,5 +1,5 @@
 name: TEMP RAVEMEMS IA visual integration validation
-# retrigger stopword fix 9aef21a85b2ba72ec02119f7e71a207e1c9eb795
+# retrigger scope guard fix after green selftest
 on:
   push:
     branches: [tmp-ravemems-ia-visual-integration]
@@ -161,11 +161,13 @@ jobs:
           $ErrorActionPreference = 'Stop'
           git checkout -- database/reference
           git clean -fd -- database/reference
-          $changed = git diff --name-only $env:BASE_COMMIT..HEAD
+          $range = "$($env:BASE_COMMIT)..HEAD"
+          $changed = @(git diff --name-only $range)
+          if ($LASTEXITCODE -ne 0) { throw "git diff scope failed: $LASTEXITCODE" }
           $allowed = @('expert/IaMemsDiagramCatalog.cpp','expert/IaMemsDiagramSelfTest.cpp','.github/workflows/tmp-ravemems-ia-visual-validation.yml','tools/tmp_apply_ia_visual_correction.py','.github/workflows/tmp-apply-ia-visual-correction.yml')
           $unexpected = @($changed | Where-Object { $_ -notin $allowed })
           if ($unexpected.Count -ne 0) { throw "Unexpected changed files: $($unexpected -join ', ')" }
-          Write-Host "SCOPE_PASS changed=$($changed.Count)"
+          Write-Host "SCOPE_PASS changed=$($changed.Count) files=$($changed -join ',')"
 
       - name: Upload validation evidence
         uses: actions/upload-artifact@v4
