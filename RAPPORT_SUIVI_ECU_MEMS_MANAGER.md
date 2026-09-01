@@ -11118,3 +11118,12 @@ PROCHAINE ACTION EXACTE : auditer en lecture seule les visual_occurrence/visual_
 - `MEMSX64` reste exactement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
 - PROCHAINE ACTION EXACTE : analyser les 100 cas restants par familles de noms/sources, en premier `AKM6348 FR`, retrouver leur document RAVEMEMS par `file_name`, `source_key`, titre/source path et alias de publication plutot que le seul `publication_code`, puis refaire le mapping page/section. Sortir une ventilation des 100 cas et viser 427/427 traitements deterministes. Ne supprimer aucune donnee et ne toucher ni QZ64, ni installateur, ni `MEMSX64`.
 
+
+## 1 SEPTEMBRE 2026 — ECHEC PROFILE 100 VISUELS RESTANTS — AVANT CORRECTION
+- Workflow profile commit `0ee188cd0696bd3b888ad1e50eb0c5ee0344e512`, run `33516085647`, job `99883334154` : FAILURE avant analyse.
+- La verification des entrees exactes a passe, y compris l artefact de mapping ID `9803548521` et son digest.
+- Les commandes de telechargement ont ete lancees ; l etape termine `exit 1` sur le controle de chemin du fichier `legacy_mapping_unresolved.json`.
+- Cause : l artefact `ravemems-exhaustive-legacy-visual-mapping` conserve le sous-dossier `mapping/` car son upload avait `/runner.temp` comme racine commune. Le profileur cherchait a tort le JSON directement sous le dossier de destination.
+- Aucun resultat de profil n a ete produit, aucune base modifiee, aucune suppression, aucun changement `MEMSX64`.
+- PROCHAINE ACTION EXACTE : corriger uniquement le chemin du JSON vers `mapping/legacy_mapping_unresolved.json` (ou le localiser de facon deterministe), puis relancer le meme profil read-only des 100 cas et des 47 documents RAVEMEMS. Ne modifier aucune donnee.
+
