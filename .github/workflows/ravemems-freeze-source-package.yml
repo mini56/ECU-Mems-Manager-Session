@@ -54,33 +54,37 @@ jobs:
           digest=art.get('digest')
           if digest is not None:
               assert digest == 'sha256:'+os.environ['SOURCE_ARTIFACT_SHA256']
+          print('SOURCE_RUN_OBSERVED', run['id'], run['status'], run['conclusion'], run['head_sha'])
+          print('SOURCE_ARTIFACT_OBSERVED', art['id'], art['name'], art['size_in_bytes'], digest)
           print('RUN4_METADATA_PASS')
           PY
 
-      - name: Download exact run4 artifact without rerunning extraction
+      - name: Download exact run4 artifact content without rerunning extraction
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          curl -fsSL \
-            -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/${SOURCE_ARTIFACT_ID}/zip" \
-            -o "$RUNNER_TEMP/run4-artifact.zip"
-          test "$(stat -c%s "$RUNNER_TEMP/run4-artifact.zip")" = "$SOURCE_ARTIFACT_SIZE"
-          test "$(sha256sum "$RUNNER_TEMP/run4-artifact.zip" | awk '{print $1}')" = "$SOURCE_ARTIFACT_SHA256"
-          mkdir -p "$RUNNER_TEMP/run4_artifact"
-          unzip -q "$RUNNER_TEMP/run4-artifact.zip" -d "$RUNNER_TEMP/run4_artifact"
+          rm -rf "$RUNNER_TEMP/run4_artifact" "$RUNNER_TEMP/run4_full"
+          mkdir -p "$RUNNER_TEMP/run4_artifact" "$RUNNER_TEMP/run4_full"
+          gh run download "$SOURCE_RUN_ID" \
+            --repo "$GITHUB_REPOSITORY" \
+            --name "$SOURCE_ARTIFACT_NAME" \
+            --dir "$RUNNER_TEMP/run4_artifact"
+          echo "ARTIFACT_API_ID=$SOURCE_ARTIFACT_ID"
+          echo "ARTIFACT_API_SIZE=$SOURCE_ARTIFACT_SIZE"
+          echo "ARTIFACT_API_SHA256=$SOURCE_ARTIFACT_SHA256"
+          find "$RUNNER_TEMP/run4_artifact" -maxdepth 1 -type f -printf '%f %s bytes\n' | sort
           test -f "$RUNNER_TEMP/run4_artifact/manifest.json"
           test -f "$RUNNER_TEMP/run4_artifact/document_audit.json"
           test -f "$RUNNER_TEMP/run4_artifact/needs_review.json"
           test -f "$RUNNER_TEMP/run4_artifact/ravemems-full-corpus-output.tar.gz"
-          mkdir -p "$RUNNER_TEMP/run4_full"
           tar -xzf "$RUNNER_TEMP/run4_artifact/ravemems-full-corpus-output.tar.gz" -C "$RUNNER_TEMP/run4_full"
           test -d "$RUNNER_TEMP/run4_full/ravemems_full_corpus_output"
-          echo RAVEMEMS_RUN4_EXACT_ARTIFACT_PASS
+          cmp "$RUNNER_TEMP/run4_artifact/manifest.json" "$RUNNER_TEMP/run4_full/ravemems_full_corpus_output/manifest.json"
+          cmp "$RUNNER_TEMP/run4_artifact/document_audit.json" "$RUNNER_TEMP/run4_full/ravemems_full_corpus_output/document_audit.json"
+          cmp "$RUNNER_TEMP/run4_artifact/needs_review.json" "$RUNNER_TEMP/run4_full/ravemems_full_corpus_output/needs_review.json"
+          echo RAVEMEMS_RUN4_EXACT_ARTIFACT_CONTENT_PASS
 
       - name: Validate SQLite manifest reviews and every registered visual asset
         shell: bash
@@ -108,13 +112,15 @@ jobs:
             'blank_detected_render':62,
             'ocr_native_raster_pages':1,
             'visual_occurrences':1794,
-            'visual_asset':1070,
             'native_lines':54732,
             'content_items':19039,
             'needs_review_pages':2,
             'execution_failure_reviews':0,
           }
           for k,v in expected.items(): assert c[k] == v, (k,c.get(k),v)
+          dbc=manifest['database_counts']
+          expected_db={'document':47,'page':1359,'line':54732,'content':19039,'visual_asset':1070,'visual_occurrence':1794,'ocr_region':45}
+          for k,v in expected_db.items(): assert dbc[k] == v, (k,dbc.get(k),v)
           assert c['pages_accounted'] == c['pages_expected_all_opened_documents']
           assert manifest['checks']['sqlite_integrity_ok'] is True
           assert manifest['checks']['sqlite_foreign_keys_ok'] is True
@@ -150,6 +156,10 @@ jobs:
           reviews=json.loads((src/'needs_review.json').read_text(encoding='utf-8'))
           pages={(x.get('document'),x.get('physical_page')) for x in reviews}
           assert pages == {('rave/xn/cdxn990e.pdf',7),('rave/library/libxn.pdf',1)}, pages
+          physical_assets=sum(1 for p in (src/'assets').rglob('*') if p.is_file())
+          assert physical_assets == 1134, physical_assets
+          print('REGISTERED_VISUAL_ASSETS', dbc['visual_asset'])
+          print('PHYSICAL_ASSET_FILES', physical_assets)
           print('RUN4_SQLITE_ASSETS_REVIEWS_PASS')
           PY
 
@@ -225,7 +235,7 @@ jobs:
             'sqlite_file':'ravemems_full_corpus.sqlite',
             'sqlite_size':int(os.environ['SOURCE_SQLITE_SIZE']),
             'sqlite_sha256':os.environ['SOURCE_SQLITE_SHA256'],
-            'counts':{'documents':47,'pages':1359,'native_text_pages':1291,'blank_pages':66,'ocr_regions':45,'visual_assets_registered':1070,'visual_occurrences':1794,'native_lines':54732,'content_items':19039},
+            'counts':{'documents':47,'pages':1359,'native_text_pages':1291,'blank_pages':66,'ocr_regions':45,'visual_assets_registered':1070,'physical_asset_files':1134,'visual_occurrences':1794,'native_lines':54732,'content_items':19039},
             'original_needs_review_preserved':True,
             'review_resolution_file':'review_resolution.json',
             'payload_inventory_file':'payload_sha256.txt',
@@ -281,7 +291,7 @@ jobs:
           assert m['source_run_id']==33484362718 and m['source_artifact_id']==9791187684
           assert m['source_artifact_zip_sha256']==os.environ['SOURCE_ARTIFACT_SHA256']
           assert m['sqlite_sha256']==os.environ['SOURCE_SQLITE_SHA256']
-          assert m['counts']['documents']==47 and m['counts']['pages']==1359 and m['counts']['visual_assets_registered']==1070
+          assert m['counts']['documents']==47 and m['counts']['pages']==1359 and m['counts']['visual_assets_registered']==1070 and m['counts']['physical_asset_files']==1134
           assert m['original_needs_review_preserved'] is True
           assert m['translation_performed_by_packaging'] is False
           assert m['extraction_rerun_by_packaging'] is False
