@@ -10885,3 +10885,24 @@ Preflight local complet avant correction, effectue sur l artefact exact deja tel
 - simulation locale du reste du packaging avec ces chemins corriges : inventaires SHA construits, deux archives deterministes produites byte-for-byte identiques. Ce test ne remplace pas la validation GitHub mais evite de pousser une correction non preflightee.
 
 PROCHAINE ACTION EXACTE : corriger uniquement les chemins des trois JSON du workflow vers `$RUNNER_TEMP/run4_artifact/ravemems_full_corpus_output/`, conserver le tar a la racine et les comparaisons byte-for-byte avec son contenu. Ne modifier aucun autre garde. Relancer ensuite le meme figement. Ne pas toucher QZ64/installateur/MEMSX64 avant succes complet du paquet source.
+
+## 2026-09-01 - CORRECTION ARCHITECTURE RAVEMEMS - FUSION ADDITIVE OBLIGATOIRE
+
+Decision utilisateur prioritaire : RAVEMEMS ne doit JAMAIS remplacer le contenu existant de la base ECU MEMS Manager. La base BUILD #103 reste la base mere. RAVEMEMS doit etre ajoute a une copie de cette base, puis les doublons et recouvrements doivent etre audites et traites dans la base fusionnee.
+
+Incident de journalisation : le run `33490537284` a echoue sur une chaine Base64 invalide (`Incorrect padding`). La tentative de correction `33490967188` a ensuite echoue avant job a cause du YAML du workflow temporaire. Aucune progression technique de fusion/audit n a ete effectuee pendant ces echecs ; priorite reste le retablissement du journal.
+
+Architecture obligatoire :
+- AVANT = SQLite reel du BUILD #103, run `33334306835`, commit `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`, artefact `9738640151`.
+- SOURCE RAVEMEMS = run final `33484362718`, artefact `9791187684`, SQLite RAVEMEMS + assets + audits + manifestes.
+- APRES = copie de BUILD #103 enrichie additivement par RAVEMEMS via le schema documentaire multilingue valide.
+- aucune table, connaissance, fait, procedure, specification, illustration ou autre contenu historique ne doit etre supprime pour faire place a RAVEMEMS ;
+- apres l import additif, detecter les doublons exacts et semantiques entre historique et RAVEMEMS ;
+- aucune deduplication destructive automatique : chaque recouvrement doit etre classe et garder la meilleure provenance ainsi que les liens vers toutes les sources ;
+- audit final obligatoire AVANT / SOURCE RAVEMEMS / APRES FUSION : schema, tables/index, compteurs, integrity/FK, historiques preserves, ajouts, doublons, orphelins, assets/SHA, couverture documentaire.
+
+Le SQLite RAVEMEMS seul n est PAS la base finale du logiciel : c est une source documentaire a integrer a la base existante.
+
+QZ64, installateur, figement final et modification `MEMSX64` restent suspendus.
+
+PROCHAINE ACTION EXACTE : produire d abord les inventaires read-only AVANT et SOURCE RAVEMEMS, puis simuler l import additif dans une copie de BUILD #103 sans suppression ni deduplication. Produire ensuite le rapport de recouvrements/doublons et la preuve que tous les contenus historiques sont preserves. Ne supprimer/fusionner aucun doublon avant inspection du rapport. Ne pas toucher `MEMSX64`.
