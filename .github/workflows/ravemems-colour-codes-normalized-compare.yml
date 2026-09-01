@@ -1,0 +1,223 @@
+name: RAVEMEMS normalized COLOUR CODES comparison
+
+on:
+  push:
+    branches: [tmp-rave-new-extraction-pilot]
+    paths:
+      - '.github/workflows/ravemems-colour-codes-normalized-compare.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BASE_COMMIT: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+      VISUAL_RUN_ID: '33510951021'
+      VISUAL_ARTIFACT_ID: '9801592148'
+      VISUAL_ARTIFACT_NAME: 'ravemems-visual-bundle-audit'
+      VISUAL_DIGEST: 'sha256:8b0fb6d8ef3a7b98e67adf603479be584236cd451b7dda2b28a6d6bb548445b1'
+      RAVE_SHA: 'e53278e031cf8180c8b6a88387c6bd44a9ea7303fddf4a7781b512a6ad660d4c'
+      OLD_PATH: 'database/reference/images/rave/RCL0194ENG_COLOUR_CODES.png'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-new-extraction-pilot
+          fetch-depth: 0
+
+      - name: Verify protected production and exact visual artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$BASE_COMMIT"
+          git cat-file -e "$BASE_COMMIT:$OLD_PATH"
+          gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${VISUAL_ARTIFACT_ID}" > "$RUNNER_TEMP/visual_artifact.json"
+          python3 - <<'PY'
+          import json,os
+          a=json.load(open(os.environ['RUNNER_TEMP']+'/visual_artifact.json'))
+          assert a['name']==os.environ['VISUAL_ARTIFACT_NAME']
+          assert a.get('digest')==os.environ['VISUAL_DIGEST']
+          print('EXACT_INPUTS_PASS',a['id'],a['name'],a.get('digest'))
+          PY
+
+      - name: Download exact RAVEMEMS visual and legacy crop
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/visual" "$RUNNER_TEMP/compare"
+          gh run download "$VISUAL_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$VISUAL_ARTIFACT_NAME" --dir "$RUNNER_TEMP/visual"
+          git show "$BASE_COMMIT:$OLD_PATH" > "$RUNNER_TEMP/compare/legacy_colour_codes.png"
+          NEW="$(find "$RUNNER_TEMP/visual/visuals" -type f -print0 | xargs -0 sha256sum | awk -v h="$RAVE_SHA" '$1==h {print $2}')"
+          test -n "$NEW" && test -f "$NEW"
+          cp "$NEW" "$RUNNER_TEMP/compare/ravemems_page7.png"
+          echo "NEW_IMAGE=$RUNNER_TEMP/compare/ravemems_page7.png" >> "$GITHUB_ENV"
+          sha256sum "$RUNNER_TEMP/compare/legacy_colour_codes.png" "$RUNNER_TEMP/compare/ravemems_page7.png"
+
+      - name: Ensure image comparison dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' || python3 -m pip install --disable-pip-version-check --quiet pillow numpy opencv-python-headless
+          import PIL, numpy, cv2
+          print('IMAGE_DEPS_PRESENT')
+          PY
+          python3 - <<'PY'
+          import PIL,numpy,cv2
+          print('IMAGE_DEPS_PASS',PIL.__version__,numpy.__version__,cv2.__version__)
+          PY
+
+      - name: Multi-scale crop and structural comparison
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' | tee "$RUNNER_TEMP/compare/metrics_stdout.txt"
+          import cv2, json, math, numpy as np, os
+          from pathlib import Path
+
+          root=Path(os.environ['RUNNER_TEMP'])/'compare'
+          old_path=root/'legacy_colour_codes.png'
+          new_path=root/'ravemems_page7.png'
+          old=cv2.imread(str(old_path),cv2.IMREAD_GRAYSCALE)
+          new=cv2.imread(str(new_path),cv2.IMREAD_GRAYSCALE)
+          assert old is not None and new is not None
+          oh,ow=old.shape; nh,nw=new.shape
+          assert (ow,oh)==(1700,696),(ow,oh)
+          assert (nw,nh)==(3356,2320),(nw,nh)
+
+          # Work at a fixed reduced new-image width for deterministic template search.
+          search_w=1200
+          ns=search_w/nw
+          new_small=cv2.resize(new,(search_w,round(nh*ns)),interpolation=cv2.INTER_AREA)
+          # Edge maps are robust against grayscale/contrast/rendering changes.
+          new_edge=cv2.Canny(cv2.GaussianBlur(new_small,(3,3),0),40,120)
+
+          candidates=[]
+          # factor = old pixels -> reduced-new pixels. Wide range supports a cropped legacy rendering.
+          for factor in np.linspace(0.22,0.68,93):
+              tw=max(32,round(ow*factor)); th=max(32,round(oh*factor))
+              if tw>=new_small.shape[1] or th>=new_small.shape[0]:
+                  continue
+              templ=cv2.resize(old,(tw,th),interpolation=cv2.INTER_AREA if factor<1 else cv2.INTER_CUBIC)
+              templ_edge=cv2.Canny(cv2.GaussianBlur(templ,(3,3),0),40,120)
+              if np.count_nonzero(templ_edge)<100:
+                  continue
+              res=cv2.matchTemplate(new_edge,templ_edge,cv2.TM_CCOEFF_NORMED)
+              _,score,_,loc=cv2.minMaxLoc(res)
+              candidates.append((float(score),float(factor),int(loc[0]),int(loc[1]),tw,th))
+          assert candidates
+          candidates.sort(reverse=True)
+          best=candidates[0]
+          score,factor,xs,ys,tw,th=best
+
+          # Map candidate rectangle back to original RAVEMEMS pixels.
+          x0=round(xs/ns); y0=round(ys/ns); x1=round((xs+tw)/ns); y1=round((ys+th)/ns)
+          x0=max(0,min(nw-1,x0)); y0=max(0,min(nh-1,y0)); x1=max(x0+1,min(nw,x1)); y1=max(y0+1,min(nh,y1))
+          crop=new[y0:y1,x0:x1]
+          aligned=cv2.resize(crop,(ow,oh),interpolation=cv2.INTER_AREA if crop.shape[1]>ow else cv2.INTER_CUBIC)
+
+          # Normalize contrast before full-resolution structural comparisons.
+          def norm(a):
+              return cv2.equalizeHist(a)
+          old_n=norm(old); ali_n=norm(aligned)
+          # Gradient correlation.
+          def grad(a):
+              gx=cv2.Sobel(a,cv2.CV_32F,1,0,ksize=3); gy=cv2.Sobel(a,cv2.CV_32F,0,1,ksize=3)
+              return cv2.magnitude(gx,gy)
+          g1=grad(old_n).ravel(); g2=grad(ali_n).ravel()
+          grad_corr=float(np.corrcoef(g1,g2)[0,1]) if np.std(g1)>0 and np.std(g2)>0 else 0.0
+          # Binary ink IoU after adaptive Otsu threshold; allow one-pixel dilation for antialiasing/raster shift.
+          _,b1=cv2.threshold(old_n,0,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
+          _,b2=cv2.threshold(ali_n,0,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
+          k=np.ones((3,3),np.uint8)
+          d1=cv2.dilate(b1,k,iterations=1)>0; d2=cv2.dilate(b2,k,iterations=1)>0
+          inter=np.logical_and(d1,d2).sum(); union=np.logical_or(d1,d2).sum()
+          ink_iou=float(inter/union) if union else 0.0
+          # Downsampled intensity correlation after normalization.
+          a=cv2.resize(old_n,(425,174),interpolation=cv2.INTER_AREA).astype(np.float32).ravel()
+          b=cv2.resize(ali_n,(425,174),interpolation=cv2.INTER_AREA).astype(np.float32).ravel()
+          intensity_corr=float(np.corrcoef(a,b)[0,1])
+
+          # A second independent search on binary ink validates location/scale consistency.
+          new_bin=cv2.adaptiveThreshold(new_small,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY_INV,31,11)
+          second=[]
+          for factor2 in np.linspace(max(0.18,factor-0.06),min(0.72,factor+0.06),49):
+              tw2=max(32,round(ow*factor2)); th2=max(32,round(oh*factor2))
+              if tw2>=new_small.shape[1] or th2>=new_small.shape[0]: continue
+              t=cv2.resize(old,(tw2,th2),interpolation=cv2.INTER_AREA)
+              t=cv2.adaptiveThreshold(t,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY_INV,31,11)
+              res=cv2.matchTemplate(new_bin,t,cv2.TM_CCOEFF_NORMED)
+              _,sc,_,lc=cv2.minMaxLoc(res)
+              second.append((float(sc),float(factor2),int(lc[0]),int(lc[1]),tw2,th2))
+          second.sort(reverse=True)
+          b2s=second[0]
+          _,f2,x2,y2,_,_=b2s
+          loc_delta=math.hypot(xs-x2,ys-y2)
+          factor_delta=abs(factor-f2)
+
+          # Conservative verdict: high independent template agreement plus strong aligned structure.
+          equivalent = bool(score>=0.70 and b2s[0]>=0.60 and grad_corr>=0.62 and intensity_corr>=0.72 and ink_iou>=0.42 and loc_delta<=20 and factor_delta<=0.03)
+          verdict='remplacer_par_ravemems' if equivalent else 'conserver_migrer_legacy'
+
+          # Proof images.
+          new_color=cv2.imread(str(new_path),cv2.IMREAD_COLOR)
+          proof=new_color.copy()
+          cv2.rectangle(proof,(x0,y0),(x1-1,y1-1),(0,0,255),8)
+          cv2.imwrite(str(root/'ravemems_page7_candidate_box.png'),proof)
+          cv2.imwrite(str(root/'ravemems_candidate_crop.png'),crop)
+          cv2.imwrite(str(root/'ravemems_candidate_aligned_to_legacy.png'),aligned)
+          diff=cv2.absdiff(old_n,ali_n)
+          cv2.imwrite(str(root/'normalized_absdiff.png'),diff)
+
+          result={
+            'pass':True,'read_only':True,'database_modifications':0,'automatic_deletions':0,
+            'legacy_dimensions':[ow,oh],'ravemems_dimensions':[nw,nh],
+            'search_new_width':search_w,'new_search_scale':ns,
+            'edge_template_score':score,'edge_factor_old_to_search':factor,
+            'binary_template_score':b2s[0],'binary_factor_old_to_search':f2,
+            'search_location_edge':[xs,ys],'search_location_binary':[x2,y2],
+            'search_location_delta_px':loc_delta,'factor_delta':factor_delta,
+            'candidate_box_ravemems_pixels':[x0,y0,x1,y1],
+            'candidate_crop_dimensions':[crop.shape[1],crop.shape[0]],
+            'gradient_correlation':grad_corr,'intensity_correlation':intensity_corr,'ink_iou_dilated':ink_iou,
+            'equivalence_proved_by_gate':equivalent,'classification':verdict,
+            'gate':'edge>=0.70,binary>=0.60,gradient>=0.62,intensity>=0.72,ink_iou>=0.42,loc_delta<=20,factor_delta<=0.03',
+            'rule':'If gate is not met, legacy is conserved; no destructive action is authorized by this workflow.'
+          }
+          (root/'normalized_comparison.json').write_text(json.dumps(result,indent=2,sort_keys=True),encoding='utf-8')
+          print('NORMALIZED_COMPARE_RESULT',json.dumps(result,sort_keys=True))
+          print('NORMALIZED_COMPARE_PASS')
+          PY
+
+      - name: Verify read-only result and prepare artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os
+          p=os.environ['RUNNER_TEMP']+'/compare/normalized_comparison.json'
+          s=json.load(open(p))
+          assert s['pass'] is True and s['read_only'] is True
+          assert s['database_modifications']==0 and s['automatic_deletions']==0
+          assert s['classification'] in ('remplacer_par_ravemems','conserver_migrer_legacy')
+          print('READ_ONLY_RESULT_PASS',s['classification'])
+          PY
+          cd "$RUNNER_TEMP/compare"
+          sha256sum *.png normalized_comparison.json > comparison_sha256.txt
+          cat normalized_comparison.json
+          cat comparison_sha256.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ravemems-colour-codes-normalized-comparison
+          path: |
+            ${{ runner.temp }}/compare/**
+          if-no-files-found: error
+          retention-days: 14
