@@ -78,7 +78,7 @@ def main():
    ev=evidence('\n'.join(doc[i].get_text('text',sort=False) for i in idx));db.execute('INSERT INTO document VALUES(?,?,?,?,?,?,?,?,?)',(dk,repo,meta.get('blob_sha'),shaf(pdf),meta.get('size'),doc.page_count,'en','canonical_rave_not_explicitly_non_english',json.dumps(ev)))
    ad=out/'assets'/dk;ad.mkdir(parents=True,exist_ok=True);assets={}
    for pi in range(doc.page_count):
-    p=doc[pi];pn=pi+1;pk=f'{dk}_P{pn:04d}';txt=p.get_text('text',sort=False);ls,bs=native(p) if txt.strip() else ([],[]);occ=0
+    p=doc[pi];pn=pi+1;pk=f'{dk}_P{pn:04d}';txt=p.get_text('text',sort=False);ls,bs=native(p) if txt.strip() else ([],[]);occ=0;occrows=[]
     try:vectors=len(p.get_drawings())
     except:vectors=0
     for im in p.get_images(full=True):
@@ -90,7 +90,7 @@ def main():
       except Exception as e:review.append({'page_key':pk,'document':repo,'physical_page':pn,'reason':f'image_extract_failed_xref_{x}: {e}'});continue
      try:rects=p.get_image_rects(x)
      except:rects=[]
-     for r in rects or [fitz.Rect(0,0,0,0)]:occ+=1;db.execute('INSERT INTO visual_occurrence VALUES(?,?,?,?)',(f'{pk}_VIS{occ:03d}',pk,assets[x],json.dumps(box(r))))
+     for r in rects or [fitz.Rect(0,0,0,0)]:occ+=1;occrows.append((f'{pk}_VIS{occ:03d}',pk,assets[x],json.dumps(box(r))))
     oc=0;rv=0;why=None;cl='blank';src=txt or ''
     if txt.strip():cl='mixed_native' if occ or vectors else 'text_native'
     elif occ or vectors:
@@ -102,7 +102,7 @@ def main():
        for ri,x in enumerate(regs):db.execute('INSERT INTO ocr_region VALUES(?,?,?,?,?,?,?)',(f'{pk}_OCR{ri+1:03d}',pk,ri,x['text'],json.dumps(x['bbox']),x['mean_confidence'],x['word_count']))
       else:review.append({'page_key':pk,'document':repo,'physical_page':pn,'reason':'ocr_returned_no_regions'})
      except Exception as e:why=f'ocr_failed: {e}';review.append({'page_key':pk,'document':repo,'physical_page':pn,'reason':why})
-    db.execute('INSERT INTO page VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',(pk,dk,pn,cl,1 if txt.strip() else 0,oc,src,shab(src.encode()) if src else None,occ,vectors,rv,why))
+    db.execute('INSERT INTO page VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',(pk,dk,pn,cl,1 if txt.strip() else 0,oc,src,shab(src.encode()) if src else None,occ,vectors,rv,why));db.executemany('INSERT INTO visual_occurrence VALUES(?,?,?,?)',occrows)
     if txt.strip():
      lids=[]
      for li,x in enumerate(ls):
