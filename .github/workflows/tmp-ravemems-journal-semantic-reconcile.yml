@@ -1,0 +1,58 @@
+name: TEMP journal RAVEMEMS semantic reconciliation result
+
+on:
+  push:
+    branches:
+      - RAPPORT
+    paths:
+      - .github/workflows/tmp-ravemems-journal-semantic-reconcile.yml
+
+permissions:
+  contents: write
+
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 1
+
+      - name: Append verified result and self-clean
+        env:
+          REPORT_ENTRY: |
+            ## 2026-09-01 - RAVEMEMS - RECONCILIATION SEMANTIQUE RCL0193ENG / RCL0194ENG - TRI INITIAL VERT
+
+            Workflow read-only `33506620906`, job `99852077963`, commit technique `3fca7125493515728c48d24a587575409c3053e8` = SUCCESS. La base fusionnee issue de l audit additif `33493009341` a ete ouverte strictement en lecture seule ; `integrity_check=ok` et aucune FK cassee.
+
+            Artefact de preuves : `ravemems-rcl0193-rcl0194-semantic-reconciliation`, ID `9799848955`, taille `52 408` octets, digest `sha256:edbc2296d977e6d702ebd279c1cfe7cb14b62dd5ef9ceb26fa78447c788bd4d2`.
+
+            Inventaire : `86` faits structures historiques `mems_expert_fact_external` lies a `SRC-RCL0193` / `SRC-RCL0194`, plus `429` references historiques generiques aux codes de publication. Ce run est un tri par ancres techniques exactes dans les lignes source RAVEMEMS ; une ancre trouvee est une preuve de recoupement mais ne vaut pas a elle seule validation semantique complete, et une ancre absente ne vaut pas conflit automatique.
+
+            Repartition machine :
+            - RCL0193ENG : 26 `anchors_supported`, 1 `partial_anchor_support`, 1 `anchors_not_found`, 3 `no_machine_anchor`.
+            - RCL0194ENG : 50 `anchors_supported`, 5 `partial_anchor_support`.
+            - Total : 76 faits avec toutes les ancres extraites retrouvees, 6 partiels, 1 ancre non retrouvee et 3 sans ancre machine exploitable.
+
+            Cas RCL0193ENG restant a lire manuellement dans leur contexte exact :
+            - `RAVE-EVAP-PURGE-001` : EVAP et ECM retrouves, valeur `70 °C` non retrouvee par le matcher.
+            - `RAVE-REP-TP-SENSOR-001` : valeur `1,5 Nm` non retrouvee ; aucune conclusion de conflit a ce stade.
+            - `RAVE-ADJ-THROTTLE-CABLE-001`, `RAVE-REP-INJECTORS-001`, `RAVE-REP-PURGE-001` : pas d ancre machine extraite ; verifier directement leurs pages citees.
+
+            Cas RCL0194ENG partiels restant a verifier : `RAVE-COLOR-SPIJ-004`, `RAVE-COLOR-SPIJ-007`, `RAVE-WIR-MPI-004`, `RAVE-WIR-MPI-012`, `RAVE-WIR-SPIJ-011`. Les connecteurs/broches principaux sont retrouves ; les manques observes portent surtout sur des acronymes/libelles (`IAT` ou `ECM`) qui peuvent etre ecrits autrement dans le schema. Ils ne constituent pas des contradictions prouvees.
+
+            Point de securite important : `RAVE-WIR-MPI-008` est classe `anchors_supported` avec `C159-15`, `C159-13`, `C169`, `MPi` et `SENSOR EARTH` tous retrouves dans le corpus RCL0194ENG. Le tri ne met donc en evidence aucun conflit de broche pour cette ligne historique. Cela devra tout de meme etre confirme par lecture du contexte local avant validation semantique finale.
+
+            Aucune suppression, aucune fusion, aucune reecriture de la base fusionnee n a ete effectuee. `MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+            PROCHAINE ACTION EXACTE : examiner en lecture seule les 10 faits non entierement resolus par le tri machine, en affichant pour chacun le statement historique, les notes/pages/sections citees et le texte RAVEMEMS local autour de ces pages ou connecteurs. Les classer individuellement en `confirme`, `complementaire`, `divergence`, `erreur historique` ou `a revoir`. En particulier verifier directement `70 °C`, `1,5 Nm` et les 5 cas RCL0194ENG partiels. Ne modifier aucune donnee et ne toucher ni QZ64, ni installateur, ni `MEMSX64`.
+        run: |
+          set -euo pipefail
+          printf '\n%s\n' "$REPORT_ENTRY" >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git rm .github/workflows/tmp-ravemems-journal-semantic-reconcile.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Record RAVEMEMS semantic reconciliation triage"
+          git push origin HEAD:RAPPORT
