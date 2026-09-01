@@ -81,25 +81,20 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY' | tee "$RUNNER_TEMP/sim/simulation_stdout.txt"
-          import collections,hashlib,json,os,shutil,sqlite3,subprocess
+          import hashlib,json,os,shutil,sqlite3,subprocess
           from pathlib import Path
 
-          root=Path(os.environ['RUNNER_TEMP'])
-          matrix_root=Path(os.environ['MATRIX_ROOT'])
-          sim=root/'sim'
-          runtime=sim/'runtime_files'
-          runtime.mkdir(parents=True,exist_ok=True)
+          root=Path(os.environ['RUNNER_TEMP']); matrix_root=Path(os.environ['MATRIX_ROOT'])
+          sim=root/'sim'; runtime=sim/'runtime_files'; runtime.mkdir(parents=True,exist_ok=True)
           manifest=json.load(open(matrix_root/'legacy_manifest_treatment_427.json',encoding='utf-8'))
           illustrations=json.load(open(matrix_root/'legacy_illustration_treatment_126.json',encoding='utf-8'))
           links=json.load(open(matrix_root/'legacy_link_treatment_329.json',encoding='utf-8'))
           matrix_summary=json.load(open(matrix_root/'legacy_treatment_summary.json',encoding='utf-8'))
           rave_manifest=json.load(open(root/'visual/visual_bundle_manifest.json',encoding='utf-8'))
           assert len(manifest)==427 and len(illustrations)==126 and len(links)==329
-          assert matrix_summary['unresolved_manifest_items']==0
-          assert matrix_summary['destructive_cleanup_authorized'] is False
-          assert rave_manifest['asset_count']==1070 and rave_manifest['occurrence_count']==1794
+          assert matrix_summary['unresolved_manifest_items']==0 and matrix_summary['destructive_cleanup_authorized'] is False
+          assert rave_manifest['asset_count']==1070 and rave_manifest['occurrence_count']==1794 and len(rave_manifest['entries'])==1794
           assert rave_manifest['ui_label']=='Voir le schéma' and rave_manifest['pure_text_page_link_ui'] is False
-          assert len(rave_manifest['entries'])==1794
 
           def sha256_file(p):
               h=hashlib.sha256()
@@ -107,152 +102,99 @@ jobs:
                   for b in iter(lambda:f.read(1024*1024),b''): h.update(b)
               return h.hexdigest()
 
-          # Copy all validated RAVEMEMS visual files into the simulated runtime.
-          rave_dst=runtime/'ravemems'
-          shutil.copytree(root/'visual/visuals',rave_dst)
+          rave_dst=runtime/'ravemems'; shutil.copytree(root/'visual/visuals',rave_dst)
           rave_files=[p for p in rave_dst.rglob('*') if p.is_file()]
           assert len(rave_files)==1070,len(rave_files)
 
-          # Build lookup from stored DB/manifest paths to actual runtime files.
-          sha_to_rave={sha256_file(p):p for p in rave_files}
-          assert len(sha_to_rave)==1070
-          rave_occ_by_key={}
-          rave_runtime_entries=[]
+          rave_occ_by_key={}; rave_runtime_entries=[]; resolved_asset_paths=set()
           for e in rave_manifest['entries']:
-              p=sha_to_rave.get(e['sha256'])
-              assert p is not None,(e['occurrence_entity_key'],e['sha256'])
-              rp=p.relative_to(runtime).as_posix()
+              stored=e.get('stored_path') or ''
+              prefix='ravemems_run4/'
+              rel=stored[len(prefix):] if stored.startswith(prefix) else stored
+              p=rave_dst/rel
+              assert rel and p.is_file(),(e['occurrence_entity_key'],stored,str(p))
+              assert sha256_file(p)==e['sha256'],(e['occurrence_entity_key'],stored,e['sha256'],sha256_file(p))
+              resolved_asset_paths.add(p.relative_to(rave_dst).as_posix())
               out={
-                  'source_type':'ravemems',
-                  'runtime_key':e['occurrence_entity_key'],
-                  'source_occurrence_key':e.get('source_occurrence_key'),
-                  'asset_entity_key':e['asset_entity_key'],
-                  'runtime_path':rp,
-                  'sha256':e['sha256'],
-                  'publication_code':e.get('publication_code'),
-                  'physical_page':e.get('physical_page'),
-                  'context_text':e.get('context_text') or '',
-                  'ui_label':'Voir le schéma',
-                  'ui_visible':True,
+                  'source_type':'ravemems','runtime_key':e['occurrence_entity_key'],
+                  'source_occurrence_key':e.get('source_occurrence_key'),'asset_entity_key':e['asset_entity_key'],
+                  'runtime_path':p.relative_to(runtime).as_posix(),'sha256':e['sha256'],
+                  'publication_code':e.get('publication_code'),'physical_page':e.get('physical_page'),
+                  'context_text':e.get('context_text') or '','ui_label':'Voir le schéma','ui_visible':True,
               }
               rave_runtime_entries.append(out)
               rave_occ_by_key[e['occurrence_entity_key']]=out
-              if e.get('source_occurrence_key'):
-                  rave_occ_by_key[e['source_occurrence_key']]=out
+              if e.get('source_occurrence_key'): rave_occ_by_key[e['source_occurrence_key']]=out
+          assert len(resolved_asset_paths)==1070,len(resolved_asset_paths)
 
-          # Copy only legacy files that the authoritative matrix says must remain available.
           legacy_keep=[x for x in manifest if x['final_action']=='conserver_migrer_legacy']
           legacy_replace=[x for x in manifest if x['final_action']=='remplacer_par_ravemems']
           legacy_hide=[x for x in manifest if x['final_action']=='retirer_de_ui_conserver_provenance']
           assert (len(legacy_keep),len(legacy_replace),len(legacy_hide))==(141,274,12)
 
-          legacy_runtime_entries=[]
-          copied_legacy_paths=set()
+          legacy_runtime_entries=[]; copied_legacy_paths=set()
           for x in legacy_keep:
-              old_path=x['old_path']
-              assert old_path and old_path not in copied_legacy_paths,old_path
+              old_path=x['old_path']; assert old_path and old_path not in copied_legacy_paths,old_path
               data=subprocess.check_output(['git','show',f"{os.environ['BASE_COMMIT']}:{old_path}"])
-              dst=runtime/'legacy'/old_path
-              dst.parent.mkdir(parents=True,exist_ok=True)
-              dst.write_bytes(data)
+              dst=runtime/'legacy'/old_path; dst.parent.mkdir(parents=True,exist_ok=True); dst.write_bytes(data)
               copied_legacy_paths.add(old_path)
               legacy_runtime_entries.append({
-                  'source_type':'legacy',
-                  'runtime_key':x.get('old_key') or old_path,
-                  'runtime_path':dst.relative_to(runtime).as_posix(),
-                  'sha256':hashlib.sha256(data).hexdigest(),
-                  'source_roots':x.get('source_roots') or [],
-                  'context_text':x.get('old_key') or '',
-                  'ui_label':'Voir le schéma',
-                  'ui_visible':True,
-                  'treatment':'conserver_migrer_legacy',
+                  'source_type':'legacy','runtime_key':x.get('old_key') or old_path,
+                  'runtime_path':dst.relative_to(runtime).as_posix(),'sha256':hashlib.sha256(data).hexdigest(),
+                  'source_roots':x.get('source_roots') or [],'context_text':x.get('old_key') or '',
+                  'ui_label':'Voir le schéma','ui_visible':True,'treatment':'conserver_migrer_legacy',
               })
           assert len(copied_legacy_paths)==141
 
-          # Replacement provenance: every replaced legacy visual must point to at least one validated RAVEMEMS occurrence.
-          replacement_rows=[]
-          missing_replacement=[]
+          def collect_keys(obj):
+              out=[]
+              if isinstance(obj,str): out.append(obj)
+              elif isinstance(obj,list):
+                  for v in obj: out.extend(collect_keys(v))
+              elif isinstance(obj,dict):
+                  for k,v in obj.items():
+                      if k in ('occurrence_entity_key','source_occurrence_key','entity_key','occurrence_key') and isinstance(v,str): out.append(v)
+                      else: out.extend(collect_keys(v))
+              return out
+
+          replacement_rows=[]; missing_replacement=[]
           for x in legacy_replace:
-              ev=x.get('final_evidence') or {}
-              occs=ev.get('ravemems_visual_occurrences') or []
+              ev=x.get('final_evidence') or {}; occs=ev.get('ravemems_visual_occurrences') or []
               resolved=[]
-              for o in occs:
-                  key=o if isinstance(o,str) else (o.get('occurrence_entity_key') or o.get('source_occurrence_key') or o.get('entity_key'))
-                  if key and key in rave_occ_by_key:
-                      resolved.append(rave_occ_by_key[key]['runtime_key'])
-              # Some mapping records may encode occurrences elsewhere; accept only a concrete valid link.
+              for key in collect_keys(occs):
+                  if key in rave_occ_by_key: resolved.append(rave_occ_by_key[key]['runtime_key'])
+              resolved=sorted(set(resolved))
               if not resolved:
                   missing_replacement.append({'old_key':x.get('old_key'),'old_path':x.get('old_path'),'raw_occurrences':occs})
-              replacement_rows.append({
-                  'old_key':x.get('old_key'),'old_path':x.get('old_path'),
-                  'action':'remplacer_par_ravemems','replacement_runtime_keys':sorted(set(resolved)),
-                  'legacy_file_packaged':False,'provenance_preserved':True,
-              })
-
-          # Hidden pure-text legacy captures retain provenance but are not viewer entries and not copied.
-          hidden_rows=[{
-              'old_key':x.get('old_key'),'old_path':x.get('old_path'),
-              'action':'retirer_de_ui_conserver_provenance','ui_visible':False,
-              'legacy_file_packaged':False,'provenance_preserved':True,
-          } for x in legacy_hide]
-
-          # The authoritative matrix claimed proven replacements. Require every replacement to resolve now.
+              replacement_rows.append({'old_key':x.get('old_key'),'old_path':x.get('old_path'),'action':'remplacer_par_ravemems','replacement_runtime_keys':resolved,'legacy_file_packaged':False,'provenance_preserved':True})
           if missing_replacement:
               (sim/'missing_replacement_links.json').write_text(json.dumps(missing_replacement,ensure_ascii=False,indent=2,sort_keys=True),encoding='utf-8')
               raise RuntimeError(f'{len(missing_replacement)} replacement legacy entries lack a resolvable validated RAVEMEMS occurrence')
 
+          hidden_rows=[{'old_key':x.get('old_key'),'old_path':x.get('old_path'),'action':'retirer_de_ui_conserver_provenance','ui_visible':False,'legacy_file_packaged':False,'provenance_preserved':True} for x in legacy_hide]
           viewer_entries=rave_runtime_entries+legacy_runtime_entries
-          assert len(viewer_entries)==1935,(len(rave_runtime_entries),len(legacy_runtime_entries))
+          assert len(viewer_entries)==1935
           assert all(e['ui_visible'] and e['ui_label']=='Voir le schéma' for e in viewer_entries)
           assert all((runtime/e['runtime_path']).is_file() for e in viewer_entries)
-          assert not any((x.get('old_path') in copied_legacy_paths) for x in legacy_replace+legacy_hide)
+          assert not any(x.get('old_path') in copied_legacy_paths for x in legacy_replace+legacy_hide)
 
-          # Add additive simulation metadata to a DB COPY only. Historical tables are never edited.
-          db=sim/'runtime_candidate.sqlite'
-          con=sqlite3.connect(db)
+          db=sim/'runtime_candidate.sqlite'; con=sqlite3.connect(db)
           con.executescript('''
-          CREATE TABLE IF NOT EXISTS mems_visual_runtime_source(
-            runtime_key TEXT PRIMARY KEY,
-            source_type TEXT NOT NULL,
-            runtime_path TEXT,
-            sha256 TEXT,
-            context_text TEXT,
-            ui_label TEXT NOT NULL,
-            ui_visible INTEGER NOT NULL,
-            treatment TEXT NOT NULL,
-            notes TEXT
-          );
-          CREATE TABLE IF NOT EXISTS mems_visual_legacy_treatment(
-            old_key TEXT,
-            old_path TEXT PRIMARY KEY,
-            action TEXT NOT NULL,
-            replacement_runtime_keys_json TEXT NOT NULL DEFAULT '[]',
-            provenance_preserved INTEGER NOT NULL,
-            legacy_file_packaged INTEGER NOT NULL
-          );
+          CREATE TABLE IF NOT EXISTS mems_visual_runtime_source(runtime_key TEXT PRIMARY KEY,source_type TEXT NOT NULL,runtime_path TEXT,sha256 TEXT,context_text TEXT,ui_label TEXT NOT NULL,ui_visible INTEGER NOT NULL,treatment TEXT NOT NULL,notes TEXT);
+          CREATE TABLE IF NOT EXISTS mems_visual_legacy_treatment(old_key TEXT,old_path TEXT PRIMARY KEY,action TEXT NOT NULL,replacement_runtime_keys_json TEXT NOT NULL DEFAULT '[]',provenance_preserved INTEGER NOT NULL,legacy_file_packaged INTEGER NOT NULL);
+          DELETE FROM mems_visual_runtime_source; DELETE FROM mems_visual_legacy_treatment;
           ''')
-          con.execute('DELETE FROM mems_visual_runtime_source')
-          con.execute('DELETE FROM mems_visual_legacy_treatment')
           for e in viewer_entries:
-              con.execute('INSERT INTO mems_visual_runtime_source VALUES(?,?,?,?,?,?,?,?,?)',(
-                  e['runtime_key'],e['source_type'],e['runtime_path'],e['sha256'],e.get('context_text') or '',
-                  'Voir le schéma',1,e.get('treatment') or 'ravemems_source',json.dumps({'publication_code':e.get('publication_code'),'physical_page':e.get('physical_page')},ensure_ascii=False,sort_keys=True)))
+              con.execute('INSERT INTO mems_visual_runtime_source VALUES(?,?,?,?,?,?,?,?,?)',(e['runtime_key'],e['source_type'],e['runtime_path'],e['sha256'],e.get('context_text') or '','Voir le schéma',1,e.get('treatment') or 'ravemems_source',json.dumps({'publication_code':e.get('publication_code'),'physical_page':e.get('physical_page')},ensure_ascii=False,sort_keys=True)))
           for r in replacement_rows:
-              con.execute('INSERT INTO mems_visual_legacy_treatment VALUES(?,?,?,?,?,?)',(
-                  r['old_key'],r['old_path'],r['action'],json.dumps(r['replacement_runtime_keys'],sort_keys=True),1,0))
+              con.execute('INSERT INTO mems_visual_legacy_treatment VALUES(?,?,?,?,?,?)',(r['old_key'],r['old_path'],r['action'],json.dumps(r['replacement_runtime_keys'],sort_keys=True),1,0))
           for e in legacy_runtime_entries:
-              # Mirror kept legacy in treatment table too.
               old_path=e['runtime_path'][len('legacy/'):]
-              con.execute('INSERT INTO mems_visual_legacy_treatment VALUES(?,?,?,?,?,?)',(
-                  e['runtime_key'],old_path,'conserver_migrer_legacy','[]',1,1))
+              con.execute('INSERT INTO mems_visual_legacy_treatment VALUES(?,?,?,?,?,?)',(e['runtime_key'],old_path,'conserver_migrer_legacy','[]',1,1))
           for r in hidden_rows:
-              con.execute('INSERT INTO mems_visual_legacy_treatment VALUES(?,?,?,?,?,?)',(
-                  r['old_key'],r['old_path'],r['action'],'[]',1,0))
+              con.execute('INSERT INTO mems_visual_legacy_treatment VALUES(?,?,?,?,?,?)',(r['old_key'],r['old_path'],r['action'],'[]',1,0))
           con.commit()
-
-          # Database invariants and historical knowledge preservation.
-          assert con.execute('PRAGMA integrity_check').fetchone()[0].lower()=='ok'
-          assert con.execute('PRAGMA foreign_key_check').fetchall()==[]
+          assert con.execute('PRAGMA integrity_check').fetchone()[0].lower()=='ok' and con.execute('PRAGMA foreign_key_check').fetchall()==[]
           assert con.execute('SELECT COUNT(*) FROM mems_rave_fact').fetchone()[0]==177
           assert con.execute('SELECT COUNT(*) FROM mems_rave_illustration').fetchone()[0]==126
           assert con.execute('SELECT COUNT(*) FROM mems_rave_illustration_link').fetchone()[0]==329
@@ -260,54 +202,29 @@ jobs:
           assert con.execute("SELECT COUNT(*) FROM mems_doc_entity WHERE entity_kind='visual_occurrence'").fetchone()[0]==1794
           assert con.execute('SELECT COUNT(*) FROM mems_visual_runtime_source').fetchone()[0]==1935
           assert con.execute('SELECT COUNT(*) FROM mems_visual_legacy_treatment').fetchone()[0]==427
-          runtime_db_rows=con.execute('SELECT runtime_key,runtime_path,sha256,ui_label,ui_visible FROM mems_visual_runtime_source').fetchall()
-          con.close()
-          assert all(label=='Voir le schéma' and visible==1 for _,_,_,label,visible in runtime_db_rows)
-          assert all((runtime/path).is_file() and sha256_file(runtime/path)==sha for _,path,sha,_,_ in runtime_db_rows)
+          runtime_db_rows=con.execute('SELECT runtime_path,sha256,ui_label,ui_visible FROM mems_visual_runtime_source').fetchall(); con.close()
+          assert all(label=='Voir le schéma' and visible==1 and (runtime/path).is_file() and sha256_file(runtime/path)==sha for path,sha,label,visible in runtime_db_rows)
 
-          # Prove original historical tables are byte-identical between source visual DB and candidate except new additive tables.
-          before=sqlite3.connect(sim/'runtime_candidate_before.sqlite')
-          after=sqlite3.connect(sim/'runtime_candidate.sqlite')
+          before=sqlite3.connect(sim/'runtime_candidate_before.sqlite'); after=sqlite3.connect(sim/'runtime_candidate.sqlite')
           def table_digest(conn,name):
               cols=[r[1] for r in conn.execute(f'PRAGMA table_info("{name}")')]
               q='SELECT '+','.join('"'+c.replace('"','""')+'"' for c in cols)+' FROM "'+name.replace('"','""')+'"'
-              if cols: q+=' ORDER BY '+','.join('"'+c.replace('"','""')+'"' for c in cols)
+              if cols:q+=' ORDER BY '+','.join('"'+c.replace('"','""')+'"' for c in cols)
               h=hashlib.sha256(); n=0
               for row in conn.execute(q):
-                  h.update((json.dumps(row,ensure_ascii=False,default=lambda x:x.hex() if isinstance(x,bytes) else str(x),separators=(',',':'))+'\n').encode())
-                  n+=1
+                  h.update((json.dumps(row,ensure_ascii=False,default=lambda x:x.hex() if isinstance(x,bytes) else str(x),separators=(',',':'))+'\n').encode()); n+=1
               return n,h.hexdigest()
           old_tables=[r[0] for r in before.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")]
-          changed=[]
-          for t in old_tables:
-              if table_digest(before,t)!=table_digest(after,t): changed.append(t)
-          before.close(); after.close()
-          assert changed==[],changed
+          changed=[t for t in old_tables if table_digest(before,t)!=table_digest(after,t)]
+          before.close(); after.close(); assert changed==[],changed
 
-          catalog={
-              'ui_label':'Voir le schéma','pure_text_page_link_ui':False,
-              'ravemems_occurrences':1794,'ravemems_assets':1070,
-              'legacy_visible_kept':141,'legacy_replaced':274,'legacy_pure_text_hidden':12,
-              'viewer_entry_count':len(viewer_entries),'entries':viewer_entries,
-          }
+          catalog={'ui_label':'Voir le schéma','pure_text_page_link_ui':False,'ravemems_occurrences':1794,'ravemems_assets':1070,'legacy_visible_kept':141,'legacy_replaced':274,'legacy_pure_text_hidden':12,'viewer_entry_count':1935,'entries':viewer_entries}
           provenance={'replacement_rows':replacement_rows,'hidden_rows':hidden_rows}
           (sim/'runtime_visual_catalog.json').write_text(json.dumps(catalog,ensure_ascii=False,indent=2,sort_keys=True),encoding='utf-8')
           (sim/'legacy_migration_provenance.json').write_text(json.dumps(provenance,ensure_ascii=False,indent=2,sort_keys=True),encoding='utf-8')
-          summary={
-              'pass':True,'simulation_only':True,'production_modifications':0,'automatic_deletions':0,
-              'historical_tables_changed':changed,'historical_rave_facts':177,'historical_rave_illustrations':126,'historical_rave_links':329,
-              'ravemems_assets':1070,'ravemems_occurrences':1794,
-              'legacy_manifest_keep':141,'legacy_manifest_replace':274,'legacy_manifest_hide_text_ui':12,
-              'runtime_viewer_entries':1935,'runtime_ravemems_entries':1794,'runtime_legacy_entries':141,
-              'replacement_provenance_rows':274,'hidden_provenance_rows':12,
-              'viewer_label':'Voir le schéma','pure_text_page_link_ui':False,
-              'viewer_paths_all_exist_and_sha_match':True,'database_integrity':'ok','foreign_key_errors':0,
-              'destructive_cleanup_authorized':False,
-              'next_gate':'inspect simulation; only then test deletion of proven redundant legacy visual rows/files on another copy, never production first',
-          }
+          summary={'pass':True,'simulation_only':True,'production_modifications':0,'automatic_deletions':0,'historical_tables_changed':changed,'historical_rave_facts':177,'historical_rave_illustrations':126,'historical_rave_links':329,'ravemems_assets':1070,'ravemems_occurrences':1794,'legacy_manifest_keep':141,'legacy_manifest_replace':274,'legacy_manifest_hide_text_ui':12,'runtime_viewer_entries':1935,'runtime_ravemems_entries':1794,'runtime_legacy_entries':141,'replacement_provenance_rows':274,'hidden_provenance_rows':12,'viewer_label':'Voir le schéma','pure_text_page_link_ui':False,'viewer_paths_all_exist_and_sha_match':True,'database_integrity':'ok','foreign_key_errors':0,'destructive_cleanup_authorized':False,'next_gate':'inspect simulation; only then test deletion of proven redundant legacy visual rows/files on another copy, never production first'}
           (sim/'runtime_migration_summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2,sort_keys=True),encoding='utf-8')
-          print('RUNTIME_MIGRATION_SIMULATION_PASS')
-          print(json.dumps(summary,ensure_ascii=False,sort_keys=True))
+          print('RUNTIME_MIGRATION_SIMULATION_PASS'); print(json.dumps(summary,ensure_ascii=False,sort_keys=True))
           PY
 
       - name: Verify complete simulation and prepare audit artifact
@@ -316,18 +233,14 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           import json,os
-          p=os.environ['RUNNER_TEMP']+'/sim/runtime_migration_summary.json'
-          s=json.load(open(p,encoding='utf-8'))
+          s=json.load(open(os.environ['RUNNER_TEMP']+'/sim/runtime_migration_summary.json',encoding='utf-8'))
           assert s['pass'] is True and s['simulation_only'] is True
-          assert s['production_modifications']==0 and s['automatic_deletions']==0
-          assert s['historical_tables_changed']==[]
+          assert s['production_modifications']==0 and s['automatic_deletions']==0 and s['historical_tables_changed']==[]
           assert s['ravemems_assets']==1070 and s['ravemems_occurrences']==1794
-          assert s['legacy_manifest_keep']==141 and s['legacy_manifest_replace']==274 and s['legacy_manifest_hide_text_ui']==12
-          assert s['runtime_viewer_entries']==1935
-          assert s['viewer_paths_all_exist_and_sha_match'] is True
+          assert (s['legacy_manifest_keep'],s['legacy_manifest_replace'],s['legacy_manifest_hide_text_ui'])==(141,274,12)
+          assert s['runtime_viewer_entries']==1935 and s['viewer_paths_all_exist_and_sha_match'] is True
           assert s['viewer_label']=='Voir le schéma' and s['pure_text_page_link_ui'] is False
-          assert s['database_integrity']=='ok' and s['foreign_key_errors']==0
-          assert s['destructive_cleanup_authorized'] is False
+          assert s['database_integrity']=='ok' and s['foreign_key_errors']==0 and s['destructive_cleanup_authorized'] is False
           print('SIMULATION_GATE_PASS')
           PY
           cd "$RUNNER_TEMP/sim"
