@@ -11896,3 +11896,12 @@ PROCHAINE ACTION EXACTE : sur `tmp-ravemems-ia-visual-integration`, modifier uni
 Le workflow temporaire cree au commit 4bc5a59ffbf4c5c04cce267ee9bcaba1f77134d8 na cree aucun job en raison de sa syntaxe YAML. Aucun code applicatif na ete modifie.
 
 PROCHAINE ACTION EXACTE : corriger uniquement ce mecanisme temporaire puis appliquer le scroll vertical standard deja autorise dans iamemstab.cpp.
+
+## 2026-09-01 — Scroll IA standard pousse sur branche de test
+
+Commit applicatif : 06bb3b8cdf4e0563d020c897dbc8faf22605b644.
+Diff applicatif : iamemstab.cpp uniquement.
+La zone IA dispose maintenant dune barre verticale Qt standard explicite de 18 px, reliee directement au defilement du QTextBrowser. Monter et descendre agit sur tout le contenu.
+MEMSX64 non modifie.
+
+PROCHAINE ACTION EXACTE : nettoyer le workflow temporaire, compiler le package x64 de test, puis valider reellement le scroll sur le PC utilisateur.
