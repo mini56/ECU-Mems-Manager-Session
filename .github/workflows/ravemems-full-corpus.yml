@@ -1,0 +1,84 @@
+name: RAVEMEMS full corpus
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["tmp-rave-new-extraction-pilot"]
+    paths: [".ravemems-full-corpus-trigger"]
+
+permissions:
+  contents: read
+
+jobs:
+  full-corpus:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-new-extraction-pilot
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install RAVEMEMS dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng
+          python -m pip install --disable-pip-version-check PyMuPDF Pillow pytesseract
+      - name: Compile full corpus processor
+        run: python -m py_compile tools/ravemems_full_corpus.py
+      - name: Materialize canonical main/rave source
+        shell: bash
+        run: |
+          git fetch origin main --depth=1
+          echo "SOURCE_COMMIT=$(git rev-parse origin/main)" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/ravemems_source"
+          git archive --format=tar origin/main rave | tar -xf - -C "$RUNNER_TEMP/ravemems_source"
+          git ls-tree -r -l origin/main rave > "$RUNNER_TEMP/rave_git_tree.txt"
+      - name: Process complete English RAVE corpus
+        run: |
+          rm -rf ravemems_full_corpus_output
+          python tools/ravemems_full_corpus.py \
+            --source-root "$RUNNER_TEMP/ravemems_source/rave" \
+            --git-tree "$RUNNER_TEMP/rave_git_tree.txt" \
+            --source-commit "$SOURCE_COMMIT" \
+            --out ravemems_full_corpus_output
+      - name: Show global manifest
+        if: always()
+        run: |
+          if [ -f ravemems_full_corpus_output/manifest.json ]; then cat ravemems_full_corpus_output/manifest.json; fi
+      - name: Enforce global completeness gate
+        run: |
+          python - <<'PY'
+          import json, sqlite3
+          from pathlib import Path
+          out = Path('ravemems_full_corpus_output')
+          m = json.loads((out/'manifest.json').read_text(encoding='utf-8'))
+          assert m['pass'] is True
+          assert m['translation_performed_by_github'] is False
+          c = m['counts']
+          assert c['pages_accounted'] == c['pages_expected_all_opened_documents']
+          assert c['documents_selected_english'] > 0
+          assert m['checks']['sqlite_integrity_ok'] is True
+          assert m['checks']['sqlite_foreign_keys_ok'] is True
+          db = sqlite3.connect(out/'ravemems_full_corpus.sqlite')
+          try:
+              assert db.execute('PRAGMA integrity_check').fetchone()[0].lower() == 'ok'
+              assert db.execute('PRAGMA foreign_key_check').fetchall() == []
+          finally:
+              db.close()
+          print('RAVEMEMS_FULL_CORPUS_GATE_PASS')
+          PY
+      - name: Pack complete output
+        run: tar -czf ravemems-full-corpus-output.tar.gz ravemems_full_corpus_output
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ravemems-full-corpus
+          path: |
+            ravemems_full_corpus_output/manifest.json
+            ravemems_full_corpus_output/document_audit.json
+            ravemems_full_corpus_output/needs_review.json
+            ravemems-full-corpus-output.tar.gz
+          if-no-files-found: error
