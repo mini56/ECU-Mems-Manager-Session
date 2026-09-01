@@ -1,0 +1,26 @@
+name: TEMP journal accidental RAVEMEMS audit placeholder
+on:
+  push:
+    branches:
+      - RAPPORT
+permissions:
+  contents: write
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 1
+      - name: Append incident
+        shell: bash
+        run: |
+          set -e
+          printf '%s\n' '' '## 2026-09-01 - RAVEMEMS - INCIDENT AVANT EXECUTION AUDIT ADDITIF' '' 'Une pousse technique accidentelle a cree sur tmp-rave-new-extraction-pilot un fichier ravemems-additive-merge-audit.yml contenant uniquement placeholder, commit f6c75f9d9d425c7aa4efd263db3c312b99c9599e. Cette erreur a ete detectee immediatement.' '' 'Aucun audit na ete execute par ce commit, aucune base na ete modifiee, aucun artefact de fusion na ete produit et MEMSX64 reste strictement BUILD #103.' '' 'Correction autorisee : remettre sur la branche temporaire le script et le workflow auditifs deja prepares dans un commit correct, sans toucher MEMSX64, puis seulement executer audit AVANT / ajout RAVEMEMS / APRES / candidats doublons.' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          rm .github/workflows/tmp-ravemems-journal-accidental-placeholder.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md .github/workflows/tmp-ravemems-journal-accidental-placeholder.yml
+          git commit -m 'Record accidental RAVEMEMS audit placeholder push'
+          git push origin HEAD:RAPPORT
