@@ -261,10 +261,11 @@ bool testRuntimeCatalog()
              temporary.path(),
              QStringLiteral("Voir le schéma pure text page uniquephrase"),
              QStringLiteral("runtime text-only capture hidden from UI")) && ok;
-    ok = requireNoSuggestion(
+    ok = requireSuggestion(
              temporary.path(),
              QStringLiteral("Voir le schéma old purge legacy uniqueold"),
-             QStringLiteral("legacy visual explicitly replaced by RAVEMEMS")) && ok;
+             QStringLiteral("RCL0193ENG p.99"),
+             QStringLiteral("ravemems/purge.png")) && ok;
     ok = requireNoSuggestion(
              temporary.path(),
              QStringLiteral("Voir le schéma absent unique missingfixture"),

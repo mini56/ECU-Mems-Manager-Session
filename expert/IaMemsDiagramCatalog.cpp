@@ -249,7 +249,10 @@ IaMemsDiagramSuggestion runtimeSuggestion(const QString &question,
                                            const QString &root)
 {
     IaMemsDiagramSuggestion best;
-    if (terms.isEmpty() || publicationOnlyTerms(terms))
+    QStringList runtimeTerms = terms;
+    if (!generation.isEmpty())
+        runtimeTerms.removeAll(generation);
+    if (runtimeTerms.isEmpty() || publicationOnlyTerms(runtimeTerms))
         return best;
 
     QFile catalog(QDir(root).filePath(QStringLiteral("runtime_visual_catalog.json")));
@@ -268,7 +271,7 @@ IaMemsDiagramSuggestion runtimeSuggestion(const QString &question,
         if (!value.isObject())
             continue;
         const QJsonObject entry = value.toObject();
-        const int score = runtimeCandidateScore(question, generation, terms, entry);
+        const int score = runtimeCandidateScore(question, generation, runtimeTerms, entry);
         if (score < 8)
             continue;
 
