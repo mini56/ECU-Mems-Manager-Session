@@ -10552,3 +10552,41 @@ Cause retenue : transport monolithique du payload compresse trop fragile. La log
 ### PROCHAINE ACTION EXACTE
 
 Remplacer uniquement le transport : pousser un installateur temporaire utilisant plusieurs fragments courts du payload compresse, verifier leur SHA/assemblage avant decompression, installer `tools/ravemems_full_corpus.py` et `.github/workflows/ravemems-full-corpus.yml`, puis effectuer un commit de trigger externe afin de lancer reellement le traitement complet. Ne pas changer les regles RAVEMEMS et ne pas toucher a `MEMSX64`.
+
+## 2026-09-01 - RAVEMEMS - TEST2 RASTER CONFIRME ET TRAITEMENT COMPLET AUTORISE
+
+Verification finale demandee avant lancement complet effectuee sur le cas raster `ravemems-test2-raster-text.yml` / `tools/ravemems_test2_raster_text.py`.
+
+Preuve GitHub Actions reelle :
+- commit d'introduction TEST2 : `a19b1aa233bc8870e15a1e9dd5b49a5cfbfce7ab` ;
+- workflow : `RAVEMEMS TEST2 raster embedded text` ;
+- run `33442157473`, tentative finale 5 : **SUCCESS** ;
+- job `99663920602` : **SUCCESS** ;
+- artefact final ID `9777901590`, nom `ravemems-test2-cdxn-page7-raster-text`, digest `sha256:b17d0d8801164cc1c4f246e52073c7f013a6f45eedd7695dd4a02097aad9488c`.
+
+Cas canonique teste : `rave/xn/cdxn990e.pdf`, page physique 7, SHA-256 `04f3854038cb48d7a761115ff69b0d5c121661d3a70a35fec6247d70c32db6f6`, 41 pages. Cette page possede **0 caractere de texte PDF natif** : le texte humain est incruste dans le raster 3356x2320. Le fallback OCR a donc ete utilise uniquement parce qu'aucune couche texte native n'existe.
+
+Resultat TEST2 final :
+- `pass=true` ;
+- 490 mots OCR, 45 regions ;
+- 34 operations de simulation d'affichage ;
+- 11 references/jetons techniques proteges pixel-identiques ;
+- geometrie complete identique hors masques de texte ;
+- toutes les substitutions demandees tiennent sans troncature ;
+- aucune phrase source cible restante ;
+- aucun identifiant interne visible ;
+- fixture francaise uniquement pour simulation MEMS Manager, jamais comme traduction canonique GitHub.
+
+Les deux familles indispensables sont donc prouvees : texte PDF natif structure + raster avec texte incruste/OCR de secours. Les pilotes visuels/callouts precedents restent egalement la reference pour les associations numero/texte, pictogrammes, styles et preservation de geometrie.
+
+Une premiere tentative de preparation du processeur complet a ensuite ete faite au commit `0f5220af2244e710341e501534d21b33a004aee9`, workflow temporaire run `33480592787`. Elle a echoue **avant toute installation et avant tout traitement RAVE**, pendant le decodage du transport compresse : `zlib.error: Error -3 while decompressing data: incorrect data check`. Aucun document du corpus n'a ete traite par cette tentative et aucun resultat partiel ne doit etre considere.
+
+Correction autorisee : supprimer le transport compresse fragile et pousser le processeur/workflow complet directement comme fichiers Git, avec garde de completude global.
+
+Perimetre complet : tous les PDF anglais canoniques sous `main/rave/` (notamment `rave/xn/`, `rave/library/`, `rave/general/` et `rave/Mini Tech Bulletins/`), **sans filtre ECU**. Les duplications linguistiques explicites autres que l'anglais doivent etre ignorees. Toute page incertaine/OCR doit etre conservee et marquee `needs_review`, jamais supprimee. GitHub n'effectue aucune traduction ; MEMS Manager reste la couche de localisation.
+
+`MEMSX64` reste strictement inchange au BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+### PROCHAINE ACTION EXACTE
+
+Installer directement sur `tmp-rave-new-extraction-pilot` le processeur et le workflow RAVEMEMS complet sans transport zlib/base64, declencher le traitement de tous les PDF anglais canoniques de `main/rave/`, puis controler le manifeste global, la couverture documents/pages, `needs_review`, l'integrite SQLite et les artefacts reels. Rapporter immediatement le resultat. Ne pas toucher a `MEMSX64`.
