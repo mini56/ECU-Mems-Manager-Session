@@ -15,7 +15,7 @@ PAGE_RX = re.compile(r"(?:PDF\s*)?[Pp](?:age)?\.?\s*(\d{1,4})|\bPDF[_\s-]*(\d{1,
 TOKEN_RX = re.compile(r"[A-Za-z0-9]{3,}")
 STOP = {
     'rave','schema','diagramme','diagram','image','images','page','pdf','rover','mini','eng','fre','the','and','for','with',
-    'des','les','une','pour','avec','sur','dans','mems','source','physical','voir','ouvrir','section','ch','codes','colour','couleur'
+    'des','les','une','pour','avec','sur','dans','mems','source','physical','voir','ouvrir','section','codes','colour','couleur'
 }
 
 
@@ -66,33 +66,33 @@ def extract_pages(row: dict):
 
 
 def tokens(text: str):
-    out = []
+    result = []
     for t in TOKEN_RX.findall((text or '').lower()):
         if t in STOP or t.isdigit() or len(t) < 4:
             continue
-        if t not in out:
-            out.append(t)
-    return out
+        if t not in result:
+            result.append(t)
+    return result
 
 
 def best_context_match(key: str, contexts: list[dict], codes: list[str]):
-    kt = tokens(key)
+    kt = set(tokens(key))
     if not kt:
         return None
     best = None
     for c in contexts:
         pub = (c.get('publication_code') or '').upper()
-        if codes and not any(code in pub or pub in code for code in codes if pub):
+        if codes and pub and not any(code == pub or code in pub or pub in code for code in codes):
             continue
         ct = set(tokens(c.get('context_text') or ''))
         if not ct:
             continue
-        hit = len(set(kt) & ct)
-        ratio = hit / max(1, len(set(kt)))
+        hit = len(kt & ct)
+        ratio = hit / len(kt)
         score = (ratio, hit)
         if best is None or score > best[0]:
             best = (score, c)
-    if best is None:
+    if not best:
         return None
     (ratio, hit), c = best
     return {
@@ -118,7 +118,6 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
 
     conn = sqlite3.connect(f'file:{db.as_posix()}?mode=ro', uri=True)
-    conn.row_factory = sqlite3.Row
     integrity = conn.execute('PRAGMA integrity_check').fetchone()[0]
     fk = conn.execute('PRAGMA foreign_key_check').fetchall()
     if str(integrity).lower() != 'ok' or fk:
@@ -127,20 +126,25 @@ def main():
     all_tables = [r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")]
     dedicated_names = ['mems_rave_fact', 'mems_rave_illustration', 'mems_rave_illustration_link']
     dedicated = {}
-    for t in dedicated_names:
-        if t not in all_tables:
-            raise SystemExit(f'missing expected legacy table {t}')
-        rr = rows_as_dict(conn, t)
-        dedicated[t] = {'count': len(rr), 'columns': columns(conn, t), 'rows': rr}
+    for table in dedicated_names:
+        if table not in all_tables:
+            raise SystemExit(f'missing expected legacy table {table}')
+        rr = rows_as_dict(conn, table)
+        dedicated[table] = {'count': len(rr), 'columns': columns(conn, table), 'rows': rr}
 
-    # New RAVEMEMS visual layer counts and lookup.
     new_assets = conn.execute('SELECT COUNT(*) FROM mems_doc_visual').fetchone()[0]
     new_occ = conn.execute("SELECT COUNT(*) FROM mems_doc_entity WHERE entity_kind='visual_occurrence'").fetchone()[0]
     new_visual_shas = {r[0] for r in conn.execute('SELECT sha256 FROM mems_doc_visual WHERE sha256 IS NOT NULL')}
 
-    docs = []
-    for r in conn.execute('SELECT document_key,publication_code,title_source,source_path FROM mems_doc_document'):
-        docs.append(dict(r))
+    doc_cols = set(columns(conn, 'mems_doc_document'))
+    required_doc_cols = {'document_key', 'publication_code', 'title_source'}
+    if not required_doc_cols.issubset(doc_cols):
+        raise SystemExit(f'unexpected mems_doc_document schema: {sorted(doc_cols)}')
+    optional = [c for c in ('source_key', 'file_name', 'notes') if c in doc_cols]
+    select_cols = ['document_key', 'publication_code', 'title_source'] + optional
+    docs = [dict(zip(select_cols, row)) for row in conn.execute(
+        'SELECT ' + ','.join(qident(c) for c in select_cols) + ' FROM mems_doc_document'
+    )]
     docs_by_code = defaultdict(list)
     for d in docs:
         pub = (d.get('publication_code') or '').upper()
@@ -148,41 +152,40 @@ def main():
             docs_by_code[pub].append(d)
 
     visual_contexts = []
-    q = """
-    SELECT e.entity_key,d.publication_code,u.physical_page,t.text_value AS context_text
-    FROM mems_doc_entity e
-    JOIN mems_doc_unit u ON u.unit_key=e.unit_key
-    JOIN mems_doc_document d ON d.document_key=e.document_key
-    LEFT JOIN mems_doc_text t ON t.entity_key=e.entity_key AND t.field_key='visual_context' AND t.locale='en'
-    WHERE e.entity_kind='visual_occurrence'
-    ORDER BY e.entity_key
-    """
-    for r in conn.execute(q):
-        visual_contexts.append(dict(r))
+    for row in conn.execute("""
+        SELECT e.entity_key,d.publication_code,u.physical_page,t.text_value
+        FROM mems_doc_entity e
+        JOIN mems_doc_unit u ON u.unit_key=e.unit_key
+        JOIN mems_doc_document d ON d.document_key=e.document_key
+        LEFT JOIN mems_doc_text t ON t.entity_key=e.entity_key AND t.field_key='visual_context' AND t.locale='en'
+        WHERE e.entity_kind='visual_occurrence'
+        ORDER BY e.entity_key
+    """):
+        visual_contexts.append({
+            'entity_key': row[0], 'publication_code': row[1], 'physical_page': row[2], 'context_text': row[3] or ''
+        })
 
     visual_pages = defaultdict(int)
     for c in visual_contexts:
         visual_pages[((c.get('publication_code') or '').upper(), int(c.get('physical_page') or 0))] += 1
 
-    def doc_covered(code: str):
+    def matching_pubs(code: str):
         code = code.upper()
-        for pub in docs_by_code:
-            if code == pub or code in pub or pub in code:
-                return True
-        return False
+        return [pub for pub in docs_by_code if code == pub or code in pub or pub in code]
+
+    def doc_covered(code: str):
+        return bool(matching_pubs(code))
 
     def page_visual_covered(codes: list[str], pages: list[int]):
         hits = []
         for code in codes:
-            for pub in docs_by_code:
-                if code == pub or code in pub or pub in code:
-                    for p in pages:
-                        n = visual_pages.get((pub, p), 0)
-                        if n:
-                            hits.append({'publication_code': pub, 'physical_page': p, 'visual_occurrences': n})
+            for pub in matching_pubs(code):
+                for page in pages:
+                    count = visual_pages.get((pub, page), 0)
+                    if count:
+                        hits.append({'publication_code': pub, 'physical_page': page, 'visual_occurrences': count})
         return hits
 
-    # Every structured legacy fact is intentionally preserved/migrated until semantic equivalence is proven.
     fact_audit = []
     for row in dedicated['mems_rave_fact']['rows']:
         text = ' | '.join(str(v) for v in row.values() if v is not None)
@@ -198,7 +201,6 @@ def main():
             'reason': 'structured historical knowledge is not equivalent to raw/documentary RAVEMEMS text or imagery',
         })
 
-    # Historical RAVE references outside dedicated tables, including expert mirrors.
     historical_scan = {}
     for table in all_tables:
         if table.startswith('mems_doc_'):
@@ -215,7 +217,6 @@ def main():
         if matched:
             historical_scan[table] = {'count': len(matched), 'rows': matched}
 
-    # Exact #103 manifest and local images.
     manifest_path = old_root / 'database/reference/manifest.json'
     if not manifest_path.is_file():
         raise SystemExit(f'missing old manifest: {manifest_path}')
@@ -226,7 +227,7 @@ def main():
     image_root = old_root / 'database/reference/images/rave'
     image_files = sorted(p for p in image_root.rglob('*') if p.is_file()) if image_root.is_dir() else []
     image_sha = {p.relative_to(old_root / 'database/reference').as_posix(): sha256_file(p) for p in image_files}
-    manifest_paths = set(v.replace('\\','/') for v in legacy_diagrams.values())
+    manifest_paths = {v.replace('\\','/') for v in legacy_diagrams.values()}
 
     manifest_audit = []
     for key, rel in sorted(legacy_diagrams.items()):
@@ -250,27 +251,21 @@ def main():
         else:
             cls = 'a_revoir_source_non_resolue'
         manifest_audit.append({
-            'key': key,
-            'relative_path': rel,
-            'exists': abs_path.is_file(),
-            'sha256': sha,
-            'codes': codes,
-            'pages': pages,
-            'exact_ravemems_sha_match': exact_sha,
-            'page_visual_hits': page_hits,
-            'best_context_match': ctx,
-            'classification': cls,
+            'key': key, 'relative_path': rel, 'exists': abs_path.is_file(), 'sha256': sha,
+            'codes': codes, 'pages': pages, 'exact_ravemems_sha_match': exact_sha,
+            'page_visual_hits': page_hits, 'best_context_match': ctx, 'classification': cls,
         })
 
-    # Dedicated illustration rows: candidate replacement only when source/page visual coverage is explicit.
     illustration_audit = []
     for row in dedicated['mems_rave_illustration']['rows']:
         text = ' | '.join(str(v) for v in row.values() if v is not None)
         codes = extract_codes(text)
         pages = extract_pages(row)
         hits = page_visual_covered(codes, pages)
-        cls = 'remplace_par_ravemems_candidat' if hits else 'a_revoir_ou_conserver'
-        illustration_audit.append({'legacy_row': row, 'codes': codes, 'pages': pages, 'page_visual_hits': hits, 'classification': cls})
+        illustration_audit.append({
+            'legacy_row': row, 'codes': codes, 'pages': pages, 'page_visual_hits': hits,
+            'classification': 'remplace_par_ravemems_candidat' if hits else 'a_revoir_ou_conserver'
+        })
 
     manifest_counts = Counter(x['classification'] for x in manifest_audit)
     illustration_counts = Counter(x['classification'] for x in illustration_audit)
@@ -317,28 +312,31 @@ def main():
         summary['pass'] = False
         summary['error_visual'] = {'assets': new_assets, 'occurrences': new_occ}
 
-    (out / 'legacy_rave_audit_summary.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True), encoding='utf-8')
-    (out / 'legacy_rave_facts.json').write_text(json.dumps(fact_audit, ensure_ascii=False, indent=2, sort_keys=True), encoding='utf-8')
-    (out / 'legacy_rave_illustrations.json').write_text(json.dumps(illustration_audit, ensure_ascii=False, indent=2, sort_keys=True), encoding='utf-8')
-    (out / 'legacy_rave_manifest_visuals.json').write_text(json.dumps(manifest_audit, ensure_ascii=False, indent=2, sort_keys=True), encoding='utf-8')
-    (out / 'historical_rave_reference_scan.json').write_text(json.dumps(historical_scan, ensure_ascii=False, indent=2, sort_keys=True), encoding='utf-8')
-    (out / 'legacy_image_sha256.json').write_text(json.dumps(image_sha, ensure_ascii=False, indent=2, sort_keys=True), encoding='utf-8')
-    (out / 'legacy_orphan_images.json').write_text(json.dumps({'orphans': orphan_files, 'missing_manifest_files': missing_manifest_files}, ensure_ascii=False, indent=2), encoding='utf-8')
+    files = {
+        'legacy_rave_audit_summary.json': summary,
+        'legacy_rave_facts.json': fact_audit,
+        'legacy_rave_illustrations.json': illustration_audit,
+        'legacy_rave_manifest_visuals.json': manifest_audit,
+        'historical_rave_reference_scan.json': historical_scan,
+        'legacy_image_sha256.json': image_sha,
+        'legacy_orphan_images.json': {'orphans': orphan_files, 'missing_manifest_files': missing_manifest_files},
+    }
+    for name, payload in files.items():
+        (out / name).write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True), encoding='utf-8')
 
     md = [
         '# Legacy RAVE #103 vs RAVEMEMS audit', '',
         f"- PASS: **{summary['pass']}**", f"- read-only: **{summary['read_only']}**",
-        f"- old facts: **{expected['mems_rave_fact']}** -> treatment **KEEP/MIGRATE**",
-        f"- old illustrations: **{expected['mems_rave_illustration']}**",
-        f"- old illustration links: **{expected['mems_rave_illustration_link']}**",
+        f"- old facts: **177** -> treatment **KEEP/MIGRATE**",
+        f"- old illustrations: **126**", f"- old illustration links: **329**",
         f"- old manifest RAVE diagrams: **{len(legacy_diagrams)}**",
         f"- old local RAVE image files: **{len(image_files)}**",
         f"- RAVEMEMS assets/occurrences: **{new_assets} / {new_occ}**", '',
-        '## Manifest classifications',
+        '## Manifest classifications'
     ]
-    for k, v in sorted(manifest_counts.items()): md.append(f'- {k}: {v}')
+    md += [f'- {k}: {v}' for k, v in sorted(manifest_counts.items())]
     md += ['', '## Old illustration classifications']
-    for k, v in sorted(illustration_counts.items()): md.append(f'- {k}: {v}')
+    md += [f'- {k}: {v}' for k, v in sorted(illustration_counts.items())]
     md += ['', '## Decision gate',
            '- No deletion is performed by this audit.',
            '- Structured legacy RAVE facts/mirrors are preserved because they are curated knowledge, not mere copies of visuals.',
