@@ -10834,3 +10834,23 @@ Resultat exact :
 Controle independant de l artefact telecharge auparavant via le connecteur GitHub : `/mnt/data/ravemems-run4.zip` = `36 007 526` octets, SHA-256 `5570f9435de985872e13d55d9c2263e3c5190f12d6ef39cbc73587fb5ce946b8`, donc l artefact de reference lui-meme reste valide. L anomalie est limitee a la methode/verification du telechargement dans le workflow de figement.
 
 PROCHAINE ACTION EXACTE : corriger uniquement l etape de telechargement du workflow de figement pour utiliser la voie GitHub Actions `gh run download` deja validee pour recuperer le contenu de l artefact, tout en conservant la verification d identite par l API (ID/nom/taille/digest) et en affichant explicitement les valeurs observees. Ne pas affaiblir les autres gardes, ne pas relancer l extraction, puis relancer le figement. Aucun QZ64/installateur ni modification `MEMSX64` avant succes du paquet source.
+
+## 2026-09-01 - RAVEMEMS RUN4 - PREFLIGHT AVANT CORRECTION DU FIGEMENT
+
+Avant de modifier le workflow apres l echec `33489607163`, le harnais a ete rejoue/inspecte hors GitHub contre l artefact exact deja telecharge et valide (`/mnt/data/ravemems-run4.zip`, 36 007 526 octets, SHA-256 `5570f9435de985872e13d55d9c2263e3c5190f12d6ef39cbc73587fb5ce946b8`) afin d eviter une chaine de corrections successives.
+
+Deux points precis sont confirmes :
+
+1. Le telechargement doit passer par `gh run download 33484362718 -n ravemems-full-corpus`, qui extrait directement le contenu de l artefact. L identite du binaire GitHub reste verrouillee avant cela par l API : artifact ID `9791187684`, nom, taille `36 007 526`, digest SHA-256 et head SHA du run. La validation ne doit donc pas pretendre recalculer le SHA du ZIP lorsqu elle utilise une voie qui ne fournit pas le ZIP brut.
+
+2. Le manifeste final stocke `visual_asset=1070` dans `database_counts`, et non dans `counts`. Le workflow candidat cherchait par erreur `counts.visual_asset`, ce qui aurait provoque un second echec apres correction du telechargement. Le controle local de l artefact prouve :
+   - `database_counts.visual_asset=1070` ;
+   - `database_counts.document=47`, `page=1359`, `line=54732`, `content=19039`, `visual_occurrence=1794`, `ocr_region=45` ;
+   - 1 134 fichiers physiques sous `assets/` au total, car les rendus de pages sans texte natif sont aussi conserves comme preuves/intermediaires ;
+   - exactement 1 070 lignes `visual_asset` en SQLite, toutes avec chemin et SHA propres. Le paquet source doit conserver l arborescence `assets/` complete et verifier individuellement les 1 070 assets enregistres, sans confondre le nombre de fichiers physiques avec le nombre d assets en base.
+
+Les deux reviews ont egalement ete recontrolees directement dans le SQLite de l artefact : CDXN p.7 = `visual_ocr`, `native_raster`, 45 regions / 490 mots ; `libxn.pdf` p.1 = `visual_no_ocr_text`, raster natif preserve, 0 region OCR.
+
+Aucune donnee RAVEMEMS n est modifiee par ce preflight. `MEMSX64` reste BUILD #103 inchange.
+
+PROCHAINE ACTION EXACTE : modifier le workflow de figement uniquement sur ces deux points de harnais : (a) recuperation du contenu par `gh run download` avec metadonnees API toujours verrouillees et affichees ; (b) lire `visual_asset` depuis `database_counts` tout en gardant le controle SQLite/hashes des 1 070 assets. Relancer ensuite le meme figement complet sans re-extraire RAVE et sans toucher QZ64/installateur/MEMSX64.
