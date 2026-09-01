@@ -11090,3 +11090,17 @@ PROCHAINE ACTION EXACTE : auditer en lecture seule les visual_occurrence/visual_
 - Aucun artefact d audit final, aucune suppression, aucune ecriture SQLite, aucun changement `MEMSX64`.
 - PROCHAINE ACTION EXACTE : corriger uniquement l auditeur pour introspecter/selectionner les colonnes reelles de `mems_doc_document` au lieu de supposer `source_path`, puis relancer le meme audit read-only avec les memes sources exactes. Ne rien supprimer ni modifier dans la base.
 
+
+## 1 SEPTEMBRE 2026 — AUDIT ANCIEN RAVE #103 CONTRE RAVEMEMS — RESULTAT VERT
+- Correction auditeur : commit `293eebee68384d63bdfe8385ecfbe0fa030d3055`.
+- Run `33514943547`, job `99879496853` : SUCCESS, audit strictement read-only, `integrity_check=ok`, `foreign_key_check=0`.
+- Artefact `ravemems-legacy-rave-audit` : ID `9803178744`, taille `497556` octets, digest `sha256:c2cbe4a5299be4cd335d5d349106e26c3e478098230d995a24e6dbf5876d8a22`.
+- Ancien RAVE structure BUILD #103 : `mems_rave_fact=177`, `mems_rave_illustration=126`, `mems_rave_illustration_link=329`.
+- Les 177 faits structures sont classes `a_migrer_conserver` : ils apportent une connaissance curee/structuree qui n est pas equivalente au corpus brut/visuel RAVEMEMS. Aucun retrait automatique de ces faits ni de leurs miroirs experts n est autorise.
+- Ancienne couche visuelle #103 : `427` fichiers dans `database/reference/images/rave` et `427` entrees RAVE dans `manifest.json`; 0 fichier a un SHA identique a un asset RAVEMEMS; 0 fichier orphelin et 0 entree de manifeste manquante.
+- Mapping automatique des 427 anciennes entrees : 21 `remplace_par_ravemems_candidat_page_visuelle`, 6 `remplace_par_ravemems_candidat_contexte`, 7 `a_revoir_source_couverte_sans_equivalence_visuelle_prouvee`, 393 `a_revoir_source_non_resolue`.
+- Illustrations historiques : 21/126 candidats de remplacement explicites, 105/126 encore `a_revoir_ou_conserver`.
+- Conclusion : il est possible que l ancienne couche visuelle soit largement remplacee par RAVEMEMS, mais le premier mapping n est pas assez complet pour supprimer 427 images/entrees. Aucune suppression n a ete faite.
+- `MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+- PROCHAINE ACTION EXACTE : expliquer les 393 entrees non resolues et produire un mapping exhaustif `ancien visuel #103 -> document/page/occurrence RAVEMEMS` en exploitant noms de fichiers, publication, page/section, anciennes tables `mems_rave_illustration`/`link` et provenance, sans se limiter au SHA. Classer chaque ancienne entree en `remplacement RAVEMEMS prouve`, `ancienne valeur ajoutee a conserver/migrer` ou `a revoir`. Aucune suppression avant couverture 427/427 et audit des 126 illustrations/329 liens.
+
