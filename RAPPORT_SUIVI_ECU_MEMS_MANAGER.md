@@ -10590,3 +10590,36 @@ Perimetre complet : tous les PDF anglais canoniques sous `main/rave/` (notamment
 ### PROCHAINE ACTION EXACTE
 
 Installer directement sur `tmp-rave-new-extraction-pilot` le processeur et le workflow RAVEMEMS complet sans transport zlib/base64, declencher le traitement de tous les PDF anglais canoniques de `main/rave/`, puis controler le manifeste global, la couverture documents/pages, `needs_review`, l'integrite SQLite et les artefacts reels. Rapporter immediatement le resultat. Ne pas toucher a `MEMSX64`.
+
+## 2026-09-01 - RAVEMEMS CORPUS COMPLET - RUN 1 ECHEC GARDE FK, AUCUNE PAGE INGEREE
+
+Lancement reel du processeur complet direct :
+- branche `tmp-rave-new-extraction-pilot` ;
+- commit `12d4f46ec2260cb99c3d9f1658b62a14c40eae8f` ;
+- workflow `RAVEMEMS full corpus` ;
+- run `33482118442` ;
+- source canonique `main` au commit `643de091b474f4e27917a065bdf46d5a0c764276`.
+
+Resultat : **ECHEC avant ingestion de page**. Le processeur a correctement detecte les 47 PDF du corpus RAVE et les a tous selectionnes comme sources anglaises, mais chaque document echoue au premier enregistrement d'occurrence visuelle avec `FOREIGN KEY constraint failed`.
+
+Cause exacte : le code inserait `visual_occurrence(page_key, ...)` avant d'avoir insere la ligne correspondante dans la table `page`. Les cles etrangeres ont donc correctement bloque l'ecriture.
+
+Manifest reel du run 1 :
+- `documents_found_pdf=47` ;
+- `documents_selected_english=47` ;
+- `documents_skipped_explicit_non_english=0` ;
+- `pages_accounted=0` ;
+- `pages_expected_all_opened_documents=0` ;
+- `document=47`, `page=0`, `line=0`, `content=0` ;
+- `pass=false` ;
+- SQLite reste structurellement integre mais aucune page n'est exploitable.
+
+Artefact d'echec seulement : ID `9790328671`, digest `sha256:aa9fe8085477ab9ad2b123416440dc885bb0a2bbde350bbb857fc984f7d4d693`. Il sert uniquement de preuve d'echec et ne doit jamais etre installe ni considere comme base RAVEMEMS.
+
+Correction limitee autorisee : differer l'insertion des `visual_occurrence` jusqu'apres creation de leur ligne `page`, sans changer les donnees extraites ni le perimetre. Relancer ensuite le corpus complet depuis zero.
+
+`MEMSX64` reste inchange au BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+### PROCHAINE ACTION EXACTE
+
+Corriger uniquement l'ordre d'insertion FK `page -> visual_occurrence` dans `tools/ravemems_full_corpus.py`, changer le trigger, pousser sur `tmp-rave-new-extraction-pilot`, puis relancer le workflow complet et inspecter le manifeste reel. Aucun resultat du run 1 ne doit etre reutilise.
