@@ -11604,3 +11604,24 @@ Le helper/orchestrateur resteront temporairement presents pour etre nettoyes apr
 
 PROCHAINE ACTION EXACTE : mettre a jour uniquement l orchestrateur, laisser son run pousser les deux corrections `.cpp` seulement, verifier le nouveau HEAD et le diff, puis journaliser immediatement ce push code avant de creer le nouveau harnais de validation. Aucun autre changement.
 
+
+## 2026-09-01 — IA VISUELLE — CORRECTIF CODE POUSSE
+
+Run orchestration code-seul `33528913539`, job `99926748010` = SUCCESS.
+
+Nouveau commit applicatif sur `tmp-ravemems-ia-visual-integration` : `491464c` (`Fix IA runtime visual selection priority`). Le commit contient exactement deux fichiers :
+- `expert/IaMemsDiagramCatalog.cpp` ;
+- `expert/IaMemsDiagramSelfTest.cpp`.
+
+Verification du runner : `CODE_ONLY_DIFF_PASS` puis `CODE_ONLY_COMMIT_SCOPE_PASS`, exactement ces deux chemins. Push distant reussi `f125267..491464c`.
+
+Correctifs appliques :
+- une question MEMS generique sans terme discriminant hors generation ne consulte plus le catalogue runtime avant le manifeste #103 ;
+- le test d un legacy remplace attend maintenant le visuel RAVEMEMS valide de remplacement au lieu d exiger aucune suggestion.
+
+Aucun workflow n a ete modifie par ce commit, aucune base/visuel/package n a ete pousse, `MEMSX64` reste BUILD #103.
+
+Les fichiers temporaires helper/orchestrateur sont encore presents uniquement comme infrastructure et seront nettoyes apres validation.
+
+PROCHAINE ACTION EXACTE : apres RAPPORT AVANT POUSSE, creer via connecteur un nouveau workflow de validation v2 declenche par son propre ajout, qui checkout le HEAD `tmp-ravemems-ia-visual-integration`, reutilise les memes artefacts runtime/cleanup exacts et reproduit le meme test x64 complet. Journaliser le verdict avant tout nettoyage ou package.
+
