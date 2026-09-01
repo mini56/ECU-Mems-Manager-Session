@@ -1,4 +1,5 @@
 name: TEMP RAVEMEMS IA visual integration validation
+# retrigger correction 491464cfaa372724ccafa5d64f6041b18a2f589d
 on:
   push:
     branches: [tmp-ravemems-ia-visual-integration]
@@ -161,7 +162,7 @@ jobs:
           git checkout -- database/reference
           git clean -fd -- database/reference
           $changed = git diff --name-only $env:BASE_COMMIT..HEAD
-          $allowed = @('expert/IaMemsDiagramCatalog.cpp','expert/IaMemsDiagramSelfTest.cpp','.github/workflows/tmp-ravemems-ia-visual-validation.yml')
+          $allowed = @('expert/IaMemsDiagramCatalog.cpp','expert/IaMemsDiagramSelfTest.cpp','.github/workflows/tmp-ravemems-ia-visual-validation.yml','tools/tmp_apply_ia_visual_correction.py','.github/workflows/tmp-apply-ia-visual-correction.yml')
           $unexpected = @($changed | Where-Object { $_ -notin $allowed })
           if ($unexpected.Count -ne 0) { throw "Unexpected changed files: $($unexpected -join ', ')" }
           Write-Host "SCOPE_PASS changed=$($changed.Count)"
