@@ -11435,3 +11435,30 @@ Resultats exacts de la simulation, exclusivement sur COPIE :
 
 PROCHAINE ACTION EXACTE : sur UNE AUTRE COPIE seulement, tester le nettoyage physique/logique des seules donnees visuelles legacy prouvees redondantes selon la matrice autoritaire. Ne jamais supprimer les 177 faits. Conserver les 141 visuels legacy runtime et les objets legacy dont la matrice illustration/lien exige conservation. Pour les objets remplaces ou captures texte, supprimer uniquement les lignes/fichiers legacy dont toutes les dependances ont ete migrees vers la couche runtime/RAVEMEMS ; verifier FK, orphelins, preservation des faits et connaissances, maintien des 1070/1794 RAVEMEMS et disponibilite des 1935 entrees viewer avant/apres. Ce test doit rester `destructive_cleanup_authorized=false` pour la production et ne doit pas toucher `MEMSX64`.
 
+
+## 2026-09-01 — RAVEMEMS — NETTOYAGE LEGACY CONTROLE SUR COPIE VALIDE
+
+Run `33524978067`, job `99913400668` — **SUCCESS**.
+Branche `tmp-rave-new-extraction-pilot`, commit `e71bd8c93217b56b5ae5950648003c7ce33fc3a2`.
+Artefact `ravemems-controlled-legacy-cleanup-copy`, ID `9807286866`, taille `19755404` octets, digest `sha256:06746252cad5942ba00d6b8ea71b2fe17c71fd137161cb43d237e707219b5735`.
+
+Le preflight a prouve qu'aucun des 288 liens conserves ne depend exclusivement d'une illustration prevue pour retrait (`unsafe_kept_links=[]`). Les 126 lignes illustration et 329 lignes lien de la matrice correspondent exactement a la copie avant nettoyage, et chaque PK illustration resout une seule ligne.
+
+Nettoyage execute exclusivement sur COPIE :
+- 177 faits RAVE structures preserves ;
+- illustrations legacy actives : 126 -> 102, soit 24 retraits controles ;
+- liens legacy actifs : 329 -> 288, soit 41 retraits controles ;
+- les 24 illustrations retirees sont archivees integralement dans `mems_visual_legacy_illustration_archive` ;
+- les 41 liens retires sont archives integralement dans `mems_visual_legacy_link_archive` ;
+- toutes les 102 illustrations et 288 liens classes `conserver_migrer_legacy` restent exactement presents ;
+- 1070 assets / 1794 occurrences RAVEMEMS preserves ;
+- 1935 entrees viewer et 1211 fichiers runtime preserves ;
+- toutes les autres tables preexistantes sont strictement inchangees ;
+- SQLite integrity `ok`, FK = 0 ;
+- `MEMSX64` strictement inchange BUILD #103 ;
+- `destructive_cleanup_authorized_for_production=false`.
+
+SHA de la base nettoyee sur copie : `2de4e16e2ccb5126a5bc65028d953bf6180070f655c431b98f7c0b9f4537d428` ; gzip SHA `67518cd59773eb73007bb4bbc75385b6aaf1362a23838a43a1edc3da09b99c67`.
+
+PROCHAINE ACTION EXACTE : valider le comportement IA/viewer sur une branche d'integration ISOLEE creee depuis le commit exact BUILD #103, sans toucher `MEMSX64`. Reutiliser strictement `IaMemsDiagramCatalog` et le viewer Qt interne existants ; etendre uniquement la selection afin qu'elle puisse interroger la couche runtime candidate `mems_visual_runtime_source`/catalogue nettoye, proposer `Voir le schéma` quand un contexte RAVEMEMS ou legacy conserve correspond a la question/reponse, ne jamais proposer les 12 pages texte masquees, et continuer a refuser les chemins absents/non autorises. Construire des self-tests couvrant RAVEMEMS, legacy conserve, legacy remplace, page texte masquee, chemin absent et protections de chemin. Aucun merge/push sur `MEMSX64` avant validation complete.
+
