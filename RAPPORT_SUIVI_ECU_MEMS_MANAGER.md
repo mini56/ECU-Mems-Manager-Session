@@ -11059,3 +11059,16 @@ PROCHAINE ACTION EXACTE : auditer en lecture seule les visual_occurrence/visual_
 - Tout run declenche sur 965cd971 ne doit pas etre considere comme validation du visual bundle.
 - Aucune base SQLite ni MEMSX64 n a ete modifiee.
 - PROCHAINE ACTION EXACTE : restaurer uniquement le contenu complet du script sur tmp-rave-new-extraction-pilot, puis utiliser le run declenche par ce commit de restauration comme premier test reel du bundle visuel.
+
+## 1 SEPTEMBRE 2026 — RAVEMEMS VISUAL BUNDLE COMPLET — RESULTAT VERIFIE
+- Run incomplet precedent 33510784299 sur commit 965cd971712d0b60265a543233b4a8303c13976d : FAILURE attendu au Build and audit complete visual bundle car le script etait vide ; cet incident avait ete journalise avant correction et n a produit aucun artefact final.
+- Commit restaure valide : 706a12cb03178410199a2da6797de2fc3490924e.
+- Run reel : 33510951021, job 99866171585 — SUCCESS.
+- Artefact : ravemems-visual-bundle-audit, ID 9801592148, taille 50 240 315 octets, digest sha256:8b0fb6d8ef3a7b98e67adf603479be584236cd451b7dda2b28a6d6bb548445b1.
+- Bundle : 1 070 assets visuels copies et SHA-verifies, 31 596 403 octets de fichiers visuels ; 1 794 occurrences ; manifeste 1 794 occurrences / 1 070 assets uniques.
+- Liaison IA documentaire : 1 794 lignes visual_context, 5 068 relations visual_context_for vers les blocs de contenu proches, 1 567 relations page_visual_asset uniques, 1 794 relations uses_visual et 1 794 contains_visual_occurrence conservees.
+- Base enrichie visuelle : SHA-256 77fca4a6100af806cf36138c464a7325fd14284b344023c99c1fa4e929b554b0.
+- Preservation : 77 tables historiques controlees logiquement avant/apres, toutes inchangees ; integrity_check et foreign_key_check passent ; second passage de liaison idempotent.
+- UI contract : pure_text_page_link_ui=false ; le seul libelle utilisateur prevu pour tous les visuels est « Voir le schema ».
+- MEMSX64 est reste strictement BUILD #103 commit 1d6316bd1746d6f2b4cfb751cab88d18e27ef730.
+- PROCHAINE ACTION EXACTE : auditer en lecture seule le chemin existant de proposition/ouverture de schema dans IA MEMS sur MEMSX64, puis preparer sur branche temporaire uniquement le branchement deterministe vers le manifeste visuel RAVEMEMS ; aucune modification de MEMSX64 avant validation complete.
