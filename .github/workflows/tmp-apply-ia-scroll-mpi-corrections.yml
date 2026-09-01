@@ -1,0 +1,204 @@
+name: TEMP apply IA scroll and MPI corrections
+
+on:
+  push:
+    branches: [tmp-ravemems-ia-visual-integration]
+    paths:
+      - '.github/workflows/tmp-apply-ia-scroll-mpi-corrections.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-ravemems-ia-visual-integration
+          fetch-depth: 0
+      - name: Guard exact starting state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin MEMSX64 tmp-ravemems-ia-visual-integration
+          test "$(git rev-parse origin/MEMSX64)" = "1d6316bd1746d6f2b4cfb751cab88d18e27ef730"
+          test "$(git rev-parse HEAD^)" = "b0334968a0daec9990bd130fe6f26b143b2468d4"
+          grep -F "m_transcript->scrollToAnchor(messageAnchor);" iamemstab.cpp
+      - name: Apply only conversation corrections
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('iamemstab.cpp')
+          text = p.read_text(encoding='utf-8')
+          
+          marker = '''QString injectionLabel(const QString &raw)
+          {
+              const QString text = IaMemsConversationRouting::normalize(raw);
+              if (text.contains(QStringLiteral("spi")) || text.contains(QStringLiteral("monopoint"))
+                  || text.contains(QStringLiteral("single point")))
+                  return QStringLiteral("SPi");
+              if (text.contains(QStringLiteral("mpi")) || text.contains(QStringLiteral("multipoint"))
+                  || text.contains(QStringLiteral("multi point")))
+                  return QStringLiteral("MPi");
+              return QString();
+          }
+          
+          } // namespace
+          '''
+          replacement = '''QString injectionLabel(const QString &raw)
+          {
+              const QString text = IaMemsConversationRouting::normalize(raw);
+              if (text.contains(QStringLiteral("spi")) || text.contains(QStringLiteral("monopoint"))
+                  || text.contains(QStringLiteral("single point")))
+                  return QStringLiteral("SPi");
+              if (text.contains(QStringLiteral("mpi")) || text.contains(QStringLiteral("multipoint"))
+                  || text.contains(QStringLiteral("multi point")))
+                  return QStringLiteral("MPi");
+              return QString();
+          }
+          
+          bool isBareInductionSelection(const QString &raw)
+          {
+              const QString text = IaMemsConversationRouting::normalize(raw);
+              return text == QStringLiteral("spi") || text == QStringLiteral("mpi");
+          }
+          
+          QString shortMpiAnswer(const QString &raw)
+          {
+              const QString text = IaMemsConversationRouting::normalize(raw);
+              if (IaMemsConversationRouting::explicitInduction(raw) != QStringLiteral("MPi"))
+                  return QString();
+          
+              if (text == QStringLiteral("mpi"))
+                  return QStringLiteral(
+                      "MPi signifie « Multi Point Injection », c'est-à-dire injection multipoint. "
+                      "Sur les montages Rover/Mini concernés, plusieurs injecteurs distribuent le carburant, typiquement un injecteur par cylindre.");
+          
+              if (text == QStringLiteral("injecteur mpi")
+                  || text == QStringLiteral("injecteurs mpi")
+                  || text == QStringLiteral("mpi injecteur")
+                  || text == QStringLiteral("mpi injecteurs")) {
+                  return QStringLiteral(
+                      "Sur un système MPi Rover/Mini MEMS, l'injection est multipoint : plusieurs injecteurs distribuent le carburant, typiquement un par cylindre. "
+                      "L'ECU commande leur ouverture pour doser le carburant dans l'admission. Si tu cherches le brochage, le câblage, un contrôle ou une procédure précise, indique simplement ce point et je chercherai la donnée correspondante.");
+              }
+              return QString();
+          }
+          
+          } // namespace
+          '''
+          if text.count(marker) != 1:
+              raise SystemExit(f'injection helper marker count={text.count(marker)}')
+          text = text.replace(marker, replacement, 1)
+          
+          marker = '''    QString effectiveQuestion = question;
+              if (!m_pendingClarificationQuestion.isEmpty()) {
+          '''
+          replacement = '''    QString effectiveQuestion = question;
+              const QString explicitSelection = IaMemsConversationRouting::explicitInduction(question);
+              const bool bareSelection = isBareInductionSelection(question);
+          
+              if (m_pendingClarificationQuestion.isEmpty() && bareSelection && !explicitSelection.isEmpty()) {
+                  const QString previousQuestion = property("iaLastVariantClarificationQuestion").toString();
+                  const QString previousSelection = property("iaLastVariantClarificationAnswer").toString();
+                  if (!previousQuestion.isEmpty()
+                      && !previousSelection.isEmpty()
+                      && explicitSelection.compare(previousSelection, Qt::CaseInsensitive) != 0) {
+                      effectiveQuestion = QStringLiteral("%1 %2")
+                                              .arg(previousQuestion, explicitSelection)
+                                              .simplified();
+                      setProperty("iaLastVariantClarificationAnswer", explicitSelection);
+                      appendMessage(QStringLiteral("IA MEMS"),
+                                    QStringLiteral("Correction prise en compte : %1. Je reprends la demande précédente avec cette variante.")
+                                        .arg(explicitSelection));
+                  }
+              } else if (m_pendingClarificationQuestion.isEmpty() && !bareSelection) {
+                  setProperty("iaLastVariantClarificationQuestion", QVariant());
+                  setProperty("iaLastVariantClarificationAnswer", QVariant());
+              }
+          
+              if (!m_pendingClarificationQuestion.isEmpty()) {
+          '''
+          if text.count(marker) != 1:
+              raise SystemExit(f'effectiveQuestion marker count={text.count(marker)}')
+          text = text.replace(marker, replacement, 1)
+          
+          marker = '''        } else {
+                      effectiveQuestion = QStringLiteral("%1 %2").arg(pending, question).simplified();
+                  }
+                  m_pendingClarificationQuestion.clear();
+          '''
+          replacement = '''        } else {
+                      if (IaMemsConversationRouting::needsInductionClarification(pending)) {
+                          const QString selected = IaMemsConversationRouting::explicitInduction(question);
+                          if (!selected.isEmpty()) {
+                              setProperty("iaLastVariantClarificationQuestion", pending);
+                              setProperty("iaLastVariantClarificationAnswer", selected);
+                          }
+                      }
+                      effectiveQuestion = QStringLiteral("%1 %2").arg(pending, question).simplified();
+                  }
+                  m_pendingClarificationQuestion.clear();
+          '''
+          if text.count(marker) != 1:
+              raise SystemExit(f'pending clarification marker count={text.count(marker)}')
+          text = text.replace(marker, replacement, 1)
+          
+          marker = '''    const QString prompt = clarificationPrompt(effectiveQuestion);
+              if (!prompt.isEmpty()) {
+                  m_pendingClarificationQuestion = effectiveQuestion;
+                  answerLocally(prompt);
+                  return;
+              }
+          
+              updateDiagramSuggestion(effectiveQuestion);
+          '''
+          replacement = '''    const QString prompt = clarificationPrompt(effectiveQuestion);
+              if (!prompt.isEmpty()) {
+                  m_pendingClarificationQuestion = effectiveQuestion;
+                  answerLocally(prompt);
+                  return;
+              }
+          
+              const QString localMpiAnswer = shortMpiAnswer(effectiveQuestion);
+              if (!localMpiAnswer.isEmpty()) {
+                  answerLocally(localMpiAnswer);
+                  return;
+              }
+          
+              updateDiagramSuggestion(effectiveQuestion);
+          '''
+          if text.count(marker) != 1:
+              raise SystemExit(f'prompt marker count={text.count(marker)}')
+          text = text.replace(marker, replacement, 1)
+          
+          p.write_text(text, encoding='utf-8')
+          PY
+      - name: Targeted source checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F 'm_transcript->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);' iamemstab.cpp
+          grep -F 'm_transcript->scrollToAnchor(messageAnchor);' iamemstab.cpp
+          grep -F 'Correction prise en compte : %1. Je reprends la demande précédente avec cette variante.' iamemstab.cpp
+          grep -F 'Sur un système MPi Rover/Mini MEMS' iamemstab.cpp
+          grep -F 'MPi signifie « Multi Point Injection »' iamemstab.cpp
+          test "$(grep -c 'shortMpiAnswer' iamemstab.cpp)" -ge 2
+          git diff --check
+      - name: Trigger isolated x64 test package and commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '\n# trigger IA scroll MPI correction %s\n' "${GITHUB_RUN_ID}" >> .github/workflows/tmp-ravemems-visual-test-package-x64.yml
+          git rm .github/workflows/tmp-apply-ia-scroll-mpi-corrections.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add iamemstab.cpp .github/workflows/tmp-ravemems-visual-test-package-x64.yml
+          git commit -m 'Fix IA transcript navigation and MPI correction flow'
+          changed="$(git diff --name-only b0334968a0daec9990bd130fe6f26b143b2468d4..HEAD | sort)"
+          expected="$(printf '%s\n' '.github/workflows/tmp-ravemems-visual-test-package-x64.yml' 'iamemstab.cpp' | sort)"
+          test "$changed" = "$expected"
+          git push origin HEAD:tmp-ravemems-ia-visual-integration
