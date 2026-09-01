@@ -1,0 +1,26 @@
+name: TEMP journal RAVEMEMS additive audit result
+on:
+  push:
+    branches:
+      - RAPPORT
+permissions:
+  contents: write
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 1
+      - name: Append audit result
+        shell: bash
+        run: |
+          set -e
+          printf '%s\n' '' '## 2026-09-01 - RAVEMEMS - AUDIT DE FUSION ADDITIVE REUSSI' '' 'Workflow RAVEMEMS additive merge audit : run 33493009341, job 99808648964, commit bc47870b5ca50759d77797d0a4b8fd24215a5a33 = SUCCESS.' '' 'Artefact audit : ravemems-additive-merge-audit, ID 9794557538, taille 19176367 octets, digest sha256:3135bee4c05fa9acb9c88106a701622e1ac520868b10743e5bb794cdd11ba893.' '' 'Base BUILD #103 AVANT : SHA-256 c6a06af6528fccf6d98610f357dfb774e44f3ab4ed510806cf70ca28e335deb6, user_version 20. Base fusionnee de test APRES : SHA-256 3d07160f28f6ea4bd112d199b464e0e3a2423e0707e3852bd7313316a811af5b, user_version 21.' '' 'Preservation historique : 0 table historique modifiee, 0 objet historique perdu, integrity/FK verts. Import RAVEMEMS execute deux fois avec resultat idempotent.' '' 'Ajout documentaire : mems_doc_document=47, mems_doc_unit=1359, mems_doc_entity=78039, mems_doc_text=75108, mems_doc_visual=1070, mems_doc_relation=77404, locales=6. Les 1070 assets enregistres ont tous ete verifies par SHA. Aucun contenu historique na ete supprime.' '' 'Audit doublons initial : 2 candidats de texte normalise exactement identique et 2 codes de publication presents a la fois dans historique et RAVEMEMS. Suppressions automatiques=0.' '' 'PROCHAINE ACTION EXACTE : examiner et classer individuellement ces 2 correspondances exactes et les 2 recouvrements de source en identique, complementaire, conflit ou a revoir. Ne supprimer ni fusionner aucune ligne avant cette classification et conserver provenance historique + RAVEMEMS.' >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          rm .github/workflows/tmp-ravemems-journal-additive-audit-result.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md .github/workflows/tmp-ravemems-journal-additive-audit-result.yml
+          git commit -m 'Record successful RAVEMEMS additive merge audit'
+          git push origin HEAD:RAPPORT
