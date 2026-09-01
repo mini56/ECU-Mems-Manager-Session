@@ -11010,3 +11010,24 @@ RAVE-REP-TP-SENSOR-001 : p.123 contient le debut de THROTTLE HOUSING et pas enco
 RCL0194ENG p.17 et p.19 confirment les sections 20.2 MPi et 20.4 SPi Japan, les connecteurs attendus, SENSOR EARTH, SJ5 et les codes couleur NK/BW/KB/GB. Le texte lineaire seul ne suffit toutefois pas a prouver la correspondance graphique fil par fil entre chaque connecteur et son code couleur ; cette association doit etre verifiee avec bbox/spans avant validation finale.
 
 PROCHAINE ACTION EXACTE : lire en lecture seule RCL0193ENG p.119,124,136,171 pour fermer cable, TP et repose injecteurs ; puis exploiter bbox/spans des lignes RCL0194ENG p.17 et p.19 afin de verifier les associations connecteur-couleur pour les cinq cas partiels. Classer ensuite les 10 faits definitivement et produire le plan non destructif de correction des seules provenances/erreurs prouvees. Aucune modification SQLite et aucun MEMSX64 avant ce verdict.
+
+## 2026-09-01 - RAVEMEMS - CLASSIFICATION FINALE DES 10 FAITS CIBLES
+
+Dernier controle read-only : run 33508591867, job 99858512519, commit technique 739c9bb581096de47434a80ec18b3aa8c81b5356 = SUCCESS. La base fusionnee de test a ete ouverte en lecture seule, integrity/FK verts, aucune ecriture SQLite.
+
+Verdict : les 10 faits historiques cibles sont CONFIRMES par RAVEMEMS. 0 divergence semantique prouvee, 0 erreur factuelle historique prouvee, 0 suppression justifiee, 0 fusion destructive justifiee.
+RAVE-EVAP-PURGE-001 : CONFIRME, texte constructeur exact p.99 lignes 68-74 ; corriger seulement la provenance p.98 -> p.99.
+RAVE-ADJ-THROTTLE-CABLE-001 : CONFIRME, procedure complete p.119, service 19.20.05 ; corriger seulement p.118 -> p.119.
+RAVE-REP-TP-SENSOR-001 : CONFIRME p.124, y compris vis/rondelles neuves, precautions de montage et couple 1.5 Nm ; corriger seulement p.123 -> p.124.
+RAVE-REP-PURGE-001 : CONFIRME p.102, y compris depose/rejet joint torique et joint neuf graisse silicone ; corriger seulement p.101 -> p.102.
+RAVE-REP-INJECTORS-001 : CONFIRME. Depose/rejet joints sur p.135 et p.170 ; repose complete, nettoyage, protections et joints neufs graisse silicone sur p.136 et p.171. Etendre/corriger la provenance vers p.135-136 et p.170-171.
+RAVE-COLOR-SPIJ-004 : CONFIRME par geometrie RCL0194 p.19 : C159-30 et reseau SENSOR EARTH/SJ5 sont sur le chemin KB commun capteurs.
+RAVE-COLOR-SPIJ-007 : CONFIRME par geometrie p.19 : C159-16 est aligne avec GB ; C174-2 et le capteur INLET AIR TEMP sont dans le meme sous-schema SPi Japan 20.4.
+RAVE-WIR-MPI-004 : CONFIRME par geometrie p.17 : C158-17 est aligne avec BW ; C152-1/C152-2 et les lignes NK/BW correspondent au circuit de vanne de purge MPi.
+RAVE-WIR-MPI-012 : CONFIRME par geometrie p.17 : C159-13, SENSOR EARTH et SJ5 sont relies au reseau KB commun capteurs.
+RAVE-WIR-SPIJ-011 : CONFIRME par geometrie p.19 : C159-30, SENSOR EARTH et SJ5 sont relies au reseau KB commun ECT/TP/IAT.
+
+PLAN NON DESTRUCTIF VALIDE POUR LA SUITE : ne supprimer aucune ligne historique et ne supprimer aucun contenu RAVEMEMS. Dans une nouvelle copie de la base fusionnee de test seulement, ajouter des liens de provenance entre les faits historiques structures et les entites/pages/lignes RAVEMEMS exactes ; corriger uniquement les localisateurs/pages de provenance RCL0193 prouves ci-dessus. Conserver les deux representations, leur source_key/legacy_key et toutes les provenances. Refaire ensuite snapshot AVANT/APRES de toutes les tables historiques, integrity_check, foreign_key_check, idempotence et audit des liens. Aucune integration production avant resultat vert.
+
+PROCHAINE ACTION EXACTE : preparer sur tmp-rave-new-extraction-pilot un traitement de provenance NON DESTRUCTIF applique uniquement a une copie de ia_mems_reference_r20_plus_ravemems_AUDIT.sqlite. Ajouter les relations historiques -> RAVEMEMS et les cinq corrections/etendues de localisateur RCL0193 confirmees, sans supprimer/fusionner aucune donnee. Executer deux fois pour prouver idempotence, comparer toutes les tables historiques hors champs explicitement de provenance si une correction y est necessaire, verifier integrity/FK, puis produire un artefact et un rapport AVANT/APRES. Ne pas toucher MEMSX64, QZ64 ni installateur.
+`MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
