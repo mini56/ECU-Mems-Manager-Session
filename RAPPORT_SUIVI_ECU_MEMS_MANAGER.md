@@ -11700,3 +11700,23 @@ Le run global reste rouge uniquement dans `Verify source scope`: PowerShell exec
 
 PROCHAINE ACTION EXACTE: corriger uniquement le harnais en construisant explicitement la plage git (par exemple `$range = "$($env:BASE_COMMIT)..HEAD"` puis `git diff --name-only $range`), puis relancer exactement le meme workflow. Aucun code applicatif, viewer, base, catalogue ou MEMSX64 ne doit changer.
 
+
+
+## IA VISUELLE RAVEMEMS - INTEGRATION X64 ENTIEREMENT VERTE
+Date: 2026-09-01
+
+Workflow de validation final: run `33532216471`, job `99937862220`, branche `tmp-ravemems-ia-visual-integration`, HEAD de run `5bd24a0679e0de33fb3d37677c23cb32cf508da8`.
+Correctif applicatif final inclus: `9aef21a85b2ba72ec02119f7e71a207e1c9eb795` (ajout de `est` aux mots non techniques ignores pour le routage visuel).
+
+RESULTAT: SUCCESS GLOBAL.
+- protection MEMSX64: PASS, toujours BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`;
+- artefacts source exacts/digests: PASS;
+- runtime: 1935 entrees viewer, 1211 fichiers, 1794 occurrences RAVEMEMS + 141 legacy conserves: PASS;
+- base nettoyee: integrity_check OK, FK 0, 177 faits, 102 illustrations legacy actives, 288 liens legacy actifs, 1070 assets RAVEMEMS, 1794 occurrences: PASS;
+- compilation MSVC x64 `ia_mems_diagram_selftest`: PASS;
+- self-test IA visuel complet: PASS, y compris MEMS 1.2/1.3/1.6/1.9, ROSCO, OBD, purge RCL0193ENG, visuel legacy AKM6348, remplacement legacy -> RAVEMEMS, pages texte masquees, chemin absent et traversal refuses;
+- garde de scope Git corrige et PASS;
+- artefact preuve `ravemems-ia-visual-integration-validation`: ID `9810240029`, taille 643 octets, digest `sha256:ec411ff33b0a57a0188e5c85e3fc443d9ea39b326be922b966fd7af716a871d3`.
+
+PROCHAINE ACTION EXACTE: sans toucher a MEMSX64, construire sur la branche isolee un package x64 de TEST derive du BUILD #103, en injectant uniquement la copie nettoyee valide et le runtime visuel valide (1935 entrees / 1211 fichiers), conserver exactement le viewer Qt #103, puis fournir l'artefact de test pour essai reel utilisateur. Le package doit verifier les SHA/comptes avant compilation et ne doit pas etre publie comme build production tant que le test utilisateur n'est pas valide.
+
