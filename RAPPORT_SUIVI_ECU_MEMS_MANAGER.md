@@ -10533,3 +10533,22 @@ L'utilisateur a explicitement donne le GO pour le traitement complet si RAVEMEMS
 ### PROCHAINE ACTION EXACTE
 
 Construire sur `tmp-rave-new-extraction-pilot` le processeur generique de corpus RAVEMEMS et son workflow, puis le lancer sur les sources anglaises canoniques de `main/rave/`. Ne pas s'arreter sur une page non reconnue : la conserver et la marquer `needs_review`. Inspecter ensuite le manifeste global, les controles SQLite et les statistiques par document/page, puis consigner immediatement le resultat dans ce rapport. `MEMSX64` reste strictement au BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+## 2026-09-01 - RAVEMEMS TRAITEMENT COMPLET - ECHEC INSTALLATEUR TRANSPORT #1
+
+Premiere pousse de preparation du processeur complet :
+- branche : `tmp-rave-new-extraction-pilot` ;
+- commit : `0f5220af2244e710341e501534d21b33a004aee9` (`Prepare RAVEMEMS full corpus processor`) ;
+- workflow temporaire : `TEMP install RAVEMEMS full corpus processor` ;
+- run : `33480592787` ;
+- job : `install`, ID `99769111000` ;
+- conclusion : **FAILURE** ;
+- erreur exacte : `zlib.error: Error -3 while decompressing data: incorrect data check`.
+
+L'echec intervient pendant la decompression du gros payload texte integre au YAML. Le script permanent, le workflow permanent et le trigger n'ont donc pas ete installes, aucun corpus RAVE n'a ete traite, aucun artefact corpus n'a ete produit et `MEMSX64` n'a pas ete touche.
+
+Cause retenue : transport monolithique du payload compresse trop fragile. La logique du processeur n'a pas encore ete executee par GitHub Actions.
+
+### PROCHAINE ACTION EXACTE
+
+Remplacer uniquement le transport : pousser un installateur temporaire utilisant plusieurs fragments courts du payload compresse, verifier leur SHA/assemblage avant decompression, installer `tools/ravemems_full_corpus.py` et `.github/workflows/ravemems-full-corpus.yml`, puis effectuer un commit de trigger externe afin de lancer reellement le traitement complet. Ne pas changer les regles RAVEMEMS et ne pas toucher a `MEMSX64`.
