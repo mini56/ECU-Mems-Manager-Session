@@ -11720,3 +11720,18 @@ RESULTAT: SUCCESS GLOBAL.
 
 PROCHAINE ACTION EXACTE: sans toucher a MEMSX64, construire sur la branche isolee un package x64 de TEST derive du BUILD #103, en injectant uniquement la copie nettoyee valide et le runtime visuel valide (1935 entrees / 1211 fichiers), conserver exactement le viewer Qt #103, puis fournir l'artefact de test pour essai reel utilisateur. Le package doit verifier les SHA/comptes avant compilation et ne doit pas etre publie comme build production tant que le test utilisateur n'est pas valide.
 
+
+
+## IA VISUELLE RAVEMEMS - LIBELLE UNIQUE VOIR LE SCHEMA AVANT POUSSE
+Date: 2026-09-01
+
+Verification du code `iamemstab.cpp` sur `tmp-ravemems-ia-visual-integration`: le viewer Qt #103 est bien conserve intact, mais `updateDiagramSuggestion()` affiche encore l'ancien texte `Ouvrir le schéma %1` avec le titre dynamique.
+
+Decision utilisateur deja validee: un seul libelle UI doit suffire pour schema, illustration, photo technique ou dessin constructeur: `Voir le schéma`.
+
+PROCHAINE ACTION EXACTE: sur la branche de test uniquement, remplacer uniquement le texte du bouton `m_diagramButton` par `Voir le schéma`, sans modifier le viewer, la resolution de fichier, les protections, le moteur IA, la base ou MEMSX64. Verifier ensuite le diff exact et journaliser avant la pousse du workflow de package x64 de test.
+
+Le chargeur #103 a egalement ete verifie compatible avec la copie enrichie user_version 21: la base packagee est choisie par le nom derive de `manifest.database_revision` et ouverte en lecture seule; aucun lecteur expert ne rejette les tables additives ni user_version 21. Le fichier de test peut donc rester `database/expert/ia_mems_reference_r20.sqlite` sans modifier le chargeur.
+
+MEMSX64 reste BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
