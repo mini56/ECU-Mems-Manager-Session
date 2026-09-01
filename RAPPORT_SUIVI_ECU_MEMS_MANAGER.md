@@ -11047,3 +11047,9 @@ PROCHAINE ACTION EXACTE : auditer en lecture seule les visual_occurrence/visual_
 - Action : import total et conservation de tous les visuels RAVEMEMS dans la base enrichie, puis liaison additive vers la couche documentaire afin que l IA puisse retrouver un visuel associe. Aucune suppression/fusion historique.
 - Regle de securite : aucune table historique modifiee ; MEMSX64 reste strictement BUILD #103.
 - PROCHAINE ACTION EXACTE : produire et tester sur tmp-rave-new-extraction-pilot une couche de liaison visuelle additive couvrant 1 070 assets / 1 794 occurrences, verifier integralite, idempotence, preservation bit-a-bit logique des tables historiques et disponibilite de chaque occurrence depuis son contexte documentaire ; ne pas integrer MEMSX64.
+
+## 1 SEPTEMBRE 2026 — INCIDENT TRANSPORT VISUAL BUNDLE — AVANT CORRECTION
+- Le commit technique prepare 57544d144c075ef88e9f476f2d978c451b328876 contenait le script complet + workflow mais n avait pas encore ete attache a tmp-rave-new-extraction-pilot.
+- Une operation de contenu incorrecte a ensuite cree le commit 71659779147aaa5306a3ff49e566887ddf5fb2c4 sur la branche temporaire avec tools/ravemems_visual_bundle_link.py vide.
+- Aucun workflow technique de visual bundle n a ete valide par ce commit incomplet ; aucune base SQLite n a ete modifiee ; MEMSX64 reste strictement BUILD #103.
+- PROCHAINE ACTION EXACTE : restaurer sur tmp-rave-new-extraction-pilot le contenu complet du script et ajouter le workflow ravemems-visual-bundle-audit.yml dans un commit correct, puis executer le test reel avant toute suite.
