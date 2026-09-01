@@ -11589,3 +11589,18 @@ Conclusion : logique corrective et scope valides ; seul le transport d une modif
 
 PROCHAINE ACTION EXACTE : apres un nouveau RAPPORT AVANT POUSSE, modifier uniquement l orchestrateur pour restaurer le workflow de validation avant commit et ne pousser que les deux fichiers `.cpp`; ne supprimer encore aucun workflow/helper dans cette pousse. Une fois ce push code vert, journaliser puis creer via connecteur un nouveau harnais de validation declenche par son propre fichier, testant le HEAD corrige. Aucun autre changement.
 
+
+## 2026-09-01 — IA VISUELLE — AVANT POUSSE CORRECTIF CODE SEUL
+
+Apres le blocage permission workflow du run `33528646773`, la prochaine pousse technique doit modifier uniquement l orchestrateur temporaire afin qu il :
+- execute le helper deja present ;
+- restaure immediatement `.github/workflows/tmp-ravemems-ia-visual-validation.yml` a son contenu courant avant commit ;
+- ne supprime ni helper ni workflow temporaire dans cette pousse ;
+- committe et pousse uniquement `expert/IaMemsDiagramCatalog.cpp` et `expert/IaMemsDiagramSelfTest.cpp` ;
+- verifie que ces deux fichiers sont les seules differences applicatives ajoutees par ce commit ;
+- ne touche pas `MEMSX64`.
+
+Le helper/orchestrateur resteront temporairement presents pour etre nettoyes apres validation. Le harnais de validation sera relance ensuite via un nouveau workflow cree par le connecteur GitHub, car le token Actions ne peut pas modifier les workflows.
+
+PROCHAINE ACTION EXACTE : mettre a jour uniquement l orchestrateur, laisser son run pousser les deux corrections `.cpp` seulement, verifier le nouveau HEAD et le diff, puis journaliser immediatement ce push code avant de creer le nouveau harnais de validation. Aucun autre changement.
+
