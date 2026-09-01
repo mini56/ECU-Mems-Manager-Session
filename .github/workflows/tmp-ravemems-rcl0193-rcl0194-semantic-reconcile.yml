@@ -1,0 +1,235 @@
+name: TEMP RAVEMEMS RCL0193 RCL0194 semantic reconcile
+
+on:
+  push:
+    branches:
+      - tmp-rave-new-extraction-pilot
+    paths:
+      - .github/workflows/tmp-ravemems-rcl0193-rcl0194-semantic-reconcile.yml
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-new-extraction-pilot
+          fetch-depth: 1
+
+      - name: Download exact merged audit database
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/additive"
+          gh run download 33493009341 --repo "$GITHUB_REPOSITORY" --name ravemems-additive-merge-audit --dir "$RUNNER_TEMP/additive"
+          test -f "$RUNNER_TEMP/additive/ia_mems_reference_r20_plus_ravemems_AUDIT.sqlite.gz"
+          gzip -dc "$RUNNER_TEMP/additive/ia_mems_reference_r20_plus_ravemems_AUDIT.sqlite.gz" > "$RUNNER_TEMP/additive/merged.sqlite"
+
+      - name: Reconcile historical RCL0193ENG and RCL0194ENG rows read-only
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/reconcile"
+          python3 - "$RUNNER_TEMP/additive/merged.sqlite" "$RUNNER_TEMP/reconcile/reconciliation.json" "$RUNNER_TEMP/reconcile/reconciliation.md" <<'PY'
+          import json, re, sqlite3, sys, unicodedata
+          from collections import defaultdict
+          from pathlib import Path
+
+          db_path, out_json, out_md = map(Path, sys.argv[1:4])
+          db = sqlite3.connect(f'file:{db_path}?mode=ro', uri=True)
+          db.row_factory = sqlite3.Row
+          assert db.execute('PRAGMA integrity_check').fetchone()[0].lower() == 'ok'
+          assert not db.execute('PRAGMA foreign_key_check').fetchall()
+
+          PUBS = {
+              'RCL0193ENG': 'SRC-RCL0193',
+              'RCL0194ENG': 'SRC-RCL0194',
+          }
+
+          def norm(s):
+              s = unicodedata.normalize('NFKC', s or '').casefold()
+              s = s.replace('n.m','nm').replace('n·m','nm')
+              s = re.sub(r'\s+', ' ', s)
+              return s.strip()
+
+          def anchors(text):
+              out=[]
+              pats = [
+                  r'\bC\d{3,4}(?:-\d+)?\b',
+                  r'\b\d{2}\.\d{2}\.\d{2}(?:\.\d+)?\b',
+                  r'\bSAX[A-Z0-9_ -]{8,}\b',
+                  r'\b\d+(?:[.,]\d+)?\s*(?:N\.?m|Nm|°C|V|mV|mm|kPa|rpm)\b',
+                  r'\b(?:MAP|IACV|IAT|ECT|ECM|ECU|MEMS|MPi|SPi|CKP|HO2S|EVAP|SENSOR EARTH)\b',
+              ]
+              for pat in pats:
+                  out += re.findall(pat, text or '', re.I)
+              seen=[]
+              for a in out:
+                  a=re.sub(r'\s+',' ',a).strip()
+                  if a and norm(a) not in [norm(x) for x in seen]: seen.append(a)
+              return seen
+
+          docs={}
+          for pub in PUBS:
+              rows=db.execute('SELECT document_key,file_name,publication_code FROM mems_doc_document WHERE publication_code=? ORDER BY document_key',(pub,)).fetchall()
+              assert len(rows)==1, (pub, [dict(x) for x in rows])
+              docs[pub]=dict(rows[0])
+
+          line_index={}
+          page_text={}
+          for pub,d in docs.items():
+              dk=d['document_key']
+              lines=db.execute('''SELECT u.physical_page,e.sort_order,t.text_value
+                                  FROM mems_doc_entity e
+                                  JOIN mems_doc_unit u ON u.unit_key=e.unit_key
+                                  JOIN mems_doc_text t ON t.entity_key=e.entity_key AND t.locale='en' AND t.field_key='source_exact'
+                                  WHERE e.document_key=? AND e.entity_kind='source_line'
+                                  ORDER BY u.physical_page,e.sort_order''',(dk,)).fetchall()
+              li=defaultdict(list)
+              for r in lines: li[r['physical_page']].append((r['sort_order'],r['text_value'] or ''))
+              line_index[pub]=dict(li)
+              pages={}
+              for p,vals in li.items(): pages[p]='\n'.join(v for _,v in vals)
+              page_text[pub]=pages
+
+          facts=[]
+          for pub,src in PUBS.items():
+              rows=db.execute('SELECT * FROM mems_expert_fact_external WHERE source_key=? ORDER BY fact_key',(src,)).fetchall()
+              for r in rows:
+                  d=dict(r)
+                  d['_publication_code']=pub
+                  facts.append(d)
+          assert facts, 'no structured RCL0193/RCL0194 historical facts found'
+
+          def cited_pages(notes):
+              pages=set()
+              for m in re.finditer(r'PDF\s*p\.?\s*(\d+)(?:\s*[-–]\s*(\d+))?', notes or '', re.I):
+                  a=int(m.group(1)); b=int(m.group(2) or a)
+                  if b<a: a,b=b,a
+                  pages.update(range(a,b+1))
+              return sorted(pages)
+
+          def section_refs(notes,pub):
+              refs=[]
+              for m in re.finditer(re.escape(pub)+r'\s*:\s*([0-9]+\.[0-9]+(?:\s*[-–]\s*[0-9]+\.[0-9]+)?)', notes or '', re.I):
+                  refs.append(m.group(1).replace(' ',''))
+              for m in re.finditer(r'(?:section|sections?)\s+[^;]*?\b(\d{1,2}\.\d{1,2})\b', notes or '', re.I):
+                  refs.append(m.group(1))
+              return list(dict.fromkeys(refs))
+
+          def hit_contexts(pub, anchor, limit=8):
+              na=norm(anchor)
+              hits=[]
+              for p,vals in line_index[pub].items():
+                  for i,(order,text) in enumerate(vals):
+                      if na in norm(text):
+                          lo=max(0,i-3); hi=min(len(vals),i+4)
+                          hits.append({'page':p,'line_order':order,'line':text,'context':[x[1] for x in vals[lo:hi]]})
+                          if len(hits)>=limit: return hits
+              return hits
+
+          reconciled=[]
+          counts=defaultdict(int)
+          for f in facts:
+              pub=f['_publication_code']
+              statement=f.get('statement') or ''
+              topic=f.get('topic') or ''
+              notes=f.get('notes') or ''
+              aa=anchors(statement+' '+topic)
+              anchor_hits={a:hit_contexts(pub,a) for a in aa}
+              missing=[a for a,h in anchor_hits.items() if not h]
+              present=[a for a,h in anchor_hits.items() if h]
+              cp=cited_pages(notes)
+              sr=section_refs(notes,pub)
+              cited_exist=[p for p in cp if p in page_text[pub]]
+              cited_missing=[p for p in cp if p not in page_text[pub]]
+              if aa and not missing:
+                  cls='anchors_supported'
+              elif present:
+                  cls='partial_anchor_support'
+              elif aa:
+                  cls='anchors_not_found'
+              else:
+                  cls='no_machine_anchor'
+              counts[(pub,cls)] += 1
+              reconciled.append({
+                  'publication_code':pub,
+                  'source_key':f.get('source_key'),
+                  'fact_key':f.get('fact_key'),
+                  'topic':topic,
+                  'statement':statement,
+                  'verification_level':f.get('verification_level'),
+                  'notes':notes,
+                  'cited_pdf_pages':cp,
+                  'cited_pages_present_in_ravemems':cited_exist,
+                  'cited_pages_missing_in_ravemems':cited_missing,
+                  'section_refs':sr,
+                  'anchors':aa,
+                  'present_anchors':present,
+                  'missing_anchors':missing,
+                  'anchor_hits':anchor_hits,
+                  'machine_classification':cls,
+              })
+
+          # Generic legacy references to the two publication codes, kept separately from semantic fact rows.
+          tables=[r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'mems_doc_%' ORDER BY name")]
+          generic_refs=[]
+          for table in tables:
+              cols=db.execute(f'PRAGMA table_info("{table}")').fetchall()
+              textcols=[c[1] for c in cols if 'TEXT' in (c[2] or '').upper()]
+              if not textcols: continue
+              sel='rowid,'+','.join('"'+c.replace('"','""')+'"' for c in textcols)
+              try: rows=db.execute(f'SELECT {sel} FROM "{table}"').fetchall()
+              except sqlite3.DatabaseError: continue
+              for row in rows:
+                  vals=[row[i+1] for i in range(len(textcols))]
+                  joined='\n'.join(v for v in vals if isinstance(v,str))
+                  pubs=[p for p in PUBS if p.casefold() in joined.casefold()]
+                  if pubs:
+                      generic_refs.append({'table':table,'rowid':row[0],'publications':pubs,'matched_columns':[c for c,v in zip(textcols,vals) if isinstance(v,str) and any(p.casefold() in v.casefold() for p in pubs)]})
+
+          out={
+              'source_run':33493009341,
+              'source_artifact':'ravemems-additive-merge-audit',
+              'database_read_only':True,
+              'documents':docs,
+              'structured_fact_count':len(reconciled),
+              'machine_class_counts':{f'{p}:{c}':n for (p,c),n in sorted(counts.items())},
+              'generic_legacy_reference_count':len(generic_refs),
+              'generic_legacy_references':generic_refs,
+              'facts':reconciled,
+              'interpretation_rule':'Machine anchor support is evidence triage only; it never authorizes deletion or semantic fusion. Missing anchors are review flags, not automatic conflicts.'
+          }
+          out_json.write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+
+          md=['# RCL0193ENG / RCL0194ENG semantic reconciliation - read only','',f'- Structured historical facts: {len(reconciled)}',f'- Generic legacy references: {len(generic_refs)}','']
+          for pub in PUBS:
+              md.append(f'## {pub}')
+              for x in [r for r in reconciled if r['publication_code']==pub]:
+                  md.append(f"- `{x['fact_key']}` — {x['machine_classification']} — anchors={len(x['anchors'])}, missing={x['missing_anchors']}, cited_pages={x['cited_pdf_pages']}, sections={x['section_refs']}")
+              md.append('')
+          out_md.write_text('\n'.join(md)+'\n',encoding='utf-8')
+
+          print('SEMANTIC_RECONCILIATION_BEGIN')
+          print('STRUCTURED_FACTS='+str(len(reconciled)))
+          print('GENERIC_LEGACY_REFERENCES='+str(len(generic_refs)))
+          for k,v in sorted(out['machine_class_counts'].items()): print('CLASS_COUNT '+k+'='+str(v))
+          for x in reconciled:
+              print('FACT '+json.dumps({k:x[k] for k in ['publication_code','fact_key','topic','machine_classification','cited_pdf_pages','section_refs','anchors','missing_anchors']},ensure_ascii=False))
+              if x['machine_classification'] in ('partial_anchor_support','anchors_not_found'):
+                  compact={a:[{'page':h['page'],'line':h['line'],'context':h['context']} for h in hs[:2]] for a,hs in x['anchor_hits'].items() if hs}
+                  print('FACT_HITS '+x['fact_key']+' '+json.dumps(compact,ensure_ascii=False))
+          print('SEMANTIC_RECONCILIATION_END')
+          db.close()
+          PY
+
+      - name: Upload reconciliation evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ravemems-rcl0193-rcl0194-semantic-reconciliation
+          path: ${{ runner.temp }}/reconcile
+          if-no-files-found: error
