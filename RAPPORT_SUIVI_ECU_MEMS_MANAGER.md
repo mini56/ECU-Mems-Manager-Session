@@ -11322,3 +11322,22 @@ Aucune base SQLite, aucun manifeste, aucune image production et aucune donnee hi
 
 PROCHAINE ACTION EXACTE : pousser uniquement le workflow read-only de comparaison normalisee COLOUR CODES, executer et inspecter ses metriques/preuves, puis journaliser le verdict avant de reconstruire la matrice globale 427 + 126 + 329.
 
+
+## 2026-09-01 — RCL0194ENG COLOUR CODES — COMPARAISON NORMALISEE TERMINEE
+
+Run read-only `33522920813` — **SUCCESS**.
+Branche `tmp-rave-new-extraction-pilot`, commit `bcf3aef8dc9b6a82c8877e152ff252d93121dbc9`.
+Artefact `ravemems-colour-codes-normalized-comparison`, ID `9806441719`, taille `498605`, digest `sha256:97ad40772a7bea16fb42ccde38c688dd88f760dbe68f10c23eb84863bfe4cdce`.
+
+Entrees exactes : BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`; ancien PNG `RCL0194ENG_COLOUR_CODES.png` SHA256 `718af9c48d7cc466b5c50278680ecb286de81a869d8e2293207796afe08833d3`, dimensions 1700x696 ; asset RAVEMEMS page 7 SHA256 `e53278e031cf8180c8b6a88387c6bd44a9ea7303fddf4a7781b512a6ad660d4c`, dimensions 3356x2320.
+
+La recherche multi-echelle a explicitement teste l'hypothese d'un crop/redimensionnement. Les deux recherches structurelles independantes ne convergent pas : score contours `0.1727330834`, score binaire `0.1612773985`, ecart de localisation `748.3168` px dans l'image de recherche, ecart de facteur `0.0502083`. Apres alignement du meilleur candidat, correlation de gradients `-0.0140985`, correlation d'intensite `0.0788823`, IoU d'encre dilatee `0.0600736`. Le garde conservateur d'equivalence n'est pas atteint.
+
+Classification autoritaire finale du cas `COLOUR CODES` : `conserver_migrer_legacy`. L'asset RAVEMEMS page 7 reste conserve comme visuel source RAVEMEMS, mais il ne remplace pas l'ancien crop legacy. Aucune suppression automatique n'est autorisee par ce test.
+
+Les 8 cas RCL0194ENG anciennement non resolus sont donc tous maintenant classes `conserver_migrer_legacy` : 15.1, 20.1, 20.2, 20.3, 20.4, 39.2, 39.3 et COLOUR CODES.
+
+Aucune base, aucune image production, aucun manifeste et aucune donnee historique n'ont ete modifies. `MEMSX64` reste strictement BUILD #103.
+
+PROCHAINE ACTION EXACTE : reconstruire en lecture seule la matrice globale de traitement des 427 entrees de manifeste legacy + 126 illustrations + 329 liens avec toutes les classifications autoritaires : remplacement seulement quand RAVEMEMS est prouve, conservation/migration des sources legacy uniques ou sans remplacement visuel, retrait de l'UI seulement des captures de pages texte sans visuel tout en gardant leur provenance. Verifier qu'aucun `a_revoir` ne reste au niveau manifeste. Ne supprimer aucune donnee avant validation de cette matrice et d'une migration sur copie.
+
