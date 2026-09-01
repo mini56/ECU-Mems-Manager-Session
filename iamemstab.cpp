@@ -130,15 +130,42 @@ IaMemsTab::IaMemsTab(MainWindow *mainWindow, QWidget *parent)
     subtitle->setWordWrap(true);
     root->addWidget(subtitle);
 
-    m_transcript = new QTextBrowser(this);
+    QWidget *transcriptPane = new QWidget(this);
+    QHBoxLayout *transcriptLayout = new QHBoxLayout(transcriptPane);
+    transcriptLayout->setContentsMargins(0, 0, 0, 0);
+    transcriptLayout->setSpacing(6);
+
+    m_transcript = new QTextBrowser(transcriptPane);
     m_transcript->setObjectName(QStringLiteral("iaMemsTranscript"));
     m_transcript->setOpenExternalLinks(false);
     m_transcript->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    m_transcript->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    m_transcript->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_transcript->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    if (QScrollBar *bar = m_transcript->verticalScrollBar())
-        bar->setMinimumWidth(14);
-    root->addWidget(m_transcript, 1);
+    transcriptLayout->addWidget(m_transcript, 1);
+
+    QScrollBar *transcriptScroll = new QScrollBar(Qt::Vertical, transcriptPane);
+    transcriptScroll->setObjectName(QStringLiteral("iaMemsTranscriptScroll"));
+    transcriptScroll->setMinimumWidth(18);
+    transcriptScroll->setMaximumWidth(18);
+    transcriptLayout->addWidget(transcriptScroll);
+
+    QScrollBar *internalScroll = m_transcript->verticalScrollBar();
+    QObject::connect(internalScroll, &QScrollBar::rangeChanged,
+                     transcriptPane,
+                     [internalScroll, transcriptScroll](int minimum, int maximum) {
+                         transcriptScroll->setRange(minimum, maximum);
+                         transcriptScroll->setPageStep(internalScroll->pageStep());
+                         transcriptScroll->setSingleStep(internalScroll->singleStep());
+                     });
+    QObject::connect(internalScroll, &QScrollBar::valueChanged,
+                     transcriptScroll, &QScrollBar::setValue);
+    QObject::connect(transcriptScroll, &QScrollBar::valueChanged,
+                     internalScroll, &QScrollBar::setValue);
+    transcriptScroll->setRange(internalScroll->minimum(), internalScroll->maximum());
+    transcriptScroll->setPageStep(internalScroll->pageStep());
+    transcriptScroll->setSingleStep(internalScroll->singleStep());
+
+    root->addWidget(transcriptPane, 1);
 
     m_diagramButton = new QPushButton(this);
     m_diagramButton->setObjectName(QStringLiteral("iaMemsDiagramButton"));
