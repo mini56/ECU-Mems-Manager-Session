@@ -11462,3 +11462,22 @@ SHA de la base nettoyee sur copie : `2de4e16e2ccb5126a5bc65028d953bf6180070f655c
 
 PROCHAINE ACTION EXACTE : valider le comportement IA/viewer sur une branche d'integration ISOLEE creee depuis le commit exact BUILD #103, sans toucher `MEMSX64`. Reutiliser strictement `IaMemsDiagramCatalog` et le viewer Qt interne existants ; etendre uniquement la selection afin qu'elle puisse interroger la couche runtime candidate `mems_visual_runtime_source`/catalogue nettoye, proposer `Voir le schéma` quand un contexte RAVEMEMS ou legacy conserve correspond a la question/reponse, ne jamais proposer les 12 pages texte masquees, et continuer a refuser les chemins absents/non autorises. Construire des self-tests couvrant RAVEMEMS, legacy conserve, legacy remplace, page texte masquee, chemin absent et protections de chemin. Aucun merge/push sur `MEMSX64` avant validation complete.
 
+
+## 2026-09-01 — IA MEMS / RAVEMEMS — AVANT POUSSE INTEGRATION VISUELLE ISOLEE
+
+Reprise depuis le nettoyage legacy controle sur copie valide. La production `MEMSX64` doit rester strictement BUILD #103 commit `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+Branche d integration isolee : `tmp-ravemems-ia-visual-integration`, creee directement depuis le commit #103 exact.
+
+Perimetre de la prochaine pousse : modifier uniquement la selection deterministe de `IaMemsDiagramCatalog` et ses self-tests afin de pouvoir interroger, en plus du `manifest.json` historique, un catalogue runtime local produit par la migration RAVEMEMS. Le viewer Qt existant dans `iamemstab.cpp` reste inchange. Aucun changement Qwen/ONNX/LocalAiClient, protocole ECU, RAM, navigation, apparence, 32 bits ou `MEMSX64`.
+
+Contrat attendu :
+- accepter une entree runtime `source_type=ravemems` ou `legacy` uniquement si `ui_visible=true`, `ui_label=Voir le schema`, chemin local autorise et fichier reel present ;
+- ne jamais proposer les 12 captures texte masquees ;
+- un legacy remplace ne doit pas etre ouvert depuis son ancien chemin si le runtime le mappe vers RAVEMEMS ;
+- conserver le fallback `manifest.json` historique pour compatibilite #103 si aucun catalogue runtime n est present ;
+- refuser chemins absolus, `..`, sorties du repertoire de reference et fichiers absents ;
+- self-tests dedies : RAVEMEMS, legacy conserve, legacy remplace, page texte masquee, chemin absent, protection traversal, fallback manifeste historique.
+
+PROCHAINE ACTION EXACTE : pousser uniquement cette extension de catalogue + self-tests sur `tmp-ravemems-ia-visual-integration`, lancer une validation GitHub x64 isolee utilisant la base nettoyee/copied runtime candidate et ses fichiers, puis journaliser immediatement le resultat avant toute integration production. `MEMSX64` reste #103.
+
