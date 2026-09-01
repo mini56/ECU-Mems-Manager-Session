@@ -66,6 +66,34 @@ QString injectionLabel(const QString &raw)
     return QString();
 }
 
+bool isBareInductionSelection(const QString &raw)
+{
+    const QString text = IaMemsConversationRouting::normalize(raw);
+    return text == QStringLiteral("spi") || text == QStringLiteral("mpi");
+}
+
+QString shortMpiAnswer(const QString &raw)
+{
+    const QString text = IaMemsConversationRouting::normalize(raw);
+    if (IaMemsConversationRouting::explicitInduction(raw) != QStringLiteral("MPi"))
+        return QString();
+
+    if (text == QStringLiteral("mpi"))
+        return QStringLiteral(
+            "MPi signifie « Multi Point Injection », c'est-à-dire injection multipoint. "
+            "Sur les montages Rover/Mini concernés, plusieurs injecteurs distribuent le carburant, typiquement un injecteur par cylindre.");
+
+    if (text == QStringLiteral("injecteur mpi")
+        || text == QStringLiteral("injecteurs mpi")
+        || text == QStringLiteral("mpi injecteur")
+        || text == QStringLiteral("mpi injecteurs")) {
+        return QStringLiteral(
+            "Sur un système MPi Rover/Mini MEMS, l'injection est multipoint : plusieurs injecteurs distribuent le carburant, typiquement un par cylindre. "
+            "L'ECU commande leur ouverture pour doser le carburant dans l'admission. Si tu cherches le brochage, le câblage, un contrôle ou une procédure précise, indique simplement ce point et je chercherai la donnée correspondante.");
+    }
+    return QString();
+}
+
 } // namespace
 
 IaMemsTab::IaMemsTab(MainWindow *mainWindow, QWidget *parent)
@@ -474,6 +502,28 @@ void IaMemsTab::sendQuestion()
     appendMessage(QStringLiteral("Vous"), question);
 
     QString effectiveQuestion = question;
+    const QString explicitSelection = IaMemsConversationRouting::explicitInduction(question);
+    const bool bareSelection = isBareInductionSelection(question);
+
+    if (m_pendingClarificationQuestion.isEmpty() && bareSelection && !explicitSelection.isEmpty()) {
+        const QString previousQuestion = property("iaLastVariantClarificationQuestion").toString();
+        const QString previousSelection = property("iaLastVariantClarificationAnswer").toString();
+        if (!previousQuestion.isEmpty()
+            && !previousSelection.isEmpty()
+            && explicitSelection.compare(previousSelection, Qt::CaseInsensitive) != 0) {
+            effectiveQuestion = QStringLiteral("%1 %2")
+                                    .arg(previousQuestion, explicitSelection)
+                                    .simplified();
+            setProperty("iaLastVariantClarificationAnswer", explicitSelection);
+            appendMessage(QStringLiteral("IA MEMS"),
+                          QStringLiteral("Correction prise en compte : %1. Je reprends la demande précédente avec cette variante.")
+                              .arg(explicitSelection));
+        }
+    } else if (m_pendingClarificationQuestion.isEmpty() && !bareSelection) {
+        setProperty("iaLastVariantClarificationQuestion", QVariant());
+        setProperty("iaLastVariantClarificationAnswer", QVariant());
+    }
+
     if (!m_pendingClarificationQuestion.isEmpty()) {
         const QString pending = m_pendingClarificationQuestion;
         m_pendingClarificationQuestion.clear();
@@ -499,6 +549,13 @@ void IaMemsTab::sendQuestion()
                 effectiveQuestion = pending;
             }
         } else {
+            if (IaMemsConversationRouting::needsInductionClarification(pending)) {
+                const QString selected = IaMemsConversationRouting::explicitInduction(question);
+                if (!selected.isEmpty()) {
+                    setProperty("iaLastVariantClarificationQuestion", pending);
+                    setProperty("iaLastVariantClarificationAnswer", selected);
+                }
+            }
             effectiveQuestion = QStringLiteral("%1 %2").arg(pending, question).simplified();
         }
         m_pendingClarificationQuestion.clear();
@@ -510,6 +567,12 @@ void IaMemsTab::sendQuestion()
     if (!prompt.isEmpty()) {
         m_pendingClarificationQuestion = effectiveQuestion;
         answerLocally(prompt);
+        return;
+    }
+
+    const QString localMpiAnswer = shortMpiAnswer(effectiveQuestion);
+    if (!localMpiAnswer.isEmpty()) {
+        answerLocally(localMpiAnswer);
         return;
     }
 
