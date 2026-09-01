@@ -1,9 +1,11 @@
 #include "IaMemsDiagramCatalog.h"
 
 #include <QCoreApplication>
+#include <QCryptographicHash>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QSet>
@@ -65,13 +67,14 @@ QStringList significantTerms(const QString &text)
     const QSet<QString> ignored = {
         QStringLiteral("schema"), QStringLiteral("diagramme"), QStringLiteral("diagram"),
         QStringLiteral("montre"), QStringLiteral("ouvrir"), QStringLiteral("ouvre"),
-        QStringLiteral("veux"), QStringLiteral("quel"), QStringLiteral("quelle"),
-        QStringLiteral("brochage"), QStringLiteral("pinout"), QStringLiteral("connecteur"),
-        QStringLiteral("connector"), QStringLiteral("prise"), QStringLiteral("cablage"),
-        QStringLiteral("wiring"), QStringLiteral("broche"), QStringLiteral("broches"),
-        QStringLiteral("pins"), QStringLiteral("mems"), QStringLiteral("ecu"),
-        QStringLiteral("de"), QStringLiteral("du"), QStringLiteral("la"), QStringLiteral("le"),
-        QStringLiteral("les"), QStringLiteral("un"), QStringLiteral("une"), QStringLiteral("des")
+        QStringLiteral("voir"), QStringLiteral("veux"), QStringLiteral("quel"),
+        QStringLiteral("quelle"), QStringLiteral("brochage"), QStringLiteral("pinout"),
+        QStringLiteral("connecteur"), QStringLiteral("connector"), QStringLiteral("prise"),
+        QStringLiteral("cablage"), QStringLiteral("wiring"), QStringLiteral("broche"),
+        QStringLiteral("broches"), QStringLiteral("pins"), QStringLiteral("mems"),
+        QStringLiteral("ecu"), QStringLiteral("de"), QStringLiteral("du"),
+        QStringLiteral("la"), QStringLiteral("le"), QStringLiteral("les"),
+        QStringLiteral("un"), QStringLiteral("une"), QStringLiteral("des")
     };
 
     QStringList result;
@@ -93,7 +96,7 @@ QString effectiveReferenceRoot(const QString &referenceRoot)
         .filePath(QStringLiteral("database/reference"));
 }
 
-bool safeDeclaredPath(const QString &relativePath)
+bool safeRelativePath(const QString &relativePath)
 {
     if (relativePath.isEmpty() || relativePath == QStringLiteral("."))
         return false;
@@ -101,15 +104,24 @@ bool safeDeclaredPath(const QString &relativePath)
         || relativePath == QStringLiteral("..")
         || relativePath.startsWith(QStringLiteral("../")))
         return false;
-    return relativePath.startsWith(QStringLiteral("images/"));
+    return true;
 }
 
-IaMemsDiagramSuggestion resolveDeclared(const QString &root,
-                                        const QString &key,
-                                        const QString &relativePath)
+bool safeDeclaredPath(const QString &relativePath)
+{
+    return safeRelativePath(relativePath)
+        && relativePath.startsWith(QStringLiteral("images/"));
+}
+
+IaMemsDiagramSuggestion resolvePath(const QString &root,
+                                    const QString &key,
+                                    const QString &relativePath,
+                                    bool manifestPathOnly)
 {
     IaMemsDiagramSuggestion suggestion;
-    if (key.trimmed().isEmpty() || !safeDeclaredPath(relativePath))
+    const bool safe = manifestPathOnly ? safeDeclaredPath(relativePath)
+                                       : safeRelativePath(relativePath);
+    if (key.trimmed().isEmpty() || !safe)
         return suggestion;
 
     const QFileInfo rootInfo(root);
@@ -130,9 +142,156 @@ IaMemsDiagramSuggestion resolveDeclared(const QString &root,
         return suggestion;
 
     suggestion.key = key.trimmed();
-    suggestion.relativePath = relativePath;
+    suggestion.relativePath = QDir::cleanPath(relativePath);
     suggestion.absolutePath = canonicalDiagram;
     return suggestion;
+}
+
+bool fileMatchesSha256(const QString &absolutePath, const QString &expected)
+{
+    const QString normalizedExpected = expected.trimmed().toLower();
+    if (normalizedExpected.isEmpty())
+        return true;
+    if (normalizedExpected.size() != 64)
+        return false;
+
+    QFile file(absolutePath);
+    if (!file.open(QIODevice::ReadOnly))
+        return false;
+    QCryptographicHash hash(QCryptographicHash::Sha256);
+    if (!hash.addData(&file))
+        return false;
+    return QString::fromLatin1(hash.result().toHex()) == normalizedExpected;
+}
+
+bool publicationOnlyTerms(const QStringList &terms)
+{
+    if (terms.size() != 1)
+        return false;
+    const QString t = terms.first();
+    return (t.startsWith(QStringLiteral("rcl")) || t.startsWith(QStringLiteral("akm")))
+        && t.size() >= 7;
+}
+
+int runtimeCandidateScore(const QString &question,
+                          const QString &generation,
+                          const QStringList &terms,
+                          const QJsonObject &entry)
+{
+    const QString sourceType = normalize(entry.value(QStringLiteral("source_type")).toString());
+    if (sourceType != QStringLiteral("ravemems") && sourceType != QStringLiteral("legacy"))
+        return -1;
+    if (!entry.value(QStringLiteral("ui_visible")).toBool(false))
+        return -1;
+    if (normalize(entry.value(QStringLiteral("ui_label")).toString()) != QStringLiteral("voir le schema"))
+        return -1;
+    if (sourceType == QStringLiteral("legacy")) {
+        const QString treatment = normalize(entry.value(QStringLiteral("treatment")).toString());
+        if (!treatment.isEmpty() && treatment != QStringLiteral("conserver migrer legacy"))
+            return -1;
+    }
+
+    const QString searchable = normalize(
+        entry.value(QStringLiteral("runtime_key")).toString() + QLatin1Char(' ')
+        + entry.value(QStringLiteral("source_occurrence_key")).toString() + QLatin1Char(' ')
+        + entry.value(QStringLiteral("asset_entity_key")).toString() + QLatin1Char(' ')
+        + entry.value(QStringLiteral("publication_code")).toString() + QLatin1Char(' ')
+        + QString::number(entry.value(QStringLiteral("physical_page")).toInt()) + QLatin1Char(' ')
+        + entry.value(QStringLiteral("context_text")).toString() + QLatin1Char(' ')
+        + entry.value(QStringLiteral("runtime_path")).toString() + QLatin1Char(' ')
+        + entry.value(QStringLiteral("legacy_old_path")).toString());
+
+    const bool asksRosco = question.contains(QStringLiteral("rosco"));
+    const bool asksObd = question.contains(QStringLiteral("obd"))
+        || question.contains(QStringLiteral("j1962"));
+    if (asksRosco && !searchable.contains(QStringLiteral("rosco")))
+        return -1;
+    if (asksObd && !searchable.contains(QStringLiteral("obd"))
+        && !searchable.contains(QStringLiteral("j1962")))
+        return -1;
+
+    int score = 0;
+    int matched = 0;
+    for (const QString &term : terms) {
+        if (term == generation)
+            continue;
+        if (searchable.contains(term)) {
+            ++matched;
+            score += term.size() >= 4 ? 8 : 4;
+        }
+    }
+    if (matched == 0)
+        return -1;
+
+    const QString publication = normalize(entry.value(QStringLiteral("publication_code")).toString());
+    if (!publication.isEmpty() && question.contains(publication))
+        score += 16;
+    if (!generation.isEmpty() && searchable.contains(generation))
+        score += 8;
+    if (sourceType == QStringLiteral("ravemems"))
+        score += 1;
+    return score;
+}
+
+QString runtimeDisplayKey(const QJsonObject &entry)
+{
+    const QString publication = entry.value(QStringLiteral("publication_code")).toString().trimmed();
+    const int page = entry.value(QStringLiteral("physical_page")).toInt();
+    if (!publication.isEmpty() && page > 0)
+        return QStringLiteral("%1 p.%2").arg(publication).arg(page);
+    const QString runtimeKey = entry.value(QStringLiteral("runtime_key")).toString().trimmed();
+    return runtimeKey;
+}
+
+IaMemsDiagramSuggestion runtimeSuggestion(const QString &question,
+                                           const QString &generation,
+                                           const QStringList &terms,
+                                           const QString &root)
+{
+    IaMemsDiagramSuggestion best;
+    if (terms.isEmpty() || publicationOnlyTerms(terms))
+        return best;
+
+    QFile catalog(QDir(root).filePath(QStringLiteral("runtime_visual_catalog.json")));
+    if (!catalog.open(QIODevice::ReadOnly))
+        return best;
+
+    QJsonParseError parseError;
+    const QJsonDocument document = QJsonDocument::fromJson(catalog.readAll(), &parseError);
+    if (parseError.error != QJsonParseError::NoError || !document.isObject())
+        return best;
+
+    const QJsonArray entries = document.object().value(QStringLiteral("entries")).toArray();
+    int bestScore = -1;
+    QString bestStableKey;
+    for (const QJsonValue &value : entries) {
+        if (!value.isObject())
+            continue;
+        const QJsonObject entry = value.toObject();
+        const int score = runtimeCandidateScore(question, generation, terms, entry);
+        if (score < 8)
+            continue;
+
+        const QString relativePath = QDir::cleanPath(
+            entry.value(QStringLiteral("runtime_path")).toString().trimmed());
+        const QString displayKey = runtimeDisplayKey(entry);
+        const QString stableKey = entry.value(QStringLiteral("runtime_key")).toString();
+        if (score < bestScore || (score == bestScore && !bestStableKey.isEmpty()
+                                  && stableKey >= bestStableKey))
+            continue;
+
+        const IaMemsDiagramSuggestion candidate = resolvePath(root, displayKey, relativePath, false);
+        if (!candidate.isValid())
+            continue;
+        if (!fileMatchesSha256(candidate.absolutePath,
+                               entry.value(QStringLiteral("sha256")).toString()))
+            continue;
+
+        bestScore = score;
+        bestStableKey = stableKey;
+        best = candidate;
+    }
+    return best;
 }
 
 int candidateScore(const QString &question,
@@ -164,7 +323,6 @@ int candidateScore(const QString &question,
             return -1;
         score += 30;
     } else {
-        // Do not offer a diagnostic socket diagram for an ECU connector request.
         if (searchable.contains(QStringLiteral("rosco"))
             || searchable.contains(QStringLiteral("obd"))
             || searchable.contains(QStringLiteral("j1962")))
@@ -190,7 +348,8 @@ IaMemsDiagramSuggestion IaMemsDiagramCatalog::suggestionForQuestion(
         QStringLiteral("schema"), QStringLiteral("broch"), QStringLiteral("pinout"),
         QStringLiteral("connecteur"), QStringLiteral("connector"), QStringLiteral("prise"),
         QStringLiteral("cablage"), QStringLiteral("wiring"), QStringLiteral("socket"),
-        QStringLiteral("pin "), QStringLiteral(" pins"), QStringLiteral("broche")
+        QStringLiteral("pin "), QStringLiteral(" pins"), QStringLiteral("broche"),
+        QStringLiteral("voir")
     });
     if (!diagramIntent)
         return IaMemsDiagramSuggestion();
@@ -204,12 +363,16 @@ IaMemsDiagramSuggestion IaMemsDiagramCatalog::suggestionForQuestion(
         return IaMemsDiagramSuggestion();
 
     const QString generation = requestedGeneration(text);
-    // Current OBD/J1962 documentation is MEMS 1.9-specific. Keep an ambiguous
-    // generation-free OBD request rejected rather than guessing a connector.
     if (asksObd && generation.isEmpty())
         return IaMemsDiagramSuggestion();
 
     const QString root = effectiveReferenceRoot(referenceRoot);
+    const QStringList terms = significantTerms(text);
+
+    const IaMemsDiagramSuggestion runtime = runtimeSuggestion(text, generation, terms, root);
+    if (runtime.isValid())
+        return runtime;
+
     QFile manifest(QDir(root).filePath(QStringLiteral("manifest.json")));
     if (!manifest.open(QIODevice::ReadOnly))
         return IaMemsDiagramSuggestion();
@@ -220,14 +383,13 @@ IaMemsDiagramSuggestion IaMemsDiagramCatalog::suggestionForQuestion(
         return IaMemsDiagramSuggestion();
 
     const QJsonObject diagrams = document.object().value(QStringLiteral("diagrams")).toObject();
-    const QStringList terms = significantTerms(text);
 
     IaMemsDiagramSuggestion best;
     int bestScore = -1;
     for (auto it = diagrams.constBegin(); it != diagrams.constEnd(); ++it) {
         const QString key = it.key().trimmed();
         const QString relativePath = QDir::cleanPath(it.value().toString().trimmed());
-        const IaMemsDiagramSuggestion candidate = resolveDeclared(root, key, relativePath);
+        const IaMemsDiagramSuggestion candidate = resolvePath(root, key, relativePath, true);
         if (!candidate.isValid())
             continue;
 
@@ -238,9 +400,6 @@ IaMemsDiagramSuggestion IaMemsDiagramCatalog::suggestionForQuestion(
         }
     }
 
-    // A future image only needs a manifest entry with a meaningful key/path;
-    // no C++ case needs to be added. Require positive evidence to avoid opening
-    // an unrelated picture for a vague question.
     if (bestScore < 8)
         return IaMemsDiagramSuggestion();
     return best;
