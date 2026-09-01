@@ -1,0 +1,504 @@
+name: TEMP RAVEMEMS visual TEST package x64
+run-name: RAVEMEMS VISUAL TEST from BUILD 103 - ${{ github.sha }}
+
+on:
+  push:
+    branches: [tmp-ravemems-ia-visual-integration]
+    paths: ['.github/workflows/tmp-ravemems-visual-test-package-x64.yml']
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  build_test_package:
+    runs-on: windows-latest
+    timeout-minutes: 120
+    env:
+      BASE_COMMIT: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+      MEMS_BUILD: '103'
+      MEMS_VERSION: '1.0.103-RAVEMEMS-VISUAL-TEST'
+      MEMS_BUILD_NUMBER: '103'
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: 'utf-8'
+      ORT_GENAI_VERSION: '0.14.0'
+      ORT_GENAI_WIN_X64_SHA256: '8a303e52dc7be8fb2a5331929af451a25ac59774102d7fd09ef673adc85c5ebf'
+      ORT_VERSION: '1.24.4'
+      ORT_WIN_X64_SHA256: 'd2319fddfb6ea4db99ccc4b60c85c517bcd855721f5daa6a06d40d7cb2ee2357'
+      ONNX_MODEL_REPO: 'xiaoyao9184/Qwen3-0.6B-onnx-genai'
+      ONNX_MODEL_REVISION: 'e6bf97818c142808967a48cbab4f0aef18b64621'
+      ONNX_MODEL_SUBDIR: 'cpu_and_mobile/cpu-int4-rtn-block-32-acc-level-4'
+      ONNX_MODEL_ONNX_SHA256: 'b52cfcd91e6ed3caa34c670d4831d96cda3da5eb07ef95bc8ba06547b4f3b86f'
+      ONNX_MODEL_DATA_SHA256: '8539cf4fbc3b5b331fd78ca8cd5b025ce537dfc2f993451f5c474b2f9fb7cd6c'
+      ONNX_TOKENIZER_SHA256: 'be75606093db2094d7cd20f3c2f385c212750648bd6ea4fb2bf507a6a4c55506'
+      SIM_RUN_ID: '33524210118'
+      SIM_ARTIFACT_ID: '9806972578'
+      SIM_ARTIFACT_NAME: 'ravemems-runtime-migration-simulation'
+      SIM_DIGEST: 'sha256:bc8ceed9ea2a748fb23f2d2504f034c62010669d3d10f2a281cf675aea735642'
+      CLEANUP_RUN_ID: '33524978067'
+      CLEANUP_ARTIFACT_ID: '9807286866'
+      CLEANUP_ARTIFACT_NAME: 'ravemems-controlled-legacy-cleanup-copy'
+      CLEANUP_DIGEST: 'sha256:06746252cad5942ba00d6b8ea71b2fe17c71fd137161cb43d237e707219b5735'
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout exact isolated integration source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Guard BUILD 103 production and source scope
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $memsx64 = (git ls-remote origin refs/heads/MEMSX64).Split("`t")[0]
+          if ($memsx64 -ne $env:BASE_COMMIT) { throw "MEMSX64 moved: $memsx64" }
+          git merge-base --is-ancestor $env:BASE_COMMIT HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'Integration branch is not derived from BUILD #103' }
+          $range = "$($env:BASE_COMMIT)..HEAD"
+          $changed = @(git diff --name-only $range)
+          if ($LASTEXITCODE -ne 0) { throw "git diff failed: $LASTEXITCODE" }
+          $appChanged = @($changed | Where-Object {
+            $_ -notlike '.github/workflows/tmp-*' -and $_ -notlike 'tools/tmp_*'
+          })
+          $allowed = @('expert/IaMemsDiagramCatalog.cpp','expert/IaMemsDiagramSelfTest.cpp','iamemstab.cpp')
+          $unexpected = @($appChanged | Where-Object { $_ -notin $allowed })
+          if ($unexpected.Count -ne 0) { throw "Unexpected application changes: $($unexpected -join ', ')" }
+          Write-Host "PROTECTED_BUILD103_PASS $memsx64"
+          Write-Host "APPLICATION_SCOPE_PASS files=$($appChanged -join ',')"
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install validation tools
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install --disable-pip-version-check "aqtinstall==3.3.0" pefile "huggingface_hub>=0.34,<1" hf_xet
+
+      - name: Verify and download exact validated RAVEMEMS artifacts
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          foreach ($spec in @(
+            @($env:SIM_ARTIFACT_ID,$env:SIM_ARTIFACT_NAME,$env:SIM_DIGEST),
+            @($env:CLEANUP_ARTIFACT_ID,$env:CLEANUP_ARTIFACT_NAME,$env:CLEANUP_DIGEST)
+          )) {
+            $json = gh api "repos/$env:GITHUB_REPOSITORY/actions/artifacts/$($spec[0])" | ConvertFrom-Json
+            if ($json.name -ne $spec[1]) { throw "Artifact name mismatch: $($json.name)" }
+            if ($json.digest -ne $spec[2]) { throw "Artifact digest mismatch: $($json.digest)" }
+            Write-Host "ARTIFACT_EXACT_PASS $($json.id) $($json.name) $($json.digest)"
+          }
+          New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP\sim","$env:RUNNER_TEMP\cleanup" | Out-Null
+          gh run download $env:SIM_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:SIM_ARTIFACT_NAME --dir "$env:RUNNER_TEMP\sim"
+          if ($LASTEXITCODE -ne 0) { throw 'Runtime artifact download failed' }
+          gh run download $env:CLEANUP_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:CLEANUP_ARTIFACT_NAME --dir "$env:RUNNER_TEMP\cleanup"
+          if ($LASTEXITCODE -ne 0) { throw 'Cleanup artifact download failed' }
+          $catalog = Get-ChildItem "$env:RUNNER_TEMP\sim" -Recurse -File -Filter runtime_visual_catalog.json | Select-Object -First 1
+          $runtimeFiles = Get-ChildItem "$env:RUNNER_TEMP\sim" -Recurse -Directory -Filter runtime_files | Select-Object -First 1
+          $cleanupDb = Get-ChildItem "$env:RUNNER_TEMP\cleanup" -Recurse -File -Filter cleanup_candidate.sqlite.gz | Select-Object -First 1
+          if (-not $catalog -or -not $runtimeFiles -or -not $cleanupDb) { throw 'Validated artifacts incomplete' }
+          "CATALOG_FILE=$($catalog.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "RUNTIME_FILES_DIR=$($runtimeFiles.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "CLEANUP_DB_GZ=$($cleanupDb.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Stage validated visual runtime and enriched expert database
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $reference = '${{ github.workspace }}\database\reference'
+          Copy-Item $env:CATALOG_FILE (Join-Path $reference 'runtime_visual_catalog.json') -Force
+          Copy-Item "$env:RUNTIME_FILES_DIR\*" $reference -Recurse -Force
+          $expertStage = '${{ github.workspace }}\validated-expert-stage'
+          if (Test-Path $expertStage) { Remove-Item $expertStage -Recurse -Force }
+          New-Item -ItemType Directory -Path $expertStage -Force | Out-Null
+          $expertDb = Join-Path $expertStage 'ia_mems_reference_r20.sqlite'
+          "EXPERT_DB_STAGE=$expertDb" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          $env:REFERENCE_ROOT = $reference
+          $env:EXPERT_DB_STAGE_LOCAL = $expertDb
+          @'
+          import gzip,hashlib,json,os,shutil,sqlite3
+          from collections import Counter
+          from pathlib import Path
+          root=Path(os.environ['REFERENCE_ROOT'])
+          catalog=json.load(open(root/'runtime_visual_catalog.json',encoding='utf-8'))
+          assert catalog['viewer_entry_count']==1935
+          assert catalog['ravemems_occurrences']==1794
+          assert catalog['legacy_visible_kept']==141
+          assert catalog['legacy_replaced']==274
+          assert catalog['legacy_pure_text_hidden']==12
+          assert len(catalog['entries'])==1935
+          sources=Counter()
+          referenced=set()
+          for e in catalog['entries']:
+              assert e['ui_visible'] is True
+              assert e['ui_label']=='Voir le schéma'
+              assert e['source_type'] in ('ravemems','legacy')
+              if e['source_type']=='legacy': assert e.get('treatment')=='conserver_migrer_legacy'
+              rel=e['runtime_path'].replace('\\','/')
+              assert rel and not rel.startswith('/') and '..' not in Path(rel).parts
+              p=root/rel
+              assert p.is_file(),(e['runtime_key'],rel)
+              got=hashlib.sha256(p.read_bytes()).hexdigest()
+              assert got==e['sha256'],(e['runtime_key'],rel,got,e['sha256'])
+              sources[e['source_type']]+=1
+              referenced.add(rel)
+          assert sources==Counter({'ravemems':1794,'legacy':141}),sources
+          runtime_root=Path(os.environ['RUNTIME_FILES_DIR'])
+          files=[p for p in runtime_root.rglob('*') if p.is_file()]
+          assert len(files)==1211,len(files)
+
+          out=Path(os.environ['EXPERT_DB_STAGE_LOCAL'])
+          with gzip.open(os.environ['CLEANUP_DB_GZ'],'rb') as src, open(out,'wb') as dst: shutil.copyfileobj(src,dst)
+          db=sqlite3.connect(out)
+          try:
+              assert db.execute('PRAGMA integrity_check').fetchone()[0].lower()=='ok'
+              assert db.execute('PRAGMA foreign_key_check').fetchall()==[]
+              assert db.execute('PRAGMA user_version').fetchone()[0]==21
+              checks={
+                'mems_rave_fact':177,
+                'mems_rave_illustration':102,
+                'mems_rave_illustration_link':288,
+                'mems_doc_visual':1070,
+                'mems_visual_runtime_source':1935,
+                'mems_visual_legacy_treatment':427,
+                'mems_visual_legacy_illustration_archive':24,
+                'mems_visual_legacy_link_archive':41,
+              }
+              for table,n in checks.items():
+                  got=db.execute(f'SELECT COUNT(*) FROM {table}').fetchone()[0]
+                  assert got==n,(table,got,n)
+              occ=db.execute("SELECT COUNT(*) FROM mems_doc_entity WHERE entity_kind='visual_occurrence'").fetchone()[0]
+              assert occ==1794,occ
+          finally: db.close()
+          print('STAGED_RAVEMEMS_PASS entries=1935 files=1211 assets=1070 occurrences=1794 legacy=141')
+          print('STAGED_EXPERT_DB_PASS user_version=21 facts=177 illustrations=102 links=288')
+          '@ | python -
+          $source = Get-Content '${{ github.workspace }}\iamemstab.cpp' -Raw -Encoding UTF8
+          if ($source -notmatch 'm_diagramButton->setText\(QStringLiteral\("Voir le schéma"\)\);') { throw 'Voir le schéma button label missing' }
+          if ($source -match 'Ouvrir le schéma %1') { throw 'Old dynamic diagram button label still present' }
+          Write-Host 'VIEW_BUTTON_LABEL_PASS Voir le schéma'
+
+      - name: Install Qt 5.15.2 MSVC 2019 x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $sevenZip = (Get-Command 7z.exe -ErrorAction Stop).Source
+          if (Test-Path 'C:\Qt') { Remove-Item 'C:\Qt' -Recurse -Force -ErrorAction SilentlyContinue }
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
+          if ($LASTEXITCODE -ne 0) { throw "aqtinstall failed: $LASTEXITCODE" }
+
+      - name: Download and stage pinned ONNX Runtime GenAI and ONNX Runtime x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $genaiArchive = Join-Path $env:RUNNER_TEMP "onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          $ortArchive = Join-Path $env:RUNNER_TEMP "onnxruntime-win-x64-$env:ORT_VERSION.zip"
+          $genaiExtract = '${{ github.workspace }}\onnx-genai-release'
+          $ortExtract = '${{ github.workspace }}\onnxruntime-release'
+          $stage = '${{ github.workspace }}\onnx-runtime-stage'
+          $genaiUrl = "https://github.com/microsoft/onnxruntime-genai/releases/download/v$env:ORT_GENAI_VERSION/onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          $ortUrl = "https://github.com/microsoft/onnxruntime/releases/download/v$env:ORT_VERSION/onnxruntime-win-x64-$env:ORT_VERSION.zip"
+          foreach ($dir in @($genaiExtract,$ortExtract,$stage)) {
+            if (Test-Path $dir) { Remove-Item $dir -Recurse -Force }
+            New-Item -ItemType Directory -Path $dir -Force | Out-Null
+          }
+          & curl.exe -L --fail --retry 3 --retry-delay 3 -o $genaiArchive $genaiUrl
+          if ($LASTEXITCODE -ne 0) { throw 'ONNX Runtime GenAI download failed' }
+          $genaiHash=(Get-FileHash $genaiArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($genaiHash -ne $env:ORT_GENAI_WIN_X64_SHA256) { throw "GenAI SHA mismatch: $genaiHash" }
+          Expand-Archive -LiteralPath $genaiArchive -DestinationPath $genaiExtract -Force
+          & curl.exe -L --fail --retry 3 --retry-delay 3 -o $ortArchive $ortUrl
+          if ($LASTEXITCODE -ne 0) { throw 'ONNX Runtime download failed' }
+          $ortHash=(Get-FileHash $ortArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($ortHash -ne $env:ORT_WIN_X64_SHA256) { throw "ORT SHA mismatch: $ortHash" }
+          Expand-Archive -LiteralPath $ortArchive -DestinationPath $ortExtract -Force
+          $header=Get-ChildItem $genaiExtract -Recurse -File -Filter ort_genai_c.h | Select-Object -First 1
+          $import=Get-ChildItem $genaiExtract -Recurse -File -Filter onnxruntime-genai.lib | Select-Object -First 1
+          $genaiDll=Get-ChildItem $genaiExtract -Recurse -File -Filter onnxruntime-genai.dll | Select-Object -First 1
+          $ortDll=Get-ChildItem $ortExtract -Recurse -File -Filter onnxruntime.dll | Select-Object -First 1
+          if (-not $header -or -not $import -or -not $genaiDll -or -not $ortDll) { throw 'ONNX package layout incomplete' }
+          $seen=@{}
+          foreach($r in @($genaiExtract,$ortExtract)) {
+            foreach($dll in Get-ChildItem $r -Recurse -File -Filter '*.dll') {
+              $key=$dll.Name.ToLowerInvariant(); $hash=(Get-FileHash $dll.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+              if($seen.ContainsKey($key)) { if($seen[$key] -ne $hash){ throw "Conflicting DLL $($dll.Name)" }; continue }
+              Copy-Item $dll.FullName (Join-Path $stage $dll.Name) -Force; $seen[$key]=$hash
+            }
+          }
+          $env:ORT_STAGE=$stage
+          @'
+          import os,re,shutil
+          from pathlib import Path
+          import pefile
+          stage=Path(os.environ['ORT_STAGE']); system32=Path(os.environ['WINDIR'])/'System32'
+          redistributable=re.compile(r'^(?:msvcp|vcruntime|concrt)\d.*\.dll$',re.I)
+          queue=list(stage.glob('*.dll')); scanned=set()
+          def imports(path):
+              pe=pefile.PE(str(path),fast_load=True)
+              pe.parse_data_directories(directories=[pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_IMPORT'],pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT']])
+              out=[]
+              for a in ('DIRECTORY_ENTRY_IMPORT','DIRECTORY_ENTRY_DELAY_IMPORT'):
+                  for e in getattr(pe,a,[]):
+                      try: out.append(e.dll.decode('ascii'))
+                      except Exception: pass
+              pe.close(); return out
+          while queue:
+              b=queue.pop(); k=b.name.lower()
+              if k in scanned: continue
+              scanned.add(k)
+              for name in imports(b):
+                  if not redistributable.match(name): continue
+                  dst=stage/name
+                  if not dst.is_file():
+                      src=system32/name
+                      if not src.is_file(): raise SystemExit('VC runtime unavailable: '+name)
+                      shutil.copy2(src,dst)
+                  queue.append(dst)
+          for p in stage.glob('*.dll'):
+              pe=pefile.PE(str(p),fast_load=True)
+              if pe.FILE_HEADER.Machine!=0x8664: raise SystemExit('Not AMD64: '+p.name)
+              pe.close()
+          print('PINNED_ONNX_RUNTIME_PASS dlls='+str(len(list(stage.glob('*.dll')))))
+          '@ | python -
+          "ORT_GENAI_INCLUDE_DIR=$($header.DirectoryName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "ORT_GENAI_LIBRARY=$($import.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "ORT_GENAI_RUNTIME_STAGE=$stage" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Validate protocol guards
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python librosco-x64/validate_protocol_guards.py
+
+      - name: Configure and build full x64 TEST package source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          cmake -S . -B build-x64 -A x64 `
+            -DCMAKE_PREFIX_PATH='C:/Qt/5.15.2/msvc2019_64' `
+            -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
+            -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF `
+            -DMEMS_USE_ONNX_GENAI=ON `
+            "-DORT_GENAI_INCLUDE_DIR=$env:ORT_GENAI_INCLUDE_DIR" `
+            "-DORT_GENAI_LIBRARY=$env:ORT_GENAI_LIBRARY"
+          if ($LASTEXITCODE -ne 0) { throw "CMake configure failed: $LASTEXITCODE" }
+          cmake --build build-x64 --config Release --target `
+            ecu_mems_manager ecu_mems_uninstaller rosco_abi_selftest `
+            ia_response_selftest ia_mems_diagram_selftest mems_search_selftest expert_runtime_selftest local_ai_onnx_selftest
+          if ($LASTEXITCODE -ne 0) { throw "x64 build failed: $LASTEXITCODE" }
+
+      - name: Run deterministic protocol reference and visual self-tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $qtRoot='C:\Qt\5.15.2\msvc2019_64'
+          $env:PATH="$qtRoot\bin;$env:ORT_GENAI_RUNTIME_STAGE;$env:PATH"
+          $env:QT_PLUGIN_PATH="$qtRoot\plugins"
+          & '${{ github.workspace }}\build-x64\Release\ia_response_selftest.exe'
+          if($LASTEXITCODE -ne 0){throw "IA response selftest failed: $LASTEXITCODE"}
+          & '${{ github.workspace }}\build-x64\Release\ia_mems_diagram_selftest.exe'
+          if($LASTEXITCODE -ne 0){throw "IA diagram selftest failed: $LASTEXITCODE"}
+          ctest --test-dir build-x64/librosco-x64 -C Release --output-on-failure -R rosco_abi_selftest
+          if($LASTEXITCODE -ne 0){throw "rosco ABI selftest failed: $LASTEXITCODE"}
+          & '${{ github.workspace }}\build-x64\Release\mems_search_selftest.exe'
+          if($LASTEXITCODE -ne 0){throw "MEMS search selftest failed: $LASTEXITCODE"}
+          Write-Host 'FULL_DETERMINISTIC_SELFTESTS_PASS'
+
+      - name: Download pinned Qwen3 ONNX INT4 model and verify hashes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $modelRoot='${{ github.workspace }}\onnx-model-stage'
+          if(Test-Path $modelRoot){Remove-Item $modelRoot -Recurse -Force}
+          $env:MODEL_ROOT=$modelRoot
+          @'
+          import os
+          from huggingface_hub import snapshot_download
+          print('MODEL_SNAPSHOT='+snapshot_download(repo_id=os.environ['ONNX_MODEL_REPO'],revision=os.environ['ONNX_MODEL_REVISION'],allow_patterns=[os.environ['ONNX_MODEL_SUBDIR']+'/*'],local_dir=os.environ['MODEL_ROOT']))
+          '@ | python -
+          $modelDir=Join-Path $modelRoot $env:ONNX_MODEL_SUBDIR
+          foreach($name in @('genai_config.json','model.onnx','model.onnx.data','tokenizer.json','tokenizer_config.json','chat_template.jinja')){
+            if(-not(Test-Path (Join-Path $modelDir $name) -PathType Leaf)){throw "Model file missing: $name"}
+          }
+          $modelHash=(Get-FileHash (Join-Path $modelDir 'model.onnx') -Algorithm SHA256).Hash.ToLowerInvariant()
+          $dataHash=(Get-FileHash (Join-Path $modelDir 'model.onnx.data') -Algorithm SHA256).Hash.ToLowerInvariant()
+          $tokHash=(Get-FileHash (Join-Path $modelDir 'tokenizer.json') -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($modelHash -ne $env:ONNX_MODEL_ONNX_SHA256){throw "model.onnx mismatch: $modelHash"}
+          if($dataHash -ne $env:ONNX_MODEL_DATA_SHA256){throw "model.data mismatch: $dataHash"}
+          if($tokHash -ne $env:ONNX_TOKENIZER_SHA256){throw "tokenizer mismatch: $tokHash"}
+          "ONNX_MODEL_DIR=$modelDir" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host 'PINNED_QWEN_MODEL_PASS'
+
+      - name: Run native ONNX LocalAiClient self-test
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $qtRoot='C:\Qt\5.15.2\msvc2019_64'
+          $selftest=Join-Path $env:ORT_GENAI_RUNTIME_STAGE 'local_ai_onnx_selftest.exe'
+          Copy-Item '${{ github.workspace }}\build-x64\Release\local_ai_onnx_selftest.exe' $selftest -Force
+          $env:PATH="$qtRoot\bin;$env:ORT_GENAI_RUNTIME_STAGE;$env:PATH"
+          $env:QT_PLUGIN_PATH="$qtRoot\plugins"
+          $env:MEMS_AI_RUNTIME=Join-Path $env:ORT_GENAI_RUNTIME_STAGE 'onnxruntime-genai.dll'
+          $env:MEMS_AI_MODEL=$env:ONNX_MODEL_DIR
+          Push-Location $env:ORT_GENAI_RUNTIME_STAGE
+          try { & $selftest; if($LASTEXITCODE -ne 0){throw "LocalAi ONNX selftest failed: $LASTEXITCODE"} }
+          finally { Pop-Location; Remove-Item $selftest -Force -ErrorAction SilentlyContinue }
+          Write-Host 'NATIVE_ONNX_QWEN_SELFTEST_PASS'
+
+      - name: Assemble portable RAVEMEMS visual TEST package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $qtRoot='C:\Qt\5.15.2\msvc2019_64'
+          $releaseRoot='${{ github.workspace }}\build-x64\Release'
+          $dist='${{ github.workspace }}\dist-ravemems-visual-test'
+          if(Test-Path $dist){Remove-Item $dist -Recurse -Force}
+          New-Item -ItemType Directory -Path $dist -Force | Out-Null
+          Copy-Item "$releaseRoot\ecu_mems_manager.exe" $dist -Force
+          Copy-Item "$releaseRoot\ecu_mems_uninstaller.exe" $dist -Force
+          Copy-Item '${{ github.workspace }}\build-x64\librosco-x64\Release\mems_manager_x64.dll' $dist -Force
+          & "$qtRoot\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist "$dist\ecu_mems_manager.exe"
+          if($LASTEXITCODE -ne 0){throw 'windeployqt app failed'}
+          & "$qtRoot\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist "$dist\ecu_mems_uninstaller.exe"
+          if($LASTEXITCODE -ne 0){throw 'windeployqt uninstaller failed'}
+          foreach($folder in @('translations','database')){if(Test-Path "$releaseRoot\$folder"){Copy-Item "$releaseRoot\$folder" "$dist\$folder" -Recurse -Force}}
+          New-Item -ItemType Directory -Path "$dist\database\expert" -Force | Out-Null
+          Copy-Item $env:EXPERT_DB_STAGE "$dist\database\expert\ia_mems_reference_r20.sqlite" -Force
+          foreach($dll in Get-ChildItem $env:ORT_GENAI_RUNTIME_STAGE -File -Filter '*.dll'){Copy-Item $dll.FullName (Join-Path $dist $dll.Name) -Force}
+          New-Item -ItemType Directory -Path "$dist\ai\models\qwen3-0.6b-int4" -Force | Out-Null
+          Copy-Item '${{ github.workspace }}\ai\README.md' "$dist\ai\README.md" -Force
+          Copy-Item '${{ github.workspace }}\ai\runtime_manifest.json' "$dist\ai\runtime_manifest.json" -Force
+          Copy-Item "$env:ONNX_MODEL_DIR\*" "$dist\ai\models\qwen3-0.6b-int4" -Recurse -Force
+          & curl.exe -L --fail --retry 3 --retry-delay 3 -o "$dist\ai\ONNX_RUNTIME_GENAI_LICENSE.txt" "https://raw.githubusercontent.com/microsoft/onnxruntime-genai/v0.14.0/LICENSE"
+          if($LASTEXITCODE -ne 0){throw 'GenAI license download failed'}
+          & curl.exe -L --fail --retry 3 --retry-delay 3 -o "$dist\ai\ONNX_RUNTIME_LICENSE.txt" "https://raw.githubusercontent.com/microsoft/onnxruntime/v$env:ORT_VERSION/LICENSE"
+          if($LASTEXITCODE -ne 0){throw 'ORT license download failed'}
+          @(
+            '*** PACKAGE DE TEST - NE PAS PUBLIER COMME BUILD PRODUCTION ***',
+            'Base de code: ECU MEMS Manager BUILD #103',
+            'Test: integration visuelle RAVEMEMS',
+            'Viewer: viewer Qt interne du BUILD #103',
+            'Bouton IA: Voir le schéma',
+            'Runtime visuel: 1935 entrees (1794 RAVEMEMS + 141 legacy)',
+            'Fichiers runtime: 1211',
+            'Base experte packagee: ia_mems_reference_r20.sqlite, user_version 21, additive',
+            '177 faits RAVE historiques conserves; 102 illustrations legacy actives; 288 liens actifs',
+            'MEMSX64 production non modifie'
+          ) | Set-Content "$dist\README_RAVEMEMS_VISUAL_TEST.txt" -Encoding UTF8
+          @(
+            "Repository: $env:ONNX_MODEL_REPO",
+            "Revision: $env:ONNX_MODEL_REVISION",
+            "Subdir: $env:ONNX_MODEL_SUBDIR",
+            "model.onnx SHA-256: $env:ONNX_MODEL_ONNX_SHA256",
+            "model.onnx.data SHA-256: $env:ONNX_MODEL_DATA_SHA256",
+            "tokenizer.json SHA-256: $env:ONNX_TOKENIZER_SHA256"
+          ) | Set-Content "$dist\ai\MODEL_SOURCE.txt" -Encoding UTF8
+          "DIST=$dist" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Validate complete portable TEST package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $env:DIST_ROOT=$env:DIST
+          $env:ORT_STAGE_VALIDATE=$env:ORT_GENAI_RUNTIME_STAGE
+          @'
+          import hashlib,json,os,sqlite3
+          from collections import Counter
+          from pathlib import Path
+          import pefile
+          root=Path(os.environ['DIST_ROOT']); ai=root/'ai'; model=ai/'models'/'qwen3-0.6b-int4'; ort=Path(os.environ['ORT_STAGE_VALIDATE'])
+          required=[root/'ecu_mems_manager.exe',root/'ecu_mems_uninstaller.exe',root/'mems_manager_x64.dll',root/'onnxruntime-genai.dll',root/'onnxruntime.dll',root/'database'/'expert'/'ia_mems_reference_r20.sqlite',root/'database'/'reference'/'manifest.json',root/'database'/'reference'/'runtime_visual_catalog.json',root/'README_RAVEMEMS_VISUAL_TEST.txt',model/'model.onnx',model/'model.onnx.data',model/'tokenizer.json']
+          missing=[str(p.relative_to(root)) for p in required if not p.is_file()]
+          if missing: raise SystemExit('Missing TEST package files: '+', '.join(missing))
+          def h(p):
+              x=hashlib.sha256()
+              with open(p,'rb') as f:
+                  for b in iter(lambda:f.read(1048576),b''): x.update(b)
+              return x.hexdigest()
+          for p in ort.glob('*.dll'):
+              q=root/p.name
+              if not q.is_file() or h(p)!=h(q): raise SystemExit('ONNX runtime changed/missing: '+p.name)
+          expected={'model.onnx':os.environ['ONNX_MODEL_ONNX_SHA256'],'model.onnx.data':os.environ['ONNX_MODEL_DATA_SHA256'],'tokenizer.json':os.environ['ONNX_TOKENIZER_SHA256']}
+          for n,w in expected.items():
+              g=h(model/n)
+              if g.lower()!=w.lower(): raise SystemExit(n+' hash mismatch')
+          for p in [root/'ecu_mems_manager.exe',root/'ecu_mems_uninstaller.exe',root/'mems_manager_x64.dll']+list(ort.glob('*.dll')):
+              q=p if p.parent==root else root/p.name
+              pe=pefile.PE(str(q),fast_load=True)
+              if pe.FILE_HEADER.Machine!=0x8664: raise SystemExit(q.name+' is not AMD64')
+              pe.close()
+          db=sqlite3.connect(root/'database'/'expert'/'ia_mems_reference_r20.sqlite')
+          try:
+              assert db.execute('PRAGMA integrity_check').fetchone()[0].lower()=='ok'
+              assert db.execute('PRAGMA foreign_key_check').fetchall()==[]
+              assert db.execute('PRAGMA user_version').fetchone()[0]==21
+              assert db.execute('SELECT COUNT(*) FROM mems_rave_fact').fetchone()[0]==177
+              assert db.execute('SELECT COUNT(*) FROM mems_rave_illustration').fetchone()[0]==102
+              assert db.execute('SELECT COUNT(*) FROM mems_rave_illustration_link').fetchone()[0]==288
+              assert db.execute('SELECT COUNT(*) FROM mems_doc_visual').fetchone()[0]==1070
+              assert db.execute("SELECT COUNT(*) FROM mems_doc_entity WHERE entity_kind='visual_occurrence'").fetchone()[0]==1794
+              assert db.execute('SELECT COUNT(*) FROM mems_visual_runtime_source').fetchone()[0]==1935
+          finally: db.close()
+          catalog=json.load(open(root/'database'/'reference'/'runtime_visual_catalog.json',encoding='utf-8'))
+          assert len(catalog['entries'])==1935
+          sources=Counter()
+          paths=set()
+          for e in catalog['entries']:
+              assert e['ui_label']=='Voir le schéma' and e['ui_visible'] is True
+              p=root/'database'/'reference'/e['runtime_path']
+              assert p.is_file(),e['runtime_path']
+              assert h(p)==e['sha256'],e['runtime_path']
+              sources[e['source_type']]+=1; paths.add(e['runtime_path'])
+          assert sources==Counter({'ravemems':1794,'legacy':141}),sources
+          assert len(paths)<=1211
+          print(f'PORTABLE_RAVEMEMS_TEST_PACKAGE_PASS entries=1935 unique_paths={len(paths)} user_version=21')
+          '@ | python -
+
+      - name: Validate packaged native ONNX Qwen runtime
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $selftest=Join-Path $env:DIST 'local_ai_onnx_selftest.exe'
+          Copy-Item '${{ github.workspace }}\build-x64\Release\local_ai_onnx_selftest.exe' $selftest -Force
+          $env:PATH="$env:DIST;$env:PATH"
+          $env:MEMS_AI_RUNTIME=Join-Path $env:DIST 'onnxruntime-genai.dll'
+          $env:MEMS_AI_MODEL=Join-Path $env:DIST 'ai\models\qwen3-0.6b-int4'
+          Push-Location $env:DIST
+          try { & $selftest; if($LASTEXITCODE -ne 0){throw "Packaged LocalAi selftest failed: $LASTEXITCODE"} }
+          finally { Pop-Location; Remove-Item $selftest -Force -ErrorAction SilentlyContinue }
+          Write-Host 'PACKAGED_NATIVE_ONNX_QWEN_PASS'
+
+      - name: Smoke launch TEST package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $p=Start-Process -FilePath "$env:DIST\ecu_mems_manager.exe" -WorkingDirectory $env:DIST -PassThru
+          Start-Sleep -Seconds 8
+          if($p.HasExited){throw "TEST package exited during smoke launch: $($p.ExitCode)"}
+          $null=$p.CloseMainWindow()
+          if(-not $p.WaitForExit(5000)){Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue}
+          Write-Host 'RAVEMEMS_VISUAL_TEST_PACKAGE_SMOKE_PASS'
+
+      - name: Generate package manifest and hashes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $manifest="$env:DIST\install_manifest.txt"
+          $hashFile="$env:DIST\RAVEMEMS_VISUAL_TEST_SHA256.txt"
+          $files=Get-ChildItem $env:DIST -Recurse -File | ForEach-Object{$_.FullName.Substring($env:DIST.Length+1).Replace('\','/')} | Sort-Object -Unique
+          ($files+'install_manifest.txt'+'RAVEMEMS_VISUAL_TEST_SHA256.txt') | Sort-Object -Unique | Set-Content $manifest -Encoding UTF8
+          $lines=foreach($f in Get-ChildItem $env:DIST -Recurse -File | Where-Object{$_.FullName-ne$hashFile} | Sort-Object FullName){$r=$f.FullName.Substring($env:DIST.Length+1).Replace('\','/'); "$((Get-FileHash $f.FullName -Algorithm SHA256).Hash.ToLowerInvariant())  $r"}
+          $lines | Set-Content $hashFile -Encoding UTF8
+
+      - name: Upload isolated RAVEMEMS visual TEST package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ECU-MEMS-Manager-x64-RAVEMEMS-VISUAL-TEST-from-BUILD-103
+          path: dist-ravemems-visual-test/
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 14
