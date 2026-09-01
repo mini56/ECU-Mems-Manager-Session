@@ -10333,3 +10333,25 @@ Aucune donnee utile ne doit etre rejetee parce qu'elle ne rentre pas encore dans
 ### PROCHAINE ACTION EXACTE
 
 Selectionner dans la source canonique `main/rave/` une vraie page RAVE de **texte plein avec couche texte PDF native**, puis construire sur `tmp-rave-new-extraction-pilot` un pilote `ravemems` qui extrait integralement et structure ce contenu pour la base et l'IA avec provenance exacte. Verifier qu'aucun paragraphe, titre, liste, valeur, note, avertissement ou autre contenu utile de la page n'est perdu. **Ne pas lancer le corpus complet** avant validation de ce pilote texte plein.
+
+## 2026-09-01 - RAVEMEMS TEXTE PLEIN - CIBLE EXACTE AVANT POUSSE
+
+Cible pilote retenue pour prouver l'extraction structuree hors ECU :
+- source canonique GitHub : `main/rave/xn/wmxn990e.pdf` ;
+- Git blob : `82263eb36bb194dfa969d0471d10ef11078ce521` ;
+- taille distante : `4 744 911` octets ;
+- SHA-256 canonique deja verifie dans le projet : `c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715` ;
+- page physique cible : **20** ;
+- section attendue : `GENERAL INFORMATION -> GENERAL PRECAUTIONS AND FITTING INSTRUCTIONS -> SAFETY INSTRUCTIONS`.
+
+Cette page est volontairement **hors ECU** afin de verifier la nouvelle regle canonique : RAVEMEMS capture TOUT RAVE. Le pilote doit verifier directement la page canonique GitHub et s'arreter si le SHA, le nombre de pages, la presence d'une couche texte native ou les ancres de section ne correspondent pas.
+
+Donnees a conserver sans perte pour ce pilote : texte anglais source integral et ordre de lecture ; titres/sous-titres ; paragraphes ; sous-sections (`Jacking`, `Precautions against damage`, `Brake shoes and pads`, `Brake hydraulics`, `Engine coolant caps and plugs`, `Cleaning components`) ; avertissements `WARNING`; instructions/contraintes dans leur ordre source ; renvois (`LIFTING AND TOWING`, `ELECTRICAL PRECAUTIONS`) ; provenance document/page/bbox ; contexte de section ; et toute autre information native presente sur la page.
+
+Le resultat doit etre exploitable par la base et l'IA : produire des donnees structurees deterministes et une preuve de reconstruction/completude du texte source. Ne jamais demander au LLM de reconstruire l'ordre des procedures. Aucun contenu ne doit etre elimine pour absence d'applicabilite precise ; la portee inconnue reste inconnue.
+
+Perimetre de pousse autorise : uniquement le pilote `ravemems` texte plein et son workflow/trigger sur `tmp-rave-new-extraction-pilot`. Aucun changement `MEMSX64`, protocole, UI, ONNX ou production. Ne pas lancer tout le corpus.
+
+### PROCHAINE ACTION EXACTE
+
+Construire le pilote texte plein sur `tmp-rave-new-extraction-pilot`, le lancer sur la page physique 20 canonique, puis inspecter les artefacts reels et mesurer la completude avant toute extension a d'autres pages.
