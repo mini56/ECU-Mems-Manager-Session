@@ -11039,3 +11039,11 @@ Les preuves textuelles et corrections de pagination RCL0193 restent conservees d
 Pour les 10 faits cibles, les cinq cas RCL0194 de schemas p.17/p.19 restent prioritaires pour liaison visuelle. Les cinq cas RCL0193 ne recevront une relation supplementaire que si leurs pages contiennent une illustration visuelle directement utile au fait.
 
 PROCHAINE ACTION EXACTE : auditer en lecture seule les visual_occurrence/visual_asset des pages RCL0193 99,102,119,124,135,136,170,171 et RCL0194 17,19. Identifier uniquement les visuels techniquement pertinents pour les 10 faits. Ensuite creer dans une copie de test seulement les liens historiques -> visuels RAVEMEMS pertinents, sans creer de liens vers les pages purement textuelles, sans supprimer/fusionner aucune donnee et sans toucher MEMSX64.
+
+## 1 SEPTEMBRE 2026 — ACTION AUTORISEE — TOUS LES VISUELS RAVEMEMS POUR IA
+- Validation utilisateur : les 1 070 assets visuels RAVEMEMS et les 1 794 occurrences visuelles doivent etre disponibles pour l interface IA lorsqu une reponse correspond a un schema, une illustration, une photo technique ou un dessin constructeur.
+- UI : un seul libelle suffit pour tous les cas : « Voir le schema ».
+- Pages purement texte : pas de lien UI necessaire ; elles restent seulement source interne/audit.
+- Action : import total et conservation de tous les visuels RAVEMEMS dans la base enrichie, puis liaison additive vers la couche documentaire afin que l IA puisse retrouver un visuel associe. Aucune suppression/fusion historique.
+- Regle de securite : aucune table historique modifiee ; MEMSX64 reste strictement BUILD #103.
+- PROCHAINE ACTION EXACTE : produire et tester sur tmp-rave-new-extraction-pilot une couche de liaison visuelle additive couvrant 1 070 assets / 1 794 occurrences, verifier integralite, idempotence, preservation bit-a-bit logique des tables historiques et disponibilite de chaque occurrence depuis son contexte documentaire ; ne pas integrer MEMSX64.
