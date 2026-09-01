@@ -11653,3 +11653,16 @@ Cause exacte identifiee dans `IaMemsDiagramCatalog.cpp` : apres retrait du terme
 
 PROCHAINE ACTION EXACTE : sur `tmp-ravemems-ia-visual-integration` uniquement, corriger la selection runtime de facon robuste pour qu'un terme residuel non technique/court comme `est` ne puisse jamais faire prendre la priorite RAVEMEMS sur une demande generique de brochage MEMS ; ajouter le cas exact au self-test, puis relancer la validation complete x64 sur le catalogue reel. Ne pas toucher `MEMSX64`, a la base de production, au viewer Qt ni aux autres fonctions IA.
 
+
+
+## IA VISUELLE RAVEMEMS - CORRECTION DU DERNIER FAUX DECLENCHEMENT AVANT POUSSE
+Date: 2026-09-01
+
+Le run de revalidation 33530522497 a compile le self-test MSVC x64 avec succes puis a echoue sur un seul cas: `Quel est le pinout du connecteur MEMS 1.3 ECU ?` etait encore route vers une occurrence RAVEMEMS du GENERAL_TESTBOOK au lieu du fallback manifeste `MEMS 1.3 ECU`.
+
+Cause confirmee dans `expert/IaMemsDiagramCatalog.cpp`: apres retrait du terme de generation `1.3`, `significantTerms()` conservait encore le mot non technique francais `est`; ce mot banal existe dans le corpus et suffisait a donner un faux score RAVEMEMS.
+
+PROCHAINE ACTION EXACTE: sur `tmp-ravemems-ia-visual-integration` uniquement, ajouter `est` a la liste des mots ignores de `significantTerms()`, sans toucher au viewer, a la base, au catalogue runtime ni a MEMSX64; puis relancer exactement le meme self-test x64 contre les 1935 entrees / 1211 fichiers valides. Si le test reste rouge, journaliser avant toute nouvelle correction.
+
+MEMSX64 doit rester strictement sur BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
