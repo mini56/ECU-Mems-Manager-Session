@@ -11832,3 +11832,29 @@ Inspection obligatoire du code pousse avant compilation : le litteral C++ de l a
 Aucune autre correction technique n est effectuee avant cette journalisation. Le comportement vise reste identique : debut de nouvelle reponse IA visible, descente pour la suite, remontee dans tout l historique, aucun effacement.
 
 PROCHAINE ACTION EXACTE : corriger uniquement le litteral HTML de l ancre dans iamemstab.cpp sur tmp-ravemems-ia-visual-integration, utiliser une forme syntaxiquement sure, verifier le diff puis compiler/tester le code avant toute autre correction IA. Ne toucher ni Qwen/ONNX, ni viewer, ni base, ni protocole, ni MEMSX64.
+
+## 2026-09-01 — Incident journal temporaire IA avant correction
+
+Le run GitHub Actions `33541024931` a échoué avant création de job (`0 job`). Cause : syntaxe YAML invalide du workflow temporaire de journalisation, le corps Markdown du here-document n'étant pas indenté dans le bloc YAML `run`.
+
+Impact : **aucune modification du code IA**, aucune modification de `MEMSX64`, aucune compilation lancée.
+
+Correction : réparer uniquement le workflow temporaire de journalisation, consigner cet incident puis reprendre l'action autorisée.
+
+## 2026-09-01 — IA MEMS — GO utilisateur : scroll/historique + cas `injecteur MPI`
+
+Autorisation utilisateur explicite après arrêt du test réel sans scroll : **GO pour appliquer les corrections observées avant de reprendre le test**.
+
+Périmètre strict de cette pousse temporaire :
+- conserver l'historique complet de la conversation IA visible et navigable ;
+- lorsqu'une nouvelle réponse IA arrive, positionner l'affichage au **début de cette réponse**, sans forcer le bas de la conversation ;
+- permettre ensuite de descendre pour lire la suite et de remonter librement vers les échanges antérieurs ;
+- corriger le traitement conversationnel du cas court `injecteur MPI` / `MPI` afin que MPi soit compris comme injection multipoint Rover/Mini MEMS et ne retombe pas sur une réponse SPi ou hors sujet ;
+- ne toucher ni au protocole ECU, ni au viewer, ni aux protections, ni à `MEMSX64`.
+
+Branche technique : `tmp-ravemems-ia-visual-integration`.
+HEAD avant cette action : `b0334968a0daec9990bd130fe6f26b143b2468d4`.
+`MEMSX64` reste protégé sur BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+### PROCHAINE ACTION EXACTE
+Modifier uniquement la logique IA nécessaire au scroll/historique déjà préparé et au cas `injecteur MPI`, ajouter des contrôles ciblés, puis compiler/tester sur la branche temporaire avant tout nouveau package utilisateur.
