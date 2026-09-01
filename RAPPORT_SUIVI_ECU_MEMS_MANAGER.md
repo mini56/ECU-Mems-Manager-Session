@@ -11395,3 +11395,14 @@ Il s'agit donc d'un defaut du simulateur, pas d'une corruption du corpus ni de l
 
 PROCHAINE ACTION EXACTE : corriger uniquement la resolution fichier du simulateur pour utiliser le `stored_path` autoritaire de chaque entree RAVEMEMS, normalise du prefixe `ravemems_run4/`, puis verifier le SHA attendu sur ce fichier precis. Ne plus exiger l'unicite globale des SHA. Relancer exactement la meme simulation sur copie avec les memes gardes et les memes comptes cibles.
 
+
+## 2026-09-01 — SIMULATION MIGRATION RUNTIME — ECHEC RESOLUTION CHEMIN LEGACY
+
+Deuxieme run de simulation `33523973138`, job `99909966749` — **FAILURE** dans le simulateur uniquement. Le correctif precedent de resolution RAVEMEMS par `stored_path` a passe ; les 1070 fichiers RAVEMEMS ont ete retrouves et verifies par chemin + SHA.
+
+Cause exacte : la matrice issue du `manifest.json` conserve `old_path` relatif a `database/reference`, par exemple `images/rave/AKM6348_FR_CH86_86_01.png`. Le simulateur a tente `git show BUILD103:images/rave/...`, alors que le chemin depot reel est `database/reference/images/rave/...`. La presence du binaire a ete reverifiee sur le commit #103 ; il ne manque pas.
+
+C'est donc un defaut de normalisation de chemin du simulateur, pas une perte de visuel legacy. Aucune base production, aucun manifeste production et aucun fichier production n'ont ete modifies. `MEMSX64` reste BUILD #103.
+
+PROCHAINE ACTION EXACTE : corriger uniquement la resolution des fichiers legacy en preservant `old_path` comme cle de provenance, mais en resolvant le chemin depot par `old_path` puis, si necessaire, `database/reference/` + `old_path`. Copier uniquement les 141 legacy `conserver_migrer_legacy`, laisser les 274 remplaces et 12 captures texte hors bundle runtime, puis relancer les memes gardes sans modifier les classifications.
+
