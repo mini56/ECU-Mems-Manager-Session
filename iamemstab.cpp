@@ -240,10 +240,18 @@ void IaMemsTab::appendMessage(const QString &speaker, const QString &text)
     const QString safeSpeaker = speaker.toHtmlEscaped();
     QString safeText = text.toHtmlEscaped();
     safeText.replace(QLatin1Char('\n'), QStringLiteral("<br>"));
-    m_transcript->append(QStringLiteral("<p><b>%1</b><br>%2</p>").arg(safeSpeaker, safeText));
 
-    if (QScrollBar *bar = m_transcript->verticalScrollBar())
-        bar->setValue(bar->maximum());
+    const QString messageAnchor = QStringLiteral("ia-message-%1")
+                  .arg(m_transcript->document()->characterCount());
+    m_transcript->append(QStringLiteral("<a name="%1"></a><p><b>%2</b><br>%3</p>")
+         .arg(messageAnchor, safeSpeaker, safeText));
+
+    if (QScrollBar *bar = m_transcript->verticalScrollBar()) {
+        if (speaker == QStringLiteral("IA MEMS"))
+            m_transcript->scrollToAnchor(messageAnchor);
+        else
+            bar->setValue(bar->maximum());
+    }
 }
 
 void IaMemsTab::appendSystemMessage(const QString &text)
