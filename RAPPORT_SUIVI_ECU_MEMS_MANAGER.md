@@ -11031,3 +11031,11 @@ PLAN NON DESTRUCTIF VALIDE POUR LA SUITE : ne supprimer aucune ligne historique 
 
 PROCHAINE ACTION EXACTE : preparer sur tmp-rave-new-extraction-pilot un traitement de provenance NON DESTRUCTIF applique uniquement a une copie de ia_mems_reference_r20_plus_ravemems_AUDIT.sqlite. Ajouter les relations historiques -> RAVEMEMS et les cinq corrections/etendues de localisateur RCL0193 confirmees, sans supprimer/fusionner aucune donnee. Executer deux fois pour prouver idempotence, comparer toutes les tables historiques hors champs explicitement de provenance si une correction y est necessaire, verifier integrity/FK, puis produire un artefact et un rapport AVANT/APRES. Ne pas toucher MEMSX64, QZ64 ni installateur.
 `MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+## 2026-09-01 - RAVEMEMS - REGLE UTILISATEUR : LIENS UNIQUEMENT POUR LES VISUELS
+
+Decision utilisateur : les liens vers les pages uniquement textuelles ne sont pas importants. Les relations de provenance explicites a ajouter dans la base doivent etre reservees aux pages contenant un visuel utile : schema electrique, illustration de procedure, dessin constructeur, photo technique ou autre visuel pertinent.
+Les preuves textuelles et corrections de pagination RCL0193 restent conservees dans le rapport/audit et dans les sources existantes, mais ne justifient pas a elles seules la creation de nouvelles relations mems_doc_relation.
+Pour les 10 faits cibles, les cinq cas RCL0194 de schemas p.17/p.19 restent prioritaires pour liaison visuelle. Les cinq cas RCL0193 ne recevront une relation supplementaire que si leurs pages contiennent une illustration visuelle directement utile au fait.
+
+PROCHAINE ACTION EXACTE : auditer en lecture seule les visual_occurrence/visual_asset des pages RCL0193 99,102,119,124,135,136,170,171 et RCL0194 17,19. Identifier uniquement les visuels techniquement pertinents pour les 10 faits. Ensuite creer dans une copie de test seulement les liens historiques -> visuels RAVEMEMS pertinents, sans creer de liens vers les pages purement textuelles, sans supprimer/fusionner aucune donnee et sans toucher MEMSX64.
