@@ -1,0 +1,59 @@
+name: TEMP RAVEMEMS report full-text run2
+
+on:
+  push:
+    branches: ["RAPPORT"]
+    paths: [".github/workflows/tmp-ravemems-report-full-text-run2.yml"]
+
+permissions:
+  contents: write
+
+jobs:
+  append-report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append full-text pilot run2 result
+        shell: bash
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+          ## 2026-09-01 - RAVEMEMS TEXTE PLEIN PAGE 20 - RUN 2 HIERARCHIE CORRIGEE, RELATION WARNING/VISUEL A PERSISTER
+
+          Correction de hierarchie poussee sur `tmp-rave-new-extraction-pilot` au commit `d49b9ae017529dd9cfcafb831ec79955fb75ca05` (`Fix RAVEMEMS full-text hierarchy context`). Workflow `RAVEMEMS full-text native pilot`, run `33475647148`, job `99754228030` : **SUCCESS**.
+
+          Les gardes precedents restent verts : source canonique anglaise SHA-256 `c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715`, 372 pages, page physique 20, couche texte native, OCR=false, 70/70 lignes couvertes, 24 items structures, 2 warnings, 2 pictogrammes, 2 renvois, 6 sous-sections, SQLite `integrity_check=ok`.
+
+          La hierarchie est maintenant explicitement separee et verifiee :
+          - chapitre : `GENERAL INFORMATION` ;
+          - groupe/section parent : `GENERAL PRECAUTIONS AND FITTING INSTRUCTIONS` ;
+          - section : `SAFETY INSTRUCTIONS` ;
+          - sous-sections : les six titres reels de la page.
+
+          Le garde `context_inheritance_guard=true` verifie notamment :
+          - `running_header GENERAL INFORMATION` -> chapter=`GENERAL INFORMATION`, section_group=NULL, section=NULL, subsection=NULL ;
+          - `running_footer_section GENERAL PRECAUTIONS AND FITTING INSTRUCTIONS` -> chapter=`GENERAL INFORMATION`, section_group=`GENERAL PRECAUTIONS AND FITTING INSTRUCTIONS`, section=NULL, subsection=NULL ;
+          - le numero de page n'herite plus de `Cleaning components`.
+
+          Artefact run 2 : ID `9788058170`, nom `ravemems-full-text-page20`, 226487 octets, digest ZIP SHA-256 `00b4fb3918bc61530014bb2b22c1b0fc6b2f8e4743cecff26f9f6b7774701526`.
+
+          Revue des donnees : les deux warnings portent bien `associated_visual_key` dans `structured_content.json` (`I012 -> VIS01`, `I014 -> VIS02`). Cependant cette relation n'est pas encore persistee dans la SQLite pilote et n'est pas reportee dans `knowledge_items.json`. Pour respecter la regle utilisateur **CAPTURER TOUT**, cette association ne doit pas etre perdue lors du passage vers la base/IA.
+
+          Verdict : extraction texte et hierarchie **correctes**, mais pilote base/IA pas encore declare modele final tant que la relation warning/pictogramme n'est pas persistee et gardee.
+
+          `MEMSX64` reste totalement inchange, BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+          ### PROCHAINE ACTION EXACTE
+
+          Ajouter uniquement la persistance deterministe des associations `content item -> visual asset` deja detectees (au minimum les deux warnings de cette page) dans la SQLite pilote et les knowledge items, avec cle etrangere/garde d'integrite. Ne modifier aucun texte source, aucune bbox, aucune hierarchie ni le perimetre anglais uniquement. Rapport avant pousse, relancer exactement le meme pilote page 20 et recontroler l'artefact. Ne pas lancer tout RAVE.
+          EOF
+          rm -f .github/workflows/tmp-ravemems-report-full-text-run2.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md .github/workflows/tmp-ravemems-report-full-text-run2.yml
+          git diff --cached --check
+          git commit -m "Record RAVEMEMS full-text page20 run2 review"
+          git push origin HEAD:RAPPORT
