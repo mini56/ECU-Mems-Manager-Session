@@ -1,0 +1,40 @@
+name: TEMP apply IA visual button label
+on:
+  push:
+    branches: [tmp-ravemems-ia-visual-integration]
+    paths: ['.github/workflows/tmp-apply-ia-view-button-label.yml']
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-ravemems-ia-visual-integration
+          fetch-depth: 0
+      - name: Replace only diagram button label and push
+        env:
+          MEMSX64_BASE: 1d6316bd1746d6f2b4cfb751cab88d18e27ef730
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$MEMSX64_BASE"
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('iamemstab.cpp')
+          s=p.read_text(encoding='utf-8')
+          old='m_diagramButton->setText(QStringLiteral("Ouvrir le schéma %1").arg(m_diagramTitle));'
+          new='m_diagramButton->setText(QStringLiteral("Voir le schéma"));'
+          assert s.count(old)==1, s.count(old)
+          assert new not in s
+          p.write_text(s.replace(old,new,1),encoding='utf-8')
+          PY
+          test "$(git diff --name-only | tr -d '\r')" = "iamemstab.cpp"
+          git diff --check
+          git diff -- iamemstab.cpp
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add iamemstab.cpp
+          git commit -m "Use single Voir le schéma button label"
+          test "$(git diff-tree --no-commit-id --name-only -r HEAD | tr -d '\r')" = "iamemstab.cpp"
+          git push origin HEAD:tmp-ravemems-ia-visual-integration
