@@ -1,0 +1,114 @@
+name: RAVEMEMS profile unresolved legacy visual families
+
+on:
+  push:
+    branches: [tmp-rave-new-extraction-pilot]
+    paths:
+      - '.github/workflows/ravemems-profile-unresolved-legacy.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  profile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BASE_COMMIT: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+      VISUAL_RUN_ID: '33510951021'
+      VISUAL_ARTIFACT_NAME: 'ravemems-visual-bundle-audit'
+      MAP_RUN_ID: '33515878966'
+      MAP_ARTIFACT_ID: '9803548521'
+      MAP_ARTIFACT_NAME: 'ravemems-exhaustive-legacy-visual-mapping'
+      MAP_DIGEST: 'sha256:bee37602bfdb3e4d17b8e99d65ef3884b0ae08a80ef00ac529f3598d463c4fa3'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-new-extraction-pilot
+          fetch-depth: 0
+
+      - name: Verify exact inputs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$BASE_COMMIT"
+          gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${MAP_ARTIFACT_ID}" > "$RUNNER_TEMP/map_artifact.json"
+          python3 - <<'PY'
+          import json,os
+          a=json.load(open(os.environ['RUNNER_TEMP']+'/map_artifact.json'))
+          assert a['name']==os.environ['MAP_ARTIFACT_NAME']
+          assert a.get('digest')==os.environ['MAP_DIGEST']
+          print('EXACT_MAPPING_INPUT_PASS')
+          PY
+
+      - name: Download mapping and visual DB
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/map" "$RUNNER_TEMP/visual"
+          gh run download "$MAP_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$MAP_ARTIFACT_NAME" --dir "$RUNNER_TEMP/map"
+          gh run download "$VISUAL_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$VISUAL_ARTIFACT_NAME" --dir "$RUNNER_TEMP/visual"
+          gzip -dc "$RUNNER_TEMP/visual/ia_mems_reference_r20_plus_ravemems_VISUAL.sqlite.gz" > "$RUNNER_TEMP/visual/visual.sqlite"
+          test -f "$RUNNER_TEMP/map/legacy_mapping_unresolved.json"
+
+      - name: Profile all 100 unresolved cases and all 47 RAVEMEMS documents
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' | tee "$RUNNER_TEMP/unresolved_profile.txt"
+          import collections,json,os,re,sqlite3
+          temp=os.environ['RUNNER_TEMP']
+          u=json.load(open(temp+'/map/legacy_mapping_unresolved.json',encoding='utf-8'))
+          assert len(u)==100
+          conn=sqlite3.connect(temp+'/visual/visual.sqlite')
+          conn.row_factory=sqlite3.Row
+          docs=[dict(r) for r in conn.execute('SELECT document_key,source_key,title_source,publication_code,file_name,source_kind,source_locale,notes FROM mems_doc_document ORDER BY document_key')]
+          print('DOCUMENT_COUNT',len(docs))
+          for d in docs:
+              print('DOC',json.dumps(d,ensure_ascii=False,sort_keys=True))
+          by_root=collections.Counter()
+          by_class=collections.Counter()
+          by_prefix=collections.Counter()
+          for x in u:
+              roots=x.get('source_roots') or ['<NO_ROOT>']
+              for r in roots: by_root[r]+=1
+              by_class[x['classification']]+=1
+              key=x['old_key']
+              prefix=re.split(r'\s+',key.strip())[0] if key.strip() else '<EMPTY>'
+              by_prefix[prefix]+=1
+          print('UNRESOLVED_BY_CLASS',json.dumps(by_class,sort_keys=True))
+          print('UNRESOLVED_BY_ROOT',json.dumps(by_root,sort_keys=True))
+          print('UNRESOLVED_BY_PREFIX',json.dumps(by_prefix,sort_keys=True))
+
+          def n(s): return re.sub(r'[^a-z0-9]+','',str(s or '').lower())
+          for root,count in sorted(by_root.items(), key=lambda kv:(-kv[1],kv[0])):
+              nr=n(root)
+              candidates=[]
+              for d in docs:
+                  blob=' '.join(str(d.get(k) or '') for k in d)
+                  nb=n(blob)
+                  score=0
+                  if nr and nr in nb: score=100
+                  # numeric publication family fallback, e.g. AKM6348 -> 6348
+                  digits=''.join(re.findall(r'\d+',root))
+                  if digits and digits in nb: score=max(score,70)
+                  if score: candidates.append((score,d))
+              candidates.sort(key=lambda z:(-z[0],z[1]['document_key']))
+              print('ROOT_PROFILE',root,'COUNT',count,'CANDIDATES',json.dumps([{'score':s,**d} for s,d in candidates[:10]],ensure_ascii=False,sort_keys=True))
+          print('ALL_UNRESOLVED')
+          for x in u:
+              print(json.dumps({k:x.get(k) for k in ('old_key','old_path','classification','source_roots','page_candidates','locator_candidates','document_candidates','attached_legacy_illustration_pk')},ensure_ascii=False,sort_keys=True))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ravemems-unresolved-legacy-profile
+          path: ${{ runner.temp }}/unresolved_profile.txt
+          if-no-files-found: error
+          retention-days: 14
