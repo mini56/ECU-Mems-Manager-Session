@@ -1,0 +1,42 @@
+name: TEMP journal IA visual revalidation failure
+on:
+  push:
+    branches: [RAPPORT]
+    paths: ['.github/workflows/tmp-journal-ia-visual-revalidation-failure.yml']
+permissions:
+  contents: write
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    env:
+      REPORT_ENTRY: |
+        ## 2026-09-01 - Revalidation IA visuelle RAVEMEMS apres correctif 491464c
+
+        Revalidation reelle lancee sur la branche isolee `tmp-ravemems-ia-visual-integration` via le run GitHub Actions `33530522497` (job `99932211244`), checkout `5e73753ddb92bc3b86550592158f59b7641291fb`, qui contient le correctif applicatif `491464cfaa372724ccafa5d64f6041b18a2f589d` et uniquement un commit de retrigger workflow au-dessus.
+
+        Resultat : ECHEC du self-test IA visuel, apres compilation MSVC x64 reussie. Les gardes production et artefacts exacts passent, le catalogue runtime passe avec `1935` entrees, `1211` fichiers, `1794` occurrences RAVEMEMS et `141` legacy visibles conserves, et la base nettoyee passe integrity/FK avec les comptes attendus.
+
+        Le second defaut du run precedent est corrige : la demande `Voir le schema old purge legacy uniqueold` resout maintenant correctement vers le remplacement RAVEMEMS `RCL0193ENG p.99`. Les tests page texte masquee, runtime absent et traversal passent egalement.
+
+        Il reste un seul echec : `Quel est le pinout du connecteur MEMS 1.3 ECU ?` resout encore a tort vers `RAVEMEMS::OCC::DOC_0036_GENERAL_TESTBOOK_TB12212E_PDF_P0044_VIS001` au lieu du manifeste historique `MEMS 1.3 ECU`.
+
+        Cause exacte identifiee dans `IaMemsDiagramCatalog.cpp` : apres retrait du terme generation `1.3`, `significantTerms()` conserve le mot francais non technique `est`. Ce terme court se retrouve dans le contenu RAVEMEMS, permet un match parasite, puis le bonus de generation fait depasser le seuil et provoque la prise de priorite RAVEMEMS. Le correctif precedent etait donc incomplet : il protege la generation seule, mais pas les stopwords residuels non discriminants.
+
+        `MEMSX64` reste protege sur BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730` ; le run confirme `PROTECTED_PRODUCTION_PASS`. Aucun nouveau correctif applicatif n'est pousse dans cette etape de verification.
+
+        PROCHAINE ACTION EXACTE : sur `tmp-ravemems-ia-visual-integration` uniquement, corriger la selection runtime de facon robuste pour qu'un terme residuel non technique/court comme `est` ne puisse jamais faire prendre la priorite RAVEMEMS sur une demande generique de brochage MEMS ; ajouter le cas exact au self-test, puis relancer la validation complete x64 sur le catalogue reel. Ne pas toucher `MEMSX64`, a la base de production, au viewer Qt ni aux autres fonctions IA.
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+      - name: Append report and self-delete
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '\n%s\n' "$REPORT_ENTRY" >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git rm .github/workflows/tmp-journal-ia-visual-revalidation-failure.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Record IA visual revalidation failure"
+          git push origin HEAD:RAPPORT
