@@ -11309,3 +11309,16 @@ Le travail est volontairement arrêté ici après journalisation. Aucune matrice
 
 Reprendre par une comparaison visuelle normalisée read-only du seul cas restant `RCL0194ENG_COLOUR_CODES.png` contre l'asset RAVEMEMS page 7, en tenant compte du fait que l'ancien PNG est probablement un crop. Si et seulement si l'équivalence est prouvée, classer `remplacer_par_ravemems`; sinon conserver/migrer le legacy. Puis reconstruire la matrice de traitement 427 manifeste + 126 illustrations + 329 liens à partir de toutes les classifications autoritaires. Ne supprimer aucune donnée avant validation de cette matrice sur une copie. `MEMSX64` doit rester BUILD #103.
 
+
+## 2026-09-01 — RCL0194ENG COLOUR CODES — AVANT COMPARAISON VISUELLE NORMALISEE
+
+Reprise apres la pause demandee. La PROCHAINE ACTION EXACTE est executee sans modifier la production.
+
+Objectif de la prochaine pousse sur `tmp-rave-new-extraction-pilot` : comparer en lecture seule l'ancien `database/reference/images/rave/RCL0194ENG_COLOUR_CODES.png` du BUILD #103 avec l'asset RAVEMEMS page physique 7 `RAVEMEMS::VIS::DOC_0040_XN_CDXN990E_PDF_X62`, en tenant compte explicitement du fait que le fichier legacy peut etre un crop et/ou un redimensionnement du visuel constructeur complet.
+
+Le test doit utiliser les entrees verrouillees BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730` et bundle visuel valide run `33510951021`, artefact `9801592148`, digest `sha256:8b0fb6d8ef3a7b98e67adf603479be584236cd451b7dda2b28a6d6bb548445b1`. Il doit produire des metriques reproductibles de correspondance normalisee/crop, conserver les deux images et une preuve visuelle de la zone candidate dans l'artefact d'audit, et ne classer `remplacer_par_ravemems` que si l'equivalence est effectivement prouvee. Sinon le legacy doit etre conserve/migre.
+
+Aucune base SQLite, aucun manifeste, aucune image production et aucune donnee historique ne doivent etre modifies par cette comparaison. `MEMSX64` reste strictement BUILD #103.
+
+PROCHAINE ACTION EXACTE : pousser uniquement le workflow read-only de comparaison normalisee COLOUR CODES, executer et inspecter ses metriques/preuves, puis journaliser le verdict avant de reconstruire la matrice globale 427 + 126 + 329.
+
