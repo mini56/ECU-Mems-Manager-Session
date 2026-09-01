@@ -11527,3 +11527,18 @@ Aucune modification production, aucun package utilisateur et aucun changement `M
 
 PROCHAINE ACTION EXACTE : apres un nouveau journal AVANT POUSSE, corriger uniquement (a) la priorite runtime pour refuser le catalogue RAVEMEMS quand il ne reste aucun terme discriminant hors generation, et (b) l attente du self-test legacy remplace afin d exiger le visuel RAVEMEMS de remplacement plutot que l absence totale de suggestion. Etendre uniquement le trigger du workflow temporaire aux deux fichiers de code pour relancer automatiquement le meme test. Aucun autre changement.
 
+
+## 2026-09-01 — IA VISUELLE — AVANT POUSSE CORRECTIF DU RUN 33527558939
+
+Correctif strictement limite aux deux causes journalisees du premier self-test x64 rouge.
+
+1. `IaMemsDiagramCatalog` : avant de consulter `runtime_visual_catalog.json`, retirer des termes significatifs la generation MEMS detectee (`1.2`, `1.3`, `1.6`, `1.9`). S il ne reste aucun terme documentaire discriminant, ne pas parcourir RAVEMEMS et laisser le manifeste #103 traiter la demande generique. Cela doit restaurer deterministiquement `MEMS 1.3 ECU` pour la question de pinout generique sans empecher une demande contextuelle comme `purge canister RCL0193ENG`.
+
+2. Self-test `legacy remplace` : ne plus exiger l absence totale de suggestion. Exiger que la requete qui correspond a un ancien legacy remplace retourne le visuel RAVEMEMS valide de remplacement et jamais `legacy/replaced.png`.
+
+3. Workflow temporaire de validation : etendre seulement son filtre `paths` aux deux fichiers `expert/IaMemsDiagramCatalog.cpp` et `expert/IaMemsDiagramSelfTest.cpp` afin que ce commit correctif relance automatiquement le meme harnais x64. Aucun autre changement de workflow.
+
+La pousse sera creee en un seul commit Git atomique pour les trois fichiers. Aucun viewer Qt, `iamemstab.cpp`, Qwen/ONNX, protocole, ECU, navigation, package ou `MEMSX64` ne doit changer.
+
+PROCHAINE ACTION EXACTE : creer le commit correctif atomique sur `tmp-ravemems-ia-visual-integration`, attendre le nouveau run du meme workflow, verifier successivement catalogue reel/base nettoyee, compilation x64, self-tests et scope, puis journaliser immediatement le verdict avant toute etape de package utilisateur.
+
