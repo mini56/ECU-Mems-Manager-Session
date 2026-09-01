@@ -1,0 +1,105 @@
+name: RAVEMEMS exhaustive legacy visual mapping
+
+on:
+  push:
+    branches: [tmp-rave-new-extraction-pilot]
+    paths:
+      - tools/ravemems_map_legacy_visuals.py
+      - .github/workflows/ravemems-map-legacy-visuals.yml
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  map:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      BASE_COMMIT: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+      VISUAL_RUN_ID: '33510951021'
+      VISUAL_ARTIFACT_ID: '9801592148'
+      VISUAL_ARTIFACT_NAME: 'ravemems-visual-bundle-audit'
+      VISUAL_ARTIFACT_DIGEST: 'sha256:8b0fb6d8ef3a7b98e67adf603479be584236cd451b7dda2b28a6d6bb548445b1'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-new-extraction-pilot
+          fetch-depth: 0
+
+      - name: Verify protected production and exact RAVEMEMS visual artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$BASE_COMMIT"
+          gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${VISUAL_ARTIFACT_ID}" > "$RUNNER_TEMP/visual_artifact.json"
+          python3 - <<'PY'
+          import json, os
+          a=json.load(open(os.environ['RUNNER_TEMP']+'/visual_artifact.json'))
+          assert a['name']==os.environ['VISUAL_ARTIFACT_NAME']
+          assert a.get('digest')==os.environ['VISUAL_ARTIFACT_DIGEST']
+          print('EXACT_INPUTS_PASS')
+          PY
+
+      - name: Download enriched visual DB and exact legacy files
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/source" "$RUNNER_TEMP/legacy103"
+          gh run download "$VISUAL_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$VISUAL_ARTIFACT_NAME" --dir "$RUNNER_TEMP/source"
+          gzip -dc "$RUNNER_TEMP/source/ia_mems_reference_r20_plus_ravemems_VISUAL.sqlite.gz" > "$RUNNER_TEMP/source/visual.sqlite"
+          git archive "$BASE_COMMIT" database/reference/manifest.json database/reference/images/rave | tar -x -C "$RUNNER_TEMP/legacy103"
+          test -f "$RUNNER_TEMP/legacy103/database/reference/manifest.json"
+          test "$(find "$RUNNER_TEMP/legacy103/database/reference/images/rave" -type f | wc -l)" -eq 427
+          echo INPUT_EXTRACTION_PASS
+
+      - name: Map all old manifest images, illustrations and links
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$RUNNER_TEMP/mapping"
+          python3 tools/ravemems_map_legacy_visuals.py \
+            --db "$RUNNER_TEMP/source/visual.sqlite" \
+            --old-root "$RUNNER_TEMP/legacy103" \
+            --out "$RUNNER_TEMP/mapping" | tee "$RUNNER_TEMP/mapping_stdout.txt"
+          python3 - <<'PY'
+          import json, os
+          s=json.load(open(os.environ['RUNNER_TEMP']+'/mapping/legacy_mapping_summary.json',encoding='utf-8'))
+          assert s['pass'] is True and s['read_only'] is True
+          assert s['old_manifest_entries']==427
+          assert s['legacy_illustrations']==126
+          assert s['legacy_links']==329
+          assert s['ravemems_assets']==1070 and s['ravemems_occurrences']==1794
+          assert s['safe_to_delete_now'] is False
+          print('EXHAUSTIVE_MAPPING_GATE_PASS')
+          print(json.dumps(s,ensure_ascii=False,sort_keys=True))
+          PY
+
+      - name: Show unresolved cases and checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/mapping"
+          sha256sum *.json *.md > mapping_sha256.txt
+          cat legacy_mapping_report.md
+          python3 - <<'PY'
+          import json
+          u=json.load(open('legacy_mapping_unresolved.json',encoding='utf-8'))
+          print('UNRESOLVED_COUNT',len(u))
+          for x in u[:40]:
+              print('UNRESOLVED',x['old_key'],'|',x['old_path'],'| roots=',x['source_roots'],'pages=',x['page_candidates'],'locators=',x['locator_candidates'],'docs=',x['document_candidates'])
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ravemems-exhaustive-legacy-visual-mapping
+          path: |
+            ${{ runner.temp }}/mapping/**
+            ${{ runner.temp }}/mapping_stdout.txt
+          if-no-files-found: error
+          retention-days: 14
