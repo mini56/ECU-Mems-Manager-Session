@@ -1,0 +1,46 @@
+name: TEMP journal RCL0194 eight resolution failure
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/tmp-journal-rcl0194-eight-failure.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    env:
+      REPORT_ENTRY: |
+        
+        ## 2026-09-01 — RCL0194ENG : échec technique du résolveur des 8 anciens visuels
+        
+        - Run technique : `33516621119` — **ECHEC**.
+        - Branche technique : `tmp-rave-new-extraction-pilot`.
+        - Commit : `d6855cdadf3b4348f6815c2100a51643ad0009c0`.
+        - Entrées exactes validées : `MEMSX64` reste `1d6316bd1746d6f2b4cfb751cab88d18e27ef730` (BUILD #103) et l'artefact RAVEMEMS visuel exact a été vérifié.
+        - Le document RCL0194ENG est bien résolu comme `rave/xn/cdxn990e.pdf`, avec 41 unités.
+        - Cause exacte de l'échec : le script a utilisé `e.sequence_no` dans une requête sur `mems_doc_entity`, mais cette colonne n'existe pas dans cette table (`sqlite3.OperationalError: no such column: e.sequence_no`).
+        - Aucune donnée SQLite n'a été modifiée ; aucune suppression n'a été effectuée ; aucun changement sur `MEMSX64`.
+        
+        ### PROCHAINE ACTION EXACTE
+        
+        Corriger uniquement le résolveur RCL0194ENG afin d'ordonner les entités avec des colonnes réellement présentes dans `mems_doc_entity` (après introspection du schéma), puis relancer la résolution read-only des 8 anciens visuels `15.1`, `20.1`, `20.2`, `20.3`, `20.4`, `39.2`, `39.3`, `COLOUR CODES`. Ne modifier aucune donnée, ne supprimer aucun ancien visuel, ne toucher ni QZ64, ni installateur, ni `MEMSX64`.
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append report and self-delete
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '\n%s\n' "$REPORT_ENTRY" >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git rm .github/workflows/tmp-journal-rcl0194-eight-failure.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m 'Journal RCL0194 eight resolver failure'
+          git push origin HEAD:RAPPORT
