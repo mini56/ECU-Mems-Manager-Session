@@ -11505,3 +11505,25 @@ Gardes : `MEMSX64` doit rester exactement BUILD #103 ; aucun ONNX/Qwen/protocole
 
 PROCHAINE ACTION EXACTE : pousser uniquement ce workflow temporaire sur la branche d integration, laisser le run tester le tree `24678414227e0f73c4e97c26989b5e223f9fd8af` + runtime reel, puis journaliser immediatement SUCCESS ou FAILURE avant toute correction.
 
+
+## 2026-09-01 — IA VISUELLE RAVEMEMS — PREMIERE VALIDATION X64 ROUGE
+
+Workflow isole `TEMP RAVEMEMS IA visual integration validation` : run `33527558939`, job `99922168600`, commit teste `717f5930377fc286dcc766b237ab91d32ab35209` = FAILURE uniquement au self-test de selection.
+
+Gardes amont tous verts :
+- `MEMSX64` recontrole exactement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730` ;
+- artefact runtime `9806972578` et artefact cleanup `9807286866` verifies par nom + digest exact ;
+- catalogue runtime reel : `1935` entrees, `1211` fichiers, `1794` RAVEMEMS + `141` legacy conserves, tous chemins/fichiers/SHA valides ;
+- base nettoyee : integrity ok, FK 0, faits 177, illustrations 102, liens 288, assets 1070, occurrences 1794 ;
+- compilation MSVC x64 de `ia_mems_diagram_selftest` = SUCCESS.
+
+Deux echecs precis du self-test :
+1. regression de priorite sur `Quel est le pinout du connecteur MEMS 1.3 ECU ?` : le nouveau catalogue runtime a propose `RAVEMEMS::OCC::DOC_0036_GENERAL_TESTBOOK_TB12212E_PDF_P0044_VIS001` au lieu du schema historique deterministe `MEMS 1.3 ECU`. Une demande generique MEMS+generation sans terme documentaire discriminant doit rester sur le manifeste #103 ; le runtime RAVEMEMS ne doit prendre la main que s il existe un contexte supplementaire reellement discriminant.
+2. fixture `legacy remplace` trop stricte : la requete contenant `purge` a correctement refuse l ancien chemin legacy remplace mais a ensuite trouve le nouveau visuel RAVEMEMS purge valide. Le test attendait a tort `aucun schema`; il doit verifier que l ancien legacy n est jamais retourne et que le remplacement RAVEMEMS valide peut l etre.
+
+Les autres protections passent : MEMS 1.2/1.6/1.9, ROSCO, OBD, RAVEMEMS purge, legacy AKM6348 conserve, page texte masquee, fichier absent et traversal `..`.
+
+Aucune modification production, aucun package utilisateur et aucun changement `MEMSX64`.
+
+PROCHAINE ACTION EXACTE : apres un nouveau journal AVANT POUSSE, corriger uniquement (a) la priorite runtime pour refuser le catalogue RAVEMEMS quand il ne reste aucun terme discriminant hors generation, et (b) l attente du self-test legacy remplace afin d exiger le visuel RAVEMEMS de remplacement plutot que l absence totale de suggestion. Etendre uniquement le trigger du workflow temporaire aux deux fichiers de code pour relancer automatiquement le meme test. Aucun autre changement.
+
