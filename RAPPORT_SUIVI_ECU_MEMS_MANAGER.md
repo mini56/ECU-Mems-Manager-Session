@@ -11625,3 +11625,14 @@ Les fichiers temporaires helper/orchestrateur sont encore presents uniquement co
 
 PROCHAINE ACTION EXACTE : apres RAPPORT AVANT POUSSE, creer via connecteur un nouveau workflow de validation v2 declenche par son propre ajout, qui checkout le HEAD `tmp-ravemems-ia-visual-integration`, reutilise les memes artefacts runtime/cleanup exacts et reproduit le meme test x64 complet. Journaliser le verdict avant tout nettoyage ou package.
 
+
+## 2026-09-01 — IA VISUELLE — AVANT RELANCE VALIDATION X64
+
+Le correctif applicatif est pousse et journalise au commit `491464c`. Pour le tester sans nouveau changement applicatif, la prochaine pousse doit modifier uniquement `.github/workflows/tmp-ravemems-ia-visual-validation.yml` via le connecteur GitHub afin d etendre son filtre `paths` aux deux fichiers `expert/IaMemsDiagramCatalog.cpp` et `expert/IaMemsDiagramSelfTest.cpp` en plus du workflow lui-meme.
+
+Cette modification du harnais, effectuee par le connecteur et non par GitHub Actions, doit declencher immediatement le meme test sur le nouveau HEAD qui contient le correctif. Le contenu des etapes de validation reste identique : MEMSX64 exact #103, artefacts runtime/cleanup exacts, 1935 entrees / 1211 fichiers, base nettoyee, Qt MSVC x64, compilation, self-tests, scope et artefact de preuve.
+
+Aucun autre fichier ne doit changer. Les helper/orchestrateur temporaires restent encore presents mais ne sont pas inclus dans le binaire et seront nettoyes apres verdict.
+
+PROCHAINE ACTION EXACTE : modifier uniquement le filtre paths du workflow de validation, attendre son nouveau run complet, puis journaliser immediatement SUCCESS ou FAILURE avant tout nettoyage ou package utilisateur.
+
