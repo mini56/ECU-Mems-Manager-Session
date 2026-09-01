@@ -10986,3 +10986,15 @@ Aucune suppression, aucune fusion, aucune reecriture de la base fusionnee n a et
 
 PROCHAINE ACTION EXACTE : examiner en lecture seule les 10 faits non entierement resolus par le tri machine, en affichant pour chacun le statement historique, les notes/pages/sections citees et le texte RAVEMEMS local autour de ces pages ou connecteurs. Les classer individuellement en `confirme`, `complementaire`, `divergence`, `erreur historique` ou `a revoir`. En particulier verifier directement `70 °C`, `1,5 Nm` et les 5 cas RCL0194ENG partiels. Ne modifier aucune donnee et ne toucher ni QZ64, ni installateur, ni `MEMSX64`.
 
+
+## 2026-09-01 - RAVEMEMS - CONTROLE CIBLE DES 10 FAITS - RUN VERT
+
+Workflow read-only run 33507019893, job 99853380924, commit technique 8d69641ddfd674663445459ec8a54156c990acd7 = SUCCESS.
+Artefact ravemems-targeted-ten-facts-review : ID 9800159465, taille 230883 octets, digest sha256:60b5bb76bb544aa9d794a12bb9500c831bb3fac0dbc4174a3278280a44574e49.
+La base fusionnee a ete ouverte strictement en lecture seule ; aucune donnee na ete modifiee.
+
+Resultat deja ferme : RAVE-EVAP-PURGE-001 est CONFIRME sur RCL0193ENG page physique 99, lignes 68-70 : la vanne est commandee par ECM et reste fermee jusqu a une temperature moteur superieure a 70 C. La reference historique PDF p.98 est donc un decalage de localisation a corriger dans la provenance, pas une erreur du fait ni un motif de suppression.
+Les connecteurs principaux des cinq cas RCL0194ENG partiels sont retrouves sur les bonnes sections/pages, notamment C174-2/C159-16 en 20.4, C152-1/C152-2/C158-17 en 20.1, C159-13/SENSOR EARTH en 20.2 et C159-30/SENSOR EARTH en 20.4. Aucun conflit de broche nest etabli par ce run.
+Le run ne permet cependant pas encore de valider les couleurs de fils, les liaisons SJ5, la valeur 1,5 Nm ni les procedures sans ancre machine parce que le log compact na pas imprime toutes les lignes locales necessaires.
+
+PROCHAINE ACTION EXACTE : effectuer un dernier extracteur read-only limite aux pages RCL0193ENG 98,99,101,102,118,123,135,170 et RCL0194ENG 17,19. Imprimer les lignes source completes de ces pages afin de classer definitivement les 10 faits en confirme, complementaire, divergence, erreur historique ou a revoir. Ne modifier aucune base, ne supprimer/fusionner aucune ligne et ne pas toucher MEMSX64.
