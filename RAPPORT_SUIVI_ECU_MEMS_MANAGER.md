@@ -11569,3 +11569,23 @@ Aucune autre difference n est autorisee. Le workflow de validation existant devr
 
 PROCHAINE ACTION EXACTE : pousser uniquement l orchestrateur temporaire, laisser celui-ci produire le commit correctif final propre et s auto-supprimer avec le helper, verifier le diff final exact de trois fichiers, puis attendre le nouveau run de validation avant toute autre action.
 
+
+## 2026-09-01 — IA VISUELLE — ORCHESTRATEUR BLOQUE PAR PERMISSION WORKFLOW
+
+Run d orchestration `33528646773`, job `99925841686` = FAILURE au push final uniquement.
+
+Les etapes locales du runner ont prouve :
+- helper execute avec succes ;
+- diff avant commit exactement sur les trois chemins autorises ;
+- commit local `01f4b70` cree avec les deux corrections + modification du filtre du workflow + suppression helper/orchestrateur ;
+- comparaison finale au commit teste `717f5930377fc286dcc766b237ab91d32ab35209` = exactement les trois chemins autorises ;
+- aucune autre difference.
+
+La pousse a ensuite ete refusee par GitHub : `refusing to allow a GitHub App to create or update workflow .github/workflows/tmp-ravemems-ia-visual-validation.yml without workflows permission`.
+
+Le commit local `01f4b70` n a donc jamais atteint le depot. La branche distante reste sur le tree applicatif non corrige avec helper/orchestrateur temporaires. `MEMSX64` reste BUILD #103.
+
+Conclusion : logique corrective et scope valides ; seul le transport d une modification de fichier workflow depuis GitHub Actions est interdit. Il faut separer la pousse code de la modification du harnais : pousser depuis Actions uniquement les deux `.cpp`, puis utiliser le connecteur GitHub (qui a deja cree/modifie des workflows) pour declencher un nouveau workflow de validation. Les fichiers temporaires seront nettoyes apres validation.
+
+PROCHAINE ACTION EXACTE : apres un nouveau RAPPORT AVANT POUSSE, modifier uniquement l orchestrateur pour restaurer le workflow de validation avant commit et ne pousser que les deux fichiers `.cpp`; ne supprimer encore aucun workflow/helper dans cette pousse. Une fois ce push code vert, journaliser puis creer via connecteur un nouveau harnais de validation declenche par son propre fichier, testant le HEAD corrige. Aucun autre changement.
+
