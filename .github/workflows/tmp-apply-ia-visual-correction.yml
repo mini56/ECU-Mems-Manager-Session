@@ -1,0 +1,55 @@
+name: TEMP apply IA visual correction atomically
+on:
+  push:
+    branches: [tmp-ravemems-ia-visual-integration]
+    paths: ['.github/workflows/tmp-apply-ia-visual-correction.yml']
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-ravemems-ia-visual-integration
+          fetch-depth: 0
+      - name: Apply exact correction and self-delete
+        env:
+          BASE_TESTED: 717f5930377fc286dcc766b237ab91d32ab35209
+          MEMSX64_BASE: 1d6316bd1746d6f2b4cfb751cab88d18e27ef730
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$MEMSX64_BASE"
+          test -f tools/tmp_apply_ia_visual_correction.py
+          python3 tools/tmp_apply_ia_visual_correction.py
+          python3 - <<'PY'
+          import subprocess
+          expected={
+            'expert/IaMemsDiagramCatalog.cpp',
+            'expert/IaMemsDiagramSelfTest.cpp',
+            '.github/workflows/tmp-ravemems-ia-visual-validation.yml',
+          }
+          changed=set(subprocess.check_output(['git','diff','--name-only'],text=True).splitlines())
+          assert changed==expected,(changed,expected)
+          print('CORRECTION_DIFF_PRECOMMIT_PASS',sorted(changed))
+          PY
+          git rm tools/tmp_apply_ia_visual_correction.py .github/workflows/tmp-apply-ia-visual-correction.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add expert/IaMemsDiagramCatalog.cpp expert/IaMemsDiagramSelfTest.cpp .github/workflows/tmp-ravemems-ia-visual-validation.yml
+          git commit -m "Fix IA runtime visual selection priority"
+          python3 - <<'PY'
+          import os,subprocess
+          expected={
+            'expert/IaMemsDiagramCatalog.cpp',
+            'expert/IaMemsDiagramSelfTest.cpp',
+            '.github/workflows/tmp-ravemems-ia-visual-validation.yml',
+          }
+          base=os.environ['BASE_TESTED']
+          changed=set(subprocess.check_output(['git','diff','--name-only',base+'..HEAD'],text=True).splitlines())
+          assert changed==expected,(changed,expected)
+          assert not subprocess.call(['test','!','-e','tools/tmp_apply_ia_visual_correction.py'])
+          assert not subprocess.call(['test','!','-e','.github/workflows/tmp-apply-ia-visual-correction.yml'])
+          print('FINAL_TREE_SCOPE_PASS',sorted(changed))
+          PY
+          git push origin HEAD:tmp-ravemems-ia-visual-integration
