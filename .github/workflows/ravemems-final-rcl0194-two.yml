@@ -1,0 +1,164 @@
+name: RAVEMEMS final RCL0194 two-case review
+
+on:
+  push:
+    branches: [tmp-rave-new-extraction-pilot]
+    paths:
+      - '.github/workflows/ravemems-final-rcl0194-two.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BASE_COMMIT: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+      VISUAL_RUN_ID: '33510951021'
+      VISUAL_ARTIFACT_ID: '9801592148'
+      VISUAL_ARTIFACT_NAME: 'ravemems-visual-bundle-audit'
+      VISUAL_DIGEST: 'sha256:8b0fb6d8ef3a7b98e67adf603479be584236cd451b7dda2b28a6d6bb548445b1'
+      OLD_COLOUR_PATH: 'database/reference/images/rave/RCL0194ENG_COLOUR_CODES.png'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-new-extraction-pilot
+          fetch-depth: 0
+
+      - name: Verify exact inputs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$BASE_COMMIT"
+          gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${VISUAL_ARTIFACT_ID}" > "$RUNNER_TEMP/visual_artifact.json"
+          python3 - <<'PY'
+          import json,os
+          a=json.load(open(os.environ['RUNNER_TEMP']+'/visual_artifact.json'))
+          assert a['name']==os.environ['VISUAL_ARTIFACT_NAME']
+          assert a.get('digest')==os.environ['VISUAL_DIGEST']
+          print('EXACT_INPUT_PASS',a['id'],a['name'],a.get('digest'))
+          PY
+          git cat-file -e "$BASE_COMMIT:$OLD_COLOUR_PATH"
+          echo OLD_COLOUR_PRESENT_PASS
+
+      - name: Download exact RAVEMEMS visual bundle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/visual"
+          gh run download "$VISUAL_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$VISUAL_ARTIFACT_NAME" --dir "$RUNNER_TEMP/visual"
+          gzip -dc "$RUNNER_TEMP/visual/ia_mems_reference_r20_plus_ravemems_VISUAL.sqlite.gz" > "$RUNNER_TEMP/visual/visual.sqlite"
+          test -d "$RUNNER_TEMP/visual/visuals"
+          echo VISUAL_BUNDLE_READY
+
+      - name: Resolve real 39.3 source unit
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/final_two"
+          python3 - <<'PY' | tee "$RUNNER_TEMP/final_two/rcl0194_39_3.txt"
+          import json,os,re,sqlite3
+          db=os.environ['RUNNER_TEMP']+'/visual/visual.sqlite'
+          c=sqlite3.connect('file:'+db+'?mode=ro',uri=True); c.row_factory=sqlite3.Row
+          d=c.execute("SELECT document_key FROM mems_doc_document WHERE publication_code='RCL0194ENG'").fetchall()
+          assert len(d)==1
+          dk=d[0]['document_key']
+          rows=[]
+          for u in c.execute('SELECT * FROM mems_doc_unit WHERE document_key=? ORDER BY sequence_no',(dk,)):
+              text='\n'.join(r[0] or '' for r in c.execute('''SELECT t.text_value FROM mems_doc_entity e JOIN mems_doc_text t ON t.entity_key=e.entity_key WHERE e.unit_key=? AND t.locale='en' AND t.field_key='source_exact' ORDER BY e.sort_order,e.entity_key''',(u['unit_key'],)))
+              low=text.lower()
+              if '39.3' not in low:
+                  continue
+              vc=c.execute("SELECT COUNT(*) FROM mems_doc_entity WHERE unit_key=? AND entity_kind='visual_occurrence'",(u['unit_key'],)).fetchone()[0]
+              row={'physical_page':u['physical_page'],'sequence_no':u['sequence_no'],'unit_key':u['unit_key'],
+                   'visual_count':vc,'has_contents':'contents' in low[:500],
+                   'has_cooling_fan':'cooling fan' in low,'has_spi':'spi' in low,'has_japan':'japan' in low,
+                   'excerpt':text[:2200]}
+              rows.append(row)
+              print('HIT_39_3',json.dumps(row,ensure_ascii=False,sort_keys=True))
+          assert rows
+          technical=[r for r in rows if r['has_cooling_fan'] and r['has_spi'] and r['has_japan'] and not r['has_contents']]
+          print('TECHNICAL_39_3_COUNT',len(technical))
+          for r in technical: print('TECHNICAL_39_3',json.dumps(r,ensure_ascii=False,sort_keys=True))
+          result={'all_hits':rows,'technical_hits':technical}
+          open(os.environ['RUNNER_TEMP']+'/final_two/rcl0194_39_3.json','w',encoding='utf-8').write(json.dumps(result,ensure_ascii=False,indent=2,sort_keys=True))
+          print('RESOLVE_39_3_PASS')
+          PY
+
+      - name: Compare old COLOUR CODES PNG to RAVEMEMS page 7 visual
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show "$BASE_COMMIT:$OLD_COLOUR_PATH" > "$RUNNER_TEMP/final_two/legacy_colour_codes.png"
+          python3 - <<'PY' | tee "$RUNNER_TEMP/final_two/colour_codes_compare.txt"
+          import hashlib,json,os,sqlite3,struct
+          from pathlib import Path
+          root=Path(os.environ['RUNNER_TEMP'])
+          db=root/'visual/visual.sqlite'
+          c=sqlite3.connect('file:'+str(db)+'?mode=ro',uri=True); c.row_factory=sqlite3.Row
+          r=c.execute('''
+            SELECT v.entity_key,v.sha256,v.relative_path,e.entity_key occurrence_key,e.unit_key,u.physical_page
+            FROM mems_doc_document d
+            JOIN mems_doc_unit u ON u.document_key=d.document_key
+            JOIN mems_doc_entity e ON e.unit_key=u.unit_key AND e.entity_kind='visual_occurrence'
+            JOIN mems_doc_relation rel ON rel.from_entity_key=e.entity_key AND rel.relation_type='uses_visual'
+            JOIN mems_doc_visual v ON v.entity_key=rel.to_entity_key
+            WHERE d.publication_code='RCL0194ENG' AND u.physical_page=7
+            ORDER BY e.entity_key
+          ''').fetchall()
+          assert len(r)==1,len(r)
+          rr=dict(r[0]); expected_sha=rr['sha256']
+          candidates=[]
+          for p in (root/'visual/visuals').rglob('*'):
+              if p.is_file():
+                  h=hashlib.sha256(p.read_bytes()).hexdigest()
+                  if h==expected_sha: candidates.append(p)
+          assert len(candidates)==1,(expected_sha,[str(x) for x in candidates])
+          new=candidates[0]; old=root/'final_two/legacy_colour_codes.png'
+          def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
+          def pngdim(p):
+              b=p.read_bytes()[:24]
+              assert b[:8]==b'\x89PNG\r\n\x1a\n' and b[12:16]==b'IHDR'
+              return struct.unpack('>II',b[16:24])
+          result={'legacy_path':os.environ['OLD_COLOUR_PATH'],'legacy_sha256':sha(old),'legacy_dimensions':pngdim(old),
+                  'ravemems_entity_key':rr['entity_key'],'ravemems_occurrence_key':rr['occurrence_key'],
+                  'ravemems_unit_key':rr['unit_key'],'ravemems_physical_page':rr['physical_page'],
+                  'ravemems_expected_sha256':expected_sha,'ravemems_bundle_path':str(new.relative_to(root/'visual')),
+                  'ravemems_actual_sha256':sha(new),'ravemems_dimensions':pngdim(new)}
+          result['byte_identical']=result['legacy_sha256']==result['ravemems_actual_sha256']
+          result['same_dimensions']=result['legacy_dimensions']==result['ravemems_dimensions']
+          print('COLOUR_COMPARE_BASE',json.dumps(result,ensure_ascii=False,sort_keys=True))
+          open(root/'final_two/colour_codes_compare.json','w',encoding='utf-8').write(json.dumps(result,ensure_ascii=False,indent=2,sort_keys=True))
+          PY
+          if command -v compare >/dev/null 2>&1; then
+            set +e
+            compare -metric RMSE "$RUNNER_TEMP/final_two/legacy_colour_codes.png" "$(python3 - <<'PY'
+          import hashlib,json,os
+          from pathlib import Path
+          root=Path(os.environ['RUNNER_TEMP'])
+          j=json.load(open(root/'final_two/colour_codes_compare.json'))
+          print(root/'visual'/j['ravemems_bundle_path'])
+          PY
+          )" null: 2> "$RUNNER_TEMP/final_two/colour_codes_rmse.txt"
+            rc=$?
+            set -e
+            echo "COMPARE_RC=$rc"
+            echo -n 'COMPARE_RMSE='; cat "$RUNNER_TEMP/final_two/colour_codes_rmse.txt"; echo
+          else
+            echo 'COMPARE_TOOL_UNAVAILABLE'
+          fi
+          echo COLOUR_CODES_COMPARE_PASS
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ravemems-final-rcl0194-two-case-review
+          path: ${{ runner.temp }}/final_two/**
+          if-no-files-found: error
+          retention-days: 14
