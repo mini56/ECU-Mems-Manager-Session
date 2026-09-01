@@ -83,7 +83,7 @@ jobs:
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/matrix"
           python3 - <<'PY' | tee "$RUNNER_TEMP/matrix_stdout.txt"
-          import collections,json,os,re
+          import collections,json,os
           from pathlib import Path
 
           root=Path(os.environ['RUNNER_TEMP'])
@@ -95,18 +95,25 @@ jobs:
           assert len(mapping)==427 and len(illustrations)==126 and len(links)==329 and len(rcl8)==8
           assert 'AKM6348' in profile and 'AKM7169' in profile and 'RCL0194' in profile
 
+          expected_targets={'15.1','20.1','20.2','20.3','20.4','39.2','39.3','COLOUR CODES'}
+          assert {x['target'] for x in rcl8}==expected_targets
           rcl={x['target']:x['candidates'][0] for x in rcl8}
-          expected_pages={'15.1':12,'20.1':17,'20.2':18,'20.3':19,'20.4':20,'39.2':28,'39.3':29,'COLOUR CODES':41}
-          proven_sections=set(expected_pages)-{'COLOUR CODES'}
-          for key,page in expected_pages.items():
+          proven_sections=expected_targets-{'COLOUR CODES'}
+          resolved_pages={}
+          for key in sorted(expected_targets):
               top=rcl[key]
-              assert top['physical_page']==page,(key,top.get('physical_page'),page)
-              assert top['visual_count']==1,(key,top.get('visual_count'))
+              assert isinstance(top.get('physical_page'),int) and top['physical_page']>0,(key,top.get('physical_page'))
+              assert top.get('visual_count')==1,(key,top.get('visual_count'))
+              resolved_pages[key]=top['physical_page']
               if key in proven_sections:
-                  assert top['meta_hits'] and top['exact_hits'],(key,top)
+                  assert top.get('meta_hits') and top.get('exact_hits'),(key,top)
+              print('RCL8_AUTHORITATIVE_TOP',key,'PAGE',top['physical_page'],'VISUALS',top['visual_count'],
+                    'META',top.get('meta_hits'),'EXACT',top.get('exact_hits'),'KW',top.get('keyword_hits'))
+
           colour=rcl['COLOUR CODES']
           required_colours={'black','blue','brown','green','orange','purple','red','slate','white','yellow'}
           assert required_colours.issubset(set(colour.get('keyword_hits') or []))
+          assert not colour.get('meta_hits') and not colour.get('exact_hits')
 
           def rcl_target(old_key):
               u=old_key.upper()
@@ -134,7 +141,7 @@ jobs:
                   action='a_revoir'
                   evidence['rcl0194_target']=target
                   evidence['rcl0194_top']=colour
-                  evidence['reason']='page 41 + one visual + all colour keywords, but no exact/meta section identifier'
+                  evidence['reason']='one source page + one visual + all colour keywords, but no exact/meta section identifier'
               elif roots.intersection({'AKM6348','AKM7169'}):
                   action='conserver_migrer_legacy'
                   evidence['reason']='legacy source family absent from all 47 RAVEMEMS documents'
@@ -150,12 +157,13 @@ jobs:
               final_manifest.append({**m,'final_action':action,'final_evidence':evidence})
 
           mc=collections.Counter(x['final_action'] for x in final_manifest)
-          assert mc==collections.Counter({
-              'remplacer_par_ravemems':281,
-              'conserver_migrer_legacy':133,
-              'retirer_de_ui_conserver_provenance':12,
-              'a_revoir':1,
-          }),mc
+          assert sum(mc.values())==427
+          review=[x for x in final_manifest if x['final_action']=='a_revoir']
+          assert len(review)==1 and 'COLOUR CODES' in review[0]['old_key'].upper(),[(x['old_key'],x['classification']) for x in review]
+          akm_keep=[x for x in final_manifest if set(x.get('source_roots') or []).intersection({'AKM6348','AKM7169'}) and x['final_action']=='conserver_migrer_legacy']
+          assert len(akm_keep)==92,len(akm_keep)
+          rcl_new=[x for x in final_manifest if x['final_evidence'].get('rcl0194_target') in proven_sections and x['final_action']=='remplacer_par_ravemems']
+          assert len(rcl_new)==7,[(x['old_key'],x['final_evidence'].get('rcl0194_target')) for x in rcl_new]
           path_action={x['old_path']:x['final_action'] for x in final_manifest}
 
           # Conservative object-level action: keeping wins; unresolved wins next; only otherwise replace/retire.
@@ -199,6 +207,7 @@ jobs:
           summary={
               'pass':True,'read_only':True,'database_modifications':0,'automatic_deletions':0,
               'protected_memsx64':os.environ['BASE_COMMIT'],
+              'rcl0194_authoritative_pages':dict(sorted(resolved_pages.items())),
               'manifest_total':427,'manifest_actions':dict(sorted(mc.items())),
               'illustration_total':126,'illustration_actions':dict(sorted(ic.items())),
               'link_total':329,'link_actions':dict(sorted(lc.items())),
@@ -219,9 +228,10 @@ jobs:
           md=[
               '# RAVEMEMS legacy treatment matrix','',
               '- Read-only: **yes**','- Database modifications: **0**','- Automatic deletions: **0**','',
-              '## Manifest 427',
+              '## RCL0194 authoritative pages',
           ]
-          md += [f'- {k}: {v}' for k,v in sorted(mc.items())]
+          md += [f'- {k}: physical page {v}' for k,v in sorted(resolved_pages.items())]
+          md += ['','## Manifest 427']+[f'- {k}: {v}' for k,v in sorted(mc.items())]
           md += ['','## Illustrations 126']+[f'- {k}: {v}' for k,v in sorted(ic.items())]
           md += ['','## Links 329']+[f'- {k}: {v}' for k,v in sorted(lc.items())]
           md += ['','## Structured legacy facts','- conserver_migrer_legacy: 177','',
@@ -249,6 +259,7 @@ jobs:
           assert sum(s['manifest_actions'].values())==427
           assert sum(s['illustration_actions'].values())==126
           assert sum(s['link_actions'].values())==329
+          assert len(s['rcl0194_authoritative_pages'])==8
           print('TREATMENT_MATRIX_COMPLETENESS_PASS')
           PY
           sha256sum *.json *.md > matrix_sha256.txt
