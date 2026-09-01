@@ -11774,3 +11774,21 @@ Aucune intégration production n'est encore faite. Le package est prêt pour tes
 ### PROCHAINE ACTION EXACTE
 Faire tester l'artefact isolé `9811065597` par l'utilisateur. Ne pas toucher à `MEMSX64` avant retour du test réel. Si le test utilisateur est concluant, journaliser ce retour avant toute décision d'intégration.
 
+
+## 2026-09-01 — TEST REEL PACKAGE RAVEMEMS VISUEL x64 : DEMARRAGE UTILISATEUR OK
+
+Package testé : `ECU-MEMS-Manager-x64-RAVEMEMS-VISUAL-TEST-from-BUILD-103`, artefact `9811065597`, run `33533678990` SUCCESS.
+
+Premier retour utilisateur réel :
+- téléchargement : OK ;
+- extraction du ZIP : OK ;
+- démarrage de l'application : OK ;
+- fonction `Vue instantanée` / capture : OK, plusieurs captures enregistrées dans `captures/...png` ;
+- navigation sur les premiers onglets visible sans anomalie bloquante signalée ;
+- onglet `IA MEMS` ouvert : statut utilisateur visible `IA locale : prête`, zone de question active et bouton Envoyer disponible ;
+- prochaine vérification réelle : réponses IA et bouton `Voir le schéma`, avec un cas historique MEMS 1.3 puis un cas RAVEMEMS.
+
+INCIDENT JOURNAL : le premier workflow temporaire de journalisation run `33536844486` a échoué avant exécution de job ; le second run `33536981807` a créé localement le bon commit mais son push a échoué car la commande omettait le remote `origin`. Aucune progression technique n a été effectuée pendant ces échecs.
+
+Aucune modification technique autorisée sur la base de ce checkpoint. Attendre les réponses du test IA réel et journaliser immédiatement tout défaut ou validation.
+`MEMSX64` doit rester strictement sur BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
