@@ -11880,3 +11880,13 @@ Impact : le commit local runner `38a3fd0` n'a **pas** été poussé ; la branche
 
 ### PROCHAINE ACTION EXACTE
 Refaire la pousse en ne modifiant que `iamemstab.cpp` depuis le runner. Le déclenchement de la compilation/package sera traité séparément, sans faire modifier un autre workflow par le `GITHUB_TOKEN`.
+
+## 2026-09-01 — Test reel IA : correction scroll standard autorisee
+
+Constat utilisateur reel : le package de test ne presente toujours pas de scroll utilisable dans la fenetre IA.
+
+La premiere tentative de journalisation, run 33545105482, a echoue avant creation de job a cause d'une indentation YAML invalide. Aucun code applicatif n'a ete modifie apres cet echec.
+
+Demande exacte : ajouter un scroll vertical standard dans la fenetre IA, permettant simplement de monter et descendre dans tout le contenu. Aucun autre comportement de scroll a inventer.
+
+PROCHAINE ACTION EXACTE : sur `tmp-ravemems-ia-visual-integration`, modifier uniquement l'affichage de la zone IA pour fournir une barre de defilement verticale standard et explicite, sans toucher a `MEMSX64`, au protocole, a la base ou au viewer RAVEMEMS. Compiler ensuite le package x64 de test et refaire le test reel.
