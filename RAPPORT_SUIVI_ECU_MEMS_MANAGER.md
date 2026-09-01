@@ -11735,3 +11735,17 @@ Le chargeur #103 a egalement ete verifie compatible avec la copie enrichie user_
 
 MEMSX64 reste BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
 
+
+
+## IA VISUELLE RAVEMEMS - LIBELLE VOIR LE SCHEMA POUSSE
+Date: 2026-09-01
+
+Run d'application controlee: `33533355822` SUCCESS.
+Commit applicatif: `2cb1a47` (`Use single Voir le schéma button label`).
+Diff exact: uniquement `iamemstab.cpp`, 1 insertion / 1 suppression. `m_diagramButton->setText(QStringLiteral("Ouvrir le schéma %1").arg(m_diagramTitle));` devient `m_diagramButton->setText(QStringLiteral("Voir le schéma"));`.
+Le viewer Qt, la resolution de fichier, les protections et le moteur de selection restent inchanges.
+
+PROCHAINE ACTION EXACTE: creer sur `tmp-ravemems-ia-visual-integration` un workflow de package x64 de TEST derive de la chaine BUILD #103. Il doit verifier MEMSX64 #103, telecharger les artefacts valides `9806972578` et `9807286866`, injecter runtime 1935/1211 et la copie SQLite nettoyee user_version 21 sous le nom attendu `ia_mems_reference_r20.sqlite`, reproduire Qt/ONNX/Qwen pins de #103, compiler, executer les self-tests, verifier le libelle `Voir le schéma`, valider le package et faire un smoke launch. Upload uniquement comme artefact TEST, aucun push/merge/release production.
+
+MEMSX64 reste BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
