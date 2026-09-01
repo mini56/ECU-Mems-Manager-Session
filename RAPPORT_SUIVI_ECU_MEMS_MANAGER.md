@@ -11341,3 +11341,44 @@ Aucune base, aucune image production, aucun manifeste et aucune donnee historiqu
 
 PROCHAINE ACTION EXACTE : reconstruire en lecture seule la matrice globale de traitement des 427 entrees de manifeste legacy + 126 illustrations + 329 liens avec toutes les classifications autoritaires : remplacement seulement quand RAVEMEMS est prouve, conservation/migration des sources legacy uniques ou sans remplacement visuel, retrait de l'UI seulement des captures de pages texte sans visuel tout en gardant leur provenance. Verifier qu'aucun `a_revoir` ne reste au niveau manifeste. Ne supprimer aucune donnee avant validation de cette matrice et d'une migration sur copie.
 
+
+## 2026-09-01 — RAVEMEMS — MATRICE AUTORITAIRE DE TRAITEMENT LEGACY VALIDEE
+
+Run read-only `33523257264`, job `99907533368` — **SUCCESS**.
+Branche `tmp-rave-new-extraction-pilot`, commit `87407663cb08b3ba6e8c390ee4f6514d7709f929`.
+Artefact `ravemems-authoritative-legacy-treatment-matrix`, ID `9806574514`, taille `157479` octets, digest `sha256:4590cbae278b629d0710c99584229a384bca2e5039183fcbe5fa1b42b346e5bf`.
+
+La matrice consomme uniquement les preuves autoritaires validees : mapping exhaustif legacy, inventaire brut RCL0194, resolution finale 39.3 et comparaison visuelle normalisee COLOUR CODES. `MEMSX64` a ete reverifie strictement sur BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+Comptes finaux — manifeste legacy 427 :
+- `conserver_migrer_legacy` = 141 ;
+- `remplacer_par_ravemems` = 274 ;
+- `retirer_de_ui_conserver_provenance` = 12 ;
+- `a_revoir` = 0.
+
+Illustrations legacy 126 :
+- conserver/migrer = 102 ;
+- remplacer par RAVEMEMS = 21 ;
+- retirer de l'UI en conservant la provenance = 3 ;
+- a revoir = 0.
+
+Liens legacy 329 :
+- conserver/migrer = 288 ;
+- remplacer par RAVEMEMS = 35 ;
+- retirer de l'UI en conservant la provenance = 6 ;
+- a revoir = 0.
+
+Les 177 faits RAVE structures historiques sont tous `conserver_migrer_legacy`.
+Les 8 visuels legacy RCL0194ENG sont tous `conserver_migrer_legacy`, y compris COLOUR CODES dont l'equivalence visuelle avec l'asset RAVEMEMS page 7 n'a pas ete prouvee.
+
+SHA des sorties principales :
+- `legacy_manifest_treatment_427.json` = `afca7143371a8e4ebf0cc8523186fb8289a54c5f337e7ae6bcd10e7e4eb4d698` ;
+- `legacy_illustration_treatment_126.json` = `9ce3a904d8592b2acee2506aa528fbf9c16dbdb62bcba4a01b8107c852e3eab3` ;
+- `legacy_link_treatment_329.json` = `6adf725e87dadb33b9b58d9f54018899ede3ab89fa7c63c906cbe481a2fba55d` ;
+- `legacy_treatment_summary.json` = `a37ec0dcb4d4e3486aadbd147832922b10d8edaef3e8c96a729c55fa41375827` ;
+- `legacy_treatment_report.md` = `a622e19565cd759035b3b679adb193344b08baadf97eb975e55b6d3a0fb5299d`.
+
+Garde final : read-only, 0 modification SQLite, 0 suppression automatique, `destructive_cleanup_authorized=false`.
+
+PROCHAINE ACTION EXACTE : simuler sur une COPIE uniquement l'application de cette matrice au bundle visuel fusionne valide. Conserver/migrer tous les elements legacy uniques ; relier les elements remplaces uniquement aux visuels RAVEMEMS dont le remplacement est prouve ; retirer seulement de la proposition UI les captures legacy de pages purement texte tout en conservant leur provenance ; integrer les 1070 assets / 1794 occurrences RAVEMEMS. Verifier integrity/FK, absence d'orphelins, preservation des 177 faits et de toute connaissance historique utile, presence des fichiers legacy conserves et compatibilite avec le viewer #103. Aucune suppression production ni modification `MEMSX64` avant validation complete de cette simulation.
+
