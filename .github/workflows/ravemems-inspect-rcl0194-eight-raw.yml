@@ -1,0 +1,92 @@
+name: RAVEMEMS inspect RCL0194 eight raw evidence
+
+on:
+  push:
+    branches: [tmp-rave-new-extraction-pilot]
+    paths:
+      - '.github/workflows/ravemems-inspect-rcl0194-eight-raw.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      BASE_COMMIT: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+      RCL8_RUN_ID: '33517427496'
+      RCL8_ARTIFACT_ID: '9804179784'
+      RCL8_ARTIFACT_NAME: 'ravemems-rcl0194-eight-resolution'
+      RCL8_DIGEST: 'sha256:eb8e279ed37b9fb02baf64c85e4a2a3b21a4d84c4c06d769490dca389cbbafcb'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-new-extraction-pilot
+          fetch-depth: 0
+
+      - name: Verify exact artifact and protected production
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$BASE_COMMIT"
+          gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${RCL8_ARTIFACT_ID}" > "$RUNNER_TEMP/rcl8_artifact.json"
+          python3 - <<'PY'
+          import json,os
+          a=json.load(open(os.environ['RUNNER_TEMP']+'/rcl8_artifact.json'))
+          assert a['name']==os.environ['RCL8_ARTIFACT_NAME']
+          assert a.get('digest')==os.environ['RCL8_DIGEST']
+          print('EXACT_RCL8_ARTIFACT_PASS',a['id'],a['name'],a.get('digest'))
+          PY
+
+      - name: Download and print raw top evidence without equivalence assumptions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/rcl8" "$RUNNER_TEMP/raw"
+          gh run download "$RCL8_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$RCL8_ARTIFACT_NAME" --dir "$RUNNER_TEMP/rcl8"
+          test -f "$RUNNER_TEMP/rcl8/rcl0194_eight.json"
+          python3 - <<'PY' | tee "$RUNNER_TEMP/raw/rcl0194_eight_raw.txt"
+          import json,os
+          from pathlib import Path
+          p=Path(os.environ['RUNNER_TEMP'])/'rcl8/rcl0194_eight.json'
+          data=json.load(open(p,encoding='utf-8'))
+          assert len(data)==8
+          rows=[]
+          for item in data:
+              assert item.get('candidates')
+              top=item['candidates'][0]
+              row={
+                  'target':item.get('target'),
+                  'physical_page':top.get('physical_page'),
+                  'sequence_no':top.get('sequence_no'),
+                  'unit_key':top.get('unit_key'),
+                  'printed_ref':top.get('printed_ref'),
+                  'section_ref':top.get('section_ref'),
+                  'score':top.get('score'),
+                  'visual_count':top.get('visual_count'),
+                  'meta_hits':top.get('meta_hits') or [],
+                  'exact_hits':top.get('exact_hits') or [],
+                  'keyword_hits':top.get('keyword_hits') or [],
+                  'visuals':top.get('visuals') or [],
+                  'text_excerpt':(top.get('text_excerpt') or '')[:1600],
+              }
+              rows.append(row)
+              print('RAW_TARGET',json.dumps(row,ensure_ascii=False,sort_keys=True))
+          Path(os.environ['RUNNER_TEMP']+'/raw/rcl0194_eight_raw.json').write_text(json.dumps(rows,ensure_ascii=False,indent=2,sort_keys=True),encoding='utf-8')
+          print('RAW_EIGHT_COUNT',len(rows))
+          print('RAW_INSPECTION_PASS')
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ravemems-rcl0194-eight-raw-evidence
+          path: ${{ runner.temp }}/raw/**
+          if-no-files-found: error
+          retention-days: 14
