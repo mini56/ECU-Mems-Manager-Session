@@ -17,24 +17,24 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
-
-## 2026-09-01 — TEST REEL IA RAVEMEMS : REQUETE COURTE `injecteur mpi` NON SATISFAISANTE
-
-Retour utilisateur réel sur le package `ECU-MEMS-Manager-x64-RAVEMEMS-VISUAL-TEST-from-BUILD-103` :
-- saisie exacte : `injecteur mpi` ;
-- défaut 1 : réponse beaucoup trop longue et agrégée, avec plusieurs procédures/occurrences déversées sans hiérarchisation ;
-- défaut 2 : aucune demande de précision / aucun choix proposé alors que la requête est courte et ambiguë ;
-- défaut 3 : la zone de réponse ne permet pas à l'utilisateur d'accéder correctement au défilement vertical, rendant les réponses longues pratiquement illisibles ;
-- capture utilisateur fournie confirmant la saturation visuelle de la zone IA ;
-- l'IA locale elle-même reste démarrée et prête, il ne s'agit pas d'un crash moteur.
-
-VERDICT : ECHEC FONCTIONNEL UTILISATEUR sur le routage d'une requête courte ambiguë et sur l'ergonomie de lecture des réponses longues.
-
-PROCHAINE ACTION EXACTE : sur `tmp-ravemems-ia-visual-integration` uniquement, auditer le traitement de la requête et le widget de réponse, puis corriger strictement : (1) limiter les requêtes courtes ambiguës au lieu d'agréger massivement, (2) proposer une clarification/choix utile avant d'afficher des procédures multiples, (3) rendre le défilement vertical de la zone de réponse toujours accessible. Ajouter des self-tests ciblés. Ne pas modifier le viewer de schéma, le protocole, Qwen/ONNX, les données historiques ni `MEMSX64`.
-
-`MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
-EOF
+          {
+            echo
+            echo '## 2026-09-01 — TEST REEL IA RAVEMEMS : REQUETE COURTE `injecteur mpi` NON SATISFAISANTE'
+            echo
+            echo 'Retour utilisateur réel sur le package `ECU-MEMS-Manager-x64-RAVEMEMS-VISUAL-TEST-from-BUILD-103` :'
+            echo '- saisie exacte : `injecteur mpi` ;'
+            echo '- défaut 1 : réponse beaucoup trop longue et agrégée, avec plusieurs procédures/occurrences déversées sans hiérarchisation ;'
+            echo '- défaut 2 : aucune demande de précision / aucun choix proposé alors que la requête est courte et ambiguë ;'
+            echo "- défaut 3 : la zone de réponse ne permet pas à l'utilisateur d'accéder correctement au défilement vertical, rendant les réponses longues pratiquement illisibles ;"
+            echo '- capture utilisateur fournie confirmant la saturation visuelle de la zone IA ;'
+            echo "- l'IA locale elle-même reste démarrée et prête, il ne s'agit pas d'un crash moteur."
+            echo
+            echo "VERDICT : ECHEC FONCTIONNEL UTILISATEUR sur le routage d'une requête courte ambiguë et sur l'ergonomie de lecture des réponses longues."
+            echo
+            echo "PROCHAINE ACTION EXACTE : sur \`tmp-ravemems-ia-visual-integration\` uniquement, auditer le traitement de la requête et le widget de réponse, puis corriger strictement : (1) limiter les requêtes courtes ambiguës au lieu d'agréger massivement, (2) proposer une clarification/choix utile avant d'afficher des procédures multiples, (3) rendre le défilement vertical de la zone de réponse toujours accessible. Ajouter des self-tests ciblés. Ne pas modifier le viewer de schéma, le protocole, Qwen/ONNX, les données historiques ni \`MEMSX64\`."
+            echo
+            echo '`MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.'
+          } >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
           rm .github/workflows/tmp-journal-realtest-injecteur-mpi-failure.yml
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
