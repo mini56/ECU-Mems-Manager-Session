@@ -10676,3 +10676,55 @@ Correction limitee et generale a effectuer :
 ### PROCHAINE ACTION EXACTE
 
 Corriger uniquement la persistance FK des `ocr_region` et renforcer le gate d'erreurs d'execution dans `tools/ravemems_full_corpus.py`, tester le correctif, pousser sur `tmp-rave-new-extraction-pilot`, declencher un run complet neuf, puis inspecter manifeste + `needs_review.json` + compte `ocr_region`. Ne pas toucher a `MEMSX64`.
+
+## 2026-09-01 - RAVEMEMS CORPUS COMPLET - RUN 3 VERT, AUDIT QUALITE AVANT FIGEAGE
+
+Correction de la persistance `ocr_region` et renforcement du gate executes au commit `45513210859af1c1f62d5fa90e3c45c257f86fba` sur `tmp-rave-new-extraction-pilot`.
+
+Preuve GitHub Actions :
+- workflow `RAVEMEMS full corpus` ;
+- run `33483355459` : **SUCCESS** ;
+- job `99777695731` : **SUCCESS** ;
+- source canonique `main` : `643de091b474f4e27917a065bdf46d5a0c764276` ;
+- artefact `ravemems-full-corpus`, ID `9790819690`, digest `sha256:3f3d8f17f5950d4ec922859e607a612b0a10c3f905bcd5348026766562551b07`, taille ZIP 36 010 735 octets.
+
+Manifest run 3 :
+- `documents_processed=47/47` ;
+- `pages_accounted=1359/1359` ;
+- `native_text_pages=1291` ;
+- `ocr_pages=64` ;
+- `ocr_regions=36` ;
+- `blank_pages=4` ;
+- `visual_occurrences=1794` ;
+- `visual_asset=1070` ;
+- `vector_drawing_objects=55343` ;
+- `native_lines=54732` ;
+- `content_items=19039` ;
+- `execution_failure_reviews=0` ;
+- `integrity_check=ok` ;
+- `foreign_key_check` vide ;
+- `RAVEMEMS_FULL_CORPUS_GATE_PASS` ;
+- `pass=true`.
+
+Verification specifique de `rave/xn/cdxn990e.pdf` page physique 7 :
+- classe `visual_ocr` ;
+- 36 regions OCR sont maintenant reellement persistees dans SQLite ;
+- aucune erreur FK ;
+- `needs_review` indique uniquement `ocr_fallback_no_native_pdf_text` ;
+- cette correction ferme donc le defaut de persistance du run 2.
+
+L'audit qualite post-artefact montre toutefois deux optimisations necessaires avant de figer le corpus :
+
+1. **OCR du raster natif** : la page CDXN p.7 possede une image source embarquee xref 62 de 3356x2320. Le processeur complet OCR actuellement un rendu de page reduit a facteur 1.5, d'ou seulement 36 regions alors que le pilote TEST2 sur le raster natif avait retrouve 45 regions / 490 mots. Pour les pages sans texte PDF possedant un raster couvrant la page, le processeur doit OCRer directement l'image native extraite et conserver ses coordonnees/echelle, le rendu de page restant le fallback pour les pages vectorielles.
+
+2. **Pages blanches** : parmi les 63 pages `ocr_returned_no_regions`, inspection pixel du rendu montre que 62 sont integralement blanches. Elles ne doivent pas etre considerees comme anomalies OCR : elles doivent etre classees `blank`, avec `ocr_used=0` et sans `needs_review`. La seule page non blanche du groupe est `rave/library/libxn.pdf` p.1, une image de couverture/photo Mini sans couche texte PDF ; son visuel doit etre conserve et elle peut rester `visual_no_ocr_text`/a revoir tant qu'aucune regle generique ne prouve l'absence de texte humain.
+
+Repartition des 63 anciens `ocr_returned_no_regions` : 46 dans `wmxn990e.pdf`, 7 dans `tb12212e.pdf`, 7 dans `tb22382e.pdf`, 1 dans `cdxn990e.pdf`, 1 dans `libxn.pdf`, 1 dans `prxn990e.pdf`.
+
+Objectif du prochain run : ameliorer la qualite OCR sans changer le perimetre ni perdre de donnees, et supprimer les faux `needs_review` dus aux pages blanches. Aucun hardcode de page constructeur ne doit etre ajoute.
+
+`MEMSX64` reste strictement inchange au BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+### PROCHAINE ACTION EXACTE
+
+Modifier uniquement `tools/ravemems_full_corpus.py` afin de (1) preferer l'image raster native pour l'OCR d'une page sans texte PDF lorsqu'un raster significatif est disponible, et (2) detecter les rendus essentiellement blancs avant OCR/review afin de les classer `blank`. Tester localement sur le cas CDXN p.7 et sur une page blanche, puis pousser avec un nouveau trigger et relancer les 47 PDF depuis zero. Inspecter ensuite le nombre de regions OCR, les pages `needs_review`, SQLite et l'artefact avant de figer RAVEMEMS. Ne pas toucher a `MEMSX64`.
