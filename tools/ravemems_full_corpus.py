@@ -78,7 +78,7 @@ def main():
    ev=evidence('\n'.join(doc[i].get_text('text',sort=False) for i in idx));db.execute('INSERT INTO document VALUES(?,?,?,?,?,?,?,?,?)',(dk,repo,meta.get('blob_sha'),shaf(pdf),meta.get('size'),doc.page_count,'en','canonical_rave_not_explicitly_non_english',json.dumps(ev)))
    ad=out/'assets'/dk;ad.mkdir(parents=True,exist_ok=True);assets={}
    for pi in range(doc.page_count):
-    p=doc[pi];pn=pi+1;pk=f'{dk}_P{pn:04d}';txt=p.get_text('text',sort=False);ls,bs=native(p) if txt.strip() else ([],[]);occ=0;occrows=[]
+    p=doc[pi];pn=pi+1;pk=f'{dk}_P{pn:04d}';txt=p.get_text('text',sort=False);ls,bs=native(p) if txt.strip() else ([],[]);occ=0;occrows=[];ocrrows=[]
     try:vectors=len(p.get_drawings())
     except:vectors=0
     for im in p.get_images(full=True):
@@ -99,10 +99,10 @@ def main():
       pix=p.get_pixmap(matrix=fitz.Matrix(1.5,1.5),alpha=False);rp=f'assets/{dk}/{pk}_NO_NATIVE_RENDER.png';pix.save(str(out/rp));regs=ocr(Image.open(out/rp).convert('RGB'))
       if regs:
        cl='visual_ocr';src='\n'.join(x['text'] for x in regs)
-       for ri,x in enumerate(regs):db.execute('INSERT INTO ocr_region VALUES(?,?,?,?,?,?,?)',(f'{pk}_OCR{ri+1:03d}',pk,ri,x['text'],json.dumps(x['bbox']),x['mean_confidence'],x['word_count']))
+       for ri,x in enumerate(regs):ocrrows.append((f'{pk}_OCR{ri+1:03d}',pk,ri,x['text'],json.dumps(x['bbox']),x['mean_confidence'],x['word_count']))
       else:review.append({'page_key':pk,'document':repo,'physical_page':pn,'reason':'ocr_returned_no_regions'})
      except Exception as e:why=f'ocr_failed: {e}';review.append({'page_key':pk,'document':repo,'physical_page':pn,'reason':why})
-    db.execute('INSERT INTO page VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',(pk,dk,pn,cl,1 if txt.strip() else 0,oc,src,shab(src.encode()) if src else None,occ,vectors,rv,why));db.executemany('INSERT INTO visual_occurrence VALUES(?,?,?,?)',occrows)
+    db.execute('INSERT INTO page VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',(pk,dk,pn,cl,1 if txt.strip() else 0,oc,src,shab(src.encode()) if src else None,occ,vectors,rv,why));db.executemany('INSERT INTO visual_occurrence VALUES(?,?,?,?)',occrows);db.executemany('INSERT INTO ocr_region VALUES(?,?,?,?,?,?,?)',ocrrows)
     if txt.strip():
      lids=[]
      for li,x in enumerate(ls):
@@ -110,13 +110,14 @@ def main():
      for ii,b in enumerate(bs):
       ids=[lids[j] for j in b['ids']];s=' '.join(ls[j]['text'].strip() for j in b['ids'] if ls[j]['text'].strip());db.execute('INSERT INTO content VALUES(?,?,?,?,?,?,?)',(f'{pk}_I{ii:03d}',pk,ii,'native_text_block',s,json.dumps(ids),json.dumps(b['bbox'])))
     if rv and not any(x.get('page_key')==pk for x in review):review.append({'page_key':pk,'document':repo,'physical_page':pn,'reason':why})
-    cnt['pages_accounted']+=1;cnt['native_text_pages']+=bool(txt.strip());cnt['ocr_pages']+=oc;cnt['blank_pages']+=cl=='blank';cnt['visual_occurrences']+=occ;cnt['vector_drawing_objects']+=vectors;cnt['native_lines']+=len(ls);cnt['content_items']+=len(bs)
+    cnt['pages_accounted']+=1;cnt['native_text_pages']+=bool(txt.strip());cnt['ocr_pages']+=oc;cnt['ocr_regions']+=len(ocrrows);cnt['blank_pages']+=cl=='blank';cnt['visual_occurrences']+=occ;cnt['vector_drawing_objects']+=vectors;cnt['native_lines']+=len(ls);cnt['content_items']+=len(bs)
    cnt['documents_processed']+=1;cnt['pages_expected_all_opened_documents']+=doc.page_count;audit.append({'document_key':dk,'relative_path':repo,'source_blob_sha':meta.get('blob_sha'),'source_size':meta.get('size'),'source_sha256':shaf(pdf),'page_count':doc.page_count,'english_evidence':ev,'processed':True})
   except Exception as e:err.append({'document':repo,'error':f'processing_failed: {e}'})
   finally:doc.close();db.commit()
  for p,r in skip:audit.append({'relative_path':'rave/'+r.as_posix(),'processed':False,'skip_reason':'explicit_non_english_filename_or_path'})
- cnt['documents_found_pdf']=len(allpdf);cnt['documents_selected_english']=len(sel);cnt['documents_skipped_explicit_non_english']=len(skip);cnt['needs_review_pages']=len({x.get('page_key') for x in review if x.get('page_key')})
- integ=db.execute('PRAGMA integrity_check').fetchone()[0];fk=db.execute('PRAGMA foreign_key_check').fetchall();dbc={t:db.execute(f'SELECT COUNT(*) FROM {t}').fetchone()[0] for t in ['document','page','line','content','visual_asset','visual_occurrence','ocr_region']};db.close();pm=cnt['pages_accounted']==cnt['pages_expected_all_opened_documents'];ok=not err and cnt['documents_processed']==cnt['documents_selected_english'] and pm and integ.lower()=='ok' and not fk
- jwrite(out/'document_audit.json',audit);jwrite(out/'needs_review.json',review);m={'method':'RAVEMEMS_FULL_CORPUS','source_commit':a.source_commit,'source_root':'main/rave','source_language_policy':'English source only; explicit non-English filename/path variants skipped','capture_scope':'ALL_RAVE_CONTENT_NO_ECU_FILTER','translation_performed_by_github':False,'localization_layer':'MEMS Manager','ocr_policy':'native PDF text first; OCR only when native text is absent; raster and vector-only pages rendered for fallback','uncertainty_policy':'preserve and mark needs_review; never discard page data','counts':dict(cnt),'database_counts':dbc,'checks':{'all_selected_documents_opened':cnt['documents_processed']==cnt['documents_selected_english'],'all_pages_accounted':pm,'sqlite_integrity_ok':integ.lower()=='ok','sqlite_foreign_keys_ok':not fk,'no_processing_errors':not err},'errors':err,'pass':ok};jwrite(out/'manifest.json',m);print(json.dumps(m,indent=2));
+ fatal_review=[x for x in review if (x.get('reason') or '').startswith(('ocr_failed:','image_extract_failed'))]
+ cnt['documents_found_pdf']=len(allpdf);cnt['documents_selected_english']=len(sel);cnt['documents_skipped_explicit_non_english']=len(skip);cnt['needs_review_pages']=len({x.get('page_key') for x in review if x.get('page_key')});cnt['execution_failure_reviews']=len(fatal_review)
+ integ=db.execute('PRAGMA integrity_check').fetchone()[0];fk=db.execute('PRAGMA foreign_key_check').fetchall();dbc={t:db.execute(f'SELECT COUNT(*) FROM {t}').fetchone()[0] for t in ['document','page','line','content','visual_asset','visual_occurrence','ocr_region']};db.close();pm=cnt['pages_accounted']==cnt['pages_expected_all_opened_documents'];clean=not err and not fatal_review;ok=clean and cnt['documents_processed']==cnt['documents_selected_english'] and pm and integ.lower()=='ok' and not fk
+ jwrite(out/'document_audit.json',audit);jwrite(out/'needs_review.json',review);m={'method':'RAVEMEMS_FULL_CORPUS','source_commit':a.source_commit,'source_root':'main/rave','source_language_policy':'English source only; explicit non-English filename/path variants skipped','capture_scope':'ALL_RAVE_CONTENT_NO_ECU_FILTER','translation_performed_by_github':False,'localization_layer':'MEMS Manager','ocr_policy':'native PDF text first; OCR only when native text is absent; raster and vector-only pages rendered for fallback','uncertainty_policy':'preserve and mark needs_review; never discard page data','counts':dict(cnt),'database_counts':dbc,'checks':{'all_selected_documents_opened':cnt['documents_processed']==cnt['documents_selected_english'],'all_pages_accounted':pm,'sqlite_integrity_ok':integ.lower()=='ok','sqlite_foreign_keys_ok':not fk,'no_processing_errors':clean,'no_execution_failures_in_needs_review':not fatal_review},'errors':err,'execution_failures_in_needs_review':fatal_review,'pass':ok};jwrite(out/'manifest.json',m);print(json.dumps(m,indent=2));
  if not ok:raise SystemExit('RAVEMEMS full corpus completeness gate failed')
 if __name__=='__main__':main()
