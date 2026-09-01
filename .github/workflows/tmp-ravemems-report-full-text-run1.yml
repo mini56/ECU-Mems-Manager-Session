@@ -1,0 +1,67 @@
+name: TEMP RAVEMEMS report full-text run1
+
+on:
+  push:
+    branches: ["RAPPORT"]
+    paths: [".github/workflows/tmp-ravemems-report-full-text-run1.yml"]
+
+permissions:
+  contents: write
+
+jobs:
+  append-report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append full-text pilot run1 result
+        shell: bash
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+          ## 2026-09-01 - RAVEMEMS TEXTE PLEIN PAGE 20 - RUN 1 VERT TECHNIQUE, DEFAUT DE CONTEXTE DETECTE EN REVUE
+
+          Pilote pousse sur `tmp-rave-new-extraction-pilot` au commit `93299927db4cff573083f9ac3860e2f4a418b41d` (`Add RAVEMEMS English full-text page20 pilot`). Workflow `RAVEMEMS full-text native pilot`, run GitHub Actions `33475303839`, job `99753195600` : **SUCCESS**.
+
+          Source canonique reellement materialisee depuis `origin/main:rave/xn/wmxn990e.pdf` et verifiee avant extraction : Git blob attendu `82263eb36bb194dfa969d0471d10ef11078ce521`, SHA-256 `c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715`, 372 pages. Edition anglaise confirmee par `RCL0193ENG` / marqueur d'amendement `ENG`. Aucune autre langue RAVE n'a ete traitee. GitHub n'effectue aucune traduction ; la localisation reste le role de MEMS Manager.
+
+          Resultat automatisé page physique 20 :
+          - couche texte PDF native : oui ; OCR : non ;
+          - 2844 caracteres source, SHA-256 texte `16ffd79a11744cf444cc6cc78e558556ab005770385e05db62172c4f24f85d72` ;
+          - 70 lignes natives, couverture 70/70 = 100 %, aucune ligne manquante, dupliquee ou inconnue ;
+          - 23 blocs texte natifs ;
+          - 24 items structures ;
+          - 6 sous-sections : `Jacking`, `Precautions against damage`, `Brake shoes and pads`, `Brake hydraulics`, `Engine coolant caps and plugs`, `Cleaning components` ;
+          - 2 avertissements `WARNING`, chacun associe a son pictogramme constructeur ;
+          - 2 occurrences visuelles conservees ;
+          - renvois extraits : `LIFTING AND TOWING` et `ELECTRICAL PRECAUTIONS` ;
+          - aucun type de bloc PDF natif non gere ;
+          - base SQLite pilote : document=1, page=1, line=70, content=24, visual=2, crossref=2, `PRAGMA integrity_check=ok` ;
+          - garde final `RAVEMEMS_FULL_TEXT_COMPLETENESS_GATE_PASS`.
+
+          Artefact reel : ID `9787940195`, nom `ravemems-full-text-page20`, 226264 octets, digest ZIP SHA-256 `15f0bf735f3375c3a90d4c751da3b5156ddb7fe8dae450c62b9f82e327d2513b`. Il contient le texte source exact, le texte en ordre de lecture, les lignes/spans/bbox, les blocs, les items structures, les renvois, les knowledge items, les pictogrammes, le rendu original et la base SQLite pilote.
+
+          ### REVUE MANUELLE - DEFAUT A CORRIGER AVANT VALIDATION
+
+          Le texte visible de la page et les donnees source sont complets, mais la revue de `structured_content.json` montre un **mauvais heritage de contexte sur les elements de marge** :
+          - `GENERAL INFORMATION` est correctement identifie comme `running_header`, mais herite actuellement de `section=SAFETY INSTRUCTIONS` ;
+          - le numero de page `2` et le pied `GENERAL PRECAUTIONS AND FITTING INSTRUCTIONS` heritent actuellement de `subsection=Cleaning components` ;
+          - ce faux rattachement ne perd aucun texte, mais il polluerait le classement et les recherches de la base/IA.
+
+          Verdict : **run techniquement vert et extraction source exhaustive sur cette page, mais pilote texte plein NON encore valide en tant que modele de classement base/IA**. Le garde actuel doit aussi verifier la hierarchie/contextualisation, pas seulement la couverture du texte.
+
+          `MEMSX64` reste totalement inchange, reference production BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+          ### PROCHAINE ACTION EXACTE
+
+          Corriger uniquement la modelisation du contexte/hierarchie des items du pilote page 20 : separer proprement le contexte document/chapitre `GENERAL INFORMATION`, le groupe/section `GENERAL PRECAUTIONS AND FITTING INSTRUCTIONS`, le titre de page/section `SAFETY INSTRUCTIONS` et les sous-sections ; ne jamais faire heriter un running header, numero de page ou running footer de la derniere sous-section. Ajouter un garde explicite contre ce faux heritage, puis rapport avant pousse, relancer exactement le meme pilote canonique et recontroler l'artefact. Ne pas lancer le corpus complet.
+          EOF
+          rm -f .github/workflows/tmp-ravemems-report-full-text-run1.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md .github/workflows/tmp-ravemems-report-full-text-run1.yml
+          git diff --cached --check
+          git commit -m "Record RAVEMEMS full-text page20 run1 review"
+          git push origin HEAD:RAPPORT
