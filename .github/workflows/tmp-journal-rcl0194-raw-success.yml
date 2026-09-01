@@ -1,0 +1,64 @@
+name: TEMP journal RCL0194 raw evidence success
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/tmp-journal-rcl0194-raw-success.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    env:
+      REPORT_ENTRY: |
+        
+        ## 2026-09-01 — RCL0194ENG : inventaire brut des 8 cas legacy terminé
+        
+        - Run read-only : `33518815657` — **SUCCES**.
+        - Branche : `tmp-rave-new-extraction-pilot`.
+        - Commit : `d77bf4f2ff12d58ab17df211e780a5e322a273f8`.
+        - Artefact : `ravemems-rcl0194-eight-raw-evidence`, ID `9804755424`, taille `9147`, digest `sha256:b7bb84c45f6442a537419d2622ee4900dbed2cb1fc42ea88e6f450cceb99f8e4`.
+        - Entrée source exacte vérifiée : artefact RCL0194 `9804179784` digest `sha256:eb8e279ed37b9fb02baf64c85e4a2a3b21a4d84c4c06d769490dca389cbbafcb`.
+        - `MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+        
+        ### CORRECTION AUTORITAIRE DES 8 CAS
+        
+        Le résumé intermédiaire précédent qui qualifiait 7 sections RCL0194 comme remplacements visuels prouvés est annulé et remplacé par la preuve brute suivante :
+        
+        - `15.1` : page physique 14, exact hit `15.1`, contexte charge/démarrage/relais/MEMS, `visual_count=0` -> `conserver_migrer_legacy` ; le texte source est présent dans RAVEMEMS mais l'ancien visuel n'a pas de remplacement visuel RAVEMEMS.
+        - `20.1` : page 16, exact hit `20.1`, contexte vilebrequin/arbre à cames/pompe/MPi, `visual_count=0` -> `conserver_migrer_legacy`.
+        - `20.2` : page 17, exact hit `20.2`, contexte injecteur/MAP/papillon/LDR/IAT/MPi, `visual_count=0` -> `conserver_migrer_legacy`.
+        - `20.3` : page 18, exact hit `20.3`, contexte vilebrequin/relais/SPi/Japon, `visual_count=0` -> `conserver_migrer_legacy`.
+        - `20.4` : page 19, exact hit `20.4`, contexte injecteur/papillon/LDR/IAT/SPi/Japon, `visual_count=0` -> `conserver_migrer_legacy`.
+        - `39.2` : page 26, exact hit `39.2`, contexte ventilateur/LDR/MPi, `visual_count=0` -> `conserver_migrer_legacy`.
+        - `39.3` : meilleur candidat actuel = page physique 5, mais il s'agit du SOMMAIRE ; `visual_count=0` -> `a_revoir`, aucune équivalence ou suppression autorisée.
+        - `COLOUR CODES` : page physique 7, contexte exact HOW TO USE THE CIRCUIT DIAGRAMS avec texte indiquant qu'un tableau fournit les codes couleur des fils, `visual_count=1`. Occurrence : `RAVEMEMS::OCC::DOC_0040_XN_CDXN990E_PDF_P0007_VIS001`, asset `RAVEMEMS::VIS::DOC_0040_XN_CDXN990E_PDF_X62`, fichier `ravemems_run4/assets/DOC_0040_XN_CDXN990E_PDF/DOC_0040_XN_CDXN990E_PDF_X62.png`, SHA256 `e53278e031cf8180c8b6a88387c6bd44a9ea7303fddf4a7781b512a6ad660d4c` -> `a_revoir` jusqu'à comparaison directe avec l'ancien PNG #103.
+        
+        Aucun de ces 8 cas n'autorise encore une suppression automatique. Les six sections numérotées ci-dessus doivent conserver/migrer leur ancien visuel car RAVEMEMS n'en contient pas d'occurrence visuelle.
+        
+        ### PROCHAINE ACTION EXACTE
+        
+        Comparer en lecture seule les deux anciens visuels encore `a_revoir` :
+        1. `RCL0194ENG 39.3` : rechercher l'unité réelle du schéma `39.3` au-delà du sommaire, vérifier son texte source, sa page physique réelle et l'existence ou non d'une occurrence visuelle RAVEMEMS.
+        2. `RCL0194ENG COLOUR CODES` : extraire l'ancien `images/rave/RCL0194ENG_COLOUR_CODES.png` du commit BUILD #103 et le comparer à l'unique occurrence RAVEMEMS page 7 (dimensions, contenu/rendu normalisé et contexte source) afin de prouver ou non son remplacement.
+        
+        Ne modifier aucune base, ne supprimer aucun fichier, ne toucher ni QZ64, ni installateur, ni `MEMSX64`.
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append report and self-delete
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '\n%s\n' "$REPORT_ENTRY" >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git rm .github/workflows/tmp-journal-rcl0194-raw-success.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m 'Journal authoritative RCL0194 raw evidence'
+          git push origin HEAD:RAPPORT
