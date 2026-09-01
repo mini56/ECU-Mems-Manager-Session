@@ -1,0 +1,265 @@
+name: RAVEMEMS legacy treatment matrix
+
+on:
+  push:
+    branches: [tmp-rave-new-extraction-pilot]
+    paths:
+      - '.github/workflows/ravemems-legacy-treatment-matrix.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BASE_COMMIT: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+      MAP_RUN_ID: '33515878966'
+      MAP_ARTIFACT_ID: '9803548521'
+      MAP_ARTIFACT_NAME: 'ravemems-exhaustive-legacy-visual-mapping'
+      MAP_DIGEST: 'sha256:bee37602bfdb3e4d17b8e99d65ef3884b0ae08a80ef00ac529f3598d463c4fa3'
+      PROFILE_RUN_ID: '33516299002'
+      PROFILE_ARTIFACT_ID: '9803718963'
+      PROFILE_ARTIFACT_NAME: 'ravemems-unresolved-legacy-profile'
+      PROFILE_DIGEST: 'sha256:997e73c1198402a6541d670a3965b986589f0669be04fb7bc29e84a3337d6fa0'
+      RCL8_RUN_ID: '33517427496'
+      RCL8_ARTIFACT_ID: '9804179784'
+      RCL8_ARTIFACT_NAME: 'ravemems-rcl0194-eight-resolution'
+      RCL8_DIGEST: 'sha256:eb8e279ed37b9fb02baf64c85e4a2a3b21a4d84c4c06d769490dca389cbbafcb'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-new-extraction-pilot
+          fetch-depth: 0
+
+      - name: Verify protected production and exact audit artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$BASE_COMMIT"
+          for spec in \
+            "$MAP_ARTIFACT_ID|$MAP_ARTIFACT_NAME|$MAP_DIGEST" \
+            "$PROFILE_ARTIFACT_ID|$PROFILE_ARTIFACT_NAME|$PROFILE_DIGEST" \
+            "$RCL8_ARTIFACT_ID|$RCL8_ARTIFACT_NAME|$RCL8_DIGEST"
+          do
+            IFS='|' read -r aid aname adigest <<< "$spec"
+            gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${aid}" > "$RUNNER_TEMP/artifact_${aid}.json"
+            python3 - "$RUNNER_TEMP/artifact_${aid}.json" "$aname" "$adigest" <<'PY'
+          import json,sys
+          p,name,digest=sys.argv[1:]
+          a=json.load(open(p,encoding='utf-8'))
+          assert a['name']==name,(a['name'],name)
+          assert a.get('digest')==digest,(a.get('digest'),digest)
+          print('ARTIFACT_EXACT_PASS',a['id'],a['name'],a.get('digest'))
+          PY
+          done
+          echo EXACT_INPUTS_PASS
+
+      - name: Download exact audit evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/map" "$RUNNER_TEMP/profile" "$RUNNER_TEMP/rcl8"
+          gh run download "$MAP_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$MAP_ARTIFACT_NAME" --dir "$RUNNER_TEMP/map"
+          gh run download "$PROFILE_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$PROFILE_ARTIFACT_NAME" --dir "$RUNNER_TEMP/profile"
+          gh run download "$RCL8_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$RCL8_ARTIFACT_NAME" --dir "$RUNNER_TEMP/rcl8"
+          test -f "$RUNNER_TEMP/map/mapping/legacy_visual_mapping_427.json"
+          test -f "$RUNNER_TEMP/map/mapping/legacy_illustration_mapping_126.json"
+          test -f "$RUNNER_TEMP/map/mapping/legacy_link_mapping_329.json"
+          test -f "$RUNNER_TEMP/profile/unresolved_profile.txt"
+          test -f "$RUNNER_TEMP/rcl8/rcl0194_eight.json"
+          echo DOWNLOAD_EVIDENCE_PASS
+
+      - name: Build deterministic non-destructive treatment matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/matrix"
+          python3 - <<'PY' | tee "$RUNNER_TEMP/matrix_stdout.txt"
+          import collections,json,os,re
+          from pathlib import Path
+
+          root=Path(os.environ['RUNNER_TEMP'])
+          mapping=json.load(open(root/'map/mapping/legacy_visual_mapping_427.json',encoding='utf-8'))
+          illustrations=json.load(open(root/'map/mapping/legacy_illustration_mapping_126.json',encoding='utf-8'))
+          links=json.load(open(root/'map/mapping/legacy_link_mapping_329.json',encoding='utf-8'))
+          rcl8=json.load(open(root/'rcl8/rcl0194_eight.json',encoding='utf-8'))
+          profile=(root/'profile/unresolved_profile.txt').read_text(encoding='utf-8',errors='replace')
+          assert len(mapping)==427 and len(illustrations)==126 and len(links)==329 and len(rcl8)==8
+          assert 'AKM6348' in profile and 'AKM7169' in profile and 'RCL0194' in profile
+
+          rcl={x['target']:x['candidates'][0] for x in rcl8}
+          expected_pages={'15.1':12,'20.1':17,'20.2':18,'20.3':19,'20.4':20,'39.2':28,'39.3':29,'COLOUR CODES':41}
+          proven_sections=set(expected_pages)-{'COLOUR CODES'}
+          for key,page in expected_pages.items():
+              top=rcl[key]
+              assert top['physical_page']==page,(key,top.get('physical_page'),page)
+              assert top['visual_count']==1,(key,top.get('visual_count'))
+              if key in proven_sections:
+                  assert top['meta_hits'] and top['exact_hits'],(key,top)
+          colour=rcl['COLOUR CODES']
+          required_colours={'black','blue','brown','green','orange','purple','red','slate','white','yellow'}
+          assert required_colours.issubset(set(colour.get('keyword_hits') or []))
+
+          def rcl_target(old_key):
+              u=old_key.upper()
+              if 'COLOUR CODES' in u:
+                  return 'COLOUR CODES'
+              for x in ('15.1','20.1','20.2','20.3','20.4','39.2','39.3'):
+                  if x in old_key:
+                      return x
+              return None
+
+          final_manifest=[]
+          for m in mapping:
+              old=m['classification']
+              roots=set(m.get('source_roots') or [])
+              target=rcl_target(m['old_key']) if 'RCL0194' in roots or 'RCL0194ENG' in m['old_key'].upper() else None
+              evidence={'previous_classification':old}
+              if old=='remplacement_ravemems_prouve':
+                  action='remplacer_par_ravemems'
+                  evidence['ravemems_visual_occurrences']=m.get('ravemems_visual_occurrences') or []
+              elif target in proven_sections:
+                  action='remplacer_par_ravemems'
+                  evidence['rcl0194_target']=target
+                  evidence['rcl0194_top']=rcl[target]
+              elif target=='COLOUR CODES':
+                  action='a_revoir'
+                  evidence['rcl0194_target']=target
+                  evidence['rcl0194_top']=colour
+                  evidence['reason']='page 41 + one visual + all colour keywords, but no exact/meta section identifier'
+              elif roots.intersection({'AKM6348','AKM7169'}):
+                  action='conserver_migrer_legacy'
+                  evidence['reason']='legacy source family absent from all 47 RAVEMEMS documents'
+              elif old=='ancienne_capture_page_texte_sans_visuel_ravemems':
+                  action='retirer_de_ui_conserver_provenance'
+                  evidence['reason']='source unit has text but no RAVEMEMS visual occurrence'
+              elif old=='ancienne_entree_source_resolue_sans_contenu_visuel':
+                  action='conserver_migrer_legacy'
+                  evidence['reason']='source resolved but RAVEMEMS has no replacement visual content'
+              else:
+                  action='a_revoir'
+                  evidence['reason']='no deterministic safe treatment from validated evidence'
+              final_manifest.append({**m,'final_action':action,'final_evidence':evidence})
+
+          mc=collections.Counter(x['final_action'] for x in final_manifest)
+          assert mc==collections.Counter({
+              'remplacer_par_ravemems':281,
+              'conserver_migrer_legacy':133,
+              'retirer_de_ui_conserver_provenance':12,
+              'a_revoir':1,
+          }),mc
+          path_action={x['old_path']:x['final_action'] for x in final_manifest}
+
+          # Conservative object-level action: keeping wins; unresolved wins next; only otherwise replace/retire.
+          def aggregate(actions):
+              s=set(actions)
+              if not s: return 'a_revoir'
+              if 'conserver_migrer_legacy' in s: return 'conserver_migrer_legacy'
+              if 'a_revoir' in s: return 'a_revoir'
+              if 'remplacer_par_ravemems' in s: return 'remplacer_par_ravemems'
+              if s=={'retirer_de_ui_conserver_provenance'}: return 'retirer_de_ui_conserver_provenance'
+              return 'a_revoir'
+
+          final_ill=[]
+          for x in illustrations:
+              acts=[path_action[p] for p in x.get('manifest_paths',[]) if p in path_action]
+              final_ill.append({**x,'manifest_final_actions':acts,'final_action':aggregate(acts)})
+          assert len(final_ill)==126
+          ic=collections.Counter(x['final_action'] for x in final_ill)
+
+          ill_action={x['index']:x['final_action'] for x in final_ill}
+          final_links=[]
+          for x in links:
+              acts=[ill_action[i] for i in x.get('legacy_illustration_indexes',[]) if i in ill_action]
+              final_links.append({**x,'illustration_final_actions':acts,'final_action':aggregate(acts)})
+          assert len(final_links)==329
+          lc=collections.Counter(x['final_action'] for x in final_links)
+
+          colour_context={
+              'target':'COLOUR CODES',
+              'physical_page':colour['physical_page'],
+              'visual_count':colour['visual_count'],
+              'keyword_hits':colour['keyword_hits'],
+              'meta_hits':colour['meta_hits'],
+              'exact_hits':colour['exact_hits'],
+              'visuals':colour.get('visuals') or [],
+              'text_excerpt':colour.get('text_excerpt') or '',
+              'decision':'a_revoir',
+              'reason':'strong page/content evidence but no exact/meta section identifier; no destructive action authorized',
+          }
+
+          summary={
+              'pass':True,'read_only':True,'database_modifications':0,'automatic_deletions':0,
+              'protected_memsx64':os.environ['BASE_COMMIT'],
+              'manifest_total':427,'manifest_actions':dict(sorted(mc.items())),
+              'illustration_total':126,'illustration_actions':dict(sorted(ic.items())),
+              'link_total':329,'link_actions':dict(sorted(lc.items())),
+              'structured_legacy_rave_facts':177,'structured_fact_action':'conserver_migrer_legacy',
+              'colour_codes_action':'a_revoir',
+              'destructive_cleanup_authorized':False,
+              'rule':'This matrix is a treatment plan only. No deletion is authorized until migration/relinking is tested on a copy and all a_revoir items are resolved.',
+          }
+          out=root/'matrix'
+          for name,obj in [
+              ('legacy_manifest_treatment_427.json',final_manifest),
+              ('legacy_illustration_treatment_126.json',final_ill),
+              ('legacy_link_treatment_329.json',final_links),
+              ('colour_codes_context.json',colour_context),
+              ('legacy_treatment_summary.json',summary),
+          ]:
+              (out/name).write_text(json.dumps(obj,ensure_ascii=False,indent=2,sort_keys=True),encoding='utf-8')
+          md=[
+              '# RAVEMEMS legacy treatment matrix','',
+              '- Read-only: **yes**','- Database modifications: **0**','- Automatic deletions: **0**','',
+              '## Manifest 427',
+          ]
+          md += [f'- {k}: {v}' for k,v in sorted(mc.items())]
+          md += ['','## Illustrations 126']+[f'- {k}: {v}' for k,v in sorted(ic.items())]
+          md += ['','## Links 329']+[f'- {k}: {v}' for k,v in sorted(lc.items())]
+          md += ['','## Structured legacy facts','- conserver_migrer_legacy: 177','',
+                 '## COLOUR CODES',f"- page: {colour['physical_page']}",f"- visual occurrences: {colour['visual_count']}",
+                 f"- keywords: {', '.join(colour['keyword_hits'])}",'- action: **a_revoir**','',
+                 '**destructive_cleanup_authorized: False**',summary['rule']]
+          (out/'legacy_treatment_report.md').write_text('\n'.join(md)+'\n',encoding='utf-8')
+          print('MATRIX_PASS')
+          print(json.dumps(summary,ensure_ascii=False,sort_keys=True))
+          print('COLOUR_CODES_CONTEXT',json.dumps(colour_context,ensure_ascii=False,sort_keys=True))
+          PY
+
+      - name: Verify matrix completeness and checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/matrix"
+          python3 - <<'PY'
+          import json
+          s=json.load(open('legacy_treatment_summary.json',encoding='utf-8'))
+          assert s['pass'] is True and s['read_only'] is True
+          assert s['manifest_total']==427 and s['illustration_total']==126 and s['link_total']==329
+          assert s['database_modifications']==0 and s['automatic_deletions']==0
+          assert s['destructive_cleanup_authorized'] is False
+          assert sum(s['manifest_actions'].values())==427
+          assert sum(s['illustration_actions'].values())==126
+          assert sum(s['link_actions'].values())==329
+          print('TREATMENT_MATRIX_COMPLETENESS_PASS')
+          PY
+          sha256sum *.json *.md > matrix_sha256.txt
+          cat legacy_treatment_report.md
+          cat matrix_sha256.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ravemems-legacy-treatment-matrix
+          path: |
+            ${{ runner.temp }}/matrix/**
+            ${{ runner.temp }}/matrix_stdout.txt
+          if-no-files-found: error
+          retention-days: 14
