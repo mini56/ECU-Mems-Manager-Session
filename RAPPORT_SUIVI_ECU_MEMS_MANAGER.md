@@ -11481,3 +11481,16 @@ Contrat attendu :
 
 PROCHAINE ACTION EXACTE : pousser uniquement cette extension de catalogue + self-tests sur `tmp-ravemems-ia-visual-integration`, lancer une validation GitHub x64 isolee utilisant la base nettoyee/copied runtime candidate et ses fichiers, puis journaliser immediatement le resultat avant toute integration production. `MEMSX64` reste #103.
 
+
+## 2026-09-01 — INCIDENT DE SEQUENCE — LOT IA VISUEL ECRIT EN DEUX COMMITS
+
+Le journal AVANT POUSSE `33526624508` a bien ete valide avant toute modification technique et couvrait le lot unique `IaMemsDiagramCatalog + self-tests`. Cependant, l API de contenu GitHub a materialise les deux fichiers du meme lot en deux commits successifs sur `tmp-ravemems-ia-visual-integration` :
+- `8cbc3d53148fc22792249628ac936fe88e385341` : extension `expert/IaMemsDiagramCatalog.cpp` ;
+- `24678414227e0f73c4e97c26989b5e223f9fd8af` : extension `expert/IaMemsDiagramSelfTest.cpp`.
+
+Aucun test GitHub n a encore ete lance et aucune autre pousse technique n a ete faite apres constat. Le lot reste isole sur une branche creee depuis BUILD #103 ; `MEMSX64` est inchange.
+
+Correction de methode : traiter ces deux commits comme un seul lot technique deja couvert par le journal pre-pousse, ne plus ajouter de modification avant son test reel, puis journaliser immediatement le resultat. Si une correction est necessaire apres test, ecrire un nouveau RAPPORT AVANT POUSSE avant tout commit correctif. Une compaction propre pourra etre faite plus tard seulement apres journalisation et sans changer le tree valide.
+
+PROCHAINE ACTION EXACTE : sans aucune nouvelle modification de code, lancer maintenant la validation GitHub du tree `24678414227e0f73c4e97c26989b5e223f9fd8af` en utilisant d abord les self-tests deterministes existants et runtime catalog. Journaliser le resultat avant toute correction ou ajout de workflow/package. `MEMSX64` reste BUILD #103.
+
