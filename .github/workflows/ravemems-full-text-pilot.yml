@@ -1,0 +1,117 @@
+name: RAVEMEMS full-text native pilot
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - tmp-rave-new-extraction-pilot
+    paths:
+      - .ravemems-full-text-pilot-trigger
+
+permissions:
+  contents: read
+
+jobs:
+  full-text-page20:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout RAVEMEMS pilot branch
+        uses: actions/checkout@v4
+        with:
+          ref: tmp-rave-new-extraction-pilot
+          fetch-depth: 1
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install native PDF extraction dependency
+        run: python -m pip install --disable-pip-version-check PyMuPDF
+
+      - name: Compile RAVEMEMS full-text pilot
+        run: python -m py_compile tools/ravemems_full_text_pilot.py
+
+      - name: Materialize canonical English RAVE source from main
+        shell: bash
+        run: |
+          git fetch origin main --depth=1
+          test "$(git rev-parse origin/main:rave/xn/wmxn990e.pdf)" = "82263eb36bb194dfa969d0471d10ef11078ce521"
+          git show origin/main:rave/xn/wmxn990e.pdf > "$RUNNER_TEMP/wmxn990e.pdf"
+          printf '%s  %s\n' "c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715" "$RUNNER_TEMP/wmxn990e.pdf" | sha256sum -c -
+
+      - name: Extract full native text page 20 for base and IA
+        run: |
+          rm -rf ravemems_full_text_output
+          python tools/ravemems_full_text_pilot.py \
+            --pdf "$RUNNER_TEMP/wmxn990e.pdf" \
+            --out ravemems_full_text_output \
+            --page 20
+
+      - name: Show completeness manifest
+        run: |
+          cat ravemems_full_text_output/manifest.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          out = Path("ravemems_full_text_output")
+          manifest = json.loads((out / "manifest.json").read_text(encoding="utf-8"))
+          items = json.loads((out / "structured_content.json").read_text(encoding="utf-8"))
+          print("RAVEMEMS_TEXT_PAGE20_SUMMARY")
+          print("pass=", manifest["pass"])
+          print("language=", manifest["source_language"])
+          print("capture_scope=", manifest["capture_scope"])
+          print("native_lines=", manifest["native_line_count"])
+          print("structured_items=", manifest["structured_item_count"])
+          print("line_coverage=", manifest["line_coverage"]["coverage_ratio"])
+          print("warnings=", manifest["warning_count"])
+          print("warning_visual_associations=", manifest["warning_visual_association_count"])
+          print("cross_refs=", manifest["cross_references"])
+          print("subsections=", manifest["subsection_titles"])
+          print("item_types=", [item["item_type"] for item in items])
+          PY
+
+      - name: Upload RAVEMEMS full-text pilot artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ravemems-full-text-page20
+          path: ravemems_full_text_output
+          if-no-files-found: error
+
+      - name: Enforce RAVEMEMS full-text completeness
+        run: |
+          python - <<'PY'
+          import json
+          import sqlite3
+          from pathlib import Path
+
+          out = Path("ravemems_full_text_output")
+          m = json.loads((out / "manifest.json").read_text(encoding="utf-8"))
+          assert m["pass"] is True
+          assert m["source_language"] == "en"
+          assert m["processed_languages"] == ["en"]
+          assert m["other_languages_processed"] == []
+          assert m["capture_scope"] == "ALL_RAVE_CONTENT_NO_ECU_FILTER"
+          assert m["native_text_layer"] is True
+          assert m["ocr_used"] is False
+          assert m["line_coverage"]["coverage_ratio"] == 1.0
+          assert m["line_coverage"]["missing_line_ids"] == []
+          assert m["line_coverage"]["duplicate_line_ids"] == []
+          assert m["warning_count"] == 2
+          assert m["warning_visual_association_count"] == 2
+          assert m["embedded_visual_occurrences"] == 2
+          assert set(m["cross_references"]) == {"LIFTING AND TOWING", "ELECTRICAL PRECAUTIONS"}
+          assert len(m["subsection_titles"]) == 6
+
+          db = sqlite3.connect(out / "ravemems_full_text_pilot.sqlite")
+          try:
+              assert db.execute("PRAGMA integrity_check").fetchone()[0].lower() == "ok"
+              assert db.execute("SELECT COUNT(*) FROM line").fetchone()[0] == m["native_line_count"]
+              assert db.execute("SELECT COUNT(*) FROM content").fetchone()[0] == m["structured_item_count"]
+              assert db.execute("SELECT COUNT(*) FROM visual").fetchone()[0] == 2
+              assert db.execute("SELECT COUNT(*) FROM crossref").fetchone()[0] == 2
+          finally:
+              db.close()
+          print("RAVEMEMS_FULL_TEXT_COMPLETENESS_GATE_PASS")
+          PY
