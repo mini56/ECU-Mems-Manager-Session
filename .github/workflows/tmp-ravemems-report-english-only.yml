@@ -1,0 +1,48 @@
+name: TEMP RAVEMEMS report English source only
+
+on:
+  push:
+    branches: ["RAPPORT"]
+    paths: [".github/workflows/tmp-ravemems-report-english-only.yml"]
+
+permissions:
+  contents: write
+
+jobs:
+  append-report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append RAVEMEMS English-only source rule
+        shell: bash
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+          ## 2026-09-01 - RAVEMEMS - REGLE LINGUISTIQUE CANONIQUE : SOURCE ANGLAISE UNIQUEMENT
+
+          Precision utilisateur obligatoire avant le pilote texte plein : certains ensembles RAVE contiennent deja plusieurs editions/langues du meme contenu. **RAVEMEMS ne doit pas retraiter chaque langue existante.**
+
+          Regle canonique :
+          - pour l'extraction RAVEMEMS, traiter **uniquement l'edition/source anglaise** des documents RAVE ;
+          - extraire depuis cette source anglaise **TOUT le contenu**, sans filtre ECU ni filtre de domaine ;
+          - ignorer les duplications linguistiques deja presentes dans RAVE (francais, allemand, italien, etc.) afin de ne pas dupliquer plusieurs fois la meme connaissance ;
+          - conserver le texte source anglais integral avec sa provenance ;
+          - MEMS Manager reste la couche qui fournit ensuite la traduction/localisation dans la langue choisie par l'utilisateur ;
+          - cette regle de langue ne change pas la regle de portee : **TOUT RAVE doit rester accessible**, mais il est extrait une seule fois depuis l'anglais.
+
+          Formule canonique : **TOUT RAVE -> SOURCE ANGLAISE UNIQUEMENT -> EXTRACTION INTEGRALE -> BASE/IA -> LOCALISATION PAR MEMS MANAGER.**
+
+          ### PROCHAINE ACTION EXACTE
+
+          Reprendre le pilote `ravemems` texte plein deja cible sur `main/rave/xn/wmxn990e.pdf`, page physique 20, en appliquant explicitement la regle source anglaise uniquement. Produire et tester l'extraction structuree complete avant toute extension au corpus.
+          EOF
+          rm -f .github/workflows/tmp-ravemems-report-english-only.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md .github/workflows/tmp-ravemems-report-english-only.yml
+          git diff --cached --check
+          git commit -m "Record RAVEMEMS English-only source rule"
+          git push origin HEAD:RAPPORT
