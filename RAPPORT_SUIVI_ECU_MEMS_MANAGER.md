@@ -11940,3 +11940,13 @@ Cause code prouvee dans `expert/IaMemsDiagramCatalog.cpp` : `suggestionForQuesti
 Conception de correction autorisee sur branche de test uniquement : conserver le chemin actuel des demandes explicites de schema ; pour une question sans intention graphique explicite, consulter uniquement le catalogue runtime avec un seuil de pertinence renforce, au moins deux termes techniques significatifs / score minimal 16, sans fallback vers les anciens schemas generiques. Completer les stop-words du matcher afin deviter les faux positifs sur des mots grammaticaux. Ajouter un self-test exact pour `Quel est le couple de serrage de la culasse ?` -> page 42, tout en conservant le test `Mon moteur chauffe-t-il trop au ralenti ?` -> aucune suggestion.
 
 PROCHAINE ACTION EXACTE : modifier uniquement `expert/IaMemsDiagramCatalog.cpp` et `expert/IaMemsDiagramSelfTest.cpp` sur `tmp-ravemems-ia-visual-integration`, lancer les self-tests et reconstruire le package x64 de test. `MEMSX64` reste BUILD #103 et le protocole ECU reste intouche.
+
+## 2026-09-02 — AVANT BUILD TEST — CORRECTION PROPOSITION VISUELLE IMPLICITE
+
+Branche `tmp-ravemems-ia-visual-integration` corrigee au commit `944d55aad1fdccdcc5d7ae15c4c13fcf2ea11d65` (`Fix implicit IA visual suggestions for relevant knowledge`). Comparaison avec le package teste precedent `edb13ed27f746a055e3824f0ebc66973ac1ec1ba` : exactement deux fichiers applicatifs modifies : `expert/IaMemsDiagramCatalog.cpp` (+32/-8) et `expert/IaMemsDiagramSelfTest.cpp` (+21). Aucun autre fichier applicatif ne differe.
+
+Correction : les demandes explicites de schema conservent le seuil historique. Pour une question sans mot graphique explicite, seul `runtime_visual_catalog.json` peut maintenant proposer un visuel, avec seuil renforce score >=16 ET au moins 2 termes techniques correspondants. Le matcher elimine davantage de mots grammaticaux. Aucun fallback implicite vers les schemas generiques du manifeste.
+
+Self-test ajoute : `Quel est le couple de serrage de la culasse ?` doit proposer `RAVE RCL0193FRE PDF 042 Couples de serrage généraux moteur`; `Mon moteur chauffe-t-il trop au ralenti ?` doit continuer a ne proposer aucun visuel. Les tests existants de schema explicite, chemins absents, traversal, visuels caches/remplaces restent conserves.
+
+MEMSX64 reste BUILD #103 commit 1d6316bd1746d6f2b4cfb751cab88d18e27ef730. PROCHAINE ACTION EXACTE : relancer le workflow complet RAVEMEMS VISUAL TEST from BUILD 103 sur ce commit corrige, exiger compilation/self-tests/package/smoke tous verts, puis tester la meme question sur le PC utilisateur.
