@@ -12308,3 +12308,19 @@ Inspection post-pousse : ordre des variables/classement coherent, `procedureInte
 `MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`. Aucun #104.
 
 PROCHAINE ACTION EXACTE : supprimer via le connecteur le workflow temporaire `.github/workflows/tmp-direct-second-ia-structured-visual.yml`, verifier le HEAD/diff, journaliser ce nettoyage, puis adapter uniquement le workflow x64 de TEST pour autoriser ces nouveaux fichiers et compiler/executer `expert_visual_reference_selftest`. Relancer le package complet et ne fournir un artefact qu apres run vert.
+
+## 2026-09-02 - DEUXIEME CORRECTION IA - NETTOYAGE SOURCE ET AVANT BUILD
+
+Workflow temporaire d edition `.github/workflows/tmp-direct-second-ia-structured-visual.yml` supprime via connecteur GitHub au commit `3851b8e346e2c463dd31df4f1177f753c7c4beff`.
+
+Verification du diff net entre le dernier package utilisateur `7bee94790ebc517452b38bc6fa904de90addc00b` et le HEAD nettoye `3851b8e346e2c463dd31df4f1177f753c7c4beff` : exactement 7 fichiers : `CMakeLists.txt`, `expert/ExpertKnowledgeReader.cpp`, `expert/ExpertKnowledgeReader.h`, nouveau `expert/ExpertVisualReferenceSelfTest.cpp`, `expert/IaMemsService.cpp`, `expert/IaMemsService.h`, `iamemstab.cpp`. Aucun workflow temporaire ne reste dans ce diff net.
+
+`MEMSX64` reverifiee : toujours exactement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+Le workflow x64 de TEST existant doit maintenant etre adapte uniquement pour :
+- autoriser les nouveaux fichiers applicatifs exacts dans le garde de perimetre ;
+- compiler explicitement la nouvelle cible `expert_visual_reference_selftest` ;
+- executer `expert_visual_reference_selftest.exe` dans les self-tests deterministes et exiger code 0 ;
+- conserver tous les autres gardes/pins RAVEMEMS, BUILD #103, protocole, Qt/ONNX/Qwen et le report du self-test fonctionnel multilingue.
+
+PROCHAINE ACTION EXACTE : modifier uniquement `.github/workflows/tmp-ravemems-visual-test-package-x64.yml` selon ce perimetre et le pousser via le connecteur GitHub afin de declencher le package x64 complet. Suivre compilation, nouveau self-test, anciens self-tests, validation package, smoke et upload. Aucun autre changement applicatif avant verdict.
