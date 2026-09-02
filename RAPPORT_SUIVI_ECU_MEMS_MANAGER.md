@@ -11995,3 +11995,19 @@ Cet incident ne touche pas `MEMSX64`, le protocole, la base, Qwen/ONNX ni la pro
 Le commit consolide propre a deja ete prepare hors ref Git sous SHA `d22a0bb790d6615d7af5dc8d2b1e59b11125cabc`, parent direct `898509ce5fc16d9540a229094ec54621d85b7248`, avec arbre consolide : header `IaMemsDiagramCatalog.h` revenu exactement a son blob initial ; seuls `IaMemsDiagramCatalog.cpp`, `IaMemsDiagramSelfTest.cpp` et `iamemstab.cpp` restent modifies.
 
 PROCHAINE ACTION EXACTE : retirer le commit parasite en repositionnant uniquement `tmp-ravemems-ia-visual-integration` sur `d22a0bb790d6615d7af5dc8d2b1e59b11125cabc` avec force necessaire car les deux commits sont freres. Verifier immediatement le HEAD et le diff. Ne pas toucher a `MEMSX64`.
+
+
+## 2026-09-02 — CHECKPOINT FINAL AVANT REBUILD : VISUEL LIE A LA REPONSE
+
+Branche temporaire reparee et verifiee : `tmp-ravemems-ia-visual-integration` HEAD `d22a0bb790d6615d7af5dc8d2b1e59b11125cabc`. Le commit parasite `0ece5d125e2a146446fe5e7573df086b56937a37` n est plus sur le ref actif.
+
+Comparaison exacte `edb13ed27f746a055e3824f0ebc66973ac1ec1ba` -> `d22a0bb790d6615d7af5dc8d2b1e59b11125cabc` : exactement 3 fichiers applicatifs modifies :
+- `expert/IaMemsDiagramCatalog.cpp` : resolution prioritaire des references visuelles structurees presentes dans le texte fourni (`rave:<publication>:PDF:<page>`, runtime_path/runtime_key/source_occurrence_key/asset_entity_key), avec validation `ui_visible`, fichier local et SHA-256 ;
+- `expert/IaMemsDiagramSelfTest.cpp` : tests de reference entouree de texte FR/EN/ES/DE, absence de reference, fichier absent ;
+- `iamemstab.cpp` : apres reception d une reponse IA, tentative de suggestion a partir du texte final ; si une image declaree est resolue, bouton `Voir le schéma` propose.
+
+Le header `expert/IaMemsDiagramCatalog.h` est revenu exactement a son etat initial et ne figure pas dans le diff final. La nouvelle regle ne depend d aucun vocabulaire utilisateur ou langue : ce sont les identifiants structurels de la reponse qui declenchent le visuel. Le comportement historique des demandes explicites de schema est conserve en fallback.
+
+`MEMSX64` verifie intact : BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`. Aucun #104.
+
+PROCHAINE ACTION EXACTE : declencher le workflow x64 RAVEMEMS VISUAL TEST from BUILD 103 sur le HEAD `d22a0bb790d6615d7af5dc8d2b1e59b11125cabc`, sans autre changement applicatif. Verifier compilation, self-tests, package et smoke. Journaliser immediatement le verdict avant test utilisateur.
