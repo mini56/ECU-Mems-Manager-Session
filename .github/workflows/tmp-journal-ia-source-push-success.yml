@@ -1,0 +1,46 @@
+name: TEMP journal IA source push success
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths: ['.github/workflows/tmp-journal-ia-source-push-success.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append journal
+        shell: bash
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+## 2026-09-02 — Correction source IA multilingue poussee, test de langue reporte
+
+Branche de test : `tmp-ravemems-ia-visual-integration`.
+Commit source pousse : `8869f9e1a098b6efd0519673a3c8d6ff0da4599c` — `Fix IA MEMS active-language rendering directly in source`.
+Run d'edition directe `33600656966` : SUCCESS. Les etapes d'edition, verification, commit et push sont toutes vertes. `git diff --check` a passe.
+
+Le commit source ne modifie aucun workflow de compilation. Fichiers applicatifs modifies : `expert/IaMemsService.cpp`, `expert/LocalAiClient.cpp`, `expert/LocalAiOnnxSelfTest.cpp`, `iamemstab.cpp`; six ressources IA ajoutees : FR/EN/ES/IT/PT/DE. Le helper temporaire d'edition a ete supprime dans le commit.
+
+`MEMSX64` verifie intact sur BUILD #103, commit `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+Decision utilisateur : ne pas interrompre la campagne de test IA actuelle pour tester les langues. Continuer d'abord le protocole reel `question -> reponse -> image` sur le package de test deja installe. Le test de langue IA sera effectue ensuite.
+
+PROCHAINE ACTION EXACTE : continuer le test reel IA en francais, une question a la fois, verifier la qualite de la reponse puis l'image/schema propose lorsqu'il y en a un. Journaliser chaque resultat. Ne pas lancer maintenant le test de langue et ne pas modifier MEMSX64.
+EOF
+      - name: Commit journal
+        shell: bash
+        run: |
+          git config user.name github-actions-bot
+          git config user.email github-actions-bot@users.noreply.github.com
+          git rm .github/workflows/tmp-journal-ia-source-push-success.yml
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m 'Journal successful IA source push and defer language test'
+          git push origin HEAD:RAPPORT
