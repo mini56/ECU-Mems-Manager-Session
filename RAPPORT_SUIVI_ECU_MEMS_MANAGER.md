@@ -12359,3 +12359,26 @@ Correction autorisee par l'utilisateur (`GO`) et strictement limitee au viewer I
 6. `MEMSX64` doit rester strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`, aucun #104.
 
 PROCHAINE ACTION EXACTE : apres SUCCESS de ce journal, modifier directement `iamemstab.cpp` sur `tmp-ravemems-ia-visual-integration`, verifier le diff et `MEMSX64`, journaliser le commit source, puis declencher le package x64 complet et retester les visuels avec zoom.
+
+## 2026-09-02 - RESULTAT SOURCE : VIEWER IA ZOOM + PORTRAIT
+
+Run d'edition directe `33657752813` : SUCCESS.
+Commit source : `59d0f2c6cfe0aee476f8b98cae46972611e6f0ec` (`Add zoom and portrait sizing to IA visual viewer`).
+Workflow temporaire d'edition supprime ensuite ; HEAD nettoye : `d3431424b5f5974258b1e7ae83d7bb846ed3b44c`.
+
+Diff applicatif exact depuis le dernier package teste `4f09101dddeff279b6f0a736b9da0bc5aa1474ff` : un seul fichier, `iamemstab.cpp`.
+
+Correction appliquee dans `openSuggestedDiagram()` :
+- detection du ratio reel via `QImageReader` ;
+- ouverture initiale portrait lorsque `height > width`, paysage conserve sinon ;
+- controles universels `-`, `100 %`, `+`, `⛶` ;
+- zoom de 10 % a 800 % ;
+- `100 %` revient a la taille native ;
+- `⛶` recalcule l'ajustement a la zone visible ;
+- `QTextBrowser` conserve `ScrollBarAsNeeded`, donc les barres de defilement apparaissent des que l'image zoomee depasse la fenetre ;
+- aucun changement du catalogue, du classement IA, des donnees RAVEMEMS, du protocole ou des langues.
+
+Verification avant commit : `git diff --check` PASS et presence des trois gardes de source zoom/orientation confirmee. Compilation x64 pas encore executee a ce stade.
+`MEMSX64` reverifie intact : BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`, aucun #104.
+
+PROCHAINE ACTION EXACTE : declencher le workflow x64 RAVEMEMS VISUAL TEST sur le HEAD nettoye, verifier garde BUILD #103, compilation, self-tests, validation package, smoke et artefact ; si vert, retester `DEPOSE INJECTEUR` et `MINI SPI` en utilisant le zoom pour confirmer la pertinence des images.
