@@ -12131,3 +12131,14 @@ RENDU IMAGE: PASS. Orientation correcte, fond blanc, schema lisible.
 LOCALISATION TITRE: PASS. Le titre de la fenetre est genere/localise en francais par MEMS Manager.
 TRADUCTION TEXTE DANS IMAGE: FAIL. Les libelles integres au schema restent dans la langue source anglaise (COOLING FAN, MEMS CONTROL UNIT, etc.).
 Aucune correction appliquee. Continuer la campagne de tests avant modification du code.
+
+## 2026-09-02 - TEST IA libre - couple serrage pompe a eau
+Question utilisateur: couple serrage pompe a eau?
+REPONSE TECHNIQUE: PASS. La reponse contient Boulons de pompe a eau = 22 N.m. Elle donne aussi Boulons de poulie de pompe a eau = 10 N.m, information connexe utile.
+QUALITE REPONSE: FAIL. La reponse restitue une grande table de couples presque complete et ajoute du contenu sans rapport, notamment AKM7169 sur pompe a carburant.
+BOUTON IMAGE: PASS.
+IMAGE OUVERTE: RCL0193ENG p.64.
+PERTINENCE IMAGE: FAIL si cette image provient bien du bouton de cette question. Elle montre une illustration moteur/culbuteurs et ne cible pas la pompe a eau ni son serrage.
+RENDU IMAGE: FAIL. Asset tourne a 90 degres, tracage blanc sur fond noir.
+TRADUCTION IMAGE: non evaluable sur la capture, pas de libelle naturel significatif visible hors codes/numeros.
+Aucune correction appliquee. Continuer les questions libres avant modification du code.
