@@ -12499,3 +12499,11 @@ Correction utilisateur : SPi et MPi ne concernent pas uniquement la Mini. Le cah
 Règle retenue : déterminer d’abord si la question concerne le véhicule actuellement connecté ou un autre véhicule. Si aucun véhicule n’est connecté, ou si l’utilisateur parle d’un autre véhicule, demander les éléments nécessaires pour identifier le véhicule (marque, modèle, moteur, année, type d’injection/gestion, ECU ou autre variante pertinente). Une fois le véhicule identifié, demander seulement le discriminant encore nécessaire, par exemple SPi ou MPi si c’est réellement ce qui différencie les réponses disponibles.
 
 Aucun code, aucune extraction et aucun BUILD lancés ; cahier toujours en relecture.
+
+## 2026-09-02 — CAHIER RAVEMEMS — QUESTION DE VARIANTE CONTEXTUELLE
+
+Précision utilisateur : si la recherche a déjà identifié un contexte Mini avec deux variantes pertinentes, l’IA doit bien demander d’abord `Est-ce pour une Mini SPi ou une Mini MPi ?`, tout en laissant la possibilité d’indiquer qu’il s’agit d’un autre véhicule.
+
+Cette formulation est un exemple contextuel et ne signifie pas que SPi/MPi est propre à la Mini. Pour un autre modèle, l’IA doit proposer les variantes réellement pertinentes pour ce véhicule. Si un véhicule/ECU est connecté, l’IA confirme d’abord que la question concerne bien le véhicule connecté avant d’utiliser ce contexte.
+
+Aucun code, aucune extraction et aucun BUILD lancés ; cahier toujours en relecture.
