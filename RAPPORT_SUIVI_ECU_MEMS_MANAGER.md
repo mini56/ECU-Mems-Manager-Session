@@ -12483,3 +12483,11 @@ Decision utilisateur : pour une demande generale, l IA doit proposer **3 choix m
 ## 2026-09-02 — RAVEMEMS — pagination des choix IA
 
 Décision utilisateur : pour une question générale, l’IA affiche au maximum 3 choix à la fois, puis `4. Autre chose ?`. Si l’utilisateur choisit 4 et qu’il reste des rubriques pertinentes pour le même sujet, l’IA affiche les 3 suivantes et répète le mécanisme jusqu’à épuisement des choix. Exemple avec 9 possibilités : 1-3, puis 4-6, puis 7-9. `Autre chose ?` sert donc à paginer les possibilités du sujet avant de demander éventuellement une formulation libre. Aucun code ni extraction lancé à ce stade.
+
+## 2026-09-02 — CAHIER RAVEMEMS — QUESTION VARIANTE / AUTRE VEHICULE
+
+Décision utilisateur : lorsqu’une question peut concerner plusieurs variantes connues, l’IA ne doit pas enfermer l’utilisateur dans ces seules variantes. Exemple validé : `Est-ce pour une Mini SPi, une Mini MPi, ou un autre véhicule ?`. Si l’utilisateur répond qu’il s’agit d’un autre véhicule, l’IA demande ensuite les informations nécessaires pour identifier ce véhicule et sa variante.
+
+Cette règle complète la règle précédente : un véhicule connecté ne doit jamais être supposé comme véhicule concerné sans confirmation explicite de l’utilisateur.
+
+Aucun code, aucune extraction et aucun BUILD lancés ; cahier toujours en relecture.

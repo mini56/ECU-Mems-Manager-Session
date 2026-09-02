@@ -189,7 +189,7 @@ Si un véhicule / ECU est actuellement connecté, l’IA ne doit pas supposer au
 
 Si aucun véhicule / ECU n’est connecté, l’IA ne connaît pas le véhicule concerné et ne doit pas en inventer un. Elle doit utiliser les informations données dans la question ou demander le véhicule / ECU / variante nécessaire.
 
-Si plusieurs réponses incompatibles restent possibles, l’IA doit demander la variante nécessaire avant de répondre.
+Si plusieurs réponses incompatibles restent possibles, l’IA doit demander la variante nécessaire avant de répondre. La question ne doit pas enfermer l’utilisateur dans les seules variantes déjà trouvées. Par exemple, si les données disponibles distinguent Mini SPi et Mini MPi, l’IA peut demander : **« Est-ce pour une Mini SPi, une Mini MPi, ou un autre véhicule ? »**. Si l’utilisateur indique un autre véhicule, l’IA lui demande alors les informations nécessaires pour identifier ce véhicule et sa variante.
 
 ---
 
