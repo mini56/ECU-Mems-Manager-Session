@@ -12108,3 +12108,15 @@ PERTINENCE IMAGE: FAIL. Le viewer ouvre RCL0193ENG p.112, illustration du boitie
 RENDU IMAGE: FAIL. L'asset p.112 est tourne a 90 degres et blanc sur fond noir.
 TRADUCTION IMAGE: non evaluee sur cette illustration, qui est de toute facon hors sujet.
 Aucune correction appliquee. Continuer la campagne de tests avant modification du code.
+
+## 2026-09-02 - TEST IA visuel - commande relais pompe carburant Mini MPi 97MY
+Question: Quelle est la broche ECU de commande du relais de pompe a carburant sur une Mini MPi 97MY ?
+REFERENCE ATTENDUE: C159-30 pour la commande du relais de pompe a carburant sur le schema constructeur RCL0194ENG 20.1.
+REPONSE TEXTE: FAIL. La reponse ne donne pas C159-30 et introduit a tort une information sur la commande du relais ventilateur C159-28, puis de longs contenus hors sujet.
+QUALITE REPONSE: FAIL. Trop de contenu documentaire et aucune reponse directe a la broche demandee.
+BOUTON IMAGE: PASS.
+PERTINENCE IMAGE: PASS. Le viewer ouvre RAVE RCL0194ENG 20.1 Mini MPi 97MY MEMS lambda CKP CMP pompe relais, qui est le bon schema pour la commande de pompe. La zone C159-30 peut demander un defilement dans le viewer.
+RENDU IMAGE: PASS. Image dans le bon sens, fond blanc, schema lisible.
+TRADUCTION TEXTE DANS IMAGE: FAIL. Les libelles du schema restent en anglais alors que l'interface est en francais.
+CORRECTION TEST PRECEDENT LAMBDA: RCL0193ENG p.112 est une vue pertinente des connecteurs/boitier ECU, mais reste secondaire pour identifier directement C158-27/C158-28; le schema RCL0194ENG 20.1 est plus pertinent pour la liaison lambda.
+Aucune correction applicative appliquee. Continuer la campagne de tests question -> reponse -> image avant modification du code.
