@@ -1,0 +1,33 @@
+name: TEMP journal final response visual prebuild
+on:
+  push:
+    branches: [RAPPORT]
+    paths: ['.github/workflows/tmp-journal-final-response-visual-prebuild.yml']
+permissions:
+  contents: write
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append journal
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md')
+          text='''\n\n## 2026-09-02 — CHECKPOINT FINAL AVANT REBUILD : VISUEL LIE A LA REPONSE\n\nBranche temporaire reparee et verifiee : `tmp-ravemems-ia-visual-integration` HEAD `d22a0bb790d6615d7af5dc8d2b1e59b11125cabc`. Le commit parasite `0ece5d125e2a146446fe5e7573df086b56937a37` n est plus sur le ref actif.\n\nComparaison exacte `edb13ed27f746a055e3824f0ebc66973ac1ec1ba` -> `d22a0bb790d6615d7af5dc8d2b1e59b11125cabc` : exactement 3 fichiers applicatifs modifies :\n- `expert/IaMemsDiagramCatalog.cpp` : resolution prioritaire des references visuelles structurees presentes dans le texte fourni (`rave:<publication>:PDF:<page>`, runtime_path/runtime_key/source_occurrence_key/asset_entity_key), avec validation `ui_visible`, fichier local et SHA-256 ;\n- `expert/IaMemsDiagramSelfTest.cpp` : tests de reference entouree de texte FR/EN/ES/DE, absence de reference, fichier absent ;\n- `iamemstab.cpp` : apres reception d une reponse IA, tentative de suggestion a partir du texte final ; si une image declaree est resolue, bouton `Voir le schéma` propose.\n\nLe header `expert/IaMemsDiagramCatalog.h` est revenu exactement a son etat initial et ne figure pas dans le diff final. La nouvelle regle ne depend d aucun vocabulaire utilisateur ou langue : ce sont les identifiants structurels de la reponse qui declenchent le visuel. Le comportement historique des demandes explicites de schema est conserve en fallback.\n\n`MEMSX64` verifie intact : BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`. Aucun #104.\n\nPROCHAINE ACTION EXACTE : declencher le workflow x64 RAVEMEMS VISUAL TEST from BUILD 103 sur le HEAD `d22a0bb790d6615d7af5dc8d2b1e59b11125cabc`, sans autre changement applicatif. Verifier compilation, self-tests, package et smoke. Journaliser immediatement le verdict avant test utilisateur.\n'''
+          p.write_text(p.read_text(encoding='utf-8')+text, encoding='utf-8')
+          PY
+      - name: Commit journal
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git rm .github/workflows/tmp-journal-final-response-visual-prebuild.yml
+          git commit -m 'Journal final response visual diff before rebuild'
+          git push origin HEAD:RAPPORT
