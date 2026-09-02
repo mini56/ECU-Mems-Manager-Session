@@ -341,8 +341,10 @@ void IaMemsTab::openSuggestedDiagram()
     if (m_diagramTitle.isEmpty() || m_diagramQuestion.isEmpty())
         return;
 
-    const IaMemsDiagramSuggestion suggestion =
-        IaMemsDiagramCatalog::suggestionForQuestion(m_diagramQuestion);
+    IaMemsDiagramSuggestion suggestion =
+        IaMemsDiagramCatalog::suggestionForResponse(m_diagramQuestion);
+    if (!suggestion.isValid())
+        suggestion = IaMemsDiagramCatalog::suggestionForQuestion(m_diagramQuestion);
     if (!suggestion.isValid() || suggestion.key != m_diagramTitle) {
         m_diagramTitle.clear();
         m_diagramQuestion.clear();
@@ -616,6 +618,15 @@ void IaMemsTab::sendQuestion()
 void IaMemsTab::onServiceResponse(const QString &text)
 {
     appendMessage(QStringLiteral("IA MEMS"), text);
+
+    const IaMemsDiagramSuggestion responseSuggestion =
+        IaMemsDiagramCatalog::suggestionForResponse(text);
+    if (responseSuggestion.isValid() && m_diagramButton) {
+        m_diagramTitle = responseSuggestion.key;
+        m_diagramQuestion = text;
+        m_diagramButton->setText(QStringLiteral("Voir le schéma"));
+        m_diagramButton->setVisible(true);
+    }
 
     if (m_sendButton)
         m_sendButton->setEnabled(true);
