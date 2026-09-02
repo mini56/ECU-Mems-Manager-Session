@@ -1,0 +1,42 @@
+name: TEMP journal launch IA visual package
+
+on:
+  push:
+    branches:
+      - RAPPORT
+    paths:
+      - .github/workflows/tmp-journal-launch-ia-visual-package.yml
+
+permissions:
+  contents: write
+
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append journal
+        shell: bash
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+## 2026-09-02 — Lancement demandé du nouveau package IA/RAVEMEMS
+
+Décision utilisateur : lancer maintenant un nouveau package x64 contenant le commit source `8869f9e1a098b6efd0519673a3c8d6ff0da4599c`, puis continuer la campagne réelle IA `question -> réponse -> image`. Le test fonctionnel de changement de langue IA est explicitement reporté après cette campagne.
+
+Le workflow x64 doit donc compiler et empaqueter la branche `tmp-ravemems-ia-visual-integration`, conserver les gardes BUILD #103/RAVEMEMS/protocole/visuels, accepter les nouveaux fichiers source et ressources I18n dans le périmètre, mais ne pas exécuter maintenant le self-test fonctionnel multilingue Qwen. `MEMSX64` reste strictement sur BUILD #103.
+
+PROCHAINE ACTION EXACTE : adapter uniquement le workflow temporaire `tmp-ravemems-visual-test-package-x64.yml` au nouveau périmètre source, différer les deux exécutions de `local_ai_onnx_selftest.exe`, pousser ce workflow pour déclencher le package, suivre le run jusqu'au verdict et fournir l'artefact si vert. Puis reprendre le test réel `question -> réponse -> image`.
+EOF
+      - name: Commit journal
+        shell: bash
+        run: |
+          git config user.name github-actions-bot
+          git config user.email github-actions-bot@users.noreply.github.com
+          git rm .github/workflows/tmp-journal-launch-ia-visual-package.yml
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m 'Journal requested IA visual package launch'
+          git push origin HEAD:RAPPORT
