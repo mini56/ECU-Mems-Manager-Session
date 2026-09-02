@@ -1,0 +1,58 @@
+name: TEMP update RAVEMEMS warning visibility
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/tmp-update-ravemems-warning-visibility.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+
+      - name: Update cahier and report
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          cahier = Path('docs/CAHIER_DES_CHARGES_RAVEMEMS_BROUILLON_2026-09-02.md')
+          text = cahier.read_text(encoding='utf-8')
+          anchor = "Ce texte source sera la base des traductions futures."
+          addition = """Ce texte source sera la base des traductions futures.
+
+          Un **avertissement ou une précaution doit conserver sa portée réelle**. S'il s'applique à plusieurs étapes ou à toute une phase, RAVEMEMS doit le rattacher à l'ensemble de cette portée et non uniquement à la ligne ou à l'étape qui le suit immédiatement. Dans la réponse IA, l'avertissement doit être présenté **avant les étapes concernées**, au moment où l'utilisateur en a besoin.
+
+          Lorsqu'il s'agit d'un avertissement de sécurité ou d'un risque technique important, l'IA doit le rendre **visuellement évident**, avec un **carré ou pictogramme rouge accompagné d'un libellé explicite tel que `ATTENTION` ou `AVERTISSEMENT`**, puis le texte correspondant. La couleur rouge ne doit jamais être le seul moyen de signaler le danger : le libellé textuel reste obligatoire."""
+          if text.count(anchor) != 1:
+              raise SystemExit(f'Unexpected warning anchor count: {text.count(anchor)}')
+          text = text.replace(anchor, addition, 1)
+          cahier.write_text(text, encoding='utf-8')
+
+          report = Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md')
+          with report.open('a', encoding='utf-8') as f:
+              f.write("\n\n## 2026-09-02 — RELECTURE CAHIER RAVEMEMS — PORTÉE ET VISIBILITÉ DES AVERTISSEMENTS\n\n")
+              f.write("Décision utilisateur validée : un avertissement ou une précaution doit rester rattaché à toute la portée de procédure à laquelle il s'applique, y compris plusieurs étapes ou une phase complète. L'IA doit le présenter avant les étapes concernées.\n\n")
+              f.write("Pour un avertissement de sécurité ou un risque technique important, l'utilisateur demande un signe visible. Règle retenue : carré ou pictogramme rouge + libellé explicite `ATTENTION` / `AVERTISSEMENT` + texte de l'alerte. La couleur seule ne suffit pas.\n\n")
+              f.write("Aucun code applicatif, aucune extraction et aucun BUILD de production dans cette étape de relecture.\n\n")
+              f.write("PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges RAVEMEMS question par question avec l'utilisateur. Ne lancer aucune nouvelle extraction avant validation explicite du cahier.\n")
+          PY
+
+      - name: Commit and cleanup
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/tmp-update-ravemems-warning-visibility.yml
+          git add docs/CAHIER_DES_CHARGES_RAVEMEMS_BROUILLON_2026-09-02.md RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git diff --cached --check
+          git commit -m "Record RAVEMEMS warning scope and visibility"
+          git push origin HEAD:RAPPORT
