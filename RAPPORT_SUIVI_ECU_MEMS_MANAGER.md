@@ -12283,3 +12283,28 @@ Interdictions maintenues : pas de multilingue dans ce lot, pas de traduction de 
 INCIDENT OUTIL AVANT JOURNAL : plusieurs branches jetables vides ont ete creees par erreur pendant la tentative de mise en place du canal de journalisation (`tmp-journal-second-ia-correction-unused`, `tmp-report-second-ia-fix-20260902`, puis variantes `-2` a `-8`). Elles pointent uniquement sur un commit existant, ne contiennent aucune modification de code/donnees et n ont aucun impact sur `MEMSX64` ni sur la branche de test. Aucune correction source n a ete poussee avant le present journal.
 
 PROCHAINE ACTION EXACTE : appliquer uniquement cette correction structurelle sur `tmp-ravemems-ia-visual-integration`, verifier le diff exact et les self-tests, puis journaliser le commit source avant de relancer le package x64. Rejouer ensuite `DEPOSE INJECTEUR`, `MINI SPI` et le cas ventilateur C159-28.
+
+## 2026-09-02 - DEUXIEME CORRECTION IA STRUCTUREE - SOURCE POUSSEE
+
+Branche technique : `tmp-ravemems-ia-visual-integration`.
+Workflow d edition directe : run `33652704637`, job `100323447352` = SUCCESS.
+Commit source : `391aea5a0e2528d485f57fbd8fd2e44c7624efa2` (`Keep IA visual references attached to selected facts`).
+
+Diff exact du commit source : 7 fichiers seulement :
+- `CMakeLists.txt` ;
+- `expert/ExpertKnowledgeReader.cpp` ;
+- `expert/ExpertKnowledgeReader.h` ;
+- `expert/ExpertVisualReferenceSelfTest.cpp` (nouveau self-test) ;
+- `expert/IaMemsService.cpp` ;
+- `expert/IaMemsService.h` ;
+- `iamemstab.cpp`.
+
+Implementation : `ExpertKnowledgeReader::visualReferenceForFact(factKey)` lit `mems_knowledge_item.image_ref` en read-only et sait aussi resoudre les facts d assets `asset:<path>`. `IaMemsService` conserve la reference du premier fait retenu possedant un visuel et emet `responseVisualReferenceReady` separement du texte. L UI resout ensuite cette reference avec le catalogue existant. Le texte affiche peut donc etre raccourci sans perdre la relation avec l image. Pour une demande de procedure/depose/repose, le classement favorise generiquement les faits contenant une vraie procedure/etapes et l operation correspondante. Aucun cas `injecteur` n est code en dur.
+
+Self-test ajoute : fixture SQLite `factKey -> image_ref`, incluant `images/rave/AKM7169ENG_PDF_133.png`, plus un asset ROSCO et un fact inconnu. Le chemin `_133.png` n est utilise que comme donnee de test, pas dans la logique applicative.
+
+Inspection post-pousse : ordre des variables/classement coherent, `procedureIntent` defini avant son utilisation, reference visuelle capturee apres tri et avant construction du texte final. `git diff --check` avait passe dans le run d edition.
+
+`MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`. Aucun #104.
+
+PROCHAINE ACTION EXACTE : supprimer via le connecteur le workflow temporaire `.github/workflows/tmp-direct-second-ia-structured-visual.yml`, verifier le HEAD/diff, journaliser ce nettoyage, puis adapter uniquement le workflow x64 de TEST pour autoriser ces nouveaux fichiers et compiler/executer `expert_visual_reference_selftest`. Relancer le package complet et ne fournir un artefact qu apres run vert.
