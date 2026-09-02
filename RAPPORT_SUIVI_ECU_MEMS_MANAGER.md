@@ -12094,3 +12094,6 @@ BOUTON IMAGE: PASS.
 PERTINENCE IMAGE: PASS. Le viewer ouvre RAVE RCL0194ENG 39.2 Mini MPi 97MY ventilateur refroidissement ECT, montrant directement C159-15 et C159-13.
 RENDU IMAGE: PASS. Image dans le bon sens, fond blanc, traits et texte lisibles.
 Aucune correction appliquee. Continuer la campagne de tests question -> reponse -> image avant modification du code.
+
+### Complément TEST IA visuel 3 - traduction du texte dans l'image
+Le texte intégré dans l'image proposée au TEST 3 n'est pas traduit dans la langue active de MEMS Manager. L'image conserve son texte dans la langue source. Ce point doit être testé et corrigé avec le mécanisme multilingue prévu pour les contenus visuels, sans créer de logique de langue en dur.
