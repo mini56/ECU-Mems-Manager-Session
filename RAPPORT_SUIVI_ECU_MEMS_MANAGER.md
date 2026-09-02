@@ -12226,3 +12226,11 @@ Correction directe du source uniquement sur `tmp-ravemems-ia-visual-integration`
 - Aucune modification du garde n'est donc nécessaire ; ne pas modifier inutilement sa logique.
 - Prochaine action exacte : déclencher le workflow de package x64 en ne modifiant que son propre fichier de workflow, puis contrôler le garde, la compilation, les self-tests, l'artefact et son digest.
 - `MEMSX64` doit rester exactement sur BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+### 2026-09-02 — Échec du mécanisme de déclenchement du package x64
+
+- Run temporaire : `33645672379`.
+- La vérification du garde a PASSÉ pour les 4 fichiers source modifiés.
+- Le commit local de déclenchement n'a pas été poussé : GitHub a refusé la modification d'un fichier `.github/workflows/*` depuis le `GITHUB_TOKEN` du workflow, erreur `refusing to allow a GitHub App to create or update workflow ... without workflows permission`.
+- Aucun package x64 n'a démarré à la suite de ce run et aucune modification applicative n'a été poussée par ce run.
+- Prochaine action exacte : supprimer le workflow temporaire de déclenchement resté sur la branche, puis toucher directement via l'API GitHub le workflow `.github/workflows/tmp-ravemems-visual-test-package-x64.yml` pour déclencher son run. Ne pas modifier sa logique de build ni son garde.
