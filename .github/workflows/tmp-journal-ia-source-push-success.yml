@@ -2,8 +2,10 @@ name: TEMP journal IA source push success
 
 on:
   push:
-    branches: [RAPPORT]
-    paths: ['.github/workflows/tmp-journal-ia-source-push-success.yml']
+    branches:
+      - RAPPORT
+    paths:
+      - .github/workflows/tmp-journal-ia-source-push-success.yml
 
 permissions:
   contents: write
@@ -17,26 +19,8 @@ jobs:
           ref: RAPPORT
           fetch-depth: 0
       - name: Append journal
-        shell: bash
-        run: |
-          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
-
-## 2026-09-02 — Correction source IA multilingue poussee, test de langue reporte
-
-Branche de test : `tmp-ravemems-ia-visual-integration`.
-Commit source pousse : `8869f9e1a098b6efd0519673a3c8d6ff0da4599c` — `Fix IA MEMS active-language rendering directly in source`.
-Run d'edition directe `33600656966` : SUCCESS. Les etapes d'edition, verification, commit et push sont toutes vertes. `git diff --check` a passe.
-
-Le commit source ne modifie aucun workflow de compilation. Fichiers applicatifs modifies : `expert/IaMemsService.cpp`, `expert/LocalAiClient.cpp`, `expert/LocalAiOnnxSelfTest.cpp`, `iamemstab.cpp`; six ressources IA ajoutees : FR/EN/ES/IT/PT/DE. Le helper temporaire d'edition a ete supprime dans le commit.
-
-`MEMSX64` verifie intact sur BUILD #103, commit `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
-
-Decision utilisateur : ne pas interrompre la campagne de test IA actuelle pour tester les langues. Continuer d'abord le protocole reel `question -> reponse -> image` sur le package de test deja installe. Le test de langue IA sera effectue ensuite.
-
-PROCHAINE ACTION EXACTE : continuer le test reel IA en francais, une question a la fois, verifier la qualite de la reponse puis l'image/schema propose lorsqu'il y en a un. Journaliser chaque resultat. Ne pas lancer maintenant le test de langue et ne pas modifier MEMSX64.
-EOF
+        run: echo 'IyMgMjAyNi0wOS0wMiDigJQgQ29ycmVjdGlvbiBzb3VyY2UgSUEgbXVsdGlsaW5ndWUgcG91c3NlZSwgdGVzdCBkZSBsYW5ndWUgcmVwb3J0ZQoKQnJhbmNoZSBkZSB0ZXN0IDogYHRtcC1yYXZlbWVtcy1pYS12aXN1YWwtaW50ZWdyYXRpb25gLgpDb21taXQgc291cmNlIHBvdXNzZSA6IGA4ODY5ZjllMWEwOThiNmVmZDA1MTk2NzNhM2M4ZDZmZjBkYTQ1OTljYCDigJQgYEZpeCBJQSBNRU1TIGFjdGl2ZS1sYW5ndWFnZSByZW5kZXJpbmcgZGlyZWN0bHkgaW4gc291cmNlYC4KUnVuIGQnZWRpdGlvbiBkaXJlY3RlIGAzMzYwMDY1Njk2NmAgOiBTVUNDRVNTLiBMZXMgZXRhcGVzIGQnZWRpdGlvbiwgdmVyaWZpY2F0aW9uLCBjb21taXQgZXQgcHVzaCBzb250IHRvdXRlcyB2ZXJ0ZXMuIGBnaXQgZGlmZiAtLWNoZWNrYCBhIHBhc3NlLgoKTGUgY29tbWl0IHNvdXJjZSBuZSBtb2RpZmllIGF1Y3VuIHdvcmtmbG93IGRlIGNvbXBpbGF0aW9uLiBGaWNoaWVycyBhcHBsaWNhdGlmcyBtb2RpZmllcyA6IGBleHBlcnQvSWFNZW1zU2VydmljZS5jcHBgLCBgZXhwZXJ0L0xvY2FsQWlDbGllbnQuY3BwYCwgYGV4cGVydC9Mb2NhbEFpT25ueFNlbGZUZXN0LmNwcGAsIGBpYW1lbXN0YWIuY3BwYDsgc2l4IHJlc3NvdXJjZXMgSUEgYWpvdXRlZXMgOiBGUi9FTi9FUy9JVC9QVC9ERS4gTGUgaGVscGVyIHRlbXBvcmFpcmUgZCdlZGl0aW9uIGEgZXRlIHN1cHByaW1lIGRhbnMgbGUgY29tbWl0LgoKYE1FTVNYNjRgIHZlcmlmaWUgaW50YWN0IHN1ciBCVUlMRCAjMTAzLCBjb21taXQgYDFkNjMxNmJkMTc0NmQ2ZjJiNGNmYjc1MWNhYjg4ZDE4ZTI3ZWY3MzBgLgoKRGVjaXNpb24gdXRpbGlzYXRldXIgOiBuZSBwYXMgaW50ZXJyb21wcmUgbGEgY2FtcGFnbmUgZGUgdGVzdCBJQSBhY3R1ZWxsZSBwb3VyIHRlc3RlciBsZXMgbGFuZ3Vlcy4gQ29udGludWVyIGQnYWJvcmQgbGUgcHJvdG9jb2xlIHJlZWwgYHF1ZXN0aW9uIC0+IHJlcG9uc2UgLT4gaW1hZ2VgIHN1ciBsZSBwYWNrYWdlIGRlIHRlc3QgZGVqYSBpbnN0YWxsZS4gTGUgdGVzdCBkZSBsYW5ndWUgSUEgc2VyYSBlZmZlY3R1ZSBlbnN1aXRlLgoKUFJPQ0hBSU5FIEFDVElPTiBFWEFDVEUgOiBjb250aW51ZXIgbGUgdGVzdCByZWVsIElBIGVuIGZyYW5jYWlzLCB1bmUgcXVlc3Rpb24gYSBsYSBmb2lzLCB2ZXJpZmllciBsYSBxdWFsaXRlIGRlIGxhIHJlcG9uc2UgcHVpcyBsJ2ltYWdlL3NjaGVtYSBwcm9wb3NlIGxvcnNxdSdpbCB5IGVuIGEgdW4uIEpvdXJuYWxpc2VyIGNoYXF1ZSByZXN1bHRhdC4gTmUgcGFzIGxhbmNlciBtYWludGVuYW50IGxlIHRlc3QgZGUgbGFuZ3VlIGV0IG5lIHBhcyBtb2RpZmllciBNRU1TWDY0Lgo=' | base64 -d >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
       - name: Commit journal
-        shell: bash
         run: |
           git config user.name github-actions-bot
           git config user.email github-actions-bot@users.noreply.github.com
