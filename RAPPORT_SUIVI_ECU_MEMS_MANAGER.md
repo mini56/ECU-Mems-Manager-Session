@@ -12142,3 +12142,12 @@ PERTINENCE IMAGE: FAIL si cette image provient bien du bouton de cette question.
 RENDU IMAGE: FAIL. Asset tourne a 90 degres, tracage blanc sur fond noir.
 TRADUCTION IMAGE: non evaluable sur la capture, pas de libelle naturel significatif visible hors codes/numeros.
 Aucune correction appliquee. Continuer les questions libres avant modification du code.
+
+## 2026-09-02 - TEST IA libre - CKP avec fautes de frappe
+Entrees utilisateur: CAPTEUR VILEBROQUIN ; CAPTEUR VILBREUQUIN ; CAPTEUR VILEBREQUIN.
+TOLERANCE AUX FAUTES: FAIL. Les deux premieres variantes fautives renvoient du contenu MAP/IAT/table de couples sans rapport direct avec le capteur CKP.
+REQUETE CORRECTE: PASS partiel. Avec VILEBREQUIN, l'IA retrouve le CKP, la reference ADU7340 sur variantes SPi, la procedure de depose/repose et les couples CKP 6 Nm / connecteur 3 Nm.
+QUALITE REPONSE: FAIL. La reponse reste beaucoup trop longue pour une requete tres courte.
+IMAGE: FAIL pour la requete CKP. Le viewer ouvre RCL0193ENG p.175, deja vu sur le test MAP, sans ciblage clair du capteur CKP.
+RENDU IMAGE: FAIL. Asset tourne a 90 degres et blanc sur fond noir.
+Aucune correction appliquee. Continuer les questions libres et consigner les ecarts avant toute modification du code.
