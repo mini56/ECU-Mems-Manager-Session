@@ -1,0 +1,875 @@
+name: TEMP direct first IA response image correction
+on:
+  push:
+    paths:
+      - '.github/workflows/tmp-direct-first-ia-response-image-correction.yml'
+jobs:
+  edit-source:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-ravemems-ia-visual-integration
+          fetch-depth: 0
+      - name: Edit source directly
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{path}: expected one match, found {count}')
+              p.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          # 1) IA knowledge retrieval: bounded typo tolerance + intent-aware concise excerpts.
+          path = 'expert/IaMemsService.cpp'
+          old = r'''bool knowledgeTermMatches(const QString &text, const QString &term)
+          {
+              static const QSet<QString> tokenTerms = {
+                  QStringLiteral("ect"), QStringLiteral("iat"), QStringLiteral("map"),
+                  QStringLiteral("tps"), QStringLiteral("ckp"), QStringLiteral("cmp"),
+                  QStringLiteral("iac"), QStringLiteral("iacv"), QStringLiteral("obd"),
+                  QStringLiteral("spi"), QStringLiteral("mpi"), QStringLiteral("rpm"),
+                  QStringLiteral("pin")
+              };
+              if (tokenTerms.contains(term) || term.size() <= 3)
+                  return containsWord(text, term);
+              return text.contains(term);
+          }
+          '''
+          new = r'''int boundedEditDistance(const QString &left, const QString &right, int maximum)
+          {
+              if (qAbs(left.size() - right.size()) > maximum)
+                  return maximum + 1;
+
+              QVector<int> previous(right.size() + 1);
+              QVector<int> current(right.size() + 1);
+              for (int j = 0; j <= right.size(); ++j)
+                  previous[j] = j;
+
+              for (int i = 1; i <= left.size(); ++i) {
+                  current[0] = i;
+                  int rowMinimum = current[0];
+                  for (int j = 1; j <= right.size(); ++j) {
+                      const int substitution = previous[j - 1]
+                          + (left.at(i - 1) == right.at(j - 1) ? 0 : 1);
+                      current[j] = qMin(qMin(previous[j] + 1, current[j - 1] + 1), substitution);
+                      rowMinimum = qMin(rowMinimum, current[j]);
+                  }
+                  if (rowMinimum > maximum)
+                      return maximum + 1;
+                  previous.swap(current);
+              }
+              return previous[right.size()];
+          }
+
+          bool fuzzyKnowledgeTokenMatch(const QString &text, const QString &term)
+          {
+              if (term.size() < 5 || term.contains(QRegularExpression(QStringLiteral("[^a-z]"))))
+                  return false;
+
+              const int maximum = term.size() >= 9 ? 2 : 1;
+              const QRegularExpression wordRx(QStringLiteral("[a-z]+"));
+              QRegularExpressionMatchIterator it = wordRx.globalMatch(text);
+              while (it.hasNext()) {
+                  const QString candidate = it.next().captured(0);
+                  if (qAbs(candidate.size() - term.size()) > maximum)
+                      continue;
+                  if (boundedEditDistance(candidate, term, maximum) <= maximum)
+                      return true;
+              }
+              return false;
+          }
+
+          bool knowledgeTermMatches(const QString &text, const QString &term)
+          {
+              static const QSet<QString> tokenTerms = {
+                  QStringLiteral("ect"), QStringLiteral("iat"), QStringLiteral("map"),
+                  QStringLiteral("tps"), QStringLiteral("ckp"), QStringLiteral("cmp"),
+                  QStringLiteral("iac"), QStringLiteral("iacv"), QStringLiteral("obd"),
+                  QStringLiteral("spi"), QStringLiteral("mpi"), QStringLiteral("rpm"),
+                  QStringLiteral("pin")
+              };
+              if (tokenTerms.contains(term) || term.size() <= 3)
+                  return containsWord(text, term);
+              if (text.contains(term))
+                  return true;
+              return fuzzyKnowledgeTokenMatch(text, term);
+          }
+          '''
+          replace_once(path, old, new)
+
+          old = r'''bool hasPinoutEvidence(const QString &text)
+          {
+              return text.contains(QStringLiteral("wiring"))
+          '''
+          new = r'''bool hasDirectConnectorEvidence(const QString &text)
+          {
+              static const QRegularExpression connectorRx(
+                  QStringLiteral("\\bC[0-9]{2,4}-[0-9]{1,3}\\b"),
+                  QRegularExpression::CaseInsensitiveOption);
+              return connectorRx.match(text).hasMatch();
+          }
+
+          bool hasPinoutEvidence(const QString &text)
+          {
+              return hasDirectConnectorEvidence(text)
+                  || text.contains(QStringLiteral("wiring"))
+          '''
+          replace_once(path, old, new)
+
+          old = r'''        QStringLiteral("documentation")
+              };
+          '''
+          new = r'''        QStringLiteral("documentation"), QStringLiteral("quel"),
+                  QStringLiteral("quelle"), QStringLiteral("quels"), QStringLiteral("quelles")
+              };
+          '''
+          replace_once(path, old, new)
+
+          marker = r'''int scopeMatchBonus(const ExpertFact &fact, const KnowledgeScopeRequest &request)
+          '''
+          helpers = r'''QString firstVisualReferenceLine(const QString &statement)
+          {
+              const QStringList lines = statement.split(QRegularExpression(QStringLiteral("[\\r\\n]+")),
+                                                        Qt::SkipEmptyParts);
+              for (const QString &rawLine : lines) {
+                  QString line = rawLine.trimmed();
+                  QString probe = line;
+                  probe.replace(QStringLiteral("\\:"), QStringLiteral(":"));
+                  probe.replace(QStringLiteral("\\_"), QStringLiteral("_"));
+                  if (probe.contains(QRegularExpression(QStringLiteral("rave\\s*:"),
+                                                        QRegularExpression::CaseInsensitiveOption))
+                      || probe.contains(QRegularExpression(QStringLiteral("images[\\\\/]"),
+                                                           QRegularExpression::CaseInsensitiveOption)))
+                      return line;
+              }
+              return QString();
+          }
+
+          int focusedSegmentScore(const QString &segment,
+                                  const QStringList &specificTerms,
+                                  KnowledgeQueryKind kind,
+                                  bool asksTorque)
+          {
+              const QString text = normalized(segment);
+              int score = 0;
+              for (const QString &term : specificTerms) {
+                  if (knowledgeTermMatches(text, term))
+                      score += term.size() >= 5 ? 8 : 5;
+              }
+              if (kind == KnowledgeQueryKind::Pinout) {
+                  if (hasDirectConnectorEvidence(segment))
+                      score += 28;
+                  else if (hasPinoutEvidence(text))
+                      score += 4;
+              }
+              if (asksTorque && IaMemsConversationRouting::hasTorqueEvidence(text))
+                  score += 24;
+              if (segment.size() <= 260)
+                  score += 3;
+              else if (segment.size() > 700)
+                  score -= 8;
+              return score;
+          }
+
+          QString focusedKnowledgeStatement(const QString &statement,
+                                            const QStringList &specificTerms,
+                                            KnowledgeQueryKind kind,
+                                            bool asksTorque,
+                                            bool procedureIntent)
+          {
+              const QString trimmed = statement.trimmed();
+              if (trimmed.size() <= 420 || procedureIntent)
+                  return trimmed;
+
+              QStringList lines;
+              const QStringList rawLines = trimmed.split(
+                  QRegularExpression(QStringLiteral("[\\r\\n]+")), Qt::SkipEmptyParts);
+              for (const QString &rawLine : rawLines) {
+                  const QString line = rawLine.trimmed();
+                  if (!line.isEmpty())
+                      lines.append(line);
+              }
+              if (lines.isEmpty())
+                  return trimmed;
+
+              QString best;
+              int bestScore = -100000;
+              for (int i = 0; i < lines.size(); ++i) {
+                  const QString single = lines.at(i);
+                  const int singleScore = focusedSegmentScore(single, specificTerms, kind, asksTorque);
+                  if (singleScore > bestScore) {
+                      bestScore = singleScore;
+                      best = single;
+                  }
+                  if (i + 1 < lines.size()
+                      && single.size() + lines.at(i + 1).size() <= 420) {
+                      const QString pair = single + QLatin1Char(' ') + lines.at(i + 1);
+                      const int pairScore = focusedSegmentScore(pair, specificTerms, kind, asksTorque);
+                      if (pairScore > bestScore) {
+                          bestScore = pairScore;
+                          best = pair;
+                      }
+                  }
+              }
+
+              if (bestScore < 8 || best.trimmed().isEmpty())
+                  return trimmed;
+
+              const QString visual = firstVisualReferenceLine(trimmed);
+              if (!visual.isEmpty() && !best.contains(visual))
+                  best += QLatin1Char('\n') + visual;
+              return best;
+          }
+
+          bool focusedDirectEvidence(const QString &statement,
+                                     KnowledgeQueryKind kind,
+                                     bool asksTorque)
+          {
+              if (kind == KnowledgeQueryKind::Pinout)
+                  return hasDirectConnectorEvidence(statement);
+              if (asksTorque)
+                  return IaMemsConversationRouting::hasTorqueEvidence(normalized(statement));
+              return false;
+          }
+
+          ''' + marker
+          replace_once(path, marker, helpers)
+
+          old = r'''    const bool asksTorque = containsAny(questionText, {
+                  QStringLiteral("couple"), QStringLiteral("serrage"), QStringLiteral("torque")
+              });
+              const QStringList terms = knowledgeTerms(question);
+          '''
+          new = r'''    const bool asksTorque = containsAny(questionText, {
+                  QStringLiteral("couple"), QStringLiteral("serrage"), QStringLiteral("torque")
+              });
+              const bool procedureIntent = containsAny(questionText, {
+                  QStringLiteral("depose"), QStringLiteral("repose"), QStringLiteral("procedure"),
+                  QStringLiteral("remove"), QStringLiteral("refit"), QStringLiteral("remplacement")
+              });
+              const QStringList terms = knowledgeTerms(question);
+          '''
+          replace_once(path, old, new)
+
+          old = r'''    for (const QString &term : terms) {
+                  if (!scopeQualifierTerm(term) && !genericIntentTerm(term, queryKind))
+                      specificTerms.append(term);
+              }
+          '''
+          new = r'''    for (const QString &term : terms) {
+                  const bool torqueIntentTerm = asksTorque
+                      && (term == QStringLiteral("couple") || term == QStringLiteral("serrage")
+                          || term == QStringLiteral("torque"));
+                  if (!scopeQualifierTerm(term) && !genericIntentTerm(term, queryKind)
+                      && !torqueIntentTerm)
+                      specificTerms.append(term);
+              }
+          '''
+          replace_once(path, old, new)
+
+          old = r'''        if (queryKind == KnowledgeQueryKind::WireColor)
+                      candidate.score += 24;
+                  else if (queryKind == KnowledgeQueryKind::Pinout)
+                      candidate.score += 16;
+          '''
+          new = r'''        if (queryKind == KnowledgeQueryKind::WireColor)
+                      candidate.score += 24;
+                  else if (queryKind == KnowledgeQueryKind::Pinout) {
+                      candidate.score += 16;
+                      if (hasDirectConnectorEvidence(fact.statement))
+                          candidate.score += 28;
+                      else
+                          candidate.score -= 6;
+                  }
+                  if (asksTorque)
+                      candidate.score += 12;
+                  if (fact.statement.size() > 5000)
+                      candidate.score -= 16;
+                  else if (fact.statement.size() > 1800)
+                      candidate.score -= 8;
+          '''
+          replace_once(path, old, new)
+
+          old = r'''    const int maximum = qMin(queryKind == KnowledgeQueryKind::General ? 3 : 4, ranked.size());
+              if (maximum == 1 && !lambdaWireColour) {
+                  const ExpertFact &fact = ranked.constFirst().fact;
+                  QString answer = fact.statement.trimmed();
+          '''
+          new = r'''    bool directAnswerAvailable = false;
+              if (queryKind == KnowledgeQueryKind::Pinout || asksTorque) {
+                  for (const RankedFact &candidate : ranked) {
+                      const QString focused = focusedKnowledgeStatement(candidate.fact.statement,
+                                                                        specificTerms,
+                                                                        queryKind,
+                                                                        asksTorque,
+                                                                        procedureIntent);
+                      if (focusedDirectEvidence(focused, queryKind, asksTorque)) {
+                          directAnswerAvailable = true;
+                          break;
+                      }
+                  }
+              }
+
+              const int requestedMaximum = asksTorque ? 2
+                  : (queryKind == KnowledgeQueryKind::General ? 3 : 4);
+              const int maximum = qMin(requestedMaximum, ranked.size());
+              if (maximum == 1 && !lambdaWireColour) {
+                  const ExpertFact &fact = ranked.constFirst().fact;
+                  QString answer = focusedKnowledgeStatement(fact.statement,
+                                                             specificTerms,
+                                                             queryKind,
+                                                             asksTorque,
+                                                             procedureIntent);
+          '''
+          replace_once(path, old, new)
+
+          old = r'''    for (int i = 0; i < maximum; ++i) {
+                  const ExpertFact &fact = ranked.at(i).fact;
+                  QString line = QStringLiteral("• %1").arg(fact.statement.trimmed());
+                  if (lambdaWireColour) {
+                      const QString role = IaMemsConversationRouting::wireColourRoleLabel(fact.statement);
+                      if (!role.isEmpty())
+                          line = QStringLiteral("• %1 — %2").arg(role, fact.statement.trimmed());
+                  }
+                  if (!fact.verificationLevel.trimmed().isEmpty())
+                      line += QStringLiteral(" — preuve : %1").arg(verificationLabel(fact.verificationLevel));
+                  if (sourceDetails && !fact.sourceKey.trimmed().isEmpty())
+                      line += QStringLiteral(" ; source : %1").arg(fact.sourceKey.trimmed());
+                  answers << line;
+                  if (sourceDetails && !fact.notes.trimmed().isEmpty())
+                      answers << QStringLiteral("  Note : %1").arg(fact.notes.trimmed());
+              }
+          '''
+          new = r'''    int emitted = 0;
+              for (int i = 0; i < ranked.size() && emitted < maximum; ++i) {
+                  const ExpertFact &fact = ranked.at(i).fact;
+                  const QString focused = lambdaWireColour
+                      ? fact.statement.trimmed()
+                      : focusedKnowledgeStatement(fact.statement,
+                                                  specificTerms,
+                                                  queryKind,
+                                                  asksTorque,
+                                                  procedureIntent);
+                  if (directAnswerAvailable
+                      && (queryKind == KnowledgeQueryKind::Pinout || asksTorque)
+                      && !focusedDirectEvidence(focused, queryKind, asksTorque))
+                      continue;
+
+                  QString line = QStringLiteral("• %1").arg(focused);
+                  if (lambdaWireColour) {
+                      const QString role = IaMemsConversationRouting::wireColourRoleLabel(fact.statement);
+                      if (!role.isEmpty())
+                          line = QStringLiteral("• %1 — %2").arg(role, focused);
+                  }
+                  if (!fact.verificationLevel.trimmed().isEmpty())
+                      line += QStringLiteral(" — preuve : %1").arg(verificationLabel(fact.verificationLevel));
+                  if (sourceDetails && !fact.sourceKey.trimmed().isEmpty())
+                      line += QStringLiteral(" ; source : %1").arg(fact.sourceKey.trimmed());
+                  answers << line;
+                  if (sourceDetails && !fact.notes.trimmed().isEmpty())
+                      answers << QStringLiteral("  Note : %1").arg(fact.notes.trimmed());
+                  ++emitted;
+              }
+          '''
+          replace_once(path, old, new)
+
+          # 2) Diagram resolver: preserve Markdown-escaped paths and resolve explicit manifest assets.
+          path = 'expert/IaMemsDiagramCatalog.cpp'
+          marker = r'''IaMemsDiagramSuggestion runtimeSuggestionForResponse(const QString &response,
+                                                                const QString &root)
+          {
+              IaMemsDiagramSuggestion none;
+              QString referenceText = response;
+              referenceText.replace(QStringLiteral("\\\\:"), QStringLiteral(":"));
+              referenceText.replace(QLatin1Char('\\\\'), QLatin1Char('/'));
+          '''
+          replacement = r'''QString canonicalResponseReferenceText(QString text)
+          {
+              for (const QString &escaped : {
+                       QStringLiteral(":"), QStringLiteral("_"), QStringLiteral("*"),
+                       QStringLiteral("["), QStringLiteral("]"), QStringLiteral("("),
+                       QStringLiteral(")"), QStringLiteral("#"), QStringLiteral("+"),
+                       QStringLiteral("-"), QStringLiteral(".")}) {
+                  text.replace(QStringLiteral("\\") + escaped, escaped);
+              }
+              text.replace(QLatin1Char('\\'), QLatin1Char('/'));
+              return text;
+          }
+
+          QString manifestShaForPath(const QJsonValue &value, const QString &relativePath)
+          {
+              if (value.isObject()) {
+                  const QJsonObject object = value.toObject();
+                  if (object.value(QStringLiteral("path")).toString()
+                          .compare(relativePath, Qt::CaseInsensitive) == 0) {
+                      const QString sha = object.value(QStringLiteral("sha256")).toString().trimmed();
+                      if (!sha.isEmpty())
+                          return sha;
+                  }
+                  for (auto it = object.constBegin(); it != object.constEnd(); ++it) {
+                      const QString sha = manifestShaForPath(it.value(), relativePath);
+                      if (!sha.isEmpty())
+                          return sha;
+                  }
+              } else if (value.isArray()) {
+                  const QJsonArray array = value.toArray();
+                  for (const QJsonValue &item : array) {
+                      const QString sha = manifestShaForPath(item, relativePath);
+                      if (!sha.isEmpty())
+                          return sha;
+                  }
+              }
+              return QString();
+          }
+
+          bool manifestAssetForStructuredKey(const QJsonValue &value,
+                                             const QString &structuredKey,
+                                             QString *relativePath,
+                                             QString *sha256)
+          {
+              if (!value.isObject() && !value.isArray())
+                  return false;
+              if (value.isObject()) {
+                  const QJsonObject object = value.toObject();
+                  for (auto it = object.constBegin(); it != object.constEnd(); ++it) {
+                      if (it.key().compare(structuredKey, Qt::CaseInsensitive) == 0
+                          && it.value().isObject()) {
+                          const QJsonObject asset = it.value().toObject();
+                          const QString path = asset.value(QStringLiteral("path")).toString().trimmed();
+                          if (!path.isEmpty()) {
+                              if (relativePath)
+                                  *relativePath = path;
+                              if (sha256)
+                                  *sha256 = asset.value(QStringLiteral("sha256")).toString().trimmed();
+                              return true;
+                          }
+                      }
+                      if (manifestAssetForStructuredKey(it.value(), structuredKey,
+                                                        relativePath, sha256))
+                          return true;
+                  }
+              } else {
+                  for (const QJsonValue &item : value.toArray()) {
+                      if (manifestAssetForStructuredKey(item, structuredKey,
+                                                        relativePath, sha256))
+                          return true;
+                  }
+              }
+              return false;
+          }
+
+          IaMemsDiagramSuggestion manifestSuggestionForResponse(const QString &referenceText,
+                                                                 const QString &root)
+          {
+              QFile manifest(QDir(root).filePath(QStringLiteral("manifest.json")));
+              if (!manifest.open(QIODevice::ReadOnly))
+                  return IaMemsDiagramSuggestion();
+
+              QJsonParseError parseError;
+              const QJsonDocument document = QJsonDocument::fromJson(manifest.readAll(), &parseError);
+              if (parseError.error != QJsonParseError::NoError || !document.isObject())
+                  return IaMemsDiagramSuggestion();
+
+              const QJsonObject manifestRoot = document.object();
+              const QJsonObject diagrams = manifestRoot.value(QStringLiteral("diagrams")).toObject();
+
+              const auto resolveManifestPath = [&](const QString &requestedPath,
+                                                   const QString &fallbackKey,
+                                                   const QString &declaredSha) {
+                  QString key = fallbackKey;
+                  QString path;
+                  for (auto it = diagrams.constBegin(); it != diagrams.constEnd(); ++it) {
+                      if (it.value().toString().compare(requestedPath, Qt::CaseInsensitive) == 0) {
+                          key = it.key().trimmed();
+                          path = it.value().toString().trimmed();
+                          break;
+                      }
+                  }
+                  if (path.isEmpty() && !fallbackKey.isEmpty())
+                      path = requestedPath;
+                  if (key.trimmed().isEmpty() || path.trimmed().isEmpty())
+                      return IaMemsDiagramSuggestion();
+
+                  const IaMemsDiagramSuggestion candidate =
+                      resolvePath(root, key, QDir::cleanPath(path), true);
+                  if (!candidate.isValid())
+                      return IaMemsDiagramSuggestion();
+
+                  QString sha = declaredSha.trimmed();
+                  if (sha.isEmpty())
+                      sha = manifestShaForPath(QJsonValue(manifestRoot), path);
+                  if (!sha.isEmpty() && !fileMatchesSha256(candidate.absolutePath, sha))
+                      return IaMemsDiagramSuggestion();
+                  return candidate;
+              };
+
+              const QRegularExpression structuredRx(
+                  QStringLiteral("(?:^|[^A-Za-z0-9_])rave\\s*:\\s*([A-Za-z0-9_-]+)\\s*:\\s*pdf\\s*:\\s*([0-9]+)"),
+                  QRegularExpression::CaseInsensitiveOption);
+              QRegularExpressionMatchIterator structuredMatches = structuredRx.globalMatch(referenceText);
+              while (structuredMatches.hasNext()) {
+                  const QRegularExpressionMatch match = structuredMatches.next();
+                  const QString structuredKey = QStringLiteral("rave:%1:PDF:%2")
+                      .arg(match.captured(1)).arg(match.captured(2).toInt());
+                  QString path;
+                  QString sha;
+                  if (manifestAssetForStructuredKey(QJsonValue(manifestRoot), structuredKey,
+                                                    &path, &sha)) {
+                      const IaMemsDiagramSuggestion candidate =
+                          resolveManifestPath(path, structuredKey, sha);
+                      if (candidate.isValid())
+                          return candidate;
+                  }
+              }
+
+              const QRegularExpression pathRx(
+                  QStringLiteral("(images/[A-Za-z0-9_./-]+\\.(?:png|svg|jpe?g|webp))"),
+                  QRegularExpression::CaseInsensitiveOption);
+              QRegularExpressionMatchIterator pathMatches = pathRx.globalMatch(referenceText);
+              while (pathMatches.hasNext()) {
+                  const QString requestedPath = QDir::cleanPath(pathMatches.next().captured(1));
+                  const IaMemsDiagramSuggestion candidate =
+                      resolveManifestPath(requestedPath, QString(), QString());
+                  if (candidate.isValid())
+                      return candidate;
+              }
+              return IaMemsDiagramSuggestion();
+          }
+
+          IaMemsDiagramSuggestion runtimeSuggestionForResponse(const QString &response,
+                                                                const QString &root)
+          {
+              IaMemsDiagramSuggestion none;
+              const QString referenceText = canonicalResponseReferenceText(response);
+          '''
+          replace_once(path, marker, replacement)
+
+          old = r'''    QFile catalog(QDir(root).filePath(QStringLiteral("runtime_visual_catalog.json")));
+              if (!catalog.open(QIODevice::ReadOnly))
+                  return none;
+
+              QJsonParseError parseError;
+              const QJsonDocument document = QJsonDocument::fromJson(catalog.readAll(), &parseError);
+              if (parseError.error != QJsonParseError::NoError || !document.isObject())
+                  return none;
+
+              const QJsonArray entries = document.object().value(QStringLiteral("entries")).toArray();
+          '''
+          new = r'''    QJsonArray entries;
+              QFile catalog(QDir(root).filePath(QStringLiteral("runtime_visual_catalog.json")));
+              if (catalog.open(QIODevice::ReadOnly)) {
+                  QJsonParseError parseError;
+                  const QJsonDocument document = QJsonDocument::fromJson(catalog.readAll(), &parseError);
+                  if (parseError.error == QJsonParseError::NoError && document.isObject())
+                      entries = document.object().value(QStringLiteral("entries")).toArray();
+              }
+          '''
+          replace_once(path, old, new)
+
+          old = r'''    return none;
+          }
+
+          IaMemsDiagramSuggestion runtimeSuggestion(const QString &question,
+          '''
+          new = r'''    const IaMemsDiagramSuggestion manifestSuggestion =
+                  manifestSuggestionForResponse(referenceText, root);
+              if (manifestSuggestion.isValid())
+                  return manifestSuggestion;
+
+              return none;
+          }
+
+          IaMemsDiagramSuggestion runtimeSuggestion(const QString &question,
+          '''
+          replace_once(path, old, new)
+
+          # 3) Diagram self-test: explicit Markdown-escaped manifest path and structured manifest key.
+          path = 'expert/IaMemsDiagramSelfTest.cpp'
+          old = r'''    const QByteArray traversalBytes("PNG-OUTSIDE-ROOT\n");
+          '''
+          new = r'''    const QByteArray traversalBytes("PNG-OUTSIDE-ROOT\n");
+              const QByteArray manifestImageBytes("PNG-AKM7169-INJECTOR-PAGE\n");
+          '''
+          replace_once(path, old, new)
+
+          old = r'''        || !writeFile(QDir(temporary.path()).filePath(QStringLiteral("../outside.png")), traversalBytes)) {
+          '''
+          new = r'''        || !writeFile(QDir(temporary.path()).filePath(QStringLiteral("../outside.png")), traversalBytes)
+                  || !writeFile(QDir(temporary.path()).filePath(
+                                    QStringLiteral("images/rave/AKM7169ENG_PDF_133.png")),
+                                manifestImageBytes)) {
+          '''
+          replace_once(path, old, new)
+
+          old = r'''    if (!writeFile(QDir(temporary.path()).filePath(QStringLiteral("runtime_visual_catalog.json")),
+                             QJsonDocument(root).toJson(QJsonDocument::Indented))) {
+                  printLine(QStringLiteral("FAIL cannot write runtime visual catalog"));
+                  return false;
+              }
+
+              bool ok = true;
+          '''
+          new = r'''    if (!writeFile(QDir(temporary.path()).filePath(QStringLiteral("runtime_visual_catalog.json")),
+                             QJsonDocument(root).toJson(QJsonDocument::Indented))) {
+                  printLine(QStringLiteral("FAIL cannot write runtime visual catalog"));
+                  return false;
+              }
+
+              QJsonObject manifestDiagrams;
+              manifestDiagrams.insert(QStringLiteral("RAVE AKM7169ENG PDF 133"),
+                                      QStringLiteral("images/rave/AKM7169ENG_PDF_133.png"));
+              QJsonObject manifestAsset;
+              manifestAsset.insert(QStringLiteral("path"),
+                                   QStringLiteral("images/rave/AKM7169ENG_PDF_133.png"));
+              manifestAsset.insert(QStringLiteral("sha256"), sha256Hex(manifestImageBytes));
+              QJsonObject manifestAssets;
+              manifestAssets.insert(QStringLiteral("rave:AKM7169ENG:PDF:133"), manifestAsset);
+              QJsonObject manifestRoot;
+              manifestRoot.insert(QStringLiteral("diagrams"), manifestDiagrams);
+              manifestRoot.insert(QStringLiteral("test_assets"), manifestAssets);
+              if (!writeFile(QDir(temporary.path()).filePath(QStringLiteral("manifest.json")),
+                             QJsonDocument(manifestRoot).toJson(QJsonDocument::Indented))) {
+                  printLine(QStringLiteral("FAIL cannot write response manifest fixture"));
+                  return false;
+              }
+
+              bool ok = true;
+          '''
+          replace_once(path, old, new)
+
+          old = r'''    ok = requireNoResponseSuggestion(
+                       temporary.path(),
+                       QStringLiteral("A response without any packaged image reference."),
+                       QStringLiteral("response without visual reference")) && ok;
+          '''
+          new = r'''    ok = requireResponseSuggestion(
+                       temporary.path(),
+                       QStringLiteral("Illustration locale: images/rave/AKM7169ENG\\_PDF\\_133.PNG"),
+                       QStringLiteral("RAVE AKM7169ENG PDF 133"),
+                       QStringLiteral("images/rave/AKM7169ENG_PDF_133.png"),
+                       QStringLiteral("manifest image path with Markdown escapes and extension case")) && ok;
+              ok = requireResponseSuggestion(
+                       temporary.path(),
+                       QStringLiteral("Illustration locale: rave:AKM7169ENG:PDF:133"),
+                       QStringLiteral("RAVE AKM7169ENG PDF 133"),
+                       QStringLiteral("images/rave/AKM7169ENG_PDF_133.png"),
+                       QStringLiteral("structured response reference resolved by manifest fallback")) && ok;
+              ok = requireNoResponseSuggestion(
+                       temporary.path(),
+                       QStringLiteral("Illustration locale: images/rave/UNDECLARED.PNG"),
+                       QStringLiteral("undeclared explicit response image path")) && ok;
+              ok = requireNoResponseSuggestion(
+                       temporary.path(),
+                       QStringLiteral("A response without any packaged image reference."),
+                       QStringLiteral("response without visual reference")) && ok;
+          '''
+          replace_once(path, old, new)
+
+          # 4) IA tab: stale response image handling + initial fit-to-window viewer.
+          path = 'iamemstab.cpp'
+          old = r'''#include <QFileInfo>
+          #include <QHBoxLayout>
+          '''
+          new = r'''#include <QFileInfo>
+          #include <QGraphicsPixmapItem>
+          #include <QGraphicsScene>
+          #include <QGraphicsView>
+          #include <QHBoxLayout>
+          '''
+          replace_once(path, old, new)
+
+          old = r'''#include <QPushButton>
+          #include <QScrollBar>
+          '''
+          new = r'''#include <QPushButton>
+          #include <QResizeEvent>
+          #include <QScrollBar>
+          '''
+          replace_once(path, old, new)
+
+          old = r'''#include <QVariantMap>
+          #include <QXmlStreamReader>
+          '''
+          new = r'''#include <QVariantMap>
+          #include <QWheelEvent>
+          #include <QXmlStreamReader>
+          '''
+          replace_once(path, old, new)
+
+          marker = r'''} // namespace
+
+          IaMemsTab::IaMemsTab(MainWindow *mainWindow, QWidget *parent)
+          '''
+          helper = r'''class IaMemsDiagramView final : public QGraphicsView
+          {
+          public:
+              explicit IaMemsDiagramView(QWidget *parent = nullptr)
+                  : QGraphicsView(parent), m_scene(new QGraphicsScene(this))
+              {
+                  setScene(m_scene);
+                  setAlignment(Qt::AlignCenter);
+                  setDragMode(QGraphicsView::ScrollHandDrag);
+                  setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
+                  setResizeAnchor(QGraphicsView::AnchorViewCenter);
+                  setBackgroundBrush(QColor(QStringLiteral("#0a1015")));
+              }
+
+              bool loadDiagram(const QString &path)
+              {
+                  const QPixmap pixmap(path);
+                  if (pixmap.isNull())
+                      return false;
+                  m_scene->clear();
+                  m_item = m_scene->addPixmap(pixmap);
+                  m_scene->setSceneRect(m_item->boundingRect());
+                  m_autoFit = true;
+                  QTimer::singleShot(0, this, [this]() { fitDiagram(); });
+                  return true;
+              }
+
+          protected:
+              void resizeEvent(QResizeEvent *event) override
+              {
+                  QGraphicsView::resizeEvent(event);
+                  if (m_autoFit)
+                      fitDiagram();
+              }
+
+              void wheelEvent(QWheelEvent *event) override
+              {
+                  if (event->modifiers().testFlag(Qt::ControlModifier)) {
+                      m_autoFit = false;
+                      const qreal factor = event->angleDelta().y() > 0 ? 1.15 : (1.0 / 1.15);
+                      scale(factor, factor);
+                      event->accept();
+                      return;
+                  }
+                  QGraphicsView::wheelEvent(event);
+              }
+
+          private:
+              void fitDiagram()
+              {
+                  if (!m_item || m_item->boundingRect().isEmpty())
+                      return;
+                  resetTransform();
+                  fitInView(m_item, Qt::KeepAspectRatio);
+              }
+
+              QGraphicsScene *m_scene = nullptr;
+              QGraphicsPixmapItem *m_item = nullptr;
+              bool m_autoFit = true;
+          };
+
+          bool responseMentionsLocalVisualReference(QString text)
+          {
+              text.replace(QStringLiteral("\\:"), QStringLiteral(":"));
+              text.replace(QStringLiteral("\\_"), QStringLiteral("_"));
+              static const QRegularExpression visualRx(
+                  QStringLiteral("(?:rave\\s*:[A-Za-z0-9_-]+\\s*:\\s*pdf\\s*:\\s*[0-9]+|images[\\\\/][^\\s]+\\.(?:png|svg|jpe?g|webp))"),
+                  QRegularExpression::CaseInsensitiveOption);
+              return visualRx.match(text).hasMatch();
+          }
+
+          } // namespace
+
+          IaMemsTab::IaMemsTab(MainWindow *mainWindow, QWidget *parent)
+          '''
+          replace_once(path, marker, helper)
+
+          old = r'''    QVBoxLayout *layout = new QVBoxLayout(&viewer);
+              QTextBrowser *browser = new QTextBrowser(&viewer);
+              browser->setObjectName(QStringLiteral("iaMemsDiagramBrowser"));
+              browser->setOpenExternalLinks(false);
+              browser->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+              browser->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+
+              const QString localUrl = QUrl::fromLocalFile(fileInfo.canonicalFilePath())
+                                           .toString()
+                                           .toHtmlEscaped();
+              const QString title = suggestion.key.toHtmlEscaped();
+              browser->setHtml(QStringLiteral(
+                  "<style>body{background:#0a1015;color:#dce3e8;font-family:'Segoe UI',Arial,sans-serif;}"
+                  "h1{color:#ff9828;font-size:16pt;margin:0 0 10px 0;}"
+                  ".diagram{background:#0d151b;border:1px solid #34414b;padding:10px;text-align:center;}"
+                  ".diagram img{max-width:100%;height:auto;}</style>"
+                  "<h1>%1</h1><div class='diagram'><img src='%2'></div>")
+                  .arg(title, localUrl));
+              layout->addWidget(browser, 1);
+          '''
+          new = r'''    QVBoxLayout *layout = new QVBoxLayout(&viewer);
+              QLabel *heading = new QLabel(suggestion.key, &viewer);
+              QFont headingFont = heading->font();
+              headingFont.setPointSize(qMax(headingFont.pointSize() + 2, 12));
+              headingFont.setBold(true);
+              heading->setFont(headingFont);
+              heading->setStyleSheet(QStringLiteral("color:#ff9828;"));
+              layout->addWidget(heading);
+
+              IaMemsDiagramView *diagramView = new IaMemsDiagramView(&viewer);
+              diagramView->setObjectName(QStringLiteral("iaMemsDiagramGraphicsView"));
+              if (diagramView->loadDiagram(fileInfo.canonicalFilePath())) {
+                  layout->addWidget(diagramView, 1);
+              } else {
+                  delete diagramView;
+                  QTextBrowser *browser = new QTextBrowser(&viewer);
+                  browser->setObjectName(QStringLiteral("iaMemsDiagramBrowser"));
+                  browser->setOpenExternalLinks(false);
+                  browser->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+                  browser->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+                  const QString localUrl = QUrl::fromLocalFile(fileInfo.canonicalFilePath())
+                                               .toString()
+                                               .toHtmlEscaped();
+                  browser->setHtml(QStringLiteral(
+                      "<style>body{background:#0a1015;margin:0;text-align:center;}"
+                      "img{max-width:100%;height:auto;}</style><img src='%1'>")
+                      .arg(localUrl));
+                  layout->addWidget(browser, 1);
+              }
+          '''
+          replace_once(path, old, new)
+
+          old = r'''    if (responseSuggestion.isValid() && m_diagramButton) {
+                  m_diagramTitle = responseSuggestion.key;
+                  m_diagramQuestion = text;
+                  m_diagramButton->setText(I18n::text(99006));
+                  m_diagramButton->setVisible(true);
+              }
+          '''
+          new = r'''    if (responseSuggestion.isValid() && m_diagramButton) {
+                  m_diagramTitle = responseSuggestion.key;
+                  m_diagramQuestion = text;
+                  m_diagramButton->setText(I18n::text(99006));
+                  m_diagramButton->setVisible(true);
+              } else if (m_diagramButton && responseMentionsLocalVisualReference(text)) {
+                  m_diagramTitle.clear();
+                  m_diagramQuestion.clear();
+                  m_diagramButton->setText(QString());
+                  m_diagramButton->setVisible(false);
+              }
+          '''
+          replace_once(path, old, new)
+          PY
+
+          git diff --check
+          git diff --stat
+          grep -F "AKM7169ENG\\_PDF\\_133.PNG" expert/IaMemsDiagramSelfTest.cpp
+          grep -F "manifestSuggestionForResponse" expert/IaMemsDiagramCatalog.cpp
+          grep -F "fuzzyKnowledgeTokenMatch" expert/IaMemsService.cpp
+          grep -F "IaMemsDiagramView" iamemstab.cpp
+      - name: Commit direct source correction
+        shell: bash
+        run: |
+          git config user.name "mini56"
+          git config user.email "48644212+mini56@users.noreply.github.com"
+          git add expert/IaMemsService.cpp expert/IaMemsDiagramCatalog.cpp expert/IaMemsDiagramSelfTest.cpp iamemstab.cpp
+          git commit -m "Improve IA answer focus and response-linked images"
+          git push origin tmp-ravemems-ia-visual-integration
