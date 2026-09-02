@@ -12599,3 +12599,11 @@ Décision utilisateur validée :
 Aucun code applicatif, aucune extraction et aucun BUILD de production ne sont lancés dans cette étape de relecture.
 
 PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges RAVEMEMS question par question avec l’utilisateur. Ne lancer aucune nouvelle extraction avant validation explicite du cahier.
+
+## 2026-09-02 — RELECTURE CAHIER RAVEMEMS — OUTILS, CONSOMMABLES ET PIECES A PREPARER
+
+Décision utilisateur validée : lorsqu'un manuel impose un outil spécial, un consommable, un produit, un joint, une rondelle, une fixation ou une pièce neuve/remplacée, RAVEMEMS doit conserver cette exigence avec l'opération. Si l'élément est nécessaire avant l'intervention, l'IA doit l'annoncer avant le début des étapes afin que l'utilisateur puisse le préparer. Aucune exigence ne doit être inventée si elle n'est pas présente dans le manuel.
+
+Aucun code applicatif, aucune extraction et aucun BUILD de production ne sont lancés dans cette étape de relecture.
+
+PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges RAVEMEMS question par question avec l'utilisateur et journaliser chaque décision. Ne lancer aucune nouvelle extraction avant validation explicite du cahier.

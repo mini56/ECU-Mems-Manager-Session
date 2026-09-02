@@ -108,6 +108,8 @@ Lorsqu'il s'agit d'un avertissement de sécurité ou d'un risque technique impor
 
 Une **REMARQUE / NOTE** du manuel doit également rester visible, mais avec une présentation distincte des avertissements : **un petit triangle orange contenant un `!` orange**, accompagné du libellé `REMARQUE` ou `NOTE` et du texte correspondant. Le carré rouge reste réservé aux vrais avertissements, précautions de sécurité ou risques techniques importants.
 
+Les **outils spéciaux, consommables, produits, joints, rondelles, fixations ou pièces dont le remplacement ou la présence est explicitement exigé par le manuel** doivent être structurés et rattachés à l'opération concernée. Lorsque ces éléments sont nécessaires avant de commencer, l'IA doit les annoncer **avant la première étape de la procédure**, afin que l'utilisateur puisse préparer le matériel requis. L'IA ne doit pas inventer une exigence absente du manuel.
+
 ---
 
 ## 9. RELATIONS ENTRE OPÉRATIONS
