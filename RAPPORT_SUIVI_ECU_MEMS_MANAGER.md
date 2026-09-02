@@ -11962,3 +11962,14 @@ Cause fonctionnelle deja prouvee et conservee : pour `Quel est le couple de serr
 
 ### PROCHAINE ACTION EXACTE
 Sur `tmp-ravemems-ia-visual-integration` uniquement, modifier **directement** le fichier source `expert/IaMemsDiagramCatalog.cpp` pour corriger cette condition de selection, puis modifier directement le self-test correspondant. Aucun script `patch_*`, aucune application de patch dans un runner. Verifier ensuite le diff exact et compiler/tester avant tout package. Ne toucher ni a `MEMSX64`, ni au protocole ECU, ni a Qwen/ONNX, ni aux donnees RAVEMEMS.
+
+
+## 2026-09-02 — REGLE VISUELLE GENERALE MULTILINGUE AVANT CORRECTION DIRECTE
+
+Precision utilisateur obligatoire : ne pas utiliser de texte en dur dependant d une langue pour decider si une image doit etre proposee. L utilisateur peut poser sa question dans une autre langue.
+
+Regle generale validee : **quand la reponse IA contient/possede une reference vers une image ou illustration locale reellement disponible et declaree, IA MEMS doit proposer automatiquement le bouton `Voir le schéma`**. La decision doit provenir de la reference visuelle structuree de la reponse et du catalogue runtime, pas d une liste de mots francais/anglais/espagnols/etc.
+
+Architecture de correction : conserver les demandes explicites de schema existantes, mais ajouter une resolution directe depuis le texte final de la reponse vers `runtime_visual_catalog.json` via les identifiants documentaires/images. Dans `onServiceResponse`, apres reception du texte final, mettre a jour la suggestion visuelle a partir de cette reponse. Aucun dictionnaire de langue pour cette fonction.
+
+PROCHAINE ACTION EXACTE : modifier directement les fichiers source necessaires sur `tmp-ravemems-ia-visual-integration`, sans script de patch et sans rustine ; ajouter le self-test de resolution par reference ; verifier le diff avant compilation. `MEMSX64` reste BUILD #103.
