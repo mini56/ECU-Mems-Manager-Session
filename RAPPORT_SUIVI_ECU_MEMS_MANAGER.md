@@ -12205,3 +12205,17 @@ Correction directe du source uniquement sur `tmp-ravemems-ia-visual-integration`
 - Erreur exacte : `expert/IaMemsDiagramCatalog.cpp: expected one match, found 0`.
 - Cause : le marqueur texte du workflow avait sur-échappé les antislashs du code C++ de `runtimeSuggestionForResponse()` ; il ne correspondait pas au source réel.
 - Action suivante : relancer la même correction avec un repérage robuste par signature de fonction / bornes de bloc, sans modifier le périmètre fonctionnel et sans toucher `MEMSX64`.
+
+### 2026-09-02 — Première correction IA question → réponse → image : source poussée
+
+- Branche de test : `tmp-ravemems-ia-visual-integration`.
+- Commit source : `a30267584c0951e99b88f83670452a3c9d5087d7` — `Improve IA answer focus and response-linked images`.
+- Diff applicatif vérifié : exactement 4 fichiers :
+  - `expert/IaMemsService.cpp`
+  - `expert/IaMemsDiagramCatalog.cpp`
+  - `expert/IaMemsDiagramSelfTest.cpp`
+  - `iamemstab.cpp`
+- Correction source : tolérance bornée aux petites fautes de frappe dans les termes de connaissance ; priorité accrue aux preuves directes de brochage `Cxxx-x` ; réduction des réponses documentaires trop longues ; résolution des chemins image de réponse avec échappement Markdown `\\_` ; fallback vers les images explicitement déclarées dans `manifest.json` ; self-tests des chemins AKM7169 ; ajustement initial de l'image à la fenêtre ; suppression d'une suggestion visuelle pré-question devenue obsolète lorsqu'une référence visuelle explicite de réponse ne se résout pas.
+- Les workflows temporaires d'édition ont été supprimés après le commit source.
+- Aucun changement sur `MEMSX64`; BUILD #103 reste la production protégée.
+- Prochaine action exacte : adapter uniquement le garde du workflow de package x64 de test pour autoriser `expert/IaMemsService.cpp`, puis lancer le package complet et valider le run/artefact avant test utilisateur.
