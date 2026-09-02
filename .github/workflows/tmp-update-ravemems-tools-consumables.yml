@@ -1,0 +1,52 @@
+name: TEMP update RAVEMEMS tools and consumables
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/tmp-update-ravemems-tools-consumables.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+
+      - name: Update cahier and report
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          cahier = Path('docs/CAHIER_DES_CHARGES_RAVEMEMS_BROUILLON_2026-09-02.md')
+          text = cahier.read_text(encoding='utf-8')
+          anchor = "Une **REMARQUE / NOTE** du manuel doit également rester visible, mais avec une présentation distincte des avertissements : **un petit triangle orange contenant un `!` orange**, accompagné du libellé `REMARQUE` ou `NOTE` et du texte correspondant. Le carré rouge reste réservé aux vrais avertissements, précautions de sécurité ou risques techniques importants."
+          addition = anchor + "\n\nLes **outils spéciaux, consommables, produits, joints, rondelles, fixations ou pièces dont le remplacement ou la présence est explicitement exigé par le manuel** doivent être structurés et rattachés à l'opération concernée. Lorsque ces éléments sont nécessaires avant de commencer, l'IA doit les annoncer **avant la première étape de la procédure**, afin que l'utilisateur puisse préparer le matériel requis. L'IA ne doit pas inventer une exigence absente du manuel."
+          if text.count(anchor) != 1:
+              raise SystemExit(f'Unexpected tools anchor count: {text.count(anchor)}')
+          cahier.write_text(text.replace(anchor, addition, 1), encoding='utf-8')
+
+          report = Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md')
+          with report.open('a', encoding='utf-8') as f:
+              f.write("\n\n## 2026-09-02 — RELECTURE CAHIER RAVEMEMS — OUTILS, CONSOMMABLES ET PIECES A PREPARER\n\n")
+              f.write("Décision utilisateur validée : lorsqu'un manuel impose un outil spécial, un consommable, un produit, un joint, une rondelle, une fixation ou une pièce neuve/remplacée, RAVEMEMS doit conserver cette exigence avec l'opération. Si l'élément est nécessaire avant l'intervention, l'IA doit l'annoncer avant le début des étapes afin que l'utilisateur puisse le préparer. Aucune exigence ne doit être inventée si elle n'est pas présente dans le manuel.\n\n")
+              f.write("Aucun code applicatif, aucune extraction et aucun BUILD de production ne sont lancés dans cette étape de relecture.\n\n")
+              f.write("PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges RAVEMEMS question par question avec l'utilisateur et journaliser chaque décision. Ne lancer aucune nouvelle extraction avant validation explicite du cahier.\n")
+          PY
+
+      - name: Commit and cleanup
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/tmp-update-ravemems-tools-consumables.yml
+          git add docs/CAHIER_DES_CHARGES_RAVEMEMS_BROUILLON_2026-09-02.md RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git diff --cached --check
+          git commit -m "Record RAVEMEMS tools and consumables policy"
+          git push origin HEAD:RAPPORT
