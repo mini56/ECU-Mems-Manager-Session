@@ -1,0 +1,49 @@
+name: TEMP journal second IA structured visual prepush
+on:
+  push:
+    paths:
+      - '.github/workflows/tmp-journal-second-ia-structured-visual-prepush.yml'
+permissions:
+  contents: write
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+      - name: Append prepush journal
+        shell: bash
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+          ## 2026-09-02 - DEUXIEME CORRECTION IA REPONSE -> IMAGE - AVANT POUSSE SOURCE
+
+          Test reel utilisateur sur le nouveau package x64 run 33646334703 : question `DEPOSE INJECTEUR`.
+          Reponse observee : deux faits courts seulement, Service Repair 19.22.61 puis 19.22.45 throttle body ; aucun bouton `Voir le schema`.
+          Verdict : ECHEC encore reproduit pour la chaine reponse -> image.
+
+          Cause racine verifiee dans le source du package `7bee94790ebc517452b38bc6fa904de90addc00b` :
+          - la premiere correction limite une requete generale a 2 faits ; le fait structure `Injector Housing - Service Repair 19.22.61` contenant la procedure detaillee et `image_ref=images/rave/AKM7169ENG_PDF_133.png` tombe derriere le resume historique et le throttle body ;
+          - `ExpertKnowledgeReader::foundationFacts()` lit deja `mems_knowledge_item.image_ref`, mais transforme cette relation en simple texte `Illustration locale: ...` dans `ExpertFact.statement` ;
+          - `IaMemsTab::onServiceResponse()` tente ensuite de retrouver un visuel dans le texte final affiche. Si la reduction de reponse retire la ligne d illustration, l association visuelle est perdue bien que la donnee existe dans la base.
+
+          Correction structurelle autorisee :
+          1. ajouter au lecteur expert une resolution read-only de la reference visuelle a partir du `factKey` selectionne, sans parser le texte affiche ;
+          2. faire conserver par `IaMemsService` la reference visuelle du/des faits reellement retenus pendant `knowledgeAnswer()` ;
+          3. transmettre cette reference separement a l UI lors de la reponse et l utiliser pour le bouton, tout en conservant le fallback historique des demandes explicites de schema ;
+          4. pour une intention de procedure/depose/repose, favoriser generiquement les faits contenant une vraie procedure structuree (`mems_procedure`/etapes) et l operation correspondante plutot qu un resume voisin ; aucun `if injecteur`, aucune reponse ou image codee par question ;
+          5. ajouter des self-tests pour la relation factKey -> image_ref et pour la conservation du cas `AKM7169ENG_PDF_133.png` independamment du texte raccourci.
+
+          Interdictions maintenues : pas de multilingue dans ce lot, pas de traduction de texte dans image, pas de protocole ECU, pas de 32 bits, pas de modification de MEMSX64. Production reste BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+          INCIDENT OUTIL AVANT JOURNAL : plusieurs branches jetables vides ont ete creees par erreur pendant la tentative de mise en place du canal de journalisation (`tmp-journal-second-ia-correction-unused`, `tmp-report-second-ia-fix-20260902`, puis variantes `-2` a `-8`). Elles pointent uniquement sur un commit existant, ne contiennent aucune modification de code/donnees et n ont aucun impact sur `MEMSX64` ni sur la branche de test. Aucune correction source n a ete poussee avant le present journal.
+
+          PROCHAINE ACTION EXACTE : appliquer uniquement cette correction structurelle sur `tmp-ravemems-ia-visual-integration`, verifier le diff exact et les self-tests, puis journaliser le commit source avant de relancer le package x64. Rejouer ensuite `DEPOSE INJECTEUR`, `MINI SPI` et le cas ventilateur C159-28.
+          EOF
+          git config user.name "mini56"
+          git config user.email "48644212+mini56@users.noreply.github.com"
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git rm .github/workflows/tmp-journal-second-ia-structured-visual-prepush.yml
+          git commit -m "Journal second IA structured visual correction prepush"
+          git push origin RAPPORT
