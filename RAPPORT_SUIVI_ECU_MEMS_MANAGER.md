@@ -12064,3 +12064,13 @@ Décision utilisateur : lancer maintenant un nouveau package x64 contenant le co
 Le workflow x64 doit donc compiler et empaqueter la branche `tmp-ravemems-ia-visual-integration`, conserver les gardes BUILD #103/RAVEMEMS/protocole/visuels, accepter les nouveaux fichiers source et ressources I18n dans le périmètre, mais ne pas exécuter maintenant le self-test fonctionnel multilingue Qwen. `MEMSX64` reste strictement sur BUILD #103.
 
 PROCHAINE ACTION EXACTE : adapter uniquement le workflow temporaire `tmp-ravemems-visual-test-package-x64.yml` au nouveau périmètre source, différer les deux exécutions de `local_ai_onnx_selftest.exe`, pousser ce workflow pour déclencher le package, suivre le run jusqu'au verdict et fournir l'artefact si vert. Puis reprendre le test réel `question -> réponse -> image`.
+
+## 2026-09-02 - TEST IA visuel 2 - couple de serrage culasse
+Question: Quel est le couple de serrage de la culasse ?
+DONNEE: PASS. La reponse contient Ecrous de culasse 34 N.m puis 34 N.m de plus. RCL0193ENG p.64 contient aussi 34 Nm initialement puis 68 Nm final.
+QUALITE REPONSE: FAIL. La reponse restitue une grande table generale de couples et du contenu hors sujet au lieu de repondre directement.
+BOUTON IMAGE: PASS.
+PERTINENCE IMAGE: PASS. Le catalogue runtime associe RCL0193ENG p.64 a la sequence de serrage de culasse et a l'ordre illustre.
+RENDU ASSET: FAIL. Le fichier runtime DOC_0047_XN_WMXN990E_PDF_X1638.png est 624x1056, contenu tourne a 90 degres, blanc sur fond noir.
+Aucune correction appliquee. Continuer les tests.
+PROCHAINE ACTION EXACTE: troisieme question IA en francais; verifier justesse, concision, bouton image, pertinence image, orientation et couleurs. Ne pas modifier MEMSX64.
