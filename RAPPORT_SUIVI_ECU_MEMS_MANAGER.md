@@ -12639,3 +12639,12 @@ Décision utilisateur validée comme **très importante** : un serrage en plusie
 Aucun code applicatif, aucune extraction et aucun BUILD de production ne sont lancés dans cette étape de relecture.
 
 PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges RAVEMEMS question par question avec l'utilisateur. Ne lancer aucune nouvelle extraction avant validation explicite du cahier.
+
+
+## 2026-09-02 — VALIDATION FINALE DU CAHIER DES CHARGES RAVEMEMS
+
+Décisions finales utilisateur : conditions inséparables des valeurs ; éditions/révisions conservées avec leur contexte ; traductions provisoires autorisées mais obligatoirement retrouvées et vérifiées par l’audit ; aucun visuel dégradé accepté, tout doit être fait pour obtenir une extraction propre et fidèle.
+
+Le cahier des charges RAVEMEMS est désormais VALIDÉ et FIGÉ avant implémentation. Aucun code applicatif, aucune nouvelle extraction et aucun BUILD de production ne sont lancés. `MEMSX64` reste protégée sur BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+PROCHAINE ACTION EXACTE : attendre un `GO` explicite de l’utilisateur. Après ce GO seulement, relire le rapport et le cahier validé, travailler sur branche de test dédiée, concevoir le nouvel extracteur RAVEMEMS et réaliser le prototype `RCL0193ENG`. Le corpus complet reste interdit avant audit et validation utilisateur du prototype.
