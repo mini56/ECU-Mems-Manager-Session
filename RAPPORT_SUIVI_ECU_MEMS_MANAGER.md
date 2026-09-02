@@ -12025,3 +12025,11 @@ Cause racine prouvee : `LocalAiClient::ask()` renvoie directement le `grounding`
 Regle utilisateur : **corriger directement le code source, aucun patch / aucune rustine**. Ne pas creer une logique dependante de Windows ni une serie de `if` par langue dans le chemin IA. Reutiliser le systeme multilingue existant de MEMS Manager et garder la coherence avec l architecture multilingue des contents/visuels RAVEMEMS.
 
 PROCHAINE ACTION EXACTE : sur `tmp-ravemems-ia-visual-integration` uniquement, corriger directement la chaine IA afin que la langue active `I18n::language()` gouverne l interface IA, les statuts/fallbacks et la restitution des faits. Un grounding documentaire ne doit plus etre retourne brut dans une autre langue que l interface active ; lorsque necessaire, Qwen doit assurer la restitution dans la langue active tout en conservant les faits techniques. Ajouter des self-tests multilingues FR/EN/ES/IT/PT/DE. Ne toucher ni a `MEMSX64`` BUILD #103, ni au protocole ECU, ni aux donnees RAVEMEMS.
+
+## 2026-09-02 — Echec technique du premier lancement de correction multilingue IA
+
+La preparation du correctif source direct a ete declenchee sur `tmp-ravemems-ia-visual-integration` par le commit `e01e9a6eb676d6b1d036aeafca83ef4fe73e6986`, mais le run GitHub Actions `33599130849` a ete rejete avant creation de tout job (`jobs=[]`, conclusion `failure`). Aucun fichier applicatif, aucune traduction et aucun workflow de package n ont donc ete modifies par ce run. `MEMSX64` reste intouche sur BUILD #103.
+
+Cause de transport : le workflow temporaire d edition directe est trop volumineux/complexe pour etre accepte correctement par GitHub Actions. Ce n est pas un echec du code IA et aucune correction partielle n a ete appliquee.
+
+PROCHAINE ACTION EXACTE : remplacer uniquement ce mecanisme temporaire par une edition directe plus courte, executer la meme correction source multilingue deja journalisee, auto-supprimer les fichiers temporaires d edition dans le commit final, puis laisser le workflow x64 complet valider le code. Aucun patch applicatif, aucun fichier `.patch`/`.diff`, aucun changement de `MEMSX64` ou du protocole.
