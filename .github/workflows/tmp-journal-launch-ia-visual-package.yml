@@ -19,20 +19,8 @@ jobs:
           ref: RAPPORT
           fetch-depth: 0
       - name: Append journal
-        shell: bash
-        run: |
-          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
-
-## 2026-09-02 — Lancement demandé du nouveau package IA/RAVEMEMS
-
-Décision utilisateur : lancer maintenant un nouveau package x64 contenant le commit source `8869f9e1a098b6efd0519673a3c8d6ff0da4599c`, puis continuer la campagne réelle IA `question -> réponse -> image`. Le test fonctionnel de changement de langue IA est explicitement reporté après cette campagne.
-
-Le workflow x64 doit donc compiler et empaqueter la branche `tmp-ravemems-ia-visual-integration`, conserver les gardes BUILD #103/RAVEMEMS/protocole/visuels, accepter les nouveaux fichiers source et ressources I18n dans le périmètre, mais ne pas exécuter maintenant le self-test fonctionnel multilingue Qwen. `MEMSX64` reste strictement sur BUILD #103.
-
-PROCHAINE ACTION EXACTE : adapter uniquement le workflow temporaire `tmp-ravemems-visual-test-package-x64.yml` au nouveau périmètre source, différer les deux exécutions de `local_ai_onnx_selftest.exe`, pousser ce workflow pour déclencher le package, suivre le run jusqu'au verdict et fournir l'artefact si vert. Puis reprendre le test réel `question -> réponse -> image`.
-EOF
+        run: echo 'IyMgMjAyNi0wOS0wMiDigJQgTGFuY2VtZW50IGRlbWFuZMOpIGR1IG5vdXZlYXUgcGFja2FnZSBJQS9SQVZFTUVNUwoKRMOpY2lzaW9uIHV0aWxpc2F0ZXVyIDogbGFuY2VyIG1haW50ZW5hbnQgdW4gbm91dmVhdSBwYWNrYWdlIHg2NCBjb250ZW5hbnQgbGUgY29tbWl0IHNvdXJjZSBgODg2OWY5ZTFhMDk4YjZlZmQwNTE5NjczYTNjOGQ2ZmYwZGE0NTk5Y2AsIHB1aXMgY29udGludWVyIGxhIGNhbXBhZ25lIHLDqWVsbGUgSUEgYHF1ZXN0aW9uIC0+IHLDqXBvbnNlIC0+IGltYWdlYC4gTGUgdGVzdCBmb25jdGlvbm5lbCBkZSBjaGFuZ2VtZW50IGRlIGxhbmd1ZSBJQSBlc3QgZXhwbGljaXRlbWVudCByZXBvcnTDqSBhcHLDqHMgY2V0dGUgY2FtcGFnbmUuCgpMZSB3b3JrZmxvdyB4NjQgZG9pdCBkb25jIGNvbXBpbGVyIGV0IGVtcGFxdWV0ZXIgbGEgYnJhbmNoZSBgdG1wLXJhdmVtZW1zLWlhLXZpc3VhbC1pbnRlZ3JhdGlvbmAsIGNvbnNlcnZlciBsZXMgZ2FyZGVzIEJVSUxEICMxMDMvUkFWRU1FTVMvcHJvdG9jb2xlL3Zpc3VlbHMsIGFjY2VwdGVyIGxlcyBub3V2ZWF1eCBmaWNoaWVycyBzb3VyY2UgZXQgcmVzc291cmNlcyBJMThuIGRhbnMgbGUgcMOpcmltw6h0cmUsIG1haXMgbmUgcGFzIGV4w6ljdXRlciBtYWludGVuYW50IGxlIHNlbGYtdGVzdCBmb25jdGlvbm5lbCBtdWx0aWxpbmd1ZSBRd2VuLiBgTUVNU1g2NGAgcmVzdGUgc3RyaWN0ZW1lbnQgc3VyIEJVSUxEICMxMDMuCgpQUk9DSEFJTkUgQUNUSU9OIEVYQUNURSA6IGFkYXB0ZXIgdW5pcXVlbWVudCBsZSB3b3JrZmxvdyB0ZW1wb3JhaXJlIGB0bXAtcmF2ZW1lbXMtdmlzdWFsLXRlc3QtcGFja2FnZS14NjQueW1sYCBhdSBub3V2ZWF1IHDDqXJpbcOodHJlIHNvdXJjZSwgZGlmZsOpcmVyIGxlcyBkZXV4IGV4w6ljdXRpb25zIGRlIGBsb2NhbF9haV9vbm54X3NlbGZ0ZXN0LmV4ZWAsIHBvdXNzZXIgY2Ugd29ya2Zsb3cgcG91ciBkw6ljbGVuY2hlciBsZSBwYWNrYWdlLCBzdWl2cmUgbGUgcnVuIGp1c3F1J2F1IHZlcmRpY3QgZXQgZm91cm5pciBsJ2FydGVmYWN0IHNpIHZlcnQuIFB1aXMgcmVwcmVuZHJlIGxlIHRlc3QgcsOpZWwgYHF1ZXN0aW9uIC0+IHLDqXBvbnNlIC0+IGltYWdlYC4K' | base64 -d >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
       - name: Commit journal
-        shell: bash
         run: |
           git config user.name github-actions-bot
           git config user.email github-actions-bot@users.noreply.github.com
