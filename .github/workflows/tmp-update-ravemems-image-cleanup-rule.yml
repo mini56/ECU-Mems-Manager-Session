@@ -1,0 +1,46 @@
+name: TEMP update RAVEMEMS image cleanup rule
+
+on:
+  push:
+    branches:
+      - RAPPORT
+    paths:
+      - '.github/workflows/tmp-update-ravemems-image-cleanup-rule.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Update cahier and report
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('docs/CAHIER_DES_CHARGES_RAVEMEMS_BROUILLON_2026-09-02.md')
+          s = p.read_text(encoding='utf-8')
+          old = "Lorsque la page est grande mais que l’illustration utile est petite, RAVEMEMS doit privilégier un recadrage propre de la zone technique utile.\n\nBénéfices : aperçu plus lisible, image utile plus grande, moins besoin de zoomer, stockage réduit et moins de texte parasite."
+          new = "Lorsque la page est grande mais que l’illustration utile est petite, RAVEMEMS doit privilégier un recadrage propre de la zone technique utile. Le recadrage doit retirer automatiquement les marges, en-têtes, pieds de page, zones blanches et autres espaces inutiles, tout en conservant une **petite marge de sécurité autour de tout contenu technique** afin de ne jamais couper un repère, une flèche, une légende, un symbole ou un élément nécessaire à la compréhension.\n\nBénéfices : aperçu plus lisible, image utile plus grande, moins besoin de zoomer, stockage réduit et moins de texte parasite."
+          if old not in s:
+              raise SystemExit('target text not found in cahier')
+          p.write_text(s.replace(old, new), encoding='utf-8')
+
+          r = Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md')
+          with r.open('a', encoding='utf-8') as f:
+              f.write("\n\n## 2026-09-02 — CAHIER RAVEMEMS : REGLE DE NETTOYAGE DES VISUELS\n\nDécision utilisateur : le recadrage RAVEMEMS doit retirer automatiquement marges, en-têtes, pieds de page, zones blanches et espaces inutiles, mais conserver systématiquement une petite marge de sécurité autour du contenu technique. Aucun repère, flèche, légende, symbole ou élément utile ne doit être coupé. Cette règle est ajoutée au cahier des charges. Aucun code ni extraction n'est lancé.\n")
+          PY
+      - name: Commit and cleanup
+        shell: bash
+        run: |
+          git config user.name "mini56"
+          git config user.email "48644212+mini56@users.noreply.github.com"
+          git rm .github/workflows/tmp-update-ravemems-image-cleanup-rule.yml
+          git add docs/CAHIER_DES_CHARGES_RAVEMEMS_BROUILLON_2026-09-02.md RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Record RAVEMEMS image cleanup rule"
+          git push origin HEAD:RAPPORT
