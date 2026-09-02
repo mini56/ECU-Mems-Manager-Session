@@ -1,0 +1,48 @@
+name: TEMP update RAVEMEMS generic vehicle context
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/tmp-update-ravemems-generic-vehicle-context.yml'
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Correct generic vehicle context in cahier and report
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('docs/CAHIER_DES_CHARGES_RAVEMEMS_BROUILLON_2026-09-02.md')
+          s=p.read_text(encoding='utf-8')
+          old="""Si plusieurs réponses incompatibles restent possibles, l’IA doit demander la variante nécessaire avant de répondre. La question ne doit pas enfermer l’utilisateur dans les seules variantes déjà trouvées. Par exemple, si les données disponibles distinguent Mini SPi et Mini MPi, l’IA peut demander : **« Est-ce pour une Mini SPi, une Mini MPi, ou un autre véhicule ? »**. Si l’utilisateur indique un autre véhicule, l’IA lui demande alors les informations nécessaires pour identifier ce véhicule et sa variante."""
+          new="""Si plusieurs réponses incompatibles restent possibles, l’IA doit demander uniquement les informations nécessaires pour identifier le véhicule et la variante concernés. **SPi / MPi ne doit jamais être associé implicitement à la Mini : plusieurs modèles et véhicules peuvent utiliser ces architectures.** La formulation doit donc rester générique et partir d’abord du véhicule concerné. Si un véhicule est connecté, l’IA demande par exemple : **« Votre question concerne-t-elle le véhicule actuellement connecté ou un autre véhicule ? »**. Si l’utilisateur répond qu’il s’agit d’un autre véhicule, ou si aucun véhicule n’est connecté, l’IA demande ensuite les éléments nécessaires (marque, modèle, moteur, année, type d’injection/gestion, ECU ou autre variante pertinente). Une fois le véhicule identifié, si plusieurs variantes restent possibles, l’IA demande seulement le discriminant utile, par exemple SPi ou MPi."""
+          if old not in s:
+              raise SystemExit('vehicle paragraph not found')
+          p.write_text(s.replace(old,new,1),encoding='utf-8')
+          PY
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+          ## 2026-09-02 — CAHIER RAVEMEMS — SPi/MPi NON LIMITES A MINI
+
+          Correction utilisateur : SPi et MPi ne concernent pas uniquement la Mini. Le cahier ne doit donc jamais utiliser Mini SPi/Mini MPi comme logique implicite ou comme choix générique de véhicule.
+
+          Règle retenue : déterminer d’abord si la question concerne le véhicule actuellement connecté ou un autre véhicule. Si aucun véhicule n’est connecté, ou si l’utilisateur parle d’un autre véhicule, demander les éléments nécessaires pour identifier le véhicule (marque, modèle, moteur, année, type d’injection/gestion, ECU ou autre variante pertinente). Une fois le véhicule identifié, demander seulement le discriminant encore nécessaire, par exemple SPi ou MPi si c’est réellement ce qui différencie les réponses disponibles.
+
+          Aucun code, aucune extraction et aucun BUILD lancés ; cahier toujours en relecture.
+          EOF
+      - name: Commit and cleanup
+        shell: bash
+        run: |
+          git config user.name "mini56"
+          git config user.email "48644212+mini56@users.noreply.github.com"
+          git add docs/CAHIER_DES_CHARGES_RAVEMEMS_BROUILLON_2026-09-02.md RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git rm .github/workflows/tmp-update-ravemems-generic-vehicle-context.yml
+          git commit -m "Generalize RAVEMEMS vehicle variant context"
+          git push origin HEAD:RAPPORT
