@@ -333,6 +333,8 @@ La **valeur et l’unité constructeur doivent toujours être conservées exacte
 
 L’IA doit également pouvoir effectuer **à la demande de l’utilisateur des conversions d’unités et des calculs simples**, même lorsque le résultat converti n’est pas écrit dans le manuel. Exemple : `3 pouces en mm ?` → **76,2 mm**. Lorsqu’une telle conversion concerne une valeur issue du manuel, la valeur constructeur d’origine reste explicitement distinguée du résultat calculé par l’IA.
 
+Les **serrages en plusieurs étapes** doivent être conservés comme une séquence technique complète et ordonnée, et non réduits à une valeur unique. RAVEMEMS doit préserver chaque passe de serrage, chaque couple, chaque angle, l’ordre des vis ou fixations, les éventuelles conditions intermédiaires et tout ordre constructeur imposé. Exemple : `20 N·m`, puis `60°`, puis encore `60°` doit rester une séquence de trois étapes distinctes. Si le manuel fournit un schéma d’ordre de serrage, ce visuel doit être relié à la séquence et l’IA doit pouvoir le proposer avec la procédure.
+
 ---
 
 ## 27. DÉDUPLICATION

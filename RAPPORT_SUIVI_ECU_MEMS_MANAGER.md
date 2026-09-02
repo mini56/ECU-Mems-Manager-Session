@@ -12630,3 +12630,12 @@ Décision utilisateur validée : tout élément dont l’extraction ou la struct
 Aucun code applicatif, aucune extraction et aucun BUILD de production ne sont lancés.
 
 PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges RAVEMEMS question par question avec l’utilisateur. Ne lancer aucune nouvelle extraction avant validation explicite du cahier.
+
+
+## 2026-09-02 — RELECTURE CAHIER RAVEMEMS — SERRAGES SEQUENTIELS / ANGULAIRES
+
+Décision utilisateur validée comme **très importante** : un serrage en plusieurs passes ne doit jamais être réduit à une valeur unique. RAVEMEMS doit conserver l'ordre exact des passes, couples, angles, ordre des vis/fixations, conditions et séquences constructeur. Exemple : 20 N·m puis 60° puis encore 60° reste une séquence ordonnée complète. Si un schéma d'ordre de serrage existe, il doit être relié à la séquence et proposé par l'IA avec la procédure concernée.
+
+Aucun code applicatif, aucune extraction et aucun BUILD de production ne sont lancés dans cette étape de relecture.
+
+PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges RAVEMEMS question par question avec l'utilisateur. Ne lancer aucune nouvelle extraction avant validation explicite du cahier.
