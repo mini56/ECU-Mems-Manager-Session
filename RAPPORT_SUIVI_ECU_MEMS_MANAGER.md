@@ -12011,3 +12011,17 @@ Le header `expert/IaMemsDiagramCatalog.h` est revenu exactement a son etat initi
 `MEMSX64` verifie intact : BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`. Aucun #104.
 
 PROCHAINE ACTION EXACTE : declencher le workflow x64 RAVEMEMS VISUAL TEST from BUILD 103 sur le HEAD `d22a0bb790d6615d7af5dc8d2b1e59b11125cabc`, sans autre changement applicatif. Verifier compilation, self-tests, package et smoke. Journaliser immediatement le verdict avant test utilisateur.
+
+## 2026-09-02 â€” TEST REEL CHANGEMENT DE LANGUE FRANCAIS -> ITALIEN : DEFA[ÕTIA MEMS
+
+Workflow x64 precedent verifie : run `33595042356` = SUCCESS, toutes les etapes compilation/self-tests/package/smoke sont vertes. Artefact `ECU-MEMS-Manager-x64-RAVEMEMS-VISUAL-TEST-from-BUILD-103`, ID `9833248994`, taille `488547609` octets, SHA-256 `d0e877e24b7e495543549b89d66e0eb24a18a3d2ec09f89bdc0766c074cc8f05`, head `43d3ff37c934b7cf2b1118149eae86a92efbc48f`.
+
+Test reel utilisateur : changement de langue de MEMS Manager de francais vers italien. L interface generale passe bien en italien (`Opzioni`, `Panoramica`, `Iniezione`, `Connetti`, etc.), mais l onglet IA MEMS reste en francais : sous-titre, message d accueil, etat base, placeholder. L utilisateur confirme aussi que les reponses IA restent en francais.
+
+Windows de l utilisateur est en francais, mais ce n est pas la cause : `LocalAiClient::activeLanguageCode()` lit `I18n::language()` et supporte explicitement `fr/en/es/it/pt/de`. `systemPrompt()` est reconstruit avec cette langue active a chaque demande.
+
+Cause racine prouvee : `LocalAiClient::ask()` renvoie directement le `grounding` lorsqu il existe et qu aucun raisonnement n est requis, sans appeler Qwen. Or `IaMemsService` construit encore de nombreux groundings, fallbacks, statuts et reponses deterministes directement en francais. Si Qwen produit une reponse rejetee, le fallback reprend aussi ce grounding francais. Le prompt italien peut donc etre contourne. En parallele, `iamemstab.cpp` contient des textes IA affiches en francais qui ne sont pas relies correctement au mecanisme I18n dynamique.
+
+Regle utilisateur : **corriger directement le code source, aucun patch / aucune rustine**. Ne pas creer une logique dependante de Windows ni une serie de `if` par langue dans le chemin IA. Reutiliser le systeme multilingue existant de MEMS Manager et garder la coherence avec l architecture multilingue des contents/visuels RAVEMEMS.
+
+PROCHAINE ACTION EXACTE : sur `tmp-ravemems-ia-visual-integration` uniquement, corriger directement la chaine IA afin que la langue active `I18n::language()` gouverne l interface IA, les statuts/fallbacks et la restitution des faits. Un grounding documentaire ne doit plus etre retourne brut dans une autre langue que l interface active ; lorsque necessaire, Qwen doit assurer la restitution dans la langue active tout en conservant les faits techniques. Ajouter des self-tests multilingues FR/EN/ES/IT/PT/DE. Ne toucher ni a `MEMSX64`` BUILD #103, ni au protocole ECU, ni aux donnees RAVEMEMS.
