@@ -306,7 +306,7 @@ La référence interne au document ou à la page n’a pas besoin d’être affi
 
 Les tableaux ne doivent pas être réduits à un gros bloc de texte lorsque leur structure peut être récupérée.
 
-Extraire autant que possible colonnes, lignes, libellés, valeurs, unités et conditions, particulièrement pour les couples de serrage, résistances, tensions, jeux, pressions, températures, valeurs de contrôle et caractéristiques.
+RAVEMEMS doit extraire **tous les tableaux techniques qu’il sait reconnaître**, en conservant autant que possible colonnes, lignes, libellés, valeurs, unités et conditions. La validation prioritaire porte toutefois sur les tableaux contenant des valeurs techniques directement exploitables par l’IA : couples de serrage, résistances, tensions, jeux, pressions, températures, valeurs de contrôle, diagnostic et caractéristiques techniques.
 
 ---
 

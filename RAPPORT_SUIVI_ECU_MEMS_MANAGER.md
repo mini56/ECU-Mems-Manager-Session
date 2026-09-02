@@ -12512,3 +12512,8 @@ Aucun code, aucune extraction et aucun BUILD lancés ; cahier toujours en relect
 ## 2026-09-02 — CAHIER RAVEMEMS : REGLE DE NETTOYAGE DES VISUELS
 
 Décision utilisateur : le recadrage RAVEMEMS doit retirer automatiquement marges, en-têtes, pieds de page, zones blanches et espaces inutiles, mais conserver systématiquement une petite marge de sécurité autour du contenu technique. Aucun repère, flèche, légende, symbole ou élément utile ne doit être coupé. Cette règle est ajoutée au cahier des charges. Aucun code ni extraction n'est lancé.
+
+
+## 2026-09-02 — REVUE CAHIER RAVEMEMS : TABLEAUX
+
+Décision utilisateur validée : RAVEMEMS extrait tous les tableaux techniques qu’il sait reconnaître. La validation prioritaire du prototype porte sur les tableaux contenant des valeurs directement exploitables par l’IA : couples de serrage, résistances, tensions, jeux, pressions, températures, valeurs de contrôle, diagnostic et caractéristiques techniques. Aucun code applicatif ni extraction lancé.
