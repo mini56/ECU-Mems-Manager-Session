@@ -1,0 +1,604 @@
+name: TEMP direct IA multilingual source correction
+
+on:
+  push:
+    branches:
+      - tmp-ravemems-ia-visual-integration
+    paths:
+      - .github/workflows/tmp-direct-ia-language-source.yml
+
+permissions:
+  contents: write
+
+jobs:
+  direct_source_edit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout test branch
+        uses: actions/checkout@v4
+        with:
+          ref: tmp-ravemems-ia-visual-integration
+          fetch-depth: 0
+
+      - name: Edit IA MEMS source and multilingual resources directly
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+
+          root = Path('.')
+
+          def replace_once(path, old, new):
+              p = root / path
+              text = p.read_text(encoding='utf-8')
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{path}: expected exactly one occurrence, got {count}: {old[:100]!r}')
+              p.write_text(text.replace(old, new, 1), encoding='utf-8', newline='\n')
+
+          def replace_all_checked(path, old, new, expected):
+              p = root / path
+              text = p.read_text(encoding='utf-8')
+              count = text.count(old)
+              if count != expected:
+                  raise SystemExit(f'{path}: expected {expected} occurrences, got {count}: {old[:100]!r}')
+              p.write_text(text.replace(old, new), encoding='utf-8', newline='\n')
+
+          # LocalAiClient: the active MEMS Manager language governs response rendering.
+          replace_once(
+              'expert/LocalAiClient.cpp',
+              '    if (m_state != Ready) {\n        emit responseError(QStringLiteral("L\'IA conversationnelle locale n\'est pas prête."));\n        return;\n    }',
+              '    if (m_state != Ready) {\n        emit responseError(I18n::text(99022));\n        return;\n    }')
+
+          replace_once(
+              'expert/LocalAiClient.cpp',
+              '    const bool reasoning = requiresReasoning(trimmedQuestion, grounding);\n    if (!reasoning && !grounding.isEmpty()) {\n        rememberTurn(m_conversation, trimmedQuestion, grounding);\n        emit responseReady(grounding);\n        return;\n    }\n\n    QString userContent = trimmedQuestion;\n    if (!grounding.isEmpty()) {\n        userContent += QStringLiteral(\n            "\\n\\nFaits fournis par MEMS Manager, à utiliser seulement s\'ils répondent à la question :\\n%1")\n                           .arg(grounding);\n    }\n    if (reasoning) {\n        userContent += QStringLiteral(\n            "\\n\\nRéponse attendue : diagnostic bref, hypothèses les plus probables dans l\'ordre, puis contrôles prioritaires. Ne montre aucun raisonnement interne.");\n    }',
+              '    const bool reasoning = requiresReasoning(trimmedQuestion, grounding);\n    const QString responseLanguageCode = activeLanguageCode();\n    const QString responseLanguageName = activeLanguageName(responseLanguageCode);\n\n    // A grounding can be returned verbatim only when it already matches the\n    // application language.  The expert service currently builds its neutral\n    // evidence text in French; every other UI language therefore goes through\n    // Qwen for faithful language rendering instead of leaking the source text.\n    if (responseLanguageCode == QStringLiteral("fr") && !reasoning && !grounding.isEmpty()) {\n        rememberTurn(m_conversation, trimmedQuestion, grounding);\n        emit responseReady(grounding);\n        return;\n    }\n\n    QString userContent = trimmedQuestion;\n    if (!grounding.isEmpty()) {\n        userContent += QStringLiteral(\n            "\\n\\nVerified facts supplied by MEMS Manager. Use only facts relevant to the question. "\n            "These facts can be written in a different language. Answer in %1 (%2), translating and synthesizing "\n            "the facts without changing technical values, units, identifiers, references or evidence:\\n%3")\n                           .arg(responseLanguageName, responseLanguageCode, grounding);\n    }\n    if (reasoning) {\n        userContent += QStringLiteral(\n            "\\n\\nExpected answer: concise diagnosis, most likely hypotheses in order, then priority checks. "\n            "Do not reveal internal reasoning.");\n    }')
+
+          replace_once(
+              'expert/LocalAiClient.cpp',
+              '                emit responseError(QStringLiteral("Erreur du moteur d\'IA locale ONNX : %1").arg(generationError));',
+              '                emit responseError(I18n::text(99026).arg(generationError));')
+
+          replace_once(
+              'expert/LocalAiClient.cpp',
+              '            if (answer.isEmpty() || isQuestionEcho(trimmedQuestion, answer))\n                answer = grounding;\n            if (answer.isEmpty()) {\n                emit responseError(QStringLiteral("Le modèle local n\'a pas produit de réponse exploitable dans la langue active."));\n                return;\n            }',
+              '            if (answer.isEmpty() || isQuestionEcho(trimmedQuestion, answer)) {\n                // Never leak source-language grounding into another UI language.\n                answer = activeLanguageCode() == QStringLiteral("fr") ? grounding : QString();\n            }\n            if (answer.isEmpty()) {\n                emit responseError(I18n::text(99025));\n                return;\n            }')
+
+          replace_once('expert/LocalAiClient.cpp',
+                       '    setState(MissingRuntime, QStringLiteral("Cette compilation ne contient pas ONNX Runtime GenAI."));',
+                       '    setState(MissingRuntime, I18n::text(99027));')
+          replace_once('expert/LocalAiClient.cpp',
+                       '        setState(MissingRuntime, QStringLiteral("Runtime ONNX Runtime GenAI absent du package."));',
+                       '        setState(MissingRuntime, I18n::text(99028));')
+          replace_once('expert/LocalAiClient.cpp',
+                       '        setState(MissingModel, QStringLiteral("Modèle Qwen ONNX IA MEMS absent du dossier IA."));',
+                       '        setState(MissingModel, I18n::text(99029));')
+          replace_once('expert/LocalAiClient.cpp',
+                       '        setState(Error, QStringLiteral("Thread du moteur IA local indisponible."));',
+                       '        setState(Error, I18n::text(99030));')
+          replace_once('expert/LocalAiClient.cpp',
+                       '                setState(Error, QStringLiteral("Chargement ONNX impossible : %1").arg(error));',
+                       '                setState(Error, I18n::text(99031).arg(error));')
+
+          replace_once(
+              'expert/LocalAiClient.cpp',
+              'QString LocalAiClient::statusText() const\n{\n    switch (m_state) {\n    case NotStarted: return QStringLiteral("IA locale non démarrée");\n    case MissingRuntime: return QStringLiteral("moteur IA local absent");\n    case MissingModel: return QStringLiteral("modèle IA local absent");\n    case Starting: return QStringLiteral("IA locale en démarrage");\n    case Ready: return QStringLiteral("IA locale prête");\n    case Busy: return QStringLiteral("IA locale en réponse");\n    case Error:\n        if (m_lastError.isEmpty()) return QStringLiteral("erreur IA locale");\n        return QStringLiteral("erreur IA locale : %1").arg(m_lastError.simplified().left(140));\n    }\n    return QStringLiteral("IA locale");\n}',
+              'QString LocalAiClient::statusText() const\n{\n    switch (m_state) {\n    case NotStarted: return I18n::text(99012);\n    case MissingRuntime: return I18n::text(99013);\n    case MissingModel: return I18n::text(99014);\n    case Starting: return I18n::text(99015);\n    case Ready: return I18n::text(99016);\n    case Busy: return I18n::text(99017);\n    case Error:\n        if (m_lastError.isEmpty()) return I18n::text(99018);\n        return I18n::text(99019).arg(m_lastError.simplified().left(140));\n    }\n    return I18n::text(99020);\n}')
+
+          # IaMemsService: local status/fallback strings use the existing I18n dictionaries.
+          replace_once('expert/IaMemsService.cpp',
+                       '#include "LocalAiClient.h"\n',
+                       '#include "LocalAiClient.h"\n#include "i18n.h"\n')
+
+          replace_once(
+              'expert/IaMemsService.cpp',
+              '            this, [this](const QString &message) {\n                QString fallback = m_pendingGrounding.trimmed();\n                if (fallback.isEmpty())\n                    fallback = QStringLiteral("Je ne peux pas répondre avec le moteur conversationnel local pour le moment.");\n                m_pendingGrounding.clear();\n                emit responseReady(fallback);\n                emit systemMessage(QStringLiteral("Moteur conversationnel local indisponible : %1").arg(message));\n                emit statusChanged();\n            });',
+              '            this, [this](const QString &message) {\n                QString fallback;\n                if (I18n::language().trimmed().toLower() == QStringLiteral("fr"))\n                    fallback = m_pendingGrounding.trimmed();\n                if (fallback.isEmpty())\n                    fallback = I18n::text(99023);\n                m_pendingGrounding.clear();\n                emit responseReady(fallback);\n                emit systemMessage(I18n::text(99024).arg(message));\n                emit statusChanged();\n            });')
+
+          replace_once('expert/IaMemsService.cpp',
+                       '        m_knowledgeError = QStringLiteral("Base experte r20 absente du package.");',
+                       '        m_knowledgeError = I18n::text(99033);')
+          replace_once('expert/IaMemsService.cpp',
+                       '        emit systemMessage(QStringLiteral(\n            "La base experte MEMS préconstruite n\'est pas disponible. Le dialogue local reste utilisable sans cette base."));',
+                       '        emit systemMessage(I18n::text(99034));')
+          replace_once('expert/IaMemsService.cpp',
+                       '        emit systemMessage(QStringLiteral(\n            "La base experte MEMS n\'a pas pu être ouverte en lecture seule. Le dialogue local reste utilisable."));',
+                       '        emit systemMessage(I18n::text(99035));')
+          replace_once('expert/IaMemsService.cpp',
+                       '    emit systemMessage(QStringLiteral("Base de connaissances MEMS prête en lecture seule."));',
+                       '    emit systemMessage(I18n::text(99021));')
+
+          replace_once(
+              'expert/IaMemsService.cpp',
+              '    const QString fallback = m_pendingGrounding.trimmed().isEmpty()\n        ? QStringLiteral("L\'IA locale n\'est pas encore prête.")\n        : m_pendingGrounding;\n    m_pendingGrounding.clear();',
+              '    QString fallback;\n    if (I18n::language().trimmed().toLower() == QStringLiteral("fr"))\n        fallback = m_pendingGrounding.trimmed();\n    if (fallback.isEmpty())\n        fallback = I18n::text(99022);\n    m_pendingGrounding.clear();')
+
+          replace_once(
+              'expert/IaMemsService.cpp',
+              '    if (m_knowledgeReady)\n        parts << QStringLiteral("base prête");\n    else if (m_knowledgeAttempted)\n        parts << QStringLiteral("base indisponible");\n    else\n        parts << QStringLiteral("base non chargée");',
+              '    if (m_knowledgeReady)\n        parts << I18n::text(99009);\n    else if (m_knowledgeAttempted)\n        parts << I18n::text(99010);\n    else\n        parts << I18n::text(99011);')
+
+          # IA tab: all user-visible local strings use the same application language dictionaries.
+          replace_once('iamemstab.cpp',
+                       '#include "database/MemsReferenceSheetRenderer.h"\n',
+                       '#include "database/MemsReferenceSheetRenderer.h"\n#include "i18n.h"\n')
+          replace_once('iamemstab.cpp',
+                       '        path, QStringLiteral("Impossible d\'ouvrir ou de lire la fiche XML locale."));',
+                       '        path, I18n::text(99041));')
+          replace_once('iamemstab.cpp',
+                       '        return QStringLiteral(\n            "MPi signifie « Multi Point Injection », c\'est-à-dire injection multipoint. "\n            "Sur les montages Rover/Mini concernés, plusieurs injecteurs distribuent le carburant, typiquement un injecteur par cylindre.");',
+                       '        return I18n::text(99049);')
+          replace_once('iamemstab.cpp',
+                       '        return QStringLiteral(\n            "Sur un système MPi Rover/Mini MEMS, l\'injection est multipoint : plusieurs injecteurs distribuent le carburant, typiquement un par cylindre. "\n            "L\'ECU commande leur ouverture pour doser le carburant dans l\'admission. Si tu cherches le brochage, le câblage, un contrôle ou une procédure précise, indique simplement ce point et je chercherai la donnée correspondante.");',
+                       '        return I18n::text(99050);')
+          replace_once('iamemstab.cpp',
+                       '    QLabel *subtitle = new QLabel(\n        QStringLiteral("Dialogue local avec le moteur expert et la base de connaissances MEMS. "\n                       "Les réponses distinguent mesures, hypothèses et niveau de preuve."),\n        this);',
+                       '    QLabel *subtitle = new QLabel(I18n::text(99001), this);')
+          replace_once('iamemstab.cpp',
+                       '    m_question->setPlaceholderText(QStringLiteral(\n        "Posez une question : Qu\'est-ce que tu vois d\'anormal ? Mon avance est-elle normale ? Que sait-on sur AANMP002 ?"));',
+                       '    m_question->setPlaceholderText(I18n::text(99002));')
+          replace_once('iamemstab.cpp',
+                       '    m_sendButton = new QPushButton(QStringLiteral("Envoyer"), this);',
+                       '    m_sendButton = new QPushButton(I18n::text(99003), this);')
+          replace_once('iamemstab.cpp',
+                       '    appendSystemMessage(QStringLiteral(\n        "Bonjour, je suis IA MEMS, l\'assistant intégré à ECU MEMS Manager. "\n        "Je peux expliquer le logiciel, les systèmes MEMS et les mesures déjà acquises par le programme. "\n        "Je n\'envoie aucune commande ECU et je n\'invente pas une mesure absente."));',
+                       '    appendSystemMessage(I18n::text(99004));')
+          replace_all_checked('iamemstab.cpp',
+                              'm_diagramButton->setText(QStringLiteral("Voir le schéma"));',
+                              'm_diagramButton->setText(I18n::text(99006));', 2)
+          replace_once('iamemstab.cpp',
+                       '        appendSystemMessage(QStringLiteral(\n            "Le schéma local proposé n\'est plus disponible ou déclaré dans le package."));',
+                       '        appendSystemMessage(I18n::text(99036));')
+          replace_once('iamemstab.cpp',
+                       '    m_documentButton->setText(QStringLiteral("Ouvrir la fiche XML MEMS %1").arg(generation));',
+                       '    m_documentButton->setText(I18n::text(99037).arg(generation));')
+          replace_once('iamemstab.cpp',
+                       '        appendSystemMessage(QStringLiteral("La base documentaire locale n\'a pas pu être ouverte."));',
+                       '        appendSystemMessage(I18n::text(99038));')
+          replace_once('iamemstab.cpp',
+                       '        appendSystemMessage(QStringLiteral("La fiche XML MEMS %1 n\'est pas disponible dans le package.").arg(m_documentGeneration));',
+                       '        appendSystemMessage(I18n::text(99039).arg(m_documentGeneration));')
+          replace_once('iamemstab.cpp',
+                       '    viewer.setWindowTitle(QStringLiteral("IA MEMS — Fiche XML MEMS %1").arg(m_documentGeneration));',
+                       '    viewer.setWindowTitle(I18n::text(99040).arg(m_documentGeneration));')
+          replace_once('iamemstab.cpp',
+                       '        return QStringLiteral("Pour éviter de mélanger les brochages Mini, est-ce une SPi ou une MPi ? Si tu ne sais pas, réponds « cherche » : j\'utiliserai l\'ECU connecté et la base avant de te redemander une information.");',
+                       '        return I18n::text(99042);')
+          replace_once('iamemstab.cpp',
+                       '        return QStringLiteral("Quelle génération MEMS faut-il utiliser : 1.2, 1.3, 1.6 ou 1.9 ? Si tu ne sais pas, réponds « cherche » et j\'utiliserai d\'abord le contexte ECU disponible.");',
+                       '        return I18n::text(99043);')
+          replace_once('iamemstab.cpp',
+                       '    appendMessage(QStringLiteral("Vous"), question);',
+                       '    appendMessage(I18n::text(99005), question);')
+          replace_once('iamemstab.cpp',
+                       '                          QStringLiteral("Correction prise en compte : %1. Je reprends la demande précédente avec cette variante.")\n                              .arg(explicitSelection));',
+                       '                          I18n::text(99044).arg(explicitSelection));')
+          replace_once('iamemstab.cpp',
+                       '                    answerLocally(QStringLiteral("J\'ai cherché dans les références ECU réellement disponibles, mais je ne peux pas trancher SPi/MPi sans preuve suffisante. Donne-moi la référence inscrite sur le calculateur, ou l\'année et le marché du véhicule."));',
+                       '                    answerLocally(I18n::text(99045));')
+          replace_once('iamemstab.cpp',
+                       '                answerLocally(QStringLiteral("J\'ai identifié %1 à partir de la référence ECU/firmware %2 retrouvée dans la base. Je poursuis la recherche initiale.").arg(resolved, evidence));',
+                       '                answerLocally(I18n::text(99046).arg(resolved, evidence));')
+          replace_once('iamemstab.cpp',
+                       '                    answerLocally(QStringLiteral("J\'ai cherché dans le contexte disponible, mais la génération MEMS n\'est pas déterminée. Donne-moi l\'année, la référence ECU ou connecte l\'ECU pour que je puisse continuer sans deviner."));',
+                       '                    answerLocally(I18n::text(99047));')
+          replace_once('iamemstab.cpp',
+                       '                answerLocally(QStringLiteral("L\'ECU connecté indique MEMS %1. Je poursuis donc avec cette documentation.").arg(m_detectedFamily));',
+                       '                answerLocally(I18n::text(99048).arg(m_detectedFamily));')
+          replace_once('iamemstab.cpp',
+                       '    parts << (m_connected ? QStringLiteral("ECU connecté") : QStringLiteral("ECU non connecté"));',
+                       '    parts << (m_connected ? I18n::text(99007) : I18n::text(99008));')
+
+          # Deterministic/native ONNX test: verify all six dictionaries and prove
+          # that non-French documentary grounding is rendered by Qwen, not leaked raw.
+          selftest = r'''#include "LocalAiClient.h"
+          #include "i18n.h"
+
+          #include <QCoreApplication>
+          #include <QDate>
+          #include <QTextStream>
+          #include <QTimer>
+
+          namespace {
+          bool containsInternalLeak(const QString &text)
+          {
+              const QString lower = text.toLower();
+              const QStringList markers = {
+                  QStringLiteral("<think>"),
+                  QStringLiteral("</think>"),
+                  QStringLiteral("<|im_"),
+                  QStringLiteral("langage obligatoire"),
+                  QStringLiteral("mandatory language"),
+                  QStringLiteral("domaine obligatoire"),
+                  QStringLiteral("contexte candidat fourni par mems manager"),
+                  QStringLiteral("mode diagnostic rapide"),
+                  QStringLiteral("you are ia mems, the local assistant"),
+                  QStringLiteral("réponse attendue"),
+                  QStringLiteral("reponse attendue"),
+                  QStringLiteral("diagnostic bref"),
+                  QStringLiteral("ne montre aucun raisonnement interne"),
+                  QStringLiteral("faits fournis par mems manager")
+              };
+              for (const QString &marker : markers) {
+                  if (lower.contains(marker))
+                      return true;
+              }
+              return false;
+          }
+          }
+
+          int main(int argc, char *argv[])
+          {
+              QCoreApplication app(argc, argv);
+              I18n::load(QStringLiteral("fr"));
+
+              QTextStream out(stdout);
+              QTextStream err(stderr);
+              out.setCodec("UTF-8");
+              err.setCodec("UTF-8");
+
+              LocalAiClient client;
+              bool started = false;
+              bool finished = false;
+              int stage = 0;
+              int languageIndex = -1;
+              const QStringList languageCodes = {
+                  QStringLiteral("fr"), QStringLiteral("en"), QStringLiteral("es"),
+                  QStringLiteral("it"), QStringLiteral("pt"), QStringLiteral("de")
+              };
+              const QStringList generatedCodes = {
+                  QStringLiteral("it"), QStringLiteral("en"), QStringLiteral("es"),
+                  QStringLiteral("pt"), QStringLiteral("de")
+              };
+              const QStringList generatedMarkers = {
+                  QStringLiteral("IT_OK"), QStringLiteral("EN_OK"), QStringLiteral("ES_OK"),
+                  QStringLiteral("PT_OK"), QStringLiteral("DE_OK")
+              };
+              const QStringList generatedQuestions = {
+                  QStringLiteral("Rispondi iniziando esattamente con IT_OK. Qual è la coppia di serraggio?"),
+                  QStringLiteral("Answer starting exactly with EN_OK. What is the tightening torque?"),
+                  QStringLiteral("Responde empezando exactamente con ES_OK. ¿Cuál es el par de apriete?"),
+                  QStringLiteral("Responde começando exatamente com PT_OK. Qual é o binário de aperto?"),
+                  QStringLiteral("Antworte exakt beginnend mit DE_OK. Wie hoch ist das Anzugsdrehmoment?")
+              };
+              const QString foreignGrounding = QStringLiteral(
+                  "Couple de serrage vérifié : 68 Nm. Niveau de preuve : constructeur.");
+
+              const auto fail = [&](const QString &message) {
+                  if (finished)
+                      return;
+                  finished = true;
+                  err << "FAIL LocalAiClient ONNX: " << message << Qt::endl;
+                  app.exit(1);
+              };
+
+              for (const QString &code : languageCodes) {
+                  if (!I18n::load(code)) {
+                      fail(QStringLiteral("Dictionnaire IA MEMS non charge pour %1").arg(code));
+                      return 1;
+                  }
+                  const QString ready = I18n::text(99016);
+                  if (ready.startsWith(QLatin1Char('[')) || ready.trimmed().isEmpty()) {
+                      fail(QStringLiteral("Cle IA MEMS 99016 absente pour %1").arg(code));
+                      return 1;
+                  }
+              }
+              I18n::load(QStringLiteral("fr"));
+
+              const auto rejectLeak = [&](const QString &answer) -> bool {
+                  if (!containsInternalLeak(answer))
+                      return false;
+                  fail(QStringLiteral("Une directive interne ou une balise Qwen a fui dans la réponse : %1")
+                           .arg(answer.left(180)));
+                  return true;
+              };
+
+              const auto askLanguageCase = [&]() {
+                  I18n::load(generatedCodes.at(languageIndex));
+                  client.clearConversation();
+                  client.ask(generatedQuestions.at(languageIndex), foreignGrounding);
+              };
+
+              QObject::connect(&client, &LocalAiClient::stateChanged, &app, [&]() {
+                  out << "STATE=" << client.statusText() << Qt::endl;
+                  switch (client.state()) {
+                  case LocalAiClient::Ready:
+                      if (!started) {
+                          started = true;
+                          stage = 0;
+                          I18n::load(QStringLiteral("fr"));
+                          client.ask(QStringLiteral("C4EST QUOI LA BOBINE ?"), QString());
+                      }
+                      break;
+                  case LocalAiClient::MissingRuntime:
+                  case LocalAiClient::MissingModel:
+                  case LocalAiClient::Error:
+                      fail(client.statusText());
+                      break;
+                  default:
+                      break;
+                  }
+              });
+
+              QObject::connect(&client, &LocalAiClient::responseError, &app,
+                               [&](const QString &message) { fail(message); });
+
+              QObject::connect(&client, &LocalAiClient::responseReady, &app,
+                               [&](const QString &text) {
+                  if (finished)
+                      return;
+                  const QString answer = text.trimmed();
+                  out << "ANSWER_STAGE_" << stage << "=" << answer << Qt::endl;
+                  if (answer.isEmpty()) {
+                      fail(QStringLiteral("Réponse vide à l'étape %1.").arg(stage));
+                      return;
+                  }
+                  if (rejectLeak(answer))
+                      return;
+
+                  if (stage == 0) {
+                      if (!answer.contains(QStringLiteral("bobine"), Qt::CaseInsensitive)
+                          || !answer.contains(QStringLiteral("haute tension"), Qt::CaseInsensitive)
+                          || !answer.contains(QStringLiteral("bougie"), Qt::CaseInsensitive)) {
+                          fail(QStringLiteral("La définition déterministe de la bobine avec C4EST n'est pas exploitable."));
+                          return;
+                      }
+                      stage = 1;
+                      client.ask(QStringLiteral("QUELLE JOURS SOMME NOUS ?"), QString());
+                      return;
+                  }
+
+                  if (stage == 1) {
+                      if (!answer.contains(QString::number(QDate::currentDate().year()))
+                          || !answer.contains(QStringLiteral("Nous sommes"), Qt::CaseInsensitive)) {
+                          fail(QStringLiteral("La question de date avec faute de frappe n'est pas reconnue."));
+                          return;
+                      }
+                      stage = 2;
+                      client.ask(QStringLiteral("BROCHE ECU 1.3"),
+                                 QStringLiteral("BROCHAGE_TEST_ECU_13 : information de brochage vérifiée fournie par la base."));
+                      return;
+                  }
+
+                  if (stage == 2) {
+                      if (!answer.contains(QStringLiteral("BROCHAGE_TEST_ECU_13"))
+                          || answer.contains(QStringLiteral("Micro-Electro-Mechanical"), Qt::CaseInsensitive)) {
+                          fail(QStringLiteral("BROCHE ECU 1.3 est encore détourné par la définition générique MEMS."));
+                          return;
+                      }
+                      stage = 3;
+                      client.ask(QStringLiteral("BROCHE OBD 1.9 ?"),
+                                 QStringLiteral("BROCHAGE_TEST_OBD_19 : information OBD vérifiée fournie par la base."));
+                      return;
+                  }
+
+                  if (stage == 3) {
+                      if (!answer.contains(QStringLiteral("BROCHAGE_TEST_OBD_19"))
+                          || answer.contains(QStringLiteral("Micro-Electro-Mechanical"), Qt::CaseInsensitive)) {
+                          fail(QStringLiteral("BROCHE OBD 1.9 est encore détourné par la définition générique MEMS."));
+                          return;
+                      }
+                      stage = 4;
+                      client.ask(QStringLiteral("Couple de serrage sonde température ECT"),
+                                 QStringLiteral("Couple ECT vérifié : 15 Nm.\nNiveau de preuve : constructeur."));
+                      return;
+                  }
+
+                  if (stage == 4) {
+                      if (!answer.contains(QStringLiteral("15 Nm"), Qt::CaseInsensitive)) {
+                          fail(QStringLiteral("Le fait documentaire ECT a été remplacé au lieu d'être rendu directement."));
+                          return;
+                      }
+                      stage = 5;
+                      client.ask(QStringLiteral("Couleur des fils sonde lambda"),
+                                 QStringLiteral("Fils sonde lambda : gris et vert clair/gris — preuve : constructeur."));
+                      return;
+                  }
+
+                  if (stage == 5) {
+                      if (!answer.contains(QStringLiteral("gris"), Qt::CaseInsensitive)
+                          || answer.contains(QStringLiteral("réponse attendue"), Qt::CaseInsensitive)
+                          || answer.contains(QStringLiteral("diagnostic bref"), Qt::CaseInsensitive)) {
+                          fail(QStringLiteral("La réponse documentaire lambda fuit encore une consigne interne."));
+                          return;
+                      }
+                      stage = 6;
+                      client.ask(QStringLiteral("Réponds uniquement par OK."), QString());
+                      return;
+                  }
+
+                  if (stage == 6) {
+                      if (!answer.contains(QStringLiteral("OK"), Qt::CaseInsensitive)) {
+                          fail(QStringLiteral("La génération native ne contient pas le marqueur OK attendu."));
+                          return;
+                      }
+                      stage = 7;
+                      languageIndex = 0;
+                      askLanguageCase();
+                      return;
+                  }
+
+                  if (stage == 7) {
+                      const QString marker = generatedMarkers.at(languageIndex);
+                      const QString code = generatedCodes.at(languageIndex);
+                      if (!answer.contains(marker, Qt::CaseInsensitive)
+                          || !answer.contains(QStringLiteral("68 Nm"), Qt::CaseInsensitive)) {
+                          fail(QStringLiteral("Restitution multilingue %1 invalide : %2")
+                                   .arg(code, answer.left(180)));
+                          return;
+                      }
+                      if (answer == foreignGrounding
+                          || answer.contains(QStringLiteral("Couple de serrage vérifié"), Qt::CaseInsensitive)) {
+                          fail(QStringLiteral("Le grounding français a fui brut en langue %1.").arg(code));
+                          return;
+                      }
+                      out << "MULTILINGUAL_PASS=" << code << Qt::endl;
+                      ++languageIndex;
+                      if (languageIndex < generatedCodes.size()) {
+                          askLanguageCase();
+                          return;
+                      }
+
+                      I18n::load(QStringLiteral("fr"));
+                      finished = true;
+                      out << "PASS LocalAiClient native ONNX response quality, documentary grounding, multilingual rendering and leak guards" << Qt::endl;
+                      app.exit(0);
+                  }
+              });
+
+              QTimer::singleShot(300000, &app, [&]() {
+                  fail(QStringLiteral("Délai dépassé pendant le chargement/génération ONNX."));
+              });
+
+              client.initialize();
+              const int result = app.exec();
+              client.shutdown();
+              return result;
+          }
+          '''
+          # Remove workflow indentation embedded above.
+          selftest = '\n'.join(line[10:] if line.startswith('          ') else line for line in selftest.splitlines()) + '\n'
+          (root / 'expert/LocalAiOnnxSelfTest.cpp').write_text(selftest, encoding='utf-8', newline='\n')
+
+          fr = {
+              "99001":"Dialogue local avec le moteur expert et la base de connaissances MEMS. Les réponses distinguent mesures, hypothèses et niveau de preuve.",
+              "99002":"Posez une question : Qu'est-ce que tu vois d'anormal ? Mon avance est-elle normale ? Que sait-on sur AANMP002 ?",
+              "99003":"Envoyer","99004":"Bonjour, je suis IA MEMS, l'assistant intégré à ECU MEMS Manager. Je peux expliquer le logiciel, les systèmes MEMS et les mesures déjà acquises par le programme. Je n'envoie aucune commande ECU et je n'invente pas une mesure absente.",
+              "99005":"Vous","99006":"Voir le schéma","99007":"ECU connecté","99008":"ECU non connecté","99009":"base prête","99010":"base indisponible","99011":"base non chargée",
+              "99012":"IA locale non démarrée","99013":"moteur IA local absent","99014":"modèle IA local absent","99015":"IA locale en démarrage","99016":"IA locale prête","99017":"IA locale en réponse","99018":"erreur IA locale","99019":"erreur IA locale : %1","99020":"IA locale",
+              "99021":"Base de connaissances MEMS prête en lecture seule.","99022":"L'IA locale n'est pas encore prête.","99023":"Je ne peux pas répondre avec le moteur conversationnel local pour le moment.","99024":"Moteur conversationnel local indisponible : %1","99025":"Le modèle local n'a pas produit de réponse exploitable dans la langue active.","99026":"Erreur du moteur d'IA locale ONNX : %1",
+              "99027":"Cette compilation ne contient pas ONNX Runtime GenAI.","99028":"Runtime ONNX Runtime GenAI absent du package.","99029":"Modèle Qwen ONNX IA MEMS absent du dossier IA.","99030":"Thread du moteur IA local indisponible.","99031":"Chargement ONNX impossible : %1",
+              "99033":"Base experte r20 absente du package.","99034":"La base experte MEMS préconstruite n'est pas disponible. Le dialogue local reste utilisable sans cette base.","99035":"La base experte MEMS n'a pas pu être ouverte en lecture seule. Le dialogue local reste utilisable.",
+              "99036":"Le schéma local proposé n'est plus disponible ou déclaré dans le package.","99037":"Ouvrir la fiche XML MEMS %1","99038":"La base documentaire locale n'a pas pu être ouverte.","99039":"La fiche XML MEMS %1 n'est pas disponible dans le package.","99040":"IA MEMS — Fiche XML MEMS %1","99041":"Impossible d'ouvrir ou de lire la fiche XML locale.",
+              "99042":"Pour éviter de mélanger les brochages Mini, est-ce une SPi ou une MPi ? Si tu ne sais pas, réponds « cherche » : j'utiliserai l'ECU connecté et la base avant de te redemander une information.","99043":"Quelle génération MEMS faut-il utiliser : 1.2, 1.3, 1.6 ou 1.9 ? Si tu ne sais pas, réponds « cherche » et j'utiliserai d'abord le contexte ECU disponible.","99044":"Correction prise en compte : %1. Je reprends la demande précédente avec cette variante.","99045":"J'ai cherché dans les références ECU réellement disponibles, mais je ne peux pas trancher SPi/MPi sans preuve suffisante. Donne-moi la référence inscrite sur le calculateur, ou l'année et le marché du véhicule.","99046":"J'ai identifié %1 à partir de la référence ECU/firmware %2 retrouvée dans la base. Je poursuis la recherche initiale.","99047":"J'ai cherché dans le contexte disponible, mais la génération MEMS n'est pas déterminée. Donne-moi l'année, la référence ECU ou connecte l'ECU pour que je puisse continuer sans deviner.","99048":"L'ECU connecté indique MEMS %1. Je poursuis donc avec cette documentation.",
+              "99049":"MPi signifie « Multi Point Injection », c'est-à-dire injection multipoint. Sur les montages Rover/Mini concernés, plusieurs injecteurs distribuent le carburant, typiquement un injecteur par cylindre.","99050":"Sur un système MPi Rover/Mini MEMS, l'injection est multipoint : plusieurs injecteurs distribuent le carburant, typiquement un par cylindre. L'ECU commande leur ouverture pour doser le carburant dans l'admission. Si tu cherches le brochage, le câblage, un contrôle ou une procédure précise, indique simplement ce point et je chercherai la donnée correspondante."
+          }
+
+          en = {
+              "99001":"Local dialogue with the expert engine and the MEMS knowledge base. Answers distinguish measurements, hypotheses and evidence level.",
+              "99002":"Ask a question: What do you see that is abnormal? Is my ignition advance normal? What do we know about AANMP002?",
+              "99003":"Send","99004":"Hello, I am IA MEMS, the assistant integrated into ECU MEMS Manager. I can explain the software, MEMS systems and measurements already acquired by the program. I do not send ECU commands and I do not invent missing measurements.",
+              "99005":"You","99006":"View diagram","99007":"ECU connected","99008":"ECU not connected","99009":"database ready","99010":"database unavailable","99011":"database not loaded",
+              "99012":"local AI not started","99013":"local AI engine missing","99014":"local AI model missing","99015":"local AI starting","99016":"local AI ready","99017":"local AI responding","99018":"local AI error","99019":"local AI error: %1","99020":"local AI",
+              "99021":"MEMS knowledge base ready in read-only mode.","99022":"The local AI is not ready yet.","99023":"I cannot answer with the local conversational engine at the moment.","99024":"Local conversational engine unavailable: %1","99025":"The local model did not produce a usable answer in the active language.","99026":"Local ONNX AI engine error: %1",
+              "99027":"This build does not include ONNX Runtime GenAI.","99028":"ONNX Runtime GenAI runtime is missing from the package.","99029":"Qwen ONNX IA MEMS model is missing from the AI folder.","99030":"Local AI engine thread unavailable.","99031":"Unable to load ONNX: %1",
+              "99033":"Expert r20 database is missing from the package.","99034":"The prebuilt MEMS expert database is unavailable. Local dialogue remains usable without this database.","99035":"The MEMS expert database could not be opened read-only. Local dialogue remains usable.",
+              "99036":"The proposed local diagram is no longer available or declared in the package.","99037":"Open MEMS %1 XML sheet","99038":"The local documentation database could not be opened.","99039":"The MEMS %1 XML sheet is not available in the package.","99040":"IA MEMS — MEMS %1 XML sheet","99041":"Unable to open or read the local XML sheet.",
+              "99042":"To avoid mixing Mini pinouts, is this an SPi or an MPi? If you do not know, answer “search”: I will use the connected ECU and the database before asking you again.","99043":"Which MEMS generation should be used: 1.2, 1.3, 1.6 or 1.9? If you do not know, answer “search” and I will use the available ECU context first.","99044":"Correction accepted: %1. I am resuming the previous request with this variant.","99045":"I searched the ECU references actually available, but I cannot distinguish SPi/MPi with sufficient evidence. Give me the reference printed on the ECU, or the vehicle year and market.","99046":"I identified %1 from ECU/firmware reference %2 found in the database. I am continuing the original search.","99047":"I searched the available context, but the MEMS generation is not determined. Give me the year, ECU reference or connect the ECU so I can continue without guessing.","99048":"The connected ECU indicates MEMS %1. I will therefore continue with this documentation.",
+              "99049":"MPi means Multi Point Injection. On the relevant Rover/Mini systems, several injectors distribute fuel, typically one injector per cylinder.","99050":"On a Rover/Mini MEMS MPi system, injection is multipoint: several injectors distribute fuel, typically one per cylinder. The ECU controls their opening to meter fuel into the intake. If you need a pinout, wiring, a check or a specific procedure, state that point and I will look for the corresponding data."
+          }
+
+          es = {
+              "99001":"Diálogo local con el motor experto y la base de conocimientos MEMS. Las respuestas distinguen medidas, hipótesis y nivel de evidencia.",
+              "99002":"Haz una pregunta: ¿Qué ves de anormal? ¿Mi avance de encendido es normal? ¿Qué sabemos sobre AANMP002?",
+              "99003":"Enviar","99004":"Hola, soy IA MEMS, el asistente integrado en ECU MEMS Manager. Puedo explicar el programa, los sistemas MEMS y las medidas ya adquiridas por la aplicación. No envío comandos a la ECU ni invento medidas ausentes.",
+              "99005":"Tú","99006":"Ver esquema","99007":"ECU conectada","99008":"ECU no conectada","99009":"base lista","99010":"base no disponible","99011":"base no cargada",
+              "99012":"IA local no iniciada","99013":"motor de IA local ausente","99014":"modelo de IA local ausente","99015":"IA local iniciándose","99016":"IA local lista","99017":"IA local respondiendo","99018":"error de IA local","99019":"error de IA local: %1","99020":"IA local",
+              "99021":"Base de conocimientos MEMS lista en modo de solo lectura.","99022":"La IA local todavía no está lista.","99023":"No puedo responder con el motor conversacional local en este momento.","99024":"Motor conversacional local no disponible: %1","99025":"El modelo local no ha producido una respuesta utilizable en el idioma activo.","99026":"Error del motor de IA local ONNX: %1",
+              "99027":"Esta compilación no incluye ONNX Runtime GenAI.","99028":"Falta el runtime ONNX Runtime GenAI en el paquete.","99029":"Falta el modelo Qwen ONNX IA MEMS en la carpeta de IA.","99030":"El hilo del motor de IA local no está disponible.","99031":"No se puede cargar ONNX: %1",
+              "99033":"Falta la base experta r20 en el paquete.","99034":"La base experta MEMS precompilada no está disponible. El diálogo local sigue siendo utilizable sin esta base.","99035":"No se ha podido abrir la base experta MEMS en modo de solo lectura. El diálogo local sigue siendo utilizable.",
+              "99036":"El esquema local propuesto ya no está disponible o declarado en el paquete.","99037":"Abrir ficha XML MEMS %1","99038":"No se ha podido abrir la base documental local.","99039":"La ficha XML MEMS %1 no está disponible en el paquete.","99040":"IA MEMS — Ficha XML MEMS %1","99041":"No se puede abrir o leer la ficha XML local.",
+              "99042":"Para evitar mezclar los pinouts de Mini, ¿es una SPi o una MPi? Si no lo sabes, responde «buscar»: usaré primero la ECU conectada y la base.","99043":"¿Qué generación MEMS debe utilizarse: 1.2, 1.3, 1.6 o 1.9? Si no lo sabes, responde «buscar» y usaré primero el contexto ECU disponible.","99044":"Corrección aplicada: %1. Retomo la solicitud anterior con esta variante.","99045":"He buscado en las referencias ECU realmente disponibles, pero no puedo distinguir SPi/MPi con evidencia suficiente. Indícame la referencia de la centralita, o el año y el mercado del vehículo.","99046":"He identificado %1 a partir de la referencia ECU/firmware %2 encontrada en la base. Continúo la búsqueda inicial.","99047":"He buscado en el contexto disponible, pero la generación MEMS no está determinada. Indícame el año, la referencia ECU o conecta la ECU para continuar sin adivinar.","99048":"La ECU conectada indica MEMS %1. Continuaré con esta documentación.",
+              "99049":"MPi significa «Multi Point Injection», es decir, inyección multipunto. En los sistemas Rover/Mini correspondientes, varios inyectores distribuyen el combustible, normalmente uno por cilindro.","99050":"En un sistema MPi Rover/Mini MEMS, la inyección es multipunto: varios inyectores distribuyen el combustible, normalmente uno por cilindro. La ECU controla su apertura para dosificar el combustible en la admisión. Si buscas pinout, cableado, una comprobación o un procedimiento concreto, indícalo y buscaré el dato correspondiente."
+          }
+
+          it = {
+              "99001":"Dialogo locale con il motore esperto e la base di conoscenze MEMS. Le risposte distinguono misure, ipotesi e livello di prova.",
+              "99002":"Fai una domanda: Cosa vedi di anomalo? Il mio anticipo è normale? Cosa sappiamo di AANMP002?",
+              "99003":"Invia","99004":"Buongiorno, sono IA MEMS, l'assistente integrato in ECU MEMS Manager. Posso spiegare il software, i sistemi MEMS e le misure già acquisite dal programma. Non invio alcun comando alla ECU e non invento misure assenti.",
+              "99005":"Tu","99006":"Vedi lo schema","99007":"ECU connessa","99008":"ECU non connessa","99009":"base pronta","99010":"base non disponibile","99011":"base non caricata",
+              "99012":"IA locale non avviata","99013":"motore IA locale assente","99014":"modello IA locale assente","99015":"IA locale in avvio","99016":"IA locale pronta","99017":"IA locale in risposta","99018":"errore IA locale","99019":"errore IA locale: %1","99020":"IA locale",
+              "99021":"Base di conoscenze MEMS pronta in sola lettura.","99022":"L'IA locale non è ancora pronta.","99023":"Al momento non posso rispondere con il motore conversazionale locale.","99024":"Motore conversazionale locale non disponibile: %1","99025":"Il modello locale non ha prodotto una risposta utilizzabile nella lingua attiva.","99026":"Errore del motore IA locale ONNX: %1",
+              "99027":"Questa compilazione non include ONNX Runtime GenAI.","99028":"Runtime ONNX Runtime GenAI assente dal pacchetto.","99029":"Modello Qwen ONNX IA MEMS assente dalla cartella IA.","99030":"Thread del motore IA locale non disponibile.","99031":"Impossibile caricare ONNX: %1",
+              "99033":"Base esperta r20 assente dal pacchetto.","99034":"La base esperta MEMS precompilata non è disponibile. Il dialogo locale resta utilizzabile senza questa base.","99035":"La base esperta MEMS non può essere aperta in sola lettura. Il dialogo locale resta utilizzabile.",
+              "99036":"Lo schema locale proposto non è più disponibile o dichiarato nel pacchetto.","99037":"Apri la scheda XML MEMS %1","99038":"Impossibile aprire la base documentale locale.","99039":"La scheda XML MEMS %1 non è disponibile nel pacchetto.","99040":"IA MEMS — Scheda XML MEMS %1","99041":"Impossibile aprire o leggere la scheda XML locale.",
+              "99042":"Per evitare di mescolare i pinout Mini, si tratta di una SPi o di una MPi? Se non lo sai, rispondi «cerca»: userò prima la ECU connessa e la base.","99043":"Quale generazione MEMS devo usare: 1.2, 1.3, 1.6 o 1.9? Se non lo sai, rispondi «cerca» e userò prima il contesto ECU disponibile.","99044":"Correzione acquisita: %1. Riprendo la richiesta precedente con questa variante.","99045":"Ho cercato nei riferimenti ECU realmente disponibili, ma non posso distinguere SPi/MPi con prove sufficienti. Indicami il riferimento sulla centralina oppure l'anno e il mercato del veicolo.","99046":"Ho identificato %1 dal riferimento ECU/firmware %2 trovato nella base. Proseguo con la ricerca iniziale.","99047":"Ho cercato nel contesto disponibile, ma la generazione MEMS non è determinata. Indicami l'anno, il riferimento ECU oppure collega la ECU per continuare senza supposizioni.","99048":"La ECU connessa indica MEMS %1. Proseguo quindi con questa documentazione.",
+              "99049":"MPi significa «Multi Point Injection», cioè iniezione multipoint. Sui sistemi Rover/Mini interessati, più iniettori distribuiscono il carburante, tipicamente uno per cilindro.","99050":"Su un sistema MPi Rover/Mini MEMS, l'iniezione è multipoint: più iniettori distribuiscono il carburante, tipicamente uno per cilindro. La ECU ne comanda l'apertura per dosare il carburante nell'aspirazione. Se cerchi pinout, cablaggio, controllo o procedura specifica, indica semplicemente quel punto e cercherò il dato corrispondente."
+          }
+
+          pt = {
+              "99001":"Diálogo local com o motor especialista e a base de conhecimentos MEMS. As respostas distinguem medições, hipóteses e nível de evidência.",
+              "99002":"Faça uma pergunta: O que vê de anormal? O meu avanço de ignição é normal? O que sabemos sobre AANMP002?",
+              "99003":"Enviar","99004":"Olá, sou a IA MEMS, o assistente integrado no ECU MEMS Manager. Posso explicar o software, os sistemas MEMS e as medições já adquiridas pelo programa. Não envio comandos à ECU nem invento medições ausentes.",
+              "99005":"Você","99006":"Ver esquema","99007":"ECU ligada","99008":"ECU não ligada","99009":"base pronta","99010":"base indisponível","99011":"base não carregada",
+              "99012":"IA local não iniciada","99013":"motor de IA local ausente","99014":"modelo de IA local ausente","99015":"IA local a iniciar","99016":"IA local pronta","99017":"IA local a responder","99018":"erro da IA local","99019":"erro da IA local: %1","99020":"IA local",
+              "99021":"Base de conhecimentos MEMS pronta em modo só de leitura.","99022":"A IA local ainda não está pronta.","99023":"Neste momento não consigo responder com o motor de conversação local.","99024":"Motor de conversação local indisponível: %1","99025":"O modelo local não produziu uma resposta utilizável no idioma ativo.","99026":"Erro do motor de IA local ONNX: %1",
+              "99027":"Esta compilação não inclui o ONNX Runtime GenAI.","99028":"O runtime ONNX Runtime GenAI não está presente no pacote.","99029":"O modelo Qwen ONNX IA MEMS não está presente na pasta de IA.","99030":"Thread do motor de IA local indisponível.","99031":"Não foi possível carregar o ONNX: %1",
+              "99033":"A base especialista r20 não está presente no pacote.","99034":"A base especialista MEMS pré-compilada não está disponível. O diálogo local continua utilizável sem esta base.","99035":"Não foi possível abrir a base especialista MEMS em modo só de leitura. O diálogo local continua utilizável.",
+              "99036":"O esquema local proposto já não está disponível ou declarado no pacote.","99037":"Abrir ficha XML MEMS %1","99038":"Não foi possível abrir a base documental local.","99039":"A ficha XML MEMS %1 não está disponível no pacote.","99040":"IA MEMS — Ficha XML MEMS %1","99041":"Não foi possível abrir ou ler a ficha XML local.",
+              "99042":"Para evitar misturar os pinouts Mini, é uma SPi ou uma MPi? Se não souber, responda «procurar»: usarei primeiro a ECU ligada e a base.","99043":"Que geração MEMS deve ser usada: 1.2, 1.3, 1.6 ou 1.9? Se não souber, responda «procurar» e usarei primeiro o contexto ECU disponível.","99044":"Correção aplicada: %1. Retomo o pedido anterior com esta variante.","99045":"Procurei nas referências ECU realmente disponíveis, mas não consigo distinguir SPi/MPi com evidência suficiente. Indique a referência inscrita na ECU, ou o ano e o mercado do veículo.","99046":"Identifiquei %1 a partir da referência ECU/firmware %2 encontrada na base. Vou continuar a pesquisa inicial.","99047":"Procurei no contexto disponível, mas a geração MEMS não está determinada. Indique o ano, a referência ECU ou ligue a ECU para continuar sem adivinhar.","99048":"A ECU ligada indica MEMS %1. Vou continuar com esta documentação.",
+              "99049":"MPi significa «Multi Point Injection», ou seja, injeção multiponto. Nos sistemas Rover/Mini em causa, vários injetores distribuem o combustível, normalmente um por cilindro.","99050":"Num sistema MPi Rover/Mini MEMS, a injeção é multiponto: vários injetores distribuem o combustível, normalmente um por cilindro. A ECU controla a abertura para dosear o combustível na admissão. Se procura pinout, cablagem, uma verificação ou um procedimento específico, indique esse ponto e procurarei o dado correspondente."
+          }
+
+          de = {
+              "99001":"Lokaler Dialog mit der Expertenlogik und der MEMS-Wissensdatenbank. Die Antworten unterscheiden Messwerte, Hypothesen und Belegniveau.",
+              "99002":"Stellen Sie eine Frage: Was ist auffällig? Ist meine Zündverstellung normal? Was wissen wir über AANMP002?",
+              "99003":"Senden","99004":"Hallo, ich bin IA MEMS, der in ECU MEMS Manager integrierte Assistent. Ich kann die Software, MEMS-Systeme und bereits vom Programm erfasste Messwerte erklären. Ich sende keine ECU-Befehle und erfinde keine fehlenden Messwerte.",
+              "99005":"Sie","99006":"Schaltbild anzeigen","99007":"ECU verbunden","99008":"ECU nicht verbunden","99009":"Datenbank bereit","99010":"Datenbank nicht verfügbar","99011":"Datenbank nicht geladen",
+              "99012":"lokale KI nicht gestartet","99013":"lokale KI-Engine fehlt","99014":"lokales KI-Modell fehlt","99015":"lokale KI startet","99016":"lokale KI bereit","99017":"lokale KI antwortet","99018":"Fehler der lokalen KI","99019":"Fehler der lokalen KI: %1","99020":"lokale KI",
+              "99021":"MEMS-Wissensdatenbank ist schreibgeschützt bereit.","99022":"Die lokale KI ist noch nicht bereit.","99023":"Der lokale Dialogmotor kann derzeit keine Antwort liefern.","99024":"Lokaler Dialogmotor nicht verfügbar: %1","99025":"Das lokale Modell hat keine verwertbare Antwort in der aktiven Sprache erzeugt.","99026":"Fehler der lokalen ONNX-KI-Engine: %1",
+              "99027":"Dieser Build enthält ONNX Runtime GenAI nicht.","99028":"ONNX Runtime GenAI fehlt im Paket.","99029":"Das Qwen-ONNX-Modell für IA MEMS fehlt im KI-Ordner.","99030":"Thread der lokalen KI-Engine nicht verfügbar.","99031":"ONNX konnte nicht geladen werden: %1",
+              "99033":"Die Experten-Datenbank r20 fehlt im Paket.","99034":"Die vorkompilierte MEMS-Expertendatenbank ist nicht verfügbar. Der lokale Dialog bleibt ohne diese Datenbank nutzbar.","99035":"Die MEMS-Expertendatenbank konnte nicht schreibgeschützt geöffnet werden. Der lokale Dialog bleibt nutzbar.",
+              "99036":"Das vorgeschlagene lokale Schaltbild ist im Paket nicht mehr verfügbar oder deklariert.","99037":"MEMS-%1-XML-Datenblatt öffnen","99038":"Die lokale Dokumentationsdatenbank konnte nicht geöffnet werden.","99039":"Das MEMS-%1-XML-Datenblatt ist im Paket nicht verfügbar.","99040":"IA MEMS — MEMS-%1-XML-Datenblatt","99041":"Das lokale XML-Datenblatt konnte nicht geöffnet oder gelesen werden.",
+              "99042":"Um Mini-Pinbelegungen nicht zu vermischen: Handelt es sich um SPi oder MPi? Falls unbekannt, antworten Sie „suchen“; ich nutze zuerst die verbundene ECU und die Datenbank.","99043":"Welche MEMS-Generation soll verwendet werden: 1.2, 1.3, 1.6 oder 1.9? Falls unbekannt, antworten Sie „suchen“; ich nutze zuerst den verfügbaren ECU-Kontext.","99044":"Korrektur übernommen: %1. Ich setze die vorherige Anfrage mit dieser Variante fort.","99045":"Ich habe die tatsächlich verfügbaren ECU-Referenzen geprüft, kann SPi/MPi aber nicht mit ausreichender Beweislage unterscheiden. Nennen Sie die ECU-Referenz oder Baujahr und Markt des Fahrzeugs.","99046":"Ich habe %1 anhand der ECU-/Firmware-Referenz %2 in der Datenbank identifiziert und setze die ursprüngliche Suche fort.","99047":"Ich habe den verfügbaren Kontext geprüft, aber die MEMS-Generation ist nicht bestimmt. Nennen Sie Baujahr oder ECU-Referenz oder verbinden Sie die ECU, damit ich ohne Raten fortfahren kann.","99048":"Die verbundene ECU meldet MEMS %1. Ich verwende daher diese Dokumentation.",
+              "99049":"MPi bedeutet „Multi Point Injection“, also Mehrpunkteinspritzung. Bei den betreffenden Rover/Mini-Systemen verteilen mehrere Einspritzventile den Kraftstoff, typischerweise eines pro Zylinder.","99050":"Bei einem Rover/Mini-MEMS-MPi-System erfolgt die Einspritzung mehrpunktig: mehrere Einspritzventile verteilen den Kraftstoff, typischerweise eines pro Zylinder. Die ECU steuert ihre Öffnung zur Kraftstoffdosierung im Ansaugtrakt. Wenn Sie Pinbelegung, Verkabelung, eine Prüfung oder ein bestimmtes Verfahren benötigen, nennen Sie diesen Punkt und ich suche die zugehörigen Daten."
+          }
+
+          for code, data in [('fr',fr),('en',en),('es',es),('it',it),('pt',pt),('de',de)]:
+              path = root / 'translations' / code / f'{code}_ia_mems.json'
+              path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8', newline='\n')
+
+          # Existing package workflow: expand the exact source guard and validate
+          # the new translation modules. The same workflow will run automatically
+          # when this direct source commit lands.
+          wf = '.github/workflows/tmp-ravemems-visual-test-package-x64.yml'
+          replace_once(
+              wf,
+              "          $allowed = @('expert/IaMemsDiagramCatalog.cpp','expert/IaMemsDiagramSelfTest.cpp','iamemstab.cpp')",
+              "          $allowed = @('expert/IaMemsDiagramCatalog.cpp','expert/IaMemsDiagramSelfTest.cpp','expert/IaMemsService.cpp','expert/LocalAiClient.cpp','expert/LocalAiOnnxSelfTest.cpp','iamemstab.cpp','translations/fr/fr_ia_mems.json','translations/en/en_ia_mems.json','translations/es/es_ia_mems.json','translations/it/it_ia_mems.json','translations/pt/pt_ia_mems.json','translations/de/de_ia_mems.json')")
+          replace_once(
+              wf,
+              "          if ($source -notmatch 'm_diagramButton->setText\\(QStringLiteral\\(\"Voir le schéma\"\\)\\);') { throw 'Voir le schéma button label missing' }\n          if ($source -match 'Ouvrir le schéma %1') { throw 'Old dynamic diagram button label still present' }\n          Write-Host 'VIEW_BUTTON_LABEL_PASS Voir le schéma'",
+              "          if ($source -notmatch 'm_diagramButton->setText\\(I18n::text\\(99006\\)\\);') { throw 'Localized diagram button label missing' }\n          if ($source -match 'm_diagramButton->setText\\(QStringLiteral\\(\"Voir le schéma\"\\)\\);') { throw 'Hard-coded French diagram button label still present' }\n          Write-Host 'VIEW_BUTTON_LABEL_I18N_PASS key=99006'\n          $env:TRANSLATION_ROOT='${{ github.workspace }}\\translations'\n          @'\n          import json,os\n          from pathlib import Path\n          root=Path(os.environ['TRANSLATION_ROOT'])\n          required={str(k) for k in range(99001,99032)} | {str(k) for k in range(99033,99051)}\n          required.discard('99032')\n          for code in ('fr','en','es','it','pt','de'):\n              p=root/code/f'{code}_ia_mems.json'\n              data=json.load(open(p,encoding='utf-8'))\n              missing=sorted(required-set(data))\n              if missing: raise SystemExit(f'{code} IA translation keys missing: {missing}')\n              if any(not str(data[k]).strip() for k in required): raise SystemExit(f'{code} IA translation contains empty value')\n          print('IA_MULTILINGUAL_RESOURCES_PASS languages=fr,en,es,it,pt,de')\n          '@ | python -")
+
+          # Add a fresh trigger marker without changing application behaviour.
+          p = root / wf
+          text = p.read_text(encoding='utf-8')
+          text = text.rstrip() + '\n\n# trigger IA multilingual direct source correction 2026-09-02\n'
+          p.write_text(text, encoding='utf-8', newline='\n')
+
+          # Ensure no patch/helper artifact is introduced in the application tree.
+          forbidden = [p for p in root.rglob('*') if p.is_file() and ('patch_' in p.name.lower() or p.suffix.lower() in {'.patch','.diff'}) and '.git' not in p.parts]
+          if forbidden:
+              raise SystemExit('Forbidden patch artifact(s): ' + ', '.join(str(p) for p in forbidden))
+
+          print('DIRECT_IA_MULTILINGUAL_SOURCE_EDIT_READY')
+          PY
+
+      - name: Verify direct source scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          echo 'Changed files:'
+          git status --short
+          test -n "$(git status --porcelain)"
+          test ! -e tools/patch_ia_language.py
+          test ! -e .github/workflows/patch-ia-language.yml
+
+      - name: Commit direct source correction and self-delete editor
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/tmp-direct-ia-language-source.yml
+          git add expert/LocalAiClient.cpp expert/IaMemsService.cpp expert/LocalAiOnnxSelfTest.cpp iamemstab.cpp \
+                  translations/fr/fr_ia_mems.json translations/en/en_ia_mems.json translations/es/es_ia_mems.json \
+                  translations/it/it_ia_mems.json translations/pt/pt_ia_mems.json translations/de/de_ia_mems.json \
+                  .github/workflows/tmp-ravemems-visual-test-package-x64.yml
+          git diff --cached --check
+          git commit -m 'Fix IA MEMS active-language rendering directly in source'
+          git push origin HEAD:tmp-ravemems-ia-visual-integration
