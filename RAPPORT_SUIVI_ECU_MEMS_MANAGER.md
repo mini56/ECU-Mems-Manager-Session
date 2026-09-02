@@ -11973,3 +11973,14 @@ Regle generale validee : **quand la reponse IA contient/possede une reference ve
 Architecture de correction : conserver les demandes explicites de schema existantes, mais ajouter une resolution directe depuis le texte final de la reponse vers `runtime_visual_catalog.json` via les identifiants documentaires/images. Dans `onServiceResponse`, apres reception du texte final, mettre a jour la suggestion visuelle a partir de cette reponse. Aucun dictionnaire de langue pour cette fonction.
 
 PROCHAINE ACTION EXACTE : modifier directement les fichiers source necessaires sur `tmp-ravemems-ia-visual-integration`, sans script de patch et sans rustine ; ajouter le self-test de resolution par reference ; verifier le diff avant compilation. `MEMSX64` reste BUILD #103.
+
+
+## 2026-09-02 — AUDIT CORRECTION DIRECTE VISUELS APRES REPONSE
+
+Les modifications directes de source ont ete poussees sur `tmp-ravemems-ia-visual-integration` sans script de patch. HEAD courant avant consolidation : `898509ce5fc16d9540a229094ec54621d85b7248`. Diff depuis `edb13ed27f746a055e3824f0ebc66973ac1ec1ba` : `expert/IaMemsDiagramCatalog.cpp`, `expert/IaMemsDiagramCatalog.h`, `expert/IaMemsDiagramSelfTest.cpp`, `iamemstab.cpp` uniquement. `MEMSX64` reste BUILD #103.
+
+Audit avant compilation : la nouvelle logique de reponse ne doit pas dependre d un vocabulaire utilisateur. Elle resout uniquement des identifiants structurels (`rave:<publication>:PDF:<page>`, runtime_path, runtime_key, source_occurrence_key, asset_entity_key) et verifie `ui_visible`, existence locale et SHA-256.
+
+Simplification retenue avant compilation : ne pas ajouter une nouvelle API publique dans `IaMemsDiagramCatalog.h`. La fonction existante `suggestionForQuestion()` doit d abord tenter la resolution structurelle de reference ; si aucune reference n existe, elle reprend son comportement historique de question explicite. `onServiceResponse()` reutilise alors `updateDiagramSuggestion(text)`. Cela ramene le diff applicatif aux trois fichiers deja autorises par le workflow de test : `expert/IaMemsDiagramCatalog.cpp`, `expert/IaMemsDiagramSelfTest.cpp`, `iamemstab.cpp`.
+
+PROCHAINE ACTION EXACTE : effectuer cette consolidation directement dans les fichiers source en une seule pousse technique, verifier le diff final, puis seulement compiler le workflow x64 de test. Aucun patch, aucun texte utilisateur en dur pour la nouvelle regle, aucun changement de `MEMSX64`, protocole, base ou Qwen/ONNX.
