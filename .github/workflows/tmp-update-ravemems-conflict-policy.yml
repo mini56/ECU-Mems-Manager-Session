@@ -1,0 +1,64 @@
+name: TEMP update RAVEMEMS conflict policy
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/tmp-update-ravemems-conflict-policy.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+
+      - name: Update cahier and report
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          cahier = Path('docs/CAHIER_DES_CHARGES_RAVEMEMS_BROUILLON_2026-09-02.md')
+          text = cahier.read_text(encoding='utf-8')
+          anchor = "RAVEMEMS doit pouvoir gérer une nouvelle version d’un document et mettre à jour le document concerné sans reconstruire toute la base documentaire."
+          addition = "\n\nSi deux valeurs, procédures ou informations différentes existent pour un même sujet selon l’année, le modèle, le moteur, le marché, la version ECU, l’équipement ou toute autre variante, RAVEMEMS doit **conserver les différentes informations avec leur contexte d’applicabilité**. L’IA ne doit jamais choisir arbitrairement une version. Elle doit identifier le discriminant réellement nécessaire et demander uniquement l’information manquante permettant de sélectionner la bonne réponse."
+          if anchor not in text:
+              raise SystemExit('section 29 anchor not found')
+          if addition.strip() not in text:
+              text = text.replace(anchor, anchor + addition, 1)
+          cahier.write_text(text, encoding='utf-8')
+
+          report = Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md')
+          lines = [
+              '',
+              '',
+              '## 2026-09-02 — RELECTURE CAHIER RAVEMEMS — CONFLITS ENTRE INFORMATIONS',
+              '',
+              'Décision utilisateur validée : si plusieurs valeurs ou procédures différentes existent pour un même sujet selon année, modèle, moteur, marché, version ECU, équipement ou autre variante, RAVEMEMS doit toutes les conserver avec leur contexte d’applicabilité.',
+              '',
+              'L’IA ne doit jamais choisir arbitrairement une version. Elle doit demander uniquement le discriminant manquant nécessaire pour sélectionner la bonne information.',
+              '',
+              'Aucun code applicatif, aucune extraction et aucun BUILD de production ne sont lancés dans cette étape de relecture.',
+              '',
+              'PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges RAVEMEMS question par question avec l’utilisateur. Ne lancer aucune nouvelle extraction avant validation explicite du cahier.',
+              ''
+          ]
+          with report.open('a', encoding='utf-8') as f:
+              f.write('\n'.join(lines))
+          PY
+
+      - name: Commit and cleanup
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/tmp-update-ravemems-conflict-policy.yml
+          git add docs/CAHIER_DES_CHARGES_RAVEMEMS_BROUILLON_2026-09-02.md RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git diff --cached --check
+          git commit -m "Record RAVEMEMS conflict handling policy"
+          git push origin HEAD:RAPPORT
