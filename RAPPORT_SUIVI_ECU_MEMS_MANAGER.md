@@ -12044,3 +12044,16 @@ Correction de methode : separer strictement le commit source du changement du wo
 Regle d'architecture maintenue : la langue active vient de `I18n::language()`, jamais de Windows. Les textes d'interface/statut/fallback passent par les ressources I18n FR/EN/ES/IT/PT/DE. Les faits documentaires ne doivent pas etre renvoyes bruts dans une langue differente de la langue active. La restitution Qwen doit conserver valeurs, unites, identifiants, references et niveau de preuve.
 
 PROCHAINE ACTION EXACTE : relancer l'edition directe en ne commitant que les fichiers source/tests/traductions et la suppression du helper `tools/tmp_direct_ia_language_edit.py`, sans aucune modification de workflow dans ce commit. Verifier le diff distant et `MEMSX64`, journaliser immediatement le commit source obtenu, puis seulement ensuite adapter et declencher le workflow x64 par une pousse autorisee separee.
+## 2026-09-02 — Correction source IA multilingue poussee, test de langue reporte
+
+Branche de test : `tmp-ravemems-ia-visual-integration`.
+Commit source pousse : `8869f9e1a098b6efd0519673a3c8d6ff0da4599c` — `Fix IA MEMS active-language rendering directly in source`.
+Run d'edition directe `33600656966` : SUCCESS. Les etapes d'edition, verification, commit et push sont toutes vertes. `git diff --check` a passe.
+
+Le commit source ne modifie aucun workflow de compilation. Fichiers applicatifs modifies : `expert/IaMemsService.cpp`, `expert/LocalAiClient.cpp`, `expert/LocalAiOnnxSelfTest.cpp`, `iamemstab.cpp`; six ressources IA ajoutees : FR/EN/ES/IT/PT/DE. Le helper temporaire d'edition a ete supprime dans le commit.
+
+`MEMSX64` verifie intact sur BUILD #103, commit `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+Decision utilisateur : ne pas interrompre la campagne de test IA actuelle pour tester les langues. Continuer d'abord le protocole reel `question -> reponse -> image` sur le package de test deja installe. Le test de langue IA sera effectue ensuite.
+
+PROCHAINE ACTION EXACTE : continuer le test reel IA en francais, une question a la fois, verifier la qualite de la reponse puis l'image/schema propose lorsqu'il y en a un. Journaliser chaque resultat. Ne pas lancer maintenant le test de langue et ne pas modifier MEMSX64.
