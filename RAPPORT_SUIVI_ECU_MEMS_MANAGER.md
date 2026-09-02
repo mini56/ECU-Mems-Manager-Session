@@ -12324,3 +12324,17 @@ Le workflow x64 de TEST existant doit maintenant etre adapte uniquement pour :
 - conserver tous les autres gardes/pins RAVEMEMS, BUILD #103, protocole, Qt/ONNX/Qwen et le report du self-test fonctionnel multilingue.
 
 PROCHAINE ACTION EXACTE : modifier uniquement `.github/workflows/tmp-ravemems-visual-test-package-x64.yml` selon ce perimetre et le pousser via le connecteur GitHub afin de declencher le package x64 complet. Suivre compilation, nouveau self-test, anciens self-tests, validation package, smoke et upload. Aucun autre changement applicatif avant verdict.
+
+## 2026-09-02 — DEUXIEME CORRECTION IA STRUCTUREE — PACKAGE X64 TEST VERT
+
+Branche de test : `tmp-ravemems-ia-visual-integration`.
+Commit workflow/package : `4f09101dddeff279b6f0a736b9da0bc5aa1474ff`.
+Commit source principal : `391aea5a0e2528d485f57fbd8fd2e44c7624efa2`.
+Run x64 complet : `33653750672` = SUCCESS.
+Le garde BUILD #103, la compilation x64, le nouveau self-test de reference visuelle structuree, les self-tests IA/protocole/recherche, la validation du package et le smoke launch sont tous verts.
+Les deux self-tests Qwen multilingues restent volontairement differee jusqu au test de langue utilisateur, conformement a la decision precedente.
+Artefact : `ECU-MEMS-Manager-x64-RAVEMEMS-VISUAL-TEST-from-BUILD-103`, ID `9856169481`, 488566013 octets, digest `sha256:c06d6f704db3099adaaacac94a637b804cc412b72421cefecfe105016f4f25ed`, expiration 2026-09-16.
+La deuxieme correction conserve la reference visuelle structuree du fait retenu et la transmet separement a l UI ; le classement des demandes de procedure favorise les connaissances avec procedure structuree de facon generique, sans cas special injecteur.
+`MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`. Aucun #104.
+
+PROCHAINE ACTION EXACTE : tester cet artefact sur le PC utilisateur avec la meme campagne question -> reponse -> image, en priorite une demande de procedure/operation qui avait auparavant perdu le bon visuel. Ne pas modifier MEMSX64 avant le retour reel.
