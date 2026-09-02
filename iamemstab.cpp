@@ -370,46 +370,111 @@ void IaMemsTab::openSuggestedDiagram()
     }
 
     const QFileInfo fileInfo(suggestion.absolutePath);
-    QDialog viewer(this);
-    viewer.setObjectName(QStringLiteral("iaMemsDiagramViewer"));
-    viewer.setWindowTitle(QStringLiteral("IA MEMS — %1").arg(suggestion.key));
+const QString canonicalPath = fileInfo.canonicalFilePath();
+const QString resolvedPath = canonicalPath.isEmpty()
+    ? fileInfo.absoluteFilePath()
+    : canonicalPath;
+QImageReader imageReader(resolvedPath);
+const QSize sourceSize = imageReader.size();
+
+QDialog viewer(this);
+viewer.setObjectName(QStringLiteral("iaMemsDiagramViewer"));
+viewer.setWindowTitle(QStringLiteral("IA MEMS — %1").arg(suggestion.key));
+if (sourceSize.isValid() && sourceSize.height() > sourceSize.width()) {
+    const int targetHeight = qBound(520, height() - 40, 860);
+    const double ratio = static_cast<double>(sourceSize.width())
+        / static_cast<double>(sourceSize.height());
+    const int targetWidth = qBound(440, qRound(targetHeight * ratio) + 120, 720);
+    viewer.resize(targetWidth, targetHeight);
+} else {
     viewer.resize(qBound(480, width() - 40, 900),
                   qBound(360, height() - 40, 650));
+}
 
-    QVBoxLayout *layout = new QVBoxLayout(&viewer);
-    QTextBrowser *browser = new QTextBrowser(&viewer);
-    browser->setObjectName(QStringLiteral("iaMemsDiagramBrowser"));
-    browser->setOpenExternalLinks(false);
-    browser->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    browser->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+QVBoxLayout *layout = new QVBoxLayout(&viewer);
+QHBoxLayout *zoomControls = new QHBoxLayout;
+zoomControls->setSpacing(6);
+QPushButton *zoomOutButton = new QPushButton(QStringLiteral("−"), &viewer);
+QPushButton *zoomResetButton = new QPushButton(QStringLiteral("100 %"), &viewer);
+QPushButton *zoomInButton = new QPushButton(QStringLiteral("+"), &viewer);
+QPushButton *zoomFitButton = new QPushButton(QStringLiteral("⛶"), &viewer);
+zoomOutButton->setMinimumWidth(46);
+zoomResetButton->setMinimumWidth(72);
+zoomInButton->setMinimumWidth(46);
+zoomFitButton->setMinimumWidth(46);
+zoomControls->addWidget(zoomOutButton);
+zoomControls->addWidget(zoomResetButton);
+zoomControls->addWidget(zoomInButton);
+zoomControls->addWidget(zoomFitButton);
+zoomControls->addStretch(1);
+layout->addLayout(zoomControls);
 
-    const QString localUrl = QUrl::fromLocalFile(fileInfo.canonicalFilePath())
-                                 .toString()
-                                 .toHtmlEscaped();
-    const QString title = suggestion.key.toHtmlEscaped();
-    QImageReader imageReader(fileInfo.canonicalFilePath());
-    const QSize sourceSize = imageReader.size();
-    const QSize available(qMax(120, viewer.width() - 60),
-                          qMax(120, viewer.height() - 150));
-    const QSize fitted = sourceSize.isValid()
-        ? sourceSize.scaled(available, Qt::KeepAspectRatio)
-        : QSize();
-    const QString imageTag = fitted.isValid()
-        ? QStringLiteral("<img src='%1' width='%2' height='%3'>")
-              .arg(localUrl).arg(fitted.width()).arg(fitted.height())
-        : QStringLiteral("<img src='%1' style='max-width:100%;height:auto;'>").arg(localUrl);
+QTextBrowser *browser = new QTextBrowser(&viewer);
+browser->setObjectName(QStringLiteral("iaMemsDiagramBrowser"));
+browser->setOpenExternalLinks(false);
+browser->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+browser->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+layout->addWidget(browser, 1);
+
+const QString localUrl = QUrl::fromLocalFile(resolvedPath)
+                             .toString()
+                             .toHtmlEscaped();
+const QString title = suggestion.key.toHtmlEscaped();
+double zoomScale = 1.0;
+const auto renderImage = [&]() {
+    QString imageTag;
+    if (sourceSize.isValid()) {
+        const int imageWidth = qMax(1, qRound(sourceSize.width() * zoomScale));
+        const int imageHeight = qMax(1, qRound(sourceSize.height() * zoomScale));
+        imageTag = QStringLiteral("<img src='%1' width='%2' height='%3'>")
+                       .arg(localUrl)
+                       .arg(imageWidth)
+                       .arg(imageHeight);
+    } else {
+        imageTag = QStringLiteral("<img src='%1'>").arg(localUrl);
+    }
     browser->setHtml(QStringLiteral(
         "<style>body{background:#0a1015;color:#dce3e8;font-family:'Segoe UI',Arial,sans-serif;}"
         "h1{color:#ff9828;font-size:16pt;margin:0 0 10px 0;}"
         ".diagram{background:#0d151b;border:1px solid #34414b;padding:10px;text-align:center;}</style>"
         "<h1>%1</h1><div class='diagram'>%2</div>")
         .arg(title, imageTag));
-    layout->addWidget(browser, 1);
+};
+const auto fitImage = [&]() {
+    if (!sourceSize.isValid()) {
+        renderImage();
+        return;
+    }
+    const QSize viewportSize = browser->viewport()->size();
+    const double widthScale = static_cast<double>(qMax(80, viewportSize.width() - 36))
+        / static_cast<double>(sourceSize.width());
+    const double heightScale = static_cast<double>(qMax(80, viewportSize.height() - 70))
+        / static_cast<double>(sourceSize.height());
+    zoomScale = qBound(0.10, qMin(widthScale, heightScale), 8.0);
+    renderImage();
+};
 
-    QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Close, &viewer);
-    connect(buttons, &QDialogButtonBox::rejected, &viewer, &QDialog::reject);
-    layout->addWidget(buttons);
-    viewer.exec();
+connect(zoomOutButton, &QPushButton::clicked, &viewer, [&]() {
+    zoomScale = qMax(0.10, zoomScale / 1.25);
+    renderImage();
+});
+connect(zoomResetButton, &QPushButton::clicked, &viewer, [&]() {
+    zoomScale = 1.0;
+    renderImage();
+});
+connect(zoomInButton, &QPushButton::clicked, &viewer, [&]() {
+    zoomScale = qMin(8.0, zoomScale * 1.25);
+    renderImage();
+});
+connect(zoomFitButton, &QPushButton::clicked, &viewer, fitImage);
+
+QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Close, &viewer);
+connect(buttons, &QDialogButtonBox::rejected, &viewer, &QDialog::reject);
+layout->addWidget(buttons);
+
+renderImage();
+QTimer::singleShot(0, &viewer, fitImage);
+viewer.exec();
 }
 
 
