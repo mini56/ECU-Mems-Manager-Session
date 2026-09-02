@@ -12616,3 +12616,8 @@ Décision utilisateur validée : la valeur et l’unité constructeur restent to
 Aucun code applicatif, aucune extraction et aucun BUILD de production ne sont lancés dans cette étape de relecture.
 
 PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges RAVEMEMS question par question avec l’utilisateur. Ne lancer aucune nouvelle extraction avant validation explicite du cahier.
+
+
+## 2026-09-02 — RELECTURE CAHIER RAVEMEMS — CONVERSIONS ET CALCULS SIMPLES
+Décision utilisateur validée : l’IA peut effectuer à la demande des conversions d’unités et des calculs simples. Exemple validé : 3 pouces = 76,2 mm. Lorsqu’une conversion porte sur une valeur constructeur, la valeur et l’unité d’origine restent la référence et sont distinguées du résultat calculé par l’IA. Aucun code applicatif, aucune extraction et aucun BUILD de production ne sont lancés.
+PROCHAINE ACTION EXACTE : reprendre la relecture du cahier à la question 16 sur le marquage des éléments d’extraction douteux et l’audit après extraction.

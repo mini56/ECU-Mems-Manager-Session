@@ -331,6 +331,8 @@ Le texte constructeur original reste conservé dans l’élément source corresp
 
 La **valeur et l’unité constructeur doivent toujours être conservées exactement comme référence**. L’IA peut ajouter une conversion utile pour faciliter la lecture, mais cette conversion reste un complément et ne doit jamais remplacer, masquer ou modifier la valeur d’origine. Exemple : `3,5 bar` peut être présenté comme **3,5 bar (≈ 350 kPa)**, tout en conservant `3,5 bar` comme valeur constructeur de référence.
 
+L’IA doit également pouvoir effectuer **à la demande de l’utilisateur des conversions d’unités et des calculs simples**, même lorsque le résultat converti n’est pas écrit dans le manuel. Exemple : `3 pouces en mm ?` → **76,2 mm**. Lorsqu’une telle conversion concerne une valeur issue du manuel, la valeur constructeur d’origine reste explicitement distinguée du résultat calculé par l’IA.
+
 ---
 
 ## 27. DÉDUPLICATION
