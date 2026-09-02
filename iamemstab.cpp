@@ -206,6 +206,20 @@ IaMemsTab::IaMemsTab(MainWindow *mainWindow, QWidget *parent)
     if (m_service) {
         connect(m_service, &IaMemsService::responseReady,
                 this, &IaMemsTab::onServiceResponse);
+        connect(m_service, &IaMemsService::responseVisualReferenceReady,
+                this,
+                [this](const QString &reference) {
+                    if (!m_diagramButton || reference.trimmed().isEmpty())
+                        return;
+                    const IaMemsDiagramSuggestion suggestion =
+                        IaMemsDiagramCatalog::suggestionForQuestion(reference);
+                    if (!suggestion.isValid())
+                        return;
+                    m_diagramTitle = suggestion.key;
+                    m_diagramQuestion = reference;
+                    m_diagramButton->setText(I18n::text(99006));
+                    m_diagramButton->setVisible(true);
+                });
         connect(m_service, &IaMemsService::systemMessage,
                 this, &IaMemsTab::onServiceSystemMessage);
         connect(m_service, &IaMemsService::statusChanged,

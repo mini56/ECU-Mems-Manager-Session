@@ -135,6 +135,28 @@ QString ExpertKnowledgeReader::lastError() const
     return m_lastError;
 }
 
+QString ExpertKnowledgeReader::visualReferenceForFact(const QString &factKey) const
+{
+    const QString key = factKey.trimmed();
+    if (!isOpen() || key.isEmpty())
+        return QString();
+
+    const QString assetPrefix = QStringLiteral("asset:");
+    if (key.startsWith(assetPrefix, Qt::CaseInsensitive))
+        return key.mid(assetPrefix.size()).trimmed();
+
+    if (!tableExists(QStringLiteral("mems_knowledge_item")))
+        return QString();
+
+    QSqlQuery query(m_database);
+    query.prepare(QStringLiteral(
+        "SELECT image_ref FROM mems_knowledge_item WHERE knowledge_key=:key LIMIT 1"));
+    query.bindValue(QStringLiteral(":key"), key);
+    if (!query.exec() || !query.next())
+        return QString();
+    return query.value(0).toString().trimmed();
+}
+
 bool ExpertKnowledgeReader::tableExists(const QString &tableName) const
 {
     if (!isOpen())

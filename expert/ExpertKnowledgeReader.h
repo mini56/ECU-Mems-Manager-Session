@@ -21,6 +21,7 @@ public:
     // tables and transparently adds the extensible RAVE knowledge foundation
     // plus packaged reference assets.
     QList<ExpertFact> facts(const ExpertContext &context) const;
+    QString visualReferenceForFact(const QString &factKey) const;
     QList<ExpertRule> rules(const ExpertContext &context) const;
 
 private:

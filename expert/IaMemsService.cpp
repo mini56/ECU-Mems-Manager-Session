@@ -158,6 +158,40 @@ bool hasPinoutEvidence(const QString &text)
         || containsWord(text, QStringLiteral("prise"));
 }
 
+bool hasStructuredProcedureEvidence(const ExpertFact &fact)
+{
+    const QString text = normalized(fact.topic + QLatin1Char('\n') + fact.statement);
+    return containsAny(text, {
+        QStringLiteral("procedure "), QStringLiteral("procedure_"),
+        QStringLiteral("etape "), QStringLiteral("step "),
+        QStringLiteral("remove_refit"), QStringLiteral("remove refit"),
+        QStringLiteral("install "), QStringLiteral("refit ")
+    });
+}
+
+int procedureOperationScore(const QString &questionText, const ExpertFact &fact)
+{
+    const QString text = normalized(fact.topic + QLatin1Char('\n') + fact.statement);
+    int score = hasStructuredProcedureEvidence(fact) ? 28 : -10;
+    const bool asksRemove = containsAny(questionText, {
+        QStringLiteral("depose"), QStringLiteral("deposer"), QStringLiteral("remove")
+    });
+    const bool asksRefit = containsAny(questionText, {
+        QStringLiteral("repose"), QStringLiteral("reposer"), QStringLiteral("refit"),
+        QStringLiteral("install")
+    });
+    if (asksRemove && containsAny(text, {
+            QStringLiteral("depose"), QStringLiteral("remove"), QStringLiteral("remove_refit")
+        }))
+        score += 12;
+    if (asksRefit && containsAny(text, {
+            QStringLiteral("repose"), QStringLiteral("refit"), QStringLiteral("install"),
+            QStringLiteral("remove_refit")
+        }))
+        score += 12;
+    return score;
+}
+
 QString number(double value, int decimals = 1)
 {
     if (!std::isfinite(value))
@@ -516,8 +550,12 @@ IaMemsService::IaMemsService(QObject *parent)
 
     connect(m_localAi, &LocalAiClient::responseReady,
             this, [this](const QString &text) {
+                const QString visualReference = m_pendingVisualReference.trimmed();
                 m_pendingGrounding.clear();
+                m_pendingVisualReference.clear();
                 emit responseReady(text);
+                if (!visualReference.isEmpty())
+                    emit responseVisualReferenceReady(visualReference);
                 emit statusChanged();
             });
 
@@ -528,8 +566,12 @@ IaMemsService::IaMemsService(QObject *parent)
                     fallback = m_pendingGrounding.trimmed();
                 if (fallback.isEmpty())
                     fallback = I18n::text(99023);
+                const QString visualReference = m_pendingVisualReference.trimmed();
                 m_pendingGrounding.clear();
+                m_pendingVisualReference.clear();
                 emit responseReady(fallback);
+                if (!visualReference.isEmpty())
+                    emit responseVisualReferenceReady(visualReference);
                 emit systemMessage(I18n::text(99024).arg(message));
                 emit statusChanged();
             });
@@ -625,6 +667,7 @@ void IaMemsService::ask(const QString &question)
         return;
 
     updateContextFromQuestion(trimmed);
+    m_pendingVisualReference.clear();
     m_pendingGrounding = groundingFor(trimmed);
 
     if (m_localAi && m_localAi->isReady()) {
@@ -638,8 +681,12 @@ void IaMemsService::ask(const QString &question)
         fallback = m_pendingGrounding.trimmed();
     if (fallback.isEmpty())
         fallback = I18n::text(99022);
+    const QString visualReference = m_pendingVisualReference.trimmed();
     m_pendingGrounding.clear();
+    m_pendingVisualReference.clear();
     emit responseReady(fallback);
+    if (!visualReference.isEmpty())
+        emit responseVisualReferenceReady(visualReference);
     emit statusChanged();
 }
 
@@ -956,7 +1003,7 @@ QString IaMemsService::analysisAnswer()
     return lines.join(QLatin1Char('\n'));
 }
 
-QString IaMemsService::knowledgeAnswer(const QString &question) const
+QString IaMemsService::knowledgeAnswer(const QString &question)
 {
     if (!m_knowledgeReady || !m_reader.isOpen())
         return QString();
@@ -1053,6 +1100,8 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
             candidate.score -= 16;
         else if (fact.statement.size() > 1800)
             candidate.score -= 8;
+        if (procedureIntent)
+            candidate.score += procedureOperationScore(questionText, fact);
 
         if (!m_context.family.trimmed().isEmpty()
             && fact.family.compare(m_context.family, Qt::CaseInsensitive) == 0)
@@ -1113,6 +1162,14 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
     const int maximum = qMin(asksTorque ? 2
                                  : (queryKind == KnowledgeQueryKind::General ? 2 : 4),
                              ranked.size());
+    for (int i = 0; i < maximum; ++i) {
+        const QString visualReference =
+            m_reader.visualReferenceForFact(ranked.at(i).fact.factKey).trimmed();
+        if (!visualReference.isEmpty()) {
+            m_pendingVisualReference = visualReference;
+            break;
+        }
+    }
     if (maximum == 1 && !lambdaWireColour) {
         const ExpertFact &fact = ranked.constFirst().fact;
         QString answer = focusedKnowledgeStatement(

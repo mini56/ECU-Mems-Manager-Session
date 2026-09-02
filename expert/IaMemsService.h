@@ -33,6 +33,7 @@ public:
 signals:
     void statusChanged();
     void responseReady(const QString &text);
+    void responseVisualReferenceReady(const QString &reference);
     void systemMessage(const QString &text);
 
 private:
@@ -45,7 +46,7 @@ private:
     QString currentValuesAnswer() const;
     QString historyAnswer() const;
     QString analysisAnswer();
-    QString knowledgeAnswer(const QString &question) const;
+    QString knowledgeAnswer(const QString &question);
     QString helpAnswer() const;
     QString verificationLabel(const QString &level) const;
 
@@ -60,6 +61,7 @@ private:
     QString m_databasePath;
     QString m_knowledgeError;
     QString m_pendingGrounding;
+    QString m_pendingVisualReference;
     bool m_activated = false;
     bool m_knowledgeAttempted = false;
     bool m_knowledgeReady = false;

@@ -128,6 +128,13 @@ add_executable(expert_runtime_selftest
 target_link_libraries(expert_runtime_selftest PRIVATE Qt5::Core Qt5::Sql)
 add_dependencies(${PNAME} expert_runtime_selftest)
 
+add_executable(expert_visual_reference_selftest
+    expert/ExpertVisualReferenceSelfTest.cpp
+    expert/ExpertKnowledgeReader.cpp expert/ExpertKnowledgeReader.h
+    expert/ExpertTypes.h)
+target_link_libraries(expert_visual_reference_selftest PRIVATE Qt5::Core Qt5::Sql)
+add_dependencies(${PNAME} expert_visual_reference_selftest)
+
 if(WIN32)
     target_sources(${PNAME} PRIVATE ${CMAKE_SOURCE_DIR}/appicon.rc)
     target_link_libraries(${PNAME} PRIVATE ole32 shell32 uuid)
