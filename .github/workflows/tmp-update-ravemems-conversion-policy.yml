@@ -1,0 +1,49 @@
+name: TEMP update RAVEMEMS conversion policy
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/tmp-update-ravemems-conversion-policy.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Update cahier and report
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('docs/CAHIER_DES_CHARGES_RAVEMEMS_BROUILLON_2026-09-02.md')
+          t = p.read_text(encoding='utf-8')
+          anchor = "La **valeur et l’unité constructeur doivent toujours être conservées exactement comme référence**. L’IA peut ajouter une conversion utile pour faciliter la lecture, mais cette conversion reste un complément et ne doit jamais remplacer, masquer ou modifier la valeur d’origine. Exemple : `3,5 bar` peut être présenté comme **3,5 bar (≈ 350 kPa)**, tout en conservant `3,5 bar` comme valeur constructeur de référence."
+          extra = "\n\nL’IA doit également pouvoir effectuer **à la demande de l’utilisateur des conversions d’unités et des calculs simples**, même lorsque le résultat converti n’est pas écrit dans le manuel. Exemple : `3 pouces en mm ?` → **76,2 mm**. Lorsqu’une telle conversion concerne une valeur issue du manuel, la valeur constructeur d’origine reste explicitement distinguée du résultat calculé par l’IA."
+          if anchor not in t:
+              raise SystemExit('conversion anchor not found')
+          if '3 pouces en mm' not in t:
+              t = t.replace(anchor, anchor + extra, 1)
+          p.write_text(t, encoding='utf-8')
+          r = Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md')
+          with r.open('a', encoding='utf-8') as f:
+              f.write('\n\n## 2026-09-02 — RELECTURE CAHIER RAVEMEMS — CONVERSIONS ET CALCULS SIMPLES\n')
+              f.write('Décision utilisateur validée : l’IA peut effectuer à la demande des conversions d’unités et des calculs simples. Exemple validé : 3 pouces = 76,2 mm. Lorsqu’une conversion porte sur une valeur constructeur, la valeur et l’unité d’origine restent la référence et sont distinguées du résultat calculé par l’IA. Aucun code applicatif, aucune extraction et aucun BUILD de production ne sont lancés.\n')
+              f.write('PROCHAINE ACTION EXACTE : reprendre la relecture du cahier à la question 16 sur le marquage des éléments d’extraction douteux et l’audit après extraction.\n')
+          PY
+      - name: Commit and cleanup
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/tmp-update-ravemems-conversion-policy.yml
+          git add docs/CAHIER_DES_CHARGES_RAVEMEMS_BROUILLON_2026-09-02.md RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git diff --cached --check
+          git commit -m "Record RAVEMEMS conversion policy"
+          git push origin HEAD:RAPPORT
