@@ -12151,3 +12151,13 @@ QUALITE REPONSE: FAIL. La reponse reste beaucoup trop longue pour une requete tr
 IMAGE: FAIL pour la requete CKP. Le viewer ouvre RCL0193ENG p.175, deja vu sur le test MAP, sans ciblage clair du capteur CKP.
 RENDU IMAGE: FAIL. Asset tourne a 90 degres et blanc sur fond noir.
 Aucune correction appliquee. Continuer les questions libres et consigner les ecarts avant toute modification du code.
+
+## 2026-09-02 — Test libre IA MEMS : `BROCHE ROSCO`
+
+- Question utilisateur : `BROCHE ROSCO`
+- Réponse IA : `Illustration technique locale disponible dans le package: images/rover_rosco_3pin_black.svg` puis `Niveau de preuve : non vérifiée.`
+- Sélection d'image : PASS — l'illustration `ROSCO 3 broches` est directement pertinente pour la demande libre.
+- Réponse texte : PASS partiel — courte et cohérente, mais ne donne pas la fonction de chaque broche.
+- Affichage de l'image : FAIL ergonomique — le SVG est affiché à une taille trop grande et n'est pas ajusté à la fenêtre ; seule une partie du connecteur est visible sans défilement.
+- Couleurs/orientation : lisibles ; pas de défaut de rotation observé sur ce cas.
+- Aucune correction applicative effectuée pendant cette phase de tests.
