@@ -62,7 +62,7 @@ jobs:
           $appChanged = @($changed | Where-Object {
             $_ -notlike '.github/workflows/tmp-*' -and $_ -notlike 'tools/tmp_*'
           })
-          $allowed = @('expert/IaMemsDiagramCatalog.cpp','expert/IaMemsDiagramSelfTest.cpp','expert/IaMemsService.cpp','expert/LocalAiClient.cpp','expert/LocalAiOnnxSelfTest.cpp','iamemstab.cpp','translations/fr/fr_ia_mems.json','translations/en/en_ia_mems.json','translations/es/es_ia_mems.json','translations/it/it_ia_mems.json','translations/pt/pt_ia_mems.json','translations/de/de_ia_mems.json')
+          $allowed = @('CMakeLists.txt','expert/IaMemsDiagramCatalog.cpp','expert/IaMemsDiagramSelfTest.cpp','expert/IaMemsService.cpp','expert/IaMemsService.h','expert/ExpertKnowledgeReader.cpp','expert/ExpertKnowledgeReader.h','expert/ExpertVisualReferenceSelfTest.cpp','expert/LocalAiClient.cpp','expert/LocalAiOnnxSelfTest.cpp','iamemstab.cpp','translations/fr/fr_ia_mems.json','translations/en/en_ia_mems.json','translations/es/es_ia_mems.json','translations/it/it_ia_mems.json','translations/pt/pt_ia_mems.json','translations/de/de_ia_mems.json')
           $unexpected = @($appChanged | Where-Object { $_ -notin $allowed })
           if ($unexpected.Count -ne 0) { throw "Unexpected application changes: $($unexpected -join ', ')" }
           Write-Host "PROTECTED_BUILD103_PASS $memsx64"
@@ -293,7 +293,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "CMake configure failed: $LASTEXITCODE" }
           cmake --build build-x64 --config Release --target `
             ecu_mems_manager ecu_mems_uninstaller rosco_abi_selftest `
-            ia_response_selftest ia_mems_diagram_selftest mems_search_selftest expert_runtime_selftest local_ai_onnx_selftest
+            ia_response_selftest ia_mems_diagram_selftest mems_search_selftest expert_runtime_selftest expert_visual_reference_selftest local_ai_onnx_selftest
           if ($LASTEXITCODE -ne 0) { throw "x64 build failed: $LASTEXITCODE" }
 
       - name: Run deterministic protocol reference and visual self-tests
@@ -311,6 +311,8 @@ jobs:
           if($LASTEXITCODE -ne 0){throw "rosco ABI selftest failed: $LASTEXITCODE"}
           & '${{ github.workspace }}\build-x64\Release\mems_search_selftest.exe'
           if($LASTEXITCODE -ne 0){throw "MEMS search selftest failed: $LASTEXITCODE"}
+          & '${{ github.workspace }}\build-x64\Release\expert_visual_reference_selftest.exe'
+          if($LASTEXITCODE -ne 0){throw "Expert visual reference selftest failed: $LASTEXITCODE"}
           Write-Host 'FULL_DETERMINISTIC_SELFTESTS_PASS'
 
       - name: Download pinned Qwen3 ONNX INT4 model and verify hashes
@@ -514,3 +516,4 @@ jobs:
 # trigger response-linked visual validation 2026-09-02
 # trigger IA visual package with language functional test deferred 2026-09-02
 # trigger first IA response-image correction a30267584c0951e99b88f83670452a3c9d5087d7
+# trigger second IA structured visual correction 391aea5a0e2528d485f57fbd8fd2e44c7624efa2 2026-09-02
