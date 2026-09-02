@@ -77,6 +77,47 @@ bool requireNoSuggestion(const QString &root, const QString &question, const QSt
     return true;
 }
 
+bool requireResponseSuggestion(const QString &root,
+                               const QString &response,
+                               const QString &expectedKey,
+                               const QString &expectedRelativePath,
+                               const QString &label)
+{
+    const IaMemsDiagramSuggestion suggestion =
+        IaMemsDiagramCatalog::suggestionForResponse(response, root);
+    if (!suggestion.isValid()) {
+        printLine(QStringLiteral("FAIL no response-linked diagram: %1").arg(label));
+        return false;
+    }
+    if (suggestion.key != expectedKey || suggestion.relativePath != expectedRelativePath) {
+        printLine(QStringLiteral("FAIL wrong response-linked diagram: %1 -> %2 / %3")
+                      .arg(label, suggestion.key, suggestion.relativePath));
+        return false;
+    }
+    if (!QFileInfo::exists(suggestion.absolutePath)) {
+        printLine(QStringLiteral("FAIL missing response-linked file: %1").arg(suggestion.absolutePath));
+        return false;
+    }
+    printLine(QStringLiteral("PASS response-linked diagram: %1 -> %2")
+                  .arg(label, suggestion.key));
+    return true;
+}
+
+bool requireNoResponseSuggestion(const QString &root,
+                                 const QString &response,
+                                 const QString &label)
+{
+    const IaMemsDiagramSuggestion suggestion =
+        IaMemsDiagramCatalog::suggestionForResponse(response, root);
+    if (suggestion.isValid()) {
+        printLine(QStringLiteral("FAIL response unexpectedly resolved: %1 -> %2 / %3")
+                      .arg(label, suggestion.key, suggestion.relativePath));
+        return false;
+    }
+    printLine(QStringLiteral("PASS no response-linked diagram: %1").arg(label));
+    return true;
+}
+
 bool testMissingFilesAreRejected(const QString &sourceRoot)
 {
     QTemporaryDir temporary;
@@ -274,6 +315,39 @@ bool testRuntimeCatalog()
              temporary.path(),
              QStringLiteral("Voir le schéma traversal unique escapeprobe"),
              QStringLiteral("runtime path traversal")) && ok;
+
+    ok = requireResponseSuggestion(
+             temporary.path(),
+             QStringLiteral("Illustration locale: rave:RCL0193ENG:PDF:99"),
+             QStringLiteral("RCL0193ENG p.99"),
+             QStringLiteral("ravemems/purge.png"),
+             QStringLiteral("structured response reference FR")) && ok;
+    ok = requireResponseSuggestion(
+             temporary.path(),
+             QStringLiteral("Local illustration: rave:RCL0193ENG:PDF:99"),
+             QStringLiteral("RCL0193ENG p.99"),
+             QStringLiteral("ravemems/purge.png"),
+             QStringLiteral("structured response reference EN")) && ok;
+    ok = requireResponseSuggestion(
+             temporary.path(),
+             QStringLiteral("Ilustración local: rave:RCL0193ENG:PDF:99"),
+             QStringLiteral("RCL0193ENG p.99"),
+             QStringLiteral("ravemems/purge.png"),
+             QStringLiteral("structured response reference ES")) && ok;
+    ok = requireResponseSuggestion(
+             temporary.path(),
+             QStringLiteral("Technischer Hinweis: ravemems/purge.png"),
+             QStringLiteral("RCL0193ENG p.99"),
+             QStringLiteral("ravemems/purge.png"),
+             QStringLiteral("runtime path reference DE")) && ok;
+    ok = requireNoResponseSuggestion(
+             temporary.path(),
+             QStringLiteral("A response without any packaged image reference."),
+             QStringLiteral("response without visual reference")) && ok;
+    ok = requireNoResponseSuggestion(
+             temporary.path(),
+             QStringLiteral("rave:RCL0194ENG:PDF:17"),
+             QStringLiteral("response reference whose runtime file is absent")) && ok;
 
     printLine(ok ? QStringLiteral("PASS runtime visual catalog fixture")
                  : QStringLiteral("FAIL runtime visual catalog fixture"));
