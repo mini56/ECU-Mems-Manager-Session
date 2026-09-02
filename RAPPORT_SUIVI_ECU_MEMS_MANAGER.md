@@ -11984,3 +11984,14 @@ Audit avant compilation : la nouvelle logique de reponse ne doit pas dependre d 
 Simplification retenue avant compilation : ne pas ajouter une nouvelle API publique dans `IaMemsDiagramCatalog.h`. La fonction existante `suggestionForQuestion()` doit d abord tenter la resolution structurelle de reference ; si aucune reference n existe, elle reprend son comportement historique de question explicite. `onServiceResponse()` reutilise alors `updateDiagramSuggestion(text)`. Cela ramene le diff applicatif aux trois fichiers deja autorises par le workflow de test : `expert/IaMemsDiagramCatalog.cpp`, `expert/IaMemsDiagramSelfTest.cpp`, `iamemstab.cpp`.
 
 PROCHAINE ACTION EXACTE : effectuer cette consolidation directement dans les fichiers source en une seule pousse technique, verifier le diff final, puis seulement compiler le workflow x64 de test. Aucun patch, aucun texte utilisateur en dur pour la nouvelle regle, aucun changement de `MEMSX64`, protocole, base ou Qwen/ONNX.
+
+
+## 2026-09-02 — INCIDENT OUTIL : COMMIT PARASITE `dummy` SUR BRANCHE TEMPORAIRE
+
+Pendant la preparation du commit consolide de correction visuelle, une operation destinee a deplacer le ref de branche a ete envoyee par erreur a l endpoint de remplacement de fichier. GitHub a cree le commit parasite `0ece5d125e2a146446fe5e7573df086b56937a37` message `dummy`, parent direct `898509ce5fc16d9540a229094ec54621d85b7248`, sur `tmp-ravemems-ia-visual-integration`.
+
+Cet incident ne touche pas `MEMSX64`, le protocole, la base, Qwen/ONNX ni la production. Aucun build n a ete lance depuis ce commit parasite.
+
+Le commit consolide propre a deja ete prepare hors ref Git sous SHA `d22a0bb790d6615d7af5dc8d2b1e59b11125cabc`, parent direct `898509ce5fc16d9540a229094ec54621d85b7248`, avec arbre consolide : header `IaMemsDiagramCatalog.h` revenu exactement a son blob initial ; seuls `IaMemsDiagramCatalog.cpp`, `IaMemsDiagramSelfTest.cpp` et `iamemstab.cpp` restent modifies.
+
+PROCHAINE ACTION EXACTE : retirer le commit parasite en repositionnant uniquement `tmp-ravemems-ia-visual-integration` sur `d22a0bb790d6615d7af5dc8d2b1e59b11125cabc` avec force necessaire car les deux commits sont freres. Verifier immediatement le HEAD et le diff. Ne pas toucher a `MEMSX64`.
