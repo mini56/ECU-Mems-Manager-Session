@@ -12478,3 +12478,8 @@ PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges avec l'u
 ## 2026-09-02 — RELECTURE CAHIER RAVEMEMS — MENU QUESTION GENERALE
 
 Decision utilisateur : pour une demande generale, l IA doit proposer **3 choix maximum**, puis une quatrieme option **`4. Autre chose ?`**. L utilisateur peut choisir `1`, `2`, `3` ou `4`; le choix `4` permet de formuler librement une autre demande au lieu d etre bloque par les trois propositions. Cette regle remplace la formulation precedente `quelques choix principaux`. Aucun code ni extraction RAVEMEMS n est lance pendant cette relecture.
+
+
+## 2026-09-02 — RAVEMEMS — pagination des choix IA
+
+Décision utilisateur : pour une question générale, l’IA affiche au maximum 3 choix à la fois, puis `4. Autre chose ?`. Si l’utilisateur choisit 4 et qu’il reste des rubriques pertinentes pour le même sujet, l’IA affiche les 3 suivantes et répète le mécanisme jusqu’à épuisement des choix. Exemple avec 9 possibilités : 1-3, puis 4-6, puis 7-9. `Autre chose ?` sert donc à paginer les possibilités du sujet avant de demander éventuellement une formulation libre. Aucun code ni extraction lancé à ce stade.
