@@ -1,10 +1,15 @@
 name: TEMP journal test4
+
 on:
   push:
-    branches: [RAPPORT]
-    paths: ['.github/workflows/tmp-journal-test4.yml']
+    branches:
+      - RAPPORT
+    paths:
+      - .github/workflows/tmp-journal-test4.yml
+
 permissions:
   contents: write
+
 jobs:
   journal:
     runs-on: ubuntu-latest
