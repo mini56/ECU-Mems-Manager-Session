@@ -1,0 +1,50 @@
+name: TEMP update RAVEMEMS uncertain extraction audit
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/tmp-update-ravemems-uncertain-elements.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+
+      - name: Update cahier and report
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          cahier = Path('docs/CAHIER_DES_CHARGES_RAVEMEMS_BROUILLON_2026-09-02.md')
+          text = cahier.read_text(encoding='utf-8')
+          anchor = "Une procédure incomplète n’est pas un état normal acceptable : elle indique qu’une partie de l’information n’a pas été extraite ou reliée correctement. Après chaque extraction, un **audit de complétude** doit vérifier les opérations, phases et numérotations d’étapes afin de détecter notamment les débuts manquants, fins manquantes, ruptures de séquence et fragments de procédure isolés. Tant que cette anomalie n’est pas corrigée, l’IA ne doit jamais présenter la procédure comme complète ; elle doit signaler clairement qu’une partie manque."
+          addition = anchor + "\n\nTout élément dont l’extraction ou la structuration reste incertaine — par exemple numéro d’étape ambigu, valeur mal lue, OCR douteux, tableau mal structuré, relation image/procédure incertaine ou autre information non suffisamment fiable — doit être **conservé mais marqué `à vérifier`**. RAVEMEMS ne doit jamais le valider silencieusement comme certain. L’**audit post-extraction** doit pouvoir retrouver automatiquement l’ensemble de ces éléments et ils doivent être revus avant validation finale du corpus."
+          if anchor not in text:
+              raise SystemExit('audit completeness anchor not found')
+          text = text.replace(anchor, addition, 1)
+          cahier.write_text(text, encoding='utf-8')
+
+          report = Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md')
+          with report.open('a', encoding='utf-8') as f:
+              f.write("\n\n## 2026-09-02 — RELECTURE CAHIER RAVEMEMS — ELEMENTS INCERTAINS\n\nDécision utilisateur validée : tout élément dont l’extraction ou la structuration reste incertaine doit être conservé mais marqué `à vérifier`. RAVEMEMS ne doit pas le considérer silencieusement comme fiable. L’audit post-extraction doit retrouver automatiquement tous ces éléments afin qu’ils soient contrôlés avant validation finale du corpus. Cela couvre notamment les numéros d’étape ambigus, valeurs mal lues, OCR douteux, tableaux mal structurés et relations image/procédure incertaines.\n\nAucun code applicatif, aucune extraction et aucun BUILD de production ne sont lancés.\n\nPROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges RAVEMEMS question par question avec l’utilisateur. Ne lancer aucune nouvelle extraction avant validation explicite du cahier.\n")
+          PY
+
+      - name: Commit and cleanup
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/tmp-update-ravemems-uncertain-elements.yml
+          git add docs/CAHIER_DES_CHARGES_RAVEMEMS_BROUILLON_2026-09-02.md RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git diff --cached --check
+          git commit -m "Record RAVEMEMS uncertain extraction audit rule"
+          git push origin HEAD:RAPPORT
