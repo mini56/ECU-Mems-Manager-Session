@@ -12097,3 +12097,14 @@ Aucune correction appliquee. Continuer la campagne de tests question -> reponse 
 
 ### Complément TEST IA visuel 3 - traduction du texte dans l'image
 Le texte intégré dans l'image proposée au TEST 3 n'est pas traduit dans la langue active de MEMS Manager. L'image conserve son texte dans la langue source. Ce point doit être testé et corrigé avec le mécanisme multilingue prévu pour les contenus visuels, sans créer de logique de langue en dur.
+
+## 2026-09-02 - TEST IA visuel lambda signal Mini MPi 97MY
+Question: Quelles sont les broches ECU du signal de sonde lambda sur une Mini MPi 97MY ?
+REFERENCE CONSTRUCTEUR: le schema RCL0194ENG 20.1 montre OXYGEN SENSOR +VE sur C158-27 et OXYGEN SENSOR -VE sur C158-28.
+REPONSE TEXTE: FAIL. La reponse explique le fonctionnement HO2S mais ne donne ni C158-27 ni C158-28.
+QUALITE REPONSE: FAIL. Contenu descriptif long au lieu de repondre directement au brochage demande.
+BOUTON IMAGE: PASS.
+PERTINENCE IMAGE: FAIL. Le viewer ouvre RCL0193ENG p.112, illustration du boitier ECU, pas le schema du signal lambda.
+RENDU IMAGE: FAIL. L'asset p.112 est tourne a 90 degres et blanc sur fond noir.
+TRADUCTION IMAGE: non evaluee sur cette illustration, qui est de toute facon hors sujet.
+Aucune correction appliquee. Continuer la campagne de tests avant modification du code.
