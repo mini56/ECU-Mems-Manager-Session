@@ -1,0 +1,60 @@
+name: TEMP update RAVEMEMS completeness audit rule
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/tmp-update-ravemems-completeness-audit.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+
+      - name: Update cahier and report
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          cahier = Path('docs/CAHIER_DES_CHARGES_RAVEMEMS_BROUILLON_2026-09-02.md')
+          text = cahier.read_text(encoding='utf-8')
+
+          old_list = "13. une question précise donnant directement la réponse."
+          new_list = "13. une question précise donnant directement la réponse.\n14. un contrôle de complétude des procédures : aucune opération ne doit être présentée comme complète si des étapes attendues manquent."
+          if old_list not in text:
+              raise SystemExit('prototype completeness anchor not found')
+          text = text.replace(old_list, new_list, 1)
+
+          old_success = "Le prototype doit démontrer que les étapes multi-pages restent continues, les phases restent distinctes, les bonnes images sont associées, les images ont le bon sens et le bon fond, les visuels sont lisibles, les informations parasites sont supprimées sans perte technique, les renvois sont exploitables, les variantes ne sont pas mélangées et l’IA sait distinguer demande générale et demande précise."
+          new_success = old_success + "\n\nUne procédure incomplète n’est pas un état normal acceptable : elle indique qu’une partie de l’information n’a pas été extraite ou reliée correctement. Après chaque extraction, un **audit de complétude** doit vérifier les opérations, phases et numérotations d’étapes afin de détecter notamment les débuts manquants, fins manquantes, ruptures de séquence et fragments de procédure isolés. Tant que cette anomalie n’est pas corrigée, l’IA ne doit jamais présenter la procédure comme complète ; elle doit signaler clairement qu’une partie manque."
+          if old_success not in text:
+              raise SystemExit('success criteria anchor not found')
+          text = text.replace(old_success, new_success, 1)
+          cahier.write_text(text, encoding='utf-8')
+
+          report = Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md')
+          with report.open('a', encoding='utf-8') as f:
+              f.write("\n\n## 2026-09-02 — RELECTURE CAHIER RAVEMEMS — AUDIT DE COMPLÉTUDE DES PROCÉDURES\n\n")
+              f.write("Décision utilisateur validée : une procédure dont certaines étapes manquent doit être considérée comme un défaut d’extraction ou de liaison, pas comme un état normal. Après extraction, un audit spécifique doit vérifier la complétude des opérations et la continuité des numérotations afin de détecter les débuts/fins manquants, ruptures de séquence et fragments isolés. Tant que l’anomalie existe, l’IA ne doit jamais présenter la procédure comme complète et doit signaler qu’une partie manque.\n\n")
+              f.write("Aucun code applicatif, aucune extraction et aucun BUILD de production ne sont lancés dans cette étape de relecture.\n\n")
+              f.write("PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges RAVEMEMS question par question avec l’utilisateur. Ne lancer aucune nouvelle extraction avant validation explicite du cahier.\n")
+          PY
+
+      - name: Commit and cleanup
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/tmp-update-ravemems-completeness-audit.yml
+          git add docs/CAHIER_DES_CHARGES_RAVEMEMS_BROUILLON_2026-09-02.md RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git diff --cached --check
+          git commit -m "Record RAVEMEMS procedure completeness audit rule"
+          git push origin HEAD:RAPPORT
