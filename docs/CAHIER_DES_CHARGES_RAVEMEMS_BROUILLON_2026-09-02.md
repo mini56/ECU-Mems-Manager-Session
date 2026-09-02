@@ -173,7 +173,7 @@ Cette proposition doit être fondée sur une relation constructeur ou une relati
 
 ## 13. LIMITER LES PROPOSITIONS
 
-Le premier menu doit rester court et utile : quelques choix principaux, puis navigation progressive, puis suggestions connexes éventuelles après la réponse.
+Le premier menu doit rester court et utile : **3 choix maximum**, puis une quatrième option **`4. Autre chose ?`**. L’utilisateur peut donc répondre `1`, `2`, `3` ou `4`. S’il choisit `4`, l’IA lui demande simplement ce qu’il souhaite savoir d’autre afin qu’il puisse formuler librement une autre demande.
 
 La base peut contenir beaucoup d’informations sans obliger l’utilisateur à tout voir.
 

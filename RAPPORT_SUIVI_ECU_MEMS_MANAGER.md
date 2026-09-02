@@ -12473,3 +12473,8 @@ Deux règles du brouillon RAVEMEMS sont corrigées à la demande explicite de l'
 Aucun code applicatif, aucune extraction et aucun BUILD ne sont lancés. MEMSX64 reste BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
 
 PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges avec l'utilisateur et intégrer ses corrections. Ne lancer aucune extraction ni implémentation avant validation explicite du cahier.
+
+
+## 2026-09-02 — RELECTURE CAHIER RAVEMEMS — MENU QUESTION GENERALE
+
+Decision utilisateur : pour une demande generale, l IA doit proposer **3 choix maximum**, puis une quatrieme option **`4. Autre chose ?`**. L utilisateur peut choisir `1`, `2`, `3` ou `4`; le choix `4` permet de formuler librement une autre demande au lieu d etre bloque par les trois propositions. Cette regle remplace la formulation precedente `quelques choix principaux`. Aucun code ni extraction RAVEMEMS n est lance pendant cette relecture.
