@@ -2,8 +2,10 @@ name: TEMP journal IA language source push rejection
 
 on:
   push:
-    branches: [RAPPORT]
-    paths: ['.github/workflows/tmp-journal-ia-language-push-reject.yml']
+    branches:
+      - RAPPORT
+    paths:
+      - .github/workflows/tmp-journal-ia-language-push-reject.yml
 
 permissions:
   contents: write
@@ -17,21 +19,7 @@ jobs:
           ref: RAPPORT
           fetch-depth: 0
       - name: Append journal
-        run: |
-          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
-
-## 2026-09-02 — Rejet du push apres edition directe multilingue IA
-
-Run `33599455406` : l'etape `Edit source directly` = SUCCESS et `git diff --check` = PASS. Le runner a cree localement le commit `7942fba` (`Fix IA MEMS active-language rendering directly in source`) avec les corrections IA et les six ressources de langue, mais le push a ete refuse par GitHub uniquement parce que ce meme commit incluait une modification de `.github/workflows/tmp-ravemems-visual-test-package-x64.yml` et le token GitHub Actions n'a pas la permission `workflows` : `refusing to allow a GitHub App to create or update workflow ... without workflows permission`.
-
-Aucune correction applicative issue de ce run n'a donc ete poussee sur la branche distante. `MEMSX64` reste intact sur BUILD #103.
-
-Correction de methode : separer strictement le commit source du changement du workflow de validation. Le commit source ne doit modifier aucun fichier sous `.github/workflows/`. Le workflow temporaire d'edition ne doit pas tenter de s'auto-supprimer dans ce push si cette suppression provoque la meme restriction ; il sera supprime ensuite par le connecteur GitHub autorise. Le workflow x64 existant sera adapte/declenche dans une pousse separee, apres journalisation du commit source.
-
-Regle d'architecture maintenue : la langue active vient de `I18n::language()`, jamais de Windows. Les textes d'interface/statut/fallback passent par les ressources I18n FR/EN/ES/IT/PT/DE. Les faits documentaires ne doivent pas etre renvoyes bruts dans une langue differente de la langue active. La restitution Qwen doit conserver valeurs, unites, identifiants, references et niveau de preuve.
-
-PROCHAINE ACTION EXACTE : relancer l'edition directe en ne commitant que les fichiers source/tests/traductions et la suppression du helper `tools/tmp_direct_ia_language_edit.py`, sans aucune modification de workflow dans ce commit. Verifier le diff distant et `MEMSX64`, journaliser immediatement le commit source obtenu, puis seulement ensuite adapter et declencher le workflow x64 par une pousse autorisee separee.
-EOF
+        run: echo 'IyMgMjAyNi0wOS0wMiDigJQgUmVqZXQgZHUgcHVzaCBhcHJlcyBlZGl0aW9uIGRpcmVjdGUgbXVsdGlsaW5ndWUgSUEKClJ1biBgMzM1OTk0NTU0MDZgIDogbCdldGFwZSBgRWRpdCBzb3VyY2UgZGlyZWN0bHlgID0gU1VDQ0VTUyBldCBgZ2l0IGRpZmYgLS1jaGVja2AgPSBQQVNTLiBMZSBydW5uZXIgYSBjcmVlIGxvY2FsZW1lbnQgbGUgY29tbWl0IGA3OTQyZmJhYCAoYEZpeCBJQSBNRU1TIGFjdGl2ZS1sYW5ndWFnZSByZW5kZXJpbmcgZGlyZWN0bHkgaW4gc291cmNlYCkgYXZlYyBsZXMgY29ycmVjdGlvbnMgSUEgZXQgbGVzIHNpeCByZXNzb3VyY2VzIGRlIGxhbmd1ZSwgbWFpcyBsZSBwdXNoIGEgZXRlIHJlZnVzZSBwYXIgR2l0SHViIHVuaXF1ZW1lbnQgcGFyY2UgcXVlIGNlIG1lbWUgY29tbWl0IGluY2x1YWl0IHVuZSBtb2RpZmljYXRpb24gZGUgYC5naXRodWIvd29ya2Zsb3dzL3RtcC1yYXZlbWVtcy12aXN1YWwtdGVzdC1wYWNrYWdlLXg2NC55bWxgIGV0IGxlIHRva2VuIEdpdEh1YiBBY3Rpb25zIG4nYSBwYXMgbGEgcGVybWlzc2lvbiBgd29ya2Zsb3dzYCA6IGByZWZ1c2luZyB0byBhbGxvdyBhIEdpdEh1YiBBcHAgdG8gY3JlYXRlIG9yIHVwZGF0ZSB3b3JrZmxvdyAuLi4gd2l0aG91dCB3b3JrZmxvd3MgcGVybWlzc2lvbmAuCgpBdWN1bmUgY29ycmVjdGlvbiBhcHBsaWNhdGl2ZSBpc3N1ZSBkZSBjZSBydW4gbidhIGRvbmMgZXRlIHBvdXNzZWUgc3VyIGxhIGJyYW5jaGUgZGlzdGFudGUuIGBNRU1TWDY0YCByZXN0ZSBpbnRhY3Qgc3VyIEJVSUxEICMxMDMuCgpDb3JyZWN0aW9uIGRlIG1ldGhvZGUgOiBzZXBhcmVyIHN0cmljdGVtZW50IGxlIGNvbW1pdCBzb3VyY2UgZHUgY2hhbmdlbWVudCBkdSB3b3JrZmxvdyBkZSB2YWxpZGF0aW9uLiBMZSBjb21taXQgc291cmNlIG5lIGRvaXQgbW9kaWZpZXIgYXVjdW4gZmljaGllciBzb3VzIGAuZ2l0aHViL3dvcmtmbG93cy9gLiBMZSB3b3JrZmxvdyB0ZW1wb3JhaXJlIGQnZWRpdGlvbiBuZSBkb2l0IHBhcyB0ZW50ZXIgZGUgcydhdXRvLXN1cHByaW1lciBkYW5zIGNlIHB1c2ggc2kgY2V0dGUgc3VwcHJlc3Npb24gcHJvdm9xdWUgbGEgbWVtZSByZXN0cmljdGlvbiA7IGlsIHNlcmEgc3VwcHJpbWUgZW5zdWl0ZSBwYXIgbGUgY29ubmVjdGV1ciBHaXRIdWIgYXV0b3Jpc2UuIExlIHdvcmtmbG93IHg2NCBleGlzdGFudCBzZXJhIGFkYXB0ZS9kZWNsZW5jaGUgZGFucyB1bmUgcG91c3NlIHNlcGFyZWUsIGFwcmVzIGpvdXJuYWxpc2F0aW9uIGR1IGNvbW1pdCBzb3VyY2UuCgpSZWdsZSBkJ2FyY2hpdGVjdHVyZSBtYWludGVudWUgOiBsYSBsYW5ndWUgYWN0aXZlIHZpZW50IGRlIGBJMThuOjpsYW5ndWFnZSgpYCwgamFtYWlzIGRlIFdpbmRvd3MuIExlcyB0ZXh0ZXMgZCdpbnRlcmZhY2Uvc3RhdHV0L2ZhbGxiYWNrIHBhc3NlbnQgcGFyIGxlcyByZXNzb3VyY2VzIEkxOG4gRlIvRU4vRVMvSVQvUFQvREUuIExlcyBmYWl0cyBkb2N1bWVudGFpcmVzIG5lIGRvaXZlbnQgcGFzIGV0cmUgcmVudm95ZXMgYnJ1dHMgZGFucyB1bmUgbGFuZ3VlIGRpZmZlcmVudGUgZGUgbGEgbGFuZ3VlIGFjdGl2ZS4gTGEgcmVzdGl0dXRpb24gUXdlbiBkb2l0IGNvbnNlcnZlciB2YWxldXJzLCB1bml0ZXMsIGlkZW50aWZpYW50cywgcmVmZXJlbmNlcyBldCBuaXZlYXUgZGUgcHJldXZlLgoKUFJPQ0hBSU5FIEFDVElPTiBFWEFDVEUgOiByZWxhbmNlciBsJ2VkaXRpb24gZGlyZWN0ZSBlbiBuZSBjb21taXRhbnQgcXVlIGxlcyBmaWNoaWVycyBzb3VyY2UvdGVzdHMvdHJhZHVjdGlvbnMgZXQgbGEgc3VwcHJlc3Npb24gZHUgaGVscGVyIGB0b29scy90bXBfZGlyZWN0X2lhX2xhbmd1YWdlX2VkaXQucHlgLCBzYW5zIGF1Y3VuZSBtb2RpZmljYXRpb24gZGUgd29ya2Zsb3cgZGFucyBjZSBjb21taXQuIFZlcmlmaWVyIGxlIGRpZmYgZGlzdGFudCBldCBgTUVNU1g2NGAsIGpvdXJuYWxpc2VyIGltbWVkaWF0ZW1lbnQgbGUgY29tbWl0IHNvdXJjZSBvYnRlbnUsIHB1aXMgc2V1bGVtZW50IGVuc3VpdGUgYWRhcHRlciBldCBkZWNsZW5jaGVyIGxlIHdvcmtmbG93IHg2NCBwYXIgdW5lIHBvdXNzZSBhdXRvcmlzZWUgc2VwYXJlZS4K' | base64 -d >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
       - name: Commit journal
         run: |
           git config user.name github-actions-bot
