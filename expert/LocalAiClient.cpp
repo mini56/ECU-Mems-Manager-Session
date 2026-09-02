@@ -635,20 +635,20 @@ void LocalAiClient::initialize()
     discoverAssets();
 
 #ifndef MEMS_USE_ONNX_GENAI
-    setState(MissingRuntime, QStringLiteral("Cette compilation ne contient pas ONNX Runtime GenAI."));
+    setState(MissingRuntime, I18n::text(99027));
     return;
 #endif
 
     if (m_runtimePath.isEmpty()) {
-        setState(MissingRuntime, QStringLiteral("Runtime ONNX Runtime GenAI absent du package."));
+        setState(MissingRuntime, I18n::text(99028));
         return;
     }
     if (m_modelPath.isEmpty()) {
-        setState(MissingModel, QStringLiteral("Modèle Qwen ONNX IA MEMS absent du dossier IA."));
+        setState(MissingModel, I18n::text(99029));
         return;
     }
     if (!m_workerThread || !m_workerThread->isRunning() || !m_worker) {
-        setState(Error, QStringLiteral("Thread du moteur IA local indisponible."));
+        setState(Error, I18n::text(99030));
         return;
     }
 
@@ -665,7 +665,7 @@ void LocalAiClient::initialize()
             if (ok)
                 setState(Ready);
             else
-                setState(Error, QStringLiteral("Chargement ONNX impossible : %1").arg(error));
+                setState(Error, I18n::text(99031).arg(error));
         }, Qt::QueuedConnection);
     }, Qt::QueuedConnection);
 }
@@ -696,7 +696,7 @@ void LocalAiClient::discoverAssets()
 void LocalAiClient::ask(const QString &question, const QString &groundingContext)
 {
     if (m_state != Ready) {
-        emit responseError(QStringLiteral("L'IA conversationnelle locale n'est pas prête."));
+        emit responseError(I18n::text(99022));
         return;
     }
 
@@ -730,7 +730,13 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
         grounding.clear();
 
     const bool reasoning = requiresReasoning(trimmedQuestion, grounding);
-    if (!reasoning && !grounding.isEmpty()) {
+    const QString responseLanguageCode = activeLanguageCode();
+    const QString responseLanguageName = activeLanguageName(responseLanguageCode);
+
+    // The expert service stores neutral evidence in its source language. Only
+    // French can currently be returned verbatim; every other active UI language
+    // must go through Qwen so the facts are rendered in the selected language.
+    if (responseLanguageCode == QStringLiteral("fr") && !reasoning && !grounding.isEmpty()) {
         rememberTurn(m_conversation, trimmedQuestion, grounding);
         emit responseReady(grounding);
         return;
@@ -739,12 +745,15 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
     QString userContent = trimmedQuestion;
     if (!grounding.isEmpty()) {
         userContent += QStringLiteral(
-            "\n\nFaits fournis par MEMS Manager, à utiliser seulement s'ils répondent à la question :\n%1")
-                           .arg(grounding);
+            "\n\nVerified facts supplied by MEMS Manager. Use only facts relevant to the question. "
+            "These facts can be written in a different language. Answer in %1 (%2), translating and synthesizing "
+            "the facts without changing technical values, units, identifiers, references or evidence:\n%3")
+                           .arg(responseLanguageName, responseLanguageCode, grounding);
     }
     if (reasoning) {
         userContent += QStringLiteral(
-            "\n\nRéponse attendue : diagnostic bref, hypothèses les plus probables dans l'ordre, puis contrôles prioritaires. Ne montre aucun raisonnement interne.");
+            "\n\nExpected answer: concise diagnosis, most likely hypotheses in order, then priority checks. "
+            "Do not reveal internal reasoning.");
     }
     userContent += QStringLiteral("\n\n/no_think");
 
@@ -769,15 +778,17 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
             QString answer = cleanModelReply(rawAnswer);
             setState(Ready);
             if (!generationError.isEmpty() && answer.isEmpty()) {
-                emit responseError(QStringLiteral("Erreur du moteur d'IA locale ONNX : %1").arg(generationError));
+                emit responseError(I18n::text(99026).arg(generationError));
                 return;
             }
             if (likelyWrongLanguage(answer) || containsInternalInstructionLeak(answer))
                 answer.clear();
-            if (answer.isEmpty() || isQuestionEcho(trimmedQuestion, answer))
-                answer = grounding;
+            if (answer.isEmpty() || isQuestionEcho(trimmedQuestion, answer)) {
+                // Never leak source-language grounding into another UI language.
+                answer = activeLanguageCode() == QStringLiteral("fr") ? grounding : QString();
+            }
             if (answer.isEmpty()) {
-                emit responseError(QStringLiteral("Le modèle local n'a pas produit de réponse exploitable dans la langue active."));
+                emit responseError(I18n::text(99025));
                 return;
             }
             rememberTurn(m_conversation, trimmedQuestion, answer);
@@ -816,17 +827,17 @@ void LocalAiClient::setState(State state, const QString &error)
 QString LocalAiClient::statusText() const
 {
     switch (m_state) {
-    case NotStarted: return QStringLiteral("IA locale non démarrée");
-    case MissingRuntime: return QStringLiteral("moteur IA local absent");
-    case MissingModel: return QStringLiteral("modèle IA local absent");
-    case Starting: return QStringLiteral("IA locale en démarrage");
-    case Ready: return QStringLiteral("IA locale prête");
-    case Busy: return QStringLiteral("IA locale en réponse");
+    case NotStarted: return I18n::text(99012);
+    case MissingRuntime: return I18n::text(99013);
+    case MissingModel: return I18n::text(99014);
+    case Starting: return I18n::text(99015);
+    case Ready: return I18n::text(99016);
+    case Busy: return I18n::text(99017);
     case Error:
-        if (m_lastError.isEmpty()) return QStringLiteral("erreur IA locale");
-        return QStringLiteral("erreur IA locale : %1").arg(m_lastError.simplified().left(140));
+        if (m_lastError.isEmpty()) return I18n::text(99018);
+        return I18n::text(99019).arg(m_lastError.simplified().left(140));
     }
-    return QStringLiteral("IA locale");
+    return I18n::text(99020);
 }
 
 QString LocalAiClient::systemPrompt() const

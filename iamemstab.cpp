@@ -7,6 +7,7 @@
 #include "expert/IaMemsService.h"
 #include "database/MemsReferenceDatabase.h"
 #include "database/MemsReferenceSheetRenderer.h"
+#include "i18n.h"
 
 #include <QDateTime>
 #include <QDialog>
@@ -34,7 +35,7 @@ namespace {
 QString iaReferenceXmlHtml(const QString &path)
 {
     return MemsReferenceSheetRenderer::renderFile(
-        path, QStringLiteral("Impossible d'ouvrir ou de lire la fiche XML locale."));
+        path, I18n::text(99041));
 }
 
 QString printableFirmware(QByteArray response)
@@ -79,17 +80,13 @@ QString shortMpiAnswer(const QString &raw)
         return QString();
 
     if (text == QStringLiteral("mpi"))
-        return QStringLiteral(
-            "MPi signifie « Multi Point Injection », c'est-à-dire injection multipoint. "
-            "Sur les montages Rover/Mini concernés, plusieurs injecteurs distribuent le carburant, typiquement un injecteur par cylindre.");
+        return I18n::text(99049);
 
     if (text == QStringLiteral("injecteur mpi")
         || text == QStringLiteral("injecteurs mpi")
         || text == QStringLiteral("mpi injecteur")
         || text == QStringLiteral("mpi injecteurs")) {
-        return QStringLiteral(
-            "Sur un système MPi Rover/Mini MEMS, l'injection est multipoint : plusieurs injecteurs distribuent le carburant, typiquement un par cylindre. "
-            "L'ECU commande leur ouverture pour doser le carburant dans l'admission. Si tu cherches le brochage, le câblage, un contrôle ou une procédure précise, indique simplement ce point et je chercherai la donnée correspondante.");
+        return I18n::text(99050);
     }
     return QString();
 }
@@ -123,10 +120,7 @@ IaMemsTab::IaMemsTab(MainWindow *mainWindow, QWidget *parent)
     header->addWidget(m_status);
     root->addLayout(header);
 
-    QLabel *subtitle = new QLabel(
-        QStringLiteral("Dialogue local avec le moteur expert et la base de connaissances MEMS. "
-                       "Les réponses distinguent mesures, hypothèses et niveau de preuve."),
-        this);
+    QLabel *subtitle = new QLabel(I18n::text(99001), this);
     subtitle->setWordWrap(true);
     root->addWidget(subtitle);
 
@@ -180,12 +174,11 @@ IaMemsTab::IaMemsTab(MainWindow *mainWindow, QWidget *parent)
     QHBoxLayout *input = new QHBoxLayout;
     m_question = new QLineEdit(this);
     m_question->setObjectName(QStringLiteral("iaMemsQuestion"));
-    m_question->setPlaceholderText(QStringLiteral(
-        "Posez une question : Qu'est-ce que tu vois d'anormal ? Mon avance est-elle normale ? Que sait-on sur AANMP002 ?"));
+    m_question->setPlaceholderText(I18n::text(99002));
     m_question->setClearButtonEnabled(true);
     input->addWidget(m_question, 1);
 
-    m_sendButton = new QPushButton(QStringLiteral("Envoyer"), this);
+    m_sendButton = new QPushButton(I18n::text(99003), this);
     m_sendButton->setObjectName(QStringLiteral("iaMemsSend"));
     input->addWidget(m_sendButton);
     root->addLayout(input);
@@ -264,10 +257,7 @@ IaMemsTab::IaMemsTab(MainWindow *mainWindow, QWidget *parent)
                 Qt::QueuedConnection);
     }
 
-    appendSystemMessage(QStringLiteral(
-        "Bonjour, je suis IA MEMS, l'assistant intégré à ECU MEMS Manager. "
-        "Je peux expliquer le logiciel, les systèmes MEMS et les mesures déjà acquises par le programme. "
-        "Je n'envoie aucune commande ECU et je n'invente pas une mesure absente."));
+    appendSystemMessage(I18n::text(99004));
 
     updateStatus();
 }
@@ -332,7 +322,7 @@ void IaMemsTab::updateDiagramSuggestion(const QString &question)
 
     m_diagramTitle = suggestion.key;
     m_diagramQuestion = question;
-    m_diagramButton->setText(QStringLiteral("Voir le schéma"));
+    m_diagramButton->setText(I18n::text(99006));
     m_diagramButton->setVisible(true);
 }
 
@@ -350,8 +340,7 @@ void IaMemsTab::openSuggestedDiagram()
             m_diagramButton->setText(QString());
             m_diagramButton->setVisible(false);
         }
-        appendSystemMessage(QStringLiteral(
-            "Le schéma local proposé n'est plus disponible ou déclaré dans le package."));
+        appendSystemMessage(I18n::text(99036));
         return;
     }
 
@@ -411,7 +400,7 @@ void IaMemsTab::updateDocumentSuggestion(const QString &question)
     }
 
     m_documentGeneration = generation;
-    m_documentButton->setText(QStringLiteral("Ouvrir la fiche XML MEMS %1").arg(generation));
+    m_documentButton->setText(I18n::text(99037).arg(generation));
     m_documentButton->setVisible(true);
 }
 
@@ -422,18 +411,18 @@ void IaMemsTab::openSuggestedDocument()
 
     MemsReferenceDatabase database;
     if (!database.open()) {
-        appendSystemMessage(QStringLiteral("La base documentaire locale n'a pas pu être ouverte."));
+        appendSystemMessage(I18n::text(99038));
         return;
     }
     const QString path = database.generationXmlPath(QStringLiteral("MEMS %1").arg(m_documentGeneration));
     if (path.isEmpty() || !QFileInfo::exists(path)) {
-        appendSystemMessage(QStringLiteral("La fiche XML MEMS %1 n'est pas disponible dans le package.").arg(m_documentGeneration));
+        appendSystemMessage(I18n::text(99039).arg(m_documentGeneration));
         return;
     }
 
     QDialog viewer(this);
     viewer.setObjectName(QStringLiteral("iaMemsDocumentViewer"));
-    viewer.setWindowTitle(QStringLiteral("IA MEMS — Fiche XML MEMS %1").arg(m_documentGeneration));
+    viewer.setWindowTitle(I18n::text(99040).arg(m_documentGeneration));
     viewer.resize(qBound(520, width() - 40, 1000), qBound(380, height() - 40, 700));
 
     QVBoxLayout *layout = new QVBoxLayout(&viewer);
@@ -498,9 +487,9 @@ QString IaMemsTab::resolveInductionFromKnownContext(const QString &question, QSt
 QString IaMemsTab::clarificationPrompt(const QString &question) const
 {
     if (IaMemsConversationRouting::needsInductionClarification(question))
-        return QStringLiteral("Pour éviter de mélanger les brochages Mini, est-ce une SPi ou une MPi ? Si tu ne sais pas, réponds « cherche » : j'utiliserai l'ECU connecté et la base avant de te redemander une information.");
+        return I18n::text(99042);
     if (IaMemsConversationRouting::needsGenerationClarification(question, m_detectedFamily))
-        return QStringLiteral("Quelle génération MEMS faut-il utiliser : 1.2, 1.3, 1.6 ou 1.9 ? Si tu ne sais pas, réponds « cherche » et j'utiliserai d'abord le contexte ECU disponible.");
+        return I18n::text(99043);
     return QString();
 }
 
@@ -526,7 +515,7 @@ void IaMemsTab::sendQuestion()
         return;
 
     m_question->clear();
-    appendMessage(QStringLiteral("Vous"), question);
+    appendMessage(I18n::text(99005), question);
 
     QString effectiveQuestion = question;
     const QString explicitSelection = IaMemsConversationRouting::explicitInduction(question);
@@ -543,8 +532,7 @@ void IaMemsTab::sendQuestion()
                                     .simplified();
             setProperty("iaLastVariantClarificationAnswer", explicitSelection);
             appendMessage(QStringLiteral("IA MEMS"),
-                          QStringLiteral("Correction prise en compte : %1. Je reprends la demande précédente avec cette variante.")
-                              .arg(explicitSelection));
+                          I18n::text(99044).arg(explicitSelection));
         }
     } else if (m_pendingClarificationQuestion.isEmpty() && !bareSelection) {
         setProperty("iaLastVariantClarificationQuestion", QVariant());
@@ -560,18 +548,18 @@ void IaMemsTab::sendQuestion()
                 QString evidence;
                 const QString resolved = resolveInductionFromKnownContext(pending, &evidence);
                 if (resolved.isEmpty()) {
-                    answerLocally(QStringLiteral("J'ai cherché dans les références ECU réellement disponibles, mais je ne peux pas trancher SPi/MPi sans preuve suffisante. Donne-moi la référence inscrite sur le calculateur, ou l'année et le marché du véhicule."));
+                    answerLocally(I18n::text(99045));
                     return;
                 }
                 effectiveQuestion = QStringLiteral("%1 %2").arg(pending, resolved);
-                answerLocally(QStringLiteral("J'ai identifié %1 à partir de la référence ECU/firmware %2 retrouvée dans la base. Je poursuis la recherche initiale.").arg(resolved, evidence));
+                answerLocally(I18n::text(99046).arg(resolved, evidence));
             } else if (IaMemsConversationRouting::needsGenerationClarification(pending, m_detectedFamily)) {
                 if (m_detectedFamily.isEmpty()) {
-                    answerLocally(QStringLiteral("J'ai cherché dans le contexte disponible, mais la génération MEMS n'est pas déterminée. Donne-moi l'année, la référence ECU ou connecte l'ECU pour que je puisse continuer sans deviner."));
+                    answerLocally(I18n::text(99047));
                     return;
                 }
                 effectiveQuestion = QStringLiteral("%1 MEMS %2").arg(pending, m_detectedFamily);
-                answerLocally(QStringLiteral("L'ECU connecté indique MEMS %1. Je poursuis donc avec cette documentation.").arg(m_detectedFamily));
+                answerLocally(I18n::text(99048).arg(m_detectedFamily));
             } else {
                 effectiveQuestion = pending;
             }
@@ -622,7 +610,7 @@ void IaMemsTab::onServiceResponse(const QString &text)
     if (responseSuggestion.isValid() && m_diagramButton) {
         m_diagramTitle = responseSuggestion.key;
         m_diagramQuestion = text;
-        m_diagramButton->setText(QStringLiteral("Voir le schéma"));
+        m_diagramButton->setText(I18n::text(99006));
         m_diagramButton->setVisible(true);
     }
 
@@ -648,7 +636,7 @@ void IaMemsTab::updateStatus()
         return;
 
     QStringList parts;
-    parts << (m_connected ? QStringLiteral("ECU connecté") : QStringLiteral("ECU non connecté"));
+    parts << (m_connected ? I18n::text(99007) : I18n::text(99008));
     if (m_service)
         parts << m_service->statusText();
 

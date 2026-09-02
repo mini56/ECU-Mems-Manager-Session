@@ -3,6 +3,7 @@
 #include "IaResponseLogic.h"
 #include "IaMemsConversationRouting.h"
 #include "LocalAiClient.h"
+#include "i18n.h"
 
 #include <QCoreApplication>
 #include <QDateTime>
@@ -396,12 +397,14 @@ IaMemsService::IaMemsService(QObject *parent)
 
     connect(m_localAi, &LocalAiClient::responseError,
             this, [this](const QString &message) {
-                QString fallback = m_pendingGrounding.trimmed();
+                QString fallback;
+                if (I18n::language().trimmed().toLower() == QStringLiteral("fr"))
+                    fallback = m_pendingGrounding.trimmed();
                 if (fallback.isEmpty())
-                    fallback = QStringLiteral("Je ne peux pas répondre avec le moteur conversationnel local pour le moment.");
+                    fallback = I18n::text(99023);
                 m_pendingGrounding.clear();
                 emit responseReady(fallback);
-                emit systemMessage(QStringLiteral("Moteur conversationnel local indisponible : %1").arg(message));
+                emit systemMessage(I18n::text(99024).arg(message));
                 emit statusChanged();
             });
 
@@ -436,17 +439,15 @@ void IaMemsService::openPackagedKnowledge()
                              .filePath(QStringLiteral("database/expert/ia_mems_reference_r20.sqlite"));
 
     if (!QFileInfo::exists(path) || !QFileInfo(path).isFile()) {
-        m_knowledgeError = QStringLiteral("Base experte r20 absente du package.");
-        emit systemMessage(QStringLiteral(
-            "La base experte MEMS préconstruite n'est pas disponible. Le dialogue local reste utilisable sans cette base."));
+        m_knowledgeError = I18n::text(99033);
+        emit systemMessage(I18n::text(99034));
         emit statusChanged();
         return;
     }
 
     if (!m_reader.openReadOnly(path)) {
         m_knowledgeError = m_reader.lastError();
-        emit systemMessage(QStringLiteral(
-            "La base experte MEMS n'a pas pu être ouverte en lecture seule. Le dialogue local reste utilisable."));
+        emit systemMessage(I18n::text(99035));
         emit statusChanged();
         return;
     }
@@ -454,7 +455,7 @@ void IaMemsService::openPackagedKnowledge()
     m_databasePath = path;
     m_knowledgeReady = true;
     m_engine.setKnowledgeReader(&m_reader);
-    emit systemMessage(QStringLiteral("Base de connaissances MEMS prête en lecture seule."));
+    emit systemMessage(I18n::text(99021));
     emit statusChanged();
 }
 
@@ -506,9 +507,11 @@ void IaMemsService::ask(const QString &question)
         return;
     }
 
-    const QString fallback = m_pendingGrounding.trimmed().isEmpty()
-        ? QStringLiteral("L'IA locale n'est pas encore prête.")
-        : m_pendingGrounding;
+    QString fallback;
+    if (I18n::language().trimmed().toLower() == QStringLiteral("fr"))
+        fallback = m_pendingGrounding.trimmed();
+    if (fallback.isEmpty())
+        fallback = I18n::text(99022);
     m_pendingGrounding.clear();
     emit responseReady(fallback);
     emit statusChanged();
@@ -529,11 +532,11 @@ QString IaMemsService::statusText() const
 {
     QStringList parts;
     if (m_knowledgeReady)
-        parts << QStringLiteral("base prête");
+        parts << I18n::text(99009);
     else if (m_knowledgeAttempted)
-        parts << QStringLiteral("base indisponible");
+        parts << I18n::text(99010);
     else
-        parts << QStringLiteral("base non chargée");
+        parts << I18n::text(99011);
 
     if (!m_context.family.isEmpty())
         parts << QStringLiteral("MEMS %1").arg(m_context.family);
