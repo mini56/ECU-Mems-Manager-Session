@@ -12449,3 +12449,15 @@ Le corpus actuel n'est pas supprimé avant validation et sert de contrôle de no
 
 ### PROCHAINE ACTION EXACTE
 Produire le cahier des charges RAVEMEMS téléchargeable, le faire relire et compléter par l'utilisateur, puis attendre sa validation explicite avant tout code ou toute nouvelle extraction.
+
+## 2026-09-02 — RESULTAT CAHIER DES CHARGES RAVEMEMS + INCIDENT DE JOURNALISATION CLOS
+
+Incident de journalisation avant rédaction du cahier : une première écriture directe du rapport a remplacé le fichier au lieu de l'ajouter. L'erreur a été détectée immédiatement avant toute progression technique. La branche `RAPPORT` a été restaurée exactement sur son parent sain `bd78bd56b7c12eb89b416e1f2f0c8e07c91081a1`, ce qui a restauré le rapport maître complet. La journalisation a ensuite été refaite par le mécanisme GitHub Actions d'append binaire sûr. Run `33677033614` : SUCCESS. Aucun historique du rapport n'est perdu.
+
+Cahier des charges brouillon créé pour relecture utilisateur : `docs/CAHIER_DES_CHARGES_RAVEMEMS_BROUILLON_2026-09-02.md`.
+Commit de création : `0eb6f2a542d123558f55f5a6309f82ef23e54a15`.
+Statut : brouillon, non encore validé par l'utilisateur.
+
+Aucun code RAVEMEMS, aucune extraction, aucun BUILD et aucune modification de `MEMSX64` n'ont été lancés pendant cette rédaction.
+
+PROCHAINE ACTION EXACTE : attendre la relecture utilisateur du cahier des charges. Intégrer ses corrections/ajouts, puis faire valider explicitement la version finale avant tout code ou toute nouvelle extraction.
