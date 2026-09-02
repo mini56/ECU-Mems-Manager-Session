@@ -12586,3 +12586,16 @@ Pour un avertissement de sécurité ou un risque technique important, l'utilisat
 Aucun code applicatif, aucune extraction et aucun BUILD de production dans cette étape de relecture.
 
 PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges RAVEMEMS question par question avec l'utilisateur. Ne lancer aucune nouvelle extraction avant validation explicite du cahier.
+
+
+## 2026-09-02 — RELECTURE CAHIER RAVEMEMS — PRESENTATION DES REMARQUES / NOTES
+
+Décision utilisateur validée :
+- les vrais avertissements / risques conservent le carré ou pictogramme rouge avec libellé textuel explicite ;
+- une REMARQUE / NOTE du manuel reste visible avec un petit triangle orange contenant un `!` orange ;
+- le libellé REMARQUE ou NOTE et le texte correspondant restent affichés ;
+- le rouge reste réservé aux avertissements, précautions de sécurité et risques techniques importants.
+
+Aucun code applicatif, aucune extraction et aucun BUILD de production ne sont lancés dans cette étape de relecture.
+
+PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges RAVEMEMS question par question avec l’utilisateur. Ne lancer aucune nouvelle extraction avant validation explicite du cahier.

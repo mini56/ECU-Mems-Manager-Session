@@ -106,6 +106,8 @@ Un **avertissement ou une précaution doit conserver sa portée réelle**. S'il 
 
 Lorsqu'il s'agit d'un avertissement de sécurité ou d'un risque technique important, l'IA doit le rendre **visuellement évident**, avec un **carré ou pictogramme rouge accompagné d'un libellé explicite tel que `ATTENTION` ou `AVERTISSEMENT`**, puis le texte correspondant. La couleur rouge ne doit jamais être le seul moyen de signaler le danger : le libellé textuel reste obligatoire.
 
+Une **REMARQUE / NOTE** du manuel doit également rester visible, mais avec une présentation distincte des avertissements : **un petit triangle orange contenant un `!` orange**, accompagné du libellé `REMARQUE` ou `NOTE` et du texte correspondant. Le carré rouge reste réservé aux vrais avertissements, précautions de sécurité ou risques techniques importants.
+
 ---
 
 ## 9. RELATIONS ENTRE OPÉRATIONS
