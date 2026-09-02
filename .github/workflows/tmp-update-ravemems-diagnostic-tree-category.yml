@@ -1,0 +1,65 @@
+name: TEMP update RAVEMEMS diagnostic tree category
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/tmp-update-ravemems-diagnostic-tree-category.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+
+      - name: Update cahier and report
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          cahier = Path('docs/CAHIER_DES_CHARGES_RAVEMEMS_BROUILLON_2026-09-02.md')
+          text = cahier.read_text(encoding='utf-8')
+          old = """- photo / vue technique ;
+          - autre visuel technique.
+
+          Cette classification doit aider l’IA à choisir le bon visuel selon la question."""
+          new = """- photo / vue technique ;
+          - organigramme / arbre de diagnostic ;
+          - autre visuel technique.
+
+          Cette classification doit aider l’IA à choisir le bon visuel selon la question. Un organigramme ou arbre de diagnostic doit être conservé comme un visuel technique à part entière et proposé lorsqu’il est réellement associé au diagnostic ou à la procédure demandée ; ses embranchements, réponses Oui/Non, conditions et renvois techniques ne doivent pas être perdus lors du recadrage ou de l’extraction."""
+          if text.count(old) != 1:
+              raise SystemExit(f'Unexpected visual category anchor count: {text.count(old)}')
+          cahier.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          report = Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md')
+          with report.open('a', encoding='utf-8') as f:
+              f.write("""
+
+          ## 2026-09-02 — RELECTURE CAHIER RAVEMEMS — ORGANIGRAMMES / ARBRES DE DIAGNOSTIC
+
+          Décision utilisateur : ajouter explicitement `organigramme / arbre de diagnostic` aux catégories de visuels RAVEMEMS. Ces arbres de décision sont des contenus techniques à part entière. Lorsqu’un manuel associe réellement un arbre de diagnostic à la demande, l’IA doit pouvoir proposer ce visuel. L’extraction et le recadrage doivent préserver les embranchements, réponses Oui/Non, conditions, flèches et renvois nécessaires à son utilisation.
+
+          Aucun code applicatif, aucune extraction et aucun build ne sont lancés dans cette étape de relecture.
+
+          PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges RAVEMEMS question par question avec l’utilisateur et journaliser les décisions. Ne lancer aucune nouvelle extraction avant validation explicite du cahier.
+          """)
+          PY
+
+      - name: Commit and cleanup
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/tmp-update-ravemems-diagnostic-tree-category.yml
+          git add docs/CAHIER_DES_CHARGES_RAVEMEMS_BROUILLON_2026-09-02.md RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git diff --cached --check
+          git commit -m "Add RAVEMEMS diagnostic tree visual category"
+          git push origin HEAD:RAPPORT
