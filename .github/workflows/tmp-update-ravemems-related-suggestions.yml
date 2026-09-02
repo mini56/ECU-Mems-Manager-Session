@@ -1,0 +1,38 @@
+name: TEMP update RAVEMEMS related suggestions
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/tmp-update-ravemems-related-suggestions.yml'
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+      - name: Update cahier and report
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('docs/CAHIER_DES_CHARGES_RAVEMEMS_BROUILLON_2026-09-02.md')
+          s = p.read_text(encoding='utf-8')
+          old = "Cette proposition doit être fondée sur une relation constructeur ou une relation technique enregistrée. L’IA ne doit pas inventer un lien simplement parce que deux sujets semblent proches."
+          new = "Cette proposition doit être fondée sur une relation constructeur ou une relation technique enregistrée. L’IA ne doit pas inventer un lien simplement parce que deux sujets semblent proches. **Par défaut, l’IA propose une seule suggestion connexe maximum.** Exception : si le manuel indique explicitement que deux, trois ou plusieurs opérations, contrôles, réglages ou points doivent être effectués, vérifiés ou consultés ensuite, l’IA doit communiquer **tous les points explicitement imposés ou recommandés par le manuel**, de façon concise. Dans ce cas, il ne s’agit pas de suggestions supplémentaires inventées par l’IA mais d’informations constructeur à ne pas perdre."
+          if old not in s:
+              raise SystemExit('target paragraph not found')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          r = Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md')
+          with r.open('a', encoding='utf-8') as f:
+              f.write("\n\n## 2026-09-02 — CAHIER RAVEMEMS — REGLE DES SUGGESTIONS CONNEXES\n\nDécision utilisateur : une seule suggestion connexe maximum par défaut après la réponse principale. Exception obligatoire : si le manuel indique explicitement plusieurs opérations, contrôles, réglages ou points à effectuer/consulter ensuite, l'IA doit tous les communiquer de façon concise. Ces éléments ne sont pas des suggestions libres de l'IA mais des relations/instructions constructeur à préserver.\n\nAucun code applicatif ni extraction lancé. `MEMSX64` reste BUILD #103, aucun #104, 32 bits et protocole intacts.\n")
+      - name: Commit and cleanup
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/tmp-update-ravemems-related-suggestions.yml
+          git add docs/CAHIER_DES_CHARGES_RAVEMEMS_BROUILLON_2026-09-02.md RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Record RAVEMEMS related suggestion rule"
+          git push origin HEAD:RAPPORT
