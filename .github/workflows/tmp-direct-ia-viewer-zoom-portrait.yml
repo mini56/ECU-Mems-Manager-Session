@@ -1,0 +1,147 @@
+name: TEMP direct IA viewer zoom portrait correction
+on:
+  push:
+    branches: [tmp-ravemems-ia-visual-integration]
+    paths: ['.github/workflows/tmp-direct-ia-viewer-zoom-portrait.yml']
+permissions:
+  contents: write
+jobs:
+  edit-source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-ravemems-ia-visual-integration
+          fetch-depth: 0
+      - name: Edit viewer source directly
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('iamemstab.cpp')
+          s = p.read_text(encoding='utf-8')
+          start = s.index('    const QFileInfo fileInfo(suggestion.absolutePath);\n', s.index('void IaMemsTab::openSuggestedDiagram()'))
+          end_marker = '    viewer.exec();\n'
+          end = s.index(end_marker, start) + len(end_marker)
+          replacement = r'''    const QFileInfo fileInfo(suggestion.absolutePath);
+          const QString canonicalPath = fileInfo.canonicalFilePath();
+          const QString resolvedPath = canonicalPath.isEmpty()
+              ? fileInfo.absoluteFilePath()
+              : canonicalPath;
+          QImageReader imageReader(resolvedPath);
+          const QSize sourceSize = imageReader.size();
+          
+          QDialog viewer(this);
+          viewer.setObjectName(QStringLiteral("iaMemsDiagramViewer"));
+          viewer.setWindowTitle(QStringLiteral("IA MEMS — %1").arg(suggestion.key));
+          if (sourceSize.isValid() && sourceSize.height() > sourceSize.width()) {
+              const int targetHeight = qBound(520, height() - 40, 860);
+              const double ratio = static_cast<double>(sourceSize.width())
+                  / static_cast<double>(sourceSize.height());
+              const int targetWidth = qBound(440, qRound(targetHeight * ratio) + 120, 720);
+              viewer.resize(targetWidth, targetHeight);
+          } else {
+              viewer.resize(qBound(480, width() - 40, 900),
+                            qBound(360, height() - 40, 650));
+          }
+          
+          QVBoxLayout *layout = new QVBoxLayout(&viewer);
+          QHBoxLayout *zoomControls = new QHBoxLayout;
+          zoomControls->setSpacing(6);
+          QPushButton *zoomOutButton = new QPushButton(QStringLiteral("−"), &viewer);
+          QPushButton *zoomResetButton = new QPushButton(QStringLiteral("100 %"), &viewer);
+          QPushButton *zoomInButton = new QPushButton(QStringLiteral("+"), &viewer);
+          QPushButton *zoomFitButton = new QPushButton(QStringLiteral("⛶"), &viewer);
+          zoomOutButton->setMinimumWidth(46);
+          zoomResetButton->setMinimumWidth(72);
+          zoomInButton->setMinimumWidth(46);
+          zoomFitButton->setMinimumWidth(46);
+          zoomControls->addWidget(zoomOutButton);
+          zoomControls->addWidget(zoomResetButton);
+          zoomControls->addWidget(zoomInButton);
+          zoomControls->addWidget(zoomFitButton);
+          zoomControls->addStretch(1);
+          layout->addLayout(zoomControls);
+          
+          QTextBrowser *browser = new QTextBrowser(&viewer);
+          browser->setObjectName(QStringLiteral("iaMemsDiagramBrowser"));
+          browser->setOpenExternalLinks(false);
+          browser->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+          browser->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+          layout->addWidget(browser, 1);
+          
+          const QString localUrl = QUrl::fromLocalFile(resolvedPath)
+                                       .toString()
+                                       .toHtmlEscaped();
+          const QString title = suggestion.key.toHtmlEscaped();
+          double zoomScale = 1.0;
+          const auto renderImage = [&]() {
+              QString imageTag;
+              if (sourceSize.isValid()) {
+                  const int imageWidth = qMax(1, qRound(sourceSize.width() * zoomScale));
+                  const int imageHeight = qMax(1, qRound(sourceSize.height() * zoomScale));
+                  imageTag = QStringLiteral("<img src='%1' width='%2' height='%3'>")
+                                 .arg(localUrl)
+                                 .arg(imageWidth)
+                                 .arg(imageHeight);
+              } else {
+                  imageTag = QStringLiteral("<img src='%1'>").arg(localUrl);
+              }
+              browser->setHtml(QStringLiteral(
+                  "<style>body{background:#0a1015;color:#dce3e8;font-family:'Segoe UI',Arial,sans-serif;}"
+                  "h1{color:#ff9828;font-size:16pt;margin:0 0 10px 0;}"
+                  ".diagram{background:#0d151b;border:1px solid #34414b;padding:10px;text-align:center;}</style>"
+                  "<h1>%1</h1><div class='diagram'>%2</div>")
+                  .arg(title, imageTag));
+          };
+          const auto fitImage = [&]() {
+              if (!sourceSize.isValid()) {
+                  renderImage();
+                  return;
+              }
+              const QSize viewportSize = browser->viewport()->size();
+              const double widthScale = static_cast<double>(qMax(80, viewportSize.width() - 36))
+                  / static_cast<double>(sourceSize.width());
+              const double heightScale = static_cast<double>(qMax(80, viewportSize.height() - 70))
+                  / static_cast<double>(sourceSize.height());
+              zoomScale = qBound(0.10, qMin(widthScale, heightScale), 8.0);
+              renderImage();
+          };
+          
+          connect(zoomOutButton, &QPushButton::clicked, &viewer, [&]() {
+              zoomScale = qMax(0.10, zoomScale / 1.25);
+              renderImage();
+          });
+          connect(zoomResetButton, &QPushButton::clicked, &viewer, [&]() {
+              zoomScale = 1.0;
+              renderImage();
+          });
+          connect(zoomInButton, &QPushButton::clicked, &viewer, [&]() {
+              zoomScale = qMin(8.0, zoomScale * 1.25);
+              renderImage();
+          });
+          connect(zoomFitButton, &QPushButton::clicked, &viewer, fitImage);
+          
+          QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Close, &viewer);
+          connect(buttons, &QDialogButtonBox::rejected, &viewer, &QDialog::reject);
+          layout->addWidget(buttons);
+          
+          renderImage();
+          QTimer::singleShot(0, &viewer, fitImage);
+          viewer.exec();
+          '''
+          s = s[:start] + replacement + s[end:]
+          p.write_text(s, encoding='utf-8')
+          PY
+          git diff --check
+          grep -F 'QStringLiteral("100 %")' iamemstab.cpp
+          grep -F 'sourceSize.height() > sourceSize.width()' iamemstab.cpp
+          grep -F 'zoomScale = qMin(8.0, zoomScale * 1.25);' iamemstab.cpp
+      - name: Commit direct viewer correction
+        shell: bash
+        run: |
+          git config user.name "mini56"
+          git config user.email "48644212+mini56@users.noreply.github.com"
+          git add iamemstab.cpp
+          git commit -m "Add zoom and portrait sizing to IA visual viewer"
+          git push origin HEAD:tmp-ravemems-ia-visual-integration
