@@ -1,0 +1,33 @@
+name: TEMP journal direct source audit
+on:
+  push:
+    branches: [RAPPORT]
+    paths: ['.github/workflows/tmp-journal-direct-source-audit.yml']
+permissions:
+  contents: write
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append journal
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md')
+          text='''\n\n## 2026-09-02 — AUDIT CORRECTION DIRECTE VISUELS APRES REPONSE\n\nLes modifications directes de source ont ete poussees sur `tmp-ravemems-ia-visual-integration` sans script de patch. HEAD courant avant consolidation : `898509ce5fc16d9540a229094ec54621d85b7248`. Diff depuis `edb13ed27f746a055e3824f0ebc66973ac1ec1ba` : `expert/IaMemsDiagramCatalog.cpp`, `expert/IaMemsDiagramCatalog.h`, `expert/IaMemsDiagramSelfTest.cpp`, `iamemstab.cpp` uniquement. `MEMSX64` reste BUILD #103.\n\nAudit avant compilation : la nouvelle logique de reponse ne doit pas dependre d un vocabulaire utilisateur. Elle resout uniquement des identifiants structurels (`rave:<publication>:PDF:<page>`, runtime_path, runtime_key, source_occurrence_key, asset_entity_key) et verifie `ui_visible`, existence locale et SHA-256.\n\nSimplification retenue avant compilation : ne pas ajouter une nouvelle API publique dans `IaMemsDiagramCatalog.h`. La fonction existante `suggestionForQuestion()` doit d abord tenter la resolution structurelle de reference ; si aucune reference n existe, elle reprend son comportement historique de question explicite. `onServiceResponse()` reutilise alors `updateDiagramSuggestion(text)`. Cela ramene le diff applicatif aux trois fichiers deja autorises par le workflow de test : `expert/IaMemsDiagramCatalog.cpp`, `expert/IaMemsDiagramSelfTest.cpp`, `iamemstab.cpp`.\n\nPROCHAINE ACTION EXACTE : effectuer cette consolidation directement dans les fichiers source en une seule pousse technique, verifier le diff final, puis seulement compiler le workflow x64 de test. Aucun patch, aucun texte utilisateur en dur pour la nouvelle regle, aucun changement de `MEMSX64`, protocole, base ou Qwen/ONNX.\n'''
+          p.write_text(p.read_text(encoding='utf-8')+text, encoding='utf-8')
+          PY
+      - name: Commit journal
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git rm .github/workflows/tmp-journal-direct-source-audit.yml
+          git commit -m 'Journal direct source audit before consolidated commit'
+          git push origin HEAD:RAPPORT
