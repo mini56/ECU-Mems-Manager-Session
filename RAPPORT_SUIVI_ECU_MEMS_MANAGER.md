@@ -12607,3 +12607,12 @@ Décision utilisateur validée : lorsqu'un manuel impose un outil spécial, un c
 Aucun code applicatif, aucune extraction et aucun BUILD de production ne sont lancés dans cette étape de relecture.
 
 PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges RAVEMEMS question par question avec l'utilisateur et journaliser chaque décision. Ne lancer aucune nouvelle extraction avant validation explicite du cahier.
+
+
+## 2026-09-02 — RELECTURE CAHIER RAVEMEMS — VALEURS ET UNITÉS
+
+Décision utilisateur validée : la valeur et l’unité constructeur restent toujours la référence exacte. Une conversion utile peut être ajoutée par l’IA comme complément, mais elle ne remplace jamais la valeur source et ne doit ni la masquer ni la modifier.
+
+Aucun code applicatif, aucune extraction et aucun BUILD de production ne sont lancés dans cette étape de relecture.
+
+PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges RAVEMEMS question par question avec l’utilisateur. Ne lancer aucune nouvelle extraction avant validation explicite du cahier.

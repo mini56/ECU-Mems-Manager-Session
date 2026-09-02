@@ -329,6 +329,8 @@ Exemple : **Pompe à eau — boulons : 22 N·m** plutôt que de forcer l’IA à
 
 Le texte constructeur original reste conservé dans l’élément source correspondant.
 
+La **valeur et l’unité constructeur doivent toujours être conservées exactement comme référence**. L’IA peut ajouter une conversion utile pour faciliter la lecture, mais cette conversion reste un complément et ne doit jamais remplacer, masquer ou modifier la valeur d’origine. Exemple : `3,5 bar` peut être présenté comme **3,5 bar (≈ 350 kPa)**, tout en conservant `3,5 bar` comme valeur constructeur de référence.
+
 ---
 
 ## 27. DÉDUPLICATION
