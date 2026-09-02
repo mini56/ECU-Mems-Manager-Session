@@ -12084,3 +12084,13 @@ Etat valide du TEST 2 :
 - BOUTON/IMAGE : NON TESTE pour cette question.
 
 PROCHAINE ACTION EXACTE : rester sur la question 2, revenir dans IA MEMS, verifier si le bouton Voir le schema est actuellement propose pour cette reponse, cliquer ce bouton sans reutiliser celui de la question precedente, puis envoyer la capture de la nouvelle fenetre. Ne pas passer a la question 3 avant validation de cette image.
+
+## 2026-09-02 - TEST IA visuel 4 - sonde ECT Mini MPi 97MY
+Question: Quelle est la broche de la sonde de temperature de liquide de refroidissement sur une Mini MPi 97MY ?
+CORRECTION REFERENCE: le schema constructeur RCL0194ENG 39.2 montre la sonde ECT sur ECU C159-15, avec retour commun capteur C159-13. La valeur C159-36 utilisee auparavant comme attente pour ce test etait incorrecte.
+REPONSE TEXTE: FAIL. La reponse parle de la sonde ECT et de procedures associees, mais ne donne pas la broche C159-15.
+QUALITE REPONSE: FAIL. Trop de contenu documentaire hors de la question de brochage.
+BOUTON IMAGE: PASS.
+PERTINENCE IMAGE: PASS. Le viewer ouvre RAVE RCL0194ENG 39.2 Mini MPi 97MY ventilateur refroidissement ECT, montrant directement C159-15 et C159-13.
+RENDU IMAGE: PASS. Image dans le bon sens, fond blanc, traits et texte lisibles.
+Aucune correction appliquee. Continuer la campagne de tests question -> reponse -> image avant modification du code.
