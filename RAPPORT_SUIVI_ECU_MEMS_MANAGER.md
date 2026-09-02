@@ -12403,3 +12403,49 @@ Le viewer du package contient : ouverture portrait pour source portrait, zoom `-
 `MEMSX64` reverifie apres le run : toujours strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`. Aucun BUILD #104. 32 bits non touche.
 
 PROCHAINE ACTION EXACTE : installer/tester cet artefact sur le PC utilisateur, refaire `DEPOSE INJECTEUR` puis `MINI SPI`, ouvrir `Voir le schema`, utiliser le zoom et confirmer separement la pertinence exacte de l'image, sa lisibilite et l'orientation de la fenetre. Ne pas modifier le code avant ce retour reel.
+
+## 2026-09-02 — AUDIT RAVEMEMS ACCEPTE ET CAHIER DES CHARGES AVANT NOUVELLE EXTRACTION
+
+### DECISION ET OBJECTIF
+L'utilisateur valide le principe de repartir des PDF sources originaux avec une nouvelle extraction RAVEMEMS structurée. `RAVEMEMS` reste le nom officiel de la fonction et doit devenir un moteur générique d'ingestion documentaire pour MEMS Manager, utilisable avec tout document technique quelle que soit sa langue. RAVE est le premier corpus de validation, pas une limitation fonctionnelle.
+
+### CONSTAT D'AUDIT ACCEPTE
+- Le corpus actuel est complet en volume mais reste organisé principalement par pages/blocs et ne reconstruit pas correctement toutes les opérations constructeur traversant plusieurs pages.
+- Les associations visuelles actuelles peuvent être géométriques plutôt que sémantiques.
+- L'extraction brute des objets image PDF perd dans de nombreux cas rotation de placement et rendu correct, notamment les visuels artificiellement blanc sur noir.
+- Le viewer n'est pas la cause : les défauts sont déjà présents dans les assets extraits.
+- Décision : pas de correction au cas par cas ; nouvelle ingestion depuis les PDF originaux.
+
+### PRINCIPES DU CAHIER DES CHARGES
+- Un document est extrait une seule fois dans sa langue source ; les traductions sont ajoutées ensuite autour des mêmes identifiants stables.
+- Structure cible : `document -> chapitre -> section/sous-section -> opération constructeur -> phase -> étapes ordonnées -> informations associées -> visuels`.
+- La page PDF devient une provenance interne, pas l'unité principale de connaissance.
+- Une procédure multi-page doit être reconstruite comme une seule opération continue ; Dépose, Repose, Contrôle/Test, Réglage et autres phases restent distinctes avec leur numérotation réelle.
+- Les renvois constructeur (`voir ...`), opérations préalables/suivantes, avertissements, réglages, valeurs, outils, pièces, tableaux et illustrations doivent devenir des relations internes lorsqu'elles existent.
+- Conserver le contexte véhicule/ECU/variante quand il change la réponse : véhicule, moteur, SPi/MPi, famille MEMS, année, marché, boîte, climatisation, etc.
+- Question générale : l'IA propose un choix court issu des rubriques réellement disponibles. Exemple `alternateur` -> Dépose / Contrôle / Réglage courroie. Question précise : réponse directe sans clarification inutile.
+- Après réponse, une suggestion `Je vous conseille aussi de voir ...` n'est permise que si une relation enregistrée la justifie.
+- Suppression de la notion de preuve côté utilisateur : pas de `preuve constructeur`, pas de page/référence documentaire affichée systématiquement, pas de bouton `Voir la source`.
+- Ne pas archiver des pages texte complètes uniquement comme preuve. Conserver le texte source original des éléments structurés utiles pour les traductions futures.
+- Refaire entièrement les visuels depuis le rendu fidèle des PDF ; ne plus utiliser directement `extract_image()` lorsque le rendu réel n'est pas respecté.
+- Recadrer la zone technique utile et retirer en-têtes, pieds de page, numéros de page, marges et mentions éditoriales répétitives quand cela n'enlève aucune information technique.
+- Ne jamais supprimer repères, légendes utiles, connecteurs, broches, valeurs, avertissements ou informations nécessaires à la compréhension.
+- Classer les visuels si possible : schéma électrique, illustration mécanique, implantation/localisation, vue connecteur, tableau, photo/vue technique, autre.
+- L'action utilisateur est adaptée au type trouvé : `Voir le schéma`, `Voir l'illustration`, `Voir le tableau`, etc., sans référence PDF encombrante.
+- Extraire les tableaux/couples/valeurs de contrôle comme données structurées autant que possible.
+- Dédupliquer les connaissances/visuels identiques tout en conservant plusieurs relations d'usage.
+- Prévoir la réimportation d'une nouvelle édition sans reconstruire toute la base.
+
+### STRATEGIE DE VALIDATION
+Le corpus actuel n'est pas supprimé avant validation et sert de contrôle de non-régression. Ne pas lancer immédiatement les 47 PDF. Commencer par un manuel représentatif et valider : multi-page, Dépose/Repose, renvois, image noir/blanc, rotation 90°, schéma électrique, illustration mécanique, tableau/couple, variante, association opération-visuel, question générale et question précise.
+
+### GARDE-FOUS
+- `MEMSX64` reste BUILD #103 / `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+- Aucun BUILD #104 sans autorisation explicite.
+- 32 bits intouché.
+- Aucun changement protocole.
+- Aucun patch/rustine.
+- Travail RAVEMEMS sur branche de test seulement.
+
+### PROCHAINE ACTION EXACTE
+Produire le cahier des charges RAVEMEMS téléchargeable, le faire relire et compléter par l'utilisateur, puis attendre sa validation explicite avant tout code ou toute nouvelle extraction.
