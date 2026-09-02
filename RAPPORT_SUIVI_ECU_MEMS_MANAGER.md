@@ -11930,3 +11930,13 @@ Observation : la reponse retrouve `Ecrous de culasse 34 N.m puis 34 N.m de plus`
 Verdict question 2 : recuperation factuelle PARTIELLEMENT CORRECTE ; pertinence/restitution ECHEC ; proposition visuelle ECHEC.
 
 PROCHAINE ACTION EXACTE : verifier uniquement si les assets correspondant aux references RCL0193FRE PDF 42 et 174 existent reellement dans le package exact, puis auditer la condition de proposition visuelle. Aucun correctif applicatif avant identification de la cause. Ne pas modifier MEMSX64 ni le protocole ECU.
+
+## 2026-09-02 — DIAGNOSTIC CAUSE REELLE — VISUEL NON PROPOSE SUR COUPLE CULASSE
+
+Verification du package exact artefact 9815810470 : `database/reference/images/rave/RCL0193FRE_PDF_042.png` et `database/reference/images/rave/RCL0193FRE_PDF_174.png` sont bien presents. La page 42 est en plus declaree dans `runtime_visual_catalog.json` avec `ui_visible=true`, `ui_label=Voir le schéma`, contexte `RAVE RCL0193FRE PDF 042 Couples de serrage généraux moteur`, et chemin runtime `legacy/database/reference/images/rave/RCL0193FRE_PDF_042.png`. La page 174 existe comme fichier mais nest pas une entree du catalogue de proposition.
+
+Cause code prouvee dans `expert/IaMemsDiagramCatalog.cpp` : `suggestionForQuestion()` exige actuellement un `diagramIntent` explicite contenant des termes tels que schema/brochage/connecteur/cablage/voir AVANT de consulter `runtime_visual_catalog.json`. La question reelle `Quel est le couple de serrage de la culasse ?` ne contient aucun de ces termes ; la fonction retourne donc immediatement aucune suggestion, bien que la page 42 soit disponible et pertinente.
+
+Conception de correction autorisee sur branche de test uniquement : conserver le chemin actuel des demandes explicites de schema ; pour une question sans intention graphique explicite, consulter uniquement le catalogue runtime avec un seuil de pertinence renforce, au moins deux termes techniques significatifs / score minimal 16, sans fallback vers les anciens schemas generiques. Completer les stop-words du matcher afin deviter les faux positifs sur des mots grammaticaux. Ajouter un self-test exact pour `Quel est le couple de serrage de la culasse ?` -> page 42, tout en conservant le test `Mon moteur chauffe-t-il trop au ralenti ?` -> aucune suggestion.
+
+PROCHAINE ACTION EXACTE : modifier uniquement `expert/IaMemsDiagramCatalog.cpp` et `expert/IaMemsDiagramSelfTest.cpp` sur `tmp-ravemems-ia-visual-integration`, lancer les self-tests et reconstruire le package x64 de test. `MEMSX64` reste BUILD #103 et le protocole ECU reste intouche.
