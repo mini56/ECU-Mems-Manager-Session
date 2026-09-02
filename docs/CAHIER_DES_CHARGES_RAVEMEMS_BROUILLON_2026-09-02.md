@@ -102,6 +102,10 @@ Conserver le texte source original des éléments techniques réellement structu
 
 Ce texte source sera la base des traductions futures.
 
+Un **avertissement ou une précaution doit conserver sa portée réelle**. S'il s'applique à plusieurs étapes ou à toute une phase, RAVEMEMS doit le rattacher à l'ensemble de cette portée et non uniquement à la ligne ou à l'étape qui le suit immédiatement. Dans la réponse IA, l'avertissement doit être présenté **avant les étapes concernées**, au moment où l'utilisateur en a besoin.
+
+Lorsqu'il s'agit d'un avertissement de sécurité ou d'un risque technique important, l'IA doit le rendre **visuellement évident**, avec un **carré ou pictogramme rouge accompagné d'un libellé explicite tel que `ATTENTION` ou `AVERTISSEMENT`**, puis le texte correspondant. La couleur rouge ne doit jamais être le seul moyen de signaler le danger : le libellé textuel reste obligatoire.
+
 ---
 
 ## 9. RELATIONS ENTRE OPÉRATIONS

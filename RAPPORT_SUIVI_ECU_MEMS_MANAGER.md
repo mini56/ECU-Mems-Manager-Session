@@ -12576,3 +12576,13 @@ Décision utilisateur validée : les étapes conditionnelles restent attachées 
 Aucun code applicatif, aucune extraction et aucun BUILD de production ne sont lancés.
 
 PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges RAVEMEMS question par question avec l’utilisateur. Ne lancer aucune nouvelle extraction avant validation explicite du cahier.
+
+## 2026-09-02 — RELECTURE CAHIER RAVEMEMS — PORTÉE ET VISIBILITÉ DES AVERTISSEMENTS
+
+Décision utilisateur validée : un avertissement ou une précaution doit rester rattaché à toute la portée de procédure à laquelle il s'applique, y compris plusieurs étapes ou une phase complète. L'IA doit le présenter avant les étapes concernées.
+
+Pour un avertissement de sécurité ou un risque technique important, l'utilisateur demande un signe visible. Règle retenue : carré ou pictogramme rouge + libellé explicite `ATTENTION` / `AVERTISSEMENT` + texte de l'alerte. La couleur seule ne suffit pas.
+
+Aucun code applicatif, aucune extraction et aucun BUILD de production dans cette étape de relecture.
+
+PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges RAVEMEMS question par question avec l'utilisateur. Ne lancer aucune nouvelle extraction avant validation explicite du cahier.
