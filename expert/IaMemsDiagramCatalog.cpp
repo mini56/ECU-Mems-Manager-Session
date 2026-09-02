@@ -265,6 +265,7 @@ IaMemsDiagramSuggestion runtimeSuggestionForResponse(const QString &response,
     IaMemsDiagramSuggestion none;
     QString referenceText = response;
     referenceText.replace(QStringLiteral("\\:"), QStringLiteral(":"));
+    referenceText.replace(QStringLiteral("\\_"), QStringLiteral("_"));
     referenceText.replace(QLatin1Char('\\'), QLatin1Char('/'));
 
     QFile catalog(QDir(root).filePath(QStringLiteral("runtime_visual_catalog.json")));
@@ -330,6 +331,48 @@ IaMemsDiagramSuggestion runtimeSuggestionForResponse(const QString &response,
         const IaMemsDiagramSuggestion candidate = resolvedRuntimeEntry(root, entry);
         if (candidate.isValid())
             return candidate;
+    }
+
+    QFile manifest(QDir(root).filePath(QStringLiteral("manifest.json")));
+    if (manifest.open(QIODevice::ReadOnly)) {
+        QJsonParseError manifestError;
+        const QJsonDocument manifestDocument =
+            QJsonDocument::fromJson(manifest.readAll(), &manifestError);
+        if (manifestError.error == QJsonParseError::NoError && manifestDocument.isObject()) {
+            const QJsonObject diagrams =
+                manifestDocument.object().value(QStringLiteral("diagrams")).toObject();
+
+            QStringList requestedPaths;
+            const QRegularExpression pathRx(
+                QStringLiteral("(images/[A-Za-z0-9_./-]+\\.(?:png|svg|jpe?g|webp))"),
+                QRegularExpression::CaseInsensitiveOption);
+            QRegularExpressionMatchIterator pathMatches = pathRx.globalMatch(referenceText);
+            while (pathMatches.hasNext())
+                requestedPaths.append(QDir::cleanPath(pathMatches.next().captured(1)));
+
+            const QRegularExpression structuredRx(
+                QStringLiteral("(?:^|[^A-Za-z0-9_])rave\\s*:\\s*([A-Za-z0-9_-]+)\\s*:\\s*pdf\\s*:\\s*([0-9]+)"),
+                QRegularExpression::CaseInsensitiveOption);
+            QRegularExpressionMatchIterator structuredMatches = structuredRx.globalMatch(referenceText);
+            while (structuredMatches.hasNext()) {
+                const QRegularExpressionMatch match = structuredMatches.next();
+                requestedPaths.append(QStringLiteral("images/rave/%1_PDF_%2.png")
+                    .arg(match.captured(1))
+                    .arg(match.captured(2).toInt(), 3, 10, QLatin1Char('0')));
+            }
+
+            for (const QString &requestedPath : requestedPaths) {
+                for (auto it = diagrams.constBegin(); it != diagrams.constEnd(); ++it) {
+                    const QString declaredPath = QDir::cleanPath(it.value().toString().trimmed());
+                    if (declaredPath.compare(requestedPath, Qt::CaseInsensitive) != 0)
+                        continue;
+                    const IaMemsDiagramSuggestion candidate =
+                        resolvePath(root, it.key().trimmed(), declaredPath, true);
+                    if (candidate.isValid())
+                        return candidate;
+                }
+            }
+        }
     }
 
     return none;

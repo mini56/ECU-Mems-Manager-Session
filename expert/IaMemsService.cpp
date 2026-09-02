@@ -56,6 +56,46 @@ bool containsWord(const QString &text, const QString &word)
     return rx.match(text).hasMatch();
 }
 
+int boundedKnowledgeEditDistance(const QString &left, const QString &right, int maximum)
+{
+    if (qAbs(left.size() - right.size()) > maximum)
+        return maximum + 1;
+    QVector<int> previous(right.size() + 1);
+    QVector<int> current(right.size() + 1);
+    for (int j = 0; j <= right.size(); ++j)
+        previous[j] = j;
+    for (int i = 1; i <= left.size(); ++i) {
+        current[0] = i;
+        int rowMinimum = current[0];
+        for (int j = 1; j <= right.size(); ++j) {
+            const int substitution = previous[j - 1]
+                + (left.at(i - 1) == right.at(j - 1) ? 0 : 1);
+            current[j] = qMin(qMin(previous[j] + 1, current[j - 1] + 1), substitution);
+            rowMinimum = qMin(rowMinimum, current[j]);
+        }
+        if (rowMinimum > maximum)
+            return maximum + 1;
+        previous.swap(current);
+    }
+    return previous[right.size()];
+}
+
+bool fuzzyKnowledgeTermMatches(const QString &text, const QString &term)
+{
+    if (term.size() < 5 || term.contains(QRegularExpression(QStringLiteral("[^a-z]"))))
+        return false;
+    const int maximum = term.size() >= 9 ? 2 : 1;
+    QRegularExpressionMatchIterator it =
+        QRegularExpression(QStringLiteral("[a-z]+")) .globalMatch(text);
+    while (it.hasNext()) {
+        const QString candidate = it.next().captured(0);
+        if (qAbs(candidate.size() - term.size()) <= maximum
+            && boundedKnowledgeEditDistance(candidate, term, maximum) <= maximum)
+            return true;
+    }
+    return false;
+}
+
 bool knowledgeTermMatches(const QString &text, const QString &term)
 {
     static const QSet<QString> tokenTerms = {
@@ -67,7 +107,9 @@ bool knowledgeTermMatches(const QString &text, const QString &term)
     };
     if (tokenTerms.contains(term) || term.size() <= 3)
         return containsWord(text, term);
-    return text.contains(term);
+    if (text.contains(term))
+        return true;
+    return fuzzyKnowledgeTermMatches(text, term);
 }
 
 KnowledgeQueryKind knowledgeQueryKind(const QString &questionText)
@@ -92,9 +134,18 @@ bool hasWireColorEvidence(const QString &text)
     return IaMemsConversationRouting::hasDirectWireColourEvidence(text);
 }
 
+bool hasDirectConnectorEvidence(const QString &text)
+{
+    static const QRegularExpression connectorRx(
+        QStringLiteral("\\bC[0-9]{2,4}-[0-9]{1,3}\\b"),
+        QRegularExpression::CaseInsensitiveOption);
+    return connectorRx.match(text).hasMatch();
+}
+
 bool hasPinoutEvidence(const QString &text)
 {
-    return text.contains(QStringLiteral("wiring"))
+    return hasDirectConnectorEvidence(text)
+        || text.contains(QStringLiteral("wiring"))
         || containsWord(text, QStringLiteral("broche"))
         || text.contains(QStringLiteral("pinout"))
         || text.contains(QStringLiteral("connector"))
@@ -179,6 +230,81 @@ QStringList knowledgeTerms(const QString &question)
         }
     }
     return result;
+}
+
+QString firstVisualReferenceLine(const QString &statement)
+{
+    const QStringList lines = statement.split(
+        QRegularExpression(QStringLiteral("[\\r\\n]+")), Qt::SkipEmptyParts);
+    for (const QString &raw : lines) {
+        QString probe = raw.trimmed();
+        probe.replace(QStringLiteral("\\:"), QStringLiteral(":"));
+        probe.replace(QStringLiteral("\\_"), QStringLiteral("_"));
+        if (probe.contains(QRegularExpression(
+                QStringLiteral("(?:rave\\s*:|images[\\\\/])"),
+                QRegularExpression::CaseInsensitiveOption)))
+            return raw.trimmed();
+    }
+    return QString();
+}
+
+int focusedKnowledgeLineScore(const QString &line,
+                              const QStringList &specificTerms,
+                              KnowledgeQueryKind queryKind,
+                              bool asksTorque)
+{
+    const QString text = normalized(line);
+    int score = 0;
+    for (const QString &term : specificTerms) {
+        if (knowledgeTermMatches(text, term))
+            score += term.size() >= 5 ? 8 : 5;
+    }
+    if (queryKind == KnowledgeQueryKind::Pinout && hasDirectConnectorEvidence(line))
+        score += 30;
+    if (asksTorque && IaMemsConversationRouting::hasTorqueEvidence(text))
+        score += 24;
+    if (line.size() <= 260)
+        score += 3;
+    return score;
+}
+
+QString focusedKnowledgeStatement(const QString &statement,
+                                  const QStringList &specificTerms,
+                                  KnowledgeQueryKind queryKind,
+                                  bool asksTorque,
+                                  bool procedureIntent)
+{
+    const QString trimmed = statement.trimmed();
+    if (trimmed.size() <= 420 || procedureIntent)
+        return trimmed;
+
+    const QStringList lines = trimmed.split(
+        QRegularExpression(QStringLiteral("[\\r\\n]+")), Qt::SkipEmptyParts);
+    QString best;
+    int bestScore = -1;
+    for (int i = 0; i < lines.size(); ++i) {
+        const QString line = lines.at(i).trimmed();
+        const int score = focusedKnowledgeLineScore(line, specificTerms, queryKind, asksTorque);
+        if (score > bestScore) {
+            bestScore = score;
+            best = line;
+        }
+        if (i + 1 < lines.size()
+            && line.size() + lines.at(i + 1).trimmed().size() <= 420) {
+            const QString pair = line + QLatin1Char(' ') + lines.at(i + 1).trimmed();
+            const int pairScore = focusedKnowledgeLineScore(pair, specificTerms, queryKind, asksTorque);
+            if (pairScore > bestScore) {
+                bestScore = pairScore;
+                best = pair;
+            }
+        }
+    }
+    if (bestScore < 8 || best.isEmpty())
+        return trimmed;
+    const QString visual = firstVisualReferenceLine(trimmed);
+    if (!visual.isEmpty() && !best.contains(visual))
+        best += QLatin1Char('\n') + visual;
+    return best;
 }
 
 int verificationScore(const QString &level)
@@ -842,6 +968,10 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
     const bool asksTorque = containsAny(questionText, {
         QStringLiteral("couple"), QStringLiteral("serrage"), QStringLiteral("torque")
     });
+    const bool procedureIntent = containsAny(questionText, {
+        QStringLiteral("depose"), QStringLiteral("repose"), QStringLiteral("procedure"),
+        QStringLiteral("remove"), QStringLiteral("refit"), QStringLiteral("remplacement")
+    });
     const QStringList terms = knowledgeTerms(question);
     if (terms.isEmpty())
         return QString();
@@ -915,8 +1045,14 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
         candidate.score += scopeMatchBonus(fact, requestedScope);
         if (queryKind == KnowledgeQueryKind::WireColor)
             candidate.score += 24;
-        else if (queryKind == KnowledgeQueryKind::Pinout)
+        else if (queryKind == KnowledgeQueryKind::Pinout) {
             candidate.score += 16;
+            candidate.score += hasDirectConnectorEvidence(fact.statement) ? 30 : -6;
+        }
+        if (fact.statement.size() > 5000)
+            candidate.score -= 16;
+        else if (fact.statement.size() > 1800)
+            candidate.score -= 8;
 
         if (!m_context.family.trimmed().isEmpty()
             && fact.family.compare(m_context.family, Qt::CaseInsensitive) == 0)
@@ -974,10 +1110,13 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
         && (questionText.contains(QStringLiteral("lambda"))
             || questionText.contains(QStringLiteral("oxygen"))
             || questionText.contains(QStringLiteral("o2")));
-    const int maximum = qMin(queryKind == KnowledgeQueryKind::General ? 3 : 4, ranked.size());
+    const int maximum = qMin(asksTorque ? 2
+                                 : (queryKind == KnowledgeQueryKind::General ? 2 : 4),
+                             ranked.size());
     if (maximum == 1 && !lambdaWireColour) {
         const ExpertFact &fact = ranked.constFirst().fact;
-        QString answer = fact.statement.trimmed();
+        QString answer = focusedKnowledgeStatement(
+            fact.statement, specificTerms, queryKind, asksTorque, procedureIntent);
         if (queryKind == KnowledgeQueryKind::WireColor
             && (questionText.contains(QStringLiteral("lambda")) || questionText.contains(QStringLiteral("oxygen")))
             && normalized(fact.statement).contains(QStringLiteral("relais"))) {
@@ -1026,11 +1165,13 @@ QString IaMemsService::knowledgeAnswer(const QString &question) const
 
     for (int i = 0; i < maximum; ++i) {
         const ExpertFact &fact = ranked.at(i).fact;
-        QString line = QStringLiteral("• %1").arg(fact.statement.trimmed());
+        const QString focused = focusedKnowledgeStatement(
+            fact.statement, specificTerms, queryKind, asksTorque, procedureIntent);
+        QString line = QStringLiteral("• %1").arg(focused);
         if (lambdaWireColour) {
             const QString role = IaMemsConversationRouting::wireColourRoleLabel(fact.statement);
             if (!role.isEmpty())
-                line = QStringLiteral("• %1 — %2").arg(role, fact.statement.trimmed());
+                line = QStringLiteral("• %1 — %2").arg(role, focused);
         }
         if (!fact.verificationLevel.trimmed().isEmpty())
             line += QStringLiteral(" — preuve : %1").arg(verificationLabel(fact.verificationLevel));

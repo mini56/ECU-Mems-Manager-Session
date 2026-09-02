@@ -209,12 +209,15 @@ bool testRuntimeCatalog()
     const QByteArray hiddenBytes("PNG-HIDDEN-TEXT-CAPTURE\n");
     const QByteArray replacedBytes("PNG-REPLACED-LEGACY\n");
     const QByteArray traversalBytes("PNG-OUTSIDE-ROOT\n");
+    const QByteArray manifestBytes("PNG-AKM7169-INJECTOR\n");
 
     if (!writeFile(QDir(temporary.path()).filePath(QStringLiteral("ravemems/purge.png")), raveBytes)
         || !writeFile(QDir(temporary.path()).filePath(QStringLiteral("legacy/akm6348_hub.png")), legacyBytes)
         || !writeFile(QDir(temporary.path()).filePath(QStringLiteral("hidden/text_page.png")), hiddenBytes)
         || !writeFile(QDir(temporary.path()).filePath(QStringLiteral("legacy/replaced.png")), replacedBytes)
-        || !writeFile(QDir(temporary.path()).filePath(QStringLiteral("../outside.png")), traversalBytes)) {
+        || !writeFile(QDir(temporary.path()).filePath(QStringLiteral("../outside.png")), traversalBytes)
+        || !writeFile(QDir(temporary.path()).filePath(
+                          QStringLiteral("images/rave/AKM7169ENG_PDF_133.png")), manifestBytes)) {
         printLine(QStringLiteral("FAIL cannot create runtime catalog fixture files"));
         return false;
     }
@@ -287,6 +290,17 @@ bool testRuntimeCatalog()
         return false;
     }
 
+    QJsonObject manifestDiagrams;
+    manifestDiagrams.insert(QStringLiteral("RAVE AKM7169ENG PDF 133"),
+                            QStringLiteral("images/rave/AKM7169ENG_PDF_133.png"));
+    QJsonObject manifestRoot;
+    manifestRoot.insert(QStringLiteral("diagrams"), manifestDiagrams);
+    if (!writeFile(QDir(temporary.path()).filePath(QStringLiteral("manifest.json")),
+                   QJsonDocument(manifestRoot).toJson(QJsonDocument::Indented))) {
+        printLine(QStringLiteral("FAIL cannot write response manifest fixture"));
+        return false;
+    }
+
     bool ok = true;
     ok = requireSuggestion(
              temporary.path(),
@@ -340,6 +354,22 @@ bool testRuntimeCatalog()
              QStringLiteral("RCL0193ENG p.99"),
              QStringLiteral("ravemems/purge.png"),
              QStringLiteral("runtime path reference DE")) && ok;
+    ok = requireResponseSuggestion(
+             temporary.path(),
+             QStringLiteral("Illustration locale: images/rave/AKM7169ENG\\_PDF\\_133.PNG"),
+             QStringLiteral("RAVE AKM7169ENG PDF 133"),
+             QStringLiteral("images/rave/AKM7169ENG_PDF_133.png"),
+             QStringLiteral("manifest path Markdown escapes")) && ok;
+    ok = requireResponseSuggestion(
+             temporary.path(),
+             QStringLiteral("Illustration locale: rave:AKM7169ENG:PDF:133"),
+             QStringLiteral("RAVE AKM7169ENG PDF 133"),
+             QStringLiteral("images/rave/AKM7169ENG_PDF_133.png"),
+             QStringLiteral("manifest structured response fallback")) && ok;
+    ok = requireNoResponseSuggestion(
+             temporary.path(),
+             QStringLiteral("Illustration locale: images/rave/UNDECLARED.PNG"),
+             QStringLiteral("undeclared explicit response image")) && ok;
     ok = requireNoResponseSuggestion(
              temporary.path(),
              QStringLiteral("A response without any packaged image reference."),

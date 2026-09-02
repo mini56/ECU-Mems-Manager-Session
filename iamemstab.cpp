@@ -15,6 +15,7 @@
 #include <QDialogButtonBox>
 #include <QFileInfo>
 #include <QHBoxLayout>
+#include <QImageReader>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
@@ -89,6 +90,16 @@ QString shortMpiAnswer(const QString &raw)
         return I18n::text(99050);
     }
     return QString();
+}
+
+bool responseMentionsLocalVisualReference(QString text)
+{
+    text.replace(QStringLiteral("\\:"), QStringLiteral(":"));
+    text.replace(QStringLiteral("\\_"), QStringLiteral("_"));
+    static const QRegularExpression rx(
+        QStringLiteral("(?:rave\\s*:[A-Za-z0-9_-]+\\s*:\\s*pdf\\s*:\\s*[0-9]+|images[\\\\/][^\\s]+\\.(?:png|svg|jpe?g|webp))"),
+        QRegularExpression::CaseInsensitiveOption);
+    return rx.match(text).hasMatch();
 }
 
 } // namespace
@@ -362,13 +373,23 @@ void IaMemsTab::openSuggestedDiagram()
                                  .toString()
                                  .toHtmlEscaped();
     const QString title = suggestion.key.toHtmlEscaped();
+    QImageReader imageReader(fileInfo.canonicalFilePath());
+    const QSize sourceSize = imageReader.size();
+    const QSize available(qMax(120, viewer.width() - 60),
+                          qMax(120, viewer.height() - 150));
+    const QSize fitted = sourceSize.isValid()
+        ? sourceSize.scaled(available, Qt::KeepAspectRatio)
+        : QSize();
+    const QString imageTag = fitted.isValid()
+        ? QStringLiteral("<img src='%1' width='%2' height='%3'>")
+              .arg(localUrl).arg(fitted.width()).arg(fitted.height())
+        : QStringLiteral("<img src='%1' style='max-width:100%;height:auto;'>").arg(localUrl);
     browser->setHtml(QStringLiteral(
         "<style>body{background:#0a1015;color:#dce3e8;font-family:'Segoe UI',Arial,sans-serif;}"
         "h1{color:#ff9828;font-size:16pt;margin:0 0 10px 0;}"
-        ".diagram{background:#0d151b;border:1px solid #34414b;padding:10px;text-align:center;}"
-        ".diagram img{max-width:100%;height:auto;}</style>"
-        "<h1>%1</h1><div class='diagram'><img src='%2'></div>")
-        .arg(title, localUrl));
+        ".diagram{background:#0d151b;border:1px solid #34414b;padding:10px;text-align:center;}</style>"
+        "<h1>%1</h1><div class='diagram'>%2</div>")
+        .arg(title, imageTag));
     layout->addWidget(browser, 1);
 
     QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Close, &viewer);
@@ -612,6 +633,11 @@ void IaMemsTab::onServiceResponse(const QString &text)
         m_diagramQuestion = text;
         m_diagramButton->setText(I18n::text(99006));
         m_diagramButton->setVisible(true);
+    } else if (m_diagramButton && responseMentionsLocalVisualReference(text)) {
+        m_diagramTitle.clear();
+        m_diagramQuestion.clear();
+        m_diagramButton->setText(QString());
+        m_diagramButton->setVisible(false);
     }
 
     if (m_sendButton)
