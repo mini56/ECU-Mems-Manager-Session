@@ -403,6 +403,8 @@ Le prototype doit démontrer que les étapes multi-pages restent continues, les 
 
 Une procédure incomplète n’est pas un état normal acceptable : elle indique qu’une partie de l’information n’a pas été extraite ou reliée correctement. Après chaque extraction, un **audit de complétude** doit vérifier les opérations, phases et numérotations d’étapes afin de détecter notamment les débuts manquants, fins manquantes, ruptures de séquence et fragments de procédure isolés. Tant que cette anomalie n’est pas corrigée, l’IA ne doit jamais présenter la procédure comme complète ; elle doit signaler clairement qu’une partie manque.
 
+Tout élément dont l’extraction ou la structuration reste incertaine — par exemple numéro d’étape ambigu, valeur mal lue, OCR douteux, tableau mal structuré, relation image/procédure incertaine ou autre information non suffisamment fiable — doit être **conservé mais marqué `à vérifier`**. RAVEMEMS ne doit jamais le valider silencieusement comme certain. L’**audit post-extraction** doit pouvoir retrouver automatiquement l’ensemble de ces éléments et ils doivent être revus avant validation finale du corpus.
+
 Seulement après cette validation, le pipeline pourra être appliqué au corpus complet.
 
 ---

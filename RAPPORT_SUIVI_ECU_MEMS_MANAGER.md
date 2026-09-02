@@ -12621,3 +12621,12 @@ PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges RAVEMEMS
 ## 2026-09-02 — RELECTURE CAHIER RAVEMEMS — CONVERSIONS ET CALCULS SIMPLES
 Décision utilisateur validée : l’IA peut effectuer à la demande des conversions d’unités et des calculs simples. Exemple validé : 3 pouces = 76,2 mm. Lorsqu’une conversion porte sur une valeur constructeur, la valeur et l’unité d’origine restent la référence et sont distinguées du résultat calculé par l’IA. Aucun code applicatif, aucune extraction et aucun BUILD de production ne sont lancés.
 PROCHAINE ACTION EXACTE : reprendre la relecture du cahier à la question 16 sur le marquage des éléments d’extraction douteux et l’audit après extraction.
+
+
+## 2026-09-02 — RELECTURE CAHIER RAVEMEMS — ELEMENTS INCERTAINS
+
+Décision utilisateur validée : tout élément dont l’extraction ou la structuration reste incertaine doit être conservé mais marqué `à vérifier`. RAVEMEMS ne doit pas le considérer silencieusement comme fiable. L’audit post-extraction doit retrouver automatiquement tous ces éléments afin qu’ils soient contrôlés avant validation finale du corpus. Cela couvre notamment les numéros d’étape ambigus, valeurs mal lues, OCR douteux, tableaux mal structurés et relations image/procédure incertaines.
+
+Aucun code applicatif, aucune extraction et aucun BUILD de production ne sont lancés.
+
+PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges RAVEMEMS question par question avec l’utilisateur. Ne lancer aucune nouvelle extraction avant validation explicite du cahier.
