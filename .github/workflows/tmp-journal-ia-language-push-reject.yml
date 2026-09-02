@@ -1,0 +1,42 @@
+name: TEMP journal IA language source push rejection
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths: ['.github/workflows/tmp-journal-ia-language-push-reject.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append journal
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+## 2026-09-02 — Rejet du push apres edition directe multilingue IA
+
+Run `33599455406` : l'etape `Edit source directly` = SUCCESS et `git diff --check` = PASS. Le runner a cree localement le commit `7942fba` (`Fix IA MEMS active-language rendering directly in source`) avec les corrections IA et les six ressources de langue, mais le push a ete refuse par GitHub uniquement parce que ce meme commit incluait une modification de `.github/workflows/tmp-ravemems-visual-test-package-x64.yml` et le token GitHub Actions n'a pas la permission `workflows` : `refusing to allow a GitHub App to create or update workflow ... without workflows permission`.
+
+Aucune correction applicative issue de ce run n'a donc ete poussee sur la branche distante. `MEMSX64` reste intact sur BUILD #103.
+
+Correction de methode : separer strictement le commit source du changement du workflow de validation. Le commit source ne doit modifier aucun fichier sous `.github/workflows/`. Le workflow temporaire d'edition ne doit pas tenter de s'auto-supprimer dans ce push si cette suppression provoque la meme restriction ; il sera supprime ensuite par le connecteur GitHub autorise. Le workflow x64 existant sera adapte/declenche dans une pousse separee, apres journalisation du commit source.
+
+Regle d'architecture maintenue : la langue active vient de `I18n::language()`, jamais de Windows. Les textes d'interface/statut/fallback passent par les ressources I18n FR/EN/ES/IT/PT/DE. Les faits documentaires ne doivent pas etre renvoyes bruts dans une langue differente de la langue active. La restitution Qwen doit conserver valeurs, unites, identifiants, references et niveau de preuve.
+
+PROCHAINE ACTION EXACTE : relancer l'edition directe en ne commitant que les fichiers source/tests/traductions et la suppression du helper `tools/tmp_direct_ia_language_edit.py`, sans aucune modification de workflow dans ce commit. Verifier le diff distant et `MEMSX64`, journaliser immediatement le commit source obtenu, puis seulement ensuite adapter et declencher le workflow x64 par une pousse autorisee separee.
+EOF
+      - name: Commit journal
+        run: |
+          git config user.name github-actions-bot
+          git config user.email github-actions-bot@users.noreply.github.com
+          git rm .github/workflows/tmp-journal-ia-language-push-reject.yml
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m 'Journal IA language source push rejection'
+          git push origin HEAD:RAPPORT
