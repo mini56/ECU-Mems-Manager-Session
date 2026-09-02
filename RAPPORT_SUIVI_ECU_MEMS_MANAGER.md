@@ -12074,3 +12074,13 @@ PERTINENCE IMAGE: PASS. Le catalogue runtime associe RCL0193ENG p.64 a la sequen
 RENDU ASSET: FAIL. Le fichier runtime DOC_0047_XN_WMXN990E_PDF_X1638.png est 624x1056, contenu tourne a 90 degres, blanc sur fond noir.
 Aucune correction appliquee. Continuer les tests.
 PROCHAINE ACTION EXACTE: troisieme question IA en francais; verifier justesse, concision, bouton image, pertinence image, orientation et couleurs. Ne pas modifier MEMSX64.
+
+## 2026-09-02 - CORRECTION du TEST IA visuel 2
+Correction utilisateur : l'image/capture analysee apres la question sur le couple de serrage de culasse provenait encore du premier test. Les conclusions precedemment inscrites sur le bouton image, la pertinence de RCL0193ENG p.64 et le rendu de cet asset ne constituent donc PAS un resultat valide du TEST 2.
+
+Etat valide du TEST 2 :
+- DONNEE TEXTE : PASS. La reponse contient bien Ecrous de culasse 34 N.m puis 34 N.m de plus.
+- QUALITE REPONSE : FAIL. La reponse est beaucoup trop longue et contient une grande table de couples et des contenus hors sujet.
+- BOUTON/IMAGE : NON TESTE pour cette question.
+
+PROCHAINE ACTION EXACTE : rester sur la question 2, revenir dans IA MEMS, verifier si le bouton Voir le schema est actuellement propose pour cette reponse, cliquer ce bouton sans reutiliser celui de la question precedente, puis envoyer la capture de la nouvelle fenetre. Ne pas passer a la question 3 avant validation de cette image.
