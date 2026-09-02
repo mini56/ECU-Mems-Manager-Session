@@ -12491,3 +12491,11 @@ Décision utilisateur : lorsqu’une question peut concerner plusieurs variantes
 Cette règle complète la règle précédente : un véhicule connecté ne doit jamais être supposé comme véhicule concerné sans confirmation explicite de l’utilisateur.
 
 Aucun code, aucune extraction et aucun BUILD lancés ; cahier toujours en relecture.
+
+## 2026-09-02 — CAHIER RAVEMEMS — SPi/MPi NON LIMITES A MINI
+
+Correction utilisateur : SPi et MPi ne concernent pas uniquement la Mini. Le cahier ne doit donc jamais utiliser Mini SPi/Mini MPi comme logique implicite ou comme choix générique de véhicule.
+
+Règle retenue : déterminer d’abord si la question concerne le véhicule actuellement connecté ou un autre véhicule. Si aucun véhicule n’est connecté, ou si l’utilisateur parle d’un autre véhicule, demander les éléments nécessaires pour identifier le véhicule (marque, modèle, moteur, année, type d’injection/gestion, ECU ou autre variante pertinente). Une fois le véhicule identifié, demander seulement le discriminant encore nécessaire, par exemple SPi ou MPi si c’est réellement ce qui différencie les réponses disponibles.
+
+Aucun code, aucune extraction et aucun BUILD lancés ; cahier toujours en relecture.
