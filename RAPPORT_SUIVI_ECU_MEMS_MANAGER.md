@@ -12120,3 +12120,14 @@ RENDU IMAGE: PASS. Image dans le bon sens, fond blanc, schema lisible.
 TRADUCTION TEXTE DANS IMAGE: FAIL. Les libelles du schema restent en anglais alors que l'interface est en francais.
 CORRECTION TEST PRECEDENT LAMBDA: RCL0193ENG p.112 est une vue pertinente des connecteurs/boitier ECU, mais reste secondaire pour identifier directement C158-27/C158-28; le schema RCL0194ENG 20.1 est plus pertinent pour la liaison lambda.
 Aucune correction applicative appliquee. Continuer la campagne de tests question -> reponse -> image avant modification du code.
+
+## 2026-09-02 - TEST IA visuel - relais ventilateur Mini MPi 97MY
+Question: Quelle est la broche ECU de commande du relais de ventilateur de refroidissement sur une Mini MPi 97MY ?
+REPONSE TECHNIQUE: PASS. La premiere ligne donne C159-28 et le circuit LGB via C448-9/C162-9.
+QUALITE REPONSE: FAIL. Apres la bonne reponse, restitution trop longue et fortement hors sujet.
+BOUTON IMAGE: PASS.
+PERTINENCE IMAGE: PASS. RCL0194ENG 39.2 montre le relais ventilateur, le circuit LGB et C159-28.
+RENDU IMAGE: PASS. Orientation correcte, fond blanc, schema lisible.
+LOCALISATION TITRE: PASS. Le titre de la fenetre est genere/localise en francais par MEMS Manager.
+TRADUCTION TEXTE DANS IMAGE: FAIL. Les libelles integres au schema restent dans la langue source anglaise (COOLING FAN, MEMS CONTROL UNIT, etc.).
+Aucune correction appliquee. Continuer la campagne de tests avant modification du code.
