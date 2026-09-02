@@ -11912,3 +11912,21 @@ Branche de test verifiee : tmp-ravemems-ia-visual-integration HEAD d936ead712d64
 MEMSX64 verifie intact : BUILD #103 commit 1d6316bd1746d6f2b4cfb751cab88d18e27ef730.
 
 PROCHAINE ACTION EXACTE : declencher le workflow RAVEMEMS VISUAL TEST from BUILD 103 sur la branche de test actuelle, sans changer sa logique de build, puis journaliser le verdict avant tout autre correctif.
+
+## 2026-09-02 — INCIDENT DE JOURNALISATION PUIS TEST REEL IA CULASSE
+
+La tentative precedente de journalisation du test reel a echoue : run 33548305774 = FAILURE avec 0 job. Cause : contenu heredoc non indente dans le YAML temporaire, donc workflow invalide. Aucun code applicatif, MEMSX64, protocole ECU ou package de test na ete modifie par cet incident. Le mecanisme temporaire est corrige avant toute reprise technique.
+
+Package teste : run 33545999454 = SUCCESS, artefact ECU-MEMS-Manager-x64-RAVEMEMS-VISUAL-TEST-from-BUILD-103, ID 9815810470, SHA-256 12c90ee438ff93fd1ea4e02dbd9b47948008c3d79d7c0ba57b2f0a36025b9b17. MEMSX64 reste BUILD #103 commit 1d6316bd1746d6f2b4cfb751cab88d18e27ef730.
+
+Test reel PC : le scroll vertical standard de la fenetre IA fonctionne. Verdict scroll : PASS.
+
+Question 1 : `CULASSE`.
+Observation : la base retrouve la procedure constructeur de joint/culasse, les etapes de depose/repose et notamment le serrage 34 N.m puis 68 N.m. La restitution est cependant beaucoup trop longue et expose des contenus bruts/internes : procedure dupliquee, en-tetes MOTEUR/REPARATIONS, marqueurs `[figure: ...]`, lignes `Exigence ...`, illustrations repetees et contamination `JOINT DE COUVRE-CULBUTEURS`.
+Verdict question 1 : donnees retrouvees, restitution ciblee ECHEC.
+
+Question 2 : `Quel est le couple de serrage de la culasse ?`
+Observation : la reponse retrouve `Ecrous de culasse 34 N.m puis 34 N.m de plus`, mais renvoie aussi la table generale complete des couples, une procedure collecteur/echappement non ciblee et des lignes internes `manufacturer_numeric_statement`. Elle contient les references `rave:RCL0193FRE:PDF:42` et `rave:RCL0193FRE:PDF:174`, mais aucun bouton ou image locale nest propose dans UI.
+Verdict question 2 : recuperation factuelle PARTIELLEMENT CORRECTE ; pertinence/restitution ECHEC ; proposition visuelle ECHEC.
+
+PROCHAINE ACTION EXACTE : verifier uniquement si les assets correspondant aux references RCL0193FRE PDF 42 et 174 existent reellement dans le package exact, puis auditer la condition de proposition visuelle. Aucun correctif applicatif avant identification de la cause. Ne pas modifier MEMSX64 ni le protocole ECU.
