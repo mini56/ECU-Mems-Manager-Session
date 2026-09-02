@@ -1,0 +1,37 @@
+name: TEMP journal free ROSCO test
+on:
+  push:
+    paths:
+      - '.github/workflows/tmp-journal-free-rosco-test.yml'
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+      - name: Append test result
+        shell: bash
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+## 2026-09-02 — Test libre IA MEMS : `BROCHE ROSCO`
+
+- Question utilisateur : `BROCHE ROSCO`
+- Réponse IA : `Illustration technique locale disponible dans le package: images/rover_rosco_3pin_black.svg` puis `Niveau de preuve : non vérifiée.`
+- Sélection d'image : PASS — l'illustration `ROSCO 3 broches` est directement pertinente pour la demande libre.
+- Réponse texte : PASS partiel — courte et cohérente, mais ne donne pas la fonction de chaque broche.
+- Affichage de l'image : FAIL ergonomique — le SVG est affiché à une taille trop grande et n'est pas ajusté à la fenêtre ; seule une partie du connecteur est visible sans défilement.
+- Couleurs/orientation : lisibles ; pas de défaut de rotation observé sur ce cas.
+- Aucune correction applicative effectuée pendant cette phase de tests.
+EOF
+      - name: Commit journal
+        shell: bash
+        run: |
+          git config user.name "mini56"
+          git config user.email "48644212+mini56@users.noreply.github.com"
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m "Journal free ROSCO IA test"
+          git push origin RAPPORT
