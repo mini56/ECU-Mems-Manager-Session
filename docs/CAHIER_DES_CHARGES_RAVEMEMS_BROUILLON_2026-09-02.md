@@ -80,6 +80,8 @@ Exemple :
 
 Il ne faut jamais transformer artificiellement `Repose 1` en étape 9, 15 ou 22 simplement parce qu’une phase Dépose la précède.
 
+Les **étapes conditionnelles** doivent rester rattachées à leur condition d’applicabilité. Exemple : si le manuel indique qu’une opération supplémentaire est nécessaire uniquement avec climatisation, cette condition fait partie de la procédure et ne doit pas être perdue. Si l’équipement ou la variante du véhicule est déjà connu, l’IA suit directement la branche applicable. Si cette information n’est pas connue et qu’elle change réellement la procédure, l’IA demande uniquement le discriminant nécessaire, par exemple : « Le véhicule est-il équipé de la climatisation ? »
+
 ---
 
 ## 7. NUMÉROS ET RÉFÉRENCES CONSTRUCTEUR

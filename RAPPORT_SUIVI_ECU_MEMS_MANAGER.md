@@ -12567,3 +12567,12 @@ Décision utilisateur validée : une procédure dont certaines étapes manquent 
 Aucun code applicatif, aucune extraction et aucun BUILD de production ne sont lancés dans cette étape de relecture.
 
 PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges RAVEMEMS question par question avec l’utilisateur. Ne lancer aucune nouvelle extraction avant validation explicite du cahier.
+
+
+## 2026-09-02 — RELECTURE CAHIER RAVEMEMS — ÉTAPES CONDITIONNELLES
+
+Décision utilisateur validée : les étapes conditionnelles restent attachées à leur condition d’applicabilité. Si le contexte véhicule/équipement est connu, l’IA suit directement la branche applicable. Si le contexte manque et change réellement la procédure, l’IA demande uniquement le discriminant nécessaire (par exemple présence de climatisation).
+
+Aucun code applicatif, aucune extraction et aucun BUILD de production ne sont lancés.
+
+PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges RAVEMEMS question par question avec l’utilisateur. Ne lancer aucune nouvelle extraction avant validation explicite du cahier.
