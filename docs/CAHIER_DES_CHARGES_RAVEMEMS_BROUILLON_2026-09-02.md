@@ -185,7 +185,11 @@ Une même opération peut varier selon modèle, moteur, SPi/MPi, famille MEMS, v
 
 RAVEMEMS doit conserver ce contexte lorsqu’il est présent dans le document.
 
-Si MEMS Manager connaît déjà le véhicule / ECU courant, l’IA doit utiliser ce contexte. Si plusieurs réponses incompatibles restent possibles, l’IA doit demander la variante nécessaire.
+Si un véhicule / ECU est actuellement connecté, l’IA ne doit pas supposer automatiquement que la question concerne ce véhicule. Elle doit demander à l’utilisateur si sa question concerne le véhicule actuellement connecté. L’utilisateur peut très bien demander une information sur un autre véhicule.
+
+Si aucun véhicule / ECU n’est connecté, l’IA ne connaît pas le véhicule concerné et ne doit pas en inventer un. Elle doit utiliser les informations données dans la question ou demander le véhicule / ECU / variante nécessaire.
+
+Si plusieurs réponses incompatibles restent possibles, l’IA doit demander la variante nécessaire avant de répondre.
 
 ---
 
@@ -403,7 +407,7 @@ Cette liste n’est pas nécessairement définitive.
 
 ## 36. PAS DE LOGIQUE BASÉE SUR UNE LANGUE PARTICULIÈRE
 
-Les comportements ne doivent pas dépendre de mots français codés en dur.
+Les comportements ne doivent pas dépendre de mots français ou de mots d’une autre langue codés en dur.
 
 La structure et les intentions doivent pouvoir fonctionner quelle que soit la langue de la question et quelle que soit la langue source du document.
 

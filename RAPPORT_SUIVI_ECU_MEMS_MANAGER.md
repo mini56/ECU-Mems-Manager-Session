@@ -12461,3 +12461,15 @@ Statut : brouillon, non encore validé par l'utilisateur.
 Aucun code RAVEMEMS, aucune extraction, aucun BUILD et aucune modification de `MEMSX64` n'ont été lancés pendant cette rédaction.
 
 PROCHAINE ACTION EXACTE : attendre la relecture utilisateur du cahier des charges. Intégrer ses corrections/ajouts, puis faire valider explicitement la version finale avant tout code ou toute nouvelle extraction.
+
+## 2026-09-02 — RELECTURE CAHIER RAVEMEMS — CORRECTIONS UTILISATEUR 14 ET 36
+
+Deux règles du brouillon RAVEMEMS sont corrigées à la demande explicite de l'utilisateur :
+
+1. CONTEXTE VEHICULE / ECU : un véhicule connecté ne doit jamais être supposé comme cible automatique de la question. Si un véhicule / ECU est connecté, IA MEMS doit demander si la question concerne le véhicule actuellement connecté. L'utilisateur peut demander une information sur un autre véhicule. Si aucun véhicule n'est connecté, l'IA ne connaît pas le véhicule concerné et doit utiliser les informations de la question ou demander le véhicule / ECU / variante nécessaire. Si plusieurs réponses incompatibles restent possibles, la variante nécessaire doit être demandée avant réponse.
+
+2. LANGUE : aucune logique comportementale ne doit dépendre de mots codés en dur dans une langue particulière. La règle vaut pour le français comme pour toute autre langue.
+
+Aucun code applicatif, aucune extraction et aucun BUILD ne sont lancés. MEMSX64 reste BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges avec l'utilisateur et intégrer ses corrections. Ne lancer aucune extraction ni implémentation avant validation explicite du cahier.
