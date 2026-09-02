@@ -12057,3 +12057,10 @@ Le commit source ne modifie aucun workflow de compilation. Fichiers applicatifs 
 Decision utilisateur : ne pas interrompre la campagne de test IA actuelle pour tester les langues. Continuer d'abord le protocole reel `question -> reponse -> image` sur le package de test deja installe. Le test de langue IA sera effectue ensuite.
 
 PROCHAINE ACTION EXACTE : continuer le test reel IA en francais, une question a la fois, verifier la qualite de la reponse puis l'image/schema propose lorsqu'il y en a un. Journaliser chaque resultat. Ne pas lancer maintenant le test de langue et ne pas modifier MEMSX64.
+## 2026-09-02 — Lancement demandé du nouveau package IA/RAVEMEMS
+
+Décision utilisateur : lancer maintenant un nouveau package x64 contenant le commit source `8869f9e1a098b6efd0519673a3c8d6ff0da4599c`, puis continuer la campagne réelle IA `question -> réponse -> image`. Le test fonctionnel de changement de langue IA est explicitement reporté après cette campagne.
+
+Le workflow x64 doit donc compiler et empaqueter la branche `tmp-ravemems-ia-visual-integration`, conserver les gardes BUILD #103/RAVEMEMS/protocole/visuels, accepter les nouveaux fichiers source et ressources I18n dans le périmètre, mais ne pas exécuter maintenant le self-test fonctionnel multilingue Qwen. `MEMSX64` reste strictement sur BUILD #103.
+
+PROCHAINE ACTION EXACTE : adapter uniquement le workflow temporaire `tmp-ravemems-visual-test-package-x64.yml` au nouveau périmètre source, différer les deux exécutions de `local_ai_onnx_selftest.exe`, pousser ce workflow pour déclencher le package, suivre le run jusqu'au verdict et fournir l'artefact si vert. Puis reprendre le test réel `question -> réponse -> image`.
