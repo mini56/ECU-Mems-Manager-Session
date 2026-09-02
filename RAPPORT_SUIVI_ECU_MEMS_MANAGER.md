@@ -12507,3 +12507,8 @@ Précision utilisateur : si la recherche a déjà identifié un contexte Mini av
 Cette formulation est un exemple contextuel et ne signifie pas que SPi/MPi est propre à la Mini. Pour un autre modèle, l’IA doit proposer les variantes réellement pertinentes pour ce véhicule. Si un véhicule/ECU est connecté, l’IA confirme d’abord que la question concerne bien le véhicule connecté avant d’utiliser ce contexte.
 
 Aucun code, aucune extraction et aucun BUILD lancés ; cahier toujours en relecture.
+
+
+## 2026-09-02 — CAHIER RAVEMEMS : REGLE DE NETTOYAGE DES VISUELS
+
+Décision utilisateur : le recadrage RAVEMEMS doit retirer automatiquement marges, en-têtes, pieds de page, zones blanches et espaces inutiles, mais conserver systématiquement une petite marge de sécurité autour du contenu technique. Aucun repère, flèche, légende, symbole ou élément utile ne doit être coupé. Cette règle est ajoutée au cahier des charges. Aucun code ni extraction n'est lancé.

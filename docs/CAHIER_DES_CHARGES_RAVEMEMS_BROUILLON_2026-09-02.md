@@ -237,7 +237,7 @@ Objectif : **ce que voit l’utilisateur dans MEMS Manager doit correspondre à 
 
 ## 19. RECADRAGE DES IMAGES
 
-Lorsque la page est grande mais que l’illustration utile est petite, RAVEMEMS doit privilégier un recadrage propre de la zone technique utile.
+Lorsque la page est grande mais que l’illustration utile est petite, RAVEMEMS doit privilégier un recadrage propre de la zone technique utile. Le recadrage doit retirer automatiquement les marges, en-têtes, pieds de page, zones blanches et autres espaces inutiles, tout en conservant une **petite marge de sécurité autour de tout contenu technique** afin de ne jamais couper un repère, une flèche, une légende, un symbole ou un élément nécessaire à la compréhension.
 
 Bénéfices : aperçu plus lisible, image utile plus grande, moins besoin de zoomer, stockage réduit et moins de texte parasite.
 
