@@ -26,11 +26,17 @@ jobs:
           git status --short
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git rm .github/workflows/tmp-direct-ia-language-source.yml tools/tmp_direct_ia_language_edit.py
+          # The helper prepares a later CI-workflow update too, but this commit must
+          # contain source/tests/translations only. Restore every workflow file.
+          git checkout -- .github/workflows/tmp-ravemems-visual-test-package-x64.yml
+          git rm tools/tmp_direct_ia_language_edit.py
           git add expert/LocalAiClient.cpp expert/IaMemsService.cpp expert/LocalAiOnnxSelfTest.cpp iamemstab.cpp \
                   translations/fr/fr_ia_mems.json translations/en/en_ia_mems.json translations/es/es_ia_mems.json \
-                  translations/it/it_ia_mems.json translations/pt/pt_ia_mems.json translations/de/de_ia_mems.json \
-                  .github/workflows/tmp-ravemems-visual-test-package-x64.yml
+                  translations/it/it_ia_mems.json translations/pt/pt_ia_mems.json translations/de/de_ia_mems.json
           git diff --cached --check
+          if git diff --cached --name-only | grep -q '^.github/workflows/'; then
+            echo 'ERROR: source commit unexpectedly contains workflow changes'
+            exit 1
+          fi
           git commit -m 'Fix IA MEMS active-language rendering directly in source'
           git push origin HEAD:tmp-ravemems-ia-visual-integration
