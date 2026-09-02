@@ -357,6 +357,8 @@ Ne pas lancer immédiatement une nouvelle extraction des 47 PDF.
 
 Commencer par un **prototype sur un seul manuel représentatif** afin de valider la méthode avant de multiplier le travail.
 
+**Premier manuel prototype retenu par l’utilisateur : `RCL0193ENG`.** Ce manuel est choisi parce qu’il permet de valider notamment les procédures multi-pages, Dépose/Repose, renvois, illustrations mécaniques, visuels actuellement tournés à 90°, visuels actuellement blanc sur noir, tableaux, valeurs techniques et relations procédure/illustration.
+
 ---
 
 ## 32. CAS OBLIGATOIRES À VALIDER SUR LE PROTOTYPE
@@ -418,6 +420,12 @@ La structure et les intentions doivent pouvoir fonctionner quelle que soit la la
 
 Les traductions doivent se rattacher à la connaissance structurée.
 
+La **langue source originale du document est toujours conservée** et reste la référence canonique. RAVEMEMS doit ensuite permettre les traductions correspondant aux six langues de MEMS Manager : **français (FR), anglais (EN), espagnol (ES), italien (IT), portugais (PT) et allemand (DE)**.
+
+La traduction ne crée jamais une nouvelle connaissance : toutes les langues restent rattachées au **même identifiant sémantique stable**. Si la langue source est déjà l’une des six langues, cette version source n’est pas retraduite vers elle-même.
+
+La **validation des traductions se fait en priorité en français**, puis dans les autres langues. Cet ordre de validation ne modifie pas l’architecture ni le statut de la langue source.
+
 On traduit ce que l’utilisateur doit lire : titres, procédures, étapes, avertissements, descriptions, légendes textuelles utiles et contenu de tableaux si nécessaire.
 
 On évite de traduire identifiants internes, numéros de broche, numéros de connecteur, références, valeurs numériques, unités universelles et numéros d’opération.
@@ -462,8 +470,6 @@ Avant développement, vérifier notamment :
 - niveau de nettoyage acceptable des images ;
 - types de tableaux prioritaires ;
 - comportement des suggestions `Je vous conseille aussi de voir…` ;
-- langues de traduction prioritaires ;
-- manuel à choisir pour le premier prototype ;
 - toute autre règle utilisateur à ajouter avant développement.
 
 ---

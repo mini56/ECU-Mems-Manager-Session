@@ -12533,3 +12533,17 @@ Décision utilisateur : ajouter explicitement `organigramme / arbre de diagnosti
 Aucun code applicatif, aucune extraction et aucun build ne sont lancés dans cette étape de relecture.
 
 PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges RAVEMEMS question par question avec l’utilisateur et journaliser les décisions. Ne lancer aucune nouvelle extraction avant validation explicite du cahier.
+
+
+## 2026-09-02 — RELECTURE CAHIER RAVEMEMS — LANGUES ET MANUEL PROTOTYPE
+
+Décisions utilisateur validées :
+- conserver systématiquement la langue source originale comme référence canonique ;
+- langues MEMS Manager : FR, EN, ES, IT, PT, DE ;
+- aucune duplication de connaissance par langue : les traductions restent rattachées au même identifiant sémantique ;
+- priorité de validation des traductions : français d’abord, puis les autres langues ;
+- premier manuel prototype retenu : `RCL0193ENG`.
+
+Les deux workflows temporaires précédents de journalisation ont échoué avant exécution de job à cause d’une indentation YAML invalide dans une chaîne Python multiligne. Cette étape répare uniquement la journalisation et enregistre les décisions validées. Aucun code applicatif, aucune extraction et aucun BUILD de production ne sont lancés.
+
+PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges RAVEMEMS question par question avec l’utilisateur. Ne lancer aucune nouvelle extraction avant validation explicite du cahier.
