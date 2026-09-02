@@ -12234,3 +12234,12 @@ Correction directe du source uniquement sur `tmp-ravemems-ia-visual-integration`
 - Le commit local de déclenchement n'a pas été poussé : GitHub a refusé la modification d'un fichier `.github/workflows/*` depuis le `GITHUB_TOKEN` du workflow, erreur `refusing to allow a GitHub App to create or update workflow ... without workflows permission`.
 - Aucun package x64 n'a démarré à la suite de ce run et aucune modification applicative n'a été poussée par ce run.
 - Prochaine action exacte : supprimer le workflow temporaire de déclenchement resté sur la branche, puis toucher directement via l'API GitHub le workflow `.github/workflows/tmp-ravemems-visual-test-package-x64.yml` pour déclencher son run. Ne pas modifier sa logique de build ni son garde.
+
+### 2026-09-02 — Deuxième mécanisme de déclenchement : aucun événement Actions
+
+- Commit direct Git : `0a1122ddd2c8c144b4438990e42ba3de77f43a5b`.
+- Le commit a supprimé le workflow temporaire de déclenchement et a seulement modifié le mode du fichier de package, sans changer son contenu ni sa logique.
+- GitHub n'a créé aucun run Actions pour ce commit (`total_count=0`). Ce type de mise à jour de ref ne produit donc pas l'événement `push` requis par le workflow de package.
+- Aucun package x64 n'a démarré.
+- Prochaine action exacte : faire un vrai changement de contenu du workflow de package via l'API GitHub Contents, sans modifier sa logique, afin de produire un événement `push` normal sur ce chemin et lancer le package.
+- `MEMSX64` reste protégée sur BUILD #103.
