@@ -12382,3 +12382,24 @@ Verification avant commit : `git diff --check` PASS et presence des trois gardes
 `MEMSX64` reverifie intact : BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`, aucun #104.
 
 PROCHAINE ACTION EXACTE : declencher le workflow x64 RAVEMEMS VISUAL TEST sur le HEAD nettoye, verifier garde BUILD #103, compilation, self-tests, validation package, smoke et artefact ; si vert, retester `DEPOSE INJECTEUR` et `MINI SPI` en utilisant le zoom pour confirmer la pertinence des images.
+
+## 2026-09-02 - PACKAGE VERT : VIEWER IA ZOOM + OUVERTURE PORTRAIT
+
+Correction source : commit `59d0f2c6cfe0aee476f8b98cae46972611e6f0ec` sur `tmp-ravemems-ia-visual-integration`.
+HEAD branche apres nettoyage du workflow package : `60ded531b253de066b6cea841b2c5bcccd4e21a7`.
+Diff applicatif par rapport au dernier package teste `4f09101dddeff279b6f0a736b9da0bc5aa1474ff` : uniquement `iamemstab.cpp`.
+
+Run x64 complet : `33658178307` = SUCCESS.
+Toutes les etapes actives sont vertes : garde BUILD #103/perimetre, RAVEMEMS valide, Qt x64, runtimes ONNX pins, gardes protocole, compilation complete, self-tests deterministes (IA reponse, diagramme, recherche, runtime expert, reference visuelle structuree, ABI librosco), modele Qwen pinne, assemblage portable, validation base/catalogue et smoke launch.
+
+Artefact : `ECU-MEMS-Manager-x64-RAVEMEMS-VISUAL-ZOOM-TEST-from-BUILD-103`.
+ID : `9857875482`.
+Taille : `488475518` octets.
+Digest : `sha256:253d7eb1273c2daf43981ce1ba570111a74d29f31946a7582823bada49a3c57d`.
+Expiration : 2026-09-16.
+
+Le viewer du package contient : ouverture portrait pour source portrait, zoom `-`, retour `100 %`, zoom `+`, ajustement `⛶`, plage 10 %-800 %, barres de defilement si l'image depasse la zone visible.
+
+`MEMSX64` reverifie apres le run : toujours strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`. Aucun BUILD #104. 32 bits non touche.
+
+PROCHAINE ACTION EXACTE : installer/tester cet artefact sur le PC utilisateur, refaire `DEPOSE INJECTEUR` puis `MINI SPI`, ouvrir `Voir le schema`, utiliser le zoom et confirmer separement la pertinence exacte de l'image, sa lisibilite et l'orientation de la fenetre. Ne pas modifier le code avant ce retour reel.
