@@ -1,0 +1,48 @@
+name: TEMP update RAVEMEMS contextual variant question
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/tmp-update-ravemems-contextual-variant-question.yml'
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Refine contextual variant rule in cahier and report
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('docs/CAHIER_DES_CHARGES_RAVEMEMS_BROUILLON_2026-09-02.md')
+          s=p.read_text(encoding='utf-8')
+          old="""Si plusieurs réponses incompatibles restent possibles, l’IA doit demander uniquement les informations nécessaires pour identifier le véhicule et la variante concernés. **SPi / MPi ne doit jamais être associé implicitement à la Mini : plusieurs modèles et véhicules peuvent utiliser ces architectures.** La formulation doit donc rester générique et partir d’abord du véhicule concerné. Si un véhicule est connecté, l’IA demande par exemple : **« Votre question concerne-t-elle le véhicule actuellement connecté ou un autre véhicule ? »**. Si l’utilisateur répond qu’il s’agit d’un autre véhicule, ou si aucun véhicule n’est connecté, l’IA demande ensuite les éléments nécessaires (marque, modèle, moteur, année, type d’injection/gestion, ECU ou autre variante pertinente). Une fois le véhicule identifié, si plusieurs variantes restent possibles, l’IA demande seulement le discriminant utile, par exemple SPi ou MPi."""
+          new="""Si plusieurs réponses incompatibles restent possibles, l’IA doit demander uniquement le discriminant réellement utile, en utilisant d’abord les variantes qui correspondent au véhicule ou au contexte déjà identifié par la recherche. **Exemple : si les résultats pertinents concernent une Mini et distinguent Mini SPi et Mini MPi, l’IA demande d’abord : « Est-ce pour une Mini SPi ou une Mini MPi ? », tout en laissant la possibilité de répondre qu’il s’agit d’un autre véhicule.** SPi / MPi ne doit toutefois jamais être considéré comme propre à la Mini : d’autres modèles et véhicules peuvent utiliser ces architectures. Pour un autre véhicule, l’IA doit donc employer les variantes réellement présentes pour ce véhicule et demander les informations complémentaires nécessaires seulement si elles manquent. Si un véhicule / ECU est connecté, la règle précédente reste prioritaire : l’IA confirme d’abord que la question concerne bien ce véhicule avant d’utiliser son contexte."""
+          if old not in s:
+              raise SystemExit('context paragraph not found')
+          p.write_text(s.replace(old,new,1),encoding='utf-8')
+          PY
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+          ## 2026-09-02 — CAHIER RAVEMEMS — QUESTION DE VARIANTE CONTEXTUELLE
+
+          Précision utilisateur : si la recherche a déjà identifié un contexte Mini avec deux variantes pertinentes, l’IA doit bien demander d’abord `Est-ce pour une Mini SPi ou une Mini MPi ?`, tout en laissant la possibilité d’indiquer qu’il s’agit d’un autre véhicule.
+
+          Cette formulation est un exemple contextuel et ne signifie pas que SPi/MPi est propre à la Mini. Pour un autre modèle, l’IA doit proposer les variantes réellement pertinentes pour ce véhicule. Si un véhicule/ECU est connecté, l’IA confirme d’abord que la question concerne bien le véhicule connecté avant d’utiliser ce contexte.
+
+          Aucun code, aucune extraction et aucun BUILD lancés ; cahier toujours en relecture.
+          EOF
+      - name: Commit and cleanup
+        shell: bash
+        run: |
+          git config user.name "mini56"
+          git config user.email "48644212+mini56@users.noreply.github.com"
+          git add docs/CAHIER_DES_CHARGES_RAVEMEMS_BROUILLON_2026-09-02.md RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git rm .github/workflows/tmp-update-ravemems-contextual-variant-question.yml
+          git commit -m "Refine contextual RAVEMEMS variant question"
+          git push origin HEAD:RAPPORT
