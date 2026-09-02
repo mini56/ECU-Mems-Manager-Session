@@ -12219,3 +12219,10 @@ Correction directe du source uniquement sur `tmp-ravemems-ia-visual-integration`
 - Les workflows temporaires d'édition ont été supprimés après le commit source.
 - Aucun changement sur `MEMSX64`; BUILD #103 reste la production protégée.
 - Prochaine action exacte : adapter uniquement le garde du workflow de package x64 de test pour autoriser `expert/IaMemsService.cpp`, puis lancer le package complet et valider le run/artefact avant test utilisateur.
+
+### 2026-09-02 — Vérification du garde avant package x64 de la première correction IA
+
+- Le workflow `.github/workflows/tmp-ravemems-visual-test-package-x64.yml` contient déjà dans `$allowed` les 4 fichiers applicatifs modifiés par `a30267584c0951e99b88f83670452a3c9d5087d7` : `expert/IaMemsDiagramCatalog.cpp`, `expert/IaMemsDiagramSelfTest.cpp`, `expert/IaMemsService.cpp`, `iamemstab.cpp`.
+- Aucune modification du garde n'est donc nécessaire ; ne pas modifier inutilement sa logique.
+- Prochaine action exacte : déclencher le workflow de package x64 en ne modifiant que son propre fichier de workflow, puis contrôler le garde, la compilation, les self-tests, l'artefact et son digest.
+- `MEMSX64` doit rester exactement sur BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
