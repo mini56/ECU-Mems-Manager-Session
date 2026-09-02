@@ -341,6 +341,8 @@ Même principe pour étape, valeur, renvoi, visuel et tableau.
 
 RAVEMEMS doit pouvoir gérer une nouvelle version d’un document et mettre à jour le document concerné sans reconstruire toute la base documentaire.
 
+Si deux valeurs, procédures ou informations différentes existent pour un même sujet selon l’année, le modèle, le moteur, le marché, la version ECU, l’équipement ou toute autre variante, RAVEMEMS doit **conserver les différentes informations avec leur contexte d’applicabilité**. L’IA ne doit jamais choisir arbitrairement une version. Elle doit identifier le discriminant réellement nécessaire et demander uniquement l’information manquante permettant de sélectionner la bonne réponse.
+
 ---
 
 ## 30. CONSERVATION TEMPORAIRE DU CORPUS ACTUEL
