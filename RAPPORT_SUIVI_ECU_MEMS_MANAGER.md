@@ -12524,3 +12524,12 @@ Décision utilisateur validée : RAVEMEMS extrait tous les tableaux techniques q
 Décision utilisateur : une seule suggestion connexe maximum par défaut après la réponse principale. Exception obligatoire : si le manuel indique explicitement plusieurs opérations, contrôles, réglages ou points à effectuer/consulter ensuite, l'IA doit tous les communiquer de façon concise. Ces éléments ne sont pas des suggestions libres de l'IA mais des relations/instructions constructeur à préserver.
 
 Aucun code applicatif ni extraction lancé. `MEMSX64` reste BUILD #103, aucun #104, 32 bits et protocole intacts.
+
+
+## 2026-09-02 — RELECTURE CAHIER RAVEMEMS — ORGANIGRAMMES / ARBRES DE DIAGNOSTIC
+
+Décision utilisateur : ajouter explicitement `organigramme / arbre de diagnostic` aux catégories de visuels RAVEMEMS. Ces arbres de décision sont des contenus techniques à part entière. Lorsqu’un manuel associe réellement un arbre de diagnostic à la demande, l’IA doit pouvoir proposer ce visuel. L’extraction et le recadrage doivent préserver les embranchements, réponses Oui/Non, conditions, flèches et renvois nécessaires à son utilisation.
+
+Aucun code applicatif, aucune extraction et aucun build ne sont lancés dans cette étape de relecture.
+
+PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges RAVEMEMS question par question avec l’utilisateur et journaliser les décisions. Ne lancer aucune nouvelle extraction avant validation explicite du cahier.

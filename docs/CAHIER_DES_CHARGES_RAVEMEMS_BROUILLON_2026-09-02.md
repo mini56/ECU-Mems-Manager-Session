@@ -273,9 +273,10 @@ Catégories initiales :
 - vue de connecteur ;
 - tableau ;
 - photo / vue technique ;
+- organigramme / arbre de diagnostic ;
 - autre visuel technique.
 
-Cette classification doit aider l’IA à choisir le bon visuel selon la question.
+Cette classification doit aider l’IA à choisir le bon visuel selon la question. Un organigramme ou arbre de diagnostic doit être conservé comme un visuel technique à part entière et proposé lorsqu’il est réellement associé au diagnostic ou à la procédure demandée ; ses embranchements, réponses Oui/Non, conditions et renvois techniques ne doivent pas être perdus lors du recadrage ou de l’extraction.
 
 ---
 
