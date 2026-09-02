@@ -1,0 +1,285 @@
+name: TEMP RAVEMEMS visual ZOOM TEST package x64
+run-name: RAVEMEMS VISUAL ZOOM TEST from BUILD 103 - ${{ github.sha }}
+on:
+  push:
+    branches: [tmp-ravemems-ia-visual-integration]
+    paths: ['.github/workflows/tmp-ravemems-visual-zoom-test-package-x64.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build_test_package:
+    runs-on: windows-latest
+    timeout-minutes: 120
+    env:
+      BASE_COMMIT: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+      MEMS_BUILD_NUMBER: '103'
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: 'utf-8'
+      ORT_GENAI_VERSION: '0.14.0'
+      ORT_GENAI_WIN_X64_SHA256: '8a303e52dc7be8fb2a5331929af451a25ac59774102d7fd09ef673adc85c5ebf'
+      ORT_VERSION: '1.24.4'
+      ORT_WIN_X64_SHA256: 'd2319fddfb6ea4db99ccc4b60c85c517bcd855721f5daa6a06d40d7cb2ee2357'
+      ONNX_MODEL_REPO: 'xiaoyao9184/Qwen3-0.6B-onnx-genai'
+      ONNX_MODEL_REVISION: 'e6bf97818c142808967a48cbab4f0aef18b64621'
+      ONNX_MODEL_SUBDIR: 'cpu_and_mobile/cpu-int4-rtn-block-32-acc-level-4'
+      ONNX_MODEL_ONNX_SHA256: 'b52cfcd91e6ed3caa34c670d4831d96cda3da5eb07ef95bc8ba06547b4f3b86f'
+      ONNX_MODEL_DATA_SHA256: '8539cf4fbc3b5b331fd78ca8cd5b025ce537dfc2f993451f5c474b2f9fb7cd6c'
+      ONNX_TOKENIZER_SHA256: 'be75606093db2094d7cd20f3c2f385c212750648bd6ea4fb2bf507a6a4c55506'
+      SIM_RUN_ID: '33524210118'
+      SIM_ARTIFACT_ID: '9806972578'
+      SIM_ARTIFACT_NAME: 'ravemems-runtime-migration-simulation'
+      SIM_DIGEST: 'sha256:bc8ceed9ea2a748fb23f2d2504f034c62010669d3d10f2a281cf675aea735642'
+      CLEANUP_RUN_ID: '33524978067'
+      CLEANUP_ARTIFACT_ID: '9807286866'
+      CLEANUP_ARTIFACT_NAME: 'ravemems-controlled-legacy-cleanup-copy'
+      CLEANUP_DIGEST: 'sha256:06746252cad5942ba00d6b8ea71b2fe17c71fd137161cb43d237e707219b5735'
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout exact integration source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Guard BUILD 103 and source scope
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $memsx64=(git ls-remote origin refs/heads/MEMSX64).Split("`t")[0]
+          if($memsx64 -ne $env:BASE_COMMIT){throw "MEMSX64 moved: $memsx64"}
+          git merge-base --is-ancestor $env:BASE_COMMIT HEAD
+          if($LASTEXITCODE -ne 0){throw 'Integration branch is not derived from BUILD #103'}
+          $changed=@(git diff --name-only "$($env:BASE_COMMIT)..HEAD")
+          $appChanged=@($changed | Where-Object {$_ -notlike '.github/workflows/tmp-*' -and $_ -notlike 'tools/tmp_*'})
+          $allowed=@('CMakeLists.txt','expert/ExpertKnowledgeReader.cpp','expert/ExpertKnowledgeReader.h','expert/ExpertVisualReferenceSelfTest.cpp','expert/IaMemsDiagramCatalog.cpp','expert/IaMemsDiagramSelfTest.cpp','expert/IaMemsService.cpp','expert/IaMemsService.h','expert/LocalAiClient.cpp','expert/LocalAiOnnxSelfTest.cpp','iamemstab.cpp','translations/fr/fr_ia_mems.json','translations/en/en_ia_mems.json','translations/es/es_ia_mems.json','translations/it/it_ia_mems.json','translations/pt/pt_ia_mems.json','translations/de/de_ia_mems.json')
+          $unexpected=@($appChanged | Where-Object {$_ -notin $allowed})
+          if($unexpected.Count -ne 0){throw "Unexpected application changes: $($unexpected -join ', ')"}
+          Write-Host "PROTECTED_BUILD103_PASS $memsx64"
+          Write-Host "APPLICATION_SCOPE_PASS files=$($appChanged -join ',')"
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install validation tools
+        shell: pwsh
+        run: |
+          python -m pip install --disable-pip-version-check "aqtinstall==3.3.0" pefile "huggingface_hub>=0.34,<1" hf_xet
+      - name: Verify and stage validated RAVEMEMS artifacts
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          foreach($spec in @(@($env:SIM_ARTIFACT_ID,$env:SIM_ARTIFACT_NAME,$env:SIM_DIGEST),@($env:CLEANUP_ARTIFACT_ID,$env:CLEANUP_ARTIFACT_NAME,$env:CLEANUP_DIGEST))){
+            $json=gh api "repos/$env:GITHUB_REPOSITORY/actions/artifacts/$($spec[0])" | ConvertFrom-Json
+            if($json.name -ne $spec[1]){throw "Artifact name mismatch: $($json.name)"}
+            if($json.digest -ne $spec[2]){throw "Artifact digest mismatch: $($json.digest)"}
+          }
+          New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP\sim","$env:RUNNER_TEMP\cleanup" | Out-Null
+          gh run download $env:SIM_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:SIM_ARTIFACT_NAME --dir "$env:RUNNER_TEMP\sim"
+          gh run download $env:CLEANUP_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:CLEANUP_ARTIFACT_NAME --dir "$env:RUNNER_TEMP\cleanup"
+          if($LASTEXITCODE -ne 0){throw 'RAVEMEMS artifact download failed'}
+          $catalog=Get-ChildItem "$env:RUNNER_TEMP\sim" -Recurse -File -Filter runtime_visual_catalog.json | Select-Object -First 1
+          $runtimeFiles=Get-ChildItem "$env:RUNNER_TEMP\sim" -Recurse -Directory -Filter runtime_files | Select-Object -First 1
+          $cleanupDb=Get-ChildItem "$env:RUNNER_TEMP\cleanup" -Recurse -File -Filter cleanup_candidate.sqlite.gz | Select-Object -First 1
+          if(-not $catalog -or -not $runtimeFiles -or -not $cleanupDb){throw 'Validated RAVEMEMS artifacts incomplete'}
+          $reference='${{ github.workspace }}\database\reference'
+          Copy-Item $catalog.FullName (Join-Path $reference 'runtime_visual_catalog.json') -Force
+          Copy-Item "$($runtimeFiles.FullName)\*" $reference -Recurse -Force
+          $expertStage='${{ github.workspace }}\validated-expert-stage'
+          New-Item -ItemType Directory -Path $expertStage -Force | Out-Null
+          $expertDb=Join-Path $expertStage 'ia_mems_reference_r20.sqlite'
+          $env:CLEANUP_DB_GZ_LOCAL=$cleanupDb.FullName
+          $env:EXPERT_DB_LOCAL=$expertDb
+          $env:REFERENCE_ROOT_LOCAL=$reference
+          @'
+          import gzip,hashlib,json,os,shutil,sqlite3
+          from collections import Counter
+          from pathlib import Path
+          root=Path(os.environ['REFERENCE_ROOT_LOCAL'])
+          catalog=json.load(open(root/'runtime_visual_catalog.json',encoding='utf-8'))
+          assert len(catalog['entries'])==1935
+          assert catalog['ravemems_occurrences']==1794
+          assert catalog['legacy_visible_kept']==141
+          counts=Counter(e['source_type'] for e in catalog['entries'])
+          assert counts==Counter({'ravemems':1794,'legacy':141}),counts
+          for e in catalog['entries']:
+              p=root/e['runtime_path']
+              assert e['ui_visible'] is True and p.is_file()
+              assert hashlib.sha256(p.read_bytes()).hexdigest()==e['sha256']
+          out=Path(os.environ['EXPERT_DB_LOCAL'])
+          with gzip.open(os.environ['CLEANUP_DB_GZ_LOCAL'],'rb') as src,open(out,'wb') as dst: shutil.copyfileobj(src,dst)
+          db=sqlite3.connect(out)
+          assert db.execute('PRAGMA integrity_check').fetchone()[0].lower()=='ok'
+          assert db.execute('PRAGMA foreign_key_check').fetchall()==[]
+          assert db.execute('PRAGMA user_version').fetchone()[0]==21
+          assert db.execute('SELECT COUNT(*) FROM mems_doc_visual').fetchone()[0]==1070
+          assert db.execute("SELECT COUNT(*) FROM mems_doc_entity WHERE entity_kind='visual_occurrence'").fetchone()[0]==1794
+          db.close()
+          print('STAGED_RAVEMEMS_PASS entries=1935 occurrences=1794 assets=1070')
+          '@ | python -
+          "EXPERT_DB_STAGE=$expertDb" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Install Qt 5.15.2 MSVC 2019 x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $sevenZip=(Get-Command 7z.exe -ErrorAction Stop).Source
+          if(Test-Path 'C:\Qt'){Remove-Item 'C:\Qt' -Recurse -Force -ErrorAction SilentlyContinue}
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
+          if($LASTEXITCODE -ne 0){throw "aqtinstall failed: $LASTEXITCODE"}
+      - name: Download and stage pinned ONNX runtimes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $genaiArchive=Join-Path $env:RUNNER_TEMP "onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          $ortArchive=Join-Path $env:RUNNER_TEMP "onnxruntime-win-x64-$env:ORT_VERSION.zip"
+          $genaiExtract='${{ github.workspace }}\onnx-genai-release'
+          $ortExtract='${{ github.workspace }}\onnxruntime-release'
+          $stage='${{ github.workspace }}\onnx-runtime-stage'
+          foreach($d in @($genaiExtract,$ortExtract,$stage)){if(Test-Path $d){Remove-Item $d -Recurse -Force};New-Item -ItemType Directory -Path $d -Force|Out-Null}
+          & curl.exe -L --fail --retry 3 -o $genaiArchive "https://github.com/microsoft/onnxruntime-genai/releases/download/v$env:ORT_GENAI_VERSION/onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          if((Get-FileHash $genaiArchive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:ORT_GENAI_WIN_X64_SHA256){throw 'GenAI SHA mismatch'}
+          Expand-Archive $genaiArchive $genaiExtract -Force
+          & curl.exe -L --fail --retry 3 -o $ortArchive "https://github.com/microsoft/onnxruntime/releases/download/v$env:ORT_VERSION/onnxruntime-win-x64-$env:ORT_VERSION.zip"
+          if((Get-FileHash $ortArchive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:ORT_WIN_X64_SHA256){throw 'ORT SHA mismatch'}
+          Expand-Archive $ortArchive $ortExtract -Force
+          $header=Get-ChildItem $genaiExtract -Recurse -File -Filter ort_genai_c.h|Select-Object -First 1
+          $import=Get-ChildItem $genaiExtract -Recurse -File -Filter onnxruntime-genai.lib|Select-Object -First 1
+          if(-not $header -or -not $import){throw 'ONNX GenAI import files missing'}
+          $seen=@{}
+          foreach($root in @($genaiExtract,$ortExtract)){
+            foreach($dll in Get-ChildItem $root -Recurse -File -Filter '*.dll'){
+              $key=$dll.Name.ToLowerInvariant();$hash=(Get-FileHash $dll.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+              if($seen.ContainsKey($key)){if($seen[$key] -ne $hash){throw "Conflicting DLL $($dll.Name)"};continue}
+              Copy-Item $dll.FullName (Join-Path $stage $dll.Name) -Force;$seen[$key]=$hash
+            }
+          }
+          $env:ORT_STAGE_LOCAL=$stage
+          @'
+          import os,re,shutil
+          from pathlib import Path
+          import pefile
+          stage=Path(os.environ['ORT_STAGE_LOCAL']);system32=Path(os.environ['WINDIR'])/'System32'
+          rx=re.compile(r'^(?:msvcp|vcruntime|concrt)\d.*\.dll$',re.I)
+          queue=list(stage.glob('*.dll'));seen=set()
+          def imports(path):
+              pe=pefile.PE(str(path),fast_load=True)
+              pe.parse_data_directories(directories=[pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_IMPORT'],pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT']])
+              out=[]
+              for a in ('DIRECTORY_ENTRY_IMPORT','DIRECTORY_ENTRY_DELAY_IMPORT'):
+                  for e in getattr(pe,a,[]):
+                      try: out.append(e.dll.decode('ascii'))
+                      except Exception: pass
+              pe.close();return out
+          while queue:
+              p=queue.pop();k=p.name.lower()
+              if k in seen: continue
+              seen.add(k)
+              for n in imports(p):
+                  if not rx.match(n): continue
+                  dst=stage/n
+                  if not dst.is_file(): shutil.copy2(system32/n,dst)
+                  queue.append(dst)
+          for p in stage.glob('*.dll'):
+              pe=pefile.PE(str(p),fast_load=True)
+              assert pe.FILE_HEADER.Machine==0x8664,p.name
+              pe.close()
+          print('PINNED_ONNX_RUNTIME_PASS')
+          '@ | python -
+          "ORT_GENAI_INCLUDE_DIR=$($header.DirectoryName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "ORT_GENAI_LIBRARY=$($import.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "ORT_GENAI_RUNTIME_STAGE=$stage" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Validate protocol guards
+        shell: pwsh
+        run: |
+          python librosco-x64/validate_protocol_guards.py
+      - name: Configure and build full x64 source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          cmake -S . -B build-x64 -A x64 -DCMAKE_PREFIX_PATH='C:/Qt/5.15.2/msvc2019_64' -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF -DMEMS_USE_ONNX_GENAI=ON "-DORT_GENAI_INCLUDE_DIR=$env:ORT_GENAI_INCLUDE_DIR" "-DORT_GENAI_LIBRARY=$env:ORT_GENAI_LIBRARY"
+          if($LASTEXITCODE -ne 0){throw 'CMake configure failed'}
+          cmake --build build-x64 --config Release --target ecu_mems_manager ecu_mems_uninstaller rosco_abi_selftest ia_response_selftest ia_mems_diagram_selftest mems_search_selftest expert_runtime_selftest expert_visual_reference_selftest local_ai_onnx_selftest
+          if($LASTEXITCODE -ne 0){throw 'x64 build failed'}
+      - name: Run deterministic self-tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $qtRoot='C:\Qt\5.15.2\msvc2019_64'
+          $env:PATH="$qtRoot\bin;$env:ORT_GENAI_RUNTIME_STAGE;$env:PATH"
+          $env:QT_PLUGIN_PATH="$qtRoot\plugins"
+          foreach($exe in @('ia_response_selftest','ia_mems_diagram_selftest','mems_search_selftest','expert_runtime_selftest','expert_visual_reference_selftest')){
+            & "${{ github.workspace }}\build-x64\Release\$exe.exe"
+            if($LASTEXITCODE -ne 0){throw "$exe failed: $LASTEXITCODE"}
+          }
+          ctest --test-dir build-x64/librosco-x64 -C Release --output-on-failure -R rosco_abi_selftest
+          if($LASTEXITCODE -ne 0){throw 'rosco ABI selftest failed'}
+          Write-Host 'FULL_DETERMINISTIC_SELFTESTS_PASS'
+      - name: Download pinned Qwen3 model
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $modelRoot='${{ github.workspace }}\onnx-model-stage'
+          $env:MODEL_ROOT=$modelRoot
+          @'
+          import os
+          from huggingface_hub import snapshot_download
+          snapshot_download(repo_id=os.environ['ONNX_MODEL_REPO'],revision=os.environ['ONNX_MODEL_REVISION'],allow_patterns=[os.environ['ONNX_MODEL_SUBDIR']+'/*'],local_dir=os.environ['MODEL_ROOT'])
+          '@ | python -
+          $modelDir=Join-Path $modelRoot $env:ONNX_MODEL_SUBDIR
+          if((Get-FileHash (Join-Path $modelDir 'model.onnx') -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:ONNX_MODEL_ONNX_SHA256){throw 'model.onnx mismatch'}
+          if((Get-FileHash (Join-Path $modelDir 'model.onnx.data') -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:ONNX_MODEL_DATA_SHA256){throw 'model.onnx.data mismatch'}
+          if((Get-FileHash (Join-Path $modelDir 'tokenizer.json') -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:ONNX_TOKENIZER_SHA256){throw 'tokenizer mismatch'}
+          "ONNX_MODEL_DIR=$modelDir" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Assemble portable visual zoom TEST package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $qtRoot='C:\Qt\5.15.2\msvc2019_64';$release='${{ github.workspace }}\build-x64\Release';$dist='${{ github.workspace }}\dist-ravemems-visual-zoom-test'
+          if(Test-Path $dist){Remove-Item $dist -Recurse -Force};New-Item -ItemType Directory -Path $dist -Force|Out-Null
+          Copy-Item "$release\ecu_mems_manager.exe" $dist -Force
+          Copy-Item "$release\ecu_mems_uninstaller.exe" $dist -Force
+          Copy-Item '${{ github.workspace }}\build-x64\librosco-x64\Release\mems_manager_x64.dll' $dist -Force
+          & "$qtRoot\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist "$dist\ecu_mems_manager.exe"
+          & "$qtRoot\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist "$dist\ecu_mems_uninstaller.exe"
+          foreach($folder in @('translations','database')){if(Test-Path "$release\$folder"){Copy-Item "$release\$folder" "$dist\$folder" -Recurse -Force}}
+          New-Item -ItemType Directory -Path "$dist\database\expert" -Force|Out-Null
+          Copy-Item $env:EXPERT_DB_STAGE "$dist\database\expert\ia_mems_reference_r20.sqlite" -Force
+          foreach($dll in Get-ChildItem $env:ORT_GENAI_RUNTIME_STAGE -File -Filter '*.dll'){Copy-Item $dll.FullName (Join-Path $dist $dll.Name) -Force}
+          New-Item -ItemType Directory -Path "$dist\ai\models\qwen3-0.6b-int4" -Force|Out-Null
+          Copy-Item '${{ github.workspace }}\ai\README.md' "$dist\ai\README.md" -Force
+          Copy-Item '${{ github.workspace }}\ai\runtime_manifest.json' "$dist\ai\runtime_manifest.json" -Force
+          Copy-Item "$env:ONNX_MODEL_DIR\*" "$dist\ai\models\qwen3-0.6b-int4" -Recurse -Force
+          @('*** PACKAGE DE TEST - NE PAS PUBLIER COMME BUILD PRODUCTION ***','Base: BUILD #103','Test: viewer IA zoom + ouverture portrait','Controles viewer: - / 100 % / + / ajuster','MEMSX64 production non modifie') | Set-Content "$dist\README_RAVEMEMS_VISUAL_ZOOM_TEST.txt" -Encoding UTF8
+          "DIST=$dist" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Validate portable package and smoke launch
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $env:DIST_ROOT=$env:DIST
+          @'
+          import json,os,sqlite3
+          from pathlib import Path
+          root=Path(os.environ['DIST_ROOT'])
+          for p in [root/'ecu_mems_manager.exe',root/'mems_manager_x64.dll',root/'database'/'expert'/'ia_mems_reference_r20.sqlite',root/'database'/'reference'/'runtime_visual_catalog.json',root/'ai'/'models'/'qwen3-0.6b-int4'/'model.onnx']:
+              assert p.is_file(),p
+          db=sqlite3.connect(root/'database'/'expert'/'ia_mems_reference_r20.sqlite')
+          assert db.execute('PRAGMA integrity_check').fetchone()[0].lower()=='ok'
+          assert db.execute('PRAGMA foreign_key_check').fetchall()==[]
+          assert db.execute('PRAGMA user_version').fetchone()[0]==21
+          db.close()
+          catalog=json.load(open(root/'database'/'reference'/'runtime_visual_catalog.json',encoding='utf-8'))
+          assert len(catalog['entries'])==1935
+          print('PORTABLE_RAVEMEMS_ZOOM_TEST_PACKAGE_PASS')
+          '@ | python -
+          $p=Start-Process -FilePath "$env:DIST\ecu_mems_manager.exe" -WorkingDirectory $env:DIST -PassThru
+          Start-Sleep -Seconds 8
+          if($p.HasExited){throw "TEST package exited during smoke launch: $($p.ExitCode)"}
+          $null=$p.CloseMainWindow();if(-not $p.WaitForExit(5000)){Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue}
+          Write-Host 'RAVEMEMS_VISUAL_ZOOM_TEST_SMOKE_PASS'
+      - name: Upload isolated visual zoom TEST package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ECU-MEMS-Manager-x64-RAVEMEMS-VISUAL-ZOOM-TEST-from-BUILD-103
+          path: dist-ravemems-visual-zoom-test/
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 14
