@@ -84,7 +84,7 @@ bool requireResponseSuggestion(const QString &root,
                                const QString &label)
 {
     const IaMemsDiagramSuggestion suggestion =
-        IaMemsDiagramCatalog::suggestionForResponse(response, root);
+        IaMemsDiagramCatalog::suggestionForQuestion(response, root);
     if (!suggestion.isValid()) {
         printLine(QStringLiteral("FAIL no response-linked diagram: %1").arg(label));
         return false;
@@ -108,7 +108,7 @@ bool requireNoResponseSuggestion(const QString &root,
                                  const QString &label)
 {
     const IaMemsDiagramSuggestion suggestion =
-        IaMemsDiagramCatalog::suggestionForResponse(response, root);
+        IaMemsDiagramCatalog::suggestionForQuestion(response, root);
     if (suggestion.isValid()) {
         printLine(QStringLiteral("FAIL response unexpectedly resolved: %1 -> %2 / %3")
                       .arg(label, suggestion.key, suggestion.relativePath));

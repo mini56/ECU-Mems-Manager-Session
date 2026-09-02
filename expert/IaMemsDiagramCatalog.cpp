@@ -432,6 +432,11 @@ IaMemsDiagramSuggestion IaMemsDiagramCatalog::suggestionForQuestion(
     const QString &question,
     const QString &referenceRoot)
 {
+    const QString root = effectiveReferenceRoot(referenceRoot);
+    const IaMemsDiagramSuggestion referenced = runtimeSuggestionForResponse(question, root);
+    if (referenced.isValid())
+        return referenced;
+
     const QString text = normalize(question);
     const bool diagramIntent = containsAny(text, {
         QStringLiteral("schema"), QStringLiteral("broch"), QStringLiteral("pinout"),
@@ -455,7 +460,6 @@ IaMemsDiagramSuggestion IaMemsDiagramCatalog::suggestionForQuestion(
     if (asksObd && generation.isEmpty())
         return IaMemsDiagramSuggestion();
 
-    const QString root = effectiveReferenceRoot(referenceRoot);
     const QStringList terms = significantTerms(text);
 
     const IaMemsDiagramSuggestion runtime = runtimeSuggestion(text, generation, terms, root);
@@ -492,13 +496,4 @@ IaMemsDiagramSuggestion IaMemsDiagramCatalog::suggestionForQuestion(
     if (bestScore < 8)
         return IaMemsDiagramSuggestion();
     return best;
-}
-
-IaMemsDiagramSuggestion IaMemsDiagramCatalog::suggestionForResponse(
-    const QString &response,
-    const QString &referenceRoot)
-{
-    if (response.trimmed().isEmpty())
-        return IaMemsDiagramSuggestion();
-    return runtimeSuggestionForResponse(response, effectiveReferenceRoot(referenceRoot));
 }
