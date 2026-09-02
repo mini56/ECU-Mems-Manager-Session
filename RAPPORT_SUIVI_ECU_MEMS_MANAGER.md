@@ -12243,3 +12243,19 @@ Correction directe du source uniquement sur `tmp-ravemems-ia-visual-integration`
 - Aucun package x64 n'a démarré.
 - Prochaine action exacte : faire un vrai changement de contenu du workflow de package via l'API GitHub Contents, sans modifier sa logique, afin de produire un événement `push` normal sur ce chemin et lancer le package.
 - `MEMSX64` reste protégée sur BUILD #103.
+
+### 2026-09-02 — Première correction IA question → réponse → image : package x64 VALIDÉ
+
+- Source de la correction : `a30267584c0951e99b88f83670452a3c9d5087d7`.
+- HEAD de package/test : `7bee94790ebc517452b38bc6fa904de90addc00b`.
+- Run GitHub Actions : `33646334703` — SUCCESS.
+- Toutes les étapes actives ont réussi : garde BUILD #103/périmètre, artefacts RAVEMEMS exacts, staging DB/runtimes, Qt x64, ONNX Runtime, gardes protocole, compilation x64, self-tests déterministes IA/protocole/visuels, modèle Qwen épinglé, assemblage, validation du package, smoke launch, manifeste/hashes et upload.
+- Les deux self-tests ONNX fonctionnels explicitement différés jusqu'au test de langue sont restés volontairement `skipped` ; ce n'est pas un échec.
+- Artefact : `ECU-MEMS-Manager-x64-RAVEMEMS-VISUAL-TEST-from-BUILD-103`.
+- Artifact ID : `9853332909`.
+- Taille : `488563605` octets.
+- Digest GitHub : `sha256:79564b1789e21675b571d56cc84bbb9f17b73fbcb772d1c15eeb792499faa64e`.
+- Expiration annoncée par GitHub : 2026-09-16.
+- `MEMSX64` vérifiée après le run : toujours exactement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+- Aucun BUILD #104 créé ; production non modifiée.
+- Prochaine action exacte : test utilisateur de ce package sur la campagne question → réponse → image, en reprenant les cas déjà relevés. Le test fonctionnel multilingue IA reste différé jusqu'après cette validation.
