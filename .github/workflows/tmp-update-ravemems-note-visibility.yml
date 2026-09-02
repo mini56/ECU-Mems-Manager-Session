@@ -1,0 +1,62 @@
+name: TEMP update RAVEMEMS note visibility
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/tmp-update-ravemems-note-visibility.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+
+      - name: Update cahier and report
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          cahier = Path('docs/CAHIER_DES_CHARGES_RAVEMEMS_BROUILLON_2026-09-02.md')
+          text = cahier.read_text(encoding='utf-8')
+          anchor = "Lorsqu'il s'agit d'un avertissement de sécurité ou d'un risque technique important, l'IA doit le rendre **visuellement évident**, avec un **carré ou pictogramme rouge accompagné d'un libellé explicite tel que `ATTENTION` ou `AVERTISSEMENT`**, puis le texte correspondant. La couleur rouge ne doit jamais être le seul moyen de signaler le danger : le libellé textuel reste obligatoire."
+          addition = "\n\nUne **REMARQUE / NOTE** du manuel doit également rester visible, mais avec une présentation distincte des avertissements : **un petit triangle orange contenant un `!` orange**, accompagné du libellé `REMARQUE` ou `NOTE` et du texte correspondant. Le carré rouge reste réservé aux vrais avertissements, précautions de sécurité ou risques techniques importants."
+          if text.count(anchor) != 1:
+              raise SystemExit(f'Unexpected warning anchor count: {text.count(anchor)}')
+          cahier.write_text(text.replace(anchor, anchor + addition, 1), encoding='utf-8')
+          report = Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md')
+          lines = [
+              '',
+              '',
+              '## 2026-09-02 — RELECTURE CAHIER RAVEMEMS — PRESENTATION DES REMARQUES / NOTES',
+              '',
+              'Décision utilisateur validée :',
+              '- les vrais avertissements / risques conservent le carré ou pictogramme rouge avec libellé textuel explicite ;',
+              '- une REMARQUE / NOTE du manuel reste visible avec un petit triangle orange contenant un `!` orange ;',
+              '- le libellé REMARQUE ou NOTE et le texte correspondant restent affichés ;',
+              '- le rouge reste réservé aux avertissements, précautions de sécurité et risques techniques importants.',
+              '',
+              'Aucun code applicatif, aucune extraction et aucun BUILD de production ne sont lancés dans cette étape de relecture.',
+              '',
+              'PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges RAVEMEMS question par question avec l’utilisateur. Ne lancer aucune nouvelle extraction avant validation explicite du cahier.'
+          ]
+          with report.open('a', encoding='utf-8') as f:
+              f.write('\n'.join(lines))
+          PY
+
+      - name: Commit and cleanup
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/tmp-update-ravemems-note-visibility.yml
+          git add docs/CAHIER_DES_CHARGES_RAVEMEMS_BROUILLON_2026-09-02.md RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git diff --cached --check
+          git commit -m "Record RAVEMEMS note visibility rule"
+          git push origin HEAD:RAPPORT
