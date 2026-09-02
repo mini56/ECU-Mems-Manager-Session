@@ -1,0 +1,32 @@
+name: TEMP journal TEST3 image translation note
+on:
+  push:
+    branches: [RAPPORT]
+    paths: ['.github/workflows/tmp-journal-test3-image-language.yml']
+permissions:
+  contents: write
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append correction
+        shell: bash
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+          
+          ### Complément TEST IA visuel 3 - traduction du texte dans l'image
+          Le texte intégré dans l'image proposée au TEST 3 n'est pas traduit dans la langue active de MEMS Manager. L'image conserve son texte dans la langue source. Ce point doit être testé et corrigé avec le mécanisme multilingue prévu pour les contenus visuels, sans créer de logique de langue en dur.
+          EOF
+      - name: Commit journal
+        shell: bash
+        run: |
+          git config user.name github-actions-bot
+          git config user.email github-actions-bot@users.noreply.github.com
+          git rm .github/workflows/tmp-journal-test3-image-language.yml
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git commit -m 'Journal TEST3 image translation note'
+          git push origin HEAD:RAPPORT
