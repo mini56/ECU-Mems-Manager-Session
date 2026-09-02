@@ -12197,3 +12197,11 @@ Correction directe du source uniquement sur `tmp-ravemems-ia-visual-integration`
 - `manifest.json` confirme que `images/rave/AKM7169ENG_PDF_024.png`, `_025.png` et `_133.png` sont déclarés ; pour `_133`, le manifeste fournit aussi la clé structurée `rave:AKM7169ENG:PDF:133` et son SHA-256.
 - Le résolveur de réponse ne consulte actuellement pas ces déclarations du manifeste lorsqu'une référence explicite n'est pas trouvée dans `runtime_visual_catalog.json`.
 - La correction doit donc déséchapper d'abord les échappements Markdown de chemin, puis résoudre les références explicites contre le catalogue runtime et, en secours contrôlé, contre le manifeste local avec validation du chemin et du SHA lorsqu'il est déclaré.
+
+### 2026-09-02 — Échec technique de la première tentative d'édition source
+- Workflow d'édition : run `33638258447`, job `100274492355`.
+- Résultat : FAIL avant commit source ; l'étape `Commit direct source correction` a été sautée.
+- Aucun fichier applicatif de cette tentative n'a donc été poussé.
+- Erreur exacte : `expert/IaMemsDiagramCatalog.cpp: expected one match, found 0`.
+- Cause : le marqueur texte du workflow avait sur-échappé les antislashs du code C++ de `runtimeSuggestionForResponse()` ; il ne correspondait pas au source réel.
+- Action suivante : relancer la même correction avec un repérage robuste par signature de fonction / bornes de bloc, sans modifier le périmètre fonctionnel et sans toucher `MEMSX64`.
