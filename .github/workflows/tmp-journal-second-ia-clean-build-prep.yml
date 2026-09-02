@@ -1,0 +1,41 @@
+name: TEMP journal second IA cleanup and build prep
+on:
+  push:
+    paths:
+      - '.github/workflows/tmp-journal-second-ia-clean-build-prep.yml'
+permissions:
+  contents: write
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+      - name: Append cleanup and build prep
+        shell: bash
+        run: |
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+          ## 2026-09-02 - DEUXIEME CORRECTION IA - NETTOYAGE SOURCE ET AVANT BUILD
+
+          Workflow temporaire d edition `.github/workflows/tmp-direct-second-ia-structured-visual.yml` supprime via connecteur GitHub au commit `3851b8e346e2c463dd31df4f1177f753c7c4beff`.
+
+          Verification du diff net entre le dernier package utilisateur `7bee94790ebc517452b38bc6fa904de90addc00b` et le HEAD nettoye `3851b8e346e2c463dd31df4f1177f753c7c4beff` : exactement 7 fichiers : `CMakeLists.txt`, `expert/ExpertKnowledgeReader.cpp`, `expert/ExpertKnowledgeReader.h`, nouveau `expert/ExpertVisualReferenceSelfTest.cpp`, `expert/IaMemsService.cpp`, `expert/IaMemsService.h`, `iamemstab.cpp`. Aucun workflow temporaire ne reste dans ce diff net.
+
+          `MEMSX64` reverifiee : toujours exactement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+          Le workflow x64 de TEST existant doit maintenant etre adapte uniquement pour :
+          - autoriser les nouveaux fichiers applicatifs exacts dans le garde de perimetre ;
+          - compiler explicitement la nouvelle cible `expert_visual_reference_selftest` ;
+          - executer `expert_visual_reference_selftest.exe` dans les self-tests deterministes et exiger code 0 ;
+          - conserver tous les autres gardes/pins RAVEMEMS, BUILD #103, protocole, Qt/ONNX/Qwen et le report du self-test fonctionnel multilingue.
+
+          PROCHAINE ACTION EXACTE : modifier uniquement `.github/workflows/tmp-ravemems-visual-test-package-x64.yml` selon ce perimetre et le pousser via le connecteur GitHub afin de declencher le package x64 complet. Suivre compilation, nouveau self-test, anciens self-tests, validation package, smoke et upload. Aucun autre changement applicatif avant verdict.
+          EOF
+          git config user.name "mini56"
+          git config user.email "48644212+mini56@users.noreply.github.com"
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git rm .github/workflows/tmp-journal-second-ia-clean-build-prep.yml
+          git commit -m "Journal second IA cleanup and build prep"
+          git push origin RAPPORT
