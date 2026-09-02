@@ -8,6 +8,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QRegularExpression>
 #include <QSet>
 #include <QStringList>
 
@@ -244,6 +245,96 @@ QString runtimeDisplayKey(const QJsonObject &entry)
     return runtimeKey;
 }
 
+IaMemsDiagramSuggestion resolvedRuntimeEntry(const QString &root, const QJsonObject &entry)
+{
+    const QString relativePath = QDir::cleanPath(
+        entry.value(QStringLiteral("runtime_path")).toString().trimmed());
+    const QString displayKey = runtimeDisplayKey(entry);
+    const IaMemsDiagramSuggestion candidate = resolvePath(root, displayKey, relativePath, false);
+    if (!candidate.isValid())
+        return IaMemsDiagramSuggestion();
+    if (!fileMatchesSha256(candidate.absolutePath,
+                           entry.value(QStringLiteral("sha256")).toString()))
+        return IaMemsDiagramSuggestion();
+    return candidate;
+}
+
+IaMemsDiagramSuggestion runtimeSuggestionForResponse(const QString &response,
+                                                      const QString &root)
+{
+    IaMemsDiagramSuggestion none;
+    QString referenceText = response;
+    referenceText.replace(QStringLiteral("\\:"), QStringLiteral(":"));
+    referenceText.replace(QLatin1Char('\\'), QLatin1Char('/'));
+
+    QFile catalog(QDir(root).filePath(QStringLiteral("runtime_visual_catalog.json")));
+    if (!catalog.open(QIODevice::ReadOnly))
+        return none;
+
+    QJsonParseError parseError;
+    const QJsonDocument document = QJsonDocument::fromJson(catalog.readAll(), &parseError);
+    if (parseError.error != QJsonParseError::NoError || !document.isObject())
+        return none;
+
+    const QJsonArray entries = document.object().value(QStringLiteral("entries")).toArray();
+
+    const QRegularExpression referenceRx(
+        QStringLiteral("(?:^|[^A-Za-z0-9_])rave\\s*:\\s*([A-Za-z0-9_-]+)\\s*:\\s*pdf\\s*:\\s*([0-9]+)"),
+        QRegularExpression::CaseInsensitiveOption);
+    QRegularExpressionMatchIterator matches = referenceRx.globalMatch(referenceText);
+    while (matches.hasNext()) {
+        const QRegularExpressionMatch match = matches.next();
+        const QString publication = match.captured(1);
+        const int page = match.captured(2).toInt();
+        for (const QJsonValue &value : entries) {
+            if (!value.isObject())
+                continue;
+            const QJsonObject entry = value.toObject();
+            if (!entry.value(QStringLiteral("ui_visible")).toBool(false))
+                continue;
+            if (entry.value(QStringLiteral("publication_code")).toString()
+                    .compare(publication, Qt::CaseInsensitive) != 0)
+                continue;
+            if (entry.value(QStringLiteral("physical_page")).toInt() != page)
+                continue;
+            const IaMemsDiagramSuggestion candidate = resolvedRuntimeEntry(root, entry);
+            if (candidate.isValid())
+                return candidate;
+        }
+    }
+
+    for (const QJsonValue &value : entries) {
+        if (!value.isObject())
+            continue;
+        const QJsonObject entry = value.toObject();
+        if (!entry.value(QStringLiteral("ui_visible")).toBool(false))
+            continue;
+
+        QString runtimePath = entry.value(QStringLiteral("runtime_path")).toString().trimmed();
+        runtimePath.replace(QLatin1Char('\\'), QLatin1Char('/'));
+        const QString runtimeKey = entry.value(QStringLiteral("runtime_key")).toString().trimmed();
+        const QString occurrenceKey = entry.value(QStringLiteral("source_occurrence_key")).toString().trimmed();
+        const QString assetKey = entry.value(QStringLiteral("asset_entity_key")).toString().trimmed();
+
+        const bool referenced = (!runtimePath.isEmpty()
+                                 && referenceText.contains(runtimePath, Qt::CaseInsensitive))
+            || (!runtimeKey.isEmpty()
+                && referenceText.contains(runtimeKey, Qt::CaseInsensitive))
+            || (!occurrenceKey.isEmpty()
+                && referenceText.contains(occurrenceKey, Qt::CaseInsensitive))
+            || (!assetKey.isEmpty()
+                && referenceText.contains(assetKey, Qt::CaseInsensitive));
+        if (!referenced)
+            continue;
+
+        const IaMemsDiagramSuggestion candidate = resolvedRuntimeEntry(root, entry);
+        if (candidate.isValid())
+            return candidate;
+    }
+
+    return none;
+}
+
 IaMemsDiagramSuggestion runtimeSuggestion(const QString &question,
                                            const QString &generation,
                                            const QStringList &terms,
@@ -276,19 +367,13 @@ IaMemsDiagramSuggestion runtimeSuggestion(const QString &question,
         if (score < 8)
             continue;
 
-        const QString relativePath = QDir::cleanPath(
-            entry.value(QStringLiteral("runtime_path")).toString().trimmed());
-        const QString displayKey = runtimeDisplayKey(entry);
         const QString stableKey = entry.value(QStringLiteral("runtime_key")).toString();
         if (score < bestScore || (score == bestScore && !bestStableKey.isEmpty()
                                   && stableKey >= bestStableKey))
             continue;
 
-        const IaMemsDiagramSuggestion candidate = resolvePath(root, displayKey, relativePath, false);
+        const IaMemsDiagramSuggestion candidate = resolvedRuntimeEntry(root, entry);
         if (!candidate.isValid())
-            continue;
-        if (!fileMatchesSha256(candidate.absolutePath,
-                               entry.value(QStringLiteral("sha256")).toString()))
             continue;
 
         bestScore = score;
@@ -407,4 +492,13 @@ IaMemsDiagramSuggestion IaMemsDiagramCatalog::suggestionForQuestion(
     if (bestScore < 8)
         return IaMemsDiagramSuggestion();
     return best;
+}
+
+IaMemsDiagramSuggestion IaMemsDiagramCatalog::suggestionForResponse(
+    const QString &response,
+    const QString &referenceRoot)
+{
+    if (response.trimmed().isEmpty())
+        return IaMemsDiagramSuggestion();
+    return runtimeSuggestionForResponse(response, effectiveReferenceRoot(referenceRoot));
 }
