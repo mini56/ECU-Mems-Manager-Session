@@ -12190,3 +12190,10 @@ Correction directe du source uniquement sur `tmp-ravemems-ia-visual-integration`
 - traduction des textes intégrés aux images ;
 - normalisation des assets tournés à 90° ou blanc sur noir ; ces fichiers devront être corrigés à la source et non masqués par une rustine du viewer ;
 - protocole ECU, 32 bits, UI générale et `MEMSX64`.
+
+### 2026-09-02 — Cause précise supplémentaire avant la première correction
+- Les réponses IA peuvent échapper les caractères Markdown dans les chemins, par exemple `images/rave/AKM7169ENG\_PDF\_133.png`.
+- `runtimeSuggestionForResponse()` remplace actuellement `\:` puis transforme tout `\` restant en `/`. Un chemin avec `\_` peut donc devenir `AKM7169ENG/_PDF/_133.png` et ne plus correspondre au fichier réel.
+- `manifest.json` confirme que `images/rave/AKM7169ENG_PDF_024.png`, `_025.png` et `_133.png` sont déclarés ; pour `_133`, le manifeste fournit aussi la clé structurée `rave:AKM7169ENG:PDF:133` et son SHA-256.
+- Le résolveur de réponse ne consulte actuellement pas ces déclarations du manifeste lorsqu'une référence explicite n'est pas trouvée dans `runtime_visual_catalog.json`.
+- La correction doit donc déséchapper d'abord les échappements Markdown de chemin, puis résoudre les références explicites contre le catalogue runtime et, en secours contrôlé, contre le manifeste local avec validation du chemin et du SHA lorsqu'il est déclaré.
