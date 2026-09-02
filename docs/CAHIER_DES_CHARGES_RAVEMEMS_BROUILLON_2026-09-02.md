@@ -379,12 +379,15 @@ Le premier prototype doit tester au minimum :
 11. une relation correcte entre une procédure et son illustration ;
 12. une question générale donnant un menu court ;
 13. une question précise donnant directement la réponse.
+14. un contrôle de complétude des procédures : aucune opération ne doit être présentée comme complète si des étapes attendues manquent.
 
 ---
 
 ## 33. CRITÈRES DE RÉUSSITE AVANT LE CORPUS COMPLET
 
 Le prototype doit démontrer que les étapes multi-pages restent continues, les phases restent distinctes, les bonnes images sont associées, les images ont le bon sens et le bon fond, les visuels sont lisibles, les informations parasites sont supprimées sans perte technique, les renvois sont exploitables, les variantes ne sont pas mélangées et l’IA sait distinguer demande générale et demande précise.
+
+Une procédure incomplète n’est pas un état normal acceptable : elle indique qu’une partie de l’information n’a pas été extraite ou reliée correctement. Après chaque extraction, un **audit de complétude** doit vérifier les opérations, phases et numérotations d’étapes afin de détecter notamment les débuts manquants, fins manquantes, ruptures de séquence et fragments de procédure isolés. Tant que cette anomalie n’est pas corrigée, l’IA ne doit jamais présenter la procédure comme complète ; elle doit signaler clairement qu’une partie manque.
 
 Seulement après cette validation, le pipeline pourra être appliqué au corpus complet.
 

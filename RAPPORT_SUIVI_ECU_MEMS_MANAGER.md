@@ -12558,3 +12558,12 @@ L’IA ne doit jamais choisir arbitrairement une version. Elle doit demander uni
 Aucun code applicatif, aucune extraction et aucun BUILD de production ne sont lancés dans cette étape de relecture.
 
 PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges RAVEMEMS question par question avec l’utilisateur. Ne lancer aucune nouvelle extraction avant validation explicite du cahier.
+
+
+## 2026-09-02 — RELECTURE CAHIER RAVEMEMS — AUDIT DE COMPLÉTUDE DES PROCÉDURES
+
+Décision utilisateur validée : une procédure dont certaines étapes manquent doit être considérée comme un défaut d’extraction ou de liaison, pas comme un état normal. Après extraction, un audit spécifique doit vérifier la complétude des opérations et la continuité des numérotations afin de détecter les débuts/fins manquants, ruptures de séquence et fragments isolés. Tant que l’anomalie existe, l’IA ne doit jamais présenter la procédure comme complète et doit signaler qu’une partie manque.
+
+Aucun code applicatif, aucune extraction et aucun BUILD de production ne sont lancés dans cette étape de relecture.
+
+PROCHAINE ACTION EXACTE : poursuivre la relecture du cahier des charges RAVEMEMS question par question avec l’utilisateur. Ne lancer aucune nouvelle extraction avant validation explicite du cahier.
