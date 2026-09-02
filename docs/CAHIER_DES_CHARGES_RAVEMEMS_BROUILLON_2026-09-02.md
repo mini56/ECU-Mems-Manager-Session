@@ -167,7 +167,7 @@ Exemple :
 
 **Je vous conseille également de consulter le réglage de la courroie d’alternateur après repose.**
 
-Cette proposition doit être fondée sur une relation constructeur ou une relation technique enregistrée. L’IA ne doit pas inventer un lien simplement parce que deux sujets semblent proches.
+Cette proposition doit être fondée sur une relation constructeur ou une relation technique enregistrée. L’IA ne doit pas inventer un lien simplement parce que deux sujets semblent proches. **Par défaut, l’IA propose une seule suggestion connexe maximum.** Exception : si le manuel indique explicitement que deux, trois ou plusieurs opérations, contrôles, réglages ou points doivent être effectués, vérifiés ou consultés ensuite, l’IA doit communiquer **tous les points explicitement imposés ou recommandés par le manuel**, de façon concise. Dans ce cas, il ne s’agit pas de suggestions supplémentaires inventées par l’IA mais d’informations constructeur à ne pas perdre.
 
 ---
 

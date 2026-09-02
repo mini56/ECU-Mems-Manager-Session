@@ -12517,3 +12517,10 @@ Décision utilisateur : le recadrage RAVEMEMS doit retirer automatiquement marge
 ## 2026-09-02 — REVUE CAHIER RAVEMEMS : TABLEAUX
 
 Décision utilisateur validée : RAVEMEMS extrait tous les tableaux techniques qu’il sait reconnaître. La validation prioritaire du prototype porte sur les tableaux contenant des valeurs directement exploitables par l’IA : couples de serrage, résistances, tensions, jeux, pressions, températures, valeurs de contrôle, diagnostic et caractéristiques techniques. Aucun code applicatif ni extraction lancé.
+
+
+## 2026-09-02 — CAHIER RAVEMEMS — REGLE DES SUGGESTIONS CONNEXES
+
+Décision utilisateur : une seule suggestion connexe maximum par défaut après la réponse principale. Exception obligatoire : si le manuel indique explicitement plusieurs opérations, contrôles, réglages ou points à effectuer/consulter ensuite, l'IA doit tous les communiquer de façon concise. Ces éléments ne sont pas des suggestions libres de l'IA mais des relations/instructions constructeur à préserver.
+
+Aucun code applicatif ni extraction lancé. `MEMSX64` reste BUILD #103, aucun #104, 32 bits et protocole intacts.
