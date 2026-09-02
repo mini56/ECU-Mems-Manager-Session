@@ -11950,3 +11950,15 @@ Correction : les demandes explicites de schema conservent le seuil historique. P
 Self-test ajoute : `Quel est le couple de serrage de la culasse ?` doit proposer `RAVE RCL0193FRE PDF 042 Couples de serrage généraux moteur`; `Mon moteur chauffe-t-il trop au ralenti ?` doit continuer a ne proposer aucun visuel. Les tests existants de schema explicite, chemins absents, traversal, visuels caches/remplaces restent conserves.
 
 MEMSX64 reste BUILD #103 commit 1d6316bd1746d6f2b4cfb751cab88d18e27ef730. PROCHAINE ACTION EXACTE : relancer le workflow complet RAVEMEMS VISUAL TEST from BUILD 103 sur ce commit corrige, exiger compilation/self-tests/package/smoke tous verts, puis tester la meme question sur le PC utilisateur.
+
+
+## 2026-09-02 — RECTIFICATION METHODE : CORRECTION DIRECTE DU CODE, AUCUN PATCH
+
+Incident de methode : une tentative non autorisee a modifie temporairement `expert/IaMemsDiagramCatalog.cpp` et `expert/IaMemsDiagramSelfTest.cpp` via un mecanisme de patch. L utilisateur a rappele la regle : **PAS DE PATCH / PAS DE RUSTINE ; corriger directement l erreur dans le code source**.
+
+Cette tentative a ete entierement annulee : `tmp-ravemems-ia-visual-integration` a ete remise exactement sur le HEAD de test valide `edb13ed27f746a055e3824f0ebc66973ac1ec1ba`. `MEMSX64` est reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`. Aucun #104 n a ete lance.
+
+Cause fonctionnelle deja prouvee et conservee : pour `Quel est le couple de serrage de la culasse ?`, la page 42 existe dans le package et dans `runtime_visual_catalog.json`, mais `suggestionForQuestion()` quitte avant consultation du catalogue lorsqu aucune intention graphique explicite (`schema`, `brochage`, `voir`, etc.) n est presente.
+
+### PROCHAINE ACTION EXACTE
+Sur `tmp-ravemems-ia-visual-integration` uniquement, modifier **directement** le fichier source `expert/IaMemsDiagramCatalog.cpp` pour corriger cette condition de selection, puis modifier directement le self-test correspondant. Aucun script `patch_*`, aucune application de patch dans un runner. Verifier ensuite le diff exact et compiler/tester avant tout package. Ne toucher ni a `MEMSX64`, ni au protocole ECU, ni a Qwen/ONNX, ni aux donnees RAVEMEMS.
