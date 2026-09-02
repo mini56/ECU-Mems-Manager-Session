@@ -504,3 +504,4 @@ jobs:
           retention-days: 14
 
 # trigger IA scroll MPI correction 2026-09-01
+# trigger response-linked visual validation 2026-09-02
