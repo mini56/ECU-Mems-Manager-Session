@@ -12161,3 +12161,32 @@ Aucune correction appliquee. Continuer les questions libres et consigner les eca
 - Affichage de l'image : FAIL ergonomique — le SVG est affiché à une taille trop grande et n'est pas ajusté à la fenêtre ; seule une partie du connecteur est visible sans défilement.
 - Couleurs/orientation : lisibles ; pas de défaut de rotation observé sur ce cas.
 - Aucune correction applicative effectuée pendant cette phase de tests.
+
+## 2026-09-02 — Pré-correction IA MEMS : première correction question → réponse → image
+
+### Nouveaux tests libres enregistrés
+- `MINI SPI` : la réponse cite explicitement `images/rave/AKM7169ENG_PDF_025.png` et `images/rave/AKM7169ENG_PDF_024.png`, mais aucun bouton image n'est proposé. FAIL réponse → image.
+- `DEPOSE INJECTEUR` : la réponse cite explicitement `images/rave/AKM7169ENG_PDF_133.png`, fichier confirmé présent dans le package par l'utilisateur, mais aucun bouton image n'est proposé. FAIL réponse → image.
+- `DEPOSE INJECTEUR` : la réponse commence en français puis restitue la procédure en anglais. Défaut multilingue confirmé mais volontairement différé à l'étape suivante.
+
+### Causes générales établies avant correction
+- `.png` / `.PNG` n'est pas la cause principale : la résolution actuelle compare les identifiants et chemins avec `Qt::CaseInsensitive`.
+- `IaMemsService` renvoie aujourd'hui des `fact.statement` bruts, ce qui explique les pages/procédures entières et le manque de réponse ciblée.
+- Le matching de termes est principalement exact ; les fautes `VILEBROQUIN` / `VILBREUQUIN` ne déclenchent pas correctement le contexte CKP.
+- Le résolveur d'image de réponse dépend du catalogue runtime ; un chemin local explicite présent dans le package mais absent/non concordant dans ce catalogue peut ne pas produire de bouton.
+- Si la résolution image de la réponse échoue, la suggestion calculée avant la question peut rester visible et conduire à une image secondaire ou sans rapport direct.
+- Le viewer ouvre certains SVG/images trop grands au lieu d'afficher d'abord l'ensemble de l'illustration.
+
+### Première correction autorisée par l'utilisateur — `GO`
+Correction directe du source uniquement sur `tmp-ravemems-ia-visual-integration`, sans patch/rustine et sans toucher `MEMSX64` BUILD #103 :
+1. tolérance générale et bornée aux petites fautes de frappe dans la recherche, sans cas codé en dur par capteur ;
+2. classement/réduction des faits selon l'intention et restitution des passages directement utiles au lieu des pages brutes ;
+3. résolution générale des chemins d'images locaux explicitement cités dans une réponse, avec validation de sécurité/intégrité via les données du package ;
+4. priorité déterministe à l'image réellement liée à la réponse et suppression d'une suggestion pré-question obsolète lorsqu'une référence visuelle explicite de réponse ne peut pas être résolue ;
+5. affichage initial de l'illustration ajusté à la fenêtre, sans modifier les assets sources.
+
+### Hors périmètre de cette première correction
+- traduction complète des réponses IA selon la langue active ;
+- traduction des textes intégrés aux images ;
+- normalisation des assets tournés à 90° ou blanc sur noir ; ces fichiers devront être corrigés à la source et non masqués par une rustine du viewer ;
+- protocole ECU, 32 bits, UI générale et `MEMSX64`.
