@@ -176,8 +176,6 @@ class Pass2SemanticParser(pe.SemanticParser):
                 continue
             if self._operation_code(text):
                 return True
-            # A new numbered workshop step means this was ordinary prose, not
-            # a pending operation-title block.
             if self._step_match(candidate):
                 return False
         return False
@@ -185,12 +183,14 @@ class Pass2SemanticParser(pe.SemanticParser):
     def _is_next_operation_title(self, lines: list[dict[str, Any]], index: int) -> bool:
         """Detect a title line immediately preceding a manufacturer operation id.
 
-        The rule is structural only: emphasized/all-capital text plus a nearby
-        operation code. It deliberately knows nothing about component names.
+        A line already recognized as a real numbered workshop step can never be
+        reclassified as a title, even if one of its spans is bold.
         """
         item = lines[index]
         text = str(item.get("text", "")).strip()
         if not text or self._operation_code(text):
+            return False
+        if self._step_match(item):
             return False
         letters = [ch for ch in text if ch.isalpha()]
         all_caps = bool(letters) and all(ch.isupper() for ch in letters)
@@ -219,17 +219,12 @@ class Pass2SemanticParser(pe.SemanticParser):
             if not text:
                 continue
 
-            # A printed folio is never instruction text. Flushing here prevents
-            # the last numbered step on a page from acquiring e.g. " 12".
             if self._is_bottom_folio(item, page_height):
                 if self.current_step:
                     self._flush_step()
                 self.boundary_folio_count += 1
                 continue
 
-            # In left-then-right reading order the title of the next procedure
-            # can immediately follow the final step of the previous column. A
-            # nearby manufacturer operation code proves the boundary.
             if self.current_step and self._is_next_operation_title(lines, index):
                 self._flush_step()
                 self.boundary_title_count += 1
