@@ -1,0 +1,88 @@
+name: TEMP RAVEMEMS V2 ELXN970E 30plus preflight
+
+on:
+  push:
+    branches: [tmp-ravemems-v2-foundation]
+    paths:
+      - '.github/workflows/tmp-ravemems-v2-elxn970e-preflight.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  elxn970e-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TEST_SHA: 'a9e47832a2fbd3bf365a32e00d374ed7c70fba5c'
+      PROTECTED_MEMSX64: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+      SOURCE_MAIN_COMMIT: '643de091b474f4e27917a065bdf46d5a0c764276'
+      SOURCE_PATH: 'rave/xn/elxn970e.pdf'
+      SOURCE_BLOB: '337f957045cb9ea79f38a1a5e3ddb01f194c7156'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TEST_SHA }}
+          fetch-depth: 0
+
+      - name: Guard exact generic code and production
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TEST_SHA"
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
+          test -f .github/pass2/ravemems_generic_precise_extract.py
+          test -f ravemems/v2/generic_document_rules.py
+          echo "ELXN970E_GENERIC_SHA_PASS $TEST_SHA"
+          echo "PROTECTED_BUILD103_PASS $PROTECTED_MEMSX64"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pinned PDF renderer
+        run: python -m pip install --disable-pip-version-check 'PyMuPDF==1.26.4'
+
+      - name: Fetch exact ELXN970E source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "$SOURCE_MAIN_COMMIT"
+          test "$(git rev-parse FETCH_HEAD)" = "$SOURCE_MAIN_COMMIT"
+          test "$(git rev-parse "$SOURCE_MAIN_COMMIT:$SOURCE_PATH")" = "$SOURCE_BLOB"
+          mkdir -p "$RUNNER_TEMP/ravemems-source"
+          git show "$SOURCE_MAIN_COMMIT:$SOURCE_PATH" > "$RUNNER_TEMP/ravemems-source/elxn970e.pdf"
+          test -s "$RUNNER_TEMP/ravemems-source/elxn970e.pdf"
+          echo "ELXN970E_SOURCE_PIN_PASS $SOURCE_BLOB"
+
+      - name: Require at least 30 pages and identify publication
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - "$RUNNER_TEMP/ravemems-source/elxn970e.pdf" <<'PY'
+          import re, sys
+          from collections import Counter
+          import fitz
+          path = sys.argv[1]
+          doc = fitz.open(path)
+          print('ELXN970E_PAGE_COUNT', doc.page_count)
+          assert doc.page_count >= 30, doc.page_count
+          head = '\n'.join(doc[i].get_text('text', sort=True) for i in range(min(20, doc.page_count)))
+          compact = re.sub(r'\s+', ' ', head).strip()
+          patterns = [
+              r'\bRCL\d{3,6}[A-Z]{0,4}\b',
+              r'\b[A-Z]{2,8}\d{3,8}(?:ENG|EN|E)\b',
+              r'\b[A-Z]{2,8}\d{3,8}\b',
+          ]
+          found = []
+          for pat in patterns:
+              found.extend(re.findall(pat, head, flags=re.I))
+          counts = Counter(x.upper() for x in found)
+          print('ELXN970E_PUBLICATION_CANDIDATES', counts.most_common(30))
+          print('ELXN970E_HEAD_TEXT_BEGIN')
+          print(compact[:5000])
+          print('ELXN970E_HEAD_TEXT_END')
+          print('ELXN970E_30PLUS_PREFLIGHT_PASS')
+          doc.close()
+          PY
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
