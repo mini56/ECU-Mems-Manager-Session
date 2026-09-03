@@ -180,17 +180,34 @@ class Pass2SemanticParser(pe.SemanticParser):
                 return False
         return False
 
+    def _current_step_needs_continuation(self) -> bool:
+        if not self.current_step:
+            return False
+        parts = [str(part).strip() for part in self.current_step.get("parts", []) if str(part).strip()]
+        if not parts:
+            return False
+        text = " ".join(parts).strip()
+        if re.search(r"\bSee$", text, re.IGNORECASE):
+            return True
+        if text.endswith(","):
+            return True
+        return False
+
     def _is_next_operation_title(self, lines: list[dict[str, Any]], index: int) -> bool:
         """Detect a title line immediately preceding a manufacturer operation id.
 
         A line already recognized as a real numbered workshop step can never be
-        reclassified as a title, even if one of its spans is bold.
+        reclassified as a title. Likewise, if the current step is syntactically
+        incomplete, its next line is preserved as continuation before title
+        detection resumes.
         """
         item = lines[index]
         text = str(item.get("text", "")).strip()
         if not text or self._operation_code(text):
             return False
         if self._step_match(item):
+            return False
+        if self._current_step_needs_continuation():
             return False
         letters = [ch for ch in text if ch.isalpha()]
         all_caps = bool(letters) and all(ch.isupper() for ch in letters)
