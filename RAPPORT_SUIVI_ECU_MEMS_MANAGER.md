@@ -12745,3 +12745,14 @@ Tentative de transport de la correction generique sur `tmp-ravemems-v2-foundatio
 La premiere tentative de journalisation de cet incident, commit RAPPORT `953629db1e6ee6437d24b5585ab1e8a4d63fe2c8`, run `33782857709`, a elle aussi echoue **avant creation d'un job** : le heredoc `EOF` etait mal indente dans le YAML temporaire, rendant le workflow invalide. La seconde tentative, commit RAPPORT `fc36722db1cddfa61273780f26011db73bf37a12`, run `33783018587`, a echoue pour la meme categorie de cause : le texte multilignes du journal etait encore sorti de l'indentation du bloc `run`. Aucun contenu du rapport n'a ete modifie par ces deux runs. Ces incidents de journalisation sont consignes ici avant toute reprise technique.
 
 PROCHAINE ACTION EXACTE : corriger uniquement le garde du helper technique en remplacant la comparaison impossible de son propre HEAD par des gardes stables (MEMSX64 #103 intact, `dee81b...` ancetre de la branche et blob de `prototype_extract.py` encore identique), sans changer le contenu fonctionnel de la correction geometrique preparee. Relancer ensuite le helper, puis laisser le workflow RAVEMEMS V2 tester le commit resultant sur le seul RCL0193ENG.
+
+
+## 2026-09-03 — CORRECTION GENERIQUE ORDRE DE LECTURE DEUX COLONNES POUSSEE
+
+Le helper technique corrige a ete relance sur `tmp-ravemems-v2-foundation`. Run helper `33783252682` : **SUCCESS**. Il a produit le commit technique `6d119858dfd728c7d344db7a6ad0a48e01f38dd0` (`Fix generic two-column workshop reading order`) et a supprime son workflow temporaire de l'arbre final.
+
+Correction appliquee sans aucun nom d'operation code en dur : ajout de `ravemems/v2/reading_order.py`, detection geometrique d'un vrai corps a deux colonnes, lecture colonne gauche puis colonne droite, maintien des pages mono-colonne en ordre `(y,x)`, marquage des regions `header/footer/body_*`, exclusion des en-tetes/pieds de l'extension semantique d'une etape, et enrichissement du debug pages 131-136 avec region+BBOX. `prototype_extract.py` n'est modifie que pour appeler cet ordre geometrique et utiliser les regions. `MEMSX64` reste exactement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+Le commit technique a ete pousse par un workflow avec le `GITHUB_TOKEN`. GitHub ne declenche pas de nouveau workflow `push` a partir d'une pousse faite par ce token; aucun run de fondation n'a donc ete cree automatiquement pour le SHA `6d119858...`. Ce n'est pas un verdict technique sur l'extracteur.
+
+PROCHAINE ACTION EXACTE : declencher explicitement, sans modifier MEMSX64 et sans autre PDF, le workflow de fondation/prototype sur le commit `6d119858...`, puis verifier run, compteurs, diagnostics et artefact RCL0193ENG, avec controle explicite des pages 131-136 et exigence d'une chute massive des 242 defauts.
