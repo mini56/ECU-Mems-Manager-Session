@@ -1,4 +1,4 @@
-name: TEMP RAVEMEMS V2 foundation test
+name: TEMP RAVEMEMS V2 foundation + RCL0193ENG prototype
 
 on:
   push:
@@ -13,9 +13,11 @@ permissions:
 jobs:
   foundation:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
       PROTECTED_MEMSX64: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+      SOURCE_MAIN_COMMIT: '643de091b474f4e27917a065bdf46d5a0c764276'
+      RCL0193ENG_BLOB: '82263eb36bb194dfa969d0471d10ef11078ce521'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -44,7 +46,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m py_compile ravemems/v2/audit.py ravemems/v2/schema_selftest.py
+          python -m py_compile ravemems/v2/audit.py ravemems/v2/schema_selftest.py ravemems/v2/prototype_extract.py
           python ravemems/v2/schema_selftest.py | tee "$RUNNER_TEMP/schema-selftest.log"
           grep -q '^RAVEMEMS_V2_SCHEMA_SELFTEST_PASS$' "$RUNNER_TEMP/schema-selftest.log"
           grep -q '^CARBURETOR_WITHOUT_ECU_PASS$' "$RUNNER_TEMP/schema-selftest.log"
@@ -91,3 +93,125 @@ jobs:
           memsx64="$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')"
           test "$memsx64" = "$PROTECTED_MEMSX64"
           echo 'RAVEMEMS_V2_FOUNDATION_GATE_PASS'
+
+      - name: Install pinned PDF renderer for prototype
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check 'PyMuPDF==1.26.4'
+          python - <<'PY'
+          import fitz
+          print('PYMUPDF_VERSION', fitz.VersionBind)
+          PY
+
+      - name: Fetch exact RCL0193ENG source only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "$SOURCE_MAIN_COMMIT"
+          test "$(git rev-parse FETCH_HEAD)" = "$SOURCE_MAIN_COMMIT"
+          source_blob="$(git rev-parse "$SOURCE_MAIN_COMMIT:rave/xn/wmxn990e.pdf")"
+          test "$source_blob" = "$RCL0193ENG_BLOB"
+          mkdir -p "$RUNNER_TEMP/ravemems-source"
+          git show "$SOURCE_MAIN_COMMIT:rave/xn/wmxn990e.pdf" > "$RUNNER_TEMP/ravemems-source/wmxn990e.pdf"
+          test -s "$RUNNER_TEMP/ravemems-source/wmxn990e.pdf"
+          echo "RCL0193ENG_SOURCE_PIN_PASS $source_blob"
+
+      - name: Extract RCL0193ENG prototype
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/rcl0193eng-prototype"
+          rm -rf "$out"
+          PYTHONPATH=ravemems/v2 python ravemems/v2/prototype_extract.py \
+            --pdf "$RUNNER_TEMP/ravemems-source/wmxn990e.pdf" \
+            --schema ravemems/v2/schema.sql \
+            --profile ravemems/v2/profiles/rcl0193eng.json \
+            --out "$out" \
+            --source-relative-path 'rave/xn/wmxn990e.pdf' \
+            --source-commit "$SOURCE_MAIN_COMMIT" \
+            --source-blob-sha "$RCL0193ENG_BLOB" \
+            | tee "$RUNNER_TEMP/rcl0193eng-extract.log"
+          test -s "$out/manifest.json"
+          test -s "$out/audit.json"
+          test -s "$out/operation_summary.json"
+          test -s "$out/debug_pages_131_136.txt"
+          test -s "$out/ravemems_v2_rcl0193eng.sqlite"
+
+      - name: Gate prototype structure without hiding audit findings
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/rcl0193eng-prototype"
+          python - "$out" <<'PY'
+          import json, sqlite3, sys
+          from pathlib import Path
+          out = Path(sys.argv[1])
+          m = json.loads((out / 'manifest.json').read_text(encoding='utf-8'))
+          assert m['prototype'] == 'RCL0193ENG'
+          assert m['publication_code'] == 'RCL0193ENG'
+          assert m['source_relative_path'] == 'rave/xn/wmxn990e.pdf'
+          assert m['source_commit'] == '643de091b474f4e27917a065bdf46d5a0c764276'
+          assert m['source_blob_sha'] == '82263eb36bb194dfa969d0471d10ef11078ce521'
+          assert m['page_count'] > 0
+          assert m['raw_extract_image_used_for_user_visual'] is False
+          assert m['visual_render_method'] == 'pdf_page_render_crop'
+          assert m['sqlite_integrity'] == 'ok'
+          assert m['foreign_key_issue_count'] == 0
+          counts = m['counts']
+          assert counts['ravemems_document'] == 1
+          assert counts['ravemems_document_revision'] == 1
+          assert counts['ravemems_page'] == m['page_count']
+          assert counts['ravemems_operation'] > 0
+          assert counts['ravemems_phase'] > 0
+          assert counts['ravemems_step'] > 0
+          db = sqlite3.connect(out / 'ravemems_v2_rcl0193eng.sqlite')
+          assert db.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
+          assert db.execute('PRAGMA foreign_key_check').fetchall() == []
+          visuals = db.execute("SELECT COUNT(*) FROM ravemems_visual WHERE render_method <> 'pdf_page_render_crop'").fetchone()[0]
+          assert visuals == 0
+          # Machine rendering is not human fidelity approval. Every generated
+          # visual must remain pending until the post-extraction audit/review.
+          auto_verified = db.execute("SELECT COUNT(*) FROM ravemems_visual WHERE fidelity_status='verified'").fetchone()[0]
+          assert auto_verified == 0
+          # Generic completeness gate: any all-numeric manufacturer sequence
+          # that starts above 1, has a gap, duplicate or reordering must be
+          # incomplete and carry an open review flag. This is not component-specific.
+          phases = db.execute('SELECT phase_key,completeness_status FROM ravemems_phase').fetchall()
+          checked = 0
+          flagged = 0
+          for phase_key, status in phases:
+              vals = [r[0] for r in db.execute('SELECT manufacturer_step_no FROM ravemems_step WHERE phase_key=? ORDER BY sequence_no', (phase_key,))]
+              if not vals or not all(v and str(v).isdigit() for v in vals):
+                  continue
+              nums = [int(v) for v in vals]
+              expected = list(range(1, max(nums)+1))
+              if nums != expected:
+                  checked += 1
+                  assert status == 'incomplete', (phase_key, nums, status)
+                  n = db.execute("SELECT COUNT(*) FROM ravemems_review_flag WHERE entity_kind='phase' AND entity_key=? AND reason_code='manufacturer_step_sequence_incomplete' AND status='open'", (phase_key,)).fetchone()[0]
+                  assert n >= 1, (phase_key, nums)
+                  flagged += 1
+          print('RCL0193ENG_NUMERIC_PHASE_DEFECTS', checked)
+          print('RCL0193ENG_NUMERIC_PHASE_FLAGS', flagged)
+          print('RCL0193ENG_PAGE_COUNT', m['page_count'])
+          print('RCL0193ENG_OPERATION_COUNT', counts['ravemems_operation'])
+          print('RCL0193ENG_PHASE_COUNT', counts['ravemems_phase'])
+          print('RCL0193ENG_STEP_COUNT', counts['ravemems_step'])
+          print('RCL0193ENG_VISUAL_COUNT', counts['ravemems_visual'])
+          print('RCL0193ENG_AUDIT_ISSUE_COUNT', m['audit_issue_count'])
+          print('RAVEMEMS_V2_RCL0193ENG_PROTOTYPE_GATE_PASS')
+          db.close()
+          PY
+          grep -qi 'inject' "$out/debug_pages_131_136.txt"
+          memsx64="$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')"
+          test "$memsx64" = "$PROTECTED_MEMSX64"
+
+      - name: Upload RCL0193ENG prototype audit artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAVEMEMS-V2-RCL0193ENG-PROTOTYPE-AUDIT
+          path: ${{ runner.temp }}/rcl0193eng-prototype
+          if-no-files-found: warn
+          retention-days: 14
