@@ -1,0 +1,7 @@
+## 2026-09-03 — RCL0193ENG regression after RCL0213ENG generic generalization GREEN
+
+Full isolated regression run 33801479667 completed SUCCESS using exact generic code SHA 7418419993af12d5d4c8a1e57673984dbedc4675, the same code that passed the RCL0213ENG 212-page Electrical Library test. Frozen RCL0193ENG source remained commit 643de091b474f4e27917a065bdf46d5a0c764276, path rave/xn/wmxn990e.pdf, blob 82263eb36bb194dfa969d0471d10ef11078ce521, 372 pages.
+
+Regression verified exact historical identity and semantics: DOC_RCL0193ENG, REV_RCL0193ENG_SOURCE, document_kind workshop_manual; 201 operations, 397 phases, 3104 steps, 144 notices, 23 requirements, 738 visuals, 401 visual links, 0 open review flags, 0 numeric phase defects, SQLite integrity ok, FK 0. Exact extraction-order visual replay verified 738/738 visuals and 401/401 links with 0 failures, 0 missing, 0 unexpected, and final audit 0. Artifact RAVEMEMS-V2-RCL0193ENG-GENERIC-RULES-REGRESSION ID 9911235574, zip SHA256 35d3ca370d9724b40b6253f89cf3252a645a06bd4473adaba43a3b340bf481c2.
+
+Conclusion: the generic RCL0213ENG identity/type/Electrical Library changes preserve the previously validated RCL0193ENG zero-defect result. Protected MEMSX64 remained exactly BUILD #103 SHA 1d6316bd1746d6f2b4cfb751cab88d18e27ef730; no BUILD #104.
