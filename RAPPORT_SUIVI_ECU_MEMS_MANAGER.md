@@ -14124,3 +14124,19 @@ Aucun BUILD #104.
 - Artifact: `RAVEMEMS-V2-NEUTRAL-LINEAGE-THREE-DOCUMENT-REGRESSION`, ID `9913015009`, ZIP SHA256 `53b7618141dc27924386c53fb3ed28dc1f5b7377f614d4585b9a3a34b806edb2`.
 - Earlier run `33805767194` had already passed all three technical regressions but failed only while attempting to push a workflow file without workflow permission. This transport issue was corrected by excluding the workflow file from the generated commit; run `33806135888` then pushed the neutral code successfully.
 <!-- journal-entry-sha256:7d4a73c1c1d1e4d3caaf78a555660a192c20cd27164a8ccbbb8693d504a83ca9 -->
+
+## 2026-09-03 — RAVEMEMS V2 : lancement traitement de masse corpus RAVE
+
+Demande utilisateur : lancer maintenant le traitement de masse du corpus RAVE sur GitHub.
+
+Périmètre verrouillé avant pousse :
+- moteur générique neutralisé exact : `745f41243adb202f638f4039016dedfff8f272d6` ;
+- source documentaire figée : commit `643de091b474f4e27917a065bdf46d5a0c764276` ;
+- entrée : ensemble complet des PDF sous `rave/` au commit source figé ;
+- aucune adaptation, aucun profil et aucune correction spécifique PDF par PDF pendant ce run ;
+- le workflow doit matérialiser le corpus, lancer le moteur générique, conserver un manifeste global et effectuer le replay visuel/audit sur chaque extraction réussie ;
+- un PDF non compris doit être signalé comme échec réel, pas contourné ;
+- `MEMSX64` reste protégé sur BUILD #103 SHA `1d6316bd1746d6f2b4cfb751cab88d18e27ef730` ; aucun BUILD #104.
+
+Prochaine action exacte : pousser le workflow temporaire de traitement complet sur `tmp-ravemems-v2-foundation`, puis relever immédiatement le run GitHub Actions créé.
+<!-- journal-entry-sha256:5a92d29def757fc47e16a3390a96c17e81ada37829d906b6bdda575abb55a3b6 -->
