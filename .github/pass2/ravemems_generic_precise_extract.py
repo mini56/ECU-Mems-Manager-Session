@@ -41,7 +41,7 @@ _COLUMN_LABELS = {
     "col",
 }
 _TITLE_PATTERN_BY_KIND = {
-    "electrical_reference_library": re.compile(r"electrical\s+reference\s+library", re.IGNORECASE),
+    "electrical_reference_library": re.compile(r"electrical\s+(?:reference\s+)?library", re.IGNORECASE),
     "workshop_manual": re.compile(r"workshop\s+manual", re.IGNORECASE),
 }
 
