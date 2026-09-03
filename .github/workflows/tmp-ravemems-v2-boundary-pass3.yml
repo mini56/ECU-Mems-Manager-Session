@@ -1,0 +1,231 @@
+name: TEMP RAVEMEMS V2 RCL0193ENG boundary pass 3
+
+on:
+  push:
+    branches: [tmp-ravemems-v2-foundation]
+    paths:
+      - '.github/workflows/tmp-ravemems-v2-boundary-pass3.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  exact-rcl0193eng-pass3:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      TEST_SHA: '7e1d4515807e72948b1648d44bc6b44be59f8393'
+      PROTECTED_MEMSX64: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+      SOURCE_MAIN_COMMIT: '643de091b474f4e27917a065bdf46d5a0c764276'
+      RCL0193ENG_BLOB: '82263eb36bb194dfa969d0471d10ef11078ce521'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TEST_SHA }}
+          fetch-depth: 0
+
+      - name: Guard exact scope and production
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TEST_SHA"
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
+          test -f .github/pass2/rcl0193eng_zero_defect_pass2.py
+          test -f .github/pass3/rcl0193eng_boundary_cleanup.py
+          test -f ravemems/v2/prototype_extract.py
+          test -f ravemems/v2/schema.sql
+          echo "PASS3_TEST_SHA_PASS $TEST_SHA"
+          echo "PROTECTED_BUILD103_PASS $PROTECTED_MEMSX64"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Validate foundation and wrappers
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=ravemems/v2 python -m py_compile \
+            ravemems/v2/audit.py \
+            ravemems/v2/schema_selftest.py \
+            ravemems/v2/reading_order.py \
+            ravemems/v2/prototype_extract.py \
+            .github/pass2/rcl0193eng_zero_defect_pass2.py \
+            .github/pass3/rcl0193eng_boundary_cleanup.py
+          python ravemems/v2/schema_selftest.py | tee "$RUNNER_TEMP/schema-selftest.log"
+          grep -q '^RAVEMEMS_V2_SCHEMA_SELFTEST_PASS$' "$RUNNER_TEMP/schema-selftest.log"
+          grep -q '^MULTIPHASE_STEP_NUMBERING_PASS$' "$RUNNER_TEMP/schema-selftest.log"
+          grep -q '^POST_EXTRACTION_AUDIT_PASS$' "$RUNNER_TEMP/schema-selftest.log"
+
+      - name: Install pinned PDF renderer
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check 'PyMuPDF==1.26.4'
+
+      - name: Fetch exact RCL0193ENG source only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "$SOURCE_MAIN_COMMIT"
+          test "$(git rev-parse FETCH_HEAD)" = "$SOURCE_MAIN_COMMIT"
+          source_blob="$(git rev-parse "$SOURCE_MAIN_COMMIT:rave/xn/wmxn990e.pdf")"
+          test "$source_blob" = "$RCL0193ENG_BLOB"
+          mkdir -p "$RUNNER_TEMP/ravemems-source"
+          git show "$SOURCE_MAIN_COMMIT:rave/xn/wmxn990e.pdf" > "$RUNNER_TEMP/ravemems-source/wmxn990e.pdf"
+          test -s "$RUNNER_TEMP/ravemems-source/wmxn990e.pdf"
+          echo "RCL0193ENG_SOURCE_PIN_PASS $source_blob"
+
+      - name: Extract exact RCL0193ENG pass 3
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/rcl0193eng-pass3"
+          rm -rf "$out"
+          PYTHONPATH=ravemems/v2 python .github/pass3/rcl0193eng_boundary_cleanup.py \
+            --pdf "$RUNNER_TEMP/ravemems-source/wmxn990e.pdf" \
+            --schema ravemems/v2/schema.sql \
+            --profile ravemems/v2/profiles/rcl0193eng.json \
+            --out "$out" \
+            --source-relative-path 'rave/xn/wmxn990e.pdf' \
+            --source-commit "$SOURCE_MAIN_COMMIT" \
+            --source-blob-sha "$RCL0193ENG_BLOB" \
+            | tee "$RUNNER_TEMP/rcl0193eng-pass3.log"
+          test -s "$out/manifest.json"
+          test -s "$out/audit.json"
+          test -s "$out/step_sequence_diagnostics.json"
+          test -s "$out/pages_131_136_semantic.json"
+          test -s "$out/ravemems_v2_rcl0193eng.sqlite"
+
+      - name: Validate zero real boundary defects
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/rcl0193eng-pass3"
+          python - "$out" <<'PY'
+          import hashlib, json, re, sqlite3, sys
+          from pathlib import Path
+          out = Path(sys.argv[1])
+          manifest = json.loads((out / 'manifest.json').read_text(encoding='utf-8'))
+          db_path = out / 'ravemems_v2_rcl0193eng.sqlite'
+          db = sqlite3.connect(db_path)
+          assert manifest['prototype'] == 'RCL0193ENG'
+          assert manifest['page_count'] == 372
+          assert manifest['source_commit'] == '643de091b474f4e27917a065bdf46d5a0c764276'
+          assert manifest['source_blob_sha'] == '82263eb36bb194dfa969d0471d10ef11078ce521'
+          assert manifest['sqlite_integrity'] == 'ok'
+          assert manifest['foreign_key_issue_count'] == 0
+          assert db.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
+          assert db.execute('PRAGMA foreign_key_check').fetchall() == []
+          assert manifest['numeric_phase_defect_count'] == 0
+          assert json.loads((out / 'step_sequence_diagnostics.json').read_text(encoding='utf-8')) == []
+          assert db.execute("SELECT COUNT(*) FROM ravemems_step WHERE manufacturer_step_no='0'").fetchone()[0] == 0
+
+          ops = db.execute(
+              "SELECT operation_key,sequence_no,manufacturer_operation_no,title_source FROM ravemems_operation ORDER BY sequence_no"
+          ).fetchall()
+          violations = []
+          for previous, following in zip(ops, ops[1:]):
+              title = re.sub(r'\s+', ' ', following[3] or '').strip()
+              if not title:
+                  continue
+              rows = db.execute(
+                  "SELECT s.step_key,s.instruction_source,s.source_page_start,s.source_page_end "
+                  "FROM ravemems_step s JOIN ravemems_phase p ON p.phase_key=s.phase_key "
+                  "WHERE p.operation_key=? ORDER BY p.sequence_no,s.sequence_no",
+                  (previous[0],),
+              ).fetchall()
+              for step_key, instruction, p0, p1 in rows:
+                  text = re.sub(r'\s+', ' ', instruction or '').strip()
+                  if text.lower().endswith(title.lower()):
+                      violations.append({
+                          'previous_operation': previous[2],
+                          'next_operation': following[2],
+                          'next_title': title,
+                          'step_key': step_key,
+                          'instruction': text,
+                          'source_page_start': p0,
+                          'source_page_end': p1,
+                      })
+          (out / 'operation_boundary_diagnostics.json').write_text(
+              json.dumps(violations, ensure_ascii=False, indent=2), encoding='utf-8'
+          )
+          print('PASS3_BOUNDARY_DEFECT_COUNT', len(violations))
+          assert violations == [], violations[:10]
+
+          def nums(op_no, phase_kind):
+              return [int(r[0]) for r in db.execute(
+                  "SELECT s.manufacturer_step_no FROM ravemems_step s "
+                  "JOIN ravemems_phase p ON p.phase_key=s.phase_key "
+                  "JOIN ravemems_operation o ON o.operation_key=p.operation_key "
+                  "WHERE o.manufacturer_operation_no=? AND p.normalized_phase_kind=? "
+                  "ORDER BY p.sequence_no,s.sequence_no",
+                  (op_no, phase_kind),
+              ) if r[0] and str(r[0]).isdigit()]
+          expected = {
+              ('12.29.02','remove'): list(range(1,37)),
+              ('12.60.38','remove'): list(range(1,35)),
+              ('30.15.15','remove'): list(range(1,30)),
+              ('57.25.01','remove'): list(range(1,27)),
+              ('57.50.01','remove'): list(range(1,22)),
+              ('86.65.64','remove'): list(range(1,12)),
+          }
+          for key, wanted in expected.items():
+              got = nums(*key)
+              assert got == wanted, (key, got, wanted)
+              print('PASS3_SEQUENCE_OK', key[0], key[1], got[0], got[-1], len(got))
+
+          op75 = [int(r[0]) for r in db.execute(
+              "SELECT s.manufacturer_step_no FROM ravemems_step s "
+              "JOIN ravemems_phase p ON p.phase_key=s.phase_key "
+              "JOIN ravemems_operation o ON o.operation_key=p.operation_key "
+              "WHERE o.manufacturer_operation_no='33.25.03' ORDER BY p.sequence_no,s.sequence_no"
+          ) if r[0] and str(r[0]).isdigit()]
+          assert op75 == list(range(1,14)), op75
+          leaked = db.execute(
+              "SELECT COUNT(*) FROM ravemems_step s "
+              "JOIN ravemems_phase p ON p.phase_key=s.phase_key "
+              "JOIN ravemems_operation o ON o.operation_key=p.operation_key "
+              "WHERE o.manufacturer_operation_no='12.65.28' AND s.source_page_start>=99"
+          ).fetchone()[0]
+          assert leaked == 0, leaked
+
+          examples = {
+              '18.30.12': 'THROTTLE POSITION (TP) SENSOR',
+              '18.30.17': 'MANIFOLD ABSOLUTE PRESSURE (MAP) SENSOR',
+              '18.30.71': 'CAMSHAFT POSITION (CMP) SENSOR',
+              '19.22.16': 'FUEL RAIL',
+              '19.60.04': 'FUEL INJECTORS',
+          }
+          for op_no, forbidden_tail in examples.items():
+              last = db.execute(
+                  "SELECT s.instruction_source FROM ravemems_step s "
+                  "JOIN ravemems_phase p ON p.phase_key=s.phase_key "
+                  "JOIN ravemems_operation o ON o.operation_key=p.operation_key "
+                  "WHERE o.manufacturer_operation_no=? ORDER BY p.sequence_no DESC,s.sequence_no DESC LIMIT 1",
+                  (op_no,),
+              ).fetchone()
+              assert last and not (last[0] or '').strip().lower().endswith(forbidden_tail.lower()), (op_no, last)
+              print('PASS3_BOUNDARY_EXAMPLE_OK', op_no)
+
+          print('PASS3_SQLITE_SHA256', hashlib.sha256(db_path.read_bytes()).hexdigest())
+          print('PASS3_OPERATION_COUNT', manifest['counts']['ravemems_operation'])
+          print('PASS3_PHASE_COUNT', manifest['counts']['ravemems_phase'])
+          print('PASS3_STEP_COUNT', manifest['counts']['ravemems_step'])
+          print('PASS3_REVIEW_FLAGS', manifest['counts']['ravemems_review_flag'])
+          print('PASS3_NUMERIC_PHASE_DEFECTS', manifest['numeric_phase_defect_count'])
+          print('PASS3_AUDIT_ISSUE_COUNT', manifest['audit_issue_count'])
+          db.close()
+          print('RAVEMEMS_V2_RCL0193ENG_PASS3_ZERO_BOUNDARY_DEFECT_PASS')
+          PY
+          grep -qi 'inject' "$out/debug_pages_131_136.txt"
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
+
+      - name: Upload RCL0193ENG pass 3 audit artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAVEMEMS-V2-RCL0193ENG-ZERO-BOUNDARY-PASS3
+          path: ${{ runner.temp }}/rcl0193eng-pass3
+          if-no-files-found: warn
+          retention-days: 14
