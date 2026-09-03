@@ -7,6 +7,7 @@ import re
 
 
 _BARE_DOTTED_TRIPLET = re.compile(r"^\s*(\d{2})\.(\d{2})\.(\d{2})\s*$")
+_PUBLICATION_TOKEN_CLEANER = re.compile(r"[^A-Z0-9]+")
 
 
 def is_bare_calendar_date_identifier(text: str, candidate: str) -> bool:
@@ -29,6 +30,14 @@ def is_bare_calendar_date_identifier(text: str, candidate: str) -> bool:
     return True
 
 
+def canonical_publication_token(publication_code: str) -> str:
+    """Return a stable corpus key token derived only from the publication code."""
+    token = _PUBLICATION_TOKEN_CLEANER.sub("", publication_code.upper())
+    if not token:
+        raise ValueError("publication code does not contain an alphanumeric identity")
+    return token
+
+
 def document_kind_for_source_path(source_relative_path: str) -> str:
     """Classify a RAVE document from stable corpus structure when available."""
     normalized = source_relative_path.replace("\\", "/")
@@ -36,3 +45,19 @@ def document_kind_for_source_path(source_relative_path: str) -> str:
     if "mini tech bulletins" in parts:
         return "technical_bulletin"
     return "workshop_manual"
+
+
+def document_kind_for_evidence(source_relative_path: str, evidence_text: str) -> str:
+    """Classify a document from source evidence before using the path fallback.
+
+    Document families share the same ``rave/xn`` directory, so the directory is
+    not sufficient to distinguish a workshop manual from an electrical
+    reference library.  Stable title wording from the source itself is stronger
+    evidence and remains corpus-generic.
+    """
+    normalized = re.sub(r"\s+", " ", evidence_text).casefold()
+    if "electrical reference library" in normalized:
+        return "electrical_reference_library"
+    if "workshop manual" in normalized:
+        return "workshop_manual"
+    return document_kind_for_source_path(source_relative_path)
