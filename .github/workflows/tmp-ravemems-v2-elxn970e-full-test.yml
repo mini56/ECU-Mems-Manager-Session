@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
-      TEST_SHA: 'ba96a4795cba4b8cb44bd13cf7b6c1637009cede'
+      TEST_SHA: '97d2e7b0a90825e2c2efbf928f2002623d16d81d'
       PROTECTED_MEMSX64: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
       SOURCE_MAIN_COMMIT: '643de091b474f4e27917a065bdf46d5a0c764276'
       SOURCE_PATH: 'rave/xn/elxn970e.pdf'
