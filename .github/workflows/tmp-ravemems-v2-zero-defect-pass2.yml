@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      TEST_SHA: '7265cfaca9f1a6a80c3f416e0ab36867d7d6ce1f'
+      TEST_SHA: 'b812e9660f0b325abc0764517b3a3e7bf79fc3ba'
       PROTECTED_MEMSX64: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
       SOURCE_MAIN_COMMIT: '643de091b474f4e27917a065bdf46d5a0c764276'
       RCL0193ENG_BLOB: '82263eb36bb194dfa969d0471d10ef11078ce521'
@@ -33,21 +33,21 @@ jobs:
           test -f .github/pass2/rcl0193eng_zero_defect_pass2.py
           test -f .github/pass2/rcl0193eng_precise_visual_extract.py
           test -f .github/pass2/rcl0193eng_visual_validate.py
-          test -f .github/pass2/rcl0193eng_visual_validate_png.py
+          test -f .github/pass2/rcl0193eng_visual_replay_validate.py
           test -f ravemems/v2/prototype_extract.py
           test -f ravemems/v2/schema.sql
-          echo "PASS2_TEST_SHA_PASS $TEST_SHA"
+          echo "REPLAY_TEST_SHA_PASS $TEST_SHA"
           echo "PROTECTED_BUILD103_PASS $PROTECTED_MEMSX64"
 
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: Validate Python foundation and validators
+      - name: Validate Python foundation and replay validator
         shell: bash
         run: |
           set -euo pipefail
-          PYTHONPATH=ravemems/v2 python -m py_compile \
+          PYTHONPATH="ravemems/v2:.github/pass2" python -m py_compile \
             ravemems/v2/audit.py \
             ravemems/v2/schema_selftest.py \
             ravemems/v2/reading_order.py \
@@ -55,7 +55,7 @@ jobs:
             .github/pass2/rcl0193eng_zero_defect_pass2.py \
             .github/pass2/rcl0193eng_precise_visual_extract.py \
             .github/pass2/rcl0193eng_visual_validate.py \
-            .github/pass2/rcl0193eng_visual_validate_png.py
+            .github/pass2/rcl0193eng_visual_replay_validate.py
           python ravemems/v2/schema_selftest.py | tee "$RUNNER_TEMP/schema-selftest.log"
           grep -q '^RAVEMEMS_V2_SCHEMA_SELFTEST_PASS$' "$RUNNER_TEMP/schema-selftest.log"
           grep -q '^MULTIPHASE_STEP_NUMBERING_PASS$' "$RUNNER_TEMP/schema-selftest.log"
@@ -86,7 +86,7 @@ jobs:
           set -euo pipefail
           out="$RUNNER_TEMP/rcl0193eng-pass2"
           rm -rf "$out"
-          PYTHONPATH=ravemems/v2 python .github/pass2/rcl0193eng_precise_visual_extract.py \
+          PYTHONPATH="ravemems/v2:.github/pass2" python .github/pass2/rcl0193eng_precise_visual_extract.py \
             --pdf "$RUNNER_TEMP/ravemems-source/wmxn990e.pdf" \
             --schema ravemems/v2/schema.sql \
             --profile ravemems/v2/profiles/rcl0193eng.json \
@@ -94,15 +94,13 @@ jobs:
             --source-relative-path 'rave/xn/wmxn990e.pdf' \
             --source-commit "$SOURCE_MAIN_COMMIT" \
             --source-blob-sha "$RCL0193ENG_BLOB" \
-            | tee "$RUNNER_TEMP/rcl0193eng-pass2.log"
+            | tee "$RUNNER_TEMP/rcl0193eng-extract.log"
           test -s "$out/manifest.json"
           test -s "$out/audit.json"
           test -s "$out/step_sequence_diagnostics.json"
-          test -s "$out/pages_131_136_semantic.json"
-          test -s "$out/debug_pages_131_136.txt"
           test -s "$out/ravemems_v2_rcl0193eng.sqlite"
 
-      - name: Validate zero semantic and text defects before visual validation
+      - name: Require zero semantic and text defects before replay
         shell: bash
         run: |
           set -euo pipefail
@@ -151,29 +149,24 @@ jobs:
           assert title_tails == [], title_tails[:12]
           codes = collections.Counter(issue['code'] for issue in audit['issues'])
           assert codes == {'visual_fidelity_not_verified': 738, 'visual_link_not_verified': 401}, codes
-          print('PRE_VISUAL_NUMERIC_PHASE_DEFECTS 0')
-          print('PRE_VISUAL_TRAILING_FOLIOS 0')
-          print('PRE_VISUAL_INCOMPLETE_CROSSREFS 0')
-          print('PRE_VISUAL_TITLE_TAILS 0')
-          print('PRE_VISUAL_AUDIT_ISSUES', audit['issue_count'])
+          print('PRE_REPLAY_SEMANTIC_TEXT_ZERO_PASS')
           db.close()
-          print('RAVEMEMS_V2_RCL0193ENG_PRE_VISUAL_ZERO_SEMANTIC_DEFECT_PASS')
           PY
           test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
 
-      - name: Validate all RCL0193ENG visuals by exact Pixmap.save rerender
+      - name: Replay exact visual extraction order and validate links
         shell: bash
         run: |
           set -euo pipefail
           out="$RUNNER_TEMP/rcl0193eng-pass2"
-          PYTHONPATH="ravemems/v2:.github/pass2" python .github/pass2/rcl0193eng_visual_validate_png.py \
+          PYTHONPATH="ravemems/v2:.github/pass2" python .github/pass2/rcl0193eng_visual_replay_validate.py \
             --pdf "$RUNNER_TEMP/ravemems-source/wmxn990e.pdf" \
             --out "$out" \
-            | tee "$RUNNER_TEMP/rcl0193eng-visual-validation.log"
-          test -s "$out/visual_validation.json"
-          grep -q '^RAVEMEMS_V2_RCL0193ENG_VISUAL_VALIDATION_PASS$' "$RUNNER_TEMP/rcl0193eng-visual-validation.log"
+            | tee "$RUNNER_TEMP/rcl0193eng-visual-replay.log"
+          test -s "$out/visual_replay_validation.json"
+          grep -q '^RAVEMEMS_V2_RCL0193ENG_EXACT_VISUAL_REPLAY_GLOBAL_ZERO_PASS$' "$RUNNER_TEMP/rcl0193eng-visual-replay.log"
 
-      - name: Require global zero audit after visual validation
+      - name: Require global zero audit after exact replay
         shell: bash
         run: |
           set -euo pipefail
@@ -184,28 +177,30 @@ jobs:
           out = Path(sys.argv[1])
           m = json.loads((out / 'manifest.json').read_text(encoding='utf-8'))
           audit = json.loads((out / 'audit.json').read_text(encoding='utf-8'))
-          vv = json.loads((out / 'visual_validation.json').read_text(encoding='utf-8'))
+          replay = json.loads((out / 'visual_replay_validation.json').read_text(encoding='utf-8'))
           db_path = out / 'ravemems_v2_rcl0193eng.sqlite'
           db = sqlite3.connect(db_path)
           assert db.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
           assert db.execute('PRAGMA foreign_key_check').fetchall() == []
+          assert replay['db_visual_count'] == 738
+          assert replay['replayed_visual_count'] == 738
+          assert replay['visual_fidelity_verified_count'] == 738
+          assert replay['visual_fidelity_failed_count'] == 0
+          assert replay['visual_link_verified_count'] == 401
+          assert replay['visual_link_failed_count'] == 0
+          assert replay['missing_replay_count'] == 0
+          assert replay['unexpected_replay_count'] == 0
+          assert replay['sqlite_integrity'] == 'ok'
+          assert replay['foreign_key_issue_count'] == 0
+          assert replay['audit_issue_count_after_validation'] == 0
           assert db.execute("SELECT COUNT(*) FROM ravemems_visual WHERE fidelity_status='verified'").fetchone()[0] == 738
-          assert db.execute("SELECT COUNT(*) FROM ravemems_visual WHERE fidelity_status<>'verified'").fetchone()[0] == 0
           assert db.execute("SELECT COUNT(*) FROM ravemems_visual_link WHERE verification_status='verified'").fetchone()[0] == 401
-          assert db.execute("SELECT COUNT(*) FROM ravemems_visual_link WHERE verification_status<>'verified'").fetchone()[0] == 0
-          assert vv['visual_fidelity_verified_count'] == 738
-          assert vv['visual_fidelity_failed_count'] == 0
-          assert vv['visual_link_verified_count'] == 401
-          assert vv['visual_link_failed_count'] == 0
-          assert vv['sqlite_integrity'] == 'ok'
-          assert vv['foreign_key_issue_count'] == 0
-          assert vv['audit_issue_count_after_validation'] == 0
           assert audit['issue_count'] == 0 and audit['issues'] == []
           assert m['audit_issue_count'] == 0
           assert m['numeric_phase_defect_count'] == 0
           assert m['counts']['ravemems_review_flag'] == 0
-          print('FINAL_VISUAL_FIDELITY_VERIFIED 738')
-          print('FINAL_VISUAL_LINKS_VERIFIED 401')
+          print('FINAL_REPLAY_VISUALS_VERIFIED 738')
+          print('FINAL_REPLAY_LINKS_VERIFIED 401')
           print('FINAL_AUDIT_ISSUES 0')
           print('FINAL_SQLITE_SHA256', hashlib.sha256(db_path.read_bytes()).hexdigest())
           db.close()
@@ -213,11 +208,11 @@ jobs:
           PY
           test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
 
-      - name: Upload RCL0193ENG zero-defect validated artifact
+      - name: Upload RCL0193ENG exact replay artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: RAVEMEMS-V2-RCL0193ENG-ZERO-DEFECT-PIXMAP-SAVE-RERENDER
+          name: RAVEMEMS-V2-RCL0193ENG-EXACT-VISUAL-REPLAY
           path: ${{ runner.temp }}/rcl0193eng-pass2
           if-no-files-found: warn
           retention-days: 14
