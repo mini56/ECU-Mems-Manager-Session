@@ -28,6 +28,19 @@ class BoundaryCleanSemanticParser(pass2.Pass2SemanticParser):
     operation transition flushes the old step.
     """
 
+    def parse_page(
+        self,
+        physical_page: int,
+        page_key: str,
+        lines: list[dict[str, Any]],
+        page_width: float,
+        page_height: float,
+    ) -> tuple[set[str], set[str]]:
+        # The PASS2 snapshot present on this branch still exposes the former
+        # four-argument page interface. Keep its proven semantic logic intact
+        # while adapting it to the current extractor contract.
+        return super().parse_page(physical_page, page_key, lines, page_height)
+
     @staticmethod
     def _boundary_clean_text(text: str, next_title: str) -> str:
         text = re.sub(r"\s+", " ", text).strip()
