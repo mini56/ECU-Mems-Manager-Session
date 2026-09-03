@@ -12704,3 +12704,20 @@ Le run ne doit pas prétendre que le manuel est validé simplement parce que l�
 Aucune intégration IA, aucun protocole ECU, aucune UI générale, aucun 32 bits, aucun BUILD #104 et aucune extraction des 47 PDF dans cette étape.
 
 PROCHAINE ACTION EXACTE : après SUCCESS de ce journal, pousser atomiquement le profil + l’extracteur + l’extension du workflow sur `tmp-ravemems-v2-foundation`, lancer GitHub Actions sur le seul `RCL0193ENG`, vérifier le run, les compteurs, l’audit et l’artefact, puis journaliser le verdict avant toute correction ou extension.
+
+
+## 2026-09-03 — RCL0193ENG V2 PROTOTYPE 1 — MECANIQUE VERTE, SEMANTIQUE A CORRIGER
+
+Branche `tmp-ravemems-v2-foundation`, commit technique `b3d4c1a5591148140f17257c695564abd5e382c3` (`Add RCL0193ENG RAVEMEMS V2 prototype extractor`). Run GitHub Actions `33721636279` : **SUCCESS** pour les gardes et l’exécution du prototype. `MEMSX64` est restée exactement BUILD #103.
+
+Source strictement figée : `main@643de091b474f4e27917a065bdf46d5a0c764276`, `rave/xn/wmxn990e.pdf`, blob `82263eb36bb194dfa969d0471d10ef11078ce521`, SHA-256 PDF `c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715`, taille `4 744 911` octets, `372` pages, publication `RCL0193ENG`, `2nd Edition`.
+
+Extraction produite : `201` opérations, `315` phases, `3 189` étapes, `180` notices, `23` exigences, `738` visuels rendus, `427` liaisons visuelles, `3 885` provenances. SQLite `integrity_check=ok`, `0` FK cassée. Tous les visuels sont produits par `pdf_page_render_crop`; aucun `extract_image()` brut n’est utilisé comme visuel utilisateur et aucun visuel n’est auto-déclaré validé.
+
+Artefact : `RAVEMEMS-V2-RCL0193ENG-PROTOTYPE-AUDIT`, ID `9880443203`, taille ZIP `25 203 259` octets, digest `sha256:caf179f2480ee4fa002295afb7e6816e617fee40263596c596741a119b918c47`, expiration 2026-09-17.
+
+Verdict : le mécanisme et les gardes sont verts, mais **le prototype sémantique n’est pas validé**. L’audit contient `1 797` constats et le garde générique a trouvé `242` phases dont la numérotation constructeur observée ne forme pas une séquence complète `1..N`; les `242` sont toutes correctement marquées incomplètes et accompagnées d’un drapeau de review ouvert. C’est beaucoup trop pour accepter l’extraction telle quelle et cela indique que la reconnaissance générique des lignes d’étapes est encore trop permissive ou manque des débuts d’étapes. Les `738` visuels et `427` liaisons restent volontairement en attente de validation, ce qui contribue également au volume d’audit et est conforme au cahier.
+
+Aucune donnée n’est corrigée manuellement et aucun cas `injecteur` ne doit être codé en dur. Le cas connu pages physiques 133–135 reste un test de validation du mécanisme générique seulement. Aucun des 47 PDF supplémentaires n’est autorisé.
+
+PROCHAINE ACTION EXACTE : sur la même branche de test, corriger à la racine la segmentation/reconnaissance des étapes et la continuité multi-pages à partir de la géométrie et des marqueurs structurels du manuel, ajouter des diagnostics structuraux permettant de distinguer vraie séquence incomplète et faux positif de parsing, puis relancer uniquement `RCL0193ENG`. Exiger une chute massive des 242 défauts et vérifier explicitement le cas multi-pages pages 133–135 avant toute validation.
