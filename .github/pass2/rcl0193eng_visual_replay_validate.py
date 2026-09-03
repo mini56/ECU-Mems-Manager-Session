@@ -12,6 +12,8 @@ from typing import Any
 import fitz
 
 import rcl0193eng_zero_defect_pass2 as pass2
+import rcl0193eng_visual_validate as visual_base
+from audit import audit_database
 
 pe = pass2.pe
 
@@ -45,6 +47,7 @@ def save_png_bytes(pixmap: fitz.Pixmap) -> bytes:
 def replay_visuals(pdf_path: Path, out_dir: Path) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     db_path = out_dir / "ravemems_v2_rcl0193eng.sqlite"
     db = sqlite3.connect(db_path)
+    db.execute("PRAGMA foreign_keys=ON")
     doc = fitz.open(pdf_path)
     verified: list[dict[str, Any]] = []
     failed: list[dict[str, Any]] = []
@@ -110,6 +113,10 @@ def replay_visuals(pdf_path: Path, out_dir: Path) -> tuple[list[dict[str, Any]],
                             f"exact extraction replay mismatch replay_sha={replay_sha} asset_sha={asset_sha}"
                         )
 
+                    db.execute(
+                        "UPDATE ravemems_visual SET fidelity_status='verified' WHERE visual_key=?",
+                        (visual_key,),
+                    )
                     evidence.update(
                         {
                             "status": "verified",
@@ -121,6 +128,11 @@ def replay_visuals(pdf_path: Path, out_dir: Path) -> tuple[list[dict[str, Any]],
                     )
                     verified.append(evidence)
                 except Exception as exc:
+                    if row is not None:
+                        db.execute(
+                            "UPDATE ravemems_visual SET fidelity_status='failed' WHERE visual_key=?",
+                            (visual_key,),
+                        )
                     evidence.update({"status": "failed", "reason": str(exc)})
                     failed.append(evidence)
 
@@ -128,35 +140,83 @@ def replay_visuals(pdf_path: Path, out_dir: Path) -> tuple[list[dict[str, Any]],
         missing_replay = sorted(db_keys - seen_keys)
         unexpected_replay = sorted(seen_keys - db_keys)
         if missing_replay:
+            db.executemany(
+                "UPDATE ravemems_visual SET fidelity_status='failed' WHERE visual_key=?",
+                [(key,) for key in missing_replay],
+            )
             failed.append({"status": "failed", "reason": "DB visuals absent from replay", "visual_keys": missing_replay})
         if unexpected_replay:
             failed.append({"status": "failed", "reason": "replayed visuals absent from DB", "visual_keys": unexpected_replay})
+
+        links_verified, links_failed = visual_base.validate_visual_links(db)
+        db.commit()
+        integrity = db.execute("PRAGMA integrity_check").fetchone()[0]
+        foreign_keys = db.execute("PRAGMA foreign_key_check").fetchall()
+        issues = audit_database(db)
 
         summary = {
             "method": "full extraction-order replay page 1..372 with get_text, read_lines, visual_candidate_rects, expanded_clip, Matrix(1.5,1.5), Pixmap.save",
             "db_visual_count": int(expected_total),
             "replayed_visual_count": len(seen_keys),
-            "verified_count": len(verified),
-            "failed_count": len(failed),
+            "visual_fidelity_verified_count": len(verified),
+            "visual_fidelity_failed_count": len(failed),
+            "visual_link_verified_count": len(links_verified),
+            "visual_link_failed_count": len(links_failed),
             "missing_replay_count": len(missing_replay),
             "unexpected_replay_count": len(unexpected_replay),
+            "sqlite_integrity": integrity,
+            "foreign_key_issue_count": len(foreign_keys),
+            "audit_issue_count_after_validation": len(issues),
             "verified": verified,
             "failed": failed,
+            "links_verified": links_verified,
+            "links_failed": links_failed,
         }
         (out_dir / "visual_replay_validation.json").write_text(
             json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8"
         )
+        (out_dir / "audit.json").write_text(
+            json.dumps({"issue_count": len(issues), "issues": issues}, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        manifest_path = out_dir / "manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["audit_issue_count"] = len(issues)
+        manifest["visual_validation"] = {
+            "method": "exact_extraction_order_replay",
+            "evidence_file": "visual_replay_validation.json",
+            "fidelity_verified": len(verified),
+            "fidelity_failed": len(failed),
+            "links_verified": len(links_verified),
+            "links_failed": len(links_failed),
+        }
+        manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
 
         print("RCL0193ENG_REPLAY_DB_VISUALS", expected_total)
         print("RCL0193ENG_REPLAY_GENERATED_VISUALS", len(seen_keys))
-        print("RCL0193ENG_REPLAY_VERIFIED", len(verified))
-        print("RCL0193ENG_REPLAY_FAILED", len(failed))
+        print("RCL0193ENG_REPLAY_FIDELITY_VERIFIED", len(verified))
+        print("RCL0193ENG_REPLAY_FIDELITY_FAILED", len(failed))
+        print("RCL0193ENG_REPLAY_LINKS_VERIFIED", len(links_verified))
+        print("RCL0193ENG_REPLAY_LINKS_FAILED", len(links_failed))
         print("RCL0193ENG_REPLAY_MISSING", len(missing_replay))
         print("RCL0193ENG_REPLAY_UNEXPECTED", len(unexpected_replay))
-        if expected_total != 738 or len(seen_keys) != 738 or len(verified) != 738 or failed:
-            return verified, failed
-        print("RAVEMEMS_V2_RCL0193ENG_EXACT_VISUAL_REPLAY_PASS")
-        return verified, failed
+        print("RCL0193ENG_REPLAY_AUDIT_ISSUES", len(issues))
+        print("RCL0193ENG_REPLAY_SQLITE_INTEGRITY", integrity)
+        print("RCL0193ENG_REPLAY_FOREIGN_KEYS", len(foreign_keys))
+
+        ok = (
+            expected_total == 738
+            and len(seen_keys) == 738
+            and len(verified) == 738
+            and not failed
+            and len(links_verified) == 401
+            and not links_failed
+            and str(integrity).lower() == "ok"
+            and not foreign_keys
+            and not issues
+        )
+        if ok:
+            print("RAVEMEMS_V2_RCL0193ENG_EXACT_VISUAL_REPLAY_GLOBAL_ZERO_PASS")
+        return verified, failed if not ok else []
     finally:
         db.close()
         doc.close()
