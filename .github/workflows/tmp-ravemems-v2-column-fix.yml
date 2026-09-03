@@ -1,10 +1,14 @@
 name: TEMP RAVEMEMS V2 column fix
+
 on:
   push:
     branches: [tmp-ravemems-v2-foundation]
-    paths: ['.github/workflows/tmp-ravemems-v2-column-fix.yml']
+    paths:
+      - '.github/workflows/tmp-ravemems-v2-column-fix.yml'
+
 permissions:
   contents: write
+
 jobs:
   patch:
     runs-on: ubuntu-latest
@@ -13,12 +17,14 @@ jobs:
         with:
           ref: tmp-ravemems-v2-foundation
           fetch-depth: 0
+
       - name: Apply patch
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = dee81b207b34cbd12b1f3f6ff58993ac0cc3e67f
-          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = 1d6316bd1746d6f2b4cfb751cab88d18e27ef730
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+          git merge-base --is-ancestor 'dee81b207b34cbd12b1f3f6ff58993ac0cc3e67f' HEAD
+          test "$(git rev-parse HEAD:ravemems/v2/prototype_extract.py)" = 'ce464546c53d89bd379ff77b46d29fbe77221c50'
           cat > ravemems/v2/reading_order.py <<'PY'
           from __future__ import annotations
           from typing import Any
@@ -93,10 +99,12 @@ jobs:
           s = s.replace('from audit import audit_database\n', 'from audit import audit_database\nfrom reading_order import geometric_reading_order\n', 1)
           old = '    lines.sort(key=lambda item: (item["bbox"][1], item["bbox"][0]))\n    return lines'
           new = '    return geometric_reading_order(lines, float(page.rect.width), float(page.rect.height))'
-          if old not in s: raise SystemExit('read_lines sort marker missing')
+          if old not in s:
+              raise SystemExit('read_lines sort marker missing')
           s = s.replace(old, new, 1)
           gate = 'if top >= page_height * 0.055 and bottom <= page_height * 0.955 and not self._ignored(text):'
-          if s.count(gate) != 2: raise SystemExit('body gate count changed')
+          if s.count(gate) != 2:
+              raise SystemExit('body gate count changed')
           s = s.replace(gate, 'if item.get("reading_region") not in {"header", "footer"} and top >= page_height * 0.055 and bottom <= page_height * 0.955 and not self._ignored(text):')
           dbg = 'debug_lines.append(f"{item[\'text\']}\\tSPANS=[{span_text}]")'
           if dbg in s:
@@ -104,9 +112,9 @@ jobs:
           p.write_text(s, encoding='utf-8')
           PY
           python3 -m py_compile ravemems/v2/reading_order.py ravemems/v2/prototype_extract.py
-          rm .github/workflows/tmp-ravemems-v2-column-fix.yml
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          rm -f .github/workflows/tmp-ravemems-v2-column-fix.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add ravemems/v2/reading_order.py ravemems/v2/prototype_extract.py .github/workflows/tmp-ravemems-v2-column-fix.yml
           git diff --cached --check
           git commit -m 'Fix generic two-column workshop reading order'
