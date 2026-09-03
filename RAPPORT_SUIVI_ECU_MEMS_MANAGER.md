@@ -12736,3 +12736,12 @@ Analyse directe de `debug_pages_131_136.txt` et `pages_131_136_semantic.json` : 
 Aucune correction manuelle, aucun cas `injecteur` ou nom d'operation ne doit etre code en dur. Aucun autre PDF n'est autorise.
 
 PROCHAINE ACTION EXACTE : corriger generiquement `read_lines()`/la segmentation de page pour reconstruire l'ordre de lecture par regions/colonnes a partir de la geometrie PDF, conserver les en-tetes/pieds hors flux semantique, puis relancer uniquement RCL0193ENG. Verifier explicitement les pages 131-136 et en particulier la continuite Fuel rail pages 134-136 / Fuel injectors page 136. Exiger une chute massive des 242 defauts avant toute validation ou extension.
+
+
+## 2026-09-03 — INCIDENT TRANSPORT CORRECTION ORDRE DE LECTURE COLONNES
+
+Tentative de transport de la correction generique sur `tmp-ravemems-v2-foundation` : commit helper `371bfe357e10ed1e994bc59e7996c2fbbfb7f827`, workflow `TEMP RAVEMEMS V2 column fix`, run `33782795451` : **FAILURE** avant toute modification technique. Cause exacte : le helper comparait `git rev-parse HEAD` au parent technique `dee81b...`, alors que le checkout contenait necessairement son propre commit helper `371bfe...`; le premier garde a donc quitte avec code 1. Aucun `reading_order.py`, aucun changement de `prototype_extract.py` et aucun commit technique n'ont ete produits par ce run. `MEMSX64` reste exactement BUILD #103 `1d6316bd...`.
+
+La premiere tentative de journalisation de cet incident, commit RAPPORT `953629db1e6ee6437d24b5585ab1e8a4d63fe2c8`, run `33782857709`, a elle aussi echoue **avant creation d'un job** : le heredoc `EOF` etait mal indente dans le YAML temporaire, rendant le workflow invalide. La seconde tentative, commit RAPPORT `fc36722db1cddfa61273780f26011db73bf37a12`, run `33783018587`, a echoue pour la meme categorie de cause : le texte multilignes du journal etait encore sorti de l'indentation du bloc `run`. Aucun contenu du rapport n'a ete modifie par ces deux runs. Ces incidents de journalisation sont consignes ici avant toute reprise technique.
+
+PROCHAINE ACTION EXACTE : corriger uniquement le garde du helper technique en remplacant la comparaison impossible de son propre HEAD par des gardes stables (MEMSX64 #103 intact, `dee81b...` ancetre de la branche et blob de `prototype_extract.py` encore identique), sans changer le contenu fonctionnel de la correction geometrique preparee. Relancer ensuite le helper, puis laisser le workflow RAVEMEMS V2 tester le commit resultant sur le seul RCL0193ENG.
