@@ -162,7 +162,14 @@ class Pass2SemanticParser(pe.SemanticParser):
             return False
         return float(item["bbox"][0]) <= margin + 10.0
 
-    def parse_page(self, physical_page: int, page_key: str, lines: list[dict[str, Any]], page_height: float) -> tuple[set[str], set[str]]:
+    def parse_page(
+        self,
+        physical_page: int,
+        page_key: str,
+        lines: list[dict[str, Any]],
+        page_width: float,
+        page_height: float,
+    ) -> tuple[set[str], set[str]]:
         # Two consecutive pages with no recognized procedure are enough to end
         # a continuation. This preserves a single illustration-only bridge page
         # but prevents later numbered diagrams/descriptions from being absorbed.
