@@ -12860,3 +12860,16 @@ Relancer ensuite UNIQUEMENT RCL0193ENG et comparer les 22 diagnostics un par un.
 - Transport technique : une action temporaire auto-supprimee appliquera ces remplacements textuels au fichier existant puis ne laissera dans l'arbre final que les fichiers `ravemems/v2/**` autorises. La garde de perimetre finale doit donc rester identique.
 - Apres pousse : compilation Python, socle SQLite/C++, extraction complete des 372 pages, audit, comparaison SQLite et verification pages 133-135. Objectif exige : `numeric_phase_defect_count=0` reel.
 <!-- journal-entry-sha256:0f5fe97dd3443b9c0a92d780f8d0b86f6aa1519aa242a045d604331aba9d5207 -->
+
+## 2026-09-03 — RAVEMEMS V2 RCL0193ENG — ZERO DEFAUT PASS 2 — PARSEUR POUSSE
+
+- Action temporaire d'application : run `33790772981` — SUCCESS complet.
+- Commit declencheur temporaire : `18ad3783c0a8dd3d21ef2fab769b50b0fabe029e`.
+- Commit applicatif final produit par GitHub Actions : `40cc86038858c9c039d5277fe26673f8a9041932` — `Refine RCL0193ENG semantic sequence boundaries`.
+- Le workflow temporaire s'est auto-supprime dans ce commit final ; il ne reste pas dans l'arbre de la branche.
+- Fichiers applicatifs modifies : `ravemems/v2/prototype_extract.py` et `ravemems/v2/reading_order.py` uniquement.
+- Contenu : rejet etape 0, titres de phase valides seulement a la marge de colonne, phase implicite pour vraie procedure numerotee commencant a 1 sans titre explicite, fermeture persistante d'un vieux contexte de phase lorsqu'une page ulterieure redemarre a 1, validation de numerotation continue entre phases semantiques consecutives, extension additive de la detection deux-colonnes numerotee.
+- Compilation Python de ces deux fichiers : PASS dans le run d'application.
+- PROCHAINE ACTION EXACTE : laisser le workflow normal RAVEMEMS V2 relancer uniquement RCL0193ENG au commit `40cc86038858c9c039d5277fe26673f8a9041932`, verifier toutes les gardes, l'extraction 372 pages, l'artefact, le SQLite, les pages 133-135 et surtout `numeric_phase_defect_count`. Ne declarer ZERO que si les diagnostics reels sont vides.
+- `MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`; aucun #104; aucun autre PDF.
+<!-- journal-entry-sha256:d29ec5f068548c113d2e8b72db7d7ba6e1774e24f9da1aade3290d87a8c66e94 -->
