@@ -1,4 +1,4 @@
-# trigger: run generic unknown-publication correction
+# trigger: run generic unknown-publication correction v2
 name: TEMP RAVEMEMS V2 fix unknown publication fallback
 
 on:
@@ -7,6 +7,7 @@ on:
       - tmp-ravemems-v2-foundation
     paths:
       - .github/workflows/tmp-ravemems-v2-fix-unknown-publication-fallback.yml
+      - tools/patch_ravemems_unknown_publication_fallback.py
   workflow_dispatch:
 
 permissions:
