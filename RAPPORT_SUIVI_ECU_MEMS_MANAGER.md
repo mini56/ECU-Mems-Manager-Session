@@ -12721,3 +12721,18 @@ Verdict : le mécanisme et les gardes sont verts, mais **le prototype sémantiqu
 Aucune donnée n’est corrigée manuellement et aucun cas `injecteur` ne doit être codé en dur. Le cas connu pages physiques 133–135 reste un test de validation du mécanisme générique seulement. Aucun des 47 PDF supplémentaires n’est autorisé.
 
 PROCHAINE ACTION EXACTE : sur la même branche de test, corriger à la racine la segmentation/reconnaissance des étapes et la continuité multi-pages à partir de la géométrie et des marqueurs structurels du manuel, ajouter des diagnostics structuraux permettant de distinguer vraie séquence incomplète et faux positif de parsing, puis relancer uniquement `RCL0193ENG`. Exiger une chute massive des 242 défauts et vérifier explicitement le cas multi-pages pages 133–135 avant toute validation.
+
+
+## 2026-09-03 — RCL0193ENG V2 PROTOTYPE 2 — DIAGNOSTIC GEOMETRIQUE AJOUTE, SEMANTIQUE ENCORE NON VALIDEE
+
+Branche `tmp-ravemems-v2-foundation`, commit technique `dee81b207b34cbd12b1f3f6ff58993ac0cc3e67f` (`Refine RCL0193ENG step parsing diagnostics`). Run GitHub Actions `33764840233` : **SUCCESS**. Tous les gardes ont passe : perimetre, fondation SQLite/Python, contrat C++, porte semantique, source exacte RCL0193ENG, extraction et garde structurel. `MEMSX64` est restee exactement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`; aucun BUILD #104.
+
+Artefact `RAVEMEMS-V2-RCL0193ENG-PROTOTYPE-AUDIT` : ID `9897056703`, taille ZIP `25 274 855` octets, digest `sha256:edcc32766d9d62b59c3dcd7cb5dc8176d09f8d6492d71d9f4ea2dddb9b9bc586`, expiration 2026-09-17. Source toujours strictement identique : `main@643de091b474f4e27917a065bdf46d5a0c764276`, PDF SHA-256 `c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715`, 372 pages.
+
+Compteurs produits inchanges par rapport au prototype 1 : `201` operations, `315` phases, `3 189` etapes, `180` notices, `23` exigences, `738` visuels, `427` liens visuels, `3 885` provenances, `242` review flags, `1 797` constats d'audit, SQLite `integrity_check=ok`, `0` FK cassee. Le nouveau diagnostic a trouve seulement `7` candidats numeriques rejetes, mais `242` phases restent numeriquement defectueuses. La base SQLite produite reste semantiquement non validee.
+
+Analyse directe de `debug_pages_131_136.txt` et `pages_131_136_semantic.json` : la cause racine visible sur ce cas test est l'ordre de lecture geometrique des pages a deux colonnes. L'extracteur trie actuellement les lignes par `(y, x)`, ce qui entrelace les deux colonnes et melange des procedures distinctes : CKP avec TP, TP avec MAP, HO2S avec Fuel rail, puis Fuel rail avec Fuel injectors. Les marqueurs d'etapes sont bien reconnus ; le defaut dominant ici est donc la segmentation/l'ordre de lecture des colonnes, puis la continuite multi-pages.
+
+Aucune correction manuelle, aucun cas `injecteur` ou nom d'operation ne doit etre code en dur. Aucun autre PDF n'est autorise.
+
+PROCHAINE ACTION EXACTE : corriger generiquement `read_lines()`/la segmentation de page pour reconstruire l'ordre de lecture par regions/colonnes a partir de la geometrie PDF, conserver les en-tetes/pieds hors flux semantique, puis relancer uniquement RCL0193ENG. Verifier explicitement les pages 131-136 et en particulier la continuite Fuel rail pages 134-136 / Fuel injectors page 136. Exiger une chute massive des 242 defauts avant toute validation ou extension.
