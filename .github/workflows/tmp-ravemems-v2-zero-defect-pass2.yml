@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      TEST_SHA: 'dc923499669c51ef17349be16ea6460fb1a1a889'
+      TEST_SHA: '0be7673d4638b1e475028ee5658ffbcebde3c149'
       PROTECTED_MEMSX64: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
       SOURCE_MAIN_COMMIT: '643de091b474f4e27917a065bdf46d5a0c764276'
       RCL0193ENG_BLOB: '82263eb36bb194dfa969d0471d10ef11078ce521'
