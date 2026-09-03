@@ -1,0 +1,256 @@
+name: TEMP RAVEMEMS V2 ELXN970E 212-page full test
+
+on:
+  push:
+    branches: [tmp-ravemems-v2-foundation]
+    paths:
+      - '.github/workflows/tmp-ravemems-v2-elxn970e-full-test.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  elxn970e-full-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      TEST_SHA: 'a9e47832a2fbd3bf365a32e00d374ed7c70fba5c'
+      PROTECTED_MEMSX64: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+      SOURCE_MAIN_COMMIT: '643de091b474f4e27917a065bdf46d5a0c764276'
+      SOURCE_PATH: 'rave/xn/elxn970e.pdf'
+      SOURCE_BLOB: '337f957045cb9ea79f38a1a5e3ddb01f194c7156'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TEST_SHA }}
+          fetch-depth: 0
+
+      - name: Guard unchanged generic algorithm and production
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TEST_SHA"
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
+          test -f ravemems/v2/generic_document_rules.py
+          test -f .github/pass2/ravemems_generic_precise_extract.py
+          test -f .github/pass2/rcl0193eng_visual_replay_validate.py
+          echo "ELXN970E_FULLTEST_ALGORITHM_SHA_PASS $TEST_SHA"
+          echo "PROTECTED_BUILD103_PASS $PROTECTED_MEMSX64"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Compile foundation and install pinned renderer
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="ravemems/v2:.github/pass2" python -m py_compile \
+            ravemems/v2/generic_document_rules.py \
+            ravemems/v2/prototype_extract.py \
+            .github/pass2/rcl0193eng_zero_defect_pass2.py \
+            .github/pass2/rcl0193eng_precise_visual_extract.py \
+            .github/pass2/ravemems_generic_precise_extract.py \
+            .github/pass2/rcl0193eng_visual_replay_validate.py
+          python ravemems/v2/schema_selftest.py | tee "$RUNNER_TEMP/schema-selftest.log"
+          grep -q '^RAVEMEMS_V2_SCHEMA_SELFTEST_PASS$' "$RUNNER_TEMP/schema-selftest.log"
+          grep -q '^POST_EXTRACTION_AUDIT_PASS$' "$RUNNER_TEMP/schema-selftest.log"
+          python -m pip install --disable-pip-version-check 'PyMuPDF==1.26.4'
+
+      - name: Fetch exact 212-page English source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "$SOURCE_MAIN_COMMIT"
+          test "$(git rev-parse FETCH_HEAD)" = "$SOURCE_MAIN_COMMIT"
+          test "$(git rev-parse "$SOURCE_MAIN_COMMIT:$SOURCE_PATH")" = "$SOURCE_BLOB"
+          mkdir -p "$RUNNER_TEMP/ravemems-source"
+          git show "$SOURCE_MAIN_COMMIT:$SOURCE_PATH" > "$RUNNER_TEMP/ravemems-source/elxn970e.pdf"
+          test -s "$RUNNER_TEMP/ravemems-source/elxn970e.pdf"
+          python - "$RUNNER_TEMP/ravemems-source/elxn970e.pdf" <<'PY'
+          import fitz, sys
+          doc = fitz.open(sys.argv[1])
+          print('ELXN970E_FULLTEST_PAGE_COUNT', doc.page_count)
+          assert doc.page_count == 212, doc.page_count
+          doc.close()
+          PY
+
+      - name: Build identity-only RCL 0213ENG profile
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - "$RUNNER_TEMP/rcl0213eng-profile.json" <<'PY'
+          import json, sys
+          from pathlib import Path
+          profile = json.loads(Path('ravemems/v2/profiles/rcl0193eng.json').read_text(encoding='utf-8'))
+          profile['profile_id'] = 'electrical_reference_en_test_RCL0213ENG'
+          profile['publication_code_regex'] = r'\bRCL\s+0213ENG\b'
+          Path(sys.argv[1]).write_text(json.dumps(profile, ensure_ascii=False, indent=2), encoding='utf-8')
+          PY
+
+      - name: Extract all 212 pages with unchanged generic algorithm
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/rcl0213eng-test"
+          rm -rf "$out"
+          PYTHONPATH="ravemems/v2:.github/pass2" python .github/pass2/ravemems_generic_precise_extract.py \
+            --pdf "$RUNNER_TEMP/ravemems-source/elxn970e.pdf" \
+            --schema ravemems/v2/schema.sql \
+            --profile "$RUNNER_TEMP/rcl0213eng-profile.json" \
+            --out "$out" \
+            --source-relative-path "$SOURCE_PATH" \
+            --source-commit "$SOURCE_MAIN_COMMIT" \
+            --source-blob-sha "$SOURCE_BLOB" \
+            | tee "$RUNNER_TEMP/rcl0213eng-extract.log"
+          test -s "$out/manifest.json"
+          test -s "$out/audit.json"
+          test -s "$out/step_sequence_diagnostics.json"
+          test -s "$out/ravemems_v2_rcl0193eng.sqlite"
+
+      - name: Capture raw semantic result without hiding defects
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/rcl0213eng-test"
+          python - "$out" <<'PY'
+          import json, sqlite3, sys
+          from pathlib import Path
+          out = Path(sys.argv[1])
+          m = json.loads((out / 'manifest.json').read_text(encoding='utf-8'))
+          diagnostics = json.loads((out / 'step_sequence_diagnostics.json').read_text(encoding='utf-8'))
+          db = sqlite3.connect(out / 'ravemems_v2_rcl0193eng.sqlite')
+          doc = db.execute('SELECT document_key,canonical_name,document_kind,title_source FROM ravemems_document').fetchone()
+          rev = db.execute('SELECT revision_key,source_relative_path,page_count FROM ravemems_document_revision').fetchone()
+          operations = db.execute('SELECT manufacturer_operation_no,title_source,completeness_status FROM ravemems_operation ORDER BY sequence_no').fetchall()
+          reviews = db.execute("SELECT reason_code,COUNT(*) FROM ravemems_review_flag WHERE status='open' GROUP BY reason_code ORDER BY COUNT(*) DESC,reason_code").fetchall()
+          summary = {
+              'manifest': m,
+              'document_row': doc,
+              'revision_row': rev,
+              'operation_count': len(operations),
+              'operation_sample': operations[:100],
+              'open_review_groups': reviews,
+              'sequence_diagnostics_count': len(diagnostics),
+              'sequence_diagnostics_sample': diagnostics[:25],
+              'sqlite_integrity': db.execute('PRAGMA integrity_check').fetchone()[0],
+              'foreign_key_issues': db.execute('PRAGMA foreign_key_check').fetchall(),
+          }
+          (out / 'raw_full_test_summary.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          print('ELXN970E_RAW_DOCUMENT_ROW', doc)
+          print('ELXN970E_RAW_REVISION_ROW', rev)
+          print('ELXN970E_RAW_COUNTS', m['counts'])
+          print('ELXN970E_RAW_NUMERIC_DEFECTS', m['numeric_phase_defect_count'])
+          print('ELXN970E_RAW_AUDIT_ISSUES', m['audit_issue_count'])
+          print('ELXN970E_RAW_OPEN_REVIEWS', reviews)
+          print('ELXN970E_RAW_OPERATION_SAMPLE', operations[:30])
+          assert m['page_count'] == 212
+          assert db.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
+          assert db.execute('PRAGMA foreign_key_check').fetchall() == []
+          db.close()
+          PY
+
+      - name: Replay and verify every extracted visual exactly
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/rcl0213eng-test"
+          PYTHONPATH="ravemems/v2:.github/pass2" python - "$RUNNER_TEMP/ravemems-source/elxn970e.pdf" "$out" <<'PY'
+          import json, sys
+          from pathlib import Path
+          import rcl0193eng_visual_replay_validate as replay
+          pdf = Path(sys.argv[1]); out = Path(sys.argv[2])
+          replay.replay_visuals(pdf, out)
+          result = json.loads((out / 'visual_replay_validation.json').read_text(encoding='utf-8'))
+          print('ELXN970E_REPLAY_RESULT', json.dumps(result, ensure_ascii=False))
+          assert result['visual_fidelity_failed_count'] == 0, result['failed'][:3]
+          assert result['missing_replay_count'] == 0
+          assert result['unexpected_replay_count'] == 0
+          assert result['sqlite_integrity'] == 'ok'
+          assert result['foreign_key_issue_count'] == 0
+          PY
+
+      - name: Build final strict test verdict data
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/rcl0213eng-test"
+          if [ ! -s "$out/manifest.json" ]; then
+            echo '{"extraction_completed":false}' > "$RUNNER_TEMP/elxn970e-final-verdict.json"
+            exit 0
+          fi
+          python - "$out" "$RUNNER_TEMP/elxn970e-final-verdict.json" <<'PY'
+          import json, sqlite3, sys
+          from pathlib import Path
+          out = Path(sys.argv[1]); target = Path(sys.argv[2])
+          m = json.loads((out / 'manifest.json').read_text(encoding='utf-8'))
+          replay_path = out / 'visual_replay_validation.json'
+          replay = json.loads(replay_path.read_text(encoding='utf-8')) if replay_path.exists() else None
+          db = sqlite3.connect(out / 'ravemems_v2_rcl0193eng.sqlite')
+          doc = db.execute('SELECT document_key,canonical_name,document_kind,title_source FROM ravemems_document').fetchone()
+          rev = db.execute('SELECT revision_key,source_relative_path,page_count FROM ravemems_document_revision').fetchone()
+          open_reviews = db.execute("SELECT COUNT(*) FROM ravemems_review_flag WHERE status='open'").fetchone()[0]
+          data = {
+              'extraction_completed': True,
+              'page_count': m['page_count'],
+              'publication_code': m['publication_code'],
+              'document_row': doc,
+              'revision_row': rev,
+              'counts': m['counts'],
+              'numeric_phase_defect_count': m['numeric_phase_defect_count'],
+              'open_review_count': open_reviews,
+              'audit_issue_count_before_visual_replay': m['audit_issue_count'],
+              'visual_replay': replay,
+              'sqlite_integrity': db.execute('PRAGMA integrity_check').fetchone()[0],
+              'foreign_key_issue_count': len(db.execute('PRAGMA foreign_key_check').fetchall()),
+              'identity_checks': {
+                  'canonical_name_is_rcl0213eng': (doc[1] or '').replace(' ', '') == 'RCL0213ENG',
+                  'document_key_not_rcl0193eng': 'RCL0193ENG' not in (doc[0] or '').upper(),
+                  'revision_key_not_rcl0193eng': 'RCL0193ENG' not in (rev[0] or '').upper(),
+                  'document_kind_is_electrical_reference_library': doc[2] == 'electrical_reference_library',
+              },
+          }
+          target.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          (out / 'final_strict_test_verdict.json').write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          print('ELXN970E_FINAL_TEST_DATA', json.dumps(data, ensure_ascii=False))
+          db.close()
+          PY
+
+      - name: Upload complete 212-page test artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAVEMEMS-V2-RCL0213ENG-212PAGE-FULL-TEST
+          path: |
+            ${{ runner.temp }}/rcl0213eng-test
+            ${{ runner.temp }}/elxn970e-final-verdict.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Strict final verdict
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          verdict="$RUNNER_TEMP/elxn970e-final-verdict.json"
+          test -s "$verdict"
+          python - "$verdict" <<'PY'
+          import json, sys
+          d = json.load(open(sys.argv[1], encoding='utf-8'))
+          assert d.get('extraction_completed') is True, d
+          assert d['page_count'] == 212
+          assert d['sqlite_integrity'] == 'ok'
+          assert d['foreign_key_issue_count'] == 0
+          assert d['numeric_phase_defect_count'] == 0, d['numeric_phase_defect_count']
+          assert d['open_review_count'] == 0, d['open_review_count']
+          replay = d['visual_replay']
+          assert replay is not None
+          assert replay['visual_fidelity_failed_count'] == 0
+          assert replay['visual_link_failed_count'] == 0
+          assert replay['audit_issue_count_after_validation'] == 0, replay['audit_issue_count_after_validation']
+          failed_identity = [k for k,v in d['identity_checks'].items() if not v]
+          assert failed_identity == [], failed_identity
+          print('RAVEMEMS_V2_RCL0213ENG_212PAGE_STRICT_ZERO_PASS')
+          PY
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
