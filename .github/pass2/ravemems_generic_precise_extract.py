@@ -10,7 +10,7 @@ from typing import Any
 
 import fitz
 
-import rcl0193eng_precise_visual_extract as precise
+import generic_precise_visual_extract as precise
 from generic_document_rules import canonical_publication_token, document_kind_for_evidence, is_bare_calendar_date_identifier
 from source_input import discover_pdf_sources, probe_pdf
 
@@ -85,6 +85,9 @@ def _prepare_runtime_profile(pdf_path: Path, out: Path) -> tuple[Path, dict[str,
     profile["profile_id"] = f"runtime_{profile.get('profile_id','generic')}"
     profile["language"] = str(probe["language"])
     profile["publication_code_regex"] = _publication_match_regex(probe.get("publication_code"))
+    profile["document_identity_token"] = str(probe["identity"])
+    profile["db_filename"] = "ravemems_v2.sqlite"
+    profile["engine_id"] = "ravemems_v2_generic"
     path = out / "_runtime_profile.json"
     path.write_text(json.dumps(profile, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return path, probe
@@ -175,7 +178,7 @@ def _build_page_grounded_sections(pdf_path: Path, db_path: Path, revision_key: s
 def main() -> int:
     out,pdf_path,probe,source_relative=_prepare_legacy_arguments(); result=pe.main()
     if result!=0: return result
-    db_path=out/"ravemems_v2_rcl0193eng.sqlite"; manifest_path=out/"manifest.json"; manifest=json.loads(manifest_path.read_text(encoding="utf-8"))
+    db_path=out/"ravemems_v2.sqlite"; manifest_path=out/"manifest.json"; manifest=json.loads(manifest_path.read_text(encoding="utf-8"))
     identity=str(probe["identity"]); publication=probe.get("publication_code"); token=canonical_publication_token(identity); dk,rk=_rekey_database(db_path,identity)
     evidence,metadata=_early_source_evidence(pdf_path); kind=document_kind_for_evidence(source_relative,evidence,str(metadata.get("title") or "")); title=_document_title_from_evidence(evidence,metadata,kind,publication or identity); language=str(probe["language"])
     db=sqlite3.connect(db_path); db.execute("UPDATE ravemems_document SET canonical_name=?,source_language=?,document_kind=?,title_source=?",(title,language,kind,title)); db.execute("UPDATE ravemems_document_revision SET source_relative_path=?,source_blob_sha=?,source_sha256=?,page_count=?",(source_relative,str(probe["source_sha256"]),str(probe["source_sha256"]),int(probe["page_count"]))); db.commit(); db.close()
