@@ -189,11 +189,11 @@ La base peut contenir beaucoup d’informations sans obliger l’utilisateur à 
 
 ---
 
-## 14. CONTEXTE VÉHICULE / ECU / VARIANTE
+## 14. CONTEXTE VÉHICULE / MOTORISATION / SYSTÈME TECHNIQUE / VARIANTE
 
-Une même opération peut varier selon modèle, moteur, SPi/MPi, famille MEMS, version ECU, année, marché, boîte, climatisation, équipement ou autre variante.
+Une même opération peut varier selon modèle, moteur, système d’alimentation, SPi/MPi, carburateur, famille MEMS, version ECU, année, marché, boîte, climatisation, équipement ou autre variante.
 
-RAVEMEMS doit conserver ce contexte lorsqu’il est présent dans le document.
+RAVEMEMS doit conserver ce contexte lorsqu’il est présent dans le document. Le contexte ne doit jamais supposer qu’un véhicule possède une injection électronique ou un ECU. Les véhicules à carburateur, à gestion mécanique ou sans calculateur moteur sont des cas normaux et doivent être représentables sans créer d’ECU fictif. Le système d’alimentation, le mode de gestion moteur et la présence ou l’absence d’un calculateur sont des dimensions distinctes. Un ECU, lorsqu’il existe, est un attribut facultatif du contexte et non une condition d’existence d’une connaissance RAVEMEMS. Le modèle doit rester extensible à d’autres architectures techniques futures.
 
 Si un véhicule / ECU est actuellement connecté, l’IA ne doit pas supposer automatiquement que la question concerne ce véhicule. Elle doit demander à l’utilisateur si sa question concerne le véhicule actuellement connecté. L’utilisateur peut très bien demander une information sur un autre véhicule.
 

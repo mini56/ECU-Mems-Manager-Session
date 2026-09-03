@@ -12648,3 +12648,20 @@ Décisions finales utilisateur : conditions inséparables des valeurs ; édition
 Le cahier des charges RAVEMEMS est désormais VALIDÉ et FIGÉ avant implémentation. Aucun code applicatif, aucune nouvelle extraction et aucun BUILD de production ne sont lancés. `MEMSX64` reste protégée sur BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
 
 PROCHAINE ACTION EXACTE : attendre un `GO` explicite de l’utilisateur. Après ce GO seulement, relire le rapport et le cahier validé, travailler sur branche de test dédiée, concevoir le nouvel extracteur RAVEMEMS et réaliser le prototype `RCL0193ENG`. Le corpus complet reste interdit avant audit et validation utilisateur du prototype.
+
+
+## 2026-09-03 — GO IMPLEMENTATION RAVEMEMS V2 ET AUDIT PREPARATOIRE
+
+L’utilisateur donne explicitement le GO pour préparer et modifier le code selon les besoins identifiés par l’audit `cahier des charges RAVEMEMS ↔ MEMS Manager`. Travail autorisé uniquement sur branche de test dédiée dérivée de BUILD #103. `MEMSX64` reste strictement protégée sur `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`; aucun #104, aucun changement protocole ECU, aucun changement 32 bits.
+
+Correction d’architecture demandée par l’utilisateur avant implémentation : RAVEMEMS doit distinguer modèle, moteur, année, marché, système d’alimentation, SPi/MPi, **carburateur**, boîte, climatisation, équipement, etc. Les futurs documents peuvent concerner des véhicules sans injection électronique et même sans ECU. Le contexte documentaire ne doit donc jamais imposer un ECU. La présence/absence d’un calculateur, le mode de gestion moteur et le système d’alimentation sont des dimensions indépendantes; un ECU n’est qu’un attribut facultatif lorsqu’il existe. Le cahier validé est ajusté sur ce point sans remettre en cause ses autres règles.
+
+Audit préparatoire : aucun outil externe bloquant identifié. Les PDF RAVE originaux restent disponibles dans `main/rave`; l’ancien corpus complet reste uniquement témoin de non-régression. Les préparations obligatoires avant le prototype sont : (1) schéma sémantique RAVEMEMS V2, (2) contexte documentaire générique non centré ECU, (3) structures de procédures/valeurs/conditions/avertissements/outils/relations, (4) références visuelles typées, (5) audit automatique de complétude et éléments `à vérifier`.
+
+Incident de journalisation avant toute pousse technique : le run `33718647548` a échoué dans l’étape de mise à jour du rapport car le fichier maître contient des octets historiques non UTF-8. Aucun fichier applicatif, aucune donnée et aucun fichier du rapport n’ont été poussés par ce run. La journalisation est reprise par append binaire sûr afin de préserver exactement l’historique existant.
+
+Incident outil sans impact technique : pendant le chargement des outils de branche GitHub, trois branches temporaires inutilisées ont été créées (`tmp-ravemems-v2-report-go`, `tmp-ravemems-v2-report-go-unused`, `tmp-ravemems-v2-report-go-2-unused`). Elles ne contiennent aucune modification technique. Elles doivent être supprimées dès que le canal de rapport est rétabli.
+
+Branche technique créée pour cette fondation : `tmp-ravemems-v2-foundation`, dérivée directement de BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+PROCHAINE ACTION EXACTE : après SUCCESS de cette journalisation et nettoyage des trois branches inutilisées, sur `tmp-ravemems-v2-foundation` uniquement, ajouter la fondation de code et de schéma RAVEMEMS V2 de manière additive et testable, sans brancher encore le nouveau lecteur sur l’IA de production et sans lancer le corpus complet. Ajouter des self-tests couvrant explicitement un véhicule à carburateur sans ECU, un véhicule à injection avec ECU, les procédures multi-phases, serrages séquentiels, conditions, visuels structurés et drapeaux `à vérifier`. Valider cette fondation sur GitHub Actions avant toute extraction prototype `RCL0193ENG`.
