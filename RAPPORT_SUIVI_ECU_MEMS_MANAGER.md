@@ -12674,3 +12674,18 @@ Le canal de journalisation est rétabli : run `33718721277` = SUCCESS. La modifi
 Avant toute pousse technique, suppression prévue des trois branches créées par erreur pendant le chargement d’outils : `tmp-ravemems-v2-report-go`, `tmp-ravemems-v2-report-go-unused`, `tmp-ravemems-v2-report-go-2-unused`. Elles ne contiennent aucune modification et ne sont pas des bases de travail. La seule branche technique autorisée reste `tmp-ravemems-v2-foundation`, dérivée de BUILD #103.
 
 PROCHAINE ACTION EXACTE : supprimer les trois branches inutilisées, puis commencer la fondation additive RAVEMEMS V2 sur `tmp-ravemems-v2-foundation`, sans toucher à `MEMSX64`, au protocole, au 32 bits ni au corpus complet.
+
+
+## 2026-09-03 — RAVEMEMS V2 — FONDATION SEMANTIQUE VALIDEE
+
+Branche technique : `tmp-ravemems-v2-foundation`, dérivée directement de BUILD #103. Commit technique : `3679841e32f69d7b1660d0845d21672116e57a1f` (`Add RAVEMEMS V2 semantic foundation`). Parent direct : `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+Run GitHub Actions de validation : `33719629957` — **SUCCESS**. Le garde a confirmé que `MEMSX64` reste exactement sur BUILD #103 et que le diff technique est limité à `ravemems/v2/*` et au workflow temporaire de test. Aucun code protocole, aucune UI, aucun 32 bits et aucun corpus PDF n’ont été modifiés.
+
+Fondation ajoutée : contrat C++ structuré `RavememsV2Types.h`, schéma SQLite sémantique V2, audit post-extraction `audit.py`, self-test SQLite et self-test C++ du contrat. Le schéma rend l’ECU facultatif et sépare véhicule, moteur, système d’alimentation, gestion moteur, présence/absence de calculateur, transmission et attributs d’équipement extensibles. Une portée `engine_controller_state=absent` ne peut pas contenir un ECU fictif.
+
+Self-tests observés verts : `RAVEMEMS_V2_SCHEMA_SELFTEST_PASS`, `CARBURETOR_WITHOUT_ECU_PASS`, `OPTIONAL_ECU_CONTEXT_PASS`, `MULTIPHASE_STEP_NUMBERING_PASS`, `SEQUENTIAL_TIGHTENING_PASS`, `POST_EXTRACTION_AUDIT_PASS`, `RAVEMEMS_V2_CONTEXT_SELFTEST_PASS`, `CARBURETOR_NO_ECU_CPP_PASS`, `OPTIONAL_ECU_CPP_PASS`, `STRUCTURED_OPERATION_CPP_PASS`, `SEQUENTIAL_TIGHTENING_CPP_PASS`, puis `RAVEMEMS_V2_FOUNDATION_GATE_PASS`.
+
+L’audit V2 sait déjà bloquer/signaliser : pages manquantes, séquences d’étapes incomplètes, opérations/phases/étapes non complètes, fidélité visuelle non validée, liaison visuelle non validée, traduction non validée, table/renvoi non validé et drapeau `à vérifier` ouvert. Le self-test crée volontairement ces défauts, vérifie qu’ils sont tous détectés, les corrige puis exige un audit final vide avec `integrity_check=ok` et aucune FK cassée.
+
+PROCHAINE ACTION EXACTE : toujours sur `tmp-ravemems-v2-foundation`, préparer le prototype d’extraction **RCL0193ENG uniquement** depuis le PDF original présent sur GitHub. L’extracteur prototype doit alimenter le schéma V2, reconstruire les opérations/phases/étapes multi-pages et produire les visuels par rendu fidèle de page + recadrage, jamais par `extract_image()` comme visuel utilisateur final. Ajouter un audit automatique du prototype. Ne lancer aucun des 47 PDF en masse avant validation complète de RCL0193ENG.
