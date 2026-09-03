@@ -13352,3 +13352,10 @@ PROCHAINE ACTION EXACTE : promouvoir les règles génériques validées de la PA
 - Analyse : ce test n'implémente pas exactement la preuve prévue dans le rapport. `Pixmap.tobytes("png")` et `Pixmap.save(path)` utilisent des sorties pouvant différer au niveau encodage/métadonnées même à pixmap identique. Il ne faut donc pas conclure à une infidélité des 737 assets sur ce test.
 - PROCHAINE ACTION EXACTE : conserver les gardes stricts; rerendre les crops depuis le PDF source avec le même PyMuPDF 1.26.4 puis utiliser exactement `Pixmap.save()` vers un fichier PNG temporaire, lire les octets de ce fichier et comparer SHA/bytes au PNG extrait. Si les fichiers ainsi créés sont identiques 738/738, considérer cette preuve byte-identique comme validation de fidélité; sinon poursuivre l'analyse des différences. Ne pas toucher à MEMSX64 ni aux 46 autres PDF.
 <!-- journal-entry-sha256:8ccd770b86d832cce23d94db616e4bdce7521d65399cc000fb825499b579d082 -->
+
+## 2026-09-03 — RAVEMEMS V2 RCL0193ENG — avant diagnostic pixel des 737 fidélités visuelles
+
+Le run 33794551649 confirme que la suppression de l'arrondi des BBOX ne change pas le résultat : 1/738 fidélités visuelles vérifiées, 737/738 refusées, tandis que 401/401 liens visuels sont vérifiés et tous les gardes texte/sémantiques restent à zéro défaut.
+
+Avant toute nouvelle correction, une passe diagnostique va mesurer sur les 737 écarts : différence absolue maximale, différence moyenne, nombre/proportion d'octets pixels différents, origine du Pixmap et espace couleur. Le validateur restera strict et continuera d'échouer tant que la cause n'est pas démontrée. Aucun changement sur MEMSX64, protégé sur BUILD #103 1d6316bd1746d6f2b4cfb751cab88d18e27ef730.
+<!-- journal-entry-sha256:472b7e840b448594b3c9326dba3487716f2c531700e33cedcaed3fd06e81c5b6 -->
