@@ -1,0 +1,207 @@
+name: TEMP RAVEMEMS V2 neutralize generic lineage
+
+on:
+  push:
+    branches: [tmp-ravemems-v2-foundation]
+    paths:
+      - "tools/neutralize_ravemems_generic_lineage.py"
+      - ".github/workflows/tmp-ravemems-v2-neutralize-generic-lineage.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  neutralize-and-regress:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      PROTECTED_MEMSX64: 1d6316bd1746d6f2b4cfb751cab88d18e27ef730
+      SOURCE_MAIN_COMMIT: 643de091b474f4e27917a065bdf46d5a0c764276
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Guard branch head and production
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git ls-remote origin refs/heads/tmp-ravemems-v2-foundation | awk '{print $1}')" = "$GITHUB_SHA"
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Generate neutral execution lineage mechanically
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/neutralize_ravemems_generic_lineage.py
+          ! grep -R -n -E 'RCL0193|rcl0193' \
+            ravemems/v2/core_extract.py \
+            ravemems/v2/source_input.py \
+            ravemems/v2/generic_document_rules.py \
+            .github/pass2/generic_semantic_pass2.py \
+            .github/pass2/generic_precise_visual_extract.py \
+            .github/pass2/ravemems_generic_precise_extract.py \
+            .github/pass2/generic_visual_validate.py \
+            .github/pass2/ravemems_generic_visual_replay_validate.py \
+            .github/pass2/ravemems_extract_source.py
+          ! grep -R -n -E 'rcl0193eng_(zero_defect|precise|visual)' \
+            .github/pass2/generic_semantic_pass2.py \
+            .github/pass2/generic_precise_visual_extract.py \
+            .github/pass2/ravemems_generic_precise_extract.py \
+            .github/pass2/generic_visual_validate.py \
+            .github/pass2/ravemems_generic_visual_replay_validate.py
+          echo GENERIC_EXECUTION_PATH_HAS_NO_DOCUMENT_SPECIFIC_RCL0193_REFERENCE
+
+      - name: Compile neutral engine and install pinned renderer
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="ravemems/v2:.github/pass2" python -m py_compile \
+            ravemems/v2/core_extract.py \
+            ravemems/v2/source_input.py \
+            ravemems/v2/generic_document_rules.py \
+            .github/pass2/generic_semantic_pass2.py \
+            .github/pass2/generic_precise_visual_extract.py \
+            .github/pass2/ravemems_generic_precise_extract.py \
+            .github/pass2/generic_visual_validate.py \
+            .github/pass2/ravemems_generic_visual_replay_validate.py \
+            .github/pass2/ravemems_extract_source.py
+          python -m json.tool ravemems/v2/profiles/language_en.json >/dev/null
+          python -m json.tool ravemems/v2/profiles/language_generic.json >/dev/null
+          python -m pip install --disable-pip-version-check "PyMuPDF==1.26.4"
+
+      - name: Fetch three frozen regression PDFs
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "$SOURCE_MAIN_COMMIT"
+          test "$(git rev-parse FETCH_HEAD)" = "$SOURCE_MAIN_COMMIT"
+          mkdir -p "$RUNNER_TEMP/pdfs"
+          test "$(git rev-parse "$SOURCE_MAIN_COMMIT:rave/xn/hr01795e.pdf")" = "63569965a1b6d62a5dd00553b1831254a9f2feb8"
+          test "$(git rev-parse "$SOURCE_MAIN_COMMIT:rave/xn/elxn970e.pdf")" = "337f957045cb9ea79f38a1a5e3ddb01f194c7156"
+          test "$(git rev-parse "$SOURCE_MAIN_COMMIT:rave/xn/wmxn990e.pdf")" = "82263eb36bb194dfa969d0471d10ef11078ce521"
+          git show "$SOURCE_MAIN_COMMIT:rave/xn/hr01795e.pdf" > "$RUNNER_TEMP/pdfs/owner.pdf"
+          git show "$SOURCE_MAIN_COMMIT:rave/xn/elxn970e.pdf" > "$RUNNER_TEMP/pdfs/electrical.pdf"
+          git show "$SOURCE_MAIN_COMMIT:rave/xn/wmxn990e.pdf" > "$RUNNER_TEMP/pdfs/workshop.pdf"
+
+      - name: Run all three documents through neutral source engine
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="ravemems/v2:.github/pass2"
+          for label in owner electrical workshop; do
+            rm -rf "$RUNNER_TEMP/out-$label"
+            python .github/pass2/ravemems_extract_source.py \
+              --source "$RUNNER_TEMP/pdfs/$label.pdf" \
+              --schema ravemems/v2/schema.sql \
+              --out "$RUNNER_TEMP/out-$label"
+            python .github/pass2/ravemems_generic_visual_replay_validate.py \
+              --pdf "$RUNNER_TEMP/pdfs/$label.pdf" \
+              --out "$RUNNER_TEMP/out-$label"
+          done
+
+      - name: Require exact three-document regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - "$RUNNER_TEMP" <<'PY'
+          import json, sqlite3, sys
+          from pathlib import Path
+          root = Path(sys.argv[1])
+          expected = {
+              'owner': {
+                  'publication': 'RCL0179ENG', 'pages': 94, 'kind': 'owner_handbook',
+                  'operations': 0, 'phases': 0, 'steps': 0, 'sections': 94,
+                  'visuals': 68, 'links': 0,
+              },
+              'electrical': {
+                  'publication': 'RCL0213ENG', 'pages': 212, 'kind': 'electrical_reference_library',
+                  'operations': 0, 'phases': 0, 'steps': 0, 'sections': 212,
+                  'visuals': 304, 'links': 0,
+              },
+              'workshop': {
+                  'publication': 'RCL0193ENG', 'pages': 372, 'kind': 'workshop_manual',
+                  'operations': 201, 'phases': 397, 'steps': 3104, 'sections': 0,
+                  'visuals': 738, 'links': 401,
+              },
+          }
+          for label, exp in expected.items():
+              out = root / f'out-{label}'
+              manifest = json.loads((out / 'manifest.json').read_text(encoding='utf-8'))
+              replay = json.loads((out / 'visual_replay_validation.json').read_text(encoding='utf-8'))
+              db_path = out / 'ravemems_v2.sqlite'
+              assert db_path.exists(), (label, list(out.iterdir()))
+              db = sqlite3.connect(db_path)
+              counts = manifest['counts']
+              assert manifest['engine_id'] == 'ravemems_v2_generic', (label, manifest.get('engine_id'))
+              assert manifest['publication_code'] == exp['publication'], (label, manifest['publication_code'])
+              assert manifest['source_language'] == 'en', (label, manifest['source_language'])
+              assert manifest['document_kind'] == exp['kind'], (label, manifest['document_kind'])
+              assert manifest['source_input']['classification_uses_source_name'] is False
+              assert counts['ravemems_page'] == exp['pages'], (label, counts)
+              assert counts['ravemems_operation'] == exp['operations'], (label, counts)
+              assert counts['ravemems_phase'] == exp['phases'], (label, counts)
+              assert counts['ravemems_step'] == exp['steps'], (label, counts)
+              assert counts.get('ravemems_section', 0) == exp['sections'], (label, counts)
+              assert counts['ravemems_visual'] == exp['visuals'], (label, counts)
+              assert counts['ravemems_visual_link'] == exp['links'], (label, counts)
+              assert manifest['numeric_phase_defect_count'] == 0, (label, manifest['numeric_phase_defect_count'])
+              assert db.execute("SELECT COUNT(*) FROM ravemems_review_flag WHERE status='open'").fetchone()[0] == 0, label
+              assert db.execute('PRAGMA integrity_check').fetchone()[0] == 'ok', label
+              assert db.execute('PRAGMA foreign_key_check').fetchall() == [], label
+              assert replay['db_visual_count'] == exp['visuals'], (label, replay)
+              assert replay['replayed_visual_count'] == exp['visuals'], (label, replay)
+              assert replay['visual_fidelity_verified_count'] == exp['visuals'], (label, replay)
+              assert replay['visual_fidelity_failed_count'] == 0, (label, replay)
+              assert replay['visual_link_verified_count'] == exp['links'], (label, replay)
+              assert replay['visual_link_failed_count'] == 0, (label, replay)
+              assert replay['missing_replay_count'] == 0 and replay['unexpected_replay_count'] == 0, (label, replay)
+              assert replay['audit_issue_count_after_validation'] == 0, (label, replay)
+              assert replay['sqlite_integrity'] == 'ok' and replay['foreign_key_issue_count'] == 0, (label, replay)
+              db.close()
+              print('NEUTRAL_REGRESSION_PASS', label, exp)
+          print('NEUTRAL_GENERIC_LINEAGE_THREE_DOCUMENT_GLOBAL_ZERO_PASS')
+          PY
+
+      - name: Commit neutralized lineage only after all regressions pass
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
+          test "$(git ls-remote origin refs/heads/tmp-ravemems-v2-foundation | awk '{print $1}')" = "$GITHUB_SHA"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            ravemems/v2/core_extract.py \
+            .github/pass2/generic_semantic_pass2.py \
+            .github/pass2/generic_precise_visual_extract.py \
+            .github/pass2/ravemems_generic_precise_extract.py \
+            .github/pass2/generic_visual_validate.py \
+            .github/pass2/ravemems_generic_visual_replay_validate.py \
+            .github/workflows/tmp-ravemems-v2-generic-source-rcl0179.yml
+          test -n "$(git diff --cached --name-only)"
+          git commit -m "Neutralize generic PDF extraction lineage"
+          git push origin HEAD:tmp-ravemems-v2-foundation
+          echo "NEUTRAL_LINEAGE_COMMIT $(git rev-parse HEAD)"
+
+      - name: Final protected production guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: RAVEMEMS-V2-NEUTRAL-LINEAGE-THREE-DOCUMENT-REGRESSION
+          path: |
+            ${{ runner.temp }}/out-owner
+            ${{ runner.temp }}/out-electrical
+            ${{ runner.temp }}/out-workshop
+          if-no-files-found: warn
+          retention-days: 14
