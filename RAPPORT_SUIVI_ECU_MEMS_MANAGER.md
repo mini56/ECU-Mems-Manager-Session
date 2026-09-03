@@ -13852,3 +13852,14 @@ Conclusion: the RCL0213ENG identity/type/electrical-reference generalization doe
 
 Next action: strengthen the RCL0213ENG electrical-reference section-title semantic-quality diagnostic and selection rule. Current section provenance and visuals are correct, but sample inspection found weak source-grounded labels (`finish.`, `15 amp`, `A1-1`, sentence fragments). Do not declare RCL0213ENG globally zero-defect until the new generic title-quality guard is green. No production changes.
 <!-- journal-entry-sha256:a2afecef376f211fe626b137cf52a58997bc2cc6415ae7fd9abedc904c55cf4e -->
+
+## RAVEMEMS V2 — troisième PDF RAVE, moteur non modifié — départ
+
+- Candidat: `rave/xn/hr01795e.pdf` (anglais, autre PDF RAVE).
+- Règle du test: le PDF doit faire au moins 30 pages.
+- Le moteur testé reste exactement le SHA validé `7418419993af12d5d4c8a1e57673984dbedc4675`.
+- Aucune adaptation spécifique à `hr01795e.pdf` ne sera ajoutée au moteur.
+- Aucun profil de publication spécifique ne sera fabriqué dans le workflow: utilisation des fichiers/profils déjà présents au SHA testé.
+- Objectif: vérifier la capacité réelle du moteur à recevoir un autre PDF RAVE sans modification préalable. Toute dépendance à une publication précise doit faire échouer le test et être considérée comme un défaut de généralisation.
+- `MEMSX64` reste protégé sur BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`; aucun #104.
+<!-- journal-entry-sha256:82cf48b53165e238fb0a153235c7b1a6fbce85e34e7bdf761f80431bdac5d715 -->
