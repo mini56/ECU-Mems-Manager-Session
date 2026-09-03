@@ -889,9 +889,7 @@ def main() -> int:
     doc = fitz.open(args.pdf)
     head_text = "\n".join(doc[i].get_text("text", sort=True) for i in range(min(20, doc.page_count)))
     publication_match = re.search(profile["publication_code_regex"], head_text, re.IGNORECASE)
-    if not publication_match:
-        raise SystemExit("Expected document identity pattern not found in source PDF")
-    publication_code = publication_match.group(0).upper()
+    publication_code = publication_match.group(0).upper() if publication_match else None
     edition_match = re.search(r"(?i)\b(\d+(?:st|nd|rd|th)\s+Edition)\b", head_text)
     edition = edition_match.group(1) if edition_match else None
 
