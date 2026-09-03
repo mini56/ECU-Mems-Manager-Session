@@ -1,0 +1,64 @@
+name: TEMP Journal RAVEMEMS V2 GO
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/tmp-journal-ravemems-v2-go.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+
+      - name: Update validated specification and master report
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          cahier = Path('docs/CAHIER_DES_CHARGES_RAVEMEMS_BROUILLON_2026-09-02.md')
+          text = cahier.read_text(encoding='utf-8')
+          old_heading = '## 14. CONTEXTE VÉHICULE / ECU / VARIANTE'
+          new_heading = '## 14. CONTEXTE VÉHICULE / MOTORISATION / SYSTÈME TECHNIQUE / VARIANTE'
+          if old_heading in text:
+              text = text.replace(old_heading, new_heading, 1)
+          elif new_heading not in text:
+              raise SystemExit('Section 14 heading not found')
+
+          anchor = ('Une même opération peut varier selon modèle, moteur, SPi/MPi, famille MEMS, version ECU, année, marché, boîte, climatisation, équipement ou autre variante.\n\n'
+                    'RAVEMEMS doit conserver ce contexte lorsqu’il est présent dans le document.\n')
+          replacement = ('Une même opération peut varier selon modèle, moteur, système d’alimentation, SPi/MPi, carburateur, famille MEMS, version ECU, année, marché, boîte, climatisation, équipement ou autre variante.\n\n'
+                         'RAVEMEMS doit conserver ce contexte lorsqu’il est présent dans le document. Le contexte ne doit jamais supposer qu’un véhicule possède une injection électronique ou un ECU. Les véhicules à carburateur, à gestion mécanique ou sans calculateur moteur sont des cas normaux et doivent être représentables sans créer d’ECU fictif. Le système d’alimentation, le mode de gestion moteur et la présence ou l’absence d’un calculateur sont des dimensions distinctes. Un ECU, lorsqu’il existe, est un attribut facultatif du contexte et non une condition d’existence d’une connaissance RAVEMEMS. Le modèle doit rester extensible à d’autres architectures techniques futures.\n')
+          if replacement not in text:
+              if anchor not in text:
+                  raise SystemExit('Section 14 insertion anchor not found')
+              text = text.replace(anchor, replacement, 1)
+          cahier.write_text(text, encoding='utf-8')
+
+          report = Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md')
+          r = report.read_text(encoding='utf-8')
+          marker = '## 2026-09-03 — GO IMPLEMENTATION RAVEMEMS V2 ET AUDIT PREPARATOIRE'
+          if marker not in r:
+              entry = '''\n\n## 2026-09-03 — GO IMPLEMENTATION RAVEMEMS V2 ET AUDIT PREPARATOIRE\n\nL’utilisateur donne explicitement le GO pour préparer et modifier le code selon les besoins identifiés par l’audit `cahier des charges RAVEMEMS ↔ MEMS Manager`. Travail autorisé uniquement sur branche de test dédiée dérivée de BUILD #103. `MEMSX64` reste strictement protégée sur `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`; aucun #104, aucun changement protocole ECU, aucun changement 32 bits.\n\nCorrection d’architecture demandée par l’utilisateur avant implémentation : RAVEMEMS doit distinguer modèle, moteur, année, marché, système d’alimentation, SPi/MPi, **carburateur**, boîte, climatisation, équipement, etc. Les futurs documents peuvent concerner des véhicules sans injection électronique et même sans ECU. Le contexte documentaire ne doit donc jamais imposer un ECU. La présence/absence d’un calculateur, le mode de gestion moteur et le système d’alimentation sont des dimensions indépendantes; un ECU n’est qu’un attribut facultatif lorsqu’il existe. Le cahier validé est ajusté sur ce point sans remettre en cause ses autres règles.\n\nAudit préparatoire : aucun outil externe bloquant identifié. Les PDF RAVE originaux restent disponibles dans `main/rave`; l’ancien corpus complet reste uniquement témoin de non-régression. Les préparations obligatoires avant le prototype sont : (1) schéma sémantique RAVEMEMS V2, (2) contexte documentaire générique non centré ECU, (3) structures de procédures/valeurs/conditions/avertissements/outils/relations, (4) références visuelles typées, (5) audit automatique de complétude et éléments `à vérifier`.\n\nBranche technique créée pour cette fondation : `tmp-ravemems-v2-foundation`, dérivée directement de BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.\n\nPROCHAINE ACTION EXACTE : sur `tmp-ravemems-v2-foundation` uniquement, ajouter la fondation de code et de schéma RAVEMEMS V2 de manière additive et testable, sans brancher encore le nouveau lecteur sur l’IA de production et sans lancer le corpus complet. Ajouter des self-tests couvrant explicitement un véhicule à carburateur sans ECU, un véhicule à injection avec ECU, les procédures multi-phases, serrages séquentiels, conditions, visuels structurés et drapeaux `à vérifier`. Valider cette fondation sur GitHub Actions avant toute extraction prototype `RCL0193ENG`.\n'''
+              report.write_text(r.rstrip() + entry + '\n', encoding='utf-8')
+          PY
+
+      - name: Commit journal before technical push
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md docs/CAHIER_DES_CHARGES_RAVEMEMS_BROUILLON_2026-09-02.md
+          git diff --cached --check
+          git commit -m 'Journal GO and generalize RAVEMEMS vehicle context'
+          git push origin HEAD:RAPPORT
