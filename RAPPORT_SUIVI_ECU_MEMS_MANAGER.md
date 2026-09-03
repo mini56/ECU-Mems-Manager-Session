@@ -12845,3 +12845,18 @@ Relancer ensuite UNIQUEMENT RCL0193ENG et comparer les 22 diagnostics un par un.
 - PROCHAINE ACTION EXACTE : terminer PASS 2 dans `prototype_extract.py` avec rejet structurel de l'etape 0, reconnaissance geometrique des vrais titres de phase, garde de continuation inter-pages et validation de continuite numerique entre phases semantiques consecutives ; puis relancer uniquement RCL0193ENG et auditer le compteur reel.
 - `MEMSX64` reste BUILD #103, aucun #104, aucun autre PDF.
 <!-- journal-entry-sha256:38fc89ccdfce7d10277c76a2f2423452e479e7cdee06093f5e5fb501a92812ef -->
+
+## 2026-09-03 — RAVEMEMS V2 RCL0193ENG — ZERO DEFAUT PASS 2 — AVANT POUSSE PARSEUR
+
+- Perimetre inchange : `RCL0193ENG` uniquement sur `tmp-ravemems-v2-foundation`; `MEMSX64` reste BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`; aucun #104.
+- Le journal de la pousse lecture deux-colonnes est vert : run `33790022321` SUCCESS.
+- La correction parseur qui suit est strictement generique et structurelle :
+  1. rejeter tout marqueur d'etape numerique inferieur a 1 afin qu'une valeur telle qu'une decimale ne cree jamais une etape 0 ;
+  2. reconnaitre un titre de phase `Remove/Refit/Adjust/Inspection/...` seulement s'il est aligne sur la marge structurelle de sa colonne, afin de ne pas confondre les fragments de corps indentes `assembly.` / `remove.` avec des titres ;
+  3. lorsqu'une operation contient directement une vraie sequence numerotee commencant a 1 sans titre de phase explicite, creer une phase implicite `procedure` au lieu de perdre les etapes ;
+  4. a une frontiere de page, si une phase deja numerotee voit une page ulterieure redemarrer generiquement a 1 sans nouvelle structure, fermer le contexte de phase et bloquer la capture implicite de cette liste afin d'empecher les fuites vers les pages/operations suivantes ;
+  5. valider les numeros constructeur entre phases semantiques consecutives : une phase peut legitimement commencer a N>1 seulement si la phase numerique precedente de la meme operation se termine a N-1 et que sa propre suite est strictement contigue ;
+  6. conserver les phases semantiques reelles et ne supprimer aucun controle d'audit.
+- Transport technique : une action temporaire auto-supprimee appliquera ces remplacements textuels au fichier existant puis ne laissera dans l'arbre final que les fichiers `ravemems/v2/**` autorises. La garde de perimetre finale doit donc rester identique.
+- Apres pousse : compilation Python, socle SQLite/C++, extraction complete des 372 pages, audit, comparaison SQLite et verification pages 133-135. Objectif exige : `numeric_phase_defect_count=0` reel.
+<!-- journal-entry-sha256:0f5fe97dd3443b9c0a92d780f8d0b86f6aa1519aa242a045d604331aba9d5207 -->
