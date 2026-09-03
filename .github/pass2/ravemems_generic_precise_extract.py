@@ -40,6 +40,10 @@ _COLUMN_LABELS = {
     "cav",
     "col",
 }
+_TITLE_PATTERN_BY_KIND = {
+    "electrical_reference_library": re.compile(r"electrical\s+reference\s+library", re.IGNORECASE),
+    "workshop_manual": re.compile(r"workshop\s+manual", re.IGNORECASE),
+}
 
 
 def _argument_value(name: str) -> str:
@@ -60,18 +64,15 @@ def _early_source_evidence(pdf_path: Path, page_limit: int = 12) -> str:
     return "\n".join(parts)
 
 
-def _document_title_from_evidence(evidence_text: str) -> str | None:
-    patterns = (
-        re.compile(r"electrical\s+reference\s+library", re.IGNORECASE),
-        re.compile(r"workshop\s+manual", re.IGNORECASE),
-    )
+def _document_title_from_evidence(evidence_text: str, document_kind: str) -> str | None:
+    """Return only a source title matching the already-selected document family."""
+    pattern = _TITLE_PATTERN_BY_KIND.get(document_kind)
+    if pattern is None:
+        return None
     for raw_line in evidence_text.splitlines():
         line = re.sub(r"\s+", " ", raw_line).strip()
-        if not line:
-            continue
-        for pattern in patterns:
-            if pattern.search(line):
-                return line
+        if line and pattern.search(line):
+            return line
     return None
 
 
@@ -289,7 +290,7 @@ def main() -> int:
 
     evidence_text = _early_source_evidence(pdf_path)
     document_kind = document_kind_for_evidence(source_relative_path, evidence_text)
-    document_title = _document_title_from_evidence(evidence_text)
+    document_title = _document_title_from_evidence(evidence_text, document_kind)
 
     db = sqlite3.connect(db_path)
     db.execute(
