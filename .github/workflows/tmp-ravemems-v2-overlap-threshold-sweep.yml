@@ -1,0 +1,103 @@
+name: TEMP RAVEMEMS V2 overlap threshold sweep
+
+on:
+  push:
+    branches: [tmp-ravemems-v2-foundation]
+    paths:
+      - '.github/workflows/tmp-ravemems-v2-overlap-threshold-sweep.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      BASE_SHA: '6d119858dfd728c7d344db7a6ad0a48e01f38dd0'
+      PROTECTED_MEMSX64: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+      SOURCE_MAIN_COMMIT: '643de091b474f4e27917a065bdf46d5a0c764276'
+      RCL0193ENG_BLOB: '82263eb36bb194dfa969d0471d10ef11078ce521'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BASE_SHA }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Guard protected branch and fetch exact PDF
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$BASE_SHA"
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
+          python -m pip install --disable-pip-version-check 'PyMuPDF==1.26.4'
+          git fetch origin "$SOURCE_MAIN_COMMIT"
+          test "$(git rev-parse FETCH_HEAD)" = "$SOURCE_MAIN_COMMIT"
+          source_blob="$(git rev-parse "$SOURCE_MAIN_COMMIT:rave/xn/wmxn990e.pdf")"
+          test "$source_blob" = "$RCL0193ENG_BLOB"
+          git show "$SOURCE_MAIN_COMMIT:rave/xn/wmxn990e.pdf" > "$RUNNER_TEMP/wmxn990e.pdf"
+          test -s "$RUNNER_TEMP/wmxn990e.pdf"
+
+      - name: Sweep overlap thresholds on exact RCL0193ENG
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp ravemems/v2/reading_order.py "$RUNNER_TEMP/reading_order.base.py"
+          for threshold in 0.12 0.05 0.02 0.00; do
+            cp "$RUNNER_TEMP/reading_order.base.py" ravemems/v2/reading_order.py
+            python - "$threshold" <<'PY'
+          from pathlib import Path
+          import sys
+          threshold = sys.argv[1]
+          p = Path('ravemems/v2/reading_order.py')
+          s = p.read_text(encoding='utf-8')
+          old = 'overlap >= page_height * 0.12'
+          new = f'overlap >= page_height * {threshold}'
+          if old not in s:
+              raise SystemExit('overlap marker missing')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          PY
+            out="$RUNNER_TEMP/rcl0193eng-$threshold"
+            rm -rf "$out"
+            PYTHONPATH=ravemems/v2 python ravemems/v2/prototype_extract.py \
+              --pdf "$RUNNER_TEMP/wmxn990e.pdf" \
+              --schema ravemems/v2/schema.sql \
+              --profile ravemems/v2/profiles/rcl0193eng.json \
+              --out "$out" \
+              --source-relative-path 'rave/xn/wmxn990e.pdf' \
+              --source-commit "$SOURCE_MAIN_COMMIT" \
+              --source-blob-sha "$RCL0193ENG_BLOB" \
+              > "$RUNNER_TEMP/extract-$threshold.log"
+            python - "$threshold" "$out" <<'PY'
+          import json, sqlite3, sys
+          from pathlib import Path
+          threshold, out = sys.argv[1], Path(sys.argv[2])
+          db = sqlite3.connect(out / 'ravemems_v2_rcl0193eng.sqlite')
+          defects = 0
+          defect_pages = set()
+          for phase_key, in db.execute('SELECT phase_key FROM ravemems_phase'):
+              rows = db.execute('SELECT manufacturer_step_no,source_page_start FROM ravemems_step WHERE phase_key=? ORDER BY sequence_no', (phase_key,)).fetchall()
+              vals = [r[0] for r in rows]
+              if not vals or not all(v and str(v).isdigit() for v in vals):
+                  continue
+              nums = [int(v) for v in vals]
+              expected = list(range(1, max(nums)+1))
+              if nums != expected:
+                  defects += 1
+                  defect_pages.update(int(r[1]) for r in rows if r[1] is not None)
+          m = json.loads((out / 'manifest.json').read_text(encoding='utf-8'))
+          dbg = (out / 'debug_pages_131_136.txt').read_text(encoding='utf-8')
+          p135 = dbg.split('===== PHYSICAL PAGE 135 =====',1)[1].split('===== PHYSICAL PAGE 136 =====',1)[0]
+          left = p135.count('REGION=body_left')
+          right = p135.count('REGION=body_right')
+          single = p135.count('REGION=body_single')
+          print(f'THRESHOLD_RESULT threshold={threshold} defects={defects} operations={m["counts"]["ravemems_operation"]} phases={m["counts"]["ravemems_phase"]} steps={m["counts"]["ravemems_step"]} audit={m["audit_issue_count"]} page135_left={left} page135_right={right} page135_single={single} defect_pages={len(defect_pages)}')
+          db.close()
+          PY
+          done
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
+          echo RAVEMEMS_V2_OVERLAP_SWEEP_PASS
