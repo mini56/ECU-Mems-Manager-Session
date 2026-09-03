@@ -1,0 +1,603 @@
+name: TEMP RAVEMEMS V2 promote validated pass 2 parser
+
+on:
+  push:
+    branches: [tmp-ravemems-v2-foundation]
+    paths:
+      - '.github/workflows/tmp-ravemems-v2-promote-pass2.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      EXPECTED_PARENT: '6ea0c499ad4e7ca9df46b1ea20e527631e9a27a1'
+      PROTECTED_MEMSX64: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-ravemems-v2-foundation
+          fetch-depth: 0
+
+      - name: Guard exact parent and production
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "$EXPECTED_PARENT"
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
+          test -f ravemems/v2/prototype_extract.py
+          test -f ravemems/v2/reading_order.py
+          test -f .github/pass2/rcl0193eng_zero_defect_pass2.py
+          echo "PROMOTION_PARENT_PASS $EXPECTED_PARENT"
+          echo "PROTECTED_BUILD103_PASS $PROTECTED_MEMSX64"
+
+      - name: Promote validated generic parser rules
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          reading_order = '''from __future__ import annotations
+          import re
+          from typing import Any
+
+
+          def _median(values: list[float]) -> float:
+              values = sorted(values)
+              if not values:
+                  return 0.0
+              mid = len(values) // 2
+              return values[mid] if len(values) % 2 else (values[mid - 1] + values[mid]) / 2.0
+
+
+          def _structural_numeric_marker(item: dict[str, Any]) -> bool:
+              """Recognize a plausible workshop marker from text or PDF span geometry."""
+              text = str(item.get("text", "")).strip()
+              if re.match(r"^[1-9]\\d{0,2}(?:\\s+|[.)](?!\\d)\\s*)\\S", text):
+                  return True
+              spans = [span for span in item.get("spans", []) if str(span.get("text", "")).strip()]
+              if len(spans) < 2:
+                  return False
+              marker_text = str(spans[0].get("text", "")).strip()
+              if not re.fullmatch(r"[1-9]\\d{0,2}[.)]?", marker_text):
+                  return False
+              marker_box = spans[0].get("bbox", (0, 0, 0, 0))
+              text_box = spans[1].get("bbox", (0, 0, 0, 0))
+              marker_mid_y = (float(marker_box[1]) + float(marker_box[3])) / 2.0
+              text_mid_y = (float(text_box[1]) + float(text_box[3])) / 2.0
+              tolerance = max(3.0, float(spans[0].get("size", 0.0)) * 0.55)
+              return abs(marker_mid_y - text_mid_y) <= tolerance and float(text_box[0]) - float(marker_box[2]) >= -0.35
+
+
+          def geometric_reading_order(lines: list[dict[str, Any]], page_width: float, page_height: float) -> list[dict[str, Any]]:
+              """Return a stable column-local reading order for workshop procedures."""
+              if not lines:
+                  return []
+
+              by_yx = lambda item: (float(item["bbox"][1]), float(item["bbox"][0]))
+              header_limit = page_height * 0.070
+              footer_limit = page_height * 0.965
+              header: list[dict[str, Any]] = []
+              body: list[dict[str, Any]] = []
+              footer: list[dict[str, Any]] = []
+              for item in lines:
+                  top, bottom = float(item["bbox"][1]), float(item["bbox"][3])
+                  if bottom <= header_limit:
+                      item["reading_region"] = "header"
+                      header.append(item)
+                  elif top >= footer_limit:
+                      item["reading_region"] = "footer"
+                      footer.append(item)
+                  else:
+                      body.append(item)
+
+              header.sort(key=by_yx)
+              footer.sort(key=by_yx)
+              midpoint = page_width / 2.0
+              gutter = max(12.0, page_width * 0.025)
+              left: list[dict[str, Any]] = []
+              right: list[dict[str, Any]] = []
+              span: list[dict[str, Any]] = []
+              for item in body:
+                  x0, _, x1, _ = [float(v) for v in item["bbox"]]
+                  center = (x0 + x1) / 2.0
+                  if x0 < midpoint - gutter and x1 > midpoint + gutter:
+                      item["reading_region"] = "body_span"
+                      span.append(item)
+                  elif center < midpoint:
+                      item["reading_region"] = "body_left"
+                      left.append(item)
+                  else:
+                      item["reading_region"] = "body_right"
+                      right.append(item)
+
+              two_column = False
+              if left and right:
+                  lc = _median([(float(x["bbox"][0]) + float(x["bbox"][2])) / 2.0 for x in left])
+                  rc = _median([(float(x["bbox"][0]) + float(x["bbox"][2])) / 2.0 for x in right])
+                  separated = lc < page_width * 0.46 and rc > page_width * 0.54
+                  if separated:
+                      lt = min(float(x["bbox"][1]) for x in left)
+                      lb = max(float(x["bbox"][3]) for x in left)
+                      rt = min(float(x["bbox"][1]) for x in right)
+                      rb = max(float(x["bbox"][3]) for x in right)
+                      overlap = max(0.0, min(lb, rb) - max(lt, rt))
+                      numbered_left = sum(1 for item in left if _structural_numeric_marker(item))
+                      numbered_right = sum(1 for item in right if _structural_numeric_marker(item))
+                      numbered_geometry = numbered_left >= 1 and numbered_right >= 1 and numbered_left + numbered_right >= 3
+                      broad_geometry = len(left) >= 3 and len(right) >= 3 and overlap >= page_height * 0.01
+                      two_column = numbered_geometry or broad_geometry
+
+              if not two_column:
+                  for item in body:
+                      item["reading_region"] = "body_single"
+                  return header + sorted(body, key=by_yx) + footer
+
+              left.sort(key=by_yx)
+              right.sort(key=by_yx)
+              span.sort(key=by_yx)
+              return header + left + right + span + footer
+          '''
+          reading_order = "\n".join(line[10:] if line.startswith("          ") else line for line in reading_order.splitlines()) + "\n"
+          Path("ravemems/v2/reading_order.py").write_text(reading_order, encoding="utf-8")
+
+          path = Path("ravemems/v2/prototype_extract.py")
+          src = path.read_text(encoding="utf-8")
+          old = '        self.explicit_step_pattern = re.compile(r"^\\s*(\\d{1,3})\\s*[.)]\\s*(.*\\S)\\s*$")\n        self.numeric_candidate_pattern = re.compile(r"^\\s*(\\d{1,3})(?:\\s|[.)])")'
+          new = '        self.explicit_step_pattern = re.compile(r"^\\s*(\\d{1,3})\\s*[.)](?!\\d)\\s*(.*\\S)\\s*$")\n        self.numeric_candidate_pattern = re.compile(r"^\\s*([1-9]\\d{0,2})(?:\\s|[.)](?!\\d))")'
+          assert old in src
+          src = src.replace(old, new, 1)
+
+          init_marker = "        self.require_explicit_structure = False\n"
+          assert src.count(init_marker) >= 1
+          src = src.replace(
+              init_marker,
+              init_marker + "        self._idle_procedure_pages = 0\n        self.boundary_folio_count = 0\n        self.boundary_title_count = 0\n",
+              1,
+          )
+
+          helper_block = '''    def _clear_active_procedure(self) -> None:
+              self._flush_step()
+              self.current_operation_key = None
+              self.current_operation_code = None
+              self.current_phase_key = None
+              self.current_phase_kind = None
+
+          @staticmethod
+          def _column_margins(lines: list[dict[str, Any]]) -> dict[str, float]:
+              margins: dict[str, float] = {}
+              for item in lines:
+                  region = str(item.get("reading_region", ""))
+                  if region not in {"body_left", "body_right", "body_single"}:
+                      continue
+                  x0 = float(item["bbox"][0])
+                  margins[region] = min(x0, margins.get(region, x0))
+              return margins
+
+          def _is_phase_heading(self, item: dict[str, Any], margins: dict[str, float]) -> str | None:
+              text = str(item.get("text", "")).strip()
+              if not text:
+                  return None
+              region = str(item.get("reading_region", ""))
+              if region in {"header", "footer", "body_span"}:
+                  return None
+              normalized = self.phase_labels.get(clean_label(text))
+              if not normalized:
+                  return None
+              if item.get("bold"):
+                  return normalized
+              if text.endswith("."):
+                  return None
+              margin = margins.get(region)
+              if margin is None:
+                  return None
+              return normalized if float(item["bbox"][0]) <= margin + 10.0 else None
+
+          @staticmethod
+          def _is_bottom_folio(item: dict[str, Any], page_height: float) -> bool:
+              text = str(item.get("text", "")).strip()
+              if not re.fullmatch(r"\\d{1,3}", text):
+                  return False
+              return float(item["bbox"][1]) >= page_height * 0.94
+
+          def _operation_code_within(self, lines: list[dict[str, Any]], index: int, lookahead: int = 5) -> bool:
+              for candidate in lines[index + 1:index + 1 + lookahead]:
+                  text = str(candidate.get("text", "")).strip()
+                  if not text:
+                      continue
+                  if self._operation_code(text):
+                      return True
+                  if self._step_match(candidate):
+                      return False
+              return False
+
+          def _current_step_needs_continuation(self) -> bool:
+              if not self.current_step:
+                  return False
+              parts = [str(part).strip() for part in self.current_step.get("parts", []) if str(part).strip()]
+              if not parts:
+                  return False
+              text = " ".join(parts).strip()
+              return bool(re.search(r"\\bSee$", text, re.IGNORECASE) or text.endswith(","))
+
+          def _is_next_operation_title(self, lines: list[dict[str, Any]], index: int) -> bool:
+              item = lines[index]
+              text = str(item.get("text", "")).strip()
+              if not text or self._operation_code(text):
+                  return False
+              if self._step_match(item):
+                  return False
+              if self._current_step_needs_continuation():
+                  return False
+              letters = [ch for ch in text if ch.isalpha()]
+              all_caps = bool(letters) and all(ch.isupper() for ch in letters)
+              emphasized = bool(item.get("bold")) or all_caps
+              return emphasized and self._operation_code_within(lines, index)
+
+          '''
+          helper_block = "\n".join(line[10:] if line.startswith("          ") else line for line in helper_block.splitlines()) + "\n"
+          parse_start = src.index("    def parse_page(")
+          assert "def _clear_active_procedure" not in src
+          src = src[:parse_start] + helper_block + src[parse_start:]
+
+          parse_start = src.index("    def parse_page(")
+          parse_end = src.index("\n    def _add_review(", parse_start)
+          new_parse = '''    def parse_page(
+              self,
+              physical_page: int,
+              page_key: str,
+              lines: list[dict[str, Any]],
+              page_width: float,
+              page_height: float,
+          ) -> tuple[set[str], set[str]]:
+              if self._idle_procedure_pages >= 2:
+                  self._clear_active_procedure()
+
+              page_operations: set[str] = set()
+              page_phases: set[str] = set()
+              margins = self._column_margins(lines)
+
+              for index, item in enumerate(lines):
+                  text = item["text"].strip()
+                  if not text:
+                      continue
+
+                  if self._is_bottom_folio(item, page_height):
+                      if self.current_step:
+                          self._flush_step()
+                      self.boundary_folio_count += 1
+                      continue
+
+                  if self.current_step and self._is_next_operation_title(lines, index):
+                      self._flush_step()
+                      self.boundary_title_count += 1
+                      continue
+
+                  code = self._operation_code(text)
+                  if code:
+                      title = self._title_candidate(lines, index)
+                      if self.current_operation_code != code or not self.current_operation_key:
+                          self._new_operation(code, title, page_key, item["bbox"])
+                      if self.current_operation_key:
+                          page_operations.add(self.current_operation_key)
+                      continue
+
+                  normalized_phase = self._is_phase_heading(item, margins)
+                  if normalized_phase:
+                      phase_key = self._new_phase(text.strip(), normalized_phase, page_key, item["bbox"])
+                      if phase_key:
+                          page_phases.add(phase_key)
+                          if self.current_operation_key:
+                              page_operations.add(self.current_operation_key)
+                      continue
+
+                  notice_match = re.match(r"^\\s*([A-Za-z]+)\\s*[:.-]?\\s*(.*)$", text)
+                  if notice_match:
+                      notice_kind = self.notice_labels.get(clean_label(notice_match.group(1)))
+                      if notice_kind:
+                          self._flush_step()
+                          body = notice_match.group(2).strip()
+                          self._add_notice(notice_kind, text if body else notice_match.group(1), page_key, item["bbox"])
+                          continue
+
+                  step_match = self._step_match(item) if self.current_operation_key else None
+                  if step_match and not self.current_phase_key:
+                      implicit = self._new_phase("Procedure", "procedure", page_key, item["bbox"])
+                      if implicit:
+                          page_phases.add(implicit)
+                          page_operations.add(self.current_operation_key)
+
+                  if step_match and self.current_phase_key:
+                      manufacturer_no, instruction, _evidence = step_match
+                      step_key = self._new_step(manufacturer_no, instruction, physical_page, page_key, item["bbox"])
+                      if step_key:
+                          page_phases.add(self.current_phase_key)
+                          if self.current_operation_key:
+                              page_operations.add(self.current_operation_key)
+                  elif self.current_phase_key:
+                      top = float(item["bbox"][1])
+                      bottom = float(item["bbox"][3])
+                      if item.get("reading_region") not in {"header", "footer"} and top >= page_height * 0.055 and bottom <= page_height * 0.985 and not self._ignored(text):
+                          self._record_rejected_numeric_candidate(physical_page, item)
+
+                  for requirement_type, pattern in self.requirement_rules:
+                      if pattern.search(text):
+                          self._add_requirement(requirement_type, text)
+
+                  if self.current_operation_key:
+                      for pattern in self.crossref_patterns:
+                          match = pattern.search(text)
+                          if match:
+                              self.pending_crossrefs.append((self.current_operation_key, match.group(1), text))
+
+                  if self.current_step and step_match is None:
+                      top = float(item["bbox"][1])
+                      bottom = float(item["bbox"][3])
+                      if item.get("reading_region") not in {"header", "footer"} and top >= page_height * 0.055 and bottom <= page_height * 0.985 and not self._ignored(text):
+                          self.current_step["parts"].append(text)
+                          self.current_step["last_page"] = physical_page
+                          if self.current_operation_key:
+                              page_operations.add(self.current_operation_key)
+                          if self.current_phase_key:
+                              page_phases.add(self.current_phase_key)
+
+              self._flush_step()
+              if page_operations or page_phases:
+                  self._idle_procedure_pages = 0
+              else:
+                  self._idle_procedure_pages += 1
+              return page_operations, page_phases
+          '''
+          new_parse = "\n".join(line[10:] if line.startswith("          ") else line for line in new_parse.splitlines()) + "\n"
+          src = src[:parse_start] + new_parse + src[parse_end:]
+
+          seq_marker = "\n    def sequence_diagnostics(self) -> list[dict[str, Any]]:"
+          assert seq_marker in src
+          finalize_tail = '''
+              # Reconcile valid manufacturer sequences that continue across a
+              # genuine semantic phase boundary. This is the validated PASS 2
+              # rule and only resolves exact contiguous numbering.
+              operations = self.db.execute(
+                  "SELECT operation_key FROM ravemems_operation ORDER BY sequence_no"
+              ).fetchall()
+              for (operation_key,) in operations:
+                  previous_last: int | None = None
+                  phases = self.db.execute(
+                      "SELECT phase_key FROM ravemems_phase WHERE operation_key=? ORDER BY sequence_no",
+                      (operation_key,),
+                  ).fetchall()
+                  for (phase_key,) in phases:
+                      rows = self.db.execute(
+                          "SELECT manufacturer_step_no FROM ravemems_step WHERE phase_key=? ORDER BY sequence_no",
+                          (phase_key,),
+                      ).fetchall()
+                      if not rows or not all(row[0] and str(row[0]).isdigit() for row in rows):
+                          previous_last = None
+                          continue
+                      numbers = [int(row[0]) for row in rows]
+                      contiguous = numbers == list(range(numbers[0], numbers[0] + len(numbers)))
+                      starts_at_one = contiguous and numbers[0] == 1
+                      continues_previous = contiguous and previous_last is not None and numbers[0] == previous_last + 1
+                      if starts_at_one or continues_previous:
+                          self.db.execute(
+                              "UPDATE ravemems_phase SET completeness_status='complete' WHERE phase_key=?",
+                              (phase_key,),
+                          )
+                          self.db.execute(
+                              "DELETE FROM ravemems_review_flag WHERE entity_kind='phase' AND entity_key=? AND reason_code='manufacturer_step_sequence_incomplete'",
+                              (phase_key,),
+                          )
+                          previous_last = numbers[-1]
+                      else:
+                          previous_last = None
+
+                  incomplete = self.db.execute(
+                      "SELECT COUNT(*) FROM ravemems_phase WHERE operation_key=? AND completeness_status='incomplete'",
+                      (operation_key,),
+                  ).fetchone()[0]
+                  if incomplete == 0:
+                      self.db.execute(
+                          "UPDATE ravemems_operation SET completeness_status='complete' WHERE operation_key=?",
+                          (operation_key,),
+                      )
+
+              print("PASS2_BOUNDARY_FOLIOS_IGNORED", self.boundary_folio_count)
+              print("PASS2_BOUNDARY_TITLES_FLUSHED", self.boundary_title_count)
+          '''
+          finalize_tail = "\n".join(line[10:] if line.startswith("          ") else line for line in finalize_tail.splitlines())
+          src = src.replace(seq_marker, finalize_tail + seq_marker, 1)
+
+          diag_old = "            phase_kind, status, operation_key, operation_no, title = metadata[phase_key]\n            steps = self.db.execute("
+          diag_new = "            phase_kind, status, operation_key, operation_no, title = metadata[phase_key]\n            if status != \"incomplete\":\n                continue\n            steps = self.db.execute("
+          assert diag_old in src
+          src = src.replace(diag_old, diag_new, 1)
+          path.write_text(src, encoding="utf-8")
+
+          parser_selftest = '''#!/usr/bin/env python3
+          from __future__ import annotations
+
+          import sqlite3
+          from pathlib import Path
+
+          from prototype_extract import SemanticParser
+          from reading_order import geometric_reading_order
+
+
+          PROFILE = {
+              "operation_no_regexes": [r"\\b(\\d{2}\\.\\d{2}\\.\\d{2})\\b"],
+              "ignore_line_regexes": [],
+              "requirement_rules": [],
+              "cross_reference_regexes": [],
+              "phase_labels": {"Remove": "remove", "Refit": "refit"},
+              "notice_labels": {},
+          }
+
+
+          def expect(condition: bool, message: str) -> None:
+              if not condition:
+                  raise AssertionError(message)
+
+
+          def line(text: str, x0: float, y0: float, x1: float, y1: float, *, bold: bool = False, region: str = "body_single") -> dict:
+              return {
+                  "text": text,
+                  "bbox": (x0, y0, x1, y1),
+                  "max_size": 10.0,
+                  "bold": bold,
+                  "reading_region": region,
+                  "spans": [{"text": text, "bbox": (x0, y0, x1, y1), "size": 10.0, "font": "Bold" if bold else "Regular"}],
+              }
+
+
+          def new_db() -> sqlite3.Connection:
+              db = sqlite3.connect(":memory:")
+              schema = (Path(__file__).resolve().parent / "schema.sql").read_text(encoding="utf-8")
+              db.executescript(schema)
+              return db
+
+
+          def test_sparse_column_order() -> None:
+              items = [
+                  line("1. Left one", 35, 100, 180, 112),
+                  line("2. Right two", 335, 105, 500, 117),
+                  line("3. Right three", 335, 130, 500, 142),
+              ]
+              ordered = geometric_reading_order(items, 600.0, 800.0)
+              expect([x["text"] for x in ordered] == ["1. Left one", "2. Right two", "3. Right three"], "sparse two-column order regressed")
+              expect(ordered[0]["reading_region"] == "body_left" and ordered[1]["reading_region"] == "body_right", "column regions lost")
+              print("COLUMN_READING_ORDER_PASS")
+
+
+          def test_boundaries_and_crossrefs() -> None:
+              db = new_db()
+              parser = SemanticParser(db, "REV", "en", PROFILE)
+              lines = [
+                  line("FIRST COMPONENT", 40, 80, 240, 92, bold=True),
+                  line("12.34.56", 40, 98, 120, 110),
+                  line("Remove", 40, 120, 100, 132, bold=True),
+                  line("1. Open cover.", 50, 145, 220, 157),
+                  line("2. Fit gasket. See", 50, 170, 260, 182),
+                  line("MANIFOLD & EXHAUST SYSTEMS, Repairs.", 70, 190, 330, 202, bold=True),
+                  line("3. Preserve this bold numbered step.", 50, 215, 330, 227, bold=True),
+                  line("NEXT COMPONENT", 340, 80, 540, 92, bold=True),
+                  line("12.34.57", 340, 98, 420, 110),
+                  line("Remove", 340, 120, 400, 132, bold=True),
+                  line("1. Next operation step.", 350, 145, 540, 157),
+                  line("12", 560, 755, 580, 767),
+              ]
+              parser.parse_page(1, "P1", lines, 600.0, 800.0)
+              ops = db.execute("SELECT operation_key,manufacturer_operation_no FROM ravemems_operation ORDER BY sequence_no").fetchall()
+              expect([x[1] for x in ops] == ["12.34.56", "12.34.57"], f"operation boundary failed: {ops}")
+              first_steps = db.execute(
+                  "SELECT manufacturer_step_no,instruction_source FROM ravemems_step WHERE phase_key=(SELECT phase_key FROM ravemems_phase WHERE operation_key=? ORDER BY sequence_no LIMIT 1) ORDER BY sequence_no",
+                  (ops[0][0],),
+              ).fetchall()
+              expect([x[0] for x in first_steps] == ["1", "2", "3"], f"bold numbered step was lost: {first_steps}")
+              expect(first_steps[1][1] == "Fit gasket. See MANIFOLD & EXHAUST SYSTEMS, Repairs.", f"cross-reference continuation lost: {first_steps[1][1]}")
+              expect("NEXT COMPONENT" not in first_steps[-1][1], f"next operation title leaked into step: {first_steps[-1][1]}")
+              second_text = db.execute(
+                  "SELECT instruction_source FROM ravemems_step s JOIN ravemems_phase p ON p.phase_key=s.phase_key WHERE p.operation_key=? ORDER BY s.sequence_no LIMIT 1",
+                  (ops[1][0],),
+              ).fetchone()[0]
+              expect(not second_text.rstrip().endswith("12"), f"folio leaked into step: {second_text}")
+              print("BOUNDARY_FOLIO_PASS")
+              print("BOUNDARY_TITLE_PASS")
+              print("BOLD_NUMBERED_STEP_PASS")
+              print("CROSSREF_CONTINUATION_PASS")
+              db.close()
+
+
+          def test_multi_page_continuation() -> None:
+              db = new_db()
+              parser = SemanticParser(db, "REV", "en", PROFILE)
+              page1 = [
+                  line("MULTIPAGE COMPONENT", 40, 80, 260, 92, bold=True),
+                  line("22.33.44", 40, 98, 120, 110),
+                  line("Remove", 40, 120, 100, 132, bold=True),
+                  line("1. First.", 50, 145, 180, 157),
+                  line("2. Second.", 50, 170, 180, 182),
+              ]
+              page2 = [
+                  line("3. Third.", 50, 100, 180, 112),
+                  line("4. Fourth.", 50, 125, 180, 137),
+              ]
+              parser.parse_page(1, "P1", page1, 600.0, 800.0)
+              parser.parse_page(2, "P2", page2, 600.0, 800.0)
+              numbers = [int(r[0]) for r in db.execute("SELECT manufacturer_step_no FROM ravemems_step ORDER BY sequence_no").fetchall()]
+              expect(numbers == [1, 2, 3, 4], f"multi-page sequence broken: {numbers}")
+              print("MULTIPAGE_CONTINUATION_PASS")
+              db.close()
+
+
+          def main() -> int:
+              test_sparse_column_order()
+              test_boundaries_and_crossrefs()
+              test_multi_page_continuation()
+              print("RAVEMEMS_V2_PARSER_SELFTEST_PASS")
+              return 0
+
+
+          if __name__ == "__main__":
+              raise SystemExit(main())
+          '''
+          parser_selftest = "\n".join(line[10:] if line.startswith("          ") else line for line in parser_selftest.splitlines()) + "\n"
+          Path("ravemems/v2/parser_selftest.py").write_text(parser_selftest, encoding="utf-8")
+
+          workflow_path = Path(".github/workflows/tmp-ravemems-v2-zero-defect-pass2.yml")
+          wf = workflow_path.read_text(encoding="utf-8")
+          wf = wf.replace("      TEST_SHA: 'ddc109f919a3808a9ba186d2928080c8cbf18dc9'\n", "")
+          wf = wf.replace("          ref: ${{ env.TEST_SHA }}\n", "")
+          wf = wf.replace('          test "$(git rev-parse HEAD)" = "$TEST_SHA"\n', '          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"\n')
+          wf = wf.replace('          test -f .github/pass2/rcl0193eng_zero_defect_pass2.py\n', '          test -f ravemems/v2/parser_selftest.py\n')
+          wf = wf.replace('          echo "PASS2_TEST_SHA_PASS $TEST_SHA"\n', '          echo "PASS2_TEST_SHA_PASS $GITHUB_SHA"\n')
+          wf = wf.replace('            .github/pass2/rcl0193eng_zero_defect_pass2.py\n', '            ravemems/v2/parser_selftest.py\n')
+          schema_gate = '''          grep -q '^POST_EXTRACTION_AUDIT_PASS$' "$RUNNER_TEMP/schema-selftest.log"\n'''
+          parser_gate = schema_gate + '''          PYTHONPATH=ravemems/v2 python ravemems/v2/parser_selftest.py | tee "$RUNNER_TEMP/parser-selftest.log"\n          grep -q '^RAVEMEMS_V2_PARSER_SELFTEST_PASS$' "$RUNNER_TEMP/parser-selftest.log"\n          grep -q '^COLUMN_READING_ORDER_PASS$' "$RUNNER_TEMP/parser-selftest.log"\n          grep -q '^BOUNDARY_FOLIO_PASS$' "$RUNNER_TEMP/parser-selftest.log"\n          grep -q '^BOUNDARY_TITLE_PASS$' "$RUNNER_TEMP/parser-selftest.log"\n          grep -q '^BOLD_NUMBERED_STEP_PASS$' "$RUNNER_TEMP/parser-selftest.log"\n          grep -q '^CROSSREF_CONTINUATION_PASS$' "$RUNNER_TEMP/parser-selftest.log"\n          grep -q '^MULTIPAGE_CONTINUATION_PASS$' "$RUNNER_TEMP/parser-selftest.log"\n'''
+          assert schema_gate in wf
+          wf = wf.replace(schema_gate, parser_gate, 1)
+          wf = wf.replace('          PYTHONPATH=ravemems/v2 python .github/pass2/rcl0193eng_zero_defect_pass2.py \\\n', '          PYTHONPATH=ravemems/v2 python ravemems/v2/prototype_extract.py \\\n')
+          workflow_path.write_text(wf, encoding="utf-8")
+
+          wrapper = Path(".github/pass2/rcl0193eng_zero_defect_pass2.py")
+          wrapper.unlink()
+          PY
+
+          git diff --check
+          test ! -e .github/pass2/rcl0193eng_zero_defect_pass2.py
+          grep -q 'def _is_bottom_folio' ravemems/v2/prototype_extract.py
+          grep -q 'def _current_step_needs_continuation' ravemems/v2/prototype_extract.py
+          grep -q 'PASS2_BOUNDARY_FOLIOS_IGNORED' ravemems/v2/prototype_extract.py
+          grep -q 'RAVEMEMS_V2_PARSER_SELFTEST_PASS' ravemems/v2/parser_selftest.py
+          grep -q 'python ravemems/v2/prototype_extract.py' .github/workflows/tmp-ravemems-v2-zero-defect-pass2.yml
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run permanent self-tests before commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check 'PyMuPDF==1.26.4'
+          PYTHONPATH=ravemems/v2 python -m py_compile ravemems/v2/prototype_extract.py ravemems/v2/reading_order.py ravemems/v2/parser_selftest.py ravemems/v2/schema_selftest.py
+          python ravemems/v2/schema_selftest.py
+          PYTHONPATH=ravemems/v2 python ravemems/v2/parser_selftest.py
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
+
+      - name: Commit promoted parser only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add ravemems/v2/prototype_extract.py ravemems/v2/reading_order.py ravemems/v2/parser_selftest.py .github/workflows/tmp-ravemems-v2-zero-defect-pass2.yml .github/pass2/rcl0193eng_zero_defect_pass2.py
+          git diff --cached --check
+          git commit -m 'Promote validated RCL0193ENG parser boundary rules'
+          promoted_sha="$(git rev-parse HEAD)"
+          git push origin HEAD:tmp-ravemems-v2-foundation
+          echo "PROMOTED_PARSER_SHA $promoted_sha"
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
