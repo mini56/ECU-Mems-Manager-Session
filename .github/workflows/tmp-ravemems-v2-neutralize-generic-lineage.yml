@@ -182,8 +182,7 @@ jobs:
             .github/pass2/generic_precise_visual_extract.py \
             .github/pass2/ravemems_generic_precise_extract.py \
             .github/pass2/generic_visual_validate.py \
-            .github/pass2/ravemems_generic_visual_replay_validate.py \
-            .github/workflows/tmp-ravemems-v2-generic-source-rcl0179.yml
+            .github/pass2/ravemems_generic_visual_replay_validate.py
           test -n "$(git diff --cached --name-only)"
           git commit -m "Neutralize generic PDF extraction lineage"
           git push origin HEAD:tmp-ravemems-v2-foundation
