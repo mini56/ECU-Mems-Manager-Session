@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      TEST_SHA: '7d820fb33754fa7c236636aefc441f92ac3fcbf3'
+      TEST_SHA: '7265cfaca9f1a6a80c3f416e0ab36867d7d6ce1f'
       PROTECTED_MEMSX64: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
       SOURCE_MAIN_COMMIT: '643de091b474f4e27917a065bdf46d5a0c764276'
       RCL0193ENG_BLOB: '82263eb36bb194dfa969d0471d10ef11078ce521'
@@ -161,7 +161,7 @@ jobs:
           PY
           test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
 
-      - name: Validate all RCL0193ENG visuals by byte-identical PNG rerender
+      - name: Validate all RCL0193ENG visuals by exact Pixmap.save rerender
         shell: bash
         run: |
           set -euo pipefail
@@ -217,7 +217,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: RAVEMEMS-V2-RCL0193ENG-ZERO-DEFECT-PNG-RERENDER
+          name: RAVEMEMS-V2-RCL0193ENG-ZERO-DEFECT-PIXMAP-SAVE-RERENDER
           path: ${{ runner.temp }}/rcl0193eng-pass2
           if-no-files-found: warn
           retention-days: 14
