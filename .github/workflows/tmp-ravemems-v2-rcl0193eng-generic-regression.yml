@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      TEST_SHA: 'a9e47832a2fbd3bf365a32e00d374ed7c70fba5c'
+      TEST_SHA: '7418419993af12d5d4c8a1e57673984dbedc4675'
       PROTECTED_MEMSX64: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
       SOURCE_MAIN_COMMIT: '643de091b474f4e27917a065bdf46d5a0c764276'
       SOURCE_PATH: 'rave/xn/wmxn990e.pdf'
@@ -92,7 +92,12 @@ jobs:
           out = Path(sys.argv[1])
           m = json.loads((out / 'manifest.json').read_text(encoding='utf-8'))
           db = sqlite3.connect(out / 'ravemems_v2_rcl0193eng.sqlite')
-          assert m['document_kind'] == 'workshop_manual', m['document_kind']
+          doc = db.execute('SELECT document_key,canonical_name,document_kind FROM ravemems_document').fetchone()
+          rev = db.execute('SELECT revision_key FROM ravemems_document_revision').fetchone()
+          assert doc[0] == 'DOC_RCL0193ENG', doc
+          assert (doc[1] or '').replace(' ', '') == 'RCL0193ENG', doc
+          assert doc[2] == 'workshop_manual', doc
+          assert rev[0] == 'REV_RCL0193ENG_SOURCE', rev
           counts = m['counts']
           assert counts['ravemems_operation'] == 201, counts
           assert counts['ravemems_phase'] == 397, counts
@@ -103,6 +108,7 @@ jobs:
           assert db.execute("SELECT COUNT(*) FROM ravemems_review_flag WHERE status='open'").fetchone()[0] == 0
           assert db.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
           assert db.execute('PRAGMA foreign_key_check').fetchall() == []
+          print('RCL0193ENG_GENERIC_IDENTITY_PASS')
           print('RCL0193ENG_GENERIC_DOCUMENT_KIND_PASS workshop_manual')
           print('RCL0193ENG_GENERIC_OPERATIONS_PASS 201')
           print('RCL0193ENG_GENERIC_PHASES_PASS 397')
