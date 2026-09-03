@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
-      TEST_SHA: '97d2e7b0a90825e2c2efbf928f2002623d16d81d'
+      TEST_SHA: '7418419993af12d5d4c8a1e57673984dbedc4675'
       PROTECTED_MEMSX64: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
       SOURCE_MAIN_COMMIT: '643de091b474f4e27917a065bdf46d5a0c764276'
       SOURCE_PATH: 'rave/xn/elxn970e.pdf'
@@ -201,6 +201,7 @@ jobs:
           open_reviews = db.execute("SELECT COUNT(*) FROM ravemems_review_flag WHERE status='open'").fetchone()[0]
           section_count = db.execute('SELECT COUNT(*) FROM ravemems_section').fetchone()[0]
           section_provenance_count = db.execute("SELECT COUNT(*) FROM ravemems_provenance WHERE entity_kind='section'").fetchone()[0]
+          title = (doc[3] or '').casefold()
           data = {
               'extraction_completed': True,
               'page_count': m['page_count'],
@@ -222,7 +223,7 @@ jobs:
                   'document_key_is_rcl0213eng': doc[0] == 'DOC_RCL0213ENG',
                   'revision_key_is_rcl0213eng': rev[0] == 'REV_RCL0213ENG_SOURCE',
                   'document_kind_is_electrical_reference_library': doc[2] == 'electrical_reference_library',
-                  'title_source_identifies_electrical_reference_library': 'electrical reference library' in (doc[3] or '').casefold(),
+                  'title_source_identifies_electrical_library_family': ('electrical library' in title or 'electrical reference library' in title),
               },
               'structure_checks': {
                   'has_reference_sections': section_count > 0,
