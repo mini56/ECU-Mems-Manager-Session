@@ -45,7 +45,7 @@ def geometric_reading_order(lines: list[dict[str, Any]], page_width: float, page
         overlap = max(0.0, min(lb, rb) - max(lt, rt))
         lc = _median([(float(x['bbox'][0]) + float(x['bbox'][2])) / 2.0 for x in left])
         rc = _median([(float(x['bbox'][0]) + float(x['bbox'][2])) / 2.0 for x in right])
-        two_column = overlap >= page_height * 0.12 and lc < page_width * 0.46 and rc > page_width * 0.54
+        two_column = overlap >= page_height * 0.00 and lc < page_width * 0.46 and rc > page_width * 0.54
     if not two_column:
         for item in body:
             item['reading_region'] = 'body_single'
