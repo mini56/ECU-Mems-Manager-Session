@@ -12774,3 +12774,12 @@ Regle operationnelle a partir de maintenant : pour toute journalisation, creer u
 
 Cette entree sert egalement de test reel du nouveau canal. Aucun changement applicatif, RAVEMEMS, ECU, protocole ou `MEMSX64` n'est effectue pendant cette reparation.
 <!-- journal-entry-sha256:96787a6616eef6b41e8f59fd12cd64f06e77467d6a037fd19b84fa1722eeb7dc -->
+
+## 2026-09-03 — VALIDATION FINALE DU CANAL DE JOURNALISATION PERMANENT
+
+Deuxieme test reel apres durcissement du workflow permanent. Cette entree contient volontairement du Markdown avec accents graves (`RAPPORT`, `MEMSX64`, `RCL0193ENG`) et des caracteres UTF-8 accentues afin de verifier qu'aucun contenu n'est interprete par le shell.
+
+Le workflow permanent a ete modifie pour ne plus generer de `__pycache__` et pour ne versionner que le rapport maitre et les suppressions de la file `.journal_queue/`.
+
+Critere de validation : run GitHub Actions SUCCESS, entree presente dans le rapport maitre, fichier de file supprime, aucun bytecode parasite et aucun workflow temporaire de journalisation cree.
+<!-- journal-entry-sha256:f624fb84ba54a0fc3383d5ad229a5b209debf6abaf5166d33078b357cbb55264 -->
