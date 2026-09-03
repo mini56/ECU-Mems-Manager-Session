@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import tempfile
+from pathlib import Path
 from typing import Any
 
 import fitz
@@ -8,23 +10,29 @@ import fitz
 import rcl0193eng_visual_validate as base
 
 
+def _save_png_bytes(pixmap: fitz.Pixmap) -> bytes:
+    """Encode through the exact Pixmap.save(path) path used by extraction."""
+    handle = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+    temp_path = Path(handle.name)
+    handle.close()
+    try:
+        pixmap.save(str(temp_path))
+        return temp_path.read_bytes()
+    finally:
+        temp_path.unlink(missing_ok=True)
+
+
 def validate_visual_fidelity_png(
     db,
     doc: fitz.Document,
     out_dir,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """Prove crop fidelity by byte-identical independent PNG rerender.
+    """Prove crop fidelity by byte-identical independent Pixmap.save rerender.
 
-    The extracted asset was originally produced by PyMuPDF Pixmap.save().
-    Re-render the same PDF page/crop/matrix independently and encode that
-    pixmap again with PyMuPDF. The asset is accepted only if the complete PNG
-    byte stream is identical to the independently generated PNG, in addition
-    to DB SHA, bbox and dimension checks.
-
-    We still record whether PyMuPDF's PNG decoder reproduces the source raw
-    samples, but that decoder-side diagnostic is deliberately not the fidelity
-    criterion: the independently re-encoded PNG itself is the artifact being
-    proved.
+    The extracted asset was originally produced by PyMuPDF Pixmap.save(path).
+    Re-render the same PDF page/crop/matrix independently, save it through the
+    exact same API to a temporary PNG, then require complete file-byte identity
+    with the extracted asset. DB SHA, bbox and dimensions are checked too.
     """
     verified: list[dict[str, Any]] = []
     failed: list[dict[str, Any]] = []
@@ -42,7 +50,7 @@ def validate_visual_fidelity_png(
             "page_key": page_key,
             "physical_page": int(physical_page),
             "render_method": render_method,
-            "proof": "byte_identical_independent_png_rerender",
+            "proof": "byte_identical_independent_pixmap_save_png_rerender",
         }
         try:
             if render_method != "pdf_page_render_crop":
@@ -69,13 +77,13 @@ def validate_visual_fidelity_png(
                     f"rerender dimensions mismatch db={(width, height)} rerender={(rerender.width, rerender.height)}"
                 )
 
-            rerender_png = rerender.tobytes("png")
-            rerender_png_sha = base._sha256(rerender_png)
-            if rerender_png != asset_png:
+            saved_rerender_png = _save_png_bytes(rerender)
+            rerender_png_sha = base._sha256(saved_rerender_png)
+            if saved_rerender_png != asset_png:
                 decoded = fitz.Pixmap(str(asset_path))
                 raise ValueError(
-                    "rerender PNG mismatch "
-                    f"expected_png={rerender_png_sha} asset_png={asset_sha} "
+                    "Pixmap.save rerender PNG mismatch "
+                    f"rerender_png={rerender_png_sha} asset_png={asset_sha} "
                     f"source_samples={base._sha256(bytes(rerender.samples))} "
                     f"decoded_samples={base._sha256(bytes(decoded.samples))}"
                 )
