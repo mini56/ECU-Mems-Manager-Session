@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import Any
 
+
 def _median(values: list[float]) -> float:
     values = sorted(values)
     n = len(values)
@@ -9,10 +10,22 @@ def _median(values: list[float]) -> float:
     m = n // 2
     return values[m] if n % 2 else (values[m - 1] + values[m]) / 2.0
 
+
 def geometric_reading_order(lines: list[dict[str, Any]], page_width: float, page_height: float) -> list[dict[str, Any]]:
-    """Read genuine two-column workshop pages left column then right column."""
+    """Read genuine two-column workshop pages left column then right column.
+
+    Full-width body lines must never force an early jump to the opposite column.
+    Earlier prototype logic flushed both columns around every spanning line;
+    ordinary captions/headings could therefore turn a real 1..N procedure into
+    1,2,3,10,4... even though the numbered markers themselves were correctly
+    positioned. A genuine two-column body is now consumed as a complete left
+    stream followed by a complete right stream. Spanning body text is retained
+    after both column streams so no source text is discarded, while it can no
+    longer reorder numbered workshop steps.
+    """
     if not lines:
         return []
+
     by_yx = lambda item: (float(item['bbox'][1]), float(item['bbox'][0]))
     header_limit = page_height * 0.075
     footer_limit = page_height * 0.90
@@ -20,12 +33,17 @@ def geometric_reading_order(lines: list[dict[str, Any]], page_width: float, page
     for item in lines:
         top, bottom = float(item['bbox'][1]), float(item['bbox'][3])
         if bottom <= header_limit:
-            item['reading_region'] = 'header'; header.append(item)
+            item['reading_region'] = 'header'
+            header.append(item)
         elif top >= footer_limit:
-            item['reading_region'] = 'footer'; footer.append(item)
+            item['reading_region'] = 'footer'
+            footer.append(item)
         else:
             body.append(item)
-    header.sort(key=by_yx); footer.sort(key=by_yx)
+
+    header.sort(key=by_yx)
+    footer.sort(key=by_yx)
+
     midpoint = page_width / 2.0
     gutter = max(12.0, page_width * 0.025)
     left, right, span = [], [], []
@@ -33,11 +51,15 @@ def geometric_reading_order(lines: list[dict[str, Any]], page_width: float, page
         x0, _, x1, _ = [float(v) for v in item['bbox']]
         center = (x0 + x1) / 2.0
         if x0 < midpoint - gutter and x1 > midpoint + gutter:
-            item['reading_region'] = 'body_span'; span.append(item)
+            item['reading_region'] = 'body_span'
+            span.append(item)
         elif center < midpoint:
-            item['reading_region'] = 'body_left'; left.append(item)
+            item['reading_region'] = 'body_left'
+            left.append(item)
         else:
-            item['reading_region'] = 'body_right'; right.append(item)
+            item['reading_region'] = 'body_right'
+            right.append(item)
+
     two_column = False
     if len(left) >= 4 and len(right) >= 4:
         lt, lb = min(float(x['bbox'][1]) for x in left), max(float(x['bbox'][3]) for x in left)
@@ -46,20 +68,13 @@ def geometric_reading_order(lines: list[dict[str, Any]], page_width: float, page
         lc = _median([(float(x['bbox'][0]) + float(x['bbox'][2])) / 2.0 for x in left])
         rc = _median([(float(x['bbox'][0]) + float(x['bbox'][2])) / 2.0 for x in right])
         two_column = overlap >= page_height * 0.00 and lc < page_width * 0.46 and rc > page_width * 0.54
+
     if not two_column:
         for item in body:
             item['reading_region'] = 'body_single'
         return header + sorted(body, key=by_yx) + footer
-    left.sort(key=by_yx); right.sort(key=by_yx); span.sort(key=by_yx)
-    if not span:
-        return header + left + right + footer
-    ordered = []
-    for separator in span:
-        sy = float(separator['bbox'][1])
-        a = [x for x in left if float(x['bbox'][1]) < sy]
-        b = [x for x in right if float(x['bbox'][1]) < sy]
-        ordered += a + b + [separator]
-        aset, bset = {id(x) for x in a}, {id(x) for x in b}
-        left = [x for x in left if id(x) not in aset]
-        right = [x for x in right if id(x) not in bset]
-    return header + ordered + left + right + footer
+
+    left.sort(key=by_yx)
+    right.sort(key=by_yx)
+    span.sort(key=by_yx)
+    return header + left + right + span + footer
