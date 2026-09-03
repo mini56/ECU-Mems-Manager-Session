@@ -1,0 +1,36 @@
+name: TEMP Journal RAVEMEMS column correction success
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/tmp-journal-ravemems-v2-column-success.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append correction push result
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+          test "$(git ls-remote origin refs/heads/tmp-ravemems-v2-foundation | awk '{print $1}')" = '6d119858dfd728c7d344db7a6ad0a48e01f38dd0'
+          marker='## 2026-09-03 — CORRECTION GENERIQUE ORDRE DE LECTURE DEUX COLONNES POUSSEE'
+          if ! grep -Fq "$marker" RAPPORT_SUIVI_ECU_MEMS_MANAGER.md; then
+            printf '%s' 'CgojIyAyMDI2LTA5LTAzIOKAlCBDT1JSRUNUSU9OIEdFTkVSSVFVRSBPUkRSRSBERSBMRUNUVVJFIERFVVggQ09MT05ORVMgUE9VU1NFRQoKTGUgaGVscGVyIHRlY2huaXF1ZSBjb3JyaWdlIGEgZXRlIHJlbGFuY2Ugc3VyIGB0bXAtcmF2ZW1lbXMtdjItZm91bmRhdGlvbmAuIFJ1biBoZWxwZXIgYDMzNzgzMjUyNjgyYCA6ICoqU1VDQ0VTUyoqLiBJbCBhIHByb2R1aXQgbGUgY29tbWl0IHRlY2huaXF1ZSBgNmQxMTk4NThkZmQ3MjhjN2QzNDRkYjdhNmFkMGE0OGUwMWYzOGRkMGAgKGBGaXggZ2VuZXJpYyB0d28tY29sdW1uIHdvcmtzaG9wIHJlYWRpbmcgb3JkZXJgKSBldCBhIHN1cHByaW1lIHNvbiB3b3JrZmxvdyB0ZW1wb3JhaXJlIGRlIGwnYXJicmUgZmluYWwuCgpDb3JyZWN0aW9uIGFwcGxpcXVlZSBzYW5zIGF1Y3VuIG5vbSBkJ29wZXJhdGlvbiBjb2RlIGVuIGR1ciA6IGFqb3V0IGRlIGByYXZlbWVtcy92Mi9yZWFkaW5nX29yZGVyLnB5YCwgZGV0ZWN0aW9uIGdlb21ldHJpcXVlIGQndW4gdnJhaSBjb3JwcyBhIGRldXggY29sb25uZXMsIGxlY3R1cmUgY29sb25uZSBnYXVjaGUgcHVpcyBjb2xvbm5lIGRyb2l0ZSwgbWFpbnRpZW4gZGVzIHBhZ2VzIG1vbm8tY29sb25uZSBlbiBvcmRyZSBgKHkseClgLCBtYXJxdWFnZSBkZXMgcmVnaW9ucyBgaGVhZGVyL2Zvb3Rlci9ib2R5XypgLCBleGNsdXNpb24gZGVzIGVuLXRldGVzL3BpZWRzIGRlIGwnZXh0ZW5zaW9uIHNlbWFudGlxdWUgZCd1bmUgZXRhcGUsIGV0IGVucmljaGlzc2VtZW50IGR1IGRlYnVnIHBhZ2VzIDEzMS0xMzYgYXZlYyByZWdpb24rQkJPWC4gYHByb3RvdHlwZV9leHRyYWN0LnB5YCBuJ2VzdCBtb2RpZmllIHF1ZSBwb3VyIGFwcGVsZXIgY2V0IG9yZHJlIGdlb21ldHJpcXVlIGV0IHV0aWxpc2VyIGxlcyByZWdpb25zLiBgTUVNU1g2NGAgcmVzdGUgZXhhY3RlbWVudCBCVUlMRCAjMTAzIGAxZDYzMTZiZDE3NDZkNmYyYjRjZmI3NTFjYWI4OGQxOGUyN2VmNzMwYC4KCkxlIGNvbW1pdCB0ZWNobmlxdWUgYSBldGUgcG91c3NlIHBhciB1biB3b3JrZmxvdyBhdmVjIGxlIGBHSVRIVUJfVE9LRU5gLiBHaXRIdWIgbmUgZGVjbGVuY2hlIHBhcyBkZSBub3V2ZWF1IHdvcmtmbG93IGBwdXNoYCBhIHBhcnRpciBkJ3VuZSBwb3Vzc2UgZmFpdGUgcGFyIGNlIHRva2VuOyBhdWN1biBydW4gZGUgZm9uZGF0aW9uIG4nYSBkb25jIGV0ZSBjcmVlIGF1dG9tYXRpcXVlbWVudCBwb3VyIGxlIFNIQSBgNmQxMTk4NTguLi5gLiBDZSBuJ2VzdCBwYXMgdW4gdmVyZGljdCB0ZWNobmlxdWUgc3VyIGwnZXh0cmFjdGV1ci4KClBST0NIQUlORSBBQ1RJT04gRVhBQ1RFIDogZGVjbGVuY2hlciBleHBsaWNpdGVtZW50LCBzYW5zIG1vZGlmaWVyIE1FTVNYNjQgZXQgc2FucyBhdXRyZSBQREYsIGxlIHdvcmtmbG93IGRlIGZvbmRhdGlvbi9wcm90b3R5cGUgc3VyIGxlIGNvbW1pdCBgNmQxMTk4NTguLi5gLCBwdWlzIHZlcmlmaWVyIHJ1biwgY29tcHRldXJzLCBkaWFnbm9zdGljcyBldCBhcnRlZmFjdCBSQ0wwMTkzRU5HLCBhdmVjIGNvbnRyb2xlIGV4cGxpY2l0ZSBkZXMgcGFnZXMgMTMxLTEzNiBldCBleGlnZW5jZSBkJ3VuZSBjaHV0ZSBtYXNzaXZlIGRlcyAyNDIgZGVmYXV0cy4K' | base64 -d >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          fi
+          rm -f .github/workflows/tmp-journal-ravemems-v2-column-success.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md .github/workflows/tmp-journal-ravemems-v2-column-success.yml
+          git diff --cached --check
+          git commit -m 'Journal RAVEMEMS column correction push'
+          git push origin HEAD:RAPPORT
