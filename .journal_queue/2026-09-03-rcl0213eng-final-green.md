@@ -1,0 +1,7 @@
+## 2026-09-03 — RCL0213ENG 212-page generalized test GREEN
+
+Exact full run 33801190596 completed SUCCESS using code SHA 7418419993af12d5d4c8a1e57673984dbedc4675 and frozen source commit 643de091b474f4e27917a065bdf46d5a0c764276, path rave/xn/elxn970e.pdf, 212 pages.
+
+Verified result: publication RCL 0213ENG; document_key DOC_RCL0213ENG; revision_key REV_RCL0213ENG_SOURCE; document_kind electrical_reference_library; source title Electrical Library; 212 page-grounded ravemems_section rows with 212 section provenance rows; 146 entries with detected manufacturer identifiers; 0 workshop operations, 0 phases, 0 steps; 0 numeric defects; 0 open reviews. Exact extraction-order visual replay verified 304/304 visuals, 0 fidelity failures, 0 missing, 0 unexpected, 0 visual-link failures, final audit 0, SQLite integrity ok, FK 0. Artifact ID 9911121403, zip SHA256 8cad3951a19d67116f59407ca778bcdfc4d5532d047aedcf7290fa979887504f.
+
+The earlier reported figure 395 visuals was already corrected in the prior journal entry: the original artifact also contained 304 visuals, so there was no visual regression. Protected MEMSX64 remained exactly 1d6316bd1746d6f2b4cfb751cab88d18e27ef730 (BUILD #103). Next mandatory action: full RCL0193ENG regression with these generic rules before declaring the generalized correction safe.
