@@ -1,0 +1,176 @@
+name: TEMP RAVEMEMS V2 R8411BU classification correction
+
+on:
+  push:
+    branches: [tmp-ravemems-v2-foundation]
+    paths:
+      - '.github/workflows/tmp-ravemems-v2-r8411bu-classification.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  r8411bu-classification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TEST_SHA: 'a9e47832a2fbd3bf365a32e00d374ed7c70fba5c'
+      PROTECTED_MEMSX64: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+      SOURCE_MAIN_COMMIT: '643de091b474f4e27917a065bdf46d5a0c764276'
+      SOURCE_PATH: 'rave/Mini Tech Bulletins/R8411BU.PDF'
+      SOURCE_BLOB: '4948dca6152b13a0e19f8acc25362b33547276a3'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TEST_SHA }}
+          fetch-depth: 0
+
+      - name: Guard corrective scope and production
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TEST_SHA"
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
+          test -f ravemems/v2/generic_document_rules.py
+          test -f .github/pass2/ravemems_generic_precise_extract.py
+          test -f .github/pass2/rcl0193eng_visual_replay_validate.py
+          echo "R8411BU_CLASSIFICATION_SHA_PASS $TEST_SHA"
+          echo "PROTECTED_BUILD103_PASS $PROTECTED_MEMSX64"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Compile and self-test foundation
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="ravemems/v2:.github/pass2" python -m py_compile \
+            ravemems/v2/generic_document_rules.py \
+            ravemems/v2/prototype_extract.py \
+            .github/pass2/rcl0193eng_zero_defect_pass2.py \
+            .github/pass2/rcl0193eng_precise_visual_extract.py \
+            .github/pass2/ravemems_generic_precise_extract.py \
+            .github/pass2/rcl0193eng_visual_replay_validate.py
+          python ravemems/v2/schema_selftest.py | tee "$RUNNER_TEMP/schema-selftest.log"
+          grep -q '^RAVEMEMS_V2_SCHEMA_SELFTEST_PASS$' "$RUNNER_TEMP/schema-selftest.log"
+          PYTHONPATH="ravemems/v2" python - <<'PY'
+          from generic_document_rules import document_kind_for_source_path, is_bare_calendar_date_identifier
+          assert is_bare_calendar_date_identifier('23.12.98', '23.12.98')
+          assert not is_bare_calendar_date_identifier('12.29.02', '12.29.02')
+          assert not is_bare_calendar_date_identifier('Service Repair No. 23.12.98', '23.12.98')
+          assert document_kind_for_source_path('rave/Mini Tech Bulletins/R8411BU.PDF') == 'technical_bulletin'
+          assert document_kind_for_source_path('rave/xn/wmxn990e.pdf') == 'workshop_manual'
+          print('GENERIC_DOCUMENT_RULES_SELFTEST_PASS')
+          PY
+
+      - name: Install pinned PDF renderer
+        run: python -m pip install --disable-pip-version-check 'PyMuPDF==1.26.4'
+
+      - name: Fetch exact R8411BU source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "$SOURCE_MAIN_COMMIT"
+          test "$(git rev-parse FETCH_HEAD)" = "$SOURCE_MAIN_COMMIT"
+          test "$(git rev-parse "$SOURCE_MAIN_COMMIT:$SOURCE_PATH")" = "$SOURCE_BLOB"
+          mkdir -p "$RUNNER_TEMP/ravemems-source"
+          git show "$SOURCE_MAIN_COMMIT:$SOURCE_PATH" > "$RUNNER_TEMP/ravemems-source/R8411BU.PDF"
+          test -s "$RUNNER_TEMP/ravemems-source/R8411BU.PDF"
+
+      - name: Build R8411BU identity profile
+        shell: bash
+        run: |
+          python - "$RUNNER_TEMP/r8411bu-profile.json" <<'PY'
+          import json, sys
+          from pathlib import Path
+          profile = json.loads(Path('ravemems/v2/profiles/rcl0193eng.json').read_text(encoding='utf-8'))
+          profile['profile_id'] = 'service_manual_en_v1_random_R8411BU'
+          profile['publication_code_regex'] = r'\bR8411BU\b'
+          Path(sys.argv[1]).write_text(json.dumps(profile, ensure_ascii=False, indent=2), encoding='utf-8')
+          PY
+
+      - name: Extract with generic identity guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/r8411bu-test"
+          rm -rf "$out"
+          PYTHONPATH="ravemems/v2:.github/pass2" python .github/pass2/ravemems_generic_precise_extract.py \
+            --pdf "$RUNNER_TEMP/ravemems-source/R8411BU.PDF" \
+            --schema ravemems/v2/schema.sql \
+            --profile "$RUNNER_TEMP/r8411bu-profile.json" \
+            --out "$out" \
+            --source-relative-path "$SOURCE_PATH" \
+            --source-commit "$SOURCE_MAIN_COMMIT" \
+            --source-blob-sha "$SOURCE_BLOB" \
+            | tee "$RUNNER_TEMP/r8411bu-extract.log"
+
+      - name: Require corrected classification and semantics
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/r8411bu-test"
+          python - "$out" <<'PY'
+          import json, sqlite3, sys
+          from pathlib import Path
+          out = Path(sys.argv[1])
+          m = json.loads((out / 'manifest.json').read_text(encoding='utf-8'))
+          db = sqlite3.connect(out / 'ravemems_v2_rcl0193eng.sqlite')
+          assert m['document_kind'] == 'technical_bulletin', m
+          row = db.execute('SELECT document_kind FROM ravemems_document').fetchone()
+          assert row == ('technical_bulletin',), row
+          bad = db.execute("SELECT manufacturer_operation_no,title_source FROM ravemems_operation WHERE manufacturer_operation_no='23.12.98'").fetchall()
+          assert bad == [], bad
+          assert m['numeric_phase_defect_count'] == 0
+          assert db.execute("SELECT COUNT(*) FROM ravemems_review_flag WHERE status='open'").fetchone()[0] == 0
+          assert db.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
+          assert db.execute('PRAGMA foreign_key_check').fetchall() == []
+          print('R8411BU_DOCUMENT_KIND_PASS technical_bulletin')
+          print('R8411BU_FALSE_DATE_OPERATION_REJECTED_PASS 23.12.98')
+          print('R8411BU_OPERATIONS_AFTER_FIX', db.execute('SELECT COUNT(*) FROM ravemems_operation').fetchone()[0])
+          print('R8411BU_PHASES_AFTER_FIX', db.execute('SELECT COUNT(*) FROM ravemems_phase').fetchone()[0])
+          print('R8411BU_STEPS_AFTER_FIX', db.execute('SELECT COUNT(*) FROM ravemems_step').fetchone()[0])
+          db.close()
+          PY
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
+
+      - name: Replay all visuals exactly
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/r8411bu-test"
+          PYTHONPATH="ravemems/v2:.github/pass2" python - "$RUNNER_TEMP/ravemems-source/R8411BU.PDF" "$out" <<'PY'
+          import json, sqlite3, sys
+          from pathlib import Path
+          import rcl0193eng_visual_replay_validate as replay
+          pdf = Path(sys.argv[1]); out = Path(sys.argv[2])
+          db = sqlite3.connect(out / 'ravemems_v2_rcl0193eng.sqlite')
+          expected_visuals = db.execute('SELECT COUNT(*) FROM ravemems_visual').fetchone()[0]
+          expected_links = db.execute('SELECT COUNT(*) FROM ravemems_visual_link').fetchone()[0]
+          db.close()
+          replay.replay_visuals(pdf, out)
+          result = json.loads((out / 'visual_replay_validation.json').read_text(encoding='utf-8'))
+          assert result['visual_fidelity_verified_count'] == expected_visuals
+          assert result['visual_fidelity_failed_count'] == 0
+          assert result['visual_link_verified_count'] == expected_links
+          assert result['visual_link_failed_count'] == 0
+          assert result['missing_replay_count'] == 0
+          assert result['unexpected_replay_count'] == 0
+          assert result['sqlite_integrity'] == 'ok'
+          assert result['foreign_key_issue_count'] == 0
+          assert result['audit_issue_count_after_validation'] == 0
+          print('R8411BU_FINAL_VISUALS_VERIFIED', expected_visuals)
+          print('R8411BU_FINAL_LINKS_VERIFIED', expected_links)
+          print('R8411BU_CLASSIFICATION_CORRECTION_PASS')
+          PY
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
+
+      - name: Upload corrected R8411BU artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAVEMEMS-V2-R8411BU-CLASSIFICATION-CORRECTED
+          path: ${{ runner.temp }}/r8411bu-test
+          if-no-files-found: warn
+          retention-days: 14
