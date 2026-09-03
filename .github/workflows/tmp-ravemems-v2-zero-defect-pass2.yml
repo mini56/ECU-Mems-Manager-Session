@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      TEST_SHA: '0d98db8433af2bc21b9b74d7f430c8c4c134819a'
+      TEST_SHA: 'fdec4ae8f0cb3515ee67f982ddec9b6bb934ec97'
       PROTECTED_MEMSX64: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
       SOURCE_MAIN_COMMIT: '643de091b474f4e27917a065bdf46d5a0c764276'
       RCL0193ENG_BLOB: '82263eb36bb194dfa969d0471d10ef11078ce521'
@@ -31,6 +31,7 @@ jobs:
           test "$(git rev-parse HEAD)" = "$TEST_SHA"
           test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
           test -f .github/pass2/rcl0193eng_zero_defect_pass2.py
+          test -f .github/pass2/rcl0193eng_precise_visual_extract.py
           test -f .github/pass2/rcl0193eng_visual_validate.py
           test -f ravemems/v2/prototype_extract.py
           test -f ravemems/v2/schema.sql
@@ -51,6 +52,7 @@ jobs:
             ravemems/v2/reading_order.py \
             ravemems/v2/prototype_extract.py \
             .github/pass2/rcl0193eng_zero_defect_pass2.py \
+            .github/pass2/rcl0193eng_precise_visual_extract.py \
             .github/pass2/rcl0193eng_visual_validate.py
           python ravemems/v2/schema_selftest.py | tee "$RUNNER_TEMP/schema-selftest.log"
           grep -q '^RAVEMEMS_V2_SCHEMA_SELFTEST_PASS$' "$RUNNER_TEMP/schema-selftest.log"
@@ -76,13 +78,13 @@ jobs:
           test -s "$RUNNER_TEMP/ravemems-source/wmxn990e.pdf"
           echo "RCL0193ENG_SOURCE_PIN_PASS $source_blob"
 
-      - name: Extract RCL0193ENG pass 2
+      - name: Extract RCL0193ENG with exact visual geometry
         shell: bash
         run: |
           set -euo pipefail
           out="$RUNNER_TEMP/rcl0193eng-pass2"
           rm -rf "$out"
-          PYTHONPATH=ravemems/v2 python .github/pass2/rcl0193eng_zero_defect_pass2.py \
+          PYTHONPATH=ravemems/v2 python .github/pass2/rcl0193eng_precise_visual_extract.py \
             --pdf "$RUNNER_TEMP/ravemems-source/wmxn990e.pdf" \
             --schema ravemems/v2/schema.sql \
             --profile ravemems/v2/profiles/rcl0193eng.json \
@@ -217,7 +219,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: RAVEMEMS-V2-RCL0193ENG-ZERO-DEFECT-VISUAL-VALIDATED
+          name: RAVEMEMS-V2-RCL0193ENG-ZERO-DEFECT-VISUAL-PRECISION
           path: ${{ runner.temp }}/rcl0193eng-pass2
           if-no-files-found: warn
           retention-days: 14
