@@ -1,0 +1,25 @@
+{
+  "profile_id": "language_en_v1",
+  "language": "en",
+  "operation_no_regexes": [
+    "(?i)service\\s+repair\\s+no\\.?\\s*[-:]?\\s*(\\d{2}\\.\\d{2}\\.\\d{2})",
+    "(?i)repair\\s+operation\\s+(?:no\\.?|number)\\s*[-:]?\\s*(\\d{2}\\.\\d{2}\\.\\d{2})",
+    "^\\s*(\\d{2}\\.\\d{2}\\.\\d{2})\\s*$"
+  ],
+  "phase_labels": {"remove":"remove","removal":"remove","refit":"refit","refitting":"refit","dismantle":"dismantle","dismantling":"dismantle","assemble":"assemble","assembly":"assemble","check":"check","inspection":"inspect","inspect":"inspect","test":"test","adjust":"adjust","adjustment":"adjust","overhaul":"overhaul","drain":"drain","refill":"refill"},
+  "notice_labels": {"warning":"warning","caution":"caution","note":"note","remark":"remark"},
+  "ignore_line_regexes": ["^\\s*MINI\\s*$","^\\s*REPAIRS\\s*$","^\\s*DESCRIPTION AND OPERATION\\s*$","^\\s*ADJUSTMENTS\\s*$","^\\s*SPECIFICATIONS\\s*$","^\\s*TORQUE WRENCH SETTINGS\\s*$","^\\s*CONTENTS\\s*$","^\\s*Page \\d+\\s*$"],
+  "requirement_rules": [
+    {"requirement_type":"special_tool","regex":"(?i)\\bspecial\\s+tool(?:s)?\\b"},
+    {"requirement_type":"replacement_part","regex":"(?i)\\b(?:fit|use|renew|replace)\\b.{0,60}\\bnew\\b.{0,60}\\b(?:seal|gasket|washer|o[- ]?ring|nut|bolt|clip|pin)\\b"}
+  ],
+  "cross_reference_regexes": ["(?i)(?:see|refer\\s+to|reference)\\b.{0,120}?(\\d{2}\\.\\d{2}\\.\\d{2})"],
+  "visual_type_rules": [
+    {"visual_type":"wiring_diagram","keywords":["wiring diagram","circuit diagram","electrical circuit"]},
+    {"visual_type":"connector_view","keywords":["connector","pinout","terminal"]},
+    {"visual_type":"diagnostic_flowchart","keywords":["diagnostic chart","diagnostic flow","yes no"]},
+    {"visual_type":"tightening_sequence","keywords":["tightening sequence","tightening order","sequence shown"]},
+    {"visual_type":"location","keywords":["location","located"]}
+  ],
+  "default_visual_type": "technical_illustration"
+}

@@ -1,0 +1,111 @@
+name: TEMP RAVEMEMS V2 generic source RCL0179ENG
+
+on:
+  push:
+    branches: [tmp-ravemems-v2-foundation]
+    paths:
+      - "ravemems/v2/source_input.py"
+      - "ravemems/v2/generic_document_rules.py"
+      - "ravemems/v2/profiles/language_en.json"
+      - "ravemems/v2/profiles/language_generic.json"
+      - ".github/pass2/ravemems_generic_precise_extract.py"
+      - ".github/pass2/ravemems_extract_source.py"
+      - ".github/workflows/tmp-ravemems-v2-generic-source-rcl0179.yml"
+permissions: {contents: read}
+jobs:
+  generic-source-rcl0179:
+    runs-on: ubuntu-24.04
+    env:
+      PROTECTED_MEMSX64: 1d6316bd1746d6f2b4cfb751cab88d18e27ef730
+      SOURCE_MAIN_COMMIT: 643de091b474f4e27917a065bdf46d5a0c764276
+      SOURCE_PATH: rave/xn/hr01795e.pdf
+      SOURCE_BLOB: 63569965a1b6d62a5dd00553b1831254a9f2feb8
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - name: Guard exact test SHA and protected production
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
+          ! grep -R -n -E 'RCL[[:space:]]*0179ENG' ravemems/v2/source_input.py ravemems/v2/generic_document_rules.py .github/pass2/ravemems_generic_precise_extract.py .github/pass2/ravemems_extract_source.py
+          echo "GENERIC_SOURCE_CODE_HAS_NO_RCL0179_SPECIAL_CASE"
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Compile and install renderer
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="ravemems/v2:.github/pass2" python -m py_compile ravemems/v2/source_input.py ravemems/v2/generic_document_rules.py .github/pass2/ravemems_generic_precise_extract.py .github/pass2/ravemems_extract_source.py
+          python -m json.tool ravemems/v2/profiles/language_en.json >/dev/null
+          python -m json.tool ravemems/v2/profiles/language_generic.json >/dev/null
+          python -m pip install --disable-pip-version-check "PyMuPDF==1.26.4"
+      - name: Fetch frozen PDF as standalone input
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "$SOURCE_MAIN_COMMIT"
+          test "$(git rev-parse FETCH_HEAD)" = "$SOURCE_MAIN_COMMIT"
+          test "$(git rev-parse "$SOURCE_MAIN_COMMIT:$SOURCE_PATH")" = "$SOURCE_BLOB"
+          mkdir -p "$RUNNER_TEMP/input"
+          git show "$SOURCE_MAIN_COMMIT:$SOURCE_PATH" > "$RUNNER_TEMP/input/document.pdf"
+      - name: Verify PDF directory ZIP and TAR discovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/source-dir/nested"
+          cp "$RUNNER_TEMP/input/document.pdf" "$RUNNER_TEMP/source-dir/nested/renamed-anything.PDF"
+          python - "$RUNNER_TEMP/input/document.pdf" "$RUNNER_TEMP/source.zip" "$RUNNER_TEMP/source.tar" <<'PY'
+          import sys,tarfile,zipfile
+          from pathlib import Path
+          pdf,zp,tp=map(Path,sys.argv[1:])
+          with zipfile.ZipFile(zp,'w',compression=zipfile.ZIP_DEFLATED) as z:z.write(pdf,'completely-different-name/inside.pdf')
+          with tarfile.open(tp,'w') as t:t.add(pdf,arcname='another-name/inside.PDF')
+          PY
+          for spec in "$RUNNER_TEMP/input/document.pdf:direct" "$RUNNER_TEMP/source-dir:directory" "$RUNNER_TEMP/source.zip:zip" "$RUNNER_TEMP/source.tar:tar"; do
+            source="${spec%%:*}"; label="${spec##*:}"
+            PYTHONPATH="ravemems/v2" python ravemems/v2/source_input.py "$source" --work-dir "$RUNNER_TEMP/resolve-$label" --probe > "$RUNNER_TEMP/probe-$label.json"
+            python - "$RUNNER_TEMP/probe-$label.json" "$label" <<'PY'
+          import json,sys
+          d=json.load(open(sys.argv[1],encoding='utf-8')); assert d['pdf_count']==1,d; p=d['documents'][0]; assert p['page_count']==94,p; assert p['publication_code']=='RCL0179ENG',p; assert p['language']=='en',p; print('SOURCE_MODE_PASS',sys.argv[2],p['identity'],p['page_count'])
+          PY
+          done
+      - name: Extract standalone PDF with no profile
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$RUNNER_TEMP/result"
+          PYTHONPATH="ravemems/v2:.github/pass2" python .github/pass2/ravemems_extract_source.py --source "$RUNNER_TEMP/input/document.pdf" --schema ravemems/v2/schema.sql --out "$RUNNER_TEMP/result"
+      - name: Validate automatic identity language kind and structure
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - "$RUNNER_TEMP/result" <<'PY'
+          import json,sqlite3,sys
+          from pathlib import Path
+          out=Path(sys.argv[1]); m=json.loads((out/'manifest.json').read_text(encoding='utf-8')); assert m['publication_code']=='RCL0179ENG',m; assert m['publication_detected'] is True,m; assert m['document_identity']=='RCL0179ENG',m; assert m['document_key']=='DOC_RCL0179ENG',m; assert m['revision_key']=='REV_RCL0179ENG_SOURCE',m; assert m['source_language']=='en',m; assert m['document_kind']=='owner_handbook',m; assert m['source_input']['classification_uses_source_name'] is False,m; c=m['counts']; assert c['ravemems_page']==94,c; assert c['ravemems_operation']==0,c; assert c['ravemems_phase']==0,c; assert c['ravemems_step']==0,c; assert c['ravemems_section']>0,c; db=sqlite3.connect(out/'ravemems_v2_rcl0193eng.sqlite'); assert db.execute('PRAGMA integrity_check').fetchone()[0]=='ok'; assert db.execute('PRAGMA foreign_key_check').fetchall()==[]; row=db.execute('SELECT document_key,source_language,document_kind,title_source FROM ravemems_document').fetchone(); assert row[0]=='DOC_RCL0179ENG' and row[1]=='en' and row[2]=='owner_handbook' and 'handbook' in row[3].casefold(),row; db.close(); print('GENERIC_RCL0179_SECTION_COUNT',c['ravemems_section']); print('GENERIC_RCL0179_VISUAL_COUNT',c['ravemems_visual'])
+          PY
+      - name: Replay all visuals exactly and require zero audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="ravemems/v2:.github/pass2" python - "$RUNNER_TEMP/input/document.pdf" "$RUNNER_TEMP/result" <<'PY'
+          import sys
+          from pathlib import Path
+          from ravemems_generic_visual_replay_validate import replay_visuals
+          pdf,out=map(Path,sys.argv[1:]); e=replay_visuals(pdf,out); assert e['replayed_visual_count']==e['db_visual_count'],e; assert e['visual_fidelity_verified_count']==e['db_visual_count'],e; assert e['visual_fidelity_failed_count']==0,e; assert e['visual_link_failed_count']==0,e; assert e['missing_replay_count']==0,e; assert e['unexpected_replay_count']==0,e; assert e['sqlite_integrity']=='ok',e; assert e['foreign_key_issue_count']==0,e; assert e['audit_issue_count_after_validation']==0,e; print('GENERIC_RCL0179_VISUALS_VERIFIED',e['visual_fidelity_verified_count']); print('GENERIC_RCL0179_LINKS_VERIFIED',e['visual_link_verified_count']); print('GENERIC_RCL0179_GLOBAL_AUDIT_ZERO')
+          PY
+      - name: Final production guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: RAVEMEMS-V2-GENERIC-SOURCE-RCL0179
+          path: |
+            ${{ runner.temp }}/probe-*.json
+            ${{ runner.temp }}/result
+          retention-days: 14

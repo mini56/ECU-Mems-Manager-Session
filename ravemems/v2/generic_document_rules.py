@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from datetime import date
-from pathlib import PurePosixPath
 import re
 
 
@@ -11,14 +10,6 @@ _PUBLICATION_TOKEN_CLEANER = re.compile(r"[^A-Z0-9]+")
 
 
 def is_bare_calendar_date_identifier(text: str, candidate: str) -> bool:
-    """Return True when a bare xx.xx.xx token is a plausible calendar date.
-
-    Manufacturer operation identifiers can share the same dotted shape as a
-    date.  We only reject the ambiguous *bare* form.  A code accompanied by an
-    explicit operation label (for example ``Service Repair No.``) is preserved
-    by the caller because the complete line no longer matches this bare-date
-    shape.
-    """
     match = _BARE_DOTTED_TRIPLET.fullmatch(text)
     if not match or candidate != ".".join(match.groups()):
         return False
@@ -31,33 +22,26 @@ def is_bare_calendar_date_identifier(text: str, candidate: str) -> bool:
 
 
 def canonical_publication_token(publication_code: str) -> str:
-    """Return a stable corpus key token derived only from the publication code."""
     token = _PUBLICATION_TOKEN_CLEANER.sub("", publication_code.upper())
     if not token:
-        raise ValueError("publication code does not contain an alphanumeric identity")
+        raise ValueError("document identity does not contain an alphanumeric token")
     return token
 
 
 def document_kind_for_source_path(source_relative_path: str) -> str:
-    """Classify a RAVE document from stable corpus structure when available."""
-    normalized = source_relative_path.replace("\\", "/")
-    parts = [part.casefold() for part in PurePosixPath(normalized).parts]
-    if "mini tech bulletins" in parts:
+    _ = source_relative_path
+    return "document"
+
+
+def document_kind_for_evidence(source_relative_path: str, evidence_text: str, metadata_title: str = "") -> str:
+    _ = source_relative_path
+    normalized = re.sub(r"\s+", " ", f"{metadata_title}\n{evidence_text}").casefold()
+    if re.search(r"\b(?:technical|service)\s+bulletin\b", normalized):
         return "technical_bulletin"
-    return "workshop_manual"
-
-
-def document_kind_for_evidence(source_relative_path: str, evidence_text: str) -> str:
-    """Classify a document from source evidence before using the path fallback.
-
-    Document families share the same ``rave/xn`` directory, so the directory is
-    not sufficient to distinguish a workshop manual from an electrical
-    reference library.  Stable title wording from the source itself is stronger
-    evidence and remains corpus-generic.
-    """
-    normalized = re.sub(r"\s+", " ", evidence_text).casefold()
-    if "electrical reference library" in normalized:
+    if re.search(r"\belectrical\s+(?:reference\s+)?library\b", normalized):
         return "electrical_reference_library"
-    if "workshop manual" in normalized:
+    if re.search(r"\bworkshop\s+manual\b", normalized):
         return "workshop_manual"
-    return document_kind_for_source_path(source_relative_path)
+    if re.search(r"\bowner(?:['’]s|s)?\s+handbook\b", normalized):
+        return "owner_handbook"
+    return "document"

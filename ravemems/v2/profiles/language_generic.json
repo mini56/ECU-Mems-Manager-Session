@@ -1,0 +1,12 @@
+{
+  "profile_id": "language_generic_v1",
+  "language": "und",
+  "operation_no_regexes": ["^\\s*(\\d{2}\\.\\d{2}\\.\\d{2})\\s*$"],
+  "phase_labels": {},
+  "notice_labels": {},
+  "ignore_line_regexes": [],
+  "requirement_rules": [],
+  "cross_reference_regexes": [],
+  "visual_type_rules": [],
+  "default_visual_type": "technical_illustration"
+}
