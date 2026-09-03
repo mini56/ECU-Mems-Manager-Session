@@ -1,10 +1,14 @@
 name: TEMP Journal failed RAVEMEMS column helper
+
 on:
   push:
     branches: [RAPPORT]
-    paths: ['.github/workflows/tmp-journal-ravemems-v2-column-helper-failure.yml']
+    paths:
+      - '.github/workflows/tmp-journal-ravemems-v2-column-helper-failure.yml'
+
 permissions:
   contents: write
+
 jobs:
   journal:
     runs-on: ubuntu-latest
@@ -13,24 +17,35 @@ jobs:
         with:
           ref: RAPPORT
           fetch-depth: 0
-      - name: Append failure
+
+      - name: Append failure incidents and clean helper
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = 1d6316bd1746d6f2b4cfb751cab88d18e27ef730
-          test "$(git ls-remote origin refs/heads/tmp-ravemems-v2-foundation | awk '{print $1}')" = 371bfe357e10ed1e994bc59e7996c2fbbfb7f827
-          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+          test "$(git ls-remote origin refs/heads/tmp-ravemems-v2-foundation | awk '{print $1}')" = '371bfe357e10ed1e994bc59e7996c2fbbfb7f827'
+          python3 - <<'PY'
+          from pathlib import Path
+          report = Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md')
+          raw = report.read_text(encoding='utf-8')
+          marker = '## 2026-09-03 — INCIDENT TRANSPORT CORRECTION ORDRE DE LECTURE COLONNES'
+          if marker not in raw:
+              raw += '''
 
 ## 2026-09-03 — INCIDENT TRANSPORT CORRECTION ORDRE DE LECTURE COLONNES
 
-Tentative de transport de la correction generique sur `tmp-ravemems-v2-foundation` : commit helper `371bfe357e10ed1e994bc59e7996c2fbbfb7f827`, workflow `TEMP RAVEMEMS V2 column fix`, run `33782795451` : **FAILURE** avant toute modification technique. Cause exacte : le helper faisait `test "$(git rev-parse HEAD)" = dee81b...` alors que le checkout de la branche contient necessairement le commit helper `371bfe...`; le premier `test` a donc quitte avec code 1. Aucun `reading_order.py`, aucun changement de `prototype_extract.py` et aucun commit technique n'ont ete produits par ce run. `MEMSX64` reste exactement BUILD #103 `1d6316bd...`.
+Tentative de transport de la correction generique sur `tmp-ravemems-v2-foundation` : commit helper `371bfe357e10ed1e994bc59e7996c2fbbfb7f827`, workflow `TEMP RAVEMEMS V2 column fix`, run `33782795451` : **FAILURE** avant toute modification technique. Cause exacte : le helper comparait `git rev-parse HEAD` au parent technique `dee81b...`, alors que le checkout contenait necessairement son propre commit helper `371bfe...`; le premier garde a donc quitte avec code 1. Aucun `reading_order.py`, aucun changement de `prototype_extract.py` et aucun commit technique n'ont ete produits par ce run. `MEMSX64` reste exactement BUILD #103 `1d6316bd...`.
 
-PROCHAINE ACTION EXACTE : corriger uniquement le garde du helper de transport pour accepter son propre HEAD `371bfe...`, sans changer le contenu de la correction geometrique preparee, relancer le helper, puis laisser le workflow RAVEMEMS V2 tester le commit technique resultant sur le seul RCL0193ENG.
-EOF
-          rm .github/workflows/tmp-journal-ravemems-v2-column-helper-failure.yml
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+La premiere tentative de journalisation de cet incident, commit RAPPORT `953629db1e6ee6437d24b5585ab1e8a4d63fe2c8`, run `33782857709`, a elle aussi echoue **avant creation d'un job** : le heredoc `EOF` etait mal indente dans le YAML temporaire, rendant le workflow invalide. Aucun contenu du rapport n'a ete modifie par ce run. Cet incident de journalisation est consigne ici avant toute reprise technique.
+
+PROCHAINE ACTION EXACTE : corriger uniquement le garde du helper technique en remplacant la comparaison impossible de son propre HEAD par des gardes stables (MEMSX64 #103 intact, `dee81b...` ancetre de la branche et blob de `prototype_extract.py` encore identique), sans changer le contenu fonctionnel de la correction geometrique preparee. Relancer ensuite le helper, puis laisser le workflow RAVEMEMS V2 tester le commit resultant sur le seul RCL0193ENG.
+'''
+              report.write_text(raw, encoding='utf-8')
+          PY
+          rm -f .github/workflows/tmp-journal-ravemems-v2-column-helper-failure.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md .github/workflows/tmp-journal-ravemems-v2-column-helper-failure.yml
           git diff --cached --check
-          git commit -m 'Journal failed RAVEMEMS column helper'
+          git commit -m 'Journal RAVEMEMS column helper incidents'
           git push origin HEAD:RAPPORT
