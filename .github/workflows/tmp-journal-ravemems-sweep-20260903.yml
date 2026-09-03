@@ -1,0 +1,32 @@
+name: TEMP journal RAVEMEMS overlap sweep
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/tmp-journal-ravemems-sweep-20260903.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append verified sweep result
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+          python3 -c "from pathlib import Path; p=Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md'); s=p.read_text(encoding='utf-8'); s += '\n\n## 2026-09-03 — RAVEMEMS V2 RCL0193ENG — BALAYAGE GEOMETRIQUE DES COLONNES\n\n- Base testee : commit technique `6d119858dfd728c7d344db7a6ad0a48e01f38dd0` (`Fix generic two-column workshop reading order`).\n- Run de balayage : `33785368384` — **SUCCESS**.\n- Source strictement unique : `RCL0193ENG` / `rave/xn/wmxn990e.pdf`, source commit `643de091b474f4e27917a065bdf46d5a0c764276`, blob `82263eb36bb194dfa969d0471d10ef11078ce521`.\n- `MEMSX64` verifiee intacte : BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.\n- Resultats : seuil 0.12 = 67 defauts ; 0.05 = 31 ; 0.02 = 27 ; 0.00 = **22**.\n- Page physique 135 : au seuil 0.12 elle reste `body_single` (22 lignes) ; aux seuils 0.02 et 0.00 elle est correctement separee en **12 lignes gauche + 10 lignes droite**.\n- Verdict : la cause principale est confirmee comme geometrique. Le seuil 0.00 donne le meilleur resultat brut, mais **22 defauts numeriques restent ouverts : NON VALIDE semantiquement**.\n- PROCHAINE ACTION EXACTE : produire une extraction complete au seuil 0.00 avec diagnostics/artefact, identifier les 22 cas restants, puis corriger generiquement jusqu a **0 defaut numerique reel**, sans cas operation/page code en dur et sans toucher a MEMSX64 ni aux autres PDF.\n'; p.write_text(s,encoding='utf-8')"
+          rm .github/workflows/tmp-journal-ravemems-sweep-20260903.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md .github/workflows/tmp-journal-ravemems-sweep-20260903.yml
+          git diff --cached --check
+          git commit -m 'Journal RAVEMEMS overlap sweep result'
+          git push origin HEAD:RAPPORT
