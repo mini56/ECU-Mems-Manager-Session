@@ -12689,3 +12689,18 @@ Self-tests observés verts : `RAVEMEMS_V2_SCHEMA_SELFTEST_PASS`, `CARBURETOR_WIT
 L’audit V2 sait déjà bloquer/signaliser : pages manquantes, séquences d’étapes incomplètes, opérations/phases/étapes non complètes, fidélité visuelle non validée, liaison visuelle non validée, traduction non validée, table/renvoi non validé et drapeau `à vérifier` ouvert. Le self-test crée volontairement ces défauts, vérifie qu’ils sont tous détectés, les corrige puis exige un audit final vide avec `integrity_check=ok` et aucune FK cassée.
 
 PROCHAINE ACTION EXACTE : toujours sur `tmp-ravemems-v2-foundation`, préparer le prototype d’extraction **RCL0193ENG uniquement** depuis le PDF original présent sur GitHub. L’extracteur prototype doit alimenter le schéma V2, reconstruire les opérations/phases/étapes multi-pages et produire les visuels par rendu fidèle de page + recadrage, jamais par `extract_image()` comme visuel utilisateur final. Ajouter un audit automatique du prototype. Ne lancer aucun des 47 PDF en masse avant validation complète de RCL0193ENG.
+
+
+## 2026-09-03 — GO PROTOTYPE RAVEMEMS V2 RCL0193ENG
+
+L’utilisateur donne explicitement le GO pour poursuivre après la fondation V2 verte. La prochaine pousse technique est strictement limitée au prototype `RCL0193ENG`; aucun autre PDF du corpus ne doit être extrait.
+
+Source originale autoritative vérifiée sur `main` : commit `643de091b474f4e27917a065bdf46d5a0c764276`, chemin `rave/xn/wmxn990e.pdf`, blob Git `82263eb36bb194dfa969d0471d10ef11078ce521`. La branche technique reste `tmp-ravemems-v2-foundation` au commit validé `3679841e32f69d7b1660d0845d21672116e57a1f`. `MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+Périmètre de la pousse autorisée : ajouter un profil documentaire `RCL0193ENG`, ajouter l’extracteur prototype générique fondé sur le schéma V2, et étendre uniquement le workflow temporaire de fondation afin qu’il exécute ce PDF exact. Les visuels utilisateur doivent être produits par rendu fidèle de page PDF + recadrage avec marge de sécurité, jamais par bitmap `extract_image()` brut. Le prototype doit produire SQLite, manifest, audit, résumé des opérations, extrait de débogage pages 131–136 et assets visuels, puis publier l’ensemble comme artefact GitHub Actions.
+
+Le run ne doit pas prétendre que le manuel est validé simplement parce que l’extraction s’exécute. Un audit avec éléments `à vérifier` est attendu et doit être conservé pour inspection. En revanche l’intégrité SQLite, les FK, la source exacte, la méthode de rendu visuel et la détection générique des séquences numériques incomplètes sont des gardes bloquants. Le cas injecteur multi-pages 133–135 sert de cas de validation du mécanisme générique, sans règle codée en dur spécifique à l’injecteur.
+
+Aucune intégration IA, aucun protocole ECU, aucune UI générale, aucun 32 bits, aucun BUILD #104 et aucune extraction des 47 PDF dans cette étape.
+
+PROCHAINE ACTION EXACTE : après SUCCESS de ce journal, pousser atomiquement le profil + l’extracteur + l’extension du workflow sur `tmp-ravemems-v2-foundation`, lancer GitHub Actions sur le seul `RCL0193ENG`, vérifier le run, les compteurs, l’audit et l’artefact, puis journaliser le verdict avant toute correction ou extension.
