@@ -37,24 +37,64 @@ def clean_label(text: str) -> str:
 
 
 def read_lines(page: fitz.Page) -> list[dict[str, Any]]:
+    """Read text lines while preserving the PDF span geometry.
+
+    RAVEMEMS must not infer a numbered workshop step from plain text alone when
+    the PDF layout can tell us whether the number is a dedicated step marker.
+    The old prototype concatenated all spans without spacing, which destroyed
+    that distinction. This reader keeps the spans and reconstructs readable
+    text only where the PDF has a real horizontal separation.
+    """
     data = page.get_text("dict", sort=True)
     lines: list[dict[str, Any]] = []
     for block in data.get("blocks", []):
         if block.get("type") != 0:
             continue
         for line in block.get("lines", []):
-            spans = line.get("spans", [])
-            text = "".join(str(span.get("text", "")) for span in spans).strip()
+            span_items: list[dict[str, Any]] = []
+            for span in line.get("spans", []):
+                raw_text = str(span.get("text", ""))
+                if not raw_text.strip():
+                    continue
+                span_items.append(
+                    {
+                        "text": raw_text,
+                        "bbox": tuple(float(v) for v in span.get("bbox", (0, 0, 0, 0))),
+                        "size": float(span.get("size", 0.0)),
+                        "font": str(span.get("font", "")),
+                    }
+                )
+            if not span_items:
+                continue
+
+            rebuilt = ""
+            previous: dict[str, Any] | None = None
+            for span in span_items:
+                raw_text = span["text"]
+                if previous is not None:
+                    gap = float(span["bbox"][0]) - float(previous["bbox"][2])
+                    needs_space = (
+                        not rebuilt.endswith((" ", "\t", "\n"))
+                        and not raw_text.startswith((" ", "\t", "\n"))
+                        and gap > 0.65
+                    )
+                    if needs_space:
+                        rebuilt += " "
+                rebuilt += raw_text
+                previous = span
+
+            text = re.sub(r"\s+", " ", rebuilt).strip()
             if not text:
                 continue
-            sizes = [float(span.get("size", 0.0)) for span in spans]
-            fonts = [str(span.get("font", "")) for span in spans]
+            sizes = [float(span["size"]) for span in span_items]
+            fonts = [str(span["font"]) for span in span_items]
             lines.append(
                 {
                     "text": text,
                     "bbox": tuple(float(v) for v in line.get("bbox", (0, 0, 0, 0))),
                     "max_size": max(sizes) if sizes else 0.0,
                     "bold": any("bold" in font.casefold() for font in fonts),
+                    "spans": span_items,
                 }
             )
     lines.sort(key=lambda item: (item["bbox"][1], item["bbox"][0]))
@@ -68,18 +108,23 @@ class SemanticParser:
         self.source_language = source_language
         self.profile = profile
         self.operation_patterns = [re.compile(x) for x in profile["operation_no_regexes"]]
-        self.step_pattern = re.compile(r"^\s*(\d{1,3})(?:[.)])\s*(.*)$")
-        self.step_fallback_pattern = re.compile(r"^\s*(\d{1,3})\s{2,}(.+)$")
+        self.explicit_step_pattern = re.compile(r"^\s*(\d{1,3})\s*[.)]\s*(.*\S)\s*$")
+        self.numeric_candidate_pattern = re.compile(r"^\s*(\d{1,3})(?:\s|[.)])")
         self.ignore_patterns = [re.compile(x, re.IGNORECASE) for x in profile.get("ignore_line_regexes", [])]
-        self.requirement_rules = [(rule["requirement_type"], re.compile(rule["regex"])) for rule in profile.get("requirement_rules", [])]
+        self.requirement_rules = [
+            (rule["requirement_type"], re.compile(rule["regex"]))
+            for rule in profile.get("requirement_rules", [])
+        ]
         self.crossref_patterns = [re.compile(x) for x in profile.get("cross_reference_regexes", [])]
         self.phase_labels = {clean_label(k): v for k, v in profile.get("phase_labels", {}).items()}
         self.notice_labels = {clean_label(k): v for k, v in profile.get("notice_labels", {}).items()}
+
         self.current_operation_key: str | None = None
         self.current_operation_code: str | None = None
         self.current_phase_key: str | None = None
         self.current_phase_kind: str | None = None
         self.current_step: dict[str, Any] | None = None
+
         self.operation_sequence = 0
         self.phase_sequence: defaultdict[str, int] = defaultdict(int)
         self.step_sequence: defaultdict[str, int] = defaultdict(int)
@@ -88,6 +133,7 @@ class SemanticParser:
         self.operation_keys_by_code: defaultdict[str, list[str]] = defaultdict(list)
         self.pending_crossrefs: list[tuple[str, str, str]] = []
         self.review_sequence = 0
+        self.rejected_numeric_candidates: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)
 
     def _ignored(self, text: str) -> bool:
         return any(pattern.search(text) for pattern in self.ignore_patterns)
@@ -99,15 +145,84 @@ class SemanticParser:
                 return match.group(1)
         return None
 
-    def _is_step_line(self, text: str) -> bool:
-        return bool(self.step_pattern.match(text) or self.step_fallback_pattern.match(text))
+    def _step_match(self, item: dict[str, Any]) -> tuple[str, str, str] | None:
+        """Return (manufacturer number, instruction, evidence kind).
+
+        Explicit `1.` / `1)` markers are accepted from text. A plain `1 text`
+        form is accepted only when the PDF encodes the marker as its own span to
+        the left of one or more instruction spans. That prevents tables, torque
+        values and figure labels from becoming workshop steps just because they
+        begin with a number.
+        """
+        text = item["text"].strip()
+        explicit = self.explicit_step_pattern.match(text)
+        if explicit and explicit.group(2).strip():
+            return explicit.group(1), explicit.group(2).strip(), "punctuated_text"
+
+        spans = [span for span in item.get("spans", []) if str(span.get("text", "")).strip()]
+        if len(spans) < 2:
+            return None
+        marker_text = str(spans[0]["text"]).strip()
+        marker = re.fullmatch(r"(\d{1,3})(?:[.)])?", marker_text)
+        if not marker:
+            return None
+
+        remainder_parts = [str(span["text"]).strip() for span in spans[1:] if str(span["text"]).strip()]
+        instruction = re.sub(r"\s+", " ", " ".join(remainder_parts)).strip()
+        if not instruction:
+            return None
+
+        marker_box = spans[0]["bbox"]
+        text_box = spans[1]["bbox"]
+        horizontal_gap = float(text_box[0]) - float(marker_box[2])
+        marker_mid_y = (float(marker_box[1]) + float(marker_box[3])) / 2.0
+        text_mid_y = (float(text_box[1]) + float(text_box[3])) / 2.0
+        vertical_tolerance = max(3.0, float(spans[0].get("size", 0.0)) * 0.55)
+        aligned = abs(marker_mid_y - text_mid_y) <= vertical_tolerance
+        separated = horizontal_gap >= -0.35
+        marker_narrower = (float(marker_box[2]) - float(marker_box[0])) < max(
+            34.0, (float(text_box[2]) - float(text_box[0])) * 0.65
+        )
+        if aligned and separated and marker_narrower:
+            return marker.group(1), instruction, "dedicated_number_span"
+        return None
+
+    def _is_step_line(self, item: dict[str, Any]) -> bool:
+        return self._step_match(item) is not None
+
+    def _record_rejected_numeric_candidate(self, physical_page: int, item: dict[str, Any]) -> None:
+        if not self.current_phase_key:
+            return
+        text = item["text"].strip()
+        if not self.numeric_candidate_pattern.match(text):
+            return
+        spans = [
+            {
+                "text": str(span.get("text", "")).strip(),
+                "bbox": [round(float(v), 3) for v in span.get("bbox", (0, 0, 0, 0))],
+            }
+            for span in item.get("spans", [])
+            if str(span.get("text", "")).strip()
+        ]
+        self.rejected_numeric_candidates[self.current_phase_key].append(
+            {
+                "physical_page": physical_page,
+                "operation_key": self.current_operation_key,
+                "operation_code": self.current_operation_code,
+                "phase_key": self.current_phase_key,
+                "phase_kind": self.current_phase_kind,
+                "text": text,
+                "bbox": [round(float(v), 3) for v in item["bbox"]],
+                "spans": spans,
+            }
+        )
 
     def _title_candidate(self, lines: list[dict[str, Any]], index: int) -> str:
         def plausible(item: dict[str, Any]) -> bool:
             text = item["text"].strip()
             if len(text) < 3 or self._ignored(text):
                 return False
-            if self._operation_code(text) or self._is_step_line(text):
+            if self._operation_code(text) or self._is_step_line(item):
                 return False
             if clean_label(text) in self.phase_labels:
                 return False
@@ -141,7 +256,10 @@ class SemanticParser:
         text = re.sub(r"\s+", " ", " ".join(self.current_step["parts"])).strip()
         if not text:
             text = self.current_step["manufacturer_step_no"]
-        self.db.execute("UPDATE ravemems_step SET instruction_source=?,source_page_end=? WHERE step_key=?", (text, self.current_step["last_page"], self.current_step["step_key"]))
+        self.db.execute(
+            "UPDATE ravemems_step SET instruction_source=?,source_page_end=? WHERE step_key=?",
+            (text, self.current_step["last_page"], self.current_step["step_key"]),
+        )
         self.current_step = None
 
     def _add_provenance(self, entity_kind: str, entity_key: str, page_key: str, bbox: tuple[float, float, float, float]) -> None:
@@ -198,7 +316,12 @@ class SemanticParser:
             "INSERT INTO ravemems_step(step_key,phase_key,sequence_no,manufacturer_step_no,instruction_source,completeness_status,source_page_start,source_page_end) VALUES(?,?,?,?,?,?,?,?)",
             (step_key, self.current_phase_key, seq, manufacturer_no, instruction.strip() or manufacturer_no, "complete", physical_page, physical_page),
         )
-        self.current_step = {"step_key": step_key, "manufacturer_step_no": manufacturer_no, "parts": [instruction.strip()] if instruction.strip() else [], "last_page": physical_page}
+        self.current_step = {
+            "step_key": step_key,
+            "manufacturer_step_no": manufacturer_no,
+            "parts": [instruction.strip()] if instruction.strip() else [],
+            "last_page": physical_page,
+        }
         self._add_provenance("step", step_key, page_key, bbox)
         return step_key
 
@@ -247,6 +370,7 @@ class SemanticParser:
             text = item["text"].strip()
             if not text:
                 continue
+
             code = self._operation_code(text)
             if code:
                 title = self._title_candidate(lines, index)
@@ -255,6 +379,7 @@ class SemanticParser:
                 if self.current_operation_key:
                     page_operations.add(self.current_operation_key)
                 continue
+
             label = clean_label(text)
             normalized_phase = self.phase_labels.get(label)
             if normalized_phase:
@@ -264,6 +389,7 @@ class SemanticParser:
                     if self.current_operation_key:
                         page_operations.add(self.current_operation_key)
                 continue
+
             notice_match = re.match(r"^\s*([A-Za-z]+)\s*[:.-]?\s*(.*)$", text)
             if notice_match:
                 notice_kind = self.notice_labels.get(clean_label(notice_match.group(1)))
@@ -272,23 +398,32 @@ class SemanticParser:
                     body = notice_match.group(2).strip()
                     self._add_notice(notice_kind, text if body else notice_match.group(1), page_key, item["bbox"])
                     continue
-            if self.current_phase_key:
-                match = self.step_pattern.match(text) or self.step_fallback_pattern.match(text)
-                if match:
-                    step_key = self._new_step(match.group(1), match.group(2), physical_page, page_key, item["bbox"])
-                    if step_key:
-                        page_phases.add(self.current_phase_key)
-                        if self.current_operation_key:
-                            page_operations.add(self.current_operation_key)
+
+            step_match = self._step_match(item) if self.current_phase_key else None
+            if step_match:
+                manufacturer_no, instruction, _evidence = step_match
+                step_key = self._new_step(manufacturer_no, instruction, physical_page, page_key, item["bbox"])
+                if step_key:
+                    page_phases.add(self.current_phase_key)
+                    if self.current_operation_key:
+                        page_operations.add(self.current_operation_key)
+            elif self.current_phase_key:
+                top = float(item["bbox"][1])
+                bottom = float(item["bbox"][3])
+                if top >= page_height * 0.055 and bottom <= page_height * 0.955 and not self._ignored(text):
+                    self._record_rejected_numeric_candidate(physical_page, item)
+
             for requirement_type, pattern in self.requirement_rules:
                 if pattern.search(text):
                     self._add_requirement(requirement_type, text)
+
             if self.current_operation_key:
                 for pattern in self.crossref_patterns:
                     match = pattern.search(text)
                     if match:
                         self.pending_crossrefs.append((self.current_operation_key, match.group(1), text))
-            if self.current_step and not self._is_step_line(text):
+
+            if self.current_step and step_match is None:
                 top = float(item["bbox"][1])
                 bottom = float(item["bbox"][3])
                 if top >= page_height * 0.055 and bottom <= page_height * 0.955 and not self._ignored(text):
@@ -298,6 +433,7 @@ class SemanticParser:
                         page_operations.add(self.current_operation_key)
                     if self.current_phase_key:
                         page_phases.add(self.current_phase_key)
+
         self._flush_step()
         return page_operations, page_phases
 
@@ -311,8 +447,13 @@ class SemanticParser:
 
     def finalize(self) -> None:
         self._flush_step()
-        for phase_key, operation_key in self.db.execute("SELECT phase_key,operation_key FROM ravemems_phase ORDER BY operation_key,sequence_no").fetchall():
-            rows = self.db.execute("SELECT manufacturer_step_no FROM ravemems_step WHERE phase_key=? ORDER BY sequence_no", (phase_key,)).fetchall()
+        for phase_key, operation_key in self.db.execute(
+            "SELECT phase_key,operation_key FROM ravemems_phase ORDER BY operation_key,sequence_no"
+        ).fetchall():
+            rows = self.db.execute(
+                "SELECT manufacturer_step_no FROM ravemems_step WHERE phase_key=? ORDER BY sequence_no",
+                (phase_key,),
+            ).fetchall()
             numeric: list[int] = []
             all_numeric = bool(rows)
             for row in rows:
@@ -325,9 +466,22 @@ class SemanticParser:
                 continue
             expected = list(range(1, max(numeric) + 1))
             if numeric != expected:
-                self.db.execute("UPDATE ravemems_phase SET completeness_status='incomplete' WHERE phase_key=?", (phase_key,))
-                self.db.execute("UPDATE ravemems_operation SET completeness_status='incomplete' WHERE operation_key=?", (operation_key,))
-                self._add_review("phase", phase_key, "manufacturer_step_sequence_incomplete", f"Observed manufacturer steps {numeric}; expected {expected}", True)
+                self.db.execute(
+                    "UPDATE ravemems_phase SET completeness_status='incomplete' WHERE phase_key=?",
+                    (phase_key,),
+                )
+                self.db.execute(
+                    "UPDATE ravemems_operation SET completeness_status='incomplete' WHERE operation_key=?",
+                    (operation_key,),
+                )
+                self._add_review(
+                    "phase",
+                    phase_key,
+                    "manufacturer_step_sequence_incomplete",
+                    f"Observed manufacturer steps {numeric}; expected {expected}",
+                    True,
+                )
+
         seen: set[tuple[str, str, str]] = set()
         relation_sequence: defaultdict[str, int] = defaultdict(int)
         for source_key, target_code, source_text in self.pending_crossrefs:
@@ -346,7 +500,57 @@ class SemanticParser:
             elif targets and targets[0] == source_key:
                 continue
             else:
-                self._add_review("operation", source_key, "unresolved_cross_reference", f"Target manufacturer operation {target_code} could not be uniquely resolved: {source_text}", False)
+                self._add_review(
+                    "operation",
+                    source_key,
+                    "unresolved_cross_reference",
+                    f"Target manufacturer operation {target_code} could not be uniquely resolved: {source_text}",
+                    False,
+                )
+
+    def sequence_diagnostics(self) -> list[dict[str, Any]]:
+        diagnostics: list[dict[str, Any]] = []
+        rows = self.db.execute(
+            "SELECT p.phase_key,p.normalized_phase_kind,p.completeness_status,"
+            "o.operation_key,o.manufacturer_operation_no,o.title_source "
+            "FROM ravemems_phase p JOIN ravemems_operation o ON o.operation_key=p.operation_key "
+            "ORDER BY o.sequence_no,p.sequence_no"
+        ).fetchall()
+        for phase_key, phase_kind, status, operation_key, operation_no, title in rows:
+            steps = self.db.execute(
+                "SELECT manufacturer_step_no,source_page_start,source_page_end,instruction_source "
+                "FROM ravemems_step WHERE phase_key=? ORDER BY sequence_no",
+                (phase_key,),
+            ).fetchall()
+            if not steps or not all(step[0] and str(step[0]).isdigit() for step in steps):
+                continue
+            numbers = [int(step[0]) for step in steps]
+            expected = list(range(1, max(numbers) + 1))
+            if numbers == expected:
+                continue
+            diagnostics.append(
+                {
+                    "operation_key": operation_key,
+                    "manufacturer_operation_no": operation_no,
+                    "title_source": title,
+                    "phase_key": phase_key,
+                    "phase_kind": phase_kind,
+                    "completeness_status": status,
+                    "observed_numbers": numbers,
+                    "expected_numbers": expected,
+                    "steps": [
+                        {
+                            "manufacturer_step_no": step[0],
+                            "source_page_start": step[1],
+                            "source_page_end": step[2],
+                            "instruction_source": step[3],
+                        }
+                        for step in steps
+                    ],
+                    "rejected_numeric_candidates": self.rejected_numeric_candidates.get(phase_key, []),
+                }
+            )
+        return diagnostics
 
 
 def classify_visual(page_text: str, profile: dict[str, Any]) -> str:
@@ -367,6 +571,7 @@ def visual_candidate_rects(page: fitz.Page) -> list[fitz.Rect]:
     page_area = max(1.0, float(page.rect.width * page.rect.height))
     candidates: list[fitz.Rect] = []
     seen: set[tuple[int, int, int, int]] = set()
+
     for image in page.get_images(full=True):
         xref = int(image[0])
         if xref <= 0:
@@ -386,6 +591,7 @@ def visual_candidate_rects(page: fitz.Page) -> list[fitz.Rect]:
                 continue
             seen.add(key)
             candidates.append(rect)
+
     if not candidates:
         try:
             drawings = page.get_drawings()
@@ -409,7 +615,18 @@ def visual_candidate_rects(page: fitz.Page) -> list[fitz.Rect]:
     return candidates
 
 
-def render_visuals(db: sqlite3.Connection, page: fitz.Page, revision_key: str, page_key: str, physical_page: int, page_text: str, page_operations: set[str], page_phases: set[str], assets_dir: Path, profile: dict[str, Any]) -> int:
+def render_visuals(
+    db: sqlite3.Connection,
+    page: fitz.Page,
+    revision_key: str,
+    page_key: str,
+    physical_page: int,
+    page_text: str,
+    page_operations: set[str],
+    page_phases: set[str],
+    assets_dir: Path,
+    profile: dict[str, Any],
+) -> int:
     visual_type = classify_visual(page_text, profile)
     rendered = 0
     for ordinal, source_rect in enumerate(visual_candidate_rects(page), start=1):
@@ -424,7 +641,22 @@ def render_visuals(db: sqlite3.Connection, page: fitz.Page, revision_key: str, p
         blob = target.read_bytes()
         db.execute(
             "INSERT INTO ravemems_visual(visual_key,revision_key,page_key,visual_type,relative_path,sha256,width,height,render_method,source_bbox_json,crop_bbox_json,caption_source,source_language,fidelity_status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-            (visual_key, revision_key, page_key, visual_type, relative_path, sha256_bytes(blob), pix.width, pix.height, "pdf_page_render_crop", bbox_json(source_rect), bbox_json(clip), None, profile["language"], "pending"),
+            (
+                visual_key,
+                revision_key,
+                page_key,
+                visual_type,
+                relative_path,
+                sha256_bytes(blob),
+                pix.width,
+                pix.height,
+                "pdf_page_render_crop",
+                bbox_json(source_rect),
+                bbox_json(clip),
+                None,
+                profile["language"],
+                "pending",
+            ),
         )
         rendered += 1
         if len(page_phases) == 1:
@@ -443,8 +675,64 @@ def render_visuals(db: sqlite3.Connection, page: fitz.Page, revision_key: str, p
 
 
 def table_counts(db: sqlite3.Connection) -> dict[str, int]:
-    names = ["ravemems_document", "ravemems_document_revision", "ravemems_page", "ravemems_operation", "ravemems_phase", "ravemems_step", "ravemems_notice", "ravemems_requirement", "ravemems_specification", "ravemems_visual", "ravemems_visual_link", "ravemems_operation_relation", "ravemems_translation", "ravemems_review_flag", "ravemems_provenance"]
+    names = [
+        "ravemems_document",
+        "ravemems_document_revision",
+        "ravemems_page",
+        "ravemems_operation",
+        "ravemems_phase",
+        "ravemems_step",
+        "ravemems_notice",
+        "ravemems_requirement",
+        "ravemems_specification",
+        "ravemems_visual",
+        "ravemems_visual_link",
+        "ravemems_operation_relation",
+        "ravemems_translation",
+        "ravemems_review_flag",
+        "ravemems_provenance",
+    ]
     return {name: int(db.execute(f"SELECT COUNT(*) FROM {name}").fetchone()[0]) for name in names}
+
+
+def semantic_window(db: sqlite3.Connection, first_page: int, last_page: int) -> list[dict[str, Any]]:
+    rows = db.execute(
+        "SELECT DISTINCT o.operation_key,o.manufacturer_operation_no,o.title_source,"
+        "p.phase_key,p.normalized_phase_kind,p.completeness_status "
+        "FROM ravemems_step s "
+        "JOIN ravemems_phase p ON p.phase_key=s.phase_key "
+        "JOIN ravemems_operation o ON o.operation_key=p.operation_key "
+        "WHERE s.source_page_start<=? AND s.source_page_end>=? "
+        "ORDER BY o.sequence_no,p.sequence_no",
+        (last_page, first_page),
+    ).fetchall()
+    result: list[dict[str, Any]] = []
+    for operation_key, operation_no, title, phase_key, phase_kind, status in rows:
+        steps = db.execute(
+            "SELECT manufacturer_step_no,source_page_start,source_page_end,instruction_source "
+            "FROM ravemems_step WHERE phase_key=? AND source_page_start<=? AND source_page_end>=? ORDER BY sequence_no",
+            (phase_key, last_page, first_page),
+        ).fetchall()
+        result.append(
+            {
+                "operation_key": operation_key,
+                "manufacturer_operation_no": operation_no,
+                "title_source": title,
+                "phase_key": phase_key,
+                "phase_kind": phase_kind,
+                "completeness_status": status,
+                "steps": [
+                    {
+                        "manufacturer_step_no": step[0],
+                        "source_page_start": step[1],
+                        "source_page_end": step[2],
+                        "instruction_source": step[3],
+                    }
+                    for step in steps
+                ],
+            }
+        )
+    return result
 
 
 def main() -> int:
@@ -457,6 +745,7 @@ def main() -> int:
     parser.add_argument("--source-commit", required=True)
     parser.add_argument("--source-blob-sha", required=True)
     args = parser.parse_args()
+
     profile = json.loads(args.profile.read_text(encoding="utf-8"))
     args.out.mkdir(parents=True, exist_ok=True)
     assets_dir = args.out / "assets"
@@ -464,6 +753,7 @@ def main() -> int:
     db_path = args.out / "ravemems_v2_rcl0193eng.sqlite"
     if db_path.exists():
         db_path.unlink()
+
     doc = fitz.open(args.pdf)
     head_text = "\n".join(doc[i].get_text("text", sort=True) for i in range(min(20, doc.page_count)))
     publication_match = re.search(profile["publication_code_regex"], head_text, re.IGNORECASE)
@@ -472,40 +762,79 @@ def main() -> int:
     publication_code = publication_match.group(0).upper()
     edition_match = re.search(r"(?i)\b(\d+(?:st|nd|rd|th)\s+Edition)\b", head_text)
     edition = edition_match.group(1) if edition_match else None
+
     db = sqlite3.connect(db_path)
     db.execute("PRAGMA foreign_keys=ON")
     db.executescript(args.schema.read_text(encoding="utf-8"))
     document_key = "DOC_RCL0193ENG"
     revision_key = "REV_RCL0193ENG_SOURCE"
-    db.execute("INSERT INTO ravemems_document(document_key,canonical_name,source_language,document_kind,manufacturer,title_source) VALUES(?,?,?,?,?,?)", (document_key, publication_code, profile["language"], "workshop_manual", "Rover", publication_code))
+    db.execute(
+        "INSERT INTO ravemems_document(document_key,canonical_name,source_language,document_kind,manufacturer,title_source) VALUES(?,?,?,?,?,?)",
+        (document_key, publication_code, profile["language"], "workshop_manual", "Rover", publication_code),
+    )
     db.execute(
         "INSERT INTO ravemems_document_revision(revision_key,document_key,edition_label,source_relative_path,source_blob_sha,source_sha256,source_size,page_count,is_current) VALUES(?,?,?,?,?,?,?,?,?)",
-        (revision_key, document_key, edition, args.source_relative_path, args.source_blob_sha, sha256_file(args.pdf), args.pdf.stat().st_size, doc.page_count, 1),
+        (
+            revision_key,
+            document_key,
+            edition,
+            args.source_relative_path,
+            args.source_blob_sha,
+            sha256_file(args.pdf),
+            args.pdf.stat().st_size,
+            doc.page_count,
+            1,
+        ),
     )
+
     semantic = SemanticParser(db, revision_key, profile["language"], profile)
     debug_lines: list[str] = []
     visual_count = 0
+
     for index in range(doc.page_count):
         page = doc[index]
         physical_page = index + 1
         page_key = f"PAGE_{physical_page:04d}"
         text = page.get_text("text", sort=True)
         lines = read_lines(page)
-        db.execute("INSERT INTO ravemems_page(page_key,revision_key,physical_page,source_text_sha256,extraction_status) VALUES(?,?,?,?,?)", (page_key, revision_key, physical_page, sha256_bytes(text.encode("utf-8")), "complete"))
-        page_operations, page_phases = semantic.parse_page(physical_page, page_key, lines, float(page.rect.height))
-        visual_count += render_visuals(db, page, revision_key, page_key, physical_page, text, page_operations, page_phases, assets_dir, profile)
+        db.execute(
+            "INSERT INTO ravemems_page(page_key,revision_key,physical_page,source_text_sha256,extraction_status) VALUES(?,?,?,?,?)",
+            (page_key, revision_key, physical_page, sha256_bytes(text.encode("utf-8")), "complete"),
+        )
+        page_operations, page_phases = semantic.parse_page(
+            physical_page, page_key, lines, float(page.rect.height)
+        )
+        visual_count += render_visuals(
+            db,
+            page,
+            revision_key,
+            page_key,
+            physical_page,
+            text,
+            page_operations,
+            page_phases,
+            assets_dir,
+            profile,
+        )
         if 131 <= physical_page <= 136:
             debug_lines.append(f"===== PHYSICAL PAGE {physical_page} =====")
-            debug_lines.extend(item["text"] for item in lines)
+            for item in lines:
+                span_text = " | ".join(str(span["text"]).strip() for span in item.get("spans", []))
+                debug_lines.append(f"{item['text']}\tSPANS=[{span_text}]")
             debug_lines.append("")
         if physical_page % 25 == 0:
             db.commit()
+
     semantic.finalize()
     db.commit()
+
+    sequence_diagnostics = semantic.sequence_diagnostics()
+    semantic_131_136 = semantic_window(db, 131, 136)
     audit_issues = audit_database(db)
     counts = table_counts(db)
     integrity = db.execute("PRAGMA integrity_check").fetchone()[0]
     fk = db.execute("PRAGMA foreign_key_check").fetchall()
+
     manifest = {
         "prototype": "RCL0193ENG",
         "source_relative_path": args.source_relative_path,
@@ -521,24 +850,85 @@ def main() -> int:
         "raw_extract_image_used_for_user_visual": False,
         "counts": counts,
         "visual_files": visual_count,
+        "numeric_phase_defect_count": len(sequence_diagnostics),
+        "rejected_numeric_candidate_count": sum(
+            len(item["rejected_numeric_candidates"]) for item in sequence_diagnostics
+        ),
         "audit_issue_count": len(audit_issues),
         "sqlite_integrity": integrity,
         "foreign_key_issue_count": len(fk),
     }
-    (args.out / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    (args.out / "audit.json").write_text(json.dumps({"issue_count": len(audit_issues), "issues": audit_issues}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    (args.out / "manifest.json").write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    (args.out / "audit.json").write_text(
+        json.dumps({"issue_count": len(audit_issues), "issues": audit_issues}, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    (args.out / "step_sequence_diagnostics.json").write_text(
+        json.dumps(sequence_diagnostics, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    (args.out / "pages_131_136_semantic.json").write_text(
+        json.dumps(semantic_131_136, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
     (args.out / "debug_pages_131_136.txt").write_text("\n".join(debug_lines), encoding="utf-8")
+
     operations = []
-    for row in db.execute("SELECT operation_key,manufacturer_operation_no,title_source,completeness_status FROM ravemems_operation ORDER BY sequence_no"):
+    for row in db.execute(
+        "SELECT operation_key,manufacturer_operation_no,title_source,completeness_status "
+        "FROM ravemems_operation ORDER BY sequence_no"
+    ):
         phases = []
-        for phase in db.execute("SELECT phase_key,sequence_no,phase_kind_source,normalized_phase_kind,completeness_status FROM ravemems_phase WHERE operation_key=? ORDER BY sequence_no", (row[0],)):
-            steps = db.execute("SELECT manufacturer_step_no,source_page_start,source_page_end,instruction_source FROM ravemems_step WHERE phase_key=? ORDER BY sequence_no", (phase[0],)).fetchall()
-            phases.append({"phase_key": phase[0], "sequence_no": phase[1], "phase_kind_source": phase[2], "normalized_phase_kind": phase[3], "completeness_status": phase[4], "steps": [{"manufacturer_step_no": step[0], "source_page_start": step[1], "source_page_end": step[2], "instruction_source": step[3]} for step in steps]})
-        operations.append({"operation_key": row[0], "manufacturer_operation_no": row[1], "title_source": row[2], "completeness_status": row[3], "phases": phases})
-    (args.out / "operation_summary.json").write_text(json.dumps(operations, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        for phase in db.execute(
+            "SELECT phase_key,sequence_no,phase_kind_source,normalized_phase_kind,completeness_status "
+            "FROM ravemems_phase WHERE operation_key=? ORDER BY sequence_no",
+            (row[0],),
+        ):
+            steps = db.execute(
+                "SELECT manufacturer_step_no,source_page_start,source_page_end,instruction_source "
+                "FROM ravemems_step WHERE phase_key=? ORDER BY sequence_no",
+                (phase[0],),
+            ).fetchall()
+            phases.append(
+                {
+                    "phase_key": phase[0],
+                    "sequence_no": phase[1],
+                    "phase_kind_source": phase[2],
+                    "normalized_phase_kind": phase[3],
+                    "completeness_status": phase[4],
+                    "steps": [
+                        {
+                            "manufacturer_step_no": step[0],
+                            "source_page_start": step[1],
+                            "source_page_end": step[2],
+                            "instruction_source": step[3],
+                        }
+                        for step in steps
+                    ],
+                }
+            )
+        operations.append(
+            {
+                "operation_key": row[0],
+                "manufacturer_operation_no": row[1],
+                "title_source": row[2],
+                "completeness_status": row[3],
+                "phases": phases,
+            }
+        )
+    (args.out / "operation_summary.json").write_text(
+        json.dumps(operations, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+
     db.close()
     doc.close()
     print(json.dumps(manifest, ensure_ascii=False, indent=2))
+    print("RCL0193ENG_SEQUENCE_DIAGNOSTICS_BEGIN")
+    print(json.dumps(sequence_diagnostics[:15], ensure_ascii=False, indent=2))
+    print("RCL0193ENG_SEQUENCE_DIAGNOSTICS_END")
+    print("RCL0193ENG_PAGES_131_136_SEMANTIC_BEGIN")
+    print(json.dumps(semantic_131_136, ensure_ascii=False, indent=2))
+    print("RCL0193ENG_PAGES_131_136_SEMANTIC_END")
     return 0
 
 
