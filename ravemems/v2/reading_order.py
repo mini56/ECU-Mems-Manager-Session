@@ -89,7 +89,7 @@ def geometric_reading_order(lines: list[dict[str, Any]], page_width: float, page
         lc = _median([(float(x['bbox'][0]) + float(x['bbox'][2])) / 2.0 for x in left])
         rc = _median([(float(x['bbox'][0]) + float(x['bbox'][2])) / 2.0 for x in right])
         separated_columns = lc < page_width * 0.46 and rc > page_width * 0.54
-        broad_geometry = len(left) >= 4 and len(right) >= 4 and overlap >= page_height * 0.02
+        broad_geometry = len(left) >= 4 and len(right) >= 4 and overlap >= page_height * 0.00
         numbered_left = sum(1 for item in left if _dedicated_numeric_marker(item))
         numbered_right = sum(1 for item in right if _dedicated_numeric_marker(item))
         numbered_geometry = numbered_left >= 2 and numbered_right >= 2

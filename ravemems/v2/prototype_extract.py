@@ -134,6 +134,7 @@ class SemanticParser:
         self.pending_crossrefs: list[tuple[str, str, str]] = []
         self.review_sequence = 0
         self.rejected_numeric_candidates: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)
+        self.require_explicit_structure = False
 
     def _ignored(self, text: str) -> bool:
         return any(pattern.search(text) for pattern in self.ignore_patterns)
@@ -156,7 +157,7 @@ class SemanticParser:
         """
         text = item["text"].strip()
         explicit = self.explicit_step_pattern.match(text)
-        if explicit and explicit.group(2).strip():
+        if explicit and explicit.group(2).strip() and int(explicit.group(1)) >= 1:
             return explicit.group(1), explicit.group(2).strip(), "punctuated_text"
 
         spans = [span for span in item.get("spans", []) if str(span.get("text", "")).strip()]
@@ -164,7 +165,7 @@ class SemanticParser:
             return None
         marker_text = str(spans[0]["text"]).strip()
         marker = re.fullmatch(r"(\d{1,3})(?:[.)])?", marker_text)
-        if not marker:
+        if not marker or int(marker.group(1)) < 1:
             return None
 
         remainder_parts = [str(span["text"]).strip() for span in spans[1:] if str(span["text"]).strip()]
@@ -189,6 +190,125 @@ class SemanticParser:
 
     def _is_step_line(self, item: dict[str, Any]) -> bool:
         return self._step_match(item) is not None
+
+    def _phase_heading_kind(self, item: dict[str, Any], page_width: float) -> str | None:
+        """Recognize a semantic phase only at a real column heading margin.
+
+        Wrapped instruction fragments such as ``assembly.`` or ``remove.`` can
+        equal a known phase label textually, but they are indented with the
+        instruction body. Genuine workshop phase headings in this manual sit at
+        the leading margin of the left or right text column.
+        """
+        if item.get("reading_region") in {"header", "footer"}:
+            return None
+        normalized = self.phase_labels.get(clean_label(item["text"]))
+        if not normalized:
+            return None
+        x0 = float(item["bbox"][0])
+        midpoint = page_width / 2.0
+        if x0 < midpoint:
+            aligned = x0 <= page_width * 0.10
+        else:
+            aligned = x0 <= page_width * 0.56
+        return normalized if aligned else None
+
+    def _phase_last_numeric_step(self) -> tuple[int, int] | None:
+        if not self.current_phase_key:
+            return None
+        row = self.db.execute(
+            "SELECT manufacturer_step_no,source_page_end FROM ravemems_step "
+            "WHERE phase_key=? ORDER BY sequence_no DESC LIMIT 1",
+            (self.current_phase_key,),
+        ).fetchone()
+        if not row:
+            return None
+        value = str(row[0] or "").strip()
+        if not value.isdigit() or int(value) < 1:
+            return None
+        return int(value), int(row[1])
+
+    def _first_page_step_number(self, lines: list[dict[str, Any]]) -> int | None:
+        for item in lines:
+            if item.get("reading_region") in {"header", "footer"}:
+                continue
+            matched = self._step_match(item)
+            if matched:
+                return int(matched[0])
+        return None
+
+    def _guard_page_continuity(self, physical_page: int, lines: list[dict[str, Any]]) -> None:
+        """Close a stale phase when a later page restarts numbering at 1.
+
+        A genuine multi-page continuation advances the manufacturer numbering.
+        A fresh 1 on a later page, without a new parsed heading yet, is a strong
+        structural boundary. Once observed we require explicit structure before
+        accepting another implicit numbered procedure, so overview/component
+        lists on subsequent pages cannot leak into the previous operation.
+        """
+        state = self._phase_last_numeric_step()
+        if not state:
+            return
+        _last_number, last_page = state
+        if physical_page <= last_page:
+            return
+        first_number = self._first_page_step_number(lines)
+        if first_number != 1:
+            return
+        self._flush_step()
+        self.current_phase_key = None
+        self.current_phase_kind = None
+        self.require_explicit_structure = True
+
+    def _phase_sequence_analysis(self) -> list[dict[str, Any]]:
+        """Validate manufacturer numbering across semantic phase boundaries.
+
+        Numbering may restart at 1 for a new manufacturer sequence, or continue
+        across a real semantic phase boundary when the next phase starts exactly
+        at the previous phase end + 1. Any gap, duplicate or reordering remains
+        a real defect.
+        """
+        result: list[dict[str, Any]] = []
+        operations = self.db.execute(
+            "SELECT operation_key FROM ravemems_operation ORDER BY sequence_no"
+        ).fetchall()
+        for (operation_key,) in operations:
+            previous_end: int | None = None
+            phases = self.db.execute(
+                "SELECT phase_key FROM ravemems_phase WHERE operation_key=? ORDER BY sequence_no",
+                (operation_key,),
+            ).fetchall()
+            for (phase_key,) in phases:
+                rows = self.db.execute(
+                    "SELECT manufacturer_step_no FROM ravemems_step WHERE phase_key=? ORDER BY sequence_no",
+                    (phase_key,),
+                ).fetchall()
+                if not rows:
+                    continue
+                values = [str(row[0] or "").strip() for row in rows]
+                if not all(value.isdigit() and int(value) >= 1 for value in values):
+                    continue
+                numbers = [int(value) for value in values]
+                start = numbers[0]
+                contiguous = numbers == list(range(start, start + len(numbers)))
+                start_valid = start == 1 or (previous_end is not None and start == previous_end + 1)
+                valid = contiguous and start_valid
+                if start == 1:
+                    expected = list(range(1, max(numbers) + 1))
+                elif previous_end is not None:
+                    expected = list(range(previous_end + 1, max(numbers) + 1))
+                else:
+                    expected = list(range(1, max(numbers) + 1))
+                result.append(
+                    {
+                        "operation_key": operation_key,
+                        "phase_key": phase_key,
+                        "numbers": numbers,
+                        "expected": expected,
+                        "valid": valid,
+                    }
+                )
+                previous_end = numbers[-1] if valid else None
+        return result
 
     def _record_rejected_numeric_candidate(self, physical_page: int, item: dict[str, Any]) -> None:
         if not self.current_phase_key:
@@ -284,6 +404,7 @@ class SemanticParser:
         self.current_operation_code = code
         self.current_phase_key = None
         self.current_phase_kind = None
+        self.require_explicit_structure = False
         self._add_provenance("operation", operation_key, page_key, bbox)
         return operation_key
 
@@ -302,6 +423,7 @@ class SemanticParser:
         )
         self.current_phase_key = phase_key
         self.current_phase_kind = normalized
+        self.require_explicit_structure = False
         self._add_provenance("phase", phase_key, page_key, bbox)
         return phase_key
 
@@ -363,9 +485,18 @@ class SemanticParser:
             (key, self.current_operation_key, phase_key, step_key, seq, requirement_type, source_text, before_start),
         )
 
-    def parse_page(self, physical_page: int, page_key: str, lines: list[dict[str, Any]], page_height: float) -> tuple[set[str], set[str]]:
+    def parse_page(
+        self,
+        physical_page: int,
+        page_key: str,
+        lines: list[dict[str, Any]],
+        page_width: float,
+        page_height: float,
+    ) -> tuple[set[str], set[str]]:
         page_operations: set[str] = set()
         page_phases: set[str] = set()
+        self._guard_page_continuity(physical_page, lines)
+
         for index, item in enumerate(lines):
             text = item["text"].strip()
             if not text:
@@ -380,8 +511,7 @@ class SemanticParser:
                     page_operations.add(self.current_operation_key)
                 continue
 
-            label = clean_label(text)
-            normalized_phase = self.phase_labels.get(label)
+            normalized_phase = self._phase_heading_kind(item, page_width)
             if normalized_phase:
                 phase_key = self._new_phase(text.strip(), normalized_phase, page_key, item["bbox"])
                 if phase_key:
@@ -399,7 +529,22 @@ class SemanticParser:
                     self._add_notice(notice_kind, text if body else notice_match.group(1), page_key, item["bbox"])
                     continue
 
-            step_match = self._step_match(item) if self.current_phase_key else None
+            candidate = self._step_match(item)
+            if (
+                candidate
+                and not self.current_phase_key
+                and self.current_operation_key
+                and candidate[0] == "1"
+                and not self.require_explicit_structure
+            ):
+                implicit = self._new_phase(
+                    "Implicit numbered procedure", "procedure", page_key, item["bbox"]
+                )
+                if implicit:
+                    page_phases.add(implicit)
+                    page_operations.add(self.current_operation_key)
+
+            step_match = candidate if self.current_phase_key else None
             if step_match:
                 manufacturer_no, instruction, _evidence = step_match
                 step_key = self._new_step(manufacturer_no, instruction, physical_page, page_key, item["bbox"])
@@ -447,40 +592,26 @@ class SemanticParser:
 
     def finalize(self) -> None:
         self._flush_step()
-        for phase_key, operation_key in self.db.execute(
-            "SELECT phase_key,operation_key FROM ravemems_phase ORDER BY operation_key,sequence_no"
-        ).fetchall():
-            rows = self.db.execute(
-                "SELECT manufacturer_step_no FROM ravemems_step WHERE phase_key=? ORDER BY sequence_no",
-                (phase_key,),
-            ).fetchall()
-            numeric: list[int] = []
-            all_numeric = bool(rows)
-            for row in rows:
-                value = (row[0] or "").strip()
-                if not value.isdigit():
-                    all_numeric = False
-                    break
-                numeric.append(int(value))
-            if not all_numeric or not numeric:
+        for analysis in self._phase_sequence_analysis():
+            if analysis["valid"]:
                 continue
-            expected = list(range(1, max(numeric) + 1))
-            if numeric != expected:
-                self.db.execute(
-                    "UPDATE ravemems_phase SET completeness_status='incomplete' WHERE phase_key=?",
-                    (phase_key,),
-                )
-                self.db.execute(
-                    "UPDATE ravemems_operation SET completeness_status='incomplete' WHERE operation_key=?",
-                    (operation_key,),
-                )
-                self._add_review(
-                    "phase",
-                    phase_key,
-                    "manufacturer_step_sequence_incomplete",
-                    f"Observed manufacturer steps {numeric}; expected {expected}",
-                    True,
-                )
+            phase_key = analysis["phase_key"]
+            operation_key = analysis["operation_key"]
+            self.db.execute(
+                "UPDATE ravemems_phase SET completeness_status='incomplete' WHERE phase_key=?",
+                (phase_key,),
+            )
+            self.db.execute(
+                "UPDATE ravemems_operation SET completeness_status='incomplete' WHERE operation_key=?",
+                (operation_key,),
+            )
+            self._add_review(
+                "phase",
+                phase_key,
+                "manufacturer_step_sequence_incomplete",
+                f"Observed manufacturer steps {analysis['numbers']}; expected {analysis['expected']}",
+                True,
+            )
 
         seen: set[tuple[str, str, str]] = set()
         relation_sequence: defaultdict[str, int] = defaultdict(int)
@@ -510,24 +641,25 @@ class SemanticParser:
 
     def sequence_diagnostics(self) -> list[dict[str, Any]]:
         diagnostics: list[dict[str, Any]] = []
-        rows = self.db.execute(
-            "SELECT p.phase_key,p.normalized_phase_kind,p.completeness_status,"
-            "o.operation_key,o.manufacturer_operation_no,o.title_source "
-            "FROM ravemems_phase p JOIN ravemems_operation o ON o.operation_key=p.operation_key "
-            "ORDER BY o.sequence_no,p.sequence_no"
-        ).fetchall()
-        for phase_key, phase_kind, status, operation_key, operation_no, title in rows:
+        metadata = {
+            row[0]: row[1:]
+            for row in self.db.execute(
+                "SELECT p.phase_key,p.normalized_phase_kind,p.completeness_status,"
+                "o.operation_key,o.manufacturer_operation_no,o.title_source "
+                "FROM ravemems_phase p JOIN ravemems_operation o ON o.operation_key=p.operation_key "
+                "ORDER BY o.sequence_no,p.sequence_no"
+            ).fetchall()
+        }
+        for analysis in self._phase_sequence_analysis():
+            if analysis["valid"]:
+                continue
+            phase_key = analysis["phase_key"]
+            phase_kind, status, operation_key, operation_no, title = metadata[phase_key]
             steps = self.db.execute(
                 "SELECT manufacturer_step_no,source_page_start,source_page_end,instruction_source "
                 "FROM ravemems_step WHERE phase_key=? ORDER BY sequence_no",
                 (phase_key,),
             ).fetchall()
-            if not steps or not all(step[0] and str(step[0]).isdigit() for step in steps):
-                continue
-            numbers = [int(step[0]) for step in steps]
-            expected = list(range(1, max(numbers) + 1))
-            if numbers == expected:
-                continue
             diagnostics.append(
                 {
                     "operation_key": operation_key,
@@ -536,8 +668,8 @@ class SemanticParser:
                     "phase_key": phase_key,
                     "phase_kind": phase_kind,
                     "completeness_status": status,
-                    "observed_numbers": numbers,
-                    "expected_numbers": expected,
+                    "observed_numbers": analysis["numbers"],
+                    "expected_numbers": analysis["expected"],
                     "steps": [
                         {
                             "manufacturer_step_no": step[0],
@@ -802,7 +934,7 @@ def main() -> int:
             (page_key, revision_key, physical_page, sha256_bytes(text.encode("utf-8")), "complete"),
         )
         page_operations, page_phases = semantic.parse_page(
-            physical_page, page_key, lines, float(page.rect.height)
+            physical_page, page_key, lines, float(page.rect.width), float(page.rect.height)
         )
         visual_count += render_visuals(
             db,
@@ -852,7 +984,7 @@ def main() -> int:
         "visual_files": visual_count,
         "numeric_phase_defect_count": len(sequence_diagnostics),
         "rejected_numeric_candidate_count": sum(
-            len(item["rejected_numeric_candidates"]) for item in sequence_diagnostics
+            len(items) for items in semantic.rejected_numeric_candidates.values()
         ),
         "audit_issue_count": len(audit_issues),
         "sqlite_integrity": integrity,
