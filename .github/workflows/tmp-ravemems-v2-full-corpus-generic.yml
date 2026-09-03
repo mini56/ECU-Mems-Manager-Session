@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 180
     env:
-      ENGINE_SHA: 745f41243adb202f638f4039016dedfff8f272d6
+      ENGINE_SHA: 5232215f5853241572f580cf1696c9f881b254f4
       SOURCE_MAIN_COMMIT: 643de091b474f4e27917a065bdf46d5a0c764276
       PROTECTED_MEMSX64: 1d6316bd1746d6f2b4cfb751cab88d18e27ef730
       EXPECTED_PDF_COUNT: "47"
@@ -25,7 +25,7 @@ jobs:
       - name: Checkout exact neutral generic engine
         uses: actions/checkout@v4
         with:
-          ref: 745f41243adb202f638f4039016dedfff8f272d6
+          ref: 5232215f5853241572f580cf1696c9f881b254f4
           fetch-depth: 0
 
       - name: Guard exact engine and production
@@ -223,7 +223,7 @@ jobs:
               validation.append(entry)
 
           summary = {
-              "engine_sha": "745f41243adb202f638f4039016dedfff8f272d6",
+              "engine_sha": "5232215f5853241572f580cf1696c9f881b254f4",
               "source_main_commit": "643de091b474f4e27917a065bdf46d5a0c764276",
               "expected_pdf_count": expected_count,
               "discovered_pdf_count": int(source.get("pdf_count", -1)),
