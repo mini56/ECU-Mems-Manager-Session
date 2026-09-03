@@ -1,0 +1,111 @@
+name: TEMP RAVEMEMS V2 fix unknown publication fallback
+
+on:
+  push:
+    branches:
+      - tmp-ravemems-v2-foundation
+    paths:
+      - .github/workflows/tmp-ravemems-v2-fix-unknown-publication-fallback.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test-push:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      SOURCE_MAIN_COMMIT: 643de091b474f4e27917a065bdf46d5a0c764276
+      PROTECTED_MEMSX64: 1d6316bd1746d6f2b4cfb751cab88d18e27ef730
+    steps:
+      - name: Checkout active generic branch
+        uses: actions/checkout@v4
+        with:
+          ref: tmp-ravemems-v2-foundation
+          fetch-depth: 0
+
+      - name: Guard production
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Apply exact generic fallback patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/patch_ravemems_unknown_publication_fallback.py
+          ! grep -n 'Expected document identity pattern not found in source PDF' ravemems/v2/core_extract.py
+          python -m py_compile ravemems/v2/core_extract.py
+
+      - name: Install pinned renderer
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check "PyMuPDF==1.26.4"
+
+      - name: Materialize unidentified frozen PDF
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "$SOURCE_MAIN_COMMIT"
+          mkdir -p "$RUNNER_TEMP/source"
+          git show "$SOURCE_MAIN_COMMIT:rave/library/libxn.pdf" > "$RUNNER_TEMP/source/input.pdf"
+
+      - name: Extract and replay unidentified PDF
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="ravemems/v2:.github/pass2"
+          rm -rf "$RUNNER_TEMP/out"
+          python .github/pass2/ravemems_generic_precise_extract.py \
+            --source "$RUNNER_TEMP/source/input.pdf" \
+            --schema ravemems/v2/schema.sql \
+            --out "$RUNNER_TEMP/out"
+          python .github/pass2/ravemems_generic_visual_replay_validate.py \
+            --pdf "$RUNNER_TEMP/source/input.pdf" \
+            --out "$RUNNER_TEMP/out"
+          python - "$RUNNER_TEMP/out" <<'PY'
+          import json, sqlite3, sys
+          from pathlib import Path
+          out = Path(sys.argv[1])
+          manifest = json.loads((out / "manifest.json").read_text(encoding="utf-8"))
+          replay = json.loads((out / "visual_replay_validation.json").read_text(encoding="utf-8"))
+          assert manifest.get("publication_code") is None, manifest.get("publication_code")
+          assert str(manifest.get("document_identity", "")).startswith("PDFSHA256"), manifest.get("document_identity")
+          assert manifest.get("source_input", {}).get("publication_detection") == "sha256_fallback", manifest.get("source_input")
+          assert int(replay.get("visual_fidelity_failed_count", -1)) == 0, replay
+          assert int(replay.get("visual_link_failed_count", -1)) == 0, replay
+          assert int(replay.get("missing_replay_count", -1)) == 0, replay
+          assert int(replay.get("unexpected_replay_count", -1)) == 0, replay
+          assert int(replay.get("audit_issue_count_after_validation", -1)) == 0, replay
+          db = sqlite3.connect(out / "ravemems_v2.sqlite")
+          assert db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+          assert not db.execute("PRAGMA foreign_key_check").fetchall()
+          assert db.execute("SELECT COUNT(*) FROM ravemems_review_flag WHERE status='open'").fetchone()[0] == 0
+          db.close()
+          print("UNKNOWN_PUBLICATION_SHA_FALLBACK_GLOBAL_ZERO_PASS", manifest.get("document_identity"))
+          PY
+
+      - name: Commit corrected generic core only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ravemems/v2/core_extract.py
+          git diff --cached --quiet && { echo "No core change to commit"; exit 1; }
+          git commit -m "Allow generic SHA identity fallback for unidentified PDFs"
+          git push origin HEAD:tmp-ravemems-v2-foundation
+
+      - name: Guard production after push
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
