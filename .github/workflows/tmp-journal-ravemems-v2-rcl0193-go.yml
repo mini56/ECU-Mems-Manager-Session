@@ -1,0 +1,51 @@
+name: TEMP Journal RAVEMEMS V2 RCL0193ENG GO
+
+on:
+  push:
+    branches: [RAPPORT]
+    paths:
+      - '.github/workflows/tmp-journal-ravemems-v2-rcl0193-go.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+
+      - name: Verify state and append prototype GO
+        shell: bash
+        run: |
+          set -euo pipefail
+          protected="$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')"
+          test "$protected" = '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+          foundation="$(git ls-remote origin refs/heads/tmp-ravemems-v2-foundation | awk '{print $1}')"
+          test "$foundation" = '3679841e32f69d7b1660d0845d21672116e57a1f'
+          mainhead="$(git ls-remote origin refs/heads/main | awk '{print $1}')"
+          test "$mainhead" = '643de091b474f4e27917a065bdf46d5a0c764276'
+          git fetch origin main:refs/remotes/origin/main
+          source_blob="$(git rev-parse origin/main:rave/xn/wmxn990e.pdf)"
+          test "$source_blob" = '82263eb36bb194dfa969d0471d10ef11078ce521'
+          python3 - <<'PY'
+          from pathlib import Path
+          report = Path('RAPPORT_SUIVI_ECU_MEMS_MANAGER.md')
+          raw = report.read_bytes()
+          marker = '## 2026-09-03 — GO PROTOTYPE RAVEMEMS V2 RCL0193ENG'.encode('utf-8')
+          if marker not in raw:
+              entry = '''\n\n## 2026-09-03 — GO PROTOTYPE RAVEMEMS V2 RCL0193ENG\n\nL’utilisateur donne explicitement le GO pour poursuivre après la fondation V2 verte. La prochaine pousse technique est strictement limitée au prototype `RCL0193ENG`; aucun autre PDF du corpus ne doit être extrait.\n\nSource originale autoritative vérifiée sur `main` : commit `643de091b474f4e27917a065bdf46d5a0c764276`, chemin `rave/xn/wmxn990e.pdf`, blob Git `82263eb36bb194dfa969d0471d10ef11078ce521`. La branche technique reste `tmp-ravemems-v2-foundation` au commit validé `3679841e32f69d7b1660d0845d21672116e57a1f`. `MEMSX64` reste strictement BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.\n\nPérimètre de la pousse autorisée : ajouter un profil documentaire `RCL0193ENG`, ajouter l’extracteur prototype générique fondé sur le schéma V2, et étendre uniquement le workflow temporaire de fondation afin qu’il exécute ce PDF exact. Les visuels utilisateur doivent être produits par rendu fidèle de page PDF + recadrage avec marge de sécurité, jamais par bitmap `extract_image()` brut. Le prototype doit produire SQLite, manifest, audit, résumé des opérations, extrait de débogage pages 131–136 et assets visuels, puis publier l’ensemble comme artefact GitHub Actions.\n\nLe run ne doit pas prétendre que le manuel est validé simplement parce que l’extraction s’exécute. Un audit avec éléments `à vérifier` est attendu et doit être conservé pour inspection. En revanche l’intégrité SQLite, les FK, la source exacte, la méthode de rendu visuel et la détection générique des séquences numériques incomplètes sont des gardes bloquants. Le cas injecteur multi-pages 133–135 sert de cas de validation du mécanisme générique, sans règle codée en dur spécifique à l’injecteur.\n\nAucune intégration IA, aucun protocole ECU, aucune UI générale, aucun 32 bits, aucun BUILD #104 et aucune extraction des 47 PDF dans cette étape.\n\nPROCHAINE ACTION EXACTE : après SUCCESS de ce journal, pousser atomiquement le profil + l’extracteur + l’extension du workflow sur `tmp-ravemems-v2-foundation`, lancer GitHub Actions sur le seul `RCL0193ENG`, vérifier le run, les compteurs, l’audit et l’artefact, puis journaliser le verdict avant toute correction ou extension.\n'''.encode('utf-8')
+              with report.open('ab') as f:
+                  if raw and not raw.endswith(b'\n'):
+                      f.write(b'\n')
+                  f.write(entry)
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git diff --cached --check
+          git commit -m 'Journal GO for RCL0193ENG V2 prototype'
+          git push origin HEAD:RAPPORT
