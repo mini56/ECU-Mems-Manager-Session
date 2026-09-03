@@ -12665,3 +12665,12 @@ Incident outil sans impact technique : pendant le chargement des outils de branc
 Branche technique créée pour cette fondation : `tmp-ravemems-v2-foundation`, dérivée directement de BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
 
 PROCHAINE ACTION EXACTE : après SUCCESS de cette journalisation et nettoyage des trois branches inutilisées, sur `tmp-ravemems-v2-foundation` uniquement, ajouter la fondation de code et de schéma RAVEMEMS V2 de manière additive et testable, sans brancher encore le nouveau lecteur sur l’IA de production et sans lancer le corpus complet. Ajouter des self-tests couvrant explicitement un véhicule à carburateur sans ECU, un véhicule à injection avec ECU, les procédures multi-phases, serrages séquentiels, conditions, visuels structurés et drapeaux `à vérifier`. Valider cette fondation sur GitHub Actions avant toute extraction prototype `RCL0193ENG`.
+
+
+## 2026-09-03 — NETTOYAGE BRANCHES TEMPORAIRES RAVEMEMS V2
+
+Le canal de journalisation est rétabli : run `33718721277` = SUCCESS. La modification du cahier généralisant le contexte aux véhicules à carburateur / gestion mécanique / absence d’ECU et l’entrée GO RAVEMEMS V2 ont été poussées sur `RAPPORT` au commit `6c1063d6d36ff8c8746630b727f4ca7e07117baf`.
+
+Avant toute pousse technique, suppression prévue des trois branches créées par erreur pendant le chargement d’outils : `tmp-ravemems-v2-report-go`, `tmp-ravemems-v2-report-go-unused`, `tmp-ravemems-v2-report-go-2-unused`. Elles ne contiennent aucune modification et ne sont pas des bases de travail. La seule branche technique autorisée reste `tmp-ravemems-v2-foundation`, dérivée de BUILD #103.
+
+PROCHAINE ACTION EXACTE : supprimer les trois branches inutilisées, puis commencer la fondation additive RAVEMEMS V2 sur `tmp-ravemems-v2-foundation`, sans toucher à `MEMSX64`, au protocole, au 32 bits ni au corpus complet.
