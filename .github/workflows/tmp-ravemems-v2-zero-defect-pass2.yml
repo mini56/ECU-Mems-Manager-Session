@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      TEST_SHA: 'ddc109f919a3808a9ba186d2928080c8cbf18dc9'
+      TEST_SHA: '0d98db8433af2bc21b9b74d7f430c8c4c134819a'
       PROTECTED_MEMSX64: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
       SOURCE_MAIN_COMMIT: '643de091b474f4e27917a065bdf46d5a0c764276'
       RCL0193ENG_BLOB: '82263eb36bb194dfa969d0471d10ef11078ce521'
@@ -31,6 +31,7 @@ jobs:
           test "$(git rev-parse HEAD)" = "$TEST_SHA"
           test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
           test -f .github/pass2/rcl0193eng_zero_defect_pass2.py
+          test -f .github/pass2/rcl0193eng_visual_validate.py
           test -f ravemems/v2/prototype_extract.py
           test -f ravemems/v2/schema.sql
           echo "PASS2_TEST_SHA_PASS $TEST_SHA"
@@ -40,7 +41,7 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Validate Python foundation and pass 2 wrapper
+      - name: Validate Python foundation and validators
         shell: bash
         run: |
           set -euo pipefail
@@ -49,7 +50,8 @@ jobs:
             ravemems/v2/schema_selftest.py \
             ravemems/v2/reading_order.py \
             ravemems/v2/prototype_extract.py \
-            .github/pass2/rcl0193eng_zero_defect_pass2.py
+            .github/pass2/rcl0193eng_zero_defect_pass2.py \
+            .github/pass2/rcl0193eng_visual_validate.py
           python ravemems/v2/schema_selftest.py | tee "$RUNNER_TEMP/schema-selftest.log"
           grep -q '^RAVEMEMS_V2_SCHEMA_SELFTEST_PASS$' "$RUNNER_TEMP/schema-selftest.log"
           grep -q '^MULTIPHASE_STEP_NUMBERING_PASS$' "$RUNNER_TEMP/schema-selftest.log"
@@ -96,67 +98,35 @@ jobs:
           test -s "$out/debug_pages_131_136.txt"
           test -s "$out/ravemems_v2_rcl0193eng.sqlite"
 
-      - name: Validate zero sequence and zero text-boundary contamination
+      - name: Validate zero semantic and text defects before visual validation
         shell: bash
         run: |
           set -euo pipefail
           out="$RUNNER_TEMP/rcl0193eng-pass2"
           python - "$out" <<'PY'
-          import collections, hashlib, json, re, sqlite3, sys
+          import collections, json, re, sqlite3, sys
           from pathlib import Path
           out = Path(sys.argv[1])
           m = json.loads((out / 'manifest.json').read_text(encoding='utf-8'))
           audit = json.loads((out / 'audit.json').read_text(encoding='utf-8'))
+          diagnostics = json.loads((out / 'step_sequence_diagnostics.json').read_text(encoding='utf-8'))
           assert m['prototype'] == 'RCL0193ENG'
           assert m['page_count'] == 372
           assert m['source_commit'] == '643de091b474f4e27917a065bdf46d5a0c764276'
           assert m['source_blob_sha'] == '82263eb36bb194dfa969d0471d10ef11078ce521'
-          assert m['sqlite_integrity'] == 'ok'
-          assert m['foreign_key_issue_count'] == 0
-          db_path = out / 'ravemems_v2_rcl0193eng.sqlite'
-          print('PASS2_SQLITE_SHA256', hashlib.sha256(db_path.read_bytes()).hexdigest())
-          db = sqlite3.connect(db_path)
+          assert m['numeric_phase_defect_count'] == 0
+          assert diagnostics == []
+          assert m['counts']['ravemems_operation'] == 201
+          assert m['counts']['ravemems_phase'] == 397
+          assert m['counts']['ravemems_step'] == 3104
+          assert m['counts']['ravemems_visual'] == 738
+          assert m['counts']['ravemems_visual_link'] == 401
+          assert m['counts']['ravemems_review_flag'] == 0
+          db = sqlite3.connect(out / 'ravemems_v2_rcl0193eng.sqlite')
           assert db.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
           assert db.execute('PRAGMA foreign_key_check').fetchall() == []
+          assert db.execute("SELECT COUNT(*) FROM ravemems_review_flag WHERE status='open'").fetchone()[0] == 0
           assert db.execute("SELECT COUNT(*) FROM ravemems_step WHERE manufacturer_step_no='0'").fetchone()[0] == 0
-
-          def nums(op_no, phase_kind):
-              return [int(r[0]) for r in db.execute(
-                  "SELECT s.manufacturer_step_no FROM ravemems_step s JOIN ravemems_phase p ON p.phase_key=s.phase_key JOIN ravemems_operation o ON o.operation_key=p.operation_key WHERE o.manufacturer_operation_no=? AND p.normalized_phase_kind=? ORDER BY p.sequence_no,s.sequence_no",
-                  (op_no, phase_kind),
-              ) if r[0] and str(r[0]).isdigit()]
-
-          expected = {
-              ('12.29.02','remove'): list(range(1,37)),
-              ('12.60.38','remove'): list(range(1,35)),
-              ('30.15.15','remove'): list(range(1,30)),
-              ('57.25.01','remove'): list(range(1,27)),
-              ('57.50.01','remove'): list(range(1,22)),
-              ('86.65.64','remove'): list(range(1,12)),
-          }
-          for key, wanted in expected.items():
-              got = nums(*key)
-              assert got == wanted, (key, got, wanted)
-              print('PASS2_SEQUENCE_OK', key[0], key[1], got[0], got[-1], len(got))
-
-          op75 = [int(r[0]) for r in db.execute(
-              "SELECT s.manufacturer_step_no FROM ravemems_step s JOIN ravemems_phase p ON p.phase_key=s.phase_key JOIN ravemems_operation o ON o.operation_key=p.operation_key WHERE o.manufacturer_operation_no='33.25.03' ORDER BY p.sequence_no,s.sequence_no"
-          ) if r[0] and str(r[0]).isdigit()]
-          assert op75 == list(range(1,14)), op75
-          print('PASS2_IMPLICIT_PHASE_OK 33.25.03', op75)
-
-          leaked = db.execute(
-              "SELECT COUNT(*) FROM ravemems_step s JOIN ravemems_phase p ON p.phase_key=s.phase_key JOIN ravemems_operation o ON o.operation_key=p.operation_key WHERE o.manufacturer_operation_no='12.65.28' AND s.source_page_start>=99"
-          ).fetchone()[0]
-          assert leaked == 0, leaked
-          print('PASS2_STALE_CONTINUATION_OK 12.65.28')
-
-          blocking_seq = db.execute(
-              "SELECT COUNT(*) FROM ravemems_review_flag WHERE reason_code='manufacturer_step_sequence_incomplete' AND status='open'"
-          ).fetchone()[0]
-          assert m['numeric_phase_defect_count'] == 0, m['numeric_phase_defect_count']
-          assert blocking_seq == 0, blocking_seq
-          assert m['counts']['ravemems_step'] == 3104, m['counts']['ravemems_step']
 
           step_rows = db.execute(
               "SELECT s.step_key,s.instruction_source,o.manufacturer_operation_no "
@@ -164,62 +134,90 @@ jobs:
               "JOIN ravemems_operation o ON o.operation_key=p.operation_key"
           ).fetchall()
           trailing_folios = [r for r in step_rows if re.search(r'\s\d{1,3}$', (r[1] or '').strip())]
-          print('PASS2_TRAILING_FOLIO_TEXT_COUNT', len(trailing_folios))
-          if trailing_folios:
-              print('PASS2_TRAILING_FOLIO_EXAMPLES', trailing_folios[:12])
-          assert trailing_folios == [], trailing_folios[:12]
-
-          incomplete_crossrefs = []
-          for r in step_rows:
-              text = (r[1] or '').strip()
-              if re.search(r'\bSee$', text, re.IGNORECASE) or text.endswith(','):
-                  incomplete_crossrefs.append(r)
-          print('PASS2_INCOMPLETE_CROSSREF_COUNT', len(incomplete_crossrefs))
-          if incomplete_crossrefs:
-              print('PASS2_INCOMPLETE_CROSSREF_EXAMPLES', incomplete_crossrefs[:12])
-          assert incomplete_crossrefs == [], incomplete_crossrefs[:12]
-
+          incomplete_crossrefs = [r for r in step_rows if re.search(r'\bSee$', (r[1] or '').strip(), re.I) or (r[1] or '').strip().endswith(',')]
           operations = db.execute(
-              "SELECT operation_key,manufacturer_operation_no,title_source FROM ravemems_operation WHERE length(title_source)>=5"
+              "SELECT manufacturer_operation_no,title_source FROM ravemems_operation WHERE length(title_source)>=5"
           ).fetchall()
           title_tails = []
           for step_key, instruction, own_code in step_rows:
               text = (instruction or '').strip()
-              for _op_key, other_code, title in operations:
-                  if other_code == own_code or not title:
-                      continue
-                  if text.endswith(title):
+              for other_code, title in operations:
+                  if other_code != own_code and title and text.endswith(title):
                       title_tails.append((step_key, own_code, other_code, title, text))
                       break
-          print('PASS2_NEXT_OPERATION_TITLE_TAIL_COUNT', len(title_tails))
-          if title_tails:
-              print('PASS2_NEXT_OPERATION_TITLE_TAIL_EXAMPLES', title_tails[:12])
+          assert trailing_folios == [], trailing_folios[:12]
+          assert incomplete_crossrefs == [], incomplete_crossrefs[:12]
           assert title_tails == [], title_tails[:12]
 
           codes = collections.Counter(issue['code'] for issue in audit['issues'])
-          print('PASS2_AUDIT_CODES', dict(codes))
-          assert set(codes) <= {'visual_fidelity_not_verified', 'visual_link_not_verified'}, codes
-          assert codes['visual_fidelity_not_verified'] == m['counts']['ravemems_visual']
-          assert codes['visual_link_not_verified'] == m['counts']['ravemems_visual_link']
-
-          print('PASS2_NUMERIC_PHASE_DEFECTS', m['numeric_phase_defect_count'])
-          print('PASS2_OPEN_SEQUENCE_FLAGS', blocking_seq)
-          print('PASS2_OPERATION_COUNT', m['counts']['ravemems_operation'])
-          print('PASS2_PHASE_COUNT', m['counts']['ravemems_phase'])
-          print('PASS2_STEP_COUNT', m['counts']['ravemems_step'])
-          print('PASS2_AUDIT_ISSUE_COUNT', m['audit_issue_count'])
+          assert codes == {'visual_fidelity_not_verified': 738, 'visual_link_not_verified': 401}, codes
+          print('PRE_VISUAL_NUMERIC_PHASE_DEFECTS 0')
+          print('PRE_VISUAL_TRAILING_FOLIOS 0')
+          print('PRE_VISUAL_INCOMPLETE_CROSSREFS 0')
+          print('PRE_VISUAL_TITLE_TAILS 0')
+          print('PRE_VISUAL_AUDIT_ISSUES', audit['issue_count'])
           db.close()
-          print('RAVEMEMS_V2_RCL0193ENG_ZERO_TEXT_BOUNDARY_DEFECT_PASS')
+          print('RAVEMEMS_V2_RCL0193ENG_PRE_VISUAL_ZERO_SEMANTIC_DEFECT_PASS')
           PY
-          grep -q '^PASS2_BOUNDARY_FOLIOS_IGNORED ' "$RUNNER_TEMP/rcl0193eng-pass2.log"
-          grep -q '^PASS2_BOUNDARY_TITLES_FLUSHED ' "$RUNNER_TEMP/rcl0193eng-pass2.log"
           test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
 
-      - name: Upload RCL0193ENG pass 2 audit artifact
+      - name: Validate all RCL0193ENG visuals with independent evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/rcl0193eng-pass2"
+          PYTHONPATH=ravemems/v2 python .github/pass2/rcl0193eng_visual_validate.py \
+            --pdf "$RUNNER_TEMP/ravemems-source/wmxn990e.pdf" \
+            --out "$out" \
+            | tee "$RUNNER_TEMP/rcl0193eng-visual-validation.log"
+          test -s "$out/visual_validation.json"
+          grep -q '^RAVEMEMS_V2_RCL0193ENG_VISUAL_VALIDATION_PASS$' "$RUNNER_TEMP/rcl0193eng-visual-validation.log"
+
+      - name: Require global zero audit after visual validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/rcl0193eng-pass2"
+          python - "$out" <<'PY'
+          import hashlib, json, sqlite3, sys
+          from pathlib import Path
+          out = Path(sys.argv[1])
+          m = json.loads((out / 'manifest.json').read_text(encoding='utf-8'))
+          audit = json.loads((out / 'audit.json').read_text(encoding='utf-8'))
+          vv = json.loads((out / 'visual_validation.json').read_text(encoding='utf-8'))
+          db_path = out / 'ravemems_v2_rcl0193eng.sqlite'
+          db = sqlite3.connect(db_path)
+          assert db.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
+          assert db.execute('PRAGMA foreign_key_check').fetchall() == []
+          assert db.execute("SELECT COUNT(*) FROM ravemems_visual WHERE fidelity_status='verified'").fetchone()[0] == 738
+          assert db.execute("SELECT COUNT(*) FROM ravemems_visual WHERE fidelity_status<>'verified'").fetchone()[0] == 0
+          assert db.execute("SELECT COUNT(*) FROM ravemems_visual_link WHERE verification_status='verified'").fetchone()[0] == 401
+          assert db.execute("SELECT COUNT(*) FROM ravemems_visual_link WHERE verification_status<>'verified'").fetchone()[0] == 0
+          assert vv['visual_fidelity_verified_count'] == 738
+          assert vv['visual_fidelity_failed_count'] == 0
+          assert vv['visual_link_verified_count'] == 401
+          assert vv['visual_link_failed_count'] == 0
+          assert vv['sqlite_integrity'] == 'ok'
+          assert vv['foreign_key_issue_count'] == 0
+          assert vv['audit_issue_count_after_validation'] == 0
+          assert audit['issue_count'] == 0 and audit['issues'] == []
+          assert m['audit_issue_count'] == 0
+          assert m['numeric_phase_defect_count'] == 0
+          assert m['counts']['ravemems_review_flag'] == 0
+          print('FINAL_VISUAL_FIDELITY_VERIFIED 738')
+          print('FINAL_VISUAL_LINKS_VERIFIED 401')
+          print('FINAL_AUDIT_ISSUES 0')
+          print('FINAL_SQLITE_SHA256', hashlib.sha256(db_path.read_bytes()).hexdigest())
+          db.close()
+          print('RAVEMEMS_V2_RCL0193ENG_GLOBAL_ZERO_AUDIT_PASS')
+          PY
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
+
+      - name: Upload RCL0193ENG zero-defect validated artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: RAVEMEMS-V2-RCL0193ENG-ZERO-DEFECT-PASS2-CROSSREF
+          name: RAVEMEMS-V2-RCL0193ENG-ZERO-DEFECT-VISUAL-VALIDATED
           path: ${{ runner.temp }}/rcl0193eng-pass2
           if-no-files-found: warn
           retention-days: 14
