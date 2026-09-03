@@ -13672,3 +13672,12 @@ No production/UI/protocol/IA files were modified. `MEMSX64` remains protected at
 
 Next action after this journal is GREEN: pin the isolated 212-page ELXN970E workflow to SHA `722707ecd6c9a004575ec4ee80105045283c9f38`, require correct identity/type plus non-zero reference sections and zero spurious workshop operations, run all 212 pages, then inspect the exact artifact and journal the result.
 <!-- journal-entry-sha256:03961efd55b00a05c16b4bad9875fffe4a6cfbd31f36f6da75ac76e8dfe94201 -->
+
+## 2026-09-03 — Additional generic replay metadata defect found before RCL0213ENG retest
+
+While preparing the exact 212-page retest, inspection of `.github/pass2/rcl0193eng_visual_replay_validate.py` found one additional RCL0193ENG-specific residue in evidence metadata: the replay `method` string is hardcoded to `page 1..372`, even when `replay_visuals()` is invoked on another PDF such as 212-page RCL0213ENG.
+
+This does not weaken or falsify pixel comparison itself, but it is incorrect provenance and must be removed before a zero-defect RCL0213ENG result can be accepted.
+
+Next corrective push: make only that evidence range dynamic from `doc.page_count`, preserving the existing exact PNG replay and RCL0193ENG-specific success guard. Then pin/run the 212-page workflow on the resulting SHA. Production remains untouched; `MEMSX64` stays BUILD #103 SHA `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+<!-- journal-entry-sha256:f0615fe96642c590463e7a993eef7b16495404e7b29984d5725a1789f7f13cfe -->
