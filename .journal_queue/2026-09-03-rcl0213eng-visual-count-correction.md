@@ -1,0 +1,5 @@
+## 2026-09-03 — RCL0213ENG visual count correction before final retest
+
+Direct inspection of the first full-test artifact from run 33799187283 (artifact 9910387693) proves that the original RCL0213ENG extraction contained 304 visuals, not 395. The artifact manifest contains ravemems_visual=304; its SQLite database contains exactly 304 ravemems_visual rows; exact replay verified 304/304 with 0 missing, 0 unexpected and 0 fidelity failures. The previously reported 395/395 figure was a reporting error, not a 91-image regression or loss.
+
+Current remaining test work: run the family-aware title fix on all 212 pages, require RCL0213ENG identity, electrical_reference_library classification, source-derived Electrical Library title, 212 page-grounded electrical reference sections, 0 invented workshop operations/phases/steps, exact 304/304 visual replay, audit 0, SQLite integrity ok, FK 0, and protected MEMSX64 SHA 1d6316bd1746d6f2b4cfb751cab88d18e27ef730 unchanged. No production modification is authorized.
