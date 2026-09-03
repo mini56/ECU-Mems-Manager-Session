@@ -165,6 +165,7 @@ class Pass2SemanticParser(pe.SemanticParser):
         physical_page: int,
         page_key: str,
         lines: list[dict[str, Any]],
+        page_width: float,
         page_height: float,
     ) -> tuple[set[str], set[str]]:
         if self._idle_procedure_pages >= 2:
