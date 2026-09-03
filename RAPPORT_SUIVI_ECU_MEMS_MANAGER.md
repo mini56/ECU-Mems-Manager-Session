@@ -13783,3 +13783,39 @@ Direct inspection of the first full-test artifact from run 33799187283 (artifact
 
 Current remaining test work: run the family-aware title fix on all 212 pages, require RCL0213ENG identity, electrical_reference_library classification, source-derived Electrical Library title, 212 page-grounded electrical reference sections, 0 invented workshop operations/phases/steps, exact 304/304 visual replay, audit 0, SQLite integrity ok, FK 0, and protected MEMSX64 SHA 1d6316bd1746d6f2b4cfb751cab88d18e27ef730 unchanged. No production modification is authorized.
 <!-- journal-entry-sha256:440e09f21e92fefaaa938c5ed77fe6dcaa6b55daf61097a0a14729dbda74000e -->
+
+## 2026-09-03 — RCL0213ENG 212-page generalized test GREEN
+
+Exact full run 33801190596 completed SUCCESS using code SHA 7418419993af12d5d4c8a1e57673984dbedc4675 and frozen source commit 643de091b474f4e27917a065bdf46d5a0c764276, path rave/xn/elxn970e.pdf, 212 pages.
+
+Verified result: publication RCL 0213ENG; document_key DOC_RCL0213ENG; revision_key REV_RCL0213ENG_SOURCE; document_kind electrical_reference_library; source title Electrical Library; 212 page-grounded ravemems_section rows with 212 section provenance rows; 146 entries with detected manufacturer identifiers; 0 workshop operations, 0 phases, 0 steps; 0 numeric defects; 0 open reviews. Exact extraction-order visual replay verified 304/304 visuals, 0 fidelity failures, 0 missing, 0 unexpected, 0 visual-link failures, final audit 0, SQLite integrity ok, FK 0. Artifact ID 9911121403, zip SHA256 8cad3951a19d67116f59407ca778bcdfc4d5532d047aedcf7290fa979887504f.
+
+The earlier reported figure 395 visuals was already corrected in the prior journal entry: the original artifact also contained 304 visuals, so there was no visual regression. Protected MEMSX64 remained exactly 1d6316bd1746d6f2b4cfb751cab88d18e27ef730 (BUILD #103). Next mandatory action: full RCL0193ENG regression with these generic rules before declaring the generalized correction safe.
+<!-- journal-entry-sha256:7bfe9d3d5c34a5a443e381083ed6fa2aa33e707d5039eb7edb6f9715e11b7571 -->
+
+## 2026-09-03 — RCL0213ENG 212-page generalized strict pass, semantic section-title quality still under review
+
+Exact isolated run `33801190596` is GREEN and tested generic algorithm SHA `7418419993af12d5d4c8a1e57673984dbedc4675` against frozen source `rave/xn/elxn970e.pdf` from source commit `643de091b474f4e27917a065bdf46d5a0c764276`, blob `337f957045cb9ea79f38a1a5e3ddb01f194c7156`, 212 pages, publication `RCL 0213ENG`.
+
+Verified strict-pass facts:
+- final marker `RAVEMEMS_V2_RCL0213ENG_212PAGE_STRICT_ZERO_PASS`;
+- document row: `DOC_RCL0213ENG`, canonical name `RCL 0213ENG`, kind `electrical_reference_library`, source title `Electrical Library`;
+- revision key `REV_RCL0213ENG_SOURCE`;
+- 212/212 page-grounded electrical-reference sections;
+- 212/212 section provenance rows;
+- 146 detected manufacturer identifiers;
+- 0 fabricated workshop operations / phases / steps;
+- 0 numeric defects;
+- 0 open review flags;
+- 304 DB visuals, 304 replayed, 304/304 exact fidelity verified;
+- 0 visual failures, 0 missing, 0 unexpected, 0 visual-link failures;
+- audit issues after exact visual replay: 0;
+- SQLite integrity `ok`; 0 foreign-key issues;
+- protected `MEMSX64` remained BUILD #103 SHA `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+Successful artifact: `RAVEMEMS-V2-RCL0213ENG-212PAGE-GENERALIZED-TEST`, ID `9911121403`, size 28,315,464 bytes, ZIP SHA256 `8cad3951a19d67116f59407ca778bcdfc4d5532d047aedcf7290fa979887504f`.
+
+Important semantic-quality caveat: inspection of the generated section sample shows that the current page-section title heuristic is still too permissive on some pages. Examples include source-grounded but weak/non-title candidates such as `finish.`, `15 amp`, `A1-1`, and sentence fragments. Therefore the run is a genuine zero pass for the guards currently implemented (identity, structure presence/provenance, non-fabrication, visual fidelity, audit/integrity), but RCL0213ENG is **not yet declared globally zero real semantic defects** for section titles.
+
+Next actions, in order: (1) regression-test RCL0193ENG with the same generic algorithm SHA to prove no workshop-manual regression; (2) add an evidence-based electrical-reference section-title quality diagnostic/guard and correct the generic title selection without page/publication hardcoding; (3) rerun RCL0213ENG until that strengthened semantic guard is also green.
+<!-- journal-entry-sha256:db626a97b7bd897515629b0fc3a47bb934ddc962ae235cdc1ab4d6c588b1a35f -->
