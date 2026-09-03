@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import re
-from collections import defaultdict
 from typing import Any
 
 import prototype_extract as pe
@@ -38,9 +37,8 @@ def _structural_numeric_marker(item: dict[str, Any]) -> bool:
 def pass2_reading_order(lines: list[dict[str, Any]], page_width: float, page_height: float) -> list[dict[str, Any]]:
     """Column-local reading order for workshop procedures.
 
-    The lower body boundary is intentionally conservative: genuine numbered
-    steps in RCL0193ENG reach well below 90% of the page height. Two-column
-    detection can use structural numbered markers even when one column is sparse.
+    Genuine two-column procedure streams are consumed left then right. Sparse
+    columns can still be recognized from their standalone numeric markers.
     """
     if not lines:
         return []
@@ -116,6 +114,8 @@ class Pass2SemanticParser(pe.SemanticParser):
         self.explicit_step_pattern = re.compile(r"^\s*(\d{1,3})\s*[.)](?!\d)\s*(.*\S)\s*$")
         self.numeric_candidate_pattern = re.compile(r"^\s*([1-9]\d{0,2})(?:\s|[.)](?!\d))")
         self._idle_procedure_pages = 0
+        self.boundary_folio_count = 0
+        self.boundary_title_count = 0
 
     def _step_match(self, item: dict[str, Any]) -> tuple[str, str, str] | None:
         match = super()._step_match(item)
@@ -160,6 +160,45 @@ class Pass2SemanticParser(pe.SemanticParser):
             return False
         return float(item["bbox"][0]) <= margin + 10.0
 
+    @staticmethod
+    def _is_bottom_folio(item: dict[str, Any], page_height: float) -> bool:
+        """Identify the printed page/section folio by text and bottom geometry."""
+        text = str(item.get("text", "")).strip()
+        if not re.fullmatch(r"\d{1,3}", text):
+            return False
+        top = float(item["bbox"][1])
+        return top >= page_height * 0.94
+
+    def _operation_code_within(self, lines: list[dict[str, Any]], index: int, lookahead: int = 5) -> bool:
+        for candidate in lines[index + 1:index + 1 + lookahead]:
+            text = str(candidate.get("text", "")).strip()
+            if not text:
+                continue
+            if self._operation_code(text):
+                return True
+            # A new numbered workshop step means this was ordinary prose, not
+            # a pending operation-title block.
+            if self._step_match(candidate):
+                return False
+        return False
+
+    def _is_next_operation_title(self, lines: list[dict[str, Any]], index: int) -> bool:
+        """Detect a title line immediately preceding a manufacturer operation id.
+
+        The rule is structural only: emphasized/all-capital text plus a nearby
+        operation code. It deliberately knows nothing about component names.
+        """
+        item = lines[index]
+        text = str(item.get("text", "")).strip()
+        if not text or self._operation_code(text):
+            return False
+        letters = [ch for ch in text if ch.isalpha()]
+        all_caps = bool(letters) and all(ch.isupper() for ch in letters)
+        emphasized = bool(item.get("bold")) or all_caps
+        if not emphasized:
+            return False
+        return self._operation_code_within(lines, index)
+
     def parse_page(
         self,
         physical_page: int,
@@ -178,6 +217,22 @@ class Pass2SemanticParser(pe.SemanticParser):
         for index, item in enumerate(lines):
             text = item["text"].strip()
             if not text:
+                continue
+
+            # A printed folio is never instruction text. Flushing here prevents
+            # the last numbered step on a page from acquiring e.g. " 12".
+            if self._is_bottom_folio(item, page_height):
+                if self.current_step:
+                    self._flush_step()
+                self.boundary_folio_count += 1
+                continue
+
+            # In left-then-right reading order the title of the next procedure
+            # can immediately follow the final step of the previous column. A
+            # nearby manufacturer operation code proves the boundary.
+            if self.current_step and self._is_next_operation_title(lines, index):
+                self._flush_step()
+                self.boundary_title_count += 1
                 continue
 
             code = self._operation_code(text)
@@ -302,6 +357,9 @@ class Pass2SemanticParser(pe.SemanticParser):
                     "UPDATE ravemems_operation SET completeness_status='complete' WHERE operation_key=?",
                     (operation_key,),
                 )
+
+        print("PASS2_BOUNDARY_FOLIOS_IGNORED", self.boundary_folio_count)
+        print("PASS2_BOUNDARY_TITLES_FLUSHED", self.boundary_title_count)
 
     def sequence_diagnostics(self) -> list[dict[str, Any]]:
         diagnostics = super().sequence_diagnostics()
