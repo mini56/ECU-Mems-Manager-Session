@@ -1,0 +1,286 @@
+name: TEMP RAVEMEMS V2 full corpus generic
+
+on:
+  push:
+    branches:
+      - tmp-ravemems-v2-foundation
+    paths:
+      - .github/workflows/tmp-ravemems-v2-full-corpus-generic.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  full-corpus:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    env:
+      ENGINE_SHA: 745f41243adb202f638f4039016dedfff8f272d6
+      SOURCE_MAIN_COMMIT: 643de091b474f4e27917a065bdf46d5a0c764276
+      PROTECTED_MEMSX64: 1d6316bd1746d6f2b4cfb751cab88d18e27ef730
+      EXPECTED_PDF_COUNT: "47"
+
+    steps:
+      - name: Checkout exact neutral generic engine
+        uses: actions/checkout@v4
+        with:
+          ref: 745f41243adb202f638f4039016dedfff8f272d6
+          fetch-depth: 0
+
+      - name: Guard exact engine and production
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$ENGINE_SHA"
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
+          echo "ENGINE_SHA=$ENGINE_SHA"
+          echo "MEMSX64_PROTECTED=$PROTECTED_MEMSX64"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pinned renderer and compile generic engine
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check "PyMuPDF==1.26.4"
+          PYTHONPATH="ravemems/v2:.github/pass2" python -m py_compile \
+            ravemems/v2/core_extract.py \
+            ravemems/v2/source_input.py \
+            ravemems/v2/generic_document_rules.py \
+            .github/pass2/generic_semantic_pass2.py \
+            .github/pass2/generic_precise_visual_extract.py \
+            .github/pass2/ravemems_generic_precise_extract.py \
+            .github/pass2/generic_visual_validate.py \
+            .github/pass2/ravemems_generic_visual_replay_validate.py \
+            .github/pass2/ravemems_extract_source.py
+          ! grep -R -n -E 'RCL0193|rcl0193' \
+            ravemems/v2/core_extract.py \
+            ravemems/v2/source_input.py \
+            ravemems/v2/generic_document_rules.py \
+            .github/pass2/generic_semantic_pass2.py \
+            .github/pass2/generic_precise_visual_extract.py \
+            .github/pass2/ravemems_generic_precise_extract.py \
+            .github/pass2/generic_visual_validate.py \
+            .github/pass2/ravemems_generic_visual_replay_validate.py \
+            .github/pass2/ravemems_extract_source.py
+
+      - name: Materialize frozen full RAVE PDF corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "$SOURCE_MAIN_COMMIT"
+          test "$(git rev-parse FETCH_HEAD)" = "$SOURCE_MAIN_COMMIT"
+          mkdir -p "$RUNNER_TEMP/corpus"
+          mapfile -t pdfs < <(git ls-tree -r --name-only "$SOURCE_MAIN_COMMIT" rave | grep -Ei '\.pdf$' | sort)
+          printf '%s\n' "${pdfs[@]}" > "$RUNNER_TEMP/corpus_pdf_paths.txt"
+          echo "FROZEN_CORPUS_PDF_COUNT=${#pdfs[@]}"
+          test "${#pdfs[@]}" -eq "$EXPECTED_PDF_COUNT"
+          : > "$RUNNER_TEMP/corpus_source_inventory.tsv"
+          for path in "${pdfs[@]}"; do
+            target="$RUNNER_TEMP/corpus/$path"
+            mkdir -p "$(dirname "$target")"
+            git show "$SOURCE_MAIN_COMMIT:$path" > "$target"
+            blob="$(git rev-parse "$SOURCE_MAIN_COMMIT:$path")"
+            size="$(wc -c < "$target")"
+            printf '%s\t%s\t%s\n' "$path" "$blob" "$size" >> "$RUNNER_TEMP/corpus_source_inventory.tsv"
+          done
+          test "$(find "$RUNNER_TEMP/corpus/rave" -type f -iname '*.pdf' | wc -l)" -eq "$EXPECTED_PDF_COUNT"
+
+      - name: Run neutral generic engine on complete corpus
+        id: extraction
+        shell: bash
+        run: |
+          set -uo pipefail
+          export PYTHONPATH="ravemems/v2:.github/pass2"
+          rm -rf "$RUNNER_TEMP/full-out"
+          python .github/pass2/ravemems_extract_source.py \
+            --source "$RUNNER_TEMP/corpus/rave" \
+            --schema ravemems/v2/schema.sql \
+            --out "$RUNNER_TEMP/full-out"
+          rc=$?
+          echo "extract_rc=$rc" >> "$GITHUB_OUTPUT"
+          echo "FULL_CORPUS_EXTRACTION_RETURN_CODE=$rc"
+          test -f "$RUNNER_TEMP/full-out/source_manifest.json"
+          exit 0
+
+      - name: Replay every successful document and build corpus audit summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="ravemems/v2:.github/pass2"
+          python - "$RUNNER_TEMP" "$EXPECTED_PDF_COUNT" <<'PY'
+          import json
+          import sqlite3
+          import subprocess
+          import sys
+          from collections import Counter
+          from pathlib import Path
+
+          root = Path(sys.argv[1])
+          expected_count = int(sys.argv[2])
+          out = root / "full-out"
+          source_manifest_path = out / "source_manifest.json"
+          source = json.loads(source_manifest_path.read_text(encoding="utf-8"))
+          results = source.get("results", [])
+          replay_script = Path(".github/pass2/ravemems_generic_visual_replay_validate.py").resolve()
+
+          replay_failures = []
+          validation = []
+          total_pages = 0
+          total_visuals = 0
+          total_links = 0
+          total_operations = 0
+          total_phases = 0
+          total_steps = 0
+          languages = Counter()
+          kinds = Counter()
+
+          for index, record in enumerate(results, 1):
+              entry = {
+                  "index": index,
+                  "input_pdf": record.get("input_pdf"),
+                  "document_identity": record.get("document_identity"),
+                  "publication_code": record.get("publication_code"),
+                  "language": record.get("language"),
+                  "page_count": record.get("page_count"),
+                  "extraction_return_code": record.get("return_code"),
+                  "output_directory": record.get("output_directory"),
+              }
+              total_pages += int(record.get("page_count") or 0)
+              languages[str(record.get("language") or "unknown")] += 1
+              if int(record.get("return_code") or 0) != 0:
+                  entry["replay_return_code"] = None
+                  entry["status"] = "extraction_failed"
+                  validation.append(entry)
+                  continue
+
+              document_out = Path(str(record["output_directory"]))
+              manifest_path = document_out / "manifest.json"
+              if not manifest_path.exists():
+                  entry["status"] = "manifest_missing"
+                  replay_failures.append({"index": index, "reason": "manifest_missing", "output": str(document_out)})
+                  validation.append(entry)
+                  continue
+
+              manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+              counts = manifest.get("counts", {})
+              kind = str(manifest.get("document_kind") or "unknown")
+              kinds[kind] += 1
+              total_visuals += int(counts.get("ravemems_visual", 0) or 0)
+              total_links += int(counts.get("ravemems_visual_link", 0) or 0)
+              total_operations += int(counts.get("ravemems_operation", 0) or 0)
+              total_phases += int(counts.get("ravemems_phase", 0) or 0)
+              total_steps += int(counts.get("ravemems_step", 0) or 0)
+              entry["document_kind"] = kind
+              entry["counts"] = counts
+
+              completed = subprocess.run([
+                  sys.executable,
+                  str(replay_script),
+                  "--pdf", str(record["input_pdf"]),
+                  "--out", str(document_out),
+              ], text=True)
+              entry["replay_return_code"] = completed.returncode
+
+              replay_path = document_out / "visual_replay_validation.json"
+              if replay_path.exists():
+                  replay = json.loads(replay_path.read_text(encoding="utf-8"))
+                  entry["replay"] = replay
+              else:
+                  replay = None
+
+              db_path = document_out / "ravemems_v2.sqlite"
+              if db_path.exists():
+                  db = sqlite3.connect(db_path)
+                  entry["sqlite_integrity"] = db.execute("PRAGMA integrity_check").fetchone()[0]
+                  entry["foreign_key_issue_count"] = len(db.execute("PRAGMA foreign_key_check").fetchall())
+                  entry["open_review_count"] = db.execute("SELECT COUNT(*) FROM ravemems_review_flag WHERE status='open'").fetchone()[0]
+                  db.close()
+              else:
+                  entry["sqlite_integrity"] = "missing"
+                  entry["foreign_key_issue_count"] = -1
+                  entry["open_review_count"] = -1
+
+              ok = (
+                  completed.returncode == 0
+                  and replay is not None
+                  and int(replay.get("visual_fidelity_failed_count", -1)) == 0
+                  and int(replay.get("visual_link_failed_count", -1)) == 0
+                  and int(replay.get("missing_replay_count", -1)) == 0
+                  and int(replay.get("unexpected_replay_count", -1)) == 0
+                  and int(replay.get("audit_issue_count_after_validation", -1)) == 0
+                  and str(entry["sqlite_integrity"]).lower() == "ok"
+                  and int(entry["foreign_key_issue_count"]) == 0
+                  and int(entry["open_review_count"]) == 0
+              )
+              entry["status"] = "pass" if ok else "replay_or_audit_failed"
+              if not ok:
+                  replay_failures.append({"index": index, "identity": record.get("document_identity"), "reason": entry["status"]})
+              validation.append(entry)
+
+          summary = {
+              "engine_sha": "745f41243adb202f638f4039016dedfff8f272d6",
+              "source_main_commit": "643de091b474f4e27917a065bdf46d5a0c764276",
+              "expected_pdf_count": expected_count,
+              "discovered_pdf_count": int(source.get("pdf_count", -1)),
+              "extraction_failure_count": int(source.get("failure_count", -1)),
+              "replay_failure_count": len(replay_failures),
+              "total_pages": total_pages,
+              "total_visuals": total_visuals,
+              "total_visual_links": total_links,
+              "total_operations": total_operations,
+              "total_phases": total_phases,
+              "total_steps": total_steps,
+              "languages": dict(sorted(languages.items())),
+              "document_kinds": dict(sorted(kinds.items())),
+              "replay_failures": replay_failures,
+              "documents": validation,
+          }
+          (out / "corpus_validation_summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          print(json.dumps({k: v for k, v in summary.items() if k not in {"documents"}}, ensure_ascii=False, indent=2))
+          print("FULL_CORPUS_DOCUMENTS_PROCESSED", len(results))
+          print("FULL_CORPUS_EXTRACTION_FAILURES", summary["extraction_failure_count"])
+          print("FULL_CORPUS_REPLAY_FAILURES", summary["replay_failure_count"])
+          PY
+
+      - name: Copy frozen source inventory into result
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/full-out/_corpus_metadata"
+          cp "$RUNNER_TEMP/corpus_pdf_paths.txt" "$RUNNER_TEMP/full-out/_corpus_metadata/"
+          cp "$RUNNER_TEMP/corpus_source_inventory.tsv" "$RUNNER_TEMP/full-out/_corpus_metadata/"
+
+      - name: Upload complete corpus result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAVEMEMS-V2-FULL-CORPUS-GENERIC-${{ github.run_id }}
+          path: ${{ runner.temp }}/full-out
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 6
+
+      - name: Strict full corpus verdict
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${{ steps.extraction.outputs.extract_rc }}" = "0"
+          python - "$RUNNER_TEMP/full-out/corpus_validation_summary.json" "$EXPECTED_PDF_COUNT" <<'PY'
+          import json, sys
+          from pathlib import Path
+          summary = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          expected = int(sys.argv[2])
+          assert summary["discovered_pdf_count"] == expected, summary
+          assert summary["extraction_failure_count"] == 0, summary["replay_failures"]
+          assert summary["replay_failure_count"] == 0, summary["replay_failures"]
+          assert len(summary["documents"]) == expected, len(summary["documents"])
+          assert all(item.get("status") == "pass" for item in summary["documents"]), [item for item in summary["documents"] if item.get("status") != "pass"]
+          print("RAVEMEMS_V2_FULL_CORPUS_GENERIC_GLOBAL_ZERO_PASS")
+          PY
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
