@@ -1,0 +1,93 @@
+name: TEMP RAVEMEMS V2 foundation test
+
+on:
+  push:
+    branches: [tmp-ravemems-v2-foundation]
+    paths:
+      - 'ravemems/v2/**'
+      - '.github/workflows/tmp-ravemems-v2-foundation-test.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  foundation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PROTECTED_MEMSX64: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Guard production and foundation scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          memsx64="$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')"
+          test "$memsx64" = "$PROTECTED_MEMSX64"
+          git merge-base --is-ancestor "$PROTECTED_MEMSX64" HEAD
+          changed="$(git diff --name-only "$PROTECTED_MEMSX64..HEAD")"
+          printf '%s\n' "$changed"
+          unexpected="$(printf '%s\n' "$changed" | grep -Ev '^(ravemems/v2/|\.github/workflows/tmp-ravemems-v2-foundation-test\.yml$)' || true)"
+          test -z "$unexpected" || { echo "Unexpected files:"; echo "$unexpected"; exit 1; }
+          echo "PROTECTED_BUILD103_PASS $memsx64"
+          echo "RAVEMEMS_V2_SCOPE_PASS"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Validate Python foundation and SQLite schema
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile ravemems/v2/audit.py ravemems/v2/schema_selftest.py
+          python ravemems/v2/schema_selftest.py | tee "$RUNNER_TEMP/schema-selftest.log"
+          grep -q '^RAVEMEMS_V2_SCHEMA_SELFTEST_PASS$' "$RUNNER_TEMP/schema-selftest.log"
+          grep -q '^CARBURETOR_WITHOUT_ECU_PASS$' "$RUNNER_TEMP/schema-selftest.log"
+          grep -q '^OPTIONAL_ECU_CONTEXT_PASS$' "$RUNNER_TEMP/schema-selftest.log"
+          grep -q '^MULTIPHASE_STEP_NUMBERING_PASS$' "$RUNNER_TEMP/schema-selftest.log"
+          grep -q '^SEQUENTIAL_TIGHTENING_PASS$' "$RUNNER_TEMP/schema-selftest.log"
+          grep -q '^POST_EXTRACTION_AUDIT_PASS$' "$RUNNER_TEMP/schema-selftest.log"
+
+      - name: Install minimal Qt5 development dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends qtbase5-dev pkg-config
+
+      - name: Compile and run C++ context contract self-test
+        shell: bash
+        run: |
+          set -euo pipefail
+          g++ -std=c++17 -fPIC -Wall -Wextra -Werror \
+            ravemems/v2/context_selftest.cpp \
+            -o "$RUNNER_TEMP/ravemems_v2_context_selftest" \
+            $(pkg-config --cflags --libs Qt5Core)
+          "$RUNNER_TEMP/ravemems_v2_context_selftest" | tee "$RUNNER_TEMP/context-selftest.log"
+          grep -q '^RAVEMEMS_V2_CONTEXT_SELFTEST_PASS$' "$RUNNER_TEMP/context-selftest.log"
+          grep -q '^CARBURETOR_NO_ECU_CPP_PASS$' "$RUNNER_TEMP/context-selftest.log"
+          grep -q '^OPTIONAL_ECU_CPP_PASS$' "$RUNNER_TEMP/context-selftest.log"
+          grep -q '^STRUCTURED_OPERATION_CPP_PASS$' "$RUNNER_TEMP/context-selftest.log"
+          grep -q '^SEQUENTIAL_TIGHTENING_CPP_PASS$' "$RUNNER_TEMP/context-selftest.log"
+
+      - name: Enforce semantic foundation gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'fuel_delivery_kind' ravemems/v2/schema.sql
+          grep -q 'engine_controller_state' ravemems/v2/schema.sql
+          grep -q "engine_controller_state <> 'absent'" ravemems/v2/schema.sql
+          grep -q 'manufacturer_step_no' ravemems/v2/schema.sql
+          grep -q 'angle_deg' ravemems/v2/schema.sql
+          grep -q 'fidelity_status' ravemems/v2/schema.sql
+          grep -q 'translation_status' ravemems/v2/schema.sql
+          grep -q 'ravemems_review_flag' ravemems/v2/schema.sql
+          grep -q 'pdf_page_render_crop' ravemems/v2/schema_selftest.py
+          memsx64="$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')"
+          test "$memsx64" = "$PROTECTED_MEMSX64"
+          echo 'RAVEMEMS_V2_FOUNDATION_GATE_PASS'
