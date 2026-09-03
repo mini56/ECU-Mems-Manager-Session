@@ -1,0 +1,198 @@
+name: TEMP RAVEMEMS V2 RCL0213ENG reference-title diagnostic
+
+on:
+  push:
+    branches: [tmp-ravemems-v2-foundation]
+    paths:
+      - '.github/workflows/tmp-ravemems-v2-rcl0213eng-title-diagnostic.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  title-diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TEST_SHA: '7418419993af12d5d4c8a1e57673984dbedc4675'
+      PROTECTED_MEMSX64: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+      SOURCE_MAIN_COMMIT: '643de091b474f4e27917a065bdf46d5a0c764276'
+      SOURCE_PATH: 'rave/xn/elxn970e.pdf'
+      SOURCE_BLOB: '337f957045cb9ea79f38a1a5e3ddb01f194c7156'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TEST_SHA }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Guard exact generic algorithm and production
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TEST_SHA"
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
+          PYTHONPATH="ravemems/v2:.github/pass2" python -m py_compile \
+            ravemems/v2/prototype_extract.py \
+            .github/pass2/ravemems_generic_precise_extract.py
+          python -m pip install --disable-pip-version-check 'PyMuPDF==1.26.4'
+
+      - name: Fetch frozen 212-page source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "$SOURCE_MAIN_COMMIT"
+          test "$(git rev-parse FETCH_HEAD)" = "$SOURCE_MAIN_COMMIT"
+          test "$(git rev-parse "$SOURCE_MAIN_COMMIT:$SOURCE_PATH")" = "$SOURCE_BLOB"
+          git show "$SOURCE_MAIN_COMMIT:$SOURCE_PATH" > "$RUNNER_TEMP/elxn970e.pdf"
+          test -s "$RUNNER_TEMP/elxn970e.pdf"
+
+      - name: Diagnose all 212 reference-title candidates from PDF geometry
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="ravemems/v2:.github/pass2" python - "$RUNNER_TEMP/elxn970e.pdf" "$RUNNER_TEMP/reference-title-diagnostic.json" <<'PY'
+          from __future__ import annotations
+          import json, re, statistics, sys
+          from pathlib import Path
+          import fitz
+          import ravemems_generic_precise_extract as generic
+
+          pdf_path = Path(sys.argv[1])
+          target = Path(sys.argv[2])
+          pe = generic.pe
+
+          CODE_RE = re.compile(r"^[A-Z]{0,4}\d+(?:[-/]\d+)+[A-Z]?$", re.I)
+          VALUE_RE = re.compile(r"^\d+(?:\.\d+)?\s*(?:amp(?:s)?|volt(?:s)?|ohm(?:s)?|watt(?:s)?|a|v|w)$", re.I)
+
+          def alpha_upper_ratio(text: str) -> float:
+              letters = [c for c in text if c.isalpha()]
+              if not letters:
+                  return 0.0
+              return sum(c.isupper() for c in letters) / len(letters)
+
+          def quality_flags(text: str, item: dict, median_size: float) -> list[str]:
+              compact = re.sub(r"\s+", " ", text).strip()
+              flags = []
+              letters = sum(c.isalpha() for c in compact)
+              upper_ratio = alpha_upper_ratio(compact)
+              if letters < 4:
+                  flags.append('too_few_letters')
+              if CODE_RE.fullmatch(compact):
+                  flags.append('code_like')
+              if VALUE_RE.fullmatch(compact):
+                  flags.append('value_like')
+              if compact.endswith(('.', ',', ';')) and upper_ratio < 0.8:
+                  flags.append('sentence_or_fragment_terminal')
+              if len(compact) > 78 and upper_ratio < 0.8:
+                  flags.append('long_prose_like')
+              visually_prominent = bool(item.get('bold')) or float(item.get('max_size', 0.0)) >= max(1.0, median_size * 1.10) or upper_ratio >= 0.80
+              if not visually_prominent and len(compact) > 35:
+                  flags.append('no_title_style_support')
+              return flags
+
+          def candidate_score(text: str, item: dict, median_size: float, page_height: float) -> float:
+              compact = re.sub(r"\s+", " ", text).strip()
+              flags = quality_flags(compact, item, median_size)
+              if any(flag in flags for flag in ('too_few_letters','code_like','value_like','sentence_or_fragment_terminal','long_prose_like')):
+                  return -100.0
+              size = float(item.get('max_size', 0.0))
+              upper_ratio = alpha_upper_ratio(compact)
+              score = 0.0
+              if item.get('bold'):
+                  score += 5.0
+              if median_size > 0:
+                  score += min(6.0, max(-2.0, (size / median_size - 1.0) * 8.0))
+              if upper_ratio >= 0.80:
+                  score += 3.0
+              elif upper_ratio >= 0.45:
+                  score += 1.0
+              if 4 <= len(compact) <= 60:
+                  score += 2.0
+              elif len(compact) <= 90:
+                  score += 0.5
+              y0 = float(item.get('bbox', (0,0,0,0))[1])
+              score += max(0.0, 1.5 - 2.0 * (y0 / max(page_height, 1.0)))
+              if 'no_title_style_support' in flags:
+                  score -= 2.0
+              return round(score, 3)
+
+          pages = []
+          suspicious = []
+          with fitz.open(pdf_path) as doc:
+              assert doc.page_count == 212, doc.page_count
+              for pno in range(1, doc.page_count + 1):
+                  page = doc[pno - 1]
+                  lines = pe.read_lines(page)
+                  identifier, selected, selected_bbox, category = generic._reference_entry_from_page(page)
+                  body = [x for x in lines if x.get('reading_region') not in {'header','footer'} and generic._meaningful_reference_line(str(x.get('text','')))]
+                  sizes = [float(x.get('max_size',0.0)) for x in body if float(x.get('max_size',0.0)) > 0]
+                  median_size = statistics.median(sizes) if sizes else 0.0
+                  selected_item = next((x for x in body if re.sub(r"\s+", " ", str(x.get('text',''))).strip() == selected), None)
+                  selected_flags = quality_flags(selected or '', selected_item or {}, median_size) if selected else ['missing_title']
+                  candidates = []
+                  for item in body:
+                      text = re.sub(r"\s+", " ", str(item.get('text',''))).strip()
+                      candidates.append({
+                          'text': text,
+                          'region': item.get('reading_region'),
+                          'bbox': [round(float(v),3) for v in item.get('bbox',(0,0,0,0))],
+                          'max_size': round(float(item.get('max_size',0.0)),3),
+                          'bold': bool(item.get('bold')),
+                          'upper_ratio': round(alpha_upper_ratio(text),3),
+                          'flags': quality_flags(text, item, median_size),
+                          'score': candidate_score(text, item, median_size, float(page.rect.height)),
+                      })
+                  ranked = sorted(candidates, key=lambda x: (-x['score'], x['bbox'][1], x['bbox'][0]))
+                  record = {
+                      'page': pno,
+                      'identifier': identifier,
+                      'category': category,
+                      'selected': selected,
+                      'selected_bbox': selected_bbox,
+                      'selected_flags': selected_flags,
+                      'median_body_size': round(median_size,3),
+                      'best_scored': ranked[:8],
+                  }
+                  pages.append(record)
+                  if selected_flags:
+                      suspicious.append(record)
+
+          result = {
+              'page_count': len(pages),
+              'suspicious_count': len(suspicious),
+              'suspicious_pages': [r['page'] for r in suspicious],
+              'pages': pages,
+          }
+          target.write_text(json.dumps(result, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          print('RCL0213_TITLE_DIAGNOSTIC_PAGE_COUNT', len(pages))
+          print('RCL0213_TITLE_DIAGNOSTIC_SUSPICIOUS_COUNT', len(suspicious))
+          print('RCL0213_TITLE_DIAGNOSTIC_SUSPICIOUS_PAGES', [r['page'] for r in suspicious])
+          for record in suspicious:
+              print('RCL0213_TITLE_SUSPICIOUS', json.dumps({
+                  'page': record['page'],
+                  'identifier': record['identifier'],
+                  'category': record['category'],
+                  'selected': record['selected'],
+                  'flags': record['selected_flags'],
+                  'median_body_size': record['median_body_size'],
+                  'best_scored': record['best_scored'][:5],
+              }, ensure_ascii=False))
+          PY
+
+      - name: Upload title diagnostic evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAVEMEMS-V2-RCL0213ENG-REFERENCE-TITLE-DIAGNOSTIC
+          path: ${{ runner.temp }}/reference-title-diagnostic.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Guard production again
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
