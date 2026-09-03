@@ -13,6 +13,7 @@ from typing import Any
 import fitz
 
 from audit import audit_database
+from reading_order import geometric_reading_order
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -97,8 +98,7 @@ def read_lines(page: fitz.Page) -> list[dict[str, Any]]:
                     "spans": span_items,
                 }
             )
-    lines.sort(key=lambda item: (item["bbox"][1], item["bbox"][0]))
-    return lines
+    return geometric_reading_order(lines, float(page.rect.width), float(page.rect.height))
 
 
 class SemanticParser:
@@ -410,7 +410,7 @@ class SemanticParser:
             elif self.current_phase_key:
                 top = float(item["bbox"][1])
                 bottom = float(item["bbox"][3])
-                if top >= page_height * 0.055 and bottom <= page_height * 0.955 and not self._ignored(text):
+                if item.get("reading_region") not in {"header", "footer"} and top >= page_height * 0.055 and bottom <= page_height * 0.955 and not self._ignored(text):
                     self._record_rejected_numeric_candidate(physical_page, item)
 
             for requirement_type, pattern in self.requirement_rules:
@@ -426,7 +426,7 @@ class SemanticParser:
             if self.current_step and step_match is None:
                 top = float(item["bbox"][1])
                 bottom = float(item["bbox"][3])
-                if top >= page_height * 0.055 and bottom <= page_height * 0.955 and not self._ignored(text):
+                if item.get("reading_region") not in {"header", "footer"} and top >= page_height * 0.055 and bottom <= page_height * 0.955 and not self._ignored(text):
                     self.current_step["parts"].append(text)
                     self.current_step["last_page"] = physical_page
                     if self.current_operation_key:
@@ -820,7 +820,7 @@ def main() -> int:
             debug_lines.append(f"===== PHYSICAL PAGE {physical_page} =====")
             for item in lines:
                 span_text = " | ".join(str(span["text"]).strip() for span in item.get("spans", []))
-                debug_lines.append(f"{item['text']}\tSPANS=[{span_text}]")
+                debug_lines.append(f"{item['text']}\tREGION={item.get('reading_region')}\tBBOX={bbox_json(item['bbox'])}\tSPANS=[{span_text}]")
             debug_lines.append("")
         if physical_page % 25 == 0:
             db.commit()
