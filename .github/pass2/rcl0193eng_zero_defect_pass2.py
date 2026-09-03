@@ -153,8 +153,6 @@ class Pass2SemanticParser(pe.SemanticParser):
             return False
         if item.get("bold"):
             return True
-        # A trailing full stop plus body-text indentation is a strong sign that
-        # this is a wrapped instruction (e.g. "assembly." / "remove."), not a heading.
         if text.endswith("."):
             return False
         margin = margins.get(region)
@@ -167,12 +165,8 @@ class Pass2SemanticParser(pe.SemanticParser):
         physical_page: int,
         page_key: str,
         lines: list[dict[str, Any]],
-        page_width: float,
         page_height: float,
     ) -> tuple[set[str], set[str]]:
-        # Two consecutive pages with no recognized procedure are enough to end
-        # a continuation. This preserves a single illustration-only bridge page
-        # but prevents later numbered diagrams/descriptions from being absorbed.
         if self._idle_procedure_pages >= 2:
             self._clear_active_procedure()
 
@@ -264,10 +258,6 @@ class Pass2SemanticParser(pe.SemanticParser):
     def finalize(self) -> None:
         super().finalize()
 
-        # The manufacturer sometimes keeps one numbered procedure continuous
-        # through a genuine semantic subheading. A phase that is internally
-        # contiguous and begins exactly after the preceding phase is therefore
-        # complete, not a missing-sequence defect.
         operations = self.db.execute(
             "SELECT operation_key FROM ravemems_operation ORDER BY sequence_no"
         ).fetchall()
