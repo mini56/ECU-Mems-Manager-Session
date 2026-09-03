@@ -1,0 +1,36 @@
+name: TEMP Journal failed RAVEMEMS column helper
+on:
+  push:
+    branches: [RAPPORT]
+    paths: ['.github/workflows/tmp-journal-ravemems-v2-column-helper-failure.yml']
+permissions:
+  contents: write
+jobs:
+  journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: RAPPORT
+          fetch-depth: 0
+      - name: Append failure
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = 1d6316bd1746d6f2b4cfb751cab88d18e27ef730
+          test "$(git ls-remote origin refs/heads/tmp-ravemems-v2-foundation | awk '{print $1}')" = 371bfe357e10ed1e994bc59e7996c2fbbfb7f827
+          cat >> RAPPORT_SUIVI_ECU_MEMS_MANAGER.md <<'EOF'
+
+## 2026-09-03 — INCIDENT TRANSPORT CORRECTION ORDRE DE LECTURE COLONNES
+
+Tentative de transport de la correction generique sur `tmp-ravemems-v2-foundation` : commit helper `371bfe357e10ed1e994bc59e7996c2fbbfb7f827`, workflow `TEMP RAVEMEMS V2 column fix`, run `33782795451` : **FAILURE** avant toute modification technique. Cause exacte : le helper faisait `test "$(git rev-parse HEAD)" = dee81b...` alors que le checkout de la branche contient necessairement le commit helper `371bfe...`; le premier `test` a donc quitte avec code 1. Aucun `reading_order.py`, aucun changement de `prototype_extract.py` et aucun commit technique n'ont ete produits par ce run. `MEMSX64` reste exactement BUILD #103 `1d6316bd...`.
+
+PROCHAINE ACTION EXACTE : corriger uniquement le garde du helper de transport pour accepter son propre HEAD `371bfe...`, sans changer le contenu de la correction geometrique preparee, relancer le helper, puis laisser le workflow RAVEMEMS V2 tester le commit technique resultant sur le seul RCL0193ENG.
+EOF
+          rm .github/workflows/tmp-journal-ravemems-v2-column-helper-failure.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md .github/workflows/tmp-journal-ravemems-v2-column-helper-failure.yml
+          git diff --cached --check
+          git commit -m 'Journal failed RAVEMEMS column helper'
+          git push origin HEAD:RAPPORT
