@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      TEST_SHA: '0be7673d4638b1e475028ee5658ffbcebde3c149'
+      TEST_SHA: 'ddc109f919a3808a9ba186d2928080c8cbf18dc9'
       PROTECTED_MEMSX64: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
       SOURCE_MAIN_COMMIT: '643de091b474f4e27917a065bdf46d5a0c764276'
       RCL0193ENG_BLOB: '82263eb36bb194dfa969d0471d10ef11078ce521'
@@ -156,6 +156,7 @@ jobs:
           ).fetchone()[0]
           assert m['numeric_phase_defect_count'] == 0, m['numeric_phase_defect_count']
           assert blocking_seq == 0, blocking_seq
+          assert m['counts']['ravemems_step'] == 3104, m['counts']['ravemems_step']
 
           step_rows = db.execute(
               "SELECT s.step_key,s.instruction_source,o.manufacturer_operation_no "
@@ -167,6 +168,16 @@ jobs:
           if trailing_folios:
               print('PASS2_TRAILING_FOLIO_EXAMPLES', trailing_folios[:12])
           assert trailing_folios == [], trailing_folios[:12]
+
+          incomplete_crossrefs = []
+          for r in step_rows:
+              text = (r[1] or '').strip()
+              if re.search(r'\bSee$', text, re.IGNORECASE) or text.endswith(','):
+                  incomplete_crossrefs.append(r)
+          print('PASS2_INCOMPLETE_CROSSREF_COUNT', len(incomplete_crossrefs))
+          if incomplete_crossrefs:
+              print('PASS2_INCOMPLETE_CROSSREF_EXAMPLES', incomplete_crossrefs[:12])
+          assert incomplete_crossrefs == [], incomplete_crossrefs[:12]
 
           operations = db.execute(
               "SELECT operation_key,manufacturer_operation_no,title_source FROM ravemems_operation WHERE length(title_source)>=5"
@@ -208,7 +219,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: RAVEMEMS-V2-RCL0193ENG-ZERO-DEFECT-PASS2-BOUNDARY
+          name: RAVEMEMS-V2-RCL0193ENG-ZERO-DEFECT-PASS2-CROSSREF
           path: ${{ runner.temp }}/rcl0193eng-pass2
           if-no-files-found: warn
           retention-days: 14
