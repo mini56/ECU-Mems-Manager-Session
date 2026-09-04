@@ -1,0 +1,128 @@
+name: TMP IA MEMSLibrary Bridge
+
+on:
+  push:
+    branches:
+      - tmp-ai-memslibrary-bridge
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  bridge-windows-x64:
+    runs-on: windows-2022
+    timeout-minutes: 45
+    steps:
+      - name: Checkout isolated bridge branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify protected ancestry and Pack001 checkpoint
+        shell: pwsh
+        run: |
+          $protected = "1d6316bd1746d6f2b4cfb751cab88d18e27ef730"
+          $pack001 = "9cf3d00840cec1749ef9358f708d3e68a2c8bc4d"
+          git merge-base --is-ancestor $protected HEAD
+          if ($LASTEXITCODE -ne 0) { throw "Bridge branch is not based on protected MEMSX64 #103" }
+          git merge-base --is-ancestor $pack001 HEAD
+          if ($LASTEXITCODE -ne 0) { throw "Bridge branch is not based on validated Pack001 checkpoint" }
+          Write-Host "BRIDGE_ANCESTRY_OK protected=$protected pack001=$pack001"
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Qt acquisition tool
+        shell: pwsh
+        run: |
+          python -m pip install --disable-pip-version-check "aqtinstall==3.3.0"
+
+      - name: Install Qt 5.15.2 MSVC 2019 x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $sevenZip = (Get-Command 7z.exe -ErrorAction Stop).Source
+          if (Test-Path 'C:\Qt') { Remove-Item 'C:\Qt' -Recurse -Force -ErrorAction SilentlyContinue }
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
+          if ($LASTEXITCODE -ne 0) { throw "aqtinstall failed: $LASTEXITCODE" }
+
+      - name: Download validated RAVEMEMS V2 47-PDF artifact
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 33810202288 --repo mini56/ECU-Mems-Manager-Session --name RAVEMEMS-V2-FULL-CORPUS-GENERIC-33810202288 --dir source47
+          $dbs = Get-ChildItem source47 -Recurse -Filter ravemems_v2.sqlite
+          if ($dbs.Count -ne 47) { throw "Expected 47 source SQLite databases, found $($dbs.Count)" }
+          Write-Host "SOURCE47_OK databases=$($dbs.Count)"
+
+      - name: Rebuild validated Pack001 fixture
+        shell: pwsh
+        run: |
+          python tools/build_memslibrary_pack.py source47 pack001 --pack-id MEMSLibrary_Pack_001
+          @'
+          import sqlite3
+          cx=sqlite3.connect('pack001/knowledge.sqlite')
+          assert cx.execute('pragma integrity_check').fetchone()[0]=='ok'
+          assert cx.execute('pragma foreign_key_check').fetchall()==[]
+          assert cx.execute('select count(*) from ravemems_document').fetchone()[0]==47
+          print('PACK001_FIXTURE_OK docs=47')
+          '@ | python -
+
+      - name: Build MEMSLibrary ABI2 x64
+        shell: pwsh
+        run: |
+          cmake -S memslibrary -B build-memslibrary -A x64
+          if ($LASTEXITCODE -ne 0) { throw "MEMSLibrary configure failed: $LASTEXITCODE" }
+          cmake --build build-memslibrary --config Release --parallel
+          if ($LASTEXITCODE -ne 0) { throw "MEMSLibrary build failed: $LASTEXITCODE" }
+
+      - name: Build focused IA MEMSLibrary bridge self-test
+        shell: pwsh
+        run: |
+          cmake -S bridge-test -B build-bridge-test -A x64 -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64"
+          if ($LASTEXITCODE -ne 0) { throw "Bridge test configure failed: $LASTEXITCODE" }
+          cmake --build build-bridge-test --config Release --parallel
+          if ($LASTEXITCODE -ne 0) { throw "Bridge test build failed: $LASTEXITCODE" }
+
+      - name: Run Pack001 provenance and no-hit bridge tests
+        shell: pwsh
+        run: |
+          $env:PATH = "C:\Qt\5.15.2\msvc2019_64\bin;$env:PATH"
+          $exe = Resolve-Path build-bridge-test/Release/ia_memslibrary_bridge_selftest.exe
+          $dll = Resolve-Path build-memslibrary/Release/MEMSLibrary.dll
+          $pack = Resolve-Path pack001
+          & $exe $dll $pack
+          if ($LASTEXITCODE -ne 0) { throw "IA MEMSLibrary bridge self-test failed: $LASTEXITCODE" }
+
+      - name: Compile ECU MEMS Manager with temporary bridge injection
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $inject = '${{ github.workspace }}\cmake\IaMemsLibraryBridgeInject.cmake'
+          cmake -S . -B build-app-check -A x64 `
+            -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
+            -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
+            -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF `
+            -DMEMS_USE_ONNX_GENAI=OFF `
+            "-DCMAKE_PROJECT_INCLUDE=$inject"
+          if ($LASTEXITCODE -ne 0) { throw "Bridge application configure failed: $LASTEXITCODE" }
+          cmake --build build-app-check --config Release --target ecu_mems_manager --parallel
+          if ($LASTEXITCODE -ne 0) { throw "Bridge application compile failed: $LASTEXITCODE" }
+          Write-Host "IA_MEMSLIBRARY_APP_COMPILE_PASS"
+
+      - name: Upload focused bridge proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: IA-MEMSLibrary-Bridge-Proof-${{ github.run_id }}
+          path: |
+            build-memslibrary/Release/MEMSLibrary.dll
+            pack001/knowledge.sqlite
+            pack001/manifest.json
+            build-bridge-test/Release/ia_memslibrary_bridge_selftest.exe
+          if-no-files-found: error
+          compression-level: 6
