@@ -24,7 +24,6 @@ add_executable(ia_memslibrary_qwen_selftest
     ../expert/IaMemsLibraryQwenSelfTest.cpp
     ../expert/IaMemsLibraryBridge.cpp
     ../expert/IaMemsLibraryBridge.h
-    ../expert/IaMemsConversationRouting.cpp
     ../expert/IaMemsConversationRouting.h
     ../expert/LocalAiClient.cpp
     ../expert/LocalAiClient.h
