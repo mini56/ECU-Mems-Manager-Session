@@ -23,6 +23,7 @@ public:
     void setContext(const ExpertContext &context);
     void addObservation(const ExpertObservation &observation);
     void ask(const QString &question);
+    void askWithLibrary(const QString &question);
     void clearConversation();
 
     QString statusText() const;
