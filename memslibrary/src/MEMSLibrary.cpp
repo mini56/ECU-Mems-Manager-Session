@@ -14,6 +14,7 @@ namespace {
 constexpr char kLibraryName[] = "MEMSLibrary";
 constexpr char kEngineRole[] = "generic_knowledge_library_engine";
 constexpr char kPackFormat[] = "MEMSLibraryKnowledgePack";
+constexpr int kMinimumPackSchemaVersion = 2;
 
 void copyText(char* dest, std::size_t capacity, const unsigned char* src)
 {
@@ -95,7 +96,7 @@ std::vector<std::string> queryTerms(const char* query)
     std::string current;
     for (const unsigned char c : std::string(query ? query : "")) {
         if (std::isalnum(c) || c >= 0x80 || c == '-' || c == '_') {
-            current.push_back(static_cast<char>(std::tolower(c)));
+            current.push_back(static_cast<char>(c < 0x80 ? std::tolower(c) : c));
         } else if (!current.empty()) {
             terms.push_back(current);
             current.clear();
@@ -103,8 +104,107 @@ std::vector<std::string> queryTerms(const char* query)
     }
     if (!current.empty()) terms.push_back(current);
     terms.erase(std::remove_if(terms.begin(), terms.end(), [](const std::string& s){ return s.size() < 2; }), terms.end());
+    std::sort(terms.begin(), terms.end());
+    terms.erase(std::unique(terms.begin(), terms.end()), terms.end());
     if (terms.size() > 8) terms.resize(8);
     return terms;
+}
+
+std::string canonicalLanguage(const char* sourceLanguage)
+{
+    if (!sourceLanguage) return {};
+    std::string value(sourceLanguage);
+    if (value.empty() || value.size() >= MEMSLIBRARY_LANGUAGE_CAPACITY) return {};
+    for (char& c : value) {
+        const unsigned char u = static_cast<unsigned char>(c);
+        if (!std::isalpha(u)) return {};
+        c = static_cast<char>(std::tolower(u));
+    }
+    return value;
+}
+
+bool languageExists(sqlite3* db, const std::string& language)
+{
+    sqlite3_stmt* stmt = nullptr;
+    if (sqlite3_prepare_v2(db,
+            "SELECT 1 FROM memslibrary_search WHERE source_language=? LIMIT 1",
+            -1, &stmt, nullptr) != SQLITE_OK) {
+        return false;
+    }
+    sqlite3_bind_text(stmt, 1, language.c_str(), -1, SQLITE_TRANSIENT);
+    const bool exists = sqlite3_step(stmt) == SQLITE_ROW;
+    sqlite3_finalize(stmt);
+    return exists;
+}
+
+std::int32_t searchByLanguage(
+    const wchar_t* packDirectory,
+    const char* sourceLanguageUtf8,
+    const char* queryUtf8,
+    MEMSLibrarySearchResult* outResults,
+    std::uint32_t resultCapacity,
+    std::uint32_t* outResultCount)
+{
+    if (!sourceLanguageUtf8 || !queryUtf8 || !outResults || resultCapacity == 0 || !outResultCount)
+        return MEMSLIBRARY_INVALID_ARGUMENT;
+    *outResultCount = 0;
+
+    const std::string language = canonicalLanguage(sourceLanguageUtf8);
+    if (language.empty()) return MEMSLIBRARY_LANGUAGE_REQUIRED;
+    const auto terms = queryTerms(queryUtf8);
+    if (terms.empty()) return MEMSLIBRARY_INVALID_ARGUMENT;
+
+    sqlite3* db = nullptr;
+    const int openStatus = openReadonly(packDirectory, &db);
+    if (openStatus != MEMSLIBRARY_OK) return openStatus;
+    if (!languageExists(db, language)) {
+        sqlite3_close(db);
+        return MEMSLIBRARY_LANGUAGE_NOT_FOUND;
+    }
+
+    std::string sql =
+        "SELECT document_key,page_number,entity_kind,entity_key,source_language,title,body "
+        "FROM memslibrary_search WHERE source_language=?";
+    for (std::size_t i = 0; i < terms.size(); ++i)
+        sql += " AND instr(' ' || search_text || ' ', ' ' || ? || ' ') > 0";
+    sql +=
+        " ORDER BY CASE entity_kind WHEN 'step' THEN 0 WHEN 'requirement' THEN 1 "
+        "WHEN 'notice' THEN 2 WHEN 'operation' THEN 3 WHEN 'section' THEN 4 ELSE 5 END, "
+        "document_key, COALESCE(page_number,2147483647), entity_key LIMIT ?";
+
+    sqlite3_stmt* stmt = nullptr;
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        sqlite3_close(db);
+        return MEMSLIBRARY_QUERY_FAILED;
+    }
+
+    int bindIndex = 1;
+    sqlite3_bind_text(stmt, bindIndex++, language.c_str(), -1, SQLITE_TRANSIENT);
+    for (const auto& term : terms)
+        sqlite3_bind_text(stmt, bindIndex++, term.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(stmt, bindIndex, static_cast<int>(resultCapacity));
+
+    std::uint32_t count = 0;
+    while (count < resultCapacity && sqlite3_step(stmt) == SQLITE_ROW) {
+        auto& r = outResults[count];
+        if (r.struct_size != sizeof(MEMSLibrarySearchResult)) {
+            sqlite3_finalize(stmt);
+            sqlite3_close(db);
+            return MEMSLIBRARY_INVALID_ARGUMENT;
+        }
+        r.page_number = sqlite3_column_type(stmt, 1) == SQLITE_NULL ? -1 : sqlite3_column_int(stmt, 1);
+        copyText(r.document_key, sizeof(r.document_key), sqlite3_column_text(stmt, 0));
+        copyText(r.entity_kind, sizeof(r.entity_kind), sqlite3_column_text(stmt, 2));
+        copyText(r.entity_key, sizeof(r.entity_key), sqlite3_column_text(stmt, 3));
+        copyText(r.source_language, sizeof(r.source_language), sqlite3_column_text(stmt, 4));
+        copyText(r.title, sizeof(r.title), sqlite3_column_text(stmt, 5));
+        copyText(r.body, sizeof(r.body), sqlite3_column_text(stmt, 6));
+        ++count;
+    }
+    sqlite3_finalize(stmt);
+    sqlite3_close(db);
+    *outResultCount = count;
+    return MEMSLIBRARY_OK;
 }
 }
 
@@ -150,7 +250,7 @@ std::int32_t MEMSLibrary_ValidatePack(const wchar_t* packDirectory, MEMSLibraryP
     const int docs = sqlite3_column_int(stmt, 3);
     const int sources = sqlite3_column_int(stmt, 4);
     const bool valid = packFormat && std::strcmp(reinterpret_cast<const char*>(packFormat), kPackFormat) == 0 &&
-        schema > 0 && docs > 0 && sources > 0;
+        schema >= kMinimumPackSchemaVersion && docs > 0 && sources > 0;
     if (valid) {
         outInfo->schema_version = static_cast<std::uint32_t>(schema);
         outInfo->document_count = static_cast<std::uint32_t>(docs);
@@ -163,55 +263,24 @@ std::int32_t MEMSLibrary_ValidatePack(const wchar_t* packDirectory, MEMSLibraryP
 }
 
 std::int32_t MEMSLibrary_SearchPack(
+    const wchar_t* /*packDirectory*/,
+    const char* /*queryUtf8*/,
+    MEMSLibrarySearchResult* /*outResults*/,
+    std::uint32_t /*resultCapacity*/,
+    std::uint32_t* outResultCount)
+{
+    if (outResultCount) *outResultCount = 0;
+    return MEMSLIBRARY_LANGUAGE_REQUIRED;
+}
+
+std::int32_t MEMSLibrary_SearchPackByLanguage(
     const wchar_t* packDirectory,
+    const char* sourceLanguageUtf8,
     const char* queryUtf8,
     MEMSLibrarySearchResult* outResults,
     std::uint32_t resultCapacity,
     std::uint32_t* outResultCount)
 {
-    if (!queryUtf8 || !outResults || resultCapacity == 0 || !outResultCount) return MEMSLIBRARY_INVALID_ARGUMENT;
-    *outResultCount = 0;
-    const auto terms = queryTerms(queryUtf8);
-    if (terms.empty()) return MEMSLIBRARY_INVALID_ARGUMENT;
-
-    sqlite3* db = nullptr;
-    const int openStatus = openReadonly(packDirectory, &db);
-    if (openStatus != MEMSLIBRARY_OK) return openStatus;
-
-    std::string sql = "SELECT document_key,page_number,entity_kind,entity_key,title,body FROM memslibrary_search WHERE 1=1";
-    for (std::size_t i = 0; i < terms.size(); ++i) sql += " AND search_text LIKE ?";
-    sql += " ORDER BY CASE entity_kind WHEN 'step' THEN 0 WHEN 'requirement' THEN 1 WHEN 'notice' THEN 2 WHEN 'operation' THEN 3 WHEN 'section' THEN 4 ELSE 5 END, document_key, COALESCE(page_number,2147483647), entity_key LIMIT ?";
-
-    sqlite3_stmt* stmt = nullptr;
-    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
-        sqlite3_close(db);
-        return MEMSLIBRARY_QUERY_FAILED;
-    }
-    int bindIndex = 1;
-    for (const auto& term : terms) {
-        const std::string pattern = "%" + term + "%";
-        sqlite3_bind_text(stmt, bindIndex++, pattern.c_str(), -1, SQLITE_TRANSIENT);
-    }
-    sqlite3_bind_int(stmt, bindIndex, static_cast<int>(resultCapacity));
-
-    std::uint32_t count = 0;
-    while (count < resultCapacity && sqlite3_step(stmt) == SQLITE_ROW) {
-        auto& r = outResults[count];
-        if (r.struct_size != sizeof(MEMSLibrarySearchResult)) {
-            sqlite3_finalize(stmt);
-            sqlite3_close(db);
-            return MEMSLIBRARY_INVALID_ARGUMENT;
-        }
-        r.page_number = sqlite3_column_type(stmt, 1) == SQLITE_NULL ? -1 : sqlite3_column_int(stmt, 1);
-        copyText(r.document_key, sizeof(r.document_key), sqlite3_column_text(stmt, 0));
-        copyText(r.entity_kind, sizeof(r.entity_kind), sqlite3_column_text(stmt, 2));
-        copyText(r.entity_key, sizeof(r.entity_key), sqlite3_column_text(stmt, 3));
-        copyText(r.title, sizeof(r.title), sqlite3_column_text(stmt, 4));
-        copyText(r.body, sizeof(r.body), sqlite3_column_text(stmt, 5));
-        ++count;
-    }
-    sqlite3_finalize(stmt);
-    sqlite3_close(db);
-    *outResultCount = count;
-    return MEMSLIBRARY_OK;
+    return searchByLanguage(packDirectory, sourceLanguageUtf8, queryUtf8,
+                            outResults, resultCapacity, outResultCount);
 }
