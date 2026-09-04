@@ -1,0 +1,45 @@
+name: TMP Restore Validated IA Visual State
+
+on:
+  push:
+    branches: [tmp-ai-memslibrary-bridge]
+    paths: ['.github/workflows/tmp-restore-validated-ia-visual.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout temporary IA bridge branch
+        uses: actions/checkout@v4
+        with:
+          ref: tmp-ai-memslibrary-bridge
+          fetch-depth: 0
+
+      - name: Restore exact validated visual and scroll application files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git cat-file -e 06bb3b8cdf4e0563d020c897dbc8faf22605b644^{commit}
+          git checkout 06bb3b8cdf4e0563d020c897dbc8faf22605b644 -- \
+            iamemstab.cpp \
+            expert/IaMemsDiagramCatalog.cpp \
+            expert/IaMemsDiagramSelfTest.cpp
+          git diff --check
+          grep -q 'iaMemsTranscriptScroll' iamemstab.cpp
+          grep -q 'Voir le schéma' iamemstab.cpp
+          grep -q 'runtime_visual_catalog.json' expert/IaMemsDiagramCatalog.cpp
+          changed="$(git diff --cached --name-only | sort)"
+          expected="$(printf '%s\n' expert/IaMemsDiagramCatalog.cpp expert/IaMemsDiagramSelfTest.cpp iamemstab.cpp | sort)"
+          test "$changed" = "$expected"
+
+      - name: Commit exact validated state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Restore validated IA visual catalog and scroll"
+          git push origin HEAD:tmp-ai-memslibrary-bridge
