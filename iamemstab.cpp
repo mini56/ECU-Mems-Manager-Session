@@ -66,6 +66,34 @@ QString injectionLabel(const QString &raw)
     return QString();
 }
 
+bool isBareInductionSelection(const QString &raw)
+{
+    const QString text = IaMemsConversationRouting::normalize(raw);
+    return text == QStringLiteral("spi") || text == QStringLiteral("mpi");
+}
+
+QString shortMpiAnswer(const QString &raw)
+{
+    const QString text = IaMemsConversationRouting::normalize(raw);
+    if (IaMemsConversationRouting::explicitInduction(raw) != QStringLiteral("MPi"))
+        return QString();
+
+    if (text == QStringLiteral("mpi"))
+        return QStringLiteral(
+            "MPi signifie « Multi Point Injection », c'est-à-dire injection multipoint. "
+            "Sur les montages Rover/Mini concernés, plusieurs injecteurs distribuent le carburant, typiquement un injecteur par cylindre.");
+
+    if (text == QStringLiteral("injecteur mpi")
+        || text == QStringLiteral("injecteurs mpi")
+        || text == QStringLiteral("mpi injecteur")
+        || text == QStringLiteral("mpi injecteurs")) {
+        return QStringLiteral(
+            "Sur un système MPi Rover/Mini MEMS, l'injection est multipoint : plusieurs injecteurs distribuent le carburant, typiquement un par cylindre. "
+            "L'ECU commande leur ouverture pour doser le carburant dans l'admission. Si tu cherches le brochage, le câblage, un contrôle ou une procédure précise, indique simplement ce point et je chercherai la donnée correspondante.");
+    }
+    return QString();
+}
+
 } // namespace
 
 IaMemsTab::IaMemsTab(MainWindow *mainWindow, QWidget *parent)
@@ -102,15 +130,42 @@ IaMemsTab::IaMemsTab(MainWindow *mainWindow, QWidget *parent)
     subtitle->setWordWrap(true);
     root->addWidget(subtitle);
 
-    m_transcript = new QTextBrowser(this);
+    QWidget *transcriptPane = new QWidget(this);
+    QHBoxLayout *transcriptLayout = new QHBoxLayout(transcriptPane);
+    transcriptLayout->setContentsMargins(0, 0, 0, 0);
+    transcriptLayout->setSpacing(6);
+
+    m_transcript = new QTextBrowser(transcriptPane);
     m_transcript->setObjectName(QStringLiteral("iaMemsTranscript"));
     m_transcript->setOpenExternalLinks(false);
     m_transcript->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    m_transcript->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    m_transcript->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_transcript->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    if (QScrollBar *bar = m_transcript->verticalScrollBar())
-        bar->setMinimumWidth(14);
-    root->addWidget(m_transcript, 1);
+    transcriptLayout->addWidget(m_transcript, 1);
+
+    QScrollBar *transcriptScroll = new QScrollBar(Qt::Vertical, transcriptPane);
+    transcriptScroll->setObjectName(QStringLiteral("iaMemsTranscriptScroll"));
+    transcriptScroll->setMinimumWidth(18);
+    transcriptScroll->setMaximumWidth(18);
+    transcriptLayout->addWidget(transcriptScroll);
+
+    QScrollBar *internalScroll = m_transcript->verticalScrollBar();
+    QObject::connect(internalScroll, &QScrollBar::rangeChanged,
+                     transcriptPane,
+                     [internalScroll, transcriptScroll](int minimum, int maximum) {
+                         transcriptScroll->setRange(minimum, maximum);
+                         transcriptScroll->setPageStep(internalScroll->pageStep());
+                         transcriptScroll->setSingleStep(internalScroll->singleStep());
+                     });
+    QObject::connect(internalScroll, &QScrollBar::valueChanged,
+                     transcriptScroll, &QScrollBar::setValue);
+    QObject::connect(transcriptScroll, &QScrollBar::valueChanged,
+                     internalScroll, &QScrollBar::setValue);
+    transcriptScroll->setRange(internalScroll->minimum(), internalScroll->maximum());
+    transcriptScroll->setPageStep(internalScroll->pageStep());
+    transcriptScroll->setSingleStep(internalScroll->singleStep());
+
+    root->addWidget(transcriptPane, 1);
 
     m_diagramButton = new QPushButton(this);
     m_diagramButton->setObjectName(QStringLiteral("iaMemsDiagramButton"));
@@ -240,10 +295,18 @@ void IaMemsTab::appendMessage(const QString &speaker, const QString &text)
     const QString safeSpeaker = speaker.toHtmlEscaped();
     QString safeText = text.toHtmlEscaped();
     safeText.replace(QLatin1Char('\n'), QStringLiteral("<br>"));
-    m_transcript->append(QStringLiteral("<p><b>%1</b><br>%2</p>").arg(safeSpeaker, safeText));
 
-    if (QScrollBar *bar = m_transcript->verticalScrollBar())
-        bar->setValue(bar->maximum());
+    const QString messageAnchor = QStringLiteral("ia-message-%1")
+                  .arg(m_transcript->document()->characterCount());
+    m_transcript->append(QStringLiteral("<a name='%1'></a><p><b>%2</b><br>%3</p>")
+         .arg(messageAnchor, safeSpeaker, safeText));
+
+    if (QScrollBar *bar = m_transcript->verticalScrollBar()) {
+        if (speaker == QStringLiteral("IA MEMS"))
+            m_transcript->scrollToAnchor(messageAnchor);
+        else
+            bar->setValue(bar->maximum());
+    }
 }
 
 void IaMemsTab::appendSystemMessage(const QString &text)
@@ -269,7 +332,7 @@ void IaMemsTab::updateDiagramSuggestion(const QString &question)
 
     m_diagramTitle = suggestion.key;
     m_diagramQuestion = question;
-    m_diagramButton->setText(QStringLiteral("Ouvrir le schéma %1").arg(m_diagramTitle));
+    m_diagramButton->setText(QStringLiteral("Voir le schéma"));
     m_diagramButton->setVisible(true);
 }
 
@@ -466,6 +529,28 @@ void IaMemsTab::sendQuestion()
     appendMessage(QStringLiteral("Vous"), question);
 
     QString effectiveQuestion = question;
+    const QString explicitSelection = IaMemsConversationRouting::explicitInduction(question);
+    const bool bareSelection = isBareInductionSelection(question);
+
+    if (m_pendingClarificationQuestion.isEmpty() && bareSelection && !explicitSelection.isEmpty()) {
+        const QString previousQuestion = property("iaLastVariantClarificationQuestion").toString();
+        const QString previousSelection = property("iaLastVariantClarificationAnswer").toString();
+        if (!previousQuestion.isEmpty()
+            && !previousSelection.isEmpty()
+            && explicitSelection.compare(previousSelection, Qt::CaseInsensitive) != 0) {
+            effectiveQuestion = QStringLiteral("%1 %2")
+                                    .arg(previousQuestion, explicitSelection)
+                                    .simplified();
+            setProperty("iaLastVariantClarificationAnswer", explicitSelection);
+            appendMessage(QStringLiteral("IA MEMS"),
+                          QStringLiteral("Correction prise en compte : %1. Je reprends la demande précédente avec cette variante.")
+                              .arg(explicitSelection));
+        }
+    } else if (m_pendingClarificationQuestion.isEmpty() && !bareSelection) {
+        setProperty("iaLastVariantClarificationQuestion", QVariant());
+        setProperty("iaLastVariantClarificationAnswer", QVariant());
+    }
+
     if (!m_pendingClarificationQuestion.isEmpty()) {
         const QString pending = m_pendingClarificationQuestion;
         m_pendingClarificationQuestion.clear();
@@ -491,6 +576,13 @@ void IaMemsTab::sendQuestion()
                 effectiveQuestion = pending;
             }
         } else {
+            if (IaMemsConversationRouting::needsInductionClarification(pending)) {
+                const QString selected = IaMemsConversationRouting::explicitInduction(question);
+                if (!selected.isEmpty()) {
+                    setProperty("iaLastVariantClarificationQuestion", pending);
+                    setProperty("iaLastVariantClarificationAnswer", selected);
+                }
+            }
             effectiveQuestion = QStringLiteral("%1 %2").arg(pending, question).simplified();
         }
         m_pendingClarificationQuestion.clear();
@@ -502,6 +594,12 @@ void IaMemsTab::sendQuestion()
     if (!prompt.isEmpty()) {
         m_pendingClarificationQuestion = effectiveQuestion;
         answerLocally(prompt);
+        return;
+    }
+
+    const QString localMpiAnswer = shortMpiAnswer(effectiveQuestion);
+    if (!localMpiAnswer.isEmpty()) {
+        answerLocally(localMpiAnswer);
         return;
     }
 
