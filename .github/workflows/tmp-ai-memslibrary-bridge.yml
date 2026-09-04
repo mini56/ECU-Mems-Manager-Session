@@ -13,7 +13,18 @@ permissions:
 jobs:
   bridge-windows-x64:
     runs-on: windows-2022
-    timeout-minutes: 45
+    timeout-minutes: 60
+    env:
+      ORT_GENAI_VERSION: '0.14.0'
+      ORT_GENAI_WIN_X64_SHA256: '8a303e52dc7be8fb2a5331929af451a25ac59774102d7fd09ef673adc85c5ebf'
+      ORT_VERSION: '1.24.4'
+      ORT_WIN_X64_SHA256: 'd2319fddfb6ea4db99ccc4b60c85c517bcd855721f5daa6a06d40d7cb2ee2357'
+      ONNX_MODEL_REPO: 'xiaoyao9184/Qwen3-0.6B-onnx-genai'
+      ONNX_MODEL_REVISION: 'e6bf97818c142808967a48cbab4f0aef18b64621'
+      ONNX_MODEL_SUBDIR: 'cpu_and_mobile/cpu-int4-rtn-block-32-acc-level-4'
+      ONNX_MODEL_ONNX_SHA256: 'b52cfcd91e6ed3caa34c670d4831d96cda3da5eb07ef95bc8ba06547b4f3b86f'
+      ONNX_MODEL_DATA_SHA256: '8539cf4fbc3b5b331fd78ca8cd5b025ce537dfc2f993451f5c474b2f9fb7cd6c'
+      ONNX_TOKENIZER_SHA256: 'be75606093db2094d7cd20f3c2f385c212750648bd6ea4fb2bf507a6a4c55506'
     steps:
       - name: Checkout isolated bridge branch
         uses: actions/checkout@v4
@@ -36,10 +47,10 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install Qt acquisition tool
+      - name: Install validation tools
         shell: pwsh
         run: |
-          python -m pip install --disable-pip-version-check "aqtinstall==3.3.0"
+          python -m pip install --disable-pip-version-check "aqtinstall==3.3.0" "huggingface_hub>=0.34,<1" hf_xet
 
       - name: Install Qt 5.15.2 MSVC 2019 x64
         shell: pwsh
@@ -115,14 +126,125 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Bridge application compile failed: $LASTEXITCODE" }
           Write-Host "IA_MEMSLIBRARY_APP_COMPILE_PASS"
 
-      - name: Upload focused bridge proof
+      - name: Stage pinned production ONNX Runtime GenAI x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $genaiArchive = Join-Path $env:RUNNER_TEMP "onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          $ortArchive = Join-Path $env:RUNNER_TEMP "onnxruntime-win-x64-$env:ORT_VERSION.zip"
+          $genaiExtract = '${{ github.workspace }}\onnx-genai-qwen-test'
+          $ortExtract = '${{ github.workspace }}\onnxruntime-qwen-test'
+          $stage = '${{ github.workspace }}\onnx-runtime-qwen-stage'
+          $genaiUrl = "https://github.com/microsoft/onnxruntime-genai/releases/download/v$env:ORT_GENAI_VERSION/onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          $ortUrl = "https://github.com/microsoft/onnxruntime/releases/download/v$env:ORT_VERSION/onnxruntime-win-x64-$env:ORT_VERSION.zip"
+          foreach ($dir in @($genaiExtract,$ortExtract,$stage)) {
+            if (Test-Path $dir) { Remove-Item $dir -Recurse -Force }
+            New-Item -ItemType Directory -Path $dir -Force | Out-Null
+          }
+          & curl.exe -L --fail --retry 3 --retry-delay 3 -o $genaiArchive $genaiUrl
+          if ($LASTEXITCODE -ne 0) { throw "ONNX Runtime GenAI download failed: $LASTEXITCODE" }
+          $genaiHash = (Get-FileHash $genaiArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($genaiHash -ne $env:ORT_GENAI_WIN_X64_SHA256) { throw "ONNX Runtime GenAI SHA256 mismatch: $genaiHash" }
+          Expand-Archive -LiteralPath $genaiArchive -DestinationPath $genaiExtract -Force
+          & curl.exe -L --fail --retry 3 --retry-delay 3 -o $ortArchive $ortUrl
+          if ($LASTEXITCODE -ne 0) { throw "ONNX Runtime download failed: $LASTEXITCODE" }
+          $ortHash = (Get-FileHash $ortArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($ortHash -ne $env:ORT_WIN_X64_SHA256) { throw "ONNX Runtime SHA256 mismatch: $ortHash" }
+          Expand-Archive -LiteralPath $ortArchive -DestinationPath $ortExtract -Force
+          $header = Get-ChildItem $genaiExtract -Recurse -File -Filter 'ort_genai_c.h' | Select-Object -First 1
+          $import = Get-ChildItem $genaiExtract -Recurse -File -Filter 'onnxruntime-genai.lib' | Select-Object -First 1
+          if (-not $header -or -not $import) { throw 'ONNX Runtime GenAI header/import library missing' }
+          $seen = @{}
+          foreach ($root in @($genaiExtract,$ortExtract)) {
+            foreach ($dll in Get-ChildItem $root -Recurse -File -Filter '*.dll') {
+              $key = $dll.Name.ToLowerInvariant()
+              $hash = (Get-FileHash $dll.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+              if ($seen.ContainsKey($key)) {
+                if ($seen[$key] -ne $hash) { throw "Conflicting ONNX DLL: $($dll.Name)" }
+                continue
+              }
+              Copy-Item $dll.FullName (Join-Path $stage $dll.Name) -Force
+              $seen[$key] = $hash
+            }
+          }
+          if (-not (Test-Path (Join-Path $stage 'onnxruntime-genai.dll'))) { throw 'onnxruntime-genai.dll missing' }
+          if (-not (Test-Path (Join-Path $stage 'onnxruntime.dll'))) { throw 'onnxruntime.dll missing' }
+          "ORT_GENAI_INCLUDE_DIR=$($header.DirectoryName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "ORT_GENAI_LIBRARY=$($import.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "ORT_GENAI_RUNTIME_STAGE=$stage" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "ONNX_QWEN_RUNTIME_OK genai=$genaiHash ort=$ortHash"
+
+      - name: Build Qwen plus RAVEMEMS end-to-end self-test
+        shell: pwsh
+        run: |
+          cmake -S bridge-qwen-test -B build-bridge-qwen -A x64 `
+            -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
+            "-DORT_GENAI_INCLUDE_DIR=$env:ORT_GENAI_INCLUDE_DIR" `
+            "-DORT_GENAI_LIBRARY=$env:ORT_GENAI_LIBRARY"
+          if ($LASTEXITCODE -ne 0) { throw "Qwen bridge test configure failed: $LASTEXITCODE" }
+          cmake --build build-bridge-qwen --config Release --parallel
+          if ($LASTEXITCODE -ne 0) { throw "Qwen bridge test build failed: $LASTEXITCODE" }
+
+      - name: Download pinned production Qwen3 ONNX INT4 model
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $modelRoot = '${{ github.workspace }}\onnx-model-qwen-test'
+          if (Test-Path $modelRoot) { Remove-Item $modelRoot -Recurse -Force }
+          $env:MODEL_ROOT = $modelRoot
+          @'
+          import os
+          from huggingface_hub import snapshot_download
+          snapshot_download(
+              repo_id=os.environ['ONNX_MODEL_REPO'],
+              revision=os.environ['ONNX_MODEL_REVISION'],
+              allow_patterns=[os.environ['ONNX_MODEL_SUBDIR'] + '/*'],
+              local_dir=os.environ['MODEL_ROOT'],
+          )
+          '@ | python -
+          $modelDir = Join-Path $modelRoot $env:ONNX_MODEL_SUBDIR
+          foreach ($required in @('genai_config.json','model.onnx','model.onnx.data','tokenizer.json')) {
+            if (-not (Test-Path (Join-Path $modelDir $required) -PathType Leaf)) { throw "Qwen model file missing: $required" }
+          }
+          $modelHash = (Get-FileHash (Join-Path $modelDir 'model.onnx') -Algorithm SHA256).Hash.ToLowerInvariant()
+          $dataHash = (Get-FileHash (Join-Path $modelDir 'model.onnx.data') -Algorithm SHA256).Hash.ToLowerInvariant()
+          $tokenizerHash = (Get-FileHash (Join-Path $modelDir 'tokenizer.json') -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($modelHash -ne $env:ONNX_MODEL_ONNX_SHA256) { throw "model.onnx hash mismatch: $modelHash" }
+          if ($dataHash -ne $env:ONNX_MODEL_DATA_SHA256) { throw "model.onnx.data hash mismatch: $dataHash" }
+          if ($tokenizerHash -ne $env:ONNX_TOKENIZER_SHA256) { throw "tokenizer.json hash mismatch: $tokenizerHash" }
+          "ONNX_MODEL_DIR=$modelDir" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "QWEN_MODEL_OK revision=$env:ONNX_MODEL_REVISION"
+
+      - name: Run Qwen with real RAVEMEMS Pack001 grounding
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
+          $env:PATH = "$qtRoot\bin;$env:ORT_GENAI_RUNTIME_STAGE;$env:PATH"
+          $env:QT_PLUGIN_PATH = "$qtRoot\plugins"
+          $env:MEMS_AI_RUNTIME = Join-Path $env:ORT_GENAI_RUNTIME_STAGE 'onnxruntime-genai.dll'
+          $env:MEMS_AI_MODEL = $env:ONNX_MODEL_DIR
+          $env:MEMS_LIBRARY_DLL = (Resolve-Path 'build-memslibrary\Release\MEMSLibrary.dll').Path
+          $env:MEMS_LIBRARY_PACK = (Resolve-Path 'pack001').Path
+          $exe = (Resolve-Path 'build-bridge-qwen\Release\ia_memslibrary_qwen_selftest.exe').Path
+          Push-Location $env:ORT_GENAI_RUNTIME_STAGE
+          try {
+            & $exe 2>&1 | Tee-Object -FilePath '${{ github.workspace }}\qwen-ravemems-proof.txt'
+            if ($LASTEXITCODE -ne 0) { throw "Qwen RAVEMEMS end-to-end self-test failed: $LASTEXITCODE" }
+          } finally {
+            Pop-Location
+          }
+
+      - name: Upload IA bridge and Qwen proof
         uses: actions/upload-artifact@v4
         with:
-          name: IA-MEMSLibrary-Bridge-Proof-${{ github.run_id }}
+          name: IA-MEMSLibrary-Qwen-Proof-${{ github.run_id }}
           path: |
             build-memslibrary/Release/MEMSLibrary.dll
             pack001/knowledge.sqlite
             pack001/manifest.json
             build-bridge-test/Release/ia_memslibrary_bridge_selftest.exe
+            build-bridge-qwen/Release/ia_memslibrary_qwen_selftest.exe
+            qwen-ravemems-proof.txt
           if-no-files-found: error
           compression-level: 6
