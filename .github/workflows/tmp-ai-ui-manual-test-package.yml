@@ -1,0 +1,297 @@
+name: TMP IA UI Manual Test Package
+
+on:
+  push:
+    branches:
+      - tmp-ai-memslibrary-ui-manual-test
+    paths:
+      - '.github/workflows/tmp-ai-ui-manual-test-package.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  package-x64:
+    runs-on: windows-2022
+    timeout-minutes: 120
+    env:
+      PROTECTED_BUILD103: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+      DIRECT_CODE_COMMIT: '5b899f62662270d7eb65a793d45394548db2b2a2'
+      BASE_PACKAGE_RUN_ID: '33889068203'
+      BASE_PACKAGE_ARTIFACT_ID: '9943343980'
+      BASE_PACKAGE_ARTIFACT_NAME: 'TMP-ECU-MEMS-Manager-x64-IA-MEMSLibrary-33889068203'
+      BASE_PACKAGE_DIGEST: 'sha256:4cf818b64670a8fb4dc5e6f77b7b30c35a3ab95251046ca24c529194a622f7f5'
+      VISUAL_RUN_ID: '33524210118'
+      VISUAL_ARTIFACT_ID: '9806972578'
+      VISUAL_ARTIFACT_NAME: 'ravemems-runtime-migration-simulation'
+      VISUAL_DIGEST: 'sha256:bc8ceed9ea2a748fb23f2d2504f034c62010669d3d10f2a281cf675aea735642'
+      ORT_GENAI_VERSION: '0.14.0'
+      ORT_GENAI_WIN_X64_SHA256: '8a303e52dc7be8fb2a5331929af451a25ac59774102d7fd09ef673adc85c5ebf'
+      MEMS_BUILD_NUMBER: '103'
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: 'utf-8'
+
+    steps:
+      - name: Checkout clean direct code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify protected state and direct code wiring
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $memsx64 = (git ls-remote origin refs/heads/MEMSX64).Split("`t")[0]
+          if ($memsx64 -ne $env:PROTECTED_BUILD103) { throw "MEMSX64 moved: $memsx64" }
+          git merge-base --is-ancestor $env:DIRECT_CODE_COMMIT HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'Manual-test branch is not based on the clean direct-code commit' }
+          $tab = Get-Content '${{ github.workspace }}\iamemstab.cpp' -Raw -Encoding UTF8
+          $cmake = Get-Content '${{ github.workspace }}\CMakeLists.txt' -Raw -Encoding UTF8
+          if ($tab -notmatch 'iaMemsTranscriptScroll') { throw 'IA scroll source missing' }
+          if ($tab -notmatch 'new QScrollBar\(Qt::Vertical, transcriptPane\)') { throw 'IA vertical scroll construction missing' }
+          if ($tab -notmatch 'Voir le schéma') { throw 'Voir le schéma button label missing' }
+          if ($tab -notmatch 'suggestionForEvidence\(evidenceQuestion, evidence\)') { throw 'Evidence-based diagram routing missing' }
+          if ($tab -notmatch 'askWithLibrary\(') { throw 'Direct askWithLibrary call missing' }
+          if ($cmake -notmatch 'IaMemsLibraryBridge.cpp' -or $cmake -notmatch 'IaMemsLibraryIntegration.cpp') { throw 'Direct MEMSLibrary sources missing from normal CMake' }
+          if ($cmake -match 'CMAKE_PROJECT_INCLUDE.*IaMemsLibraryBridgeInject') { throw 'Temporary MEMSLibrary injector still wired in normal CMake' }
+          Write-Host 'DIRECT_CODE_UI_GUARD_PASS'
+          Write-Host "MEMSX64_PROTECTED_PASS $memsx64"
+
+      - name: Record source hashes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $files = @(
+            'iamemstab.cpp',
+            'expert\IaMemsDiagramCatalog.cpp',
+            'expert\IaMemsDiagramCatalog.h',
+            'expert\IaMemsLibraryBridge.cpp',
+            'expert\IaMemsLibraryIntegration.cpp',
+            'CMakeLists.txt'
+          )
+          $lines = foreach ($f in $files) {
+            $p = Join-Path '${{ github.workspace }}' $f
+            "$((Get-FileHash $p -Algorithm SHA256).Hash.ToLowerInvariant())  $f"
+          }
+          $lines | Set-Content '${{ runner.temp }}\source-before.sha256' -Encoding ASCII
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Qt and validation tools
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install --disable-pip-version-check "aqtinstall==3.3.0" pefile
+          if ($LASTEXITCODE -ne 0) { throw "Validation tools install failed: $LASTEXITCODE" }
+          $sevenZip = (Get-Command 7z.exe -ErrorAction Stop).Source
+          if (Test-Path 'C:\Qt') { Remove-Item 'C:\Qt' -Recurse -Force -ErrorAction SilentlyContinue }
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
+          if ($LASTEXITCODE -ne 0) { throw "Qt install failed: $LASTEXITCODE" }
+
+      - name: Download exact last tested green IA package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $meta = gh api "repos/$env:GITHUB_REPOSITORY/actions/artifacts/$env:BASE_PACKAGE_ARTIFACT_ID" | ConvertFrom-Json
+          if ($meta.name -ne $env:BASE_PACKAGE_ARTIFACT_NAME) { throw "Base artifact name mismatch: $($meta.name)" }
+          if ($meta.digest -ne $env:BASE_PACKAGE_DIGEST) { throw "Base artifact digest mismatch: $($meta.digest)" }
+          if ($meta.expired) { throw 'Base green IA artifact expired' }
+          $base = '${{ github.workspace }}\base-green-package'
+          New-Item -ItemType Directory -Path $base -Force | Out-Null
+          gh run download $env:BASE_PACKAGE_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:BASE_PACKAGE_ARTIFACT_NAME --dir $base
+          if ($LASTEXITCODE -ne 0) { throw "Base package download failed: $LASTEXITCODE" }
+          $app = Get-ChildItem $base -Recurse -File -Filter 'ecu_mems_manager.exe' | Select-Object -First 1
+          if (-not $app) { throw 'Base package ECU executable not found' }
+          $baseRoot = $app.DirectoryName
+          foreach ($required in @('MEMSLibrary.dll','MEMSLibrary_Pack_001\knowledge.sqlite','MEMSLibrary_Pack_001\manifest.json','onnxruntime-genai.dll','onnxruntime.dll','ai\models\qwen3-0.6b-int4\model.onnx')) {
+            if (-not (Test-Path (Join-Path $baseRoot $required) -PathType Leaf)) { throw "Base package missing $required" }
+          }
+          $dist = '${{ github.workspace }}\dist-ui-manual-test'
+          if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }
+          New-Item -ItemType Directory -Path $dist -Force | Out-Null
+          Copy-Item "$baseRoot\*" $dist -Recurse -Force
+          "DIST=$dist" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "BASE_GREEN_PACKAGE_PASS artifact=$($meta.id)"
+
+      - name: Stage validated RAVEMEMS visual runtime into package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $meta = gh api "repos/$env:GITHUB_REPOSITORY/actions/artifacts/$env:VISUAL_ARTIFACT_ID" | ConvertFrom-Json
+          if ($meta.name -ne $env:VISUAL_ARTIFACT_NAME) { throw "Visual artifact name mismatch: $($meta.name)" }
+          if ($meta.digest -ne $env:VISUAL_DIGEST) { throw "Visual artifact digest mismatch: $($meta.digest)" }
+          if ($meta.expired) { throw 'Visual runtime artifact expired' }
+          $visual = '${{ github.workspace }}\validated-visual-runtime'
+          New-Item -ItemType Directory -Path $visual -Force | Out-Null
+          gh run download $env:VISUAL_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:VISUAL_ARTIFACT_NAME --dir $visual
+          if ($LASTEXITCODE -ne 0) { throw "Visual artifact download failed: $LASTEXITCODE" }
+          $catalog = Get-ChildItem $visual -Recurse -File -Filter 'runtime_visual_catalog.json' | Select-Object -First 1
+          $runtimeFiles = Get-ChildItem $visual -Recurse -Directory -Filter 'runtime_files' | Select-Object -First 1
+          if (-not $catalog -or -not $runtimeFiles) { throw 'Validated visual runtime layout incomplete' }
+          $packageReference = Join-Path $env:DIST 'database\reference'
+          New-Item -ItemType Directory -Path $packageReference -Force | Out-Null
+          Copy-Item $catalog.FullName (Join-Path $packageReference 'runtime_visual_catalog.json') -Force
+          Copy-Item "$($runtimeFiles.FullName)\*" $packageReference -Recurse -Force
+          $env:REFERENCE_VALIDATE = $packageReference
+          @'
+          import hashlib,json,os
+          from collections import Counter
+          from pathlib import Path
+          root=Path(os.environ['REFERENCE_VALIDATE'])
+          cat=json.loads((root/'runtime_visual_catalog.json').read_text(encoding='utf-8'))
+          entries=cat['entries']
+          assert len(entries)==1935,len(entries)
+          assert cat['ravemems_occurrences']==1794
+          assert Counter(e['source_type'] for e in entries)==Counter({'ravemems':1794,'legacy':141})
+          def h(p):
+              x=hashlib.sha256()
+              with open(p,'rb') as f:
+                  for b in iter(lambda:f.read(1048576),b''): x.update(b)
+              return x.hexdigest()
+          for e in entries:
+              p=root/e['runtime_path']
+              assert p.is_file(),e['runtime_path']
+              assert h(p)==e['sha256'],e['runtime_path']
+          print('VISUAL_RUNTIME_PASS entries=1935 ravemems=1794 legacy=141')
+          '@ | python -
+
+      - name: Stage pinned ONNX Runtime GenAI development files
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $archive = Join-Path $env:RUNNER_TEMP "onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          $extract = '${{ github.workspace }}\onnx-genai-dev'
+          $url = "https://github.com/microsoft/onnxruntime-genai/releases/download/v$env:ORT_GENAI_VERSION/onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          & curl.exe -L --fail --retry 3 --retry-delay 3 -o $archive $url
+          if ($LASTEXITCODE -ne 0) { throw "ONNX GenAI download failed: $LASTEXITCODE" }
+          $hash = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($hash -ne $env:ORT_GENAI_WIN_X64_SHA256) { throw "ONNX GenAI SHA mismatch: $hash" }
+          Expand-Archive -LiteralPath $archive -DestinationPath $extract -Force
+          $header = Get-ChildItem $extract -Recurse -File -Filter 'ort_genai_c.h' | Select-Object -First 1
+          $import = Get-ChildItem $extract -Recurse -File -Filter 'onnxruntime-genai.lib' | Select-Object -First 1
+          if (-not $header -or -not $import) { throw 'ONNX GenAI development files incomplete' }
+          "ORT_GENAI_INCLUDE_DIR=$($header.DirectoryName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "ORT_GENAI_LIBRARY=$($import.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Configure current code without source injection
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake -S . -B build-ui-manual-test -A x64 `
+            -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
+            -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
+            -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF `
+            -DMEMS_USE_ONNX_GENAI=ON `
+            "-DORT_GENAI_INCLUDE_DIR=$env:ORT_GENAI_INCLUDE_DIR" `
+            "-DORT_GENAI_LIBRARY=$env:ORT_GENAI_LIBRARY"
+          if ($LASTEXITCODE -ne 0) { throw "Normal CMake configure failed: $LASTEXITCODE" }
+          Write-Host 'NORMAL_CMAKE_NO_INJECTION_PASS'
+
+      - name: Compile current x64 ECU MEMS Manager
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake --build build-ui-manual-test --config Release --target ecu_mems_manager --parallel
+          if ($LASTEXITCODE -ne 0) { throw "Current application compile failed: $LASTEXITCODE" }
+          Write-Host 'CURRENT_X64_COMPILE_PASS'
+
+      - name: Verify build did not transform source files
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $files = @(
+            'iamemstab.cpp',
+            'expert\IaMemsDiagramCatalog.cpp',
+            'expert\IaMemsDiagramCatalog.h',
+            'expert\IaMemsLibraryBridge.cpp',
+            'expert\IaMemsLibraryIntegration.cpp',
+            'CMakeLists.txt'
+          )
+          $lines = foreach ($f in $files) {
+            $p = Join-Path '${{ github.workspace }}' $f
+            "$((Get-FileHash $p -Algorithm SHA256).Hash.ToLowerInvariant())  $f"
+          }
+          $after = '${{ runner.temp }}\source-after.sha256'
+          $lines | Set-Content $after -Encoding ASCII
+          $beforeText = Get-Content '${{ runner.temp }}\source-before.sha256' -Raw
+          $afterText = Get-Content $after -Raw
+          if ($beforeText -ne $afterText) { throw 'Source files changed during build' }
+          Write-Host 'SOURCE_UNCHANGED_DURING_BUILD_PASS'
+
+      - name: Replace only executable in validated base package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $newApp = '${{ github.workspace }}\build-ui-manual-test\Release\ecu_mems_manager.exe'
+          if (-not (Test-Path $newApp -PathType Leaf)) { throw 'Compiled application missing' }
+          Copy-Item $newApp "$env:DIST\ecu_mems_manager.exe" -Force
+          $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
+          & "$qtRoot\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $env:DIST "$env:DIST\ecu_mems_manager.exe"
+          if ($LASTEXITCODE -ne 0) { throw "windeployqt failed: $LASTEXITCODE" }
+          @(
+            'ECU MEMS Manager - TEMPORARY UI MANUAL TEST PACKAGE - NOT BUILD #104',
+            'Purpose: manual verification of IA vertical scroll and Voir le schema button.',
+            'Code base: direct-code branch commit 5b899f62662270d7eb65a793d45394548db2b2a2.',
+            'No source patch or CMake injector is used by this workflow.',
+            'Base runtime/package: last tested green IA package run 33889068203 / commit 9da599e.',
+            'Visual runtime: validated RAVEMEMS artifact 9806972578.',
+            'MEMSX64 remains BUILD #103.'
+          ) | Set-Content "$env:DIST\README_UI_MANUAL_TEST.txt" -Encoding UTF8
+
+      - name: Validate packaged essentials and smoke launch
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:PACKAGE_ROOT = $env:DIST
+          @'
+          import json,os,sqlite3
+          from pathlib import Path
+          import pefile
+          root=Path(os.environ['PACKAGE_ROOT'])
+          required=[
+              root/'ecu_mems_manager.exe',
+              root/'MEMSLibrary.dll',
+              root/'MEMSLibrary_Pack_001'/'knowledge.sqlite',
+              root/'MEMSLibrary_Pack_001'/'manifest.json',
+              root/'onnxruntime-genai.dll',
+              root/'onnxruntime.dll',
+              root/'ai'/'models'/'qwen3-0.6b-int4'/'model.onnx',
+              root/'database'/'reference'/'runtime_visual_catalog.json'
+          ]
+          missing=[str(p.relative_to(root)) for p in required if not p.is_file()]
+          if missing: raise SystemExit('Missing package files: '+', '.join(missing))
+          db=sqlite3.connect(root/'MEMSLibrary_Pack_001'/'knowledge.sqlite')
+          try:
+              assert db.execute('pragma integrity_check').fetchone()[0]=='ok'
+              assert db.execute('pragma foreign_key_check').fetchall()==[]
+              assert db.execute('select count(*) from ravemems_document').fetchone()[0]==47
+          finally:
+              db.close()
+          cat=json.loads((root/'database'/'reference'/'runtime_visual_catalog.json').read_text(encoding='utf-8'))
+          assert len(cat['entries'])==1935
+          app=pefile.PE(str(root/'ecu_mems_manager.exe'),fast_load=True)
+          assert app.FILE_HEADER.Machine==0x8664
+          app.close()
+          print('PACKAGE_VALIDATE_PASS docs=47 visuals=1935 amd64=1')
+          '@ | python -
+          $p = Start-Process -FilePath "$env:DIST\ecu_mems_manager.exe" -WorkingDirectory $env:DIST -PassThru
+          Start-Sleep -Seconds 8
+          if ($p.HasExited) { throw "ECU MEMS Manager exited during smoke launch: $($p.ExitCode)" }
+          $null = $p.CloseMainWindow()
+          if (-not $p.WaitForExit(5000)) { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }
+          Write-Host 'UI_MANUAL_TEST_PACKAGE_SMOKE_PASS'
+
+      - name: Upload manual UI test package
+        uses: actions/upload-artifact@v4
+        with:
+          name: TMP-ECU-MEMS-Manager-x64-UI-SCROLL-SCHEMA-${{ github.run_id }}
+          path: dist-ui-manual-test/
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 14
