@@ -1,0 +1,107 @@
+name: TMP MEMSLibrary Pack001
+
+on:
+  push:
+    branches:
+      - tmp-memslibrary-pack001
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  pack001-windows-x64:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    steps:
+      - name: Checkout isolated branch
+        uses: actions/checkout@v4
+
+      - name: Verify protected production base ancestry
+        shell: pwsh
+        run: |
+          $expected = "1d6316bd1746d6f2b4cfb751cab88d18e27ef730"
+          git merge-base --is-ancestor $expected HEAD
+          if ($LASTEXITCODE -ne 0) { throw "Pack branch is not based on protected MEMSX64 #103" }
+          Write-Host "PROTECTED_BASE_OK $expected"
+
+      - name: Download validated RAVEMEMS V2 47-PDF artifact
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 33810202288 --repo mini56/ECU-Mems-Manager-Session --name RAVEMEMS-V2-FULL-CORPUS-GENERIC-33810202288 --dir source47
+          $dbs = Get-ChildItem source47 -Recurse -Filter ravemems_v2.sqlite
+          if ($dbs.Count -ne 47) { throw "Expected 47 source SQLite databases, found $($dbs.Count)" }
+          Write-Host "SOURCE47_OK databases=$($dbs.Count)"
+
+      - name: Build Pack001 twice and prove reproducibility
+        shell: pwsh
+        run: |
+          python tools/build_memslibrary_pack.py source47 outA --pack-id MEMSLibrary_Pack_001
+          python tools/build_memslibrary_pack.py source47 outB --pack-id MEMSLibrary_Pack_001
+          $a = (Get-FileHash outA/knowledge.sqlite -Algorithm SHA256).Hash.ToLower()
+          $b = (Get-FileHash outB/knowledge.sqlite -Algorithm SHA256).Hash.ToLower()
+          if ($a -ne $b) { throw "Pack001 is not reproducible: $a != $b" }
+          if ($a -ne "581232a03db9f5aef7dc4b1b0a5c721048bbae595db992344ff605f3dd74db33") { throw "Unexpected canonical Pack001 SHA256 $a" }
+          Write-Host "PACK001_REPRODUCIBLE sha256=$a"
+
+      - name: Verify Pack001 database invariants
+        shell: pwsh
+        run: |
+          @'
+          import sqlite3
+          p='outA/knowledge.sqlite'
+          cx=sqlite3.connect(p)
+          assert cx.execute('pragma integrity_check').fetchone()[0]=='ok'
+          assert cx.execute('pragma foreign_key_check').fetchall()==[]
+          assert cx.execute('select count(*) from ravemems_document').fetchone()[0]==47
+          assert cx.execute('select count(*) from ravemems_page').fetchone()[0]==1359
+          assert cx.execute('select count(*) from memslibrary_search').fetchone()[0]==5453
+          assert cx.execute("select count(*) from ravemems_review_flag where status is null or lower(status) not in ('resolved','closed')").fetchone()[0]==0
+          print('PACK001_SQLITE_OK docs=47 pages=1359 search=5453 reviews=0 fk=0')
+          '@ | python -
+
+      - name: Configure MEMSLibrary ABI2 x64
+        shell: pwsh
+        run: cmake -S memslibrary -B build-memslibrary -A x64
+
+      - name: Build MEMSLibrary ABI2 x64
+        shell: pwsh
+        run: cmake --build build-memslibrary --config Release --parallel
+
+      - name: Create corrupt Pack002 fixture
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force corruptPack002 | Out-Null
+          Set-Content -Path corruptPack002/manifest.json -Value '{"pack_format":"MEMSLibraryKnowledgePack","pack_id":"CORRUPT_PACK_002"}' -Encoding UTF8
+          Set-Content -Path corruptPack002/knowledge.sqlite -Value 'not a sqlite database' -Encoding ASCII
+
+      - name: Load DLL and test Pack001 + corrupt Pack002 isolation
+        shell: pwsh
+        run: |
+          $exe = Resolve-Path build-memslibrary/Release/MEMSLibrarySmokeTest.exe
+          $good = Resolve-Path outA
+          $bad = Resolve-Path corruptPack002
+          & $exe $good $bad
+          if ($LASTEXITCODE -ne 0) { throw "MEMSLibrary Pack001 smoke test failed: $LASTEXITCODE" }
+
+      - name: Assemble canonical deliverable
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force deliverable/MEMSLibrary_Pack_001 | Out-Null
+          Copy-Item build-memslibrary/Release/MEMSLibrary.dll deliverable/
+          Copy-Item outA/knowledge.sqlite deliverable/MEMSLibrary_Pack_001/
+          Copy-Item outA/manifest.json deliverable/MEMSLibrary_Pack_001/
+          Get-FileHash deliverable/MEMSLibrary.dll -Algorithm SHA256
+          Get-FileHash deliverable/MEMSLibrary_Pack_001/knowledge.sqlite -Algorithm SHA256
+          Write-Host "MEMSLIBRARY_PACK001_WINDOWS_X64_PASS"
+
+      - name: Upload canonical Pack001 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MEMSLibrary-Pack001-${{ github.run_id }}
+          path: deliverable
+          if-no-files-found: error
+          compression-level: 6
