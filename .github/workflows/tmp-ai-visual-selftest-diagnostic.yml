@@ -1,0 +1,136 @@
+name: TMP IA Visual Historical Selftest Diagnostic
+
+on:
+  push:
+    branches: [tmp-ai-memslibrary-bridge]
+    paths: ['.github/workflows/tmp-ai-visual-selftest-diagnostic.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  diagnose:
+    runs-on: windows-2022
+    timeout-minutes: 45
+    env:
+      PROTECTED_BUILD103: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+      GREEN_IA_PACKAGE_COMMIT: '9da599e697aa96d099982a30f5f5c8a562a7c788'
+      VISUAL_RUN_ID: '33524210118'
+      VISUAL_ARTIFACT_ID: '9806972578'
+      VISUAL_ARTIFACT_NAME: 'ravemems-runtime-migration-simulation'
+      VISUAL_DIGEST: 'sha256:bc8ceed9ea2a748fb23f2d2504f034c62010669d3d10f2a281cf675aea735642'
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: 'utf-8'
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout isolated branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify protected ancestry
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $memsx64=(git ls-remote origin refs/heads/MEMSX64).Split("`t")[0]
+          if($memsx64 -ne $env:PROTECTED_BUILD103){throw "MEMSX64 moved: $memsx64"}
+          git merge-base --is-ancestor $env:GREEN_IA_PACKAGE_COMMIT HEAD
+          if($LASTEXITCODE -ne 0){throw 'Not derived from green IA package commit'}
+          Write-Host "DIAG_ANCESTRY_PASS $memsx64"
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Qt 5.15.2 x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python -m pip install --disable-pip-version-check "aqtinstall==3.3.0"
+          $sevenZip=(Get-Command 7z.exe -ErrorAction Stop).Source
+          if(Test-Path 'C:\Qt'){Remove-Item 'C:\Qt' -Recurse -Force -ErrorAction SilentlyContinue}
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
+          if($LASTEXITCODE -ne 0){throw "Qt install failed: $LASTEXITCODE"}
+
+      - name: Stage exact validated visual runtime
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $meta=gh api "repos/$env:GITHUB_REPOSITORY/actions/artifacts/$env:VISUAL_ARTIFACT_ID" | ConvertFrom-Json
+          if($meta.name -ne $env:VISUAL_ARTIFACT_NAME){throw "Visual artifact name mismatch: $($meta.name)"}
+          if($meta.digest -ne $env:VISUAL_DIGEST){throw "Visual artifact digest mismatch: $($meta.digest)"}
+          $visual='${{ github.workspace }}\validated-visual-runtime'
+          if(Test-Path $visual){Remove-Item $visual -Recurse -Force}
+          New-Item -ItemType Directory -Path $visual -Force | Out-Null
+          gh run download $env:VISUAL_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:VISUAL_ARTIFACT_NAME --dir $visual
+          if($LASTEXITCODE -ne 0){throw "Visual artifact download failed: $LASTEXITCODE"}
+          $catalog=Get-ChildItem $visual -Recurse -File -Filter runtime_visual_catalog.json | Select-Object -First 1
+          $runtimeFiles=Get-ChildItem $visual -Recurse -Directory -Filter runtime_files | Select-Object -First 1
+          if(-not $catalog -or -not $runtimeFiles){throw 'Visual artifact layout incomplete'}
+          $reference='${{ github.workspace }}\database\reference'
+          New-Item -ItemType Directory -Path $reference -Force | Out-Null
+          Copy-Item $catalog.FullName (Join-Path $reference 'runtime_visual_catalog.json') -Force
+          Copy-Item "$($runtimeFiles.FullName)\*" $reference -Recurse -Force
+          Write-Host 'DIAG_VISUAL_RUNTIME_PASS'
+
+      - name: Apply exact temporary implicit visual patch
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python tools/tmp_patch_ia_implicit_visual.py
+          if($LASTEXITCODE -ne 0){throw "Patch failed: $LASTEXITCODE"}
+
+      - name: Configure and build historical self-tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          cmake -S . -B build-diag -A x64 -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF
+          if($LASTEXITCODE -ne 0){throw "Configure failed: $LASTEXITCODE"}
+          cmake --build build-diag --config Release --target ia_response_selftest ia_mems_diagram_selftest mems_search_selftest --parallel
+          if($LASTEXITCODE -ne 0){throw "Build failed: $LASTEXITCODE"}
+
+      - name: Run and capture all historical self-tests
+        id: historical
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          $qtRoot='C:\Qt\5.15.2\msvc2019_64'
+          $env:PATH="$qtRoot\bin;$env:PATH"
+          $env:QT_PLUGIN_PATH="$qtRoot\plugins"
+          $failed=@()
+          foreach($test in @('ia_response_selftest.exe','ia_mems_diagram_selftest.exe','mems_search_selftest.exe')){
+            $log="${{ github.workspace }}\$($test.Replace('.exe','.log'))"
+            "TEST=$test" | Set-Content $log -Encoding UTF8
+            & "${{ github.workspace }}\build-diag\Release\$test" *>> $log
+            $code=$LASTEXITCODE
+            "EXIT_CODE=$code" | Add-Content $log -Encoding UTF8
+            Get-Content $log | Write-Host
+            if($code -ne 0){$failed += "$test=$code"}
+          }
+          if($failed.Count -gt 0){
+            "FAILED=$($failed -join ',')" | Set-Content '${{ github.workspace }}\historical-summary.txt' -Encoding UTF8
+            exit 1
+          }
+          'FAILED=none' | Set-Content '${{ github.workspace }}\historical-summary.txt' -Encoding UTF8
+
+      - name: Upload historical self-test diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TMP-IA-Historical-Selftests-${{ github.run_id }}
+          path: |
+            *.log
+            historical-summary.txt
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Fail job if historical self-tests failed
+        if: steps.historical.outcome == 'failure'
+        shell: pwsh
+        run: |
+          Get-Content '${{ github.workspace }}\historical-summary.txt'
+          throw 'One or more historical IA self-tests failed; see uploaded diagnostic artifact.'
