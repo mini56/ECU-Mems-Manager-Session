@@ -1,0 +1,103 @@
+name: TEMP MEMSLibrary foundation
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [tmp-memslibrary-foundation]
+
+permissions:
+  contents: read
+
+env:
+  PROTECTED_MEMSX64: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+
+jobs:
+  build-and-smoke-test:
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout isolated foundation branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Guard protected production and isolated scope
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $remote = (git ls-remote origin refs/heads/MEMSX64).Split("`t")[0].Trim()
+          if ($remote -ne $env:PROTECTED_MEMSX64) {
+            throw "MEMSX64 moved: expected $env:PROTECTED_MEMSX64 got $remote"
+          }
+
+          git fetch origin MEMSX64 --quiet
+          $base = (git merge-base HEAD "origin/MEMSX64").Trim()
+          if ($base -ne $env:PROTECTED_MEMSX64) {
+            throw "Foundation branch is not based on protected MEMSX64: $base"
+          }
+
+          $changed = @(git diff --name-only $env:PROTECTED_MEMSX64 HEAD)
+          foreach ($path in $changed) {
+            if ($path -notmatch '^(memslibrary/|\.github/workflows/tmp-memslibrary-foundation\.yml$)') {
+              throw "Out-of-scope change detected: $path"
+            }
+          }
+          Write-Host "PASS protected MEMSX64=$remote isolated_changes=$($changed.Count)"
+
+      - name: Configure MEMSLibrary x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake -S memslibrary -B build-memslibrary -A x64
+          if ($LASTEXITCODE -ne 0) { throw "CMake configure failed: $LASTEXITCODE" }
+
+      - name: Build MEMSLibrary.dll and smoke test
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake --build build-memslibrary --config Release --target MEMSLibrary MEMSLibrarySmokeTest
+          if ($LASTEXITCODE -ne 0) { throw "MEMSLibrary build failed: $LASTEXITCODE" }
+
+          $dll = '${{ github.workspace }}\build-memslibrary\Release\MEMSLibrary.dll'
+          $test = '${{ github.workspace }}\build-memslibrary\Release\MEMSLibrarySmokeTest.exe'
+          if (-not (Test-Path -LiteralPath $dll -PathType Leaf)) { throw 'MEMSLibrary.dll missing' }
+          if (-not (Test-Path -LiteralPath $test -PathType Leaf)) { throw 'MEMSLibrarySmokeTest.exe missing' }
+          if ((Split-Path $dll -Leaf) -cne 'MEMSLibrary.dll') { throw 'DLL filename mismatch' }
+
+          & $test
+          if ($LASTEXITCODE -ne 0) { throw "MEMSLibrary smoke test failed: $LASTEXITCODE" }
+
+          $hash = (Get-FileHash -LiteralPath $dll -Algorithm SHA256).Hash.ToLowerInvariant()
+          $size = (Get-Item -LiteralPath $dll).Length
+          "MEMSLIBRARY_DLL_SHA256=$hash" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "MEMSLIBRARY_DLL_SIZE=$size" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "MEMSLIBRARY_DLL_PASS name=MEMSLibrary.dll size=$size sha256=$hash"
+
+      - name: Run CTest
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          ctest --test-dir build-memslibrary -C Release --output-on-failure
+          if ($LASTEXITCODE -ne 0) { throw "CTest failed: $LASTEXITCODE" }
+
+      - name: Upload MEMSLibrary foundation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MEMSLibrary-foundation-${{ github.run_id }}
+          path: |
+            build-memslibrary/Release/MEMSLibrary.dll
+            build-memslibrary/Release/MEMSLibrarySmokeTest.exe
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Final protected production guard
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $remote = (git ls-remote origin refs/heads/MEMSX64).Split("`t")[0].Trim()
+          if ($remote -ne $env:PROTECTED_MEMSX64) {
+            throw "MEMSX64 moved during test: expected $env:PROTECTED_MEMSX64 got $remote"
+          }
+          Write-Host "PASS final MEMSX64=$remote"
+          Write-Host "PASS MEMSLibrary.dll sha256=$env:MEMSLIBRARY_DLL_SHA256 size=$env:MEMSLIBRARY_DLL_SIZE"
