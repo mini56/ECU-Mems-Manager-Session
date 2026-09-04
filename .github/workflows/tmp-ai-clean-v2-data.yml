@@ -1,0 +1,408 @@
+name: TMP IA Clean V2 Data Rebuild
+
+on:
+  push:
+    branches:
+      - tmp-ai-memslibrary-clean-v2-data
+    paths:
+      - '.github/workflows/tmp-ai-clean-v2-data.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  clean-data:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      PROTECTED_BUILD103: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+      DIRECT_CODE_COMMIT: '5b899f62662270d7eb65a793d45394548db2b2a2'
+      BASE_PACKAGE_RUN_ID: '33889068203'
+      BASE_PACKAGE_ARTIFACT_ID: '9943343980'
+      BASE_PACKAGE_ARTIFACT_NAME: 'TMP-ECU-MEMS-Manager-x64-IA-MEMSLibrary-33889068203'
+      BASE_PACKAGE_DIGEST: 'sha256:4cf818b64670a8fb4dc5e6f77b7b30c35a3ab95251046ca24c529194a622f7f5'
+      V2_RUN_ID: '33810202288'
+      V2_ARTIFACT_ID: '9914590689'
+      V2_ARTIFACT_NAME: 'RAVEMEMS-V2-FULL-CORPUS-GENERIC-33810202288'
+      V2_ARTIFACT_DIGEST: 'sha256:0dab01f5a5e58229245f1eb96eedaca234839030e9cffe630b1e103f56130ac5'
+      V2_LINEAGE: 'RAVEMEMS_V2_FINAL_33810202288'
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout exact clean direct-code base
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Guard production and clean ancestry
+        shell: bash
+        run: |
+          set -euo pipefail
+          memsx64="$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')"
+          test "$memsx64" = "$PROTECTED_BUILD103"
+          git merge-base --is-ancestor "$DIRECT_CODE_COMMIT" HEAD
+          test ! -e .github/workflows/tmp-ai-ui-manual-test-package.yml
+          ! grep -R -n -E '33510951021|33524210118|ravemems-runtime-migration-simulation|ravemems-visual-bundle-audit' .github/workflows CMakeLists.txt expert iamemstab.cpp 2>/dev/null
+          echo "MEMSX64_PROTECTED=$memsx64"
+          echo "CLEAN_DIRECT_CODE_BASE=$DIRECT_CODE_COMMIT"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Download exact last green IA package
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, subprocess
+          meta=json.loads(subprocess.check_output(['gh','api',f"repos/{os.environ['GITHUB_REPOSITORY']}/actions/artifacts/{os.environ['BASE_PACKAGE_ARTIFACT_ID']}"]))
+          assert meta['name']==os.environ['BASE_PACKAGE_ARTIFACT_NAME'], meta
+          assert meta.get('digest')==os.environ['BASE_PACKAGE_DIGEST'], meta.get('digest')
+          assert not meta.get('expired'), meta
+          print('BASE_ARTIFACT_PIN_PASS',meta['id'])
+          PY
+          rm -rf base-green
+          mkdir base-green
+          gh run download "$BASE_PACKAGE_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$BASE_PACKAGE_ARTIFACT_NAME" --dir base-green
+          app="$(find base-green -type f -iname 'ecu_mems_manager.exe' -print -quit)"
+          test -n "$app"
+          base_root="$(dirname "$app")"
+          rm -rf clean-package
+          mkdir clean-package
+          cp -a "$base_root"/. clean-package/
+          test -d clean-package/database/reference
+          echo "CLEAN_PACKAGE=$GITHUB_WORKSPACE/clean-package" >> "$GITHUB_ENV"
+          echo "REFERENCE_ROOT=$GITHUB_WORKSPACE/clean-package/database/reference" >> "$GITHUB_ENV"
+
+      - name: Inventory protected reference data before cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          root=Path(os.environ['REFERENCE_ROOT'])
+          old=root/'images'/'rave'
+          old_files=sorted(p for p in old.rglob('*') if p.is_file()) if old.exists() else []
+          if len(old_files)!=427:
+              raise SystemExit(f'Expected audited BUILD #103 pre-V2 RAVE image count 427, found {len(old_files)}')
+          def sha(p):
+              h=hashlib.sha256()
+              with p.open('rb') as f:
+                  for b in iter(lambda:f.read(1024*1024),b''): h.update(b)
+              return h.hexdigest()
+          protected={}
+          for p in sorted(root.rglob('*')):
+              if not p.is_file(): continue
+              rel=p.relative_to(root).as_posix()
+              if rel.startswith('images/rave/'): continue
+              if rel in {'manifest.json','runtime_visual_catalog.json'}: continue
+              protected[rel]={'sha256':sha(p),'size':p.stat().st_size}
+          sqlite_files=sorted(k for k in protected if k.lower().endswith(('.sqlite','.db')))
+          qz64_files=sorted(k for k in protected if k.lower().endswith('.qz64'))
+          image_non_rave=sorted(k for k in protected if k.lower().endswith(('.png','.jpg','.jpeg','.svg','.webp','.bmp')))
+          manifest=root/'manifest.json'
+          if not manifest.is_file(): raise SystemExit('Historical reference manifest.json missing')
+          data=json.loads(manifest.read_text(encoding='utf-8-sig'))
+          diagrams=data.get('diagrams',{})
+          if not isinstance(diagrams,dict): raise SystemExit('manifest diagrams is not an object')
+          old_diagrams={k:v for k,v in diagrams.items() if isinstance(v,str) and v.replace('\\','/').startswith('images/rave/')}
+          if len(old_diagrams)!=427:
+              raise SystemExit(f'Expected 427 audited pre-V2 RAVE manifest diagrams, found {len(old_diagrams)}')
+          audit={
+              'old_pre_v2_rave_image_count':len(old_files),
+              'old_pre_v2_rave_manifest_diagram_count':len(old_diagrams),
+              'protected_non_target_file_count':len(protected),
+              'protected_sqlite_db_files':sqlite_files,
+              'protected_qz64_files':qz64_files,
+              'protected_non_rave_image_count':len(image_non_rave),
+              'protected_files':protected,
+              'old_rave_image_paths':[p.relative_to(root).as_posix() for p in old_files],
+              'old_rave_manifest_keys':sorted(old_diagrams),
+          }
+          Path('cleanup-audit').mkdir(exist_ok=True)
+          Path('cleanup-audit/before.json').write_text(json.dumps(audit,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          Path('cleanup-audit/manifest-before.json').write_text(json.dumps(data,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          print('PRE_CLEAN_AUDIT_PASS old_rave_images=427 old_rave_diagrams=427 protected_files=',len(protected))
+          print('PROTECTED_SQLITE_DB_COUNT',len(sqlite_files),'PROTECTED_QZ64_COUNT',len(qz64_files),'PROTECTED_NON_RAVE_IMAGES',len(image_non_rave))
+          PY
+
+      - name: Remove only pre-V2 RAVE physical images and their visual menu entries
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, shutil
+          from pathlib import Path
+          root=Path(os.environ['REFERENCE_ROOT'])
+          target=root/'images'/'rave'
+          if not target.is_dir(): raise SystemExit('Pre-V2 image directory missing before ordered removal')
+          shutil.rmtree(target)
+          old_catalog=root/'runtime_visual_catalog.json'
+          if old_catalog.exists():
+              old_catalog.unlink()
+          manifest=root/'manifest.json'
+          data=json.loads(manifest.read_text(encoding='utf-8-sig'))
+          diagrams=data.get('diagrams',{})
+          remove=[k for k,v in diagrams.items() if isinstance(v,str) and v.replace('\\','/').startswith('images/rave/')]
+          if len(remove)!=427: raise SystemExit(f'Refusing manifest cleanup: expected 427 old RAVE entries, got {len(remove)}')
+          for k in remove: del diagrams[k]
+          data['diagrams']=diagrams
+          manifest.write_text(json.dumps(data,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          print('PRE_V2_RAVE_ACTIVE_IMAGES_REMOVED=427')
+          print('PRE_V2_RAVE_MANIFEST_DIAGRAMS_REMOVED=427')
+          PY
+
+      - name: Prove ECU analysis ROSCO Leopold Haro and all non-target files were untouched
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          root=Path(os.environ['REFERENCE_ROOT'])
+          before=json.loads(Path('cleanup-audit/before.json').read_text(encoding='utf-8'))
+          manifest_before=json.loads(Path('cleanup-audit/manifest-before.json').read_text(encoding='utf-8'))
+          def sha(p):
+              h=hashlib.sha256()
+              with p.open('rb') as f:
+                  for b in iter(lambda:f.read(1024*1024),b''): h.update(b)
+              return h.hexdigest()
+          for rel,meta in before['protected_files'].items():
+              p=root/rel
+              if not p.is_file(): raise SystemExit(f'Protected file disappeared: {rel}')
+              if p.stat().st_size!=meta['size'] or sha(p)!=meta['sha256']:
+                  raise SystemExit(f'Protected file changed: {rel}')
+          if (root/'images'/'rave').exists(): raise SystemExit('Pre-V2 RAVE image directory still exists')
+          manifest_after=json.loads((root/'manifest.json').read_text(encoding='utf-8'))
+          before_other={k:v for k,v in manifest_before.items() if k!='diagrams'}
+          after_other={k:v for k,v in manifest_after.items() if k!='diagrams'}
+          if before_other!=after_other: raise SystemExit('Non-diagram manifest data changed')
+          expected={k:v for k,v in manifest_before.get('diagrams',{}).items() if not (isinstance(v,str) and v.replace('\\','/').startswith('images/rave/'))}
+          if manifest_after.get('diagrams',{})!=expected: raise SystemExit('Manifest cleanup changed something other than old RAVE diagram entries')
+          print('PROTECTED_NON_TARGET_DATA_BYTE_IDENTICAL_PASS files=',len(before['protected_files']))
+          print('ECU_ANALYSIS_DATA_PRESERVED_BY_HASH_PASS')
+          print('ROSCO_LEOPOLD_HARO_NON_TARGET_PRESERVATION_PASS')
+          PY
+
+      - name: Download exact final RAVEMEMS V2 corpus only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, subprocess
+          meta=json.loads(subprocess.check_output(['gh','api',f"repos/{os.environ['GITHUB_REPOSITORY']}/actions/artifacts/{os.environ['V2_ARTIFACT_ID']}"]))
+          assert meta['name']==os.environ['V2_ARTIFACT_NAME'], meta
+          assert meta.get('digest')==os.environ['V2_ARTIFACT_DIGEST'], meta.get('digest')
+          assert not meta.get('expired'), meta
+          print('FINAL_V2_ARTIFACT_PIN_PASS',meta['id'])
+          PY
+          rm -rf final-v2
+          mkdir final-v2
+          gh run download "$V2_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$V2_ARTIFACT_NAME" --dir final-v2
+          test "$(find final-v2 -type f -name ravemems_v2.sqlite | wc -l)" -eq 47
+          if find final-v2 -type f -print0 | xargs -0 grep -Il -E '33510951021|33524210118|ravemems-runtime-migration-simulation' 2>/dev/null | grep -q .; then
+            echo 'Forbidden pre-V2 runtime lineage found inside final V2 artifact'
+            exit 1
+          fi
+          echo 'FINAL_V2_SOURCE47_PASS'
+
+      - name: Build runtime visuals exclusively from final V2 databases and files
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, os, re, shutil, sqlite3
+          from pathlib import Path
+          src=Path('final-v2')
+          ref=Path(os.environ['REFERENCE_ROOT'])
+          out=ref/'manufacturer_docs_v2_33810202288'/'visuals'
+          if out.exists(): shutil.rmtree(out.parent)
+          out.mkdir(parents=True)
+          entries=[]
+          dbs=sorted(src.rglob('ravemems_v2.sqlite'))
+          if len(dbs)!=47: raise SystemExit(f'Expected 47 final V2 databases, found {len(dbs)}')
+          def file_sha(p):
+              h=hashlib.sha256()
+              with p.open('rb') as f:
+                  for b in iter(lambda:f.read(1024*1024),b''): h.update(b)
+              return h.hexdigest()
+          def clean_pub(s):
+              s=(s or '').strip()
+              return re.sub(r'[^A-Za-z0-9_.-]+','_',s).strip('_') or 'UNKNOWN'
+          def context_for(cx,visual_key,page):
+              parts=[]
+              row=cx.execute('select caption_source, visual_type, render_method from ravemems_visual where visual_key=?',(visual_key,)).fetchone()
+              if row: parts.extend(x for x in row if x)
+              for r in cx.execute('''select o.title_source, ph.phase_kind_source, ph.title_source, st.instruction_source, sp.parameter_source, sp.condition_text, tb.title_source
+                  from ravemems_visual_link l
+                  left join ravemems_operation o on o.operation_key=l.operation_key
+                  left join ravemems_phase ph on ph.phase_key=l.phase_key
+                  left join ravemems_step st on st.step_key=l.step_key
+                  left join ravemems_specification sp on sp.specification_key=l.specification_key
+                  left join ravemems_table tb on tb.table_key=l.table_key
+                  where l.visual_key=?''',(visual_key,)):
+                  parts.extend(x for x in r if x)
+              if page:
+                  for r in cx.execute('''select distinct o.title_source, ph.title_source, st.instruction_source
+                      from ravemems_step st join ravemems_phase ph on ph.phase_key=st.phase_key
+                      join ravemems_operation o on o.operation_key=ph.operation_key
+                      where st.source_page_start is not null and st.source_page_end is not null and ? between st.source_page_start and st.source_page_end
+                      limit 80''',(page,)):
+                      parts.extend(x for x in r if x)
+              text=' | '.join(dict.fromkeys(str(x).strip() for x in parts if str(x).strip()))
+              return text[:16000]
+          seen_keys=set()
+          total=0
+          for db in dbs:
+              cx=sqlite3.connect(db)
+              if cx.execute('pragma integrity_check').fetchone()[0].lower()!='ok': raise SystemExit(f'Bad V2 DB {db}')
+              if cx.execute('pragma foreign_key_check').fetchall(): raise SystemExit(f'V2 FK issue {db}')
+              drow=cx.execute('select canonical_name from ravemems_document limit 1').fetchone()
+              canonical=drow[0] if drow else ''
+              manifest_path=db.parent/'manifest.json'
+              manifest=json.loads(manifest_path.read_text(encoding='utf-8')) if manifest_path.exists() else {}
+              pub=clean_pub(manifest.get('publication_code') or manifest.get('document_identity') or canonical)
+              rows=cx.execute('''select v.visual_key,v.relative_path,v.sha256,v.width,v.height,v.render_method,v.caption_source,p.physical_page
+                  from ravemems_visual v left join ravemems_page p on p.page_key=v.page_key
+                  order by p.physical_page,v.visual_key''').fetchall()
+              total+=len(rows)
+              for visual_key,rel,expected_sha,w,h,render_method,caption,page in rows:
+                  declared=(db.parent/rel).resolve()
+                  chosen=None
+                  if declared.is_file() and file_sha(declared)==expected_sha.lower():
+                      chosen=declared
+                  else:
+                      candidates=[]
+                      for p in db.parent.rglob(Path(rel).name):
+                          if p.is_file() and file_sha(p)==expected_sha.lower(): candidates.append(p.resolve())
+                      if len(candidates)==1: chosen=candidates[0]
+                  if chosen is None: raise SystemExit(f'Cannot resolve exact V2 visual {visual_key} rel={rel} sha={expected_sha}')
+                  ext=chosen.suffix.lower() or '.bin'
+                  stable=hashlib.sha256((pub+'|'+visual_key).encode()).hexdigest()[:24]
+                  dest_rel=Path('manufacturer_docs_v2_33810202288')/'visuals'/pub/f'{stable}{ext}'
+                  dest=ref/dest_rel
+                  dest.parent.mkdir(parents=True,exist_ok=True)
+                  shutil.copy2(chosen,dest)
+                  if file_sha(dest)!=expected_sha.lower(): raise SystemExit(f'Copied SHA mismatch {visual_key}')
+                  runtime_key=f'V2::{pub}::P{int(page or 0):04d}::{visual_key}'
+                  if runtime_key in seen_keys: raise SystemExit(f'Duplicate runtime key {runtime_key}')
+                  seen_keys.add(runtime_key)
+                  entries.append({
+                      'runtime_key':runtime_key,
+                      'source_type':'ravemems',
+                      'source_lineage':os.environ['V2_LINEAGE'],
+                      'source_run_id':int(os.environ['V2_RUN_ID']),
+                      'source_occurrence_key':visual_key,
+                      'asset_entity_key':visual_key,
+                      'publication_code':pub,
+                      'physical_page':int(page or 0),
+                      'context_text':context_for(cx,visual_key,int(page or 0)),
+                      'runtime_path':dest_rel.as_posix(),
+                      'sha256':expected_sha.lower(),
+                      'width':int(w),
+                      'height':int(h),
+                      'render_method':render_method or '',
+                      'caption_source':caption or '',
+                      'ui_visible':True,
+                      'ui_label':'Voir le schéma',
+                  })
+              cx.close()
+          if total!=1667: raise SystemExit(f'Expected final V2 visual count 1667, found {total}')
+          catalog={
+              'schema':'MEMS_MANAGER_VISUAL_RUNTIME_V2',
+              'source_lineage':os.environ['V2_LINEAGE'],
+              'source_run_id':int(os.environ['V2_RUN_ID']),
+              'pre_v2_images_included':0,
+              'legacy_entries':0,
+              'entry_count':len(entries),
+              'entries':entries,
+          }
+          (ref/'runtime_visual_catalog.json').write_text(json.dumps(catalog,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          print('FINAL_V2_RUNTIME_BUILD_PASS entries=',len(entries))
+          PY
+
+      - name: Final ordered-clean validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          ref=Path(os.environ['REFERENCE_ROOT'])
+          before=json.loads(Path('cleanup-audit/before.json').read_text(encoding='utf-8'))
+          cat=json.loads((ref/'runtime_visual_catalog.json').read_text(encoding='utf-8'))
+          assert cat['schema']=='MEMS_MANAGER_VISUAL_RUNTIME_V2'
+          assert cat['source_lineage']==os.environ['V2_LINEAGE']
+          assert cat['source_run_id']==int(os.environ['V2_RUN_ID'])
+          assert cat['entry_count']==1667
+          assert cat['legacy_entries']==0 and cat['pre_v2_images_included']==0
+          assert all(e.get('source_lineage')==os.environ['V2_LINEAGE'] for e in cat['entries'])
+          assert all(e.get('source_run_id')==int(os.environ['V2_RUN_ID']) for e in cat['entries'])
+          assert all(e.get('source_type')=='ravemems' for e in cat['entries'])
+          assert not (ref/'images'/'rave').exists()
+          forbidden=('33510951021','33524210118','ravemems-runtime-migration-simulation','ravemems-visual-bundle-audit')
+          catalog_text=(ref/'runtime_visual_catalog.json').read_text(encoding='utf-8')
+          assert not any(x in catalog_text for x in forbidden)
+          def sha(p):
+              h=hashlib.sha256()
+              with p.open('rb') as f:
+                  for b in iter(lambda:f.read(1024*1024),b''): h.update(b)
+              return h.hexdigest()
+          for rel,meta in before['protected_files'].items():
+              p=ref/rel
+              assert p.is_file(),rel
+              assert p.stat().st_size==meta['size'],rel
+              assert sha(p)==meta['sha256'],rel
+          v2files=[p for p in (ref/'manufacturer_docs_v2_33810202288'/'visuals').rglob('*') if p.is_file()]
+          assert len(v2files)==1667,len(v2files)
+          report={
+              'verdict':'PASS',
+              'production_memsx64_expected':os.environ['PROTECTED_BUILD103'],
+              'direct_code_base':os.environ['DIRECT_CODE_COMMIT'],
+              'protected_non_target_files_byte_identical':len(before['protected_files']),
+              'protected_sqlite_db_files_unchanged':before['protected_sqlite_db_files'],
+              'protected_qz64_files_unchanged':before['protected_qz64_files'],
+              'protected_non_rave_images_unchanged':before['protected_non_rave_image_count'],
+              'removed_pre_v2_rave_images':427,
+              'removed_pre_v2_rave_manifest_diagrams':427,
+              'removed_old_runtime_catalog_if_present':True,
+              'active_visual_source_lineage':os.environ['V2_LINEAGE'],
+              'active_visual_source_run_id':int(os.environ['V2_RUN_ID']),
+              'active_v2_visuals':1667,
+              'legacy_active_visuals':0,
+              'forbidden_old_visual_runs':[33510951021,33524210118],
+              'note':'Only pre-V2 RAVE physical images and their visual menu entries were removed. All non-target reference files, databases, QZ64 lots, ECU/analysis data and non-RAVE images remained byte-identical.',
+          }
+          Path('cleanup-audit/cleanup_report.json').write_text(json.dumps(report,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          Path('cleanup-audit/cleanup_report.txt').write_text('\n'.join([
+              'ORDERED CLEAN DATA VERDICT: PASS',
+              'MEMSX64 untouched: '+os.environ['PROTECTED_BUILD103'],
+              'Direct code base: '+os.environ['DIRECT_CODE_COMMIT'],
+              f"Protected non-target files byte-identical: {len(before['protected_files'])}",
+              'Pre-V2 RAVE physical images removed: 427',
+              'Pre-V2 RAVE visual manifest entries removed: 427',
+              'Final V2 active visual source: '+os.environ['V2_LINEAGE'],
+              'Final V2 active visual count: 1667',
+              'Legacy active visual count: 0',
+              'ROSCO / Leopold / Haro / ECU / analysis non-target data: preserved by byte-for-byte guard',
+          ])+'\n',encoding='utf-8')
+          print('ORDERED_CLEAN_DATA_GLOBAL_PASS')
+          PY
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_BUILD103"
+
+      - name: Upload cleaned reference and audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: CLEAN-REFERENCE-V2-${{ github.run_id }}
+          path: |
+            clean-package/database/reference
+            cleanup-audit/cleanup_report.json
+            cleanup-audit/cleanup_report.txt
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 6
