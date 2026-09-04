@@ -1,5 +1,6 @@
 name: TMP MEMSLibrary Pack001 Language Isolation
 
+# Isolated validation only. This workflow never updates MEMSX64.
 on:
   push:
     branches:
