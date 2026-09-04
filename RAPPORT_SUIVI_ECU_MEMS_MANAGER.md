@@ -12012,7 +12012,7 @@ Le header `expert/IaMemsDiagramCatalog.h` est revenu exactement a son etat initi
 
 PROCHAINE ACTION EXACTE : declencher le workflow x64 RAVEMEMS VISUAL TEST from BUILD 103 sur le HEAD `d22a0bb790d6615d7af5dc8d2b1e59b11125cabc`, sans autre changement applicatif. Verifier compilation, self-tests, package et smoke. Journaliser immediatement le verdict avant test utilisateur.
 
-## 2026-09-02 — TEST REEL CHANGEMENT DE LANGUE FRANCAIS -> ITALIEN : DEFA[�TIA MEMS
+## 2026-09-02 — TEST REEL CHANGEMENT DE LANGUE FRANCAIS -> ITALIEN : DEFA[ÕTIA MEMS
 
 Workflow x64 precedent verifie : run `33595042356` = SUCCESS, toutes les etapes compilation/self-tests/package/smoke sont vertes. Artefact `ECU-MEMS-Manager-x64-RAVEMEMS-VISUAL-TEST-from-BUILD-103`, ID `9833248994`, taille `488547609` octets, SHA-256 `d0e877e24b7e495543549b89d66e0eb24a18a3d2ec09f89bdc0766c074cc8f05`, head `43d3ff37c934b7cf2b1118149eae86a92efbc48f`.
 
@@ -14500,3 +14500,14 @@ Correction autorisée :
 
 État production protégé : `MEMSX64` reste BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`. Aucun BUILD #104.
 <!-- journal-entry-sha256:76f8bb11e1727a9e11c2632aec64b4ed26a8c69283e92774e73534a31305e777 -->
+
+## 2026-09-04 — RAPPORT maître — exécution de la réparation UTF-8
+
+Réparation exécutée conformément au plan déjà journalisé : le writer du rapport doit désormais réparer uniquement les octets qui rendent le flux UTF-8 invalide, en préservant byte pour byte tout le contenu déjà UTF-8 valide, puis vérifier une relecture stricte UTF-8 après écriture.
+
+Le mécanisme `tools/append_master_report.py` a été renforcé sur la branche `RAPPORT` afin que toute future écriture du rapport soit validée strictement en UTF-8 et que la corruption historique ne puisse plus être simplement recopiée sans contrôle.
+
+Aucune modification de `MEMSX64`, aucun BUILD #104, aucune modification Qwen/MEMSLibrary/RAVEMEMS pendant cette réparation. `MEMSX64` reste protégé sur BUILD #103 `1d6316bd1746d6f2b4cfb751cab88d18e27ef730`.
+
+Après cette écriture, le fichier `RAPPORT_SUIVI_ECU_MEMS_MANAGER.md` doit être relu directement depuis GitHub ; la réparation ne sera considérée comme terminée que si cette relecture retourne réellement le contenu UTF-8 du rapport au lieu d'un contenu vide/illisible.
+<!-- journal-entry-sha256:b22e7f6007f2858335285bd440c1396a255fffe8d3fedc747e7cec4e03a7fda0 -->
