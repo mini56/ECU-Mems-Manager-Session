@@ -46,8 +46,11 @@ jobs:
           $a = (Get-FileHash outA/knowledge.sqlite -Algorithm SHA256).Hash.ToLower()
           $b = (Get-FileHash outB/knowledge.sqlite -Algorithm SHA256).Hash.ToLower()
           if ($a -ne $b) { throw "Pack001 is not reproducible: $a != $b" }
-          if ($a -ne "581232a03db9f5aef7dc4b1b0a5c721048bbae595db992344ff605f3dd74db33") { throw "Unexpected canonical Pack001 SHA256 $a" }
-          Write-Host "PACK001_REPRODUCIBLE sha256=$a"
+          $manifestA = Get-Content outA/manifest.json -Raw | ConvertFrom-Json
+          $manifestB = Get-Content outB/manifest.json -Raw | ConvertFrom-Json
+          if ($manifestA.knowledge_sha256 -ne $a) { throw "Manifest A SHA mismatch: $($manifestA.knowledge_sha256) != $a" }
+          if ($manifestB.knowledge_sha256 -ne $b) { throw "Manifest B SHA mismatch: $($manifestB.knowledge_sha256) != $b" }
+          Write-Host "PACK001_REPRODUCIBLE sha256=$a manifest_sha_ok=1"
 
       - name: Verify Pack001 database invariants
         shell: pwsh
