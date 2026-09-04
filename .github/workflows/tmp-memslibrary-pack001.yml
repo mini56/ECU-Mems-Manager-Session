@@ -1,9 +1,9 @@
-name: TMP MEMSLibrary Pack001
+name: TMP MEMSLibrary Pack001 Language Isolation
 
 on:
   push:
     branches:
-      - tmp-memslibrary-pack001
+      - tmp-memslibrary-language-isolation
   workflow_dispatch:
 
 permissions:
@@ -11,7 +11,7 @@ permissions:
   actions: read
 
 jobs:
-  pack001-windows-x64:
+  pack001-language-isolation-windows-x64:
     runs-on: windows-2022
     timeout-minutes: 30
     steps:
@@ -25,8 +25,9 @@ jobs:
         run: |
           $expected = "1d6316bd1746d6f2b4cfb751cab88d18e27ef730"
           git merge-base --is-ancestor $expected HEAD
-          if ($LASTEXITCODE -ne 0) { throw "Pack branch is not based on protected MEMSX64 #103" }
+          if ($LASTEXITCODE -ne 0) { throw "Pack branch is not based on protected MEMSX64 #103 lineage" }
           Write-Host "PROTECTED_BASE_OK $expected"
+          Write-Host "PRODUCTION_MEMSX64_NOT_MODIFIED_BY_THIS_WORKFLOW"
 
       - name: Download validated RAVEMEMS V2 47-PDF artifact
         shell: pwsh
@@ -38,7 +39,26 @@ jobs:
           if ($dbs.Count -ne 47) { throw "Expected 47 source SQLite databases, found $($dbs.Count)" }
           Write-Host "SOURCE47_OK databases=$($dbs.Count)"
 
-      - name: Build Pack001 twice and prove reproducibility
+      - name: Prove RAVEMEMS V2 source languages are already separated
+        shell: pwsh
+        run: |
+          @'
+          import glob, sqlite3
+          docs=[]
+          for p in sorted(glob.glob('source47/**/ravemems_v2.sqlite', recursive=True)):
+              cx=sqlite3.connect(p)
+              row=cx.execute('select document_key,source_language from ravemems_document').fetchone()
+              assert row and row[0] and row[1]
+              docs.append(row)
+              assert cx.execute('select count(distinct source_language) from ravemems_document').fetchone()[0] == 1
+              cx.close()
+          langs={}
+          for doc,lang in docs: langs[lang]=langs.get(lang,0)+1
+          assert 'fr' in langs and 'en' in langs, langs
+          print('RAVEMEMS_V2_LANGUAGE_SEPARATION_SOURCE_PASS', sorted(langs.items()))
+          '@ | python -
+
+      - name: Build Pack001 schema2 twice and prove reproducibility
         shell: pwsh
         run: |
           python tools/build_memslibrary_pack.py source47 outA --pack-id MEMSLibrary_Pack_001
@@ -50,9 +70,11 @@ jobs:
           $manifestB = Get-Content outB/manifest.json -Raw | ConvertFrom-Json
           if ($manifestA.knowledge_sha256 -ne $a) { throw "Manifest A SHA mismatch: $($manifestA.knowledge_sha256) != $a" }
           if ($manifestB.knowledge_sha256 -ne $b) { throw "Manifest B SHA mismatch: $($manifestB.knowledge_sha256) != $b" }
-          Write-Host "PACK001_REPRODUCIBLE sha256=$a manifest_sha_ok=1"
+          if ($manifestA.pack_schema_version -ne 2) { throw "Expected Pack schema 2" }
+          if (-not $manifestA.language_isolation_required) { throw "Language isolation flag missing" }
+          Write-Host "PACK001_SCHEMA2_REPRODUCIBLE sha256=$a manifest_sha_ok=1 language_isolation=1"
 
-      - name: Verify Pack001 database invariants
+      - name: Verify Pack001 language invariants
         shell: pwsh
         run: |
           @'
@@ -61,18 +83,24 @@ jobs:
           cx=sqlite3.connect(p)
           assert cx.execute('pragma integrity_check').fetchone()[0]=='ok'
           assert cx.execute('pragma foreign_key_check').fetchall()==[]
+          assert cx.execute('select pack_schema_version from memslibrary_pack').fetchone()[0]==2
           assert cx.execute('select count(*) from ravemems_document').fetchone()[0]==47
           assert cx.execute('select count(*) from ravemems_page').fetchone()[0]==1359
           assert cx.execute('select count(*) from memslibrary_search').fetchone()[0]==5453
+          assert cx.execute("select count(*) from memslibrary_search where source_language is null or trim(source_language)='' ").fetchone()[0]==0
           assert cx.execute("select count(*) from ravemems_review_flag where status is null or lower(status) not in ('resolved','closed')").fetchone()[0]==0
-          print('PACK001_SQLITE_OK docs=47 pages=1359 search=5453 reviews=0 fk=0')
+          langs=dict(cx.execute('select source_language,count(*) from memslibrary_search group by source_language'))
+          assert langs.get('fr',0)>0 and langs.get('en',0)>0, langs
+          assert cx.execute("select count(*) from memslibrary_search where source_language='fr' and document_key like '%ENG%'").fetchone()[0]==0
+          assert cx.execute("select count(*) from memslibrary_search where source_language='en' and document_key like '%FRE%'").fetchone()[0]==0
+          print('PACK001_LANGUAGE_INVARIANTS_PASS docs=47 pages=1359 search=5453 reviews=0 fk=0 languages=', sorted(langs.items()))
           '@ | python -
 
-      - name: Configure MEMSLibrary ABI2 x64
+      - name: Configure MEMSLibrary ABI3 x64
         shell: pwsh
         run: cmake -S memslibrary -B build-memslibrary -A x64
 
-      - name: Build MEMSLibrary ABI2 x64
+      - name: Build MEMSLibrary ABI3 x64
         shell: pwsh
         run: cmake --build build-memslibrary --config Release --parallel
 
@@ -83,16 +111,25 @@ jobs:
           Set-Content -Path corruptPack002/manifest.json -Value '{"pack_format":"MEMSLibraryKnowledgePack","pack_id":"CORRUPT_PACK_002"}' -Encoding UTF8
           Set-Content -Path corruptPack002/knowledge.sqlite -Value 'not a sqlite database' -Encoding ASCII
 
-      - name: Load DLL and test Pack001 + corrupt Pack002 isolation
+      - name: Load DLL and prove strict language isolation
         shell: pwsh
         run: |
           $exe = Resolve-Path build-memslibrary/Release/MEMSLibrarySmokeTest.exe
           $good = Resolve-Path outA
           $bad = Resolve-Path corruptPack002
           & $exe $good $bad
-          if ($LASTEXITCODE -ne 0) { throw "MEMSLibrary Pack001 smoke test failed: $LASTEXITCODE" }
+          if ($LASTEXITCODE -ne 0) { throw "MEMSLibrary ABI3 language isolation smoke test failed: $LASTEXITCODE" }
 
-      - name: Assemble canonical deliverable
+      - name: Prove no build-time source rewriting
+        shell: pwsh
+        run: |
+          if (-not (git diff --quiet -- memslibrary tools/build_memslibrary_pack.py)) {
+            git diff -- memslibrary tools/build_memslibrary_pack.py
+            throw "Build or tests modified authoritative source"
+          }
+          Write-Host "DIRECT_SOURCE_UNCHANGED_AFTER_BUILD_PASS"
+
+      - name: Assemble isolated deliverable
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force deliverable/MEMSLibrary_Pack_001 | Out-Null
@@ -101,12 +138,12 @@ jobs:
           Copy-Item outA/manifest.json deliverable/MEMSLibrary_Pack_001/
           Get-FileHash deliverable/MEMSLibrary.dll -Algorithm SHA256
           Get-FileHash deliverable/MEMSLibrary_Pack_001/knowledge.sqlite -Algorithm SHA256
-          Write-Host "MEMSLIBRARY_PACK001_WINDOWS_X64_PASS"
+          Write-Host "MEMSLIBRARY_PACK001_ABI3_LANGUAGE_ISOLATION_WINDOWS_X64_PASS"
 
-      - name: Upload canonical Pack001 artifact
+      - name: Upload isolated ABI3 Pack001 artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MEMSLibrary-Pack001-${{ github.run_id }}
+          name: MEMSLibrary-Pack001-ABI3-Language-Isolation-${{ github.run_id }}
           path: deliverable
           if-no-files-found: error
           compression-level: 6
