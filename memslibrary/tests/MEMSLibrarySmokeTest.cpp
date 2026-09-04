@@ -78,7 +78,7 @@ int wmain(int argc, wchar_t** argv)
     auto searchStatus = search(argv[1], "primary gear end float", results.data(), static_cast<std::uint32_t>(results.size()), &count);
     bool foundPrimary = false;
     for (std::uint32_t i = 0; i < count; ++i) {
-        if (std::strcmp(results[i].document_key, "RCL0193ENG") == 0 && results[i].page_number == 53 &&
+        if (std::strcmp(results[i].document_key, "DOC_RCL0193ENG") == 0 && results[i].page_number == 53 &&
             (contains(results[i].body, "0.089") || contains(results[i].body, "0.165"))) {
             foundPrimary = true;
         }
@@ -94,7 +94,7 @@ int wmain(int argc, wchar_t** argv)
     searchStatus = search(argv[1], "battery restoration procedure", results.data(), static_cast<std::uint32_t>(results.size()), &count);
     bool foundBattery = false;
     for (std::uint32_t i = 0; i < count; ++i) {
-        if (std::strcmp(results[i].document_key, "RCL0221ENG") == 0 && results[i].page_number == 20) foundBattery = true;
+        if (std::strcmp(results[i].document_key, "DOC_RCL0221ENG") == 0 && results[i].page_number == 20) foundBattery = true;
     }
     if (searchStatus != MEMSLIBRARY_OK || !foundBattery) {
         std::cerr << "FAIL battery search status=" << searchStatus << " count=" << count << "\n";
@@ -121,7 +121,7 @@ int wmain(int argc, wchar_t** argv)
 
     std::cout << "MEMSLIBRARY_PACK001_PASS abi=2 pack=" << info.pack_id
               << " documents=" << info.document_count
-              << " primary=RCL0193ENG:p53 battery=RCL0221ENG:p20 corrupt_pack_isolated=1\n";
+              << " primary=DOC_RCL0193ENG:p53 battery=DOC_RCL0221ENG:p20 corrupt_pack_isolated=1\n";
     FreeLibrary(module);
     return 0;
 }
