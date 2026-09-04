@@ -1,0 +1,22 @@
+name: TMP Trigger IA Visual Package
+
+on:
+  push:
+    branches: [tmp-ai-memslibrary-bridge]
+    paths: ['.github/workflows/tmp-trigger-ia-visual-package.yml']
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch full IA MEMSLibrary visual package workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST \
+            "repos/${{ github.repository }}/actions/workflows/tmp-ai-memslibrary-visual-package.yml/dispatches" \
+            -f ref=tmp-ai-memslibrary-bridge
