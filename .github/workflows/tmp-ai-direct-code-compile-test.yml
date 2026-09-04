@@ -1,0 +1,112 @@
+name: TMP IA Direct Code Compile Test
+
+on:
+  push:
+    branches:
+      - tmp-ai-memslibrary-reprise-code-test
+    paths:
+      - '.github/workflows/tmp-ai-direct-code-compile-test.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compile-direct-code:
+    runs-on: windows-2022
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout direct code branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify protected base
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          git merge-base --is-ancestor 5b899f62662270d7eb65a793d45394548db2b2a2 HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'Direct-code commit is not an ancestor of test HEAD' }
+          $memsx64 = (git ls-remote origin refs/heads/MEMSX64).Split("`t")[0]
+          if ($memsx64 -ne '1d6316bd1746d6f2b4cfb751cab88d18e27ef730') { throw "MEMSX64 changed: $memsx64" }
+          Write-Host "BASE_OK direct=5b899f62662270d7eb65a793d45394548db2b2a2 MEMSX64=$memsx64"
+
+      - name: Verify scroll button and direct MEMSLibrary wiring
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          @'
+          from pathlib import Path
+          tab = Path('iamemstab.cpp').read_text(encoding='utf-8')
+          cmake = Path('CMakeLists.txt').read_text(encoding='utf-8')
+          catalog = Path('expert/IaMemsDiagramCatalog.cpp').read_text(encoding='utf-8')
+          integration = Path('expert/IaMemsLibraryIntegration.cpp').read_text(encoding='utf-8')
+          checks = {
+              'scroll_widget': 'new QScrollBar(Qt::Vertical, transcriptPane)' in tab,
+              'scroll_object': 'iaMemsTranscriptScroll' in tab,
+              'scroll_sync': 'transcriptScroll, &QScrollBar::valueChanged' in tab,
+              'diagram_button_exists': 'iaMemsDiagramButton' in tab,
+              'diagram_button_label': 'QStringLiteral("Voir le schéma")' in tab,
+              'diagram_button_visible_after_evidence': 'm_diagramButton->setVisible(true);' in tab and 'suggestionForEvidence(evidenceQuestion, evidence)' in tab,
+              'direct_library_call': 'm_service->askWithLibrary(IaMemsConversationRouting::focusedQuestion(effectiveQuestion));' in tab,
+              'library_sources_in_normal_cmake': 'expert/IaMemsLibraryBridge.cpp expert/IaMemsLibraryBridge.h expert/IaMemsLibraryIntegration.cpp' in cmake,
+              'evidence_saved': 'iaMemsLastLibraryEvidence' in integration,
+              'source_page_match': 'publication_code' in catalog and 'physical_page' in catalog,
+              'negative_generic_diagnostic_guard': 'genericDiagnostic' in catalog,
+          }
+          failed = [name for name, ok in checks.items() if not ok]
+          for name, ok in checks.items():
+              print(f'{name}={"PASS" if ok else "FAIL"}')
+          if failed:
+              raise SystemExit('DIRECT_CODE_GUARD_FAILED: ' + ', '.join(failed))
+          print('DIRECT_CODE_UI_GUARDS_OK')
+          '@ | python -
+
+      - name: Record source hashes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Get-FileHash iamemstab.cpp,CMakeLists.txt,expert/IaMemsDiagramCatalog.cpp,expert/IaMemsDiagramCatalog.h,expert/IaMemsLibraryIntegration.cpp -Algorithm SHA256 | ForEach-Object { "$($_.Path)|$($_.Hash)" } | Set-Content $env:RUNNER_TEMP\source-hashes-before.txt
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Qt 5.15.2 MSVC x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install --disable-pip-version-check aqtinstall==3.3.0
+          $sevenZip = (Get-Command 7z.exe -ErrorAction Stop).Source
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
+          if ($LASTEXITCODE -ne 0) { throw "Qt install failed: $LASTEXITCODE" }
+
+      - name: Configure normal x64 build without source injection
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake -S . -B build-direct-code -A x64 -DCMAKE_PREFIX_PATH=C:/Qt/5.15.2/msvc2019_64 -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF -DMEMS_USE_ONNX_GENAI=OFF
+          if ($LASTEXITCODE -ne 0) { throw "CMake configure failed: $LASTEXITCODE" }
+          Write-Host 'NORMAL_CMAKE_CONFIGURE_OK no_injector=PASS'
+
+      - name: Compile ECU MEMS Manager x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake --build build-direct-code --config Release --target ecu_mems_manager --parallel
+          if ($LASTEXITCODE -ne 0) { throw "Application compile failed: $LASTEXITCODE" }
+          Write-Host 'DIRECT_CODE_COMPILE_X64_OK'
+
+      - name: Verify source files were not transformed by build
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Get-FileHash iamemstab.cpp,CMakeLists.txt,expert/IaMemsDiagramCatalog.cpp,expert/IaMemsDiagramCatalog.h,expert/IaMemsLibraryIntegration.cpp -Algorithm SHA256 | ForEach-Object { "$($_.Path)|$($_.Hash)" } | Set-Content $env:RUNNER_TEMP\source-hashes-after.txt
+          $before = Get-Content $env:RUNNER_TEMP\source-hashes-before.txt
+          $after = Get-Content $env:RUNNER_TEMP\source-hashes-after.txt
+          if (($before -join "`n") -ne ($after -join "`n")) { throw 'Source files changed during configure/build' }
+          $memsx64 = (git ls-remote origin refs/heads/MEMSX64).Split("`t")[0]
+          if ($memsx64 -ne '1d6316bd1746d6f2b4cfb751cab88d18e27ef730') { throw 'MEMSX64 moved during test' }
+          Write-Host 'FINAL_OK compile=PASS scroll=PASS diagram_button=PASS evidence_routing=PASS source_mutation=NONE MEMSX64_unchanged=PASS'
