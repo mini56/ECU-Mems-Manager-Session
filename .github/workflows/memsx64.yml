@@ -1,186 +1,175 @@
 name: ECU MEMS Manager x64
-run-name: BUILD #${{ github.run_number }} - v1.0.${{ github.run_number }} - native ONNX IA package - ${{ github.sha }}
+run-name: BUILD #${{ inputs.build_number || github.run_number }} - v1.0.${{ inputs.build_number || github.run_number }} - CLEAN V2 IA - ${{ github.sha }}
 
 on:
-  workflow_dispatch:
   push:
     branches: [MEMSX64]
-
-concurrency:
-  group: memsx64-build
-  cancel-in-progress: true
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      build_number:
+        description: Optional build number override for isolated preflight
+        required: false
+        type: string
+        default: ''
 
 permissions:
   contents: read
+  actions: read
+
+concurrency:
+  group: memsx64-build
+  cancel-in-progress: false
+
+env:
+  MEMS_BUILD: ${{ inputs.build_number || github.run_number }}
+  ORT_GENAI_VERSION: '0.14.0'
+  ORT_GENAI_WIN_X64_SHA256: '8a303e52dc7be8fb2a5331929af451a25ac59774102d7fd09ef673adc85c5ebf'
+  ORT_VERSION: '1.24.4'
+  ORT_WIN_X64_SHA256: 'd2319fddfb6ea4db99ccc4b60c85c517bcd855721f5daa6a06d40d7cb2ee2357'
+  BASE_PACKAGE_RUN_ID: '33889068203'
+  BASE_PACKAGE_ARTIFACT_ID: '9943343980'
+  BASE_PACKAGE_ARTIFACT_NAME: 'TMP-ECU-MEMS-Manager-x64-IA-MEMSLibrary-33889068203'
+  BASE_PACKAGE_DIGEST: 'sha256:4cf818b64670a8fb4dc5e6f77b7b30c35a3ab95251046ca24c529194a622f7f5'
+  CLEAN_REFERENCE_RUN_ID: '33919306584'
+  CLEAN_REFERENCE_ARTIFACT_ID: '9954393075'
+  CLEAN_REFERENCE_ARTIFACT_NAME: 'CLEAN-REFERENCE-V2-33919306584'
+  CLEAN_REFERENCE_DIGEST: 'sha256:b056ada5b925648824274f6b04cfa95b81fb6ba8bd07c101f3210757f5ef4df8'
+  PACK001_RUN_ID: '33847448261'
+  PACK001_ARTIFACT_ID: '9927059742'
+  PACK001_ARTIFACT_NAME: 'MEMSLibrary-Pack001-33847448261'
+  PACK001_DIGEST: 'sha256:ffa9c42783fe443ffc3949cf2166083291adb08505b3fca228b03003a904698a'
+  CLEAN_V2_LINEAGE: 'RAVEMEMS_V2_FINAL_33810202288'
 
 jobs:
   build_x64:
-    runs-on: windows-latest
+    runs-on: windows-2022
     timeout-minutes: 120
-    env:
-      MEMS_BUILD: '${{ github.run_number }}'
-      MEMS_VERSION: '1.0.${{ github.run_number }}'
-      MEMS_BUILD_NUMBER: '${{ github.run_number }}'
-      PYTHONUTF8: '1'
-      PYTHONIOENCODING: 'utf-8'
-      ORT_GENAI_VERSION: '0.14.0'
-      ORT_GENAI_WIN_X64_SHA256: '8a303e52dc7be8fb2a5331929af451a25ac59774102d7fd09ef673adc85c5ebf'
-      ORT_VERSION: '1.24.4'
-      ORT_WIN_X64_SHA256: 'd2319fddfb6ea4db99ccc4b60c85c517bcd855721f5daa6a06d40d7cb2ee2357'
-      ONNX_MODEL_REPO: 'xiaoyao9184/Qwen3-0.6B-onnx-genai'
-      ONNX_MODEL_REVISION: 'e6bf97818c142808967a48cbab4f0aef18b64621'
-      ONNX_MODEL_SUBDIR: 'cpu_and_mobile/cpu-int4-rtn-block-32-acc-level-4'
-      ONNX_MODEL_ONNX_SHA256: 'b52cfcd91e6ed3caa34c670d4831d96cda3da5eb07ef95bc8ba06547b4f3b86f'
-      ONNX_MODEL_DATA_SHA256: '8539cf4fbc3b5b331fd78ca8cd5b025ce537dfc2f993451f5c474b2f9fb7cd6c'
-      ONNX_TOKENIZER_SHA256: 'be75606093db2094d7cd20f3c2f385c212750648bd6ea4fb2bf507a6a4c55506'
-
     steps:
       - name: Checkout exact source
         uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
+          fetch-depth: 0
 
-      - name: Setup Python 3.11
+      - name: Guard direct code and no patch injection
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          if (Select-String -Path CMakeLists.txt -Pattern 'CMAKE_PROJECT_INCLUDE' -Quiet) { throw 'Source injection is forbidden' }
+          if (-not (Select-String -Path iamemstab.cpp -Pattern 'iaMemsTranscriptScroll' -Quiet)) { throw 'IA vertical scroll source missing' }
+          if (-not (Select-String -Path iamemstab.cpp -Pattern 'Voir le schéma' -Quiet)) { throw 'Voir le schema UI source missing' }
+          if (-not (Select-String -Path iamemstab.cpp -Pattern 'askWithLibrary' -Quiet)) { throw 'Direct MEMSLibrary call missing' }
+          if (-not (Select-String -Path expert/IaMemsDiagramCatalog.cpp -Pattern 'suggestionForEvidence' -Quiet)) { throw 'Evidence visual routing source missing' }
+          if (-not (Select-String -Path CMakeLists.txt -Pattern 'IaMemsLibraryBridge.cpp' -Quiet)) { throw 'Direct bridge CMake wiring missing' }
+          $files=@('CMakeLists.txt','iamemstab.cpp','expert/IaMemsDiagramCatalog.cpp','expert/IaMemsDiagramCatalog.h','expert/IaMemsService.h','expert/IaMemsLibraryBridge.cpp','expert/IaMemsLibraryBridge.h','expert/IaMemsLibraryIntegration.cpp')
+          $hashes=@{}
+          foreach($f in $files){ if(-not(Test-Path $f)){throw "Missing source $f"}; $hashes[$f]=(Get-FileHash $f -Algorithm SHA256).Hash.ToLowerInvariant() }
+          $hashes | ConvertTo-Json | Set-Content source-hashes-before.json -Encoding UTF8
+          Write-Host 'DIRECT_SOURCE_NO_PATCH_PASS'
+
+      - name: Setup Python and Qt tools
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install validation tools
+      - name: Install Qt 5.15.2 MSVC x64 and validation tools
         shell: pwsh
         run: |
-          $ErrorActionPreference = 'Stop'
-          python -m pip install --disable-pip-version-check "aqtinstall==3.3.0" pefile "huggingface_hub>=0.34,<1" hf_xet
-
-      - name: Install Qt 5.15.2 MSVC 2019 x64
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $sevenZip = (Get-Command 7z.exe -ErrorAction Stop).Source
-          if (Test-Path 'C:\Qt') { Remove-Item 'C:\Qt' -Recurse -Force -ErrorAction SilentlyContinue }
+          $ErrorActionPreference='Stop'
+          python -m pip install --disable-pip-version-check "aqtinstall==3.3.0" pefile
+          $sevenZip=(Get-Command 7z.exe -ErrorAction Stop).Source
+          if(Test-Path C:\Qt){Remove-Item C:\Qt -Recurse -Force -ErrorAction SilentlyContinue}
           python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
-          if ($LASTEXITCODE -ne 0) { throw "aqtinstall failed: $LASTEXITCODE" }
+          if($LASTEXITCODE -ne 0){throw "Qt install failed $LASTEXITCODE"}
 
-      - name: Download and stage official ONNX Runtime GenAI plus ONNX Runtime Windows x64 CPU
+      - name: Download pinned ONNX Runtime development files
         shell: pwsh
         run: |
-          $ErrorActionPreference = 'Stop'
-          $genaiArchive = Join-Path $env:RUNNER_TEMP "onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
-          $ortArchive = Join-Path $env:RUNNER_TEMP "onnxruntime-win-x64-$env:ORT_VERSION.zip"
-          $genaiExtract = '${{ github.workspace }}\onnx-genai-release'
-          $ortExtract = '${{ github.workspace }}\onnxruntime-release'
-          $stage = '${{ github.workspace }}\onnx-runtime-stage'
-          $genaiUrl = "https://github.com/microsoft/onnxruntime-genai/releases/download/v$env:ORT_GENAI_VERSION/onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
-          $ortUrl = "https://github.com/microsoft/onnxruntime/releases/download/v$env:ORT_VERSION/onnxruntime-win-x64-$env:ORT_VERSION.zip"
+          $ErrorActionPreference='Stop'
+          $genaiArchive=Join-Path $env:RUNNER_TEMP "onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          $ortArchive=Join-Path $env:RUNNER_TEMP "onnxruntime-win-x64-$env:ORT_VERSION.zip"
+          $genaiExtract=Join-Path $env:RUNNER_TEMP 'genai'
+          $ortExtract=Join-Path $env:RUNNER_TEMP 'ort'
+          curl.exe -L --fail --retry 3 -o $genaiArchive "https://github.com/microsoft/onnxruntime-genai/releases/download/v$env:ORT_GENAI_VERSION/onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          if($LASTEXITCODE -ne 0){throw 'GenAI download failed'}
+          curl.exe -L --fail --retry 3 -o $ortArchive "https://github.com/microsoft/onnxruntime/releases/download/v$env:ORT_VERSION/onnxruntime-win-x64-$env:ORT_VERSION.zip"
+          if($LASTEXITCODE -ne 0){throw 'ORT download failed'}
+          if((Get-FileHash $genaiArchive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:ORT_GENAI_WIN_X64_SHA256){throw 'GenAI SHA mismatch'}
+          if((Get-FileHash $ortArchive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:ORT_WIN_X64_SHA256){throw 'ORT SHA mismatch'}
+          Expand-Archive $genaiArchive $genaiExtract -Force
+          Expand-Archive $ortArchive $ortExtract -Force
+          $header=Get-ChildItem $genaiExtract -Recurse -File -Filter ort_genai_c.h | Select-Object -First 1
+          $lib=Get-ChildItem $genaiExtract -Recurse -File -Filter onnxruntime-genai.lib | Select-Object -First 1
+          if(-not $header -or -not $lib){throw 'ONNX development files incomplete'}
+          "ORT_GENAI_INCLUDE_DIR=$($header.DirectoryName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "ORT_GENAI_LIBRARY=$($lib.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
 
-          foreach ($dir in @($genaiExtract,$ortExtract,$stage)) {
-            if (Test-Path $dir) { Remove-Item $dir -Recurse -Force }
-            New-Item -ItemType Directory -Path $dir -Force | Out-Null
+      - name: Download and pin clean reference Pack001 and validated IA base
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          function Assert-Artifact($id,$name,$digest){
+            $m=gh api "repos/$env:GITHUB_REPOSITORY/actions/artifacts/$id" | ConvertFrom-Json
+            if($m.name -ne $name -or $m.digest -ne $digest -or $m.expired){throw "Artifact pin failed: $id"}
           }
+          Assert-Artifact $env:BASE_PACKAGE_ARTIFACT_ID $env:BASE_PACKAGE_ARTIFACT_NAME $env:BASE_PACKAGE_DIGEST
+          Assert-Artifact $env:CLEAN_REFERENCE_ARTIFACT_ID $env:CLEAN_REFERENCE_ARTIFACT_NAME $env:CLEAN_REFERENCE_DIGEST
+          Assert-Artifact $env:PACK001_ARTIFACT_ID $env:PACK001_ARTIFACT_NAME $env:PACK001_DIGEST
+          gh run download $env:BASE_PACKAGE_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:BASE_PACKAGE_ARTIFACT_NAME --dir base-package
+          gh run download $env:CLEAN_REFERENCE_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:CLEAN_REFERENCE_ARTIFACT_NAME --dir clean-reference
+          gh run download $env:PACK001_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:PACK001_ARTIFACT_NAME --dir pack001
+          $refCatalog=Get-ChildItem clean-reference -Recurse -File -Filter runtime_visual_catalog.json | Select-Object -First 1
+          if(-not $refCatalog){throw 'Clean runtime catalog missing'}
+          $refRoot=$refCatalog.Directory.FullName
+          if(-not(Test-Path (Join-Path $refRoot 'manifest.json'))){throw 'Clean reference manifest missing'}
+          "CLEAN_REFERENCE_ROOT=$refRoot" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          $baseExe=Get-ChildItem base-package -Recurse -File -Filter ecu_mems_manager.exe | Select-Object -First 1
+          if(-not $baseExe){throw 'Validated IA base executable missing'}
+          "VALIDATED_BASE_ROOT=$($baseExe.Directory.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          $memsDll=Get-ChildItem pack001 -Recurse -File -Filter MEMSLibrary.dll | Select-Object -First 1
+          $packDb=Get-ChildItem pack001 -Recurse -File -Filter knowledge.sqlite | Select-Object -First 1
+          if(-not $memsDll -or -not $packDb){throw 'Canonical Pack001 artifact incomplete'}
+          "MEMSLIBRARY_DLL_SOURCE=$($memsDll.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "PACK001_SOURCE_ROOT=$($packDb.Directory.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host 'PINNED_CLEAN_INPUTS_PASS'
 
-          & curl.exe -L --fail --retry 3 --retry-delay 3 -o $genaiArchive $genaiUrl
-          if ($LASTEXITCODE -ne 0) { throw "ONNX Runtime GenAI package download failed: $LASTEXITCODE" }
-          $genaiHash = (Get-FileHash $genaiArchive -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($genaiHash -ne $env:ORT_GENAI_WIN_X64_SHA256) { throw "ONNX Runtime GenAI SHA256 mismatch: $genaiHash" }
-          Expand-Archive -LiteralPath $genaiArchive -DestinationPath $genaiExtract -Force
-
-          & curl.exe -L --fail --retry 3 --retry-delay 3 -o $ortArchive $ortUrl
-          if ($LASTEXITCODE -ne 0) { throw "ONNX Runtime package download failed: $LASTEXITCODE" }
-          $ortHash = (Get-FileHash $ortArchive -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($ortHash -ne $env:ORT_WIN_X64_SHA256) { throw "ONNX Runtime SHA256 mismatch: $ortHash" }
-          Expand-Archive -LiteralPath $ortArchive -DestinationPath $ortExtract -Force
-
-          $header = Get-ChildItem $genaiExtract -Recurse -File -Filter 'ort_genai_c.h' | Select-Object -First 1
-          $import = Get-ChildItem $genaiExtract -Recurse -File -Filter 'onnxruntime-genai.lib' | Select-Object -First 1
-          $genaiDll = Get-ChildItem $genaiExtract -Recurse -File -Filter 'onnxruntime-genai.dll' | Select-Object -First 1
-          $ortDll = Get-ChildItem $ortExtract -Recurse -File -Filter 'onnxruntime.dll' | Select-Object -First 1
-          if (-not $header -or -not $import -or -not $genaiDll -or -not $ortDll) {
-            throw 'Official ONNX Runtime GenAI / ONNX Runtime package layout is incomplete'
-          }
-
-          $seen = @{}
-          foreach ($root in @($genaiExtract,$ortExtract)) {
-            foreach ($dll in Get-ChildItem $root -Recurse -File -Filter '*.dll') {
-              $key = $dll.Name.ToLowerInvariant()
-              $hash = (Get-FileHash $dll.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-              if ($seen.ContainsKey($key)) {
-                if ($seen[$key] -ne $hash) { throw "Conflicting duplicate ONNX DLL: $($dll.Name)" }
-                continue
-              }
-              Copy-Item $dll.FullName (Join-Path $stage $dll.Name) -Force
-              $seen[$key] = $hash
-            }
-          }
-          foreach ($required in @('onnxruntime-genai.dll','onnxruntime.dll')) {
-            if (-not (Test-Path (Join-Path $stage $required) -PathType Leaf)) { throw "$required was not staged" }
-          }
-
-          $env:ORT_STAGE = $stage
+      - name: Validate clean reference before compilation
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $env:REF=$env:CLEAN_REFERENCE_ROOT
           @'
-          import os,re,shutil
+          import json,os
           from pathlib import Path
-          import pefile
-
-          stage=Path(os.environ['ORT_STAGE'])
-          system32=Path(os.environ['WINDIR'])/'System32'
-          redistributable=re.compile(r'^(?:msvcp|vcruntime|concrt)\d.*\.dll$', re.I)
-          queue=[p for p in stage.glob('*.dll')]
-          scanned=set()
-          copied=set()
-
-          def imports(path):
-              pe=pefile.PE(str(path), fast_load=True)
-              pe.parse_data_directories(directories=[
-                  pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_IMPORT'],
-                  pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT'],
-              ])
-              names=[]
-              for attr in ('DIRECTORY_ENTRY_IMPORT','DIRECTORY_ENTRY_DELAY_IMPORT'):
-                  for entry in getattr(pe,attr,[]):
-                      try: names.append(entry.dll.decode('ascii'))
-                      except Exception: pass
-              pe.close()
-              return names
-
-          while queue:
-              binary=queue.pop()
-              key=binary.name.lower()
-              if key in scanned: continue
-              scanned.add(key)
-              for name in imports(binary):
-                  if not redistributable.match(name): continue
-                  dst=stage/name
-                  if not dst.is_file():
-                      src=system32/name
-                      if not src.is_file():
-                          raise SystemExit('Required Microsoft VC++ runtime DLL unavailable: '+name)
-                      shutil.copy2(src,dst)
-                      copied.add(name.lower())
-                  queue.append(dst)
-
-          for p in stage.glob('*.dll'):
-              pe=pefile.PE(str(p), fast_load=True)
-              if pe.FILE_HEADER.Machine != 0x8664:
-                  raise SystemExit('Runtime is not AMD64: '+p.name)
-              pe.close()
-          print(f'PASS ONNX runtime stage: DLLs={len(list(stage.glob("*.dll")))} app_local_vc={len(copied)}')
+          r=Path(os.environ['REF'])
+          c=json.loads((r/'runtime_visual_catalog.json').read_text(encoding='utf-8'))
+          assert c['source_lineage']=='RAVEMEMS_V2_FINAL_33810202288'
+          assert c['source_run_id']==33810202288
+          assert c['entry_count']==1667
+          assert c['legacy_entries']==0 and c['pre_v2_images_included']==0
+          assert not (r/'images'/'rave').exists()
+          assert all(e.get('source_lineage')=='RAVEMEMS_V2_FINAL_33810202288' for e in c['entries'])
+          assert all(e.get('source_run_id')==33810202288 for e in c['entries'])
+          assert all(e.get('source_type')=='ravemems' for e in c['entries'])
+          text=(r/'runtime_visual_catalog.json').read_text(encoding='utf-8')
+          for bad in ('33510951021','33524210118','ravemems-runtime-migration-simulation','ravemems-visual-bundle-audit'):
+              assert bad not in text
+          print('CLEAN_REFERENCE_V2_PASS visuals=1667 legacy=0')
           '@ | python -
 
-          "ORT_GENAI_INCLUDE_DIR=$($header.DirectoryName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-          "ORT_GENAI_LIBRARY=$($import.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-          "ORT_GENAI_RUNTIME_STAGE=$stage" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-          Write-Host "PASS ONNX Runtime GenAI $env:ORT_GENAI_VERSION SHA256=$genaiHash"
-          Write-Host "PASS ONNX Runtime $env:ORT_VERSION Windows x64 CPU SHA256=$ortHash"
-
-      - name: Validate protocol guards before build
+      - name: Validate protocol guards
         shell: pwsh
         run: |
-          $ErrorActionPreference = 'Stop'
+          $ErrorActionPreference='Stop'
           python librosco-x64/validate_protocol_guards.py
 
-      - name: Configure and build ECU MEMS Manager x64 with native ONNX IA
+      - name: Configure and compile current direct source
         shell: pwsh
         run: |
-          $ErrorActionPreference = 'Stop'
+          $ErrorActionPreference='Stop'
           cmake -S . -B build-x64 -A x64 `
             -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
             -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
@@ -188,322 +177,137 @@ jobs:
             -DMEMS_USE_ONNX_GENAI=ON `
             "-DORT_GENAI_INCLUDE_DIR=$env:ORT_GENAI_INCLUDE_DIR" `
             "-DORT_GENAI_LIBRARY=$env:ORT_GENAI_LIBRARY"
-          if ($LASTEXITCODE -ne 0) { throw "CMake configure failed: $LASTEXITCODE" }
+          if($LASTEXITCODE -ne 0){throw "CMake configure failed $LASTEXITCODE"}
+          cmake --build build-x64 --config Release --target ecu_mems_manager ecu_mems_uninstaller rosco_abi_selftest ia_response_selftest ia_mems_diagram_selftest --parallel
+          if($LASTEXITCODE -ne 0){throw "Compile failed $LASTEXITCODE"}
 
-          cmake --build build-x64 --config Release --target `
-            ecu_mems_manager ecu_mems_uninstaller rosco_abi_selftest `
-            ia_response_selftest ia_mems_diagram_selftest mems_search_selftest expert_runtime_selftest local_ai_onnx_selftest
-          if ($LASTEXITCODE -ne 0) { throw "MEMS x64 ONNX build failed: $LASTEXITCODE" }
-
-      - name: Run deterministic self-tests
+      - name: Prove build did not transform source
         shell: pwsh
         run: |
-          $ErrorActionPreference = 'Stop'
-          $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
-          $env:PATH = "$qtRoot\bin;$env:ORT_GENAI_RUNTIME_STAGE;$env:PATH"
-          $env:QT_PLUGIN_PATH = "$qtRoot\plugins"
+          $ErrorActionPreference='Stop'
+          $before=Get-Content source-hashes-before.json -Raw | ConvertFrom-Json
+          foreach($p in $before.PSObject.Properties){
+            $now=(Get-FileHash $p.Name -Algorithm SHA256).Hash.ToLowerInvariant()
+            if($now -ne [string]$p.Value){throw "Source changed during build: $($p.Name)"}
+          }
+          Write-Host 'SOURCE_UNCHANGED_AFTER_BUILD_PASS'
 
+      - name: Stage clean runtime inputs for self-tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $release='${{ github.workspace }}\build-x64\Release'
+          $ref=Join-Path $release 'database\reference'
+          if(Test-Path $ref){Remove-Item $ref -Recurse -Force}
+          New-Item -ItemType Directory -Force -Path (Split-Path $ref -Parent) | Out-Null
+          Copy-Item $env:CLEAN_REFERENCE_ROOT $ref -Recurse -Force
+          Copy-Item $env:MEMSLIBRARY_DLL_SOURCE (Join-Path $release 'MEMSLibrary.dll') -Force
+          $pack=Join-Path $release 'MEMSLibrary_Pack_001'
+          if(Test-Path $pack){Remove-Item $pack -Recurse -Force}
+          Copy-Item $env:PACK001_SOURCE_ROOT $pack -Recurse -Force
+
+      - name: Run deterministic source self-tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $qt='C:\Qt\5.15.2\msvc2019_64'
+          $env:PATH="$qt\bin;$env:PATH"
+          $env:QT_PLUGIN_PATH="$qt\plugins"
           & '${{ github.workspace }}\build-x64\Release\ia_response_selftest.exe'
-          if ($LASTEXITCODE -ne 0) { throw "IA response self-test failed: $LASTEXITCODE" }
-
+          if($LASTEXITCODE -ne 0){throw 'IA response self-test failed'}
           & '${{ github.workspace }}\build-x64\Release\ia_mems_diagram_selftest.exe'
-          if ($LASTEXITCODE -ne 0) { throw "IA MEMS diagram self-test failed: $LASTEXITCODE" }
-
+          if($LASTEXITCODE -ne 0){throw 'IA diagram self-test failed'}
           ctest --test-dir build-x64/librosco-x64 -C Release --output-on-failure -R rosco_abi_selftest
-          if ($LASTEXITCODE -ne 0) { throw "Protocol ABI self-test failed: $LASTEXITCODE" }
+          if($LASTEXITCODE -ne 0){throw 'ROSCO ABI self-test failed'}
 
-          & '${{ github.workspace }}\build-x64\Release\mems_search_selftest.exe'
-          if ($LASTEXITCODE -ne 0) { throw "MEMS reference semantic self-test failed: $LASTEXITCODE" }
-
-      - name: Generate and validate packaged expert database r20
+      - name: Assemble BUILD package from validated IA runtime plus clean data
         shell: pwsh
         run: |
-          $ErrorActionPreference = 'Stop'
-          $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
-          $releaseRoot = '${{ github.workspace }}\build-x64\Release'
-          $referenceSource = '${{ github.workspace }}\database\reference'
-          $referenceRuntime = Join-Path $releaseRoot 'database\reference'
-          $expertRuntime = Join-Path $releaseRoot 'database\expert'
-          $cacheRoot = '${{ github.workspace }}\expert-runtime-cache'
-
-          if (Test-Path $referenceRuntime) { Remove-Item $referenceRuntime -Recurse -Force }
-          New-Item -ItemType Directory -Path (Split-Path $referenceRuntime -Parent) -Force | Out-Null
-          Copy-Item $referenceSource $referenceRuntime -Recurse -Force
-          if (Test-Path $expertRuntime) { Remove-Item $expertRuntime -Recurse -Force }
-          if (Test-Path $cacheRoot) { Remove-Item $cacheRoot -Recurse -Force }
-          New-Item -ItemType Directory -Path $cacheRoot -Force | Out-Null
-
-          $env:PATH = "$qtRoot\bin;$env:ORT_GENAI_RUNTIME_STAGE;$env:PATH"
-          $env:QT_PLUGIN_PATH = "$qtRoot\plugins"
-          $savedLocalAppData = $env:LOCALAPPDATA
-          $savedAppData = $env:APPDATA
-          $generatorOutput = @()
-          try {
-            $env:LOCALAPPDATA = $cacheRoot
-            $env:APPDATA = $cacheRoot
-            & (Join-Path $releaseRoot 'expert_runtime_selftest.exe') 2>&1 | Tee-Object -Variable generatorOutput
-            if ($LASTEXITCODE -ne 0) { throw "Expert runtime database generator failed: $LASTEXITCODE" }
-          } finally {
-            $env:LOCALAPPDATA = $savedLocalAppData
-            $env:APPDATA = $savedAppData
-          }
-
-          $databaseLine = $generatorOutput | ForEach-Object { [string]$_ } |
-            Where-Object { $_ -like 'EXPERT_RUNTIME_DATABASE=*' } | Select-Object -Last 1
-          if (-not $databaseLine) { throw 'Expert runtime generator did not report EXPERT_RUNTIME_DATABASE' }
-          $expertDbPath = $databaseLine.Substring('EXPERT_RUNTIME_DATABASE='.Length).Trim()
-          if (-not (Test-Path -LiteralPath $expertDbPath -PathType Leaf)) { throw "Expert DB missing: $expertDbPath" }
-
-          $env:EXPERT_DB = $expertDbPath
-          @'
-          import os,sqlite3
-          p=os.environ['EXPERT_DB']; db=sqlite3.connect(p)
-          try:
-              ok=db.execute('PRAGMA integrity_check').fetchone()[0]
-              rev=db.execute('PRAGMA user_version').fetchone()[0]
-          finally: db.close()
-          if str(ok).lower()!='ok' or rev!=20:
-              raise SystemExit(f'Invalid expert DB: integrity={ok} revision={rev}')
-          print('PASS expert SQLite r20')
-          '@ | python -
-          "AI_EXPERT_DB=$expertDbPath" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-
-      - name: Download pinned Qwen3-0.6B ONNX INT4 CPU model and verify hashes
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $modelRoot = '${{ github.workspace }}\onnx-model-stage'
-          if (Test-Path $modelRoot) { Remove-Item $modelRoot -Recurse -Force }
-          $env:MODEL_ROOT = $modelRoot
-          @'
-          import os
-          from huggingface_hub import snapshot_download
-          root = snapshot_download(
-              repo_id=os.environ['ONNX_MODEL_REPO'],
-              revision=os.environ['ONNX_MODEL_REVISION'],
-              allow_patterns=[os.environ['ONNX_MODEL_SUBDIR'] + '/*'],
-              local_dir=os.environ['MODEL_ROOT'],
-          )
-          print('MODEL_SNAPSHOT=' + root)
-          '@ | python -
-
-          $modelDir = Join-Path $modelRoot $env:ONNX_MODEL_SUBDIR
-          foreach ($name in @('genai_config.json','model.onnx','model.onnx.data','tokenizer.json','tokenizer_config.json','chat_template.jinja')) {
-            if (-not (Test-Path (Join-Path $modelDir $name) -PathType Leaf)) { throw "ONNX model file missing: $name" }
-          }
-          $modelHash = (Get-FileHash (Join-Path $modelDir 'model.onnx') -Algorithm SHA256).Hash.ToLowerInvariant()
-          $dataHash = (Get-FileHash (Join-Path $modelDir 'model.onnx.data') -Algorithm SHA256).Hash.ToLowerInvariant()
-          $tokenizerHash = (Get-FileHash (Join-Path $modelDir 'tokenizer.json') -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($modelHash -ne $env:ONNX_MODEL_ONNX_SHA256) { throw "model.onnx hash mismatch: $modelHash" }
-          if ($dataHash -ne $env:ONNX_MODEL_DATA_SHA256) { throw "model.onnx.data hash mismatch: $dataHash" }
-          if ($tokenizerHash -ne $env:ONNX_TOKENIZER_SHA256) { throw "tokenizer.json hash mismatch: $tokenizerHash" }
-          "ONNX_MODEL_DIR=$modelDir" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-          Write-Host 'PASS pinned Qwen3-0.6B ONNX INT4 CPU model hashes'
-
-      - name: Run production LocalAiClient native ONNX self-test
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
-          $selftest = Join-Path $env:ORT_GENAI_RUNTIME_STAGE 'local_ai_onnx_selftest.exe'
-          Copy-Item '${{ github.workspace }}\build-x64\Release\local_ai_onnx_selftest.exe' $selftest -Force
-          $env:PATH = "$qtRoot\bin;$env:ORT_GENAI_RUNTIME_STAGE;$env:PATH"
-          $env:QT_PLUGIN_PATH = "$qtRoot\plugins"
-          $env:MEMS_AI_RUNTIME = Join-Path $env:ORT_GENAI_RUNTIME_STAGE 'onnxruntime-genai.dll'
-          $env:MEMS_AI_MODEL = $env:ONNX_MODEL_DIR
-          Push-Location $env:ORT_GENAI_RUNTIME_STAGE
-          try {
-            & $selftest
-            if ($LASTEXITCODE -ne 0) { throw "Production LocalAiClient ONNX self-test failed: $LASTEXITCODE" }
-          } finally {
-            Pop-Location
-            Remove-Item $selftest -Force -ErrorAction SilentlyContinue
-          }
-          Write-Host 'PASS production LocalAiClient: native ONNX model load and generation'
-
-      - name: Assemble portable ONNX package
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
-          $releaseRoot = '${{ github.workspace }}\build-x64\Release'
-          $dist = '${{ github.workspace }}\dist-x64'
-          if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }
-          New-Item -ItemType Directory -Path $dist -Force | Out-Null
-
-          Copy-Item "$releaseRoot\ecu_mems_manager.exe" $dist -Force
-          Copy-Item "$releaseRoot\ecu_mems_uninstaller.exe" $dist -Force
-          Copy-Item '${{ github.workspace }}\build-x64\librosco-x64\Release\mems_manager_x64.dll' $dist -Force
-          & "$qtRoot\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist "$dist\ecu_mems_manager.exe"
-          if ($LASTEXITCODE -ne 0) { throw "windeployqt app failed: $LASTEXITCODE" }
-          & "$qtRoot\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist "$dist\ecu_mems_uninstaller.exe"
-          if ($LASTEXITCODE -ne 0) { throw "windeployqt uninstaller failed: $LASTEXITCODE" }
-
-          foreach ($folder in @('translations','database')) {
-            if (Test-Path "$releaseRoot\$folder") { Copy-Item "$releaseRoot\$folder" "$dist\$folder" -Recurse -Force }
-          }
-          New-Item -ItemType Directory -Path "$dist\database\expert" -Force | Out-Null
-          Copy-Item $env:AI_EXPERT_DB "$dist\database\expert\ia_mems_reference_r20.sqlite" -Force
-
-          foreach ($dll in Get-ChildItem $env:ORT_GENAI_RUNTIME_STAGE -File -Filter '*.dll') {
-            Copy-Item $dll.FullName (Join-Path $dist $dll.Name) -Force
-          }
-
-          New-Item -ItemType Directory -Path "$dist\ai\models\qwen3-0.6b-int4" -Force | Out-Null
-          Copy-Item '${{ github.workspace }}\ai\README.md' "$dist\ai\README.md" -Force
-          Copy-Item '${{ github.workspace }}\ai\runtime_manifest.json' "$dist\ai\runtime_manifest.json" -Force
-          Copy-Item "$env:ONNX_MODEL_DIR\*" "$dist\ai\models\qwen3-0.6b-int4" -Recurse -Force
-
-          & curl.exe -L --fail --retry 3 --retry-delay 3 -o "$dist\ai\ONNX_RUNTIME_GENAI_LICENSE.txt" "https://raw.githubusercontent.com/microsoft/onnxruntime-genai/v0.14.0/LICENSE"
-          if ($LASTEXITCODE -ne 0) { throw "ONNX Runtime GenAI LICENSE download failed: $LASTEXITCODE" }
-          & curl.exe -L --fail --retry 3 --retry-delay 3 -o "$dist\ai\ONNX_RUNTIME_LICENSE.txt" "https://raw.githubusercontent.com/microsoft/onnxruntime/v$env:ORT_VERSION/LICENSE"
-          if ($LASTEXITCODE -ne 0) { throw "ONNX Runtime LICENSE download failed: $LASTEXITCODE" }
-
-          $readmeName = 'README_BUILD' + $env:MEMS_BUILD + '.txt'
+          $ErrorActionPreference='Stop'
+          $dist='${{ github.workspace }}\dist-x64'
+          if(Test-Path $dist){Remove-Item $dist -Recurse -Force}
+          New-Item -ItemType Directory -Force -Path $dist | Out-Null
+          Copy-Item "$env:VALIDATED_BASE_ROOT\*" $dist -Recurse -Force
+          Copy-Item '${{ github.workspace }}\build-x64\Release\ecu_mems_manager.exe' "$dist\ecu_mems_manager.exe" -Force
+          Copy-Item '${{ github.workspace }}\build-x64\Release\ecu_mems_uninstaller.exe' "$dist\ecu_mems_uninstaller.exe" -Force
+          Copy-Item '${{ github.workspace }}\build-x64\librosco-x64\Release\mems_manager_x64.dll' "$dist\mems_manager_x64.dll" -Force
+          $ref="$dist\database\reference"
+          if(Test-Path $ref){Remove-Item $ref -Recurse -Force}
+          New-Item -ItemType Directory -Force -Path (Split-Path $ref -Parent) | Out-Null
+          Copy-Item $env:CLEAN_REFERENCE_ROOT $ref -Recurse -Force
+          Copy-Item $env:MEMSLIBRARY_DLL_SOURCE "$dist\MEMSLibrary.dll" -Force
+          $pack="$dist\MEMSLibrary_Pack_001"
+          if(Test-Path $pack){Remove-Item $pack -Recurse -Force}
+          Copy-Item $env:PACK001_SOURCE_ROOT $pack -Recurse -Force
+          $qt='C:\Qt\5.15.2\msvc2019_64'
+          & "$qt\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist "$dist\ecu_mems_manager.exe"
+          if($LASTEXITCODE -ne 0){throw 'windeployqt app failed'}
+          & "$qt\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist "$dist\ecu_mems_uninstaller.exe"
+          if($LASTEXITCODE -ne 0){throw 'windeployqt uninstaller failed'}
           @(
-            "ECU MEMS Manager BUILD #$env:MEMS_BUILD / v$env:MEMS_VERSION",
-            "IA locale x64: ONNX Runtime GenAI $env:ORT_GENAI_VERSION + ONNX Runtime $env:ORT_VERSION CPU + Qwen3-0.6B ONNX INT4",
-            'Integration: native in-process, worker thread Qt',
-            'QProcess/llama-server/HTTP local: supprimés de la voie IA x64',
-            'Base experte r20: préconstruite, lecture seule',
-            '32 bits et protocole ECU inchangés'
-          ) | Set-Content (Join-Path $dist $readmeName) -Encoding UTF8
-
-          @(
-            "Repository: $env:ONNX_MODEL_REPO",
-            "Revision: $env:ONNX_MODEL_REVISION",
-            "Subdir: $env:ONNX_MODEL_SUBDIR",
-            "model.onnx SHA-256: $env:ONNX_MODEL_ONNX_SHA256",
-            "model.onnx.data SHA-256: $env:ONNX_MODEL_DATA_SHA256",
-            "tokenizer.json SHA-256: $env:ONNX_TOKENIZER_SHA256"
-          ) | Set-Content "$dist\ai\MODEL_SOURCE.txt" -Encoding UTF8
-
+            "ECU MEMS Manager BUILD #$env:MEMS_BUILD / v1.0.$env:MEMS_BUILD",
+            'IA scroll vertical: direct C++ source',
+            'Voir le schema: direct C++ source with evidence routing',
+            'MEMSLibrary Pack001: canonical run 33847448261',
+            'Active manufacturer visual data: final V2 run 33810202288 only',
+            'Pre-V2 RAVE images active: 0',
+            'ROSCO / Leopold / Haro / ECU analysis reference data preserved by clean-reference audit run 33919306584',
+            'No source patch or build-time source injection'
+          ) | Set-Content "$dist\README_BUILD$env:MEMS_BUILD.txt" -Encoding UTF8
           "DIST=$dist" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - name: Validate complete portable ONNX package
+      - name: Validate complete clean BUILD package
         shell: pwsh
         run: |
-          $ErrorActionPreference = 'Stop'
-          $env:DIST_ROOT = $env:DIST
-          $env:ORT_STAGE_VALIDATE = $env:ORT_GENAI_RUNTIME_STAGE
+          $ErrorActionPreference='Stop'
+          $env:DIST_ROOT=$env:DIST
           @'
-          import hashlib,os,sqlite3
+          import hashlib,json,os,sqlite3
           from pathlib import Path
           import pefile
-
           root=Path(os.environ['DIST_ROOT'])
-          ai=root/'ai'
-          model=ai/'models'/'qwen3-0.6b-int4'
-          ort=Path(os.environ['ORT_STAGE_VALIDATE'])
-          required=[
-              root/'ecu_mems_manager.exe', root/'ecu_mems_uninstaller.exe', root/'mems_manager_x64.dll',
-              root/'onnxruntime-genai.dll', root/'onnxruntime.dll', root/'Qt5Svg.dll', root/'imageformats'/'qsvg.dll',
-              model/'genai_config.json', model/'model.onnx', model/'model.onnx.data',
-              model/'tokenizer.json', model/'tokenizer_config.json', model/'chat_template.jinja',
-              root/'database'/'expert'/'ia_mems_reference_r20.sqlite', ai/'runtime_manifest.json', ai/'README.md',
-              root/'database'/'reference'/'manifest.json',
-              root/'database'/'reference'/'images'/'mems_1_2_ecu_connector.svg',
-              root/'database'/'reference'/'images'/'mems_1_3_ecu_connectors.svg',
-              root/'database'/'reference'/'images'/'mems_1_6_ecu_connector.svg',
-              root/'database'/'reference'/'images'/'mems_1_9_ecu_connector.svg',
-              root/'database'/'reference'/'images'/'rover_rosco_3pin_black.svg',
-              root/'database'/'reference'/'images'/'mems_1_9_obd_16pin.svg'
-          ]
-          missing=[str(p.relative_to(root)) for p in required if not p.is_file()]
-          if missing: raise SystemExit('Missing packaged ONNX/IA diagram files: '+', '.join(missing))
-          if (ai/'llama-server.exe').exists() or any(ai.rglob('*.gguf')):
-              raise SystemExit('Obsolete llama.cpp/GGUF runtime leaked into ONNX package')
-
-          def h(p):
-              x=hashlib.sha256()
-              with open(p,'rb') as f:
-                  for b in iter(lambda:f.read(1048576),b''): x.update(b)
-              return x.hexdigest()
-
-          for p in ort.glob('*.dll'):
-              q=root/p.name
-              if not q.is_file() or h(p)!=h(q):
-                  raise SystemExit('ONNX runtime file changed/missing: '+p.name)
-
-          expected={
-              'model.onnx':os.environ['ONNX_MODEL_ONNX_SHA256'],
-              'model.onnx.data':os.environ['ONNX_MODEL_DATA_SHA256'],
-              'tokenizer.json':os.environ['ONNX_TOKENIZER_SHA256'],
-          }
-          for name,want in expected.items():
-              got=h(model/name)
-              if got.lower()!=want.lower(): raise SystemExit(f'{name} hash mismatch in package: {got}')
-
-          for p in [root/'ecu_mems_manager.exe',root/'ecu_mems_uninstaller.exe',root/'mems_manager_x64.dll']+list(ort.glob('*.dll')):
-              pe=pefile.PE(str(p if p.parent==root else root/p.name), fast_load=True)
-              if pe.FILE_HEADER.Machine != 0x8664: raise SystemExit(p.name+' is not AMD64')
-              pe.close()
-
-          app=pefile.PE(str(root/'ecu_mems_manager.exe'), fast_load=True)
-          app.parse_data_directories(directories=[pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_IMPORT']])
-          imports={e.dll.decode('ascii').lower() for e in getattr(app,'DIRECTORY_ENTRY_IMPORT',[])}
-          app.close()
-          if 'onnxruntime-genai.dll' not in imports:
-              raise SystemExit('ECU MEMS Manager is not linked to onnxruntime-genai.dll')
-
-          db=sqlite3.connect(str(root/'database'/'expert'/'ia_mems_reference_r20.sqlite'))
-          try: ok=db.execute('PRAGMA integrity_check').fetchone()[0]; rev=db.execute('PRAGMA user_version').fetchone()[0]
+          required=[root/'ecu_mems_manager.exe',root/'mems_manager_x64.dll',root/'MEMSLibrary.dll',root/'MEMSLibrary_Pack_001'/'knowledge.sqlite',root/'MEMSLibrary_Pack_001'/'manifest.json',root/'database'/'reference'/'runtime_visual_catalog.json']
+          miss=[str(x) for x in required if not x.is_file()]
+          assert not miss,miss
+          ref=root/'database'/'reference'
+          cat=json.loads((ref/'runtime_visual_catalog.json').read_text(encoding='utf-8'))
+          assert cat['source_lineage']=='RAVEMEMS_V2_FINAL_33810202288' and cat['entry_count']==1667
+          assert cat['legacy_entries']==0 and cat['pre_v2_images_included']==0
+          assert not (ref/'images'/'rave').exists()
+          db=sqlite3.connect(root/'MEMSLibrary_Pack_001'/'knowledge.sqlite')
+          try:
+              assert db.execute('pragma integrity_check').fetchone()[0]=='ok'
+              assert db.execute('pragma foreign_key_check').fetchall()==[]
+              assert db.execute('select count(*) from ravemems_document').fetchone()[0]==47
+              assert db.execute('select count(*) from ravemems_page').fetchone()[0]==1359
+              assert db.execute('select count(*) from memslibrary_search').fetchone()[0]==5453
           finally: db.close()
-          if str(ok).lower()!='ok' or rev!=20: raise SystemExit(f'Invalid expert DB: {ok} r{rev}')
-          print(f'PASS complete ONNX package: runtime_dlls={len(list(ort.glob("*.dll")))}, expert=r{rev}')
+          for p in (root/'ecu_mems_manager.exe',root/'mems_manager_x64.dll',root/'MEMSLibrary.dll'):
+              pe=pefile.PE(str(p),fast_load=True); assert pe.FILE_HEADER.Machine==0x8664,p; pe.close()
+          print('CLEAN_BUILD_PACKAGE_PASS visuals=1667 legacy=0 docs=47 pages=1359 search=5453')
           '@ | python -
 
-      - name: Validate packaged production LocalAiClient with Qwen
+      - name: Smoke launch clean BUILD package
         shell: pwsh
         run: |
-          $ErrorActionPreference = 'Stop'
-          $dist = $env:DIST
-          $selftest = Join-Path $dist 'local_ai_onnx_selftest.exe'
-          Copy-Item '${{ github.workspace }}\build-x64\Release\local_ai_onnx_selftest.exe' $selftest -Force
-          $env:PATH = "$dist;$env:PATH"
-          $env:MEMS_AI_RUNTIME = Join-Path $dist 'onnxruntime-genai.dll'
-          $env:MEMS_AI_MODEL = Join-Path $dist 'ai\models\qwen3-0.6b-int4'
-          Push-Location $dist
-          try {
-            & $selftest
-            if ($LASTEXITCODE -ne 0) { throw "Packaged production LocalAiClient ONNX self-test failed: $LASTEXITCODE" }
-          } finally {
-            Pop-Location
-            Remove-Item $selftest -Force -ErrorAction SilentlyContinue
-          }
-          Write-Host 'PASS packaged production LocalAiClient native ONNX/Qwen'
-
-      - name: Smoke launch ECU MEMS Manager with native ONNX runtime
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
+          $ErrorActionPreference='Stop'
           $p=Start-Process -FilePath "$env:DIST\ecu_mems_manager.exe" -WorkingDirectory $env:DIST -PassThru
           Start-Sleep -Seconds 8
-          if($p.HasExited){ throw "ECU MEMS Manager exited during smoke launch: $($p.ExitCode)" }
-          $null=$p.CloseMainWindow()
-          if(-not $p.WaitForExit(5000)){ Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }
-          Write-Host "PASS ECU MEMS Manager BUILD $env:MEMS_BUILD native ONNX smoke launch"
+          if($p.HasExited){throw "Application exited during smoke launch: $($p.ExitCode)"}
+          $null=$p.CloseMainWindow(); if(-not $p.WaitForExit(5000)){Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue}
+          Write-Host "BUILD_$env:MEMS_BUILD_SMOKE_PASS"
 
-      - name: Generate manifest and file hashes
+      - name: Generate package hashes
         shell: pwsh
         run: |
-          $ErrorActionPreference = 'Stop'
-          $manifest="$env:DIST\install_manifest.txt"
-          $hashName = 'BUILD' + $env:MEMS_BUILD + '_SHA256.txt'
-          $files=Get-ChildItem $env:DIST -Recurse -File | ForEach-Object { $_.FullName.Substring($env:DIST.Length+1).Replace('\','/') } | Sort-Object -Unique
-          ($files + 'install_manifest.txt' + $hashName) | Sort-Object -Unique | Set-Content $manifest -Encoding UTF8
-
-          $hashFile=Join-Path $env:DIST $hashName
-          $lines=foreach($f in Get-ChildItem $env:DIST -Recurse -File | Where-Object{$_.FullName-ne$hashFile} | Sort-Object FullName){
-            $r=$f.FullName.Substring($env:DIST.Length+1).Replace('\','/')
-            "$((Get-FileHash $f.FullName -Algorithm SHA256).Hash.ToLowerInvariant())  $r"
-          }
+          $hashFile=Join-Path $env:DIST ("BUILD"+$env:MEMS_BUILD+"_SHA256.txt")
+          $lines=foreach($f in Get-ChildItem $env:DIST -Recurse -File | Where-Object{$_.FullName-ne$hashFile} | Sort-Object FullName){$r=$f.FullName.Substring($env:DIST.Length+1).Replace('\','/'); "$((Get-FileHash $f.FullName -Algorithm SHA256).Hash.ToLowerInvariant())  $r"}
           $lines | Set-Content $hashFile -Encoding UTF8
 
-      - name: Upload ECU MEMS Manager native ONNX
+      - name: Upload ECU MEMS Manager clean x64
         uses: actions/upload-artifact@v4
         with:
-          name: ECU-MEMS-Manager-x64-BUILD-${{ github.run_number }}-v1.0.${{ github.run_number }}
+          name: ECU-MEMS-Manager-x64-BUILD-${{ env.MEMS_BUILD }}-v1.0.${{ env.MEMS_BUILD }}-CLEAN-V2
           path: dist-x64/
           if-no-files-found: error
           compression-level: 6
