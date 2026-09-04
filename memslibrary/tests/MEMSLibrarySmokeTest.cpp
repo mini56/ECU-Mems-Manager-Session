@@ -14,6 +14,7 @@ using GetAbiVersionFn = std::uint32_t (*)();
 using GetTextFn = const char* (*)();
 using ValidatePackFn = std::int32_t (*)(const wchar_t*, MEMSLibraryPackInfo*);
 using SearchPackFn = std::int32_t (*)(const wchar_t*, const char*, MEMSLibrarySearchResult*, std::uint32_t, std::uint32_t*);
+using SearchPackByLanguageFn = std::int32_t (*)(const wchar_t*, const char*, const char*, MEMSLibrarySearchResult*, std::uint32_t, std::uint32_t*);
 
 std::wstring executableDirectory()
 {
@@ -28,6 +29,22 @@ std::wstring executableDirectory()
 bool contains(const char* text, const char* needle)
 {
     return text && needle && std::strstr(text, needle) != nullptr;
+}
+
+void reset(std::vector<MEMSLibrarySearchResult>& results)
+{
+    for (auto& r : results) {
+        r = {};
+        r.struct_size = sizeof(r);
+    }
+}
+
+bool allLanguage(const std::vector<MEMSLibrarySearchResult>& results, std::uint32_t count, const char* language)
+{
+    for (std::uint32_t i = 0; i < count; ++i) {
+        if (std::strcmp(results[i].source_language, language) != 0) return false;
+    }
+    return true;
 }
 }
 
@@ -49,15 +66,16 @@ int wmain(int argc, wchar_t** argv)
     const auto name = reinterpret_cast<GetTextFn>(GetProcAddress(module, "MEMSLibrary_GetName"));
     const auto role = reinterpret_cast<GetTextFn>(GetProcAddress(module, "MEMSLibrary_GetEngineRole"));
     const auto validate = reinterpret_cast<ValidatePackFn>(GetProcAddress(module, "MEMSLibrary_ValidatePack"));
-    const auto search = reinterpret_cast<SearchPackFn>(GetProcAddress(module, "MEMSLibrary_SearchPack"));
-    if (!abi || !name || !role || !validate || !search) {
-        std::cerr << "FAIL required ABI2 export missing\n";
+    const auto legacySearch = reinterpret_cast<SearchPackFn>(GetProcAddress(module, "MEMSLibrary_SearchPack"));
+    const auto search = reinterpret_cast<SearchPackByLanguageFn>(GetProcAddress(module, "MEMSLibrary_SearchPackByLanguage"));
+    if (!abi || !name || !role || !validate || !legacySearch || !search) {
+        std::cerr << "FAIL required ABI3 export missing\n";
         FreeLibrary(module);
         return 3;
     }
-    if (abi() != 2u || std::strcmp(name(), "MEMSLibrary") != 0 ||
+    if (abi() != 3u || std::strcmp(name(), "MEMSLibrary") != 0 ||
         std::strcmp(role(), "generic_knowledge_library_engine") != 0) {
-        std::cerr << "FAIL ABI identity mismatch\n";
+        std::cerr << "FAIL ABI3 identity mismatch\n";
         FreeLibrary(module);
         return 4;
     }
@@ -65,41 +83,93 @@ int wmain(int argc, wchar_t** argv)
     MEMSLibraryPackInfo info{};
     info.struct_size = sizeof(info);
     const auto validStatus = validate(argv[1], &info);
-    if (validStatus != MEMSLIBRARY_OK || info.document_count != 47u || info.source_database_count != 47u ||
-        std::strcmp(info.pack_id, "MEMSLibrary_Pack_001") != 0) {
-        std::cerr << "FAIL Pack001 validation status=" << validStatus << " docs=" << info.document_count << " sources=" << info.source_database_count << " id=" << info.pack_id << "\n";
+    if (validStatus != MEMSLIBRARY_OK || info.schema_version < 2u || info.document_count != 47u ||
+        info.source_database_count != 47u || std::strcmp(info.pack_id, "MEMSLibrary_Pack_001") != 0) {
+        std::cerr << "FAIL Pack001 validation status=" << validStatus << " schema=" << info.schema_version
+                  << " docs=" << info.document_count << " sources=" << info.source_database_count
+                  << " id=" << info.pack_id << "\n";
         FreeLibrary(module);
         return 5;
     }
 
-    std::vector<MEMSLibrarySearchResult> results(16);
-    for (auto& r : results) r.struct_size = sizeof(r);
+    std::vector<MEMSLibrarySearchResult> results(32);
+    reset(results);
     std::uint32_t count = 0;
-    auto searchStatus = search(argv[1], "primary gear end float", results.data(), static_cast<std::uint32_t>(results.size()), &count);
-    bool foundPrimary = false;
-    for (std::uint32_t i = 0; i < count; ++i) {
-        if (std::strcmp(results[i].document_key, "DOC_RCL0193ENG") == 0 && results[i].page_number == 53 &&
-            (contains(results[i].body, "0.089") || contains(results[i].body, "0.165"))) {
-            foundPrimary = true;
-        }
-    }
-    if (searchStatus != MEMSLIBRARY_OK || !foundPrimary) {
-        std::cerr << "FAIL primary gear search status=" << searchStatus << " count=" << count << "\n";
+
+    const auto unsafeStatus = legacySearch(argv[1], "primary gear end float", results.data(),
+                                           static_cast<std::uint32_t>(results.size()), &count);
+    if (unsafeStatus != MEMSLIBRARY_LANGUAGE_REQUIRED || count != 0) {
+        std::cerr << "FAIL unscoped search was not blocked status=" << unsafeStatus << " count=" << count << "\n";
         FreeLibrary(module);
         return 6;
     }
 
-    for (auto& r : results) { r = {}; r.struct_size = sizeof(r); }
+    reset(results);
     count = 0;
-    searchStatus = search(argv[1], "battery restoration procedure", results.data(), static_cast<std::uint32_t>(results.size()), &count);
-    bool foundBattery = false;
+    auto searchStatus = search(argv[1], "en", "primary gear end float", results.data(),
+                               static_cast<std::uint32_t>(results.size()), &count);
+    bool foundPrimaryEnglish = false;
     for (std::uint32_t i = 0; i < count; ++i) {
-        if (std::strcmp(results[i].document_key, "DOC_RCL0221ENG") == 0 && results[i].page_number == 20) foundBattery = true;
+        if (std::strcmp(results[i].document_key, "DOC_RCL0193ENG") == 0 && results[i].page_number == 53 &&
+            (contains(results[i].body, "0.089") || contains(results[i].body, "0.165"))) {
+            foundPrimaryEnglish = true;
+        }
     }
-    if (searchStatus != MEMSLIBRARY_OK || !foundBattery) {
-        std::cerr << "FAIL battery search status=" << searchStatus << " count=" << count << "\n";
+    if (searchStatus != MEMSLIBRARY_OK || count == 0 || !allLanguage(results, count, "en") || !foundPrimaryEnglish) {
+        std::cerr << "FAIL isolated English primary search status=" << searchStatus << " count=" << count << "\n";
         FreeLibrary(module);
         return 7;
+    }
+
+    reset(results);
+    count = 0;
+    searchStatus = search(argv[1], "fr", "jeu axial pignon primaire", results.data(),
+                          static_cast<std::uint32_t>(results.size()), &count);
+    bool foundPrimaryFrench = false;
+    for (std::uint32_t i = 0; i < count; ++i) {
+        if (std::strcmp(results[i].document_key, "DOC_RCL0193FRE") == 0 &&
+            (contains(results[i].body, "0,089") || contains(results[i].body, "0,165") ||
+             contains(results[i].title, "PIGNON PRIMAIRE"))) {
+            foundPrimaryFrench = true;
+        }
+        if (contains(results[i].body, "coaxial") || contains(results[i].title, "coaxial")) {
+            std::cerr << "FAIL French primary search contains coaxial false positive\n";
+            FreeLibrary(module);
+            return 8;
+        }
+    }
+    if (searchStatus != MEMSLIBRARY_OK || count == 0 || !allLanguage(results, count, "fr") || !foundPrimaryFrench) {
+        std::cerr << "FAIL isolated French primary search status=" << searchStatus << " count=" << count << "\n";
+        FreeLibrary(module);
+        return 9;
+    }
+
+    reset(results);
+    count = 0;
+    searchStatus = search(argv[1], "en", "axial", results.data(),
+                          static_cast<std::uint32_t>(results.size()), &count);
+    for (std::uint32_t i = 0; i < count; ++i) {
+        if ((results[i].page_number == 342 || results[i].page_number == 343) &&
+            (contains(results[i].body, "coaxial") || contains(results[i].title, "coaxial"))) {
+            std::cerr << "FAIL token boundary: axial matched coaxial on p342/p343\n";
+            FreeLibrary(module);
+            return 10;
+        }
+    }
+    if (searchStatus != MEMSLIBRARY_OK || !allLanguage(results, count, "en")) {
+        std::cerr << "FAIL token-boundary English search status=" << searchStatus << " count=" << count << "\n";
+        FreeLibrary(module);
+        return 11;
+    }
+
+    reset(results);
+    count = 0;
+    const auto missingLanguageStatus = search(argv[1], "zz", "primary gear", results.data(),
+                                              static_cast<std::uint32_t>(results.size()), &count);
+    if (missingLanguageStatus != MEMSLIBRARY_LANGUAGE_NOT_FOUND || count != 0) {
+        std::cerr << "FAIL unknown language was not rejected status=" << missingLanguageStatus << " count=" << count << "\n";
+        FreeLibrary(module);
+        return 12;
     }
 
     MEMSLibraryPackInfo badInfo{};
@@ -108,7 +178,7 @@ int wmain(int argc, wchar_t** argv)
     if (corruptStatus == MEMSLIBRARY_OK) {
         std::cerr << "FAIL corrupt Pack002 unexpectedly accepted\n";
         FreeLibrary(module);
-        return 8;
+        return 13;
     }
 
     MEMSLibraryPackInfo recheck{};
@@ -116,12 +186,13 @@ int wmain(int argc, wchar_t** argv)
     if (validate(argv[1], &recheck) != MEMSLIBRARY_OK || recheck.document_count != 47u) {
         std::cerr << "FAIL Pack001 unavailable after corrupt Pack002 test\n";
         FreeLibrary(module);
-        return 9;
+        return 14;
     }
 
-    std::cout << "MEMSLIBRARY_PACK001_PASS abi=2 pack=" << info.pack_id
-              << " documents=" << info.document_count
-              << " primary=DOC_RCL0193ENG:p53 battery=DOC_RCL0221ENG:p20 corrupt_pack_isolated=1\n";
+    std::cout << "MEMSLIBRARY_PACK001_LANGUAGE_ISOLATION_PASS abi=3 schema=" << info.schema_version
+              << " pack=" << info.pack_id << " documents=" << info.document_count
+              << " en_primary=DOC_RCL0193ENG:p53 fr_primary=DOC_RCL0193FRE"
+              << " unscoped_blocked=1 axial_not_coaxial=1 corrupt_pack_isolated=1\n";
     FreeLibrary(module);
     return 0;
 }
