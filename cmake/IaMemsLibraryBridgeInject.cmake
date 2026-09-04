@@ -1,3 +1,7 @@
+if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    return()
+endif()
+
 if(CMAKE_VERSION VERSION_LESS 3.19)
     message(FATAL_ERROR "IA MEMSLibrary temporary integration requires CMake 3.19 or newer")
 endif()
