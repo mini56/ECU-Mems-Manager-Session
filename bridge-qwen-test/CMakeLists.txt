@@ -39,4 +39,31 @@ target_link_libraries(ia_memslibrary_qwen_selftest PRIVATE
 
 if(MSVC)
     target_compile_options(ia_memslibrary_qwen_selftest PRIVATE /permissive /utf-8)
+
+    set(MEMS_QWEN_RUNTIME_STAGE "$ENV{ORT_GENAI_RUNTIME_STAGE}")
+    if(MEMS_QWEN_RUNTIME_STAGE STREQUAL "" OR NOT IS_DIRECTORY "${MEMS_QWEN_RUNTIME_STAGE}")
+        message(FATAL_ERROR "ORT_GENAI_RUNTIME_STAGE is unavailable for Qwen self-test runtime staging")
+    endif()
+
+    file(GLOB MEMS_QWEN_VC_RUNTIME_DLLS
+        "$ENV{WINDIR}/System32/msvcp*.dll"
+        "$ENV{WINDIR}/System32/vcruntime*.dll"
+        "$ENV{WINDIR}/System32/concrt*.dll")
+    if(NOT MEMS_QWEN_VC_RUNTIME_DLLS)
+        message(FATAL_ERROR "No Microsoft VC++ runtime DLLs found in System32")
+    endif()
+
+    add_custom_command(TARGET ia_memslibrary_qwen_selftest POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${MEMS_QWEN_RUNTIME_STAGE}"
+            "$<TARGET_FILE_DIR:ia_memslibrary_qwen_selftest>"
+        COMMENT "Stage the pinned ONNX runtime beside the Qwen self-test")
+
+    foreach(MEMS_QWEN_VC_DLL IN LISTS MEMS_QWEN_VC_RUNTIME_DLLS)
+        add_custom_command(TARGET ia_memslibrary_qwen_selftest POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${MEMS_QWEN_VC_DLL}"
+                "$<TARGET_FILE_DIR:ia_memslibrary_qwen_selftest>"
+            COMMENT "Stage Microsoft VC++ runtime for Qwen self-test")
+    endforeach()
 endif()
