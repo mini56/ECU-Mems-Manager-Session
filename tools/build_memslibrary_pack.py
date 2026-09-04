@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-import argparse, glob, hashlib, json, os, pathlib, sqlite3
+import argparse, glob, hashlib, json, os, pathlib, re, sqlite3
 
-PACK_SCHEMA_VERSION = 1
+PACK_SCHEMA_VERSION = 2
 PACK_FORMAT = "MEMSLibraryKnowledgePack"
 SOURCE_RUN_ID = "33810202288"
 SOURCE_ARTIFACT_ID = "9914590689"
@@ -68,6 +68,11 @@ def transformed_row(table, cols, row, revision_key):
             vals[i] = local_key(revision_key, vals[i])
     return vals
 
+def normalize_search_text(*parts):
+    text = " ".join(str(part) for part in parts if part).casefold()
+    text = re.sub(r"[^\w-]+", " ", text, flags=re.UNICODE)
+    return " ".join(text.split())
+
 def create_search_schema(out):
     out.executescript("""
     CREATE TABLE memslibrary_pack (
@@ -87,7 +92,7 @@ def create_search_schema(out):
         page_number INTEGER,
         entity_kind TEXT NOT NULL,
         entity_key TEXT NOT NULL,
-        source_language TEXT,
+        source_language TEXT NOT NULL,
         title TEXT,
         body TEXT,
         search_text TEXT NOT NULL,
@@ -98,6 +103,8 @@ def create_search_schema(out):
     CREATE INDEX idx_memslibrary_search_revision ON memslibrary_search(revision_key);
     CREATE INDEX idx_memslibrary_search_page ON memslibrary_search(document_key, page_number);
     CREATE INDEX idx_memslibrary_search_kind ON memslibrary_search(entity_kind);
+    CREATE INDEX idx_memslibrary_search_language ON memslibrary_search(source_language);
+    CREATE INDEX idx_memslibrary_search_language_kind ON memslibrary_search(source_language, entity_kind);
     """)
 
 def first_page_map(out):
@@ -179,7 +186,9 @@ def add_search_rows(out):
                      "requirement", entity_key, language_for_doc.get(doc), req_type, body))
 
     for search_key, doc, rev, page, kind, entity, lang, title, body in rows:
-        normalized = " ".join((title or "", body or "")).lower()
+        if not lang:
+            raise RuntimeError(f"search row without source language: {search_key}")
+        normalized = normalize_search_text(title, body)
         out.execute("""
             INSERT INTO memslibrary_search
             (search_key,document_key,revision_key,page_number,entity_kind,entity_key,source_language,title,body,search_text)
@@ -217,9 +226,13 @@ def build(source_root, output_dir, pack_id):
         if cx.execute("PRAGMA foreign_key_check").fetchall():
             raise RuntimeError(f"source foreign key failure: {path}")
         doc, rev = doc_context(cx)
+        language = cx.execute("SELECT source_language FROM ravemems_document WHERE document_key=?", (doc,)).fetchone()[0]
+        if not language:
+            raise RuntimeError(f"document without source language: {doc}")
         source_manifest.append({
             "document_key": doc,
             "revision_key": rev,
+            "source_language": language,
             "source_database_sha256": sha256_file(path)
         })
         cx.close()
@@ -261,8 +274,13 @@ def build(source_root, output_dir, pack_id):
     page_count = out.execute("SELECT COUNT(*) FROM ravemems_page").fetchone()[0]
     visual_count = out.execute("SELECT COUNT(*) FROM ravemems_visual").fetchone()[0]
     review_count = out.execute("SELECT COUNT(*) FROM ravemems_review_flag WHERE status IS NULL OR lower(status) NOT IN ('resolved','closed')").fetchone()[0]
-    if integrity != "ok" or fk or doc_count != 47 or review_count != 0:
-        raise RuntimeError(f"pack validation failed: integrity={integrity} fk={len(fk)} docs={doc_count} reviews={review_count}")
+    missing_language_count = out.execute("SELECT COUNT(*) FROM memslibrary_search WHERE source_language IS NULL OR trim(source_language)='' ").fetchone()[0]
+    language_rows = out.execute("SELECT source_language, COUNT(*) FROM memslibrary_search GROUP BY source_language ORDER BY source_language").fetchall()
+    document_language_rows = out.execute("SELECT source_language, COUNT(*) FROM ravemems_document GROUP BY source_language ORDER BY source_language").fetchall()
+    if integrity != "ok" or fk or doc_count != 47 or review_count != 0 or missing_language_count != 0:
+        raise RuntimeError(
+            f"pack validation failed: integrity={integrity} fk={len(fk)} docs={doc_count} "
+            f"reviews={review_count} missing_language={missing_language_count}")
     out.execute("VACUUM")
     out.close()
 
@@ -277,6 +295,12 @@ def build(source_root, output_dir, pack_id):
         "page_count": page_count,
         "visual_count": visual_count,
         "search_entry_count": search_count,
+        "languages": [
+            {"code": language, "search_entry_count": count,
+             "document_count": dict(document_language_rows).get(language, 0)}
+            for language, count in language_rows
+        ],
+        "language_isolation_required": True,
         "source_run_id": SOURCE_RUN_ID,
         "source_artifact_id": SOURCE_ARTIFACT_ID,
         "source_engine_sha": ENGINE_SHA,
@@ -295,12 +319,14 @@ def main():
     manifest=build(args.source_root,args.output_dir,args.pack_id)
     print(json.dumps({
         "pack_id": manifest["pack_id"],
+        "pack_schema_version": manifest["pack_schema_version"],
         "document_count": manifest["document_count"],
         "page_count": manifest["page_count"],
         "visual_count": manifest["visual_count"],
         "search_entry_count": manifest["search_entry_count"],
+        "languages": manifest["languages"],
         "knowledge_sha256": manifest["knowledge_sha256"]
-    }, indent=2))
+    }, indent=2, ensure_ascii=False))
 
 if __name__=="__main__":
     main()
