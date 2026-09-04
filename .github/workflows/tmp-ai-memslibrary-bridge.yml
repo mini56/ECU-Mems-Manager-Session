@@ -236,6 +236,7 @@ jobs:
           }
 
       - name: Upload IA bridge and Qwen proof
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: IA-MEMSLibrary-Qwen-Proof-${{ github.run_id }}
