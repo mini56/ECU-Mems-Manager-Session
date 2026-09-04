@@ -616,7 +616,7 @@ void IaMemsTab::sendQuestion()
         m_sendButton->setEnabled(false);
     m_question->setEnabled(false);
 
-    m_service->ask(IaMemsConversationRouting::focusedQuestion(effectiveQuestion));
+    m_service->askWithLibrary(IaMemsConversationRouting::focusedQuestion(effectiveQuestion));
 }
 
 void IaMemsTab::onServiceResponse(const QString &text)
