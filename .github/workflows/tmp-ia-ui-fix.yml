@@ -1,0 +1,211 @@
+name: TMP IA UI Exact Fix
+
+on:
+  push:
+    branches:
+      - tmp-ia-ui-fix-stage
+    paths:
+      - '.github/workflows/tmp-ia-ui-fix.yml'
+      - 'tools/tmp_fix_ia_ui.py'
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  fix-and-validate:
+    runs-on: windows-2022
+    timeout-minutes: 60
+    env:
+      PROTECTED_BUILD103: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+      EXPECTED_BASE: '35c539bfa7c64d416a202e66dc913904cbe67fd3'
+      VISUAL_RUN_ID: '33524210118'
+      VISUAL_ARTIFACT_ID: '9806972578'
+      VISUAL_ARTIFACT_NAME: 'ravemems-runtime-migration-simulation'
+      VISUAL_DIGEST: 'sha256:bc8ceed9ea2a748fb23f2d2504f034c62010669d3d10f2a281cf675aea735642'
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: 'utf-8'
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout isolated UI staging branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify protected base and exact starting ancestry
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $memsx64=(git ls-remote origin refs/heads/MEMSX64).Split("`t")[0]
+          if($memsx64 -ne $env:PROTECTED_BUILD103){throw "MEMSX64 moved: $memsx64"}
+          git merge-base --is-ancestor $env:EXPECTED_BASE HEAD
+          if($LASTEXITCODE -ne 0){throw "UI staging branch is not derived from expected base"}
+          Write-Host "PROTECTED_BUILD103_PASS $memsx64"
+          Write-Host "EXPECTED_UI_BASE_PASS $env:EXPECTED_BASE"
+
+      - name: Apply only the documented IA UI delta
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python tools/tmp_fix_ia_ui.py
+          if($LASTEXITCODE -ne 0){throw "IA UI patch failed: $LASTEXITCODE"}
+          git diff --check
+          if($LASTEXITCODE -ne 0){throw "git diff --check failed"}
+          $changed=@(git diff --name-only)
+          $expected=@(
+            '.github/workflows/tmp-ai-memslibrary-visual-package.yml',
+            'expert/IaMemsDiagramCatalog.cpp',
+            'iamemstab.cpp',
+            'iamemstab.h',
+            'tools/tmp_patch_ia_implicit_visual.py'
+          )
+          if((Compare-Object ($changed | Sort-Object) ($expected | Sort-Object))){
+            Write-Host "Changed files:"
+            $changed | ForEach-Object { Write-Host $_ }
+            throw 'IA UI patch changed an unexpected file or missed an expected file'
+          }
+          Write-Host 'IA_UI_SCOPE_PASS'
+
+      - name: Verify whole-window scroll source structure
+        shell: python
+        run: |
+          from pathlib import Path
+          cpp=Path('iamemstab.cpp').read_text(encoding='utf-8')
+          hdr=Path('iamemstab.h').read_text(encoding='utf-8')
+          assert 'iaMemsWindowScroll' in cpp
+          assert 'iaMemsTranscriptScroll' not in cpp
+          assert 'QScrollArea *m_scrollArea' in hdr
+          assert 'm_scrollArea->setWidget(scrollContent)' in cpp
+          assert 'm_scrollArea->verticalScrollBar()' in cpp
+          assert 'm_transcript->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff)' in cpp
+          assert 'transcriptScroll' not in cpp
+          print('IA_WHOLE_WINDOW_SCROLL_SOURCE_PASS')
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Qt 5.15.2 x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python -m pip install --disable-pip-version-check "aqtinstall==3.3.0"
+          $sevenZip=(Get-Command 7z.exe -ErrorAction Stop).Source
+          if(Test-Path 'C:\Qt'){Remove-Item 'C:\Qt' -Recurse -Force -ErrorAction SilentlyContinue}
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
+          if($LASTEXITCODE -ne 0){throw "Qt install failed: $LASTEXITCODE"}
+
+      - name: Stage exact validated RAVEMEMS visual runtime
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $meta=gh api "repos/$env:GITHUB_REPOSITORY/actions/artifacts/$env:VISUAL_ARTIFACT_ID" | ConvertFrom-Json
+          if($meta.name -ne $env:VISUAL_ARTIFACT_NAME){throw "Visual artifact name mismatch: $($meta.name)"}
+          if($meta.digest -ne $env:VISUAL_DIGEST){throw "Visual artifact digest mismatch: $($meta.digest)"}
+          if($meta.expired){throw 'Validated visual runtime artifact is expired'}
+          $visual='${{ github.workspace }}\validated-visual-runtime'
+          if(Test-Path $visual){Remove-Item $visual -Recurse -Force}
+          New-Item -ItemType Directory -Path $visual -Force | Out-Null
+          gh run download $env:VISUAL_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:VISUAL_ARTIFACT_NAME --dir $visual
+          if($LASTEXITCODE -ne 0){throw "Visual artifact download failed: $LASTEXITCODE"}
+          $catalog=Get-ChildItem $visual -Recurse -File -Filter runtime_visual_catalog.json | Select-Object -First 1
+          $runtimeFiles=Get-ChildItem $visual -Recurse -Directory -Filter runtime_files | Select-Object -First 1
+          if(-not $catalog -or -not $runtimeFiles){throw 'Visual artifact layout incomplete'}
+          $reference='${{ github.workspace }}\database\reference'
+          New-Item -ItemType Directory -Path $reference -Force | Out-Null
+          Copy-Item $catalog.FullName (Join-Path $reference 'runtime_visual_catalog.json') -Force
+          Copy-Item "$($runtimeFiles.FullName)\*" $reference -Recurse -Force
+          Write-Host 'IA_UI_VISUAL_RUNTIME_PASS'
+
+      - name: Configure and compile corrected IA UI
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          cmake -S . -B build-ui-fix -A x64 `
+            -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
+            -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
+            -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF
+          if($LASTEXITCODE -ne 0){throw "UI fix configure failed: $LASTEXITCODE"}
+          cmake --build build-ui-fix --config Release --target ecu_mems_manager ia_mems_diagram_selftest --parallel
+          if($LASTEXITCODE -ne 0){throw "UI fix build failed: $LASTEXITCODE"}
+          Write-Host 'IA_UI_X64_BUILD_PASS'
+
+      - name: Run historical visual safety check
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $env:PATH="C:\Qt\5.15.2\msvc2019_64\bin;$env:PATH"
+          & '${{ github.workspace }}\build-ui-fix\Release\ia_mems_diagram_selftest.exe'
+          if($LASTEXITCODE -ne 0){throw "IA historical diagram self-test failed: $LASTEXITCODE"}
+          Write-Host 'IA_UI_HISTORICAL_VISUAL_SAFETY_PASS'
+
+      - name: Build and run natural-question visual button checks
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          cmake -S visual-question-test -B build-ui-visual-question -A x64 `
+            -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64"
+          if($LASTEXITCODE -ne 0){throw "Visual question configure failed: $LASTEXITCODE"}
+          cmake --build build-ui-visual-question --config Release --parallel
+          if($LASTEXITCODE -ne 0){throw "Visual question build failed: $LASTEXITCODE"}
+          $env:PATH="C:\Qt\5.15.2\msvc2019_64\bin;$env:PATH"
+          & '${{ github.workspace }}\build-ui-visual-question\Release\ia_visual_question_selftest.exe' `
+            '${{ github.workspace }}\database\reference'
+          if($LASTEXITCODE -ne 0){throw "Natural-question visual self-test failed: $LASTEXITCODE"}
+          Write-Host 'IA_UI_NATURAL_VISUAL_BUTTON_PASS'
+
+      - name: Capture exact correction evidence
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          git diff --check
+          git diff -- `
+            iamemstab.cpp `
+            iamemstab.h `
+            expert/IaMemsDiagramCatalog.cpp `
+            tools/tmp_patch_ia_implicit_visual.py `
+            .github/workflows/tmp-ai-memslibrary-visual-package.yml `
+            | Out-File '${{ github.workspace }}\IA_UI_FIX_DIFF.txt' -Encoding utf8
+          @"
+          IA_UI_FIX_PASS
+          protected_build=103
+          protected_sha=$env:PROTECTED_BUILD103
+          base=$env:EXPECTED_BASE
+          whole_window_scroll=pass
+          primary_gear_visual=pass
+          battery_restoration_visual=pass
+          ordinary_diagnostic_no_visual=pass
+          "@ | Set-Content '${{ github.workspace }}\IA_UI_FIX_RESULT.txt' -Encoding utf8
+
+      - name: Upload exact UI correction evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: TMP-IA-UI-FIX-${{ github.run_id }}
+          path: |
+            IA_UI_FIX_DIFF.txt
+            IA_UI_FIX_RESULT.txt
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Commit validated correction on staging only
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/tmp-ia-ui-fix.yml tools/tmp_fix_ia_ui.py
+          git add `
+            iamemstab.cpp `
+            iamemstab.h `
+            expert/IaMemsDiagramCatalog.cpp `
+            tools/tmp_patch_ia_implicit_visual.py `
+            .github/workflows/tmp-ai-memslibrary-visual-package.yml
+          git diff --cached --check
+          if($LASTEXITCODE -ne 0){throw "Cached correction diff invalid"}
+          git commit -m "Validate IA whole-window scroll and visual button [skip ci]"
+          if($LASTEXITCODE -ne 0){throw "Staging correction commit failed: $LASTEXITCODE"}
+          git push origin HEAD:tmp-ia-ui-fix-stage
+          if($LASTEXITCODE -ne 0){throw "Staging correction push failed: $LASTEXITCODE"}
+          Write-Host "IA_UI_STAGING_COMMIT=$(git rev-parse HEAD)"
