@@ -1,0 +1,104 @@
+name: TMP Restore Validated IA Scroll
+
+on:
+  push:
+    branches:
+      - tmp-ai-memslibrary-bridge
+    paths:
+      - .github/workflows/tmp-restore-ia-scroll.yml
+
+permissions:
+  contents: write
+
+jobs:
+  restore-scroll:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout isolated IA bridge branch
+        uses: actions/checkout@v4
+        with:
+          ref: tmp-ai-memslibrary-bridge
+          fetch-depth: 0
+
+      - name: Apply exact validated scroll diff from 06bb3b8
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('iamemstab.cpp')
+          text = path.read_text(encoding='utf-8')
+
+          old = '''    m_transcript = new QTextBrowser(this);
+    m_transcript->setObjectName(QStringLiteral("iaMemsTranscript"));
+    m_transcript->setOpenExternalLinks(false);
+    m_transcript->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    m_transcript->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    m_transcript->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    if (QScrollBar *bar = m_transcript->verticalScrollBar())
+        bar->setMinimumWidth(14);
+    root->addWidget(m_transcript, 1);
+'''
+
+          new = '''    QWidget *transcriptPane = new QWidget(this);
+    QHBoxLayout *transcriptLayout = new QHBoxLayout(transcriptPane);
+    transcriptLayout->setContentsMargins(0, 0, 0, 0);
+    transcriptLayout->setSpacing(6);
+
+    m_transcript = new QTextBrowser(transcriptPane);
+    m_transcript->setObjectName(QStringLiteral("iaMemsTranscript"));
+    m_transcript->setOpenExternalLinks(false);
+    m_transcript->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    m_transcript->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_transcript->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    transcriptLayout->addWidget(m_transcript, 1);
+
+    QScrollBar *transcriptScroll = new QScrollBar(Qt::Vertical, transcriptPane);
+    transcriptScroll->setObjectName(QStringLiteral("iaMemsTranscriptScroll"));
+    transcriptScroll->setMinimumWidth(18);
+    transcriptScroll->setMaximumWidth(18);
+    transcriptLayout->addWidget(transcriptScroll);
+
+    QScrollBar *internalScroll = m_transcript->verticalScrollBar();
+    QObject::connect(internalScroll, &QScrollBar::rangeChanged,
+                     transcriptPane,
+                     [internalScroll, transcriptScroll](int minimum, int maximum) {
+                         transcriptScroll->setRange(minimum, maximum);
+                         transcriptScroll->setPageStep(internalScroll->pageStep());
+                         transcriptScroll->setSingleStep(internalScroll->singleStep());
+                     });
+    QObject::connect(internalScroll, &QScrollBar::valueChanged,
+                     transcriptScroll, &QScrollBar::setValue);
+    QObject::connect(transcriptScroll, &QScrollBar::valueChanged,
+                     internalScroll, &QScrollBar::setValue);
+    transcriptScroll->setRange(internalScroll->minimum(), internalScroll->maximum());
+    transcriptScroll->setPageStep(internalScroll->pageStep());
+    transcriptScroll->setSingleStep(internalScroll->singleStep());
+
+    root->addWidget(transcriptPane, 1);
+'''
+
+          if 'iaMemsTranscriptScroll' in text:
+              raise SystemExit('Validated IA scroll is already present; refusing duplicate edit')
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected exactly one legacy transcript block, found {text.count(old)}')
+
+          path.write_text(text.replace(old, new, 1), encoding='utf-8', newline='\n')
+
+      - name: Verify only the IA transcript scroll block changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          git diff -- iamemstab.cpp
+          test "$(git diff --name-only | tr -d '\r')" = "iamemstab.cpp"
+          grep -q 'iaMemsTranscriptScroll' iamemstab.cpp
+
+      - name: Commit validated scroll restoration
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add iamemstab.cpp
+          git commit -m "Restore validated IA transcript scroll"
+          git push origin HEAD:tmp-ai-memslibrary-bridge
