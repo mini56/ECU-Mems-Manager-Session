@@ -21,6 +21,11 @@ public:
     static IaMemsDiagramSuggestion suggestionForQuestion(
         const QString &question,
         const QString &referenceRoot = QString());
+
+    static IaMemsDiagramSuggestion suggestionForEvidence(
+        const QString &question,
+        const QString &evidence,
+        const QString &referenceRoot = QString());
 };
 
 #endif // IAMEMSDIAGRAMCATALOG_H

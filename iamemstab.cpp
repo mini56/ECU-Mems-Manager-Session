@@ -322,6 +322,8 @@ void IaMemsTab::updateDiagramSuggestion(const QString &question)
     if (!m_diagramButton)
         return;
 
+    m_diagramButton->setProperty("iaMemsDiagramEvidence", QString());
+
     const IaMemsDiagramSuggestion suggestion =
         IaMemsDiagramCatalog::suggestionForQuestion(question);
     if (!suggestion.isValid()) {
@@ -341,8 +343,12 @@ void IaMemsTab::openSuggestedDiagram()
     if (m_diagramTitle.isEmpty() || m_diagramQuestion.isEmpty())
         return;
 
-    const IaMemsDiagramSuggestion suggestion =
-        IaMemsDiagramCatalog::suggestionForQuestion(m_diagramQuestion);
+    const QString evidence = m_diagramButton
+        ? m_diagramButton->property("iaMemsDiagramEvidence").toString()
+        : QString();
+    const IaMemsDiagramSuggestion suggestion = evidence.trimmed().isEmpty()
+        ? IaMemsDiagramCatalog::suggestionForQuestion(m_diagramQuestion)
+        : IaMemsDiagramCatalog::suggestionForEvidence(m_diagramQuestion, evidence);
     if (!suggestion.isValid() || suggestion.key != m_diagramTitle) {
         m_diagramTitle.clear();
         m_diagramQuestion.clear();
@@ -616,6 +622,24 @@ void IaMemsTab::sendQuestion()
 void IaMemsTab::onServiceResponse(const QString &text)
 {
     appendMessage(QStringLiteral("IA MEMS"), text);
+
+    if (m_service && m_diagramButton) {
+        const QString evidenceQuestion =
+            m_service->property("iaMemsLastLibraryQuestion").toString().trimmed();
+        const QString evidence =
+            m_service->property("iaMemsLastLibraryEvidence").toString().trimmed();
+        if (!evidenceQuestion.isEmpty() && !evidence.isEmpty()) {
+            const IaMemsDiagramSuggestion suggestion =
+                IaMemsDiagramCatalog::suggestionForEvidence(evidenceQuestion, evidence);
+            if (suggestion.isValid()) {
+                m_diagramTitle = suggestion.key;
+                m_diagramQuestion = evidenceQuestion;
+                m_diagramButton->setProperty("iaMemsDiagramEvidence", evidence);
+                m_diagramButton->setText(QStringLiteral("Voir le schéma"));
+                m_diagramButton->setVisible(true);
+            }
+        }
+    }
 
     if (m_sendButton)
         m_sendButton->setEnabled(true);

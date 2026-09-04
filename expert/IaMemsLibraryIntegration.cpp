@@ -99,6 +99,8 @@ void IaMemsService::askWithLibrary(const QString &question)
     const QString legacyGrounding = groundingFor(trimmed);
     const IaMemsLibraryGrounding libraryGrounding =
         IaMemsLibraryBridge::retrieve(trimmed, libraryKeywords(trimmed));
+    setProperty("iaMemsLastLibraryQuestion", trimmed);
+    setProperty("iaMemsLastLibraryEvidence", libraryGrounding.text);
     m_pendingGrounding = mergeGrounding(legacyGrounding, libraryGrounding);
 
     if (m_localAi && m_localAi->isReady()) {
