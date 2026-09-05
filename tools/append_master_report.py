@@ -3,7 +3,7 @@ from __future__ import annotations
 from hashlib import sha256
 from pathlib import Path
 
-REPORT = Path("RAPPORT_SUIVI_ECU_MEMS_MANAGER.md")
+REPORT = Path("RAPPORT_SUIVI_ECU_MEMS_MANAGER_SUITE.md")
 QUEUE = Path(".journal_queue")
 
 
