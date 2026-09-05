@@ -1,0 +1,344 @@
+name: TMP IA MEMSLibrary App Preflight
+
+on:
+  push:
+    branches: [tmp-ai-memslibrary-app-preflight]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  MEMS_BUILD_NUMBER: '104'
+  GREEN_BRIDGE_SHA: 'c62386a540a7bd89007fb8f5b0835603ca634591'
+  BUILD104_SHA: 'a55427affeec84643f916621df6247adf29e80fb'
+  ORT_GENAI_VERSION: '0.14.0'
+  ORT_GENAI_WIN_X64_SHA256: '8a303e52dc7be8fb2a5331929af451a25ac59774102d7fd09ef673adc85c5ebf'
+  ORT_VERSION: '1.24.4'
+  ORT_WIN_X64_SHA256: 'd2319fddfb6ea4db99ccc4b60c85c517bcd855721f5daa6a06d40d7cb2ee2357'
+  BASE_PACKAGE_RUN_ID: '33889068203'
+  BASE_PACKAGE_ARTIFACT_ID: '9943343980'
+  BASE_PACKAGE_ARTIFACT_NAME: 'TMP-ECU-MEMS-Manager-x64-IA-MEMSLibrary-33889068203'
+  BASE_PACKAGE_DIGEST: 'sha256:4cf818b64670a8fb4dc5e6f77b7b30c35a3ab95251046ca24c529194a622f7f5'
+  CLEAN_REFERENCE_RUN_ID: '33919306584'
+  CLEAN_REFERENCE_ARTIFACT_ID: '9954393075'
+  CLEAN_REFERENCE_ARTIFACT_NAME: 'CLEAN-REFERENCE-V2-33919306584'
+  CLEAN_REFERENCE_DIGEST: 'sha256:b056ada5b925648824274f6b04cfa95b81fb6ba8bd07c101f3210757f5ef4df8'
+  DLL_RUN_ID: '33953367833'
+  DLL_ARTIFACT_ID: '9965560001'
+  DLL_ARTIFACT_NAME: 'MEMSLibrary-DLL-Provenance-33953367833'
+  DLL_ARTIFACT_DIGEST: 'sha256:f6987c821d312a505019e02cfdd3b254bc04e1a3b86657fc1f3f87dd3e99c491'
+  DLL_SHA256: '77d73dd7c64fa2271fa26bb5d724b1c3b0c343c0669af3af5647236546437b7a'
+  PACK_SHA256: '827208b703324335828d72093994ec5f7bf9e0a6fd0cd3b0082d033bfa38628b'
+
+jobs:
+  app_preflight:
+    runs-on: windows-2022
+    timeout-minutes: 120
+    steps:
+      - name: Checkout exact preflight source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Guard green bridge lineage and preflight-only delta
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          git merge-base --is-ancestor $env:BUILD104_SHA HEAD
+          if($LASTEXITCODE -ne 0){throw 'Preflight branch is not descended from BUILD #104'}
+          git merge-base --is-ancestor $env:GREEN_BRIDGE_SHA HEAD
+          if($LASTEXITCODE -ne 0){throw 'Preflight branch is not descended from green bridge HEAD'}
+          $delta=@(git diff --name-only "$env:GREEN_BRIDGE_SHA..HEAD")
+          if($delta.Count -ne 1 -or $delta[0] -ne '.github/workflows/tmp-ai-memslibrary-app-preflight.yml'){
+            throw "Preflight delta is not workflow-only: $($delta -join ', ')"
+          }
+          Write-Host 'APP_PREFLIGHT_SCOPE_PASS green_bridge_unchanged=1'
+
+      - name: Snapshot protected source hashes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $files=@(
+            'CMakeLists.txt','iamemstab.cpp',
+            'expert/IaMemsLibraryBridge.cpp','expert/IaMemsLibraryBridge.h',
+            'expert/IaMemsLibraryIntegration.cpp',
+            'expert/IaMemsDiagramCatalog.cpp','expert/IaMemsDiagramCatalog.h',
+            'memslibrary/include/MEMSLibrary.h'
+          )
+          $hashes=@{}
+          foreach($f in $files){$hashes[$f]=(Get-FileHash $f -Algorithm SHA256).Hash.ToLowerInvariant()}
+          $hashes | ConvertTo-Json | Set-Content source-hashes-before.json -Encoding UTF8
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Qt 5.15.2 MSVC x64 and validation tools
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python -m pip install --disable-pip-version-check "aqtinstall==3.3.0" pefile
+          $sevenZip=(Get-Command 7z.exe -ErrorAction Stop).Source
+          if(Test-Path C:\Qt){Remove-Item C:\Qt -Recurse -Force -ErrorAction SilentlyContinue}
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
+          if($LASTEXITCODE -ne 0){throw "Qt install failed $LASTEXITCODE"}
+
+      - name: Download pinned ONNX Runtime development files
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $genaiArchive=Join-Path $env:RUNNER_TEMP "onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          $ortArchive=Join-Path $env:RUNNER_TEMP "onnxruntime-win-x64-$env:ORT_VERSION.zip"
+          $genaiExtract=Join-Path $env:RUNNER_TEMP 'genai'
+          $ortExtract=Join-Path $env:RUNNER_TEMP 'ort'
+          curl.exe -L --fail --retry 3 -o $genaiArchive "https://github.com/microsoft/onnxruntime-genai/releases/download/v$env:ORT_GENAI_VERSION/onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          if($LASTEXITCODE -ne 0){throw 'GenAI download failed'}
+          curl.exe -L --fail --retry 3 -o $ortArchive "https://github.com/microsoft/onnxruntime/releases/download/v$env:ORT_VERSION/onnxruntime-win-x64-$env:ORT_VERSION.zip"
+          if($LASTEXITCODE -ne 0){throw 'ORT download failed'}
+          if((Get-FileHash $genaiArchive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:ORT_GENAI_WIN_X64_SHA256){throw 'GenAI SHA mismatch'}
+          if((Get-FileHash $ortArchive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:ORT_WIN_X64_SHA256){throw 'ORT SHA mismatch'}
+          Expand-Archive $genaiArchive $genaiExtract -Force
+          Expand-Archive $ortArchive $ortExtract -Force
+          $header=Get-ChildItem $genaiExtract -Recurse -File -Filter ort_genai_c.h | Select-Object -First 1
+          $lib=Get-ChildItem $genaiExtract -Recurse -File -Filter onnxruntime-genai.lib | Select-Object -First 1
+          if(-not $header -or -not $lib){throw 'ONNX development files incomplete'}
+          "ORT_GENAI_INCLUDE_DIR=$($header.DirectoryName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "ORT_GENAI_LIBRARY=$($lib.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Download pinned validated runtime clean V2 and corrected MEMSLibrary
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          function Assert-Artifact($id,$name,$digest){
+            $m=gh api "repos/$env:GITHUB_REPOSITORY/actions/artifacts/$id" | ConvertFrom-Json
+            if($m.name -ne $name -or $m.digest -ne $digest -or $m.expired){throw "Artifact pin failed: $id"}
+          }
+          Assert-Artifact $env:BASE_PACKAGE_ARTIFACT_ID $env:BASE_PACKAGE_ARTIFACT_NAME $env:BASE_PACKAGE_DIGEST
+          Assert-Artifact $env:CLEAN_REFERENCE_ARTIFACT_ID $env:CLEAN_REFERENCE_ARTIFACT_NAME $env:CLEAN_REFERENCE_DIGEST
+          Assert-Artifact $env:DLL_ARTIFACT_ID $env:DLL_ARTIFACT_NAME $env:DLL_ARTIFACT_DIGEST
+          gh run download $env:BASE_PACKAGE_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:BASE_PACKAGE_ARTIFACT_NAME --dir base-package
+          gh run download $env:CLEAN_REFERENCE_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:CLEAN_REFERENCE_ARTIFACT_NAME --dir clean-reference
+          gh run download $env:DLL_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:DLL_ARTIFACT_NAME --dir corrected-dll
+          $baseExe=Get-ChildItem base-package -Recurse -File -Filter ecu_mems_manager.exe | Select-Object -First 1
+          $catalog=Get-ChildItem clean-reference -Recurse -File -Filter runtime_visual_catalog.json | Select-Object -First 1
+          $dll=Get-ChildItem corrected-dll -Recurse -File -Filter MEMSLibrary.dll | Select-Object -First 1
+          $pack=Get-ChildItem corrected-dll -Recurse -File -Filter knowledge.sqlite | Select-Object -First 1
+          if(-not $baseExe -or -not $catalog -or -not $dll -or -not $pack){throw 'Pinned preflight inputs incomplete'}
+          if((Get-FileHash $dll.FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:DLL_SHA256){throw 'Corrected DLL SHA mismatch'}
+          if((Get-FileHash $pack.FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:PACK_SHA256){throw 'Pack001 SHA mismatch'}
+          "VALIDATED_BASE_ROOT=$($baseExe.Directory.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "CLEAN_REFERENCE_ROOT=$($catalog.Directory.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "MEMSLIBRARY_DLL_SOURCE=$($dll.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "PACK001_SOURCE_ROOT=$($pack.Directory.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host 'APP_PREFLIGHT_PINNED_INPUTS_PASS'
+
+      - name: Validate clean V2 and Pack001 before compilation
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $env:REF=$env:CLEAN_REFERENCE_ROOT
+          $env:PACK=$env:PACK001_SOURCE_ROOT
+          @'
+          import json, os, sqlite3
+          from pathlib import Path
+          ref=Path(os.environ['REF'])
+          pack=Path(os.environ['PACK'])/'knowledge.sqlite'
+          cat=json.loads((ref/'runtime_visual_catalog.json').read_text(encoding='utf-8'))
+          assert cat['source_lineage']=='RAVEMEMS_V2_FINAL_33810202288'
+          assert cat['source_run_id']==33810202288 and cat['entry_count']==1667
+          assert cat['legacy_entries']==0 and cat['pre_v2_images_included']==0
+          rows=[e for e in cat['entries'] if e.get('publication_code')=='RCL0193ENG' and e.get('physical_page')==53]
+          assert {'VIS_P0053_001','VIS_P0053_002'} <= {e.get('asset_entity_key') for e in rows}
+          db=sqlite3.connect(pack)
+          try:
+              assert db.execute('pragma integrity_check').fetchone()[0]=='ok'
+              assert db.execute('pragma foreign_key_check').fetchall()==[]
+              assert db.execute('select count(*) from ravemems_document').fetchone()[0]==47
+              assert db.execute('select count(*) from ravemems_page').fetchone()[0]==1359
+              assert db.execute('select count(*) from memslibrary_search').fetchone()[0]==5453
+          finally: db.close()
+          print('APP_PREFLIGHT_DATA_PASS visuals=1667 docs=47 pages=1359 search=5453 p53_visuals=2')
+          '@ | python -
+
+      - name: Validate protocol guards
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python librosco-x64/validate_protocol_guards.py
+
+      - name: Configure true application x64 source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          cmake -S . -B build-x64 -A x64 `
+            -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
+            -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
+            -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF `
+            -DMEMS_USE_ONNX_GENAI=ON `
+            "-DORT_GENAI_INCLUDE_DIR=$env:ORT_GENAI_INCLUDE_DIR" `
+            "-DORT_GENAI_LIBRARY=$env:ORT_GENAI_LIBRARY"
+          if($LASTEXITCODE -ne 0){throw "Application configure failed $LASTEXITCODE"}
+
+      - name: Compile true application and existing self-tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          cmake --build build-x64 --config Release --target ecu_mems_manager ecu_mems_uninstaller rosco_abi_selftest ia_response_selftest ia_mems_diagram_selftest --parallel
+          if($LASTEXITCODE -ne 0){throw "Application compile failed $LASTEXITCODE"}
+
+      - name: Configure and compile bridge self-test against same source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          cmake -S expert/bridge-selftest -B build-bridge-test -A x64 -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64"
+          if($LASTEXITCODE -ne 0){throw 'Bridge test configure failed'}
+          cmake --build build-bridge-test --config Release --parallel
+          if($LASTEXITCODE -ne 0){throw 'Bridge test compile failed'}
+
+      - name: Prove compilation did not transform source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $before=Get-Content source-hashes-before.json -Raw | ConvertFrom-Json
+          foreach($p in $before.PSObject.Properties){
+            $now=(Get-FileHash $p.Name -Algorithm SHA256).Hash.ToLowerInvariant()
+            if($now -ne [string]$p.Value){throw "Source changed during build: $($p.Name)"}
+          }
+          Write-Host 'APP_PREFLIGHT_SOURCE_UNCHANGED_PASS'
+
+      - name: Stage corrected runtime inputs beside compiled executable
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $release='${{ github.workspace }}\build-x64\Release'
+          $ref=Join-Path $release 'database\reference'
+          if(Test-Path $ref){Remove-Item $ref -Recurse -Force}
+          New-Item -ItemType Directory -Force -Path (Split-Path $ref -Parent) | Out-Null
+          Copy-Item $env:CLEAN_REFERENCE_ROOT $ref -Recurse -Force
+          Copy-Item $env:MEMSLIBRARY_DLL_SOURCE (Join-Path $release 'MEMSLibrary.dll') -Force
+          $pack=Join-Path $release 'MEMSLibrary_Pack_001'
+          if(Test-Path $pack){Remove-Item $pack -Recurse -Force}
+          Copy-Item $env:PACK001_SOURCE_ROOT $pack -Recurse -Force
+
+      - name: Run existing deterministic self-tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $qt='C:\Qt\5.15.2\msvc2019_64'
+          $env:PATH="$qt\bin;$env:PATH"
+          $env:QT_PLUGIN_PATH="$qt\plugins"
+          & '${{ github.workspace }}\build-x64\Release\ia_response_selftest.exe'
+          if($LASTEXITCODE -ne 0){throw 'IA response self-test failed'}
+          & '${{ github.workspace }}\build-x64\Release\ia_mems_diagram_selftest.exe'
+          if($LASTEXITCODE -ne 0){throw 'IA diagram self-test failed'}
+          ctest --test-dir build-x64/librosco-x64 -C Release --output-on-failure -R rosco_abi_selftest
+          if($LASTEXITCODE -ne 0){throw 'ROSCO ABI self-test failed'}
+          Write-Host 'APP_PREFLIGHT_EXISTING_SELFTESTS_PASS'
+
+      - name: Run filtered bridge test with staged production runtime data
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $qt='C:\Qt\5.15.2\msvc2019_64'
+          $env:PATH="$qt\bin;$env:PATH"
+          $release='${{ github.workspace }}\build-x64\Release'
+          $exe='${{ github.workspace }}\build-bridge-test\Release\ia_memslibrary_bridge_selftest.exe'
+          & $exe (Join-Path $release 'MEMSLibrary.dll') (Join-Path $release 'MEMSLibrary_Pack_001') (Join-Path $release 'database\reference')
+          if($LASTEXITCODE -ne 0){throw "Filtered bridge runtime test failed $LASTEXITCODE"}
+
+      - name: Assemble temporary application preflight package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $dist='${{ github.workspace }}\dist-app-preflight'
+          if(Test-Path $dist){Remove-Item $dist -Recurse -Force}
+          New-Item -ItemType Directory -Force -Path $dist | Out-Null
+          Copy-Item "$env:VALIDATED_BASE_ROOT\*" $dist -Recurse -Force
+          Copy-Item '${{ github.workspace }}\build-x64\Release\ecu_mems_manager.exe' "$dist\ecu_mems_manager.exe" -Force
+          Copy-Item '${{ github.workspace }}\build-x64\Release\ecu_mems_uninstaller.exe' "$dist\ecu_mems_uninstaller.exe" -Force
+          Copy-Item '${{ github.workspace }}\build-x64\librosco-x64\Release\mems_manager_x64.dll' "$dist\mems_manager_x64.dll" -Force
+          $ref="$dist\database\reference"
+          if(Test-Path $ref){Remove-Item $ref -Recurse -Force}
+          New-Item -ItemType Directory -Force -Path (Split-Path $ref -Parent) | Out-Null
+          Copy-Item $env:CLEAN_REFERENCE_ROOT $ref -Recurse -Force
+          Copy-Item $env:MEMSLIBRARY_DLL_SOURCE "$dist\MEMSLibrary.dll" -Force
+          $pack="$dist\MEMSLibrary_Pack_001"
+          if(Test-Path $pack){Remove-Item $pack -Recurse -Force}
+          Copy-Item $env:PACK001_SOURCE_ROOT $pack -Recurse -Force
+          $qt='C:\Qt\5.15.2\msvc2019_64'
+          & "$qt\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist "$dist\ecu_mems_manager.exe"
+          if($LASTEXITCODE -ne 0){throw 'windeployqt app failed'}
+          & "$qt\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist "$dist\ecu_mems_uninstaller.exe"
+          if($LASTEXITCODE -ne 0){throw 'windeployqt uninstaller failed'}
+          @(
+            'TEMPORARY PREFLIGHT ONLY - NOT BUILD #105',
+            'Source lineage: BUILD #104 + filtered MEMSLibrary bridge',
+            'Corrected MEMSLibrary.dll SHA256: 77d73dd7c64fa2271fa26bb5d724b1c3b0c343c0669af3af5647236546437b7a',
+            'Pack001 SQLite unchanged SHA256: 827208b703324335828d72093994ec5f7bf9e0a6fd0cd3b0082d033bfa38628b',
+            'Clean V2 visual lineage: RAVEMEMS_V2_FINAL_33810202288'
+          ) | Set-Content "$dist\PREFLIGHT_ONLY.txt" -Encoding UTF8
+          "DIST=$dist" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Validate complete temporary package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $env:DIST_ROOT=$env:DIST
+          @'
+          import json, os, sqlite3
+          from pathlib import Path
+          import pefile
+          root=Path(os.environ['DIST_ROOT'])
+          required=[root/'ecu_mems_manager.exe',root/'mems_manager_x64.dll',root/'MEMSLibrary.dll',root/'MEMSLibrary_Pack_001'/'knowledge.sqlite',root/'MEMSLibrary_Pack_001'/'manifest.json',root/'database'/'reference'/'runtime_visual_catalog.json',root/'PREFLIGHT_ONLY.txt']
+          missing=[str(p) for p in required if not p.is_file()]
+          assert not missing, missing
+          cat=json.loads((root/'database'/'reference'/'runtime_visual_catalog.json').read_text(encoding='utf-8'))
+          assert cat['source_lineage']=='RAVEMEMS_V2_FINAL_33810202288' and cat['entry_count']==1667
+          db=sqlite3.connect(root/'MEMSLibrary_Pack_001'/'knowledge.sqlite')
+          try:
+              assert db.execute('pragma integrity_check').fetchone()[0]=='ok'
+              assert db.execute('pragma foreign_key_check').fetchall()==[]
+              assert db.execute('select count(*) from ravemems_document').fetchone()[0]==47
+              assert db.execute('select count(*) from ravemems_page').fetchone()[0]==1359
+              assert db.execute('select count(*) from memslibrary_search').fetchone()[0]==5453
+          finally: db.close()
+          for p in (root/'ecu_mems_manager.exe',root/'mems_manager_x64.dll',root/'MEMSLibrary.dll'):
+              pe=pefile.PE(str(p),fast_load=True)
+              assert pe.FILE_HEADER.Machine==0x8664,p
+              pe.close()
+          print('APP_PREFLIGHT_PACKAGE_PASS x64=1 visuals=1667 docs=47 pages=1359 search=5453')
+          '@ | python -
+          if((Get-FileHash "$env:DIST\MEMSLibrary.dll" -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:DLL_SHA256){throw 'Packaged corrected DLL SHA mismatch'}
+          if((Get-FileHash "$env:DIST\MEMSLibrary_Pack_001\knowledge.sqlite" -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:PACK_SHA256){throw 'Packaged Pack001 SHA mismatch'}
+
+      - name: Smoke launch true application package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $p=Start-Process -FilePath "$env:DIST\ecu_mems_manager.exe" -WorkingDirectory $env:DIST -PassThru
+          Start-Sleep -Seconds 8
+          if($p.HasExited){throw "Application exited during smoke launch: $($p.ExitCode)"}
+          $null=$p.CloseMainWindow()
+          if(-not $p.WaitForExit(5000)){Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue}
+          Write-Host 'APP_PREFLIGHT_SMOKE_PASS'
+
+      - name: Generate temporary package hashes
+        shell: pwsh
+        run: |
+          $hashFile=Join-Path $env:DIST 'PREFLIGHT_SHA256.txt'
+          $lines=foreach($f in Get-ChildItem $env:DIST -Recurse -File | Where-Object{$_.FullName-ne$hashFile} | Sort-Object FullName){$r=$f.FullName.Substring($env:DIST.Length+1).Replace('\','/'); "$((Get-FileHash $f.FullName -Algorithm SHA256).Hash.ToLowerInvariant())  $r"}
+          $lines | Set-Content $hashFile -Encoding UTF8
+
+      - name: Upload temporary app preflight artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TMP-ECU-MEMS-Manager-x64-FILTERED-BRIDGE-PREFLIGHT-${{ github.run_id }}
+          path: dist-app-preflight/
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 7
