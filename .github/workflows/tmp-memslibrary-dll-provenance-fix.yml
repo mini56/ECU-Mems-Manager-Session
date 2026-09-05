@@ -24,6 +24,7 @@ jobs:
         shell: pwsh
         run: |
           $baseline = "9cf3d00840cec1749ef9358f708d3e68a2c8bc4d"
+          $range = "$($baseline)..HEAD"
           git merge-base --is-ancestor $baseline HEAD
           if ($LASTEXITCODE -ne 0) { throw "DLL correction branch is not based on validated Pack001 $baseline" }
 
@@ -33,14 +34,14 @@ jobs:
             "memslibrary/src/MEMSLibrary.cpp",
             "memslibrary/tests/MEMSLibrarySmokeTest.cpp"
           )
-          $changed = @(git diff --name-only $baseline..HEAD)
+          $changed = @(git diff --name-only $range)
           foreach ($path in $changed) {
             if ($allowed -notcontains $path) { throw "Out-of-scope changed file: $path" }
           }
           foreach ($required in @("memslibrary/include/MEMSLibrary.h", "memslibrary/src/MEMSLibrary.cpp", "memslibrary/tests/MEMSLibrarySmokeTest.cpp")) {
             if ($changed -notcontains $required) { throw "Expected DLL correction file missing from diff: $required" }
           }
-          git diff --exit-code $baseline..HEAD -- tools/build_memslibrary_pack.py
+          git diff --exit-code $range -- tools/build_memslibrary_pack.py
           if ($LASTEXITCODE -ne 0) { throw "Pack001 builder was modified" }
           Write-Host "SCOPE_OK baseline=$baseline changed=$($changed -join ',') pack_builder_unchanged=1"
 
