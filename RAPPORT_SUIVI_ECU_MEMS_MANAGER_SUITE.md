@@ -590,3 +590,27 @@ Procédure :
 
 Preuve attendue : question `Quel est le jeu axial du pignon primaire et comment le contrôler ?` -> `DOC_RCL0193ENG`, page 53, révision `REV_RCL0193ENG_SOURCE`, langue `en`, valeur `0.089–0.165 mm`, contrôle aux cales d'épaisseur, visuel p53, aucune p342/coaxial, contexte page-pure.
 <!-- journal-entry-sha256:e664ad5135d6f516faecc25225e83bac400207f490e86ceb357b57f7b1d24bf0 -->
+
+## 2026-09-05 — BUILD #105 préflight temporaire : run 1 ROUGE sur transport ONNX externe
+
+Branche temporaire : `tmp-memsx64-build105-filtered-bridge`
+HEAD testé : `16e9a22fbac367a51b534ad3d867db15a13d09c5`
+Run : `33956355098`
+Job : `101280296674`
+Conclusion : FAILURE.
+
+Étapes passées avant l'échec :
+- checkout exact source : SUCCESS ;
+- garde source directe / aucune injection : SUCCESS (`DIRECT_SOURCE_NO_PATCH_PASS`) ;
+- Python : SUCCESS ;
+- Qt 5.15.2 MSVC x64 : SUCCESS.
+
+Échec exact : étape historique `Download pinned ONNX Runtime development files`, avant le téléchargement de la DLL MEMSLibrary corrigée, avant compilation application/bridge, avant self-tests et avant packaging.
+Log : `curl: (35) Send failure: Connection was reset`, puis `GenAI download failed`.
+
+Diagnostic : défaillance de transport réseau externe sur le téléchargement GitHub Release ONNX GenAI. Ce run ne fournit aucune preuve d'un défaut du bridge filtré, de la DLL corrigée ou du Pack001 puisqu'aucun de ces tests n'a été exécuté.
+
+PROCHAINE POUSSE AUTORISÉE APRÈS CE JOURNAL : correction workflow uniquement dans `.github/workflows/memsx64.yml`, sans changement applicatif : conserver les URLs, versions et SHA épinglés et ajouter aux deux commandes curl existantes la robustesse `--retry-all-errors --retry-delay 2` en plus de `--retry 3`. Aucun contournement des contrôles SHA, aucun changement bridge/DLL/Pack/protocole/UI.
+
+Après pousse : relancer le même préflight temporaire #105 et journaliser immédiatement son résultat avant toute intégration dans `MEMSX64`.
+<!-- journal-entry-sha256:c0d68bdafa6cba51cc6fd288e9fc9d92f09f56eb1f94de9f9daf6a34792553c5 -->
