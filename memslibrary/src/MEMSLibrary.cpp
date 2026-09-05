@@ -106,6 +106,21 @@ std::vector<std::string> queryTerms(const char* query)
     if (terms.size() > 8) terms.resize(8);
     return terms;
 }
+
+bool terminatedField(const char* value, std::size_t capacity)
+{
+    return value && std::memchr(value, '\0', capacity) != nullptr;
+}
+
+bool bindText(sqlite3_stmt* stmt, int index, const std::string& value)
+{
+    return sqlite3_bind_text(stmt, index, value.c_str(), -1, SQLITE_TRANSIENT) == SQLITE_OK;
+}
+
+bool bindText(sqlite3_stmt* stmt, int index, const char* value)
+{
+    return sqlite3_bind_text(stmt, index, value, -1, SQLITE_TRANSIENT) == SQLITE_OK;
+}
 }
 
 std::uint32_t MEMSLibrary_GetAbiVersion()
@@ -212,6 +227,100 @@ std::int32_t MEMSLibrary_SearchPack(
     }
     sqlite3_finalize(stmt);
     sqlite3_close(db);
+    *outResultCount = count;
+    return MEMSLIBRARY_OK;
+}
+
+std::int32_t MEMSLibrary_SearchPackFiltered(
+    const wchar_t* packDirectory,
+    const char* queryUtf8,
+    const MEMSLibrarySearchFilters* filters,
+    MEMSLibrarySearchResultWithProvenance* outResults,
+    std::uint32_t resultCapacity,
+    std::uint32_t* outResultCount)
+{
+    if (!queryUtf8 || !outResults || resultCapacity == 0 || !outResultCount) return MEMSLIBRARY_INVALID_ARGUMENT;
+    *outResultCount = 0;
+
+    if (filters) {
+        if (filters->struct_size != sizeof(MEMSLibrarySearchFilters) ||
+            !terminatedField(filters->document_key, sizeof(filters->document_key)) ||
+            !terminatedField(filters->revision_key, sizeof(filters->revision_key)) ||
+            !terminatedField(filters->source_language, sizeof(filters->source_language)) ||
+            !terminatedField(filters->entity_kind, sizeof(filters->entity_kind))) {
+            return MEMSLIBRARY_INVALID_ARGUMENT;
+        }
+    }
+
+    for (std::uint32_t i = 0; i < resultCapacity; ++i) {
+        if (outResults[i].struct_size != sizeof(MEMSLibrarySearchResultWithProvenance)) {
+            return MEMSLIBRARY_INVALID_ARGUMENT;
+        }
+    }
+
+    const auto terms = queryTerms(queryUtf8);
+    if (terms.empty()) return MEMSLIBRARY_INVALID_ARGUMENT;
+
+    sqlite3* db = nullptr;
+    const int openStatus = openReadonly(packDirectory, &db);
+    if (openStatus != MEMSLIBRARY_OK) return openStatus;
+
+    const bool filterDocument = filters && filters->document_key[0] != '\0';
+    const bool filterRevision = filters && filters->revision_key[0] != '\0';
+    const bool filterLanguage = filters && filters->source_language[0] != '\0';
+    const bool filterKind = filters && filters->entity_kind[0] != '\0';
+
+    std::string sql = "SELECT document_key,revision_key,source_language,page_number,entity_kind,entity_key,title,body FROM memslibrary_search WHERE 1=1";
+    for (std::size_t i = 0; i < terms.size(); ++i) sql += " AND search_text LIKE ?";
+    if (filterDocument) sql += " AND document_key = ? COLLATE BINARY";
+    if (filterRevision) sql += " AND revision_key = ? COLLATE BINARY";
+    if (filterLanguage) sql += " AND source_language = ? COLLATE BINARY";
+    if (filterKind) sql += " AND entity_kind = ? COLLATE BINARY";
+    sql += " ORDER BY CASE entity_kind WHEN 'step' THEN 0 WHEN 'requirement' THEN 1 WHEN 'notice' THEN 2 WHEN 'operation' THEN 3 WHEN 'section' THEN 4 ELSE 5 END, document_key, revision_key, COALESCE(page_number,2147483647), entity_key LIMIT ?";
+
+    sqlite3_stmt* stmt = nullptr;
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        sqlite3_close(db);
+        return MEMSLIBRARY_QUERY_FAILED;
+    }
+
+    int bindIndex = 1;
+    bool bound = true;
+    for (const auto& term : terms) {
+        const std::string pattern = "%" + term + "%";
+        bound = bound && bindText(stmt, bindIndex++, pattern);
+    }
+    if (filterDocument) bound = bound && bindText(stmt, bindIndex++, filters->document_key);
+    if (filterRevision) bound = bound && bindText(stmt, bindIndex++, filters->revision_key);
+    if (filterLanguage) bound = bound && bindText(stmt, bindIndex++, filters->source_language);
+    if (filterKind) bound = bound && bindText(stmt, bindIndex++, filters->entity_kind);
+    bound = bound && sqlite3_bind_int(stmt, bindIndex, static_cast<int>(resultCapacity)) == SQLITE_OK;
+    if (!bound) {
+        sqlite3_finalize(stmt);
+        sqlite3_close(db);
+        return MEMSLIBRARY_QUERY_FAILED;
+    }
+
+    std::uint32_t count = 0;
+    int stepStatus = SQLITE_DONE;
+    while (count < resultCapacity && (stepStatus = sqlite3_step(stmt)) == SQLITE_ROW) {
+        auto& r = outResults[count];
+        r.page_number = sqlite3_column_type(stmt, 3) == SQLITE_NULL ? -1 : sqlite3_column_int(stmt, 3);
+        copyText(r.document_key, sizeof(r.document_key), sqlite3_column_text(stmt, 0));
+        copyText(r.revision_key, sizeof(r.revision_key), sqlite3_column_text(stmt, 1));
+        copyText(r.source_language, sizeof(r.source_language), sqlite3_column_text(stmt, 2));
+        copyText(r.entity_kind, sizeof(r.entity_kind), sqlite3_column_text(stmt, 4));
+        copyText(r.entity_key, sizeof(r.entity_key), sqlite3_column_text(stmt, 5));
+        copyText(r.title, sizeof(r.title), sqlite3_column_text(stmt, 6));
+        copyText(r.body, sizeof(r.body), sqlite3_column_text(stmt, 7));
+        ++count;
+    }
+
+    const bool queryOk = stepStatus == SQLITE_DONE || count == resultCapacity;
+    sqlite3_finalize(stmt);
+    sqlite3_close(db);
+    if (!queryOk) return MEMSLIBRARY_QUERY_FAILED;
+
     *outResultCount = count;
     return MEMSLIBRARY_OK;
 }
