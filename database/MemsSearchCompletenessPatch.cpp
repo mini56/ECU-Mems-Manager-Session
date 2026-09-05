@@ -272,10 +272,22 @@ bool genericScopeLabel(const QString &label,const QString &queryTerm)
         || n.contains(QStringLiteral("table des matieres"));
 }
 
+bool broadDisplayScopeLabel(const QString &label,const QString &queryTerm)
+{
+    const QString n=normalized(label);
+    if((queryTerm==QStringLiteral("frein") || queryTerm==QStringLiteral("freins"))
+       && n.contains(QStringLiteral("purge"))
+       && n.contains(QStringLiteral("tambour"))
+       && n.contains(QStringLiteral("hydraul")))
+        return true;
+    return false;
+}
+
 bool genericDisplayScopeLabel(const QString &label,const QString &queryTerm)
 {
     const QString n=normalized(label);
     return genericScopeLabel(label,queryTerm)
+        || broadDisplayScopeLabel(label,queryTerm)
         || n==QStringLiteral("brake")
         || n==QStringLiteral("embrayage")
         || n==QStringLiteral("clutch")
@@ -298,7 +310,8 @@ bool internalScopeLabel(const QString &label)
     const QString n=normalized(label);
     return n.startsWith(QStringLiteral("know rcl"))
         || n.startsWith(QStringLiteral("doc rcl"))
-        || n.startsWith(QStringLiteral("rev rcl"));
+        || n.startsWith(QStringLiteral("rev rcl"))
+        || n.startsWith(QStringLiteral("src rcl"));
 }
 
 bool mostlyUpperHeading(const QString &text)
@@ -321,6 +334,29 @@ QString cleanChoiceText(QString value)
     value.replace(QLatin1Char('_'),QLatin1Char(' '));
     if(value.size()>88) value=value.left(85)+QStringLiteral("...");
     return value.trimmed();
+}
+
+QString polishUserChoiceLabel(QString label)
+{
+    label=cleanChoiceText(label);
+    const QString n=normalized(label);
+    if(n==QStringLiteral("freins ecrous de maitre cylindre de frein")
+       || n==QStringLiteral("ecrous de maitre cylindre de frein"))
+        return QStringLiteral("Écrous de maître-cylindre de frein");
+    if(n==QStringLiteral("freins tambour de frein sur moyeu vis")
+       || n==QStringLiteral("tambour de frein sur moyeu vis"))
+        return QStringLiteral("Tambour de frein sur moyeu - vis");
+    if(n==QStringLiteral("freins boulon de pivot de pedale de frein ecrou")
+       || n==QStringLiteral("boulon de pivot de pedale de frein ecrou"))
+        return QStringLiteral("Boulon de pivot de pédale de frein - écrou");
+    if(n==QStringLiteral("freins vis de purge sur etrier")
+       || n==QStringLiteral("vis de purge sur etrier"))
+        return QStringLiteral("Vis de purge sur étrier");
+    if(n==QStringLiteral("freins tuyau de frein sur maitre cylindre raccord union")
+       || n==QStringLiteral("tuyau de frein sur maitre cylindre raccord union"))
+        return QStringLiteral("Tuyau de frein sur maître-cylindre - raccord union");
+    if(!label.isEmpty()) label[0]=label.at(0).toUpper();
+    return label;
 }
 
 QString usefulHeadingFromContent(const QString &content,const QString &queryTerm)
@@ -374,7 +410,7 @@ QString userFacingChoiceLabel(const QVariantMap &row,const QString &rawChoice,co
         if(ln==QStringLiteral("maitre cylindre")) label=QStringLiteral("Maître-cylindre d'embrayage");
         else if(ln==QStringLiteral("cylindre recepteur")) label=QStringLiteral("Cylindre récepteur d'embrayage");
     }
-    return label;
+    return polishUserChoiceLabel(label);
 }
 
 QList<IaScopeChoice> documentaryScopeChoices(const QString &question)
@@ -395,6 +431,7 @@ QList<IaScopeChoice> documentaryScopeChoices(const QString &question)
 
     QList<IaScopeChoice> choices;
     QSet<QString> seen;
+    QSet<QString> seenLabels;
     const QStringList fields={
         QStringLiteral("topic"),QStringLiteral("component_name"),QStringLiteral("subject"),
         QStringLiteral("component_key"),QStringLiteral("title_source"),QStringLiteral("operation"),
@@ -414,17 +451,27 @@ QList<IaScopeChoice> documentaryScopeChoices(const QString &question)
         for(QString candidate:candidates){
             candidate=humanScopeLabel(candidate);
             if(genericScopeLabel(candidate,queryTerm)) continue;
+            if(broadDisplayScopeLabel(candidate,queryTerm)) continue;
             QString signature=normalized(candidate);
             if(signature.isEmpty() || seen.contains(signature)) continue;
             if(!signature.contains(queryTerm) && queryTerm.size()>3)
                 candidate=QStringLiteral("%1 — %2").arg(queryTerm,candidate);
             signature=normalized(candidate);
             if(seen.contains(signature)) continue;
-            seen.insert(signature);
+
             IaScopeChoice choice;
             choice.query=candidate;
             choice.label=userFacingChoiceLabel(row,candidate,queryTerm);
-            if(choice.label.trimmed().isEmpty()) choice.label=candidate;
+            if(choice.label.trimmed().isEmpty()) continue;
+            if(genericDisplayScopeLabel(choice.label,queryTerm)
+               || pageOnlyScopeLabel(choice.label)
+               || internalScopeLabel(choice.label))
+                continue;
+            const QString labelSignature=normalized(choice.label);
+            if(labelSignature.isEmpty() || seenLabels.contains(labelSignature)) continue;
+
+            seen.insert(signature);
+            seenLabels.insert(labelSignature);
             choices.append(choice);
             break;
         }
