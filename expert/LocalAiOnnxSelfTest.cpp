@@ -22,6 +22,8 @@ bool containsInternalLeak(const QString &text)
         QStringLiteral("you are ia mems, the local assistant"),
         QStringLiteral("réponse attendue"),
         QStringLiteral("reponse attendue"),
+        QStringLiteral("réponse documentaire attendue"),
+        QStringLiteral("reponse documentaire attendue"),
         QStringLiteral("diagnostic bref"),
         QStringLiteral("ne montre aucun raisonnement interne"),
         QStringLiteral("faits fournis par mems manager")
@@ -128,7 +130,7 @@ int main(int argc, char *argv[])
         if (stage == 2) {
             if (!answer.contains(QStringLiteral("BROCHAGE_TEST_ECU_13"))
                 || answer.contains(QStringLiteral("Micro-Electro-Mechanical"), Qt::CaseInsensitive)) {
-                fail(QStringLiteral("BROCHE ECU 1.3 est encore détourné par la définition générique MEMS."));
+                fail(QStringLiteral("BROCHE ECU 1.3 n'utilise pas correctement le fait documentaire vérifié."));
                 return;
             }
             stage = 3;
@@ -140,7 +142,7 @@ int main(int argc, char *argv[])
         if (stage == 3) {
             if (!answer.contains(QStringLiteral("BROCHAGE_TEST_OBD_19"))
                 || answer.contains(QStringLiteral("Micro-Electro-Mechanical"), Qt::CaseInsensitive)) {
-                fail(QStringLiteral("BROCHE OBD 1.9 est encore détourné par la définition générique MEMS."));
+                fail(QStringLiteral("BROCHE OBD 1.9 n'utilise pas correctement le fait documentaire vérifié."));
                 return;
             }
             stage = 4;
@@ -151,7 +153,7 @@ int main(int argc, char *argv[])
 
         if (stage == 4) {
             if (!answer.contains(QStringLiteral("15 Nm"), Qt::CaseInsensitive)) {
-                fail(QStringLiteral("Le fait documentaire ECT a été remplacé au lieu d'être rendu directement."));
+                fail(QStringLiteral("Le fait documentaire ECT a perdu sa valeur vérifiée."));
                 return;
             }
             stage = 5;
@@ -164,26 +166,50 @@ int main(int argc, char *argv[])
             if (!answer.contains(QStringLiteral("gris"), Qt::CaseInsensitive)
                 || answer.contains(QStringLiteral("réponse attendue"), Qt::CaseInsensitive)
                 || answer.contains(QStringLiteral("diagnostic bref"), Qt::CaseInsensitive)) {
-                fail(QStringLiteral("La réponse documentaire lambda fuit encore une consigne interne."));
+                fail(QStringLiteral("La réponse documentaire lambda est incorrecte ou fuit une consigne interne."));
                 return;
             }
             stage = 6;
-            client.ask(QStringLiteral("Réponds uniquement par OK."), QString());
+            client.ask(
+                QStringLiteral("Quel est le jeu axial du pignon primaire et comment le contrôler ?"),
+                QStringLiteral(
+                    "Documentation RAVEMEMS retrouvée dans MEMSLibrary_Pack_001. "
+                    "Utiliser uniquement les extraits pertinents ci-dessous et conserver leur provenance ; "
+                    "si aucun extrait ne répond exactement à la question, ne pas extrapoler.\n"
+                    "Source DOC_RCL0193ENG, page 53 [révision REV_RCL0193ENG_SOURCE, langue en, type step] — 12.21.28\n"
+                    "Using feeler gauges, check primary gear end-float. End-float = 0.089 to 0.165 mm."));
             return;
         }
 
         if (stage == 6) {
+            if (!answer.contains(QStringLiteral("0.089"), Qt::CaseInsensitive)
+                || !answer.contains(QStringLiteral("0.165"), Qt::CaseInsensitive)
+                || !answer.contains(QStringLiteral("12.21.28"), Qt::CaseInsensitive)) {
+                fail(QStringLiteral("La réponse construite depuis RAVEMEMS a perdu la valeur ou la référence d'opération."));
+                return;
+            }
+            if (answer.startsWith(QStringLiteral("Documentation RAVEMEMS retrouvée"), Qt::CaseInsensitive)
+                || answer.contains(QStringLiteral("type step"), Qt::CaseInsensitive)) {
+                fail(QStringLiteral("Le bloc RAVEMEMS brut est encore affiché au lieu d'une réponse construite."));
+                return;
+            }
+            stage = 7;
+            client.ask(QStringLiteral("Réponds uniquement par OK."), QString());
+            return;
+        }
+
+        if (stage == 7) {
             if (!answer.contains(QStringLiteral("OK"), Qt::CaseInsensitive)) {
                 fail(QStringLiteral("La génération native ne contient pas le marqueur OK attendu."));
                 return;
             }
             finished = true;
-            out << "PASS LocalAiClient native ONNX response quality, documentary grounding and leak guards" << Qt::endl;
+            out << "PASS LocalAiClient native ONNX response construction, documentary grounding and leak guards" << Qt::endl;
             app.exit(0);
         }
     });
 
-    QTimer::singleShot(180000, &app, [&]() {
+    QTimer::singleShot(240000, &app, [&]() {
         fail(QStringLiteral("Délai dépassé pendant le chargement/génération ONNX."));
     });
 
