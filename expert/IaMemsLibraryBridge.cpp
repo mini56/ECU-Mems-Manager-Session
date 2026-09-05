@@ -3,6 +3,7 @@
 #include "memslibrary/include/MEMSLibrary.h"
 
 #include <QCoreApplication>
+#include <QDebug>
 #include <QDir>
 #include <QFileInfo>
 #include <QLibrary>
@@ -39,6 +40,31 @@ QString firstConfiguredPath(const QString &environmentName, const QString &fallb
 {
     const QString configured = QProcessEnvironment::systemEnvironment().value(environmentName).trimmed();
     return configured.isEmpty() ? fallback : configured;
+}
+
+bool traceEnabled()
+{
+    const QString value = QProcessEnvironment::systemEnvironment()
+                              .value(QStringLiteral("MEMS_LIBRARY_TRACE"))
+                              .trimmed()
+                              .toLower();
+    return value == QStringLiteral("1") || value == QStringLiteral("true") || value == QStringLiteral("yes");
+}
+
+QString traceOneLine(QString value, int limit = 320)
+{
+    value.replace(QLatin1Char('\r'), QLatin1Char(' '));
+    value.replace(QLatin1Char('\n'), QLatin1Char(' '));
+    value = value.simplified();
+    if (value.size() > limit)
+        value = value.left(limit) + QStringLiteral("...");
+    return value;
+}
+
+void trace(const QString &message)
+{
+    if (traceEnabled())
+        qInfo().noquote() << message;
 }
 
 void appendUnique(QStringList &items, const QString &value)
@@ -182,7 +208,12 @@ IaMemsLibraryGrounding IaMemsLibraryBridge::retrieve(const QString &question,
     QStringList evidence;
     const std::wstring packWide = state.packDirectory.toStdWString();
 
-    for (const QString &query : queries) {
+    trace(QStringLiteral("TRACE_MEMSLIBRARY_BEGIN question=\"%1\" keywords=[%2] candidates=%3")
+              .arg(traceOneLine(question), keywords.join(QStringLiteral(" | ")))
+              .arg(queries.size()));
+
+    for (int queryIndex = 0; queryIndex < queries.size(); ++queryIndex) {
+        const QString &query = queries.at(queryIndex);
         QVector<MEMSLibrarySearchResult> results(16);
         for (MEMSLibrarySearchResult &result : results)
             result.struct_size = sizeof(result);
@@ -192,21 +223,61 @@ IaMemsLibraryGrounding IaMemsLibraryBridge::retrieve(const QString &question,
         const std::int32_t status = state.search(
             packWide.c_str(), utf8.constData(), results.data(),
             static_cast<std::uint32_t>(results.size()), &count);
+
+        trace(QStringLiteral("TRACE_MEMSLIBRARY_QUERY index=%1 query=\"%2\" status=%3 raw_count=%4 evidence_before=%5")
+                  .arg(queryIndex)
+                  .arg(traceOneLine(query))
+                  .arg(status)
+                  .arg(count)
+                  .arg(evidence.size()));
+
         if (status != MEMSLIBRARY_OK)
             continue;
 
-        for (std::uint32_t i = 0; i < count && evidence.size() < 6; ++i) {
-            const QString key = resultKey(results.at(static_cast<int>(i)));
-            if (seen.contains(key))
-                continue;
-            seen.insert(key);
-            evidence.append(evidenceText(results.at(static_cast<int>(i))));
+        for (std::uint32_t i = 0; i < count; ++i) {
+            const MEMSLibrarySearchResult &raw = results.at(static_cast<int>(i));
+            trace(QStringLiteral("TRACE_MEMSLIBRARY_RAW query_index=%1 rank=%2 doc=%3 page=%4 kind=%5 entity=%6 title=\"%7\" body=\"%8\"")
+                      .arg(queryIndex)
+                      .arg(i)
+                      .arg(QString::fromUtf8(raw.document_key))
+                      .arg(raw.page_number)
+                      .arg(QString::fromUtf8(raw.entity_kind))
+                      .arg(QString::fromUtf8(raw.entity_key))
+                      .arg(traceOneLine(QString::fromUtf8(raw.title), 180))
+                      .arg(traceOneLine(QString::fromUtf8(raw.body), 320)));
         }
-        if (evidence.size() >= 3)
+
+        for (std::uint32_t i = 0; i < count && evidence.size() < 6; ++i) {
+            const MEMSLibrarySearchResult &result = results.at(static_cast<int>(i));
+            const QString key = resultKey(result);
+            if (seen.contains(key)) {
+                trace(QStringLiteral("TRACE_MEMSLIBRARY_SKIP_DUP query_index=%1 rank=%2 key=%3")
+                          .arg(queryIndex)
+                          .arg(i)
+                          .arg(key));
+                continue;
+            }
+            seen.insert(key);
+            evidence.append(evidenceText(result));
+            trace(QStringLiteral("TRACE_MEMSLIBRARY_SELECT query_index=%1 rank=%2 selected_index=%3 doc=%4 page=%5 kind=%6 entity=%7")
+                      .arg(queryIndex)
+                      .arg(i)
+                      .arg(evidence.size() - 1)
+                      .arg(QString::fromUtf8(result.document_key))
+                      .arg(result.page_number)
+                      .arg(QString::fromUtf8(result.entity_kind))
+                      .arg(QString::fromUtf8(result.entity_key)));
+        }
+        if (evidence.size() >= 3) {
+            trace(QStringLiteral("TRACE_MEMSLIBRARY_EARLY_STOP query_index=%1 evidence=%2 reason=minimum_3_reached")
+                      .arg(queryIndex)
+                      .arg(evidence.size()));
             break;
+        }
     }
 
     output.resultCount = evidence.size();
+    trace(QStringLiteral("TRACE_MEMSLIBRARY_END result_count=%1").arg(output.resultCount));
     if (evidence.isEmpty())
         return output;
 
