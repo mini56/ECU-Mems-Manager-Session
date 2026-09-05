@@ -1,0 +1,95 @@
+name: TMP BUILD108 Qwen rejection trace
+
+on:
+  push:
+    branches: [tmp-build108-qwen-rejection-trace]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  trace:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    env:
+      ORT_GENAI_VERSION: '0.14.0'
+      ORT_GENAI_WIN_X64_SHA256: '8a303e52dc7be8fb2a5331929af451a25ac59774102d7fd09ef673adc85c5ebf'
+      BUILD108_RUN_ID: '33970147790'
+      BUILD108_ARTIFACT_NAME: 'ECU-MEMS-Manager-x64-BUILD-108-v1.0.108-CLEAN-V2'
+    steps:
+      - name: Checkout exact trace source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install minimal Qt 5.15.2 development files
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python -m pip install --disable-pip-version-check "aqtinstall==3.3.0"
+          $sevenZip=(Get-Command 7z.exe -ErrorAction Stop).Source
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -O C:\Qt --external "$sevenZip" --archives qtbase
+          if($LASTEXITCODE -ne 0){throw "Qt install failed $LASTEXITCODE"}
+
+      - name: Download pinned ONNX Runtime GenAI development files
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $archive=Join-Path $env:RUNNER_TEMP "onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          $extract=Join-Path $env:RUNNER_TEMP 'genai-dev'
+          curl.exe -L --fail --retry 3 --retry-all-errors --retry-delay 2 -o $archive "https://github.com/microsoft/onnxruntime-genai/releases/download/v$env:ORT_GENAI_VERSION/onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          if($LASTEXITCODE -ne 0){throw 'GenAI download failed'}
+          if((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:ORT_GENAI_WIN_X64_SHA256){throw 'GenAI SHA mismatch'}
+          Expand-Archive $archive $extract -Force
+          $header=Get-ChildItem $extract -Recurse -File -Filter ort_genai_c.h | Select-Object -First 1
+          $lib=Get-ChildItem $extract -Recurse -File -Filter onnxruntime-genai.lib | Select-Object -First 1
+          if(-not $header -or -not $lib){throw 'GenAI development files incomplete'}
+          "ORT_GENAI_INCLUDE_DIR=$($header.DirectoryName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "ORT_GENAI_LIBRARY=$($lib.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Download exact BUILD108 runtime
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          gh run download $env:BUILD108_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:BUILD108_ARTIFACT_NAME --dir build108-runtime
+          $exe=Get-ChildItem build108-runtime -Recurse -File -Filter ecu_mems_manager.exe | Select-Object -First 1
+          if(-not $exe){throw 'BUILD108 executable not found'}
+          $root=$exe.Directory.FullName
+          $modelConfig=Get-ChildItem $root -Recurse -File -Filter genai_config.json | Select-Object -First 1
+          if(-not $modelConfig){throw 'BUILD108 model not found'}
+          if(-not(Test-Path (Join-Path $root 'onnxruntime-genai.dll'))){throw 'BUILD108 onnxruntime-genai.dll missing'}
+          if(-not(Test-Path (Join-Path $root 'onnxruntime.dll'))){throw 'BUILD108 onnxruntime.dll missing'}
+          "BUILD108_RUNTIME_ROOT=$root" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "MEMS_AI_MODEL=$($modelConfig.Directory.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "TRACE_RUNTIME=$root"
+          Write-Host "TRACE_MODEL=$($modelConfig.Directory.FullName)"
+
+      - name: Build trace executable
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          cmake -S expert/qwen-rejection-trace -B build-qwen-trace -A x64 `
+            -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
+            "-DORT_GENAI_INCLUDE_DIR=$env:ORT_GENAI_INCLUDE_DIR" `
+            "-DORT_GENAI_LIBRARY=$env:ORT_GENAI_LIBRARY"
+          if($LASTEXITCODE -ne 0){throw 'Trace configure failed'}
+          cmake --build build-qwen-trace --config Release --parallel
+          if($LASTEXITCODE -ne 0){throw 'Trace build failed'}
+
+      - name: Run exact BUILD108 documentary generation trace
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $qt='C:\Qt\5.15.2\msvc2019_64\bin'
+          $env:PATH="$env:BUILD108_RUNTIME_ROOT;$qt;$env:PATH"
+          & '${{ github.workspace }}\build-qwen-trace\Release\qwen_rejection_trace.exe'
+          if($LASTEXITCODE -ne 0){throw "Trace executable failed $LASTEXITCODE"}
+          Write-Host 'BUILD108_QWEN_REJECTION_TRACE_PASS'
