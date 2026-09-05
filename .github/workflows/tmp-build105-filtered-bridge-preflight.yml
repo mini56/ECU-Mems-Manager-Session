@@ -1,0 +1,25 @@
+name: TMP BUILD105 Filtered Bridge Preflight
+
+on:
+  push:
+    branches:
+      - tmp-memsx64-build105-filtered-bridge
+    paths:
+      - '.github/workflows/tmp-build105-filtered-bridge-preflight.yml'
+      - '.github/workflows/memsx64.yml'
+      - 'expert/IaMemsLibraryBridge.cpp'
+      - 'expert/IaMemsLibraryBridge.h'
+      - 'expert/IaMemsLibraryBridgeSelfTest.cpp'
+      - 'expert/bridge-selftest/CMakeLists.txt'
+      - 'memslibrary/include/MEMSLibrary.h'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  preflight:
+    uses: ./.github/workflows/memsx64.yml
+    with:
+      build_number: '105'

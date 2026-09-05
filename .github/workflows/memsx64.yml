@@ -39,6 +39,12 @@ env:
   PACK001_ARTIFACT_ID: '9927059742'
   PACK001_ARTIFACT_NAME: 'MEMSLibrary-Pack001-33847448261'
   PACK001_DIGEST: 'sha256:ffa9c42783fe443ffc3949cf2166083291adb08505b3fca228b03003a904698a'
+  PACK001_SQLITE_SHA256: '827208b703324335828d72093994ec5f7bf9e0a6fd0cd3b0082d033bfa38628b'
+  CORRECTED_DLL_RUN_ID: '33953367833'
+  CORRECTED_DLL_ARTIFACT_ID: '9965560001'
+  CORRECTED_DLL_ARTIFACT_NAME: 'MEMSLibrary-DLL-Provenance-33953367833'
+  CORRECTED_DLL_DIGEST: 'sha256:f6987c821d312a505019e02cfdd3b254bc04e1a3b86657fc1f3f87dd3e99c491'
+  CORRECTED_DLL_SHA256: '77d73dd7c64fa2271fa26bb5d724b1c3b0c343c0669af3af5647236546437b7a'
   CLEAN_V2_LINEAGE: 'RAVEMEMS_V2_FINAL_33810202288'
 
 jobs:
@@ -62,7 +68,9 @@ jobs:
           if (-not (Select-String -Path iamemstab.cpp -Pattern 'askWithLibrary' -Quiet)) { throw 'Direct MEMSLibrary call missing' }
           if (-not (Select-String -Path expert/IaMemsDiagramCatalog.cpp -Pattern 'suggestionForEvidence' -Quiet)) { throw 'Evidence visual routing source missing' }
           if (-not (Select-String -Path CMakeLists.txt -Pattern 'IaMemsLibraryBridge.cpp' -Quiet)) { throw 'Direct bridge CMake wiring missing' }
-          $files=@('CMakeLists.txt','iamemstab.cpp','expert/IaMemsDiagramCatalog.cpp','expert/IaMemsDiagramCatalog.h','expert/IaMemsService.h','expert/IaMemsLibraryBridge.cpp','expert/IaMemsLibraryBridge.h','expert/IaMemsLibraryIntegration.cpp')
+          if (-not (Select-String -Path expert/IaMemsLibraryBridge.cpp -Pattern 'MEMSLibrary_SearchPackFiltered' -Quiet)) { throw 'Filtered MEMSLibrary bridge source missing' }
+          if (-not (Select-String -Path memslibrary/include/MEMSLibrary.h -Pattern 'MEMSLibrary_SearchPackFiltered' -Quiet)) { throw 'Filtered MEMSLibrary public contract missing' }
+          $files=@('CMakeLists.txt','iamemstab.cpp','expert/IaMemsDiagramCatalog.cpp','expert/IaMemsDiagramCatalog.h','expert/IaMemsService.h','expert/IaMemsLibraryBridge.cpp','expert/IaMemsLibraryBridge.h','expert/IaMemsLibraryIntegration.cpp','expert/IaMemsLibraryBridgeSelfTest.cpp','expert/bridge-selftest/CMakeLists.txt','memslibrary/include/MEMSLibrary.h')
           $hashes=@{}
           foreach($f in $files){ if(-not(Test-Path $f)){throw "Missing source $f"}; $hashes[$f]=(Get-FileHash $f -Algorithm SHA256).Hash.ToLowerInvariant() }
           $hashes | ConvertTo-Json | Set-Content source-hashes-before.json -Encoding UTF8
@@ -105,7 +113,7 @@ jobs:
           "ORT_GENAI_INCLUDE_DIR=$($header.DirectoryName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
           "ORT_GENAI_LIBRARY=$($lib.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - name: Download and pin clean reference Pack001 and validated IA base
+      - name: Download and pin clean reference Pack001 corrected DLL and validated IA base
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
@@ -118,9 +126,11 @@ jobs:
           Assert-Artifact $env:BASE_PACKAGE_ARTIFACT_ID $env:BASE_PACKAGE_ARTIFACT_NAME $env:BASE_PACKAGE_DIGEST
           Assert-Artifact $env:CLEAN_REFERENCE_ARTIFACT_ID $env:CLEAN_REFERENCE_ARTIFACT_NAME $env:CLEAN_REFERENCE_DIGEST
           Assert-Artifact $env:PACK001_ARTIFACT_ID $env:PACK001_ARTIFACT_NAME $env:PACK001_DIGEST
+          Assert-Artifact $env:CORRECTED_DLL_ARTIFACT_ID $env:CORRECTED_DLL_ARTIFACT_NAME $env:CORRECTED_DLL_DIGEST
           gh run download $env:BASE_PACKAGE_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:BASE_PACKAGE_ARTIFACT_NAME --dir base-package
           gh run download $env:CLEAN_REFERENCE_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:CLEAN_REFERENCE_ARTIFACT_NAME --dir clean-reference
           gh run download $env:PACK001_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:PACK001_ARTIFACT_NAME --dir pack001
+          gh run download $env:CORRECTED_DLL_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:CORRECTED_DLL_ARTIFACT_NAME --dir corrected-dll
           $refCatalog=Get-ChildItem clean-reference -Recurse -File -Filter runtime_visual_catalog.json | Select-Object -First 1
           if(-not $refCatalog){throw 'Clean runtime catalog missing'}
           $refRoot=$refCatalog.Directory.FullName
@@ -129,12 +139,14 @@ jobs:
           $baseExe=Get-ChildItem base-package -Recurse -File -Filter ecu_mems_manager.exe | Select-Object -First 1
           if(-not $baseExe){throw 'Validated IA base executable missing'}
           "VALIDATED_BASE_ROOT=$($baseExe.Directory.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-          $memsDll=Get-ChildItem pack001 -Recurse -File -Filter MEMSLibrary.dll | Select-Object -First 1
+          $memsDll=Get-ChildItem corrected-dll -Recurse -File -Filter MEMSLibrary.dll | Select-Object -First 1
           $packDb=Get-ChildItem pack001 -Recurse -File -Filter knowledge.sqlite | Select-Object -First 1
-          if(-not $memsDll -or -not $packDb){throw 'Canonical Pack001 artifact incomplete'}
+          if(-not $memsDll -or -not $packDb){throw 'Pinned MEMSLibrary runtime inputs incomplete'}
+          if((Get-FileHash $memsDll.FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:CORRECTED_DLL_SHA256){throw 'Corrected MEMSLibrary DLL SHA mismatch'}
+          if((Get-FileHash $packDb.FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:PACK001_SQLITE_SHA256){throw 'Pack001 SQLite SHA mismatch'}
           "MEMSLIBRARY_DLL_SOURCE=$($memsDll.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
           "PACK001_SOURCE_ROOT=$($packDb.Directory.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-          Write-Host 'PINNED_CLEAN_INPUTS_PASS'
+          Write-Host 'PINNED_CLEAN_INPUTS_PASS corrected_dll=1 pack001_unchanged=1'
 
       - name: Validate clean reference before compilation
         shell: pwsh
@@ -157,7 +169,10 @@ jobs:
           text=(r/'runtime_visual_catalog.json').read_text(encoding='utf-8')
           for bad in ('33510951021','33524210118','ravemems-runtime-migration-simulation','ravemems-visual-bundle-audit'):
               assert bad not in text
-          print('CLEAN_REFERENCE_V2_PASS visuals=1667 legacy=0')
+          rows=[e for e in c['entries'] if e.get('publication_code')=='RCL0193ENG' and e.get('physical_page')==53]
+          keys={e.get('asset_entity_key') for e in rows}
+          assert {'VIS_P0053_001','VIS_P0053_002'} <= keys
+          print('CLEAN_REFERENCE_V2_PASS visuals=1667 legacy=0 p53_visuals=2')
           '@ | python -
 
       - name: Validate protocol guards
@@ -180,6 +195,10 @@ jobs:
           if($LASTEXITCODE -ne 0){throw "CMake configure failed $LASTEXITCODE"}
           cmake --build build-x64 --config Release --target ecu_mems_manager ecu_mems_uninstaller rosco_abi_selftest ia_response_selftest ia_mems_diagram_selftest --parallel
           if($LASTEXITCODE -ne 0){throw "Compile failed $LASTEXITCODE"}
+          cmake -S expert/bridge-selftest -B build-bridge-test -A x64 -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64"
+          if($LASTEXITCODE -ne 0){throw "Bridge self-test configure failed $LASTEXITCODE"}
+          cmake --build build-bridge-test --config Release --parallel
+          if($LASTEXITCODE -ne 0){throw "Bridge self-test build failed $LASTEXITCODE"}
 
       - name: Prove build did not transform source
         shell: pwsh
@@ -217,6 +236,8 @@ jobs:
           if($LASTEXITCODE -ne 0){throw 'IA response self-test failed'}
           & '${{ github.workspace }}\build-x64\Release\ia_mems_diagram_selftest.exe'
           if($LASTEXITCODE -ne 0){throw 'IA diagram self-test failed'}
+          & '${{ github.workspace }}\build-bridge-test\Release\ia_memslibrary_bridge_selftest.exe' $env:MEMSLIBRARY_DLL_SOURCE $env:PACK001_SOURCE_ROOT $env:CLEAN_REFERENCE_ROOT
+          if($LASTEXITCODE -ne 0){throw 'Filtered MEMSLibrary bridge self-test failed'}
           ctest --test-dir build-x64/librosco-x64 -C Release --output-on-failure -R rosco_abi_selftest
           if($LASTEXITCODE -ne 0){throw 'ROSCO ABI self-test failed'}
 
@@ -248,7 +269,8 @@ jobs:
             "ECU MEMS Manager BUILD #$env:MEMS_BUILD / v1.0.$env:MEMS_BUILD",
             'IA scroll vertical: direct C++ source',
             'Voir le schema: direct C++ source with evidence routing',
-            'MEMSLibrary Pack001: canonical run 33847448261',
+            'MEMSLibrary Pack001: canonical run 33847448261 / SQLite unchanged',
+            'MEMSLibrary DLL provenance fix: validated run 33953367833',
             'Active manufacturer visual data: final V2 run 33810202288 only',
             'Pre-V2 RAVE images active: 0',
             'ROSCO / Leopold / Haro / ECU analysis reference data preserved by clean-reference audit run 33919306584',
@@ -269,6 +291,9 @@ jobs:
           required=[root/'ecu_mems_manager.exe',root/'mems_manager_x64.dll',root/'MEMSLibrary.dll',root/'MEMSLibrary_Pack_001'/'knowledge.sqlite',root/'MEMSLibrary_Pack_001'/'manifest.json',root/'database'/'reference'/'runtime_visual_catalog.json']
           miss=[str(x) for x in required if not x.is_file()]
           assert not miss,miss
+          sha=lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
+          assert sha(root/'MEMSLibrary.dll')==os.environ['CORRECTED_DLL_SHA256']
+          assert sha(root/'MEMSLibrary_Pack_001'/'knowledge.sqlite')==os.environ['PACK001_SQLITE_SHA256']
           ref=root/'database'/'reference'
           cat=json.loads((ref/'runtime_visual_catalog.json').read_text(encoding='utf-8'))
           assert cat['source_lineage']=='RAVEMEMS_V2_FINAL_33810202288' and cat['entry_count']==1667
@@ -284,7 +309,7 @@ jobs:
           finally: db.close()
           for p in (root/'ecu_mems_manager.exe',root/'mems_manager_x64.dll',root/'MEMSLibrary.dll'):
               pe=pefile.PE(str(p),fast_load=True); assert pe.FILE_HEADER.Machine==0x8664,p; pe.close()
-          print('CLEAN_BUILD_PACKAGE_PASS visuals=1667 legacy=0 docs=47 pages=1359 search=5453')
+          print('CLEAN_BUILD_PACKAGE_PASS visuals=1667 legacy=0 docs=47 pages=1359 search=5453 corrected_dll=1')
           '@ | python -
 
       - name: Smoke launch clean BUILD package
