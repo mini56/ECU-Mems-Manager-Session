@@ -2,6 +2,7 @@
 #include "IaMemsDiagramCatalog.h"
 
 #include <QCoreApplication>
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonArray>
