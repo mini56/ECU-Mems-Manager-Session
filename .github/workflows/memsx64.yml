@@ -99,9 +99,9 @@ jobs:
           $ortArchive=Join-Path $env:RUNNER_TEMP "onnxruntime-win-x64-$env:ORT_VERSION.zip"
           $genaiExtract=Join-Path $env:RUNNER_TEMP 'genai'
           $ortExtract=Join-Path $env:RUNNER_TEMP 'ort'
-          curl.exe -L --fail --retry 3 -o $genaiArchive "https://github.com/microsoft/onnxruntime-genai/releases/download/v$env:ORT_GENAI_VERSION/onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          curl.exe -L --fail --retry 3 --retry-all-errors --retry-delay 2 -o $genaiArchive "https://github.com/microsoft/onnxruntime-genai/releases/download/v$env:ORT_GENAI_VERSION/onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
           if($LASTEXITCODE -ne 0){throw 'GenAI download failed'}
-          curl.exe -L --fail --retry 3 -o $ortArchive "https://github.com/microsoft/onnxruntime/releases/download/v$env:ORT_VERSION/onnxruntime-win-x64-$env:ORT_VERSION.zip"
+          curl.exe -L --fail --retry 3 --retry-all-errors --retry-delay 2 -o $ortArchive "https://github.com/microsoft/onnxruntime/releases/download/v$env:ORT_VERSION/onnxruntime-win-x64-$env:ORT_VERSION.zip"
           if($LASTEXITCODE -ne 0){throw 'ORT download failed'}
           if((Get-FileHash $genaiArchive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:ORT_GENAI_WIN_X64_SHA256){throw 'GenAI SHA mismatch'}
           if((Get-FileHash $ortArchive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:ORT_WIN_X64_SHA256){throw 'ORT SHA mismatch'}
