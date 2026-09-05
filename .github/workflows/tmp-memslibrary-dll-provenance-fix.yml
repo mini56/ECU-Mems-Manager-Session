@@ -1,0 +1,148 @@
+name: TMP MEMSLibrary DLL Provenance Fix
+
+on:
+  push:
+    branches:
+      - tmp-memslibrary-dll-provenance-fix
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  memslibrary-provenance-windows-x64:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    steps:
+      - name: Checkout isolated DLL branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify exact Pack001 ancestry and change scope
+        shell: pwsh
+        run: |
+          $baseline = "9cf3d00840cec1749ef9358f708d3e68a2c8bc4d"
+          git merge-base --is-ancestor $baseline HEAD
+          if ($LASTEXITCODE -ne 0) { throw "DLL correction branch is not based on validated Pack001 $baseline" }
+
+          $allowed = @(
+            ".github/workflows/tmp-memslibrary-dll-provenance-fix.yml",
+            "memslibrary/include/MEMSLibrary.h",
+            "memslibrary/src/MEMSLibrary.cpp",
+            "memslibrary/tests/MEMSLibrarySmokeTest.cpp"
+          )
+          $changed = @(git diff --name-only $baseline..HEAD)
+          foreach ($path in $changed) {
+            if ($allowed -notcontains $path) { throw "Out-of-scope changed file: $path" }
+          }
+          foreach ($required in @("memslibrary/include/MEMSLibrary.h", "memslibrary/src/MEMSLibrary.cpp", "memslibrary/tests/MEMSLibrarySmokeTest.cpp")) {
+            if ($changed -notcontains $required) { throw "Expected DLL correction file missing from diff: $required" }
+          }
+          git diff --exit-code $baseline..HEAD -- tools/build_memslibrary_pack.py
+          if ($LASTEXITCODE -ne 0) { throw "Pack001 builder was modified" }
+          Write-Host "SCOPE_OK baseline=$baseline changed=$($changed -join ',') pack_builder_unchanged=1"
+
+      - name: Download validated RAVEMEMS V2 47-PDF artifact
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 33810202288 --repo mini56/ECU-Mems-Manager-Session --name RAVEMEMS-V2-FULL-CORPUS-GENERIC-33810202288 --dir source47
+          $dbs = Get-ChildItem source47 -Recurse -Filter ravemems_v2.sqlite
+          if ($dbs.Count -ne 47) { throw "Expected 47 source SQLite databases, found $($dbs.Count)" }
+          Write-Host "SOURCE47_OK databases=$($dbs.Count)"
+
+      - name: Rebuild Pack001 twice without changing content
+        shell: pwsh
+        run: |
+          python tools/build_memslibrary_pack.py source47 outA --pack-id MEMSLibrary_Pack_001
+          python tools/build_memslibrary_pack.py source47 outB --pack-id MEMSLibrary_Pack_001
+          $a = (Get-FileHash outA/knowledge.sqlite -Algorithm SHA256).Hash.ToLower()
+          $b = (Get-FileHash outB/knowledge.sqlite -Algorithm SHA256).Hash.ToLower()
+          if ($a -ne $b) { throw "Pack001 is not reproducible: $a != $b" }
+          $manifestA = Get-Content outA/manifest.json -Raw | ConvertFrom-Json
+          $manifestB = Get-Content outB/manifest.json -Raw | ConvertFrom-Json
+          if ($manifestA.knowledge_sha256 -ne $a -or $manifestB.knowledge_sha256 -ne $b) { throw "Pack manifest SHA mismatch" }
+          $a | Set-Content pack_sha_before.txt -Encoding ASCII
+          Write-Host "PACK001_REPRODUCIBLE sha256=$a"
+
+      - name: Verify Pack001 schema and provenance columns
+        shell: pwsh
+        run: |
+          @'
+          import sqlite3
+          p='outA/knowledge.sqlite'
+          cx=sqlite3.connect(p)
+          assert cx.execute('pragma integrity_check').fetchone()[0]=='ok'
+          assert cx.execute('pragma foreign_key_check').fetchall()==[]
+          assert cx.execute('select count(*) from ravemems_document').fetchone()[0]==47
+          assert cx.execute('select count(*) from ravemems_page').fetchone()[0]==1359
+          assert cx.execute('select count(*) from memslibrary_search').fetchone()[0]==5453
+          assert cx.execute("select count(*) from ravemems_review_flag where status is null or lower(status) not in ('resolved','closed')").fetchone()[0]==0
+          cols={r[1] for r in cx.execute('pragma table_info(memslibrary_search)')}
+          required={'document_key','revision_key','source_language','page_number','entity_kind','entity_key','title','body','search_text'}
+          assert required <= cols, (required-cols)
+          row=cx.execute("select document_key,revision_key,source_language from memslibrary_search where document_key='DOC_RCL0193ENG' and source_language='en' limit 1").fetchone()
+          assert row and row[0]=='DOC_RCL0193ENG' and row[1] and row[2]=='en', row
+          print('PACK001_SQLITE_OK docs=47 pages=1359 search=5453 reviews=0 fk=0 provenance_columns=1 rcl0193_en=1')
+          '@ | python -
+
+      - name: Configure MEMSLibrary x64
+        shell: pwsh
+        run: cmake -S memslibrary -B build-memslibrary -A x64
+
+      - name: Build MEMSLibrary x64
+        shell: pwsh
+        run: cmake --build build-memslibrary --config Release --parallel
+
+      - name: Create corrupt Pack002 fixture
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force corruptPack002 | Out-Null
+          Set-Content -Path corruptPack002/manifest.json -Value '{"pack_format":"MEMSLibraryKnowledgePack","pack_id":"CORRUPT_PACK_002"}' -Encoding UTF8
+          Set-Content -Path corruptPack002/knowledge.sqlite -Value 'not a sqlite database' -Encoding ASCII
+
+      - name: Load DLL and run ABI2 plus provenance regression tests
+        shell: pwsh
+        run: |
+          $exe = Resolve-Path build-memslibrary/Release/MEMSLibrarySmokeTest.exe
+          $good = Resolve-Path outA
+          $bad = Resolve-Path corruptPack002
+          & $exe $good $bad
+          if ($LASTEXITCODE -ne 0) { throw "MEMSLibrary provenance smoke test failed: $LASTEXITCODE" }
+
+      - name: Prove Pack001 remained byte-identical during DLL tests
+        shell: pwsh
+        run: |
+          $before = (Get-Content pack_sha_before.txt -Raw).Trim()
+          $after = (Get-FileHash outA/knowledge.sqlite -Algorithm SHA256).Hash.ToLower()
+          if ($before -ne $after) { throw "Pack001 was modified by DLL test: $before != $after" }
+          @'
+          import sqlite3
+          cx=sqlite3.connect('outA/knowledge.sqlite')
+          assert cx.execute('pragma integrity_check').fetchone()[0]=='ok'
+          assert cx.execute('pragma foreign_key_check').fetchall()==[]
+          print('PACK001_POST_TEST_OK integrity=ok fk=0')
+          '@ | python -
+          Write-Host "PACK001_BYTE_IDENTICAL sha256=$after"
+
+      - name: Assemble isolated DLL validation artifact
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force deliverable/MEMSLibrary_Pack_001 | Out-Null
+          Copy-Item build-memslibrary/Release/MEMSLibrary.dll deliverable/
+          Copy-Item outA/knowledge.sqlite deliverable/MEMSLibrary_Pack_001/
+          Copy-Item outA/manifest.json deliverable/MEMSLibrary_Pack_001/
+          $dllSha = (Get-FileHash deliverable/MEMSLibrary.dll -Algorithm SHA256).Hash.ToLower()
+          $packSha = (Get-FileHash deliverable/MEMSLibrary_Pack_001/knowledge.sqlite -Algorithm SHA256).Hash.ToLower()
+          Write-Host "MEMSLIBRARY_DLL_PROVENANCE_WINDOWS_X64_PASS dll_sha256=$dllSha pack_sha256=$packSha"
+
+      - name: Upload isolated validation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MEMSLibrary-DLL-Provenance-${{ github.run_id }}
+          path: deliverable
+          if-no-files-found: error
+          compression-level: 6
