@@ -8,6 +8,7 @@
 #include <QHash>
 #include <QLibrary>
 #include <QProcessEnvironment>
+#include <QRegularExpression>
 #include <QSet>
 #include <QVector>
 
@@ -117,6 +118,36 @@ bool containsExactToken(const QString &normalizedText, const QString &normalized
     return padded.contains(QStringLiteral(" ") + normalizedToken + QStringLiteral(" "));
 }
 
+bool isManufacturerReferenceAlias(const QString &value)
+{
+    static const QRegularExpression aliasRx(
+        QStringLiteral("^\\d{1,3}(?:_\\d{1,3}){2,3}$"));
+    return aliasRx.match(value).hasMatch();
+}
+
+QString dottedReference(const QString &alias)
+{
+    QString result = alias;
+    result.replace(QLatin1Char('_'), QLatin1Char('.'));
+    return result;
+}
+
+bool containsManufacturerReference(const EvidenceCandidate &result, const QString &alias)
+{
+    if (!isManufacturerReferenceAlias(alias))
+        return false;
+
+    const QString normalizedEntityKey = normalizeForMatching(result.entityKey);
+    const QRegularExpression entityRx(
+        QStringLiteral("(?:^|_)%1(?:_|$)").arg(QRegularExpression::escape(alias)));
+    if (entityRx.match(normalizedEntityKey).hasMatch())
+        return true;
+
+    const QString normalizedContent = normalizeForMatching(
+        result.title + QLatin1Char(' ') + result.body);
+    return containsExactToken(normalizedContent, dottedReference(alias));
+}
+
 QStringList candidateQueries(const QString &question, const QStringList &keywords)
 {
     QStringList candidates;
@@ -132,9 +163,8 @@ QStringList candidateQueries(const QString &question, const QStringList &keyword
     if (clean.isEmpty())
         return candidates;
 
-    // Semantic aliases are appended by the service after the words extracted
-    // from the question. Try their combined forms first, before any broad
-    // single-term lookup can win on a substring coincidence.
+    // Semantic aliases and normalized manufacturer references are appended by
+    // the service. Try their combined forms first, before broad single terms.
     if (clean.size() >= 3)
         appendUnique(candidates, clean.mid(clean.size() - 3, 3).join(QLatin1Char(' ')));
     if (clean.size() >= 2)
@@ -254,22 +284,34 @@ int evidenceScore(const EvidenceCandidate &result,
     if (queryTerms.isEmpty())
         return -1;
 
-    // MEMSLibrary uses substring LIKE matching. Accept a row only when every
-    // query term is also present as an exact token. This rejects axial/coaxial.
+    int referenceBoost = 0;
+    // MEMSLibrary uses substring LIKE matching. Accept ordinary terms only as
+    // exact tokens (rejecting axial/coaxial). Manufacturer references use the
+    // generic underscore form present in RAVEMEMS entity keys.
     for (const QString &term : queryTerms) {
+        if (isManufacturerReferenceAlias(term)) {
+            if (!containsManufacturerReference(result, term))
+                return -1;
+            referenceBoost += 500;
+            continue;
+        }
         if (!containsExactToken(searchable, term))
             return -1;
     }
 
-    int score = queryTerms.size() * 100;
+    int score = queryTerms.size() * 100 + referenceBoost;
     QSet<QString> scoredKeywords;
     for (const QString &keyword : keywords) {
         const QString normalized = normalizeForMatching(keyword);
         if (normalized.isEmpty() || scoredKeywords.contains(normalized))
             continue;
         scoredKeywords.insert(normalized);
-        if (containsExactToken(searchable, normalized))
+        if (isManufacturerReferenceAlias(normalized)) {
+            if (containsManufacturerReference(result, normalized))
+                score += 24;
+        } else if (containsExactToken(searchable, normalized)) {
             score += 12;
+        }
     }
 
     if (result.entityKind == QStringLiteral("step"))
@@ -282,6 +324,18 @@ int evidenceScore(const EvidenceCandidate &result,
         score += 5;
     else if (result.entityKind == QStringLiteral("section"))
         score += 4;
+
+    // For an explicit operation-reference lookup, keep the operation heading
+    // ahead of its steps so Qwen receives the procedure identity as context.
+    bool referenceQuery = false;
+    for (const QString &term : queryTerms) {
+        if (isManufacturerReferenceAlias(term)) {
+            referenceQuery = true;
+            break;
+        }
+    }
+    if (referenceQuery && result.entityKind == QStringLiteral("operation"))
+        score += 30;
 
     if (!result.title.trimmed().isEmpty())
         score += 2;
@@ -598,10 +652,22 @@ IaMemsLibraryGrounding IaMemsLibraryBridge::retrieve(const QString &question,
 
     std::sort(isolatedRows.begin(), isolatedRows.end(), betterCandidate);
 
+    bool explicitReferenceLookup = false;
+    if (!selectedGroup.rows.isEmpty()) {
+        const QStringList selectedTerms = normalizedTerms(selectedGroup.rows.first().query);
+        for (const QString &term : selectedTerms) {
+            if (isManufacturerReferenceAlias(term)) {
+                explicitReferenceLookup = true;
+                break;
+            }
+        }
+    }
+
     QStringList evidence;
     QSet<QString> seen;
+    const int evidenceLimit = explicitReferenceLookup ? 12 : 6;
     for (const EvidenceCandidate &candidate : isolatedRows) {
-        if (evidence.size() >= 6)
+        if (evidence.size() >= evidenceLimit)
             break;
         const QString key = resultKey(candidate);
         if (seen.contains(key))
