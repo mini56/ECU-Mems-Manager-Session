@@ -8,6 +8,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QRegularExpression>
 #include <QStringList>
 
 #include <iostream>
@@ -23,6 +24,27 @@ int fail(int code, const QString &message)
 bool containsInsensitive(const QString &text, const QString &needle)
 {
     return text.contains(needle, Qt::CaseInsensitive);
+}
+
+bool allEvidencePagesEqual(const QString &text, int expectedPage, int *sourceCount)
+{
+    const QRegularExpression sourceRx(
+        QStringLiteral("Source\\s+DOC_[A-Za-z0-9_]+,\\s*page\\s+(\\d+)"),
+        QRegularExpression::CaseInsensitiveOption);
+    QRegularExpressionMatchIterator matches = sourceRx.globalMatch(text);
+    int count = 0;
+    while (matches.hasNext()) {
+        const QRegularExpressionMatch match = matches.next();
+        ++count;
+        if (match.captured(1).toInt() != expectedPage) {
+            if (sourceCount)
+                *sourceCount = count;
+            return false;
+        }
+    }
+    if (sourceCount)
+        *sourceCount = count;
+    return count > 0;
 }
 
 bool visualMatchesPrimaryProof(const QString &referenceRoot,
@@ -119,15 +141,20 @@ int main(int argc, char **argv)
         return fail(12, QStringLiteral("primary proof contaminated by antenna/coax evidence"));
     }
 
+    int primarySourceCount = 0;
+    if (!allEvidencePagesEqual(primary.text, 53, &primarySourceCount)) {
+        return fail(13, QStringLiteral("primary evidence contains a page other than p53"));
+    }
+
     const IaMemsDiagramSuggestion primaryVisual =
         IaMemsDiagramCatalog::suggestionForEvidence(primaryQuestion, primary.text, referenceRoot);
     if (!primaryVisual.isValid())
-        return fail(13, QStringLiteral("no visual followed the selected p53 proof"));
+        return fail(14, QStringLiteral("no visual followed the selected p53 proof"));
     if (primaryVisual.key != QStringLiteral("RCL0193ENG p.53"))
-        return fail(14, QStringLiteral("wrong visual proof key: %1").arg(primaryVisual.key));
+        return fail(15, QStringLiteral("wrong visual proof key: %1").arg(primaryVisual.key));
     QString primaryAsset;
     if (!visualMatchesPrimaryProof(referenceRoot, primaryVisual, &primaryAsset))
-        return fail(15, QStringLiteral("visual is not VIS_P0053_001/002 from the selected proof"));
+        return fail(16, QStringLiteral("visual is not VIS_P0053_001/002 from the selected proof"));
 
     const QString batteryQuestion = QStringLiteral(
         "Quelle est la procédure de restauration de la batterie ?");
@@ -139,9 +166,12 @@ int main(int argc, char **argv)
         || battery.selectedDocument != QStringLiteral("DOC_RCL0221ENG")
         || battery.selectedPage != 20
         || !containsInsensitive(battery.text, QStringLiteral("BATTERY RESTORATION PROCEDURE"))) {
-        return fail(16, QStringLiteral("battery regression failed doc=%1 page=%2")
+        return fail(17, QStringLiteral("battery regression failed doc=%1 page=%2")
             .arg(battery.selectedDocument).arg(battery.selectedPage));
     }
+    int batterySourceCount = 0;
+    if (!allEvidencePagesEqual(battery.text, 20, &batterySourceCount))
+        return fail(18, QStringLiteral("battery evidence is not page-pure p20"));
 
     const IaMemsLibraryGrounding throttle = IaMemsLibraryBridge::retrieve(
         QStringLiteral("throttle potentiometer"),
@@ -150,16 +180,19 @@ int main(int argc, char **argv)
         || throttle.selectedDocument != QStringLiteral("DOC_RCL0195ENG")
         || throttle.selectedPage != 35
         || !containsInsensitive(throttle.text, QStringLiteral("18.30.24"))) {
-        return fail(17, QStringLiteral("throttle regression failed doc=%1 page=%2")
+        return fail(19, QStringLiteral("throttle regression failed doc=%1 page=%2")
             .arg(throttle.selectedDocument).arg(throttle.selectedPage));
     }
+    int throttleSourceCount = 0;
+    if (!allEvidencePagesEqual(throttle.text, 35, &throttleSourceCount))
+        return fail(20, QStringLiteral("throttle evidence is not page-pure p35"));
 
     const IaMemsLibraryGrounding substring = IaMemsLibraryBridge::retrieve(
         QStringLiteral("axial"), {QStringLiteral("axial")});
     if (substring.selectedPage == 342
         || containsInsensitive(substring.text, QStringLiteral("coaxial"))
         || containsInsensitive(substring.text, QStringLiteral("aerial"))) {
-        return fail(18, QStringLiteral("substring guard failed: axial still matched coaxial"));
+        return fail(21, QStringLiteral("substring guard failed: axial still matched coaxial"));
     }
 
     std::cout
@@ -167,6 +200,8 @@ int main(int argc, char **argv)
         << " primary=DOC_RCL0193ENG:p53"
         << " revision=REV_RCL0193ENG_SOURCE"
         << " language=en"
+        << " primary_sources=" << primarySourceCount
+        << " page_pure=1"
         << " visual=" << primaryAsset.toStdString()
         << " battery=DOC_RCL0221ENG:p20"
         << " throttle=DOC_RCL0195ENG:p35"
