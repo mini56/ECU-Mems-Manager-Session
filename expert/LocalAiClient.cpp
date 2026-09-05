@@ -84,6 +84,8 @@ QString normalizedPlainText(QString text)
     }
 
     result = result.simplified();
+    // Frequent AZERTY apostrophe substitutions seen in real IA MEMS questions.
+    // Keep this deliberately narrow so protocol tokens such as D4 are untouched.
     result.replace(QRegularExpression(QStringLiteral("\\bc4est\\b")), QStringLiteral("c est"));
     result.replace(QRegularExpression(QStringLiteral("\\bl4onglet\\b")), QStringLiteral("l onglet"));
     result.replace(QRegularExpression(QStringLiteral("\\bl4apercu\\b")), QStringLiteral("l apercu"));
@@ -239,6 +241,24 @@ bool asksWiringOrPinout(const QString &plain)
         || plain.contains(QStringLiteral("prise obd"))
         || plain.contains(QStringLiteral(" obd "))
         || plain.startsWith(QStringLiteral("obd "));
+}
+
+bool isMemsDomainQuestion(const QString &question, const QString &grounding)
+{
+    const QString plain = normalizedPlainText(question);
+    return plain.contains(QStringLiteral("mems"))
+        || plain.contains(QStringLiteral("ecu"))
+        || plain.contains(QStringLiteral("rosco"))
+        || plain.contains(QStringLiteral("firmware"))
+        || plain.contains(QStringLiteral("iac"))
+        || plain.contains(QStringLiteral("lambda"))
+        || plain.contains(QStringLiteral("injection"))
+        || plain.contains(QStringLiteral("injecteur"))
+        || plain.contains(QStringLiteral("spi"))
+        || plain.contains(QStringLiteral("map"))
+        || plain.contains(QStringLiteral("bobine"))
+        || plain.contains(QStringLiteral("dwell"))
+        || !grounding.trimmed().isEmpty();
 }
 
 QString controlledTechnicalAnswer(const QString &question)
