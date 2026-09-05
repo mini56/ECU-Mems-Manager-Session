@@ -1,0 +1,21 @@
+cmake_minimum_required(VERSION 3.16)
+project(qwen_rejection_trace CXX)
+
+set(CMAKE_AUTOMOC OFF)
+find_package(Qt5 REQUIRED COMPONENTS Core)
+
+set(ORT_GENAI_INCLUDE_DIR "" CACHE PATH "Directory containing ort_genai_c.h")
+set(ORT_GENAI_LIBRARY "" CACHE FILEPATH "ONNX Runtime GenAI import library")
+if(NOT EXISTS "${ORT_GENAI_INCLUDE_DIR}/ort_genai_c.h")
+    message(FATAL_ERROR "ORT_GENAI_INCLUDE_DIR invalid: ${ORT_GENAI_INCLUDE_DIR}")
+endif()
+if(NOT EXISTS "${ORT_GENAI_LIBRARY}")
+    message(FATAL_ERROR "ORT_GENAI_LIBRARY invalid: ${ORT_GENAI_LIBRARY}")
+endif()
+
+add_executable(qwen_rejection_trace main.cpp)
+target_include_directories(qwen_rejection_trace PRIVATE "${ORT_GENAI_INCLUDE_DIR}")
+target_link_libraries(qwen_rejection_trace PRIVATE Qt5::Core "${ORT_GENAI_LIBRARY}")
+if(MSVC)
+    target_compile_options(qwen_rejection_trace PRIVATE /permissive /utf-8)
+endif()
