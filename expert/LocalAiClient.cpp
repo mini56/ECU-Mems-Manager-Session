@@ -730,17 +730,20 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
         grounding.clear();
 
     const bool reasoning = requiresReasoning(trimmedQuestion, grounding);
-    if (!reasoning && !grounding.isEmpty()) {
-        rememberTurn(m_conversation, trimmedQuestion, grounding);
-        emit responseReady(grounding);
-        return;
-    }
+    const bool documentary = !grounding.isEmpty() && !reasoning;
 
     QString userContent = trimmedQuestion;
     if (!grounding.isEmpty()) {
         userContent += QStringLiteral(
             "\n\nFaits fournis par MEMS Manager, à utiliser seulement s'ils répondent à la question :\n%1")
                            .arg(grounding);
+    }
+    if (documentary) {
+        userContent += QStringLiteral(
+            "\n\nRéponse documentaire attendue : réponds directement dans la langue active, uniquement à partir des faits fournis. "
+            "Ne recopie pas le bloc documentaire brut. Conserve exactement les valeurs, unités, références d'opération et la provenance utiles. "
+            "Si plusieurs extraits sont fournis, n'utilise que ceux qui répondent réellement à la question. "
+            "Quand une source et une page sont indiquées, termine par une courte ligne Source avec ce document et cette page.");
     }
     if (reasoning) {
         userContent += QStringLiteral(
@@ -843,6 +846,7 @@ QString LocalAiClient::systemPrompt() const
         "Understand obvious typing mistakes without commenting on them. "
         "Answer the exact user question first. Do not repeat or reformulate it instead of answering. "
         "For MEMS technical questions, facts supplied by MEMS Manager take priority and unrelated supplied facts must be ignored. "
+        "When verified documentary facts are supplied, synthesize them into a direct answer instead of dumping the raw evidence block. Preserve exact technical values, units, operation references and useful source provenance. "
         "Never invent ECU measurements, faults, protocol addresses, software functions, sources or confidence levels. "
         "If reliable information is insufficient, say briefly what is missing instead of guessing. "
         "For diagnostic questions, distinguish observations from hypotheses and give practical checks in priority order. "
