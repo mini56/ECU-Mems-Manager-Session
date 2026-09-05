@@ -11,7 +11,7 @@ permissions:
 jobs:
   trace:
     runs-on: windows-2022
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
       ORT_GENAI_VERSION: '0.14.0'
       ORT_GENAI_WIN_X64_SHA256: '8a303e52dc7be8fb2a5331929af451a25ac59774102d7fd09ef673adc85c5ebf'
@@ -28,13 +28,13 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install minimal Qt 5.15.2 development files
+      - name: Install production Qt 5.15.2 development files
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
           python -m pip install --disable-pip-version-check "aqtinstall==3.3.0"
           $sevenZip=(Get-Command 7z.exe -ErrorAction Stop).Source
-          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -O C:\Qt --external "$sevenZip" --archives qtbase
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
           if($LASTEXITCODE -ne 0){throw "Qt install failed $LASTEXITCODE"}
 
       - name: Download pinned ONNX Runtime GenAI development files
@@ -72,24 +72,41 @@ jobs:
           Write-Host "TRACE_RUNTIME=$root"
           Write-Host "TRACE_MODEL=$($modelConfig.Directory.FullName)"
 
-      - name: Build trace executable
+      - name: Inject temporary trace into actual application source
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
-          cmake -S expert/qwen-rejection-trace -B build-qwen-trace -A x64 `
+          python expert/qwen-rejection-trace/patch_actual_app.py
+          if($LASTEXITCODE -ne 0){throw 'Actual app trace patch failed'}
+
+      - name: Build actual ECU MEMS Manager with trace
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          cmake -S . -B build-app-trace -A x64 `
             -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
+            -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
+            -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF `
+            -DMEMS_USE_ONNX_GENAI=ON `
             "-DORT_GENAI_INCLUDE_DIR=$env:ORT_GENAI_INCLUDE_DIR" `
             "-DORT_GENAI_LIBRARY=$env:ORT_GENAI_LIBRARY"
-          if($LASTEXITCODE -ne 0){throw 'Trace configure failed'}
-          cmake --build build-qwen-trace --config Release --parallel
-          if($LASTEXITCODE -ne 0){throw 'Trace build failed'}
+          if($LASTEXITCODE -ne 0){throw 'Trace app configure failed'}
+          cmake --build build-app-trace --config Release --target ecu_mems_manager --parallel
+          if($LASTEXITCODE -ne 0){throw 'Trace app build failed'}
+          $built=Get-Item 'build-app-trace\Release\ecu_mems_manager.exe'
+          Copy-Item $built.FullName (Join-Path $env:BUILD108_RUNTIME_ROOT 'ecu_mems_manager.exe') -Force
+          Write-Host 'ACTUAL_MEMS_MANAGER_TRACE_BUILD_PASS'
 
-      - name: Run exact BUILD108 documentary generation trace
+      - name: Run documentary trace in actual ECU MEMS Manager
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
           $qt='C:\Qt\5.15.2\msvc2019_64\bin'
           $env:PATH="$env:BUILD108_RUNTIME_ROOT;$qt;$env:PATH"
-          & '${{ github.workspace }}\build-qwen-trace\Release\qwen_rejection_trace.exe'
-          if($LASTEXITCODE -ne 0){throw "Trace executable failed $LASTEXITCODE"}
-          Write-Host 'BUILD108_QWEN_REJECTION_TRACE_PASS'
+          $env:MEMS_QWEN_TRACE_APP='1'
+          $env:QT_QPA_PLATFORM='offscreen'
+          & (Join-Path $env:BUILD108_RUNTIME_ROOT 'ecu_mems_manager.exe')
+          $code=$LASTEXITCODE
+          Write-Host "TRACE_APP_EXIT=$code"
+          if($code -ne 0 -and $code -ne 2){throw "Trace app failed before response classification: $code"}
+          Write-Host 'BUILD108_ACTUAL_APP_QWEN_TRACE_COMPLETE'
