@@ -54,6 +54,16 @@ struct EvidenceCandidate
     int score = -1;
 };
 
+struct EvidenceGroup
+{
+    QString document;
+    QString revision;
+    QString sourceLanguage;
+    int page = -1;
+    int score = 0;
+    QVector<EvidenceCandidate> rows;
+};
+
 QString firstConfiguredPath(const QString &environmentName, const QString &fallback)
 {
     const QString configured = QProcessEnvironment::systemEnvironment().value(environmentName).trimmed();
@@ -121,6 +131,9 @@ QStringList candidateQueries(const QString &question, const QStringList &keyword
     if (clean.isEmpty())
         return candidates;
 
+    // Semantic aliases are appended by the service after the words extracted
+    // from the question. Try their combined forms first, before any broad
+    // single-term lookup can win on a substring coincidence.
     if (clean.size() >= 3)
         appendUnique(candidates, clean.mid(clean.size() - 3, 3).join(QLatin1Char(' ')));
     if (clean.size() >= 2)
@@ -130,8 +143,6 @@ QStringList candidateQueries(const QString &question, const QStringList &keyword
     if (clean.size() >= 3)
         appendUnique(candidates, clean.mid(0, 3).join(QLatin1Char(' ')));
 
-    // Search all keyword pairs, starting from the most recently appended aliases.
-    // The bridge must not stop on the first substring hit (for example axial/coaxial).
     for (int i = clean.size() - 1; i >= 1; --i) {
         for (int j = i - 1; j >= 0; --j)
             appendUnique(candidates, clean.at(j) + QLatin1Char(' ') + clean.at(i));
@@ -181,8 +192,8 @@ BridgeRuntime &runtime()
     state.searchFiltered = reinterpret_cast<SearchPackFilteredFn>(
         state.library.resolve("MEMSLibrary_SearchPackFiltered"));
 
-    // The additive provenance export is optional here so an older ABI2 runtime can
-    // still use the historical search as a controlled compatibility fallback.
+    // The additive export remains optional for backward compatibility. The
+    // corrected runtime uses it; an older ABI2 DLL keeps the historical path.
     if (!state.abi || !state.name || !state.role || !state.validate || !state.search) {
         state.error = QStringLiteral("ABI2 MEMSLibrary incomplète.");
         return state;
@@ -213,10 +224,17 @@ BridgeRuntime &runtime()
 
 QString resultKey(const EvidenceCandidate &result)
 {
-    return QStringLiteral("%1|%2|%3|%4|%5")
-        .arg(result.document, result.revision)
+    return QStringLiteral("%1|%2|%3|%4|%5|%6")
+        .arg(result.document, result.revision, result.sourceLanguage)
         .arg(result.page)
         .arg(result.entityKind, result.entityKey);
+}
+
+QString groupKey(const EvidenceCandidate &result)
+{
+    return QStringLiteral("%1|%2|%3|%4")
+        .arg(result.document, result.revision, result.sourceLanguage)
+        .arg(result.page);
 }
 
 QString searchableText(const EvidenceCandidate &result)
@@ -235,9 +253,8 @@ int evidenceScore(const EvidenceCandidate &result,
     if (queryTerms.isEmpty())
         return -1;
 
-    // MEMSLibrary deliberately uses substring LIKE matching. The bridge applies
-    // token-boundary verification before accepting a row, preventing false
-    // substring evidence such as "axial" matching "coaxial".
+    // MEMSLibrary uses substring LIKE matching. Accept a row only when every
+    // query term is also present as an exact token. This rejects axial/coaxial.
     for (const QString &term : queryTerms) {
         if (!containsExactToken(searchable, term))
             return -1;
@@ -390,23 +407,66 @@ bool betterCandidate(const EvidenceCandidate &left, const EvidenceCandidate &rig
 {
     if (left.score != right.score)
         return left.score > right.score;
+    if (left.entityKind != right.entityKind)
+        return left.entityKind < right.entityKind;
+    return left.entityKey < right.entityKey;
+}
 
-    const int leftPage = left.page >= 0 ? left.page : std::numeric_limits<int>::max();
-    const int rightPage = right.page >= 0 ? right.page : std::numeric_limits<int>::max();
-    if (leftPage != rightPage)
-        return leftPage < rightPage;
+QVector<EvidenceGroup> buildGroups(const QVector<EvidenceCandidate> &candidates)
+{
+    QVector<EvidenceGroup> groups;
+    QHash<QString, int> indices;
+
+    for (const EvidenceCandidate &candidate : candidates) {
+        const QString key = groupKey(candidate);
+        auto it = indices.constFind(key);
+        if (it == indices.constEnd()) {
+            EvidenceGroup group;
+            group.document = candidate.document;
+            group.revision = candidate.revision;
+            group.sourceLanguage = candidate.sourceLanguage;
+            group.page = candidate.page;
+            indices.insert(key, groups.size());
+            groups.append(group);
+            it = indices.constFind(key);
+        }
+        groups[*it].rows.append(candidate);
+    }
+
+    for (EvidenceGroup &group : groups) {
+        std::sort(group.rows.begin(), group.rows.end(), betterCandidate);
+        const int limit = qMin(4, group.rows.size());
+        for (int i = 0; i < limit; ++i)
+            group.score += group.rows.at(i).score;
+        group.score += limit * 5;
+    }
+    return groups;
+}
+
+bool betterGroup(const EvidenceGroup &left, const EvidenceGroup &right)
+{
+    if (left.score != right.score)
+        return left.score > right.score;
+    if (left.rows.size() != right.rows.size())
+        return left.rows.size() > right.rows.size();
     if (left.document != right.document)
         return left.document < right.document;
     if (left.revision != right.revision)
         return left.revision < right.revision;
-    return left.entityKey < right.entityKey;
+    if (left.sourceLanguage != right.sourceLanguage)
+        return left.sourceLanguage < right.sourceLanguage;
+
+    const int leftPage = left.page >= 0 ? left.page : std::numeric_limits<int>::max();
+    const int rightPage = right.page >= 0 ? right.page : std::numeric_limits<int>::max();
+    return leftPage < rightPage;
 }
 
-bool sameProvenance(const EvidenceCandidate &candidate, const EvidenceCandidate &selected)
+bool sameProvenanceAndPage(const EvidenceCandidate &candidate, const EvidenceGroup &selected)
 {
     return candidate.document == selected.document
         && candidate.revision == selected.revision
-        && candidate.sourceLanguage == selected.sourceLanguage;
+        && candidate.sourceLanguage == selected.sourceLanguage
+        && candidate.page == selected.page;
 }
 
 template <std::size_t N>
@@ -462,8 +522,6 @@ IaMemsLibraryGrounding IaMemsLibraryBridge::retrieve(const QString &question,
     const bool filteredApiOperational = collectFilteredCandidates(
         state, packWide, queries, keywords, nullptr, candidates, indices);
 
-    // If the additive export is absent or unusable, retain a compatibility path
-    // through the historical ABI2 export, with the same token-boundary ranking.
     if (candidates.isEmpty()) {
         indices.clear();
         collectHistoricalCandidates(state, packWide, queries, keywords, candidates, indices);
@@ -471,72 +529,68 @@ IaMemsLibraryGrounding IaMemsLibraryBridge::retrieve(const QString &question,
     if (candidates.isEmpty())
         return output;
 
-    std::sort(candidates.begin(), candidates.end(), betterCandidate);
-    const EvidenceCandidate selected = candidates.first();
+    QVector<EvidenceGroup> groups = buildGroups(candidates);
+    if (groups.isEmpty())
+        return output;
+    std::sort(groups.begin(), groups.end(), betterGroup);
+    const EvidenceGroup selectedGroup = groups.first();
 
-    output.selectedDocument = selected.document;
-    output.selectedRevision = selected.revision;
-    output.selectedSourceLanguage = selected.sourceLanguage;
-    output.selectedPage = selected.page;
+    output.selectedDocument = selectedGroup.document;
+    output.selectedRevision = selectedGroup.revision;
+    output.selectedSourceLanguage = selectedGroup.sourceLanguage;
+    output.selectedPage = selectedGroup.page;
 
-    QVector<EvidenceCandidate> selectedCandidates;
-    QHash<QString, int> selectedIndices;
+    QVector<EvidenceCandidate> finalRows = selectedGroup.rows;
+    QHash<QString, int> finalIndices;
+    for (int i = 0; i < finalRows.size(); ++i)
+        finalIndices.insert(resultKey(finalRows.at(i)), i);
 
     if (filteredApiOperational && state.searchFiltered
-        && !selected.document.isEmpty() && !selected.revision.isEmpty()) {
+        && !selectedGroup.document.isEmpty() && !selectedGroup.revision.isEmpty()
+        && !selectedGroup.rows.isEmpty()) {
         MEMSLibrarySearchFilters filters{};
         filters.struct_size = sizeof(filters);
-        copyFilterText(filters.document_key, selected.document);
-        copyFilterText(filters.revision_key, selected.revision);
-        if (!selected.sourceLanguage.isEmpty())
-            copyFilterText(filters.source_language, selected.sourceLanguage);
+        copyFilterText(filters.document_key, selectedGroup.document);
+        copyFilterText(filters.revision_key, selectedGroup.revision);
+        if (!selectedGroup.sourceLanguage.isEmpty())
+            copyFilterText(filters.source_language, selectedGroup.sourceLanguage);
 
         QVector<EvidenceCandidate> verification;
         QHash<QString, int> verificationIndices;
+        const QString verificationQuery = selectedGroup.rows.first().query;
         const bool verificationQueryOk = collectFilteredCandidates(
-            state, packWide, QStringList{selected.query}, keywords, &filters,
+            state, packWide, QStringList{verificationQuery}, keywords, &filters,
             verification, verificationIndices);
 
-        bool selectedProvenanceVerified = false;
-        for (const EvidenceCandidate &candidate : verification) {
-            if (sameProvenance(candidate, selected) && candidate.page == selected.page) {
-                selectedProvenanceVerified = true;
-                break;
-            }
-        }
-
-        if (verificationQueryOk && selectedProvenanceVerified) {
-            output.provenanceFiltered = true;
-            for (EvidenceCandidate candidate : candidates) {
-                if (!sameProvenance(candidate, selected))
-                    continue;
-                if (selected.page >= 0 && candidate.page == selected.page)
-                    candidate.score += 40;
-                upsertCandidate(selectedCandidates, selectedIndices, candidate);
-            }
+        bool selectedPageVerified = false;
+        if (verificationQueryOk) {
             for (EvidenceCandidate candidate : verification) {
-                if (selected.page >= 0 && candidate.page == selected.page)
-                    candidate.score += 40;
-                upsertCandidate(selectedCandidates, selectedIndices, candidate);
+                if (!sameProvenanceAndPage(candidate, selectedGroup))
+                    continue;
+                selectedPageVerified = true;
+                candidate.score += 40;
+                upsertCandidate(finalRows, finalIndices, candidate);
             }
         }
+        output.provenanceFiltered = selectedPageVerified;
     }
 
-    if (selectedCandidates.isEmpty()) {
-        selectedCandidates = candidates;
-        if (selected.page >= 0) {
-            for (EvidenceCandidate &candidate : selectedCandidates) {
-                if (candidate.page == selected.page)
-                    candidate.score += 40;
-            }
-        }
+    // Critical isolation rule: once a physical page has won, every excerpt
+    // handed to Qwen must come from that exact page. A same-document page is
+    // not an acceptable substitute and cannot re-enter through broad queries.
+    QVector<EvidenceCandidate> isolatedRows;
+    for (const EvidenceCandidate &candidate : finalRows) {
+        if (sameProvenanceAndPage(candidate, selectedGroup))
+            isolatedRows.append(candidate);
     }
+    if (isolatedRows.isEmpty())
+        return output;
 
-    std::sort(selectedCandidates.begin(), selectedCandidates.end(), betterCandidate);
+    std::sort(isolatedRows.begin(), isolatedRows.end(), betterCandidate);
 
     QStringList evidence;
     QSet<QString> seen;
-    for (const EvidenceCandidate &candidate : selectedCandidates) {
+    for (const EvidenceCandidate &candidate : isolatedRows) {
         if (evidence.size() >= 6)
             break;
         const QString key = resultKey(candidate);
