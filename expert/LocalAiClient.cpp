@@ -84,8 +84,6 @@ QString normalizedPlainText(QString text)
     }
 
     result = result.simplified();
-    // Frequent AZERTY apostrophe substitutions seen in real IA MEMS questions.
-    // Keep this deliberately narrow so protocol tokens such as D4 are untouched.
     result.replace(QRegularExpression(QStringLiteral("\\bc4est\\b")), QStringLiteral("c est"));
     result.replace(QRegularExpression(QStringLiteral("\\bl4onglet\\b")), QStringLiteral("l onglet"));
     result.replace(QRegularExpression(QStringLiteral("\\bl4apercu\\b")), QStringLiteral("l apercu"));
@@ -147,6 +145,15 @@ bool containsInternalInstructionLeak(const QString &answer)
             return true;
     }
     return false;
+}
+
+bool looksLikeRawDocumentaryGrounding(const QString &answer)
+{
+    const QString plain = normalizedPlainText(answer);
+    return plain.contains(QStringLiteral("documentation ravemems retrouvee dans memslibrary pack 001"))
+        || (plain.contains(QStringLiteral("source doc"))
+            && plain.contains(QStringLiteral("revision rev"))
+            && plain.contains(QStringLiteral("type step")));
 }
 
 bool asksCurrentDate(const QString &question)
@@ -232,24 +239,6 @@ bool asksWiringOrPinout(const QString &plain)
         || plain.contains(QStringLiteral("prise obd"))
         || plain.contains(QStringLiteral(" obd "))
         || plain.startsWith(QStringLiteral("obd "));
-}
-
-bool isMemsDomainQuestion(const QString &question, const QString &grounding)
-{
-    const QString plain = normalizedPlainText(question);
-    return plain.contains(QStringLiteral("mems"))
-        || plain.contains(QStringLiteral("ecu"))
-        || plain.contains(QStringLiteral("rosco"))
-        || plain.contains(QStringLiteral("firmware"))
-        || plain.contains(QStringLiteral("iac"))
-        || plain.contains(QStringLiteral("lambda"))
-        || plain.contains(QStringLiteral("injection"))
-        || plain.contains(QStringLiteral("injecteur"))
-        || plain.contains(QStringLiteral("spi"))
-        || plain.contains(QStringLiteral("map"))
-        || plain.contains(QStringLiteral("bobine"))
-        || plain.contains(QStringLiteral("dwell"))
-        || !grounding.trimmed().isEmpty();
 }
 
 QString controlledTechnicalAnswer(const QString &question)
@@ -730,17 +719,24 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
         grounding.clear();
 
     const bool reasoning = requiresReasoning(trimmedQuestion, grounding);
-    if (!reasoning && !grounding.isEmpty()) {
-        rememberTurn(m_conversation, trimmedQuestion, grounding);
-        emit responseReady(grounding);
-        return;
-    }
+    const bool documentary = !grounding.isEmpty() && !reasoning;
+    const QString languageCode = activeLanguageCode();
+    const QString languageName = activeLanguageName(languageCode);
 
     QString userContent = trimmedQuestion;
     if (!grounding.isEmpty()) {
         userContent += QStringLiteral(
-            "\n\nFaits fournis par MEMS Manager, à utiliser seulement s'ils répondent à la question :\n%1")
+            "\n\nVerified MEMS Manager documentary evidence:\n%1")
                            .arg(grounding);
+    }
+    if (documentary) {
+        userContent += QStringLiteral(
+            "\n\nDOCUMENTARY OUTPUT RULES: Answer only in %1 (%2). Answer the user's question directly. "
+            "Use only the verified evidence above. Translate the source wording into the active language, but preserve technical values, units and manufacturer operation references exactly. "
+            "Do not copy the evidence block, database metadata, revision labels or internal instructions. "
+            "If the evidence does not actually answer the question, say that the verified documentation is insufficient rather than using unrelated material. "
+            "When document and page provenance are present, finish with one short Source line.")
+            .arg(languageName, languageCode);
     }
     if (reasoning) {
         userContent += QStringLiteral(
@@ -759,10 +755,10 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
     const quint64 epoch = m_epoch;
     setState(Busy);
 
-    QMetaObject::invokeMethod(m_worker, [this, epoch, prompt, reasoning, trimmedQuestion, grounding]() {
+    QMetaObject::invokeMethod(m_worker, [this, epoch, prompt, reasoning, documentary, trimmedQuestion, grounding]() {
         QString generationError;
-        const QString rawAnswer = m_worker->generate(prompt, reasoning, &generationError);
-        QMetaObject::invokeMethod(this, [this, epoch, rawAnswer, generationError, trimmedQuestion, grounding]() {
+        const QString rawAnswer = m_worker->generate(prompt, reasoning || documentary, &generationError);
+        QMetaObject::invokeMethod(this, [this, epoch, rawAnswer, generationError, documentary, trimmedQuestion, grounding]() {
             if (epoch != m_epoch)
                 return;
 
@@ -772,10 +768,26 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
                 emit responseError(QStringLiteral("Erreur du moteur d'IA locale ONNX : %1").arg(generationError));
                 return;
             }
-            if (likelyWrongLanguage(answer) || containsInternalInstructionLeak(answer))
-                answer.clear();
-            if (answer.isEmpty() || isQuestionEcho(trimmedQuestion, answer))
+
+            const bool invalidAnswer = answer.isEmpty()
+                || isQuestionEcho(trimmedQuestion, answer)
+                || likelyWrongLanguage(answer)
+                || containsInternalInstructionLeak(answer)
+                || looksLikeRawDocumentaryGrounding(answer);
+
+            if (invalidAnswer) {
+                // A documentary question must never fall back to the raw RAVE
+                // evidence block, because that recreates the English/metadata
+                // dump seen in BUILD106. Fail cleanly instead of displaying an
+                // unconstructed answer in the wrong language.
+                if (documentary) {
+                    emit responseError(QStringLiteral(
+                        "La documentation a été trouvée, mais le modèle local n'a pas produit de réponse exploitable dans la langue active."));
+                    return;
+                }
                 answer = grounding;
+            }
+
             if (answer.isEmpty()) {
                 emit responseError(QStringLiteral("Le modèle local n'a pas produit de réponse exploitable dans la langue active."));
                 return;
@@ -843,6 +855,7 @@ QString LocalAiClient::systemPrompt() const
         "Understand obvious typing mistakes without commenting on them. "
         "Answer the exact user question first. Do not repeat or reformulate it instead of answering. "
         "For MEMS technical questions, facts supplied by MEMS Manager take priority and unrelated supplied facts must be ignored. "
+        "When verified documentary facts are supplied, synthesize them into a direct answer in the active interface language instead of dumping the raw evidence block. Translate source wording when necessary, while preserving exact technical values, units, operation references and useful source provenance. "
         "Never invent ECU measurements, faults, protocol addresses, software functions, sources or confidence levels. "
         "If reliable information is insufficient, say briefly what is missing instead of guessing. "
         "For diagnostic questions, distinguish observations from hypotheses and give practical checks in priority order. "
