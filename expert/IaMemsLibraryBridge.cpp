@@ -60,7 +60,8 @@ struct EvidenceGroup
     QString revision;
     QString sourceLanguage;
     int page = -1;
-    int score = 0;
+    int bestScore = -1;
+    int supportScore = 0;
     QVector<EvidenceCandidate> rows;
 };
 
@@ -435,18 +436,27 @@ QVector<EvidenceGroup> buildGroups(const QVector<EvidenceCandidate> &candidates)
 
     for (EvidenceGroup &group : groups) {
         std::sort(group.rows.begin(), group.rows.end(), betterCandidate);
+        if (group.rows.isEmpty())
+            continue;
+
+        // A precise multi-term hit must outrank any volume of generic
+        // single-term hits. Corroborating rows are only a tie-breaker after
+        // the best individual evidence strength has been compared.
+        group.bestScore = group.rows.first().score;
         const int limit = qMin(4, group.rows.size());
-        for (int i = 0; i < limit; ++i)
-            group.score += group.rows.at(i).score;
-        group.score += limit * 5;
+        for (int i = 1; i < limit; ++i)
+            group.supportScore += group.rows.at(i).score;
+        group.supportScore += limit * 5;
     }
     return groups;
 }
 
 bool betterGroup(const EvidenceGroup &left, const EvidenceGroup &right)
 {
-    if (left.score != right.score)
-        return left.score > right.score;
+    if (left.bestScore != right.bestScore)
+        return left.bestScore > right.bestScore;
+    if (left.supportScore != right.supportScore)
+        return left.supportScore > right.supportScore;
     if (left.rows.size() != right.rows.size())
         return left.rows.size() > right.rows.size();
     if (left.document != right.document)
