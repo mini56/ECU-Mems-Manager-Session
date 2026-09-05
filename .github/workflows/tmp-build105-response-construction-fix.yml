@@ -1,0 +1,191 @@
+name: TMP BUILD105 Response Construction Fix
+
+on:
+  push:
+    branches: [tmp-build105-response-construction-fix]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: tmp-build105-response-construction-fix
+  cancel-in-progress: false
+
+env:
+  BUILD105_SHA: '1b106eed05e1fd665b857f73a719f02ee6b6b2ac'
+  BUILD105_RUN_ID: '33956856201'
+  BUILD105_ARTIFACT_ID: '9966706296'
+  BUILD105_ARTIFACT_NAME: 'ECU-MEMS-Manager-x64-BUILD-105-v1.0.105-CLEAN-V2'
+  BUILD105_ARTIFACT_DIGEST: 'sha256:6a2c160b2f32dc5a459266a3c99515ad514530837d366721967a8391ecb8e000'
+  PACK001_RUN_ID: '33847448261'
+  PACK001_ARTIFACT_ID: '9927059742'
+  PACK001_ARTIFACT_NAME: 'MEMSLibrary-Pack001-33847448261'
+  PACK001_DIGEST: 'sha256:ffa9c42783fe443ffc3949cf2166083291adb08505b3fca228b03003a904698a'
+  PACK001_SQLITE_SHA256: '827208b703324335828d72093994ec5f7bf9e0a6fd0cd3b0082d033bfa38628b'
+  CORRECTED_DLL_RUN_ID: '33953367833'
+  CORRECTED_DLL_ARTIFACT_ID: '9965560001'
+  CORRECTED_DLL_ARTIFACT_NAME: 'MEMSLibrary-DLL-Provenance-33953367833'
+  CORRECTED_DLL_DIGEST: 'sha256:f6987c821d312a505019e02cfdd3b254bc04e1a3b86657fc1f3f87dd3e99c491'
+  CORRECTED_DLL_SHA256: '77d73dd7c64fa2271fa26bb5d724b1c3b0c343c0669af3af5647236546437b7a'
+  ORT_GENAI_VERSION: '0.14.0'
+  ORT_GENAI_WIN_X64_SHA256: '8a303e52dc7be8fb2a5331929af451a25ac59774102d7fd09ef673adc85c5ebf'
+  PYTHONUTF8: '1'
+  PYTHONIOENCODING: 'utf-8'
+
+jobs:
+  response-construction:
+    runs-on: windows-2022
+    timeout-minutes: 45
+    steps:
+      - name: Checkout isolated response construction branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Guard BUILD105 remains untouched
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $current=(git ls-remote origin refs/heads/MEMSX64).Split("`t")[0]
+          if($current -ne $env:BUILD105_SHA){throw "MEMSX64 changed during response validation: $current"}
+          git merge-base --is-ancestor $env:BUILD105_SHA HEAD
+          if($LASTEXITCODE -ne 0){throw 'Fix branch is not based on BUILD105'}
+          if(-not (Select-String -Path expert/IaMemsLibraryIntegration.cpp -Pattern 'if \(library\.provenanceFiltered\)' -Quiet)){throw 'Verified-proof isolation fix missing'}
+          if(Select-String -Path expert/LocalAiClient.cpp -Pattern 'emit responseReady\(grounding\);' -Quiet){throw 'Raw documentary grounding passthrough still present'}
+          if(-not (Select-String -Path expert/LocalAiClient.cpp -Pattern 'Réponse documentaire attendue' -Quiet)){throw 'Documentary answer construction prompt missing'}
+          Write-Host "BUILD105_RESPONSE_FIX_GUARD_PASS memsx64=$current head=$(git rev-parse HEAD)"
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Qt 5.15.2 MSVC x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python -m pip install --disable-pip-version-check "aqtinstall==3.3.0"
+          $sevenZip=(Get-Command 7z.exe -ErrorAction Stop).Source
+          if(Test-Path C:\Qt){Remove-Item C:\Qt -Recurse -Force -ErrorAction SilentlyContinue}
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
+          if($LASTEXITCODE -ne 0){throw "Qt install failed $LASTEXITCODE"}
+
+      - name: Download ONNX Runtime GenAI development files
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $archive=Join-Path $env:RUNNER_TEMP "onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          $extract=Join-Path $env:RUNNER_TEMP 'genai-dev'
+          curl.exe -L --fail --retry 3 --retry-all-errors --retry-delay 2 -o $archive "https://github.com/microsoft/onnxruntime-genai/releases/download/v$env:ORT_GENAI_VERSION/onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          if($LASTEXITCODE -ne 0){throw 'GenAI download failed'}
+          if((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:ORT_GENAI_WIN_X64_SHA256){throw 'GenAI SHA mismatch'}
+          Expand-Archive $archive $extract -Force
+          $header=Get-ChildItem $extract -Recurse -File -Filter ort_genai_c.h | Select-Object -First 1
+          $lib=Get-ChildItem $extract -Recurse -File -Filter onnxruntime-genai.lib | Select-Object -First 1
+          if(-not $header -or -not $lib){throw 'GenAI development files incomplete'}
+          "ORT_GENAI_INCLUDE_DIR=$($header.DirectoryName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "ORT_GENAI_LIBRARY=$($lib.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Download exact BUILD105 model, Pack001 and corrected MEMSLibrary DLL
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          function Assert-Artifact($id,$name,$digest){
+            $m=gh api "repos/$env:GITHUB_REPOSITORY/actions/artifacts/$id" | ConvertFrom-Json
+            if($m.name -ne $name -or $m.digest -ne $digest -or $m.expired){throw "Artifact pin failed: $id"}
+          }
+          Assert-Artifact $env:BUILD105_ARTIFACT_ID $env:BUILD105_ARTIFACT_NAME $env:BUILD105_ARTIFACT_DIGEST
+          Assert-Artifact $env:PACK001_ARTIFACT_ID $env:PACK001_ARTIFACT_NAME $env:PACK001_DIGEST
+          Assert-Artifact $env:CORRECTED_DLL_ARTIFACT_ID $env:CORRECTED_DLL_ARTIFACT_NAME $env:CORRECTED_DLL_DIGEST
+          gh run download $env:BUILD105_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:BUILD105_ARTIFACT_NAME --dir build105-package
+          gh run download $env:PACK001_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:PACK001_ARTIFACT_NAME --dir pack001
+          gh run download $env:CORRECTED_DLL_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:CORRECTED_DLL_ARTIFACT_NAME --dir corrected-dll
+
+          $modelConfig=Get-ChildItem build105-package -Recurse -File -Filter genai_config.json | Select-Object -First 1
+          $runtime=Get-ChildItem build105-package -Recurse -File -Filter onnxruntime-genai.dll | Select-Object -First 1
+          $ort=Get-ChildItem build105-package -Recurse -File -Filter onnxruntime.dll | Select-Object -First 1
+          $db=Get-ChildItem pack001 -Recurse -File -Filter knowledge.sqlite | Select-Object -First 1
+          $dll=Get-ChildItem corrected-dll -Recurse -File -Filter MEMSLibrary.dll | Select-Object -First 1
+          if(-not $modelConfig -or -not $runtime -or -not $ort -or -not $db -or -not $dll){throw 'Pinned response runtime inputs incomplete'}
+          if((Get-FileHash $db.FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:PACK001_SQLITE_SHA256){throw 'Pack001 SQLite SHA mismatch'}
+          if((Get-FileHash $dll.FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:CORRECTED_DLL_SHA256){throw 'Corrected MEMSLibrary DLL SHA mismatch'}
+          "MEMS_AI_MODEL=$($modelConfig.Directory.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "MEMS_AI_RUNTIME=$($runtime.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "BUILD105_RUNTIME_DIR=$($runtime.Directory.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "PACK_ROOT=$($db.Directory.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "MEMSLIBRARY_DLL=$($dll.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host 'PINNED_BUILD105_RESPONSE_INPUTS_PASS'
+
+      - name: Compile complete application with response fix
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          cmake -S . -B build-app -A x64 `
+            -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
+            -DMEMS_USE_ONNX_GENAI=ON `
+            -DORT_GENAI_INCLUDE_DIR="$env:ORT_GENAI_INCLUDE_DIR" `
+            -DORT_GENAI_LIBRARY="$env:ORT_GENAI_LIBRARY" `
+            -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
+            -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF
+          if($LASTEXITCODE -ne 0){throw "Application configure failed $LASTEXITCODE"}
+          cmake --build build-app --config Release --target ecu_mems_manager --parallel
+          if($LASTEXITCODE -ne 0){throw "Application compile failed $LASTEXITCODE"}
+          Write-Host 'BUILD105_RESPONSE_FIX_APP_COMPILE_PASS'
+
+      - name: Build end-to-end MEMSLibrary to Qwen response harness
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          cmake -S expert/endtoend-response-selftest -B build-e2e-response -A x64 `
+            -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
+            -DORT_GENAI_INCLUDE_DIR="$env:ORT_GENAI_INCLUDE_DIR" `
+            -DORT_GENAI_LIBRARY="$env:ORT_GENAI_LIBRARY"
+          if($LASTEXITCODE -ne 0){throw "E2E configure failed $LASTEXITCODE"}
+          cmake --build build-e2e-response --config Release --parallel
+          if($LASTEXITCODE -ne 0){throw "E2E compile failed $LASTEXITCODE"}
+
+      - name: Run real Pack001 to Qwen response construction test
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Continue'
+          $env:PATH="C:\Qt\5.15.2\msvc2019_64\bin;$env:BUILD105_RUNTIME_DIR;$env:PATH"
+          $exe=(Resolve-Path 'build-e2e-response\Release\ia_mems_e2e_response_selftest.exe').Path
+          & $exe $env:MEMSLIBRARY_DLL $env:PACK_ROOT 2>&1 | Tee-Object -FilePath 'build105-response-construction-e2e.txt'
+          $code=$LASTEXITCODE
+          Set-Content 'build105-response-construction-exit.txt' $code -Encoding ascii
+          Write-Host "BUILD105_RESPONSE_CONSTRUCTION_EXIT=$code"
+          exit 0
+
+      - name: Extract response proof
+        if: always()
+        shell: pwsh
+        run: |
+          if(Test-Path 'build105-response-construction-e2e.txt'){
+            Select-String -Path 'build105-response-construction-e2e.txt' -Pattern 'E2E_PROOF_|ANSWER_STAGE_|E2E_.*_PASS|IA_MEMSLIBRARY_QWEN_RESPONSE_CONSTRUCTION_PASS|FAIL E2E RESPONSE' |
+              ForEach-Object {$_.Line} | Set-Content 'build105-response-construction-summary.txt' -Encoding utf8
+            Get-Content 'build105-response-construction-summary.txt'
+          }
+
+      - name: Upload response construction proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: BUILD105-Response-Construction-${{ github.run_id }}
+          path: |
+            build105-response-construction-e2e.txt
+            build105-response-construction-summary.txt
+            build105-response-construction-exit.txt
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Require correct constructed answers
+        shell: pwsh
+        run: |
+          if(-not(Test-Path 'build105-response-construction-exit.txt')){throw 'Response construction exit proof missing'}
+          $code=[int](Get-Content 'build105-response-construction-exit.txt' -Raw).Trim()
+          if($code -ne 0){throw "Response construction test failed (code $code)"}
+          Write-Host 'BUILD105_RESPONSE_CONSTRUCTION_FIX_PASS'
