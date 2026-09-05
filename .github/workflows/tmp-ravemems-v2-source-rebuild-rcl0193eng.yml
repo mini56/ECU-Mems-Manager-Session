@@ -1,0 +1,238 @@
+name: TEMP RAVEMEMS V2 source rebuild RCL0193ENG pilot
+
+on:
+  push:
+    branches: [tmp-ravemems-v2-source-rebuild]
+    paths:
+      - 'ravemems/v2/source_rebuild_visual_policy.py'
+      - '.github/workflows/tmp-ravemems-v2-source-rebuild-rcl0193eng.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  rcl0193eng-source-rebuild-pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      BASE_ENGINE_SHA: '4942f1e7bd11bddf3c0f4cf9bcc5cbe0b6e11c4d'
+      PROTECTED_MEMSX64: '1b106eed05e1fd665b857f73a719f02ee6b6b2ac'
+      SOURCE_MAIN_COMMIT: '643de091b474f4e27917a065bdf46d5a0c764276'
+      SOURCE_PATH: 'rave/xn/wmxn990e.pdf'
+      SOURCE_BLOB: '82263eb36bb194dfa969d0471d10ef11078ce521'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Guard source-rebuild scope and production
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
+          git cat-file -e "$BASE_ENGINE_SHA^{commit}"
+          changed="$(git diff --name-only "$BASE_ENGINE_SHA..HEAD")"
+          printf '%s\n' "$changed"
+          unexpected="$(printf '%s\n' "$changed" | grep -Ev '^(ravemems/v2/source_rebuild_visual_policy\.py|\.github/workflows/tmp-ravemems-v2-source-rebuild-rcl0193eng\.yml)$' || true)"
+          test -z "$unexpected" || { echo "Unexpected source-rebuild files:"; echo "$unexpected"; exit 1; }
+          echo "MEMSX64_105_PROTECTED_PASS $PROTECTED_MEMSX64"
+          echo "SOURCE_REBUILD_SCOPE_PASS"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Compile source-rebuild policy and install pinned renderer
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="ravemems/v2:.github/pass2" python -m py_compile \
+            ravemems/v2/source_rebuild_visual_policy.py \
+            ravemems/v2/core_extract.py \
+            ravemems/v2/reading_order.py \
+            .github/pass2/generic_precise_visual_extract.py \
+            .github/pass2/ravemems_generic_precise_extract.py
+          python -m pip install --disable-pip-version-check 'PyMuPDF==1.26.4'
+          python - <<'PY'
+          import fitz
+          assert fitz.VersionBind == '1.26.4', fitz.VersionBind
+          print('PYMUPDF_PIN_PASS', fitz.VersionBind)
+          PY
+
+      - name: Fetch exact RCL0193ENG source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "$SOURCE_MAIN_COMMIT"
+          test "$(git rev-parse FETCH_HEAD)" = "$SOURCE_MAIN_COMMIT"
+          test "$(git rev-parse "$SOURCE_MAIN_COMMIT:$SOURCE_PATH")" = "$SOURCE_BLOB"
+          mkdir -p "$RUNNER_TEMP/ravemems-source"
+          git show "$SOURCE_MAIN_COMMIT:$SOURCE_PATH" > "$RUNNER_TEMP/ravemems-source/wmxn990e.pdf"
+          test -s "$RUNNER_TEMP/ravemems-source/wmxn990e.pdf"
+          echo "RCL0193ENG_SOURCE_PASS $SOURCE_BLOB"
+
+      - name: Extract RCL0193ENG with source-rebuild raster policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/rcl0193eng-source-rebuild"
+          rm -rf "$out"
+          mkdir -p "$out"
+          PYTHONPATH="ravemems/v2:.github/pass2" python - \
+            "$RUNNER_TEMP/ravemems-source/wmxn990e.pdf" "$out" \
+            "$SOURCE_MAIN_COMMIT" "$SOURCE_BLOB" "$SOURCE_PATH" <<'PY'
+          import sys
+          import ravemems_generic_precise_extract as generic
+          from source_rebuild_visual_policy import install_source_rebuild_visual_policy
+
+          pdf, out, source_commit, source_blob, source_path = sys.argv[1:]
+          install_source_rebuild_visual_policy(
+              generic.pe,
+              header_ratio=0.075,
+              repeated_small_min_pages=5,
+              repeated_small_max_dimension=120.0,
+              repeated_small_max_area_ratio=0.02,
+          )
+          sys.argv = [
+              'ravemems-source-rebuild',
+              '--pdf', pdf,
+              '--schema', 'ravemems/v2/schema.sql',
+              '--out', out,
+              '--source-relative-path', source_path,
+              '--source-commit', source_commit,
+              '--source-blob-sha', source_blob,
+          ]
+          raise SystemExit(generic.main())
+          PY
+          test -s "$out/ravemems_v2.sqlite"
+          test -s "$out/manifest.json"
+
+      - name: Gate semantics and visual policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/rcl0193eng-source-rebuild"
+          pdf="$RUNNER_TEMP/ravemems-source/wmxn990e.pdf"
+          python - "$out" "$pdf" <<'PY'
+          import json, sqlite3, sys
+          from pathlib import Path
+          import fitz
+
+          out = Path(sys.argv[1])
+          pdf = Path(sys.argv[2])
+          db = sqlite3.connect(out / 'ravemems_v2.sqlite')
+          manifest = json.loads((out / 'manifest.json').read_text(encoding='utf-8'))
+
+          assert manifest['document_kind'] == 'workshop_manual', manifest['document_kind']
+          assert manifest['publication_code'] == 'RCL0193ENG', manifest.get('publication_code')
+          assert db.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
+          assert db.execute('PRAGMA foreign_key_check').fetchall() == []
+
+          # Text/procedure extraction must not change in this visual-only pilot.
+          counts = manifest['counts']
+          assert counts['ravemems_operation'] == 201, counts
+          assert counts['ravemems_phase'] == 397, counts
+          assert counts['ravemems_step'] == 3104, counts
+
+          op = db.execute(
+              "SELECT operation_key,title_source FROM ravemems_operation WHERE manufacturer_operation_no='12.21.28'"
+          ).fetchone()
+          assert op is not None, 'operation 12.21.28 missing'
+          assert 'PRIMARY GEAR END-FLOAT' in (op[1] or '').upper(), op
+          step_rows = db.execute(
+              "SELECT s.instruction_source FROM ravemems_step s JOIN ravemems_phase p ON p.phase_key=s.phase_key WHERE p.operation_key=? ORDER BY p.sequence_no,s.sequence_no",
+              (op[0],),
+          ).fetchall()
+          procedure = '\n'.join((row[0] or '') for row in step_rows)
+          assert 'Using feeler gauges' in procedure, procedure
+          assert '0.089 to 0.165 mm' in procedure, procedure
+
+          page_key = db.execute('SELECT page_key FROM ravemems_page WHERE physical_page=53').fetchone()[0]
+          rows = db.execute(
+              'SELECT visual_key,source_bbox_json,crop_bbox_json,relative_path FROM ravemems_visual WHERE page_key=? ORDER BY visual_key',
+              (page_key,),
+          ).fetchall()
+          assert len(rows) == 1, rows
+          visual_key, source_json, crop_json, relative_path = rows[0]
+          assert visual_key == 'VIS_P0053_001', rows[0]
+          source_bbox = json.loads(source_json)
+          crop_bbox = json.loads(crop_json)
+          assert source_bbox == crop_bbox, (source_bbox, crop_bbox)
+          expected = [63.889892578125, 210.61001586914062, 252.04989624023438, 502.45001220703125]
+          assert all(abs(a-b) < 0.02 for a,b in zip(source_bbox, expected)), source_bbox
+          assert Path(out / relative_path).is_file(), relative_path
+
+          with fitz.open(pdf) as source_doc:
+              page = source_doc[52]
+              header_limit = float(page.rect.height) * 0.075
+              assert source_bbox[3] > header_limit
+              # Source fixture proves the old false ENGINE icon is in the header.
+              engine_icon = None
+              technical = None
+              for image in page.get_images(full=True):
+                  xref = int(image[0])
+                  for raw in page.get_image_rects(xref):
+                      rect = fitz.Rect(raw) & page.rect
+                      if rect.y1 <= header_limit:
+                          engine_icon = [float(v) for v in rect]
+                      elif rect.height > 200:
+                          technical = [float(v) for v in rect]
+              assert engine_icon is not None, 'page 53 header fixture missing'
+              assert technical is not None, 'page 53 technical fixture missing'
+              assert all(abs(a-b) < 0.02 for a,b in zip(source_bbox, technical)), (source_bbox, technical)
+
+          # The historical 738 visuals included repeated section pictograms.
+          visual_count = db.execute('SELECT COUNT(*) FROM ravemems_visual').fetchone()[0]
+          assert 450 <= visual_count < 738, visual_count
+          mismatched_crop = 0
+          header_visuals = 0
+          with fitz.open(pdf) as source_doc:
+              page_heights = {i+1: float(source_doc[i].rect.height) for i in range(source_doc.page_count)}
+          for physical, src, crop in db.execute(
+              'SELECT p.physical_page,v.source_bbox_json,v.crop_bbox_json FROM ravemems_visual v JOIN ravemems_page p ON p.page_key=v.page_key'
+          ):
+              s = json.loads(src); c = json.loads(crop)
+              if s != c:
+                  mismatched_crop += 1
+              if s[3] <= page_heights[int(physical)] * 0.075:
+                  header_visuals += 1
+          assert mismatched_crop == 0, mismatched_crop
+          assert header_visuals == 0, header_visuals
+
+          summary = {
+              'publication': 'RCL0193ENG',
+              'visual_count_before_historical': 738,
+              'visual_count_source_rebuild': visual_count,
+              'page53_visual_key': visual_key,
+              'page53_source_bbox': source_bbox,
+              'page53_crop_bbox': crop_bbox,
+              'page53_header_icon_rejected': True,
+              'raster_extra_margin_points': 0.0,
+              'operation_12_21_28_preserved': True,
+              'value_0_089_to_0_165_mm_preserved': True,
+              'sqlite_integrity': 'ok',
+          }
+          (out / 'source_rebuild_visual_policy_summary.json').write_text(
+              json.dumps(summary, indent=2) + '\n', encoding='utf-8'
+          )
+          print('RCL0193ENG_SEMANTICS_UNCHANGED_PASS operations=201 phases=397 steps=3104')
+          print('RCL0193ENG_PAGE53_ENGINE_ICON_REJECTED_PASS')
+          print('RCL0193ENG_PAGE53_TECHNICAL_VISUAL_PASS', visual_key)
+          print('RCL0193ENG_PAGE53_EXACT_RASTER_CROP_PASS margin=0')
+          print('RCL0193ENG_SOURCE_REBUILD_VISUAL_COUNT', visual_count)
+          print('RCL0193ENG_SOURCE_REBUILD_SQLITE_PASS')
+          db.close()
+          PY
+          mkdir -p "$out/pilot_review"
+          cp "$out/assets/VIS_P0053_001.png" "$out/pilot_review/RCL0193ENG-p53-primary-gear-end-float.png"
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
+
+      - name: Upload source-rebuild pilot artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAVEMEMS-V2-SOURCE-REBUILD-RCL0193ENG-PILOT
+          path: ${{ runner.temp }}/rcl0193eng-source-rebuild
+          if-no-files-found: warn
+          retention-days: 14
