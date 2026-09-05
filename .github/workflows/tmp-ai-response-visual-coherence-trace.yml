@@ -1,0 +1,186 @@
+name: TMP IA Response Visual Coherence Trace
+
+on:
+  push:
+    branches:
+      - tmp-ai-response-visual-coherence-trace
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  response-visual-coherence-windows-x64:
+    runs-on: windows-2022
+    timeout-minutes: 45
+    env:
+      PROTECTED_BUILD103: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+      BRIDGE_BASE: '35c539bfa7c64d416a202e66dc913904cbe67fd3'
+      PACK001_CHECKPOINT: '9cf3d00840cec1749ef9358f708d3e68a2c8bc4d'
+      VISUAL_RUN_ID: '33524210118'
+      VISUAL_ARTIFACT_NAME: 'ravemems-runtime-migration-simulation'
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: 'utf-8'
+
+    steps:
+      - name: Checkout dedicated coherence branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Guard protected production and validated ancestry
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $memsx64 = (git ls-remote origin refs/heads/MEMSX64).Split("`t")[0]
+          if ($memsx64 -ne $env:PROTECTED_BUILD103) { throw "MEMSX64 moved: $memsx64" }
+          git merge-base --is-ancestor $env:BRIDGE_BASE HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'Coherence branch is not based on validated IA MEMSLibrary bridge' }
+          git merge-base --is-ancestor $env:PACK001_CHECKPOINT HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'Coherence branch is not based on validated Pack001 checkpoint' }
+          Write-Host "COHERENCE_GUARD_PASS memsx64=$memsx64 bridge=$env:BRIDGE_BASE pack001=$env:PACK001_CHECKPOINT head=$(git rev-parse HEAD)"
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Qt 5.15.2 MSVC 2019 x64 Core
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install --disable-pip-version-check "aqtinstall==3.3.0"
+          $sevenZip = (Get-Command 7z.exe -ErrorAction Stop).Source
+          if (Test-Path 'C:\Qt') { Remove-Item 'C:\Qt' -Recurse -Force -ErrorAction SilentlyContinue }
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -O C:\Qt --external "$sevenZip"
+          if ($LASTEXITCODE -ne 0) { throw "aqtinstall failed: $LASTEXITCODE" }
+
+      - name: Download validated RAVEMEMS V2 47-PDF source artifact
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          gh run download 33810202288 --repo mini56/ECU-Mems-Manager-Session --name RAVEMEMS-V2-FULL-CORPUS-GENERIC-33810202288 --dir source47
+          if ($LASTEXITCODE -ne 0) { throw "RAVEMEMS source artifact download failed: $LASTEXITCODE" }
+          $dbs = Get-ChildItem source47 -Recurse -Filter ravemems_v2.sqlite
+          if ($dbs.Count -ne 47) { throw "Expected 47 source SQLite databases, found $($dbs.Count)" }
+          Write-Host "COHERENCE_SOURCE47_PASS databases=$($dbs.Count)"
+
+      - name: Rebuild exact real MEMSLibrary Pack001
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python tools/build_memslibrary_pack.py source47 pack001 --pack-id MEMSLibrary_Pack_001
+          if ($LASTEXITCODE -ne 0) { throw "Pack001 rebuild failed: $LASTEXITCODE" }
+          @'
+          import sqlite3
+          cx=sqlite3.connect('pack001/knowledge.sqlite')
+          assert cx.execute('pragma integrity_check').fetchone()[0]=='ok'
+          assert cx.execute('pragma foreign_key_check').fetchall()==[]
+          assert cx.execute('select count(*) from ravemems_document').fetchone()[0]==47
+          print('COHERENCE_PACK001_PASS docs=47')
+          '@ | python -
+
+      - name: Build MEMSLibrary ABI2 x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake -S memslibrary -B build-memslibrary -A x64
+          if ($LASTEXITCODE -ne 0) { throw "MEMSLibrary configure failed: $LASTEXITCODE" }
+          cmake --build build-memslibrary --config Release --parallel
+          if ($LASTEXITCODE -ne 0) { throw "MEMSLibrary build failed: $LASTEXITCODE" }
+
+      - name: Download and stage exact validated visual runtime
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $visual = '${{ github.workspace }}\visual-runtime'
+          New-Item -ItemType Directory -Path $visual -Force | Out-Null
+          gh run download $env:VISUAL_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:VISUAL_ARTIFACT_NAME --dir $visual
+          if ($LASTEXITCODE -ne 0) { throw "Visual runtime download failed: $LASTEXITCODE" }
+          $catalog = Get-ChildItem $visual -Recurse -File -Filter 'runtime_visual_catalog.json' | Select-Object -First 1
+          $runtimeFiles = Get-ChildItem $visual -Recurse -Directory -Filter 'runtime_files' | Select-Object -First 1
+          if (-not $catalog -or -not $runtimeFiles) { throw 'Validated visual runtime layout incomplete' }
+          $reference = '${{ github.workspace }}\database\reference'
+          New-Item -ItemType Directory -Path $reference -Force | Out-Null
+          Copy-Item $catalog.FullName (Join-Path $reference 'runtime_visual_catalog.json') -Force
+          Copy-Item "$($runtimeFiles.FullName)\*" $reference -Recurse -Force
+          $env:REFERENCE_VALIDATE = $reference
+          @'
+          import json,os
+          from pathlib import Path
+          root=Path(os.environ['REFERENCE_VALIDATE'])
+          data=json.loads((root/'runtime_visual_catalog.json').read_text(encoding='utf-8'))
+          assert len(data['entries'])==1935
+          assert data['ravemems_occurrences']==1794
+          print('COHERENCE_VISUAL_RUNTIME_PASS entries=1935 ravemems=1794')
+          '@ | python -
+
+      - name: Apply exact implicit visual routing used by validated test package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python tools/tmp_patch_ia_implicit_visual.py
+          if ($LASTEXITCODE -ne 0) { throw "Implicit visual patch failed: $LASTEXITCODE" }
+          $source = Get-Content 'expert/IaMemsDiagramCatalog.cpp' -Raw -Encoding UTF8
+          if ($source -notmatch 'strongMatch') { throw 'Implicit visual routing patch absent' }
+          Write-Host 'COHERENCE_IMPLICIT_VISUAL_PATCH_PASS'
+
+      - name: Build response visual coherence self-test
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake -S coherence-test -B build-coherence -A x64 -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64"
+          if ($LASTEXITCODE -ne 0) { throw "Coherence test configure failed: $LASTEXITCODE" }
+          cmake --build build-coherence --config Release --parallel
+          if ($LASTEXITCODE -ne 0) { throw "Coherence test build failed: $LASTEXITCODE" }
+
+      - name: Run real response versus visual source comparison
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $env:PATH = "C:\Qt\5.15.2\msvc2019_64\bin;$env:PATH"
+          $exe = (Resolve-Path 'build-coherence\Release\ia_response_visual_coherence_selftest.exe').Path
+          $dll = (Resolve-Path 'build-memslibrary\Release\MEMSLibrary.dll').Path
+          $pack = (Resolve-Path 'pack001').Path
+          $reference = (Resolve-Path 'database\reference').Path
+          & $exe $dll $pack $reference 2>&1 | Tee-Object -FilePath 'response-visual-coherence-trace.txt'
+          $code = $LASTEXITCODE
+          Set-Content -Path 'response-visual-coherence-exit.txt' -Value $code -Encoding ascii
+          Write-Host "COHERENCE_SELFTEST_EXIT=$code"
+          exit 0
+
+      - name: Extract comparison summary
+        if: always()
+        shell: pwsh
+        run: |
+          if (Test-Path 'response-visual-coherence-trace.txt') {
+            Select-String -Path 'response-visual-coherence-trace.txt' -Pattern 'COHERENCE_CASE_BEGIN|QUESTION |RESPONSE_SOURCES|VISUAL key=|VISUAL none|VISUAL_CONTEXT|COHERENCE_COMPARE|COHERENCE_VERDICT|COHERENCE_SUMMARY|IA_RESPONSE_VISUAL_COHERENCE_' |
+              ForEach-Object { $_.Line } | Set-Content 'response-visual-coherence-summary.txt' -Encoding utf8
+            Get-Content 'response-visual-coherence-summary.txt'
+          }
+
+      - name: Upload response visual coherence proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: IA-Response-Visual-Coherence-${{ github.run_id }}
+          path: |
+            response-visual-coherence-trace.txt
+            response-visual-coherence-summary.txt
+            response-visual-coherence-exit.txt
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Fail run if response and visual routing are incoherent
+        if: always()
+        shell: pwsh
+        run: |
+          if (-not (Test-Path 'response-visual-coherence-exit.txt')) { throw 'Coherence test exit proof missing' }
+          $code = [int](Get-Content 'response-visual-coherence-exit.txt' -Raw).Trim()
+          if ($code -ne 0) { throw "Response/visual coherence test detected routing divergence (code $code)" }
+          Write-Host 'IA_RESPONSE_VISUAL_COHERENCE_PASS'
