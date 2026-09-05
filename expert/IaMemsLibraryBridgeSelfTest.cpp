@@ -13,6 +13,32 @@ bool require(bool condition, const QString &message, QTextStream &err)
     return false;
 }
 
+void printDiagnosticCase(const QString &name,
+                         const QString &question,
+                         const QStringList &keywords,
+                         QTextStream &out)
+{
+    out << "DIAG_CASE_BEGIN name=" << name << Qt::endl;
+    out << "DIAG_QUESTION " << question << Qt::endl;
+    out << "DIAG_KEYWORDS " << keywords.join(QStringLiteral(" | ")) << Qt::endl;
+
+    const IaMemsLibraryGrounding grounding = IaMemsLibraryBridge::retrieve(question, keywords);
+    const bool expectedPrimaryPage = grounding.text.contains(QStringLiteral("DOC_RCL0193ENG"))
+        && grounding.text.contains(QStringLiteral("page 53"));
+    const bool expectedAxialValue = grounding.text.contains(QStringLiteral("0.089"))
+        || grounding.text.contains(QStringLiteral("0.165"));
+
+    out << "DIAG_RESULT ready=" << (grounding.libraryReady ? 1 : 0)
+        << " count=" << grounding.resultCount
+        << " rcl0193_p53=" << (expectedPrimaryPage ? 1 : 0)
+        << " axial_value=" << (expectedAxialValue ? 1 : 0)
+        << Qt::endl;
+    out << "DIAG_GROUNDING_BEGIN" << Qt::endl;
+    out << grounding.text << Qt::endl;
+    out << "DIAG_GROUNDING_END" << Qt::endl;
+    out << "DIAG_CASE_END name=" << name << Qt::endl;
+}
+
 } // namespace
 
 int main(int argc, char *argv[])
@@ -62,9 +88,26 @@ int main(int argc, char *argv[])
         return 4;
     }
 
+    // Diagnostic only: these two cases mirror natural French questions as they reach
+    // IaMemsLibraryBridge after the current MEMS Manager keyword enrichment.  They do
+    // not change pass/fail status; the trace shows exactly what the bridge selected.
+    printDiagnosticCase(
+        QStringLiteral("french_short_axial"),
+        QStringLiteral("Quel est le jeu axial du pignon primaire ?"),
+        {QStringLiteral("jeu"), QStringLiteral("axial"), QStringLiteral("pignon"), QStringLiteral("primaire"),
+         QStringLiteral("primary"), QStringLiteral("end"), QStringLiteral("float")},
+        out);
+
+    printDiagnosticCase(
+        QStringLiteral("french_primary_removal"),
+        QStringLiteral("Comment demonter le pignon primaire sur le moteur ?"),
+        {QStringLiteral("comment"), QStringLiteral("demonter"), QStringLiteral("pignon"),
+         QStringLiteral("primaire"), QStringLiteral("moteur"), QStringLiteral("primary")},
+        out);
+
     out << "IA_MEMSLIBRARY_BRIDGE_PASS "
         << "primary=DOC_RCL0193ENG:p53 "
         << "battery=DOC_RCL0221ENG:p20 "
-        << "provenance=1 no_hit_safe=1" << Qt::endl;
+        << "provenance=1 no_hit_safe=1 diagnostics=2" << Qt::endl;
     return 0;
 }
