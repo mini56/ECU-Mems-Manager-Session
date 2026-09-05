@@ -1,0 +1,16 @@
+name: TMP IA Clarification Test from BUILD105
+
+on:
+  push:
+    branches:
+      - tmp-ia-clarification-test-1b106ee
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  build:
+    uses: ./.github/workflows/memsx64.yml
+    with:
+      build_number: '105'
