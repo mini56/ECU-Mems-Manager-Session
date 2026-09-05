@@ -14,6 +14,7 @@ using GetAbiVersionFn = std::uint32_t (*)();
 using GetTextFn = const char* (*)();
 using ValidatePackFn = std::int32_t (*)(const wchar_t*, MEMSLibraryPackInfo*);
 using SearchPackFn = std::int32_t (*)(const wchar_t*, const char*, MEMSLibrarySearchResult*, std::uint32_t, std::uint32_t*);
+using SearchPackFilteredFn = std::int32_t (*)(const wchar_t*, const char*, const MEMSLibrarySearchFilters*, MEMSLibrarySearchResultWithProvenance*, std::uint32_t, std::uint32_t*);
 
 std::wstring executableDirectory()
 {
@@ -28,6 +29,31 @@ std::wstring executableDirectory()
 bool contains(const char* text, const char* needle)
 {
     return text && needle && std::strstr(text, needle) != nullptr;
+}
+
+template <std::size_t N>
+void setText(char (&dest)[N], const char* source)
+{
+    dest[0] = '\0';
+    if (!source) return;
+    std::strncpy(dest, source, N - 1);
+    dest[N - 1] = '\0';
+}
+
+void resetResults(std::vector<MEMSLibrarySearchResult>& results)
+{
+    for (auto& r : results) {
+        r = {};
+        r.struct_size = sizeof(r);
+    }
+}
+
+void resetProvenanceResults(std::vector<MEMSLibrarySearchResultWithProvenance>& results)
+{
+    for (auto& r : results) {
+        r = {};
+        r.struct_size = sizeof(r);
+    }
 }
 }
 
@@ -50,8 +76,9 @@ int wmain(int argc, wchar_t** argv)
     const auto role = reinterpret_cast<GetTextFn>(GetProcAddress(module, "MEMSLibrary_GetEngineRole"));
     const auto validate = reinterpret_cast<ValidatePackFn>(GetProcAddress(module, "MEMSLibrary_ValidatePack"));
     const auto search = reinterpret_cast<SearchPackFn>(GetProcAddress(module, "MEMSLibrary_SearchPack"));
-    if (!abi || !name || !role || !validate || !search) {
-        std::cerr << "FAIL required ABI2 export missing\n";
+    const auto searchFiltered = reinterpret_cast<SearchPackFilteredFn>(GetProcAddress(module, "MEMSLibrary_SearchPackFiltered"));
+    if (!abi || !name || !role || !validate || !search || !searchFiltered) {
+        std::cerr << "FAIL required ABI2/provenance export missing\n";
         FreeLibrary(module);
         return 3;
     }
@@ -72,8 +99,9 @@ int wmain(int argc, wchar_t** argv)
         return 5;
     }
 
+    // Historical ABI2 search must stay byte-contract compatible and operational.
     std::vector<MEMSLibrarySearchResult> results(16);
-    for (auto& r : results) r.struct_size = sizeof(r);
+    resetResults(results);
     std::uint32_t count = 0;
     auto searchStatus = search(argv[1], "primary gear end float", results.data(), static_cast<std::uint32_t>(results.size()), &count);
     bool foundPrimary = false;
@@ -84,12 +112,12 @@ int wmain(int argc, wchar_t** argv)
         }
     }
     if (searchStatus != MEMSLIBRARY_OK || !foundPrimary) {
-        std::cerr << "FAIL primary gear search status=" << searchStatus << " count=" << count << "\n";
+        std::cerr << "FAIL historical primary gear search status=" << searchStatus << " count=" << count << "\n";
         FreeLibrary(module);
         return 6;
     }
 
-    for (auto& r : results) { r = {}; r.struct_size = sizeof(r); }
+    resetResults(results);
     count = 0;
     searchStatus = search(argv[1], "battery restoration procedure", results.data(), static_cast<std::uint32_t>(results.size()), &count);
     bool foundBattery = false;
@@ -97,9 +125,124 @@ int wmain(int argc, wchar_t** argv)
         if (std::strcmp(results[i].document_key, "DOC_RCL0221ENG") == 0 && results[i].page_number == 20) foundBattery = true;
     }
     if (searchStatus != MEMSLIBRARY_OK || !foundBattery) {
-        std::cerr << "FAIL battery search status=" << searchStatus << " count=" << count << "\n";
+        std::cerr << "FAIL historical battery search status=" << searchStatus << " count=" << count << "\n";
         FreeLibrary(module);
         return 7;
+    }
+
+    // New additive search: exact document + language constraints and returned provenance.
+    std::vector<MEMSLibrarySearchResultWithProvenance> provenanceResults(16);
+    resetProvenanceResults(provenanceResults);
+    MEMSLibrarySearchFilters filters{};
+    filters.struct_size = sizeof(filters);
+    setText(filters.document_key, "DOC_RCL0193ENG");
+    setText(filters.source_language, "en");
+
+    count = 0;
+    auto filteredStatus = searchFiltered(argv[1], "primary gear end float", &filters,
+        provenanceResults.data(), static_cast<std::uint32_t>(provenanceResults.size()), &count);
+    bool foundFilteredPrimary = false;
+    bool foundWrongPage342 = false;
+    std::string correctRevision;
+    std::string correctKind;
+    for (std::uint32_t i = 0; i < count; ++i) {
+        const auto& r = provenanceResults[i];
+        if (std::strcmp(r.document_key, "DOC_RCL0193ENG") != 0 || std::strcmp(r.source_language, "en") != 0) {
+            std::cerr << "FAIL filtered result escaped document/language constraint\n";
+            FreeLibrary(module);
+            return 8;
+        }
+        if (r.page_number == 342) foundWrongPage342 = true;
+        if (r.page_number == 53 && (contains(r.body, "0.089") || contains(r.body, "0.165"))) {
+            foundFilteredPrimary = true;
+            correctRevision = r.revision_key;
+            correctKind = r.entity_kind;
+        }
+    }
+    if (filteredStatus != MEMSLIBRARY_OK || !foundFilteredPrimary || foundWrongPage342 || correctRevision.empty() || correctKind.empty()) {
+        std::cerr << "FAIL filtered primary provenance status=" << filteredStatus << " count=" << count
+                  << " found=" << foundFilteredPrimary << " p342=" << foundWrongPage342
+                  << " revision=" << correctRevision << " kind=" << correctKind << "\n";
+        FreeLibrary(module);
+        return 9;
+    }
+
+    // A wrong document must not leak a result from RCL0193ENG.
+    resetProvenanceResults(provenanceResults);
+    MEMSLibrarySearchFilters wrongDocument{};
+    wrongDocument.struct_size = sizeof(wrongDocument);
+    setText(wrongDocument.document_key, "DOC_RCL0221ENG");
+    setText(wrongDocument.source_language, "en");
+    count = 0;
+    filteredStatus = searchFiltered(argv[1], "primary gear end float", &wrongDocument,
+        provenanceResults.data(), static_cast<std::uint32_t>(provenanceResults.size()), &count);
+    if (filteredStatus != MEMSLIBRARY_OK || count != 0) {
+        std::cerr << "FAIL wrong-document isolation status=" << filteredStatus << " count=" << count << "\n";
+        FreeLibrary(module);
+        return 10;
+    }
+
+    // A wrong language must not silently fall back to another language.
+    resetProvenanceResults(provenanceResults);
+    MEMSLibrarySearchFilters wrongLanguage{};
+    wrongLanguage.struct_size = sizeof(wrongLanguage);
+    setText(wrongLanguage.document_key, "DOC_RCL0193ENG");
+    setText(wrongLanguage.source_language, "fr");
+    count = 0;
+    filteredStatus = searchFiltered(argv[1], "primary gear end float", &wrongLanguage,
+        provenanceResults.data(), static_cast<std::uint32_t>(provenanceResults.size()), &count);
+    if (filteredStatus != MEMSLIBRARY_OK || count != 0) {
+        std::cerr << "FAIL wrong-language isolation status=" << filteredStatus << " count=" << count << "\n";
+        FreeLibrary(module);
+        return 11;
+    }
+
+    // A wrong revision must not silently fall back to another revision.
+    resetProvenanceResults(provenanceResults);
+    MEMSLibrarySearchFilters wrongRevision{};
+    wrongRevision.struct_size = sizeof(wrongRevision);
+    setText(wrongRevision.document_key, "DOC_RCL0193ENG");
+    setText(wrongRevision.source_language, "en");
+    setText(wrongRevision.revision_key, "REVISION_DOES_NOT_EXIST");
+    count = 0;
+    filteredStatus = searchFiltered(argv[1], "primary gear end float", &wrongRevision,
+        provenanceResults.data(), static_cast<std::uint32_t>(provenanceResults.size()), &count);
+    if (filteredStatus != MEMSLIBRARY_OK || count != 0) {
+        std::cerr << "FAIL wrong-revision isolation status=" << filteredStatus << " count=" << count << "\n";
+        FreeLibrary(module);
+        return 12;
+    }
+
+    // Reapply the exact returned revision and entity kind: provenance must remain stable.
+    resetProvenanceResults(provenanceResults);
+    MEMSLibrarySearchFilters exactContext{};
+    exactContext.struct_size = sizeof(exactContext);
+    setText(exactContext.document_key, "DOC_RCL0193ENG");
+    setText(exactContext.source_language, "en");
+    setText(exactContext.revision_key, correctRevision.c_str());
+    setText(exactContext.entity_kind, correctKind.c_str());
+    count = 0;
+    filteredStatus = searchFiltered(argv[1], "primary gear end float", &exactContext,
+        provenanceResults.data(), static_cast<std::uint32_t>(provenanceResults.size()), &count);
+    bool exactPrimary = false;
+    for (std::uint32_t i = 0; i < count; ++i) {
+        const auto& r = provenanceResults[i];
+        if (std::strcmp(r.document_key, exactContext.document_key) != 0 ||
+            std::strcmp(r.revision_key, exactContext.revision_key) != 0 ||
+            std::strcmp(r.source_language, exactContext.source_language) != 0 ||
+            std::strcmp(r.entity_kind, exactContext.entity_kind) != 0) {
+            std::cerr << "FAIL exact-context provenance escaped constraint\n";
+            FreeLibrary(module);
+            return 13;
+        }
+        if (r.page_number == 53 && (contains(r.body, "0.089") || contains(r.body, "0.165"))) exactPrimary = true;
+        if (r.page_number == 342) foundWrongPage342 = true;
+    }
+    if (filteredStatus != MEMSLIBRARY_OK || !exactPrimary || foundWrongPage342) {
+        std::cerr << "FAIL exact-context primary status=" << filteredStatus << " count=" << count
+                  << " primary=" << exactPrimary << " p342=" << foundWrongPage342 << "\n";
+        FreeLibrary(module);
+        return 14;
     }
 
     MEMSLibraryPackInfo badInfo{};
@@ -108,7 +251,7 @@ int wmain(int argc, wchar_t** argv)
     if (corruptStatus == MEMSLIBRARY_OK) {
         std::cerr << "FAIL corrupt Pack002 unexpectedly accepted\n";
         FreeLibrary(module);
-        return 8;
+        return 15;
     }
 
     MEMSLibraryPackInfo recheck{};
@@ -116,12 +259,14 @@ int wmain(int argc, wchar_t** argv)
     if (validate(argv[1], &recheck) != MEMSLIBRARY_OK || recheck.document_count != 47u) {
         std::cerr << "FAIL Pack001 unavailable after corrupt Pack002 test\n";
         FreeLibrary(module);
-        return 9;
+        return 16;
     }
 
-    std::cout << "MEMSLIBRARY_PACK001_PASS abi=2 pack=" << info.pack_id
+    std::cout << "MEMSLIBRARY_PROVENANCE_PASS abi=2 pack=" << info.pack_id
               << " documents=" << info.document_count
-              << " primary=DOC_RCL0193ENG:p53 battery=DOC_RCL0221ENG:p20 corrupt_pack_isolated=1\n";
+              << " historical_primary=DOC_RCL0193ENG:p53 historical_battery=DOC_RCL0221ENG:p20"
+              << " filtered_primary=DOC_RCL0193ENG:p53 language=en revision=" << correctRevision
+              << " wrong_document=0 wrong_language=0 wrong_revision=0 p342=0 corrupt_pack_isolated=1\n";
     FreeLibrary(module);
     return 0;
 }
