@@ -239,3 +239,17 @@ Sequence imposee :
 7. tester plusieurs autres questions afin de prouver que le correctif est general ;
 8. journaliser immediatement le resultat reel ;
 9. **ne pas lancer BUILD #105** tant que la branche temporaire et les tests de chaine ne sont pas verts.
+
+## 2026-09-05 — ACTIVATION DU RAPPORT ACTIF N°2
+
+Migration de journalisation effectuee :
+- `RAPPORT_SUIVI_ECU_MEMS_MANAGER.md` reste conserve comme historique maitre n°1 ;
+- `RAPPORT_SUIVI_ECU_MEMS_MANAGER_SUITE.md` est desormais le rapport actif officiel ;
+- `tools/append_master_report.py` cible le rapport n°2 ;
+- `.github/workflows/report-master-journal.yml` ajoute et verifie le rapport n°2 ;
+- le mecanisme `.journal_queue` reste inchange dans son principe.
+
+Cette entree sert de test reel de la nouvelle cible de journalisation.
+
+PROCHAINE ACTION EXACTE : raccorder `MEMSLibrary_SearchPackFiltered(...)` au bridge IA sur branche temporaire, avec tests document/page/visuels, sans BUILD #105 avant validation verte.
+<!-- journal-entry-sha256:a5468a8fdfcb83fe3a3a77cb84dd4f9f42011253fcc690cf0b16321ef38d2d87 -->
