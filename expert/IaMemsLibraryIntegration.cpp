@@ -80,6 +80,14 @@ QString mergeGrounding(const QString &legacy, const IaMemsLibraryGrounding &libr
     const QString newGrounding = library.text.trimmed();
     if (newGrounding.isEmpty())
         return oldGrounding;
+
+    // Once MEMSLibrary has re-queried and verified the selected document,
+    // revision, language and physical page, that proof is authoritative for
+    // the documentary answer. Mixing legacy grounding back into it can
+    // reintroduce a neighbouring procedure or unrelated historical fact.
+    if (library.provenanceFiltered)
+        return newGrounding;
+
     if (oldGrounding.isEmpty() || genericInsufficientGrounding(oldGrounding))
         return newGrounding;
 
