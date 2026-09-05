@@ -1,0 +1,150 @@
+name: TMP BUILD105 Response Visual Coherence Trace
+
+on:
+  push:
+    branches:
+      - tmp-build105-response-visual-coherence-trace
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  coherence:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    env:
+      BUILD105_SHA: '1b106eed05e1fd665b857f73a719f02ee6b6b2ac'
+      CLEAN_REFERENCE_RUN_ID: '33919306584'
+      CLEAN_REFERENCE_ARTIFACT_ID: '9954393075'
+      CLEAN_REFERENCE_ARTIFACT_NAME: 'CLEAN-REFERENCE-V2-33919306584'
+      CLEAN_REFERENCE_DIGEST: 'sha256:b056ada5b925648824274f6b04cfa95b81fb6ba8bd07c101f3210757f5ef4df8'
+      PACK001_RUN_ID: '33847448261'
+      PACK001_ARTIFACT_ID: '9927059742'
+      PACK001_ARTIFACT_NAME: 'MEMSLibrary-Pack001-33847448261'
+      PACK001_DIGEST: 'sha256:ffa9c42783fe443ffc3949cf2166083291adb08505b3fca228b03003a904698a'
+      PACK001_SQLITE_SHA256: '827208b703324335828d72093994ec5f7bf9e0a6fd0cd3b0082d033bfa38628b'
+      CORRECTED_DLL_RUN_ID: '33953367833'
+      CORRECTED_DLL_ARTIFACT_ID: '9965560001'
+      CORRECTED_DLL_ARTIFACT_NAME: 'MEMSLibrary-DLL-Provenance-33953367833'
+      CORRECTED_DLL_DIGEST: 'sha256:f6987c821d312a505019e02cfdd3b254bc04e1a3b86657fc1f3f87dd3e99c491'
+      CORRECTED_DLL_SHA256: '77d73dd7c64fa2271fa26bb5d724b1c3b0c343c0669af3af5647236546437b7a'
+
+    steps:
+      - name: Checkout isolated BUILD105 trace branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Guard exact current BUILD105 without modifying MEMSX64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $current=(git ls-remote origin refs/heads/MEMSX64).Split("`t")[0]
+          if($current -ne $env:BUILD105_SHA){throw "MEMSX64 changed during trace: $current"}
+          git merge-base --is-ancestor $env:BUILD105_SHA HEAD
+          if($LASTEXITCODE -ne 0){throw 'Trace branch is not based on BUILD105'}
+          Write-Host "BUILD105_TRACE_GUARD_PASS memsx64=$current head=$(git rev-parse HEAD)"
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Qt 5.15.2 MSVC x64 Core
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python -m pip install --disable-pip-version-check "aqtinstall==3.3.0"
+          $sevenZip=(Get-Command 7z.exe -ErrorAction Stop).Source
+          if(Test-Path C:\Qt){Remove-Item C:\Qt -Recurse -Force -ErrorAction SilentlyContinue}
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -O C:\Qt --external "$sevenZip"
+          if($LASTEXITCODE -ne 0){throw "Qt install failed $LASTEXITCODE"}
+
+      - name: Download exact BUILD105 documentary and visual runtime inputs
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          function Assert-Artifact($id,$name,$digest){
+            $m=gh api "repos/$env:GITHUB_REPOSITORY/actions/artifacts/$id" | ConvertFrom-Json
+            if($m.name -ne $name -or $m.digest -ne $digest -or $m.expired){throw "Artifact pin failed: $id"}
+          }
+          Assert-Artifact $env:CLEAN_REFERENCE_ARTIFACT_ID $env:CLEAN_REFERENCE_ARTIFACT_NAME $env:CLEAN_REFERENCE_DIGEST
+          Assert-Artifact $env:PACK001_ARTIFACT_ID $env:PACK001_ARTIFACT_NAME $env:PACK001_DIGEST
+          Assert-Artifact $env:CORRECTED_DLL_ARTIFACT_ID $env:CORRECTED_DLL_ARTIFACT_NAME $env:CORRECTED_DLL_DIGEST
+          gh run download $env:CLEAN_REFERENCE_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:CLEAN_REFERENCE_ARTIFACT_NAME --dir clean-reference
+          gh run download $env:PACK001_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:PACK001_ARTIFACT_NAME --dir pack001
+          gh run download $env:CORRECTED_DLL_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:CORRECTED_DLL_ARTIFACT_NAME --dir corrected-dll
+          $catalog=Get-ChildItem clean-reference -Recurse -File -Filter runtime_visual_catalog.json | Select-Object -First 1
+          $db=Get-ChildItem pack001 -Recurse -File -Filter knowledge.sqlite | Select-Object -First 1
+          $dll=Get-ChildItem corrected-dll -Recurse -File -Filter MEMSLibrary.dll | Select-Object -First 1
+          if(-not $catalog -or -not $db -or -not $dll){throw 'Pinned BUILD105 runtime inputs incomplete'}
+          if((Get-FileHash $db.FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:PACK001_SQLITE_SHA256){throw 'Pack001 SQLite SHA mismatch'}
+          if((Get-FileHash $dll.FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:CORRECTED_DLL_SHA256){throw 'Corrected DLL SHA mismatch'}
+          "REFERENCE_ROOT=$($catalog.Directory.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "PACK_ROOT=$($db.Directory.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "MEMSLIBRARY_DLL=$($dll.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          $env:CATALOG_PATH=$catalog.FullName
+          @'
+          import json,os
+          c=json.load(open(os.environ['CATALOG_PATH'],encoding='utf-8'))
+          assert c['source_lineage']=='RAVEMEMS_V2_FINAL_33810202288'
+          assert c['entry_count']==1667
+          assert c['legacy_entries']==0
+          print('BUILD105_INPUTS_PASS visuals=1667 legacy=0')
+          '@ | python -
+
+      - name: Build exact current response visual coherence harness
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          cmake -S expert/coherence-selftest -B build-coherence -A x64 -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64"
+          if($LASTEXITCODE -ne 0){throw "Coherence configure failed $LASTEXITCODE"}
+          cmake --build build-coherence --config Release --parallel
+          if($LASTEXITCODE -ne 0){throw "Coherence build failed $LASTEXITCODE"}
+
+      - name: Run actual UI routing sequence response versus image
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Continue'
+          $env:PATH="C:\Qt\5.15.2\msvc2019_64\bin;$env:PATH"
+          $exe=(Resolve-Path 'build-coherence\Release\ia_response_visual_coherence_selftest.exe').Path
+          & $exe $env:MEMSLIBRARY_DLL $env:PACK_ROOT $env:REFERENCE_ROOT 2>&1 | Tee-Object -FilePath 'build105-response-visual-coherence.txt'
+          $code=$LASTEXITCODE
+          Set-Content 'build105-response-visual-exit.txt' $code -Encoding ascii
+          Write-Host "BUILD105_COHERENCE_EXIT=$code"
+          exit 0
+
+      - name: Extract readable coherence summary
+        if: always()
+        shell: pwsh
+        run: |
+          if(Test-Path 'build105-response-visual-coherence.txt'){
+            Select-String -Path 'build105-response-visual-coherence.txt' -Pattern 'CASE_BEGIN|QUESTION |TEXT_SOURCE|INITIAL_IMAGE|EVIDENCE_IMAGE|FINAL_IMAGE|COMPARE |VERDICT |COHERENCE_SUMMARY|IA_RESPONSE_VISUAL_COHERENCE_' |
+              ForEach-Object {$_.Line} | Set-Content 'build105-response-visual-summary.txt' -Encoding utf8
+            Get-Content 'build105-response-visual-summary.txt'
+          }
+
+      - name: Upload coherence proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: BUILD105-Response-Visual-Coherence-${{ github.run_id }}
+          path: |
+            build105-response-visual-coherence.txt
+            build105-response-visual-summary.txt
+            build105-response-visual-exit.txt
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Fail only when final displayed image disagrees with verified response source
+        if: always()
+        shell: pwsh
+        run: |
+          if(-not(Test-Path 'build105-response-visual-exit.txt')){throw 'Coherence exit proof missing'}
+          $code=[int](Get-Content 'build105-response-visual-exit.txt' -Raw).Trim()
+          if($code -ne 0){throw "BUILD105 response/image coherence defect detected (code $code)"}
+          Write-Host 'BUILD105_RESPONSE_VISUAL_COHERENCE_PASS'
