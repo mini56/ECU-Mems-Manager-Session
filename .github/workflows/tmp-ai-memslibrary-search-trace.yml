@@ -1,0 +1,128 @@
+name: TMP IA MEMSLibrary Search Trace
+
+on:
+  push:
+    branches:
+      - tmp-ai-memslibrary-search-trace
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  retrieval-trace-windows-x64:
+    runs-on: windows-2022
+    timeout-minutes: 35
+    steps:
+      - name: Checkout dedicated trace branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify protected ancestry and validated Pack001 checkpoint
+        shell: pwsh
+        run: |
+          $protected = "1d6316bd1746d6f2b4cfb751cab88d18e27ef730"
+          $pack001 = "9cf3d00840cec1749ef9358f708d3e68a2c8bc4d"
+          git merge-base --is-ancestor $protected HEAD
+          if ($LASTEXITCODE -ne 0) { throw "Trace branch is not based on protected MEMSX64 #103" }
+          git merge-base --is-ancestor $pack001 HEAD
+          if ($LASTEXITCODE -ne 0) { throw "Trace branch is not based on validated Pack001 checkpoint" }
+          Write-Host "TRACE_ANCESTRY_OK protected=$protected pack001=$pack001 head=$(git rev-parse HEAD)"
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Qt installer
+        shell: pwsh
+        run: python -m pip install --disable-pip-version-check "aqtinstall==3.3.0"
+
+      - name: Install Qt 5.15.2 MSVC 2019 x64 Core
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $sevenZip = (Get-Command 7z.exe -ErrorAction Stop).Source
+          if (Test-Path 'C:\Qt') { Remove-Item 'C:\Qt' -Recurse -Force -ErrorAction SilentlyContinue }
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -O C:\Qt --external "$sevenZip"
+          if ($LASTEXITCODE -ne 0) { throw "aqtinstall failed: $LASTEXITCODE" }
+
+      - name: Download validated RAVEMEMS V2 47-PDF source artifact
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          gh run download 33810202288 --repo mini56/ECU-Mems-Manager-Session --name RAVEMEMS-V2-FULL-CORPUS-GENERIC-33810202288 --dir source47
+          if ($LASTEXITCODE -ne 0) { throw "RAVEMEMS source artifact download failed: $LASTEXITCODE" }
+          $dbs = Get-ChildItem source47 -Recurse -Filter ravemems_v2.sqlite
+          if ($dbs.Count -ne 47) { throw "Expected 47 source SQLite databases, found $($dbs.Count)" }
+          Write-Host "TRACE_SOURCE47_OK databases=$($dbs.Count)"
+
+      - name: Rebuild real MEMSLibrary Pack001
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python tools/build_memslibrary_pack.py source47 pack001 --pack-id MEMSLibrary_Pack_001
+          if ($LASTEXITCODE -ne 0) { throw "Pack001 rebuild failed: $LASTEXITCODE" }
+          @'
+          import sqlite3
+          cx = sqlite3.connect('pack001/knowledge.sqlite')
+          assert cx.execute('pragma integrity_check').fetchone()[0] == 'ok'
+          assert cx.execute('pragma foreign_key_check').fetchall() == []
+          assert cx.execute('select count(*) from ravemems_document').fetchone()[0] == 47
+          print('TRACE_PACK001_OK docs=47')
+          '@ | python -
+
+      - name: Build MEMSLibrary ABI2 x64
+        shell: pwsh
+        run: |
+          cmake -S memslibrary -B build-memslibrary -A x64
+          if ($LASTEXITCODE -ne 0) { throw "MEMSLibrary configure failed: $LASTEXITCODE" }
+          cmake --build build-memslibrary --config Release --parallel
+          if ($LASTEXITCODE -ne 0) { throw "MEMSLibrary build failed: $LASTEXITCODE" }
+
+      - name: Build focused retrieval trace self-test
+        shell: pwsh
+        run: |
+          cmake -S bridge-test -B build-bridge-test -A x64 -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64"
+          if ($LASTEXITCODE -ne 0) { throw "Trace test configure failed: $LASTEXITCODE" }
+          cmake --build build-bridge-test --config Release --parallel
+          if ($LASTEXITCODE -ne 0) { throw "Trace test build failed: $LASTEXITCODE" }
+
+      - name: Run real Pack001 retrieval trace
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:PATH = "C:\Qt\5.15.2\msvc2019_64\bin;$env:PATH"
+          $env:MEMS_LIBRARY_TRACE = '1'
+          $exe = (Resolve-Path 'build-bridge-test\Release\ia_memslibrary_bridge_selftest.exe').Path
+          $dll = (Resolve-Path 'build-memslibrary\Release\MEMSLibrary.dll').Path
+          $pack = (Resolve-Path 'pack001').Path
+          & $exe $dll $pack 2>&1 | Tee-Object -FilePath 'memslibrary-search-trace.txt'
+          $code = $LASTEXITCODE
+          Write-Host "TRACE_SELFTEST_EXIT=$code"
+          if ($code -ne 0) { throw "IA MEMSLibrary retrieval trace self-test failed: $code" }
+
+      - name: Extract diagnostic summary
+        if: always()
+        shell: pwsh
+        run: |
+          if (Test-Path 'memslibrary-search-trace.txt') {
+            Select-String -Path 'memslibrary-search-trace.txt' -Pattern 'DIAG_|TRACE_MEMSLIBRARY_(BEGIN|QUERY|SELECT|EARLY_STOP|END)|IA_MEMSLIBRARY_BRIDGE_PASS' |
+              ForEach-Object { $_.Line } | Set-Content 'memslibrary-search-summary.txt' -Encoding utf8
+            Get-Content 'memslibrary-search-summary.txt'
+          }
+
+      - name: Upload retrieval trace proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: IA-MEMSLibrary-Search-Trace-${{ github.run_id }}
+          path: |
+            memslibrary-search-trace.txt
+            memslibrary-search-summary.txt
+          if-no-files-found: warn
+          retention-days: 14
