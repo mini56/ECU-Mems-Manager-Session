@@ -1,0 +1,151 @@
+name: TMP IA MEMSLibrary Filtered Bridge
+
+on:
+  push:
+    branches: [tmp-ai-memslibrary-filtered-bridge]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  bridge_validation:
+    runs-on: windows-2022
+    timeout-minutes: 45
+    env:
+      BASE_SHA: a55427affeec84643f916621df6247adf29e80fb
+      DLL_RUN_ID: '33953367833'
+      DLL_ARTIFACT_ID: '9965560001'
+      DLL_ARTIFACT_NAME: 'MEMSLibrary-DLL-Provenance-33953367833'
+      DLL_ARTIFACT_DIGEST: 'sha256:f6987c821d312a505019e02cfdd3b254bc04e1a3b86657fc1f3f87dd3e99c491'
+      DLL_SHA256: '77d73dd7c64fa2271fa26bb5d724b1c3b0c343c0669af3af5647236546437b7a'
+      PACK_SHA256: '827208b703324335828d72093994ec5f7bf9e0a6fd0cd3b0082d033bfa38628b'
+      CLEAN_RUN_ID: '33919306584'
+      CLEAN_ARTIFACT_ID: '9954393075'
+      CLEAN_ARTIFACT_NAME: 'CLEAN-REFERENCE-V2-33919306584'
+      CLEAN_ARTIFACT_DIGEST: 'sha256:b056ada5b925648824274f6b04cfa95b81fb6ba8bd07c101f3210757f5ef4df8'
+
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Guard exact BUILD 104 ancestry and scope
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          git merge-base --is-ancestor $env:BASE_SHA HEAD
+          if($LASTEXITCODE -ne 0){throw 'Temporary bridge branch is not based on BUILD #104'}
+          $allowed=@(
+            '.github/workflows/tmp-ai-memslibrary-filtered-bridge.yml',
+            'expert/IaMemsLibraryBridge.cpp',
+            'expert/IaMemsLibraryBridge.h',
+            'expert/IaMemsLibraryBridgeSelfTest.cpp',
+            'expert/bridge-selftest/CMakeLists.txt',
+            'memslibrary/include/MEMSLibrary.h'
+          )
+          $changed=@(git diff --name-only "$env:BASE_SHA..HEAD")
+          foreach($f in $changed){if($allowed -notcontains $f){throw "Out-of-scope file changed: $f"}}
+          foreach($required in @('expert/IaMemsLibraryBridge.cpp','expert/IaMemsLibraryBridge.h','memslibrary/include/MEMSLibrary.h')){
+            if($changed -notcontains $required){throw "Required integration file not changed: $required"}
+          }
+          if(git diff "$env:BASE_SHA..HEAD" -- CMakeLists.txt iamemstab.cpp expert/IaMemsDiagramCatalog.cpp expert/IaMemsDiagramCatalog.h expert/IaMemsLibraryIntegration.cpp){
+            throw 'Production UI/visual/integration files changed unexpectedly'
+          }
+          Write-Host "BRIDGE_SCOPE_PASS changed=$($changed.Count)"
+
+      - name: Setup Python and Qt
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Qt 5.15.2 MSVC x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python -m pip install --disable-pip-version-check "aqtinstall==3.3.0"
+          $sevenZip=(Get-Command 7z.exe -ErrorAction Stop).Source
+          if(Test-Path C:\Qt){Remove-Item C:\Qt -Recurse -Force -ErrorAction SilentlyContinue}
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -O C:\Qt --external "$sevenZip"
+          if($LASTEXITCODE -ne 0){throw "Qt install failed $LASTEXITCODE"}
+
+      - name: Download pinned corrected DLL Pack001 and clean V2 visuals
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          function Assert-Artifact($id,$name,$digest){
+            $m=gh api "repos/$env:GITHUB_REPOSITORY/actions/artifacts/$id" | ConvertFrom-Json
+            if($m.name -ne $name -or $m.digest -ne $digest -or $m.expired){throw "Artifact pin failed: $id"}
+          }
+          Assert-Artifact $env:DLL_ARTIFACT_ID $env:DLL_ARTIFACT_NAME $env:DLL_ARTIFACT_DIGEST
+          Assert-Artifact $env:CLEAN_ARTIFACT_ID $env:CLEAN_ARTIFACT_NAME $env:CLEAN_ARTIFACT_DIGEST
+          gh run download $env:DLL_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:DLL_ARTIFACT_NAME --dir corrected-dll
+          gh run download $env:CLEAN_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:CLEAN_ARTIFACT_NAME --dir clean-reference
+          $dll=Get-ChildItem corrected-dll -Recurse -File -Filter MEMSLibrary.dll | Select-Object -First 1
+          $pack=Get-ChildItem corrected-dll -Recurse -File -Filter knowledge.sqlite | Select-Object -First 1
+          $catalog=Get-ChildItem clean-reference -Recurse -File -Filter runtime_visual_catalog.json | Select-Object -First 1
+          if(-not $dll -or -not $pack -or -not $catalog){throw 'Pinned runtime inputs incomplete'}
+          if((Get-FileHash $dll.FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:DLL_SHA256){throw 'Corrected DLL SHA mismatch'}
+          if((Get-FileHash $pack.FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:PACK_SHA256){throw 'Pack001 SQLite SHA mismatch'}
+          "TEST_DLL=$($dll.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "TEST_PACK=$($pack.Directory.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "TEST_REFERENCE=$($catalog.Directory.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host 'PINNED_RUNTIME_INPUTS_PASS'
+
+      - name: Validate clean V2 p53 visual provenance
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $env:REF=$env:TEST_REFERENCE
+          @'
+          import json, os
+          from pathlib import Path
+          ref=Path(os.environ['REF'])
+          data=json.loads((ref/'runtime_visual_catalog.json').read_text(encoding='utf-8'))
+          rows=[e for e in data['entries'] if e.get('publication_code')=='RCL0193ENG' and e.get('physical_page')==53]
+          keys={e.get('asset_entity_key') for e in rows}
+          assert {'VIS_P0053_001','VIS_P0053_002'} <= keys, keys
+          for e in rows:
+              if e.get('asset_entity_key') in {'VIS_P0053_001','VIS_P0053_002'}:
+                  assert (ref/e['runtime_path']).is_file(), e['runtime_path']
+          print('P53_VISUAL_PROVENANCE_PASS assets=VIS_P0053_001,VIS_P0053_002')
+          '@ | python -
+
+      - name: Configure isolated bridge self-test
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          cmake -S expert/bridge-selftest -B build-bridge-test -A x64 -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64"
+          if($LASTEXITCODE -ne 0){throw "Bridge self-test configure failed $LASTEXITCODE"}
+
+      - name: Build isolated bridge self-test
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          cmake --build build-bridge-test --config Release --parallel
+          if($LASTEXITCODE -ne 0){throw "Bridge self-test build failed $LASTEXITCODE"}
+
+      - name: Run filtered bridge proof and visual regression tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $qt='C:\Qt\5.15.2\msvc2019_64'
+          $env:PATH="$qt\bin;$env:PATH"
+          $exe='${{ github.workspace }}\build-bridge-test\Release\ia_memslibrary_bridge_selftest.exe'
+          & $exe $env:TEST_DLL $env:TEST_PACK $env:TEST_REFERENCE
+          if($LASTEXITCODE -ne 0){throw "Filtered bridge self-test failed $LASTEXITCODE"}
+
+      - name: Prove protected production files unchanged
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          foreach($f in @('CMakeLists.txt','iamemstab.cpp','expert/IaMemsDiagramCatalog.cpp','expert/IaMemsDiagramCatalog.h','expert/IaMemsLibraryIntegration.cpp')){
+            $base=(git show "$env:BASE_SHA`:$f" | git hash-object --stdin).Trim()
+            $now=(git hash-object $f).Trim()
+            if($base -ne $now){throw "Protected production file changed: $f"}
+          }
+          Write-Host 'PROTECTED_PRODUCTION_FILES_UNCHANGED_PASS'
