@@ -54,6 +54,13 @@ QStringList libraryKeywords(const QString &question)
             break;
     }
 
+    // Reserve room for operation references before semantic enrichment. This
+    // makes any xx.xx.xx manufacturer reference available to the bridge even
+    // in a long natural-language question.
+    const QStringList referenceAliases = manufacturerReferenceAliases(question);
+    for (const QString &alias : referenceAliases)
+        appendUnique(terms, alias);
+
     const QString normalized = text.simplified();
     if (normalized.contains(QStringLiteral("batterie"))) appendUnique(terms, QStringLiteral("battery"));
     if (normalized.contains(QStringLiteral("restauration"))) appendUnique(terms, QStringLiteral("restoration"));
@@ -79,13 +86,6 @@ QStringList libraryKeywords(const QString &question)
         appendUnique(terms, QStringLiteral("wire"));
         appendUnique(terms, QStringLiteral("colour"));
     }
-
-    // RAVE operation references such as 12.21.28 are encoded in entity keys
-    // with underscores. Add that generic alias so the library can resolve any
-    // manufacturer operation number without hard-coding a particular one.
-    const QStringList referenceAliases = manufacturerReferenceAliases(question);
-    for (const QString &alias : referenceAliases)
-        appendUnique(terms, alias);
 
     return terms;
 }
