@@ -66,7 +66,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
-          python -m pip install --disable-pip-version-check "aqtinstall==3.3.0"
+          python -m pip install --disable-pip-version-check "aqtinstall==3.3.0" pefile
           $sevenZip=(Get-Command 7z.exe -ErrorAction Stop).Source
           if(Test-Path C:\Qt){Remove-Item C:\Qt -Recurse -Force -ErrorAction SilentlyContinue}
           python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
@@ -148,14 +148,45 @@ jobs:
           cmake --build build-e2e-response --config Release --parallel
           if($LASTEXITCODE -ne 0){throw "E2E compile failed $LASTEXITCODE"}
 
+      - name: Stage exact BUILD105 runtime beside harness
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $testDir=(Resolve-Path 'build-e2e-response\Release').Path
+          $exe=Join-Path $testDir 'ia_mems_e2e_response_selftest.exe'
+          if(-not(Test-Path $exe)){throw 'E2E executable missing'}
+
+          Get-ChildItem $env:BUILD105_RUNTIME_DIR -File -Filter '*.dll' | ForEach-Object {
+            Copy-Item $_.FullName (Join-Path $testDir $_.Name) -Force
+          }
+          Copy-Item $env:MEMSLIBRARY_DLL (Join-Path $testDir 'MEMSLibrary.dll') -Force
+
+          $qt='C:\Qt\5.15.2\msvc2019_64'
+          & "$qt\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $testDir $exe
+          if($LASTEXITCODE -ne 0){throw "windeployqt harness failed $LASTEXITCODE"}
+
+          foreach($name in @('onnxruntime-genai.dll','onnxruntime.dll','Qt5Core.dll')){
+            $p=Join-Path $testDir $name
+            if(-not(Test-Path $p)){throw "Required staged runtime missing: $name"}
+            Write-Host "STAGED_RUNTIME $name sha256=$((Get-FileHash $p -Algorithm SHA256).Hash.ToLowerInvariant())"
+          }
+
+          $env:E2E_TEST_DIR=$testDir
+          "E2E_TEST_DIR=$testDir" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "BUILD105_RUNTIME_STAGED_PASS dir=$testDir"
+
       - name: Run real Pack001 to Qwen response construction test
         shell: pwsh
         run: |
           $ErrorActionPreference='Continue'
-          $env:PATH="C:\Qt\5.15.2\msvc2019_64\bin;$env:BUILD105_RUNTIME_DIR;$env:PATH"
-          $exe=(Resolve-Path 'build-e2e-response\Release\ia_mems_e2e_response_selftest.exe').Path
-          & $exe $env:MEMSLIBRARY_DLL $env:PACK_ROOT 2>&1 | Tee-Object -FilePath 'build105-response-construction-e2e.txt'
+          $old=(Get-Location).Path
+          Set-Location $env:E2E_TEST_DIR
+          $env:PATH="$env:E2E_TEST_DIR;$env:PATH"
+          $env:MEMS_AI_RUNTIME=(Join-Path $env:E2E_TEST_DIR 'onnxruntime-genai.dll')
+          $exe=Join-Path $env:E2E_TEST_DIR 'ia_mems_e2e_response_selftest.exe'
+          & $exe $env:MEMSLIBRARY_DLL $env:PACK_ROOT 2>&1 | Tee-Object -FilePath (Join-Path $old 'build105-response-construction-e2e.txt')
           $code=$LASTEXITCODE
+          Set-Location $old
           Set-Content 'build105-response-construction-exit.txt' $code -Encoding ascii
           Write-Host "BUILD105_RESPONSE_CONSTRUCTION_EXIT=$code"
           exit 0
@@ -165,7 +196,7 @@ jobs:
         shell: pwsh
         run: |
           if(Test-Path 'build105-response-construction-e2e.txt'){
-            Select-String -Path 'build105-response-construction-e2e.txt' -Pattern 'E2E_PROOF_|ANSWER_STAGE_|E2E_.*_PASS|IA_MEMSLIBRARY_QWEN_RESPONSE_CONSTRUCTION_PASS|FAIL E2E RESPONSE' |
+            Select-String -Path 'build105-response-construction-e2e.txt' -Pattern 'E2E_PROOF_|ANSWER_STAGE_|E2E_.*_PASS|IA_MEMSLIBRARY_QWEN_RESPONSE_CONSTRUCTION_PASS|FAIL E2E RESPONSE|STATE=' |
               ForEach-Object {$_.Line} | Set-Content 'build105-response-construction-summary.txt' -Encoding utf8
             Get-Content 'build105-response-construction-summary.txt'
           }
