@@ -5,13 +5,16 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QFileInfo>
+#include <QHash>
 #include <QLibrary>
 #include <QProcessEnvironment>
 #include <QSet>
 #include <QVector>
 
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <limits>
 #include <string>
 
 namespace {
@@ -20,6 +23,7 @@ using GetAbiVersionFn = std::uint32_t (*)();
 using GetTextFn = const char* (*)();
 using ValidatePackFn = std::int32_t (*)(const wchar_t*, MEMSLibraryPackInfo*);
 using SearchPackFn = std::int32_t (*)(const wchar_t*, const char*, MEMSLibrarySearchResult*, std::uint32_t, std::uint32_t*);
+using SearchPackFilteredFn = std::int32_t (*)(const wchar_t*, const char*, const MEMSLibrarySearchFilters*, MEMSLibrarySearchResultWithProvenance*, std::uint32_t, std::uint32_t*);
 
 struct BridgeRuntime
 {
@@ -31,8 +35,23 @@ struct BridgeRuntime
     GetTextFn role = nullptr;
     ValidatePackFn validate = nullptr;
     SearchPackFn search = nullptr;
+    SearchPackFilteredFn searchFiltered = nullptr;
     bool attempted = false;
     bool ready = false;
+};
+
+struct EvidenceCandidate
+{
+    QString document;
+    QString revision;
+    QString sourceLanguage;
+    QString entityKind;
+    QString entityKey;
+    QString title;
+    QString body;
+    QString query;
+    int page = -1;
+    int score = -1;
 };
 
 QString firstConfiguredPath(const QString &environmentName, const QString &fallback)
@@ -48,6 +67,45 @@ void appendUnique(QStringList &items, const QString &value)
         items.append(simplified);
 }
 
+QString normalizeForMatching(const QString &input)
+{
+    const QString decomposed = input.normalized(QString::NormalizationForm_D).toCaseFolded();
+    QString output;
+    output.reserve(decomposed.size());
+    bool previousSpace = true;
+
+    for (const QChar ch : decomposed) {
+        const QChar::Category category = ch.category();
+        if (category == QChar::Mark_NonSpacing
+            || category == QChar::Mark_SpacingCombining
+            || category == QChar::Mark_Enclosing) {
+            continue;
+        }
+
+        if (ch.isLetterOrNumber() || ch == QLatin1Char('.') || ch == QLatin1Char('_')) {
+            output += ch;
+            previousSpace = false;
+        } else if (!previousSpace) {
+            output += QLatin1Char(' ');
+            previousSpace = true;
+        }
+    }
+    return output.simplified();
+}
+
+QStringList normalizedTerms(const QString &text)
+{
+    return normalizeForMatching(text).split(QLatin1Char(' '), Qt::SkipEmptyParts);
+}
+
+bool containsExactToken(const QString &normalizedText, const QString &normalizedToken)
+{
+    if (normalizedText.isEmpty() || normalizedToken.isEmpty())
+        return false;
+    const QString padded = QStringLiteral(" ") + normalizedText + QStringLiteral(" ");
+    return padded.contains(QStringLiteral(" ") + normalizedToken + QStringLiteral(" "));
+}
+
 QStringList candidateQueries(const QString &question, const QStringList &keywords)
 {
     QStringList candidates;
@@ -56,23 +114,31 @@ QStringList candidateQueries(const QString &question, const QStringList &keyword
     QStringList clean;
     for (const QString &keyword : keywords) {
         const QString value = keyword.trimmed();
-        if (value.size() >= 2 && !clean.contains(value, Qt::CaseInsensitive) && clean.size() < 8)
+        if (value.size() >= 2 && !clean.contains(value, Qt::CaseInsensitive) && clean.size() < 10)
             clean.append(value);
     }
 
-    if (!clean.isEmpty()) {
-        appendUnique(candidates, clean.mid(0, qMin(4, clean.size())).join(QLatin1Char(' ')));
-        if (clean.size() >= 3)
-            appendUnique(candidates, clean.mid(0, 3).join(QLatin1Char(' ')));
+    if (clean.isEmpty())
+        return candidates;
 
-        const int pairLimit = qMin(6, clean.size());
-        for (int i = 0; i < pairLimit; ++i) {
-            for (int j = i + 1; j < pairLimit; ++j)
-                appendUnique(candidates, clean.at(i) + QLatin1Char(' ') + clean.at(j));
-        }
-        for (const QString &keyword : clean)
-            appendUnique(candidates, keyword);
+    if (clean.size() >= 3)
+        appendUnique(candidates, clean.mid(clean.size() - 3, 3).join(QLatin1Char(' ')));
+    if (clean.size() >= 2)
+        appendUnique(candidates, clean.mid(clean.size() - 2, 2).join(QLatin1Char(' ')));
+
+    appendUnique(candidates, clean.mid(0, qMin(4, clean.size())).join(QLatin1Char(' ')));
+    if (clean.size() >= 3)
+        appendUnique(candidates, clean.mid(0, 3).join(QLatin1Char(' ')));
+
+    // Search all keyword pairs, starting from the most recently appended aliases.
+    // The bridge must not stop on the first substring hit (for example axial/coaxial).
+    for (int i = clean.size() - 1; i >= 1; --i) {
+        for (int j = i - 1; j >= 0; --j)
+            appendUnique(candidates, clean.at(j) + QLatin1Char(' ') + clean.at(i));
     }
+
+    for (int i = clean.size() - 1; i >= 0; --i)
+        appendUnique(candidates, clean.at(i));
 
     return candidates;
 }
@@ -112,6 +178,11 @@ BridgeRuntime &runtime()
     state.role = reinterpret_cast<GetTextFn>(state.library.resolve("MEMSLibrary_GetEngineRole"));
     state.validate = reinterpret_cast<ValidatePackFn>(state.library.resolve("MEMSLibrary_ValidatePack"));
     state.search = reinterpret_cast<SearchPackFn>(state.library.resolve("MEMSLibrary_SearchPack"));
+    state.searchFiltered = reinterpret_cast<SearchPackFilteredFn>(
+        state.library.resolve("MEMSLibrary_SearchPackFiltered"));
+
+    // The additive provenance export is optional here so an older ABI2 runtime can
+    // still use the historical search as a controlled compatibility fallback.
     if (!state.abi || !state.name || !state.role || !state.validate || !state.search) {
         state.error = QStringLiteral("ABI2 MEMSLibrary incomplète.");
         return state;
@@ -140,28 +211,234 @@ BridgeRuntime &runtime()
     return state;
 }
 
-QString resultKey(const MEMSLibrarySearchResult &result)
+QString resultKey(const EvidenceCandidate &result)
 {
-    return QStringLiteral("%1|%2|%3")
-        .arg(QString::fromUtf8(result.document_key))
-        .arg(result.page_number)
-        .arg(QString::fromUtf8(result.entity_key));
+    return QStringLiteral("%1|%2|%3|%4|%5")
+        .arg(result.document, result.revision)
+        .arg(result.page)
+        .arg(result.entityKind, result.entityKey);
 }
 
-QString evidenceText(const MEMSLibrarySearchResult &result)
+QString searchableText(const EvidenceCandidate &result)
 {
-    const QString document = QString::fromUtf8(result.document_key).trimmed();
-    const QString title = QString::fromUtf8(result.title).trimmed();
-    const QString body = QString::fromUtf8(result.body).trimmed();
-    const QString page = result.page_number >= 0
-        ? QStringLiteral("page %1").arg(result.page_number)
+    return normalizeForMatching(QStringLiteral("%1 %2 %3 %4 %5 %6 %7")
+        .arg(result.document, result.revision, result.entityKind, result.entityKey,
+             result.title, result.body, result.sourceLanguage));
+}
+
+int evidenceScore(const EvidenceCandidate &result,
+                  const QString &query,
+                  const QStringList &keywords)
+{
+    const QString searchable = searchableText(result);
+    const QStringList queryTerms = normalizedTerms(query);
+    if (queryTerms.isEmpty())
+        return -1;
+
+    // MEMSLibrary deliberately uses substring LIKE matching. The bridge applies
+    // token-boundary verification before accepting a row, preventing false
+    // substring evidence such as "axial" matching "coaxial".
+    for (const QString &term : queryTerms) {
+        if (!containsExactToken(searchable, term))
+            return -1;
+    }
+
+    int score = queryTerms.size() * 100;
+    QSet<QString> scoredKeywords;
+    for (const QString &keyword : keywords) {
+        const QString normalized = normalizeForMatching(keyword);
+        if (normalized.isEmpty() || scoredKeywords.contains(normalized))
+            continue;
+        scoredKeywords.insert(normalized);
+        if (containsExactToken(searchable, normalized))
+            score += 12;
+    }
+
+    if (result.entityKind == QStringLiteral("step"))
+        score += 8;
+    else if (result.entityKind == QStringLiteral("requirement"))
+        score += 7;
+    else if (result.entityKind == QStringLiteral("notice"))
+        score += 6;
+    else if (result.entityKind == QStringLiteral("operation"))
+        score += 5;
+    else if (result.entityKind == QStringLiteral("section"))
+        score += 4;
+
+    if (!result.title.trimmed().isEmpty())
+        score += 2;
+    return score;
+}
+
+void upsertCandidate(QVector<EvidenceCandidate> &candidates,
+                     QHash<QString, int> &indices,
+                     EvidenceCandidate candidate)
+{
+    const QString key = resultKey(candidate);
+    const auto it = indices.constFind(key);
+    if (it == indices.constEnd()) {
+        indices.insert(key, candidates.size());
+        candidates.append(candidate);
+        return;
+    }
+
+    EvidenceCandidate &existing = candidates[*it];
+    if (candidate.score > existing.score)
+        existing = candidate;
+}
+
+EvidenceCandidate fromFilteredResult(const MEMSLibrarySearchResultWithProvenance &result)
+{
+    EvidenceCandidate candidate;
+    candidate.document = QString::fromUtf8(result.document_key).trimmed();
+    candidate.revision = QString::fromUtf8(result.revision_key).trimmed();
+    candidate.sourceLanguage = QString::fromUtf8(result.source_language).trimmed();
+    candidate.entityKind = QString::fromUtf8(result.entity_kind).trimmed();
+    candidate.entityKey = QString::fromUtf8(result.entity_key).trimmed();
+    candidate.title = QString::fromUtf8(result.title).trimmed();
+    candidate.body = QString::fromUtf8(result.body).trimmed();
+    candidate.page = result.page_number;
+    return candidate;
+}
+
+EvidenceCandidate fromHistoricalResult(const MEMSLibrarySearchResult &result)
+{
+    EvidenceCandidate candidate;
+    candidate.document = QString::fromUtf8(result.document_key).trimmed();
+    candidate.entityKind = QString::fromUtf8(result.entity_kind).trimmed();
+    candidate.entityKey = QString::fromUtf8(result.entity_key).trimmed();
+    candidate.title = QString::fromUtf8(result.title).trimmed();
+    candidate.body = QString::fromUtf8(result.body).trimmed();
+    candidate.page = result.page_number;
+    return candidate;
+}
+
+bool collectFilteredCandidates(BridgeRuntime &state,
+                               const std::wstring &packWide,
+                               const QStringList &queries,
+                               const QStringList &keywords,
+                               const MEMSLibrarySearchFilters *filters,
+                               QVector<EvidenceCandidate> &candidates,
+                               QHash<QString, int> &indices)
+{
+    if (!state.searchFiltered)
+        return false;
+
+    bool anySuccessfulQuery = false;
+    for (const QString &query : queries) {
+        QVector<MEMSLibrarySearchResultWithProvenance> results(24);
+        for (MEMSLibrarySearchResultWithProvenance &result : results) {
+            result = {};
+            result.struct_size = sizeof(result);
+        }
+
+        std::uint32_t count = 0;
+        const QByteArray utf8 = query.toUtf8();
+        const std::int32_t status = state.searchFiltered(
+            packWide.c_str(), utf8.constData(), filters, results.data(),
+            static_cast<std::uint32_t>(results.size()), &count);
+        if (status != MEMSLIBRARY_OK)
+            continue;
+        anySuccessfulQuery = true;
+
+        for (std::uint32_t i = 0; i < count; ++i) {
+            EvidenceCandidate candidate = fromFilteredResult(results.at(static_cast<int>(i)));
+            candidate.query = query;
+            candidate.score = evidenceScore(candidate, query, keywords);
+            if (candidate.score < 0)
+                continue;
+            upsertCandidate(candidates, indices, candidate);
+        }
+    }
+    return anySuccessfulQuery;
+}
+
+void collectHistoricalCandidates(BridgeRuntime &state,
+                                 const std::wstring &packWide,
+                                 const QStringList &queries,
+                                 const QStringList &keywords,
+                                 QVector<EvidenceCandidate> &candidates,
+                                 QHash<QString, int> &indices)
+{
+    for (const QString &query : queries) {
+        QVector<MEMSLibrarySearchResult> results(24);
+        for (MEMSLibrarySearchResult &result : results) {
+            result = {};
+            result.struct_size = sizeof(result);
+        }
+
+        std::uint32_t count = 0;
+        const QByteArray utf8 = query.toUtf8();
+        const std::int32_t status = state.search(
+            packWide.c_str(), utf8.constData(), results.data(),
+            static_cast<std::uint32_t>(results.size()), &count);
+        if (status != MEMSLIBRARY_OK)
+            continue;
+
+        for (std::uint32_t i = 0; i < count; ++i) {
+            EvidenceCandidate candidate = fromHistoricalResult(results.at(static_cast<int>(i)));
+            candidate.query = query;
+            candidate.score = evidenceScore(candidate, query, keywords);
+            if (candidate.score < 0)
+                continue;
+            upsertCandidate(candidates, indices, candidate);
+        }
+    }
+}
+
+bool betterCandidate(const EvidenceCandidate &left, const EvidenceCandidate &right)
+{
+    if (left.score != right.score)
+        return left.score > right.score;
+
+    const int leftPage = left.page >= 0 ? left.page : std::numeric_limits<int>::max();
+    const int rightPage = right.page >= 0 ? right.page : std::numeric_limits<int>::max();
+    if (leftPage != rightPage)
+        return leftPage < rightPage;
+    if (left.document != right.document)
+        return left.document < right.document;
+    if (left.revision != right.revision)
+        return left.revision < right.revision;
+    return left.entityKey < right.entityKey;
+}
+
+bool sameProvenance(const EvidenceCandidate &candidate, const EvidenceCandidate &selected)
+{
+    return candidate.document == selected.document
+        && candidate.revision == selected.revision
+        && candidate.sourceLanguage == selected.sourceLanguage;
+}
+
+template <std::size_t N>
+void copyFilterText(char (&destination)[N], const QString &value)
+{
+    const QByteArray utf8 = value.toUtf8();
+    const std::size_t sourceLength = static_cast<std::size_t>(utf8.size());
+    const std::size_t copyLength = sourceLength < (N - 1) ? sourceLength : (N - 1);
+    std::memcpy(destination, utf8.constData(), copyLength);
+    destination[copyLength] = '\0';
+}
+
+QString evidenceText(const EvidenceCandidate &result)
+{
+    const QString page = result.page >= 0
+        ? QStringLiteral("page %1").arg(result.page)
         : QStringLiteral("page non indiquée");
 
-    QString line = QStringLiteral("Source %1, %2").arg(document, page);
-    if (!title.isEmpty())
-        line += QStringLiteral(" — %1").arg(title);
-    if (!body.isEmpty())
-        line += QStringLiteral("\n%1").arg(body);
+    QString line = QStringLiteral("Source %1, %2").arg(result.document, page);
+    QStringList provenance;
+    if (!result.revision.isEmpty())
+        provenance.append(QStringLiteral("révision %1").arg(result.revision));
+    if (!result.sourceLanguage.isEmpty())
+        provenance.append(QStringLiteral("langue %1").arg(result.sourceLanguage));
+    if (!result.entityKind.isEmpty())
+        provenance.append(QStringLiteral("type %1").arg(result.entityKind));
+    if (!provenance.isEmpty())
+        line += QStringLiteral(" [%1]").arg(provenance.join(QStringLiteral(", ")));
+    if (!result.title.isEmpty())
+        line += QStringLiteral(" — %1").arg(result.title);
+    if (!result.body.isEmpty())
+        line += QStringLiteral("\n%1").arg(result.body);
     return line;
 }
 
@@ -178,32 +455,95 @@ IaMemsLibraryGrounding IaMemsLibraryBridge::retrieve(const QString &question,
         return output;
 
     const QStringList queries = candidateQueries(question, keywords);
-    QSet<QString> seen;
-    QStringList evidence;
     const std::wstring packWide = state.packDirectory.toStdWString();
+    QVector<EvidenceCandidate> candidates;
+    QHash<QString, int> indices;
 
-    for (const QString &query : queries) {
-        QVector<MEMSLibrarySearchResult> results(16);
-        for (MEMSLibrarySearchResult &result : results)
-            result.struct_size = sizeof(result);
+    const bool filteredApiOperational = collectFilteredCandidates(
+        state, packWide, queries, keywords, nullptr, candidates, indices);
 
-        std::uint32_t count = 0;
-        const QByteArray utf8 = query.toUtf8();
-        const std::int32_t status = state.search(
-            packWide.c_str(), utf8.constData(), results.data(),
-            static_cast<std::uint32_t>(results.size()), &count);
-        if (status != MEMSLIBRARY_OK)
-            continue;
+    // If the additive export is absent or unusable, retain a compatibility path
+    // through the historical ABI2 export, with the same token-boundary ranking.
+    if (candidates.isEmpty()) {
+        indices.clear();
+        collectHistoricalCandidates(state, packWide, queries, keywords, candidates, indices);
+    }
+    if (candidates.isEmpty())
+        return output;
 
-        for (std::uint32_t i = 0; i < count && evidence.size() < 6; ++i) {
-            const QString key = resultKey(results.at(static_cast<int>(i)));
-            if (seen.contains(key))
-                continue;
-            seen.insert(key);
-            evidence.append(evidenceText(results.at(static_cast<int>(i))));
+    std::sort(candidates.begin(), candidates.end(), betterCandidate);
+    const EvidenceCandidate selected = candidates.first();
+
+    output.selectedDocument = selected.document;
+    output.selectedRevision = selected.revision;
+    output.selectedSourceLanguage = selected.sourceLanguage;
+    output.selectedPage = selected.page;
+
+    QVector<EvidenceCandidate> selectedCandidates;
+    QHash<QString, int> selectedIndices;
+
+    if (filteredApiOperational && state.searchFiltered
+        && !selected.document.isEmpty() && !selected.revision.isEmpty()) {
+        MEMSLibrarySearchFilters filters{};
+        filters.struct_size = sizeof(filters);
+        copyFilterText(filters.document_key, selected.document);
+        copyFilterText(filters.revision_key, selected.revision);
+        if (!selected.sourceLanguage.isEmpty())
+            copyFilterText(filters.source_language, selected.sourceLanguage);
+
+        QVector<EvidenceCandidate> verification;
+        QHash<QString, int> verificationIndices;
+        const bool verificationQueryOk = collectFilteredCandidates(
+            state, packWide, QStringList{selected.query}, keywords, &filters,
+            verification, verificationIndices);
+
+        bool selectedProvenanceVerified = false;
+        for (const EvidenceCandidate &candidate : verification) {
+            if (sameProvenance(candidate, selected) && candidate.page == selected.page) {
+                selectedProvenanceVerified = true;
+                break;
+            }
         }
-        if (evidence.size() >= 3)
+
+        if (verificationQueryOk && selectedProvenanceVerified) {
+            output.provenanceFiltered = true;
+            for (EvidenceCandidate candidate : candidates) {
+                if (!sameProvenance(candidate, selected))
+                    continue;
+                if (selected.page >= 0 && candidate.page == selected.page)
+                    candidate.score += 40;
+                upsertCandidate(selectedCandidates, selectedIndices, candidate);
+            }
+            for (EvidenceCandidate candidate : verification) {
+                if (selected.page >= 0 && candidate.page == selected.page)
+                    candidate.score += 40;
+                upsertCandidate(selectedCandidates, selectedIndices, candidate);
+            }
+        }
+    }
+
+    if (selectedCandidates.isEmpty()) {
+        selectedCandidates = candidates;
+        if (selected.page >= 0) {
+            for (EvidenceCandidate &candidate : selectedCandidates) {
+                if (candidate.page == selected.page)
+                    candidate.score += 40;
+            }
+        }
+    }
+
+    std::sort(selectedCandidates.begin(), selectedCandidates.end(), betterCandidate);
+
+    QStringList evidence;
+    QSet<QString> seen;
+    for (const EvidenceCandidate &candidate : selectedCandidates) {
+        if (evidence.size() >= 6)
             break;
+        const QString key = resultKey(candidate);
+        if (seen.contains(key))
+            continue;
+        seen.insert(key);
+        evidence.append(evidenceText(candidate));
     }
 
     output.resultCount = evidence.size();
