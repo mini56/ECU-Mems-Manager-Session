@@ -2,6 +2,7 @@
 
 #include "IaMemsConversationRouting.h"
 #include "IaMemsLibraryBridge.h"
+#include "IaMemsLibrarySynthesis.h"
 #include "LocalAiClient.h"
 
 #include <QRegularExpression>
@@ -103,15 +104,30 @@ void IaMemsService::askWithLibrary(const QString &question)
     setProperty("iaMemsLastLibraryEvidence", libraryGrounding.text);
     m_pendingGrounding = mergeGrounding(legacyGrounding, libraryGrounding);
 
+    const bool canonicalLibraryEvidence =
+        IaMemsLibrarySynthesis::hasCanonicalLibraryEvidence(libraryGrounding.text);
+
     if (m_localAi && m_localAi->isReady()) {
-        m_localAi->ask(trimmed, m_pendingGrounding);
+        if (canonicalLibraryEvidence) {
+            const QString synthesisQuestion =
+                IaMemsLibrarySynthesis::promptQuestion(trimmed, m_pendingGrounding);
+            m_localAi->ask(synthesisQuestion, QString());
+        } else {
+            m_localAi->ask(trimmed, m_pendingGrounding);
+        }
         emit statusChanged();
         return;
     }
 
-    const QString fallback = m_pendingGrounding.trimmed().isEmpty()
-        ? QStringLiteral("L'IA locale n'est pas encore prête.")
-        : m_pendingGrounding;
+    QString fallback;
+    if (canonicalLibraryEvidence) {
+        fallback = QStringLiteral(
+            "La documentation a été retrouvée, mais l'IA locale n'est pas encore prête à la synthétiser.");
+    } else {
+        fallback = m_pendingGrounding.trimmed().isEmpty()
+            ? QStringLiteral("L'IA locale n'est pas encore prête.")
+            : m_pendingGrounding;
+    }
     m_pendingGrounding.clear();
     emit responseReady(fallback);
     emit statusChanged();

@@ -447,6 +447,7 @@ IaMemsDiagramSuggestion IaMemsDiagramCatalog::suggestionForEvidence(
 
     IaMemsDiagramSuggestion best;
     int bestScore = -1;
+    qint64 bestPixelArea = -1;
     QString bestStableKey;
     while (sources.hasNext()) {
         const QRegularExpressionMatch source = sources.next();
@@ -509,8 +510,13 @@ IaMemsDiagramSuggestion IaMemsDiagramCatalog::suggestionForEvidence(
                 entry.value(QStringLiteral("runtime_path")).toString().trimmed());
             const QString displayKey = runtimeDisplayKey(entry);
             const QString stableKey = entry.value(QStringLiteral("runtime_key")).toString();
-            if (score < bestScore || (score == bestScore && !bestStableKey.isEmpty()
-                                      && stableKey >= bestStableKey))
+            const qint64 width = entry.value(QStringLiteral("width")).toInt();
+            const qint64 height = entry.value(QStringLiteral("height")).toInt();
+            const qint64 pixelArea = (width > 0 && height > 0) ? width * height : 0;
+            if (score < bestScore
+                || (score == bestScore && pixelArea < bestPixelArea)
+                || (score == bestScore && pixelArea == bestPixelArea
+                    && !bestStableKey.isEmpty() && stableKey >= bestStableKey))
                 continue;
 
             const IaMemsDiagramSuggestion candidate = resolvePath(root, displayKey, relativePath, false);
@@ -521,6 +527,7 @@ IaMemsDiagramSuggestion IaMemsDiagramCatalog::suggestionForEvidence(
                 continue;
 
             bestScore = score;
+            bestPixelArea = pixelArea;
             bestStableKey = stableKey;
             best = candidate;
         }
