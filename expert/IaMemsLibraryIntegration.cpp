@@ -16,6 +16,22 @@ void appendUnique(QStringList &terms, const QString &term)
         terms.append(clean);
 }
 
+QStringList manufacturerReferenceAliases(const QString &question)
+{
+    const QString normalized = IaMemsConversationRouting::normalize(question);
+    static const QRegularExpression referenceRx(
+        QStringLiteral("\\b(\\d{1,3}(?:\\.\\d{1,3}){2,3})\\b"));
+
+    QStringList aliases;
+    QRegularExpressionMatchIterator matches = referenceRx.globalMatch(normalized);
+    while (matches.hasNext()) {
+        QString alias = matches.next().captured(1);
+        alias.replace(QLatin1Char('.'), QLatin1Char('_'));
+        appendUnique(aliases, alias);
+    }
+    return aliases;
+}
+
 QStringList libraryKeywords(const QString &question)
 {
     QString text = IaMemsConversationRouting::normalize(question);
@@ -63,6 +79,14 @@ QStringList libraryKeywords(const QString &question)
         appendUnique(terms, QStringLiteral("wire"));
         appendUnique(terms, QStringLiteral("colour"));
     }
+
+    // RAVE operation references such as 12.21.28 are encoded in entity keys
+    // with underscores. Add that generic alias so the library can resolve any
+    // manufacturer operation number without hard-coding a particular one.
+    const QStringList referenceAliases = manufacturerReferenceAliases(question);
+    for (const QString &alias : referenceAliases)
+        appendUnique(terms, alias);
+
     return terms;
 }
 
@@ -80,6 +104,13 @@ QString mergeGrounding(const QString &legacy, const IaMemsLibraryGrounding &libr
     const QString newGrounding = library.text.trimmed();
     if (newGrounding.isEmpty())
         return oldGrounding;
+
+    // Once MEMSLibrary has re-queried and verified the winning physical page,
+    // that documentary proof is authoritative. Re-adding legacy grounding can
+    // reintroduce an unrelated procedure even though the library answer is good.
+    if (library.provenanceFiltered)
+        return newGrounding;
+
     if (oldGrounding.isEmpty() || genericInsufficientGrounding(oldGrounding))
         return newGrounding;
 
