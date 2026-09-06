@@ -1,6 +1,8 @@
 #include "MemsReferenceDatabase.h"
 #include "MemsGlobalSearchIndex.h"
 #include "../i18n.h"
+#include "../expert/IaMemsService.h"
+#include "../expert/IaMemsConversationRouting.h"
 
 #include <QApplication>
 #include <QComboBox>
@@ -214,6 +216,7 @@ struct IaScopeChoice
 {
     QString label;
     QString query;
+    bool drillDown=false;
 };
 
 QStringList meaningfulIaTerms(const QString &question)
@@ -287,7 +290,6 @@ bool genericDisplayScopeLabel(const QString &label,const QString &queryTerm)
 {
     const QString n=normalized(label);
     return genericScopeLabel(label,queryTerm)
-        || broadDisplayScopeLabel(label,queryTerm)
         || n==QStringLiteral("brake")
         || n==QStringLiteral("embrayage")
         || n==QStringLiteral("clutch")
@@ -311,7 +313,8 @@ bool internalScopeLabel(const QString &label)
     return n.startsWith(QStringLiteral("know rcl"))
         || n.startsWith(QStringLiteral("doc rcl"))
         || n.startsWith(QStringLiteral("rev rcl"))
-        || n.startsWith(QStringLiteral("src rcl"));
+        || n.startsWith(QStringLiteral("src rcl"))
+        || QRegularExpression(QStringLiteral("^rcl[0-9]{4}[a-z]{3}$"),QRegularExpression::CaseInsensitiveOption).match(n).hasMatch();
 }
 
 bool mostlyUpperHeading(const QString &text)
@@ -340,20 +343,17 @@ QString polishUserChoiceLabel(QString label)
 {
     label=cleanChoiceText(label);
     const QString n=normalized(label);
-    if(n==QStringLiteral("freins ecrous de maitre cylindre de frein")
-       || n==QStringLiteral("ecrous de maitre cylindre de frein"))
+    if(n==QStringLiteral("freins ecrous de maitre cylindre de frein") || n==QStringLiteral("ecrous de maitre cylindre de frein"))
         return QStringLiteral("Écrous de maître-cylindre de frein");
-    if(n==QStringLiteral("freins tambour de frein sur moyeu vis")
-       || n==QStringLiteral("tambour de frein sur moyeu vis"))
+    if(n==QStringLiteral("freins tambour de frein sur moyeu vis") || n==QStringLiteral("tambour de frein sur moyeu vis"))
         return QStringLiteral("Tambour de frein sur moyeu - vis");
-    if(n==QStringLiteral("freins boulon de pivot de pedale de frein ecrou")
-       || n==QStringLiteral("boulon de pivot de pedale de frein ecrou"))
+    if(n==QStringLiteral("freins boulon de pivot de pedale de frein ecrou") || n==QStringLiteral("boulon de pivot de pedale de frein ecrou"))
         return QStringLiteral("Boulon de pivot de pédale de frein - écrou");
-    if(n==QStringLiteral("freins vis de purge sur etrier")
-       || n==QStringLiteral("vis de purge sur etrier"))
+    if(n==QStringLiteral("freins boulons d etrier de frein sur porte fusee") || n==QStringLiteral("boulons d etrier de frein sur porte fusee"))
+        return QStringLiteral("Boulons d'étrier de frein sur porte-fusée");
+    if(n==QStringLiteral("freins vis de purge sur etrier") || n==QStringLiteral("vis de purge sur etrier"))
         return QStringLiteral("Vis de purge sur étrier");
-    if(n==QStringLiteral("freins tuyau de frein sur maitre cylindre raccord union")
-       || n==QStringLiteral("tuyau de frein sur maitre cylindre raccord union"))
+    if(n==QStringLiteral("freins tuyau de frein sur maitre cylindre raccord union") || n==QStringLiteral("tuyau de frein sur maitre cylindre raccord union"))
         return QStringLiteral("Tuyau de frein sur maître-cylindre - raccord union");
     if(!label.isEmpty()) label[0]=label.at(0).toUpper();
     return label;
@@ -382,20 +382,14 @@ QString userFacingChoiceLabel(const QVariantMap &row,const QString &rawChoice,co
 {
     QString label=cleanChoiceText(rawChoice);
     const QString content=row.value(QStringLiteral("content")).toString();
-    const bool needsReplacement=genericDisplayScopeLabel(label,queryTerm)
-        || pageOnlyScopeLabel(label)
-        || internalScopeLabel(label);
-
+    const bool needsReplacement=genericDisplayScopeLabel(label,queryTerm) || pageOnlyScopeLabel(label) || internalScopeLabel(label);
     if(needsReplacement){
-        const QStringList fields={
-            QStringLiteral("procedure_title"),QStringLiteral("operation_title"),QStringLiteral("component_name"),
-            QStringLiteral("subject"),QStringLiteral("source_section"),QStringLiteral("topic"),
-            QStringLiteral("function_name"),QStringLiteral("name_fr"),QStringLiteral("operation")
-        };
+        const QStringList fields={QStringLiteral("procedure_title"),QStringLiteral("operation_title"),QStringLiteral("component_name"),
+                                  QStringLiteral("subject"),QStringLiteral("source_section"),QStringLiteral("topic"),
+                                  QStringLiteral("function_name"),QStringLiteral("name_fr"),QStringLiteral("operation")};
         for(const QString &field:fields){
             const QString candidate=cleanChoiceText(contentField(content,field));
-            if(candidate.isEmpty() || genericDisplayScopeLabel(candidate,queryTerm)
-               || pageOnlyScopeLabel(candidate) || internalScopeLabel(candidate)) continue;
+            if(candidate.isEmpty() || genericDisplayScopeLabel(candidate,queryTerm) || pageOnlyScopeLabel(candidate) || internalScopeLabel(candidate)) continue;
             label=candidate;
             break;
         }
@@ -404,7 +398,6 @@ QString userFacingChoiceLabel(const QVariantMap &row,const QString &rawChoice,co
             if(!heading.isEmpty()) label=heading;
         }
     }
-
     if(queryTerm==QStringLiteral("embrayage")){
         const QString ln=normalized(label);
         if(ln==QStringLiteral("maitre cylindre")) label=QStringLiteral("Maître-cylindre d'embrayage");
@@ -413,63 +406,139 @@ QString userFacingChoiceLabel(const QVariantMap &row,const QString &rawChoice,co
     return polishUserChoiceLabel(label);
 }
 
+QString polishChapterLabel(QString label)
+{
+    label=cleanChoiceText(label);
+    const QString n=normalized(label);
+    if(n==QStringLiteral("purge du circuit des freins")) return QStringLiteral("Purge du circuit des freins");
+    if(n==QStringLiteral("contacteur des feux stop")) return QStringLiteral("Contacteur des feux stop");
+    if(n==QStringLiteral("tambour de frein arriere")) return QStringLiteral("Tambour de frein arrière");
+    if(n==QStringLiteral("contacteur de temoin de defaillance de frein")) return QStringLiteral("Contacteur de témoin de défaillance de frein");
+    if(n==QStringLiteral("soupape de tarage")) return QStringLiteral("Soupape de tarage");
+    if(n==QStringLiteral("maitre cylindre")) return QStringLiteral("Maître-cylindre");
+    if(n==QStringLiteral("pedale de frein")) return QStringLiteral("Pédale de frein");
+    if(n==QStringLiteral("plaquettes de frein avant")) return QStringLiteral("Plaquettes de frein avant");
+    if(n==QStringLiteral("segments de frein arriere")) return QStringLiteral("Segments de frein arrière");
+    if(n==QStringLiteral("ensemble de servocommande")) return QStringLiteral("Servocommande");
+    if(n==QStringLiteral("etrier de frein avant")) return QStringLiteral("Étrier de frein avant");
+    if(n==QStringLiteral("cylindre de frein arriere")) return QStringLiteral("Cylindre de frein arrière");
+    if(n.contains(QStringLiteral("cable de frein a main"))) return QStringLiteral("Frein à main / câble de frein à main");
+    return polishUserChoiceLabel(label);
+}
+
+QList<IaScopeChoice> brakeChapterChoices(const QString &rootQuestion)
+{
+    const QVariantList rows=MemsGlobalSearchIndex::search(rootQuestion,QString(),80);
+    QList<IaScopeChoice> out;
+    QSet<QString> seen;
+    const QStringList wanted={
+        QStringLiteral("PURGE DU CIRCUIT DES FREINS"),QStringLiteral("CONTACTEUR DES FEUX STOP"),
+        QStringLiteral("TAMBOUR DE FREIN ARRIERE"),QStringLiteral("CONTACTEUR DE TEMOIN DE DEFAILLANCE DE FREIN"),
+        QStringLiteral("SOUPAPE DE TARAGE"),QStringLiteral("MAITRE-CYLINDRE"),QStringLiteral("PEDALE DE FREIN"),
+        QStringLiteral("PLAQUETTES DE FREIN AVANT"),QStringLiteral("SEGMENTS DE FREIN ARRIERE"),
+        QStringLiteral("ENSEMBLE DE SERVOCOMMANDE"),QStringLiteral("ETRIER DE FREIN AVANT"),
+        QStringLiteral("CYLINDRE DE FREIN ARRIERE"),QStringLiteral("CABLE DE FREIN A MAIN - AVANT")
+    };
+    for(const QVariant &item:rows){
+        const QString content=item.toMap().value(QStringLiteral("content")).toString();
+        const QString nc=normalized(content);
+        for(const QString &heading:wanted){
+            const QString sig=normalized(heading);
+            if(seen.contains(sig) || !nc.contains(sig)) continue;
+            IaScopeChoice choice;
+            choice.label=polishChapterLabel(heading);
+            choice.query=QStringLiteral("%1 %2").arg(rootQuestion,heading).simplified();
+            choice.drillDown=true;
+            seen.insert(sig);
+            out.append(choice);
+        }
+    }
+    return out;
+}
+
+QList<IaScopeChoice> refinementChoices(const QString &query)
+{
+    const QVariantList rows=MemsGlobalSearchIndex::search(query,QString(),80);
+    if(rows.size()<2) return QList<IaScopeChoice>();
+    QList<IaScopeChoice> out;
+    QSet<QString> seen;
+    const QStringList fields={QStringLiteral("procedure_title"),QStringLiteral("operation_title"),QStringLiteral("subject"),
+                              QStringLiteral("component_name"),QStringLiteral("source_section"),QStringLiteral("topic"),QStringLiteral("operation")};
+    for(const QVariant &item:rows){
+        const QVariantMap row=item.toMap();
+        const QString content=row.value(QStringLiteral("content")).toString();
+        QString label;
+        for(const QString &field:fields){
+            const QString candidate=polishChapterLabel(contentField(content,field));
+            if(candidate.isEmpty() || pageOnlyScopeLabel(candidate) || internalScopeLabel(candidate)) continue;
+            label=candidate;
+            break;
+        }
+        if(label.isEmpty()){
+            const QString heading=usefulHeadingFromContent(content,QString());
+            if(!heading.isEmpty()) label=polishChapterLabel(heading);
+        }
+        if(label.isEmpty()) continue;
+        const QString sig=normalized(label);
+        if(sig.isEmpty() || seen.contains(sig) || sig==normalized(query)) continue;
+        IaScopeChoice choice;
+        choice.label=label;
+        choice.query=QStringLiteral("%1 %2").arg(query,label).simplified();
+        choice.drillDown=true;
+        seen.insert(sig);
+        out.append(choice);
+        if(out.size()>=12) break;
+    }
+    return out.size()>=2?out:QList<IaScopeChoice>();
+}
+
 QList<IaScopeChoice> documentaryScopeChoices(const QString &question)
 {
     const QStringList terms=meaningfulIaTerms(question);
     if(terms.size()!=1) return QList<IaScopeChoice>();
-
-    static const QSet<QString> preciseTokens={
-        QStringLiteral("ckp"),QStringLiteral("ect"),QStringLiteral("iat"),QStringLiteral("map"),
-        QStringLiteral("tps"),QStringLiteral("iac"),QStringLiteral("iacv"),QStringLiteral("ecu"),
-        QStringLiteral("spi"),QStringLiteral("mpi"),QStringLiteral("obd"),QStringLiteral("rosco")
-    };
+    static const QSet<QString> preciseTokens={QStringLiteral("ckp"),QStringLiteral("ect"),QStringLiteral("iat"),QStringLiteral("map"),
+                                               QStringLiteral("tps"),QStringLiteral("iac"),QStringLiteral("iacv"),QStringLiteral("ecu"),
+                                               QStringLiteral("spi"),QStringLiteral("mpi"),QStringLiteral("obd"),QStringLiteral("rosco")};
     const QString queryTerm=terms.first();
     if(preciseTokens.contains(queryTerm)) return QList<IaScopeChoice>();
-
     const QVariantList rows=MemsGlobalSearchIndex::search(question,QString(),40);
     if(rows.size()<10) return QList<IaScopeChoice>();
 
     QList<IaScopeChoice> choices;
     QSet<QString> seen;
     QSet<QString> seenLabels;
-    const QStringList fields={
-        QStringLiteral("topic"),QStringLiteral("component_name"),QStringLiteral("subject"),
-        QStringLiteral("component_key"),QStringLiteral("title_source"),QStringLiteral("operation"),
-        QStringLiteral("source_section")
-    };
+    const QStringList fields={QStringLiteral("topic"),QStringLiteral("component_name"),QStringLiteral("subject"),
+                              QStringLiteral("component_key"),QStringLiteral("title_source"),QStringLiteral("operation"),QStringLiteral("source_section")};
+
+    if(queryTerm==QStringLiteral("frein") || queryTerm==QStringLiteral("freins")){
+        IaScopeChoice parent;
+        parent.label=QStringLiteral("Freins — documentation générale");
+        parent.query=question;
+        parent.drillDown=true;
+        choices.append(parent);
+        seenLabels.insert(normalized(parent.label));
+    }
 
     for(const QVariant &item:rows){
         const QVariantMap row=item.toMap();
         const QString content=row.value(QStringLiteral("content")).toString();
         QStringList candidates;
-        for(const QString &field:fields){
-            const QString value=contentField(content,field);
-            if(!value.isEmpty()) candidates.append(value);
-        }
+        for(const QString &field:fields){const QString value=contentField(content,field);if(!value.isEmpty()) candidates.append(value);}
         candidates.append(row.value(QStringLiteral("title")).toString());
-
         for(QString candidate:candidates){
             candidate=humanScopeLabel(candidate);
-            if(genericScopeLabel(candidate,queryTerm)) continue;
-            if(broadDisplayScopeLabel(candidate,queryTerm)) continue;
+            if(genericScopeLabel(candidate,queryTerm) || broadDisplayScopeLabel(candidate,queryTerm)) continue;
             QString signature=normalized(candidate);
             if(signature.isEmpty() || seen.contains(signature)) continue;
-            if(!signature.contains(queryTerm) && queryTerm.size()>3)
-                candidate=QStringLiteral("%1 — %2").arg(queryTerm,candidate);
+            if(!signature.contains(queryTerm) && queryTerm.size()>3) candidate=QStringLiteral("%1 — %2").arg(queryTerm,candidate);
             signature=normalized(candidate);
             if(seen.contains(signature)) continue;
-
             IaScopeChoice choice;
             choice.query=candidate;
             choice.label=userFacingChoiceLabel(row,candidate,queryTerm);
-            if(choice.label.trimmed().isEmpty()) continue;
-            if(genericDisplayScopeLabel(choice.label,queryTerm)
-               || pageOnlyScopeLabel(choice.label)
-               || internalScopeLabel(choice.label))
-                continue;
+            if(choice.label.trimmed().isEmpty() || genericDisplayScopeLabel(choice.label,queryTerm) || pageOnlyScopeLabel(choice.label) || internalScopeLabel(choice.label)) continue;
             const QString labelSignature=normalized(choice.label);
             if(labelSignature.isEmpty() || seenLabels.contains(labelSignature)) continue;
-
             seen.insert(signature);
             seenLabels.insert(labelSignature);
             choices.append(choice);
@@ -477,7 +546,6 @@ QList<IaScopeChoice> documentaryScopeChoices(const QString &question)
         }
         if(choices.size()>=5) break;
     }
-
     return choices.size()>=3?choices:QList<IaScopeChoice>();
 }
 
@@ -492,15 +560,13 @@ void appendIaTranscript(QTextBrowser *browser,const QString &speaker,const QStri
 class IaDocumentaryClarificationController : public QObject
 {
 public:
-    explicit IaDocumentaryClarificationController(QWidget *tab)
-        :QObject(tab),m_tab(tab)
+    explicit IaDocumentaryClarificationController(QWidget *tab):QObject(tab),m_tab(tab)
     {
         if(!m_tab) return;
         m_question=m_tab->findChild<QLineEdit*>(QStringLiteral("iaMemsQuestion"));
         m_send=m_tab->findChild<QPushButton*>(QStringLiteral("iaMemsSend"));
         m_transcript=m_tab->findChild<QTextBrowser*>(QStringLiteral("iaMemsTranscript"));
         if(!m_question || !m_send) return;
-
         QObject::disconnect(m_send,nullptr,m_tab,nullptr);
         QObject::disconnect(m_question,nullptr,m_tab,nullptr);
         QObject::connect(m_send,&QPushButton::clicked,this,[this](){handleSend();});
@@ -509,10 +575,33 @@ public:
     }
 
 private:
-    void invokeOriginalSend()
+    void invokeOriginalSend(const QString &question)
     {
-        if(m_tab)
-            QMetaObject::invokeMethod(m_tab.data(),"sendQuestion",Qt::DirectConnection);
+        if(!m_tab || !m_question) return;
+        m_question->setText(question);
+        QMetaObject::invokeMethod(m_tab.data(),"sendQuestion",Qt::DirectConnection);
+    }
+
+    void sendRefinedDocumentary(const QString &question)
+    {
+        IaMemsService *service=IaMemsService::instance();
+        if(!service || !m_question || !m_send) return;
+        m_question->clear();
+        m_send->setEnabled(false);
+        m_question->setEnabled(false);
+        service->askWithLibrary(IaMemsConversationRouting::focusedQuestion(question));
+    }
+
+    void showChoices(const QString &subject,const QList<IaScopeChoice> &choices)
+    {
+        m_pendingQuestion=subject;
+        m_choices=choices;
+        m_question->clear();
+        QString prompt=QStringLiteral("J'ai trouvé plusieurs sujets correspondant à « %1 ». Lequel recherchez-vous ?").arg(subject);
+        for(int i=0;i<m_choices.size();++i) prompt+=QStringLiteral("\n%1. %2").arg(i+1).arg(m_choices.at(i).label);
+        prompt+=QStringLiteral("\nRépondez par le numéro ou précisez directement le sujet.");
+        appendIaTranscript(m_transcript,QStringLiteral("IA MEMS"),prompt);
+        m_question->setFocus();
     }
 
     void handleSend()
@@ -522,42 +611,57 @@ private:
         if(raw.isEmpty()) return;
 
         if(!m_pendingQuestion.isEmpty()){
+            appendIaTranscript(m_transcript,QStringLiteral("Vous"),raw);
             bool ok=false;
             const int selected=raw.toInt(&ok);
-            QString refined=raw;
-            if(ok && selected>=1 && selected<=m_choices.size())
-                refined=m_choices.at(selected-1).query;
-            else if(!normalized(raw).contains(normalized(m_pendingQuestion)))
-                refined=QStringLiteral("%1 %2").arg(m_pendingQuestion,raw).simplified();
+            QString refined;
+            IaScopeChoice selectedChoice;
+            bool haveSelected=false;
+            if(ok && selected>=1 && selected<=m_choices.size()){
+                selectedChoice=m_choices.at(selected-1);
+                refined=selectedChoice.query;
+                haveSelected=true;
+            }else{
+                refined=raw;
+                if(!normalized(raw).contains(normalized(m_pendingQuestion))) refined=QStringLiteral("%1 %2").arg(m_pendingQuestion,raw).simplified();
+            }
+
+            const QString root=m_rootQuestion.isEmpty()?m_pendingQuestion:m_rootQuestion;
             m_pendingQuestion.clear();
             m_choices.clear();
-            m_question->setText(refined);
-            invokeOriginalSend();
+
+            QList<IaScopeChoice> next;
+            if(haveSelected && selectedChoice.label==QStringLiteral("Freins — documentation générale"))
+                next=brakeChapterChoices(root);
+            else
+                next=refinementChoices(refined);
+
+            if(next.size()>=2){
+                showChoices(haveSelected?selectedChoice.label:refined,next);
+                return;
+            }
+
+            m_rootQuestion.clear();
+            sendRefinedDocumentary(refined);
             return;
         }
 
         const QList<IaScopeChoice> choices=documentaryScopeChoices(raw);
         if(choices.isEmpty()){
-            invokeOriginalSend();
+            invokeOriginalSend(raw);
             return;
         }
 
-        m_pendingQuestion=raw;
-        m_choices=choices;
-        m_question->clear();
+        m_rootQuestion=raw;
         appendIaTranscript(m_transcript,QStringLiteral("Vous"),raw);
-        QString prompt=QStringLiteral("J'ai trouvé de nombreuses réponses correspondant à « %1 ». Quel périmètre voulez-vous consulter ?").arg(raw);
-        for(int i=0;i<m_choices.size();++i)
-            prompt+=QStringLiteral("\n%1. %2").arg(i+1).arg(m_choices.at(i).label);
-        prompt+=QStringLiteral("\nRépondez par le numéro ou précisez directement le périmètre.");
-        appendIaTranscript(m_transcript,QStringLiteral("IA MEMS"),prompt);
-        m_question->setFocus();
+        showChoices(raw,choices);
     }
 
     QPointer<QWidget> m_tab;
     QPointer<QLineEdit> m_question;
     QPointer<QPushButton> m_send;
     QPointer<QTextBrowser> m_transcript;
+    QString m_rootQuestion;
     QString m_pendingQuestion;
     QList<IaScopeChoice> m_choices;
 };
@@ -575,8 +679,7 @@ public:
     bool eventFilter(QObject *watched,QEvent *event) override
     {
         QWidget *widget=qobject_cast<QWidget*>(watched);
-        if(widget && event && (event->type()==QEvent::Show || event->type()==QEvent::Polish)
-           && widget->objectName()==QStringLiteral("ia_mems_tab")){
+        if(widget && event && (event->type()==QEvent::Show || event->type()==QEvent::Polish) && widget->objectName()==QStringLiteral("ia_mems_tab")){
             QPointer<QWidget> guarded(widget);
             QTimer::singleShot(100,this,[guarded](){if(guarded) patchIaDocumentaryClarification(guarded);});
         }
@@ -590,12 +693,7 @@ void installIaDocumentaryClarification()
     if(!core) return;
     IaDocumentaryClarificationInstaller *installer=new IaDocumentaryClarificationInstaller(core);
     core->installEventFilter(installer);
-    QTimer::singleShot(350,installer,[installer](){
-        Q_UNUSED(installer)
-        for(QWidget *widget:QApplication::allWidgets())
-            if(widget && widget->objectName()==QStringLiteral("ia_mems_tab"))
-                patchIaDocumentaryClarification(widget);
-    });
+    QTimer::singleShot(350,installer,[installer](){Q_UNUSED(installer) for(QWidget *widget:QApplication::allWidgets()) if(widget && widget->objectName()==QStringLiteral("ia_mems_tab")) patchIaDocumentaryClarification(widget);});
 }
 
 }
