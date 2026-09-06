@@ -22,7 +22,9 @@
 namespace {
 const int kMaximumTurns = 8;
 const int kFastMaxNewTokens = 256;
-const int kDiagnosticMaxNewTokens = 768;
+const int kDiagnosticMaxNewTokens = 192;
+const int kGroundedSynthesisMaxNewTokens = 320;
+enum class GenerationMode { Fast, GroundedSynthesis, Diagnostic };
 
 QString firstExistingFile(const QStringList &paths)
 {
@@ -470,7 +472,7 @@ public:
 #endif
     }
 
-    QString generate(const QString &prompt, bool reasoning, QString *error)
+    QString generate(const QString &prompt, GenerationMode mode, QString *error)
     {
 #ifdef MEMS_USE_ONNX_GENAI
         if (!m_model || !m_tokenizer) {
@@ -506,21 +508,28 @@ public:
             return QString();
         }
 
-        const size_t promptTokens = OgaSequencesGetSequenceCount(sequences, 0);
-        const int maxNewTokens = reasoning ? kDiagnosticMaxNewTokens : kFastMaxNewTokens;
+                const size_t promptTokens = OgaSequencesGetSequenceCount(sequences, 0);
+        int maxNewTokens = kFastMaxNewTokens;
+        double temperature = 0.7;
+        double topP = 0.8;
+        if (mode == GenerationMode::Diagnostic) {
+            maxNewTokens = kDiagnosticMaxNewTokens;
+            temperature = 0.6;
+            topP = 0.9;
+        } else if (mode == GenerationMode::GroundedSynthesis) {
+            maxNewTokens = kGroundedSynthesisMaxNewTokens;
+            temperature = 0.6;
+            topP = 0.85;
+        }
         if (!check(OgaCreateGeneratorParams(m_model, &params), error)
             || !check(OgaGeneratorParamsSetSearchNumber(params, "max_length", static_cast<double>(promptTokens + maxNewTokens)), error)
             || !check(OgaGeneratorParamsSetSearchNumber(params, "batch_size", 1.0), error)
             || !check(OgaGeneratorParamsSetSearchBool(params, "do_sample", true), error)
             || !check(OgaGeneratorParamsSetSearchNumber(params, "random_seed", 42.0), error)
-            || !check(OgaGeneratorParamsSetSearchNumber(params, "temperature", reasoning ? 0.6 : 0.7), error)
-            || !check(OgaGeneratorParamsSetSearchNumber(params, "top_p", reasoning ? 0.9 : 0.8), error)
+            || !check(OgaGeneratorParamsSetSearchNumber(params, "temperature", temperature), error)
+            || !check(OgaGeneratorParamsSetSearchNumber(params, "top_p", topP), error)
             || !check(OgaGeneratorParamsSetSearchNumber(params, "top_k", 20.0), error)
             || !check(OgaCreateGenerator(m_model, params, &generator), error)
-            || !check(OgaGenerator_AppendTokenSequences(generator, sequences), error)
-            || !check(OgaCreateTokenizerStream(m_tokenizer, &stream), error)) {
-            cleanup();
-            return QString();
         }
 
         std::string output;
@@ -561,7 +570,7 @@ public:
         return answer;
 #else
         Q_UNUSED(prompt)
-        Q_UNUSED(reasoning)
+        Q_UNUSED(mode)
         if (error)
             *error = QStringLiteral("ONNX Runtime GenAI n'est pas activé dans cette compilation.");
         return QString();
@@ -735,12 +744,18 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
     if (isGenericGrounding(grounding))
         grounding.clear();
 
-    const bool reasoning = forcedGrounded || requiresReasoning(trimmedQuestion, grounding);
-    if (!reasoning && !grounding.isEmpty()) {
+        const bool diagnosticReasoning = requiresReasoning(trimmedQuestion, grounding);
+    if (!forcedGrounded && !diagnosticReasoning && !grounding.isEmpty()) {
         rememberTurn(m_conversation, trimmedQuestion, grounding);
         emit responseReady(grounding);
         return;
     }
+
+    GenerationMode mode = GenerationMode::Fast;
+    if (diagnosticReasoning)
+        mode = GenerationMode::Diagnostic;
+    else if (forcedGrounded)
+        mode = GenerationMode::GroundedSynthesis;
 
     QString userContent = trimmedQuestion;
     if (!grounding.isEmpty()) {
@@ -748,9 +763,12 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
             "\n\nFaits fournis par MEMS Manager, à utiliser seulement s'ils répondent à la question :\n%1")
                            .arg(grounding);
     }
-    if (reasoning && !forcedGrounded) {
+    if (mode == GenerationMode::Diagnostic) {
         userContent += QStringLiteral(
             "\n\nRéponse attendue : diagnostic bref, hypothèses les plus probables dans l'ordre, puis contrôles prioritaires. Ne montre aucun raisonnement interne.");
+    } else if (mode == GenerationMode::GroundedSynthesis) {
+        userContent += QStringLiteral(
+            "\n\nRéponse attendue : reformulation brève et directe des faits fournis, sans les répéter mot à mot ni les développer inutilement.");
     }
     userContent += QStringLiteral("\n\n/no_think");
 
@@ -765,9 +783,9 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
     const quint64 epoch = m_epoch;
     setState(Busy);
 
-    QMetaObject::invokeMethod(m_worker, [this, epoch, prompt, reasoning, trimmedQuestion, grounding]() {
+    QMetaObject::invokeMethod(m_worker, [this, epoch, prompt, mode, trimmedQuestion, grounding]() {
         QString generationError;
-        const QString rawAnswer = m_worker->generate(prompt, reasoning, &generationError);
+        const QString rawAnswer = m_worker->generate(prompt, mode, &generationError);
         QMetaObject::invokeMethod(this, [this, epoch, rawAnswer, generationError, trimmedQuestion, grounding]() {
             if (epoch != m_epoch)
                 return;
