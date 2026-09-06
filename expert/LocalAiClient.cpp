@@ -700,25 +700,31 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
         return;
     }
 
-    const QString trimmedQuestion = question.trimmed();
+    QString trimmedQuestion = question.trimmed();
+    const QString forcedGroundedPrefix = QStringLiteral("[[MEMS_GROUNDED]]");
+    const bool forcedGrounded = trimmedQuestion.startsWith(forcedGroundedPrefix);
+    if (forcedGrounded)
+        trimmedQuestion = trimmedQuestion.mid(forcedGroundedPrefix.size()).trimmed();
     if (trimmedQuestion.isEmpty())
         return;
 
-    if (asksCurrentDate(trimmedQuestion)) {
+    if (!forcedGrounded && asksCurrentDate(trimmedQuestion)) {
         const QString answer = currentDateAnswer();
         rememberTurn(m_conversation, trimmedQuestion, answer);
         emit responseReady(answer);
         return;
     }
 
-    const QString controlled = controlledTechnicalAnswer(trimmedQuestion);
+    const QString controlled = forcedGrounded ? QString() : controlledTechnicalAnswer(trimmedQuestion);
     if (!controlled.isEmpty()) {
         rememberTurn(m_conversation, trimmedQuestion, controlled);
         emit responseReady(controlled);
         return;
     }
 
-    const QString controlledFollowUp = controlledFollowUpAnswer(trimmedQuestion, m_conversation);
+    const QString controlledFollowUp = forcedGrounded
+        ? QString()
+        : controlledFollowUpAnswer(trimmedQuestion, m_conversation);
     if (!controlledFollowUp.isEmpty()) {
         rememberTurn(m_conversation, trimmedQuestion, controlledFollowUp);
         emit responseReady(controlledFollowUp);

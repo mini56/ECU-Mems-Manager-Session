@@ -81,7 +81,7 @@ QString documentaryModelQuestion(const QString &question,
                                   const QString &evidence)
 {
     return QStringLiteral(
-        "Analyse documentaire technique.\n"
+        "[[MEMS_GROUNDED]]Analyse documentaire technique.\n"
         "Question de l'utilisateur : %1\n"
         "Rubrique sélectionnée : %2\n\n"
         "Documentation structurée à utiliser exclusivement :\n%3\n\n"
