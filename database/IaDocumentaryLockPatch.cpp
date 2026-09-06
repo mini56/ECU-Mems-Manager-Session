@@ -1,284 +1,557 @@
-#include "MemsGlobalSearchIndex.h"
 #include "../expert/IaMemsService.h"
+#include "../expert/IaMemsConversationRouting.h"
+#include "../expert/IaResponseLogic.h"
+#include "../i18n.h"
 
 #include <QApplication>
 #include <QCoreApplication>
+#include <QDir>
 #include <QEvent>
+#include <QFileInfo>
+#include <QHash>
 #include <QLineEdit>
 #include <QMetaObject>
 #include <QPointer>
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QSet>
+#include <QSqlDatabase>
+#include <QSqlError>
+#include <QSqlQuery>
+#include <QSqlRecord>
+#include <QStringList>
 #include <QTextBrowser>
 #include <QTimer>
-#include <QVariantMap>
+#include <QUuid>
+#include <QVariant>
+#include <QVector>
+
+#include <algorithm>
 
 namespace {
 
-QString normalizedLock(QString input)
+struct DocumentaryChoice
+{
+    QString searchKey;
+    QString documentKey;
+    QString revisionKey;
+    QString sourceLanguage;
+    QString entityKind;
+    QString entityKey;
+    QString label;
+    QString operationNumber;
+    int pageNumber = -1;
+    int score = 0;
+
+    bool isValid() const
+    {
+        return !entityKind.trimmed().isEmpty() && !entityKey.trimmed().isEmpty();
+    }
+
+    QString identity() const
+    {
+        return entityKind + QLatin1Char('|') + entityKey;
+    }
+};
+
+QString normalizedDocumentary(QString input)
 {
     input = input.normalized(QString::NormalizationForm_D).toCaseFolded();
-    QString out;
-    bool space = true;
+    QString output;
+    output.reserve(input.size());
+    bool previousSpace = true;
     for (const QChar ch : input) {
         const QChar::Category category = ch.category();
-        if (category == QChar::Mark_NonSpacing || category == QChar::Mark_SpacingCombining || category == QChar::Mark_Enclosing)
+        if (category == QChar::Mark_NonSpacing
+            || category == QChar::Mark_SpacingCombining
+            || category == QChar::Mark_Enclosing) {
             continue;
-        if (ch.isLetterOrNumber()) {
-            out += ch;
-            space = false;
-        } else if (!space) {
-            out += QLatin1Char(' ');
-            space = true;
+        }
+        if (ch.isLetterOrNumber() || ch == QLatin1Char('.')) {
+            output += ch;
+            previousSpace = false;
+        } else if (!previousSpace) {
+            output += QLatin1Char(' ');
+            previousSpace = true;
         }
     }
-    return out.simplified();
+    return output.simplified();
 }
 
-QString contentFieldLock(const QString &content, const QString &field)
+bool exactToken(const QString &normalizedText, const QString &token)
 {
-    const QString prefix = field + QStringLiteral(":");
-    for (const QString &rawLine : content.split(QLatin1Char('\n'))) {
-        const QString line = rawLine.trimmed();
-        if (line.startsWith(prefix, Qt::CaseInsensitive))
-            return line.mid(prefix.size()).trimmed();
+    if (normalizedText.isEmpty() || token.isEmpty())
+        return false;
+    return (QStringLiteral(" ") + normalizedText + QStringLiteral(" "))
+        .contains(QStringLiteral(" ") + token + QStringLiteral(" "));
+}
+
+QStringList meaningfulDocumentaryTerms(const QString &question)
+{
+    static const QSet<QString> stop = {
+        QStringLiteral("que"), QStringLiteral("quoi"), QStringLiteral("quel"), QStringLiteral("quelle"),
+        QStringLiteral("quels"), QStringLiteral("quelles"), QStringLiteral("le"), QStringLiteral("la"),
+        QStringLiteral("les"), QStringLiteral("un"), QStringLiteral("une"), QStringLiteral("de"),
+        QStringLiteral("du"), QStringLiteral("des"), QStringLiteral("sur"), QStringLiteral("dans"),
+        QStringLiteral("pour"), QStringLiteral("avec"), QStringLiteral("est"), QStringLiteral("sont"),
+        QStringLiteral("sais"), QStringLiteral("sait"), QStringLiteral("peux"), QStringLiteral("peut"),
+        QStringLiteral("dire"), QStringLiteral("donne"), QStringLiteral("donner"), QStringLiteral("cherche"),
+        QStringLiteral("recherche"), QStringLiteral("trouve"), QStringLiteral("trouver"), QStringLiteral("moi"),
+        QStringLiteral("comment"), QStringLiteral("faire"), QStringLiteral("fait"), QStringLiteral("cette"),
+        QStringLiteral("cet"), QStringLiteral("ces"), QStringLiteral("documentation"), QStringLiteral("document"),
+        QStringLiteral("procedure"), QStringLiteral("technique")
+    };
+
+    QStringList terms;
+    for (const QString &word : normalizedDocumentary(question).split(QLatin1Char(' '), Qt::SkipEmptyParts)) {
+        if (word.size() < 3 || stop.contains(word))
+            continue;
+        if (!terms.contains(word))
+            terms.append(word);
     }
-    return QString();
+    return terms;
 }
 
-QString cleanLabelLock(QString value)
+int editDistanceBounded(const QString &a, const QString &b, int limit)
 {
-    value = value.simplified();
-    value.replace(QLatin1Char('_'), QLatin1Char(' '));
-    if (value.size() > 88)
-        value = value.left(85) + QStringLiteral("...");
-    return value.trimmed();
+    if (qAbs(a.size() - b.size()) > limit)
+        return limit + 1;
+    QVector<int> previous(b.size() + 1);
+    QVector<int> current(b.size() + 1);
+    for (int j = 0; j <= b.size(); ++j)
+        previous[j] = j;
+    for (int i = 1; i <= a.size(); ++i) {
+        current[0] = i;
+        int rowBest = current[0];
+        for (int j = 1; j <= b.size(); ++j) {
+            const int cost = a.at(i - 1) == b.at(j - 1) ? 0 : 1;
+            current[j] = qMin(qMin(previous[j] + 1, current[j - 1] + 1), previous[j - 1] + cost);
+            rowBest = qMin(rowBest, current[j]);
+        }
+        if (rowBest > limit)
+            return limit + 1;
+        previous.swap(current);
+    }
+    return previous[b.size()];
 }
 
-bool internalOrPageLabelLock(const QString &label)
+bool fuzzyTitleMatch(const QString &title, const QString &term)
 {
-    const QString n = normalizedLock(label);
-    if (n.isEmpty())
-        return true;
-    if (n.startsWith(QStringLiteral("know rcl")) || n.startsWith(QStringLiteral("doc rcl"))
-        || n.startsWith(QStringLiteral("rev rcl")) || n.startsWith(QStringLiteral("src rcl")))
-        return true;
-    if (QRegularExpression(QStringLiteral("^rcl[0-9]{4}[a-z]{3}$"), QRegularExpression::CaseInsensitiveOption).match(n).hasMatch())
-        return true;
-    return QRegularExpression(QStringLiteral("(^| )pdf p? [0-9]+($| )")).match(n).hasMatch()
-        || QRegularExpression(QStringLiteral("(^| )page [0-9]+($| )")).match(n).hasMatch();
+    if (term.size() < 5)
+        return false;
+    const int limit = term.size() >= 9 ? 2 : 1;
+    for (const QString &word : title.split(QLatin1Char(' '), Qt::SkipEmptyParts)) {
+        if (word.size() < 4)
+            continue;
+        if (editDistanceBounded(word, term, limit) <= limit)
+            return true;
+    }
+    return false;
 }
 
-QString polishLabelLock(QString label)
+QString cleanDocumentaryLabel(QString label)
 {
-    label = cleanLabelLock(label);
-    const QString n = normalizedLock(label);
-    if (n == QStringLiteral("rear brake drum")) return QStringLiteral("Tambour de frein arrière");
-    if (n == QStringLiteral("front brake caliper")) return QStringLiteral("Étrier de frein avant");
-    if (n == QStringLiteral("front brake pads")) return QStringLiteral("Plaquettes de frein avant");
-    if (n == QStringLiteral("rear brake shoes")) return QStringLiteral("Segments de frein arrière");
-    if (n == QStringLiteral("master cylinder")) return QStringLiteral("Maître-cylindre");
-    if (n == QStringLiteral("brake servo")) return QStringLiteral("Servocommande de frein");
-    if (n == QStringLiteral("handbrake") || n == QStringLiteral("parking brake")) return QStringLiteral("Frein à main");
-    if (n == QStringLiteral("purge du circuit des freins")) return QStringLiteral("Purge du circuit des freins");
-    if (n == QStringLiteral("contacteur des feux stop")) return QStringLiteral("Contacteur des feux stop");
-    if (n == QStringLiteral("tambour de frein arriere")) return QStringLiteral("Tambour de frein arrière");
-    if (n == QStringLiteral("contacteur de temoin de defaillance de frein")) return QStringLiteral("Contacteur de témoin de défaillance de frein");
-    if (n == QStringLiteral("soupape de tarage")) return QStringLiteral("Soupape de tarage");
-    if (n == QStringLiteral("maitre cylindre")) return QStringLiteral("Maître-cylindre");
-    if (n == QStringLiteral("pedale de frein")) return QStringLiteral("Pédale de frein");
-    if (n == QStringLiteral("plaquettes de frein avant")) return QStringLiteral("Plaquettes de frein avant");
-    if (n == QStringLiteral("segments de frein arriere")) return QStringLiteral("Segments de frein arrière");
-    if (n == QStringLiteral("ensemble de servocommande")) return QStringLiteral("Servocommande");
-    if (n == QStringLiteral("etrier de frein avant")) return QStringLiteral("Étrier de frein avant");
-    if (n == QStringLiteral("cylindre de frein arriere")) return QStringLiteral("Cylindre de frein arrière");
-    if (n.contains(QStringLiteral("cable de frein a main"))) return QStringLiteral("Frein à main / câble de frein à main");
+    label = label.simplified();
+    label.replace(QLatin1Char('_'), QLatin1Char(' '));
+    if (label.size() > 120)
+        label = label.left(117) + QStringLiteral("...");
     if (!label.isEmpty())
         label[0] = label.at(0).toUpper();
     return label;
 }
 
-QStringList meaningfulTermsLock(const QString &question)
+QString preferredLanguage()
 {
-    static const QSet<QString> stop = {
-        QStringLiteral("que"), QStringLiteral("quoi"), QStringLiteral("quel"), QStringLiteral("quelle"),
-        QStringLiteral("le"), QStringLiteral("la"), QStringLiteral("les"), QStringLiteral("un"), QStringLiteral("une"),
-        QStringLiteral("de"), QStringLiteral("du"), QStringLiteral("des"), QStringLiteral("sur"), QStringLiteral("dans"),
-        QStringLiteral("pour"), QStringLiteral("avec"), QStringLiteral("est"), QStringLiteral("sais"), QStringLiteral("dire")
-    };
-    QStringList out;
-    for (const QString &word : normalizedLock(question).split(QLatin1Char(' '), Qt::SkipEmptyParts)) {
-        if (word.size() < 3 || stop.contains(word))
-            continue;
-        if (!out.contains(word))
-            out.append(word);
-    }
-    return out;
+    const QString active = I18n::language().trimmed().toLower();
+    return active.isEmpty() ? QStringLiteral("fr") : active;
 }
 
-bool broadBrakeLabelLock(const QString &label)
+class DocumentaryPackReader
 {
-    const QString n = normalizedLock(label);
-    if (!n.contains(QStringLiteral("frein")))
-        return false;
-    int broadTerms = 0;
-    for (const QString &term : {QStringLiteral("purge"), QStringLiteral("tambour"), QStringLiteral("hydraul"),
-                                QStringLiteral("servocommande"), QStringLiteral("frein a main"), QStringLiteral("table des matieres")}) {
-        if (n.contains(term))
-            ++broadTerms;
+public:
+    DocumentaryPackReader()
+    {
+        m_connectionName = QStringLiteral("ia_documentary_%1")
+            .arg(QUuid::createUuid().toString(QUuid::WithoutBraces));
+        m_database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), m_connectionName);
+        const QString path = QDir(QCoreApplication::applicationDirPath())
+                                 .filePath(QStringLiteral("MEMSLibrary_Pack_001/knowledge.sqlite"));
+        if (!QFileInfo::exists(path) || !QFileInfo(path).isFile()) {
+            m_error = QStringLiteral("Pack001 absent");
+            return;
+        }
+        m_database.setDatabaseName(path);
+        m_database.setConnectOptions(QStringLiteral("QSQLITE_OPEN_READONLY"));
+        if (!m_database.open()) {
+            m_error = m_database.lastError().text();
+            return;
+        }
+        QSqlQuery check(m_database);
+        if (!check.exec(QStringLiteral("SELECT COUNT(*) FROM memslibrary_search")) || !check.next()) {
+            m_error = QStringLiteral("Index documentaire Pack001 indisponible");
+            m_database.close();
+            return;
+        }
+        m_ready = true;
     }
-    return broadTerms >= 2 || n.contains(QStringLiteral("documentation generale"));
-}
 
-struct LockedChoice
-{
-    QString label;
-    QString query;
-    bool parent = false;
-    bool locked = false;
+    ~DocumentaryPackReader()
+    {
+        if (m_database.isOpen())
+            m_database.close();
+        m_database = QSqlDatabase();
+        QSqlDatabase::removeDatabase(m_connectionName);
+    }
+
+    bool isReady() const { return m_ready; }
+    QString error() const { return m_error; }
+
+    QList<DocumentaryChoice> discover(const QString &question, int maximum = 10)
+    {
+        QList<DocumentaryChoice> ranked;
+        if (!m_ready)
+            return ranked;
+        const QStringList terms = meaningfulDocumentaryTerms(question);
+        if (terms.isEmpty())
+            return ranked;
+
+        const QString normalizedQuestion = normalizedDocumentary(question);
+        const QString language = preferredLanguage();
+        QSqlQuery query(m_database);
+        if (!query.exec(QStringLiteral(
+                "SELECT search_key,document_key,revision_key,page_number,entity_kind,entity_key,"
+                "source_language,title,body FROM memslibrary_search "
+                "WHERE entity_kind IN ('section','operation')"))) {
+            return ranked;
+        }
+
+        QHash<QString, DocumentaryChoice> bestByLabel;
+        while (query.next()) {
+            DocumentaryChoice choice;
+            choice.searchKey = query.value(0).toString();
+            choice.documentKey = query.value(1).toString();
+            choice.revisionKey = query.value(2).toString();
+            choice.pageNumber = query.value(3).isNull() ? -1 : query.value(3).toInt();
+            choice.entityKind = query.value(4).toString();
+            choice.entityKey = query.value(5).toString();
+            choice.sourceLanguage = query.value(6).toString().toLower();
+            choice.label = cleanDocumentaryLabel(query.value(7).toString());
+            const QString body = query.value(8).toString();
+            if (choice.label.isEmpty() || choice.entityKey.isEmpty())
+                continue;
+
+            const QString titleN = normalizedDocumentary(choice.label);
+            const QString bodyN = normalizedDocumentary(body);
+            int matches = 0;
+            int score = 0;
+            for (const QString &term : terms) {
+                if (exactToken(titleN, term)) {
+                    score += 95;
+                    ++matches;
+                } else if (exactToken(bodyN, term)) {
+                    score += 48;
+                    ++matches;
+                } else if (titleN.contains(term)) {
+                    score += 34;
+                    ++matches;
+                } else if (bodyN.contains(term)) {
+                    score += 18;
+                    ++matches;
+                } else if (fuzzyTitleMatch(titleN, term)) {
+                    score += 28;
+                    ++matches;
+                }
+            }
+            if (matches == 0)
+                continue;
+            if (terms.size() >= 2 && matches * 2 < terms.size())
+                continue;
+
+            const QString compactTerms = terms.join(QLatin1Char(' '));
+            if (titleN == normalizedQuestion || titleN == compactTerms)
+                score += 150;
+            else if (!compactTerms.isEmpty() && titleN.contains(compactTerms))
+                score += 55;
+
+            if (choice.sourceLanguage == language)
+                score += 45;
+            else if (choice.sourceLanguage == QStringLiteral("fr"))
+                score += 18;
+
+            if (choice.entityKind == QStringLiteral("section"))
+                score += terms.size() == 1 ? 65 : 12;
+            else if (choice.entityKind == QStringLiteral("operation"))
+                score += terms.size() >= 2 ? 45 : 25;
+
+            choice.score = score;
+            if (choice.entityKind == QStringLiteral("operation")) {
+                QSqlQuery op(m_database);
+                op.prepare(QStringLiteral(
+                    "SELECT manufacturer_operation_no FROM ravemems_operation WHERE operation_key=?"));
+                op.addBindValue(choice.entityKey);
+                if (op.exec() && op.next())
+                    choice.operationNumber = op.value(0).toString().trimmed();
+            }
+
+            QString key = normalizedDocumentary(choice.label);
+            if (key.isEmpty())
+                key = choice.identity();
+            const auto existing = bestByLabel.constFind(key);
+            if (existing == bestByLabel.constEnd() || choice.score > existing.value().score)
+                bestByLabel.insert(key, choice);
+        }
+
+        ranked = bestByLabel.values();
+        std::sort(ranked.begin(), ranked.end(), [](const DocumentaryChoice &a, const DocumentaryChoice &b) {
+            if (a.score != b.score)
+                return a.score > b.score;
+            if (a.sourceLanguage != b.sourceLanguage)
+                return a.sourceLanguage == preferredLanguage();
+            if (a.entityKind != b.entityKind)
+                return a.entityKind == QStringLiteral("section");
+            return a.label < b.label;
+        });
+        if (ranked.size() > maximum)
+            ranked = ranked.mid(0, maximum);
+        return ranked;
+    }
+
+    QList<DocumentaryChoice> children(const DocumentaryChoice &parent)
+    {
+        QList<DocumentaryChoice> children;
+        if (!m_ready || !parent.isValid())
+            return children;
+
+        if (parent.entityKind == QStringLiteral("section")) {
+            QSqlQuery query(m_database);
+            query.prepare(QStringLiteral(
+                "SELECT s.search_key,s.document_key,s.revision_key,s.page_number,s.entity_kind,s.entity_key,"
+                "COALESCE(o.source_language,s.source_language),o.title_source,o.manufacturer_operation_no "
+                "FROM ravemems_operation o JOIN memslibrary_search s "
+                "ON s.entity_kind='operation' AND s.entity_key=o.operation_key "
+                "WHERE o.section_key=? ORDER BY o.sequence_no,o.operation_key"));
+            query.addBindValue(parent.entityKey);
+            if (!query.exec())
+                return children;
+            while (query.next()) {
+                DocumentaryChoice child;
+                child.searchKey = query.value(0).toString();
+                child.documentKey = query.value(1).toString();
+                child.revisionKey = query.value(2).toString();
+                child.pageNumber = query.value(3).isNull() ? -1 : query.value(3).toInt();
+                child.entityKind = query.value(4).toString();
+                child.entityKey = query.value(5).toString();
+                child.sourceLanguage = query.value(6).toString();
+                child.label = cleanDocumentaryLabel(query.value(7).toString());
+                child.operationNumber = query.value(8).toString().trimmed();
+                if (child.isValid() && !child.label.isEmpty())
+                    children.append(child);
+            }
+            return children;
+        }
+
+        if (parent.entityKind == QStringLiteral("document")) {
+            QSqlQuery query(m_database);
+            query.prepare(QStringLiteral(
+                "SELECT s.search_key,s.document_key,s.revision_key,s.page_number,s.entity_kind,s.entity_key,"
+                "s.source_language,s.title FROM ravemems_section sec JOIN memslibrary_search s "
+                "ON s.entity_kind='section' AND s.entity_key=sec.section_key "
+                "WHERE sec.revision_key=? ORDER BY sec.sequence_no,sec.section_key"));
+            query.addBindValue(parent.revisionKey);
+            if (!query.exec())
+                return children;
+            while (query.next()) {
+                DocumentaryChoice child;
+                child.searchKey = query.value(0).toString();
+                child.documentKey = query.value(1).toString();
+                child.revisionKey = query.value(2).toString();
+                child.pageNumber = query.value(3).isNull() ? -1 : query.value(3).toInt();
+                child.entityKind = query.value(4).toString();
+                child.entityKey = query.value(5).toString();
+                child.sourceLanguage = query.value(6).toString();
+                child.label = cleanDocumentaryLabel(query.value(7).toString());
+                if (child.isValid() && !child.label.isEmpty())
+                    children.append(child);
+            }
+        }
+        return children;
+    }
+
+    QString evidenceForOperation(const DocumentaryChoice &choice)
+    {
+        if (!m_ready || choice.entityKind != QStringLiteral("operation") || choice.entityKey.isEmpty())
+            return QString();
+
+        QSqlQuery operation(m_database);
+        operation.prepare(QStringLiteral(
+            "SELECT title_source,manufacturer_operation_no,operation_kind,source_language,section_key "
+            "FROM ravemems_operation WHERE operation_key=?"));
+        operation.addBindValue(choice.entityKey);
+        if (!operation.exec() || !operation.next())
+            return QString();
+
+        QStringList output;
+        const QString title = operation.value(0).toString().trimmed();
+        const QString opNo = operation.value(1).toString().trimmed();
+        const QString opKind = operation.value(2).toString().trimmed();
+        output << QStringLiteral("Sujet documentaire : %1").arg(title.isEmpty() ? choice.label : title);
+        if (!opNo.isEmpty())
+            output << QStringLiteral("Opération constructeur : %1").arg(opNo);
+        if (!opKind.isEmpty())
+            output << QStringLiteral("Type d'opération : %1").arg(opKind);
+
+        QSqlQuery pages(m_database);
+        pages.prepare(QStringLiteral(
+            "SELECT MIN(p.physical_page),MAX(p.physical_page) FROM ravemems_provenance pr "
+            "JOIN ravemems_page p ON p.page_key=pr.page_key WHERE "
+            "(pr.entity_kind='operation' AND pr.entity_key=?) OR "
+            "(pr.entity_kind='phase' AND pr.entity_key IN (SELECT phase_key FROM ravemems_phase WHERE operation_key=?)) OR "
+            "(pr.entity_kind='step' AND pr.entity_key IN (SELECT st.step_key FROM ravemems_step st JOIN ravemems_phase ph ON ph.phase_key=st.phase_key WHERE ph.operation_key=?)) OR "
+            "(pr.entity_kind='notice' AND pr.entity_key IN (SELECT notice_key FROM ravemems_notice WHERE operation_key=?)) OR "
+            "(pr.entity_kind='requirement' AND pr.entity_key IN (SELECT requirement_key FROM ravemems_requirement WHERE operation_key=?))"));
+        for (int i = 0; i < 5; ++i)
+            pages.addBindValue(choice.entityKey);
+        if (pages.exec() && pages.next() && !pages.value(0).isNull()) {
+            const int first = pages.value(0).toInt();
+            const int last = pages.value(1).toInt();
+            output << (first == last
+                       ? QStringLiteral("Étendue documentaire : page %1").arg(first)
+                       : QStringLiteral("Étendue documentaire : pages %1 à %2").arg(first).arg(last));
+        }
+
+        QSqlQuery phases(m_database);
+        phases.prepare(QStringLiteral(
+            "SELECT phase_key,sequence_no,phase_kind_source,normalized_phase_kind,title_source "
+            "FROM ravemems_phase WHERE operation_key=? ORDER BY sequence_no,phase_key"));
+        phases.addBindValue(choice.entityKey);
+        if (phases.exec()) {
+            while (phases.next()) {
+                const QString phaseKey = phases.value(0).toString();
+                const QString phaseKind = phases.value(2).toString().trimmed();
+                const QString normalizedKind = phases.value(3).toString().trimmed();
+                const QString phaseTitle = phases.value(4).toString().trimmed();
+                QString heading = phaseTitle;
+                if (heading.isEmpty())
+                    heading = !phaseKind.isEmpty() ? phaseKind : normalizedKind;
+                if (!heading.isEmpty())
+                    output << QStringLiteral("\n%1").arg(heading);
+
+                QSqlQuery steps(m_database);
+                steps.prepare(QStringLiteral(
+                    "SELECT sequence_no,manufacturer_step_no,instruction_source,condition_text,source_page_start,source_page_end "
+                    "FROM ravemems_step WHERE phase_key=? ORDER BY sequence_no,step_key"));
+                steps.addBindValue(phaseKey);
+                if (steps.exec()) {
+                    while (steps.next()) {
+                        const QString manufacturerStep = steps.value(1).toString().trimmed();
+                        const QString instruction = steps.value(2).toString().trimmed();
+                        const QString condition = steps.value(3).toString().trimmed();
+                        if (instruction.isEmpty())
+                            continue;
+                        QString line = manufacturerStep.isEmpty()
+                            ? QStringLiteral("• %1").arg(instruction)
+                            : QStringLiteral("• Étape %1 : %2").arg(manufacturerStep, instruction);
+                        if (!condition.isEmpty())
+                            line += QStringLiteral(" — condition : %1").arg(condition);
+                        output << line;
+                    }
+                }
+            }
+        }
+
+        QSqlQuery notices(m_database);
+        notices.prepare(QStringLiteral(
+            "SELECT notice_kind,source_text,scope_kind FROM ravemems_notice "
+            "WHERE operation_key=? ORDER BY sequence_no,notice_key"));
+        notices.addBindValue(choice.entityKey);
+        if (notices.exec()) {
+            QStringList rows;
+            while (notices.next()) {
+                const QString text = notices.value(1).toString().trimmed();
+                if (text.isEmpty())
+                    continue;
+                const QString kind = notices.value(0).toString().trimmed();
+                rows << (kind.isEmpty() ? QStringLiteral("• %1").arg(text)
+                                        : QStringLiteral("• %1 : %2").arg(kind, text));
+            }
+            if (!rows.isEmpty()) {
+                output << QStringLiteral("\nAvertissements / remarques :");
+                output.append(rows);
+            }
+        }
+
+        QSqlQuery requirements(m_database);
+        requirements.prepare(QStringLiteral(
+            "SELECT requirement_type,requirement_source,part_number,quantity,unit,before_start,figure_ref "
+            "FROM ravemems_requirement WHERE operation_key=? ORDER BY sequence_no,requirement_key"));
+        requirements.addBindValue(choice.entityKey);
+        if (requirements.exec()) {
+            QStringList rows;
+            while (requirements.next()) {
+                const QString type = requirements.value(0).toString().trimmed();
+                const QString text = requirements.value(1).toString().trimmed();
+                const QString part = requirements.value(2).toString().trimmed();
+                const QString quantity = requirements.value(3).toString().trimmed();
+                const QString unit = requirements.value(4).toString().trimmed();
+                if (text.isEmpty() && part.isEmpty())
+                    continue;
+                QStringList fields;
+                if (!type.isEmpty()) fields << type;
+                if (!text.isEmpty()) fields << text;
+                if (!part.isEmpty()) fields << QStringLiteral("réf. %1").arg(part);
+                if (!quantity.isEmpty()) fields << QStringLiteral("%1 %2").arg(quantity, unit).trimmed();
+                rows << QStringLiteral("• %1").arg(fields.join(QStringLiteral(" — ")));
+            }
+            if (!rows.isEmpty()) {
+                output << QStringLiteral("\nExigences / spécifications :");
+                output.append(rows);
+            }
+        }
+
+        return output.join(QLatin1Char('\n')).trimmed();
+    }
+
+private:
+    QString m_connectionName;
+    QSqlDatabase m_database;
+    QString m_error;
+    bool m_ready = false;
 };
 
-QList<LockedChoice> brakeChapterChoicesLock()
+QString menuFingerprint(const QList<DocumentaryChoice> &choices)
 {
-    const QStringList headings = {
-        QStringLiteral("PURGE DU CIRCUIT DES FREINS"),
-        QStringLiteral("CONTACTEUR DES FEUX STOP"),
-        QStringLiteral("TAMBOUR DE FREIN ARRIERE"),
-        QStringLiteral("CONTACTEUR DE TEMOIN DE DEFAILLANCE DE FREIN"),
-        QStringLiteral("SOUPAPE DE TARAGE"),
-        QStringLiteral("MAITRE-CYLINDRE"),
-        QStringLiteral("PEDALE DE FREIN"),
-        QStringLiteral("PLAQUETTES DE FREIN AVANT"),
-        QStringLiteral("SEGMENTS DE FREIN ARRIERE"),
-        QStringLiteral("ENSEMBLE DE SERVOCOMMANDE"),
-        QStringLiteral("ETRIER DE FREIN AVANT"),
-        QStringLiteral("CYLINDRE DE FREIN ARRIERE"),
-        QStringLiteral("CABLE DE FREIN A MAIN - AVANT")
-    };
-    QList<LockedChoice> out;
-    for (const QString &heading : headings) {
-        LockedChoice choice;
-        choice.label = polishLabelLock(heading);
-        choice.query = heading;
-        choice.locked = true;
-        out.append(choice);
-    }
-    return out;
+    QStringList ids;
+    for (const DocumentaryChoice &choice : choices)
+        ids << choice.identity();
+    return ids.join(QStringLiteral("||"));
 }
 
-QString candidateLabelLock(const QVariantMap &row)
+QString displayChoiceLabel(const DocumentaryChoice &choice)
 {
-    const QString content = row.value(QStringLiteral("content")).toString();
-    const QStringList fields = {
-        QStringLiteral("procedure_title"), QStringLiteral("operation_title"), QStringLiteral("subject"),
-        QStringLiteral("component_name"), QStringLiteral("source_section"), QStringLiteral("topic"),
-        QStringLiteral("title_source"), QStringLiteral("operation"), QStringLiteral("name_fr")
-    };
-    for (const QString &field : fields) {
-        const QString value = polishLabelLock(contentFieldLock(content, field));
-        if (!value.isEmpty() && !internalOrPageLabelLock(value))
-            return value;
+    QString label = cleanDocumentaryLabel(choice.label);
+    if (choice.entityKind == QStringLiteral("operation")
+        && !choice.operationNumber.isEmpty()
+        && !normalizedDocumentary(label).contains(normalizedDocumentary(choice.operationNumber))) {
+        label += QStringLiteral(" — opération %1").arg(choice.operationNumber);
     }
-    const QString title = polishLabelLock(row.value(QStringLiteral("title")).toString());
-    return internalOrPageLabelLock(title) ? QString() : title;
+    return label;
 }
 
-QList<LockedChoice> initialChoicesLock(const QString &question)
-{
-    const QStringList terms = meaningfulTermsLock(question);
-    if (terms.size() != 1)
-        return QList<LockedChoice>();
-    const QString term = terms.first();
-    static const QSet<QString> precise = {
-        QStringLiteral("ckp"), QStringLiteral("ect"), QStringLiteral("iat"), QStringLiteral("map"),
-        QStringLiteral("tps"), QStringLiteral("iac"), QStringLiteral("iacv"), QStringLiteral("ecu"),
-        QStringLiteral("spi"), QStringLiteral("mpi"), QStringLiteral("obd"), QStringLiteral("rosco")
-    };
-    if (precise.contains(term))
-        return QList<LockedChoice>();
-
-    const QVariantList rows = MemsGlobalSearchIndex::search(question, QString(), 40);
-    if (rows.size() < 10)
-        return QList<LockedChoice>();
-
-    QList<LockedChoice> out;
-    QSet<QString> seen;
-    if (term == QStringLiteral("frein") || term == QStringLiteral("freins")) {
-        LockedChoice parent;
-        parent.label = QStringLiteral("Freins — documentation générale");
-        parent.query = QStringLiteral("FREINS");
-        parent.parent = true;
-        out.append(parent);
-        seen.insert(normalizedLock(parent.label));
-    }
-
-    for (const QVariant &item : rows) {
-        const QVariantMap row = item.toMap();
-        QString label = candidateLabelLock(row);
-        if (label.isEmpty())
-            continue;
-        const QString n = normalizedLock(label);
-        if (n == term || n == QStringLiteral("freins") || n == QStringLiteral("brakes")
-            || n == QStringLiteral("embrayage") || n == QStringLiteral("clutch")
-            || n.contains(QStringLiteral("table des matieres")) || broadBrakeLabelLock(label))
-            continue;
-        if (seen.contains(n))
-            continue;
-        seen.insert(n);
-        LockedChoice choice;
-        choice.label = label;
-        choice.query = QStringLiteral("%1 %2").arg(question, label).simplified();
-        choice.locked = (term == QStringLiteral("frein") || term == QStringLiteral("freins"));
-        out.append(choice);
-        if (out.size() >= 5)
-            break;
-    }
-    return out.size() >= 3 ? out : QList<LockedChoice>();
-}
-
-QList<LockedChoice> refinementChoicesLock(const QString &query)
-{
-    const QVariantList rows = MemsGlobalSearchIndex::search(query, QString(), 80);
-    if (rows.size() < 2)
-        return QList<LockedChoice>();
-
-    QList<LockedChoice> out;
-    QSet<QString> seen;
-    for (const QVariant &item : rows) {
-        const QVariantMap row = item.toMap();
-        const QString label = candidateLabelLock(row);
-        if (label.isEmpty())
-            continue;
-        const QString n = normalizedLock(label);
-        if (n.isEmpty() || n == normalizedLock(query) || seen.contains(n)
-            || n.contains(QStringLiteral("table des matieres")) || broadBrakeLabelLock(label))
-            continue;
-        seen.insert(n);
-        LockedChoice choice;
-        choice.label = label;
-        choice.query = QStringLiteral("%1 %2").arg(query, label).simplified();
-        choice.locked = true;
-        out.append(choice);
-        if (out.size() >= 12)
-            break;
-    }
-    return out.size() >= 2 ? out : QList<LockedChoice>();
-}
-
-void appendTranscriptLock(QTextBrowser *browser, const QString &speaker, const QString &text)
+void appendDocumentaryTranscript(QTextBrowser *browser, const QString &speaker, const QString &text)
 {
     if (!browser)
         return;
     QString safe = text.toHtmlEscaped();
     safe.replace(QLatin1Char('\n'), QStringLiteral("<br>"));
-    browser->append(QStringLiteral("<p><b>%1</b><br>%2</p>").arg(speaker.toHtmlEscaped(), safe));
+    browser->append(QStringLiteral("<p><b>%1</b><br>%2</p>")
+                    .arg(speaker.toHtmlEscaped(), safe));
 }
 
-class LockedDocumentaryController : public QObject
+class DocumentaryPipelineController final : public QObject
 {
 public:
-    explicit LockedDocumentaryController(QWidget *tab) : QObject(tab), m_tab(tab)
+    explicit DocumentaryPipelineController(QWidget *tab)
+        : QObject(tab), m_tab(tab)
     {
         if (!m_tab)
             return;
@@ -293,40 +566,183 @@ public:
         QObject::connect(m_send, &QPushButton::clicked, this, [this]() { handleSend(); });
         QObject::connect(m_question, &QLineEdit::returnPressed, this, [this]() { handleSend(); });
         m_tab->setProperty("iaDocumentaryClarificationTest", true);
-        m_tab->setProperty("iaDocumentaryLockedControllerV1", true);
+        m_tab->setProperty("iaDocumentaryIdentityPipelineV2", true);
     }
 
 private:
     void invokeOriginalSend(const QString &question)
     {
+        clearPending();
         if (!m_tab || !m_question)
             return;
         m_question->setText(question);
         QMetaObject::invokeMethod(m_tab.data(), "sendQuestion", Qt::DirectConnection);
     }
 
-    void sendLocked(const QString &query)
+    void clearPending()
     {
-        IaMemsService *service = IaMemsService::instance();
-        if (!service || !m_question || !m_send)
+        m_pendingChoices.clear();
+        m_pendingSubject.clear();
+        m_originalQuestion.clear();
+        m_lastMenuFingerprint.clear();
+    }
+
+    void showChoices(const QString &subject,
+                     const QList<DocumentaryChoice> &choices,
+                     const QString &originalQuestion)
+    {
+        if (choices.isEmpty())
             return;
+        const QString fingerprint = menuFingerprint(choices);
+        if (!m_lastMenuFingerprint.isEmpty() && fingerprint == m_lastMenuFingerprint) {
+            for (const DocumentaryChoice &choice : choices) {
+                if (choice.entityKind == QStringLiteral("operation")) {
+                    sendResolved(choice, originalQuestion);
+                    return;
+                }
+            }
+            invokeOriginalSend(originalQuestion);
+            return;
+        }
+
+        m_lastMenuFingerprint = fingerprint;
+        m_pendingChoices = choices;
+        m_pendingSubject = subject;
+        m_originalQuestion = originalQuestion;
+        m_question->clear();
+
+        QString prompt = QStringLiteral("J'ai trouvé plusieurs rubriques correspondant à « %1 ». Laquelle recherchez-vous ?")
+                             .arg(subject);
+        for (int i = 0; i < choices.size(); ++i)
+            prompt += QStringLiteral("\n%1. %2").arg(i + 1).arg(displayChoiceLabel(choices.at(i)));
+        prompt += QStringLiteral("\nRépondez par le numéro, ou écrivez un autre sujet pour relancer une recherche.");
+        appendDocumentaryTranscript(m_transcript, QStringLiteral("IA MEMS"), prompt);
+        m_question->setFocus();
+    }
+
+    void sendResolved(const DocumentaryChoice &choice, const QString &originalQuestion)
+    {
+        DocumentaryPackReader reader;
+        if (!reader.isReady()) {
+            invokeOriginalSend(originalQuestion);
+            return;
+        }
+
+        if (choice.entityKind == QStringLiteral("section") || choice.entityKind == QStringLiteral("document")) {
+            const QList<DocumentaryChoice> children = reader.children(choice);
+            if (children.size() == 1) {
+                sendResolved(children.first(), originalQuestion);
+                return;
+            }
+            if (children.size() >= 2) {
+                showChoices(displayChoiceLabel(choice), children, originalQuestion);
+                return;
+            }
+            invokeOriginalSend(originalQuestion);
+            return;
+        }
+
+        if (choice.entityKind != QStringLiteral("operation")) {
+            invokeOriginalSend(originalQuestion);
+            return;
+        }
+
+        const QString evidence = reader.evidenceForOperation(choice);
+        if (evidence.trimmed().isEmpty()) {
+            appendDocumentaryTranscript(m_transcript, QStringLiteral("IA MEMS"),
+                QStringLiteral("La rubrique sélectionnée existe, mais son contenu structuré n'a pas pu être lu. Je ne vais pas remplacer cette sélection par une autre recherche approximative."));
+            clearPending();
+            return;
+        }
+
+        IaMemsService *service = IaMemsService::instance();
+        if (!service)
+            return;
+        clearPending();
         m_question->clear();
         m_send->setEnabled(false);
         m_question->setEnabled(false);
-        service->askWithLibrary(QStringLiteral("[[MEMS_LOCKED]]%1").arg(query.trimmed()));
+        service->setProperty("iaMemsResolvedEvidence", evidence);
+        service->setProperty("iaMemsResolvedSubject", displayChoiceLabel(choice));
+        service->setProperty("iaMemsResolvedEntityKind", choice.entityKind);
+        service->setProperty("iaMemsResolvedEntityKey", choice.entityKey);
+        service->askWithLibrary(QStringLiteral("[[MEMS_RESOLVED]]%1").arg(originalQuestion.trimmed()));
     }
 
-    void showChoices(const QString &subject, const QList<LockedChoice> &choices)
+    void resolveInitial(const QString &raw)
     {
-        m_pendingSubject = subject;
-        m_choices = choices;
-        m_question->clear();
-        QString prompt = QStringLiteral("J'ai trouvé plusieurs sujets correspondant à « %1 ». Lequel recherchez-vous ?").arg(subject);
-        for (int i = 0; i < m_choices.size(); ++i)
-            prompt += QStringLiteral("\n%1. %2").arg(i + 1).arg(m_choices.at(i).label);
-        prompt += QStringLiteral("\nRépondez par le numéro ou précisez directement le sujet.");
-        appendTranscriptLock(m_transcript, QStringLiteral("IA MEMS"), prompt);
-        m_question->setFocus();
+        DocumentaryPackReader reader;
+        if (!reader.isReady()) {
+            invokeOriginalSend(raw);
+            return;
+        }
+
+        QList<DocumentaryChoice> choices = reader.discover(raw, 10);
+        if (choices.isEmpty()) {
+            invokeOriginalSend(raw);
+            return;
+        }
+
+        appendDocumentaryTranscript(m_transcript, QStringLiteral("Vous"), raw);
+
+        const QStringList terms = meaningfulDocumentaryTerms(raw);
+        if (terms.size() == 1 && choices.first().entityKind == QStringLiteral("section")) {
+            const QList<DocumentaryChoice> children = reader.children(choices.first());
+            if (children.size() == 1) {
+                sendResolved(children.first(), raw);
+                return;
+            }
+            if (children.size() >= 2) {
+                showChoices(displayChoiceLabel(choices.first()), children, raw);
+                return;
+            }
+        }
+
+        if (choices.first().entityKind == QStringLiteral("operation")) {
+            const bool clearWinner = choices.size() == 1
+                || choices.first().score >= choices.at(1).score + 70;
+            if (clearWinner) {
+                sendResolved(choices.first(), raw);
+                return;
+            }
+        }
+
+        showChoices(raw, choices, raw);
+    }
+
+    void handlePendingSelection(const QString &raw)
+    {
+        appendDocumentaryTranscript(m_transcript, QStringLiteral("Vous"), raw);
+        bool ok = false;
+        const int selected = raw.toInt(&ok);
+        if (ok && selected >= 1 && selected <= m_pendingChoices.size()) {
+            const DocumentaryChoice choice = m_pendingChoices.at(selected - 1);
+            const QString original = m_originalQuestion;
+            m_pendingChoices.clear();
+            m_pendingSubject.clear();
+            sendResolved(choice, original);
+            return;
+        }
+
+        const QString original = m_originalQuestion;
+        clearPending();
+        DocumentaryPackReader reader;
+        if (!reader.isReady()) {
+            invokeOriginalSend(raw);
+            return;
+        }
+        const QString refined = QStringLiteral("%1 %2").arg(original, raw).simplified();
+        QList<DocumentaryChoice> choices = reader.discover(refined, 10);
+        if (choices.isEmpty()) {
+            invokeOriginalSend(refined);
+            return;
+        }
+        if (choices.first().entityKind == QStringLiteral("operation")
+            && (choices.size() == 1 || choices.first().score >= choices.at(1).score + 70)) {
+            sendResolved(choices.first(), original);
+            return;
+        }
+        showChoices(raw, choices, original);
     }
 
     void handleSend()
@@ -337,100 +753,75 @@ private:
         if (raw.isEmpty())
             return;
 
-        if (!m_pendingSubject.isEmpty()) {
-            appendTranscriptLock(m_transcript, QStringLiteral("Vous"), raw);
-            bool ok = false;
-            const int selected = raw.toInt(&ok);
-            LockedChoice choice;
-            bool haveChoice = ok && selected >= 1 && selected <= m_choices.size();
-            QString refined;
-            if (haveChoice) {
-                choice = m_choices.at(selected - 1);
-                refined = choice.query;
-            } else {
-                refined = QStringLiteral("%1 %2").arg(m_pendingSubject, raw).simplified();
-            }
-
-            m_pendingSubject.clear();
-            m_choices.clear();
-
-            if (haveChoice && (choice.parent || broadBrakeLabelLock(choice.label))) {
-                showChoices(QStringLiteral("Freins — documentation générale"), brakeChapterChoicesLock());
-                return;
-            }
-
-            if (haveChoice && choice.locked) {
-                sendLocked(refined);
-                return;
-            }
-
-            const QList<LockedChoice> next = refinementChoicesLock(refined);
-            if (next.size() >= 2) {
-                showChoices(haveChoice ? choice.label : refined, next);
-                return;
-            }
-            sendLocked(refined);
+        if (!m_pendingChoices.isEmpty()) {
+            handlePendingSelection(raw);
             return;
         }
 
-        const QList<LockedChoice> choices = initialChoicesLock(raw);
-        if (choices.isEmpty()) {
+        const IaResponseLogic::Intent intent = IaResponseLogic::classify(raw);
+        const bool explicitDocumentation = IaMemsConversationRouting::isDocumentationQuestion(raw);
+        if (intent != IaResponseLogic::Intent::None && !explicitDocumentation) {
             invokeOriginalSend(raw);
             return;
         }
 
-        appendTranscriptLock(m_transcript, QStringLiteral("Vous"), raw);
-        showChoices(raw, choices);
+        resolveInitial(raw);
     }
 
     QPointer<QWidget> m_tab;
     QPointer<QLineEdit> m_question;
     QPointer<QPushButton> m_send;
     QPointer<QTextBrowser> m_transcript;
+    QList<DocumentaryChoice> m_pendingChoices;
     QString m_pendingSubject;
-    QList<LockedChoice> m_choices;
+    QString m_originalQuestion;
+    QString m_lastMenuFingerprint;
 };
 
-void patchLockedController(QWidget *tab)
+void patchDocumentaryPipeline(QWidget *tab)
 {
-    if (!tab || tab->property("iaDocumentaryLockedControllerV1").toBool())
+    if (!tab || tab->property("iaDocumentaryIdentityPipelineV2").toBool())
         return;
-    new LockedDocumentaryController(tab);
+    new DocumentaryPipelineController(tab);
 }
 
-class LockedControllerInstaller : public QObject
+class DocumentaryPipelineInstaller final : public QObject
 {
 public:
-    explicit LockedControllerInstaller(QObject *parent = nullptr) : QObject(parent) {}
+    explicit DocumentaryPipelineInstaller(QObject *parent = nullptr) : QObject(parent) {}
 
     bool eventFilter(QObject *watched, QEvent *event) override
     {
         QWidget *widget = qobject_cast<QWidget*>(watched);
-        if (widget && event && (event->type() == QEvent::Show || event->type() == QEvent::Polish)
+        if (widget && event
+            && (event->type() == QEvent::Show || event->type() == QEvent::Polish)
             && widget->objectName() == QStringLiteral("ia_mems_tab")) {
             QPointer<QWidget> guarded(widget);
-            QTimer::singleShot(250, this, [guarded]() { if (guarded) patchLockedController(guarded); });
+            QTimer::singleShot(350, this, [guarded]() {
+                if (guarded)
+                    patchDocumentaryPipeline(guarded);
+            });
         }
         return QObject::eventFilter(watched, event);
     }
 };
 
-void installLockedDocumentaryController()
+void installDocumentaryIdentityPipeline()
 {
     QCoreApplication *core = QCoreApplication::instance();
     if (!core)
         return;
-    LockedControllerInstaller *installer = new LockedControllerInstaller(core);
+    DocumentaryPipelineInstaller *installer = new DocumentaryPipelineInstaller(core);
     core->installEventFilter(installer);
-    QTimer::singleShot(800, installer, [installer]() {
+    QTimer::singleShot(900, installer, [installer]() {
         Q_UNUSED(installer)
         for (QWidget *widget : QApplication::allWidgets()) {
             if (widget && widget->objectName() == QStringLiteral("ia_mems_tab"))
-                patchLockedController(widget);
+                patchDocumentaryPipeline(widget);
         }
     });
 }
 
 } // namespace
 
-Q_COREAPP_STARTUP_FUNCTION(installLockedDocumentaryController)
+Q_COREAPP_STARTUP_FUNCTION(installDocumentaryIdentityPipeline)

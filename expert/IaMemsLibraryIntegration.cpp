@@ -9,7 +9,7 @@
 
 namespace {
 
-const QString kLockedDocumentaryPrefix = QStringLiteral("[[MEMS_LOCKED]]");
+const QString kResolvedDocumentaryPrefix = QStringLiteral("[[MEMS_RESOLVED]]");
 
 void appendUnique(QStringList &terms, const QString &term)
 {
@@ -76,17 +76,21 @@ bool genericInsufficientGrounding(const QString &text)
         || lower.contains(QStringLiteral("je n'ai pas assez d elements"));
 }
 
-QString mergeGrounding(const QString &legacy, const IaMemsLibraryGrounding &library)
+QString documentaryModelQuestion(const QString &question,
+                                  const QString &subject,
+                                  const QString &evidence)
 {
-    const QString oldGrounding = legacy.trimmed();
-    const QString newGrounding = library.text.trimmed();
-    if (newGrounding.isEmpty())
-        return oldGrounding;
-    if (oldGrounding.isEmpty() || genericInsufficientGrounding(oldGrounding))
-        return newGrounding;
-
-    return QStringLiteral("%1\n\nContexte expert MEMS Manager complémentaire :\n%2")
-        .arg(newGrounding, oldGrounding);
+    return QStringLiteral(
+        "Analyse documentaire technique.\n"
+        "Question de l'utilisateur : %1\n"
+        "Rubrique sélectionnée : %2\n\n"
+        "Documentation structurée à utiliser exclusivement :\n%3\n\n"
+        "Réponds directement en français à la question. Organise la réponse dans l'ordre utile. "
+        "N'invente rien et n'ajoute aucune information extérieure à la documentation fournie. "
+        "Si la documentation contient plusieurs étapes, conserve leur ordre et les informations nécessaires. "
+        "N'affiche pas les identifiants internes, le préambule de recherche, la provenance, les clés techniques "
+        "ou le niveau de preuve, sauf demande explicite de l'utilisateur.")
+        .arg(question.trimmed(), subject.trimmed().isEmpty() ? question.trimmed() : subject.trimmed(), evidence.trimmed());
 }
 
 } // namespace
@@ -97,68 +101,72 @@ void IaMemsService::askWithLibrary(const QString &question)
     if (trimmed.isEmpty())
         return;
 
-    const bool lockedDocumentary = trimmed.startsWith(kLockedDocumentaryPrefix);
-    if (lockedDocumentary)
-        trimmed = trimmed.mid(kLockedDocumentaryPrefix.size()).trimmed();
+    const bool resolvedDocumentary = trimmed.startsWith(kResolvedDocumentaryPrefix);
+    if (resolvedDocumentary)
+        trimmed = trimmed.mid(kResolvedDocumentaryPrefix.size()).trimmed();
     if (trimmed.isEmpty())
         return;
 
     updateContextFromQuestion(trimmed);
 
-    if (lockedDocumentary) {
-        // A numbered documentary choice is already the user's resolved subject.
-        // Search only this exact subject: do not generate broad keyword/single-word
-        // fallbacks that can jump to another system (for example emissions purge).
-        const IaMemsLibraryGrounding libraryGrounding =
-            IaMemsLibraryBridge::retrieve(trimmed, QStringList());
+    if (resolvedDocumentary) {
+        const QString evidence = property("iaMemsResolvedEvidence").toString().trimmed();
+        const QString subject = property("iaMemsResolvedSubject").toString().trimmed();
         setProperty("iaMemsLastLibraryQuestion", trimmed);
-        setProperty("iaMemsLastLibraryEvidence", libraryGrounding.text);
+        setProperty("iaMemsLastLibraryEvidence", evidence);
         setProperty("iaMemsLastLibraryLocked", true);
 
-        if (libraryGrounding.text.trimmed().isEmpty()) {
+        if (evidence.isEmpty()) {
             m_pendingGrounding.clear();
             emit responseReady(QStringLiteral(
-                "Je n'ai pas trouvé de donnée documentaire correspondant exactement au sujet sélectionné. Je ne vais pas élargir automatiquement la recherche à un autre sujet."));
+                "La rubrique documentaire a été sélectionnée, mais son contenu structuré est vide. Je ne vais pas élargir automatiquement la recherche à un autre sujet."));
             emit statusChanged();
             return;
         }
 
-        // The evidence is embedded in the hidden model request and NOT passed as
-        // groundingContext. That deliberately bypasses LocalAiClient's historical
-        // non-diagnostic shortcut which displayed the raw RAG text instead of
-        // asking Qwen to synthesize it.
-        const QString modelQuestion = QStringLiteral(
-            "Question documentaire sélectionnée par l'utilisateur : %1\n\n"
-            "Documentation technique verrouillée pour cette sélection :\n%2\n\n"
-            "Réponds directement à la question à partir de cette documentation uniquement. "
-            "Donne une réponse claire, organisée et complète. N'affiche pas le préambule RAG, "
-            "les identifiants internes, les clés DOC/REV/SRC, le niveau de preuve ni la provenance, "
-            "sauf si l'utilisateur les demande explicitement.")
-            .arg(trimmed, libraryGrounding.text.trimmed());
-
         m_pendingGrounding = QStringLiteral(
-            "La documentation sélectionnée a été retrouvée, mais sa synthèse par l'IA locale n'a pas pu être produite.");
+            "La documentation sélectionnée a été retrouvée, mais la synthèse par l'IA locale n'a pas pu être produite.");
 
         if (m_localAi && m_localAi->isReady()) {
-            m_localAi->ask(modelQuestion, QString());
+            m_localAi->ask(documentaryModelQuestion(trimmed, subject, evidence), QString());
             emit statusChanged();
             return;
         }
 
         m_pendingGrounding.clear();
         emit responseReady(QStringLiteral(
-            "La documentation sélectionnée a bien été retrouvée, mais l'IA locale n'est pas prête pour produire la réponse synthétique."));
+            "La documentation sélectionnée a bien été retrouvée, mais l'IA locale n'est pas prête pour produire la réponse."));
         emit statusChanged();
         return;
     }
 
-    const QString legacyGrounding = groundingFor(trimmed);
     const IaMemsLibraryGrounding libraryGrounding =
         IaMemsLibraryBridge::retrieve(trimmed, libraryKeywords(trimmed));
     setProperty("iaMemsLastLibraryQuestion", trimmed);
     setProperty("iaMemsLastLibraryEvidence", libraryGrounding.text);
     setProperty("iaMemsLastLibraryLocked", false);
-    m_pendingGrounding = mergeGrounding(legacyGrounding, libraryGrounding);
+
+    // When Pack001 really found documentary evidence, do not concatenate a second
+    // legacy answer that may concern another topic. Ask the local model to
+    // synthesize the Pack001 evidence instead of displaying the raw RAG block.
+    if (!libraryGrounding.text.trimmed().isEmpty()) {
+        m_pendingGrounding = QStringLiteral(
+            "La documentation a été retrouvée, mais la synthèse par l'IA locale n'a pas pu être produite.");
+        if (m_localAi && m_localAi->isReady()) {
+            m_localAi->ask(documentaryModelQuestion(trimmed, trimmed, libraryGrounding.text), QString());
+            emit statusChanged();
+            return;
+        }
+        m_pendingGrounding.clear();
+        emit responseReady(QStringLiteral(
+            "La documentation correspondante a été retrouvée, mais l'IA locale n'est pas prête pour produire la réponse."));
+        emit statusChanged();
+        return;
+    }
+
+    // No Pack001 evidence: preserve the existing deterministic/expert path.
+    const QString legacyGrounding = groundingFor(trimmed);
+    m_pendingGrounding = legacyGrounding;
 
     if (m_localAi && m_localAi->isReady()) {
         m_localAi->ask(trimmed, m_pendingGrounding);
