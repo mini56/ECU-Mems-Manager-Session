@@ -119,8 +119,8 @@ AnalysisTab::AnalysisTab(QWidget *parent)
     m_overlayButton=new QPushButton(I18n::text(6446),this);m_overlayButton->setObjectName(QStringLiteral("analysisOverlayButton"));m_overlayButton->setCheckable(true);
     m_fileLabel=new QLabel(I18n::text(6443),this);m_fileLabel->setObjectName(QStringLiteral("analysisFileLabel"));m_fileLabel->setWordWrap(true);m_fileLabel->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
 
-    m_diagnosticLiveButton=new QPushButton(I18n::text(7907),this);m_diagnosticLiveButton->setObjectName(QStringLiteral("analysisDiagnosticLiveButton"));m_diagnosticLiveButton->setCheckable(true);
-    m_injectionLiveButton=new QPushButton(I18n::text(7908),this);m_injectionLiveButton->setObjectName(QStringLiteral("analysisInjectionLiveButton"));m_injectionLiveButton->setCheckable(true);
+    m_diagnosticLiveButton=new QPushButton(I18n::text(6876),this);m_diagnosticLiveButton->setObjectName(QStringLiteral("analysisDiagnosticLiveButton"));m_diagnosticLiveButton->setCheckable(true);
+    m_injectionLiveButton=new QPushButton(I18n::text(7900),this);m_injectionLiveButton->setObjectName(QStringLiteral("analysisInjectionLiveButton"));m_injectionLiveButton->setCheckable(true);
     for(QPushButton *button:{m_loadButton,m_diagnosticLiveButton,m_injectionLiveButton})button->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
     m_liveButtonGroup=new QButtonGroup(this);m_liveButtonGroup->setExclusive(true);m_liveButtonGroup->addButton(m_diagnosticLiveButton);m_liveButtonGroup->addButton(m_injectionLiveButton);
 

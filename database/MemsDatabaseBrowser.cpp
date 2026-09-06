@@ -160,6 +160,8 @@ void MemsDatabaseBrowser::buildUi()
     sv->addWidget(searchTitle); sv->addWidget(m_search,1); sv->addWidget(m_generation); sv->addWidget(m_resultCount); root->addWidget(searchBox);
 
     QSplitter *split=new QSplitter(Qt::Horizontal,this); split->setChildrenCollapsible(false); split->setHandleWidth(7);
+    split->setMinimumHeight(0);
+    split->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     split->setStyleSheet(QStringLiteral("QSplitter::handle{background:#090e13;}"));
 
     QFrame *listCard=card(split); QVBoxLayout *lv=new QVBoxLayout(listCard); lv->setContentsMargins(7,7,7,7);
@@ -174,16 +176,20 @@ void MemsDatabaseBrowser::buildUi()
     m_results->setStyleSheet(QStringLiteral("QTableWidget{background:#0a1117;color:#dce3e8;alternate-background-color:#0e151b;border:1px solid #27323b;outline:0;}QTableWidget::item{padding:4px;border:0;}QTableWidget::item:selected{background:#332414;color:#fff;}QHeaderView::section{background:#141c23;color:#ff9828;border:0;border-right:1px solid #29343e;border-bottom:2px solid #ff7a00;padding:5px;font-weight:700;}"));
     lv->addWidget(m_results,1);
 
-    QFrame *detailCard=card(split); QVBoxLayout *dv=new QVBoxLayout(detailCard); dv->setContentsMargins(7,7,7,7); dv->setSpacing(5);
+    QFrame *detailCard=card(split);
+    detailCard->setMinimumHeight(0);
+    detailCard->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    QVBoxLayout *dv=new QVBoxLayout(detailCard); dv->setContentsMargins(7,7,7,7); dv->setSpacing(5);
     QHBoxLayout *tools=new QHBoxLayout; QLabel *detailTitle=makeLabel(7224,detailCard); QFont df=detailTitle->font(); df.setBold(true); detailTitle->setFont(df);
     detailTitle->setStyleSheet(QStringLiteral("color:#ff9828;background:transparent;border:0;"));
     m_sheetButton=new QPushButton(detailCard); m_pdfButton=new QPushButton(detailCard);
     for(QPushButton *b:{m_sheetButton,m_pdfButton}){b->setMinimumHeight(28);b->setStyleSheet(QStringLiteral("QPushButton{background:#182129;color:#e9eef1;border:1px solid #3b4852;border-radius:4px;padding:4px 9px;}QPushButton:hover{border-color:#ff7a00;color:#ffad5c;}"));}
     tools->addWidget(detailTitle); tools->addStretch(1); tools->addWidget(m_sheetButton); tools->addWidget(m_pdfButton); dv->addLayout(tools);
     m_detail=new QTextBrowser(detailCard);
+    m_detail->setMinimumHeight(0);
     m_detail->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     m_detail->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    m_detail->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    m_detail->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Ignored);
     m_detail->setStyleSheet(QStringLiteral("QTextBrowser{background:#0a1015;color:#dce3e8;border:1px solid #27323b;border-radius:3px;padding:7px;}QTextBrowser QScrollBar:vertical{background:#080d12;width:10px;margin:0;}QTextBrowser QScrollBar::handle:vertical{background:#46535e;border-radius:3px;min-height:24px;}QTextBrowser QScrollBar::add-line:vertical,QTextBrowser QScrollBar::sub-line:vertical{height:0;}"));
     dv->addWidget(m_detail,1);
     split->addWidget(listCard); split->addWidget(detailCard); split->setStretchFactor(0,3); split->setStretchFactor(1,4); root->addWidget(split,1);
