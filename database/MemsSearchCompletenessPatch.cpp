@@ -698,4 +698,5 @@ void installIaDocumentaryClarification()
 
 }
 
-Q_COREAPP_STARTUP_FUNCTION(installIaDocumentaryClarification)
+// Superseded by IaDocumentaryLockPatch.cpp identity-based documentary pipeline.
+// Q_COREAPP_STARTUP_FUNCTION(installIaDocumentaryClarification)
