@@ -1,0 +1,57 @@
+name: TMP IA grounded generation source alignment
+
+on:
+  push:
+    branches:
+      - tmp-ia-architecture-prep
+
+permissions:
+  contents: write
+
+jobs:
+  align-grounded-generation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Make resolved documentary requests bypass deterministic canned answers
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('expert/LocalAiClient.cpp')
+          text=p.read_text(encoding='utf-8')
+          old='''    const QString trimmedQuestion = question.trimmed();\n    if (trimmedQuestion.isEmpty())\n        return;\n\n    if (asksCurrentDate(trimmedQuestion)) {'''
+          new='''    QString trimmedQuestion = question.trimmed();\n    const QString forcedGroundedPrefix = QStringLiteral("[[MEMS_GROUNDED]]");\n    const bool forcedGrounded = trimmedQuestion.startsWith(forcedGroundedPrefix);\n    if (forcedGrounded)\n        trimmedQuestion = trimmedQuestion.mid(forcedGroundedPrefix.size()).trimmed();\n    if (trimmedQuestion.isEmpty())\n        return;\n\n    if (!forcedGrounded && asksCurrentDate(trimmedQuestion)) {'''
+          if old not in text:
+              raise SystemExit('LocalAiClient entry block not found')
+          text=text.replace(old,new,1)
+          old='''    const QString controlled = controlledTechnicalAnswer(trimmedQuestion);\n    if (!controlled.isEmpty()) {'''
+          new='''    const QString controlled = forcedGrounded ? QString() : controlledTechnicalAnswer(trimmedQuestion);\n    if (!controlled.isEmpty()) {'''
+          if old not in text:
+              raise SystemExit('controlledTechnicalAnswer block not found')
+          text=text.replace(old,new,1)
+          old='''    const QString controlledFollowUp = controlledFollowUpAnswer(trimmedQuestion, m_conversation);\n    if (!controlledFollowUp.isEmpty()) {'''
+          new='''    const QString controlledFollowUp = forcedGrounded\n        ? QString()\n        : controlledFollowUpAnswer(trimmedQuestion, m_conversation);\n    if (!controlledFollowUp.isEmpty()) {'''
+          if old not in text:
+              raise SystemExit('controlledFollowUp block not found')
+          text=text.replace(old,new,1)
+          p.write_text(text,encoding='utf-8')
+
+          q=Path('expert/IaMemsLibraryIntegration.cpp')
+          text=q.read_text(encoding='utf-8')
+          old='''    return QStringLiteral(\n        "Analyse documentaire technique.\\n"'''
+          new='''    return QStringLiteral(\n        "[[MEMS_GROUNDED]]Analyse documentaire technique.\\n"'''
+          if old not in text:
+              raise SystemExit('documentary model prompt block not found')
+          text=text.replace(old,new,1)
+          q.write_text(text,encoding='utf-8')
+          PY
+          git config user.name mini56
+          git config user.email 48644212+mini56@users.noreply.github.com
+          git add expert/LocalAiClient.cpp expert/IaMemsLibraryIntegration.cpp
+          git rm .github/workflows/tmp-ia-grounded-source-alignment.yml
+          git commit -m "Force selected documentary evidence through Qwen synthesis"
+          git push origin HEAD:tmp-ia-architecture-prep
