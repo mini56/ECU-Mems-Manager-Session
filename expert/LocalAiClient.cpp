@@ -530,6 +530,10 @@ public:
             || !check(OgaGeneratorParamsSetSearchNumber(params, "top_p", topP), error)
             || !check(OgaGeneratorParamsSetSearchNumber(params, "top_k", 20.0), error)
             || !check(OgaCreateGenerator(m_model, params, &generator), error)
+            || !check(OgaGenerator_AppendTokenSequences(generator, sequences), error)
+            || !check(OgaCreateTokenizerStream(m_tokenizer, &stream), error)) {
+            cleanup();
+            return QString();
         }
 
         std::string output;
