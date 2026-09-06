@@ -735,7 +735,7 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
     if (isGenericGrounding(grounding))
         grounding.clear();
 
-    const bool reasoning = requiresReasoning(trimmedQuestion, grounding);
+    const bool reasoning = forcedGrounded || requiresReasoning(trimmedQuestion, grounding);
     if (!reasoning && !grounding.isEmpty()) {
         rememberTurn(m_conversation, trimmedQuestion, grounding);
         emit responseReady(grounding);
@@ -748,7 +748,7 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
             "\n\nFaits fournis par MEMS Manager, à utiliser seulement s'ils répondent à la question :\n%1")
                            .arg(grounding);
     }
-    if (reasoning) {
+    if (reasoning && !forcedGrounded) {
         userContent += QStringLiteral(
             "\n\nRéponse attendue : diagnostic bref, hypothèses les plus probables dans l'ordre, puis contrôles prioritaires. Ne montre aucun raisonnement interne.");
     }
