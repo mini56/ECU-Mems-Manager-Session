@@ -21,8 +21,8 @@
 
 namespace {
 const int kMaximumTurns = 8;
-const int kFastMaxNewTokens = 128;
-const int kDiagnosticMaxNewTokens = 192;
+const int kFastMaxNewTokens = 256;
+const int kDiagnosticMaxNewTokens = 768;
 
 QString firstExistingFile(const QStringList &paths)
 {
