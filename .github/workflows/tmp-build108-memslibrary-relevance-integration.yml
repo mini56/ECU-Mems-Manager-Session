@@ -111,13 +111,23 @@ jobs:
       - name: Run natural-language retrieval in actual ECU MEMS Manager
         shell: pwsh
         run: |
-          $ErrorActionPreference='Stop'
           $qt='C:\Qt\5.15.2\msvc2019_64\bin'
           $env:PATH="$env:RUNTIME_ROOT;$qt;$env:PATH"
           $env:QT_QPA_PLATFORM='offscreen'
           $env:MEMS_RELEVANCE_INTEGRATION_TEST='1'
-          & (Join-Path $env:RUNTIME_ROOT 'ecu_mems_manager.exe')
+          $out=Join-Path $env:GITHUB_WORKSPACE 'relevance-output.txt'
+          & (Join-Path $env:RUNTIME_ROOT 'ecu_mems_manager.exe') *> $out
           $code=$LASTEXITCODE
-          Write-Host "ACTUAL_APP_RELEVANCE_EXIT=$code"
+          "ACTUAL_APP_RELEVANCE_EXIT=$code" | Add-Content $out -Encoding UTF8
+          Get-Content $out
           if($code -ne 0){throw "Actual application relevance integration failed: $code"}
           Write-Host 'BUILD108_ACTUAL_APP_MEMSLIBRARY_RELEVANCE_PASS'
+
+      - name: Upload relevance probe output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: BUILD108-MEMSLibrary-Relevance-Probe-${{ github.run_id }}
+          path: relevance-output.txt
+          if-no-files-found: warn
+          retention-days: 7
