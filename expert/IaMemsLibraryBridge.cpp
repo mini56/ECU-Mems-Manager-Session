@@ -520,8 +520,21 @@ QVector<EvidenceGroup> buildGroups(const QVector<EvidenceCandidate> &candidates)
     return groups;
 }
 
+int groupRelevanceScore(const EvidenceGroup &group)
+{
+    // Several independent rows on the same physical page are meaningful
+    // corroboration. Keep the bonus deliberately bounded so a large page can
+    // never overwhelm a substantially stronger precise hit elsewhere.
+    const int corroborationBonus = qMin(80, group.supportScore / 10);
+    return group.bestScore + corroborationBonus;
+}
+
 bool betterGroup(const EvidenceGroup &left, const EvidenceGroup &right)
 {
+    const int leftRelevance = groupRelevanceScore(left);
+    const int rightRelevance = groupRelevanceScore(right);
+    if (leftRelevance != rightRelevance)
+        return leftRelevance > rightRelevance;
     if (left.bestScore != right.bestScore)
         return left.bestScore > right.bestScore;
     if (left.supportScore != right.supportScore)
