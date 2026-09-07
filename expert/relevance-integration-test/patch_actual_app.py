@@ -1,162 +1,12 @@
 from pathlib import Path
 
-# Temporary integration-only patch: validate a language-neutral relevance score
-# inside the real BUILD108 application before changing the permanent bridge.
+# Broad validation only. The language-neutral bridge relevance fix is already
+# persisted on this temporary branch; do not alter it during this benchmark.
 bridge = Path('expert/IaMemsLibraryBridge.cpp')
 bridge_text = bridge.read_text(encoding='utf-8')
-old_score = r'''int evidenceScore(const EvidenceCandidate &result,
-                  const QString &query,
-                  const QStringList &keywords)
-{
-    const QString searchable = searchableText(result);
-    const QStringList queryTerms = normalizedTerms(query);
-    if (queryTerms.isEmpty())
-        return -1;
-
-    int referenceBoost = 0;
-    // MEMSLibrary uses substring LIKE matching. Accept ordinary terms only as
-    // exact tokens (rejecting axial/coaxial). Manufacturer references use the
-    // generic underscore form present in RAVEMEMS entity keys.
-    for (const QString &term : queryTerms) {
-        if (isManufacturerReferenceAlias(term)) {
-            if (!containsManufacturerReference(result, term))
-                return -1;
-            referenceBoost += 500;
-            continue;
-        }
-        if (!containsExactToken(searchable, term))
-            return -1;
-    }
-
-    int score = queryTerms.size() * 100 + referenceBoost;
-    QSet<QString> scoredKeywords;
-    for (const QString &keyword : keywords) {
-        const QString normalized = normalizeForMatching(keyword);
-        if (normalized.isEmpty() || scoredKeywords.contains(normalized))
-            continue;
-        scoredKeywords.insert(normalized);
-        if (isManufacturerReferenceAlias(normalized)) {
-            if (containsManufacturerReference(result, normalized))
-                score += 24;
-        } else if (containsExactToken(searchable, normalized)) {
-            score += 12;
-        }
-    }
-
-    if (result.entityKind == QStringLiteral("step"))
-        score += 8;
-    else if (result.entityKind == QStringLiteral("requirement"))
-        score += 7;
-    else if (result.entityKind == QStringLiteral("notice"))
-        score += 6;
-    else if (result.entityKind == QStringLiteral("operation"))
-        score += 5;
-    else if (result.entityKind == QStringLiteral("section"))
-        score += 4;
-
-    // For an explicit operation-reference lookup, keep the operation heading
-    // ahead of its steps so Qwen receives the procedure identity as context.
-    bool referenceQuery = false;
-    for (const QString &term : queryTerms) {
-        if (isManufacturerReferenceAlias(term)) {
-            referenceQuery = true;
-            break;
-        }
-    }
-    if (referenceQuery && result.entityKind == QStringLiteral("operation"))
-        score += 30;
-
-    if (!result.title.trimmed().isEmpty())
-        score += 2;
-    return score;
-}
-'''
-new_score = r'''int evidenceScore(const EvidenceCandidate &result,
-                  const QString &query,
-                  const QStringList &keywords)
-{
-    const QString searchable = searchableText(result);
-    const QString searchableTitle = normalizeForMatching(result.title);
-    const QStringList queryTerms = normalizedTerms(query);
-    if (queryTerms.isEmpty())
-        return -1;
-
-    int score = 0;
-    int matchedTerms = 0;
-    bool referenceQuery = false;
-
-    // Rank by evidence actually present, not by the raw number of words in a
-    // natural-language sub-query. This is deliberately language-neutral:
-    // longer exact terms carry more information, title hits are stronger, and
-    // missing conversational words do not eliminate a technically good row.
-    // Explicit manufacturer references remain strict provenance constraints.
-    for (const QString &term : queryTerms) {
-        if (isManufacturerReferenceAlias(term)) {
-            referenceQuery = true;
-            if (!containsManufacturerReference(result, term))
-                return -1;
-            ++matchedTerms;
-            score += 600;
-            continue;
-        }
-
-        if (!containsExactToken(searchable, term))
-            continue;
-
-        ++matchedTerms;
-        const int specificity = qBound(1, term.size() - 2, 10);
-        score += 16 + (specificity * 7);
-        if (containsExactToken(searchableTitle, term))
-            score += 28 + (specificity * 5);
-    }
-
-    if (matchedTerms == 0)
-        return -1;
-
-    // Coverage helps a page matching several independent terms, while a
-    // generic two-word phrase cannot win merely because both words occur.
-    score += matchedTerms * matchedTerms * 8;
-    if (matchedTerms == queryTerms.size() && queryTerms.size() > 1)
-        score += 24 + (queryTerms.size() * 4);
-
-    QSet<QString> scoredKeywords;
-    for (const QString &keyword : keywords) {
-        const QString normalized = normalizeForMatching(keyword);
-        if (normalized.isEmpty() || scoredKeywords.contains(normalized))
-            continue;
-        scoredKeywords.insert(normalized);
-        if (isManufacturerReferenceAlias(normalized)) {
-            if (containsManufacturerReference(result, normalized))
-                score += 24;
-        } else if (containsExactToken(searchable, normalized)) {
-            const int specificity = qBound(1, normalized.size() - 2, 10);
-            score += 4 + (specificity * 2);
-        }
-    }
-
-    if (result.entityKind == QStringLiteral("step"))
-        score += 8;
-    else if (result.entityKind == QStringLiteral("requirement"))
-        score += 7;
-    else if (result.entityKind == QStringLiteral("notice"))
-        score += 6;
-    else if (result.entityKind == QStringLiteral("operation"))
-        score += 5;
-    else if (result.entityKind == QStringLiteral("section"))
-        score += 4;
-
-    if (referenceQuery && result.entityKind == QStringLiteral("operation"))
-        score += 30;
-
-    if (!result.title.trimmed().isEmpty())
-        score += 2;
-    return score;
-}
-'''
-if old_score not in bridge_text:
-    raise SystemExit('bridge evidenceScore insertion point not found')
-bridge.write_text(bridge_text.replace(old_score, new_score, 1), encoding='utf-8')
-print('TEMP_BRIDGE_LANGUAGE_NEUTRAL_RELEVANCE_PATCHED')
+if 'Rank by evidence actually present' not in bridge_text:
+    raise SystemExit('validated language-neutral bridge relevance fix is not present')
+print('PERSISTED_BRIDGE_RELEVANCE_FIX_PRESENT')
 
 main = Path('main.cpp')
 text = main.read_text(encoding='utf-8')
@@ -167,6 +17,7 @@ main_replacement = '''int main(int argc, char *argv[])\n{\n    if (qEnvironmentV
 if main_needle not in text:
     raise SystemExit('main QApplication insertion point not found')
 text = text.replace(main_needle, main_replacement, 1)
+
 needle = '''    QApplication::setOrganizationName("ECU Mems Manager");\n'''
 probe = r'''
 
@@ -186,12 +37,10 @@ probe = r'''
             file.flush();
         };
 
-        trace(QStringLiteral("PROBE_START"));
+        trace(QStringLiteral("BROAD_PROBE_START"));
         I18n::load(QStringLiteral("en"));
         I18n::install(&app);
-        trace(QStringLiteral("SERVICE_CREATE_BEGIN"));
         IaMemsService *service = IaMemsService::instance();
-        trace(QStringLiteral("SERVICE_CREATE_END"));
 
         auto checkEvidence = [&](const QString &label,
                                  const QString &question,
@@ -201,7 +50,6 @@ probe = r'''
                                  const QStringList &forbidden) -> bool {
             trace(QStringLiteral("CASE_BEGIN=%1").arg(label));
             service->askWithLibrary(question);
-            trace(QStringLiteral("CASE_RETURNED=%1").arg(label));
             const QString evidence = service->property("iaMemsLastLibraryEvidence").toString();
             trace(QStringLiteral("EVIDENCE_BEGIN=%1").arg(label));
             trace(evidence);
@@ -214,21 +62,18 @@ probe = r'''
                                              .arg(document)
                                              .arg(page);
             if (!evidence.contains(sourceNeedle, Qt::CaseInsensitive)) {
-                trace(QStringLiteral("FAIL missing target provenance %1").arg(sourceNeedle));
-                qCritical().noquote() << "FAIL missing target provenance" << sourceNeedle;
+                trace(QStringLiteral("FAIL %1 missing target provenance %2").arg(label, sourceNeedle));
                 return false;
             }
             for (const QString &needleText : required) {
                 if (!evidence.contains(needleText, Qt::CaseInsensitive)) {
-                    trace(QStringLiteral("FAIL missing required evidence %1").arg(needleText));
-                    qCritical().noquote() << "FAIL missing required evidence" << needleText;
+                    trace(QStringLiteral("FAIL %1 missing required evidence %2").arg(label, needleText));
                     return false;
                 }
             }
             for (const QString &needleText : forbidden) {
                 if (evidence.contains(needleText, Qt::CaseInsensitive)) {
-                    trace(QStringLiteral("FAIL contaminated evidence %1").arg(needleText));
-                    qCritical().noquote() << "FAIL contaminated evidence" << needleText;
+                    trace(QStringLiteral("FAIL %1 contaminated evidence %2").arg(label, needleText));
                     return false;
                 }
             }
@@ -236,29 +81,74 @@ probe = r'''
             return true;
         };
 
-        const bool primaryOk = checkEvidence(
-            QStringLiteral("natural_primary_en"),
+        int passed = 0;
+        int total = 0;
+        const auto runCase = [&](bool ok) {
+            ++total;
+            if (ok)
+                ++passed;
+        };
+
+        // Two historical witnesses remain as regression controls only.
+        runCase(checkEvidence(
+            QStringLiteral("control_primary_en"),
             QStringLiteral("How do I check the primary gear end float?"),
-            QStringLiteral("DOC_RCL0193ENG"),
-            53,
+            QStringLiteral("DOC_RCL0193ENG"), 53,
             {QStringLiteral("0.089"), QStringLiteral("0.165"), QStringLiteral("feeler gauges")},
-            {QStringLiteral("page 342"), QStringLiteral("coaxial"), QStringLiteral("aerial")});
+            {QStringLiteral("page 342"), QStringLiteral("coaxial"), QStringLiteral("aerial")}));
 
-        const bool batteryOk = checkEvidence(
-            QStringLiteral("natural_battery_en"),
+        runCase(checkEvidence(
+            QStringLiteral("control_battery_en"),
             QStringLiteral("How do I carry out the battery restoration procedure?"),
-            QStringLiteral("DOC_RCL0221ENG"),
-            20,
-            {QStringLiteral("BATTERY RESTORATION PROCEDURE")},
-            {});
+            QStringLiteral("DOC_RCL0221ENG"), 20,
+            {QStringLiteral("BATTERY RESTORATION PROCEDURE")}, {}));
 
-        if (!primaryOk || !batteryOk) {
-            trace(QStringLiteral("PROBE_FAIL"));
+        // Broad cases from unrelated manuals/topics. These are deliberately not
+        // special-cased in the application or bridge.
+        runCase(checkEvidence(
+            QStringLiteral("rocker_clearance_en"),
+            QStringLiteral("What clearance should I use when adjusting the engine valve rockers?"),
+            QStringLiteral("DOC_RCL0193ENG"), 54,
+            {QStringLiteral("ENGINE VALVE ROCKER ADJUSTMENT"), QStringLiteral("0.30 mm"), QStringLiteral("feeler gauge")}, {}));
+
+        runCase(checkEvidence(
+            QStringLiteral("electrical_safety_en"),
+            QStringLiteral("What precautions should I take before undertaking electrical work on a vehicle?"),
+            QStringLiteral("DOC_RCL0213ENG"), 9,
+            {QStringLiteral("Before undertaking any electrical work on a vehicle")}, {}));
+
+        runCase(checkEvidence(
+            QStringLiteral("harness_engine_compartment_en"),
+            QStringLiteral("What does the manual say about connectors and harnesses in the engine compartment?"),
+            QStringLiteral("DOC_RCL0213ENG"), 11,
+            {QStringLiteral("Connectors and Harness"), QStringLiteral("engine compartment")}, {}));
+
+        runCase(checkEvidence(
+            QStringLiteral("external_connectors_en"),
+            QStringLiteral("How do I identify the external connectors used by TestBook?"),
+            QStringLiteral("DOC_RCL0238ENG"), 14,
+            {QStringLiteral("Identifying the External Connectors")}, {}));
+
+        runCase(checkEvidence(
+            QStringLiteral("vcsi_en"),
+            QStringLiteral("Where is the Vehicle Communication Serial Interface VCSI documented?"),
+            QStringLiteral("DOC_RCL0238ENG"), 16,
+            {QStringLiteral("Vehicle Communication Serial Interface"), QStringLiteral("VCSI")}, {}));
+
+        runCase(checkEvidence(
+            QStringLiteral("sunroof_manual_close_en"),
+            QStringLiteral("How can I close the sunroof if the electric motor will not close it?"),
+            QStringLiteral("DOC_RCL0179ENX"), 24,
+            {QStringLiteral("electric motor will not close the sunroof")}, {}));
+
+        trace(QStringLiteral("BROAD_RESULT passed=%1 total=%2").arg(passed).arg(total));
+        qInfo().noquote() << "BROAD_RELEVANCE_RESULT passed=" << passed << "total=" << total;
+        if (passed != total) {
+            trace(QStringLiteral("BROAD_PROBE_FAIL"));
             return 5;
         }
 
-        trace(QStringLiteral("PROBE_PASS"));
-        qInfo().noquote() << "ACTUAL_MEMS_MANAGER_MEMSLIBRARY_RELEVANCE_PASS primary=DOC_RCL0193ENG:p53 battery=DOC_RCL0221ENG:p20";
+        trace(QStringLiteral("BROAD_PROBE_PASS"));
         return 0;
     }
 '''
@@ -266,4 +156,4 @@ if needle not in text:
     raise SystemExit('main integration insertion point not found')
 text = text.replace(needle, needle + probe, 1)
 main.write_text(text, encoding='utf-8')
-print('ACTUAL_APP_RELEVANCE_INTEGRATION_PATCHED')
+print('ACTUAL_APP_BROAD_RELEVANCE_PROBE_PATCHED')
