@@ -2,16 +2,33 @@ from pathlib import Path
 
 main = Path('main.cpp')
 text = main.read_text(encoding='utf-8')
-text = text.replace('#include <QStringList>\n', '#include <QStringList>\n#include <QDebug>\n')
+text = text.replace('#include <QStringList>\n', '#include <QStringList>\n#include <QDebug>\n#include <QFile>\n#include <QTextStream>\n')
 text = text.replace('#include "navigationorderpatch.h"\n', '#include "navigationorderpatch.h"\n#include "expert/IaMemsService.h"\n')
 needle = '''    QApplication::setOrganizationName("ECU Mems Manager");\n'''
 probe = r'''
 
     if (qEnvironmentVariableIsSet("MEMS_RELEVANCE_INTEGRATION_TEST"))
     {
+        const QString tracePath = qEnvironmentVariable("MEMS_RELEVANCE_TRACE_FILE");
+        const auto trace = [&tracePath](const QString &line) {
+            if (tracePath.isEmpty())
+                return;
+            QFile file(tracePath);
+            if (!file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text))
+                return;
+            QTextStream stream(&file);
+            stream.setCodec("UTF-8");
+            stream << line << '\n';
+            stream.flush();
+            file.flush();
+        };
+
+        trace(QStringLiteral("PROBE_START"));
         I18n::load(QStringLiteral("en"));
         I18n::install(&app);
+        trace(QStringLiteral("SERVICE_CREATE_BEGIN"));
         IaMemsService *service = IaMemsService::instance();
+        trace(QStringLiteral("SERVICE_CREATE_END"));
 
         auto checkEvidence = [&](const QString &label,
                                  const QString &question,
@@ -19,8 +36,13 @@ probe = r'''
                                  int page,
                                  const QStringList &required,
                                  const QStringList &forbidden) -> bool {
+            trace(QStringLiteral("CASE_BEGIN=%1").arg(label));
             service->askWithLibrary(question);
+            trace(QStringLiteral("CASE_RETURNED=%1").arg(label));
             const QString evidence = service->property("iaMemsLastLibraryEvidence").toString();
+            trace(QStringLiteral("EVIDENCE_BEGIN=%1").arg(label));
+            trace(evidence);
+            trace(QStringLiteral("EVIDENCE_END=%1").arg(label));
             qInfo().noquote() << "RELEVANCE_CASE=" << label;
             qInfo().noquote() << "QUESTION=" << question;
             qInfo().noquote() << "EVIDENCE_BEGIN\n" << evidence << "\nEVIDENCE_END";
@@ -29,21 +51,25 @@ probe = r'''
                                              .arg(document)
                                              .arg(page);
             if (!evidence.contains(sourceNeedle, Qt::CaseInsensitive)) {
+                trace(QStringLiteral("FAIL missing target provenance %1").arg(sourceNeedle));
                 qCritical().noquote() << "FAIL missing target provenance" << sourceNeedle;
                 return false;
             }
             for (const QString &needleText : required) {
                 if (!evidence.contains(needleText, Qt::CaseInsensitive)) {
+                    trace(QStringLiteral("FAIL missing required evidence %1").arg(needleText));
                     qCritical().noquote() << "FAIL missing required evidence" << needleText;
                     return false;
                 }
             }
             for (const QString &needleText : forbidden) {
                 if (evidence.contains(needleText, Qt::CaseInsensitive)) {
+                    trace(QStringLiteral("FAIL contaminated evidence %1").arg(needleText));
                     qCritical().noquote() << "FAIL contaminated evidence" << needleText;
                     return false;
                 }
             }
+            trace(QStringLiteral("CASE_PASS=%1").arg(label));
             return true;
         };
 
@@ -63,9 +89,12 @@ probe = r'''
             {QStringLiteral("BATTERY RESTORATION PROCEDURE")},
             {});
 
-        if (!primaryOk || !batteryOk)
+        if (!primaryOk || !batteryOk) {
+            trace(QStringLiteral("PROBE_FAIL"));
             return 5;
+        }
 
+        trace(QStringLiteral("PROBE_PASS"));
         qInfo().noquote() << "ACTUAL_MEMS_MANAGER_MEMSLIBRARY_RELEVANCE_PASS primary=DOC_RCL0193ENG:p53 battery=DOC_RCL0221ENG:p20";
         return 0;
     }

@@ -108,21 +108,38 @@ jobs:
           Copy-Item 'build-app-relevance\Release\ecu_mems_manager.exe' (Join-Path $env:RUNTIME_ROOT 'ecu_mems_manager.exe') -Force
           Write-Host 'ACTUAL_MEMS_MANAGER_RELEVANCE_BUILD_PASS'
 
-      - name: Run natural-language retrieval in actual ECU MEMS Manager
+      - name: Run bounded natural-language retrieval in actual ECU MEMS Manager
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
           $qt='C:\Qt\5.15.2\msvc2019_64\bin'
           $env:PATH="$env:RUNTIME_ROOT;$qt;$env:PATH"
           $env:QT_QPA_PLATFORM='offscreen'
+          $env:QT_FORCE_STDERR_LOGGING='1'
           $env:MEMS_RELEVANCE_INTEGRATION_TEST='1'
+          $env:MEMS_RELEVANCE_TRACE_FILE=Join-Path $env:GITHUB_WORKSPACE 'relevance-trace.txt'
           $exe=Join-Path $env:RUNTIME_ROOT 'ecu_mems_manager.exe'
           $out=Join-Path $env:GITHUB_WORKSPACE 'relevance-output.txt'
           $stdout=Join-Path $env:GITHUB_WORKSPACE 'relevance-stdout.txt'
           $stderr=Join-Path $env:GITHUB_WORKSPACE 'relevance-stderr.txt'
-          $process=Start-Process -FilePath $exe -WorkingDirectory $env:RUNTIME_ROOT -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
-          $code=$process.ExitCode
+          $process=Start-Process -FilePath $exe -WorkingDirectory $env:RUNTIME_ROOT -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+          $deadline=(Get-Date).AddSeconds(45)
+          while(-not $process.HasExited -and (Get-Date) -lt $deadline){
+            Start-Sleep -Milliseconds 500
+            $process.Refresh()
+          }
+          $timedOut=-not $process.HasExited
+          if($timedOut){
+            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+            try{$process.WaitForExit()}catch{}
+            $code='TIMEOUT'
+          } else {
+            $code=$process.ExitCode
+          }
           "ACTUAL_APP_RELEVANCE_EXIT=$code" | Set-Content $out -Encoding UTF8
+          'TRACE_BEGIN' | Add-Content $out -Encoding UTF8
+          if(Test-Path $env:MEMS_RELEVANCE_TRACE_FILE){Get-Content $env:MEMS_RELEVANCE_TRACE_FILE | Add-Content $out -Encoding UTF8}
+          'TRACE_END' | Add-Content $out -Encoding UTF8
           'STDOUT_BEGIN' | Add-Content $out -Encoding UTF8
           if(Test-Path $stdout){Get-Content $stdout | Add-Content $out -Encoding UTF8}
           'STDOUT_END' | Add-Content $out -Encoding UTF8
@@ -130,7 +147,8 @@ jobs:
           if(Test-Path $stderr){Get-Content $stderr | Add-Content $out -Encoding UTF8}
           'STDERR_END' | Add-Content $out -Encoding UTF8
           Get-Content $out
-          if($code -ne 0){throw "Actual application relevance integration failed: $code"}
+          if($timedOut){throw 'Actual application relevance integration timed out after 45 seconds'}
+          if([int]$code -ne 0){throw "Actual application relevance integration failed: $code"}
           Write-Host 'BUILD108_ACTUAL_APP_MEMSLIBRARY_RELEVANCE_PASS'
 
       - name: Upload relevance probe output
@@ -138,6 +156,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: BUILD108-MEMSLibrary-Relevance-Probe-${{ github.run_id }}
-          path: relevance-output.txt
+          path: |
+            relevance-output.txt
+            relevance-trace.txt
+            relevance-stdout.txt
+            relevance-stderr.txt
           if-no-files-found: warn
           retention-days: 7
