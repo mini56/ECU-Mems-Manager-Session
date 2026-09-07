@@ -8,6 +8,17 @@ if 'Rank by evidence actually present' not in bridge_text:
     raise SystemExit('validated language-neutral bridge relevance fix is not present')
 print('PERSISTED_BRIDGE_RELEVANCE_FIX_PRESENT')
 
+# Temporary generic query-preparation test: do not discard technical words
+# merely because they occur after the first seven words of a natural question.
+integration = Path('expert/IaMemsLibraryIntegration.cpp')
+integration_text = integration.read_text(encoding='utf-8')
+old_terms = '''    QStringList terms;\n    for (const QString &word : text.split(QLatin1Char(' '), Qt::SkipEmptyParts)) {\n        if (word.size() >= 3 && !stop.contains(word))\n            appendUnique(terms, word);\n        if (terms.size() >= 7)\n            break;\n    }\n'''
+new_terms = '''    QStringList terms;\n    for (const QString &word : text.split(QLatin1Char(' '), Qt::SkipEmptyParts)) {\n        if (word.size() >= 3 && !stop.contains(word))\n            appendUnique(terms, word);\n    }\n'''
+if old_terms not in integration_text:
+    raise SystemExit('libraryKeywords seven-term cutoff insertion point not found')
+integration.write_text(integration_text.replace(old_terms, new_terms, 1), encoding='utf-8')
+print('TEMP_LIBRARY_KEYWORDS_FULL_QUESTION_PATCHED')
+
 main = Path('main.cpp')
 text = main.read_text(encoding='utf-8')
 text = text.replace('#include <QStringList>\n', '#include <QStringList>\n#include <QDebug>\n#include <QFile>\n#include <QTextStream>\n')
@@ -89,7 +100,6 @@ probe = r'''
                 ++passed;
         };
 
-        // Two historical witnesses remain as regression controls only.
         runCase(checkEvidence(
             QStringLiteral("control_primary_en"),
             QStringLiteral("How do I check the primary gear end float?"),
@@ -103,8 +113,6 @@ probe = r'''
             QStringLiteral("DOC_RCL0221ENG"), 20,
             {QStringLiteral("BATTERY RESTORATION PROCEDURE")}, {}));
 
-        // Broad cases from unrelated manuals/topics. These are deliberately not
-        // special-cased in the application or bridge.
         runCase(checkEvidence(
             QStringLiteral("rocker_clearance_en"),
             QStringLiteral("What clearance should I use when adjusting the engine valve rockers?"),
