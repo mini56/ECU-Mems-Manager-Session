@@ -93,18 +93,33 @@ std::vector<std::string> queryTerms(const char* query)
 {
     std::vector<std::string> terms;
     std::string current;
+    auto appendTerm = [&terms](std::string term) {
+        if (term.size() < 2) return;
+        if (std::find(terms.begin(), terms.end(), term) == terms.end()) terms.push_back(std::move(term));
+    };
+
     for (const unsigned char c : std::string(query ? query : "")) {
         if (std::isalnum(c) || c >= 0x80 || c == '-' || c == '_') {
-            current.push_back(static_cast<char>(std::tolower(c)));
+            current.push_back(static_cast<char>(c < 0x80 ? std::tolower(c) : c));
         } else if (!current.empty()) {
-            terms.push_back(current);
+            appendTerm(current);
             current.clear();
         }
     }
-    if (!current.empty()) terms.push_back(current);
-    terms.erase(std::remove_if(terms.begin(), terms.end(), [](const std::string& s){ return s.size() < 2; }), terms.end());
-    if (terms.size() > 8) terms.resize(8);
+    if (!current.empty()) appendTerm(current);
+    if (terms.size() > 16) terms.resize(16);
     return terms;
+}
+
+int termWeight(const std::string& term)
+{
+    const bool technical = std::any_of(term.begin(), term.end(), [](unsigned char c) {
+        return std::isdigit(c) || c == '-' || c == '_';
+    });
+    if (technical || term.size() >= 7) return 4;
+    if (term.size() >= 5) return 3;
+    if (term.size() >= 4) return 2;
+    return 1;
 }
 }
 
@@ -178,21 +193,36 @@ std::int32_t MEMSLibrary_SearchPack(
     const int openStatus = openReadonly(packDirectory, &db);
     if (openStatus != MEMSLIBRARY_OK) return openStatus;
 
-    std::string sql = "SELECT document_key,page_number,entity_kind,entity_key,title,body FROM memslibrary_search WHERE 1=1";
-    for (std::size_t i = 0; i < terms.size(); ++i) sql += " AND search_text LIKE ?";
-    sql += " ORDER BY CASE entity_kind WHEN 'step' THEN 0 WHEN 'requirement' THEN 1 WHEN 'notice' THEN 2 WHEN 'operation' THEN 3 WHEN 'section' THEN 4 ELSE 5 END, document_key, COALESCE(page_number,2147483647), entity_key LIMIT ?";
+    std::string relevance = "(";
+    for (std::size_t i = 0; i < terms.size(); ++i) {
+        if (i != 0) relevance += " + ";
+        relevance += "CASE WHEN search_text LIKE ?" + std::to_string(i + 1) + " THEN " +
+                     std::to_string(termWeight(terms[i])) + " ELSE 0 END";
+    }
+    relevance += ")";
+
+    std::string sql = "SELECT document_key,page_number,entity_kind,entity_key,title,body," + relevance +
+                      " AS relevance FROM memslibrary_search WHERE (";
+    for (std::size_t i = 0; i < terms.size(); ++i) {
+        if (i != 0) sql += " OR ";
+        sql += "search_text LIKE ?" + std::to_string(i + 1);
+    }
+    sql += ") ORDER BY relevance DESC, "
+           "CASE entity_kind WHEN 'step' THEN 0 WHEN 'requirement' THEN 1 WHEN 'notice' THEN 2 "
+           "WHEN 'operation' THEN 3 WHEN 'section' THEN 4 ELSE 5 END, "
+           "document_key, COALESCE(page_number,2147483647), entity_key LIMIT ?" +
+           std::to_string(terms.size() + 1);
 
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
         sqlite3_close(db);
         return MEMSLIBRARY_QUERY_FAILED;
     }
-    int bindIndex = 1;
-    for (const auto& term : terms) {
-        const std::string pattern = "%" + term + "%";
-        sqlite3_bind_text(stmt, bindIndex++, pattern.c_str(), -1, SQLITE_TRANSIENT);
+    for (std::size_t i = 0; i < terms.size(); ++i) {
+        const std::string pattern = "%" + terms[i] + "%";
+        sqlite3_bind_text(stmt, static_cast<int>(i + 1), pattern.c_str(), -1, SQLITE_TRANSIENT);
     }
-    sqlite3_bind_int(stmt, bindIndex, static_cast<int>(resultCapacity));
+    sqlite3_bind_int(stmt, static_cast<int>(terms.size() + 1), static_cast<int>(resultCapacity));
 
     std::uint32_t count = 0;
     while (count < resultCapacity && sqlite3_step(stmt) == SQLITE_ROW) {
