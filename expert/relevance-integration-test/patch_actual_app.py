@@ -4,6 +4,11 @@ main = Path('main.cpp')
 text = main.read_text(encoding='utf-8')
 text = text.replace('#include <QStringList>\n', '#include <QStringList>\n#include <QDebug>\n#include <QFile>\n#include <QTextStream>\n')
 text = text.replace('#include "navigationorderpatch.h"\n', '#include "navigationorderpatch.h"\n#include "expert/IaMemsService.h"\n')
+main_needle = '''int main(int argc, char *argv[])\n{\n    QApplication app(argc, argv);\n'''
+main_replacement = '''int main(int argc, char *argv[])\n{\n    if (qEnvironmentVariableIsSet("MEMS_RELEVANCE_INTEGRATION_TEST")) {\n        qputenv("QT_PLUGIN_PATH", QByteArray("C:/Qt/5.15.2/msvc2019_64/plugins"));\n        qputenv("QT_QPA_PLATFORM_PLUGIN_PATH", QByteArray("C:/Qt/5.15.2/msvc2019_64/plugins/platforms"));\n    }\n    QApplication app(argc, argv);\n'''
+if main_needle not in text:
+    raise SystemExit('main QApplication insertion point not found')
+text = text.replace(main_needle, main_replacement, 1)
 needle = '''    QApplication::setOrganizationName("ECU Mems Manager");\n'''
 probe = r'''
 
