@@ -39,7 +39,7 @@ jobs:
         shell: pwsh
         run: |
           @'
-          import sqlite3, re, pathlib, json
+          import sqlite3, pathlib, json
 
           dbs=list(pathlib.Path('pack001').rglob('knowledge.sqlite'))
           if len(dbs)!=1:
@@ -73,15 +73,19 @@ jobs:
               return ts, rows
 
           cases=[
-              ('baseline_primary','primary gear end float'),
-              ('natural_primary','How do I check the primary gear end float?'),
-              ('baseline_battery','battery restoration procedure'),
-              ('natural_battery','How do I carry out the battery restoration procedure?'),
+              ('baseline_primary_en','primary gear end float'),
+              ('natural_primary_en','How do I check the primary gear end float?'),
+              ('natural_primary_fr','Comment contrôler le jeu axial du pignon primaire ?'),
+              ('baseline_battery_en','battery restoration procedure'),
+              ('natural_battery_en','How do I carry out the battery restoration procedure?'),
+              ('natural_battery_fr','Comment effectuer la procédure de remise en état de la batterie ?'),
           ]
 
           summary={}
+          all_rows={}
           for name,q in cases:
               ts,rows=search(q)
+              all_rows[name]=rows
               summary[name]={'query':q,'terms':ts,'count':len(rows),'rows':[]}
               print(f'CASE {name}')
               print(f'QUERY={q}')
@@ -95,17 +99,13 @@ jobs:
                   summary[name]['rows'].append({'document_key':doc,'page_number':page,'entity_kind':kind,'entity_key':key,'title':title,'body':body})
               print('---')
 
-          # Known validated targets from Pack001 smoke test.
           def has(rows, doc, page):
               return any(r[0]==doc and r[1]==page for r in rows)
 
-          bp_t,bp=search('primary gear end float')
-          np_t,np=search('How do I check the primary gear end float?')
-          bb_t,bb=search('battery restoration procedure')
-          nb_t,nb=search('How do I carry out the battery restoration procedure?')
-
-          print('DIAGNOSTIC_PRIMARY baseline_target=', has(bp,'DOC_RCL0193ENG',53), 'natural_target=', has(np,'DOC_RCL0193ENG',53), 'baseline_count=',len(bp),'natural_count=',len(np))
-          print('DIAGNOSTIC_BATTERY baseline_target=', has(bb,'DOC_RCL0221ENG',20), 'natural_target=', has(nb,'DOC_RCL0221ENG',20), 'baseline_count=',len(bb),'natural_count=',len(nb))
+          print('DIAGNOSTIC_PRIMARY_EN baseline_target=', has(all_rows['baseline_primary_en'],'DOC_RCL0193ENG',53), 'natural_target=', has(all_rows['natural_primary_en'],'DOC_RCL0193ENG',53), 'baseline_count=',len(all_rows['baseline_primary_en']),'natural_count=',len(all_rows['natural_primary_en']))
+          print('DIAGNOSTIC_PRIMARY_FR target=', has(all_rows['natural_primary_fr'],'DOC_RCL0193ENG',53), 'count=',len(all_rows['natural_primary_fr']))
+          print('DIAGNOSTIC_BATTERY_EN baseline_target=', has(all_rows['baseline_battery_en'],'DOC_RCL0221ENG',20), 'natural_target=', has(all_rows['natural_battery_en'],'DOC_RCL0221ENG',20), 'baseline_count=',len(all_rows['baseline_battery_en']),'natural_count=',len(all_rows['natural_battery_en']))
+          print('DIAGNOSTIC_BATTERY_FR target=', has(all_rows['natural_battery_fr'],'DOC_RCL0221ENG',20), 'count=',len(all_rows['natural_battery_fr']))
 
           pathlib.Path('retrieval-diagnostic.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding='utf-8')
           cx.close()
