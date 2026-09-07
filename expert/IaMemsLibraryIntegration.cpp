@@ -115,11 +115,16 @@ bool looseTermMatch(const QString &normalizedText, const QString &term)
     for (const QString &word : words) {
         if (word == term)
             return true;
+        // Tolère un petit suffixe (pluriel : eau/eaux, feu/feux, roue/roues)
+        // sans jamais matcher au milieu d'un mot sans rapport.
+        if (word.size() >= term.size() && word.startsWith(term)
+            && word.size() - term.size() <= 2)
+            return true;
         if (term.size() >= 4 && word.size() >= 4
             && (word.startsWith(term) || term.startsWith(word)))
             return true;
     }
-    return normalizedText.contains(term);
+    return false;
 }
 
 int pageFromSection(const QString &section)
