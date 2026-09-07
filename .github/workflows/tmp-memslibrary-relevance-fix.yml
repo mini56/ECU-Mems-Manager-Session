@@ -1,0 +1,86 @@
+name: MEMSLibrary relevance fix validation
+
+on:
+  push:
+    branches:
+      - tmp-memslibrary-relevance-fix
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  validate:
+    runs-on: windows-2022
+    steps:
+      - name: Checkout relevance-fix branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify protected production base ancestry
+        shell: pwsh
+        run: |
+          $expected = "1d6316bd1746d6f2b4cfb751cab88d18e27ef730"
+          git merge-base --is-ancestor $expected HEAD
+          if ($LASTEXITCODE -ne 0) { throw "Fix branch is not based on protected MEMSX64 #103" }
+          Write-Host "PROTECTED_BASE_OK $expected"
+          Write-Host "PRODUCTION_MEMSX64_NOT_MODIFIED"
+
+      - name: Download validated MEMSLibrary Pack001 artifact
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 33847448261 --repo mini56/ECU-Mems-Manager-Session --name MEMSLibrary-Pack001-33847448261 --dir pack001
+          $dbs = Get-ChildItem pack001 -Recurse -Filter knowledge.sqlite
+          if ($dbs.Count -ne 1) { throw "Expected one knowledge.sqlite, found $($dbs.Count)" }
+          $manifests = Get-ChildItem pack001 -Recurse -Filter manifest.json
+          if ($manifests.Count -ne 1) { throw "Expected one manifest.json, found $($manifests.Count)" }
+          Write-Host "PACK001_INPUT_OK"
+
+      - name: Configure MEMSLibrary ABI2 x64
+        shell: pwsh
+        run: cmake -S memslibrary -B build-memslibrary -A x64
+
+      - name: Build MEMSLibrary ABI2 x64
+        shell: pwsh
+        run: cmake --build build-memslibrary --config Release --parallel
+
+      - name: Create corrupt Pack002 fixture
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force corruptPack002 | Out-Null
+          Set-Content -Path corruptPack002/manifest.json -Value '{"pack_format":"MEMSLibraryKnowledgePack","pack_id":"CORRUPT_PACK_002"}' -Encoding UTF8
+          Set-Content -Path corruptPack002/knowledge.sqlite -Value 'not a sqlite database' -Encoding ASCII
+
+      - name: Run compiled DLL relevance smoke test
+        shell: pwsh
+        run: |
+          $exe = Resolve-Path build-memslibrary/Release/MEMSLibrarySmokeTest.exe
+          $good = (Resolve-Path (Get-ChildItem pack001 -Recurse -Filter knowledge.sqlite | Select-Object -First 1).DirectoryName).Path
+          $bad = (Resolve-Path corruptPack002).Path
+          & $exe $good $bad
+          if ($LASTEXITCODE -ne 0) { throw "MEMSLibrary relevance smoke test failed: $LASTEXITCODE" }
+
+      - name: Verify correction scope
+        shell: pwsh
+        run: |
+          $allowed = @(
+            'memslibrary/src/MEMSLibrary.cpp',
+            'memslibrary/tests/MEMSLibrarySmokeTest.cpp',
+            '.github/workflows/tmp-memslibrary-relevance-fix.yml'
+          )
+          $changed = git diff --name-only 9397483c7f2f4d12a1ca862dee2ff84a70a78f9e..HEAD
+          foreach ($f in $changed) {
+            if ($allowed -notcontains $f) { throw "Unexpected changed file: $f" }
+          }
+          Write-Host "FIX_SCOPE_OK"
+
+      - name: Upload corrected DLL
+        uses: actions/upload-artifact@v4
+        with:
+          name: MEMSLibrary-Relevance-Fix-${{ github.run_id }}
+          path: build-memslibrary/Release/MEMSLibrary.dll
+          if-no-files-found: error
