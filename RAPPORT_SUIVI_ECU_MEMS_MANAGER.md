@@ -15237,3 +15237,12 @@ Action autorisee maintenant :
 
 PROCHAINE ACTION EXACTE APRES LA BASCULE : raccorder la DLL corrigee au bridge IA de MEMS Manager sur branche temporaire, sans toucher aux sous-systemes non concernes et sans lancer BUILD #105 avant tests verts.
 <!-- journal-entry-sha256:0c41150ec50a907f4768cbc4795633c41035721f6f12f6fa82d69f267444c220 -->
+
+## 2026-09-07 — BUILD UTILISATEUR x64 — INTENTION AVANT POUSSE/BUILD
+- Objectif : produire un package x64 temporaire réellement testable par l'utilisateur final avec les deux corrections de pertinence déjà validées.
+- Source temporaire : tmp-build108-memslibrary-relevance-integration @ 815eb0c249346907fa103074e0e80b678b0e76b1.
+- Correction bridge : 65b11a752d824e4d4464e0e587fa7110158e39db.
+- Correction MEMSLibrary : 2ca4ffa86d88cb3daa89bd3b52eb9f1f957b3621.
+- Base de production protégée : MEMSX64 BUILD #103 @ 1d6316bd1746d6f2b4cfb751cab88d18e27ef730 — aucune modification/promotion.
+- Aucun changement RAVEMEMS V2, Qwen, images ou logique UI ; aucune sonde de diagnostic dans le package utilisateur.
+- Le verdict fonctionnel attendu est le test réel sur le PC de l'utilisateur final.
