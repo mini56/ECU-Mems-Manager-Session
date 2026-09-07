@@ -1,23 +1,69 @@
 from pathlib import Path
 
-# Broad validation only. The language-neutral bridge relevance fix is already
-# persisted on this temporary branch; do not alter it during this benchmark.
+# Broad validation of the persisted language-neutral row score plus a bounded
+# page-level corroboration bonus. No language-specific dictionary is involved.
 bridge = Path('expert/IaMemsLibraryBridge.cpp')
 bridge_text = bridge.read_text(encoding='utf-8')
 if 'Rank by evidence actually present' not in bridge_text:
     raise SystemExit('validated language-neutral bridge relevance fix is not present')
-print('PERSISTED_BRIDGE_RELEVANCE_FIX_PRESENT')
 
-# Temporary generic query-preparation test: do not discard technical words
-# merely because they occur after the first seven words of a natural question.
-integration = Path('expert/IaMemsLibraryIntegration.cpp')
-integration_text = integration.read_text(encoding='utf-8')
-old_terms = '''    QStringList terms;\n    for (const QString &word : text.split(QLatin1Char(' '), Qt::SkipEmptyParts)) {\n        if (word.size() >= 3 && !stop.contains(word))\n            appendUnique(terms, word);\n        if (terms.size() >= 7)\n            break;\n    }\n'''
-new_terms = '''    QStringList terms;\n    for (const QString &word : text.split(QLatin1Char(' '), Qt::SkipEmptyParts)) {\n        if (word.size() >= 3 && !stop.contains(word))\n            appendUnique(terms, word);\n    }\n'''
-if old_terms not in integration_text:
-    raise SystemExit('libraryKeywords seven-term cutoff insertion point not found')
-integration.write_text(integration_text.replace(old_terms, new_terms, 1), encoding='utf-8')
-print('TEMP_LIBRARY_KEYWORDS_FULL_QUESTION_PATCHED')
+old_group = r'''bool betterGroup(const EvidenceGroup &left, const EvidenceGroup &right)
+{
+    if (left.bestScore != right.bestScore)
+        return left.bestScore > right.bestScore;
+    if (left.supportScore != right.supportScore)
+        return left.supportScore > right.supportScore;
+    if (left.rows.size() != right.rows.size())
+        return left.rows.size() > right.rows.size();
+    if (left.document != right.document)
+        return left.document < right.document;
+    if (left.revision != right.revision)
+        return left.revision < right.revision;
+    if (left.sourceLanguage != right.sourceLanguage)
+        return left.sourceLanguage < right.sourceLanguage;
+
+    const int leftPage = left.page >= 0 ? left.page : std::numeric_limits<int>::max();
+    const int rightPage = right.page >= 0 ? right.page : std::numeric_limits<int>::max();
+    return leftPage < rightPage;
+}
+'''
+new_group = r'''int groupRelevanceScore(const EvidenceGroup &group)
+{
+    // Several independent rows on the same physical page are meaningful
+    // corroboration. Keep the bonus deliberately bounded so a large page can
+    // never overwhelm a substantially stronger precise hit elsewhere.
+    const int corroborationBonus = qMin(80, group.supportScore / 10);
+    return group.bestScore + corroborationBonus;
+}
+
+bool betterGroup(const EvidenceGroup &left, const EvidenceGroup &right)
+{
+    const int leftRelevance = groupRelevanceScore(left);
+    const int rightRelevance = groupRelevanceScore(right);
+    if (leftRelevance != rightRelevance)
+        return leftRelevance > rightRelevance;
+    if (left.bestScore != right.bestScore)
+        return left.bestScore > right.bestScore;
+    if (left.supportScore != right.supportScore)
+        return left.supportScore > right.supportScore;
+    if (left.rows.size() != right.rows.size())
+        return left.rows.size() > right.rows.size();
+    if (left.document != right.document)
+        return left.document < right.document;
+    if (left.revision != right.revision)
+        return left.revision < right.revision;
+    if (left.sourceLanguage != right.sourceLanguage)
+        return left.sourceLanguage < right.sourceLanguage;
+
+    const int leftPage = left.page >= 0 ? left.page : std::numeric_limits<int>::max();
+    const int rightPage = right.page >= 0 ? right.page : std::numeric_limits<int>::max();
+    return leftPage < rightPage;
+}
+'''
+if old_group not in bridge_text:
+    raise SystemExit('bridge group ranking insertion point not found')
+bridge.write_text(bridge_text.replace(old_group, new_group, 1), encoding='utf-8')
+print('TEMP_BRIDGE_PAGE_CORROBORATION_PATCHED')
 
 main = Path('main.cpp')
 text = main.read_text(encoding='utf-8')
