@@ -146,6 +146,17 @@ std::string anyTermPredicate(const std::vector<std::string>& terms)
     return predicate;
 }
 
+std::string allTermPredicate(const std::vector<std::string>& terms)
+{
+    std::string predicate = "(";
+    for (std::size_t i = 0; i < terms.size(); ++i) {
+        if (i != 0) predicate += " AND ";
+        predicate += "search_text LIKE ?" + std::to_string(i + 1);
+    }
+    predicate += ")";
+    return predicate;
+}
+
 bool terminatedField(const char* value, std::size_t capacity)
 {
     return value && std::memchr(value, '\0', capacity) != nullptr;
@@ -327,10 +338,12 @@ std::int32_t MEMSLibrary_SearchPackFiltered(
     const bool filterRevision = filters && filters->revision_key[0] != '\0';
     const bool filterLanguage = filters && filters->source_language[0] != '\0';
     const bool filterKind = filters && filters->entity_kind[0] != '\0';
+    const bool exactVerification = filterDocument || filterRevision || filterLanguage || filterKind;
 
     const std::string relevance = relevanceExpression(terms);
+    const std::string termPredicate = exactVerification ? allTermPredicate(terms) : anyTermPredicate(terms);
     std::string sql = "SELECT document_key,revision_key,source_language,page_number,entity_kind,entity_key,title,body,"
-        + relevance + " AS relevance FROM memslibrary_search WHERE " + anyTermPredicate(terms);
+        + relevance + " AS relevance FROM memslibrary_search WHERE " + termPredicate;
 
     int nextParameter = static_cast<int>(terms.size() + 1);
     int documentParameter = 0;
