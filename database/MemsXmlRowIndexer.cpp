@@ -77,4 +77,10 @@ void installResultScroll()
 
 }
 
-Q_COREAPP_STARTUP_FUNCTION(installResultScroll)
+// Désactivé : la configuration des scrollbars des deux panneaux (liste + fiche)
+// est désormais appliquée une seule fois, directement dans
+// MemsDatabaseBrowser::buildUi(). Ce filtre global entrait en conflit avec
+// cette configuration (application différée aléatoire 100-300ms après
+// affichage, recalcul du pageStep avant stabilisation du layout), ce qui
+// causait des scrollbars mal configurées dans l'onglet base de données.
+// Q_COREAPP_STARTUP_FUNCTION(installResultScroll)
