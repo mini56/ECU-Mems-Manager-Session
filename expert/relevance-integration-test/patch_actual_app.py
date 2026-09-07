@@ -1,5 +1,163 @@
 from pathlib import Path
 
+# Temporary integration-only patch: validate a language-neutral relevance score
+# inside the real BUILD108 application before changing the permanent bridge.
+bridge = Path('expert/IaMemsLibraryBridge.cpp')
+bridge_text = bridge.read_text(encoding='utf-8')
+old_score = r'''int evidenceScore(const EvidenceCandidate &result,
+                  const QString &query,
+                  const QStringList &keywords)
+{
+    const QString searchable = searchableText(result);
+    const QStringList queryTerms = normalizedTerms(query);
+    if (queryTerms.isEmpty())
+        return -1;
+
+    int referenceBoost = 0;
+    // MEMSLibrary uses substring LIKE matching. Accept ordinary terms only as
+    // exact tokens (rejecting axial/coaxial). Manufacturer references use the
+    // generic underscore form present in RAVEMEMS entity keys.
+    for (const QString &term : queryTerms) {
+        if (isManufacturerReferenceAlias(term)) {
+            if (!containsManufacturerReference(result, term))
+                return -1;
+            referenceBoost += 500;
+            continue;
+        }
+        if (!containsExactToken(searchable, term))
+            return -1;
+    }
+
+    int score = queryTerms.size() * 100 + referenceBoost;
+    QSet<QString> scoredKeywords;
+    for (const QString &keyword : keywords) {
+        const QString normalized = normalizeForMatching(keyword);
+        if (normalized.isEmpty() || scoredKeywords.contains(normalized))
+            continue;
+        scoredKeywords.insert(normalized);
+        if (isManufacturerReferenceAlias(normalized)) {
+            if (containsManufacturerReference(result, normalized))
+                score += 24;
+        } else if (containsExactToken(searchable, normalized)) {
+            score += 12;
+        }
+    }
+
+    if (result.entityKind == QStringLiteral("step"))
+        score += 8;
+    else if (result.entityKind == QStringLiteral("requirement"))
+        score += 7;
+    else if (result.entityKind == QStringLiteral("notice"))
+        score += 6;
+    else if (result.entityKind == QStringLiteral("operation"))
+        score += 5;
+    else if (result.entityKind == QStringLiteral("section"))
+        score += 4;
+
+    // For an explicit operation-reference lookup, keep the operation heading
+    // ahead of its steps so Qwen receives the procedure identity as context.
+    bool referenceQuery = false;
+    for (const QString &term : queryTerms) {
+        if (isManufacturerReferenceAlias(term)) {
+            referenceQuery = true;
+            break;
+        }
+    }
+    if (referenceQuery && result.entityKind == QStringLiteral("operation"))
+        score += 30;
+
+    if (!result.title.trimmed().isEmpty())
+        score += 2;
+    return score;
+}
+'''
+new_score = r'''int evidenceScore(const EvidenceCandidate &result,
+                  const QString &query,
+                  const QStringList &keywords)
+{
+    const QString searchable = searchableText(result);
+    const QString searchableTitle = normalizeForMatching(result.title);
+    const QStringList queryTerms = normalizedTerms(query);
+    if (queryTerms.isEmpty())
+        return -1;
+
+    int score = 0;
+    int matchedTerms = 0;
+    bool referenceQuery = false;
+
+    // Rank by evidence actually present, not by the raw number of words in a
+    // natural-language sub-query. This is deliberately language-neutral:
+    // longer exact terms carry more information, title hits are stronger, and
+    // missing conversational words do not eliminate a technically good row.
+    // Explicit manufacturer references remain strict provenance constraints.
+    for (const QString &term : queryTerms) {
+        if (isManufacturerReferenceAlias(term)) {
+            referenceQuery = true;
+            if (!containsManufacturerReference(result, term))
+                return -1;
+            ++matchedTerms;
+            score += 600;
+            continue;
+        }
+
+        if (!containsExactToken(searchable, term))
+            continue;
+
+        ++matchedTerms;
+        const int specificity = qBound(1, term.size() - 2, 10);
+        score += 16 + (specificity * 7);
+        if (containsExactToken(searchableTitle, term))
+            score += 28 + (specificity * 5);
+    }
+
+    if (matchedTerms == 0)
+        return -1;
+
+    // Coverage helps a page matching several independent terms, while a
+    // generic two-word phrase cannot win merely because both words occur.
+    score += matchedTerms * matchedTerms * 8;
+    if (matchedTerms == queryTerms.size() && queryTerms.size() > 1)
+        score += 24 + (queryTerms.size() * 4);
+
+    QSet<QString> scoredKeywords;
+    for (const QString &keyword : keywords) {
+        const QString normalized = normalizeForMatching(keyword);
+        if (normalized.isEmpty() || scoredKeywords.contains(normalized))
+            continue;
+        scoredKeywords.insert(normalized);
+        if (isManufacturerReferenceAlias(normalized)) {
+            if (containsManufacturerReference(result, normalized))
+                score += 24;
+        } else if (containsExactToken(searchable, normalized)) {
+            const int specificity = qBound(1, normalized.size() - 2, 10);
+            score += 4 + (specificity * 2);
+        }
+    }
+
+    if (result.entityKind == QStringLiteral("step"))
+        score += 8;
+    else if (result.entityKind == QStringLiteral("requirement"))
+        score += 7;
+    else if (result.entityKind == QStringLiteral("notice"))
+        score += 6;
+    else if (result.entityKind == QStringLiteral("operation"))
+        score += 5;
+    else if (result.entityKind == QStringLiteral("section"))
+        score += 4;
+
+    if (referenceQuery && result.entityKind == QStringLiteral("operation"))
+        score += 30;
+
+    if (!result.title.trimmed().isEmpty())
+        score += 2;
+    return score;
+}
+'''
+if old_score not in bridge_text:
+    raise SystemExit('bridge evidenceScore insertion point not found')
+bridge.write_text(bridge_text.replace(old_score, new_score, 1), encoding='utf-8')
+print('TEMP_BRIDGE_LANGUAGE_NEUTRAL_RELEVANCE_PATCHED')
+
 main = Path('main.cpp')
 text = main.read_text(encoding='utf-8')
 text = text.replace('#include <QStringList>\n', '#include <QStringList>\n#include <QDebug>\n#include <QFile>\n#include <QTextStream>\n')
