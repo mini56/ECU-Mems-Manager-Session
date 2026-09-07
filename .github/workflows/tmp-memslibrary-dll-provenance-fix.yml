@@ -1,9 +1,9 @@
-name: TMP MEMSLibrary DLL Provenance Fix
+name: TMP MEMSLibrary Provenance Relevance Fix
 
 on:
   push:
     branches:
-      - tmp-memslibrary-dll-provenance-fix
+      - tmp-memslibrary-provenance-relevance-fix
   workflow_dispatch:
 
 permissions:
@@ -11,7 +11,7 @@ permissions:
   actions: read
 
 jobs:
-  memslibrary-provenance-windows-x64:
+  memslibrary-provenance-relevance-windows-x64:
     runs-on: windows-2022
     timeout-minutes: 30
     steps:
@@ -112,7 +112,7 @@ jobs:
           $good = Resolve-Path outA
           $bad = Resolve-Path corruptPack002
           & $exe $good $bad
-          if ($LASTEXITCODE -ne 0) { throw "MEMSLibrary provenance smoke test failed: $LASTEXITCODE" }
+          if ($LASTEXITCODE -ne 0) { throw "MEMSLibrary provenance/relevance smoke test failed: $LASTEXITCODE" }
 
       - name: Prove Pack001 remained byte-identical during DLL tests
         shell: pwsh
@@ -129,7 +129,7 @@ jobs:
           '@ | python -
           Write-Host "PACK001_BYTE_IDENTICAL sha256=$after"
 
-      - name: Assemble isolated DLL validation artifact
+      - name: Assemble isolated combined DLL validation artifact
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force deliverable/MEMSLibrary_Pack_001 | Out-Null
@@ -138,12 +138,12 @@ jobs:
           Copy-Item outA/manifest.json deliverable/MEMSLibrary_Pack_001/
           $dllSha = (Get-FileHash deliverable/MEMSLibrary.dll -Algorithm SHA256).Hash.ToLower()
           $packSha = (Get-FileHash deliverable/MEMSLibrary_Pack_001/knowledge.sqlite -Algorithm SHA256).Hash.ToLower()
-          Write-Host "MEMSLIBRARY_DLL_PROVENANCE_WINDOWS_X64_PASS dll_sha256=$dllSha pack_sha256=$packSha"
+          Write-Host "MEMSLIBRARY_PROVENANCE_RELEVANCE_WINDOWS_X64_PASS dll_sha256=$dllSha pack_sha256=$packSha"
 
-      - name: Upload isolated validation artifact
+      - name: Upload isolated combined DLL artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MEMSLibrary-DLL-Provenance-${{ github.run_id }}
+          name: MEMSLibrary-DLL-Provenance-Relevance-${{ github.run_id }}
           path: deliverable
           if-no-files-found: error
           compression-level: 6
