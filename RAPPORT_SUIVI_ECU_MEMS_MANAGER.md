@@ -15255,3 +15255,12 @@ PROCHAINE ACTION EXACTE APRES LA BASCULE : raccorder la DLL corrigee au bridge I
 - Référence de production protégée : MEMSX64 BUILD #103 @ 1d6316bd1746d6f2b4cfb751cab88d18e27ef730 — aucune modification/promotion par ce workflow.
 - Aucun changement RAVEMEMS V2, Qwen, images ou logique UI ; aucune sonde de diagnostic dans le package utilisateur.
 - Le verdict fonctionnel attendu est le test réel sur le PC de l'utilisateur final.
+
+## 2026-09-07 — BUILD UTILISATEUR x64 ONNX — INTENTION AVANT BUILD
+- Objectif : produire enfin un package x64 réellement testable sur le PC utilisateur avec IA MEMS/Qwen ONNX active et les corrections de recherche déjà validées.
+- Source temporaire : tmp-build108-memslibrary-relevance-integration @ b2d6eaf1dd611be957da5981c0289a0a7e5583c2.
+- Correction bridge : 65b11a752d824e4d4464e0e587fa7110158e39db.
+- Correction MEMSLibrary : 2ca4ffa86d88cb3daa89bd3b52eb9f1f957b3621, fournie par la DLL validée et épinglée.
+- Runtime utilisateur de base : BUILD108 run 33970147790, modèle/runtimes ONNX conservés.
+- Compilation obligatoire avec MEMS_USE_ONNX_GENAI=ON ; le précédent build OFF est rejeté comme non testable pour IA MEMS.
+- Référence protégée : MEMSX64 BUILD #103 @ 1d6316bd1746d6f2b4cfb751cab88d18e27ef730 ; aucune pousse vers MEMSX64.
