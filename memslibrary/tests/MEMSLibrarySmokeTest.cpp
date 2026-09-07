@@ -29,6 +29,65 @@ bool contains(const char* text, const char* needle)
 {
     return text && needle && std::strstr(text, needle) != nullptr;
 }
+
+void resetResults(std::vector<MEMSLibrarySearchResult>& results)
+{
+    for (auto& r : results) {
+        r = {};
+        r.struct_size = sizeof(r);
+    }
+}
+
+bool searchFinds(
+    SearchPackFn search,
+    const wchar_t* pack,
+    const char* query,
+    const char* expectedDocument,
+    std::int32_t expectedPage,
+    std::vector<MEMSLibrarySearchResult>& results,
+    std::uint32_t* outCount)
+{
+    resetResults(results);
+    std::uint32_t count = 0;
+    const auto status = search(pack, query, results.data(), static_cast<std::uint32_t>(results.size()), &count);
+    bool found = false;
+    for (std::uint32_t i = 0; i < count; ++i) {
+        if (std::strcmp(results[i].document_key, expectedDocument) == 0 && results[i].page_number == expectedPage) {
+            found = true;
+            break;
+        }
+    }
+    std::cout << "RETRIEVAL query=\"" << query << "\" status=" << status << " count=" << count
+              << " target=" << expectedDocument << ":p" << expectedPage << " found=" << (found ? 1 : 0) << "\n";
+    const std::uint32_t preview = count < 5 ? count : 5;
+    for (std::uint32_t i = 0; i < preview; ++i) {
+        std::cout << "TOP" << (i + 1) << " doc=" << results[i].document_key
+                  << " page=" << results[i].page_number
+                  << " kind=" << results[i].entity_kind
+                  << " title=\"" << results[i].title << "\"\n";
+    }
+    if (outCount) *outCount = count;
+    return status == MEMSLIBRARY_OK && found;
+}
+
+void probeFrench(
+    SearchPackFn search,
+    const wchar_t* pack,
+    const char* query,
+    std::vector<MEMSLibrarySearchResult>& results)
+{
+    resetResults(results);
+    std::uint32_t count = 0;
+    const auto status = search(pack, query, results.data(), static_cast<std::uint32_t>(results.size()), &count);
+    std::cout << "FRENCH_PROBE query=\"" << query << "\" status=" << status << " count=" << count << "\n";
+    const std::uint32_t preview = count < 5 ? count : 5;
+    for (std::uint32_t i = 0; i < preview; ++i) {
+        std::cout << "FR_TOP" << (i + 1) << " doc=" << results[i].document_key
+                  << " page=" << results[i].page_number
+                  << " kind=" << results[i].entity_kind
+                  << " title=\"" << results[i].title << "\"\n";
+    }
+}
 }
 
 int wmain(int argc, wchar_t** argv)
@@ -72,35 +131,48 @@ int wmain(int argc, wchar_t** argv)
         return 5;
     }
 
-    std::vector<MEMSLibrarySearchResult> results(16);
-    for (auto& r : results) r.struct_size = sizeof(r);
+    std::vector<MEMSLibrarySearchResult> results(32);
     std::uint32_t count = 0;
-    auto searchStatus = search(argv[1], "primary gear end float", results.data(), static_cast<std::uint32_t>(results.size()), &count);
-    bool foundPrimary = false;
-    for (std::uint32_t i = 0; i < count; ++i) {
-        if (std::strcmp(results[i].document_key, "DOC_RCL0193ENG") == 0 && results[i].page_number == 53 &&
-            (contains(results[i].body, "0.089") || contains(results[i].body, "0.165"))) {
-            foundPrimary = true;
-        }
-    }
-    if (searchStatus != MEMSLIBRARY_OK || !foundPrimary) {
-        std::cerr << "FAIL primary gear search status=" << searchStatus << " count=" << count << "\n";
+
+    if (!searchFinds(search, argv[1], "primary gear end float", "DOC_RCL0193ENG", 53, results, &count)) {
+        std::cerr << "FAIL baseline primary gear retrieval\n";
         FreeLibrary(module);
         return 6;
     }
-
-    for (auto& r : results) { r = {}; r.struct_size = sizeof(r); }
-    count = 0;
-    searchStatus = search(argv[1], "battery restoration procedure", results.data(), static_cast<std::uint32_t>(results.size()), &count);
-    bool foundBattery = false;
+    bool primaryValueFound = false;
     for (std::uint32_t i = 0; i < count; ++i) {
-        if (std::strcmp(results[i].document_key, "DOC_RCL0221ENG") == 0 && results[i].page_number == 20) foundBattery = true;
+        if (std::strcmp(results[i].document_key, "DOC_RCL0193ENG") == 0 && results[i].page_number == 53 &&
+            (contains(results[i].body, "0.089") || contains(results[i].body, "0.165"))) {
+            primaryValueFound = true;
+            break;
+        }
     }
-    if (searchStatus != MEMSLIBRARY_OK || !foundBattery) {
-        std::cerr << "FAIL battery search status=" << searchStatus << " count=" << count << "\n";
+    if (!primaryValueFound) {
+        std::cerr << "FAIL baseline primary gear values missing\n";
         FreeLibrary(module);
         return 7;
     }
+
+    if (!searchFinds(search, argv[1], "How do I check the primary gear end float?", "DOC_RCL0193ENG", 53, results, nullptr)) {
+        std::cerr << "FAIL natural primary gear retrieval\n";
+        FreeLibrary(module);
+        return 8;
+    }
+
+    if (!searchFinds(search, argv[1], "battery restoration procedure", "DOC_RCL0221ENG", 20, results, nullptr)) {
+        std::cerr << "FAIL baseline battery retrieval\n";
+        FreeLibrary(module);
+        return 9;
+    }
+
+    if (!searchFinds(search, argv[1], "How do I carry out the battery restoration procedure?", "DOC_RCL0221ENG", 20, results, nullptr)) {
+        std::cerr << "FAIL natural battery retrieval\n";
+        FreeLibrary(module);
+        return 10;
+    }
+
+    probeFrench(search, argv[1], u8"Comment contrôler le jeu axial du pignon primaire ?", results);
+    probeFrench(search, argv[1], u8"Comment effectuer la procédure de remise en état de la batterie ?", results);
 
     MEMSLibraryPackInfo badInfo{};
     badInfo.struct_size = sizeof(badInfo);
@@ -108,7 +180,7 @@ int wmain(int argc, wchar_t** argv)
     if (corruptStatus == MEMSLIBRARY_OK) {
         std::cerr << "FAIL corrupt Pack002 unexpectedly accepted\n";
         FreeLibrary(module);
-        return 8;
+        return 11;
     }
 
     MEMSLibraryPackInfo recheck{};
@@ -116,12 +188,12 @@ int wmain(int argc, wchar_t** argv)
     if (validate(argv[1], &recheck) != MEMSLIBRARY_OK || recheck.document_count != 47u) {
         std::cerr << "FAIL Pack001 unavailable after corrupt Pack002 test\n";
         FreeLibrary(module);
-        return 9;
+        return 12;
     }
 
-    std::cout << "MEMSLIBRARY_PACK001_PASS abi=2 pack=" << info.pack_id
+    std::cout << "MEMSLIBRARY_RELEVANCE_FIX_PASS abi=2 pack=" << info.pack_id
               << " documents=" << info.document_count
-              << " primary=DOC_RCL0193ENG:p53 battery=DOC_RCL0221ENG:p20 corrupt_pack_isolated=1\n";
+              << " natural_primary=DOC_RCL0193ENG:p53 natural_battery=DOC_RCL0221ENG:p20 corrupt_pack_isolated=1\n";
     FreeLibrary(module);
     return 0;
 }
