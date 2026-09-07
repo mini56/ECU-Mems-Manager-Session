@@ -749,7 +749,13 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
         grounding.clear();
 
         const bool diagnosticReasoning = requiresReasoning(trimmedQuestion, grounding);
-    if (!forcedGrounded && !diagnosticReasoning && !grounding.isEmpty()) {
+    if (!diagnosticReasoning && !grounding.isEmpty()) {
+        // Ne jamais faire "reformuler" un fait documentaire par Qwen : cette
+        // session a montré 3 modes de défaillance distincts (écho du
+        // gabarit, troncature, hallucination hors-sujet) tous liés au fait
+        // de faire passer un petit modèle par une étape de synthèse pour
+        // une simple restitution de fait. Retourner directement les faits
+        // récupérés est plus fiable et plus honnête.
         rememberTurn(m_conversation, trimmedQuestion, grounding);
         emit responseReady(grounding);
         return;
