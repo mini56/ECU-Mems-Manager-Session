@@ -111,14 +111,24 @@ jobs:
       - name: Run natural-language retrieval in actual ECU MEMS Manager
         shell: pwsh
         run: |
+          $ErrorActionPreference='Stop'
           $qt='C:\Qt\5.15.2\msvc2019_64\bin'
           $env:PATH="$env:RUNTIME_ROOT;$qt;$env:PATH"
           $env:QT_QPA_PLATFORM='offscreen'
           $env:MEMS_RELEVANCE_INTEGRATION_TEST='1'
+          $exe=Join-Path $env:RUNTIME_ROOT 'ecu_mems_manager.exe'
           $out=Join-Path $env:GITHUB_WORKSPACE 'relevance-output.txt'
-          & (Join-Path $env:RUNTIME_ROOT 'ecu_mems_manager.exe') *> $out
-          $code=$LASTEXITCODE
-          "ACTUAL_APP_RELEVANCE_EXIT=$code" | Add-Content $out -Encoding UTF8
+          $stdout=Join-Path $env:GITHUB_WORKSPACE 'relevance-stdout.txt'
+          $stderr=Join-Path $env:GITHUB_WORKSPACE 'relevance-stderr.txt'
+          $process=Start-Process -FilePath $exe -WorkingDirectory $env:RUNTIME_ROOT -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+          $code=$process.ExitCode
+          "ACTUAL_APP_RELEVANCE_EXIT=$code" | Set-Content $out -Encoding UTF8
+          'STDOUT_BEGIN' | Add-Content $out -Encoding UTF8
+          if(Test-Path $stdout){Get-Content $stdout | Add-Content $out -Encoding UTF8}
+          'STDOUT_END' | Add-Content $out -Encoding UTF8
+          'STDERR_BEGIN' | Add-Content $out -Encoding UTF8
+          if(Test-Path $stderr){Get-Content $stderr | Add-Content $out -Encoding UTF8}
+          'STDERR_END' | Add-Content $out -Encoding UTF8
           Get-Content $out
           if($code -ne 0){throw "Actual application relevance integration failed: $code"}
           Write-Host 'BUILD108_ACTUAL_APP_MEMSLIBRARY_RELEVANCE_PASS'
