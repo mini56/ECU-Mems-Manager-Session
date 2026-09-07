@@ -1,15 +1,10 @@
-name: TMP BUILD108 MEMSLibrary relevance integration
+name: TMP USER TEST x64 MEMSLibrary relevance build
 
 on:
   push:
     branches: [tmp-build108-memslibrary-relevance-integration]
     paths:
       - '.github/workflows/tmp-build108-memslibrary-relevance-integration.yml'
-      - 'expert/relevance-integration-test/**'
-      - 'expert/IaMemsLibraryBridge.h'
-      - 'expert/IaMemsLibraryIntegration.cpp'
-      - 'expert/IaMemsService.cpp'
-      - 'expert/IaMemsService.h'
   workflow_dispatch:
 
 permissions:
@@ -17,10 +12,11 @@ permissions:
   actions: read
 
 jobs:
-  actual-app-relevance:
+  user-test-package:
     runs-on: windows-2022
     timeout-minutes: 45
     env:
+      PROTECTED_BASE: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
       BUILD108_RUN_ID: '33970147790'
       BUILD108_ARTIFACT_NAME: 'ECU-MEMS-Manager-x64-BUILD-108-v1.0.108-CLEAN-V2'
       RELEVANCE_DLL_RUN_ID: '34135797836'
@@ -29,22 +25,53 @@ jobs:
       RELEVANCE_DLL_DIGEST: 'sha256:596d9e4aaf7ad0e2b11cd011ada09ef58bab93936eab665c8e7a57b85cd3a2fb'
       RELEVANCE_DLL_SHA256: 'b16dfe3d4d3ece40557fb5fa5e17088fbe3a48ca085575568d16057d8571dd8b'
       PACK001_SQLITE_SHA256: '827208b703324335828d72093994ec5f7bf9e0a6fd0cd3b0082d033bfa38628b'
+      BRIDGE_FIX_COMMIT: '65b11a752d824e4d4464e0e587fa7110158e39db'
+      LIBRARY_FIX_COMMIT: '2ca4ffa86d88cb3daa89bd3b52eb9f1f957b3621'
 
     steps:
-      - name: Checkout exact temporary integration source
+      - name: Checkout exact temporary user-test source
         uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
 
-      - name: Prove protected production baseline is untouched
+      - name: Journal user-test build intent on RAPPORT before build
         shell: pwsh
         run: |
-          $expected='1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
-          git merge-base --is-ancestor $expected HEAD
-          if($LASTEXITCODE -ne 0){throw 'Temporary integration branch is not based on protected #103 lineage'}
-          Write-Host "PROTECTED_BASE_OK $expected"
-          Write-Host 'PRODUCTION_MEMSX64_NOT_MODIFIED'
+          $ErrorActionPreference='Stop'
+          git fetch origin RAPPORT
+          $reportPath = Join-Path $env:RUNNER_TEMP 'ecu-mems-rapport'
+          if(Test-Path $reportPath){Remove-Item $reportPath -Recurse -Force}
+          git worktree add -B report-user-test $reportPath origin/RAPPORT
+          $entry = @"
+
+## 2026-09-07 — BUILD UTILISATEUR x64 — INTENTION AVANT POUSSE/BUILD
+- Objectif : produire un package x64 temporaire réellement testable par l'utilisateur final avec les deux corrections de pertinence déjà validées.
+- Source temporaire : tmp-build108-memslibrary-relevance-integration @ $env:GITHUB_SHA.
+- Correction bridge : $env:BRIDGE_FIX_COMMIT.
+- Correction MEMSLibrary : $env:LIBRARY_FIX_COMMIT.
+- Base de production protégée : MEMSX64 BUILD #103 @ $env:PROTECTED_BASE — aucune modification/promotion.
+- Aucun changement RAVEMEMS V2, Qwen, images ou logique UI ; aucune sonde de diagnostic dans le package utilisateur.
+- Le verdict fonctionnel attendu est le test réel sur le PC de l'utilisateur final.
+"@
+          Add-Content -Path (Join-Path $reportPath 'RAPPORT_SUIVI_ECU_MEMS_MANAGER.md') -Value $entry -Encoding UTF8
+          git -C $reportPath config user.name 'github-actions[bot]'
+          git -C $reportPath config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C $reportPath add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git -C $reportPath commit -m 'Journal x64 user-test build intent'
+          git -C $reportPath push origin HEAD:RAPPORT
+          if($LASTEXITCODE -ne 0){throw 'Mandatory RAPPORT pre-build push failed'}
+          Write-Host 'RAPPORT_PRE_BUILD_OK'
+
+      - name: Prove protected production baseline remains untouched
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          git merge-base --is-ancestor $env:PROTECTED_BASE HEAD
+          if($LASTEXITCODE -ne 0){throw 'Temporary user-test source is not based on protected #103 lineage'}
+          $remote103 = git rev-parse origin/MEMSX64
+          if($remote103 -ne $env:PROTECTED_BASE){throw "MEMSX64 moved unexpectedly: $remote103"}
+          Write-Host "PROTECTED_MEMSX64_OK $remote103"
 
       - name: Setup Python and Qt 5.15.2 MSVC x64
         uses: actions/setup-python@v5
@@ -61,121 +88,127 @@ jobs:
           python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
           if($LASTEXITCODE -ne 0){throw "Qt install failed $LASTEXITCODE"}
 
-      - name: Download BUILD108 runtime and corrected relevance DLL
+      - name: Download validated runtime and corrected MEMSLibrary
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference='Stop'
           $artifact=gh api "repos/$env:GITHUB_REPOSITORY/actions/artifacts/$env:RELEVANCE_DLL_ARTIFACT_ID" | ConvertFrom-Json
-          if($artifact.name -ne $env:RELEVANCE_DLL_ARTIFACT_NAME -or $artifact.digest -ne $env:RELEVANCE_DLL_DIGEST -or $artifact.expired){throw 'Relevance DLL artifact pin failed'}
+          if($artifact.name -ne $env:RELEVANCE_DLL_ARTIFACT_NAME -or $artifact.digest -ne $env:RELEVANCE_DLL_DIGEST -or $artifact.expired){throw 'Corrected MEMSLibrary artifact pin failed'}
           gh run download $env:BUILD108_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:BUILD108_ARTIFACT_NAME --dir build108-runtime
+          if($LASTEXITCODE -ne 0){throw 'BUILD108 runtime download failed'}
           gh run download $env:RELEVANCE_DLL_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:RELEVANCE_DLL_ARTIFACT_NAME --dir relevance-dll
-          $exe=Get-ChildItem build108-runtime -Recurse -File -Filter ecu_mems_manager.exe | Select-Object -First 1
+          if($LASTEXITCODE -ne 0){throw 'Corrected MEMSLibrary download failed'}
+          $baseExe=Get-ChildItem build108-runtime -Recurse -File -Filter ecu_mems_manager.exe | Select-Object -First 1
           $dll=Get-ChildItem relevance-dll -Recurse -File -Filter MEMSLibrary.dll | Select-Object -First 1
           $db=Get-ChildItem relevance-dll -Recurse -File -Filter knowledge.sqlite | Select-Object -First 1
-          if(-not $exe -or -not $dll -or -not $db){throw 'Runtime or relevance artifact incomplete'}
-          if((Get-FileHash $dll.FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:RELEVANCE_DLL_SHA256){throw 'Relevance DLL SHA mismatch'}
-          if((Get-FileHash $db.FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:PACK001_SQLITE_SHA256){throw 'Pack001 SHA mismatch'}
-          $root=$exe.Directory.FullName
-          Copy-Item $dll.FullName (Join-Path $root 'MEMSLibrary.dll') -Force
-          $pack=Join-Path $root 'MEMSLibrary_Pack_001'
-          if(Test-Path $pack){Remove-Item $pack -Recurse -Force}
-          Copy-Item $db.Directory.FullName $pack -Recurse -Force
-          "RUNTIME_ROOT=$root" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-          Write-Host "RUNTIME_RELEVANCE_DLL_INJECTED sha256=$env:RELEVANCE_DLL_SHA256"
-          Write-Host "PACK001_UNCHANGED sha256=$env:PACK001_SQLITE_SHA256"
+          $manifest=Get-ChildItem relevance-dll -Recurse -File -Filter manifest.json | Select-Object -First 1
+          if(-not $baseExe -or -not $dll -or -not $db -or -not $manifest){throw 'Pinned runtime or MEMSLibrary package incomplete'}
+          if((Get-FileHash $dll.FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:RELEVANCE_DLL_SHA256){throw 'Corrected MEMSLibrary DLL SHA mismatch'}
+          if((Get-FileHash $db.FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:PACK001_SQLITE_SHA256){throw 'Pack001 knowledge.sqlite SHA mismatch'}
+          $stage=Join-Path $env:GITHUB_WORKSPACE 'ECU-MEMS-Manager-x64-USER-TEST'
+          if(Test-Path $stage){Remove-Item $stage -Recurse -Force}
+          New-Item -ItemType Directory -Path $stage | Out-Null
+          Copy-Item (Join-Path $baseExe.Directory.FullName '*') $stage -Recurse -Force
+          Copy-Item $dll.FullName (Join-Path $stage 'MEMSLibrary.dll') -Force
+          $stagePack=Join-Path $stage 'MEMSLibrary_Pack_001'
+          if(Test-Path $stagePack){Remove-Item $stagePack -Recurse -Force}
+          New-Item -ItemType Directory -Path $stagePack | Out-Null
+          Copy-Item $db.FullName (Join-Path $stagePack 'knowledge.sqlite') -Force
+          Copy-Item $manifest.FullName (Join-Path $stagePack 'manifest.json') -Force
+          "USER_TEST_STAGE=$stage" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "USER_TEST_RUNTIME_STAGED $stage"
 
-      - name: Inject deterministic retrieval probe into actual application
-        shell: pwsh
-        run: |
-          python expert/relevance-integration-test/patch_actual_app.py
-          if($LASTEXITCODE -ne 0){throw 'Actual app relevance probe patch failed'}
-
-      - name: Build actual ECU MEMS Manager retrieval path
+      - name: Build normal ECU MEMS Manager GUI with persisted bridge fix
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
-          cmake -S . -B build-app-relevance -A x64 `
+          cmake -S . -B build-user-test -A x64 `
             -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
             -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
             -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF `
             -DMEMS_USE_ONNX_GENAI=OFF
-          if($LASTEXITCODE -ne 0){throw 'Actual app configure failed'}
-          cmake --build build-app-relevance --config Release --target ecu_mems_manager --parallel
-          if($LASTEXITCODE -ne 0){throw 'Actual app build failed'}
-          Copy-Item 'build-app-relevance\Release\ecu_mems_manager.exe' (Join-Path $env:RUNTIME_ROOT 'ecu_mems_manager.exe') -Force
-          Write-Host 'ACTUAL_MEMS_MANAGER_RELEVANCE_BUILD_PASS'
+          if($LASTEXITCODE -ne 0){throw 'User-test configure failed'}
+          cmake --build build-user-test --config Release --target ecu_mems_manager --parallel
+          if($LASTEXITCODE -ne 0){throw 'User-test normal GUI build failed'}
+          $built='build-user-test\Release\ecu_mems_manager.exe'
+          if(-not (Test-Path $built)){throw 'Normal GUI executable missing'}
+          Copy-Item $built (Join-Path $env:USER_TEST_STAGE 'ecu_mems_manager.exe') -Force
+          Write-Host 'NORMAL_USER_GUI_BUILD_OK'
 
-      - name: Run bounded natural-language retrieval in actual ECU MEMS Manager
+      - name: Finalize isolated user-test package
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
-          $qt='C:\Qt\5.15.2\msvc2019_64\bin'
-          $env:PATH="$env:RUNTIME_ROOT;$qt;$env:PATH"
-          $env:QT_QPA_PLATFORM='offscreen'
-          $env:QT_FORCE_STDERR_LOGGING='1'
-          $env:MEMS_RELEVANCE_INTEGRATION_TEST='1'
-          $env:MEMS_RELEVANCE_TRACE_FILE=Join-Path $env:GITHUB_WORKSPACE 'relevance-trace.txt'
-          $exe=Join-Path $env:RUNTIME_ROOT 'ecu_mems_manager.exe'
-          $out=Join-Path $env:GITHUB_WORKSPACE 'relevance-output.txt'
-          $stdout=Join-Path $env:GITHUB_WORKSPACE 'relevance-stdout.txt'
-          $stderr=Join-Path $env:GITHUB_WORKSPACE 'relevance-stderr.txt'
-          $process=Start-Process -FilePath $exe -WorkingDirectory $env:RUNTIME_ROOT -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
-          $deadline=(Get-Date).AddSeconds(45)
-          while(-not $process.HasExited -and (Get-Date) -lt $deadline){
-            Start-Sleep -Milliseconds 500
-            $process.Refresh()
-          }
-          $timedOut=-not $process.HasExited
-          if($timedOut){
-            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
-            try{$process.WaitForExit()}catch{}
-            $code='TIMEOUT'
-          } else {
-            $code=$process.ExitCode
-          }
-          "ACTUAL_APP_RELEVANCE_EXIT=$code" | Set-Content $out -Encoding UTF8
-          'TRACE_BEGIN' | Add-Content $out -Encoding UTF8
-          if(Test-Path $env:MEMS_RELEVANCE_TRACE_FILE){Get-Content $env:MEMS_RELEVANCE_TRACE_FILE | Add-Content $out -Encoding UTF8}
-          'TRACE_END' | Add-Content $out -Encoding UTF8
-          'STDOUT_BEGIN' | Add-Content $out -Encoding UTF8
-          if(Test-Path $stdout){Get-Content $stdout | Add-Content $out -Encoding UTF8}
-          'STDOUT_END' | Add-Content $out -Encoding UTF8
-          'STDERR_BEGIN' | Add-Content $out -Encoding UTF8
-          if(Test-Path $stderr){Get-Content $stderr | Add-Content $out -Encoding UTF8}
-          'STDERR_END' | Add-Content $out -Encoding UTF8
-          Get-Content $out
-          if($timedOut){throw 'Actual application relevance integration timed out after 45 seconds'}
-          if([int]$code -ne 0){throw "Actual application relevance integration failed: $code"}
-          Write-Host 'BUILD108_ACTUAL_APP_MEMSLIBRARY_RELEVANCE_PASS'
+          $exe=Join-Path $env:USER_TEST_STAGE 'ecu_mems_manager.exe'
+          $dll=Join-Path $env:USER_TEST_STAGE 'MEMSLibrary.dll'
+          $db=Join-Path $env:USER_TEST_STAGE 'MEMSLibrary_Pack_001\knowledge.sqlite'
+          $manifest=Join-Path $env:USER_TEST_STAGE 'MEMSLibrary_Pack_001\manifest.json'
+          foreach($p in @($exe,$dll,$db,$manifest)){if(-not(Test-Path $p)){throw "Package missing $p"}}
+          $dllSha=(Get-FileHash $dll -Algorithm SHA256).Hash.ToLowerInvariant()
+          $dbSha=(Get-FileHash $db -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($dllSha -ne $env:RELEVANCE_DLL_SHA256){throw 'Packaged MEMSLibrary DLL SHA mismatch'}
+          if($dbSha -ne $env:PACK001_SQLITE_SHA256){throw 'Packaged Pack001 SHA mismatch'}
+          $llama=Get-ChildItem $env:USER_TEST_STAGE -Recurse -File -Filter llama-server.exe | Select-Object -First 1
+          $model=Get-ChildItem $env:USER_TEST_STAGE -Recurse -File -Filter *.gguf | Select-Object -First 1
+          if(-not $llama){throw 'Package missing llama-server.exe required for local AI'}
+          if(-not $model){throw 'Package missing local Qwen GGUF model'}
+          $info=@"
+ECU MEMS Manager x64 — USER TEST BUILD
+NOT PRODUCTION — DO NOT REPLACE MEMSX64 BUILD #103
 
-      - name: Persist validated bridge relevance fix
-        shell: pwsh
-        run: |
-          $ErrorActionPreference='Stop'
-          git diff --quiet -- expert/IaMemsLibraryBridge.cpp
-          if($LASTEXITCODE -eq 0){
-            Write-Host 'BRIDGE_RELEVANCE_ALREADY_PERSISTED'
-            exit 0
-          }
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add expert/IaMemsLibraryBridge.cpp
-          git commit -m 'Fix MEMSLibrary bridge relevance ranking'
-          git push origin "HEAD:tmp-build108-memslibrary-relevance-integration"
-          if($LASTEXITCODE -ne 0){throw 'Failed to persist validated bridge relevance fix'}
-          Write-Host 'BRIDGE_RELEVANCE_PERSISTED'
+Protected production: MEMSX64 BUILD #103
+Protected commit: $env:PROTECTED_BASE
+Temporary source branch: tmp-build108-memslibrary-relevance-integration
+Temporary source commit: $env:GITHUB_SHA
+MEMSLibrary relevance fix: $env:LIBRARY_FIX_COMMIT
+MEMS Manager bridge relevance fix: $env:BRIDGE_FIX_COMMIT
+MEMSLibrary.dll SHA256: $dllSha
+knowledge.sqlite SHA256: $dbSha
+Build run: $env:GITHUB_RUN_ID
 
-      - name: Upload relevance probe output
-        if: always()
+Purpose: real end-user PC validation of the corrected documentary retrieval path.
+No RAVEMEMS V2, image logic, Qwen model or protected production promotion is included in this change.
+"@
+          Set-Content -Path (Join-Path $env:USER_TEST_STAGE 'USER_TEST_BUILD_INFO.txt') -Value $info -Encoding UTF8
+          Write-Host "PACKAGE_READY dll=$dllSha pack=$dbSha llama=$($llama.Name) model=$($model.Name)"
+
+      - name: Upload x64 user-test package
         uses: actions/upload-artifact@v4
         with:
-          name: BUILD108-MEMSLibrary-Relevance-Probe-${{ github.run_id }}
-          path: |
-            relevance-output.txt
-            relevance-trace.txt
-            relevance-stdout.txt
-            relevance-stderr.txt
-          if-no-files-found: warn
-          retention-days: 7
+          name: ECU-MEMS-Manager-x64-USER-TEST-Relevance-${{ github.run_id }}
+          path: ECU-MEMS-Manager-x64-USER-TEST/**
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 14
+
+      - name: Journal completed user-test package on RAPPORT
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $reportPath = Join-Path $env:RUNNER_TEMP 'ecu-mems-rapport'
+          git -C $reportPath fetch origin RAPPORT
+          git -C $reportPath reset --hard origin/RAPPORT
+          $dllSha=(Get-FileHash (Join-Path $env:USER_TEST_STAGE 'MEMSLibrary.dll') -Algorithm SHA256).Hash.ToLowerInvariant()
+          $dbSha=(Get-FileHash (Join-Path $env:USER_TEST_STAGE 'MEMSLibrary_Pack_001\knowledge.sqlite') -Algorithm SHA256).Hash.ToLowerInvariant()
+          $artifactName="ECU-MEMS-Manager-x64-USER-TEST-Relevance-$env:GITHUB_RUN_ID"
+          $entry = @"
+
+## 2026-09-07 — BUILD UTILISATEUR x64 — RESULTAT
+- Run GitHub Actions : $env:GITHUB_RUN_ID.
+- Artifact : $artifactName.
+- Source temporaire : tmp-build108-memslibrary-relevance-integration @ $env:GITHUB_SHA.
+- MEMSLibrary.dll corrigée SHA256 : $dllSha.
+- Pack001 knowledge.sqlite SHA256 : $dbSha.
+- Package GUI normal, sans sonde de diagnostic, assemblé pour test réel sur le PC utilisateur.
+- MEMSX64 BUILD #103 reste strictement sur $env:PROTECTED_BASE ; aucune promotion production.
+"@
+          Add-Content -Path (Join-Path $reportPath 'RAPPORT_SUIVI_ECU_MEMS_MANAGER.md') -Value $entry -Encoding UTF8
+          git -C $reportPath config user.name 'github-actions[bot]'
+          git -C $reportPath config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C $reportPath add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
+          git -C $reportPath commit -m "Journal x64 user-test package $env:GITHUB_RUN_ID"
+          git -C $reportPath push origin HEAD:RAPPORT
+          if($LASTEXITCODE -ne 0){throw 'Mandatory RAPPORT post-build push failed'}
+          Write-Host 'RAPPORT_POST_BUILD_OK'
