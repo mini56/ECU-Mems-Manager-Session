@@ -1,4 +1,4 @@
-name: TMP USER TEST x64 MEMSLibrary relevance build
+name: TMP USER TEST x64 ONNX MEMSLibrary relevance
 
 on:
   push:
@@ -14,11 +14,13 @@ permissions:
 jobs:
   user-test-package:
     runs-on: windows-2022
-    timeout-minutes: 45
+    timeout-minutes: 60
     env:
       PROTECTED_BASE: '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
       BUILD108_RUN_ID: '33970147790'
+      BUILD108_ARTIFACT_ID: '9970811523'
       BUILD108_ARTIFACT_NAME: 'ECU-MEMS-Manager-x64-BUILD-108-v1.0.108-CLEAN-V2'
+      BUILD108_ARTIFACT_DIGEST: 'sha256:f64d1450ab1821f2d67e7fa76f0801f22a0b76774238db7e6ff2efdfe89ad16d'
       RELEVANCE_DLL_RUN_ID: '34135797836'
       RELEVANCE_DLL_ARTIFACT_ID: '10023930741'
       RELEVANCE_DLL_ARTIFACT_NAME: 'MEMSLibrary-DLL-Provenance-Relevance-34135797836'
@@ -27,6 +29,10 @@ jobs:
       PACK001_SQLITE_SHA256: '827208b703324335828d72093994ec5f7bf9e0a6fd0cd3b0082d033bfa38628b'
       BRIDGE_FIX_COMMIT: '65b11a752d824e4d4464e0e587fa7110158e39db'
       LIBRARY_FIX_COMMIT: '2ca4ffa86d88cb3daa89bd3b52eb9f1f957b3621'
+      ORT_GENAI_VERSION: '0.14.0'
+      ORT_GENAI_WIN_X64_SHA256: '8a303e52dc7be8fb2a5331929af451a25ac59774102d7fd09ef673adc85c5ebf'
+      ORT_VERSION: '1.24.4'
+      ORT_WIN_X64_SHA256: 'd2319fddfb6ea4db99ccc4b60c85c517bcd855721f5daa6a06d40d7cb2ee2357'
 
     steps:
       - name: Checkout exact temporary user-test source
@@ -35,7 +41,7 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 0
 
-      - name: Journal user-test build intent on RAPPORT before build
+      - name: Journal real ONNX user-test build intent on RAPPORT before build
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
@@ -45,41 +51,42 @@ jobs:
           git worktree add -B report-user-test $reportPath origin/RAPPORT
           $entry = @(
             '',
-            '## 2026-09-07 — BUILD UTILISATEUR x64 — INTENTION AVANT POUSSE/BUILD',
-            "- Objectif : produire un package x64 temporaire réellement testable par l'utilisateur final avec les deux corrections de pertinence déjà validées.",
+            '## 2026-09-07 — BUILD UTILISATEUR x64 ONNX — INTENTION AVANT BUILD',
+            "- Objectif : produire enfin un package x64 réellement testable sur le PC utilisateur avec IA MEMS/Qwen ONNX active et les corrections de recherche déjà validées.",
             "- Source temporaire : tmp-build108-memslibrary-relevance-integration @ $env:GITHUB_SHA.",
             "- Correction bridge : $env:BRIDGE_FIX_COMMIT.",
-            "- Correction MEMSLibrary : $env:LIBRARY_FIX_COMMIT.",
-            "- Référence de production protégée : MEMSX64 BUILD #103 @ $env:PROTECTED_BASE — aucune modification/promotion par ce workflow.",
-            '- Aucun changement RAVEMEMS V2, Qwen, images ou logique UI ; aucune sonde de diagnostic dans le package utilisateur.',
-            "- Le verdict fonctionnel attendu est le test réel sur le PC de l'utilisateur final."
+            "- Correction MEMSLibrary : $env:LIBRARY_FIX_COMMIT, fournie par la DLL validée et épinglée.",
+            "- Runtime utilisateur de base : BUILD108 run $env:BUILD108_RUN_ID, modèle/runtimes ONNX conservés.",
+            '- Compilation obligatoire avec MEMS_USE_ONNX_GENAI=ON ; le précédent build OFF est rejeté comme non testable pour IA MEMS.',
+            "- Référence protégée : MEMSX64 BUILD #103 @ $env:PROTECTED_BASE ; aucune pousse vers MEMSX64."
           ) -join [Environment]::NewLine
           Add-Content -Path (Join-Path $reportPath 'RAPPORT_SUIVI_ECU_MEMS_MANAGER.md') -Value $entry -Encoding UTF8
           git -C $reportPath config user.name 'github-actions[bot]'
           git -C $reportPath config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git -C $reportPath add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
-          git -C $reportPath commit -m 'Journal x64 user-test build intent'
+          git -C $reportPath commit -m 'Journal real ONNX x64 user-test build intent'
           git -C $reportPath push origin HEAD:RAPPORT
           if($LASTEXITCODE -ne 0){throw 'Mandatory RAPPORT pre-build push failed'}
           Write-Host 'RAPPORT_PRE_BUILD_OK'
 
-      - name: Prove temporary build descends from protected reference
+      - name: Prove protected lineage and persisted bridge fix
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
           git merge-base --is-ancestor $env:PROTECTED_BASE HEAD
           if($LASTEXITCODE -ne 0){throw 'Temporary user-test source is not based on protected #103 lineage'}
-          $remoteHead = git rev-parse origin/MEMSX64
+          git merge-base --is-ancestor $env:BRIDGE_FIX_COMMIT HEAD
+          if($LASTEXITCODE -ne 0){throw 'Persisted bridge relevance fix is not in user-test source'}
           Write-Host "PROTECTED_REFERENCE_ANCESTOR_OK $env:PROTECTED_BASE"
-          Write-Host "MEMSX64_REMOTE_HEAD_OBSERVED $remoteHead"
+          Write-Host "BRIDGE_FIX_PRESENT $env:BRIDGE_FIX_COMMIT"
           Write-Host 'THIS_WORKFLOW_NEVER_PUSHES_TO_MEMSX64'
 
-      - name: Setup Python and Qt 5.15.2 MSVC x64
+      - name: Setup Python and Qt tools
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install Qt
+      - name: Install Qt 5.15.2 MSVC x64
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
@@ -89,18 +96,46 @@ jobs:
           python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
           if($LASTEXITCODE -ne 0){throw "Qt install failed $LASTEXITCODE"}
 
-      - name: Download validated runtime and corrected MEMSLibrary
+      - name: Download pinned ONNX Runtime GenAI development files
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $genaiArchive=Join-Path $env:RUNNER_TEMP "onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          $ortArchive=Join-Path $env:RUNNER_TEMP "onnxruntime-win-x64-$env:ORT_VERSION.zip"
+          $genaiExtract=Join-Path $env:RUNNER_TEMP 'genai'
+          $ortExtract=Join-Path $env:RUNNER_TEMP 'ort'
+          curl.exe -L --fail --retry 3 --retry-all-errors --retry-delay 2 -o $genaiArchive "https://github.com/microsoft/onnxruntime-genai/releases/download/v$env:ORT_GENAI_VERSION/onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          if($LASTEXITCODE -ne 0){throw 'GenAI download failed'}
+          curl.exe -L --fail --retry 3 --retry-all-errors --retry-delay 2 -o $ortArchive "https://github.com/microsoft/onnxruntime/releases/download/v$env:ORT_VERSION/onnxruntime-win-x64-$env:ORT_VERSION.zip"
+          if($LASTEXITCODE -ne 0){throw 'ORT download failed'}
+          if((Get-FileHash $genaiArchive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:ORT_GENAI_WIN_X64_SHA256){throw 'GenAI SHA mismatch'}
+          if((Get-FileHash $ortArchive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:ORT_WIN_X64_SHA256){throw 'ORT SHA mismatch'}
+          Expand-Archive $genaiArchive $genaiExtract -Force
+          Expand-Archive $ortArchive $ortExtract -Force
+          $header=Get-ChildItem $genaiExtract -Recurse -File -Filter ort_genai_c.h | Select-Object -First 1
+          $lib=Get-ChildItem $genaiExtract -Recurse -File -Filter onnxruntime-genai.lib | Select-Object -First 1
+          if(-not $header -or -not $lib){throw 'ONNX Runtime GenAI development files incomplete'}
+          "ORT_GENAI_INCLUDE_DIR=$($header.DirectoryName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "ORT_GENAI_LIBRARY=$($lib.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "ONNX_DEV_READY include=$($header.DirectoryName) lib=$($lib.FullName)"
+
+      - name: Download validated BUILD108 runtime and corrected MEMSLibrary
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference='Stop'
-          $artifact=gh api "repos/$env:GITHUB_REPOSITORY/actions/artifacts/$env:RELEVANCE_DLL_ARTIFACT_ID" | ConvertFrom-Json
-          if($artifact.name -ne $env:RELEVANCE_DLL_ARTIFACT_NAME -or $artifact.digest -ne $env:RELEVANCE_DLL_DIGEST -or $artifact.expired){throw 'Corrected MEMSLibrary artifact pin failed'}
+          function Assert-Artifact($id,$name,$digest){
+            $m=gh api "repos/$env:GITHUB_REPOSITORY/actions/artifacts/$id" | ConvertFrom-Json
+            if($m.name -ne $name -or $m.digest -ne $digest -or $m.expired){throw "Artifact pin failed: $id"}
+          }
+          Assert-Artifact $env:BUILD108_ARTIFACT_ID $env:BUILD108_ARTIFACT_NAME $env:BUILD108_ARTIFACT_DIGEST
+          Assert-Artifact $env:RELEVANCE_DLL_ARTIFACT_ID $env:RELEVANCE_DLL_ARTIFACT_NAME $env:RELEVANCE_DLL_DIGEST
           gh run download $env:BUILD108_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:BUILD108_ARTIFACT_NAME --dir build108-runtime
           if($LASTEXITCODE -ne 0){throw 'BUILD108 runtime download failed'}
           gh run download $env:RELEVANCE_DLL_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:RELEVANCE_DLL_ARTIFACT_NAME --dir relevance-dll
           if($LASTEXITCODE -ne 0){throw 'Corrected MEMSLibrary download failed'}
+
           $baseExe=Get-ChildItem build108-runtime -Recurse -File -Filter ecu_mems_manager.exe | Select-Object -First 1
           $dll=Get-ChildItem relevance-dll -Recurse -File -Filter MEMSLibrary.dll | Select-Object -First 1
           $db=Get-ChildItem relevance-dll -Recurse -File -Filter knowledge.sqlite | Select-Object -First 1
@@ -108,7 +143,8 @@ jobs:
           if(-not $baseExe -or -not $dll -or -not $db -or -not $manifest){throw 'Pinned runtime or MEMSLibrary package incomplete'}
           if((Get-FileHash $dll.FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:RELEVANCE_DLL_SHA256){throw 'Corrected MEMSLibrary DLL SHA mismatch'}
           if((Get-FileHash $db.FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:PACK001_SQLITE_SHA256){throw 'Pack001 knowledge.sqlite SHA mismatch'}
-          $stage=Join-Path $env:GITHUB_WORKSPACE 'ECU-MEMS-Manager-x64-USER-TEST'
+
+          $stage=Join-Path $env:GITHUB_WORKSPACE 'ECU-MEMS-Manager-x64-USER-TEST-ONNX'
           if(Test-Path $stage){Remove-Item $stage -Recurse -Force}
           New-Item -ItemType Directory -Path $stage | Out-Null
           Copy-Item (Join-Path $baseExe.Directory.FullName '*') $stage -Recurse -Force
@@ -118,10 +154,29 @@ jobs:
           New-Item -ItemType Directory -Path $stagePack | Out-Null
           Copy-Item $db.FullName (Join-Path $stagePack 'knowledge.sqlite') -Force
           Copy-Item $manifest.FullName (Join-Path $stagePack 'manifest.json') -Force
-          "USER_TEST_STAGE=$stage" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-          Write-Host "USER_TEST_RUNTIME_STAGED $stage"
 
-      - name: Build normal ECU MEMS Manager GUI with persisted bridge fix
+          $runtimeCandidates=@(
+            (Join-Path $stage 'onnxruntime-genai.dll'),
+            (Join-Path $stage 'ai\onnxruntime-genai.dll')
+          )
+          $runtime=$runtimeCandidates | Where-Object {Test-Path $_} | Select-Object -First 1
+          $modelCandidates=@(
+            (Join-Path $stage 'ai\models\qwen3-0.6b-int4'),
+            (Join-Path $stage 'ai\models\ia-mems-onnx'),
+            (Join-Path $stage 'models\qwen3-0.6b-int4')
+          )
+          $modelDir=$modelCandidates | Where-Object {Test-Path (Join-Path $_ 'genai_config.json')} | Select-Object -First 1
+          if(-not $runtime){throw 'BUILD108 package is missing onnxruntime-genai.dll'}
+          if(-not $modelDir){throw 'BUILD108 package is missing the Qwen ONNX model/genai_config.json'}
+          $onnx=Get-ChildItem $modelDir -Recurse -File -Filter *.onnx | Select-Object -First 1
+          if(-not $onnx){throw 'Qwen ONNX model file is missing'}
+
+          "USER_TEST_STAGE=$stage" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "USER_TEST_RUNTIME=$runtime" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "USER_TEST_MODEL_DIR=$modelDir" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "USER_TEST_RUNTIME_STAGED runtime=$runtime model=$modelDir"
+
+      - name: Build real ECU MEMS Manager GUI with ONNX GenAI enabled
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
@@ -129,16 +184,34 @@ jobs:
             -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
             -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
             -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF `
-            -DMEMS_USE_ONNX_GENAI=OFF
-          if($LASTEXITCODE -ne 0){throw 'User-test configure failed'}
+            -DMEMS_USE_ONNX_GENAI=ON `
+            "-DORT_GENAI_INCLUDE_DIR=$env:ORT_GENAI_INCLUDE_DIR" `
+            "-DORT_GENAI_LIBRARY=$env:ORT_GENAI_LIBRARY"
+          if($LASTEXITCODE -ne 0){throw 'User-test ONNX configure failed'}
           cmake --build build-user-test --config Release --target ecu_mems_manager --parallel
-          if($LASTEXITCODE -ne 0){throw 'User-test normal GUI build failed'}
+          if($LASTEXITCODE -ne 0){throw 'User-test ONNX GUI build failed'}
           $built='build-user-test\Release\ecu_mems_manager.exe'
-          if(-not (Test-Path $built)){throw 'Normal GUI executable missing'}
+          if(-not (Test-Path $built)){throw 'ONNX GUI executable missing'}
           Copy-Item $built (Join-Path $env:USER_TEST_STAGE 'ecu_mems_manager.exe') -Force
-          Write-Host 'NORMAL_USER_GUI_BUILD_OK'
+          Write-Host 'REAL_ONNX_USER_GUI_BUILD_OK'
 
-      - name: Finalize isolated user-test package
+      - name: Run one packaged ONNX engine smoke test
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $qt='C:\Qt\5.15.2\msvc2019_64'
+          $runtimeDir=Split-Path $env:USER_TEST_RUNTIME -Parent
+          $env:PATH="$env:USER_TEST_STAGE;$runtimeDir;$qt\bin;$env:PATH"
+          $env:QT_PLUGIN_PATH="$qt\plugins"
+          $env:MEMS_AI_RUNTIME=$env:USER_TEST_RUNTIME
+          $env:MEMS_AI_MODEL=$env:USER_TEST_MODEL_DIR
+          $selftest='build-user-test\Release\local_ai_onnx_selftest.exe'
+          if(-not(Test-Path $selftest)){throw 'ONNX self-test executable missing'}
+          & $selftest
+          if($LASTEXITCODE -ne 0){throw "Packaged ONNX engine self-test failed $LASTEXITCODE"}
+          Write-Host 'PACKAGED_ONNX_ENGINE_PASS'
+
+      - name: Finalize real ONNX user-test package
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
@@ -146,45 +219,43 @@ jobs:
           $dll=Join-Path $env:USER_TEST_STAGE 'MEMSLibrary.dll'
           $db=Join-Path $env:USER_TEST_STAGE 'MEMSLibrary_Pack_001\knowledge.sqlite'
           $manifest=Join-Path $env:USER_TEST_STAGE 'MEMSLibrary_Pack_001\manifest.json'
-          foreach($p in @($exe,$dll,$db,$manifest)){if(-not(Test-Path $p)){throw "Package missing $p"}}
+          foreach($p in @($exe,$dll,$db,$manifest,$env:USER_TEST_RUNTIME)){if(-not(Test-Path $p)){throw "Package missing $p"}}
+          if(-not(Test-Path (Join-Path $env:USER_TEST_MODEL_DIR 'genai_config.json'))){throw 'Package missing Qwen genai_config.json'}
+          if(-not(Get-ChildItem $env:USER_TEST_MODEL_DIR -Recurse -File -Filter *.onnx | Select-Object -First 1)){throw 'Package missing Qwen ONNX model'}
           $dllSha=(Get-FileHash $dll -Algorithm SHA256).Hash.ToLowerInvariant()
           $dbSha=(Get-FileHash $db -Algorithm SHA256).Hash.ToLowerInvariant()
           if($dllSha -ne $env:RELEVANCE_DLL_SHA256){throw 'Packaged MEMSLibrary DLL SHA mismatch'}
           if($dbSha -ne $env:PACK001_SQLITE_SHA256){throw 'Packaged Pack001 SHA mismatch'}
-          $llama=Get-ChildItem $env:USER_TEST_STAGE -Recurse -File -Filter llama-server.exe | Select-Object -First 1
-          $model=Get-ChildItem $env:USER_TEST_STAGE -Recurse -File -Filter *.gguf | Select-Object -First 1
-          if(-not $llama){throw 'Package missing llama-server.exe required for local AI'}
-          if(-not $model){throw 'Package missing local Qwen GGUF model'}
           $info = @(
-            'ECU MEMS Manager x64 — USER TEST BUILD',
+            'ECU MEMS Manager x64 — REAL USER TEST — ONNX IA MEMS',
             'NOT PRODUCTION — DO NOT REPLACE MEMSX64 BUILD #103',
             '',
-            'Protected production reference: MEMSX64 BUILD #103',
             "Protected reference commit: $env:PROTECTED_BASE",
-            'Temporary source branch: tmp-build108-memslibrary-relevance-integration',
             "Temporary source commit: $env:GITHUB_SHA",
             "MEMSLibrary relevance fix: $env:LIBRARY_FIX_COMMIT",
             "MEMS Manager bridge relevance fix: $env:BRIDGE_FIX_COMMIT",
+            'IA engine: ONNX Runtime GenAI ENABLED',
+            "Runtime: $env:USER_TEST_RUNTIME",
+            "Model: $env:USER_TEST_MODEL_DIR",
             "MEMSLibrary.dll SHA256: $dllSha",
             "knowledge.sqlite SHA256: $dbSha",
             "Build run: $env:GITHUB_RUN_ID",
             '',
-            'Purpose: real end-user PC validation of the corrected documentary retrieval path.',
-            'No RAVEMEMS V2, image logic, Qwen model or protected production promotion is included in this change.'
+            'Purpose: real end-user PC validation in the IA MEMS tab with the corrected documentary retrieval path.'
           ) -join [Environment]::NewLine
           Set-Content -Path (Join-Path $env:USER_TEST_STAGE 'USER_TEST_BUILD_INFO.txt') -Value $info -Encoding UTF8
-          Write-Host "PACKAGE_READY dll=$dllSha pack=$dbSha llama=$($llama.Name) model=$($model.Name)"
+          Write-Host "REAL_USER_PACKAGE_READY dll=$dllSha pack=$dbSha"
 
-      - name: Upload x64 user-test package
+      - name: Upload real x64 ONNX user-test package
         uses: actions/upload-artifact@v4
         with:
-          name: ECU-MEMS-Manager-x64-USER-TEST-Relevance-${{ github.run_id }}
-          path: ECU-MEMS-Manager-x64-USER-TEST/**
+          name: ECU-MEMS-Manager-x64-USER-TEST-ONNX-Relevance-${{ github.run_id }}
+          path: ECU-MEMS-Manager-x64-USER-TEST-ONNX/**
           if-no-files-found: error
           compression-level: 6
           retention-days: 14
 
-      - name: Journal completed user-test package on RAPPORT
+      - name: Journal completed real ONNX user-test package on RAPPORT
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
@@ -193,23 +264,25 @@ jobs:
           git -C $reportPath reset --hard origin/RAPPORT
           $dllSha=(Get-FileHash (Join-Path $env:USER_TEST_STAGE 'MEMSLibrary.dll') -Algorithm SHA256).Hash.ToLowerInvariant()
           $dbSha=(Get-FileHash (Join-Path $env:USER_TEST_STAGE 'MEMSLibrary_Pack_001\knowledge.sqlite') -Algorithm SHA256).Hash.ToLowerInvariant()
-          $artifactName="ECU-MEMS-Manager-x64-USER-TEST-Relevance-$env:GITHUB_RUN_ID"
+          $artifactName="ECU-MEMS-Manager-x64-USER-TEST-ONNX-Relevance-$env:GITHUB_RUN_ID"
           $entry = @(
             '',
-            '## 2026-09-07 — BUILD UTILISATEUR x64 — RESULTAT',
+            '## 2026-09-07 — BUILD UTILISATEUR x64 ONNX — RESULTAT',
             "- Run GitHub Actions : $env:GITHUB_RUN_ID.",
             "- Artifact : $artifactName.",
             "- Source temporaire : tmp-build108-memslibrary-relevance-integration @ $env:GITHUB_SHA.",
+            '- IA MEMS compilée avec MEMS_USE_ONNX_GENAI=ON ; runtime et modèle Qwen ONNX présents dans le package.',
+            '- Self-test moteur ONNX packagé : PASS.',
             "- MEMSLibrary.dll corrigée SHA256 : $dllSha.",
             "- Pack001 knowledge.sqlite SHA256 : $dbSha.",
-            '- Package GUI normal, sans sonde de diagnostic, assemblé pour test réel sur le PC utilisateur.',
-            "- Référence #103 conservée : $env:PROTECTED_BASE ; ce workflow n'a rien poussé vers MEMSX64."
+            '- Package destiné au test réel dans IA MEMS sur le PC utilisateur.',
+            "- Référence #103 conservée : $env:PROTECTED_BASE ; aucune pousse vers MEMSX64."
           ) -join [Environment]::NewLine
           Add-Content -Path (Join-Path $reportPath 'RAPPORT_SUIVI_ECU_MEMS_MANAGER.md') -Value $entry -Encoding UTF8
           git -C $reportPath config user.name 'github-actions[bot]'
           git -C $reportPath config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git -C $reportPath add RAPPORT_SUIVI_ECU_MEMS_MANAGER.md
-          git -C $reportPath commit -m "Journal x64 user-test package $env:GITHUB_RUN_ID"
+          git -C $reportPath commit -m "Journal real ONNX x64 user-test package $env:GITHUB_RUN_ID"
           git -C $reportPath push origin HEAD:RAPPORT
           if($LASTEXITCODE -ne 0){throw 'Mandatory RAPPORT post-build push failed'}
           Write-Host 'RAPPORT_POST_BUILD_OK'
