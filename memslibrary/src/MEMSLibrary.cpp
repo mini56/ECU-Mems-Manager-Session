@@ -93,18 +93,57 @@ std::vector<std::string> queryTerms(const char* query)
 {
     std::vector<std::string> terms;
     std::string current;
+    auto appendTerm = [&terms](std::string term) {
+        if (term.size() < 2) return;
+        if (std::find(terms.begin(), terms.end(), term) == terms.end())
+            terms.push_back(std::move(term));
+    };
+
     for (const unsigned char c : std::string(query ? query : "")) {
         if (std::isalnum(c) || c >= 0x80 || c == '-' || c == '_') {
-            current.push_back(static_cast<char>(std::tolower(c)));
+            current.push_back(static_cast<char>(c < 0x80 ? std::tolower(c) : c));
         } else if (!current.empty()) {
-            terms.push_back(current);
+            appendTerm(current);
             current.clear();
         }
     }
-    if (!current.empty()) terms.push_back(current);
-    terms.erase(std::remove_if(terms.begin(), terms.end(), [](const std::string& s){ return s.size() < 2; }), terms.end());
-    if (terms.size() > 8) terms.resize(8);
+    if (!current.empty()) appendTerm(current);
+    if (terms.size() > 16) terms.resize(16);
     return terms;
+}
+
+int termWeight(const std::string& term)
+{
+    const bool technical = std::any_of(term.begin(), term.end(), [](unsigned char c) {
+        return std::isdigit(c) || c == '-' || c == '_';
+    });
+    if (technical || term.size() >= 7) return 4;
+    if (term.size() >= 5) return 3;
+    if (term.size() >= 4) return 2;
+    return 1;
+}
+
+std::string relevanceExpression(const std::vector<std::string>& terms)
+{
+    std::string expression = "(";
+    for (std::size_t i = 0; i < terms.size(); ++i) {
+        if (i != 0) expression += " + ";
+        expression += "CASE WHEN search_text LIKE ?" + std::to_string(i + 1) + " THEN "
+            + std::to_string(termWeight(terms[i])) + " ELSE 0 END";
+    }
+    expression += ")";
+    return expression;
+}
+
+std::string anyTermPredicate(const std::vector<std::string>& terms)
+{
+    std::string predicate = "(";
+    for (std::size_t i = 0; i < terms.size(); ++i) {
+        if (i != 0) predicate += " OR ";
+        predicate += "search_text LIKE ?" + std::to_string(i + 1);
+    }
+    predicate += ")";
+    return predicate;
 }
 
 bool terminatedField(const char* value, std::size_t capacity)
@@ -120,6 +159,16 @@ bool bindText(sqlite3_stmt* stmt, int index, const std::string& value)
 bool bindText(sqlite3_stmt* stmt, int index, const char* value)
 {
     return sqlite3_bind_text(stmt, index, value, -1, SQLITE_TRANSIENT) == SQLITE_OK;
+}
+
+bool bindTermPatterns(sqlite3_stmt* stmt, const std::vector<std::string>& terms)
+{
+    for (std::size_t i = 0; i < terms.size(); ++i) {
+        const std::string pattern = "%" + terms[i] + "%";
+        if (!bindText(stmt, static_cast<int>(i + 1), pattern))
+            return false;
+    }
+    return true;
 }
 }
 
@@ -193,24 +242,30 @@ std::int32_t MEMSLibrary_SearchPack(
     const int openStatus = openReadonly(packDirectory, &db);
     if (openStatus != MEMSLIBRARY_OK) return openStatus;
 
-    std::string sql = "SELECT document_key,page_number,entity_kind,entity_key,title,body FROM memslibrary_search WHERE 1=1";
-    for (std::size_t i = 0; i < terms.size(); ++i) sql += " AND search_text LIKE ?";
-    sql += " ORDER BY CASE entity_kind WHEN 'step' THEN 0 WHEN 'requirement' THEN 1 WHEN 'notice' THEN 2 WHEN 'operation' THEN 3 WHEN 'section' THEN 4 ELSE 5 END, document_key, COALESCE(page_number,2147483647), entity_key LIMIT ?";
+    const std::string relevance = relevanceExpression(terms);
+    std::string sql = "SELECT document_key,page_number,entity_kind,entity_key,title,body," + relevance
+        + " AS relevance FROM memslibrary_search WHERE " + anyTermPredicate(terms)
+        + " ORDER BY relevance DESC, "
+          "CASE entity_kind WHEN 'step' THEN 0 WHEN 'requirement' THEN 1 WHEN 'notice' THEN 2 "
+          "WHEN 'operation' THEN 3 WHEN 'section' THEN 4 ELSE 5 END, "
+          "document_key, COALESCE(page_number,2147483647), entity_key LIMIT ?"
+        + std::to_string(terms.size() + 1);
 
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
         sqlite3_close(db);
         return MEMSLIBRARY_QUERY_FAILED;
     }
-    int bindIndex = 1;
-    for (const auto& term : terms) {
-        const std::string pattern = "%" + term + "%";
-        sqlite3_bind_text(stmt, bindIndex++, pattern.c_str(), -1, SQLITE_TRANSIENT);
+    if (!bindTermPatterns(stmt, terms)
+        || sqlite3_bind_int(stmt, static_cast<int>(terms.size() + 1), static_cast<int>(resultCapacity)) != SQLITE_OK) {
+        sqlite3_finalize(stmt);
+        sqlite3_close(db);
+        return MEMSLIBRARY_QUERY_FAILED;
     }
-    sqlite3_bind_int(stmt, bindIndex, static_cast<int>(resultCapacity));
 
     std::uint32_t count = 0;
-    while (count < resultCapacity && sqlite3_step(stmt) == SQLITE_ROW) {
+    int stepStatus = SQLITE_DONE;
+    while (count < resultCapacity && (stepStatus = sqlite3_step(stmt)) == SQLITE_ROW) {
         auto& r = outResults[count];
         if (r.struct_size != sizeof(MEMSLibrarySearchResult)) {
             sqlite3_finalize(stmt);
@@ -225,8 +280,12 @@ std::int32_t MEMSLibrary_SearchPack(
         copyText(r.body, sizeof(r.body), sqlite3_column_text(stmt, 5));
         ++count;
     }
+
+    const bool queryOk = stepStatus == SQLITE_DONE || count == resultCapacity;
     sqlite3_finalize(stmt);
     sqlite3_close(db);
+    if (!queryOk) return MEMSLIBRARY_QUERY_FAILED;
+
     *outResultCount = count;
     return MEMSLIBRARY_OK;
 }
@@ -253,9 +312,8 @@ std::int32_t MEMSLibrary_SearchPackFiltered(
     }
 
     for (std::uint32_t i = 0; i < resultCapacity; ++i) {
-        if (outResults[i].struct_size != sizeof(MEMSLibrarySearchResultWithProvenance)) {
+        if (outResults[i].struct_size != sizeof(MEMSLibrarySearchResultWithProvenance))
             return MEMSLIBRARY_INVALID_ARGUMENT;
-        }
     }
 
     const auto terms = queryTerms(queryUtf8);
@@ -270,13 +328,38 @@ std::int32_t MEMSLibrary_SearchPackFiltered(
     const bool filterLanguage = filters && filters->source_language[0] != '\0';
     const bool filterKind = filters && filters->entity_kind[0] != '\0';
 
-    std::string sql = "SELECT document_key,revision_key,source_language,page_number,entity_kind,entity_key,title,body FROM memslibrary_search WHERE 1=1";
-    for (std::size_t i = 0; i < terms.size(); ++i) sql += " AND search_text LIKE ?";
-    if (filterDocument) sql += " AND document_key = ? COLLATE BINARY";
-    if (filterRevision) sql += " AND revision_key = ? COLLATE BINARY";
-    if (filterLanguage) sql += " AND source_language = ? COLLATE BINARY";
-    if (filterKind) sql += " AND entity_kind = ? COLLATE BINARY";
-    sql += " ORDER BY CASE entity_kind WHEN 'step' THEN 0 WHEN 'requirement' THEN 1 WHEN 'notice' THEN 2 WHEN 'operation' THEN 3 WHEN 'section' THEN 4 ELSE 5 END, document_key, revision_key, COALESCE(page_number,2147483647), entity_key LIMIT ?";
+    const std::string relevance = relevanceExpression(terms);
+    std::string sql = "SELECT document_key,revision_key,source_language,page_number,entity_kind,entity_key,title,body,"
+        + relevance + " AS relevance FROM memslibrary_search WHERE " + anyTermPredicate(terms);
+
+    int nextParameter = static_cast<int>(terms.size() + 1);
+    int documentParameter = 0;
+    int revisionParameter = 0;
+    int languageParameter = 0;
+    int kindParameter = 0;
+
+    if (filterDocument) {
+        documentParameter = nextParameter++;
+        sql += " AND document_key = ?" + std::to_string(documentParameter) + " COLLATE BINARY";
+    }
+    if (filterRevision) {
+        revisionParameter = nextParameter++;
+        sql += " AND revision_key = ?" + std::to_string(revisionParameter) + " COLLATE BINARY";
+    }
+    if (filterLanguage) {
+        languageParameter = nextParameter++;
+        sql += " AND source_language = ?" + std::to_string(languageParameter) + " COLLATE BINARY";
+    }
+    if (filterKind) {
+        kindParameter = nextParameter++;
+        sql += " AND entity_kind = ?" + std::to_string(kindParameter) + " COLLATE BINARY";
+    }
+    const int limitParameter = nextParameter;
+    sql += " ORDER BY relevance DESC, "
+           "CASE entity_kind WHEN 'step' THEN 0 WHEN 'requirement' THEN 1 WHEN 'notice' THEN 2 "
+           "WHEN 'operation' THEN 3 WHEN 'section' THEN 4 ELSE 5 END, "
+           "document_key, revision_key, COALESCE(page_number,2147483647), entity_key LIMIT ?"
+        + std::to_string(limitParameter);
 
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
@@ -284,17 +367,12 @@ std::int32_t MEMSLibrary_SearchPackFiltered(
         return MEMSLIBRARY_QUERY_FAILED;
     }
 
-    int bindIndex = 1;
-    bool bound = true;
-    for (const auto& term : terms) {
-        const std::string pattern = "%" + term + "%";
-        bound = bound && bindText(stmt, bindIndex++, pattern);
-    }
-    if (filterDocument) bound = bound && bindText(stmt, bindIndex++, filters->document_key);
-    if (filterRevision) bound = bound && bindText(stmt, bindIndex++, filters->revision_key);
-    if (filterLanguage) bound = bound && bindText(stmt, bindIndex++, filters->source_language);
-    if (filterKind) bound = bound && bindText(stmt, bindIndex++, filters->entity_kind);
-    bound = bound && sqlite3_bind_int(stmt, bindIndex, static_cast<int>(resultCapacity)) == SQLITE_OK;
+    bool bound = bindTermPatterns(stmt, terms);
+    if (filterDocument) bound = bound && bindText(stmt, documentParameter, filters->document_key);
+    if (filterRevision) bound = bound && bindText(stmt, revisionParameter, filters->revision_key);
+    if (filterLanguage) bound = bound && bindText(stmt, languageParameter, filters->source_language);
+    if (filterKind) bound = bound && bindText(stmt, kindParameter, filters->entity_kind);
+    bound = bound && sqlite3_bind_int(stmt, limitParameter, static_cast<int>(resultCapacity)) == SQLITE_OK;
     if (!bound) {
         sqlite3_finalize(stmt);
         sqlite3_close(db);
