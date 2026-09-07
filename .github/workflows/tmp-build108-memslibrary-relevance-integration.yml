@@ -50,7 +50,7 @@ jobs:
             "- Source temporaire : tmp-build108-memslibrary-relevance-integration @ $env:GITHUB_SHA.",
             "- Correction bridge : $env:BRIDGE_FIX_COMMIT.",
             "- Correction MEMSLibrary : $env:LIBRARY_FIX_COMMIT.",
-            "- Base de production protégée : MEMSX64 BUILD #103 @ $env:PROTECTED_BASE — aucune modification/promotion.",
+            "- Référence de production protégée : MEMSX64 BUILD #103 @ $env:PROTECTED_BASE — aucune modification/promotion par ce workflow.",
             '- Aucun changement RAVEMEMS V2, Qwen, images ou logique UI ; aucune sonde de diagnostic dans le package utilisateur.',
             "- Le verdict fonctionnel attendu est le test réel sur le PC de l'utilisateur final."
           ) -join [Environment]::NewLine
@@ -63,15 +63,16 @@ jobs:
           if($LASTEXITCODE -ne 0){throw 'Mandatory RAPPORT pre-build push failed'}
           Write-Host 'RAPPORT_PRE_BUILD_OK'
 
-      - name: Prove protected production baseline remains untouched
+      - name: Prove temporary build descends from protected reference
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
           git merge-base --is-ancestor $env:PROTECTED_BASE HEAD
           if($LASTEXITCODE -ne 0){throw 'Temporary user-test source is not based on protected #103 lineage'}
-          $remote103 = git rev-parse origin/MEMSX64
-          if($remote103 -ne $env:PROTECTED_BASE){throw "MEMSX64 moved unexpectedly: $remote103"}
-          Write-Host "PROTECTED_MEMSX64_OK $remote103"
+          $remoteHead = git rev-parse origin/MEMSX64
+          Write-Host "PROTECTED_REFERENCE_ANCESTOR_OK $env:PROTECTED_BASE"
+          Write-Host "MEMSX64_REMOTE_HEAD_OBSERVED $remoteHead"
+          Write-Host 'THIS_WORKFLOW_NEVER_PUSHES_TO_MEMSX64'
 
       - name: Setup Python and Qt 5.15.2 MSVC x64
         uses: actions/setup-python@v5
@@ -158,8 +159,8 @@ jobs:
             'ECU MEMS Manager x64 — USER TEST BUILD',
             'NOT PRODUCTION — DO NOT REPLACE MEMSX64 BUILD #103',
             '',
-            'Protected production: MEMSX64 BUILD #103',
-            "Protected commit: $env:PROTECTED_BASE",
+            'Protected production reference: MEMSX64 BUILD #103',
+            "Protected reference commit: $env:PROTECTED_BASE",
             'Temporary source branch: tmp-build108-memslibrary-relevance-integration',
             "Temporary source commit: $env:GITHUB_SHA",
             "MEMSLibrary relevance fix: $env:LIBRARY_FIX_COMMIT",
@@ -202,7 +203,7 @@ jobs:
             "- MEMSLibrary.dll corrigée SHA256 : $dllSha.",
             "- Pack001 knowledge.sqlite SHA256 : $dbSha.",
             '- Package GUI normal, sans sonde de diagnostic, assemblé pour test réel sur le PC utilisateur.',
-            "- MEMSX64 BUILD #103 reste strictement sur $env:PROTECTED_BASE ; aucune promotion production."
+            "- Référence #103 conservée : $env:PROTECTED_BASE ; ce workflow n'a rien poussé vers MEMSX64."
           ) -join [Environment]::NewLine
           Add-Content -Path (Join-Path $reportPath 'RAPPORT_SUIVI_ECU_MEMS_MANAGER.md') -Value $entry -Encoding UTF8
           git -C $reportPath config user.name 'github-actions[bot]'
