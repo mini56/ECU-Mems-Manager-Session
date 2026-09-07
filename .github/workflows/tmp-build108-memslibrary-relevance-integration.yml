@@ -43,17 +43,17 @@ jobs:
           $reportPath = Join-Path $env:RUNNER_TEMP 'ecu-mems-rapport'
           if(Test-Path $reportPath){Remove-Item $reportPath -Recurse -Force}
           git worktree add -B report-user-test $reportPath origin/RAPPORT
-          $entry = @"
-
-## 2026-09-07 — BUILD UTILISATEUR x64 — INTENTION AVANT POUSSE/BUILD
-- Objectif : produire un package x64 temporaire réellement testable par l'utilisateur final avec les deux corrections de pertinence déjà validées.
-- Source temporaire : tmp-build108-memslibrary-relevance-integration @ $env:GITHUB_SHA.
-- Correction bridge : $env:BRIDGE_FIX_COMMIT.
-- Correction MEMSLibrary : $env:LIBRARY_FIX_COMMIT.
-- Base de production protégée : MEMSX64 BUILD #103 @ $env:PROTECTED_BASE — aucune modification/promotion.
-- Aucun changement RAVEMEMS V2, Qwen, images ou logique UI ; aucune sonde de diagnostic dans le package utilisateur.
-- Le verdict fonctionnel attendu est le test réel sur le PC de l'utilisateur final.
-"@
+          $entry = @(
+            '',
+            '## 2026-09-07 — BUILD UTILISATEUR x64 — INTENTION AVANT POUSSE/BUILD',
+            "- Objectif : produire un package x64 temporaire réellement testable par l'utilisateur final avec les deux corrections de pertinence déjà validées.",
+            "- Source temporaire : tmp-build108-memslibrary-relevance-integration @ $env:GITHUB_SHA.",
+            "- Correction bridge : $env:BRIDGE_FIX_COMMIT.",
+            "- Correction MEMSLibrary : $env:LIBRARY_FIX_COMMIT.",
+            "- Base de production protégée : MEMSX64 BUILD #103 @ $env:PROTECTED_BASE — aucune modification/promotion.",
+            '- Aucun changement RAVEMEMS V2, Qwen, images ou logique UI ; aucune sonde de diagnostic dans le package utilisateur.',
+            "- Le verdict fonctionnel attendu est le test réel sur le PC de l'utilisateur final."
+          ) -join [Environment]::NewLine
           Add-Content -Path (Join-Path $reportPath 'RAPPORT_SUIVI_ECU_MEMS_MANAGER.md') -Value $entry -Encoding UTF8
           git -C $reportPath config user.name 'github-actions[bot]'
           git -C $reportPath config user.email '41898282+github-actions[bot]@users.noreply.github.com'
@@ -154,23 +154,23 @@ jobs:
           $model=Get-ChildItem $env:USER_TEST_STAGE -Recurse -File -Filter *.gguf | Select-Object -First 1
           if(-not $llama){throw 'Package missing llama-server.exe required for local AI'}
           if(-not $model){throw 'Package missing local Qwen GGUF model'}
-          $info=@"
-ECU MEMS Manager x64 — USER TEST BUILD
-NOT PRODUCTION — DO NOT REPLACE MEMSX64 BUILD #103
-
-Protected production: MEMSX64 BUILD #103
-Protected commit: $env:PROTECTED_BASE
-Temporary source branch: tmp-build108-memslibrary-relevance-integration
-Temporary source commit: $env:GITHUB_SHA
-MEMSLibrary relevance fix: $env:LIBRARY_FIX_COMMIT
-MEMS Manager bridge relevance fix: $env:BRIDGE_FIX_COMMIT
-MEMSLibrary.dll SHA256: $dllSha
-knowledge.sqlite SHA256: $dbSha
-Build run: $env:GITHUB_RUN_ID
-
-Purpose: real end-user PC validation of the corrected documentary retrieval path.
-No RAVEMEMS V2, image logic, Qwen model or protected production promotion is included in this change.
-"@
+          $info = @(
+            'ECU MEMS Manager x64 — USER TEST BUILD',
+            'NOT PRODUCTION — DO NOT REPLACE MEMSX64 BUILD #103',
+            '',
+            'Protected production: MEMSX64 BUILD #103',
+            "Protected commit: $env:PROTECTED_BASE",
+            'Temporary source branch: tmp-build108-memslibrary-relevance-integration',
+            "Temporary source commit: $env:GITHUB_SHA",
+            "MEMSLibrary relevance fix: $env:LIBRARY_FIX_COMMIT",
+            "MEMS Manager bridge relevance fix: $env:BRIDGE_FIX_COMMIT",
+            "MEMSLibrary.dll SHA256: $dllSha",
+            "knowledge.sqlite SHA256: $dbSha",
+            "Build run: $env:GITHUB_RUN_ID",
+            '',
+            'Purpose: real end-user PC validation of the corrected documentary retrieval path.',
+            'No RAVEMEMS V2, image logic, Qwen model or protected production promotion is included in this change.'
+          ) -join [Environment]::NewLine
           Set-Content -Path (Join-Path $env:USER_TEST_STAGE 'USER_TEST_BUILD_INFO.txt') -Value $info -Encoding UTF8
           Write-Host "PACKAGE_READY dll=$dllSha pack=$dbSha llama=$($llama.Name) model=$($model.Name)"
 
@@ -193,17 +193,17 @@ No RAVEMEMS V2, image logic, Qwen model or protected production promotion is inc
           $dllSha=(Get-FileHash (Join-Path $env:USER_TEST_STAGE 'MEMSLibrary.dll') -Algorithm SHA256).Hash.ToLowerInvariant()
           $dbSha=(Get-FileHash (Join-Path $env:USER_TEST_STAGE 'MEMSLibrary_Pack_001\knowledge.sqlite') -Algorithm SHA256).Hash.ToLowerInvariant()
           $artifactName="ECU-MEMS-Manager-x64-USER-TEST-Relevance-$env:GITHUB_RUN_ID"
-          $entry = @"
-
-## 2026-09-07 — BUILD UTILISATEUR x64 — RESULTAT
-- Run GitHub Actions : $env:GITHUB_RUN_ID.
-- Artifact : $artifactName.
-- Source temporaire : tmp-build108-memslibrary-relevance-integration @ $env:GITHUB_SHA.
-- MEMSLibrary.dll corrigée SHA256 : $dllSha.
-- Pack001 knowledge.sqlite SHA256 : $dbSha.
-- Package GUI normal, sans sonde de diagnostic, assemblé pour test réel sur le PC utilisateur.
-- MEMSX64 BUILD #103 reste strictement sur $env:PROTECTED_BASE ; aucune promotion production.
-"@
+          $entry = @(
+            '',
+            '## 2026-09-07 — BUILD UTILISATEUR x64 — RESULTAT',
+            "- Run GitHub Actions : $env:GITHUB_RUN_ID.",
+            "- Artifact : $artifactName.",
+            "- Source temporaire : tmp-build108-memslibrary-relevance-integration @ $env:GITHUB_SHA.",
+            "- MEMSLibrary.dll corrigée SHA256 : $dllSha.",
+            "- Pack001 knowledge.sqlite SHA256 : $dbSha.",
+            '- Package GUI normal, sans sonde de diagnostic, assemblé pour test réel sur le PC utilisateur.',
+            "- MEMSX64 BUILD #103 reste strictement sur $env:PROTECTED_BASE ; aucune promotion production."
+          ) -join [Environment]::NewLine
           Add-Content -Path (Join-Path $reportPath 'RAPPORT_SUIVI_ECU_MEMS_MANAGER.md') -Value $entry -Encoding UTF8
           git -C $reportPath config user.name 'github-actions[bot]'
           git -C $reportPath config user.email '41898282+github-actions[bot]@users.noreply.github.com'
