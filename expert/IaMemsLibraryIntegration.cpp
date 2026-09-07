@@ -385,6 +385,9 @@ public:
         if (!haveStructured && !choice.sourceText.trimmed().isEmpty())
             output << choice.sourceText.trimmed();
 
+        if (output.size() <= 1)
+            return QString();
+
         return output.join(QLatin1Char('\n')).trimmed();
     }
 
@@ -657,6 +660,15 @@ void IaMemsService::askWithLibrary(const QString &question)
                     emit statusChanged();
                     return;
                 }
+                const QString emptySubject = selected - 1 < pendingLabels.size()
+                    ? pendingLabels.at(selected - 1) : choice.label;
+                m_pendingGrounding.clear();
+                emit responseReady(QStringLiteral(
+                    "Je n'ai pas de contenu documentaire structuré pour « %1 ». "
+                    "Cette rubrique existe mais son contenu n'a pas encore été extrait.")
+                    .arg(emptySubject));
+                emit statusChanged();
+                return;
             }
         } else {
             clearStructuredMenuState(this);
