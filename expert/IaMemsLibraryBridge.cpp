@@ -280,26 +280,49 @@ int evidenceScore(const EvidenceCandidate &result,
                   const QStringList &keywords)
 {
     const QString searchable = searchableText(result);
+    const QString searchableTitle = normalizeForMatching(result.title);
     const QStringList queryTerms = normalizedTerms(query);
     if (queryTerms.isEmpty())
         return -1;
 
-    int referenceBoost = 0;
-    // MEMSLibrary uses substring LIKE matching. Accept ordinary terms only as
-    // exact tokens (rejecting axial/coaxial). Manufacturer references use the
-    // generic underscore form present in RAVEMEMS entity keys.
+    int score = 0;
+    int matchedTerms = 0;
+    bool referenceQuery = false;
+
+    // Rank by evidence actually present, not by the raw number of words in a
+    // natural-language sub-query. This is deliberately language-neutral:
+    // longer exact terms carry more information, title hits are stronger, and
+    // missing conversational words do not eliminate a technically good row.
+    // Explicit manufacturer references remain strict provenance constraints.
     for (const QString &term : queryTerms) {
         if (isManufacturerReferenceAlias(term)) {
+            referenceQuery = true;
             if (!containsManufacturerReference(result, term))
                 return -1;
-            referenceBoost += 500;
+            ++matchedTerms;
+            score += 600;
             continue;
         }
+
         if (!containsExactToken(searchable, term))
-            return -1;
+            continue;
+
+        ++matchedTerms;
+        const int specificity = qBound(1, term.size() - 2, 10);
+        score += 16 + (specificity * 7);
+        if (containsExactToken(searchableTitle, term))
+            score += 28 + (specificity * 5);
     }
 
-    int score = queryTerms.size() * 100 + referenceBoost;
+    if (matchedTerms == 0)
+        return -1;
+
+    // Coverage helps a page matching several independent terms, while a
+    // generic two-word phrase cannot win merely because both words occur.
+    score += matchedTerms * matchedTerms * 8;
+    if (matchedTerms == queryTerms.size() && queryTerms.size() > 1)
+        score += 24 + (queryTerms.size() * 4);
+
     QSet<QString> scoredKeywords;
     for (const QString &keyword : keywords) {
         const QString normalized = normalizeForMatching(keyword);
@@ -310,7 +333,8 @@ int evidenceScore(const EvidenceCandidate &result,
             if (containsManufacturerReference(result, normalized))
                 score += 24;
         } else if (containsExactToken(searchable, normalized)) {
-            score += 12;
+            const int specificity = qBound(1, normalized.size() - 2, 10);
+            score += 4 + (specificity * 2);
         }
     }
 
@@ -325,15 +349,6 @@ int evidenceScore(const EvidenceCandidate &result,
     else if (result.entityKind == QStringLiteral("section"))
         score += 4;
 
-    // For an explicit operation-reference lookup, keep the operation heading
-    // ahead of its steps so Qwen receives the procedure identity as context.
-    bool referenceQuery = false;
-    for (const QString &term : queryTerms) {
-        if (isManufacturerReferenceAlias(term)) {
-            referenceQuery = true;
-            break;
-        }
-    }
     if (referenceQuery && result.entityKind == QStringLiteral("operation"))
         score += 30;
 
