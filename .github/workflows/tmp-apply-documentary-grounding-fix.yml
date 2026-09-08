@@ -156,17 +156,10 @@ jobs:
           text = text.replace(anchor, replacement, 1)
 
           path.write_text(text, encoding='utf-8')
-
-          buildwf = Path('.github/workflows/tmp-build108-memslibrary-relevance-integration.yml')
-          wf = buildwf.read_text(encoding='utf-8')
-          marker = '# documentary-grounding-fix: direct LocalAiClient source correction\n'
-          if marker not in wf:
-              buildwf.write_text(wf.rstrip() + '\n\n' + marker, encoding='utf-8')
           PY
 
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git rm .github/workflows/tmp-apply-documentary-grounding-fix.yml
-          git add expert/LocalAiClient.cpp .github/workflows/tmp-build108-memslibrary-relevance-integration.yml
+          git add expert/LocalAiClient.cpp
           git commit -m 'Enforce MEMSLibrary grounding in documentary answers'
           git push origin HEAD:tmp-build108-memslibrary-relevance-integration
