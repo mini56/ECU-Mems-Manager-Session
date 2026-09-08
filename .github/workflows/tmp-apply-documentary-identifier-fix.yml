@@ -28,8 +28,7 @@ jobs:
           anchor = '''    if (answerPlain.isEmpty())
               return false;
 
-              const QStringList ignored = {
-          '''
+              const QStringList ignored = {'''.replace('              return false;', '        return false;').replace('              const QStringList', '    const QStringList')
           replacement = '''    if (answerPlain.isEmpty())
               return false;
 
@@ -47,8 +46,22 @@ jobs:
               if (hasExactIdentifier)
                   return false;
 
-              const QStringList ignored = {
-          '''
+              const QStringList ignored = {'''
+          replacement = replacement.replace('              return false;', '        return false;', 1)
+          replacement = replacement.replace('              const QRegularExpression', '    const QRegularExpression')
+          replacement = replacement.replace('              QRegularExpressionMatchIterator', '    QRegularExpressionMatchIterator')
+          replacement = replacement.replace('              bool hasExactIdentifier', '    bool hasExactIdentifier')
+          replacement = replacement.replace('              while', '    while')
+          replacement = replacement.replace('                  const QString identifier', '        const QString identifier')
+          replacement = replacement.replace('                  if (identifier.isEmpty())', '        if (identifier.isEmpty())')
+          replacement = replacement.replace('                      continue;', '            continue;')
+          replacement = replacement.replace('                  hasExactIdentifier', '        hasExactIdentifier')
+          replacement = replacement.replace('                  if (answer.contains', '        if (answer.contains')
+          replacement = replacement.replace('                      return true;', '            return true;')
+          replacement = replacement.replace('              }', '    }', 1)
+          replacement = replacement.replace('              if (hasExactIdentifier)', '    if (hasExactIdentifier)')
+          replacement = replacement.replace('                  return false;', '        return false;')
+          replacement = replacement.replace('              const QStringList ignored', '    const QStringList ignored')
           if text.count(anchor) != 1:
               raise SystemExit('Identifier guard insertion anchor mismatch')
           path.write_text(text.replace(anchor, replacement, 1), encoding='utf-8')
