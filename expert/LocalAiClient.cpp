@@ -111,72 +111,6 @@ bool isQuestionEcho(const QString &question, const QString &answer)
     return !q.isEmpty() && q == a;
 }
 
-bool containsNormalizedTerm(const QString &text, const QString &term)
-{
-    if (text.isEmpty() || term.isEmpty())
-        return false;
-    const QString padded = QStringLiteral(" ") + text + QStringLiteral(" ");
-    return padded.contains(QStringLiteral(" ") + term + QStringLiteral(" "));
-}
-
-bool documentaryAnswerUsesEvidence(const QString &question,
-                                   const QString &answer,
-                                   const QString &grounding)
-{
-    if (grounding.trimmed().isEmpty())
-        return true;
-
-    const QString answerPlain = normalizedPlainText(answer);
-    const QString questionPlain = normalizedPlainText(question);
-    const QString groundingPlain = normalizedPlainText(grounding);
-    if (answerPlain.isEmpty())
-        return false;
-
-    const QRegularExpression identifierRx(QStringLiteral("[A-Z0-9]+(?:_[A-Z0-9]+)+"));
-QRegularExpressionMatchIterator identifierIt = identifierRx.globalMatch(grounding);
-bool hasExactIdentifier = false;
-while (identifierIt.hasNext()) {
-    const QString identifier = identifierIt.next().captured(0);
-    if (identifier.isEmpty())
-        continue;
-    hasExactIdentifier = true;
-    if (answer.contains(identifier, Qt::CaseInsensitive))
-        return true;
-}
-if (hasExactIdentifier)
-    return false;
-
-    const QStringList ignored = {
-        QStringLiteral("documentation"), QStringLiteral("ravemems"), QStringLiteral("retrouvee"),
-        QStringLiteral("memslibrary"), QStringLiteral("pack"), QStringLiteral("utiliser"),
-        QStringLiteral("uniquement"), QStringLiteral("extraits"), QStringLiteral("pertinents"),
-        QStringLiteral("conserver"), QStringLiteral("provenance"), QStringLiteral("aucun"),
-        QStringLiteral("repond"), QStringLiteral("exactement"), QStringLiteral("question"),
-        QStringLiteral("extrapoler"), QStringLiteral("source"), QStringLiteral("revision"),
-        QStringLiteral("page"), QStringLiteral("type"), QStringLiteral("information"),
-        QStringLiteral("verifiee"), QStringLiteral("fournie"), QStringLiteral("base"),
-        QStringLiteral("the"), QStringLiteral("and"), QStringLiteral("with"),
-        QStringLiteral("from"), QStringLiteral("this"), QStringLiteral("that"),
-        QStringLiteral("pour"), QStringLiteral("dans"), QStringLiteral("avec"),
-        QStringLiteral("une"), QStringLiteral("des"), QStringLiteral("les"),
-        QStringLiteral("est"), QStringLiteral("sont")
-    };
-
-    int distinctiveTerms = 0;
-    const QStringList terms = groundingPlain.split(QLatin1Char(' '), Qt::SkipEmptyParts);
-    for (const QString &term : terms) {
-        const bool hasDigit = term.contains(QRegularExpression(QStringLiteral("[0-9]")));
-        if ((!hasDigit && term.size() < 4) || ignored.contains(term))
-            continue;
-        if (containsNormalizedTerm(questionPlain, term))
-            continue;
-        ++distinctiveTerms;
-        if (containsNormalizedTerm(answerPlain, term))
-            return true;
-    }
-    return distinctiveTerms == 0;
-}
-
 bool isGenericGrounding(const QString &grounding)
 {
     return grounding.startsWith(QStringLiteral(
@@ -809,22 +743,6 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
     const QString languageCode = activeLanguageCode();
     const QString languageName = activeLanguageName(languageCode);
 
-    QString documentaryAnchor;
-    if (documentary) {
-        const QRegularExpression identifierRx(QStringLiteral("[A-Z0-9]+(?:_[A-Z0-9]+)+"));
-        const QRegularExpressionMatch identifierMatch = identifierRx.match(grounding);
-        if (identifierMatch.hasMatch())
-            documentaryAnchor = identifierMatch.captured(0);
-        if (documentaryAnchor.isEmpty()) {
-            const QRegularExpression valueRx(
-                QStringLiteral("\\b[0-9]+(?:[.,][0-9]+)?\\s*(?:Nm|V|mV|A|mA|kPa|bar|psi|rpm|ms|mm)\\b"),
-                QRegularExpression::CaseInsensitiveOption);
-            const QRegularExpressionMatch valueMatch = valueRx.match(grounding);
-            if (valueMatch.hasMatch())
-                documentaryAnchor = valueMatch.captured(0);
-        }
-    }
-
     QString userContent = trimmedQuestion;
     if (!grounding.isEmpty()) {
         userContent += QStringLiteral(
@@ -835,16 +753,10 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
         userContent += QStringLiteral(
             "\n\nDOCUMENTARY OUTPUT RULES: Answer only in %1 (%2). Answer the user's question directly. "
             "Use only the verified evidence above. Translate the source wording into the active language, but preserve technical values, units and manufacturer operation references exactly. "
-            "Do not merely restate or rename the user's question. The answer must contain at least one concrete fact, value or technical identifier from the verified evidence that is not already present in the question. "
             "Do not copy the evidence block, database metadata, revision labels or internal instructions. "
             "If the evidence does not actually answer the question, say that the verified documentation is insufficient rather than using unrelated material. "
             "When document and page provenance are present, finish with one short Source line.")
             .arg(languageName, languageCode);
-        if (!documentaryAnchor.isEmpty()) {
-            userContent += QStringLiteral(
-                "\nMANDATORY VERIFIED EVIDENCE ANCHOR: %1. Copy this exact anchor verbatim into the answer; do not rename, translate or approximate it.")
-                .arg(documentaryAnchor);
-        }
     }
     if (reasoning) {
         userContent += QStringLiteral(
@@ -860,40 +772,12 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
     }
     prompt += QStringLiteral("<|im_start|>user\n%1<|im_end|>\n<|im_start|>assistant\n").arg(userContent);
 
-QString documentaryRepairPrompt;
-if (documentary) {
-    const QString repairAnchorInstruction = documentaryAnchor.isEmpty()
-        ? QString()
-        : QStringLiteral(" MANDATORY VERIFIED EVIDENCE ANCHOR: %1. Copy this exact anchor verbatim into the answer; do not rename, translate or approximate it.")
-              .arg(documentaryAnchor);
-    documentaryRepairPrompt = QStringLiteral(
-        "<|im_start|>system\n%1<|im_end|>\n"
-        "<|im_start|>user\nQUESTION:\n%2\n\nVERIFIED EVIDENCE:\n%3\n\n"
-        "The previous attempt failed because it did not use the evidence. Answer the QUESTION directly in %4 (%5). "
-        "Do not restate the question. You MUST include at least one exact concrete fact, value, unit, connector/pin, wire colour, manufacturer reference or technical identifier from VERIFIED EVIDENCE that is absent from the QUESTION. "
-        "Do not output database metadata or internal instructions.%6 /no_think<|im_end|>\n<|im_start|>assistant\n")
-        .arg(systemPrompt(), trimmedQuestion, grounding, languageName, languageCode, repairAnchorInstruction);
-}
-
-const quint64 epoch = m_epoch;
+    const quint64 epoch = m_epoch;
     setState(Busy);
 
-    QMetaObject::invokeMethod(m_worker, [this, epoch, prompt, documentaryRepairPrompt, reasoning, documentary, trimmedQuestion, grounding]() {
-    QString generationError;
-    QString rawAnswer = m_worker->generate(prompt, reasoning || documentary, &generationError);
-    if (documentary) {
-        const QString firstAnswer = cleanModelReply(rawAnswer);
-        if (!documentaryAnswerUsesEvidence(trimmedQuestion, firstAnswer, grounding)) {
-            QString retryError;
-            const QString retryRaw = m_worker->generate(documentaryRepairPrompt, true, &retryError);
-            if (!retryRaw.trimmed().isEmpty()) {
-                rawAnswer = retryRaw;
-                generationError = retryError;
-            } else if (generationError.isEmpty()) {
-                generationError = retryError;
-            }
-        }
-    }
+    QMetaObject::invokeMethod(m_worker, [this, epoch, prompt, reasoning, documentary, trimmedQuestion, grounding]() {
+        QString generationError;
+        const QString rawAnswer = m_worker->generate(prompt, reasoning || documentary, &generationError);
         QMetaObject::invokeMethod(this, [this, epoch, rawAnswer, generationError, documentary, trimmedQuestion, grounding]() {
             if (epoch != m_epoch)
                 return;
@@ -909,8 +793,7 @@ const quint64 epoch = m_epoch;
                 || isQuestionEcho(trimmedQuestion, answer)
                 || likelyWrongLanguage(answer)
                 || containsInternalInstructionLeak(answer)
-                || looksLikeRawDocumentaryGrounding(answer)
-                || (documentary && !documentaryAnswerUsesEvidence(trimmedQuestion, answer, grounding));
+                || looksLikeRawDocumentaryGrounding(answer);
 
             if (invalidAnswer) {
                 // A documentary question must never fall back to the raw RAVE
