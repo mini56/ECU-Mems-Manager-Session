@@ -1,0 +1,60 @@
+name: TMP APPLY documentary identifier guard
+
+on:
+  push:
+    branches: [tmp-build108-memslibrary-relevance-integration]
+    paths:
+      - '.github/workflows/tmp-apply-documentary-identifier-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-build108-memslibrary-relevance-integration
+          fetch-depth: 0
+
+      - name: Require exact technical identifiers from documentary evidence
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('expert/LocalAiClient.cpp')
+          text = path.read_text(encoding='utf-8')
+          anchor = '''    if (answerPlain.isEmpty())
+              return false;
+
+              const QStringList ignored = {
+          '''
+          replacement = '''    if (answerPlain.isEmpty())
+              return false;
+
+              const QRegularExpression identifierRx(QStringLiteral("[A-Z0-9]+(?:_[A-Z0-9]+)+"));
+              QRegularExpressionMatchIterator identifierIt = identifierRx.globalMatch(grounding);
+              bool hasExactIdentifier = false;
+              while (identifierIt.hasNext()) {
+                  const QString identifier = identifierIt.next().captured(0);
+                  if (identifier.isEmpty())
+                      continue;
+                  hasExactIdentifier = true;
+                  if (answer.contains(identifier, Qt::CaseInsensitive))
+                      return true;
+              }
+              if (hasExactIdentifier)
+                  return false;
+
+              const QStringList ignored = {
+          '''
+          if text.count(anchor) != 1:
+              raise SystemExit('Identifier guard insertion anchor mismatch')
+          path.write_text(text.replace(anchor, replacement, 1), encoding='utf-8')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add expert/LocalAiClient.cpp
+          git commit -m 'Require exact documentary evidence identifiers'
+          git push origin HEAD:tmp-build108-memslibrary-relevance-integration
