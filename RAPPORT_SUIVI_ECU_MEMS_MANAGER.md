@@ -15327,3 +15327,14 @@ PROCHAINE ACTION EXACTE APRES LA BASCULE : raccorder la DLL corrigee au bridge I
 - Runtime utilisateur de base : BUILD108 run 33970147790, modèle/runtimes ONNX conservés.
 - Compilation obligatoire avec MEMS_USE_ONNX_GENAI=ON ; le précédent build OFF est rejeté comme non testable pour IA MEMS.
 - Référence protégée : MEMSX64 BUILD #103 @ 1d6316bd1746d6f2b4cfb751cab88d18e27ef730 ; aucune pousse vers MEMSX64.
+
+## 2026-09-07 — BUILD UTILISATEUR x64 ONNX — RESULTAT
+- Run GitHub Actions : 34223592281.
+- Artifact : ECU-MEMS-Manager-x64-USER-TEST-ONNX-Relevance-34223592281.
+- Source temporaire : tmp-build108-memslibrary-relevance-integration @ 73e28d184825fd7db181e5d22f6a27cfb1951e50.
+- IA MEMS compilée avec MEMS_USE_ONNX_GENAI=ON ; runtime et modèle Qwen ONNX présents dans le package.
+- Self-test moteur ONNX packagé : non exécuté ; il ne bloque plus ce build utilisateur.
+- MEMSLibrary.dll corrigée SHA256 : b16dfe3d4d3ece40557fb5fa5e17088fbe3a48ca085575568d16057d8571dd8b.
+- Pack001 knowledge.sqlite SHA256 : 827208b703324335828d72093994ec5f7bf9e0a6fd0cd3b0082d033bfa38628b.
+- Package destiné au test réel dans IA MEMS sur le PC utilisateur.
+- Référence #103 conservée : 1d6316bd1746d6f2b4cfb751cab88d18e27ef730 ; aucune pousse vers MEMSX64.
