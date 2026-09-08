@@ -151,7 +151,7 @@ bool documentaryAnswerUsesEvidence(const QString &question,
     int distinctiveTerms = 0;
     const QStringList terms = groundingPlain.split(QLatin1Char(' '), Qt::SkipEmptyParts);
     for (const QString &term : terms) {
-        const bool hasDigit = term.contains(QRegularExpression(QStringLiteral("\d")));
+        const bool hasDigit = term.contains(QRegularExpression(QStringLiteral("[0-9]")));
         if ((!hasDigit && term.size() < 4) || ignored.contains(term))
             continue;
         if (containsNormalizedTerm(questionPlain, term))
