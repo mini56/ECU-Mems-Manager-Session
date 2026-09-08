@@ -1,0 +1,24 @@
+name: TMP DISPATCH documentary ONNX validation
+
+on:
+  push:
+    branches: [tmp-build108-memslibrary-relevance-integration]
+    paths:
+      - '.github/workflows/tmp-dispatch-documentary-validation.yml'
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch corrected real ONNX user-test workflow
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run tmp-build108-memslibrary-relevance-integration.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            --ref tmp-build108-memslibrary-relevance-integration
