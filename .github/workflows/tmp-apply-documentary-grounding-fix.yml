@@ -1,0 +1,192 @@
+name: TMP APPLY documentary grounding fix
+
+on:
+  push:
+    branches: [tmp-build108-memslibrary-relevance-integration]
+    paths:
+      - '.github/workflows/tmp-apply-documentary-grounding-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-build108-memslibrary-relevance-integration
+          fetch-depth: 0
+
+      - name: Apply direct LocalAiClient documentary grounding correction
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('expert/LocalAiClient.cpp')
+          text = path.read_text(encoding='utf-8')
+
+          old = '''bool isQuestionEcho(const QString &question, const QString &answer)
+          {
+              const QString q = normalizedEchoText(question);
+              const QString a = normalizedEchoText(answer);
+              return !q.isEmpty() && q == a;
+          }
+
+          bool isGenericGrounding(const QString &grounding)
+          '''
+          new = '''bool isQuestionEcho(const QString &question, const QString &answer)
+          {
+              const QString q = normalizedEchoText(question);
+              const QString a = normalizedEchoText(answer);
+              return !q.isEmpty() && q == a;
+          }
+
+          bool containsNormalizedTerm(const QString &text, const QString &term)
+          {
+              if (text.isEmpty() || term.isEmpty())
+                  return false;
+              const QString padded = QStringLiteral(" ") + text + QStringLiteral(" ");
+              return padded.contains(QStringLiteral(" ") + term + QStringLiteral(" "));
+          }
+
+          bool documentaryAnswerUsesEvidence(const QString &question,
+                                             const QString &answer,
+                                             const QString &grounding)
+          {
+              if (grounding.trimmed().isEmpty())
+                  return true;
+
+              const QString answerPlain = normalizedPlainText(answer);
+              const QString questionPlain = normalizedPlainText(question);
+              const QString groundingPlain = normalizedPlainText(grounding);
+              if (answerPlain.isEmpty())
+                  return false;
+
+              const QStringList ignored = {
+                  QStringLiteral("documentation"), QStringLiteral("ravemems"), QStringLiteral("retrouvee"),
+                  QStringLiteral("memslibrary"), QStringLiteral("pack"), QStringLiteral("utiliser"),
+                  QStringLiteral("uniquement"), QStringLiteral("extraits"), QStringLiteral("pertinents"),
+                  QStringLiteral("conserver"), QStringLiteral("provenance"), QStringLiteral("aucun"),
+                  QStringLiteral("repond"), QStringLiteral("exactement"), QStringLiteral("question"),
+                  QStringLiteral("extrapoler"), QStringLiteral("source"), QStringLiteral("revision"),
+                  QStringLiteral("page"), QStringLiteral("type"), QStringLiteral("information"),
+                  QStringLiteral("verifiee"), QStringLiteral("fournie"), QStringLiteral("base"),
+                  QStringLiteral("the"), QStringLiteral("and"), QStringLiteral("with"),
+                  QStringLiteral("from"), QStringLiteral("this"), QStringLiteral("that"),
+                  QStringLiteral("pour"), QStringLiteral("dans"), QStringLiteral("avec"),
+                  QStringLiteral("une"), QStringLiteral("des"), QStringLiteral("les"),
+                  QStringLiteral("est"), QStringLiteral("sont")
+              };
+
+              int distinctiveTerms = 0;
+              const QStringList terms = groundingPlain.split(QLatin1Char(' '), Qt::SkipEmptyParts);
+              for (const QString &term : terms) {
+                  const bool hasDigit = term.contains(QRegularExpression(QStringLiteral("\\d")));
+                  if ((!hasDigit && term.size() < 4) || ignored.contains(term))
+                      continue;
+                  if (containsNormalizedTerm(questionPlain, term))
+                      continue;
+                  ++distinctiveTerms;
+                  if (containsNormalizedTerm(answerPlain, term))
+                      return true;
+              }
+              return distinctiveTerms == 0;
+          }
+
+          bool isGenericGrounding(const QString &grounding)
+          '''
+          if text.count(old) != 1:
+              raise SystemExit('Insertion anchor mismatch for documentary evidence guard')
+          text = text.replace(old, new, 1)
+
+          old = '''            "Use only the verified evidence above. Translate the source wording into the active language, but preserve technical values, units and manufacturer operation references exactly. "
+              "Do not copy the evidence block, database metadata, revision labels or internal instructions. "'''
+          new = '''            "Use only the verified evidence above. Translate the source wording into the active language, but preserve technical values, units and manufacturer operation references exactly. "
+              "Do not merely restate or rename the user's question. The answer must contain at least one concrete fact, value or technical identifier from the verified evidence that is not already present in the question. "
+              "Do not copy the evidence block, database metadata, revision labels or internal instructions. "'''
+          if text.count(old) != 1:
+              raise SystemExit('Documentary prompt anchor mismatch')
+          text = text.replace(old, new, 1)
+
+          old = '''    prompt += QStringLiteral("<|im_start|>user\\n%1<|im_end|>\\n<|im_start|>assistant\\n").arg(userContent);
+
+              const quint64 epoch = m_epoch;
+              setState(Busy);
+
+              QMetaObject::invokeMethod(m_worker, [this, epoch, prompt, reasoning, documentary, trimmedQuestion, grounding]() {
+                  QString generationError;
+                  const QString rawAnswer = m_worker->generate(prompt, reasoning || documentary, &generationError);
+                  QMetaObject::invokeMethod(this, [this, epoch, rawAnswer, generationError, documentary, trimmedQuestion, grounding]() {
+          '''
+          new = '''    prompt += QStringLiteral("<|im_start|>user\\n%1<|im_end|>\\n<|im_start|>assistant\\n").arg(userContent);
+
+              QString documentaryRepairPrompt;
+              if (documentary) {
+                  documentaryRepairPrompt = QStringLiteral(
+                      "<|im_start|>system\\n%1<|im_end|>\\n"
+                      "<|im_start|>user\\nQUESTION:\\n%2\\n\\nVERIFIED EVIDENCE:\\n%3\\n\\n"
+                      "The previous attempt failed because it did not use the evidence. Answer the QUESTION directly in %4 (%5). "
+                      "Do not restate the question. You MUST include at least one exact concrete fact, value, unit, connector/pin, wire colour, manufacturer reference or technical identifier from VERIFIED EVIDENCE that is absent from the QUESTION. "
+                      "Do not output database metadata or internal instructions. /no_think<|im_end|>\\n<|im_start|>assistant\\n")
+                      .arg(systemPrompt(), trimmedQuestion, grounding, languageName, languageCode);
+              }
+
+              const quint64 epoch = m_epoch;
+              setState(Busy);
+
+              QMetaObject::invokeMethod(m_worker, [this, epoch, prompt, documentaryRepairPrompt, reasoning, documentary, trimmedQuestion, grounding]() {
+                  QString generationError;
+                  QString rawAnswer = m_worker->generate(prompt, reasoning || documentary, &generationError);
+                  if (documentary) {
+                      const QString firstAnswer = cleanModelReply(rawAnswer);
+                      if (!documentaryAnswerUsesEvidence(trimmedQuestion, firstAnswer, grounding)) {
+                          QString retryError;
+                          const QString retryRaw = m_worker->generate(documentaryRepairPrompt, true, &retryError);
+                          if (!retryRaw.trimmed().isEmpty()) {
+                              rawAnswer = retryRaw;
+                              generationError = retryError;
+                          } else if (generationError.isEmpty()) {
+                              generationError = retryError;
+                          }
+                      }
+                  }
+                  QMetaObject::invokeMethod(this, [this, epoch, rawAnswer, generationError, documentary, trimmedQuestion, grounding]() {
+          '''
+          if text.count(old) != 1:
+              raise SystemExit('Generation retry anchor mismatch')
+          text = text.replace(old, new, 1)
+
+          old = '''            const bool invalidAnswer = answer.isEmpty()
+                      || isQuestionEcho(trimmedQuestion, answer)
+                      || likelyWrongLanguage(answer)
+                      || containsInternalInstructionLeak(answer)
+                      || looksLikeRawDocumentaryGrounding(answer);
+          '''
+          new = '''            const bool invalidAnswer = answer.isEmpty()
+                      || isQuestionEcho(trimmedQuestion, answer)
+                      || likelyWrongLanguage(answer)
+                      || containsInternalInstructionLeak(answer)
+                      || looksLikeRawDocumentaryGrounding(answer)
+                      || (documentary && !documentaryAnswerUsesEvidence(trimmedQuestion, answer, grounding));
+          '''
+          if text.count(old) != 1:
+              raise SystemExit('Invalid-answer guard anchor mismatch')
+          text = text.replace(old, new, 1)
+
+          path.write_text(text, encoding='utf-8')
+
+          buildwf = Path('.github/workflows/tmp-build108-memslibrary-relevance-integration.yml')
+          wf = buildwf.read_text(encoding='utf-8')
+          marker = '# documentary-grounding-fix: direct LocalAiClient source correction\n'
+          if marker not in wf:
+              buildwf.write_text(wf.rstrip() + '\n\n' + marker, encoding='utf-8')
+          PY
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/tmp-apply-documentary-grounding-fix.yml
+          git add expert/LocalAiClient.cpp .github/workflows/tmp-build108-memslibrary-relevance-integration.yml
+          git commit -m 'Enforce MEMSLibrary grounding in documentary answers'
+          git push origin HEAD:tmp-build108-memslibrary-relevance-integration
