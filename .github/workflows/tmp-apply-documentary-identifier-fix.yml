@@ -25,46 +25,27 @@ jobs:
           from pathlib import Path
           path = Path('expert/LocalAiClient.cpp')
           text = path.read_text(encoding='utf-8')
-          anchor = '''    if (answerPlain.isEmpty())
+          function_start = text.index('bool documentaryAnswerUsesEvidence(')
+          insertion_point = text.index('    const QStringList ignored = {', function_start)
+          guard = '''    const QRegularExpression identifierRx(QStringLiteral("[A-Z0-9]+(?:_[A-Z0-9]+)+"));
+          QRegularExpressionMatchIterator identifierIt = identifierRx.globalMatch(grounding);
+          bool hasExactIdentifier = false;
+          while (identifierIt.hasNext()) {
+              const QString identifier = identifierIt.next().captured(0);
+              if (identifier.isEmpty())
+                  continue;
+              hasExactIdentifier = true;
+              if (answer.contains(identifier, Qt::CaseInsensitive))
+                  return true;
+          }
+          if (hasExactIdentifier)
               return false;
 
-              const QStringList ignored = {'''.replace('              return false;', '        return false;').replace('              const QStringList', '    const QStringList')
-          replacement = '''    if (answerPlain.isEmpty())
-              return false;
-
-              const QRegularExpression identifierRx(QStringLiteral("[A-Z0-9]+(?:_[A-Z0-9]+)+"));
-              QRegularExpressionMatchIterator identifierIt = identifierRx.globalMatch(grounding);
-              bool hasExactIdentifier = false;
-              while (identifierIt.hasNext()) {
-                  const QString identifier = identifierIt.next().captured(0);
-                  if (identifier.isEmpty())
-                      continue;
-                  hasExactIdentifier = true;
-                  if (answer.contains(identifier, Qt::CaseInsensitive))
-                      return true;
-              }
-              if (hasExactIdentifier)
-                  return false;
-
-              const QStringList ignored = {'''
-          replacement = replacement.replace('              return false;', '        return false;', 1)
-          replacement = replacement.replace('              const QRegularExpression', '    const QRegularExpression')
-          replacement = replacement.replace('              QRegularExpressionMatchIterator', '    QRegularExpressionMatchIterator')
-          replacement = replacement.replace('              bool hasExactIdentifier', '    bool hasExactIdentifier')
-          replacement = replacement.replace('              while', '    while')
-          replacement = replacement.replace('                  const QString identifier', '        const QString identifier')
-          replacement = replacement.replace('                  if (identifier.isEmpty())', '        if (identifier.isEmpty())')
-          replacement = replacement.replace('                      continue;', '            continue;')
-          replacement = replacement.replace('                  hasExactIdentifier', '        hasExactIdentifier')
-          replacement = replacement.replace('                  if (answer.contains', '        if (answer.contains')
-          replacement = replacement.replace('                      return true;', '            return true;')
-          replacement = replacement.replace('              }', '    }', 1)
-          replacement = replacement.replace('              if (hasExactIdentifier)', '    if (hasExactIdentifier)')
-          replacement = replacement.replace('                  return false;', '        return false;')
-          replacement = replacement.replace('              const QStringList ignored', '    const QStringList ignored')
-          if text.count(anchor) != 1:
-              raise SystemExit('Identifier guard insertion anchor mismatch')
-          path.write_text(text.replace(anchor, replacement, 1), encoding='utf-8')
+          '''
+          if 'identifierRx.globalMatch(grounding)' in text[function_start:insertion_point]:
+              raise SystemExit('Exact identifier guard already present')
+          text = text[:insertion_point] + guard + text[insertion_point:]
+          path.write_text(text, encoding='utf-8')
           PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
