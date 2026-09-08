@@ -132,6 +132,20 @@ bool documentaryAnswerUsesEvidence(const QString &question,
     if (answerPlain.isEmpty())
         return false;
 
+    const QRegularExpression identifierRx(QStringLiteral("[A-Z0-9]+(?:_[A-Z0-9]+)+"));
+QRegularExpressionMatchIterator identifierIt = identifierRx.globalMatch(grounding);
+bool hasExactIdentifier = false;
+while (identifierIt.hasNext()) {
+    const QString identifier = identifierIt.next().captured(0);
+    if (identifier.isEmpty())
+        continue;
+    hasExactIdentifier = true;
+    if (answer.contains(identifier, Qt::CaseInsensitive))
+        return true;
+}
+if (hasExactIdentifier)
+    return false;
+
     const QStringList ignored = {
         QStringLiteral("documentation"), QStringLiteral("ravemems"), QStringLiteral("retrouvee"),
         QStringLiteral("memslibrary"), QStringLiteral("pack"), QStringLiteral("utiliser"),
