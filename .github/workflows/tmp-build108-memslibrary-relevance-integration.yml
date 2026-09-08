@@ -201,14 +201,21 @@ jobs:
           $ErrorActionPreference='Stop'
           $qt='C:\Qt\5.15.2\msvc2019_64'
           $runtimeDir=Split-Path $env:USER_TEST_RUNTIME -Parent
-          $env:PATH="$env:USER_TEST_STAGE;$runtimeDir;$qt\bin;$env:PATH"
+          $env:PATH="$qt\bin;$runtimeDir;$env:USER_TEST_STAGE;$env:PATH"
           $env:QT_PLUGIN_PATH="$qt\plugins"
           $env:MEMS_AI_RUNTIME=$env:USER_TEST_RUNTIME
           $env:MEMS_AI_MODEL=$env:USER_TEST_MODEL_DIR
-          $selftest='build-user-test\Release\local_ai_onnx_selftest.exe'
-          if(-not(Test-Path $selftest)){throw 'ONNX self-test executable missing'}
-          & $selftest
-          if($LASTEXITCODE -ne 0){throw "Packaged ONNX engine self-test failed $LASTEXITCODE"}
+          $builtSelftest='build-user-test\Release\local_ai_onnx_selftest.exe'
+          if(-not(Test-Path $builtSelftest)){throw 'ONNX self-test executable missing'}
+          $selftest=Join-Path $env:USER_TEST_STAGE 'local_ai_onnx_selftest.exe'
+          Copy-Item $builtSelftest $selftest -Force
+          Push-Location $env:USER_TEST_STAGE
+          try {
+            & $selftest
+            if($LASTEXITCODE -ne 0){throw "Packaged ONNX engine self-test failed $LASTEXITCODE"}
+          } finally {
+            Pop-Location
+          }
           Write-Host 'PACKAGED_ONNX_ENGINE_PASS'
 
       - name: Finalize real ONNX user-test package
