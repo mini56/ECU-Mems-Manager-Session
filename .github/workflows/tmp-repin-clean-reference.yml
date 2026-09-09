@@ -1,0 +1,33 @@
+name: TMP Repin Clean Reference (fix 1800/1810 bleed)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  repin:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    env:
+      CLEAN_REFERENCE_RUN_ID: '33919306584'
+      CLEAN_REFERENCE_ARTIFACT_ID: '9954393075'
+      CLEAN_REFERENCE_ARTIFACT_NAME: 'CLEAN-REFERENCE-V2-33919306584'
+      CLEAN_REFERENCE_DIGEST: 'sha256:b056ada5b925648824274f6b04cfa95b81fb6ba8bd07c101f3210757f5ef4df8'
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Download and verify current pinned clean reference
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          function Assert-Artifact($id,$name,$digest){
+            $m=gh api "repos/$env:GITHUB_REPOSITORY/actions/artifacts/$id" | ConvertFrom-Json
+            if($m.name -ne $name -or $m.digest -ne $digest -or $m.expired){throw "Artifact pin failed:
