@@ -30,4 +30,52 @@ jobs:
           $ErrorActionPreference='Stop'
           function Assert-Artifact($id,$name,$digest){
             $m=gh api "repos/$env:GITHUB_REPOSITORY/actions/artifacts/$id" | ConvertFrom-Json
-            if($m.name -ne $name -or $m.digest -ne $digest -or $m.expired){throw "Artifact pin failed:
+            if($m.name -ne $name -or $m.digest -ne $digest -or $m.expired){throw "Artifact pin failed: $id"}
+          }
+          Assert-Artifact $env:CLEAN_REFERENCE_ARTIFACT_ID $env:CLEAN_REFERENCE_ARTIFACT_NAME $env:CLEAN_REFERENCE_DIGEST
+          gh run download $env:CLEAN_REFERENCE_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:CLEAN_REFERENCE_ARTIFACT_NAME --dir clean-reference
+
+      - name: Overlay corrected files from this branch
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $refCatalog = Get-ChildItem clean-reference -Recurse -File -Filter runtime_visual_catalog.json | Select-Object -First 1
+          if(-not $refCatalog){throw 'Downloaded clean reference is missing runtime_visual_catalog.json'}
+          $refRoot = $refCatalog.Directory.FullName
+          Write-Host "Reference root: $refRoot"
+
+          $before1810 = Get-FileHash (Join-Path $refRoot 'research_enrichment_1810.qz64') -Algorithm SHA256
+          $before1800 = Get-FileHash (Join-Path $refRoot 'research_enrichment_1800.qz64') -Algorithm SHA256
+          Write-Host "Before: 1810=$($before1810.Hash) 1800=$($before1800.Hash)"
+
+          Copy-Item 'database\reference\research_enrichment_1810.qz64' (Join-Path $refRoot 'research_enrichment_1810.qz64') -Force
+          Copy-Item 'database\reference\research_enrichment_1800.qz64' (Join-Path $refRoot 'research_enrichment_1800.qz64') -Force
+          Copy-Item 'database\reference\manifest.json' (Join-Path $refRoot 'manifest.json') -Force
+
+          $after1810 = Get-FileHash (Join-Path $refRoot 'research_enrichment_1810.qz64') -Algorithm SHA256
+          $after1800 = Get-FileHash (Join-Path $refRoot 'research_enrichment_1800.qz64') -Algorithm SHA256
+          Write-Host "After:  1810=$($after1810.Hash) 1800=$($after1800.Hash)"
+          if($after1810.Hash -eq $before1810.Hash){throw 'research_enrichment_1810.qz64 was not actually replaced'}
+          if($after1800.Hash -eq $before1800.Hash){throw 'research_enrichment_1800.qz64 was not actually replaced'}
+
+          "REF_ROOT=$refRoot" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Upload new clean reference artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CLEAN-REFERENCE-V3-fix-1800-1810-${{ github.run_id }}
+          path: ${{ env.REF_ROOT }}
+          if-no-files-found: error
+
+      - name: Print new artifact info for repinning
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          Start-Sleep -Seconds 5
+          $run = gh api "repos/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID/artifacts" | ConvertFrom-Json
+          $artifact = $run.artifacts | Where-Object { $_.name -eq "CLEAN-REFERENCE-V3-fix-1800-1810-$env:GITHUB_RUN_ID" }
+          Write-Host '=== COPY THESE 4 VALUES INTO memsx64.yml ==='
+          Write-Host "CLEAN_REFERENCE_RUN_ID: '$env:GITHUB_RUN_ID'"
+          Write-Host "CLEAN_REFERENCE_ARTIFACT_ID: '$($artifact.id)'"
+          Write-Host "CLEAN_REFERENCE_ARTIFACT_NAME: '$($artifact.name)'"
+          Write-Host "CLEAN_REFERENCE_DIGEST: '$($artifact.digest)'"
