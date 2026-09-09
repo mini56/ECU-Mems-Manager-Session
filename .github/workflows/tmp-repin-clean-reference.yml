@@ -2,6 +2,11 @@ name: TMP Repin Clean Reference (fix 1800/1810 bleed)
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - tmp-ia-clarification-test-1b106ee
+    paths:
+      - '.github/workflows/tmp-repin-clean-reference.yml'
 
 permissions:
   contents: read
