@@ -171,7 +171,6 @@ inline bool shouldUseDiagnosticGeneration(const QString &question, const QString
     const QString facts = normalize(grounding);
     if (containsAny(text, {
             QStringLiteral("diagnostic"), QStringLiteral("diagnostique"),
-            QStringLiteral("analyse"), QStringLiteral("analyser"),
             QStringLiteral("anormal"), QStringLiteral("panne"),
             QStringLiteral("probleme"), QStringLiteral("hypothese"),
             QStringLiteral("oscill"), QStringLiteral("instable")
