@@ -1,5 +1,5 @@
 name: TEMP LIGHT actual runtime navigation diagnosis (no installer)
-run-name: DIAG LIGHT - inspect final navigation identities on Windows
+run-name: DIAG LIGHT #2 - rebuild final navigation after async GUI construction
 
 on:
   push:
