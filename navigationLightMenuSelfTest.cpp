@@ -2,6 +2,7 @@
 
 #include <QApplication>
 #include <QListWidget>
+#include <QSettings>
 #include <QTabWidget>
 #include <QWidget>
 #include <QDebug>
@@ -51,6 +52,24 @@ static bool testNavigation(const QStringList &names)
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
+    if (app.arguments().contains(QStringLiteral("--ci-preconfigure-language"))) {
+        // A virgin Windows account opens a modal language chooser before
+        // MainWindow exists. The CI runner has no user to click that dialog.
+        // Preconfigure only this ephemeral runner's normal QSettings; leave
+        // the chooser unchanged for all real users.
+        QSettings language(QSettings::IniFormat, QSettings::UserScope,
+                           QStringLiteral(PROJECTNAME));
+        language.beginGroup(QStringLiteral("Settings"));
+        language.setValue(QStringLiteral("Language"),QStringLiteral("fr"));
+        language.setValue(QStringLiteral("LanguageConfigured"),true);
+        language.endGroup();
+        language.sync();
+        if (!check(language.status()==QSettings::NoError,
+                   QStringLiteral("cannot prepare Windows runner language")))
+            return 1;
+        qInfo() << "LIGHT_CI_LANGUAGE_CONFIGURED" << language.fileName();
+        return 0;
+    }
     const QStringList official = {
         "overview_tab", "injection_tab", "emission_tab", "actuators",
         "errors", "diagnostic", "ia_mems_tab", "analysis",
