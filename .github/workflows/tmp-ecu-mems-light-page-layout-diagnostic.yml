@@ -1,5 +1,5 @@
 name: TEMP LIGHT page layout runtime diagnostic (no installer)
-run-name: DIAG LIGHT #2 - fix strict visual and dedicated tab canvas
+run-name: DIAG LIGHT #3 - preserve analysis, settings and raw canvas too
 
 on:
   push:
@@ -101,6 +101,9 @@ jobs:
             if($code -notmatch 'preserveHistoricalPageCanvas'){
               throw "Competing visual patch could still compress original pages: $patch"
             }
+          }
+          if(-not (Select-String -Path visualcompletion.cpp -Pattern 'releasePageMinimumWithoutCompressing' -Quiet)){
+            throw 'VisualCompletion can still reset original page width'
           }
           Write-Host 'LIGHT_PAGE_GEOMETRY_SOURCE_GUARD_PASS'
           Write-Host 'LIGHT_DELAYED_SIDEBAR_SOURCE_GUARD_PASS'
