@@ -546,3 +546,10 @@ void installFinalNavigation(QApplication *app, QMainWindow *window)
     if (!applyDeterministicNavigation(mainWindow))
         qWarning() << "MEMSX64 deterministic navigation could not resolve all 14 official tabs";
 }
+
+bool refreshFinalNavigation(QMainWindow *window)
+{
+    MainWindow *mainWindow=qobject_cast<MainWindow*>(window);
+    if(!mainWindow) return false;
+    return applyDeterministicNavigation(mainWindow);
+}
