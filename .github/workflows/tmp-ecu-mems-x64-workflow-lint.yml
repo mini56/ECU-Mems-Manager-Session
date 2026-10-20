@@ -1,0 +1,30 @@
+name: Verify temporary ECU MEMS x64 rebuild workflow syntax
+on:
+  push:
+    branches: [tmp-ia-clarification-test-1b106ee]
+    paths:
+      - '.github/workflows/tmp-ecu-mems-x64-rebuild-20261020.yml'
+      - '.github/workflows/tmp-ecu-mems-x64-workflow-lint.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse YAML and show job names
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check PyYAML
+          python - <<'PY'
+          import yaml
+          from pathlib import Path
+          path=Path('.github/workflows/tmp-ecu-mems-x64-rebuild-20261020.yml')
+          d=yaml.safe_load(path.read_text(encoding='utf-8'))
+          print('PARSE_OK jobs=', list(d.get('jobs',{})))
+          PY
+      - name: Actionlint semantic workflow validation
+        shell: bash
+        run: |
+          go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 -color .github/workflows/tmp-ecu-mems-x64-rebuild-20261020.yml
