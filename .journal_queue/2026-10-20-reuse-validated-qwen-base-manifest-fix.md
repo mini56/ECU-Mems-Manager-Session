@@ -1,0 +1,5 @@
+## 2026-10-20 — PREFLIGHT BASE IA VERT ET REUTILISATION DES PAQUETS VALIDES
+- Run 39385925033 : job source47 SUCCESS, tar 99 468 868 octets SHA256 00d2d52b7291fd6cf4893dbedbab34c0eb2a6d41072dc38111d6c2140e06158c, préversion privée mems-build116-candidate-39385925033.
+- Même run : job base-runtime SUCCESS, runtime Qwen ONNX validé et application smoke lancée; IA_BASE_PUBLISHED SHA256 B1E093734D4C479879B1A5C9431F16711D8850DC00AA7B8C5125F3BEF656A057, 421330468 octets, actif dans préversion privée.
+- clean-reference du run a échoué uniquement sur une comparaison injustifiée du manifeste nettoyé avec celui du dépôt. Vérification des bytes ZIP réel : 1800 et 1810 sont exacts, catalogue contient 1667 assets V2, 427 références images/rave orphelines dans manifeste V3 dont fichiers physiques absents.
+- Changement isolé avant nouveau preflight : réutiliser source+base Qwen du run dont les deux jobs sont SUCCESS, en contrôlant les SHA256, garder la V3 exacte puis ne supprimer que les 427 références du manifeste V3 dans sa copie staging. Pousser Setup après self-tests et smoke x64 uniquement; pas de changement de branche de production.
