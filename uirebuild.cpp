@@ -1,4 +1,5 @@
 #include <QAbstractItemView>
+#include <QAbstractItemModel>
 #include <QApplication>
 #include <QBoxLayout>
 #include <QCoreApplication>
@@ -29,6 +30,7 @@
 #include "i18n.h"
 #include "optionsdialog.h"
 #include "navigationlightmenu.h"
+#include "navigationorderpatch.h"
 
 namespace {
 
@@ -393,8 +395,23 @@ private:
         wh->addWidget(nav);wh->addWidget(tabs,1);root->insertWidget(oldIndex<0?1:oldIndex,workspace,1);
         QObject::connect(nav,&QListWidget::currentRowChanged,tabs,&QTabWidget::setCurrentIndex);
         QObject::connect(tabs,&QTabWidget::currentChanged,nav,[nav](int row){ nav->setCurrentRow(row); });
+        // Other navigation installers can append/rebuild entries after the
+        // first Show. Reapply the LIGHT visibility only when list and tab
+        // indices line up, so none of the original pages is removed.
+        QObject::connect(nav->model(),&QAbstractItemModel::rowsInserted,window,
+                         [nav,tabs](const QModelIndex&,int,int){
+            QTimer::singleShot(0,nav,[nav,tabs](){
+                if(nav->count()==tabs->count())
+                    applyLightMenuVisibility(tabs,nav);
+            });
+        });
         for(int i=0;i<tabs->count();++i){QWidget *page=realPage(tabs->widget(i));if(!page)continue;if(QScrollArea *scroll=qobject_cast<QScrollArea*>(tabs->widget(i))){scroll->setWidgetResizable(true);scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);page->setMinimumSize(0,0);}const QString title=titleForIndex(tabs,i);if(!usesDedicatedLayout(page,i))composeGenericPage(page,title,i);}
         root->addWidget(buildBottomStatus(window));tabs->setCurrentIndex(0);
+        // Crucial ordering: the pre-existing installFinalNavigation call
+        // may happen BEFORE this asynchronous sidebar exists. Synchronize
+        // now, when its widget is actually present, to get all 14 pages.
+        if(!refreshFinalNavigation(window))
+            qWarning("LIGHT navigation: full tab synchronization not ready");
         applyResponsive(window);
         QTimer::singleShot(120,window,[window](){applyResponsive(window);});
         // Opt-in CI evidence from the REAL running GUI, after the asynchronous
