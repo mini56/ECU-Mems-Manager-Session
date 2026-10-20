@@ -56,6 +56,24 @@ static const TabSpec kTabs[kFinalTabCount] = {
     {"mems19_test", 19000}
 };
 
+// Hide ONLY the navigation entry. Preserve the tab widget, its lifetime,
+// its order/index and every ECU/IA/ROSCO implementation for later reactivation.
+static bool temporarilyHiddenMenuRank(int rank)
+{
+    return rank == 6   // IA MEMS
+        || rank == 9   // ECU ROSCO
+        || rank == 13; // TEST ECU 1.9
+}
+
+static int visibleNavigationItemCount()
+{
+    int total = 0;
+    for (int rank = 0; rank < kFinalTabCount; ++rank)
+        if (!temporarilyHiddenMenuRank(rank))
+            ++total;
+    return total;
+}
+
 static QWidget *realPage(QWidget *tab)
 {
     if (!tab)
@@ -284,10 +302,10 @@ static void fitNavigationRows(QListWidget *nav)
     if (viewportHeight <= 0)
         return;
 
-    // On smaller screens the original 14 rows can exceed the viewport by only
-    // a few pixels. Compress the row height just enough to keep every official
-    // tab visible; never solve this by scrolling the first tab out of view.
-    const int rowHeight = qBound(21, viewportHeight / kFinalTabCount, 26);
+    // Fit the visible entries only. Hidden items keep their original row
+    // numbers, so row -> QTabWidget index mapping remains strictly unchanged.
+    const int visibleCount = visibleNavigationItemCount();
+    const int rowHeight = qBound(21, viewportHeight / qMax(1, visibleCount), 26);
     nav->setIconSize(QSize(qMin(20, rowHeight - 2), qMin(20, rowHeight - 2)));
     nav->setSpacing(0);
     nav->setUniformItemSizes(true);
@@ -470,8 +488,11 @@ static bool applyDeterministicNavigation(MainWindow *window)
             const QString title = translatedTitle(rank);
             QListWidgetItem *item = new QListWidgetItem(iconForRank(rank), title, nav);
             item->setToolTip(title);
+            item->setHidden(temporarilyHiddenMenuRank(rank));
         }
-        nav->setCurrentRow(qBound(0, tabs->currentIndex(), kFinalTabCount - 1));
+        // Do not focus an entry that is intentionally removed from the menu.
+        const int selectedRank = qBound(0, tabs->currentIndex(), kFinalTabCount - 1);
+        nav->setCurrentRow(temporarilyHiddenMenuRank(selectedRank) ? 0 : selectedRank);
         fitNavigationRows(nav);
     }
 
