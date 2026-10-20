@@ -1,0 +1,1608 @@
+name: TEMP ECU MEMS Manager Full Windows Setup Rebuild
+run-name: PRE-FLIGHT BUILD 116 - Full RAVEMEMS V2, Qwen ONNX and Windows Setup
+
+on:
+  push:
+    branches: [tmp-ia-clarification-test-1b106ee]
+    paths:
+      - '.github/workflows/tmp-ecu-mems-x64-rebuild-20261020.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: tmp-ecu-mems-x64-rebuild-20261020
+  cancel-in-progress: false
+
+env:
+  MEMS_BUILD: '116'
+  MEMS_BUILD_NUMBER: '116'
+  ORT_GENAI_VERSION: '0.14.0'
+  ORT_GENAI_WIN_X64_SHA256: '8a303e52dc7be8fb2a5331929af451a25ac59774102d7fd09ef673adc85c5ebf'
+  ORT_VERSION: '1.24.4'
+  ORT_WIN_X64_SHA256: 'd2319fddfb6ea4db99ccc4b60c85c517bcd855721f5daa6a06d40d7cb2ee2357'
+  BASE_PACKAGE_RUN_ID: '33889068203'
+  BASE_PACKAGE_ARTIFACT_ID: '9943343980'
+  BASE_PACKAGE_ARTIFACT_NAME: 'TMP-ECU-MEMS-Manager-x64-IA-MEMSLibrary-33889068203'
+  BASE_PACKAGE_DIGEST: 'sha256:4cf818b64670a8fb4dc5e6f77b7b30c35a3ab95251046ca24c529194a622f7f5'
+  CLEAN_REFERENCE_RUN_ID: '33919306584'
+  CLEAN_REFERENCE_ARTIFACT_ID: '9954393075'
+  CLEAN_REFERENCE_ARTIFACT_NAME: 'CLEAN-REFERENCE-V2-33919306584'
+  CLEAN_REFERENCE_DIGEST: 'sha256:b056ada5b925648824274f6b04cfa95b81fb6ba8bd07c101f3210757f5ef4df8'
+  PACK001_RUN_ID: '33847448261'
+  PACK001_ARTIFACT_ID: '9927059742'
+  PACK001_ARTIFACT_NAME: 'MEMSLibrary-Pack001-33847448261'
+  PACK001_DIGEST: 'sha256:ffa9c42783fe443ffc3949cf2166083291adb08505b3fca228b03003a904698a'
+  PACK001_SQLITE_SHA256: '827208b703324335828d72093994ec5f7bf9e0a6fd0cd3b0082d033bfa38628b'
+  CORRECTED_DLL_RUN_ID: '33953367833'
+  CORRECTED_DLL_ARTIFACT_ID: '9965560001'
+  CORRECTED_DLL_ARTIFACT_NAME: 'MEMSLibrary-DLL-Provenance-33953367833'
+  CORRECTED_DLL_DIGEST: 'sha256:f6987c821d312a505019e02cfdd3b254bc04e1a3b86657fc1f3f87dd3e99c491'
+  CORRECTED_DLL_SHA256: '77d73dd7c64fa2271fa26bb5d724b1c3b0c343c0669af3af5647236546437b7a'
+  CLEAN_V2_LINEAGE: 'RAVEMEMS_V2_FINAL_33810202288'
+
+jobs:
+  source47:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    env:
+      ENGINE_SHA: 5232215f5853241572f580cf1696c9f881b254f4
+      SOURCE_MAIN_COMMIT: 643de091b474f4e27917a065bdf46d5a0c764276
+      PROTECTED_MEMSX64: 1b106eed05e1fd665b857f73a719f02ee6b6b2ac
+      EXPECTED_PDF_COUNT: "47"
+
+    steps:
+      - name: Checkout exact neutral generic engine
+        uses: actions/checkout@v4
+        with:
+          ref: 5232215f5853241572f580cf1696c9f881b254f4
+          fetch-depth: 0
+
+      - name: Guard exact engine and production
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$ENGINE_SHA"
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
+          echo "ENGINE_SHA=$ENGINE_SHA"
+          echo "MEMSX64_PROTECTED=$PROTECTED_MEMSX64"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pinned renderer and compile generic engine
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check "PyMuPDF==1.26.4"
+          PYTHONPATH="ravemems/v2:.github/pass2" python -m py_compile \
+            ravemems/v2/core_extract.py \
+            ravemems/v2/source_input.py \
+            ravemems/v2/generic_document_rules.py \
+            .github/pass2/generic_semantic_pass2.py \
+            .github/pass2/generic_precise_visual_extract.py \
+            .github/pass2/ravemems_generic_precise_extract.py \
+            .github/pass2/generic_visual_validate.py \
+            .github/pass2/ravemems_generic_visual_replay_validate.py \
+            .github/pass2/ravemems_extract_source.py
+          ! grep -R -n -E 'RCL0193|rcl0193' \
+            ravemems/v2/core_extract.py \
+            ravemems/v2/source_input.py \
+            ravemems/v2/generic_document_rules.py \
+            .github/pass2/generic_semantic_pass2.py \
+            .github/pass2/generic_precise_visual_extract.py \
+            .github/pass2/ravemems_generic_precise_extract.py \
+            .github/pass2/generic_visual_validate.py \
+            .github/pass2/ravemems_generic_visual_replay_validate.py \
+            .github/pass2/ravemems_extract_source.py
+
+      - name: Materialize frozen full RAVE PDF corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "$SOURCE_MAIN_COMMIT"
+          test "$(git rev-parse FETCH_HEAD)" = "$SOURCE_MAIN_COMMIT"
+          mkdir -p "$RUNNER_TEMP/corpus"
+          mapfile -t pdfs < <(git ls-tree -r --name-only "$SOURCE_MAIN_COMMIT" rave | grep -Ei '\.pdf$' | sort)
+          printf '%s\n' "${pdfs[@]}" > "$RUNNER_TEMP/corpus_pdf_paths.txt"
+          echo "FROZEN_CORPUS_PDF_COUNT=${#pdfs[@]}"
+          test "${#pdfs[@]}" -eq "$EXPECTED_PDF_COUNT"
+          : > "$RUNNER_TEMP/corpus_source_inventory.tsv"
+          for path in "${pdfs[@]}"; do
+            target="$RUNNER_TEMP/corpus/$path"
+            mkdir -p "$(dirname "$target")"
+            git show "$SOURCE_MAIN_COMMIT:$path" > "$target"
+            blob="$(git rev-parse "$SOURCE_MAIN_COMMIT:$path")"
+            size="$(wc -c < "$target")"
+            printf '%s\t%s\t%s\n' "$path" "$blob" "$size" >> "$RUNNER_TEMP/corpus_source_inventory.tsv"
+          done
+          test "$(find "$RUNNER_TEMP/corpus/rave" -type f -iname '*.pdf' | wc -l)" -eq "$EXPECTED_PDF_COUNT"
+
+      - name: Run neutral generic engine on complete corpus
+        id: extraction
+        shell: bash
+        run: |
+          set -uo pipefail
+          export PYTHONPATH="ravemems/v2:.github/pass2"
+          rm -rf "$RUNNER_TEMP/full-out"
+          python .github/pass2/ravemems_extract_source.py \
+            --source "$RUNNER_TEMP/corpus/rave" \
+            --schema ravemems/v2/schema.sql \
+            --out "$RUNNER_TEMP/full-out"
+          rc=$?
+          echo "extract_rc=$rc" >> "$GITHUB_OUTPUT"
+          echo "FULL_CORPUS_EXTRACTION_RETURN_CODE=$rc"
+          test -f "$RUNNER_TEMP/full-out/source_manifest.json"
+          exit 0
+
+      - name: Replay every successful document and build corpus audit summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="ravemems/v2:.github/pass2"
+          python - "$RUNNER_TEMP" "$EXPECTED_PDF_COUNT" <<'PY'
+          import json
+          import sqlite3
+          import subprocess
+          import sys
+          from collections import Counter
+          from pathlib import Path
+
+          root = Path(sys.argv[1])
+          expected_count = int(sys.argv[2])
+          out = root / "full-out"
+          source_manifest_path = out / "source_manifest.json"
+          source = json.loads(source_manifest_path.read_text(encoding="utf-8"))
+          results = source.get("results", [])
+          replay_script = Path(".github/pass2/ravemems_generic_visual_replay_validate.py").resolve()
+
+          replay_failures = []
+          validation = []
+          total_pages = 0
+          total_visuals = 0
+          total_links = 0
+          total_operations = 0
+          total_phases = 0
+          total_steps = 0
+          languages = Counter()
+          kinds = Counter()
+
+          for index, record in enumerate(results, 1):
+              entry = {
+                  "index": index,
+                  "input_pdf": record.get("input_pdf"),
+                  "document_identity": record.get("document_identity"),
+                  "publication_code": record.get("publication_code"),
+                  "language": record.get("language"),
+                  "page_count": record.get("page_count"),
+                  "extraction_return_code": record.get("return_code"),
+                  "output_directory": record.get("output_directory"),
+              }
+              total_pages += int(record.get("page_count") or 0)
+              languages[str(record.get("language") or "unknown")] += 1
+              if int(record.get("return_code") or 0) != 0:
+                  entry["replay_return_code"] = None
+                  entry["status"] = "extraction_failed"
+                  validation.append(entry)
+                  continue
+
+              document_out = Path(str(record["output_directory"]))
+              manifest_path = document_out / "manifest.json"
+              if not manifest_path.exists():
+                  entry["status"] = "manifest_missing"
+                  replay_failures.append({"index": index, "reason": "manifest_missing", "output": str(document_out)})
+                  validation.append(entry)
+                  continue
+
+              manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+              counts = manifest.get("counts", {})
+              kind = str(manifest.get("document_kind") or "unknown")
+              kinds[kind] += 1
+              total_visuals += int(counts.get("ravemems_visual", 0) or 0)
+              total_links += int(counts.get("ravemems_visual_link", 0) or 0)
+              total_operations += int(counts.get("ravemems_operation", 0) or 0)
+              total_phases += int(counts.get("ravemems_phase", 0) or 0)
+              total_steps += int(counts.get("ravemems_step", 0) or 0)
+              entry["document_kind"] = kind
+              entry["counts"] = counts
+
+              completed = subprocess.run([
+                  sys.executable,
+                  str(replay_script),
+                  "--pdf", str(record["input_pdf"]),
+                  "--out", str(document_out),
+              ], text=True)
+              entry["replay_return_code"] = completed.returncode
+
+              replay_path = document_out / "visual_replay_validation.json"
+              if replay_path.exists():
+                  replay = json.loads(replay_path.read_text(encoding="utf-8"))
+                  entry["replay"] = replay
+              else:
+                  replay = None
+
+              db_path = document_out / "ravemems_v2.sqlite"
+              if db_path.exists():
+                  db = sqlite3.connect(db_path)
+                  entry["sqlite_integrity"] = db.execute("PRAGMA integrity_check").fetchone()[0]
+                  entry["foreign_key_issue_count"] = len(db.execute("PRAGMA foreign_key_check").fetchall())
+                  entry["open_review_count"] = db.execute("SELECT COUNT(*) FROM ravemems_review_flag WHERE status='open'").fetchone()[0]
+                  db.close()
+              else:
+                  entry["sqlite_integrity"] = "missing"
+                  entry["foreign_key_issue_count"] = -1
+                  entry["open_review_count"] = -1
+
+              ok = (
+                  completed.returncode == 0
+                  and replay is not None
+                  and int(replay.get("visual_fidelity_failed_count", -1)) == 0
+                  and int(replay.get("visual_link_failed_count", -1)) == 0
+                  and int(replay.get("missing_replay_count", -1)) == 0
+                  and int(replay.get("unexpected_replay_count", -1)) == 0
+                  and int(replay.get("audit_issue_count_after_validation", -1)) == 0
+                  and str(entry["sqlite_integrity"]).lower() == "ok"
+                  and int(entry["foreign_key_issue_count"]) == 0
+                  and int(entry["open_review_count"]) == 0
+              )
+              entry["status"] = "pass" if ok else "replay_or_audit_failed"
+              if not ok:
+                  replay_failures.append({"index": index, "identity": record.get("document_identity"), "reason": entry["status"]})
+              validation.append(entry)
+
+          summary = {
+              "engine_sha": "5232215f5853241572f580cf1696c9f881b254f4",
+              "source_main_commit": "643de091b474f4e27917a065bdf46d5a0c764276",
+              "expected_pdf_count": expected_count,
+              "discovered_pdf_count": int(source.get("pdf_count", -1)),
+              "extraction_failure_count": int(source.get("failure_count", -1)),
+              "replay_failure_count": len(replay_failures),
+              "total_pages": total_pages,
+              "total_visuals": total_visuals,
+              "total_visual_links": total_links,
+              "total_operations": total_operations,
+              "total_phases": total_phases,
+              "total_steps": total_steps,
+              "languages": dict(sorted(languages.items())),
+              "document_kinds": dict(sorted(kinds.items())),
+              "replay_failures": replay_failures,
+              "documents": validation,
+          }
+          (out / "corpus_validation_summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          print(json.dumps({k: v for k, v in summary.items() if k not in {"documents"}}, ensure_ascii=False, indent=2))
+          print("FULL_CORPUS_DOCUMENTS_PROCESSED", len(results))
+          print("FULL_CORPUS_EXTRACTION_FAILURES", summary["extraction_failure_count"])
+          print("FULL_CORPUS_REPLAY_FAILURES", summary["replay_failure_count"])
+          PY
+
+      - name: Copy frozen source inventory into result
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/full-out/_corpus_metadata"
+          cp "$RUNNER_TEMP/corpus_pdf_paths.txt" "$RUNNER_TEMP/full-out/_corpus_metadata/"
+          cp "$RUNNER_TEMP/corpus_source_inventory.tsv" "$RUNNER_TEMP/full-out/_corpus_metadata/"
+
+      - name: Upload complete corpus result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAVEMEMS-V2-FULL-CORPUS-GENERIC-${{ github.run_id }}
+          path: ${{ runner.temp }}/full-out
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 6
+
+      - name: Strict full corpus verdict
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${{ steps.extraction.outputs.extract_rc }}" = "0"
+          python - "$RUNNER_TEMP/full-out/corpus_validation_summary.json" "$EXPECTED_PDF_COUNT" <<'PY'
+          import json, sys
+          from pathlib import Path
+          summary = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          expected = int(sys.argv[2])
+          assert summary["discovered_pdf_count"] == expected, summary
+          assert summary["extraction_failure_count"] == 0, summary["replay_failures"]
+          assert summary["replay_failure_count"] == 0, summary["replay_failures"]
+          assert len(summary["documents"]) == expected, len(summary["documents"])
+          assert all(item.get("status") == "pass" for item in summary["documents"]), [item for item in summary["documents"] if item.get("status") != "pass"]
+          print("RAVEMEMS_V2_FULL_CORPUS_GENERIC_GLOBAL_ZERO_PASS")
+          PY
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_MEMSX64"
+  base-runtime:
+    needs: source47
+    runs-on: windows-2022
+    timeout-minutes: 120
+    env:
+      MEMS_BUILD: '103'
+      MEMS_VERSION: '1.0.103'
+      MEMS_BUILD_NUMBER: '103'
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: 'utf-8'
+      ORT_GENAI_VERSION: '0.14.0'
+      ORT_GENAI_WIN_X64_SHA256: '8a303e52dc7be8fb2a5331929af451a25ac59774102d7fd09ef673adc85c5ebf'
+      ORT_VERSION: '1.24.4'
+      ORT_WIN_X64_SHA256: 'd2319fddfb6ea4db99ccc4b60c85c517bcd855721f5daa6a06d40d7cb2ee2357'
+      ONNX_MODEL_REPO: 'xiaoyao9184/Qwen3-0.6B-onnx-genai'
+      ONNX_MODEL_REVISION: 'e6bf97818c142808967a48cbab4f0aef18b64621'
+      ONNX_MODEL_SUBDIR: 'cpu_and_mobile/cpu-int4-rtn-block-32-acc-level-4'
+      ONNX_MODEL_ONNX_SHA256: 'b52cfcd91e6ed3caa34c670d4831d96cda3da5eb07ef95bc8ba06547b4f3b86f'
+      ONNX_MODEL_DATA_SHA256: '8539cf4fbc3b5b331fd78ca8cd5b025ce537dfc2f993451f5c474b2f9fb7cd6c'
+      ONNX_TOKENIZER_SHA256: 'be75606093db2094d7cd20f3c2f385c212750648bd6ea4fb2bf507a6a4c55506'
+
+    steps:
+      - name: Checkout isolated IA bridge branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: 9da599e697aa96d099982a30f5f5c8a562a7c788
+
+      - name: Verify protected production and Pack001 ancestry
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $protected = '1d6316bd1746d6f2b4cfb751cab88d18e27ef730'
+          $pack001 = '9cf3d00840cec1749ef9358f708d3e68a2c8bc4d'
+          git merge-base --is-ancestor $protected HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'Temporary package branch is not based on protected MEMSX64 BUILD #103' }
+          git merge-base --is-ancestor $pack001 HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'Temporary package branch is not based on validated MEMSLibrary Pack001 checkpoint' }
+          Write-Host "TMP_PACKAGE_ANCESTRY_OK protected=$protected pack001=$pack001"
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install validation tools
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install --disable-pip-version-check "aqtinstall==3.3.0" pefile "huggingface_hub>=0.34,<1" hf_xet
+          if ($LASTEXITCODE -ne 0) { throw "Validation tools install failed: $LASTEXITCODE" }
+
+      - name: Install Qt 5.15.2 MSVC 2019 x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $sevenZip = (Get-Command 7z.exe -ErrorAction Stop).Source
+          if (Test-Path 'C:\Qt') { Remove-Item 'C:\Qt' -Recurse -Force -ErrorAction SilentlyContinue }
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
+          if ($LASTEXITCODE -ne 0) { throw "aqtinstall failed: $LASTEXITCODE" }
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: RAVEMEMS-V2-FULL-CORPUS-GENERIC-${{ github.run_id }}
+          path: source47
+      - name: Verify regenerated RAVEMEMS V2 47-PDF source artifact
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $dbs=@(Get-ChildItem source47 -Recurse -File -Filter ravemems_v2.sqlite)
+          if($dbs.Count -ne 47){throw "Expected 47 source SQLite databases, found $($dbs.Count)"}
+          Write-Host "SOURCE47_OK databases=$($dbs.Count)"
+
+      - name: Rebuild and validate MEMSLibrary Pack001
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python tools/build_memslibrary_pack.py source47 pack001 --pack-id MEMSLibrary_Pack_001
+          if ($LASTEXITCODE -ne 0) { throw "Pack001 rebuild failed: $LASTEXITCODE" }
+          @'
+          import json,sqlite3
+          from pathlib import Path
+          root=Path('pack001')
+          db=root/'knowledge.sqlite'
+          manifest=root/'manifest.json'
+          cx=sqlite3.connect(db)
+          try:
+              assert cx.execute('pragma integrity_check').fetchone()[0]=='ok'
+              assert cx.execute('pragma foreign_key_check').fetchall()==[]
+              assert cx.execute('select count(*) from ravemems_document').fetchone()[0]==47
+          finally:
+              cx.close()
+          data=json.loads(manifest.read_text(encoding='utf-8'))
+          assert data.get('pack_id')=='MEMSLibrary_Pack_001'
+          assert int(data.get('document_count',0))==47
+          print('PACK001_PACKAGE_FIXTURE_OK docs=47')
+          '@ | python -
+
+      - name: Build MEMSLibrary ABI2 x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake -S memslibrary -B build-memslibrary -A x64
+          if ($LASTEXITCODE -ne 0) { throw "MEMSLibrary configure failed: $LASTEXITCODE" }
+          cmake --build build-memslibrary --config Release --parallel
+          if ($LASTEXITCODE -ne 0) { throw "MEMSLibrary build failed: $LASTEXITCODE" }
+
+      - name: Stage exact BUILD 103 ONNX Runtime and VC++ dependencies
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $genaiArchive = Join-Path $env:RUNNER_TEMP "onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          $ortArchive = Join-Path $env:RUNNER_TEMP "onnxruntime-win-x64-$env:ORT_VERSION.zip"
+          $genaiExtract = '${{ github.workspace }}\onnx-genai-package'
+          $ortExtract = '${{ github.workspace }}\onnxruntime-package'
+          $stage = '${{ github.workspace }}\onnx-runtime-package-stage'
+          $genaiUrl = "https://github.com/microsoft/onnxruntime-genai/releases/download/v$env:ORT_GENAI_VERSION/onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          $ortUrl = "https://github.com/microsoft/onnxruntime/releases/download/v$env:ORT_VERSION/onnxruntime-win-x64-$env:ORT_VERSION.zip"
+
+          foreach ($dir in @($genaiExtract,$ortExtract,$stage)) {
+            if (Test-Path $dir) { Remove-Item $dir -Recurse -Force }
+            New-Item -ItemType Directory -Path $dir -Force | Out-Null
+          }
+
+          & curl.exe -L --fail --retry 3 --retry-delay 3 -o $genaiArchive $genaiUrl
+          if ($LASTEXITCODE -ne 0) { throw "ONNX Runtime GenAI download failed: $LASTEXITCODE" }
+          $genaiHash = (Get-FileHash $genaiArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($genaiHash -ne $env:ORT_GENAI_WIN_X64_SHA256) { throw "ONNX Runtime GenAI SHA256 mismatch: $genaiHash" }
+          Expand-Archive -LiteralPath $genaiArchive -DestinationPath $genaiExtract -Force
+
+          & curl.exe -L --fail --retry 3 --retry-delay 3 -o $ortArchive $ortUrl
+          if ($LASTEXITCODE -ne 0) { throw "ONNX Runtime download failed: $LASTEXITCODE" }
+          $ortHash = (Get-FileHash $ortArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($ortHash -ne $env:ORT_WIN_X64_SHA256) { throw "ONNX Runtime SHA256 mismatch: $ortHash" }
+          Expand-Archive -LiteralPath $ortArchive -DestinationPath $ortExtract -Force
+
+          $header = Get-ChildItem $genaiExtract -Recurse -File -Filter 'ort_genai_c.h' | Select-Object -First 1
+          $import = Get-ChildItem $genaiExtract -Recurse -File -Filter 'onnxruntime-genai.lib' | Select-Object -First 1
+          $genaiDll = Get-ChildItem $genaiExtract -Recurse -File -Filter 'onnxruntime-genai.dll' | Select-Object -First 1
+          $ortDll = Get-ChildItem $ortExtract -Recurse -File -Filter 'onnxruntime.dll' | Select-Object -First 1
+          if (-not $header -or -not $import -or -not $genaiDll -or -not $ortDll) {
+            throw 'Official ONNX Runtime GenAI / ONNX Runtime package layout is incomplete'
+          }
+
+          $seen = @{}
+          foreach ($root in @($genaiExtract,$ortExtract)) {
+            foreach ($dll in Get-ChildItem $root -Recurse -File -Filter '*.dll') {
+              $key = $dll.Name.ToLowerInvariant()
+              $hash = (Get-FileHash $dll.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+              if ($seen.ContainsKey($key)) {
+                if ($seen[$key] -ne $hash) { throw "Conflicting duplicate ONNX DLL: $($dll.Name)" }
+                continue
+              }
+              Copy-Item $dll.FullName (Join-Path $stage $dll.Name) -Force
+              $seen[$key] = $hash
+            }
+          }
+          foreach ($required in @('onnxruntime-genai.dll','onnxruntime.dll')) {
+            if (-not (Test-Path (Join-Path $stage $required) -PathType Leaf)) { throw "$required was not staged" }
+          }
+
+          $env:ORT_STAGE = $stage
+          @'
+          import os,re,shutil
+          from pathlib import Path
+          import pefile
+          stage=Path(os.environ['ORT_STAGE'])
+          system32=Path(os.environ['WINDIR'])/'System32'
+          redistributable=re.compile(r'^(?:msvcp|vcruntime|concrt)\d.*\.dll$', re.I)
+          queue=[p for p in stage.glob('*.dll')]
+          scanned=set()
+          copied=set()
+          def imports(path):
+              pe=pefile.PE(str(path), fast_load=True)
+              pe.parse_data_directories(directories=[
+                  pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_IMPORT'],
+                  pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT'],
+              ])
+              names=[]
+              for attr in ('DIRECTORY_ENTRY_IMPORT','DIRECTORY_ENTRY_DELAY_IMPORT'):
+                  for entry in getattr(pe,attr,[]):
+                      try: names.append(entry.dll.decode('ascii'))
+                      except Exception: pass
+              pe.close()
+              return names
+          while queue:
+              binary=queue.pop()
+              key=binary.name.lower()
+              if key in scanned: continue
+              scanned.add(key)
+              for name in imports(binary):
+                  if not redistributable.match(name): continue
+                  dst=stage/name
+                  if not dst.is_file():
+                      src=system32/name
+                      if not src.is_file():
+                          raise SystemExit('Required Microsoft VC++ runtime DLL unavailable: '+name)
+                      shutil.copy2(src,dst)
+                      copied.add(name.lower())
+                  queue.append(dst)
+          for p in stage.glob('*.dll'):
+              pe=pefile.PE(str(p), fast_load=True)
+              if pe.FILE_HEADER.Machine != 0x8664:
+                  raise SystemExit('Runtime is not AMD64: '+p.name)
+              pe.close()
+          print(f'PASS BUILD103-compatible ONNX runtime stage: DLLs={len(list(stage.glob("*.dll")))} app_local_vc={len(copied)}')
+          '@ | python -
+
+          "ORT_GENAI_INCLUDE_DIR=$($header.DirectoryName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "ORT_GENAI_LIBRARY=$($import.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "ORT_GENAI_RUNTIME_STAGE=$stage" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "PASS pinned ONNX runtime genai=$genaiHash ort=$ortHash"
+
+      - name: Configure and build full x64 application with MEMSLibrary bridge and ONNX
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $inject = '${{ github.workspace }}\cmake\IaMemsLibraryBridgeInject.cmake'
+          cmake -S . -B build-package -A x64 `
+            -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
+            -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
+            -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF `
+            -DMEMS_USE_ONNX_GENAI=ON `
+            "-DORT_GENAI_INCLUDE_DIR=$env:ORT_GENAI_INCLUDE_DIR" `
+            "-DORT_GENAI_LIBRARY=$env:ORT_GENAI_LIBRARY" `
+            "-DCMAKE_PROJECT_INCLUDE=$inject"
+          if ($LASTEXITCODE -ne 0) { throw "Temporary IA package CMake configure failed: $LASTEXITCODE" }
+
+          cmake --build build-package --config Release --target `
+            ecu_mems_manager ecu_mems_uninstaller rosco_abi_selftest `
+            ia_response_selftest ia_mems_diagram_selftest mems_search_selftest `
+            expert_runtime_selftest local_ai_onnx_selftest --parallel
+          if ($LASTEXITCODE -ne 0) { throw "Temporary IA package build failed: $LASTEXITCODE" }
+          Write-Host 'TMP_IA_FULL_APP_BUILD_PASS'
+
+      - name: Run deterministic application checks
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
+          $env:PATH = "$qtRoot\bin;$env:ORT_GENAI_RUNTIME_STAGE;$env:PATH"
+          $env:QT_PLUGIN_PATH = "$qtRoot\plugins"
+          & '${{ github.workspace }}\build-package\Release\ia_response_selftest.exe'
+          if ($LASTEXITCODE -ne 0) { throw "IA response self-test failed: $LASTEXITCODE" }
+          & '${{ github.workspace }}\build-package\Release\ia_mems_diagram_selftest.exe'
+          if ($LASTEXITCODE -ne 0) { throw "IA diagram self-test failed: $LASTEXITCODE" }
+          & '${{ github.workspace }}\build-package\Release\mems_search_selftest.exe'
+          if ($LASTEXITCODE -ne 0) { throw "Reference search self-test failed: $LASTEXITCODE" }
+          ctest --test-dir build-package/librosco-x64 -C Release --output-on-failure -R rosco_abi_selftest
+          if ($LASTEXITCODE -ne 0) { throw "Protocol ABI self-test failed: $LASTEXITCODE" }
+
+      - name: Generate and validate expert database r20
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
+          $releaseRoot = '${{ github.workspace }}\build-package\Release'
+          $referenceSource = '${{ github.workspace }}\database\reference'
+          $referenceRuntime = Join-Path $releaseRoot 'database\reference'
+          $expertRuntime = Join-Path $releaseRoot 'database\expert'
+          $cacheRoot = '${{ github.workspace }}\expert-runtime-package-cache'
+          if (Test-Path $referenceRuntime) { Remove-Item $referenceRuntime -Recurse -Force }
+          New-Item -ItemType Directory -Path (Split-Path $referenceRuntime -Parent) -Force | Out-Null
+          Copy-Item $referenceSource $referenceRuntime -Recurse -Force
+          if (Test-Path $expertRuntime) { Remove-Item $expertRuntime -Recurse -Force }
+          if (Test-Path $cacheRoot) { Remove-Item $cacheRoot -Recurse -Force }
+          New-Item -ItemType Directory -Path $cacheRoot -Force | Out-Null
+          $env:PATH = "$qtRoot\bin;$env:ORT_GENAI_RUNTIME_STAGE;$env:PATH"
+          $env:QT_PLUGIN_PATH = "$qtRoot\plugins"
+          $savedLocalAppData = $env:LOCALAPPDATA
+          $savedAppData = $env:APPDATA
+          $generatorOutput = @()
+          try {
+            $env:LOCALAPPDATA = $cacheRoot
+            $env:APPDATA = $cacheRoot
+            & (Join-Path $releaseRoot 'expert_runtime_selftest.exe') 2>&1 | Tee-Object -Variable generatorOutput
+            if ($LASTEXITCODE -ne 0) { throw "Expert runtime DB generator failed: $LASTEXITCODE" }
+          } finally {
+            $env:LOCALAPPDATA = $savedLocalAppData
+            $env:APPDATA = $savedAppData
+          }
+          $databaseLine = $generatorOutput | ForEach-Object { [string]$_ } | Where-Object { $_ -like 'EXPERT_RUNTIME_DATABASE=*' } | Select-Object -Last 1
+          if (-not $databaseLine) { throw 'Expert runtime generator did not report EXPERT_RUNTIME_DATABASE' }
+          $expertDbPath = $databaseLine.Substring('EXPERT_RUNTIME_DATABASE='.Length).Trim()
+          if (-not (Test-Path -LiteralPath $expertDbPath -PathType Leaf)) { throw "Expert DB missing: $expertDbPath" }
+          $env:EXPERT_DB = $expertDbPath
+          @'
+          import os,sqlite3
+          p=os.environ['EXPERT_DB']
+          db=sqlite3.connect(p)
+          try:
+              ok=db.execute('PRAGMA integrity_check').fetchone()[0]
+              rev=db.execute('PRAGMA user_version').fetchone()[0]
+          finally:
+              db.close()
+          if str(ok).lower()!='ok' or rev!=20:
+              raise SystemExit(f'Invalid expert DB: integrity={ok} revision={rev}')
+          print('PASS expert SQLite r20')
+          '@ | python -
+          "AI_EXPERT_DB=$expertDbPath" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Download pinned BUILD 103 Qwen3 ONNX INT4 model
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $modelRoot = '${{ github.workspace }}\onnx-model-package'
+          if (Test-Path $modelRoot) { Remove-Item $modelRoot -Recurse -Force }
+          $env:MODEL_ROOT = $modelRoot
+          @'
+          import os
+          from huggingface_hub import snapshot_download
+          snapshot_download(
+              repo_id=os.environ['ONNX_MODEL_REPO'],
+              revision=os.environ['ONNX_MODEL_REVISION'],
+              allow_patterns=[os.environ['ONNX_MODEL_SUBDIR'] + '/*'],
+              local_dir=os.environ['MODEL_ROOT'],
+          )
+          '@ | python -
+          $modelDir = Join-Path $modelRoot $env:ONNX_MODEL_SUBDIR
+          foreach ($name in @('genai_config.json','model.onnx','model.onnx.data','tokenizer.json','tokenizer_config.json','chat_template.jinja')) {
+            if (-not (Test-Path (Join-Path $modelDir $name) -PathType Leaf)) { throw "Qwen model file missing: $name" }
+          }
+          $modelHash = (Get-FileHash (Join-Path $modelDir 'model.onnx') -Algorithm SHA256).Hash.ToLowerInvariant()
+          $dataHash = (Get-FileHash (Join-Path $modelDir 'model.onnx.data') -Algorithm SHA256).Hash.ToLowerInvariant()
+          $tokenizerHash = (Get-FileHash (Join-Path $modelDir 'tokenizer.json') -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($modelHash -ne $env:ONNX_MODEL_ONNX_SHA256) { throw "model.onnx hash mismatch: $modelHash" }
+          if ($dataHash -ne $env:ONNX_MODEL_DATA_SHA256) { throw "model.onnx.data hash mismatch: $dataHash" }
+          if ($tokenizerHash -ne $env:ONNX_TOKENIZER_SHA256) { throw "tokenizer.json hash mismatch: $tokenizerHash" }
+          "ONNX_MODEL_DIR=$modelDir" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host 'PASS pinned BUILD 103 Qwen model hashes'
+
+      - name: Validate native LocalAiClient before packaging
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
+          $selftest = Join-Path $env:ORT_GENAI_RUNTIME_STAGE 'local_ai_onnx_selftest.exe'
+          Copy-Item '${{ github.workspace }}\build-package\Release\local_ai_onnx_selftest.exe' $selftest -Force
+          $env:PATH = "$qtRoot\bin;$env:ORT_GENAI_RUNTIME_STAGE;$env:PATH"
+          $env:QT_PLUGIN_PATH = "$qtRoot\plugins"
+          $env:MEMS_AI_RUNTIME = Join-Path $env:ORT_GENAI_RUNTIME_STAGE 'onnxruntime-genai.dll'
+          $env:MEMS_AI_MODEL = $env:ONNX_MODEL_DIR
+          Push-Location $env:ORT_GENAI_RUNTIME_STAGE
+          try {
+            & $selftest
+            if ($LASTEXITCODE -ne 0) { throw "Native LocalAiClient ONNX self-test failed: $LASTEXITCODE" }
+          } finally {
+            Pop-Location
+            Remove-Item $selftest -Force -ErrorAction SilentlyContinue
+          }
+          Write-Host 'PASS native LocalAiClient Qwen before packaging'
+
+      - name: Build packaged Qwen plus MEMSLibrary validator
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake -S bridge-qwen-test -B build-package-qwen -A x64 `
+            -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
+            "-DORT_GENAI_INCLUDE_DIR=$env:ORT_GENAI_INCLUDE_DIR" `
+            "-DORT_GENAI_LIBRARY=$env:ORT_GENAI_LIBRARY"
+          if ($LASTEXITCODE -ne 0) { throw "Packaged Qwen validator configure failed: $LASTEXITCODE" }
+          cmake --build build-package-qwen --config Release --parallel
+          if ($LASTEXITCODE -ne 0) { throw "Packaged Qwen validator build failed: $LASTEXITCODE" }
+
+      - name: Assemble temporary portable IA MEMSLibrary package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $qtRoot = 'C:\Qt\5.15.2\msvc2019_64'
+          $releaseRoot = '${{ github.workspace }}\build-package\Release'
+          $dist = '${{ github.workspace }}\dist-tmp-ia'
+          if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }
+          New-Item -ItemType Directory -Path $dist -Force | Out-Null
+
+          Copy-Item "$releaseRoot\ecu_mems_manager.exe" $dist -Force
+          Copy-Item "$releaseRoot\ecu_mems_uninstaller.exe" $dist -Force
+          Copy-Item '${{ github.workspace }}\build-package\librosco-x64\Release\mems_manager_x64.dll' $dist -Force
+          & "$qtRoot\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist "$dist\ecu_mems_manager.exe"
+          if ($LASTEXITCODE -ne 0) { throw "windeployqt app failed: $LASTEXITCODE" }
+          & "$qtRoot\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist "$dist\ecu_mems_uninstaller.exe"
+          if ($LASTEXITCODE -ne 0) { throw "windeployqt uninstaller failed: $LASTEXITCODE" }
+
+          foreach ($folder in @('translations','database')) {
+            if (Test-Path "$releaseRoot\$folder") { Copy-Item "$releaseRoot\$folder" "$dist\$folder" -Recurse -Force }
+          }
+          New-Item -ItemType Directory -Path "$dist\database\expert" -Force | Out-Null
+          Copy-Item $env:AI_EXPERT_DB "$dist\database\expert\ia_mems_reference_r20.sqlite" -Force
+
+          foreach ($dll in Get-ChildItem $env:ORT_GENAI_RUNTIME_STAGE -File -Filter '*.dll') {
+            Copy-Item $dll.FullName (Join-Path $dist $dll.Name) -Force
+          }
+
+          New-Item -ItemType Directory -Path "$dist\ai\models\qwen3-0.6b-int4" -Force | Out-Null
+          Copy-Item '${{ github.workspace }}\ai\README.md' "$dist\ai\README.md" -Force
+          Copy-Item '${{ github.workspace }}\ai\runtime_manifest.json' "$dist\ai\runtime_manifest.json" -Force
+          Copy-Item "$env:ONNX_MODEL_DIR\*" "$dist\ai\models\qwen3-0.6b-int4" -Recurse -Force
+
+          Copy-Item '${{ github.workspace }}\build-memslibrary\Release\MEMSLibrary.dll' "$dist\MEMSLibrary.dll" -Force
+          New-Item -ItemType Directory -Path "$dist\MEMSLibrary_Pack_001" -Force | Out-Null
+          Copy-Item '${{ github.workspace }}\pack001\knowledge.sqlite' "$dist\MEMSLibrary_Pack_001\knowledge.sqlite" -Force
+          Copy-Item '${{ github.workspace }}\pack001\manifest.json' "$dist\MEMSLibrary_Pack_001\manifest.json" -Force
+
+          & curl.exe -L --fail --retry 3 --retry-delay 3 -o "$dist\ai\ONNX_RUNTIME_GENAI_LICENSE.txt" "https://raw.githubusercontent.com/microsoft/onnxruntime-genai/v0.14.0/LICENSE"
+          if ($LASTEXITCODE -ne 0) { throw "ONNX Runtime GenAI LICENSE download failed: $LASTEXITCODE" }
+          & curl.exe -L --fail --retry 3 --retry-delay 3 -o "$dist\ai\ONNX_RUNTIME_LICENSE.txt" "https://raw.githubusercontent.com/microsoft/onnxruntime/v$env:ORT_VERSION/LICENSE"
+          if ($LASTEXITCODE -ne 0) { throw "ONNX Runtime LICENSE download failed: $LASTEXITCODE" }
+
+          @(
+            'TEMPORARY IA TEST PACKAGE - NOT BUILD #104',
+            'Production base protected: MEMSX64 BUILD #103 1d6316bd1746d6f2b4cfb751cab88d18e27ef730',
+            "Temporary bridge commit: $env:GITHUB_SHA",
+            'IA: native ONNX Runtime GenAI 0.14.0 + ONNX Runtime 1.24.4 + Qwen3-0.6B INT4',
+            'Knowledge: MEMSLibrary ABI2 + MEMSLibrary_Pack_001 (47 RAVEMEMS documents)',
+            'This package is for IA validation only; production MEMSX64 was not modified.'
+          ) | Set-Content "$dist\README_TMP_IA_MEMSLIBRARY.txt" -Encoding UTF8
+
+          @(
+            "Repository: $env:ONNX_MODEL_REPO",
+            "Revision: $env:ONNX_MODEL_REVISION",
+            "Subdir: $env:ONNX_MODEL_SUBDIR",
+            "model.onnx SHA-256: $env:ONNX_MODEL_ONNX_SHA256",
+            "model.onnx.data SHA-256: $env:ONNX_MODEL_DATA_SHA256",
+            "tokenizer.json SHA-256: $env:ONNX_TOKENIZER_SHA256"
+          ) | Set-Content "$dist\ai\MODEL_SOURCE.txt" -Encoding UTF8
+
+          "DIST=$dist" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Validate complete temporary IA package structure
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:DIST_ROOT = $env:DIST
+          $env:ORT_STAGE_VALIDATE = $env:ORT_GENAI_RUNTIME_STAGE
+          @'
+          import hashlib,json,os,sqlite3
+          from pathlib import Path
+          import pefile
+          root=Path(os.environ['DIST_ROOT'])
+          ai=root/'ai'
+          model=ai/'models'/'qwen3-0.6b-int4'
+          ort=Path(os.environ['ORT_STAGE_VALIDATE'])
+          pack=root/'MEMSLibrary_Pack_001'
+          required=[
+              root/'ecu_mems_manager.exe', root/'ecu_mems_uninstaller.exe', root/'mems_manager_x64.dll',
+              root/'MEMSLibrary.dll', pack/'knowledge.sqlite', pack/'manifest.json',
+              root/'onnxruntime-genai.dll', root/'onnxruntime.dll', root/'Qt5Svg.dll', root/'imageformats'/'qsvg.dll',
+              model/'genai_config.json', model/'model.onnx', model/'model.onnx.data', model/'tokenizer.json',
+              model/'tokenizer_config.json', model/'chat_template.jinja',
+              root/'database'/'expert'/'ia_mems_reference_r20.sqlite', ai/'runtime_manifest.json', ai/'README.md',
+              root/'database'/'reference'/'manifest.json'
+          ]
+          missing=[str(p.relative_to(root)) for p in required if not p.is_file()]
+          if missing: raise SystemExit('Missing temporary IA package files: '+', '.join(missing))
+          def h(p):
+              x=hashlib.sha256()
+              with open(p,'rb') as f:
+                  for b in iter(lambda:f.read(1048576),b''): x.update(b)
+              return x.hexdigest()
+          for p in ort.glob('*.dll'):
+              q=root/p.name
+              if not q.is_file() or h(p)!=h(q):
+                  raise SystemExit('ONNX runtime file changed/missing: '+p.name)
+          expected={
+              'model.onnx':os.environ['ONNX_MODEL_ONNX_SHA256'],
+              'model.onnx.data':os.environ['ONNX_MODEL_DATA_SHA256'],
+              'tokenizer.json':os.environ['ONNX_TOKENIZER_SHA256'],
+          }
+          for name,want in expected.items():
+              got=h(model/name)
+              if got.lower()!=want.lower(): raise SystemExit(f'{name} hash mismatch in package: {got}')
+          for p in [root/'ecu_mems_manager.exe',root/'ecu_mems_uninstaller.exe',root/'mems_manager_x64.dll',root/'MEMSLibrary.dll']+list(ort.glob('*.dll')):
+              target=p if p.parent==root else root/p.name
+              pe=pefile.PE(str(target), fast_load=True)
+              if pe.FILE_HEADER.Machine != 0x8664: raise SystemExit(target.name+' is not AMD64')
+              pe.close()
+          app=pefile.PE(str(root/'ecu_mems_manager.exe'), fast_load=True)
+          app.parse_data_directories(directories=[pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_IMPORT']])
+          imports={e.dll.decode('ascii').lower() for e in getattr(app,'DIRECTORY_ENTRY_IMPORT',[])}
+          app.close()
+          if 'onnxruntime-genai.dll' not in imports:
+              raise SystemExit('ECU MEMS Manager is not linked to onnxruntime-genai.dll')
+          db=sqlite3.connect(pack/'knowledge.sqlite')
+          try:
+              ok=db.execute('pragma integrity_check').fetchone()[0]
+              fk=db.execute('pragma foreign_key_check').fetchall()
+              docs=db.execute('select count(*) from ravemems_document').fetchone()[0]
+          finally: db.close()
+          if str(ok).lower()!='ok' or fk or docs!=47:
+              raise SystemExit(f'Invalid packaged Pack001: integrity={ok} fk={len(fk)} docs={docs}')
+          manifest=json.loads((pack/'manifest.json').read_text(encoding='utf-8'))
+          if manifest.get('pack_id')!='MEMSLibrary_Pack_001' or int(manifest.get('document_count',0))!=47:
+              raise SystemExit('Invalid Pack001 manifest in package')
+          expert=root/'database'/'expert'/'ia_mems_reference_r20.sqlite'
+          db=sqlite3.connect(expert)
+          try:
+              ok2=db.execute('pragma integrity_check').fetchone()[0]
+              rev=db.execute('pragma user_version').fetchone()[0]
+          finally: db.close()
+          if str(ok2).lower()!='ok' or rev!=20:
+              raise SystemExit(f'Invalid expert database: {ok2} r{rev}')
+          print(f'TMP_IA_PACKAGE_STRUCTURE_PASS runtime_dlls={len(list(ort.glob("*.dll")))} pack_docs={docs} expert=r{rev}')
+          '@ | python -
+
+      - name: Run packaged Qwen with packaged RAVEMEMS grounding
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $dist = $env:DIST
+          $selftest = Join-Path $dist 'ia_memslibrary_qwen_selftest.exe'
+          Copy-Item '${{ github.workspace }}\build-package-qwen\Release\ia_memslibrary_qwen_selftest.exe' $selftest -Force
+          $env:PATH = "$dist;$env:PATH"
+          $env:QT_PLUGIN_PATH = "$dist\plugins"
+          $env:MEMS_AI_RUNTIME = Join-Path $dist 'onnxruntime-genai.dll'
+          $env:MEMS_AI_MODEL = Join-Path $dist 'ai\models\qwen3-0.6b-int4'
+          $env:MEMS_LIBRARY_DLL = Join-Path $dist 'MEMSLibrary.dll'
+          $env:MEMS_LIBRARY_PACK = Join-Path $dist 'MEMSLibrary_Pack_001'
+          Push-Location $dist
+          try {
+            & $selftest 2>&1 | Tee-Object -FilePath (Join-Path $dist 'TMP_IA_PACKAGE_QWEN_PROOF.txt')
+            if ($LASTEXITCODE -ne 0) { throw "Packaged Qwen + RAVEMEMS test failed: $LASTEXITCODE" }
+          } finally {
+            Pop-Location
+            Remove-Item $selftest -Force -ErrorAction SilentlyContinue
+          }
+          Write-Host 'TMP_IA_PACKAGE_QWEN_PASS'
+
+      - name: Smoke launch packaged ECU MEMS Manager
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $p=Start-Process -FilePath "$env:DIST\ecu_mems_manager.exe" -WorkingDirectory $env:DIST -PassThru
+          Start-Sleep -Seconds 8
+          if($p.HasExited){ throw "Packaged ECU MEMS Manager exited during smoke launch: $($p.ExitCode)" }
+          $null=$p.CloseMainWindow()
+          if(-not $p.WaitForExit(5000)){ Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }
+          Write-Host 'TMP_IA_PACKAGE_APP_SMOKE_PASS'
+
+      - name: Generate temporary package manifest and hashes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $manifest="$env:DIST\install_manifest.txt"
+          $hashName='TMP_IA_MEMSLIBRARY_SHA256.txt'
+          $files=Get-ChildItem $env:DIST -Recurse -File | ForEach-Object { $_.FullName.Substring($env:DIST.Length+1).Replace('\','/') } | Sort-Object -Unique
+          ($files + 'install_manifest.txt' + $hashName) | Sort-Object -Unique | Set-Content $manifest -Encoding UTF8
+          $hashFile=Join-Path $env:DIST $hashName
+          $lines=foreach($f in Get-ChildItem $env:DIST -Recurse -File | Where-Object{$_.FullName-ne$hashFile} | Sort-Object FullName){
+            $r=$f.FullName.Substring($env:DIST.Length+1).Replace('\','/')
+            "$((Get-FileHash $f.FullName -Algorithm SHA256).Hash.ToLowerInvariant())  $r"
+          }
+          $lines | Set-Content $hashFile -Encoding UTF8
+          Write-Host "TMP_IA_PACKAGE_FILES=$($files.Count)"
+
+      - name: Upload temporary ECU MEMS Manager x64 IA MEMSLibrary package
+        uses: actions/upload-artifact@v4
+        with:
+          name: TMP-ECU-MEMS-Manager-x64-IA-MEMSLibrary-${{ github.run_id }}
+          path: dist-tmp-ia/
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 30
+  clean-reference:
+    needs: [source47, base-runtime]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      PROTECTED_BUILD103: '1b106eed05e1fd665b857f73a719f02ee6b6b2ac'
+      DIRECT_CODE_COMMIT: '5b899f62662270d7eb65a793d45394548db2b2a2'
+      BASE_PACKAGE_RUN_ID: '33889068203'
+      BASE_PACKAGE_ARTIFACT_ID: '9943343980'
+      BASE_PACKAGE_ARTIFACT_NAME: 'TMP-ECU-MEMS-Manager-x64-IA-MEMSLibrary-33889068203'
+      BASE_PACKAGE_DIGEST: 'sha256:4cf818b64670a8fb4dc5e6f77b7b30c35a3ab95251046ca24c529194a622f7f5'
+      V2_RUN_ID: '33810202288'
+      V2_ARTIFACT_ID: '9914590689'
+      V2_ARTIFACT_NAME: 'RAVEMEMS-V2-FULL-CORPUS-GENERIC-33810202288'
+      V2_ARTIFACT_DIGEST: 'sha256:0dab01f5a5e58229245f1eb96eedaca234839030e9cffe630b1e103f56130ac5'
+      V2_LINEAGE: 'RAVEMEMS_V2_FINAL_33810202288'
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout exact clean direct-code base
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: b7d550a54c13622cc1311f082e155419ad8b3a7e
+
+      - name: Guard production and clean ancestry
+        shell: bash
+        run: |
+          set -euo pipefail
+          memsx64="$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')"
+          test "$memsx64" = "$PROTECTED_BUILD103"
+          git merge-base --is-ancestor "$DIRECT_CODE_COMMIT" HEAD
+          test ! -e .github/workflows/tmp-ai-ui-manual-test-package.yml
+          ! grep -R -n -E '33510951021|33524210118|ravemems-runtime-migration-simulation|ravemems-visual-bundle-audit' .github/workflows CMakeLists.txt expert iamemstab.cpp 2>/dev/null
+          echo "MEMSX64_PROTECTED=$memsx64"
+          echo "CLEAN_DIRECT_CODE_BASE=$DIRECT_CODE_COMMIT"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: TMP-ECU-MEMS-Manager-x64-IA-MEMSLibrary-${{ github.run_id }}
+          path: base-green
+      - name: Stage regenerated verified IA package as cleanup input
+        shell: bash
+        run: |
+          set -euo pipefail
+          app="$(find base-green -type f -iname 'ecu_mems_manager.exe' -print -quit)"
+          test -n "$app"
+          base_root="$(dirname "$app")"
+          rm -rf clean-package
+          mkdir clean-package
+          cp -a "$base_root"/. clean-package/
+          test -d clean-package/database/reference
+          echo "CLEAN_PACKAGE=$GITHUB_WORKSPACE/clean-package" >> "$GITHUB_ENV"
+          echo "REFERENCE_ROOT=$GITHUB_WORKSPACE/clean-package/database/reference" >> "$GITHUB_ENV"
+          test -f clean-package/ai/models/qwen3-0.6b-int4/genai_config.json
+          echo REGENERATED_BASE_PACKAGE_STAGED
+
+      - name: Inventory protected reference data before cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          root=Path(os.environ['REFERENCE_ROOT'])
+          old=root/'images'/'rave'
+          old_files=sorted(p for p in old.rglob('*') if p.is_file()) if old.exists() else []
+          if len(old_files)!=427:
+              raise SystemExit(f'Expected audited BUILD #103 pre-V2 RAVE image count 427, found {len(old_files)}')
+          def sha(p):
+              h=hashlib.sha256()
+              with p.open('rb') as f:
+                  for b in iter(lambda:f.read(1024*1024),b''): h.update(b)
+              return h.hexdigest()
+          protected={}
+          for p in sorted(root.rglob('*')):
+              if not p.is_file(): continue
+              rel=p.relative_to(root).as_posix()
+              if rel.startswith('images/rave/'): continue
+              if rel in {'manifest.json','runtime_visual_catalog.json'}: continue
+              protected[rel]={'sha256':sha(p),'size':p.stat().st_size}
+          sqlite_files=sorted(k for k in protected if k.lower().endswith(('.sqlite','.db')))
+          qz64_files=sorted(k for k in protected if k.lower().endswith('.qz64'))
+          image_non_rave=sorted(k for k in protected if k.lower().endswith(('.png','.jpg','.jpeg','.svg','.webp','.bmp')))
+          manifest=root/'manifest.json'
+          if not manifest.is_file(): raise SystemExit('Historical reference manifest.json missing')
+          data=json.loads(manifest.read_text(encoding='utf-8-sig'))
+          diagrams=data.get('diagrams',{})
+          if not isinstance(diagrams,dict): raise SystemExit('manifest diagrams is not an object')
+          old_diagrams={k:v for k,v in diagrams.items() if isinstance(v,str) and v.replace('\\','/').startswith('images/rave/')}
+          if len(old_diagrams)!=427:
+              raise SystemExit(f'Expected 427 audited pre-V2 RAVE manifest diagrams, found {len(old_diagrams)}')
+          audit={
+              'old_pre_v2_rave_image_count':len(old_files),
+              'old_pre_v2_rave_manifest_diagram_count':len(old_diagrams),
+              'protected_non_target_file_count':len(protected),
+              'protected_sqlite_db_files':sqlite_files,
+              'protected_qz64_files':qz64_files,
+              'protected_non_rave_image_count':len(image_non_rave),
+              'protected_files':protected,
+              'old_rave_image_paths':[p.relative_to(root).as_posix() for p in old_files],
+              'old_rave_manifest_keys':sorted(old_diagrams),
+          }
+          Path('cleanup-audit').mkdir(exist_ok=True)
+          Path('cleanup-audit/before.json').write_text(json.dumps(audit,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          Path('cleanup-audit/manifest-before.json').write_text(json.dumps(data,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          print('PRE_CLEAN_AUDIT_PASS old_rave_images=427 old_rave_diagrams=427 protected_files=',len(protected))
+          print('PROTECTED_SQLITE_DB_COUNT',len(sqlite_files),'PROTECTED_QZ64_COUNT',len(qz64_files),'PROTECTED_NON_RAVE_IMAGES',len(image_non_rave))
+          PY
+
+      - name: Remove only pre-V2 RAVE physical images and their visual menu entries
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, shutil
+          from pathlib import Path
+          root=Path(os.environ['REFERENCE_ROOT'])
+          target=root/'images'/'rave'
+          if not target.is_dir(): raise SystemExit('Pre-V2 image directory missing before ordered removal')
+          shutil.rmtree(target)
+          old_catalog=root/'runtime_visual_catalog.json'
+          if old_catalog.exists():
+              old_catalog.unlink()
+          manifest=root/'manifest.json'
+          data=json.loads(manifest.read_text(encoding='utf-8-sig'))
+          diagrams=data.get('diagrams',{})
+          remove=[k for k,v in diagrams.items() if isinstance(v,str) and v.replace('\\','/').startswith('images/rave/')]
+          if len(remove)!=427: raise SystemExit(f'Refusing manifest cleanup: expected 427 old RAVE entries, got {len(remove)}')
+          for k in remove: del diagrams[k]
+          data['diagrams']=diagrams
+          manifest.write_text(json.dumps(data,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          print('PRE_V2_RAVE_ACTIVE_IMAGES_REMOVED=427')
+          print('PRE_V2_RAVE_MANIFEST_DIAGRAMS_REMOVED=427')
+          PY
+
+      - name: Prove ECU analysis ROSCO Leopold Haro and all non-target files were untouched
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          root=Path(os.environ['REFERENCE_ROOT'])
+          before=json.loads(Path('cleanup-audit/before.json').read_text(encoding='utf-8'))
+          manifest_before=json.loads(Path('cleanup-audit/manifest-before.json').read_text(encoding='utf-8'))
+          def sha(p):
+              h=hashlib.sha256()
+              with p.open('rb') as f:
+                  for b in iter(lambda:f.read(1024*1024),b''): h.update(b)
+              return h.hexdigest()
+          for rel,meta in before['protected_files'].items():
+              p=root/rel
+              if not p.is_file(): raise SystemExit(f'Protected file disappeared: {rel}')
+              if p.stat().st_size!=meta['size'] or sha(p)!=meta['sha256']:
+                  raise SystemExit(f'Protected file changed: {rel}')
+          if (root/'images'/'rave').exists(): raise SystemExit('Pre-V2 RAVE image directory still exists')
+          manifest_after=json.loads((root/'manifest.json').read_text(encoding='utf-8'))
+          before_other={k:v for k,v in manifest_before.items() if k!='diagrams'}
+          after_other={k:v for k,v in manifest_after.items() if k!='diagrams'}
+          if before_other!=after_other: raise SystemExit('Non-diagram manifest data changed')
+          expected={k:v for k,v in manifest_before.get('diagrams',{}).items() if not (isinstance(v,str) and v.replace('\\','/').startswith('images/rave/'))}
+          if manifest_after.get('diagrams',{})!=expected: raise SystemExit('Manifest cleanup changed something other than old RAVE diagram entries')
+          print('PROTECTED_NON_TARGET_DATA_BYTE_IDENTICAL_PASS files=',len(before['protected_files']))
+          print('ECU_ANALYSIS_DATA_PRESERVED_BY_HASH_PASS')
+          print('ROSCO_LEOPOLD_HARO_NON_TARGET_PRESERVATION_PASS')
+          PY
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: RAVEMEMS-V2-FULL-CORPUS-GENERIC-${{ github.run_id }}
+          path: final-v2
+      - name: Verify regenerated final RAVEMEMS V2 corpus only
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(find final-v2 -type f -name ravemems_v2.sqlite | wc -l)" -eq 47
+          echo FINAL_V2_SOURCE47_PASS
+
+      - name: Build runtime visuals exclusively from final V2 databases and files
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, os, re, shutil, sqlite3
+          from pathlib import Path
+          src=Path('final-v2')
+          ref=Path(os.environ['REFERENCE_ROOT'])
+          out=ref/'manufacturer_docs_v2_33810202288'/'visuals'
+          if out.exists(): shutil.rmtree(out.parent)
+          out.mkdir(parents=True)
+          entries=[]
+          dbs=sorted(src.rglob('ravemems_v2.sqlite'))
+          if len(dbs)!=47: raise SystemExit(f'Expected 47 final V2 databases, found {len(dbs)}')
+          def file_sha(p):
+              h=hashlib.sha256()
+              with p.open('rb') as f:
+                  for b in iter(lambda:f.read(1024*1024),b''): h.update(b)
+              return h.hexdigest()
+          def clean_pub(s):
+              s=(s or '').strip()
+              return re.sub(r'[^A-Za-z0-9_.-]+','_',s).strip('_') or 'UNKNOWN'
+          def context_for(cx,visual_key,page):
+              parts=[]
+              row=cx.execute('select caption_source, visual_type, render_method from ravemems_visual where visual_key=?',(visual_key,)).fetchone()
+              if row: parts.extend(x for x in row if x)
+              for r in cx.execute('''select o.title_source, ph.phase_kind_source, ph.title_source, st.instruction_source, sp.parameter_source, sp.condition_text, tb.title_source
+                  from ravemems_visual_link l
+                  left join ravemems_operation o on o.operation_key=l.operation_key
+                  left join ravemems_phase ph on ph.phase_key=l.phase_key
+                  left join ravemems_step st on st.step_key=l.step_key
+                  left join ravemems_specification sp on sp.specification_key=l.specification_key
+                  left join ravemems_table tb on tb.table_key=l.table_key
+                  where l.visual_key=?''',(visual_key,)):
+                  parts.extend(x for x in r if x)
+              if page:
+                  for r in cx.execute('''select distinct o.title_source, ph.title_source, st.instruction_source
+                      from ravemems_step st join ravemems_phase ph on ph.phase_key=st.phase_key
+                      join ravemems_operation o on o.operation_key=ph.operation_key
+                      where st.source_page_start is not null and st.source_page_end is not null and ? between st.source_page_start and st.source_page_end
+                      limit 80''',(page,)):
+                      parts.extend(x for x in r if x)
+              text=' | '.join(dict.fromkeys(str(x).strip() for x in parts if str(x).strip()))
+              return text[:16000]
+          seen_keys=set()
+          total=0
+          for db in dbs:
+              cx=sqlite3.connect(db)
+              if cx.execute('pragma integrity_check').fetchone()[0].lower()!='ok': raise SystemExit(f'Bad V2 DB {db}')
+              if cx.execute('pragma foreign_key_check').fetchall(): raise SystemExit(f'V2 FK issue {db}')
+              drow=cx.execute('select canonical_name from ravemems_document limit 1').fetchone()
+              canonical=drow[0] if drow else ''
+              manifest_path=db.parent/'manifest.json'
+              manifest=json.loads(manifest_path.read_text(encoding='utf-8')) if manifest_path.exists() else {}
+              pub=clean_pub(manifest.get('publication_code') or manifest.get('document_identity') or canonical)
+              rows=cx.execute('''select v.visual_key,v.relative_path,v.sha256,v.width,v.height,v.render_method,v.caption_source,p.physical_page
+                  from ravemems_visual v left join ravemems_page p on p.page_key=v.page_key
+                  order by p.physical_page,v.visual_key''').fetchall()
+              total+=len(rows)
+              for visual_key,rel,expected_sha,w,h,render_method,caption,page in rows:
+                  declared=(db.parent/rel).resolve()
+                  chosen=None
+                  if declared.is_file() and file_sha(declared)==expected_sha.lower():
+                      chosen=declared
+                  else:
+                      candidates=[]
+                      for p in db.parent.rglob(Path(rel).name):
+                          if p.is_file() and file_sha(p)==expected_sha.lower(): candidates.append(p.resolve())
+                      if len(candidates)==1: chosen=candidates[0]
+                  if chosen is None: raise SystemExit(f'Cannot resolve exact V2 visual {visual_key} rel={rel} sha={expected_sha}')
+                  ext=chosen.suffix.lower() or '.bin'
+                  stable=hashlib.sha256((pub+'|'+visual_key).encode()).hexdigest()[:24]
+                  dest_rel=Path('manufacturer_docs_v2_33810202288')/'visuals'/pub/f'{stable}{ext}'
+                  dest=ref/dest_rel
+                  dest.parent.mkdir(parents=True,exist_ok=True)
+                  shutil.copy2(chosen,dest)
+                  if file_sha(dest)!=expected_sha.lower(): raise SystemExit(f'Copied SHA mismatch {visual_key}')
+                  runtime_key=f'V2::{pub}::P{int(page or 0):04d}::{visual_key}'
+                  if runtime_key in seen_keys: raise SystemExit(f'Duplicate runtime key {runtime_key}')
+                  seen_keys.add(runtime_key)
+                  entries.append({
+                      'runtime_key':runtime_key,
+                      'source_type':'ravemems',
+                      'source_lineage':os.environ['V2_LINEAGE'],
+                      'source_run_id':int(os.environ['V2_RUN_ID']),
+                      'source_occurrence_key':visual_key,
+                      'asset_entity_key':visual_key,
+                      'publication_code':pub,
+                      'physical_page':int(page or 0),
+                      'context_text':context_for(cx,visual_key,int(page or 0)),
+                      'runtime_path':dest_rel.as_posix(),
+                      'sha256':expected_sha.lower(),
+                      'width':int(w),
+                      'height':int(h),
+                      'render_method':render_method or '',
+                      'caption_source':caption or '',
+                      'ui_visible':True,
+                      'ui_label':'Voir le schéma',
+                  })
+              cx.close()
+          if total!=1667: raise SystemExit(f'Expected final V2 visual count 1667, found {total}')
+          catalog={
+              'schema':'MEMS_MANAGER_VISUAL_RUNTIME_V2',
+              'source_lineage':os.environ['V2_LINEAGE'],
+              'source_run_id':int(os.environ['V2_RUN_ID']),
+              'pre_v2_images_included':0,
+              'legacy_entries':0,
+              'entry_count':len(entries),
+              'entries':entries,
+          }
+          (ref/'runtime_visual_catalog.json').write_text(json.dumps(catalog,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          print('FINAL_V2_RUNTIME_BUILD_PASS entries=',len(entries))
+          PY
+
+      - name: Final ordered-clean validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          ref=Path(os.environ['REFERENCE_ROOT'])
+          before=json.loads(Path('cleanup-audit/before.json').read_text(encoding='utf-8'))
+          cat=json.loads((ref/'runtime_visual_catalog.json').read_text(encoding='utf-8'))
+          assert cat['schema']=='MEMS_MANAGER_VISUAL_RUNTIME_V2'
+          assert cat['source_lineage']==os.environ['V2_LINEAGE']
+          assert cat['source_run_id']==int(os.environ['V2_RUN_ID'])
+          assert cat['entry_count']==1667
+          assert cat['legacy_entries']==0 and cat['pre_v2_images_included']==0
+          assert all(e.get('source_lineage')==os.environ['V2_LINEAGE'] for e in cat['entries'])
+          assert all(e.get('source_run_id')==int(os.environ['V2_RUN_ID']) for e in cat['entries'])
+          assert all(e.get('source_type')=='ravemems' for e in cat['entries'])
+          assert not (ref/'images'/'rave').exists()
+          forbidden=('33510951021','33524210118','ravemems-runtime-migration-simulation','ravemems-visual-bundle-audit')
+          catalog_text=(ref/'runtime_visual_catalog.json').read_text(encoding='utf-8')
+          assert not any(x in catalog_text for x in forbidden)
+          def sha(p):
+              h=hashlib.sha256()
+              with p.open('rb') as f:
+                  for b in iter(lambda:f.read(1024*1024),b''): h.update(b)
+              return h.hexdigest()
+          for rel,meta in before['protected_files'].items():
+              p=ref/rel
+              assert p.is_file(),rel
+              assert p.stat().st_size==meta['size'],rel
+              assert sha(p)==meta['sha256'],rel
+          v2files=[p for p in (ref/'manufacturer_docs_v2_33810202288'/'visuals').rglob('*') if p.is_file()]
+          assert len(v2files)==1667,len(v2files)
+          report={
+              'verdict':'PASS',
+              'production_memsx64_expected':os.environ['PROTECTED_BUILD103'],
+              'direct_code_base':os.environ['DIRECT_CODE_COMMIT'],
+              'protected_non_target_files_byte_identical':len(before['protected_files']),
+              'protected_sqlite_db_files_unchanged':before['protected_sqlite_db_files'],
+              'protected_qz64_files_unchanged':before['protected_qz64_files'],
+              'protected_non_rave_images_unchanged':before['protected_non_rave_image_count'],
+              'removed_pre_v2_rave_images':427,
+              'removed_pre_v2_rave_manifest_diagrams':427,
+              'removed_old_runtime_catalog_if_present':True,
+              'active_visual_source_lineage':os.environ['V2_LINEAGE'],
+              'active_visual_source_run_id':int(os.environ['V2_RUN_ID']),
+              'active_v2_visuals':1667,
+              'legacy_active_visuals':0,
+              'forbidden_old_visual_runs':[33510951021,33524210118],
+              'note':'Only pre-V2 RAVE physical images and their visual menu entries were removed. All non-target reference files, databases, QZ64 lots, ECU/analysis data and non-RAVE images remained byte-identical.',
+          }
+          Path('cleanup-audit/cleanup_report.json').write_text(json.dumps(report,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          Path('cleanup-audit/cleanup_report.txt').write_text('\n'.join([
+              'ORDERED CLEAN DATA VERDICT: PASS',
+              'MEMSX64 untouched: '+os.environ['PROTECTED_BUILD103'],
+              'Direct code base: '+os.environ['DIRECT_CODE_COMMIT'],
+              f"Protected non-target files byte-identical: {len(before['protected_files'])}",
+              'Pre-V2 RAVE physical images removed: 427',
+              'Pre-V2 RAVE visual manifest entries removed: 427',
+              'Final V2 active visual source: '+os.environ['V2_LINEAGE'],
+              'Final V2 active visual count: 1667',
+              'Legacy active visual count: 0',
+              'ROSCO / Leopold / Haro / ECU / analysis non-target data: preserved by byte-for-byte guard',
+          ])+'\n',encoding='utf-8')
+          print('ORDERED_CLEAN_DATA_GLOBAL_PASS')
+          PY
+          test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_BUILD103"
+
+      - name: Upload cleaned reference and audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: CLEAN-REFERENCE-V2-${{ github.run_id }}
+          path: |
+            clean-package/database/reference
+            cleanup-audit/cleanup_report.json
+            cleanup-audit/cleanup_report.txt
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 6
+  build-x64:
+    needs: [base-runtime, clean-reference]
+    runs-on: windows-2022
+    timeout-minutes: 120
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@v4
+        with:
+          ref: 1b106eed05e1fd665b857f73a719f02ee6b6b2ac
+          fetch-depth: 0
+
+      - name: Guard direct code and no patch injection
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          if (Select-String -Path CMakeLists.txt -Pattern 'CMAKE_PROJECT_INCLUDE' -Quiet) { throw 'Source injection is forbidden' }
+          if (-not (Select-String -Path iamemstab.cpp -Pattern 'iaMemsTranscriptScroll' -Quiet)) { throw 'IA vertical scroll source missing' }
+          if (-not (Select-String -Path iamemstab.cpp -Pattern 'Voir le schéma' -Quiet)) { throw 'Voir le schema UI source missing' }
+          if (-not (Select-String -Path iamemstab.cpp -Pattern 'askWithLibrary' -Quiet)) { throw 'Direct MEMSLibrary call missing' }
+          if (-not (Select-String -Path expert/IaMemsDiagramCatalog.cpp -Pattern 'suggestionForEvidence' -Quiet)) { throw 'Evidence visual routing source missing' }
+          if (-not (Select-String -Path CMakeLists.txt -Pattern 'IaMemsLibraryBridge.cpp' -Quiet)) { throw 'Direct bridge CMake wiring missing' }
+          if (-not (Select-String -Path expert/IaMemsLibraryBridge.cpp -Pattern 'MEMSLibrary_SearchPackFiltered' -Quiet)) { throw 'Filtered MEMSLibrary bridge source missing' }
+          if (-not (Select-String -Path memslibrary/include/MEMSLibrary.h -Pattern 'MEMSLibrary_SearchPackFiltered' -Quiet)) { throw 'Filtered MEMSLibrary public contract missing' }
+          $files=@('CMakeLists.txt','iamemstab.cpp','expert/IaMemsDiagramCatalog.cpp','expert/IaMemsDiagramCatalog.h','expert/IaMemsService.h','expert/IaMemsLibraryBridge.cpp','expert/IaMemsLibraryBridge.h','expert/IaMemsLibraryIntegration.cpp','expert/IaMemsLibraryBridgeSelfTest.cpp','expert/bridge-selftest/CMakeLists.txt','memslibrary/include/MEMSLibrary.h')
+          $hashes=@{}
+          foreach($f in $files){ if(-not(Test-Path $f)){throw "Missing source $f"}; $hashes[$f]=(Get-FileHash $f -Algorithm SHA256).Hash.ToLowerInvariant() }
+          $hashes | ConvertTo-Json | Set-Content source-hashes-before.json -Encoding UTF8
+          Write-Host 'DIRECT_SOURCE_NO_PATCH_PASS'
+
+      - name: Setup Python and Qt tools
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Qt 5.15.2 MSVC x64 and validation tools
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python -m pip install --disable-pip-version-check "aqtinstall==3.3.0" pefile
+          $sevenZip=(Get-Command 7z.exe -ErrorAction Stop).Source
+          if(Test-Path C:\Qt){Remove-Item C:\Qt -Recurse -Force -ErrorAction SilentlyContinue}
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
+          if($LASTEXITCODE -ne 0){throw "Qt install failed $LASTEXITCODE"}
+
+      - name: Download pinned ONNX Runtime development files
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $genaiArchive=Join-Path $env:RUNNER_TEMP "onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          $ortArchive=Join-Path $env:RUNNER_TEMP "onnxruntime-win-x64-$env:ORT_VERSION.zip"
+          $genaiExtract=Join-Path $env:RUNNER_TEMP 'genai'
+          $ortExtract=Join-Path $env:RUNNER_TEMP 'ort'
+          curl.exe -L --fail --retry 3 --retry-all-errors --retry-delay 2 -o $genaiArchive "https://github.com/microsoft/onnxruntime-genai/releases/download/v$env:ORT_GENAI_VERSION/onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          if($LASTEXITCODE -ne 0){throw 'GenAI download failed'}
+          curl.exe -L --fail --retry 3 --retry-all-errors --retry-delay 2 -o $ortArchive "https://github.com/microsoft/onnxruntime/releases/download/v$env:ORT_VERSION/onnxruntime-win-x64-$env:ORT_VERSION.zip"
+          if($LASTEXITCODE -ne 0){throw 'ORT download failed'}
+          if((Get-FileHash $genaiArchive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:ORT_GENAI_WIN_X64_SHA256){throw 'GenAI SHA mismatch'}
+          if((Get-FileHash $ortArchive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:ORT_WIN_X64_SHA256){throw 'ORT SHA mismatch'}
+          Expand-Archive $genaiArchive $genaiExtract -Force
+          Expand-Archive $ortArchive $ortExtract -Force
+          $header=Get-ChildItem $genaiExtract -Recurse -File -Filter ort_genai_c.h | Select-Object -First 1
+          $lib=Get-ChildItem $genaiExtract -Recurse -File -Filter onnxruntime-genai.lib | Select-Object -First 1
+          if(-not $header -or -not $lib){throw 'ONNX development files incomplete'}
+          "ORT_GENAI_INCLUDE_DIR=$($header.DirectoryName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "ORT_GENAI_LIBRARY=$($lib.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: TMP-ECU-MEMS-Manager-x64-IA-MEMSLibrary-${{ github.run_id }}
+          path: base-package
+      - uses: actions/download-artifact@v4
+        with:
+          name: CLEAN-REFERENCE-V2-${{ github.run_id }}
+          path: clean-reference
+      - name: Stage fresh IA runtime and clean reference plus protected Pack001 and corrected DLL
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $catalog=Get-ChildItem clean-reference -Recurse -File -Filter runtime_visual_catalog.json | Select-Object -First 1
+          if(-not $catalog){throw 'Regenerated clean runtime catalog missing'}
+          $refRoot=$catalog.Directory.FullName
+          if(-not(Test-Path (Join-Path $refRoot 'manifest.json'))){throw 'Clean runtime reference manifest missing'}
+          "CLEAN_REFERENCE_ROOT=$refRoot" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          $baseExe=Get-ChildItem base-package -Recurse -File -Filter ecu_mems_manager.exe | Select-Object -First 1
+          if(-not $baseExe){throw 'Regenerated IA base executable missing'}
+          "VALIDATED_BASE_ROOT=$($baseExe.Directory.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          function Assert-Artifact($id,$name,$digest){
+            $m=gh api "repos/$env:GITHUB_REPOSITORY/actions/artifacts/$id" | ConvertFrom-Json
+            if($LASTEXITCODE -ne 0 -or $m.name -ne $name -or $m.digest -ne $digest -or $m.expired){throw "Pinned artifact invalid or expired: $id"}
+          }
+          Assert-Artifact $env:PACK001_ARTIFACT_ID $env:PACK001_ARTIFACT_NAME $env:PACK001_DIGEST
+          Assert-Artifact $env:CORRECTED_DLL_ARTIFACT_ID $env:CORRECTED_DLL_ARTIFACT_NAME $env:CORRECTED_DLL_DIGEST
+          gh run download $env:PACK001_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:PACK001_ARTIFACT_NAME --dir pack001
+          if($LASTEXITCODE -ne 0){throw 'Validated Pack001 download failed'}
+          gh run download $env:CORRECTED_DLL_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:CORRECTED_DLL_ARTIFACT_NAME --dir corrected-dll
+          if($LASTEXITCODE -ne 0){throw 'Validated corrected DLL download failed'}
+          $dll=Get-ChildItem corrected-dll -Recurse -File -Filter MEMSLibrary.dll | Select-Object -First 1
+          $db=Get-ChildItem pack001 -Recurse -File -Filter knowledge.sqlite | Select-Object -First 1
+          if(-not $dll -or -not $db){throw 'Canonical Pack001 or corrected DLL missing'}
+          if((Get-FileHash $dll.FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:CORRECTED_DLL_SHA256){throw 'Corrected DLL hash mismatch'}
+          if((Get-FileHash $db.FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:PACK001_SQLITE_SHA256){throw 'Canonical Pack001 SQLite hash mismatch'}
+          "MEMSLIBRARY_DLL_SOURCE=$($dll.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "PACK001_SOURCE_ROOT=$($db.Directory.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host 'PINNED_INPUTS_PASS fresh_ia=1 clean_v2=1 protected_pack001=1 corrected_dll=1'
+
+      - name: Validate clean reference before compilation
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $env:REF=$env:CLEAN_REFERENCE_ROOT
+          @'
+          import json,os
+          from pathlib import Path
+          r=Path(os.environ['REF'])
+          c=json.loads((r/'runtime_visual_catalog.json').read_text(encoding='utf-8'))
+          assert c['source_lineage']=='RAVEMEMS_V2_FINAL_33810202288'
+          assert c['source_run_id']==33810202288
+          assert c['entry_count']==1667
+          assert c['legacy_entries']==0 and c['pre_v2_images_included']==0
+          assert not (r/'images'/'rave').exists()
+          assert all(e.get('source_lineage')=='RAVEMEMS_V2_FINAL_33810202288' for e in c['entries'])
+          assert all(e.get('source_run_id')==33810202288 for e in c['entries'])
+          assert all(e.get('source_type')=='ravemems' for e in c['entries'])
+          text=(r/'runtime_visual_catalog.json').read_text(encoding='utf-8')
+          for bad in ('33510951021','33524210118','ravemems-runtime-migration-simulation','ravemems-visual-bundle-audit'):
+              assert bad not in text
+          rows=[e for e in c['entries'] if e.get('publication_code')=='RCL0193ENG' and e.get('physical_page')==53]
+          keys={e.get('asset_entity_key') for e in rows}
+          assert {'VIS_P0053_001','VIS_P0053_002'} <= keys
+          print('CLEAN_REFERENCE_V2_PASS visuals=1667 legacy=0 p53_visuals=2')
+          '@ | python -
+
+      - name: Validate protocol guards
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python librosco-x64/validate_protocol_guards.py
+
+      - name: Configure and compile current direct source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          cmake -S . -B build-x64 -A x64 `
+            -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
+            -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
+            -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF `
+            -DMEMS_USE_ONNX_GENAI=ON `
+            "-DORT_GENAI_INCLUDE_DIR=$env:ORT_GENAI_INCLUDE_DIR" `
+            "-DORT_GENAI_LIBRARY=$env:ORT_GENAI_LIBRARY"
+          if($LASTEXITCODE -ne 0){throw "CMake configure failed $LASTEXITCODE"}
+          cmake --build build-x64 --config Release --target ecu_mems_manager ecu_mems_uninstaller rosco_abi_selftest ia_response_selftest ia_mems_diagram_selftest --parallel
+          if($LASTEXITCODE -ne 0){throw "Compile failed $LASTEXITCODE"}
+          cmake -S expert/bridge-selftest -B build-bridge-test -A x64 -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64"
+          if($LASTEXITCODE -ne 0){throw "Bridge self-test configure failed $LASTEXITCODE"}
+          cmake --build build-bridge-test --config Release --parallel
+          if($LASTEXITCODE -ne 0){throw "Bridge self-test build failed $LASTEXITCODE"}
+
+      - name: Prove build did not transform source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $before=Get-Content source-hashes-before.json -Raw | ConvertFrom-Json
+          foreach($p in $before.PSObject.Properties){
+            $now=(Get-FileHash $p.Name -Algorithm SHA256).Hash.ToLowerInvariant()
+            if($now -ne [string]$p.Value){throw "Source changed during build: $($p.Name)"}
+          }
+          Write-Host 'SOURCE_UNCHANGED_AFTER_BUILD_PASS'
+
+      - name: Stage clean runtime inputs for self-tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $release='${{ github.workspace }}\build-x64\Release'
+          $ref=Join-Path $release 'database\reference'
+          if(Test-Path $ref){Remove-Item $ref -Recurse -Force}
+          New-Item -ItemType Directory -Force -Path (Split-Path $ref -Parent) | Out-Null
+          Copy-Item $env:CLEAN_REFERENCE_ROOT $ref -Recurse -Force
+          Copy-Item $env:MEMSLIBRARY_DLL_SOURCE (Join-Path $release 'MEMSLibrary.dll') -Force
+          $pack=Join-Path $release 'MEMSLibrary_Pack_001'
+          if(Test-Path $pack){Remove-Item $pack -Recurse -Force}
+          Copy-Item $env:PACK001_SOURCE_ROOT $pack -Recurse -Force
+
+      - name: Run deterministic source self-tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $qt='C:\Qt\5.15.2\msvc2019_64'
+          $env:PATH="$qt\bin;$env:PATH"
+          $env:QT_PLUGIN_PATH="$qt\plugins"
+          & '${{ github.workspace }}\build-x64\Release\ia_response_selftest.exe'
+          if($LASTEXITCODE -ne 0){throw 'IA response self-test failed'}
+          & '${{ github.workspace }}\build-x64\Release\ia_mems_diagram_selftest.exe'
+          if($LASTEXITCODE -ne 0){throw 'IA diagram self-test failed'}
+          & '${{ github.workspace }}\build-bridge-test\Release\ia_memslibrary_bridge_selftest.exe' $env:MEMSLIBRARY_DLL_SOURCE $env:PACK001_SOURCE_ROOT $env:CLEAN_REFERENCE_ROOT
+          if($LASTEXITCODE -ne 0){throw 'Filtered MEMSLibrary bridge self-test failed'}
+          ctest --test-dir build-x64/librosco-x64 -C Release --output-on-failure -R rosco_abi_selftest
+          if($LASTEXITCODE -ne 0){throw 'ROSCO ABI self-test failed'}
+
+      - name: Assemble BUILD package from validated IA runtime plus clean data
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $dist='${{ github.workspace }}\dist-x64'
+          if(Test-Path $dist){Remove-Item $dist -Recurse -Force}
+          New-Item -ItemType Directory -Force -Path $dist | Out-Null
+          Copy-Item "$env:VALIDATED_BASE_ROOT\*" $dist -Recurse -Force
+          Copy-Item '${{ github.workspace }}\build-x64\Release\ecu_mems_manager.exe' "$dist\ecu_mems_manager.exe" -Force
+          Copy-Item '${{ github.workspace }}\build-x64\Release\ecu_mems_uninstaller.exe' "$dist\ecu_mems_uninstaller.exe" -Force
+          Copy-Item '${{ github.workspace }}\build-x64\librosco-x64\Release\mems_manager_x64.dll' "$dist\mems_manager_x64.dll" -Force
+          $ref="$dist\database\reference"
+          if(Test-Path $ref){Remove-Item $ref -Recurse -Force}
+          New-Item -ItemType Directory -Force -Path (Split-Path $ref -Parent) | Out-Null
+          Copy-Item $env:CLEAN_REFERENCE_ROOT $ref -Recurse -Force
+          Copy-Item $env:MEMSLIBRARY_DLL_SOURCE "$dist\MEMSLibrary.dll" -Force
+          $pack="$dist\MEMSLibrary_Pack_001"
+          if(Test-Path $pack){Remove-Item $pack -Recurse -Force}
+          Copy-Item $env:PACK001_SOURCE_ROOT $pack -Recurse -Force
+          $qt='C:\Qt\5.15.2\msvc2019_64'
+          & "$qt\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist "$dist\ecu_mems_manager.exe"
+          if($LASTEXITCODE -ne 0){throw 'windeployqt app failed'}
+          & "$qt\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist "$dist\ecu_mems_uninstaller.exe"
+          if($LASTEXITCODE -ne 0){throw 'windeployqt uninstaller failed'}
+          @(
+            "ECU MEMS Manager BUILD #$env:MEMS_BUILD / v1.0.$env:MEMS_BUILD",
+            'IA scroll vertical: direct C++ source',
+            'Voir le schema: direct C++ source with evidence routing',
+            'MEMSLibrary Pack001: canonical run 33847448261 / SQLite unchanged',
+            'MEMSLibrary DLL provenance fix: validated run 33953367833',
+            'Active manufacturer visual data: final V2 run 33810202288 only',
+            'Pre-V2 RAVE images active: 0',
+            'ROSCO / Leopold / Haro / ECU analysis reference data preserved by clean-reference audit run 33919306584',
+            'No source patch or build-time source injection'
+          ) | Set-Content "$dist\README_BUILD$env:MEMS_BUILD.txt" -Encoding UTF8
+          "DIST=$dist" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Validate complete clean BUILD package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $env:DIST_ROOT=$env:DIST
+          @'
+          import hashlib,json,os,sqlite3
+          from pathlib import Path
+          import pefile
+          root=Path(os.environ['DIST_ROOT'])
+          required=[root/'ecu_mems_manager.exe',root/'mems_manager_x64.dll',root/'MEMSLibrary.dll',root/'MEMSLibrary_Pack_001'/'knowledge.sqlite',root/'MEMSLibrary_Pack_001'/'manifest.json',root/'database'/'reference'/'runtime_visual_catalog.json']
+          miss=[str(x) for x in required if not x.is_file()]
+          assert not miss,miss
+          sha=lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
+          assert sha(root/'MEMSLibrary.dll')==os.environ['CORRECTED_DLL_SHA256']
+          assert sha(root/'MEMSLibrary_Pack_001'/'knowledge.sqlite')==os.environ['PACK001_SQLITE_SHA256']
+          ref=root/'database'/'reference'
+          cat=json.loads((ref/'runtime_visual_catalog.json').read_text(encoding='utf-8'))
+          assert cat['source_lineage']=='RAVEMEMS_V2_FINAL_33810202288' and cat['entry_count']==1667
+          assert cat['legacy_entries']==0 and cat['pre_v2_images_included']==0
+          assert not (ref/'images'/'rave').exists()
+          db=sqlite3.connect(root/'MEMSLibrary_Pack_001'/'knowledge.sqlite')
+          try:
+              assert db.execute('pragma integrity_check').fetchone()[0]=='ok'
+              assert db.execute('pragma foreign_key_check').fetchall()==[]
+              assert db.execute('select count(*) from ravemems_document').fetchone()[0]==47
+              assert db.execute('select count(*) from ravemems_page').fetchone()[0]==1359
+              assert db.execute('select count(*) from memslibrary_search').fetchone()[0]==5453
+          finally: db.close()
+          for p in (root/'ecu_mems_manager.exe',root/'mems_manager_x64.dll',root/'MEMSLibrary.dll'):
+              pe=pefile.PE(str(p),fast_load=True); assert pe.FILE_HEADER.Machine==0x8664,p; pe.close()
+          print('CLEAN_BUILD_PACKAGE_PASS visuals=1667 legacy=0 docs=47 pages=1359 search=5453 corrected_dll=1')
+          '@ | python -
+
+      - name: Smoke launch clean BUILD package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $p=Start-Process -FilePath "$env:DIST\ecu_mems_manager.exe" -WorkingDirectory $env:DIST -PassThru
+          Start-Sleep -Seconds 8
+          if($p.HasExited){throw "Application exited during smoke launch: $($p.ExitCode)"}
+          $null=$p.CloseMainWindow(); if(-not $p.WaitForExit(5000)){Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue}
+          Write-Host "BUILD_$env:MEMS_BUILD_SMOKE_PASS"
+
+      - name: Generate package hashes
+        shell: pwsh
+        run: |
+          $hashFile=Join-Path $env:DIST ("BUILD"+$env:MEMS_BUILD+"_SHA256.txt")
+          $lines=foreach($f in Get-ChildItem $env:DIST -Recurse -File | Where-Object{$_.FullName-ne$hashFile} | Sort-Object FullName){$r=$f.FullName.Substring($env:DIST.Length+1).Replace('\','/'); "$((Get-FileHash $f.FullName -Algorithm SHA256).Hash.ToLowerInvariant())  $r"}
+          $lines | Set-Content $hashFile -Encoding UTF8
+
+      - name: Upload ECU MEMS Manager clean x64
+        uses: actions/upload-artifact@v4
+        with:
+          name: ECU-MEMS-Manager-x64-BUILD-${{ env.MEMS_BUILD }}-v1.0.${{ env.MEMS_BUILD }}-CLEAN-V2
+          path: dist-x64/
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 30
+          retention-days: 30
+      
+      - name: Create Windows Setup installer from validated x64 package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          choco install innosetup -y --no-progress --limit-output
+          if($LASTEXITCODE -ne 0){throw 'Inno Setup installation failed'}
+          $compiler=Get-ChildItem "${env:ProgramFiles(x86)}" -Recurse -File -Filter ISCC.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          if(-not $compiler){throw 'Inno Setup compiler missing'}
+          $root=$env:DIST.Replace('\','\\')
+          $iss=@'
+          #define MyAppName "ECU MEMS Manager"
+          #define MyAppVersion "1.0.116"
+          [Setup]
+          AppId={{FDBAA74F-2FD8-4FD1-A1E3-ECF617EBE03B}
+          AppName={#MyAppName}
+          AppVersion={#MyAppVersion}
+          AppPublisher=ECU MEMS Manager
+          DefaultDirName={autopf}\ECU MEMS Manager
+          DefaultGroupName=ECU MEMS Manager
+          OutputDir=setup-output
+          OutputBaseFilename=ECU-MEMS-Manager-Setup-v1.0.116-TEST
+          Compression=lzma2
+          SolidCompression=yes
+          WizardStyle=modern
+          ArchitecturesAllowed=x64
+          ArchitecturesInstallIn64BitMode=x64
+          PrivilegesRequired=admin
+          UninstallDisplayIcon={app}\ecu_mems_manager.exe
+          [Languages]
+          Name: "french"; MessagesFile: "compiler:Languages\French.isl"
+          [Files]
+          Source: "dist-x64\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+          [Icons]
+          Name: "{group}\ECU MEMS Manager"; Filename: "{app}\ecu_mems_manager.exe"
+          [Run]
+          Filename: "{app}\ecu_mems_manager.exe"; Description: "Démarrer ECU MEMS Manager"; Flags: nowait postinstall skipifsilent
+          '@
+          $iss | Set-Content setup.iss -Encoding UTF8
+          & $compiler.FullName setup.iss
+          if($LASTEXITCODE -ne 0){throw 'Inno Setup compilation failed'}
+          $exe=Get-ChildItem setup-output -File -Filter *.exe | Select-Object -First 1
+          if(-not $exe){throw 'Setup executable not generated'}
+          Write-Host "SETUP_GENERATED size=$($exe.Length) sha256=$((Get-FileHash $exe.FullName -Algorithm SHA256).Hash)"
+      
+      - name: Upload Windows Setup candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: ECU-MEMS-Manager-Windows-Setup-BUILD-116-TEST-${{ github.run_id }}
+          path: setup-output/*.exe
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
