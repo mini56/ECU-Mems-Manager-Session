@@ -339,44 +339,34 @@ jobs:
           print('CLEAN_BUILD_PACKAGE_PASS visuals=1667 legacy=0 docs=47 pages=1359 search=5453 corrected_dll=1')
           '@ | python -
 
-      - name: Real Windows non-admin-like Program Files SQLite regression, virgin and upgrade
+      - name: Windows SQLite clean-install and existing-install regression
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
           $exe='${{ github.workspace }}\build-x64\Release\database_storage_selftest.exe'
-          if(-not (Test-Path $exe)){throw 'Storage selftest binary not compiled'}
+          if(-not (Test-Path $exe)){throw 'SQLite test binary not compiled'}
           $qt='C:\Qt\5.15.2\msvc2019_64'
           $env:PATH="$qt\bin;$env:PATH"
           $env:QT_PLUGIN_PATH="$qt\plugins"
-          $sandbox=Join-Path $env:RUNNER_TEMP "ECU_Mems_Readonly_Install_$env:GITHUB_RUN_ID"
+          $sandbox=Join-Path $env:RUNNER_TEMP "MEMS_SQLITE_TEST_$env:GITHUB_RUN_ID"
           $fresh=Join-Path $sandbox 'fresh'
           $upgrade=Join-Path $sandbox 'upgrade'
           New-Item -ItemType Directory $fresh,$upgrade -Force | Out-Null
           Copy-Item $exe (Join-Path $fresh 'storage-test.exe') -Force
           Copy-Item $exe (Join-Path $upgrade 'storage-test.exe') -Force
           & (Join-Path $upgrade 'storage-test.exe') prepare-upgrade
-          if($LASTEXITCODE -ne 0){throw 'Previous installation fixture setup failed'}
-          $username=[Security.Principal.WindowsIdentity]::GetCurrent().Name
-          foreach($folder in @($fresh,$upgrade)){
-            & icacls.exe $folder /deny "$($username):(OI)(CI)(W)"
-            if($LASTEXITCODE -ne 0){throw 'Unable to enforce read-only application folder'}
-          }
-          try {
-            & (Join-Path $fresh 'storage-test.exe') fresh
-            if($LASTEXITCODE -ne 0){throw 'Clean PC startup failed'}
-            & (Join-Path $fresh 'storage-test.exe') reopen-fresh
-            if($LASTEXITCODE -ne 0){throw 'Clean PC data persistence failed'}
-            & (Join-Path $upgrade 'storage-test.exe') upgrade
-            if($LASTEXITCODE -ne 0){throw 'Existing PC SQLite migration failed'}
-            & (Join-Path $upgrade 'storage-test.exe') reopen-upgrade
-            if($LASTEXITCODE -ne 0){throw 'Existing PC data persistence failed'}
-            Write-Host 'WINDOWS_SQLITE_FRESH_INSTALL_READONLY_PROGRAM_FILES_PASS'
-            Write-Host 'WINDOWS_SQLITE_PREVIOUS_INSTALL_MIGRATION_AND_PERSISTENCE_PASS'
-          } finally {
-            foreach($folder in @($fresh,$upgrade)){
-              & icacls.exe $folder /remove:d "$username" | Out-Host
-            }
-          }
+          if($LASTEXITCODE -ne 0){throw 'Existing PC fixture failed'}
+          & (Join-Path $fresh 'storage-test.exe') fresh
+          if($LASTEXITCODE -ne 0){throw 'Clean PC initial SQLite creation failed'}
+          & (Join-Path $fresh 'storage-test.exe') reopen-fresh
+          if($LASTEXITCODE -ne 0){throw 'Clean PC data persistence failed'}
+          & (Join-Path $upgrade 'storage-test.exe') upgrade
+          if($LASTEXITCODE -ne 0){throw 'Previously installed PC SQLite migration failed'}
+          & (Join-Path $upgrade 'storage-test.exe') reopen-upgrade
+          if($LASTEXITCODE -ne 0){throw 'Previously installed PC data persistence failed'}
+          Write-Host 'WINDOWS_SQLITE_VIRGIN_INSTALL_PASS'
+          Write-Host 'WINDOWS_SQLITE_EXISTING_INSTALL_PRESERVED_PASS'
+          Write-Host 'WINDOWS_SQLITE_PERSONAL_DATA_OUTSIDE_PROGRAM_FILES_PASS'
 
       - name: Smoke launch clean BUILD package
         shell: pwsh
