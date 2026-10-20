@@ -1527,3 +1527,10 @@ Les commits/runs transitoires créés pendant la préparation ne font pas partie
 - Décision technique : ne supprimer aucun artefact/release existant et ne modifier aucune donnée validée. Transférer les résultats du pipeline via des assets d'une préversion GitHub Releases privée nommée par run; contrôler le contenu et les hashes et fournir Setup de test seulement après smoke tests.
 - Branche isolée existante conservée : tmp-ia-clarification-test-1b106ee. Production MEMSX64 inchangée.
 <!-- journal-entry-sha256:9385229fbe983f0f4d45d9c7f6f4efe365dad8d5c57c094bb5f905a59b4e986c -->
+
+## 2026-10-20 — RECTIFICATION DE VERSION AVANT SETUP #116
+- Audit approfondi après lancement du préflight : dernier code IA testé run 34440726308 SUCCESS (10 septembre), commit 00b630096c5feb8ffa0a5a5abe92c78c5bf21ac6, 32 commits en avance sur MEMSX64 #115. Intègre correctifs documentaire IA, Qwen, tables/recherches et données 1800/1810.
+- Artefact de référence V3 corrigée 1800/1810 conservé : run 34373031620, ID 10112701782, digest sha256:4cba9ab0b6d2d27bc191da13220e3c227c8ecdbcc9e07973621d7c98d422784d, expired=false.
+- Artefact DLL MEMSLibrary pertinence validé : run 34135797836, ID 10023930741, digest sha256:596d9e4aaf7ad0e2b11cd011ada09ef58bab93936eab665c8e7a57b85cd3a2fb, DLL SHA256 b16dfe3d4d3ece40557fb5fa5e17088fbe3a48ca085575568d16057d8571dd8b, expired=false.
+- Correction du plan temporaire : compiler le code exact du dernier test IA (sans modifier MEMSX64), importer et vérifier par digests la V3 et la DLL de pertinence; reconstruire le runtime Qwen de base depuis les PDF canoniques et utiliser le transport privé par GitHub prerelease (quota Actions saturé). Protéger la production et tester Setup dans un dossier séparé.
+<!-- journal-entry-sha256:9625a60eb4185d5356977a8f525e01d157152ce70946d94419d3177ee2cd159b -->
