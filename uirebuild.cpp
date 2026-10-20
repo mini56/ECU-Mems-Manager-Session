@@ -5,6 +5,8 @@
 #include <QCoreApplication>
 #include <QEvent>
 #include <QFile>
+#include <QFontInfo>
+#include <QVector>
 #include <QFrame>
 #include <QGridLayout>
 #include <QGroupBox>
@@ -464,6 +466,65 @@ private:
                             .arg(pageCount).arg(menuCount).arg(visible).arg(hidden)
                             .arg(mismatch).arg(intended).arg(details.join(QLatin1Char('|')));
                     }
+                }
+                // Exercise every visible menu link against the REAL main
+                // window, not just standalone Qt mocks. A previous release
+                // rebuilt scroll pages as resizable and crushed their layout
+                // after the first click.
+                if (result.startsWith(QStringLiteral("LIGHT_GUI_MENU_PROBE_PASS"))) {
+                    struct OriginalPage {
+                        QScrollArea *scroll;
+                        QWidget *page;
+                        int minimumWidth;
+                        qreal fontPt;
+                    };
+                    QVector<OriginalPage> originals;
+                    QStringList violations;
+                    for(int rank=0; rank<tabs->count(); ++rank) {
+                        QScrollArea *scroll=qobject_cast<QScrollArea*>(tabs->widget(rank));
+                        if(!scroll || !scroll->widget() ||
+                           !scroll->widget()->property("wrappedInScrollArea").toBool())
+                            continue;
+                        QWidget *page=scroll->widget();
+                        originals.append({scroll,page,page->minimumWidth(),
+                                          QFontInfo(page->font()).pointSizeF()});
+                        if(scroll->widgetResizable() ||
+                           scroll->horizontalScrollBarPolicy()!=Qt::ScrollBarAsNeeded ||
+                           page->minimumWidth()<1300)
+                            violations << QStringLiteral("initial_canvas_%1").arg(rank);
+                    }
+                    if(originals.isEmpty())
+                        violations << QStringLiteral("no_original_canvases");
+                    const QSize initialWindowSize=window->size();
+                    const int originalRank=tabs->currentIndex();
+                    int clicked=0;
+                    for(int rank=0; rank<tabs->count(); ++rank) {
+                        if(finalMenu->item(rank)->isHidden())
+                            continue;
+                        finalMenu->setCurrentRow(rank); // real menu click path
+                        qApp->processEvents();
+                        ++clicked;
+                        if(tabs->currentIndex()!=rank)
+                            violations << QStringLiteral("menu_mapping_%1").arg(rank);
+                        for(const OriginalPage &original : originals) {
+                            if(original.scroll->widgetResizable() ||
+                               original.scroll->horizontalScrollBarPolicy()!=Qt::ScrollBarAsNeeded ||
+                               original.page->minimumWidth()!=original.minimumWidth ||
+                               QFontInfo(original.page->font()).pointSizeF()!=original.fontPt)
+                                violations << QStringLiteral("resize_or_font_changed_%1").arg(rank);
+                        }
+                        if(window->size()!=initialWindowSize)
+                            violations << QStringLiteral("main_window_size_changed_%1").arg(rank);
+                    }
+                    tabs->setCurrentIndex(originalRank);
+                    qApp->processEvents();
+                    if(clicked!=11) violations << QStringLiteral("not_eleven_links");
+                    if(violations.isEmpty())
+                        result += QStringLiteral(" layout=stable pages=%1 menu_clicks=%2")
+                                  .arg(originals.size()).arg(clicked);
+                    else
+                        result = QStringLiteral("LIGHT_PAGE_LAYOUT_PROBE_FAIL %1")
+                                 .arg(violations.join(QLatin1Char(',')));
                 }
                 QFile marker(QString::fromLocal8Bit(probePath));
                 if (marker.open(QIODevice::WriteOnly|QIODevice::Truncate|QIODevice::Text)) {
