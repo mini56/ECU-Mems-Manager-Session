@@ -123,6 +123,13 @@ add_executable(mems_search_selftest
 target_link_libraries(mems_search_selftest PRIVATE Qt5::Core Qt5::Sql)
 add_dependencies(${PNAME} mems_search_selftest)
 
+# A portable, isolated regression test for fresh install and upgrade when
+# the executable directory (Program Files) is not writable.
+add_executable(database_storage_selftest
+    database/DatabaseManagerStorageSelfTest.cpp
+    database/DatabaseManager.cpp database/DatabaseManager.h)
+target_link_libraries(database_storage_selftest PRIVATE Qt5::Core Qt5::Sql)
+
 add_executable(expert_runtime_selftest
     expert/ExpertRuntimeDatabaseSelfTest.cpp
     expert/ExpertRuntimeDatabase.cpp expert/ExpertRuntimeDatabase.h)
