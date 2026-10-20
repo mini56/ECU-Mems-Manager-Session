@@ -1568,3 +1568,12 @@ Les commits/runs transitoires créés pendant la préparation ne font pas partie
 - Transport par asset de GitHub Release privée, pour éviter le quota de stockage GitHub Actions atteint. Archive portable `ECU-MEMS-Manager-x64-BUILD116-CLEAN-V2.tar.gz` publiée aussi.
 - **Aucune modification de MEMSX64 ni main**. MEMSX64 toujours `1b106eed05e1fd665b857f73a719f02ee6b6b2ac`. Candidat #116 pour test PC utilisateur; la validation utilisateur Windows reste à faire.
 <!-- journal-entry-sha256:53a2a335d70ecf2ffe6837de9ae055fd334809a749d060e96cfebf2ef53e425c -->
+
+## 2026-10-20 — PLAN AVANT POUSSE : RÉGRESSION SQLITE AU DÉMARRAGE DU SETUP #116
+- Retour utilisateur après installation du candidat BUILD #116 : message exact `Impossible d'ouvrir la base de données SQLite.` à l'initialisation.
+- Confirmation source exacte : le message `I18n::text(13)` provient de `main.cpp` uniquement si `DatabaseManager::open()` échoue. Dans `database/DatabaseManager.cpp`, `defaultDatabasePath()` pointe actuellement vers `QCoreApplication::applicationDirPath() + "/database/ecu_mems_manager.sqlite"`.
+- Le Setup #116 utilise Inno Setup avec `DefaultDirName={autopf}\\ECU MEMS Manager TEST 116` ; cet emplacement est typiquement non inscriptible pour un utilisateur Windows standard. Le smoke test Github sous compte d'administration ne reproduisait pas ce scénario. La base de référence, elle, est bien en `QStandardPaths::AppLocalDataLocation` et passe plus tôt.
+- Correction planifiée minimaliste : déplacer exclusivement la base personnelle `ecu_mems_manager.sqlite` vers `QStandardPaths::AppLocalDataLocation/database`, conserver/recopier l'ancienne base install-dir si accessible et si aucune copie utilisateur n'existe, ne jamais écraser la base utilisateur, échouer explicitement si migration impossible plutôt que créer une base vierge.
+- Ajouter test de régression Windows x64 pour création, lecture et migration d'une ancienne base, avec vérification d'emplacement utilisateur. L'installateur doit être testé sans écriture dans Program Files et non pas simplement démarré sous droits admin.
+- Ne pas modifier RAVE, Pack001, DLL IA, protocole ECU, acquision/RAM/reset, images/UI. Ne pas modifier `MEMSX64` ni `main` et conserver BUILD #116. Créer prochain candidat unique **BUILD #117**, exclusivement sur la branche temporaire existante `tmp-ia-clarification-test-1b106ee`. Journaliser verdict réel.
+<!-- journal-entry-sha256:27184ff9d130e737609b9dd2006e237a5e987270cc92aff0525be17e1edf2d22 -->
