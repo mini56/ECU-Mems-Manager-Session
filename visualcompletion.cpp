@@ -33,6 +33,19 @@ static QWidget *realPage(QWidget *tab)
     return tab;
 }
 
+// A real legacy ECU page must keep its design-width canvas. Only its
+// viewport should shrink on smaller screens; Qt then offers scrolling.
+static void releasePageMinimumWithoutCompressing(QWidget *page)
+{
+    if(!page) return;
+    if(page->property("wrappedInScrollArea").toBool()) {
+        page->setMinimumHeight(0);
+        page->setMinimumWidth(qMax(1300,page->minimumWidth()));
+    } else {
+        page->setMinimumSize(0,0);
+    }
+}
+
 static qreal scaleFor(QMainWindow *w)
 {
     if (!w) return 1.0;
@@ -197,7 +210,8 @@ static void fitAnalysis(QMainWindow *w,qreal s)
         if (p && QString::fromLatin1(p->metaObject()->className())==QStringLiteral("AnalysisTab")) { tab=p; break; }
     if (!tab) return;
 
-    tab->setMinimumSize(0,0); tab->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
+    releasePageMinimumWithoutCompressing(tab);
+    tab->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
     if (QLayout *root=tab->layout()) {
         const int m=qBound(4,qRound(7*s),9),gap=qBound(4,qRound(6*s),8);
         root->setContentsMargins(m,m,m,m); root->setSpacing(gap); root->setSizeConstraint(QLayout::SetDefaultConstraint);
@@ -244,7 +258,8 @@ static void fitOverviewAndSettings(QMainWindow *w,qreal s)
     }
 
     if (QWidget *settings=w->findChild<QWidget*>(QStringLiteral("emission_tab"))) {
-        settings->setMinimumSize(0,0); settings->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
+        releasePageMinimumWithoutCompressing(settings);
+        settings->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
         if (QLayout *l=settings->layout()) {
             const int m=qBound(4,qRound(8*s),11),gap=qBound(4,qRound(7*s),9);
             l->setContentsMargins(m,m,m,m); l->setSpacing(gap);
@@ -269,7 +284,7 @@ static void fitRawDataPage(QWidget *page)
     QWidget *right=page->findChild<QWidget*>(QStringLiteral("raw_2"));
     if (!left || !right) return;
 
-    page->setMinimumSize(0,0);
+    releasePageMinimumWithoutCompressing(page);
     page->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
 
     QWidget *viewport=page->parentWidget();
