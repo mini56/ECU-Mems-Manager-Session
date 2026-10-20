@@ -910,7 +910,10 @@ jobs:
           test "$memsx64" = "$PROTECTED_BUILD103"
           git merge-base --is-ancestor "$DIRECT_CODE_COMMIT" HEAD
           test ! -e .github/workflows/tmp-ai-ui-manual-test-package.yml
-          ! grep -R -n -E '33510951021|33524210118|ravemems-runtime-migration-simulation|ravemems-visual-bundle-audit' .github/workflows CMakeLists.txt expert iamemstab.cpp 2>/dev/null
+          if grep -R -n -E '33510951021|33524210118|ravemems-runtime-migration-simulation|ravemems-visual-bundle-audit' .github/workflows CMakeLists.txt expert iamemstab.cpp 2>/dev/null; then
+            echo 'FORBIDDEN_PRE_V2_REFERENCE' >&2
+            exit 1
+          fi
           echo "MEMSX64_PROTECTED=$memsx64"
           echo "CLEAN_DIRECT_CODE_BASE=$DIRECT_CODE_COMMIT"
 
@@ -1551,7 +1554,6 @@ jobs:
           path: dist-x64/
           if-no-files-found: error
           compression-level: 6
-          retention-days: 30
           retention-days: 30
       
       - name: Create Windows Setup installer from validated x64 package
