@@ -1589,3 +1589,12 @@ Les commits/runs transitoires créés pendant la préparation ne font pas partie
 - URL binaire : https://github.com/mini56/ECU-Mems-Manager-Session/releases/download/mems-build117-candidate-39395038798/ECU-MEMS-Manager-Setup-v1.0.117-TEST.exe
 - Paquet portable x64 disponible sur même release en tar.gz. Ne pas déclarer test manuel sur PC utilisateur terminé (à faire par utilisateur). `MEMSX64` et `main` inchangés, #116 conservé, branche test unique `tmp-ia-clarification-test-1b106ee`.
 <!-- journal-entry-sha256:b0e418b63c1224cc41fa6da08acb899960d0aa985e8321c4523e23e6ffd34999 -->
+
+## 2026-10-20 — PLAN DÉSACTIVATION DE TROIS ACCÈS DANS LE MENU — BUILD 118
+
+Demande utilisateur expresse : masquer UNIQUEMENT les accès de navigation aux pages `TEST ECU 1.9`, `IA MEMS`, `ECU ROSCO`, sans effacer les pages ni modifier leur fonctionnalité. Ne pas changer les autres entrées/pages.
+
+Implémentation dans l'unique `navigationorderpatch.cpp` : conserver les 14 vrais widgets et les 14 identités/indices pour ne pas casser les signaux `currentRowChanged -> setCurrentIndex`; rendre invisibles uniquement les trois `QListWidgetItem` de rang 13, 6 et 9. Conserver leur code et les données, et les recréations lors des changements de langue. Ajuster la taille des rangées aux 11 visibles. Test de source garantissant les 11 boutons affichés et les trois cachés; vérification compilation, smoke Windows et installateur.
+
+Version `BUILD 118` nouvelle, branche existante `tmp-ia-clarification-test-1b106ee`, repos `mini56/ECU-Mems-Manager-Session`. Maintenir `MEMSX64` et `main` inchangés, Setup #117 et travaux RAVEMEMS/IA intacts. Installer en parallèle pour essai.
+<!-- journal-entry-sha256:ca2a8678620997ed5264a00b549bbe49acf9118c6c07753b2a2a07dbf9122bf4 -->
