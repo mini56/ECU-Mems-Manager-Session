@@ -1641,3 +1641,11 @@ Demande utilisateur explicite : retirer UNIQUEMENT les entrées `TEST ECU 1.9`, 
 - Corriger uniquement le script du prochain workflow pour appliquer `[string](@($shortcuts)[0])` au chemin .lnk et effectuer comparaison COM de `TargetPath`. Nouveau numéro unique **BUILD #122**, branche `tmp-ia-clarification-test-1b106ee`, workflow à part, vérifications réelles intégrales + installateur avec nom `ECU MEMS Manager LIGHT` et raccourci Bureau.
 - Ne pas modifier une autre fonctionnalité, aucun programme ECU ni RAVE ni SQLite ; aucune écriture `MEMSX64`/`main`.
 <!-- journal-entry-sha256:555cb0abf426da45c8e818943351d77b47628a3ee58ac568d1ba14d7ae13faac -->
+
+## 2026-10-20 — BUILD121 LIGHT, installateur créé mais contrôle .lnk faux négatif
+- Run `39459664985` — failure dans l'étape finale `ACTUALLY INSTALL LIGHT Setup and verify desktop shortcut`, **pas** pendant la création Setup ni pendant l'installation réelle de Windows.
+- Vérifications déjà successives : vrai GUI `LIGHT_GUI_MENU_PROBE_PASS visible=11 hidden=3 pages=14`, 47 PDF/1 359 pages/RAVE, SQLite neuf/existant, runtime Windows x64 et création Setup Inno Setup.
+- Le test a effectivement trouvé l'EXE installé en Program Files et trouvé le raccourci `ECU MEMS Manager LIGHT.lnk` sur le Bureau, puis a appelé `$shell.CreateShortcut($shortcuts[0])`. PowerShell déplie une sélection unique en simple chaîne ; `$shortcuts[0]` devient donc **le premier caractère** de cette chaîne, et COM signale `The shortcut pathname must end with .lnk or .url.`
+- Correction strictement limitée au script de validation Windows : choisir un chemin unique entier avec `Select-Object -First 1`, le typer `[string]` et vérifier l'extension .lnk avant `WScript.Shell.CreateShortcut($shortcutPath)`, et comparer cible à l'exécutable installé. Aucun changement des pages/code ECU/IA/RAVE ni du vrai raccourci Inno Setup.
+- Ne pas réutiliser le numéro Build121 rouge. Lancer prochain candidat unique **BUILD122 LIGHT**, dans la branche test existante `tmp-ia-clarification-test-1b106ee`. Release et Setup publiés seulement après vérification finale. `MEMSX64` / `main` inchangés.
+<!-- journal-entry-sha256:44f30da0b3be35a87b0e8a54d2552a489d69c3b4dc03f0bbede460968ac0a7fc -->
