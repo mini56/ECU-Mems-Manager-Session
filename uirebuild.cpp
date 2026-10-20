@@ -32,6 +32,7 @@
 #include "i18n.h"
 #include "optionsdialog.h"
 #include "navigationlightmenu.h"
+#include "historicalpagecanvas.h"
 #include "navigationorderpatch.h"
 
 namespace {
@@ -297,20 +298,6 @@ static qreal responsiveScale(QMainWindow *window)
     return qBound<qreal>(0.64,qMin(sz.width()/1450.0,sz.height()/720.0),1.28);
 }
 
-// The original fixed-layout ECU pages were placed in scroll areas by
-// MainWindow::makeFixedTabsScrollable(). Their 1300px-or-wider design canvas
-// must NEVER be compressed to the viewport when the user changes pages.
-// Other modern / embedded scroll areas retain their own policies.
-static void preserveOriginalPageCanvas(QScrollArea *scroll)
-{
-    if (!scroll || !scroll->widget() ||
-        !scroll->widget()->property("wrappedInScrollArea").toBool())
-        return;
-    scroll->setWidgetResizable(false);
-    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-}
-
 static void applyResponsive(QMainWindow *window)
 {
     if(!window) return;
@@ -419,7 +406,7 @@ private:
                     applyLightMenuVisibility(tabs,nav);
             });
         });
-        for(int i=0;i<tabs->count();++i){QWidget *page=realPage(tabs->widget(i));if(!page)continue;if(QScrollArea *scroll=qobject_cast<QScrollArea*>(tabs->widget(i))){preserveOriginalPageCanvas(scroll);}const QString title=titleForIndex(tabs,i);if(!usesDedicatedLayout(page,i))composeGenericPage(page,title,i);}
+        for(int i=0;i<tabs->count();++i){QWidget *page=realPage(tabs->widget(i));if(!page)continue;if(QScrollArea *scroll=qobject_cast<QScrollArea*>(tabs->widget(i))){preserveHistoricalPageCanvas(scroll);}const QString title=titleForIndex(tabs,i);if(!usesDedicatedLayout(page,i))composeGenericPage(page,title,i);}
         root->addWidget(buildBottomStatus(window));tabs->setCurrentIndex(0);
         // Crucial ordering: the pre-existing installFinalNavigation call
         // may happen BEFORE this asynchronous sidebar exists. Synchronize
