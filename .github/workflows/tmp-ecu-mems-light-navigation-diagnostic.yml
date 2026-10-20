@@ -1,5 +1,5 @@
 name: TEMP LIGHT actual runtime navigation diagnosis (no installer)
-run-name: DIAG LIGHT #2 - rebuild final navigation after async GUI construction
+run-name: DIAG LIGHT #3 - postpone sidebar until end of MainWindow constructor
 
 on:
   push:
@@ -84,6 +84,9 @@ jobs:
           }
           Write-Host 'LIGHT_REAL_SIDEBAR_SOURCE_GUARD_PASS'
           Write-Host 'SIDEBAR_HIDES_ONLY_IA_MEMS_ECU_ROSCO_TEST_ECU_19_PASS'
+          if(-not (Select-String -Path mainwindow.cpp -Pattern 'setProperty\("ecuMainWindowConstructed", true\)' -Quiet)){throw 'MainWindow ready guard missing'}
+          if(-not (Select-String -Path uirebuild.cpp -Pattern 'property\("ecuMainWindowConstructed"\)' -Quiet)){throw 'UI early-build rejection missing'}
+          Write-Host 'LIGHT_EARLY_UI_BUILD_GUARD_PRESENT'
           Write-Host 'DIRECT_SOURCE_NO_PATCH_PASS'
 
       - name: Setup Python and Qt tools
