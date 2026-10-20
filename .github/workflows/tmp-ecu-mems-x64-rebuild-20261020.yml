@@ -926,10 +926,17 @@ jobs:
           test -n "$catalog"
           refroot="$(dirname "$catalog")"
           echo "CANONICAL_REF_ROOT=$refroot" >> "$GITHUB_ENV"
-          for file in research_enrichment_1800.qz64 research_enrichment_1810.qz64 manifest.json; do
+          for file in research_enrichment_1800.qz64 research_enrichment_1810.qz64; do
             test -f "$refroot/$file"
-            test "$(sha256sum "$refroot/$file" | cut -d' ' -f1)" = "$(sha256sum "database/reference/$file" | cut -d' ' -f1)"
+            actual="$(sha256sum "$refroot/$file" | cut -d' ' -f1)"
+            expected="$(sha256sum "database/reference/$file" | cut -d' ' -f1)"
+            echo "REFERENCE_QZ64_SHA256 file=$file actual=$actual expected=$expected"
+            test "$actual" = "$expected"
           done
+          test -f "$refroot/manifest.json"
+          manifest_sha="$(sha256sum "$refroot/manifest.json" | cut -d' ' -f1)"
+          test "$manifest_sha" = "612b47e2d9217ff27fe3c10223ce8a42bb9569b1dd2edb2a07fc62387d8bdcd9"
+          echo "V3_PACKAGED_MANIFEST_PIN_PASS sha256=$manifest_sha"
           python - "$refroot" <<'PY'
           import json,sys
           from pathlib import Path
