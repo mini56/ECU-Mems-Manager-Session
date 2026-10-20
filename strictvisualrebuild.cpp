@@ -26,6 +26,7 @@
 #include <QWidget>
 #include <QtMath>
 #include "i18n.h"
+#include "historicalpagecanvas.h"
 
 namespace {
 
@@ -176,12 +177,30 @@ static void releaseLegacySizing(QMainWindow *w)
     tabs->setMinimumSize(0,0); tabs->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX); tabs->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     for(int i=0;i<tabs->count();++i){
         QWidget *tab=tabs->widget(i);
-        if(QScrollArea *s=qobject_cast<QScrollArea*>(tab)){
-            s->setWidgetResizable(true); s->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff); s->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-            s->setMinimumSize(0,0); s->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
+        QScrollArea *area=qobject_cast<QScrollArea*>(tab);
+        const bool originalCanvas=hasHistoricalPageCanvas(area);
+        if(area){
+            if(originalCanvas) {
+                // Avoid shrinking the original ECU design after a menu click
+                // or a Resize event. Leave other modern pages responsive.
+                preserveHistoricalPageCanvas(area);
+            } else {
+                area->setWidgetResizable(true);
+                area->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+                area->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+            }
+            area->setMinimumSize(0,0);
+            area->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
         }
         QWidget *p=pageOf(tab); if(!p) continue;
-        p->setMinimumSize(0,0); p->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX); p->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+        if(originalCanvas) {
+            p->setMinimumHeight(0);
+            preserveHistoricalPageCanvas(area);
+        } else {
+            p->setMinimumSize(0,0);
+        }
+        p->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
+        p->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
         if(QLayout *l=p->layout()) l->setSizeConstraint(QLayout::SetDefaultConstraint);
     }
 }
