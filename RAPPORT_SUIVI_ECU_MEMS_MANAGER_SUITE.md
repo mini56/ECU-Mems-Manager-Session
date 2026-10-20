@@ -1661,3 +1661,19 @@ Demande utilisateur explicite : retirer UNIQUEMENT les entrées `TEST ECU 1.9`, 
 - Build121 rouge uniquement à cause du garde PowerShell de vérification du raccourci : accès `$shortcuts[0]` sur chaîne scalaire = premier caractère ; BUILD122 corrige et vérifie le fichier `.lnk` complet.
 - Le setup est prêt pour **essais de l'utilisateur sur son PC réel** ; ne pas prétendre avoir testé le PC personnel ou ECU physique.
 <!-- journal-entry-sha256:39781285facf7ff0dc6e7e66eea21e5c52bbb08c2cabed16fcd04d6e57fb5266 -->
+
+## 2026-10-20 — ECU MEMS MANAGER LIGHT BUILD #122 : SETUP WIN X64 RÉEL VERT / LIVRÉ
+
+Exigence utilisateur : édition LIGHT (et non TEST), masquer uniquement les trois raccourcis IA MEMS / ECU ROSCO / Test ECU 1.9, conserver les 14 pages, ajouter un raccourci Bureau pointant vers l'EXE avec son icône, installer sur PC neuf ou déjà équipé sans perdre les données.
+
+- Cause correction réelle vérifiée : `UiRebuildInstaller` construisait menu avant fin constructeur MainWindow à cause de `qApp->processEvents()`, avec 10 ou 12 tabs. `setProperty("ecuMainWindowConstructed",true)` en fin constructeur et garde dans uirebuild. Menu final remasqué par identité de page.
+- Diagnostic réel préalable run `39458513372` SUCCESS prouve `LIGHT_GUI_MENU_PROBE_PASS visible=11 hidden=3 pages=14`.
+- Tentatives #119 et #120 arrêtées avant setup ; #121 `39459664985` compilé et Setup généré, vraie installation Inno OK et raccourci existant détecté mais contrôle PowerShell défaillant car `$shortcuts[0]` indexait le 1er caractère d'une chaîne (pipeline un seul résultat). Ne pas réutiliser ces numéros, aucun Setup diffusé.
+- Correction du seul script de vérification pour forcer `[string](@($shortcuts)[0])` et lire la vraie cible COM. Nouveau workflow temporaire `.github/workflows/tmp-ecu-mems-light-build122.yml` sur `tmp-ia-clarification-test-1b106ee`, commit `904702cf0df75e03e0978d2aded61bf108242ade`.
+- **RUN final #39461449398 SUCCESS** ; compilation Windows x64 / ONNX / MEMSLibrary & DLL et Pack001 épinglés / corpus RAVE / SQLite neuf et existant / vrai démarrage Qt et 11/3/14 menu / installateur Inno / installation silencieuse réelle / cible du raccourci COM validés. Marqueurs réels : `LIGHT_REAL_WINDOWS_GUI_11_MENU_ITEMS_PASS`, `WINDOWS_SQLITE_VIRGIN_INSTALL_PASS`, `WINDOWS_SQLITE_EXISTING_INSTALL_PRESERVED_PASS`, `LIGHT_REAL_WINDOWS_SETUP_INSTALL_PASS`, `LIGHT_REAL_DESKTOP_SHORTCUT_PASS shortcut=C:\Users\Public\Desktop\ECU MEMS Manager LIGHT.lnk target=C:\Program Files\ECU MEMS Manager LIGHT\ecu_mems_manager.exe`, `WINDOWS_SETUP_PUBLISHED`.
+- Fichier final : `ECU-MEMS-Manager-Setup-v1.0.122-LIGHT.exe`, taille **446638123 octets** ; SHA256 `9eb6b17a9eb9a2aacb818570dd08fd882a35feef305d4cb7b1e3a9c85f957f71`.
+- Setup direct : https://github.com/mini56/ECU-Mems-Manager-Session/releases/download/mems-build122-candidate-39461449398/ECU-MEMS-Manager-Setup-v1.0.122-LIGHT.exe
+- Release privée : https://github.com/mini56/ECU-Mems-Manager-Session/releases/tag/mems-build122-candidate-39461449398
+- Également `ECU-MEMS-Manager-x64-BUILD122-LIGHT.tar.gz` 486638670 octets.
+- Pas de test physique ECU effectué sur le matériel utilisateur. `MEMSX64` `main` intacts, BUILD118 et autres conservés. Prochaine étape : test utilisateur réel sur son PC de la capture des 11 entrées et raccourci Bureau, puis retour.
+<!-- journal-entry-sha256:9dcc50aa1a62df9f8a35e437af35bcb62a67032a0f0700ac6228e15c882328f6 -->
