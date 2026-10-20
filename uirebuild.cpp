@@ -27,6 +27,7 @@
 #include <QWidget>
 #include "i18n.h"
 #include "optionsdialog.h"
+#include "navigationlightmenu.h"
 
 namespace {
 
@@ -376,7 +377,16 @@ private:
         QFrame *workspace=new QFrame(central);workspace->setObjectName(QStringLiteral("uiRebuildWorkspace"));workspace->setAttribute(Qt::WA_StyledBackground,true);workspace->setStyleSheet(QStringLiteral("#uiRebuildWorkspace{background:%1;border:0;}").arg(QString::fromLatin1(kBg)));QHBoxLayout *wh=new QHBoxLayout(workspace);wh->setContentsMargins(0,0,0,0);wh->setSpacing(0);
         QListWidget *nav=new QListWidget(workspace);nav->setObjectName(QStringLiteral("uiRebuildNav"));nav->setFocusPolicy(Qt::NoFocus);nav->setUniformItemSizes(true);nav->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         for(int i=0;i<tabs->count();++i)nav->addItem(titleForIndex(tabs,i));
-        nav->setCurrentRow(tabs->currentIndex());
+        // This is the actual sidebar created asynchronously AFTER the
+        // deterministic-tab setup. Apply the LIGHT mask here, not just to
+        // an earlier navigation widget that may be replaced on first Show.
+        const int visibleLightEntries = applyLightMenuVisibility(tabs,nav);
+        if (visibleLightEntries != 11)
+            qWarning("LIGHT navigation: expected exactly 11 visible menu entries, got %d", visibleLightEntries);
+        const int currentMenuRow = tabs->currentIndex();
+        nav->setCurrentRow(currentMenuRow >= 0 && currentMenuRow < nav->count()
+                           && nav->item(currentMenuRow)->isHidden()
+                           ? 0 : currentMenuRow);
         tabs->tabBar()->hide();
         tabs->setStyleSheet(QStringLiteral("QTabWidget::pane{border:0;background:%1;}").arg(QString::fromLatin1(kBg)));
         wh->addWidget(nav);wh->addWidget(tabs,1);root->insertWidget(oldIndex<0?1:oldIndex,workspace,1);
