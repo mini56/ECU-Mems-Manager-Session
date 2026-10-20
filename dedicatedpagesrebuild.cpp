@@ -21,6 +21,7 @@
 #include <QVBoxLayout>
 #include <QWidget>
 #include "i18n.h"
+#include "historicalpagecanvas.h"
 
 namespace {
 
@@ -57,7 +58,14 @@ static void replaceRoot(QWidget *page,QVBoxLayout *&root)
     root->setContentsMargins(8,7,8,7);
     root->setSpacing(7);
     root->setSizeConstraint(QLayout::SetDefaultConstraint);
-    page->setMinimumSize(0,0);
+    // Original scroll-wrapped pages keep their 1300px design width;
+    // the surrounding QScrollArea can scroll instead of squeezing text.
+    if(page->property("wrappedInScrollArea").toBool()){
+        page->setMinimumHeight(0);
+        page->setMinimumWidth(qMax(1300,page->minimumWidth()));
+    } else {
+        page->setMinimumSize(0,0);
+    }
     page->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
     page->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
 }
@@ -348,7 +356,16 @@ static void fitBuiltPages(QMainWindow *w)
             l->setSpacing(spacing);
             l->setSizeConstraint(QLayout::SetDefaultConstraint);
         }
-        page->setMinimumSize(0,0);
+        if(QScrollArea *original=qobject_cast<QScrollArea*>(tabs->widget(i))) {
+            if(hasHistoricalPageCanvas(original)) {
+                page->setMinimumHeight(0);
+                preserveHistoricalPageCanvas(original);
+            } else {
+                page->setMinimumSize(0,0);
+            }
+        } else {
+            page->setMinimumSize(0,0);
+        }
         page->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
         for (QTableWidget *t:page->findChildren<QTableWidget*>())
             if (t->verticalHeader()) t->verticalHeader()->setDefaultSectionSize(rowHeight);
