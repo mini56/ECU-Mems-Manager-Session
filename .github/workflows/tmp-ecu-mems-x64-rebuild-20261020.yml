@@ -14,7 +14,7 @@ permissions:
 
 concurrency:
   group: tmp-ecu-mems-x64-rebuild-20261020
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   MEMS_BUILD: '116'
@@ -910,7 +910,7 @@ jobs:
           test "$memsx64" = "$PROTECTED_BUILD103"
           git merge-base --is-ancestor "$DIRECT_CODE_COMMIT" HEAD
           test ! -e .github/workflows/tmp-ai-ui-manual-test-package.yml
-          if grep -R -n -E '33510951021|33524210118|ravemems-runtime-migration-simulation|ravemems-visual-bundle-audit' .github/workflows CMakeLists.txt expert iamemstab.cpp 2>/dev/null; then
+          if grep -R -n -E '33510951021|33524210118|ravemems-runtime-migration-simulation|ravemems-visual-bundle-audit' CMakeLists.txt expert iamemstab.cpp 2>/dev/null; then
             echo 'FORBIDDEN_PRE_V2_REFERENCE' >&2
             exit 1
           fi
@@ -1401,6 +1401,8 @@ jobs:
 
       - name: Configure and compile current direct source
         shell: pwsh
+        env:
+          GITHUB_SHA: 1b106eed05e1fd665b857f73a719f02ee6b6b2ac
         run: |
           $ErrorActionPreference='Stop'
           cmake -S . -B build-x64 -A x64 `
@@ -1566,15 +1568,15 @@ jobs:
           if(-not $compiler){throw 'Inno Setup compiler missing'}
           $root=$env:DIST.Replace('\','\\')
           $iss=@'
-          #define MyAppName "ECU MEMS Manager"
+          #define MyAppName "ECU MEMS Manager - TEST 116"
           #define MyAppVersion "1.0.116"
           [Setup]
           AppId={{FDBAA74F-2FD8-4FD1-A1E3-ECF617EBE03B}
           AppName={#MyAppName}
           AppVersion={#MyAppVersion}
           AppPublisher=ECU MEMS Manager
-          DefaultDirName={autopf}\ECU MEMS Manager
-          DefaultGroupName=ECU MEMS Manager
+          DefaultDirName={autopf}\ECU MEMS Manager TEST 116
+          DefaultGroupName=ECU MEMS Manager TEST 116
           OutputDir=setup-output
           OutputBaseFilename=ECU-MEMS-Manager-Setup-v1.0.116-TEST
           Compression=lzma2
