@@ -434,8 +434,11 @@ private:
                         if (expected) ++intended;
                         if (actual) ++hidden; else ++visible;
                         if (expected!=actual) ++mismatch;
-                        const QString name=tabs->widget(i)
-                            ? tabs->widget(i)->objectName()
+                        QWidget *listedPage=tabs->widget(i);
+                        if(QScrollArea *scroll=qobject_cast<QScrollArea*>(listedPage))
+                            listedPage=scroll->widget();
+                        const QString name=listedPage
+                            ? listedPage->objectName()
                             : QStringLiteral("<null>");
                         details.append(QStringLiteral("%1:%2:%3:%4")
                             .arg(i).arg(name).arg(expected).arg(actual));
