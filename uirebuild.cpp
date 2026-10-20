@@ -404,26 +404,44 @@ private:
         if (!probePath.isEmpty()) {
             QTimer::singleShot(1800,window,[window,tabs,probePath]() {
                 QListWidget *finalMenu=window->findChild<QListWidget*>(QStringLiteral("uiRebuildNav"));
-                if (!finalMenu || !tabs || finalMenu->count()!=tabs->count() || tabs->count()!=14)
-                    qFatal("LIGHT_GUI_MENU_PROBE_FAIL menu/tabs missing or count mismatch");
-                int hidden=0;
-                int visible=0;
-                for (int i=0;i<tabs->count();++i) {
-                    const bool expectedHidden=lightMenuHidesTab(tabs->widget(i));
-                    const bool actualHidden=finalMenu->item(i)->isHidden();
-                    if (actualHidden!=expectedHidden)
-                        qFatal("LIGHT_GUI_MENU_PROBE_FAIL unexpected menu item visibility");
-                    if (actualHidden) ++hidden; else ++visible;
+                QString result;
+                if (!finalMenu || !tabs) {
+                    result = QStringLiteral("LIGHT_GUI_MENU_PROBE_FAIL missing UI menu or tabs");
+                } else {
+                    const int menuCount=finalMenu->count(), pageCount=tabs->count();
+                    int hidden=0, visible=0, mismatch=0, intended=0;
+                    QStringList details;
+                    for (int i=0;i<menuCount && i<pageCount;++i) {
+                        const bool expected=lightMenuHidesTab(tabs->widget(i));
+                        const bool actual=finalMenu->item(i)->isHidden();
+                        if (expected) ++intended;
+                        if (actual) ++hidden; else ++visible;
+                        if (expected!=actual) ++mismatch;
+                        const QString name=tabs->widget(i)
+                            ? tabs->widget(i)->objectName()
+                            : QStringLiteral("<null>");
+                        details.append(QStringLiteral("%1:%2:%3:%4")
+                            .arg(i).arg(name).arg(expected).arg(actual));
+                    }
+                    if (pageCount==14 && menuCount==14 && visible==11 &&
+                        hidden==3 && mismatch==0 && intended==3) {
+                        result=QStringLiteral("LIGHT_GUI_MENU_PROBE_PASS visible=11 hidden=3 pages=14");
+                    } else {
+                        result=QStringLiteral(
+                            "LIGHT_GUI_MENU_PROBE_FAIL pages=%1 menu=%2 visible=%3 hidden=%4 mismatches=%5 intended=%6 items=%7")
+                            .arg(pageCount).arg(menuCount).arg(visible).arg(hidden)
+                            .arg(mismatch).arg(intended).arg(details.join(QLatin1Char('|')));
+                    }
                 }
-                if (hidden!=3 || visible!=11)
-                    qFatal("LIGHT_GUI_MENU_PROBE_FAIL visible/hidden item counts");
                 QFile marker(QString::fromLocal8Bit(probePath));
-                if (!marker.open(QIODevice::WriteOnly|QIODevice::Truncate|QIODevice::Text))
-                    qFatal("LIGHT_GUI_MENU_PROBE_FAIL cannot write verification marker");
-                marker.write("LIGHT_GUI_MENU_PROBE_PASS visible=11 hidden=3 pages=14\\n");
-                marker.close();
-            });
-        }
+                if (marker.open(QIODevice::WriteOnly|QIODevice::Truncate|QIODevice::Text)) {
+                    marker.write(result.toUtf8());
+                    marker.write("\n");
+                    marker.close();
+                }
+                // This check is diagnostic on CI only. It must never terminate
+                // ECU MEMS Manager or interfere with normal user operation.
+            });        }
     }
 };
 
