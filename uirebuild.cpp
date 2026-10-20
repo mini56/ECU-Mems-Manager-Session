@@ -491,7 +491,11 @@ private:
                         if(scroll->widgetResizable() ||
                            scroll->horizontalScrollBarPolicy()!=Qt::ScrollBarAsNeeded ||
                            page->minimumWidth()<1300)
-                            violations << QStringLiteral("initial_canvas_%1").arg(rank);
+                            violations << QStringLiteral(
+                                "initial_canvas_%1_resize_%2_horizontal_%3_minw_%4_currentw_%5")
+                                .arg(rank).arg(scroll->widgetResizable())
+                                .arg(int(scroll->horizontalScrollBarPolicy()))
+                                .arg(page->minimumWidth()).arg(page->width());
                     }
                     if(originals.isEmpty())
                         violations << QStringLiteral("no_original_canvases");
@@ -511,7 +515,11 @@ private:
                                original.scroll->horizontalScrollBarPolicy()!=Qt::ScrollBarAsNeeded ||
                                original.page->minimumWidth()!=original.minimumWidth ||
                                QFontInfo(original.page->font()).pointSizeF()!=original.fontPt)
-                                violations << QStringLiteral("resize_or_font_changed_%1").arg(rank);
+                                violations << QStringLiteral(
+                                   "unstable_%1_resize_%2_minw_%3_font_%4")
+                                   .arg(rank).arg(original.scroll->widgetResizable())
+                                   .arg(original.page->minimumWidth())
+                                   .arg(QFontInfo(original.page->font()).pointSizeF());
                         }
                         if(window->size()!=initialWindowSize)
                             violations << QStringLiteral("main_window_size_changed_%1").arg(rank);
