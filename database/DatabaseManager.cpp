@@ -548,7 +548,7 @@ bool migrateLegacyDatabase(const QString &destination)
 
         QFile header(source);
         if (!header.open(QIODevice::ReadOnly)
-            || header.read(16) != QByteArray("SQLite format 3\\0", 16)) {
+            || header.read(16) != QByteArray::fromHex("53514c69746520666f726d6174203300")) {
             qWarning() << "Legacy personal SQLite database unreadable; preserved:" << source;
             return false;
         }
