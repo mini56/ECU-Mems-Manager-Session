@@ -257,6 +257,10 @@ m_mems(0), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerD
   makeFixedTabsScrollable();
   m_ui->Tab_main->setCurrentIndex(0); // Toujours démarrer sur Aperçu
   TooltipBubbleManager::install(this);
+  // The global UI rebuild listener may receive Polish/Show events during
+  // QCoreApplication::processEvents() inside this constructor. Only allow
+  // sidebar construction AFTER all final pages have been registered.
+  setProperty("ecuMainWindowConstructed", true);
 }
 
 
