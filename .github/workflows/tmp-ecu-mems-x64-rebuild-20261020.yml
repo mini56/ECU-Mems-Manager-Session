@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   actions: read
 
 concurrency:
@@ -288,15 +288,24 @@ jobs:
           cp "$RUNNER_TEMP/corpus_pdf_paths.txt" "$RUNNER_TEMP/full-out/_corpus_metadata/"
           cp "$RUNNER_TEMP/corpus_source_inventory.tsv" "$RUNNER_TEMP/full-out/_corpus_metadata/"
 
-      - name: Upload complete corpus result
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: RAVEMEMS-V2-FULL-CORPUS-GENERIC-${{ github.run_id }}
-          path: ${{ runner.temp }}/full-out
-          if-no-files-found: error
-          retention-days: 30
-          compression-level: 6
+      - name: Publish verified full RAVEMEMS V2 corpus to private prerelease
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python - "$RUNNER_TEMP/full-out/corpus_validation_summary.json" <<'PY'
+          import json,sys
+          x=json.load(open(sys.argv[1],encoding='utf-8'))
+          assert x['discovered_pdf_count']==47 and x['total_pages']==1359 and x['total_visuals']==1667
+          assert x['extraction_failure_count']==0 and x['replay_failure_count']==0
+          print('SOURCE47_STRICT_PASS')
+          PY
+          tar -czf "$RUNNER_TEMP/source47.tar.gz" -C "$RUNNER_TEMP/full-out" .
+          sha256sum "$RUNNER_TEMP/source47.tar.gz"
+          gh release create "mems-build116-candidate-$GITHUB_RUN_ID" "$RUNNER_TEMP/source47.tar.gz" --target "$GITHUB_SHA" --title "ECU MEMS Manager BUILD 116 - reconstruction de test" --notes "Préversion privée ; non validée pour utilisation finale." --prerelease
+          echo SOURCE47_RELEASE_PUBLISHED
+
 
       - name: Strict full corpus verdict
         shell: bash
@@ -377,17 +386,22 @@ jobs:
           python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
           if ($LASTEXITCODE -ne 0) { throw "aqtinstall failed: $LASTEXITCODE" }
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: RAVEMEMS-V2-FULL-CORPUS-GENERIC-${{ github.run_id }}
-          path: source47
-      - name: Verify regenerated RAVEMEMS V2 47-PDF source artifact
+      - name: Download regenerated RAVEMEMS V2 via private prerelease
         shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference='Stop'
+          $tag="mems-build116-candidate-$env:GITHUB_RUN_ID"
+          New-Item -ItemType Directory source47,source47-input -Force | Out-Null
+          gh release download $tag --pattern source47.tar.gz --dir source47-input
+          if($LASTEXITCODE -ne 0){throw 'RAVEMEMS V2 download failed'}
+          tar.exe -xzf source47-input/source47.tar.gz -C source47
+          if($LASTEXITCODE -ne 0){throw 'RAVEMEMS V2 archive extraction failed'}
           $dbs=@(Get-ChildItem source47 -Recurse -File -Filter ravemems_v2.sqlite)
-          if($dbs.Count -ne 47){throw "Expected 47 source SQLite databases, found $($dbs.Count)"}
-          Write-Host "SOURCE47_OK databases=$($dbs.Count)"
+          if($dbs.Count -ne 47){throw "Expected 47 SQLite databases, got $($dbs.Count)"}
+          Write-Host "SOURCE47_RELEASE_DOWNLOAD_PASS dbs=$($dbs.Count)"
+
 
       - name: Rebuild and validate MEMSLibrary Pack001
         shell: pwsh
@@ -869,14 +883,20 @@ jobs:
           $lines | Set-Content $hashFile -Encoding UTF8
           Write-Host "TMP_IA_PACKAGE_FILES=$($files.Count)"
 
-      - name: Upload temporary ECU MEMS Manager x64 IA MEMSLibrary package
-        uses: actions/upload-artifact@v4
-        with:
-          name: TMP-ECU-MEMS-Manager-x64-IA-MEMSLibrary-${{ github.run_id }}
-          path: dist-tmp-ia/
-          if-no-files-found: error
-          compression-level: 6
-          retention-days: 30
+      - name: Publish Qwen ONNX base runtime to private prerelease
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $archive=Join-Path $env:RUNNER_TEMP 'base-runtime.tar.gz'
+          tar.exe -czf $archive -C dist-tmp-ia .
+          if($LASTEXITCODE -ne 0){throw 'IA base archive failed'}
+          gh release upload "mems-build116-candidate-$env:GITHUB_RUN_ID" $archive
+          if($LASTEXITCODE -ne 0){throw 'IA base publishing failed'}
+          Write-Host "IA_BASE_PUBLISHED sha256=$((Get-FileHash $archive -Algorithm SHA256).Hash)"
+
+
   clean-reference:
     needs: [source47, base-runtime]
     runs-on: ubuntu-24.04
@@ -922,10 +942,17 @@ jobs:
         with:
           python-version: '3.12'
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: TMP-ECU-MEMS-Manager-x64-IA-MEMSLibrary-${{ github.run_id }}
-          path: base-green
+      - name: Download regenerated Qwen IA base from private prerelease
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p base-green prerelease-input
+          gh release download "mems-build116-candidate-$GITHUB_RUN_ID" --pattern base-runtime.tar.gz --dir prerelease-input
+          tar -xzf prerelease-input/base-runtime.tar.gz -C base-green
+          test -n "$(find base-green -type f -name ecu_mems_manager.exe -print -quit)"
+          echo BASE_RUNTIME_FROM_RELEASE_PASS
       - name: Stage regenerated verified IA package as cleanup input
         shell: bash
         run: |
@@ -1053,10 +1080,17 @@ jobs:
           print('ROSCO_LEOPOLD_HARO_NON_TARGET_PRESERVATION_PASS')
           PY
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: RAVEMEMS-V2-FULL-CORPUS-GENERIC-${{ github.run_id }}
-          path: final-v2
+      - name: Download exact RAVEMEMS V2 corpus from private prerelease
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p final-v2 final-v2-input
+          gh release download "mems-build116-candidate-$GITHUB_RUN_ID" --pattern source47.tar.gz --dir final-v2-input
+          tar -xzf final-v2-input/source47.tar.gz -C final-v2
+          test "$(find final-v2 -type f -name ravemems_v2.sqlite | wc -l)" -eq 47
+          echo V2_CORPUS_FROM_RELEASE_PASS
       - name: Verify regenerated final RAVEMEMS V2 corpus only
         shell: bash
         run: |
@@ -1248,17 +1282,17 @@ jobs:
           PY
           test "$(git ls-remote origin refs/heads/MEMSX64 | awk '{print $1}')" = "$PROTECTED_BUILD103"
 
-      - name: Upload cleaned reference and audit
-        uses: actions/upload-artifact@v4
-        with:
-          name: CLEAN-REFERENCE-V2-${{ github.run_id }}
-          path: |
-            clean-package/database/reference
-            cleanup-audit/cleanup_report.json
-            cleanup-audit/cleanup_report.txt
-          if-no-files-found: error
-          retention-days: 30
-          compression-level: 6
+      - name: Publish clean V2 reference and audit to private prerelease
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tar -czf "$RUNNER_TEMP/clean-reference.tar.gz" -C clean-package/database reference -C "$GITHUB_WORKSPACE" cleanup-audit/cleanup_report.json cleanup-audit/cleanup_report.txt
+          gh release upload "mems-build116-candidate-$GITHUB_RUN_ID" "$RUNNER_TEMP/clean-reference.tar.gz"
+          echo CLEAN_REFERENCE_RELEASE_PUBLISHED
+
+
   build-x64:
     needs: [base-runtime, clean-reference]
     runs-on: windows-2022
@@ -1325,14 +1359,25 @@ jobs:
           "ORT_GENAI_INCLUDE_DIR=$($header.DirectoryName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
           "ORT_GENAI_LIBRARY=$($lib.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: TMP-ECU-MEMS-Manager-x64-IA-MEMSLibrary-${{ github.run_id }}
-          path: base-package
-      - uses: actions/download-artifact@v4
-        with:
-          name: CLEAN-REFERENCE-V2-${{ github.run_id }}
-          path: clean-reference
+      - name: Download IA base and clean reference from private prerelease
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $tag="mems-build116-candidate-$env:GITHUB_RUN_ID"
+          New-Item -ItemType Directory base-package,clean-reference,release-input -Force | Out-Null
+          gh release download $tag --pattern base-runtime.tar.gz --dir release-input
+          if($LASTEXITCODE -ne 0){throw 'IA base release download failed'}
+          tar.exe -xzf release-input/base-runtime.tar.gz -C base-package
+          if($LASTEXITCODE -ne 0){throw 'IA base archive extraction failed'}
+          gh release download $tag --pattern clean-reference.tar.gz --dir release-input
+          if($LASTEXITCODE -ne 0){throw 'Clean reference release download failed'}
+          tar.exe -xzf release-input/clean-reference.tar.gz -C clean-reference
+          if($LASTEXITCODE -ne 0){throw 'Clean V2 reference archive extraction failed'}
+          Write-Host 'REGENERATED_RELEASE_INPUTS_STAGED'
+
+
       - name: Stage fresh IA runtime and clean reference plus protected Pack001 and corrected DLL
         shell: pwsh
         env:
@@ -1549,15 +1594,20 @@ jobs:
           $lines=foreach($f in Get-ChildItem $env:DIST -Recurse -File | Where-Object{$_.FullName-ne$hashFile} | Sort-Object FullName){$r=$f.FullName.Substring($env:DIST.Length+1).Replace('\','/'); "$((Get-FileHash $f.FullName -Algorithm SHA256).Hash.ToLowerInvariant())  $r"}
           $lines | Set-Content $hashFile -Encoding UTF8
 
-      - name: Upload ECU MEMS Manager clean x64
-        uses: actions/upload-artifact@v4
-        with:
-          name: ECU-MEMS-Manager-x64-BUILD-${{ env.MEMS_BUILD }}-v1.0.${{ env.MEMS_BUILD }}-CLEAN-V2
-          path: dist-x64/
-          if-no-files-found: error
-          compression-level: 6
-          retention-days: 30
-      
+      - name: Publish validated portable ECU MEMS Manager BUILD116
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $archive=Join-Path $env:RUNNER_TEMP 'ECU-MEMS-Manager-x64-BUILD116-CLEAN-V2.tar.gz'
+          tar.exe -czf $archive -C dist-x64 .
+          if($LASTEXITCODE -ne 0){throw 'Portable x64 archive creation failed'}
+          gh release upload "mems-build116-candidate-$env:GITHUB_RUN_ID" $archive
+          if($LASTEXITCODE -ne 0){throw 'Portable x64 publishing failed'}
+          Write-Host "PORTABLE_X64_PUBLISHED sha256=$((Get-FileHash $archive -Algorithm SHA256).Hash)"
+
+
       - name: Create Windows Setup installer from validated x64 package
         shell: pwsh
         run: |
@@ -1602,11 +1652,14 @@ jobs:
           if(-not $exe){throw 'Setup executable not generated'}
           Write-Host "SETUP_GENERATED size=$($exe.Length) sha256=$((Get-FileHash $exe.FullName -Algorithm SHA256).Hash)"
       
-      - name: Upload Windows Setup candidate
-        uses: actions/upload-artifact@v4
-        with:
-          name: ECU-MEMS-Manager-Windows-Setup-BUILD-116-TEST-${{ github.run_id }}
-          path: setup-output/*.exe
-          if-no-files-found: error
-          retention-days: 30
-          compression-level: 0
+      - name: Publish tested Windows Setup to private prerelease
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $exe=Get-ChildItem setup-output -File -Filter *.exe | Select-Object -First 1
+          if(-not $exe){throw 'Windows Setup binary missing'}
+          gh release upload "mems-build116-candidate-$env:GITHUB_RUN_ID" $exe.FullName
+          if($LASTEXITCODE -ne 0){throw 'Publishing Setup binary failed'}
+          Write-Host "WINDOWS_SETUP_PUBLISHED size=$($exe.Length) sha256=$((Get-FileHash $exe.FullName -Algorithm SHA256).Hash)"
