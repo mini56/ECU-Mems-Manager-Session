@@ -360,6 +360,11 @@ protected:
     {
         QMainWindow *window=qobject_cast<QMainWindow*>(watched);
         if(!window||window->objectName()!=QStringLiteral("MainWindow"))return QObject::eventFilter(watched,event);
+        // MainWindow calls processEvents() while it is still constructing
+        // additional tabs. Ignore these early Polish/Show events entirely.
+        // Never build a partial 10/12 page sidebar that later desynchronizes.
+        if(!window->property("ecuMainWindowConstructed").toBool())
+            return QObject::eventFilter(watched,event);
 
         if(event->type()==QEvent::Resize && window->property("uiRebuildInstalled").toBool()) {
             applyResponsive(window);
