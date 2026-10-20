@@ -6,6 +6,10 @@
 #include <QVariant>
 #include <QUuid>
 #include <QSqlRecord>
+#include <QFile>
+#include <QFileInfo>
+#include <QStandardPaths>
+#include <QDebug>
 
 QVariantList DatabaseManager::queryList(
     const QString &sql,
@@ -504,15 +508,112 @@ DatabaseManager::~DatabaseManager()
     close();
 }
 
+namespace
+{
+// The personal ECU database is never written into Program Files. Historical
+// installations used applicationDirPath()/database. Copy those files into the
+// user's writable profile without modifying or deleting the original.
+QStringList legacyDatabasePaths()
+{
+    QStringList paths;
+    const QString fileName = QStringLiteral("/database/ecu_mems_manager.sqlite");
+    paths << (QCoreApplication::applicationDirPath() + fileName);
+#ifdef Q_OS_WIN
+    const QStringList programFileRoots = {
+        qEnvironmentVariable("ProgramW6432"),
+        qEnvironmentVariable("ProgramFiles"),
+        qEnvironmentVariable("ProgramFiles(x86)")
+    };
+    const QStringList historicalInstallNames = {
+        QStringLiteral("ECU MEMS Manager"),
+        QStringLiteral("ECU Mems Manager"),
+        QStringLiteral("ECU MEMS Manager TEST 116")
+    };
+    for (const QString &root : programFileRoots) {
+        if (root.isEmpty()) continue;
+        for (const QString &name : historicalInstallNames)
+            paths << (QDir(root).filePath(name) + fileName);
+    }
+#endif
+    paths.removeDuplicates();
+    return paths;
+}
+
+bool migrateLegacyDatabase(const QString &destination)
+{
+    for (const QString &source : legacyDatabasePaths()) {
+        if (!QFileInfo::exists(source)) continue;
+        if (QFileInfo(source).absoluteFilePath() == QFileInfo(destination).absoluteFilePath())
+            continue;
+
+        QFile header(source);
+        if (!header.open(QIODevice::ReadOnly)
+            || header.read(16) != QByteArray("SQLite format 3\\0", 16)) {
+            qWarning() << "Legacy personal SQLite database unreadable; preserved:" << source;
+            return false;
+        }
+        header.close();
+
+        // VACUUM INTO makes a consistent SQLite snapshot, even if the legacy
+        // database uses WAL. Do not copy only the .sqlite while WAL is active.
+        const QString connection = QStringLiteral("LEGACY_ECU_MIGRATION_")
+            + QUuid::createUuid().toString();
+        bool succeeded = false;
+        {
+            QSqlDatabase legacy = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), connection);
+            legacy.setDatabaseName(source);
+            legacy.setConnectOptions(QStringLiteral("QSQLITE_OPEN_READONLY"));
+            if (legacy.open()) {
+                {
+                    QSqlQuery integrity(legacy);
+                    succeeded = integrity.exec(QStringLiteral("PRAGMA quick_check"))
+                        && integrity.next()
+                        && integrity.value(0).toString() == QStringLiteral("ok");
+                }
+                if (succeeded) {
+                    QSqlQuery backup(legacy);
+                    const QString escaped = QString(destination).replace(
+                        QLatin1Char('\''), QStringLiteral("''"));
+                    succeeded = backup.exec(
+                        QStringLiteral("VACUUM main INTO '%1'").arg(escaped));
+                    if (!succeeded)
+                        qWarning() << "Legacy SQLite snapshot failed:" << backup.lastError().text();
+                }
+                legacy.close();
+            } else {
+                qWarning() << "Cannot read legacy SQLite:" << legacy.lastError().text();
+            }
+        }
+        QSqlDatabase::removeDatabase(connection);
+        if (!succeeded) {
+            // The source is preserved. Never silently create an empty database
+            // when a previous user's database could not be migrated.
+            QFile::remove(destination);
+            return false;
+        }
+        qInfo() << "ECU personal database migrated to user profile:" << destination;
+        return true;
+    }
+    return true; // New installation, no legacy database to migrate.
+}
+}
+
 QString DatabaseManager::defaultDatabasePath() const
 {
-    const QString directory =
-        QCoreApplication::applicationDirPath() + "/database";
+    const QString root =
+        QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+    if (root.isEmpty())
+        return QString();
 
-    QDir dir;
-    dir.mkpath(directory);
+    const QString directory = QDir(root).filePath(QStringLiteral("database"));
+    if (!QDir().mkpath(directory))
+        return QString();
 
-    return directory + "/ecu_mems_manager.sqlite";
+    const QString destination =
+        QDir(directory).filePath(QStringLiteral("ecu_mems_manager.sqlite"));
+    if (!QFileInfo::exists(destination) && !migrateLegacyDatabase(destination))
+        return QString();
+    return destination;
 }
 
 bool DatabaseManager::open(const QString &databasePath)
@@ -524,6 +625,9 @@ bool DatabaseManager::open(const QString &databasePath)
         databasePath.isEmpty()
             ? defaultDatabasePath()
             : databasePath;
+
+    if (m_databasePath.isEmpty())
+        return false;
 
     m_database = QSqlDatabase::addDatabase(
         "QSQLITE",
