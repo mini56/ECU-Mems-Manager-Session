@@ -295,6 +295,20 @@ static qreal responsiveScale(QMainWindow *window)
     return qBound<qreal>(0.64,qMin(sz.width()/1450.0,sz.height()/720.0),1.28);
 }
 
+// The original fixed-layout ECU pages were placed in scroll areas by
+// MainWindow::makeFixedTabsScrollable(). Their 1300px-or-wider design canvas
+// must NEVER be compressed to the viewport when the user changes pages.
+// Other modern / embedded scroll areas retain their own policies.
+static void preserveOriginalPageCanvas(QScrollArea *scroll)
+{
+    if (!scroll || !scroll->widget() ||
+        !scroll->widget()->property("wrappedInScrollArea").toBool())
+        return;
+    scroll->setWidgetResizable(false);
+    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+}
+
 static void applyResponsive(QMainWindow *window)
 {
     if(!window) return;
@@ -340,16 +354,9 @@ static void applyResponsive(QMainWindow *window)
     if(QFrame *status=window->findChild<QFrame*>(QStringLiteral("uiRebuildStatus")))
         status->setFixedHeight(qBound(29,qRound(35.0*s),40));
 
-    const QList<QScrollArea*> scrolls=window->findChildren<QScrollArea*>();
-    for(QScrollArea *scroll:scrolls){
-        scroll->setWidgetResizable(true);
-        scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-        if(scroll->widget()){
-            scroll->widget()->setMinimumWidth(0);
-            scroll->widget()->setMaximumWidth(QWIDGETSIZE_MAX);
-        }
-    }
+    // Do not modify any page's QScrollArea here. Qt resizes the viewport
+    // automatically, while original fixed canvases keep their saved design
+    // width and built-in horizontal/vertical scrolling.
 }
 
 class UiRebuildInstaller : public QObject
@@ -410,7 +417,7 @@ private:
                     applyLightMenuVisibility(tabs,nav);
             });
         });
-        for(int i=0;i<tabs->count();++i){QWidget *page=realPage(tabs->widget(i));if(!page)continue;if(QScrollArea *scroll=qobject_cast<QScrollArea*>(tabs->widget(i))){scroll->setWidgetResizable(true);scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);page->setMinimumSize(0,0);}const QString title=titleForIndex(tabs,i);if(!usesDedicatedLayout(page,i))composeGenericPage(page,title,i);}
+        for(int i=0;i<tabs->count();++i){QWidget *page=realPage(tabs->widget(i));if(!page)continue;if(QScrollArea *scroll=qobject_cast<QScrollArea*>(tabs->widget(i))){preserveOriginalPageCanvas(scroll);}const QString title=titleForIndex(tabs,i);if(!usesDedicatedLayout(page,i))composeGenericPage(page,title,i);}
         root->addWidget(buildBottomStatus(window));tabs->setCurrentIndex(0);
         // Crucial ordering: the pre-existing installFinalNavigation call
         // may happen BEFORE this asynchronous sidebar exists. Synchronize
