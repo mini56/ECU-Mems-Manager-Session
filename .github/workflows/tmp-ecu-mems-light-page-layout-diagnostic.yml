@@ -1,5 +1,5 @@
 name: TEMP LIGHT page layout runtime diagnostic (no installer)
-run-name: DIAG LIGHT - Qt legacy canvases and font after navigation
+run-name: DIAG LIGHT #2 - fix strict visual and dedicated tab canvas
 
 on:
   push:
@@ -57,7 +57,7 @@ jobs:
           if (-not (Select-String -Path CMakeLists.txt -Pattern 'IaMemsLibraryBridge.cpp' -Quiet)) { throw 'Direct bridge CMake wiring missing' }
           if (-not (Select-String -Path expert/IaMemsLibraryBridge.cpp -Pattern 'MEMSLibrary_SearchPackFiltered' -Quiet)) { throw 'Filtered MEMSLibrary bridge source missing' }
           if (-not (Select-String -Path memslibrary/include/MEMSLibrary.h -Pattern 'MEMSLibrary_SearchPackFiltered' -Quiet)) { throw 'Filtered MEMSLibrary public contract missing' }
-          $files=@('navigationorderpatch.cpp','navigationlightmenu.h','navigationLightMenuSelfTest.cpp','uirebuild.cpp','CMakeLists.txt','iamemstab.cpp','expert/IaMemsDiagramCatalog.cpp','expert/IaMemsDiagramCatalog.h','expert/IaMemsService.h','expert/IaMemsLibraryBridge.cpp','expert/IaMemsLibraryBridge.h','expert/IaMemsLibraryIntegration.cpp','expert/IaMemsLibraryBridgeSelfTest.cpp','expert/bridge-selftest/CMakeLists.txt','memslibrary/include/MEMSLibrary.h')
+          $files=@('historicalpagecanvas.h','strictvisualrebuild.cpp','visualcompletion.cpp','dedicatedpagesrebuild.cpp','navigationorderpatch.cpp','navigationlightmenu.h','navigationLightMenuSelfTest.cpp','uirebuild.cpp','CMakeLists.txt','iamemstab.cpp','expert/IaMemsDiagramCatalog.cpp','expert/IaMemsDiagramCatalog.h','expert/IaMemsService.h','expert/IaMemsLibraryBridge.cpp','expert/IaMemsLibraryBridge.h','expert/IaMemsLibraryIntegration.cpp','expert/IaMemsLibraryBridgeSelfTest.cpp','expert/bridge-selftest/CMakeLists.txt','memslibrary/include/MEMSLibrary.h')
           $hashes=@{}
           foreach($f in $files){ if(-not(Test-Path $f)){throw "Missing source $f"}; $hashes[$f]=(Get-FileHash $f -Algorithm SHA256).Hash.ToLowerInvariant() }
           $hashes | ConvertTo-Json | Set-Content source-hashes-before.json -Encoding UTF8
@@ -89,8 +89,18 @@ jobs:
           $ui=Get-Content uirebuild.cpp -Raw
           if($ui -match 'scroll->setWidgetResizable\(true\)'){throw 'Legacy scroll compression must not be reintroduced'}
           if($ui -match 'scroll->widget\(\)->setMinimumWidth\(0\)'){throw 'Legacy 1300px design minimum must not be erased'}
-          if($ui -notmatch 'preserveOriginalPageCanvas' -or $ui -notmatch 'LIGHT_PAGE_LAYOUT_PROBE_FAIL'){
+          if($ui -notmatch 'preserveHistoricalPageCanvas' -or $ui -notmatch 'LIGHT_PAGE_LAYOUT_PROBE_FAIL'){
             throw 'Qt layout preservation and post-navigation regression probe are mandatory'
+          }
+          $historic=Get-Content historicalpagecanvas.h -Raw
+          if($historic -notmatch 'setMinimumWidth\(qMax\(1300' -or $historic -notmatch 'setWidgetResizable\(false\)'){
+            throw 'Historical ECU tab page canvas guard is incomplete'
+          }
+          foreach($patch in @('strictvisualrebuild.cpp','visualcompletion.cpp','dedicatedpagesrebuild.cpp')){
+            $code=Get-Content $patch -Raw
+            if($code -notmatch 'preserveHistoricalPageCanvas'){
+              throw "Competing visual patch could still compress original pages: $patch"
+            }
           }
           Write-Host 'LIGHT_PAGE_GEOMETRY_SOURCE_GUARD_PASS'
           Write-Host 'LIGHT_DELAYED_SIDEBAR_SOURCE_GUARD_PASS'
