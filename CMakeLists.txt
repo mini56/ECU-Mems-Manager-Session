@@ -130,6 +130,12 @@ add_executable(database_storage_selftest
     database/DatabaseManager.cpp database/DatabaseManager.h)
 target_link_libraries(database_storage_selftest PRIVATE Qt5::Core Qt5::Sql)
 
+# Actual Qt QListWidget/QTabWidget regression for the LIGHT sidebar:
+# the original 14 page widgets survive, only three menu items are invisible.
+add_executable(navigation_light_selftest
+    navigationLightMenuSelfTest.cpp navigationlightmenu.h)
+target_link_libraries(navigation_light_selftest PRIVATE Qt5::Widgets)
+
 add_executable(expert_runtime_selftest
     expert/ExpertRuntimeDatabaseSelfTest.cpp
     expert/ExpertRuntimeDatabase.cpp expert/ExpertRuntimeDatabase.h)
