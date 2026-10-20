@@ -1,0 +1,558 @@
+name: TEMP ECU MEMS Manager LIGHT 11 visible entries BUILD122
+run-name: LIGHT BUILD 122 - real GUI 11 entries and Windows desktop shortcut
+
+on:
+  push:
+    branches: [tmp-ia-clarification-test-1b106ee]
+    paths:
+      - '.github/workflows/tmp-ecu-mems-light-build122.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: tmp-ecu-mems-light-build122
+  cancel-in-progress: false
+
+env:
+  MEMS_BUILD: '122'
+  MEMS_BUILD_NUMBER: '122'
+  ORT_GENAI_VERSION: '0.14.0'
+  ORT_GENAI_WIN_X64_SHA256: '8a303e52dc7be8fb2a5331929af451a25ac59774102d7fd09ef673adc85c5ebf'
+  ORT_VERSION: '1.24.4'
+  ORT_WIN_X64_SHA256: 'd2319fddfb6ea4db99ccc4b60c85c517bcd855721f5daa6a06d40d7cb2ee2357'
+  PACK001_RUN_ID: '33847448261'
+  PACK001_ARTIFACT_ID: '9927059742'
+  PACK001_ARTIFACT_NAME: 'MEMSLibrary-Pack001-33847448261'
+  PACK001_DIGEST: 'sha256:ffa9c42783fe443ffc3949cf2166083291adb08505b3fca228b03003a904698a'
+  PACK001_SQLITE_SHA256: '827208b703324335828d72093994ec5f7bf9e0a6fd0cd3b0082d033bfa38628b'
+  CORRECTED_DLL_RUN_ID: '34135797836'
+  CORRECTED_DLL_ARTIFACT_ID: '10023930741'
+  CORRECTED_DLL_ARTIFACT_NAME: 'MEMSLibrary-DLL-Provenance-Relevance-34135797836'
+  CORRECTED_DLL_DIGEST: 'sha256:596d9e4aaf7ad0e2b11cd011ada09ef58bab93936eab665c8e7a57b85cd3a2fb'
+  CORRECTED_DLL_SHA256: 'b16dfe3d4d3ece40557fb5fa5e17088fbe3a48ca085575568d16057d8571dd8b'
+  CLEAN_V2_LINEAGE: 'RAVEMEMS_V2_FINAL_33810202288'
+jobs:
+  build-x64:
+    runs-on: windows-2022
+    timeout-minutes: 122
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Guard direct code and no patch injection
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          if (Select-String -Path CMakeLists.txt -Pattern 'CMAKE_PROJECT_INCLUDE' -Quiet) { throw 'Source injection is forbidden' }
+          if (-not (Select-String -Path iamemstab.cpp -Pattern 'iaMemsTranscriptScroll' -Quiet)) { throw 'IA vertical scroll source missing' }
+          if (-not (Select-String -Path iamemstab.cpp -Pattern 'Voir le schéma' -Quiet)) { throw 'Voir le schema UI source missing' }
+          if (-not (Select-String -Path iamemstab.cpp -Pattern 'askWithLibrary' -Quiet)) { throw 'Direct MEMSLibrary call missing' }
+          if (-not (Select-String -Path expert/IaMemsDiagramCatalog.cpp -Pattern 'suggestionForEvidence' -Quiet)) { throw 'Evidence visual routing source missing' }
+          if (-not (Select-String -Path CMakeLists.txt -Pattern 'IaMemsLibraryBridge.cpp' -Quiet)) { throw 'Direct bridge CMake wiring missing' }
+          if (-not (Select-String -Path expert/IaMemsLibraryBridge.cpp -Pattern 'MEMSLibrary_SearchPackFiltered' -Quiet)) { throw 'Filtered MEMSLibrary bridge source missing' }
+          if (-not (Select-String -Path memslibrary/include/MEMSLibrary.h -Pattern 'MEMSLibrary_SearchPackFiltered' -Quiet)) { throw 'Filtered MEMSLibrary public contract missing' }
+          $files=@('navigationorderpatch.cpp','navigationlightmenu.h','navigationLightMenuSelfTest.cpp','uirebuild.cpp','CMakeLists.txt','iamemstab.cpp','expert/IaMemsDiagramCatalog.cpp','expert/IaMemsDiagramCatalog.h','expert/IaMemsService.h','expert/IaMemsLibraryBridge.cpp','expert/IaMemsLibraryBridge.h','expert/IaMemsLibraryIntegration.cpp','expert/IaMemsLibraryBridgeSelfTest.cpp','expert/bridge-selftest/CMakeLists.txt','memslibrary/include/MEMSLibrary.h')
+          $hashes=@{}
+          foreach($f in $files){ if(-not(Test-Path $f)){throw "Missing source $f"}; $hashes[$f]=(Get-FileHash $f -Algorithm SHA256).Hash.ToLowerInvariant() }
+          $hashes | ConvertTo-Json | Set-Content source-hashes-before.json -Encoding UTF8
+          # The official 14 pages remain fully built; only three sidebar
+          # QListWidgetItem entries are temporarily invisible.
+          $nav=Get-Content navigationorderpatch.cpp -Raw
+          foreach($rank in @(6,9,13)){
+            if($nav -notmatch ("rank\s*==\s*"+$rank+"\b")){throw "Hidden navigation rank missing: $rank"}
+          }
+          if($nav -notmatch 'item->setHidden\(temporarilyHiddenMenuRank\(rank\)\)'){throw 'Sidebar hide rule missing'}
+          if($nav -notmatch 'visibleNavigationItemCount'){throw 'Sidebar layout count not updated'}
+          foreach($page in @('ia_mems_tab','ecu_rosco_tab','mems19_test_tab')){
+            if(-not $nav.Contains($page)){throw "Official page was removed: $page"}
+          }
+          if($nav -notmatch 'static const int kFinalTabCount = 14;'){throw 'Tab count altered'}
+          # Validate the ACTUAL sidebar builder, not solely the early
+          # deterministic navigation patch. A previous green test missed this.
+          $ui=Get-Content uirebuild.cpp -Raw
+          if($ui -notmatch 'applyLightMenuVisibility\(tabs,nav\)'){throw 'Real GUI sidebar is not masked'}
+          if($ui -notmatch 'MEMS_LIGHT_NAV_PROBE'){throw 'Runtime GUI verification hook absent'}
+          $policy=Get-Content navigationlightmenu.h -Raw
+          foreach($identity in @('ia_mems_tab','ecu_rosco_tab','mems19_test_tab')){
+            if(-not $policy.Contains($identity)){throw "LIGHT menu identity missing: $identity"}
+          }
+          Write-Host 'LIGHT_REAL_SIDEBAR_SOURCE_GUARD_PASS'
+          Write-Host 'SIDEBAR_HIDES_ONLY_IA_MEMS_ECU_ROSCO_TEST_ECU_19_PASS'
+          if(-not (Select-String -Path mainwindow.cpp -Pattern 'setProperty\("ecuMainWindowConstructed", true\)' -Quiet)){throw 'MainWindow constructor-complete flag absent'}
+          if(-not (Select-String -Path uirebuild.cpp -Pattern 'property\("ecuMainWindowConstructed"\)' -Quiet)){throw 'Sidebar may be built before MainWindow finished'}
+          Write-Host 'LIGHT_DELAYED_SIDEBAR_SOURCE_GUARD_PASS'
+          Write-Host 'DIRECT_SOURCE_NO_PATCH_PASS'
+
+      - name: Setup Python and Qt tools
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Qt 5.15.2 MSVC x64 and validation tools
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python -m pip install --disable-pip-version-check "aqtinstall==3.3.0" pefile
+          $sevenZip=(Get-Command 7z.exe -ErrorAction Stop).Source
+          if(Test-Path C:\Qt){Remove-Item C:\Qt -Recurse -Force -ErrorAction SilentlyContinue}
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
+          if($LASTEXITCODE -ne 0){throw "Qt install failed $LASTEXITCODE"}
+
+      - name: Download pinned ONNX Runtime development files
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $genaiArchive=Join-Path $env:RUNNER_TEMP "onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          $ortArchive=Join-Path $env:RUNNER_TEMP "onnxruntime-win-x64-$env:ORT_VERSION.zip"
+          $genaiExtract=Join-Path $env:RUNNER_TEMP 'genai'
+          $ortExtract=Join-Path $env:RUNNER_TEMP 'ort'
+          curl.exe -L --fail --retry 3 --retry-all-errors --retry-delay 2 -o $genaiArchive "https://github.com/microsoft/onnxruntime-genai/releases/download/v$env:ORT_GENAI_VERSION/onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          if($LASTEXITCODE -ne 0){throw 'GenAI download failed'}
+          curl.exe -L --fail --retry 3 --retry-all-errors --retry-delay 2 -o $ortArchive "https://github.com/microsoft/onnxruntime/releases/download/v$env:ORT_VERSION/onnxruntime-win-x64-$env:ORT_VERSION.zip"
+          if($LASTEXITCODE -ne 0){throw 'ORT download failed'}
+          if((Get-FileHash $genaiArchive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:ORT_GENAI_WIN_X64_SHA256){throw 'GenAI SHA mismatch'}
+          if((Get-FileHash $ortArchive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:ORT_WIN_X64_SHA256){throw 'ORT SHA mismatch'}
+          Expand-Archive $genaiArchive $genaiExtract -Force
+          Expand-Archive $ortArchive $ortExtract -Force
+          $header=Get-ChildItem $genaiExtract -Recurse -File -Filter ort_genai_c.h | Select-Object -First 1
+          $lib=Get-ChildItem $genaiExtract -Recurse -File -Filter onnxruntime-genai.lib | Select-Object -First 1
+          if(-not $header -or -not $lib){throw 'ONNX development files incomplete'}
+          "ORT_GENAI_INCLUDE_DIR=$($header.DirectoryName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "ORT_GENAI_LIBRARY=$($lib.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Fetch pinned green BUILD116 reference and ONNX runtime (reusable, immutable)
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $tag='mems-build116-candidate-39387164216'
+          $meta=gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/$tag" | ConvertFrom-Json
+          if($LASTEXITCODE -ne 0){throw 'Previous green BUILD116 release metadata unavailable'}
+          $required=@{
+            'base-runtime.tar.gz'='sha256:12b8c139f50c85654729a36bd0d7c10ecfbf1db037229e904e2427138ec30243'
+            'clean-reference.tar.gz'='sha256:24ad6da0b48cd91af1826323b3bcf477d31af4d91d94b136da9dc4816333f104'
+          }
+          foreach($entry in $required.GetEnumerator()){
+            $asset=$meta.assets | Where-Object { $_.name -eq $entry.Key } | Select-Object -First 1
+            if(-not $asset -or $asset.digest -ne $entry.Value){throw "Pinned release asset mismatch: $($entry.Key)"}
+            Write-Host "GREEN_ASSET_PIN_PASS $($entry.Key) $($entry.Value)"
+          }
+          New-Item -ItemType Directory base-package,clean-reference,release-input -Force | Out-Null
+          foreach($asset in $required.Keys){
+            gh release download $tag --pattern $asset --dir release-input
+            if($LASTEXITCODE -ne 0){throw "Downloading $asset failed"}
+            $actual=(Get-FileHash (Join-Path release-input $asset) -Algorithm SHA256).Hash.ToLowerInvariant()
+            if("sha256:$actual" -ne $required[$asset]){throw "Downloaded bytes mismatch $asset"}
+          }
+          tar.exe -xzf release-input/base-runtime.tar.gz -C base-package
+          if($LASTEXITCODE -ne 0){throw 'IA runtime extraction failed'}
+          tar.exe -xzf release-input/clean-reference.tar.gz -C clean-reference
+          if($LASTEXITCODE -ne 0){throw 'Reference extraction failed'}
+          Write-Host 'IMMUTABLE_BUILD116_INPUTS_VERIFIED_FOR_BUILD122'
+
+      - name: Stage fresh IA runtime and clean reference plus protected Pack001 and corrected DLL
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $catalog=Get-ChildItem clean-reference -Recurse -File -Filter runtime_visual_catalog.json | Select-Object -First 1
+          if(-not $catalog){throw 'Regenerated clean runtime catalog missing'}
+          $refRoot=$catalog.Directory.FullName
+          if(-not(Test-Path (Join-Path $refRoot 'manifest.json'))){throw 'Clean runtime reference manifest missing'}
+          "CLEAN_REFERENCE_ROOT=$refRoot" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          $baseExe=Get-ChildItem base-package -Recurse -File -Filter ecu_mems_manager.exe | Select-Object -First 1
+          if(-not $baseExe){throw 'Regenerated IA base executable missing'}
+          "VALIDATED_BASE_ROOT=$($baseExe.Directory.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          function Assert-Artifact($id,$name,$digest){
+            $m=gh api "repos/$env:GITHUB_REPOSITORY/actions/artifacts/$id" | ConvertFrom-Json
+            if($LASTEXITCODE -ne 0 -or $m.name -ne $name -or $m.digest -ne $digest -or $m.expired){throw "Pinned artifact invalid or expired: $id"}
+          }
+          Assert-Artifact $env:PACK001_ARTIFACT_ID $env:PACK001_ARTIFACT_NAME $env:PACK001_DIGEST
+          Assert-Artifact $env:CORRECTED_DLL_ARTIFACT_ID $env:CORRECTED_DLL_ARTIFACT_NAME $env:CORRECTED_DLL_DIGEST
+          gh run download $env:PACK001_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:PACK001_ARTIFACT_NAME --dir pack001
+          if($LASTEXITCODE -ne 0){throw 'Validated Pack001 download failed'}
+          gh run download $env:CORRECTED_DLL_RUN_ID --repo $env:GITHUB_REPOSITORY --name $env:CORRECTED_DLL_ARTIFACT_NAME --dir corrected-dll
+          if($LASTEXITCODE -ne 0){throw 'Validated corrected DLL download failed'}
+          $dll=Get-ChildItem corrected-dll -Recurse -File -Filter MEMSLibrary.dll | Select-Object -First 1
+          $db=Get-ChildItem pack001 -Recurse -File -Filter knowledge.sqlite | Select-Object -First 1
+          if(-not $dll -or -not $db){throw 'Canonical Pack001 or corrected DLL missing'}
+          if((Get-FileHash $dll.FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:CORRECTED_DLL_SHA256){throw 'Corrected DLL hash mismatch'}
+          if((Get-FileHash $db.FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:PACK001_SQLITE_SHA256){throw 'Canonical Pack001 SQLite hash mismatch'}
+          "MEMSLIBRARY_DLL_SOURCE=$($dll.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "PACK001_SOURCE_ROOT=$($db.Directory.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host 'PINNED_INPUTS_PASS fresh_ia=1 clean_v2=1 protected_pack001=1 corrected_dll=1'
+
+      - name: Validate clean reference before compilation
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $env:REF=$env:CLEAN_REFERENCE_ROOT
+          @'
+          import json,os
+          from pathlib import Path
+          r=Path(os.environ['REF'])
+          c=json.loads((r/'runtime_visual_catalog.json').read_text(encoding='utf-8'))
+          assert c['source_lineage']=='RAVEMEMS_V2_FINAL_33810202288'
+          assert c['source_run_id']==33810202288
+          assert c['entry_count']==1667
+          assert c['legacy_entries']==0 and c['pre_v2_images_included']==0
+          assert not (r/'images'/'rave').exists()
+          assert all(e.get('source_lineage')=='RAVEMEMS_V2_FINAL_33810202288' for e in c['entries'])
+          assert all(e.get('source_run_id')==33810202288 for e in c['entries'])
+          assert all(e.get('source_type')=='ravemems' for e in c['entries'])
+          text=(r/'runtime_visual_catalog.json').read_text(encoding='utf-8')
+          for bad in ('33510951021','33524210122','ravemems-runtime-migration-simulation','ravemems-visual-bundle-audit'):
+              assert bad not in text
+          rows=[e for e in c['entries'] if e.get('publication_code')=='RCL0193ENG' and e.get('physical_page')==53]
+          keys={e.get('asset_entity_key') for e in rows}
+          assert {'VIS_P0053_001','VIS_P0053_002'} <= keys
+          print('CLEAN_REFERENCE_V2_PASS visuals=1667 legacy=0 p53_visuals=2')
+          '@ | python -
+
+      - name: Validate protocol guards
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python librosco-x64/validate_protocol_guards.py
+
+      - name: Configure and compile current direct source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          cmake -S . -B build-x64 -A x64 `
+            -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
+            -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
+            -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF `
+            -DMEMS_USE_ONNX_GENAI=ON `
+            "-DORT_GENAI_INCLUDE_DIR=$env:ORT_GENAI_INCLUDE_DIR" `
+            "-DORT_GENAI_LIBRARY=$env:ORT_GENAI_LIBRARY"
+          if($LASTEXITCODE -ne 0){throw "CMake configure failed $LASTEXITCODE"}
+          cmake --build build-x64 --config Release --target ecu_mems_manager ecu_mems_uninstaller rosco_abi_selftest ia_response_selftest ia_mems_diagram_selftest database_storage_selftest navigation_light_selftest --parallel
+          if($LASTEXITCODE -ne 0){throw "Compile failed $LASTEXITCODE"}
+          cmake -S expert/bridge-selftest -B build-bridge-test -A x64 -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64"
+          if($LASTEXITCODE -ne 0){throw "Bridge self-test configure failed $LASTEXITCODE"}
+          cmake --build build-bridge-test --config Release --parallel
+          if($LASTEXITCODE -ne 0){throw "Bridge self-test build failed $LASTEXITCODE"}
+
+      - name: Prove build did not transform source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $before=Get-Content source-hashes-before.json -Raw | ConvertFrom-Json
+          foreach($p in $before.PSObject.Properties){
+            $now=(Get-FileHash $p.Name -Algorithm SHA256).Hash.ToLowerInvariant()
+            if($now -ne [string]$p.Value){throw "Source changed during build: $($p.Name)"}
+          }
+          Write-Host 'SOURCE_UNCHANGED_AFTER_BUILD_PASS'
+
+      - name: Stage clean runtime inputs for self-tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $release='${{ github.workspace }}\build-x64\Release'
+          $ref=Join-Path $release 'database\reference'
+          if(Test-Path $ref){Remove-Item $ref -Recurse -Force}
+          New-Item -ItemType Directory -Force -Path (Split-Path $ref -Parent) | Out-Null
+          Copy-Item $env:CLEAN_REFERENCE_ROOT $ref -Recurse -Force
+          Copy-Item $env:MEMSLIBRARY_DLL_SOURCE (Join-Path $release 'MEMSLibrary.dll') -Force
+          $pack=Join-Path $release 'MEMSLibrary_Pack_001'
+          if(Test-Path $pack){Remove-Item $pack -Recurse -Force}
+          Copy-Item $env:PACK001_SOURCE_ROOT $pack -Recurse -Force
+
+      - name: Run deterministic source self-tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $qt='C:\Qt\5.15.2\msvc2019_64'
+          $env:PATH="$qt\bin;$env:PATH"
+          $env:QT_PLUGIN_PATH="$qt\plugins"
+          & '${{ github.workspace }}\build-x64\Release\ia_response_selftest.exe'
+          if($LASTEXITCODE -ne 0){throw 'IA response self-test failed'}
+          & '${{ github.workspace }}\build-x64\Release\ia_mems_diagram_selftest.exe'
+          if($LASTEXITCODE -ne 0){throw 'IA diagram self-test failed'}
+          & '${{ github.workspace }}\build-bridge-test\Release\ia_memslibrary_bridge_selftest.exe' $env:MEMSLIBRARY_DLL_SOURCE $env:PACK001_SOURCE_ROOT $env:CLEAN_REFERENCE_ROOT
+          if($LASTEXITCODE -ne 0){throw 'Filtered MEMSLibrary bridge self-test failed'}
+          ctest --test-dir build-x64/librosco-x64 -C Release --output-on-failure -R rosco_abi_selftest
+          if($LASTEXITCODE -ne 0){throw 'ROSCO ABI self-test failed'}
+
+      - name: Verify actual Qt LIGHT navigation widgets (11 links, 14 pages)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $qt='C:\Qt\5.15.2\msvc2019_64'
+          $env:PATH="$qt\bin;$env:PATH"
+          $env:QT_PLUGIN_PATH="$qt\plugins"
+          $env:QT_QPA_PLATFORM='offscreen'
+          & '${{ github.workspace }}\build-x64\Release\navigation_light_selftest.exe'
+          if($LASTEXITCODE -ne 0){throw 'LIGHT real Qt widget self-test failed'}
+          & '${{ github.workspace }}\build-x64\Release\navigation_light_selftest.exe' --ci-preconfigure-language
+          if($LASTEXITCODE -ne 0){throw 'LIGHT initial French language setup for CI failed'}
+          Remove-Item Env:QT_QPA_PLATFORM -ErrorAction SilentlyContinue
+          Write-Host 'LIGHT_QT_WIDGETS_11_VISIBLE_3_HIDDEN_14_PAGES_PASS'
+
+      - name: Assemble BUILD package from validated IA runtime plus clean data
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $dist='${{ github.workspace }}\dist-x64'
+          if(Test-Path $dist){Remove-Item $dist -Recurse -Force}
+          New-Item -ItemType Directory -Force -Path $dist | Out-Null
+          Copy-Item "$env:VALIDATED_BASE_ROOT\*" $dist -Recurse -Force
+          # The previously validated runtime may have produced a personal SQLite
+          # while smoke-tested. Never install a user's writable database as part
+          # of the application payload; it is created/migrated on first launch.
+          foreach($suffix in @('','.wal','-wal','-shm','-journal')){
+            $personalDb=Join-Path $dist ("database\ecu_mems_manager.sqlite"+$suffix)
+            if(Test-Path $personalDb){Remove-Item $personalDb -Force}
+          }
+          if(Test-Path (Join-Path $dist 'database\ecu_mems_manager.sqlite')){
+            throw 'Personal SQLite must not be shipped by installer'
+          }
+          Write-Host 'PERSONAL_SQLITE_NOT_SHIPPED_PASS'
+          Copy-Item '${{ github.workspace }}\build-x64\Release\ecu_mems_manager.exe' "$dist\ecu_mems_manager.exe" -Force
+          Copy-Item '${{ github.workspace }}\build-x64\Release\ecu_mems_uninstaller.exe' "$dist\ecu_mems_uninstaller.exe" -Force
+          Copy-Item '${{ github.workspace }}\build-x64\librosco-x64\Release\mems_manager_x64.dll' "$dist\mems_manager_x64.dll" -Force
+          $ref="$dist\database\reference"
+          if(Test-Path $ref){Remove-Item $ref -Recurse -Force}
+          New-Item -ItemType Directory -Force -Path (Split-Path $ref -Parent) | Out-Null
+          Copy-Item $env:CLEAN_REFERENCE_ROOT $ref -Recurse -Force
+          Copy-Item $env:MEMSLIBRARY_DLL_SOURCE "$dist\MEMSLibrary.dll" -Force
+          $pack="$dist\MEMSLibrary_Pack_001"
+          if(Test-Path $pack){Remove-Item $pack -Recurse -Force}
+          Copy-Item $env:PACK001_SOURCE_ROOT $pack -Recurse -Force
+          $qt='C:\Qt\5.15.2\msvc2019_64'
+          & "$qt\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist "$dist\ecu_mems_manager.exe"
+          if($LASTEXITCODE -ne 0){throw 'windeployqt app failed'}
+          & "$qt\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist "$dist\ecu_mems_uninstaller.exe"
+          if($LASTEXITCODE -ne 0){throw 'windeployqt uninstaller failed'}
+          @(
+            "ECU MEMS Manager BUILD #$env:MEMS_BUILD / v1.0.$env:MEMS_BUILD",
+            'IA scroll vertical: direct C++ source',
+            'Voir le schema: direct C++ source with evidence routing',
+            'MEMSLibrary Pack001: canonical run 33847448261 / SQLite unchanged',
+            'MEMSLibrary DLL provenance fix: validated run 33953367833',
+            'Active manufacturer visual data: final V2 run 33810202288 only',
+            'Pre-V2 RAVE images active: 0',
+            'ROSCO / Leopold / Haro / ECU analysis reference data preserved by clean-reference audit run 33919306584',
+            'No source patch or build-time source injection'
+          ) | Set-Content "$dist\README_BUILD$env:MEMS_BUILD.txt" -Encoding UTF8
+          "DIST=$dist" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Validate complete clean BUILD package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $env:DIST_ROOT=$env:DIST
+          @'
+          import hashlib,json,os,sqlite3
+          from pathlib import Path
+          import pefile
+          root=Path(os.environ['DIST_ROOT'])
+          required=[root/'ecu_mems_manager.exe',root/'mems_manager_x64.dll',root/'MEMSLibrary.dll',root/'MEMSLibrary_Pack_001'/'knowledge.sqlite',root/'MEMSLibrary_Pack_001'/'manifest.json',root/'database'/'reference'/'runtime_visual_catalog.json']
+          miss=[str(x) for x in required if not x.is_file()]
+          assert not miss,miss
+          sha=lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
+          assert sha(root/'MEMSLibrary.dll')==os.environ['CORRECTED_DLL_SHA256']
+          assert sha(root/'MEMSLibrary_Pack_001'/'knowledge.sqlite')==os.environ['PACK001_SQLITE_SHA256']
+          ref=root/'database'/'reference'
+          cat=json.loads((ref/'runtime_visual_catalog.json').read_text(encoding='utf-8'))
+          assert cat['source_lineage']=='RAVEMEMS_V2_FINAL_33810202288' and cat['entry_count']==1667
+          assert cat['legacy_entries']==0 and cat['pre_v2_images_included']==0
+          assert not (ref/'images'/'rave').exists()
+          db=sqlite3.connect(root/'MEMSLibrary_Pack_001'/'knowledge.sqlite')
+          try:
+              assert db.execute('pragma integrity_check').fetchone()[0]=='ok'
+              assert db.execute('pragma foreign_key_check').fetchall()==[]
+              assert db.execute('select count(*) from ravemems_document').fetchone()[0]==47
+              assert db.execute('select count(*) from ravemems_page').fetchone()[0]==1359
+              assert db.execute('select count(*) from memslibrary_search').fetchone()[0]==5453
+          finally: db.close()
+          for p in (root/'ecu_mems_manager.exe',root/'mems_manager_x64.dll',root/'MEMSLibrary.dll'):
+              pe=pefile.PE(str(p),fast_load=True); assert pe.FILE_HEADER.Machine==0x8664,p; pe.close()
+          print('CLEAN_BUILD_PACKAGE_PASS visuals=1667 legacy=0 docs=47 pages=1359 search=5453 corrected_dll=1')
+          '@ | python -
+
+      - name: Windows SQLite clean-install and existing-install regression
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $exe='${{ github.workspace }}\build-x64\Release\database_storage_selftest.exe'
+          if(-not (Test-Path $exe)){throw 'SQLite test binary not compiled'}
+          $qt='C:\Qt\5.15.2\msvc2019_64'
+          $env:PATH="$qt\bin;$env:PATH"
+          $env:QT_PLUGIN_PATH="$qt\plugins"
+          $sandbox=Join-Path $env:RUNNER_TEMP "MEMS_SQLITE_TEST_$env:GITHUB_RUN_ID"
+          $fresh=Join-Path $sandbox 'fresh'
+          $upgrade=Join-Path $sandbox 'upgrade'
+          New-Item -ItemType Directory $fresh,$upgrade -Force | Out-Null
+          Copy-Item $exe (Join-Path $fresh 'storage-test.exe') -Force
+          Copy-Item $exe (Join-Path $upgrade 'storage-test.exe') -Force
+          & (Join-Path $upgrade 'storage-test.exe') prepare-upgrade
+          if($LASTEXITCODE -ne 0){throw 'Existing PC fixture failed'}
+          & (Join-Path $fresh 'storage-test.exe') fresh
+          if($LASTEXITCODE -ne 0){throw 'Clean PC initial SQLite creation failed'}
+          & (Join-Path $fresh 'storage-test.exe') reopen-fresh
+          if($LASTEXITCODE -ne 0){throw 'Clean PC data persistence failed'}
+          & (Join-Path $upgrade 'storage-test.exe') upgrade
+          if($LASTEXITCODE -ne 0){throw 'Previously installed PC SQLite migration failed'}
+          & (Join-Path $upgrade 'storage-test.exe') reopen-upgrade
+          if($LASTEXITCODE -ne 0){throw 'Previously installed PC data persistence failed'}
+          Write-Host 'WINDOWS_SQLITE_VIRGIN_INSTALL_PASS'
+          Write-Host 'WINDOWS_SQLITE_EXISTING_INSTALL_PRESERVED_PASS'
+          Write-Host 'WINDOWS_SQLITE_PERSONAL_DATA_OUTSIDE_PROGRAM_FILES_PASS'
+
+      - name: Verify REAL Windows navigation after language selection and deferred sidebar build
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $marker=Join-Path $env:RUNNER_TEMP "LIGHT_GUI_verified_$env:GITHUB_RUN_ID.txt"
+          if(Test-Path $marker){Remove-Item $marker -Force}
+          $env:MEMS_LIGHT_NAV_PROBE=$marker
+          $p=Start-Process -FilePath "$env:DIST\ecu_mems_manager.exe" -WorkingDirectory $env:DIST -PassThru
+          try {
+            $result=$false
+            for($attempt=0;$attempt -lt 122;$attempt++){
+              if(Test-Path $marker){$result=$true;break}
+              if($p.HasExited){throw "App exited before LIGHT GUI: $($p.ExitCode)"}
+              if(($attempt%10) -eq 0){
+                $p.Refresh()
+                Write-Host "WAIT_LIGHT_REAL_GUI elapsed=$($attempt*2)s window=$($p.MainWindowTitle)"
+              }
+              Start-Sleep -Seconds 2
+            }
+            if(-not $result){
+              $p.Refresh()
+              throw "REAL LIGHT GUI not ready after 240s; window=$($p.MainWindowTitle)"
+            }
+            $proof=Get-Content $marker -Raw
+            if(-not $proof.StartsWith('LIGHT_GUI_MENU_PROBE_PASS visible=11 hidden=3 pages=14')){
+              throw "LIGHT GUI output invalid: $proof"
+            }
+            Write-Host 'LIGHT_REAL_WINDOWS_GUI_11_MENU_ITEMS_PASS'
+          } finally {
+            $null=$p.CloseMainWindow()
+            if(-not $p.WaitForExit(5000)){Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue}
+            Remove-Item Env:MEMS_LIGHT_NAV_PROBE -ErrorAction SilentlyContinue
+          }
+          Write-Host "BUILD_$env:MEMS_BUILD_SMOKE_PASS"
+
+      - name: Generate package hashes
+        shell: pwsh
+        run: |
+          $hashFile=Join-Path $env:DIST ("BUILD"+$env:MEMS_BUILD+"_SHA256.txt")
+          $lines=foreach($f in Get-ChildItem $env:DIST -Recurse -File | Where-Object{$_.FullName-ne$hashFile} | Sort-Object FullName){$r=$f.FullName.Substring($env:DIST.Length+1).Replace('\','/'); "$((Get-FileHash $f.FullName -Algorithm SHA256).Hash.ToLowerInvariant())  $r"}
+          $lines | Set-Content $hashFile -Encoding UTF8
+
+      - name: Publish verified BUILD122 LIGHT portable package and create private prerelease
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $archive=Join-Path $env:RUNNER_TEMP 'ECU-MEMS-Manager-x64-BUILD122-LIGHT.tar.gz'
+          tar.exe -czf $archive -C dist-x64 .
+          if($LASTEXITCODE -ne 0){throw 'Portable x64 archive creation failed'}
+          gh release create "mems-build122-candidate-$env:GITHUB_RUN_ID" --title "ECU MEMS Manager LIGHT 1.1.19 - trois pages masquees du menu" --target "$env:GITHUB_SHA" --prerelease --notes "LIGHT : menu reel teste sous Windows avec 11 liens visibles. IA MEMS, ECU ROSCO et TEST ECU 1.9 masques sans supprimer les pages. SQLite neuf et existant preserve, icone Bureau ajoutee. Builds existants inchanges."
+          if($LASTEXITCODE -ne 0){throw 'BUILD122 candidate release creation failed'}
+          gh release upload "mems-build122-candidate-$env:GITHUB_RUN_ID" $archive
+          if($LASTEXITCODE -ne 0){throw 'Portable x64 publishing failed'}
+          Write-Host "PORTABLE_X64_PUBLISHED sha256=$((Get-FileHash $archive -Algorithm SHA256).Hash)"
+
+
+      - name: Create Windows Setup installer from validated x64 package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          choco install innosetup -y --no-progress --limit-output
+          if($LASTEXITCODE -ne 0){throw 'Inno Setup installation failed'}
+          $compiler=Get-ChildItem "${env:ProgramFiles(x86)}" -Recurse -File -Filter ISCC.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          if(-not $compiler){throw 'Inno Setup compiler missing'}
+          $root=$env:DIST.Replace('\','\\')
+          $iss=@'
+          #define MyAppName "ECU MEMS Manager LIGHT"
+          #define MyAppVersion "1.0.122"
+          [Setup]
+          AppId={{D2504AE1-8548-44B9-97AA-46E141868A01}
+          AppName={#MyAppName}
+          AppVersion={#MyAppVersion}
+          AppPublisher=ECU MEMS Manager
+          DefaultDirName={autopf}\ECU MEMS Manager LIGHT
+          DefaultGroupName=ECU MEMS Manager LIGHT
+          OutputDir=setup-output
+          OutputBaseFilename=ECU-MEMS-Manager-Setup-v1.0.122-LIGHT
+          Compression=lzma2
+          SolidCompression=yes
+          WizardStyle=modern
+          ArchitecturesAllowed=x64
+          ArchitecturesInstallIn64BitMode=x64
+          PrivilegesRequired=admin
+          UninstallDisplayIcon={app}\ecu_mems_manager.exe
+          [Languages]
+          Name: "french"; MessagesFile: "compiler:Languages\French.isl"
+          [Files]
+          Source: "dist-x64\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+          [Icons]
+          Name: "{group}\ECU MEMS Manager LIGHT"; Filename: "{app}\ecu_mems_manager.exe"; WorkingDir: "{app}"; IconFilename: "{app}\ecu_mems_manager.exe"
+          Name: "{autodesktop}\ECU MEMS Manager LIGHT"; Filename: "{app}\ecu_mems_manager.exe"; WorkingDir: "{app}"; IconFilename: "{app}\ecu_mems_manager.exe"
+          [Run]
+          Filename: "{app}\ecu_mems_manager.exe"; Description: "Démarrer ECU MEMS Manager LIGHT"; Flags: nowait postinstall skipifsilent
+          '@
+          $iss | Set-Content setup.iss -Encoding UTF8
+          & $compiler.FullName setup.iss
+          if($LASTEXITCODE -ne 0){throw 'Inno Setup compilation failed'}
+          $exe=Get-ChildItem setup-output -File -Filter *.exe | Select-Object -First 1
+          if(-not $exe){throw 'Setup executable not generated'}
+          Write-Host "SETUP_GENERATED size=$($exe.Length) sha256=$((Get-FileHash $exe.FullName -Algorithm SHA256).Hash)"
+      
+      - name: ACTUALLY INSTALL LIGHT Setup and verify desktop shortcut
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $setup=Get-ChildItem setup-output -File -Filter *.exe | Select-Object -First 1
+          if(-not $setup){throw 'Setup not available for installation test'}
+          $process=Start-Process -FilePath $setup.FullName -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-' -Wait -PassThru
+          if($process.ExitCode -ne 0){throw "Silent LIGHT Windows install failed: $($process.ExitCode)"}
+          $installed=@(
+            (Join-Path $env:ProgramFiles 'ECU MEMS Manager LIGHT\ecu_mems_manager.exe'),
+            (Join-Path ${env:ProgramFiles(x86)} 'ECU MEMS Manager LIGHT\ecu_mems_manager.exe')
+          ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if(-not $installed){throw 'Setup did not install LIGHT executable in Program Files'}
+          $shortcuts=@(
+            (Join-Path $env:PUBLIC 'Desktop\ECU MEMS Manager LIGHT.lnk'),
+            (Join-Path $env:USERPROFILE 'Desktop\ECU MEMS Manager LIGHT.lnk')
+          ) | Where-Object { Test-Path $_ }
+          if(-not $shortcuts){throw 'LIGHT desktop shortcut missing after a real Setup install'}
+          $shell=New-Object -ComObject WScript.Shell
+          # PowerShell unwraps a single-item pipeline result to a scalar
+          # string: $shortcuts[0] would then mean its FIRST CHARACTER. Force
+          # an array and verify the complete .lnk path before COM opens it.
+          $shortcutPath=[string](@($shortcuts)[0])
+          if(-not $shortcutPath.EndsWith('.lnk',[StringComparison]::OrdinalIgnoreCase)){
+            throw "Invalid shortcut pathname selected: $shortcutPath"
+          }
+          $link=$shell.CreateShortcut($shortcutPath)
+          if($link.TargetPath -ne $installed){throw "Wrong desktop shortcut target: $($link.TargetPath) expected $installed"}
+          if(-not(Test-Path $link.TargetPath)){throw 'Desktop shortcut executable missing'}
+          Write-Host 'LIGHT_REAL_WINDOWS_SETUP_INSTALL_PASS'
+          Write-Host "LIGHT_REAL_DESKTOP_SHORTCUT_PASS shortcut=$shortcutPath target=$($link.TargetPath)"
+          Write-Host 'LIGHT_PROTECTED_PROGRAM_FILES_LOCATION_PASS'
+
+      - name: Publish tested Windows Setup to private prerelease
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $exe=Get-ChildItem setup-output -File -Filter *.exe | Select-Object -First 1
+          if(-not $exe){throw 'Windows Setup binary missing'}
+          gh release upload "mems-build122-candidate-$env:GITHUB_RUN_ID" $exe.FullName
+          if($LASTEXITCODE -ne 0){throw 'Publishing Setup binary failed'}
+          Write-Host "WINDOWS_SETUP_PUBLISHED size=$($exe.Length) sha256=$((Get-FileHash $exe.FullName -Algorithm SHA256).Hash)"
