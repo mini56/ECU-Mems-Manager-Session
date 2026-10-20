@@ -22,6 +22,7 @@
 #include <QWidget>
 #include "i18n.h"
 #include "mainwindow.h"
+#include "historicalpagecanvas.h"
 
 namespace {
 
@@ -342,7 +343,17 @@ static void fitDedicatedPages(QMainWindow *w,qreal s)
         const bool dedicated=p->property("strictSummaryBuilt").toBool() || p->property("strictRawBuilt").toBool() ||
             p->property("strictInteractiveBuilt").toBool() || p->property("strictRoscoBuilt").toBool() || p->property("strictDiagnosticBuilt").toBool();
         if (!dedicated) continue;
-        p->setMinimumSize(0,0); p->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
+        if (QScrollArea *original=qobject_cast<QScrollArea*>(tabs->widget(i))) {
+            if (hasHistoricalPageCanvas(original)) {
+                p->setMinimumHeight(0);
+                preserveHistoricalPageCanvas(original);
+            } else {
+                p->setMinimumSize(0,0);
+            }
+        } else {
+            p->setMinimumSize(0,0);
+        }
+        p->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
         if (QLayout *l=p->layout()) { l->setContentsMargins(margin,margin,margin,margin); l->setSpacing(gap); }
         for (QFrame *f:p->findChildren<QFrame*>())
             if (f->objectName().startsWith(QStringLiteral("strictHero_"))) f->setMaximumHeight(qBound(36,qRound(44*s),48));
