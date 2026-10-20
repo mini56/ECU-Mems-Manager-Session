@@ -3,6 +3,7 @@
 #include <QBoxLayout>
 #include <QCoreApplication>
 #include <QEvent>
+#include <QFile>
 #include <QFrame>
 #include <QGridLayout>
 #include <QGroupBox>
@@ -396,6 +397,33 @@ private:
         root->addWidget(buildBottomStatus(window));tabs->setCurrentIndex(0);
         applyResponsive(window);
         QTimer::singleShot(120,window,[window](){applyResponsive(window);});
+        // Opt-in CI evidence from the REAL running GUI, after the asynchronous
+        // Show/rebuild/resize event sequence has settled. In normal execution
+        // this has no effect on the application.
+        const QByteArray probePath = qgetenv("MEMS_LIGHT_NAV_PROBE");
+        if (!probePath.isEmpty()) {
+            QTimer::singleShot(1800,window,[window,tabs,probePath]() {
+                QListWidget *finalMenu=window->findChild<QListWidget*>(QStringLiteral("uiRebuildNav"));
+                if (!finalMenu || !tabs || finalMenu->count()!=tabs->count() || tabs->count()!=14)
+                    qFatal("LIGHT_GUI_MENU_PROBE_FAIL menu/tabs missing or count mismatch");
+                int hidden=0;
+                int visible=0;
+                for (int i=0;i<tabs->count();++i) {
+                    const bool expectedHidden=lightMenuHidesTab(tabs->widget(i));
+                    const bool actualHidden=finalMenu->item(i)->isHidden();
+                    if (actualHidden!=expectedHidden)
+                        qFatal("LIGHT_GUI_MENU_PROBE_FAIL unexpected menu item visibility");
+                    if (actualHidden) ++hidden; else ++visible;
+                }
+                if (hidden!=3 || visible!=11)
+                    qFatal("LIGHT_GUI_MENU_PROBE_FAIL visible/hidden item counts");
+                QFile marker(QString::fromLocal8Bit(probePath));
+                if (!marker.open(QIODevice::WriteOnly|QIODevice::Truncate|QIODevice::Text))
+                    qFatal("LIGHT_GUI_MENU_PROBE_FAIL cannot write verification marker");
+                marker.write("LIGHT_GUI_MENU_PROBE_PASS visible=11 hidden=3 pages=14\\n");
+                marker.close();
+            });
+        }
     }
 };
 
