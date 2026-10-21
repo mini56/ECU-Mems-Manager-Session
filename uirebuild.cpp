@@ -332,7 +332,7 @@ static void applyResponsive(QMainWindow *window)
 
     if(QListWidget *nav=window->findChild<QListWidget*>(QStringLiteral("uiRebuildNav"))) {
         const QSize a=window->findChild<QWidget*>(QStringLiteral("uiRebuildWorkspace"))?window->findChild<QWidget*>(QStringLiteral("uiRebuildWorkspace"))->size():(window->centralWidget()?window->centralWidget()->size():window->size());
-        const int navW=qBound(142,qRound(a.width()*0.12),214);
+        const int navW=lightMenuWidthForWindow(window);
         const int rowH=qBound(27,qRound(34.0*s),40);
         const int pad=qBound(8,qRound(13.0*s),16);
         nav->setFixedWidth(navW);
