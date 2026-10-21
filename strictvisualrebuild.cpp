@@ -181,8 +181,7 @@ static void releaseLegacySizing(QMainWindow *w)
         const bool originalCanvas=hasHistoricalPageCanvas(area);
         if(area){
             if(originalCanvas) {
-                // Avoid shrinking the original ECU design after a menu click
-                // or a Resize event. Leave other modern pages responsive.
+                // Wrapped pages expand and contract with the available viewport.
                 preserveHistoricalPageCanvas(area);
             } else {
                 area->setWidgetResizable(true);
@@ -194,7 +193,6 @@ static void releaseLegacySizing(QMainWindow *w)
         }
         QWidget *p=pageOf(tab); if(!p) continue;
         if(originalCanvas) {
-            p->setMinimumHeight(0);
             preserveHistoricalPageCanvas(area);
         } else {
             p->setMinimumSize(0,0);
