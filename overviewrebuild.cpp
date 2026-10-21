@@ -81,7 +81,7 @@ protected:
 
         QFont titleFont=p.font();
         titleFont.setBold(true);
-        titleFont.setPointSizeF(8.2);
+        titleFont.setPointSizeF(9.8);
         p.setFont(titleFont);
         p.setPen(QColor("#edf2f4"));
         p.drawText(QRectF(6,5,176,18),Qt::AlignCenter,m_title.toUpper());
@@ -199,7 +199,7 @@ protected:
         // inside the tick ring rather than sitting on the graduation marks.
         QFont scaleFont=p.font();
         scaleFont.setBold(true);
-        scaleFont.setPointSizeF(rpmGauge?6.3:6.2);
+        scaleFont.setPointSizeF(rpmGauge?7.5:7.4);
         p.setFont(scaleFont);
         p.setPen(QColor("#eef2f4"));
 
@@ -260,7 +260,7 @@ protected:
 
         QFont unitFont=p.font();
         unitFont.setBold(true);
-        unitFont.setPointSizeF(7.7);
+        unitFont.setPointSizeF(9.0);
         p.setFont(unitFont);
         p.setPen(QColor("#d0d8dc"));
         p.drawText(QRectF(48,148,92,14),Qt::AlignCenter,m_unit);
@@ -388,7 +388,7 @@ protected:
 
         QFont sub=p.font();
         sub.setBold(false);
-        sub.setPointSizeF(6.0);
+        sub.setPointSizeF(8.5);
         p.setFont(sub);
         p.setPen(QColor("#8d99a3"));
         p.drawText(QRectF(14,190,160,24),Qt::AlignCenter|Qt::TextWordWrap,I18n::text(7145));
@@ -474,7 +474,7 @@ private:
 
         QLabel *sub=new QLabel(I18n::text(7146),heading);
         QFont sf=sub->font();
-        sf.setPointSizeF(6.8);
+        sf.setPointSizeF(9.0);
         sub->setFont(sf);
         sub->setStyleSheet(QStringLiteral("color:#83909a;background:transparent;"));
 
