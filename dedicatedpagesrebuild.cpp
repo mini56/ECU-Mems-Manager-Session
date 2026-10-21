@@ -5,6 +5,7 @@
 #include <QFrame>
 #include <QGroupBox>
 #include <QHBoxLayout>
+#include <QBoxLayout>
 #include <QHeaderView>
 #include <QLabel>
 #include <QLayout>
@@ -172,8 +173,12 @@ static void styleRawBlock(QWidget *block)
 
 static void rebuildRaw(QTabWidget *tabs)
 {
-    const int index=5;
-    QWidget *page=pageAt(tabs,index);
+    // Use the page's stable identity: final LIGHT navigation reorders indices.
+    int index=-1;
+    for(int i=0;tabs && i<tabs->count();++i)
+        if(QWidget *candidate=pageAt(tabs,i))
+            if(candidate->objectName()==QStringLiteral("raw")) {index=i;break;}
+    QWidget *page=index>=0 ? pageAt(tabs,index) : nullptr;
     if (!page || page->property("strictRawBuilt").toBool()) return;
     QWidget *a=page->findChild<QWidget*>(QStringLiteral("raw_1"));
     QWidget *b=page->findChild<QWidget*>(QStringLiteral("raw_2"));
@@ -185,7 +190,8 @@ static void rebuildRaw(QTabWidget *tabs)
     QVBoxLayout *root=nullptr;
     replaceRoot(page,root);
     root->addWidget(hero(page,tabs->tabText(index),I18n::text(7109)));
-    QHBoxLayout *body=new QHBoxLayout;
+    QBoxLayout *body=new QBoxLayout(QBoxLayout::LeftToRight);
+    body->setObjectName(QStringLiteral("rawResponsiveBody"));
     body->setSpacing(7);
     QFrame *ca=card(page,I18n::text(7124));
     static_cast<QVBoxLayout*>(ca->layout())->addWidget(a,1);
@@ -366,6 +372,18 @@ static void fitBuiltPages(QMainWindow *w)
     }
 }
 
+static void adaptRawColumns(QMainWindow *window)
+{
+    if(!window) return;
+    QWidget *raw=window->findChild<QWidget*>(QStringLiteral("raw"));
+    if(!raw) return;
+    QBoxLayout *body=raw->findChild<QBoxLayout*>(QStringLiteral("rawResponsiveBody"));
+    if(!body) return;
+    const auto direction=raw->width()<960 ? QBoxLayout::TopToBottom
+                                           : QBoxLayout::LeftToRight;
+    if(body->direction()!=direction) body->setDirection(direction);
+}
+
 static void rebuildAll(QMainWindow *w)
 {
     QTabWidget *tabs=w?w->findChild<QTabWidget*>(QStringLiteral("Tab_main")):nullptr;
@@ -376,6 +394,7 @@ static void rebuildAll(QMainWindow *w)
     rebuildRosco(tabs);
     rebuildDiagnostic(tabs);
     fitBuiltPages(w);
+    adaptRawColumns(w);
 }
 
 class DedicatedInstaller : public QObject
@@ -391,8 +410,12 @@ protected:
             w->setProperty("dedicatedPagesScheduled",true);
             QTimer::singleShot(180,w,[w](){rebuildAll(w);});
             QTimer::singleShot(700,w,[w](){rebuildAll(w);});
+            if(QTabWidget *tabs=w->findChild<QTabWidget*>(QStringLiteral("Tab_main")))
+                QObject::connect(tabs,&QTabWidget::currentChanged,w,[w](int){
+                    QTimer::singleShot(0,w,[w](){adaptRawColumns(w);});
+                });
         } else if (event->type()==QEvent::Resize && w->property("dedicatedPagesScheduled").toBool()) {
-            QTimer::singleShot(0,w,[w](){fitBuiltPages(w);});
+            QTimer::singleShot(0,w,[w](){fitBuiltPages(w); adaptRawColumns(w);});
         }
         return QObject::eventFilter(watched,event);
     }
