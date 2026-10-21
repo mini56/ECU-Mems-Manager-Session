@@ -246,10 +246,12 @@ static void styleLed(QWidget *led)
 static void styleAdjustButton(QPushButton *button)
 {
     if(!button) return;
-    button->setMinimumHeight(29);
-    button->setMaximumHeight(34);
-    button->setMinimumWidth(125);
-    button->setMaximumWidth(170);
+    // At 10pt, the original 29px/125px controls leave insufficient text
+    // height and waste horizontal space beside the ECU setting labels.
+    button->setMinimumHeight(34);
+    button->setMaximumHeight(38);
+    button->setMinimumWidth(105);
+    button->setMaximumWidth(142);
     button->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
     button->show();
 }
@@ -399,8 +401,8 @@ static void rebuildAdjustArea(QWidget *page,QFrame *states,QFrame *adjust,QLineE
     if(!layout) return;
     clearLayout(layout);
     for(QWidget *child:adjust->findChildren<QWidget*>(QString(),Qt::FindDirectChildrenOnly)) child->hide();
-    layout->setContentsMargins(14,8,14,9);
-    layout->setSpacing(5);
+    layout->setContentsMargins(12,8,12,10);
+    layout->setSpacing(6);
 
     QHBoxLayout *header=new QHBoxLayout;
     header->setContentsMargins(0,0,0,0);
@@ -438,8 +440,9 @@ static void rebuildAdjustArea(QWidget *page,QFrame *states,QFrame *adjust,QLineE
         note->setParent(adjust);
         note->setReadOnly(true);
         note->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
-        note->setMinimumWidth(280);
-        note->setMaximumWidth(470);
+        note->setMinimumWidth(160);
+        note->setMaximumWidth(350);
+        note->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
         note->setMinimumHeight(24);
         note->setMaximumHeight(28);
         note->setStyleSheet(QStringLiteral("QLineEdit{background:transparent;color:#b8c1c7;border:0;padding:1px 2px;}"));
@@ -459,8 +462,8 @@ static void rebuildAdjustArea(QWidget *page,QFrame *states,QFrame *adjust,QLineE
     form->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
     QGridLayout *grid=new QGridLayout(form);
     grid->setContentsMargins(0,0,0,0);
-    grid->setHorizontalSpacing(10);
-    grid->setVerticalSpacing(4);
+    grid->setHorizontalSpacing(7);
+    grid->setVerticalSpacing(6);
     grid->setColumnStretch(0,0);
     grid->setColumnStretch(1,0);
     grid->setColumnStretch(2,0);
@@ -484,8 +487,9 @@ static void rebuildAdjustArea(QWidget *page,QFrame *states,QFrame *adjust,QLineE
     for(int row=0;row<4;row++) {
         if(rows[row].label) {
             rows[row].label->setParent(form);
-            rows[row].label->setMinimumWidth(210);
-            rows[row].label->setMaximumWidth(240);
+            rows[row].label->setMinimumWidth(195);
+            rows[row].label->setMaximumWidth(250);
+            rows[row].label->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
             rows[row].label->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
             rows[row].label->setStyleSheet(QStringLiteral("color:#e6ecef;background:transparent;border:0;"));
             rows[row].label->show();
@@ -530,15 +534,15 @@ static void rebuildAdjustArea(QWidget *page,QFrame *states,QFrame *adjust,QLineE
     resets->addStretch(1);
     if(resetAdj) {
         resetAdj->setParent(adjust);
-        resetAdj->setMinimumHeight(29);
-        resetAdj->setMaximumHeight(34);
+        resetAdj->setMinimumHeight(33);
+        resetAdj->setMaximumHeight(38);
         resetAdj->show();
         resets->addWidget(resetAdj);
     }
     if(resetEcu) {
         resetEcu->setParent(adjust);
-        resetEcu->setMinimumHeight(29);
-        resetEcu->setMaximumHeight(34);
+        resetEcu->setMinimumHeight(33);
+        resetEcu->setMaximumHeight(38);
         resetEcu->show();
         resets->addWidget(resetEcu);
     }
@@ -606,9 +610,12 @@ static void applySettingsSizing(QWidget *page,QFrame *metrics,QFrame *adjust)
     metrics->setMaximumHeight(metricsHeight+6);
     metrics->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
 
-    const int adjustHeight=qBound(168,qRound(height*.31),205);
+    // Reserve enough vertical room for four legible adjustment rows and
+    // the two reset controls. Keep sizeGauge() and all five dial dimensions
+    // completely unchanged; the page may scroll on a smaller screen.
+    const int adjustHeight=qBound(225,qRound(height*.34),260);
     adjust->setMinimumHeight(adjustHeight);
-    adjust->setMaximumHeight(adjustHeight+12);
+    adjust->setMaximumHeight(adjustHeight+20);
 }
 
 static void suppressLegacyOverlays(QFrame *metrics)
