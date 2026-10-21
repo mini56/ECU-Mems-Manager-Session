@@ -27,6 +27,7 @@
 #include <QtMath>
 #include "i18n.h"
 #include "historicalpagecanvas.h"
+#include "navigationlightmenu.h"
 
 namespace {
 
@@ -289,7 +290,7 @@ static void fitChrome(QMainWindow *w,qreal s)
     if(QFrame *h=w->findChild<QFrame*>(QStringLiteral("uiRebuildHeader"))) h->setFixedHeight(qBound(43,qRound(a.height()*.060),62));
     if(QFrame *b=w->findChild<QFrame*>(QStringLiteral("uiRebuildStatus"))) b->setFixedHeight(qBound(30,qRound(a.height()*.042),40));
     if(QListWidget *nav=w->findChild<QListWidget*>(QStringLiteral("uiRebuildNav"))){
-        const int nw=qBound(145,qRound(a.width()*.115),210),rh=qBound(26,qRound(32*s),38),pad=qBound(8,qRound(12*s),15);
+        const int nw=lightMenuWidthForWindow(w),rh=qBound(26,qRound(32*s),38),pad=qBound(8,qRound(12*s),15);
         nav->setFixedWidth(nw);
         nav->setStyleSheet(QStringLiteral("#uiRebuildNav{background:#0c1217;color:#cbd3d8;border:0;border-right:1px solid #29343e;padding:5px 0;}#uiRebuildNav::item{min-height:%1px;padding:2px %2px;border-left:3px solid transparent;font-weight:650;}#uiRebuildNav::item:hover{background:#151d23;color:#fff;}#uiRebuildNav::item:selected{background:#1c211f;color:#ff9828;border-left:3px solid #ff7a00;}").arg(rh).arg(pad));
     }
