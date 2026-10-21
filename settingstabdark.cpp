@@ -2,6 +2,7 @@
 #include <QCoreApplication>
 #include <QEvent>
 #include <QFrame>
+#include <QFontMetrics>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -74,12 +75,20 @@ protected:
         p.translate((width()-bw*scale)/2.0,(height()-bh*scale)/2.0);
         p.scale(scale,scale);
 
+        // Text scales independently of precision gauge geometry. Adapt
+        // only long headings inside the existing 310/176 designer canvases.
+        const QString caption=m_title.toUpper();
         QFont titleFont=p.font();
         titleFont.setBold(true);
-        titleFont.setPointSizeF(large?10.0:9.2);
+        const qreal maxTitlePt=large?10.0:9.2;
+        for(qreal pt=maxTitlePt;pt>=6.5;pt-=0.25) {
+            titleFont.setPointSizeF(pt);
+            if(QFontMetricsF(titleFont).horizontalAdvance(caption)<=bw-14.0)
+                break;
+        }
         p.setFont(titleFont);
         p.setPen(kText);
-        p.drawText(QRectF(4,0,bw-8,20),Qt::AlignCenter,m_title.toUpper());
+        p.drawText(QRectF(4,0,bw-8,20),Qt::AlignCenter,caption);
 
         const QPointF c(bw/2.0,large?151.0:87.0);
         const qreal r=large?126.0:68.0;
