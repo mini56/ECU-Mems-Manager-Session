@@ -58,14 +58,8 @@ static void replaceRoot(QWidget *page,QVBoxLayout *&root)
     root->setContentsMargins(8,7,8,7);
     root->setSpacing(7);
     root->setSizeConstraint(QLayout::SetDefaultConstraint);
-    // Original scroll-wrapped pages keep their 1300px design width;
-    // the surrounding QScrollArea can scroll instead of squeezing text.
-    if(page->property("wrappedInScrollArea").toBool()){
-        page->setMinimumHeight(0);
-        page->setMinimumWidth(qMax(1300,page->minimumWidth()));
-    } else {
-        page->setMinimumSize(0,0);
-    }
+    // A rebuilt page has a layout, so Qt can size it to any viewport.
+    page->setMinimumSize(0,0);
     page->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
     page->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
 }
