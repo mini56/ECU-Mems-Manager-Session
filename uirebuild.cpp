@@ -33,6 +33,7 @@
 #include "optionsdialog.h"
 #include "navigationlightmenu.h"
 #include "historicalpagecanvas.h"
+#include "lightcontentfonts.h"
 #include "navigationorderpatch.h"
 
 namespace {
@@ -399,9 +400,15 @@ private:
         wh->addWidget(nav);wh->addWidget(tabs,1);root->insertWidget(oldIndex<0?1:oldIndex,workspace,1);
         QObject::connect(nav,&QListWidget::currentRowChanged,tabs,&QTabWidget::setCurrentIndex);
         QObject::connect(tabs,&QTabWidget::currentChanged,nav,[nav](int row){ nav->setCurrentRow(row); });
-        // Keep scroll wrappers viewport-resizable even after deferred polish.
+        // Readable fonts belong to page content, never to menu/chrome.
+        // Re-apply after deferred visual installers in case they recreate
+        // their labels or reset a custom font during navigation.
         QObject::connect(tabs,&QTabWidget::currentChanged,window,[tabs](int) {
-            QTimer::singleShot(0,tabs,[tabs](){ stabilizeHistoricalTabCanvases(tabs); });
+            QTimer::singleShot(0,tabs,[tabs](){
+                stabilizeHistoricalTabCanvases(tabs);
+                applyLightReadableContentFonts(tabs);
+            });
+            QTimer::singleShot(390,tabs,[tabs](){ applyLightReadableContentFonts(tabs); });
         });
         // Other navigation installers can append/rebuild entries after the
         // first Show. Reapply the LIGHT visibility only when list and tab
@@ -426,8 +433,13 @@ private:
             applyResponsive(window);
             stabilizeHistoricalTabCanvases(tabs);
         });
-        // Deferred visual modules must not reintroduce fixed content widths.
-        QTimer::singleShot(1300,window,[tabs](){ stabilizeHistoricalTabCanvases(tabs); });
+        // Keep the original responsive layout and enlarge ONLY the text
+        // widgets of non-approved pages. Some pages rebuild late (~2.45s).
+        QTimer::singleShot(1300,window,[tabs](){
+            stabilizeHistoricalTabCanvases(tabs);
+            applyLightReadableContentFonts(tabs);
+        });
+        QTimer::singleShot(2750,window,[tabs](){ applyLightReadableContentFonts(tabs); });
         // Opt-in CI evidence from the REAL running GUI, after the asynchronous
         // Show/rebuild/resize event sequence has settled. In normal execution
         // this has no effect on the application.
