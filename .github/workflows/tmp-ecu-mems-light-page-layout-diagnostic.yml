@@ -87,14 +87,14 @@ jobs:
           if(-not (Select-String -Path mainwindow.cpp -Pattern 'setProperty\("ecuMainWindowConstructed", true\)' -Quiet)){throw 'MainWindow constructor-complete flag absent'}
           if(-not (Select-String -Path uirebuild.cpp -Pattern 'property\("ecuMainWindowConstructed"\)' -Quiet)){throw 'Sidebar may be built before MainWindow finished'}
           $ui=Get-Content uirebuild.cpp -Raw
-          if($ui -match 'scroll->setWidgetResizable\(true\)'){throw 'Legacy scroll compression must not be reintroduced'}
-          if($ui -match 'scroll->widget\(\)->setMinimumWidth\(0\)'){throw 'Legacy 1300px design minimum must not be erased'}
+          if($ui -match 'scroll->setWidgetResizable\(false\)'){throw 'Fixed-width scroll areas must not be reintroduced'}
+          if($ui -match 'setMinimumWidth\(qMax\(1300'){throw 'Hard-coded 1300px page width forbidden'}
           if($ui -notmatch 'preserveHistoricalPageCanvas' -or $ui -notmatch 'LIGHT_PAGE_LAYOUT_PROBE_FAIL'){
             throw 'Qt layout preservation and post-navigation regression probe are mandatory'
           }
           $historic=Get-Content historicalpagecanvas.h -Raw
-          if($historic -notmatch 'setMinimumWidth\(qMax\(1300' -or $historic -notmatch 'setWidgetResizable\(false\)'){
-            throw 'Historical ECU tab page canvas guard is incomplete'
+          if($historic -notmatch 'setMinimumWidth\(0\)' -or $historic -notmatch 'setWidgetResizable\(true\)'){
+            throw 'Responsive ECU page canvas policy is missing'
           }
           foreach($patch in @('strictvisualrebuild.cpp','visualcompletion.cpp','dedicatedpagesrebuild.cpp')){
             $code=Get-Content $patch -Raw
@@ -460,11 +460,11 @@ jobs:
             if(-not $proof.StartsWith('LIGHT_GUI_MENU_PROBE_PASS visible=11 hidden=3 pages=14')){
               throw "LIGHT GUI output invalid: $proof"
             }
-            if(-not $proof.Contains('layout=stable') -or -not $proof.Contains('menu_clicks=11')){
-              throw "LIGHT page layout or font changed after menu clicks: $proof"
+            if(-not $proof.Contains('layout=responsive') -or -not $proof.Contains('resolutions=4') -or -not $proof.Contains('menu_clicks=44')){
+              throw "LIGHT responsive page viewport or font regression: $proof"
             }
             Write-Host 'LIGHT_REAL_WINDOWS_GUI_11_MENU_ITEMS_PASS'
-            Write-Host 'LIGHT_ALL_11_MENU_CLICKS_KEEP_PAGE_LAYOUT_AND_FONT_PASS'
+            Write-Host 'LIGHT_ALL_11_MENU_LINKS_4_RESOLUTIONS_RESPONSIVE_PASS'
           } finally {
             $null=$p.CloseMainWindow()
             if(-not $p.WaitForExit(5000)){Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue}
