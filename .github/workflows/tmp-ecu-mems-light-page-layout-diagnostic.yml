@@ -142,6 +142,18 @@ jobs:
              $ui -notmatch 'qAbs\(finalMenu->width\(\)-menuWidth\)>4'){
             throw 'LIGHT menu must remain at its stable 200px width'
           }
+          # Text on dense diagnostic/error tables must remain readable.
+          # Horizontal scrolling is acceptable at 1024px only if genuinely
+          # accessible; approved measurements/raw-data pages stay untouched.
+          $font=Get-Content lightcontentfonts.h -Raw
+          if($font -notmatch 'minimumPointSize = 11\.0' -or
+             $font -notmatch 'SummaryTab' -or
+             $font -notmatch 'QStringLiteral\("raw"\)' -or
+             $ui -notmatch 'readable_fonts=11pt' -or
+             $ui -notmatch 'protected_pages=2' -or
+             $ui -notmatch 'scrollAccessible') {
+             throw 'LIGHT font minimum, approved page exemptions, or accessible scrolling missing'
+          }
           Write-Host 'LIGHT_PAGE_GEOMETRY_SOURCE_GUARD_PASS'
           Write-Host 'LIGHT_DELAYED_SIDEBAR_SOURCE_GUARD_PASS'
           Write-Host 'DIRECT_SOURCE_NO_PATCH_PASS'
@@ -493,6 +505,9 @@ jobs:
             Write-Host "LIGHT_LAYOUT_REAL_GUI_DIAGNOSTIC=$proof"
             if(-not $proof.StartsWith('LIGHT_GUI_MENU_PROBE_PASS visible=11 hidden=3 pages=14')){
               throw "LIGHT GUI output invalid: $proof"
+            }
+            if(-not $proof.Contains('readable_fonts=11pt') -or -not $proof.Contains('protected_pages=2')) {
+              throw "LIGHT content fonts or protected pages not validated: $proof"
             }
             if(-not $proof.Contains('layout=responsive') -or -not $proof.Contains('resolutions=4') -or -not $proof.Contains('menu_clicks=44')){
               throw "LIGHT responsive page viewport or font regression: $proof"
