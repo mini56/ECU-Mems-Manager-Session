@@ -121,7 +121,7 @@ jobs:
           }
           $navSource=Get-Content navigationorderpatch.cpp -Raw
           if($navSource -notmatch 'qMax\(20,\s*qMin\(26' -or
-             $ui -notmatch 'visibleCount'){
+             (Get-Content visualcompletion.cpp -Raw) -notmatch 'visibleCount'){
             throw 'Raw labels or visible LIGHT menu rows can still be compressed'
           }
           foreach($uiSource in @('uirebuild.cpp','strictvisualrebuild.cpp','visualcompletion.cpp')){
