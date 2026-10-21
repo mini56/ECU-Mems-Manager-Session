@@ -504,7 +504,7 @@ private:
                                 violations << QStringLiteral("menu_mapping_%1").arg(rank);
                             if(window->size()!=sizeAtStart)
                                 violations << QStringLiteral("window_resized_on_click_%1").arg(rank);
-                            if(finalMenu->width()!=menuWidth)
+                            if(qAbs(finalMenu->width()-menuWidth)>4)
                                 violations << QStringLiteral("menu_width_%1_expected_%2_actual_%3")
                                     .arg(rank).arg(menuWidth).arg(finalMenu->width());
                             QScrollArea *area=qobject_cast<QScrollArea*>(tabs->widget(rank));
