@@ -4,6 +4,7 @@
 #include <QFrame>
 #include <QGridLayout>
 #include <QHBoxLayout>
+#include <QBoxLayout>
 #include <QLabel>
 #include <QLCDNumber>
 #include <QLineEdit>
@@ -194,7 +195,9 @@ static void composeActuators(QMainWindow *window)
     }
 
     QVBoxLayout *root=nullptr;beginPage(page,root);
-    QHBoxLayout *body=new QHBoxLayout;body->setSpacing(10);
+    QBoxLayout *body=new QBoxLayout(QBoxLayout::LeftToRight);
+    body->setObjectName(QStringLiteral("actuatorResponsiveBody"));
+    body->setSpacing(10);
     QFrame *left=card(page,QStringLiteral("actuatorListCard"),I18n::text(4001).toUpper());
     if(list){
         prepWidget(list);
@@ -216,14 +219,41 @@ static void composeActuators(QMainWindow *window)
     root->addLayout(body,1);
 }
 
+static void adaptActuatorColumns(QMainWindow *window)
+{
+    QWidget *page=pageFor(window,QStringLiteral("actuators"));
+    if(!page) return;
+    QBoxLayout *body=page->findChild<QBoxLayout*>(QStringLiteral("actuatorResponsiveBody"));
+    if(!body) return;
+    const auto direction = page->width()<950 ? QBoxLayout::TopToBottom
+                                             : QBoxLayout::LeftToRight;
+    if(body->direction()!=direction) body->setDirection(direction);
+}
+
 class MajorPagesInstaller:public QObject
 {
 public:explicit MajorPagesInstaller(QObject*p=nullptr):QObject(p){}
 protected:bool eventFilter(QObject*watched,QEvent*event)override
     {
-        if((event->type()!=QEvent::Show&&event->type()!=QEvent::Polish)||!watched)return QObject::eventFilter(watched,event);
+        if(!watched)return QObject::eventFilter(watched,event);
+        if(event->type()==QEvent::Resize){
+            if(QMainWindow *resized=qobject_cast<QMainWindow*>(watched))
+                if(resized->property("majorPagesInstaller").toBool())
+                    QTimer::singleShot(0,resized,[resized](){adaptActuatorColumns(resized);});
+        }
+        if(event->type()!=QEvent::Show&&event->type()!=QEvent::Polish)
+            return QObject::eventFilter(watched,event);
         QMainWindow *w=qobject_cast<QMainWindow*>(watched);if(!w||w->objectName()!=QStringLiteral("MainWindow")||w->property("majorPagesInstaller").toBool())return QObject::eventFilter(watched,event);
-        w->setProperty("majorPagesInstaller",true);QTimer::singleShot(60,w,[w](){composeSettings(w);composeErrors(w);composeActuators(w);});return QObject::eventFilter(watched,event);
+        w->setProperty("majorPagesInstaller",true);
+        QTimer::singleShot(60,w,[w](){
+            composeSettings(w); composeErrors(w); composeActuators(w);
+            adaptActuatorColumns(w);
+            if(QTabWidget *tabs=w->findChild<QTabWidget*>(QStringLiteral("Tab_main")))
+                QObject::connect(tabs,&QTabWidget::currentChanged,w,[w](int){
+                    QTimer::singleShot(0,w,[w](){adaptActuatorColumns(w);});
+                });
+        });
+        return QObject::eventFilter(watched,event);
     }
 };
 
