@@ -495,6 +495,8 @@ private:
                         QSize(1366,768), QSize(1600,900)
                     };
                     int clicked=0;
+                    int readableWidgetsChecked=0;
+                    int protectedPagesChecked=0;
                     for (const QSize &wanted : viewportSizes) {
                         window->resize(wanted);
                         qApp->processEvents();
@@ -519,6 +521,22 @@ private:
                             if(qAbs(finalMenu->width()-menuWidth)>4)
                                 violations << QStringLiteral("menu_width_%1_expected_%2_actual_%3")
                                     .arg(rank).arg(menuWidth).arg(finalMenu->width());
+                            QWidget *fontPage=realPage(tabs->widget(rank));
+                            if(fontPage && lightContentFontPageIsProtected(fontPage)) {
+                                ++protectedPagesChecked;
+                            } else if(fontPage) {
+                                for(QWidget *text:fontPage->findChildren<QWidget*>()) {
+                                    if(!text || !lightContentFontTarget(text)
+                                       || !text->isVisibleTo(fontPage)) continue;
+                                    ++readableWidgetsChecked;
+                                    if(QFontInfo(text->font()).pointSizeF()<10.9) {
+                                        violations << QStringLiteral("small_content_font_%1_%2_%3pt")
+                                            .arg(rank).arg(text->objectName())
+                                            .arg(QFontInfo(text->font()).pointSizeF());
+                                        break;
+                                    }
+                                }
+                            }
                             QScrollArea *area=qobject_cast<QScrollArea*>(tabs->widget(rank));
                             if(!area || !hasHistoricalPageCanvas(area)) continue;
                             QWidget *page=area->widget();
@@ -538,8 +556,13 @@ private:
                     tabs->setCurrentIndex(savedRank);
                     qApp->processEvents();
                     if(clicked!=44) violations << QStringLiteral("expected_44_menu_clicks");
+                    if(readableWidgetsChecked<44)
+                        violations << QStringLiteral("no_readable_font_samples_%1").arg(readableWidgetsChecked);
+                    if(protectedPagesChecked!=8)
+                        violations << QStringLiteral("expected_2_protected_pages_x_4_got_%1")
+                            .arg(protectedPagesChecked);
                     if(violations.isEmpty())
-                        result += QStringLiteral(" layout=responsive resolutions=4 menu_clicks=%1")
+                        result += QStringLiteral(" layout=responsive resolutions=4 menu_clicks=%1 readable_fonts=11pt protected_pages=2")
                                     .arg(clicked);
                     else
                         result=QStringLiteral("LIGHT_PAGE_LAYOUT_PROBE_FAIL %1")
