@@ -2,10 +2,19 @@
 #define NAVIGATIONLIGHTMENU_H
 
 #include <QListWidget>
+#include <QMainWindow>
 #include <QScrollArea>
 #include <QString>
 #include <QTabWidget>
 #include <QWidget>
+
+// One width policy for the menu, shared by every visual installer.
+// Competing width calculations previously made the menu jump on each click.
+inline int lightMenuWidthForWindow(const QMainWindow *window)
+{
+    const int width = window ? window->width() : 1024;
+    return qBound(145, qRound(width * 0.115), 210);
+}
 
 // LIGHT is a navigation-only presentation choice. Never remove or delete
 // the original pages: their tab indices and internal implementations stay put.
