@@ -1,5 +1,5 @@
 name: TEMP LIGHT page layout runtime diagnostic (no installer)
-run-name: DIAG LIGHT #3 - preserve analysis, settings and raw canvas too
+run-name: DIAG LIGHT #4 - keep minimum width stable through menu navigation
 
 on:
   push:
@@ -104,6 +104,9 @@ jobs:
           }
           if(-not (Select-String -Path visualcompletion.cpp -Pattern 'releasePageMinimumWithoutCompressing' -Quiet)){
             throw 'VisualCompletion can still reset original page width'
+          }
+          if(-not (Select-String -Path uirebuild.cpp -Pattern 'stabilizeHistoricalTabCanvases' -Quiet)){
+            throw 'Original page invariant must be reasserted after navigation and resize'
           }
           Write-Host 'LIGHT_PAGE_GEOMETRY_SOURCE_GUARD_PASS'
           Write-Host 'LIGHT_DELAYED_SIDEBAR_SOURCE_GUARD_PASS'
