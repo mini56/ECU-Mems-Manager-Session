@@ -19,6 +19,7 @@
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QScrollBar>
 #include <QSettings>
 #include <QStyle>
 #include <QTabBar>
@@ -544,10 +545,20 @@ private:
                                 violations << QStringLiteral("fixed_canvas_%1_%2x%3_min_%4")
                                     .arg(rank).arg(wanted.width()).arg(wanted.height())
                                     .arg(page->minimumWidth());
-                            if(page->layout() && page->width()>area->viewport()->width()+20)
-                                violations << QStringLiteral("page_overflow_%1_%2x%3_page_%4_view_%5")
-                                    .arg(rank).arg(wanted.width()).arg(wanted.height())
-                                    .arg(page->width()).arg(area->viewport()->width());
+                            // At very small resolutions a dense table may be wider
+                            // than the viewport. This is acceptable ONLY when
+                            // the user can actually reach its entire width by
+                            // horizontal scrolling, never by shrinking fonts.
+                            if(page->layout() && page->width()>area->viewport()->width()+20) {
+                                const QScrollBar *bar=area->horizontalScrollBar();
+                                const bool scrollAccessible=
+                                    area->horizontalScrollBarPolicy()==Qt::ScrollBarAsNeeded &&
+                                    bar && bar->maximum()>0;
+                                if(!scrollAccessible)
+                                    violations << QStringLiteral("page_overflow_without_scroll_%1_%2x%3_page_%4_view_%5")
+                                        .arg(rank).arg(wanted.width()).arg(wanted.height())
+                                        .arg(page->width()).arg(area->viewport()->width());
+                            }
                             if(QFontInfo(page->font()).pointSizeF()<8.0)
                                 violations << QStringLiteral("page_font_too_small_%1").arg(rank);
                         }
