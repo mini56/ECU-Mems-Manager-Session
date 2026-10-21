@@ -492,7 +492,9 @@ private:
                             violations << QStringLiteral("window_minimum_%1x%2_actual_%3x%4")
                                 .arg(wanted.width()).arg(wanted.height())
                                 .arg(sizeAtStart.width()).arg(sizeAtStart.height());
-                        const int menuWidth=finalMenu->width();
+                        // Compare to the one design policy, not transient geometry
+                        // captured before Qt has completed its resized layout.
+                        const int menuWidth=lightMenuWidthForWindow(window);
                         for(int rank=0;rank<tabs->count();++rank) {
                             if(finalMenu->item(rank)->isHidden()) continue;
                             finalMenu->setCurrentRow(rank);
@@ -503,7 +505,8 @@ private:
                             if(window->size()!=sizeAtStart)
                                 violations << QStringLiteral("window_resized_on_click_%1").arg(rank);
                             if(finalMenu->width()!=menuWidth)
-                                violations << QStringLiteral("menu_width_changed_%1").arg(rank);
+                                violations << QStringLiteral("menu_width_%1_expected_%2_actual_%3")
+                                    .arg(rank).arg(menuWidth).arg(finalMenu->width());
                             QScrollArea *area=qobject_cast<QScrollArea*>(tabs->widget(rank));
                             if(!area || !hasHistoricalPageCanvas(area)) continue;
                             QWidget *page=area->widget();
