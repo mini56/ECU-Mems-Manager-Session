@@ -19,6 +19,7 @@
 #include <QWidget>
 #include <QtMath>
 #include "i18n.h"
+#include "lightcontentfonts.h"
 
 namespace {
 
@@ -659,6 +660,11 @@ static void applySettingsLayout(QMainWindow *window)
     }
 
     applySettingsSizing(page,metrics,adjust);
+    // The settings controls are built by deferred callbacks (2050/2450ms).
+    // Enforce the approved compact 10pt typography AFTER their creation,
+    // including the read-only status/note and the ECU buttons.
+    if(QTabWidget *tabs=window->findChild<QTabWidget*>(QStringLiteral("Tab_main")))
+        applyLightReadableContentFonts(tabs);
 }
 
 class SettingsTabDarkInstaller : public QObject
