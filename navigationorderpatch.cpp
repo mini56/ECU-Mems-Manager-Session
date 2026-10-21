@@ -345,7 +345,8 @@ static void fitRawSpacing(QMainWindow *window)
     const bool wrapped = left->parentWidget() && left->parentWidget() != page;
     const int reserve = wrapped ? 48 : 20;
     const int usableHeight = qMax(320, pageHeight - reserve);
-    const int rowHeight = qBound(13, usableHeight / rows, 18);
+    // Raw-data labels must stay readable; let the scroll area handle overflow.
+    const int rowHeight = qMax(20, qMin(26, usableHeight / rows));
     const int blockHeight = rowHeight * rows;
 
     const auto fitBlock = [page,rowHeight,blockHeight](QWidget *block,QGridLayout *grid) {
