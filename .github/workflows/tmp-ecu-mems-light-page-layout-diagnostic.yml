@@ -183,6 +183,11 @@ jobs:
              $actuators -notmatch 'setColumnMinimumWidth\(0,240\)') {
             throw 'Settings/Actuators control fields not resized for readability'
           }
+          if($ui -notmatch 'QTimer::singleShot\(3150' -or
+             (Get-Content settingstabdark.cpp -Raw) -notmatch 'applyLightReadableContentFonts\(tabs\)' -or
+             $font -notmatch 'widget->font\(\)\.pointSizeF\(\)') {
+            throw 'Late-created Settings controls could revert to unreadable fonts'
+          }
           Write-Host 'LIGHT_PAGE_GEOMETRY_SOURCE_GUARD_PASS'
           Write-Host 'LIGHT_DELAYED_SIDEBAR_SOURCE_GUARD_PASS'
           Write-Host 'DIRECT_SOURCE_NO_PATCH_PASS'
