@@ -2116,20 +2116,18 @@ void MainWindow::makeFixedTabsScrollable()
     const QString title = tabs->tabText(i);
     const QIcon icon = tabs->tabIcon(i);
 
-    // Conserve la taille de conception : les pages historiques du projet
-    // font souvent plus de 3000 px de haut. C'est cette taille qui doit
-    // devenir la zone défilable, et non la fenêtre principale.
-    QSize contentSize = page->size().expandedTo(page->sizeHint())
-                                    .expandedTo(page->minimumSizeHint());
-    if (contentSize.width() < 1300) contentSize.setWidth(1300);
-    if (contentSize.height() < 768) contentSize.setHeight(768);
+    // Preserve a tall canvas only for legacy pages without a layout.
+    // A real layout must be allowed to occupy the available viewport;
+    // neither the screen resolution nor the original .ui width is a minimum.
+    const QSize contentSize = page->size().expandedTo(page->sizeHint())
+                                         .expandedTo(page->minimumSizeHint());
 
     tabs->removeTab(i);
 
     QScrollArea *scroll = new QScrollArea(tabs);
     scroll->setObjectName(I18n::text(7070) /* EN: scrollArea_%1 */.arg(page->objectName()));
     scroll->setFrameShape(QFrame::NoFrame);
-    scroll->setWidgetResizable(false);
+    scroll->setWidgetResizable(true);
     scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     scroll->setAlignment(Qt::AlignLeft | Qt::AlignTop);
@@ -2139,7 +2137,7 @@ void MainWindow::makeFixedTabsScrollable()
 
     page->setProperty("wrappedInScrollArea", true);
     page->setParent(scroll);
-    page->setMinimumSize(contentSize);
+    page->setMinimumSize(0, page->layout() ? 0 : qMax(0, contentSize.height()));
     page->resize(contentSize);
     scroll->setWidget(page);
 
