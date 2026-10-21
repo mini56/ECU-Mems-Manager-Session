@@ -76,7 +76,7 @@ protected:
 
         QFont titleFont=p.font();
         titleFont.setBold(true);
-        titleFont.setPointSizeF(large?9.0:7.2);
+        titleFont.setPointSizeF(large?10.0:9.2);
         p.setFont(titleFont);
         p.setPen(kText);
         p.drawText(QRectF(4,0,bw-8,20),Qt::AlignCenter,m_title.toUpper());
@@ -170,7 +170,7 @@ protected:
 
         QFont scaleFont=p.font();
         scaleFont.setBold(false);
-        scaleFont.setPointSizeF(large?8.5:6.1);
+        scaleFont.setPointSizeF(large?9.0:7.4);
         p.setFont(scaleFont);
         p.setPen(QColor("#eef2f4"));
         const qreal labelR=r-(large?38.0:25.0);
@@ -214,7 +214,7 @@ protected:
 
         QFont unitFont=p.font();
         unitFont.setBold(true);
-        unitFont.setPointSizeF(large?8.5:6.3);
+        unitFont.setPointSizeF(large?9.5:8.0);
         p.setFont(unitFont);
         p.setPen(QColor("#d4dbe0"));
         p.drawText(QRectF(c.x()-(large?55:36),c.y()+(large?83:45),large?110:72,large?17:13),Qt::AlignCenter,m_unit);
