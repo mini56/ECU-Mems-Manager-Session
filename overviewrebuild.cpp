@@ -3,6 +3,7 @@
 #include <QElapsedTimer>
 #include <QEvent>
 #include <QFrame>
+#include <QFontMetrics>
 #include <QGridLayout>
 #include <QLabel>
 #include <QMainWindow>
@@ -79,12 +80,20 @@ protected:
         p.setBrush(QColor("#0c1217"));
         p.drawRoundedRect(card.adjusted(.5,.5,-.5,-.5),5.0,5.0);
 
+        // Fit the entire caption inside the original card; never resize the
+        // dial. Long translations such as "CORRECTION CARBURANT" must not
+        // lose their first and last letters.
+        const QString caption=m_title.toUpper();
         QFont titleFont=p.font();
         titleFont.setBold(true);
-        titleFont.setPointSizeF(9.8);
+        for(qreal pt=9.2;pt>=6.3;pt-=0.25) {
+            titleFont.setPointSizeF(pt);
+            if(QFontMetricsF(titleFont).horizontalAdvance(caption)<=170.0)
+                break;
+        }
         p.setFont(titleFont);
         p.setPen(QColor("#edf2f4"));
-        p.drawText(QRectF(6,5,176,18),Qt::AlignCenter,m_title.toUpper());
+        p.drawText(QRectF(6,5,176,18),Qt::AlignCenter,caption);
         p.setPen(QPen(QColor("#27333b"),1.0));
         p.drawLine(QPointF(8,25),QPointF(180,25));
 
@@ -248,13 +257,13 @@ protected:
 
         // The live value and unit are raised into the black opening so they no
         // longer sit on the lower rim of the dial.
-        QFont valueFont=p.font();
-        valueFont.setBold(true);
-        valueFont.setPointSizeF(18.5);
-        p.setFont(valueFont);
-        p.setPen(QColor("#ffffff"));
         const bool oneDecimalValue=batteryGauge || advanceGauge ||
             (qAbs(value)<10.0 && qAbs(maxv-minv)<=40.0);
+        QFont valueFont=p.font();
+        valueFont.setBold(true);
+        valueFont.setPointSizeF(oneDecimalValue?16.0:18.5);
+        p.setFont(valueFont);
+        p.setPen(QColor("#ffffff"));
         const QString val=QString::number(value,'f',oneDecimalValue?1:0);
         p.drawText(QRectF(51,124,86,25),Qt::AlignCenter,val);
 
