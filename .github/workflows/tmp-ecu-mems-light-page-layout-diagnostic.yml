@@ -135,6 +135,9 @@ jobs:
           if((Get-Content dedicatedpagesrebuild.cpp -Raw) -notmatch 'rawResponsiveBody'){
             throw 'Raw-data responsive stacking missing'
           }
+          if($ui -notmatch 'menu_width_%1_expected_%2_actual_%3'){
+            throw 'LIGHT menu test must use the shared width policy, not unsettled geometry'
+          }
           Write-Host 'LIGHT_PAGE_GEOMETRY_SOURCE_GUARD_PASS'
           Write-Host 'LIGHT_DELAYED_SIDEBAR_SOURCE_GUARD_PASS'
           Write-Host 'DIRECT_SOURCE_NO_PATCH_PASS'
