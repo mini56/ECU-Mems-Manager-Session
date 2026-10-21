@@ -23,6 +23,7 @@
 #include "i18n.h"
 #include "mainwindow.h"
 #include "historicalpagecanvas.h"
+#include "navigationlightmenu.h"
 
 namespace {
 
@@ -33,8 +34,7 @@ static QWidget *realPage(QWidget *tab)
     return tab;
 }
 
-// A real legacy ECU page must keep its design-width canvas. Only its
-// viewport should shrink on smaller screens; Qt then offers scrolling.
+// Both legacy and modern pages use viewport width; long content scrolls vertically.
 static void releasePageMinimumWithoutCompressing(QWidget *page)
 {
     if(!page) return;
@@ -388,7 +388,7 @@ static void fitChrome(QMainWindow *w,qreal s)
     QWidget *workspace=w->findChild<QWidget*>(QStringLiteral("uiRebuildWorkspace"));
     const QSize a=(workspace && workspace->width()>0)?workspace->size():(w->centralWidget()?w->centralWidget()->size():w->size());
     if (QListWidget *nav=w->findChild<QListWidget*>(QStringLiteral("uiRebuildNav"))) {
-        const int navWidth=qBound(142,qRound(a.width()*0.12),214);
+        const int navWidth=lightMenuWidthForWindow(w);
         nav->setFixedWidth(navWidth);
         nav->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         nav->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
