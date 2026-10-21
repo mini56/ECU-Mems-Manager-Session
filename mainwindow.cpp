@@ -63,7 +63,12 @@ m_mems(0), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerD
     centralLayout->addWidget(m_ui->Tab_main, 1);
   }
   setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-  resize(1300, 690);
+  // Initial window size follows the user's actual usable screen area.
+  // 1300x690 is the old designer size, not a minimum or a display target.
+  const QScreen *screen = qApp->primaryScreen();
+  const QSize available = screen ? screen->availableGeometry().size() : QSize(1300, 768);
+  resize(qMin(available.width(), qMax(1, qRound(available.width() * 0.92))),
+         qMin(available.height(), qMax(1, qRound(available.height() * 0.92))));
   qApp->processEvents();
   this->setWindowTitle(PROJECTNAME + QString(" ") +
       QString::number(VER_MAJOR) + "." +
