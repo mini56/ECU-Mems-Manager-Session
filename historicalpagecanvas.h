@@ -2,6 +2,7 @@
 #define HISTORICALPAGECANVAS_H
 
 #include <QScrollArea>
+#include <QFontInfo>
 #include <QWidget>
 #include <QTabWidget>
 #include <QtGlobal>
@@ -22,6 +23,12 @@ inline void preserveHistoricalPageCanvas(QScrollArea *area)
 
     QWidget *page = area->widget();
     page->setMinimumWidth(0);
+    // Do not inherit miniature root fonts from legacy Designer pages.
+    if (QFontInfo(page->font()).pointSizeF() < 9.0) {
+        QFont readable = page->font();
+        readable.setPointSizeF(9.0);
+        page->setFont(readable);
+    }
     if (page->layout())
         page->setMinimumHeight(0);
     area->setWidgetResizable(true);
