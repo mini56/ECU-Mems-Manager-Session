@@ -154,6 +154,35 @@ jobs:
              $ui -notmatch 'scrollAccessible') {
              throw 'LIGHT font minimum, approved page exemptions, or accessible scrolling missing'
           }
+          # BUILD128: only typography and control fields may change.
+          # Gauge sizes stay exactly on the BUILD127 layout formula.
+          $settings=Get-Content settingstabdark.cpp -Raw
+          $actuators=Get-Content majorpagesrebuild.cpp -Raw
+          $overview=Get-Content overviewrebuild.cpp -Raw
+          if($settings -notmatch 'center=qBound\(270' -or
+             $settings -notmatch 'outer=qBound\(155' -or
+             $settings -notmatch 'sizeGauge\(' -or
+             $overview -notmatch 'baseW=188\.0' -or
+             $overview -notmatch 'baseH=226\.0') {
+            throw 'Existing precision gauges were resized'
+          }
+          if($overview -notmatch 'QFontMetricsF\(titleFont\)' -or
+             $settings -notmatch 'QFontMetricsF\(titleFont\)') {
+            throw 'Dial titles must adapt to the existing dial width'
+          }
+          if($font -notmatch 'compactControls \? 10\.0 : minimumPointSize' -or
+             $font -notmatch 'emission_tab' -or
+             $font -notmatch 'actuators' -or
+             $ui -notmatch 'compact_controls=10pt' -or
+             $ui -notmatch 'actuator_label_clipped_' -or
+             $ui -notmatch 'actuator_button_clipped_') {
+            throw '10pt controls or real text/button clipping checks missing'
+          }
+          if($settings -notmatch 'button->setMinimumHeight\(34\)' -or
+             $actuators -notmatch 'setMinimumWidth\(570\)' -or
+             $actuators -notmatch 'setColumnMinimumWidth\(0,240\)') {
+            throw 'Settings/Actuators control fields not resized for readability'
+          }
           Write-Host 'LIGHT_PAGE_GEOMETRY_SOURCE_GUARD_PASS'
           Write-Host 'LIGHT_DELAYED_SIDEBAR_SOURCE_GUARD_PASS'
           Write-Host 'DIRECT_SOURCE_NO_PATCH_PASS'
@@ -505,6 +534,9 @@ jobs:
             Write-Host "LIGHT_LAYOUT_REAL_GUI_DIAGNOSTIC=$proof"
             if(-not $proof.StartsWith('LIGHT_GUI_MENU_PROBE_PASS visible=11 hidden=3 pages=14')){
               throw "LIGHT GUI output invalid: $proof"
+            }
+            if(-not $proof.Contains('compact_controls=10pt')) {
+              throw "LIGHT Settings/Actuators compact text unverified: $proof"
             }
             if(-not $proof.Contains('readable_fonts=11pt') -or -not $proof.Contains('protected_pages=2')) {
               throw "LIGHT content fonts or protected pages not validated: $proof"
