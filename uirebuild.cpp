@@ -343,9 +343,8 @@ static void applyResponsive(QMainWindow *window)
     if(QFrame *status=window->findChild<QFrame*>(QStringLiteral("uiRebuildStatus")))
         status->setFixedHeight(qBound(29,qRound(35.0*s),40));
 
-    // Do not modify any page's QScrollArea here. Qt resizes the viewport
-    // automatically, while original fixed canvases keep their saved design
-    // width and built-in horizontal/vertical scrolling.
+    // Only the chrome/menu is resized here. Every content page adapts to
+    // the remainder of the workspace independently of the navigation.
 }
 
 class UiRebuildInstaller : public QObject
@@ -400,8 +399,7 @@ private:
         wh->addWidget(nav);wh->addWidget(tabs,1);root->insertWidget(oldIndex<0?1:oldIndex,workspace,1);
         QObject::connect(nav,&QListWidget::currentRowChanged,tabs,&QTabWidget::setCurrentIndex);
         QObject::connect(tabs,&QTabWidget::currentChanged,nav,[nav](int row){ nav->setCurrentRow(row); });
-        // Re-assert the original page canvas on every navigation change,
-        // after other queued visual polishers have touched page geometry.
+        // Keep scroll wrappers viewport-resizable even after deferred polish.
         QObject::connect(tabs,&QTabWidget::currentChanged,window,[tabs](int) {
             QTimer::singleShot(0,tabs,[tabs](){ stabilizeHistoricalTabCanvases(tabs); });
         });
@@ -428,9 +426,7 @@ private:
             applyResponsive(window);
             stabilizeHistoricalTabCanvases(tabs);
         });
-        // The historical visual installers use deferred layout operations
-        // at 180/450/700/900ms. Reassert the invariant once those callbacks
-        // have settled; navigation and window resizing are handled above.
+        // Deferred visual modules must not reintroduce fixed content widths.
         QTimer::singleShot(1300,window,[tabs](){ stabilizeHistoricalTabCanvases(tabs); });
         // Opt-in CI evidence from the REAL running GUI, after the asynchronous
         // Show/rebuild/resize event sequence has settled. In normal execution
