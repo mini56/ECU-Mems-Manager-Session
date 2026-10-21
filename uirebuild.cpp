@@ -446,7 +446,10 @@ private:
         // this has no effect on the application.
         const QByteArray probePath = qgetenv("MEMS_LIGHT_NAV_PROBE");
         if (!probePath.isEmpty()) {
-            QTimer::singleShot(1800,window,[window,tabs,probePath]() {
+            // Run after SettingsTabDark's 2050/2450ms deferred rebuild and
+            // the 2750ms content-font pass. Otherwise the probe inspects
+            // temporary labels that do not survive the final Windows layout.
+            QTimer::singleShot(3150,window,[window,tabs,probePath]() {
                 QListWidget *finalMenu=window->findChild<QListWidget*>(QStringLiteral("uiRebuildNav"));
                 QString result;
                 if (!finalMenu || !tabs) {
@@ -534,7 +537,7 @@ private:
                                     if(!text || !lightContentFontTarget(text)
                                        || !text->isVisibleTo(fontPage)) continue;
                                     ++readableWidgetsChecked;
-                                    const qreal actual=QFontInfo(text->font()).pointSizeF();
+                                    const qreal actual=text->font().pointSizeF();
                                     if(actual<expectedPointSize-0.1) {
                                         violations << QStringLiteral("small_content_font_%1_%2_%3pt_expected_%4pt")
                                             .arg(rank).arg(text->objectName())
