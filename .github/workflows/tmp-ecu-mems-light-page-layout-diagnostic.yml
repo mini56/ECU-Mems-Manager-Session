@@ -138,6 +138,10 @@ jobs:
           if($ui -notmatch 'menu_width_%1_expected_%2_actual_%3'){
             throw 'LIGHT menu test must use the shared width policy, not unsettled geometry'
           }
+          if((Get-Content navigationlightmenu.h -Raw) -notmatch 'return 200;' -or
+             $ui -notmatch 'qAbs\(finalMenu->width\(\)-menuWidth\)>4'){
+            throw 'LIGHT menu must remain at its stable 200px width'
+          }
           Write-Host 'LIGHT_PAGE_GEOMETRY_SOURCE_GUARD_PASS'
           Write-Host 'LIGHT_DELAYED_SIDEBAR_SOURCE_GUARD_PASS'
           Write-Host 'DIRECT_SOURCE_NO_PATCH_PASS'
