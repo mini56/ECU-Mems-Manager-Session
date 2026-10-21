@@ -108,6 +108,22 @@ jobs:
           if(-not (Select-String -Path uirebuild.cpp -Pattern 'stabilizeHistoricalTabCanvases' -Quiet)){
             throw 'Original page invariant must be reasserted after navigation and resize'
           }
+          # Unlike the old BUILD124 guard, reject a hard-coded content
+          # width and insist on a window sized from the user's own screen.
+          $mainwindow=Get-Content mainwindow.cpp -Raw
+          if($mainwindow -match 'contentSize.setWidth\\(1300\\)' -or
+             $mainwindow -match 'resize\\(1300,\\s*690\\)'){
+            throw 'Legacy fixed 1300px screen width reintroduced'
+          }
+          if($mainwindow -notmatch 'primaryScreen\\(\\)' -or
+             $mainwindow -notmatch 'scroll->setWidgetResizable\\(true\\)'){
+            throw 'Available-screen startup or viewport-resizable pages missing'
+          }
+          $navSource=Get-Content navigationorderpatch.cpp -Raw
+          if($navSource -notmatch 'qMax\\(20,\\s*qMin\\(26' -or
+             $ui -notmatch 'visibleCount'){
+            throw 'Raw labels or visible LIGHT menu rows can still be compressed'
+          }
           Write-Host 'LIGHT_PAGE_GEOMETRY_SOURCE_GUARD_PASS'
           Write-Host 'LIGHT_DELAYED_SIDEBAR_SOURCE_GUARD_PASS'
           Write-Host 'DIRECT_SOURCE_NO_PATCH_PASS'
