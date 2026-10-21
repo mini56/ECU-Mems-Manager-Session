@@ -202,8 +202,53 @@ static void composeActuators(QMainWindow *window)
     if(list){
         prepWidget(list);
         list->setParent(left);
-        list->setMaximumWidth(490);
+        // The original list was still capped at 490px while its buttons
+        // grew to 11pt; the label column disappeared under the left edge.
+        // Use the available half-page width without changing any ECU action.
+        list->setMinimumWidth(570);
+        list->setMaximumWidth(680);
         list->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Expanding);
+        if (QGridLayout *grid=qobject_cast<QGridLayout*>(list->layout())) {
+            grid->setContentsMargins(6,4,6,4);
+            grid->setHorizontalSpacing(6);
+            grid->setVerticalSpacing(5);
+            grid->setColumnMinimumWidth(0,240);
+            grid->setColumnStretch(0,2);
+            for(int col=1;col<=3;++col) {
+                grid->setColumnMinimumWidth(col,90);
+                grid->setColumnStretch(col,0);
+            }
+        }
+        for (QLabel *label:list->findChildren<QLabel*>()) {
+            if (label->text().trimmed().isEmpty()) continue;
+            QFont font=label->font();font.setPointSizeF(10.0);label->setFont(font);
+            if (label->objectName()!=QStringLiteral("m_testActuatorLabel")) {
+                label->setMinimumWidth(232);
+                label->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
+                label->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
+            }
+        }
+        for (QPushButton *button:list->findChildren<QPushButton*>()) {
+            QFont font=button->font();font.setPointSizeF(10.0);button->setFont(font);
+            button->setMinimumHeight(32);
+            button->setMaximumHeight(38);
+            if(button->objectName()==QStringLiteral("m_AllActuatorsOffButton")) {
+                // Split at the slash rather than truncate a safety-related
+                // label; only the presentation changes, not the action.
+                const QString original=button->text();
+                button->setToolTip(original);
+                QString wrapped=original;
+                wrapped.replace(QStringLiteral(" / "),QStringLiteral(" /\n"));
+                button->setText(wrapped);
+                button->setMinimumHeight(43);
+                button->setMaximumHeight(49);
+                button->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+            } else {
+                button->setMinimumWidth(88);
+                button->setMaximumWidth(108);
+                button->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
+            }
+        }
         QHBoxLayout *centered=new QHBoxLayout;
         centered->setContentsMargins(0,0,0,0);
         centered->setSpacing(0);
@@ -225,7 +270,7 @@ static void adaptActuatorColumns(QMainWindow *window)
     if(!page) return;
     QBoxLayout *body=page->findChild<QBoxLayout*>(QStringLiteral("actuatorResponsiveBody"));
     if(!body) return;
-    const auto direction = page->width()<950 ? QBoxLayout::TopToBottom
+    const auto direction = page->width()<1220 ? QBoxLayout::TopToBottom
                                              : QBoxLayout::LeftToRight;
     if(body->direction()!=direction) body->setDirection(direction);
 }
