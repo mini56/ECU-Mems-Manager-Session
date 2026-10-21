@@ -364,6 +364,10 @@ protected:
 
         if(event->type()==QEvent::Resize && window->property("uiRebuildInstalled").toBool()) {
             applyResponsive(window);
+            if(QTabWidget *tabs=window->findChild<QTabWidget*>(QStringLiteral("Tab_main"))) {
+                // Event-driven consistency after any external visual resize.
+                QTimer::singleShot(0, tabs, [tabs]() { stabilizeHistoricalTabCanvases(tabs); });
+            }
             return QObject::eventFilter(watched,event);
         }
 
@@ -396,6 +400,11 @@ private:
         wh->addWidget(nav);wh->addWidget(tabs,1);root->insertWidget(oldIndex<0?1:oldIndex,workspace,1);
         QObject::connect(nav,&QListWidget::currentRowChanged,tabs,&QTabWidget::setCurrentIndex);
         QObject::connect(tabs,&QTabWidget::currentChanged,nav,[nav](int row){ nav->setCurrentRow(row); });
+        // Re-assert the original page canvas on every navigation change,
+        // after other queued visual polishers have touched page geometry.
+        QObject::connect(tabs,&QTabWidget::currentChanged,window,[tabs](int) {
+            QTimer::singleShot(0,tabs,[tabs](){ stabilizeHistoricalTabCanvases(tabs); });
+        });
         // Other navigation installers can append/rebuild entries after the
         // first Show. Reapply the LIGHT visibility only when list and tab
         // indices line up, so none of the original pages is removed.
@@ -414,7 +423,15 @@ private:
         if(!refreshFinalNavigation(window))
             qWarning("LIGHT navigation: full tab synchronization not ready");
         applyResponsive(window);
-        QTimer::singleShot(120,window,[window](){applyResponsive(window);});
+        stabilizeHistoricalTabCanvases(tabs);
+        QTimer::singleShot(120,window,[window,tabs](){
+            applyResponsive(window);
+            stabilizeHistoricalTabCanvases(tabs);
+        });
+        // The historical visual installers use deferred layout operations
+        // at 180/450/700/900ms. Reassert the invariant once those callbacks
+        // have settled; navigation and window resizing are handled above.
+        QTimer::singleShot(1300,window,[tabs](){ stabilizeHistoricalTabCanvases(tabs); });
         // Opt-in CI evidence from the REAL running GUI, after the asynchronous
         // Show/rebuild/resize event sequence has settled. In normal execution
         // this has no effect on the application.
