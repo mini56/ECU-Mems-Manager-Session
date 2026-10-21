@@ -8,12 +8,12 @@
 #include <QTabWidget>
 #include <QWidget>
 
-// One width policy for the menu, shared by every visual installer.
-// Competing width calculations previously made the menu jump on each click.
+// A stable, readable menu is deliberately independent of page and window
+// resizing. The content panel alone takes the remaining screen space.
 inline int lightMenuWidthForWindow(const QMainWindow *window)
 {
-    const int width = window ? window->width() : 1024;
-    return qBound(145, qRound(width * 0.115), 210);
+    Q_UNUSED(window);
+    return 200;
 }
 
 // LIGHT is a navigation-only presentation choice. Never remove or delete
