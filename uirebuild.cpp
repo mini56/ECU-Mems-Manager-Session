@@ -472,67 +472,63 @@ private:
                 // rebuilt scroll pages as resizable and crushed their layout
                 // after the first click.
                 if (result.startsWith(QStringLiteral("LIGHT_GUI_MENU_PROBE_PASS"))) {
-                    struct OriginalPage {
-                        QScrollArea *scroll;
-                        QWidget *page;
-                        int minimumWidth;
-                        qreal fontPt;
-                    };
-                    QVector<OriginalPage> originals;
+                    // Exercise every visible real menu link at several
+                    // viewport sizes. A fixed 1300px canvas previously passed
+                    // the test while making the user interface unusable.
                     QStringList violations;
-                    for(int rank=0; rank<tabs->count(); ++rank) {
-                        QScrollArea *scroll=qobject_cast<QScrollArea*>(tabs->widget(rank));
-                        if(!scroll || !scroll->widget() ||
-                           !scroll->widget()->property("wrappedInScrollArea").toBool())
-                            continue;
-                        QWidget *page=scroll->widget();
-                        originals.append({scroll,page,page->minimumWidth(),
-                                          QFontInfo(page->font()).pointSizeF()});
-                        if(scroll->widgetResizable() ||
-                           scroll->horizontalScrollBarPolicy()!=Qt::ScrollBarAsNeeded ||
-                           page->minimumWidth()<1300)
-                            violations << QStringLiteral(
-                                "initial_canvas_%1_resize_%2_horizontal_%3_minw_%4_currentw_%5")
-                                .arg(rank).arg(scroll->widgetResizable())
-                                .arg(int(scroll->horizontalScrollBarPolicy()))
-                                .arg(page->minimumWidth()).arg(page->width());
-                    }
-                    if(originals.isEmpty())
-                        violations << QStringLiteral("no_original_canvases");
-                    const QSize initialWindowSize=window->size();
-                    const int originalRank=tabs->currentIndex();
+                    const QSize savedSize=window->size();
+                    const int savedRank=tabs->currentIndex();
+                    const QVector<QSize> viewportSizes={
+                        QSize(1024,768), QSize(1280,800),
+                        QSize(1366,768), QSize(1600,900)
+                    };
                     int clicked=0;
-                    for(int rank=0; rank<tabs->count(); ++rank) {
-                        if(finalMenu->item(rank)->isHidden())
-                            continue;
-                        finalMenu->setCurrentRow(rank); // real menu click path
+                    for (const QSize &wanted : viewportSizes) {
+                        window->resize(wanted);
                         qApp->processEvents();
-                        ++clicked;
-                        if(tabs->currentIndex()!=rank)
-                            violations << QStringLiteral("menu_mapping_%1").arg(rank);
-                        for(const OriginalPage &original : originals) {
-                            if(original.scroll->widgetResizable() ||
-                               original.scroll->horizontalScrollBarPolicy()!=Qt::ScrollBarAsNeeded ||
-                               original.page->minimumWidth()!=original.minimumWidth ||
-                               QFontInfo(original.page->font()).pointSizeF()!=original.fontPt)
-                                violations << QStringLiteral(
-                                   "unstable_%1_resize_%2_minw_%3_font_%4")
-                                   .arg(rank).arg(original.scroll->widgetResizable())
-                                   .arg(original.page->minimumWidth())
-                                   .arg(QFontInfo(original.page->font()).pointSizeF());
+                        const QSize sizeAtStart=window->size();
+                        if (sizeAtStart.width()<wanted.width()-12 ||
+                            sizeAtStart.height()<wanted.height()-12)
+                            violations << QStringLiteral("window_minimum_%1x%2_actual_%3x%4")
+                                .arg(wanted.width()).arg(wanted.height())
+                                .arg(sizeAtStart.width()).arg(sizeAtStart.height());
+                        const int menuWidth=finalMenu->width();
+                        for(int rank=0;rank<tabs->count();++rank) {
+                            if(finalMenu->item(rank)->isHidden()) continue;
+                            finalMenu->setCurrentRow(rank);
+                            qApp->processEvents();
+                            ++clicked;
+                            if(tabs->currentIndex()!=rank)
+                                violations << QStringLiteral("menu_mapping_%1").arg(rank);
+                            if(window->size()!=sizeAtStart)
+                                violations << QStringLiteral("window_resized_on_click_%1").arg(rank);
+                            if(finalMenu->width()!=menuWidth)
+                                violations << QStringLiteral("menu_width_changed_%1").arg(rank);
+                            QScrollArea *area=qobject_cast<QScrollArea*>(tabs->widget(rank));
+                            if(!area || !hasHistoricalPageCanvas(area)) continue;
+                            QWidget *page=area->widget();
+                            if(!area->widgetResizable() || page->minimumWidth()!=0)
+                                violations << QStringLiteral("fixed_canvas_%1_%2x%3_min_%4")
+                                    .arg(rank).arg(wanted.width()).arg(wanted.height())
+                                    .arg(page->minimumWidth());
+                            if(page->layout() && page->width()>area->viewport()->width()+20)
+                                violations << QStringLiteral("page_overflow_%1_%2x%3_page_%4_view_%5")
+                                    .arg(rank).arg(wanted.width()).arg(wanted.height())
+                                    .arg(page->width()).arg(area->viewport()->width());
+                            if(QFontInfo(page->font()).pointSizeF()<8.0)
+                                violations << QStringLiteral("page_font_too_small_%1").arg(rank);
                         }
-                        if(window->size()!=initialWindowSize)
-                            violations << QStringLiteral("main_window_size_changed_%1").arg(rank);
                     }
-                    tabs->setCurrentIndex(originalRank);
+                    window->resize(savedSize);
+                    tabs->setCurrentIndex(savedRank);
                     qApp->processEvents();
-                    if(clicked!=11) violations << QStringLiteral("not_eleven_links");
+                    if(clicked!=44) violations << QStringLiteral("expected_44_menu_clicks");
                     if(violations.isEmpty())
-                        result += QStringLiteral(" layout=stable pages=%1 menu_clicks=%2")
-                                  .arg(originals.size()).arg(clicked);
+                        result += QStringLiteral(" layout=responsive resolutions=4 menu_clicks=%1")
+                                    .arg(clicked);
                     else
-                        result = QStringLiteral("LIGHT_PAGE_LAYOUT_PROBE_FAIL %1")
-                                 .arg(violations.join(QLatin1Char(',')));
+                        result=QStringLiteral("LIGHT_PAGE_LAYOUT_PROBE_FAIL %1")
+                                   .arg(violations.join(QLatin1Char(',')));
                 }
                 QFile marker(QString::fromLocal8Bit(probePath));
                 if (marker.open(QIODevice::WriteOnly|QIODevice::Truncate|QIODevice::Text)) {
