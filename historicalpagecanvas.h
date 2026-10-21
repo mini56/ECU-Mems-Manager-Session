@@ -3,6 +3,7 @@
 
 #include <QScrollArea>
 #include <QWidget>
+#include <QTabWidget>
 #include <QtGlobal>
 
 // The original ECU tabs use a fixed canvas set up by
@@ -27,6 +28,19 @@ inline void preserveHistoricalPageCanvas(QScrollArea *area)
     area->setWidgetResizable(false);
     area->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     area->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+}
+
+inline int stabilizeHistoricalTabCanvases(QTabWidget *tabs)
+{
+    if (!tabs) return 0;
+    int preserved = 0;
+    for (int i = 0; i < tabs->count(); ++i) {
+        QScrollArea *area = qobject_cast<QScrollArea*>(tabs->widget(i));
+        if (!hasHistoricalPageCanvas(area)) continue;
+        preserveHistoricalPageCanvas(area);
+        ++preserved;
+    }
+    return preserved;
 }
 
 #endif
