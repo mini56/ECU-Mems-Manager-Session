@@ -38,12 +38,8 @@ static QWidget *realPage(QWidget *tab)
 static void releasePageMinimumWithoutCompressing(QWidget *page)
 {
     if(!page) return;
-    if(page->property("wrappedInScrollArea").toBool()) {
-        page->setMinimumHeight(0);
-        page->setMinimumWidth(qMax(1300,page->minimumWidth()));
-    } else {
-        page->setMinimumSize(0,0);
-    }
+    page->setMinimumWidth(0);
+    if(page->layout()) page->setMinimumHeight(0);
 }
 
 static qreal scaleFor(QMainWindow *w)
@@ -311,8 +307,9 @@ static void fitRawDataPage(QWidget *page)
     }
 
     const int usableHeight=qMax(300,visibleHeight-14);
-    const int rowHeight=qMax(10,qMin(21,usableHeight/qMax(1,rows)));
-    const qreal fontSize=rowHeight<=10?6.7:(rowHeight<=11?6.9:(rowHeight<=12?7.1:(rowHeight<=13?7.4:(rowHeight<=14?7.6:(rowHeight<=15?7.8:(rowHeight<=16?8.0:8.2))))));
+    // Prefer a vertical scroll to unreadable miniature labels on small screens.
+    const int rowHeight=qMax(20,qMin(26,usableHeight/qMax(1,rows)));
+    const qreal fontSize=9.0;
 
     auto fitBlock=[&](QWidget *block,QGridLayout *grid) {
         if (!block) return;
@@ -400,7 +397,10 @@ static void fitChrome(QMainWindow *w,qreal s)
         // The navigation is physically constrained between the top header and
         // the bottom tools/status bar. Size its 14 rows from the actual list
         // viewport height, not from screen resolution or a fixed design size.
-        const int count=qMax(1,nav->count());
+        int visibleCount=0;
+        for (int i=0; i<nav->count(); ++i)
+            if (nav->item(i) && !nav->item(i)->isHidden()) ++visibleCount;
+        const int count=qMax(1,visibleCount);
         const int available=qMax(1,nav->viewport()->height()-10);
         const int preferred=qBound(18,qRound(34.0*s),40);
         const int rowHeight=qMax(16,qMin(preferred,available/count));
