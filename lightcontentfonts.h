@@ -59,7 +59,9 @@ inline void applyLightReadableContentFonts(QTabWidget *tabs)
         children.prepend(page);
         for(QWidget *widget : children) {
             if (!widget || !lightContentFontTarget(widget)) continue;
-            const qreal points=QFontInfo(widget->font()).pointSizeF();
+            // The requested Qt point size is authoritative. QFontInfo may
+            // round 10pt to 9.75pt on Windows DPI and trigger infinite resets.
+            const qreal points=widget->font().pointSizeF();
             // On Settings/Actuators, reduce 11pt controls by only 1pt.
             // Elsewhere preserve larger user/editor fonts.
             if (compactControls ? qAbs(points-targetSize)<0.1
