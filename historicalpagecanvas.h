@@ -6,10 +6,9 @@
 #include <QTabWidget>
 #include <QtGlobal>
 
-// The original ECU tabs use a fixed canvas set up by
-// MainWindow::makeFixedTabsScrollable(). This is NOT a new display scale:
-// keep the original design readable and let a smaller viewport scroll.
-// Modern non-wrapped pages and embedded controls retain their own policy.
+// Scroll wrappers remain available for legacy content, but they must never
+// impose the 1300px designer width on a real user's screen. Layout-based
+// pages fill the viewport; taller content scrolls at its natural height.
 inline bool hasHistoricalPageCanvas(const QScrollArea *area)
 {
     return area && area->widget()
@@ -22,10 +21,10 @@ inline void preserveHistoricalPageCanvas(QScrollArea *area)
         return;
 
     QWidget *page = area->widget();
-    // Various visual polishers can reset minWidth to zero during Show/Resize.
-    // Restore exactly the declared original 1300px minimum, not a font scale.
-    page->setMinimumWidth(qMax(1300,page->minimumWidth()));
-    area->setWidgetResizable(false);
+    page->setMinimumWidth(0);
+    if (page->layout())
+        page->setMinimumHeight(0);
+    area->setWidgetResizable(true);
     area->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     area->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 }
