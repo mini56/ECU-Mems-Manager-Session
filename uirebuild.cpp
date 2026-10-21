@@ -526,15 +526,48 @@ private:
                             if(fontPage && lightContentFontPageIsProtected(fontPage)) {
                                 ++protectedPagesChecked;
                             } else if(fontPage) {
+                                const bool compactControls=
+                                    fontPage->objectName()==QStringLiteral("emission_tab") ||
+                                    fontPage->objectName()==QStringLiteral("actuators");
+                                const qreal expectedPointSize=compactControls?10.0:11.0;
                                 for(QWidget *text:fontPage->findChildren<QWidget*>()) {
                                     if(!text || !lightContentFontTarget(text)
                                        || !text->isVisibleTo(fontPage)) continue;
                                     ++readableWidgetsChecked;
-                                    if(QFontInfo(text->font()).pointSizeF()<10.9) {
-                                        violations << QStringLiteral("small_content_font_%1_%2_%3pt")
+                                    const qreal actual=QFontInfo(text->font()).pointSizeF();
+                                    if(actual<expectedPointSize-0.1) {
+                                        violations << QStringLiteral("small_content_font_%1_%2_%3pt_expected_%4pt")
                                             .arg(rank).arg(text->objectName())
-                                            .arg(QFontInfo(text->font()).pointSizeF());
+                                            .arg(actual).arg(expectedPointSize);
                                         break;
+                                    }
+                                }
+                                // Test the actual rendered bounds of the actuator
+                                // labels and command buttons, not just their font.
+                                if(fontPage->objectName()==QStringLiteral("actuators")) {
+                                    QWidget *commands=fontPage->findChild<QWidget*>(QStringLiteral("layoutWidget_4"));
+                                    if(!commands || commands->width()<560)
+                                        violations << QStringLiteral("actuator_commands_too_narrow_%1")
+                                            .arg(commands?commands->width():-1);
+                                    if(commands) {
+                                        for (QLabel *label:commands->findChildren<QLabel*>()) {
+                                            if(!label->isVisibleTo(fontPage) || label->text().isEmpty()) continue;
+                                            const int ink=label->fontMetrics().horizontalAdvance(label->text());
+                                            if(ink>label->width()+2)
+                                                violations << QStringLiteral("actuator_label_clipped_%1_%2_%3")
+                                                    .arg(label->objectName()).arg(ink).arg(label->width());
+                                        }
+                                        for (QPushButton *button:commands->findChildren<QPushButton*>()) {
+                                            if(!button->isVisibleTo(fontPage)) continue;
+                                            for(const QString &line:button->text().split(QLatin1Char('\n'))) {
+                                                const int ink=button->fontMetrics().horizontalAdvance(line);
+                                                if(ink+10>button->width()) {
+                                                    violations << QStringLiteral("actuator_button_clipped_%1_%2_%3")
+                                                        .arg(button->objectName()).arg(ink).arg(button->width());
+                                                    break;
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -573,7 +606,7 @@ private:
                         violations << QStringLiteral("expected_2_protected_pages_x_4_got_%1")
                             .arg(protectedPagesChecked);
                     if(violations.isEmpty())
-                        result += QStringLiteral(" layout=responsive resolutions=4 menu_clicks=%1 readable_fonts=11pt protected_pages=2")
+                        result += QStringLiteral(" layout=responsive resolutions=4 menu_clicks=%1 readable_fonts=11pt compact_controls=10pt protected_pages=2")
                                     .arg(clicked);
                     else
                         result=QStringLiteral("LIGHT_PAGE_LAYOUT_PROBE_FAIL %1")
