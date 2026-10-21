@@ -1,0 +1,13 @@
+## 2026-10-21 — SUCCESS BUILD #124 — ECU MEMS MANAGER LIGHT, stabilité des pages au changement de menu
+
+User-reported issue BUILD122: un clic dans le menu changeait la taille des pages et rendait les polices très petites. Cause démontrée dans le code : les modules de présentation concurrents (`uirebuild.cpp`, `strictvisualrebuild.cpp`, `visualcompletion.cpp`, `dedicatedpagesrebuild.cpp`) rétablissaient `QScrollArea::widgetResizable(true)` et effaçaient la largeur minimale des canevas historiques. Le cadre original de `MainWindow::makeFixedTabsScrollable` était donc comprimé.
+
+Correctif exclusivement visuel sur la même branche temporaire `tmp-ia-clarification-test-1b106ee`, sans changer `MEMSX64`, `main`, IA, protocoles, SQLite, MEMSLibrary ni RAVE. Module partagé `historicalpagecanvas.h` et maintien du canevas historique avec minimum 1300 px, `widgetResizable(false)`, barres de défilement au besoin. Réaffirmation après navigation, resize et fin des modifications UI différées. Les 14 pages existent toujours, seules 3 entrées de navigation IA MEMS, ECU / ROSCO, TEST ECU 1.9 masquées (11 visibles).
+
+Diagnostic préalable `39553771570` SUCCESS : `LIGHT_GUI_MENU_PROBE_PASS visible=11 hidden=3 pages=14 layout=stable pages=10 menu_clicks=11`.
+
+**Build #124 final run GitHub Actions `39554630987` SUCCESS**, commit `9f88f81319a9c65dfebb8970b08f5c0a23dce265`, branche de test existante. Contrôles confirmés dans les logs : `LIGHT_PAGE_GEOMETRY_SOURCE_GUARD_PASS`, `LIGHT_QT_WIDGETS_11_VISIBLE_3_HIDDEN_14_PAGES_PASS`, `CLEAN_BUILD_PACKAGE_PASS visuals=1667 legacy=0 docs=47 pages=1359 search=5453 corrected_dll=1`, `WINDOWS_SQLITE_VIRGIN_INSTALL_PASS`, `WINDOWS_SQLITE_EXISTING_INSTALL_PRESERVED_PASS`, `LIGHT_REAL_WINDOWS_GUI_11_MENU_ITEMS_PASS`, `LIGHT_ALL_11_MENU_CLICKS_KEEP_PAGE_LAYOUT_AND_FONT_PASS`, `LIGHT_REAL_WINDOWS_SETUP_INSTALL_PASS`, `LIGHT_REAL_DESKTOP_SHORTCUT_PASS`.
+
+Setup Windows **`ECU-MEMS-Manager-Setup-v1.0.124-LIGHT.exe`**, 447005367 octets, SHA256 `e7aca261e8b20b828affd65c724f8422b9e3f0f2b676853864c3dc9c8bc1f876`. Lien direct : `https://github.com/mini56/ECU-Mems-Manager-Session/releases/download/mems-build124-candidate-39554630987/ECU-MEMS-Manager-Setup-v1.0.124-LIGHT.exe` ; Release privée `https://github.com/mini56/ECU-Mems-Manager-Session/releases/tag/mems-build124-candidate-39554630987`.
+
+Setup testé par installation silencieuse **réelle sur Windows GitHub runner** ; raccourci `C:\Users\Public\Desktop\ECU MEMS Manager LIGHT.lnk` vérifié par COM, cible `C:\Program Files\ECU MEMS Manager LIGHT\ecu_mems_manager.exe`. L'ancienne Release BUILD122 conservée en secours. Validation encore nécessaire sur PC utilisateur réel, ne pas prétendre le contraire. Builds #123 non réutilisés.
