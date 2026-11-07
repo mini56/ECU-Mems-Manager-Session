@@ -1,0 +1,49 @@
+name: "Nettoyage 59 archives ECU sur GitHub"
+on:
+  push:
+    branches: [ops-archive-ecu-artifacts-samsung-20261107]
+    paths: ['.github/workflows/samsung-cleanup-59-ecu.yml']
+permissions:
+  actions: write
+  contents: read
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: "Supprimer seulement les 59 artefacts deja sauvegardes et verifies"
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          repo="mini56/ECU-Mems-Manager-Session"
+          protected="10112701782"
+          ids="10023930741:1046374 10023151122:19242 10021273368:930 10021141935:787 9965560001:1042528 9945633954:1113805 9945408762:1113803 9945098411:1113804 9944987101:1113804 9944980813:1113806 9944943344:1113803 9944165146:1113800 9944078293:1113803 9943205586:1113804 9942873002:1113803 9940246937:1113048 9937722170:1058880 9927059742:1041083 9800159465:230883 9799848955:52408 9791187684:36007526 9790819690:36010735 9790466787:36005496 9790328671:1559 9788189764:226939 9788058170:226487 9787940195:226264 9777901590:343887 9777755805:338727 9777363401:331698 9777109051:112425 9776650909:112460 9774823178:1198799 9774746336:1199581 9774674665:1197784 9774559159:811767 9774517167:249312 9774341702:623768 9773934959:496639 9773887550:492623 9773821699:492004 9525708940:779959273 9570421127:779817134 9711539092:387364252 9515199032:46258185 9714454237:5986424 9773535534:491620 9535149380:13964 9512948423:13964 9512929990:13627 9512232721:13489 9512265535:13488 9512419544:13487 9497217545:5874 9516857339:432 9516591906:415 9516603562:413 9517735552:285 9517874584:284"
+          count=0
+          total=0
+          gh api "repos/$repo/actions/artifacts/$protected" --jq '.id' | grep -Fx "$protected"
+          echo "CONTROLE_PREALABLE"
+          for item in $ids; do
+            id="${item%%:*}"
+            size="${item##*:}"
+            test "$id" != "$protected"
+            actual=$(gh api "repos/$repo/actions/artifacts/$id" --jq '.size_in_bytes')
+            test "$actual" = "$size"
+            count=$((count+1))
+            total=$((total+size))
+          done
+          test "$count" -eq 59
+          test "$total" -eq 2133417288
+          echo "CONTROLE_OK=$count octets=$total"
+          done_count=0
+          for item in $ids; do
+            id="${item%%:*}"
+            gh api -X DELETE "repos/$repo/actions/artifacts/$id"
+            done_count=$((done_count+1))
+            echo "SUPPRIME=$done_count/59 id=$id"
+          done
+          gh api "repos/$repo/actions/artifacts/$protected" --jq '.id' | grep -Fx "$protected"
+          echo "SUPPRESSION_TERMINEE=$done_count"
+          echo "RELEASES=NON_MODIFIEES"
+          echo "SAMSUNG=ARCHIVES_CONSERVEES"
