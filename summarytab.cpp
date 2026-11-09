@@ -159,7 +159,7 @@ SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)
   setTooltip(m_rowIdleError,
     I18n::text(6697) /* EN: This is the current difference between the MEMS ECU target idle speed and actual engine speed. A value above 100 rpm indicates that the ECU is not controlling idle correctly and may indicate a fault. */);
   setTooltip(m_rowIdleErrorHotCorrected,
-    I18n::text(6698) /* EN: Decodes field 7D14-15: the raw 16-bit value is centred on 32768, then the hot-idle position correction configured in the Settings tab is applied. Formula: (raw value - 32768) + hot-idle correction. The correction is not constant; it follows the user's current setting. */);
+    I18n::text(6698) /* EN: Decodes field 7D14-15: the raw 16-bit value is centred on 32768, then the hot-idle position correction configured in the Settings tab is applied. Formula: (raw value - 32768) - hot-idle correction. The correction is not constant; it follows the user's current setting. */);
   setTooltip(m_rowIgnitionAdvanceOffset,
     I18n::text(6699) /* EN: Displays the service ignition-advance offset currently used by the MEMS ECU. This special setting is intended for countries using low-octane fuel and can be configured in the Settings tab. */);
   setTooltip(m_rowCoilTime,
@@ -417,7 +417,7 @@ void SummaryTab::updateData(mems_data *data)
        static_cast<int>(data->uk10);
   const int idleHotCorrection = static_cast<int>(data->idle_hot) - 35;
   const int idleErrorHotCorrected =
-      (raw7d1415 - 32768) + idleHotCorrection;
+      (raw7d1415 - 32768) - idleHotCorrection;
 
   setValue(m_rowIdleErrorHotCorrected,
            QString::number(raw7d1415),

@@ -223,7 +223,7 @@ void DiagnosticPanel::rebuild(const mems_data &d)
     // elle correspond au réglage actuel « Position ralenti chaud » (idle_hot - 35).
     const int raw7d1415 = (static_cast<int>(d.idle_error2) << 8) | static_cast<int>(d.uk10);
     const int hotIdleCorrection = static_cast<int>(d.idle_hot) - 35;
-    const int hotIdleErrorCorrected = (raw7d1415 - 32768) + hotIdleCorrection;
+    const int hotIdleErrorCorrected = (raw7d1415 - 32768) - hotIdleCorrection;
     const bool hotIdleErrorOk = qAbs(hotIdleErrorCorrected) <= 15;
     addCheck(I18n::text(6859) /* EN: Hot idle error */,
              I18n::text(6860) /* EN: %1 ECU | brut 7D14-15=%2 | correction=%3 */
@@ -290,7 +290,7 @@ QString DiagnosticPanel::buildReport() const
     text += I18n::text(6882) /* EN: DTC : %1 %2 %3  */.arg(hexByte(d.dtc0), hexByte(d.dtc1), hexByte(d.dtc2));
     const int raw7d1415 = (static_cast<int>(d.idle_error2) << 8) | static_cast<int>(d.uk10);
     const int hotIdleCorrection = static_cast<int>(d.idle_hot) - 35;
-    const int hotIdleErrorCorrected = (raw7d1415 - 32768) + hotIdleCorrection;
+    const int hotIdleErrorCorrected = (raw7d1415 - 32768) - hotIdleCorrection;
     text += I18n::text(6883) /* EN: Temps coil=%1 ms  */.arg(static_cast<double>(d.coil_time) * 0.002, 0, 'f', 2);
     text += I18n::text(6884) /* EN: raw 7D14-15=%1 | hot-idle correction=%2 | corrected hot-idle error=%3 ECU  */
         .arg(raw7d1415).arg(hotIdleCorrection).arg(hotIdleErrorCorrected);

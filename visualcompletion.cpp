@@ -42,74 +42,6 @@ static qreal scaleFor(QMainWindow *w)
     return qBound<qreal>(0.64,qMin(a.width()/1450.0,a.height()/720.0),1.30);
 }
 
-static void applyBuild28HotIdleCorrection(MainWindow *w)
-{
-    if (!w) return;
-    MEMSInterface *mems=w->memsInterface();
-    if (!mems || !mems->isConnected()) return;
-    mems_data *data=mems->getData();
-    if (!data) return;
-
-    const int raw7d1415=(static_cast<int>(data->idle_error2)<<8)|static_cast<int>(data->uk10);
-    const int hotIdleCorrection=static_cast<int>(data->idle_hot)-35;
-    const int hotIdleErrorCorrected=(raw7d1415-32768)-hotIdleCorrection;
-
-    if (QLabel *label=w->findChild<QLabel*>(QStringLiteral("m_7D_15"))) {
-        label->setText(QString::number(hotIdleErrorCorrected));
-        QString tip=I18n::text(7033);
-        tip.replace(QStringLiteral(" + "),QStringLiteral(" - "));
-        label->setToolTip(tip.arg(raw7d1415).arg(hotIdleCorrection).arg(hotIdleErrorCorrected));
-    }
-
-    // DiagnosticPanel historically adds the configured correction. Feed only
-    // this diagnostic view an equivalent mirrored correction so its existing
-    // score/rebuild path evaluates the requested formula without changing the
-    // real ECU data or the Settings value. Then restore the displayed sign.
-    if (DiagnosticPanel *panel=w->findChild<DiagnosticPanel*>()) {
-        mems_data diagnosticData=*data;
-        const int mirroredIdleHot=qBound(0,35-hotIdleCorrection,255);
-        diagnosticData.idle_hot=static_cast<decltype(diagnosticData.idle_hot)>(mirroredIdleHot);
-        panel->updateData(&diagnosticData);
-
-        if (QTableWidget *checks=panel->findChild<QTableWidget*>()) {
-            for (int row=0;row<checks->rowCount();++row) {
-                QTableWidgetItem *name=checks->item(row,0);
-                if (!name || name->text()!=I18n::text(6859)) continue;
-                if (QTableWidgetItem *value=checks->item(row,1))
-                    value->setText(I18n::text(6860).arg(hotIdleErrorCorrected).arg(raw7d1415).arg(hotIdleCorrection));
-                if (QTableWidgetItem *advice=checks->item(row,3)) {
-                    QString text=I18n::text(6897);
-                    text.replace(QStringLiteral(" + "),QStringLiteral(" - "));
-                    advice->setText(text);
-                }
-                break;
-            }
-        }
-
-        if (QPlainTextEdit *report=panel->findChild<QPlainTextEdit*>()) {
-            QString text=report->toPlainText();
-            const QString wrongLine=I18n::text(6884)
-                .arg(raw7d1415).arg(-hotIdleCorrection).arg(hotIdleErrorCorrected);
-            const QString rightLine=I18n::text(6884)
-                .arg(raw7d1415).arg(hotIdleCorrection).arg(hotIdleErrorCorrected);
-            text.replace(wrongLine,rightLine);
-            report->setPlainText(text);
-        }
-    }
-}
-
-static void bindBuild28LiveFixes(QMainWindow *w)
-{
-    MainWindow *main=qobject_cast<MainWindow*>(w);
-    if (!main || main->property("build28LiveFixesBound").toBool()) return;
-    MEMSInterface *mems=main->memsInterface();
-    if (!mems) return;
-    main->setProperty("build28LiveFixesBound",true);
-    QObject::connect(mems,&MEMSInterface::dataReady,main,[main](){
-        QTimer::singleShot(0,main,[main](){applyBuild28HotIdleCorrection(main);});
-    },Qt::QueuedConnection);
-}
-
 static QPushButton *buttonByText(QMainWindow *w,const QString &text,QWidget *exclude=nullptr)
 {
     if (!w) return nullptr;
@@ -389,7 +321,6 @@ static void apply(QMainWindow *w)
     fitOverviewAndSettings(w,s);
     fitAnalysis(w,s);
     fitDedicatedPages(w,s);
-    bindBuild28LiveFixes(w);
 }
 
 class VisualCompletionInstaller : public QObject
