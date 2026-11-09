@@ -1,4 +1,4 @@
-name: COMPLETE - Controle fenetre Windows native
+name: COMPLETE - Controle des dispositions originales BUILD117
 on:
   push:
     branches: [dev-complete-build117-14-pages-20261109]
@@ -6,19 +6,31 @@ on:
 permissions:
   contents: read
 jobs:
-  native-window-guard:
+  original-layout-guard:
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
-      - name: Verifier suppression du zoom impose
+      - name: Verifier aucune refonte, menu complet et absence de zoom global
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
           $main=Get-Content main.cpp -Raw
-          $win=Get-Content mainwindow.cpp -Raw
-          $nav=Get-Content navigationorderpatch.cpp -Raw
-          if($main -notmatch 'window\.showMaximized\(\)' -or $main -notmatch 'AA_EnableHighDpiScaling') {throw 'NATIVE_WINDOW_NOT_RESTORED'}
-          if($main -match 'CompleteZoom|QT_SCALE_FACTOR|window\.setFixedSize\(' -or $win -match 'CompleteZoom') {throw 'OLD_GLOBAL_ZOOM_STILL_PRESENT'}
-          if($win -match 'setWidgetResizable\(false\)' -or $win -match 'Qt::ScrollBarAsNeeded') {throw 'PAGE_SCROLL_REGRESSION'}
-          if($nav -notmatch 'kFinalTabCount = 14'){throw 'FULL_MENU_MISSING'}
-          Write-Host 'NATIVE_WINDOWS_LAYOUT_GUARD_PASS'
+          $ui=Get-Content uirebuild.cpp -Raw
+          $strict=Get-Content strictvisualrebuild.cpp -Raw
+          if($main -notmatch 'window\.showMaximized\(\)' -or $main -match 'CompleteZoom|QT_SCALE_FACTOR|window\.setFixedSize\(') {throw 'FORCED_GLOBAL_ZOOM'}
+          $baseline=@{
+            'mainwindow.cpp'='c0f89a30f8a26c2e971e5c1a998e03b4bce50010'
+            'navigationorderpatch.cpp'='799d5b0dc7be9a324dc32a37369746e72ad7d540'
+            'navigationorderpatch.h'='da252d14b0ab000b78ba2684f61790f69eb56c30'
+            'overviewrebuild.cpp'='e59e6b1ddd0f2d4f6c457672b91c7e8496a811a2'
+            'visualcompletion.cpp'='56e7cc3842119328bb4ea078d6dc44884ce3e6d2'
+            'dedicatedpagesrebuild.cpp'='17d9364639c7a2a6891cd0364303e2cf625b8df0'
+          }
+          foreach($item in $baseline.GetEnumerator()){
+            if((git hash-object $item.Key).Trim() -ne $item.Value){
+              throw "DISPOSITION_MODIFIED: $($item.Key)"
+            }
+          }
+          if($ui -notmatch 'applyReadablePageFonts\(tabs\)' -or $ui -notmatch 'if \(i==10\) continue'){throw 'REFERENCE_TEXT_PAGE_CHANGED'}
+          if($strict -notmatch 's->setVerticalScrollBarPolicy\(Qt::ScrollBarAlwaysOff\)'){throw 'EXTERNAL_PAGE_SCROLL'}
+          Write-Host 'COMPLETE_BUILD117_LAYOUT_PRESERVED'
