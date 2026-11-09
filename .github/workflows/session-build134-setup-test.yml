@@ -42,11 +42,11 @@ jobs:
           $ui=Get-Content uirebuild.cpp -Raw
           $settings=Get-Content settingstabdark.cpp -Raw
           if($nav -notmatch 'kFinalTabCount = 14' -or $nav -match 'temporarilyHiddenMenuRank'){throw 'FULL_MENU_MISSING'}
-          if((git hash-object 'mainwindow.cpp').Trim() -ne 'c0f89a30f8a26c2e971e5c1a998e03b4bce50010'){throw 'BUILD117_LAYOUT_CHANGED: mainwindow.cpp'}
+          if((git hash-object 'mainwindow.cpp').Trim() -ne '7de0f781bba8060e6940417c9beb696eb9b906e5'){throw 'BUILD117_LAYOUT_CHANGED: mainwindow.cpp'}
           if((git hash-object 'navigationorderpatch.cpp').Trim() -ne '799d5b0dc7be9a324dc32a37369746e72ad7d540'){throw 'BUILD117_LAYOUT_CHANGED: navigationorderpatch.cpp'}
           if((git hash-object 'navigationorderpatch.h').Trim() -ne 'da252d14b0ab000b78ba2684f61790f69eb56c30'){throw 'BUILD117_LAYOUT_CHANGED: navigationorderpatch.h'}
           if((git hash-object 'overviewrebuild.cpp').Trim() -ne 'e59e6b1ddd0f2d4f6c457672b91c7e8496a811a2'){throw 'BUILD117_LAYOUT_CHANGED: overviewrebuild.cpp'}
-          if((git hash-object 'visualcompletion.cpp').Trim() -ne '56e7cc3842119328bb4ea078d6dc44884ce3e6d2'){throw 'BUILD117_LAYOUT_CHANGED: visualcompletion.cpp'}
+          if((git hash-object 'visualcompletion.cpp').Trim() -ne 'b5542ac376718c786ec490e80cda89463ce359f4'){throw 'BUILD117_LAYOUT_CHANGED: visualcompletion.cpp'}
           if((git hash-object 'dedicatedpagesrebuild.cpp').Trim() -ne '17d9364639c7a2a6891cd0364303e2cf625b8df0'){throw 'BUILD117_LAYOUT_CHANGED: dedicatedpagesrebuild.cpp'}
           if($main -notmatch 'window\.showMaximized\(\)' -or $main -match 'CompleteZoom|QT_SCALE_FACTOR|window\.setFixedSize\('){throw 'FORCED_GLOBAL_ZOOM'}
           if($ui -notmatch 'applyReadablePageFonts\(tabs\)' -or $ui -notmatch 'if \(i==10\) continue'){throw 'READABILITY_NOT_SCOPED'}
@@ -64,22 +64,29 @@ jobs:
           $dark=Get-Content darkstyle.cpp -Raw
           if($dark -notmatch 'm_clearFaultsButton' -or
              $dark -notmatch 'm_clearRecordedAnomalies'){throw 'ERROR_CLEAR_BUTTONS_STYLE_OVERWRITTEN'}
-          $late=Get-Content settingsvisualpatch.cpp -Raw
-          $cmake=Get-Content CMakeLists.txt -Raw
+          # The original Settings source is now the only active owner of its
+          # gauges, buttons and panel arrangement. There is NO visual patch.
+          if(Test-Path 'settingsvisualpatch.cpp'){throw 'LEGACY_SETTINGS_PATCH_FILE_PRESENT'}
+          if($cmake -match 'settingsvisualpatch.cpp'){throw 'LEGACY_SETTINGS_PATCH_STILL_COMPILED'}
+          if($settings -notmatch 'settingsLayoutIntegrated' -or
+             $settings -notmatch 'arrangeBottomPanels\(page,metrics,states,adjust\)' -or
+             $settings -notmatch 'compactAdjustForm\(page,adjust\)' -or
+             $settings -notmatch 'button->setMinimumHeight\(36\)' -or
+             $settings -notmatch 'center\*\.62'){
+              throw 'SETTINGS_ORIGINAL_SOURCE_NOT_CONSOLIDATED'
+          }
+          foreach($conflict in @('strictvisualrebuild.cpp','darkfixes.cpp','darkstyle.cpp','visualcompletion.cpp')){
+            $body=Get-Content $conflict -Raw
+            if($body -match 'rebuildSettingsGauges\(w\)' -or
+               $body -match 'fixSettings\(w\)' -or
+               $body -match 'reflowSettings\(w\)' -or
+               $body -match 'if \(QWidget \*settings=w->findChild<QWidget\*>'){
+              throw "SECOND_SETTINGS_LAYOUT_OWNER: $conflict"
+            }
+          }
           $mainWindow=Get-Content mainwindow.cpp -Raw
           $chrome=Get-Content uirebuild.cpp -Raw
           $shortcutSource=Get-Content desktopshortcut.cpp -Raw
-          if($late -match 'button->setMinimumHeight\(21\)' -or
-             $late -match 'button->setMaximumHeight\(22\)' -or
-             $late -match 'qBound\(370,qMin\(centerByWidth,centerByHeight\),400\)' -or
-             $late -match 'qBound\(138,qRound\(height\*\.23\),154\)'){
-              throw 'SETTINGS_LATE_PATCH_REVERTS_DIMENSIONS'
-          }
-          if($late -notmatch 'button->setMinimumHeight\(36\)' -or
-             $late -notmatch 'center\*\.62' -or
-             $late -notmatch 'metricsHeight-20'){
-              throw 'SETTINGS_LATE_PATCH_INCONSISTENT'
-          }
           if($cmake -notmatch 'APP_NAME="ECU MEMS Manager SESSION"' -or
              $mainWindow -notmatch 'QStringLiteral\(APP_NAME\)' -or
              $main -notmatch 'setApplicationDisplayName\(QStringLiteral\("ECU MEMS Manager SESSION"\)\)' -or
@@ -327,7 +334,7 @@ jobs:
           $tag="mems-session-134-test-$env:GITHUB_RUN_ID"
           $setup=Get-ChildItem setup-output-134 -File -Filter '*.exe' | Select-Object -First 1
           if(-not $setup){throw 'NO_SETUP_TO_PUBLISH'}
-          gh release create $tag --title "ECU MEMS Manager SESSION 134 - Reglages et nom officiel (TEST)" --target "$env:GITHUB_SHA" --prerelease --notes "Version SESSION Windows x64, 14 pages et IA ONNX active. Seule la page Reglages est corrigee visuellement. Le correctif empeche un traitement tardif de reduire les cadrans et les boutons. Le nom officiel SESSION est retabli. Identifiants techniques et donnees conserves. Aucun zoom global ni changement de resolution Windows. Splash titre et sous-titre rendus en haute resolution native. Setup de test pour validation visuelle sur PC utilisateur. Dossier distinct de LIGHT. Mise a jour de 133 en place grace au meme AppId. Base de donnees personnelle non embarquee."
+          gh release create $tag --title "ECU MEMS Manager SESSION 134 - Reglages et nom officiel (TEST)" --target "$env:GITHUB_SHA" --prerelease --notes "Version SESSION Windows x64, 14 pages et IA ONNX active. Seule la page Reglages est corrigee visuellement, directement dans le code source original. Les anciens traitements concurrents ont ete supprimes. Le nom officiel SESSION est retabli. Identifiants techniques et donnees conserves. Aucun zoom global ni changement de resolution Windows. Splash titre et sous-titre rendus en haute resolution native. Setup de test pour validation visuelle sur PC utilisateur. Dossier distinct de LIGHT. Mise a jour de 133 en place grace au meme AppId. Base de donnees personnelle non embarquee."
           if($LASTEXITCODE -ne 0){
             Write-Warning 'RELEASE_PUBLICATION_DENIED: setup still available as a validated GitHub Actions artifact.'
             exit 0
