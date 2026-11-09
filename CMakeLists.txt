@@ -173,6 +173,8 @@ if(MSVC)
     endif()
 endif()
 if(WIN32)
+    # Explicit Win32 monitor/work-area query required for automatic Qt zoom.
+    target_link_libraries(${PNAME} PRIVATE user32)
     message(STATUS "Plateforme Windows détectée (MSVC / MinGW).")
     if(MSVC)
         set_target_properties(${PNAME} PROPERTIES WIN32_EXECUTABLE TRUE)
