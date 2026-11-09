@@ -281,6 +281,10 @@ static void styleControls(QMainWindow *w)
     const QString button=QStringLiteral("QPushButton{background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #1b252c,stop:1 #111920);color:#eaf0f3;border:1px solid #35434e;border-radius:5px;padding:5px 10px;font-weight:650;}QPushButton:hover{border-color:#ff7a00;background:#202a31;color:#fff;}QPushButton:pressed{background:#0b1116;}QPushButton:checked{background:#3b2918;border-color:#ff8a1c;color:#ffad5c;}QPushButton:disabled{background:#141b20;color:#63707a;border-color:#27313a;}");
     for(QPushButton *b:w->findChildren<QPushButton*>()){
         if(b->objectName()==QStringLiteral("m_connectButton")||b->objectName()==QStringLiteral("m_disconnectButton")) continue;
+        // These two Erreurs controls have their own user-approved
+        // black/orange style, which must not be replaced by global styling.
+        if(b->objectName()==QStringLiteral("m_clearFaultsButton") ||
+           b->objectName()==QStringLiteral("m_clearRecordedAnomalies")) continue;
         b->setStyleSheet(button);b->setMinimumHeight(qMax(27,b->fontMetrics().height()+12));
     }
     const QString edit=QStringLiteral("background:#071016;color:#e2e9ed;border:1px solid #34434e;border-radius:5px;padding:4px 7px;selection-background-color:#754016;");

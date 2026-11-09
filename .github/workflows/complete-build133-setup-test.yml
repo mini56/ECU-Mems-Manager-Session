@@ -61,6 +61,9 @@ jobs:
           if($errors -notmatch 'QPushButton:disabled\{background:#090e13;color:#ff9828' -or
              $errors -notmatch 'horizontalAdvance\(button->text\(\)\)'){throw 'ERROR_CLEAR_BUTTONS_NOT_FIXED'}
           if($settings -notmatch 'button->setMinimumHeight\(36\)'){throw 'SETTINGS_BUTTONS_TOO_SHORT'}
+          $dark=Get-Content darkstyle.cpp -Raw
+          if($dark -notmatch 'm_clearFaultsButton' -or
+             $dark -notmatch 'm_clearRecordedAnomalies'){throw 'ERROR_CLEAR_BUTTONS_STYLE_OVERWRITTEN'}
           Write-Host 'COMPLETE_133_BUILD117_LAYOUT_TEXT_ONLY_PASS'
       - name: Controle anti-pixellisation du splash haute definition
         shell: pwsh
