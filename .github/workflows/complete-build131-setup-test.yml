@@ -250,6 +250,20 @@ jobs:
           $link=(New-Object -ComObject WScript.Shell).CreateShortcut([string]$shortcut)
           if($link.TargetPath -ne (Join-Path $folder 'ecu_mems_manager.exe')){throw 'COMPLETE_SHORTCUT_WRONG_TARGET'}
           Write-Host 'COMPLETE_131_ACTUAL_WINDOWS_INSTALL_AND_SHORTCUT_PASS'
+      - name: Verifier demarrage du programme installe sous Windows
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $folder=Join-Path $env:RUNNER_TEMP 'MEMS_COMPLETE_131_INSTALL'
+          $exe=Join-Path $folder 'ecu_mems_manager.exe'
+          if(-not(Test-Path $exe)){throw 'INSTALLED_EXE_MISSING'}
+          $app=Start-Process -FilePath $exe -WorkingDirectory $folder -PassThru
+          Start-Sleep -Seconds 8
+          $app.Refresh()
+          if($app.HasExited){throw "INSTALLED_APP_EXITED_AT_STARTUP code=$($app.ExitCode)"}
+          $null=$app.CloseMainWindow()
+          if(-not $app.WaitForExit(5000)){Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue}
+          Write-Host 'COMPLETE_131_INSTALLED_GUI_STARTUP_PASS'
       - name: Publier uniquement le Setup verifie dans une prerelease privee
         shell: pwsh
         env:
@@ -259,7 +273,7 @@ jobs:
           $tag="mems-complete-131-test-$env:GITHUB_RUN_ID"
           $setup=Get-ChildItem setup-output-131 -File -Filter '*.exe' | Select-Object -First 1
           if(-not $setup){throw 'NO_SETUP_TO_PUBLISH'}
-          gh release create $tag --title "ECU MEMS Manager COMPLETE 131 - zoom automatique (TEST)" --target "$env:GITHUB_SHA" --prerelease --notes "Version COMPLETE Windows x64, 14 pages et IA ONNX active. Fenetre Windows native, maximisee et redimensionnable. Aucune reduction globale de la page, aucune modification de la resolution Windows. Splash titre et sous-titre rendus en haute resolution native. Setup pour tests sur PC utilisateur : validation visuelle sur les differentes resolutions encore necessaire. Installe dans un dossier distinct de LIGHT. Base de donnees personnelle non embarquee."
+          gh release create $tag --title "ECU MEMS Manager COMPLETE 131 - affichage Windows natif (TEST)" --target "$env:GITHUB_SHA" --prerelease --notes "Version COMPLETE Windows x64, 14 pages et IA ONNX active. Fenetre Windows native, maximisee et redimensionnable. Aucune reduction globale de la page, aucune modification de la resolution Windows. Splash titre et sous-titre rendus en haute resolution native. Setup pour tests sur PC utilisateur : validation visuelle sur les differentes resolutions encore necessaire. Installe dans un dossier distinct de LIGHT. Base de donnees personnelle non embarquee."
           if($LASTEXITCODE -ne 0){throw 'RELEASE_CREATION_FAILED'}
           gh release upload $tag $setup.FullName
           if($LASTEXITCODE -ne 0){throw 'RELEASE_SETUP_UPLOAD_FAILED'}
