@@ -50,123 +50,6 @@ static QGridLayout *gridContaining(QWidget *root,const QList<QWidget*> &widgets)
     return best;
 }
 
-static QWidget *analysisWidget(QMainWindow *w)
-{
-    if(!w) return nullptr;
-    for(QWidget *x:w->findChildren<QWidget*>())
-        if(className(x)==QStringLiteral("AnalysisTab")) return x;
-    return nullptr;
-}
-
-static void updateAnalysisEmpty(QWidget *analysis,QLabel *fileLabel,QLabel *empty)
-{
-    if(!analysis || !empty) return;
-    const bool noFile=!fileLabel || fileLabel->text()==I18n::text(6443);
-    empty->setVisible(noFile);
-}
-
-static void fixAnalysis(QMainWindow *w)
-{
-    QWidget *analysis=analysisWidget(w);
-    if(!analysis) return;
-
-    QWidget *topBar=analysis->findChild<QWidget*>(QStringLiteral("analysisTopBar"));
-    QWidget *rightPanel=analysis->findChild<QWidget*>(QStringLiteral("analysisRightPanel"));
-    QLabel *fileLabel=nullptr;
-
-    if(!topBar || !rightPanel) {
-        QWidget *legacy=nullptr;
-        const QList<QWidget*> direct=analysis->findChildren<QWidget*>(QString(),Qt::FindDirectChildrenOnly);
-        for(QWidget *c:direct) {
-            if(!c || qobject_cast<QScrollArea*>(c)) continue;
-            if(c->findChildren<QPushButton*>().size()>=4 && c->findChild<QScrollArea*>()) { legacy=c; break; }
-        }
-        QVBoxLayout *root=qobject_cast<QVBoxLayout*>(analysis->layout());
-        QHBoxLayout *mainRow=nullptr;
-        if(root) for(int i=0;i<root->count();++i) if(QLayout *l=root->itemAt(i)->layout()) { mainRow=qobject_cast<QHBoxLayout*>(l); if(mainRow) break; }
-        if(legacy && root && mainRow) {
-            QList<QPushButton*> buttons=legacy->findChildren<QPushButton*>();
-            QPushButton *load=nullptr,*all=nullptr,*none=nullptr,*overlay=nullptr;
-            for(QPushButton *b:buttons) {
-                if(b->isCheckable()) { overlay=b; continue; }
-                if(!load && (b->text().contains(QStringLiteral("CSV"),Qt::CaseInsensitive)||b->text().contains(QStringLiteral("TXT"),Qt::CaseInsensitive))) { load=b; continue; }
-            }
-            if(!load && !buttons.isEmpty()) load=buttons.first();
-            for(QPushButton *b:buttons) {
-                if(b==load || b==overlay) continue;
-                if(!all) all=b; else if(!none) none=b;
-            }
-
-            QLabel *channelsLabel=nullptr;
-            for(QLabel *l:legacy->findChildren<QLabel*>(QString(),Qt::FindDirectChildrenOnly)) {
-                if(l->wordWrap() && !fileLabel) fileLabel=l;
-                else if(!channelsLabel) channelsLabel=l;
-            }
-            QScrollArea *parameters=legacy->findChild<QScrollArea*>();
-
-            topBar=new QWidget(analysis);
-            topBar->setObjectName(QStringLiteral("analysisTopBar"));
-            topBar->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
-            QHBoxLayout *top=new QHBoxLayout(topBar); top->setContentsMargins(8,5,8,5); top->setSpacing(7);
-            if(load) { load->setParent(topBar); top->addWidget(load); }
-            if(fileLabel) { fileLabel->setParent(topBar); fileLabel->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred); top->addWidget(fileLabel,1); }
-            root->insertWidget(0,topBar);
-
-            rightPanel=new QWidget(analysis);
-            rightPanel->setObjectName(QStringLiteral("analysisRightPanel"));
-            rightPanel->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Expanding);
-            QVBoxLayout *right=new QVBoxLayout(rightPanel); right->setContentsMargins(9,9,9,9); right->setSpacing(7);
-            if(channelsLabel) {
-                channelsLabel->setParent(rightPanel); channelsLabel->setStyleSheet(QStringLiteral("color:#ff9828;font-weight:800;padding:2px 0 5px 0;border-bottom:1px solid #2c3842;")); right->addWidget(channelsLabel);
-            } else {
-                QLabel *title=new QLabel(I18n::text(6447),rightPanel); title->setStyleSheet(QStringLiteral("color:#ff9828;font-weight:800;padding:2px 0 5px 0;border-bottom:1px solid #2c3842;")); right->addWidget(title);
-            }
-            if(parameters) {
-                parameters->setParent(rightPanel); parameters->setWidgetResizable(true); parameters->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff); right->addWidget(parameters,1);
-            }
-            QHBoxLayout *select=new QHBoxLayout; select->setSpacing(5);
-            if(all) { all->setParent(rightPanel); select->addWidget(all); }
-            if(none) { none->setParent(rightPanel); select->addWidget(none); }
-            right->addLayout(select);
-            if(overlay) { overlay->setParent(rightPanel); overlay->setMinimumWidth(0); overlay->setMaximumWidth(QWIDGETSIZE_MAX); overlay->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred); right->addWidget(overlay); }
-
-            mainRow->removeWidget(legacy); legacy->hide(); legacy->setMaximumWidth(0);
-            mainRow->addWidget(rightPanel,0);
-            for(int i=0;i<mainRow->count();++i) mainRow->setStretch(i,i==mainRow->count()-1?0:1);
-            analysis->setProperty("finalAnalysisLayout",true);
-        }
-    } else {
-        const QList<QLabel*> labels=topBar->findChildren<QLabel*>();
-        if(!labels.isEmpty()) fileLabel=labels.first();
-    }
-
-    if(!topBar || !rightPanel) return;
-    topBar->setStyleSheet(QStringLiteral("#analysisTopBar{background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #18232b,stop:1 #0d151b);border:1px solid #2d3943;border-left:3px solid #ff7a00;border-radius:6px;}"));
-    rightPanel->setStyleSheet(QStringLiteral("#analysisRightPanel{background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #131c23,stop:1 #091116);border:1px solid #2d3943;border-radius:6px;}"));
-    topBar->setFixedHeight(qBound(34,analysis->height()/13,43));
-    const int rightW=qBound(205,qRound(analysis->width()*0.21),300);
-    rightPanel->setMinimumWidth(rightW); rightPanel->setMaximumWidth(rightW);
-
-    QScrollArea *stack=nullptr;
-    for(QScrollArea *s:analysis->findChildren<QScrollArea*>(QString(),Qt::FindDirectChildrenOnly)) { stack=s; break; }
-    if(stack && stack->widget()) {
-        stack->setFrameShape(QFrame::NoFrame); stack->setWidgetResizable(true); stack->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        QLabel *empty=stack->widget()->findChild<QLabel*>(QStringLiteral("analysisEmptyState"),Qt::FindDirectChildrenOnly);
-        if(!empty) {
-            empty=new QLabel(I18n::text(6443)+QStringLiteral("\n\n")+I18n::text(6442),stack->widget());
-            empty->setObjectName(QStringLiteral("analysisEmptyState"));
-            empty->setAlignment(Qt::AlignCenter); empty->setWordWrap(true);
-            empty->setStyleSheet(QStringLiteral("color:#8f9da6;background:#0c141a;border:1px dashed #34424d;border-radius:8px;padding:28px;font-size:13px;"));
-            if(QVBoxLayout *vl=qobject_cast<QVBoxLayout*>(stack->widget()->layout())) vl->insertWidget(0,empty,1,Qt::AlignCenter);
-        }
-        updateAnalysisEmpty(analysis,fileLabel,empty);
-        if(!analysis->findChild<QTimer*>(QStringLiteral("analysisEmptyTimer"))) {
-            QTimer *timer=new QTimer(analysis); timer->setObjectName(QStringLiteral("analysisEmptyTimer")); timer->setInterval(350);
-            QObject::connect(timer,&QTimer::timeout,analysis,[analysis,fileLabel,empty](){updateAnalysisEmpty(analysis,fileLabel,empty);}); timer->start();
-        }
-    }
-}
-
 static void fixDiagnostic(QMainWindow *w)
 {
     QWidget *diag=nullptr;
@@ -251,7 +134,6 @@ static void cleanBottomBar(QMainWindow *w)
 static void applyFinalFixes(QMainWindow *w)
 {
     if(!w) return;
-    fixAnalysis(w);
     fixDiagnostic(w);
     makeTablesReadable(w);
     styleScrollBars(w);

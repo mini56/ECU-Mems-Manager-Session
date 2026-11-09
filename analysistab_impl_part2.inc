@@ -76,14 +76,20 @@ void AnalysisTab::showEvent(QShowEvent *event)
     const qreal pt=font().pointSizeF()>0?font().pointSizeF():9.0;
     setProperty("analysisModernized",true);
     setProperty("analysisBaseFontPointSize",pt);
-    QTimer::singleShot(0,this,[this](){applyAnalysisModernStyle(this);});
+    QTimer::singleShot(0,this,[this](){
+        applyAnalysisModernStyle(this);
+        configureNativeAnalysis(this);
+    });
 }
 
 void AnalysisTab::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);
     if (property("analysisModernized").toBool())
-        QTimer::singleShot(0,this,[this](){fitAnalysisModernSizing(this);});
+        QTimer::singleShot(0,this,[this](){
+            fitAnalysisModernSizing(this);
+            configureNativeAnalysis(this);
+        });
 }
 
 AnalysisTab::AnalysisTab(QWidget *parent)
