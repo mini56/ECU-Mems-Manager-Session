@@ -164,7 +164,7 @@ QString chooseInitialLanguage()
 
 QSplashScreen *createStartupSplash()
 {
-    // A 640x360 pixmap enlarged by QT_SCALE_FACTOR rasterizes all titles
+    // Scaling a 640x360 raster image degrades the title lettering
     // at low resolution. Draw in physical pixels while keeping the exact
     // same 640x360 logical layout and font sizes on every monitor.
     constexpr int splashWidth = 640;
@@ -254,7 +254,7 @@ QSplashScreen *createStartupSplash()
 int main(int argc, char *argv[])
 {
     // Qt and Windows determine the native DPI and available screen area.
-    // There is NO application-wide QT_SCALE_FACTOR or page zoom.
+    // Keep each Qt widget at its native size; no whole-page scaling.
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling, true);
     QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps, true);
     QApplication app(argc, argv);
