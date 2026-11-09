@@ -76,7 +76,7 @@ protected:
 
         QFont titleFont=p.font();
         titleFont.setBold(true);
-        titleFont.setPointSizeF(large?9.0:7.2);
+        titleFont.setPointSizeF(large?10.2:9.0);
         p.setFont(titleFont);
         p.setPen(kText);
         p.drawText(QRectF(4,0,bw-8,20),Qt::AlignCenter,m_title.toUpper());
@@ -170,7 +170,7 @@ protected:
 
         QFont scaleFont=p.font();
         scaleFont.setBold(false);
-        scaleFont.setPointSizeF(large?8.5:6.1);
+        scaleFont.setPointSizeF(large?9.2:7.3);
         p.setFont(scaleFont);
         p.setPen(QColor("#eef2f4"));
         const qreal labelR=r-(large?38.0:25.0);
@@ -206,7 +206,7 @@ protected:
 
         QFont valueFont=p.font();
         valueFont.setBold(true);
-        valueFont.setPointSizeF(large?23.0:13.0);
+        valueFont.setPointSizeF(large?23.0:14.5);
         p.setFont(valueFont);
         p.setPen(QColor("#ffffff"));
         const QString valueText=(qAbs(maxv-minv)<=50.0)?QString::number(value,'f',1):QString::number(value,'f',0);
@@ -214,7 +214,7 @@ protected:
 
         QFont unitFont=p.font();
         unitFont.setBold(true);
-        unitFont.setPointSizeF(large?8.5:6.3);
+        unitFont.setPointSizeF(large?9.2:7.6);
         p.setFont(unitFont);
         p.setPen(QColor("#d4dbe0"));
         p.drawText(QRectF(c.x()-(large?55:36),c.y()+(large?83:45),large?110:72,large?17:13),Qt::AlignCenter,m_unit);
@@ -579,12 +579,15 @@ static void applySettingsSizing(QWidget *page,QFrame *metrics,QFrame *adjust)
 {
     if(!page || !metrics || !adjust) return;
 
+    // BUILD117 positions stay unchanged: two gauges in each side column,
+    // and the single RPM gauge remains substantially larger in the centre.
+    // The former 335/350 px caps wasted vertical space on tall screens.
     const int width=qMax(700,page->width());
     const int height=qMax(430,page->height());
-    const int centerByWidth=qRound(width*.285);
-    const int centerByHeight=qRound((height-175)*.91);
-    const int center=qBound(270,qMin(centerByWidth,centerByHeight),335);
-    const int outer=qBound(155,qRound(center*.57),192);
+    const int adjustHeight=qBound(174,qRound(height*.27),205);
+    const int metricsHeight=qMax(225,height-adjustHeight-38);
+    const int center=qMax(200,qMin(qRound(width*.36),metricsHeight-18));
+    const int outer=qMax(120,qMin(qRound(center*.60),(metricsHeight-12)/2));
 
     sizeGauge(page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeRpm")),center);
     sizeGauge(page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeIdle")),outer);
@@ -592,14 +595,11 @@ static void applySettingsSizing(QWidget *page,QFrame *metrics,QFrame *adjust)
     sizeGauge(page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeIgnition")),outer);
     sizeGauge(page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeLambda")),outer);
 
-    const int metricsHeight=qBound(292,center+12,350);
     metrics->setMinimumHeight(metricsHeight);
-    metrics->setMaximumHeight(metricsHeight+6);
+    metrics->setMaximumHeight(metricsHeight);
     metrics->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
-
-    const int adjustHeight=qBound(168,qRound(height*.31),205);
     adjust->setMinimumHeight(adjustHeight);
-    adjust->setMaximumHeight(adjustHeight+12);
+    adjust->setMaximumHeight(adjustHeight);
 }
 
 static void suppressLegacyOverlays(QFrame *metrics)

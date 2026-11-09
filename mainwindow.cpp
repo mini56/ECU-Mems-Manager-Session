@@ -257,8 +257,6 @@ m_mems(0), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerD
   makeFixedTabsScrollable();
   m_ui->Tab_main->setCurrentIndex(0); // Toujours démarrer sur Aperçu
   TooltipBubbleManager::install(this);
-  // The asynchronous sidebar must not be constructed before all 14 pages exist.
-  setProperty("ecuMainWindowConstructed", true);
 }
 
 
@@ -2114,17 +2112,22 @@ void MainWindow::makeFixedTabsScrollable()
     const QString title = tabs->tabText(i);
     const QIcon icon = tabs->tabIcon(i);
 
-    // All pages share the same virtual canvas, not their Designer size.
-    // Do not manufacture an oversized 1300 x 3441 scrolling page.
+    // Conserve la taille de conception : les pages historiques du projet
+    // font souvent plus de 3000 px de haut. C'est cette taille qui doit
+    // devenir la zone défilable, et non la fenêtre principale.
+    QSize contentSize = page->size().expandedTo(page->sizeHint())
+                                    .expandedTo(page->minimumSizeHint());
+    if (contentSize.width() < 1300) contentSize.setWidth(1300);
+    if (contentSize.height() < 768) contentSize.setHeight(768);
 
     tabs->removeTab(i);
 
     QScrollArea *scroll = new QScrollArea(tabs);
     scroll->setObjectName(I18n::text(7070) /* EN: scrollArea_%1 */.arg(page->objectName()));
     scroll->setFrameShape(QFrame::NoFrame);
-    scroll->setWidgetResizable(true);
-    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    scroll->setWidgetResizable(false);
+    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     scroll->setAlignment(Qt::AlignLeft | Qt::AlignTop);
 
     scroll->setFocusPolicy(Qt::NoFocus);
@@ -2132,8 +2135,8 @@ void MainWindow::makeFixedTabsScrollable()
 
     page->setProperty("wrappedInScrollArea", true);
     page->setParent(scroll);
-    page->setMinimumSize(0,0);
-    // Qt adjusts each page to the actual tab viewport; no forced canvas size.
+    page->setMinimumSize(contentSize);
+    page->resize(contentSize);
     scroll->setWidget(page);
 
     tabs->insertTab(i, scroll, icon, title);

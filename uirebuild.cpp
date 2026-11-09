@@ -27,7 +27,6 @@
 #include <QWidget>
 #include "i18n.h"
 #include "optionsdialog.h"
-#include "navigationorderpatch.h"
 
 namespace {
 
@@ -337,16 +336,15 @@ static void applyResponsive(QMainWindow *window)
     if(QFrame *status=window->findChild<QFrame*>(QStringLiteral("uiRebuildStatus")))
         status->setFixedHeight(qBound(29,qRound(35.0*s),40));
 
-    // Only the outer page wrappers: data views and log widgets keep their
-    // normal internal interaction. A COMPLETE page never scrolls.
     const QList<QScrollArea*> scrolls=window->findChildren<QScrollArea*>();
     for(QScrollArea *scroll:scrolls){
-        QWidget *page=scroll->widget();
-        if(!page || !page->property("wrappedInScrollArea").toBool()) continue;
         scroll->setWidgetResizable(true);
         scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        page->setMinimumSize(0,0);
+        if(scroll->widget()){
+            scroll->widget()->setMinimumWidth(0);
+            scroll->widget()->setMaximumWidth(QWIDGETSIZE_MAX);
+        }
     }
 }
 
@@ -358,8 +356,6 @@ protected:
     {
         QMainWindow *window=qobject_cast<QMainWindow*>(watched);
         if(!window||window->objectName()!=QStringLiteral("MainWindow"))return QObject::eventFilter(watched,event);
-        if(!window->property("ecuMainWindowConstructed").toBool())
-            return QObject::eventFilter(watched,event);
 
         if(event->type()==QEvent::Resize && window->property("uiRebuildInstalled").toBool()) {
             applyResponsive(window);
@@ -372,6 +368,36 @@ protected:
         window->setProperty("uiRebuildInstalled",true); QTimer::singleShot(0,window,[=](){rebuild(window,central,root,tabs,legacy);}); return QObject::eventFilter(watched,event);
     }
 private:
+    // Typography only. The 14 original BUILD117 page layouts remain intact.
+    // All-data page at rank 10 is the validated reference and is untouched.
+    static void applyReadablePageFonts(QTabWidget *tabs)
+    {
+        if (!tabs) return;
+        constexpr qreal kMinimumPoints = 9.8;
+        for (int i=0; i<tabs->count(); ++i) {
+            if (i==10) continue;
+            QWidget *page=realPage(tabs->widget(i));
+            if (!page) continue;
+            for (QWidget *widget:page->findChildren<QWidget*>()) {
+                if (!widget) continue;
+                if (!(qobject_cast<QLabel*>(widget) ||
+                      qobject_cast<QAbstractItemView*>(widget) ||
+                      widget->inherits("QAbstractButton") ||
+                      widget->inherits("QLineEdit") ||
+                      widget->inherits("QComboBox") ||
+                      widget->inherits("QGroupBox") ||
+                      widget->inherits("QTextEdit") ||
+                      widget->inherits("QPlainTextEdit"))) continue;
+                QFont font=widget->font();
+                const qreal pt=font.pointSizeF();
+                if (pt>0 && pt<kMinimumPoints) {
+                    font.setPointSizeF(kMinimumPoints);
+                    widget->setFont(font);
+                }
+            }
+        }
+    }
+
     static void rebuild(QMainWindow *window,QWidget *central,QVBoxLayout *root,QTabWidget *tabs,QWidget *legacy)
     {
         qApp->setStyleSheet(globalStyle()); central->setAttribute(Qt::WA_StyledBackground,true); central->setStyleSheet(QStringLiteral("background:%1;").arg(QString::fromLatin1(kBg)));
@@ -388,10 +414,11 @@ private:
         QObject::connect(tabs,&QTabWidget::currentChanged,nav,[nav](int row){ nav->setCurrentRow(row); });
         for(int i=0;i<tabs->count();++i){QWidget *page=realPage(tabs->widget(i));if(!page)continue;if(QScrollArea *scroll=qobject_cast<QScrollArea*>(tabs->widget(i))){scroll->setWidgetResizable(true);scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);page->setMinimumSize(0,0);}const QString title=titleForIndex(tabs,i);if(!usesDedicatedLayout(page,i))composeGenericPage(page,title,i);}
         root->addWidget(buildBottomStatus(window));tabs->setCurrentIndex(0);
-        if(!refreshFinalNavigation(window))
-            qWarning("COMPLETE navigation: full 14-page menu not synchronized");
         applyResponsive(window);
         QTimer::singleShot(120,window,[window](){applyResponsive(window);});
+        // Once the original settings and page installers finish, improve
+        // text only: no position, size, card, dial or table changes.
+        QTimer::singleShot(2800,window,[tabs](){applyReadablePageFonts(tabs);});
     }
 };
 
