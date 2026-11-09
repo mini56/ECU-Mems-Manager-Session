@@ -96,6 +96,10 @@ public:
 signals:
     void liveSourceRequested(bool injectionMode);
 
+protected:
+    void showEvent(QShowEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
+
 private slots:
     void onLoadFileClicked();
     void onCheckboxToggled(bool checked);

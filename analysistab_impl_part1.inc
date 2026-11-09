@@ -10,6 +10,10 @@
 #include <QGridLayout>
 #include <QMessageBox>
 #include <QPainter>
+#include <QFrame>
+#include <QShowEvent>
+#include <QResizeEvent>
+#include <QTimer>
 #include <QPalette>
 #include <QScrollBar>
 #include <QSignalBlocker>
@@ -18,6 +22,114 @@
 #include <QtMath>
 
 namespace {
+
+// Original AnalysisTab owns styling and resizing: no application-wide filter.
+static void fitAnalysisModernSizing(QWidget *tab);
+    static qreal analysisUiScale(QWidget *tab)
+    {
+        QWidget *top = tab ? tab->window() : nullptr;
+        if (top && top->property("globalUiScale").isValid())
+            return qBound<qreal>(0.62, top->property("globalUiScale").toDouble(), 1.18);
+        return 1.0;
+    }
+
+    static void applyAnalysisModernStyle(QWidget *tab)
+    {
+        if (!tab)
+            return;
+
+        tab->setMinimumSize(0, 0);
+        tab->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+        tab->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        tab->setAttribute(Qt::WA_StyledBackground, true);
+        tab->setStyleSheet(QStringLiteral(
+            "AnalysisTab{background:#0b0f14;color:#dce2e7;}"
+            "QWidget{color:#dce2e7;}"
+            "QLabel{background:transparent;border:0;color:#dce2e7;}"
+            "#analysisRightPanel{background:#0f151b;border:1px solid #26313b;border-radius:0;}"
+            "#analysisParametersTitle,#analysisToolsTitle{color:#ff9828;font-weight:700;padding:3px 0;border-bottom:1px solid #2b3540;}"
+            "#analysisFileLabel{color:#aeb8bf;font-style:italic;}"
+            "QPushButton{background:#17202a;color:#dce2e7;border:1px solid #34414d;border-radius:2px;padding:4px 8px;font-weight:600;min-height:23px;}"
+            "QPushButton:hover{border-color:#ff8a1c;color:#fff;}"
+            "QPushButton:pressed{background:#202b36;}"
+            "QPushButton:checked{background:#ff8a1c;color:#101419;border-color:#ff9b32;}"
+            "QPushButton:disabled{background:#111820;color:#5f6972;border-color:#28323b;}"
+            "QScrollArea{background:#0d1218;border:0;}"
+            "QScrollArea>QWidget>QWidget{background:#0d1218;}"
+            "QCheckBox{spacing:6px;padding:2px 1px;color:#dce2e7;background:transparent;}"
+            "QScrollBar:vertical{background:#0c1116;width:8px;margin:1px;}"
+            "QScrollBar::handle:vertical{background:#384550;border-radius:1px;min-height:24px;}"
+            "QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical{height:0;}"
+        ));
+
+        const QList<QScrollArea*> scrollAreas = tab->findChildren<QScrollArea*>();
+        for (QScrollArea *scroll : scrollAreas)
+        {
+            scroll->setFrameShape(QFrame::NoFrame);
+            scroll->setWidgetResizable(true);
+            if (scroll->viewport())
+            {
+                scroll->viewport()->setAutoFillBackground(false);
+                scroll->viewport()->setStyleSheet(QStringLiteral("background:#0d1218;"));
+            }
+        }
+
+        fitAnalysisModernSizing(tab);
+    }
+
+    static void fitAnalysisModernSizing(QWidget *tab)
+    {
+        if (!tab)
+            return;
+
+        const qreal scale = analysisUiScale(tab);
+        if (QLayout *root = tab->layout())
+        {
+            const int margin = qBound(4, qRound(6.0 * scale), 8);
+            root->setContentsMargins(margin, margin, margin, margin);
+            root->setSpacing(margin);
+            root->setSizeConstraint(QLayout::SetDefaultConstraint);
+        }
+
+        QWidget *right = tab->findChild<QWidget*>(QStringLiteral("analysisRightPanel"));
+        const int rightWidth = qBound(210, qRound(tab->width() * 0.20), 300);
+        if (right)
+        {
+            right->setMinimumWidth(rightWidth);
+            right->setMaximumWidth(rightWidth);
+        }
+
+        const qreal base = tab->property("analysisBaseFontPointSize").isValid()
+            ? tab->property("analysisBaseFontPointSize").toDouble()
+            : 9.0;
+        QFont font = tab->font();
+        font.setPointSizeF(qMax<qreal>(6.5, base * scale));
+        tab->setFont(font);
+        tab->setProperty("analysisScale", scale);
+
+        const int buttonHeight = qBound(22, qRound(27.0 * scale), 32);
+        const QList<QPushButton*> buttons = tab->findChildren<QPushButton*>();
+        for (QPushButton *button : buttons)
+        {
+            button->setMinimumHeight(buttonHeight);
+            button->setMaximumHeight(qMax(buttonHeight, 34));
+        }
+
+        const QList<QWidget*> children = tab->findChildren<QWidget*>();
+        for (QWidget *child : children)
+        {
+            const QString cls = QString::fromLatin1(child->metaObject()->className());
+            if (cls == QStringLiteral("SingleChartWidget") || cls == QStringLiteral("ChartWidget"))
+            {
+                child->setMinimumHeight(qBound(105, qRound(170.0 * scale), 220));
+                child->setMaximumHeight(QWIDGETSIZE_MAX);
+                child->setMinimumWidth(0);
+                child->setMaximumWidth(QWIDGETSIZE_MAX);
+                child->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+            }
+        }
+    }
+
 
 static QString friendlyColumnName(const QString &rawName)
 {

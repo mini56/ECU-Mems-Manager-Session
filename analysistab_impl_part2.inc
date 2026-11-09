@@ -68,6 +68,24 @@ void ChartWidget::paintEvent(QPaintEvent *event)
     }
 }
 
+// Native QWidget lifecycle replaces a global application event filter.
+void AnalysisTab::showEvent(QShowEvent *event)
+{
+    QWidget::showEvent(event);
+    if (property("analysisModernized").toBool()) return;
+    const qreal pt=font().pointSizeF()>0?font().pointSizeF():9.0;
+    setProperty("analysisModernized",true);
+    setProperty("analysisBaseFontPointSize",pt);
+    QTimer::singleShot(0,this,[this](){applyAnalysisModernStyle(this);});
+}
+
+void AnalysisTab::resizeEvent(QResizeEvent *event)
+{
+    QWidget::resizeEvent(event);
+    if (property("analysisModernized").toBool())
+        QTimer::singleShot(0,this,[this](){fitAnalysisModernSizing(this);});
+}
+
 AnalysisTab::AnalysisTab(QWidget *parent)
     : QWidget(parent), m_overlayMode(false), m_liveSource(FileSource)
 {

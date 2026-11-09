@@ -76,7 +76,7 @@ set(SOURCES
     expert/IaMemsDiagramCatalog.cpp expert/IaMemsDiagramCatalog.h
     expert/ExpertEngine.cpp expert/ExpertEngine.h expert/ExpertKnowledgeReader.cpp expert/ExpertKnowledgeReader.h
     expert/ExpertTypes.h expert/LocalAiClient.cpp expert/LocalAiClient.h
-    uirebuild.cpp overviewrebuild.cpp majorpagesrebuild.cpp errorsvisualpatch.cpp analysismodernizer.cpp
+    uirebuild.cpp overviewrebuild.cpp majorpagesrebuild.cpp errorsvisualpatch.cpp
     strictvisualrebuild.cpp dedicatedpagesrebuild.cpp visualcompletion.cpp navigationorderpatch.cpp darkstyle.cpp darkfixes.cpp
     settingstabdark.cpp mainwindowtitlebarfix.cpp systemstateconnectionfix.cpp)
 add_executable(${PNAME} ${SOURCES})
