@@ -25,7 +25,6 @@
 #include <QDateTime>
 #include <QPixmap>
 #include <QScreen>
-#include "completezoom.h"
 #include <QStatusBar>
 #include <QGroupBox>
 #include <QGridLayout>
@@ -64,7 +63,7 @@ m_mems(0), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerD
     centralLayout->addWidget(m_ui->Tab_main, 1);
   }
   setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-  resize(CompleteZoom::referenceSize());
+  resize(1300, 690);
   qApp->processEvents();
   this->setWindowTitle(PROJECTNAME + QString(" ") +
       QString::number(VER_MAJOR) + "." +
@@ -2134,7 +2133,7 @@ void MainWindow::makeFixedTabsScrollable()
     page->setProperty("wrappedInScrollArea", true);
     page->setParent(scroll);
     page->setMinimumSize(0,0);
-    page->resize(CompleteZoom::referenceSize());
+    // Qt adjusts each page to the actual tab viewport; no forced canvas size.
     scroll->setWidget(page);
 
     tabs->insertTab(i, scroll, icon, title);

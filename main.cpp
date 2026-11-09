@@ -1,5 +1,4 @@
 #include <QApplication>
-#include "completezoom.h"
 #include <QLocale>
 #include <QSettings>
 #include <QMessageBox>
@@ -173,8 +172,8 @@ QSplashScreen *createStartupSplash()
     const QScreen *screen = QGuiApplication::primaryScreen();
     const qreal deviceScale = qMax<qreal>(
         1.0, screen ? screen->devicePixelRatio() : 1.0);
-    QPixmap pixmap(qCeil(splashWidth * deviceScale),
-                   qCeil(splashHeight * deviceScale));
+    QPixmap pixmap(qRound(splashWidth * deviceScale),
+                   qRound(splashHeight * deviceScale));
     pixmap.setDevicePixelRatio(deviceScale);
     pixmap.fill(QColor(QStringLiteral("#111820")));
 
@@ -254,8 +253,10 @@ QSplashScreen *createStartupSplash()
 
 int main(int argc, char *argv[])
 {
-    // Zoom native Qt widgets uniformly BEFORE they are constructed.
-    CompleteZoom::configureBeforeApplication();
+    // Qt and Windows determine the native DPI and available screen area.
+    // There is NO application-wide QT_SCALE_FACTOR or page zoom.
+    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling, true);
+    QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps, true);
     QApplication app(argc, argv);
     QApplication::setApplicationName("ECU Mems Manager");
     QApplication::setApplicationVersion(QStringLiteral(APP_VERSION));
@@ -378,13 +379,12 @@ int main(int argc, char *argv[])
     setStep(g_interfaceStep, StartupStepState::Done, I18n::text(26));
     setStartupProgress(100);
 
-    // ONE virtual page for every monitor. QT_SCALE_FACTOR scales everything:
-    // needles, gauges, text, fields and menu, with no page reflow.
-    window.setFixedSize(CompleteZoom::referenceSize());
+    // Standard resizable, maximized Qt window managed by Windows.
     QScreen *screen = QGuiApplication::primaryScreen();
     if (screen)
     {
         const QRect available = screen->availableGeometry();
+        window.resize(qMin(1300, available.width()), qMin(690, available.height()));
         window.move(available.center() -
                     QPoint(window.width() / 2, window.height() / 2));
     }
@@ -401,7 +401,7 @@ int main(int argc, char *argv[])
     g_interfaceStep = nullptr;
     g_splashProgressCallback = nullptr;
 
-    window.show();
+    window.showMaximized();
     installFinalNavigation(&app, &window);
     const int result = app.exec();
     database.close();
