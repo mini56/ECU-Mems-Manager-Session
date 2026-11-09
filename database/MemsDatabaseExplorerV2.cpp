@@ -76,46 +76,6 @@ QString generationFromText(const QString &raw)
     return QString();
 }
 
-QString diagramsForGeneration(const QString &generation)
-{
-    const QString root=QCoreApplication::applicationDirPath()+QStringLiteral("/database/reference/images/");
-    QStringList files;
-    QStringList captions;
-
-    if(generation==QStringLiteral("1.2")) {
-        files << QStringLiteral("mems_1_2_ecu_connector.svg")
-              << QStringLiteral("rover_rosco_3pin_black.svg");
-        captions << QStringLiteral("Connecteur ECU MEMS 1.2 — 36 voies")
-                 << QStringLiteral("Prise diagnostic Rover / ROSCO — 3 broches");
-    } else if(generation==QStringLiteral("1.3")) {
-        files << QStringLiteral("mems_1_3_ecu_connectors.svg")
-              << QStringLiteral("rover_rosco_3pin_black.svg");
-        captions << QStringLiteral("Connecteurs ECU MEMS 1.3 — 36 + 18 voies")
-                 << QStringLiteral("Prise diagnostic Rover / ROSCO — 3 broches");
-    } else if(generation==QStringLiteral("1.6")) {
-        files << QStringLiteral("mems_1_6_ecu_connector.svg")
-              << QStringLiteral("rover_rosco_3pin_black.svg");
-        captions << QStringLiteral("Connecteur ECU MEMS 1.6 — 36 voies ; variante 36 + 18 selon véhicule")
-                 << QStringLiteral("Prise diagnostic Rover / ROSCO — 3 broches");
-    } else if(generation==QStringLiteral("1.9")) {
-        files << QStringLiteral("mems_1_9_ecu_connector.svg")
-              << QStringLiteral("mems_1_9_obd_16pin.svg");
-        captions << QStringLiteral("Connecteur ECU MEMS 1.9 — 36 voies")
-                 << QStringLiteral("Prise diagnostic MEMS 1.9 — 16 broches type J1962 / OBD");
-    }
-
-    QString html;
-    for(int i=0;i<files.size();++i) {
-        const QString path=root+files.at(i);
-        if(!QFileInfo::exists(path))
-            continue;
-        const QString url=QUrl::fromLocalFile(path).toString().toHtmlEscaped();
-        html+=QStringLiteral("<div class='diagram'><img src='%1'><p class='muted'>%2</p></div>")
-                  .arg(url,captions.value(i).toHtmlEscaped());
-    }
-    return html;
-}
-
 QString removeGeneration(QString raw,const QString &generation)
 {
     if(generation.isEmpty()) return raw.trimmed();
@@ -154,9 +114,9 @@ QString htmlStyle()
         "td{border-bottom:1px solid #26323b;padding:5px;vertical-align:top}.content{white-space:pre-wrap;line-height:1.45}</style>");
 }
 
-QString diagramHtml(const QString &path)
+QString diagramHtml(const QString &generation)
 {
-    const QString base=QFileInfo(path).baseName().toLower();
+    const QString base=QStringLiteral("mems_%1").arg(QString(generationFromText(generation)).replace(QLatin1Char('.'), QLatin1Char('_')));
     const QString root=QCoreApplication::applicationDirPath()+QStringLiteral("/database/reference/images/");
     QStringList files;
     QStringList captions;
@@ -228,7 +188,7 @@ QString renderXml(const QString &path)
     if(!file.open(QIODevice::ReadOnly|QIODevice::Text))
         return htmlStyle()+QStringLiteral("<p class='note'>%1</p>").arg(I18n::text(7232).toHtmlEscaped());
     QXmlStreamReader xml(&file);
-    QString html=htmlStyle()+diagramHtml(path);
+    QString html=htmlStyle()+diagramHtml(QFileInfo(path).completeBaseName());
     bool firstRow=true;
     while(!xml.atEnd()){
         xml.readNext();
@@ -811,9 +771,9 @@ private:
         QString subtitle=categoryLabel(category).toHtmlEscaped();
         if(!generation.isEmpty()) subtitle+=QStringLiteral(" — ")+generation.toHtmlEscaped();
         // Wiring illustrations belong to the actual database result renderer.
-        // The earlier standalone diagram patch was never compiled.
+        // Wiring and XML sheets share this single diagram renderer.
         const QString diagrams = category==QStringLiteral("wiring")
-            ? diagramsForGeneration(generationFromText(generation)) : QString();
+            ? diagramHtml(generation) : QString();
         m_detail->setHtml(htmlStyle()+QStringLiteral("<h1>%1</h1><p class='muted'>%2</p>%3<div class='content'>%4</div>")
                           .arg(title.toHtmlEscaped(),subtitle,diagrams,content));
         if(m_detail->verticalScrollBar()) m_detail->verticalScrollBar()->setValue(0);
