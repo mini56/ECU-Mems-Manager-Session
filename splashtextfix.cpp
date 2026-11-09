@@ -52,8 +52,9 @@ static void applySplashVisuals(QSplashScreen *splash)
         palette.setColor(QPalette::Text, Qt::white);
         palette.setColor(QPalette::HighlightedText, Qt::white);
         progress->setPalette(palette);
-        // Keep the exact historical visual result of the former patch.
-        progress->setStyleSheet(QStringLiteral("QProgressBar{color:#ffffff;}"));
+        // Do not replace the complete stylesheet established by main.cpp.
+        // Replacing it with only a text-colour rule reverts the progress
+        // fill to the Windows default and loses the intended blue design.
     }
 
     const QList<QLabel*> labels = splash->findChildren<QLabel*>();

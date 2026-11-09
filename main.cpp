@@ -165,13 +165,24 @@ QString chooseInitialLanguage()
 
 QSplashScreen *createStartupSplash()
 {
-    QPixmap pixmap(640, 360);
+    // A 640x360 pixmap enlarged by QT_SCALE_FACTOR rasterizes all titles
+    // at low resolution. Draw in physical pixels while keeping the exact
+    // same 640x360 logical layout and font sizes on every monitor.
+    constexpr int splashWidth = 640;
+    constexpr int splashHeight = 360;
+    const QScreen *screen = QGuiApplication::primaryScreen();
+    const qreal deviceScale = qMax<qreal>(
+        1.0, screen ? screen->devicePixelRatio() : 1.0);
+    QPixmap pixmap(qCeil(splashWidth * deviceScale),
+                   qCeil(splashHeight * deviceScale));
+    pixmap.setDevicePixelRatio(deviceScale);
     pixmap.fill(QColor(QStringLiteral("#111820")));
 
     QPainter painter(&pixmap);
     painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setRenderHint(QPainter::TextAntialiasing, true);
     painter.setPen(QPen(QColor(QStringLiteral("#3A4652")), 1));
-    painter.drawRoundedRect(pixmap.rect().adjusted(1, 1, -2, -2), 8, 8);
+    painter.drawRoundedRect(QRect(1, 1, splashWidth - 2, splashHeight - 2), 8, 8);
 
     painter.setPen(QColor(QStringLiteral("#F4F7FA")));
     QFont titleFont = painter.font();

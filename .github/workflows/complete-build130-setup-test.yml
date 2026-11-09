@@ -1,0 +1,265 @@
+name: COMPLETE 130 - installateur Windows x64 de test
+run-name: COMPLETE BUILD 130 - 14 pages, zoom automatique, splash HD - ${{ github.sha }}
+on:
+  push:
+    branches:
+      - dev-complete-build117-14-pages-20261109
+    paths:
+      - '.github/workflows/complete-build130-setup-test.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: complete-build130-test
+  cancel-in-progress: false
+
+env:
+  MEMS_BUILD_NUMBER: '130'
+  ORT_GENAI_VERSION: '0.14.0'
+  ORT_GENAI_WIN_X64_SHA256: '8a303e52dc7be8fb2a5331929af451a25ac59774102d7fd09ef673adc85c5ebf'
+  BASE_RELEASE_TAG: 'mems-build117-candidate-39395038798'
+  BASE_ARCHIVE_NAME: 'ECU-MEMS-Manager-x64-BUILD117-CLEAN-V2.tar.gz'
+  BASE_ARCHIVE_SHA256: '4f187bae49bfc134329b53eb4e455c2d125403fe510f2da08a8272b2dcb3cd3b'
+
+jobs:
+  complete-setup:
+    runs-on: windows-2022
+    timeout-minutes: 120
+    steps:
+      - name: Recuperer les sources exactes de COMPLETE
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Verifier 14 pages, IA et zoom sans scroll de page
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $nav=Get-Content navigationorderpatch.cpp -Raw
+          $main=Get-Content main.cpp -Raw
+          $win=Get-Content mainwindow.cpp -Raw
+          if($nav -notmatch 'kFinalTabCount = 14' -or $nav -match 'temporarilyHiddenMenuRank') {throw 'FULL_14_MENU_MISSING'}
+          foreach($id in @('"ia_mems"','"ecu_rosco"','"mems19_test"')) {
+            if(-not $nav.Contains($id)){throw "FULL_MENU_ENTRY_MISSING $id"}
+          }
+          if($main -notmatch 'CompleteZoom::configureBeforeApplication\(\)' -or
+             $main -notmatch 'window\.setFixedSize\(CompleteZoom::referenceSize\(\)\)' -or
+             $main -match 'window\.showMaximized\(\)'){throw 'COMPLETE_ZOOM_INVALID'}
+          if($win -match 'setWidgetResizable\(false\)'){throw 'OUTER_SCROLLING_PAGE_PRESENT'}
+          Write-Host 'COMPLETE_14_PAGES_AND_ZOOM_SOURCE_PASS'
+      - name: Controle anti-pixellisation du splash haute definition
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $splash=Get-Content main.cpp -Raw
+          $style=Get-Content splashtextfix.cpp -Raw
+          if($splash -notmatch 'screen->devicePixelRatio\(\)' -or
+             $splash -notmatch 'pixmap\.setDevicePixelRatio\(deviceScale\)' -or
+             $splash -notmatch 'qCeil\(splashWidth \* deviceScale\)' -or
+             $splash -notmatch 'QPainter::TextAntialiasing'){
+            throw 'SPLASH_HIGH_DPI_RENDER_GUARD_FAILED'
+          }
+          if($style -match 'progress->setStyleSheet\('){
+            throw 'SPLASH_PROGRESS_STYLESHEET_RESET_REGRESSION'
+          }
+          Write-Host 'COMPLETE_130_SPLASH_HIGH_DPI_GUARD_PASS'
+      - name: Preparer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Installer Qt 5.15.2 MSVC x64 et outils de validation
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python -m pip install --disable-pip-version-check "aqtinstall==3.3.0" pefile
+          if($LASTEXITCODE -ne 0){throw 'pip install failed'}
+          $sevenZip=(Get-Command 7z.exe -ErrorAction Stop).Source
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
+          if($LASTEXITCODE -ne 0){throw 'Qt install failed'}
+      - name: Recuperer les fichiers ONNX pour compilation de IA reelle
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $archive=Join-Path $env:RUNNER_TEMP "onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          $folder=Join-Path $env:RUNNER_TEMP 'onnx-genai'
+          curl.exe -L --fail --retry 3 --retry-all-errors --retry-delay 2 -o $archive "https://github.com/microsoft/onnxruntime-genai/releases/download/v$env:ORT_GENAI_VERSION/onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          if($LASTEXITCODE -ne 0){throw 'ONNX download failed'}
+          if((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:ORT_GENAI_WIN_X64_SHA256){throw 'ONNX archive SHA256 mismatch'}
+          Expand-Archive $archive $folder -Force
+          $header=Get-ChildItem $folder -Recurse -File -Filter ort_genai_c.h | Select-Object -First 1
+          $lib=Get-ChildItem $folder -Recurse -File -Filter onnxruntime-genai.lib | Select-Object -First 1
+          if(-not $header -or -not $lib){throw 'ONNX import files missing'}
+          "ORT_GENAI_INCLUDE_DIR=$($header.Directory.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "ORT_GENAI_LIBRARY=$($lib.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host 'COMPLETE_ONNX_SOURCE_VERIFIED'
+      - name: Compiler le programme avec IA ONNX active et protocoles ROSCO
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          cmake -S . -B build-complete-130 -A x64 `
+            -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
+            -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
+            -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF `
+            -DMEMS_USE_ONNX_GENAI=ON `
+            "-DORT_GENAI_INCLUDE_DIR=$env:ORT_GENAI_INCLUDE_DIR" `
+            "-DORT_GENAI_LIBRARY=$env:ORT_GENAI_LIBRARY"
+          if($LASTEXITCODE -ne 0){throw 'CMake configuration failed'}
+          cmake --build build-complete-130 --config Release --target ecu_mems_manager ecu_mems_uninstaller --parallel
+          if($LASTEXITCODE -ne 0){throw 'COMPLETE source compilation failed'}
+          if(-not(Test-Path 'build-complete-130\Release\ecu_mems_manager.exe')){throw 'COMPLETE exe missing'}
+          if(-not(Test-Path 'build-complete-130\librosco-x64\Release\mems_manager_x64.dll')){throw 'ROSCO dll missing'}
+          Write-Host 'COMPLETE_BUILD130_SOURCE_AND_ONNX_COMPILE_PASS'
+      - name: Recuperer la distribution 117 complete deja validee
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $meta=gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/$env:BASE_RELEASE_TAG" | ConvertFrom-Json
+          if($LASTEXITCODE -ne 0){throw 'BASE_RELEASE_UNAVAILABLE'}
+          $asset=$meta.assets | Where-Object {$_.name -eq $env:BASE_ARCHIVE_NAME} | Select-Object -First 1
+          if(-not $asset -or $asset.digest -ne "sha256:$env:BASE_ARCHIVE_SHA256"){throw 'BASE_ARCHIVE_DIGEST_MISMATCH'}
+          New-Item -ItemType Directory -Force base-117,download-117 | Out-Null
+          gh release download $env:BASE_RELEASE_TAG --pattern $env:BASE_ARCHIVE_NAME --dir download-117
+          if($LASTEXITCODE -ne 0){throw 'BASE_ARCHIVE_DOWNLOAD_FAILED'}
+          $archive=Join-Path download-117 $env:BASE_ARCHIVE_NAME
+          if((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:BASE_ARCHIVE_SHA256){throw 'BASE_DOWNLOAD_HASH_MISMATCH'}
+          tar.exe -xzf $archive -C base-117
+          if($LASTEXITCODE -ne 0){throw 'BASE_ARCHIVE_EXTRACT_FAILED'}
+          if(-not(Test-Path base-117\ecu_mems_manager.exe)){throw 'BASE_STRUCTURE_UNEXPECTED'}
+          Write-Host 'COMPLETE_VALIDATED_REFERENCE_RUNTIME_PRESERVED'
+      - name: Construire le dossier de distribution COMPLETE 130
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          if(Test-Path dist-complete-130){Remove-Item dist-complete-130 -Recurse -Force}
+          Copy-Item base-117 dist-complete-130 -Recurse -Force
+          $dist=(Resolve-Path dist-complete-130).Path
+          # Nouvelle compilation COMPLETE, IA ONNX active et ROSCO x64 :
+          Copy-Item build-complete-130\Release\ecu_mems_manager.exe "$dist\ecu_mems_manager.exe" -Force
+          Copy-Item build-complete-130\Release\ecu_mems_uninstaller.exe "$dist\ecu_mems_uninstaller.exe" -Force
+          Copy-Item build-complete-130\librosco-x64\Release\mems_manager_x64.dll "$dist\mems_manager_x64.dll" -Force
+          # Le runtime IA, ses modeles, SQLite documentaire et Pack001 restent identiques au BUILD117.
+          # La base personnelle n'est JAMAIS incluse dans le Setup.
+          foreach($suffix in @('','-wal','-shm','-journal')){
+            $db=Join-Path $dist ('database\ecu_mems_manager.sqlite'+$suffix)
+            if(Test-Path $db){Remove-Item $db -Force}
+          }
+          $qt='C:\Qt\5.15.2\msvc2019_64'
+          & "$qt\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist "$dist\ecu_mems_manager.exe"
+          if($LASTEXITCODE -ne 0){throw 'windeployqt COMPLETE failed'}
+          & "$qt\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist "$dist\ecu_mems_uninstaller.exe"
+          if($LASTEXITCODE -ne 0){throw 'windeployqt uninstaller failed'}
+          $needed=@('ecu_mems_manager.exe','mems_manager_x64.dll','MEMSLibrary.dll','MEMSLibrary_Pack_001\knowledge.sqlite','database\reference\runtime_visual_catalog.json')
+          foreach($n in $needed){if(-not(Test-Path (Join-Path $dist $n))){throw "MISSING_COMPLETE_RUNTIME $n"}}
+          if(Test-Path "$dist\database\ecu_mems_manager.sqlite"){throw 'USER_DATABASE_MUST_NOT_SHIP'}
+          $onnx=Get-ChildItem $dist -Recurse -File -Filter onnxruntime-genai.dll | Select-Object -First 1
+          if(-not $onnx){throw 'IA_ONNX_RUNTIME_MISSING'}
+          "DIST_COMPLETE=$dist" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host 'COMPLETE_130_RUNTIME_AND_SQLITE_PRESERVATION_PASS'
+      - name: Tester architecture x64 et ressources RAVE / IA
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $env:DIST_ROOT=$env:DIST_COMPLETE
+          @'
+          import os, pefile, json, sqlite3
+          from pathlib import Path
+          r=Path(os.environ['DIST_ROOT'])
+          for n in ('ecu_mems_manager.exe','mems_manager_x64.dll','MEMSLibrary.dll'):
+              p=r/n
+              pe=pefile.PE(str(p),fast_load=True)
+              assert pe.FILE_HEADER.Machine==0x8664, n
+              pe.close()
+          db=r/'MEMSLibrary_Pack_001'/'knowledge.sqlite'
+          conn=sqlite3.connect(db)
+          assert conn.execute('pragma integrity_check').fetchone()[0]=='ok'
+          assert not conn.execute('pragma foreign_key_check').fetchall()
+          assert conn.execute('select count(*) from ravemems_document').fetchone()[0]==47
+          assert conn.execute('select count(*) from ravemems_page').fetchone()[0]==1359
+          conn.close()
+          catalog=json.loads((r/'database'/'reference'/'runtime_visual_catalog.json').read_text(encoding='utf-8'))
+          assert catalog['source_lineage']=='RAVEMEMS_V2_FINAL_33810202288'
+          assert catalog['entry_count']==1667
+          assert not (r/'database'/'ecu_mems_manager.sqlite').exists()
+          print('COMPLETE_130_X64_IA_RAVE_SQLITE_PACKAGE_PASS')
+          '@ | python -
+          if($LASTEXITCODE -ne 0){throw 'PACKAGE_INTEGRITY_FAILED'}
+      - name: Creer le Setup distinct de LIGHT, sans suppression des donnees
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          choco install innosetup -y --no-progress --limit-output
+          if($LASTEXITCODE -ne 0){throw 'INNO_INSTALL_FAILED'}
+          $compiler=Get-ChildItem "${env:ProgramFiles(x86)}" -Recurse -File -Filter ISCC.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          if(-not $compiler){throw 'ISCC_NOT_FOUND'}
+          $iss=@'
+          #define MyAppName "ECU MEMS Manager COMPLETE"
+          #define MyAppVersion "1.1.30"
+          [Setup]
+          AppId={{BC7FAF73-5BCF-49FC-8513-9D9C7B08F130}
+          AppName={#MyAppName}
+          AppVersion={#MyAppVersion}
+          AppPublisher=ECU MEMS Manager
+          DefaultDirName={autopf}\ECU MEMS Manager COMPLETE
+          DefaultGroupName=ECU MEMS Manager COMPLETE
+          OutputDir=setup-output-130
+          OutputBaseFilename=ECU-MEMS-Manager-Setup-v1.1.30-COMPLETE-TEST
+          Compression=lzma2
+          SolidCompression=yes
+          WizardStyle=modern
+          ArchitecturesAllowed=x64
+          ArchitecturesInstallIn64BitMode=x64
+          PrivilegesRequired=admin
+          UninstallDisplayIcon={app}\ecu_mems_manager.exe
+          [Languages]
+          Name: "french"; MessagesFile: "compiler:Languages\French.isl"
+          [Files]
+          Source: "dist-complete-130\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+          [Icons]
+          Name: "{group}\ECU MEMS Manager COMPLETE"; Filename: "{app}\ecu_mems_manager.exe"
+          Name: "{autodesktop}\ECU MEMS Manager COMPLETE"; Filename: "{app}\ecu_mems_manager.exe"; IconFilename: "{app}\ecu_mems_manager.exe"
+          [Run]
+          Filename: "{app}\ecu_mems_manager.exe"; Description: "Demarrer ECU MEMS Manager COMPLETE"; Flags: nowait postinstall skipifsilent
+          '@
+          $iss | Set-Content complete-130.iss -Encoding UTF8
+          & $compiler.FullName complete-130.iss
+          if($LASTEXITCODE -ne 0){throw 'INNO_BUILD_FAILED'}
+          $exe=Get-ChildItem setup-output-130 -File -Filter '*.exe' | Select-Object -First 1
+          if(-not $exe -or $exe.Length -lt 100MB){throw 'INNO_SETUP_INCOMPLETE'}
+          Write-Host "COMPLETE_130_SETUP_BUILT size=$($exe.Length) sha256=$((Get-FileHash $exe.FullName -Algorithm SHA256).Hash)"
+      - name: Tester une vraie installation Windows et les fichiers installes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $setup=Get-ChildItem setup-output-130 -File -Filter '*.exe' | Select-Object -First 1
+          $folder=Join-Path $env:RUNNER_TEMP 'MEMS_COMPLETE_130_INSTALL'
+          if(Test-Path $folder){Remove-Item $folder -Recurse -Force}
+          $proc=Start-Process -FilePath $setup.FullName -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/DIR=$folder" -Wait -PassThru
+          if($proc.ExitCode -ne 0){throw "INNO_INSTALL_EXIT $($proc.ExitCode)"}
+          foreach($relative in @('ecu_mems_manager.exe','MEMSLibrary.dll','mems_manager_x64.dll','MEMSLibrary_Pack_001\knowledge.sqlite','database\reference\runtime_visual_catalog.json')){
+            if(-not(Test-Path (Join-Path $folder $relative))){throw "ACTUAL_INSTALL_MISSING $relative"}
+          }
+          if(Test-Path (Join-Path $folder 'database\ecu_mems_manager.sqlite')){throw 'PERSONAL_DATABASE_SHIPPED'}
+          $shortcut=Join-Path $env:PUBLIC 'Desktop\ECU MEMS Manager COMPLETE.lnk'
+          if(-not(Test-Path $shortcut)){throw 'COMPLETE_DESKTOP_SHORTCUT_MISSING'}
+          $link=(New-Object -ComObject WScript.Shell).CreateShortcut([string]$shortcut)
+          if($link.TargetPath -ne (Join-Path $folder 'ecu_mems_manager.exe')){throw 'COMPLETE_SHORTCUT_WRONG_TARGET'}
+          Write-Host 'COMPLETE_130_ACTUAL_WINDOWS_INSTALL_AND_SHORTCUT_PASS'
+      - name: Publier uniquement le Setup verifie dans une prerelease privee
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $tag="mems-complete-130-test-$env:GITHUB_RUN_ID"
+          $setup=Get-ChildItem setup-output-130 -File -Filter '*.exe' | Select-Object -First 1
+          if(-not $setup){throw 'NO_SETUP_TO_PUBLISH'}
+          gh release create $tag --title "ECU MEMS Manager COMPLETE 130 - zoom automatique (TEST)" --target "$env:GITHUB_SHA" --prerelease --notes "Version COMPLETE Windows x64, 14 pages et IA ONNX active. Zoom global automatique, sans changer la resolution Windows. Splash titre et sous-titre rendus en haute resolution native. Setup pour tests sur PC utilisateur : validation visuelle sur les differentes resolutions encore necessaire. Installe dans un dossier distinct de LIGHT. Base de donnees personnelle non embarquee."
+          if($LASTEXITCODE -ne 0){throw 'RELEASE_CREATION_FAILED'}
+          gh release upload $tag $setup.FullName
+          if($LASTEXITCODE -ne 0){throw 'RELEASE_SETUP_UPLOAD_FAILED'}
+          $digest=(Get-FileHash $setup.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          Write-Host "COMPLETE_130_SETUP_PUBLISHED tag=$tag file=$($setup.Name) sha256=$digest"
