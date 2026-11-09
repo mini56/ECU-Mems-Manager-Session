@@ -1,0 +1,89 @@
+name: SESSION - Compilation de consolidation du code source
+run-name: SESSION - code source sans correctifs superposes - ${{ github.sha }}
+on:
+  push:
+    branches:
+      - cleanup-session-source-consolidation-20261109
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: session-cleanup-source-validation
+  cancel-in-progress: false
+env:
+  MEMS_BUILD_NUMBER: '134'
+  ORT_GENAI_VERSION: '0.14.0'
+  ORT_GENAI_WIN_X64_SHA256: '8a303e52dc7be8fb2a5331929af451a25ac59774102d7fd09ef673adc85c5ebf'
+jobs:
+  compiler-sources:
+    runs-on: windows-2022
+    timeout-minutes: 120
+    steps:
+      - name: Recuperer les sources de la branche de nettoyage
+        uses: actions/checkout@v4
+      - name: Verifier source unique, nom officiel et menu 14 pages
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $cmake=Get-Content CMakeLists.txt -Raw
+          $main=Get-Content main.cpp -Raw
+          $s=Get-Content settingstabdark.cpp -Raw
+          $nav=Get-Content navigationorderpatch.cpp -Raw
+          if(Test-Path splashtextfix.cpp){throw 'SPLASH_OLD_PATCH_STILL_PRESENT'}
+          if(Test-Path settingsvisualpatch.cpp){throw 'SETTINGS_OLD_PATCH_STILL_PRESENT'}
+          if(Test-Path taborderpatch.cpp){throw 'UNBUILT_TAB_ORDER_PATCH_STILL_PRESENT'}
+          if($cmake -match 'splashtextfix.cpp|settingsvisualpatch.cpp'){throw 'OBSOLETE_PATCH_STILL_COMPILED'}
+          if($s -notmatch 'settingsLayoutIntegrated' -or
+             $s -notmatch 'moveIndicatorsToStates\(page,states,adjust\)'){throw 'SETTINGS_SOURCE_NOT_CONSOLIDATED'}
+          if($main -notmatch 'buildIdentityLabel' -or
+             $main -notmatch 'progressPalette.setColor\(QPalette::HighlightedText,Qt::white\)'){throw 'SPLASH_SOURCE_NOT_CONSOLIDATED'}
+          if($cmake -notmatch 'APP_NAME="ECU MEMS Manager SESSION"'){throw 'OFFICIAL_NAME_CHANGED'}
+          if($nav -notmatch 'kFinalTabCount = 14'){throw 'FULL_MENU_CHANGED'}
+          Write-Host 'SESSION_CLEAN_SOURCE_PREFLIGHT_PASS'
+      - name: Preparer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Installer Qt 5.15.2 MSVC x64 et outils de validation
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python -m pip install --disable-pip-version-check "aqtinstall==3.3.0" pefile
+          if($LASTEXITCODE -ne 0){throw 'pip install failed'}
+          $sevenZip=(Get-Command 7z.exe -ErrorAction Stop).Source
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external "$sevenZip"
+          if($LASTEXITCODE -ne 0){throw 'Qt install failed'}
+      - name: Recuperer les fichiers ONNX pour compilation de IA reelle
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $archive=Join-Path $env:RUNNER_TEMP "onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          $folder=Join-Path $env:RUNNER_TEMP 'onnx-genai'
+          curl.exe -L --fail --retry 3 --retry-all-errors --retry-delay 2 -o $archive "https://github.com/microsoft/onnxruntime-genai/releases/download/v$env:ORT_GENAI_VERSION/onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          if($LASTEXITCODE -ne 0){throw 'ONNX download failed'}
+          if((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:ORT_GENAI_WIN_X64_SHA256){throw 'ONNX archive SHA256 mismatch'}
+          Expand-Archive $archive $folder -Force
+          $header=Get-ChildItem $folder -Recurse -File -Filter ort_genai_c.h | Select-Object -First 1
+          $lib=Get-ChildItem $folder -Recurse -File -Filter onnxruntime-genai.lib | Select-Object -First 1
+          if(-not $header -or -not $lib){throw 'ONNX import files missing'}
+          "ORT_GENAI_INCLUDE_DIR=$($header.Directory.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "ORT_GENAI_LIBRARY=$($lib.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host 'SESSION_ONNX_SOURCE_VERIFIED'
+      - name: Compiler le programme avec IA ONNX active et protocoles ROSCO
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          cmake -S . -B build-session-134 -A x64 `
+            -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
+            -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
+            -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF `
+            -DMEMS_USE_ONNX_GENAI=ON `
+            "-DORT_GENAI_INCLUDE_DIR=$env:ORT_GENAI_INCLUDE_DIR" `
+            "-DORT_GENAI_LIBRARY=$env:ORT_GENAI_LIBRARY"
+          if($LASTEXITCODE -ne 0){throw 'CMake configuration failed'}
+          cmake --build build-session-134 --config Release --target ecu_mems_manager ecu_mems_uninstaller --parallel
+          if($LASTEXITCODE -ne 0){throw 'SESSION source compilation failed'}
+          if(-not(Test-Path 'build-session-134\Release\ecu_mems_manager.exe')){throw 'SESSION exe missing'}
+          if(-not(Test-Path 'build-session-134\librosco-x64\Release\mems_manager_x64.dll')){throw 'ROSCO dll missing'}
+          Write-Host 'SESSION_BUILD134_SOURCE_AND_ONNX_COMPILE_PASS'
+
