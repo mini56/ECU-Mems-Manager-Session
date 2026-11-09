@@ -77,7 +77,7 @@ set(SOURCES
     expert/ExpertEngine.cpp expert/ExpertEngine.h expert/ExpertKnowledgeReader.cpp expert/ExpertKnowledgeReader.h
     expert/ExpertTypes.h expert/LocalAiClient.cpp expert/LocalAiClient.h
     uirebuild.cpp overviewrebuild.cpp majorpagesrebuild.cpp
-    strictvisualrebuild.cpp dedicatedpagesrebuild.cpp visualcompletion.cpp navigationorderpatch.cpp darkstyle.cpp darkfixes.cpp
+    dedicatedpagesrebuild.cpp visualcompletion.cpp navigationorderpatch.cpp darkstyle.cpp darkfixes.cpp
     settingstabdark.cpp mainwindowtitlebarfix.cpp systemstateconnectionfix.cpp)
 add_executable(${PNAME} ${SOURCES})
 target_sources(${PNAME} PRIVATE ${CMAKE_SOURCE_DIR}/desktopshortcut.cpp ${CMAKE_SOURCE_DIR}/desktopshortcut.h)
