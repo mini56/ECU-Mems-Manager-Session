@@ -87,12 +87,15 @@ jobs:
           $mainWindow=Get-Content mainwindow.cpp -Raw
           $chrome=Get-Content uirebuild.cpp -Raw
           $shortcutSource=Get-Content desktopshortcut.cpp -Raw
-          if($cmake -notmatch 'APP_NAME="ECU MEMS Manager SESSION"' -or
-             $mainWindow -notmatch 'QStringLiteral\(APP_NAME\)' -or
-             $main -notmatch 'setApplicationDisplayName\(QStringLiteral\("ECU MEMS Manager SESSION"\)\)' -or
-             $chrome -notmatch 'MANAGER SESSION' -or
-             $shortcutSource -notmatch 'ECU MEMS Manager SESSION.lnk'){
-              throw 'OFFICIAL_SESSION_NAME_MISSING'
+          $nameChecks=@{
+            'CMAKE_PRODUCT'=$cmake.Contains('APP_NAME="ECU MEMS Manager SESSION"')
+            'WINDOW_TITLE'=$mainWindow.Contains('QStringLiteral(APP_NAME)')
+            'WINDOWS_DISPLAY'=$main.Contains('setApplicationDisplayName(QStringLiteral("ECU MEMS Manager SESSION"))')
+            'IN_APP_HEADER'=$chrome.Contains('MANAGER SESSION')
+            'DESKTOP_SHORTCUT'=$shortcutSource.Contains('ECU MEMS Manager SESSION.lnk')
+          }
+          foreach($entry in $nameChecks.GetEnumerator()){
+            if(-not $entry.Value){throw "OFFICIAL_SESSION_NAME_MISSING: $($entry.Key)"}
           }
           if($cmake -notmatch 'set\(PROJECTNAME "ECU_Mems_Manager"\)' -or
              $main -notmatch 'setApplicationName\("ECU Mems Manager"\)'){
