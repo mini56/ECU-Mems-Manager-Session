@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - cleanup-session-source-consolidation-20261109
+    paths:
+      - '**/*.cpp'
+      - '**/*.h'
+      - '**/*.inc'
+      - 'CMakeLists.txt'
+      - '.github/workflows/session-cleanup-source-validation.yml'
   workflow_dispatch:
 permissions:
   contents: read
@@ -32,6 +38,19 @@ jobs:
           if(Test-Path splashtextfix.cpp){throw 'SPLASH_OLD_PATCH_STILL_PRESENT'}
           if(Test-Path settingsvisualpatch.cpp){throw 'SETTINGS_OLD_PATCH_STILL_PRESENT'}
           if(Test-Path taborderpatch.cpp){throw 'UNBUILT_TAB_ORDER_PATCH_STILL_PRESENT'}
+          foreach($old in @('sidebarbubblecleaner.cpp','readabilityfix.cpp')){
+            if(Test-Path $old){throw "DEFERRED_VISUAL_PATCH_REINTRODUCED: $old"}
+            if($cmake -match [regex]::Escape($old)){throw "DEFERRED_VISUAL_PATCH_COMPILED: $old"}
+          }
+          $analysis=Get-Content analysistab_impl_part1.inc -Raw
+          $summary=Get-Content summarytab.cpp -Raw
+          $diagnostic=Get-Content diagnosticpanel.cpp -Raw
+          $raw=Get-Content dedicatedpagesrebuild.cpp -Raw
+          if($analysis -notmatch 'paintAnalysisChart\(this\)' -or
+             $summary -notmatch 'void SummaryTab::resizeEvent' -or
+             $summary -notmatch 'whiteRule' -or
+             $diagnostic -notmatch 'Qt::ForegroundRole' -or
+             $raw -notmatch 'color:#ffffff;background:transparent'){throw 'NATIVE_SOURCE_CONSOLIDATION_MISSING'}
           if($cmake -match 'splashtextfix.cpp|settingsvisualpatch.cpp'){throw 'OBSOLETE_PATCH_STILL_COMPILED'}
           if($s -notmatch 'settingsLayoutIntegrated' -or
              $s -notmatch 'moveIndicatorsToStates\(page,states,adjust\)'){throw 'SETTINGS_SOURCE_NOT_CONSOLIDATED'}
