@@ -58,6 +58,10 @@ DiagnosticPanel::DiagnosticPanel(QWidget *parent) : QWidget(parent)
     m_checks->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
     m_checks->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
     m_checks->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch);
+    m_checks->horizontalHeader()->setMinimumSectionSize(55);
+    m_checks->horizontalHeader()->setStretchLastSection(true);
+    m_checks->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_checks->setWordWrap(false);
     m_checks->verticalHeader()->setVisible(false);
     // The diagnostic table owns its readability, without a late UI patch.
     m_checks->setStyleSheet(m_checks->styleSheet()+QStringLiteral(

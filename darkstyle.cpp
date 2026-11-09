@@ -13,6 +13,9 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMainWindow>
+#include <QPalette>
+#include <QScrollBar>
+#include <QStatusBar>
 #include <QMenu>
 #include <QMenuBar>
 #include <QPainter>
@@ -220,6 +223,54 @@ static void stylePages(QMainWindow *w)
     }
 }
 
+static void makeTablesReadable(QMainWindow *w)
+{
+    const QColor disabledText("#91a1ab");
+    const QString disabledQss=QStringLiteral(
+        "QTableView:disabled,QTableWidget:disabled{color:#91a1ab;background:#081016;}"
+        "QTableView::item:disabled,QTableWidget::item:disabled{color:#7f909b;background:#081016;}"
+        "QHeaderView::section{color:#edf2f4;}" );
+    for(QTableView *t:w->findChildren<QTableView*>()) {
+        QPalette pal=t->palette();
+        pal.setColor(QPalette::Disabled,QPalette::Text,disabledText);
+        pal.setColor(QPalette::Disabled,QPalette::WindowText,disabledText);
+        pal.setColor(QPalette::Disabled,QPalette::Base,QColor("#081016"));
+        t->setPalette(pal);
+        if(!t->property("darkReadableStyled").toBool()) {
+            t->setStyleSheet(t->styleSheet()+disabledQss);
+            t->setProperty("darkReadableStyled",true);
+        }
+    }
+    for(QTableWidget *t:w->findChildren<QTableWidget*>()) {
+        QPalette pal=t->palette();
+        pal.setColor(QPalette::Disabled,QPalette::Text,disabledText);
+        pal.setColor(QPalette::Disabled,QPalette::WindowText,disabledText);
+        pal.setColor(QPalette::Disabled,QPalette::Base,QColor("#081016"));
+        t->setPalette(pal);
+        if(!t->property("darkReadableStyled").toBool()) {
+            t->setStyleSheet(t->styleSheet()+disabledQss);
+            t->setProperty("darkReadableStyled",true);
+        }
+    }
+}
+
+static void styleScrollBars(QMainWindow *w)
+{
+    if(!w) return;
+    const QString qss=QStringLiteral(
+        "QScrollBar:vertical{background:#070c11;width:9px;margin:0;border:0;}"
+        "QScrollBar::handle:vertical{background:#35434d;border-radius:4px;min-height:28px;}"
+        "QScrollBar::handle:vertical:hover{background:#52616b;}"
+        "QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical{height:0;}"
+        "QScrollBar::add-page:vertical,QScrollBar::sub-page:vertical{background:transparent;}"
+        "QScrollBar:horizontal{background:#070c11;height:9px;margin:0;border:0;}"
+        "QScrollBar::handle:horizontal{background:#35434d;border-radius:4px;min-width:28px;}"
+        "QScrollBar::handle:horizontal:hover{background:#52616b;}"
+        "QScrollBar::add-line:horizontal,QScrollBar::sub-line:horizontal{width:0;}"
+        "QScrollBar::add-page:horizontal,QScrollBar::sub-page:horizontal{background:transparent;}" );
+    for(QScrollBar *bar:w->findChildren<QScrollBar*>()) bar->setStyleSheet(qss);
+}
+
 static void styleTables(QMainWindow *w)
 {
     const QString qss=QStringLiteral(
@@ -238,6 +289,7 @@ static void styleTables(QMainWindow *w)
         if(t->verticalHeader()) t->verticalHeader()->setVisible(false);
         if(t->horizontalHeader()){t->horizontalHeader()->setStretchLastSection(true);t->horizontalHeader()->setMinimumHeight(qMax(28,t->fontMetrics().height()+13));}
     }
+    makeTablesReadable(w);
 }
 
 static void styleControls(QMainWindow *w)
@@ -284,7 +336,15 @@ static void styleChrome(QMainWindow *w)
     }
 
     QFrame *status=w->findChild<QFrame*>(QStringLiteral("uiRebuildStatus"));
-    if(status) status->setStyleSheet(QStringLiteral("#uiRebuildStatus{background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #070c11,stop:1 #0c1318);border-top:1px solid #293640;}#uiRebuildStatus QLabel{background:transparent;color:#cbd4da;border-right:1px solid #25313a;padding:0 8px;}#uiRebuildStatus QLineEdit{background:#081015;color:#dfe6ea;border:1px solid #30404a;border-radius:5px;padding:3px 7px;}#uiRebuildStatus QPushButton{background:#111b22;color:#e4ebef;border:1px solid #33506a;border-radius:5px;padding:3px 9px;font-weight:700;}#uiRebuildStatus QPushButton:hover{border-color:#ff7a00;color:#fff;}"));
+    if(status) {
+        status->setMinimumHeight(29); status->setMaximumHeight(34);
+        status->setStyleSheet(QStringLiteral("#uiRebuildStatus{background:#070c11;border-top:1px solid #293640;}#uiRebuildStatus QLabel{background:transparent;color:#cbd4da;border-right:1px solid #25313a;padding:0 9px;}"));
+    }
+    if(QStatusBar *native=w?w->statusBar():nullptr) {
+        native->setSizeGripEnabled(false);
+        native->setStyleSheet(QStringLiteral("QStatusBar{background:#070c11;color:#cbd4da;border-top:1px solid #293640;padding:1px 6px;}QStatusBar::item{border:0;}"));
+        native->setMaximumHeight(22);
+    }
 }
 
 static void apply(QMainWindow *w)
@@ -297,6 +357,7 @@ static void apply(QMainWindow *w)
     styleControls(w);
     styleAnalysis(w);
     styleChrome(w);
+    styleScrollBars(w);
 }
 
 class DarkStyleInstaller : public QObject
