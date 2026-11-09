@@ -1390,6 +1390,12 @@ void MainWindow::clearRecordedAnomalies()
  * Reponds to the "connect" signal from the MEMSInterface by enabling/disabling
  * the appropriate buttons and setting a message in the status bar.
  */
+bool MainWindow::isEcuDisconnected() const
+{
+  return m_ui->m_connectButton->isEnabled() &&
+         !m_ui->m_disconnectButton->isEnabled();
+}
+
 void MainWindow::refreshConnectionHeader()
 {
   // ECU signals and user settings own connection-state updates.
@@ -1408,8 +1414,7 @@ void MainWindow::refreshConnectionHeader()
   if (QLabel *statusPort = findChild<QLabel*>(QStringLiteral("statusPort")))
     statusPort->setText(QStringLiteral("%1 : %2").arg(I18n::text(7114), port));
 
-  const bool disconnected = m_ui->m_connectButton->isEnabled() &&
-                            !m_ui->m_disconnectButton->isEnabled();
+  const bool disconnected = isEcuDisconnected();
   if (disconnected)
   {
     m_ui->m_commsGoodLed->setChecked(false);

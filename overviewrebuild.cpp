@@ -18,6 +18,7 @@
 #include <QWidget>
 #include <QtMath>
 #include "i18n.h"
+#include "mainwindow.h"
 
 namespace {
 
@@ -324,7 +325,7 @@ private:
 class SystemStateCard : public QWidget
 {
 public:
-    explicit SystemStateCard(QObject *source,QWidget *parent=nullptr):QWidget(parent),m_source(source)
+    explicit SystemStateCard(MainWindow *window,QObject *source,QWidget *parent=nullptr):QWidget(parent),m_window(window),m_source(source)
     {
         setMinimumSize(64,88);
         setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
@@ -359,6 +360,7 @@ protected:
         p.drawLine(QPointF(8,25),QPointF(180,25));
 
         const bool fault=m_source?m_source->property("checked").toBool():false;
+        const bool disconnected=m_window&&m_window->isEcuDisconnected();
         const QPointF c(94,97);
         const qreal rr=45;
         QPainterPath shield;
@@ -369,12 +371,12 @@ protected:
         shield.lineTo(c.x()-rr*.75,c.y()-rr*.65);
         shield.closeSubpath();
 
-        const QColor state=fault?QColor("#ff4b3b"):QColor("#6bdd45");
+        const QColor state=disconnected?QColor("#ff9828"):(fault?QColor("#ff4b3b"):QColor("#6bdd45"));
         p.setPen(QPen(state,2.6));
         p.setBrush(Qt::NoBrush);
         p.drawPath(shield);
         p.setPen(QPen(state,3.3,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin));
-        if(!fault) {
+        if(!fault||disconnected) {
             p.drawLine(QPointF(c.x()-18,c.y()+2),QPointF(c.x()-5,c.y()+15));
             p.drawLine(QPointF(c.x()-5,c.y()+15),QPointF(c.x()+23,c.y()-18));
         }
@@ -384,7 +386,7 @@ protected:
         st.setPointSizeF(9.2);
         p.setFont(st);
         p.setPen(state);
-        p.drawText(QRectF(10,157,168,28),Qt::AlignCenter,fault?I18n::text(7144):I18n::text(7143));
+        p.drawText(QRectF(10,157,168,28),Qt::AlignCenter,disconnected?I18n::disconnectedStatus():(fault?I18n::text(7144):I18n::text(7143)));
 
         QFont sub=p.font();
         sub.setBold(false);
@@ -395,6 +397,7 @@ protected:
     }
 
 private:
+    MainWindow *m_window=nullptr;
     QObject *m_source=nullptr;
 };
 
@@ -552,13 +555,15 @@ private:
         }
 
         QObject *sys=w->findChild<QObject*>(QStringLiteral("m_engine_error"));
-        grid->addWidget(new SystemStateCard(sys,overview),1,5);
+        SystemStateCard *systemCard=new SystemStateCard(qobject_cast<MainWindow*>(w),sys,overview);
+        grid->addWidget(systemCard,1,5);
         root->addLayout(grid,1);
 
         QTimer *timer=new QTimer(overview);
         timer->setInterval(500);
-        QObject::connect(timer,&QTimer::timeout,overview,[cards](){
+        QObject::connect(timer,&QTimer::timeout,overview,[cards,systemCard](){
             for(RebuildGaugeCard *card:cards) card->sample();
+            systemCard->update();
         });
         timer->start();
         fitNativeOverviewLayout(overview);

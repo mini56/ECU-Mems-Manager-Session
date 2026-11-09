@@ -18,6 +18,7 @@ public:
     static QString text(const QString &source);
     static QString text(int key);
     static QString language();
+    static QString disconnectedStatus();
     static void install(QApplication *app);
     static void apply(QWidget *root);
 

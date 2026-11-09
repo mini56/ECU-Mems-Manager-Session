@@ -18,6 +18,7 @@
 #include <QVBoxLayout>
 #include <QWidget>
 #include "i18n.h"
+#include "mainwindow.h"
 
 namespace {
 
@@ -154,8 +155,8 @@ static void putButtonInTitleBar(QFrame *card,QPushButton *button)
 class SystemStatePreview : public QWidget
 {
 public:
-    explicit SystemStatePreview(QObject *source,QWidget *parent=nullptr)
-        : QWidget(parent),m_source(source)
+    explicit SystemStatePreview(MainWindow *window,QObject *source,QWidget *parent=nullptr)
+        : QWidget(parent),m_window(window),m_source(source)
     {
         setMinimumWidth(150);
         setMaximumWidth(210);
@@ -193,7 +194,8 @@ protected:
 
         // Same source, rule, colours and translated states as the Overview card.
         const bool fault=m_source?m_source->property("checked").toBool():false;
-        const QColor state=fault?QColor("#ff4b3b"):QColor("#6bdd45");
+        const bool disconnected=m_window&&m_window->isEcuDisconnected();
+        const QColor state=disconnected?QColor("#ff9828"):(fault?QColor("#ff4b3b"):QColor("#6bdd45"));
 
         const QPointF c(width()/2.0,height()*0.48);
         const qreal rr=qMin(width()*0.19,height()*0.16);
@@ -208,7 +210,7 @@ protected:
         p.setBrush(Qt::NoBrush);
         p.drawPath(shield);
 
-        if(!fault) {
+        if(!fault||disconnected) {
             p.setPen(QPen(state,2.8,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin));
             p.drawLine(QPointF(c.x()-rr*.40,c.y()+rr*.04),
                        QPointF(c.x()-rr*.12,c.y()+rr*.32));
@@ -222,7 +224,7 @@ protected:
         p.setFont(stateFont);
         p.setPen(state);
         p.drawText(QRectF(8,height()*0.67,qMax(0,width()-16),24),
-                   Qt::AlignCenter,fault?I18n::text(7144):I18n::text(7143));
+                   Qt::AlignCenter,disconnected?I18n::disconnectedStatus():(fault?I18n::text(7144):I18n::text(7143)));
 
         QFont sub=p.font();
         sub.setBold(false);
@@ -234,6 +236,7 @@ protected:
     }
 
 private:
+    MainWindow *m_window=nullptr;
     QObject *m_source=nullptr;
 };
 
@@ -364,7 +367,7 @@ static void rebuildLivePanel(QMainWindow *w,QFrame *bottom)
             line->hide();
 
     QObject *sys=w->findChild<QObject*>(QStringLiteral("m_engine_error"));
-    SystemStatePreview *preview=new SystemStatePreview(sys,bottom);
+    SystemStatePreview *preview=new SystemStatePreview(qobject_cast<MainWindow*>(w),sys,bottom);
 
     QHBoxLayout *body=new QHBoxLayout;
     body->setContentsMargins(0,0,0,0);

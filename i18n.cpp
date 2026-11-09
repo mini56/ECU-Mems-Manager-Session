@@ -145,6 +145,18 @@ QString I18n::text(const QString &source) { return instance()->lookup(source); }
 QString I18n::text(int key) { return instance()->lookupKey(key); }
 QString I18n::language() { return instance()->m_language; }
 
+// Native status text used by the Overview and Errors cards.
+QString I18n::disconnectedStatus()
+{
+    const QString code = language().toLower();
+    if (code == QStringLiteral("en")) return QStringLiteral("DISCONNECTED");
+    if (code == QStringLiteral("es")) return QStringLiteral("DESCONECTADO");
+    if (code == QStringLiteral("it")) return QStringLiteral("DISCONNESSO");
+    if (code == QStringLiteral("pt")) return QStringLiteral("DESCONECTADO");
+    if (code == QStringLiteral("de")) return QStringLiteral("GETRENNT");
+    return QString::fromUtf8("DÉCONNECTÉ");
+}
+
 void I18n::install(QApplication *app)
 {
     if (app) app->installEventFilter(instance());
