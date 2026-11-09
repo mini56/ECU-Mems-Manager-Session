@@ -237,8 +237,9 @@ static void styleLed(QWidget *led)
 static void styleAdjustButton(QPushButton *button)
 {
     if(!button) return;
-    button->setMinimumHeight(29);
-    button->setMaximumHeight(34);
+    // Allow the full button label to fit above and below the text baseline.
+    button->setMinimumHeight(36);
+    button->setMaximumHeight(42);
     button->setMinimumWidth(125);
     button->setMaximumWidth(170);
     button->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
@@ -521,15 +522,15 @@ static void rebuildAdjustArea(QWidget *page,QFrame *states,QFrame *adjust,QLineE
     resets->addStretch(1);
     if(resetAdj) {
         resetAdj->setParent(adjust);
-        resetAdj->setMinimumHeight(29);
-        resetAdj->setMaximumHeight(34);
+        resetAdj->setMinimumHeight(36);
+        resetAdj->setMaximumHeight(42);
         resetAdj->show();
         resets->addWidget(resetAdj);
     }
     if(resetEcu) {
         resetEcu->setParent(adjust);
-        resetEcu->setMinimumHeight(29);
-        resetEcu->setMaximumHeight(34);
+        resetEcu->setMinimumHeight(36);
+        resetEcu->setMaximumHeight(42);
         resetEcu->show();
         resets->addWidget(resetEcu);
     }
@@ -584,10 +585,13 @@ static void applySettingsSizing(QWidget *page,QFrame *metrics,QFrame *adjust)
     // The former 335/350 px caps wasted vertical space on tall screens.
     const int width=qMax(700,page->width());
     const int height=qMax(430,page->height());
-    const int adjustHeight=qBound(174,qRound(height*.27),205);
-    const int metricsHeight=qMax(225,height-adjustHeight-38);
-    const int center=qMax(200,qMin(qRound(width*.36),metricsHeight-18));
-    const int outer=qMax(120,qMin(qRound(center*.60),(metricsHeight-12)/2));
+    // Preserve the five original gauge positions, but use the free vertical
+    // space that was previously left above and below their fixed-height boxes.
+    // The control area receives enough room for four full-height button rows.
+    const int adjustHeight=qBound(232,qRound(height*.33),250);
+    const int metricsHeight=qMax(250,height-adjustHeight-22);
+    const int center=qMax(190,qMin(qRound(width*.40),metricsHeight-12));
+    const int outer=qMax(122,qMin(qRound(center*.62),(metricsHeight-8)/2));
 
     sizeGauge(page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeRpm")),center);
     sizeGauge(page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeIdle")),outer);
@@ -596,10 +600,11 @@ static void applySettingsSizing(QWidget *page,QFrame *metrics,QFrame *adjust)
     sizeGauge(page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeLambda")),outer);
 
     metrics->setMinimumHeight(metricsHeight);
-    metrics->setMaximumHeight(metricsHeight);
-    metrics->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+    metrics->setMaximumHeight(QWIDGETSIZE_MAX);
+    metrics->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     adjust->setMinimumHeight(adjustHeight);
-    adjust->setMaximumHeight(adjustHeight);
+    adjust->setMaximumHeight(QWIDGETSIZE_MAX);
+    adjust->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
 }
 
 static void suppressLegacyOverlays(QFrame *metrics)

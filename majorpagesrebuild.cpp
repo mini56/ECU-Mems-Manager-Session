@@ -199,13 +199,15 @@ static void composeActuators(QMainWindow *window)
     if(list){
         prepWidget(list);
         list->setParent(left);
-        list->setMaximumWidth(490);
-        list->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Expanding);
+        // Do not cap the black actuator list at 490px: its left labels were
+        // clipped while the existing left card had unused horizontal space.
+        list->setMaximumWidth(QWIDGETSIZE_MAX);
+        list->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
         QHBoxLayout *centered=new QHBoxLayout;
         centered->setContentsMargins(0,0,0,0);
         centered->setSpacing(0);
         centered->addStretch(1);
-        centered->addWidget(list,0);
+        centered->addWidget(list,1);
         centered->addStretch(1);
         static_cast<QVBoxLayout*>(left->layout())->addLayout(centered,1);
     }

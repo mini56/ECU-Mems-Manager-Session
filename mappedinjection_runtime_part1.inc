@@ -23,8 +23,15 @@ protected:
         const qreal baseW=188.0,baseH=210.0,s=qMin(width()/baseW,height()/baseH);
         p.translate((width()-baseW*s)/2.0,(height()-baseH*s)/2.0);p.scale(s,s);
         p.setPen(QPen(QColor("#34414a"),1));p.setBrush(QColor("#0c1217"));p.drawRoundedRect(QRectF(.5,.5,187,209),5,5);
-        QFont tf=p.font();tf.setBold(true);tf.setPointSizeF(8.0);p.setFont(tf);p.setPen(QColor("#edf2f4"));
-        p.drawText(QRectF(6,5,176,20),Qt::AlignCenter,m_title.toUpper());p.setPen(QColor("#27333b"));p.drawLine(QPointF(8,26),QPointF(180,26));
+        QFont tf=p.font();tf.setBold(true);tf.setPointSizeF(7.3);
+        const QString fullGaugeTitle=m_title.toUpper();
+        // Fit the complete title inside the unchanged 176-pixel title field.
+        // Only the title font may shrink; the gauge and its numeric fonts stay intact.
+        while(tf.pointSizeF()>5.2 &&
+              QFontMetricsF(tf).horizontalAdvance(fullGaugeTitle)>172.0)
+            tf.setPointSizeF(tf.pointSizeF()-0.2);
+        p.setFont(tf);p.setPen(QColor("#edf2f4"));
+        p.drawText(QRectF(6,5,176,20),Qt::AlignCenter,fullGaugeTitle);p.setPen(QColor("#27333b"));p.drawLine(QPointF(8,26),QPointF(180,26));
         const QPointF c(94,105);const qreal r=70,startDeg=135,sweepDeg=270;
         p.setPen(QPen(QColor("#66727a"),1.2));p.setBrush(QColor("#060a0d"));p.drawEllipse(c,r,r);
         p.setPen(QPen(QColor("#38434a"),2));p.setBrush(Qt::NoBrush);p.drawArc(QRectF(c.x()-58,c.y()-58,116,116),(-45)*16,270*16);

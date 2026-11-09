@@ -2,6 +2,7 @@
 #include <QCoreApplication>
 #include <QEvent>
 #include <QFrame>
+#include <QFontMetrics>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -53,11 +54,26 @@ static void putButtonInTitleBar(QFrame *card,QPushButton *button)
     v->removeWidget(title);
     removeFromCurrentLayout(button);
     button->setParent(card);
-    button->setMinimumHeight(23);
-    button->setMaximumHeight(25);
-    button->setMinimumWidth(150);
-    button->setMaximumWidth(230);
-    button->setSizePolicy(QSizePolicy::Maximum,QSizePolicy::Fixed);
+    // Both existing clear buttons only: avoid clipping after the BUILD132
+    // readability font increase, and use the program's orange on black.
+    QFont buttonFont=button->font();
+    if(buttonFont.pointSizeF()>0 && buttonFont.pointSizeF()<9.8)
+        buttonFont.setPointSizeF(9.8);
+    buttonFont.setBold(true);
+    button->setFont(buttonFont);
+    const int fullTextWidth=QFontMetrics(buttonFont).horizontalAdvance(button->text())+34;
+    button->setMinimumWidth(qBound(220,fullTextWidth,400));
+    button->setMaximumWidth(qBound(220,fullTextWidth,400));
+    button->setMinimumHeight(36);
+    button->setMaximumHeight(36);
+    button->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
+    button->setStyleSheet(QStringLiteral(
+        "QPushButton{background:#090e13;color:#ff9828;"
+        "border:1px solid #ff9828;border-radius:4px;"
+        "padding:4px 10px;font-weight:700;}"
+        "QPushButton:disabled{background:#090e13;color:#ff9828;"
+        "border:1px solid #ff9828;}"
+        "QPushButton:hover:enabled{background:#19130a;}"));
     button->show();
 
     QGridLayout *head=new QGridLayout;

@@ -71,7 +71,7 @@ void setStep(QLabel *label, StartupStepState state, const QString &text)
         break;
     case StartupStepState::Active:
         marker = QStringLiteral("●");
-        markerColor = QStringLiteral("#5AA2FF");
+        markerColor = QStringLiteral("#ff9828");
         break;
     case StartupStepState::Done:
         marker = QString::fromUtf8("✓");
@@ -183,7 +183,7 @@ QSplashScreen *createStartupSplash()
     painter.setPen(QPen(QColor(QStringLiteral("#3A4652")), 1));
     painter.drawRoundedRect(QRect(1, 1, splashWidth - 2, splashHeight - 2), 8, 8);
 
-    painter.setPen(QColor(QStringLiteral("#F4F7FA")));
+    painter.setPen(QColor(QStringLiteral("#ff9828")));
     QFont titleFont = painter.font();
     titleFont.setBold(true);
     titleFont.setPointSize(19);
@@ -234,7 +234,7 @@ QSplashScreen *createStartupSplash()
         "  text-align: center;"
         "}"
         "QProgressBar::chunk {"
-        "  background: #2D7FF9;"
+        "  background: #ff9828;"
         "  border-radius: 4px;"
         "}"));
 
