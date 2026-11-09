@@ -40,6 +40,7 @@ jobs:
           if(Test-Path taborderpatch.cpp){throw 'UNBUILT_TAB_ORDER_PATCH_STILL_PRESENT'}
           if(Test-Path strictvisualrebuild.cpp){throw 'STRICT_VISUAL_OVERLAY_REINTRODUCED'}
           if(Test-Path darkfixes.cpp){throw 'DARK_FIXES_LATE_PATCH_REINTRODUCED'}
+          if(Test-Path visualcompletion.cpp){throw 'VISUAL_COMPLETION_LATE_PATCH_REINTRODUCED'}
           foreach($old in @('sidebarbubblecleaner.cpp','readabilityfix.cpp')){
             if(Test-Path $old){throw "DEFERRED_VISUAL_PATCH_REINTRODUCED: $old"}
             if($cmake -match [regex]::Escape($old)){throw "DEFERRED_VISUAL_PATCH_COMPILED: $old"}

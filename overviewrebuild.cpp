@@ -398,6 +398,30 @@ private:
     QObject *m_source=nullptr;
 };
 
+// Overview page owns responsive spacing and its 12 cards. The old
+// application-wide visual-completion override is no longer necessary.
+static void fitNativeOverviewLayout(QWidget *overview)
+{
+    if(!overview) return;
+    QWidget *window=overview->window();
+    const qreal scale=window && window->property("globalUiScale").isValid()
+        ? qBound<qreal>(0.64,window->property("globalUiScale").toDouble(),1.30)
+        : 1.0;
+    if(QLayout *layout=overview->layout()) {
+        const int margin=qBound(3,qRound(7*scale),9);
+        const int gap=qBound(3,qRound(5*scale),7);
+        layout->setContentsMargins(margin,margin,margin,margin);
+        layout->setSpacing(gap);
+    }
+    for(QWidget *card:overview->findChildren<QWidget*>(QString(),Qt::FindDirectChildrenOnly)) {
+        if(card->inherits("RebuildGaugeCard") || card->inherits("SystemStateCard")) {
+            card->setMinimumSize(64,88);
+            card->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
+            card->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+        }
+    }
+}
+
 class OverviewRebuildInstaller : public QObject
 {
 public:
@@ -406,6 +430,10 @@ public:
 protected:
     bool eventFilter(QObject *watched,QEvent *event) override
     {
+        if(event && event->type()==QEvent::Resize)
+            if(QWidget *page=qobject_cast<QWidget*>(watched))
+                if(page->objectName()==QStringLiteral("overview_tab"))
+                    fitNativeOverviewLayout(page);
         if(QToolButton *toggle=qobject_cast<QToolButton*>(watched)) {
             if(toggle->objectName()==QStringLiteral("darkSidebarToggle") &&
                (event->type()==QEvent::ToolTipChange || event->type()==QEvent::Show ||
@@ -533,6 +561,7 @@ private:
             for(RebuildGaugeCard *card:cards) card->sample();
         });
         timer->start();
+        fitNativeOverviewLayout(overview);
     }
 };
 
