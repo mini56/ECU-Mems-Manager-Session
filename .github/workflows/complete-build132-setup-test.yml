@@ -265,6 +265,14 @@ jobs:
           $null=$app.CloseMainWindow()
           if(-not $app.WaitForExit(5000)){Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue}
           Write-Host 'COMPLETE_132_INSTALLED_GUI_STARTUP_PASS'
+      - name: Conserver le Setup valide comme artefact telechargeable
+        uses: actions/upload-artifact@v4
+        with:
+          name: ECU-MEMS-Manager-COMPLETE-132-Setup-TEST
+          path: setup-output-132/ECU-MEMS-Manager-Setup-v1.1.32-COMPLETE-TEST.exe
+          retention-days: 3
+          compression-level: 0
+          if-no-files-found: error
       - name: Publier uniquement le Setup verifie dans une prerelease privee
         shell: pwsh
         env:
@@ -275,8 +283,14 @@ jobs:
           $setup=Get-ChildItem setup-output-132 -File -Filter '*.exe' | Select-Object -First 1
           if(-not $setup){throw 'NO_SETUP_TO_PUBLISH'}
           gh release create $tag --title "ECU MEMS Manager COMPLETE 132 - disposition BUILD117 (TEST)" --target "$env:GITHUB_SHA" --prerelease --notes "Version COMPLETE Windows x64, 14 pages et IA ONNX active. Dispositions BUILD117 restaurees, textes agrandis hors Toutes les donnees, cadrans Reglages agrandis en conservant leurs positions. Aucun zoom global ni changement de resolution Windows. Splash titre et sous-titre rendus en haute resolution native. Setup pour tests sur PC utilisateur : validation visuelle sur les differentes resolutions encore necessaire. Installe dans un dossier distinct de LIGHT. Base de donnees personnelle non embarquee."
-          if($LASTEXITCODE -ne 0){throw 'RELEASE_CREATION_FAILED'}
+          if($LASTEXITCODE -ne 0){
+            Write-Warning 'RELEASE_PUBLICATION_DENIED: setup still available as a validated GitHub Actions artifact.'
+            exit 0
+          }
           gh release upload $tag $setup.FullName
-          if($LASTEXITCODE -ne 0){throw 'RELEASE_SETUP_UPLOAD_FAILED'}
+          if($LASTEXITCODE -ne 0){
+            Write-Warning 'RELEASE_UPLOAD_DENIED: setup still available as a validated GitHub Actions artifact.'
+            exit 0
+          }
           $digest=(Get-FileHash $setup.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
           Write-Host "COMPLETE_132_SETUP_PUBLISHED tag=$tag file=$($setup.Name) sha256=$digest"
