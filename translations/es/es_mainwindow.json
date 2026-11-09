@@ -32,7 +32,7 @@
   "7030": "sin fallo",
   "7031": "FALLOS",
   "7032": "sin fallo",
-  "7033": "7D14-15 bruto = %1 ; corrección de ralentí en caliente = %2 ; valor corregido = %3. Fórmula: (bruto - 32768) + corrección.",
+  "7033": "7D14-15 bruto = %1 ; corrección de ralentí en caliente = %2 ; valor corregido = %3. Fórmula: (bruto - 32768) - corrección.",
   "7034": "FALLOS",
   "7035": "sin fallo",
   "7036": "Desactivado",

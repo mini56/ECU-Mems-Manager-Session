@@ -96,5 +96,5 @@
   "6894": "Informe de texto (*.txt)",
   "6895": "Diagnóstico",
   "6896": "No se puede escribir el informe.",
-  "6897": "Decodificación: (7D14-15 bruto - 32768) + corrección de la posición de ralentí en caliente. La corrección sigue el valor configurado en la pestaña Ajustes; no está codificada de forma fija. El valor indicativo es coherente cuando permanece próximo a cero."
+  "6897": "Decodificación: (7D14-15 bruto - 32768) - corrección de la posición de ralentí en caliente. La corrección sigue el valor configurado en la pestaña Ajustes; no está codificada de forma fija. El valor indicativo es coherente cuando permanece próximo a cero."
 }
