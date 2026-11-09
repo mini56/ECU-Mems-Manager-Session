@@ -805,9 +805,121 @@ static void shortenSettingsSeparator(QFrame *adjust)
     }
 }
 
+// The Settings page is owned here, including its initial BUILD117 scaffold.
+// No other page module is permitted to rebuild its layouts or its gauges.
+static QFrame *settingsScaffoldCard(QWidget *parent,const QString &name,const QString &title)
+{
+    QFrame *c=new QFrame(parent);
+    c->setObjectName(name);
+    c->setAttribute(Qt::WA_StyledBackground,true);
+    c->setStyleSheet(QStringLiteral("#%1{background:#10161c;border:1px solid #29343e;border-radius:5px;}").arg(name));
+    QVBoxLayout *v=new QVBoxLayout(c);
+    v->setContentsMargins(14,12,14,14);
+    v->setSpacing(8);
+    QLabel *t=new QLabel(title,c);
+    QFont font=t->font();font.setBold(true);font.setPointSizeF(9.5);t->setFont(font);
+    t->setStyleSheet(QStringLiteral("color:#ff9828;background:transparent;border:0;"));
+    v->addWidget(t);
+    QFrame *line=new QFrame(c);line->setFrameShape(QFrame::HLine);
+    line->setStyleSheet(QStringLiteral("background:#29343e;border:0;max-height:1px;"));
+    v->addWidget(line);
+    return c;
+}
+static void beginSettingsScaffold(QWidget *page,QVBoxLayout *&root)
+{
+    QFrame *header=nullptr;
+    for(QFrame *f:page->findChildren<QFrame*>(QString(),Qt::FindDirectChildrenOnly)) {
+        if(f->objectName().startsWith(QStringLiteral("uiRebuildHero_"))){header=f;break;}
+    }
+    QLayout *old=page->layout();
+    if(old){clearLayout(old);delete old;}
+    root=new QVBoxLayout(page);
+    root->setContentsMargins(15,12,15,12);
+    root->setSpacing(10);
+    if(header){header->show();root->addWidget(header);}
+    for(QWidget *w:page->findChildren<QWidget*>(QString(),Qt::FindDirectChildrenOnly))
+        if(w!=header)w->hide();
+}
+
+static void buildSettingsScaffold(QMainWindow *window)
+{
+    QWidget *page=window?window->findChild<QWidget*>(QStringLiteral("emission_tab")):nullptr;
+    if(!page||page->property("majorPageRebuilt").toBool())return;
+    page->setProperty("majorPageRebuilt",true);
+
+    QWidget *rpm=page->findChild<QWidget*>(QStringLiteral("m_revCounter_exhaust"));
+    QWidget *idleErr=page->findChild<QWidget*>(QStringLiteral("e_idle_error"));
+    QWidget *advance=page->findChild<QWidget*>(QStringLiteral("e_ignition_advance"));
+    QWidget *trim=page->findChild<QWidget*>(QStringLiteral("e_short_term_fuel_trim"));
+    QWidget *lambda=page->findChild<QWidget*>(QStringLiteral("e_lambda"));
+    QWidget *idleLed=page->findChild<QWidget*>(QStringLiteral("idleswitch_led"));
+    QWidget *loopLed=page->findChild<QWidget*>(QStringLiteral("closedloop_led"));
+
+    QLabel *fuelLabel=page->findChild<QLabel*>(QStringLiteral("emi_shorttermftrim"));
+    QLabel *hotLabel=page->findChild<QLabel*>(QStringLiteral("emi_idledecay"));
+    QLabel *rpmLabel=page->findChild<QLabel*>(QStringLiteral("emi_rpm"));
+    QLabel *ignLabel=page->findChild<QLabel*>(QStringLiteral("emi_ignadvance"));
+    QPushButton *fuelMinus=page->findChild<QPushButton*>(QStringLiteral("m_fuel_trim_minusButton"));
+    QPushButton *fuelPlus=page->findChild<QPushButton*>(QStringLiteral("m_fuel_trim_plusButton"));
+    QPushButton *hotMinus=page->findChild<QPushButton*>(QStringLiteral("m_idle_decay_minusButton"));
+    QPushButton *hotPlus=page->findChild<QPushButton*>(QStringLiteral("m_idle_decay_plusButton"));
+    QPushButton *rpmMinus=page->findChild<QPushButton*>(QStringLiteral("m_idle_speed_minusButton"));
+    QPushButton *rpmPlus=page->findChild<QPushButton*>(QStringLiteral("m_idle_speed_plusButton"));
+    QPushButton *ignMinus=page->findChild<QPushButton*>(QStringLiteral("m_ignition_advance_minusButton"));
+    QPushButton *ignPlus=page->findChild<QPushButton*>(QStringLiteral("m_ignition_advance_plusButton"));
+    QLCDNumber *fuelLcd=page->findChild<QLCDNumber*>(QStringLiteral("e_FuelTrim_lcd"));
+    QLCDNumber *hotLcd=page->findChild<QLCDNumber*>(QStringLiteral("e_IdleDecay_lcd"));
+    QLCDNumber *rpmLcd=page->findChild<QLCDNumber*>(QStringLiteral("e_IdleSpeed_lcd"));
+    QLCDNumber *ignLcd=page->findChild<QLCDNumber*>(QStringLiteral("e_IgnitionAdvance_lcd"));
+    QPushButton *resetAdj=page->findChild<QPushButton*>(QStringLiteral("m_resetAdjustmentsButton"));
+    QPushButton *resetEcu=page->findChild<QPushButton*>(QStringLiteral("m_resetECUButton"));
+    QLineEdit *note=page->findChild<QLineEdit*>(QStringLiteral("lineEdit_3"));
+
+    QVBoxLayout *root=nullptr;beginSettingsScaffold(page,root);
+    QGridLayout *body=new QGridLayout;body->setHorizontalSpacing(10);body->setVerticalSpacing(10);body->setColumnStretch(0,3);body->setColumnStretch(1,2);
+
+    QFrame *metrics=settingsScaffoldCard(page,QStringLiteral("settingsMetrics"),I18n::text(7133));
+    QGridLayout *mg=new QGridLayout;mg->setSpacing(8);
+    QWidget *gauges[]={idleErr,rpm,trim,advance,lambda};
+    const int titleKeys[]={7139,1011,7140,7141,7142};
+    for(int i=0;i<5;i++){
+        QFrame *box=new QFrame(metrics);box->setStyleSheet(QStringLiteral("background:#0b1116;border:1px solid #27323b;border-radius:4px;"));
+        QVBoxLayout *bv=new QVBoxLayout(box);bv->setContentsMargins(6,6,6,6);bv->setSpacing(3);
+        QLabel *tl=new QLabel(I18n::text(titleKeys[i]),box);QFont tf=tl->font();tf.setBold(true);tf.setPointSizeF(7.2);tl->setFont(tf);tl->setAlignment(Qt::AlignCenter);tl->setStyleSheet(QStringLiteral("color:#cfd6dc;background:transparent;border:0;"));bv->addWidget(tl);
+        if(gauges[i]){gauges[i]->setParent(box);gauges[i]->setMinimumHeight(80);gauges[i]->setMaximumHeight(130);gauges[i]->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);gauges[i]->show();bv->addWidget(gauges[i],1);}
+        mg->addWidget(box,i<3?0:1,i<3?i:i-3);
+    }
+    static_cast<QVBoxLayout*>(metrics->layout())->addLayout(mg,1);
+    body->addWidget(metrics,0,0,2,1);
+
+    QFrame *states=settingsScaffoldCard(page,QStringLiteral("settingsStates"),I18n::text(7134));
+    QGridLayout *sg=new QGridLayout;sg->setHorizontalSpacing(12);sg->setVerticalSpacing(10);
+    QLabel *idleTxt=new QLabel(I18n::text(2015),states);QLabel *loopTxt=new QLabel(I18n::text(2014),states);
+    if(idleLed){idleLed->setParent(states);idleLed->setFixedSize(26,26);idleLed->show();sg->addWidget(idleLed,0,0);}sg->addWidget(idleTxt,0,1);
+    if(loopLed){loopLed->setParent(states);loopLed->setFixedSize(26,26);loopLed->show();sg->addWidget(loopLed,1,0);}sg->addWidget(loopTxt,1,1);sg->setColumnStretch(2,1);
+    static_cast<QVBoxLayout*>(states->layout())->addLayout(sg);static_cast<QVBoxLayout*>(states->layout())->addStretch(1);
+    body->addWidget(states,0,1);
+
+    QFrame *adjust=settingsScaffoldCard(page,QStringLiteral("settingsAdjust"),I18n::text(7135));
+    QGridLayout *ag=new QGridLayout;ag->setHorizontalSpacing(8);ag->setVerticalSpacing(7);ag->setColumnStretch(1,1);
+    struct Row{QLabel*l;QPushButton*minus;QLCDNumber*lcd;QPushButton*plus;};
+    Row rows[]={{fuelLabel,fuelMinus,fuelLcd,fuelPlus},{hotLabel,hotMinus,hotLcd,hotPlus},{rpmLabel,rpmMinus,rpmLcd,rpmPlus},{ignLabel,ignMinus,ignLcd,ignPlus}};
+    for(int r=0;r<4;r++){
+        if(rows[r].l){rows[r].l->setParent(adjust);rows[r].l->show();ag->addWidget(rows[r].l,r,0);}
+        if(rows[r].minus){rows[r].minus->setParent(adjust);rows[r].minus->show();ag->addWidget(rows[r].minus,r,1);}
+        if(rows[r].lcd){rows[r].lcd->setParent(adjust);rows[r].lcd->setSegmentStyle(QLCDNumber::Flat);rows[r].lcd->setStyleSheet(QStringLiteral("background:#0a1117;color:#ff9828;border:1px solid #303c46;"));rows[r].lcd->setMinimumWidth(64);rows[r].lcd->show();ag->addWidget(rows[r].lcd,r,2);}
+        if(rows[r].plus){rows[r].plus->setParent(adjust);rows[r].plus->show();ag->addWidget(rows[r].plus,r,3);}
+    }
+    if(note){note->setParent(adjust);note->setReadOnly(true);note->show();ag->addWidget(note,4,0,1,4);}
+    QHBoxLayout *resets=new QHBoxLayout;if(resetAdj){resetAdj->setParent(adjust);resetAdj->show();resets->addWidget(resetAdj);}if(resetEcu){resetEcu->setParent(adjust);resetEcu->show();resets->addWidget(resetEcu);}ag->addLayout(resets,5,0,1,4);
+    static_cast<QVBoxLayout*>(adjust->layout())->addLayout(ag,1);body->addWidget(adjust,1,1);
+    root->addLayout(body,1);
+}
+
 static void applySettingsLayout(QMainWindow *window)
 {
     if(!window) return;
+    buildSettingsScaffold(window);
     QWidget *page=window->findChild<QWidget*>(QStringLiteral("emission_tab"));
     QFrame *metrics=window->findChild<QFrame*>(QStringLiteral("settingsMetrics"));
     QFrame *states=window->findChild<QFrame*>(QStringLiteral("settingsStates"));
@@ -867,6 +979,7 @@ protected:
         if((event->type()==QEvent::Show || event->type()==QEvent::Polish) &&
            !window->property("settingsTabDarkScheduled").toBool()) {
             window->setProperty("settingsTabDarkScheduled",true);
+            QTimer::singleShot(60,window,[window](){buildSettingsScaffold(window);});
             QTimer::singleShot(2050,window,[window](){applySettingsLayout(window);});
             QTimer::singleShot(2450,window,[window](){applySettingsLayout(window);});
         } else if(event->type()==QEvent::Resize && window->property("settingsTabDarkScheduled").toBool()) {

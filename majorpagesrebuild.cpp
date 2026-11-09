@@ -79,81 +79,6 @@ static void prepWidget(QWidget *w)
     w->show();
 }
 
-static void composeSettings(QMainWindow *window)
-{
-    QWidget *page=pageFor(window,QStringLiteral("emission_tab"));
-    if(!page||page->property("majorPageRebuilt").toBool())return;
-    page->setProperty("majorPageRebuilt",true);
-
-    QWidget *rpm=page->findChild<QWidget*>(QStringLiteral("m_revCounter_exhaust"));
-    QWidget *idleErr=page->findChild<QWidget*>(QStringLiteral("e_idle_error"));
-    QWidget *advance=page->findChild<QWidget*>(QStringLiteral("e_ignition_advance"));
-    QWidget *trim=page->findChild<QWidget*>(QStringLiteral("e_short_term_fuel_trim"));
-    QWidget *lambda=page->findChild<QWidget*>(QStringLiteral("e_lambda"));
-    QWidget *idleLed=page->findChild<QWidget*>(QStringLiteral("idleswitch_led"));
-    QWidget *loopLed=page->findChild<QWidget*>(QStringLiteral("closedloop_led"));
-
-    QLabel *fuelLabel=page->findChild<QLabel*>(QStringLiteral("emi_shorttermftrim"));
-    QLabel *hotLabel=page->findChild<QLabel*>(QStringLiteral("emi_idledecay"));
-    QLabel *rpmLabel=page->findChild<QLabel*>(QStringLiteral("emi_rpm"));
-    QLabel *ignLabel=page->findChild<QLabel*>(QStringLiteral("emi_ignadvance"));
-    QPushButton *fuelMinus=page->findChild<QPushButton*>(QStringLiteral("m_fuel_trim_minusButton"));
-    QPushButton *fuelPlus=page->findChild<QPushButton*>(QStringLiteral("m_fuel_trim_plusButton"));
-    QPushButton *hotMinus=page->findChild<QPushButton*>(QStringLiteral("m_idle_decay_minusButton"));
-    QPushButton *hotPlus=page->findChild<QPushButton*>(QStringLiteral("m_idle_decay_plusButton"));
-    QPushButton *rpmMinus=page->findChild<QPushButton*>(QStringLiteral("m_idle_speed_minusButton"));
-    QPushButton *rpmPlus=page->findChild<QPushButton*>(QStringLiteral("m_idle_speed_plusButton"));
-    QPushButton *ignMinus=page->findChild<QPushButton*>(QStringLiteral("m_ignition_advance_minusButton"));
-    QPushButton *ignPlus=page->findChild<QPushButton*>(QStringLiteral("m_ignition_advance_plusButton"));
-    QLCDNumber *fuelLcd=page->findChild<QLCDNumber*>(QStringLiteral("e_FuelTrim_lcd"));
-    QLCDNumber *hotLcd=page->findChild<QLCDNumber*>(QStringLiteral("e_IdleDecay_lcd"));
-    QLCDNumber *rpmLcd=page->findChild<QLCDNumber*>(QStringLiteral("e_IdleSpeed_lcd"));
-    QLCDNumber *ignLcd=page->findChild<QLCDNumber*>(QStringLiteral("e_IgnitionAdvance_lcd"));
-    QPushButton *resetAdj=page->findChild<QPushButton*>(QStringLiteral("m_resetAdjustmentsButton"));
-    QPushButton *resetEcu=page->findChild<QPushButton*>(QStringLiteral("m_resetECUButton"));
-    QLineEdit *note=page->findChild<QLineEdit*>(QStringLiteral("lineEdit_3"));
-
-    QVBoxLayout *root=nullptr;beginPage(page,root);
-    QGridLayout *body=new QGridLayout;body->setHorizontalSpacing(10);body->setVerticalSpacing(10);body->setColumnStretch(0,3);body->setColumnStretch(1,2);
-
-    QFrame *metrics=card(page,QStringLiteral("settingsMetrics"),I18n::text(7133));
-    QGridLayout *mg=new QGridLayout;mg->setSpacing(8);
-    QWidget *gauges[]={idleErr,rpm,trim,advance,lambda};
-    const int titleKeys[]={7139,1011,7140,7141,7142};
-    for(int i=0;i<5;i++){
-        QFrame *box=new QFrame(metrics);box->setStyleSheet(QStringLiteral("background:#0b1116;border:1px solid #27323b;border-radius:4px;"));
-        QVBoxLayout *bv=new QVBoxLayout(box);bv->setContentsMargins(6,6,6,6);bv->setSpacing(3);
-        QLabel *tl=new QLabel(I18n::text(titleKeys[i]),box);QFont tf=tl->font();tf.setBold(true);tf.setPointSizeF(7.2);tl->setFont(tf);tl->setAlignment(Qt::AlignCenter);tl->setStyleSheet(QStringLiteral("color:#cfd6dc;background:transparent;border:0;"));bv->addWidget(tl);
-        if(gauges[i]){gauges[i]->setParent(box);gauges[i]->setMinimumHeight(80);gauges[i]->setMaximumHeight(130);gauges[i]->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);gauges[i]->show();bv->addWidget(gauges[i],1);}
-        mg->addWidget(box,i<3?0:1,i<3?i:i-3);
-    }
-    static_cast<QVBoxLayout*>(metrics->layout())->addLayout(mg,1);
-    body->addWidget(metrics,0,0,2,1);
-
-    QFrame *states=card(page,QStringLiteral("settingsStates"),I18n::text(7134));
-    QGridLayout *sg=new QGridLayout;sg->setHorizontalSpacing(12);sg->setVerticalSpacing(10);
-    QLabel *idleTxt=new QLabel(I18n::text(2015),states);QLabel *loopTxt=new QLabel(I18n::text(2014),states);
-    if(idleLed){idleLed->setParent(states);idleLed->setFixedSize(26,26);idleLed->show();sg->addWidget(idleLed,0,0);}sg->addWidget(idleTxt,0,1);
-    if(loopLed){loopLed->setParent(states);loopLed->setFixedSize(26,26);loopLed->show();sg->addWidget(loopLed,1,0);}sg->addWidget(loopTxt,1,1);sg->setColumnStretch(2,1);
-    static_cast<QVBoxLayout*>(states->layout())->addLayout(sg);static_cast<QVBoxLayout*>(states->layout())->addStretch(1);
-    body->addWidget(states,0,1);
-
-    QFrame *adjust=card(page,QStringLiteral("settingsAdjust"),I18n::text(7135));
-    QGridLayout *ag=new QGridLayout;ag->setHorizontalSpacing(8);ag->setVerticalSpacing(7);ag->setColumnStretch(1,1);
-    struct Row{QLabel*l;QPushButton*minus;QLCDNumber*lcd;QPushButton*plus;};
-    Row rows[]={{fuelLabel,fuelMinus,fuelLcd,fuelPlus},{hotLabel,hotMinus,hotLcd,hotPlus},{rpmLabel,rpmMinus,rpmLcd,rpmPlus},{ignLabel,ignMinus,ignLcd,ignPlus}};
-    for(int r=0;r<4;r++){
-        if(rows[r].l){rows[r].l->setParent(adjust);rows[r].l->show();ag->addWidget(rows[r].l,r,0);}
-        if(rows[r].minus){rows[r].minus->setParent(adjust);rows[r].minus->show();ag->addWidget(rows[r].minus,r,1);}
-        if(rows[r].lcd){rows[r].lcd->setParent(adjust);rows[r].lcd->setSegmentStyle(QLCDNumber::Flat);rows[r].lcd->setStyleSheet(QStringLiteral("background:#0a1117;color:#ff9828;border:1px solid #303c46;"));rows[r].lcd->setMinimumWidth(64);rows[r].lcd->show();ag->addWidget(rows[r].lcd,r,2);}
-        if(rows[r].plus){rows[r].plus->setParent(adjust);rows[r].plus->show();ag->addWidget(rows[r].plus,r,3);}
-    }
-    if(note){note->setParent(adjust);note->setReadOnly(true);note->show();ag->addWidget(note,4,0,1,4);}
-    QHBoxLayout *resets=new QHBoxLayout;if(resetAdj){resetAdj->setParent(adjust);resetAdj->show();resets->addWidget(resetAdj);}if(resetEcu){resetEcu->setParent(adjust);resetEcu->show();resets->addWidget(resetEcu);}ag->addLayout(resets,5,0,1,4);
-    static_cast<QVBoxLayout*>(adjust->layout())->addLayout(ag,1);body->addWidget(adjust,1,1);
-    root->addLayout(body,1);
-}
-
 static void composeErrors(QMainWindow *window)
 {
     QWidget *page=pageFor(window,QStringLiteral("errors"));if(!page||page->property("majorPageRebuilt").toBool())return;page->setProperty("majorPageRebuilt",true);
@@ -225,7 +150,7 @@ protected:bool eventFilter(QObject*watched,QEvent*event)override
     {
         if((event->type()!=QEvent::Show&&event->type()!=QEvent::Polish)||!watched)return QObject::eventFilter(watched,event);
         QMainWindow *w=qobject_cast<QMainWindow*>(watched);if(!w||w->objectName()!=QStringLiteral("MainWindow")||w->property("majorPagesInstaller").toBool())return QObject::eventFilter(watched,event);
-        w->setProperty("majorPagesInstaller",true);QTimer::singleShot(60,w,[w](){composeSettings(w);composeErrors(w);composeActuators(w);});return QObject::eventFilter(watched,event);
+        w->setProperty("majorPagesInstaller",true);QTimer::singleShot(60,w,[w](){composeErrors(w);composeActuators(w);});return QObject::eventFilter(watched,event);
     }
 };
 
