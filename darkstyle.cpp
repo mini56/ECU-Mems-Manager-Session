@@ -195,52 +195,6 @@ static void reflowOverview(QMainWindow *w)
     for(QWidget *x:cards){x->setMinimumSize(0,0);x->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);x->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);}
 }
 
-static void reflowSettings(QMainWindow *w)
-{
-    QWidget *page=w?w->findChild<QWidget*>(QStringLiteral("emission_tab")):nullptr;
-    QFrame *metrics=w?w->findChild<QFrame*>(QStringLiteral("settingsMetrics")):nullptr;
-    QFrame *states=w?w->findChild<QFrame*>(QStringLiteral("settingsStates")):nullptr;
-    QFrame *adjust=w?w->findChild<QFrame*>(QStringLiteral("settingsAdjust")):nullptr;
-    if(!page||!metrics||!states||!adjust) return;
-
-    QList<QWidget*> gauges;
-    for(QWidget *x:metrics->findChildren<QWidget*>()) if(cls(x)==QStringLiteral("CompactGauge")) gauges<<x;
-    if(gauges.size()==5){
-        QGridLayout *g=gridContaining(metrics,gauges);
-        if(g){
-            const int mw=qMax(1,metrics->width());
-            const int cols=mw>=900?5:(mw>=560?3:(mw>=360?2:1));
-            if(metrics->property("darkGaugeCols").toInt()!=cols){
-                for(QWidget *x:gauges) g->removeWidget(x);
-                for(int c=0;c<5;++c) g->setColumnStretch(c,c<cols?1:0);
-                const int rows=(gauges.size()+cols-1)/cols;
-                for(int r=0;r<5;++r) g->setRowStretch(r,r<rows?1:0);
-                for(int i=0;i<gauges.size();++i) g->addWidget(gauges.at(i),i/cols,i%cols);
-                metrics->setProperty("darkGaugeCols",cols);
-            }
-            g->setHorizontalSpacing(8);g->setVerticalSpacing(8);
-        }
-    }
-
-    QList<QWidget*> panels; panels<<metrics<<states<<adjust;
-    QGridLayout *body=gridContaining(page,panels); if(!body) return;
-    const bool narrow=page->width()<860;
-    if(page->property("darkSettingsNarrow").toBool()!=narrow||!page->property("darkSettingsDone").toBool()){
-        for(QWidget *x:panels) body->removeWidget(x);
-        if(narrow){
-            body->addWidget(metrics,0,0); body->addWidget(states,1,0); body->addWidget(adjust,2,0);
-            body->setColumnStretch(0,1);body->setColumnStretch(1,0);
-            body->setRowStretch(0,3);body->setRowStretch(1,1);body->setRowStretch(2,2);
-        }else{
-            body->addWidget(metrics,0,0,1,2); body->addWidget(states,1,0); body->addWidget(adjust,1,1);
-            body->setColumnStretch(0,2);body->setColumnStretch(1,3);
-            body->setRowStretch(0,3);body->setRowStretch(1,2);body->setRowStretch(2,0);
-        }
-        page->setProperty("darkSettingsNarrow",narrow);page->setProperty("darkSettingsDone",true);
-    }
-    body->setHorizontalSpacing(10);body->setVerticalSpacing(10);
-}
-
 static void stylePages(QMainWindow *w)
 {
     QTabWidget *tabs=w?w->findChild<QTabWidget*>(QStringLiteral("Tab_main")):nullptr;
@@ -328,7 +282,6 @@ static void apply(QMainWindow *w)
     if(!w) return;
     styleNavigation(w);
     reflowOverview(w);
-    reflowSettings(w);
     stylePages(w);
     styleTables(w);
     styleControls(w);

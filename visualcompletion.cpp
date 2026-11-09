@@ -242,23 +242,7 @@ static void fitOverviewAndSettings(QMainWindow *w,qreal s)
         }
     }
 
-    if (QWidget *settings=w->findChild<QWidget*>(QStringLiteral("emission_tab"))) {
-        settings->setMinimumSize(0,0); settings->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
-        if (QLayout *l=settings->layout()) {
-            const int m=qBound(4,qRound(8*s),11),gap=qBound(4,qRound(7*s),9);
-            l->setContentsMargins(m,m,m,m); l->setSpacing(gap);
-        }
-        for (const char *n:{"settingsMetrics","settingsStates","settingsAdjust"})
-            if (QWidget *c=settings->findChild<QWidget*>(QString::fromLatin1(n))) {
-                c->setMinimumSize(0,0); c->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
-                c->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding); c->show();
-            }
-        for (QWidget *c:settings->findChildren<QWidget*>())
-            if (QString::fromLatin1(c->metaObject()->className())==QStringLiteral("CompactGauge")) {
-                c->setMinimumSize(60,80); c->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
-                c->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding); c->show();
-            }
-    }
+
 }
 
 static void fitRawDataPage(QWidget *page)

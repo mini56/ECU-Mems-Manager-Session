@@ -573,6 +573,9 @@ static void sizeGauge(QWidget *gauge,int size)
     gauge->setMinimumSize(size,size);
     gauge->setMaximumSize(size,size);
     gauge->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
+    gauge->setAttribute(Qt::WA_StyledBackground,true);
+    gauge->setStyleSheet(QStringLiteral(
+        "background:#080d11;border:1px solid #34414a;border-radius:5px;"));
     gauge->show();
 }
 
@@ -619,6 +622,189 @@ static void suppressLegacyOverlays(QFrame *metrics)
     }
 }
 
+static void compactAdjustForm(QWidget *page,QFrame *adjust)
+{
+    if(!page || !adjust) return;
+
+    QWidget *form=page->findChild<QWidget*>(QStringLiteral("darkSettingsAdjustForm"));
+    if(form) {
+        form->setMaximumWidth(760);
+        form->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
+        form->setStyleSheet(QStringLiteral("background:transparent;border:0;"));
+
+        if(QGridLayout *grid=qobject_cast<QGridLayout*>(form->layout())) {
+            grid->setContentsMargins(0,0,0,0);
+            grid->setVerticalSpacing(4);
+        }
+
+        const QList<QPushButton*> buttons=form->findChildren<QPushButton*>();
+        for(QPushButton *button:buttons) {
+            button->setMinimumWidth(108);
+            button->setMaximumWidth(142);
+            button->setMinimumHeight(36);
+            button->setMaximumHeight(42);
+        }
+
+        const QList<QLCDNumber*> lcds=form->findChildren<QLCDNumber*>();
+        for(QLCDNumber *lcd:lcds) {
+            lcd->setMinimumHeight(32);
+            lcd->setMaximumHeight(32);
+        }
+
+        const QList<QLabel*> labels=form->findChildren<QLabel*>();
+        for(QLabel *label:labels) {
+            label->setMinimumHeight(30);
+            label->setMaximumHeight(42);
+            if(label->minimumWidth()>=200) {
+                label->setMinimumWidth(185);
+                label->setMaximumWidth(215);
+            }
+        }
+    }
+
+    const QList<QPushButton*> resetButtons=adjust->findChildren<QPushButton*>(QString(),Qt::FindDirectChildrenOnly);
+    for(QPushButton *button:resetButtons) {
+        button->setMinimumHeight(36);
+        button->setMaximumHeight(42);
+    }
+
+    if(QLineEdit *note=page->findChild<QLineEdit*>(QStringLiteral("lineEdit_3"))) {
+        note->setMinimumWidth(0);
+        note->setMaximumWidth(QWIDGETSIZE_MAX);
+        note->setMinimumHeight(19);
+        note->setMaximumHeight(21);
+        note->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
+        note->setAlignment(Qt::AlignCenter);
+        QFont font=note->font();
+        font.setPointSizeF(8.0);
+        note->setFont(font);
+        note->setStyleSheet(QStringLiteral(
+            "QLineEdit{background:transparent;color:#b8c1c7;"
+            "border:0;padding:0 2px;}"));
+    }
+}
+
+static void moveIndicatorsToStates(QWidget *page,QFrame *states,QFrame *adjust)
+{
+    if(!page || !states || !adjust) return;
+
+    QWidget *idleLed=page->findChild<QWidget*>(QStringLiteral("idleswitch_led"));
+    QWidget *loopLed=page->findChild<QWidget*>(QStringLiteral("closedloop_led"));
+    if(!idleLed || !loopLed) return;
+
+    for(QHBoxLayout *row:adjust->findChildren<QHBoxLayout*>()) {
+        if(row->indexOf(idleLed)>=0) row->removeWidget(idleLed);
+        if(row->indexOf(loopLed)>=0) row->removeWidget(loopLed);
+    }
+
+    for(QLabel *label:adjust->findChildren<QLabel*>(QString(),Qt::FindDirectChildrenOnly)) {
+        if(label->text()==I18n::text(2014) || label->text()==I18n::text(2015))
+            label->hide();
+    }
+
+    QLabel *idleText=nullptr;
+    QLabel *loopText=nullptr;
+    for(QLabel *label:states->findChildren<QLabel*>()) {
+        if(!idleText && label->text()==I18n::text(2015)) idleText=label;
+        if(!loopText && label->text()==I18n::text(2014)) loopText=label;
+    }
+
+    QGridLayout *stateGrid=nullptr;
+    for(QGridLayout *grid:states->findChildren<QGridLayout*>()) {
+        if((idleText && grid->indexOf(idleText)>=0) || (loopText && grid->indexOf(loopText)>=0)) {
+            stateGrid=grid;
+            break;
+        }
+    }
+    if(!stateGrid) return;
+
+    idleLed->setParent(states);
+    idleLed->setFixedSize(24,24);
+    idleLed->show();
+    stateGrid->addWidget(idleLed,0,0,Qt::AlignCenter);
+
+    loopLed->setParent(states);
+    loopLed->setFixedSize(24,24);
+    loopLed->show();
+    stateGrid->addWidget(loopLed,1,0,Qt::AlignCenter);
+
+    if(idleText) idleText->show();
+    if(loopText) loopText->show();
+    states->show();
+}
+
+static void moveNoteBelowRpm(QWidget *page,QFrame *metrics,QFrame *adjust)
+{
+    if(!page || !metrics || !adjust) return;
+
+    QLineEdit *note=page->findChild<QLineEdit*>(QStringLiteral("lineEdit_3"));
+    QWidget *rpm=page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeRpm"));
+    if(!note || !rpm) return;
+
+    for(QHBoxLayout *row:adjust->findChildren<QHBoxLayout*>())
+        if(row->indexOf(note)>=0) row->removeWidget(note);
+
+    note->setParent(rpm);
+    note->setReadOnly(true);
+    note->show();
+    note->raise();
+
+    const int noteHeight=qBound(19,note->sizeHint().height(),21);
+    const int margin=8;
+    const int noteWidth=qMax(1,rpm->width()-margin*2);
+    const int x=margin;
+    const int y=qMax(2,rpm->height()-noteHeight-4);
+    note->setGeometry(x,y,noteWidth,noteHeight);
+}
+
+static void arrangeBottomPanels(QWidget *page,QFrame *metrics,QFrame *states,QFrame *adjust)
+{
+    if(!page || !metrics || !states || !adjust) return;
+
+    QGridLayout *body=nullptr;
+    for(QGridLayout *grid:page->findChildren<QGridLayout*>()) {
+        if(grid->indexOf(metrics)>=0 && grid->indexOf(adjust)>=0) {
+            body=grid;
+            break;
+        }
+    }
+    if(!body) return;
+
+    // The metrics frame spans both body columns so the gauge group stays
+    // centered while the two lower panels share the full available width.
+    body->removeWidget(metrics);
+    body->removeWidget(states);
+    body->removeWidget(adjust);
+    body->addWidget(metrics,0,0,1,2);
+    body->addWidget(states,1,0);
+    body->addWidget(adjust,1,1);
+    body->setColumnStretch(0,1);
+    body->setColumnStretch(1,4);
+    body->setHorizontalSpacing(8);
+    body->setVerticalSpacing(4);
+
+    states->setMinimumWidth(205);
+    states->setMaximumWidth(275);
+    states->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Expanding);
+    adjust->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+}
+
+static void shortenSettingsSeparator(QFrame *adjust)
+{
+    if(!adjust) return;
+    QVBoxLayout *layout=qobject_cast<QVBoxLayout*>(adjust->layout());
+    if(!layout) return;
+
+    for(QFrame *line:adjust->findChildren<QFrame*>(QString(),Qt::FindDirectChildrenOnly)) {
+        if(line->frameShape()!=QFrame::HLine) continue;
+        line->setMinimumWidth(0);
+        line->setMaximumWidth(650);
+        line->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
+        layout->setAlignment(line,Qt::AlignLeft);
+        break;
+    }
+}
+
 static void applySettingsLayout(QMainWindow *window)
 {
     if(!window) return;
@@ -626,7 +812,7 @@ static void applySettingsLayout(QMainWindow *window)
     QFrame *metrics=window->findChild<QFrame*>(QStringLiteral("settingsMetrics"));
     QFrame *states=window->findChild<QFrame*>(QStringLiteral("settingsStates"));
     QFrame *adjust=window->findChild<QFrame*>(QStringLiteral("settingsAdjust"));
-    if(!page || !metrics || !adjust) return;
+    if(!page || !metrics || !states || !adjust) return;
 
     if(!page->property("settingsDark410Built").toBool()) {
         page->setProperty("settingsDark410Built",true);
@@ -636,6 +822,15 @@ static void applySettingsLayout(QMainWindow *window)
         rebuildPageLayout(page,metrics,states,adjust);
     }
 
+    // One authoritative source for the Settings page.
+    // Integrate the previously separate late visual pass once, here.
+    if(!page->property("settingsLayoutIntegrated").toBool()) {
+        compactAdjustForm(page,adjust);
+        moveIndicatorsToStates(page,states,adjust);
+        arrangeBottomPanels(page,metrics,states,adjust);
+        shortenSettingsSeparator(adjust);
+        page->setProperty("settingsLayoutIntegrated",true);
+    }
     suppressLegacyOverlays(metrics);
 
     page->setMinimumSize(0,0);
@@ -648,6 +843,13 @@ static void applySettingsLayout(QMainWindow *window)
     }
 
     applySettingsSizing(page,metrics,adjust);
+    // Let the same layout size the status panel; never restore a 154px cap.
+    states->setMinimumHeight(adjust->minimumHeight());
+    states->setMaximumHeight(QWIDGETSIZE_MAX);
+    states->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Expanding);
+    QTimer::singleShot(0,page,[page,metrics,adjust](){
+        moveNoteBelowRpm(page,metrics,adjust);
+    });
 }
 
 class SettingsTabDarkInstaller : public QObject

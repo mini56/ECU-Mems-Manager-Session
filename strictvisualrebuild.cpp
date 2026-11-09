@@ -228,29 +228,6 @@ static void stylePage(QWidget *p,qreal s)
     styleTables(p,s);
 }
 
-static void rebuildSettingsGauges(QMainWindow *w)
-{
-    QWidget *page=w?w->findChild<QWidget*>(QStringLiteral("emission_tab")):nullptr;
-    QFrame *metrics=w?w->findChild<QFrame*>(QStringLiteral("settingsMetrics")):nullptr;
-    if(!page||!metrics||metrics->property("premiumGaugeGrid").toBool()) return;
-    metrics->setProperty("premiumGaugeGrid",true);
-
-    const char *names[]={"e_idle_error","m_revCounter_exhaust","e_short_term_fuel_trim","e_ignition_advance","e_lambda"};
-    const int titleKeys[]={7139,1011,7140,7141,7142};
-    const char *units[]={"tr/min","tr/min","%","°","mV"};
-    for(const char *n:names) if(QWidget *g=page->findChild<QWidget*>(QString::fromLatin1(n))){g->hide(); if(g->parentWidget())g->parentWidget()->hide();}
-
-    QVBoxLayout *v=qobject_cast<QVBoxLayout*>(metrics->layout()); if(!v) return;
-    QGridLayout *grid=new QGridLayout; grid->setContentsMargins(0,0,0,0); grid->setHorizontalSpacing(5); grid->setVerticalSpacing(5);
-    for(int c=0;c<3;c++) grid->setColumnStretch(c,1); grid->setRowStretch(0,1);grid->setRowStretch(1,1);
-    for(int i=0;i<5;i++){
-        QObject *src=page->findChild<QObject*>(QString::fromLatin1(names[i]));
-        CompactGauge *g=new CompactGauge(src,I18n::text(titleKeys[i]),QString::fromUtf8(units[i]),metrics);
-        grid->addWidget(g,i<3?0:1,i<3?i:i-3);
-    }
-    v->addLayout(grid,1);
-}
-
 static void fitOverview(QMainWindow *w,qreal s)
 {
     QWidget *p=w?w->findChild<QWidget*>(QStringLiteral("overview_tab")):nullptr; if(!p) return;
@@ -287,7 +264,6 @@ static void applyStrict(QMainWindow *w)
     fitChrome(w,s);
     QTabWidget *tabs=w->findChild<QTabWidget*>(QStringLiteral("Tab_main"));
     if(tabs){for(int i=0;i<tabs->count();++i)stylePage(pageOf(tabs->widget(i)),s);}
-    rebuildSettingsGauges(w);
     fitOverview(w,s);
     syncNavigation(w);
 }

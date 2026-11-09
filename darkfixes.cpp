@@ -274,108 +274,6 @@ static void ensureSidebar(QMainWindow *w)
     applySidebarState(w);
 }
 
-static QList<QWidget*> compactSettingsGauges(QFrame *metrics)
-{
-    QList<QWidget*> gauges;
-    if(!metrics) return gauges;
-    for(QWidget *x:metrics->findChildren<QWidget*>())
-        if(x && className(x)==QStringLiteral("CompactGauge")) gauges<<x;
-    return gauges;
-}
-
-static void fixSettings(QMainWindow *w)
-{
-    QFrame *metrics=w?w->findChild<QFrame*>(QStringLiteral("settingsMetrics")):nullptr;
-    if(!metrics) return;
-
-    QList<QWidget*> gauges=compactSettingsGauges(metrics);
-    if(gauges.size()!=5) return;
-
-    QWidget *stage=metrics->findChild<QWidget*>(QStringLiteral("darkSettingsGaugeStage"),Qt::FindDirectChildrenOnly);
-    QGridLayout *stageGrid=nullptr;
-    if(!stage) {
-        QGridLayout *oldGrid=gridContaining(metrics,gauges);
-        if(oldGrid) for(QWidget *g:gauges) oldGrid->removeWidget(g);
-
-        QVBoxLayout *root=qobject_cast<QVBoxLayout*>(metrics->layout());
-        if(!root) return;
-        if(oldGrid) {
-            for(int i=root->count()-1;i>=0;--i) {
-                QLayoutItem *item=root->itemAt(i);
-                if(item && item->layout()==oldGrid) {
-                    QLayoutItem *removed=root->takeAt(i);
-                    delete removed;
-                    break;
-                }
-            }
-        }
-
-        stage=new QWidget(metrics);
-        stage->setObjectName(QStringLiteral("darkSettingsGaugeStage"));
-        stage->setMinimumSize(0,0);
-        stage->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
-        stage->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
-        stageGrid=new QGridLayout(stage);
-        stageGrid->setContentsMargins(4,2,4,2);
-        stageGrid->setHorizontalSpacing(10);
-        stageGrid->setVerticalSpacing(8);
-
-        gauges.at(0)->setObjectName(QStringLiteral("darkGaugeIdleError"));
-        gauges.at(1)->setObjectName(QStringLiteral("darkGaugeRpm"));
-        gauges.at(2)->setObjectName(QStringLiteral("darkGaugeFuelTrim"));
-        gauges.at(3)->setObjectName(QStringLiteral("darkGaugeIgnition"));
-        gauges.at(4)->setObjectName(QStringLiteral("darkGaugeLambda"));
-        for(QWidget *g:gauges) g->setParent(stage);
-        root->addWidget(stage,1);
-    } else {
-        stageGrid=qobject_cast<QGridLayout*>(stage->layout());
-    }
-    if(!stageGrid) return;
-
-    QWidget *idle=stage->findChild<QWidget*>(QStringLiteral("darkGaugeIdleError"));
-    QWidget *rpm=stage->findChild<QWidget*>(QStringLiteral("darkGaugeRpm"));
-    QWidget *trim=stage->findChild<QWidget*>(QStringLiteral("darkGaugeFuelTrim"));
-    QWidget *ign=stage->findChild<QWidget*>(QStringLiteral("darkGaugeIgnition"));
-    QWidget *lambda=stage->findChild<QWidget*>(QStringLiteral("darkGaugeLambda"));
-    QList<QWidget*> ordered; ordered<<idle<<ign<<rpm<<lambda<<trim;
-    for(QWidget *g:ordered) if(g) stageGrid->removeWidget(g);
-
-    const bool wide=metrics->width()>=760;
-    if(wide) {
-        for(int c=0;c<5;++c) stageGrid->setColumnStretch(c,c==2?15:10);
-        stageGrid->setRowStretch(0,1); stageGrid->setRowStretch(1,0);
-        for(int i=0;i<ordered.size();++i) if(ordered.at(i)) stageGrid->addWidget(ordered.at(i),0,i,Qt::AlignCenter);
-    } else {
-        for(int c=0;c<3;++c) stageGrid->setColumnStretch(c,c==1?14:10);
-        stageGrid->setRowStretch(0,1); stageGrid->setRowStretch(1,1);
-        if(idle) stageGrid->addWidget(idle,0,0,Qt::AlignCenter);
-        if(rpm) stageGrid->addWidget(rpm,0,1,2,1,Qt::AlignCenter);
-        if(trim) stageGrid->addWidget(trim,0,2,Qt::AlignCenter);
-        if(ign) stageGrid->addWidget(ign,1,0,Qt::AlignCenter);
-        if(lambda) stageGrid->addWidget(lambda,1,2,Qt::AlignCenter);
-    }
-
-    const int h=qMax(1,metrics->height());
-    const int outerH=wide?qBound(158,h-92,188):qBound(130,(h-80)/2,165);
-    const int rpmH=wide?qBound(205,h-58,238):qBound(190,h-70,225);
-    for(QWidget *g:{idle,trim,ign,lambda}) if(g) {
-        g->setMinimumSize(wide?135:105,outerH);
-        g->setMaximumHeight(outerH);
-        g->setMaximumWidth(QWIDGETSIZE_MAX);
-        g->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
-        g->show();
-    }
-    if(rpm) {
-        rpm->setMinimumSize(wide?205:175,rpmH);
-        rpm->setMaximumHeight(rpmH);
-        rpm->setMaximumWidth(QWIDGETSIZE_MAX);
-        rpm->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
-        rpm->show();
-    }
-    metrics->setMinimumHeight(wide?270:390);
-    metrics->setMaximumHeight(QWIDGETSIZE_MAX);
-}
-
 static QWidget *analysisWidget(QMainWindow *w)
 {
     if(!w) return nullptr;
@@ -578,7 +476,6 @@ static void applyFinalFixes(QMainWindow *w)
 {
     if(!w) return;
     ensureSidebar(w);
-    fixSettings(w);
     fixAnalysis(w);
     fixDiagnostic(w);
     makeTablesReadable(w);
