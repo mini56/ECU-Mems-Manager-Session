@@ -164,7 +164,7 @@ static void styleRawBlock(QWidget *block)
         const bool head=n.startsWith(QStringLiteral("header_")) || n.startsWith(QStringLiteral("Aheader_"));
         l->setStyleSheet(head
             ? QStringLiteral("color:#ff9828;background:transparent;font-weight:700;")
-            : QStringLiteral("color:#dce3e8;background:transparent;"));
+            : QStringLiteral("color:#ffffff;background:transparent;"));
     }
 }
 

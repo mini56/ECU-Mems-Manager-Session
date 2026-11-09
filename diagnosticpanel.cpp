@@ -59,6 +59,12 @@ DiagnosticPanel::DiagnosticPanel(QWidget *parent) : QWidget(parent)
     m_checks->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
     m_checks->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch);
     m_checks->verticalHeader()->setVisible(false);
+    // The diagnostic table owns its readability, without a late UI patch.
+    m_checks->setStyleSheet(m_checks->styleSheet()+QStringLiteral(
+        "QTableWidget{color:#ffffff;}"
+        "QTableWidget:disabled{color:#ffffff;}"
+        "QTableWidget::item{color:#ffffff;}"
+        "QTableWidget::item:disabled{color:#ffffff;}"));
     root->addWidget(m_checks, 3);
 
     QGroupBox *reportBox = new QGroupBox(I18n::text(6812) /* EN: Automatic report */, this);
@@ -103,6 +109,9 @@ void DiagnosticPanel::addCheck(const QString &name, const QString &value,
     m_checks->setItem(row, 1, new QTableWidgetItem(value));
     m_checks->setItem(row, 2, new QTableWidgetItem(state));
     m_checks->setItem(row, 3, new QTableWidgetItem(advice));
+    for (int col=0; col<4; ++col)
+      if (QTableWidgetItem *item=m_checks->item(row,col))
+        item->setData(Qt::ForegroundRole, QColor(QStringLiteral("#ffffff")));
 }
 
 void DiagnosticPanel::rebuild(const mems_data &d)

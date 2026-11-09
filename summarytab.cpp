@@ -51,6 +51,13 @@ SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)
     tables[i]->setAlternatingRowColors(true);
     tables[i]->setShowGrid(false);
     tables[i]->setIconSize(QSize(24,18));
+      // Native readability: no delayed application-wide style filter.
+      const QString whiteRule=QStringLiteral(
+        "QTableWidget{color:#ffffff;}"
+        "QTableWidget:disabled{color:#ffffff;}"
+        "QTableWidget::item{color:#ffffff;}"
+        "QTableWidget::item:disabled{color:#ffffff;}");
+      tables[i]->setStyleSheet(tables[i]->styleSheet()+whiteRule);
     if (QTableWidgetItem *head=tables[i]->horizontalHeaderItem(2)) {
       QString value=head->text();
       if (!value.contains(QLatin1Char('\n'))) {
@@ -202,6 +209,9 @@ int SummaryTab::addRow(const QString &name)
   table->setItem(localRow, 1, new QTableWidgetItem(""));
   table->setItem(localRow, 2, new QTableWidgetItem("--"));
   table->setItem(localRow, 3, new QTableWidgetItem("--"));
+  for (int col=0; col<4; ++col)
+    if (QTableWidgetItem *item=table->item(localRow,col))
+      item->setData(Qt::ForegroundRole, QColor(QStringLiteral("#ffffff")));
   for (int col=1; col<4; ++col)
     if (QTableWidgetItem *item=table->item(localRow,col))
       item->setTextAlignment(Qt::AlignCenter);
