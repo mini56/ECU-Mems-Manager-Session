@@ -5,7 +5,7 @@ on:
     branches:
       - dev-complete-build117-14-pages-20261109
     paths:
-      - '.github/workflows/complete-build134-setup-test.yml'
+      - '.github/workflows/session-build134-setup-test.yml'
   workflow_dispatch:
 
 permissions:
