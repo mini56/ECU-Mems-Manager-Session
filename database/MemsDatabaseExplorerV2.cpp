@@ -1,4 +1,5 @@
 #include "MemsGlobalSearchIndex.h"
+#include "MemsReferenceSheetRenderer.h"
 #include "../i18n.h"
 
 #include <QApplication>
@@ -144,81 +145,16 @@ QString diagramHtml(const QString &generation)
     return html;
 }
 
-QString swatchHtml(const QStringList &fills,const QString &text)
-{
-    QString html;
-    int used=0;
-    QSet<QString> seen;
-    for(QString fill:fills){
-        fill=fill.trimmed();
-        if(fill.isEmpty() || fill.compare(QStringLiteral("none"),Qt::CaseInsensitive)==0 || seen.contains(fill)) continue;
-        seen.insert(fill);
-        html+=QStringLiteral("<span style='background-color:%1;color:%1;border:1px solid #8a949c;'>██</span>").arg(fill.toHtmlEscaped());
-        if(++used>=2) break;
-    }
-    if(!html.isEmpty()) html+=QStringLiteral("&nbsp;&nbsp;");
-    html+=text.trimmed().toHtmlEscaped();
-    return html;
-}
-
-QString readXmlCell(QXmlStreamReader &xml,const QString &endTag)
-{
-    QString text;
-    QStringList fills;
-    while(!xml.atEnd()){
-        xml.readNext();
-        if(xml.isStartElement()){
-            const QStringRef name=xml.name();
-            if(name==QStringLiteral("rect") || name==QStringLiteral("path")){
-                const QString fill=xml.attributes().value(QStringLiteral("fill")).toString();
-                if(!fill.isEmpty()) fills.append(fill);
-            }
-        }else if(xml.isCharacters() && !xml.isWhitespace()){
-            text+=xml.text().toString();
-        }else if(xml.isEndElement() && xml.name()==endTag){
-            break;
-        }
-    }
-    return swatchHtml(fills,text);
-}
-
 QString renderXml(const QString &path)
 {
-    QFile file(path);
-    if(!file.open(QIODevice::ReadOnly|QIODevice::Text))
-        return htmlStyle()+QStringLiteral("<p class='note'>%1</p>").arg(I18n::text(7232).toHtmlEscaped());
-    QXmlStreamReader xml(&file);
-    QString html=htmlStyle()+diagramHtml(QFileInfo(path).completeBaseName());
-    bool firstRow=true;
-    while(!xml.atEnd()){
-        xml.readNext();
-        if(xml.isEndElement()){
-            if(xml.name()==QStringLiteral("ligne")){html+=QStringLiteral("</tr>");firstRow=false;}
-            else if(xml.name()==QStringLiteral("table")) html+=QStringLiteral("</table>");
-            continue;
-        }
-        if(!xml.isStartElement()) continue;
-        const QStringRef name=xml.name();
-        if(name==QStringLiteral("titre")) html+=QStringLiteral("<h1>%1</h1>").arg(xml.readElementText(QXmlStreamReader::IncludeChildElements).toHtmlEscaped());
-        else if(name==QStringLiteral("sous-titre")) html+=QStringLiteral("<p class='muted'>%1</p>").arg(xml.readElementText(QXmlStreamReader::IncludeChildElements).toHtmlEscaped());
-        else if(name==QStringLiteral("section")) html+=QStringLiteral("<h2>%1</h2>").arg(xml.attributes().value(QStringLiteral("titre")).toString().toHtmlEscaped());
-        else if(name==QStringLiteral("p")){
-            QString text=xml.readElementText(QXmlStreamReader::IncludeChildElements).toHtmlEscaped();
-            text.replace(QStringLiteral("\n"),QStringLiteral("<br>"));
-            html+=QStringLiteral("<p>%1</p>").arg(text);
-        }else if(name==QStringLiteral("note")){
-            QString text=xml.readElementText(QXmlStreamReader::IncludeChildElements).toHtmlEscaped();
-            text.replace(QStringLiteral("\n"),QStringLiteral("<br>"));
-            html+=QStringLiteral("<div class='note'>%1</div>").arg(text);
-        }else if(name==QStringLiteral("table")){
-            firstRow=true;
-            html+=QStringLiteral("<table>");
-        }else if(name==QStringLiteral("ligne")){
-            html+=QStringLiteral("<tr>");
-        }else if(name==QStringLiteral("cellule") || name==QStringLiteral("broche") || name==QStringLiteral("fonction") || name==QStringLiteral("couleur")){
-            const QString tag=firstRow?QStringLiteral("th"):QStringLiteral("td");
-            html+=QStringLiteral("<%1>%2</%1>").arg(tag,readXmlCell(xml,name.toString()));
-        }
+    // Common XML renderer is used by both the browser and the indexed explorer.
+    QString html = MemsReferenceSheetRenderer::renderFile(path,I18n::text(7232));
+    const QString diagrams = diagramHtml(QFileInfo(path).completeBaseName());
+    if(!diagrams.isEmpty()){
+        const QString styleEnd=QStringLiteral("</style>");
+        const int pos=html.indexOf(styleEnd);
+        if(pos>=0) html.insert(pos+styleEnd.size(),diagrams);
+        else html.prepend(diagrams);
     }
     return html;
 }

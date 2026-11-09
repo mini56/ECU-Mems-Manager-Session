@@ -4,6 +4,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QSet>
+#include <QRegularExpression>
 #include <QString>
 #include <QStringList>
 #include <QXmlStreamReader>
@@ -61,6 +62,48 @@ inline ElementContent readElementContent(QXmlStreamReader &xml)
     return result;
 }
 
+// Textual wire-colour notation from MEMS reference sheets is represented
+// together with colours encoded as SVG/XML fill attributes.
+inline QString wireColorHex(QString word)
+{
+    word=word.normalized(QString::NormalizationForm_D).toLower();
+    QString normalized;
+    for(QChar ch:word){
+        const QChar::Category category=ch.category();
+        if(category!=QChar::Mark_NonSpacing &&
+           category!=QChar::Mark_SpacingCombining &&
+           category!=QChar::Mark_Enclosing)
+            normalized+=ch;
+    }
+    if(normalized==QStringLiteral("noir") || normalized==QStringLiteral("black")) return QStringLiteral("#101010");
+    if(normalized==QStringLiteral("blanc") || normalized==QStringLiteral("white")) return QStringLiteral("#f2f2f2");
+    if(normalized==QStringLiteral("rouge") || normalized==QStringLiteral("red")) return QStringLiteral("#d32f2f");
+    if(normalized==QStringLiteral("vert") || normalized==QStringLiteral("green")) return QStringLiteral("#2e9b4f");
+    if(normalized==QStringLiteral("bleu") || normalized==QStringLiteral("blue")) return QStringLiteral("#2878d0");
+    if(normalized==QStringLiteral("jaune") || normalized==QStringLiteral("yellow")) return QStringLiteral("#f4d03f");
+    if(normalized==QStringLiteral("orange")) return QStringLiteral("#f28c28");
+    if(normalized==QStringLiteral("marron") || normalized==QStringLiteral("brun") || normalized==QStringLiteral("brown")) return QStringLiteral("#7a4a24");
+    if(normalized==QStringLiteral("violet") || normalized==QStringLiteral("purple")) return QStringLiteral("#7e57c2");
+    if(normalized==QStringLiteral("gris") || normalized==QStringLiteral("gray") || normalized==QStringLiteral("grey")) return QStringLiteral("#8c939a");
+    if(normalized==QStringLiteral("rose") || normalized==QStringLiteral("pink")) return QStringLiteral("#e78ab3");
+    return QString();
+}
+
+inline QString textColorSwatches(const QString &text)
+{
+    QString html;
+    QSet<QString> used;
+    for(const QString &part:text.split(QRegularExpression(QStringLiteral("[\\s/,+;-]+")),Qt::SkipEmptyParts)){
+        const QString color=wireColorHex(part);
+        if(color.isEmpty() || used.contains(color)) continue;
+        used.insert(color);
+        html+=QStringLiteral("<span style='background:%1;border:1px solid #b8c0c6;'>&nbsp;&nbsp;&nbsp;</span>&nbsp;")
+                  .arg(color);
+        if(used.size()>=3) break;
+    }
+    return html;
+}
+
 inline QString renderElementContent(const ElementContent &content)
 {
     QString html;
@@ -72,6 +115,7 @@ inline QString renderElementContent(const ElementContent &content)
     }
     if (!content.fills.isEmpty())
         html += QStringLiteral("</span>");
+    if(content.fills.isEmpty()) html+=textColorSwatches(content.text);
     QString text = content.text.simplified().toHtmlEscaped();
     if (!text.isEmpty()) {
         if (!html.isEmpty())
