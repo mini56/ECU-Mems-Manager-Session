@@ -189,7 +189,7 @@ QSplashScreen *createStartupSplash()
     titleFont.setPointSize(19);
     painter.setFont(titleFont);
     painter.drawText(QRect(28, 24, 584, 38), Qt::AlignLeft | Qt::AlignVCenter,
-                     I18n::text(7));
+                     QStringLiteral("ECU MEMS Manager SESSION"));
 
     painter.setPen(QColor(QStringLiteral("#AAB4BF")));
     QFont subFont = painter.font();
@@ -258,7 +258,9 @@ int main(int argc, char *argv[])
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling, true);
     QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps, true);
     QApplication app(argc, argv);
+    // Preserve this storage-related internal identifier on upgrades.
     QApplication::setApplicationName("ECU Mems Manager");
+    QApplication::setApplicationDisplayName(QStringLiteral("ECU MEMS Manager SESSION"));
     QApplication::setApplicationVersion(QStringLiteral(APP_VERSION));
     QApplication::setOrganizationName("ECU Mems Manager");
 

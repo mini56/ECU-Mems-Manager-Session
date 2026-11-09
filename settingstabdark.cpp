@@ -590,7 +590,7 @@ static void applySettingsSizing(QWidget *page,QFrame *metrics,QFrame *adjust)
     // The control area receives enough room for four full-height button rows.
     const int adjustHeight=qBound(232,qRound(height*.33),250);
     const int metricsHeight=qMax(250,height-adjustHeight-22);
-    const int center=qMax(190,qMin(qRound(width*.40),metricsHeight-12));
+    const int center=qMax(190,qMin(qRound(width*.40),metricsHeight-20));
     const int outer=qMax(122,qMin(qRound(center*.62),(metricsHeight-8)/2));
 
     sizeGauge(page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeRpm")),center);

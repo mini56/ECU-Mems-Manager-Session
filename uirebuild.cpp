@@ -228,7 +228,7 @@ static QFrame *buildHeader(QMainWindow *window, QWidget *legacy)
     QHBoxLayout *h=new QHBoxLayout(header); h->setContentsMargins(12,5,10,5); h->setSpacing(8);
     QLabel *logo=new QLabel(header); logo->setObjectName(QStringLiteral("uiRebuildLogo")); QPixmap p(QStringLiteral(":/icons/key.png")); if(!p.isNull())logo->setPixmap(p.scaled(34,34,Qt::KeepAspectRatio,Qt::SmoothTransformation)); logo->setAlignment(Qt::AlignCenter); h->addWidget(logo);
     QVBoxLayout *brandV=new QVBoxLayout; brandV->setContentsMargins(0,0,0,0); brandV->setSpacing(0);
-    QLabel *brand=new QLabel(QStringLiteral("ECU MEMS MANAGER"),header); brand->setObjectName(QStringLiteral("uiRebuildBrand")); QFont bf=brand->font(); bf.setBold(true); bf.setPointSizeF(10.5); brand->setFont(bf); brand->setStyleSheet(QStringLiteral("color:#f5f7f8;letter-spacing:.5px;"));
+    QLabel *brand=new QLabel(QStringLiteral("ECU MEMS\nMANAGER SESSION"),header); brand->setObjectName(QStringLiteral("uiRebuildBrand")); QFont bf=brand->font(); bf.setBold(true); bf.setPointSizeF(9.0); brand->setFont(bf); brand->setStyleSheet(QStringLiteral("color:#f5f7f8;letter-spacing:.5px;"));
     QLabel *ver=new QLabel(QStringLiteral("v%1.%2.%3").arg(VER_MAJOR).arg(VER_MINOR).arg(VER_PATCH),header); ver->setStyleSheet(QStringLiteral("color:%1;font-weight:700;").arg(QString::fromLatin1(kOrange2))); brandV->addWidget(brand); brandV->addWidget(ver); h->addLayout(brandV);
     QFrame *sep=new QFrame(header); sep->setFrameShape(QFrame::VLine); sep->setStyleSheet(QStringLiteral("background:%1;max-width:1px;").arg(QString::fromLatin1(kBorder))); h->addWidget(sep);
     ecu->setParent(header); ecu->setStyleSheet(QStringLiteral("color:#dfe4e8;font-weight:700;padding:0 8px;")); h->addWidget(ecu);
@@ -306,7 +306,7 @@ static void applyResponsive(QMainWindow *window)
         if(!p.isNull())logo->setPixmap(p.scaled(side-4,side-4,Qt::KeepAspectRatio,Qt::SmoothTransformation));
     }
     if(QLabel *brand=window->findChild<QLabel*>(QStringLiteral("uiRebuildBrand"))) {
-        QFont f=brand->font(); f.setPointSizeF(qBound<qreal>(8.0,10.5*s,12.5)); brand->setFont(f);
+        QFont f=brand->font(); f.setPointSizeF(qBound<qreal>(8.0,9.5*s,9.5)); brand->setFont(f);
     }
     if(QPushButton *b=window->findChild<QPushButton*>(QStringLiteral("m_connectButton"))) {
         b->setMinimumWidth(qBound(76,qRound(92.0*s),112));

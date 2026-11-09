@@ -15,7 +15,7 @@
 static QString shortcutPath()
 {
     const QString desktop = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
-    return QDir(desktop).filePath(QStringLiteral(PROJECTNAME) + ".lnk");
+    return QDir(desktop).filePath(QStringLiteral("ECU MEMS Manager SESSION.lnk"));
 }
 
 void DesktopShortcut::ensureIfEnabled()

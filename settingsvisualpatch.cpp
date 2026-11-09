@@ -44,15 +44,15 @@ static void compactAdjustForm(QWidget *page,QFrame *adjust)
 
         if(QGridLayout *grid=qobject_cast<QGridLayout*>(form->layout())) {
             grid->setContentsMargins(0,0,0,0);
-            grid->setVerticalSpacing(0);
+            grid->setVerticalSpacing(4);
         }
 
         const QList<QPushButton*> buttons=form->findChildren<QPushButton*>();
         for(QPushButton *button:buttons) {
             button->setMinimumWidth(108);
             button->setMaximumWidth(142);
-            button->setMinimumHeight(21);
-            button->setMaximumHeight(22);
+            button->setMinimumHeight(36);
+            button->setMaximumHeight(42);
         }
 
         const QList<QLCDNumber*> lcds=form->findChildren<QLCDNumber*>();
@@ -74,8 +74,8 @@ static void compactAdjustForm(QWidget *page,QFrame *adjust)
 
     const QList<QPushButton*> resetButtons=adjust->findChildren<QPushButton*>(QString(),Qt::FindDirectChildrenOnly);
     for(QPushButton *button:resetButtons) {
-        button->setMinimumHeight(21);
-        button->setMaximumHeight(23);
+        button->setMinimumHeight(36);
+        button->setMaximumHeight(42);
     }
 
     if(QLineEdit *note=page->findChild<QLineEdit*>(QStringLiteral("lineEdit_3"))) {
@@ -195,8 +195,8 @@ static void arrangeBottomPanels(QWidget *page,QFrame *metrics,QFrame *states,QFr
 
     states->setMinimumWidth(205);
     states->setMaximumWidth(275);
-    states->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
-    adjust->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+    states->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Expanding);
+    adjust->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
 }
 
 static void shortenSettingsSeparator(QFrame *adjust)
@@ -230,12 +230,14 @@ static void applySettingsVisualPatch(QMainWindow *window)
         return;
     }
 
-    const int width=qMax(760,page->width());
-    const int height=qMax(500,page->height());
-    const int centerByWidth=qRound(width*.34);
-    const int centerByHeight=qRound((height-190)*.96);
-    const int center=qBound(370,qMin(centerByWidth,centerByHeight),400);
-    const int outer=qBound(198,qRound(center*.53),210);
+    // Same dimensions as the earlier Settings pass. This late pass must
+    // NOT revert the user's accepted two-left / larger-centre / two-right.
+    const int width=qMax(700,page->width());
+    const int height=qMax(430,page->height());
+    const int adjustHeight=qBound(232,qRound(height*.33),250);
+    const int metricsHeight=qMax(250,height-adjustHeight-22);
+    const int center=qMax(190,qMin(qRound(width*.40),metricsHeight-20));
+    const int outer=qMax(122,qMin(qRound(center*.62),(metricsHeight-8)/2));
 
     applyGaugeFrame(page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeRpm")),center);
     applyGaugeFrame(page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeIdle")),outer);
@@ -243,31 +245,29 @@ static void applySettingsVisualPatch(QMainWindow *window)
     applyGaugeFrame(page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeIgnition")),outer);
     applyGaugeFrame(page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeLambda")),outer);
 
-    const int metricsHeight=qMax(center+16,outer*2+8);
     metrics->setMinimumHeight(metricsHeight);
-    metrics->setMaximumHeight(metricsHeight+8);
-    metrics->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+    metrics->setMaximumHeight(QWIDGETSIZE_MAX);
+    metrics->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     metrics->setStyleSheet(QStringLiteral(
         "QFrame#settingsMetrics{background:#0d1318;"
         "border:1px solid #2f3b45;border-radius:6px;}"));
 
-    const int adjustHeight=qBound(138,qRound(height*.23),154);
     adjust->setMinimumHeight(adjustHeight);
-    adjust->setMaximumHeight(adjustHeight+4);
-    adjust->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+    adjust->setMaximumHeight(QWIDGETSIZE_MAX);
+    adjust->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     adjust->setStyleSheet(QStringLiteral(
         "QFrame#settingsAdjust{background:#10161c;"
         "border:1px solid #34414a;border-radius:6px;}"));
 
     states->setMinimumHeight(adjustHeight);
-    states->setMaximumHeight(adjustHeight+4);
+    states->setMaximumHeight(QWIDGETSIZE_MAX);
     states->setStyleSheet(QStringLiteral(
         "QFrame#settingsStates{background:#10161c;"
         "border:1px solid #34414a;border-radius:6px;}"));
 
     if(QVBoxLayout *layout=qobject_cast<QVBoxLayout*>(adjust->layout())) {
         layout->setContentsMargins(10,3,10,4);
-        layout->setSpacing(1);
+        layout->setSpacing(4);
     }
 
     compactAdjustForm(page,adjust);

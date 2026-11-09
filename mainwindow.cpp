@@ -65,7 +65,7 @@ m_mems(0), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerD
   setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   resize(1300, 690);
   qApp->processEvents();
-  this->setWindowTitle(PROJECTNAME + QString(" ") +
+  this->setWindowTitle(QStringLiteral(APP_NAME) + QString(" ") +
       QString::number(VER_MAJOR) + "." +
       QString::number(VER_MINOR) + "." +
       QString::number(VER_PATCH));
