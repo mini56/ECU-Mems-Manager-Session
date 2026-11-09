@@ -64,6 +64,7 @@ jobs:
           $dark=Get-Content darkstyle.cpp -Raw
           if($dark -notmatch 'm_clearFaultsButton' -or
              $dark -notmatch 'm_clearRecordedAnomalies'){throw 'ERROR_CLEAR_BUTTONS_STYLE_OVERWRITTEN'}
+          $cmake=Get-Content CMakeLists.txt -Raw
           # The original Settings source is now the only active owner of its
           # gauges, buttons and panel arrangement. There is NO visual patch.
           if(Test-Path 'settingsvisualpatch.cpp'){throw 'LEGACY_SETTINGS_PATCH_FILE_PRESENT'}
