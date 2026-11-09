@@ -1,4 +1,5 @@
 name: COMPLETE - verification compilation Qt Windows
+# Retrigger after Win32 min/max macro isolation in zoom maths.
 on:
   push:
     branches:

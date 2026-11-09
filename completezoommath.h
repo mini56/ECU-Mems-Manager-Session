@@ -14,11 +14,11 @@ constexpr int kScreenSafetyMargin = 8;
 inline double factorForWorkArea(int width, int height)
 {
     if (width <= 0 || height <= 0) return 1.0;
-    const double fitWidth = std::max(1, width - kScreenSafetyMargin) /
+    const double fitWidth = (std::max)(1, width - kScreenSafetyMargin) /
         static_cast<double>(kReferenceWidth);
-    const double fitHeight = std::max(1, height - kScreenSafetyMargin -
+    const double fitHeight = (std::max)(1, height - kScreenSafetyMargin -
         kNativeCaptionAllowance) / static_cast<double>(kReferenceHeight);
-    return std::max(0.20, std::min(4.0, std::min(fitWidth, fitHeight)));
+    return (std::max)(0.20, (std::min)(4.0, (std::min)(fitWidth, fitHeight)));
 }
 }
 #endif
