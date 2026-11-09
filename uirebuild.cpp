@@ -463,6 +463,14 @@ static QFrame *buildHeader(QMainWindow *window, QWidget *legacy)
     ecu->setParent(header); ecu->setStyleSheet(QStringLiteral("color:#dfe4e8;font-weight:700;padding:0 8px;")); h->addWidget(ecu);
     h->addStretch(1);
     QWidget *commBox=new QWidget(header); QHBoxLayout *ch=new QHBoxLayout(commBox); ch->setContentsMargins(0,0,0,0); ch->setSpacing(5); comm->setParent(commBox); comm->setStyleSheet(QStringLiteral("color:#cbd3d9;font-weight:700;")); ch->addWidget(comm); if(good){good->setParent(commBox);ch->addWidget(good);} if(bad){bad->setParent(commBox);ch->addWidget(bad);} h->addWidget(commBox);
+    // Connection buttons are styled once in their original header construction.
+    const QString connectionButtonStyle = QStringLiteral(
+        "QPushButton{background:#ff7a00;color:#11161a;border:1px solid #ff9828;border-radius:3px;padding:6px 11px;font-weight:800;}"
+        "QPushButton:hover{background:#ff9828;}"
+        "QPushButton:pressed{background:#d96500;}"
+        "QPushButton:disabled{background:#171e24;color:#5f6972;border-color:#29323a;}");
+    connectButton->setStyleSheet(connectionButtonStyle);
+    disconnectButton->setStyleSheet(connectionButtonStyle);
     connectButton->setParent(header); disconnectButton->setParent(header); h->addWidget(connectButton); h->addWidget(disconnectButton);
     legacy->hide(); legacy->setMaximumSize(0,0); return header;
 }

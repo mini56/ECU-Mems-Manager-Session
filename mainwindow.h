@@ -205,6 +205,7 @@ private:
 
     void buildSpeedAndTempUnitTables();
     void setupWidgets();
+    void refreshConnectionHeader();
     void makeFixedTabsScrollable();
 
     int convertTemperature(int tempF);

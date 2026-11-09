@@ -3,6 +3,7 @@
 #include <QMessageBox>
 #include <QProcess>
 #include <QList>
+#include <QLabel>
 #include <QDateTime>
 #include <QDir>
 #include <QHBoxLayout>
@@ -257,6 +258,7 @@ m_mems(0), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerD
   makeFixedTabsScrollable();
   m_ui->Tab_main->setCurrentIndex(0); // Toujours démarrer sur Aperçu
   TooltipBubbleManager::install(this);
+  refreshConnectionHeader();
 }
 
 
@@ -705,6 +707,7 @@ void MainWindow::onConnectClicked()
   setProperty("ecuConnectInProgress", true);
   m_ui->m_connectButton->setEnabled(false);
   m_autoReconnectEnabled = true;
+  refreshConnectionHeader();
 
   // If the worker thread hasn't been created yet, do that now.
   if (m_memsThread == 0)
@@ -754,6 +757,7 @@ void MainWindow::onDisconnectClicked()
   m_reconnectTimer->stop();
   m_ui->m_disconnectButton->setEnabled(false);
   m_mems->disconnectFromECU();
+  refreshConnectionHeader();
 }
 
 /**
@@ -1331,6 +1335,7 @@ void MainWindow::onEditOptionsClicked()
       }
       m_mems->setSerialDevice(m_options->getSerialDeviceName());
     }
+    refreshConnectionHeader();
   }
 }
 
@@ -1385,6 +1390,37 @@ void MainWindow::clearRecordedAnomalies()
  * Reponds to the "connect" signal from the MEMSInterface by enabling/disabling
  * the appropriate buttons and setting a message in the status bar.
  */
+void MainWindow::refreshConnectionHeader()
+{
+  // ECU signals and user settings own connection-state updates.
+  // No periodic UI patch is needed to overwrite the header widgets.
+  QString port = m_options ? m_options->getSerialDeviceName().trimmed() : QString();
+#ifdef Q_OS_WIN
+  const QString windowsPrefix = QStringLiteral("\\\\.\\");
+  if (port.startsWith(windowsPrefix, Qt::CaseInsensitive))
+    port.remove(0, windowsPrefix.size());
+#endif
+  if (port.isEmpty())
+    port = QStringLiteral("--");
+
+  if (QLabel *portLabel = findChild<QLabel*>(QStringLiteral("uiRebuildPortLabel")))
+    portLabel->setText(I18n::text(7114) + QStringLiteral("\n") + port);
+  if (QLabel *statusPort = findChild<QLabel*>(QStringLiteral("statusPort")))
+    statusPort->setText(QStringLiteral("%1 : %2").arg(I18n::text(7114), port));
+
+  const bool disconnected = m_ui->m_connectButton->isEnabled() &&
+                            !m_ui->m_disconnectButton->isEnabled();
+  if (disconnected)
+  {
+    m_ui->m_commsGoodLed->setChecked(false);
+    m_ui->m_commsBadLed->setChecked(true);
+  }
+  else if (m_ui->m_commsGoodLed->isChecked() && m_ui->m_commsBadLed->isChecked())
+  {
+    m_ui->m_commsBadLed->setChecked(false);
+  }
+}
+
 void MainWindow::onConnect()
 {
   setProperty("ecuConnectInProgress", false);
@@ -1399,6 +1435,7 @@ void MainWindow::onConnect()
   // m_ui->m_clearRecordedAnomalies->setEnabled(true);
   m_ui->m_resetAdjustmentsButton->setEnabled(true);
   m_ui->m_resetECUButton->setEnabled(true);
+  refreshConnectionHeader();
 }
 
 /**
@@ -1466,6 +1503,7 @@ void MainWindow::onDisconnect()
   setAdjustmentsEnabled(false);
   setActuatorsOffEnabled(false);
   m_prevFaultMaskValid = false;
+  refreshConnectionHeader();
 }
 
 /**
@@ -1483,6 +1521,7 @@ void MainWindow::onReadError()
   m_ui->m_connectButton->setEnabled(true);
   m_ui->m_disconnectButton->setEnabled(true);
   m_ui->m_engine_error->setChecked(false);
+  refreshConnectionHeader();
 
   // Tentative de reconnexion automatique (câble débranché puis rebranché),
   // seulement si la déconnexion n'est pas volontaire
@@ -1581,6 +1620,7 @@ void MainWindow::onReadSuccess()
   m_ui->m_commsBadLed->setChecked(false);
   m_ui->m_connectButton->setEnabled(false);
   m_ui->m_disconnectButton->setEnabled(true);
+  refreshConnectionHeader();
 }
 
 /**
@@ -1642,6 +1682,7 @@ void MainWindow::onFailedToConnect(QString dev)
   setProperty("ecuConnectInProgress", false);
   if (!m_closing)
     m_ui->m_connectButton->setEnabled(true);
+  refreshConnectionHeader();
 
   if (m_closing)
     return;
