@@ -1,4 +1,5 @@
 #include <QApplication>
+#include "completezoom.h"
 #include <QLocale>
 #include <QSettings>
 #include <QMessageBox>
@@ -242,6 +243,8 @@ QSplashScreen *createStartupSplash()
 
 int main(int argc, char *argv[])
 {
+    // Zoom native Qt widgets uniformly BEFORE they are constructed.
+    CompleteZoom::configureBeforeApplication();
     QApplication app(argc, argv);
     QApplication::setApplicationName("ECU Mems Manager");
     QApplication::setApplicationVersion(QStringLiteral(APP_VERSION));
@@ -364,14 +367,15 @@ int main(int argc, char *argv[])
     setStep(g_interfaceStep, StartupStepState::Done, I18n::text(26));
     setStartupProgress(100);
 
+    // ONE virtual page for every monitor. QT_SCALE_FACTOR scales everything:
+    // needles, gauges, text, fields and menu, with no page reflow.
+    window.setFixedSize(CompleteZoom::referenceSize());
     QScreen *screen = QGuiApplication::primaryScreen();
     if (screen)
     {
         const QRect available = screen->availableGeometry();
-        const int width = qMin(1300, qMax(760, available.width() - 40));
-        const int height = qMin(690, qMax(480, available.height() - 80));
-        window.resize(width, height);
-        window.move(available.center() - QPoint(width / 2, height / 2));
+        window.move(available.center() -
+                    QPoint(window.width() / 2, window.height() / 2));
     }
 
     app.processEvents();
@@ -386,7 +390,7 @@ int main(int argc, char *argv[])
     g_interfaceStep = nullptr;
     g_splashProgressCallback = nullptr;
 
-    window.showMaximized();
+    window.show();
     installFinalNavigation(&app, &window);
     const int result = app.exec();
     database.close();

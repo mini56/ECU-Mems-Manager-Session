@@ -27,6 +27,7 @@
 #include <QWidget>
 #include "i18n.h"
 #include "optionsdialog.h"
+#include "navigationorderpatch.h"
 
 namespace {
 
@@ -336,15 +337,16 @@ static void applyResponsive(QMainWindow *window)
     if(QFrame *status=window->findChild<QFrame*>(QStringLiteral("uiRebuildStatus")))
         status->setFixedHeight(qBound(29,qRound(35.0*s),40));
 
+    // Only the outer page wrappers: data views and log widgets keep their
+    // normal internal interaction. A COMPLETE page never scrolls.
     const QList<QScrollArea*> scrolls=window->findChildren<QScrollArea*>();
     for(QScrollArea *scroll:scrolls){
+        QWidget *page=scroll->widget();
+        if(!page || !page->property("wrappedInScrollArea").toBool()) continue;
         scroll->setWidgetResizable(true);
         scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-        if(scroll->widget()){
-            scroll->widget()->setMinimumWidth(0);
-            scroll->widget()->setMaximumWidth(QWIDGETSIZE_MAX);
-        }
+        scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        page->setMinimumSize(0,0);
     }
 }
 
@@ -356,6 +358,8 @@ protected:
     {
         QMainWindow *window=qobject_cast<QMainWindow*>(watched);
         if(!window||window->objectName()!=QStringLiteral("MainWindow"))return QObject::eventFilter(watched,event);
+        if(!window->property("ecuMainWindowConstructed").toBool())
+            return QObject::eventFilter(watched,event);
 
         if(event->type()==QEvent::Resize && window->property("uiRebuildInstalled").toBool()) {
             applyResponsive(window);
@@ -382,8 +386,10 @@ private:
         wh->addWidget(nav);wh->addWidget(tabs,1);root->insertWidget(oldIndex<0?1:oldIndex,workspace,1);
         QObject::connect(nav,&QListWidget::currentRowChanged,tabs,&QTabWidget::setCurrentIndex);
         QObject::connect(tabs,&QTabWidget::currentChanged,nav,[nav](int row){ nav->setCurrentRow(row); });
-        for(int i=0;i<tabs->count();++i){QWidget *page=realPage(tabs->widget(i));if(!page)continue;if(QScrollArea *scroll=qobject_cast<QScrollArea*>(tabs->widget(i))){scroll->setWidgetResizable(true);scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);page->setMinimumSize(0,0);}const QString title=titleForIndex(tabs,i);if(!usesDedicatedLayout(page,i))composeGenericPage(page,title,i);}
+        for(int i=0;i<tabs->count();++i){QWidget *page=realPage(tabs->widget(i));if(!page)continue;if(QScrollArea *scroll=qobject_cast<QScrollArea*>(tabs->widget(i))){scroll->setWidgetResizable(true);scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);page->setMinimumSize(0,0);}const QString title=titleForIndex(tabs,i);if(!usesDedicatedLayout(page,i))composeGenericPage(page,title,i);}
         root->addWidget(buildBottomStatus(window));tabs->setCurrentIndex(0);
+        if(!refreshFinalNavigation(window))
+            qWarning("COMPLETE navigation: full 14-page menu not synchronized");
         applyResponsive(window);
         QTimer::singleShot(120,window,[window](){applyResponsive(window);});
     }

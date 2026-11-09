@@ -177,7 +177,7 @@ static void releaseLegacySizing(QMainWindow *w)
     for(int i=0;i<tabs->count();++i){
         QWidget *tab=tabs->widget(i);
         if(QScrollArea *s=qobject_cast<QScrollArea*>(tab)){
-            s->setWidgetResizable(true); s->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff); s->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+            s->setWidgetResizable(true); s->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff); s->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
             s->setMinimumSize(0,0); s->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
         }
         QWidget *p=pageOf(tab); if(!p) continue;

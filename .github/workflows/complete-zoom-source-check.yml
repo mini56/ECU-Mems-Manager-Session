@@ -1,0 +1,41 @@
+name: COMPLETE - zoom uniforme (source et calcul)
+on:
+  push:
+    branches:
+      - dev-complete-build117-14-pages-20261109
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  zoom-maths-and-scope:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compiler et tester les facteurs de zoom (MSVC)
+        shell: cmd
+        run: |
+          call "%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          cl /nologo /EHsc /std:c++17 /W4 tests\completezoom_math_test.cpp /Fe:completezoom_math_test.exe
+          completezoom_math_test.exe
+      - name: Contrôler zoom unique, pages fixes et menu complet
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $main=Get-Content main.cpp -Raw
+          $win=Get-Content mainwindow.cpp -Raw
+          $menu=Get-Content navigationorderpatch.cpp -Raw
+          $rebuild=Get-Content uirebuild.cpp -Raw
+          if($main -notmatch 'CompleteZoom::configureBeforeApplication\(\)' -or
+             $main -notmatch 'window\.setFixedSize\(CompleteZoom::referenceSize\(\)\)' -or
+             $main -match 'window\.showMaximized\(\)') { throw 'Zoom unique ou canvas fixe absent' }
+          if($win -notmatch 'Qt::ScrollBarAlwaysOff' -or
+             $win -match 'setWidgetResizable\(false\)') { throw 'Ancien scroll de page encore actif' }
+          if($menu -notmatch 'kFinalTabCount = 14' -or
+             $menu -notmatch '"ia_mems"' -or
+             $menu -notmatch '"ecu_rosco"' -or
+             $menu -notmatch '"mems19_test"' -or
+             $menu -match 'temporarilyHiddenMenuRank') { throw 'Menu complet de 14 pages non respecte' }
+          if($rebuild -notmatch 'refreshFinalNavigation\(window\)') { throw 'Synchronisation menu tardif absente' }
+          Write-Host 'COMPLETE_UNIFORM_ZOOM_SOURCE_GUARD_PASS'

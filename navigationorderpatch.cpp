@@ -525,3 +525,10 @@ void installFinalNavigation(QApplication *app, QMainWindow *window)
     if (!applyDeterministicNavigation(mainWindow))
         qWarning() << "MEMSX64 deterministic navigation could not resolve all 14 official tabs";
 }
+
+// Resynchronize once the real sidebar is created, without hiding any menu entry.
+bool refreshFinalNavigation(QMainWindow *window)
+{
+    MainWindow *mainWindow=qobject_cast<MainWindow*>(window);
+    return mainWindow && applyDeterministicNavigation(mainWindow);
+}
