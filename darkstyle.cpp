@@ -137,6 +137,10 @@ static void styleNavigation(QMainWindow *w)
     }
 
     nav->setCurrentRow(tabs->currentIndex());
+    // The native sidebar owns its collapse layout and list width; do not
+    // overwrite them from the global theme after the sidebar is built.
+    if (w->findChild<QFrame*>(QStringLiteral("darkSidebar")))
+        return;
     const int available=qMax(1,w->centralWidget()?w->centralWidget()->width():w->width());
     const int maxWidth=qBound(220,available/4,305);
     nav->setFixedWidth(qBound(178,longest+iconSide+62,maxWidth));

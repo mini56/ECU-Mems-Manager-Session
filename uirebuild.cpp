@@ -12,6 +12,11 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMainWindow>
+#include <QFontMetrics>
+#include <QToolButton>
+#include <QPixmap>
+#include <QIcon>
+#include <QPainter>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QScrollArea>
@@ -37,6 +42,230 @@ static const char *kPanel = "#10161c";
 static const char *kBorder = "#29343e";
 static const char *kText = "#e7ecef";
 static const char *kMuted = "#8d99a3";
+
+static QIcon utilityIcon(const QString &kind)
+{
+    QPixmap pm(24,24);
+    pm.fill(Qt::transparent);
+    QPainter p(&pm);
+    p.setRenderHint(QPainter::Antialiasing,true);
+    p.setPen(QPen(QColor("#ff8a1c"),1.8,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin));
+    p.setBrush(Qt::NoBrush);
+
+    if(kind==QStringLiteral("record")) {
+        p.setBrush(QColor("#ff8a1c"));
+        p.drawEllipse(QPointF(12,12),5.2,5.2);
+    } else if(kind==QStringLiteral("stop")) {
+        p.setBrush(QColor("#ff8a1c"));
+        p.drawRoundedRect(QRectF(7,7,10,10),1.5,1.5);
+    } else if(kind==QStringLiteral("camera")) {
+        p.drawRoundedRect(QRectF(4,7,16,11),2,2);
+        p.drawEllipse(QPointF(12,12.5),3.3,3.3);
+        p.drawLine(8,7,10,4.8); p.drawLine(10,4.8,14,4.8); p.drawLine(14,4.8,16,7);
+    } else if(kind==QStringLiteral("gallery")) {
+        p.drawRoundedRect(QRectF(4,5,16,14),2,2);
+        p.drawEllipse(QPointF(15.7,9),1.5,1.5);
+        QPolygonF q; q << QPointF(6,17) << QPointF(10.2,12.3) << QPointF(13,15) << QPointF(16,12.2) << QPointF(19,17);
+        p.drawPolyline(q);
+    } else if(kind==QStringLiteral("collapse")) {
+        p.drawLine(5,4,5,20);
+        p.drawLine(9,12,19,12);
+        p.drawLine(9,12,14,7);
+        p.drawLine(9,12,14,17);
+    } else if(kind==QStringLiteral("expand")) {
+        p.drawLine(19,4,19,20);
+        p.drawLine(5,12,15,12);
+        p.drawLine(15,12,10,7);
+        p.drawLine(15,12,10,17);
+    }
+    return QIcon(pm);
+}
+
+static QPushButton *buttonByText(QMainWindow *w,const QString &text)
+{
+    if(!w) return nullptr;
+    for(QPushButton *b:w->findChildren<QPushButton*>())
+        if(b && b->text()==text) return b;
+    return nullptr;
+}
+
+static void rememberButtonText(QPushButton *b)
+{
+    if(!b) return;
+    if(!b->property("darkOriginalText").isValid()) b->setProperty("darkOriginalText",b->text());
+}
+
+static void styleSidebarButton(QPushButton *b,const QString &kind)
+{
+    if(!b) return;
+    rememberButtonText(b);
+    b->setIcon(utilityIcon(kind));
+    b->setIconSize(QSize(18,18));
+    b->setMinimumHeight(28);
+    b->setMaximumHeight(30);
+    b->setStyleSheet(QStringLiteral(
+        "QPushButton{background:#111920;color:#e7edf0;border:1px solid #33414b;border-radius:5px;padding:3px 8px;text-align:left;font-weight:700;}"
+        "QPushButton:hover{background:#1b252c;border-color:#ff7a00;color:#fff;}"
+        "QPushButton:pressed{background:#090f14;}"
+        "QPushButton:disabled{background:#11181e;color:#5f6c75;border-color:#27323b;}"));
+}
+
+static void applySidebarState(QMainWindow *w)
+{
+    QFrame *sidebar=w?w->findChild<QFrame*>(QStringLiteral("darkSidebar")):nullptr;
+    QListWidget *nav=w?w->findChild<QListWidget*>(QStringLiteral("uiRebuildNav")):nullptr;
+    if(!sidebar || !nav) return;
+
+    const bool collapsed=sidebar->property("collapsed").toBool();
+    QFrame *utils=sidebar->findChild<QFrame*>(QStringLiteral("darkSidebarUtilities"));
+    QToolButton *toggle=sidebar->findChild<QToolButton*>(QStringLiteral("darkSidebarToggle"));
+
+    if(toggle) {
+        toggle->setIcon(utilityIcon(collapsed?QStringLiteral("expand"):QStringLiteral("collapse")));
+        toggle->setIconSize(QSize(19,19));
+        toggle->setToolButtonStyle(collapsed?Qt::ToolButtonIconOnly:Qt::ToolButtonTextBesideIcon);
+        toggle->setText(collapsed?QString():I18n::text(7101));
+        toggle->setToolTip(collapsed?I18n::text(7103):I18n::text(7102));
+        toggle->setMinimumHeight(30); toggle->setMaximumHeight(32);
+    }
+
+    if(utils) {
+        if(QLabel *title=utils->findChild<QLabel*>(QStringLiteral("darkUtilitiesTitle"))) title->setVisible(!collapsed);
+        if(QLineEdit *file=w->findChild<QLineEdit*>(QStringLiteral("m_logFileNameBox"))) file->setVisible(!collapsed);
+        for(QPushButton *b:utils->findChildren<QPushButton*>(QString(),Qt::FindDirectChildrenOnly)) {
+            rememberButtonText(b);
+            const QString original=b->property("darkOriginalText").toString();
+            b->setText(collapsed?QString():original);
+            if(collapsed) {
+                b->setMinimumWidth(38); b->setMaximumWidth(38);
+                b->setStyleSheet(b->styleSheet()+QStringLiteral("QPushButton{text-align:center;padding:3px;}"));
+            } else {
+                b->setMinimumWidth(0); b->setMaximumWidth(QWIDGETSIZE_MAX);
+            }
+        }
+        utils->setMaximumHeight(collapsed?142:198);
+    }
+
+    QFontMetrics fm(nav->font());
+    int longest=0;
+    const int textRole=Qt::UserRole+42;
+    const int sidebarHeight=sidebar->height()>300?sidebar->height():580;
+    const int reserved=(toggle?toggle->height():31)+(utils?(collapsed?142:198):0)+20;
+    const int navSpace=qMax(220,sidebarHeight-reserved);
+    const int rowHeight=qBound(collapsed?30:25,navSpace/qMax(1,nav->count()),collapsed?40:35);
+
+    for(int i=0;i<nav->count();++i) {
+        QListWidgetItem *item=nav->item(i);
+        if(!item) continue;
+        if(!item->data(textRole).isValid()) item->setData(textRole,item->text());
+        const QString original=item->data(textRole).toString();
+        longest=qMax(longest,fm.horizontalAdvance(original));
+        item->setText(collapsed?QString():original);
+        item->setTextAlignment(collapsed?Qt::AlignCenter:(Qt::AlignLeft|Qt::AlignVCenter));
+        item->setSizeHint(QSize(0,rowHeight));
+    }
+
+    const int expanded=qBound(198,longest+78,252);
+    const int width=collapsed?58:expanded;
+    sidebar->setMinimumWidth(width); sidebar->setMaximumWidth(width);
+    nav->setMinimumWidth(width); nav->setMaximumWidth(width);
+    nav->setIconSize(QSize(22,22));
+    nav->setSpacing(0);
+    nav->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    nav->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    nav->setStyleSheet(QStringLiteral(
+        "#uiRebuildNav{background:#080e13;color:#cbd4da;border:0;padding:2px 0;}"
+        "#uiRebuildNav::item{padding:3px %1px;border-left:3px solid transparent;border-bottom:1px solid #121a20;}"
+        "#uiRebuildNav::item:hover{background:#151f26;color:#fff;}"
+        "#uiRebuildNav::item:selected{background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #332417,stop:1 #161d21);color:#ffad5c;border-left:3px solid #ff7a00;font-weight:700;}"
+    ).arg(collapsed?12:11));
+}
+
+static void ensureSidebar(QMainWindow *w)
+{
+    if(!w) return;
+    QWidget *workspace=w->findChild<QWidget*>(QStringLiteral("uiRebuildWorkspace"));
+    QListWidget *nav=w->findChild<QListWidget*>(QStringLiteral("uiRebuildNav"));
+    QHBoxLayout *workspaceLayout=workspace?qobject_cast<QHBoxLayout*>(workspace->layout()):nullptr;
+    if(!workspace || !nav || !workspaceLayout) return;
+
+    QFrame *sidebar=w->findChild<QFrame*>(QStringLiteral("darkSidebar"));
+    QVBoxLayout *sideLayout=nullptr;
+    if(!sidebar) {
+        sidebar=new QFrame(workspace);
+        sidebar->setObjectName(QStringLiteral("darkSidebar"));
+        sidebar->setProperty("collapsed",false);
+        sidebar->setAttribute(Qt::WA_StyledBackground,true);
+        sidebar->setStyleSheet(QStringLiteral("#darkSidebar{background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #070c11,stop:1 #0c141a);border:0;border-right:1px solid #2a3540;}"));
+        sideLayout=new QVBoxLayout(sidebar);
+        sideLayout->setContentsMargins(0,4,0,5);
+        sideLayout->setSpacing(3);
+
+        QToolButton *toggle=new QToolButton(sidebar);
+        toggle->setObjectName(QStringLiteral("darkSidebarToggle"));
+        toggle->setAutoRaise(false);
+        toggle->setStyleSheet(QStringLiteral(
+            "QToolButton{background:#101820;color:#e7edf0;border:0;border-left:3px solid transparent;padding:4px 11px;text-align:left;font-weight:700;}"
+            "QToolButton:hover{background:#182229;color:#ffad5c;border-left:3px solid #ff7a00;}"));
+        sideLayout->addWidget(toggle);
+
+        workspaceLayout->removeWidget(nav);
+        nav->setParent(sidebar);
+        sideLayout->addWidget(nav,1);
+
+        QFrame *utils=new QFrame(sidebar);
+        utils->setObjectName(QStringLiteral("darkSidebarUtilities"));
+        utils->setAttribute(Qt::WA_StyledBackground,true);
+        utils->setStyleSheet(QStringLiteral("#darkSidebarUtilities{background:#0b1217;border-top:1px solid #27333c;}"));
+        QVBoxLayout *uv=new QVBoxLayout(utils);
+        uv->setContentsMargins(8,4,8,4);
+        uv->setSpacing(4);
+        QLabel *ut=new QLabel(I18n::text(7100),utils);
+        ut->setObjectName(QStringLiteral("darkUtilitiesTitle"));
+        QFont uf=ut->font(); uf.setBold(true); uf.setPointSizeF(qMax<qreal>(7.0,uf.pointSizeF()-1.0)); ut->setFont(uf);
+        ut->setStyleSheet(QStringLiteral("color:#ff9828;background:transparent;border:0;padding:0 2px 1px 2px;"));
+        uv->addWidget(ut);
+        sideLayout->addWidget(utils,0);
+
+        QObject::connect(toggle,&QToolButton::clicked,sidebar,[w,sidebar](){
+            sidebar->setProperty("collapsed",!sidebar->property("collapsed").toBool());
+            applySidebarState(w);
+        });
+
+        workspaceLayout->insertWidget(0,sidebar,0);
+    } else {
+        sideLayout=qobject_cast<QVBoxLayout*>(sidebar->layout());
+    }
+
+    QFrame *utils=sidebar->findChild<QFrame*>(QStringLiteral("darkSidebarUtilities"));
+    QVBoxLayout *uv=utils?qobject_cast<QVBoxLayout*>(utils->layout()):nullptr;
+    if(!utils || !uv) return;
+
+    QLineEdit *file=w->findChild<QLineEdit*>(QStringLiteral("m_logFileNameBox"));
+    QPushButton *start=w->findChild<QPushButton*>(QStringLiteral("m_startLoggingButton"));
+    QPushButton *stop=w->findChild<QPushButton*>(QStringLiteral("m_stopLoggingButton"));
+    QPushButton *snapshot=w->findChild<QPushButton*>(QStringLiteral("darkSnapshotButton"));
+    QPushButton *view=w->findChild<QPushButton*>(QStringLiteral("darkViewCapturesButton"));
+    if(!snapshot) snapshot=buttonByText(w,I18n::text(7015));
+    if(!view) view=buttonByText(w,I18n::text(7016));
+    if(snapshot) snapshot->setObjectName(QStringLiteral("darkSnapshotButton"));
+    if(view) view->setObjectName(QStringLiteral("darkViewCapturesButton"));
+
+    if(file) {
+        file->setParent(utils);
+        file->setMinimumHeight(27); file->setMaximumHeight(29);
+        file->setMinimumWidth(0); file->setMaximumWidth(QWIDGETSIZE_MAX);
+        file->setStyleSheet(QStringLiteral("QLineEdit{background:#071016;color:#e2e9ed;border:1px solid #34434e;border-radius:5px;padding:3px 7px;}QLineEdit:focus{border-color:#ff7a00;}"));
+        if(uv->indexOf(file)<0) uv->addWidget(file);
+    }
+    if(start) { start->setParent(utils); styleSidebarButton(start,QStringLiteral("record")); if(uv->indexOf(start)<0) uv->addWidget(start); }
+    if(stop) { stop->setParent(utils); styleSidebarButton(stop,QStringLiteral("stop")); if(uv->indexOf(stop)<0) uv->addWidget(stop); }
+    if(snapshot) { snapshot->setParent(utils); styleSidebarButton(snapshot,QStringLiteral("camera")); if(uv->indexOf(snapshot)<0) uv->addWidget(snapshot); }
+    if(view) { view->setParent(utils); styleSidebarButton(view,QStringLiteral("gallery")); if(uv->indexOf(view)<0) uv->addWidget(view); }
+
+    if(QLabel *fileLabel=w->findChild<QLabel*>(QStringLiteral("m_logFileNameLabel"))) fileLabel->hide();
+    applySidebarState(w);
+}
 
 static QWidget *realPage(QWidget *tab)
 {
@@ -346,6 +575,8 @@ static void applyResponsive(QMainWindow *window)
             scroll->widget()->setMaximumWidth(QWIDGETSIZE_MAX);
         }
     }
+    if(window->findChild<QFrame*>(QStringLiteral("darkSidebar")))
+        applySidebarState(window);
 }
 
 class UiRebuildInstaller : public QObject
@@ -415,6 +646,9 @@ private:
         for(int i=0;i<tabs->count();++i){QWidget *page=realPage(tabs->widget(i));if(!page)continue;if(QScrollArea *scroll=qobject_cast<QScrollArea*>(tabs->widget(i))){scroll->setWidgetResizable(true);scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);page->setMinimumSize(0,0);}const QString title=titleForIndex(tabs,i);if(!usesDedicatedLayout(page,i))composeGenericPage(page,title,i);}
         root->addWidget(buildBottomStatus(window));tabs->setCurrentIndex(0);
         applyResponsive(window);
+        // The sidebar and its utility actions belong to the native window
+        // shell instead of a delayed global patch.
+        ensureSidebar(window);
         QTimer::singleShot(120,window,[window](){applyResponsive(window);});
         // Once the original settings and page installers finish, improve
         // text only: no position, size, card, dial or table changes.
