@@ -32,7 +32,7 @@
   "7030": "nessun guasto",
   "7031": "GUASTI",
   "7032": "nessun guasto",
-  "7033": "7D14-15 grezzo = %1 ; correzione minimo a caldo = %2 ; valore corretto = %3. Formula: (grezzo - 32768) + correzione.",
+  "7033": "7D14-15 grezzo = %1 ; correzione minimo a caldo = %2 ; valore corretto = %3. Formula: (grezzo - 32768) - correzione.",
   "7034": "GUASTI",
   "7035": "nessun guasto",
   "7036": "Spento",

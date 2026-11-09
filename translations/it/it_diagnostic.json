@@ -96,5 +96,5 @@
   "6894": "Rapporto di testo (*.txt)",
   "6895": "Diagnostica",
   "6896": "Impossibile scrivere il rapporto.",
-  "6897": "Decodifica: (7D14-15 grezzo - 32768) + correzione della posizione minimo a caldo. La correzione segue il valore configurato nella scheda Impostazioni; non è codificata in modo fisso. Il valore indicativo è coerente quando rimane vicino a zero."
+  "6897": "Decodifica: (7D14-15 grezzo - 32768) - correzione della posizione minimo a caldo. La correzione segue il valore configurato nella scheda Impostazioni; non è codificata in modo fisso. Il valore indicativo è coerente quando rimane vicino a zero."
 }
