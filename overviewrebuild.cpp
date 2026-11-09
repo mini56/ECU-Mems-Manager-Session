@@ -40,7 +40,7 @@ public:
     RebuildGaugeCard(QObject *source,const QString &title,const QString &unit,QWidget *parent=nullptr)
         : QWidget(parent),m_source(source),m_title(title),m_unit(unit)
     {
-        setMinimumSize(118,150);
+        setMinimumSize(64,88);
         setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
         setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
         setAttribute(Qt::WA_TransparentForMouseEvents,true);
@@ -326,7 +326,7 @@ class SystemStateCard : public QWidget
 public:
     explicit SystemStateCard(QObject *source,QWidget *parent=nullptr):QWidget(parent),m_source(source)
     {
-        setMinimumSize(118,150);
+        setMinimumSize(64,88);
         setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
         setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     }

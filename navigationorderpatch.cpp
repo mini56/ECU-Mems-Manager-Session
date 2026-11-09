@@ -440,6 +440,17 @@ static bool applyDeterministicNavigation(MainWindow *window)
 
     ensureDynamicPages(window,tabs);
 
+    // The official navigation owns its page list. Remove the obsolete
+    // invented recorder page here instead of through a later UI patch.
+    for(int i=tabs->count()-1; i>=0; --i) {
+        QWidget *page=realPage(tabs->widget(i));
+        if(page && page->objectName()==QStringLiteral("recorder_tab")) {
+            QWidget *victim=tabs->widget(i);
+            tabs->removeTab(i);
+            if(victim) victim->deleteLater();
+        }
+    }
+
     QWidget *official[kFinalTabCount];
     if (!collectOfficialTabs(tabs, official))
         return false;
