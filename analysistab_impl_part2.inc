@@ -1,35 +1,3 @@
-    const int n=qMin(m_time.size(),m_values.size());
-    for(int i=0;i<n;++i){
-        const double xf=(m_time[i]-tMin)/tSpan;
-        const double yf=(m_values[i]-vMin)/vSpan;
-        poly << QPointF(plot.left()+xf*plot.width(),plot.bottom()-yf*plot.height());
-    }
-    p.setPen(QPen(m_color,1.8)); p.drawPolyline(poly);
-
-    p.setPen(QColor("#8a93a6"));
-    for(int i=0;i<=5;++i){
-        const double t=tMin+tSpan*i/5.0;
-        const int x=plot.left()+plot.width()*i/5;
-        p.drawText(QRect(x-34,plot.bottom()+3,68,17),Qt::AlignCenter,
-                   QString("%1 s").arg(t-tMax,0,'f',0));
-    }
-
-    if(m_hasCursor && m_cursorX>=plot.left() && m_cursorX<=plot.right()){
-        p.setPen(QPen(QColor("#d6dce1"),1,Qt::DashLine));
-        p.drawLine(m_cursorX,plot.top(),m_cursorX,plot.bottom());
-        const double tAt=tMin+double(m_cursorX-plot.left())/qMax(1,plot.width())*tSpan;
-        int idx=0; double best=1e99;
-        for(int i=0;i<m_time.size();++i){ double d=qAbs(m_time[i]-tAt); if(d<best){best=d;idx=i;} }
-        if(idx<m_values.size()){
-            const QString label=QString::number(m_values[idx],'f',2);
-            QFontMetrics fm(axis); const int tw=fm.horizontalAdvance(label)+10;
-            int bx=m_cursorX+6; if(bx+tw>plot.right()) bx=m_cursorX-6-tw;
-            p.setPen(Qt::NoPen); p.setBrush(QColor(14,20,32,225)); p.drawRect(bx,plot.top()+4,tw,17);
-            p.setPen(m_color); p.drawText(QRect(bx+5,plot.top()+4,tw-5,17),Qt::AlignVCenter,label);
-        }
-    }
-}
-
 ChartWidget::ChartWidget(QWidget *parent)
     : QWidget(parent), m_hasCursor(false), m_cursorX(0)
 {
