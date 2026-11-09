@@ -3,7 +3,6 @@
 #include <QApplication>
 #include <QDebug>
 #include <QEvent>
-#include <QGridLayout>
 #include <QGroupBox>
 #include <QIcon>
 #include <QLabel>
@@ -300,73 +299,6 @@ static void fitNavigationRows(QListWidget *nav)
     nav->scrollToTop();
 }
 
-static void fitRawSpacing(QMainWindow *window)
-{
-    if (!window)
-        return;
-    QTabWidget *tabs = window->findChild<QTabWidget*>(QStringLiteral("Tab_main"));
-    if (!tabs)
-        return;
-
-    QWidget *page = realPage(findTabByRank(tabs, 10));
-    if (!page)
-        return;
-    QWidget *left = page->findChild<QWidget*>(QStringLiteral("raw_1"));
-    QWidget *right = page->findChild<QWidget*>(QStringLiteral("raw_2"));
-    if (!left || !right)
-        return;
-
-    QGridLayout *leftGrid = qobject_cast<QGridLayout*>(left->layout());
-    QGridLayout *rightGrid = qobject_cast<QGridLayout*>(right->layout());
-    const int rows = qMax(leftGrid ? leftGrid->rowCount() : 1,
-                          rightGrid ? rightGrid->rowCount() : 1);
-    if (rows <= 0)
-        return;
-
-    const int pageHeight = qMax(page->height(), tabs->height());
-    const bool wrapped = left->parentWidget() && left->parentWidget() != page;
-    const int reserve = wrapped ? 48 : 20;
-    const int usableHeight = qMax(320, pageHeight - reserve);
-    const int rowHeight = qBound(13, usableHeight / rows, 18);
-    const int blockHeight = rowHeight * rows;
-
-    const auto fitBlock = [page,rowHeight,blockHeight](QWidget *block,QGridLayout *grid) {
-        if (!block || !grid)
-            return;
-        grid->setContentsMargins(0,0,0,0);
-        grid->setHorizontalSpacing(8);
-        grid->setVerticalSpacing(0);
-        grid->setSizeConstraint(QLayout::SetDefaultConstraint);
-        for (int r = 0; r < grid->rowCount(); ++r)
-            grid->setRowMinimumHeight(r,rowHeight);
-        block->setMinimumHeight(blockHeight);
-        block->setMaximumHeight(blockHeight);
-        block->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
-        QWidget *container = block->parentWidget();
-        if (container && container != page)
-        {
-            container->setMinimumHeight(blockHeight + 42);
-            container->setMaximumHeight(QWIDGETSIZE_MAX);
-            container->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
-        }
-        else if (container == page)
-        {
-            const int y = qMax(6,block->y());
-            block->setGeometry(block->x(),y,block->width(),blockHeight);
-        }
-        for (QLabel *label : block->findChildren<QLabel*>())
-        {
-            label->setWordWrap(false);
-            label->setMinimumHeight(rowHeight);
-            label->setMaximumHeight(rowHeight);
-            label->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
-        }
-    };
-
-    fitBlock(left,leftGrid);
-    fitBlock(right,rightGrid);
-}
-
 static void installMappedConnections(QMainWindow *window, QTabWidget *tabs, QListWidget *nav)
 {
     if (!window || !tabs || !nav || nav->property("deterministicNavigationMapped").toBool())
@@ -488,7 +420,6 @@ static bool applyDeterministicNavigation(MainWindow *window)
 
     installMappedConnections(window,tabs,nav);
     fitNavigationRows(nav);
-    fitRawSpacing(window);
     window->setProperty("deterministicNavigationApplied", true);
     window->setProperty("deterministicNavigationCount", kFinalTabCount);
     return true;
@@ -509,7 +440,6 @@ protected:
                 applyDeterministicNavigation(m_window);
             else if (event->type() == QEvent::Resize &&
                      m_window->property("deterministicNavigationApplied").toBool()) {
-                fitRawSpacing(m_window);
                 if (QListWidget *nav = m_window->findChild<QListWidget*>(QStringLiteral("uiRebuildNav")))
                     fitNavigationRows(nav);
             }
