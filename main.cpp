@@ -4,6 +4,7 @@
 #include <QMessageBox>
 #include <QSplashScreen>
 #include <QProgressBar>
+#include <QPalette>
 #include <QLabel>
 #include <QPainter>
 #include <QFont>
@@ -211,6 +212,9 @@ QSplashScreen *createStartupSplash()
         QFont font = label->font();
         font.setPointSize(10);
         label->setFont(font);
+        // Native splash styling belongs here, not in a deferred global
+        // event filter that changes an already-visible splash window.
+        label->setStyleSheet(QStringLiteral("color:#ffffff;background:transparent;"));
         return label;
     };
 
@@ -225,6 +229,10 @@ QSplashScreen *createStartupSplash()
     progress->setRange(0, 100);
     progress->setValue(0);
     progress->setTextVisible(true);
+    QPalette progressPalette=progress->palette();
+    progressPalette.setColor(QPalette::Text,Qt::white);
+    progressPalette.setColor(QPalette::HighlightedText,Qt::white);
+    progress->setPalette(progressPalette);
     progress->setStyleSheet(QStringLiteral(
         "QProgressBar {"
         "  border: 1px solid #3A4652;"
@@ -237,6 +245,21 @@ QSplashScreen *createStartupSplash()
         "  background: #ff9828;"
         "  border-radius: 4px;"
         "}"));
+
+    // Show the original build identity in its original position and style
+    // without installing a permanent application-wide splash patch.
+    QLabel *buildIdentity=new QLabel(splash);
+    buildIdentity->setObjectName(QStringLiteral("buildIdentityLabel"));
+    buildIdentity->setGeometry(300,88,310,22);
+    buildIdentity->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    QFont buildFont=buildIdentity->font();
+    buildFont.setPointSize(9);
+    buildIdentity->setFont(buildFont);
+    buildIdentity->setText(I18n::text(44)
+        .arg(QStringLiteral(APP_BUILD_NUMBER))
+        .arg(QStringLiteral(APP_COMMIT_SHA)));
+    buildIdentity->setStyleSheet(QStringLiteral("color:#AAB4BF;background:transparent;"));
+    buildIdentity->show();
 
     g_startupProgress = progress;
     g_startupSplash = splash;
