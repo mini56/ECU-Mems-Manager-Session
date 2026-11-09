@@ -27,6 +27,7 @@
 #include <QSizePolicy>
 #include <QTabWidget>
 #include <QTableView>
+#include <QTableWidget>
 #include <QTextEdit>
 #include <QTimer>
 #include <QVBoxLayout>
