@@ -26,6 +26,9 @@ public:
     explicit SummaryTab(QWidget *parent = 0);
     void updateData(mems_data *data);
 
+protected:
+    void resizeEvent(QResizeEvent *event) override;
+
 private:
     int addRow(const QString &label);
     void setValue(int row, const QString &rawText, const QString &interpretedText);

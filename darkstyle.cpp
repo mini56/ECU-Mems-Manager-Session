@@ -145,7 +145,8 @@ static void styleNavigation(QMainWindow *w)
         "#uiRebuildNav{background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #070c11,stop:1 #0c141a);color:#cbd4da;border:0;border-right:1px solid #2a3540;padding:8px 0;}"
         "#uiRebuildNav::item{padding:6px 12px;border-left:3px solid transparent;border-bottom:1px solid #121a20;}"
         "#uiRebuildNav::item:hover{background:#151f26;color:#fff;}"
-        "#uiRebuildNav::item:selected{background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #322417,stop:1 #171d20);color:#ffad5c;border-left:3px solid #ff7a00;font-weight:700;}"));
+        "#uiRebuildNav::item:selected{background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #322417,stop:1 #171d20);color:#ffad5c;border-left:3px solid #ff7a00;font-weight:700;}"
+        "QToolTip{color:#ffffff;}"));
 }
 
 static QGridLayout *gridContaining(QWidget *root,const QList<QWidget*> &widgets)
@@ -224,6 +225,11 @@ static void styleTables(QMainWindow *w)
         "QTableView::item:selected,QTableWidget::item:selected{background:#352518;color:#fff;}"
         "QHeaderView::section{background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #1b252c,stop:1 #11191f);color:#f0f3f5;border:0;border-right:1px solid #2b3741;border-bottom:2px solid #8a4a18;padding:6px 8px;font-weight:700;}");
     for(QTableView *t:w->findChildren<QTableView*>()){
+        // SummaryTab is the native owner of the three raw-data tables.
+        bool isSummary=false;
+        for (QWidget *parent=t->parentWidget(); parent; parent=parent->parentWidget())
+          if (parent->inherits("SummaryTab")) { isSummary=true; break; }
+        if (isSummary) continue;
         t->setStyleSheet(qss);t->setAlternatingRowColors(true);t->setShowGrid(false);t->setMinimumSize(0,0);t->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
         if(t->verticalHeader()) t->verticalHeader()->setVisible(false);
         if(t->horizontalHeader()){t->horizontalHeader()->setStretchLastSection(true);t->horizontalHeader()->setMinimumHeight(qMax(28,t->fontMetrics().height()+13));}

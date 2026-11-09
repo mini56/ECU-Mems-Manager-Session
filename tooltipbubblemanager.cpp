@@ -40,6 +40,14 @@ void TooltipBubbleManager::ensureBubble(QWidget *widget)
         return;
 
     QLabel *bubble = widget->findChild<QLabel*>(kBubbleObjectName, Qt::FindDirectChildrenOnly);
+    // The sidebar collapse control is explicitly labelled; it must never
+    // get the generic speech bubble. Own this rule in the tooltip source.
+    if (widget->objectName() == QStringLiteral("darkSidebarToggle"))
+    {
+        if (!widget->toolTip().isEmpty()) widget->setToolTip(QString());
+        if (bubble) bubble->hide();
+        return;
+    }
     const bool bubbleLeft = widget->property("helpBubbleLeft").toBool();
 
     // Labels explicitly marked helpBubbleLeft always reserve the HELP column,

@@ -1,9 +1,27 @@
 #include "summarytab.h"
 #include <QHeaderView>
 #include <QIcon>
+#include <QResizeEvent>
+#include <QTimer>
+#include <QSize>
 #include "i18n.h"
 #define tr I18n::text
 
+// Native table sizing: summary data owns its column widths rather than a
+// global delayed event filter overriding the viewport after startup.
+static void sizeSummaryTable(QTableWidget *table)
+{
+  if (!table || table->columnCount() < 4) return;
+  QHeaderView *header = table->horizontalHeader();
+  header->setStretchLastSection(false);
+  for (int c=0; c<4; ++c)
+    header->setSectionResizeMode(c, QHeaderView::Fixed);
+  const int width = qMax(0,table->viewport()->width()-2);
+  header->resizeSection(0,qMax(80,width-28-54-82));
+  header->resizeSection(1,28);
+  header->resizeSection(2,54);
+  header->resizeSection(3,82);
+}
 
 SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)
 {
@@ -20,17 +38,34 @@ SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)
   {
     tables[i]->setHorizontalHeaderLabels(QStringList()
         << I18n::text(6600) /* EN: Parameter */ << "" << I18n::text(6601) /* EN: ECU received */ << I18n::text(6602) /* EN: Interpreted */);
-    tables[i]->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+    tables[i]->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
     tables[i]->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
-    tables[i]->setColumnWidth(1, 24);
+    tables[i]->setColumnWidth(1, 28);
     tables[i]->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Fixed);
-    tables[i]->setColumnWidth(2, 105);
+    tables[i]->setColumnWidth(2, 54);
     tables[i]->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Fixed);
-    tables[i]->setColumnWidth(3, 105);
+    tables[i]->setColumnWidth(3, 82);
     tables[i]->verticalHeader()->setVisible(false);
     tables[i]->setEditTriggers(QTableWidget::NoEditTriggers);
     tables[i]->setSelectionMode(QTableWidget::NoSelection);
     tables[i]->setAlternatingRowColors(true);
+    tables[i]->setShowGrid(false);
+    tables[i]->setIconSize(QSize(24,18));
+    if (QTableWidgetItem *head=tables[i]->horizontalHeaderItem(2)) {
+      QString value=head->text();
+      if (!value.contains(QLatin1Char('\n'))) {
+        const int space=value.indexOf(QLatin1Char(' '));
+        if (space>0) value[space]=QLatin1Char('\n');
+      }
+      head->setText(value);
+      head->setTextAlignment(Qt::AlignCenter);
+    }
+    if (QTableWidgetItem *head=tables[i]->horizontalHeaderItem(3))
+      head->setTextAlignment(Qt::AlignCenter);
+    tables[i]->horizontalHeader()->setStyleSheet(QStringLiteral(
+      "QHeaderView::section{background:#141c23;color:#ff9828;border:0;"
+      "border-right:1px solid #29343e;border-bottom:2px solid #ff7a00;"
+      "padding:4px 5px;font-weight:700;}"));
     layout->addWidget(tables[i]);
   }
 
@@ -136,6 +171,22 @@ SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)
     I18n::text(6706) /* EN: Short-term fuel trim is active only in closed loop. Values up to 10% are normal and occasionally up to 15%. Values above 15% are abnormal. */);
   setTooltip(m_rowIgnitionAdvance2,
     I18n::text(6707) /* EN: MEMS ECU function intended to compensate for certain conditions over the vehicle's life (low-octane fuel, engine wear) by slightly advancing ignition at idle. */);
+
+  for (QTableWidget *table : {m_table0,m_table1,m_table2})
+    sizeSummaryTable(table);
+  QTimer::singleShot(0,this,[this]() {
+    for (QTableWidget *table : {m_table0,m_table1,m_table2})
+      sizeSummaryTable(table);
+  });
+}
+
+void SummaryTab::resizeEvent(QResizeEvent *event)
+{
+  QWidget::resizeEvent(event);
+  QTimer::singleShot(0,this,[this]() {
+    for (QTableWidget *table : {m_table0,m_table1,m_table2})
+      sizeSummaryTable(table);
+  });
 }
 
 int SummaryTab::addRow(const QString &name)
@@ -151,6 +202,9 @@ int SummaryTab::addRow(const QString &name)
   table->setItem(localRow, 1, new QTableWidgetItem(""));
   table->setItem(localRow, 2, new QTableWidgetItem("--"));
   table->setItem(localRow, 3, new QTableWidgetItem("--"));
+  for (int col=1; col<4; ++col)
+    if (QTableWidgetItem *item=table->item(localRow,col))
+      item->setTextAlignment(Qt::AlignCenter);
   return globalRow;
 }
 
