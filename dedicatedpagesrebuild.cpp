@@ -3,6 +3,9 @@
 #include <QEvent>
 #include <QFont>
 #include <QFrame>
+#include <QtMath>
+#include <QTableView>
+#include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -328,30 +331,107 @@ static void rebuildDiagnostic(QTabWidget *tabs)
     root->addLayout(body,1);
 }
 
+static void fitRawDataPage(QWidget *page)
+{
+    if (!page) return;
+    QWidget *left=page->findChild<QWidget*>(QStringLiteral("raw_1"));
+    QWidget *right=page->findChild<QWidget*>(QStringLiteral("raw_2"));
+    if (!left || !right) return;
+
+    page->setMinimumSize(0,0);
+    page->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
+
+    QWidget *viewport=page->parentWidget();
+    int visibleHeight=(viewport && viewport->height()>0)?viewport->height():page->height();
+    visibleHeight=qMax(360,visibleHeight);
+
+    auto gridFor=[](QWidget *block)->QGridLayout* {
+        return block?qobject_cast<QGridLayout*>(block->layout()):nullptr;
+    };
+    QGridLayout *leftGrid=gridFor(left);
+    QGridLayout *rightGrid=gridFor(right);
+    const int rows=qMax(leftGrid?leftGrid->rowCount():1,rightGrid?rightGrid->rowCount():1);
+
+    for (QWidget *block:{left,right}) {
+        block->setMinimumSize(0,0);
+        block->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
+        block->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+        QWidget *parent=block->parentWidget();
+        QLayout *parentLayout=parent?parent->layout():nullptr;
+        if (!parentLayout || parentLayout->indexOf(block)<0) {
+            const int top=qMax(0,block->y());
+            block->resize(block->width(),qMax(300,visibleHeight-top-6));
+        }
+    }
+
+    const int usableHeight=qMax(300,visibleHeight-14);
+    const int rowHeight=qMax(10,qMin(21,usableHeight/qMax(1,rows)));
+    const qreal fontSize=rowHeight<=10?6.7:(rowHeight<=11?6.9:(rowHeight<=12?7.1:(rowHeight<=13?7.4:(rowHeight<=14?7.6:(rowHeight<=15?7.8:(rowHeight<=16?8.0:8.2))))));
+
+    auto fitBlock=[&](QWidget *block,QGridLayout *grid) {
+        if (!block) return;
+        if (grid) {
+            grid->setContentsMargins(0,0,0,0);
+            grid->setHorizontalSpacing(8);
+            grid->setVerticalSpacing(0);
+            grid->setSizeConstraint(QLayout::SetDefaultConstraint);
+            for (int r=0;r<grid->rowCount();++r) grid->setRowMinimumHeight(r,rowHeight);
+        }
+        for (QLabel *label:block->findChildren<QLabel*>()) {
+            const QString name=label->objectName();
+            const bool header=name.startsWith(QStringLiteral("header_")) || name.startsWith(QStringLiteral("Aheader_"));
+            QFont f=label->font();
+            f.setPointSizeF(fontSize);
+            f.setBold(header);
+            label->setFont(f);
+            label->setWordWrap(false);
+            label->setMinimumHeight(rowHeight);
+            label->setMaximumHeight(rowHeight);
+            label->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
+            label->setStyleSheet(header
+                ? QStringLiteral("color:#ff9828;background:transparent;border:0;font-weight:700;")
+                : QStringLiteral("color:#ffffff;background:transparent;border:0;"));
+        }
+    };
+
+    fitBlock(left,leftGrid);
+    fitBlock(right,rightGrid);
+}
+
 static void fitBuiltPages(QMainWindow *w)
 {
     QTabWidget *tabs=w?w->findChild<QTabWidget*>(QStringLiteral("Tab_main")):nullptr;
     if (!tabs) return;
-    const int h=qMax(420,tabs->height());
-    const int margin=h<620?5:8;
-    const int spacing=h<620?5:7;
-    const int rowHeight=h<620?22:26;
-    for (int i=0;i<tabs->count();++i) {
+    const qreal s=w->property("globalUiScale").isValid()
+        ? qBound<qreal>(0.64,w->property("globalUiScale").toDouble(),1.30)
+        : 1.0;
+    const int margin=qBound(3,qRound(7*s),10),gap=qBound(3,qRound(6*s),8);
+    const int row=qBound(19,qRound(24*s),28);
+    for(int i=0;i<tabs->count();++i) {
         QWidget *page=realPage(tabs->widget(i));
-        if (!page) continue;
-        const bool built=page->property("strictSummaryBuilt").toBool() || page->property("strictRawBuilt").toBool() ||
-            page->property("strictInteractiveBuilt").toBool() || page->property("strictRoscoBuilt").toBool() ||
+        if(!page) continue;
+        fitRawDataPage(page);
+        const bool built=page->property("strictSummaryBuilt").toBool() ||
+            page->property("strictRawBuilt").toBool() ||
+            page->property("strictInteractiveBuilt").toBool() ||
+            page->property("strictRoscoBuilt").toBool() ||
             page->property("strictDiagnosticBuilt").toBool();
-        if (!built) continue;
-        if (QLayout *l=page->layout()) {
-            l->setContentsMargins(margin,margin,margin,margin);
-            l->setSpacing(spacing);
-            l->setSizeConstraint(QLayout::SetDefaultConstraint);
-        }
+        if(!built) continue;
         page->setMinimumSize(0,0);
         page->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
-        for (QTableWidget *t:page->findChildren<QTableWidget*>())
-            if (t->verticalHeader()) t->verticalHeader()->setDefaultSectionSize(rowHeight);
+        if(QLayout *l=page->layout()) {
+            l->setContentsMargins(margin,margin,margin,margin);
+            l->setSpacing(gap);
+        }
+        for(QFrame *card:page->findChildren<QFrame*>())
+            if(card->objectName().startsWith(QStringLiteral("strictHero_")))
+                card->setMaximumHeight(qBound(36,qRound(44*s),48));
+        for(QTableView *table:page->findChildren<QTableView*>()) {
+            table->setMinimumSize(0,0);
+            table->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
+            if(table->verticalHeader()) table->verticalHeader()->setDefaultSectionSize(row);
+            if(table->horizontalHeader()) table->horizontalHeader()->setStretchLastSection(true);
+        }
     }
 }
 
