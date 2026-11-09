@@ -61,6 +61,30 @@ jobs:
              $main -notmatch 'progressPalette.setColor\(QPalette::HighlightedText,Qt::white\)'){throw 'SPLASH_SOURCE_NOT_CONSOLIDATED'}
           if($cmake -notmatch 'APP_NAME="ECU MEMS Manager SESSION"'){throw 'OFFICIAL_NAME_CHANGED'}
           if($nav -notmatch 'kFinalTabCount = 14'){throw 'FULL_MENU_CHANGED'}
+          foreach($obsolete in @(
+            'systemstateconnectionfix.cpp',
+            'singleinstanceforce.cpp',
+            'database/MemsDatabaseDiagramSearchPatch.cpp',
+            'database/MemsSearchCompletenessPatch.cpp'
+          )){
+            if(Test-Path $obsolete){throw "OLD_LAYERED_MODULE_REINTRODUCED: $obsolete"}
+            if($cmake.Contains($obsolete)){throw "OLD_LAYERED_MODULE_STILL_COMPILED: $obsolete"}
+          }
+          $window=Get-Content mainwindow.cpp -Raw
+          $overview=Get-Content overviewrebuild.cpp -Raw
+          $errors=Get-Content majorpagesrebuild.cpp -Raw
+          $explorer=Get-Content database/MemsDatabaseExplorerV2.cpp -Raw
+          $xml=Get-Content database/MemsReferenceSheetRenderer.h -Raw
+          $instance=Get-Content mainwindowtitlebarfix.cpp -Raw
+          if($window -notmatch 'void MainWindow::refreshConnectionHeader\(' -or
+             $window -notmatch 'bool MainWindow::isEcuDisconnected\(' -or
+             $overview -notmatch 'isEcuDisconnected\(\)' -or
+             $errors -notmatch 'isEcuDisconnected\(\)'){throw 'NATIVE_ECU_CONNECTION_STATUS_MISSING'}
+          if($instance -notmatch 'CreateMutexW' -or
+             $instance -notmatch 'processReplacementRequest'){throw 'SINGLE_INSTANCE_PROTECTION_MISSING'}
+          if($explorer -notmatch 'MemsReferenceSheetRenderer::renderFile' -or
+             $explorer -notmatch 'diagramHtml\(generation\)' -or
+             $xml -notmatch 'textColorSwatches\(content.text\)'){throw 'NATIVE_MEMS_DOCUMENTATION_MISSING'}
           Write-Host 'SESSION_CLEAN_SOURCE_PREFLIGHT_PASS'
       - name: Preparer Python
         uses: actions/setup-python@v5
