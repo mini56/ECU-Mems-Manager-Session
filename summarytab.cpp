@@ -1,5 +1,6 @@
 #include "summarytab.h"
 #include <QHeaderView>
+#include <QFontMetrics>
 #include <QIcon>
 #include <QResizeEvent>
 #include <QTimer>
@@ -7,25 +8,48 @@
 #include "i18n.h"
 #define tr I18n::text
 
-// Native table sizing: summary data owns its column widths rather than a
-// global delayed event filter overriding the viewport after startup.
+// The longest visible Parameter label determines the natural first-column
+// width.  Spare pixels go to "Interpreted", not back into Parameter; no
+// transport values, translations, tooltips or ECU handlers are changed.
 static void sizeSummaryTable(QTableWidget *table)
 {
   if (!table || table->columnCount() < 4) return;
-  QHeaderView *header = table->horizontalHeader();
+  QHeaderView *header=table->horizontalHeader();
+  const int width=table->viewport()->width()-2;
+  if(width<=0) return;
   header->setStretchLastSection(false);
-  for (int c=0; c<4; ++c)
-    header->setSectionResizeMode(c, QHeaderView::Fixed);
-  const int width = qMax(0,table->viewport()->width()-2);
-  header->resizeSection(0,qMax(80,width-28-54-82));
-  header->resizeSection(1,28);
-  header->resizeSection(2,54);
-  header->resizeSection(3,82);
+  for(int col=0;col<4;++col)
+    header->setSectionResizeMode(col,QHeaderView::Fixed);
+
+  const QFontMetrics rowMetrics(table->font());
+  int longest=rowMetrics.horizontalAdvance(
+    table->horizontalHeaderItem(0)?table->horizontalHeaderItem(0)->text():QString());
+  for(int row=0;row<table->rowCount();++row) {
+    if(QTableWidgetItem *item=table->item(row,0))
+      longest=qMax(longest,rowMetrics.horizontalAdvance(item->text()));
+  }
+
+  const int helpWidth=30;
+  const int ecuWidth=70;
+  // Reserve enough room for the translated Interpreted header and values.
+  const int interpretedMinimum=qMax(106,QFontMetrics(header->font()).horizontalAdvance(
+    table->horizontalHeaderItem(3)?table->horizontalHeaderItem(3)->text():QString())+18);
+  const int parameterNatural=longest+18;
+  const int parameterAvailable=qMax(100,width-helpWidth-ecuWidth-interpretedMinimum);
+  const int parameterWidth=qMin(parameterNatural,parameterAvailable);
+  const int interpretedWidth=qMax(interpretedMinimum,width-parameterWidth-helpWidth-ecuWidth);
+
+  header->resizeSection(0,parameterWidth);
+  header->resizeSection(1,helpWidth);
+  header->resizeSection(2,ecuWidth);
+  header->resizeSection(3,interpretedWidth);
 }
 
 SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)
 {
   QHBoxLayout *layout = new QHBoxLayout(this);
+  layout->setContentsMargins(5,5,5,5);
+  layout->setSpacing(5);
   m_rowCount = 0;
   m_rowsPerTable = 19;
 
