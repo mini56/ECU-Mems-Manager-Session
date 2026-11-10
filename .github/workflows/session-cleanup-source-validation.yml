@@ -67,6 +67,7 @@ jobs:
             'mainwindowtitlebarfix.cpp',
             'navigationorderpatch.cpp',
             'navigationorderpatch.h',
+            'database/IaDocumentaryLockPatch.cpp',
             'database/MemsDatabaseDiagramSearchPatch.cpp',
             'database/MemsSearchCompletenessPatch.cpp'
           )){
@@ -91,6 +92,14 @@ jobs:
           if($explorer -notmatch 'MemsReferenceSheetRenderer::renderFile' -or
              $explorer -notmatch 'diagramHtml\(generation\)' -or
              $xml -notmatch 'textColorSwatches\(content.text\)'){throw 'NATIVE_MEMS_DOCUMENTATION_MISSING'}
+          $ia=Get-Content iamemstab.cpp -Raw
+          $pipeline=Get-Content expert/IaMemsDocumentaryPipeline.cpp -Raw
+          if($ia -notmatch 'connectIaMemsDocumentaryPipeline\(this, m_question, m_sendButton, m_transcript\)' -or
+             $pipeline -notmatch 'class DocumentaryPackReader' -or
+             $pipeline -notmatch 'sendResolved\(' -or
+             $pipeline -match 'installEventFilter|Q_COREAPP_STARTUP_FUNCTION|QObject::disconnect\(m_send'){
+             throw 'NATIVE_DOCUMENTARY_PIPELINE_MISSING_OR_LAYERED'
+          }
           Write-Host 'SESSION_CLEAN_SOURCE_PREFLIGHT_PASS'
       - name: Preparer Python
         uses: actions/setup-python@v5

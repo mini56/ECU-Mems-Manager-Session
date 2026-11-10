@@ -1,12 +1,11 @@
-#include "../expert/IaMemsService.h"
-#include "../expert/IaMemsConversationRouting.h"
-#include "../expert/IaResponseLogic.h"
+#include "IaMemsDocumentaryPipeline.h"
+#include "IaMemsService.h"
+#include "IaMemsConversationRouting.h"
+#include "IaResponseLogic.h"
 #include "../i18n.h"
 
-#include <QApplication>
 #include <QCoreApplication>
 #include <QDir>
-#include <QEvent>
 #include <QFileInfo>
 #include <QHash>
 #include <QLineEdit>
@@ -21,7 +20,6 @@
 #include <QSqlRecord>
 #include <QStringList>
 #include <QTextBrowser>
-#include <QTimer>
 #include <QUuid>
 #include <QVariant>
 #include <QVector>
@@ -550,23 +548,17 @@ void appendDocumentaryTranscript(QTextBrowser *browser, const QString &speaker, 
 class DocumentaryPipelineController final : public QObject
 {
 public:
-    explicit DocumentaryPipelineController(QWidget *tab)
-        : QObject(tab), m_tab(tab)
+    explicit DocumentaryPipelineController(QWidget *tab, QLineEdit *question,
+                                          QPushButton *sendButton, QTextBrowser *transcript)
+        : QObject(tab), m_tab(tab), m_question(question), m_send(sendButton),
+          m_transcript(transcript)
     {
-        if (!m_tab)
+        // The IA tab owns these connections from its construction.
+        // No global filter, delayed installation or signal replacement.
+        if (!m_tab || !m_question || !m_send || !m_transcript)
             return;
-        m_question = m_tab->findChild<QLineEdit*>(QStringLiteral("iaMemsQuestion"));
-        m_send = m_tab->findChild<QPushButton*>(QStringLiteral("iaMemsSend"));
-        m_transcript = m_tab->findChild<QTextBrowser*>(QStringLiteral("iaMemsTranscript"));
-        if (!m_question || !m_send)
-            return;
-
-        QObject::disconnect(m_send, nullptr, nullptr, nullptr);
-        QObject::disconnect(m_question, nullptr, nullptr, nullptr);
         QObject::connect(m_send, &QPushButton::clicked, this, [this]() { handleSend(); });
         QObject::connect(m_question, &QLineEdit::returnPressed, this, [this]() { handleSend(); });
-        m_tab->setProperty("iaDocumentaryClarificationTest", true);
-        m_tab->setProperty("iaDocumentaryIdentityPipelineV2", true);
     }
 
 private:
@@ -778,50 +770,12 @@ private:
     QString m_lastMenuFingerprint;
 };
 
-void patchDocumentaryPipeline(QWidget *tab)
-{
-    if (!tab || tab->property("iaDocumentaryIdentityPipelineV2").toBool())
-        return;
-    new DocumentaryPipelineController(tab);
-}
-
-class DocumentaryPipelineInstaller final : public QObject
-{
-public:
-    explicit DocumentaryPipelineInstaller(QObject *parent = nullptr) : QObject(parent) {}
-
-    bool eventFilter(QObject *watched, QEvent *event) override
-    {
-        QWidget *widget = qobject_cast<QWidget*>(watched);
-        if (widget && event
-            && (event->type() == QEvent::Show || event->type() == QEvent::Polish)
-            && widget->objectName() == QStringLiteral("ia_mems_tab")) {
-            QPointer<QWidget> guarded(widget);
-            QTimer::singleShot(350, this, [guarded]() {
-                if (guarded)
-                    patchDocumentaryPipeline(guarded);
-            });
-        }
-        return QObject::eventFilter(watched, event);
-    }
-};
-
-void installDocumentaryIdentityPipeline()
-{
-    QCoreApplication *core = QCoreApplication::instance();
-    if (!core)
-        return;
-    DocumentaryPipelineInstaller *installer = new DocumentaryPipelineInstaller(core);
-    core->installEventFilter(installer);
-    QTimer::singleShot(900, installer, [installer]() {
-        Q_UNUSED(installer)
-        for (QWidget *widget : QApplication::allWidgets()) {
-            if (widget && widget->objectName() == QStringLiteral("ia_mems_tab"))
-                patchDocumentaryPipeline(widget);
-        }
-    });
-}
-
 } // namespace
 
-Q_COREAPP_STARTUP_FUNCTION(installDocumentaryIdentityPipeline)
+void connectIaMemsDocumentaryPipeline(QWidget *tab, QLineEdit *question,
+                                     QPushButton *sendButton, QTextBrowser *transcript)
+{
+    if (!tab || !question || !sendButton || !transcript)
+        return;
+    new DocumentaryPipelineController(tab, question, sendButton, transcript);
+}

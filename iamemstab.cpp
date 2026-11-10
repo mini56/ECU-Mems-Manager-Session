@@ -5,6 +5,7 @@
 #include "expert/IaMemsDiagramCatalog.h"
 #include "expert/IaMemsConversationRouting.h"
 #include "expert/IaMemsService.h"
+#include "expert/IaMemsDocumentaryPipeline.h"
 #include "database/MemsReferenceDatabase.h"
 #include "database/MemsReferenceSheetRenderer.h"
 
@@ -190,10 +191,7 @@ IaMemsTab::IaMemsTab(MainWindow *mainWindow, QWidget *parent)
     input->addWidget(m_sendButton);
     root->addLayout(input);
 
-    connect(m_sendButton, &QPushButton::clicked,
-            this, &IaMemsTab::sendQuestion);
-    connect(m_question, &QLineEdit::returnPressed,
-            this, &IaMemsTab::sendQuestion);
+    connectIaMemsDocumentaryPipeline(this, m_question, m_sendButton, m_transcript);
     connect(m_diagramButton, &QPushButton::clicked,
             this, &IaMemsTab::openSuggestedDiagram);
     connect(m_documentButton, &QPushButton::clicked,

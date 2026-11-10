@@ -69,7 +69,8 @@ set(SOURCES
     database/MemsReferenceDatabase.cpp database/MemsReferenceDatabase.h database/MemsReferencePackageRefresh.cpp
     database/MemsGlobalSearchIndex.cpp database/MemsGlobalSearchIndex.h database/MemsDatabaseExplorerV2.cpp
     database/MemsDatabaseUniversalAccess.cpp database/MemsReferenceLanguageSync.cpp
-    database/MemsXmlRowIndexer.cpp database/IaDocumentaryLockPatch.cpp database/MemsDatabaseBrowser.cpp database/MemsDatabaseBrowser.h
+    database/MemsXmlRowIndexer.cpp database/MemsDatabaseBrowser.cpp database/MemsDatabaseBrowser.h
+    expert/IaMemsDocumentaryPipeline.cpp expert/IaMemsDocumentaryPipeline.h
     iamemstab.cpp iamemstab.h
     expert/IaResponseLogic.h expert/IaMemsService.cpp expert/IaMemsService.h
     expert/IaMemsLibraryBridge.cpp expert/IaMemsLibraryBridge.h expert/IaMemsLibraryIntegration.cpp
