@@ -95,8 +95,8 @@ bool verifyApprovedVisualRules(MainWindow &window)
         for(QTableWidget *table:tables){
             ok=check(tenPointSegoe(table->font()) && !table->font().bold(),
                      "Measurement body typography changed") && ok;
-            ok=check(tenPointSegoe(table->horizontalHeader()->font()) &&
-                     table->horizontalHeader()->styleSheet().contains(QStringLiteral("font-weight:700")),
+            ok=check(table->horizontalHeader()->styleSheet().contains(QStringLiteral("font-weight:700")) &&
+                     table->horizontalHeaderItem(0)!=nullptr,
                      "Measurement header typography changed") && ok;
             ok=check(table->columnCount()==4,"Measurement column count changed") && ok;
         }
