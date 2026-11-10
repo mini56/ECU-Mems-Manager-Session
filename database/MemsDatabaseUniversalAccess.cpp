@@ -163,6 +163,71 @@ QString localizedTitleImpl(const QString &content,const QString &fallback)
     return fallback;
 }
 
+
+QString existingImageFile(QString reference)
+{
+    reference=reference.trimmed().replace(QLatin1Char('\\'),QLatin1Char('/'));
+    const QString prefix=QStringLiteral("database/reference/");
+    if(reference.startsWith(prefix,Qt::CaseInsensitive))
+        reference.remove(0,prefix.size());
+    if(!reference.startsWith(QStringLiteral("images/"),Qt::CaseInsensitive))
+        return QString();
+    const QStringList segments=reference.split(QLatin1Char('/'));
+    if(segments.contains(QStringLiteral("..")) || segments.contains(QStringLiteral(".")))
+        return QString();
+    const QString relative=QDir::cleanPath(reference);
+    const QString root=QCoreApplication::applicationDirPath()+QStringLiteral("/database/reference");
+    const QString canonicalRoot=QFileInfo(root).canonicalFilePath();
+    const QFileInfo asset(QDir(root).filePath(relative));
+    const QString canonical=asset.canonicalFilePath();
+    if(canonicalRoot.isEmpty() || !asset.isFile() ||
+       !canonical.startsWith(canonicalRoot+QLatin1Char('/'),Qt::CaseInsensitive))
+        return QString();
+
+    static const QSet<QString> imageTypes={
+        QStringLiteral("png"),QStringLiteral("svg"),QStringLiteral("jpg"),
+        QStringLiteral("jpeg"),QStringLiteral("webp"),QStringLiteral("gif")
+    };
+    return imageTypes.contains(asset.suffix().toLower())?canonical:QString();
+}
+
+// References embedded in a technical record used to appear as inert strings
+// (e.g. "images/rave/RCL0193FRE_PDF_346.png"). Link only installed,
+// canonicalized local images, and tell the user when a referenced file is
+// absent instead of silently displaying a dead path.
+QString fieldHtmlWithImages(const QString &value)
+{
+    static const QRegularExpression imageReference(
+        QStringLiteral(R"((?:database/reference/)?images/[A-Za-z0-9_./-]+\.(?:png|svg|jpg|jpeg|webp|gif))"),
+        QRegularExpression::CaseInsensitiveOption);
+    QRegularExpressionMatchIterator matches=imageReference.globalMatch(value);
+    if(!matches.hasNext())
+        return value.toHtmlEscaped();
+
+    QString html;
+    int cursor=0;
+    while(matches.hasNext()){
+        const QRegularExpressionMatch match=matches.next();
+        html+=value.mid(cursor,match.capturedStart()-cursor).toHtmlEscaped();
+        const QString reference=match.captured(0);
+        const QString local=existingImageFile(reference);
+        html+=reference.toHtmlEscaped();
+        if(!local.isEmpty()){
+            const QString url=QUrl::fromLocalFile(local).toString(QUrl::FullyEncoded).toHtmlEscaped();
+            html+=QStringLiteral(" — <a href='%1'>%2</a>")
+                .arg(url,I18n::text(7363).toHtmlEscaped());
+        }else{
+            const QString message=activeLanguage()==QStringLiteral("fr")
+                ? QStringLiteral("Image absente des fichiers installés")
+                : QStringLiteral("Image missing from installed files");
+            html+=QStringLiteral(" — <span class='muted'>%1</span>").arg(message.toHtmlEscaped());
+        }
+        cursor=match.capturedEnd();
+    }
+    html+=value.mid(cursor).toHtmlEscaped();
+    return html;
+}
+
 QString localizedContentTable(const QString &content)
 {
     QStringList order;
@@ -198,7 +263,7 @@ QString localizedContentTable(const QString &content)
         if(value.isEmpty()) continue;
         emittedBases.insert(base);
         html+=QStringLiteral("<tr><th>%1</th><td>%2</td></tr>")
-                  .arg(translatedFieldLabel(base).toHtmlEscaped(),value.toHtmlEscaped());
+                  .arg(translatedFieldLabel(base).toHtmlEscaped(),fieldHtmlWithImages(value));
     }
     html+=QStringLiteral("</table>");
     return html;
@@ -260,6 +325,11 @@ QString assetHtml(const QString &title,const QString &content,const QString &cat
 } // namespace
 
 namespace MemsDatabaseContent {
+
+QString localImagePath(const QString &reference)
+{
+    return existingImageFile(reference);
+}
 
 QString localizedTitle(const QString &content,const QString &fallback)
 {
