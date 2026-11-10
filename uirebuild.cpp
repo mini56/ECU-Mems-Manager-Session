@@ -42,6 +42,7 @@
 #include "iamemstab.h"
 #include "mems19testtab.h"
 #include "overviewpage.h"
+#include "ecupages.h"
 #include "summarytab.h"
 
 namespace {
@@ -1057,6 +1058,7 @@ private:
         if(!applyDeterministicNavigation(qobject_cast<MainWindow*>(window)))
             qWarning() << "SESSION official navigation could not initialize all 14 pages";
         buildOverviewPage(window);
+        buildEcuControlPages(window);
         root->addWidget(buildBottomStatus(window));tabs->setCurrentIndex(0);
         applyResponsive(window);
         // The sidebar and its utility actions belong to the native window

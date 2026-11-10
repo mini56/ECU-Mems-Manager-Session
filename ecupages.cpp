@@ -19,6 +19,7 @@
 #include <QWidget>
 #include "i18n.h"
 #include "mainwindow.h"
+#include "ecupages.h"
 
 namespace {
 
@@ -466,26 +467,16 @@ static void composeActuators(QMainWindow *window)
     root->addLayout(body,1);
 }
 
-class MajorPagesInstaller:public QObject
+
+} // namespace
+
+void buildEcuControlPages(QMainWindow *window)
 {
-public:explicit MajorPagesInstaller(QObject*p=nullptr):QObject(p){}
-protected:bool eventFilter(QObject*watched,QEvent*event)override
-    {
-        if((event->type()!=QEvent::Show&&event->type()!=QEvent::Polish)||!watched)return QObject::eventFilter(watched,event);
-        QMainWindow *w=qobject_cast<QMainWindow*>(watched);if(!w||w->objectName()!=QStringLiteral("MainWindow")||w->property("majorPagesInstaller").toBool())return QObject::eventFilter(watched,event);
-        w->setProperty("majorPagesInstaller",true);
-        QTimer::singleShot(60,w,[w](){
-            composeErrors(w);
-            composeActuators(w);
-        });
-        // Error-page owner schedules its own original two initialization passes.
-        QTimer::singleShot(240,w,[w](){applyErrorsVisualPhaseOne(w);});
-        QTimer::singleShot(900,w,[w](){applyErrorsVisualPhaseOne(w);});return QObject::eventFilter(watched,event);
-    }
-};
-
-void installMajorPages(){QApplication *a=qobject_cast<QApplication*>(QCoreApplication::instance());if(!a)return;a->installEventFilter(new MajorPagesInstaller(a));}
-
+    if (!window)
+        return;
+    // Create both original control pages in their actual owner module.
+    // No late global event filter or repeated 240/900 ms corrective passes.
+    composeErrors(window);
+    composeActuators(window);
+    applyErrorsVisualPhaseOne(window);
 }
-
-Q_COREAPP_STARTUP_FUNCTION(installMajorPages)
