@@ -321,7 +321,7 @@ jobs:
       - name: Preparer la distribution Windows complete pour le test de demarrage
         shell: pwsh
         env:
-          GH_TOKEN: \${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference='Stop'
           # A bare executable is not a deployment. Exercise Qt, ROSCO, ONNX and MEMSLibrary in the real distribution.
