@@ -39,7 +39,7 @@ void MEMSInterface::onFaultCodesClearRequested()
 {
   if (m_initComplete && mems_is_connected(&m_memsinfo))
   {
-    if (mems_clear_faults(&m_memsinfo))
+    if (guardedClearFaults())
     {
       emit faultCodesClearSuccess();
     }
@@ -61,7 +61,7 @@ void MEMSInterface::onResetAdjustmentsRequested()
 {
   if (m_initComplete && mems_is_connected(&m_memsinfo))
   {
-    if (mems_reset_adjustments(&m_memsinfo))
+    if (guardedResetAdjustments())
     {
       // emit adjustmentsResetSuccess();
     }
@@ -83,7 +83,7 @@ void MEMSInterface::onResetECURequested()
 {
   if (m_initComplete && mems_is_connected(&m_memsinfo))
   {
-    if (mems_reset_ECU(&m_memsinfo))
+    if (guardedResetEcu())
     {
       emit ECUResetSuccess();
     }
@@ -105,7 +105,7 @@ void MEMSInterface::onIdleAirControlMovementRequest(int desiredPos)
 {
   if (m_initComplete && mems_is_connected(&m_memsinfo))
   {
-    if (!mems_move_iac(&m_memsinfo, desiredPos))
+    if (!guardedMemsMoveIac(desiredPos))
     {
       emit errorSendingCommand();
     }
@@ -123,7 +123,7 @@ void MEMSInterface::onIdleAirControlMovementRequest(int desiredPos)
  * @return True if serial device was opened successfully and the
  *  ECU is responding to commands; false otherwise.
  */
-bool MEMSInterface::connectToECU()
+bool MEMSInterface::connectToECULegacy()
 {
   if (m_shutdownRequested.loadAcquire() != 0)
     return false;
@@ -223,7 +223,7 @@ void MEMSInterface::onParentThreadStarted()
 /**
  * Responds to a signal to start polling the ECU.
  */
-void MEMSInterface::onStartPollingRequest()
+void MEMSInterface::onStartPollingRequestLegacy()
 {
   if (m_shutdownRequested.loadAcquire() != 0)
   {
@@ -239,7 +239,7 @@ void MEMSInterface::onStartPollingRequest()
   m_stopPolling = false;
   m_shutdownThread = false;
 
-  if (connectToECU())
+  if (connectToECULegacy())
   {
     emit connected();
     runServiceLoop();
@@ -329,13 +329,13 @@ bool MEMSInterface::actuatorOnOffDelayTest(actuator_cmd onCmd, actuator_cmd offC
 
   if (m_initComplete && mems_is_connected(&m_memsinfo))
   {
-    const bool onOk = mems_test_actuator(&m_memsinfo, onCmd, NULL);
+    const bool onOk = guardedMemsTestActuator( onCmd, NULL);
     if (onOk)
       QThread::sleep(1);
 
     // Toujours demander OFF par sécurité, même si l'accusé de la commande ON
     // a échoué. Le test n'est réussi que si ON et OFF ont tous les deux réussi.
-    const bool offOk = mems_test_actuator(&m_memsinfo, offCmd, NULL);
+    const bool offOk = guardedMemsTestActuator( offCmd, NULL);
     status = onOk && offOk;
 
     if (!status)
@@ -409,7 +409,7 @@ void MEMSInterface::onFuelPumpOn()
 {
   if (m_initComplete && mems_is_connected(&m_memsinfo))
   {
-    if (!mems_test_actuator(&m_memsinfo, MEMS_FuelPumpOn, NULL))
+    if (!guardedMemsTestActuator( MEMS_FuelPumpOn, NULL))
     {
       emit errorSendingCommand();
     }
@@ -420,7 +420,7 @@ void MEMSInterface::onFuelPumpOff()
 {
   if (m_initComplete && mems_is_connected(&m_memsinfo))
   {
-    if (!mems_test_actuator(&m_memsinfo, MEMS_FuelPumpOff, NULL))
+    if (!guardedMemsTestActuator( MEMS_FuelPumpOff, NULL))
     {
       emit errorSendingCommand();
     }
@@ -431,7 +431,7 @@ void MEMSInterface::onPTCRelayOn()
 {
   if (m_initComplete && mems_is_connected(&m_memsinfo))
   {
-    if (!mems_test_actuator(&m_memsinfo, MEMS_PTCRelayOn, NULL))
+    if (!guardedMemsTestActuator( MEMS_PTCRelayOn, NULL))
     {
       emit errorSendingCommand();
     }
@@ -442,7 +442,7 @@ void MEMSInterface::onPTCRelayOff()
 {
   if (m_initComplete && mems_is_connected(&m_memsinfo))
   {
-    if (!mems_test_actuator(&m_memsinfo, MEMS_PTCRelayOff, NULL))
+    if (!guardedMemsTestActuator( MEMS_PTCRelayOff, NULL))
     {
       emit errorSendingCommand();
     }
@@ -453,7 +453,7 @@ void MEMSInterface::onACRelayOn()
 {
   if (m_initComplete && mems_is_connected(&m_memsinfo))
   {
-    if (!mems_test_actuator(&m_memsinfo, MEMS_ACRelayOn, NULL))
+    if (!guardedMemsTestActuator( MEMS_ACRelayOn, NULL))
     {
       emit errorSendingCommand();
     }
@@ -464,7 +464,7 @@ void MEMSInterface::onACRelayOff()
 {
   if (m_initComplete && mems_is_connected(&m_memsinfo))
   {
-    if (!mems_test_actuator(&m_memsinfo, MEMS_ACRelayOff, NULL))
+    if (!guardedMemsTestActuator( MEMS_ACRelayOff, NULL))
     {
       emit errorSendingCommand();
     }
@@ -475,7 +475,7 @@ void MEMSInterface::onIgnitionCoilTest()
 {
   if (m_initComplete && mems_is_connected(&m_memsinfo))
   {
-    if (!mems_test_actuator(&m_memsinfo, MEMS_FireCoil, NULL))
+    if (!guardedMemsTestActuator( MEMS_FireCoil, NULL))
     {
       emit errorSendingCommand();
     }
@@ -486,7 +486,7 @@ void MEMSInterface::onFuelInjectorTest()
 {
   if (m_initComplete && mems_is_connected(&m_memsinfo))
   {
-    if (!mems_test_actuator(&m_memsinfo, MEMS_TestInjectors, NULL))
+    if (!guardedMemsTestActuator( MEMS_TestInjectors, NULL))
     {
       emit errorSendingCommand();
     }
@@ -496,7 +496,7 @@ void MEMSInterface::on_m_fuel_trim_plusButton_clicked()
 {
  if (m_initComplete && mems_is_connected(&m_memsinfo))
  {
-     if (!mems_test_actuator(&m_memsinfo,MEMS_FuelTrimPlus,NULL))
+     if (!guardedMemsTestActuator(MEMS_FuelTrimPlus,NULL))
      {
        emit errorSendingCommand();
      }
@@ -508,7 +508,7 @@ void MEMSInterface::on_m_fuel_trim_plusButton_clicked()
  {
   if (m_initComplete && mems_is_connected(&m_memsinfo))
   {
-      if (!mems_test_actuator(&m_memsinfo, MEMS_FuelTrimMinus, NULL))
+      if (!guardedMemsTestActuator( MEMS_FuelTrimMinus, NULL))
       {
         emit errorSendingCommand();
       }
@@ -519,7 +519,7 @@ void MEMSInterface::on_m_fuel_trim_plusButton_clicked()
   {
    if (m_initComplete && mems_is_connected(&m_memsinfo))
    {
-       if (!mems_test_actuator(&m_memsinfo,MEMS_IdleDecayPlus, NULL))
+       if (!guardedMemsTestActuator(MEMS_IdleDecayPlus, NULL))
        {
          emit errorSendingCommand();
        }
@@ -530,7 +530,7 @@ void MEMSInterface::on_m_fuel_trim_plusButton_clicked()
     {
      if (m_initComplete && mems_is_connected(&m_memsinfo))
      {
-         if (!mems_test_actuator(&m_memsinfo,MEMS_IdleDecayMinus, NULL))
+         if (!guardedMemsTestActuator(MEMS_IdleDecayMinus, NULL))
          {
            emit errorSendingCommand();
          }
@@ -541,7 +541,7 @@ void MEMSInterface::on_m_fuel_trim_plusButton_clicked()
     {
      if (m_initComplete && mems_is_connected(&m_memsinfo))
      {
-         if (!mems_test_actuator(&m_memsinfo,MEMS_IdleSpeedPlus, NULL))
+         if (!guardedMemsTestActuator(MEMS_IdleSpeedPlus, NULL))
          {
            emit errorSendingCommand();
          }
@@ -552,7 +552,7 @@ void MEMSInterface::on_m_fuel_trim_plusButton_clicked()
     {
      if (m_initComplete && mems_is_connected(&m_memsinfo))
      {
-         if (!mems_test_actuator(&m_memsinfo,MEMS_IdleSpeedMinus, NULL))
+         if (!guardedMemsTestActuator(MEMS_IdleSpeedMinus, NULL))
          {
            emit errorSendingCommand();
          }
@@ -562,7 +562,7 @@ void MEMSInterface::on_m_fuel_trim_plusButton_clicked()
     {
      if (m_initComplete && mems_is_connected(&m_memsinfo))
      {
-         if (!mems_test_actuator(&m_memsinfo,MEMS_IgnitionAdvancePlus, NULL))
+         if (!guardedMemsTestActuator(MEMS_IgnitionAdvancePlus, NULL))
          {
            emit errorSendingCommand();
          }
@@ -572,7 +572,7 @@ void MEMSInterface::on_m_fuel_trim_plusButton_clicked()
     {
      if (m_initComplete && mems_is_connected(&m_memsinfo))
      {
-         if (!mems_test_actuator(&m_memsinfo,MEMS_IgnitionAdvanceMinus, NULL))
+         if (!guardedMemsTestActuator(MEMS_IgnitionAdvanceMinus, NULL))
          {
            emit errorSendingCommand();
          }
@@ -584,7 +584,7 @@ void MEMSInterface::on_m_fuel_trim_plusButton_clicked()
     {
      if (m_initComplete && mems_is_connected(&m_memsinfo))
      {
-         if (!mems_test_actuator(&m_memsinfo,MEMS_PurgeValveOn, NULL))
+         if (!guardedMemsTestActuator(MEMS_PurgeValveOn, NULL))
          {
            emit errorSendingCommand();
          }
@@ -594,7 +594,7 @@ void MEMSInterface::on_m_fuel_trim_plusButton_clicked()
     {
      if (m_initComplete && mems_is_connected(&m_memsinfo))
      {
-         if (!mems_test_actuator(&m_memsinfo,MEMS_PurgeValveOff, NULL))
+         if (!guardedMemsTestActuator(MEMS_PurgeValveOff, NULL))
          {
            emit errorSendingCommand();
          }
@@ -605,7 +605,7 @@ void MEMSInterface::on_m_fuel_trim_plusButton_clicked()
 		// void sleep();
      if (m_initComplete && mems_is_connected(&m_memsinfo))
      {
-		if (!mems_test_actuator(&m_memsinfo,MEMS_O2HeaterOn, NULL))
+		if (!guardedMemsTestActuator(MEMS_O2HeaterOn, NULL))
          {
            emit errorSendingCommand();
          }
@@ -614,7 +614,7 @@ void MEMSInterface::on_m_fuel_trim_plusButton_clicked()
 			 QThread::sleep(5);
 			 emit turnO2HeaterOff();
 		 } */
-		 /* if (mems_test_actuator(&m_memsinfo,MEMS_O2HeaterOn, NULL))
+		 /* if (guardedMemsTestActuator(MEMS_O2HeaterOn, NULL))
 		 {
 			 QThread::sleep(2);
 			 emit turnO2HeaterOff();
@@ -626,7 +626,7 @@ void MEMSInterface::on_m_fuel_trim_plusButton_clicked()
     {
      if (m_initComplete && mems_is_connected(&m_memsinfo))
      {
-         if (!mems_test_actuator(&m_memsinfo,MEMS_O2HeaterOff, NULL))
+         if (!guardedMemsTestActuator(MEMS_O2HeaterOff, NULL))
          {
            emit errorSendingCommand();
          }
@@ -636,7 +636,7 @@ void MEMSInterface::on_m_fuel_trim_plusButton_clicked()
     {
      if (m_initComplete && mems_is_connected(&m_memsinfo))
      {
-         if (!mems_test_actuator(&m_memsinfo,MEMS_BoostValveOn, NULL))
+         if (!guardedMemsTestActuator(MEMS_BoostValveOn, NULL))
          {
            emit errorSendingCommand();
          }
@@ -646,7 +646,7 @@ void MEMSInterface::on_m_fuel_trim_plusButton_clicked()
     {
      if (m_initComplete && mems_is_connected(&m_memsinfo))
      {
-         if (!mems_test_actuator(&m_memsinfo,MEMS_BoostValveOff, NULL))
+         if (!guardedMemsTestActuator(MEMS_BoostValveOff, NULL))
          {
            emit errorSendingCommand();
          }
@@ -656,7 +656,7 @@ void MEMSInterface::on_m_fuel_trim_plusButton_clicked()
     {
      if (m_initComplete && mems_is_connected(&m_memsinfo))
      {
-         if (!mems_test_actuator(&m_memsinfo,MEMS_Fan1On, NULL))
+         if (!guardedMemsTestActuator(MEMS_Fan1On, NULL))
          {
            emit errorSendingCommand();
          }
@@ -666,7 +666,7 @@ void MEMSInterface::on_m_fuel_trim_plusButton_clicked()
     {
      if (m_initComplete && mems_is_connected(&m_memsinfo))
      {
-         if (!mems_test_actuator(&m_memsinfo,MEMS_Fan2On, NULL))
+         if (!guardedMemsTestActuator(MEMS_Fan2On, NULL))
          {
            emit errorSendingCommand();
          }
@@ -676,7 +676,7 @@ void MEMSInterface::on_m_fuel_trim_plusButton_clicked()
     {
      if (m_initComplete && mems_is_connected(&m_memsinfo))
      {
-         if (!mems_test_actuator(&m_memsinfo,MEMS_Fan3On, NULL))
+         if (!guardedMemsTestActuator(MEMS_Fan3On, NULL))
          {
            emit errorSendingCommand();
          }
@@ -687,7 +687,7 @@ void MEMSInterface::on_m_fuel_trim_plusButton_clicked()
     {
      if (m_initComplete && mems_is_connected(&m_memsinfo))
      {
-         if (!mems_test_actuator(&m_memsinfo,MEMS_Fan1Off, NULL))
+         if (!guardedMemsTestActuator(MEMS_Fan1Off, NULL))
          {
            emit errorSendingCommand();
          }
@@ -697,7 +697,7 @@ void MEMSInterface::on_m_fuel_trim_plusButton_clicked()
     {
      if (m_initComplete && mems_is_connected(&m_memsinfo))
      {
-         if (!mems_test_actuator(&m_memsinfo,MEMS_Fan2Off, NULL))
+         if (!guardedMemsTestActuator(MEMS_Fan2Off, NULL))
          {
            emit errorSendingCommand();
          }
@@ -707,7 +707,7 @@ void MEMSInterface::on_m_fuel_trim_plusButton_clicked()
     {
      if (m_initComplete && mems_is_connected(&m_memsinfo))
      {
-         if (!mems_test_actuator(&m_memsinfo,MEMS_Fan3Off, NULL))
+         if (!guardedMemsTestActuator(MEMS_Fan3Off, NULL))
          {
            emit errorSendingCommand();
          }
@@ -718,7 +718,7 @@ void MEMSInterface::on_m_fuel_trim_plusButton_clicked()
     {
      if (m_initComplete && mems_is_connected(&m_memsinfo))
      {
-         if (!mems_test_actuator(&m_memsinfo,MEMS_CloseIAC, NULL))
+         if (!guardedMemsTestActuator(MEMS_CloseIAC, NULL))
          {
            emit errorSendingCommand();
          }
@@ -728,7 +728,7 @@ void MEMSInterface::on_m_fuel_trim_plusButton_clicked()
     {
      if (m_initComplete && mems_is_connected(&m_memsinfo))
      {
-         if (!mems_test_actuator(&m_memsinfo,MEMS_OpenIAC, NULL))
+         if (!guardedMemsTestActuator(MEMS_OpenIAC, NULL))
          {
            emit errorSendingCommand();
          }
@@ -739,7 +739,7 @@ void MEMSInterface::on_m_fuel_trim_plusButton_clicked()
     {
      if (m_initComplete && mems_is_connected(&m_memsinfo))
      {
-         if (!mems_test_actuator(&m_memsinfo,MEMS_AllActuatorsOff, NULL))
+         if (!guardedMemsTestActuator(MEMS_AllActuatorsOff, NULL))
          {
            emit errorSendingCommand();
          }
@@ -766,7 +766,7 @@ void MEMSInterface::on_m_fuel_trim_plusButton_clicked()
  * writes (for example D3) are not exposed here because their semantics are
  * not sufficiently documented for safe automatic use.
  */
-void MEMSInterface::onProtocolCommandRequested(quint8 command)
+void MEMSInterface::onProtocolCommandRequestedLegacy(quint8 command)
 {
   if (m_shutdownRequested.loadAcquire() != 0)
     return;

@@ -148,6 +148,18 @@ jobs:
              $nav -notmatch 'resizeApplicationVisualStyle\(window\)'){
              throw 'DARK_STYLE_GLOBAL_LAYER_NOT_REMOVED'
           }
+          $transport=Get-Content memsinterface.cpp -Raw
+          $protocol=Get-Content memsinterface_dispatch.cpp -Raw
+          if($protocol -match '#include\s+"memsinterface\.cpp"' -or
+             $protocol -match '#define\s+(mems_test_actuator|mems_move_iac|mems_clear_faults|mems_reset_adjustments|mems_reset_ECU|connectToECU|onStartPollingRequest|onProtocolCommandRequested)' -or
+             $transport -notmatch 'guardedMemsTestActuator\(' -or
+             $transport -notmatch 'guardedMemsMoveIac\(' -or
+             $transport -notmatch 'guardedClearFaults\(' -or
+             $transport -notmatch 'guardedResetAdjustments\(' -or
+             $transport -notmatch 'guardedResetEcu\(' -or
+             $cmake -notmatch 'memsinterface\.cpp memsinterface_dispatch\.cpp'){
+             throw 'ECU_PROTOCOL_GUARDS_MUST_BE_IN_NATIVE_SOURCE'
+          }
           Write-Host 'SESSION_CLEAN_SOURCE_PREFLIGHT_PASS'
       - name: Preparer Python
         uses: actions/setup-python@v5

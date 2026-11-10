@@ -1,26 +1,6 @@
-// Connection and safety dispatcher layered around the historical MEMSInterface implementation.
-// The historical transport/command code stays in memsinterface.cpp. BUILD #28
-// routes every mutating legacy call through a central family/mode policy before
-// the historical C API can transmit it.
+// MEMS protocol dispatcher: mode/family negotiation and guarded commands.
+// The low-level transport is compiled independently from memsinterface.cpp.
 #include "memsinterface.h"
-
-#define connectToECU connectToECULegacy
-#define onStartPollingRequest onStartPollingRequestLegacy
-#define onProtocolCommandRequested onProtocolCommandRequestedLegacy
-#define mems_test_actuator(info, cmd, data) guardedMemsTestActuator((cmd), (data))
-#define mems_move_iac(info, desiredPos) guardedMemsMoveIac((desiredPos))
-#define mems_clear_faults(info) guardedClearFaults()
-#define mems_reset_adjustments(info) guardedResetAdjustments()
-#define mems_reset_ECU(info) guardedResetEcu()
-#include "memsinterface.cpp"
-#undef mems_reset_ECU
-#undef mems_reset_adjustments
-#undef mems_clear_faults
-#undef mems_move_iac
-#undef mems_test_actuator
-#undef onProtocolCommandRequested
-#undef onStartPollingRequest
-#undef connectToECU
 
 #include <QElapsedTimer>
 #include <QVariant>
