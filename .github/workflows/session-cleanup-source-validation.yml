@@ -337,8 +337,12 @@ jobs:
           }
           $env:QT_PLUGIN_PATH="C:\Qt\5.15.2\msvc2019_64\plugins"
           # Wait only for the GUI process, not for any unrelated child process.
+          $trace=Join-Path $env:TEMP 'ecu_mems_session_ui_smoke.log'
+          if(Test-Path $trace){Remove-Item $trace -Force}
           $uiProcess=Start-Process -FilePath $executable -ArgumentList "--session-ui-smoke-test" -PassThru
-          if(-not $uiProcess.WaitForExit(120000)){throw 'SESSION_UI_SMOKE_TIMEOUT_120S'}
+          $finished=$uiProcess.WaitForExit(120000)
+          if(Test-Path $trace){Get-Content $trace}
+          if(-not $finished){throw 'SESSION_UI_SMOKE_TIMEOUT_120S'}
           if($uiProcess.ExitCode -ne 0){throw "SESSION_UI_SMOKE_FAILED exit=$($uiProcess.ExitCode)"}
           Write-Host 'SESSION_NATIVE_UI_14_PAGES_PASS'
 

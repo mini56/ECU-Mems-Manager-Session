@@ -14,8 +14,20 @@
 #include <QTimer>
 #include <QWidget>
 #include <QDebug>
+#include <QFile>
+#include <QDir>
+#include <QDateTime>
 
 namespace {
+
+void logSmoke(const QString &message)
+{
+    QFile file(QDir::temp().filePath(QStringLiteral("ecu_mems_session_ui_smoke.log")));
+    if (file.open(QIODevice::WriteOnly|QIODevice::Append|QIODevice::Text)){
+        file.write((QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs)+
+                    QStringLiteral(" ")+message+QStringLiteral("\n")).toUtf8());
+    }
+}
 
 QWidget *actualPage(QWidget *tab)
 {
@@ -27,7 +39,10 @@ QWidget *actualPage(QWidget *tab)
 bool verifyUi(MainWindow &window)
 {
     auto check=[](bool ok,const char *description){
-        if (!ok) qCritical().noquote() << "SESSION_UI_SMOKE_FAIL" << description;
+        if (!ok) {
+            qCritical().noquote() << "SESSION_UI_SMOKE_FAIL" << description;
+            logSmoke(QStringLiteral("FAIL ")+QString::fromLatin1(description));
+        }
         return ok;
     };
 
@@ -99,6 +114,7 @@ bool verifyUi(MainWindow &window)
 
 int runUiShellSmokeTest(QApplication &app)
 {
+    logSmoke(QStringLiteral("ENTER smoke test"));
     // Never touch the real install's user profile or persistent database.
     QStandardPaths::setTestModeEnabled(true);
     QCoreApplication::setOrganizationName(QStringLiteral("ECU Mems Manager Smoke"));
@@ -108,23 +124,33 @@ int runUiShellSmokeTest(QApplication &app)
         return 2;
     }
     I18n::install(&app);
+    logSmoke(QStringLiteral("Before MainWindow constructor"));
 
     MainWindow window;
+    logSmoke(QStringLiteral("After MainWindow constructor"));
     window.setAttribute(Qt::WA_QuitOnClose,false);
     window.setProperty("ecuSkipExitConfirmation",true);
     window.resize(1280,768);
     window.show();
+    logSmoke(QStringLiteral("After show()"));
 
     // The real showEvent schedules the native shell on the next event turn.
     // No test-only mutation of the page layouts is performed.
     QTimer::singleShot(350,&window,[&app,&window](){
+        logSmoke(QStringLiteral("Enter timer / start checks"));
         const bool ok=verifyUi(window);
+        logSmoke(ok?QStringLiteral("Checks PASS"):QStringLiteral("Checks FAIL"));
         window.close();
+        logSmoke(QStringLiteral("After close"));
         app.exit(ok?0:1);
     });
     QTimer::singleShot(60000,&app,[&app](){
         qCritical() << "SESSION_UI_SMOKE_FAIL UI timeout";
+        logSmoke(QStringLiteral("Timeout in event loop"));
         app.exit(3);
     });
-    return app.exec();
+    logSmoke(QStringLiteral("Enter Qt event loop"));
+    const int result=app.exec();
+    logSmoke(QStringLiteral("Qt event loop returned: ")+QString::number(result));
+    return result;
 }
