@@ -1,21 +1,14 @@
 #include "../i18n.h"
 #include "MemsDatabaseUniversalAccess.h"
-#include "MemsDatabaseUniversalAccess.h"
 
-#include <QDesktopServices>
-#include <QEvent>
 #include <QCoreApplication>
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QHash>
-#include <QPointer>
 #include <QRegularExpression>
-#include <QScrollBar>
 #include <QSet>
-#include <QTableWidget>
-#include <QTableWidgetItem>
-#include <QTextBrowser>
-#include <QTimer>
+#include <QStringList>
 #include <QUrl>
 
 namespace {

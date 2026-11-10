@@ -239,11 +239,12 @@ jobs:
         run: |
           $ErrorActionPreference='Stop'
           $env:PATH="C:\Qt\5.15.2\msvc2019_64\bin;$env:PATH"
-          foreach($test in @('ia_response_selftest','ia_mems_diagram_selftest')){
+          foreach($test in @('ia_response_selftest','ia_mems_diagram_selftest','mems_database_content_selftest')){
             $executable=Join-Path $PWD "build-session-134\Release\$test.exe"
             if(-not(Test-Path $executable)){throw "MISSING_REGRESSION_TEST: $test"}
             & $executable
             if($LASTEXITCODE -ne 0){throw "REGRESSION_TEST_FAILED: $test"}
           }
           Write-Host 'SESSION_IA_MULTILINGUAL_AND_MEMS_DIAGRAM_TESTS_PASS'
+          Write-Host 'SESSION_MEMS_DATABASE_CONTENT_REGRESSION_TEST_PASS'
 

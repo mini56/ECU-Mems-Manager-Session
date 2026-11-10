@@ -125,6 +125,16 @@ add_executable(mems_search_selftest
 target_link_libraries(mems_search_selftest PRIVATE Qt5::Core Qt5::Sql)
 add_dependencies(${PNAME} mems_search_selftest)
 
+# Native indexed MEMS result formatting: exercises the real source and locale
+# selection without any ECU, database migration or late UI patch.
+add_executable(mems_database_content_selftest
+    database/MemsDatabaseContentSelfTest.cpp
+    database/MemsDatabaseUniversalAccess.cpp
+    database/MemsDatabaseUniversalAccess.h
+    i18n.cpp i18n.h)
+target_link_libraries(mems_database_content_selftest PRIVATE Qt5::Widgets)
+add_dependencies(${PNAME} mems_database_content_selftest)
+
 # A portable, isolated regression test for fresh install and upgrade when
 # the executable directory (Program Files) is not writable.
 add_executable(database_storage_selftest
@@ -170,6 +180,7 @@ if(MSVC)
     target_compile_options(${PNAME} PRIVATE /permissive /utf-8)
     target_compile_options(ia_response_selftest PRIVATE /utf-8)
     target_compile_options(ia_mems_diagram_selftest PRIVATE /utf-8)
+    target_compile_options(mems_database_content_selftest PRIVATE /utf-8)
     if(TARGET local_ai_onnx_selftest)
         target_compile_options(local_ai_onnx_selftest PRIVATE /permissive /utf-8)
     endif()
