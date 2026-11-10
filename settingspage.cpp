@@ -343,11 +343,14 @@ static void rebuildGaugeArea(QWidget *page,QFrame *metrics)
     grid->setContentsMargins(2,0,2,0);
     grid->setHorizontalSpacing(18);
     grid->setVerticalSpacing(0);
-    grid->addWidget(idle,0,0,Qt::AlignCenter);
-    grid->addWidget(ign,1,0,Qt::AlignCenter);
-    grid->addWidget(rpm,0,1,2,1,Qt::AlignCenter);
-    grid->addWidget(trim,0,2,Qt::AlignCenter);
-    grid->addWidget(lambda,1,2,Qt::AlignCenter);
+    // Let the grid allocate the full cell to each gauge.  Center alignment
+    // constrains widgets to sizeHint/minimumSize and caused the five dials
+    // to shrink despite having plenty of available space.
+    grid->addWidget(idle,0,0);
+    grid->addWidget(ign,1,0);
+    grid->addWidget(rpm,0,1,2,1);
+    grid->addWidget(trim,0,2);
+    grid->addWidget(lambda,1,2);
     grid->setColumnStretch(0,10);
     grid->setColumnStretch(1,18);
     grid->setColumnStretch(2,10);
@@ -389,11 +392,9 @@ static void rebuildAdjustArea(QWidget *page,QFrame *adjust)
     layout->setContentsMargins(14,8,14,9);
     layout->setSpacing(5);
 
-    // The ECU settings title is a compact header, not an expanding row.
-    QWidget *headerBar=new QWidget(adjust);
-    headerBar->setFixedHeight(28);
-    headerBar->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
-    QHBoxLayout *header=new QHBoxLayout(headerBar);
+    // The title belongs directly to the panel layout.  A nested QWidget
+    // inherited a solid dark background and appeared as an unwanted band.
+    QHBoxLayout *header=new QHBoxLayout;
     header->setContentsMargins(0,0,0,0);
     header->setSpacing(9);
 
@@ -405,7 +406,7 @@ static void rebuildAdjustArea(QWidget *page,QFrame *adjust)
     title->setStyleSheet(QStringLiteral("color:#ff9828;background:transparent;border:0;"));
     header->addWidget(title);
     header->addStretch(1);
-    layout->addWidget(headerBar);
+    layout->addLayout(header);
 
     QFrame *line=new QFrame(adjust);
     line->setFrameShape(QFrame::HLine);
