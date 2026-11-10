@@ -356,6 +356,16 @@ jobs:
           $qt='C:\Qt\5.15.2\msvc2019_64'
           & "$qt\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist (Join-Path $dist 'ecu_mems_manager.exe')
           if($LASTEXITCODE -ne 0){throw 'QT_RUNTIME_DEPLOY_FAILED'}
+          # The test runs without a monitor: deploy the genuine Qt offscreen
+          # platform plugin so both directory and installed smoke use the same
+          # self-contained Qt runtime instead of a build-machine plugin.
+          $platforms=Join-Path $dist 'platforms'
+          New-Item -ItemType Directory -Force $platforms | Out-Null
+          $offscreen=Join-Path $platforms 'qoffscreen.dll'
+          if(-not(Test-Path $offscreen)){
+            Copy-Item (Join-Path $qt 'plugins\platforms\qoffscreen.dll') $offscreen -Force
+          }
+          if(-not(Test-Path $offscreen)){throw 'DEPLOYED_QT_OFFSCREEN_PLUGIN_MISSING'}
           foreach($file in @('Qt5Core.dll','Qt5Widgets.dll','mems_manager_x64.dll','MEMSLibrary.dll')){
             if(-not(Test-Path (Join-Path $dist $file))){throw "MISSING_DEPLOYMENT_DLL: $file"}
           }
@@ -380,7 +390,9 @@ jobs:
           foreach($directory in @($runtimeDlls | ForEach-Object {$_.DirectoryName} | Sort-Object -Unique)){
             $env:PATH="$directory;$env:PATH"
           }
-          $env:QT_PLUGIN_PATH="C:\Qt\5.15.2\msvc2019_64\plugins"
+          $env:QT_PLUGIN_PATH=(Resolve-Path dist-session-smoke).Path
+          $env:QT_QPA_PLATFORM_PLUGIN_PATH=Join-Path $env:QT_PLUGIN_PATH 'platforms'
+          if(-not(Test-Path (Join-Path $env:QT_QPA_PLATFORM_PLUGIN_PATH 'qoffscreen.dll'))){throw 'QT_PLUGIN_NOT_DEPLOYED_IN_DIST'}
           # Wait only for the GUI process, not for any unrelated child process.
           $trace=Join-Path (Split-Path $executable) 'session_ui_smoke_trace.log'
           $stderr=Join-Path $PWD 'session_ui_stderr.log'
@@ -483,17 +495,32 @@ jobs:
           if(Test-Path (Join-Path $folder 'database\ecu_mems_manager.sqlite')){throw 'INSTALLED_PERSONAL_DB_MUST_BE_ABSENT'}
           $env:QT_QPA_PLATFORM='offscreen'
           $env:QT_OPENGL='software'
+          # Do not let Qt accidentally pick a different plugin from the
+          # GitHub runner: the installed test must use its own platform DLL.
           $env:QT_PLUGIN_PATH=$folder
+          $env:QT_QPA_PLATFORM_PLUGIN_PATH=Join-Path $folder 'platforms'
+          $env:QT_DEBUG_PLUGINS='1'
+          $env:PATH="$folder;$env:PATH"
+          if(-not(Test-Path (Join-Path $env:QT_QPA_PLATFORM_PLUGIN_PATH 'qoffscreen.dll'))){throw 'INSTALLED_QT_OFFSCREEN_PLUGIN_MISSING'}
           $installed=Join-Path $folder 'ecu_mems_manager.exe'
           $errorLog=Join-Path $folder 'installed_ui_stderr.log'
-          $ui=Start-Process -FilePath $installed -WorkingDirectory $folder -ArgumentList '--session-ui-smoke-test' -RedirectStandardError $errorLog -PassThru
-          $finished=$ui.WaitForExit(300000)
+          $outLog=Join-Path $folder 'installed_ui_stdout.log'
+          foreach($file in @($errorLog,$outLog,(Join-Path $folder 'session_ui_smoke_trace.log'))){
+            if(Test-Path $file){Remove-Item $file -Force}
+          }
+          $ui=Start-Process -FilePath $installed -WorkingDirectory $folder -ArgumentList '--session-ui-smoke-test' -RedirectStandardError $errorLog -RedirectStandardOutput $outLog -PassThru
+          $finished=$ui.WaitForExit(120000)
           $trace=Join-Path $folder 'session_ui_smoke_trace.log'
-          if(Test-Path $trace){Get-Content $trace}
-          if(Test-Path $errorLog){Get-Content $errorLog}
+          foreach($file in @($trace,$errorLog,$outLog)){
+            Write-Host "INSTALLED_GUI_DIAGNOSTIC=$file"
+            if(Test-Path $file){Get-Content $file | Select-Object -Last 100}
+            else{Write-Host 'FILE_NOT_CREATED'}
+          }
           if(-not $finished){
+            Write-Host "INSTALLED_GUI_STUCK_PID=$($ui.Id)"
+            Get-Process -Id $ui.Id -ErrorAction SilentlyContinue | Format-List Id,ProcessName,Responding,MainWindowTitle,CPU,Threads
             Stop-Process -Id $ui.Id -Force -ErrorAction SilentlyContinue
-            throw 'INSTALLED_UI_SMOKE_TIMEOUT'
+            throw 'INSTALLED_UI_SMOKE_TIMEOUT_120S'
           }
           if($ui.ExitCode -ne 0){throw "INSTALLED_UI_SMOKE_FAILED=$($ui.ExitCode)"}
           Write-Host 'SESSION_TEST_SETUP_REAL_WINDOWS_INSTALL_AND_14_PAGES_PASS'
