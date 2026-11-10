@@ -123,7 +123,7 @@ void MEMSInterface::onIdleAirControlMovementRequest(int desiredPos)
  * @return True if serial device was opened successfully and the
  *  ECU is responding to commands; false otherwise.
  */
-bool MEMSInterface::connectToECULegacy()
+bool MEMSInterface::openRoscoTransport()
 {
   if (m_shutdownRequested.loadAcquire() != 0)
     return false;
@@ -223,45 +223,6 @@ void MEMSInterface::onParentThreadStarted()
 /**
  * Responds to a signal to start polling the ECU.
  */
-void MEMSInterface::onStartPollingRequestLegacy()
-{
-  if (m_shutdownRequested.loadAcquire() != 0)
-  {
-    QThread::currentThread()->quit();
-    return;
-  }
-
-  if (m_connectionAttemptActive || m_serviceLoopRunning)
-    return;
-
-  m_connectionAttemptActive = true;
-  m_disconnectRequested.storeRelease(0);
-  m_stopPolling = false;
-  m_shutdownThread = false;
-
-  if (connectToECULegacy())
-  {
-    emit connected();
-    runServiceLoop();
-    m_connectionAttemptActive = false;
-  }
-  else
-  {
-    m_connectionAttemptActive = false;
-#ifdef WIN32
-    QString simpleDeviceName = m_deviceName;
-
-    if (simpleDeviceName.indexOf("\\\\.\\") == 0)
-    {
-      simpleDeviceName.remove(0, 4);
-    }
-    emit failedToConnect(simpleDeviceName);
-#else
-    emit failedToConnect(m_deviceName);
-#endif
-  }
-}
-
 /**
  * Calls the library in a loop until commanded to stop.
  */
@@ -766,7 +727,7 @@ void MEMSInterface::on_m_fuel_trim_plusButton_clicked()
  * writes (for example D3) are not exposed here because their semantics are
  * not sufficiently documented for safe automatic use.
  */
-void MEMSInterface::onProtocolCommandRequestedLegacy(quint8 command)
+void MEMSInterface::sendRoscoReadCommand(quint8 command)
 {
   if (m_shutdownRequested.loadAcquire() != 0)
     return;

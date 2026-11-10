@@ -195,6 +195,20 @@ jobs:
              $nativeBrowser -notmatch 'void MemsDatabaseBrowser::activateLegacyBrowser\('){
              throw 'MEMS_DATABASE_DOUBLE_UI_BINDING_REINTRODUCED'
           }
+          $transport=Get-Content memsinterface.cpp -Raw
+          $protocol=Get-Content memsinterface_dispatch.cpp -Raw
+          $memsApi=Get-Content memsinterface.h -Raw
+          foreach($legacyName in @('onStartPollingRequestLegacy','connectToECULegacy','onProtocolCommandRequestedLegacy')){
+            foreach($source in @($transport,$protocol,$memsApi)){
+              if($source.Contains($legacyName)){throw "ECU_DUPLICATED_LEGACY_ROUTINE: $legacyName"}
+            }
+          }
+          if($transport -notmatch 'bool MEMSInterface::openRoscoTransport\(' -or
+             $transport -notmatch 'void MEMSInterface::sendRoscoReadCommand\(' -or
+             $protocol -notmatch 'openRoscoTransport\(\)' -or
+             $protocol -notmatch 'sendRoscoReadCommand\(command\)'){
+            throw 'ECU_NATIVE_TRANSPORT_ROUTING_MISSING'
+          }
           Write-Host 'SESSION_CLEAN_SOURCE_PREFLIGHT_PASS'
       - name: Preparer Python
         uses: actions/setup-python@v5

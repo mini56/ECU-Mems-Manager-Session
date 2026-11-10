@@ -33,7 +33,6 @@ namespace Ui
 class MainWindow;
 }
 
-class OverviewLiveInstaller;
 
 class MainWindow : public QMainWindow
 {
@@ -159,7 +158,6 @@ protected:
     void changeEvent(QEvent *event) override;
 
 private:
-    friend class OverviewLiveInstaller;
 
     Ui::MainWindow *m_ui;
     bool m_uiShellScheduled = false;

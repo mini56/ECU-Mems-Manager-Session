@@ -117,7 +117,7 @@ void MEMSInterface::onProtocolCommandRequested(quint8 command)
         return;
     }
 
-    onProtocolCommandRequestedLegacy(command);
+    sendRoscoReadCommand(command);
 }
 
 bool MEMSInterface::tryRoscoConnect(const QString &devicePath)
@@ -136,7 +136,7 @@ bool MEMSInterface::tryRoscoConnect(const QString &devicePath)
 
     resetProtocolContext();
     m_deviceName = devicePath;
-    const bool connected=connectToECULegacy();
+    const bool connected=openRoscoTransport();
     if (connected && cancelled())
     {
         if (m_initComplete && mems_is_connected(&m_memsinfo))
