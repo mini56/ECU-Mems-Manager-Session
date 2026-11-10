@@ -64,6 +64,7 @@ jobs:
           foreach($obsolete in @(
             'systemstateconnectionfix.cpp',
             'singleinstanceforce.cpp',
+            'mainwindowtitlebarfix.cpp',
             'database/MemsDatabaseDiagramSearchPatch.cpp',
             'database/MemsSearchCompletenessPatch.cpp'
           )){
@@ -75,13 +76,16 @@ jobs:
           $errors=Get-Content majorpagesrebuild.cpp -Raw
           $explorer=Get-Content database/MemsDatabaseExplorerV2.cpp -Raw
           $xml=Get-Content database/MemsReferenceSheetRenderer.h -Raw
-          $instance=Get-Content mainwindowtitlebarfix.cpp -Raw
+          $instance=Get-Content singleinstance.cpp -Raw
+          $mainWindow=Get-Content mainwindow.cpp -Raw
           if($window -notmatch 'void MainWindow::refreshConnectionHeader\(' -or
              $window -notmatch 'bool MainWindow::isEcuDisconnected\(' -or
              $overview -notmatch 'isEcuDisconnected\(\)' -or
              $errors -notmatch 'isEcuDisconnected\(\)'){throw 'NATIVE_ECU_CONNECTION_STATUS_MISSING'}
           if($instance -notmatch 'CreateMutexW' -or
-             $instance -notmatch 'processReplacementRequest'){throw 'SINGLE_INSTANCE_PROTECTION_MISSING'}
+             $instance -notmatch 'processReplacementRequest' -or
+             $mainWindow -notmatch 'confirmMainWindowClose\(this\)' -or
+             $mainWindow -notmatch 'void MainWindow::showEvent\('){throw 'NATIVE_WINDOW_LIFECYCLE_MISSING'}
           if($explorer -notmatch 'MemsReferenceSheetRenderer::renderFile' -or
              $explorer -notmatch 'diagramHtml\(generation\)' -or
              $xml -notmatch 'textColorSwatches\(content.text\)'){throw 'NATIVE_MEMS_DOCUMENTATION_MISSING'}

@@ -1,5 +1,7 @@
 #include <cmath>
 #include <QCloseEvent>
+#include <QShowEvent>
+#include <QAbstractButton>
 #include <QMessageBox>
 #include <QProcess>
 #include <QList>
@@ -13,6 +15,7 @@
 #include <QCryptographicHash>
 #include <QGraphicsOpacityEffect>
 #include "mainwindow.h"
+#include "nativewindowstyle.h"
 #include "ui_mainwindow.h"
 #include "styles.h"
 #include "captureviewer.h"
@@ -38,6 +41,103 @@
 #include <QFrame>
 #include "i18n.h"
 #define tr I18n::text
+
+namespace {
+
+struct ExitConfirmationText
+{
+    QString title;
+    QString message;
+    QString yes;
+    QString no;
+};
+
+static ExitConfirmationText exitConfirmationText()
+{
+    const QString language = I18n::language().toLower();
+
+    if (language == QStringLiteral("en"))
+        return {QStringLiteral("Exit ECU MEMS Manager"),
+                QStringLiteral("Do you really want to exit ECU MEMS Manager?"),
+                QStringLiteral("Yes"), QStringLiteral("No")};
+    if (language == QStringLiteral("es"))
+        return {QString::fromUtf8("Salir de ECU MEMS Manager"),
+                QString::fromUtf8("¿Realmente desea salir de ECU MEMS Manager?"),
+                QString::fromUtf8("Sí"), QStringLiteral("No")};
+    if (language == QStringLiteral("it"))
+        return {QStringLiteral("Uscire da ECU MEMS Manager"),
+                QStringLiteral("Vuoi davvero uscire da ECU MEMS Manager?"),
+                QString::fromUtf8("Sì"), QStringLiteral("No")};
+    if (language == QStringLiteral("pt"))
+        return {QStringLiteral("Sair do ECU MEMS Manager"),
+                QStringLiteral("Deseja realmente sair do ECU MEMS Manager?"),
+                QStringLiteral("Sim"), QString::fromUtf8("Não")};
+    if (language == QStringLiteral("de"))
+        return {QStringLiteral("ECU MEMS Manager beenden"),
+                QString::fromUtf8("Möchten Sie ECU MEMS Manager wirklich beenden?"),
+                QStringLiteral("Ja"), QStringLiteral("Nein")};
+
+    return {QStringLiteral("Quitter ECU MEMS Manager"),
+            QString::fromUtf8("Voulez-vous vraiment quitter ECU MEMS Manager ?"),
+            QStringLiteral("Oui"), QStringLiteral("Non")};
+}
+
+static bool confirmMainWindowClose(QMainWindow *window)
+{
+    if (!window)
+        return true;
+
+    const ExitConfirmationText text = exitConfirmationText();
+    QMessageBox box(QMessageBox::Question, text.title, text.message,
+                    QMessageBox::NoButton, window);
+
+    QPushButton *yesButton = box.addButton(text.yes, QMessageBox::YesRole);
+    QPushButton *noButton = box.addButton(text.no, QMessageBox::NoRole);
+    box.setDefaultButton(noButton);
+    box.setEscapeButton(noButton);
+
+    const bool dark = qApp && qApp->property("ecuDarkTheme").toBool();
+    if (dark)
+    {
+        box.setStyleSheet(QStringLiteral(
+            "QMessageBox{background:#090e13;color:#e7ecef;}"
+            "QMessageBox QLabel{color:#e7ecef;background:transparent;}"
+            "QMessageBox QPushButton{background:#151d25;color:#edf2f5;border:1px solid #35414c;border-radius:5px;padding:6px 16px;font-weight:700;min-width:72px;}"
+            "QMessageBox QPushButton:hover{background:#1b252e;border-color:#ff7a00;}"));
+        yesButton->setStyleSheet(QStringLiteral(
+            "QPushButton{background:#ff7a00;color:#101419;border:1px solid #ff9828;border-radius:5px;padding:6px 16px;font-weight:700;min-width:72px;}"
+            "QPushButton:hover{background:#ff9828;}"
+            "QPushButton:pressed{background:#d96500;}"));
+    }
+
+    applyNativeTitleBar(&box, dark);
+    box.exec();
+    return box.clickedButton() == yesButton;
+}
+
+static void showConnectionError(QWidget *parent, const QString &title, const QString &description)
+{
+    QMessageBox box(QMessageBox::Warning, title, description, QMessageBox::Ok, parent);
+    const bool dark = qApp && qApp->property("ecuDarkTheme").toBool();
+    if (dark)
+    {
+        box.setStyleSheet(QStringLiteral(
+            "QMessageBox{background:#090e13;color:#e7ecef;}"
+            "QMessageBox QLabel{color:#e7ecef;background:transparent;}"
+            "QMessageBox QPushButton{background:#151d25;color:#edf2f5;border:1px solid #35414c;border-radius:5px;padding:6px 16px;font-weight:700;min-width:72px;}"
+            "QMessageBox QPushButton:hover{background:#1b252e;border-color:#ff7a00;}"));
+        if (QAbstractButton *okButton = box.button(QMessageBox::Ok))
+            okButton->setStyleSheet(QStringLiteral(
+                "QPushButton{background:#ff7a00;color:#101419;border:1px solid #ff9828;border-radius:5px;padding:6px 16px;font-weight:700;min-width:72px;}"
+                "QPushButton:hover{background:#ff9828;}"
+                "QPushButton:pressed{background:#d96500;}"));
+    }
+    applyNativeTitleBar(&box, dark);
+    box.exec();
+}
+
+
+} // namespace
 
 MainWindow::MainWindow(QWidget* parent):QMainWindow(parent),
 m_ui(new Ui::MainWindow),
@@ -1281,6 +1381,7 @@ void MainWindow::onEditOptionsClicked()
     {
       qApp->setProperty("ecuDarkTheme", m_options->getTheme() == "dark");
       qApp->setStyleSheet(m_options->getTheme() == "dark" ? STYLE_DARK : STYLE_LIGHT);
+      applyNativeTitleBar(this, m_options->getTheme() == "dark");
       const QList<WidgetWithBackground*> meters = findChildren<WidgetWithBackground*>();
       for (WidgetWithBackground *meter : meters)
         meter->updateWithBackground();
@@ -1344,8 +1445,19 @@ void MainWindow::onEditOptionsClicked()
  * the other thread.
  * @param event The event itself.
  */
+void MainWindow::showEvent(QShowEvent* event)
+{
+  QMainWindow::showEvent(event);
+  applyNativeTitleBar(this, qApp && qApp->property("ecuDarkTheme").toBool());
+}
+
 void MainWindow::closeEvent(QCloseEvent* event)
 {
+  if (!property("ecuSkipExitConfirmation").toBool() && !confirmMainWindowClose(this))
+  {
+    event->ignore();
+    return;
+  }
   m_closing = true;
   m_autoReconnectEnabled = false;
   m_silentReconnect = false;
@@ -1700,16 +1812,14 @@ void MainWindow::onFailedToConnect(QString dev)
 
   if (dev.isEmpty() || dev.isNull())
   {
-    QMessageBox::warning(this, I18n::text(7056) /* EN: Error */,
+    showConnectionError(this, I18n::text(7056) /* EN: Error */,
                          I18n::text(7057) /* EN: ECU connection error. No serial port specified.   */ +
-                         I18n::text(7058) /* EN: Select a serial device using "Edit settings" in the "Options" menu. */,
-                         QMessageBox::Ok);
+                         I18n::text(7058) /* EN: Select a serial device using "Edit settings" in the "Options" menu. */);
   }
   else
   {
-    QMessageBox::warning(this, I18n::text(7059) /* EN: Error */,
-                         I18n::text(7060) /* EN: ECU connection error on port %1. Check the wiring and make sure the ECU is powered. */.arg(dev),
-                         QMessageBox::Ok);
+    showConnectionError(this, I18n::text(7059) /* EN: Error */,
+                         I18n::text(7060) /* EN: ECU connection error on port %1. Check the wiring and make sure the ECU is powered. */.arg(dev));
   }
 }
 
