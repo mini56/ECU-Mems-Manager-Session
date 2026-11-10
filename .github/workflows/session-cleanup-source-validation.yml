@@ -33,7 +33,7 @@ jobs:
           $ErrorActionPreference='Stop'
           $cmake=Get-Content CMakeLists.txt -Raw
           $main=Get-Content main.cpp -Raw
-          $s=Get-Content settingstabdark.cpp -Raw
+          $s=Get-Content settingspage.cpp -Raw
           $nav=Get-Content uirebuild.cpp -Raw
           if(Test-Path splashtextfix.cpp){throw 'SPLASH_OLD_PATCH_STILL_PRESENT'}
           if(Test-Path settingsvisualpatch.cpp){throw 'SETTINGS_OLD_PATCH_STILL_PRESENT'}
@@ -70,6 +70,7 @@ jobs:
             'database/IaDocumentaryLockPatch.cpp',
             'overviewrebuild.cpp',
             'majorpagesrebuild.cpp',
+            'settingstabdark.cpp',
             'database/MemsDatabaseDiagramSearchPatch.cpp',
             'database/MemsSearchCompletenessPatch.cpp'
           )){
@@ -116,6 +117,13 @@ jobs:
              $errors -match 'Q_COREAPP_STARTUP_FUNCTION|installEventFilter' -or
              $nav -notmatch 'buildEcuControlPages\(window\)'){
              throw 'NATIVE_ECU_CONTROL_PAGES_MISSING'
+          }
+          if($s -notmatch 'void buildSettingsPage\(' -or
+             $s -notmatch 'void fitSettingsPage\(' -or
+             $s -match 'Q_COREAPP_STARTUP_FUNCTION|installEventFilter' -or
+             $nav -notmatch 'buildSettingsPage\(window\)' -or
+             $nav -notmatch 'fitSettingsPage\(window\)'){
+             throw 'NATIVE_SETTINGS_PAGE_MISSING'
           }
           Write-Host 'SESSION_CLEAN_SOURCE_PREFLIGHT_PASS'
       - name: Preparer Python

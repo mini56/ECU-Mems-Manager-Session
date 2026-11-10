@@ -1,6 +1,3 @@
-#include <QApplication>
-#include <QCoreApplication>
-#include <QEvent>
 #include <QFrame>
 #include <QGridLayout>
 #include <QHBoxLayout>
@@ -18,6 +15,7 @@
 #include <QWidget>
 #include <QtMath>
 #include "i18n.h"
+#include "settingspage.h"
 
 namespace {
 
@@ -964,37 +962,22 @@ static void applySettingsLayout(QMainWindow *window)
     });
 }
 
-class SettingsTabDarkInstaller : public QObject
+
+} // namespace
+
+void buildSettingsPage(QMainWindow *window)
 {
-public:
-    explicit SettingsTabDarkInstaller(QObject *parent=nullptr):QObject(parent) {}
-
-protected:
-    bool eventFilter(QObject *watched,QEvent *event) override
-    {
-        QMainWindow *window=qobject_cast<QMainWindow*>(watched);
-        if(!window || window->objectName()!=QStringLiteral("MainWindow"))
-            return QObject::eventFilter(watched,event);
-
-        if((event->type()==QEvent::Show || event->type()==QEvent::Polish) &&
-           !window->property("settingsTabDarkScheduled").toBool()) {
-            window->setProperty("settingsTabDarkScheduled",true);
-            QTimer::singleShot(60,window,[window](){buildSettingsScaffold(window);});
-            QTimer::singleShot(2050,window,[window](){applySettingsLayout(window);});
-            QTimer::singleShot(2450,window,[window](){applySettingsLayout(window);});
-        } else if(event->type()==QEvent::Resize && window->property("settingsTabDarkScheduled").toBool()) {
-            QTimer::singleShot(240,window,[window](){applySettingsLayout(window);});
-        }
-        return QObject::eventFilter(watched,event);
-    }
-};
-
-void installSettingsTabDark()
-{
-    QApplication *app=qobject_cast<QApplication*>(QCoreApplication::instance());
-    if(app) app->installEventFilter(new SettingsTabDarkInstaller(app));
+    // The Settings layout is built once as part of the real UI, not corrected
+    // again at arbitrary delays after the first window show.
+    applySettingsLayout(window);
 }
 
+void fitSettingsPage(QMainWindow *window)
+{
+    if (!window)
+        return;
+    QWidget *page=window->findChild<QWidget*>(QStringLiteral("emission_tab"));
+    QFrame *metrics=window->findChild<QFrame*>(QStringLiteral("settingsMetrics"));
+    QFrame *adjust=window->findChild<QFrame*>(QStringLiteral("settingsAdjust"));
+    applySettingsSizing(page,metrics,adjust);
 }
-
-Q_COREAPP_STARTUP_FUNCTION(installSettingsTabDark)

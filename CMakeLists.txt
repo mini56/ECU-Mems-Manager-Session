@@ -79,7 +79,7 @@ set(SOURCES
     expert/ExpertTypes.h expert/LocalAiClient.cpp expert/LocalAiClient.h
     uirebuild.cpp overviewpage.cpp overviewpage.h ecupages.cpp ecupages.h
     dedicatedpagesrebuild.cpp darkstyle.cpp
-    settingstabdark.cpp
+    settingspage.cpp settingspage.h
     singleinstance.cpp singleinstance.h nativewindowstyle.cpp nativewindowstyle.h)
 add_executable(${PNAME} ${SOURCES})
 target_sources(${PNAME} PRIVATE ${CMAKE_SOURCE_DIR}/desktopshortcut.cpp ${CMAKE_SOURCE_DIR}/desktopshortcut.h)

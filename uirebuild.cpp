@@ -43,6 +43,7 @@
 #include "mems19testtab.h"
 #include "overviewpage.h"
 #include "ecupages.h"
+#include "settingspage.h"
 #include "summarytab.h"
 
 namespace {
@@ -986,6 +987,7 @@ static void applyResponsive(QMainWindow *window)
     if(QListWidget *nav=window->findChild<QListWidget*>(QStringLiteral("uiRebuildNav")))
         fitNavigationRows(nav);
     fitOverviewPage(window->findChild<QWidget*>(QStringLiteral("overview_tab")));
+    fitSettingsPage(window);
 }
 
 class UiRebuildInstaller : public QObject
@@ -1059,6 +1061,7 @@ private:
             qWarning() << "SESSION official navigation could not initialize all 14 pages";
         buildOverviewPage(window);
         buildEcuControlPages(window);
+        buildSettingsPage(window);
         root->addWidget(buildBottomStatus(window));tabs->setCurrentIndex(0);
         applyResponsive(window);
         // The sidebar and its utility actions belong to the native window
