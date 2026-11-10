@@ -328,7 +328,17 @@ jobs:
           $env:QT_OPENGL='software'
           $executable=Join-Path $PWD 'build-session-134\Release\ecu_mems_manager.exe'
           if(-not(Test-Path $executable)){throw 'SESSION_NATIVE_UI_EXE_MISSING'}
-          $uiProcess=Start-Process -FilePath $executable -ArgumentList "--session-ui-smoke-test" -Wait -PassThru
+          # The compiled GUI links both ROSCO and ONNX import libraries.
+          $env:PATH="$PWD\build-session-134\librosco-x64\Release;$env:PATH"
+          $onnxDir=Join-Path $env:RUNNER_TEMP 'onnx-genai'
+          $runtimeDlls=Get-ChildItem $onnxDir -Recurse -File -Filter '*onnxruntime*.dll'
+          foreach($directory in @($runtimeDlls | ForEach-Object {$_.DirectoryName} | Sort-Object -Unique)){
+            $env:PATH="$directory;$env:PATH"
+          }
+          $env:QT_PLUGIN_PATH="C:\Qt\5.15.2\msvc2019_64\plugins"
+          # Wait only for the GUI process, not for any unrelated child process.
+          $uiProcess=Start-Process -FilePath $executable -ArgumentList "--session-ui-smoke-test" -PassThru
+          if(-not $uiProcess.WaitForExit(120000)){throw 'SESSION_UI_SMOKE_TIMEOUT_120S'}
           if($uiProcess.ExitCode -ne 0){throw "SESSION_UI_SMOKE_FAILED exit=$($uiProcess.ExitCode)"}
           Write-Host 'SESSION_NATIVE_UI_14_PAGES_PASS'
 
