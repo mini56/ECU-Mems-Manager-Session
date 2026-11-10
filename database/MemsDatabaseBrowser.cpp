@@ -1,6 +1,7 @@
 #include "MemsDatabaseBrowser.h"
 #include "MemsReferenceDatabase.h"
 #include "MemsReferenceSheetRenderer.h"
+#include "MemsDatabaseExplorerV2.h"
 #include "../i18n.h"
 
 #include <QAbstractItemView>
@@ -104,6 +105,8 @@ MemsDatabaseBrowser::MemsDatabaseBrowser(QWidget *parent)
         m_detail->setHtml(htmlStyle()+QStringLiteral("<h1>%1</h1><p class='note'>%2</p>")
             .arg(I18n::text(7160).toHtmlEscaped(),I18n::text(7262).toHtmlEscaped()));
     }
+    // Construct the one authoritative search controller after the real widgets exist.
+    initializeMemsDatabaseExplorer(this);
 }
 
 MemsDatabaseBrowser::~MemsDatabaseBrowser(){delete m_database;}

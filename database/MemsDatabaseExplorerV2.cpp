@@ -1,4 +1,5 @@
 #include "MemsGlobalSearchIndex.h"
+#include "MemsDatabaseExplorerV2.h"
 #include "MemsReferenceSheetRenderer.h"
 #include "../i18n.h"
 
@@ -759,43 +760,11 @@ private:
     bool m_ftsEnabled;
 };
 
-class DatabaseExplorerV2Installer : public QObject
+} // namespace
+
+void initializeMemsDatabaseExplorer(QWidget *browser)
 {
-public:
-    explicit DatabaseExplorerV2Installer(QObject *parent=nullptr):QObject(parent){}
-
-    bool eventFilter(QObject *watched,QEvent *event) override
-    {
-        QWidget *widget=qobject_cast<QWidget*>(watched);
-        if(widget&&event&&(event->type()==QEvent::Show||event->type()==QEvent::Polish)&&widget->objectName()==QStringLiteral("memsDatabaseBrowser")) schedule(widget);
-        return QObject::eventFilter(watched,event);
-    }
-
-    void scan()
-    {
-        for(QWidget *widget:QApplication::allWidgets())
-            if(widget&&widget->objectName()==QStringLiteral("memsDatabaseBrowser")) schedule(widget);
-    }
-
-private:
-    void schedule(QWidget *widget)
-    {
-        if(!widget||widget->property("databaseExplorerV2Patched").toBool()) return;
-        widget->setProperty("databaseExplorerV2Patched",true);
-        QPointer<QWidget> guarded(widget);
-        QTimer::singleShot(80,this,[guarded](){if(guarded) new DatabaseExplorerV2(guarded);});
-    }
-};
-
-void installDatabaseExplorerV2()
-{
-    QCoreApplication *core=QCoreApplication::instance();
-    if(!core) return;
-    DatabaseExplorerV2Installer *installer=new DatabaseExplorerV2Installer(core);
-    core->installEventFilter(installer);
-    QTimer::singleShot(250,installer,[installer](){installer->scan();});
+    if (browser)
+        new DatabaseExplorerV2(browser);
 }
 
-}
-
-Q_COREAPP_STARTUP_FUNCTION(installDatabaseExplorerV2)
