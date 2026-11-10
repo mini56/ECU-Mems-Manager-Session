@@ -141,6 +141,13 @@ jobs:
              $cmake -match 'dedicatedpagesrebuild.cpp'){
              throw 'RAW_PAGE_OWNER_OR_NAVIGATION_REGRESSION'
           }
+          $dark=Get-Content darkstyle.cpp -Raw
+          if($dark -notmatch 'void applyApplicationVisualStyle\(' -or
+             $dark -match 'Q_COREAPP_STARTUP_FUNCTION|installEventFilter|styleNavigation\(' -or
+             $nav -notmatch 'applyApplicationVisualStyle\(window\)' -or
+             $nav -notmatch 'resizeApplicationVisualStyle\(window\)'){
+             throw 'DARK_STYLE_GLOBAL_LAYER_NOT_REMOVED'
+          }
           Write-Host 'SESSION_CLEAN_SOURCE_PREFLIGHT_PASS'
       - name: Preparer Python
         uses: actions/setup-python@v5

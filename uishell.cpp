@@ -42,6 +42,7 @@
 #include "overviewpage.h"
 #include "ecupages.h"
 #include "settingspage.h"
+#include "applicationvisualstyle.h"
 #include "rawpage.h"
 #include "uishell.h"
 #include "summarytab.h"
@@ -989,6 +990,7 @@ static void applyResponsive(QMainWindow *window)
     fitOverviewPage(window->findChild<QWidget*>(QStringLiteral("overview_tab")));
     fitSettingsPage(window);
     fitRawDataPage(window->findChild<QWidget*>(QStringLiteral("raw")));
+    resizeApplicationVisualStyle(window);
 }
 
     // Typography only. The 14 original BUILD117 page layouts remain intact.
@@ -1043,6 +1045,7 @@ static void applyResponsive(QMainWindow *window)
         // The sidebar and its utility actions belong to the native window
         // shell instead of a delayed global patch.
         ensureSidebar(window);
+        applyApplicationVisualStyle(window);
         // All page owners have finished constructing their widgets here.
         // Apply the validated minimum typography immediately, once.
         applyReadablePageFonts(tabs);

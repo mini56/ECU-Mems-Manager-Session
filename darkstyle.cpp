@@ -1,8 +1,6 @@
-#include <QApplication>
 #include <QCheckBox>
+#include "applicationvisualstyle.h"
 #include <QComboBox>
-#include <QCoreApplication>
-#include <QEvent>
 #include <QFontMetrics>
 #include <QFrame>
 #include <QGridLayout>
@@ -18,18 +16,14 @@
 #include <QStatusBar>
 #include <QMenu>
 #include <QMenuBar>
-#include <QPainter>
-#include <QPixmap>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QScrollArea>
-#include <QSignalBlocker>
 #include <QSizePolicy>
 #include <QTabWidget>
 #include <QTableView>
 #include <QTableWidget>
 #include <QTextEdit>
-#include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -45,116 +39,6 @@ static QWidget *pageOf(QWidget *tab)
     if (!tab) return nullptr;
     if (QScrollArea *s = qobject_cast<QScrollArea*>(tab)) return s->widget();
     return tab;
-}
-
-static QIcon navIcon(const QString &kind)
-{
-    QPixmap pm(22,22);
-    pm.fill(Qt::transparent);
-    QPainter p(&pm);
-    p.setRenderHint(QPainter::Antialiasing,true);
-    p.setPen(QPen(QColor("#ff8a1c"),1.7,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin));
-    p.setBrush(Qt::NoBrush);
-    const QRectF r(3.5,3.5,15,15);
-
-    if (kind==QStringLiteral("overview")) {
-        p.drawRoundedRect(QRectF(3,4,7,6),1.3,1.3); p.drawRoundedRect(QRectF(12,4,7,6),1.3,1.3);
-        p.drawRoundedRect(QRectF(3,12,7,6),1.3,1.3); p.drawRoundedRect(QRectF(12,12,7,6),1.3,1.3);
-    } else if (kind==QStringLiteral("settings")) {
-        p.drawLine(4,6,18,6); p.drawLine(4,11,18,11); p.drawLine(4,16,18,16);
-        p.drawEllipse(QPointF(9,6),2,2); p.drawEllipse(QPointF(14,11),2,2); p.drawEllipse(QPointF(7,16),2,2);
-    } else if (kind==QStringLiteral("error")) {
-        QPolygonF q; q << QPointF(11,3.5) << QPointF(19,18) << QPointF(3,18); p.drawPolygon(q);
-        p.drawLine(11,8,11,13); p.drawPoint(QPointF(11,16));
-    } else if (kind==QStringLiteral("actuator")) {
-        p.drawEllipse(r); p.drawEllipse(QPointF(11,11),3,3);
-        p.drawLine(11,3,11,6); p.drawLine(11,16,11,19); p.drawLine(3,11,6,11); p.drawLine(16,11,19,11);
-    } else if (kind==QStringLiteral("chart")) {
-        p.drawLine(4,18,4,5); p.drawLine(4,18,19,18);
-        QPolygonF q; q << QPointF(5,15) << QPointF(9,10) << QPointF(12,12) << QPointF(18,6); p.drawPolyline(q);
-    } else if (kind==QStringLiteral("data")) {
-        p.drawRoundedRect(r,2,2); p.drawLine(7,4,7,19); p.drawLine(12,4,12,19); p.drawLine(4,9,19,9); p.drawLine(4,14,19,14);
-    } else if (kind==QStringLiteral("diag")) {
-        p.drawEllipse(r); p.drawLine(7,11,10,14); p.drawLine(10,14,16,7);
-    } else if (kind==QStringLiteral("link")) {
-        p.drawRoundedRect(QRectF(3,7,9,8),4,4); p.drawRoundedRect(QRectF(10,7,9,8),4,4); p.drawLine(8,11,14,11);
-    } else {
-        p.drawRoundedRect(r,2,2); p.drawLine(7,8,15,8); p.drawLine(7,12,15,12); p.drawLine(7,16,13,16);
-    }
-    return QIcon(pm);
-}
-
-static QString iconKind(QWidget *page,int index)
-{
-    switch(index) {
-    case 0: return QStringLiteral("overview");
-    case 1: return QStringLiteral("settings");
-    case 2: return QStringLiteral("data");
-    case 3: return QStringLiteral("error");
-    case 4: return QStringLiteral("actuator");
-    case 5: return QStringLiteral("data");
-    case 6: return QStringLiteral("link");
-    case 7: return QStringLiteral("chart");
-    case 8: return QStringLiteral("link");
-    case 9: return QStringLiteral("diag");
-    default: break;
-    }
-    const QString n=page?page->objectName().toLower():QString();
-    const QString c=cls(page).toLower();
-    if(n==QStringLiteral("overview_tab")) return QStringLiteral("overview");
-    if(n==QStringLiteral("emission_tab")) return QStringLiteral("settings");
-    if(n==QStringLiteral("errors")) return QStringLiteral("error");
-    if(n==QStringLiteral("actuators")) return QStringLiteral("actuator");
-    if(n==QStringLiteral("raw")) return QStringLiteral("data");
-    if(n==QStringLiteral("ecu")) return QStringLiteral("link");
-    if(c.contains(QStringLiteral("analysis"))) return QStringLiteral("chart");
-    if(c.contains(QStringLiteral("diagnostic"))) return QStringLiteral("diag");
-    return QStringLiteral("page");
-}
-
-static void styleNavigation(QMainWindow *w)
-{
-    QTabWidget *tabs=w?w->findChild<QTabWidget*>(QStringLiteral("Tab_main")):nullptr;
-    QListWidget *nav=w?w->findChild<QListWidget*>(QStringLiteral("uiRebuildNav")):nullptr;
-    if(!tabs||!nav) return;
-
-    const QSignalBlocker blocker(nav);
-    if(nav->count()!=tabs->count()) nav->clear();
-
-    QFont f=nav->font();
-    const qreal base=w->font().pointSizeF()>0?w->font().pointSizeF():9.0;
-    f.setPointSizeF(qBound<qreal>(8.5,base,10.5));
-    nav->setFont(f);
-    const QFontMetrics fm(f);
-    const int iconSide=qBound(18,fm.height()+2,22);
-    nav->setIconSize(QSize(iconSide,iconSide));
-    int longest=0;
-
-    for(int i=0;i<tabs->count();++i){
-        const QString text=tabs->tabText(i).trimmed();
-        QListWidgetItem *item=i<nav->count()?nav->item(i):new QListWidgetItem(nav);
-        item->setText(text);
-        item->setIcon(navIcon(iconKind(pageOf(tabs->widget(i)),i)));
-        item->setSizeHint(QSize(0,qMax(37,fm.height()+19)));
-        item->setToolTip(text);
-        longest=qMax(longest,fm.horizontalAdvance(text));
-    }
-
-    nav->setCurrentRow(tabs->currentIndex());
-    // The native sidebar owns its collapse layout and list width; do not
-    // overwrite them from the global theme after the sidebar is built.
-    if (w->findChild<QFrame*>(QStringLiteral("darkSidebar")))
-        return;
-    const int available=qMax(1,w->centralWidget()?w->centralWidget()->width():w->width());
-    const int maxWidth=qBound(220,available/4,305);
-    nav->setFixedWidth(qBound(178,longest+iconSide+62,maxWidth));
-    nav->setSpacing(1);
-    nav->setStyleSheet(QStringLiteral(
-        "#uiRebuildNav{background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #070c11,stop:1 #0c141a);color:#cbd4da;border:0;border-right:1px solid #2a3540;padding:8px 0;}"
-        "#uiRebuildNav::item{padding:6px 12px;border-left:3px solid transparent;border-bottom:1px solid #121a20;}"
-        "#uiRebuildNav::item:hover{background:#151f26;color:#fff;}"
-        "#uiRebuildNav::item:selected{background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #322417,stop:1 #171d20);color:#ffad5c;border-left:3px solid #ff7a00;font-weight:700;}"
-        "QToolTip{color:#ffffff;}"));
 }
 
 static QGridLayout *gridContaining(QWidget *root,const QList<QWidget*> &widgets)
@@ -351,7 +235,6 @@ static void styleChrome(QMainWindow *w)
 static void apply(QMainWindow *w)
 {
     if(!w) return;
-    styleNavigation(w);
     reflowOverview(w);
     stylePages(w);
     styleTables(w);
@@ -361,32 +244,17 @@ static void apply(QMainWindow *w)
     styleScrollBars(w);
 }
 
-class DarkStyleInstaller : public QObject
-{
-public:
-    explicit DarkStyleInstaller(QObject *parent=nullptr):QObject(parent){}
-protected:
-    bool eventFilter(QObject *watched,QEvent *event) override
-    {
-        QMainWindow *w=qobject_cast<QMainWindow*>(watched);
-        if(!w||w->objectName()!=QStringLiteral("MainWindow")) return QObject::eventFilter(watched,event);
-        if((event->type()==QEvent::Show||event->type()==QEvent::Polish)&&!w->property("darkStyleScheduled").toBool()){
-            w->setProperty("darkStyleScheduled",true);
-            QTimer::singleShot(1050,w,[w](){apply(w);});
-            QTimer::singleShot(1320,w,[w](){apply(w);});
-        }else if(event->type()==QEvent::Resize&&w->property("darkStyleScheduled").toBool()){
-            QTimer::singleShot(70,w,[w](){apply(w);});
-        }
-        return QObject::eventFilter(watched,event);
-    }
-};
+} // namespace
 
-void installDarkStyle()
+void applyApplicationVisualStyle(QMainWindow *window)
 {
-    QApplication *app=qobject_cast<QApplication*>(QCoreApplication::instance());
-    if(app) app->installEventFilter(new DarkStyleInstaller(app));
+    apply(window);
 }
 
+void resizeApplicationVisualStyle(QMainWindow *window)
+{
+    if (!window)
+        return;
+    reflowOverview(window);
+    styleAnalysis(window);
 }
-
-Q_COREAPP_STARTUP_FUNCTION(installDarkStyle)
