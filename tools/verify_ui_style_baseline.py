@@ -8,16 +8,25 @@ When the user explicitly approves a visual change, review the diff and
 update the baseline in a dedicated, visible change. The Qt smoke test
 independently checks fonts, alignment, panels and the 14-page navigation.
 """
-import hashlib
+import subprocess
 import json
 from pathlib import Path
 import sys
 
 
-def git_blob_hash(data: bytes) -> str:
-    return hashlib.sha1(
-        b"blob " + str(len(data)).encode("ascii") + b"\0" + data
-    ).hexdigest()
+def committed_blob_hash(root: Path, relpath: str) -> str:
+    """Compare the actual Git blob, not the CRLF-converted Windows checkout.
+
+    Git for Windows can check out CRLF text while the same committed blob is
+    stored as LF. Git resolves the canonical blob identity regardless of the
+    working-tree line ending and avoids false positives on every source file.
+    """
+    result = subprocess.run(
+        ["git", "rev-parse", f"HEAD:{relpath}"],
+        cwd=root, text=True, capture_output=True, check=True,
+    )
+    return result.stdout.strip()
+
 
 
 def main() -> int:
@@ -37,7 +46,7 @@ def main() -> int:
         if not source.is_file():
             failed.append(f"{relpath}: missing approved source")
             continue
-        sha = git_blob_hash(source.read_bytes())
+        sha = committed_blob_hash(root, relpath)
         if sha != approved_sha:
             failed.append(f"{relpath}: approved {approved_sha}, current {sha}")
     if failed:
