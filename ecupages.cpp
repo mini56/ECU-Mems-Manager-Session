@@ -425,7 +425,10 @@ static void composeErrors(QMainWindow *window)
 
 static void composeActuators(QMainWindow *window)
 {
-    QWidget *page=pageFor(window,QStringLiteral("actuators"));if(!page||page->property("majorPageRebuilt").toBool())return;page->setProperty("majorPageRebuilt",true);
+    QWidget *page=pageFor(window,QStringLiteral("actuators"));
+    if(!page || page->property("majorPageRebuilt").toBool())return;
+    page->setProperty("majorPageRebuilt",true);
+
     QWidget *list=window->findChild<QWidget*>(QStringLiteral("layoutWidget_4"));
     QWidget *pos=window->findChild<QWidget*>(QStringLiteral("layoutWidget_5"));
     QWidget *slider=window->findChild<QWidget*>(QStringLiteral("layoutWidget_6"));
@@ -435,84 +438,113 @@ static void composeActuators(QMainWindow *window)
     QPushButton *move=page->findChild<QPushButton*>(QStringLiteral("m_moveIACButton"));
     QPushButton *minus=page->findChild<QPushButton*>(QStringLiteral("m_IACMinusButton"));
     QPushButton *plus=page->findChild<QPushButton*>(QStringLiteral("m_IACPlusButton"));
-    if(list)list->setParent(page);if(pos)pos->setParent(page);if(slider)slider->setParent(page);if(info)info->setParent(page);if(move)move->setParent(page);if(minus)minus->setParent(page);if(plus)plus->setParent(page);
 
-    if(o2Label&&o2On){
-        const QString tip=o2On->toolTip();
-        if(!tip.isEmpty()){
-            o2On->setToolTip(QString());
-            o2Label->setProperty("helpBubbleLeft",true);
-            o2Label->setToolTip(tip);
-            o2Label->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
-            o2Label->setSizePolicy(QSizePolicy::Maximum,QSizePolicy::Preferred);
-            if(list&&list->layout())list->layout()->setAlignment(o2Label,Qt::AlignRight|Qt::AlignVCenter);
-        }
-    }
+    for(QWidget *widget:{list,pos,slider,info,move,minus,plus})
+        if(widget)widget->setParent(page);
 
-    QVBoxLayout *root=nullptr;beginPage(page,root);
-    QHBoxLayout *body=new QHBoxLayout;body->setSpacing(10);
+    QVBoxLayout *root=nullptr;
+    beginPage(page,root);
+    QHBoxLayout *body=new QHBoxLayout;
+    body->setSpacing(10);
+
     QFrame *left=card(page,QStringLiteral("actuatorListCard"),I18n::text(4001).toUpper());
     if(list){
         prepWidget(list);
         list->setParent(left);
-        // Do not cap the black actuator list at 490px: its left labels were
-        // clipped while the existing left card had unused horizontal space.
-        list->setMaximumWidth(QWIDGETSIZE_MAX);
+        // Centre the complete existing grid, keeping all actuator signals
+        // and button sizes intact.  On narrower windows it can still shrink.
+        list->setMinimumWidth(0);
+        list->setMaximumWidth(740);
         list->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
-        // The actuator grid owns the entire left card.  The old centering
-        // stretches reserved unused side margins and compressed its controls.
+
         if(QGridLayout *grid=qobject_cast<QGridLayout*>(list->layout())){
-            grid->setContentsMargins(5,4,5,4);
-            grid->setHorizontalSpacing(10);
+            grid->setContentsMargins(6,4,6,4);
+            grid->setHorizontalSpacing(9);
             grid->setVerticalSpacing(5);
             for(int row=0;row<grid->rowCount();++row)grid->setRowStretch(row,0);
             for(int row=2;row<=10;++row)grid->setRowStretch(row,1);
-            grid->setRowStretch(12,1);
-            grid->setRowStretch(13,1);
-            grid->setRowStretch(15,1);
-            // Keep the action buttons easily readable without affecting
-            // their existing ECU connections, enable states or commands.
+            for(int row:{12,13,15})grid->setRowStretch(row,1);
+
+            // The functional names belong to the left edge of their column,
+            // not flush against the first button. Keep the group title centred.
+            int longestLabel=0;
+            for(int row:{2,3,4,5,6,7,8,9,10,12,13,15}){
+                QLayoutItem *cell=grid->itemAtPosition(row,0);
+                QLabel *label=cell?qobject_cast<QLabel*>(cell->widget()):nullptr;
+                if(!label)continue;
+                label->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
+                label->setMinimumHeight(26);
+                label->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
+                longestLabel=qMax(longestLabel,
+                    QFontMetrics(label->font()).horizontalAdvance(label->text()));
+            }
+            grid->setColumnStretch(0,0);
+            grid->setColumnMinimumWidth(0,longestLabel+18);
+            for(int col=1;col<=3;++col)grid->setColumnStretch(col,1);
+
             for(QPushButton *button:list->findChildren<QPushButton*>()){
                 button->setMinimumHeight(32);
                 button->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
             }
-            for(QLabel *label:list->findChildren<QLabel*>()){
-                label->setMinimumHeight(26);
-                label->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
+
+            // Transfer the lambda warning to the label's RIGHT help bubble.
+            // A left-side property reserved 30px before the text, reversing
+            // the requested reading order.
+            if(o2Label && o2On){
+                const QString tip=o2On->toolTip();
+                o2Label->setProperty("helpBubbleLeft",false);
+                if(!tip.isEmpty()){
+                    o2On->setToolTip(QString());
+                    o2Label->setToolTip(tip);
+                }
+                o2Label->setMaximumWidth(
+                    QFontMetrics(o2Label->font()).horizontalAdvance(o2Label->text())+36);
+                o2Label->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
+                grid->setAlignment(o2Label,Qt::AlignLeft|Qt::AlignVCenter);
             }
         }
-        static_cast<QVBoxLayout*>(left->layout())->addWidget(list,1);
+
+        QHBoxLayout *centered=new QHBoxLayout;
+        centered->setContentsMargins(0,0,0,0);
+        centered->setSpacing(0);
+        centered->addStretch(1);
+        centered->addWidget(list,14);
+        centered->addStretch(1);
+        static_cast<QVBoxLayout*>(left->layout())->addLayout(centered,1);
     }
     body->addWidget(left,3);
+
     QFrame *right=card(page,QStringLiteral("actuatorIacCard"),I18n::text(7138));
     QVBoxLayout *rv=static_cast<QVBoxLayout*>(right->layout());
-
-    // The idle-control instructions and the three controls are distributed
-    // vertically with native stretches, instead of all collecting at the top.
-    rv->addStretch(1);
+    rv->setSpacing(12);
+    // Compact stepper instructions and controls: the only remaining
+    // flexible spacer sits BEFORE the bottom system-state indicator.
     if(info){
         info->setParent(right);
         info->setWordWrap(true);
-        info->setMinimumHeight(52);
+        info->setMinimumHeight(42);
+        info->setMaximumHeight(72);
         info->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
         info->show();
         rv->addWidget(info);
     }
-    rv->addStretch(1);
     if(pos){
         prepWidget(pos);
         pos->setParent(right);
         pos->setMinimumHeight(40);
+        pos->setMaximumHeight(48);
+        pos->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
         rv->addWidget(pos);
     }
-    rv->addStretch(1);
     if(slider){
         prepWidget(slider);
         slider->setParent(right);
         slider->setMinimumHeight(46);
+        slider->setMaximumHeight(52);
+        slider->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
         rv->addWidget(slider);
     }
-    rv->addStretch(1);
+
     QHBoxLayout *buttons=new QHBoxLayout;
     buttons->setSpacing(8);
     for(QPushButton *button:{minus,move,plus}){
@@ -524,11 +556,20 @@ static void composeActuators(QMainWindow *window)
         buttons->addWidget(button,button==move?1:0);
     }
     rv->addLayout(buttons);
+
+    // Reuse the system indicator already used by the Errors page, driven
+    // by the SAME ECU connection and engine-fault source as in Overview.
     rv->addStretch(1);
+    QObject *systemSource=window->findChild<QObject*>(QStringLiteral("m_engine_error"));
+    SystemStatePreview *state=new SystemStatePreview(
+        qobject_cast<MainWindow*>(window),systemSource,right);
+    state->setObjectName(QStringLiteral("actuatorSystemState"));
+    state->setFixedSize(200,180);
+    rv->addWidget(state,0,Qt::AlignHCenter);
+
     body->addWidget(right,2);
     root->addLayout(body,1);
 }
-
 
 } // namespace
 
