@@ -4,6 +4,7 @@
 
 #include <QDesktopServices>
 #include <QEvent>
+#include <QCoreApplication>
 #include <QFile>
 #include <QFileInfo>
 #include <QHash>
