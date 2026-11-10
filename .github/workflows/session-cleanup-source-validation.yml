@@ -337,12 +337,23 @@ jobs:
           }
           $env:QT_PLUGIN_PATH="C:\Qt\5.15.2\msvc2019_64\plugins"
           # Wait only for the GUI process, not for any unrelated child process.
-          $trace=Join-Path $env:TEMP 'ecu_mems_session_ui_smoke.log'
-          if(Test-Path $trace){Remove-Item $trace -Force}
-          $uiProcess=Start-Process -FilePath $executable -ArgumentList "--session-ui-smoke-test" -PassThru
-          $finished=$uiProcess.WaitForExit(120000)
-          if(Test-Path $trace){Get-Content $trace}
-          if(-not $finished){throw 'SESSION_UI_SMOKE_TIMEOUT_120S'}
+          $trace=Join-Path $PWD 'session_ui_smoke_trace.log'
+          $stderr=Join-Path $PWD 'session_ui_stderr.log'
+          $stdout=Join-Path $PWD 'session_ui_stdout.log'
+          foreach($file in @($trace,$stderr,$stdout)){if(Test-Path $file){Remove-Item $file -Force}}
+          $uiProcess=Start-Process -FilePath $executable -ArgumentList "--session-ui-smoke-test" -RedirectStandardError $stderr -RedirectStandardOutput $stdout -PassThru
+          $finished=$uiProcess.WaitForExit(60000)
+          foreach($file in @($trace,$stderr,$stdout)){
+            Write-Host "SESSION_DIAGNOSTIC_FILE=$file"
+            if(Test-Path $file){Get-Content $file}
+            else{Write-Host 'FILE_NOT_CREATED'}
+          }
+          if(-not $finished){
+            Write-Host "SESSION_SMOKE_STUCK_PID=$($uiProcess.Id)"
+            Get-Process -Id $uiProcess.Id | Format-List Id,ProcessName,Responding,MainWindowTitle,CPU,Threads
+            Stop-Process -Id $uiProcess.Id -Force -ErrorAction SilentlyContinue
+            throw 'SESSION_UI_SMOKE_TIMEOUT_60S'
+          }
           if($uiProcess.ExitCode -ne 0){throw "SESSION_UI_SMOKE_FAILED exit=$($uiProcess.ExitCode)"}
           Write-Host 'SESSION_NATIVE_UI_14_PAGES_PASS'
 

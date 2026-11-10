@@ -15,6 +15,7 @@
 #include <QGridLayout>
 #include <QPushButton>
 #include <QIcon>
+#include <QFile>
 #include <QStringList>
 #include "splashprogress.h"
 
@@ -278,11 +279,26 @@ QSplashScreen *createStartupSplash()
 
 int main(int argc, char *argv[])
 {
+    // Diagnostic trace only for the noninteractive Windows CI smoke command.
+    // Write before QApplication: absence of this line means the process never reached main().
+    bool smokeRequested = false;
+    for (int i=1; i<argc; ++i)
+        smokeRequested |= QString::fromLocal8Bit(argv[i])==QStringLiteral("--session-ui-smoke-test");
+    if (smokeRequested) {
+        QFile trace(QStringLiteral("session_ui_smoke_trace.log"));
+        if (trace.open(QIODevice::WriteOnly|QIODevice::Truncate|QIODevice::Text))
+            trace.write("ENTER main() before QApplication\n");
+    }
     // Qt and Windows determine the native DPI and available screen area.
     // Keep each Qt widget at its native size; no whole-page scaling.
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling, true);
     QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps, true);
     QApplication app(argc, argv);
+    if (smokeRequested) {
+        QFile trace(QStringLiteral("session_ui_smoke_trace.log"));
+        if (trace.open(QIODevice::WriteOnly|QIODevice::Append|QIODevice::Text))
+            trace.write("ENTER after QApplication constructor\n");
+    }
     // Isolated Windows CI smoke test: never install a runner token, contact an ECU,
     // or alter normal user settings. This runs the actual MainWindow and UI code.
     if (app.arguments().contains(QStringLiteral("--session-ui-smoke-test")))

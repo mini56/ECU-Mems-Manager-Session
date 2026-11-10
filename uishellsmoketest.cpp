@@ -22,7 +22,7 @@ namespace {
 
 void logSmoke(const QString &message)
 {
-    QFile file(QDir::temp().filePath(QStringLiteral("ecu_mems_session_ui_smoke.log")));
+    QFile file(QDir::current().filePath(QStringLiteral("session_ui_smoke_trace.log")));
     if (file.open(QIODevice::WriteOnly|QIODevice::Append|QIODevice::Text)){
         file.write((QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs)+
                     QStringLiteral(" ")+message+QStringLiteral("\n")).toUtf8());
