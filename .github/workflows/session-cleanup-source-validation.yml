@@ -55,8 +55,14 @@ jobs:
              $diagnostic -notmatch 'Qt::ForegroundRole' -or
              $raw -notmatch 'color:#ffffff;background:transparent'){throw 'NATIVE_SOURCE_CONSOLIDATION_MISSING'}
           if($cmake -match 'splashtextfix.cpp|settingsvisualpatch.cpp'){throw 'OBSOLETE_PATCH_STILL_COMPILED'}
+          # The two LEDs and their labels are now owned by the States panel
+          # from initial construction; reparenting them caused duplicate text.
           if($s -notmatch 'settingsLayoutIntegrated' -or
-             $s -notmatch 'moveIndicatorsToStates\(page,states,adjust\)'){throw 'SETTINGS_SOURCE_NOT_CONSOLIDATED'}
+             $s -notmatch 'states->show\(\)' -or
+             $s -match 'moveIndicatorsToStates\(' -or
+             $s -match 'header->addWidget\((loopLed|idleLed)\)'){
+            throw 'SETTINGS_SOURCE_NOT_CONSOLIDATED'
+          }
           if($main -notmatch 'buildIdentityLabel' -or
              $main -notmatch 'progressPalette.setColor\(QPalette::HighlightedText,Qt::white\)'){throw 'SPLASH_SOURCE_NOT_CONSOLIDATED'}
           if($cmake -notmatch 'APP_NAME="ECU MEMS Manager SESSION"'){throw 'OFFICIAL_NAME_CHANGED'}
