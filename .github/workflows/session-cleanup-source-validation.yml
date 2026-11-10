@@ -251,6 +251,16 @@ jobs:
              $transport -notmatch 'bindProtocolContextTracking\(\);'){
              throw 'ECU_PROTOCOL_TRACKING_MUST_BIND_IN_CONSTRUCTOR'
           }
+          $settings=Get-Content settingspage.cpp -Raw
+          if($settings -match 'QTimer::singleShot\(0,page' -or
+             $settings -match 'moveNoteBelowRpm\(' -or
+             $settings -notmatch 'embedNoteInRpmGauge\(page,metrics,adjust\)' -or
+             $settings -notmatch 'layout->addWidget\(note\)'){
+             throw 'SETTINGS_RPM_NOTE_MUST_USE_NATIVE_LAYOUT'
+          }
+          if(Test-Path qrc_resources.cpp){
+             throw 'GENERATED_QT_RCC_SOURCE_SHOULD_NOT_BE_VERSIONED'
+          }
           Write-Host 'SESSION_CLEAN_SOURCE_PREFLIGHT_PASS'
       - name: Preparer Python
         uses: actions/setup-python@v5
