@@ -318,6 +318,51 @@ jobs:
           if(-not(Test-Path 'build-session-134\librosco-x64\Release\mems_manager_x64.dll')){throw 'ROSCO dll missing'}
           Write-Host 'SESSION_BUILD134_SOURCE_AND_ONNX_COMPILE_PASS'
 
+      - name: Preparer la distribution Windows complete pour le test de demarrage
+        shell: pwsh
+        env:
+          GH_TOKEN: \${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          # A bare executable is not a deployment. Exercise Qt, ROSCO, ONNX and MEMSLibrary in the real distribution.
+          $tag='mems-build117-candidate-39395038798'
+          $name='ECU-MEMS-Manager-x64-BUILD117-CLEAN-V2.tar.gz'
+          $sha='4f187bae49bfc134329b53eb4e455c2d125403fe510f2da08a8272b2dcb3cd3b'
+          New-Item -ItemType Directory -Force download-117,dist-session-smoke | Out-Null
+          gh release download $tag --pattern $name --dir download-117 --clobber
+          if($LASTEXITCODE -ne 0){throw 'BASE117_RUNTIME_DOWNLOAD_FAILED'}
+          $archive=Join-Path download-117 $name
+          if((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $sha){
+            throw 'BASE117_RUNTIME_ARCHIVE_HASH_MISMATCH'
+          }
+          tar.exe -xzf $archive -C dist-session-smoke
+          if($LASTEXITCODE -ne 0){throw 'BASE117_RUNTIME_UNPACK_FAILED'}
+          $dist=(Resolve-Path dist-session-smoke).Path
+          foreach($pair in @(
+            @('build-session-134\Release\ecu_mems_manager.exe','ecu_mems_manager.exe'),
+            @('build-session-134\Release\ecu_mems_uninstaller.exe','ecu_mems_uninstaller.exe'),
+            @('build-session-134\librosco-x64\Release\mems_manager_x64.dll','mems_manager_x64.dll')
+          )){
+            Copy-Item $pair[0] (Join-Path $dist $pair[1]) -Force
+          }
+          $runtime=Join-Path $env:RUNNER_TEMP 'onnx-genai'
+          $dlls=Get-ChildItem $runtime -Recurse -File -Filter '*onnxruntime*.dll'
+          foreach($dll in $dlls){
+            Copy-Item $dll.FullName (Join-Path $dist $dll.Name) -Force
+          }
+          if(-not(Test-Path (Join-Path $dist 'onnxruntime-genai.dll'))){
+            throw 'ONNX_GENAI_RUNTIME_NOT_DEPLOYED'
+          }
+          $qt='C:\Qt\5.15.2\msvc2019_64'
+          & "$qt\bin\windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist (Join-Path $dist 'ecu_mems_manager.exe')
+          if($LASTEXITCODE -ne 0){throw 'QT_RUNTIME_DEPLOY_FAILED'}
+          foreach($file in @('Qt5Core.dll','Qt5Widgets.dll','mems_manager_x64.dll','MEMSLibrary.dll')){
+            if(-not(Test-Path (Join-Path $dist $file))){throw "MISSING_DEPLOYMENT_DLL: $file"}
+          }
+          if(Test-Path (Join-Path $dist 'database\ecu_mems_manager.sqlite')){
+            throw 'PERSONAL_SQLITE_MUST_NOT_BE_BUNDLED'
+          }
+          Write-Host 'SESSION_COMPLETE_RUNTIME_READY_FOR_GUI_TEST'
       - name: Tester le programme Windows et ses 14 pages sans ECU
         shell: pwsh
         timeout-minutes: 5
@@ -326,7 +371,7 @@ jobs:
           $env:PATH="C:\Qt\5.15.2\msvc2019_64\bin;$env:PATH"
           $env:QT_QPA_PLATFORM='offscreen'
           $env:QT_OPENGL='software'
-          $executable=Join-Path $PWD 'build-session-134\Release\ecu_mems_manager.exe'
+          $executable=Join-Path $PWD 'dist-session-smoke\ecu_mems_manager.exe'
           if(-not(Test-Path $executable)){throw 'SESSION_NATIVE_UI_EXE_MISSING'}
           # The compiled GUI links both ROSCO and ONNX import libraries.
           $env:PATH="$PWD\build-session-134\librosco-x64\Release;$env:PATH"
@@ -337,11 +382,11 @@ jobs:
           }
           $env:QT_PLUGIN_PATH="C:\Qt\5.15.2\msvc2019_64\plugins"
           # Wait only for the GUI process, not for any unrelated child process.
-          $trace=Join-Path $PWD 'session_ui_smoke_trace.log'
+          $trace=Join-Path (Split-Path $executable) 'session_ui_smoke_trace.log'
           $stderr=Join-Path $PWD 'session_ui_stderr.log'
           $stdout=Join-Path $PWD 'session_ui_stdout.log'
           foreach($file in @($trace,$stderr,$stdout)){if(Test-Path $file){Remove-Item $file -Force}}
-          $uiProcess=Start-Process -FilePath $executable -ArgumentList "--session-ui-smoke-test" -RedirectStandardError $stderr -RedirectStandardOutput $stdout -PassThru
+          $uiProcess=Start-Process -FilePath $executable -WorkingDirectory (Split-Path $executable) -ArgumentList "--session-ui-smoke-test" -RedirectStandardError $stderr -RedirectStandardOutput $stdout -PassThru
           $finished=$uiProcess.WaitForExit(60000)
           foreach($file in @($trace,$stderr,$stdout)){
             Write-Host "SESSION_DIAGNOSTIC_FILE=$file"
