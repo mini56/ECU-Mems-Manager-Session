@@ -47,7 +47,7 @@ Workflow : `.github/workflows/session-cleanup-source-validation.yml`.
 - **42791666397 : SUCCESS** — consolidation avant le suivi des modes ECU.
 - **42792329174 : SUCCESS** — commit `0650c5b3`, y compris les controles de source et tests.
 - **42792714170 : SUCCESS** — commit `ea636c68`, y compris compilation et tests.
-- **42793149697 : en cours au dernier controle** — commit `d80627d1`. Ne pas le presenter comme vert avant lecture de sa conclusion.
+- **42793149697 : SUCCESS** — commit `d80627d1`, compilation Windows, contrôles de source et tests IA/documentation/journal RAM réussis.
 
 Le CI refuse les modules obsolete references, les `Q_COREAPP_STARTUP_FUNCTION` dans les sources natives compilees et les inclusions textuelles de fichiers `.cpp`. Il verifie egalement plusieurs contrats de proprietaire unique.
 
