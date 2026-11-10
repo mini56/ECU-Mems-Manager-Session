@@ -3,6 +3,7 @@
 
 #include <QCoreApplication>
 #include <QDebug>
+#include <QFileInfo>
 #include <QString>
 #include <array>
 
@@ -87,6 +88,39 @@ int main(int argc,char **argv)
     ok=expect(!escapedAsset.contains(QStringLiteral("<img")),
               "unsafe or missing image unexpectedly rendered")&&ok;
 
-    if(ok) qInfo().noquote() << "PASS MEMS database: six languages, safe HTML, wiring assets and fallback";
+    // Real RAVE asset expected in the packaged reference folder: a search
+    // result must lead to an installed, openable image instead of a dead path.
+    const QString reference=QStringLiteral("images/rave/RCL0193FRE_PDF_346.png");
+    const QString resolved=MemsDatabaseContent::localImagePath(reference);
+    ok=expect(!resolved.isEmpty() && QFileInfo(resolved).isFile(),
+              "RCL0193FRE page 346 PNG missing from installed reference")&&ok;
+    const QString indexed=MemsDatabaseContent::renderResultHtml(
+        QStringLiteral("RAVE manual"),QStringLiteral("image_ref: ")+reference,
+        QStringLiteral("documentation"),QStringLiteral("1.3"),
+        QStringLiteral("rave_reference"),QString());
+    ok=expect(indexed.contains(QStringLiteral("RCL0193FRE_PDF_346.png")) &&
+              indexed.contains(QStringLiteral("href='file:")),
+              "Indexed RAVE file reference is not clickable")&&ok;
+    const QString direct=MemsDatabaseContent::renderResultHtml(
+        QStringLiteral("RAVE image"),QStringLiteral("relative_path: ")+reference,
+        QStringLiteral("wiring"),QStringLiteral("1.3"),
+        QStringLiteral("wiring_assets"),QString());
+    ok=expect(direct.contains(QStringLiteral("<img src='file:")) &&
+              direct.contains(QStringLiteral("href='file:")),
+              "Direct indexed image preview/open link missing")&&ok;
+
+    ok=expect(MemsDatabaseContent::localImagePath(
+              QStringLiteral("../images/rave/RCL0193FRE_PDF_346.png")).isEmpty(),
+              "Parent path traversal allowed in RAVE image resolver")&&ok;
+    const QString absent=MemsDatabaseContent::renderResultHtml(
+        QStringLiteral("Missing image"),
+        QStringLiteral("image_ref: images/rave/RCL0193FRE_PDF_999999.png"),
+        QStringLiteral("documentation"),QStringLiteral("1.3"),
+        QStringLiteral("rave_reference"),QString());
+    ok=expect(!absent.contains(QStringLiteral("href='file:")) &&
+              absent.contains(QStringLiteral("RCL0193FRE_PDF_999999.png")),
+              "Missing RAVE image incorrectly treated as installed")&&ok;
+
+    if(ok) qInfo().noquote() << "PASS MEMS database: six languages, safe HTML, installed RAVE images and clickable references";
     return ok?0:1;
 }
