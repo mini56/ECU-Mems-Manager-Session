@@ -27,6 +27,7 @@
 #include "database/MemsReferencePackageRefresh.h"
 #include "i18n.h"
 #include "singleinstance.h"
+#include "uishellsmoketest.h"
 
 namespace
 {
@@ -282,6 +283,10 @@ int main(int argc, char *argv[])
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling, true);
     QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps, true);
     QApplication app(argc, argv);
+    // Isolated Windows CI smoke test: never install a runner token, contact an ECU,
+    // or alter normal user settings. This runs the actual MainWindow and UI code.
+    if (app.arguments().contains(QStringLiteral("--session-ui-smoke-test")))
+        return runUiShellSmokeTest(app);
     installSingleInstanceManager(&app);
     // Preserve this storage-related internal identifier on upgrades.
     QApplication::setApplicationName("ECU Mems Manager");

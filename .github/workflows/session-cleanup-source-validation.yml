@@ -309,6 +309,20 @@ jobs:
           if(-not(Test-Path 'build-session-134\librosco-x64\Release\mems_manager_x64.dll')){throw 'ROSCO dll missing'}
           Write-Host 'SESSION_BUILD134_SOURCE_AND_ONNX_COMPILE_PASS'
 
+      - name: Tester le programme Windows et ses 14 pages sans ECU
+        shell: pwsh
+        timeout-minutes: 5
+        run: |
+          $ErrorActionPreference='Stop'
+          $env:PATH="C:\Qt\5.15.2\msvc2019_64\bin;$env:PATH"
+          $env:QT_QPA_PLATFORM='offscreen'
+          $env:QT_OPENGL='software'
+          $executable=Join-Path $PWD 'build-session-134\Release\ecu_mems_manager.exe'
+          if(-not(Test-Path $executable)){throw 'SESSION_NATIVE_UI_EXE_MISSING'}
+          & $executable --session-ui-smoke-test
+          if($LASTEXITCODE -ne 0){throw "SESSION_UI_SMOKE_FAILED exit=$LASTEXITCODE"}
+          Write-Host 'SESSION_NATIVE_UI_14_PAGES_PASS'
+
       - name: Tester les reponses IA multilingues et les diagrammes MEMS
         shell: pwsh
         run: |

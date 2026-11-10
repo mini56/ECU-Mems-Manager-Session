@@ -77,7 +77,7 @@ set(SOURCES
     expert/IaMemsDiagramCatalog.cpp expert/IaMemsDiagramCatalog.h
     expert/ExpertEngine.cpp expert/ExpertEngine.h expert/ExpertKnowledgeReader.cpp expert/ExpertKnowledgeReader.h
     expert/ExpertTypes.h expert/LocalAiClient.cpp expert/LocalAiClient.h
-    uishell.cpp uishell.h overviewpage.cpp overviewpage.h ecupages.cpp ecupages.h
+    uishell.cpp uishell.h uishellsmoketest.cpp uishellsmoketest.h overviewpage.cpp overviewpage.h ecupages.cpp ecupages.h
     rawpage.cpp rawpage.h darkstyle.cpp
     settingspage.cpp settingspage.h
     singleinstance.cpp singleinstance.h nativewindowstyle.cpp nativewindowstyle.h)
