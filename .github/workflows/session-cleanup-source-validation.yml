@@ -234,3 +234,16 @@ jobs:
           if(-not(Test-Path 'build-session-134\librosco-x64\Release\mems_manager_x64.dll')){throw 'ROSCO dll missing'}
           Write-Host 'SESSION_BUILD134_SOURCE_AND_ONNX_COMPILE_PASS'
 
+      - name: Tester les reponses IA multilingues et les diagrammes MEMS
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $env:PATH="C:\Qt\5.15.2\msvc2019_64\bin;$env:PATH"
+          foreach($test in @('ia_response_selftest','ia_mems_diagram_selftest')){
+            $executable=Join-Path $PWD "build-session-134\Release\$test.exe"
+            if(-not(Test-Path $executable)){throw "MISSING_REGRESSION_TEST: $test"}
+            & $executable
+            if($LASTEXITCODE -ne 0){throw "REGRESSION_TEST_FAILED: $test"}
+          }
+          Write-Host 'SESSION_IA_MULTILINGUAL_AND_MEMS_DIAGRAM_TESTS_PASS'
+
