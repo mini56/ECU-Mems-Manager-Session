@@ -3,6 +3,7 @@
 #include "ecuidentification.h"
 #include "analysistab.h"
 #include "i18n.h"
+#include "applicationvisualstyle.h"
 
 #include <QApplication>
 #include <QByteArray>

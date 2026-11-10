@@ -53,22 +53,10 @@ private:
         // The longest of the four visible titles sets one shared font size.
         // Recalculate when the firmware changes the Injection header labels.
         InjectionGaugeCard *cards[]={m_final,m_base,m_transient,m_counter};
-        QFont titleFont=m_final->font();
-        titleFont.setBold(true);
-        qreal pointSize=7.3;
-        for(;pointSize>4.5;pointSize-=0.1){
-            titleFont.setPointSizeF(pointSize);
-            const QFontMetricsF metrics(titleFont);
-            bool allFit=true;
-            for(InjectionGaugeCard *card:cards){
-                if(metrics.horizontalAdvance(card->title().toUpper())>172.0){
-                    allFit=false;
-                    break;
-                }
-            }
-            if(allFit)break;
-        }
-        for(InjectionGaugeCard *card:cards)card->setTitlePointSize(pointSize);
+        QStringList titles;
+        for(InjectionGaugeCard *card:cards)titles.append(card->title());
+        const qreal size=GaugeHeading::sharedPointSize(m_final->font(),titles,164.0);
+        for(InjectionGaugeCard *card:cards)card->setTitlePointSize(size);
     }
 
     void refreshRaw()

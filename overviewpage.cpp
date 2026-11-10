@@ -21,14 +21,16 @@
 #include "i18n.h"
 #include "mainwindow.h"
 #include "overviewpage.h"
+#include "applicationvisualstyle.h"
 
 namespace {
 
 class RebuildGaugeCard : public QWidget
 {
 public:
-    RebuildGaugeCard(QObject *source,const QString &title,const QString &unit,QWidget *parent=nullptr)
-        : QWidget(parent),m_source(source),m_title(title),m_unit(unit)
+    RebuildGaugeCard(QObject *source,const QString &title,const QString &unit,
+                     qreal titleSize,QWidget *parent=nullptr)
+        : QWidget(parent),m_source(source),m_title(title),m_unit(unit),m_titleSize(titleSize)
     {
         setMinimumSize(64,88);
         setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
@@ -70,13 +72,7 @@ protected:
         p.drawRoundedRect(card.adjusted(.5,.5,-.5,-.5),5.0,5.0);
 
         const QString gaugeTitle=m_title.toUpper();
-        QFont titleFont=p.font();
-        titleFont.setBold(true);
-        titleFont.setPointSizeF(8.2);
-        // Titles must fit the actual header width; only their lettering is scaled.
-        while(titleFont.pointSizeF()>5.0 &&
-              QFontMetricsF(titleFont).horizontalAdvance(gaugeTitle)>170.0)
-            titleFont.setPointSizeF(titleFont.pointSizeF()-0.2);
+        const QFont titleFont=GaugeHeading::styledFont(p.font(),m_titleSize);
         p.setFont(titleFont);
         p.setPen(QColor("#edf2f4"));
         p.drawText(QRectF(6,5,176,18),Qt::AlignCenter,gaugeTitle);
@@ -312,6 +308,7 @@ private:
     QObject *m_source=nullptr;
     QString m_title;
     QString m_unit;
+    qreal m_titleSize=8.0;
     QElapsedTimer m_clock;
     QVector<QPair<qint64,double>> m_history;
 };
@@ -490,6 +487,9 @@ static void buildOverviewCards(QMainWindow *w,QWidget *overview)
             {"m_ignition_advance",7141,"°",1,4}
         };
 
+        QStringList titles;
+        for(const G &g:gauges)titles.append(I18n::text(g.titleKey));
+        const qreal titleSize=GaugeHeading::sharedPointSize(w->font(),titles,164.0);
         QVector<RebuildGaugeCard*> cards;
         for(const G &g:gauges) {
             QObject *src=w->findChild<QObject*>(QString::fromLatin1(g.name));
@@ -502,7 +502,7 @@ static void buildOverviewCards(QMainWindow *w,QWidget *overview)
                 injectorSource->hide();
                 src=injectorSource;
             }
-            RebuildGaugeCard *gaugeCard=new RebuildGaugeCard(src,I18n::text(g.titleKey),QString::fromUtf8(g.unit),overview);
+            RebuildGaugeCard *gaugeCard=new RebuildGaugeCard(src,I18n::text(g.titleKey),QString::fromUtf8(g.unit),titleSize,overview);
             grid->addWidget(gaugeCard,g.row,g.col);
             cards.append(gaugeCard);
         }

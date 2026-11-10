@@ -26,7 +26,7 @@ protected:
         p.translate((width()-baseW*s)/2.0,(height()-baseH*s)/2.0);p.scale(s,s);
         p.setPen(QPen(QColor("#34414a"),1));p.setBrush(QColor("#0c1217"));p.drawRoundedRect(QRectF(.5,.5,187,209),5,5);
         // All four Injection titles use the same font size, fitted together.
-        QFont tf=p.font();tf.setBold(true);tf.setPointSizeF(m_titlePointSize);
+        const QFont tf=GaugeHeading::styledFont(p.font(),m_titlePointSize);
         const QString fullGaugeTitle=m_title.toUpper();
         p.setFont(tf);p.setPen(QColor("#edf2f4"));
         p.drawText(QRectF(6,5,176,20),Qt::AlignCenter,fullGaugeTitle);p.setPen(QColor("#27333b"));p.drawLine(QPointF(8,26),QPointF(180,26));

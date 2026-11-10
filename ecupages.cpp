@@ -257,7 +257,12 @@ static void compactStoredPanel(QMainWindow *w,QFrame *top)
         if(QGridLayout *g=qobject_cast<QGridLayout*>(stored->layout())) {
             g->setContentsMargins(0,0,0,0);
             g->setHorizontalSpacing(10);
-            g->setVerticalSpacing(2);
+            // The legacy .ui had an invisible row with stretch=100,
+            // leaving the fault list cramped at the top. Distribute the
+            // existing eight rows evenly over the available panel height.
+            g->setVerticalSpacing(6);
+            for(int row=0;row<g->rowCount();++row)g->setRowStretch(row,0);
+            for(int row=1;row<=8;++row)g->setRowStretch(row,1);
         }
     }
 }

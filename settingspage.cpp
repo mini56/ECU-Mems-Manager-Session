@@ -17,6 +17,7 @@
 #include <QtMath>
 #include "i18n.h"
 #include "settingspage.h"
+#include "applicationvisualstyle.h"
 
 namespace {
 
@@ -46,12 +47,14 @@ class SettingsGauge : public QWidget
 public:
     enum Kind { IdleError, EngineRpm, FuelTrim, IgnitionAdvance, Lambda };
 
-    SettingsGauge(QObject *source,const QString &title,const QString &unit,Kind kind,QWidget *parent=nullptr)
-        : QWidget(parent),m_source(source),m_title(title),m_unit(unit),m_kind(kind)
+    SettingsGauge(QObject *source,const QString &title,const QString &unit,Kind kind,
+                  qreal titleSize,QWidget *parent=nullptr)
+        : QWidget(parent),m_source(source),m_title(title),m_unit(unit),m_kind(kind),
+          m_titleSize(titleSize)
     {
         setMinimumSize(kind==EngineRpm?260:145,kind==EngineRpm?260:145);
         setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
-        setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
+        setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
         setAttribute(Qt::WA_TransparentForMouseEvents,true);
         QTimer *timer=new QTimer(this);
         timer->setInterval(250);
@@ -69,17 +72,14 @@ protected:
         const bool large=(m_kind==EngineRpm);
         const qreal bw=large?310.0:176.0;
         const qreal bh=large?300.0:166.0;
-        const qreal scale=qMin(width()/bw,height()/bh);
-        p.translate((width()-bw*scale)/2.0,(height()-bh*scale)/2.0);
+        // Keep the RPM caption in its own bottom strip below the dial.
+        const qreal dialHeight=qMax<qreal>(1,height()-(large?30:0));
+        const qreal scale=qMin(width()/bw,dialHeight/bh);
+        p.translate((width()-bw*scale)/2.0,(dialHeight-bh*scale)/2.0);
         p.scale(scale,scale);
 
         const QString gaugeTitle=m_title.toUpper();
-        QFont titleFont=p.font();
-        titleFont.setBold(true);
-        titleFont.setPointSizeF(large?10.2:9.0);
-        while(titleFont.pointSizeF()>6.0 &&
-              QFontMetricsF(titleFont).horizontalAdvance(gaugeTitle)>bw-12.0)
-            titleFont.setPointSizeF(titleFont.pointSizeF()-0.2);
+        const QFont titleFont=GaugeHeading::styledFont(p.font(),m_titleSize);
         p.setFont(titleFont);
         p.setPen(kText);
         p.drawText(QRectF(4,0,bw-8,20),Qt::AlignCenter,gaugeTitle);
@@ -228,14 +228,8 @@ private:
     QString m_title;
     QString m_unit;
     Kind m_kind;
+    qreal m_titleSize=8.0;
 };
-
-static void styleLed(QWidget *led)
-{
-    if(!led) return;
-    led->setFixedSize(24,24);
-    led->show();
-}
 
 static void styleAdjustButton(QPushButton *button)
 {
@@ -330,11 +324,14 @@ static void rebuildGaugeArea(QWidget *page,QFrame *metrics)
     QObject *ignSrc=page->findChild<QObject*>(QStringLiteral("e_ignition_advance"));
     QObject *lambdaSrc=page->findChild<QObject*>(QStringLiteral("e_lambda"));
 
-    SettingsGauge *idle=new SettingsGauge(idleSrc,I18n::text(7139),QStringLiteral("tr/min"),SettingsGauge::IdleError,metrics);
-    SettingsGauge *rpm=new SettingsGauge(rpmSrc,I18n::text(1011),QStringLiteral("tr/min"),SettingsGauge::EngineRpm,metrics);
-    SettingsGauge *trim=new SettingsGauge(trimSrc,I18n::text(7140),QStringLiteral("%"),SettingsGauge::FuelTrim,metrics);
-    SettingsGauge *ign=new SettingsGauge(ignSrc,I18n::text(7141),QString::fromUtf8("°"),SettingsGauge::IgnitionAdvance,metrics);
-    SettingsGauge *lambda=new SettingsGauge(lambdaSrc,I18n::text(7142),QStringLiteral("mV"),SettingsGauge::Lambda,metrics);
+    const qreal titleSize=GaugeHeading::sharedPointSize(page->font(),
+        QStringList{I18n::text(7139),I18n::text(1011),I18n::text(7140),
+                    I18n::text(7141),I18n::text(7142)},164.0);
+    SettingsGauge *idle=new SettingsGauge(idleSrc,I18n::text(7139),QStringLiteral("tr/min"),SettingsGauge::IdleError,titleSize,metrics);
+    SettingsGauge *rpm=new SettingsGauge(rpmSrc,I18n::text(1011),QStringLiteral("tr/min"),SettingsGauge::EngineRpm,titleSize,metrics);
+    SettingsGauge *trim=new SettingsGauge(trimSrc,I18n::text(7140),QStringLiteral("%"),SettingsGauge::FuelTrim,titleSize,metrics);
+    SettingsGauge *ign=new SettingsGauge(ignSrc,I18n::text(7141),QString::fromUtf8("°"),SettingsGauge::IgnitionAdvance,titleSize,metrics);
+    SettingsGauge *lambda=new SettingsGauge(lambdaSrc,I18n::text(7142),QStringLiteral("mV"),SettingsGauge::Lambda,titleSize,metrics);
 
     idle->setObjectName(QStringLiteral("darkTuneGaugeIdle"));
     rpm->setObjectName(QStringLiteral("darkTuneGaugeRpm"));
@@ -359,12 +356,9 @@ static void rebuildGaugeArea(QWidget *page,QFrame *metrics)
     layout->addLayout(grid,1);
 }
 
-static void rebuildAdjustArea(QWidget *page,QFrame *states,QFrame *adjust,QLineEdit *note)
+static void rebuildAdjustArea(QWidget *page,QFrame *adjust)
 {
     if(!page || !adjust) return;
-
-    QWidget *idleLed=page->findChild<QWidget*>(QStringLiteral("idleswitch_led"));
-    QWidget *loopLed=page->findChild<QWidget*>(QStringLiteral("closedloop_led"));
 
     QLabel *fuelLabel=page->findChild<QLabel*>(QStringLiteral("emi_shorttermftrim"));
     QLabel *hotLabel=page->findChild<QLabel*>(QStringLiteral("emi_idledecay"));
@@ -388,8 +382,6 @@ static void rebuildAdjustArea(QWidget *page,QFrame *states,QFrame *adjust,QLineE
     QPushButton *resetAdj=page->findChild<QPushButton*>(QStringLiteral("m_resetAdjustmentsButton"));
     QPushButton *resetEcu=page->findChild<QPushButton*>(QStringLiteral("m_resetECUButton"));
 
-    if(states) states->hide();
-
     QVBoxLayout *layout=qobject_cast<QVBoxLayout*>(adjust->layout());
     if(!layout) return;
     clearLayout(layout);
@@ -412,39 +404,7 @@ static void rebuildAdjustArea(QWidget *page,QFrame *states,QFrame *adjust,QLineE
     title->setFont(titleFont);
     title->setStyleSheet(QStringLiteral("color:#ff9828;background:transparent;border:0;"));
     header->addWidget(title);
-    header->addSpacing(18);
-
-    if(loopLed) {
-        loopLed->setParent(adjust);
-        styleLed(loopLed);
-        header->addWidget(loopLed);
-        QLabel *loopText=new QLabel(I18n::text(2014),adjust);
-        loopText->setStyleSheet(QStringLiteral("color:#dce3e8;background:transparent;border:0;"));
-        header->addWidget(loopText);
-    }
-    header->addSpacing(14);
-    if(idleLed) {
-        idleLed->setParent(adjust);
-        styleLed(idleLed);
-        header->addWidget(idleLed);
-        QLabel *idleText=new QLabel(I18n::text(2015),adjust);
-        idleText->setStyleSheet(QStringLiteral("color:#dce3e8;background:transparent;border:0;"));
-        header->addWidget(idleText);
-    }
-
     header->addStretch(1);
-    if(note) {
-        note->setParent(adjust);
-        note->setReadOnly(true);
-        note->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
-        note->setMinimumWidth(280);
-        note->setMaximumWidth(470);
-        note->setMinimumHeight(24);
-        note->setMaximumHeight(28);
-        note->setStyleSheet(QStringLiteral("QLineEdit{background:transparent;color:#b8c1c7;border:0;padding:1px 2px;}"));
-        note->show();
-        header->addWidget(note,0);
-    }
     layout->addWidget(headerBar);
 
     QFrame *line=new QFrame(adjust);
@@ -575,12 +535,13 @@ static void rebuildPageLayout(QWidget *page,QFrame *metrics,QFrame *states,QFram
     body->setVerticalSpacing(7);
 }
 
-static void sizeGauge(QWidget *gauge,int size)
+static void prepareSettingsGauge(QWidget *gauge,bool precision)
 {
-    if(!gauge) return;
-    gauge->setMinimumSize(size,size);
-    gauge->setMaximumSize(size,size);
-    gauge->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
+    if(!gauge)return;
+    // The grid owns gauge geometry on every resize: no stale pixel caps.
+    gauge->setMinimumSize(precision?270:150,precision?280:145);
+    gauge->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
+    gauge->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     gauge->setAttribute(Qt::WA_StyledBackground,true);
     gauge->setStyleSheet(QStringLiteral(
         "background:#080d11;border:1px solid #34414a;border-radius:5px;"));
@@ -591,27 +552,21 @@ static void applySettingsSizing(QWidget *page,QFrame *metrics,QFrame *adjust)
 {
     if(!page || !metrics || !adjust) return;
 
-    // Keep the five original positions. The precision RPM dial takes the
-    // maximum square allowed by the page height and the three-column grid.
-    // The lower control band is only as tall as its real content requires.
-    const int width=qMax(700,page->width());
-    const int height=qMax(430,page->height());
-    const int adjustHeight=qMax(225,adjust->minimumSizeHint().height());
-    const int metricsHeight=qMax(240,height-adjustHeight-24);
-    const int center=qMax(190,qMin(qRound(width*.52),metricsHeight-14));
-    const int outer=qMax(122,qMin(qRound(center*.55),(metricsHeight-10)/2));
+    // The central precision RPM card spans both rows and fills its cell.
+    // Free space is allocated by Qt's current layout, not startup geometry.
+    for(const char *name:{"darkTuneGaugeIdle","darkTuneGaugeTrim",
+                          "darkTuneGaugeIgnition","darkTuneGaugeLambda"})
+        prepareSettingsGauge(page->findChild<QWidget*>(QString::fromLatin1(name)),false);
+    prepareSettingsGauge(page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeRpm")),true);
 
-    sizeGauge(page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeRpm")),center);
-    sizeGauge(page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeIdle")),outer);
-    sizeGauge(page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeTrim")),outer);
-    sizeGauge(page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeIgnition")),outer);
-    sizeGauge(page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeLambda")),outer);
-
-    metrics->setMinimumHeight(metricsHeight);
+    metrics->setMinimumHeight(280);
     metrics->setMaximumHeight(QWIDGETSIZE_MAX);
     metrics->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
-    adjust->setMinimumHeight(adjustHeight);
-    adjust->setMaximumHeight(adjustHeight);
+
+    // Four control rows remain compact; spare height belongs to the dials.
+    const int controlsHeight=qMax(210,adjust->minimumSizeHint().height());
+    adjust->setMinimumHeight(controlsHeight);
+    adjust->setMaximumHeight(controlsHeight);
     adjust->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
 }
 
@@ -689,55 +644,6 @@ static void compactAdjustForm(QWidget *page,QFrame *adjust)
     }
 }
 
-static void moveIndicatorsToStates(QWidget *page,QFrame *states,QFrame *adjust)
-{
-    if(!page || !states || !adjust) return;
-
-    QWidget *idleLed=page->findChild<QWidget*>(QStringLiteral("idleswitch_led"));
-    QWidget *loopLed=page->findChild<QWidget*>(QStringLiteral("closedloop_led"));
-    if(!idleLed || !loopLed) return;
-
-    for(QHBoxLayout *row:adjust->findChildren<QHBoxLayout*>()) {
-        if(row->indexOf(idleLed)>=0) row->removeWidget(idleLed);
-        if(row->indexOf(loopLed)>=0) row->removeWidget(loopLed);
-    }
-
-    for(QLabel *label:adjust->findChildren<QLabel*>(QString(),Qt::FindDirectChildrenOnly)) {
-        if(label->text()==I18n::text(2014) || label->text()==I18n::text(2015))
-            label->hide();
-    }
-
-    QLabel *idleText=nullptr;
-    QLabel *loopText=nullptr;
-    for(QLabel *label:states->findChildren<QLabel*>()) {
-        if(!idleText && label->text()==I18n::text(2015)) idleText=label;
-        if(!loopText && label->text()==I18n::text(2014)) loopText=label;
-    }
-
-    QGridLayout *stateGrid=nullptr;
-    for(QGridLayout *grid:states->findChildren<QGridLayout*>()) {
-        if((idleText && grid->indexOf(idleText)>=0) || (loopText && grid->indexOf(loopText)>=0)) {
-            stateGrid=grid;
-            break;
-        }
-    }
-    if(!stateGrid) return;
-
-    idleLed->setParent(states);
-    idleLed->setFixedSize(24,24);
-    idleLed->show();
-    stateGrid->addWidget(idleLed,0,0,Qt::AlignCenter);
-
-    loopLed->setParent(states);
-    loopLed->setFixedSize(24,24);
-    loopLed->show();
-    stateGrid->addWidget(loopLed,1,0,Qt::AlignCenter);
-
-    if(idleText) idleText->show();
-    if(loopText) loopText->show();
-    states->show();
-}
-
 static void embedNoteInRpmGauge(QWidget *page,QFrame *metrics,QFrame *adjust)
 {
     if(!page || !metrics || !adjust) return;
@@ -789,6 +695,7 @@ static void arrangeBottomPanels(QWidget *page,QFrame *metrics,QFrame *states,QFr
     body->removeWidget(adjust);
     body->addWidget(metrics,0,0,1,2);
     body->addWidget(states,1,0);
+    states->show();
     body->addWidget(adjust,1,1);
     body->setColumnStretch(0,1);
     body->setColumnStretch(1,4);
@@ -944,9 +851,8 @@ static void applySettingsLayout(QMainWindow *window)
 
     if(!page->property("settingsDark410Built").toBool()) {
         page->setProperty("settingsDark410Built",true);
-        QLineEdit *note=page->findChild<QLineEdit*>(QStringLiteral("lineEdit_3"));
         rebuildGaugeArea(page,metrics);
-        rebuildAdjustArea(page,states,adjust,note);
+        rebuildAdjustArea(page,adjust);
         rebuildPageLayout(page,metrics,states,adjust);
     }
 
@@ -954,7 +860,6 @@ static void applySettingsLayout(QMainWindow *window)
     // Integrate the previously separate late visual pass once, here.
     if(!page->property("settingsLayoutIntegrated").toBool()) {
         compactAdjustForm(page,adjust);
-        moveIndicatorsToStates(page,states,adjust);
         arrangeBottomPanels(page,metrics,states,adjust);
         shortenSettingsSeparator(adjust);
         page->setProperty("settingsLayoutIntegrated",true);
