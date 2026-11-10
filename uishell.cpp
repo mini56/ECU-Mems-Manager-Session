@@ -1043,9 +1043,9 @@ static void applyResponsive(QMainWindow *window)
         // The sidebar and its utility actions belong to the native window
         // shell instead of a delayed global patch.
         ensureSidebar(window);
-        // Once the original settings and page installers finish, improve
-        // text only: no position, size, card, dial or table changes.
-        QTimer::singleShot(2800,window,[tabs](){applyReadablePageFonts(tabs);});
+        // All page owners have finished constructing their widgets here.
+        // Apply the validated minimum typography immediately, once.
+        applyReadablePageFonts(tabs);
     }
 } // namespace
 
