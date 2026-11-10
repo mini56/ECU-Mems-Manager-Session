@@ -209,6 +209,16 @@ jobs:
              $protocol -notmatch 'sendRoscoReadCommand\(command\)'){
             throw 'ECU_NATIVE_TRANSPORT_ROUTING_MISSING'
           }
+          $ramLogger=Get-Content injectionramtestlogger.cpp -Raw
+          $ramTest=Get-Content injectionramtest.cpp -Raw
+          if($ramLogger -match 'Q_COREAPP_STARTUP_FUNCTION|installEventFilter|scanDialogs|setInterval\(50\)' -or
+             $ramLogger -notmatch 'void saveFinishedPhase\(' -or
+             $ramLogger -notmatch 'void addFolderButton\(' -or
+             $ramTest -notmatch 'InjectionRamTestLog::saveFinishedPhase\(output\)' -or
+             $ramTest -notmatch 'InjectionRamTestLog::beginPhase\(output\)' -or
+             $ramTest -notmatch 'InjectionRamTestLog::addFolderButton\(session,grid\)'){
+             throw 'AANMP002_JOURNAL_MUST_USE_NATIVE_TEST_EVENTS'
+          }
           Write-Host 'SESSION_CLEAN_SOURCE_PREFLIGHT_PASS'
       - name: Preparer Python
         uses: actions/setup-python@v5
@@ -262,7 +272,7 @@ jobs:
         run: |
           $ErrorActionPreference='Stop'
           $env:PATH="C:\Qt\5.15.2\msvc2019_64\bin;$env:PATH"
-          foreach($test in @('ia_response_selftest','ia_mems_diagram_selftest','mems_database_content_selftest')){
+          foreach($test in @('ia_response_selftest','ia_mems_diagram_selftest','mems_database_content_selftest','injection_ram_log_selftest')){
             $executable=Join-Path $PWD "build-session-134\Release\$test.exe"
             if(-not(Test-Path $executable)){throw "MISSING_REGRESSION_TEST: $test"}
             & $executable
@@ -270,4 +280,5 @@ jobs:
           }
           Write-Host 'SESSION_IA_MULTILINGUAL_AND_MEMS_DIAGRAM_TESTS_PASS'
           Write-Host 'SESSION_MEMS_DATABASE_CONTENT_REGRESSION_TEST_PASS'
+          Write-Host 'SESSION_INJECTION_RAM_LOG_REGRESSION_TEST_PASS'
 

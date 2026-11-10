@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "injectionramtestui.h"
+#include "injectionramtestlogger.h"
 #include "memsinterface.h"
 #include "i18n.h"
 
@@ -1078,6 +1079,7 @@ static bool installButton(MainWindow *window)
             openDialog(window);
         });
 
+        InjectionRamTestLog::addFolderButton(session,grid);
         return true;
     }
 
@@ -1094,7 +1096,7 @@ static bool installButton(MainWindow *window)
         }
 
         InjectionRamTestDialog dialog(window);
-        // Keep this exact title: the automatic logger recognises it.
+        // Stable dialog title for the AANMP002 test.
         dialog.setWindowTitle(QStringLiteral("Test dynamique temps injection — AANMP002"));
         dialog.setModal(true);
         dialog.resize(820, 700);
@@ -1190,6 +1192,7 @@ static bool installButton(MainWindow *window)
                     ? QStringLiteral("font-weight:700; color:#55c979;")
                     : QStringLiteral("font-weight:700; color:#ff9828;"));
                 output->setPlainText(testLog);
+                InjectionRamTestLog::saveFinishedPhase(output);
                 close->setEnabled(true);
 
                 const bool phase1Ready = mems && mems->property("injectionRamPhase1Ready").toBool();
@@ -1216,6 +1219,7 @@ static bool installButton(MainWindow *window)
                 return;
 
             const bool phase2 = mems->property("injectionRamPhase1Ready").toBool();
+            InjectionRamTestLog::beginPhase(output);
             mems->setProperty("injectionRamPhase2Requested", phase2);
 
             run->setEnabled(false);

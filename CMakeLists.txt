@@ -135,6 +135,12 @@ add_executable(mems_database_content_selftest
 target_link_libraries(mems_database_content_selftest PRIVATE Qt5::Widgets)
 add_dependencies(${PNAME} mems_database_content_selftest)
 
+add_executable(injection_ram_log_selftest
+    InjectionRamTestLoggerSelfTest.cpp
+    injectionramtestlogger.cpp injectionramtestlogger.h)
+target_link_libraries(injection_ram_log_selftest PRIVATE Qt5::Widgets)
+add_dependencies(${PNAME} injection_ram_log_selftest)
+
 # A portable, isolated regression test for fresh install and upgrade when
 # the executable directory (Program Files) is not writable.
 add_executable(database_storage_selftest
@@ -181,6 +187,7 @@ if(MSVC)
     target_compile_options(ia_response_selftest PRIVATE /utf-8)
     target_compile_options(ia_mems_diagram_selftest PRIVATE /utf-8)
     target_compile_options(mems_database_content_selftest PRIVATE /utf-8)
+    target_compile_options(injection_ram_log_selftest PRIVATE /utf-8)
     if(TARGET local_ai_onnx_selftest)
         target_compile_options(local_ai_onnx_selftest PRIVATE /permissive /utf-8)
     endif()
