@@ -426,6 +426,46 @@ bool MEMSInterface::connectToECU()
     return false;
 }
 
+// Per-instance tracking is connected exactly once during construction.
+void MEMSInterface::bindProtocolContextTracking()
+{
+    QObject::connect(this, &MEMSInterface::protocolResponse, this,
+                     [this](quint8 command, const QByteArray &response) {
+        if (command != quint8(0xF0) || response.isEmpty())
+            return;
+        for (int i = response.size() - 1; i >= 0; --i)
+        {
+            const quint8 value = quint8(static_cast<unsigned char>(response.at(i)));
+            if (value == 0x50u)
+            {
+                setDiagnosticMode(MemsDiagnosticMode::Normal);
+                return;
+            }
+            if (value == 0x14u)
+            {
+                setDiagnosticMode(MemsDiagnosticMode::Mode3);
+                return;
+            }
+            if (value == 0x1Eu)
+            {
+                setDiagnosticMode(MemsDiagnosticMode::Mode4);
+                return;
+            }
+        }
+    }, Qt::DirectConnection);
+    QObject::connect(this, &MEMSInterface::readModeChanged, this,
+                     [this](const QString &mode) {
+        if (mode == QStringLiteral("diagnostic"))
+            setDiagnosticMode(MemsDiagnosticMode::Normal);
+        else if (mode == QStringLiteral("injection"))
+            setDiagnosticMode(MemsDiagnosticMode::Mode4);
+        else if (mode == QStringLiteral("mode3"))
+            setDiagnosticMode(MemsDiagnosticMode::Mode3);
+        else if (mode == QStringLiteral("transition"))
+            setDiagnosticMode(MemsDiagnosticMode::Transition);
+    }, Qt::DirectConnection);
+}
+
 void MEMSInterface::onStartPollingRequest()
 {
     if (m_shutdownRequested.loadAcquire() != 0)
@@ -433,48 +473,6 @@ void MEMSInterface::onStartPollingRequest()
         resetProtocolContext();
         QThread::currentThread()->quit();
         return;
-    }
-
-    // Bind once: F0 can recover/confirm the central diagnostic mode, while the
-    // mapped Injection reader also publishes transition/Mode4/normal changes.
-    if (!property("protocolContextTrackingBound").toBool())
-    {
-        setProperty("protocolContextTrackingBound", true);
-        QObject::connect(this, &MEMSInterface::protocolResponse, this,
-                         [this](quint8 command, const QByteArray &response) {
-            if (command != quint8(0xF0) || response.isEmpty())
-                return;
-            for (int i = response.size() - 1; i >= 0; --i)
-            {
-                const quint8 value = quint8(static_cast<unsigned char>(response.at(i)));
-                if (value == 0x50u)
-                {
-                    setDiagnosticMode(MemsDiagnosticMode::Normal);
-                    return;
-                }
-                if (value == 0x14u)
-                {
-                    setDiagnosticMode(MemsDiagnosticMode::Mode3);
-                    return;
-                }
-                if (value == 0x1Eu)
-                {
-                    setDiagnosticMode(MemsDiagnosticMode::Mode4);
-                    return;
-                }
-            }
-        }, Qt::DirectConnection);
-        QObject::connect(this, &MEMSInterface::readModeChanged, this,
-                         [this](const QString &mode) {
-            if (mode == QStringLiteral("diagnostic"))
-                setDiagnosticMode(MemsDiagnosticMode::Normal);
-            else if (mode == QStringLiteral("injection"))
-                setDiagnosticMode(MemsDiagnosticMode::Mode4);
-            else if (mode == QStringLiteral("mode3"))
-                setDiagnosticMode(MemsDiagnosticMode::Mode3);
-            else if (mode == QStringLiteral("transition"))
-                setDiagnosticMode(MemsDiagnosticMode::Transition);
-        }, Qt::DirectConnection);
     }
 
     // Prevent a second queued connection request from entering while a slow

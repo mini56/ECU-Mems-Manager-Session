@@ -165,6 +165,7 @@ private:
     void setEcuFamily(MemsEcuFamily family);
     void setDiagnosticMode(MemsDiagnosticMode mode);
     void resetProtocolContext();
+    void bindProtocolContextTracking();
     bool guardedMemsTestActuator(actuator_cmd cmd, uint8_t *data);
     bool guardedMemsMoveIac(uint8_t desiredPos);
     bool guardedClearFaults();

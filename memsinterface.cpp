@@ -4,7 +4,6 @@
 #include <QCoreApplication>
 #include <QMutexLocker>
 #include <string.h>
-#include <QThread>
 #ifdef WIN32
 #include <windows.h>
 #else
@@ -23,6 +22,7 @@ QObject(parent), m_deviceName(device), m_stopPolling(false), m_shutdownThread(fa
 {
   memset(&m_data, 0, sizeof(mems_data));
   memset(m_d0_response_buffer, 0, 4);
+  bindProtocolContextTracking();
 }
 
 /**

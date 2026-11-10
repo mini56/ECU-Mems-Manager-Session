@@ -244,6 +244,13 @@ jobs:
              if(Test-Path $obsolete){throw "UNBUILT_DUPLICATE_SOURCE_REINTRODUCED: $obsolete"}
           }
           Write-Host "SESSION_NATIVE_CPP_SOURCES_AUDITED=$($nativeCpp.Count)"
+          $transport=Get-Content memsinterface.cpp -Raw
+          $protocol=Get-Content memsinterface_dispatch.cpp -Raw
+          if($protocol -match 'protocolContextTrackingBound' -or
+             $protocol -notmatch 'void MEMSInterface::bindProtocolContextTracking\(' -or
+             $transport -notmatch 'bindProtocolContextTracking\(\);'){
+             throw 'ECU_PROTOCOL_TRACKING_MUST_BIND_IN_CONSTRUCTOR'
+          }
           Write-Host 'SESSION_CLEAN_SOURCE_PREFLIGHT_PASS'
       - name: Preparer Python
         uses: actions/setup-python@v5
