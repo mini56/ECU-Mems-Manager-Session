@@ -731,28 +731,35 @@ static void moveIndicatorsToStates(QWidget *page,QFrame *states,QFrame *adjust)
     states->show();
 }
 
-static void moveNoteBelowRpm(QWidget *page,QFrame *metrics,QFrame *adjust)
+static void embedNoteInRpmGauge(QWidget *page,QFrame *metrics,QFrame *adjust)
 {
     if(!page || !metrics || !adjust) return;
 
     QLineEdit *note=page->findChild<QLineEdit*>(QStringLiteral("lineEdit_3"));
-    QWidget *rpm=page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeRpm"));
+    QWidget *rpm=metrics->findChild<QWidget*>(QStringLiteral("darkTuneGaugeRpm"));
     if(!note || !rpm) return;
 
+    // This is part of the gauge's layout, not a late geometry correction.
+    // The bottom-aligned line always follows gauge resizing.
     for(QHBoxLayout *row:adjust->findChildren<QHBoxLayout*>())
         if(row->indexOf(note)>=0) row->removeWidget(note);
 
     note->setParent(rpm);
     note->setReadOnly(true);
-    note->show();
-    note->raise();
+    note->setMinimumHeight(19);
+    note->setMaximumHeight(21);
+    note->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
 
-    const int noteHeight=qBound(19,note->sizeHint().height(),21);
-    const int margin=8;
-    const int noteWidth=qMax(1,rpm->width()-margin*2);
-    const int x=margin;
-    const int y=qMax(2,rpm->height()-noteHeight-4);
-    note->setGeometry(x,y,noteWidth,noteHeight);
+    QVBoxLayout *layout=qobject_cast<QVBoxLayout*>(rpm->layout());
+    if(!layout) {
+        layout=new QVBoxLayout(rpm);
+        layout->setContentsMargins(8,0,8,4);
+        layout->setSpacing(0);
+        layout->addStretch(1);
+    }
+    if(layout->indexOf(note)<0)
+        layout->addWidget(note);
+    note->show();
 }
 
 static void arrangeBottomPanels(QWidget *page,QFrame *metrics,QFrame *states,QFrame *adjust)
@@ -957,9 +964,7 @@ static void applySettingsLayout(QMainWindow *window)
     states->setMinimumHeight(adjust->minimumHeight());
     states->setMaximumHeight(QWIDGETSIZE_MAX);
     states->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Expanding);
-    QTimer::singleShot(0,page,[page,metrics,adjust](){
-        moveNoteBelowRpm(page,metrics,adjust);
-    });
+    embedNoteInRpmGauge(page,metrics,adjust);
 }
 
 
