@@ -33,6 +33,24 @@ inline qreal sharedPointSize(const QFont &base,const QStringList &labels,
     return qMax<qreal>(3.9,size);
 }
 }
+// Common Segoe UI data typography for the two data views and the ECU
+// interactive instructions.  Headers are bold; ordinary content is not.
+namespace DataPageTypography {
+inline QFont body(const QFont &base)
+{
+    QFont font(base);
+    font.setFamily(QStringLiteral("Segoe UI"));
+    font.setPointSizeF(10.0);
+    font.setWeight(QFont::Normal);
+    return font;
+}
+inline QFont header(const QFont &base)
+{
+    QFont font=body(base);
+    font.setWeight(QFont::Bold);
+    return font;
+}
+}
 // Native UI owns visual style application and responsive card arrangement.
 void applyApplicationVisualStyle(QMainWindow *window);
 void resizeApplicationVisualStyle(QMainWindow *window);

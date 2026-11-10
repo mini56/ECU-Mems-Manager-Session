@@ -1,4 +1,5 @@
 #include <QApplication>
+#include "applicationvisualstyle.h"
 #include <QCoreApplication>
 #include <QEvent>
 #include <QFrame>
@@ -15,6 +16,7 @@
 #include <QPushButton>
 #include <QTabWidget>
 #include <QTimer>
+#include <QTextDocument>
 #include <QVBoxLayout>
 #include <QWidget>
 #include "i18n.h"
@@ -530,6 +532,106 @@ static void composeActuators(QMainWindow *window)
 
 } // namespace
 
+// Native interactive ECU page: legacy .ui uses absolute coordinates,
+ // which clipped the command and warning labels.  Own one responsive
+ // layout here, preserving the existing widgets and their ECU signals.
+static void composeInteractive(QMainWindow *window)
+{
+    QWidget *page=pageFor(window,QStringLiteral("ECU"));
+    if(!page || page->property("interactivePageLayoutBuilt").toBool())return;
+    page->setProperty("interactivePageLayoutBuilt",true);
+    page->setMinimumSize(0,0);
+    page->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
+    page->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+
+    if(QWidget *empty=page->findChild<QWidget*>(QStringLiteral("label_9")))
+        empty->hide();
+
+    QVBoxLayout *layout=qobject_cast<QVBoxLayout*>(page->layout());
+    if(!layout){
+        layout=new QVBoxLayout(page);
+        layout->setContentsMargins(32,22,32,20);
+        layout->setSpacing(12);
+    }
+
+    const char *texts[]={
+        "label_23", // Readmems prerequisite
+        "label_24", // Open a command prompt
+        "label_48", // Dir command
+        "label_49", // Interactive command
+        "label_50", // Serial port
+        "ecuResetSettingsWarningLabel", // 0xFA warning
+    };
+    for(const char *name:texts){
+        QLabel *label=page->findChild<QLabel*>(QString::fromLatin1(name));
+        if(!label)continue;
+        // Translate and display the source wording, with long lines wrapped.
+        // The old HTML markup is not needed for these instructional labels.
+        if(Qt::mightBeRichText(label->text())){
+            QTextDocument document;
+            document.setHtml(label->text());
+            label->setTextFormat(Qt::PlainText);
+            label->setText(document.toPlainText().trimmed());
+        }
+        label->setFont(DataPageTypography::body(label->font()));
+        label->setStyleSheet(QStringLiteral(
+            "color:#ffffff;background:transparent;border:0;font-weight:400;"));
+        label->setWordWrap(true);
+        label->setMinimumSize(0,0);
+        label->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
+        label->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
+        label->show();
+        layout->addWidget(label);
+    }
+
+    // Preserve the original text and purpose of the 0x0F field.
+    if(QLineEdit *note=page->findChild<QLineEdit*>(QStringLiteral("lineEdit_2"))){
+        note->setFont(DataPageTypography::body(note->font()));
+        note->setStyleSheet(QStringLiteral(
+            "QLineEdit{font-weight:400;color:#ffffff;background:transparent;"
+            "border:0;padding:0 2px;}"));
+        note->setMinimumWidth(0);
+        note->setMaximumWidth(QWIDGETSIZE_MAX);
+        note->setMinimumHeight(30);
+        note->setMaximumHeight(32);
+        note->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+        note->show();
+        layout->addWidget(note);
+    }
+
+    if(QLabel *warning=page->findChild<QLabel*>(QStringLiteral("label_22"))){
+        // Inline legacy HTML forces 12pt red text.  Use the shared 10pt
+        // body typeface while retaining red as a meaningful safety warning.
+        if(Qt::mightBeRichText(warning->text())){
+            QTextDocument document;
+            document.setHtml(warning->text());
+            warning->setTextFormat(Qt::PlainText);
+            warning->setText(document.toPlainText().trimmed());
+        }
+        warning->setFont(DataPageTypography::body(warning->font()));
+        warning->setStyleSheet(QStringLiteral(
+            "color:#ff3535;background:transparent;border:0;font-weight:400;"));
+        warning->setWordWrap(true);
+        warning->setMinimumSize(0,0);
+        warning->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
+        warning->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
+        warning->show();
+        layout->addWidget(warning);
+    }
+
+    if(QPushButton *button=page->findChild<QPushButton*>(QStringLiteral("interactive_push_button"))){
+        button->setFont(DataPageTypography::body(button->font()));
+        button->setMinimumWidth(160);
+        button->setMinimumHeight(34);
+        button->setMaximumWidth(QWIDGETSIZE_MAX);
+        button->setMaximumHeight(38);
+        button->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
+        button->show();
+        layout->addWidget(button,0,Qt::AlignLeft);
+    }
+    layout->addStretch(1);
+}
+
 void buildEcuControlPages(QMainWindow *window)
 {
     if (!window)
@@ -538,5 +640,6 @@ void buildEcuControlPages(QMainWindow *window)
     // No late global event filter or repeated 240/900 ms corrective passes.
     composeErrors(window);
     composeActuators(window);
+    composeInteractive(window);
     applyErrorsVisualPhaseOne(window);
 }

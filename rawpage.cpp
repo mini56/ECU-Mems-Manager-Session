@@ -1,4 +1,5 @@
 #include "rawpage.h"
+#include "applicationvisualstyle.h"
 #include <QFont>
 #include <QFontMetrics>
 #include <QGridLayout>
@@ -35,11 +36,8 @@ void fitRawDataPage(QWidget *page)
     QGridLayout *rightGrid=qobject_cast<QGridLayout*>(right->layout());
     if(!leftGrid || !rightGrid) return;
 
-    const int rows=qMax(leftGrid->rowCount(),rightGrid->rowCount());
-    const int height=qMax(430,page->height()-body->contentsMargins().top()-body->contentsMargins().bottom());
-    // All rows remain visible at standard laptop sizes, with readable
-    // lettering on larger windows instead of the former 6.7pt minimum.
-    const qreal pointSize=qBound<qreal>(9.8,(height-30.0)/qMax(1,rows)*0.60,10.5);
+    // Both native data pages use one 10pt Segoe UI font.  The grid
+    // stretches its rows; font size is not recalculated on window resize.
 
     for (QWidget *block:{left,right}) {
         block->setMinimumSize(0,0);
@@ -57,8 +55,7 @@ void fitRawDataPage(QWidget *page)
         grid->setColumnStretch(2,2);  // ECU value
         grid->setColumnStretch(3,3);  // Converted value
 
-        QFont rowFont=block->font();
-        rowFont.setPointSizeF(pointSize);
+        const QFont rowFont=DataPageTypography::body(block->font());
         const int textHeight=QFontMetrics(rowFont).height();
         for(int row=0;row<grid->rowCount();++row){
             grid->setRowMinimumHeight(row,textHeight+1);
@@ -69,17 +66,16 @@ void fitRawDataPage(QWidget *page)
             const QString name=label->objectName();
             const bool header=name.startsWith(QStringLiteral("header_")) ||
                               name.startsWith(QStringLiteral("Aheader_"));
-            QFont font=label->font();
-            font.setPointSizeF(pointSize);
-            font.setBold(header);
-            label->setFont(font);
+            label->setFont(header
+                ? DataPageTypography::header(label->font())
+                : DataPageTypography::body(label->font()));
             label->setWordWrap(false);
             label->setMinimumHeight(textHeight+1);
             label->setMaximumHeight(QWIDGETSIZE_MAX);
             label->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Expanding);
             label->setStyleSheet(header
                 ? QStringLiteral("color:#ff9828;background:transparent;border:0;font-weight:700;")
-                : QStringLiteral("color:#ffffff;background:transparent;border:0;"));
+                : QStringLiteral("color:#ffffff;background:transparent;border:0;font-weight:400;"));
         }
     }
 }

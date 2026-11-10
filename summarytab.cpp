@@ -1,4 +1,5 @@
 #include "summarytab.h"
+#include "applicationvisualstyle.h"
 #include <QHeaderView>
 #include <QFontMetrics>
 #include <QIcon>
@@ -60,6 +61,9 @@ SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)
   QTableWidget *tables[3] = { m_table0, m_table1, m_table2 };
   for (int i = 0; i < 3; i++)
   {
+    tables[i]->setFont(DataPageTypography::body(tables[i]->font()));
+    tables[i]->horizontalHeader()->setFont(
+        DataPageTypography::header(tables[i]->horizontalHeader()->font()));
     tables[i]->setHorizontalHeaderLabels(QStringList()
         << I18n::text(6600) /* EN: Parameter */ << "" << I18n::text(6601) /* EN: ECU received */ << I18n::text(6602) /* EN: Interpreted */);
     tables[i]->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
@@ -77,7 +81,7 @@ SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)
     tables[i]->setIconSize(QSize(24,18));
       // Native readability: no delayed application-wide style filter.
       const QString whiteRule=QStringLiteral(
-        "QTableWidget{color:#ffffff;}"
+        "QTableWidget{color:#ffffff;font-weight:400;}"
         "QTableWidget:disabled{color:#ffffff;}"
         "QTableWidget::item{color:#ffffff;}"
         "QTableWidget::item:disabled{color:#ffffff;}");
