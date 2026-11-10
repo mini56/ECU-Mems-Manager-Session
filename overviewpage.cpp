@@ -22,19 +22,6 @@
 
 namespace {
 
-static void removeCollapseHelpBubble(QToolButton *toggle)
-{
-    if(!toggle || toggle->objectName()!=QStringLiteral("darkSidebarToggle")) return;
-    if(!toggle->toolTip().isEmpty()) toggle->setToolTip(QString());
-    toggle->setStatusTip(QString());
-    toggle->setWhatsThis(QString());
-
-    if(QLabel *bubble=toggle->findChild<QLabel*>(QStringLiteral("_ecuHelpBubble"),Qt::FindDirectChildrenOnly)) {
-        bubble->hide();
-        bubble->deleteLater();
-    }
-}
-
 class RebuildGaugeCard : public QWidget
 {
 public:
@@ -425,48 +412,7 @@ static void fitNativeOverviewLayout(QWidget *overview)
     }
 }
 
-class OverviewRebuildInstaller : public QObject
-{
-public:
-    explicit OverviewRebuildInstaller(QObject *p=nullptr):QObject(p){}
-
-protected:
-    bool eventFilter(QObject *watched,QEvent *event) override
-    {
-        if(event && event->type()==QEvent::Resize)
-            if(QWidget *page=qobject_cast<QWidget*>(watched))
-                if(page->objectName()==QStringLiteral("overview_tab"))
-                    fitNativeOverviewLayout(page);
-        if(QToolButton *toggle=qobject_cast<QToolButton*>(watched)) {
-            if(toggle->objectName()==QStringLiteral("darkSidebarToggle") &&
-               (event->type()==QEvent::ToolTipChange || event->type()==QEvent::Show ||
-                event->type()==QEvent::Resize || event->type()==QEvent::Polish)) {
-                QTimer::singleShot(0,toggle,[toggle](){removeCollapseHelpBubble(toggle);});
-            }
-        }
-
-        if((event->type()!=QEvent::Show && event->type()!=QEvent::Polish) || !watched)
-            return QObject::eventFilter(watched,event);
-
-        QMainWindow *w=qobject_cast<QMainWindow*>(watched);
-        if(!w || w->objectName()!=QStringLiteral("MainWindow") ||
-           w->property("overviewRebuildInstalled").toBool())
-            return QObject::eventFilter(watched,event);
-
-        QWidget *overview=w->findChild<QWidget*>(QStringLiteral("overview_tab"));
-        if(!overview) return QObject::eventFilter(watched,event);
-
-        w->setProperty("overviewRebuildInstalled",true);
-        QTimer::singleShot(80,w,[w,overview](){install(w,overview);});
-        QTimer::singleShot(2100,w,[w](){
-            if(QToolButton *toggle=w->findChild<QToolButton*>(QStringLiteral("darkSidebarToggle")))
-                removeCollapseHelpBubble(toggle);
-        });
-        return QObject::eventFilter(watched,event);
-    }
-
-private:
-    static void install(QMainWindow *w,QWidget *overview)
+static void buildOverviewCards(QMainWindow *w,QWidget *overview)
     {
         if(overview->layout()) return;
 
@@ -567,17 +513,19 @@ private:
         });
         timer->start();
         fitNativeOverviewLayout(overview);
-    }
-};
+}
+} // namespace
 
-void installOverviewRebuild()
+void buildOverviewPage(QMainWindow *window)
 {
-    QApplication *app=qobject_cast<QApplication*>(QCoreApplication::instance());
-    if(!app) return;
-    OverviewRebuildInstaller *installer=new OverviewRebuildInstaller(app);
-    app->installEventFilter(installer);
+    if (!window)
+        return;
+    QWidget *overview = window->findChild<QWidget*>(QStringLiteral("overview_tab"));
+    if (overview)
+        buildOverviewCards(window, overview);
 }
 
+void fitOverviewPage(QWidget *page)
+{
+    fitNativeOverviewLayout(page);
 }
-
-Q_COREAPP_STARTUP_FUNCTION(installOverviewRebuild)

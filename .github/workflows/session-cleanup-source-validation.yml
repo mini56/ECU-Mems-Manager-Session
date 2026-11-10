@@ -68,6 +68,7 @@ jobs:
             'navigationorderpatch.cpp',
             'navigationorderpatch.h',
             'database/IaDocumentaryLockPatch.cpp',
+            'overviewrebuild.cpp',
             'database/MemsDatabaseDiagramSearchPatch.cpp',
             'database/MemsSearchCompletenessPatch.cpp'
           )){
@@ -99,6 +100,13 @@ jobs:
              $pipeline -notmatch 'sendResolved\(' -or
              $pipeline -match 'installEventFilter|Q_COREAPP_STARTUP_FUNCTION|QObject::disconnect\(m_send'){
              throw 'NATIVE_DOCUMENTARY_PIPELINE_MISSING_OR_LAYERED'
+          }
+          $overviewNative=Get-Content overviewpage.cpp -Raw
+          if($overviewNative -notmatch 'void buildOverviewPage\(' -or
+             $overviewNative -notmatch 'void fitOverviewPage\(' -or
+             $overviewNative -match 'Q_COREAPP_STARTUP_FUNCTION|installEventFilter' -or
+             $nav -notmatch 'buildOverviewPage\(window\)'){
+             throw 'NATIVE_OVERVIEW_BUILDER_MISSING'
           }
           Write-Host 'SESSION_CLEAN_SOURCE_PREFLIGHT_PASS'
       - name: Preparer Python

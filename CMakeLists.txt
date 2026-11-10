@@ -77,7 +77,7 @@ set(SOURCES
     expert/IaMemsDiagramCatalog.cpp expert/IaMemsDiagramCatalog.h
     expert/ExpertEngine.cpp expert/ExpertEngine.h expert/ExpertKnowledgeReader.cpp expert/ExpertKnowledgeReader.h
     expert/ExpertTypes.h expert/LocalAiClient.cpp expert/LocalAiClient.h
-    uirebuild.cpp overviewrebuild.cpp majorpagesrebuild.cpp
+    uirebuild.cpp overviewpage.cpp overviewpage.h majorpagesrebuild.cpp
     dedicatedpagesrebuild.cpp darkstyle.cpp
     settingstabdark.cpp
     singleinstance.cpp singleinstance.h nativewindowstyle.cpp nativewindowstyle.h)

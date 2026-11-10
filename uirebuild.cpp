@@ -41,6 +41,7 @@
 #include "diagnosticpanel.h"
 #include "iamemstab.h"
 #include "mems19testtab.h"
+#include "overviewpage.h"
 #include "summarytab.h"
 
 namespace {
@@ -983,6 +984,7 @@ static void applyResponsive(QMainWindow *window)
         applySidebarState(window);
     if(QListWidget *nav=window->findChild<QListWidget*>(QStringLiteral("uiRebuildNav")))
         fitNavigationRows(nav);
+    fitOverviewPage(window->findChild<QWidget*>(QStringLiteral("overview_tab")));
 }
 
 class UiRebuildInstaller : public QObject
@@ -1054,6 +1056,7 @@ private:
         for(int i=0;i<tabs->count();++i){QWidget *page=realPage(tabs->widget(i));if(!page)continue;if(QScrollArea *scroll=qobject_cast<QScrollArea*>(tabs->widget(i))){scroll->setWidgetResizable(true);scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);page->setMinimumSize(0,0);}const QString title=titleForIndex(tabs,i);if(!usesDedicatedLayout(page,i))composeGenericPage(page,title,i);}
         if(!applyDeterministicNavigation(qobject_cast<MainWindow*>(window)))
             qWarning() << "SESSION official navigation could not initialize all 14 pages";
+        buildOverviewPage(window);
         root->addWidget(buildBottomStatus(window));tabs->setCurrentIndex(0);
         applyResponsive(window);
         // The sidebar and its utility actions belong to the native window
