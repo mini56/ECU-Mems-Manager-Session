@@ -98,15 +98,22 @@ MemsDatabaseBrowser::MemsDatabaseBrowser(QWidget *parent)
     setAttribute(Qt::WA_StyledBackground,true);
     setStyleSheet(QStringLiteral("#memsDatabaseBrowser{background:#090e13;}"));
     buildUi();
-    if(m_database->open()){
+    const bool referenceAvailable=m_database->open();
+    if(referenceAvailable)
         updateMetrics();
-        refreshResults();
-    }else{
-        m_detail->setHtml(htmlStyle()+QStringLiteral("<h1>%1</h1><p class='note'>%2</p>")
-            .arg(I18n::text(7160).toHtmlEscaped(),I18n::text(7262).toHtmlEscaped()));
+
+    // Choose the indexed browser before binding any signals. The original
+    // ECU-only reader remains a genuine fallback if the index is unavailable.
+    m_indexedExplorerActive=initializeMemsDatabaseExplorer(this);
+    if(!m_indexedExplorerActive)
+    {
+        activateLegacyBrowser();
+        if(referenceAvailable)
+            refreshResults();
+        else
+            m_detail->setHtml(htmlStyle()+QStringLiteral("<h1>%1</h1><p class='note'>%2</p>")
+                .arg(I18n::text(7160).toHtmlEscaped(),I18n::text(7262).toHtmlEscaped()));
     }
-    // Construct the one authoritative search controller after the real widgets exist.
-    initializeMemsDatabaseExplorer(this);
 }
 
 MemsDatabaseBrowser::~MemsDatabaseBrowser(){delete m_database;}
@@ -205,12 +212,20 @@ void MemsDatabaseBrowser::buildUi()
     QLabel *readOnly=makeLabel(7231,footer); readOnly->setStyleSheet(QStringLiteral("color:#86d17a;background:transparent;border:0;"));
     fv->addWidget(m_updateTitle); fv->addWidget(m_updateState); fv->addStretch(1); fv->addWidget(readOnly); root->addWidget(footer);
 
-    connect(m_search,&QLineEdit::textChanged,this,&MemsDatabaseBrowser::refreshResults);
-    connect(m_generation,QOverload<int>::of(&QComboBox::currentIndexChanged),this,&MemsDatabaseBrowser::refreshResults);
-    connect(m_results,&QTableWidget::itemSelectionChanged,this,&MemsDatabaseBrowser::showSelectedEcu);
-    connect(m_sheetButton,&QPushButton::clicked,this,&MemsDatabaseBrowser::showGenerationSheet);
-    connect(m_pdfButton,&QPushButton::clicked,this,&MemsDatabaseBrowser::openGenerationPdf);
     retranslateUi();
+}
+
+void MemsDatabaseBrowser::activateLegacyBrowser()
+{
+    connect(m_search,&QLineEdit::textChanged,this,&MemsDatabaseBrowser::refreshResults);
+    connect(m_generation,QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this,&MemsDatabaseBrowser::refreshResults);
+    connect(m_results,&QTableWidget::itemSelectionChanged,
+            this,&MemsDatabaseBrowser::showSelectedEcu);
+    connect(m_sheetButton,&QPushButton::clicked,
+            this,&MemsDatabaseBrowser::showGenerationSheet);
+    connect(m_pdfButton,&QPushButton::clicked,
+            this,&MemsDatabaseBrowser::openGenerationPdf);
 }
 
 void MemsDatabaseBrowser::changeEvent(QEvent *event)
@@ -225,16 +240,19 @@ void MemsDatabaseBrowser::retranslateUi()
         const QVariant key=label->property("i18nKey"); if(key.isValid()) label->setText(I18n::text(key.toInt()));
     }
     if(m_search) m_search->setPlaceholderText(I18n::text(7217));
-    if(m_generation){
+    if(m_generation && !m_indexedExplorerActive){
         const QString current=m_generation->currentData().toString(); m_generation->blockSignals(true); m_generation->clear();
         m_generation->addItem(I18n::text(7218),QString()); m_generation->addItem(I18n::text(7163),QStringLiteral("1.2"));
         m_generation->addItem(I18n::text(7164),QStringLiteral("1.3")); m_generation->addItem(I18n::text(7165),QStringLiteral("1.6")); m_generation->addItem(I18n::text(7166),QStringLiteral("1.9"));
         const int idx=m_generation->findData(current); m_generation->setCurrentIndex(idx>=0?idx:0); m_generation->blockSignals(false);
     }
-    if(m_results){const int keys[]={7219,7220,7221,7222,7223};for(int i=0;i<5;++i){QTableWidgetItem *item=m_results->horizontalHeaderItem(i);if(!item){item=new QTableWidgetItem;m_results->setHorizontalHeaderItem(i,item);}item->setText(I18n::text(keys[i]));}}
-    if(m_sheetButton) m_sheetButton->setText(I18n::text(7253)); if(m_pdfButton) m_pdfButton->setText(I18n::text(7261));
-    if(m_detail && selectedPartNumber().isEmpty()) m_detail->setHtml(htmlStyle()+QStringLiteral("<h1>%1</h1><p class='muted'>%2</p>").arg(I18n::text(7224).toHtmlEscaped(),I18n::text(7225).toHtmlEscaped()));
-    if(m_database && m_database->isOpen()) refreshResults();
+    if(m_results && !m_indexedExplorerActive){const int keys[]={7219,7220,7221,7222,7223};for(int i=0;i<5;++i){QTableWidgetItem *item=m_results->horizontalHeaderItem(i);if(!item){item=new QTableWidgetItem;m_results->setHorizontalHeaderItem(i,item);}item->setText(I18n::text(keys[i]));}}
+    if(!m_indexedExplorerActive){
+        if(m_sheetButton) m_sheetButton->setText(I18n::text(7253));
+        if(m_pdfButton) m_pdfButton->setText(I18n::text(7261));
+    }
+    if(!m_indexedExplorerActive && m_detail && selectedPartNumber().isEmpty()) m_detail->setHtml(htmlStyle()+QStringLiteral("<h1>%1</h1><p class='muted'>%2</p>").arg(I18n::text(7224).toHtmlEscaped(),I18n::text(7225).toHtmlEscaped()));
+    if(!m_indexedExplorerActive && m_database && m_database->isOpen()) refreshResults();
 }
 
 void MemsDatabaseBrowser::updateMetrics()

@@ -197,7 +197,7 @@ public:
     explicit DatabaseExplorerV2(QWidget *browser)
         : QObject(browser),m_browser(browser),m_search(nullptr),m_filter(nullptr),m_results(nullptr),m_detail(nullptr),
           m_count(nullptr),m_scopeCompact(nullptr),m_sheetButton(nullptr),m_pdfButton(nullptr),m_currentGenerationLabel(nullptr),
-          m_debounce(new QTimer(this)),m_completionModel(new QStringListModel(this)),m_completer(nullptr),m_ftsEnabled(false)
+          m_debounce(new QTimer(this)),m_completionModel(new QStringListModel(this)),m_completer(nullptr),m_ftsEnabled(false),m_ready(false)
     {
         if(!m_browser) return;
         m_search=m_browser->findChild<QLineEdit*>();
@@ -210,7 +210,6 @@ public:
         if(!MemsGlobalSearchIndex::ensureBuilt()) return;
         if(!openIndex()) return;
 
-        disconnectLegacyUi();
         compactHeader();
         configureFilter();
         configureResults();
@@ -219,8 +218,11 @@ public:
         configureSearch();
         retranslate();
         m_browser->installEventFilter(this);
+        m_ready=true;
         QTimer::singleShot(0,this,[this](){runSearch();});
     }
+
+    bool ready() const { return m_ready; }
 
     ~DatabaseExplorerV2() override
     {
@@ -261,13 +263,6 @@ private:
         if(!m_search||!m_search->parentWidget()) return;
         const QList<QLabel*> labels=m_search->parentWidget()->findChildren<QLabel*>(QString(),Qt::FindDirectChildrenOnly);
         if(!labels.isEmpty()) m_count=labels.last();
-    }
-
-    void disconnectLegacyUi()
-    {
-        QObject::disconnect(m_search,nullptr,nullptr,nullptr);
-        QObject::disconnect(m_filter,nullptr,nullptr,nullptr);
-        QObject::disconnect(m_results,nullptr,nullptr,nullptr);
     }
 
     void compactHeader()
@@ -399,11 +394,9 @@ private:
             else if(button->text()==I18n::text(7261)) m_pdfButton=button;
         }
         if(m_sheetButton){
-            QObject::disconnect(m_sheetButton,nullptr,nullptr,nullptr);
             connect(m_sheetButton,&QPushButton::clicked,this,[this](){openXmlDialog();});
         }
         if(m_pdfButton){
-            QObject::disconnect(m_pdfButton,nullptr,nullptr,nullptr);
             connect(m_pdfButton,&QPushButton::clicked,this,[this](){
                 const QString path=pdfPath(currentGeneration());
                 if(!path.isEmpty()&&QFileInfo::exists(path)) QDesktopServices::openUrl(QUrl::fromLocalFile(path));
@@ -756,13 +749,18 @@ private:
     QSqlDatabase m_index;
     QString m_indexConnection;
     bool m_ftsEnabled;
+    bool m_ready;
 };
 
 } // namespace
 
-void initializeMemsDatabaseExplorer(QWidget *browser)
+bool initializeMemsDatabaseExplorer(QWidget *browser)
 {
-    if (browser)
-        new DatabaseExplorerV2(browser);
+    if(!browser) return false;
+    DatabaseExplorerV2 *explorer=new DatabaseExplorerV2(browser);
+    if(explorer->ready()) return true;
+    // An unavailable index must leave the original ECU-only reader usable.
+    delete explorer;
+    return false;
 }
 

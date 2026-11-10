@@ -186,6 +186,15 @@ jobs:
              $ramUi -notmatch 'injectionRamTestButton'){
              throw 'NATIVE_INJECTION_RAM_TEST_BUTTON_MISSING'
           }
+          $nativeBrowser=Get-Content database/MemsDatabaseBrowser.cpp -Raw
+          $nativeExplorer=Get-Content database/MemsDatabaseExplorerV2.cpp -Raw
+          if($nativeExplorer -match 'disconnectLegacyUi|QObject::disconnect\(m_sheetButton|QObject::disconnect\(m_pdfButton' -or
+             $nativeExplorer -notmatch 'bool initializeMemsDatabaseExplorer\(' -or
+             $nativeBrowser -notmatch 'm_indexedExplorerActive=initializeMemsDatabaseExplorer\(this\)' -or
+             $nativeBrowser -notmatch 'if\(!m_indexedExplorerActive\)' -or
+             $nativeBrowser -notmatch 'void MemsDatabaseBrowser::activateLegacyBrowser\('){
+             throw 'MEMS_DATABASE_DOUBLE_UI_BINDING_REINTRODUCED'
+          }
           Write-Host 'SESSION_CLEAN_SOURCE_PREFLIGHT_PASS'
       - name: Preparer Python
         uses: actions/setup-python@v5

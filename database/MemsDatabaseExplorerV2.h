@@ -4,6 +4,7 @@
 class QWidget;
 
 // Initializes the native indexed search on its owning browser widget.
-void initializeMemsDatabaseExplorer(QWidget *browser);
+// Returns false without binding any UI signals if the index cannot be opened.
+bool initializeMemsDatabaseExplorer(QWidget *browser);
 
 #endif

@@ -29,6 +29,7 @@ private slots:
 
 private:
     void buildUi();
+    void activateLegacyBrowser();
     void retranslateUi();
     void updateMetrics();
     QLabel *makeLabel(int key, QWidget *parent = nullptr);
@@ -54,6 +55,7 @@ private:
     QLabel *m_updateState;
     QPushButton *m_sheetButton;
     QPushButton *m_pdfButton;
+    bool m_indexedExplorerActive=false;
 };
 
 #endif
