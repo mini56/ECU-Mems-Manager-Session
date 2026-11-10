@@ -233,7 +233,7 @@ QString localizedContentTable(const QString &content)
     QStringList order;
     const QHash<QString,FieldValue> fields=parseIndexedContent(content,&order);
     if(fields.isEmpty()){
-        QString plain=content.toHtmlEscaped();
+        QString plain=fieldHtmlWithImages(content);
         plain.replace(QStringLiteral("\n"),QStringLiteral("<br>"));
         return QStringLiteral("<div>%1</div>").arg(plain);
     }
