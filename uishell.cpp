@@ -42,6 +42,7 @@
 #include "overviewpage.h"
 #include "ecupages.h"
 #include "settingspage.h"
+#include "rawpage.h"
 #include "uishell.h"
 #include "summarytab.h"
 
@@ -987,6 +988,7 @@ static void applyResponsive(QMainWindow *window)
         fitNavigationRows(nav);
     fitOverviewPage(window->findChild<QWidget*>(QStringLiteral("overview_tab")));
     fitSettingsPage(window);
+    fitRawDataPage(window->findChild<QWidget*>(QStringLiteral("raw")));
 }
 
     // Typography only. The 14 original BUILD117 page layouts remain intact.

@@ -48,7 +48,7 @@ jobs:
           $analysis=Get-Content analysistab_impl_part1.inc -Raw
           $summary=Get-Content summarytab.cpp -Raw
           $diagnostic=Get-Content diagnosticpanel.cpp -Raw
-          $raw=Get-Content dedicatedpagesrebuild.cpp -Raw
+          $raw=Get-Content rawpage.cpp -Raw
           if($analysis -notmatch 'paintAnalysisChart\(this\)' -or
              $summary -notmatch 'void SummaryTab::resizeEvent' -or
              $summary -notmatch 'whiteRule' -or
@@ -72,6 +72,7 @@ jobs:
             'majorpagesrebuild.cpp',
             'settingstabdark.cpp',
             'uirebuild.cpp',
+            'dedicatedpagesrebuild.cpp',
             'database/MemsDatabaseDiagramSearchPatch.cpp',
             'database/MemsSearchCompletenessPatch.cpp'
           )){
@@ -133,6 +134,12 @@ jobs:
              $mainWindow -notmatch 'buildUiShell\(this\)' -or
              $mainWindow -notmatch 'resizeUiShell\(this\)'){
              throw 'NATIVE_UI_SHELL_LIFECYCLE_MISSING'
+          }
+          if($raw -notmatch 'void fitRawDataPage\(' -or
+             $nav -notmatch 'fitRawDataPage\(window->findChild<QWidget\*>' -or
+             $nav -match 'rebuildInteractive\(tabs\)' -or
+             $cmake -match 'dedicatedpagesrebuild.cpp'){
+             throw 'RAW_PAGE_OWNER_OR_NAVIGATION_REGRESSION'
           }
           Write-Host 'SESSION_CLEAN_SOURCE_PREFLIGHT_PASS'
       - name: Preparer Python

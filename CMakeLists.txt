@@ -78,7 +78,7 @@ set(SOURCES
     expert/ExpertEngine.cpp expert/ExpertEngine.h expert/ExpertKnowledgeReader.cpp expert/ExpertKnowledgeReader.h
     expert/ExpertTypes.h expert/LocalAiClient.cpp expert/LocalAiClient.h
     uishell.cpp uishell.h overviewpage.cpp overviewpage.h ecupages.cpp ecupages.h
-    dedicatedpagesrebuild.cpp darkstyle.cpp
+    rawpage.cpp rawpage.h darkstyle.cpp
     settingspage.cpp settingspage.h
     singleinstance.cpp singleinstance.h nativewindowstyle.cpp nativewindowstyle.h)
 add_executable(${PNAME} ${SOURCES})
