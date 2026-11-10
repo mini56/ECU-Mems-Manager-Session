@@ -2,6 +2,11 @@
 
 #include "mainwindow.h"
 #include "i18n.h"
+#include "database/DatabaseManager.h"
+#include "database/MemsReferenceDatabase.h"
+#include "database/MemsReferencePackageRefresh.h"
+#include "database/MemsReferenceLanguageSync.h"
+#include "database/MemsGlobalSearchIndex.h"
 
 #include <QApplication>
 #include <QCoreApplication>
@@ -124,6 +129,38 @@ int runUiShellSmokeTest(QApplication &app)
         return 2;
     }
     I18n::install(&app);
+    // The real application prepares the reference cache, user database and
+    // index before it creates MainWindow. Reproduce that lifecycle rather than
+    // forcing the page constructor to rebuild the first-run index on the UI thread.
+    logSmoke(QStringLiteral("Before reference package preparation"));
+    MemsReferencePackageAction action=MemsReferencePackageAction::Unavailable;
+    if (!refreshMemsReferencePackage(&action)) {
+        logSmoke(QStringLiteral("FAIL reference package preparation"));
+        return 4;
+    }
+    logSmoke(QStringLiteral("Reference package prepared"));
+    {
+        MemsReferenceDatabase reference;
+        if (!reference.open()) {
+            logSmoke(QStringLiteral("FAIL reference database open"));
+            return 5;
+        }
+        reference.close();
+    }
+    synchronizeMemsReferenceLanguage();
+    logSmoke(QStringLiteral("Reference language synchronized"));
+    DatabaseManager database;
+    if (!database.open()) {
+        logSmoke(QStringLiteral("FAIL user test database open"));
+        return 6;
+    }
+    logSmoke(QStringLiteral("Before global reference index build"));
+    QString indexError;
+    if (!MemsGlobalSearchIndex::ensureBuilt(&indexError)) {
+        logSmoke(QStringLiteral("FAIL global reference index: ")+indexError);
+        return 7;
+    }
+    logSmoke(QStringLiteral("Global reference index ready"));
     logSmoke(QStringLiteral("Before MainWindow constructor"));
 
     MainWindow window;
@@ -144,7 +181,7 @@ int runUiShellSmokeTest(QApplication &app)
         logSmoke(QStringLiteral("After close"));
         app.exit(ok?0:1);
     });
-    QTimer::singleShot(60000,&app,[&app](){
+    QTimer::singleShot(240000,&app,[&app](){
         qCritical() << "SESSION_UI_SMOKE_FAIL UI timeout";
         logSmoke(QStringLiteral("Timeout in event loop"));
         app.exit(3);

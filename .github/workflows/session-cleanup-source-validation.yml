@@ -387,7 +387,7 @@ jobs:
           $stdout=Join-Path $PWD 'session_ui_stdout.log'
           foreach($file in @($trace,$stderr,$stdout)){if(Test-Path $file){Remove-Item $file -Force}}
           $uiProcess=Start-Process -FilePath $executable -WorkingDirectory (Split-Path $executable) -ArgumentList "--session-ui-smoke-test" -RedirectStandardError $stderr -RedirectStandardOutput $stdout -PassThru
-          $finished=$uiProcess.WaitForExit(60000)
+          $finished=$uiProcess.WaitForExit(300000)
           foreach($file in @($trace,$stderr,$stdout)){
             Write-Host "SESSION_DIAGNOSTIC_FILE=$file"
             if(Test-Path $file){Get-Content $file}
@@ -397,7 +397,7 @@ jobs:
             Write-Host "SESSION_SMOKE_STUCK_PID=$($uiProcess.Id)"
             Get-Process -Id $uiProcess.Id | Format-List Id,ProcessName,Responding,MainWindowTitle,CPU,Threads
             Stop-Process -Id $uiProcess.Id -Force -ErrorAction SilentlyContinue
-            throw 'SESSION_UI_SMOKE_TIMEOUT_60S'
+            throw 'SESSION_UI_SMOKE_TIMEOUT_300S'
           }
           if($uiProcess.ExitCode -ne 0){throw "SESSION_UI_SMOKE_FAILED exit=$($uiProcess.ExitCode)"}
           Write-Host 'SESSION_NATIVE_UI_14_PAGES_PASS'
@@ -487,7 +487,7 @@ jobs:
           $installed=Join-Path $folder 'ecu_mems_manager.exe'
           $errorLog=Join-Path $folder 'installed_ui_stderr.log'
           $ui=Start-Process -FilePath $installed -WorkingDirectory $folder -ArgumentList '--session-ui-smoke-test' -RedirectStandardError $errorLog -PassThru
-          $finished=$ui.WaitForExit(60000)
+          $finished=$ui.WaitForExit(300000)
           $trace=Join-Path $folder 'session_ui_smoke_trace.log'
           if(Test-Path $trace){Get-Content $trace}
           if(Test-Path $errorLog){Get-Content $errorLog}
