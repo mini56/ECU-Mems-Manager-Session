@@ -261,6 +261,15 @@ jobs:
           if(Test-Path qrc_resources.cpp){
              throw 'GENERATED_QT_RCC_SOURCE_SHOULD_NOT_BE_VERSIONED'
           }
+          # A widget may only have one native object identity in the Qt .ui
+          # file. uic used to silently rename the second label_51 to label_511.
+          [xml]$uiDefinition=Get-Content mainwindow.ui -Raw
+          $duplicateNames=@($uiDefinition.SelectNodes('//widget') |
+            ForEach-Object { $_.GetAttribute('name') } |
+            Group-Object | Where-Object { $_.Count -gt 1 })
+          if($duplicateNames.Count -gt 0){
+            throw "DUPLICATE_NATIVE_UI_WIDGET: $(($duplicateNames | ForEach-Object {$_.Name}) -join ', ')"
+          }
           Write-Host 'SESSION_CLEAN_SOURCE_PREFLIGHT_PASS'
       - name: Preparer Python
         uses: actions/setup-python@v5
