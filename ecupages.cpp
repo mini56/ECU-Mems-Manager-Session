@@ -439,7 +439,8 @@ static void composeActuators(QMainWindow *window)
     QPushButton *minus=page->findChild<QPushButton*>(QStringLiteral("m_IACMinusButton"));
     QPushButton *plus=page->findChild<QPushButton*>(QStringLiteral("m_IACPlusButton"));
 
-    for(QWidget *widget:{list,pos,slider,info,move,minus,plus})
+    const QList<QWidget*> controls={list,pos,slider,info,move,minus,plus};
+    for(QWidget *widget:controls)
         if(widget)widget->setParent(page);
 
     QVBoxLayout *root=nullptr;
