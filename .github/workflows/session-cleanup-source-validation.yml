@@ -375,7 +375,8 @@ jobs:
                (Get-FileHash -LiteralPath $installed -Algorithm SHA256).Hash){
               throw "RAVE_REFERENCE_ASSET_HASH_MISMATCH=$relative"
             }
-            if($relative -like 'images\\*'){$imageCount++}
+            if($relative.StartsWith('images/',[StringComparison]::OrdinalIgnoreCase) -or
+               $relative.StartsWith('images'+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)){$imageCount++}
           }
           if($imageCount -lt 400){throw "RAVE_REFERENCE_IMAGE_COUNT_TOO_LOW=$imageCount"}
           Write-Host "RAVE_REFERENCE_CORPUS_PACKAGED=$($sourceFiles.Count) resources, $imageCount images; hashes verified"
