@@ -319,8 +319,8 @@ jobs:
           $env:QT_OPENGL='software'
           $executable=Join-Path $PWD 'build-session-134\Release\ecu_mems_manager.exe'
           if(-not(Test-Path $executable)){throw 'SESSION_NATIVE_UI_EXE_MISSING'}
-          & $executable --session-ui-smoke-test
-          if($LASTEXITCODE -ne 0){throw "SESSION_UI_SMOKE_FAILED exit=$LASTEXITCODE"}
+          $uiProcess=Start-Process -FilePath $executable -ArgumentList "--session-ui-smoke-test" -Wait -PassThru
+          if($uiProcess.ExitCode -ne 0){throw "SESSION_UI_SMOKE_FAILED exit=$($uiProcess.ExitCode)"}
           Write-Host 'SESSION_NATIVE_UI_14_PAGES_PASS'
 
       - name: Tester les reponses IA multilingues et les diagrammes MEMS
