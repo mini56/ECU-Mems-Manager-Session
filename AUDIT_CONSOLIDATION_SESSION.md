@@ -1,42 +1,62 @@
-# ECU MEMS Manager SESSION — audit des correctifs empiles
+# ECU MEMS Manager SESSION — audit de consolidation du code source
 
-Etat de travail : 9 novembre 2026. Branche de nettoyage : `cleanup-session-source-consolidation-20261109`.
+**Mise a jour : 10 novembre 2026.** Branche de travail : `cleanup-session-source-consolidation-20261109`.
 
-## Protection
+## Source de reference protegee
 
-- Reference fonctionnelle et installable conservee : BUILD 134, commit `e59247313a18cdc171e6fe0fe332218422ac6940`, branche `dev-complete-build117-14-pages-20261109`.
-- Les changements de nettoyage ne sont pas publies comme installateur et ne sont pas reintegres automatiquement dans cette reference.
-- Ne pas modifier les 14 pages, leurs dispositions approuvees (BUILD 117), le stockage de donnees, RAVE/MEMSLibrary, ROSCO ou l'IA ONNX hors demande explicite.
-- Nom visible unique : **ECU MEMS Manager SESSION**. Les identifiants internes CMake, Qt et la base existante restent inchanges pour compatibilite.
+- Version installable de reference : **BUILD 134**, commit `e59247313a18cdc171e6fe0fe332218422ac6940`, branche `dev-complete-build117-14-pages-20261109`.
+- Toute correction dans cette branche est une correction des **sources definitives**, pas un nouveau module surcharge ni un patch d'affichage. Aucun Setup, Release ou fusion de nettoyage n'est autorise sans validation distincte.
+- Maintenir **14 pages officielles**, leur ordre, les mises en page validees, le stockage SQLite, l'IA ONNX, MEMSLibrary/RAVE, les protocoles et protections ECU/ROSCO. L'interface porte le nom **ECU MEMS Manager SESSION** ; les identifiants internes du stockage restent compatibles.
 
-## Suppressions et reintegrations deja effectuees
+## Modules consolidés etormais possedes par le code source
 
-| Ancien fichier | Etat | Nouvelle source de responsabilite |
+| Responsabilite | Source(s) active(s) | Modules de surcharge supprimes |
 |---|---|---|
-| `settingsvisualpatch.cpp` | Retire avant la creation de cette branche | `settingstabdark.cpp` (dimensions, cadrans, boutons) |
-| `splashtextfix.cpp` | Retire de la compilation et du depot | `main.cpp` (splash, textes, progression, identite BUILD) |
-| `taborderpatch.cpp` | Supprime ; etait deja non compile | La navigation active reste dans `navigationorderpatch.cpp` |
-| `sidebarbubblecleaner.cpp` | Retire de la compilation et du depot | `summarytab.cpp`, `summarytab.h`, `tooltipbubblemanager.cpp`, `darkstyle.cpp`, `uirebuild.cpp` |
-| `readabilityfix.cpp` | Retire de la compilation et du depot | `analysistab_impl_part1.inc`, `summarytab.cpp`, `diagnosticpanel.cpp`, `dedicatedpagesrebuild.cpp` |
+| Navigation officielle 14 pages, menu, entete, style | `uishell.cpp`, `darkstyle.cpp`, `mainwindow.cpp` | `uirebuild.cpp`, `navigationorderpatch.cpp/.h`, `visualcompletion.cpp`, `strictvisualrebuild.cpp`, `darkfixes.cpp`, `sidebarbubblecleaner.cpp`, `readabilityfix.cpp` |
+| Page Reglages et cadrans | `settingspage.cpp` | `settingstabdark.cpp`, `settingsvisualpatch.cpp` |
+| Apercu, etats ECU, signaux injection | `overviewpage.cpp`, `overviewramlive.cpp`, `mainwindow.cpp` | `overviewrebuild.cpp`, `systemstateconnectionfix.cpp` |
+| Erreurs / Actionneurs | `ecupages.cpp` | `majorpagesrebuild.cpp`, anciens correctifs d'Erreurs |
+| Donnees brutes et adaptation du contenu | `rawpage.cpp` | `dedicatedpagesrebuild.cpp` |
+| Fenetre, dialogue de fermeture, unicite des instances | `mainwindow.cpp`, `singleinstance.cpp`, `nativewindowstyle.cpp` | `mainwindowtitlebarfix.cpp`, `singleinstanceforce.cpp` |
+| Recherche MEMS et consultation des fiches | `database/MemsDatabaseBrowser.cpp`, `MemsDatabaseExplorerV2.cpp`, `MemsDatabaseUniversalAccess.cpp`, `MemsReferenceSheetRenderer.h` | `MemsDatabaseDiagramSearchPatch.cpp`, `MemsSearchCompletenessPatch.cpp`, `MemsDatabaseGlobalUi.cpp`, `MemsDatabaseUsability.cpp`, `MemsXmlRowIndexer.cpp` |
+| IA documentaire | `iamemstab.cpp`, `expert/IaMemsDocumentaryPipeline.cpp` | `database/IaDocumentaryLockPatch.cpp` |
+| Connexion et securite protocolaire | `memsinterface.cpp`, `memsinterface_dispatch.cpp`, `protocolcontext.h` | Macros de renommage et `#include "memsinterface.cpp"` supprimes ; appels aux gardes de securite explicites dans la source |
+| Test RAM AANMP002 et journal | `injectionramtest.cpp`, `injectionramtestlogger.cpp` | Filtres d'application et surveillance globale periodique elimines |
+| Demarrage, splash, ressources Qt | `main.cpp`, `resources.qrc` | `splashtextfix.cpp`, `main_keyed.cpp`, `qrc_resources.cpp` genere et non utilise |
 
-Transferts effectues sans retirer les donnees ou les fonctions ECU. Compilation Windows reussie pour les premiers lots ; tout lot non encore valide demeure en test.
+**Important :** `memsinterface_dispatch.cpp` n'est pas un patch graphique. C'est le module actif des protections, de la detection et de la connexion ECU. Ses fonctions doivent rester preservees.
 
-## Modules encore presents a examiner, sans suppression aveugle
+## Dernieres operations source (10/11/2026)
 
-- **Presentation globale conflictuelle :** `strictvisualrebuild.cpp`, `visualcompletion.cpp`, `darkfixes.cpp`, `darkstyle.cpp`, `uirebuild.cpp`.
-- **Constructeurs/pages indispensables a consolider :** `overviewrebuild.cpp` (Apercu), `majorpagesrebuild.cpp` (Reglages de base, Erreurs, Actionneurs), `dedicatedpagesrebuild.cpp` (pages dediees), `errorsvisualpatch.cpp` (Erreurs), `analysismodernizer.cpp` (Analyse).
-- **Fonctions metier et navigation a proteger :** `navigationorderpatch.cpp` (14 pages et commandes), `mainwindowtitlebarfix.cpp` (instance unique, confirmation de fermeture et commandes), `systemstateconnectionfix.cpp` (etats ECU deconnecte).
-- **Source consolidee a garder :** `settingstabdark.cpp` (Reglages).
-- **Fichiers de base documentaire avec "Patch" dans le nom :** `database/IaDocumentaryLockPatch.cpp`, `database/MemsDatabaseDiagramSearchPatch.cpp`, `database/MemsSearchCompletenessPatch.cpp`. Ils contiennent des fonctions de recherche documentaire et ne doivent pas etre detruits sur le seul critere de leur nom.
+- `fc2eeba6` : sources ECU compilees separement et gardes de securite appeles explicitement.
+- `3becc966` : explorateur MEMS initialise par la page qui le possede, sans filtre global au demarrage.
+- `ecc443af` : synchronisation des fiches traduites lors de la preparation initiale, avant l'index, au lieu d'une verification chaque seconde.
+- `a50e53ff` / `6a87bcc7` : une seule chaine de presentation des resultats de la base, sans second controleur toutes les 280 ms.
+- `83f862ce` : donnees directes de l'Apercu, plage temps de bobine/injection 0–5 ms.
+- `363bc136` : bouton du test RAM 2 phases directement dans la page ROSCO.
+- `c0e64645` : correction du test de journal Windows pour les fins de ligne CRLF.
+- `0650c5b3` : branchement unique des signaux de suivi des modes ECU au constructeur de `MEMSInterface`.
+- `ea636c68` : note du cadran RPM integree directement a sa disposition Qt, sans deplacement differe ni coordonnees absolues.
+- `d80627d1` : retrait de `qrc_resources.cpp`, genere et non compile ; garde CI contre le retour de ce fichier et du repositionnement differe de la note.
 
-## Regle de nettoyage
+## Validations constatees sur GitHub Actions
 
-1. Identifier ce qu'un module rend reellement, quels objets il cree et quels signaux il connecte.
-2. Transferer ses fonctions dans la source qui possede le composant, sans changement visible ou fonctionnel.
-3. Eliminer le traitement concurrent (`Q_COREAPP_STARTUP_FUNCTION`, filtres globaux, timers de retouche) quand sa responsabilite a ete transferee.
-4. Supprimer l'ancien fichier de CMake, puis du depot.
-5. Compiler et tester ; conserver les dispositions et fonctions precedemment validees. Une compilation verte n'est pas une validation du rendu graphique.
+Workflow : `.github/workflows/session-cleanup-source-validation.yml`.
 
-## Livraison
+- **42787477090 : SUCCESS** — compilation Windows, IA ONNX, ROSCO et tests IA multilingue, diagrammes MEMS, fiches de base, journal RAM.
+- **42791666397 : SUCCESS** — consolidation avant le suivi des modes ECU.
+- **42792329174 : SUCCESS** — commit `0650c5b3`, y compris les controles de source et tests.
+- **42792714170 : SUCCESS** — commit `ea636c68`, y compris compilation et tests.
+- **42793149697 : en cours au dernier controle** — commit `d80627d1`. Ne pas le presenter comme vert avant lecture de sa conclusion.
 
-La derniere version de test installee et publiee reste la BUILD 134. Les prochaines sorties utiliseront le nom de produit et d'artefact **ECU MEMS Manager SESSION**, sans les suffixes `COMPLETE` ou `TEST` ; version/build sont suivis dans les metadonnees techniques. Aucune nouvelle Release n'est creee par le workflow de consolidation.
+Le CI refuse les modules obsolete references, les `Q_COREAPP_STARTUP_FUNCTION` dans les sources natives compilees et les inclusions textuelles de fichiers `.cpp`. Il verifie egalement plusieurs contrats de proprietaire unique.
+
+## Limites de validation / prochaines etapes
+
+1. Lire et journaliser la conclusion de la derniere compilation. Corriger toute erreur dans sa **source d'origine**, pas au moyen d'une surcharge.
+2. Continuer l'audit des ajustements et abonnements internes qui pourraient rester redondants, sans supprimer les traitements normaux de Qt (timers de mesure, debounce, redimensionnement).
+3. Faire des tests **reels sous Windows** : ouverture, fermeture, traduction, navigation sur les **14 pages**, tailles sur plusieurs resolutions, pages Reglages/Erreurs/Apercu/ROSCO, consultation documentaire et journal RAM.
+4. Tester sur vrai calculateur ou simulateur les cas de connexion, deconnexion, Mode 3/Mode 4, identification MEMS 1.9 et les refus de commandes dangereuses. Une compilation verte **ne prouve pas** ces tests materiels.
+5. Tester l'installation propre, la mise a jour et la preservation SQLite **avant** toute fusion ou nouvel installateur.
+
+**Regle immuable :** le nettoyage doit produire un seul code de reference qui conserve toutes les fonctions valides. Ne jamais supprimer une fonction utile uniquement parce qu'elle provient historiquement d'un correctif.
