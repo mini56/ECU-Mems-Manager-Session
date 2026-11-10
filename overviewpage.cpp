@@ -19,6 +19,7 @@
 #include <QtMath>
 #include "i18n.h"
 #include "mainwindow.h"
+#include "overviewpage.h"
 
 namespace {
 

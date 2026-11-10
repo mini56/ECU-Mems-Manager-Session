@@ -76,7 +76,7 @@ jobs:
             if($cmake.Contains($obsolete)){throw "OLD_LAYERED_MODULE_STILL_COMPILED: $obsolete"}
           }
           $window=Get-Content mainwindow.cpp -Raw
-          $overview=Get-Content overviewrebuild.cpp -Raw
+          $overview=Get-Content overviewpage.cpp -Raw
           $errors=Get-Content majorpagesrebuild.cpp -Raw
           $explorer=Get-Content database/MemsDatabaseExplorerV2.cpp -Raw
           $xml=Get-Content database/MemsReferenceSheetRenderer.h -Raw
