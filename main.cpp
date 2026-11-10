@@ -22,6 +22,7 @@
 #include "desktopshortcut.h"
 #include "database/DatabaseManager.h"
 #include "database/MemsReferenceDatabase.h"
+#include "database/MemsReferenceLanguageSync.h"
 #include "database/MemsGlobalSearchIndex.h"
 #include "database/MemsReferencePackageRefresh.h"
 #include "i18n.h"
@@ -354,6 +355,7 @@ int main(int argc, char *argv[])
         return 1;
     }
     referenceDatabase.close();
+    synchronizeMemsReferenceLanguage();
 
     DatabaseManager database;
     if (!database.open())

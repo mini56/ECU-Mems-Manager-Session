@@ -1,12 +1,10 @@
 #include "../i18n.h"
 #include "MemsGlobalSearchIndex.h"
 
-#include <QCoreApplication>
 #include <QFile>
 #include <QFileInfo>
 #include <QSet>
 #include <QStandardPaths>
-#include <QTimer>
 
 namespace {
 
@@ -35,21 +33,8 @@ bool replaceFile(const QString &source,const QString &destination)
     return output.write(bytes)==bytes.size();
 }
 
-class MemsReferenceLanguageSync final : public QObject
+void synchronizeReferenceLanguageFiles()
 {
-public:
-    explicit MemsReferenceLanguageSync(QObject *parent=nullptr):QObject(parent)
-    {
-        m_timer=new QTimer(this);
-        m_timer->setInterval(1000);
-        connect(m_timer,&QTimer::timeout,this,[this](){synchronize();});
-        m_timer->start();
-        QTimer::singleShot(0,this,[this](){synchronize();});
-    }
-
-private:
-    void synchronize()
-    {
         const QString language=referenceLanguage();
         if(language.isEmpty()) return;
 
@@ -78,17 +63,12 @@ private:
         // a language switch makes the next search rebuild from the selected
         // localized sheets, so results and full sheets stay in the UI language.
         if(changed) QFile::remove(MemsGlobalSearchIndex::indexPath());
-    }
+}
 
-    QTimer *m_timer=nullptr;
-};
+} // namespace
 
-void installMemsReferenceLanguageSync()
+void synchronizeMemsReferenceLanguage()
 {
-    if(QCoreApplication::instance())
-        new MemsReferenceLanguageSync(QCoreApplication::instance());
+    // Called after the package has been extracted and before index creation.
+    synchronizeReferenceLanguageFiles();
 }
-
-}
-
-Q_COREAPP_STARTUP_FUNCTION(installMemsReferenceLanguageSync)
