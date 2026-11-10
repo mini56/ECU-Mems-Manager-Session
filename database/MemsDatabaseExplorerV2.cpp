@@ -9,6 +9,12 @@
 #include <QCompleter>
 #include <QCoreApplication>
 #include <QDesktopServices>
+#include <QDir>
+#include <QGraphicsScene>
+#include <QGraphicsView>
+#include <QMessageBox>
+#include <QPainter>
+#include <QPixmap>
 #include <QDialog>
 #include <QEvent>
 #include <QFile>
@@ -370,10 +376,88 @@ private:
         bar->show();
     }
 
+    // Show a RAVE image inside the database page, not via an external
+    // browser. Scroll/drag and fit/zoom remain available for technical
+    // drawings containing small component labels.
+    void openReferenceImage(const QString &path)
+    {
+        const QPixmap original(path);
+        if(original.isNull()){
+            QMessageBox::warning(m_browser.data(),QStringLiteral("Image RAVE"),
+                                 QStringLiteral("Impossible de lire le fichier image :\n%1").arg(path));
+            return;
+        }
+        QDialog dialog(m_browser.data());
+        dialog.setWindowTitle(QStringLiteral("Image RAVE — %1").arg(QFileInfo(path).fileName()));
+        dialog.resize(1000,740);
+        QVBoxLayout *layout=new QVBoxLayout(&dialog);
+        layout->setContentsMargins(8,8,8,8);
+        layout->setSpacing(7);
+
+        QHBoxLayout *actions=new QHBoxLayout;
+        QPushButton *smaller=new QPushButton(QStringLiteral("−"),&dialog);
+        QPushButton *bigger=new QPushButton(QStringLiteral("+"),&dialog);
+        QPushButton *fit=new QPushButton(QStringLiteral("Ajuster"),&dialog);
+        QPushButton *actual=new QPushButton(QStringLiteral("100 %"),&dialog);
+        actions->addWidget(new QLabel(QFileInfo(path).fileName(),&dialog));
+        actions->addStretch(1);
+        actions->addWidget(smaller);
+        actions->addWidget(bigger);
+        actions->addWidget(fit);
+        actions->addWidget(actual);
+        layout->addLayout(actions);
+
+        QGraphicsScene scene(&dialog);
+        scene.addPixmap(original);
+        scene.setSceneRect(QRectF(original.rect()));
+        QGraphicsView *view=new QGraphicsView(&scene,&dialog);
+        view->setDragMode(QGraphicsView::ScrollHandDrag);
+        view->setRenderHint(QPainter::SmoothPixmapTransform,true);
+        view->setBackgroundBrush(QColor(QStringLiteral("#0a1015")));
+        layout->addWidget(view,1);
+        connect(smaller,&QPushButton::clicked,view,[view](){view->scale(0.8,0.8);});
+        connect(bigger,&QPushButton::clicked,view,[view](){view->scale(1.25,1.25);});
+        connect(fit,&QPushButton::clicked,view,[view,&scene](){
+            view->fitInView(scene.sceneRect(),Qt::KeepAspectRatio);
+        });
+        connect(actual,&QPushButton::clicked,view,[view](){view->resetTransform();});
+        QTimer::singleShot(0,&dialog,[view,&scene](){
+            view->fitInView(scene.sceneRect(),Qt::KeepAspectRatio);
+        });
+        dialog.exec();
+    }
+
+    void openResultLink(const QUrl &url)
+    {
+        if(url.isLocalFile()){
+            const QString root=QCoreApplication::applicationDirPath()+
+                               QStringLiteral("/database/reference");
+            const QString canonicalRoot=QFileInfo(root).canonicalFilePath();
+            const QString path=QFileInfo(url.toLocalFile()).canonicalFilePath();
+            if(canonicalRoot.isEmpty() ||
+               !path.startsWith(canonicalRoot+QLatin1Char('/'),Qt::CaseInsensitive))
+                return; // Never follow paths outside the installed reference package.
+            const QString relative=QDir(canonicalRoot).relativeFilePath(path);
+            const QString image=MemsDatabaseContent::localImagePath(relative);
+            if(!image.isEmpty() && image==path){
+                openReferenceImage(image);
+                return;
+            }
+            // Preserve existing file opening for trusted, packaged PDF/text.
+            QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+        }else if(url.scheme()==QStringLiteral("http") ||
+                 url.scheme()==QStringLiteral("https")){
+            QDesktopServices::openUrl(url);
+        }
+    }
+
     void configureDetail()
     {
         forceDetailScroll();
-        m_detail->setOpenExternalLinks(true);
+        m_detail->setOpenLinks(false);
+        m_detail->setOpenExternalLinks(false);
+        connect(m_detail,&QTextBrowser::anchorClicked,this,
+                [this](const QUrl &url){openResultLink(url);});
     }
 
     QString generationLabel(const QString &generation) const
