@@ -12,7 +12,7 @@ on:
       - '.github/workflows/session-cleanup-source-validation.yml'
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: session-cleanup-source-validation
   cancel-in-progress: false
@@ -416,4 +416,101 @@ jobs:
           Write-Host 'SESSION_IA_MULTILINGUAL_AND_MEMS_DIAGRAM_TESTS_PASS'
           Write-Host 'SESSION_MEMS_DATABASE_CONTENT_REGRESSION_TEST_PASS'
           Write-Host 'SESSION_INJECTION_RAM_LOG_REGRESSION_TEST_PASS'
+
+      - name: Creer le Setup Windows SESSION uniquement apres validation
+        if: contains(github.event.head_commit.message, '[setup-test]')
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          if(-not(Test-Path 'dist-session-smoke\ecu_mems_manager.exe')){throw 'NO_DEPLOYED_BINARY_TO_INSTALL'}
+          if(-not(Test-Path 'dist-session-smoke\MEMSLibrary_Pack_001\knowledge.sqlite')){throw 'RAVE_MEMS_REFERENCE_MISSING'}
+          if(Test-Path 'dist-session-smoke\database\ecu_mems_manager.sqlite'){throw 'PRIVATE_SQLITE_IN_DISTRIBUTION'}
+          choco install innosetup -y --no-progress --limit-output
+          if($LASTEXITCODE -ne 0){throw 'INNO_SETUP_INSTALL_FAILED'}
+          $programFilesX86=[Environment]::GetFolderPath('ProgramFilesX86')
+          $compiler=Get-ChildItem $programFilesX86 -Recurse -File -Filter ISCC.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          if(-not $compiler){throw 'INNO_SETUP_COMPILER_MISSING'}
+          $script=@'
+          #define MyAppName "ECU MEMS Manager SESSION"
+          #define MyAppVersion "1.1.34"
+          [Setup]
+          AppId={{BC7FAF73-5BCF-49FC-8513-9D9C7B08F133}
+          AppName={#MyAppName}
+          AppVersion={#MyAppVersion}
+          AppPublisher=ECU MEMS Manager SESSION
+          DefaultDirName={autopf}\ECU MEMS Manager SESSION
+          DefaultGroupName=ECU MEMS Manager SESSION
+          UsePreviousGroup=no
+          OutputDir=setup-session-test
+          OutputBaseFilename=ECU MEMS Manager SESSION Setup
+          Compression=lzma2
+          SolidCompression=yes
+          WizardStyle=modern
+          ArchitecturesAllowed=x64
+          ArchitecturesInstallIn64BitMode=x64
+          PrivilegesRequired=admin
+          UninstallDisplayIcon={app}\ecu_mems_manager.exe
+          [Languages]
+          Name: "french"; MessagesFile: "compiler:Languages\French.isl"
+          [Files]
+          Source: "dist-session-smoke\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+          [Icons]
+          Name: "{group}\ECU MEMS Manager SESSION"; Filename: "{app}\ecu_mems_manager.exe"
+          Name: "{autodesktop}\ECU MEMS Manager SESSION"; Filename: "{app}\ecu_mems_manager.exe"; IconFilename: "{app}\ecu_mems_manager.exe"
+          [Run]
+          Filename: "{app}\ecu_mems_manager.exe"; Description: "Demarrer ECU MEMS Manager SESSION"; Flags: nowait postinstall skipifsilent
+          '@
+          $script | Set-Content 'session-cleanup-test.iss' -Encoding UTF8
+          & $compiler.FullName 'session-cleanup-test.iss'
+          if($LASTEXITCODE -ne 0){throw 'SESSION_SETUP_BUILD_FAILED'}
+          $setup=Get-ChildItem setup-session-test -File -Filter '*.exe' | Select-Object -First 1
+          if(-not $setup -or $setup.Length -lt 100MB){throw 'SESSION_SETUP_INCOMPLETE'}
+          Write-Host "SESSION_SETUP_BUILT size=$($setup.Length) sha256=$((Get-FileHash $setup.FullName -Algorithm SHA256).Hash.ToLowerInvariant())"
+
+      - name: Tester installation reelle puis le programme Windows et les 14 pages
+        if: contains(github.event.head_commit.message, '[setup-test]')
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $setup=Get-ChildItem setup-session-test -File -Filter '*.exe' | Select-Object -First 1
+          $folder=Join-Path $env:RUNNER_TEMP 'MEMS_SESSION_134_CLEAN_SETUP_TEST'
+          if(Test-Path $folder){Remove-Item $folder -Recurse -Force}
+          $p=Start-Process -FilePath $setup.FullName -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',"/DIR=$folder" -Wait -PassThru
+          if($p.ExitCode -ne 0){throw "ACTUAL_SETUP_INSTALL_EXIT=$($p.ExitCode)"}
+          foreach($asset in @('ecu_mems_manager.exe','mems_manager_x64.dll','MEMSLibrary.dll','MEMSLibrary_Pack_001\knowledge.sqlite','onnxruntime-genai.dll')){
+            if(-not(Test-Path (Join-Path $folder $asset))){throw "INSTALLED_RUNTIME_MISSING=$asset"}
+          }
+          if(Test-Path (Join-Path $folder 'database\ecu_mems_manager.sqlite')){throw 'INSTALLED_PERSONAL_DB_MUST_BE_ABSENT'}
+          $env:QT_QPA_PLATFORM='offscreen'
+          $env:QT_OPENGL='software'
+          $env:QT_PLUGIN_PATH=$folder
+          $installed=Join-Path $folder 'ecu_mems_manager.exe'
+          $errorLog=Join-Path $folder 'installed_ui_stderr.log'
+          $ui=Start-Process -FilePath $installed -WorkingDirectory $folder -ArgumentList '--session-ui-smoke-test' -RedirectStandardError $errorLog -PassThru
+          $finished=$ui.WaitForExit(60000)
+          $trace=Join-Path $folder 'session_ui_smoke_trace.log'
+          if(Test-Path $trace){Get-Content $trace}
+          if(Test-Path $errorLog){Get-Content $errorLog}
+          if(-not $finished){
+            Stop-Process -Id $ui.Id -Force -ErrorAction SilentlyContinue
+            throw 'INSTALLED_UI_SMOKE_TIMEOUT'
+          }
+          if($ui.ExitCode -ne 0){throw "INSTALLED_UI_SMOKE_FAILED=$($ui.ExitCode)"}
+          Write-Host 'SESSION_TEST_SETUP_REAL_WINDOWS_INSTALL_AND_14_PAGES_PASS'
+
+      - name: Publier le Setup valide en prerelease de test
+        if: contains(github.event.head_commit.message, '[setup-test]')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $setup=Get-ChildItem setup-session-test -File -Filter '*.exe' | Select-Object -First 1
+          if(-not $setup){throw 'NO_VALIDATED_SETUP_TO_PUBLISH'}
+          $tag="mems-session-cleanup-test-$env:GITHUB_RUN_ID"
+          $notes="Setup Windows x64 de test du code consolide. 14 pages, IA ONNX, ROSCO, RAVE/MEMSLibrary. Compilation et tests IA/MEMS, smoke GUI et installation Windows reelle valides sur CI. Base personnelle SQLite non incluse. Branche de reference BUILD 134 preservee. Commit : $env:GITHUB_SHA"
+          gh release create $tag $setup.FullName --target $env:GITHUB_SHA --title 'ECU MEMS Manager SESSION - Setup de test du code consolide' --prerelease --notes $notes
+          if($LASTEXITCODE -ne 0){throw 'SESSION_SETUP_PRERELEASE_UPLOAD_FAILED'}
+          $sha=(Get-FileHash $setup.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          Write-Host "SESSION_SETUP_TEST_PUBLISHED tag=$tag sha256=$sha"
 
