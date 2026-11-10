@@ -4,8 +4,6 @@
 #include <QPolygonF>
 #include <QSignalBlocker>
 #include <QBoxLayout>
-#include <QCoreApplication>
-#include <QEvent>
 #include <QFrame>
 #include <QGridLayout>
 #include <QGroupBox>
@@ -44,6 +42,7 @@
 #include "overviewpage.h"
 #include "ecupages.h"
 #include "settingspage.h"
+#include "uishell.h"
 #include "summarytab.h"
 
 namespace {
@@ -990,31 +989,6 @@ static void applyResponsive(QMainWindow *window)
     fitSettingsPage(window);
 }
 
-class UiRebuildInstaller : public QObject
-{
-public: explicit UiRebuildInstaller(QObject *parent=nullptr):QObject(parent){}
-protected:
-    bool eventFilter(QObject *watched,QEvent *event) override
-    {
-        QMainWindow *window=qobject_cast<QMainWindow*>(watched);
-        if(!window||window->objectName()!=QStringLiteral("MainWindow"))return QObject::eventFilter(watched,event);
-
-        if(event->type()==QEvent::LanguageChange && window->property("deterministicNavigationApplied").toBool()) {
-            applyDeterministicNavigation(qobject_cast<MainWindow*>(window));
-            return QObject::eventFilter(watched,event);
-        }
-
-        if(event->type()==QEvent::Resize && window->property("uiRebuildInstalled").toBool()) {
-            applyResponsive(window);
-            return QObject::eventFilter(watched,event);
-        }
-
-        if((event->type()!=QEvent::Show&&event->type()!=QEvent::Polish)||window->property("uiRebuildInstalled").toBool())return QObject::eventFilter(watched,event);
-        QTabWidget *tabs=window->findChild<QTabWidget*>(QStringLiteral("Tab_main")); QWidget *central=window->centralWidget(); QVBoxLayout *root=central?qobject_cast<QVBoxLayout*>(central->layout()):nullptr; QWidget *legacy=central?central->findChild<QWidget*>(QStringLiteral("layoutWidget_7")):nullptr;
-        if(!tabs||!root||!legacy)return QObject::eventFilter(watched,event);
-        window->setProperty("uiRebuildInstalled",true); QTimer::singleShot(0,window,[=](){rebuild(window,central,root,tabs,legacy);}); return QObject::eventFilter(watched,event);
-    }
-private:
     // Typography only. The 14 original BUILD117 page layouts remain intact.
     // All-data page at rank 10 is the validated reference and is untouched.
     static void applyReadablePageFonts(QTabWidget *tabs)
@@ -1067,15 +1041,38 @@ private:
         // The sidebar and its utility actions belong to the native window
         // shell instead of a delayed global patch.
         ensureSidebar(window);
-        QTimer::singleShot(120,window,[window](){applyResponsive(window);});
         // Once the original settings and page installers finish, improve
         // text only: no position, size, card, dial or table changes.
         QTimer::singleShot(2800,window,[tabs](){applyReadablePageFonts(tabs);});
     }
-};
+} // namespace
 
-void installUiRebuild(){QApplication *app=qobject_cast<QApplication*>(QCoreApplication::instance());if(!app)return;UiRebuildInstaller *installer=new UiRebuildInstaller(app);app->installEventFilter(installer);} 
+void buildUiShell(QMainWindow *window)
+{
+    if (!window || window->property("uiRebuildInstalled").toBool())
+        return;
 
+    QTabWidget *tabs = window->findChild<QTabWidget*>(QStringLiteral("Tab_main"));
+    QWidget *central = window->centralWidget();
+    QVBoxLayout *root = central ? qobject_cast<QVBoxLayout*>(central->layout()) : nullptr;
+    QWidget *legacy = central ? central->findChild<QWidget*>(QStringLiteral("layoutWidget_7")) : nullptr;
+    if (!tabs || !root || !legacy)
+        return;
+
+    window->setProperty("uiRebuildInstalled", true);
+    rebuild(window, central, root, tabs, legacy);
+    window->setProperty("uiShellReady", true);
 }
 
-Q_COREAPP_STARTUP_FUNCTION(installUiRebuild)
+void resizeUiShell(QMainWindow *window)
+{
+    if (window && window->property("uiShellReady").toBool())
+        applyResponsive(window);
+}
+
+void retranslateUiShell(QMainWindow *window)
+{
+    if (window && window->property("uiShellReady").toBool() &&
+        window->property("deterministicNavigationApplied").toBool())
+        applyDeterministicNavigation(qobject_cast<MainWindow*>(window));
+}

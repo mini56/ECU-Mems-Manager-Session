@@ -156,12 +156,15 @@ signals:
 protected:
     void closeEvent(QCloseEvent *event) override;
     void showEvent(QShowEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
+    void changeEvent(QEvent *event) override;
 
 private:
     friend class InjectionRamTestInstaller;
     friend class OverviewLiveInstaller;
 
     Ui::MainWindow *m_ui;
+    bool m_uiShellScheduled = false;
 
     QThread *m_memsThread;
     MEMSInterface *m_mems;

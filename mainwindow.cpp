@@ -1,6 +1,8 @@
 #include <cmath>
 #include <QCloseEvent>
 #include <QShowEvent>
+#include <QResizeEvent>
+#include <QEvent>
 #include <QAbstractButton>
 #include <QMessageBox>
 #include <QProcess>
@@ -16,6 +18,7 @@
 #include <QGraphicsOpacityEffect>
 #include "mainwindow.h"
 #include "nativewindowstyle.h"
+#include "uishell.h"
 #include "ui_mainwindow.h"
 #include "styles.h"
 #include "captureviewer.h"
@@ -1449,6 +1452,26 @@ void MainWindow::showEvent(QShowEvent* event)
 {
   QMainWindow::showEvent(event);
   applyNativeTitleBar(this, qApp && qApp->property("ecuDarkTheme").toBool());
+
+  if (!m_uiShellScheduled)
+  {
+    m_uiShellScheduled = true;
+    // Initial geometry is available after the window has received Show.
+    QTimer::singleShot(0, this, [this]() { buildUiShell(this); });
+  }
+}
+
+void MainWindow::resizeEvent(QResizeEvent* event)
+{
+  QMainWindow::resizeEvent(event);
+  resizeUiShell(this);
+}
+
+void MainWindow::changeEvent(QEvent* event)
+{
+  QMainWindow::changeEvent(event);
+  if (event && event->type() == QEvent::LanguageChange)
+    retranslateUiShell(this);
 }
 
 void MainWindow::closeEvent(QCloseEvent* event)

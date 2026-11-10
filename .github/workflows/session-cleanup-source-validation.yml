@@ -34,7 +34,7 @@ jobs:
           $cmake=Get-Content CMakeLists.txt -Raw
           $main=Get-Content main.cpp -Raw
           $s=Get-Content settingspage.cpp -Raw
-          $nav=Get-Content uirebuild.cpp -Raw
+          $nav=Get-Content uishell.cpp -Raw
           if(Test-Path splashtextfix.cpp){throw 'SPLASH_OLD_PATCH_STILL_PRESENT'}
           if(Test-Path settingsvisualpatch.cpp){throw 'SETTINGS_OLD_PATCH_STILL_PRESENT'}
           if(Test-Path taborderpatch.cpp){throw 'UNBUILT_TAB_ORDER_PATCH_STILL_PRESENT'}
@@ -71,6 +71,7 @@ jobs:
             'overviewrebuild.cpp',
             'majorpagesrebuild.cpp',
             'settingstabdark.cpp',
+            'uirebuild.cpp',
             'database/MemsDatabaseDiagramSearchPatch.cpp',
             'database/MemsSearchCompletenessPatch.cpp'
           )){
@@ -124,6 +125,14 @@ jobs:
              $nav -notmatch 'buildSettingsPage\(window\)' -or
              $nav -notmatch 'fitSettingsPage\(window\)'){
              throw 'NATIVE_SETTINGS_PAGE_MISSING'
+          }
+          if($nav -notmatch 'void buildUiShell\(' -or
+             $nav -notmatch 'void resizeUiShell\(' -or
+             $nav -notmatch 'void retranslateUiShell\(' -or
+             $nav -match 'Q_COREAPP_STARTUP_FUNCTION|installEventFilter' -or
+             $mainWindow -notmatch 'buildUiShell\(this\)' -or
+             $mainWindow -notmatch 'resizeUiShell\(this\)'){
+             throw 'NATIVE_UI_SHELL_LIFECYCLE_MISSING'
           }
           Write-Host 'SESSION_CLEAN_SOURCE_PREFLIGHT_PASS'
       - name: Preparer Python
