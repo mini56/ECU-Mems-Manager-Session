@@ -15,7 +15,7 @@ permissions:
   contents: write
 concurrency:
   group: session-cleanup-source-validation
-  cancel-in-progress: false
+  cancel-in-progress: true
 env:
   MEMS_BUILD_NUMBER: '134'
   ORT_GENAI_VERSION: '0.14.0'
