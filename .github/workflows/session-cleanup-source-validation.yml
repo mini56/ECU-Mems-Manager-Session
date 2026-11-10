@@ -1,5 +1,5 @@
-name: ECU MEMS Manager SESSION - BUILD 135
-run-name: SESSION BUILD 135 - styles valides et controles anti-regression - ${{ github.sha }}
+name: ECU MEMS Manager SESSION - BUILD 136
+run-name: SESSION BUILD 136 - affichage local des images RAVE - ${{ github.sha }}
 on:
   push:
     branches:
@@ -20,7 +20,7 @@ concurrency:
   group: session-cleanup-source-validation
   cancel-in-progress: true
 env:
-  MEMS_BUILD_NUMBER: '135'
+  MEMS_BUILD_NUMBER: '136'
   ORT_GENAI_VERSION: '0.14.0'
   ORT_GENAI_WIN_X64_SHA256: '8a303e52dc7be8fb2a5331929af451a25ac59774102d7fd09ef673adc85c5ebf'
 jobs:
@@ -318,7 +318,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
-          cmake -S . -B build-session-135 -A x64 `
+          cmake -S . -B build-session-136 -A x64 `
             -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/msvc2019_64" `
             -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
             -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF `
@@ -326,11 +326,11 @@ jobs:
             "-DORT_GENAI_INCLUDE_DIR=$env:ORT_GENAI_INCLUDE_DIR" `
             "-DORT_GENAI_LIBRARY=$env:ORT_GENAI_LIBRARY"
           if($LASTEXITCODE -ne 0){throw 'CMake configuration failed'}
-          cmake --build build-session-135 --config Release --target ecu_mems_manager ecu_mems_uninstaller --parallel
+          cmake --build build-session-136 --config Release --target ecu_mems_manager ecu_mems_uninstaller --parallel
           if($LASTEXITCODE -ne 0){throw 'SESSION source compilation failed'}
-          if(-not(Test-Path 'build-session-135\Release\ecu_mems_manager.exe')){throw 'SESSION exe missing'}
-          if(-not(Test-Path 'build-session-135\librosco-x64\Release\mems_manager_x64.dll')){throw 'ROSCO dll missing'}
-          Write-Host 'SESSION_BUILD135_SOURCE_AND_ONNX_COMPILE_PASS'
+          if(-not(Test-Path 'build-session-136\Release\ecu_mems_manager.exe')){throw 'SESSION exe missing'}
+          if(-not(Test-Path 'build-session-136\librosco-x64\Release\mems_manager_x64.dll')){throw 'ROSCO dll missing'}
+          Write-Host 'SESSION_BUILD136_SOURCE_AND_ONNX_COMPILE_PASS'
 
       - name: Preparer la distribution Windows complete pour le test de demarrage
         shell: pwsh
@@ -353,9 +353,9 @@ jobs:
           if($LASTEXITCODE -ne 0){throw 'BASE117_RUNTIME_UNPACK_FAILED'}
           $dist=(Resolve-Path dist-session-smoke).Path
           foreach($pair in @(
-            @('build-session-135\Release\ecu_mems_manager.exe','ecu_mems_manager.exe'),
-            @('build-session-135\Release\ecu_mems_uninstaller.exe','ecu_mems_uninstaller.exe'),
-            @('build-session-135\librosco-x64\Release\mems_manager_x64.dll','mems_manager_x64.dll')
+            @('build-session-136\Release\ecu_mems_manager.exe','ecu_mems_manager.exe'),
+            @('build-session-136\Release\ecu_mems_uninstaller.exe','ecu_mems_uninstaller.exe'),
+            @('build-session-136\librosco-x64\Release\mems_manager_x64.dll','mems_manager_x64.dll')
           )){
             Copy-Item $pair[0] (Join-Path $dist $pair[1]) -Force
           }
@@ -363,6 +363,9 @@ jobs:
           $dlls=Get-ChildItem $runtime -Recurse -File -Filter '*onnxruntime*.dll'
           foreach($dll in $dlls){
             Copy-Item $dll.FullName (Join-Path $dist $dll.Name) -Force
+          }
+          if(-not(Test-Path (Join-Path $dist 'database/reference/images/rave/RCL0193FRE_PDF_346.png'))){
+            throw 'RAVE_REFERENCE_IMAGE_346_MISSING_FROM_DISTRIBUTION'
           }
           if(-not(Test-Path (Join-Path $dist 'onnxruntime-genai.dll'))){
             throw 'ONNX_GENAI_RUNTIME_NOT_DEPLOYED'
@@ -398,7 +401,7 @@ jobs:
           $executable=Join-Path $PWD 'dist-session-smoke\ecu_mems_manager.exe'
           if(-not(Test-Path $executable)){throw 'SESSION_NATIVE_UI_EXE_MISSING'}
           # The compiled GUI links both ROSCO and ONNX import libraries.
-          $env:PATH="$PWD\build-session-135\librosco-x64\Release;$env:PATH"
+          $env:PATH="$PWD\build-session-136\librosco-x64\Release;$env:PATH"
           $onnxDir=Join-Path $env:RUNNER_TEMP 'onnx-genai'
           $runtimeDlls=Get-ChildItem $onnxDir -Recurse -File -Filter '*onnxruntime*.dll'
           foreach($directory in @($runtimeDlls | ForEach-Object {$_.DirectoryName} | Sort-Object -Unique)){
@@ -434,7 +437,7 @@ jobs:
           $ErrorActionPreference='Stop'
           $env:PATH="C:\Qt\5.15.2\msvc2019_64\bin;$env:PATH"
           foreach($test in @('ia_response_selftest','ia_mems_diagram_selftest','mems_database_content_selftest','injection_ram_log_selftest')){
-            $executable=Join-Path $PWD "build-session-135\Release\$test.exe"
+            $executable=Join-Path $PWD "build-session-136\Release\$test.exe"
             if(-not(Test-Path $executable)){throw "MISSING_REGRESSION_TEST: $test"}
             & $executable
             if($LASTEXITCODE -ne 0){throw "REGRESSION_TEST_FAILED: $test"}
@@ -458,7 +461,7 @@ jobs:
           if(-not $compiler){throw 'INNO_SETUP_COMPILER_MISSING'}
           $script=@'
           #define MyAppName "ECU MEMS Manager SESSION"
-          #define MyAppVersion "1.1.35"
+          #define MyAppVersion "1.1.36"
           [Setup]
           AppId={{BC7FAF73-5BCF-49FC-8513-9D9C7B08F133}
           AppName={#MyAppName}
@@ -499,7 +502,7 @@ jobs:
         run: |
           $ErrorActionPreference='Stop'
           $setup=Get-ChildItem setup-session-test -File -Filter '*.exe' | Select-Object -First 1
-          $folder=Join-Path $env:RUNNER_TEMP 'MEMS_SESSION_135_SETUP_TEST'
+          $folder=Join-Path $env:RUNNER_TEMP 'MEMS_SESSION_136_SETUP_TEST'
           if(Test-Path $folder){Remove-Item $folder -Recurse -Force}
           $p=Start-Process -FilePath $setup.FullName -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',"/DIR=$folder" -Wait -PassThru
           if($p.ExitCode -ne 0){throw "ACTUAL_SETUP_INSTALL_EXIT=$($p.ExitCode)"}
@@ -507,6 +510,9 @@ jobs:
             if(-not(Test-Path (Join-Path $folder $asset))){throw "INSTALLED_RUNTIME_MISSING=$asset"}
           }
           if(Test-Path (Join-Path $folder 'database\ecu_mems_manager.sqlite')){throw 'INSTALLED_PERSONAL_DB_MUST_BE_ABSENT'}
+          if(-not(Test-Path (Join-Path $folder 'database/reference/images/rave/RCL0193FRE_PDF_346.png'))){
+            throw 'RAVE_REFERENCE_IMAGE_346_MISSING_FROM_SETUP'
+          }
           $env:QT_QPA_PLATFORM='offscreen'
           $env:QT_OPENGL='software'
           # Do not let Qt accidentally pick a different plugin from the
@@ -548,9 +554,9 @@ jobs:
           $ErrorActionPreference='Stop'
           $setup=Get-ChildItem setup-session-test -File -Filter '*.exe' | Select-Object -First 1
           if(-not $setup){throw 'NO_VALIDATED_SETUP_TO_PUBLISH'}
-          $tag="mems-session-build-135"
-          $notes="ECU MEMS Manager SESSION BUILD 135 (Windows x64, version 1.1.35). Styles de pages valides figes avec controle bloquant SHA Git et tests Qt d'invariants visuels. 14 pages, IA ONNX, ROSCO, RAVE/MEMSLibrary. Tests de compilation, regression, demarrage et installation Windows passes. Le code visuel des pages approuvees est inchange par rapport au build de reference. Base personnelle SQLite non embarquee. Commit : $env:GITHUB_SHA. Release pour essai sur PC."
-          gh release create $tag $setup.FullName --target $env:GITHUB_SHA --title 'ECU MEMS Manager SESSION - BUILD 135' --notes $notes
+          $tag="mems-session-build-136"
+          $notes="ECU MEMS Manager SESSION BUILD 136 (Windows x64, version 1.1.36). Styles de pages valides figes avec controle bloquant SHA Git et tests Qt d'invariants visuels. 14 pages, IA ONNX, ROSCO, RAVE/MEMSLibrary. Tests de compilation, regression, demarrage et installation Windows passes. Le code visuel des pages approuvees est inchange par rapport au build de reference. Base personnelle SQLite non embarquee. Commit : $env:GITHUB_SHA. Release pour essai sur PC."
+          gh release create $tag $setup.FullName --target $env:GITHUB_SHA --title 'ECU MEMS Manager SESSION - BUILD 136' --notes $notes
           if($LASTEXITCODE -ne 0){throw 'SESSION_SETUP_PRERELEASE_UPLOAD_FAILED'}
           $sha=(Get-FileHash $setup.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
           Write-Host "SESSION_SETUP_TEST_PUBLISHED tag=$tag sha256=$sha"
