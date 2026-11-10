@@ -558,15 +558,17 @@ static void composeActuators(QMainWindow *window)
     }
     rv->addLayout(buttons);
 
-    // Reuse the system indicator already used by the Errors page, driven
-    // by the SAME ECU connection and engine-fault source as in Overview.
-    rv->addStretch(1);
+    // Reuse the same real ECU status source and drawing as on the Errors
+    // page. On Actionneurs the larger indicator owns the spare vertical
+    // space; a fixed 200x180 size previously left most of the panel unused.
     QObject *systemSource=window->findChild<QObject*>(QStringLiteral("m_engine_error"));
     SystemStatePreview *state=new SystemStatePreview(
         qobject_cast<MainWindow*>(window),systemSource,right);
     state->setObjectName(QStringLiteral("actuatorSystemState"));
-    state->setFixedSize(200,180);
-    rv->addWidget(state,0,Qt::AlignHCenter);
+    state->setMinimumSize(270,215);
+    state->setMaximumSize(350,QWIDGETSIZE_MAX);
+    state->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    rv->addWidget(state,1,Qt::AlignHCenter);
 
     body->addWidget(right,2);
     root->addLayout(body,1);
