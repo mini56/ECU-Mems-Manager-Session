@@ -1,5 +1,6 @@
 #include "../i18n.h"
 #include "MemsDatabaseUniversalAccess.h"
+#include "MemsDatabaseUniversalAccess.h"
 
 #include <QDesktopServices>
 #include <QEvent>
@@ -146,7 +147,7 @@ bool splitLanguageField(const QString &field,QString *base,QString *language)
     return true;
 }
 
-QString localizedTitle(const QString &content,const QString &fallback)
+QString localizedTitleImpl(const QString &content,const QString &fallback)
 {
     const QHash<QString,FieldValue> fields=parseIndexedContent(content);
     if(fields.isEmpty()) return fallback;
@@ -262,113 +263,28 @@ QString assetHtml(const QString &title,const QString &content,const QString &cat
     return html;
 }
 
-class UniversalDatabaseAccessController : public QObject
-{
-public:
-    explicit UniversalDatabaseAccessController(QWidget *browser)
-        : QObject(browser),m_browser(browser)
-    {
-        if(!m_browser) return;
-        m_results=m_browser->findChild<QTableWidget*>();
-        m_detail=m_browser->findChild<QTextBrowser*>();
-        if(!m_results || !m_detail) return;
-
-        m_detail->setOpenExternalLinks(true);
-        connect(m_results,&QTableWidget::itemSelectionChanged,this,[this](){
-            QTimer::singleShot(0,this,[this](){synchronize(true);});
-        });
-        m_browser->installEventFilter(this);
-
-        QTimer::singleShot(0,this,[this](){synchronize(true);});
-    }
-
-protected:
-    bool eventFilter(QObject *watched,QEvent *event) override
-    {
-        if(watched==m_browser && event && event->type()==QEvent::LanguageChange){
-            m_lastSnapshot.clear();
-            QTimer::singleShot(40,this,[this](){synchronize(true);});
-        }
-        return QObject::eventFilter(watched,event);
-    }
-
-private:
-    QString snapshot() const
-    {
-        if(!m_results) return QString();
-        QString value=activeLanguage()+QLatin1Char('|')+QString::number(m_results->rowCount())+QLatin1Char('|')+QString::number(m_results->currentRow());
-        if(m_results->rowCount()>0){
-            if(QTableWidgetItem *first=m_results->item(0,0))
-                value+=QLatin1Char('|')+first->data(RoleSourceTable).toString()+QLatin1Char('|')+first->data(RoleSourceKey).toString();
-            if(QTableWidgetItem *last=m_results->item(m_results->rowCount()-1,0))
-                value+=QLatin1Char('|')+last->data(RoleSourceTable).toString()+QLatin1Char('|')+last->data(RoleSourceKey).toString();
-        }
-        return value;
-    }
-
-    void localizeResultTitles()
-    {
-        if(!m_results) return;
-        for(int row=0;row<m_results->rowCount();++row){
-            QTableWidgetItem *item=m_results->item(row,0);
-            if(!item) continue;
-            if(!item->data(RoleOriginalTitle).isValid()) item->setData(RoleOriginalTitle,item->text());
-            const QString original=item->data(RoleOriginalTitle).toString();
-            const QString content=item->data(RoleContent).toString();
-            const QString title=localizedTitle(content,original);
-            if(!title.isEmpty() && item->text()!=title) item->setText(title);
-        }
-    }
-
-    void showSelection()
-    {
-        if(!m_results || !m_detail || m_results->currentRow()<0) return;
-        QTableWidgetItem *item=m_results->item(m_results->currentRow(),0);
-        if(!item) return;
-
-        const QString category=item->data(RoleCategory).toString();
-        const QString sourceTable=item->data(RoleSourceTable).toString();
-        const QString content=item->data(RoleContent).toString();
-        const QString generation=item->data(RoleGeneration).toString();
-        const QString title=localizedTitle(content,item->text());
-
-        if(isAssetTable(sourceTable)){
-            m_detail->setHtml(assetHtml(title,content,category,generation));
-            if(m_detail->verticalScrollBar()) m_detail->verticalScrollBar()->setValue(0);
-            return;
-        }
-
-        // ECU and complete XML sheets have richer dedicated renderers. Leave
-        // those views intact. Every normal indexed database row is rendered
-        // here with only the active language variant visible.
-        if(category==QStringLiteral("ecu") || sourceTable==QStringLiteral("xml_documentation")) return;
-
-        QString subtitle=categoryLabel(category).toHtmlEscaped();
-        if(!generation.trimmed().isEmpty()) subtitle+=QStringLiteral(" — MEMS ")+generation.toHtmlEscaped();
-        m_detail->setHtml(htmlStyle()+QStringLiteral("<h1>%1</h1><p class='muted'>%2</p>%3")
-                          .arg(title.toHtmlEscaped(),subtitle,localizedContentTable(content)));
-        if(m_detail->verticalScrollBar()) m_detail->verticalScrollBar()->setValue(0);
-    }
-
-    void synchronize(bool force)
-    {
-        const QString current=snapshot();
-        if(!force && current==m_lastSnapshot) return;
-        m_lastSnapshot=current;
-        localizeResultTitles();
-        showSelection();
-    }
-
-    QPointer<QWidget> m_browser;
-    QPointer<QTableWidget> m_results;
-    QPointer<QTextBrowser> m_detail;
-    QString m_lastSnapshot;
-};
-
 } // namespace
 
-void initializeMemsDatabaseUniversalAccess(QWidget *browser)
+namespace MemsDatabaseContent {
+
+QString localizedTitle(const QString &content,const QString &fallback)
 {
-    if (browser)
-        new UniversalDatabaseAccessController(browser);
+    return localizedTitleImpl(content,fallback);
 }
+
+QString renderResultHtml(const QString &title,const QString &content,
+                         const QString &category,const QString &generation,
+                         const QString &sourceTable,const QString &diagrams)
+{
+    if(isAssetTable(sourceTable))
+        return assetHtml(title,content,category,generation);
+
+    QString subtitle=categoryLabel(category).toHtmlEscaped();
+    if(!generation.trimmed().isEmpty())
+        subtitle+=QStringLiteral(" — MEMS ")+generation.toHtmlEscaped();
+    return htmlStyle()+
+        QStringLiteral("<h1>%1</h1><p class='muted'>%2</p>%3%4")
+          .arg(title.toHtmlEscaped(),subtitle,diagrams,localizedContentTable(content));
+}
+
+} // namespace MemsDatabaseContent

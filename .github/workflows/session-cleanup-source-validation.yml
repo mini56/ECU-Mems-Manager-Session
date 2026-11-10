@@ -167,6 +167,14 @@ jobs:
              $browser -notmatch 'initializeMemsDatabaseUniversalAccess\(this\)'){
              throw 'NATIVE_DATABASE_UNIVERSAL_ACCESS_MISSING'
           }
+          $universal=Get-Content database/MemsDatabaseUniversalAccess.cpp -Raw
+          $explorer=Get-Content database/MemsDatabaseExplorerV2.cpp -Raw
+          if($universal -match 'Q_COREAPP_STARTUP_FUNCTION|installEventFilter|UniversalDatabaseAccessController|setInterval\(280\)' -or
+             $universal -notmatch 'namespace MemsDatabaseContent' -or
+             $explorer -notmatch 'MemsDatabaseContent::renderResultHtml\(' -or
+             $explorer -notmatch 'MemsDatabaseContent::localizedTitle\('){
+             throw 'DATABASE_CONTENT_RENDERING_MUST_BE_NATIVE'
+          }
           Write-Host 'SESSION_CLEAN_SOURCE_PREFLIGHT_PASS'
       - name: Preparer Python
         uses: actions/setup-python@v5

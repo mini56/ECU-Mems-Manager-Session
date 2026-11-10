@@ -1,5 +1,6 @@
 #include "MemsGlobalSearchIndex.h"
 #include "MemsDatabaseExplorerV2.h"
+#include "MemsDatabaseUniversalAccess.h"
 #include "MemsReferenceSheetRenderer.h"
 #include "../i18n.h"
 
@@ -377,7 +378,7 @@ private:
     void configureDetail()
     {
         forceDetailScroll();
-        QTimer::singleShot(100,this,[this](){forceDetailScroll();});
+        m_detail->setOpenExternalLinks(true);
     }
 
     QString generationLabel(const QString &generation) const
@@ -613,7 +614,9 @@ private:
             const QString title=row.value(QStringLiteral("title")).toString();
             const QString generation=row.value(QStringLiteral("generation")).toString();
             const QString category=row.value(QStringLiteral("category")).toString();
-            QTableWidgetItem *titleItem=new QTableWidgetItem(title);
+            const QString localized=MemsDatabaseContent::localizedTitle(
+                row.value(QStringLiteral("content")).toString(),title);
+            QTableWidgetItem *titleItem=new QTableWidgetItem(localized);
             titleItem->setData(Qt::UserRole+10,category);
             titleItem->setData(Qt::UserRole+11,row.value(QStringLiteral("source_table")));
             titleItem->setData(Qt::UserRole+12,row.value(QStringLiteral("source_key")));
@@ -703,16 +706,11 @@ private:
         }
 
         const QString title=row.value(QStringLiteral("title")).toString();
-        QString content=row.value(QStringLiteral("content")).toString().toHtmlEscaped();
-        content.replace(QStringLiteral("\n"),QStringLiteral("<br>"));
-        QString subtitle=categoryLabel(category).toHtmlEscaped();
-        if(!generation.isEmpty()) subtitle+=QStringLiteral(" — ")+generation.toHtmlEscaped();
-        // Wiring illustrations belong to the actual database result renderer.
-        // Wiring and XML sheets share this single diagram renderer.
-        const QString diagrams = category==QStringLiteral("wiring")
+        const QString content=row.value(QStringLiteral("content")).toString();
+        const QString diagrams=category==QStringLiteral("wiring")
             ? diagramHtml(generation) : QString();
-        m_detail->setHtml(htmlStyle()+QStringLiteral("<h1>%1</h1><p class='muted'>%2</p>%3<div class='content'>%4</div>")
-                          .arg(title.toHtmlEscaped(),subtitle,diagrams,content));
+        m_detail->setHtml(MemsDatabaseContent::renderResultHtml(
+            title,content,category,generation,source,diagrams));
         if(m_detail->verticalScrollBar()) m_detail->verticalScrollBar()->setValue(0);
         updateDocumentControls();forceDetailScroll();
     }
