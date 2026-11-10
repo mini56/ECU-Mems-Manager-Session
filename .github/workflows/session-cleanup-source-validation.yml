@@ -160,6 +160,13 @@ jobs:
              $cmake -notmatch 'memsinterface\.cpp memsinterface_dispatch\.cpp'){
              throw 'ECU_PROTOCOL_GUARDS_MUST_BE_IN_NATIVE_SOURCE'
           }
+          $universal=Get-Content database/MemsDatabaseUniversalAccess.cpp -Raw
+          $browser=Get-Content database/MemsDatabaseBrowser.cpp -Raw
+          if($universal -notmatch 'void initializeMemsDatabaseUniversalAccess\(' -or
+             $universal -match 'Q_COREAPP_STARTUP_FUNCTION|installUniversalDatabaseAccess|installEventFilter\(installer\)|setInterval\(280\)' -or
+             $browser -notmatch 'initializeMemsDatabaseUniversalAccess\(this\)'){
+             throw 'NATIVE_DATABASE_UNIVERSAL_ACCESS_MISSING'
+          }
           Write-Host 'SESSION_CLEAN_SOURCE_PREFLIGHT_PASS'
       - name: Preparer Python
         uses: actions/setup-python@v5

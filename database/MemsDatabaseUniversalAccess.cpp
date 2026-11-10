@@ -1,7 +1,6 @@
 #include "../i18n.h"
+#include "MemsDatabaseUniversalAccess.h"
 
-#include <QApplication>
-#include <QCoreApplication>
 #include <QDesktopServices>
 #include <QEvent>
 #include <QFile>
@@ -280,10 +279,6 @@ public:
         });
         m_browser->installEventFilter(this);
 
-        m_timer=new QTimer(this);
-        m_timer->setInterval(280);
-        connect(m_timer,&QTimer::timeout,this,[this](){synchronize(false);});
-        m_timer->start();
         QTimer::singleShot(0,this,[this](){synchronize(true);});
     }
 
@@ -367,50 +362,13 @@ private:
     QPointer<QWidget> m_browser;
     QPointer<QTableWidget> m_results;
     QPointer<QTextBrowser> m_detail;
-    QTimer *m_timer=nullptr;
     QString m_lastSnapshot;
 };
 
-class UniversalDatabaseAccessInstaller : public QObject
+} // namespace
+
+void initializeMemsDatabaseUniversalAccess(QWidget *browser)
 {
-public:
-    explicit UniversalDatabaseAccessInstaller(QObject *parent=nullptr):QObject(parent){}
-
-    bool eventFilter(QObject *watched,QEvent *event) override
-    {
-        QWidget *widget=qobject_cast<QWidget*>(watched);
-        if(widget && event && (event->type()==QEvent::Show || event->type()==QEvent::Polish) &&
-           widget->objectName()==QStringLiteral("memsDatabaseBrowser")) schedule(widget);
-        return QObject::eventFilter(watched,event);
-    }
-
-    void scan()
-    {
-        for(QWidget *widget:QApplication::allWidgets())
-            if(widget && widget->objectName()==QStringLiteral("memsDatabaseBrowser")) schedule(widget);
-    }
-
-private:
-    void schedule(QWidget *widget)
-    {
-        if(!widget || widget->property("databaseUniversalAccessInstalled").toBool()) return;
-        widget->setProperty("databaseUniversalAccessInstalled",true);
-        QPointer<QWidget> guarded(widget);
-        QTimer::singleShot(1050,this,[guarded](){
-            if(guarded) new UniversalDatabaseAccessController(guarded);
-        });
-    }
-};
-
-void installUniversalDatabaseAccess()
-{
-    QCoreApplication *core=QCoreApplication::instance();
-    if(!core) return;
-    UniversalDatabaseAccessInstaller *installer=new UniversalDatabaseAccessInstaller(core);
-    core->installEventFilter(installer);
-    QTimer::singleShot(1900,installer,[installer](){installer->scan();});
+    if (browser)
+        new UniversalDatabaseAccessController(browser);
 }
-
-}
-
-Q_COREAPP_STARTUP_FUNCTION(installUniversalDatabaseAccess)

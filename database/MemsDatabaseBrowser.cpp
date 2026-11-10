@@ -2,6 +2,7 @@
 #include "MemsReferenceDatabase.h"
 #include "MemsReferenceSheetRenderer.h"
 #include "MemsDatabaseExplorerV2.h"
+#include "MemsDatabaseUniversalAccess.h"
 #include "../i18n.h"
 
 #include <QAbstractItemView>
@@ -107,6 +108,7 @@ MemsDatabaseBrowser::MemsDatabaseBrowser(QWidget *parent)
     }
     // Construct the one authoritative search controller after the real widgets exist.
     initializeMemsDatabaseExplorer(this);
+    initializeMemsDatabaseUniversalAccess(this);
 }
 
 MemsDatabaseBrowser::~MemsDatabaseBrowser(){delete m_database;}
