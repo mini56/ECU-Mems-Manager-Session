@@ -10,6 +10,7 @@
 #include <QElapsedTimer>
 #include <QEvent>
 #include <QFrame>
+#include <QFontMetrics>
 #include <QGridLayout>
 #include <QHash>
 #include <QLabel>

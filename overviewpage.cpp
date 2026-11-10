@@ -3,6 +3,7 @@
 #include <QElapsedTimer>
 #include <QEvent>
 #include <QFrame>
+#include <QFontMetrics>
 #include <QGridLayout>
 #include <QLabel>
 #include <QMainWindow>
@@ -68,12 +69,17 @@ protected:
         p.setBrush(QColor("#0c1217"));
         p.drawRoundedRect(card.adjusted(.5,.5,-.5,-.5),5.0,5.0);
 
+        const QString gaugeTitle=m_title.toUpper();
         QFont titleFont=p.font();
         titleFont.setBold(true);
         titleFont.setPointSizeF(8.2);
+        // Titles must fit the actual header width; only their lettering is scaled.
+        while(titleFont.pointSizeF()>5.0 &&
+              QFontMetricsF(titleFont).horizontalAdvance(gaugeTitle)>170.0)
+            titleFont.setPointSizeF(titleFont.pointSizeF()-0.2);
         p.setFont(titleFont);
         p.setPen(QColor("#edf2f4"));
-        p.drawText(QRectF(6,5,176,18),Qt::AlignCenter,m_title.toUpper());
+        p.drawText(QRectF(6,5,176,18),Qt::AlignCenter,gaugeTitle);
         p.setPen(QPen(QColor("#27333b"),1.0));
         p.drawLine(QPointF(8,25),QPointF(180,25));
 

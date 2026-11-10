@@ -14,6 +14,8 @@ public:
         setMinimumSize(118,150);setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     }
     void setTitle(const QString &title){m_title=title;update();}
+    QString title() const{return m_title;}
+    void setTitlePointSize(qreal pointSize){m_titlePointSize=pointSize;update();}
     void setValue(double value){m_value=value;update();}
     void setRange(double minimum,double maximum){m_min=minimum;m_max=maximum;update();}
 protected:
@@ -23,13 +25,9 @@ protected:
         const qreal baseW=188.0,baseH=210.0,s=qMin(width()/baseW,height()/baseH);
         p.translate((width()-baseW*s)/2.0,(height()-baseH*s)/2.0);p.scale(s,s);
         p.setPen(QPen(QColor("#34414a"),1));p.setBrush(QColor("#0c1217"));p.drawRoundedRect(QRectF(.5,.5,187,209),5,5);
-        QFont tf=p.font();tf.setBold(true);tf.setPointSizeF(7.3);
+        // All four Injection titles use the same font size, fitted together.
+        QFont tf=p.font();tf.setBold(true);tf.setPointSizeF(m_titlePointSize);
         const QString fullGaugeTitle=m_title.toUpper();
-        // Fit the complete title inside the unchanged 176-pixel title field.
-        // Only the title font may shrink; the gauge and its numeric fonts stay intact.
-        while(tf.pointSizeF()>5.2 &&
-              QFontMetricsF(tf).horizontalAdvance(fullGaugeTitle)>172.0)
-            tf.setPointSizeF(tf.pointSizeF()-0.2);
         p.setFont(tf);p.setPen(QColor("#edf2f4"));
         p.drawText(QRectF(6,5,176,20),Qt::AlignCenter,fullGaugeTitle);p.setPen(QColor("#27333b"));p.drawLine(QPointF(8,26),QPointF(180,26));
         const QPointF c(94,105);const qreal r=70,startDeg=135,sweepDeg=270;
@@ -46,7 +44,9 @@ protected:
         QFont uf=p.font();uf.setBold(true);uf.setPointSizeF(8);p.setFont(uf);p.setPen(QColor("#d0d8dc"));p.drawText(QRectF(45,157,98,16),Qt::AlignCenter,m_unit);
     }
 private:
-    QString m_title,m_unit;double m_min,m_max,m_value;
+    QString m_title,m_unit;
+    qreal m_titlePointSize=7.3;
+    double m_min,m_max,m_value;
 };
 
 class InjectionHistoryWidget : public QWidget
@@ -96,6 +96,7 @@ public:
         m_base=new InjectionGaugeCard(I18n::text(7902),QStringLiteral("ms"),0,20,this);
         m_transient=new InjectionGaugeCard(I18n::text(7903),QStringLiteral("ms"),0,5,this);
         m_counter=new InjectionGaugeCard(I18n::text(7904),QString(),0,255,this);
+        synchronizeGaugeTitles();
         grid->addWidget(m_final,0,0);grid->addWidget(m_base,0,1);grid->addWidget(m_transient,0,2);grid->addWidget(m_counter,0,3);root->addLayout(grid,1);
 
         QHBoxLayout *bottom=new QHBoxLayout;bottom->setContentsMargins(0,0,0,0);bottom->setSpacing(6);

@@ -1,4 +1,5 @@
 #include <QFrame>
+#include <QFontMetrics>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -72,12 +73,16 @@ protected:
         p.translate((width()-bw*scale)/2.0,(height()-bh*scale)/2.0);
         p.scale(scale,scale);
 
+        const QString gaugeTitle=m_title.toUpper();
         QFont titleFont=p.font();
         titleFont.setBold(true);
         titleFont.setPointSizeF(large?10.2:9.0);
+        while(titleFont.pointSizeF()>6.0 &&
+              QFontMetricsF(titleFont).horizontalAdvance(gaugeTitle)>bw-12.0)
+            titleFont.setPointSizeF(titleFont.pointSizeF()-0.2);
         p.setFont(titleFont);
         p.setPen(kText);
-        p.drawText(QRectF(4,0,bw-8,20),Qt::AlignCenter,m_title.toUpper());
+        p.drawText(QRectF(4,0,bw-8,20),Qt::AlignCenter,gaugeTitle);
 
         const QPointF c(bw/2.0,large?151.0:87.0);
         const qreal r=large?126.0:68.0;
@@ -392,7 +397,11 @@ static void rebuildAdjustArea(QWidget *page,QFrame *states,QFrame *adjust,QLineE
     layout->setContentsMargins(14,8,14,9);
     layout->setSpacing(5);
 
-    QHBoxLayout *header=new QHBoxLayout;
+    // The ECU settings title is a compact header, not an expanding row.
+    QWidget *headerBar=new QWidget(adjust);
+    headerBar->setFixedHeight(28);
+    headerBar->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+    QHBoxLayout *header=new QHBoxLayout(headerBar);
     header->setContentsMargins(0,0,0,0);
     header->setSpacing(9);
 
@@ -436,10 +445,11 @@ static void rebuildAdjustArea(QWidget *page,QFrame *states,QFrame *adjust,QLineE
         note->show();
         header->addWidget(note,0);
     }
-    layout->addLayout(header);
+    layout->addWidget(headerBar);
 
     QFrame *line=new QFrame(adjust);
     line->setFrameShape(QFrame::HLine);
+    line->setFixedHeight(1);
     line->setStyleSheet(QStringLiteral("background:#29343e;border:0;max-height:1px;"));
     layout->addWidget(line);
 
@@ -581,18 +591,15 @@ static void applySettingsSizing(QWidget *page,QFrame *metrics,QFrame *adjust)
 {
     if(!page || !metrics || !adjust) return;
 
-    // BUILD117 positions stay unchanged: two gauges in each side column,
-    // and the single RPM gauge remains substantially larger in the centre.
-    // The former 335/350 px caps wasted vertical space on tall screens.
+    // Keep the five original positions. The precision RPM dial takes the
+    // maximum square allowed by the page height and the three-column grid.
+    // The lower control band is only as tall as its real content requires.
     const int width=qMax(700,page->width());
     const int height=qMax(430,page->height());
-    // Preserve the five original gauge positions, but use the free vertical
-    // space that was previously left above and below their fixed-height boxes.
-    // The control area receives enough room for four full-height button rows.
-    const int adjustHeight=qBound(232,qRound(height*.33),250);
-    const int metricsHeight=qMax(250,height-adjustHeight-22);
-    const int center=qMax(190,qMin(qRound(width*.40),metricsHeight-20));
-    const int outer=qMax(122,qMin(qRound(center*.62),(metricsHeight-8)/2));
+    const int adjustHeight=qMax(225,adjust->minimumSizeHint().height());
+    const int metricsHeight=qMax(240,height-adjustHeight-24);
+    const int center=qMax(190,qMin(qRound(width*.52),metricsHeight-14));
+    const int outer=qMax(122,qMin(qRound(center*.55),(metricsHeight-10)/2));
 
     sizeGauge(page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeRpm")),center);
     sizeGauge(page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeIdle")),outer);
@@ -604,8 +611,8 @@ static void applySettingsSizing(QWidget *page,QFrame *metrics,QFrame *adjust)
     metrics->setMaximumHeight(QWIDGETSIZE_MAX);
     metrics->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     adjust->setMinimumHeight(adjustHeight);
-    adjust->setMaximumHeight(QWIDGETSIZE_MAX);
-    adjust->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    adjust->setMaximumHeight(adjustHeight);
+    adjust->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
 }
 
 static void suppressLegacyOverlays(QFrame *metrics)
@@ -669,8 +676,8 @@ static void compactAdjustForm(QWidget *page,QFrame *adjust)
     if(QLineEdit *note=page->findChild<QLineEdit*>(QStringLiteral("lineEdit_3"))) {
         note->setMinimumWidth(0);
         note->setMaximumWidth(QWIDGETSIZE_MAX);
-        note->setMinimumHeight(19);
-        note->setMaximumHeight(21);
+        note->setMinimumHeight(24);
+        note->setMaximumHeight(27);
         note->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
         note->setAlignment(Qt::AlignCenter);
         QFont font=note->font();
@@ -746,14 +753,14 @@ static void embedNoteInRpmGauge(QWidget *page,QFrame *metrics,QFrame *adjust)
 
     note->setParent(rpm);
     note->setReadOnly(true);
-    note->setMinimumHeight(19);
-    note->setMaximumHeight(21);
+    note->setMinimumHeight(24);
+    note->setMaximumHeight(27);
     note->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
 
     QVBoxLayout *layout=qobject_cast<QVBoxLayout*>(rpm->layout());
     if(!layout) {
         layout=new QVBoxLayout(rpm);
-        layout->setContentsMargins(8,0,8,4);
+        layout->setContentsMargins(8,0,8,6);
         layout->setSpacing(0);
         layout->addStretch(1);
     }
@@ -785,6 +792,10 @@ static void arrangeBottomPanels(QWidget *page,QFrame *metrics,QFrame *states,QFr
     body->addWidget(adjust,1,1);
     body->setColumnStretch(0,1);
     body->setColumnStretch(1,4);
+    // The precision dial owns any spare vertical room; controls keep their
+    // natural height rather than expanding into an oversized lower band.
+    body->setRowStretch(0,1);
+    body->setRowStretch(1,0);
     body->setHorizontalSpacing(8);
     body->setVerticalSpacing(4);
 
@@ -962,8 +973,8 @@ static void applySettingsLayout(QMainWindow *window)
     applySettingsSizing(page,metrics,adjust);
     // Let the same layout size the status panel; never restore a 154px cap.
     states->setMinimumHeight(adjust->minimumHeight());
-    states->setMaximumHeight(QWIDGETSIZE_MAX);
-    states->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Expanding);
+    states->setMaximumHeight(adjust->maximumHeight());
+    states->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
     embedNoteInRpmGauge(page,metrics,adjust);
 }
 
