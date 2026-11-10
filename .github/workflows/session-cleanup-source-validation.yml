@@ -219,6 +219,31 @@ jobs:
              $ramTest -notmatch 'InjectionRamTestLog::addFolderButton\(session,grid\)'){
              throw 'AANMP002_JOURNAL_MUST_USE_NATIVE_TEST_EVENTS'
           }
+          # Audit only the C++ modules owned by the Windows application.
+          # Process-wide startup fixes and textual .cpp includes are forbidden.
+          $start=$cmake.IndexOf('set(SOURCES')
+          $end=$cmake.IndexOf('add_executable(${PNAME}', $start)
+          if($start -lt 0 -or $end -le $start){
+             throw 'CMAKE_NATIVE_SOURCE_LIST_NOT_FOUND'
+          }
+          $applicationSources=$cmake.Substring($start,$end-$start)
+          $nativeCpp=[regex]::Matches($applicationSources,'[A-Za-z0-9_./-]+\.cpp') |
+             ForEach-Object { $_.Value } | Sort-Object -Unique
+          if($nativeCpp.Count -lt 50){throw 'NATIVE_SOURCE_AUDIT_TOO_SMALL'}
+          foreach($nativeFile in $nativeCpp){
+             if(-not(Test-Path $nativeFile)){throw "MISSING_COMPILED_SOURCE: $nativeFile"}
+             $contents=Get-Content $nativeFile -Raw
+             if($contents -match '(?m)^\s*Q_COREAPP_STARTUP_FUNCTION\s*\('){
+                 throw "LATE_GLOBAL_STARTUP_INSTALLER_IN_NATIVE_SOURCE: $nativeFile"
+             }
+             if($contents -match '(?m)^\s*#include\s+"[^"]+\.cpp"'){
+                 throw "TEXTUAL_CPP_COMPOSITION_IN_NATIVE_SOURCE: $nativeFile"
+             }
+          }
+          foreach($obsolete in @('main_keyed.cpp','scrollarea.cpp')){
+             if(Test-Path $obsolete){throw "UNBUILT_DUPLICATE_SOURCE_REINTRODUCED: $obsolete"}
+          }
+          Write-Host "SESSION_NATIVE_CPP_SOURCES_AUDITED=$($nativeCpp.Count)"
           Write-Host 'SESSION_CLEAN_SOURCE_PREFLIGHT_PASS'
       - name: Preparer Python
         uses: actions/setup-python@v5
