@@ -3,6 +3,7 @@
 #include "memsinterface.h"
 
 #include <QElapsedTimer>
+#include <QThread>
 #include <QVariant>
 #include <QSerialPort>
 #include "serialadapterdetector.h"
