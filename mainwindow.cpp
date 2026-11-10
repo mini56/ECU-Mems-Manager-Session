@@ -18,6 +18,7 @@
 #include <QGraphicsOpacityEffect>
 #include "mainwindow.h"
 #include "overviewramlive.h"
+#include "injectionramtestui.h"
 #include "nativewindowstyle.h"
 #include "uishell.h"
 #include "applicationvisualstyle.h"
@@ -362,6 +363,7 @@ m_mems(0), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerD
   // Adaptation automatique des pages fixes aux différentes résolutions.
   makeFixedTabsScrollable();
   m_ui->Tab_main->setCurrentIndex(0); // Toujours démarrer sur Aperçu
+  initializeInjectionRamTestUi(this);
   TooltipBubbleManager::install(this);
   initializeOverviewLive(this);
   refreshConnectionHeader();

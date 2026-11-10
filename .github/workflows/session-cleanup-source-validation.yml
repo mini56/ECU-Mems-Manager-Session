@@ -179,6 +179,13 @@ jobs:
              $main -notmatch 'injectorGauge->setProperty\("maximum", 5\.0\)'){
              throw 'NATIVE_OVERVIEW_INJECTION_RANGE_MISSING'
           }
+          $ramUi=Get-Content injectionramtest.cpp -Raw
+          if($ramUi -match 'Q_COREAPP_STARTUP_FUNCTION|installEventFilter|class InjectionRamTestInstaller' -or
+             $ramUi -notmatch 'void initializeInjectionRamTestUi\(' -or
+             $window -notmatch 'initializeInjectionRamTestUi\(this\)' -or
+             $ramUi -notmatch 'injectionRamTestButton'){
+             throw 'NATIVE_INJECTION_RAM_TEST_BUTTON_MISSING'
+          }
           Write-Host 'SESSION_CLEAN_SOURCE_PREFLIGHT_PASS'
       - name: Preparer Python
         uses: actions/setup-python@v5

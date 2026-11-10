@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include "injectionramtestui.h"
 #include "memsinterface.h"
 #include "i18n.h"
 
@@ -1014,27 +1015,11 @@ void MEMSInterface::onInjectionRamTestRequested()
     }
 }
 
-class InjectionRamTestInstaller : public QObject
-{
-public:
-    explicit InjectionRamTestInstaller(QObject *parent = nullptr)
-        : QObject(parent)
-    {
-    }
+namespace {
 
-protected:
-    bool eventFilter(QObject *watched, QEvent *event) override
-    {
-        if (event && event->type() == QEvent::Show)
-        {
-            if (MainWindow *window = qobject_cast<MainWindow*>(watched))
-                installButton(window);
-        }
-        return QObject::eventFilter(watched, event);
-    }
+static void openDialog(MainWindow *window);
 
-private:
-    static bool installButton(MainWindow *window)
+static bool installButton(MainWindow *window)
     {
         if (!window)
             return false;
@@ -1101,7 +1086,7 @@ private:
         if (!window)
             return;
 
-        MEMSInterface *mems = window->m_mems;
+        MEMSInterface *mems = window->memsInterface();
         if (mems)
         {
             mems->setProperty("injectionRamPhase1Ready", false);
@@ -1258,13 +1243,10 @@ private:
 
         dialog.exec();
     }
-};
 
-static void installInjectionRamTestUi()
+} // namespace
+
+void initializeInjectionRamTestUi(MainWindow *window)
 {
-    QApplication *app = qobject_cast<QApplication*>(QCoreApplication::instance());
-    if (app)
-        app->installEventFilter(new InjectionRamTestInstaller(app));
+    installButton(window);
 }
-
-Q_COREAPP_STARTUP_FUNCTION(installInjectionRamTestUi)

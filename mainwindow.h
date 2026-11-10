@@ -33,7 +33,6 @@ namespace Ui
 class MainWindow;
 }
 
-class InjectionRamTestInstaller;
 class OverviewLiveInstaller;
 
 class MainWindow : public QMainWindow
@@ -160,7 +159,6 @@ protected:
     void changeEvent(QEvent *event) override;
 
 private:
-    friend class InjectionRamTestInstaller;
     friend class OverviewLiveInstaller;
 
     Ui::MainWindow *m_ui;
