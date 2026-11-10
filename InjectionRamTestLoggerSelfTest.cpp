@@ -6,10 +6,11 @@
 #include <QFileInfo>
 #include <QTemporaryDir>
 #include <QDebug>
+#include <cstdio>
 
 static bool require(bool condition,const char *label)
 {
-    if(!condition) qCritical().noquote() << "FAIL AANMP002 log self-test:" << label;
+    if(!condition) std::fprintf(stderr,"FAIL AANMP002 log self-test: %s\n",label);
     return condition;
 }
 
@@ -32,7 +33,8 @@ int main(int argc,char **argv)
                "each phase must have its own file")&&ok;
 
     QFile file1(first),file2(second);
-    ok=require(file1.open(QIODevice::ReadOnly) && file2.open(QIODevice::ReadOnly),
+    ok=require(file1.open(QIODevice::ReadOnly|QIODevice::Text) &&
+               file2.open(QIODevice::ReadOnly|QIODevice::Text),
                "both logs must be readable")&&ok;
     if(file1.isOpen() && file2.isOpen()){
         ok=require(QString::fromUtf8(file1.readAll())==phase1+QLatin1Char('\n'),
@@ -49,6 +51,6 @@ int main(int argc,char **argv)
                   QDir::Files).size()==2,
                "unexpected extra files")&&ok;
 
-    if(ok) qInfo().noquote() << "PASS AANMP002 two-phase journal files, content and pre-completion guard";
+    if(ok) std::fprintf(stdout,"PASS AANMP002 two-phase journal files and portable text contents\n");
     return ok?0:1;
 }
