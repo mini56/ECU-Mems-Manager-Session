@@ -169,6 +169,9 @@ jobs:
              throw 'DATABASE_CONTENT_RENDERING_MUST_BE_NATIVE'
           }
           if(Test-Path database/MemsXmlRowIndexer.cpp){throw 'DISABLED_SCROLL_INSTALLER_MUST_NOT_RETURN'}
+          foreach($dead in @('database/MemsDatabaseGlobalUi.cpp','database/MemsDatabaseUsability.cpp')){
+            if(Test-Path $dead){throw "UNBUILT_OLD_GLOBAL_INSTALLER_REMAINS: $dead"}
+          }
           Write-Host 'SESSION_CLEAN_SOURCE_PREFLIGHT_PASS'
       - name: Preparer Python
         uses: actions/setup-python@v5
