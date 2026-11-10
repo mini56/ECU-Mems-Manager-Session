@@ -96,7 +96,7 @@ bool verifyApprovedVisualRules(MainWindow &window)
             ok=check(tenPointSegoe(table->font()) && !table->font().bold(),
                      "Measurement body typography changed") && ok;
             ok=check(tenPointSegoe(table->horizontalHeader()->font()) &&
-                     table->horizontalHeader()->font().bold(),
+                     table->horizontalHeader()->styleSheet().contains(QStringLiteral("font-weight:700")),
                      "Measurement header typography changed") && ok;
             ok=check(table->columnCount()==4,"Measurement column count changed") && ok;
         }
