@@ -161,13 +161,6 @@ jobs:
              throw 'ECU_PROTOCOL_GUARDS_MUST_BE_IN_NATIVE_SOURCE'
           }
           $universal=Get-Content database/MemsDatabaseUniversalAccess.cpp -Raw
-          $browser=Get-Content database/MemsDatabaseBrowser.cpp -Raw
-          if($universal -notmatch 'void initializeMemsDatabaseUniversalAccess\(' -or
-             $universal -match 'Q_COREAPP_STARTUP_FUNCTION|installUniversalDatabaseAccess|installEventFilter\(installer\)|setInterval\(280\)' -or
-             $browser -notmatch 'initializeMemsDatabaseUniversalAccess\(this\)'){
-             throw 'NATIVE_DATABASE_UNIVERSAL_ACCESS_MISSING'
-          }
-          $universal=Get-Content database/MemsDatabaseUniversalAccess.cpp -Raw
           $explorer=Get-Content database/MemsDatabaseExplorerV2.cpp -Raw
           if($universal -match 'Q_COREAPP_STARTUP_FUNCTION|installEventFilter|UniversalDatabaseAccessController|setInterval\(280\)' -or
              $universal -notmatch 'namespace MemsDatabaseContent' -or
