@@ -26,6 +26,7 @@
 #include "database/MemsReferencePackageRefresh.h"
 #include "i18n.h"
 #include "navigationorderpatch.h"
+#include "singleinstance.h"
 
 namespace
 {
@@ -281,6 +282,7 @@ int main(int argc, char *argv[])
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling, true);
     QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps, true);
     QApplication app(argc, argv);
+    installSingleInstanceManager(&app);
     // Preserve this storage-related internal identifier on upgrades.
     QApplication::setApplicationName("ECU Mems Manager");
     QApplication::setApplicationDisplayName(QStringLiteral("ECU MEMS Manager SESSION"));
