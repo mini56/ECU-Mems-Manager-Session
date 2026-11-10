@@ -457,18 +457,73 @@ static void composeActuators(QMainWindow *window)
         // clipped while the existing left card had unused horizontal space.
         list->setMaximumWidth(QWIDGETSIZE_MAX);
         list->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
-        QHBoxLayout *centered=new QHBoxLayout;
-        centered->setContentsMargins(0,0,0,0);
-        centered->setSpacing(0);
-        centered->addStretch(1);
-        centered->addWidget(list,1);
-        centered->addStretch(1);
-        static_cast<QVBoxLayout*>(left->layout())->addLayout(centered,1);
+        // The actuator grid owns the entire left card.  The old centering
+        // stretches reserved unused side margins and compressed its controls.
+        if(QGridLayout *grid=qobject_cast<QGridLayout*>(list->layout())){
+            grid->setContentsMargins(5,4,5,4);
+            grid->setHorizontalSpacing(10);
+            grid->setVerticalSpacing(5);
+            for(int row=0;row<grid->rowCount();++row)grid->setRowStretch(row,0);
+            for(int row=2;row<=10;++row)grid->setRowStretch(row,1);
+            grid->setRowStretch(12,1);
+            grid->setRowStretch(13,1);
+            grid->setRowStretch(15,1);
+            // Keep the action buttons easily readable without affecting
+            // their existing ECU connections, enable states or commands.
+            for(QPushButton *button:list->findChildren<QPushButton*>()){
+                button->setMinimumHeight(32);
+                button->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
+            }
+            for(QLabel *label:list->findChildren<QLabel*>()){
+                label->setMinimumHeight(26);
+                label->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
+            }
+        }
+        static_cast<QVBoxLayout*>(left->layout())->addWidget(list,1);
     }
-    body->addWidget(left,1);
-    QFrame *right=card(page,QStringLiteral("actuatorIacCard"),I18n::text(7138));QVBoxLayout *rv=static_cast<QVBoxLayout*>(right->layout());
-    if(info){info->setParent(right);info->setWordWrap(true);info->show();rv->addWidget(info);}if(pos){prepWidget(pos);pos->setParent(right);rv->addWidget(pos);}if(slider){prepWidget(slider);slider->setParent(right);rv->addWidget(slider);}
-    QHBoxLayout *buttons=new QHBoxLayout;if(minus){minus->setParent(right);minus->show();buttons->addWidget(minus);}if(move){move->setParent(right);move->show();buttons->addWidget(move,1);}if(plus){plus->setParent(right);plus->show();buttons->addWidget(plus);}rv->addLayout(buttons);rv->addStretch(1);body->addWidget(right,1);
+    body->addWidget(left,3);
+    QFrame *right=card(page,QStringLiteral("actuatorIacCard"),I18n::text(7138));
+    QVBoxLayout *rv=static_cast<QVBoxLayout*>(right->layout());
+
+    // The idle-control instructions and the three controls are distributed
+    // vertically with native stretches, instead of all collecting at the top.
+    rv->addStretch(1);
+    if(info){
+        info->setParent(right);
+        info->setWordWrap(true);
+        info->setMinimumHeight(52);
+        info->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
+        info->show();
+        rv->addWidget(info);
+    }
+    rv->addStretch(1);
+    if(pos){
+        prepWidget(pos);
+        pos->setParent(right);
+        pos->setMinimumHeight(40);
+        rv->addWidget(pos);
+    }
+    rv->addStretch(1);
+    if(slider){
+        prepWidget(slider);
+        slider->setParent(right);
+        slider->setMinimumHeight(46);
+        rv->addWidget(slider);
+    }
+    rv->addStretch(1);
+    QHBoxLayout *buttons=new QHBoxLayout;
+    buttons->setSpacing(8);
+    for(QPushButton *button:{minus,move,plus}){
+        if(!button)continue;
+        button->setParent(right);
+        button->setMinimumHeight(40);
+        button->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+        button->show();
+        buttons->addWidget(button,button==move?1:0);
+    }
+    rv->addLayout(buttons);
+    rv->addStretch(1);
+    body->addWidget(right,2);
     root->addLayout(body,1);
 }
 
