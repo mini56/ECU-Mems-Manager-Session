@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "approved_from_commit": "0d061294d90c8273f9d5ce0dbb08d6731d6cc4a8",
+  "description": "Code source des pages et styles valides par essai utilisateur avant BUILD 135. Tout changement bloque la compilation jusqu'a autorisation explicite d'une nouvelle reference.",
+  "git_blob_sha1": {
+    "applicationvisualstyle.h": "a0b3c6217d5da82521f0b01317edf8edbd64e115",
+    "darkstyle.cpp": "2cfa6cc31220d9e156024294768871fb372e4c7d",
+    "ecupages.cpp": "2fc1e0477021bb77b5e707e0e963dbcc47f972b1",
+    "mainwindow.ui": "50b5018e526f0acd6c928f401d3a6b67bfd5bb55",
+    "nativewindowstyle.cpp": "6073a3834bb87a27d2dba3d612b521503335da58",
+    "overviewpage.cpp": "507fb5416feb0b3037f18a24aa05adac227acf6a",
+    "rawpage.cpp": "f08fe33bf49249b0182a784a66f1d7999007a9f5",
+    "settingspage.cpp": "fdc89c1a5371987a7365608971f757c5af7a17cb",
+    "summarytab.cpp": "bc224e183b5805ef58fe485e6090e19fdde61114",
+    "tooltipbubblemanager.cpp": "9456f627cc89d0de6c86bc8d9e0b5840ff10d382",
+    "uishell.cpp": "a098b7afa8e5a147307934b2dd30beed7eaf8285"
+  }
+}

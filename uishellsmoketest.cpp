@@ -1,6 +1,7 @@
 #include "uishellsmoketest.h"
 
 #include "mainwindow.h"
+#include "summarytab.h"
 #include "i18n.h"
 #include "database/DatabaseManager.h"
 #include "database/MemsReferenceDatabase.h"
@@ -13,6 +14,10 @@
 #include <QEvent>
 #include <QFrame>
 #include <QListWidget>
+#include <QLabel>
+#include <QHeaderView>
+#include <QTableWidget>
+#include <QtMath>
 #include <QScrollArea>
 #include <QStandardPaths>
 #include <QTabWidget>
@@ -39,6 +44,97 @@ QWidget *actualPage(QWidget *tab)
     if (QScrollArea *scroll=qobject_cast<QScrollArea*>(tab))
         return scroll->widget();
     return tab;
+}
+
+
+bool verifyApprovedVisualRules(MainWindow &window)
+{
+    auto check=[](bool correct,const char *description){
+        if(!correct){
+            qCritical().noquote() << "SESSION_UI_STYLE_REGRESSION" << description;
+            logSmoke(QStringLiteral("STYLE FAIL ")+QString::fromLatin1(description));
+        }
+        return correct;
+    };
+    auto tenPointSegoe=[](const QFont &font){
+        return font.family()==QStringLiteral("Segoe UI") &&
+               qAbs(font.pointSizeF()-10.0)<0.2;
+    };
+    bool ok=true;
+
+    // The raw 7D/80 pages share Segoe UI 10 pt, with regular data rows
+    // and bold column headings.
+    QWidget *raw=window.findChild<QWidget*>(QStringLiteral("raw"));
+    ok=check(raw!=nullptr,"Raw data page absent") && ok;
+    if(raw){
+        QWidget *a=raw->findChild<QWidget*>(QStringLiteral("raw_1"));
+        QWidget *b=raw->findChild<QWidget*>(QStringLiteral("raw_2"));
+        ok=check(a && b,"Both raw data tables required") && ok;
+        for(QWidget *block:{a,b}){
+            if(!block)continue;
+            int rows=0;
+            for(QLabel *label:block->findChildren<QLabel*>()){
+                if(label->objectName().isEmpty())continue;
+                const bool header=label->objectName().startsWith(QStringLiteral("header_"))||
+                                  label->objectName().startsWith(QStringLiteral("Aheader_"));
+                ok=check(tenPointSegoe(label->font()),"Raw data font changed") && ok;
+                ok=check(label->font().bold()==header,"Raw data font weight changed") && ok;
+                ++rows;
+            }
+            ok=check(rows>=10,"Raw table labels unexpectedly missing") && ok;
+        }
+    }
+
+    // The three measurement tables must preserve typography and a
+    // sufficiently wide Interpreted column.
+    SummaryTab *summary=window.findChild<SummaryTab*>();
+    ok=check(summary!=nullptr,"Measurement page absent") && ok;
+    if(summary){
+        const QList<QTableWidget*> tables=summary->findChildren<QTableWidget*>();
+        ok=check(tables.size()==3,"Three measurement tables required") && ok;
+        for(QTableWidget *table:tables){
+            ok=check(tenPointSegoe(table->font()) && !table->font().bold(),
+                     "Measurement body typography changed") && ok;
+            ok=check(tenPointSegoe(table->horizontalHeader()->font()) &&
+                     table->horizontalHeader()->font().bold(),
+                     "Measurement header typography changed") && ok;
+            ok=check(table->columnCount()==4,"Measurement column count changed") && ok;
+        }
+    }
+
+    // Approved Actuators arrangement: names at left, lambda help after
+    // its title, stepper commands grouped, and large live system indicator.
+    QLabel *lambda=window.findChild<QLabel*>(QStringLiteral("m_O2Heater"));
+    QLabel *function=window.findChild<QLabel*>(QStringLiteral("m_PTCRelay"));
+    ok=check(lambda && function,"Actuator labels missing") && ok;
+    for(QLabel *label:{lambda,function}){
+        if(label)ok=check((label->alignment() & Qt::AlignHorizontal_Mask)==Qt::AlignLeft,
+                          "Actuator function labels must be left-aligned") && ok;
+    }
+    if(lambda){
+        ok=check(!lambda->property("helpBubbleLeft").toBool() && !lambda->toolTip().isEmpty(),
+                 "Lambda help must appear after text") && ok;
+    }
+    QWidget *state=window.findChild<QWidget*>(QStringLiteral("actuatorSystemState"));
+    ok=check(state!=nullptr,"Actuator state indicator absent") && ok;
+    if(state){
+        ok=check(state->minimumWidth()>=270 && state->minimumHeight()>=215 &&
+                 state->maximumWidth()>=350,
+                 "Actuator state indicator was reduced") && ok;
+    }
+
+    // The interactive ECU labels must wrap rather than clip.
+    QWidget *interactive=window.findChild<QWidget*>(QStringLiteral("ECU"));
+    ok=check(interactive && interactive->layout(),"Interactive page layout missing") && ok;
+    if(interactive){
+        for(const char *id:{"label_23","label_24","label_48","label_49",
+                            "label_50","ecuResetSettingsWarningLabel","label_22"}){
+            QLabel *label=interactive->findChild<QLabel*>(QString::fromLatin1(id));
+            ok=check(label && label->wordWrap() && tenPointSegoe(label->font()),
+                     "Interactive ECU text styling regressed") && ok;
+        }
+    }
+    return ok;
 }
 
 bool verifyUi(MainWindow &window)
@@ -83,12 +179,13 @@ bool verifyUi(MainWindow &window)
     ok=check(window.findChild<QWidget*>(QStringLiteral("injectionRamTestButton"))!=nullptr,
              "Native ROSCO AANMP002 action missing") && ok;
     QWidget *injector=window.findChild<QWidget*>(QStringLiteral("m_injector_time"));
+    ok=verifyApprovedVisualRules(window) && ok;
     ok=check(injector!=nullptr,"Native injection dwell source missing") && ok;
     if (injector)
         ok=check(injector->property("maximum").toDouble()==5.0,
                  "Normal-frame injection dwell must use the 0-5ms scale") && ok;
 
-    for (const QSize size : {QSize(1024,700),QSize(1280,800),QSize(1366,768)}){
+    for (const QSize size : {QSize(1024,700),QSize(1200,768),QSize(1280,800),QSize(1366,768),QSize(1920,1080)}){
         window.resize(size);
         QCoreApplication::processEvents();
         ok=check(tabs->count()==14 && navigation->count()==14,
@@ -111,7 +208,7 @@ bool verifyUi(MainWindow &window)
     }
 
     if (ok) qInfo().noquote() << "SESSION_UI_SMOKE_PASS 14 native pages, bidirectional navigation, "
-                               "three window sizes, English language, MEMS/Settings/ROSCO, dwell 0-5ms";
+                               "five window sizes, approved visual style, English language, MEMS/Settings/ROSCO, dwell 0-5ms";
     return ok;
 }
 
