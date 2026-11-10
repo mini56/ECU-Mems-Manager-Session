@@ -352,6 +352,33 @@ jobs:
           tar.exe -xzf $archive -C dist-session-smoke
           if($LASTEXITCODE -ne 0){throw 'BASE117_RUNTIME_UNPACK_FAILED'}
           $dist=(Resolve-Path dist-session-smoke).Path
+          # BUILD117 is the preserved verified runtime baseline, but its
+          # archive predates several RAVE reference images. Merge ALL current
+          # source-controlled reference files without deleting historical
+          # assets. The installed SQLite search cache is regenerated from
+          # the resulting real reference corpus.
+          $referenceSource=(Resolve-Path 'database/reference').Path
+          $referenceTarget=Join-Path $dist 'database/reference'
+          New-Item -ItemType Directory -Path $referenceTarget -Force | Out-Null
+          & robocopy.exe $referenceSource $referenceTarget /E /R:2 /W:2 /NFL /NDL /NJH /NJS /NP
+          if($LASTEXITCODE -ge 8){throw "RAVE_REFERENCE_ASSET_COPY_FAILED=$LASTEXITCODE"}
+          $sourceFiles=@(Get-ChildItem $referenceSource -Recurse -File)
+          if($sourceFiles.Count -lt 500){throw "RAVE_REFERENCE_SOURCE_INCOMPLETE=$($sourceFiles.Count)"}
+          $imageCount=0
+          foreach($file in $sourceFiles){
+            $relative=$file.FullName.Substring($referenceSource.Length+1)
+            $installed=Join-Path $referenceTarget $relative
+            if(-not(Test-Path -LiteralPath $installed)){
+              throw "RAVE_REFERENCE_ASSET_NOT_PACKAGED=$relative"
+            }
+            if((Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash -ne
+               (Get-FileHash -LiteralPath $installed -Algorithm SHA256).Hash){
+              throw "RAVE_REFERENCE_ASSET_HASH_MISMATCH=$relative"
+            }
+            if($relative -like 'images\\*'){$imageCount++}
+          }
+          if($imageCount -lt 400){throw "RAVE_REFERENCE_IMAGE_COUNT_TOO_LOW=$imageCount"}
+          Write-Host "RAVE_REFERENCE_CORPUS_PACKAGED=$($sourceFiles.Count) resources, $imageCount images; hashes verified"
           foreach($pair in @(
             @('build-session-136\Release\ecu_mems_manager.exe','ecu_mems_manager.exe'),
             @('build-session-136\Release\ecu_mems_uninstaller.exe','ecu_mems_uninstaller.exe'),
