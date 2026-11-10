@@ -172,6 +172,13 @@ jobs:
           foreach($dead in @('database/MemsDatabaseGlobalUi.cpp','database/MemsDatabaseUsability.cpp')){
             if(Test-Path $dead){throw "UNBUILT_OLD_GLOBAL_INSTALLER_REMAINS: $dead"}
           }
+          $overviewLive=Get-Content overviewramlive.cpp -Raw
+          if($overviewLive -match 'Q_COREAPP_STARTUP_FUNCTION|installEventFilter|OverviewLiveInstaller' -or
+             $overviewLive -notmatch 'void initializeOverviewLive\(' -or
+             $window -notmatch 'initializeOverviewLive\(this\)' -or
+             $main -notmatch 'injectorGauge->setProperty\("maximum", 5\.0\)'){
+             throw 'NATIVE_OVERVIEW_INJECTION_RANGE_MISSING'
+          }
           Write-Host 'SESSION_CLEAN_SOURCE_PREFLIGHT_PASS'
       - name: Preparer Python
         uses: actions/setup-python@v5

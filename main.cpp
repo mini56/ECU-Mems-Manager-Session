@@ -400,7 +400,7 @@ int main(int argc, char *argv[])
     if (QObject *injectorGauge = window.findChild<QObject*>(QStringLiteral("m_injector_time")))
     {
         injectorGauge->setProperty("minimum", 0.0);
-        injectorGauge->setProperty("maximum", 20.0);
+        injectorGauge->setProperty("maximum", 5.0);
     }
 
     setStep(g_portsStep, StartupStepState::Done, I18n::text(24));
