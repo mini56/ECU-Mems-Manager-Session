@@ -25,7 +25,6 @@
 #include "database/MemsGlobalSearchIndex.h"
 #include "database/MemsReferencePackageRefresh.h"
 #include "i18n.h"
-#include "navigationorderpatch.h"
 #include "singleinstance.h"
 
 namespace
@@ -429,7 +428,6 @@ int main(int argc, char *argv[])
     g_splashProgressCallback = nullptr;
 
     window.showMaximized();
-    installFinalNavigation(&app, &window);
     const int result = app.exec();
     database.close();
     return result;

@@ -34,7 +34,7 @@ jobs:
           $cmake=Get-Content CMakeLists.txt -Raw
           $main=Get-Content main.cpp -Raw
           $s=Get-Content settingstabdark.cpp -Raw
-          $nav=Get-Content navigationorderpatch.cpp -Raw
+          $nav=Get-Content uirebuild.cpp -Raw
           if(Test-Path splashtextfix.cpp){throw 'SPLASH_OLD_PATCH_STILL_PRESENT'}
           if(Test-Path settingsvisualpatch.cpp){throw 'SETTINGS_OLD_PATCH_STILL_PRESENT'}
           if(Test-Path taborderpatch.cpp){throw 'UNBUILT_TAB_ORDER_PATCH_STILL_PRESENT'}
@@ -65,6 +65,8 @@ jobs:
             'systemstateconnectionfix.cpp',
             'singleinstanceforce.cpp',
             'mainwindowtitlebarfix.cpp',
+            'navigationorderpatch.cpp',
+            'navigationorderpatch.h',
             'database/MemsDatabaseDiagramSearchPatch.cpp',
             'database/MemsSearchCompletenessPatch.cpp'
           )){
