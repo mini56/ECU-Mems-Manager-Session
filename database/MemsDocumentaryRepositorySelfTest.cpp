@@ -131,6 +131,26 @@ int main(int argc, char **argv)
             if (!check(sql.exec(statement), "record fixture"))
                 return 1;
         }
+        QSqlQuery extra(seed);
+        extra.prepare(QStringLiteral(
+            "INSERT INTO extracted_procedure_candidates VALUES(?,?,?,?,?,?,?,?,?)"));
+        for (int i=1; i<=236; ++i) {
+            const QString id=QStringLiteral("rover:ocr:candidate:%1").arg(i);
+            const QString number=QStringLiteral("31.%1.%2")
+                .arg((i/100)%100,2,10,QLatin1Char('0'))
+                .arg(i%100,2,10,QLatin1Char('0'));
+            extra.bindValue(0,id);
+            extra.bindValue(1,QStringLiteral("rover-akm7169eng"));
+            extra.bindValue(2,i);
+            extra.bindValue(3,QStringLiteral("left"));
+            extra.bindValue(4,number);
+            extra.bindValue(5,QStringLiteral("Unreviewed source procedure %1").arg(i));
+            extra.bindValue(6,QStringLiteral("NUMBER_PATTERN_MATCH"));
+            extra.bindValue(7,QStringLiteral("REVIEW_REQUIRED"));
+            extra.bindValue(8,0);
+            if (!check(extra.exec(), "populate 238 source candidates for realistic browsing"))
+                return 1;
+        }
         seed.close();
         seed = QSqlDatabase();
     }
@@ -180,6 +200,10 @@ int main(int argc, char **argv)
                 page.first().toMap().value(QStringLiteral("source_key")).toString() ==
                     QStringLiteral("rover-akm7169eng:page:93"),
                 "direct physical page 93 is returned unapproved"))
+            return 1;
+        const QVariantList overview=repository.search(QString(),300);
+        if (!check(overview.size()==238,
+                   "browse all 238 candidates/curated entries without truncation"))
             return 1;
         if (!check(!repository.search(QString()).isEmpty(),
                    "empty query lists available structured procedures"))
