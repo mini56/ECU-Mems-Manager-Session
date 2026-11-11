@@ -51,7 +51,7 @@ QStringList meaningfulTerms(const QString &value)
     return output;
 }
 
-QString procedureContent(QSqlDatabase &database, const QString &key,
+QString procedureContent(const QSqlDatabase &database, const QString &key,
                          const QString &title, const QString &ref,
                          const QString &pages, const QString &status)
 {
