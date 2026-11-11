@@ -284,6 +284,37 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
     };
     QVector<Candidate> candidates;
     QSet<QString> seen;
+
+    // An explicit physical-page question must locate that precise PDF page,
+    // including pages that have no usable OCR. It must not turn the page
+    // itself into an approved repair instruction.
+    const QRegularExpression pageRx(
+        QStringLiteral("\\bpages?\\s+(\\d{1,3})\\b"),
+        QRegularExpression::CaseInsensitiveOption);
+    const QRegularExpressionMatch pageMatch = pageRx.match(question);
+    if (pageMatch.hasMatch()) {
+        const int requestedPage = pageMatch.captured(1).toInt();
+        QSqlQuery sourcePage(m_database);
+        sourcePage.prepare(QStringLiteral(
+            "SELECT physical_page,ocr_text,knowledge_state "
+            "FROM source_page_discovery WHERE physical_page=?"));
+        sourcePage.addBindValue(requestedPage);
+        if (sourcePage.exec() && sourcePage.next()) {
+            const QString key = QStringLiteral("rover-akm7169eng:page:%1")
+                                    .arg(requestedPage);
+            QString original = sourcePage.value(1).toString().simplified();
+            if (original.isEmpty())
+                original = QStringLiteral("[Aucun texte OCR exploitable sur cette page]");
+            result.append(makeRow(
+                key, QStringLiteral("Rover AKM7169ENG — page %1").arg(requestedPage),
+                QStringLiteral("document: Rover AKM7169ENG\npage physique: %1\n"
+                               "validation: OCR_DISCOVERY_ONLY — texte non vérifié\n"
+                               "extrait OCR: %2").arg(requestedPage).arg(original.left(1300)),
+                QStringLiteral("rover_ocr_discovery"),
+                sourcePage.value(2).toString()));
+            seen.insert(key);
+        }
+    }
     QSqlQuery procedures(m_database);
     if (procedures.exec(QStringLiteral(
             "SELECT procedure_id,title,manufacturer_repair_no,original_pages,"
@@ -306,6 +337,17 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
             for (const QString &name : aliases) {
                 if (name.size() >= 5 && input.contains(name))
                     score = qMax(score, 400);
+                if (terms.isEmpty())
+                    continue;
+                const QStringList aliasWords =
+                    name.split(QLatin1Char(' '), Qt::SkipEmptyParts);
+                int matched = 0;
+                for (const QString &term : terms)
+                    if (aliasWords.contains(term))
+                        ++matched;
+                if (matched >= 2 || (matched == 1 && terms.size() == 1 &&
+                                     terms.first().size() >= 6))
+                    score = qMax(score, matched * 110);
             }
             if (score == 0) {
                 for (const QString &term : terms) {
@@ -313,6 +355,29 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
                         score += 60;
                     else if (term.size() > 4 && titleN.contains(term))
                         score += 20;
+                }
+            }
+            // Real questions often refer to a step rather than the
+            // manufacturer title; search the recorded step text but require
+            // more than a generic single keyword before ranking it highly.
+            if (!browse && !terms.isEmpty()) {
+                QSqlQuery stepsSearch(m_database);
+                stepsSearch.prepare(QStringLiteral(
+                    "SELECT source_text FROM procedure_steps WHERE procedure_id=?"));
+                stepsSearch.addBindValue(key);
+                if (stepsSearch.exec()) {
+                    while (stepsSearch.next()) {
+                        const QStringList words =
+                            normalized(stepsSearch.value(0).toString())
+                                .split(QLatin1Char(' '), Qt::SkipEmptyParts);
+                        int matched = 0;
+                        for (const QString &term : terms)
+                            if (words.contains(term))
+                                ++matched;
+                        if (matched >= 2 || (matched == 1 && terms.size() == 1 &&
+                                             terms.first().size() >= 7))
+                            score = qMax(score, matched * 75);
+                    }
                 }
             }
             if (measured.hasMatch()) {
@@ -377,8 +442,13 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
             const QString status = pages.value(2).toString();
             const QString title = QStringLiteral("Rover AKM7169ENG — page %1")
                                       .arg(pageNumber);
+            const QString key = QStringLiteral("rover-akm7169eng:page:%1")
+                                    .arg(pageNumber);
+            if (seen.contains(key))
+                continue;
+            seen.insert(key);
             result.append(makeRow(
-                QStringLiteral("rover-akm7169eng:page:%1").arg(pageNumber), title,
+                key, title,
                 QStringLiteral("document: Rover AKM7169ENG\npage physique: %1\n"
                                "validation: OCR_DISCOVERY_ONLY — texte non vérifié\n"
                                "extrait OCR: %2").arg(pageNumber).arg(body),
