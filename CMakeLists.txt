@@ -132,6 +132,12 @@ add_executable(mems_documentary_real_corpus_selftest
     database/MemsDocumentaryRepository.cpp database/MemsDocumentaryRepository.h)
 target_compile_definitions(mems_documentary_real_corpus_selftest PRIVATE MEMS_DOCUMENTARY_SELFTEST=1)
 target_link_libraries(mems_documentary_real_corpus_selftest PRIVATE Qt5::Core Qt5::Sql)
+# Preserve UTF-8 French text and accented SQLite search aliases on MSVC.
+# The executable already uses /utf-8; both documentary tests must too.
+if(MSVC)
+    target_compile_options(mems_documentary_selftest PRIVATE /utf-8)
+    target_compile_options(mems_documentary_real_corpus_selftest PRIVATE /utf-8)
+endif()
 add_dependencies(${PNAME} mems_documentary_selftest)
 
 add_executable(mems_search_selftest
