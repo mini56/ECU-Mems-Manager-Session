@@ -78,7 +78,10 @@ jobs:
                   'forcedGrounded || hasDocumentaryEvidence' in local
               ),
               'diagnostic_still_uses_expert_path': (
-                  'explicitDocumentaryRequest || !diagnosticRequest' in ai
+                  'requestsLiveEcuData' in ai
+                  and 'IaResponseLogic::classify(trimmed)' in ai
+                  and 'softwareHelpRequest' in ai
+                  and '!diagnosticRequest && !requestsLiveEcuData && !softwareHelpRequest' in ai
               ),
               'production_file_location_is_fixed': (
                   '#ifdef MEMS_DOCUMENTARY_SELFTEST' in reader
