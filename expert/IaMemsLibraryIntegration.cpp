@@ -615,8 +615,12 @@ void IaMemsService::askWithLibrary(const QString &question)
     const bool diagnosticRequest =
         IaMemsConversationRouting::shouldUseDiagnosticGeneration(
             trimmed, QString());
+    const IaResponseLogic::Intent liveIntent = IaResponseLogic::classify(trimmed);
+    const bool requestsLiveEcuData = liveIntent != IaResponseLogic::Intent::None;
+    const bool softwareHelpRequest = !softwareAnswer(trimmed).trimmed().isEmpty();
     if (MemsDocumentaryRepository::isPackInstalled() &&
-        (explicitDocumentaryRequest || !diagnosticRequest)) {
+        (explicitDocumentaryRequest ||
+         (!diagnosticRequest && !requestsLiveEcuData && !softwareHelpRequest))) {
         // One documentary SQLite and one retrieval policy for UI and AI.
         // All new-source evidence is exposed directly, with page and review
         // status. Never send unapproved OCR steps to Qwen for unsupervised
