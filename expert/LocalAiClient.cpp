@@ -728,16 +728,20 @@ void LocalAiClient::ask(const QString &question, const QString &groundingContext
         return;
     }
 
-    const QString controlled = forcedGrounded ? QString() : controlledTechnicalAnswer(trimmedQuestion);
+    // Grounded evidence wins over canned definitions and historical
+    // question-specific responses. Those definitions remain only for the
+    // legitimate no-documentation software/help fallback.
+    const bool hasDocumentaryEvidence = !groundingContext.trimmed().isEmpty();
+    const QString controlled = (forcedGrounded || hasDocumentaryEvidence)
+        ? QString() : controlledTechnicalAnswer(trimmedQuestion);
     if (!controlled.isEmpty()) {
         rememberTurn(m_conversation, trimmedQuestion, controlled);
         emit responseReady(controlled);
         return;
     }
 
-    const QString controlledFollowUp = forcedGrounded
-        ? QString()
-        : controlledFollowUpAnswer(trimmedQuestion, m_conversation);
+    const QString controlledFollowUp = (forcedGrounded || hasDocumentaryEvidence)
+        ? QString() : controlledFollowUpAnswer(trimmedQuestion, m_conversation);
     if (!controlledFollowUp.isEmpty()) {
         rememberTurn(m_conversation, trimmedQuestion, controlledFollowUp);
         emit responseReady(controlledFollowUp);
