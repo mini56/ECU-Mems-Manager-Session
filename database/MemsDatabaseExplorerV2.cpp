@@ -612,7 +612,11 @@ private:
 
     QVariantList fetchRows(const QString &raw,const QString &category,const QString &generation) const
     {
-        return executeQuery(raw,category,generation,category.isEmpty()?140:220);
+        // The documentary view must be able to browse all currently detected
+        // procedures (238 candidates), not silently truncate to the first 30.
+        const int limit=category==QStringLiteral("documentation")?300:
+                        (category.isEmpty()?140:220);
+        return executeQuery(raw,category,generation,limit);
     }
 
     QVector<QVariantMap> cleanAndSort(const QVariantList &fetched,const QString &requestedCategory) const
