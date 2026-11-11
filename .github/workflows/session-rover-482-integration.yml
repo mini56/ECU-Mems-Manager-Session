@@ -1,0 +1,228 @@
+name: SESSION - Rover 482 - Setup integre
+run-name: SESSION Rover 482 - installation et IA - ${{ github.sha }}
+on:
+  push:
+    branches: [integration-rover-482-session-20261111]
+    paths:
+      - '.github/workflows/session-rover-482-integration.yml'
+      - 'database/documentary/parts/**'
+      - 'database/MemsDocumentaryRepository.cpp'
+      - 'database/MemsDocumentaryRepository.h'
+      - 'expert/IaMemsLibraryIntegration.cpp'
+      - 'database/MemsDatabaseExplorerV2.cpp'
+      - 'tools/build_rover_session_documentary.py'
+      - 'database/MemsDocumentaryRealCorpusSelfTest.cpp'
+      - 'CMakeLists.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: session-rover-482-setup
+  cancel-in-progress: false
+
+jobs:
+  build-install-test:
+    runs-on: windows-2022
+    timeout-minutes: 120
+    env:
+      ORT_GENAI_VERSION: '0.14.0'
+      ORT_GENAI_WIN_X64_SHA256: '8a303e52dc7be8fb2a5331929af451a25ac59774102d7fd09ef673adc85c5ebf'
+      BASE_RELEASE_TAG: 'mems-build117-candidate-39395038798'
+      BASE_ARCHIVE_NAME: 'ECU-MEMS-Manager-x64-BUILD117-CLEAN-V2.tar.gz'
+      BASE_ARCHIVE_SHA256: '4f187bae49bfc134329b53eb4e455c2d125403fe510f2da08a8272b2dcb3cd3b'
+    steps:
+      - name: Charger le code source SESSION de la nouvelle branche
+        uses: actions/checkout@v4
+      - name: Charger le PDF Rover original depuis MEMS Forge, revision figee
+        uses: actions/checkout@v4
+        with:
+          repository: mini56/Mems-Forge
+          ref: ed82bcb4db6c742f8e8a66ca5db81202ad18da78
+          lfs: true
+          path: original-mems-forge
+          persist-credentials: false
+      - name: Preparer Python et reconstruire la SQLite de production depuis ses 29 blocs
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verifier le pack Rover et son PDF exact (sans fichier utilisateur)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $original='original-mems-forge/depot/20260909-230410/AKM7169ENG-mini-repair-manual-92-96-pdf-pr_a0f71dc9b68bd0365e8141310900faca.pdf'
+          python tools/build_rover_session_documentary.py --pdf $original --output database/documentary
+          if($LASTEXITCODE -ne 0){throw 'ROVER_482_RECONSTRUCTION_FAILED'}
+          if(Test-Path database/ecu_mems_manager.sqlite){throw 'USER_SQLITE_MUST_NEVER_BE_PACKAGED'}
+          Write-Host 'ROVER_482_SOURCE_SQLITE_PDF_AUTHENTICATED'
+      - name: Installer Qt 5.15.2 MSVC x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python -m pip install --disable-pip-version-check 'aqtinstall==3.3.0'
+          if($LASTEXITCODE -ne 0){throw 'PIP_AQT_FAILED'}
+          $sevenZip=(Get-Command 7z.exe -ErrorAction Stop).Source
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external $sevenZip
+          if($LASTEXITCODE -ne 0){throw 'QT_INSTALL_FAILED'}
+      - name: Recuperer le SDK ONNX identique a SESSION
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $archive=Join-Path $env:RUNNER_TEMP "onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          $folder=Join-Path $env:RUNNER_TEMP 'onnx-genai'
+          curl.exe -L --fail --retry 3 --retry-all-errors --retry-delay 2 -o $archive "https://github.com/microsoft/onnxruntime-genai/releases/download/v$env:ORT_GENAI_VERSION/onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          if($LASTEXITCODE -ne 0){throw 'ONNX_DOWNLOAD_FAILED'}
+          if((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:ORT_GENAI_WIN_X64_SHA256){throw 'ONNX_SHA256_MISMATCH'}
+          Expand-Archive $archive $folder -Force
+          $header=Get-ChildItem $folder -Recurse -File -Filter ort_genai_c.h | Select-Object -First 1
+          $lib=Get-ChildItem $folder -Recurse -File -Filter onnxruntime-genai.lib | Select-Object -First 1
+          if(-not $header -or -not $lib){throw 'ONNX_SDK_INCOMPLETE'}
+          "ORT_GENAI_INCLUDE_DIR=$($header.Directory.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "ORT_GENAI_LIBRARY=$($lib.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Compiler SESSION complet depuis le code source et le lecteur Rover
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          cmake -S . -B build-session-rover -A x64 `
+            -DCMAKE_PREFIX_PATH='C:/Qt/5.15.2/msvc2019_64' `
+            -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON `
+            -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF `
+            -DMEMS_USE_ONNX_GENAI=ON `
+            "-DORT_GENAI_INCLUDE_DIR=$env:ORT_GENAI_INCLUDE_DIR" `
+            "-DORT_GENAI_LIBRARY=$env:ORT_GENAI_LIBRARY"
+          if($LASTEXITCODE -ne 0){throw 'CMAKE_CONFIG_FAILED'}
+          cmake --build build-session-rover --config Release --target ecu_mems_manager ecu_mems_uninstaller mems_documentary_selftest mems_documentary_real_corpus_selftest --parallel
+          if($LASTEXITCODE -ne 0){throw 'SOURCE_COMPILATION_FAILED'}
+          if(-not(Test-Path build-session-rover/Release/ecu_mems_manager.exe)){throw 'SESSION_EXE_MISSING'}
+      - name: Tester le vrai lecteur et le meme parcours IA sur la base 482 pages
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $qt='C:\Qt\5.15.2\msvc2019_64'
+          $bin=(Resolve-Path build-session-rover/Release).Path
+          & "$qt/bin/windeployqt.exe" --release --compiler-runtime --no-translations --dir $bin "$bin/mems_documentary_selftest.exe"
+          if($LASTEXITCODE -ne 0){throw 'QT_TEST_DEPLOY_FAILED'}
+          New-Item -ItemType Directory -Force (Join-Path $bin 'sqldrivers') | Out-Null
+          Copy-Item "$qt/plugins/sqldrivers/qsqlite.dll" (Join-Path $bin 'sqldrivers/qsqlite.dll') -Force
+          & "$bin/mems_documentary_selftest.exe"
+          if($LASTEXITCODE -ne 0){throw 'DOCUMENTARY_READER_SELFTEST_FAILED'}
+          & "$bin/mems_documentary_real_corpus_selftest.exe" `
+             (Resolve-Path database/documentary/rover_482.sqlite).Path `
+             (Resolve-Path database/documentary/AKM7169ENG.pdf).Path
+          if($LASTEXITCODE -ne 0){throw 'REAL_ROVER_DOCUMENTARY_AI_CONTRACT_FAILED'}
+      - name: Recuperer la distribution complete 117 deja validee
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          New-Item -ItemType Directory -Force download-117,dist-session-rover | Out-Null
+          gh release download $env:BASE_RELEASE_TAG --pattern $env:BASE_ARCHIVE_NAME --dir download-117
+          if($LASTEXITCODE -ne 0){throw 'COMPLETE_RUNTIME_DOWNLOAD_FAILED'}
+          $archive=Join-Path download-117 $env:BASE_ARCHIVE_NAME
+          if((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:BASE_ARCHIVE_SHA256){throw 'COMPLETE_RUNTIME_SHA256_MISMATCH'}
+          tar.exe -xzf $archive -C dist-session-rover
+          if($LASTEXITCODE -ne 0){throw 'RUNTIME_UNPACK_FAILED'}
+          if(-not(Test-Path dist-session-rover/ecu_mems_manager.exe)){throw 'RUNTIME_BASE_LAYOUT_INVALID'}
+      - name: Assembler SESSION avec la nouvelle base documentaire et le PDF
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $dist=(Resolve-Path dist-session-rover).Path
+          $qt='C:\Qt\5.15.2\msvc2019_64'
+          Copy-Item build-session-rover/Release/ecu_mems_manager.exe "$dist/ecu_mems_manager.exe" -Force
+          Copy-Item build-session-rover/Release/ecu_mems_uninstaller.exe "$dist/ecu_mems_uninstaller.exe" -Force
+          Copy-Item build-session-rover/librosco-x64/Release/mems_manager_x64.dll "$dist/mems_manager_x64.dll" -Force
+          $referenceSource=(Resolve-Path database/reference).Path
+          $referenceTarget=Join-Path $dist 'database/reference'
+          New-Item -ItemType Directory -Path $referenceTarget -Force | Out-Null
+          & robocopy.exe $referenceSource $referenceTarget /E /R:2 /W:2 /NFL /NDL /NJH /NJS /NP
+          if($LASTEXITCODE -ge 8){throw "REFERENCE_COPY_FAILED $LASTEXITCODE"}
+          New-Item -ItemType Directory -Force "$dist/database/documentary" | Out-Null
+          Copy-Item database/documentary/rover_482.sqlite "$dist/database/documentary/rover_482.sqlite" -Force
+          Copy-Item database/documentary/AKM7169ENG.pdf "$dist/database/documentary/AKM7169ENG.pdf" -Force
+          Copy-Item database/documentary/rover_482_install_manifest.json "$dist/database/documentary/rover_482_install_manifest.json" -Force
+          foreach($suffix in @('','-wal','-shm','-journal')){
+            $userDb=Join-Path $dist ('database/ecu_mems_manager.sqlite'+$suffix)
+            if(Test-Path $userDb){Remove-Item $userDb -Force}
+          }
+          & "$qt/bin/windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist "$dist/ecu_mems_manager.exe"
+          if($LASTEXITCODE -ne 0){throw 'QT_DEPLOY_FAILED'}
+          New-Item -ItemType Directory -Force "$dist/sqldrivers" | Out-Null
+          Copy-Item "$qt/plugins/sqldrivers/qsqlite.dll" "$dist/sqldrivers/qsqlite.dll" -Force
+          foreach($part in @('ecu_mems_manager.exe','MEMSLibrary.dll','MEMSLibrary_Pack_001/knowledge.sqlite','database/documentary/rover_482.sqlite','database/documentary/AKM7169ENG.pdf','sqldrivers/qsqlite.dll')){
+            if(-not(Test-Path (Join-Path $dist $part))){throw "DIST_FILE_MISSING $part"}
+          }
+          Write-Host 'SESSION_ROVER_UI_AI_SQLITE_PDF_DISTRIBUTION_READY'
+      - name: Creer le vrai Setup Windows SESSION sans modifier les donnees personnelles
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          choco install innosetup -y --no-progress --limit-output
+          if($LASTEXITCODE -ne 0){throw 'INNO_INSTALL_FAILED'}
+          $compiler=Get-ChildItem "${env:ProgramFiles(x86)}" -Recurse -File -Filter ISCC.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          if(-not $compiler){throw 'INNO_COMPILER_MISSING'}
+          $iss=@'
+          #define MyAppName "ECU MEMS Manager SESSION"
+          #define MyAppVersion "1.1.37"
+          [Setup]
+          AppId={{BC7FAF73-5BCF-49FC-8513-9D9C7B08F133}
+          AppName={#MyAppName}
+          AppVersion={#MyAppVersion}
+          AppPublisher=ECU MEMS Manager SESSION
+          DefaultDirName={autopf}\ECU MEMS Manager SESSION
+          DefaultGroupName=ECU MEMS Manager SESSION
+          UsePreviousGroup=no
+          OutputDir=setup-rover-output
+          OutputBaseFilename=ECU MEMS Manager SESSION Setup
+          Compression=lzma2
+          SolidCompression=yes
+          WizardStyle=modern
+          ArchitecturesAllowed=x64
+          ArchitecturesInstallIn64BitMode=x64
+          PrivilegesRequired=admin
+          UninstallDisplayIcon={app}\ecu_mems_manager.exe
+          [Languages]
+          Name: "french"; MessagesFile: "compiler:Languages\French.isl"
+          [Files]
+          Source: "dist-session-rover\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+          [Icons]
+          Name: "{group}\ECU MEMS Manager SESSION"; Filename: "{app}\ecu_mems_manager.exe"
+          Name: "{autodesktop}\ECU MEMS Manager SESSION"; Filename: "{app}\ecu_mems_manager.exe"; IconFilename: "{app}\ecu_mems_manager.exe"
+          '@
+          $iss | Set-Content session-rover.iss -Encoding utf8
+          & $compiler.FullName session-rover.iss
+          if($LASTEXITCODE -ne 0){throw 'INNO_COMPILATION_FAILED'}
+          $setup=Get-ChildItem setup-rover-output -File -Filter '*.exe' | Select-Object -First 1
+          if(-not $setup -or $setup.Length -lt 100MB){throw 'SETUP_TOO_SMALL_OR_MISSING'}
+          Write-Host "SESSION_ROVER_SETUP_SHA256=$((Get-FileHash $setup.FullName -Algorithm SHA256).Hash)"
+      - name: Installer reellement sur Windows et verifier la base, le PDF et le lancement
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $setup=Get-ChildItem setup-rover-output -File -Filter '*.exe' | Select-Object -First 1
+          $folder=Join-Path $env:RUNNER_TEMP 'SESSION_ROVER_482_INSTALLED'
+          if(Test-Path $folder){Remove-Item $folder -Recurse -Force}
+          $proc=Start-Process -FilePath $setup.FullName -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',"/DIR=$folder" -Wait -PassThru
+          if($proc.ExitCode -ne 0){throw "SETUP_INSTALL_EXIT_$($proc.ExitCode)"}
+          if(-not(Test-Path "$folder/ecu_mems_manager.exe")){throw 'SESSION_INSTALLED_EXE_MISSING'}
+          python tools/build_rover_session_documentary.py --pdf "$folder/database/documentary/AKM7169ENG.pdf" --parts database/documentary/parts --output "$env:RUNNER_TEMP/ROVER_COMPARE"
+          if($LASTEXITCODE -ne 0){throw 'INSTALLED_PDF_OR_SOURCE_INVALID'}
+          $actual=(Get-FileHash "$folder/database/documentary/rover_482.sqlite" -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($actual -ne 'dd37296b5d477c4124133f51e96691858c0ae4746d42c3e4478bf6003a9445bb'){throw 'INSTALLED_SQLITE_MISMATCH'}
+          if(Test-Path "$folder/database/ecu_mems_manager.sqlite"){throw 'USER_DB_SHIPPED_IN_SETUP'}
+          $exe="$folder/ecu_mems_manager.exe"
+          $instance=Start-Process -FilePath $exe -WorkingDirectory $folder -PassThru
+          Start-Sleep -Seconds 12
+          $instance.Refresh()
+          if($instance.HasExited){throw "SESSION_INSTALLED_APP_EARLY_EXIT_$($instance.ExitCode)"}
+          Stop-Process -Id $instance.Id -Force
+          Write-Host 'REAL_WINDOWS_SETUP_INSTALLED_SQLITE_PDF_APPLICATION_START_OK'
+      - name: Publier un seul Setup Windows installe et teste
+        uses: actions/upload-artifact@v4
+        with:
+          name: ECU-MEMS-Manager-SESSION-Setup-Rover-482
+          path: setup-rover-output/*.exe
+          retention-days: 14
+          if-no-files-found: error
