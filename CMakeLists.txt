@@ -124,6 +124,14 @@ add_executable(mems_documentary_selftest
     database/MemsDocumentaryRepository.cpp database/MemsDocumentaryRepository.h)
 target_compile_definitions(mems_documentary_selftest PRIVATE MEMS_DOCUMENTARY_SELFTEST=1)
 target_link_libraries(mems_documentary_selftest PRIVATE Qt5::Core Qt5::Sql)
+# Compiled against exactly the same SQLite reader used by the user-facing
+# database page and IA MEMS.  Only this test target can override the
+# production database path with MEMS_DOCUMENTARY_DB.
+add_executable(mems_documentary_real_corpus_selftest
+    database/MemsDocumentaryRealCorpusSelfTest.cpp
+    database/MemsDocumentaryRepository.cpp database/MemsDocumentaryRepository.h)
+target_compile_definitions(mems_documentary_real_corpus_selftest PRIVATE MEMS_DOCUMENTARY_SELFTEST=1)
+target_link_libraries(mems_documentary_real_corpus_selftest PRIVATE Qt5::Core Qt5::Sql)
 add_dependencies(${PNAME} mems_documentary_selftest)
 
 add_executable(mems_search_selftest
