@@ -19,13 +19,25 @@ jobs:
       - name: Compiler le vrai lecteur documentaire Qt en C++ sans Setup
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends g++ pkg-config qtbase5-dev libqt5sql5-sqlite
+          sudo apt-get install -y --no-install-recommends g++ pkg-config qtbase5-dev libqt5sql5-sqlite libqt5charts5-dev libqt5serialport5-dev
           g++ -std=c++17 -Wall -Wextra -Werror -fPIC \
             database/MemsDocumentaryRepository.cpp \
             database/MemsDocumentaryRepositorySelfTest.cpp \
             -o /tmp/mems_documentary_selftest \
             $(pkg-config --cflags --libs Qt5Core Qt5Sql)
           /tmp/mems_documentary_selftest
+      - name: Verifier la compilation des vrais fichiers consommateurs sans executable Windows
+        run: |
+          for source in \
+            database/MemsDatabaseExplorerV2.cpp \
+            expert/IaMemsDocumentaryPipeline.cpp \
+            expert/IaMemsLibraryIntegration.cpp \
+            expert/LocalAiClient.cpp; do
+            echo "C++: $source"
+            g++ -std=c++17 -fPIC -fsyntax-only -I. \
+              $(pkg-config --cflags Qt5Core Qt5Widgets Qt5Sql Qt5Network Qt5Charts Qt5SerialPort) \
+              "$source"
+          done
       - name: Controler les deux usages et le routage IA
         run: |
           python3 - <<'PY'
