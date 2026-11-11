@@ -5,6 +5,13 @@ on:
     branches: [audit-ia-mems-acces-sqlite-20261111]
     paths:
       - '.github/workflows/audit-documentary-sqlite.yml'
+      - 'database/MemsDocumentaryRepository.cpp'
+      - 'database/MemsDocumentaryRepository.h'
+      - 'database/MemsDocumentaryRepositorySelfTest.cpp'
+      - 'database/MemsDatabaseExplorerV2.cpp'
+      - 'expert/IaMemsLibraryIntegration.cpp'
+      - 'expert/IaMemsDocumentaryPipeline.cpp'
+      - 'expert/LocalAiClient.cpp'
   workflow_dispatch:
 
 permissions:
