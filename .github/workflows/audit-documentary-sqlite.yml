@@ -26,6 +26,7 @@ jobs:
             -o /tmp/mems_documentary_selftest \
             $(pkg-config --cflags --libs Qt5Core Qt5Sql)
           /tmp/mems_documentary_selftest
+          echo 'Native SQLite source-validation selftest passed'
       - name: Verifier la compilation des vrais fichiers consommateurs sans executable Windows
         run: |
           for source in \
