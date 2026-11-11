@@ -1,0 +1,171 @@
+#include "MemsDocumentaryRepository.h"
+
+#include <QCoreApplication>
+#include <QDir>
+#include <QSqlDatabase>
+#include <QSqlQuery>
+#include <QTemporaryDir>
+#include <QVariantMap>
+
+#include <cstdio>
+
+static bool check(bool truth, const char *message)
+{
+    if (!truth)
+        std::fprintf(stderr, "MEMS_DOCUMENTARY_SELFTEST_FAIL: %s\n", message);
+    return truth;
+}
+
+int main(int argc, char **argv)
+{
+    QCoreApplication application(argc, argv);
+    QTemporaryDir temp;
+    if (!check(temp.isValid(), "temporary SQLite location"))
+        return 1;
+    const QString name = QStringLiteral("documentary_test_seed");
+    const QString file = QDir(temp.path()).filePath(QStringLiteral("rover_482.sqlite"));
+    {
+        QSqlDatabase seed = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), name);
+        seed.setDatabaseName(file);
+        if (!check(seed.open(), "open fixture"))
+            return 1;
+        const QStringList schema = {
+            QStringLiteral("CREATE TABLE source_documents("
+                           "document_id TEXT PRIMARY KEY,total_pages INTEGER,"
+                           "original_pdf_sha256 TEXT)"),
+            QStringLiteral("CREATE TABLE source_page_discovery("
+                           "document_id TEXT,physical_page INTEGER,ocr_text TEXT,"
+                           "knowledge_state TEXT)"),
+            QStringLiteral("CREATE TABLE procedures("
+                           "procedure_id TEXT PRIMARY KEY,title TEXT,"
+                           "manufacturer_repair_no TEXT,original_pages TEXT,"
+                           "transcription_status TEXT,ai_publication_allowed INTEGER,"
+                           "technical_approval INTEGER)"),
+            QStringLiteral("CREATE TABLE procedure_steps("
+                           "procedure_id TEXT,phase TEXT,step_number INTEGER,"
+                           "source_text TEXT,source_page INTEGER)"),
+            QStringLiteral("CREATE TABLE technical_values("
+                           "procedure_id TEXT,literal_number TEXT,literal_unit TEXT)"),
+            QStringLiteral("CREATE TABLE illustrations("
+                           "procedure_id TEXT,reference_code TEXT,physical_page INTEGER)"),
+            QStringLiteral("CREATE TABLE search_aliases("
+                           "procedure_id TEXT,alias TEXT)"),
+            QStringLiteral("CREATE VIRTUAL TABLE source_page_fts USING fts5("
+                           "physical_page UNINDEXED,ocr_text)")
+        };
+        for (const QString &statement : schema) {
+            QSqlQuery sql(seed);
+            if (!check(sql.exec(statement), "create fixture schema"))
+                return 1;
+        }
+        const QString sha(64, QLatin1Char('a'));
+        QSqlQuery insertDocument(seed);
+        insertDocument.prepare(QStringLiteral(
+            "INSERT INTO source_documents VALUES(?,?,?)"));
+        insertDocument.addBindValue(QStringLiteral("rover-akm7169eng"));
+        insertDocument.addBindValue(482);
+        insertDocument.addBindValue(sha);
+        if (!check(insertDocument.exec(), "original 482-page provenance"))
+            return 1;
+        if (!check(seed.transaction(), "start page import"))
+            return 1;
+        QSqlQuery page(seed), fts(seed);
+        page.prepare(QStringLiteral(
+            "INSERT INTO source_page_discovery VALUES(?,?,?,?)"));
+        fts.prepare(QStringLiteral(
+            "INSERT INTO source_page_fts VALUES(?,?)"));
+        for (int n = 1; n <= 482; ++n) {
+            const QString content = n == 92
+                ? QStringLiteral("service timing chain gears removal")
+                : QStringLiteral("original manual physical page");
+            page.bindValue(0, QStringLiteral("rover-akm7169eng"));
+            page.bindValue(1, n);
+            page.bindValue(2, content);
+            page.bindValue(3, QStringLiteral("OCR_DISCOVERY_ONLY"));
+            fts.bindValue(0, n);
+            fts.bindValue(1, content);
+            if (!check(page.exec() && fts.exec(), "source page row"))
+                return 1;
+        }
+        if (!check(seed.commit(), "commit 482-page source mapping"))
+            return 1;
+        const QStringList records = {
+            QStringLiteral("INSERT INTO procedures VALUES("
+                           "'rover-akm7169eng-12.65.12','Timing Chain and Gears',"
+                           "'12.65.12','92-93','TECHNICAL_REVIEW_PENDING',0,0)"),
+            QStringLiteral("INSERT INTO procedure_steps VALUES("
+                           "'rover-akm7169eng-12.65.12','remove',1,"
+                           "'Remove the cover.',92)"),
+            QStringLiteral("INSERT INTO procedure_steps VALUES("
+                           "'rover-akm7169eng-12.65.12','refit',8,"
+                           "'tighten camshaft nut to 88 Nm.',93)"),
+            QStringLiteral("INSERT INTO technical_values VALUES("
+                           "'rover-akm7169eng-12.65.12','88','Nm')"),
+            QStringLiteral("INSERT INTO illustrations VALUES("
+                           "'rover-akm7169eng-12.65.12','12M0986',93)"),
+            QStringLiteral("INSERT INTO search_aliases VALUES("
+                           "'rover-akm7169eng-12.65.12','chaîne de distribution')")
+        };
+        for (const QString &statement : records) {
+            QSqlQuery sql(seed);
+            if (!check(sql.exec(statement), "record fixture"))
+                return 1;
+        }
+        seed.close();
+        seed = QSqlDatabase();
+    }
+    QSqlDatabase::removeDatabase(name);
+    qputenv("MEMS_DOCUMENTARY_DB", file.toUtf8());
+    {
+        MemsDocumentaryRepository repository;
+        if (!check(repository.open(), "strict 482-page reader opens"))
+            return 1;
+        const QStringList questions = {
+            QStringLiteral("12.65.12"),
+            QStringLiteral("chaîne de distribution"),
+            QStringLiteral("88 Nm"),
+            QStringLiteral("service timing")
+        };
+        for (const QString &question : questions) {
+            const QVariantList hits = repository.search(question);
+            if (!check(!hits.isEmpty(), "search yields original source"))
+                return 1;
+            if (!check(!hits.first().toMap().value(
+                           QStringLiteral("approved_for_ai")).toBool(),
+                       "never approve uncertified text"))
+                return 1;
+        }
+        const QVariantList exact = repository.search(QStringLiteral("12.65.12"));
+        if (!check(exact.first().toMap().value(
+                       QStringLiteral("source_key")).toString() ==
+                   QStringLiteral("rover-akm7169eng-12.65.12"),
+                   "exact repair reference survives both readers"))
+            return 1;
+        const QString evidence = MemsDocumentaryRepository::answerFromHits(exact);
+        if (!check(evidence.contains(QStringLiteral("page 92")) &&
+                   evidence.contains(QStringLiteral("88 Nm")) &&
+                   evidence.contains(QStringLiteral("NON")),
+                   "answer preserves sources, literal units and review status"))
+            return 1;
+        if (!check(repository.search(QStringLiteral("unknown-gizmo")).isEmpty(),
+                   "unknown query cannot fabricate an answer"))
+            return 1;
+    }
+    // An incomplete schema must fail closed, not fall back to another pack.
+    const QString bad = QDir(temp.path()).filePath(QStringLiteral("incomplete.sqlite"));
+    QSqlDatabase broken = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), name);
+    broken.setDatabaseName(bad);
+    if (!check(broken.open(), "corrupt fixture opens"))
+        return 1;
+    broken.close();
+    broken = QSqlDatabase();
+    QSqlDatabase::removeDatabase(name);
+    qputenv("MEMS_DOCUMENTARY_DB", bad.toUtf8());
+    {
+        MemsDocumentaryRepository repository;
+        if (!check(!repository.open(), "partial schema is rejected"))
+            return 1;
+    }
+    std::puts("MEMS_DOCUMENTARY_SELFTEST_OK");
+    return 0;
+}
