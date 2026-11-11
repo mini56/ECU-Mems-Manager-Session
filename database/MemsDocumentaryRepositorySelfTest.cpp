@@ -50,6 +50,12 @@ int main(int argc, char **argv)
                            "procedure_id TEXT,reference_code TEXT,physical_page INTEGER)"),
             QStringLiteral("CREATE TABLE search_aliases("
                            "procedure_id TEXT,alias TEXT)"),
+            QStringLiteral("CREATE TABLE extracted_procedure_candidates("
+                           "candidate_id TEXT PRIMARY KEY,document_id TEXT,"
+                           "original_page INTEGER,source_region TEXT,"
+                           "candidate_manufacturer_repair_number TEXT,"
+                           "candidate_title TEXT,repair_number_format_status TEXT,"
+                           "source_status TEXT,approved_for_ai INTEGER)"),
             QStringLiteral("CREATE VIRTUAL TABLE source_page_fts USING fts5("
                            "physical_page UNINDEXED,ocr_text)")
         };
@@ -110,7 +116,15 @@ int main(int argc, char **argv)
             QStringLiteral("INSERT INTO illustrations VALUES("
                            "'rover-akm7169eng-12.65.12','12M0986',93)"),
             QStringLiteral("INSERT INTO search_aliases VALUES("
-                           "'rover-akm7169eng-12.65.12','chaîne de distribution')")
+                           "'rover-akm7169eng-12.65.12','chaîne de distribution')"),
+            QStringLiteral("INSERT INTO extracted_procedure_candidates VALUES("
+                           "'rover:ocr:93:right:12.65.05','rover-akm7169eng',93,'right',"
+                           "'12.65.05','Timing Cover and Oil Seal',"
+                           "'NUMBER_PATTERN_MATCH','REVIEW_REQUIRED',0)"),
+            QStringLiteral("INSERT INTO extracted_procedure_candidates VALUES("
+                           "'rover:ocr:92:right:12.65.12','rover-akm7169eng',92,'right',"
+                           "'12.65.12','Timing Chain and Gears',"
+                           "'NUMBER_PATTERN_MATCH','REVIEW_REQUIRED',0)")
         };
         for (const QString &statement : records) {
             QSqlQuery sql(seed);
@@ -143,6 +157,24 @@ int main(int argc, char **argv)
                        "never approve uncertified text"))
                 return 1;
         }
+        const QVariantList candidate=repository.search(QStringLiteral("12.65.05"));
+        if (!check(!candidate.isEmpty() &&
+                candidate.first().toMap().value(QStringLiteral("source_table")).toString()
+                    == QStringLiteral("rover_procedure_candidate"),
+                "unverified original manufacturer operation can be discovered"))
+            return 1;
+        const QString candidateContent = candidate.first().toMap().value(
+            QStringLiteral("content")).toString();
+        if (!check(candidateContent.contains(QStringLiteral("REVIEW_REQUIRED")) &&
+                !candidateContent.contains(QStringLiteral("1. Remove")),
+                "unverified procedure instructions never promoted to IA facts"))
+            return 1;
+        const QVariantList curated=repository.search(QStringLiteral("12.65.12"));
+        for(const QVariant &item : curated)
+            if(!check(item.toMap().value(QStringLiteral("source_table")).toString() !=
+                      QStringLiteral("rover_procedure_candidate"),
+                      "reviewed procedure replaces duplicate OCR candidate"))
+                return 1;
         const QVariantList page = repository.search(QStringLiteral("page 93"));
         if (!check(!page.isEmpty() &&
                 page.first().toMap().value(QStringLiteral("source_key")).toString() ==
