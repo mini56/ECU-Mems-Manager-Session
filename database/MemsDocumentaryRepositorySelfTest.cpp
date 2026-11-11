@@ -194,6 +194,12 @@ int main(int argc, char **argv)
         };
         for (const QString &question : questions) {
             const QVariantList hits = repository.search(question);
+            if (hits.isEmpty()) {
+                const QByteArray utf8 = question.toUtf8();
+                std::fprintf(stderr, "MEMS_DOCUMENTARY_SEARCH_EMPTY: question=%s error=%s\\n",
+                             utf8.constData(),
+                             repository.lastError().toUtf8().constData());
+            }
             if (!check(!hits.isEmpty(), "search yields original source"))
                 return 1;
             if (!check(!hits.first().toMap().value(
