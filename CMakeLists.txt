@@ -67,6 +67,7 @@ set(SOURCES
     analogwidgets/manometer100.cpp analogwidgets/abstractmeter100.cpp analogwidgets/manometer900.cpp
     analogwidgets/abstractmeter900.cpp mainwindow.ui resources.qrc database/DatabaseManager.cpp
     database/MemsReferenceDatabase.cpp database/MemsReferenceDatabase.h database/MemsReferencePackageRefresh.cpp
+    database/MemsDocumentaryRepository.cpp database/MemsDocumentaryRepository.h
     database/MemsGlobalSearchIndex.cpp database/MemsGlobalSearchIndex.h database/MemsDatabaseExplorerV2.cpp
     database/MemsDatabaseUniversalAccess.cpp database/MemsDatabaseUniversalAccess.h database/MemsReferenceLanguageSync.cpp
     database/MemsDatabaseBrowser.cpp database/MemsDatabaseBrowser.h
@@ -117,6 +118,12 @@ target_compile_definitions(ia_mems_diagram_selftest PRIVATE
     MEMS_SOURCE_REFERENCE_DIR="${CMAKE_SOURCE_DIR}/database/reference")
 target_link_libraries(ia_mems_diagram_selftest PRIVATE Qt5::Core)
 add_dependencies(${PNAME} ia_mems_diagram_selftest)
+
+add_executable(mems_documentary_selftest
+    database/MemsDocumentaryRepositorySelfTest.cpp
+    database/MemsDocumentaryRepository.cpp database/MemsDocumentaryRepository.h)
+target_link_libraries(mems_documentary_selftest PRIVATE Qt5::Core Qt5::Sql)
+add_dependencies(${PNAME} mems_documentary_selftest)
 
 add_executable(mems_search_selftest
     database/MemsSearchSelfTest.cpp
