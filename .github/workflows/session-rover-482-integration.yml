@@ -8,6 +8,7 @@ on:
       - 'database/documentary/parts/**'
       - 'database/MemsDocumentaryRepository.cpp'
       - 'database/MemsDocumentaryRepository.h'
+      - 'database/MemsDocumentaryRepositorySelfTest.cpp'
       - 'expert/IaMemsLibraryIntegration.cpp'
       - 'database/MemsDatabaseExplorerV2.cpp'
       - 'tools/build_rover_session_documentary.py'
