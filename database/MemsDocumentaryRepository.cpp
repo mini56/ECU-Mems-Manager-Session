@@ -129,9 +129,11 @@ QString MemsDocumentaryRepository::databasePath()
     // A single packaged SQLite, never the runtime ECU calibration database.
     // Test-only opt-in permits isolated fixtures; normal installation uses
     // the file beside the program, entirely offline.
+#ifdef MEMS_DOCUMENTARY_SELFTEST
     const QString overridePath = qEnvironmentVariable("MEMS_DOCUMENTARY_DB").trimmed();
     if (!overridePath.isEmpty())
         return QDir::cleanPath(overridePath);
+#endif
     return QDir(QCoreApplication::applicationDirPath()).filePath(
         QStringLiteral("database/documentary/rover_482.sqlite"));
 }
@@ -195,7 +197,8 @@ bool MemsDocumentaryRepository::open()
     QSqlQuery validation(m_database);
     if (!validation.exec(QStringLiteral(
             "SELECT d.total_pages,COUNT(p.physical_page),MIN(p.physical_page),"
-            "MAX(p.physical_page),d.original_pdf_sha256 "
+            "MAX(p.physical_page),d.original_pdf_sha256,"
+            "COUNT(DISTINCT p.physical_page) "
             "FROM source_documents d JOIN source_page_discovery p "
             "ON p.document_id=d.document_id "
             "GROUP BY d.document_id")) ||
@@ -204,10 +207,19 @@ bool MemsDocumentaryRepository::open()
         validation.value(1).toInt() != 482 ||
         validation.value(2).toInt() != 1 ||
         validation.value(3).toInt() != 482 ||
+        validation.value(5).toInt() != 482 ||
         !QRegularExpression(QStringLiteral("^[a-f0-9]{64}$"))
             .match(validation.value(4).toString()).hasMatch() ||
         validation.next()) {
         m_error = QStringLiteral("Corpus Rover incomplet ou provenance invalide (482 pages requises).");
+        m_database.close();
+        return false;
+    }
+    QSqlQuery integrity(m_database);
+    if (!integrity.exec(QStringLiteral("PRAGMA quick_check")) ||
+        !integrity.next() ||
+        integrity.value(0).toString() != QStringLiteral("ok")) {
+        m_error = QStringLiteral("Intégrité SQLite documentaire non conforme.");
         m_database.close();
         return false;
     }
