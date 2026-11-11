@@ -2,7 +2,7 @@ name: AUDIT - MEMS documentaire SQLite unifiee
 
 on:
   push:
-    branches: [audit-ia-mems-acces-sqlite-20261111]
+    branches: [audit-ia-mems-acces-sqlite-20261111, fix-rover-reader-phase-labels-20261111]
     paths:
       - '.github/workflows/audit-documentary-sqlite.yml'
       - 'database/MemsDocumentaryRepository.cpp'
