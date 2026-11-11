@@ -35,7 +35,7 @@ int main(int argc, char **argv)
                            "original_pdf_sha256 TEXT)"),
             QStringLiteral("CREATE TABLE source_page_discovery("
                            "document_id TEXT,physical_page INTEGER,ocr_text TEXT,"
-                           "knowledge_state TEXT)"),
+                           "knowledge_state TEXT,original_pdf_sha256 TEXT)"),
             QStringLiteral("CREATE TABLE procedures("
                            "procedure_id TEXT PRIMARY KEY,title TEXT,"
                            "manufacturer_repair_no TEXT,original_pages TEXT,"
@@ -71,7 +71,7 @@ int main(int argc, char **argv)
             return 1;
         QSqlQuery page(seed), fts(seed);
         page.prepare(QStringLiteral(
-            "INSERT INTO source_page_discovery VALUES(?,?,?,?)"));
+            "INSERT INTO source_page_discovery VALUES(?,?,?,?,?)"));
         fts.prepare(QStringLiteral(
             "INSERT INTO source_page_fts VALUES(?,?)"));
         for (int n = 1; n <= 482; ++n) {
@@ -82,6 +82,7 @@ int main(int argc, char **argv)
             page.bindValue(1, n);
             page.bindValue(2, content);
             page.bindValue(3, QStringLiteral("OCR_DISCOVERY_ONLY"));
+            page.bindValue(4, sha);
             fts.bindValue(0, n);
             fts.bindValue(1, content);
             if (!check(page.exec() && fts.exec(), "source page row"))
@@ -99,8 +100,13 @@ int main(int argc, char **argv)
             QStringLiteral("INSERT INTO procedure_steps VALUES("
                            "'rover-akm7169eng-12.65.12','refit',8,"
                            "'tighten camshaft nut to 88 Nm.',93)"),
+            QStringLiteral("INSERT INTO procedure_steps VALUES("
+                           "'rover-akm7169eng-12.65.12','refit',3,"
+                           "'Shim size = 0.152 mm.',93)"),
             QStringLiteral("INSERT INTO technical_values VALUES("
                            "'rover-akm7169eng-12.65.12','88','Nm')"),
+            QStringLiteral("INSERT INTO technical_values VALUES("
+                           "'rover-akm7169eng-12.65.12','0.152','mm')"),
             QStringLiteral("INSERT INTO illustrations VALUES("
                            "'rover-akm7169eng-12.65.12','12M0986',93)"),
             QStringLiteral("INSERT INTO search_aliases VALUES("
@@ -124,7 +130,9 @@ int main(int argc, char **argv)
             QStringLiteral("12.65.12"),
             QStringLiteral("chaîne de distribution"),
             QStringLiteral("88 Nm"),
-            QStringLiteral("service timing")
+            QStringLiteral("0,152 mm"),
+            QStringLiteral("service timing"),
+            QStringLiteral("chaine distribution")
         };
         for (const QString &question : questions) {
             const QVariantList hits = repository.search(question);
@@ -135,6 +143,15 @@ int main(int argc, char **argv)
                        "never approve uncertified text"))
                 return 1;
         }
+        const QVariantList page = repository.search(QStringLiteral("page 93"));
+        if (!check(!page.isEmpty() &&
+                page.first().toMap().value(QStringLiteral("source_key")).toString() ==
+                    QStringLiteral("rover-akm7169eng:page:93"),
+                "direct physical page 93 is returned unapproved"))
+            return 1;
+        if (!check(!repository.search(QString()).isEmpty(),
+                   "empty query lists available structured procedures"))
+            return 1;
         const QVariantList exact = repository.search(QStringLiteral("12.65.12"));
         if (!check(exact.first().toMap().value(
                        QStringLiteral("source_key")).toString() ==
