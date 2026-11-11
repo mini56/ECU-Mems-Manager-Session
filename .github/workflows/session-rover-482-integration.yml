@@ -20,11 +20,11 @@ permissions:
 
 concurrency:
   group: session-rover-482-setup
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build-install-test:
-    runs-on: windows-2022
+    runs-on: windows-2025
     timeout-minutes: 120
     env:
       ORT_GENAI_VERSION: '0.14.0'
