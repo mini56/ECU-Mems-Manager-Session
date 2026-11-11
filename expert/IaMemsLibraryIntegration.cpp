@@ -606,7 +606,17 @@ void IaMemsService::askWithLibrary(const QString &question)
 
     updateContextFromQuestion(trimmed);
 
-    if (MemsDocumentaryRepository::isPackInstalled()) {
+    // Live ECU diagnosis remains on the measurement/expert route unless
+    // the user explicitly asks for a technical document. Otherwise a vague
+    // word in an OCR page could hijack an actual vehicle diagnosis.
+    const bool explicitDocumentaryRequest =
+        resolvedDocumentary ||
+        IaMemsConversationRouting::isDocumentationQuestion(trimmed);
+    const bool diagnosticRequest =
+        IaMemsConversationRouting::shouldUseDiagnosticGeneration(
+            trimmed, QString());
+    if (MemsDocumentaryRepository::isPackInstalled() &&
+        (explicitDocumentaryRequest || !diagnosticRequest)) {
         // One documentary SQLite and one retrieval policy for UI and AI.
         // All new-source evidence is exposed directly, with page and review
         // status. Never send unapproved OCR steps to Qwen for unsupervised
@@ -635,9 +645,7 @@ void IaMemsService::askWithLibrary(const QString &question)
         const bool referenceNumber=QRegularExpression(
             QStringLiteral("\\b\\d{2}\\.\\d{2}\\.\\d{2}\\b"))
             .match(trimmed).hasMatch();
-        const bool documentaryIntent=resolvedDocumentary ||
-            IaMemsConversationRouting::isDocumentationQuestion(trimmed) ||
-            referenceNumber;
+        const bool documentaryIntent=explicitDocumentaryRequest || referenceNumber;
         if (documentaryIntent) {
             m_pendingGrounding.clear();
             emit responseReady(QStringLiteral(
