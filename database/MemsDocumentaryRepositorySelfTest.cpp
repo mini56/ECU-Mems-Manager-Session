@@ -43,7 +43,8 @@ int main(int argc, char **argv)
                            "technical_approval INTEGER)"),
             QStringLiteral("CREATE TABLE procedure_steps("
                            "procedure_id TEXT,phase TEXT,step_number INTEGER,"
-                           "source_text TEXT,source_page INTEGER)"),
+                           "source_text TEXT,source_page INTEGER,"
+                           "original_phase_label TEXT)"),
             QStringLiteral("CREATE TABLE technical_values("
                            "procedure_id TEXT,literal_number TEXT,literal_unit TEXT)"),
             QStringLiteral("CREATE TABLE illustrations("
@@ -108,13 +109,22 @@ int main(int argc, char **argv)
                            "'12.65.12','92-93','TECHNICAL_REVIEW_PENDING',0,0)"),
             QStringLiteral("INSERT INTO procedure_steps VALUES("
                            "'rover-akm7169eng-12.65.12','remove',1,"
-                           "'Remove the cover.',92)"),
+                           "'Remove the cover.',92,'REMOVE')"),
             QStringLiteral("INSERT INTO procedure_steps VALUES("
                            "'rover-akm7169eng-12.65.12','refit',8,"
-                           "'tighten camshaft nut to 88 Nm.',93)"),
+                           "'tighten camshaft nut to 88 Nm.',93,'REFIT')"),
             QStringLiteral("INSERT INTO procedure_steps VALUES("
                            "'rover-akm7169eng-12.65.12','refit',3,"
-                           "'Shim size = 0.152 mm.',93)"),
+                           "'Shim size = 0.152 mm.',93,'REFIT')"),
+            QStringLiteral("INSERT INTO procedure_steps VALUES("
+                           "'rover-akm7169eng-12.65.12','check',4,"
+                           "'Inspect the condition.',93,'Check')"),
+            QStringLiteral("INSERT INTO procedure_steps VALUES("
+                           "'rover-akm7169eng-12.65.12','other',5,"
+                           "'Source phase unspecified.',93,'Unspecified')"),
+            QStringLiteral("INSERT INTO procedure_steps VALUES("
+                           "'rover-akm7169eng-12.65.12','adjust',6,"
+                           "'Adjust the setting.',93,'Adjust')"),
             QStringLiteral("INSERT INTO technical_values VALUES("
                            "'rover-akm7169eng-12.65.12','88','Nm')"),
             QStringLiteral("INSERT INTO technical_values VALUES("
@@ -239,6 +249,14 @@ int main(int argc, char **argv)
                    "exact repair reference survives both readers"))
             return 1;
         const QString evidence = MemsDocumentaryRepository::answerFromHits(exact);
+        if (!check(evidence.contains(QStringLiteral("Contrôle 4 (page 93)")) &&
+                   evidence.contains(QStringLiteral("Phase non précisée 5 (page 93)")) &&
+                   evidence.contains(QStringLiteral("Réglage 6 (page 93)")) &&
+                   !evidence.contains(QStringLiteral("Remontage 4 (page 93)")) &&
+                   !evidence.contains(QStringLiteral("Remontage 5 (page 93)")) &&
+                   !evidence.contains(QStringLiteral("Remontage 6 (page 93)")),
+                   "never mislabel documentary checks or adjustments as refit"))
+            return 1;
         if (!check(evidence.contains(QStringLiteral("page 92")) &&
                    evidence.contains(QStringLiteral("88 Nm")) &&
                    evidence.contains(QStringLiteral("NE SONT PAS")),
