@@ -56,6 +56,12 @@ int main(int argc, char **argv)
                            "candidate_manufacturer_repair_number TEXT,"
                            "candidate_title TEXT,repair_number_format_status TEXT,"
                            "source_status TEXT,approved_for_ai INTEGER)"),
+            QStringLiteral("CREATE TABLE extracted_procedure_candidate_steps("
+                           "candidate_id TEXT,phase_position INTEGER,"
+                           "step_position INTEGER,phase_kind TEXT,"
+                           "manufacturer_step_number INTEGER,"
+                           "ocr_instruction_candidate TEXT,"
+                           "source_status TEXT,approved_for_ai INTEGER)"),
             QStringLiteral("CREATE VIRTUAL TABLE source_page_fts USING fts5("
                            "physical_page UNINDEXED,ocr_text)")
         };
@@ -124,7 +130,15 @@ int main(int argc, char **argv)
             QStringLiteral("INSERT INTO extracted_procedure_candidates VALUES("
                            "'rover:ocr:92:right:12.65.12','rover-akm7169eng',92,'right',"
                            "'12.65.12','Timing Chain and Gears',"
-                           "'NUMBER_PATTERN_MATCH','REVIEW_REQUIRED',0)")
+                           "'NUMBER_PATTERN_MATCH','REVIEW_REQUIRED',0)"),
+            QStringLiteral("INSERT INTO extracted_procedure_candidate_steps VALUES("
+                           "'rover:ocr:93:right:12.65.05',0,0,'remove',1,"
+                           "'Lift timing gear cover after removing bolts.',"
+                           "'OCR_UNVERIFIED',0)"),
+            QStringLiteral("INSERT INTO extracted_procedure_candidate_steps VALUES("
+                           "'rover:ocr:93:right:12.65.05',0,1,'remove',2,"
+                           "'Tighten sample to 22 Nm.',"
+                           "'OCR_UNVERIFIED',0)")
         };
         for (const QString &statement : records) {
             QSqlQuery sql(seed);
@@ -186,8 +200,18 @@ int main(int argc, char **argv)
         const QString candidateContent = candidate.first().toMap().value(
             QStringLiteral("content")).toString();
         if (!check(candidateContent.contains(QStringLiteral("REVIEW_REQUIRED")) &&
-                !candidateContent.contains(QStringLiteral("1. Remove")),
-                "unverified procedure instructions never promoted to IA facts"))
+                candidateContent.contains(QStringLiteral("OCR brut, NON VALIDÉ")) &&
+                candidateContent.contains(QStringLiteral("Lift timing gear cover")) &&
+                !candidate.first().toMap().value(
+                    QStringLiteral("approved_for_ai")).toBool(),
+                "full candidate OCR is visible only as flagged database source"))
+            return 1;
+        const QString candidateAnswer =
+            MemsDocumentaryRepository::answerFromHits(candidate);
+        if (!check(!candidateAnswer.contains(QStringLiteral("Lift timing gear cover")) &&
+                !candidateAnswer.contains(QStringLiteral("Tighten sample")) &&
+                candidateAnswer.contains(QStringLiteral("Aucun conseil de réparation validé")),
+                "IA response must not promote unreviewed OCR repair steps"))
             return 1;
         const QVariantList curated=repository.search(QStringLiteral("12.65.12"));
         for(const QVariant &item : curated)
