@@ -198,7 +198,9 @@ bool MemsDocumentaryRepository::open()
     if (!validation.exec(QStringLiteral(
             "SELECT d.total_pages,COUNT(p.physical_page),MIN(p.physical_page),"
             "MAX(p.physical_page),d.original_pdf_sha256,"
-            "COUNT(DISTINCT p.physical_page) "
+            "COUNT(DISTINCT p.physical_page),"
+            "SUM(CASE WHEN p.original_pdf_sha256=d.original_pdf_sha256 "
+            "THEN 0 ELSE 1 END) "
             "FROM source_documents d JOIN source_page_discovery p "
             "ON p.document_id=d.document_id "
             "GROUP BY d.document_id")) ||
@@ -208,6 +210,7 @@ bool MemsDocumentaryRepository::open()
         validation.value(2).toInt() != 1 ||
         validation.value(3).toInt() != 482 ||
         validation.value(5).toInt() != 482 ||
+        validation.value(6).toInt() != 0 ||
         !QRegularExpression(QStringLiteral("^[a-f0-9]{64}$"))
             .match(validation.value(4).toString()).hasMatch() ||
         validation.next()) {
@@ -220,6 +223,13 @@ bool MemsDocumentaryRepository::open()
         !integrity.next() ||
         integrity.value(0).toString() != QStringLiteral("ok")) {
         m_error = QStringLiteral("Intégrité SQLite documentaire non conforme.");
+        m_database.close();
+        return false;
+    }
+    QSqlQuery foreignKeys(m_database);
+    if (!foreignKeys.exec(QStringLiteral("PRAGMA foreign_key_check")) ||
+        foreignKeys.next()) {
+        m_error = QStringLiteral("Références de la base documentaire incohérentes.");
         m_database.close();
         return false;
     }
@@ -251,8 +261,9 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
                                                 int maximum, bool allowOcrDiscovery) const
 {
     QVariantList result;
-    if (!isOpen() || question.trimmed().isEmpty())
+    if (!isOpen())
         return result;
+    const bool browse = question.trimmed().isEmpty();
     const QString input = normalized(question);
     const QStringList terms = meaningfulTerms(question);
     maximum = qBound(1, maximum, 30);
@@ -263,7 +274,8 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
         QStringLiteral("\\b(\\d+(?:[.,]\\d+)?)\\s*(Nm|mm|kPa|bar|mV|V|A)\\b"),
         QRegularExpression::CaseInsensitiveOption);
     const QRegularExpressionMatch measured = valueRx.match(question);
-    const QString numeric = measured.hasMatch() ? measured.captured(1) : QString();
+    QString numeric = measured.hasMatch() ? measured.captured(1) : QString();
+    numeric.replace(QLatin1Char(','), QLatin1Char('.'));
     const QString unit = measured.hasMatch() ? measured.captured(2) : QString();
 
     struct Candidate {
@@ -282,7 +294,8 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
             const QString reference = procedures.value(2).toString();
             const QString pages = procedures.value(3).toString();
             const QString status = procedures.value(4).toString();
-            int score = repairNo == reference && !repairNo.isEmpty() ? 1000 : 0;
+            int score = browse ? 10 :
+                (repairNo == reference && !repairNo.isEmpty() ? 1000 : 0);
             const QString titleN = normalized(title);
             QStringList aliases;
             QSqlQuery alias(m_database);
@@ -335,7 +348,7 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
             break;
         result.append(entry.row);
     }
-    if (!allowOcrDiscovery || result.size() >= maximum || terms.isEmpty())
+    if (!allowOcrDiscovery || browse || result.size() >= maximum || terms.isEmpty())
         return result;
 
     // OCR discovery never becomes a technical fact. FTS terms are escaped,
