@@ -122,6 +122,7 @@ add_dependencies(${PNAME} ia_mems_diagram_selftest)
 add_executable(mems_documentary_selftest
     database/MemsDocumentaryRepositorySelfTest.cpp
     database/MemsDocumentaryRepository.cpp database/MemsDocumentaryRepository.h)
+target_compile_definitions(mems_documentary_selftest PRIVATE MEMS_DOCUMENTARY_SELFTEST=1)
 target_link_libraries(mems_documentary_selftest PRIVATE Qt5::Core Qt5::Sql)
 add_dependencies(${PNAME} mems_documentary_selftest)
 
