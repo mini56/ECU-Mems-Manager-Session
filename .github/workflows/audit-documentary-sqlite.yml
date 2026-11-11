@@ -20,7 +20,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends g++ pkg-config qtbase5-dev libqt5sql5-sqlite libqt5charts5-dev libqt5serialport5-dev
-          g++ -std=c++17 -Wall -Wextra -Werror -fPIC \
+          g++ -std=c++17 -Wall -Wextra -Werror -fPIC -DMEMS_DOCUMENTARY_SELFTEST=1 \
             database/MemsDocumentaryRepository.cpp \
             database/MemsDocumentaryRepositorySelfTest.cpp \
             -o /tmp/mems_documentary_selftest \
@@ -69,6 +69,13 @@ jobs:
               ),
               'hardcoded_responses_do_not_override_grounding': (
                   'forcedGrounded || hasDocumentaryEvidence' in local
+              ),
+              'diagnostic_still_uses_expert_path': (
+                  'explicitDocumentaryRequest || !diagnosticRequest' in ai
+              ),
+              'production_file_location_is_fixed': (
+                  '#ifdef MEMS_DOCUMENTARY_SELFTEST' in reader
+                  and 'database/documentary/rover_482.sqlite' in reader
               ),
               'real_cpp_is_compiled': (
                   'database/MemsDocumentaryRepository.cpp' in cmake
