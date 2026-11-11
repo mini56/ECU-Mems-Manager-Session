@@ -5,6 +5,7 @@
 #include "IaResponseLogic.h"
 #include "LocalAiClient.h"
 #include "../database/MemsReferenceDatabase.h"
+#include "../database/MemsDocumentaryRepository.h"
 
 #include <QDir>
 #include <QFileInfo>
@@ -604,6 +605,51 @@ void IaMemsService::askWithLibrary(const QString &question)
         return;
 
     updateContextFromQuestion(trimmed);
+
+    if (MemsDocumentaryRepository::isPackInstalled()) {
+        // One documentary SQLite and one retrieval policy for UI and AI.
+        // All new-source evidence is exposed directly, with page and review
+        // status. Never send unapproved OCR steps to Qwen for unsupervised
+        // reformulation and never silently substitute older Pack001 facts.
+        MemsDocumentaryRepository documentary;
+        if (!documentary.open()) {
+            m_pendingGrounding.clear();
+            emit responseReady(QStringLiteral(
+                "Base documentaire Rover indisponible : %1. "
+                "Aucune autre base ne sera utilisée comme remplacement silencieux.")
+                .arg(documentary.lastError()));
+            emit statusChanged();
+            return;
+        }
+        const QVariantList documents = documentary.search(trimmed, 5, true);
+        if (!documents.isEmpty()) {
+            const QString evidence=MemsDocumentaryRepository::answerFromHits(documents);
+            setProperty("iaMemsLastLibraryQuestion",trimmed);
+            setProperty("iaMemsLastLibraryEvidence",evidence);
+            setProperty("iaMemsLastLibraryLocked",true);
+            m_pendingGrounding.clear();
+            emit responseReady(evidence);
+            emit statusChanged();
+            return;
+        }
+        const bool referenceNumber=QRegularExpression(
+            QStringLiteral("\\b\\d{2}\\.\\d{2}\\.\\d{2}\\b"))
+            .match(trimmed).hasMatch();
+        const bool documentaryIntent=resolvedDocumentary ||
+            IaMemsConversationRouting::isDocumentationQuestion(trimmed) ||
+            referenceNumber;
+        if (documentaryIntent) {
+            m_pendingGrounding.clear();
+            emit responseReady(QStringLiteral(
+                "Aucune information correspondante n'a été retrouvée dans "
+                "la base Rover de 482 pages. Je ne vais pas inventer une "
+                "procédure, un couple de serrage ou un schéma."));
+            emit statusChanged();
+            return;
+        }
+        // Live diagnostic and software questions keep their own domain;
+        // the Rover workshop manual must not replace ECU telemetry.
+    }
 
     if (resolvedDocumentary) {
         const QString evidence = property("iaMemsResolvedEvidence").toString().trimmed();
