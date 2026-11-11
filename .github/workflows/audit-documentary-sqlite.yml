@@ -1,0 +1,70 @@
+name: AUDIT - MEMS documentaire SQLite unifiee
+
+on:
+  push:
+    branches: [audit-ia-mems-acces-sqlite-20261111]
+    paths:
+      - '.github/workflows/audit-documentary-sqlite.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-and-query-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compiler le vrai lecteur documentaire Qt en C++ sans Setup
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends g++ pkg-config qtbase5-dev libqt5sql5-sqlite
+          g++ -std=c++17 -Wall -Wextra -Werror -fPIC \
+            database/MemsDocumentaryRepository.cpp \
+            database/MemsDocumentaryRepositorySelfTest.cpp \
+            -o /tmp/mems_documentary_selftest \
+            $(pkg-config --cflags --libs Qt5Core Qt5Sql)
+          /tmp/mems_documentary_selftest
+      - name: Controler les deux usages et le routage IA
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          reader = Path('database/MemsDocumentaryRepository.cpp').read_text()
+          ui = Path('database/MemsDatabaseExplorerV2.cpp').read_text()
+          ai = Path('expert/IaMemsLibraryIntegration.cpp').read_text()
+          router = Path('expert/IaMemsDocumentaryPipeline.cpp').read_text()
+          local = Path('expert/LocalAiClient.cpp').read_text()
+          cmake = Path('CMakeLists.txt').read_text()
+          checks = {
+              'same_repository_read_by_both': (
+                  'MemsDocumentaryRepository corpus;' in ui
+                  and 'MemsDocumentaryRepository documentary;' in ai
+                  and 'MemsDocumentaryRepository::isPackInstalled()' in router
+              ),
+              'old_documentary_no_longer_mixed': (
+                  'row.value(QStringLiteral("category")).toString()==QStringLiteral("documentation")' in ui
+                  and 'return rows;' in ui
+              ),
+              'no_silent_fallback_on_missing_document': (
+                  'Aucune autre base ne sera utilisée comme remplacement silencieux.' in ai
+                  and 'Aucune information correspondante' in ai
+              ),
+              'ocr_never_implicitly_approved': (
+                  'approved_for_ai' in reader
+                  and 'TECHNICAL_REVIEW_PENDING' in reader
+              ),
+              'hardcoded_responses_do_not_override_grounding': (
+                  'forcedGrounded || hasDocumentaryEvidence' in local
+              ),
+              'real_cpp_is_compiled': (
+                  'database/MemsDocumentaryRepository.cpp' in cmake
+                  and 'database/MemsDocumentaryRepositorySelfTest.cpp' in cmake
+              ),
+          }
+          for name, ok in checks.items():
+              print(name, 'PASS' if ok else 'FAIL')
+          if not all(checks.values()):
+              raise SystemExit('UNIFIED_DOCUMENTARY_RUNTIME_WIRING_INCOMPLETE')
+          print('MEMS_DOCUMENTARY_STATIC_CONTRACT_OK')
+          PY
