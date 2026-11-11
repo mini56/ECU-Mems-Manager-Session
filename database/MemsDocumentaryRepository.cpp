@@ -65,13 +65,28 @@ QString procedureContent(const QSqlDatabase &database, const QString &key,
     };
     QSqlQuery steps(database);
     steps.prepare(QStringLiteral(
-        "SELECT phase,step_number,source_text,source_page FROM procedure_steps "
+        "SELECT phase,step_number,source_text,source_page,original_phase_label FROM procedure_steps "
         "WHERE procedure_id=? ORDER BY CASE phase WHEN 'remove' THEN 0 ELSE 1 END, step_number"));
     steps.addBindValue(key);
     if (steps.exec()) {
         while (steps.next()) {
-            const QString phase = steps.value(0).toString() == QStringLiteral("remove")
-                ? QStringLiteral("Démontage") : QStringLiteral("Remontage");
+            const QString phaseCode = steps.value(0).toString();
+            const QString printedPhase = steps.value(4).toString().trimmed();
+            QString phase;
+            if (phaseCode == QStringLiteral("remove"))
+                phase = QStringLiteral("Démontage");
+            else if (phaseCode == QStringLiteral("refit"))
+                phase = QStringLiteral("Remontage");
+            else if (phaseCode == QStringLiteral("check"))
+                phase = QStringLiteral("Contrôle");
+            else if (phaseCode == QStringLiteral("adjust"))
+                phase = QStringLiteral("Réglage");
+            else if (phaseCode == QStringLiteral("inspection"))
+                phase = QStringLiteral("Inspection");
+            else if (phaseCode == QStringLiteral("other"))
+                phase = QStringLiteral("Phase non précisée");
+            else
+                phase = printedPhase.isEmpty() ? phaseCode : printedPhase;
             fields << QStringLiteral("%1 %2 (page %3): %4")
                 .arg(phase).arg(steps.value(1).toInt())
                 .arg(steps.value(3).toInt()).arg(steps.value(2).toString());
