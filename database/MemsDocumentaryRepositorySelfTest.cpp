@@ -144,7 +144,7 @@ int main(int argc, char **argv)
         const QString evidence = MemsDocumentaryRepository::answerFromHits(exact);
         if (!check(evidence.contains(QStringLiteral("page 92")) &&
                    evidence.contains(QStringLiteral("88 Nm")) &&
-                   evidence.contains(QStringLiteral("NON")),
+                   evidence.contains(QStringLiteral("NE SONT PAS")),
                    "answer preserves sources, literal units and review status"))
             return 1;
         if (!check(repository.search(QStringLiteral("unknown-gizmo")).isEmpty(),
