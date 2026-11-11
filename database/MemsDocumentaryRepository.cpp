@@ -266,7 +266,7 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
     const bool browse = question.trimmed().isEmpty();
     const QString input = normalized(question);
     const QStringList terms = meaningfulTerms(question);
-    maximum = qBound(1, maximum, 30);
+    maximum = qBound(1, maximum, 300);
     const QRegularExpression refRx(QStringLiteral("\\b\\d{2}\\.\\d{2}\\.\\d{2}\\b"));
     const QRegularExpressionMatch repair = refRx.match(question);
     const QString repairNo = repair.hasMatch() ? repair.captured(0) : QString();
@@ -284,6 +284,7 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
     };
     QVector<Candidate> candidates;
     QSet<QString> seen;
+    QSet<QString> curatedRepairNumbers;
 
     // An explicit physical-page question must locate that precise PDF page,
     // including pages that have no usable OCR. It must not turn the page
@@ -323,6 +324,7 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
             const QString key = procedures.value(0).toString();
             const QString title = procedures.value(1).toString();
             const QString reference = procedures.value(2).toString();
+            curatedRepairNumbers.insert(reference);
             const QString pages = procedures.value(3).toString();
             const QString status = procedures.value(4).toString();
             int score = browse ? 10 :
@@ -412,6 +414,76 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
         if (result.size() >= maximum)
             break;
         result.append(entry.row);
+    }
+    // The 482-page source audit contains automatically detected repairs.
+    // They are discoverable by number/title ONLY, not executable technical
+    // instructions. A candidate must never replace a separately reviewed
+    // procedure sharing the same manufacturer number.
+    QSqlQuery tableCheck(m_database);
+    if (tableCheck.exec(QStringLiteral(
+            "SELECT 1 FROM sqlite_master WHERE type='table' "
+            "AND name='extracted_procedure_candidates'")) && tableCheck.next()) {
+        QSqlQuery detected(m_database);
+        if (detected.exec(QStringLiteral(
+                "SELECT candidate_id,original_page,source_region,"
+                "candidate_manufacturer_repair_number,candidate_title,"
+                "repair_number_format_status,source_status "
+                "FROM extracted_procedure_candidates "
+                "WHERE source_status='REVIEW_REQUIRED' AND approved_for_ai=0"))) {
+            QVector<Candidate> found;
+            while (detected.next()) {
+                const QString key = detected.value(0).toString();
+                const int physicalPage = detected.value(1).toInt();
+                const QString region = detected.value(2).toString();
+                const QString number = detected.value(3).toString();
+                const QString title = detected.value(4).toString();
+                const QString numberState = detected.value(5).toString();
+                if (key.isEmpty() || title.isEmpty() ||
+                    curatedRepairNumbers.contains(number))
+                    continue;
+                const QString titleN = normalized(title);
+                int score = browse ? 9 : 0;
+                if (!repairNo.isEmpty() && repairNo == number)
+                    score = 850;
+                for (const QString &term : terms) {
+                    if (titleN.split(QLatin1Char(' ')).contains(term))
+                        score += 55;
+                    else if (term.size() >= 5 && titleN.contains(term))
+                        score += 15;
+                }
+                if (score <= 0)
+                    continue;
+                const QString validity = numberState == QStringLiteral("NUMBER_PATTERN_MATCH")
+                    ? QStringLiteral("format du numéro repéré par OCR")
+                    : QStringLiteral("numéro constructeur illisible ou incomplet — vérification obligatoire");
+                const QString content = QStringLiteral(
+                    "document: Rover AKM7169ENG\n"
+                    "référence candidate: %1\n"
+                    "titre OCR candidat: %2\n"
+                    "page physique: %3\n"
+                    "colonne source: %4\n"
+                    "numéro: %5\n"
+                    "validation: REVIEW_REQUIRED — extraction OCR non vérifiée\n"
+                    "attention: Notice de repérage seulement. Les étapes, les schémas et "
+                    "l'applicabilité ne sont pas certifiés. Consulter le PDF original.")
+                    .arg(number,title).arg(physicalPage).arg(region,validity);
+                found.append({score,makeRow(
+                    key, QStringLiteral("%1 — %2 (p. %3, à vérifier)")
+                        .arg(number,title).arg(physicalPage),
+                    content,QStringLiteral("rover_procedure_candidate"),
+                    QStringLiteral("REVIEW_REQUIRED"))});
+            }
+            std::sort(found.begin(),found.end(),
+                [](const Candidate &left,const Candidate &right){
+                    if (left.score!=right.score) return left.score>right.score;
+                    return left.row.value(QStringLiteral("title")).toString() <
+                           right.row.value(QStringLiteral("title")).toString();
+                });
+            for (const Candidate &item : found) {
+                if (result.size()>=maximum) break;
+                result.append(item.row);
+            }
+        }
     }
     if (!allowOcrDiscovery || browse || result.size() >= maximum || terms.isEmpty())
         return result;
