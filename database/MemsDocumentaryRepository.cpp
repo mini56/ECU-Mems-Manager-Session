@@ -90,6 +90,61 @@ QString procedureContent(const QSqlDatabase &database, const QString &key,
     return fields.join(QLatin1Char('\n'));
 }
 
+QString unverifiedProcedurePreview(const QSqlDatabase &database,
+                                   const QString &candidateId)
+{
+    // Present source OCR in the database browser as raw evidence only.
+    // This is never approved as an instruction or passed to Qwen as facts.
+    QStringList lines;
+    QSqlQuery countQuery(database);
+    countQuery.prepare(QStringLiteral(
+        "SELECT COUNT(*) FROM extracted_procedure_candidate_steps "
+        "WHERE candidate_id=?"));
+    countQuery.addBindValue(candidateId);
+    int total = 0;
+    if (countQuery.exec() && countQuery.next())
+        total = countQuery.value(0).toInt();
+
+    QSqlQuery instructions(database);
+    instructions.prepare(QStringLiteral(
+        "SELECT phase_kind,manufacturer_step_number,"
+        "ocr_instruction_candidate,source_status "
+        "FROM extracted_procedure_candidate_steps "
+        "WHERE candidate_id=? "
+        "ORDER BY phase_position,step_position LIMIT 20"));
+    instructions.addBindValue(candidateId);
+    if (!instructions.exec())
+        return QStringLiteral(
+            "source: extraction des étapes momentanément indisponible");
+    int visible = 0;
+    while (instructions.next()) {
+        const QString kind = instructions.value(0).toString();
+        const int number = instructions.value(1).toInt();
+        const QString text = instructions.value(2).toString().simplified();
+        const QString state = instructions.value(3).toString();
+        if (text.isEmpty() || state != QStringLiteral("OCR_UNVERIFIED")) {
+            lines << QStringLiteral(
+                "OCR à examiner (étape %1 / %2): ligne incomplète ou incertaine")
+                .arg(kind).arg(number);
+        } else {
+            lines << QStringLiteral(
+                "OCR brut, NON VALIDÉ — %1 %2: %3")
+                .arg(kind).arg(number).arg(text);
+        }
+        ++visible;
+    }
+    if (total > visible)
+        lines << QStringLiteral(
+            "Attention: %1 étapes OCR supplémentaires ne sont pas affichées. "
+            "Lire la page originale du PDF avant toute utilisation.")
+            .arg(total - visible);
+    if (lines.isEmpty())
+        return QStringLiteral(
+            "Aucune étape OCR rattachée localement — rechercher les fragments "
+            "sur les pages voisines et examiner le PDF.");
+    return lines.join(QLatin1Char('\n'));
+}
+
 QVariantMap makeRow(const QString &key, const QString &title,
                     const QString &content, const QString &table,
                     const QString &status)
@@ -451,6 +506,30 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
                     else if (term.size() >= 5 && titleN.contains(term))
                         score += 15;
                 }
+                // Search OCR step vocabulary as source discovery only. A
+                // single generic term must never create a spurious operation.
+                if (!browse && !terms.isEmpty()) {
+                    QSqlQuery sourceSteps(m_database);
+                    sourceSteps.prepare(QStringLiteral(
+                        "SELECT ocr_instruction_candidate "
+                        "FROM extracted_procedure_candidate_steps "
+                        "WHERE candidate_id=? AND source_status='OCR_UNVERIFIED'"));
+                    sourceSteps.addBindValue(key);
+                    if (sourceSteps.exec()) {
+                        while (sourceSteps.next()) {
+                            const QStringList words =
+                                normalized(sourceSteps.value(0).toString())
+                                    .split(QLatin1Char(' '),Qt::SkipEmptyParts);
+                            int matched=0;
+                            for (const QString &term:terms)
+                                if (words.contains(term))
+                                    ++matched;
+                            if (matched>=2 || (matched==1 && terms.size()==1
+                                    && terms.first().size()>=8))
+                                score=qMax(score,matched*48);
+                        }
+                    }
+                }
                 if (score <= 0)
                     continue;
                 const QString validity = numberState == QStringLiteral("NUMBER_PATTERN_MATCH")
@@ -464,9 +543,11 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
                     "colonne source: %4\n"
                     "numéro: %5\n"
                     "validation: REVIEW_REQUIRED — extraction OCR non vérifiée\n"
-                    "attention: Notice de repérage seulement. Les étapes, les schémas et "
-                    "l'applicabilité ne sont pas certifiés. Consulter le PDF original.")
-                    .arg(number,title).arg(physicalPage).arg(region,validity);
+                    "attention: Les étapes suivantes sont des extraits OCR à "
+                    "contrôler sur le PDF, PAS des instructions techniquement approuvées.\n"
+                    "%6")
+                    .arg(number,title).arg(physicalPage)
+                    .arg(region,validity,unverifiedProcedurePreview(m_database,key));
                 found.append({score,makeRow(
                     key, QStringLiteral("%1 — %2 (p. %3, à vérifier)")
                         .arg(number,title).arg(physicalPage),
@@ -544,6 +625,19 @@ QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
     for (int i = 0; i < count; ++i) {
         const QVariantMap item = hits.at(i).toMap();
         QString content = item.value(QStringLiteral("content")).toString();
+        if (item.value(QStringLiteral("source_table")).toString() ==
+            QStringLiteral("rover_procedure_candidate")) {
+            // Review-only OCR is visible in the database screen, but the IA
+            // must not output its unverified steps as repair instructions.
+            const int firstStep = content.indexOf(
+                QStringLiteral("OCR brut, NON VALIDÉ"));
+            if (firstStep >= 0)
+                content = content.left(firstStep);
+            content += QStringLiteral(
+                "\nIA: procédure candidate retrouvée, mais ses instructions "
+                "et schémas ne sont pas encore vérifiés sur les pages "
+                "constructeur. Aucun conseil de réparation validé disponible.");
+        }
         if (content.size() > 3500)
             content = content.left(3500) + QStringLiteral("\n[Extrait abrégé dans l'IA]");
         paragraphs << QStringLiteral("%1\n%2")
