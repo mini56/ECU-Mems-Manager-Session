@@ -1,0 +1,19 @@
+name: Annuler l'ancien Setup Rover bloque
+on:
+  push:
+    branches: [integration-rover-482-session-20261111]
+    paths:
+      - '.github/workflows/_cancel_stale_rover_43095532796.yml'
+permissions:
+  actions: write
+  contents: read
+jobs:
+  cancel-old-run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Annuler le run 43095532796 reste queued
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${{ github.repository }}/actions/runs/43095532796/cancel"
