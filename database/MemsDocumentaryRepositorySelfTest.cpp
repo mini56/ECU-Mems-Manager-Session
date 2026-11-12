@@ -343,6 +343,31 @@ int main(int argc, char **argv)
                    "unknown query cannot fabricate an answer"))
             return 1;
     }
+    // Les 20 pages scannées AKM7169FRE sont originales en français ;
+    // l'OCR non révisé ne peut pas devenir une procédure de réparation IA.
+    {
+        QVariantMap scan;
+        scan.insert(QStringLiteral("source_key"),
+                    QStringLiteral("rave-fr:AKM7169FRE:ocr-pdf-012"));
+        scan.insert(QStringLiteral("source_table"),
+                    QStringLiteral("rover_fr_akm7169fre_page_ocr"));
+        scan.insert(QStringLiteral("title"),
+                    QStringLiteral("AKM7169FRE page 12 — OCR"));
+        scan.insert(QStringLiteral("content"),
+                    QStringLiteral(
+                        "document : AKM7169FRE\\npage physique : 12"
+                        "\\nstatut de vérification : review_required"
+                        "\\n\\n[TRANSCRIPTION OCR NON VÉRIFIÉE] "
+                        "INSTRUCTION TECHNIQUE FICTIVE 999 Nm."));
+        const QString safe=MemsDocumentaryRepository::answerFromHits(
+            QVariantList{scan});
+        if (!check(safe.contains(QStringLiteral("AKM7169FRE")) &&
+                   safe.contains(QStringLiteral("OCR de repérage non validé")) &&
+                   !safe.contains(QStringLiteral("INSTRUCTION TECHNIQUE FICTIVE")) &&
+                   !safe.contains(QStringLiteral("RCL0193FRE")),
+                   "never turn unreviewed French scan into IA repair instructions"))
+            return 1;
+    }
     // An incomplete schema must fail closed, not fall back to another pack.
     const QString bad = QDir(temp.path()).filePath(QStringLiteral("incomplete.sqlite"));
     QSqlDatabase broken = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), name);
