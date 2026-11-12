@@ -31,10 +31,14 @@ TABLES = (
     "mems_rave_fact", "mems_expert_fact_external",
 )
 CONTENT_FIELDS = (
-    "topic", "source_text", "source_section", "title", "description",
-    "statement", "step_text", "instruction", "action_text",
-    "requirement_text", "procedure_text", "value_text",
+    "topic", "title_source", "source_text", "source_section", "parameter",
+    "description", "statement", "instruction_source", "instruction_text",
+    "step_text", "instruction", "action_text", "condition_text",
+    "requirement_source", "requirement_text", "procedure_text",
+    "value_text", "value_numeric", "value_min", "value_max",
+    "tolerance_minus", "tolerance_plus", "angle_deg",
     "specification", "value", "unit", "notes", "reference",
+    "figure_ref", "alias",
 )
 SCHEMA = """
 PRAGMA foreign_keys=ON;
@@ -238,8 +242,8 @@ def extract_source(conn: sqlite3.Connection) -> dict[str,list[dict]]:
     return selection
 
 def physical_page(row: dict) -> int | None:
-    for key in ("image_ref","source_section","source_key","knowledge_key","notes",
-                "page","physical_page"):
+    for key in ("image_ref","figure_ref","source_section","source_key",
+                "knowledge_key","notes","page","physical_page"):
         text = str(row.get(key) or "")
         for pattern in (r"RCL0193FRE[_:]PDF[_:](\d{1,3})",
                         r"\bPDF[: #p.]+(\d{1,3})\b"):
@@ -301,9 +305,17 @@ def build(reference_root: Path, destination: Path) -> dict:
                     continue
                 page = physical_page(row)
                 text = record_text(row)
-                title = str(row.get("topic") or row.get("title") or
-                            row.get("name") or row.get("source_section") or
-                            row.get("knowledge_key") or table)
+                title = str(row.get("topic") or row.get("title_source") or
+                            row.get("title") or row.get("parameter") or
+                            row.get("alias") or row.get("name") or
+                            row.get("source_section") or row.get("spec_key") or
+                            row.get("procedure_key") or row.get("knowledge_key") or table)
+                if table == "mems_procedure_step":
+                    title = f"{row.get('procedure_key')} — étape {row.get('step_no')}"
+                elif table == "mems_specification_value":
+                    title = f"{row.get('spec_key')} — valeur {row.get('sequence_no')}"
+                elif table == "mems_procedure_requirement":
+                    title = f"{row.get('procedure_key')} — {row.get('requirement_type')}"
                 status = ("source_checked"
                           if str(row.get("verification_level") or "").lower()
                              in ("verifie_constructeur","verifie_document","source_checked")
