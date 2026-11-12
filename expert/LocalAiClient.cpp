@@ -888,6 +888,14 @@ void LocalAiClient::translateTechnicalLine(
     }, Qt::QueuedConnection);
 }
 
+void LocalAiClient::cancelTechnicalTranslation()
+{
+    // Cancellation is atomic and observed between ONNX generation tokens.
+    // The worker remains initialized for the next documentary request.
+    if (m_worker)
+        m_worker->requestCancel();
+}
+
 void LocalAiClient::clearConversation() { m_conversation.clear(); }
 
 void LocalAiClient::shutdown()
