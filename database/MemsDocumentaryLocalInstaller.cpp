@@ -28,12 +28,6 @@ QString normalizedLanguage(const QString &language)
         ? code : QString();
 }
 
-QSettings settings()
-{
-    return QSettings(QSettings::IniFormat,QSettings::UserScope,
-                     QStringLiteral("ECU_Mems_Manager"));
-}
-
 QByteArray derive(const QString &password,const QByteArray &salt)
 {
     return QPasswordDigestor::deriveKeyPbkdf2(
@@ -289,7 +283,8 @@ QString installSource(const QString &source,const QString &code,
                 salt[i+j]=char((random>>(j*8))&0xff);
         }
         const QByteArray digest=derive(password,salt);
-        QSettings auth=settings();
+        QSettings auth(QSettings::IniFormat,QSettings::UserScope,
+                       QStringLiteral("ECU_Mems_Manager"));
         auth.setValue(QStringLiteral("DocumentaryInstall/salt"),salt.toHex());
         auth.setValue(QStringLiteral("DocumentaryInstall/digest"),digest.toHex());
         auth.sync();
@@ -307,14 +302,16 @@ QString installSource(const QString &source,const QString &code,
 
 bool MemsDocumentaryLocalInstaller::hasPassword()
 {
-    QSettings s=settings();
+    QSettings s(QSettings::IniFormat,QSettings::UserScope,
+                QStringLiteral("ECU_Mems_Manager"));
     return !s.value(QStringLiteral("DocumentaryInstall/salt")).toByteArray().isEmpty()
         && !s.value(QStringLiteral("DocumentaryInstall/digest")).toByteArray().isEmpty();
 }
 
 bool MemsDocumentaryLocalInstaller::passwordValid(const QString &password)
 {
-    QSettings s=settings();
+    QSettings s(QSettings::IniFormat,QSettings::UserScope,
+                QStringLiteral("ECU_Mems_Manager"));
     const QByteArray salt=QByteArray::fromHex(
         s.value(QStringLiteral("DocumentaryInstall/salt")).toByteArray());
     const QByteArray expected=QByteArray::fromHex(
