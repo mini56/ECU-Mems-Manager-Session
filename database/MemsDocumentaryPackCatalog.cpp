@@ -2,6 +2,7 @@
 
 #include <QDir>
 #include <QJsonDocument>
+#include <QJsonArray>
 #include <QJsonObject>
 #include <QRegularExpression>
 #include <QSettings>
@@ -30,9 +31,10 @@ bool validHttpsRelease(const QString &url)
         return false;
     // Only release assets in the updater repository may be fetched. Reject
     // redirector URLs or links to any other repo, including private data.
-    return parsed.path().startsWith(
-        QStringLiteral("/mini56/ECU-Mems-Manager-Session-MAJ/releases/download/"),
-        Qt::CaseSensitive);
+    static const QRegularExpression releaseAsset(
+        QStringLiteral("^/mini56/ECU-Mems-Manager-Session-MAJ/releases/"
+                       "download/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$"));
+    return releaseAsset.match(parsed.path()).hasMatch();
 }
 
 } // namespace
