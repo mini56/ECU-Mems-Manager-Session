@@ -26,6 +26,7 @@ public:
     QVariantList search(const QString &question, int maximum = 12,
                         bool allowOcrDiscovery = true) const;
     static QString answerFromHits(const QVariantList &hits);
+    static QString frenchTitle(const QString &manufacturerTitle);
 
 private:
     QSqlDatabase m_database;
