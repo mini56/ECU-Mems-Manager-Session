@@ -57,6 +57,37 @@ jobs:
           assert report['publication_ready'] is False
           print('RAVE_FR_ISOLATION_AUDIT_PASS',json.dumps(report,ensure_ascii=False))
           PY
+      - name: Compiler et tester le lecteur C++ reel, sans Setup
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            g++ pkg-config qtbase5-dev libqt5sql5-sqlite
+          g++ -std=c++17 -Wall -Wextra -fPIC \
+            -DMEMS_DOCUMENTARY_SELFTEST=1 \
+            database/MemsDocumentaryRepository.cpp \
+            database/MemsDocumentaryPackCatalog.cpp \
+            tools/test_rave_fr_cpp_reader.cpp \
+            -o /tmp/mems_rave_fr_reader_test \
+            $(pkg-config --cflags --libs Qt5Core Qt5Sql)
+          /tmp/mems_rave_fr_reader_test output/rave-fr/mems_documentary_fr.sqlite
+      - name: Verifier la nouvelle couverture des schémas français
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import sqlite3
+          from pathlib import Path
+          db=sqlite3.connect('output/rave-fr/mems_documentary_fr.sqlite')
+          assert db.execute('select count(*) from documentary_images').fetchone()[0]==301
+          assert db.execute('select count(*) from documentary_entries where source_table=?',('mems_procedure_step',)).fetchone()[0]>3000
+          assert db.execute("select count(*) from documentary_entries where source_table='mems_procedure_step' and source_page is not null").fetchone()[0]>2500
+          assert db.execute("select count(*) from documentary_entries where source_table='mems_specification_value' and source_text like '%value_numeric:%'").fetchone()[0]>500
+          for page,file in db.execute('select physical_page,relative_path from documentary_images'):
+              assert (Path('output/rave-fr')/file).is_file(),(page,file)
+          print('RAVE_FR_301_ILLUSTRATIONS_VERIFIED')
+          PY
       - name: Archiver pour audit prive, sans publication publique
         uses: actions/upload-artifact@v4
         with:
