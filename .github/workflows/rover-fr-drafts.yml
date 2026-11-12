@@ -1,0 +1,91 @@
+name: ROVER FR - traduction integrale par lots (brouillons, sans Setup)
+
+on:
+  push:
+    branches:
+      - integration-rover-482-session-20261111
+    paths:
+      - 'tools/rover_french_generate.py'
+      - 'tools/rover_multilingual.py'
+      - '.github/workflows/rover-fr-drafts.yml'
+  workflow_dispatch:
+    inputs:
+      max_new_units:
+        description: "Nombre maximal de nouvelles unités françaises (0 = toutes)"
+        required: true
+        default: '150'
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rover-fr-drafts-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  rover-fr:
+    name: Traduire, sauvegarder et afficher les pourcentages FR
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    env:
+      HF_HUB_DISABLE_TELEMETRY: '1'
+      TOKENIZERS_PARALLELISM: 'false'
+      MAX_NEW_UNITS: ${{ inputs.max_new_units || '150' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Restaurer le dernier lot de traductions françaises
+        uses: actions/cache@v4
+        with:
+          path: fr-work/
+          key: rover-fr-drafts-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: |
+            rover-fr-drafts-${{ github.ref_name }}-
+
+      - name: Reconstituer et verifier la base originale Rover (sans la modifier)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/build_rover_session_documentary.py \
+            --pdf "original-mems-forge/depot/20260909-230410/AKM7169ENG-mini-repair-manual-92-96-pdf-pr_a0f71dc9b68bd0365e8141310900faca.pdf" \
+            --output build/rover
+          python tools/rover_multilingual.py \
+            --database build/rover/rover_482.sqlite \
+            --source-sha256 dd37296b5d477c4124133f51e96691858c0ae4746d42c3e4478bf6003a9445bb \
+            --verify-only
+
+      - name: Installer moteur de traduction français OPUS-MT (préparation hors programme)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --index-url https://download.pytorch.org/whl/cpu 'torch==2.5.1'
+          python -m pip install --disable-pip-version-check \
+            'transformers==4.46.3' 'sentencepiece==0.2.0' 'sacremoses==0.1.1'
+
+      - name: Traduire un lot, vérifier les nombres et afficher les pourcentages
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/rover_french_generate.py \
+            --database build/rover/rover_482.sqlite \
+            --checkpoint fr-work/french_checkpoint.jsonl \
+            --pack fr-work/rover_fr_machine_draft.json \
+            --progress fr-work/french_progress.json \
+            --max-new-units "$MAX_NEW_UNITS" \
+            --batch-size 6
+
+      - name: Publier les brouillons et compteurs pour reprise (aucun Setup)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ROVER-FR-TRADUCTION-PROGRESSION-${{ github.run_number }}
+          path: |
+            fr-work/french_checkpoint.jsonl
+            fr-work/rover_fr_machine_draft.json
+            fr-work/french_progress.json
+          retention-days: 14
+          if-no-files-found: warn
