@@ -129,6 +129,13 @@ bool metadataValid(const QString &path,const QString &language,QString *reason,
                                     counts.value(3).toInt()==325+
                                     (docCount==2?20:0);
                             }
+                            // Un corpus français ne doit pas être installé si
+                            // une entrée est encore en cours de relecture.
+                            QSqlQuery review(database);
+                            valid &= review.exec(QStringLiteral(
+                                "SELECT COUNT(*) FROM documentary_entries "
+                                "WHERE verification_status<>'source_checked'")) &&
+                                review.next() && review.value(0).toInt()==0;
                             QSqlQuery visual(database);
                             valid &= visual.exec(QStringLiteral(
                                 "SELECT COUNT(*) FROM documentary_page_visual_status "
@@ -161,7 +168,7 @@ bool metadataValid(const QString &path,const QString &language,QString *reason,
                             valid &= count==325+(docCount==2?20:0);
                             ok=valid;
                             if(!valid) *reason=QStringLiteral(
-                                "Base française incomplète, origine, pages ou images incohérentes.");
+                                "Base française non intégralement relue, ou provenance, pages ou images incohérentes.");
                         }
                     }
                 }else{
