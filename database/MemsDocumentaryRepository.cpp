@@ -552,7 +552,7 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
                 .arg(doc,page,type,status,sourceText.left(10000));
             result.append(makeRow(
                 QStringLiteral("rave-fr:%1:%2").arg(doc,id),
-                title,content,table,status));
+                title,content,QStringLiteral("rover_fr_") + table,status));
         }
         return result;
     }
