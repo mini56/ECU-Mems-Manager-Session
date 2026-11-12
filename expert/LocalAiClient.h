@@ -33,6 +33,7 @@ public:
     // Dedicated local translation, independent of the conversation history.
     void translateTechnicalLine(const QString &source, const QString &language,
                                 const QString &token);
+    void cancelTechnicalTranslation();
     void clearConversation();
 
     State state() const { return m_state; }
