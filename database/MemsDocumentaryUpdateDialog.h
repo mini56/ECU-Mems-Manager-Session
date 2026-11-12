@@ -1,0 +1,50 @@
+#ifndef MEMSDOCUMENTARYUPDATEDIALOG_H
+#define MEMSDOCUMENTARYUPDATEDIALOG_H
+
+#include "MemsDocumentaryPackCatalog.h"
+
+#include <QByteArray>
+#include <QCryptographicHash>
+#include <QDialog>
+#include <QNetworkAccessManager>
+#include <QPointer>
+#include <QScopedPointer>
+
+class QLabel;
+class QPushButton;
+class QProgressBar;
+class QNetworkReply;
+class QSaveFile;
+
+// Only downloads verified, encrypted RELEASE packs to local data.
+// Installing/decrypting requires a separate password-protected workflow.
+// The ECU diagnostic and expert databases are never opened or modified here.
+class MemsDocumentaryUpdateDialog : public QDialog
+{
+public:
+    explicit MemsDocumentaryUpdateDialog(const QString &language, QWidget *parent=nullptr);
+    ~MemsDocumentaryUpdateDialog() override;
+
+private:
+    void checkManifest();
+    void startDownload();
+    void setBusy(bool busy);
+    void setStatus(const QString &message);
+    void finishDownload(QNetworkReply *reply);
+    QString ui(const QString &fr, const QString &en) const;
+
+    QString m_language;
+    QNetworkAccessManager m_network;
+    QPointer<QNetworkReply> m_reply;
+    QLabel *m_status = nullptr;
+    QPushButton *m_check = nullptr;
+    QPushButton *m_download = nullptr;
+    QProgressBar *m_progress = nullptr;
+    QByteArray m_manifestBytes;
+    MemsDocumentaryOffer m_offer;
+    QScopedPointer<QSaveFile> m_target;
+    QCryptographicHash m_sha{QCryptographicHash::Sha256};
+    QString m_savedFilePath;
+};
+
+#endif
