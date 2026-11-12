@@ -45,6 +45,20 @@ int main(int argc, char **argv)
                     "documentary_ai_must_use_shared_sqlite_and_cite_original"))
             return 1;
     }
+    // A short French mechanical term must reach the English Rover index,
+    // so IA MEMS can offer a useful numbered list instead of raw OCR.
+    const QVariantList cylinderHead = corpus.search(QStringLiteral("culasse"), 12, true);
+    if (!verify(!cylinderHead.isEmpty(), "french_cylinder_head_lookup"))
+        return 1;
+    const QString frenchLabel = MemsDocumentaryRepository::frenchTitle(
+        QStringLiteral("12.65.12 — Cylinder Head Gasket Removal"));
+    if (!verify(frenchLabel.contains(QStringLiteral("12.65.12"))
+                && frenchLabel.contains(QStringLiteral("joint de culasse"),
+                                        Qt::CaseInsensitive)
+                && frenchLabel.contains(QStringLiteral("dépose"),
+                                        Qt::CaseInsensitive),
+                "french_menu_labels_preserve_source_reference"))
+        return 1;
     const QVariantList exact = corpus.search(QStringLiteral("12.65.12"));
     if (!verify(exact.first().toMap().value(QStringLiteral("source_key")).toString()
                 == QStringLiteral("rover-akm7169eng-12.65.12"),
