@@ -6,6 +6,9 @@ on:
       - rave-fr-source-sqlite-20261112
     paths:
       - tools/build_rave_fr_documentary.py
+      - tools/test_rave_fr_cpp_reader.cpp
+      - database/MemsDocumentaryRepository.cpp
+      - database/MemsDocumentaryRepository.h
       - .github/workflows/rave-fr-source-sqlite.yml
   workflow_dispatch:
 
