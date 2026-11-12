@@ -50,6 +50,38 @@ int main(int argc,char **argv)
         folder.path(),QStringLiteral("tr"),QStringLiteral("TestPassword12345!"));
     if(!demand(!badLanguage.isEmpty(),"unrecognized source language rejected"))
         return 1;
+
+    if(argc==2){
+        const QString protectedPassword=QStringLiteral("TestPassword12345!");
+        const QString validFolder=QString::fromLocal8Bit(argv[1]);
+        const QString installed=MemsDocumentaryPackCatalog::
+            installedDatabasePath(QStringLiteral("fr"));
+        const QString installedResult=
+            MemsDocumentaryLocalInstaller::installDirectory(
+                validFolder,QStringLiteral("fr"),protectedPassword);
+        if(!demand(installedResult.isEmpty(),
+                   "validated French test fixture installs with password")){
+            std::fprintf(stderr,"INSTALL_RETURNED %s\\n",
+                         qPrintable(installedResult));
+            return 1;
+        }
+        if(!demand(MemsDocumentaryLocalInstaller::hasPassword() &&
+                   MemsDocumentaryLocalInstaller::passwordValid(protectedPassword) &&
+                   !MemsDocumentaryLocalInstaller::passwordValid(
+                       QStringLiteral("WRONG_PASSWORD")),
+                   "password verified and wrong password rejected")) return 1;
+        if(!demand(QFile::exists(installed),
+                   "verified database exists in documentary storage")) return 1;
+        const QString refusal=MemsDocumentaryLocalInstaller::installDirectory(
+            validFolder,QStringLiteral("fr"),QStringLiteral("WRONG_PASSWORD"));
+        if(!demand(!refusal.isEmpty() && QFile::exists(installed),
+                   "failed upgrade keeps installed verified database")) return 1;
+        const QString upgrade=MemsDocumentaryLocalInstaller::installDirectory(
+            validFolder,QStringLiteral("fr"),protectedPassword);
+        if(!demand(upgrade.isEmpty() && QFile::exists(installed),
+                   "same verified pack can upgrade with backup")) return 1;
+        std::puts("DOCUMENTARY_OFFLINE_REAL_INSTALL_PASSWORD_BACKUP_PASS");
+    }
     std::puts("DOCUMENTARY_OFFLINE_INVALID_PACKAGE_ROLLBACK_PASS");
     return 0;
 }
