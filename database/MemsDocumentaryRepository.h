@@ -26,7 +26,11 @@ public:
     QVariantList search(const QString &question, int maximum = 12,
                         bool allowOcrDiscovery = true) const;
     static QString answerFromHits(const QVariantList &hits);
+    static QString localizedTitle(const QString &manufacturerTitle,
+                                  const QString &language);
     static QString frenchTitle(const QString &manufacturerTitle);
+    static QString numberedMenu(const QString &question, const QVariantList &choices,
+                                const QString &language);
     static QString numberedMenu(const QString &question, const QVariantList &choices,
                                 bool french);
 
