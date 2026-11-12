@@ -599,6 +599,23 @@ void IaMemsService::askWithLibrary(const QString &question)
     if (trimmed.isEmpty())
         return;
 
+    // Only the latest IA question may publish a delayed Rover translation.
+    setProperty("iaMemsLastTranslationRequestId", QVariant());
+    const auto emitLocalizedDocument = [this](const QString &sourceText) {
+        const QString language = I18n::language().left(2).toLower();
+        if (language == QStringLiteral("en")) {
+            emit responseReady(sourceText);
+            return;
+        }
+        const QString requestId =
+            QStringLiteral("ia-rover-") +
+            QUuid::createUuid().toString(QUuid::WithoutBraces);
+        setProperty("iaMemsLastTranslationRequestId", requestId);
+        setProperty("iaMemsLastTranslationLanguage", language);
+        emit responseReady(IaMemsService::documentTranslationNotice(language, true));
+        requestDocumentTranslation(requestId, sourceText, language);
+    };
+
     const bool resolvedDocumentary = trimmed.startsWith(kResolvedDocumentaryPrefix);
     if (resolvedDocumentary)
         trimmed = trimmed.mid(kResolvedDocumentaryPrefix.size()).trimmed();
@@ -642,7 +659,7 @@ void IaMemsService::askWithLibrary(const QString &question)
             setProperty("iaMemsLastLibraryEvidence", evidence);
             setProperty("iaMemsLastLibraryLocked", true);
             m_pendingGrounding.clear();
-            emit responseReady(evidence);
+            emitLocalizedDocument(evidence);
             emit statusChanged();
             return;
         }
@@ -712,7 +729,7 @@ void IaMemsService::askWithLibrary(const QString &question)
                 setProperty("iaMemsLastLibraryEvidence", QVariant());
                 setProperty("iaMemsLastLibraryLocked", true);
                 m_pendingGrounding.clear();
-                emit responseReady(menu);
+                emitLocalizedDocument(menu);
                 emit statusChanged();
                 return;
             }
@@ -722,7 +739,7 @@ void IaMemsService::askWithLibrary(const QString &question)
             setProperty("iaMemsLastLibraryEvidence", evidence);
             setProperty("iaMemsLastLibraryLocked", true);
             m_pendingGrounding.clear();
-            emit responseReady(evidence);
+            emitLocalizedDocument(evidence);
             emit statusChanged();
             return;
         }
