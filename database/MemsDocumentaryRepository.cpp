@@ -89,7 +89,7 @@ QString procedureContent(const QSqlDatabase &database, const QString &key,
                 phase = printedPhase.isEmpty() ? phaseCode : printedPhase;
             fields << QStringLiteral("%1 %2 (page %3): %4")
                 .arg(phase).arg(steps.value(1).toInt())
-                .arg(steps.value(3).toInt()).arg(steps.value(2).toString());
+                .arg(steps.value(3).toInt()).arg(steps.value(2).toString().simplified());
         }
     }
     QSqlQuery figures(database);
