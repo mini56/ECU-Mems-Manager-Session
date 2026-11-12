@@ -257,6 +257,7 @@ bool MemsDocumentaryRepository::open()
         return true;
     m_error.clear();
     m_frenchComplete = false;
+    m_nativeFrench = false;
     const QFileInfo file(databasePath());
     if (!file.isFile()) {
         m_error = QStringLiteral("Base documentaire Rover absente.");
@@ -275,6 +276,79 @@ bool MemsDocumentaryRepository::open()
         m_error = QStringLiteral("Lecture seule documentaire non garantie.");
         m_database.close();
         return false;
+    }
+
+    // Nouvelle SQLite RAVE en français d'origine, distincte du corpus anglais
+    // AKM7169ENG et de ses anciennes traductions. Ne touche à aucune base ECU.
+    QSqlQuery nativeSchema(m_database);
+    if (nativeSchema.exec(QStringLiteral(
+            "SELECT name FROM sqlite_master WHERE type='table' "
+            "AND name='documentary_database'")) && nativeSchema.next()) {
+        auto rejectNative = [this](const QString &message) {
+            m_error = message;
+            m_database.close();
+            return false;
+        };
+        const QStringList requiredFr = {
+            QStringLiteral("documentary_database"),
+            QStringLiteral("documentary_documents"),
+            QStringLiteral("documentary_pages"),
+            QStringLiteral("documentary_entries"),
+            QStringLiteral("documentary_images"),
+            QStringLiteral("documentary_fts")
+        };
+        QSqlQuery check(m_database);
+        check.prepare(QStringLiteral(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type IN ('table','view') "
+            "AND name=?"));
+        for (const QString &name : requiredFr) {
+            check.bindValue(0,name);
+            if (!check.exec() || !check.next() || check.value(0).toInt()!=1)
+                return rejectNative(QStringLiteral(
+                    "Schéma RAVE français incomplet : %1").arg(name));
+        }
+        QSqlQuery meta(m_database);
+        if (!meta.exec(QStringLiteral(
+              "SELECT schema_version,language,publication_status "
+              "FROM documentary_database WHERE singleton=1")) ||
+            !meta.next() || meta.value(0).toInt()!=1 ||
+            meta.value(1).toString()!=QStringLiteral("fr") ||
+            !QStringList{QStringLiteral("source_inventory"),
+                         QStringLiteral("validated")}
+                .contains(meta.value(2).toString()) || meta.next())
+            return rejectNative(QStringLiteral(
+                "Métadonnées de la base française invalides."));
+        QSqlQuery document(m_database);
+        if (!document.exec(QStringLiteral(
+              "SELECT COUNT(*),MIN(language),MAX(language) "
+              "FROM documentary_documents")) ||
+            !document.next() || document.value(0).toInt()<1 ||
+            document.value(1).toString()!=QStringLiteral("fr") ||
+            document.value(2).toString()!=QStringLiteral("fr"))
+            return rejectNative(QStringLiteral("Sources non françaises détectées."));
+        QSqlQuery counts(m_database);
+        if (!counts.exec(QStringLiteral(
+              "SELECT (SELECT COUNT(*) FROM documentary_entries), "
+              "(SELECT COUNT(*) FROM documentary_fts), "
+              "(SELECT COUNT(*) FROM documentary_pages)")) ||
+            !counts.next() || counts.value(0).toInt()<=0 ||
+            counts.value(0).toInt()!=counts.value(1).toInt() ||
+            counts.value(2).toInt()<=0)
+            return rejectNative(QStringLiteral(
+                "Index documentaire RAVE français incomplet."));
+        QSqlQuery integrity(m_database);
+        if (!integrity.exec(QStringLiteral("PRAGMA quick_check")) ||
+            !integrity.next() || integrity.value(0).toString()!=QStringLiteral("ok"))
+            return rejectNative(QStringLiteral(
+                "Intégrité de la SQLite française non conforme."));
+        QSqlQuery foreignKeys(m_database);
+        if (!foreignKeys.exec(QStringLiteral("PRAGMA foreign_key_check")) ||
+            foreignKeys.next())
+            return rejectNative(QStringLiteral(
+                "Références incohérentes dans la SQLite française."));
+        m_nativeFrench = true;
+        m_frenchComplete = true;
+        return true;
     }
 
     // Fail closed on partial/foreign packages. Merely being valid SQLite
@@ -412,6 +486,76 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
     QVariantList result;
     if (!isOpen())
         return result;
+    if (m_nativeFrench) {
+        const QString requested = language.left(2).toLower();
+        if (!requested.isEmpty() && requested != QStringLiteral("fr"))
+            return result; // langue différente : jamais de remplacement silencieux
+        maximum = qBound(1,maximum,100);
+        QString statement;
+        const QRegularExpression pageRx(
+            QStringLiteral("\\bpages?\\s+(\\d{1,3})\\b"),
+            QRegularExpression::CaseInsensitiveOption);
+        const auto pageMatch = pageRx.match(question);
+        QStringList tokens;
+        for (const QString &token : meaningfulTerms(question)) {
+            if (token.size()>=3 && tokens.size()<8)
+                tokens << (QStringLiteral("\"") + token + QStringLiteral("\""));
+        }
+        QSqlQuery query(m_database);
+        if (pageMatch.hasMatch()) {
+            statement = QStringLiteral(
+                "SELECT document_id,entry_id,title,source_text,source_page,"
+                "verification_status,entry_type,source_table "
+                "FROM documentary_entries WHERE source_page=? "
+                "ORDER BY CASE entry_type WHEN 'reference' THEN 0 "
+                "WHEN 'procedure' THEN 1 ELSE 2 END LIMIT ?");
+            query.prepare(statement);
+            query.addBindValue(pageMatch.captured(1).toInt());
+            query.addBindValue(maximum);
+        } else if (!tokens.isEmpty()) {
+            statement = QStringLiteral(
+                "SELECT e.document_id,e.entry_id,e.title,e.source_text,e.source_page,"
+                "e.verification_status,e.entry_type,e.source_table "
+                "FROM documentary_fts JOIN documentary_entries e "
+                "ON e.rowid=documentary_fts.rowid "
+                "WHERE documentary_fts MATCH ? "
+                "ORDER BY bm25(documentary_fts) LIMIT ?");
+            query.prepare(statement);
+            query.addBindValue(tokens.join(QStringLiteral(" OR ")));
+            query.addBindValue(maximum);
+        } else {
+            statement = QStringLiteral(
+                "SELECT document_id,entry_id,title,source_text,source_page,"
+                "verification_status,entry_type,source_table "
+                "FROM documentary_entries "
+                "ORDER BY CASE entry_type WHEN 'reference' THEN 0 "
+                "WHEN 'procedure' THEN 1 ELSE 2 END,source_page LIMIT ?");
+            query.prepare(statement);
+            query.addBindValue(maximum);
+        }
+        if (!query.exec())
+            return result;
+        while (query.next()) {
+            const QString doc = query.value(0).toString();
+            const QString id = query.value(1).toString();
+            const QString title = query.value(2).toString();
+            const QString sourceText = query.value(3).toString();
+            const QString page = query.value(4).isNull()
+                ? QStringLiteral("non précisée")
+                : query.value(4).toString();
+            const QString status = query.value(5).toString();
+            const QString type = query.value(6).toString();
+            const QString table = query.value(7).toString();
+            const QString content = QStringLiteral(
+                "document : %1\nlangue : français\npage physique : %2\n"
+                "type : %3\nstatut de vérification : %4\n\n%5")
+                .arg(doc,page,type,status,sourceText.left(10000));
+            result.append(makeRow(
+                QStringLiteral("rave-fr:%1:%2").arg(doc,id),
+                title,content,table,status));
+        }
+        return result;
+    }
     const bool browse = question.trimmed().isEmpty();
     // Until the French corpus is complete, all documentary display is kept
     // in French and exposes no partial English manufacturer instructions.
@@ -799,11 +943,23 @@ QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
     if (hits.isEmpty())
         return QString();
     QStringList paragraphs;
-    paragraphs << QStringLiteral(
-        "Documentation Rover AKM7169ENG — recherche dans la SQLite commune "
-        "au lecteur et à l'IA. Les transcriptions ci-dessous NE SONT PAS "
-        "des procédures techniquement approuvées. Vérifier le PDF constructeur "
-        "et l'applicabilité au véhicule avant une intervention.");
+    const bool originalFrench = hits.first().toMap()
+        .value(QStringLiteral("source_key")).toString()
+        .startsWith(QStringLiteral("rave-fr:"));
+    if (originalFrench) {
+        paragraphs << QStringLiteral(
+            "Documentation Rover en français d'origine — RCL0193FRE. "
+            "Source constructeur retrouvée, sans traduction de l'anglais. "
+            "Les extraits sont documentaires, pas des conseils de réparation "
+            "individuellement approuvés. Vérifier les pages et la compatibilité "
+            "du véhicule avant toute intervention.");
+    } else {
+        paragraphs << QStringLiteral(
+            "Documentation Rover AKM7169ENG — recherche dans la SQLite commune "
+            "au lecteur et à l'IA. Les transcriptions ci-dessous NE SONT PAS "
+            "des procédures techniquement approuvées. Vérifier le PDF constructeur "
+            "et l'applicabilité au véhicule avant une intervention.");
+    }
     const int count = qMin(3, hits.size());
     for (int i = 0; i < count; ++i) {
         const QVariantMap item = hits.at(i).toMap();
