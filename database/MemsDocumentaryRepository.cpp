@@ -236,6 +236,7 @@ bool MemsDocumentaryRepository::open()
     if (m_database.isOpen())
         return true;
     m_error.clear();
+    m_frenchComplete = false;
     const QFileInfo file(databasePath());
     if (!file.isFile()) {
         m_error = QStringLiteral("Base documentaire Rover absente.");
@@ -351,6 +352,26 @@ bool MemsDocumentaryRepository::open()
         m_database.close();
         return false;
     }
+    // Publish French atomically. Even one absent, unreviewed, or
+    // source-mismatched unit makes the complete French corpus unavailable.
+    QSqlQuery frenchPublication(m_database);
+    if (!frenchPublication.exec(QStringLiteral(
+            "SELECT COUNT(*),"
+            "COALESCE(SUM(CASE WHEN t.review_status='reviewed' "
+            "AND LENGTH(TRIM(t.reviewer))>0 "
+            "AND t.source_sha256=u.source_sha256 "
+            "THEN 1 ELSE 0 END),0) "
+            "FROM documentary_text_units u "
+            "LEFT JOIN documentary_translations t "
+            "ON t.unit_id=u.unit_id AND t.language='fr'")) ||
+        !frenchPublication.next()) {
+        m_error = QStringLiteral("Vérification de la couverture française impossible.");
+        m_database.close();
+        return false;
+    }
+    const qlonglong expected = frenchPublication.value(0).toLongLong();
+    const qlonglong approved = frenchPublication.value(1).toLongLong();
+    m_frenchComplete = expected > 0 && expected == approved;
     return true;
 }
 
@@ -372,7 +393,26 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
     if (!isOpen())
         return result;
     const bool browse = question.trimmed().isEmpty();
-    const QString locale = language.left(2).toLower();
+    // Until the French corpus is complete, all documentary display is kept
+    // in French and exposes no partial English manufacturer instructions.
+    // Other languages temporarily use the original English corpus, never a
+    // mixture of partial translated paragraphs.
+    const QString requestedLanguage = language.left(2).toLower();
+    const QString locale = requestedLanguage == QStringLiteral("fr")
+        ? QStringLiteral("fr") : QStringLiteral("en");
+    if (locale == QStringLiteral("fr") && !m_frenchComplete) {
+        result.append(makeRow(
+            QStringLiteral("rover-fr-translation-not-published"),
+            QStringLiteral("Documentation Rover — traduction française en préparation"),
+            QStringLiteral(
+                "La traduction française intégrale de ce manuel n'est pas encore "
+                "terminée et vérifiée. Aucune procédure anglaise n'est mélangée "
+                "à cette consultation française. Le PDF constructeur original "
+                "reste conservé séparément."),
+            QStringLiteral("rover_translation_status"),
+            QStringLiteral("FR_NOT_PUBLISHED")));
+        return result;
+    }
     // A shared, read-only lookup of translations imported into the
     // SAME SQLite as the immutable Rover manufacturer data.
     QHash<QString, QString> translatedText;
