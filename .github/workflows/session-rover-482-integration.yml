@@ -190,12 +190,19 @@ jobs:
           Compression=lzma2
           SolidCompression=yes
           WizardStyle=modern
+          ShowLanguageDialog=yes
+          UsePreviousLanguage=no
           ArchitecturesAllowed=x64
           ArchitecturesInstallIn64BitMode=x64
           PrivilegesRequired=admin
           UninstallDisplayIcon={app}\ecu_mems_manager.exe
           [Languages]
           Name: "french"; MessagesFile: "compiler:Languages\French.isl"
+          Name: "english"; MessagesFile: "compiler:Default.isl"
+          Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
+          Name: "italian"; MessagesFile: "compiler:Languages\Italian.isl"
+          Name: "portuguese"; MessagesFile: "compiler:Languages\Portuguese.isl"
+          Name: "german"; MessagesFile: "compiler:Languages\German.isl"
           [Files]
           Source: "dist-session-rover\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
           [Icons]
