@@ -68,6 +68,8 @@ set(SOURCES
     analogwidgets/abstractmeter900.cpp mainwindow.ui resources.qrc database/DatabaseManager.cpp
     database/MemsReferenceDatabase.cpp database/MemsReferenceDatabase.h database/MemsReferencePackageRefresh.cpp
     database/MemsDocumentaryRepository.cpp database/MemsDocumentaryRepository.h
+    database/MemsDocumentaryPackCatalog.cpp database/MemsDocumentaryPackCatalog.h
+    database/MemsDocumentaryUpdateDialog.cpp database/MemsDocumentaryUpdateDialog.h
     database/MemsGlobalSearchIndex.cpp database/MemsGlobalSearchIndex.h database/MemsDatabaseExplorerV2.cpp
     database/MemsDatabaseUniversalAccess.cpp database/MemsDatabaseUniversalAccess.h database/MemsReferenceLanguageSync.cpp
     database/MemsDatabaseBrowser.cpp database/MemsDatabaseBrowser.h
@@ -121,7 +123,8 @@ add_dependencies(${PNAME} ia_mems_diagram_selftest)
 
 add_executable(mems_documentary_selftest
     database/MemsDocumentaryRepositorySelfTest.cpp
-    database/MemsDocumentaryRepository.cpp database/MemsDocumentaryRepository.h)
+    database/MemsDocumentaryRepository.cpp database/MemsDocumentaryRepository.h
+    database/MemsDocumentaryPackCatalog.cpp database/MemsDocumentaryPackCatalog.h)
 target_compile_definitions(mems_documentary_selftest PRIVATE MEMS_DOCUMENTARY_SELFTEST=1)
 target_link_libraries(mems_documentary_selftest PRIVATE Qt5::Core Qt5::Sql)
 # Compiled against exactly the same SQLite reader used by the user-facing
@@ -129,14 +132,24 @@ target_link_libraries(mems_documentary_selftest PRIVATE Qt5::Core Qt5::Sql)
 # production database path with MEMS_DOCUMENTARY_DB.
 add_executable(mems_documentary_real_corpus_selftest
     database/MemsDocumentaryRealCorpusSelfTest.cpp
-    database/MemsDocumentaryRepository.cpp database/MemsDocumentaryRepository.h)
+    database/MemsDocumentaryRepository.cpp database/MemsDocumentaryRepository.h
+    database/MemsDocumentaryPackCatalog.cpp database/MemsDocumentaryPackCatalog.h)
 target_compile_definitions(mems_documentary_real_corpus_selftest PRIVATE MEMS_DOCUMENTARY_SELFTEST=1)
 target_link_libraries(mems_documentary_real_corpus_selftest PRIVATE Qt5::Core Qt5::Sql)
+# Verify the manifest contract without network access, a live ECU or a
+# published documentary pack. This executable cannot install any database.
+add_executable(mems_documentary_update_selftest
+    database/MemsDocumentaryPackCatalogSelfTest.cpp
+    database/MemsDocumentaryPackCatalog.cpp database/MemsDocumentaryPackCatalog.h)
+target_link_libraries(mems_documentary_update_selftest PRIVATE Qt5::Core)
+add_dependencies(${PNAME} mems_documentary_update_selftest)
+
 # Preserve UTF-8 French text and accented SQLite search aliases on MSVC.
 # The executable already uses /utf-8; both documentary tests must too.
 if(MSVC)
     target_compile_options(mems_documentary_selftest PRIVATE /utf-8)
     target_compile_options(mems_documentary_real_corpus_selftest PRIVATE /utf-8)
+    target_compile_options(mems_documentary_update_selftest PRIVATE /utf-8)
 endif()
 add_dependencies(${PNAME} mems_documentary_selftest)
 
