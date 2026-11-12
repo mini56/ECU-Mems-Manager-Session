@@ -5,6 +5,9 @@
 #include "LocalAiClient.h"
 
 #include <QCoreApplication>
+#include <QCryptographicHash>
+#include <QSettings>
+#include <QUuid>
 #include <QDateTime>
 #include <QDir>
 #include <QFileInfo>
@@ -386,6 +389,10 @@ IaMemsService::IaMemsService(QObject *parent)
 {
     connect(m_localAi, &LocalAiClient::stateChanged,
             this, &IaMemsService::statusChanged);
+    connect(m_localAi, &LocalAiClient::stateChanged,
+            this, &IaMemsService::advanceDocumentTranslation);
+    connect(m_localAi, &LocalAiClient::technicalLineTranslated,
+            this, &IaMemsService::acceptTranslatedLine);
 
     connect(m_localAi, &LocalAiClient::responseReady,
             this, [this](const QString &text) {
@@ -406,6 +413,175 @@ IaMemsService::IaMemsService(QObject *parent)
             });
 
     m_engine.setContext(m_context);
+}
+
+QString IaMemsService::documentTranslationNotice(const QString &language, bool pending)
+{
+    const QString code = language.left(2).toLower();
+    if (pending) {
+        if (code == QStringLiteral("pt")) return QStringLiteral("Tradução técnica local em curso…");
+        if (code == QStringLiteral("es")) return QStringLiteral("Traducción técnica local en curso…");
+        if (code == QStringLiteral("it")) return QStringLiteral("Traduzione tecnica locale in corso…");
+        if (code == QStringLiteral("de")) return QStringLiteral("Lokale technische Übersetzung läuft…");
+        if (code == QStringLiteral("en")) return QStringLiteral("Preparing original technical document…");
+        return QStringLiteral("Traduction technique locale en cours…");
+    }
+    if (code == QStringLiteral("pt")) return QStringLiteral(
+        "Tradução automática não verificada. Consulte sempre o manual Rover original antes de qualquer intervenção.");
+    if (code == QStringLiteral("es")) return QStringLiteral(
+        "Traducción automática no verificada. Consulte siempre el manual Rover original antes de intervenir.");
+    if (code == QStringLiteral("it")) return QStringLiteral(
+        "Traduzione automatica non verificata. Consultare sempre il manuale Rover originale prima di intervenire.");
+    if (code == QStringLiteral("de")) return QStringLiteral(
+        "Ungeprüfte automatische Übersetzung. Vor Arbeiten immer das Rover-Originalhandbuch prüfen.");
+    if (code == QStringLiteral("en")) return QStringLiteral(
+        "Manufacturer transcription not technically approved. Verify against the original Rover manual.");
+    return QStringLiteral(
+        "Traduction automatique non vérifiée. Consulter le manuel Rover original avant toute intervention.");
+}
+
+void IaMemsService::requestDocumentTranslation(
+    const QString &requestId, const QString &source, const QString &language)
+{
+    if (requestId.trimmed().isEmpty()) return;
+    const QString code = language.left(2).toLower();
+    if (code == QStringLiteral("en")) {
+        emit documentTranslationReady(requestId, source, true);
+        return;
+    }
+    static const QSet<QString> supported = {
+        QStringLiteral("fr"), QStringLiteral("es"),
+        QStringLiteral("it"), QStringLiteral("pt"), QStringLiteral("de")
+    };
+    if (!supported.contains(code)) {
+        emit documentTranslationReady(requestId, QString(), false);
+        return;
+    }
+    DocumentTranslationJob job;
+    job.requestId = requestId;
+    job.source = source;
+    job.language = code;
+    job.lines = source.split(QLatin1Char('\n'), Qt::KeepEmptyParts);
+    m_translationQueue.enqueue(job);
+    advanceDocumentTranslation();
+}
+
+void IaMemsService::advanceDocumentTranslation()
+{
+    if (!m_translationActive) {
+        if (m_translationQueue.isEmpty()) return;
+        m_translationJob = m_translationQueue.dequeue();
+        m_translationActive = true;
+        m_translationActiveLineToken.clear();
+    }
+    if (!m_translationActiveLineToken.isEmpty()) return;
+
+    while (m_translationJob.line < m_translationJob.lines.size()) {
+        const QString original = m_translationJob.lines.at(m_translationJob.line);
+        if (original.trimmed().isEmpty()) {
+            m_translationJob.translated.append(original);
+            ++m_translationJob.line;
+            continue;
+        }
+        const QString cacheKey = QString::fromLatin1(
+            QCryptographicHash::hash(
+                QStringLiteral("RoverLocalV1|%1|%2")
+                    .arg(m_translationJob.language, original).toUtf8(),
+                QCryptographicHash::Sha256).toHex());
+        QSettings store(QSettings::IniFormat, QSettings::UserScope, PROJECTNAME);
+        store.beginGroup(QStringLiteral("RoverTranslations"));
+        const QString cached = store.value(cacheKey).toString();
+        store.endGroup();
+        if (!cached.isEmpty()) {
+            m_translationJob.translated.append(cached);
+            ++m_translationJob.line;
+            continue;
+        }
+
+        if (!m_localAi || !m_localAi->isReady()) {
+            if (!m_localAi || m_localAi->state() == LocalAiClient::MissingModel
+                || m_localAi->state() == LocalAiClient::MissingRuntime
+                || m_localAi->state() == LocalAiClient::Error) {
+                m_translationJob.complete = false;
+                m_translationJob.translated.append(QStringLiteral(
+                    "[Traduction locale indisponible : consulter le PDF Rover original]"));
+                ++m_translationJob.line;
+                continue;
+            }
+            activate();
+            return;
+        }
+        // Avoid silently cutting off long technical steps. They remain
+        // accessible in the original PDF if the small model cannot translate.
+        if (original.size() > 600) {
+            m_translationJob.complete = false;
+            m_translationJob.translated.append(QStringLiteral(
+                "[Traduction de cette longue ligne indisponible : voir le PDF Rover]"));
+            ++m_translationJob.line;
+            continue;
+        }
+
+        m_translationActiveLineToken = QUuid::createUuid().toString(QUuid::WithoutBraces);
+        m_localAi->translateTechnicalLine(original, m_translationJob.language,
+                                          m_translationActiveLineToken);
+        return;
+    }
+
+    const QString id = m_translationJob.requestId;
+    const QString translated = m_translationJob.translated.join(QLatin1Char('\n'));
+    const bool complete = m_translationJob.complete;
+    m_translationActive = false;
+    m_translationActiveLineToken.clear();
+    emit documentTranslationReady(id, translated, complete);
+    advanceDocumentTranslation();
+}
+
+void IaMemsService::acceptTranslatedLine(const QString &token,
+                                          const QString &result,
+                                          const QString &error)
+{
+    if (!m_translationActive || token != m_translationActiveLineToken)
+        return;
+    m_translationActiveLineToken.clear();
+    const QString original = m_translationJob.lines.value(m_translationJob.line);
+    QString translated = result.trimmed();
+    if (translated.startsWith(QLatin1Char('"')) &&
+        translated.endsWith(QLatin1Char('"')) && translated.size() > 2)
+        translated = translated.mid(1, translated.size() - 2);
+
+    // Manufacturer measurements and source identifiers must survive exactly.
+    static const QRegularExpression numeric(
+        QStringLiteral("\\b\\d+(?:[.,]\\d+)?\\b"));
+    const auto numbers = [](const QString &value) {
+        QStringList found;
+        auto matches = numeric.globalMatch(value);
+        while (matches.hasNext()) found.append(matches.next().captured(0));
+        return found;
+    };
+    const bool safe = error.isEmpty() && !translated.isEmpty()
+        && translated.size() < qMax(120, original.size() * 4)
+        && numbers(original) == numbers(translated)
+        && !translated.contains(QStringLiteral("<|"))
+        && !translated.contains(QStringLiteral("Source to translate:"));
+    if (!safe) {
+        m_translationJob.complete = false;
+        translated = QStringLiteral(
+            "[Traduction non validée pour cette ligne : consulter le PDF original]");
+    } else {
+        const QString cacheKey = QString::fromLatin1(
+            QCryptographicHash::hash(
+                QStringLiteral("RoverLocalV1|%1|%2")
+                    .arg(m_translationJob.language, original).toUtf8(),
+                QCryptographicHash::Sha256).toHex());
+        QSettings store(QSettings::IniFormat, QSettings::UserScope, PROJECTNAME);
+        store.beginGroup(QStringLiteral("RoverTranslations"));
+        store.setValue(cacheKey, translated);
+        store.endGroup();
+        store.sync();
+    }
+    m_translationJob.translated.append(translated);
+    ++m_translationJob.line;
+    advanceDocumentTranslation();
 }
 
 void IaMemsService::activate()
