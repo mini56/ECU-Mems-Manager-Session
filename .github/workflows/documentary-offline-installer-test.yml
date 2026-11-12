@@ -48,5 +48,5 @@ jobs:
             database/MemsDocumentaryLocalInstaller.cpp \
             database/MemsDocumentaryPackCatalog.cpp \
             -o /tmp/documentary_offline_installer_test \
-            $(pkg-config --cflags --libs Qt5Core Qt5Sql)
+            $(pkg-config --cflags --libs Qt5Core Qt5Sql Qt5Network)
           /tmp/documentary_offline_installer_test
