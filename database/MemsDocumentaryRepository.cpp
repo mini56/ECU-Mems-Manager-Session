@@ -982,9 +982,9 @@ QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
             // Le texte d'un scan n'a pas été relu ligne par ligne. Il permet
             // de retrouver une page dans la base, jamais de générer une
             // consigne de réparation prétendument vérifiée dans l'IA.
-            content=content.section(QStringLiteral("\\n\\n"),0,0)
+            content=content.section(QStringLiteral("\n\n"),0,0)
                 +QStringLiteral(
-                    "\\nOCR de repérage non validé : consulter l'image "
+                    "\nOCR de repérage non validé : consulter l'image "
                     "du constructeur dans Base de données. "
                     "Aucune étape OCR n'est approuvée pour l'IA.");
         }
