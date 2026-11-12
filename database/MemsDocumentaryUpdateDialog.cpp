@@ -1,6 +1,11 @@
 #include "MemsDocumentaryUpdateDialog.h"
+#include "MemsDocumentaryLocalInstaller.h"
 
 #include <QDir>
+#include <QFileDialog>
+#include <QInputDialog>
+#include <QLineEdit>
+#include <QMessageBox>
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -90,15 +95,21 @@ MemsDocumentaryUpdateDialog::MemsDocumentaryUpdateDialog(
            QStringLiteral("Download database")), this);
     m_download->setObjectName(QStringLiteral("documentaryDownloadUpdate"));
     m_download->setEnabled(false);
+    m_installLocal = new QPushButton(
+        ui(QStringLiteral("Installer une base locale (ZIP)"),
+           QStringLiteral("Install local database (ZIP)")),this);
+    m_installLocal->setObjectName(QStringLiteral("documentaryInstallLocalZip"));
     QPushButton *close = new QPushButton(
         ui(QStringLiteral("Fermer"), QStringLiteral("Close")), this);
     actions->addWidget(m_check);
     actions->addWidget(m_download);
+    actions->addWidget(m_installLocal);
     actions->addWidget(close);
     layout->addLayout(actions);
 
     connect(m_check,&QPushButton::clicked,this,[this](){checkManifest();});
     connect(m_download,&QPushButton::clicked,this,[this](){startDownload();});
+    connect(m_installLocal,&QPushButton::clicked,this,[this](){installLocalZip();});
     connect(close,&QPushButton::clicked,this,&QDialog::reject);
     checkManifest();
 }
@@ -126,6 +137,7 @@ void MemsDocumentaryUpdateDialog::setBusy(bool busy)
 {
     m_check->setEnabled(!busy);
     m_download->setEnabled(!busy && m_offer.available);
+    if(m_installLocal) m_installLocal->setEnabled(!busy);
 }
 
 void MemsDocumentaryUpdateDialog::checkManifest()
@@ -312,4 +324,77 @@ void MemsDocumentaryUpdateDialog::finishDownload(QNetworkReply *reply)
                            "Existing databases were not modified.")));
     }
     setBusy(false);
+}
+
+void MemsDocumentaryUpdateDialog::installLocalZip()
+{
+    const QString archive=QFileDialog::getOpenFileName(
+        this,ui(QStringLiteral("Choisir le ZIP de la base documentaire"),
+                QStringLiteral("Choose documentary database ZIP")),
+        QString(),QStringLiteral("Archives ZIP (*.zip)"));
+    if(archive.isEmpty())
+        return;
+    bool accepted=false;
+    const bool hasPassword=MemsDocumentaryLocalInstaller::hasPassword();
+    QString password=QInputDialog::getText(
+        this,hasPassword
+            ? ui(QStringLiteral("Mot de passe documentaire"),
+                 QStringLiteral("Documentary installation password"))
+            : ui(QStringLiteral("Créer le mot de passe documentaire"),
+                 QStringLiteral("Create documentary installation password")),
+        hasPassword
+            ? ui(QStringLiteral("Mot de passe d'installation :"),
+                 QStringLiteral("Installation password:"))
+            : ui(QStringLiteral("Définir un mot de passe de 12 caractères minimum :"),
+                 QStringLiteral("Choose a password of at least 12 characters:")),
+        QLineEdit::Password,QString(),&accepted);
+    if(!accepted)
+        return;
+    if(!hasPassword){
+        const QString confirm=QInputDialog::getText(
+            this,ui(QStringLiteral("Confirmer le mot de passe"),
+                    QStringLiteral("Confirm installation password")),
+            ui(QStringLiteral("Saisir à nouveau le mot de passe :"),
+               QStringLiteral("Repeat password:")),
+            QLineEdit::Password,QString(),&accepted);
+        if(!accepted || confirm!=password || password.size()<12){
+            password.fill(QChar(' '));
+            setStatus(ui(QStringLiteral(
+                "Mot de passe non confirmé ou trop court. Aucune base modifiée."),
+                QStringLiteral(
+                "Password was not confirmed or is too short. No database changed.")));
+            return;
+        }
+    }
+    setBusy(true);
+    setStatus(ui(QStringLiteral(
+        "Contrôle du ZIP, des pages, des images et de l'intégrité SQLite…"),
+        QStringLiteral(
+        "Verifying ZIP, manufacturer pages, images, and SQLite integrity…")));
+    // A complete verified local package is staged before replacing anything.
+    const QString error=MemsDocumentaryLocalInstaller::installZip(
+        archive,m_language,password);
+    password.fill(QChar(' '));
+    setBusy(false);
+    if(!error.isEmpty()){
+        setStatus(error);
+        QMessageBox::warning(this,
+            ui(QStringLiteral("Base non installée"),
+               QStringLiteral("Database not installed")),error);
+        return;
+    }
+    const QString message=ui(QStringLiteral(
+        "Base documentaire %1 installée et contrôlée. "
+        "L'ancienne base a été conservée comme sauvegarde. "
+        "Fermer puis rouvrir Base de données pour consulter les nouveaux documents.")
+        .arg(languageName(m_language)),
+        QStringLiteral(
+        "Documentary database %1 installed and verified. "
+        "Previous database retained as backup. "
+        "Close and reopen the database screen to read the new documents.")
+        .arg(languageName(m_language)));
+    setStatus(message);
+    QMessageBox::information(this,
+        ui(QStringLiteral("Base installée"),
+           QStringLiteral("Database installed")),message);
 }
