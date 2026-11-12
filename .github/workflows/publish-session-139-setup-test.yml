@@ -1,0 +1,52 @@
+name: SESSION 139 - publier Setup test sans manuels
+on:
+  push:
+    branches: [rave-fr-source-sqlite-20261112]
+    paths:
+      - '.github/workflows/publish-session-139-setup-test.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  test-setup-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Verifier le build Windows installe et teste
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_info=$(gh api repos/mini56/ECU-Mems-Manager-Session/actions/runs/43286178837)
+          echo "$run_info" | jq -e '.conclusion=="success" and .head_sha=="97c215f7b8b9da20c97b53303f5ba0df28e19070"'
+          mkdir -p dist
+          gh run download 43286178837 --repo mini56/ECU-Mems-Manager-Session \
+            --name ECU-MEMS-Manager-SESSION-139-SANS-BASE-TEST --dir dist
+          find dist -maxdepth 2 -type f -printf '%p %s bytes\n'
+          count=$(find dist -type f -name '*Setup*.exe' | wc -l)
+          test "$count" -eq 1
+          setup=$(find dist -type f -name '*Setup*.exe' -print -quit)
+          test "$(stat -c '%s' "$setup")" -gt 100000000
+          test "$(head -c 2 "$setup")" = MZ
+          sha256sum "$setup" | tee dist/SESSION-139-Setup.sha256
+      - name: Publier la version de test dans le depot programme
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          setup=$(find dist -type f -name '*Setup*.exe' -print -quit)
+          tag='session-139-documentary-offline-TEST'
+          if gh release view "$tag" --repo mini56/ECU-Mems-Manager-Session >/dev/null 2>&1; then
+            echo "RELEASE_EXISTS_VERIFIED_BY_TAG"
+            exit 0
+          fi
+          gh release create "$tag" "$setup" dist/SESSION-139-Setup.sha256 \
+            --repo mini56/ECU-Mems-Manager-Session \
+            --title "ECU MEMS Manager SESSION 139 - test documentaire" \
+            --notes "Setup Windows de test. Installe et demarre sur runner Windows CI. Inclut l'installation locale de bases documentaires ZIP avec mot de passe, verification de la SQLite et sauvegarde. Aucune base Rover, aucune donnee personnelle, ni archive constructeur embarquee. Importer uniquement un ZIP documentaire dont la provenance a ete controlee. Ceci n'est PAS une publication des bases documentaires." \
+            --prerelease
+          gh release view "$tag" --repo mini56/ECU-Mems-Manager-Session \
+            --json url,assets --jq '{url,assets:[.assets[].name]}'
