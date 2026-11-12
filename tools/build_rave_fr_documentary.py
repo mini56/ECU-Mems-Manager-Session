@@ -190,8 +190,9 @@ def as_json(row: dict) -> str:
                       ensure_ascii=False, sort_keys=True)
 
 def linked(row: dict, parent_key: str, parents: set) -> bool:
-    return (row.get(parent_key) in parents or
-            any(isinstance(value, str) and value in parents for value in row.values()))
+    """Only follow a named, non-empty foreign key (never None)."""
+    foreign_key = row.get(parent_key)
+    return foreign_key is not None and foreign_key in parents
 
 def contains_source(row: dict) -> bool:
     return any(SOURCE in str(row.get(k) or "").upper() for k in
@@ -215,10 +216,10 @@ def extract_source(conn: sqlite3.Connection) -> dict[str,list[dict]]:
     selection["mems_specification"] = [
         r for r in all_rows["mems_specification"]
         if linked(r,"knowledge_key",keys) or contains_source(r)]
-    specs = {r.get("specification_key") for r in selection["mems_specification"]}
+    specs = {r["spec_key"] for r in selection["mems_specification"] if r.get("spec_key")}
     selection["mems_specification_value"] = [
         r for r in all_rows["mems_specification_value"]
-        if linked(r,"specification_key",specs)]
+        if linked(r,"spec_key",specs)]
     selection["mems_procedure"] = [
         r for r in all_rows["mems_procedure"]
         if linked(r,"knowledge_key",keys) or contains_source(r)]
@@ -234,11 +235,17 @@ def extract_source(conn: sqlite3.Connection) -> dict[str,list[dict]]:
         if any(isinstance(value,str) and value in keys for value in r.values())]
     selection["mems_term_alias"] = [
         r for r in all_rows["mems_term_alias"]
-        if linked(r,"knowledge_key",keys) or contains_source(r)]
+        if linked(r,"entity_key",keys) or contains_source(r)]
     selection["mems_rave_fact"] = [
         r for r in all_rows["mems_rave_fact"] if contains_source(r)]
     selection["mems_expert_fact_external"] = [
         r for r in all_rows["mems_expert_fact_external"] if contains_source(r)]
+    # A French manufacturer's document must never inherit orphan values from
+    # another source merely because a foreign key was missing.
+    if any("AKM7169" in as_json(row).upper()
+           for rows_selected in selection.values()
+           for row in rows_selected):
+        raise RuntimeError("RAVE_FR_FOREIGN_ENGLISH_AKM7169_ROWS_FOUND")
     return selection
 
 def physical_page(row: dict) -> int | None:
@@ -378,6 +385,8 @@ def build(reference_root: Path, destination: Path) -> dict:
             raise RuntimeError("Illustrations et références textuelles incohérentes : "
                 f"captures sans texte={sorted(image_pages-set(source_pages))}, "
                 f"texte sans capture={sorted(set(source_pages)-image_pages)}")
+        if entries_without_page:
+            raise RuntimeError(f"RAVE_FR_SOURCE_PAGE_UNRESOLVED: {dict(entries_without_page)}")
         fr.commit()
         integrity = fr.execute("PRAGMA integrity_check").fetchone()[0]
         fk = fr.execute("PRAGMA foreign_key_check").fetchall()
