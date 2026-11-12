@@ -1,4 +1,5 @@
 #include "MemsDocumentaryRepository.h"
+#include "MemsDocumentaryPackCatalog.h"
 
 #include <QCoreApplication>
 #include <QDir>
@@ -223,22 +224,26 @@ MemsDocumentaryRepository::~MemsDocumentaryRepository()
 
 QString MemsDocumentaryRepository::databasePath()
 {
-    // A single packaged SQLite, never the runtime ECU calibration database.
-    // Test-only opt-in permits isolated fixtures; normal installation uses
-    // the file beside the program, entirely offline.
+    // Only the selected documentary language is optional/downloadable.
+    // ECU user data, MEMS reference and expert runtime paths never change.
 #ifdef MEMS_DOCUMENTARY_SELFTEST
     const QString overridePath = qEnvironmentVariable("MEMS_DOCUMENTARY_DB").trimmed();
     if (!overridePath.isEmpty())
         return QDir::cleanPath(overridePath);
 #endif
-    return QDir(QCoreApplication::applicationDirPath()).filePath(
-        QStringLiteral("database/documentary/rover_482.sqlite"));
+    return MemsDocumentaryPackCatalog::installedDatabasePath(
+        MemsDocumentaryPackCatalog::selectedLanguage());
 }
 
 QString MemsDocumentaryRepository::originalPdfPath()
 {
-    return QDir(QCoreApplication::applicationDirPath()).filePath(
-        QStringLiteral("database/documentary/AKM7169ENG.pdf"));
+    // A source PDF is only exposed when explicitly included in an installed
+    // and licensed language pack. No English PDF is assumed in French mode.
+    const QString location = databasePath();
+    if (location.isEmpty())
+        return QString();
+    return QDir(QFileInfo(location).absolutePath()).filePath(
+        QStringLiteral("original-source.pdf"));
 }
 
 bool MemsDocumentaryRepository::isPackInstalled()
