@@ -14,6 +14,7 @@ from pathlib import Path
 import shutil
 import sqlite3
 import tempfile
+from contextlib import closing
 from rover_multilingual import create_schema, import_pack, check_localized_schema
 
 DOCUMENT_SHA = 'c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0'
@@ -95,7 +96,7 @@ def build(parts: Path, original_pdf: Path, output: Path,
         # The verified English SQLite is never edited in-place. Construct the
         # multilingual *distribution* on this temporary copy, then publish it
         # only after verifying the complete source-to-translation contract.
-        with sqlite3.connect(temporary_sqlite) as con:
+        with closing(sqlite3.connect(temporary_sqlite)) as con:
             create_schema(con, DATABASE_SHA)
             for pack_path in translation_packs or []:
                 pack = json.loads(pack_path.read_text(encoding='utf-8'))
