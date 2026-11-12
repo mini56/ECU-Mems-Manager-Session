@@ -5,6 +5,7 @@ import json
 import sqlite3
 import sys
 import tempfile
+from contextlib import closing
 from pathlib import Path
 
 from rover_multilingual import (
@@ -20,7 +21,7 @@ def ensure(test: bool, name: str) -> None:
 def run() -> None:
     with tempfile.TemporaryDirectory() as directory:
         db = Path(directory) / "rover_french_test.sqlite"
-        with sqlite3.connect(db) as con:
+        with closing(sqlite3.connect(db)) as con:
             con.executescript("""
                 CREATE TABLE procedures(procedure_id TEXT PRIMARY KEY,title TEXT);
                 CREATE TABLE procedure_steps(
