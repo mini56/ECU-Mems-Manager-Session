@@ -1,5 +1,4 @@
 #include "IaMemsDocumentaryPipeline.h"
-#include "../database/MemsDocumentaryRepository.h"
 #include "IaMemsService.h"
 #include "IaMemsConversationRouting.h"
 #include "IaResponseLogic.h"
@@ -745,14 +744,6 @@ private:
         const QString raw = m_question->text().trimmed();
         if (raw.isEmpty())
             return;
-
-        // Once the unified document is mounted, the old Pack001 controller
-        // must not intercept the question or return a competing operation.
-        // The normal IA service will use the SAME SQLite reader as the browser.
-        if (MemsDocumentaryRepository::isPackInstalled()) {
-            invokeOriginalSend(raw);
-            return;
-        }
 
         if (!m_pendingChoices.isEmpty()) {
             handlePendingSelection(raw);
