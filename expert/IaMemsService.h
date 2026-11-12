@@ -30,6 +30,7 @@ public:
     void requestDocumentTranslation(const QString &requestId, const QString &source,
                                     const QString &language);
     static QString documentTranslationNotice(const QString &language, bool pending);
+    static QString documentTranslationIncompleteNotice(const QString &language);
     void clearConversation();
 
     QString statusText() const;
