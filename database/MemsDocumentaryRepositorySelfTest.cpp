@@ -355,9 +355,9 @@ int main(int argc, char **argv)
                     QStringLiteral("AKM7169FRE page 12 — OCR"));
         scan.insert(QStringLiteral("content"),
                     QStringLiteral(
-                        "document : AKM7169FRE\\npage physique : 12"
-                        "\\nstatut de vérification : review_required"
-                        "\\n\\n[TRANSCRIPTION OCR NON VÉRIFIÉE] "
+                        "document : AKM7169FRE\npage physique : 12"
+                        "\nstatut de vérification : review_required"
+                        "\n\n[TRANSCRIPTION OCR NON VÉRIFIÉE] "
                         "INSTRUCTION TECHNIQUE FICTIVE 999 Nm."));
         const QString safe=MemsDocumentaryRepository::answerFromHits(
             QVariantList{scan});
