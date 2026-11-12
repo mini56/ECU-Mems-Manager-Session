@@ -1,0 +1,239 @@
+name: SESSION - Setup test sans base documentaire, mise a jour GitHub
+run-name: SESSION 138 - bouton mise a jour documentaire, sans base Rover - ${{ github.sha }}
+on:
+  push:
+    branches: [integration-rover-482-session-20261111]
+    paths:
+      - '.github/workflows/session-documentary-update-test.yml'
+      - 'database/MemsDocumentaryPackCatalog*'
+      - 'database/MemsDocumentaryUpdateDialog*'
+      - 'database/MemsDocumentaryRepository.cpp'
+      - 'database/MemsDatabaseExplorerV2.cpp'
+      - 'CMakeLists.txt'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: session-documentary-updater-test
+  cancel-in-progress: true
+env:
+  MEMS_BUILD_NUMBER: '138'
+  ORT_GENAI_VERSION: '0.14.0'
+  ORT_GENAI_WIN_X64_SHA256: '8a303e52dc7be8fb2a5331929af451a25ac59774102d7fd09ef673adc85c5ebf'
+  BASE_RELEASE_TAG: 'mems-build117-candidate-39395038798'
+  BASE_ARCHIVE_NAME: 'ECU-MEMS-Manager-x64-BUILD117-CLEAN-V2.tar.gz'
+  BASE_ARCHIVE_SHA256: '4f187bae49bfc134329b53eb4e455c2d125403fe510f2da08a8272b2dcb3cd3b'
+
+jobs:
+  build-and-install-test:
+    name: Compiler et installer sans Rover, verifier le bouton et le diagnostic
+    runs-on: windows-2025
+    timeout-minutes: 120
+    steps:
+      - name: Charger les sources SESSION
+        uses: actions/checkout@v4
+      - name: Controler les sources sans patch
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python tools/validate_source_architecture.py
+          if($LASTEXITCODE -ne 0){throw 'SOURCE_ARCHITECTURE_NOT_CLEAN'}
+          if((Get-Content database/MemsDatabaseExplorerV2.cpp -Raw) -notmatch 'documentaryUpdateButton'){throw 'DOCUMENTARY_UPDATE_BUTTON_MISSING'}
+          if((Get-Content database/MemsDocumentaryRepository.cpp -Raw) -match 'QStringLiteral\("database/documentary/rover_482.sqlite"\)'){throw 'ROVER_STILL_HARDCODED_IN_RUNTIME'}
+          if((Get-Content CMakeLists.txt -Raw) -notmatch 'MemsDocumentaryUpdateDialog.cpp'){throw 'UPDATE_DIALOG_NOT_COMPILED'}
+          Write-Host 'SESSION_SOURCE_DOCUMENTARY_UPDATE_ISOLATION_PASS'
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Installer Qt 5.15.2 MSVC x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python -m pip install --disable-pip-version-check 'aqtinstall==3.3.0' pefile
+          if($LASTEXITCODE -ne 0){throw 'QT_INSTALL_PREP_FAILED'}
+          $sevenZip=(Get-Command 7z.exe -ErrorAction Stop).Source
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external $sevenZip
+          if($LASTEXITCODE -ne 0){throw 'QT_INSTALL_FAILED'}
+      - name: Recuperer ONNX Runtime GenAI identique a SESSION
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $archive=Join-Path $env:RUNNER_TEMP "onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          $folder=Join-Path $env:RUNNER_TEMP 'onnx-genai'
+          curl.exe -L --fail --retry 3 --retry-all-errors --retry-delay 2 -o $archive "https://github.com/microsoft/onnxruntime-genai/releases/download/v$env:ORT_GENAI_VERSION/onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          if($LASTEXITCODE -ne 0){throw 'ONNX_SDK_DOWNLOAD_FAILED'}
+          if((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:ORT_GENAI_WIN_X64_SHA256){throw 'ONNX_SDK_SHA_MISMATCH'}
+          Expand-Archive $archive $folder -Force
+          $header=Get-ChildItem $folder -Recurse -File -Filter ort_genai_c.h | Select-Object -First 1
+          $lib=Get-ChildItem $folder -Recurse -File -Filter onnxruntime-genai.lib | Select-Object -First 1
+          if(-not $header -or -not $lib){throw 'ONNX_SDK_INCOMPLETE'}
+          "ORT_GENAI_INCLUDE_DIR=$($header.Directory.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "ORT_GENAI_LIBRARY=$($lib.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Compiler SESSION et tests de mise a jour
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          cmake -S . -B build-session-138 -A x64 -DCMAKE_PREFIX_PATH='C:/Qt/5.15.2/msvc2019_64' -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF -DMEMS_USE_ONNX_GENAI=ON "-DORT_GENAI_INCLUDE_DIR=$env:ORT_GENAI_INCLUDE_DIR" "-DORT_GENAI_LIBRARY=$env:ORT_GENAI_LIBRARY"
+          if($LASTEXITCODE -ne 0){throw 'CMAKE_SESSION_CONFIG_FAILED'}
+          cmake --build build-session-138 --config Release --target ecu_mems_manager ecu_mems_uninstaller mems_documentary_update_selftest mems_documentary_selftest --parallel
+          if($LASTEXITCODE -ne 0){throw 'CMAKE_SESSION_COMPILATION_FAILED'}
+          if(-not(Test-Path build-session-138/Release/ecu_mems_manager.exe)){throw 'SESSION_EXE_MISSING'}
+          Write-Host 'SESSION_138_COMPILE_PASS'
+      - name: Tester le catalogue de mises a jour sans connexion ni base Rover
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $qt='C:\Qt\5.15.2\msvc2019_64'
+          $bin=(Resolve-Path build-session-138/Release).Path
+          & "$qt/bin/windeployqt.exe" --release --compiler-runtime --no-translations --dir $bin "$bin/mems_documentary_update_selftest.exe"
+          if($LASTEXITCODE -ne 0){throw 'UPDATE_QT_DEPLOY_FAILED'}
+          & "$bin/mems_documentary_update_selftest.exe"
+          if($LASTEXITCODE -ne 0){throw 'UPDATE_CATALOG_SELFTEST_FAILED'}
+      - name: Recuperer la distribution existante avec IA et ECU inchanges
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          New-Item -ItemType Directory -Force download-base,dist-session-138 | Out-Null
+          gh release download $env:BASE_RELEASE_TAG --pattern $env:BASE_ARCHIVE_NAME --dir download-base
+          if($LASTEXITCODE -ne 0){throw 'RUNTIME_DOWNLOAD_FAILED'}
+          $archive=Join-Path download-base $env:BASE_ARCHIVE_NAME
+          if((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:BASE_ARCHIVE_SHA256){throw 'RUNTIME_BASE_SHA_MISMATCH'}
+          tar.exe -xzf $archive -C dist-session-138
+          if($LASTEXITCODE -ne 0){throw 'RUNTIME_EXTRACT_FAILED'}
+          if(-not(Test-Path dist-session-138/ecu_mems_manager.exe)){throw 'RUNTIME_LAYOUT_INVALID'}
+      - name: Assembler sans nouvelle base documentaire, conserver les bases ECU et expertes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $dist=(Resolve-Path dist-session-138).Path
+          Copy-Item build-session-138/Release/ecu_mems_manager.exe "$dist/ecu_mems_manager.exe" -Force
+          Copy-Item build-session-138/Release/ecu_mems_uninstaller.exe "$dist/ecu_mems_uninstaller.exe" -Force
+          Copy-Item build-session-138/librosco-x64/Release/mems_manager_x64.dll "$dist/mems_manager_x64.dll" -Force
+          $documentary=Join-Path $dist 'database/documentary'
+          if(Test-Path $documentary){Remove-Item $documentary -Recurse -Force}
+          foreach($suffix in @('','-wal','-shm','-journal')){
+            $userDb=Join-Path $dist ('database/ecu_mems_manager.sqlite'+$suffix)
+            if(Test-Path $userDb){Remove-Item $userDb -Force}
+          }
+          $qt='C:\Qt\5.15.2\msvc2019_64'
+          & "$qt/bin/windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist "$dist/ecu_mems_manager.exe"
+          if($LASTEXITCODE -ne 0){throw 'QT_SESSION_DEPLOY_FAILED'}
+          & "$qt/bin/windeployqt.exe" --release --compiler-runtime --no-translations --dir $dist "$dist/ecu_mems_uninstaller.exe"
+          if($LASTEXITCODE -ne 0){throw 'QT_UNINSTALLER_DEPLOY_FAILED'}
+          foreach($file in @('ecu_mems_manager.exe','MEMSLibrary.dll','MEMSLibrary_Pack_001/knowledge.sqlite','mems_manager_x64.dll','database/reference/runtime_visual_catalog.json')){
+            if(-not(Test-Path (Join-Path $dist $file))){throw "DIAGNOSTIC_DEPENDENCY_MISSING $file"}
+          }
+          if(Test-Path $documentary){throw 'ROVER_SQLITE_SHIPPED'}
+          if(Test-Path (Join-Path $dist 'database/ecu_mems_manager.sqlite')){throw 'USER_DB_SHIPPED'}
+          Write-Host 'SESSION_138_NO_ROVER_DB_DIAGNOSTIC_DATA_PRESERVED'
+      - name: Controler les fonctions ECU et base experte
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $env:DIST_ROOT=(Resolve-Path dist-session-138).Path
+          @'
+          import os,pefile,sqlite3
+          from pathlib import Path
+          root=Path(os.environ['DIST_ROOT'])
+          for n in ('ecu_mems_manager.exe','mems_manager_x64.dll','MEMSLibrary.dll'):
+              pe=pefile.PE(str(root/n),fast_load=True)
+              assert pe.FILE_HEADER.Machine==0x8664,n
+              pe.close()
+          assert not (root/'database'/'documentary').exists()
+          assert not (root/'database'/'ecu_mems_manager.sqlite').exists()
+          with sqlite3.connect(root/'MEMSLibrary_Pack_001'/'knowledge.sqlite') as con:
+              assert con.execute('pragma integrity_check').fetchone()[0]=='ok'
+              assert con.execute('select count(*) from ravemems_document').fetchone()[0]==47
+          print('SESSION_138_X64_ECU_AI_AND_DOCUMENTARY_SEPARATION_PASS')
+          '@ | python -
+          if($LASTEXITCODE -ne 0){throw 'PACKAGE_ECU_REGRESSION'}
+      - name: Creer un vrai Setup Windows pour SESSION 138
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          choco install innosetup -y --no-progress --limit-output
+          if($LASTEXITCODE -ne 0){throw 'INNO_INSTALL_FAILED'}
+          $compiler=Get-ChildItem 'C:\Program Files (x86)' -Recurse -File -Filter ISCC.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          if(-not $compiler){throw 'INNO_COMPILER_MISSING'}
+          $iss=@'
+          #define MyAppName "ECU MEMS Manager SESSION"
+          #define MyAppVersion "1.1.38"
+          [Setup]
+          AppId={{BC7FAF73-5BCF-49FC-8513-9D9C7B08F133}
+          AppName={#MyAppName}
+          AppVersion={#MyAppVersion}
+          AppPublisher=ECU MEMS Manager SESSION
+          DefaultDirName={autopf}\ECU MEMS Manager SESSION
+          DefaultGroupName=ECU MEMS Manager SESSION
+          UsePreviousGroup=no
+          OutputDir=setup-session-138
+          OutputBaseFilename=ECU MEMS Manager SESSION Setup
+          Compression=lzma2
+          SolidCompression=yes
+          WizardStyle=modern
+          ShowLanguageDialog=yes
+          UsePreviousLanguage=no
+          ArchitecturesAllowed=x64
+          ArchitecturesInstallIn64BitMode=x64
+          PrivilegesRequired=admin
+          UninstallDisplayIcon={app}\ecu_mems_manager.exe
+          [Languages]
+          Name: "french"; MessagesFile: "compiler:Languages\French.isl"
+          Name: "english"; MessagesFile: "compiler:Default.isl"
+          Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
+          Name: "italian"; MessagesFile: "compiler:Languages\Italian.isl"
+          Name: "portuguese"; MessagesFile: "compiler:Languages\Portuguese.isl"
+          Name: "german"; MessagesFile: "compiler:Languages\German.isl"
+          [Files]
+          Source: "dist-session-138\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+          [INI]
+          Filename: "{app}\session-install-language.ini"; Section: "Installation"; Key: "Language"; String: "fr"; Languages: french
+          Filename: "{app}\session-install-language.ini"; Section: "Installation"; Key: "Language"; String: "en"; Languages: english
+          Filename: "{app}\session-install-language.ini"; Section: "Installation"; Key: "Language"; String: "es"; Languages: spanish
+          Filename: "{app}\session-install-language.ini"; Section: "Installation"; Key: "Language"; String: "it"; Languages: italian
+          Filename: "{app}\session-install-language.ini"; Section: "Installation"; Key: "Language"; String: "pt"; Languages: portuguese
+          Filename: "{app}\session-install-language.ini"; Section: "Installation"; Key: "Language"; String: "de"; Languages: german
+          [Icons]
+          Name: "{group}\ECU MEMS Manager SESSION"; Filename: "{app}\ecu_mems_manager.exe"
+          Name: "{autodesktop}\ECU MEMS Manager SESSION"; Filename: "{app}\ecu_mems_manager.exe"; IconFilename: "{app}\ecu_mems_manager.exe"
+          '@
+          $iss | Set-Content setup-session-138.iss -Encoding utf8
+          & $compiler.FullName setup-session-138.iss
+          if($LASTEXITCODE -ne 0){throw 'INNO_BUILD_FAILED'}
+          $setup=Get-ChildItem setup-session-138 -File -Filter '*.exe' | Select-Object -First 1
+          if(-not $setup -or $setup.Length -lt 100MB){throw 'SETUP_TOO_SMALL_OR_MISSING'}
+          Write-Host "SESSION_138_SETUP_SHA256=$((Get-FileHash $setup.FullName -Algorithm SHA256).Hash)"
+      - name: Installer et demarrer reellement sous Windows sans base RAVE
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $setup=Get-ChildItem setup-session-138 -File -Filter '*.exe' | Select-Object -First 1
+          $folder=Join-Path $env:RUNNER_TEMP 'SESSION_138_INSTALLED'
+          if(Test-Path $folder){Remove-Item $folder -Recurse -Force}
+          $install=Start-Process -FilePath $setup.FullName -ArgumentList '/LANG=french','/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',"/DIR=$folder" -Wait -PassThru
+          if($install.ExitCode -ne 0){throw "SETUP_INSTALL_EXIT_$($install.ExitCode)"}
+          if(-not(Test-Path "$folder/ecu_mems_manager.exe")){throw 'INSTALLED_EXE_MISSING'}
+          if(Test-Path "$folder/database/documentary"){throw 'DOCUMENTARY_SQLITE_INSIDE_SETUP'}
+          if(Test-Path "$folder/database/ecu_mems_manager.sqlite"){throw 'USER_DATABASE_IN_SETUP'}
+          foreach($file in @('MEMSLibrary.dll','MEMSLibrary_Pack_001/knowledge.sqlite','database/reference/runtime_visual_catalog.json','mems_manager_x64.dll')){
+            if(-not(Test-Path (Join-Path $folder $file))){throw "INSTALLED_DIAGNOSTIC_FILE_MISSING $file"}
+          }
+          $ini=Get-Content "$folder/session-install-language.ini" -Raw
+          if($ini -notmatch '(?m)^Language=fr\s*$'){throw 'SETUP_LANGUAGE_MISSING'}
+          $instance=Start-Process -FilePath "$folder/ecu_mems_manager.exe" -WorkingDirectory $folder -PassThru
+          Start-Sleep -Seconds 12
+          $instance.Refresh()
+          if($instance.HasExited){throw "INSTALLED_APP_EARLY_EXIT_$($instance.ExitCode)"}
+          Stop-Process -Id $instance.Id -Force
+          Write-Host 'SESSION_138_REAL_WINDOWS_INSTALL_START_AND_NO_DOCUMENTARY_DB_OK'
+      - name: Mettre le Setup de test a disposition
+        uses: actions/upload-artifact@v4
+        with:
+          name: ECU-MEMS-Manager-SESSION-138-SANS-BASE-TEST
+          path: setup-session-138/*.exe
+          retention-days: 7
+          compression-level: 0
+          if-no-files-found: error
