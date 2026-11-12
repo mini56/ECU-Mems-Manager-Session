@@ -83,7 +83,9 @@ jobs:
           assert db.execute('select count(*) from documentary_images').fetchone()[0]==301
           assert db.execute('select count(*) from documentary_entries where source_table=?',('mems_procedure_step',)).fetchone()[0]>3000
           assert db.execute("select count(*) from documentary_entries where source_table='mems_procedure_step' and source_page is not null").fetchone()[0]>2500
-          assert db.execute("select count(*) from documentary_entries where source_table='mems_specification_value' and source_text like '%value_numeric:%'").fetchone()[0]>500
+          assert db.execute("select count(*) from documentary_entries where source_table='mems_specification_value'").fetchone()[0]>=650
+          assert db.execute("select count(*) from documentary_entries where source_table='mems_specification_value' and source_text like '%value_numeric:%'").fetchone()[0]>250
+          assert db.execute("select count(*) from documentary_entries where source_table='mems_specification_value' and source_text like '%value_text:%'").fetchone()[0]>400
           for page,file in db.execute('select physical_page,relative_path from documentary_images'):
               assert (Path('output/rave-fr')/file).is_file(),(page,file)
           print('RAVE_FR_301_ILLUSTRATIONS_VERIFIED')
