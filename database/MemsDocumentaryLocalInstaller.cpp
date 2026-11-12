@@ -14,6 +14,7 @@
 #include <QSettings>
 #include <QSqlDatabase>
 #include <QSqlQuery>
+#include <QSqlError>
 #include <QStandardPaths>
 #include <QUuid>
 #include <QTemporaryDir>
@@ -91,8 +92,6 @@ bool metadataValid(const QString &path,const QString &language,QString *reason,
                         if(!docs.exec(QStringLiteral(
                            "SELECT document_id,source_pages,source_sha256 FROM "
                            "documentary_documents"))){
-                            // Keep backward compatibility with the already-built schema:
-                            // the original column is source_pages, not total_pages.
                             *reason=QStringLiteral("Provenance documentaire absente.");
                         }else{
                             bool valid=true,hasRcl=false;
@@ -237,8 +236,8 @@ QString installSource(const QString &source,const QString &code,
     if(installed.isEmpty())
         return QStringLiteral("Emplacement documentaire Windows indisponible.");
     const QFileInfo installedInfo(installed);
-    const QDir parent(installedInfo.absolutePath());
-    if(!QDir().mkpath(parent.absolutePath()+QStringLiteral("/..")))
+    const QFileInfo destinationInfo(installedInfo.absolutePath());
+    if(!QDir().mkpath(destinationInfo.absolutePath()))
         return QStringLiteral("Impossible de créer le dossier documentaire.");
     const QString stamp=QUuid::createUuid().toString(QUuid::WithoutBraces);
     const QString destination=installedInfo.absolutePath();
