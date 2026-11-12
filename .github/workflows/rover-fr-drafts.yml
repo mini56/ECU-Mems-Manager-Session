@@ -1,20 +1,10 @@
 name: ROVER FR - traduction integrale par lots (brouillons, sans Setup)
 
+# Historique expérimental conservé, mais chantier abandonné :
+# les éditions constructeur RAVE existent dans leurs langues d'origine.
+# Aucun nouveau lot IA ne doit être généré automatiquement ni à la demande.
 on:
-  push:
-    branches:
-      - integration-rover-482-session-20261111
-    paths:
-      - 'tools/rover_french_generate.py'
-      - 'tools/rover_multilingual.py'
-      - '.github/workflows/rover-fr-drafts.yml'
   workflow_dispatch:
-    inputs:
-      max_new_units:
-        description: "Nombre maximal de nouvelles unités françaises (0 = toutes)"
-        required: true
-        default: '150'
-        type: string
 
 permissions:
   contents: read
@@ -25,6 +15,7 @@ concurrency:
 
 jobs:
   rover-fr:
+    if: ${{ false }}
     name: Traduire, sauvegarder et afficher les pourcentages FR
     runs-on: ubuntu-24.04
     timeout-minutes: 180
