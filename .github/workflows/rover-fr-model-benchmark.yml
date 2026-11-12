@@ -1,0 +1,78 @@
+name: ROVER FR - audit comparatif du moteur de traduction
+
+on:
+  push:
+    branches:
+      - integration-rover-482-session-20261111
+    paths:
+      - 'tools/rover_fr_compare_translation_models.py'
+      - '.github/workflows/rover-fr-model-benchmark.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rover-fr-model-evaluation
+  cancel-in-progress: true
+
+jobs:
+  compare-translation:
+    name: Comparer les traductions mecaniques et verifier les termes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      HF_HUB_DISABLE_TELEMETRY: '1'
+      HF_HUB_ENABLE_HF_TRANSFER: '0'
+      TOKENIZERS_PARALLELISM: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ouvrir le manuel Rover fige et sa source authentifiee
+        uses: actions/checkout@v4
+        with:
+          repository: mini56/Mems-Forge
+          ref: ed82bcb4db6c742f8e8a66ca5db81202ad18da78
+          lfs: true
+          path: original-mems-forge
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Reprendre le meme echantillon source lie au premier brouillon
+        uses: actions/cache/restore@v4
+        with:
+          path: fr-work/
+          key: rover-fr-drafts-compare-only
+          restore-keys: |
+            rover-fr-drafts-${{ github.ref_name }}-
+      - name: Reconstituer la source documentaire Rover identique
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s fr-work/french_checkpoint.jsonl
+          python tools/build_rover_session_documentary.py \
+            --pdf "original-mems-forge/depot/20260909-230410/AKM7169ENG-mini-repair-manual-92-96-pdf-pr_a0f71dc9b68bd0365e8141310900faca.pdf" \
+            --output build/rover
+      - name: Installer le moteur de traduction Hy-MT2 (evaluation seulement)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check \
+            'llama-cpp-python==0.3.16' 'huggingface_hub>=0.35,<1.0'
+      - name: Comparer 18 extraits reels dans le meme contexte constructeur
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/rover_fr_compare_translation_models.py \
+            --database build/rover/rover_482.sqlite \
+            --opus-checkpoint fr-work/french_checkpoint.jsonl \
+            --output fr-benchmark/rover_fr_model_comparison.json \
+            --count 18
+      - name: Archiver uniquement le rapport de qualite (aucun Setup)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ROVER-FR-COMPARAISON-TECHNIQUE-${{ github.run_number }}
+          path: fr-benchmark/rover_fr_model_comparison.json
+          retention-days: 14
+          if-no-files-found: warn
