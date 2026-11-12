@@ -229,10 +229,8 @@ int main(int argc, char **argv)
         fr.addBindValue(translatedTitle);
         fr.addBindValue(hash(englishTitle));
         fr.addBindValue(hash(translatedTitle));
-        fr.addBindValue(QStringLiteral("machine_draft"));
-        // A null QString maps to SQLite NULL; an unreviewed translation
-        // must store a non-null *empty* reviewer, as the production importer does.
-        fr.addBindValue(QStringLiteral(""));
+        fr.addBindValue(QStringLiteral("reviewed"));
+        fr.addBindValue(QStringLiteral("TEST_TRANSLATION_REVIEWER"));
         if (!check(fr.exec(), "seed source-bound French translation"))
             return 1;
         seed.close();
