@@ -14,6 +14,7 @@
 #include <QPointer>
 #include <QRegularExpression>
 #include <QSet>
+#include <QTimer>
 #include <QVector>
 
 #include <algorithm>
@@ -410,7 +411,7 @@ IaMemsService::IaMemsService(QObject *parent)
         QString heading = documentTranslationNotice(language, false);
         if (!complete)
             heading += QStringLiteral("\n") +
-                documentTranslationNotice(language, true);
+                documentTranslationIncompleteNotice(language);
         emit responseReady(heading + QStringLiteral("\n\n") + text);
         emit statusChanged();
     });
@@ -454,6 +455,23 @@ QString IaMemsService::documentTranslationNotice(const QString &language, bool p
         "Traduction automatique non vérifiée. Consulter le manuel Rover original avant toute intervention.");
 }
 
+QString IaMemsService::documentTranslationIncompleteNotice(const QString &language)
+{
+    const QString code = language.left(2).toLower();
+    if (code == QStringLiteral("pt")) return QStringLiteral(
+        "Tradução incompleta ou demasiado lenta. Consulte o documento Rover original.");
+    if (code == QStringLiteral("es")) return QStringLiteral(
+        "Traducción incompleta o demasiado lenta. Consulte el documento Rover original.");
+    if (code == QStringLiteral("it")) return QStringLiteral(
+        "Traduzione incompleta o troppo lenta. Consultare il documento Rover originale.");
+    if (code == QStringLiteral("de")) return QStringLiteral(
+        "Übersetzung unvollständig oder zu langsam. Rover-Originaldokument konsultieren.");
+    if (code == QStringLiteral("en")) return QStringLiteral(
+        "Translation incomplete or too slow. Consult the original Rover document.");
+    return QStringLiteral(
+        "Traduction incomplète ou trop lente. Consulter le document Rover original.");
+}
+
 void IaMemsService::requestDocumentTranslation(
     const QString &requestId, const QString &source, const QString &language)
 {
@@ -476,6 +494,15 @@ void IaMemsService::requestDocumentTranslation(
     job.source = source;
     job.language = code;
     job.lines = source.split(QLatin1Char('\n'), Qt::KeepEmptyParts);
+    // The reader and IA share the worker. Discard obsolete work when a new
+    // selection arrives instead of queueing translations of unseen pages.
+    m_translationQueue.clear();
+    if (m_translationActive) {
+        m_translationActiveLineToken.clear();
+        if (m_localAi)
+            m_localAi->cancelTechnicalTranslation();
+        m_translationActive = false;
+    }
     m_translationQueue.enqueue(job);
     advanceDocumentTranslation();
 }
@@ -487,6 +514,22 @@ void IaMemsService::advanceDocumentTranslation()
         m_translationJob = m_translationQueue.dequeue();
         m_translationActive = true;
         m_translationActiveLineToken.clear();
+        const QString activeRequestId = m_translationJob.requestId;
+        // A documentary lookup must never leave the user with a spinner
+        // indefinitely, even when the small offline model stalls.
+        QTimer::singleShot(30000, this, [this, activeRequestId]() {
+            if (!m_translationActive ||
+                m_translationJob.requestId != activeRequestId)
+                return;
+            if (!m_translationActiveLineToken.isEmpty() && m_localAi)
+                m_localAi->cancelTechnicalTranslation();
+            m_translationActiveLineToken.clear();
+            m_translationJob.complete = false;
+            m_translationJob.translated.append(
+                documentTranslationIncompleteNotice(m_translationJob.language));
+            m_translationJob.line = m_translationJob.lines.size();
+            advanceDocumentTranslation();
+        });
     }
     if (!m_translationActiveLineToken.isEmpty()) return;
 
@@ -517,9 +560,9 @@ void IaMemsService::advanceDocumentTranslation()
                 || m_localAi->state() == LocalAiClient::MissingRuntime
                 || m_localAi->state() == LocalAiClient::Error) {
                 m_translationJob.complete = false;
-                m_translationJob.translated.append(QStringLiteral(
-                    "[Traduction locale indisponible : consulter le PDF Rover original]"));
-                ++m_translationJob.line;
+                m_translationJob.translated.append(
+                    documentTranslationIncompleteNotice(m_translationJob.language));
+                m_translationJob.line = m_translationJob.lines.size();
                 continue;
             }
             activate();
@@ -529,8 +572,8 @@ void IaMemsService::advanceDocumentTranslation()
         // accessible in the original PDF if the small model cannot translate.
         if (original.size() > 600) {
             m_translationJob.complete = false;
-            m_translationJob.translated.append(QStringLiteral(
-                "[Traduction de cette longue ligne indisponible : voir le PDF Rover]"));
+            m_translationJob.translated.append(
+                documentTranslationIncompleteNotice(m_translationJob.language));
             ++m_translationJob.line;
             continue;
         }
@@ -584,8 +627,8 @@ void IaMemsService::acceptTranslatedLine(const QString &token,
         && !translated.contains(QStringLiteral("Source to translate:"));
     if (!safe) {
         m_translationJob.complete = false;
-        translated = QStringLiteral(
-            "[Traduction non validée pour cette ligne : consulter le PDF original]");
+        translated = documentTranslationIncompleteNotice(
+            m_translationJob.language);
     } else {
         const QString cacheKey = QString::fromLatin1(
             QCryptographicHash::hash(
