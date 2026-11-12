@@ -22,6 +22,7 @@
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QTextBrowser>
+#include <QTextOption>
 #include <QUrl>
 #include <QVBoxLayout>
 #include <QVariantMap>
