@@ -85,6 +85,13 @@ jobs:
           if($manifest.original_sqlite_sha256 -ne 'dd37296b5d477c4124133f51e96691858c0ae4746d42c3e4478bf6003a9445bb'){throw 'ROVER_IMMUTABLE_SOURCE_CHANGED'}
           $built=(Get-FileHash database/documentary/rover_482.sqlite -Algorithm SHA256).Hash.ToLowerInvariant()
           if($manifest.database_sha256 -ne $built){throw 'ROVER_PACKAGED_SQLITE_SHA_MISMATCH'}
+          # A new installer may only be issued after every source unit has
+          # been translated and translation-reviewed in French. Source/CI
+          # checks remain possible while French work is incomplete.
+          if('${{ github.event_name }}' -eq 'workflow_dispatch'){
+            python tools/rover_multilingual.py --database database/documentary/rover_482.sqlite --source-sha256 $manifest.original_sqlite_sha256 --verify-only --require-complete-french
+            if($LASTEXITCODE -ne 0){throw 'FRENCH_CORPUS_INCOMPLETE_SETUP_BLOCKED'}
+          }
           Write-Host 'ROVER_482_SOURCE_SQLITE_PDF_AUTHENTICATED'
       - name: Installer Qt 5.15.2 MSVC x64
         shell: pwsh
