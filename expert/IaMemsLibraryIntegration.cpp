@@ -721,7 +721,7 @@ void IaMemsService::askWithLibrary(const QString &question)
                 setProperty("iaMemsLastLibraryEvidence", QVariant());
                 setProperty("iaMemsLastLibraryLocked", true);
                 m_pendingGrounding.clear();
-                emit responseReady(lines.join(QLatin1Char('\\n')));
+                emit responseReady(lines.join(QLatin1Char('\n')));
                 emit statusChanged();
                 return;
             }
