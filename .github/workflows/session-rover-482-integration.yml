@@ -10,6 +10,11 @@ on:
       - 'database/MemsDocumentaryRepository.h'
       - 'database/MemsDocumentaryRepositorySelfTest.cpp'
       - 'expert/IaMemsLibraryIntegration.cpp'
+      - 'expert/IaMemsService.cpp'
+      - 'expert/IaMemsService.h'
+      - 'expert/LocalAiClient.cpp'
+      - 'expert/LocalAiClient.h'
+      - 'main.cpp'
       - 'database/MemsDatabaseExplorerV2.cpp'
       - 'database/MemsDatabaseBrowser.cpp'
       - 'expert/IaMemsDocumentaryPipeline.cpp'
@@ -248,6 +253,23 @@ jobs:
           if($instance.HasExited){throw "SESSION_INSTALLED_APP_EARLY_EXIT_$($instance.ExitCode)"}
           Stop-Process -Id $instance.Id -Force
           Write-Host 'REAL_WINDOWS_SETUP_INSTALLED_SQLITE_PDF_APPLICATION_START_OK'
+          $portugueseFolder=Join-Path $env:RUNNER_TEMP 'SESSION_ROVER_482_PORTUGUESE'
+          if(Test-Path $portugueseFolder){Remove-Item $portugueseFolder -Recurse -Force}
+          $ptInstall=Start-Process -FilePath $setup.FullName -ArgumentList '/LANG=portuguese','/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',"/DIR=$portugueseFolder" -Wait -PassThru
+          if($ptInstall.ExitCode -ne 0){throw "SETUP_PORTUGUESE_INSTALL_EXIT_$($ptInstall.ExitCode)"}
+          $ptIni=Join-Path $portugueseFolder 'session-install-language.ini'
+          if(-not(Test-Path $ptIni)){throw 'PORTUGUESE_INSTALLER_LANGUAGE_NOT_WRITTEN'}
+          $ptText=Get-Content $ptIni -Raw
+          if($ptText -notmatch '(?m)^Language=pt\\s*      - name: Publier un seul Setup Windows installe et teste
+        uses: actions/upload-artifact@v4
+        with:
+          name: ECU-MEMS-Manager-SESSION-Setup-Rover-482
+          path: setup-rover-output/*.exe
+          retention-days: 14
+          if-no-files-found: error
+){throw "PORTUGUESE_INSTALL_LANGUAGE_WRONG $ptText"}
+          if(-not(Test-Path (Join-Path $portugueseFolder 'ecu_mems_manager.exe'))){throw 'PORTUGUESE_INSTALL_EXECUTABLE_MISSING'}
+          Write-Host 'SESSION_SETUP_FRENCH_AND_PORTUGUESE_LANGUAGE_SELECTION_PASS'
       - name: Publier un seul Setup Windows installe et teste
         uses: actions/upload-artifact@v4
         with:
