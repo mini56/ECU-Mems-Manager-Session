@@ -42,6 +42,7 @@
 #include <QTextBrowser>
 #include <QTimer>
 #include <QUrl>
+#include <QUuid>
 #include <QVBoxLayout>
 #include <QVariantMap>
 #include <QVector>
