@@ -519,7 +519,8 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
                 "FROM documentary_fts JOIN documentary_entries e "
                 "ON e.rowid=documentary_fts.rowid "
                 "WHERE documentary_fts MATCH ? "
-                "ORDER BY bm25(documentary_fts) LIMIT ?");
+                "ORDER BY CASE WHEN e.source_table='akm7169fre_page_ocr' "
+            "THEN 1 ELSE 0 END, bm25(documentary_fts) LIMIT ?");
             query.prepare(statement);
             query.addBindValue(tokens.join(QStringLiteral(" OR ")));
             query.addBindValue(maximum);
@@ -947,12 +948,23 @@ QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
         .value(QStringLiteral("source_key")).toString()
         .startsWith(QStringLiteral("rave-fr:"));
     if (originalFrench) {
+        QStringList sources;
+        for (const QVariant &hit : hits) {
+            const QString key=hit.toMap().value(
+                QStringLiteral("source_key")).toString();
+            if (key.startsWith(QStringLiteral("rave-fr:AKM7169FRE:")) &&
+                !sources.contains(QStringLiteral("AKM7169FRE (SPi 20 pages)")))
+                sources << QStringLiteral("AKM7169FRE (SPi 20 pages)");
+            if (key.startsWith(QStringLiteral("rave-fr:RCL0193FRE:")) &&
+                !sources.contains(QStringLiteral("RCL0193FRE (371 pages)")))
+                sources << QStringLiteral("RCL0193FRE (371 pages)");
+        }
         paragraphs << QStringLiteral(
-            "Documentation Rover en français d'origine — RCL0193FRE. "
-            "Source constructeur retrouvée, sans traduction de l'anglais. "
-            "Les extraits sont documentaires, pas des conseils de réparation "
-            "individuellement approuvés. Vérifier les pages et la compatibilité "
-            "du véhicule avant toute intervention.");
+            "Documentation Rover en français constructeur — %1. "
+            "Aucune traduction de l'anglais. Extraits documentaires : "
+            "les procédures et valeurs non approuvées doivent être vérifiées "
+            "sur le fac-similé original et pour le véhicule concerné.")
+            .arg(sources.join(QStringLiteral(", ")));
     } else {
         paragraphs << QStringLiteral(
             "Documentation Rover AKM7169ENG — recherche dans la SQLite commune "
@@ -964,8 +976,19 @@ QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
     for (int i = 0; i < count; ++i) {
         const QVariantMap item = hits.at(i).toMap();
         QString content = item.value(QStringLiteral("content")).toString();
-        if (item.value(QStringLiteral("source_table")).toString() ==
-            QStringLiteral("rover_procedure_candidate")) {
+        const QString sourceTable=item.value(
+            QStringLiteral("source_table")).toString();
+        if (sourceTable==QStringLiteral("rover_fr_akm7169fre_page_ocr")) {
+            // Le texte d'un scan n'a pas été relu ligne par ligne. Il permet
+            // de retrouver une page dans la base, jamais de générer une
+            // consigne de réparation prétendument vérifiée dans l'IA.
+            content=content.section(QStringLiteral("\\n\\n"),0,0)
+                +QStringLiteral(
+                    "\\nOCR de repérage non validé : consulter l'image "
+                    "du constructeur dans Base de données. "
+                    "Aucune étape OCR n'est approuvée pour l'IA.");
+        }
+        if (sourceTable == QStringLiteral("rover_procedure_candidate")) {
             // Review-only OCR is visible in the database screen, but the IA
             // must not output its unverified steps as repair instructions.
             const int firstStep = content.indexOf(
