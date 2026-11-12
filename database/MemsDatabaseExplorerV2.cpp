@@ -1,5 +1,6 @@
 #include "MemsGlobalSearchIndex.h"
 #include "MemsDocumentaryRepository.h"
+#include "MemsDocumentaryUpdateDialog.h"
 #include "MemsDatabaseExplorerV2.h"
 #include "MemsDatabaseUniversalAccess.h"
 #include "MemsReferenceSheetRenderer.h"
@@ -203,7 +204,7 @@ class DatabaseExplorerV2 : public QObject
 public:
     explicit DatabaseExplorerV2(QWidget *browser)
         : QObject(browser),m_browser(browser),m_search(nullptr),m_filter(nullptr),m_results(nullptr),m_detail(nullptr),
-          m_count(nullptr),m_scopeCompact(nullptr),m_sheetButton(nullptr),m_pdfButton(nullptr),m_currentGenerationLabel(nullptr),
+          m_count(nullptr),m_scopeCompact(nullptr),m_updateButton(nullptr),m_sheetButton(nullptr),m_pdfButton(nullptr),m_currentGenerationLabel(nullptr),
           m_debounce(new QTimer(this)),m_completionModel(new QStringListModel(this)),m_completer(nullptr),m_ftsEnabled(false),m_ready(false)
     {
         if(!m_browser) return;
@@ -215,10 +216,10 @@ public:
         if(!m_search||!m_filter||!m_results||!m_detail) return;
 
         const bool existingIndexReady=MemsGlobalSearchIndex::ensureBuilt() && openIndex();
-        // Do not suppress the documentary page when the legacy index fails:
-        // the shared 482-page repository can still be queried independently.
-        if(!existingIndexReady && !MemsDocumentaryRepository::isPackInstalled()) return;
-
+        // A first installation has no external documentary database yet.
+        // The page and its update button MUST remain usable offline, even
+        // when no documentary index or pack is installed.
+        Q_UNUSED(existingIndexReady);
         compactHeader();
         configureFilter();
         configureResults();
@@ -295,7 +296,21 @@ private:
         m_scopeCompact=new QLabel(row);
         m_scopeCompact->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
         m_scopeCompact->setStyleSheet(QStringLiteral("color:#aeb9c2;background:transparent;border:0;font-weight:600;"));
+        m_scopeCompact->setMaximumWidth(470);
         horizontal->addWidget(m_scopeCompact);
+        m_updateButton=new QPushButton(row);
+        m_updateButton->setObjectName(QStringLiteral("documentaryUpdateButton"));
+        m_updateButton->setMinimumHeight(31);
+        m_updateButton->setMaximumWidth(225);
+        m_updateButton->setStyleSheet(QStringLiteral(
+            "QPushButton{background:#0e141a;color:#ff9828;border:1px solid #ff7a00;"
+            "border-radius:6px;padding:4px 10px;font-weight:700;}"
+            "QPushButton:hover{background:#1a2630;}"));
+        horizontal->addWidget(m_updateButton);
+        connect(m_updateButton,&QPushButton::clicked,this,[this](){
+            MemsDocumentaryUpdateDialog dialog(I18n::language(),m_browser.data());
+            dialog.exec();
+        });
         layout->insertWidget(index,row);
     }
 
@@ -506,6 +521,16 @@ private:
         if(m_scopeCompact){
             m_scopeCompact->setText(I18n::text(7162)+QStringLiteral("  ")+I18n::text(7163)+QStringLiteral("  ")+I18n::text(7164)+QStringLiteral("  ")+I18n::text(7165)+QStringLiteral("  ")+I18n::text(7166)+QStringLiteral("     ")+I18n::text(7260));
         }
+        if(m_updateButton) {
+            const QString language=I18n::language().left(2).toLower();
+            QString label=QStringLiteral("Download database update");
+            if(language==QStringLiteral("fr")) label=QStringLiteral("Mise à jour de la base");
+            else if(language==QStringLiteral("es")) label=QStringLiteral("Actualizar base de datos");
+            else if(language==QStringLiteral("it")) label=QStringLiteral("Aggiorna banca dati");
+            else if(language==QStringLiteral("pt")) label=QStringLiteral("Atualizar base de dados");
+            else if(language==QStringLiteral("de")) label=QStringLiteral("Datenbank aktualisieren");
+            m_updateButton->setText(label);
+        }
         if(m_search) m_search->setPlaceholderText(I18n::text(7217));
         const QString current=filterData();
         rebuildFilterItems(current);
@@ -543,7 +568,10 @@ private:
         }
         // A mounted corpus is the single documentary source. Never add old
         // Pack001/reference documentary rows beside it as competing evidence.
-        if(documentaryInstalled && category==QStringLiteral("documentation"))
+        // Documentary pages are exclusively supplied by the installed
+        // language pack. Never silently insert reference or Pack001 content
+        // while the downloadable documentary database is absent.
+        if(category==QStringLiteral("documentation"))
             return rows;
         if(!m_index.isOpen()) return rows;
         const QString cleaned=removeGeneration(text,generation);
@@ -581,8 +609,7 @@ private:
             QVariantMap row;
             const QSqlRecord record=query.record();
             for(int i=0;i<record.count();++i) row.insert(record.fieldName(i),query.value(i));
-            if(documentaryInstalled &&
-               row.value(QStringLiteral("category")).toString()==QStringLiteral("documentation"))
+            if(row.value(QStringLiteral("category")).toString()==QStringLiteral("documentation"))
                 continue;
             rows.append(row);
         }
@@ -842,6 +869,7 @@ private:
     QTextBrowser *m_detail;
     QLabel *m_count;
     QLabel *m_scopeCompact;
+    QPushButton *m_updateButton;
     QPushButton *m_sheetButton;
     QPushButton *m_pdfButton;
     QLabel *m_currentGenerationLabel;
