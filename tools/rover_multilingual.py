@@ -220,7 +220,34 @@ def check_localized_schema(con: sqlite3.Connection, original_sha: str) -> dict:
         require(original is not None and original[1] == src_hash and
                 sha(translation) == translated_hash, "CORRUPT_TRANSLATION_PROVENANCE")
         validate_translation(original[0], translation)
-    return {"source_units": total, "coverage": coverage, "schema_version": SCHEMA_VERSION}
+    reviewed_french = con.execute(
+        "SELECT COUNT(*) FROM documentary_translations t "
+        "JOIN documentary_text_units u ON u.unit_id=t.unit_id "
+        "WHERE t.language='fr' AND t.review_status='reviewed' "
+        "AND length(trim(t.reviewer))>0 "
+        "AND t.source_sha256=u.source_sha256"
+    ).fetchone()[0]
+    translated_french = coverage.get("fr", 0)
+    french = {
+        "required": total,
+        "translated": translated_french,
+        "reviewed": reviewed_french,
+        "missing": total - translated_french,
+        "not_reviewed": translated_french - reviewed_french,
+        "ready_for_user_testing": bool(total) and reviewed_french == total,
+    }
+    return {"source_units": total, "coverage": coverage,
+            "french": french, "schema_version": SCHEMA_VERSION}
+
+
+def require_complete_french(status: dict) -> None:
+    """One quality gate, never a partial French/English display release."""
+    french = status["french"]
+    require(french["ready_for_user_testing"],
+            "FRENCH_CORPUS_INCOMPLETE: "
+            f"{french['translated']}/{french['required']} translated, "
+            f"{french['reviewed']}/{french['required']} translation-reviewed. "
+            "NO_USER_SETUP_OR_TRIAL_PERMITTED")
 
 def make_export(con: sqlite3.Connection, source_sha: str, language: str) -> dict:
     require(language in SUPPORTED_LANGUAGES and language != "en", "BAD_EXPORT_LANGUAGE")
@@ -243,6 +270,9 @@ def main() -> None:
     parser.add_argument("--export-source", type=Path)
     parser.add_argument("--language", default="fr")
     parser.add_argument("--verify-only", action="store_true")
+    parser.add_argument("--require-complete-french", action="store_true",
+                        help="Reject any French release or user trial unless all"
+                             " original text units have reviewed French entries")
     args = parser.parse_args()
     con = sqlite3.connect(args.database)
     try:
@@ -252,6 +282,8 @@ def main() -> None:
                 print("IMPORTED_TRANSLATIONS", path,
                       import_pack(con, json.loads(path.read_text(encoding="utf-8"))))
         status = check_localized_schema(con, args.source_sha256)
+        if args.require_complete_french:
+            require_complete_french(status)
         if args.export_source:
             args.export_source.parent.mkdir(parents=True, exist_ok=True)
             export = make_export(con, args.source_sha256, args.language)
