@@ -260,14 +260,7 @@ jobs:
           $ptIni=Join-Path $portugueseFolder 'session-install-language.ini'
           if(-not(Test-Path $ptIni)){throw 'PORTUGUESE_INSTALLER_LANGUAGE_NOT_WRITTEN'}
           $ptText=Get-Content $ptIni -Raw
-          if($ptText -notmatch '(?m)^Language=pt\\s*      - name: Publier un seul Setup Windows installe et teste
-        uses: actions/upload-artifact@v4
-        with:
-          name: ECU-MEMS-Manager-SESSION-Setup-Rover-482
-          path: setup-rover-output/*.exe
-          retention-days: 14
-          if-no-files-found: error
-){throw "PORTUGUESE_INSTALL_LANGUAGE_WRONG $ptText"}
+          if($ptText -notmatch '(?m)^Language=pt\s*$'){throw "PORTUGUESE_INSTALL_LANGUAGE_WRONG $ptText"}
           if(-not(Test-Path (Join-Path $portugueseFolder 'ecu_mems_manager.exe'))){throw 'PORTUGUESE_INSTALL_EXECUTABLE_MISSING'}
           Write-Host 'SESSION_SETUP_FRENCH_AND_PORTUGUESE_LANGUAGE_SELECTION_PASS'
       - name: Publier un seul Setup Windows installe et teste
