@@ -737,11 +737,11 @@ private:
             const QString title=row.value(QStringLiteral("title")).toString();
             const QString generation=row.value(QStringLiteral("generation")).toString();
             const QString category=row.value(QStringLiteral("category")).toString();
-            const QString localized=
+            const QString localized =
                 row.value(QStringLiteral("source_table")).toString().startsWith(
-                    QStringLiteral("rover_")) &&
-                I18n::language().startsWith(QStringLiteral("fr"),Qt::CaseInsensitive)
-                ? MemsDocumentaryRepository::frenchTitle(title)
+                    QStringLiteral("rover_"))
+                ? MemsDocumentaryRepository::localizedTitle(
+                    title, I18n::language())
                 : MemsDatabaseContent::localizedTitle(
                     row.value(QStringLiteral("content")).toString(),title);
             QTableWidgetItem *titleItem=new QTableWidgetItem(localized);
