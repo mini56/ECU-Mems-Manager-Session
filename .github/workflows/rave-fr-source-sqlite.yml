@@ -72,6 +72,14 @@ jobs:
             -o /tmp/mems_rave_fr_reader_test \
             $(pkg-config --cflags --libs Qt5Core Qt5Sql)
           /tmp/mems_rave_fr_reader_test output/rave-fr/mems_documentary_fr.sqlite
+          g++ -std=c++17 -Wall -Wextra -fPIC \
+            -DMEMS_DOCUMENTARY_SELFTEST=1 \
+            database/MemsDocumentaryRepository.cpp \
+            database/MemsDocumentaryPackCatalog.cpp \
+            database/MemsDocumentaryRepositorySelfTest.cpp \
+            -o /tmp/mems_documentary_english_regression_test \
+            $(pkg-config --cflags --libs Qt5Core Qt5Sql)
+          /tmp/mems_documentary_english_regression_test
       - name: Verifier la nouvelle couverture des schémas français
         shell: bash
         run: |
