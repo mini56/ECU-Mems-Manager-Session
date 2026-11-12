@@ -201,7 +201,9 @@ void MemsDatabaseBrowser::buildUi()
     m_detail->setMinimumHeight(0);
     m_detail->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     m_detail->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    m_detail->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Ignored);
+    m_detail->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    m_detail->setLineWrapMode(QTextEdit::WidgetWidth);
+    m_detail->setWordWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
     m_detail->setStyleSheet(QStringLiteral("QTextBrowser{background:#0a1015;color:#dce3e8;border:1px solid #27323b;border-radius:3px;padding:7px;}QTextBrowser QScrollBar:vertical{background:#111a21;width:16px;margin:0;border-left:1px solid #53616c;}QTextBrowser QScrollBar::handle:vertical{background:#7c8b96;min-height:38px;border:1px solid #a0abb3;border-radius:5px;margin:2px;}QTextBrowser QScrollBar::handle:vertical:hover{background:#ff8a22;border-color:#ffad5c;}QTextBrowser QScrollBar::add-line:vertical,QTextBrowser QScrollBar::sub-line:vertical{height:0;}QTextBrowser QScrollBar::add-page:vertical,QTextBrowser QScrollBar::sub-page:vertical{background:#111a21;}"));
     dv->addWidget(m_detail,1);
     split->addWidget(listCard); split->addWidget(detailCard); split->setStretchFactor(0,3); split->setStretchFactor(1,4); root->addWidget(split,1);
