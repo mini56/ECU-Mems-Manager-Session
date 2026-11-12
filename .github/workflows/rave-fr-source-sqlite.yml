@@ -9,6 +9,7 @@ on:
       - tools/test_rave_fr_cpp_reader.cpp
       - database/MemsDocumentaryRepository.cpp
       - database/MemsDocumentaryRepository.h
+      - database/MemsDatabaseExplorerV2.cpp
       - .github/workflows/rave-fr-source-sqlite.yml
   workflow_dispatch:
 
@@ -66,7 +67,8 @@ jobs:
           set -euo pipefail
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends \
-            g++ pkg-config qtbase5-dev libqt5sql5-sqlite
+            g++ pkg-config qtbase5-dev libqt5sql5-sqlite \
+            libqt5charts5-dev libqt5serialport5-dev
           g++ -std=c++17 -Wall -Wextra -fPIC \
             -DMEMS_DOCUMENTARY_SELFTEST=1 \
             database/MemsDocumentaryRepository.cpp \
@@ -83,6 +85,10 @@ jobs:
             -o /tmp/mems_documentary_english_regression_test \
             $(pkg-config --cflags --libs Qt5Core Qt5Sql)
           /tmp/mems_documentary_english_regression_test
+          g++ -std=c++17 -fPIC -fsyntax-only -I. \
+            $(pkg-config --cflags Qt5Core Qt5Widgets Qt5Sql Qt5Network Qt5Charts Qt5SerialPort) \
+            database/MemsDatabaseExplorerV2.cpp
+          echo RAVE_FR_REAL_UI_SOURCE_COMPILES
       - name: Verifier la nouvelle couverture des schémas français
         shell: bash
         run: |
