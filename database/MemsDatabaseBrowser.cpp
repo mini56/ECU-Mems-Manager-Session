@@ -18,6 +18,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QScrollBar>
 #include <QSplitter>
 #include <QTableWidget>
 #include <QTableWidgetItem>
@@ -198,15 +199,49 @@ void MemsDatabaseBrowser::buildUi()
     m_sheetButton=new QPushButton(detailCard); m_pdfButton=new QPushButton(detailCard);
     for(QPushButton *b:{m_sheetButton,m_pdfButton}){b->setMinimumHeight(28);b->setStyleSheet(QStringLiteral("QPushButton{background:#182129;color:#e9eef1;border:1px solid #3b4852;border-radius:4px;padding:4px 9px;}QPushButton:hover{border-color:#ff7a00;color:#ffad5c;}"));}
     tools->addWidget(detailTitle); tools->addStretch(1); tools->addWidget(m_sheetButton); tools->addWidget(m_pdfButton); dv->addLayout(tools);
+    // A single, owned document viewport: long technical sheets scroll by
+    // the same native Qt scrollbar used by IA MEMS. No resize/event overlays.
+    QHBoxLayout *detailViewport=new QHBoxLayout;
+    detailViewport->setContentsMargins(0,0,0,0);
+    detailViewport->setSpacing(5);
     m_detail=new QTextBrowser(detailCard);
+    m_detail->setObjectName(QStringLiteral("memsDatabaseDocument"));
     m_detail->setMinimumHeight(0);
-    m_detail->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-    m_detail->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     m_detail->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     m_detail->setLineWrapMode(QTextEdit::WidgetWidth);
     m_detail->setWordWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
-    m_detail->setStyleSheet(QStringLiteral("QTextBrowser{background:#0a1015;color:#dce3e8;border:1px solid #27323b;border-radius:3px;padding:7px;}QTextBrowser QScrollBar:vertical{background:#111a21;width:16px;margin:0;border-left:1px solid #53616c;}QTextBrowser QScrollBar::handle:vertical{background:#7c8b96;min-height:38px;border:1px solid #a0abb3;border-radius:5px;margin:2px;}QTextBrowser QScrollBar::handle:vertical:hover{background:#ff8a22;border-color:#ffad5c;}QTextBrowser QScrollBar::add-line:vertical,QTextBrowser QScrollBar::sub-line:vertical{height:0;}QTextBrowser QScrollBar::add-page:vertical,QTextBrowser QScrollBar::sub-page:vertical{background:#111a21;}"));
-    dv->addWidget(m_detail,1);
+    m_detail->setFocusPolicy(Qt::StrongFocus);
+    m_detail->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_detail->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    m_detail->setStyleSheet(QStringLiteral(
+        "QTextBrowser{background:#0a1015;color:#dce3e8;border:1px solid #27323b;"
+        "border-radius:3px;padding:7px;}"));
+    detailViewport->addWidget(m_detail,1);
+    QScrollBar *documentScroll=new QScrollBar(Qt::Vertical,detailCard);
+    documentScroll->setObjectName(QStringLiteral("memsDatabaseDocumentScroll"));
+    documentScroll->setFixedWidth(18);
+    documentScroll->setStyleSheet(QStringLiteral(
+        "QScrollBar:vertical{background:#111a21;width:18px;margin:0;border-left:1px solid #53616c;}"
+        "QScrollBar::handle:vertical{background:#8897a5;min-height:38px;border:1px solid #b1bdc5;border-radius:4px;margin:2px;}"
+        "QScrollBar::handle:vertical:hover{background:#ff8a22;border-color:#ffad5c;}"
+        "QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical{height:0;}"
+        "QScrollBar::add-page:vertical,QScrollBar::sub-page:vertical{background:#111a21;}"));
+    detailViewport->addWidget(documentScroll);
+    QScrollBar *documentInternal=m_detail->verticalScrollBar();
+    connect(documentInternal,&QScrollBar::rangeChanged,documentScroll,
+            [documentScroll,documentInternal](int minimum,int maximum){
+        documentScroll->setRange(minimum,maximum);
+        documentScroll->setPageStep(documentInternal->pageStep());
+        documentScroll->setSingleStep(documentInternal->singleStep());
+    });
+    connect(documentInternal,&QScrollBar::valueChanged,
+            documentScroll,&QScrollBar::setValue);
+    connect(documentScroll,&QScrollBar::valueChanged,
+            documentInternal,&QScrollBar::setValue);
+    documentScroll->setRange(documentInternal->minimum(),documentInternal->maximum());
+    documentScroll->setPageStep(documentInternal->pageStep());
+    documentScroll->setSingleStep(documentInternal->singleStep());
+    dv->addLayout(detailViewport,1);
     split->addWidget(listCard); split->addWidget(detailCard); split->setStretchFactor(0,3); split->setStretchFactor(1,4); root->addWidget(split,1);
 
     QFrame *footer=card(this); QHBoxLayout *fv=new QHBoxLayout(footer); fv->setContentsMargins(9,4,9,4);
