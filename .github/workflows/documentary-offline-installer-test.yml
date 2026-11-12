@@ -39,6 +39,17 @@ jobs:
               $(pkg-config --cflags Qt5Core Qt5Widgets Qt5Sql Qt5Network) "$source"
           done
           echo DOCUMENTARY_INSTALLER_SOURCES_COMPILE_PASS
+      - name: Construire une source reellement structuree puis un fixture synthetique
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p output/rave-fr
+          python3 tools/build_rave_fr_documentary.py \
+            --reference-root database/reference \
+            --output output/rave-fr/mems_documentary_fr.sqlite
+          # Fausse page de test uniquement, aucun document constructeur
+          # non valide n'est publie ou livre aux utilisateurs.
+          python3 tools/test_documentary_fixture.py --source output/rave-fr
       - name: Tester un mot de passe et le refus des mauvais paquets
         shell: bash
         run: |
@@ -49,4 +60,4 @@ jobs:
             database/MemsDocumentaryPackCatalog.cpp \
             -o /tmp/documentary_offline_installer_test \
             $(pkg-config --cflags --libs Qt5Core Qt5Sql Qt5Network)
-          /tmp/documentary_offline_installer_test
+          /tmp/documentary_offline_installer_test output/rave-fr
