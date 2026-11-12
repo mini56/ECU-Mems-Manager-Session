@@ -703,17 +703,8 @@ void IaMemsService::askWithLibrary(const QString &question)
             if (choices.size() > 1) {
                 const bool french = I18n::language().startsWith(QStringLiteral("fr"),
                                                                  Qt::CaseInsensitive);
-                QStringList lines;
-                lines << QStringLiteral("Rubriques retrouvées pour « %1 » :").arg(trimmed);
-                for (int index = 0; index < choices.size(); ++index) {
-                    const QVariantMap choice = choices.at(index).toMap();
-                    const QString title = choice.value(QStringLiteral("title")).toString();
-                    lines << QStringLiteral("%1. %2").arg(index + 1)
-                        .arg(french ? MemsDocumentaryRepository::frenchTitle(title) : title);
-                }
-                lines << QStringLiteral(
-                    "Réponds par le numéro de la rubrique à consulter, "
-                    "ou écris une autre recherche.");
+                const QString menu =
+                    MemsDocumentaryRepository::numberedMenu(trimmed, choices, french);
                 clearStructuredMenuState(this);
                 setProperty("iaMemsRoverMenuRows", choices);
                 setProperty("iaMemsRoverMenuQuestion", trimmed);
@@ -721,7 +712,7 @@ void IaMemsService::askWithLibrary(const QString &question)
                 setProperty("iaMemsLastLibraryEvidence", QVariant());
                 setProperty("iaMemsLastLibraryLocked", true);
                 m_pendingGrounding.clear();
-                emit responseReady(lines.join(QLatin1Char('\n')));
+                emit responseReady(menu);
                 emit statusChanged();
                 return;
             }
