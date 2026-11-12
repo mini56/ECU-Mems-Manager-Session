@@ -367,6 +367,8 @@ private:
         m_detail->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
         m_detail->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
         m_detail->setFocusPolicy(Qt::StrongFocus);
+        m_detail->setLineWrapMode(QTextEdit::WidgetWidth);
+        m_detail->setWordWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
         QScrollBar *bar=m_detail->verticalScrollBar();
         if(!bar) return;
         bar->setFixedWidth(16);
@@ -720,8 +722,13 @@ private:
             const QString title=row.value(QStringLiteral("title")).toString();
             const QString generation=row.value(QStringLiteral("generation")).toString();
             const QString category=row.value(QStringLiteral("category")).toString();
-            const QString localized=MemsDatabaseContent::localizedTitle(
-                row.value(QStringLiteral("content")).toString(),title);
+            const QString localized=
+                row.value(QStringLiteral("source_table")).toString().startsWith(
+                    QStringLiteral("rover_")) &&
+                I18n::language().startsWith(QStringLiteral("fr"),Qt::CaseInsensitive)
+                ? MemsDocumentaryRepository::frenchTitle(title)
+                : MemsDatabaseContent::localizedTitle(
+                    row.value(QStringLiteral("content")).toString(),title);
             QTableWidgetItem *titleItem=new QTableWidgetItem(localized);
             titleItem->setData(Qt::UserRole+10,category);
             titleItem->setData(Qt::UserRole+11,row.value(QStringLiteral("source_table")));
