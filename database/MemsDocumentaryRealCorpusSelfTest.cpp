@@ -53,22 +53,28 @@ int main(int argc, char **argv)
         return 1;
     const QVariantList frenchHead = corpus.search(
         QStringLiteral("Cylinder Head"),12,true,QStringLiteral("fr"));
-    if (!verify(!frenchHead.isEmpty(),"french_reader_has_source_access"))
+    if (!verify(!frenchHead.isEmpty(),"french_reader_returns_publication_status_or_reviewed_source"))
         return 1;
-    bool foundUntranslated = false;
-    for (const QVariant &entry : frenchHead) {
-        const QVariantMap row = entry.toMap();
-        if (row.value(QStringLiteral("source_table")).toString()
-                == QStringLiteral("rover_documentary") &&
-            !row.value(QStringLiteral("translation_available")).toBool() &&
-            row.value(QStringLiteral("title")).toString().contains(
-                QStringLiteral("[EN / FR indisponible]"))) {
-            foundUntranslated = true;
-            break;
-        }
+    const QVariantMap french = frenchHead.first().toMap();
+    const QString sourceTable = french.value(QStringLiteral("source_table")).toString();
+    if (sourceTable == QStringLiteral("rover_translation_status")) {
+        // The real English corpus has no reviewed French translation pack:
+        // the user sees ONE French-only status, not hybrid instructions.
+        if (!verify(french.value(QStringLiteral("title")).toString().contains(
+                        QStringLiteral("traduction française")) &&
+                    !french.value(QStringLiteral("content")).toString().contains(
+                        QStringLiteral("Cylinder Head")) &&
+                    french.value(QStringLiteral("source_status")).toString()
+                        == QStringLiteral("FR_NOT_PUBLISHED"),
+                    "incomplete_french_must_be_hidden_not_mixed"))
+            return 1;
+    } else {
+        // Once the French pack is complete, all displayed Rover entries must
+        // originate from reviewed translations, never partial English.
+        if (!verify(french.value(QStringLiteral("translation_available")).toBool(),
+                    "published_french_requires_real_translated_source"))
+            return 1;
     }
-    if (!verify(foundUntranslated,"no_fabricated_french_translation_before_import"))
-        return 1;
     const QVariantList exact = corpus.search(QStringLiteral("12.65.12"));
     if (!verify(exact.first().toMap().value(QStringLiteral("source_key")).toString()
                 == QStringLiteral("rover-akm7169eng-12.65.12"),
