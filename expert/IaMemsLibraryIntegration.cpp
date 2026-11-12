@@ -6,6 +6,7 @@
 #include "LocalAiClient.h"
 #include "../database/MemsReferenceDatabase.h"
 #include "../database/MemsDocumentaryRepository.h"
+#include "../i18n.h"
 
 #include <QDir>
 #include <QFileInfo>
@@ -604,6 +605,51 @@ void IaMemsService::askWithLibrary(const QString &question)
     if (trimmed.isEmpty())
         return;
 
+    // When the Rover catalogue is mounted, a numbered reply selects the
+    // exact stored source row rather than starting a new, unrelated search.
+    // New text starts a new query; selecting an item never changes the corpus.
+    const QVariantList roverChoices = property("iaMemsRoverMenuRows").toList();
+    if (!roverChoices.isEmpty() && !resolvedDocumentary) {
+        bool numeric = false;
+        const int selected = trimmed.toInt(&numeric);
+        if (numeric) {
+            if (selected < 1 || selected > roverChoices.size()) {
+                m_pendingGrounding.clear();
+                emit responseReady(QStringLiteral(
+                    "Choisis un numéro entre 1 et %1, ou saisis une nouvelle recherche.")
+                    .arg(roverChoices.size()));
+                emit statusChanged();
+                return;
+            }
+            const QVariantMap chosen = roverChoices.at(selected - 1).toMap();
+            const QString originalQuestion =
+                property("iaMemsRoverMenuQuestion").toString().trimmed();
+            setProperty("iaMemsRoverMenuRows", QVariant());
+            setProperty("iaMemsRoverMenuQuestion", QVariant());
+            MemsDocumentaryRepository documentary;
+            if (!documentary.open()) {
+                m_pendingGrounding.clear();
+                emit responseReady(QStringLiteral(
+                    "La base documentaire Rover est indisponible : %1.")
+                    .arg(documentary.lastError()));
+                emit statusChanged();
+                return;
+            }
+            const QString evidence = MemsDocumentaryRepository::answerFromHits(
+                QVariantList{chosen});
+            setProperty("iaMemsLastLibraryQuestion",
+                        originalQuestion.isEmpty() ? trimmed : originalQuestion);
+            setProperty("iaMemsLastLibraryEvidence", evidence);
+            setProperty("iaMemsLastLibraryLocked", true);
+            m_pendingGrounding.clear();
+            emit responseReady(evidence);
+            emit statusChanged();
+            return;
+        }
+        setProperty("iaMemsRoverMenuRows", QVariant());
+        setProperty("iaMemsRoverMenuQuestion", QVariant());
+    }
+
     updateContextFromQuestion(trimmed);
 
     // Live ECU diagnosis remains on the measurement/expert route unless
@@ -635,12 +681,55 @@ void IaMemsService::askWithLibrary(const QString &question)
             emit statusChanged();
             return;
         }
-        const QVariantList documents = documentary.search(trimmed, 5, true);
+        const QVariantList documents = documentary.search(trimmed, 12, true);
         if (!documents.isEmpty()) {
-            const QString evidence=MemsDocumentaryRepository::answerFromHits(documents);
-            setProperty("iaMemsLastLibraryQuestion",trimmed);
-            setProperty("iaMemsLastLibraryEvidence",evidence);
-            setProperty("iaMemsLastLibraryLocked",true);
+            // Prefer identifiable workshop operations to loose page OCR hits.
+            // A menu of precise sources restores the numbered navigation the
+            // documentary UI offered before installing the Rover corpus.
+            QVariantList choices;
+            QSet<QString> seenKeys;
+            for (const QVariant &entry : documents) {
+                const QVariantMap row = entry.toMap();
+                const QString key = row.value(QStringLiteral("source_key")).toString();
+                if (key.isEmpty() || seenKeys.contains(key)
+                    || row.value(QStringLiteral("source_table")).toString()
+                       == QStringLiteral("rover_ocr_discovery"))
+                    continue;
+                seenKeys.insert(key);
+                choices.append(row);
+            }
+            if (choices.isEmpty())
+                choices = documents;
+            if (choices.size() > 1) {
+                const bool french = I18n::language().startsWith(QStringLiteral("fr"),
+                                                                 Qt::CaseInsensitive);
+                QStringList lines;
+                lines << QStringLiteral("Rubriques retrouvées pour « %1 » :").arg(trimmed);
+                for (int index = 0; index < choices.size(); ++index) {
+                    const QVariantMap choice = choices.at(index).toMap();
+                    const QString title = choice.value(QStringLiteral("title")).toString();
+                    lines << QStringLiteral("%1. %2").arg(index + 1)
+                        .arg(french ? MemsDocumentaryRepository::frenchTitle(title) : title);
+                }
+                lines << QStringLiteral(
+                    "Réponds par le numéro de la rubrique à consulter, "
+                    "ou écris une autre recherche.");
+                clearStructuredMenuState(this);
+                setProperty("iaMemsRoverMenuRows", choices);
+                setProperty("iaMemsRoverMenuQuestion", trimmed);
+                setProperty("iaMemsLastLibraryQuestion", trimmed);
+                setProperty("iaMemsLastLibraryEvidence", QVariant());
+                setProperty("iaMemsLastLibraryLocked", true);
+                m_pendingGrounding.clear();
+                emit responseReady(lines.join(QLatin1Char('\\n')));
+                emit statusChanged();
+                return;
+            }
+            const QString evidence =
+                MemsDocumentaryRepository::answerFromHits(choices);
+            setProperty("iaMemsLastLibraryQuestion", trimmed);
+            setProperty("iaMemsLastLibraryEvidence", evidence);
+            setProperty("iaMemsLastLibraryLocked", true);
             m_pendingGrounding.clear();
             emit responseReady(evidence);
             emit statusChanged();
