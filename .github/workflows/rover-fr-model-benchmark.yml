@@ -1,12 +1,9 @@
 name: ROVER FR - audit comparatif du moteur de traduction
 
+# Historique expérimental conservé, mais chantier abandonné :
+# les éditions constructeur RAVE existent dans leurs langues d'origine.
+# Aucun nouveau lot IA ne doit être généré automatiquement ni à la demande.
 on:
-  push:
-    branches:
-      - integration-rover-482-session-20261111
-    paths:
-      - 'tools/rover_fr_compare_translation_models.py'
-      - '.github/workflows/rover-fr-model-benchmark.yml'
   workflow_dispatch:
 
 permissions:
@@ -18,6 +15,7 @@ concurrency:
 
 jobs:
   compare-translation:
+    if: ${{ false }}
     name: Comparer les traductions mecaniques et verifier les termes
     runs-on: ubuntu-24.04
     timeout-minutes: 120
