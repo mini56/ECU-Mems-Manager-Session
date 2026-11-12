@@ -50,6 +50,21 @@ int main(int argc, char **argv)
     const QVariantList cylinderHead = corpus.search(QStringLiteral("culasse"), 12, true);
     if (!verify(!cylinderHead.isEmpty(), "french_cylinder_head_lookup"))
         return 1;
+    if (!verify(cylinderHead.size() >= 2, "culasse_has_numbered_menu_choices"))
+        return 1;
+    const QString numbered = MemsDocumentaryRepository::numberedMenu(
+        QStringLiteral("culasse"), cylinderHead, true);
+    if (!verify(numbered.contains(QStringLiteral("1. "))
+                && numbered.contains(QStringLiteral("2. "))
+                && numbered.contains(QStringLiteral("Réponds par le numéro")),
+                "rover_numbered_menu_is_readable_and_selectable"))
+        return 1;
+    for (int i = 0; i < qMin(8, cylinderHead.size()); ++i) {
+        const QString label = MemsDocumentaryRepository::frenchTitle(
+            cylinderHead.at(i).toMap().value(QStringLiteral("title")).toString());
+        std::fprintf(stdout, "ROVER_CULASSE_MENU_%d %s\n",
+                     i + 1, label.toUtf8().constData());
+    }
     const QString frenchLabel = MemsDocumentaryRepository::frenchTitle(
         QStringLiteral("12.65.12 — Cylinder Head Gasket Removal"));
     if (!verify(frenchLabel.contains(QStringLiteral("12.65.12"))
