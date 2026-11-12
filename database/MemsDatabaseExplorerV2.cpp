@@ -40,7 +40,6 @@
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QTextBrowser>
-#include <QTextOption>
 #include <QTimer>
 #include <QUrl>
 #include <QUuid>
@@ -248,8 +247,6 @@ protected:
         if(watched==m_browser && event){
             if(event->type()==QEvent::LanguageChange)
                 QTimer::singleShot(30,this,[this](){retranslate();runSearch();});
-            else if(event->type()==QEvent::Resize || event->type()==QEvent::Show)
-                QTimer::singleShot(0,this,[this](){forceDetailScroll();});
         }
         return QObject::eventFilter(watched,event);
     }
@@ -362,26 +359,6 @@ private:
         connect(m_results,&QTableWidget::itemSelectionChanged,this,[this](){showSelectedResult();});
     }
 
-    void forceDetailScroll()
-    {
-        if(!m_detail) return;
-        m_detail->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-        m_detail->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-        m_detail->setFocusPolicy(Qt::StrongFocus);
-        m_detail->setLineWrapMode(QTextEdit::WidgetWidth);
-        m_detail->setWordWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
-        QScrollBar *bar=m_detail->verticalScrollBar();
-        if(!bar) return;
-        bar->setFixedWidth(16);
-        bar->setStyleSheet(QStringLiteral(
-            "QScrollBar:vertical{background:#111a21;width:16px;margin:0;border-left:1px solid #53616c;}"
-            "QScrollBar::handle:vertical{background:#7c8b96;min-height:38px;border:1px solid #a0abb3;border-radius:5px;margin:2px;}"
-            "QScrollBar::handle:vertical:hover{background:#ff8a22;border-color:#ffad5c;}"
-            "QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical{height:0;}"
-            "QScrollBar::add-page:vertical,QScrollBar::sub-page:vertical{background:#111a21;}"));
-        bar->show();
-    }
-
     // Show a RAVE image inside the database page, not via an external
     // browser. Scroll/drag and fit/zoom remain available for technical
     // drawings containing small component labels.
@@ -459,7 +436,6 @@ private:
 
     void configureDetail()
     {
-        forceDetailScroll();
         m_detail->setOpenLinks(false);
         m_detail->setOpenExternalLinks(false);
         connect(m_detail,&QTextBrowser::anchorClicked,this,
@@ -688,7 +664,7 @@ private:
             m_results->setRowCount(0);
             if(m_count) m_count->setText(I18n::text(7324).arg(QStringLiteral("0")));
             m_detail->setHtml(htmlStyle()+QStringLiteral("<h1>%1</h1><p class='muted'>%2</p>").arg(I18n::text(7216).toHtmlEscaped(),I18n::text(7295).toHtmlEscaped()));
-            updateDocumentControls();forceDetailScroll();
+            updateDocumentControls();
             return;
         }
 
@@ -706,7 +682,7 @@ private:
                 if(!corpus.open()) missing=corpus.lastError();
             }
             m_detail->setHtml(htmlStyle()+QStringLiteral("<h1>%1</h1><p class='muted'>%2</p>").arg(I18n::text(7216).toHtmlEscaped(),missing.toHtmlEscaped()));
-            updateDocumentControls();forceDetailScroll();
+            updateDocumentControls();
         }else{
             m_results->selectRow(0);
             showSelectedResult();
@@ -805,7 +781,7 @@ private:
 
         if(category==QStringLiteral("ecu") && source==QStringLiteral("ecu_target")){
             QMetaObject::invokeMethod(m_browser.data(),"showSelectedEcu",Qt::DirectConnection);
-            updateDocumentControls();forceDetailScroll();
+            updateDocumentControls();
             return;
         }
         if(category==QStringLiteral("documentation") && source==QStringLiteral("xml_documentation")){
@@ -816,7 +792,7 @@ private:
             if(!path.isEmpty()&&QFileInfo::exists(path)){
                 m_detail->setHtml(renderXml(path));
                 if(m_detail->verticalScrollBar()) m_detail->verticalScrollBar()->setValue(0);
-                updateDocumentControls();forceDetailScroll();
+                updateDocumentControls();
                 return;
             }
         }
@@ -828,7 +804,7 @@ private:
         m_detail->setHtml(MemsDatabaseContent::renderResultHtml(
             title,content,category,generation,source,diagrams));
         if(m_detail->verticalScrollBar()) m_detail->verticalScrollBar()->setValue(0);
-        updateDocumentControls();forceDetailScroll();
+        updateDocumentControls();
     }
 
     void openXmlDialog()
