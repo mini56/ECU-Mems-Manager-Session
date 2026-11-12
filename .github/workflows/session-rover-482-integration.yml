@@ -11,6 +11,10 @@ on:
       - 'database/MemsDocumentaryRepositorySelfTest.cpp'
       - 'expert/IaMemsLibraryIntegration.cpp'
       - 'database/MemsDatabaseExplorerV2.cpp'
+      - 'database/MemsDatabaseBrowser.cpp'
+      - 'expert/IaMemsDocumentaryPipeline.cpp'
+      - 'iamemstab.cpp'
+      - 'tools/validate_source_architecture.py'
       - 'tools/build_rover_session_documentary.py'
       - 'database/MemsDocumentaryRealCorpusSelfTest.cpp'
       - 'CMakeLists.txt'
@@ -48,6 +52,12 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Controler le code source sans scripts de patch ni interception UI
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python tools/validate_source_architecture.py
+          if($LASTEXITCODE -ne 0){throw 'SESSION_SOURCE_PATCH_ARCHITECTURE_REJECTED'}
       - name: Verifier le pack Rover et son PDF exact (sans fichier utilisateur)
         shell: pwsh
         run: |
