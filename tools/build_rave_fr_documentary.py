@@ -346,11 +346,10 @@ def build(reference_root: Path, destination: Path) -> dict:
                     title = f"{row.get('spec_key')} — valeur {row.get('sequence_no')}"
                 elif table == "mems_procedure_requirement":
                     title = f"{row.get('procedure_key')} — {row.get('requirement_type')}"
-                # Les huit lots français disposent d'audits constructeur
-                # rattachés au SHA du PDF exact. "source_checked" atteste
-                # la provenance et la page, NON une approbation technique de
-                # l'intervention ou de l'applicabilité au véhicule.
-                status = "source_checked"
+                status = ("source_checked"
+                          if str(row.get("verification_level") or "").lower()
+                             in ("verifie_constructeur","verifie_document","source_checked")
+                          else "review_required")
                 fr.execute("INSERT INTO documentary_entries VALUES(?,?,?,?,?,?,?,?,?,?)",
                     (SOURCE,"source-original-auditee-371",f"{table}:{index}",
                      types[table],page,title,text,status,table,as_json(row)))
