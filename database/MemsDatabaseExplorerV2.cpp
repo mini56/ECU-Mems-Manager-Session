@@ -256,7 +256,7 @@ public:
             if (!complete)
                 html.replace(QStringLiteral("<h1>"),
                     QStringLiteral("<p style='color:#ffb44e;'>%1</p><h1>")
-                       .arg(IaMemsService::documentTranslationNotice(language, true).toHtmlEscaped()));
+                       .arg(IaMemsService::documentTranslationIncompleteNotice(language).toHtmlEscaped()));
             m_detail->setHtml(html);
             if (m_detail->verticalScrollBar())
                 m_detail->verticalScrollBar()->setValue(0);
@@ -839,12 +839,15 @@ private:
         const QString title=row.value(QStringLiteral("title")).toString();
         const QString content=row.value(QStringLiteral("content")).toString();
         const QString language=I18n::language().left(2).toLower();
+        const QString localizedTitle = source.startsWith(QStringLiteral("rover_"))
+            ? MemsDocumentaryRepository::localizedTitle(title, language)
+            : title;
         if (source.startsWith(QStringLiteral("rover_")) &&
             language!=QStringLiteral("en")) {
             m_translationRequestId=QUuid::createUuid().toString(QUuid::WithoutBraces);
             m_detail->setHtml(QStringLiteral(
                 "<h1>%1</h1><p class='muted'>%2</p>")
-                .arg(title.toHtmlEscaped(),
+                .arg(localizedTitle.toHtmlEscaped(),
                      IaMemsService::documentTranslationNotice(language,true).toHtmlEscaped()));
             IaMemsService::instance()->requestDocumentTranslation(
                 m_translationRequestId,content,language);
