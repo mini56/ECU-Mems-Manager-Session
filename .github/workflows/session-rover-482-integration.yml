@@ -21,6 +21,8 @@ on:
       - 'iamemstab.cpp'
       - 'tools/validate_source_architecture.py'
       - 'tools/build_rover_session_documentary.py'
+      - 'tools/rover_multilingual.py'
+      - 'tools/test_rover_multilingual.py'
       - 'database/MemsDocumentaryRealCorpusSelfTest.cpp'
       - 'CMakeLists.txt'
   workflow_dispatch:
@@ -57,6 +59,12 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Valider la base documentaire multilingue en francais sans lancer de Setup
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python tools/test_rover_multilingual.py
+          if($LASTEXITCODE -ne 0){throw 'ROVER_FRENCH_ARCHITECTURE_TEST_FAILED'}
       - name: Controler le code source sans scripts de patch ni interception UI
         shell: pwsh
         run: |
@@ -71,6 +79,12 @@ jobs:
           python tools/build_rover_session_documentary.py --pdf $original --output database/documentary
           if($LASTEXITCODE -ne 0){throw 'ROVER_482_RECONSTRUCTION_FAILED'}
           if(Test-Path database/ecu_mems_manager.sqlite){throw 'USER_SQLITE_MUST_NEVER_BE_PACKAGED'}
+          python tools/rover_multilingual.py --database database/documentary/rover_482.sqlite --source-sha256 dd37296b5d477c4124133f51e96691858c0ae4746d42c3e4478bf6003a9445bb --verify-only
+          if($LASTEXITCODE -ne 0){throw 'ROVER_MULTILINGUAL_DISTRIBUTION_INVALID'}
+          $manifest = Get-Content database/documentary/rover_482_install_manifest.json -Raw | ConvertFrom-Json
+          if($manifest.original_sqlite_sha256 -ne 'dd37296b5d477c4124133f51e96691858c0ae4746d42c3e4478bf6003a9445bb'){throw 'ROVER_IMMUTABLE_SOURCE_CHANGED'}
+          $built=(Get-FileHash database/documentary/rover_482.sqlite -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($manifest.database_sha256 -ne $built){throw 'ROVER_PACKAGED_SQLITE_SHA_MISMATCH'}
           Write-Host 'ROVER_482_SOURCE_SQLITE_PDF_AUTHENTICATED'
       - name: Installer Qt 5.15.2 MSVC x64
         shell: pwsh
@@ -128,6 +142,7 @@ jobs:
              (Resolve-Path database/documentary/AKM7169ENG.pdf).Path
           if($LASTEXITCODE -ne 0){throw 'REAL_ROVER_DOCUMENTARY_AI_CONTRACT_FAILED'}
       - name: Recuperer la distribution complete 117 deja validee
+        if: github.event_name == 'workflow_dispatch'
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
@@ -142,6 +157,7 @@ jobs:
           if($LASTEXITCODE -ne 0){throw 'RUNTIME_UNPACK_FAILED'}
           if(-not(Test-Path dist-session-rover/ecu_mems_manager.exe)){throw 'RUNTIME_BASE_LAYOUT_INVALID'}
       - name: Assembler SESSION avec la nouvelle base documentaire et le PDF
+        if: github.event_name == 'workflow_dispatch'
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
@@ -172,6 +188,7 @@ jobs:
           }
           Write-Host 'SESSION_ROVER_UI_AI_SQLITE_PDF_DISTRIBUTION_READY'
       - name: Creer le vrai Setup Windows SESSION sans modifier les donnees personnelles
+        if: github.event_name == 'workflow_dispatch'
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
@@ -228,6 +245,7 @@ jobs:
           if(-not $setup -or $setup.Length -lt 100MB){throw 'SETUP_TOO_SMALL_OR_MISSING'}
           Write-Host "SESSION_ROVER_SETUP_SHA256=$((Get-FileHash $setup.FullName -Algorithm SHA256).Hash)"
       - name: Installer reellement sur Windows et verifier la base, le PDF et le lancement
+        if: github.event_name == 'workflow_dispatch'
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
@@ -244,7 +262,11 @@ jobs:
           python tools/build_rover_session_documentary.py --pdf "$folder/database/documentary/AKM7169ENG.pdf" --parts database/documentary/parts --output "$env:RUNNER_TEMP/ROVER_COMPARE"
           if($LASTEXITCODE -ne 0){throw 'INSTALLED_PDF_OR_SOURCE_INVALID'}
           $actual=(Get-FileHash "$folder/database/documentary/rover_482.sqlite" -Algorithm SHA256).Hash.ToLowerInvariant()
-          if($actual -ne 'dd37296b5d477c4124133f51e96691858c0ae4746d42c3e4478bf6003a9445bb'){throw 'INSTALLED_SQLITE_MISMATCH'}
+          $installedManifest=Get-Content "$folder/database/documentary/rover_482_install_manifest.json" -Raw | ConvertFrom-Json
+          if($actual -ne $installedManifest.database_sha256){throw 'INSTALLED_LOCALIZED_SQLITE_MISMATCH'}
+          if($installedManifest.original_sqlite_sha256 -ne 'dd37296b5d477c4124133f51e96691858c0ae4746d42c3e4478bf6003a9445bb'){throw 'INSTALLED_IMMUTABLE_SOURCE_MISMATCH'}
+          python tools/rover_multilingual.py --database "$folder/database/documentary/rover_482.sqlite" --source-sha256 $installedManifest.original_sqlite_sha256 --verify-only
+          if($LASTEXITCODE -ne 0){throw 'INSTALLED_MULTILINGUAL_INTEGRITY_FAILED'}
           if(Test-Path "$folder/database/ecu_mems_manager.sqlite"){throw 'USER_DB_SHIPPED_IN_SETUP'}
           $exe="$folder/ecu_mems_manager.exe"
           $instance=Start-Process -FilePath $exe -WorkingDirectory $folder -PassThru
@@ -264,6 +286,7 @@ jobs:
           if(-not(Test-Path (Join-Path $portugueseFolder 'ecu_mems_manager.exe'))){throw 'PORTUGUESE_INSTALL_EXECUTABLE_MISSING'}
           Write-Host 'SESSION_SETUP_FRENCH_AND_PORTUGUESE_LANGUAGE_SELECTION_PASS'
       - name: Publier un seul Setup Windows installe et teste
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
           name: ECU-MEMS-Manager-SESSION-Setup-Rover-482

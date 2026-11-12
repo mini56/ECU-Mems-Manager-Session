@@ -1,6 +1,7 @@
 #include "MemsDocumentaryRepository.h"
 
 #include <QCoreApplication>
+#include <QCryptographicHash>
 #include <QDir>
 #include <QSqlDatabase>
 #include <QSqlQuery>
@@ -63,6 +64,19 @@ int main(int argc, char **argv)
                            "manufacturer_step_number INTEGER,"
                            "ocr_instruction_candidate TEXT,"
                            "source_status TEXT,approved_for_ai INTEGER)"),
+            QStringLiteral("CREATE TABLE documentary_language_meta("
+                           "key TEXT PRIMARY KEY,value TEXT NOT NULL)"),
+            QStringLiteral("CREATE TABLE documentary_text_units("
+                           "unit_id TEXT PRIMARY KEY,unit_kind TEXT NOT NULL,"
+                           "owner_id TEXT NOT NULL,source_text TEXT NOT NULL,"
+                           "source_sha256 TEXT NOT NULL)"),
+            QStringLiteral("CREATE TABLE documentary_translations("
+                           "unit_id TEXT NOT NULL,language TEXT NOT NULL,"
+                           "translated_text TEXT NOT NULL,source_sha256 TEXT NOT NULL,"
+                           "translated_sha256 TEXT NOT NULL,review_status TEXT NOT NULL,"
+                           "reviewer TEXT NOT NULL DEFAULT '',"
+                           "PRIMARY KEY(unit_id,language),"
+                           "FOREIGN KEY(unit_id) REFERENCES documentary_text_units(unit_id))"),
             QStringLiteral("CREATE VIRTUAL TABLE source_page_fts USING fts5("
                            "physical_page UNINDEXED,ocr_text)")
         };
@@ -175,6 +189,50 @@ int main(int argc, char **argv)
             if (!check(extra.exec(), "populate 238 source candidates for realistic browsing"))
                 return 1;
         }
+        // The synthetic fixture tests the same source-bound layout the
+        // Python production pack builder installs in the original SQLite.
+        QSqlQuery meta(seed);
+        if (!check(meta.exec(QStringLiteral(
+            "INSERT INTO documentary_language_meta VALUES"
+            "('schema_version','1'),"
+            "('original_sqlite_sha256','aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')")),
+            "localized schema exact corpus metadata"))
+            return 1;
+        const QString englishTitle = QStringLiteral("Timing Chain and Gears");
+        const QString translatedTitle = QStringLiteral("Chaîne de distribution et pignons");
+        const QString translationKey = QStringLiteral(
+            "procedure.title:rover-akm7169eng-12.65.12");
+        const auto hash = [](const QString &text) {
+            return QString::fromLatin1(
+                QCryptographicHash::hash(text.toUtf8(),QCryptographicHash::Sha256).toHex());
+        };
+        QSqlQuery titleUnit(seed);
+        titleUnit.prepare(QStringLiteral(
+            "INSERT INTO documentary_text_units("
+            "unit_id,unit_kind,owner_id,source_text,source_sha256)"
+            " VALUES(?,?,?,?,?)"));
+        titleUnit.addBindValue(translationKey);
+        titleUnit.addBindValue(QStringLiteral("procedure_title"));
+        titleUnit.addBindValue(QStringLiteral("rover-akm7169eng-12.65.12"));
+        titleUnit.addBindValue(englishTitle);
+        titleUnit.addBindValue(hash(englishTitle));
+        if (!check(titleUnit.exec(), "seed immutable manufacturer title"))
+            return 1;
+        QSqlQuery fr(seed);
+        fr.prepare(QStringLiteral(
+            "INSERT INTO documentary_translations("
+            "unit_id,language,translated_text,source_sha256,translated_sha256,"
+            "review_status,reviewer) VALUES(?,?,?,?,?,?,?)"));
+        fr.addBindValue(translationKey);
+        fr.addBindValue(QStringLiteral("fr"));
+        fr.addBindValue(translatedTitle);
+        fr.addBindValue(hash(englishTitle));
+        fr.addBindValue(hash(translatedTitle));
+        fr.addBindValue(QStringLiteral("machine_draft"));
+        fr.addBindValue(QString());
+        if (!check(fr.exec(), "seed source-bound French translation"))
+            return 1;
         seed.close();
         seed = QSqlDatabase();
     }
@@ -183,6 +241,19 @@ int main(int argc, char **argv)
     {
         MemsDocumentaryRepository repository;
         if (!check(repository.open(), "strict 482-page reader opens"))
+            return 1;
+        const QVariantList french = repository.search(
+            QStringLiteral("pignons"),12,true,QStringLiteral("fr"));
+        if (!check(!french.isEmpty() &&
+                french.first().toMap().value(QStringLiteral("title"))
+                    .toString().contains(QStringLiteral("Chaîne de distribution et pignons")),
+                "generic French search resolves translated SQLite title"))
+            return 1;
+        const QVariantList english = repository.search(QStringLiteral("Timing Chain"));
+        if (!check(!english.isEmpty() &&
+                english.first().toMap().value(QStringLiteral("title"))
+                    .toString().contains(QStringLiteral("Timing Chain")),
+                "original English manufacturer title remains unchanged"))
             return 1;
         const QStringList questions = {
             QStringLiteral("12.65.12"),

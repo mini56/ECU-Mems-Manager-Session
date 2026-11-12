@@ -24,9 +24,9 @@ public:
     bool isOpen() const;
     QString lastError() const;
     QVariantList search(const QString &question, int maximum = 12,
-                        bool allowOcrDiscovery = true) const;
+                        bool allowOcrDiscovery = true,
+                        const QString &language = QString()) const;
     static QString answerFromHits(const QVariantList &hits);
-    static QString frenchTitle(const QString &manufacturerTitle);
     static QString numberedMenu(const QString &question, const QVariantList &choices,
                                 bool french);
 

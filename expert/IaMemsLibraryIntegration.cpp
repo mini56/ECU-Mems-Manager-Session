@@ -599,21 +599,11 @@ void IaMemsService::askWithLibrary(const QString &question)
     if (trimmed.isEmpty())
         return;
 
-    // Only the latest IA question may publish a delayed Rover translation.
-    setProperty("iaMemsLastTranslationRequestId", QVariant());
+    // The documentary repository has already selected the installed
+    // language from the same SQLite used by the Database page.  Answers and
+    // numbered selections are immediate and cannot stall on model inference.
     const auto emitLocalizedDocument = [this](const QString &sourceText) {
-        const QString language = I18n::language().left(2).toLower();
-        if (language == QStringLiteral("en")) {
-            emit responseReady(sourceText);
-            return;
-        }
-        const QString requestId =
-            QStringLiteral("ia-rover-") +
-            QUuid::createUuid().toString(QUuid::WithoutBraces);
-        setProperty("iaMemsLastTranslationRequestId", requestId);
-        setProperty("iaMemsLastTranslationLanguage", language);
-        emit responseReady(IaMemsService::documentTranslationNotice(language, true));
-        requestDocumentTranslation(requestId, sourceText, language);
+        emit responseReady(sourceText);
     };
 
     const bool resolvedDocumentary = trimmed.startsWith(kResolvedDocumentaryPrefix);
@@ -698,7 +688,8 @@ void IaMemsService::askWithLibrary(const QString &question)
             emit statusChanged();
             return;
         }
-        const QVariantList documents = documentary.search(trimmed, 12, true);
+        const QVariantList documents = documentary.search(
+            trimmed, 12, true, I18n::language());
         if (!documents.isEmpty()) {
             // Prefer identifiable workshop operations to loose page OCR hits.
             // A menu of precise sources restores the numbered navigation the

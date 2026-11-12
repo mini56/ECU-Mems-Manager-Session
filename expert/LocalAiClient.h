@@ -30,10 +30,6 @@ public:
     void initialize();
     void shutdown();
     void ask(const QString &question, const QString &groundingContext);
-    // Dedicated local translation, independent of the conversation history.
-    void translateTechnicalLine(const QString &source, const QString &language,
-                                const QString &token);
-    void cancelTechnicalTranslation();
     void clearConversation();
 
     State state() const { return m_state; }
@@ -48,8 +44,6 @@ signals:
     void stateChanged();
     void responseReady(const QString &text);
     void responseError(const QString &message);
-    void technicalLineTranslated(const QString &token, const QString &result,
-                                 const QString &error);
 
 private:
     void setState(State state, const QString &error = QString());

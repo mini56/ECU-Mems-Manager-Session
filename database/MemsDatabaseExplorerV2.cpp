@@ -4,7 +4,6 @@
 #include "MemsDatabaseUniversalAccess.h"
 #include "MemsReferenceSheetRenderer.h"
 #include "../i18n.h"
-#include "../expert/IaMemsService.h"
 
 #include <QApplication>
 #include <QComboBox>
@@ -43,7 +42,6 @@
 #include <QTextBrowser>
 #include <QTimer>
 #include <QUrl>
-#include <QUuid>
 #include <QVBoxLayout>
 #include <QVariantMap>
 #include <QVector>
@@ -224,43 +222,6 @@ public:
         configureFilter();
         configureResults();
         configureDetail();
-        connect(IaMemsService::instance(), &IaMemsService::documentTranslationReady,
-                this, [this](const QString &requestId, const QString &translated,
-                             bool complete) {
-            if (requestId != m_translationRequestId || !m_detail)
-                return;
-            m_translationRequestId.clear();
-            const QVariantMap row = selectedResult();
-            if (row.isEmpty() ||
-                !row.value(QStringLiteral("source_table")).toString().startsWith(
-                    QStringLiteral("rover_")))
-                return;
-            const QString language = I18n::language();
-            const QString title = row.value(QStringLiteral("title")).toString();
-            QString translatedTitle = title;
-            const QString firstLine = translated.section(QLatin1Char('\n'),0,0);
-            const int colon = firstLine.indexOf(QLatin1Char(':'));
-            if (colon >= 0 && colon < 24 &&
-                firstLine.mid(colon+1).trimmed().size() > 3)
-                translatedTitle = firstLine.mid(colon+1).trimmed();
-            const QString notice = IaMemsService::documentTranslationNotice(
-                language, false);
-            QString html = MemsDatabaseContent::renderResultHtml(
-                translatedTitle, translated,
-                row.value(QStringLiteral("category")).toString(),
-                row.value(QStringLiteral("generation")).toString(),
-                row.value(QStringLiteral("source_table")).toString(), QString());
-            html.replace(QStringLiteral("<h1>"),
-                QStringLiteral("<p style='color:#ffad5c;font-weight:700;'>%1</p><h1>")
-                    .arg(notice.toHtmlEscaped()));
-            if (!complete)
-                html.replace(QStringLiteral("<h1>"),
-                    QStringLiteral("<p style='color:#ffb44e;'>%1</p><h1>")
-                       .arg(IaMemsService::documentTranslationIncompleteNotice(language).toHtmlEscaped()));
-            m_detail->setHtml(html);
-            if (m_detail->verticalScrollBar())
-                m_detail->verticalScrollBar()->setValue(0);
-        });
         configureDocumentation();
         configureSearch();
         retranslate();
@@ -577,7 +538,7 @@ private:
         if(documentaryInstalled && generation.isEmpty() &&
            (category.isEmpty() || category==QStringLiteral("documentation"))){
             MemsDocumentaryRepository corpus;
-            if(corpus.open()) rows=corpus.search(text,limit,true);
+            if(corpus.open()) rows=corpus.search(text,limit,true,I18n::language());
         }
         // A mounted corpus is the single documentary source. Never add old
         // Pack001/reference documentary rows beside it as competing evidence.
@@ -737,11 +698,12 @@ private:
             const QString title=row.value(QStringLiteral("title")).toString();
             const QString generation=row.value(QStringLiteral("generation")).toString();
             const QString category=row.value(QStringLiteral("category")).toString();
+            // Rover supplies the correctly localized title from the same
+            // SQLite query used by IA MEMS. No word-substitution overlay.
             const QString localized=
                 row.value(QStringLiteral("source_table")).toString().startsWith(
-                    QStringLiteral("rover_")) &&
-                I18n::language().startsWith(QStringLiteral("fr"),Qt::CaseInsensitive)
-                ? MemsDocumentaryRepository::frenchTitle(title)
+                    QStringLiteral("rover_"))
+                ? title
                 : MemsDatabaseContent::localizedTitle(
                     row.value(QStringLiteral("content")).toString(),title);
             QTableWidgetItem *titleItem=new QTableWidgetItem(localized);
@@ -811,7 +773,6 @@ private:
 
     void showSelectedResult()
     {
-        m_translationRequestId.clear();
         const QVariantMap row=selectedResult();
         if(row.isEmpty()) return;
         const QString category=row.value(QStringLiteral("category")).toString();
@@ -837,24 +798,9 @@ private:
         }
 
         const QString title=row.value(QStringLiteral("title")).toString();
+        // Source and translations are assembled by the repository before UI
+        // rendering. No Qwen generation or delayed translation in the page.
         const QString content=row.value(QStringLiteral("content")).toString();
-        const QString language=I18n::language().left(2).toLower();
-        const QString localizedTitle = source.startsWith(QStringLiteral("rover_")) &&
-            language == QStringLiteral("fr")
-            ? MemsDocumentaryRepository::frenchTitle(title)
-            : title;
-        if (source.startsWith(QStringLiteral("rover_")) &&
-            language!=QStringLiteral("en")) {
-            m_translationRequestId=QUuid::createUuid().toString(QUuid::WithoutBraces);
-            m_detail->setHtml(QStringLiteral(
-                "<h1>%1</h1><p class='muted'>%2</p>")
-                .arg(localizedTitle.toHtmlEscaped(),
-                     IaMemsService::documentTranslationNotice(language,true).toHtmlEscaped()));
-            IaMemsService::instance()->requestDocumentTranslation(
-                m_translationRequestId,content,language);
-            updateDocumentControls();
-            return;
-        }
         const QString diagrams=category==QStringLiteral("wiring")
             ? diagramHtml(generation) : QString();
         m_detail->setHtml(MemsDatabaseContent::renderResultHtml(
@@ -903,7 +849,6 @@ private:
     QCompleter *m_completer;
     QSqlDatabase m_index;
     QString m_indexConnection;
-    QString m_translationRequestId;
     bool m_ftsEnabled;
     bool m_ready;
 };

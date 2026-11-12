@@ -14,6 +14,7 @@ from pathlib import Path
 import shutil
 import sqlite3
 import tempfile
+from rover_multilingual import create_schema, import_pack, check_localized_schema
 
 DOCUMENT_SHA = 'c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0'
 GZIP_SHA = '9e2d30ea5e28461c053a99fdf974e8406cdbb4933f30a3e9b0792f9e65aa7572'
@@ -68,7 +69,8 @@ def check_database(path: Path) -> dict:
         con.close()
 
 
-def build(parts: Path, original_pdf: Path, output: Path) -> None:
+def build(parts: Path, original_pdf: Path, output: Path,
+          translation_packs: list[Path] | None = None) -> None:
     ensure(original_pdf.is_file(), 'ORIGINAL_PDF_MISSING')
     ensure(original_pdf.stat().st_size == PDF_BYTES and digest(original_pdf) == DOCUMENT_SHA,
            'ORIGINAL_PDF_MUST_MATCH_482_PAGE_MANUFACTURER_SOURCE')
@@ -90,15 +92,34 @@ def build(parts: Path, original_pdf: Path, output: Path) -> None:
         ensure(temporary_sqlite.stat().st_size == DATABASE_BYTES and digest(temporary_sqlite) == DATABASE_SHA,
                'COMPLETE_SQLITE_SHA256_MISMATCH')
         counts = check_database(temporary_sqlite)
+        # The verified English SQLite is never edited in-place. Construct the
+        # multilingual *distribution* on this temporary copy, then publish it
+        # only after verifying the complete source-to-translation contract.
+        with sqlite3.connect(temporary_sqlite) as con:
+            create_schema(con, DATABASE_SHA)
+            for pack_path in translation_packs or []:
+                pack = json.loads(pack_path.read_text(encoding='utf-8'))
+                imported = import_pack(con, pack)
+                print('ROVER_TRANSLATION_PACK_IMPORTED', pack_path, imported)
+            language_report = check_localized_schema(con, DATABASE_SHA)
+        distribution_sha = digest(temporary_sqlite)
         shutil.copy2(temporary_sqlite, output / 'rover_482.sqlite')
+        ensure(digest(output / 'rover_482.sqlite') == distribution_sha,
+               'MULTILINGUAL_DISTRIBUTION_HASH_MISMATCH')
     shutil.copy2(original_pdf, output / 'AKM7169ENG.pdf')
     ensure(digest(output / 'AKM7169ENG.pdf') == DOCUMENT_SHA, 'INSTALLED_PDF_HASH_WRONG')
     report = {'source': 'Rover AKM7169ENG 482-page original', 'pdf_sha256': DOCUMENT_SHA,
-              'database_sha256': DATABASE_SHA, 'integrity': 'ok',
-              'documentary_counts': counts, 'user_ecu_database_bundled': False,
+              'original_sqlite_sha256': DATABASE_SHA,
+              'database_sha256': distribution_sha, 'integrity': 'ok',
+              'documentary_counts': counts,
+              'documentary_languages': language_report,
+              'user_ecu_database_bundled': False,
               'source_certification': 'documentary provenance checked; technical OCR not individually certified'}
-    (output / 'rover_482_install_manifest.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
-    print('MEMS_ROVER_482_DOCUMENTARY_RUNTIME_READY', json.dumps(counts, sort_keys=True))
+    (output / 'rover_482_install_manifest.json').write_text(
+        json.dumps(report, indent=2, sort_keys=True), encoding='utf-8')
+    print('MEMS_ROVER_482_DOCUMENTARY_RUNTIME_READY',
+          json.dumps({'source_counts': counts, 'languages': language_report},
+                     sort_keys=True))
 
 
 if __name__ == '__main__':
@@ -106,5 +127,7 @@ if __name__ == '__main__':
     parser.add_argument('--parts', type=Path, default=Path('database/documentary/parts'))
     parser.add_argument('--pdf', type=Path, required=True)
     parser.add_argument('--output', type=Path, default=Path('database/documentary'))
+    parser.add_argument('--translation-pack', type=Path, action='append', default=[],
+                        help='Validated FR translation pack(s), imported into same SQLite')
     args = parser.parse_args()
-    build(args.parts, args.pdf, args.output)
+    build(args.parts, args.pdf, args.output, args.translation_pack)

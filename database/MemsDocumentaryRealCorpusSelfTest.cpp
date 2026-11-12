@@ -45,34 +45,29 @@ int main(int argc, char **argv)
                     "documentary_ai_must_use_shared_sqlite_and_cite_original"))
             return 1;
     }
-    // A short French mechanical term must reach the English Rover index,
-    // so IA MEMS can offer a useful numbered list instead of raw OCR.
-    const QVariantList cylinderHead = corpus.search(QStringLiteral("culasse"), 12, true);
-    if (!verify(!cylinderHead.isEmpty(), "french_cylinder_head_lookup"))
+    // The English source is always searchable. Before importing the French
+    // pack, the reader must not claim that a translated procedure exists.
+    const QVariantList originalHead = corpus.search(
+        QStringLiteral("Cylinder Head"),12,true,QStringLiteral("en"));
+    if (!verify(!originalHead.isEmpty(),"english_constructor_lookup"))
         return 1;
-    if (!verify(cylinderHead.size() >= 2, "culasse_has_numbered_menu_choices"))
+    const QVariantList frenchHead = corpus.search(
+        QStringLiteral("Cylinder Head"),12,true,QStringLiteral("fr"));
+    if (!verify(!frenchHead.isEmpty(),"french_reader_has_source_access"))
         return 1;
-    const QString numbered = MemsDocumentaryRepository::numberedMenu(
-        QStringLiteral("culasse"), cylinderHead, true);
-    if (!verify(numbered.contains(QStringLiteral("1. "))
-                && numbered.contains(QStringLiteral("2. "))
-                && numbered.contains(QStringLiteral("Réponds par le numéro")),
-                "rover_numbered_menu_is_readable_and_selectable"))
-        return 1;
-    for (int i = 0; i < qMin(8, cylinderHead.size()); ++i) {
-        const QString label = MemsDocumentaryRepository::frenchTitle(
-            cylinderHead.at(i).toMap().value(QStringLiteral("title")).toString());
-        std::fprintf(stdout, "ROVER_CULASSE_MENU_%d %s\n",
-                     i + 1, label.toUtf8().constData());
+    bool foundUntranslated = false;
+    for (const QVariant &entry : frenchHead) {
+        const QVariantMap row = entry.toMap();
+        if (row.value(QStringLiteral("source_table")).toString()
+                == QStringLiteral("rover_documentary") &&
+            !row.value(QStringLiteral("translation_available")).toBool() &&
+            row.value(QStringLiteral("title")).toString().contains(
+                QStringLiteral("[EN / FR indisponible]"))) {
+            foundUntranslated = true;
+            break;
+        }
     }
-    const QString frenchLabel = MemsDocumentaryRepository::frenchTitle(
-        QStringLiteral("12.65.12 — Cylinder Head Gasket Removal"));
-    if (!verify(frenchLabel.contains(QStringLiteral("12.65.12"))
-                && frenchLabel.contains(QStringLiteral("joint de culasse"),
-                                        Qt::CaseInsensitive)
-                && frenchLabel.contains(QStringLiteral("dépose"),
-                                        Qt::CaseInsensitive),
-                "french_menu_labels_preserve_source_reference"))
+    if (!verify(foundUntranslated,"no_fabricated_french_translation_before_import"))
         return 1;
     const QVariantList exact = corpus.search(QStringLiteral("12.65.12"));
     if (!verify(exact.first().toMap().value(QStringLiteral("source_key")).toString()

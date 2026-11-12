@@ -3,6 +3,7 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QFileInfo>
+#include <QHash>
 #include <QRegularExpression>
 #include <QSet>
 #include <QSqlError>
@@ -53,7 +54,9 @@ QStringList meaningfulTerms(const QString &value)
 
 QString procedureContent(const QSqlDatabase &database, const QString &key,
                          const QString &title, const QString &ref,
-                         const QString &pages, const QString &status)
+                         const QString &pages, const QString &status,
+                         const QHash<QString, QString> &translations,
+                         const QString &language)
 {
     QStringList fields = {
         QStringLiteral("title: %1").arg(title),
@@ -65,7 +68,7 @@ QString procedureContent(const QSqlDatabase &database, const QString &key,
     };
     QSqlQuery steps(database);
     steps.prepare(QStringLiteral(
-        "SELECT phase,step_number,source_text,source_page,original_phase_label FROM procedure_steps "
+        "SELECT phase,step_number,source_text,source_page,original_phase_label,rowid FROM procedure_steps "
         "WHERE procedure_id=? ORDER BY CASE phase WHEN 'remove' THEN 0 ELSE 1 END, step_number"));
     steps.addBindValue(key);
     if (steps.exec()) {
@@ -87,9 +90,18 @@ QString procedureContent(const QSqlDatabase &database, const QString &key,
                 phase = QStringLiteral("Phase non précisée");
             else
                 phase = printedPhase.isEmpty() ? phaseCode : printedPhase;
+            const QString sourceStep = steps.value(2).toString().simplified();
+            const QString translatedStep = translations.value(
+                QStringLiteral("procedure.step:%1").arg(steps.value(5).toLongLong()));
+            const QString content = language == QStringLiteral("en") ||
+                language.isEmpty() ? sourceStep :
+                (translatedStep.isEmpty()
+                    ? QStringLiteral("[EN original — traduction %1 absente] %2")
+                          .arg(language.toUpper(), sourceStep)
+                    : translatedStep);
             fields << QStringLiteral("%1 %2 (page %3): %4")
                 .arg(phase).arg(steps.value(1).toInt())
-                .arg(steps.value(3).toInt()).arg(steps.value(2).toString().simplified());
+                .arg(steps.value(3).toInt()).arg(content);
         }
     }
     QSqlQuery figures(database);
@@ -248,6 +260,9 @@ bool MemsDocumentaryRepository::open()
     // is not evidence that the document chain is complete.
     const QStringList required = {
         QStringLiteral("source_documents"), QStringLiteral("source_page_discovery"),
+        QStringLiteral("documentary_language_meta"),
+        QStringLiteral("documentary_text_units"),
+        QStringLiteral("documentary_translations"),
         QStringLiteral("procedures"), QStringLiteral("procedure_steps"),
         QStringLiteral("technical_values"), QStringLiteral("illustrations"),
         QStringLiteral("search_aliases"), QStringLiteral("source_page_fts")
@@ -285,6 +300,28 @@ bool MemsDocumentaryRepository::open()
             .match(validation.value(4).toString()).hasMatch() ||
         validation.next()) {
         m_error = QStringLiteral("Corpus Rover incomplet ou provenance invalide (482 pages requises).");
+        m_database.close();
+        return false;
+    }
+    // The multilingual layer is only accepted when bound to this exact
+    // immutable original corpus.  Its SHA is recorded during verified build.
+    QSqlQuery localeMeta(m_database);
+    if (!localeMeta.exec(QStringLiteral(
+            "SELECT key,value FROM documentary_language_meta "
+            "WHERE key IN ('schema_version','original_sqlite_sha256')")) ||
+        !localeMeta.isActive()) {
+        m_error = QStringLiteral("Métadonnées multilingues Rover absentes.");
+        m_database.close();
+        return false;
+    }
+    QHash<QString,QString> localeIdentity;
+    while (localeMeta.next())
+        localeIdentity.insert(localeMeta.value(0).toString(),
+                              localeMeta.value(1).toString());
+    if (localeIdentity.value(QStringLiteral("schema_version")) != QStringLiteral("1") ||
+        !QRegularExpression(QStringLiteral("^[a-f0-9]{64}$"))
+            .match(localeIdentity.value(QStringLiteral("original_sqlite_sha256"))).hasMatch()) {
+        m_error = QStringLiteral("Version ou provenance multilingue incorrecte.");
         m_database.close();
         return false;
     }
@@ -328,38 +365,33 @@ QString MemsDocumentaryRepository::lastError() const
 }
 
 QVariantList MemsDocumentaryRepository::search(const QString &question,
-                                                int maximum, bool allowOcrDiscovery) const
+                                                int maximum, bool allowOcrDiscovery,
+                                                const QString &language) const
 {
     QVariantList result;
     if (!isOpen())
         return result;
     const bool browse = question.trimmed().isEmpty();
+    const QString locale = language.left(2).toLower();
+    // A shared, read-only lookup of translations imported into the
+    // SAME SQLite as the immutable Rover manufacturer data.
+    QHash<QString, QString> translatedText;
+    if (!locale.isEmpty() && locale != QStringLiteral("en")) {
+        QSqlQuery translated(m_database);
+        translated.prepare(QStringLiteral(
+            "SELECT t.unit_id,t.translated_text FROM documentary_translations t "
+            "JOIN documentary_text_units u ON u.unit_id=t.unit_id "
+            "WHERE t.language=? AND t.source_sha256=u.source_sha256 "
+            "AND t.review_status IN ('machine_draft','reviewed')"));
+        translated.addBindValue(locale);
+        if (translated.exec()) {
+            while (translated.next())
+                translatedText.insert(translated.value(0).toString(),
+                                      translated.value(1).toString());
+        }
+    }
     const QString input = normalized(question);
     QStringList terms = meaningfulTerms(question);
-    // English constructor manual, French search: match actual source words
-    // without changing the source pages or inventing manufacturer entries.
-    const QStringList originalTerms = terms;
-    const auto appendTerm = [&terms](const QString &word) {
-        if (!terms.contains(word)) terms.append(word);
-    };
-    if (originalTerms.contains(QStringLiteral("culasse"))) {
-        appendTerm(QStringLiteral("cylinder"));
-        appendTerm(QStringLiteral("head"));
-    }
-    if (originalTerms.contains(QStringLiteral("joint")))
-        appendTerm(QStringLiteral("gasket"));
-    if (originalTerms.contains(QStringLiteral("depose")))
-        appendTerm(QStringLiteral("removal"));
-    if (originalTerms.contains(QStringLiteral("repose")))
-        appendTerm(QStringLiteral("refit"));
-    if (originalTerms.contains(QStringLiteral("serrage")))
-        appendTerm(QStringLiteral("tightening"));
-    if (originalTerms.contains(QStringLiteral("soupape")))
-        appendTerm(QStringLiteral("valve"));
-    if (originalTerms.contains(QStringLiteral("distribution"))) {
-        appendTerm(QStringLiteral("timing"));
-        appendTerm(QStringLiteral("chain"));
-    }
     maximum = qBound(1, maximum, 300);
     const QRegularExpression refRx(QStringLiteral("\\b\\d{2}\\.\\d{2}\\.\\d{2}\\b"));
     const QRegularExpressionMatch repair = refRx.match(question);
@@ -423,7 +455,9 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
             const QString status = procedures.value(4).toString();
             int score = browse ? 10 :
                 (repairNo == reference && !repairNo.isEmpty() ? 1000 : 0);
-            const QString titleN = normalized(title);
+            const QString translatedTitle = translatedText.value(
+                QStringLiteral("procedure.title:%1").arg(key));
+            const QString titleN = normalized(title + QLatin1Char(' ') + translatedTitle);
             QStringList aliases;
             QSqlQuery alias(m_database);
             alias.prepare(QStringLiteral("SELECT alias FROM search_aliases WHERE procedure_id=?"));
@@ -459,12 +493,14 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
             if (!browse && !terms.isEmpty()) {
                 QSqlQuery stepsSearch(m_database);
                 stepsSearch.prepare(QStringLiteral(
-                    "SELECT source_text FROM procedure_steps WHERE procedure_id=?"));
+                    "SELECT rowid,source_text FROM procedure_steps WHERE procedure_id=?"));
                 stepsSearch.addBindValue(key);
                 if (stepsSearch.exec()) {
                     while (stepsSearch.next()) {
                         const QStringList words =
-                            normalized(stepsSearch.value(0).toString())
+                            normalized(stepsSearch.value(1).toString() + QLatin1Char(' ') +
+                                translatedText.value(QStringLiteral("procedure.step:%1")
+                                    .arg(stepsSearch.value(0).toLongLong())))
                                 .split(QLatin1Char(' '), Qt::SkipEmptyParts);
                         int matched = 0;
                         for (const QString &term : terms)
@@ -490,11 +526,22 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
             if (score <= 0)
                 continue;
             const QString content = procedureContent(
-                m_database, key, title, reference, pages, status);
-            candidates.append({score, makeRow(
-                key, QStringLiteral("%1 — %2").arg(reference, title),
+                m_database, key, translatedTitle.isEmpty()? title : translatedTitle,
+                reference, pages, status, translatedText, locale);
+            const QString uiTitle = locale == QStringLiteral("en") || locale.isEmpty()
+                ? title : (translatedTitle.isEmpty()
+                    ? QStringLiteral("[EN / %1 indisponible] %2")
+                          .arg(locale.toUpper(), title)
+                    : translatedTitle);
+            QVariantMap row = makeRow(
+                key, QStringLiteral("%1 — %2").arg(reference, uiTitle),
                 content, QStringLiteral("rover_documentary"),
-                QStringLiteral("TECHNICAL_REVIEW_PENDING"))});
+                QStringLiteral("TECHNICAL_REVIEW_PENDING"));
+            row.insert(QStringLiteral("original_title"),
+                       QStringLiteral("%1 — %2").arg(reference, title));
+            row.insert(QStringLiteral("translation_language"), locale);
+            row.insert(QStringLiteral("translation_available"), !translatedTitle.isEmpty());
+            candidates.append({score, row});
             seen.insert(key);
         }
     }
@@ -535,7 +582,9 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
                 if (key.isEmpty() || title.isEmpty() ||
                     curatedRepairNumbers.contains(number))
                     continue;
-                const QString titleN = normalized(title);
+                const QString translatedTitle = translatedText.value(
+                    QStringLiteral("candidate.title:%1").arg(key));
+                const QString titleN = normalized(title + QLatin1Char(' ') + translatedTitle);
                 int score = browse ? 9 : 0;
                 if (!repairNo.isEmpty() && repairNo == number)
                     score = 850;
@@ -550,14 +599,17 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
                 if (!browse && !terms.isEmpty()) {
                     QSqlQuery sourceSteps(m_database);
                     sourceSteps.prepare(QStringLiteral(
-                        "SELECT ocr_instruction_candidate "
+                        "SELECT rowid,ocr_instruction_candidate "
                         "FROM extracted_procedure_candidate_steps "
                         "WHERE candidate_id=? AND source_status='OCR_UNVERIFIED'"));
                     sourceSteps.addBindValue(key);
                     if (sourceSteps.exec()) {
                         while (sourceSteps.next()) {
                             const QStringList words =
-                                normalized(sourceSteps.value(0).toString())
+                                normalized(sourceSteps.value(1).toString() +
+                                    QLatin1Char(' ') + translatedText.value(
+                                        QStringLiteral("candidate.step:%1")
+                                        .arg(sourceSteps.value(0).toLongLong())))
                                     .split(QLatin1Char(' '),Qt::SkipEmptyParts);
                             int matched=0;
                             for (const QString &term:terms)
@@ -650,68 +702,6 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
     return result;
 }
 
-QString MemsDocumentaryRepository::frenchTitle(const QString &manufacturerTitle)
-{
-    // UI navigation vocabulary only. Manufacturer identifiers, measurements
-    // and the original PDF remain unchanged; this is not a translation of
-    // unverified workshop instructions.
-    QString text = manufacturerTitle;
-    const QPair<const char *, const char *> vocabulary[] = {
-        {"cylinder head gasket", "joint de culasse"},
-        {"head gasket", "joint de culasse"},
-        {"cylinder head", "culasse"},
-        {"timing chain and gears", "chaîne de distribution et pignons"},
-        {"timing chain", "chaîne de distribution"},
-        {"oil seal", "joint d'étanchéité"},
-        {"valve stem seal", "joint de queue de soupape"},
-        {"camshaft", "arbre à cames"},
-        {"crankshaft", "vilebrequin"},
-        {"tightening torque", "couple de serrage"},
-        {"tightening", "serrage"},
-        {"torque", "couple de serrage"},
-        {"removal", "dépose"},
-        {"removing", "dépose"},
-        {"remove", "dépose"},
-        {"refitting", "repose"},
-        {"refit", "repose"},
-        {"installation", "montage"},
-        {"install", "montage"},
-        {"reassembly", "remontage"},
-        {"dismantling", "démontage"},
-        {"dismantle", "démontage"},
-        {"inspection", "contrôle"},
-        {"checking", "contrôle"},
-        {"check", "contrôle"},
-        {"adjustment", "réglage"},
-        {"adjust", "réglage"},
-        {"gaskets", "joints"},
-        {"gasket", "joint"},
-        {"seals", "joints d'étanchéité"},
-        {"seal", "joint d'étanchéité"},
-        {"cylinder", "cylindre"},
-        {"valves", "soupapes"},
-        {"valve", "soupape"},
-        {"bolts", "boulons"},
-        {"bolt", "boulon"},
-        {"nuts", "écrous"},
-        {"nut", "écrou"},
-        {"gear", "pignon"},
-        {"gears", "pignons"},
-        {"cover", "couvercle"},
-        {"spring", "ressort"},
-        {"tensioner", "tendeur"},
-        {"head", "culasse"}
-    };
-    for (const auto &entry : vocabulary) {
-        const QRegularExpression pattern(
-            QStringLiteral("\\b%1\\b").arg(
-                QRegularExpression::escape(QString::fromLatin1(entry.first))),
-            QRegularExpression::CaseInsensitiveOption);
-        text.replace(pattern, QString::fromUtf8(entry.second));
-    }
-    return text;
-}
-
 QString MemsDocumentaryRepository::numberedMenu(
     const QString &question, const QVariantList &choices, bool french)
 {
@@ -721,7 +711,7 @@ QString MemsDocumentaryRepository::numberedMenu(
         const QString title =
             choices.at(index).toMap().value(QStringLiteral("title")).toString();
         lines << QStringLiteral("%1. %2").arg(index + 1)
-            .arg(french ? frenchTitle(title) : title);
+            .arg(title);
     }
     lines << QStringLiteral(
         "Réponds par le numéro de la rubrique à consulter, "
