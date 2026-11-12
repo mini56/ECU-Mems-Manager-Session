@@ -175,7 +175,8 @@ def as_json(row: dict) -> str:
                       ensure_ascii=False, sort_keys=True)
 
 def linked(row: dict, parent_key: str, parents: set) -> bool:
-    return row.get(parent_key) in parents if parent_key in row else False
+    return (row.get(parent_key) in parents or
+            any(isinstance(value, str) and value in parents for value in row.values()))
 
 def contains_source(row: dict) -> bool:
     return any(SOURCE in str(row.get(k) or "").upper() for k in
@@ -215,7 +216,7 @@ def extract_source(conn: sqlite3.Connection) -> dict[str,list[dict]]:
         if linked(r,"procedure_key",procs)]
     selection["mems_knowledge_relation"] = [
         r for r in all_rows["mems_knowledge_relation"]
-        if any(value in keys for name,value in r.items() if name.endswith("knowledge_key"))]
+        if any(isinstance(value,str) and value in keys for value in r.values())]
     selection["mems_term_alias"] = [
         r for r in all_rows["mems_term_alias"]
         if linked(r,"knowledge_key",keys) or contains_source(r)]
