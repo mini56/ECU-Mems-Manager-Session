@@ -34,6 +34,9 @@ private:
     QSqlDatabase m_database;
     QString m_connectionName;
     QString m_error;
+    // French is published atomically: every original unit translated and
+    // translation-reviewed. Until then, no mixed-language pages are returned.
+    bool m_frenchComplete = false;
 };
 
 #endif
