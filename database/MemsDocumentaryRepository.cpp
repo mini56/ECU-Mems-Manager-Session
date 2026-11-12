@@ -1,5 +1,4 @@
 #include "MemsDocumentaryRepository.h"
-#include "MemsAutomotiveTerminology.h"
 
 #include <QCoreApplication>
 #include <QDir>
@@ -651,37 +650,83 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
     return result;
 }
 
-QString MemsDocumentaryRepository::localizedTitle(
-    const QString &manufacturerTitle, const QString &language)
-{
-    return MemsAutomotiveTerminology::localizedTitle(manufacturerTitle, language);
-}
-
 QString MemsDocumentaryRepository::frenchTitle(const QString &manufacturerTitle)
 {
-    return localizedTitle(manufacturerTitle, QStringLiteral("fr"));
-}
-
-QString MemsDocumentaryRepository::numberedMenu(
-    const QString &question, const QVariantList &choices, const QString &language)
-{
-    QStringList lines;
-    lines << MemsAutomotiveTerminology::menuHeading(language).arg(question);
-    for (int index = 0; index < choices.size(); ++index) {
-        const QString title =
-            choices.at(index).toMap().value(QStringLiteral("title")).toString();
-        lines << QStringLiteral("%1. %2").arg(index + 1)
-            .arg(localizedTitle(title, language));
+    // UI navigation vocabulary only. Manufacturer identifiers, measurements
+    // and the original PDF remain unchanged; this is not a translation of
+    // unverified workshop instructions.
+    QString text = manufacturerTitle;
+    const QPair<const char *, const char *> vocabulary[] = {
+        {"cylinder head gasket", "joint de culasse"},
+        {"head gasket", "joint de culasse"},
+        {"cylinder head", "culasse"},
+        {"timing chain and gears", "chaîne de distribution et pignons"},
+        {"timing chain", "chaîne de distribution"},
+        {"oil seal", "joint d'étanchéité"},
+        {"valve stem seal", "joint de queue de soupape"},
+        {"camshaft", "arbre à cames"},
+        {"crankshaft", "vilebrequin"},
+        {"tightening torque", "couple de serrage"},
+        {"tightening", "serrage"},
+        {"torque", "couple de serrage"},
+        {"removal", "dépose"},
+        {"removing", "dépose"},
+        {"remove", "dépose"},
+        {"refitting", "repose"},
+        {"refit", "repose"},
+        {"installation", "montage"},
+        {"install", "montage"},
+        {"reassembly", "remontage"},
+        {"dismantling", "démontage"},
+        {"dismantle", "démontage"},
+        {"inspection", "contrôle"},
+        {"checking", "contrôle"},
+        {"check", "contrôle"},
+        {"adjustment", "réglage"},
+        {"adjust", "réglage"},
+        {"gaskets", "joints"},
+        {"gasket", "joint"},
+        {"seals", "joints d'étanchéité"},
+        {"seal", "joint d'étanchéité"},
+        {"cylinder", "cylindre"},
+        {"valves", "soupapes"},
+        {"valve", "soupape"},
+        {"bolts", "boulons"},
+        {"bolt", "boulon"},
+        {"nuts", "écrous"},
+        {"nut", "écrou"},
+        {"gear", "pignon"},
+        {"gears", "pignons"},
+        {"cover", "couvercle"},
+        {"spring", "ressort"},
+        {"tensioner", "tendeur"},
+        {"head", "culasse"}
+    };
+    for (const auto &entry : vocabulary) {
+        const QRegularExpression pattern(
+            QStringLiteral("\\b%1\\b").arg(
+                QRegularExpression::escape(QString::fromLatin1(entry.first))),
+            QRegularExpression::CaseInsensitiveOption);
+        text.replace(pattern, QString::fromUtf8(entry.second));
     }
-    lines << MemsAutomotiveTerminology::menuInstruction(language);
-    return lines.join(QLatin1Char('\n'));
+    return text;
 }
 
 QString MemsDocumentaryRepository::numberedMenu(
     const QString &question, const QVariantList &choices, bool french)
 {
-    return numberedMenu(question, choices,
-        french ? QStringLiteral("fr") : QStringLiteral("en"));
+    QStringList lines;
+    lines << QStringLiteral("Rubriques retrouvées pour « %1 » :").arg(question);
+    for (int index = 0; index < choices.size(); ++index) {
+        const QString title =
+            choices.at(index).toMap().value(QStringLiteral("title")).toString();
+        lines << QStringLiteral("%1. %2").arg(index + 1)
+            .arg(french ? frenchTitle(title) : title);
+    }
+    lines << QStringLiteral(
+        "Réponds par le numéro de la rubrique à consulter, "
+        "ou écris une autre recherche.");
+    return lines.join(QLatin1Char('\n'));
 }
 
 QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)

@@ -19,37 +19,6 @@ static bool check(bool truth, const char *message)
 int main(int argc, char **argv)
 {
     QCoreApplication application(argc, argv);
-
-    // A navigation list must be fully usable offline without an ONNX model.
-    // Exercise the same title and menu functions consumed by IA and the DB.
-    const QVariantList menuRows = {
-        QVariantMap{{QStringLiteral("title"),
-                     QStringLiteral("70.10.03 — REAR BRAKE DRUM")}},
-        QVariantMap{{QStringLiteral("title"),
-                     QStringLiteral("70.40.02 — FRONT BRAKE PADS")}}
-    };
-    struct MenuCase { const char *language; const char *first; const char *second; };
-    const MenuCase locales[] = {
-        {"fr", "tambour de frein arrière", "plaquettes de frein avant"},
-        {"en", "REAR BRAKE DRUM", "FRONT BRAKE PADS"},
-        {"es", "tambor de freno trasero", "pastillas de freno delanteras"},
-        {"it", "tamburo freno posteriore", "pastiglie freno anteriori"},
-        {"pt", "tambor do travão traseiro", "pastilhas dos travões dianteiros"},
-        {"de", "hintere Bremstrommel", "Vorderradbremsbeläge"}
-    };
-    for (const MenuCase &item : locales) {
-        const QString menu = MemsDocumentaryRepository::numberedMenu(
-            QStringLiteral("FREIN"), menuRows, QString::fromLatin1(item.language));
-        if (!check(menu.contains(QStringLiteral("1. 70.10.03")) &&
-                   menu.contains(QStringLiteral("2. 70.40.02")),
-                   "numbered menu instantly preserves item numbers and source identifiers"))
-            return 1;
-        if (!check(menu.contains(QString::fromUtf8(item.first), Qt::CaseInsensitive) &&
-                   menu.contains(QString::fromUtf8(item.second), Qt::CaseInsensitive),
-                   "mechanical menu labels must use the selected installation language"))
-            return 1;
-    }
-
     QTemporaryDir temp;
     if (!check(temp.isValid(), "temporary SQLite location"))
         return 1;

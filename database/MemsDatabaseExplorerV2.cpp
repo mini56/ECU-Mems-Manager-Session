@@ -737,11 +737,11 @@ private:
             const QString title=row.value(QStringLiteral("title")).toString();
             const QString generation=row.value(QStringLiteral("generation")).toString();
             const QString category=row.value(QStringLiteral("category")).toString();
-            const QString localized =
+            const QString localized=
                 row.value(QStringLiteral("source_table")).toString().startsWith(
-                    QStringLiteral("rover_"))
-                ? MemsDocumentaryRepository::localizedTitle(
-                    title, I18n::language())
+                    QStringLiteral("rover_")) &&
+                I18n::language().startsWith(QStringLiteral("fr"),Qt::CaseInsensitive)
+                ? MemsDocumentaryRepository::frenchTitle(title)
                 : MemsDatabaseContent::localizedTitle(
                     row.value(QStringLiteral("content")).toString(),title);
             QTableWidgetItem *titleItem=new QTableWidgetItem(localized);
@@ -839,8 +839,9 @@ private:
         const QString title=row.value(QStringLiteral("title")).toString();
         const QString content=row.value(QStringLiteral("content")).toString();
         const QString language=I18n::language().left(2).toLower();
-        const QString localizedTitle = source.startsWith(QStringLiteral("rover_"))
-            ? MemsDocumentaryRepository::localizedTitle(title, language)
+        const QString localizedTitle = source.startsWith(QStringLiteral("rover_")) &&
+            language == QStringLiteral("fr")
+            ? MemsDocumentaryRepository::frenchTitle(title)
             : title;
         if (source.startsWith(QStringLiteral("rover_")) &&
             language!=QStringLiteral("en")) {
