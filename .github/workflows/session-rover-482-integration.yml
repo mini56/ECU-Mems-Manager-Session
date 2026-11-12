@@ -205,6 +205,13 @@ jobs:
           Name: "german"; MessagesFile: "compiler:Languages\German.isl"
           [Files]
           Source: "dist-session-rover\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+          [INI]
+          Filename: "{app}\session-install-language.ini"; Section: "Installation"; Key: "Language"; String: "fr"; Languages: french
+          Filename: "{app}\session-install-language.ini"; Section: "Installation"; Key: "Language"; String: "en"; Languages: english
+          Filename: "{app}\session-install-language.ini"; Section: "Installation"; Key: "Language"; String: "es"; Languages: spanish
+          Filename: "{app}\session-install-language.ini"; Section: "Installation"; Key: "Language"; String: "it"; Languages: italian
+          Filename: "{app}\session-install-language.ini"; Section: "Installation"; Key: "Language"; String: "pt"; Languages: portuguese
+          Filename: "{app}\session-install-language.ini"; Section: "Installation"; Key: "Language"; String: "de"; Languages: german
           [Icons]
           Name: "{group}\ECU MEMS Manager SESSION"; Filename: "{app}\ecu_mems_manager.exe"
           Name: "{autodesktop}\ECU MEMS Manager SESSION"; Filename: "{app}\ecu_mems_manager.exe"; IconFilename: "{app}\ecu_mems_manager.exe"
@@ -225,6 +232,30 @@ jobs:
           $proc=Start-Process -FilePath $setup.FullName -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',"/DIR=$folder" -Wait -PassThru
           if($proc.ExitCode -ne 0){throw "SETUP_INSTALL_EXIT_$($proc.ExitCode)"}
           if(-not(Test-Path "$folder/ecu_mems_manager.exe")){throw 'SESSION_INSTALLED_EXE_MISSING'}
+          $installLanguage=Join-Path $folder 'session-install-language.ini'
+          if(-not(Test-Path $installLanguage)){throw 'INSTALLER_LANGUAGE_NOT_WRITTEN'}
+          $languageText=Get-Content $installLanguage -Raw
+          if($languageText -notmatch '(?m)^Language=fr\s*          python tools/build_rover_session_documentary.py --pdf "$folder/database/documentary/AKM7169ENG.pdf" --parts database/documentary/parts --output "$env:RUNNER_TEMP/ROVER_COMPARE"
+          if($LASTEXITCODE -ne 0){throw 'INSTALLED_PDF_OR_SOURCE_INVALID'}
+          $actual=(Get-FileHash "$folder/database/documentary/rover_482.sqlite" -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($actual -ne 'dd37296b5d477c4124133f51e96691858c0ae4746d42c3e4478bf6003a9445bb'){throw 'INSTALLED_SQLITE_MISMATCH'}
+          if(Test-Path "$folder/database/ecu_mems_manager.sqlite"){throw 'USER_DB_SHIPPED_IN_SETUP'}
+          $exe="$folder/ecu_mems_manager.exe"
+          $instance=Start-Process -FilePath $exe -WorkingDirectory $folder -PassThru
+          Start-Sleep -Seconds 12
+          $instance.Refresh()
+          if($instance.HasExited){throw "SESSION_INSTALLED_APP_EARLY_EXIT_$($instance.ExitCode)"}
+          Stop-Process -Id $instance.Id -Force
+          Write-Host 'REAL_WINDOWS_SETUP_INSTALLED_SQLITE_PDF_APPLICATION_START_OK'
+      - name: Publier un seul Setup Windows installe et teste
+        uses: actions/upload-artifact@v4
+        with:
+          name: ECU-MEMS-Manager-SESSION-Setup-Rover-482
+          path: setup-rover-output/*.exe
+          retention-days: 14
+          if-no-files-found: error){
+            throw "INSTALLER_LANGUAGE_UNEXPECTED $languageText"
+          }
           python tools/build_rover_session_documentary.py --pdf "$folder/database/documentary/AKM7169ENG.pdf" --parts database/documentary/parts --output "$env:RUNNER_TEMP/ROVER_COMPARE"
           if($LASTEXITCODE -ne 0){throw 'INSTALLED_PDF_OR_SOURCE_INVALID'}
           $actual=(Get-FileHash "$folder/database/documentary/rover_482.sqlite" -Algorithm SHA256).Hash.ToLowerInvariant()
