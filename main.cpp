@@ -312,9 +312,20 @@ int main(int argc, char *argv[])
 
     QSettings languageSettings(QSettings::IniFormat, QSettings::UserScope, PROJECTNAME);
     languageSettings.beginGroup("Settings");
-    const bool languageConfigured = languageSettings.value("LanguageConfigured", false).toBool();
+    bool languageConfigured = languageSettings.value("LanguageConfigured", false).toBool();
     QString language = languageSettings.value("Language", "fr").toString().toLower();
+    const QString lastInstallerLanguage =
+        languageSettings.value("LastInstallerLanguage").toString().toLower();
     languageSettings.endGroup();
+
+    // The native Inno Setup language selection is the default for SESSION.
+    // Keep the user's subsequent Options choice when the installer has not
+    // selected a different language since the last application launch.
+    const QString installerFile =
+        QCoreApplication::applicationDirPath() + QStringLiteral("/session-install-language.ini");
+    QSettings installerSettings(installerFile, QSettings::IniFormat);
+    const QString installerLanguage =
+        installerSettings.value(QStringLiteral("Installation/Language")).toString().toLower();
 
     const QStringList supportedLanguages = {
         QStringLiteral("fr"), QStringLiteral("en"), QStringLiteral("es"),
@@ -322,6 +333,18 @@ int main(int argc, char *argv[])
     };
     if (!supportedLanguages.contains(language))
         language = QStringLiteral("fr");
+
+    if (supportedLanguages.contains(installerLanguage) &&
+        (!languageConfigured || installerLanguage != lastInstallerLanguage)) {
+        language = installerLanguage;
+        languageConfigured = true;
+        languageSettings.beginGroup("Settings");
+        languageSettings.setValue("Language", language);
+        languageSettings.setValue("LanguageConfigured", true);
+        languageSettings.setValue("LastInstallerLanguage", installerLanguage);
+        languageSettings.endGroup();
+        languageSettings.sync();
+    }
 
     if (!languageConfigured)
     {
