@@ -401,6 +401,20 @@ IaMemsService::IaMemsService(QObject *parent)
                 emit statusChanged();
             });
 
+    connect(this, &IaMemsService::documentTranslationReady,
+            this, [this](const QString &id, const QString &text, bool complete) {
+        if (id != property("iaMemsLastTranslationRequestId").toString())
+            return;
+        setProperty("iaMemsLastTranslationRequestId", QVariant());
+        const QString language = property("iaMemsLastTranslationLanguage").toString();
+        QString heading = documentTranslationNotice(language, false);
+        if (!complete)
+            heading += QStringLiteral("\n") +
+                documentTranslationNotice(language, true);
+        emit responseReady(heading + QStringLiteral("\n\n") + text);
+        emit statusChanged();
+    });
+
     connect(m_localAi, &LocalAiClient::responseError,
             this, [this](const QString &message) {
                 QString fallback = m_pendingGrounding.trimmed();
