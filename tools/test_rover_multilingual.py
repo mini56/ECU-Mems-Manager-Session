@@ -10,6 +10,7 @@ from pathlib import Path
 
 from rover_multilingual import (
     check_localized_schema, create_schema, import_pack, make_export, sha,
+    require_complete_french,
 )
 
 SOURCE = "a" * 64
@@ -86,6 +87,22 @@ def run() -> None:
                    "FRENCH_TEXT_AND_UNVERIFIED_STATUS")
             ensure(check_localized_schema(con, SOURCE)["coverage"] == {"fr": 2},
                    "COVERAGE_IS_MEASURED")
+
+            # A partial French corpus must not be eligible for a user Setup,
+            # even if individual translated headings happen to look correct.
+            incomplete = check_localized_schema(con, SOURCE)
+            ensure(incomplete["french"]["required"] == 6 and
+                   incomplete["french"]["translated"] == 2 and
+                   incomplete["french"]["reviewed"] == 0 and
+                   not incomplete["french"]["ready_for_user_testing"],
+                   "TRANSLATION_GAP_IS_EXPLICIT")
+            try:
+                require_complete_french(incomplete)
+            except ValueError as problem:
+                ensure("NO_USER_SETUP_OR_TRIAL_PERMITTED" in str(problem),
+                       "PREMATURE_TRIAL_BLOCKED")
+            else:
+                raise AssertionError("PARTIAL_FRENCH_SETUP_ALLOWED")
 
             invalid = json.loads(json.dumps(pack))
             invalid["entries"][0]["translated_text"] = "Serrer à 89 Nm."
