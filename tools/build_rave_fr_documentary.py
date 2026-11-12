@@ -295,7 +295,25 @@ def build(reference_root: Path, destination: Path) -> dict:
             "mems_rave_fact":"reference",
             "mems_expert_fact_external":"reference",
         }
+        # Les valeurs et les phases renvoient à leur connaissance constructeur :
+        # conserver la page physique de la source, sans inventer une pagination.
+        knowledge_pages = {
+            row["knowledge_key"]: physical_page(row)
+            for row in selection.get("mems_knowledge_item", [])
+            if row.get("knowledge_key") and physical_page(row)
+        }
+        specification_pages = {
+            row["spec_key"]: physical_page(row) or knowledge_pages.get(row.get("knowledge_key"))
+            for row in selection.get("mems_specification", [])
+            if row.get("spec_key")
+        }
+        procedure_pages = {
+            row["procedure_key"]: physical_page(row) or knowledge_pages.get(row.get("knowledge_key"))
+            for row in selection.get("mems_procedure", [])
+            if row.get("procedure_key")
+        }
         source_pages = defaultdict(int)
+        entries_without_page = defaultdict(int)
         entries = 0
         for table in TABLES:
             for index,row in enumerate(selection.get(table,[]),start=1):
@@ -304,6 +322,11 @@ def build(reference_root: Path, destination: Path) -> dict:
                 if table not in types:
                     continue
                 page = physical_page(row)
+                if page is None:
+                    page = (knowledge_pages.get(row.get("knowledge_key"))
+                            or specification_pages.get(row.get("spec_key"))
+                            or procedure_pages.get(row.get("procedure_key"))
+                            or knowledge_pages.get(row.get("entity_key")))
                 text = record_text(row)
                 title = str(row.get("topic") or row.get("title_source") or
                             row.get("title") or row.get("parameter") or
@@ -326,6 +349,8 @@ def build(reference_root: Path, destination: Path) -> dict:
                 entries += 1
                 if page:
                     source_pages[page]+=1
+                else:
+                    entries_without_page[table] += 1
         fr.executemany(
             "UPDATE documentary_pages SET structured_records=?,indexed_state='source_linked' "
             "WHERE document_id=? AND physical_page=?",
@@ -374,6 +399,7 @@ def build(reference_root: Path, destination: Path) -> dict:
             "illustration_pages": len(image_pages),
             "illustration_bytes": sum((image_output / f"RCL0193FRE_PDF_{p:03d}.png").stat().st_size for p in image_pages),
             "documentary_entries": entries,
+            "entries_without_source_page_by_table": dict(entries_without_page),
             "source_rows_by_table": {k:len(v) for k,v in selection.items()},
             "sqlite_integrity": integrity,
             "publication_ready": False,
