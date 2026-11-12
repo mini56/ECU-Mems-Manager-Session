@@ -1,0 +1,66 @@
+name: RAVE FR - reconstruire base documentaire depuis lots constructeur
+run-name: Inventaire et export FR RCL0193FRE, sans Setup
+on:
+  push:
+    branches:
+      - rave-fr-source-sqlite-20261112
+    paths:
+      - tools/build_rave_fr_documentary.py
+      - .github/workflows/rave-fr-source-sqlite.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-french-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verifier les fichiers français et la provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          for lot in range(1790,1870,10):
+              assert Path(f"database/reference/research_enrichment_{lot}.qz64").stat().st_size>0
+              assert Path(f"database/reference/audits/rcl0193fre_{lot}_audit.md").stat().st_size>0
+          print("RAVE_FR_8_AUDITED_LOTS_PRESENT")
+          PY
+      - name: Construire une SQLite indépendante depuis les sources françaises
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p output/rave-fr
+          python3 tools/build_rave_fr_documentary.py \
+            --reference-root database/reference \
+            --output output/rave-fr/mems_documentary_fr.sqlite
+      - name: Verifier le corpus et la separation des langues
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,sqlite3
+          from pathlib import Path
+          root=Path('output/rave-fr')
+          report=json.loads((root/'mems_documentary_fr_report.json').read_text())
+          c=sqlite3.connect(f"file:{root/'mems_documentary_fr.sqlite'}?mode=ro",uri=True)
+          assert c.execute('PRAGMA integrity_check').fetchone()[0]=='ok'
+          assert c.execute('PRAGMA foreign_key_check').fetchall()==[]
+          assert c.execute('SELECT DISTINCT language FROM documentary_documents').fetchall()==[('fr',)]
+          assert c.execute('SELECT COUNT(*) FROM documentary_pages').fetchone()[0]==371
+          assert c.execute('SELECT COUNT(*) FROM documentary_entries').fetchone()[0]>100
+          assert report['translation_from_english'] is False
+          assert report['english_akm7169_included'] is False
+          assert report['publication_ready'] is False
+          print('RAVE_FR_ISOLATION_AUDIT_PASS',json.dumps(report,ensure_ascii=False))
+          PY
+      - name: Archiver pour audit prive, sans publication publique
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAVE-FR-RCL0193FRE-SQLITE-INVENTAIRE
+          path: output/rave-fr/
+          if-no-files-found: error
+          retention-days: 7
