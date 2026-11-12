@@ -718,10 +718,10 @@ void IaMemsService::askWithLibrary(const QString &question)
             if (choices.isEmpty())
                 choices = documents;
             if (choices.size() > 1) {
-                const bool french = I18n::language().startsWith(QStringLiteral("fr"),
-                                                                 Qt::CaseInsensitive);
-                const QString menu =
-                    MemsDocumentaryRepository::numberedMenu(trimmed, choices, french);
+                // Navigation must never wait for generative translation:
+                // headings and automotive terminology are localized offline.
+                const QString menu = MemsDocumentaryRepository::numberedMenu(
+                    trimmed, choices, I18n::language());
                 clearStructuredMenuState(this);
                 setProperty("iaMemsRoverMenuRows", choices);
                 setProperty("iaMemsRoverMenuQuestion", trimmed);
@@ -729,7 +729,7 @@ void IaMemsService::askWithLibrary(const QString &question)
                 setProperty("iaMemsLastLibraryEvidence", QVariant());
                 setProperty("iaMemsLastLibraryLocked", true);
                 m_pendingGrounding.clear();
-                emitLocalizedDocument(menu);
+                emit responseReady(menu);
                 emit statusChanged();
                 return;
             }
