@@ -70,6 +70,7 @@ set(SOURCES
     database/MemsDocumentaryRepository.cpp database/MemsDocumentaryRepository.h
     database/MemsDocumentaryPackCatalog.cpp database/MemsDocumentaryPackCatalog.h
     database/MemsDocumentaryUpdateDialog.cpp database/MemsDocumentaryUpdateDialog.h
+    database/MemsDocumentaryLocalInstaller.cpp database/MemsDocumentaryLocalInstaller.h
     database/MemsGlobalSearchIndex.cpp database/MemsGlobalSearchIndex.h database/MemsDatabaseExplorerV2.cpp
     database/MemsDatabaseUniversalAccess.cpp database/MemsDatabaseUniversalAccess.h database/MemsReferenceLanguageSync.cpp
     database/MemsDatabaseBrowser.cpp database/MemsDatabaseBrowser.h
