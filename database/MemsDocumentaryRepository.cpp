@@ -126,7 +126,7 @@ QString unverifiedProcedurePreview(const QSqlDatabase &database,
         "ocr_instruction_candidate,source_status "
         "FROM extracted_procedure_candidate_steps "
         "WHERE candidate_id=? "
-        "ORDER BY phase_position,step_position LIMIT 20"));
+        "ORDER BY phase_position,step_position"));
     instructions.addBindValue(candidateId);
     if (!instructions.exec())
         return QStringLiteral(
@@ -335,7 +335,31 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
         return result;
     const bool browse = question.trimmed().isEmpty();
     const QString input = normalized(question);
-    const QStringList terms = meaningfulTerms(question);
+    QStringList terms = meaningfulTerms(question);
+    // English constructor manual, French search: match actual source words
+    // without changing the source pages or inventing manufacturer entries.
+    const QStringList originalTerms = terms;
+    const auto appendTerm = [&terms](const QString &word) {
+        if (!terms.contains(word)) terms.append(word);
+    };
+    if (originalTerms.contains(QStringLiteral("culasse"))) {
+        appendTerm(QStringLiteral("cylinder"));
+        appendTerm(QStringLiteral("head"));
+    }
+    if (originalTerms.contains(QStringLiteral("joint")))
+        appendTerm(QStringLiteral("gasket"));
+    if (originalTerms.contains(QStringLiteral("depose")))
+        appendTerm(QStringLiteral("removal"));
+    if (originalTerms.contains(QStringLiteral("repose")))
+        appendTerm(QStringLiteral("refit"));
+    if (originalTerms.contains(QStringLiteral("serrage")))
+        appendTerm(QStringLiteral("tightening"));
+    if (originalTerms.contains(QStringLiteral("soupape")))
+        appendTerm(QStringLiteral("valve"));
+    if (originalTerms.contains(QStringLiteral("distribution"))) {
+        appendTerm(QStringLiteral("timing"));
+        appendTerm(QStringLiteral("chain"));
+    }
     maximum = qBound(1, maximum, 300);
     const QRegularExpression refRx(QStringLiteral("\\b\\d{2}\\.\\d{2}\\.\\d{2}\\b"));
     const QRegularExpressionMatch repair = refRx.match(question);
@@ -380,7 +404,7 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
                 key, QStringLiteral("Rover AKM7169ENG — page %1").arg(requestedPage),
                 QStringLiteral("document: Rover AKM7169ENG\npage physique: %1\n"
                                "validation: OCR_DISCOVERY_ONLY — texte non vérifié\n"
-                               "extrait OCR: %2").arg(requestedPage).arg(original.left(1300)),
+                               "extrait OCR: %2").arg(requestedPage).arg(original),
                 QStringLiteral("rover_ocr_discovery"),
                 sourcePage.value(2).toString()));
             seen.insert(key);
@@ -597,7 +621,7 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
         return result;
     QSqlQuery pages(m_database);
     pages.prepare(QStringLiteral(
-        "SELECT f.physical_page,substr(p.ocr_text,1,1300),p.knowledge_state "
+        "SELECT f.physical_page,p.ocr_text,p.knowledge_state "
         "FROM source_page_fts f JOIN source_page_discovery p "
         "ON p.physical_page=CAST(f.physical_page AS INTEGER) "
         "WHERE source_page_fts MATCH ? ORDER BY bm25(source_page_fts) LIMIT ?"));
@@ -624,6 +648,68 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
         }
     }
     return result;
+}
+
+QString MemsDocumentaryRepository::frenchTitle(const QString &manufacturerTitle)
+{
+    // UI navigation vocabulary only. Manufacturer identifiers, measurements
+    // and the original PDF remain unchanged; this is not a translation of
+    // unverified workshop instructions.
+    QString text = manufacturerTitle;
+    const QPair<const char *, const char *> vocabulary[] = {
+        {"cylinder head gasket", "joint de culasse"},
+        {"head gasket", "joint de culasse"},
+        {"cylinder head", "culasse"},
+        {"timing chain and gears", "chaîne de distribution et pignons"},
+        {"timing chain", "chaîne de distribution"},
+        {"oil seal", "joint d'étanchéité"},
+        {"valve stem seal", "joint de queue de soupape"},
+        {"camshaft", "arbre à cames"},
+        {"crankshaft", "vilebrequin"},
+        {"tightening torque", "couple de serrage"},
+        {"tightening", "serrage"},
+        {"torque", "couple de serrage"},
+        {"removal", "dépose"},
+        {"removing", "dépose"},
+        {"remove", "dépose"},
+        {"refitting", "repose"},
+        {"refit", "repose"},
+        {"installation", "montage"},
+        {"install", "montage"},
+        {"reassembly", "remontage"},
+        {"dismantling", "démontage"},
+        {"dismantle", "démontage"},
+        {"inspection", "contrôle"},
+        {"checking", "contrôle"},
+        {"check", "contrôle"},
+        {"adjustment", "réglage"},
+        {"adjust", "réglage"},
+        {"gaskets", "joints"},
+        {"gasket", "joint"},
+        {"seals", "joints d'étanchéité"},
+        {"seal", "joint d'étanchéité"},
+        {"cylinder", "cylindre"},
+        {"valves", "soupapes"},
+        {"valve", "soupape"},
+        {"bolts", "boulons"},
+        {"bolt", "boulon"},
+        {"nuts", "écrous"},
+        {"nut", "écrou"},
+        {"gear", "pignon"},
+        {"gears", "pignons"},
+        {"cover", "couvercle"},
+        {"spring", "ressort"},
+        {"tensioner", "tendeur"},
+        {"head", "culasse"}
+    };
+    for (const auto &entry : vocabulary) {
+        const QRegularExpression pattern(
+            QStringLiteral("\\b%1\\b").arg(
+                QRegularExpression::escape(QString::fromLatin1(entry.first))),
+            QRegularExpression::CaseInsensitiveOption);
+        text.replace(pattern, QString::fromUtf8(entry.second));
+    }
+    return text;
 }
 
 QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
