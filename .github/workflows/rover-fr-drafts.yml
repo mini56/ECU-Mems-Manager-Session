@@ -34,6 +34,14 @@ jobs:
       MAX_NEW_UNITS: ${{ inputs.max_new_units || '150' }}
     steps:
       - uses: actions/checkout@v4
+      - name: Charger le PDF Rover constructeur depuis MEMS Forge (version figée)
+        uses: actions/checkout@v4
+        with:
+          repository: mini56/Mems-Forge
+          ref: ed82bcb4db6c742f8e8a66ca5db81202ad18da78
+          lfs: true
+          path: original-mems-forge
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
