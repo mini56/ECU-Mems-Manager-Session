@@ -52,6 +52,20 @@ QStringList meaningfulTerms(const QString &value)
     return output;
 }
 
+// The one documentary text accessor: no per-word substitutions, no live
+// model inference, and never silently display English inside a French page.
+QString documentText(const QString &unitId, const QString &original,
+                     const QHash<QString, QString> &translations,
+                     const QString &language)
+{
+    if (language != QStringLiteral("fr"))
+        return original;
+    const QString published = translations.value(unitId);
+    return published.trimmed().isEmpty()
+        ? QStringLiteral("Texte français indisponible : ce document ne peut pas être présenté.")
+        : published;
+}
+
 QString procedureContent(const QSqlDatabase &database, const QString &key,
                          const QString &title, const QString &ref,
                          const QString &pages, const QString &status,
@@ -91,14 +105,9 @@ QString procedureContent(const QSqlDatabase &database, const QString &key,
             else
                 phase = printedPhase.isEmpty() ? phaseCode : printedPhase;
             const QString sourceStep = steps.value(2).toString().simplified();
-            const QString translatedStep = translations.value(
-                QStringLiteral("procedure.step:%1").arg(steps.value(5).toLongLong()));
-            const QString content = language == QStringLiteral("en") ||
-                language.isEmpty() ? sourceStep :
-                (translatedStep.isEmpty()
-                    ? QStringLiteral("[EN original — traduction %1 absente] %2")
-                          .arg(language.toUpper(), sourceStep)
-                    : translatedStep);
+            const QString content = documentText(
+                QStringLiteral("procedure.step:%1").arg(steps.value(5).toLongLong()),
+                sourceStep, translations, language);
             fields << QStringLiteral("%1 %2 (page %3): %4")
                 .arg(phase).arg(steps.value(1).toInt())
                 .arg(steps.value(3).toInt()).arg(content);
@@ -118,7 +127,9 @@ QString procedureContent(const QSqlDatabase &database, const QString &key,
 }
 
 QString unverifiedProcedurePreview(const QSqlDatabase &database,
-                                   const QString &candidateId)
+                                   const QString &candidateId,
+                                   const QHash<QString, QString> &translations,
+                                   const QString &language)
 {
     // Present source OCR in the database browser as raw evidence only.
     // This is never approved as an instruction or passed to Qwen as facts.
@@ -135,7 +146,7 @@ QString unverifiedProcedurePreview(const QSqlDatabase &database,
     QSqlQuery instructions(database);
     instructions.prepare(QStringLiteral(
         "SELECT phase_kind,manufacturer_step_number,"
-        "ocr_instruction_candidate,source_status "
+        "ocr_instruction_candidate,source_status,rowid "
         "FROM extracted_procedure_candidate_steps "
         "WHERE candidate_id=? "
         "ORDER BY phase_position,step_position"));
@@ -147,7 +158,11 @@ QString unverifiedProcedurePreview(const QSqlDatabase &database,
     while (instructions.next()) {
         const QString kind = instructions.value(0).toString();
         const int number = instructions.value(1).toInt();
-        const QString text = instructions.value(2).toString().simplified();
+        const QString text = documentText(
+            QStringLiteral("candidate.step:%1").arg(
+                instructions.value(4).toLongLong()),
+            instructions.value(2).toString().simplified(),
+            translations, language);
         const QString state = instructions.value(3).toString();
         if (text.isEmpty() || state != QStringLiteral("OCR_UNVERIFIED")) {
             lines << QStringLiteral(
@@ -472,11 +487,14 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
             QString original = sourcePage.value(1).toString().simplified();
             if (original.isEmpty())
                 original = QStringLiteral("[Aucun texte OCR exploitable sur cette page]");
+            const QString localizedPage = documentText(
+                QStringLiteral("ocr.page:%1").arg(requestedPage),
+                original, translatedText, locale);
             result.append(makeRow(
                 key, QStringLiteral("Rover AKM7169ENG — page %1").arg(requestedPage),
                 QStringLiteral("document: Rover AKM7169ENG\npage physique: %1\n"
                                "validation: OCR_DISCOVERY_ONLY — texte non vérifié\n"
-                               "extrait OCR: %2").arg(requestedPage).arg(original),
+                               "extrait OCR: %2").arg(requestedPage).arg(localizedPage),
                 QStringLiteral("rover_ocr_discovery"),
                 sourcePage.value(2).toString()));
             seen.insert(key);
@@ -666,6 +684,14 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
                 const QString validity = numberState == QStringLiteral("NUMBER_PATTERN_MATCH")
                     ? QStringLiteral("format du numéro repéré par OCR")
                     : QStringLiteral("numéro constructeur illisible ou incomplet — vérification obligatoire");
+                const QString displayTitle = documentText(
+                    QStringLiteral("candidate.title:%1").arg(key),
+                    title, translatedText, locale);
+                const QString displayRegion = locale == QStringLiteral("fr")
+                    ? (region == QStringLiteral("left") ? QStringLiteral("gauche")
+                      : region == QStringLiteral("right") ? QStringLiteral("droite")
+                      : region)
+                    : region;
                 const QString content = QStringLiteral(
                     "document: Rover AKM7169ENG\n"
                     "référence candidate: %1\n"
@@ -677,11 +703,12 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
                     "attention: Les étapes suivantes sont des extraits OCR à "
                     "contrôler sur le PDF, PAS des instructions techniquement approuvées.\n"
                     "%6")
-                    .arg(number,title).arg(physicalPage)
-                    .arg(region,validity,unverifiedProcedurePreview(m_database,key));
+                    .arg(number,displayTitle).arg(physicalPage)
+                    .arg(displayRegion,validity,
+                         unverifiedProcedurePreview(m_database,key,translatedText,locale));
                 found.append({score,makeRow(
                     key, QStringLiteral("%1 — %2 (p. %3, à vérifier)")
-                        .arg(number,title).arg(physicalPage),
+                        .arg(number,displayTitle).arg(physicalPage),
                     content,QStringLiteral("rover_procedure_candidate"),
                     QStringLiteral("REVIEW_REQUIRED"))});
             }
@@ -722,7 +749,10 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
     if (pages.exec()) {
         while (pages.next()) {
             const int pageNumber = pages.value(0).toInt();
-            const QString body = pages.value(1).toString().simplified();
+            const QString body = documentText(
+                QStringLiteral("ocr.page:%1").arg(pages.value(0).toInt()),
+                pages.value(1).toString().simplified(),
+                translatedText, locale);
             const QString status = pages.value(2).toString();
             const QString title = QStringLiteral("Rover AKM7169ENG — page %1")
                                       .arg(pageNumber);
