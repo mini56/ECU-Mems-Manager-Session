@@ -712,6 +712,23 @@ QString MemsDocumentaryRepository::frenchTitle(const QString &manufacturerTitle)
     return text;
 }
 
+QString MemsDocumentaryRepository::numberedMenu(
+    const QString &question, const QVariantList &choices, bool french)
+{
+    QStringList lines;
+    lines << QStringLiteral("Rubriques retrouvées pour « %1 » :").arg(question);
+    for (int index = 0; index < choices.size(); ++index) {
+        const QString title =
+            choices.at(index).toMap().value(QStringLiteral("title")).toString();
+        lines << QStringLiteral("%1. %2").arg(index + 1)
+            .arg(french ? frenchTitle(title) : title);
+    }
+    lines << QStringLiteral(
+        "Réponds par le numéro de la rubrique à consulter, "
+        "ou écris une autre recherche.");
+    return lines.join(QLatin1Char('\n'));
+}
+
 QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
 {
     if (hits.isEmpty())
