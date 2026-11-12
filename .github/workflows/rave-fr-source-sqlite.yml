@@ -8,6 +8,7 @@ on:
       - tools/build_rave_fr_documentary.py
       - tools/test_rave_fr_cpp_reader.cpp
       - database/MemsDocumentaryRepository.cpp
+      - database/MemsDocumentaryRepositorySelfTest.cpp
       - database/MemsDocumentaryRepository.h
       - database/MemsDatabaseExplorerV2.cpp
       - .github/workflows/rave-fr-source-sqlite.yml
