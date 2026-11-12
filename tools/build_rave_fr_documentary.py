@@ -67,6 +67,17 @@ CREATE TABLE documentary_pages(
     FOREIGN KEY(document_id,source_revision)
       REFERENCES documentary_documents(document_id,source_revision)
 );
+CREATE TABLE documentary_images(
+    document_id TEXT NOT NULL,
+    source_revision TEXT NOT NULL,
+    physical_page INTEGER NOT NULL,
+    relative_path TEXT NOT NULL,
+    asset_sha256 TEXT NOT NULL,
+    asset_bytes INTEGER NOT NULL,
+    PRIMARY KEY(document_id,source_revision,physical_page),
+    FOREIGN KEY(document_id,source_revision,physical_page)
+      REFERENCES documentary_pages(document_id,source_revision,physical_page)
+);
 CREATE TABLE documentary_entries(
     document_id TEXT NOT NULL,
     source_revision TEXT NOT NULL,
@@ -307,6 +318,29 @@ def build(reference_root: Path, destination: Path) -> dict:
             "UPDATE documentary_pages SET structured_records=?,indexed_state='source_linked' "
             "WHERE document_id=? AND physical_page=?",
             ((count,SOURCE,page) for page,count in source_pages.items()))
+        image_root = reference_root / "images" / "rave"
+        image_output = destination.parent / "images"
+        image_output.mkdir(parents=True, exist_ok=True)
+        from shutil import copy2
+        image_pages = set()
+        for asset in sorted(image_root.glob("RCL0193FRE_PDF_*.png")):
+            matched = re.fullmatch(r"RCL0193FRE_PDF_(\d{3})\.png", asset.name)
+            if not matched:
+                continue
+            page = int(matched.group(1))
+            if not 1 <= page <= 371:
+                raise RuntimeError(f"Page d'illustration hors manuel : {asset.name}")
+            image_pages.add(page)
+            dest = image_output / asset.name
+            copy2(asset, dest)
+            digest = sha256(dest.read_bytes())
+            fr.execute("INSERT INTO documentary_images VALUES(?,?,?,?,?,?)",
+                       (SOURCE, "source-original-auditee-371", page,
+                        "images/" + asset.name, digest, dest.stat().st_size))
+        if image_pages != set(source_pages):
+            raise RuntimeError("Illustrations et références textuelles incohérentes : "
+                f"captures sans texte={sorted(image_pages-set(source_pages))}, "
+                f"texte sans capture={sorted(set(source_pages)-image_pages)}")
         fr.commit()
         integrity = fr.execute("PRAGMA integrity_check").fetchone()[0]
         fk = fr.execute("PRAGMA foreign_key_check").fetchall()
@@ -325,6 +359,8 @@ def build(reference_root: Path, destination: Path) -> dict:
             "source_pages": 371,
             "pages_with_explicit_structured_links": len(source_pages),
             "pages_without_structured_links": 371-len(source_pages),
+            "illustration_pages": len(image_pages),
+            "illustration_bytes": sum((image_output / f"RCL0193FRE_PDF_{p:03d}.png").stat().st_size for p in image_pages),
             "documentary_entries": entries,
             "source_rows_by_table": {k:len(v) for k,v in selection.items()},
             "sqlite_integrity": integrity,
