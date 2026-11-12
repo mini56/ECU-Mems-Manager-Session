@@ -40,6 +40,7 @@
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QTextBrowser>
+#include <QTextOption>
 #include <QTimer>
 #include <QUrl>
 #include <QUuid>
