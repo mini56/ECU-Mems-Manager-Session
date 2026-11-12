@@ -27,6 +27,8 @@ public:
                         bool allowOcrDiscovery = true) const;
     static QString answerFromHits(const QVariantList &hits);
     static QString frenchTitle(const QString &manufacturerTitle);
+    static QString numberedMenu(const QString &question, const QVariantList &choices,
+                                bool french);
 
 private:
     QSqlDatabase m_database;
