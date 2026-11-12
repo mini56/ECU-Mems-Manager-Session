@@ -16,8 +16,8 @@ class QProgressBar;
 class QNetworkReply;
 class QSaveFile;
 
-// Only downloads verified, encrypted RELEASE packs to local data.
-// Installing/decrypting requires a separate password-protected workflow.
+// GitHub downloads remain protected. A local ZIP supplied by the user can
+// be installed with a password after verifying the documentary-only SQLite.
 // The ECU diagnostic and expert databases are never opened or modified here.
 class MemsDocumentaryUpdateDialog : public QDialog
 {
@@ -28,6 +28,7 @@ public:
 private:
     void checkManifest();
     void startDownload();
+    void installLocalZip();
     void setBusy(bool busy);
     void setStatus(const QString &message);
     void finishDownload(QNetworkReply *reply);
@@ -39,6 +40,7 @@ private:
     QLabel *m_status = nullptr;
     QPushButton *m_check = nullptr;
     QPushButton *m_download = nullptr;
+    QPushButton *m_installLocal = nullptr;
     QProgressBar *m_progress = nullptr;
     QByteArray m_manifestBytes;
     MemsDocumentaryOffer m_offer;
