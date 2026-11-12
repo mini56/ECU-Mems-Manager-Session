@@ -428,6 +428,23 @@ private:
     void openResultLink(const QUrl &url)
     {
         if(url.isLocalFile()){
+            // Les images françaises téléchargées sont confinées au dossier
+            // 'images' de la base documentaire sélectionnée. Rien d'autre
+            // dans AppData ou sur le système ne peut s'ouvrir par ce lien.
+            const QString documentaryRoot=QFileInfo(
+                MemsDocumentaryRepository::databasePath()).absolutePath();
+            const QString imageRoot=QFileInfo(
+                QDir(documentaryRoot).filePath(QStringLiteral("images")))
+                .canonicalFilePath();
+            const QString selected=QFileInfo(url.toLocalFile()).canonicalFilePath();
+            if(!imageRoot.isEmpty() &&
+               selected.startsWith(imageRoot+QLatin1Char('/'),Qt::CaseInsensitive) &&
+               QRegularExpression(QStringLiteral("^[A-Z0-9_-]{1,60}_PDF_[0-9]{3}\\.png$"),
+                                  QRegularExpression::CaseInsensitiveOption)
+                   .match(QFileInfo(selected).fileName()).hasMatch()){
+                openReferenceImage(selected);
+                return;
+            }
             const QString root=QCoreApplication::applicationDirPath()+
                                QStringLiteral("/database/reference");
             const QString canonicalRoot=QFileInfo(root).canonicalFilePath();
@@ -831,8 +848,38 @@ private:
         const QString content=row.value(QStringLiteral("content")).toString();
         const QString diagrams=category==QStringLiteral("wiring")
             ? diagramHtml(generation) : QString();
-        m_detail->setHtml(MemsDatabaseContent::renderResultHtml(
-            title,content,category,generation,source,diagrams));
+        QString html=MemsDatabaseContent::renderResultHtml(
+            title,content,category,generation,source,diagrams);
+        if(category==QStringLiteral("documentation") &&
+           source.startsWith(QStringLiteral("rover_fr_"))){
+            const QString key=row.value(QStringLiteral("source_key")).toString();
+            const QRegularExpression docRx(
+                QStringLiteral("^rave-fr:([A-Z0-9_-]{1,60}):"),
+                QRegularExpression::CaseInsensitiveOption);
+            const QRegularExpression pageRx(
+                QStringLiteral("page physique\\s*:\\s*(\\d{1,3})"));
+            const auto doc=docRx.match(key);
+            const auto page=pageRx.match(content);
+            if(doc.hasMatch() && page.hasMatch()){
+                const int physicalPage=page.captured(1).toInt();
+                const QString filename=QStringLiteral("%1_PDF_%2.png")
+                    .arg(doc.captured(1))
+                    .arg(physicalPage,3,10,QLatin1Char('0'));
+                const QString picture=QDir(QFileInfo(
+                    MemsDocumentaryRepository::databasePath()).absolutePath())
+                    .filePath(QStringLiteral("images/")+filename);
+                if(physicalPage>0 && QFileInfo::exists(picture)){
+                    const QString imageUrl=QUrl::fromLocalFile(picture)
+                        .toString(QUrl::FullyEncoded).toHtmlEscaped();
+                    html+=QStringLiteral(
+                        "<p><a href='%1'>Afficher la page constructeur %2 "
+                        "en grand format</a></p>"
+                        "<p><img src='%1' width='620'></p>")
+                        .arg(imageUrl).arg(physicalPage);
+                }
+            }
+        }
+        m_detail->setHtml(html);
         if(m_detail->verticalScrollBar()) m_detail->verticalScrollBar()->setValue(0);
         updateDocumentControls();
     }
