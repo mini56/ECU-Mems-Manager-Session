@@ -572,9 +572,14 @@ void IaMemsService::acceptTranslatedLine(const QString &token,
         while (matches.hasNext()) found.append(matches.next().captured(0));
         return found;
     };
+    const QStringList originalNumbers = numbers(original);
+    const QStringList translatedNumbers = numbers(translated);
+    bool identicalMeasurements = originalNumbers.size() == translatedNumbers.size();
+    for (int i = 0; identicalMeasurements && i < originalNumbers.size(); ++i)
+        identicalMeasurements = originalNumbers.at(i) == translatedNumbers.at(i);
     const bool safe = error.isEmpty() && !translated.isEmpty()
         && translated.size() < qMax(120, original.size() * 4)
-        && numbers(original) == numbers(translated)
+        && identicalMeasurements
         && !translated.contains(QStringLiteral("<|"))
         && !translated.contains(QStringLiteral("Source to translate:"));
     if (!safe) {
