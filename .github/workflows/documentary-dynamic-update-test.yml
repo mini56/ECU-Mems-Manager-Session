@@ -12,6 +12,7 @@ on:
       - 'tools/test_documentary_offline_installer.cpp'
       - 'tools/test_documentary_multisource_fixture.py'
       - 'tools/test_documentary_third_source_fixture.py'
+      - 'tools/test_documentary_offline_installer.cpp'
       - 'database/MemsDocumentaryRepository.cpp'
       - 'database/MemsDocumentaryRepository.h'
       - '.github/workflows/documentary-dynamic-update-test.yml'
@@ -94,9 +95,7 @@ jobs:
           cp -a output/rave-fr output/rave-fr-multi
           python3 tools/test_documentary_multisource_fixture.py \
             --source output/rave-fr-multi
-          /tmp/documentary_offline_installer_test output/rave-fr-multi
-          echo DOCUMENTARY_NATIVE_TWO_DOCUMENT_INSTALL_PASS
           cp -a output/rave-fr-multi output/rave-fr-third
           python3 tools/test_documentary_third_source_fixture.py --source output/rave-fr-third
-          /tmp/documentary_offline_installer_test output/rave-fr-third
-          echo DOCUMENTARY_NATIVE_THIRD_SOURCE_UPDATE_PASS
+          /tmp/documentary_offline_installer_test output/rave-fr-multi --upgrade output/rave-fr-third
+          echo DOCUMENTARY_TWO_TO_THREE_SOURCE_UPDATE_PASS
