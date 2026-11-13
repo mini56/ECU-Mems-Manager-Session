@@ -1098,25 +1098,6 @@ QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
         return answer;
     }
     {
-        QStringList sources;
-        for (const QVariant &hit : hits) {
-            const QString key=hit.toMap().value(
-                QStringLiteral("source_key")).toString();
-            if (key.startsWith(QStringLiteral("rave-fr:AKM7169FRE:")) &&
-                !sources.contains(QStringLiteral("AKM7169FRE (SPi 20 pages)")))
-                sources << QStringLiteral("AKM7169FRE (SPi 20 pages)");
-            if (key.startsWith(QStringLiteral("rave-fr:RCL0193FRE:")) &&
-                !sources.contains(QStringLiteral("RCL0193FRE (371 pages)")))
-                sources << QStringLiteral("RCL0193FRE (371 pages)");
-        }
-        paragraphs << QStringLiteral(
-            "Documentation Rover en français constructeur — %1. "
-            "Aucune traduction de l'anglais. Extraits documentaires : "
-            "les procédures et valeurs non approuvées doivent être vérifiées "
-            "sur le fac-similé original et pour le véhicule concerné.")
-            .arg(sources.join(QStringLiteral(", ")));
-    }
-    {
         paragraphs << QStringLiteral(
             "Documentation Rover AKM7169ENG — recherche dans la SQLite commune "
             "au lecteur et à l'IA. Les transcriptions ci-dessous NE SONT PAS "
