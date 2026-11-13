@@ -201,13 +201,13 @@ void MemsDocumentaryUpdateDialog::checkManifest()
             } else {
                 setStatus(ui(QStringLiteral(
                     "Pack chiffré version %1 disponible. "
-                    "Téléchargement possible ; l'installation protégée "
-                    "par mot de passe n'est pas encore activée dans ce test.")
+                    "Le bouton Téléchargement installera la base après "
+                    "vérification SHA-256 et saisie du mot de passe.")
                         .arg(m_offer.version),
                     QStringLiteral(
                     "Encrypted pack version %1 available. "
-                    "You may download it; password-protected installation "
-                    "is not enabled in this test yet.").arg(m_offer.version)));
+                    "Download verifies SHA-256 and installs after "
+                    "password and SQLite validation.").arg(m_offer.version)));
             }
         }
         setBusy(false);
