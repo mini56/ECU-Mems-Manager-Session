@@ -1,0 +1,115 @@
+name: DOCUMENTARY - MAJ AES-GCM FR EN end-to-end
+on:
+  push:
+    branches: [rave-fr-source-sqlite-20261112]
+    paths:
+      - 'tools/pack_mems_documentary.py'
+      - 'tools/test_documentary_encrypted_fixture.py'
+      - 'tools/test_documentary_encrypted_cpp.cpp'
+      - 'database/MemsDocumentaryEncryptedPack.cpp'
+      - 'database/MemsDocumentaryEncryptedPack.h'
+      - 'database/MemsDocumentaryLocalInstaller.cpp'
+      - 'database/MemsDocumentaryUpdateDialog.cpp'
+      - '.github/workflows/documentary-encrypted-pack-test.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-encrypted-pack-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Installer dépendances de chiffrement et du lecteur C++
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --user 'cryptography>=42,<47'
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            g++ pkg-config qtbase5-dev libqt5sql5-sqlite
+      - name: Compiler les sources Qt de l'application, sans Windows
+        shell: bash
+        run: |
+          set -euo pipefail
+          for source in database/MemsDocumentaryEncryptedPack.cpp \
+                        database/MemsDocumentaryLocalInstaller.cpp \
+                        database/MemsDocumentaryUpdateDialog.cpp; do
+            g++ -std=c++17 -fPIC -Wall -Wextra -fsyntax-only -I. \
+              $(pkg-config --cflags Qt5Core Qt5Widgets Qt5Sql Qt5Network) "$source"
+          done
+          echo MEMSDOC1_REAL_APPLICATION_CPP_COMPILES
+      - name: Reconstruire les deux sources constructeur indépendantes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p output/rave-fr output/rave-en output/verification
+          python3 tools/build_rave_fr_documentary.py \
+            --reference-root database/reference \
+            --output output/rave-fr/mems_documentary_fr.sqlite
+          python3 tools/test_documentary_fixture.py --source output/rave-fr
+          python3 tools/build_rave_en_documentary.py \
+            --parts database/documentary/parts --output output/rave-en
+          python3 - <<'PY'
+          import zipfile
+          from pathlib import Path
+          root=Path('output')
+          with zipfile.ZipFile(root/'verification/fr.zip','w',
+                               zipfile.ZIP_DEFLATED) as archive:
+              for path in sorted((root/'rave-fr').rglob('*')):
+                  if path.is_file() and (path.suffix=='.sqlite' or
+                                          path.parent.name=='images'):
+                      archive.write(path,path.relative_to(root/'rave-fr'))
+          with zipfile.ZipFile(root/'verification/en.zip','w',
+                               zipfile.ZIP_DEFLATED) as archive:
+              archive.write(root/'rave-en/mems_documentary_en.sqlite',
+                            'mems_documentary_en.sqlite')
+          PY
+      - name: Chiffrer puis dechiffrer les vraies structures FR EN
+        shell: bash
+        env:
+          MEMS_DOCUMENTARY_PUBLISH_PASSWORD: SyntheticTestOnlyPassword456!
+        run: |
+          set -euo pipefail
+          for lang in fr en; do
+            python3 tools/pack_mems_documentary.py \
+              --language "$lang" --source-zip "output/verification/$lang.zip" \
+              --output "output/verification/$lang.encrypted" \
+              --report "output/verification/$lang.json"
+          done
+          python3 - <<'PY'
+          import hashlib,json,struct,zipfile
+          from pathlib import Path
+          from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+          from cryptography.exceptions import InvalidTag
+          root=Path('output/verification')
+          for lang in ('fr','en'):
+              data=(root/f'{lang}.encrypted').read_bytes()
+              original=(root/f'{lang}.zip').read_bytes()
+              assert data[:8]==b'MEMSDOC1' and data[8]==1
+              assert struct.unpack_from('<Q',data,37)[0]==len(original)
+              key=hashlib.pbkdf2_hmac('sha256',
+                   b'SyntheticTestOnlyPassword456!',data[9:25],210000,32)
+              assert AESGCM(key).decrypt(data[25:37],data[45:],data[:45])==original
+              for bad in (data[:48]+bytes([data[48]^1])+data[49:],
+                          data[:30]+bytes([data[30]^1])+data[31:]):
+                  try:
+                      AESGCM(key).decrypt(bad[25:37],bad[45:],bad[:45])
+                  except InvalidTag:
+                      pass
+                  else:
+                      raise AssertionError('TAMPER_ACCEPTED')
+              try:
+                  AESGCM(hashlib.pbkdf2_hmac('sha256',b'WRONG_PASSWORD',
+                      data[9:25],210000,32)).decrypt(data[25:37],data[45:],data[:45])
+              except InvalidTag:
+                  pass
+              else:
+                  raise AssertionError('WRONG_PASSWORD_ACCEPTED')
+              report=json.loads((root/f'{lang}.json').read_text())
+              assert report['language']==lang
+              assert report['encrypted_sha256']==hashlib.sha256(data).hexdigest()
+              with zipfile.ZipFile(root/f'{lang}.zip') as archive:
+                  assert archive.testzip() is None
+              print('MEMSDOC1_AES_GCM_REAL_STRUCTURE_ROUNDTRIP_PASS',lang)
+          PY
