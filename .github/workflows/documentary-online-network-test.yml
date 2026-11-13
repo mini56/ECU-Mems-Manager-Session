@@ -4,6 +4,8 @@ on:
     branches: [fix-141-documentary-online-network-20261113]
     paths:
       - 'tools/documentary_network_probe/**'
+      - 'database/MemsDocumentaryWindowsTransport*'
+      - 'database/MemsDocumentaryUpdateDialog*'
       - '.github/workflows/documentary-online-network-test.yml'
   workflow_dispatch:
 permissions:
@@ -40,17 +42,6 @@ jobs:
             Write-Host "WINHTTP_FR_AVAILABLE=$($manifest.documentary_bases.fr.available)"
             Write-Host "WINHTTP_EN_AVAILABLE=$($manifest.documentary_bases.en.available)"
           } catch { Write-Host "WINHTTP_ERROR=$_"; throw }
-      - name: Identifier les bibliotheques OpenSSL 1.1 sur Windows
-        shell: pwsh
-        run: |
-          $roots=@('C:\Program Files\OpenSSL-Win64','C:\Program Files\OpenSSL','C:\Program Files\Git','C:\Qt',"$env:RUNNER_TOOL_CACHE")
-          foreach($root in $roots){
-            if(-not(Test-Path $root)){continue}
-            Get-ChildItem -LiteralPath $root -Filter libssl-1_1-x64.dll -File -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
-              $crypto=Join-Path $_.Directory.FullName 'libcrypto-1_1-x64.dll'
-              Write-Host "OPENSSL_11_CANDIDATE=$($_.FullName); CRYPTO=$((Test-Path $crypto))"
-            }
-          }
       - name: Tester HTTPS natif Windows sans OpenSSL externe
         shell: pwsh
         run: |
@@ -65,12 +56,3 @@ jobs:
           if($LASTEXITCODE -ne 0){throw 'TRANSPORT_DEPLOY_FAILED'}
           & "$bin/mems_documentary_transport_probe.exe"
           if($LASTEXITCODE -ne 0){throw 'WINDOWS_DOCUMENTARY_TRANSPORT_FAILED'}
-      - name: Deployer Qt et interroger la version reelle du manifeste GitHub
-        shell: pwsh
-        run: |
-          $qt='C:\Qt\5.15.2\msvc2019_64'
-          $bin=(Resolve-Path build-https/Release).Path
-          & "$qt/bin/windeployqt.exe" --release --compiler-runtime --dir $bin "$bin/mems_documentary_network_probe.exe"
-          if($LASTEXITCODE -ne 0){throw 'QT_DEPLOY_FAILED'}
-          & "$bin/mems_documentary_network_probe.exe"
-          if($LASTEXITCODE -ne 0){Write-Host 'EXPECTED_QT_5_TLS_UNAVAILABLE_NATIVE_WINDOWS_TEST_PASSED'}
