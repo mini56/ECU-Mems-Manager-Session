@@ -521,7 +521,9 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
                 "ORDER BY CASE WHEN e.source_table='akm7169fre_page_ocr' "
             "THEN 1 ELSE 0 END, bm25(documentary_fts) LIMIT ?");
             query.prepare(statement);
-            query.addBindValue(tokens.join(QStringLiteral(" OR ")));
+            // Une question précise doit retrouver ses termes ensemble, et non
+            // douze lignes différentes ayant chacune un seul mot en commun.
+            query.addBindValue(tokens.join(QStringLiteral(" AND ")));
             query.addBindValue(maximum);
         } else {
             statement = QStringLiteral(
@@ -550,9 +552,14 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
                 "document : %1\nlangue : français\npage physique : %2\n"
                 "type : %3\nstatut de vérification : %4\n\n%5")
                 .arg(doc,page,type,status,sourceText.left(10000));
-            result.append(makeRow(
+            QVariantMap hit=makeRow(
                 QStringLiteral("rave-fr:%1:%2").arg(doc,id),
-                title,content,QStringLiteral("rover_fr_") + table,status));
+                title,content,QStringLiteral("rover_fr_") + table,status);
+            hit.insert(QStringLiteral("document_id"),doc);
+            hit.insert(QStringLiteral("source_page"),
+                       query.value(4).isNull() ? 0 : query.value(4).toInt());
+            hit.insert(QStringLiteral("entry_type"),type);
+            result.append(hit);
         }
         return result;
     }
@@ -938,6 +945,98 @@ QString MemsDocumentaryRepository::numberedMenu(
     return lines.join(QLatin1Char('\n'));
 }
 
+// Les valeurs affichées par IA MEMS doivent être des textes techniques et non
+// des champs SQLite ("topic:", "source_text:", "source_section:", etc.).
+// Aucune reformulation automatique de couple/valeur ne doit modifier la source.
+static QString workshopText(const QVariantMap &row)
+{
+    QString raw=row.value(QStringLiteral("content")).toString();
+    if(raw.contains(QStringLiteral("\n\n")))
+        raw=raw.section(QStringLiteral("\n\n"),1);
+    QStringList facts;
+    QStringList supplementary;
+    for(const QString &record : raw.split(QLatin1Char('\n'))){
+        const QString line=record.trimmed();
+        if(line.isEmpty())
+            continue;
+        const QString lower=line.toLower();
+        if(lower.startsWith(QStringLiteral("source_text:"))){
+            const QString value=line.mid(line.indexOf(QLatin1Char(':'))+1).trimmed();
+            if(!value.isEmpty()) facts.append(value);
+        }else if(lower.startsWith(QStringLiteral("notes:"))){
+            const QString value=line.mid(line.indexOf(QLatin1Char(':'))+1).trimmed();
+            if(!value.isEmpty()) supplementary.append(value);
+        }else if(lower.startsWith(QStringLiteral("topic:")) ||
+                 lower.startsWith(QStringLiteral("source_section:")) ||
+                 lower.startsWith(QStringLiteral("document:")) ||
+                 lower.startsWith(QStringLiteral("document :")) ||
+                 lower.startsWith(QStringLiteral("langue :")) ||
+                 lower.startsWith(QStringLiteral("page physique :")) ||
+                 lower.startsWith(QStringLiteral("type :")) ||
+                 lower.startsWith(QStringLiteral("statut de vérification :"))){
+            continue;
+        }else{
+            facts.append(line);
+        }
+    }
+    facts.append(supplementary);
+    QStringList unique;
+    for(const QString &fact : facts){
+        if(!unique.contains(fact))
+            unique.append(fact);
+    }
+    return unique.join(QStringLiteral("\n")).trimmed();
+}
+
+// Conserve uniquement les faits textuels lisibles. Les marqueurs techniques
+// "SPEC-... valeur 1" ne constituent ni un couple de serrage ni une consigne.
+static bool informativeWorkshopText(const QString &text)
+{
+    if(text.trimmed().size()<12)
+        return false;
+    static const QRegularExpression placeholder(
+        QStringLiteral("^(?:valeur|value)\\s*\\d+$"),
+        QRegularExpression::CaseInsensitiveOption);
+    return !placeholder.match(text.trimmed()).hasMatch();
+}
+
+QString MemsDocumentaryRepository::imagePathForHit(const QVariantMap &hit)
+{
+    const QString key=hit.value(QStringLiteral("source_key")).toString();
+    static const QRegularExpression source(
+        QStringLiteral("^rave-fr:([A-Z0-9_-]{1,60}):"),
+        QRegularExpression::CaseInsensitiveOption);
+    const auto match=source.match(key);
+    if(!match.hasMatch())
+        return QString();
+    int page=hit.value(QStringLiteral("source_page")).toInt();
+    if(page<=0){
+        static const QRegularExpression pageExpression(
+            QStringLiteral("page physique\\s*:\\s*(\\d{1,3})"));
+        const auto pageMatch=pageExpression.match(
+            hit.value(QStringLiteral("content")).toString());
+        if(pageMatch.hasMatch())
+            page=pageMatch.captured(1).toInt();
+    }
+    if(page<=0 || page>999)
+        return QString();
+    const QString root=QFileInfo(databasePath()).absolutePath();
+    const QString imageRoot=QFileInfo(
+        QDir(root).filePath(QStringLiteral("images"))).canonicalFilePath();
+    if(imageRoot.isEmpty())
+        return QString();
+    const QString filename=QStringLiteral("%1_PDF_%2.png")
+        .arg(match.captured(1))
+        .arg(page,3,10,QLatin1Char('0'));
+    const QFileInfo file(QDir(imageRoot).filePath(filename));
+    const QString absolute=file.canonicalFilePath();
+    if(!file.isFile() || file.isSymLink() ||
+       !absolute.startsWith(imageRoot+QLatin1Char('/'),
+                           Qt::CaseInsensitive))
+        return QString();
+    return absolute;
+}
+
 QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
 {
     if (hits.isEmpty())
@@ -947,24 +1046,58 @@ QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
         .value(QStringLiteral("source_key")).toString()
         .startsWith(QStringLiteral("rave-fr:"));
     if (originalFrench) {
-        QStringList sources;
-        for (const QVariant &hit : hits) {
-            const QString key=hit.toMap().value(
-                QStringLiteral("source_key")).toString();
-            if (key.startsWith(QStringLiteral("rave-fr:AKM7169FRE:")) &&
-                !sources.contains(QStringLiteral("AKM7169FRE (SPi 20 pages)")))
-                sources << QStringLiteral("AKM7169FRE (SPi 20 pages)");
-            if (key.startsWith(QStringLiteral("rave-fr:RCL0193FRE:")) &&
-                !sources.contains(QStringLiteral("RCL0193FRE (371 pages)")))
-                sources << QStringLiteral("RCL0193FRE (371 pages)");
+        QStringList sections;
+        QSet<QString> seen;
+        const int maximum=qMin(3,hits.size());
+        for(const QVariant &value : hits){
+            if(sections.size()>=maximum)
+                break;
+            const QVariantMap item=value.toMap();
+            const QString sourceTable=item.value(QStringLiteral("source_table")).toString();
+            const QString key=item.value(QStringLiteral("source_key")).toString();
+            const QStringList sourceFields=key.split(QLatin1Char(':'));
+            const QString document=sourceFields.size()>=3 ?
+                sourceFields.at(1) : QStringLiteral("Rover");
+            const int page=item.value(QStringLiteral("source_page")).toInt();
+            const QString title=item.value(QStringLiteral("title")).toString().simplified();
+            QString body=workshopText(item);
+            if(sourceTable==QStringLiteral("rover_fr_akm7169fre_page_ocr")){
+                // Le scan n'est pas une procédure vérifiée. Proposer sa page,
+                // mais jamais reproduire ses instructions non relues.
+                body=QStringLiteral(
+                    "OCR de repérage non validé : consulter l'image du constructeur. Aucune instruction non relue n'est transmise à l'IA.");
+            }
+            if(!informativeWorkshopText(body))
+                continue;
+            const QString signature=body.left(250).toCaseFolded();
+            if(seen.contains(signature))
+                continue;
+            seen.insert(signature);
+            QString section;
+            static const QRegularExpression internalId(
+                QStringLiteral("^(?:SPEC|PROC)-[A-Z0-9_-]+$"),
+                QRegularExpression::CaseInsensitiveOption);
+            if(!title.isEmpty() && !internalId.match(title).hasMatch())
+                section=title+QStringLiteral("\n");
+            section+=body;
+            section+=QStringLiteral("\nSource constructeur : %1").arg(document);
+            if(page>0)
+                section+=QStringLiteral(", page %1").arg(page);
+            sections.append(section);
         }
-        paragraphs << QStringLiteral(
-            "Documentation Rover en français constructeur — %1. "
-            "Aucune traduction de l'anglais. Extraits documentaires : "
-            "les procédures et valeurs non approuvées doivent être vérifiées "
-            "sur le fac-similé original et pour le véhicule concerné.")
-            .arg(sources.join(QStringLiteral(", ")));
-    } else {
+        if(sections.isEmpty()){
+            return QStringLiteral(
+                "Des rubriques sont indexées, mais aucun extrait technique "
+                "suffisamment explicite ne répond à la demande. "
+                "Consulte la page constructeur correspondante, sans déduire de valeur absente.");
+        }
+        QString answer=sections.join(QStringLiteral("\n\n"));
+        answer+=QStringLiteral(
+            "\n\nVérifier la variante du moteur et la page constructeur "
+            "avant toute intervention.");
+        return answer;
+    }
+    {
         paragraphs << QStringLiteral(
             "Documentation Rover AKM7169ENG — recherche dans la SQLite commune "
             "au lecteur et à l'IA. Les transcriptions ci-dessous NE SONT PAS "

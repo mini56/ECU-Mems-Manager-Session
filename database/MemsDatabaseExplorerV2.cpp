@@ -1,5 +1,6 @@
 #include "MemsGlobalSearchIndex.h"
 #include "MemsDocumentaryRepository.h"
+#include "MemsDocumentaryImageViewer.h"
 #include "MemsDocumentaryUpdateDialog.h"
 #include "MemsDatabaseExplorerV2.h"
 #include "MemsDatabaseUniversalAccess.h"
@@ -379,50 +380,7 @@ private:
     // drawings containing small component labels.
     void openReferenceImage(const QString &path)
     {
-        const QPixmap original(path);
-        if(original.isNull()){
-            QMessageBox::warning(m_browser.data(),QStringLiteral("Image RAVE"),
-                                 QStringLiteral("Impossible de lire le fichier image :\n%1").arg(path));
-            return;
-        }
-        QDialog dialog(m_browser.data());
-        dialog.setWindowTitle(QStringLiteral("Image RAVE — %1").arg(QFileInfo(path).fileName()));
-        dialog.resize(1000,740);
-        QVBoxLayout *layout=new QVBoxLayout(&dialog);
-        layout->setContentsMargins(8,8,8,8);
-        layout->setSpacing(7);
-
-        QHBoxLayout *actions=new QHBoxLayout;
-        QPushButton *smaller=new QPushButton(QStringLiteral("−"),&dialog);
-        QPushButton *bigger=new QPushButton(QStringLiteral("+"),&dialog);
-        QPushButton *fit=new QPushButton(QStringLiteral("Ajuster"),&dialog);
-        QPushButton *actual=new QPushButton(QStringLiteral("100 %"),&dialog);
-        actions->addWidget(new QLabel(QFileInfo(path).fileName(),&dialog));
-        actions->addStretch(1);
-        actions->addWidget(smaller);
-        actions->addWidget(bigger);
-        actions->addWidget(fit);
-        actions->addWidget(actual);
-        layout->addLayout(actions);
-
-        QGraphicsScene scene(&dialog);
-        scene.addPixmap(original);
-        scene.setSceneRect(QRectF(original.rect()));
-        QGraphicsView *view=new QGraphicsView(&scene,&dialog);
-        view->setDragMode(QGraphicsView::ScrollHandDrag);
-        view->setRenderHint(QPainter::SmoothPixmapTransform,true);
-        view->setBackgroundBrush(QColor(QStringLiteral("#0a1015")));
-        layout->addWidget(view,1);
-        connect(smaller,&QPushButton::clicked,view,[view](){view->scale(0.8,0.8);});
-        connect(bigger,&QPushButton::clicked,view,[view](){view->scale(1.25,1.25);});
-        connect(fit,&QPushButton::clicked,view,[view,&scene](){
-            view->fitInView(scene.sceneRect(),Qt::KeepAspectRatio);
-        });
-        connect(actual,&QPushButton::clicked,view,[view](){view->resetTransform();});
-        QTimer::singleShot(0,&dialog,[view,&scene](){
-            view->fitInView(scene.sceneRect(),Qt::KeepAspectRatio);
-        });
-        dialog.exec();
+        MemsDocumentaryImageViewer::show(m_browser.data(),path);
     }
 
     void openResultLink(const QUrl &url)
@@ -852,31 +810,13 @@ private:
             title,content,category,generation,source,diagrams);
         if(category==QStringLiteral("documentation") &&
            source.startsWith(QStringLiteral("rover_fr_"))){
-            const QString key=row.value(QStringLiteral("source_key")).toString();
-            const QRegularExpression docRx(
-                QStringLiteral("^rave-fr:([A-Z0-9_-]{1,60}):"),
-                QRegularExpression::CaseInsensitiveOption);
-            const QRegularExpression pageRx(
-                QStringLiteral("page physique\\s*:\\s*(\\d{1,3})"));
-            const auto doc=docRx.match(key);
-            const auto page=pageRx.match(content);
-            if(doc.hasMatch() && page.hasMatch()){
-                const int physicalPage=page.captured(1).toInt();
-                const QString filename=QStringLiteral("%1_PDF_%2.png")
-                    .arg(doc.captured(1))
-                    .arg(physicalPage,3,10,QLatin1Char('0'));
-                const QString picture=QDir(QFileInfo(
-                    MemsDocumentaryRepository::databasePath()).absolutePath())
-                    .filePath(QStringLiteral("images/")+filename);
-                if(physicalPage>0 && QFileInfo::exists(picture)){
-                    const QString imageUrl=QUrl::fromLocalFile(picture)
-                        .toString(QUrl::FullyEncoded).toHtmlEscaped();
-                    html+=QStringLiteral(
-                        "<p><a href='%1'>Afficher la page constructeur %2 "
-                        "en grand format</a></p>"
-                        "<p><img src='%1' width='620'></p>")
-                        .arg(imageUrl).arg(physicalPage);
-                }
+            const QString picture=MemsDocumentaryRepository::imagePathForHit(row);
+            if(!picture.isEmpty()){
+                const QString imageUrl=QUrl::fromLocalFile(picture)
+                    .toString(QUrl::FullyEncoded).toHtmlEscaped();
+                html+=QStringLiteral(
+                    "<p><a href='%1'>Afficher la page constructeur en grand format</a></p>"
+                    "<p><img src='%1' width='620'></p>").arg(imageUrl);
             }
         }
         m_detail->setHtml(html);
