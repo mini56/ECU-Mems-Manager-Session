@@ -53,6 +53,93 @@ QStringList meaningfulTerms(const QString &value)
     return output;
 }
 
+// Question technique libre -> sujet documentaire et opération demandée.
+// Ce n'est pas un catalogue de mots-clés : "donne-moi la procédure de dépose
+// du joint de culasse" doit retrouver "JOINT DE CULASSE — dépose", même si
+// le titre ne contient ni "donne-moi" ni "procédure".
+QStringList nativeSubjectTerms(const QString &question)
+{
+    static const QSet<QString> conversational = {
+        QStringLiteral("moi"),QStringLiteral("mon"),QStringLiteral("ma"),
+        QStringLiteral("mes"),QStringLiteral("tu"),QStringLiteral("vous"),
+        QStringLiteral("peux"),QStringLiteral("peut"),QStringLiteral("faire"),
+        QStringLiteral("fais"),QStringLiteral("faut"),QStringLiteral("veux"),
+        QStringLiteral("voudrais"),QStringLiteral("savoir"),
+        QStringLiteral("expliquer"),QStringLiteral("explique"),
+        QStringLiteral("indiquer"),QStringLiteral("indique"),
+        QStringLiteral("montre"),QStringLiteral("montrez"),
+        QStringLiteral("etape"),QStringLiteral("etapes"),
+        QStringLiteral("operation"),QStringLiteral("operations"),
+        QStringLiteral("procedure"),QStringLiteral("procedures"),
+        QStringLiteral("procede"),QStringLiteral("technique"),
+        QStringLiteral("commentaire"),QStringLiteral("detail"),
+        QStringLiteral("details"),QStringLiteral("complete"),
+        QStringLiteral("precise"),QStringLiteral("precisement"),
+        QStringLiteral("depose"),QStringLiteral("deposer"),
+        QStringLiteral("demontage"),QStringLiteral("demonter"),
+        QStringLiteral("demonte"),QStringLiteral("repose"),
+        QStringLiteral("reposer"),QStringLiteral("remontage"),
+        QStringLiteral("remonter"),QStringLiteral("remonte"),
+        QStringLiteral("retirer"),QStringLiteral("retire"),
+        QStringLiteral("installer"),QStringLiteral("installation")
+    };
+    QStringList terms;
+    for(QString token:meaningfulTerms(question)){
+        if(conversational.contains(token) || token.size()<3)
+            continue;
+        if(token==QStringLiteral("joints"))token=QStringLiteral("joint");
+        if(token==QStringLiteral("culasses"))token=QStringLiteral("culasse");
+        if(token==QStringLiteral("freins"))token=QStringLiteral("frein");
+        if(!terms.contains(token))
+            terms<<token;
+    }
+    return terms.mid(0,6);
+}
+
+QString nativeOperation(const QString &question)
+{
+    const QString plain=normalized(question);
+    const auto hasTerm=[&plain](const QStringList &words) {
+        for(const QString &word:words)
+            if(plain.split(QLatin1Char(' ')).contains(word))
+                return true;
+        return false;
+    };
+    const bool remove=hasTerm({QStringLiteral("depose"),QStringLiteral("deposer"),
+        QStringLiteral("demontage"),QStringLiteral("demonter"),
+        QStringLiteral("retirer"),QStringLiteral("retire")});
+    const bool refit=hasTerm({QStringLiteral("repose"),QStringLiteral("reposer"),
+        QStringLiteral("remontage"),QStringLiteral("remonter"),
+        QStringLiteral("remonte"),QStringLiteral("remettre")});
+    return remove==refit?QString():remove?
+        QStringLiteral("depose"):QStringLiteral("repose");
+}
+
+int nativeRelevance(const QVariantMap &hit,const QStringList &subject,
+                    const QString &operation)
+{
+    const QString title=normalized(hit.value(QStringLiteral("title")).toString());
+    const QString type=hit.value(QStringLiteral("entry_type")).toString();
+    int score=0;
+    for(const QString &term:subject){
+        if(title.split(QLatin1Char(' ')).contains(term))
+            score+=25;
+    }
+    if(!operation.isEmpty()){
+        if(title.contains(operation))
+            score+=160;
+        const QString opposite=operation==QStringLiteral("depose")?
+            QStringLiteral("repose"):QStringLiteral("depose");
+        if(title.contains(opposite))
+            score-=200;
+    }
+    if(type==QStringLiteral("procedure"))score+=20;
+    if(type==QStringLiteral("step"))score+=10;
+    if(hit.value(QStringLiteral("source_table")).toString()
+          .contains(QStringLiteral("page_ocr")))score-=50;
+    return score;
+}
+
 // The one documentary text accessor: no per-word substitutions, no live
 // model inference, and never silently display English inside a French page.
 QString documentText(const QString &unitId, const QString &original,
@@ -495,11 +582,11 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
             QStringLiteral("\\bpages?\\s+(\\d{1,3})\\b"),
             QRegularExpression::CaseInsensitiveOption);
         const auto pageMatch = pageRx.match(question);
+        const QStringList subject=nativeSubjectTerms(question);
+        const QString operation=nativeOperation(question);
         QStringList tokens;
-        for (const QString &token : meaningfulTerms(question)) {
-            if (token.size()>=3 && tokens.size()<8)
-                tokens << (QStringLiteral("\"") + token + QStringLiteral("\""));
-        }
+        for(const QString &token:subject)
+            tokens << QStringLiteral("\"%1\"").arg(token);
         QSqlQuery query(m_database);
         if (pageMatch.hasMatch()) {
             statement = QStringLiteral(
@@ -524,8 +611,12 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
             // Une question précise doit retrouver ses termes ensemble, et non
             // douze lignes différentes ayant chacune un seul mot en commun.
             query.addBindValue(tokens.join(QStringLiteral(" AND ")));
-            query.addBindValue(maximum);
+            // Examiner assez de résultats avant de classer par opération
+            // demandée ; ne jamais classer sur seulement les 12 premiers BM25.
+            query.addBindValue(qMax(60,maximum));
         } else {
+            if(!question.trimmed().isEmpty())
+                return result; // Une question vague ne doit pas retourner un annuaire arbitraire.
             statement = QStringLiteral(
                 "SELECT document_id,entry_id,title,source_text,source_page,"
                 "verification_status,entry_type,source_table "
@@ -561,7 +652,37 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
             hit.insert(QStringLiteral("entry_type"),type);
             result.append(hit);
         }
-        return result;
+        // Classement par sens de la question : dépose et repose ne sont pas
+        // interchangeables, même si "joint de culasse" est commun aux deux.
+        if(!subject.isEmpty() && !pageMatch.hasMatch()){
+            std::stable_sort(result.begin(),result.end(),
+                [&subject,&operation](const QVariant &a,const QVariant &b){
+                    return nativeRelevance(a.toMap(),subject,operation)>
+                           nativeRelevance(b.toMap(),subject,operation);
+                });
+            if(!operation.isEmpty()){
+                const QString opposite=operation==QStringLiteral("depose")?
+                    QStringLiteral("repose"):QStringLiteral("depose");
+                QVariantList relevant;
+                bool hasMatchingOperation=false;
+                for(const QVariant &v:result){
+                    if(normalized(v.toMap().value(QStringLiteral("title")).toString())
+                       .contains(operation)){
+                        hasMatchingOperation=true;
+                        break;
+                    }
+                }
+                for(const QVariant &v:result){
+                    const QString title=normalized(v.toMap()
+                        .value(QStringLiteral("title")).toString());
+                    if(hasMatchingOperation && title.contains(opposite))
+                        continue;
+                    relevant.append(v);
+                }
+                result=relevant;
+            }
+        }
+        return result.mid(0,maximum);
     }
     const bool browse = question.trimmed().isEmpty();
     // Until the French corpus is complete, all documentary display is kept
