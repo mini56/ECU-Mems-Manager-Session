@@ -82,7 +82,8 @@ jobs:
             database/MemsDocumentaryPackCatalog.cpp \
             -o /tmp/documentary_offline_installer_test \
             $(pkg-config --cflags --libs Qt5Core Qt5Sql Qt5Network)
-          /tmp/documentary_offline_installer_test output/rave-fr
+          # Le test autonome multi-documents couvre aussi le cas invalide,
+          # sans laisser d'installation précédente dans le profil Qt du runner.
           # Construire un second dossier en deux documents avec des contenus
           # AKM7169FRE entièrement synthétiques, sans reproduction du manuel.
           cp -a output/rave-fr output/rave-fr-multi
