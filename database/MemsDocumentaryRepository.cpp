@@ -1065,7 +1065,7 @@ QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
                 // Le scan n'est pas une procédure vérifiée. Proposer sa page,
                 // mais jamais reproduire ses instructions non relues.
                 body=QStringLiteral(
-                    "Texte du scan non validé : ouvrir la page constructeur pour le consulter.");
+                    "OCR de repérage non validé : consulter l'image du constructeur. Aucune instruction non relue n'est transmise à l'IA.");
             }
             if(!informativeWorkshopText(body))
                 continue;
