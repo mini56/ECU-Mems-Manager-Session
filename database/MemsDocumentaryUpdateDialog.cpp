@@ -255,6 +255,99 @@ void MemsDocumentaryUpdateDialog::showManifestResult(const QByteArray &data)
 
 }
 
+
+#ifdef Q_OS_WIN
+void MemsDocumentaryUpdateDialog::checkManifestWindows()
+{
+    if (m_windowsTransportBusy)
+        return;
+    m_offer=MemsDocumentaryOffer{};
+    m_windowsTransportBusy=true;
+    setBusy(true);
+    setStatus(ui(QStringLiteral("Connexion HTTPS Windows au catalogue GitHub…"),
+                 QStringLiteral("Connecting to GitHub using Windows HTTPS…")));
+
+    const QString url=MemsDocumentaryPackCatalog::manifestUrl();
+    auto result=QSharedPointer<MemsDocumentaryHttpResult>::create();
+    QThread *worker=QThread::create([result,url](){
+        *result=MemsDocumentaryWindowsTransport::get(url,kMaxManifestBytes);
+    });
+    connect(worker,&QThread::finished,this,[this,result](){
+        m_windowsTransportBusy=false;
+        if(result->ok()){
+            showManifestResult(result->body);
+        }else{
+            setStatus(ui(
+                QStringLiteral("Échec HTTPS Windows : %1. "
+                               "Aucune base existante n'a été modifiée.").arg(result->error),
+                QStringLiteral("Windows HTTPS failed: %1. "
+                               "Existing databases remain unchanged.").arg(result->error)));
+        }
+        setBusy(false);
+    });
+    connect(worker,&QThread::finished,worker,&QObject::deleteLater);
+    worker->start();
+}
+
+void MemsDocumentaryUpdateDialog::downloadPackWindows()
+{
+    if(m_windowsTransportBusy || !m_offer.available)
+        return;
+    const QString root=QStandardPaths::writableLocation(
+        QStandardPaths::AppLocalDataLocation);
+    if(root.isEmpty()){
+        setStatus(ui(QStringLiteral("Dossier local inaccessible."),
+                     QStringLiteral("Local storage unavailable.")));
+        return;
+    }
+    const QString directory=QDir(root).filePath(
+        QStringLiteral("documentary/downloads/%1").arg(m_language));
+    if(!QDir().mkpath(directory)){
+        setStatus(ui(QStringLiteral("Impossible de créer le dossier des packs."),
+                     QStringLiteral("Unable to create the package directory.")));
+        return;
+    }
+    m_savedFilePath=QDir(directory).filePath(
+        QStringLiteral("mems_documentary_%1_%2.encrypted")
+            .arg(m_language,m_offer.version));
+    const QString destination=m_savedFilePath;
+    const QString url=m_offer.releaseUrl;
+    const QByteArray expectedHash=m_offer.sha256.toLatin1();
+
+    m_windowsTransportBusy=true;
+    m_progress->setRange(0,0);
+    m_progress->setVisible(true);
+    setBusy(true);
+    setStatus(ui(QStringLiteral(
+        "Téléchargement sécurisé Windows et contrôle SHA-256 en cours…"),
+        QStringLiteral(
+        "Downloading with native Windows HTTPS and verifying SHA-256…")));
+
+    auto result=QSharedPointer<MemsDocumentaryHttpResult>::create();
+    QThread *worker=QThread::create([result,url,destination,expectedHash](){
+        *result=MemsDocumentaryWindowsTransport::get(
+            url,kMaxEncryptedPackBytes,destination,expectedHash);
+    });
+    connect(worker,&QThread::finished,this,[this,result](){
+        m_windowsTransportBusy=false;
+        m_progress->setRange(0,100);
+        m_progress->setVisible(false);
+        if(result->ok()){
+            installVerifiedDownloadedPackage();
+        }else{
+            setStatus(ui(
+                QStringLiteral("Téléchargement refusé : %1. "
+                               "La base installée n'a pas été modifiée.").arg(result->error),
+                QStringLiteral("Download rejected: %1. "
+                               "Installed database unchanged.").arg(result->error)));
+        }
+        setBusy(false);
+    });
+    connect(worker,&QThread::finished,worker,&QObject::deleteLater);
+    worker->start();
+}
+#endif
+
 void MemsDocumentaryUpdateDialog::startDownload()
 {
 #ifdef Q_OS_WIN
