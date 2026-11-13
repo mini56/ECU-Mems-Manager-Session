@@ -55,6 +55,7 @@ jobs:
         run: |
           set -euo pipefail
           g++ -std=c++17 -Wall -Wextra -fPIC -I. \
+            -DMEMS_DOCUMENTARY_INSTALL_SELFTEST=1 \
             tools/test_documentary_offline_installer.cpp \
             database/MemsDocumentaryLocalInstaller.cpp \
             database/MemsDocumentaryEncryptedPack.cpp \
