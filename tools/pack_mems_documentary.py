@@ -72,26 +72,61 @@ def inspect_zip(path: Path, language: str) -> dict:
                         "SQLITE_FOREIGN_KEYS_ERROR")
                 if language == "fr":
                     docs = db.execute(
-                        "SELECT document_id,source_pages FROM documentary_documents"
+                        "SELECT document_id,source_pages,source_sha256 "
+                        "FROM documentary_documents ORDER BY document_id"
                     ).fetchall()
-                    require(docs == [("RCL0193FRE", 371)],
-                            "RCL0193FRE_SOURCE_COUNT_INVALID")
+                    RCL=("RCL0193FRE",371,
+                         "0c7fef28d0d0f0673ba321d6625a019c005823103caa98afb3258114e1fec713")
+                    SPI=("AKM7169FRE",20,
+                         "37cd0434347fe4009963d075e4b91b0b21ebc905bae5657519a8080c3026d4f5")
+                    expected_single=[RCL]
+                    expected_multi=[SPI,RCL]
+                    require(docs in (expected_single,expected_multi),
+                            "FRENCH_MANUFACTURER_PDF_IDENTITIES_INVALID")
+                    multi=docs==expected_multi
+                    expected_entries=6387 if multi else 5958
+                    expected_images=345 if multi else 325
                     require(db.execute("SELECT count(*) FROM documentary_entries")
-                            .fetchone()[0] == 5958, "FRENCH_ENTRIES_INCOMPLETE")
+                            .fetchone()[0] == expected_entries,
+                            "FRENCH_ENTRIES_INCOMPLETE")
+                    require(db.execute("SELECT count(*) FROM documentary_fts")
+                            .fetchone()[0] == expected_entries,
+                            "FRENCH_FTS_INDEX_INCOMPLETE")
                     require(db.execute(
-                        "SELECT count(*) FROM documentary_entries WHERE verification_status "
-                        "NOT IN ('source_checked','technical_reviewed')"
-                    ).fetchone()[0] == 0, "FRENCH_REVIEW_STATUS_INCOMPLETE")
+                        "SELECT count(*) FROM documentary_entries WHERE verification_status"
+                        " != 'source_checked'"
+                    ).fetchone()[0] == 0, "FRENCH_UNREVIEWED_ROWS_REJECTED")
+                    require(db.execute("SELECT COUNT(*) FROM documentary_page_visual_status"
+                                       " WHERE document_id='RCL0193FRE' AND is_blank=0")
+                            .fetchone()[0] == 325,"RCL_IMAGE_VISUAL_PROVENANCE_INCOMPLETE")
+                    require(db.execute("SELECT COUNT(*) FROM documentary_pages")
+                            .fetchone()[0] == (391 if multi else 371),
+                            "FRENCH_PAGE_COVERAGE_INVALID")
                     images = db.execute(
                         "SELECT relative_path,asset_sha256,asset_bytes "
                         "FROM documentary_images"
                     ).fetchall()
-                    require(len(images) == 325, "FRENCH_IMAGE_COVERAGE_INVALID")
+                    require(len(images) == expected_images,
+                            "FRENCH_IMAGE_COVERAGE_INVALID")
                     for relative, digest, size in images:
                         require(relative in names and size == zip_.getinfo(relative).file_size,
                                 "MANUFACTURER_IMAGE_MISSING")
                         require(hashlib.sha256(zip_.read(relative)).hexdigest() == digest,
                                 "MANUFACTURER_IMAGE_SHA256_MISMATCH")
+                    if multi:
+                        require(db.execute(
+                            "SELECT count(*) FROM documentary_entries WHERE "
+                            "document_id='AKM7169FRE' AND entry_type='step'"
+                        ).fetchone()[0] == 267, "SPI_REPAIR_STEPS_INCOMPLETE")
+                        require(db.execute(
+                            "SELECT count(*) FROM documentary_entries WHERE "
+                            "document_id='AKM7169FRE' AND entry_type='technical_value'"
+                        ).fetchone()[0] == 22,"SPI_TECHNICAL_VALUES_INCOMPLETE")
+                        require(db.execute(
+                            "SELECT count(*) FROM documentary_entries WHERE "
+                            "document_id='AKM7169FRE' AND source_table="
+                            "'akm7169fre_description_relie'"
+                        ).fetchone()[0] == 19,"SPI_DESCRIPTIVE_SECTIONS_INCOMPLETE")
                 else:
                     docs = db.execute("SELECT total_pages FROM source_documents").fetchall()
                     require(docs == [(482,)], "ENGLISH_MANUFACTURER_PAGES_INCOMPLETE")
