@@ -37,8 +37,8 @@ private:
     // French is published atomically: every original unit translated and
     // translation-reviewed. Until then, no mixed-language pages are returned.
     bool m_frenchComplete = false;
-    // Base RAVE française construite depuis des sources FR, jamais traduite.
-    bool m_nativeFrench = false;
+    // Base documentaire native multimanuel par langue, jamais traduite à la volée.
+    bool m_nativeDocumentary = false;
 };
 
 #endif
