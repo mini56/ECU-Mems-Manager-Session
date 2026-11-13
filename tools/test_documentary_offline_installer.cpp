@@ -38,7 +38,7 @@ int main(int argc,char **argv)
     }
     const QString failure=MemsDocumentaryLocalInstaller::installDirectory(
         folder.path(),QStringLiteral("fr"),
-        QStringLiteral("TestPassword12345!"));
+        QStringLiteral("SyntheticTestOnlyPassword456!"));
     if(!demand(!failure.isEmpty(),"reject invalid fake data")) return 1;
     if(!demand(!MemsDocumentaryLocalInstaller::hasPassword(),
                "reject must not set installer password")) return 1;
@@ -47,12 +47,12 @@ int main(int argc,char **argv)
     if(!demand(!QFile::exists(absent),"reject must not modify local database"))
         return 1;
     const QString badLanguage=MemsDocumentaryLocalInstaller::installDirectory(
-        folder.path(),QStringLiteral("tr"),QStringLiteral("TestPassword12345!"));
+        folder.path(),QStringLiteral("tr"),QStringLiteral("SyntheticTestOnlyPassword456!"));
     if(!demand(!badLanguage.isEmpty(),"unrecognized source language rejected"))
         return 1;
 
     if(argc==2){
-        const QString protectedPassword=QStringLiteral("TestPassword12345!");
+        const QString protectedPassword=QStringLiteral("SyntheticTestOnlyPassword456!");
         const QString validFolder=QString::fromLocal8Bit(argv[1]);
         const QString installed=MemsDocumentaryPackCatalog::
             installedDatabasePath(QStringLiteral("fr"));
@@ -80,6 +80,23 @@ int main(int argc,char **argv)
             validFolder,QStringLiteral("fr"),protectedPassword);
         if(!demand(upgrade.isEmpty() && QFile::exists(installed),
                    "same verified pack can upgrade with backup")) return 1;
+        if(argc==3){
+            const QString encrypted=QString::fromLocal8Bit(argv[2]);
+            const QString invalidPassword=MemsDocumentaryLocalInstaller::installEncrypted(
+                encrypted,QStringLiteral("fr"),QStringLiteral("WrongPassword"));
+            if(!demand(!invalidPassword.isEmpty() && QFile::exists(installed),
+                       "wrong AES package password must preserve old database"))
+                return 1;
+            const QString newPackage=MemsDocumentaryLocalInstaller::installEncrypted(
+                encrypted,QStringLiteral("fr"),protectedPassword);
+            if(!demand(newPackage.isEmpty() && QFile::exists(installed),
+                       "AES authenticated downloaded package installs successfully")){
+                std::fprintf(stderr,"ENCRYPTED_INSTALL_ERROR %s\\n",
+                             qPrintable(newPackage));
+                return 1;
+            }
+            std::puts("DOCUMENTARY_WINDOWS_ENCRYPTED_PACK_REAL_INSTALL_PASS");
+        }
         std::puts("DOCUMENTARY_OFFLINE_REAL_INSTALL_PASSWORD_BACKUP_PASS");
     }
     std::puts("DOCUMENTARY_OFFLINE_INVALID_PACKAGE_ROLLBACK_PASS");
