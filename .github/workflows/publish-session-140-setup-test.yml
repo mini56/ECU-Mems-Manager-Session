@@ -15,7 +15,7 @@ jobs:
       - name: Retrouver le Setup Windows validé, sans base constructeur
         shell: bash
         env:
-          GH_TOKEN: \${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           run_id=43390870063
@@ -34,7 +34,7 @@ jobs:
       - name: Publier la préversion du programme sur GitHub
         shell: bash
         env:
-          GH_TOKEN: \${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           tag='session-140-admin-encrypted-documentary-TEST'
