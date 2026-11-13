@@ -17,7 +17,7 @@ from pathlib import Path
 
 DB = Path("output/rave-fr/mems_documentary_fr.sqlite")
 MODEL = Path("models/Qwen3-4B-Q4_K_M.gguf")
-SERVER = Path("llama-bin/llama-server")
+SERVER = Path(os.environ.get("MEMS_LLAMA_SERVER","llama-bin/llama-server"))
 HOST = "http://127.0.0.1:18439"
 OUTPUT = Path("benchmark/qwen3_4b_test_dialogue.json")
 MAX_PER_TURN = 270
