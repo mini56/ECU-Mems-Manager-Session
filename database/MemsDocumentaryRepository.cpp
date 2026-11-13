@@ -5,6 +5,8 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QHash>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QRegularExpression>
 #include <QSet>
 #include <QSqlError>
@@ -652,6 +654,7 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
                 QStringLiteral("rave-fr:%1:%2").arg(doc,id),
                 title,content,QStringLiteral("rover_fr_") + table,status);
             hit.insert(QStringLiteral("document_id"),doc);
+            hit.insert(QStringLiteral("entry_id"),id);
             hit.insert(QStringLiteral("source_page"),
                        query.value(4).isNull() ? 0 : query.value(4).toInt());
             hit.insert(QStringLiteral("entry_type"),type);
@@ -1161,6 +1164,177 @@ QString MemsDocumentaryRepository::imagePathForHit(const QVariantMap &hit)
                            Qt::CaseInsensitive))
         return QString();
     return absolute;
+}
+
+// Les procédures françaises du constructeur sont conservées dans une SQLite
+// structurée : la ligne "mems_procedure" contient la clé d'opération, les
+// lignes "mems_procedure_step" et "mems_procedure_requirement" portent la même
+// procédure dans leur raw_json. La recherche FTS seule ne sait pas faire cette
+// jointure ; auparavant SESSION n'affichait que le titre de l'opération.
+QString MemsDocumentaryRepository::procedureAnswer(
+    const QVariantMap &hit, QStringList *imagePaths) const
+{
+    if(imagePaths)
+        imagePaths->clear();
+    if(!isOpen() || !m_nativeDocumentary ||
+       hit.value(QStringLiteral("entry_type")).toString()!=QStringLiteral("procedure"))
+        return QString();
+
+    const QString document=hit.value(QStringLiteral("document_id")).toString();
+    const QString entry=hit.value(QStringLiteral("entry_id")).toString();
+    if(document.isEmpty() || entry.isEmpty())
+        return QString();
+
+    QSqlQuery main(m_database);
+    main.prepare(QStringLiteral(
+        "SELECT source_revision,source_page,raw_json,title "
+        "FROM documentary_entries "
+        "WHERE document_id=? AND entry_id=? AND entry_type='procedure'"));
+    main.addBindValue(document);
+    main.addBindValue(entry);
+    if(!main.exec() || !main.next())
+        return QString();
+
+    const QString revision=main.value(0).toString();
+    const int openingPage=main.value(1).toInt();
+    const QJsonObject procedure=QJsonDocument::fromJson(
+        main.value(2).toByteArray()).object();
+    const QString procedureKey=procedure.value(
+        QStringLiteral("procedure_key")).toString().trimmed();
+    const QString title=main.value(3).toString().trimmed();
+    if(procedureKey.isEmpty())
+        return QString();
+
+    struct WorkshopStep {
+        int order=0;
+        int page=0;
+        QString text;
+        bool checked=false;
+    };
+    QList<WorkshopStep> steps;
+    QList<WorkshopStep> requirements;
+    QSet<int> pageSet;
+    if(openingPage>0)
+        pageSet.insert(openingPage);
+
+    QSqlQuery related(m_database);
+    related.prepare(QStringLiteral(
+        "SELECT source_table,source_page,verification_status,raw_json "
+        "FROM documentary_entries "
+        "WHERE document_id=? AND source_revision=? "
+        "AND source_table IN ('mems_procedure_step',"
+        "                     'mems_procedure_requirement')"));
+    related.addBindValue(document);
+    related.addBindValue(revision);
+    if(!related.exec())
+        return QString();
+
+    while(related.next()){
+        const QString kind=related.value(0).toString();
+        const int page=related.value(1).toInt();
+        const bool checked=related.value(2).toString() ==
+            QStringLiteral("source_checked") ||
+            related.value(2).toString()==QStringLiteral("technical_reviewed");
+        const QJsonObject record=QJsonDocument::fromJson(
+            related.value(3).toByteArray()).object();
+        if(record.value(QStringLiteral("procedure_key")).toString()!=procedureKey)
+            continue;
+
+        QString source;
+        if(kind==QStringLiteral("mems_procedure_step")){
+            const QStringList fields={
+                QStringLiteral("instruction_source"),
+                QStringLiteral("instruction_text"),
+                QStringLiteral("step_text"),
+                QStringLiteral("action_text"),
+                QStringLiteral("instruction"),
+                QStringLiteral("statement")
+            };
+            for(const QString &field:fields){
+                source=record.value(field).toString().trimmed();
+                if(!source.isEmpty())break;
+            }
+        } else {
+            const QStringList fields={
+                QStringLiteral("requirement_source"),
+                QStringLiteral("requirement_text"),
+                QStringLiteral("condition_text"),
+                QStringLiteral("description"),
+                QStringLiteral("notes")
+            };
+            for(const QString &field:fields){
+                source=record.value(field).toString().trimmed();
+                if(!source.isEmpty())break;
+            }
+        }
+        if(source.isEmpty())
+            continue;
+        WorkshopStep item;
+        item.order=record.value(QStringLiteral("step_no")).toInt();
+        item.page=page;
+        item.text=source;
+        item.checked=checked;
+        if(page>0)
+            pageSet.insert(page);
+        if(kind==QStringLiteral("mems_procedure_step"))
+            steps.append(item);
+        else
+            requirements.append(item);
+    }
+    std::stable_sort(steps.begin(),steps.end(),
+        [](const WorkshopStep &a,const WorkshopStep &b){
+            return a.order<b.order;
+        });
+    if(steps.isEmpty())
+        return QString(); // Ne jamais annoncer une procédure complète sans étapes.
+
+    if(imagePaths){
+        QList<int> pages=pageSet.values();
+        std::sort(pages.begin(),pages.end());
+        for(const int page:pages){
+            QVariantMap imageHit=hit;
+            imageHit.insert(QStringLiteral("source_page"),page);
+            const QString path=imagePathForHit(imageHit);
+            if(!path.isEmpty() && !imagePaths->contains(path))
+                imagePaths->append(path);
+        }
+    }
+
+    QStringList answer;
+    answer << QStringLiteral("%1").arg(title);
+    answer << QStringLiteral(
+        "Manuel constructeur %1 — %2 étapes conservées dans l'ordre d'origine.")
+        .arg(document).arg(steps.size());
+    answer << QStringLiteral(
+        "Transcription issue de la documentation : les étapes non validées "
+        "techniquement doivent être vérifiées sur les pages constructeur "
+        "affichées ci-dessous, ainsi que l'applicabilité au véhicule.");
+    if(!requirements.isEmpty()){
+        answer << QStringLiteral("Précautions et conditions documentaires :");
+        for(const WorkshopStep &requirement:requirements)
+            answer << QStringLiteral("• %1").arg(requirement.text);
+    }
+    answer << QStringLiteral("Étapes de l'opération :");
+    for(int i=0;i<steps.size();++i){
+        const WorkshopStep &step=steps.at(i);
+        QString line=QStringLiteral("%1. %2")
+            .arg(step.order>0 ? step.order : i+1).arg(step.text);
+        if(step.page>0)
+            line+=QStringLiteral(" (RCL0193FRE, p. %1)").arg(step.page);
+        if(!step.checked)
+            line+=QStringLiteral(" [transcription à vérifier]");
+        answer << line;
+    }
+    if(!pageSet.isEmpty()){
+        QList<int> pages=pageSet.values();
+        std::sort(pages.begin(),pages.end());
+        QStringList pageNumbers;
+        for(int page:pages)
+            pageNumbers.append(QString::number(page));
+        answer << QStringLiteral("Fac-similés constructeur associés : pages %1.")
+            .arg(pageNumbers.join(QStringLiteral(", ")));
+    }
+    return answer.join(QLatin1Char('\n'));
 }
 
 QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
