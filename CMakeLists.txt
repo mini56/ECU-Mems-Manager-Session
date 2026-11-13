@@ -68,6 +68,7 @@ set(SOURCES
     analogwidgets/abstractmeter900.cpp mainwindow.ui resources.qrc database/DatabaseManager.cpp
     database/MemsReferenceDatabase.cpp database/MemsReferenceDatabase.h database/MemsReferencePackageRefresh.cpp
     database/MemsDocumentaryRepository.cpp database/MemsDocumentaryRepository.h
+    database/MemsDocumentaryImageViewer.cpp database/MemsDocumentaryImageViewer.h
     database/MemsDocumentaryPackCatalog.cpp database/MemsDocumentaryPackCatalog.h
     database/MemsDocumentaryUpdateDialog.cpp database/MemsDocumentaryUpdateDialog.h
     database/MemsDocumentaryLocalInstaller.cpp database/MemsDocumentaryLocalInstaller.h
