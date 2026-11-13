@@ -40,6 +40,17 @@ jobs:
             Write-Host "WINHTTP_FR_AVAILABLE=$($manifest.documentary_bases.fr.available)"
             Write-Host "WINHTTP_EN_AVAILABLE=$($manifest.documentary_bases.en.available)"
           } catch { Write-Host "WINHTTP_ERROR=$_"; throw }
+      - name: Identifier les bibliotheques OpenSSL 1.1 sur Windows
+        shell: pwsh
+        run: |
+          $roots=@('C:\Program Files\OpenSSL-Win64','C:\Program Files\OpenSSL','C:\Program Files\Git','C:\Qt',"$env:RUNNER_TOOL_CACHE")
+          foreach($root in $roots){
+            if(-not(Test-Path $root)){continue}
+            Get-ChildItem -LiteralPath $root -Filter libssl-1_1-x64.dll -File -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
+              $crypto=Join-Path $_.Directory.FullName 'libcrypto-1_1-x64.dll'
+              Write-Host "OPENSSL_11_CANDIDATE=$($_.FullName); CRYPTO=$((Test-Path $crypto))"
+            }
+          }
       - name: Deployer Qt et interroger la version reelle du manifeste GitHub
         shell: pwsh
         run: |
