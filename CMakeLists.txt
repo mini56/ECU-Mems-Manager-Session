@@ -72,6 +72,7 @@ set(SOURCES
     database/MemsDocumentaryUpdateDialog.cpp database/MemsDocumentaryUpdateDialog.h
     database/MemsDocumentaryLocalInstaller.cpp database/MemsDocumentaryLocalInstaller.h
     database/MemsDocumentaryEncryptedPack.cpp database/MemsDocumentaryEncryptedPack.h
+    database/MemsDocumentaryWindowsTransport.cpp database/MemsDocumentaryWindowsTransport.h
     database/MemsGlobalSearchIndex.cpp database/MemsGlobalSearchIndex.h database/MemsDatabaseExplorerV2.cpp
     database/MemsDatabaseUniversalAccess.cpp database/MemsDatabaseUniversalAccess.h database/MemsReferenceLanguageSync.cpp
     database/MemsDatabaseBrowser.cpp database/MemsDatabaseBrowser.h
@@ -88,7 +89,7 @@ set(SOURCES
     singleinstance.cpp singleinstance.h nativewindowstyle.cpp nativewindowstyle.h)
 add_executable(${PNAME} ${SOURCES})
 if(WIN32)
-    target_link_libraries(${PNAME} PRIVATE bcrypt)
+    target_link_libraries(${PNAME} PRIVATE bcrypt winhttp)
 endif()
 target_sources(${PNAME} PRIVATE ${CMAKE_SOURCE_DIR}/desktopshortcut.cpp ${CMAKE_SOURCE_DIR}/desktopshortcut.h)
 
