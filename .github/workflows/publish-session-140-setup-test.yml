@@ -1,0 +1,53 @@
+name: Publier SESSION 140 test sur le depot du programme
+on:
+  push:
+    branches: [rave-fr-source-sqlite-20261112]
+    paths: ['.github/workflows/publish-session-140-setup-test.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Retrouver le Setup Windows validé, sans base constructeur
+        shell: bash
+        env:
+          GH_TOKEN: \${{ github.token }}
+        run: |
+          set -euo pipefail
+          run_id=43390870063
+          run_json=$(gh api repos/mini56/ECU-Mems-Manager-Session/actions/runs/$run_id)
+          echo "$run_json" | jq -e \
+            '.conclusion=="success" and .head_sha=="f4a6b9c76938db3515c20d579b4fea992ff854ec"'
+          mkdir -p dist
+          gh run download "$run_id" --repo mini56/ECU-Mems-Manager-Session \
+            --name ECU-MEMS-Manager-SESSION-140-SANS-BASE-TEST --dir dist
+          setup=$(find dist -type f -iname '*Setup*.exe' -print -quit)
+          test -n "$setup"
+          test "$(stat -c '%s' "$setup")" -gt 100000000
+          test "$(head -c 2 "$setup")" = MZ
+          sha256sum "$setup" | tee dist/SESSION-140-Setup.sha256
+          echo "SETUP_140_WINDOWS_TESTED_AND_HASHED"
+      - name: Publier la préversion du programme sur GitHub
+        shell: bash
+        env:
+          GH_TOKEN: \${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag='session-140-admin-encrypted-documentary-TEST'
+          if gh release view "$tag" --repo mini56/ECU-Mems-Manager-Session >/dev/null 2>&1; then
+            echo 'SESSION_140_TEST_RELEASE_EXISTS'
+            exit 0
+          fi
+          setup=$(find dist -type f -iname '*Setup*.exe' -print -quit)
+          gh release create "$tag" "$setup" dist/SESSION-140-Setup.sha256 \
+            --repo mini56/ECU-Mems-Manager-Session \
+            --target f4a6b9c76938db3515c20d579b4fea992ff854ec \
+            --title 'MEMS Manager SESSION 140 - test bases chiffrées MAJ' \
+            --notes 'Préversion de test Windows compilée, installée et démarrée sur GitHub CI. Le bouton de mise à jour vérifie la SHA-256 du pack, puis exige le secret de chiffrement défini par l’administrateur et vérifie AES-GCM avant d’installer la SQLite documentaire avec sauvegarde. L’utilisateur ne peut pas définir son propre mot de passe. Tests Windows d’installation et de refus d’un mauvais secret exécutés. Ne contient aucune base ni aucun manuel constructeur. Les packs documentaires eux-mêmes ne sont pas encore publiés sur le site MAJ.' \
+            --prerelease
+          gh release view "$tag" --repo mini56/ECU-Mems-Manager-Session \
+            --json url,assets --jq '{url,assets:[.assets[].name]}'
