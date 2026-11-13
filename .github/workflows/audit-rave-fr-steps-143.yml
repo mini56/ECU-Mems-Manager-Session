@@ -1,0 +1,54 @@
+name: RAVE FR 143 - Audit vraies etapes des operations constructeur
+on:
+  push:
+    branches: [fix-143-ia-documentary-question-intent-20261113]
+    paths:
+      - '.github/workflows/audit-rave-fr-steps-143.yml'
+      - 'tools/build_rave_fr_documentary.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit-linked-steps:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reconstruire le corpus francais exact depuis les huit lots source
+        run: |
+          mkdir -p /tmp/rave-fr-audit
+          python3 tools/build_rave_fr_documentary.py --reference-root database/reference --output /tmp/rave-fr-audit/mems_documentary_fr.sqlite
+      - name: Auditer les liens entre operations constructeur et etapes sans publier leur texte
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import sqlite3,json
+          db=sqlite3.connect('/tmp/rave-fr-audit/mems_documentary_fr.sqlite')
+          db.row_factory=sqlite3.Row
+          counts=dict(db.execute("select source_table,count(*) from documentary_entries group by source_table"))
+          print("NATIVE_FR_PROCEDURES",counts.get('mems_procedure',0))
+          print("NATIVE_FR_STEPS",counts.get('mems_procedure_step',0))
+          print("NATIVE_FR_REQUIREMENTS",counts.get('mems_procedure_requirement',0))
+          procedures=list(db.execute("select title,source_page,raw_json from documentary_entries where source_table='mems_procedure'"))
+          steps=list(db.execute("select source_page,raw_json from documentary_entries where source_table='mems_procedure_step'"))
+          requirements=list(db.execute("select raw_json from documentary_entries where source_table='mems_procedure_requirement'"))
+          bykey={}
+          for item in steps:
+              data=json.loads(item['raw_json'])
+              key=data.get('procedure_key')
+              if key:bykey.setdefault(key,[]).append((data.get('step_no'),item['source_page']))
+          print("JOINED_PROCEDURE_KEYS",len(bykey))
+          matched=0
+          for row in procedures:
+              if 'CULASSE' not in row['title'].upper():continue
+              matched+=1
+              data=json.loads(row['raw_json'])
+              key=data.get('procedure_key')
+              linked=bykey.get(key,[])
+              req=sum(json.loads(x['raw_json']).get('procedure_key')==key for x in requirements)
+              print('CULASSE_PROCEDURE',{'page':row['source_page'],'title_has_depose':'d.pose' in row['title'].lower() or 'dépose' in row['title'].lower(),'title_has_repose':'repose' in row['title'].lower(),'key_present':bool(key),'step_count':len(linked),'requirements':req,'step_min':min((x[0] for x in linked if isinstance(x[0],int)),default=None),'step_max':max((x[0] for x in linked if isinstance(x[0],int)),default=None),'distinct_pages':len(set(x[1] for x in linked))})
+          print('CULASSE_MATCHED_PROCEDURES',matched)
+          assert counts.get('mems_procedure_step',0)>3000
+          assert len(bykey)>0
+          print('RAVE_FR_STEP_LINKING_DIAGNOSTIC_PASS')
+          PY
