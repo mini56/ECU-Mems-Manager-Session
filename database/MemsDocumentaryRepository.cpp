@@ -487,7 +487,7 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
         return result;
     if (m_nativeDocumentary) {
         const QString requested = language.left(2).toLower();
-        if (!requested.isEmpty() && requested != QStringLiteral("fr"))
+        if (!requested.isEmpty() && requested != MemsDocumentaryPackCatalog::selectedLanguage())
             return result; // Pas de substitution silencieuse entre langues.
         maximum = qBound(1,maximum,100);
         QString statement;
