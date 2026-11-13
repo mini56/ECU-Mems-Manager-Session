@@ -28,6 +28,18 @@ jobs:
           if($LASTEXITCODE -ne 0){throw 'PROBE_CONFIG_FAILED'}
           cmake --build build-https --config Release --parallel
           if($LASTEXITCODE -ne 0){throw 'PROBE_BUILD_FAILED'}
+      - name: Verifier que Windows peut contacter le vrai manifeste independamment de Qt
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $uri='https://raw.githubusercontent.com/mini56/ECU-Mems-Manager-Session-MAJ/main/manifest.json'
+          try {
+            Invoke-WebRequest -Uri $uri -OutFile manifest-windows.json -TimeoutSec 20
+            $manifest=Get-Content manifest-windows.json -Raw | ConvertFrom-Json
+            Write-Host "WINHTTP_PUBLIC_MANIFEST_LENGTH=$((Get-Item manifest-windows.json).Length)"
+            Write-Host "WINHTTP_FR_AVAILABLE=$($manifest.documentary_bases.fr.available)"
+            Write-Host "WINHTTP_EN_AVAILABLE=$($manifest.documentary_bases.en.available)"
+          } catch { Write-Host "WINHTTP_ERROR=$_"; throw }
       - name: Deployer Qt et interroger la version reelle du manifeste GitHub
         shell: pwsh
         run: |
