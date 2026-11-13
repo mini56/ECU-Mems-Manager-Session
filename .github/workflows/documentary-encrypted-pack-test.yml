@@ -113,3 +113,84 @@ jobs:
                   assert archive.testzip() is None
               print('MEMSDOC1_AES_GCM_REAL_STRUCTURE_ROUNDTRIP_PASS',lang)
           PY
+
+      - name: Essai corpus français multi-documents 391 pages sans contenus constructeur
+        shell: bash
+        env:
+          MEMS_DOCUMENTARY_PUBLISH_PASSWORD: SyntheticTestOnlyPassword456!
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import sqlite3,hashlib,shutil,json,zipfile
+          from pathlib import Path
+          src=Path('output/rave-fr')
+          dest=Path('output/rave-fr-two-doc-synthetic')
+          shutil.copytree(src,dest)
+          db=sqlite3.connect(dest/'mems_documentary_fr.sqlite')
+          doc='AKM7169FRE'
+          rev='MEMS-SPI-20P-ORIGINAL-FR-1993'
+          png=bytes.fromhex(
+              '89504e470d0a1a0a0000000d494844520000000100000001'
+              '08060000001f15c4890000000b49444154789c63600002'
+              '0000050001a5f645400000000049454e44ae426082'
+          )
+          source_sha='37cd0434347fe4009963d075e4b91b0b21ebc905bae5657519a8080c3026d4f5'
+          db.execute('INSERT INTO documentary_documents VALUES (?,?,?,?,?,?,?,?,?)',
+              (doc,rev,'fr','Rover Group','AKM7169FRE',
+               'SYNTHETIC_CI_NO_MANUFACTURER_PDF',source_sha,20,'SYNTHETIC_CI'))
+          for page in range(1,21):
+              name=f'images/AKM7169FRE_PDF_{page:03d}.png'
+              (dest/name).write_bytes(png)
+              db.execute('INSERT INTO documentary_pages VALUES (?,?,?,?,?)',
+                         (doc,rev,page,0,'source_linked'))
+              db.execute('INSERT INTO documentary_images VALUES (?,?,?,?,?,?)',
+                         (doc,rev,page,name,hashlib.sha256(png).hexdigest(),len(png)))
+          for source,kind,count in (
+              ('syn_figure','figure',20),('syn_component','reference',19),
+              ('syn_location','reference',18),('syn_index','reference',20),
+              ('syn_facsimile','other',20),('syn_procedure','procedure',20),
+              ('syn_step','step',267),('syn_value','technical_value',22),
+              ('akm7169fre_description_relie','other',19),
+              ('syn_notice','notice',4)):
+              for i in range(count):
+                  db.execute('INSERT INTO documentary_entries VALUES (?,?,?,?,?,?,?,?,?,?)',
+                      (doc,rev,f'{source}-{i}',kind,i%20+1,
+                       f'SYNTHETIC-{source}-{i}','SYNTHETIC_TEST_NO_MANUFACTURER_TEXT',
+                       'source_checked',source,'{}'))
+          db.execute("UPDATE documentary_pages SET structured_records="
+              "(SELECT COUNT(*) FROM documentary_entries e WHERE "
+              "e.document_id=documentary_pages.document_id AND "
+              "e.source_page=documentary_pages.physical_page) WHERE "
+              "document_id='AKM7169FRE'")
+          db.commit()
+          assert db.execute('PRAGMA integrity_check').fetchone()[0]=='ok'
+          assert not db.execute('PRAGMA foreign_key_check').fetchall()
+          assert db.execute('SELECT COUNT(*) FROM documentary_entries').fetchone()[0]==6387
+          assert db.execute('SELECT COUNT(*) FROM documentary_images').fetchone()[0]==345
+          assert db.execute('SELECT COUNT(*) FROM documentary_pages').fetchone()[0]==391
+          db.close()
+          packed=Path('output/verification/fr-multi-synthetic.zip')
+          with zipfile.ZipFile(packed,'w',zipfile.ZIP_DEFLATED) as archive:
+              for item in sorted(dest.rglob('*')):
+                  if item.is_file() and (
+                      item.suffix=='.sqlite' or item.parent.name=='images'):
+                      archive.write(item,item.relative_to(dest))
+          assert zipfile.ZipFile(packed).testzip() is None
+          print('SYNTHETIC_FR_2_DOCUMENTS_391_PAGES_6387_ENTRIES_PASS')
+          PY
+          python3 tools/pack_mems_documentary.py             --language fr --source-zip output/verification/fr-multi-synthetic.zip             --output output/verification/fr-multi-synthetic.encrypted
+          python3 - <<'PY'
+          import hashlib,struct
+          from pathlib import Path
+          from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+          p=Path('output/verification')
+          encrypted=(p/'fr-multi-synthetic.encrypted').read_bytes()
+          plain=(p/'fr-multi-synthetic.zip').read_bytes()
+          assert encrypted[:8]==b'MEMSDOC1'
+          assert struct.unpack_from('<Q',encrypted,37)[0]==len(plain)
+          secret=b'SyntheticTestOnlyPassword456!'
+          key=hashlib.pbkdf2_hmac('sha256',secret,encrypted[9:25],210000,32)
+          assert AESGCM(key).decrypt(encrypted[25:37],encrypted[45:],
+                                     encrypted[:45])==plain
+          print('MEMSDOC1_FR_MULTI_SOURCE_ENCRYPTION_PASS')
+          PY
