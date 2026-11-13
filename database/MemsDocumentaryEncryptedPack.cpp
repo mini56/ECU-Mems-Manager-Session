@@ -2,6 +2,7 @@
 
 #include <QCryptographicHash>
 #include <QFile>
+#include <QFileInfo>
 #include <QPasswordDigestor>
 #include <QSaveFile>
 #include <QtEndian>
