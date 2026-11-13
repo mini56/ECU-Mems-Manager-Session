@@ -51,6 +51,11 @@ jobs:
               Write-Host "OPENSSL_11_CANDIDATE=$($_.FullName); CRYPTO=$((Test-Path $crypto))"
             }
           }
+      - name: Tester HTTPS natif Windows sans OpenSSL externe
+        shell: pwsh
+        run: |
+          & "build-https/Release/mems_documentary_native_https_probe.exe"
+          if($LASTEXITCODE -ne 0){throw 'NATIVE_WINDOWS_HTTPS_FAILED'}
       - name: Deployer Qt et interroger la version reelle du manifeste GitHub
         shell: pwsh
         run: |
