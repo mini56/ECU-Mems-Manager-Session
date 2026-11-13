@@ -612,8 +612,23 @@ void IaMemsService::askWithLibrary(const QString &question)
     if (trimmed.isEmpty())
         return;
 
-    // La suggestion de page est attachée uniquement à la réponse courante.
+    // Les pages appartiennent à la réponse et à l'opération en cours.
     setProperty("iaMemsLastDocumentaryImagePath", QVariant());
+    setProperty("iaMemsLastDocumentaryImagePaths", QVariant());
+
+    // "Culasse" suivi de "dépose" est une question contextuelle : conserver
+    // le composant de la première intervention, pas imposer un menu numéroté.
+    const QString followUp=IaMemsConversationRouting::normalize(trimmed);
+    const QString currentComponent=property("iaMemsActiveDocumentaryComponent").toString();
+    static const QSet<QString> operationFollowUps={
+        QStringLiteral("depose"),QStringLiteral("repose"),
+        QStringLiteral("serrage"),QStringLiteral("couple"),
+        QStringLiteral("demontage"),QStringLiteral("remontage")
+    };
+    if(!currentComponent.isEmpty() && operationFollowUps.contains(followUp))
+        trimmed=currentComponent+QLatin1Char(' ')+trimmed;
+    else if(!operationFollowUps.contains(followUp))
+        setProperty("iaMemsActiveDocumentaryComponent",QVariant());
 
     // When the Rover catalogue is mounted, a numbered reply selects the
     // exact stored source row rather than starting a new, unrelated search.
@@ -645,8 +660,13 @@ void IaMemsService::askWithLibrary(const QString &question)
                 emit statusChanged();
                 return;
             }
-            const QString evidence = MemsDocumentaryRepository::answerFromHits(
-                QVariantList{chosen});
+            QStringList linkedPages;
+            QString evidence=documentary.procedureAnswer(chosen,&linkedPages);
+            if(evidence.isEmpty())
+                evidence=MemsDocumentaryRepository::answerFromHits(
+                    QVariantList{chosen});
+            if(!linkedPages.isEmpty())
+                setProperty("iaMemsLastDocumentaryImagePaths",linkedPages);
             setProperty("iaMemsLastDocumentaryImagePath",
                         MemsDocumentaryRepository::imagePathForHit(chosen));
             setProperty("iaMemsLastLibraryQuestion",
@@ -736,6 +756,88 @@ void IaMemsService::askWithLibrary(const QString &question)
                 emit statusChanged();
                 return;
             }
+            // Pour un simple nom de composant, demander le besoin : une IA
+            // d'atelier n'est pas un annuaire de références ou de pages.
+            const QString normalizedQuestion=IaMemsConversationRouting::normalize(trimmed);
+            const QStringList words=normalizedQuestion.split(QLatin1Char(' '),
+                                                            Qt::SkipEmptyParts);
+            const bool componentOnly=words.size()<=3 &&
+                !normalizedQuestion.contains(QStringLiteral("depose")) &&
+                !normalizedQuestion.contains(QStringLiteral("repose")) &&
+                !normalizedQuestion.contains(QStringLiteral("serrage")) &&
+                !normalizedQuestion.contains(QStringLiteral("couple"));
+            if(componentOnly){
+                QStringList capabilities;
+                QSet<QString> unique;
+                for(const QVariant &choice:choices){
+                    const QVariantMap item=choice.toMap();
+                    const QString title=IaMemsConversationRouting::normalize(
+                        item.value(QStringLiteral("title")).toString());
+                    if(item.value(QStringLiteral("entry_type")).toString() !=
+                       QStringLiteral("procedure"))continue;
+                    if(title.contains(QStringLiteral("depose")))
+                        unique.insert(QStringLiteral("la dépose"));
+                    if(title.contains(QStringLiteral("repose")))
+                        unique.insert(QStringLiteral("la repose"));
+                }
+                if(unique.contains(QStringLiteral("la dépose")))
+                    capabilities<<QStringLiteral("la dépose");
+                if(unique.contains(QStringLiteral("la repose")))
+                    capabilities<<QStringLiteral("la repose");
+                // En général les fiches associées contiennent aussi des
+                // couples et réglages ; ne les promettre que lorsqu'ils
+                // figurent réellement dans les résultats.
+                for(const QVariant &choice:choices){
+                    const QVariantMap item=choice.toMap();
+                    if(item.value(QStringLiteral("entry_type")).toString()==
+                       QStringLiteral("technical_value") &&
+                       !capabilities.contains(QStringLiteral("les valeurs techniques")))
+                        capabilities<<QStringLiteral("les valeurs techniques");
+                }
+                if(!capabilities.isEmpty()){
+                    setProperty("iaMemsActiveDocumentaryComponent",trimmed);
+                    m_pendingGrounding.clear();
+                    emit responseReady(QStringLiteral(
+                        "Pour « %1 », veux-tu connaître %2 ? "
+                        "Précise l'intervention : je pourrai alors afficher "
+                        "les étapes constructeur disponibles et leurs pages illustrées.")
+                        .arg(trimmed,capabilities.join(QStringLiteral(", "))));
+                    emit statusChanged();
+                    return;
+                }
+            }
+
+            // Pour une opération reconnue, joindre toutes ses étapes (36
+            // pour la dépose du joint de culasse dans la base française)
+            // et toutes ses pages, pas les seuls titres de recherche.
+            const QString intendedOperation=normalizedQuestion.contains(
+                QStringLiteral("depose")) ||
+                normalizedQuestion.contains(QStringLiteral("deposer")) ||
+                normalizedQuestion.contains(QStringLiteral("repose")) ||
+                normalizedQuestion.contains(QStringLiteral("reposer")) ||
+                normalizedQuestion.contains(QStringLiteral("demontage")) ||
+                normalizedQuestion.contains(QStringLiteral("remontage"));
+            if(intendedOperation){
+                for(const QVariant &choice:choices){
+                    const QVariantMap item=choice.toMap();
+                    if(item.value(QStringLiteral("entry_type")).toString() !=
+                       QStringLiteral("procedure"))
+                        continue;
+                    QStringList allPages;
+                    const QString detail=documentary.procedureAnswer(item,&allPages);
+                    if(detail.isEmpty())
+                        continue;
+                    setProperty("iaMemsLastDocumentaryImagePaths",allPages);
+                    setProperty("iaMemsLastLibraryQuestion",trimmed);
+                    setProperty("iaMemsLastLibraryEvidence",detail);
+                    setProperty("iaMemsLastLibraryLocked",true);
+                    m_pendingGrounding.clear();
+                    emitLocalizedDocument(detail);
+                    emit statusChanged();
+                    return;
+                }
+            }
+
             const QString evidence =
                 MemsDocumentaryRepository::answerFromHits(choices.mid(0,3));
             for(const QVariant &choice : choices.mid(0,3)){
