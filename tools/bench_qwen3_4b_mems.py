@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Essai réel, isolé, Qwen3-4B GGUF + procédures RAVE FR locales.
+"""Essai réel, isolé, Qwen3-1.7B GGUF + procédures RAVE FR locales.
 
 Aucun changement du programme SESSION, aucun Setup ni publication de base.
 Les réponses sont générées par le modèle dans llama.cpp, PAS préécrites.
@@ -16,11 +16,11 @@ import urllib.request
 from pathlib import Path
 
 DB = Path("output/rave-fr/mems_documentary_fr.sqlite")
-MODEL = Path("models/Qwen3-4B-Q4_K_M.gguf")
+MODEL = Path("models/Qwen3-1.7B-Q4_K_M.gguf")
 SERVER = Path(os.environ.get("MEMS_LLAMA_SERVER","llama-bin/llama-server"))
 HOST = "http://127.0.0.1:18439"
-OUTPUT = Path("benchmark/qwen3_4b_test_dialogue.json")
-MAX_PER_TURN = 270
+OUTPUT = Path("benchmark/qwen3_1_7b_test_dialogue.json")
+MAX_PER_TURN = 170
 
 SYSTEM = """Tu es IA MEMS, un assistant MECANICIEN CONVERSATIONNEL, pas l'onglet Base de données.
 Tu aides le mécanicien en français naturel. Tu comprends le composant demandé,
@@ -121,16 +121,16 @@ def health() -> None:
         try:
             with urllib.request.urlopen(HOST+"/health",timeout=3) as r:
                 if r.status==200:
-                    print("QWEN3_4B_REAL_MODEL_LOADED",flush=True)
+                    print("QWEN3_1_7B_REAL_MODEL_LOADED",flush=True)
                     return
         except (urllib.error.URLError,TimeoutError):
             pass
         time.sleep(2)
-    raise RuntimeError("REAL_QWEN3_4B_SERVER_NOT_READY")
+    raise RuntimeError("REAL_QWEN3_1_7B_SERVER_NOT_READY")
 
 def chat(messages: list[dict],user_text:str,grounding:str) -> dict:
     payload={
-        "model":"Qwen3-4B",
+        "model":"Qwen3-1.7B",
         "messages":messages+[{
             "role":"user",
             "content":user_text+"\n\n"+grounding+"\n\n/no_think"
@@ -138,27 +138,43 @@ def chat(messages: list[dict],user_text:str,grounding:str) -> dict:
         "temperature":0.25,
         "top_p":0.8,
         "max_tokens":MAX_PER_TURN,
-        "stream":False,
+        "stream":True,
         "chat_template_kwargs":{"enable_thinking":False},
     }
     request=urllib.request.Request(
         HOST+"/v1/chat/completions",data=json.dumps(payload,ensure_ascii=False).encode(),
         headers={"Content-Type":"application/json"},method="POST")
     began=time.monotonic()
+    chunks=[]
+    first_text=None
     with urllib.request.urlopen(request,timeout=260) as resp:
-        result=json.loads(resp.read())
-    msg=result["choices"][0]["message"]
-    answer=(msg.get("content") or "").strip()
+        for line in resp:
+            line=line.decode("utf-8","replace").strip()
+            if not line.startswith("data:"):
+                continue
+            payload=line[5:].strip()
+            if payload=="[DONE]":
+                break
+            item=json.loads(payload)
+            choice=(item.get("choices") or [{}])[0]
+            content=choice.get("delta",{}).get("content") or ""
+            if content:
+                if first_text is None:
+                    first_text=time.monotonic()-began
+                    print("QWEN3_1_7B_FIRST_TEXT_SECONDS",round(first_text,2),flush=True)
+                chunks.append(content)
+    answer="".join(chunks).strip()
     if not answer:
-        raise RuntimeError("QWEN3_4B_MODEL_EMPTY_REPLY")
-    print("QWEN3_4B_RESPONSE_SECONDS",round(time.monotonic()-began,2),flush=True)
-    return {"answer":answer,"seconds":round(time.monotonic()-began,2),
-            "tokens":result.get("usage"),"model_response":msg}
+        raise RuntimeError("QWEN3_1_7B_MODEL_EMPTY_REPLY")
+    elapsed=round(time.monotonic()-began,2)
+    print("QWEN3_1_7B_RESPONSE_SECONDS",elapsed,flush=True)
+    return {"answer":answer,"seconds":elapsed,"first_text_seconds":round(first_text or elapsed,2),
+            "tokens":None,"model_response":None}
 
 def main() -> int:
     data=procedures()
-    if not MODEL.is_file() or MODEL.stat().st_size < 2_000_000_000:
-        raise RuntimeError("OFFICIAL_QWEN3_4B_GGUF_FILE_NOT_DOWNLOADED")
+    if not MODEL.is_file() or MODEL.stat().st_size < 1_100_000_000:
+        raise RuntimeError("OFFICIAL_QWEN3_1_7B_GGUF_FILE_NOT_DOWNLOADED")
     if not SERVER.is_file():
         raise RuntimeError("LLAMA_CPP_SERVER_NOT_PRESENT")
     env=os.environ.copy()
@@ -168,7 +184,7 @@ def main() -> int:
         proc=subprocess.Popen([
             str(SERVER.resolve()),"-m",str(MODEL.resolve()),
             "--host","127.0.0.1","--port","18439",
-            "-c","8192","-t","4","-ngl","0","--parallel","1"
+            "-c","4096","-t","4","-ngl","0","--parallel","1"
         ],env=env,stdout=output,stderr=subprocess.STDOUT)
         try:
             health()
@@ -180,15 +196,15 @@ def main() -> int:
                  "SOURCES DOCUMENTAIRES DISPONIBLES : joint de culasse — dépose : 36 étapes (pages 59 à 62) ; joint de culasse — repose : 35 étapes (pages 62 à 63). Le manuel Rover existe en français. Ne déroule pas la procédure tant que l'utilisateur n'a pas dit quelle intervention il veut."),
                 ("depose",
                  "Je veux déposer le joint de culasse.",
-                 evidence("dépose",data["depose"],1,36)+
+                 evidence("dépose",data["depose"],1,5)+
                  "\nDemande d'utilisateur : commence la procédure avec quelques premières étapes exactes et propose de continuer."),
                 ("suite",
                  "Et ensuite ?",
-                 evidence("dépose",data["depose"],6,17)+
+                 evidence("dépose",data["depose"],6,10)+
                  "\nL'utilisateur demande la suite de la dépose, pas la repose. Poursuis aux étapes suivantes."),
                 ("repose",
                  "Et pour la repose ?",
-                 evidence("repose",data["repose"],1,35)+
+                 evidence("repose",data["repose"],1,5)+
                  "\nL'utilisateur parle toujours du joint de culasse. Commence la repose, sans citer les étapes de dépose."),
                 ("precision",
                  "Sur quel moteur cette procédure s'applique-t-elle exactement ?",
@@ -201,12 +217,12 @@ def main() -> int:
                 history.append({"role":"assistant","content":answer})
                 tests.append({
                     "test":label,"question":question,"response":answer,
-                    "seconds":result["seconds"],"usage":result["tokens"]})
-                print(f"=== QWEN3_4B_REAL_{label.upper()}_REPLY ===",flush=True)
+                    "seconds":result["seconds"],"first_text_seconds":result["first_text_seconds"],"usage":result["tokens"]})
+                print(f"=== QWEN3_1_7B_REAL_{label.upper()}_REPLY ===",flush=True)
                 print(answer,flush=True)
                 print("=== END_REAL_REPLY ===",flush=True)
             report={
-                "model":"Qwen/Qwen3-4B-GGUF Q4_K_M",
+                "model":"Qwen/Qwen3-1.7B-GGUF Q4_K_M",
                 "runtime":"llama.cpp b12240 CPU, no network inference",
                 "setup_unchanged":True,"source_database_published":False,
                 "original_documents_sent_to_cloud":False,
@@ -216,7 +232,7 @@ def main() -> int:
             }
             OUTPUT.parent.mkdir(exist_ok=True)
             OUTPUT.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf-8")
-            print("QWEN3_4B_REAL_DIALOGUE_BENCHMARK_COMPLETE",flush=True)
+            print("QWEN3_1_7B_REAL_DIALOGUE_BENCHMARK_COMPLETE",flush=True)
         finally:
             proc.terminate()
             try:proc.wait(timeout=10)
@@ -226,7 +242,7 @@ def main() -> int:
 if __name__=="__main__":
     try:sys.exit(main())
     except Exception as e:
-        print("QWEN3_4B_BENCHMARK_ERROR",type(e).__name__,str(e),flush=True)
+        print("QWEN3_1_7B_BENCHMARK_ERROR",type(e).__name__,str(e),flush=True)
         log=Path("benchmark/llama-server.log")
         if log.is_file():print("SERVER_LOG_TAIL",log.read_text(errors="replace")[-3500:],flush=True)
         sys.exit(1)
