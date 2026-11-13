@@ -37,7 +37,7 @@ jobs:
           assert c.execute('pragma integrity_check').fetchone()[0]=='ok'
           print('RAVE_REAL_FRENCH_PROCEDURES_AND_STEP_COUNT_VERIFIED')
           PY
-      - name: Telecharger le modele OFFICIEL Qwen3 1.7B Q4_K_M (pas de donnees utilisateur)
+      - name: Telecharger le modele Qwen3 1.7B GGUF quantifie Q4_K_M (pas de donnees utilisateur)
         shell: bash
         run: |
           set -euo pipefail
@@ -46,8 +46,8 @@ jobs:
           python3 - <<'PY'
           from huggingface_hub import hf_hub_download
           p=hf_hub_download(
-              repo_id="tensorblock/Qwen_Qwen3-1.7B-GGUF",
-              filename="Qwen3-1.7B-Q4_K_M.gguf",
+              repo_id="Antigma/Qwen3-1.7B-GGUF",
+              filename="qwen3-1.7b-q4_k_m.gguf",
               local_dir="models")
           import os
           size=os.path.getsize(p)
