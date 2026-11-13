@@ -14,6 +14,7 @@
 #include <QProgressBar>
 #include <QPushButton>
 #include <QSaveFile>
+#include <QSettings>
 #include <QStandardPaths>
 #include <QUrl>
 #include <QVBoxLayout>
@@ -305,17 +306,66 @@ void MemsDocumentaryUpdateDialog::finishDownload(QNetworkReply *reply)
     reply->deleteLater();
     m_progress->setVisible(false);
     if (success) {
-        setStatus(ui(
-            QStringLiteral(
-                "Pack chiffré téléchargé et SHA-256 vérifié :\n%1\n"
-                "Ce test n'installe pas la base. "
-                "Le mot de passe sera exigé lors de l'installation.")
-                .arg(m_savedFilePath),
-            QStringLiteral(
-                "Encrypted pack downloaded and SHA-256 verified:\n%1\n"
-                "This test does not install the database. "
-                "A password will be required for installation.")
-                .arg(m_savedFilePath)));
+        bool accepted=false;
+        const bool existingPassword=MemsDocumentaryLocalInstaller::hasPassword();
+        QString password=QInputDialog::getText(
+            this,ui(QStringLiteral("Installation de la mise à jour documentaire"),
+                    QStringLiteral("Install documentary database update")),
+            ui(QStringLiteral("Mot de passe du pack chiffré :"),
+               QStringLiteral("Encrypted package password:")),
+            QLineEdit::Password,QString(),&accepted);
+        if(!accepted || password.isEmpty()){
+            setStatus(ui(QStringLiteral(
+                "Téléchargement vérifié. Installation annulée : aucune base modifiée."),
+                QStringLiteral(
+                "Verified download. Installation cancelled. No database changed.")));
+            setBusy(false);
+            return;
+        }
+        if(!existingPassword){
+            bool confirmAccepted=false;
+            const QString confirmation=QInputDialog::getText(
+                this,ui(QStringLiteral("Confirmer le mot de passe"),
+                        QStringLiteral("Confirm installation password")),
+                ui(QStringLiteral("Répéter le mot de passe du pack :"),
+                   QStringLiteral("Repeat package password:")),
+                QLineEdit::Password,QString(),&confirmAccepted);
+            if(!confirmAccepted || confirmation!=password || password.size()<12){
+                password.fill(QChar(' '));
+                setStatus(ui(QStringLiteral(
+                    "Mot de passe non confirmé ou trop court. Base inchangée."),
+                    QStringLiteral(
+                    "Password not confirmed or too short. Database unchanged.")));
+                setBusy(false);
+                return;
+            }
+        }
+        const QString error=MemsDocumentaryLocalInstaller::installEncrypted(
+            m_savedFilePath,m_language,password);
+        password.fill(QChar(' '));
+        if(error.isEmpty()){
+            QSettings settings(QSettings::IniFormat,QSettings::UserScope,
+                               QStringLiteral("ECU_Mems_Manager"));
+            settings.setValue(
+                QStringLiteral("DocumentaryVersions/%1").arg(m_language),
+                m_offer.version);
+            settings.sync();
+            setStatus(ui(QStringLiteral(
+                "Base documentaire %1 version %2 installée. "
+                "Intégrité, mot de passe, images et provenance vérifiés. "
+                "Redémarrer l'écran Base de données.")
+                   .arg(languageName(m_language),m_offer.version),
+                QStringLiteral(
+                "Documentary database %1 version %2 installed. "
+                "Integrity, password, images and provenance verified. "
+                "Reopen the database screen.")
+                   .arg(languageName(m_language),m_offer.version)));
+        }else{
+            setStatus(error);
+            QMessageBox::warning(this,
+                ui(QStringLiteral("Mise à jour refusée"),
+                   QStringLiteral("Update rejected")),error);
+        }
     } else {
         setStatus(ui(
             QStringLiteral("Téléchargement rejeté (réseau, fichier ou SHA-256). "
