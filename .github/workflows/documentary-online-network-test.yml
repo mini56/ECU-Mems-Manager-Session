@@ -1,0 +1,39 @@
+name: SESSION - test HTTPS des mises a jour en conditions Windows
+on:
+  push:
+    branches: [fix-141-documentary-online-network-20261113]
+    paths:
+      - 'tools/documentary_network_probe/**'
+      - '.github/workflows/documentary-online-network-test.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows-https:
+    runs-on: windows-2025
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Installer Qt 5.15.2 Windows
+        shell: pwsh
+        run: |
+          python -m pip install --disable-pip-version-check 'aqtinstall==3.3.0'
+          $sevenZip=(Get-Command 7z.exe -ErrorAction Stop).Source
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -O C:\Qt --external $sevenZip
+          if($LASTEXITCODE -ne 0){throw 'QT_INSTALL_FAILED'}
+      - name: Compiler la vraie requete HTTPS Qt de SESSION
+        shell: pwsh
+        run: |
+          cmake -S tools/documentary_network_probe -B build-https -A x64 -DCMAKE_PREFIX_PATH='C:/Qt/5.15.2/msvc2019_64'
+          if($LASTEXITCODE -ne 0){throw 'PROBE_CONFIG_FAILED'}
+          cmake --build build-https --config Release --parallel
+          if($LASTEXITCODE -ne 0){throw 'PROBE_BUILD_FAILED'}
+      - name: Deployer Qt et interroger la version reelle du manifeste GitHub
+        shell: pwsh
+        run: |
+          $qt='C:\Qt\5.15.2\msvc2019_64'
+          $bin=(Resolve-Path build-https/Release).Path
+          & "$qt/bin/windeployqt.exe" --release --compiler-runtime --dir $bin "$bin/mems_documentary_network_probe.exe"
+          if($LASTEXITCODE -ne 0){throw 'QT_DEPLOY_FAILED'}
+          & "$bin/mems_documentary_network_probe.exe"
+          if($LASTEXITCODE -ne 0){throw 'SESSION_QT_HTTPS_MANIFEST_FAILED'}
