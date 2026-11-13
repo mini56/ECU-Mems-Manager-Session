@@ -224,7 +224,7 @@ MemsDocumentaryHttpResult singleRequest(
         }
     }
     result.bytes=offset;
-    QByteArray buffer(64*1024,Qt::Uninitialized);
+    QByteArray buffer(64*1024,'\0');
     for(;;){
         DWORD available=0;
         if(!WinHttpQueryDataAvailable(request.get(),&available)){
