@@ -1,5 +1,10 @@
 #include "MemsDocumentaryUpdateDialog.h"
 #include "MemsDocumentaryLocalInstaller.h"
+#ifdef Q_OS_WIN
+#include "MemsDocumentaryWindowsTransport.h"
+#include <QSharedPointer>
+#include <QThread>
+#endif
 
 #include <QDir>
 #include <QFileDialog>
@@ -143,6 +148,10 @@ void MemsDocumentaryUpdateDialog::setBusy(bool busy)
 
 void MemsDocumentaryUpdateDialog::checkManifest()
 {
+#ifdef Q_OS_WIN
+    checkManifestWindows();
+    return;
+#endif
     if (m_reply)
         return;
     m_offer = MemsDocumentaryOffer{};
@@ -192,8 +201,16 @@ void MemsDocumentaryUpdateDialog::checkManifest()
                 "Details: %1. Installed databases are unchanged.")
                     .arg(reason)));
         } else {
+            showManifestResult(m_manifestBytes);
+        }
+        setBusy(false);
+    });
+}
+
+void MemsDocumentaryUpdateDialog::showManifestResult(const QByteArray &data)
+{
             m_offer = MemsDocumentaryPackCatalog::parseManifest(
-                m_manifestBytes, m_language);
+                data, m_language);
             if (!m_offer.error.isEmpty()) {
                 setStatus(ui(QStringLiteral(
                     "Manifeste de mise à jour non conforme. Téléchargement refusé."),
@@ -235,13 +252,15 @@ void MemsDocumentaryUpdateDialog::checkManifest()
                     "Download verifies SHA-256 and installs after "
                     "password and SQLite validation.").arg(m_offer.version)));
             }
-        }
-        setBusy(false);
-    });
+
 }
 
 void MemsDocumentaryUpdateDialog::startDownload()
 {
+#ifdef Q_OS_WIN
+    downloadPackWindows();
+    return;
+#endif
     if (m_reply || !m_offer.available)
         return;
     const QString root = QStandardPaths::writableLocation(
@@ -332,6 +351,19 @@ void MemsDocumentaryUpdateDialog::finishDownload(QNetworkReply *reply)
     reply->deleteLater();
     m_progress->setVisible(false);
     if (success) {
+        installVerifiedDownloadedPackage();
+    } else {
+        setStatus(ui(
+            QStringLiteral("Téléchargement rejeté (réseau, fichier ou SHA-256). "
+                           "Aucune base existante n'a été modifiée."),
+            QStringLiteral("Download rejected (network, file or SHA-256). "
+                           "Existing databases were not modified.")));
+    }
+    setBusy(false);
+}
+
+void MemsDocumentaryUpdateDialog::installVerifiedDownloadedPackage()
+{
         bool accepted=false;
         QString password=QInputDialog::getText(
             this,ui(QStringLiteral("Autorisation d'installation"),
@@ -373,14 +405,7 @@ void MemsDocumentaryUpdateDialog::finishDownload(QNetworkReply *reply)
                 ui(QStringLiteral("Mise à jour refusée"),
                    QStringLiteral("Update rejected")),error);
         }
-    } else {
-        setStatus(ui(
-            QStringLiteral("Téléchargement rejeté (réseau, fichier ou SHA-256). "
-                           "Aucune base existante n'a été modifiée."),
-            QStringLiteral("Download rejected (network, file or SHA-256). "
-                           "Existing databases were not modified.")));
-    }
-    setBusy(false);
+
 }
 
 void MemsDocumentaryUpdateDialog::installLocalEncrypted()
