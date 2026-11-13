@@ -288,7 +288,7 @@ QString MemsDocumentaryLocalInstaller::installZip(
     const QFileInfo archive(archivePath);
     if(!archive.isFile() || archive.isSymLink() ||
        archive.suffix().toLower()!=QStringLiteral("zip") ||
-       archive.size()>160LL*1024*1024 || archive.size()<1024)
+       archive.size()>256LL*1024*1024 || archive.size()<1024)
         return QStringLiteral("Archive ZIP documentaire invalide.");
     const QString code=normalizedLanguage(language);
     if(code.isEmpty())
