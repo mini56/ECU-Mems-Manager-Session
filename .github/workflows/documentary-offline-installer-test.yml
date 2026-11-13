@@ -39,6 +39,25 @@ jobs:
               $(pkg-config --cflags Qt5Core Qt5Widgets Qt5Sql Qt5Network) "$source"
           done
           echo DOCUMENTARY_INSTALLER_SOURCES_COMPILE_PASS
+      - name: Refuser la creation d'un mot de passe par le destinataire
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          dialog=Path('database/MemsDocumentaryUpdateDialog.cpp').read_text(encoding='utf-8')
+          header=Path('database/MemsDocumentaryLocalInstaller.h').read_text(encoding='utf-8')
+          src=Path('database/MemsDocumentaryLocalInstaller.cpp').read_text(encoding='utf-8')
+          for forbidden in ('Créer le mot de passe', 'Choose a password',
+                            'hasPassword()', 'installLocalZip()'):
+              assert forbidden not in dialog, forbidden
+          assert 'installEncrypted(' in dialog and 'installZip(' not in dialog
+          assert 'installDirectory(' in header and 'private:' in header
+          assert 'MEMS_DOCUMENTARY_INSTALL_SELFTEST' in header
+          assert 'DocumentaryInstall/salt' not in src
+          assert 'DocumentaryInstall/digest' not in src
+          print('PUBLISHER_ONLY_PASSWORD_UI_CONTRACT_PASS')
+          PY
       - name: Construire une source reellement structuree puis un fixture synthetique
         shell: bash
         run: |
