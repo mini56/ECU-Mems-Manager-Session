@@ -3,26 +3,28 @@
 
 #include <QString>
 
-// Installe UNIQUEMENT un pack documentaire local dans AppLocalDataLocation.
-// Jamais de base ECU, d'index expert, ni de fichier dans le dossier programme.
-// Le mot de passe est défini lors de la première installation et demandé
-// pour les suivantes. Le contenu des archives publiques reste non publié.
+// Installation documentaire isolée : aucune base ECU, session ou experte modifiée.
+// Le propriétaire du projet choisit LE secret de distribution, lors de la
+// fabrication de ses packs AES-GCM ; l'utilisateur final ne choisit rien.
+// La possession du bon secret est prouvée par l'authentification du pack.
 class MemsDocumentaryLocalInstaller
 {
 public:
-    static bool hasPassword();
-    static bool passwordValid(const QString &password);
-    static QString installDirectory(const QString &sourceDirectory,
-                                    const QString &language,
-                                    const QString &password);
-    static QString installZip(const QString &archivePath,
-                              const QString &language,
-                              const QString &password);
-    // Verifies the authenticated downloaded envelope before the existing
-    // documentary-only SQLite validation and atomic installation.
     static QString installEncrypted(const QString &encryptedPath,
                                     const QString &language,
-                                    const QString &password);
+                                    const QString &publisherPassword);
+
+#ifdef MEMS_DOCUMENTARY_INSTALL_SELFTEST
+    // Contrôles CI uniquement : ces entrées ne sont PAS exposées dans le
+    // programme publié et n'acceptent pas de mot de passe inventé.
+public:
+#else
+private:
+#endif
+    static QString installDirectory(const QString &sourceDirectory,
+                                    const QString &language);
+    static QString installZip(const QString &archivePath,
+                              const QString &language);
 };
 
 #endif
