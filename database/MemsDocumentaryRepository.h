@@ -4,6 +4,7 @@
 #include <QSqlDatabase>
 #include <QString>
 #include <QVariantList>
+#include <QVariantMap>
 
 // The sole read-only interface to the versioned Rover documentary SQLite.
 // This interface never issues ECU commands or treats OCR discovery as approved
@@ -27,6 +28,8 @@ public:
                         bool allowOcrDiscovery = true,
                         const QString &language = QString()) const;
     static QString answerFromHits(const QVariantList &hits);
+    // Page constructeur exacte issue du pack installe (jamais un chemin libre fourni par l'IA).
+    static QString imagePathForHit(const QVariantMap &hit);
     static QString numberedMenu(const QString &question, const QVariantList &choices,
                                 bool french);
 
