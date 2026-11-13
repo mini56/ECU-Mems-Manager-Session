@@ -8,6 +8,7 @@
 #include <QStandardPaths>
 #include <QSqlDatabase>
 #include <QSqlQuery>
+#include <QVariant>
 #include <QTemporaryDir>
 #include <cstdio>
 
