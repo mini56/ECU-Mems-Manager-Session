@@ -1,0 +1,58 @@
+name: SESSION - test HTTPS des mises a jour en conditions Windows
+on:
+  push:
+    branches: [fix-141-documentary-online-network-20261113]
+    paths:
+      - 'tools/documentary_network_probe/**'
+      - 'database/MemsDocumentaryWindowsTransport*'
+      - 'database/MemsDocumentaryUpdateDialog*'
+      - '.github/workflows/documentary-online-network-test.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows-https:
+    runs-on: windows-2025
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Installer Qt 5.15.2 Windows
+        shell: pwsh
+        run: |
+          python -m pip install --disable-pip-version-check 'aqtinstall==3.3.0'
+          $sevenZip=(Get-Command 7z.exe -ErrorAction Stop).Source
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -O C:\Qt --external $sevenZip
+          if($LASTEXITCODE -ne 0){throw 'QT_INSTALL_FAILED'}
+      - name: Compiler la vraie requete HTTPS Qt de SESSION
+        shell: pwsh
+        run: |
+          cmake -S tools/documentary_network_probe -B build-https -A x64 -DCMAKE_PREFIX_PATH='C:/Qt/5.15.2/msvc2019_64'
+          if($LASTEXITCODE -ne 0){throw 'PROBE_CONFIG_FAILED'}
+          cmake --build build-https --config Release --parallel
+          if($LASTEXITCODE -ne 0){throw 'PROBE_BUILD_FAILED'}
+      - name: Verifier que Windows peut contacter le vrai manifeste independamment de Qt
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $uri='https://raw.githubusercontent.com/mini56/ECU-Mems-Manager-Session-MAJ/main/manifest.json'
+          try {
+            Invoke-WebRequest -Uri $uri -OutFile manifest-windows.json -TimeoutSec 20
+            $manifest=Get-Content manifest-windows.json -Raw | ConvertFrom-Json
+            Write-Host "WINHTTP_PUBLIC_MANIFEST_LENGTH=$((Get-Item manifest-windows.json).Length)"
+            Write-Host "WINHTTP_FR_AVAILABLE=$($manifest.documentary_bases.fr.available)"
+            Write-Host "WINHTTP_EN_AVAILABLE=$($manifest.documentary_bases.en.available)"
+          } catch { Write-Host "WINHTTP_ERROR=$_"; throw }
+      - name: Tester HTTPS natif Windows sans OpenSSL externe
+        shell: pwsh
+        run: |
+          & "build-https/Release/mems_documentary_native_https_probe.exe"
+          if($LASTEXITCODE -ne 0){throw 'NATIVE_WINDOWS_HTTPS_FAILED'}
+      - name: Tester le vrai catalogue et le telechargement chiffré FR EN par Windows
+        shell: pwsh
+        run: |
+          $qt='C:\Qt\5.15.2\msvc2019_64'
+          $bin=(Resolve-Path build-https/Release).Path
+          & "$qt/bin/windeployqt.exe" --release --compiler-runtime --no-translations --dir $bin "$bin/mems_documentary_transport_probe.exe"
+          if($LASTEXITCODE -ne 0){throw 'TRANSPORT_DEPLOY_FAILED'}
+          & "$bin/mems_documentary_transport_probe.exe"
+          if($LASTEXITCODE -ne 0){throw 'WINDOWS_DOCUMENTARY_TRANSPORT_FAILED'}

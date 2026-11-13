@@ -1,5 +1,10 @@
 #include "MemsDocumentaryUpdateDialog.h"
 #include "MemsDocumentaryLocalInstaller.h"
+#ifdef Q_OS_WIN
+#include "MemsDocumentaryWindowsTransport.h"
+#include <QSharedPointer>
+#include <QThread>
+#endif
 
 #include <QDir>
 #include <QFileDialog>
@@ -143,6 +148,10 @@ void MemsDocumentaryUpdateDialog::setBusy(bool busy)
 
 void MemsDocumentaryUpdateDialog::checkManifest()
 {
+#ifdef Q_OS_WIN
+    checkManifestWindows();
+    return;
+#endif
     if (m_reply)
         return;
     m_offer = MemsDocumentaryOffer{};
@@ -169,20 +178,39 @@ void MemsDocumentaryUpdateDialog::checkManifest()
         if (m_manifestBytes.size() + tail.size() <= kMaxManifestBytes)
             m_manifestBytes.append(tail);
         m_reply = nullptr;
+        const int httpStatus=reply->attribute(
+            QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        const QString networkReason=reply->errorString();
         const bool success = reply->error() == QNetworkReply::NoError &&
-            reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 200 &&
+            httpStatus == 200 &&
             reply->url().scheme() == QStringLiteral("https") &&
+            !m_manifestBytes.isEmpty() &&
             m_manifestBytes.size() <= kMaxManifestBytes;
         reply->deleteLater();
         if (!success) {
+            // Une erreur SSL, réseau ou HTTP doit être visible et diagnosticable,
+            // sans prétendre qu'aucune base n'est publiée sur GitHub.
+            const QString reason=QStringLiteral("HTTP %1 / %2")
+                .arg(httpStatus).arg(networkReason.left(180));
             setStatus(ui(QStringLiteral(
-                "Impossible de vérifier les mises à jour. "
-                "Aucune base installée n'a été modifiée."),
+                "Échec de la connexion HTTPS au catalogue de mise à jour. "
+                "Détail : %1. Aucune base installée n'a été modifiée.")
+                    .arg(reason),
                 QStringLiteral(
-                "Unable to check updates. Installed databases are unchanged.")));
+                "Unable to retrieve the update catalogue over HTTPS. "
+                "Details: %1. Installed databases are unchanged.")
+                    .arg(reason)));
         } else {
+            showManifestResult(m_manifestBytes);
+        }
+        setBusy(false);
+    });
+}
+
+void MemsDocumentaryUpdateDialog::showManifestResult(const QByteArray &data)
+{
             m_offer = MemsDocumentaryPackCatalog::parseManifest(
-                m_manifestBytes, m_language);
+                data, m_language);
             if (!m_offer.error.isEmpty()) {
                 setStatus(ui(QStringLiteral(
                     "Manifeste de mise à jour non conforme. Téléchargement refusé."),
@@ -224,13 +252,108 @@ void MemsDocumentaryUpdateDialog::checkManifest()
                     "Download verifies SHA-256 and installs after "
                     "password and SQLite validation.").arg(m_offer.version)));
             }
+
+}
+
+
+#ifdef Q_OS_WIN
+void MemsDocumentaryUpdateDialog::checkManifestWindows()
+{
+    if (m_windowsTransportBusy)
+        return;
+    m_offer=MemsDocumentaryOffer{};
+    m_windowsTransportBusy=true;
+    setBusy(true);
+    setStatus(ui(QStringLiteral("Connexion HTTPS Windows au catalogue GitHub…"),
+                 QStringLiteral("Connecting to GitHub using Windows HTTPS…")));
+
+    const QString url=MemsDocumentaryPackCatalog::manifestUrl();
+    auto result=QSharedPointer<MemsDocumentaryHttpResult>::create();
+    QThread *worker=QThread::create([result,url](){
+        *result=MemsDocumentaryWindowsTransport::get(url,kMaxManifestBytes);
+    });
+    connect(worker,&QThread::finished,this,[this,result](){
+        m_windowsTransportBusy=false;
+        if(result->ok()){
+            showManifestResult(result->body);
+        }else{
+            setStatus(ui(
+                QStringLiteral("Échec HTTPS Windows : %1. "
+                               "Aucune base existante n'a été modifiée.").arg(result->error),
+                QStringLiteral("Windows HTTPS failed: %1. "
+                               "Existing databases remain unchanged.").arg(result->error)));
         }
         setBusy(false);
     });
+    connect(worker,&QThread::finished,worker,&QObject::deleteLater);
+    worker->start();
 }
+
+void MemsDocumentaryUpdateDialog::downloadPackWindows()
+{
+    if(m_windowsTransportBusy || !m_offer.available)
+        return;
+    const QString root=QStandardPaths::writableLocation(
+        QStandardPaths::AppLocalDataLocation);
+    if(root.isEmpty()){
+        setStatus(ui(QStringLiteral("Dossier local inaccessible."),
+                     QStringLiteral("Local storage unavailable.")));
+        return;
+    }
+    const QString directory=QDir(root).filePath(
+        QStringLiteral("documentary/downloads/%1").arg(m_language));
+    if(!QDir().mkpath(directory)){
+        setStatus(ui(QStringLiteral("Impossible de créer le dossier des packs."),
+                     QStringLiteral("Unable to create the package directory.")));
+        return;
+    }
+    m_savedFilePath=QDir(directory).filePath(
+        QStringLiteral("mems_documentary_%1_%2.encrypted")
+            .arg(m_language,m_offer.version));
+    const QString destination=m_savedFilePath;
+    const QString url=m_offer.releaseUrl;
+    const QByteArray expectedHash=m_offer.sha256.toLatin1();
+
+    m_windowsTransportBusy=true;
+    m_progress->setRange(0,0);
+    m_progress->setVisible(true);
+    setBusy(true);
+    setStatus(ui(QStringLiteral(
+        "Téléchargement sécurisé Windows et contrôle SHA-256 en cours…"),
+        QStringLiteral(
+        "Downloading with native Windows HTTPS and verifying SHA-256…")));
+
+    auto result=QSharedPointer<MemsDocumentaryHttpResult>::create();
+    QThread *worker=QThread::create([result,url,destination,expectedHash](){
+        *result=MemsDocumentaryWindowsTransport::get(
+            url,kMaxEncryptedPackBytes,destination,expectedHash);
+    });
+    connect(worker,&QThread::finished,this,[this,result](){
+        m_windowsTransportBusy=false;
+        m_progress->setRange(0,100);
+        m_progress->setVisible(false);
+        if(result->ok()){
+            installVerifiedDownloadedPackage();
+        }else{
+            setStatus(ui(
+                QStringLiteral("Téléchargement refusé : %1. "
+                               "La base installée n'a pas été modifiée.").arg(result->error),
+                QStringLiteral("Download rejected: %1. "
+                               "Installed database unchanged.").arg(result->error)));
+        }
+        setBusy(false);
+    });
+    connect(worker,&QThread::finished,worker,&QObject::deleteLater);
+    worker->start();
+}
+#endif
 
 void MemsDocumentaryUpdateDialog::startDownload()
 {
+#ifdef Q_OS_WIN
+    downloadPackWindows();
+    return;
+#endif
     if (m_reply || !m_offer.available)
         return;
     const QString root = QStandardPaths::writableLocation(
@@ -321,6 +444,19 @@ void MemsDocumentaryUpdateDialog::finishDownload(QNetworkReply *reply)
     reply->deleteLater();
     m_progress->setVisible(false);
     if (success) {
+        installVerifiedDownloadedPackage();
+    } else {
+        setStatus(ui(
+            QStringLiteral("Téléchargement rejeté (réseau, fichier ou SHA-256). "
+                           "Aucune base existante n'a été modifiée."),
+            QStringLiteral("Download rejected (network, file or SHA-256). "
+                           "Existing databases were not modified.")));
+    }
+    setBusy(false);
+}
+
+void MemsDocumentaryUpdateDialog::installVerifiedDownloadedPackage()
+{
         bool accepted=false;
         QString password=QInputDialog::getText(
             this,ui(QStringLiteral("Autorisation d'installation"),
@@ -362,14 +498,7 @@ void MemsDocumentaryUpdateDialog::finishDownload(QNetworkReply *reply)
                 ui(QStringLiteral("Mise à jour refusée"),
                    QStringLiteral("Update rejected")),error);
         }
-    } else {
-        setStatus(ui(
-            QStringLiteral("Téléchargement rejeté (réseau, fichier ou SHA-256). "
-                           "Aucune base existante n'a été modifiée."),
-            QStringLiteral("Download rejected (network, file or SHA-256). "
-                           "Existing databases were not modified.")));
-    }
-    setBusy(false);
+
 }
 
 void MemsDocumentaryUpdateDialog::installLocalEncrypted()
