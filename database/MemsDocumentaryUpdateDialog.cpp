@@ -169,17 +169,28 @@ void MemsDocumentaryUpdateDialog::checkManifest()
         if (m_manifestBytes.size() + tail.size() <= kMaxManifestBytes)
             m_manifestBytes.append(tail);
         m_reply = nullptr;
+        const int httpStatus=reply->attribute(
+            QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        const QString networkReason=reply->errorString();
         const bool success = reply->error() == QNetworkReply::NoError &&
-            reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 200 &&
+            httpStatus == 200 &&
             reply->url().scheme() == QStringLiteral("https") &&
+            !m_manifestBytes.isEmpty() &&
             m_manifestBytes.size() <= kMaxManifestBytes;
         reply->deleteLater();
         if (!success) {
+            // Une erreur SSL, réseau ou HTTP doit être visible et diagnosticable,
+            // sans prétendre qu'aucune base n'est publiée sur GitHub.
+            const QString reason=QStringLiteral("HTTP %1 / %2")
+                .arg(httpStatus).arg(networkReason.left(180));
             setStatus(ui(QStringLiteral(
-                "Impossible de vérifier les mises à jour. "
-                "Aucune base installée n'a été modifiée."),
+                "Échec de la connexion HTTPS au catalogue de mise à jour. "
+                "Détail : %1. Aucune base installée n'a été modifiée.")
+                    .arg(reason),
                 QStringLiteral(
-                "Unable to check updates. Installed databases are unchanged.")));
+                "Unable to retrieve the update catalogue over HTTPS. "
+                "Details: %1. Installed databases are unchanged.")
+                    .arg(reason)));
         } else {
             m_offer = MemsDocumentaryPackCatalog::parseManifest(
                 m_manifestBytes, m_language);
