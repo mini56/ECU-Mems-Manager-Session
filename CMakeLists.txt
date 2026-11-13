@@ -148,6 +148,20 @@ add_executable(mems_documentary_update_selftest
     database/MemsDocumentaryPackCatalog.cpp database/MemsDocumentaryPackCatalog.h)
 target_link_libraries(mems_documentary_update_selftest PRIVATE Qt5::Core)
 add_dependencies(${PNAME} mems_documentary_update_selftest)
+# Cross-language encrypted release pack decryption; native Windows CNG
+# authenticated AES-GCM. No manufacturer content is linked into this test.
+add_executable(mems_documentary_encrypted_selftest
+    tools/test_documentary_encrypted_cpp.cpp
+    database/MemsDocumentaryEncryptedPack.cpp
+    database/MemsDocumentaryEncryptedPack.h)
+target_link_libraries(mems_documentary_encrypted_selftest PRIVATE Qt5::Core Qt5::Network)
+if(WIN32)
+    target_link_libraries(mems_documentary_encrypted_selftest PRIVATE bcrypt)
+endif()
+if(MSVC)
+    target_compile_options(mems_documentary_encrypted_selftest PRIVATE /utf-8)
+endif()
+add_dependencies(${PNAME} mems_documentary_encrypted_selftest)
 
 # Preserve UTF-8 French text and accented SQLite search aliases on MSVC.
 # The executable already uses /utf-8; both documentary tests must too.
