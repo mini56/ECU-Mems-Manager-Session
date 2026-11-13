@@ -4,3 +4,8 @@ set(CMAKE_CXX_STANDARD 17)
 find_package(Qt5 REQUIRED COMPONENTS Core Network)
 add_executable(mems_documentary_network_probe probe.cpp)
 target_link_libraries(mems_documentary_network_probe PRIVATE Qt5::Core Qt5::Network)
+
+if(WIN32)
+    add_executable(mems_documentary_native_https_probe native_probe.cpp)
+    target_link_libraries(mems_documentary_native_https_probe PRIVATE winhttp)
+endif()
