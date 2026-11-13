@@ -27,6 +27,12 @@ public:
 
 private:
     void checkManifest();
+    void showManifestResult(const QByteArray &data);
+    void installVerifiedDownloadedPackage();
+#ifdef Q_OS_WIN
+    void checkManifestWindows();
+    void downloadPackWindows();
+#endif
     void startDownload();
     void installLocalEncrypted();
     void setBusy(bool busy);
@@ -47,6 +53,7 @@ private:
     QScopedPointer<QSaveFile> m_target;
     QCryptographicHash m_sha{QCryptographicHash::Sha256};
     QString m_savedFilePath;
+    bool m_windowsTransportBusy = false;
 };
 
 #endif
