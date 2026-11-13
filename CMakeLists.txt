@@ -137,6 +137,14 @@ target_link_libraries(mems_documentary_selftest PRIVATE Qt5::Core Qt5::Sql)
 # Compiled against exactly the same SQLite reader used by the user-facing
 # database page and IA MEMS.  Only this test target can override the
 # production database path with MEMS_DOCUMENTARY_DB.
+# Test d'intention en français sur le vrai schéma documentaire multimanuel.
+add_executable(mems_documentary_native_intent_selftest
+    database/MemsDocumentaryNativeIntentSelfTest.cpp
+    database/MemsDocumentaryRepository.cpp database/MemsDocumentaryRepository.h
+    database/MemsDocumentaryPackCatalog.cpp database/MemsDocumentaryPackCatalog.h)
+target_compile_definitions(mems_documentary_native_intent_selftest PRIVATE MEMS_DOCUMENTARY_SELFTEST=1)
+target_link_libraries(mems_documentary_native_intent_selftest PRIVATE Qt5::Core Qt5::Sql)
+
 add_executable(mems_documentary_real_corpus_selftest
     database/MemsDocumentaryRealCorpusSelfTest.cpp
     database/MemsDocumentaryRepository.cpp database/MemsDocumentaryRepository.h
