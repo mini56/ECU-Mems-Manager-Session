@@ -15,6 +15,7 @@
 #include <QVariantMap>
 
 #include <algorithm>
+#include <cstdio>
 
 namespace {
 
@@ -633,8 +634,13 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
             query.prepare(statement);
             query.addBindValue(maximum);
         }
-        if (!query.exec())
+        if (!query.exec()) {
+#ifdef MEMS_DOCUMENTARY_SELFTEST
+            fprintf(stderr,"NATIVE_SQL_SEARCH_FAILED: %s\\n",
+                    qPrintable(query.lastError().text()));
+#endif
             return result;
+        }
         while (query.next()) {
             const QString doc = query.value(0).toString();
             const QString id = query.value(1).toString();
