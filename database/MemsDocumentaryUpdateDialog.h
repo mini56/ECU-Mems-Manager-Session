@@ -16,8 +16,8 @@ class QProgressBar;
 class QNetworkReply;
 class QSaveFile;
 
-// GitHub downloads remain protected. A local ZIP supplied by the user can
-// be installed with a password after verifying the documentary-only SQLite.
+// Only administrator-encrypted MEMSDOC1 packages (from GitHub MAJ or a
+// local file) are installable after AES-GCM password authentication.
 // The ECU diagnostic and expert databases are never opened or modified here.
 class MemsDocumentaryUpdateDialog : public QDialog
 {
@@ -28,7 +28,7 @@ public:
 private:
     void checkManifest();
     void startDownload();
-    void installLocalZip();
+    void installLocalEncrypted();
     void setBusy(bool busy);
     void setStatus(const QString &message);
     void finishDownload(QNetworkReply *reply);
