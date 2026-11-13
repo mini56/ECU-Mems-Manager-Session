@@ -18,6 +18,11 @@ public:
     static QString installZip(const QString &archivePath,
                               const QString &language,
                               const QString &password);
+    // Verifies the authenticated downloaded envelope before the existing
+    // documentary-only SQLite validation and atomic installation.
+    static QString installEncrypted(const QString &encryptedPath,
+                                    const QString &language,
+                                    const QString &password);
 };
 
 #endif
