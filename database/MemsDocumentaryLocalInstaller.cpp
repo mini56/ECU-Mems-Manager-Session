@@ -1,4 +1,5 @@
 #include "MemsDocumentaryLocalInstaller.h"
+#include "MemsDocumentaryEncryptedPack.h"
 #include "MemsDocumentaryPackCatalog.h"
 
 #include <QCryptographicHash>
@@ -388,4 +389,25 @@ QString MemsDocumentaryLocalInstaller::installZip(
     return QStringLiteral("Import ZIP intégré uniquement sous Windows ; "
                           "utiliser un dossier déjà extrait pour le test.");
 #endif
+}
+
+QString MemsDocumentaryLocalInstaller::installEncrypted(
+    const QString &encryptedPath,const QString &language,
+    const QString &password)
+{
+    if(password.isEmpty())
+        return QStringLiteral("Mot de passe obligatoire.");
+    QTemporaryDir temporary;
+    if(!temporary.isValid())
+        return QStringLiteral("Dossier temporaire inaccessible.");
+    const QString decrypted=QDir(temporary.path()).filePath(
+        QStringLiteral("source-documentaire-dechiffree.zip"));
+    const QString failure=MemsDocumentaryEncryptedPack::decryptToZip(
+        encryptedPath,password,decrypted);
+    if(!failure.isEmpty())
+        return failure;
+    // AES-GCM verified. The same production ZIP importer checks file names,
+    // documentation provenance, language, pages, images, SQLite and backups.
+    // QTemporaryDir wipes the decrypted ZIP on both success and failure.
+    return installZip(decrypted,language,password);
 }
