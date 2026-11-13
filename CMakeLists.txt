@@ -162,6 +162,23 @@ if(MSVC)
     target_compile_options(mems_documentary_encrypted_selftest PRIVATE /utf-8)
 endif()
 add_dependencies(${PNAME} mems_documentary_encrypted_selftest)
+# Integration-level test: encrypted package installation uses the same
+# production installer, SQL verification, backup and ZIP extraction.
+add_executable(mems_documentary_encrypted_install_selftest
+    tools/test_documentary_offline_installer.cpp
+    database/MemsDocumentaryLocalInstaller.cpp database/MemsDocumentaryLocalInstaller.h
+    database/MemsDocumentaryEncryptedPack.cpp database/MemsDocumentaryEncryptedPack.h
+    database/MemsDocumentaryPackCatalog.cpp database/MemsDocumentaryPackCatalog.h)
+target_link_libraries(mems_documentary_encrypted_install_selftest PRIVATE
+    Qt5::Core Qt5::Sql Qt5::Network)
+if(WIN32)
+    target_link_libraries(mems_documentary_encrypted_install_selftest PRIVATE bcrypt)
+endif()
+if(MSVC)
+    target_compile_options(mems_documentary_encrypted_install_selftest PRIVATE /utf-8)
+endif()
+add_dependencies(${PNAME} mems_documentary_encrypted_install_selftest)
+
 
 # Preserve UTF-8 French text and accented SQLite search aliases on MSVC.
 # The executable already uses /utf-8; both documentary tests must too.
