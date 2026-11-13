@@ -3,6 +3,7 @@
 
 #include <QCoreApplication>
 #include <QFileInfo>
+#include <QFile>
 #include <QTemporaryDir>
 #include <cstdio>
 
@@ -44,6 +45,26 @@ int main(int argc,char **argv)
             qPrintable(language),static_cast<long long>(file.bytes),
             qPrintable(offer.sha256));
     }
+    // Resume an interrupted encrypted pack from an on-disk 1 MiB prefix.
+    const MemsDocumentaryOffer fr=MemsDocumentaryPackCatalog::parseManifest(
+        manifest.body,QStringLiteral("fr"));
+    const QString complete=destination.filePath(QStringLiteral("fr.encrypted"));
+    const QString resumed=destination.filePath(QStringLiteral("fr-resumed.encrypted"));
+    QFile existing(complete),partial(resumed+QStringLiteral(".part"));
+    if(!existing.open(QIODevice::ReadOnly) ||
+       !partial.open(QIODevice::WriteOnly) ||
+       partial.write(existing.read(1024*1024))!=1024*1024)
+        return 6;
+    partial.close();
+    existing.close();
+    const MemsDocumentaryHttpResult restart=MemsDocumentaryWindowsTransport::get(
+        fr.releaseUrl,256LL*1024*1024,resumed,fr.sha256.toLatin1());
+    if(!restart.ok() || QFileInfo(resumed).size()!=28098898){
+        std::fprintf(stderr,"WINHTTP_RESUME_FAILED=%s\n",qPrintable(restart.error));
+        return 7;
+    }
+    std::fprintf(stderr,"WINHTTP_RESUME_SHA256_PASS BYTES=%lld\n",
+        static_cast<long long>(restart.bytes));
     std::fprintf(stderr,"WINHTTP_FR_EN_MANIFEST_DOWNLOAD_AND_SHA256_PASS\n");
     return 0;
 }
