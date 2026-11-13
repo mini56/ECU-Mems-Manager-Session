@@ -11,7 +11,7 @@ on:
       - 'database/MemsDocumentaryEncryptedPack*'
       - 'tools/pack_mems_documentary.py'
       - 'tools/test_documentary_encrypted_cpp.cpp'
-      - '.github/workflows/session-documentary-install-140-test.yml'
+      - '.github/workflows/session-documentary-maj-140-test.yml'
       - 'database/MemsDocumentaryRepository.cpp'
       - 'database/MemsDatabaseExplorerV2.cpp'
       - 'CMakeLists.txt'
