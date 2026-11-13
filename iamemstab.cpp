@@ -646,32 +646,63 @@ void IaMemsTab::sendQuestion()
 void IaMemsTab::onServiceResponse(const QString &text)
 {
     appendMessage(QStringLiteral("IA MEMS"), text);
-    // Images du même pack documentaire que la réponse, jamais des images
-    // devinées par le modèle. Prévisualisation et ouverture avec zoom.
+    // Une opération de plusieurs pages propose TOUTES les images source
+    // authentifiées (pages 59 à 62 pour la dépose de la culasse), pas
+    // uniquement la première image retrouvée par recherche FTS.
     if(m_service && m_transcript){
-        const QString offered=m_service->property(
-            "iaMemsLastDocumentaryImagePath").toString();
+        QStringList offered=m_service->property(
+            "iaMemsLastDocumentaryImagePaths").toStringList();
+        if(offered.isEmpty()){
+            const QString legacy=m_service->property(
+                "iaMemsLastDocumentaryImagePath").toString();
+            if(!legacy.isEmpty())
+                offered.append(legacy);
+        }
+        m_service->setProperty("iaMemsLastDocumentaryImagePaths",QVariant());
         m_service->setProperty("iaMemsLastDocumentaryImagePath",QVariant());
-        const QFileInfo file(offered);
-        const QString canonical=file.canonicalFilePath();
         const QString imageRoot=QFileInfo(QDir(QFileInfo(
             MemsDocumentaryRepository::databasePath()).absolutePath())
             .filePath(QStringLiteral("images"))).canonicalFilePath();
-        if(!canonical.isEmpty() && !imageRoot.isEmpty() &&
-           file.isFile() && !file.isSymLink() &&
-           canonical.startsWith(imageRoot+QLatin1Char('/'),Qt::CaseInsensitive) &&
-           QRegularExpression(QStringLiteral(
-               "^[A-Z0-9_-]{1,60}_PDF_[0-9]{3}\\.png$"),
-               QRegularExpression::CaseInsensitiveOption)
-               .match(file.fileName()).hasMatch()){
+        const QRegularExpression imageName(QStringLiteral(
+            "^[A-Z0-9_-]{1,60}_PDF_([0-9]{3})\\.png$"),
+            QRegularExpression::CaseInsensitiveOption);
+        QStringList html;
+        int shown=0;
+        for(const QString &candidate:offered){
+            const QFileInfo file(candidate);
+            const QString canonical=file.canonicalFilePath();
+            const QRegularExpressionMatch match=imageName.match(file.fileName());
+            if(canonical.isEmpty() || imageRoot.isEmpty() ||
+               !file.isFile() || file.isSymLink() ||
+               !canonical.startsWith(imageRoot+QLatin1Char('/'),
+                                     Qt::CaseInsensitive) ||
+               !match.hasMatch() ||
+               m_offeredDocumentaryImagePaths.contains(canonical) ||
+               shown>=12)
+                continue;
             m_offeredDocumentaryImagePaths.insert(canonical);
             const QString imageUrl=QUrl::fromLocalFile(canonical)
                 .toString(QUrl::FullyEncoded).toHtmlEscaped();
-            m_transcript->append(QStringLiteral(
-                "<p><b>Page constructeur associée</b> — "
-                "<a href='%1'>ouvrir en grand format (zoom)</a></p>"
-                "<p><a href='%1'><img src='%1' width='520'></a></p>")
-                .arg(imageUrl));
+            const int page=match.captured(1).toInt();
+            html.append(QStringLiteral(
+                "<td style='vertical-align:top;padding:5px;'>"
+                "<a href='%1'><b>Page %2 — voir en grand format (zoom)</b><br>"
+                "<img src='%1' width='330'></a></td>")
+                .arg(imageUrl).arg(page));
+            ++shown;
+        }
+        if(!html.isEmpty()){
+            QString grid=QStringLiteral(
+                "<p><b>Pages constructeur associées à l'opération :</b></p>"
+                "<table cellspacing='5' cellpadding='3'>");
+            for(int i=0;i<html.size();i+=2){
+                grid+=QStringLiteral("<tr>")+html.at(i);
+                if(i+1<html.size())
+                    grid+=html.at(i+1);
+                grid+=QStringLiteral("</tr>");
+            }
+            grid+=QStringLiteral("</table>");
+            m_transcript->append(grid);
         }
     }
 
