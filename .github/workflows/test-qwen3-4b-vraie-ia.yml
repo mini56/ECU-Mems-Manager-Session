@@ -1,0 +1,86 @@
+name: IA MEMS - essai reel Qwen3 4B conversationnel (sans Setup)
+run-name: IA MEMS - Qwen3 4B contre les vraies etapes RAVE FR
+on:
+  push:
+    branches:
+      - test-qwen3-4b-vraie-ia-20261113
+    paths:
+      - 'tools/bench_qwen3_4b_mems.py'
+      - '.github/workflows/test-qwen3-4b-vraie-ia.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  qwen3-4b-real:
+    name: Tester un VRAI modele local sur les procedures de culasse
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    env:
+      HF_HUB_DISABLE_TELEMETRY: '1'
+      HF_HUB_ENABLE_HF_TRANSFER: '0'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - name: Lire le code documentaire d'origine (sans le modifier)
+        uses: actions/checkout@v4
+      - name: Reconstruire les vraies donnees etape-par-etape en francais
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p output/rave-fr
+          python3 tools/build_rave_fr_documentary.py \
+            --reference-root database/reference \
+            --output output/rave-fr/mems_documentary_fr.sqlite
+          python3 - <<'PY'
+          import sqlite3
+          c=sqlite3.connect('output/rave-fr/mems_documentary_fr.sqlite')
+          assert c.execute("select count(*) from documentary_entries where source_table='mems_procedure_step'").fetchone()[0]>=3100
+          assert c.execute('pragma integrity_check').fetchone()[0]=='ok'
+          print('RAVE_REAL_FRENCH_PROCEDURES_AND_STEP_COUNT_VERIFIED')
+          PY
+      - name: Telecharger le modele OFFICIEL Qwen3 4B Q4_K_M (pas de donnees utilisateur)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check 'huggingface_hub==0.35.3' 'hf_xet>=1.1.0'
+          mkdir -p models
+          python3 - <<'PY'
+          from huggingface_hub import hf_hub_download
+          p=hf_hub_download(
+              repo_id="Qwen/Qwen3-4B-GGUF",
+              filename="Qwen3-4B-Q4_K_M.gguf",
+              local_dir="models")
+          import os
+          size=os.path.getsize(p)
+          print('OFFICIAL_QWEN3_4B_MODEL_DOWNLOADED_BYTES',size)
+          assert size>2_000_000_000
+          PY
+      - name: Recuperer llama.cpp CPU precompile pour un test independant
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --connect-timeout 20 \
+            'https://github.com/ggml-org/llama.cpp/releases/download/b12240/llama-b12240-bin-ubuntu-x64.tar.gz' \
+            -o /tmp/llama-b12240-ubuntu.tar.gz
+          mkdir -p llama-bin
+          tar -xzf /tmp/llama-b12240-ubuntu.tar.gz -C llama-bin
+          server="$(find llama-bin -type f -name llama-server -print -quit)"
+          if [ -z "$server" ]; then
+            echo "LLAMA_SERVER_MISSING_FROM_OFFICIAL_BINARY"
+            exit 1
+          fi
+          chmod +x "$server"
+          echo "MEMS_LLAMA_SERVER=$server" >> "$GITHUB_ENV"
+          echo "LLAMA_CPP_OFFICIAL_CPU_BINARY_READY $server"
+      - name: Dialoguer REELLEMENT avec Qwen3 4B sur les etapes RAVE et suivre le contexte
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/bench_qwen3_4b_mems.py
+      - name: Archiver uniquement les questions et reponses du modele
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: QWEN3-4B-ESSAI-CONVERSATION-RAVE-FR
+          path: benchmark/qwen3_4b_test_dialogue.json
+          if-no-files-found: warn
+          retention-days: 7
