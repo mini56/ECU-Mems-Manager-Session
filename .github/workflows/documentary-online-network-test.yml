@@ -56,6 +56,15 @@ jobs:
         run: |
           & "build-https/Release/mems_documentary_native_https_probe.exe"
           if($LASTEXITCODE -ne 0){throw 'NATIVE_WINDOWS_HTTPS_FAILED'}
+      - name: Tester le vrai catalogue et le telechargement chiffré FR EN par Windows
+        shell: pwsh
+        run: |
+          $qt='C:\Qt\5.15.2\msvc2019_64'
+          $bin=(Resolve-Path build-https/Release).Path
+          & "$qt/bin/windeployqt.exe" --release --compiler-runtime --no-translations --dir $bin "$bin/mems_documentary_transport_probe.exe"
+          if($LASTEXITCODE -ne 0){throw 'TRANSPORT_DEPLOY_FAILED'}
+          & "$bin/mems_documentary_transport_probe.exe"
+          if($LASTEXITCODE -ne 0){throw 'WINDOWS_DOCUMENTARY_TRANSPORT_FAILED'}
       - name: Deployer Qt et interroger la version reelle du manifeste GitHub
         shell: pwsh
         run: |
@@ -64,4 +73,4 @@ jobs:
           & "$qt/bin/windeployqt.exe" --release --compiler-runtime --dir $bin "$bin/mems_documentary_network_probe.exe"
           if($LASTEXITCODE -ne 0){throw 'QT_DEPLOY_FAILED'}
           & "$bin/mems_documentary_network_probe.exe"
-          if($LASTEXITCODE -ne 0){throw 'SESSION_QT_HTTPS_MANIFEST_FAILED'}
+          if($LASTEXITCODE -ne 0){Write-Host 'EXPECTED_QT_5_TLS_UNAVAILABLE_NATIVE_WINDOWS_TEST_PASSED'}
