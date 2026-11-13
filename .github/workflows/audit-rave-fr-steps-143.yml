@@ -48,6 +48,21 @@ jobs:
               req=sum(json.loads(x['raw_json']).get('procedure_key')==key for x in requirements)
               print('CULASSE_PROCEDURE',{'page':row['source_page'],'title_has_depose':'d.pose' in row['title'].lower() or 'dépose' in row['title'].lower(),'title_has_repose':'repose' in row['title'].lower(),'key_present':bool(key),'step_count':len(linked),'requirements':req,'step_min':min((x[0] for x in linked if isinstance(x[0],int)),default=None),'step_max':max((x[0] for x in linked if isinstance(x[0],int)),default=None),'distinct_pages':len(set(x[1] for x in linked))})
           print('CULASSE_MATCHED_PROCEDURES',matched)
+          from collections import Counter
+          for row in procedures:
+              if 'CULASSE' not in row['title'].upper():continue
+              key=json.loads(row['raw_json']).get('procedure_key')
+              kinds=Counter()
+              status=Counter()
+              sample=[]
+              for sr in db.execute("select raw_json,source_page,verification_status from documentary_entries where source_table='mems_procedure_step'"):
+                  raw=json.loads(sr['raw_json'])
+                  if raw.get('procedure_key')!=key:continue
+                  status[sr['verification_status']]+=1
+                  for k,v in raw.items():
+                      if isinstance(v,str) and v.strip():kinds[k]+=1
+                  sample.append((raw.get('step_no'),sr['source_page']))
+              print('CULASSE_STEPS_FIELDS',{'type':row['title'].split(' - ')[-1],'fields':dict(kinds),'verification':dict(status),'pages':sorted(set(x[1] for x in sample))})
           assert counts.get('mems_procedure_step',0)>3000
           assert len(bykey)>0
           print('RAVE_FR_STEP_LINKING_DIAGNOSTIC_PASS')
