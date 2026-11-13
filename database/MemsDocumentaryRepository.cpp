@@ -61,6 +61,11 @@ QStringList nativeSubjectTerms(const QString &question)
 {
     static const QSet<QString> conversational = {
         QStringLiteral("moi"),QStringLiteral("mon"),QStringLiteral("ma"),
+        QStringLiteral("sont"),QStringLiteral("sera"),QStringLiteral("serait"),
+        QStringLiteral("souhaite"),QStringLiteral("aimerais"),QStringLiteral("connaitre"),
+        QStringLiteral("connait"),QStringLiteral("voudrait"),QStringLiteral("pourrais"),
+        QStringLiteral("possible"),QStringLiteral("obtenir"),QStringLiteral("besoin"),
+        QStringLiteral("trouver"),QStringLiteral("recherche"),QStringLiteral("demande"),
         QStringLiteral("mes"),QStringLiteral("tu"),QStringLiteral("vous"),
         QStringLiteral("peux"),QStringLiteral("peut"),QStringLiteral("faire"),
         QStringLiteral("fais"),QStringLiteral("faut"),QStringLiteral("veux"),
