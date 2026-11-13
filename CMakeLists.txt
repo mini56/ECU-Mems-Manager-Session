@@ -171,6 +171,8 @@ add_executable(mems_documentary_encrypted_install_selftest
     database/MemsDocumentaryPackCatalog.cpp database/MemsDocumentaryPackCatalog.h)
 target_link_libraries(mems_documentary_encrypted_install_selftest PRIVATE
     Qt5::Core Qt5::Sql Qt5::Network)
+target_compile_definitions(mems_documentary_encrypted_install_selftest PRIVATE
+    MEMS_DOCUMENTARY_INSTALL_SELFTEST=1)
 if(WIN32)
     target_link_libraries(mems_documentary_encrypted_install_selftest PRIVATE bcrypt)
 endif()
