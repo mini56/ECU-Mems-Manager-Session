@@ -3,6 +3,7 @@
 
 #include <QSqlDatabase>
 #include <QString>
+#include <QStringList>
 #include <QVariantList>
 #include <QVariantMap>
 
@@ -28,6 +29,10 @@ public:
                         bool allowOcrDiscovery = true,
                         const QString &language = QString()) const;
     static QString answerFromHits(const QVariantList &hits);
+    // Reconstitue toutes les étapes et exigences liées à l'opération exacte,
+    // dans l'ordre constructeur. Renvoie toutes les pages illustrées utiles.
+    QString procedureAnswer(const QVariantMap &hit,
+                            QStringList *imagePaths = nullptr) const;
     // Page constructeur exacte issue du pack installe (jamais un chemin libre fourni par l'IA).
     static QString imagePathForHit(const QVariantMap &hit);
     static QString numberedMenu(const QString &question, const QVariantList &choices,
