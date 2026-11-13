@@ -3,6 +3,7 @@
 #include <QCoreApplication>
 #include <QCryptographicHash>
 #include <QDir>
+#include <QFile>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QTemporaryDir>
@@ -238,6 +239,57 @@ int main(int argc, char **argv)
     }
     QSqlDatabase::removeDatabase(name);
     qputenv("MEMS_DOCUMENTARY_DB", file.toUtf8());
+    // Régression SESSION 141: le texte "topic:/source_text:/source_section:"
+    // et les identifiants internes ne doivent jamais être la réponse IA.
+    QVariantMap frenchCulasse;
+    frenchCulasse.insert(QStringLiteral("source_key"),
+        QStringLiteral("rave-fr:RCL0193FRE:PROC-RCL0193FRE-42"));
+    frenchCulasse.insert(QStringLiteral("source_table"),
+        QStringLiteral("rover_fr_procedure"));
+    frenchCulasse.insert(QStringLiteral("title"),
+        QStringLiteral("Écrous de culasse — séquence de serrage"));
+    frenchCulasse.insert(QStringLiteral("source_page"),42);
+    frenchCulasse.insert(QStringLiteral("content"),QStringLiteral(
+        "document : RCL0193FRE\nlangue : français\npage physique : 42"
+        "\ntype : référence\nstatut de vérification : source_checked\n\n"
+        "topic: culasse écrous séquence de serrage\n"
+        "source_text: Écrous de culasse : 34 N.m puis 34 N.m de plus\n"
+        "source_section: PDF p.42\n"
+        "notes: Séquence multi-étapes conservée sans calculer arbitrairement un couple final."));
+    const QString answer=MemsDocumentaryRepository::answerFromHits(
+        QVariantList{frenchCulasse});
+    if(!check(answer.contains(QStringLiteral("34 N.m")) &&
+              answer.contains(QStringLiteral("RCL0193FRE, page 42")) &&
+              !answer.contains(QStringLiteral("source_text:")) &&
+              !answer.contains(QStringLiteral("source_section:")) &&
+              !answer.contains(QStringLiteral("topic:")) &&
+              !answer.contains(QStringLiteral("PROC-RCL0193FRE")) &&
+              !answer.contains(QStringLiteral("Rubriques retrouvées")),
+              "IA returns readable workshop information with precise source rather than raw database fields"))
+        return 1;
+    if(!check(QDir(temp.path()).mkpath(QStringLiteral("images")),
+              "create original-image test directory"))
+        return 1;
+    QFile image(QDir(temp.path()).filePath(QStringLiteral("images/RCL0193FRE_PDF_042.png")));
+    if(!check(image.open(QIODevice::WriteOnly) &&
+              image.write("PNG-TEST",8)==8,
+              "write test-only manufacturer page image name"))
+        return 1;
+    image.close();
+    if(!check(MemsDocumentaryRepository::imagePathForHit(frenchCulasse)==
+              QFileInfo(image.fileName()).canonicalFilePath(),
+              "IA can resolve actual local page image for the same documented answer"))
+        return 1;
+    QVariantMap fake=frenchCulasse;
+    fake.insert(QStringLiteral("source_key"),QStringLiteral("rave-fr:../../windows:invalid"));
+    if(!check(MemsDocumentaryRepository::imagePathForHit(fake).isEmpty(),
+              "IA image path traversal is forbidden"))
+        return 1;
+    fake=frenchCulasse;
+    fake.insert(QStringLiteral("source_page"),43);
+    if(!check(MemsDocumentaryRepository::imagePathForHit(fake).isEmpty(),
+              "IA never invents an image for an absent physical page"))
+        return 1;
     {
         MemsDocumentaryRepository repository;
         if (!check(repository.open(), "strict 482-page reader opens"))
