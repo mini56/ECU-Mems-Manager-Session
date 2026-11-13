@@ -612,6 +612,9 @@ void IaMemsService::askWithLibrary(const QString &question)
     if (trimmed.isEmpty())
         return;
 
+    // La suggestion de page est attachée uniquement à la réponse courante.
+    setProperty("iaMemsLastDocumentaryImagePath", QVariant());
+
     // When the Rover catalogue is mounted, a numbered reply selects the
     // exact stored source row rather than starting a new, unrelated search.
     // New text starts a new query; selecting an item never changes the corpus.
@@ -644,6 +647,8 @@ void IaMemsService::askWithLibrary(const QString &question)
             }
             const QString evidence = MemsDocumentaryRepository::answerFromHits(
                 QVariantList{chosen});
+            setProperty("iaMemsLastDocumentaryImagePath",
+                        MemsDocumentaryRepository::imagePathForHit(chosen));
             setProperty("iaMemsLastLibraryQuestion",
                         originalQuestion.isEmpty() ? trimmed : originalQuestion);
             setProperty("iaMemsLastLibraryEvidence", evidence);
@@ -708,7 +713,14 @@ void IaMemsService::askWithLibrary(const QString &question)
             }
             if (choices.isEmpty())
                 choices = documents;
-            if (choices.size() > 1) {
+            // Un sujet technique doit recevoir une réponse immédiatement.
+            // La navigation numérotée n'est utile que si l'utilisateur
+            // demande expressément une liste de rubriques à parcourir.
+            const QString request=IaMemsConversationRouting::normalize(trimmed);
+            const bool wantsIndex=request.contains(QStringLiteral("liste")) ||
+                request.contains(QStringLiteral("rubrique")) ||
+                request.contains(QStringLiteral("sommaire"));
+            if (choices.size() > 1 && wantsIndex) {
                 const bool french = I18n::language().startsWith(QStringLiteral("fr"),
                                                                  Qt::CaseInsensitive);
                 const QString menu =
@@ -725,7 +737,15 @@ void IaMemsService::askWithLibrary(const QString &question)
                 return;
             }
             const QString evidence =
-                MemsDocumentaryRepository::answerFromHits(choices);
+                MemsDocumentaryRepository::answerFromHits(choices.mid(0,3));
+            for(const QVariant &choice : choices.mid(0,3)){
+                const QString image=MemsDocumentaryRepository::imagePathForHit(
+                    choice.toMap());
+                if(!image.isEmpty()){
+                    setProperty("iaMemsLastDocumentaryImagePath",image);
+                    break;
+                }
+            }
             setProperty("iaMemsLastLibraryQuestion", trimmed);
             setProperty("iaMemsLastLibraryEvidence", evidence);
             setProperty("iaMemsLastLibraryLocked", true);
@@ -742,7 +762,7 @@ void IaMemsService::askWithLibrary(const QString &question)
             m_pendingGrounding.clear();
             emit responseReady(QStringLiteral(
                 "Aucune information correspondante n'a été retrouvée dans "
-                "la base Rover de 482 pages. Je ne vais pas inventer une "
+                "la base documentaire Rover installée. Je ne vais pas inventer une "
                 "procédure, un couple de serrage ou un schéma."));
             emit statusChanged();
             return;
