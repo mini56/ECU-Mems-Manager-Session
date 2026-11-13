@@ -4,6 +4,7 @@
 #include <QSettings>
 #include <QSqlDatabase>
 #include <QSqlQuery>
+#include <QSqlError>
 #include <QTemporaryDir>
 #include <QVariantMap>
 #include <cstdio>
@@ -94,7 +95,22 @@ int main(int argc,char** argv)
     };
     for(const QString& question:removalQuestions){
         const QVariantList found=repository.search(question,12,true,QStringLiteral("fr"));
-        if(!require(!found.isEmpty(),"natural question returns actual manufacturer record"))return 1;
+        if(found.isEmpty()) {
+            std::fprintf(stderr,"NATIVE_QUERY_NO_HITS_FOR=%s\\n",qPrintable(question));
+            QSqlDatabase debug=QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),QStringLiteral("native-debug"));
+            debug.setDatabaseName(path);
+            if(debug.open()) {
+                QSqlQuery fts(debug);
+                fts.prepare(QStringLiteral("SELECT COUNT(*) FROM documentary_fts WHERE documentary_fts MATCH ?"));
+                fts.addBindValue(QStringLiteral("\\\"joint\\\" AND \\\"culasse\\\""));
+                std::fprintf(stderr,"NATIVE_PROBE_EXEC=%d ERROR=%s\\n",int(fts.exec()),qPrintable(fts.lastError().text()));
+                if(fts.next())std::fprintf(stderr,"NATIVE_PROBE_COUNT=%d\\n",fts.value(0).toInt());
+                debug.close();
+            }
+            debug=QSqlDatabase();
+            QSqlDatabase::removeDatabase(QStringLiteral("native-debug"));
+            return 1;
+        }
         const QVariantMap first=found.first().toMap();
         if(!require(first.value(QStringLiteral("title")).toString().contains(
              QStringLiteral("dépose")),"removal requested must prioritize removal"))return 1;
