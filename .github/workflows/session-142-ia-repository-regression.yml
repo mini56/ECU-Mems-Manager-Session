@@ -1,0 +1,44 @@
+name: SESSION 142 - Test des reponses et images IA documentaires
+on:
+  push:
+    branches: [fix-142-ia-reponses-documentaires-20261113]
+    paths:
+      - 'database/MemsDocumentaryRepository*'
+      - '.github/workflows/session-142-ia-repository-regression.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test-documentary-answers:
+    runs-on: windows-2025
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Installer Qt 5.15.2
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python -m pip install --disable-pip-version-check 'aqtinstall==3.3.0'
+          if($LASTEXITCODE -ne 0){throw 'QT_INSTALLER_FAILED'}
+          $sevenZip=(Get-Command 7z.exe -ErrorAction Stop).Source
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external $sevenZip
+          if($LASTEXITCODE -ne 0){throw 'QT_INSTALL_FAILED'}
+      - name: Compiler le vrai lecteur documentaire SESSION
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          cmake -S . -B build-ia-142 -A x64 -DCMAKE_PREFIX_PATH='C:/Qt/5.15.2/msvc2019_64' -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF
+          if($LASTEXITCODE -ne 0){throw 'CMAKE_FAILED'}
+          cmake --build build-ia-142 --config Release --target mems_documentary_selftest --parallel
+          if($LASTEXITCODE -ne 0){throw 'SELFTEST_COMPILE_FAILED'}
+      - name: Executer les regressions sur les reponses IA et les images
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $bin=(Resolve-Path build-ia-142/Release).Path
+          $qt='C:\Qt\5.15.2\msvc2019_64'
+          & "$qt/bin/windeployqt.exe" --release --no-translations --dir $bin "$bin/mems_documentary_selftest.exe"
+          if($LASTEXITCODE -ne 0){throw 'QT_RUNTIME_DEPLOY_FAILED'}
+          & "$bin/mems_documentary_selftest.exe"
+          if($LASTEXITCODE -ne 0){throw 'DOCUMENTARY_IA_CONTENT_OR_IMAGE_REGRESSION'}
+          Write-Host 'SESSION_142_IA_FRENCH_ANSWER_AND_LOCAL_IMAGE_TEST_PASS'
