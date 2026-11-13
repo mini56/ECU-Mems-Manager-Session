@@ -7,12 +7,9 @@
 #include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
-#include <QPasswordDigestor>
 #include <QProcess>
 #include <QProcessEnvironment>
-#include <QRandomGenerator>
 #include <QRegularExpression>
-#include <QSettings>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QSqlError>
@@ -27,12 +24,6 @@ QString normalizedLanguage(const QString &language)
     const QString code=language.left(2).toLower();
     return code==QStringLiteral("fr") || code==QStringLiteral("en")
         ? code : QString();
-}
-
-QByteArray derive(const QString &password,const QByteArray &salt)
-{
-    return QPasswordDigestor::deriveKeyPbkdf2(
-        QCryptographicHash::Sha256,password.toUtf8(),salt,210000,32);
 }
 
 QByteArray fileHash(const QString &path)
@@ -218,14 +209,10 @@ QString locateSource(const QString &directory,const QString &code)
     return found;
 }
 
-QString installSource(const QString &source,const QString &code,
-                      const QString &password)
+QString installSource(const QString &source,const QString &code)
 {
-    const bool first=!MemsDocumentaryLocalInstaller::hasPassword();
-    if(first && password.size()<12)
-        return QStringLiteral("Premier mot de passe : 12 caractères minimum.");
-    if(!first && !MemsDocumentaryLocalInstaller::passwordValid(password))
-        return QStringLiteral("Mot de passe incorrect : aucune base modifiée.");
+    // Private entrypoint: reached only after an authentic MEMSDOC1
+    // decrypt-and-verify step (or in an explicitly compiled self-test).
     const QFileInfo input(source);
     if(!input.isFile() || input.isSymLink() || input.size()<4096 ||
        input.size()>512LL*1024*1024)
@@ -276,59 +263,13 @@ QString installSource(const QString &source,const QString &code,
         QDir(incoming).removeRecursively();
         return QStringLiteral("Installation annulée. Ancienne base restaurée.");
     }
-    if(first){
-        QByteArray salt(24,0);
-        for(int i=0;i<salt.size();i+=4){
-            const quint32 random=QRandomGenerator::system()->generate();
-            for(int j=0;j<4 && i+j<salt.size();++j)
-                salt[i+j]=char((random>>(j*8))&0xff);
-        }
-        const QByteArray digest=derive(password,salt);
-        QSettings auth(QSettings::IniFormat,QSettings::UserScope,
-                       QStringLiteral("ECU_Mems_Manager"));
-        auth.setValue(QStringLiteral("DocumentaryInstall/salt"),salt.toHex());
-        auth.setValue(QStringLiteral("DocumentaryInstall/digest"),digest.toHex());
-        auth.sync();
-        if(auth.status()!=QSettings::NoError){
-            // Fail closed: a first-time password must not be lost.
-            QDir(destination).removeRecursively();
-            if(existed) QDir().rename(backup,destination);
-            return QStringLiteral("Mot de passe non sauvegardé, installation annulée.");
-        }
-    }
     return QString(); // Succès : éventuelle ancienne base conservée dans .backup-UUID
 }
 
 } // namespace
 
-bool MemsDocumentaryLocalInstaller::hasPassword()
-{
-    QSettings s(QSettings::IniFormat,QSettings::UserScope,
-                QStringLiteral("ECU_Mems_Manager"));
-    return !s.value(QStringLiteral("DocumentaryInstall/salt")).toByteArray().isEmpty()
-        && !s.value(QStringLiteral("DocumentaryInstall/digest")).toByteArray().isEmpty();
-}
-
-bool MemsDocumentaryLocalInstaller::passwordValid(const QString &password)
-{
-    QSettings s(QSettings::IniFormat,QSettings::UserScope,
-                QStringLiteral("ECU_Mems_Manager"));
-    const QByteArray salt=QByteArray::fromHex(
-        s.value(QStringLiteral("DocumentaryInstall/salt")).toByteArray());
-    const QByteArray expected=QByteArray::fromHex(
-        s.value(QStringLiteral("DocumentaryInstall/digest")).toByteArray());
-    if(salt.size()!=24 || expected.size()!=32)
-        return false;
-    const QByteArray actual=derive(password,salt);
-    // Always compare all bytes to avoid leaking password prefix information.
-    int diff=0;
-    for(int i=0;i<expected.size();++i)
-        diff|=quint8(actual.at(i))^quint8(expected.at(i));
-    return diff==0;
-}
-
 QString MemsDocumentaryLocalInstaller::installDirectory(
-    const QString &sourceDirectory,const QString &language,const QString &password)
+    const QString &sourceDirectory,const QString &language)
 {
     const QString code=normalizedLanguage(language);
     if(code.isEmpty())
@@ -336,11 +277,11 @@ QString MemsDocumentaryLocalInstaller::installDirectory(
     const QString source=locateSource(sourceDirectory,code);
     if(source.isEmpty())
         return QStringLiteral("Fichier documentaire %1 introuvable ou ambigu.").arg(code);
-    return installSource(source,code,password);
+    return installSource(source,code);
 }
 
 QString MemsDocumentaryLocalInstaller::installZip(
-    const QString &archivePath,const QString &language,const QString &password)
+    const QString &archivePath,const QString &language)
 {
     const QFileInfo archive(archivePath);
     if(!archive.isFile() || archive.isSymLink() ||
@@ -383,9 +324,8 @@ QString MemsDocumentaryLocalInstaller::installZip(
            (total+=file.size())>700LL*1024*1024)
             return QStringLiteral("Archive contenant trop de fichiers ou de données.");
     }
-    return installDirectory(temporary.path(),code,password);
+    return installDirectory(temporary.path(),code);
 #else
-    Q_UNUSED(password)
     return QStringLiteral("Import ZIP intégré uniquement sous Windows ; "
                           "utiliser un dossier déjà extrait pour le test.");
 #endif
@@ -409,5 +349,5 @@ QString MemsDocumentaryLocalInstaller::installEncrypted(
     // AES-GCM verified. The same production ZIP importer checks file names,
     // documentation provenance, language, pages, images, SQLite and backups.
     // QTemporaryDir wipes the decrypted ZIP on both success and failure.
-    return installZip(decrypted,language,password);
+    return installZip(decrypted,language);
 }
