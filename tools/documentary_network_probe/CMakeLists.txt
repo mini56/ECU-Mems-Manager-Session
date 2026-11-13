@@ -8,4 +8,8 @@ target_link_libraries(mems_documentary_network_probe PRIVATE Qt5::Core Qt5::Netw
 if(WIN32)
     add_executable(mems_documentary_native_https_probe native_probe.cpp)
     target_link_libraries(mems_documentary_native_https_probe PRIVATE winhttp)
+    add_executable(mems_documentary_transport_probe transport_probe.cpp
+        ../../database/MemsDocumentaryWindowsTransport.cpp
+        ../../database/MemsDocumentaryPackCatalog.cpp)
+    target_link_libraries(mems_documentary_transport_probe PRIVATE Qt5::Core winhttp)
 endif()
