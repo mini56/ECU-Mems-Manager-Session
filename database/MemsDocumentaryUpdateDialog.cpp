@@ -97,9 +97,9 @@ MemsDocumentaryUpdateDialog::MemsDocumentaryUpdateDialog(
     m_download->setObjectName(QStringLiteral("documentaryDownloadUpdate"));
     m_download->setEnabled(false);
     m_installLocal = new QPushButton(
-        ui(QStringLiteral("Installer une base locale (ZIP)"),
-           QStringLiteral("Install local database (ZIP)")),this);
-    m_installLocal->setObjectName(QStringLiteral("documentaryInstallLocalZip"));
+        ui(QStringLiteral("Installer un pack sécurisé local"),
+           QStringLiteral("Install local encrypted pack")),this);
+    m_installLocal->setObjectName(QStringLiteral("documentaryInstallLocalEncrypted"));
     QPushButton *close = new QPushButton(
         ui(QStringLiteral("Fermer"), QStringLiteral("Close")), this);
     actions->addWidget(m_check);
@@ -110,7 +110,7 @@ MemsDocumentaryUpdateDialog::MemsDocumentaryUpdateDialog(
 
     connect(m_check,&QPushButton::clicked,this,[this](){checkManifest();});
     connect(m_download,&QPushButton::clicked,this,[this](){startDownload();});
-    connect(m_installLocal,&QPushButton::clicked,this,[this](){installLocalZip();});
+    connect(m_installLocal,&QPushButton::clicked,this,[this](){installLocalEncrypted();});
     connect(close,&QPushButton::clicked,this,&QDialog::reject);
     checkManifest();
 }
@@ -322,38 +322,19 @@ void MemsDocumentaryUpdateDialog::finishDownload(QNetworkReply *reply)
     m_progress->setVisible(false);
     if (success) {
         bool accepted=false;
-        const bool existingPassword=MemsDocumentaryLocalInstaller::hasPassword();
         QString password=QInputDialog::getText(
-            this,ui(QStringLiteral("Installation de la mise à jour documentaire"),
-                    QStringLiteral("Install documentary database update")),
-            ui(QStringLiteral("Mot de passe du pack chiffré :"),
-               QStringLiteral("Encrypted package password:")),
+            this,ui(QStringLiteral("Autorisation d'installation"),
+                    QStringLiteral("Database installation authorization")),
+            ui(QStringLiteral("Mot de passe donné par l'administrateur :"),
+               QStringLiteral("Password provided by the administrator:")),
             QLineEdit::Password,QString(),&accepted);
         if(!accepted || password.isEmpty()){
             setStatus(ui(QStringLiteral(
-                "Téléchargement vérifié. Installation annulée : aucune base modifiée."),
+                "Téléchargement vérifié, installation annulée : aucune base modifiée."),
                 QStringLiteral(
-                "Verified download. Installation cancelled. No database changed.")));
+                "Verified download; installation cancelled. Database unchanged.")));
             setBusy(false);
             return;
-        }
-        if(!existingPassword){
-            bool confirmAccepted=false;
-            const QString confirmation=QInputDialog::getText(
-                this,ui(QStringLiteral("Confirmer le mot de passe"),
-                        QStringLiteral("Confirm installation password")),
-                ui(QStringLiteral("Répéter le mot de passe du pack :"),
-                   QStringLiteral("Repeat package password:")),
-                QLineEdit::Password,QString(),&confirmAccepted);
-            if(!confirmAccepted || confirmation!=password || password.size()<12){
-                password.fill(QChar(' '));
-                setStatus(ui(QStringLiteral(
-                    "Mot de passe non confirmé ou trop court. Base inchangée."),
-                    QStringLiteral(
-                    "Password not confirmed or too short. Database unchanged.")));
-                setBusy(false);
-                return;
-            }
         }
         const QString error=MemsDocumentaryLocalInstaller::installEncrypted(
             m_savedFilePath,m_language,password);
@@ -391,72 +372,56 @@ void MemsDocumentaryUpdateDialog::finishDownload(QNetworkReply *reply)
     setBusy(false);
 }
 
-void MemsDocumentaryUpdateDialog::installLocalZip()
+void MemsDocumentaryUpdateDialog::installLocalEncrypted()
 {
     const QString archive=QFileDialog::getOpenFileName(
-        this,ui(QStringLiteral("Choisir le ZIP de la base documentaire"),
-                QStringLiteral("Choose documentary database ZIP")),
-        QString(),QStringLiteral("Archives ZIP (*.zip)"));
+        this,ui(QStringLiteral("Choisir le pack sécurisé fourni par l'administrateur"),
+                QStringLiteral("Choose the administrator-encrypted pack")),
+        QString(),QStringLiteral("Packs documentaires chiffrés (*.encrypted)"));
     if(archive.isEmpty())
         return;
     bool accepted=false;
-    const bool hasPassword=MemsDocumentaryLocalInstaller::hasPassword();
     QString password=QInputDialog::getText(
-        this,hasPassword
-            ? ui(QStringLiteral("Mot de passe documentaire"),
-                 QStringLiteral("Documentary installation password"))
-            : ui(QStringLiteral("Créer le mot de passe documentaire"),
-                 QStringLiteral("Create documentary installation password")),
-        hasPassword
-            ? ui(QStringLiteral("Mot de passe d'installation :"),
-                 QStringLiteral("Installation password:"))
-            : ui(QStringLiteral("Définir un mot de passe de 12 caractères minimum :"),
-                 QStringLiteral("Choose a password of at least 12 characters:")),
+        this,ui(QStringLiteral("Autorisation d'installation"),
+                QStringLiteral("Database installation authorization")),
+        ui(QStringLiteral("Mot de passe communiqué par l'administrateur :"),
+           QStringLiteral("Password provided by the administrator:")),
         QLineEdit::Password,QString(),&accepted);
-    if(!accepted)
+    if(!accepted || password.isEmpty()){
+        password.fill(QChar(' '));
+        setStatus(ui(QStringLiteral(
+            "Installation annulée : mot de passe administrateur obligatoire."),
+            QStringLiteral(
+            "Installation cancelled: administrator password is required.")));
         return;
-    if(!hasPassword){
-        const QString confirm=QInputDialog::getText(
-            this,ui(QStringLiteral("Confirmer le mot de passe"),
-                    QStringLiteral("Confirm installation password")),
-            ui(QStringLiteral("Saisir à nouveau le mot de passe :"),
-               QStringLiteral("Repeat password:")),
-            QLineEdit::Password,QString(),&accepted);
-        if(!accepted || confirm!=password || password.size()<12){
-            password.fill(QChar(' '));
-            setStatus(ui(QStringLiteral(
-                "Mot de passe non confirmé ou trop court. Aucune base modifiée."),
-                QStringLiteral(
-                "Password was not confirmed or is too short. No database changed.")));
-            return;
-        }
     }
     setBusy(true);
     setStatus(ui(QStringLiteral(
-        "Contrôle du ZIP, des pages, des images et de l'intégrité SQLite…"),
+        "Authentification du pack, puis contrôle SQLite et des images…"),
         QStringLiteral(
-        "Verifying ZIP, manufacturer pages, images, and SQLite integrity…")));
-    // A complete verified local package is staged before replacing anything.
-    const QString error=MemsDocumentaryLocalInstaller::installZip(
+        "Authenticating the package, then verifying SQLite and images…")));
+    // Both online and offline delivery use the same AES-GCM gate. An
+    // unencrypted ZIP must never be a supported installation shortcut.
+    const QString error=MemsDocumentaryLocalInstaller::installEncrypted(
         archive,m_language,password);
     password.fill(QChar(' '));
     setBusy(false);
     if(!error.isEmpty()){
         setStatus(error);
         QMessageBox::warning(this,
-            ui(QStringLiteral("Base non installée"),
-               QStringLiteral("Database not installed")),error);
+            ui(QStringLiteral("Pack refusé"),
+               QStringLiteral("Package rejected")),error);
         return;
     }
     const QString message=ui(QStringLiteral(
         "Base documentaire %1 installée et contrôlée. "
-        "L'ancienne base a été conservée comme sauvegarde. "
-        "Fermer puis rouvrir Base de données pour consulter les nouveaux documents.")
+        "Ancienne version conservée en sauvegarde. "
+        "Rouvrir Base de données pour consulter les nouveaux documents.")
         .arg(languageName(m_language)),
         QStringLiteral(
         "Documentary database %1 installed and verified. "
-        "Previous database retained as backup. "
-        "Close and reopen the database screen to read the new documents.")
+        "Previous version retained as backup. "
+        "Reopen the database screen to read new documents.")
         .arg(languageName(m_language)));
     setStatus(message);
     QMessageBox::information(this,
