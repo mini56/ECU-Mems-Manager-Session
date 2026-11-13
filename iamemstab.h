@@ -2,6 +2,7 @@
 #define IAMEMSTAB_H
 
 #include <QString>
+#include <QSet>
 #include <QWidget>
 
 #include "expert/ExpertTypes.h"
@@ -70,6 +71,7 @@ private:
     QString m_detectedFamily;
     QString m_firmwareIdentifier;
     QString m_ecuIdHex;
+    QSet<QString> m_offeredDocumentaryImagePaths;
 
     bool m_connected = false;
     bool m_haveInjection = false;
