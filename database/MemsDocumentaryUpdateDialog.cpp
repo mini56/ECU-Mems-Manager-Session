@@ -21,7 +21,7 @@
 
 namespace {
 constexpr qint64 kMaxManifestBytes = 256 * 1024;
-constexpr qint64 kMaxEncryptedPackBytes = 2LL * 1024 * 1024 * 1024;
+constexpr qint64 kMaxEncryptedPackBytes = 256LL * 1024 * 1024;
 
 QNetworkRequest secureRequest(const QUrl &url)
 {

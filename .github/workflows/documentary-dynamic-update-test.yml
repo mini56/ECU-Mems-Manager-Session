@@ -1,0 +1,101 @@
+name: DOCUMENTARY - multi-manuel et mises a jour successives
+on:
+  push:
+    branches: [fix-dynamic-documentary-install-20261113]
+    paths:
+      - 'database/MemsDocumentaryLocalInstaller.cpp'
+      - 'database/MemsDocumentaryLocalInstaller.h'
+      - 'database/MemsDocumentaryUpdateDialog.cpp'
+      - 'database/MemsDocumentaryUpdateDialog.h'
+      - 'database/MemsDocumentaryPackCatalog.cpp'
+      - 'database/MemsDocumentaryPackCatalog.h'
+      - 'tools/test_documentary_offline_installer.cpp'
+      - 'tools/test_documentary_multisource_fixture.py'
+      - 'tools/test_documentary_third_source_fixture.py'
+      - 'tools/test_documentary_offline_installer.cpp'
+      - 'database/MemsDocumentaryRepository.cpp'
+      - 'database/MemsDocumentaryRepository.h'
+      - '.github/workflows/documentary-dynamic-update-test.yml'
+      - '.github/workflows/documentary-offline-installer-test.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compile-and-verify-offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Installer Qt5 pour compiler les vrais fichiers source
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            g++ pkg-config qtbase5-dev libqt5sql5-sqlite
+      - name: Compiler le code exact de l'installation et du dialogue
+        shell: bash
+        run: |
+          set -euo pipefail
+          for source in \
+            database/MemsDocumentaryLocalInstaller.cpp \
+            database/MemsDocumentaryUpdateDialog.cpp \
+            database/MemsDocumentaryPackCatalog.cpp \
+            database/MemsDocumentaryRepository.cpp; do
+            echo "SOURCE: $source"
+            g++ -std=c++17 -Wall -Wextra -fPIC -fsyntax-only -I. \
+              $(pkg-config --cflags Qt5Core Qt5Widgets Qt5Sql Qt5Network) "$source"
+          done
+          echo DOCUMENTARY_INSTALLER_SOURCES_COMPILE_PASS
+      - name: Refuser la creation d'un mot de passe par le destinataire
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          dialog=Path('database/MemsDocumentaryUpdateDialog.cpp').read_text(encoding='utf-8')
+          header=Path('database/MemsDocumentaryLocalInstaller.h').read_text(encoding='utf-8')
+          src=Path('database/MemsDocumentaryLocalInstaller.cpp').read_text(encoding='utf-8')
+          for forbidden in ('Créer le mot de passe', 'Choose a password',
+                            'hasPassword()', 'installLocalZip()'):
+              assert forbidden not in dialog, forbidden
+          assert 'installEncrypted(' in dialog and 'installZip(' not in dialog
+          assert 'installDirectory(' in header and 'private:' in header
+          assert 'MEMS_DOCUMENTARY_INSTALL_SELFTEST' in header
+          assert 'DocumentaryInstall/salt' not in src
+          assert 'DocumentaryInstall/digest' not in src
+          print('PUBLISHER_ONLY_PASSWORD_UI_CONTRACT_PASS')
+          PY
+      - name: Construire une source reellement structuree puis un fixture synthetique
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p output/rave-fr
+          python3 tools/build_rave_fr_documentary.py \
+            --reference-root database/reference \
+            --output output/rave-fr/mems_documentary_fr.sqlite
+          # Fausse page de test uniquement, aucun document constructeur
+          # non valide n'est publie ou livre aux utilisateurs.
+          python3 tools/test_documentary_fixture.py --source output/rave-fr
+      - name: Tester un mot de passe et le refus des mauvais paquets
+        shell: bash
+        run: |
+          set -euo pipefail
+          g++ -std=c++17 -Wall -Wextra -fPIC -I. \
+            -DMEMS_DOCUMENTARY_INSTALL_SELFTEST=1 \
+            tools/test_documentary_offline_installer.cpp \
+            database/MemsDocumentaryLocalInstaller.cpp \
+            database/MemsDocumentaryEncryptedPack.cpp \
+            database/MemsDocumentaryPackCatalog.cpp \
+            -o /tmp/documentary_offline_installer_test \
+            $(pkg-config --cflags --libs Qt5Core Qt5Sql Qt5Network)
+          # Le test autonome multi-documents couvre aussi le cas invalide,
+          # sans laisser d'installation précédente dans le profil Qt du runner.
+          # Construire un second dossier en deux documents avec des contenus
+          # AKM7169FRE entièrement synthétiques, sans reproduction du manuel.
+          cp -a output/rave-fr output/rave-fr-multi
+          python3 tools/test_documentary_multisource_fixture.py \
+            --source output/rave-fr-multi
+          cp -a output/rave-fr-multi output/rave-fr-third
+          python3 tools/test_documentary_third_source_fixture.py --source output/rave-fr-third
+          /tmp/documentary_offline_installer_test output/rave-fr-multi --upgrade output/rave-fr-third
+          echo DOCUMENTARY_TWO_TO_THREE_SOURCE_UPDATE_PASS

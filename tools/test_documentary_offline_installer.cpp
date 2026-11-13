@@ -6,6 +6,9 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QStandardPaths>
+#include <QSqlDatabase>
+#include <QSqlQuery>
+#include <QVariant>
 #include <QTemporaryDir>
 #include <cstdio>
 
@@ -71,7 +74,40 @@ int main(int argc,char **argv)
         if(!demand(upgrade.isEmpty() && QFile::exists(installed),
                    "verified package upgrade retains a backup")) return 1;
 
-        if(argc>=3){
+        if(argc>=4 && QString::fromLocal8Bit(argv[2])==QStringLiteral("--upgrade")){
+            const QString thirdSource=QString::fromLocal8Bit(argv[3]);
+            const QString upgraded=MemsDocumentaryLocalInstaller::installDirectory(
+                thirdSource,QStringLiteral("fr"));
+            if(!demand(upgraded.isEmpty() && QFile::exists(installed),
+                       "three-manual snapshot replaces previous version")){
+                std::fprintf(stderr,"UPGRADE_RESULT %s\n",qPrintable(upgraded));
+                return 1;
+            }
+            bool complete=false;
+            {
+                QSqlDatabase db=QSqlDatabase::addDatabase(
+                    QStringLiteral("QSQLITE"),QStringLiteral("THIRD_SOURCE_TEST"));
+                db.setDatabaseName(installed);
+                if(db.open()){
+                    QSqlQuery q(db);
+                    complete=q.exec(QStringLiteral(
+                        "SELECT COUNT(*),"
+                        "SUM(CASE WHEN document_id='RCL0193FRE' THEN 1 ELSE 0 END),"
+                        "SUM(CASE WHEN document_id='AKM7169FRE' THEN 1 ELSE 0 END),"
+                        "SUM(CASE WHEN document_id='SYNTHETIC_THIRD_MANUAL' THEN 1 ELSE 0 END) "
+                        "FROM documentary_documents")) &&
+                        q.next() && q.value(0).toInt()==3 &&
+                        q.value(1).toInt()==1 &&
+                        q.value(2).toInt()==1 &&
+                        q.value(3).toInt()==1;
+                    db.close();
+                }
+            }
+            QSqlDatabase::removeDatabase(QStringLiteral("THIRD_SOURCE_TEST"));
+            if(!demand(complete,"three manuals readable and previous manuals preserved"))
+                return 1;
+            std::puts("DOCUMENTARY_TWO_TO_THREE_DOCUMENT_UPGRADE_PASS");
+        }else if(argc>=3){
             const QString encrypted=QString::fromLocal8Bit(argv[2]);
             const QString badPassword=MemsDocumentaryLocalInstaller::installEncrypted(
                 encrypted,QStringLiteral("fr"),QStringLiteral("WrongPassword"));

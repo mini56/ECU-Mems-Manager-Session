@@ -257,7 +257,7 @@ bool MemsDocumentaryRepository::open()
         return true;
     m_error.clear();
     m_frenchComplete = false;
-    m_nativeFrench = false;
+    m_nativeDocumentary = false;
     const QFileInfo file(databasePath());
     if (!file.isFile()) {
         m_error = QStringLiteral("Base documentaire Rover absente.");
@@ -278,8 +278,7 @@ bool MemsDocumentaryRepository::open()
         return false;
     }
 
-    // Nouvelle SQLite RAVE en français d'origine, distincte du corpus anglais
-    // AKM7169ENG et de ses anciennes traductions. Ne touche à aucune base ECU.
+    // Schéma documentaire multimanuel par langue (sans dépendance aux bases ECU).
     QSqlQuery nativeSchema(m_database);
     if (nativeSchema.exec(QStringLiteral(
             "SELECT name FROM sqlite_master WHERE type='table' "
@@ -289,7 +288,7 @@ bool MemsDocumentaryRepository::open()
             m_database.close();
             return false;
         };
-        const QStringList requiredFr = {
+        const QStringList requiredNative = {
             QStringLiteral("documentary_database"),
             QStringLiteral("documentary_documents"),
             QStringLiteral("documentary_pages"),
@@ -301,31 +300,31 @@ bool MemsDocumentaryRepository::open()
         check.prepare(QStringLiteral(
             "SELECT COUNT(*) FROM sqlite_master WHERE type IN ('table','view') "
             "AND name=?"));
-        for (const QString &name : requiredFr) {
+        for (const QString &name : requiredNative) {
             check.bindValue(0,name);
             if (!check.exec() || !check.next() || check.value(0).toInt()!=1)
                 return rejectNative(QStringLiteral(
-                    "Schéma RAVE français incomplet : %1").arg(name));
+                    "Schéma documentaire natif incomplet : %1").arg(name));
         }
         QSqlQuery meta(m_database);
         if (!meta.exec(QStringLiteral(
               "SELECT schema_version,language,publication_status "
               "FROM documentary_database WHERE singleton=1")) ||
             !meta.next() || meta.value(0).toInt()!=1 ||
-            meta.value(1).toString()!=QStringLiteral("fr") ||
+            meta.value(1).toString()!=MemsDocumentaryPackCatalog::selectedLanguage() ||
             !QStringList{QStringLiteral("source_inventory"),
                          QStringLiteral("validated")}
                 .contains(meta.value(2).toString()) || meta.next())
             return rejectNative(QStringLiteral(
-                "Métadonnées de la base française invalides."));
+                "Métadonnées documentaires invalides."));
         QSqlQuery document(m_database);
         if (!document.exec(QStringLiteral(
               "SELECT COUNT(*),MIN(language),MAX(language) "
               "FROM documentary_documents")) ||
             !document.next() || document.value(0).toInt()<1 ||
-            document.value(1).toString()!=QStringLiteral("fr") ||
-            document.value(2).toString()!=QStringLiteral("fr"))
-            return rejectNative(QStringLiteral("Sources non françaises détectées."));
+            document.value(1).toString()!=MemsDocumentaryPackCatalog::selectedLanguage() ||
+            document.value(2).toString()!=MemsDocumentaryPackCatalog::selectedLanguage())
+            return rejectNative(QStringLiteral("Langues des sources incohérentes."));
         QSqlQuery counts(m_database);
         if (!counts.exec(QStringLiteral(
               "SELECT (SELECT COUNT(*) FROM documentary_entries), "
@@ -335,19 +334,19 @@ bool MemsDocumentaryRepository::open()
             counts.value(0).toInt()!=counts.value(1).toInt() ||
             counts.value(2).toInt()<=0)
             return rejectNative(QStringLiteral(
-                "Index documentaire RAVE français incomplet."));
+                "Index documentaire natif incomplet."));
         QSqlQuery integrity(m_database);
         if (!integrity.exec(QStringLiteral("PRAGMA quick_check")) ||
             !integrity.next() || integrity.value(0).toString()!=QStringLiteral("ok"))
             return rejectNative(QStringLiteral(
-                "Intégrité de la SQLite française non conforme."));
+                "Intégrité SQLite documentaire non conforme."));
         QSqlQuery foreignKeys(m_database);
         if (!foreignKeys.exec(QStringLiteral("PRAGMA foreign_key_check")) ||
             foreignKeys.next())
             return rejectNative(QStringLiteral(
-                "Références incohérentes dans la SQLite française."));
-        m_nativeFrench = true;
-        m_frenchComplete = true;
+                "Références documentaires incohérentes."));
+        m_nativeDocumentary = true;
+        m_frenchComplete = MemsDocumentaryPackCatalog::selectedLanguage()==QStringLiteral("fr");
         return true;
     }
 
@@ -486,10 +485,10 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
     QVariantList result;
     if (!isOpen())
         return result;
-    if (m_nativeFrench) {
+    if (m_nativeDocumentary) {
         const QString requested = language.left(2).toLower();
-        if (!requested.isEmpty() && requested != QStringLiteral("fr"))
-            return result; // langue différente : jamais de remplacement silencieux
+        if (!requested.isEmpty() && requested != MemsDocumentaryPackCatalog::selectedLanguage())
+            return result; // Pas de substitution silencieuse entre langues.
         maximum = qBound(1,maximum,100);
         QString statement;
         const QRegularExpression pageRx(

@@ -13,6 +13,7 @@
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QSqlError>
+#include <QSet>
 #include <QStandardPaths>
 #include <QUuid>
 #include <QTemporaryDir>
@@ -22,8 +23,11 @@ namespace {
 QString normalizedLanguage(const QString &language)
 {
     const QString code=language.left(2).toLower();
-    return code==QStringLiteral("fr") || code==QStringLiteral("en")
-        ? code : QString();
+    static const QStringList supported={
+        QStringLiteral("fr"),QStringLiteral("en"),QStringLiteral("pt"),
+        QStringLiteral("es"),QStringLiteral("it"),QStringLiteral("de")
+    };
+    return supported.contains(code) ? code : QString();
 }
 
 QByteArray fileHash(const QString &path)
@@ -54,134 +58,132 @@ bool metadataValid(const QString &path,const QString &language,QString *reason,
         if(!database.open()){
             *reason=QStringLiteral("SQLite documentaire illisible.");
         }else{
-            QSqlQuery integrity(database);
-            if(!integrity.exec(QStringLiteral("PRAGMA integrity_check")) ||
-               !integrity.next() || integrity.value(0).toString()!=QStringLiteral("ok")){
-                *reason=QStringLiteral("Contrôle d'intégrité SQLite échoué.");
-            }else{
-                QSqlQuery foreignKeys(database);
-                if(!foreignKeys.exec(QStringLiteral("PRAGMA foreign_key_check")) ||
-                   foreignKeys.next()){
-                    *reason=QStringLiteral("Relations SQLite invalides.");
-                }else if(language==QStringLiteral("fr")){
-                    QSqlQuery meta(database);
-                    if(!meta.exec(QStringLiteral(
-                        "SELECT language,publication_status FROM documentary_database "
-                        "WHERE singleton=1")) || !meta.next() ||
-                       meta.value(0).toString()!=QStringLiteral("fr") ||
-                       !QStringList{QStringLiteral("source_inventory"),
-                                    QStringLiteral("validated")}
-                           .contains(meta.value(1).toString())){
-                        *reason=QStringLiteral("Base documentaire non française.");
-                    }else{
-                        QSqlQuery docs(database);
-                        if(!docs.exec(QStringLiteral(
-                           "SELECT document_id,source_pages,source_sha256 FROM "
-                           "documentary_documents"))){
-                            *reason=QStringLiteral("Provenance documentaire absente.");
-                        }else{
-                            bool valid=true,hasRcl=false;
-                            int docCount=0;
-                            while(docs.next()){
-                                ++docCount;
-                                const QString id=docs.value(0).toString();
-                                const int pages=docs.value(1).toInt();
-                                const QString sha=docs.value(2).toString();
-                                if(id==QStringLiteral("RCL0193FRE")){
-                                    hasRcl=pages==371 &&
-                                       sha==QStringLiteral(
-                                       "0c7fef28d0d0f0673ba321d6625a019c005823103caa98afb3258114e1fec713");
-                                    valid &= hasRcl;
-                                }else if(id==QStringLiteral("AKM7169FRE")){
-                                    valid &= pages==20 &&
-                                       sha==QStringLiteral(
-                                       "37cd0434347fe4009963d075e4b91b0b21ebc905bae5657519a8080c3026d4f5");
-                                }else valid=false; // another edition needs a separate audit
-                            }
-                            QSqlQuery counts(database);
-                            valid &= docs.lastError().type()==QSqlError::NoError &&
-                                docCount>0 && hasRcl &&
-                                counts.exec(QStringLiteral(
-                                    "SELECT (SELECT COUNT(*) FROM documentary_pages),"
-                                    "(SELECT COUNT(*) FROM documentary_entries),"
-                                    "(SELECT COUNT(*) FROM documentary_fts),"
-                                    "(SELECT COUNT(*) FROM documentary_images)")) &&
-                                counts.next();
-                            if(valid){
-                                valid &= counts.value(0).toInt()==371+
-                                    (docCount==2?20:0) &&
-                                    counts.value(1).toInt()>=5958 &&
-                                    counts.value(1)==counts.value(2) &&
-                                    counts.value(3).toInt()==325+
-                                    (docCount==2?20:0);
-                            }
-                            // Un corpus français ne doit pas être installé si
-                            // une entrée est encore en cours de relecture.
-                            QSqlQuery review(database);
-                            valid &= review.exec(QStringLiteral(
-                                "SELECT COUNT(*) FROM documentary_entries "
-                                "WHERE verification_status<>'source_checked'")) &&
-                                review.next() && review.value(0).toInt()==0;
-                            QSqlQuery visual(database);
-                            valid &= visual.exec(QStringLiteral(
-                                "SELECT COUNT(*) FROM documentary_page_visual_status "
-                                "WHERE document_id='RCL0193FRE' AND is_blank=0")) &&
-                                visual.next() && visual.value(0).toInt()==325;
-                            QSqlQuery imagesQuery(database);
-                            valid &= imagesQuery.exec(QStringLiteral(
-                                "SELECT relative_path,asset_sha256,asset_bytes "
-                                "FROM documentary_images"));
-                            int count=0;
-                            const QRegularExpression imageName(QStringLiteral(
-                                "^images/(?:RCL0193FRE|AKM7169FRE)_PDF_[0-9]{3}\\.png$"));
-                            while(valid && imagesQuery.next()){
-                                const QString relative=imagesQuery.value(0).toString();
-                                const QString expected=imagesQuery.value(1).toString();
-                                const qint64 size=imagesQuery.value(2).toLongLong();
-                                const QString image=QDir(QFileInfo(path).absolutePath())
-                                    .filePath(relative);
-                                const QFileInfo info(image);
-                                if(!imageName.match(relative).hasMatch() ||
-                                   !info.isFile() || info.isSymLink() ||
-                                   size<=0 || size>5*1024*1024 || info.size()!=size ||
-                                   QString::fromLatin1(fileHash(image))!=expected){
-                                    valid=false;
-                                    break;
-                                }
-                                images->append(relative);
-                                ++count;
-                            }
-                            valid &= count==325+(docCount==2?20:0);
-                            ok=valid;
-                            if(!valid) *reason=QStringLiteral(
-                                "Base française non intégralement relue, ou provenance, pages ou images incohérentes.");
-                        }
-                    }
-                }else{
-                    QSqlQuery docs(database);
-                    ok=docs.exec(QStringLiteral(
-                         "SELECT total_pages,original_pdf_sha256 FROM source_documents")) &&
-                       docs.next() && docs.value(0).toInt()==482 &&
-                       docs.value(1).toString()==QStringLiteral(
-                         "c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0")
-                       && !docs.next();
-                    QSqlQuery counts(database);
-                    ok &= counts.exec(QStringLiteral(
-                        "SELECT (SELECT COUNT(*) FROM source_page_discovery),"
-                        "(SELECT COUNT(*) FROM procedures),"
-                        "(SELECT COUNT(*) FROM procedure_steps),"
-                        "(SELECT COUNT(*) FROM technical_values),"
-                        "(SELECT COUNT(*) FROM illustrations)")) && counts.next();
-                    if(ok)
-                        ok=counts.value(0).toInt()==482 &&
-                           counts.value(1).toInt()==336 &&
-                           counts.value(2).toInt()==5055 &&
-                           counts.value(3).toInt()==630 &&
-                           counts.value(4).toInt()==316;
-                    if(!ok) *reason=QStringLiteral(
-                        "Base anglaise ou références constructeur incohérentes.");
+            QSqlQuery integrity(database),foreignKeys(database);
+            bool valid=integrity.exec(QStringLiteral("PRAGMA integrity_check")) &&
+                integrity.next() && integrity.value(0).toString()==QStringLiteral("ok") &&
+                foreignKeys.exec(QStringLiteral("PRAGMA foreign_key_check")) &&
+                !foreignKeys.next() && foreignKeys.lastError().type()==QSqlError::NoError;
+            QSqlQuery nativeQuery(database);
+            const bool native=nativeQuery.exec(QStringLiteral(
+                "SELECT 1 FROM sqlite_master WHERE type='table' "
+                "AND name='documentary_database'")) && nativeQuery.next();
+            const QRegularExpression shaShape(QStringLiteral("^[0-9a-f]{64}$"));
+            if(valid && native){
+                QSqlQuery meta(database);
+                valid &= meta.exec(QStringLiteral(
+                    "SELECT schema_version,language,publication_status "
+                    "FROM documentary_database WHERE singleton=1")) &&
+                    meta.next() && meta.value(0).toInt()==1 &&
+                    meta.value(1).toString()==language &&
+                    QStringList{QStringLiteral("source_inventory"),
+                                QStringLiteral("validated")}
+                        .contains(meta.value(2).toString()) && !meta.next();
+                QSqlQuery documents(database);
+                valid &= documents.exec(QStringLiteral(
+                    "SELECT d.document_id,d.source_revision,d.language,"
+                    "d.source_pages,d.source_sha256,COUNT(p.physical_page),"
+                    "MIN(p.physical_page),MAX(p.physical_page) "
+                    "FROM documentary_documents d LEFT JOIN documentary_pages p "
+                    "ON p.document_id=d.document_id AND p.source_revision=d.source_revision "
+                    "GROUP BY d.document_id,d.source_revision,d.language,"
+                    "d.source_pages,d.source_sha256"));
+                int docCount=0;
+                qint64 totalPages=0;
+                while(valid && documents.next()){
+                    const int pages=documents.value(3).toInt();
+                    valid &= !documents.value(0).toString().isEmpty() &&
+                        !documents.value(1).toString().isEmpty() &&
+                        documents.value(2).toString()==language &&
+                        pages>0 && pages<=50000 &&
+                        shaShape.match(documents.value(4).toString()).hasMatch() &&
+                        documents.value(5).toInt()==pages &&
+                        documents.value(6).toInt()==1 &&
+                        documents.value(7).toInt()==pages;
+                    totalPages+=pages;
+                    ++docCount;
                 }
+                valid &= docCount>0 && documents.lastError().type()==QSqlError::NoError;
+                QSqlQuery counts(database);
+                valid &= counts.exec(QStringLiteral(
+                    "SELECT (SELECT COUNT(*) FROM documentary_pages),"
+                    "(SELECT COUNT(*) FROM documentary_entries),"
+                    "(SELECT COUNT(*) FROM documentary_fts),"
+                    "(SELECT COUNT(*) FROM documentary_images)")) && counts.next();
+                if(valid)
+                    valid &= counts.value(0).toLongLong()==totalPages &&
+                        counts.value(1).toInt()>0 &&
+                        counts.value(1).toInt()==counts.value(2).toInt();
+                QSqlQuery unchecked(database),unknownPages(database);
+                valid &= unchecked.exec(QStringLiteral(
+                    "SELECT COUNT(*) FROM documentary_entries "
+                    "WHERE verification_status<>'source_checked'")) &&
+                    unchecked.next() && unchecked.value(0).toInt()==0;
+                valid &= unknownPages.exec(QStringLiteral(
+                    "SELECT COUNT(*) FROM documentary_entries e "
+                    "WHERE e.source_page IS NOT NULL AND NOT EXISTS "
+                    "(SELECT 1 FROM documentary_pages p "
+                    "WHERE p.document_id=e.document_id AND "
+                    "p.source_revision=e.source_revision AND "
+                    "p.physical_page=e.source_page)")) &&
+                    unknownPages.next() && unknownPages.value(0).toInt()==0;
+                QSqlQuery imagesQuery(database);
+                valid &= imagesQuery.exec(QStringLiteral(
+                    "SELECT relative_path,asset_sha256,asset_bytes "
+                    "FROM documentary_images"));
+                const QRegularExpression imageName(QStringLiteral(
+                    "^images/[A-Za-z0-9._/-]+\\.(png|jpg|jpeg|webp|svg)$"),
+                    QRegularExpression::CaseInsensitiveOption);
+                QSet<QString> known;
+                while(valid && imagesQuery.next()){
+                    const QString relative=imagesQuery.value(0).toString();
+                    const QString expected=imagesQuery.value(1).toString();
+                    const qint64 size=imagesQuery.value(2).toLongLong();
+                    const QFileInfo info(QDir(QFileInfo(path).absolutePath())
+                                         .filePath(relative));
+                    valid &= imageName.match(relative).hasMatch() &&
+                        !relative.split(QLatin1Char('/')).contains(QStringLiteral("..")) &&
+                        QDir::cleanPath(relative)==relative &&
+                        !known.contains(relative) &&
+                        shaShape.match(expected).hasMatch() &&
+                        info.isFile() && !info.isSymLink() &&
+                        size>0 && size<=15*1024*1024 && info.size()==size &&
+                        QString::fromLatin1(fileHash(info.absoluteFilePath()))==expected;
+                    if(valid){
+                        known.insert(relative);
+                        images->append(relative);
+                    }
+                }
+                valid &= imagesQuery.lastError().type()==QSqlError::NoError &&
+                    counts.value(3).toInt()==known.size();
+                ok=valid;
+            }else if(valid && language==QStringLiteral("en") && !native){
+                // The original English schema remains supported for its first pack.
+                // Future English multi-source snapshots use documentary_database.
+                QSqlQuery docs(database),counts(database);
+                valid &= docs.exec(QStringLiteral(
+                    "SELECT total_pages,original_pdf_sha256 FROM source_documents")) &&
+                    docs.next() && docs.value(0).toInt()==482 &&
+                    docs.value(1).toString()==QStringLiteral(
+                      "c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0")
+                    && !docs.next();
+                valid &= counts.exec(QStringLiteral(
+                    "SELECT (SELECT COUNT(*) FROM source_page_discovery),"
+                    "(SELECT COUNT(*) FROM procedures),"
+                    "(SELECT COUNT(*) FROM procedure_steps),"
+                    "(SELECT COUNT(*) FROM technical_values),"
+                    "(SELECT COUNT(*) FROM illustrations)")) && counts.next();
+                if(valid)
+                    valid &= counts.value(0).toInt()==482 &&
+                        counts.value(1).toInt()==336 &&
+                        counts.value(2).toInt()==5055 &&
+                        counts.value(3).toInt()==630 &&
+                        counts.value(4).toInt()==316;
+                ok=valid;
             }
+            if(!ok)
+                *reason=QStringLiteral(
+                    "Base refusée : langue, provenance, pages, index, "
+                    "intégrité ou illustrations non conformes.");
             database.close();
         }
     }
@@ -286,7 +288,7 @@ QString MemsDocumentaryLocalInstaller::installZip(
     const QFileInfo archive(archivePath);
     if(!archive.isFile() || archive.isSymLink() ||
        archive.suffix().toLower()!=QStringLiteral("zip") ||
-       archive.size()>160LL*1024*1024 || archive.size()<1024)
+       archive.size()>256LL*1024*1024 || archive.size()<1024)
         return QStringLiteral("Archive ZIP documentaire invalide.");
     const QString code=normalizedLanguage(language);
     if(code.isEmpty())
