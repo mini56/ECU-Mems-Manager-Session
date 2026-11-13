@@ -14,7 +14,7 @@
 int main(int argc,char **argv)
 {
     QCoreApplication app(argc,argv);
-    std::printf("QT_VERSION=%s\nSSL_SUPPORTED=%s\nSSL_LIBRARY=%s\nSSL_BUILD=%s\n",
+    std::fprintf(stderr,"QT_VERSION=%s\nSSL_SUPPORTED=%s\nSSL_LIBRARY=%s\nSSL_BUILD=%s\n",
         QT_VERSION_STR,QSslSocket::supportsSsl()?"yes":"no",
         qPrintable(QSslSocket::sslLibraryVersionString()),
         qPrintable(QSslSocket::sslLibraryBuildVersionString()));
@@ -46,10 +46,11 @@ int main(int argc,char **argv)
     }
     const QByteArray body=reply->readAll();
     const int status=reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-    std::printf("NETWORK_ERROR=%d\nNETWORK_ERROR_TEXT=%s\nSTATUS=%d\nFINAL_URL=%s\nBYTES=%lld\n",
+    std::fprintf(stderr,"NETWORK_ERROR=%d\nNETWORK_ERROR_TEXT=%s\nSTATUS=%d\nFINAL_URL=%s\nBYTES=%lld\n",
         int(reply->error()),qPrintable(reply->errorString()),status,
         qPrintable(reply->url().toString()),static_cast<long long>(body.size()));
     QJsonParseError jsonError;
+    std::fprintf(stderr,"BODY_PREFIX=%s\\n",body.left(240).toHex().constData());
     const QJsonDocument manifest=QJsonDocument::fromJson(body,&jsonError);
     if(jsonError.error!=QJsonParseError::NoError||!manifest.isObject()){
         std::fprintf(stderr,"INVALID_JSON=%s\n",qPrintable(jsonError.errorString()));
@@ -58,7 +59,7 @@ int main(int argc,char **argv)
     const QJsonObject bases=manifest.object().value(QStringLiteral("documentary_bases")).toObject();
     const bool fr=bases.value(QStringLiteral("fr")).toObject().value(QStringLiteral("available")).toBool();
     const bool en=bases.value(QStringLiteral("en")).toObject().value(QStringLiteral("available")).toBool();
-    std::printf("BASE_FR_AVAILABLE=%d\nBASE_EN_AVAILABLE=%d\n",int(fr),int(en));
+    std::fprintf(stderr,"BASE_FR_AVAILABLE=%d\nBASE_EN_AVAILABLE=%d\n",int(fr),int(en));
     if(reply->error()!=QNetworkReply::NoError||status!=200||!fr||!en)
         return 4;
     return 0;
