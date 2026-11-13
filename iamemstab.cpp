@@ -7,10 +7,12 @@
 #include "expert/IaMemsService.h"
 #include "expert/IaMemsDocumentaryPipeline.h"
 #include "database/MemsDocumentaryRepository.h"
+#include "database/MemsDocumentaryImageViewer.h"
 #include "database/MemsReferenceDatabase.h"
 #include "database/MemsReferenceSheetRenderer.h"
 
 #include <QDateTime>
+#include <QDir>
 #include <QDialog>
 #include <QFile>
 #include <QDialogButtonBox>
@@ -140,6 +142,21 @@ IaMemsTab::IaMemsTab(MainWindow *mainWindow, QWidget *parent)
     m_transcript = new QTextBrowser(transcriptPane);
     m_transcript->setObjectName(QStringLiteral("iaMemsTranscript"));
     m_transcript->setOpenExternalLinks(false);
+    m_transcript->setOpenLinks(false);
+    connect(m_transcript,&QTextBrowser::anchorClicked,this,[this](const QUrl &url){
+        if(!url.isLocalFile()) return;
+        const QString selected=QFileInfo(url.toLocalFile()).canonicalFilePath();
+        if(selected.isEmpty() || !m_offeredDocumentaryImagePaths.contains(selected))
+            return;
+        const QString documentaryRoot=QFileInfo(
+            MemsDocumentaryRepository::databasePath()).absolutePath();
+        const QString imageRoot=QFileInfo(QDir(documentaryRoot).filePath(
+            QStringLiteral("images"))).canonicalFilePath();
+        if(imageRoot.isEmpty() ||
+           !selected.startsWith(imageRoot+QLatin1Char('/'),Qt::CaseInsensitive))
+            return;
+        MemsDocumentaryImageViewer::show(this,selected);
+    });
     m_transcript->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     m_transcript->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_transcript->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -629,6 +646,34 @@ void IaMemsTab::sendQuestion()
 void IaMemsTab::onServiceResponse(const QString &text)
 {
     appendMessage(QStringLiteral("IA MEMS"), text);
+    // Images du même pack documentaire que la réponse, jamais des images
+    // devinées par le modèle. Prévisualisation et ouverture avec zoom.
+    if(m_service && m_transcript){
+        const QString offered=m_service->property(
+            "iaMemsLastDocumentaryImagePath").toString();
+        m_service->setProperty("iaMemsLastDocumentaryImagePath",QVariant());
+        const QFileInfo file(offered);
+        const QString canonical=file.canonicalFilePath();
+        const QString imageRoot=QFileInfo(QDir(QFileInfo(
+            MemsDocumentaryRepository::databasePath()).absolutePath())
+            .filePath(QStringLiteral("images"))).canonicalFilePath();
+        if(!canonical.isEmpty() && !imageRoot.isEmpty() &&
+           file.isFile() && !file.isSymLink() &&
+           canonical.startsWith(imageRoot+QLatin1Char('/'),Qt::CaseInsensitive) &&
+           QRegularExpression(QStringLiteral(
+               "^[A-Z0-9_-]{1,60}_PDF_[0-9]{3}\\.png$"),
+               QRegularExpression::CaseInsensitiveOption)
+               .match(file.fileName()).hasMatch()){
+            m_offeredDocumentaryImagePaths.insert(canonical);
+            const QString imageUrl=QUrl::fromLocalFile(canonical)
+                .toString(QUrl::FullyEncoded).toHtmlEscaped();
+            m_transcript->append(QStringLiteral(
+                "<p><b>Page constructeur associée</b> — "
+                "<a href='%1'>ouvrir en grand format (zoom)</a></p>"
+                "<p><a href='%1'><img src='%1' width='520'></a></p>")
+                .arg(imageUrl));
+        }
+    }
 
     if (m_service && m_diagramButton) {
         const QString evidenceQuestion =
