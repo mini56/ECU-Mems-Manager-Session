@@ -199,7 +199,22 @@ void MemsDocumentaryUpdateDialog::checkManifest()
                     "ECU diagnostic and expert databases remain unchanged.").arg(
                         languageName(m_language))));
             } else {
-                setStatus(ui(QStringLiteral(
+                QSettings versionSettings(QSettings::IniFormat,
+                    QSettings::UserScope,QStringLiteral("ECU_Mems_Manager"));
+                const QString savedVersion=versionSettings.value(
+                    QStringLiteral("DocumentaryVersions/%1").arg(m_language))
+                    .toString();
+                if(savedVersion==m_offer.version &&
+                   QFileInfo::exists(MemsDocumentaryPackCatalog::installedDatabasePath(
+                        m_language))){
+                    m_offer.available=false;
+                    setStatus(ui(QStringLiteral(
+                        "Base documentaire %1 à jour (version %2).")
+                            .arg(languageName(m_language),savedVersion),
+                        QStringLiteral(
+                        "Documentary database %1 is up to date (version %2).")
+                            .arg(languageName(m_language),savedVersion)));
+                }else setStatus(ui(QStringLiteral(
                     "Pack chiffré version %1 disponible. "
                     "Le bouton Téléchargement installera la base après "
                     "vérification SHA-256 et saisie du mot de passe.")
