@@ -17,6 +17,7 @@ Key: PBKDF2-HMAC-SHA256(password UTF-8, salt, 210000 iterations, 32 bytes).
 from __future__ import annotations
 
 import argparse
+from contextlib import closing
 import hashlib
 import json
 import os
@@ -62,7 +63,9 @@ def inspect_zip(path: Path, language: str) -> dict:
         with tempfile.TemporaryDirectory() as folder:
             source_db = Path(folder) / exact
             source_db.write_bytes(zip_.read(exact))
-            with sqlite3.connect(f"file:{source_db}?mode=ro", uri=True) as db:
+            # sqlite3.Connection.__exit__ alone does NOT close the handle:
+            # Windows refuses to delete the temporary SQLite otherwise.
+            with closing(sqlite3.connect(f"file:{source_db}?mode=ro", uri=True)) as db:
                 require(db.execute("PRAGMA integrity_check").fetchone()[0] == "ok",
                         "SQLITE_INTEGRITY_ERROR")
                 require(not db.execute("PRAGMA foreign_key_check").fetchall(),
