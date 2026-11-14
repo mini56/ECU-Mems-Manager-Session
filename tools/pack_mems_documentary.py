@@ -60,7 +60,7 @@ def inspect_zip(path: Path, language: str) -> dict:
                 "ZIP_PATH_COLLISION_OR_TOO_MANY_FILES")
         require(exact in names and names.count(exact)==1,
                 "ZIP_SQLITE_LANGUAGE_MISMATCH")
-        require(not any(name.startswith("/") or "\\\\" in name or
+        require(not any(name.startswith("/") or "\\" in name or
                         any(part in ("", ".", "..") for part in name.split("/"))
                         for name in names), "ZIP_PATH_TRAVERSAL")
         require(not any((entry.external_attr >> 16) & 0o170000==0o120000
@@ -80,7 +80,7 @@ def inspect_zip(path: Path, language: str) -> dict:
                 for relative,digest,size in images:
                     require(isinstance(relative,str) and
                             re.fullmatch(
-                                r"images/[A-Za-z0-9_.-]+\\.(png|jpg|jpeg|webp)",
+                                r"images/[A-Za-z0-9_.-]+\.(png|jpg|jpeg|webp)",
                                 relative,re.IGNORECASE) is not None and
                             relative not in found and relative in names and
                             isinstance(size,int) and 0<size<=15*1024*1024,
