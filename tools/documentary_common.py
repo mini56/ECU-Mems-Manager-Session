@@ -11,6 +11,35 @@ LANGUAGES = frozenset(("fr", "en", "es", "pt", "it", "de"))
 SCHEMA_VERSION = 1
 MAX_SOURCE_PAGES = 50000
 
+OPERATION_SCHEMA = """
+CREATE TABLE IF NOT EXISTS documentary_operations(
+ document_id TEXT NOT NULL, source_revision TEXT NOT NULL,
+ operation_id TEXT NOT NULL, source_entry_id TEXT NOT NULL,
+ title TEXT NOT NULL, opening_page INTEGER,
+ verification_status TEXT NOT NULL,
+ PRIMARY KEY(document_id,source_revision,operation_id),
+ UNIQUE(document_id,source_revision,source_entry_id),
+ FOREIGN KEY(document_id,source_revision)
+ REFERENCES documentary_documents(document_id,source_revision),
+ FOREIGN KEY(document_id,source_revision,source_entry_id)
+ REFERENCES documentary_entries(document_id,source_revision,entry_id)
+);
+CREATE TABLE IF NOT EXISTS documentary_operation_steps(
+ document_id TEXT NOT NULL, source_revision TEXT NOT NULL,
+ operation_id TEXT NOT NULL, source_entry_id TEXT NOT NULL,
+ step_number INTEGER NOT NULL, phase TEXT NOT NULL,
+ source_page INTEGER, source_text TEXT NOT NULL,
+ verification_status TEXT NOT NULL,
+ PRIMARY KEY(document_id,source_revision,source_entry_id),
+ FOREIGN KEY(document_id,source_revision,operation_id)
+ REFERENCES documentary_operations(document_id,source_revision,operation_id),
+ FOREIGN KEY(document_id,source_revision,source_entry_id)
+ REFERENCES documentary_entries(document_id,source_revision,entry_id)
+);
+CREATE INDEX IF NOT EXISTS idx_doc_operation_steps_order
+ ON documentary_operation_steps(document_id,source_revision,operation_id,phase,step_number);
+"""
+
 def schema(language: str) -> str:
     if language not in LANGUAGES:
         raise ValueError("DOCUMENTARY_LANGUAGE_NOT_SUPPORTED")
@@ -99,7 +128,7 @@ CREATE TRIGGER documentary_fts_insert AFTER INSERT ON documentary_entries BEGIN
  INSERT INTO documentary_fts(rowid,title,source_text)
  VALUES(new.rowid,new.title,new.source_text);
 END;
-""".replace("LANGCODE", language)
+""".replace("LANGCODE", language) + OPERATION_SCHEMA
 
 
 def validate_source_snapshot(db, language: str) -> dict:
@@ -169,6 +198,22 @@ def validate_source_snapshot(db, language: str) -> dict:
             """).fetchone()[0]
         if altered:
             raise ValueError("DOCUMENTARY_IMPORT_HISTORY_SOURCE_MISMATCH")
+    operation_tables={
+        row[0] for row in db.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name IN "
+            "('documentary_operations','documentary_operation_steps')")}
+    if bool(operation_tables) and len(operation_tables)!=2:
+        raise ValueError("DOCUMENTARY_OPERATION_SCHEMA_INCOMPLETE")
+    if len(operation_tables)==2:
+        dangling=db.execute("""
+            SELECT COUNT(*) FROM documentary_operation_steps s
+            WHERE NOT EXISTS(
+               SELECT 1 FROM documentary_operations p
+               WHERE p.document_id=s.document_id
+                 AND p.source_revision=s.source_revision
+                 AND p.operation_id=s.operation_id)""").fetchone()[0]
+        if dangling:
+            raise ValueError("DOCUMENTARY_UNLINKED_OPERATION_STEP")
     if db.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
         raise ValueError("DOCUMENTARY_SQLITE_INTEGRITY_FAILED")
     if db.execute("PRAGMA foreign_key_check").fetchall():
@@ -290,4 +335,81 @@ def documentary_import_report(db,language: str) -> dict:
           "indexed_entries_at_import","procedures_at_import",
           "steps_at_import","images_at_import"),record))
           for record in document_rows],
+    }
+
+
+def ensure_structured_operations(db) -> dict:
+    """Normalize existing reviewed/unreviewed procedure links, without new OCR.
+
+    Once imported, all languages expose one operation_id -> steps relation.
+    Transitional source adapters only recognize historic procedure_key and
+    procedure_id. Future annotation files use procedure_id exclusively.
+    Missing/unlinked steps remain visible in the report, never invented.
+    """
+    import json
+    db.executescript(OPERATION_SCHEMA)
+    inserted_operations=0
+    linked_steps=0
+    missing_keys=0
+    orphan_steps=0
+    procedures=db.execute("""
+        SELECT document_id,source_revision,entry_id,title,source_page,
+               verification_status,raw_json
+        FROM documentary_entries WHERE entry_type='procedure'
+        ORDER BY document_id,source_revision,entry_id""").fetchall()
+    for doc,revision,entry,title,page,status,raw in procedures:
+        source=json.loads(raw or "{}")
+        key=str(source.get("procedure_id") or source.get("procedure_key") or "").strip()
+        if not key:
+            missing_keys+=1
+            continue
+        before=db.total_changes
+        db.execute("""
+            INSERT OR IGNORE INTO documentary_operations(
+              document_id,source_revision,operation_id,source_entry_id,
+              title,opening_page,verification_status)
+            VALUES(?,?,?,?,?,?,?)""",
+            (doc,revision,key,entry,title,page,status))
+        inserted_operations+=db.total_changes-before
+    steps=db.execute("""
+        SELECT document_id,source_revision,entry_id,source_page,
+               verification_status,raw_json,source_text
+        FROM documentary_entries WHERE entry_type='step'
+        ORDER BY document_id,source_revision,entry_id""").fetchall()
+    for doc,revision,entry,page,status,raw,text in steps:
+        source=json.loads(raw or "{}")
+        key=str(source.get("procedure_id") or source.get("procedure_key") or "").strip()
+        if not key or db.execute("""
+            SELECT 1 FROM documentary_operations
+            WHERE document_id=? AND source_revision=? AND operation_id=?""",
+            (doc,revision,key)).fetchone() is None:
+            orphan_steps+=1
+            continue
+        order=source.get("step_number",source.get("step_no",0))
+        try:
+            order=int(order)
+        except (TypeError,ValueError):
+            order=0
+        if order<0:
+            order=0
+        original_text=next((str(source[k]).strip() for k in
+            ("instruction_source","instruction_text","step_text","action_text",
+             "instruction","source_text","statement")
+            if k in source and source[k] is not None and str(source[k]).strip()),text)
+        phase=str(source.get("phase") or "").strip()
+        before=db.total_changes
+        db.execute("""
+            INSERT OR IGNORE INTO documentary_operation_steps(
+             document_id,source_revision,operation_id,source_entry_id,
+             step_number,phase,source_page,source_text,verification_status)
+            VALUES(?,?,?,?,?,?,?,?,?)""",
+            (doc,revision,key,entry,order,phase,page,original_text,status))
+        linked_steps+=db.total_changes-before
+    return {
+        "new_operations":inserted_operations,
+        "new_linked_steps":linked_steps,
+        "procedures_without_keys":missing_keys,
+        "unlinked_steps":orphan_steps,
+        "total_operations":db.execute("SELECT COUNT(*) FROM documentary_operations").fetchone()[0],
+        "total_linked_steps":db.execute("SELECT COUNT(*) FROM documentary_operation_steps").fetchone()[0],
     }
