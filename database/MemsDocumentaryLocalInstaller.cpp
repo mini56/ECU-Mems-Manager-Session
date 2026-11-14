@@ -114,9 +114,18 @@ bool metadataValid(const QString &path,const QString &language,QString *reason,
                         counts.value(1).toInt()>0 &&
                         counts.value(1).toInt()==counts.value(2).toInt();
                 QSqlQuery unchecked(database),unknownPages(database);
+                // A complete manufacturer *inventory* can contain
+                // review_required transcriptions, but such transcriptions
+                // must NEVER be presented as a validated publication.
+                // The source evidence remains searchable in Base de donnees;
+                // IA MEMS withholds unreviewed repair instructions.
                 valid &= unchecked.exec(QStringLiteral(
                     "SELECT COUNT(*) FROM documentary_entries "
-                    "WHERE verification_status<>'source_checked'")) &&
+                    "WHERE verification_status NOT IN "
+                    "('source_checked','technical_reviewed','review_required') "
+                    "OR (verification_status='review_required' AND EXISTS "
+                    "(SELECT 1 FROM documentary_database "
+                    "WHERE publication_status='validated'))")) &&
                     unchecked.next() && unchecked.value(0).toInt()==0;
                 valid &= unknownPages.exec(QStringLiteral(
                     "SELECT COUNT(*) FROM documentary_entries e "
