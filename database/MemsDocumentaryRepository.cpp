@@ -652,13 +652,18 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
             const QString status = query.value(5).toString();
             const QString type = query.value(6).toString();
             const QString table = query.value(7).toString();
-            const QString content = QStringLiteral(
-                "document : %1\nlangue : français\npage physique : %2\n"
-                "type : %3\nstatut de vérification : %4\n\n%5")
-                .arg(doc,page,type,status,sourceText.left(10000));
+            const QString selectedLanguage=MemsDocumentaryPackCatalog::selectedLanguage();
+            const QString localeName=selectedLanguage==QStringLiteral("fr")
+                ? QStringLiteral("français") : QStringLiteral("anglais");
+            const QString content=QStringLiteral(
+                "document : %1\nlangue : %2\npage physique : %3\n"
+                "type : %4\nstatut de vérification : %5\n\n%6")
+                .arg(doc).arg(localeName).arg(page).arg(type)
+                .arg(status).arg(sourceText.left(10000));
             QVariantMap hit=makeRow(
-                QStringLiteral("rave-fr:%1:%2").arg(doc,id),
-                title,content,QStringLiteral("rover_fr_") + table,status);
+                QStringLiteral("rave-%1:%2:%3").arg(selectedLanguage,doc,id),
+                title,content,
+                QStringLiteral("rover_%1_%2").arg(selectedLanguage,table),status);
             hit.insert(QStringLiteral("document_id"),doc);
             hit.insert(QStringLiteral("entry_id"),id);
             hit.insert(QStringLiteral("source_page"),
@@ -1139,7 +1144,7 @@ QString MemsDocumentaryRepository::imagePathForHit(const QVariantMap &hit)
 {
     const QString key=hit.value(QStringLiteral("source_key")).toString();
     static const QRegularExpression source(
-        QStringLiteral("^rave-fr:([A-Z0-9_-]{1,60}):"),
+        QStringLiteral("^rave-(?:fr|en):([A-Z0-9_-]{1,60}):"),
         QRegularExpression::CaseInsensitiveOption);
     const auto match=source.match(key);
     if(!match.hasMatch())
@@ -1326,7 +1331,7 @@ QString MemsDocumentaryRepository::procedureAnswer(
         QString line=QStringLiteral("%1. %2")
             .arg(step.order>0 ? step.order : i+1).arg(step.text);
         if(step.page>0)
-            line+=QStringLiteral(" (RCL0193FRE, p. %1)").arg(step.page);
+            line+=QStringLiteral(" (%1, p. %2)").arg(document).arg(step.page);
         if(!step.checked)
             line+=QStringLiteral(" [transcription à vérifier]");
         answer << line;
@@ -1348,10 +1353,11 @@ QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
     if (hits.isEmpty())
         return QString();
     QStringList paragraphs;
-    const bool originalFrench = hits.first().toMap()
-        .value(QStringLiteral("source_key")).toString()
-        .startsWith(QStringLiteral("rave-fr:"));
-    if (originalFrench) {
+    const QString nativeKey=hits.first().toMap()
+        .value(QStringLiteral("source_key")).toString();
+    const bool nativeDocument=nativeKey.startsWith(QStringLiteral("rave-fr:"))
+        || nativeKey.startsWith(QStringLiteral("rave-en:"));
+    if (nativeDocument) {
         QStringList sections;
         QSet<QString> seen;
         const int maximum=qMin(3,hits.size());
@@ -1367,11 +1373,14 @@ QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
             const int page=item.value(QStringLiteral("source_page")).toInt();
             const QString title=item.value(QStringLiteral("title")).toString().simplified();
             QString body=workshopText(item);
-            if(sourceTable==QStringLiteral("rover_fr_akm7169fre_page_ocr")){
-                // Le scan n'est pas une procédure vérifiée. Proposer sa page,
-                // mais jamais reproduire ses instructions non relues.
+            if(item.value(QStringLiteral("source_status")).toString()
+                  ==QStringLiteral("review_required") ||
+               sourceTable.endsWith(QStringLiteral("_page_ocr"))){
+                // L'index est consultable dans Base de données. L'IA ne publie
+                // aucune consigne extraite mais non relue, quelle que soit la langue.
                 body=QStringLiteral(
-                    "OCR de repérage non validé : consulter l'image du constructeur. Aucune instruction non relue n'est transmise à l'IA.");
+                    "Source documentaire retrouvée, transcription technique non validée : "
+                    "consulter la page constructeur avant toute intervention.");
             }
             if(!informativeWorkshopText(body))
                 continue;
