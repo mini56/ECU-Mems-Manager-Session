@@ -6,6 +6,7 @@ on:
     paths:
       - "rave/**"
       - "tools/build_rave_en_multidoc.py"
+      - "tools/rave_en_catalog.py"
       - "tools/pack_mems_documentary.py"
       - ".github/workflows/test-rave-en-multidoc.yml"
   workflow_dispatch:
@@ -45,15 +46,18 @@ jobs:
           sys.path.insert(0, 'tools')
           from pack_mems_documentary import inspect_zip
           root=Path(sys.argv[1])
-          source=root/'MEMS-DOC-EN-AKM7169ENG-RCL0193ENG-PRIVATE-CANDIDATE.zip'
+          source=root/'MEMS-DOC-EN-AKM7169ENG-RAVE47-PRIVATE-CANDIDATE.zip'
           result=inspect_zip(source,'en')
           report=json.loads((root/'RAVE_EN_MERGE_REPORT.json').read_text(encoding='utf-8'))
-          assert result['documents']==2
-          assert result['manufacturer_image_count']==326
-          assert report['native_pages']==854
-          print('RAVE_EN_TWO_MANUAL_CANDIDATE_VERIFIED')
-          print('MANUALS: AKM7169ENG=482, RCL0193ENG=372')
+          assert result['documents']==48
+          assert result['manufacturer_image_count']==326+report['remaining_rave']['facsimiles']
+          assert report['native_pages']==854+report['remaining_rave']['pages']
+          print('RAVE_EN_47_SOURCE_PDF_CANDIDATE_VERIFIED')
+          print('DOCUMENTS: 47 original RAVE PDFs + separate AKM7169ENG (482 pages)')
           print('REVIEW_STATUS: source_inventory, no repair instruction approved')
+          print('SOURCE_PAGES:',report['native_pages'])
+          print('FACS_IMAGES:',result['manufacturer_image_count'])
+          print('PRIVATE_STAGING_CANDIDATE_BYTES:',report['candidate_zip_bytes'])
           print('PRIVATE_STAGING_CANDIDATE_SHA256:',report['candidate_zip_sha256'])
           PY
       - name: No public artifacts, no Release, no Setup
