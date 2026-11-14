@@ -48,7 +48,7 @@ def verify_images(db: sqlite3.Connection, root: Path) -> None:
     known: set[str] = set()
     for relative,digest,size in recorded:
         if (not isinstance(relative,str)
-                or not re.fullmatch(r"images/[A-Za-z0-9_.-]+\\.(?:png|jpg|jpeg|webp)",relative,re.I)
+                or not re.fullmatch(r"images/[A-Za-z0-9_.-]+\.(?:png|jpg|jpeg|webp)",relative,re.I)
                 or relative in known or not isinstance(size,int) or not 0<size<=15*1024*1024):
             raise ValueError("INVALID_IMAGE_METADATA:" + str(relative))
         path = root / relative
@@ -81,7 +81,7 @@ def copy_snapshot(source: Path, root: Path, language: str) -> None:
         for entry in members:
             name=entry.filename
             if (name!=dbname and
-                    not re.fullmatch(r"images/[A-Za-z0-9_.-]+\\.(?:png|jpg|jpeg|webp)",name,re.I)):
+                    not re.fullmatch(r"images/[A-Za-z0-9_.-]+\.(?:png|jpg|jpeg|webp)",name,re.I)):
                 raise ValueError("UNEXPECTED_SNAPSHOT_ASSET:" + name)
             if entry.is_dir() or (entry.external_attr >> 16) & 0o170000 == 0o120000:
                 raise ValueError("ARCHIVE_LINK_OR_DIRECTORY_FORBIDDEN")
