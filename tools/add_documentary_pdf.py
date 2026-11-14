@@ -11,6 +11,7 @@ import argparse
 from contextlib import closing
 import hashlib
 import json
+from datetime import datetime, timezone
 import re
 import shutil
 import sqlite3
@@ -20,6 +21,7 @@ from pathlib import Path
 
 from documentary_common import (
     LANGUAGES, MAX_SOURCE_PAGES, schema, validate_source_snapshot,
+    ensure_import_history, register_added_pdf, documentary_import_report,
 )
 
 MAX_FILES = 2500
@@ -112,6 +114,7 @@ def append_pdf(snapshot: Path | None, pdf: Path, language: str,
     output.parent.mkdir(parents=True,exist_ok=True)
     if snapshot and snapshot.resolve()==output.resolve():
         raise ValueError("SOURCE_SNAPSHOT_MUST_NOT_BE_OVERWRITTEN")
+    previous_zip_sha256=sha256(snapshot) if snapshot else None
     with tempfile.TemporaryDirectory(prefix="mems-doc-add-") as folder:
         root=Path(folder)
         dbpath=root / dbname
@@ -125,6 +128,9 @@ def append_pdf(snapshot: Path | None, pdf: Path, language: str,
                     "INSERT INTO documentary_database VALUES(1,1,?,1,'source_inventory')",
                     (language,))
                 db.commit()
+            ensure_import_history(db,
+                legacy_snapshot_sha256=previous_zip_sha256,
+                existing_kind="existing_snapshot")
             existing=db.execute(
                 "SELECT 1 FROM documentary_documents WHERE document_id=? AND source_revision=?",
                 (source_id,revision)).fetchone()
@@ -175,11 +181,15 @@ def append_pdf(snapshot: Path | None, pdf: Path, language: str,
                         (source_id,revision,number,
                          "images/"+filename,
                          hashlib.sha256(image).hexdigest(),len(image)))
+            register_added_pdf(db,document_id=source_id,revision=revision,
+                               previous_snapshot_sha256=previous_zip_sha256,
+                               imported_utc=datetime.now(timezone.utc).isoformat())
             db.execute(
                 "UPDATE documentary_database SET collection_revision=collection_revision+1,"
                 "publication_status='source_inventory' WHERE singleton=1")
             db.commit()
             details=validate_source_snapshot(db,language)
+            audit=documentary_import_report(db,language)
             verify_images(db,root)
         assets=sorted((root/"images").glob("*"))
         if len(assets)+1>=MAX_FILES:
@@ -201,10 +211,18 @@ def append_pdf(snapshot: Path | None, pdf: Path, language: str,
             partial.replace(output)
         finally:
             partial.unlink(missing_ok=True)
-    return dict(details,new_document_id=source_id,
+    result=dict(details,new_document_id=source_id,
                 new_source_pages=count,original_pdf_sha256=digest,
                 candidate_zip_sha256=sha256(output),
                 production_installed=False)
+    # The sidecar is human-readable; the immutable source history is inside
+    # SQLite, so the trace survives encrypted distribution and installation.
+    report_path=output.with_suffix(output.suffix+".audit.json")
+    report_path.write_text(json.dumps(dict(result,**audit),ensure_ascii=False,
+                                      indent=2,sort_keys=True)+"\n",encoding="utf-8")
+    result["audit_report"]=str(report_path)
+    result["import_sequence"]=audit["history"][-1]["sequence"]
+    return result
 
 
 def main() -> None:
