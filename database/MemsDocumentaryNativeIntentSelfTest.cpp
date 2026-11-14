@@ -103,7 +103,10 @@ int main(int argc,char** argv)
                 QSqlQuery fts(debug);
                 fts.prepare(QStringLiteral("SELECT COUNT(*) FROM documentary_fts WHERE documentary_fts MATCH ?"));
                 fts.addBindValue(QStringLiteral("\\\"joint\\\" AND \\\"culasse\\\""));
-                std::fprintf(stderr,"NATIVE_PROBE_EXEC=%d ERROR=%s\\n",int(fts.exec()),qPrintable(fts.lastError().text()));
+                const bool executed=fts.exec();
+                const QString diagnostic=fts.lastError().text();
+                std::fprintf(stderr,"NATIVE_PROBE_EXEC=%d ERROR=%s\\n",
+                             int(executed),qPrintable(diagnostic));
                 if(fts.next())std::fprintf(stderr,"NATIVE_PROBE_COUNT=%d\\n",fts.value(0).toInt());
                 debug.close();
             }
