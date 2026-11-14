@@ -1219,6 +1219,138 @@ QString MemsDocumentaryRepository::procedureAnswer(
         procedureKey=procedure.value(QStringLiteral("procedure_id"))
             .toString().trimmed();
     const QString title=procedureQuery.value(3).toString().trimmed();
+
+    // New FR/EN/other packs expose ONE normalized relation. It is the
+    // authoritative source for ordered operations regardless of manufacturer
+    // or source-PDF format. The historical raw-json reader below is used only
+    // for already installed legacy packs which lack these common tables.
+    QSqlQuery structure(m_database);
+    const bool normalizedPack=structure.exec(QStringLiteral(
+        "SELECT 1 FROM sqlite_master WHERE type='table' "
+        "AND name='documentary_operations'")) && structure.next();
+    if(normalizedPack){
+        QSqlQuery operation(m_database);
+        operation.prepare(QStringLiteral(
+            "SELECT operation_id,opening_page FROM documentary_operations "
+            "WHERE document_id=? AND source_revision=? AND source_entry_id=?"));
+        operation.addBindValue(document);
+        operation.addBindValue(revision);
+        operation.addBindValue(entry);
+        if(!operation.exec() || !operation.next())
+            return QString(); // Source inventory; no invented workshop operation.
+        const QString operationId=operation.value(0).toString();
+        QSet<int> pages;
+        const int firstPage=operation.value(1).toInt();
+        if(firstPage>0) pages.insert(firstPage);
+
+        QSqlQuery steps(m_database);
+        steps.prepare(QStringLiteral(
+            "SELECT step_number,phase,source_text,source_page,verification_status "
+            "FROM documentary_operation_steps "
+            "WHERE document_id=? AND source_revision=? AND operation_id=? "
+            "ORDER BY CASE phase WHEN 'remove' THEN 0 WHEN 'depose' THEN 0 "
+            "WHEN 'refit' THEN 1 WHEN 'repose' THEN 1 "
+            "WHEN 'check' THEN 2 WHEN 'inspection' THEN 2 "
+            "WHEN 'adjust' THEN 3 ELSE 4 END,step_number,source_entry_id"));
+        steps.addBindValue(document);
+        steps.addBindValue(revision);
+        steps.addBindValue(operationId);
+        if(!steps.exec()) return QString();
+
+        struct LinkedStep {
+            int number=0;
+            int page=0;
+            QString phase;
+            QString text;
+            bool verified=false;
+        };
+        QList<LinkedStep> linked;
+        while(steps.next()){
+            LinkedStep item;
+            item.number=steps.value(0).toInt();
+            item.phase=steps.value(1).toString();
+            item.text=steps.value(2).toString().trimmed();
+            item.page=steps.value(3).toInt();
+            const QString status=steps.value(4).toString();
+            item.verified=status==QStringLiteral("source_checked") ||
+                          status==QStringLiteral("technical_reviewed");
+            if(item.text.isEmpty())continue;
+            if(item.page>0)pages.insert(item.page);
+            linked.append(item);
+        }
+        if(linked.isEmpty())
+            return QString(); // PDF indexed but no validated step structure.
+
+        QStringList answer;
+        answer << title;
+        answer << QStringLiteral(
+            "Manuel constructeur %1 — %2 étapes disponibles dans l'ordre.")
+            .arg(document).arg(linked.size());
+        answer << QStringLiteral(
+            "Transcription documentaire : vérifier les étapes non validées "
+            "sur les pages constructeur et contrôler l'applicabilité au véhicule.");
+
+        QSqlQuery precautions(m_database);
+        precautions.prepare(QStringLiteral(
+            "SELECT source_text,source_page FROM documentary_operation_notices "
+            "WHERE document_id=? AND source_revision=? AND operation_id=? "
+            "ORDER BY source_page,source_entry_id"));
+        precautions.addBindValue(document);
+        precautions.addBindValue(revision);
+        precautions.addBindValue(operationId);
+        if(!precautions.exec())return QString();
+        QStringList notices;
+        while(precautions.next()){
+            const QString text=precautions.value(0).toString().trimmed();
+            const int page=precautions.value(1).toInt();
+            if(!text.isEmpty())notices.append(QStringLiteral("• %1").arg(text));
+            if(page>0)pages.insert(page);
+        }
+        if(!notices.isEmpty()){
+            answer << QStringLiteral("Précautions constructeur :");
+            answer << notices;
+        }
+        answer << QStringLiteral("Étapes de l'opération :");
+        QString lastPhase;
+        for(int i=0;i<linked.size();++i){
+            const LinkedStep &item=linked.at(i);
+            if(!item.phase.isEmpty() && item.phase!=lastPhase){
+                QString label=item.phase;
+                if(item.phase==QStringLiteral("remove") ||
+                   item.phase==QStringLiteral("depose"))
+                    label=QStringLiteral("Dépose");
+                else if(item.phase==QStringLiteral("refit") ||
+                        item.phase==QStringLiteral("repose"))
+                    label=QStringLiteral("Repose");
+                else if(item.phase==QStringLiteral("check"))
+                    label=QStringLiteral("Contrôle");
+                else if(item.phase==QStringLiteral("adjust"))
+                    label=QStringLiteral("Réglage");
+                answer << label+QLatin1Char(':');
+                lastPhase=item.phase;
+            }
+            QString line=QStringLiteral("%1. %2")
+                .arg(item.number>0 ? item.number : i+1).arg(item.text);
+            if(item.page>0)
+                line+=QStringLiteral(" (%1, p. %2)").arg(document).arg(item.page);
+            if(!item.verified)
+                line+=QStringLiteral(" [transcription à vérifier]");
+            answer << line;
+        }
+        if(imagePaths){
+            QList<int> sorted=pages.values();
+            std::sort(sorted.begin(),sorted.end());
+            for(const int page:sorted){
+                QVariantMap imageHit=hit;
+                imageHit.insert(QStringLiteral("source_page"),page);
+                const QString file=imagePathForHit(imageHit);
+                if(!file.isEmpty() && !imagePaths->contains(file))
+                    imagePaths->append(file);
+            }
+        }
+        return answer.join(QLatin1Char('\n'));
+    }
+
     if(procedureKey.isEmpty())
         return QString();
 
