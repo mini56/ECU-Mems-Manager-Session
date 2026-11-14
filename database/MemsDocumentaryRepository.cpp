@@ -1158,7 +1158,7 @@ QString MemsDocumentaryRepository::imagePathForHit(const QVariantMap &hit)
         if(pageMatch.hasMatch())
             page=pageMatch.captured(1).toInt();
     }
-    if(page<=0 || page>999)
+    if(page<=0 || page>50000)
         return QString();
     const QString root=QFileInfo(databasePath()).absolutePath();
     const QString imageRoot=QFileInfo(
@@ -1196,23 +1196,29 @@ QString MemsDocumentaryRepository::procedureAnswer(
     if(document.isEmpty() || entry.isEmpty())
         return QString();
 
-    QSqlQuery main(m_database);
-    main.prepare(QStringLiteral(
+    QSqlQuery procedureQuery(m_database);
+    procedureQuery.prepare(QStringLiteral(
         "SELECT source_revision,source_page,raw_json,title "
         "FROM documentary_entries "
         "WHERE document_id=? AND entry_id=? AND entry_type='procedure'"));
-    main.addBindValue(document);
-    main.addBindValue(entry);
-    if(!main.exec() || !main.next())
+    procedureQuery.addBindValue(document);
+    procedureQuery.addBindValue(entry);
+    if(!procedureQuery.exec() || !procedureQuery.next())
         return QString();
 
-    const QString revision=main.value(0).toString();
-    const int openingPage=main.value(1).toInt();
+    const QString revision=procedureQuery.value(0).toString();
+    const int openingPage=procedureQuery.value(1).toInt();
     const QJsonObject procedure=QJsonDocument::fromJson(
-        main.value(2).toByteArray()).object();
-    const QString procedureKey=procedure.value(
-        QStringLiteral("procedure_key")).toString().trimmed();
-    const QString title=main.value(3).toString().trimmed();
+        procedureQuery.value(2).toByteArray()).object();
+    // All documentary procedures follow one logical key contract. Existing
+    // snapshots use either "procedure_key" (FR) or "procedure_id" (EN AKM).
+    // Read both from original provenance without altering their source rows.
+    QString procedureKey=procedure.value(QStringLiteral("procedure_key"))
+        .toString().trimmed();
+    if(procedureKey.isEmpty())
+        procedureKey=procedure.value(QStringLiteral("procedure_id"))
+            .toString().trimmed();
+    const QString title=procedureQuery.value(3).toString().trimmed();
     if(procedureKey.isEmpty())
         return QString();
 
@@ -1220,6 +1226,8 @@ QString MemsDocumentaryRepository::procedureAnswer(
         int order=0;
         int page=0;
         QString text;
+        QString phase;
+        int phaseOrder=0;
         bool checked=false;
     };
     QList<WorkshopStep> steps;
@@ -1228,13 +1236,15 @@ QString MemsDocumentaryRepository::procedureAnswer(
     if(openingPage>0)
         pageSet.insert(openingPage);
 
+    // A procedure's children are identified by their *type and source key*,
+    // never by the importer-specific source_table. The same reader works
+    // for FR, EN and later manufacturer documents.
     QSqlQuery related(m_database);
     related.prepare(QStringLiteral(
-        "SELECT source_table,source_page,verification_status,raw_json "
+        "SELECT entry_type,source_page,verification_status,raw_json,source_text "
         "FROM documentary_entries "
         "WHERE document_id=? AND source_revision=? "
-        "AND source_table IN ('mems_procedure_step',"
-        "                     'mems_procedure_requirement')"));
+        "AND entry_type IN ('step','notice')"));
     related.addBindValue(document);
     related.addBindValue(revision);
     if(!related.exec())
@@ -1243,61 +1253,88 @@ QString MemsDocumentaryRepository::procedureAnswer(
     while(related.next()){
         const QString kind=related.value(0).toString();
         const int page=related.value(1).toInt();
-        const bool checked=related.value(2).toString() ==
-            QStringLiteral("source_checked") ||
-            related.value(2).toString()==QStringLiteral("technical_reviewed");
+        const QString status=related.value(2).toString();
         const QJsonObject record=QJsonDocument::fromJson(
             related.value(3).toByteArray()).object();
-        if(record.value(QStringLiteral("procedure_key")).toString()!=procedureKey)
+        QString childKey=record.value(QStringLiteral("procedure_key"))
+            .toString().trimmed();
+        if(childKey.isEmpty())
+            childKey=record.value(QStringLiteral("procedure_id"))
+                .toString().trimmed();
+        if(childKey!=procedureKey)
             continue;
 
         QString source;
-        if(kind==QStringLiteral("mems_procedure_step")){
-            const QStringList fields={
+        const QStringList fields=kind==QStringLiteral("step")
+            ? QStringList{
                 QStringLiteral("instruction_source"),
                 QStringLiteral("instruction_text"),
                 QStringLiteral("step_text"),
                 QStringLiteral("action_text"),
                 QStringLiteral("instruction"),
-                QStringLiteral("statement")
-            };
-            for(const QString &field:fields){
-                source=record.value(field).toString().trimmed();
-                if(!source.isEmpty())break;
-            }
-        } else {
-            const QStringList fields={
+                QStringLiteral("statement"),
+                QStringLiteral("source_text")
+              }
+            : QStringList{
                 QStringLiteral("requirement_source"),
                 QStringLiteral("requirement_text"),
                 QStringLiteral("condition_text"),
                 QStringLiteral("description"),
-                QStringLiteral("notes")
-            };
-            for(const QString &field:fields){
-                source=record.value(field).toString().trimmed();
-                if(!source.isEmpty())break;
-            }
+                QStringLiteral("notes"),
+                QStringLiteral("source_text")
+              };
+        for(const QString &field:fields){
+            source=record.value(field).toString().trimmed();
+            if(!source.isEmpty())
+                break;
         }
+        // Raw schema fields vary by edition; the common indexed source_text
+        // is authoritative and must not be lost when a PDF importer changes.
+        if(source.isEmpty())
+            source=related.value(4).toString().trimmed();
         if(source.isEmpty())
             continue;
+
         WorkshopStep item;
         item.order=record.value(QStringLiteral("step_no")).toInt();
+        if(item.order<=0){
+            const QJsonValue number=record.value(QStringLiteral("step_number"));
+            item.order=number.isDouble()?number.toInt():number.toString().toInt();
+        }
         item.page=page;
         item.text=source;
-        item.checked=checked;
+        item.checked=status==QStringLiteral("source_checked") ||
+                     status==QStringLiteral("technical_reviewed");
+        item.phase=record.value(QStringLiteral("phase")).toString().trimmed();
+        const QString normalizedPhase=item.phase.toLower();
+        if(normalizedPhase==QStringLiteral("refit") ||
+           normalizedPhase==QStringLiteral("repose"))
+            item.phaseOrder=1;
+        else if(normalizedPhase==QStringLiteral("check") ||
+                normalizedPhase==QStringLiteral("inspection"))
+            item.phaseOrder=2;
+        else if(normalizedPhase==QStringLiteral("adjust"))
+            item.phaseOrder=3;
+        else if(!normalizedPhase.isEmpty() &&
+                normalizedPhase!=QStringLiteral("remove"))
+            item.phaseOrder=4;
         if(page>0)
             pageSet.insert(page);
-        if(kind==QStringLiteral("mems_procedure_step"))
+        if(kind==QStringLiteral("step"))
             steps.append(item);
         else
             requirements.append(item);
     }
     std::stable_sort(steps.begin(),steps.end(),
         [](const WorkshopStep &a,const WorkshopStep &b){
+            if(a.phaseOrder!=b.phaseOrder)
+                return a.phaseOrder<b.phaseOrder;
+            if(a.phase!=b.phase && a.order==b.order)
+                return a.phase<b.phase;
             return a.order<b.order;
         });
     if(steps.isEmpty())
-        return QString(); // Ne jamais annoncer une procédure complète sans étapes.
+        return QString(); // Never claim a full procedure from a page-only index.
 
     if(imagePaths){
         QList<int> pages=pageSet.values();
@@ -1312,22 +1349,32 @@ QString MemsDocumentaryRepository::procedureAnswer(
     }
 
     QStringList answer;
-    answer << QStringLiteral("%1").arg(title);
+    answer << title;
     answer << QStringLiteral(
         "Manuel constructeur %1 — %2 étapes conservées dans l'ordre d'origine.")
         .arg(document).arg(steps.size());
     answer << QStringLiteral(
         "Transcription issue de la documentation : les étapes non validées "
         "techniquement doivent être vérifiées sur les pages constructeur "
-        "affichées ci-dessous, ainsi que l'applicabilité au véhicule.");
+        "ainsi que l'applicabilité au véhicule.");
     if(!requirements.isEmpty()){
         answer << QStringLiteral("Précautions et conditions documentaires :");
         for(const WorkshopStep &requirement:requirements)
             answer << QStringLiteral("• %1").arg(requirement.text);
     }
     answer << QStringLiteral("Étapes de l'opération :");
+    QString lastPhase;
     for(int i=0;i<steps.size();++i){
         const WorkshopStep &step=steps.at(i);
+        if(!step.phase.isEmpty() && step.phase!=lastPhase){
+            QString name=step.phase;
+            if(step.phase==QStringLiteral("remove"))name=QStringLiteral("Dépose");
+            else if(step.phase==QStringLiteral("refit"))name=QStringLiteral("Repose");
+            else if(step.phase==QStringLiteral("check"))name=QStringLiteral("Contrôle");
+            else if(step.phase==QStringLiteral("adjust"))name=QStringLiteral("Réglage");
+            answer << name+QLatin1Char(':');
+            lastPhase=step.phase;
+        }
         QString line=QStringLiteral("%1. %2")
             .arg(step.order>0 ? step.order : i+1).arg(step.text);
         if(step.page>0)
@@ -1342,7 +1389,7 @@ QString MemsDocumentaryRepository::procedureAnswer(
         QStringList pageNumbers;
         for(int page:pages)
             pageNumbers.append(QString::number(page));
-        answer << QStringLiteral("Fac-similés constructeur associés : pages %1.")
+        answer << QStringLiteral("Pages constructeur associées : %1.")
             .arg(pageNumbers.join(QStringLiteral(", ")));
     }
     return answer.join(QLatin1Char('\n'));
