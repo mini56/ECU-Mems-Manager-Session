@@ -11,6 +11,7 @@ on:
       - 'tools/build_rave_en_multidoc.py'
       - 'database/MemsDocumentaryRepository.cpp'
       - 'database/MemsDocumentaryMultilingualSelfTest.cpp'
+      - 'database/MemsDocumentaryNativeIntentSelfTest.cpp'
       - 'CMakeLists.txt'
       - '.github/workflows/test-unified-documentary-system.yml'
   workflow_dispatch:
