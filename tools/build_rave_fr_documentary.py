@@ -19,6 +19,8 @@ import zlib
 from collections import defaultdict
 from pathlib import Path
 
+from documentary_common import schema, validate_source_snapshot
+
 SOURCE = "RCL0193FRE"
 SOURCE_SHA = "0c7fef28d0d0f0673ba321d6625a019c005823103caa98afb3258114e1fec713"
 LOTS = tuple(range(1790, 1870, 10))
@@ -40,81 +42,7 @@ CONTENT_FIELDS = (
     "specification", "value", "unit", "notes", "reference",
     "figure_ref", "alias",
 )
-SCHEMA = """
-PRAGMA foreign_keys=ON;
-CREATE TABLE documentary_database(
-    singleton INTEGER PRIMARY KEY CHECK(singleton=1),
-    schema_version INTEGER NOT NULL,
-    language TEXT NOT NULL CHECK(language='fr'),
-    collection_revision INTEGER NOT NULL CHECK(collection_revision>0),
-    publication_status TEXT NOT NULL CHECK(publication_status IN ('source_inventory','validated'))
-);
-CREATE TABLE documentary_documents(
-    document_id TEXT NOT NULL,
-    source_revision TEXT NOT NULL,
-    language TEXT NOT NULL CHECK(language='fr'),
-    publisher TEXT NOT NULL,
-    edition_code TEXT NOT NULL,
-    source_filename TEXT NOT NULL,
-    source_sha256 TEXT NOT NULL,
-    source_pages INTEGER NOT NULL,
-    extraction TEXT NOT NULL,
-    PRIMARY KEY(document_id,source_revision)
-);
-CREATE TABLE documentary_pages(
-    document_id TEXT NOT NULL,
-    source_revision TEXT NOT NULL,
-    physical_page INTEGER NOT NULL CHECK(physical_page BETWEEN 1 AND 371),
-    structured_records INTEGER NOT NULL DEFAULT 0,
-    indexed_state TEXT NOT NULL CHECK(indexed_state IN ('source_linked','not_yet_structured')),
-    PRIMARY KEY(document_id,source_revision,physical_page),
-    FOREIGN KEY(document_id,source_revision)
-      REFERENCES documentary_documents(document_id,source_revision)
-);
-CREATE TABLE documentary_images(
-    document_id TEXT NOT NULL,
-    source_revision TEXT NOT NULL,
-    physical_page INTEGER NOT NULL,
-    relative_path TEXT NOT NULL,
-    asset_sha256 TEXT NOT NULL,
-    asset_bytes INTEGER NOT NULL,
-    PRIMARY KEY(document_id,source_revision,physical_page),
-    FOREIGN KEY(document_id,source_revision,physical_page)
-      REFERENCES documentary_pages(document_id,source_revision,physical_page)
-);
-CREATE TABLE documentary_entries(
-    document_id TEXT NOT NULL,
-    source_revision TEXT NOT NULL,
-    entry_id TEXT NOT NULL,
-    entry_type TEXT NOT NULL CHECK(entry_type IN
-      ('reference','procedure','step','technical_value','notice','figure','other')),
-    source_page INTEGER CHECK(source_page BETWEEN 1 AND 371),
-    title TEXT NOT NULL,
-    source_text TEXT NOT NULL,
-    verification_status TEXT NOT NULL CHECK(verification_status IN
-      ('source_checked','review_required','technical_reviewed')),
-    source_table TEXT NOT NULL,
-    raw_json TEXT NOT NULL,
-    PRIMARY KEY(document_id,source_revision,entry_id),
-    FOREIGN KEY(document_id,source_revision)
-      REFERENCES documentary_documents(document_id,source_revision)
-);
-CREATE TABLE documentary_source_rows(
-    table_name TEXT NOT NULL,
-    source_index INTEGER NOT NULL,
-    row_json TEXT NOT NULL,
-    PRIMARY KEY(table_name,source_index)
-);
-CREATE INDEX idx_documentary_page ON documentary_entries(source_page);
-CREATE INDEX idx_documentary_type ON documentary_entries(entry_type);
-CREATE VIRTUAL TABLE documentary_fts USING fts5(title, source_text,
-  content='documentary_entries', content_rowid='rowid',
-  tokenize='unicode61 remove_diacritics 2');
-CREATE TRIGGER documentary_fts_insert AFTER INSERT ON documentary_entries BEGIN
- INSERT INTO documentary_fts(rowid,title,source_text)
- VALUES (new.rowid,new.title,new.source_text);
-END;
-"""
+SCHEMA = schema("fr")
 
 def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
@@ -395,8 +323,10 @@ def build(reference_root: Path, destination: Path) -> dict:
             raise RuntimeError(f"Intégrité documentaire: {integrity}, FK={len(fk)}, FTS={fts_count}/{entries}")
         if fr.execute("SELECT COUNT(*) FROM documentary_pages").fetchone()[0] != 371:
             raise RuntimeError("371 pages source exigées")
+        contract = validate_source_snapshot(fr, "fr")
         report = {
             "source": SOURCE,
+            "shared_documentary_contract": contract,
             "source_pdf_original_sha256": SOURCE_SHA,
             "language": "fr",
             "translation_from_english": False,
