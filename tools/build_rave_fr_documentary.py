@@ -19,7 +19,7 @@ import zlib
 from collections import defaultdict
 from pathlib import Path
 
-from documentary_common import schema, validate_source_snapshot, ensure_import_history, documentary_import_report
+from documentary_common import schema, validate_source_snapshot, ensure_import_history, documentary_import_report, ensure_structured_operations
 from datetime import datetime, timezone
 
 SOURCE = "RCL0193FRE"
@@ -324,6 +324,7 @@ def build(reference_root: Path, destination: Path) -> dict:
             raise RuntimeError(f"Intégrité documentaire: {integrity}, FK={len(fk)}, FTS={fts_count}/{entries}")
         if fr.execute("SELECT COUNT(*) FROM documentary_pages").fetchone()[0] != 371:
             raise RuntimeError("371 pages source exigées")
+        operation_report=ensure_structured_operations(fr)
         ensure_import_history(fr, existing_kind="source_build",
                               imported_utc=datetime.now(timezone.utc).isoformat())
         fr.commit()
@@ -331,6 +332,7 @@ def build(reference_root: Path, destination: Path) -> dict:
         report = {
             "source": SOURCE,
             "shared_documentary_contract": contract,
+            "structured_operation_contract": operation_report,
             "source_import_history": documentary_import_report(fr, "fr"),
             "source_pdf_original_sha256": SOURCE_SHA,
             "language": "fr",
