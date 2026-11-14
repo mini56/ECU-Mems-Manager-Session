@@ -363,6 +363,21 @@ def ensure_structured_operations(db) -> dict:
     linked_steps=0
     missing_keys=0
     orphan_steps=0
+    def key_from_raw(source: dict) -> str:
+        canonical=str(source.get("procedure_id") or
+                      source.get("procedure_key") or "").strip()
+        if canonical:
+            return canonical
+        # Some manufacturer editions key both operations and steps by a
+        # service repair reference together with an operation identifier.
+        # This is a *generic source identity*, scoped by document+revision,
+        # not a PDF-name-specific extraction rule.
+        operation=str(source.get("operation") or "").strip().casefold()
+        reference=str(source.get("service_repair_no") or "").strip().casefold()
+        if operation:
+            return "service:" + reference + "/operation:" + operation
+        return ""
+
     procedures=db.execute("""
         SELECT document_id,source_revision,entry_id,title,source_page,
                verification_status,raw_json
@@ -370,7 +385,7 @@ def ensure_structured_operations(db) -> dict:
         ORDER BY document_id,source_revision,entry_id""").fetchall()
     for doc,revision,entry,title,page,status,raw in procedures:
         source=json.loads(raw or "{}")
-        key=str(source.get("procedure_id") or source.get("procedure_key") or "").strip()
+        key=key_from_raw(source)
         if not key:
             missing_keys+=1
             continue
@@ -389,14 +404,14 @@ def ensure_structured_operations(db) -> dict:
         ORDER BY document_id,source_revision,entry_id""").fetchall()
     for doc,revision,entry,page,status,raw,text in steps:
         source=json.loads(raw or "{}")
-        key=str(source.get("procedure_id") or source.get("procedure_key") or "").strip()
+        key=key_from_raw(source)
         if not key or db.execute("""
             SELECT 1 FROM documentary_operations
             WHERE document_id=? AND source_revision=? AND operation_id=?""",
             (doc,revision,key)).fetchone() is None:
             orphan_steps+=1
             continue
-        order=source.get("step_number",source.get("step_no",0))
+        order=source.get("step_number",source.get("step_no",source.get("step",0)))
         try:
             order=int(order)
         except (TypeError,ValueError):
@@ -426,7 +441,7 @@ def ensure_structured_operations(db) -> dict:
         ORDER BY document_id,source_revision,entry_id""").fetchall()
     for doc,revision,entry,page,status,raw,text in notices:
         source=json.loads(raw or "{}")
-        key=str(source.get("procedure_id") or source.get("procedure_key") or "").strip()
+        key=key_from_raw(source)
         if not key or db.execute("""
             SELECT 1 FROM documentary_operations
             WHERE document_id=? AND source_revision=? AND operation_id=?""",
