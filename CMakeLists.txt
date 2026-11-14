@@ -207,6 +207,7 @@ add_dependencies(${PNAME} mems_documentary_encrypted_install_selftest)
 # The executable already uses /utf-8; both documentary tests must too.
 if(MSVC)
     target_compile_options(mems_documentary_selftest PRIVATE /utf-8)
+    target_compile_options(mems_documentary_native_intent_selftest PRIVATE /utf-8)
     target_compile_options(mems_documentary_real_corpus_selftest PRIVATE /utf-8)
     target_compile_options(mems_documentary_update_selftest PRIVATE /utf-8)
 endif()
