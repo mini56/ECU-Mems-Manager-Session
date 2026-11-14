@@ -33,6 +33,8 @@ except ImportError as exc:
 from build_rave_en_documentary import build as build_akm
 from rave_en_catalog import add_remaining_rave_pdfs
 
+from documentary_common import schema, validate_source_snapshot
+
 RAVE_SHA = "c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715"
 AKM_SHA = "c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0"
 RAVE_PAGES = 372
@@ -43,63 +45,7 @@ RAVE_BLANK = {
     228, 230, 234, 236, 256, 258, 262, 274, 280, 282, 298, 304, 306,
     316, 326, 328, 360,
 }
-SCHEMA = """
-PRAGMA foreign_keys=ON;
-CREATE TABLE documentary_database(
- singleton INTEGER PRIMARY KEY CHECK(singleton=1),
- schema_version INTEGER NOT NULL CHECK(schema_version=1),
- language TEXT NOT NULL CHECK(language='en'),
- collection_revision INTEGER NOT NULL CHECK(collection_revision>0),
- publication_status TEXT NOT NULL CHECK(publication_status IN ('source_inventory','validated'))
-);
-CREATE TABLE documentary_documents(
- document_id TEXT NOT NULL, source_revision TEXT NOT NULL,
- language TEXT NOT NULL CHECK(language='en'), publisher TEXT NOT NULL,
- edition_code TEXT NOT NULL, source_filename TEXT NOT NULL,
- source_sha256 TEXT NOT NULL, source_pages INTEGER NOT NULL,
- extraction TEXT NOT NULL, PRIMARY KEY(document_id,source_revision)
-);
-CREATE TABLE documentary_pages(
- document_id TEXT NOT NULL, source_revision TEXT NOT NULL,
- physical_page INTEGER NOT NULL CHECK(physical_page BETWEEN 1 AND 999),
- structured_records INTEGER NOT NULL DEFAULT 0,
- indexed_state TEXT NOT NULL CHECK(indexed_state IN ('source_linked','not_yet_structured')),
- PRIMARY KEY(document_id,source_revision,physical_page),
- FOREIGN KEY(document_id,source_revision)
- REFERENCES documentary_documents(document_id,source_revision)
-);
-CREATE TABLE documentary_images(
- document_id TEXT NOT NULL, source_revision TEXT NOT NULL,
- physical_page INTEGER NOT NULL,
- relative_path TEXT NOT NULL, asset_sha256 TEXT NOT NULL,
- asset_bytes INTEGER NOT NULL,
- PRIMARY KEY(document_id,source_revision,physical_page),
- FOREIGN KEY(document_id,source_revision,physical_page)
- REFERENCES documentary_pages(document_id,source_revision,physical_page)
-);
-CREATE TABLE documentary_entries(
- document_id TEXT NOT NULL, source_revision TEXT NOT NULL,
- entry_id TEXT NOT NULL, entry_type TEXT NOT NULL CHECK(entry_type IN
- ('reference','procedure','step','technical_value','notice','figure','other')),
- source_page INTEGER CHECK(source_page BETWEEN 1 AND 999),
- title TEXT NOT NULL, source_text TEXT NOT NULL,
- verification_status TEXT NOT NULL CHECK(verification_status IN
- ('source_checked','review_required','technical_reviewed')),
- source_table TEXT NOT NULL, raw_json TEXT NOT NULL,
- PRIMARY KEY(document_id,source_revision,entry_id),
- FOREIGN KEY(document_id,source_revision)
- REFERENCES documentary_documents(document_id,source_revision)
-);
-CREATE INDEX idx_documentary_page ON documentary_entries(document_id,source_page);
-CREATE INDEX idx_documentary_type ON documentary_entries(entry_type);
-CREATE VIRTUAL TABLE documentary_fts USING fts5(title, source_text,
- content='documentary_entries', content_rowid='rowid',
- tokenize='unicode61 remove_diacritics 2');
-CREATE TRIGGER documentary_fts_insert AFTER INSERT ON documentary_entries BEGIN
- INSERT INTO documentary_fts(rowid,title,source_text)
- VALUES(new.rowid,new.title,new.source_text);
-END;
-"""
+SCHEMA = schema("en")
 
 
 def require(condition: bool, reason: str) -> None:
@@ -307,6 +253,7 @@ def build(parts: Path, rave: Path, out: Path) -> dict:
             ).fetchone()[0] == 0, "UNAPPROVED_TEXT_WAS_MARKED_VERIFIED")
             require(db.execute("SELECT COUNT(*) FROM procedures").fetchone()[0] == 336,
                     "ORIGINAL_AKM_PROCEDURES_CHANGED")
+            contract = validate_source_snapshot(db, "en")
             report = {"language": "en", "documents": [
                 {"id": "AKM7169ENG", "pages": AKM_PAGES, "source_sha256": AKM_SHA},
                 {"id": "RCL0193ENG", "pages": RAVE_PAGES, "source_sha256": RAVE_SHA}],
