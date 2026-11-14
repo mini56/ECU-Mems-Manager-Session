@@ -156,6 +156,17 @@ if(MSVC)
     target_compile_options(mems_documentary_multilingual_selftest PRIVATE /utf-8)
 endif()
 
+# Validate the *actual* complete FR and EN language packs, never test data.
+add_executable(mems_documentary_real_language_selftest
+    database/MemsDocumentaryRealLanguageSelfTest.cpp
+    database/MemsDocumentaryRepository.cpp database/MemsDocumentaryRepository.h
+    database/MemsDocumentaryPackCatalog.cpp database/MemsDocumentaryPackCatalog.h)
+target_compile_definitions(mems_documentary_real_language_selftest PRIVATE MEMS_DOCUMENTARY_SELFTEST=1)
+target_link_libraries(mems_documentary_real_language_selftest PRIVATE Qt5::Core Qt5::Sql)
+if(MSVC)
+    target_compile_options(mems_documentary_real_language_selftest PRIVATE /utf-8)
+endif()
+
 add_executable(mems_documentary_real_corpus_selftest
     database/MemsDocumentaryRealCorpusSelfTest.cpp
     database/MemsDocumentaryRepository.cpp database/MemsDocumentaryRepository.h
