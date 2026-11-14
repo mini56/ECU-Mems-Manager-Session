@@ -1,0 +1,68 @@
+name: DOCUMENTARY - one system for all language PDFs and SESSION reader
+on:
+  push:
+    branches: [fix-ia-documentary-single-source-20261114]
+    paths:
+      - 'tools/documentary_common.py'
+      - 'tools/add_documentary_pdf.py'
+      - 'tools/test_unified_documentary_system.py'
+      - 'tools/pack_mems_documentary.py'
+      - 'tools/build_rave_fr_documentary.py'
+      - 'tools/build_rave_en_multidoc.py'
+      - 'database/MemsDocumentaryRepository.cpp'
+      - 'database/MemsDocumentaryMultilingualSelfTest.cpp'
+      - 'CMakeLists.txt'
+      - '.github/workflows/test-unified-documentary-system.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  six-languages-one-pdf-importer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install PDF and AES-GCM dependencies
+        run: python -m pip install --disable-pip-version-check pymupdf cryptography
+      - name: Check Python source syntax and cross-language snapshot tests
+        run: |
+          python -m compileall -q tools/documentary_common.py tools/add_documentary_pdf.py tools/build_rave_fr_documentary.py tools/build_rave_en_multidoc.py tools/pack_mems_documentary.py
+          python -m unittest discover -s tools -p test_unified_documentary_system.py -v
+  windows-session-shared-procedure-reader:
+    runs-on: windows-2025
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Qt 5.15.2
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python -m pip install --disable-pip-version-check 'aqtinstall==3.3.0'
+          if($LASTEXITCODE -ne 0){throw 'QT_INSTALLER_FAILED'}
+          $sevenZip=(Get-Command 7z.exe -ErrorAction Stop).Source
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external $sevenZip
+          if($LASTEXITCODE -ne 0){throw 'QT_INSTALL_FAILED'}
+      - name: Build actual SESSION documentary C++ repository
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          cmake -S . -B build-doc-one-system -A x64 -DCMAKE_PREFIX_PATH='C:/Qt/5.15.2/msvc2019_64' -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF
+          if($LASTEXITCODE -ne 0){throw 'CMAKE_CONFIGURE_FAILED'}
+          cmake --build build-doc-one-system --config Release --target mems_documentary_multilingual_selftest mems_documentary_native_intent_selftest --parallel
+          if($LASTEXITCODE -ne 0){throw 'SHARED_READER_COMPILE_FAILED'}
+      - name: Run FR and EN actual C++ reader tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $dir=(Resolve-Path build-doc-one-system/Release).Path
+          $qt='C:\Qt\5.15.2\msvc2019_64'
+          & "$qt/bin/windeployqt.exe" --release --no-translations --dir $dir "$dir/mems_documentary_multilingual_selftest.exe"
+          if($LASTEXITCODE -ne 0){throw 'QT_RUNTIME_DEPLOY_FAILED'}
+          & "$dir/mems_documentary_multilingual_selftest.exe"
+          if($LASTEXITCODE -ne 0){throw 'FR_EN_READER_CONTRACT_FAILED'}
+          & "$dir/mems_documentary_native_intent_selftest.exe"
+          if($LASTEXITCODE -ne 0){throw 'EXISTING_FR_BEHAVIOUR_REGRESSION'}
+          Write-Host 'PASS_SESSION_DOCUMENTARY_READER_FR_EN_AND_EXISTING_FR_INTENT'
