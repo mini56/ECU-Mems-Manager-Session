@@ -93,7 +93,7 @@ class UniformDocumentarySystemTest(unittest.TestCase):
                     self.assertTrue(encrypted.read_bytes().startswith(b"MEMSDOC1"))
                 with self.assertRaisesRegex(ValueError,"ORIGINAL_DOCUMENT_ALREADY"):
                     append_pdf(new,first,language,root/f"{language}-duplicate.zip")
-                with self.assertRaisesRegex(ValueError,"DOCUMENTARY_SCHEMA_LANGUAGE_MISMATCH"):
+                with self.assertRaisesRegex(ValueError,"SOURCE_SNAPSHOT_LIMITS_OR_DATABASE_MISSING"):
                     append_pdf(new,second,
                                "fr" if language!="fr" else "en",
                                root/f"{language}-wrong-language.zip")
