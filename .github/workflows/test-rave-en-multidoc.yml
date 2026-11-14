@@ -4,6 +4,7 @@ on:
   push:
     branches: [fix-rave-en-multidoc-20261114]
     paths:
+      - "rave/**"
       - "tools/build_rave_en_multidoc.py"
       - "tools/pack_mems_documentary.py"
       - ".github/workflows/test-rave-en-multidoc.yml"
