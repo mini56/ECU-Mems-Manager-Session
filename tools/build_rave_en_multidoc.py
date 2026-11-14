@@ -33,7 +33,7 @@ except ImportError as exc:
 from build_rave_en_documentary import build as build_akm
 from rave_en_catalog import add_remaining_rave_pdfs
 
-from documentary_common import schema, validate_source_snapshot, ensure_import_history, documentary_import_report
+from documentary_common import schema, validate_source_snapshot, ensure_import_history, documentary_import_report, ensure_structured_operations
 from datetime import datetime, timezone
 
 RAVE_SHA = "c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715"
@@ -254,6 +254,7 @@ def build(parts: Path, rave: Path, out: Path) -> dict:
             ).fetchone()[0] == 0, "UNAPPROVED_TEXT_WAS_MARKED_VERIFIED")
             require(db.execute("SELECT COUNT(*) FROM procedures").fetchone()[0] == 336,
                     "ORIGINAL_AKM_PROCEDURES_CHANGED")
+            operation_report=ensure_structured_operations(db)
             ensure_import_history(db, existing_kind="source_build",
                                   imported_utc=datetime.now(timezone.utc).isoformat())
             db.commit()
@@ -264,6 +265,7 @@ def build(parts: Path, rave: Path, out: Path) -> dict:
                 "akm": akm, "rave": rave_data, "remaining_rave": other_rave,
                 "native_entries": n, "native_fts": fts, "native_pages": pages,
                 "shared_documentary_contract": contract,
+                "structured_operation_contract": operation_report,
                 "source_import_history": documentary_import_report(db,"en"),
                 "approval": "source_inventory / review_required",
                 "sqlite_sha256": sha_file(target),
