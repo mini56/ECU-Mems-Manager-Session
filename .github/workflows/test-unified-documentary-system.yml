@@ -14,6 +14,9 @@ on:
       - 'CMakeLists.txt'
       - '.github/workflows/test-unified-documentary-system.yml'
   workflow_dispatch:
+concurrency:
+  group: documentary-one-system-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
