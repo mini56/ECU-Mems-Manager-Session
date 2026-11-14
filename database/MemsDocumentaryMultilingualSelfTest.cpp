@@ -113,6 +113,49 @@ static bool createSource(const QString &path,const QString &lang,
                             ?QStringLiteral("akm7169eng_procedure_steps")
                             :QStringLiteral("mems_procedure_step"),raw);
             }
+            // Both fixtures expose precisely the same normalized contract;
+            // historical FR/EN key differences are not consulted by SESSION.
+            const QStringList shared={
+                QStringLiteral(
+                    "CREATE TABLE documentary_operations("
+                    "document_id TEXT,source_revision TEXT,operation_id TEXT,"
+                    "source_entry_id TEXT,title TEXT,opening_page INTEGER,"
+                    "verification_status TEXT)"),
+                QStringLiteral(
+                    "CREATE TABLE documentary_operation_steps("
+                    "document_id TEXT,source_revision TEXT,operation_id TEXT,"
+                    "source_entry_id TEXT,step_number INTEGER,phase TEXT,"
+                    "source_page INTEGER,source_text TEXT,verification_status TEXT)"),
+                QStringLiteral(
+                    "CREATE TABLE documentary_operation_notices("
+                    "document_id TEXT,source_revision TEXT,operation_id TEXT,"
+                    "source_entry_id TEXT,source_page INTEGER,source_text TEXT,"
+                    "verification_status TEXT)")
+            };
+            if(success){
+                for(const QString &sql:shared){
+                    QSqlQuery q(db);
+                    if(!q.exec(sql)){success=false;break;}
+                }
+            }
+            if(success)success=insert(db,QStringLiteral(
+                "INSERT INTO documentary_operations VALUES(?,?,?,?,?,?,?)"),
+                {doc,QStringLiteral("rev1"),procedureKey,
+                 QStringLiteral("procedure:1"),title,1,
+                 QStringLiteral("review_required")});
+            for(int i=1;success&&i<=2;++i){
+                const QString instruction=english
+                    ? (i==1?QStringLiteral("Remove the cover"):
+                             QStringLiteral("Inspect the gasket"))
+                    : (i==1?QStringLiteral("Déposer le cache"):
+                             QStringLiteral("Contrôler le joint"));
+                success=insert(db,QStringLiteral(
+                    "INSERT INTO documentary_operation_steps VALUES(?,?,?,?,?,?,?,?,?)"),
+                    {doc,QStringLiteral("rev1"),procedureKey,
+                     QStringLiteral("step:%1").arg(i),i,
+                     QStringLiteral("remove"),i,instruction,
+                     QStringLiteral("review_required")});
+            }
             db.close();
         }
         db=QSqlDatabase();
