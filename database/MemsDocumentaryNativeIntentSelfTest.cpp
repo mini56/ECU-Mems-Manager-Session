@@ -102,12 +102,15 @@ int main(int argc,char** argv)
             if(debug.open()) {
                 QSqlQuery fts(debug);
                 fts.prepare(QStringLiteral("SELECT COUNT(*) FROM documentary_fts WHERE documentary_fts MATCH ?"));
-                fts.addBindValue(QStringLiteral("\\\"joint\\\" AND \\\"culasse\\\""));
+                fts.addBindValue(QStringLiteral("\"joint\" AND \"culasse\""));
                 const bool executed=fts.exec();
                 const QString diagnostic=fts.lastError().text();
                 std::fprintf(stderr,"NATIVE_PROBE_EXEC=%d ERROR=%s\\n",
                              int(executed),qPrintable(diagnostic));
                 if(fts.next())std::fprintf(stderr,"NATIVE_PROBE_COUNT=%d\\n",fts.value(0).toInt());
+                QSqlQuery all(debug);
+                if(all.exec(QStringLiteral("SELECT COUNT(*) FROM documentary_fts")) && all.next())
+                    std::fprintf(stderr,"NATIVE_FTS_ALL_ROWS=%d\\n",all.value(0).toInt());
                 debug.close();
             }
             debug=QSqlDatabase();
