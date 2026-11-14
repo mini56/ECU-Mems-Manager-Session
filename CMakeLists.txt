@@ -145,6 +145,17 @@ add_executable(mems_documentary_native_intent_selftest
 target_compile_definitions(mems_documentary_native_intent_selftest PRIVATE MEMS_DOCUMENTARY_SELFTEST=1)
 target_link_libraries(mems_documentary_native_intent_selftest PRIVATE Qt5::Core Qt5::Sql)
 
+# One reader contract for existing and future FR/EN documentary sources.
+add_executable(mems_documentary_multilingual_selftest
+    database/MemsDocumentaryMultilingualSelfTest.cpp
+    database/MemsDocumentaryRepository.cpp database/MemsDocumentaryRepository.h
+    database/MemsDocumentaryPackCatalog.cpp database/MemsDocumentaryPackCatalog.h)
+target_compile_definitions(mems_documentary_multilingual_selftest PRIVATE MEMS_DOCUMENTARY_SELFTEST=1)
+target_link_libraries(mems_documentary_multilingual_selftest PRIVATE Qt5::Core Qt5::Sql)
+if(MSVC)
+    target_compile_options(mems_documentary_multilingual_selftest PRIVATE /utf-8)
+endif()
+
 add_executable(mems_documentary_real_corpus_selftest
     database/MemsDocumentaryRealCorpusSelfTest.cpp
     database/MemsDocumentaryRepository.cpp database/MemsDocumentaryRepository.h
