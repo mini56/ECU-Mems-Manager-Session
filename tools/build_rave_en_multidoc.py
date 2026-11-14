@@ -33,7 +33,8 @@ except ImportError as exc:
 from build_rave_en_documentary import build as build_akm
 from rave_en_catalog import add_remaining_rave_pdfs
 
-from documentary_common import schema, validate_source_snapshot
+from documentary_common import schema, validate_source_snapshot, ensure_import_history, documentary_import_report
+from datetime import datetime, timezone
 
 RAVE_SHA = "c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715"
 AKM_SHA = "c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0"
@@ -253,12 +254,17 @@ def build(parts: Path, rave: Path, out: Path) -> dict:
             ).fetchone()[0] == 0, "UNAPPROVED_TEXT_WAS_MARKED_VERIFIED")
             require(db.execute("SELECT COUNT(*) FROM procedures").fetchone()[0] == 336,
                     "ORIGINAL_AKM_PROCEDURES_CHANGED")
+            ensure_import_history(db, existing_kind="source_build",
+                                  imported_utc=datetime.now(timezone.utc).isoformat())
+            db.commit()
             contract = validate_source_snapshot(db, "en")
             report = {"language": "en", "documents": [
                 {"id": "AKM7169ENG", "pages": AKM_PAGES, "source_sha256": AKM_SHA},
                 {"id": "RCL0193ENG", "pages": RAVE_PAGES, "source_sha256": RAVE_SHA}],
                 "akm": akm, "rave": rave_data, "remaining_rave": other_rave,
                 "native_entries": n, "native_fts": fts, "native_pages": pages,
+                "shared_documentary_contract": contract,
+                "source_import_history": documentary_import_report(db,"en"),
                 "approval": "source_inventory / review_required",
                 "sqlite_sha256": sha_file(target),
                 "status": "private_unencrypted_candidate_only",
