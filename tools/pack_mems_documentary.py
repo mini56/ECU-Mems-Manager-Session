@@ -128,11 +128,78 @@ def inspect_zip(path: Path, language: str) -> dict:
                             "'akm7169fre_description_relie'"
                         ).fetchone()[0] == 19,"SPI_DESCRIPTIVE_SECTIONS_INCOMPLETE")
                 else:
-                    docs = db.execute("SELECT total_pages FROM source_documents").fetchall()
-                    require(docs == [(482,)], "ENGLISH_MANUFACTURER_PAGES_INCOMPLETE")
-                    require(db.execute("SELECT count(*) FROM procedures").fetchone()[0] == 336,
-                            "ENGLISH_MANUFACTURER_PROCEDURES_INCOMPLETE")
-                    images = []
+                    # Backwards compatible with the previously published single
+                    # AKM7169ENG package; the new candidate uses one *native*
+                    # language SQLite containing AKM7169ENG AND RCL0193ENG.
+                    native = db.execute(
+                        "SELECT COUNT(*) FROM sqlite_master "
+                        "WHERE type='table' AND name='documentary_database'"
+                    ).fetchone()[0] == 1
+                    if native:
+                        docs = db.execute(
+                            "SELECT document_id,source_pages,source_sha256 "
+                            "FROM documentary_documents ORDER BY document_id"
+                        ).fetchall()
+                        require(docs == [
+                            ("AKM7169ENG",482,
+                             "c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0"),
+                            ("RCL0193ENG",372,
+                             "c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715"),
+                        ], "RAVE_EN_SOURCE_IDENTITIES_INVALID")
+                        meta = db.execute(
+                            "SELECT schema_version,language,publication_status "
+                            "FROM documentary_database WHERE singleton=1"
+                        ).fetchone()
+                        require(meta == (1, "en", "source_inventory"),
+                                "RAVE_EN_NATIVE_METADATA_INVALID")
+                        page_counts = db.execute(
+                            "SELECT document_id,COUNT(*),MIN(physical_page),MAX(physical_page) "
+                            "FROM documentary_pages GROUP BY document_id ORDER BY document_id"
+                        ).fetchall()
+                        require(page_counts == [
+                            ("AKM7169ENG",482,1,482), ("RCL0193ENG",372,1,372)
+                        ], "RAVE_EN_PHYSICAL_PAGE_COVERAGE_INVALID")
+                        n = db.execute(
+                            "SELECT COUNT(*) FROM documentary_entries"
+                        ).fetchone()[0]
+                        fts = db.execute(
+                            "SELECT COUNT(*) FROM documentary_fts"
+                        ).fetchone()[0]
+                        require(n > 6500 and fts == n,
+                                "RAVE_EN_NATIVE_FTS_OR_ENTRIES_INCOMPLETE")
+                        require(db.execute(
+                            "SELECT COUNT(*) FROM documentary_entries "
+                            "WHERE document_id='RCL0193ENG' AND "
+                            "source_table='rcl0193eng_pdf_text'"
+                        ).fetchone()[0] == 326,
+                                "RCL0193ENG_TEXT_PAGES_INCOMPLETE")
+                        require(db.execute(
+                            "SELECT COUNT(*) FROM documentary_entries "
+                            "WHERE verification_status!='review_required'"
+                        ).fetchone()[0] == 0,
+                                "UNAPPROVED_RAVE_EN_TEXT_REJECTED")
+                        require(db.execute(
+                            "SELECT COUNT(*) FROM procedures"
+                        ).fetchone()[0] == 336,
+                                "AKM7169ENG_ORIGINAL_PROCEDURES_CHANGED")
+                        images = db.execute(
+                            "SELECT relative_path,asset_sha256,asset_bytes "
+                            "FROM documentary_images ORDER BY physical_page"
+                        ).fetchall()
+                        require(len(images) == 326,
+                                "RCL0193ENG_FACSIMILE_PAGES_INCOMPLETE")
+                        for relative, digest, size in images:
+                            require(relative in names and
+                                    zip_.getinfo(relative).file_size == size,
+                                    "RAVE_EN_IMAGE_MISSING_OR_BAD_SIZE")
+                            require(hashlib.sha256(zip_.read(relative)).hexdigest() == digest,
+                                    "RAVE_EN_IMAGE_SHA256_MISMATCH")
+                    else:
+                        docs = db.execute("SELECT total_pages FROM source_documents").fetchall()
+                        require(docs == [(482,)], "ENGLISH_MANUFACTURER_PAGES_INCOMPLETE")
+                        require(db.execute("SELECT count(*) FROM procedures").fetchone()[0] == 336,
+                                "ENGLISH_MANUFACTURER_PROCEDURES_INCOMPLETE")
+                        images = []
     return {
         "language": language,
         "source_zip_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
