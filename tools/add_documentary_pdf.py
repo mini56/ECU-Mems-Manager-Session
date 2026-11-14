@@ -22,6 +22,7 @@ from pathlib import Path
 from documentary_common import (
     LANGUAGES, MAX_SOURCE_PAGES, schema, validate_source_snapshot,
     ensure_import_history, register_added_pdf, documentary_import_report,
+    ensure_structured_operations,
 )
 
 MAX_FILES = 2500
@@ -181,6 +182,7 @@ def append_pdf(snapshot: Path | None, pdf: Path, language: str,
                         (source_id,revision,number,
                          "images/"+filename,
                          hashlib.sha256(image).hexdigest(),len(image)))
+            operation_report=ensure_structured_operations(db)
             register_added_pdf(db,document_id=source_id,revision=revision,
                                previous_snapshot_sha256=previous_zip_sha256,
                                imported_utc=datetime.now(timezone.utc).isoformat())
@@ -211,7 +213,8 @@ def append_pdf(snapshot: Path | None, pdf: Path, language: str,
             partial.replace(output)
         finally:
             partial.unlink(missing_ok=True)
-    result=dict(details,new_document_id=source_id,
+    result=dict(details,structured_operation_contract=operation_report,
+                new_document_id=source_id,
                 new_source_pages=count,original_pdf_sha256=digest,
                 candidate_zip_sha256=sha256(output),
                 production_installed=False)
