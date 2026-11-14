@@ -5,6 +5,7 @@
 #include "expert/IaMemsDiagramCatalog.h"
 #include "expert/IaMemsConversationRouting.h"
 #include "expert/IaMemsService.h"
+#include "expert/IaMemsDocumentaryPipeline.h"
 #include "database/MemsDocumentaryRepository.h"
 #include "database/MemsDocumentaryImageViewer.h"
 #include "database/MemsReferenceDatabase.h"
@@ -208,11 +209,15 @@ IaMemsTab::IaMemsTab(MainWindow *mainWindow, QWidget *parent)
     input->addWidget(m_sendButton);
     root->addLayout(input);
 
-    // One Send path, independent of when a documentary pack is installed.
-    // IaMemsService::askWithLibrary selects the same language-native SQLite
-    // as the Base de donnees page. Never attach a second Pack001 navigator.
-    connect(m_sendButton,&QPushButton::clicked,this,&IaMemsTab::sendQuestion);
-    connect(m_question,&QLineEdit::returnPressed,this,&IaMemsTab::sendQuestion);
+    // Exactly one owner of the Send action. With the Rover corpus installed,
+    // the IA service performs both searching and numbered source selection.
+    // The older Pack001 navigator remains available only without Rover.
+    if (MemsDocumentaryRepository::isPackInstalled()) {
+        connect(m_sendButton,&QPushButton::clicked,this,&IaMemsTab::sendQuestion);
+        connect(m_question,&QLineEdit::returnPressed,this,&IaMemsTab::sendQuestion);
+    } else {
+        connectIaMemsDocumentaryPipeline(this,m_question,m_sendButton,m_transcript);
+    }
     connect(m_diagramButton, &QPushButton::clicked,
             this, &IaMemsTab::openSuggestedDiagram);
     connect(m_documentButton, &QPushButton::clicked,
