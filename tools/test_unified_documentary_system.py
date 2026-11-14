@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Regression: one PDF import/packing contract for every SESSION language."""
 import hashlib
+import json
 import sqlite3
 import tempfile
 import unittest
@@ -39,6 +40,17 @@ class UniformDocumentarySystemTest(unittest.TestCase):
                 self.assertEqual(report1["facsimiles"],3)
                 self.assertEqual(inspect_zip(old,language)["documents"],1)
                 report2=append_pdf(old,second,language,new)
+                self.assertEqual(report1['import_sequence'],1)
+                self.assertEqual(report2['import_sequence'],2)
+                audit=json.loads(Path(report2['audit_report']).read_text(encoding='utf-8'))
+                self.assertEqual(audit['document_count'],2)
+                self.assertEqual([e['sequence'] for e in audit['history']],[1,2])
+                self.assertTrue(all(e['import_kind']=='added_pdf' for e in audit['history']))
+                self.assertIsNone(audit['history'][0]['previous_snapshot_sha256'])
+                self.assertEqual(audit['history'][1]['previous_snapshot_sha256'],hashlib.sha256(old.read_bytes()).hexdigest())
+                self.assertEqual([e['source_pages'] for e in audit['history']],[3,2])
+                self.assertEqual([e['images_at_import'] for e in audit['history']],[3,2])
+                self.assertEqual([e['procedures_at_import'] for e in audit['history']],[0,0])
                 self.assertEqual(report2["document_count"],2)
                 self.assertEqual(report2["source_pages"],5)
                 self.assertEqual(report2["facsimiles"],5)
@@ -62,6 +74,8 @@ class UniformDocumentarySystemTest(unittest.TestCase):
                     new_path.write_bytes(updated_snapshot)
                     with sqlite3.connect(old_path) as before,sqlite3.connect(new_path) as after:
                         self.assertEqual(validate_source_snapshot(after,language)["document_count"],2)
+                        with self.assertRaises(sqlite3.IntegrityError):
+                            after.execute('DELETE FROM documentary_import_history WHERE import_sequence=1')
                         previous=before.execute(
                             "SELECT document_id,entry_id,source_text,raw_json "
                             "FROM documentary_entries ORDER BY document_id,entry_id").fetchall()
