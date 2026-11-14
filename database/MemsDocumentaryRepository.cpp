@@ -619,6 +619,11 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
             // Une question précise doit retrouver ses termes ensemble, et non
             // douze lignes différentes ayant chacune un seul mot en commun.
             query.addBindValue(tokens.join(QStringLiteral(" AND ")));
+#ifdef MEMS_DOCUMENTARY_SELFTEST
+            fprintf(stderr,"NATIVE_TERMS=%s MATCH=%s\\n",
+                qPrintable(subject.join(QStringLiteral(","))),
+                qPrintable(tokens.join(QStringLiteral(" AND "))));
+#endif
             // Examiner assez de résultats avant de classer par opération
             // demandée ; ne jamais classer sur seulement les 12 premiers BM25.
             query.addBindValue(qMax(60,maximum));
