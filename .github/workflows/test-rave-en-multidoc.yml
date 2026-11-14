@@ -1,0 +1,59 @@
+name: RAVE EN - verify AKM and RCL multi-document candidate (NO PUBLIC PACK)
+
+on:
+  push:
+    branches: [fix-rave-en-multidoc-20261114]
+    paths:
+      - "tools/build_rave_en_multidoc.py"
+      - "tools/pack_mems_documentary.py"
+      - ".github/workflows/test-rave-en-multidoc.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-private-staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install PDF reader and encrypted-pack validator requirements
+        run: python -m pip install --disable-pip-version-check pymupdf cryptography
+      - name: Check original source identity BEFORE building
+        run: |
+          python - <<'PY'
+          from hashlib import sha256
+          from pathlib import Path
+          path=Path('rave/xn/wmxn990e.pdf')
+          assert path.is_file(), 'RAVE_PDF_MISSING'
+          assert sha256(path.read_bytes()).hexdigest() == 'c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715', 'WRONG_RAVE_PDF'
+          print('RAVE_ORIGINAL_PDF_SHA256_OK')
+          PY
+      - name: Build independent English candidate in temporary runner space
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/build_rave_en_multidoc.py --output "$RUNNER_TEMP/rave-en-verification" > "$RUNNER_TEMP/rave-en-report.log"
+          python - "$RUNNER_TEMP/rave-en-verification" <<'PY'
+          import json, sys
+          from pathlib import Path
+          sys.path.insert(0, 'tools')
+          from pack_mems_documentary import inspect_zip
+          root=Path(sys.argv[1])
+          source=root/'MEMS-DOC-EN-AKM7169ENG-RCL0193ENG-PRIVATE-CANDIDATE.zip'
+          result=inspect_zip(source,'en')
+          report=json.loads((root/'RAVE_EN_MERGE_REPORT.json').read_text(encoding='utf-8'))
+          assert result['documents']==2
+          assert result['manufacturer_image_count']==326
+          assert report['native_pages']==854
+          print('RAVE_EN_TWO_MANUAL_CANDIDATE_VERIFIED')
+          print('MANUALS: AKM7169ENG=482, RCL0193ENG=372')
+          print('REVIEW_STATUS: source_inventory, no repair instruction approved')
+          print('PRIVATE_STAGING_CANDIDATE_SHA256:',report['candidate_zip_sha256'])
+          PY
+      - name: No public artifacts, no Release, no Setup
+        run: echo "VERIFICATION_ONLY - candidate remains in runner temporary storage"
