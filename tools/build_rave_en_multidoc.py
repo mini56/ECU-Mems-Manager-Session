@@ -31,6 +31,7 @@ except ImportError as exc:
     raise SystemExit("PyMuPDF required: python -m pip install pymupdf") from exc
 
 from build_rave_en_documentary import build as build_akm
+from rave_en_catalog import add_remaining_rave_pdfs
 
 RAVE_SHA = "c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715"
 AKM_SHA = "c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0"
@@ -282,6 +283,7 @@ def build(parts: Path, rave: Path, out: Path) -> dict:
             db.execute("INSERT INTO documentary_database VALUES(1,1,'en',2,'source_inventory')")
             akm = add_akm(db)
             rave_data = add_rave(db, rave, image_dir)
+            other_rave = add_remaining_rave_pdfs(db, rave, image_dir)
             db.commit()
             require(db.execute("PRAGMA quick_check").fetchone()[0] == "ok",
                     "NATIVE_EN_INTEGRITY_FAILED")
@@ -290,13 +292,16 @@ def build(parts: Path, rave: Path, out: Path) -> dict:
             docs = db.execute(
                 "SELECT document_id,source_pages FROM documentary_documents ORDER BY document_id"
             ).fetchall()
-            require([tuple(r) for r in docs] ==
-                    [("AKM7169ENG", 482), ("RCL0193ENG", 372)],
-                    "NATIVE_EN_DOCUMENT_MISMATCH")
+            doc_index = {r["document_id"]: r["source_pages"] for r in docs}
+            require(len(doc_index) == 48 and doc_index["AKM7169ENG"] == AKM_PAGES
+                    and doc_index["RCL0193ENG"] == RAVE_PAGES
+                    and sum(doc_index.values()) == 854 + other_rave["pages"],
+                    "NATIVE_EN_RAVE_DOCUMENT_MISMATCH")
             n = db.execute("SELECT COUNT(*) FROM documentary_entries").fetchone()[0]
             fts = db.execute("SELECT COUNT(*) FROM documentary_fts").fetchone()[0]
             pages = db.execute("SELECT COUNT(*) FROM documentary_pages").fetchone()[0]
-            require(n == fts and pages == 854, "NATIVE_EN_FTS_OR_PAGE_LOSS")
+            require(n == fts and pages == sum(doc_index.values()),
+                    "NATIVE_EN_FTS_OR_PAGE_LOSS")
             require(db.execute(
                 "SELECT COUNT(*) FROM documentary_entries WHERE verification_status!='review_required'"
             ).fetchone()[0] == 0, "UNAPPROVED_TEXT_WAS_MARKED_VERIFIED")
@@ -305,18 +310,20 @@ def build(parts: Path, rave: Path, out: Path) -> dict:
             report = {"language": "en", "documents": [
                 {"id": "AKM7169ENG", "pages": AKM_PAGES, "source_sha256": AKM_SHA},
                 {"id": "RCL0193ENG", "pages": RAVE_PAGES, "source_sha256": RAVE_SHA}],
-                "akm": akm, "rave": rave_data,
+                "akm": akm, "rave": rave_data, "remaining_rave": other_rave,
                 "native_entries": n, "native_fts": fts, "native_pages": pages,
                 "approval": "source_inventory / review_required",
                 "sqlite_sha256": sha_file(target),
                 "status": "private_unencrypted_candidate_only",
                 "published": False}
-        package = out / "MEMS-DOC-EN-AKM7169ENG-RCL0193ENG-PRIVATE-CANDIDATE.zip"
+        package = out / "MEMS-DOC-EN-AKM7169ENG-RAVE47-PRIVATE-CANDIDATE.zip"
         with zipfile.ZipFile(package, "w", zipfile.ZIP_DEFLATED,
                              compresslevel=7) as archive:
             archive.write(target, "mems_documentary_en.sqlite")
             for asset in sorted(image_dir.glob("*.png")):
                 archive.write(asset, "images/" + asset.name)
+        require(package.stat().st_size <= 256 * 1024 * 1024,
+                "CANDIDATE_ZIP_TOO_LARGE_FOR_SESSION_IMPORT")
         require(zipfile.ZipFile(package).testzip() is None, "CANDIDATE_ZIP_CRC_FAILED")
         report["candidate_zip_sha256"] = sha_file(package)
         report["candidate_zip_bytes"] = package.stat().st_size
