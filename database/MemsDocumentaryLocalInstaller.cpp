@@ -331,7 +331,7 @@ QString MemsDocumentaryLocalInstaller::installZip(
                           QDirIterator::Subdirectories);
     while(iterator.hasNext()){
         const QFileInfo file(iterator.next());
-        if(file.isSymLink() || ++files>1000 ||
+        if(file.isSymLink() || ++files>2500 ||
            (total+=file.size())>700LL*1024*1024)
             return QStringLiteral("Archive contenant trop de fichiers ou de données.");
     }
