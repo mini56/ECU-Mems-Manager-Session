@@ -49,7 +49,7 @@ def inspect_zip(path: Path, language: str) -> dict:
         files = [e for e in entries if not e.is_dir()]
         names = [e.filename for e in files]
         require(len(names) == len(set(names)), "DUPLICATE_ZIP_PATH")
-        require(len(files) < 1000, "ZIP_TOO_MANY_FILES")
+        require(len(files) < 2500, "ZIP_TOO_MANY_FILES")
         require(exact in names and names.count(exact) == 1, "ZIP_SQLITE_LANGUAGE_MISMATCH")
         require(not any(n.startswith("/") or "\\" in n or
                         n in (".", "..") or
@@ -140,12 +140,21 @@ def inspect_zip(path: Path, language: str) -> dict:
                             "SELECT document_id,source_pages,source_sha256 "
                             "FROM documentary_documents ORDER BY document_id"
                         ).fetchall()
-                        require(docs == [
-                            ("AKM7169ENG",482,
-                             "c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0"),
-                            ("RCL0193ENG",372,
-                             "c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715"),
-                        ], "RAVE_EN_SOURCE_IDENTITIES_INVALID")
+                        doc_map = {document_id:(pages,sha)
+                                   for document_id,pages,sha in docs}
+                        require(len(docs) == 48 and len(doc_map) == 48
+                                and doc_map.get("AKM7169ENG") ==
+                                (482,"c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0")
+                                and doc_map.get("RCL0193ENG") ==
+                                (372,"c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715")
+                                and all(name.startswith("RAVE_")
+                                        and 1 <= pages <= 999
+                                        and re.fullmatch("[0-9a-f]{64}",sha)
+                                        for name,(pages,sha) in doc_map.items()
+                                        if name not in ("AKM7169ENG","RCL0193ENG"))
+                                and len([name for name in doc_map
+                                         if name.startswith("RAVE_")]) == 46,
+                                "RAVE_EN_47_SOURCE_IDENTITIES_INVALID")
                         meta = db.execute(
                             "SELECT schema_version,language,publication_status "
                             "FROM documentary_database WHERE singleton=1"
@@ -156,9 +165,11 @@ def inspect_zip(path: Path, language: str) -> dict:
                             "SELECT document_id,COUNT(*),MIN(physical_page),MAX(physical_page) "
                             "FROM documentary_pages GROUP BY document_id ORDER BY document_id"
                         ).fetchall()
-                        require(page_counts == [
-                            ("AKM7169ENG",482,1,482), ("RCL0193ENG",372,1,372)
-                        ], "RAVE_EN_PHYSICAL_PAGE_COVERAGE_INVALID")
+                        require(len(page_counts)==len(doc_map) and all(
+                            actual==doc_map[doc][0] and first==1 and
+                            last==doc_map[doc][0]
+                            for doc,actual,first,last in page_counts),
+                            "RAVE_EN_PHYSICAL_PAGE_COVERAGE_INVALID")
                         n = db.execute(
                             "SELECT COUNT(*) FROM documentary_entries"
                         ).fetchone()[0]
@@ -186,8 +197,21 @@ def inspect_zip(path: Path, language: str) -> dict:
                             "SELECT relative_path,asset_sha256,asset_bytes "
                             "FROM documentary_images ORDER BY physical_page"
                         ).fetchall()
-                        require(len(images) == 326,
-                                "RCL0193ENG_FACSIMILE_PAGES_INCOMPLETE")
+                        expected_images = sum(
+                            pages for name,(pages,sha) in doc_map.items()
+                            if name.startswith("RAVE_")) + 326
+                        require(len(images) == expected_images,
+                                "FULL_RAVE_EN_FACSIMILE_PAGES_INCOMPLETE")
+                        image_counts = dict(db.execute(
+                            "SELECT document_id,COUNT(*) FROM documentary_images "
+                            "GROUP BY document_id"
+                        ).fetchall())
+                        require(image_counts.get("RCL0193ENG") == 326
+                                and not image_counts.get("AKM7169ENG")
+                                and all(image_counts.get(name) == pages
+                                        for name,(pages,sha) in doc_map.items()
+                                        if name.startswith("RAVE_")),
+                                "RAVE_EN_IMAGES_BY_SOURCE_INCOMPLETE")
                         for relative, digest, size in images:
                             require(relative in names and
                                     zip_.getinfo(relative).file_size == size,
