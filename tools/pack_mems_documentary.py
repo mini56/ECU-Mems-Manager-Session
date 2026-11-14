@@ -29,6 +29,7 @@ import zipfile
 from pathlib import Path
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from documentary_common import LANGUAGES, validate_source_snapshot
 
 MAX_ZIP = 256 * 1024 * 1024
 MAX_UNPACKED = 700 * 1024 * 1024
@@ -42,200 +43,66 @@ def require(ok: bool, reason: str) -> None:
 
 
 def inspect_zip(path: Path, language: str) -> dict:
-    require(path.is_file() and path.stat().st_size < MAX_ZIP, "ZIP_MISSING_OR_TOO_LARGE")
-    exact = f"mems_documentary_{language}.sqlite"
-    with zipfile.ZipFile(path) as zip_:
-        entries = zip_.infolist()
-        files = [e for e in entries if not e.is_dir()]
-        names = [e.filename for e in files]
-        require(len(names) == len(set(names)), "DUPLICATE_ZIP_PATH")
-        require(len(files) < 2500, "ZIP_TOO_MANY_FILES")
-        require(exact in names and names.count(exact) == 1, "ZIP_SQLITE_LANGUAGE_MISMATCH")
-        require(not any(n.startswith("/") or "\\" in n or
-                        n in (".", "..") or
-                        any(p in (".", "..", "") for p in n.split("/"))
-                        for n in names), "ZIP_PATH_TRAVERSAL")
-        require(not any((e.external_attr >> 16) & 0o170000 == 0o120000
-                        for e in files), "ZIP_SYMLINK_REJECTED")
-        require(sum(e.file_size for e in files) < MAX_UNPACKED,
+    """One validator for ALL languages, editions and document counts.
+
+    No manual names, page counts, fixed numbers of images, or hidden source
+    substitutions. Every stored original image is verified by its SHA256.
+    """
+    require(language in LANGUAGES, "UNKNOWN_LANGUAGE")
+    require(path.is_file() and path.stat().st_size < MAX_ZIP,
+            "ZIP_MISSING_OR_TOO_LARGE")
+    exact=f"mems_documentary_{language}.sqlite"
+    with zipfile.ZipFile(path) as archive:
+        entries=archive.infolist()
+        files=[entry for entry in entries if not entry.is_dir()]
+        names=[entry.filename for entry in files]
+        require(len(files)==len(set(names)) and len(files)<2500,
+                "ZIP_PATH_COLLISION_OR_TOO_MANY_FILES")
+        require(exact in names and names.count(exact)==1,
+                "ZIP_SQLITE_LANGUAGE_MISMATCH")
+        require(not any(name.startswith("/") or "\\\\" in name or
+                        any(part in ("", ".", "..") for part in name.split("/"))
+                        for name in names), "ZIP_PATH_TRAVERSAL")
+        require(not any((entry.external_attr >> 16) & 0o170000==0o120000
+                        for entry in files), "ZIP_SYMLINK_REJECTED")
+        require(sum(entry.file_size for entry in files)<MAX_UNPACKED,
                 "ZIP_UNPACKED_TOO_LARGE")
-        require(zip_.testzip() is None, "ZIP_CRC_ERROR")
+        require(archive.testzip() is None, "ZIP_CRC_ERROR")
         with tempfile.TemporaryDirectory() as folder:
-            source_db = Path(folder) / exact
-            source_db.write_bytes(zip_.read(exact))
-            # sqlite3.Connection.__exit__ alone does NOT close the handle:
-            # Windows refuses to delete the temporary SQLite otherwise.
-            with closing(sqlite3.connect(f"file:{source_db}?mode=ro", uri=True)) as db:
-                require(db.execute("PRAGMA integrity_check").fetchone()[0] == "ok",
-                        "SQLITE_INTEGRITY_ERROR")
-                require(not db.execute("PRAGMA foreign_key_check").fetchall(),
-                        "SQLITE_FOREIGN_KEYS_ERROR")
-                if language == "fr":
-                    docs = db.execute(
-                        "SELECT document_id,source_pages,source_sha256 "
-                        "FROM documentary_documents ORDER BY document_id"
-                    ).fetchall()
-                    RCL=("RCL0193FRE",371,
-                         "0c7fef28d0d0f0673ba321d6625a019c005823103caa98afb3258114e1fec713")
-                    SPI=("AKM7169FRE",20,
-                         "37cd0434347fe4009963d075e4b91b0b21ebc905bae5657519a8080c3026d4f5")
-                    expected_single=[RCL]
-                    expected_multi=[SPI,RCL]
-                    require(docs in (expected_single,expected_multi),
-                            "FRENCH_MANUFACTURER_PDF_IDENTITIES_INVALID")
-                    multi=docs==expected_multi
-                    expected_entries=6387 if multi else 5958
-                    expected_images=345 if multi else 325
-                    require(db.execute("SELECT count(*) FROM documentary_entries")
-                            .fetchone()[0] == expected_entries,
-                            "FRENCH_ENTRIES_INCOMPLETE")
-                    require(db.execute("SELECT count(*) FROM documentary_fts")
-                            .fetchone()[0] == expected_entries,
-                            "FRENCH_FTS_INDEX_INCOMPLETE")
-                    require(db.execute(
-                        "SELECT count(*) FROM documentary_entries WHERE verification_status"
-                        " != 'source_checked'"
-                    ).fetchone()[0] == 0, "FRENCH_UNREVIEWED_ROWS_REJECTED")
-                    require(db.execute("SELECT COUNT(*) FROM documentary_page_visual_status"
-                                       " WHERE document_id='RCL0193FRE' AND is_blank=0")
-                            .fetchone()[0] == 325,"RCL_IMAGE_VISUAL_PROVENANCE_INCOMPLETE")
-                    require(db.execute("SELECT COUNT(*) FROM documentary_pages")
-                            .fetchone()[0] == (391 if multi else 371),
-                            "FRENCH_PAGE_COVERAGE_INVALID")
-                    images = db.execute(
-                        "SELECT relative_path,asset_sha256,asset_bytes "
-                        "FROM documentary_images"
-                    ).fetchall()
-                    require(len(images) == expected_images,
-                            "FRENCH_IMAGE_COVERAGE_INVALID")
-                    for relative, digest, size in images:
-                        require(relative in names and size == zip_.getinfo(relative).file_size,
-                                "MANUFACTURER_IMAGE_MISSING")
-                        require(hashlib.sha256(zip_.read(relative)).hexdigest() == digest,
-                                "MANUFACTURER_IMAGE_SHA256_MISMATCH")
-                    if multi:
-                        require(db.execute(
-                            "SELECT count(*) FROM documentary_entries WHERE "
-                            "document_id='AKM7169FRE' AND entry_type='step'"
-                        ).fetchone()[0] == 267, "SPI_REPAIR_STEPS_INCOMPLETE")
-                        require(db.execute(
-                            "SELECT count(*) FROM documentary_entries WHERE "
-                            "document_id='AKM7169FRE' AND entry_type='technical_value'"
-                        ).fetchone()[0] == 22,"SPI_TECHNICAL_VALUES_INCOMPLETE")
-                        require(db.execute(
-                            "SELECT count(*) FROM documentary_entries WHERE "
-                            "document_id='AKM7169FRE' AND source_table="
-                            "'akm7169fre_description_relie'"
-                        ).fetchone()[0] == 19,"SPI_DESCRIPTIVE_SECTIONS_INCOMPLETE")
-                else:
-                    # Backwards compatible with the previously published single
-                    # AKM7169ENG package; the new candidate uses one *native*
-                    # language SQLite containing AKM7169ENG AND RCL0193ENG.
-                    native = db.execute(
-                        "SELECT COUNT(*) FROM sqlite_master "
-                        "WHERE type='table' AND name='documentary_database'"
-                    ).fetchone()[0] == 1
-                    if native:
-                        docs = db.execute(
-                            "SELECT document_id,source_pages,source_sha256 "
-                            "FROM documentary_documents ORDER BY document_id"
-                        ).fetchall()
-                        doc_map = {document_id:(pages,sha)
-                                   for document_id,pages,sha in docs}
-                        require(len(docs) == 48 and len(doc_map) == 48
-                                and doc_map.get("AKM7169ENG") ==
-                                (482,"c8bbb30d7d5a52932e7f92723ba5dc70520012ac3ceac21d19ab0a39b4d4c4e0")
-                                and doc_map.get("RCL0193ENG") ==
-                                (372,"c050a3eebe50c5a85bf8a69b7722bd2052079944e09d58578a498984ecf06715")
-                                and all(name.startswith("RAVE_")
-                                        and 1 <= pages <= 999
-                                        and re.fullmatch("[0-9a-f]{64}",sha)
-                                        for name,(pages,sha) in doc_map.items()
-                                        if name not in ("AKM7169ENG","RCL0193ENG"))
-                                and len([name for name in doc_map
-                                         if name.startswith("RAVE_")]) == 46,
-                                "RAVE_EN_47_SOURCE_IDENTITIES_INVALID")
-                        meta = db.execute(
-                            "SELECT schema_version,language,publication_status "
-                            "FROM documentary_database WHERE singleton=1"
-                        ).fetchone()
-                        require(meta == (1, "en", "source_inventory"),
-                                "RAVE_EN_NATIVE_METADATA_INVALID")
-                        page_counts = db.execute(
-                            "SELECT document_id,COUNT(*),MIN(physical_page),MAX(physical_page) "
-                            "FROM documentary_pages GROUP BY document_id ORDER BY document_id"
-                        ).fetchall()
-                        require(len(page_counts)==len(doc_map) and all(
-                            actual==doc_map[doc][0] and first==1 and
-                            last==doc_map[doc][0]
-                            for doc,actual,first,last in page_counts),
-                            "RAVE_EN_PHYSICAL_PAGE_COVERAGE_INVALID")
-                        n = db.execute(
-                            "SELECT COUNT(*) FROM documentary_entries"
-                        ).fetchone()[0]
-                        fts = db.execute(
-                            "SELECT COUNT(*) FROM documentary_fts"
-                        ).fetchone()[0]
-                        require(n > 6500 and fts == n,
-                                "RAVE_EN_NATIVE_FTS_OR_ENTRIES_INCOMPLETE")
-                        require(db.execute(
-                            "SELECT COUNT(*) FROM documentary_entries "
-                            "WHERE document_id='RCL0193ENG' AND "
-                            "source_table='rcl0193eng_pdf_text'"
-                        ).fetchone()[0] == 326,
-                                "RCL0193ENG_TEXT_PAGES_INCOMPLETE")
-                        require(db.execute(
-                            "SELECT COUNT(*) FROM documentary_entries "
-                            "WHERE verification_status!='review_required'"
-                        ).fetchone()[0] == 0,
-                                "UNAPPROVED_RAVE_EN_TEXT_REJECTED")
-                        require(db.execute(
-                            "SELECT COUNT(*) FROM procedures"
-                        ).fetchone()[0] == 336,
-                                "AKM7169ENG_ORIGINAL_PROCEDURES_CHANGED")
-                        images = db.execute(
-                            "SELECT relative_path,asset_sha256,asset_bytes "
-                            "FROM documentary_images ORDER BY physical_page"
-                        ).fetchall()
-                        expected_images = sum(
-                            pages for name,(pages,sha) in doc_map.items()
-                            if name.startswith("RAVE_")) + 326
-                        require(len(images) == expected_images,
-                                "FULL_RAVE_EN_FACSIMILE_PAGES_INCOMPLETE")
-                        image_counts = dict(db.execute(
-                            "SELECT document_id,COUNT(*) FROM documentary_images "
-                            "GROUP BY document_id"
-                        ).fetchall())
-                        require(image_counts.get("RCL0193ENG") == 326
-                                and not image_counts.get("AKM7169ENG")
-                                and all(image_counts.get(name) == pages
-                                        for name,(pages,sha) in doc_map.items()
-                                        if name.startswith("RAVE_")),
-                                "RAVE_EN_IMAGES_BY_SOURCE_INCOMPLETE")
-                        for relative, digest, size in images:
-                            require(relative in names and
-                                    zip_.getinfo(relative).file_size == size,
-                                    "RAVE_EN_IMAGE_MISSING_OR_BAD_SIZE")
-                            require(hashlib.sha256(zip_.read(relative)).hexdigest() == digest,
-                                    "RAVE_EN_IMAGE_SHA256_MISMATCH")
-                    else:
-                        docs = db.execute("SELECT total_pages FROM source_documents").fetchall()
-                        require(docs == [(482,)], "ENGLISH_MANUFACTURER_PAGES_INCOMPLETE")
-                        require(db.execute("SELECT count(*) FROM procedures").fetchone()[0] == 336,
-                                "ENGLISH_MANUFACTURER_PROCEDURES_INCOMPLETE")
-                        images = []
-    return {
-        "language": language,
-        "source_zip_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
-        "source_zip_bytes": path.stat().st_size,
-        "documents": len(docs),
-        "manufacturer_image_count": len(images),
-        "verified_sqlite": exact,
-    }
+            target=Path(folder)/exact
+            target.write_bytes(archive.read(exact))
+            with closing(sqlite3.connect(f"file:{target}?mode=ro",uri=True)) as db:
+                counts=validate_source_snapshot(db,language)
+                images=db.execute(
+                    "SELECT relative_path,asset_sha256,asset_bytes "
+                    "FROM documentary_images").fetchall()
+                found=set()
+                for relative,digest,size in images:
+                    require(isinstance(relative,str) and
+                            re.fullmatch(
+                                r"images/[A-Za-z0-9_.-]+\\.(png|jpg|jpeg|webp)",
+                                relative,re.IGNORECASE) is not None and
+                            relative not in found and relative in names and
+                            isinstance(size,int) and 0<size<=15*1024*1024,
+                            "DOC_IMAGE_PATH_OR_SIZE_INVALID")
+                    require(archive.getinfo(relative).file_size==size and
+                            hashlib.sha256(archive.read(relative)).hexdigest()==digest,
+                            "DOC_IMAGE_SHA256_INVALID")
+                    found.add(relative)
+                require(set(names)==found|{exact},
+                        "DOC_SNAPSHOT_UNDECLARED_FILES")
+    return dict(
+        counts,source_zip_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
+        source_zip_bytes=path.stat().st_size,
+        documents=counts["document_count"],
+        manufacturer_image_count=counts["facsimiles"],
+        verified_sqlite=exact)
+
+
 
 
 def create_pack(source: Path, language: str, output: Path, password: str) -> dict:
-    require(language in ("fr", "en"), "UNKNOWN_LANGUAGE")
+    require(language in LANGUAGES, "UNKNOWN_LANGUAGE")
     require(isinstance(password, str) and len(password) >= 12, "PACK_PASSWORD_TOO_SHORT")
     details = inspect_zip(source, language)
     plain = source.read_bytes()
@@ -271,7 +138,7 @@ def create_pack(source: Path, language: str, output: Path, password: str) -> dic
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-zip", type=Path, required=True)
-    parser.add_argument("--language", required=True, choices=("fr", "en"))
+    parser.add_argument("--language", required=True, choices=sorted(LANGUAGES))
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--password-env", default="MEMS_DOCUMENTARY_PUBLISH_PASSWORD")
     parser.add_argument("--report", type=Path)
