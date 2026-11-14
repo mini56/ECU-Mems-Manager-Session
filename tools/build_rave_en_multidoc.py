@@ -153,7 +153,8 @@ def add_akm(db: sqlite3.Connection) -> dict:
     source = db.execute(
         "SELECT original_pdf_sha256,total_pages FROM source_documents"
     ).fetchone()
-    require(source == (AKM_SHA, AKM_PAGES), "AKM_SOURCE_PROVENANCE_CHANGED")
+    require(source is not None and tuple(source) == (AKM_SHA, AKM_PAGES),
+            "AKM_SOURCE_PROVENANCE_CHANGED")
     db.execute("INSERT INTO documentary_documents VALUES(?,?,?,?,?,?,?,?,?)",
                ("AKM7169ENG", revision, "en", "Rover", "AKM7169ENG",
                 "AKM7169ENG.pdf", AKM_SHA, AKM_PAGES,
