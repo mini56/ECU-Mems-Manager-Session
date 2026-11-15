@@ -55,7 +55,7 @@ jobs:
           if((Get-Content CMakeLists.txt -Raw) -notmatch 'MemsDocumentaryUpdateDialog.cpp'){throw 'UPDATE_DIALOG_NOT_COMPILED'}
           if((Get-Content CMakeLists.txt -Raw) -notmatch 'MemsDocumentaryImageViewer.cpp'){throw 'IMAGE_VIEWER_NOT_COMPILED'}
           $ia=Get-Content iamemstab.cpp -Raw
-          if($ia -notmatch 'Page constructeur associée' -or $ia -notmatch 'MemsDocumentaryImageViewer::show'){throw 'IA_IMAGES_NOT_WIRED'}
+          if($ia -notmatch 'iaMemsLastDocumentaryImagePaths' -or $ia -notmatch 'MemsDocumentaryImageViewer::show'){throw 'IA_IMAGES_NOT_WIRED'}
           $service=Get-Content expert/IaMemsLibraryIntegration.cpp -Raw
           if($service -notmatch 'iaMemsLastDocumentaryImagePath'){throw 'IA_IMAGE_PROVENANCE_NOT_CONNECTED'}
           Write-Host 'SESSION_SOURCE_DOCUMENTARY_UPDATE_ISOLATION_PASS'
