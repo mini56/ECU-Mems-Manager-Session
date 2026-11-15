@@ -89,6 +89,60 @@ bool genericInsufficientGrounding(const QString &text)
         || lower.contains(QStringLiteral("je n'ai pas assez d elements"));
 }
 
+QStringList workshopSubjectTokens(const QString &question)
+{
+    const QString plain = IaMemsConversationRouting::normalize(question);
+    static const QSet<QString> ignored = {
+        QStringLiteral("de"), QStringLiteral("du"), QStringLiteral("des"),
+        QStringLiteral("la"), QStringLiteral("le"), QStringLiteral("les"),
+        QStringLiteral("un"), QStringLiteral("une"), QStringLiteral("et"),
+        QStringLiteral("comment"), QStringLiteral("faire"), QStringLiteral("pour"),
+        QStringLiteral("procedure"), QStringLiteral("procedures"),
+        QStringLiteral("operation"), QStringLiteral("operations"),
+        QStringLiteral("depose"), QStringLiteral("deposer"),
+        QStringLiteral("repose"), QStringLiteral("reposer"),
+        QStringLiteral("demontage"), QStringLiteral("remontage"),
+        QStringLiteral("reparation"), QStringLiteral("reparer"),
+        QStringLiteral("revision"), QStringLiteral("controle"),
+        QStringLiteral("verifier"), QStringLiteral("verification"),
+        QStringLiteral("serrage"), QStringLiteral("couple"),
+        QStringLiteral("reglage"), QStringLiteral("regler")
+    };
+    QStringList terms;
+    for (QString word : plain.split(QLatin1Char(' '), Qt::SkipEmptyParts)) {
+        if (word.size() < 3 || ignored.contains(word))
+            continue;
+        if (word.endsWith(QLatin1Char('s')) && word.size() > 4)
+            word.chop(1);
+        if (!terms.contains(word))
+            terms.append(word);
+    }
+    return terms;
+}
+
+bool workshopTitleMatches(const QVariantMap &hit, const QStringList &subject)
+{
+    const QString title = IaMemsConversationRouting::normalize(
+        hit.value(QStringLiteral("title")).toString());
+    if (title.isEmpty() || subject.isEmpty())
+        return false;
+    const QStringList titleWords = title.split(QLatin1Char(' '), Qt::SkipEmptyParts);
+    for (const QString &term : subject) {
+        bool found = titleWords.contains(term);
+        if (!found) {
+            for (const QString &word : titleWords) {
+                if (word.startsWith(term) && word.size() <= term.size() + 2) {
+                    found = true;
+                    break;
+                }
+            }
+        }
+        if (!found)
+            return false;
+    }
+    return true;
+}
+
 QString documentaryModelQuestion(const QString &question,
                                   const QString &subject)
 {
@@ -623,7 +677,10 @@ void IaMemsService::askWithLibrary(const QString &question)
     static const QSet<QString> operationFollowUps={
         QStringLiteral("depose"),QStringLiteral("repose"),
         QStringLiteral("serrage"),QStringLiteral("couple"),
-        QStringLiteral("demontage"),QStringLiteral("remontage")
+        QStringLiteral("demontage"),QStringLiteral("remontage"),
+        QStringLiteral("reparation"),QStringLiteral("revision"),
+        QStringLiteral("controle"),QStringLiteral("verification"),
+        QStringLiteral("reglage")
     };
     if(!currentComponent.isEmpty() && operationFollowUps.contains(followUp))
         trimmed=currentComponent+QLatin1Char(' ')+trimmed;
@@ -733,6 +790,14 @@ void IaMemsService::askWithLibrary(const QString &question)
             }
             if (choices.isEmpty())
                 choices = documents;
+            const QStringList requestedSubject = workshopSubjectTokens(trimmed);
+            QVariantList matchingChoices;
+            for (const QVariant &choice : choices) {
+                if (workshopTitleMatches(choice.toMap(), requestedSubject))
+                    matchingChoices.append(choice);
+            }
+            // A mention in an unrelated chapter cannot become an answer.
+            choices = matchingChoices;
             // Un sujet technique doit recevoir une réponse immédiatement.
             // La navigation numérotée n'est utile que si l'utilisateur
             // demande expressément une liste de rubriques à parcourir.
@@ -766,7 +831,7 @@ void IaMemsService::askWithLibrary(const QString &question)
                 !normalizedQuestion.contains(QStringLiteral("repose")) &&
                 !normalizedQuestion.contains(QStringLiteral("serrage")) &&
                 !normalizedQuestion.contains(QStringLiteral("couple"));
-            if(componentOnly){
+            if(componentOnly && !choices.isEmpty()){
                 QStringList capabilities;
                 QSet<QString> unique;
                 for(const QVariant &choice:choices){
@@ -823,6 +888,21 @@ void IaMemsService::askWithLibrary(const QString &question)
                     if(item.value(QStringLiteral("entry_type")).toString() !=
                        QStringLiteral("procedure"))
                         continue;
+                    const QString requested = IaMemsConversationRouting::normalize(trimmed);
+                    const QString candidate = IaMemsConversationRouting::normalize(
+                        item.value(QStringLiteral("title")).toString());
+                    const bool wantsRemoval = requested.contains(QStringLiteral("depose")) ||
+                        requested.contains(QStringLiteral("deposer")) ||
+                        requested.contains(QStringLiteral("demontage"));
+                    const bool wantsRefit = requested.contains(QStringLiteral("repose")) ||
+                        requested.contains(QStringLiteral("reposer")) ||
+                        requested.contains(QStringLiteral("remontage"));
+                    if (wantsRemoval && candidate.contains(QStringLiteral("repose")) &&
+                        !candidate.contains(QStringLiteral("depose")))
+                        continue;
+                    if (wantsRefit && candidate.contains(QStringLiteral("depose")) &&
+                        !candidate.contains(QStringLiteral("repose")))
+                        continue;
                     QStringList allPages;
                     const QString detail=documentary.procedureAnswer(item,&allPages);
                     if(detail.isEmpty())
@@ -838,8 +918,19 @@ void IaMemsService::askWithLibrary(const QString &question)
                 }
             }
 
+            if (choices.isEmpty()) {
+                m_pendingGrounding.clear();
+                emit responseReady(QStringLiteral(
+                    "La documentation mentionne « %1 », mais aucune opération "
+                    "correspondant précisément à cette demande n\x27a été identifiée. "
+                    "Je ne vais pas présenter une procédure hors sujet. "
+                    "Précise le composant et l\x27intervention recherchés.")
+                    .arg(trimmed));
+                emit statusChanged();
+                return;
+            }
             const QString evidence =
-                MemsDocumentaryRepository::answerFromHits(choices.mid(0,3));
+                MemsDocumentaryRepository::answerFromHits(choices.mid(0,1));
             for(const QVariant &choice : choices.mid(0,3)){
                 const QString image=MemsDocumentaryRepository::imagePathForHit(
                     choice.toMap());
