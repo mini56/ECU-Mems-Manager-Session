@@ -167,6 +167,25 @@ if(MSVC)
     target_compile_options(mems_documentary_real_language_selftest PRIVATE /utf-8)
 endif()
 
+# Real uploaded 371-page scanned RAVE: validate local encrypted installation
+# and actual French OCR search (not merely synthetic PDF fixtures).
+add_executable(mems_documentary_real_fr_ocr_install_selftest
+    tools/test_real_fr_rave_ocr_install.cpp
+    database/MemsDocumentaryRepository.cpp database/MemsDocumentaryRepository.h
+    database/MemsDocumentaryPackCatalog.cpp database/MemsDocumentaryPackCatalog.h
+    database/MemsDocumentaryLocalInstaller.cpp database/MemsDocumentaryLocalInstaller.h
+    database/MemsDocumentaryEncryptedPack.cpp database/MemsDocumentaryEncryptedPack.h)
+target_compile_definitions(mems_documentary_real_fr_ocr_install_selftest PRIVATE
+    MEMS_DOCUMENTARY_SELFTEST=1 MEMS_DOCUMENTARY_INSTALL_SELFTEST=1)
+target_link_libraries(mems_documentary_real_fr_ocr_install_selftest PRIVATE
+    Qt5::Core Qt5::Sql Qt5::Network)
+if(WIN32)
+    target_link_libraries(mems_documentary_real_fr_ocr_install_selftest PRIVATE bcrypt)
+endif()
+if(MSVC)
+    target_compile_options(mems_documentary_real_fr_ocr_install_selftest PRIVATE /utf-8)
+endif()
+
 add_executable(mems_documentary_real_corpus_selftest
     database/MemsDocumentaryRealCorpusSelfTest.cpp
     database/MemsDocumentaryRepository.cpp database/MemsDocumentaryRepository.h
