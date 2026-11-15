@@ -785,9 +785,11 @@ void IaMemsService::askWithLibrary(const QString &question)
         QStringLiteral("purge"), QStringLiteral("diagnostic"),
         QStringLiteral("entretien"), QStringLiteral("schema")
     };
+    const bool isNumericSelection =
+        QRegularExpression(QStringLiteral("^[0-9]+$")).match(trimmed).hasMatch();
     if (!currentComponent.isEmpty() && operationFollowUps.contains(followUp))
         trimmed = currentComponent + QLatin1Char(' ') + trimmed;
-    else if (!operationFollowUps.contains(followUp))
+    else if (!operationFollowUps.contains(followUp) && !isNumericSelection)
         setProperty("iaMemsActiveDocumentaryComponent", QVariant());
 
     // When the Rover catalogue is mounted, a numbered reply selects the
@@ -841,7 +843,8 @@ void IaMemsService::askWithLibrary(const QString &question)
         // A new phrase may refine the menu subject ("frein" -> "maitre cylindre")
         // only if it appears in one of the currently offered operations.
         const QStringList refinement = workshopSubjectTokens(trimmed);
-        bool isRefinement = !refinement.isEmpty() && !currentComponent.isEmpty();
+        const bool isRefinement = !refinement.isEmpty() &&
+            !currentComponent.isEmpty() && !operationFollowUps.contains(followUp);
         if (isRefinement) {
             bool existsInMenu = false;
             for (const QVariant &choice : roverChoices) {
