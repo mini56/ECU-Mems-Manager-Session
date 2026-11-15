@@ -1134,13 +1134,75 @@ static QString workshopText(const QVariantMap &row)
             facts.append(line);
         }
     }
-    facts.append(supplementary);
+    // Cataloguing notes are not manufacturer repair instructions. Keep them
+    // only when no source text was indexed for this entry.
+    if (facts.isEmpty())
+        facts.append(supplementary);
     QStringList unique;
     for(const QString &fact : facts){
         if(!unique.contains(fact))
             unique.append(fact);
     }
     return unique.join(QStringLiteral("\n")).trimmed();
+}
+
+
+// Manufacturer PDFs sometimes carry running headers, printed page numbers,
+// and the next chapter heading in the same indexed source excerpt. Do not
+// change the original document or its provenance: remove only recognisable
+// page-layout furniture from the IA display. Numbered repair instructions,
+// phase headings and safety warnings must remain byte-for-byte unchanged.
+static QString readableWorkshopExcerpt(const QString &source)
+{
+    const QStringList lines=source.split(QLatin1Char('\n'),Qt::KeepEmptyParts);
+    static const QRegularExpression pageNumber(QStringLiteral("^\\d{1,3}$"));
+    static const QRegularExpression stepNumber(QStringLiteral("^\\d{1,3}[.)]\\s+"));
+    const auto isPageNumber=[&pageNumber](const QString &text){
+        return pageNumber.match(text.trimmed()).hasMatch();
+    };
+    const auto isStep=[&stepNumber](const QString &text){
+        return stepNumber.match(text.trimmed()).hasMatch();
+    };
+    const auto isRunningHeading=[](const QString &text){
+        const QString clean=text.trimmed();
+        if(clean.size()<4 || clean.size()>80 || clean!=clean.toUpper())
+            return false;
+        bool hasLetter=false;
+        for(const QChar ch:clean){
+            if(ch.isLetter())
+                hasLetter=true;
+            else if(!ch.isSpace() && !ch.isDigit() &&
+                    ch!=QLatin1Char('-') && ch!=QLatin1Char('/'))
+                return false;
+        }
+        return hasLetter;
+    };
+    QStringList output;
+    bool hasInstruction=false;
+    for(int i=0;i<lines.size();++i){
+        const QString line=lines.at(i).trimmed();
+        // E.g. "FREINS / REPARATIONS / 11" between steps 4 and 5.
+        if(hasInstruction && i+3<lines.size() &&
+           isRunningHeading(lines.at(i)) &&
+           isRunningHeading(lines.at(i+1)) &&
+           isPageNumber(lines.at(i+2)) &&
+           isStep(lines.at(i+3))){
+            i+=2;
+            continue;
+        }
+        // E.g. "12 / ENSEMBLE DE SERVOCOMMANDE" after the last brake
+        // step: the page number plus a new all-caps chapter heading
+        // identifies the start of the next unrelated source section.
+        if(hasInstruction && i+1<lines.size() &&
+           isPageNumber(lines.at(i)) &&
+           isRunningHeading(lines.at(i+1))){
+            break;
+        }
+        output.append(lines.at(i));
+        if(isStep(line))
+            hasInstruction=true;
+    }
+    return output.join(QLatin1Char('\n')).trimmed();
 }
 
 // Conserve uniquement les faits textuels lisibles. Les marqueurs techniques
@@ -1573,7 +1635,7 @@ QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
                 sourceFields.at(1) : QStringLiteral("Rover");
             const int page=item.value(QStringLiteral("source_page")).toInt();
             const QString title=item.value(QStringLiteral("title")).toString().simplified();
-            QString body=workshopText(item);
+            QString body=readableWorkshopExcerpt(workshopText(item));
             if(item.value(QStringLiteral("source_status")).toString()
                   ==QStringLiteral("review_required") ||
                sourceTable.endsWith(QStringLiteral("_page_ocr"))){
