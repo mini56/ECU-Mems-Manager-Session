@@ -810,7 +810,7 @@ void IaMemsService::askWithLibrary(const QString &question)
             // Pour une opération reconnue, joindre toutes ses étapes (36
             // pour la dépose du joint de culasse dans la base française)
             // et toutes ses pages, pas les seuls titres de recherche.
-            const QString intendedOperation=normalizedQuestion.contains(
+            const bool intendedOperation=normalizedQuestion.contains(
                 QStringLiteral("depose")) ||
                 normalizedQuestion.contains(QStringLiteral("deposer")) ||
                 normalizedQuestion.contains(QStringLiteral("repose")) ||
