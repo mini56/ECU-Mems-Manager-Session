@@ -1334,8 +1334,13 @@ QString MemsDocumentaryRepository::procedureAnswer(
                 answer << label+QLatin1Char(':');
                 lastPhase=item.phase;
             }
+            // Some source transcriptions already include the printed step number.
+            // Display it only once without changing the original stored text.
+            QString instruction=item.text;
+            const QRegularExpression printedNumber(QStringLiteral("^\\s*\\d+\\s*[.)]\\s*"));
+            instruction.remove(printedNumber);
             QString line=QStringLiteral("%1. %2")
-                .arg(item.number>0 ? item.number : i+1).arg(item.text);
+                .arg(item.number>0 ? item.number : i+1).arg(instruction);
             if(item.page>0)
                 line+=QStringLiteral(" (%1, p. %2)").arg(document).arg(item.page);
             if(!item.verified)
@@ -1512,8 +1517,10 @@ QString MemsDocumentaryRepository::procedureAnswer(
             answer << name+QLatin1Char(':');
             lastPhase=step.phase;
         }
+        QString instruction=step.text;
+        instruction.remove(QRegularExpression(QStringLiteral("^\\s*\\d+\\s*[.)]\\s*")));
         QString line=QStringLiteral("%1. %2")
-            .arg(step.order>0 ? step.order : i+1).arg(step.text);
+            .arg(step.order>0 ? step.order : i+1).arg(instruction);
         if(step.page>0)
             line+=QStringLiteral(" (%1, p. %2)").arg(document).arg(step.page);
         if(!step.checked)
