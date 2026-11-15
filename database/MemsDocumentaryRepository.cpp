@@ -89,7 +89,17 @@ QStringList nativeSubjectTerms(const QString &question)
         QStringLiteral("reposer"),QStringLiteral("remontage"),
         QStringLiteral("remonter"),QStringLiteral("remonte"),
         QStringLiteral("retirer"),QStringLiteral("retire"),
-        QStringLiteral("installer"),QStringLiteral("installation")
+        QStringLiteral("installer"),QStringLiteral("installation"),
+        QStringLiteral("reparation"),QStringLiteral("reparer"),
+        QStringLiteral("revision"),QStringLiteral("entretien"),
+        QStringLiteral("controle"),QStringLiteral("controler"),
+        QStringLiteral("verification"),QStringLiteral("verifier"),
+        QStringLiteral("reglage"),QStringLiteral("regler"),
+        QStringLiteral("remplacement"),QStringLiteral("remplacer"),
+        QStringLiteral("purge"),QStringLiteral("purger"),
+        QStringLiteral("diagnostic"),QStringLiteral("inspection"),
+        QStringLiteral("serrage"),QStringLiteral("couple"),
+        QStringLiteral("schema"),QStringLiteral("schemas")
     };
     QStringList terms;
     for(QString token:meaningfulTerms(question)){
@@ -626,7 +636,7 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
 #endif
             // Examiner assez de résultats avant de classer par opération
             // demandée ; ne jamais classer sur seulement les 12 premiers BM25.
-            query.addBindValue(qMax(60,maximum));
+            query.addBindValue(qMax(800,maximum));
         } else {
             if(!question.trimmed().isEmpty())
                 return result; // Une question vague ne doit pas retourner un annuaire arbitraire.
