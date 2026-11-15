@@ -222,10 +222,19 @@ int main(int argc,char** argv)
     selectedBrake.insert(QStringLiteral("title"),
                          QStringLiteral("SEGMENTS DE FREIN ARRIERE - operation 70.40.03"));
     selectedBrake.insert(QStringLiteral("content"),QStringLiteral(
-        "document : RCL0193FRE\\nlangue : francais\\npage physique : 247\\n\\n"
-        "Depose\\n1. Deposer les deux tambours.\\n"
-        "Inspection\\n1. Verifier les ressorts.\\n"
-        "Repose\\n1. Reposer les ressorts."));
+        "document : RCL0193FRE\nlangue : francais\npage physique : 247\n\n"
+        "Dépose\nAVERTISSEMENT: Remplacer tous les segments du même essieu.\n"
+        "1. Déposer les deux tambours.\n"
+        "4. Dégager le ressort du segment secondaire.\n"
+        "FREINS\nREPARATIONS\n11\n"
+        "5. Enlever les ressorts.\n"
+        "6. Maintenir les pistons avec un élastique.\n"
+        "Inspection\n1. Nettoyer le flasque.\n"
+        "2. Vérifier l'état des ressorts.\n"
+        "Repose\n1. Lubrifier les points de contact.\n"
+        "10. Poser les freins arrière à tambour.\n"
+        "12\nENSEMBLE DE SERVOCOMMANDE\n"
+        "notes: Références côté gauche/droit conservées ensemble."));
     const QString brakeReply=MemsDocumentaryRepository::answerFromHits(
         QVariantList{selectedBrake});
     if(!require(brakeReply.contains(QStringLiteral("Depose")) &&
@@ -236,6 +245,26 @@ int main(int argc,char** argv)
                 "selected operation must preserve manufacturer source and page"))return 1;
     if(!require(!brakeReply.contains(QStringLiteral("variante du moteur")),
                 "brake answers must not contain an unrelated engine warning"))return 1;
+    if(!require(brakeReply.contains(QStringLiteral("AVERTISSEMENT:")) &&
+                brakeReply.contains(QStringLiteral("5. Enlever les ressorts.")) &&
+                brakeReply.contains(QStringLiteral("10. Poser les freins")),
+                "layout cleanup must never discard real repair steps or warnings"))return 1;
+    if(!require(!brakeReply.contains(QStringLiteral("\nFREINS\n")) &&
+                !brakeReply.contains(QStringLiteral("\nREPARATIONS\n")) &&
+                !brakeReply.contains(QStringLiteral("ENSEMBLE DE SERVOCOMMANDE")) &&
+                !brakeReply.contains(QStringLiteral("Références côté gauche/droit")),
+                "PDF running headings, next chapter and editorial notes must not leak into operation"))return 1;
+    // A value on its own line is NOT a page number without the adjacent
+    // manufacturer heading. Protect such values against over-cleaning.
+    QVariantMap standaloneValue=selectedBrake;
+    standaloneValue.insert(QStringLiteral("content"),QStringLiteral(
+        "document : RCL0193FRE\nlangue : francais\npage physique : 247\n\n"
+        "Contrôle\n1. Mesurer le jeu.\n12\n2. Répéter la mesure."));
+    const QString valueReply=MemsDocumentaryRepository::answerFromHits(
+        QVariantList{standaloneValue});
+    if(!require(valueReply.contains(QStringLiteral("\n12\n")),
+                "a standalone technical value must remain without page-heading proof"))return 1;
+
     std::puts("MEMS_NATIVE_FRENCH_INTENT_AND_OPERATION_TEST_PASS");
     return 0;
 }
