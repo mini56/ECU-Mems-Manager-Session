@@ -108,6 +108,26 @@ int main(int argc,char** argv)
                            "'MOTEUR ET BOITE - dépose',"
                            "'Débrancher les tuyaux de frein pendant la dépose du moteur',"
                            "'source_checked','mems_procedure','{}')"),
+            QStringLiteral("INSERT INTO documentary_entries VALUES("
+                           "'RCL0193FRE','v1','piston-mention','reference',251,"
+                           "'ETRIER DE FREIN AVANT - inspection',"
+                           "'Le cylindre contient deux pistons. Vérifier la liberté de déplacement.',"
+                           "'source_checked','mems_knowledge_item','{}')"),
+            QStringLiteral("INSERT INTO documentary_entries VALUES("
+                           "'RCL0193FRE','v1','injecteur-ref','reference',112,"
+                           "'Injecteur',"
+                           "'Injecteur: fonctionnement et commande du solénoïde.',"
+                           "'source_checked','mems_knowledge_item','{}')"),
+            QStringLiteral("INSERT INTO documentary_entries VALUES("
+                           "'RCL0193FRE','v1','injecteur-location','reference',113,"
+                           "'Emplacement : Injecteur',"
+                           "'Repérage des injecteurs sur la rampe d alimentation.',"
+                           "'source_checked','mems_knowledge_item','{}')"),
+            QStringLiteral("INSERT INTO documentary_entries VALUES("
+                           "'RCL0193FRE','v1','iat-incidental','reference',114,"
+                           "'IAT température admission injecteurs carburant',"
+                           "'Le calculateur ajuste les injecteurs suivant la sonde IAT.',"
+                           "'source_checked','mems_knowledge_item','{}')"),
             QStringLiteral("INSERT INTO documentary_fts(documentary_fts) VALUES('rebuild')")
         };
         for(const QString& sql:schema){
@@ -209,6 +229,46 @@ int main(int argc,char** argv)
                 "workshop operation word must not block otherwise available procedures"))return 1;
     const QVariantList unrelated=repository.search(QStringLiteral("reprogrammer le vaisseau spatial"));
     if(!require(unrelated.isEmpty(),"unrelated question must not return an index"))return 1;
+    // Regression: "PISTON" occurs in a checked passage without being the
+    // heading. Offer it as a clearly labelled documentary mention, rather
+    // than inventing a piston removal procedure or returning no result.
+    const QVariantList pistonHits=repository.search(
+        QStringLiteral("PISTON"),100,true,QStringLiteral("fr"));
+    const QVariantList pistonTopics=MemsDocumentaryRepository::relevantChoices(
+        QStringLiteral("PISTON"),pistonHits);
+    if(!require(!pistonTopics.isEmpty() &&
+                pistonTopics.first().toMap().value(
+                    QStringLiteral("iaMemsMentionOnly")).toBool(),
+                "piston mentioned only in text must be offered as a mention"))return 1;
+    const QString pistonMenu=MemsDocumentaryRepository::numberedMenu(
+        QStringLiteral("PISTON"),pistonTopics,true);
+    if(!require(pistonMenu.contains(QStringLiteral("mention dans le document")),
+                "source mention must be unambiguously labelled"))return 1;
+    const QString pistonAnswer=MemsDocumentaryRepository::answerFromHits(
+        QVariantList{pistonTopics.first()});
+    if(!require(pistonAnswer.contains(QStringLiteral("pistons")) &&
+                pistonAnswer.contains(QStringLiteral("page 251")) &&
+                pistonAnswer.contains(QStringLiteral("pas d'une procédure")),
+                "piston mention selection must preserve source, excerpt and scope"))return 1;
+
+    // Regression: the IAT is a different topic even though its heading
+    // incidentally includes the word "injecteurs".
+    const QVariantList injectorHits=repository.search(
+        QStringLiteral("INJECTEUR"),100,true,QStringLiteral("fr"));
+    const QVariantList injectorTopics=MemsDocumentaryRepository::relevantChoices(
+        QStringLiteral("INJECTEUR"),injectorHits);
+    if(!require(injectorTopics.size()==2,
+                "injector query must keep the two dedicated headings only"))return 1;
+    for(const QVariant &entry:injectorTopics)
+        if(!require(!entry.toMap().value(QStringLiteral("title"))
+                 .toString().contains(QStringLiteral("IAT")),
+                 "IAT description must not be an injector operation"))return 1;
+    const QVariantList allBrakeTopics=MemsDocumentaryRepository::relevantChoices(
+        QStringLiteral("FREIN"),
+        repository.search(QStringLiteral("FREIN"),100,true,QStringLiteral("fr")));
+    if(!require(allBrakeTopics.size()>=7,
+                "broad brake subject must retain all manufacturer operations"))return 1;
+
     // Reproduce the brake workshop conversation: a numbered documentary
     // selection must retain its three source phases and original page, and
     // must never append an engine-specific warning to a brake procedure.
@@ -264,6 +324,37 @@ int main(int argc,char** argv)
         QVariantList{standaloneValue});
     if(!require(valueReply.contains(QStringLiteral("\n12\n")),
                 "a standalone technical value must remain without page-heading proof"))return 1;
+
+    // Layout must also be removed before an explanatory (unnumbered)
+    // paragraph and at the tail of a numbered operation.
+    QVariantMap iatExcerpt=selectedBrake;
+    iatExcerpt.insert(QStringLiteral("title"),
+        QStringLiteral("IAT - description constructeur"));
+    iatExcerpt.insert(QStringLiteral("content"),QStringLiteral(
+        "document : RCL0193FRE\nlangue : français\npage physique : 112\n\n"
+        "SYSTEME DE GESTION MOTEUR\nDESCRIPTION ET FONCTIONNEMENT\n7\n"
+        "La sonde de température d'admission (IAT) est du type NTC.\n"
+        "Le module ECM utilise ce signal pour doser le carburant."));
+    const QString iatAnswer=MemsDocumentaryRepository::answerFromHits(
+        QVariantList{iatExcerpt});
+    if(!require(iatAnswer.contains(QStringLiteral("La sonde de température")) &&
+                !iatAnswer.contains(QStringLiteral("SYSTEME DE GESTION MOTEUR")) &&
+                !iatAnswer.contains(QStringLiteral("DESCRIPTION ET FONCTIONNEMENT")) &&
+                !iatAnswer.contains(QStringLiteral("\n7\n")),
+                "opening PDF headers must not contaminate IAT description"))return 1;
+    QVariantMap switchExcerpt=selectedBrake;
+    switchExcerpt.insert(QStringLiteral("title"),
+        QStringLiteral("CONTACTEUR DE TEMOIN DE DEFAILLANCE DE FREIN"));
+    switchExcerpt.insert(QStringLiteral("content"),QStringLiteral(
+        "document : RCL0193FRE\nlangue : français\npage physique : 239\n\n"
+        "Dépose\n1. Débrancher les connecteurs.\n"
+        "Repose\n1. Poser l'interrupteur.\n"
+        "FREINS\nREPARATIONS"));
+    const QString switchAnswer=MemsDocumentaryRepository::answerFromHits(
+        QVariantList{switchExcerpt});
+    if(!require(switchAnswer.contains(QStringLiteral("Poser l'interrupteur")) &&
+                !switchAnswer.contains(QStringLiteral("\nFREINS\nREPARATIONS")),
+                "trailing PDF running headings must be trimmed"))return 1;
 
     std::puts("MEMS_NATIVE_FRENCH_INTENT_AND_OPERATION_TEST_PASS");
     return 0;
