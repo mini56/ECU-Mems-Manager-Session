@@ -237,7 +237,7 @@ int main(int argc,char** argv)
         "notes: Références côté gauche/droit conservées ensemble."));
     const QString brakeReply=MemsDocumentaryRepository::answerFromHits(
         QVariantList{selectedBrake});
-    if(!require(brakeReply.contains(QStringLiteral("Depose")) &&
+    if(!require(brakeReply.contains(QStringLiteral("Dépose")) &&
                 brakeReply.contains(QStringLiteral("Inspection")) &&
                 brakeReply.contains(QStringLiteral("Repose")),
                 "the selected brake source must preserve all three phases"))return 1;
