@@ -241,26 +241,32 @@ public:
             const QString titleN = normalizedDocumentary(choice.label);
             const QString bodyN = normalizedDocumentary(body);
             int matches = 0;
+            int titleMatches = 0;
             int score = 0;
             for (const QString &term : terms) {
                 if (exactToken(titleN, term)) {
                     score += 95;
                     ++matches;
+                    ++titleMatches;
                 } else if (exactToken(bodyN, term)) {
                     score += 48;
                     ++matches;
                 } else if (titleN.contains(term)) {
                     score += 34;
                     ++matches;
+                    ++titleMatches;
                 } else if (bodyN.contains(term)) {
                     score += 18;
                     ++matches;
                 } else if (fuzzyTitleMatch(titleN, term)) {
                     score += 28;
                     ++matches;
+                    ++titleMatches;
                 }
             }
-            if (matches == 0)
+            // A term mentioned only inside another procedure is not its subject.
+            // Never promote a coincidental full-text match into an operation answer.
+            if (matches == 0 || titleMatches == 0)
                 continue;
             if (terms.size() >= 2 && matches * 2 < terms.size())
                 continue;
@@ -731,10 +737,11 @@ private:
         }
         if (choices.first().entityKind == QStringLiteral("operation")
             && (choices.size() == 1 || choices.first().score >= choices.at(1).score + 70)) {
-            sendResolved(choices.first(), original);
+            sendResolved(choices.first(), refined);
             return;
         }
-        showChoices(raw, choices, original);
+        // Preserve every refinement (e.g. frein -> maitre cylindre -> reparation).
+        showChoices(raw, choices, refined);
     }
 
     void handleSend()
