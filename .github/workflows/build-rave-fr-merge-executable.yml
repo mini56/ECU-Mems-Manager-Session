@@ -1,0 +1,57 @@
+name: RAVE French documentary cumulative merger - Windows portable tool
+on:
+  push:
+    branches: [fix-ia-documentary-single-source-20261114]
+    paths:
+      - 'tools/merge_rave_fr_addon.py'
+      - 'tools/test_merge_rave_fr_addon.py'
+      - '.github/workflows/build-rave-fr-merge-executable.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-and-build:
+    runs-on: windows-2025
+    timeout-minutes: 35
+    steps:
+      - name: Checkout original SESSION documentary tools
+        uses: actions/checkout@v4
+      - name: Python and SQLite with Windows packaging
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          architecture: x64
+      - name: Install authenticated pack dependency and portable builder
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python -m pip install --disable-pip-version-check 'cryptography>=43,<47' 'pyinstaller>=6.8,<7'
+          if($LASTEXITCODE -ne 0){throw 'WINDOWS_MERGER_DEPENDENCIES_FAILED'}
+      - name: Unit test preservation and encrypted readback using 6-document synthetic fixture
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python tools/test_merge_rave_fr_addon.py
+          if($LASTEXITCODE -ne 0){throw 'DOCUMENTARY_CUMULATIVE_ENCRYPTED_MERGE_TEST_FAILED'}
+      - name: Build portable Windows EXE with original source and no user documents
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name MEMS-RAVE-FR-AJOUT --distpath dist-rave --workpath build-rave tools/merge_rave_fr_addon.py
+          if($LASTEXITCODE -ne 0){throw 'RAVE_FR_WINDOWS_EXE_BUILD_FAILED'}
+          if(-not (Test-Path 'dist-rave/MEMS-RAVE-FR-AJOUT.exe')){throw 'RAVE_FR_EXE_MISSING'}
+          Write-Host ('MERGER_EXE_SIZE_BYTES '+(Get-Item 'dist-rave/MEMS-RAVE-FR-AJOUT.exe').Length)
+      - name: Verify real executable launches and has CLI help
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $p=Start-Process -FilePath (Resolve-Path 'dist-rave/MEMS-RAVE-FR-AJOUT.exe') -ArgumentList '--help' -PassThru -Wait
+          if($p.ExitCode -ne 0){throw 'RAVE_FR_WINDOWS_EXE_DID_NOT_RUN'}
+          Write-Host 'PASS_RAVE_FR_WINDOWS_PORTABLE_EXECUTABLE'
+      - name: Supply portable importer without PDFs or passwords
+        uses: actions/upload-artifact@v4
+        with:
+          name: MEMS-RAVE-FR-AJOUT-OUTIL-WINDOWS
+          path: dist-rave/MEMS-RAVE-FR-AJOUT.exe
+          if-no-files-found: error
+          retention-days: 7
