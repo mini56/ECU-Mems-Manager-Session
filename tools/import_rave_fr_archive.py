@@ -70,7 +70,7 @@ def load_inventory(path: Path) -> dict[str,dict]:
     result={}
     for row in rows:
         filename=row["fichier"]
-        if not re.fullmatch(r"[A-Za-z0-9._-]+\\.[pP][dD][fF]",filename):
+        if not re.fullmatch(r"[A-Za-z0-9._-]+\.[pP][dD][fF]",filename):
             fail("RAVE_FR_INVALID_ORIGINAL_NAME:"+filename)
         if not re.fullmatch("[0-9a-f]{64}",row["sha256"]):
             fail("RAVE_FR_INVALID_ORIGINAL_SHA:"+filename)
