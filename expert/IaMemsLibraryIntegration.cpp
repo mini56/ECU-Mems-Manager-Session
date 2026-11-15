@@ -1000,14 +1000,9 @@ void IaMemsService::askWithLibrary(const QString &question)
             return;
         }
 
-        m_pendingGrounding = evidence;
-
-        if (m_localAi && m_localAi->isReady()) {
-            m_localAi->ask(documentaryModelQuestion(trimmed, subject), evidence);
-            emit statusChanged();
-            return;
-        }
-
+        // The selected structured operation is already the manufacturer answer.
+        // A generative rewrite can omit steps, change values or produce a
+        // different operation. Return the complete ordered evidence directly.
         m_pendingGrounding.clear();
         emit responseReady(evidence);
         emit statusChanged();
