@@ -28,6 +28,11 @@ public:
     QVariantList search(const QString &question, int maximum = 12,
                         bool allowOcrDiscovery = true,
                         const QString &language = QString()) const;
+    // Shared source-grounded topic selection for IA MEMS. Distinguishes
+    // manufacturer headings from incidental mentions in documentary text.
+    static QStringList subjectTerms(const QString &question);
+    static QVariantList relevantChoices(const QString &question,
+                                        const QVariantList &hits);
     static QString answerFromHits(const QVariantList &hits);
     // Reconstitue toutes les étapes et exigences liées à l'opération exacte,
     // dans l'ordre constructeur. Renvoie toutes les pages illustrées utiles.
