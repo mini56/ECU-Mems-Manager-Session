@@ -830,7 +830,12 @@ void IaMemsService::askWithLibrary(const QString &question)
                 !normalizedQuestion.contains(QStringLiteral("depose")) &&
                 !normalizedQuestion.contains(QStringLiteral("repose")) &&
                 !normalizedQuestion.contains(QStringLiteral("serrage")) &&
-                !normalizedQuestion.contains(QStringLiteral("couple"));
+                !normalizedQuestion.contains(QStringLiteral("couple")) &&
+                !normalizedQuestion.contains(QStringLiteral("reparation")) &&
+                !normalizedQuestion.contains(QStringLiteral("revision")) &&
+                !normalizedQuestion.contains(QStringLiteral("controle")) &&
+                !normalizedQuestion.contains(QStringLiteral("verification")) &&
+                !normalizedQuestion.contains(QStringLiteral("reglage"));
             if(componentOnly && !choices.isEmpty()){
                 QStringList capabilities;
                 QSet<QString> unique;
@@ -881,7 +886,13 @@ void IaMemsService::askWithLibrary(const QString &question)
                 normalizedQuestion.contains(QStringLiteral("repose")) ||
                 normalizedQuestion.contains(QStringLiteral("reposer")) ||
                 normalizedQuestion.contains(QStringLiteral("demontage")) ||
-                normalizedQuestion.contains(QStringLiteral("remontage"));
+                normalizedQuestion.contains(QStringLiteral("remontage")) ||
+                normalizedQuestion.contains(QStringLiteral("reparation")) ||
+                normalizedQuestion.contains(QStringLiteral("revision")) ||
+                normalizedQuestion.contains(QStringLiteral("controle")) ||
+                normalizedQuestion.contains(QStringLiteral("verification")) ||
+                normalizedQuestion.contains(QStringLiteral("reglage")) ||
+                normalizedQuestion.contains(QStringLiteral("serrage"));
             if(intendedOperation){
                 for(const QVariant &choice:choices){
                     const QVariantMap item=choice.toMap();
@@ -925,6 +936,16 @@ void IaMemsService::askWithLibrary(const QString &question)
                     "correspondant précisément à cette demande n\x27a été identifiée. "
                     "Je ne vais pas présenter une procédure hors sujet. "
                     "Précise le composant et l\x27intervention recherchés.")
+                    .arg(trimmed));
+                emit statusChanged();
+                return;
+            }
+            if (intendedOperation) {
+                m_pendingGrounding.clear();
+                emit responseReady(QStringLiteral(
+                    "J\x27ai retrouvé le sujet « %1 », mais aucune procédure structurée "
+                    "correspondant à l\x27intervention demandée n\x27est disponible. "
+                    "Je ne remplace pas une réparation ou un contrôle par une autre opération.")
                     .arg(trimmed));
                 emit statusChanged();
                 return;
