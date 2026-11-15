@@ -2,7 +2,7 @@ name: SESSION 144 - MAJ bases chiffrees et installation Windows
 run-name: SESSION 144 - MAJ chiffrée et reprise ECU - ${{ github.sha }}
 on:
   push:
-    branches: [fix-ia-mems-reponses-pertinentes-20261115]
+    branches: [fix-ia-documentary-single-source-20261114]
     paths:
       - '.github/workflows/session-documentary-update-test.yml'
       - 'database/MemsDocumentaryPackCatalog*'
