@@ -1,4 +1,4 @@
-name: SESSION 145 - IA MEMS : toutes operations disponibles, Setup Windows
+name: "SESSION 145 - IA MEMS - Toutes operations disponibles - Setup Windows"
 run-name: SESSION 145 - IA MEMS, operations constructeur - ${{ github.sha }}
 on:
   push:
@@ -8,12 +8,12 @@ on:
       - 'database/MemsDocumentaryPackCatalog*'
       - 'database/MemsDocumentaryUpdateDialog*'
       - 'database/MemsDocumentaryWindowsTransport*'
-      - '.github/workflows/session-145-unified-documentary-setup-test.yml'
+      - '.github/workflows/session-145-ia-workshop-setup-test.yml'
       - 'database/MemsDocumentaryLocalInstaller*'
       - 'database/MemsDocumentaryEncryptedPack*'
       - 'tools/pack_mems_documentary.py'
       - 'tools/test_documentary_encrypted_cpp.cpp'
-      - '.github/workflows/session-145-unified-documentary-setup-test.yml'
+      - '.github/workflows/session-145-ia-workshop-setup-test.yml'
       - 'database/MemsDocumentaryRepository.cpp'
       - 'database/MemsDocumentaryRepositorySelfTest.cpp'
       - 'database/MemsDocumentaryImageViewer*'
