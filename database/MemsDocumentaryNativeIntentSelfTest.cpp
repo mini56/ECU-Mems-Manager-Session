@@ -68,6 +68,46 @@ int main(int argc,char** argv)
                            "'culasse écrous séquence de serrage',"
                            "'source_text: Écrous de culasse : 34 N.m puis 34 N.m de plus',"
                            "'source_checked','mems_knowledge_item','{}')"),
+            QStringLiteral("INSERT INTO documentary_entries VALUES("
+                           "'RCL0193FRE','v1','p3','procedure',70,"
+                           "'MAITRE CYLINDRE DE FREIN - réparation',"
+                           "'Consignes constructeur MAITRE CYLINDRE DE FREIN - réparation page 70',"
+                           "'source_checked','mems_procedure','{}')"),
+            QStringLiteral("INSERT INTO documentary_entries VALUES("
+                           "'RCL0193FRE','v1','p4','procedure',71,"
+                           "'MAITRE CYLINDRE DE FREIN - contrôle',"
+                           "'Consignes constructeur MAITRE CYLINDRE DE FREIN - contrôle page 71',"
+                           "'source_checked','mems_procedure','{}')"),
+            QStringLiteral("INSERT INTO documentary_entries VALUES("
+                           "'RCL0193FRE','v1','p5','procedure',72,"
+                           "'MAITRE CYLINDRE DE FREIN - réglage',"
+                           "'Consignes constructeur MAITRE CYLINDRE DE FREIN - réglage page 72',"
+                           "'source_checked','mems_procedure','{}')"),
+            QStringLiteral("INSERT INTO documentary_entries VALUES("
+                           "'RCL0193FRE','v1','p6','procedure',73,"
+                           "'MAITRE CYLINDRE DE FREIN - remplacement',"
+                           "'Consignes constructeur MAITRE CYLINDRE DE FREIN - remplacement page 73',"
+                           "'source_checked','mems_procedure','{}')"),
+            QStringLiteral("INSERT INTO documentary_entries VALUES("
+                           "'RCL0193FRE','v1','p7','procedure',74,"
+                           "'MAITRE CYLINDRE DE FREIN - purge',"
+                           "'Consignes constructeur MAITRE CYLINDRE DE FREIN - purge page 74',"
+                           "'source_checked','mems_procedure','{}')"),
+            QStringLiteral("INSERT INTO documentary_entries VALUES("
+                           "'RCL0193FRE','v1','p8','procedure',75,"
+                           "'MAITRE CYLINDRE DE FREIN - dépose',"
+                           "'Consignes constructeur MAITRE CYLINDRE DE FREIN - dépose page 75',"
+                           "'source_checked','mems_procedure','{}')"),
+            QStringLiteral("INSERT INTO documentary_entries VALUES("
+                           "'RCL0193FRE','v1','p9','procedure',76,"
+                           "'MAITRE CYLINDRE DE FREIN - repose',"
+                           "'Consignes constructeur MAITRE CYLINDRE DE FREIN - repose page 76',"
+                           "'source_checked','mems_procedure','{}')"),
+            QStringLiteral("INSERT INTO documentary_entries VALUES("
+                           "'RCL0193FRE','v1','motor','procedure',77,"
+                           "'MOTEUR ET BOITE - dépose',"
+                           "'Débrancher les tuyaux de frein pendant la dépose du moteur',"
+                           "'source_checked','mems_procedure','{}')"),
             QStringLiteral("INSERT INTO documentary_fts(documentary_fts) VALUES('rebuild')")
         };
         for(const QString& sql:schema){
@@ -140,6 +180,33 @@ int main(int argc,char** argv)
     }
     const QVariantList direct=repository.search(QStringLiteral("joint de culasse"));
     if(!require(direct.size()>=2,"general topic returns both real operations"))return 1;
+    // A broad component query must offer every real workshop operation,
+    // including repairs, controls, settings, replacement and bleeding.
+    const QVariantList brakeOffers=repository.search(
+        QStringLiteral("maitre cylindre de frein"),100,true,QStringLiteral("fr"));
+    const QString menu=MemsDocumentaryRepository::numberedMenu(
+        QStringLiteral("maitre cylindre de frein"),brakeOffers,true);
+    for (const QString &kind : {QStringLiteral("réparation"), QStringLiteral("contrôle"),
+            QStringLiteral("réglage"), QStringLiteral("remplacement"),
+            QStringLiteral("purge"), QStringLiteral("dépose"), QStringLiteral("repose")}) {
+        if(!require(menu.contains(kind),"workshop subject lists all actual operations"))return 1;
+    }
+    const QVariantList repair=repository.search(
+        QStringLiteral("réparation du maitre cylindre de frein"),100,true,QStringLiteral("fr"));
+    if(!require(!repair.isEmpty() &&
+                repair.first().toMap().value(QStringLiteral("title")).toString()
+                    .contains(QStringLiteral("MAITRE CYLINDRE")),
+                "repair request keeps the component without forcing removal/refit"))return 1;
+    const QVariantList control=repository.search(
+        QStringLiteral("contrôle maitre cylindre de frein"),100,true,QStringLiteral("fr"));
+    if(!require(!control.isEmpty() &&
+                control.first().toMap().value(QStringLiteral("title")).toString()
+                    .contains(QStringLiteral("MAITRE CYLINDRE")),
+                "control request stays with the intended brake component"))return 1;
+    const QVariantList review=repository.search(
+        QStringLiteral("révision du maitre cylindre de frein"),100,true,QStringLiteral("fr"));
+    if(!require(!review.isEmpty(),
+                "workshop operation word must not block otherwise available procedures"))return 1;
     const QVariantList unrelated=repository.search(QStringLiteral("reprogrammer le vaisseau spatial"));
     if(!require(unrelated.isEmpty(),"unrelated question must not return an index"))return 1;
     std::puts("MEMS_NATIVE_FRENCH_INTENT_AND_OPERATION_TEST_PASS");
