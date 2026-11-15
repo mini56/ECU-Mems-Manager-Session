@@ -604,7 +604,9 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
         const QString operation=nativeOperation(question);
         QStringList tokens;
         for(const QString &token:subject)
-            tokens << QStringLiteral("\"%1\"").arg(token);
+            tokens << (subject.size()==1 && token.size()>=4
+                ? QStringLiteral("\"%1\"*").arg(token)
+                : QStringLiteral("\"%1\"").arg(token));
         QSqlQuery query(m_database);
         if (pageMatch.hasMatch()) {
             statement = QStringLiteral(
@@ -1091,8 +1093,11 @@ QString MemsDocumentaryRepository::numberedMenu(
     for (int index = 0; index < choices.size(); ++index) {
         const QString title =
             choices.at(index).toMap().value(QStringLiteral("title")).toString();
-        lines << QStringLiteral("%1. %2").arg(index + 1)
-            .arg(title);
+        const bool mention=choices.at(index).toMap()
+            .value(QStringLiteral("iaMemsMentionOnly")).toBool();
+        lines << QStringLiteral("%1. %2%3").arg(index + 1)
+            .arg(title,mention ? QStringLiteral(" [mention dans le document]")
+                               : QString());
     }
     lines << QStringLiteral(
         "Réponds par le numéro de la rubrique à consulter, "
@@ -1215,6 +1220,182 @@ static bool informativeWorkshopText(const QString &text)
         QStringLiteral("^(?:valeur|value)\\s*\\d+$"),
         QRegularExpression::CaseInsensitiveOption);
     return !placeholder.match(text.trimmed()).hasMatch();
+}
+
+
+QStringList MemsDocumentaryRepository::subjectTerms(const QString &question)
+{
+    return nativeSubjectTerms(question);
+}
+
+static bool documentaryTokenMatches(const QString &candidate,
+                                    const QString &requested)
+{
+    if(candidate==requested)
+        return true;
+    // Only grammatical endings, never arbitrary substring matches (e.g.
+    // "injecteur" cannot match the unrelated word "injection").
+    return requested.size()>=4 && candidate.startsWith(requested) &&
+           candidate.size()<=requested.size()+2;
+}
+
+static int documentaryTitleHits(const QString &title,
+                                const QStringList &terms)
+{
+    const QStringList words=normalized(title).split(
+        QLatin1Char(' '),Qt::SkipEmptyParts);
+    int matches=0;
+    for(const QString &term:terms){
+        for(const QString &word:words){
+            if(documentaryTokenMatches(word,term)){
+                ++matches;
+                break;
+            }
+        }
+    }
+    return matches;
+}
+
+static QString documentaryTopicExcerpt(const QVariantMap &hit,
+                                       const QStringList &terms)
+{
+    const QString source=readableWorkshopExcerpt(workshopText(hit));
+    const QStringList lines=source.split(QLatin1Char('\n'));
+    QStringList excerpts;
+    for(int i=0;i<lines.size();++i){
+        const QString line=normalized(lines.at(i));
+        bool potential=false;
+        for(const QString &term:terms){
+            for(const QString &word:line.split(QLatin1Char(' '),Qt::SkipEmptyParts))
+                if(documentaryTokenMatches(word,term)){
+                    potential=true;
+                    break;
+                }
+            if(potential)
+                break;
+        }
+        if(!potential)
+            continue;
+        const int start=qMax(0,i-1);
+        const int finish=qMin(lines.size(),i+4);
+        QStringList context;
+        for(int k=start;k<finish;++k)
+            context.append(lines.at(k));
+        const QString joined=normalized(context.join(QLatin1Char(' ')));
+        bool complete=true;
+        for(const QString &term:terms){
+            bool found=false;
+            for(const QString &word:joined.split(QLatin1Char(' '),Qt::SkipEmptyParts))
+                if(documentaryTokenMatches(word,term)){
+                    found=true;
+                    break;
+                }
+            if(!found){
+                complete=false;
+                break;
+            }
+        }
+        if(!complete)
+            continue;
+        const QString excerpt=context.join(QLatin1Char('\n')).trimmed();
+        if(!excerpt.isEmpty() && !excerpts.contains(excerpt))
+            excerpts.append(excerpt);
+        if(excerpts.size()==2)
+            break;
+    }
+    return excerpts.join(QStringLiteral("\n[…]\n"));
+}
+
+QVariantList MemsDocumentaryRepository::relevantChoices(
+    const QString &question,const QVariantList &hits)
+{
+    const QStringList terms=nativeSubjectTerms(question);
+    if(terms.isEmpty() || hits.isEmpty())
+        return {};
+    const int required=terms.size()>=3?terms.size()-1:terms.size();
+    QVariantList direct;
+    QVariantList mentions;
+    bool hasConciseTopicHeading=false;
+    for(const QVariant &value:hits){
+        const QVariantMap row=value.toMap();
+        const QString title=row.value(QStringLiteral("title")).toString();
+        const QStringList words=normalized(title).split(
+            QLatin1Char(' '),Qt::SkipEmptyParts);
+        const int matched=documentaryTitleHits(title,terms);
+        if(matched>=required){
+            // A precise heading such as "Injecteur" or "Emplacement :
+            // Injecteur" takes precedence over a longer unrelated IAT
+            // heading that merely mentions injecteurs as another concept.
+            bool concise=false;
+            if(terms.size()==1 && words.size()<=2){
+                for(const QString &word:words)
+                    if(documentaryTokenMatches(word,terms.first()))
+                        concise=true;
+            }
+            if(concise)
+                hasConciseTopicHeading=true;
+            QVariantMap named=row;
+            named.insert(QStringLiteral("iaMemsConciseHeading"),concise);
+            direct.append(named);
+            continue;
+        }
+        // When there is no relevant heading, expose real source mentions as
+        // excerpts (never pretend the unrelated operation is a piston repair).
+        const QString entryType=row.value(QStringLiteral("entry_type")).toString();
+        if(entryType==QStringLiteral("step") ||
+           entryType==QStringLiteral("notice") ||
+           row.value(QStringLiteral("source_table")).toString().contains(
+               QStringLiteral("ocr_discovery")))
+            continue;
+        const QString excerpt=documentaryTopicExcerpt(row,terms);
+        if(excerpt.isEmpty())
+            continue;
+        QVariantMap mentioned=row;
+        mentioned.insert(QStringLiteral("iaMemsMentionOnly"),true);
+        mentioned.insert(QStringLiteral("iaMemsMentionSubject"),terms.join(QLatin1Char(' ')));
+        mentioned.insert(QStringLiteral("iaMemsMentionExcerpt"),excerpt);
+        mentions.append(mentioned);
+    }
+    if(!direct.isEmpty()){
+        // Only narrow down when an unambiguous short heading exists.
+        // A broad topic such as "frein" must still list its full workshop
+        // catalogue, including pedals, calipers, cylinders and linings.
+        if(hasConciseTopicHeading && terms.size()==1){
+            QVariantList focused;
+            const QString term=terms.first();
+            for(const QVariant &entry:direct){
+                const QVariantMap row=entry.toMap();
+                const QStringList words=normalized(row.value(QStringLiteral("title"))
+                    .toString()).split(QLatin1Char(' '),Qt::SkipEmptyParts);
+                bool startsWithTopic=false;
+                if(!words.isEmpty())
+                    startsWithTopic=documentaryTokenMatches(words.first(),term);
+                if(row.value(QStringLiteral("iaMemsConciseHeading")).toBool() ||
+                   startsWithTopic)
+                    focused.append(row);
+            }
+            if(!focused.isEmpty())
+                direct=focused;
+        }
+        std::stable_sort(direct.begin(),direct.end(),
+            [](const QVariant &left,const QVariant &right){
+                return left.toMap().value(QStringLiteral("iaMemsConciseHeading")).toBool() &&
+                      !right.toMap().value(QStringLiteral("iaMemsConciseHeading")).toBool();
+            });
+        return direct;
+    }
+    // A word absent from all titles is not "unknown": it may occur inside
+    // a checked reference. Return a small, explicitly labelled source index.
+    std::stable_sort(mentions.begin(),mentions.end(),
+        [](const QVariant &left,const QVariant &right){
+            const QVariantMap a=left.toMap(),b=right.toMap();
+            const bool aChecked=a.value(QStringLiteral("source_status")).toString()
+                ==QStringLiteral("source_checked");
+            const bool bChecked=b.value(QStringLiteral("source_status")).toString()
+                ==QStringLiteral("source_checked");
+            return aChecked && !bChecked;
+        });
+    return mentions.mid(0,30);
 }
 
 QString MemsDocumentaryRepository::imagePathForHit(const QVariantMap &hit)
@@ -1616,6 +1797,31 @@ QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
     if (hits.isEmpty())
         return QString();
     QStringList paragraphs;
+    const QVariantMap selected=hits.first().toMap();
+    if(selected.value(QStringLiteral("iaMemsMentionOnly")).toBool()){
+        const QString document=selected.value(QStringLiteral("document_id")).toString();
+        const int page=selected.value(QStringLiteral("source_page")).toInt();
+        const QString subject=selected.value(QStringLiteral("iaMemsMentionSubject")).toString();
+        QStringList answer{
+            QStringLiteral("Mention de « %1 » dans la documentation :").arg(subject),
+            selected.value(QStringLiteral("title")).toString()
+        };
+        const QString status=selected.value(QStringLiteral("source_status")).toString();
+        if(status==QStringLiteral("source_checked") ||
+           status==QStringLiteral("technical_reviewed"))
+            answer<<selected.value(QStringLiteral("iaMemsMentionExcerpt")).toString();
+        else
+            answer<<QStringLiteral(
+                "Cette transcription n'est pas vérifiée : consulter l'image "
+                "du constructeur. Aucune procédure n'est déduite de cette mention.");
+        if(!document.isEmpty())
+            answer<<QStringLiteral("Source constructeur : %1%2").arg(document,
+                page>0?QStringLiteral(", page %1").arg(page):QString());
+        answer<<QStringLiteral(
+            "Il s'agit d'une mention dans un document, pas d'une procédure "
+            "spécifiquement consacrée à ce composant.");
+        return answer.join(QLatin1Char('\n'));
+    }
     const QString nativeKey=hits.first().toMap()
         .value(QStringLiteral("source_key")).toString();
     const bool nativeDocument=nativeKey.startsWith(QStringLiteral("rave-fr:"))
