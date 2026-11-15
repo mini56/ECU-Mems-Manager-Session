@@ -209,6 +209,33 @@ int main(int argc,char** argv)
                 "workshop operation word must not block otherwise available procedures"))return 1;
     const QVariantList unrelated=repository.search(QStringLiteral("reprogrammer le vaisseau spatial"));
     if(!require(unrelated.isEmpty(),"unrelated question must not return an index"))return 1;
+    // Reproduce the brake workshop conversation: a numbered documentary
+    // selection must retain its three source phases and original page, and
+    // must never append an engine-specific warning to a brake procedure.
+    QVariantMap selectedBrake;
+    selectedBrake.insert(QStringLiteral("source_key"),
+                         QStringLiteral("rave-fr:RCL0193FRE:brake-operation"));
+    selectedBrake.insert(QStringLiteral("source_page"),247);
+    selectedBrake.insert(QStringLiteral("source_table"),
+                         QStringLiteral("rover_fr_mems_knowledge_item"));
+    selectedBrake.insert(QStringLiteral("source_status"),QStringLiteral("source_checked"));
+    selectedBrake.insert(QStringLiteral("title"),
+                         QStringLiteral("SEGMENTS DE FREIN ARRIERE - operation 70.40.03"));
+    selectedBrake.insert(QStringLiteral("content"),QStringLiteral(
+        "document : RCL0193FRE\\nlangue : francais\\npage physique : 247\\n\\n"
+        "Depose\\n1. Deposer les deux tambours.\\n"
+        "Inspection\\n1. Verifier les ressorts.\\n"
+        "Repose\\n1. Reposer les ressorts."));
+    const QString brakeReply=MemsDocumentaryRepository::answerFromHits(
+        QVariantList{selectedBrake});
+    if(!require(brakeReply.contains(QStringLiteral("Depose")) &&
+                brakeReply.contains(QStringLiteral("Inspection")) &&
+                brakeReply.contains(QStringLiteral("Repose")),
+                "the selected brake source must preserve all three phases"))return 1;
+    if(!require(brakeReply.contains(QStringLiteral("RCL0193FRE, page 247")),
+                "selected operation must preserve manufacturer source and page"))return 1;
+    if(!require(!brakeReply.contains(QStringLiteral("variante du moteur")),
+                "brake answers must not contain an unrelated engine warning"))return 1;
     std::puts("MEMS_NATIVE_FRENCH_INTENT_AND_OPERATION_TEST_PASS");
     return 0;
 }
