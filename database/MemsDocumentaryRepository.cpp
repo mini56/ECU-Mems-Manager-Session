@@ -1609,8 +1609,8 @@ QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
         }
         QString answer=sections.join(QStringLiteral("\n\n"));
         answer+=QStringLiteral(
-            "\n\nVérifier la variante du moteur et la page constructeur "
-            "avant toute intervention.");
+            "\n\nVérifier que cette information correspond au véhicule "
+            "et à la page constructeur avant toute intervention.");
         return answer;
     }
     {
