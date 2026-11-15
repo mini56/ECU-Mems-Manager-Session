@@ -1157,10 +1157,10 @@ static QString readableWorkshopExcerpt(const QString &source)
     const QStringList lines=source.split(QLatin1Char('\n'),Qt::KeepEmptyParts);
     static const QRegularExpression pageNumber(QStringLiteral("^\\d{1,3}$"));
     static const QRegularExpression stepNumber(QStringLiteral("^\\d{1,3}[.)]\\s+"));
-    const auto isPageNumber=[&pageNumber](const QString &text){
+    const auto isPageNumber=[](const QString &text){
         return pageNumber.match(text.trimmed()).hasMatch();
     };
-    const auto isStep=[&stepNumber](const QString &text){
+    const auto isStep=[](const QString &text){
         return stepNumber.match(text.trimmed()).hasMatch();
     };
     const auto isRunningHeading=[](const QString &text){
