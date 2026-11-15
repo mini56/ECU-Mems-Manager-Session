@@ -25,7 +25,7 @@ EXPECTED_PIECES = 120
 EXPECTED_SOURCE_NAMES = {
     "ir07301f.pdf": 24,
     "elxn010f.pdf": 210,
-    "hr01795f.pdf": 98,
+    "hr01795f.PDF": 98,
     "cdxn010f.pdf": 74,
 }
 
