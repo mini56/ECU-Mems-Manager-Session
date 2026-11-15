@@ -50,7 +50,7 @@ def get_blob(item: dict) -> tuple[int, bytes]:
             if blob.get("encoding") != "base64":
                 raise ValueError("GITHUB_BLOB_NOT_BASE64")
             payload = base64.b64decode(blob["content"], validate=False)
-            header = f"blob {len(payload)}\\0".encode("ascii")
+            header = f"blob {len(payload)}".encode("ascii") + bytes([0])
             if hashlib.sha1(header + payload).hexdigest() != sha:
                 raise ValueError("SOURCE_BLOB_SHA_MISMATCH")
             if item["part"] < 119 and len(payload) != 393216:
