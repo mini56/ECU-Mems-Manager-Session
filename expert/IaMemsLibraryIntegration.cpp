@@ -89,83 +89,6 @@ bool genericInsufficientGrounding(const QString &text)
         || lower.contains(QStringLiteral("je n'ai pas assez d elements"));
 }
 
-QStringList workshopSubjectTokens(const QString &question)
-{
-    const QString plain = IaMemsConversationRouting::normalize(question);
-    static const QSet<QString> ignored = {
-        QStringLiteral("de"), QStringLiteral("du"), QStringLiteral("des"),
-        QStringLiteral("la"), QStringLiteral("le"), QStringLiteral("les"),
-        QStringLiteral("un"), QStringLiteral("une"), QStringLiteral("et"),
-        QStringLiteral("comment"), QStringLiteral("faire"), QStringLiteral("pour"),
-        QStringLiteral("quel"), QStringLiteral("quelle"), QStringLiteral("quelles"),
-        QStringLiteral("quels"), QStringLiteral("qu"), QStringLiteral("est"),
-        QStringLiteral("sont"), QStringLiteral("vous"), QStringLiteral("peux"),
-        QStringLiteral("tu"), QStringLiteral("donne"), QStringLiteral("donner"),
-        QStringLiteral("montre"), QStringLiteral("montrer"),
-        QStringLiteral("cherche"), QStringLiteral("recherche"),
-        QStringLiteral("sur"), QStringLiteral("dans"), QStringLiteral("avec"),
-        QStringLiteral("me"), QStringLiteral("moi"), QStringLiteral("je"),
-        QStringLiteral("veux"), QStringLiteral("souhaite"),
-        QStringLiteral("procedure"), QStringLiteral("procedures"),
-        QStringLiteral("operation"), QStringLiteral("operations"),
-        QStringLiteral("depose"), QStringLiteral("deposer"),
-        QStringLiteral("repose"), QStringLiteral("reposer"),
-        QStringLiteral("demontage"), QStringLiteral("remontage"),
-        QStringLiteral("reparation"), QStringLiteral("reparer"),
-        QStringLiteral("revision"), QStringLiteral("controle"),
-        QStringLiteral("verifier"), QStringLiteral("verification"),
-        QStringLiteral("serrage"), QStringLiteral("couple"),
-        QStringLiteral("reglage"), QStringLiteral("regler"),
-        QStringLiteral("remplacement"), QStringLiteral("remplacer"),
-        QStringLiteral("purge"), QStringLiteral("purger"),
-        QStringLiteral("entretien"), QStringLiteral("diagnostic"),
-        QStringLiteral("inspection"), QStringLiteral("essai"),
-        QStringLiteral("valeur"), QStringLiteral("valeurs"),
-        QStringLiteral("schema"), QStringLiteral("schemas"),
-        QStringLiteral("donnee"), QStringLiteral("donnees"),
-        QStringLiteral("technique"), QStringLiteral("techniques")
-    };
-    QStringList terms;
-    for (QString word : plain.split(QLatin1Char(' '), Qt::SkipEmptyParts)) {
-        if (word.size() < 3 || ignored.contains(word))
-            continue;
-        if (word.endsWith(QLatin1Char('s')) && word.size() > 4)
-            word.chop(1);
-        if (!terms.contains(word))
-            terms.append(word);
-    }
-    return terms;
-}
-
-bool workshopTitleMatches(const QVariantMap &hit, const QStringList &subject)
-{
-    const QString title = IaMemsConversationRouting::normalize(
-        hit.value(QStringLiteral("title")).toString());
-    if (title.isEmpty() || subject.isEmpty())
-        return false;
-    const QStringList titleWords = title.split(QLatin1Char(' '), Qt::SkipEmptyParts);
-    int matches = 0;
-    for (const QString &term : subject) {
-        bool found = titleWords.contains(term);
-        if (!found) {
-            for (const QString &word : titleWords) {
-                if (word.startsWith(term) && word.size() <= term.size() + 2) {
-                    found = true;
-                    break;
-                }
-            }
-        }
-        if (found)
-            ++matches;
-    }
-    // A three-term subject may contain a vehicle family omitted by the
-    // manufacturer heading (e.g. "maitre cylindre frein" -> "maitre cylindre").
-    // A single word MUST be present in the heading: OCR mentions elsewhere
-    // in a motor-removal procedure never constitute a brake-control answer.
-    const int required = subject.size() >= 3 ? subject.size() - 1 : subject.size();
-    return matches >= required;
-}
-
 QString requestedWorkshopOperation(const QString &question)
 {
     const QString plain = IaMemsConversationRouting::normalize(question);
@@ -823,7 +746,9 @@ void IaMemsService::askWithLibrary(const QString &question)
                 return;
             }
             QStringList linkedPages;
-            QString evidence=documentary.procedureAnswer(chosen,&linkedPages);
+            QString evidence;
+            if (!chosen.value(QStringLiteral("iaMemsMentionOnly")).toBool())
+                evidence=documentary.procedureAnswer(chosen,&linkedPages);
             if(evidence.isEmpty())
                 evidence=MemsDocumentaryRepository::answerFromHits(
                     QVariantList{chosen});
@@ -842,13 +767,14 @@ void IaMemsService::askWithLibrary(const QString &question)
         }
         // A new phrase may refine the menu subject ("frein" -> "maitre cylindre")
         // only if it appears in one of the currently offered operations.
-        const QStringList refinement = workshopSubjectTokens(trimmed);
+        const QStringList refinement = MemsDocumentaryRepository::subjectTerms(trimmed);
         const bool isRefinement = !refinement.isEmpty() &&
             !currentComponent.isEmpty() && !operationFollowUps.contains(followUp);
         if (isRefinement) {
             bool existsInMenu = false;
             for (const QVariant &choice : roverChoices) {
-                if (workshopTitleMatches(choice.toMap(), refinement)) {
+                if (!MemsDocumentaryRepository::relevantChoices(
+                        trimmed, QVariantList{choice}).isEmpty()) {
                     existsInMenu = true;
                     break;
                 }
@@ -911,14 +837,10 @@ void IaMemsService::askWithLibrary(const QString &question)
             }
             if (choices.isEmpty())
                 choices = documents;
-            const QStringList requestedSubject = workshopSubjectTokens(trimmed);
-            QVariantList matchingChoices;
-            for (const QVariant &choice : choices) {
-                if (workshopTitleMatches(choice.toMap(), requestedSubject))
-                    matchingChoices.append(choice);
-            }
-            // A mention in an unrelated chapter cannot become an answer.
-            choices = matchingChoices;
+            // One relevance policy for both direct manufacturer headings
+            // and explicitly labelled source mentions (e.g. "PISTON").
+            // A mention cannot become an unrelated workshop procedure.
+            choices = MemsDocumentaryRepository::relevantChoices(trimmed, choices);
             // IA MEMS presents all REAL operations found for the component.
             // The choices come from the installed documentary pack, never
             // from a hardcoded list of hypothetical repairs.
@@ -930,7 +852,7 @@ void IaMemsService::askWithLibrary(const QString &question)
                 // refines this component instead of starting a new topic.
                 QString activeSubject = trimmed;
                 if (!operation.isEmpty()) {
-                    const QStringList subjectWords = workshopSubjectTokens(trimmed);
+                    const QStringList subjectWords = MemsDocumentaryRepository::subjectTerms(trimmed);
                     activeSubject = subjectWords.join(QLatin1Char(' '));
                 }
                 if (!activeSubject.trimmed().isEmpty())
@@ -949,7 +871,8 @@ void IaMemsService::askWithLibrary(const QString &question)
             }
             if (!operation.isEmpty() && matchingOperationChoices.size() == 1) {
                 const QVariantMap row = matchingOperationChoices.first().toMap();
-                if (row.value(QStringLiteral("entry_type")).toString()
+                if (!row.value(QStringLiteral("iaMemsMentionOnly")).toBool() &&
+                    row.value(QStringLiteral("entry_type")).toString()
                     == QStringLiteral("procedure")) {
                     QStringList pages;
                     const QString detail = documentary.procedureAnswer(row, &pages);
