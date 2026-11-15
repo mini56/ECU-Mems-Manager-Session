@@ -889,7 +889,7 @@ void IaMemsService::askWithLibrary(const QString &question)
             return;
         }
         const QVariantList documents = documentary.search(
-            trimmed, 12, true, I18n::language());
+            trimmed, 100, true, I18n::language());
         if (!documents.isEmpty()) {
             // Prefer identifiable workshop operations to loose page OCR hits.
             // A menu of precise sources restores the numbered navigation the
@@ -927,8 +927,8 @@ void IaMemsService::askWithLibrary(const QString &question)
                 // refines this component instead of starting a new topic.
                 QString activeSubject = trimmed;
                 if (!operation.isEmpty()) {
-''                    const QStringList subjectWords = workshopSubjectTokens(trimmed);
-''                    activeSubject = subjectWords.join(QLatin1Char(' '));
+                    const QStringList subjectWords = workshopSubjectTokens(trimmed);
+                    activeSubject = subjectWords.join(QLatin1Char(' '));
                 }
                 if (!activeSubject.trimmed().isEmpty())
                     setProperty("iaMemsActiveDocumentaryComponent", activeSubject);
