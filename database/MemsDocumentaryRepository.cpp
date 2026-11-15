@@ -1186,15 +1186,23 @@ static QString readableWorkshopExcerpt(const QString &source)
     bool hasInstruction=false;
     for(int i=0;i<lines.size();++i){
         const QString line=lines.at(i).trimmed();
-        // E.g. "FREINS / REPARATIONS / 11" between steps 4 and 5.
-        if(hasInstruction && i+3<lines.size() &&
+        // A running header can also precede the first paragraph, without
+        // any numbered step: "SYSTEME DE GESTION MOTEUR / DESCRIPTION ET
+        // FONCTIONNEMENT / 7" is a page header, not IAT guidance.
+        if(i+2<lines.size() &&
            isRunningHeading(lines.at(i)) &&
            isRunningHeading(lines.at(i+1)) &&
            isPageNumber(lines.at(i+2)) &&
-           isStep(lines.at(i+3))){
+           (!hasInstruction || (i+3<lines.size() && isStep(lines.at(i+3))))){
             i+=2;
             continue;
         }
+        // A PDF may end an operation with two repeated running headings
+        // but no printed page number. Do not attach these to the final step.
+        if(hasInstruction && i+2==lines.size() &&
+           isRunningHeading(lines.at(i)) &&
+           isRunningHeading(lines.at(i+1)))
+            break;
         // E.g. "12 / ENSEMBLE DE SERVOCOMMANDE" after the last brake
         // step: the page number plus a new all-caps chapter heading
         // identifies the start of the next unrelated source section.
