@@ -699,6 +699,77 @@ int main(int argc,char** argv)
     if(!require(technicalMention.value(QStringLiteral("content")).toString()
                     .contains(QStringLiteral(". . . .")),
                 "cleaning must not modify the manufacturer source stored in SQLite"))return 1;
+    // Generic PDF table rendering contract. These variants imitate original
+    // source layouts rather than special-case any manufacturer's part name.
+    // Labels may be separated from values by leaders, or already appear as
+    // a single flattened cell. The IA display must restore useful rows.
+    const QStringList arbitraryLabels={
+        QStringLiteral("Type/Cylindrée"),
+        QStringLiteral("Ordre d'allumage"),
+        QStringLiteral("Rapport volumétrique"),
+        QStringLiteral("Ralenti"),
+        QStringLiteral("Pression alimentation")
+    };
+    const QStringList arbitraryValues={
+        QStringLiteral("12A2EK71/1275 cm3"),
+        QStringLiteral("1 - 3 - 4 - 2"),
+        QStringLiteral("10,0 : 1"),
+        QStringLiteral("900 ± 50 tr/min"),
+        QStringLiteral("1,0 bar ± 0,2 bar")
+    };
+    for(int variant=0;variant<6;++variant){
+        QVariantMap row=technicalMention;
+        row.insert(QStringLiteral("source_page"),38+variant);
+        row.insert(QStringLiteral("source_key"),
+            QStringLiteral("rave-fr:RCL0193FRE:technical-%1").arg(variant));
+        QStringList sourceRows;
+        for(int i=0;i<arbitraryLabels.size();++i){
+            const QString label=arbitraryLabels.at(i);
+            const QString value=arbitraryValues.at(i);
+            if(variant%3==0)
+                sourceRows<<QStringLiteral("%1 . . . . . . . . %2")
+                            .arg(label,value);
+            else if(variant%3==1)
+                sourceRows<<QStringLiteral("%1 %2 . . . . . . . . ")
+                            .arg(label,value);
+            else
+                sourceRows<<QStringLiteral("%1 %2").arg(label,value);
+        }
+        const QString separator=(variant<3)
+            ?QStringLiteral("\n"):QStringLiteral(" ");
+        const QString original=QStringLiteral(
+            "document : RCL0193FRE\nlangue : français\npage physique : %1\n\n")
+                .arg(38+variant)+sourceRows.join(separator);
+        row.insert(QStringLiteral("content"),original);
+        const QString result=MemsDocumentaryRepository::answerFromHits(
+            QVariantList{row});
+        for(int i=0;i<arbitraryLabels.size();++i){
+            if(!require(result.contains(arbitraryLabels.at(i)) &&
+                        result.contains(arbitraryValues.at(i)),
+                        "all technical labels and their original values must survive"))
+                return 1;
+        }
+        if(!require(!result.contains(QStringLiteral(". . . .")) &&
+                    result.contains(QStringLiteral("RCL0193FRE, page %1")
+                        .arg(38+variant)),
+                    "PDF dot leaders must be removed without losing provenance"))
+            return 1;
+        const QString displayBody=result.section(
+            QStringLiteral("Source constructeur :"),0,0);
+        if(!require(displayBody.count(QLatin1Char('\n'))>=5,
+                    "a technical table must render as multiple readable rows"))
+            return 1;
+        if(!require(!displayBody.contains(QStringLiteral(
+                        "1275 cm3 Ordre d'allumage")) &&
+                    !displayBody.contains(QStringLiteral(
+                        "tr/min Pression alimentation")),
+                    "separate table parameters must not be concatenated"))
+            return 1;
+        if(!require(row.value(QStringLiteral("content")).toString()==original,
+                    "display-only formatting must never change source text"))
+            return 1;
+    }
+
     std::puts("MEMS_NATIVE_FRENCH_INTENT_AND_OPERATION_TEST_PASS");
     return 0;
 }
