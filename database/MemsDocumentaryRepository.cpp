@@ -99,7 +99,12 @@ QStringList nativeSubjectTerms(const QString &question)
         QStringLiteral("purge"),QStringLiteral("purger"),
         QStringLiteral("diagnostic"),QStringLiteral("inspection"),
         QStringLiteral("serrage"),QStringLiteral("couple"),
-        QStringLiteral("schema"),QStringLiteral("schemas")
+        QStringLiteral("schema"),QStringLiteral("schemas"),
+        // Vehicle-system variants constrain applicability, not the name of
+        // a part. Filtering them as FTS AND tokens hid procedures whose
+        // titles described the component but did not repeat SPi/MPi.
+        QStringLiteral("spi"),QStringLiteral("mpi"),
+        QStringLiteral("monopoint"),QStringLiteral("multipoint")
     };
     QStringList terms;
     for(QString token:meaningfulTerms(question)){
@@ -630,7 +635,13 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
             query.prepare(statement);
             // Une question précise doit retrouver ses termes ensemble, et non
             // douze lignes différentes ayant chacune un seul mot en commun.
-            query.addBindValue(tokens.join(QStringLiteral(" AND ")));
+            const bool multipleSubjects=subject.size()>1 &&
+                (normalized(question).contains(QStringLiteral(" et ")) ||
+                 normalized(question).contains(QStringLiteral(" and ")));
+            // "bielle et piston" asks for two subjects. The FTS must not
+            // require both inside the very same page/paragraph.
+            query.addBindValue(tokens.join(multipleSubjects
+                ? QStringLiteral(" OR ") : QStringLiteral(" AND ")));
 #ifdef MEMS_DOCUMENTARY_SELFTEST
             fprintf(stderr,"NATIVE_TERMS=%s MATCH=%s\\n",
                 qPrintable(subject.join(QStringLiteral(","))),
@@ -1163,6 +1174,8 @@ QString MemsDocumentaryRepository::numberedMenu(
         QString title=readableDocumentaryTitle(row);
         if(row.value(QStringLiteral("iaMemsMentionOnly")).toBool())
             title+=QStringLiteral(" [mention dans le document]");
+        if(row.value(QStringLiteral("iaMemsVariantUnverified")).toBool())
+            title+=QStringLiteral(" [variante à vérifier]");
         const QVariantList group=row.value(QStringLiteral("iaMemsGroupRows")).toList();
         if(!group.isEmpty())
             title+=QStringLiteral(" — %1 références").arg(group.size());
@@ -1416,8 +1429,22 @@ static int documentaryTitleHits(const QString &title,
     return matches;
 }
 
+// A printed technical table uses dot leaders between its parameter and
+// value. Dot leaders are layout, never technical data. Only the copy shown
+// to IA MEMS is cleaned; SQLite and PDF page remain untouched.
+static QString readableReferenceLayout(QString text)
+{
+    static const QRegularExpression leaders(
+        QStringLiteral("(?:[ \\t]*\\.[ \\t]*){4,}"));
+    text.replace(leaders,QStringLiteral(" — "));
+    static const QRegularExpression repeatedSpaces(QStringLiteral("[ \\t]{2,}"));
+    text.replace(repeatedSpaces,QStringLiteral(" "));
+    return text.trimmed();
+}
+
 static QString documentaryTopicExcerpt(const QVariantMap &hit,
-                                       const QStringList &terms)
+                                       const QStringList &terms,
+                                       bool separateSubjects=false)
 {
     const QString source=readableWorkshopParagraphs(
         readableWorkshopExcerpt(workshopText(hit)));
@@ -1456,9 +1483,35 @@ static QString documentaryTopicExcerpt(const QVariantMap &hit,
                 break;
             }
         }
-        if(!complete)
+        if(!complete && !separateSubjects)
             continue;
-        const QString excerpt=context.join(QLatin1Char('\n')).trimmed();
+        QString excerpt=readableReferenceLayout(
+            context.join(QLatin1Char('\n')).trimmed());
+        // Some PDF extracts flatten a whole technical table to ONE line.
+        // A documentary 'mention' should show the matching passage, not
+        // dump an entire table with unrelated parameters. Do not invent a
+        // value or discard the page link: the original remains consultable.
+        if(excerpt.size()>650 && !terms.isEmpty()){
+            int at=-1;
+            for(const QString &term:terms){
+                at=excerpt.indexOf(term,0,Qt::CaseInsensitive);
+                if(at>=0)break;
+            }
+            if(at<0)at=0;
+            int begin=qMax(0,at-140);
+            int end=qMin(excerpt.size(),at+380);
+            if(begin>0){
+                const int space=excerpt.indexOf(QLatin1Char(' '),begin);
+                if(space>0 && space<at)begin=space+1;
+            }
+            if(end<excerpt.size()){
+                const int space=excerpt.lastIndexOf(QLatin1Char(' '),end);
+                if(space>at)end=space;
+            }
+            excerpt=(begin>0?QStringLiteral("… "):QString())+
+                excerpt.mid(begin,end-begin).trimmed()+
+                (end<source.size()?QStringLiteral(" …"):QString());
+        }
         if(!excerpt.isEmpty() && !excerpts.contains(excerpt))
             excerpts.append(excerpt);
         if(excerpts.size()==2)
@@ -1473,7 +1526,17 @@ QVariantList MemsDocumentaryRepository::relevantChoices(
     const QStringList terms=nativeSubjectTerms(question);
     if(terms.isEmpty() || hits.isEmpty())
         return {};
-    const int required=terms.size()>=3?terms.size()-1:terms.size();
+    const QString requestNorm=normalized(question);
+    const bool separateSubjects=terms.size()>1 &&
+        (requestNorm.contains(QStringLiteral(" et ")) ||
+         requestNorm.contains(QStringLiteral(" and ")));
+    const int required=separateSubjects ? 1 :
+        (terms.size()>=3?terms.size()-1:terms.size());
+    const QStringList requestWords=requestNorm.split(QLatin1Char(' '),Qt::SkipEmptyParts);
+    const bool wantsSpi=requestWords.contains(QStringLiteral("spi")) ||
+                        requestWords.contains(QStringLiteral("monopoint"));
+    const bool wantsMpi=requestWords.contains(QStringLiteral("mpi")) ||
+                        requestWords.contains(QStringLiteral("multipoint"));
     QVariantList direct;
     QVariantList mentions;
     bool hasConciseTopicHeading=false;
@@ -1482,6 +1545,16 @@ QVariantList MemsDocumentaryRepository::relevantChoices(
         const QString title=row.value(QStringLiteral("title")).toString();
         const QStringList words=normalized(title).split(
             QLatin1Char(' '),Qt::SkipEmptyParts);
+        // An explicitly incompatible variant in the heading is evidence
+        // against this result. Unlabelled generic headings may still apply,
+        // but they do not prove MPi/SPi compatibility.
+        const bool titleSpi=words.contains(QStringLiteral("spi")) ||
+                            words.contains(QStringLiteral("monopoint"));
+        const bool titleMpi=words.contains(QStringLiteral("mpi")) ||
+                            words.contains(QStringLiteral("multipoint"));
+        if((wantsSpi && titleMpi && !titleSpi) ||
+           (wantsMpi && titleSpi && !titleMpi))
+            continue;
         const int matched=documentaryTitleHits(title,terms);
         if(matched>=required){
             // A precise heading such as "Injecteur" or "Emplacement :
@@ -1497,6 +1570,8 @@ QVariantList MemsDocumentaryRepository::relevantChoices(
                 hasConciseTopicHeading=true;
             QVariantMap named=row;
             named.insert(QStringLiteral("iaMemsConciseHeading"),concise);
+            if((wantsSpi && !titleSpi) || (wantsMpi && !titleMpi))
+                named.insert(QStringLiteral("iaMemsVariantUnverified"),true);
             direct.append(named);
             continue;
         }
@@ -1508,13 +1583,15 @@ QVariantList MemsDocumentaryRepository::relevantChoices(
         if(row.value(QStringLiteral("source_table")).toString().contains(
                QStringLiteral("ocr_discovery")))
             continue;
-        const QString excerpt=documentaryTopicExcerpt(row,terms);
+        const QString excerpt=documentaryTopicExcerpt(row,terms,separateSubjects);
         if(excerpt.isEmpty())
             continue;
         QVariantMap mentioned=row;
         mentioned.insert(QStringLiteral("iaMemsMentionOnly"),true);
         mentioned.insert(QStringLiteral("iaMemsMentionSubject"),terms.join(QLatin1Char(' ')));
         mentioned.insert(QStringLiteral("iaMemsMentionExcerpt"),excerpt);
+        if((wantsSpi && !titleSpi) || (wantsMpi && !titleMpi))
+            mentioned.insert(QStringLiteral("iaMemsVariantUnverified"),true);
         mentions.append(mentioned);
     }
     if(!direct.isEmpty()){
@@ -1543,6 +1620,20 @@ QVariantList MemsDocumentaryRepository::relevantChoices(
                 return left.toMap().value(QStringLiteral("iaMemsConciseHeading")).toBool() &&
                       !right.toMap().value(QStringLiteral("iaMemsConciseHeading")).toBool();
             });
+        // If a vehicle variant is part of the request, retain any verified
+        // mention in a specifically tagged technical section alongside the
+        // generic component heading, with its 'mention' label.
+        if(wantsSpi || wantsMpi){
+            for(const QVariant &entry:mentions){
+                const QVariantMap mention=entry.toMap();
+                const QStringList mentionWords=normalized(mention.value(
+                    QStringLiteral("title")).toString()).split(
+                        QLatin1Char(' '),Qt::SkipEmptyParts);
+                if((wantsSpi && mentionWords.contains(QStringLiteral("spi"))) ||
+                   (wantsMpi && mentionWords.contains(QStringLiteral("mpi"))))
+                    direct.append(entry);
+            }
+        }
         return direct;
     }
     // A word absent from all titles is not "unknown": it may occur inside
@@ -1970,7 +2061,8 @@ QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
         const QString status=selected.value(QStringLiteral("source_status")).toString();
         if(status==QStringLiteral("source_checked") ||
            status==QStringLiteral("technical_reviewed"))
-            answer<<selected.value(QStringLiteral("iaMemsMentionExcerpt")).toString();
+            answer<<readableReferenceLayout(
+                selected.value(QStringLiteral("iaMemsMentionExcerpt")).toString());
         else
             answer<<QStringLiteral(
                 "Cette transcription n'est pas vérifiée : consulter l'image "
@@ -2004,6 +2096,9 @@ QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
             const QString title=item.value(QStringLiteral("title")).toString().simplified();
             QString body=readableWorkshopParagraphs(
                 readableWorkshopExcerpt(workshopText(item)));
+            if(item.value(QStringLiteral("entry_type")).toString()
+               ==QStringLiteral("reference"))
+                body=readableReferenceLayout(body);
             if(item.value(QStringLiteral("source_status")).toString()
                   ==QStringLiteral("review_required") ||
                sourceTable.endsWith(QStringLiteral("_page_ocr"))){
