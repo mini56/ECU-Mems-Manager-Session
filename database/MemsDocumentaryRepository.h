@@ -33,6 +33,9 @@ public:
     static QStringList subjectTerms(const QString &question);
     static QVariantList relevantChoices(const QString &question,
                                         const QVariantList &hits);
+    // Identical headings are grouped without discarding any original row.
+    // A chosen group opens its preserved source rows as a second menu.
+    static QVariantList groupedChoices(const QVariantList &hits);
     static QString answerFromHits(const QVariantList &hits);
     // Reconstitue toutes les étapes et exigences liées à l'opération exacte,
     // dans l'ordre constructeur. Renvoie toutes les pages illustrées utiles.
