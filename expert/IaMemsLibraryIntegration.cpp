@@ -685,8 +685,14 @@ void IaMemsService::askWithLibrary(const QString &question)
     };
 
     const bool resolvedDocumentary = trimmed.startsWith(kResolvedDocumentaryPrefix);
-    if (resolvedDocumentary)
+    if (resolvedDocumentary) {
         trimmed = trimmed.mid(kResolvedDocumentaryPrefix.size()).trimmed();
+        // An externally resolved reference replaces any older numbered
+        // menu; otherwise the next digit could select a stale source.
+        setProperty("iaMemsRoverMenuRows", QVariant());
+        setProperty("iaMemsRoverMenuQuestion", QVariant());
+        clearStructuredMenuState(this);
+    }
     if (trimmed.isEmpty())
         return;
 
@@ -724,7 +730,16 @@ void IaMemsService::askWithLibrary(const QString &question)
                 emit statusChanged();
                 return;
             }
-            const QVariantMap chosen = roverChoices.at(selected - 1).toMap();
+            const QVariantMap chosen =
+                MemsDocumentaryRepository::choiceForNumber(roverChoices,trimmed);
+            if(chosen.isEmpty()){
+                emit responseReady(QStringLiteral(
+                    "Ce numéro ne correspond à aucune source affichée. "
+                    "Relance une recherche documentaire."));
+                emit statusChanged();
+                return;
+            }
+            clearStructuredMenuState(this);
             const QString originalQuestion =
                 property("iaMemsRoverMenuQuestion").toString().trimmed();
             // Identical headings may designate several real source rows.
@@ -743,8 +758,10 @@ void IaMemsService::askWithLibrary(const QString &question)
                 setProperty("iaMemsRoverMenuRows",subChoices);
                 setProperty("iaMemsRoverMenuQuestion",originalQuestion);
                 m_pendingGrounding.clear();
+                const QString subMenuSubject=QStringLiteral("%1 — %2")
+                    .arg(originalQuestion,chosen.value(QStringLiteral("title")).toString());
                 emit responseReady(MemsDocumentaryRepository::numberedMenu(
-                    originalQuestion,subChoices,
+                    subMenuSubject,subChoices,
                     I18n::language().startsWith(QStringLiteral("fr"),
                                                 Qt::CaseInsensitive)));
                 emit statusChanged();
@@ -819,6 +836,9 @@ void IaMemsService::askWithLibrary(const QString &question)
         const QVariantList documents = documentary.search(
             trimmed, 100, true, I18n::language());
         if (!documents.isEmpty()) {
+            // A new documentary search owns the only active numbered menu.
+            // The older structured-reference menu must not accept its numbers.
+            clearStructuredMenuState(this);
             // Prefer identifiable workshop operations to loose page OCR hits.
             // A menu of precise sources restores the numbered navigation the
             // documentary UI offered before installing the Rover corpus.
@@ -1003,6 +1023,16 @@ void IaMemsService::askWithLibrary(const QString &question)
         } else {
             clearStructuredMenuState(this);
         }
+    }
+
+    // A bare digit is a menu selection only while one of the two documented
+    // menus is active. Never run it as a fresh free-text or ECU query.
+    if (isNumericSelection && property("iaStructuredMenuKeys").toStringList().isEmpty()){
+        m_pendingGrounding.clear();
+        emit responseReady(QStringLiteral(
+            "Aucun menu numéroté n'est actif. Saisis un sujet pour afficher ses rubriques."));
+        emit statusChanged();
+        return;
     }
 
     if (isStructuredReferenceEligible(trimmed)) {
