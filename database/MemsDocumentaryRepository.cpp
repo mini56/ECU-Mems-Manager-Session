@@ -1085,19 +1085,82 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
     return result;
 }
 
+// Title formatting is presentation only. Source identifiers and numerical
+// values remain immutable inside the selected documentary rows.
+static QString readableDocumentaryTitle(const QVariantMap &row)
+{
+    QString title=row.value(QStringLiteral("title")).toString().simplified();
+    const QRegularExpression identifier(
+        QStringLiteral("^[a-z0-9]+(?:_[a-z0-9]+){2,}(?:\\s+[a-z]+)?$"),
+        QRegularExpression::CaseInsensitiveOption);
+    if(!identifier.match(title).hasMatch())
+        return title;
+    const bool torque=title.startsWith(QStringLiteral("torque_"),
+                                      Qt::CaseInsensitive);
+    if(torque)
+        title=title.mid(QStringLiteral("torque_").size());
+    title.replace(QLatin1Char('_'),QLatin1Char(' '));
+    if(torque){
+        title.remove(QRegularExpression(QStringLiteral("\\s+torque$"),
+                         QRegularExpression::CaseInsensitiveOption));
+        title=QStringLiteral("Couple de serrage — %1").arg(title);
+    }else if(row.value(QStringLiteral("entry_type")).toString()
+              ==QStringLiteral("technical_value")){
+        title=QStringLiteral("Valeur technique — %1").arg(title);
+    }
+    return title;
+}
+
+QVariantList MemsDocumentaryRepository::groupedChoices(const QVariantList &hits)
+{
+    QVariantList groups;
+    QHash<QString,int> positions;
+    for(const QVariant &entry:hits){
+        const QVariantMap row=entry.toMap();
+        const QString key=normalized(readableDocumentaryTitle(row))
+            +QLatin1Char('|')+row.value(QStringLiteral("entry_type")).toString()
+            +QLatin1Char('|')+(row.value(QStringLiteral("iaMemsMentionOnly")).toBool()
+                 ? QStringLiteral("mention"):QStringLiteral("rubrique"));
+        if(!positions.contains(key)){
+            positions.insert(key,groups.size());
+            groups.append(row);
+            continue;
+        }
+        const int index=positions.value(key);
+        QVariantMap current=groups.at(index).toMap();
+        QVariantList originals=current.value(QStringLiteral("iaMemsGroupRows")).toList();
+        if(originals.isEmpty())
+            originals.append(current);
+        originals.append(row);
+        current.insert(QStringLiteral("iaMemsGroupRows"),originals);
+        groups[index]=current;
+    }
+    return groups;
+}
+
 QString MemsDocumentaryRepository::numberedMenu(
     const QString &question, const QVariantList &choices, bool french)
 {
+    Q_UNUSED(french);
     QStringList lines;
     lines << QStringLiteral("Rubriques retrouvées pour « %1 » :").arg(question);
     for (int index = 0; index < choices.size(); ++index) {
-        const QString title =
-            choices.at(index).toMap().value(QStringLiteral("title")).toString();
-        const bool mention=choices.at(index).toMap()
-            .value(QStringLiteral("iaMemsMentionOnly")).toBool();
-        lines << QStringLiteral("%1. %2%3").arg(index + 1)
-            .arg(title,mention ? QStringLiteral(" [mention dans le document]")
-                               : QString());
+        const QVariantMap row=choices.at(index).toMap();
+        QString title=readableDocumentaryTitle(row);
+        if(row.value(QStringLiteral("iaMemsMentionOnly")).toBool())
+            title+=QStringLiteral(" [mention dans le document]");
+        const QVariantList group=row.value(QStringLiteral("iaMemsGroupRows")).toList();
+        if(!group.isEmpty())
+            title+=QStringLiteral(" — %1 références").arg(group.size());
+        if(row.value(QStringLiteral("iaMemsGroupChild")).toBool()){
+            const int page=row.value(QStringLiteral("source_page")).toInt();
+            if(page>0)
+                title+=QStringLiteral(" — page %1").arg(page);
+            const QString type=row.value(QStringLiteral("entry_type")).toString();
+            if(!type.isEmpty() && type!=QStringLiteral("reference"))
+                title+=QStringLiteral(" (%1)").arg(type);
+        }
+        lines<<QStringLiteral("%1. %2").arg(index+1).arg(title);
     }
     lines << QStringLiteral(
         "Réponds par le numéro de la rubrique à consulter, "
@@ -1350,9 +1413,9 @@ QVariantList MemsDocumentaryRepository::relevantChoices(
         // When there is no relevant heading, expose real source mentions as
         // excerpts (never pretend the unrelated operation is a piston repair).
         const QString entryType=row.value(QStringLiteral("entry_type")).toString();
-        if(entryType==QStringLiteral("step") ||
-           entryType==QStringLiteral("notice") ||
-           row.value(QStringLiteral("source_table")).toString().contains(
+        // A component might be mentioned only in a linked workshop step.
+        // Present that as a source mention, not as a complete repair.
+        if(row.value(QStringLiteral("source_table")).toString().contains(
                QStringLiteral("ocr_discovery")))
             continue;
         const QString excerpt=documentaryTopicExcerpt(row,terms);
