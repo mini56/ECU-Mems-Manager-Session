@@ -27,6 +27,15 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 find_package(Qt5 REQUIRED COMPONENTS Widgets SerialPort Charts Sql Network)
+# Fast, deterministic identity-routing guard. Independent of ONNX, Windows
+# Shell, RAVE packs and the installed ECU database.
+add_executable(mems_ecu_reference_routing_selftest
+    expert/IaMemsEcuReferenceRoutingSelfTest.cpp
+    expert/IaMemsEcuReferenceRouting.h)
+target_link_libraries(mems_ecu_reference_routing_selftest PRIVATE Qt5::Core)
+if(MSVC)
+    target_compile_options(mems_ecu_reference_routing_selftest PRIVATE /utf-8)
+endif()
 include_directories("${CMAKE_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}/qledindicator" "${CMAKE_SOURCE_DIR}/analogwidgets" "${CMAKE_SOURCE_DIR}/ecu" "${CMAKE_CURRENT_BINARY_DIR}")
 
 option(MEMS_USE_BUNDLED_LIBROSCO_X64 "Build and link the verified source-controlled native librosco implementation" OFF)
