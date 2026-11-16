@@ -13,7 +13,6 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMainWindow>
-#include <QFontMetrics>
 #include <QToolButton>
 #include <QPixmap>
 #include <QIcon>
@@ -160,8 +159,6 @@ static void applySidebarState(QMainWindow *w)
         utils->setMaximumHeight(collapsed?142:198);
     }
 
-    QFontMetrics fm(nav->font());
-    int longest=0;
     const int textRole=Qt::UserRole+42;
     const int sidebarHeight=sidebar->height()>300?sidebar->height():580;
     const int reserved=(toggle?toggle->height():31)+(utils?(collapsed?142:198):0)+20;
@@ -173,16 +170,17 @@ static void applySidebarState(QMainWindow *w)
         if(!item) continue;
         if(!item->data(textRole).isValid()) item->setData(textRole,item->text());
         const QString original=item->data(textRole).toString();
-        longest=qMax(longest,fm.horizontalAdvance(original));
         item->setText(collapsed?QString():original);
         item->setTextAlignment(collapsed?Qt::AlignCenter:(Qt::AlignLeft|Qt::AlignVCenter));
         item->setSizeHint(QSize(0,rowHeight));
     }
 
-    // One owner for sidebar width: neither responsive resizing nor page
-    // navigation may impose a competing width on the navigation list.
-    const int expanded=qBound(208,longest+78,252);
-    const int width=collapsed?58:expanded;
+    // The expanded menu has one canonical width from its very first
+    // appearance. Measuring its labels before Qt finishes font/style
+    // initialization made it 208 px at startup and wider on the first click.
+    // Do not let page navigation recalculate its geometry.
+    constexpr int kExpandedWidth=236;
+    const int width=collapsed?58:kExpandedWidth;
     sidebar->setFixedWidth(width);
     nav->setFixedWidth(width);
     nav->setIconSize(QSize(22,22));
@@ -1051,6 +1049,9 @@ static void applyResponsive(QMainWindow *window)
         // All page owners have finished constructing their widgets here.
         // Apply the validated minimum typography immediately, once.
         applyReadablePageFonts(tabs);
+        // Finalize navigation with the fully styled window before returning
+        // to the event loop: the first visible page must match later pages.
+        applySidebarState(window);
     }
 } // namespace
 
