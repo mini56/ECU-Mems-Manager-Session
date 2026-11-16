@@ -732,8 +732,11 @@ int main(int argc,char** argv)
             else if(variant%3==1)
                 sourceRows<<QStringLiteral("%1 %2 . . . . . . . . ")
                             .arg(label,value);
-            else
+            else if(variant<3)
                 sourceRows<<QStringLiteral("%1 %2").arg(label,value);
+            else
+                sourceRows<<QStringLiteral("%1 . . . . . . . %2")
+                            .arg(label,value);
         }
         const QString separator=(variant<3)
             ?QStringLiteral("\n"):QStringLiteral(" ");
