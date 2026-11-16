@@ -93,16 +93,13 @@ QLabel *scopePill(int key,QWidget *parent)
 MemsDatabaseBrowser::MemsDatabaseBrowser(QWidget *parent)
     : QWidget(parent),m_database(new MemsReferenceDatabase),m_search(nullptr),m_generation(nullptr),
       m_results(nullptr),m_detail(nullptr),m_resultCount(nullptr),m_title(nullptr),m_subtitle(nullptr),
-      m_scopeTitle(nullptr),m_updateTitle(nullptr),m_updateState(nullptr),m_sheetButton(nullptr),m_pdfButton(nullptr)
+      m_scopeTitle(nullptr),m_updateTitle(nullptr),m_sheetButton(nullptr),m_pdfButton(nullptr)
 {
-    for(int i=0;i<6;++i){m_metricValues[i]=nullptr;m_metricTitles[i]=nullptr;}
     setObjectName(QStringLiteral("memsDatabaseBrowser"));
     setAttribute(Qt::WA_StyledBackground,true);
     setStyleSheet(QStringLiteral("#memsDatabaseBrowser{background:#090e13;}"));
     buildUi();
     const bool referenceAvailable=m_database->open();
-    if(referenceAvailable)
-        updateMetrics();
 
     // Choose the indexed browser before binding any signals. The original
     // ECU-only reader remains a genuine fallback if the index is unavailable.
@@ -147,20 +144,8 @@ void MemsDatabaseBrowser::buildUi()
     sh->addStretch(1); QLabel *offline=makeLabel(7260,scope); offline->setStyleSheet(QStringLiteral("color:#86d17a;background:transparent;border:0;font-weight:700;")); sh->addWidget(offline);
     root->addWidget(scope);
 
-    QGridLayout *metrics=new QGridLayout; metrics->setContentsMargins(0,0,0,0); metrics->setHorizontalSpacing(6);
-    const int metricKeys[]={7168,7169,7170,7171,7172,7173};
-    for(int i=0;i<6;++i){
-        QFrame *box=card(this); QVBoxLayout *v=new QVBoxLayout(box); v->setContentsMargins(8,5,8,5); v->setSpacing(0);
-        m_metricValues[i]=new QLabel(QStringLiteral("—"),box); m_metricValues[i]->setAlignment(Qt::AlignCenter);
-        QFont vf=m_metricValues[i]->font(); vf.setBold(true); vf.setPointSizeF(13.5); m_metricValues[i]->setFont(vf);
-        m_metricValues[i]->setStyleSheet(QStringLiteral("color:#ff9828;background:transparent;border:0;"));
-        m_metricTitles[i]=makeLabel(metricKeys[i],box); m_metricTitles[i]->setAlignment(Qt::AlignCenter);
-        QFont mf=m_metricTitles[i]->font(); mf.setBold(true); mf.setPointSizeF(7.1); m_metricTitles[i]->setFont(mf);
-        m_metricTitles[i]->setStyleSheet(QStringLiteral("color:#aeb9c2;background:transparent;border:0;"));
-        v->addWidget(m_metricValues[i]); v->addWidget(m_metricTitles[i]); metrics->addWidget(box,0,i); metrics->setColumnStretch(i,1);
-    }
-    root->addLayout(metrics);
-
+    // ECU/command totals are available in searches, not as six giant
+    // counters that steal vertical space from the document reader.
     QFrame *searchBox=card(this); QHBoxLayout *sv=new QHBoxLayout(searchBox); sv->setContentsMargins(9,6,9,6); sv->setSpacing(7);
     QLabel *searchTitle=makeLabel(7216,searchBox); QFont qf=searchTitle->font(); qf.setBold(true); searchTitle->setFont(qf);
     searchTitle->setStyleSheet(QStringLiteral("color:#ff9828;background:transparent;border:0;"));
@@ -246,9 +231,8 @@ void MemsDatabaseBrowser::buildUi()
 
     QFrame *footer=card(this); footer->setObjectName(QStringLiteral("memsDatabaseFooter")); QHBoxLayout *fv=new QHBoxLayout(footer); fv->setContentsMargins(9,4,9,4);
     m_updateTitle=makeLabel(7255,footer); m_updateTitle->setObjectName(QStringLiteral("memsDatabaseUpdateTitle")); QFont uf=m_updateTitle->font(); uf.setBold(true); m_updateTitle->setFont(uf); m_updateTitle->setStyleSheet(QStringLiteral("color:#ff9828;background:transparent;border:0;"));
-    m_updateState=makeLabel(7256,footer); m_updateState->setObjectName(QStringLiteral("memsDatabaseUpdateState")); m_updateState->setStyleSheet(QStringLiteral("color:#8f9aa4;background:transparent;border:0;"));
     QLabel *readOnly=makeLabel(7231,footer); readOnly->setStyleSheet(QStringLiteral("color:#86d17a;background:transparent;border:0;"));
-    fv->addWidget(m_updateTitle); fv->addWidget(m_updateState); fv->addStretch(1); fv->addWidget(readOnly); root->addWidget(footer);
+    fv->addWidget(m_updateTitle); fv->addStretch(1); fv->addWidget(readOnly); root->addWidget(footer);
 
     retranslateUi();
 }
@@ -291,12 +275,6 @@ void MemsDatabaseBrowser::retranslateUi()
     }
     if(!m_indexedExplorerActive && m_detail && selectedPartNumber().isEmpty()) m_detail->setHtml(htmlStyle()+QStringLiteral("<h1>%1</h1><p class='muted'>%2</p>").arg(I18n::text(7224).toHtmlEscaped(),I18n::text(7225).toHtmlEscaped()));
     if(!m_indexedExplorerActive && m_database && m_database->isOpen()) refreshResults();
-}
-
-void MemsDatabaseBrowser::updateMetrics()
-{
-    const int values[]={m_database->targetEcuCount(),m_database->targetFileCount(),m_database->targetFitmentCount(),m_database->commandCount(),m_database->dataFieldCount(),m_database->capabilityCount()};
-    for(int i=0;i<6;++i) if(m_metricValues[i]) m_metricValues[i]->setText(QString::number(values[i]));
 }
 
 QString MemsDatabaseBrowser::generationFilterToken() const{return m_generation?m_generation->currentData().toString():QString();}
