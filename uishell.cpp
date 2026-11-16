@@ -12,6 +12,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
+#include <QItemSelectionModel>
 #include <QMainWindow>
 #include <QToolButton>
 #include <QPixmap>
@@ -160,9 +161,13 @@ static void applySidebarState(QMainWindow *w)
     }
 
     const int textRole=Qt::UserRole+42;
-    const int sidebarHeight=sidebar->height()>300?sidebar->height():580;
+    // The sidebar height is transient while the native shell is built.
+    // Using it to determine row height made the startup menu visually
+    // compressed until the first tab click. The shown main-window height
+    // is already defined and provides a stable row-height calculation.
+    const int availableHeight=qMax(320,w->height()-110);
     const int reserved=(toggle?toggle->height():31)+(utils?(collapsed?142:198):0)+20;
-    const int navSpace=qMax(220,sidebarHeight-reserved);
+    const int navSpace=qMax(220,availableHeight-reserved);
     const int rowHeight=qBound(collapsed?30:25,navSpace/qMax(1,nav->count()),collapsed?40:35);
 
     for(int i=0;i<nav->count();++i) {
@@ -578,7 +583,10 @@ static void installMappedConnections(QMainWindow *window, QTabWidget *tabs, QLis
         if (index < 0 || index >= nav->count())
             return;
         const QSignalBlocker blocker(nav);
-        nav->setCurrentRow(index);
+        // Current-row and selected-row are distinct in Qt. NoUpdate,
+        // the setCurrentRow default, can leave the preceding page orange
+        // while another page is visible.
+        nav->setCurrentRow(index,QItemSelectionModel::ClearAndSelect);
         fitNavigationRows(nav);
     });
 
@@ -673,7 +681,8 @@ static bool applyDeterministicNavigation(MainWindow *window)
             QListWidgetItem *item = new QListWidgetItem(iconForRank(rank), title, nav);
             item->setToolTip(title);
         }
-        nav->setCurrentRow(qBound(0, tabs->currentIndex(), kFinalTabCount - 1));
+        nav->setCurrentRow(qBound(0, tabs->currentIndex(), kFinalTabCount - 1),
+                           QItemSelectionModel::ClearAndSelect);
         fitNavigationRows(nav);
     }
 
@@ -1029,7 +1038,7 @@ static void applyResponsive(QMainWindow *window)
         if(QFrame *header=buildHeader(window,legacy))root->insertWidget(0,header);
         const int oldIndex=root->indexOf(tabs);if(oldIndex>=0)root->removeWidget(tabs);
         QFrame *workspace=new QFrame(central);workspace->setObjectName(QStringLiteral("uiRebuildWorkspace"));workspace->setAttribute(Qt::WA_StyledBackground,true);workspace->setStyleSheet(QStringLiteral("#uiRebuildWorkspace{background:%1;border:0;}").arg(QString::fromLatin1(kBg)));QHBoxLayout *wh=new QHBoxLayout(workspace);wh->setContentsMargins(0,0,0,0);wh->setSpacing(0);
-        QListWidget *nav=new QListWidget(workspace);nav->setObjectName(QStringLiteral("uiRebuildNav"));nav->setFocusPolicy(Qt::NoFocus);nav->setUniformItemSizes(true);nav->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        QListWidget *nav=new QListWidget(workspace);nav->setObjectName(QStringLiteral("uiRebuildNav"));nav->setFocusPolicy(Qt::NoFocus);nav->setSelectionMode(QAbstractItemView::SingleSelection);nav->setUniformItemSizes(true);nav->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         // The official 14 entries are created once by applyDeterministicNavigation().
         tabs->tabBar()->hide();
         tabs->setStyleSheet(QStringLiteral("QTabWidget::pane{border:0;background:%1;}").arg(QString::fromLatin1(kBg)));
