@@ -808,7 +808,7 @@ void IaMemsService::askWithLibrary(const QString &question)
                 evidence=QStringLiteral(
                     "La variante moteur demandée n'est pas confirmée par le "
                     "titre de cette source. Vérifier sa compatibilité avant "
-                    "toute intervention.\\n\\n")+evidence;
+                    "toute intervention.\n\n")+evidence;
             if(!linkedPages.isEmpty())
                 setProperty("iaMemsLastDocumentaryImagePaths",linkedPages);
             setProperty("iaMemsLastDocumentaryImagePath",
