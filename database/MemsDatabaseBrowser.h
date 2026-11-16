@@ -31,7 +31,6 @@ private:
     void buildUi();
     void activateLegacyBrowser();
     void retranslateUi();
-    void updateMetrics();
     QLabel *makeLabel(int key, QWidget *parent = nullptr);
     QString selectedPartNumber() const;
     QString selectedSystemFamily() const;
@@ -46,13 +45,10 @@ private:
     QTableWidget *m_results;
     QTextBrowser *m_detail;
     QLabel *m_resultCount;
-    QLabel *m_metricValues[6];
-    QLabel *m_metricTitles[6];
     QLabel *m_title;
     QLabel *m_subtitle;
     QLabel *m_scopeTitle;
     QLabel *m_updateTitle;
-    QLabel *m_updateState;
     QPushButton *m_sheetButton;
     QPushButton *m_pdfButton;
     bool m_indexedExplorerActive=false;
