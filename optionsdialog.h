@@ -32,6 +32,7 @@ public:
     bool getThemeChanged() { return m_themeChanged; }
     QString getLanguage() const { return m_language; }
     bool getLanguageChanged() const { return m_languageChanged; }
+    bool getTaskbarAutoHide() const { return m_taskbarAutoHide; }
 
 protected:
     void showEvent(QShowEvent *event) override;
@@ -54,6 +55,8 @@ private:
     QLabel *m_languageLabel;
     QComboBox *m_languageBox;
     QCheckBox *m_desktopShortcutBox;
+    QCheckBox *m_taskbarAutoHideBox;
+    QLabel *m_taskbarExplanation;
 
     QFrame *m_horizontalLineA;
 
@@ -70,6 +73,7 @@ private:
     QString m_language;
     bool m_languageChanged;
     bool m_desktopShortcut;
+    bool m_taskbarAutoHide=false;
 
     bool m_serialDeviceChanged;
 
