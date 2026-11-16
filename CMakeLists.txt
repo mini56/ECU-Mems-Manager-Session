@@ -59,7 +59,7 @@ configure_file("${CMAKE_SOURCE_DIR}/help.html.in" "${CMAKE_SOURCE_DIR}/help.html
 configure_file("${CMAKE_SOURCE_DIR}/help_en.html.in" "${CMAKE_SOURCE_DIR}/help_en.html")
 set(SOURCES
     main.cpp i18n.cpp i18n.h memsinterface.cpp memsinterface_dispatch.cpp memsinterface.h overviewramlive.cpp mappedinjection.cpp injectionramtest.cpp injectionramtestlogger.cpp memslogic.cpp database/DatabaseSeed.cpp
-    helpviewer.cpp logger.cpp serialdevenumerator.cpp splashprogress.cpp mainwindow.cpp aboutbox.cpp
+    helpviewer.cpp taskbarautohide.cpp taskbarautohide.h logger.cpp serialdevenumerator.cpp splashprogress.cpp mainwindow.cpp aboutbox.cpp
     optionsdialog.cpp summarytab.cpp diagnosticpanel.cpp analysistab.cpp captureviewer.cpp captureviewer.h
     tooltipbubblemanager.cpp tooltipbubblemanager.h scr/ecu/ecumanager.cpp scr/ecu/ecumanager.h
     qledindicator/qledindicator.cpp analogwidgets/led.cpp analogwidgets/functions.cpp
@@ -89,8 +89,26 @@ set(SOURCES
     settingspage.cpp settingspage.h
     singleinstance.cpp singleinstance.h nativewindowstyle.cpp nativewindowstyle.h)
 add_executable(${PNAME} ${SOURCES})
+
+# Screenshots supplied later under docs/aide/images are automatically
+# embedded as Qt resources in every Windows Setup, so the help stays offline.
+file(GLOB HELP_SCREENSHOTS CONFIGURE_DEPENDS
+    "${CMAKE_SOURCE_DIR}/docs/aide/images/*.png"
+    "${CMAKE_SOURCE_DIR}/docs/aide/images/*.jpg"
+    "${CMAKE_SOURCE_DIR}/docs/aide/images/*.jpeg")
+if(HELP_SCREENSHOTS)
+    set(HELP_SCREENSHOTS_QRC "${CMAKE_CURRENT_BINARY_DIR}/mems-help-illustrations.qrc")
+    file(WRITE "${HELP_SCREENSHOTS_QRC}" "<RCC>\n<qresource prefix=\"/help/images\">\n")
+    foreach(SCREENSHOT IN LISTS HELP_SCREENSHOTS)
+        get_filename_component(SCREENSHOT_NAME "${SCREENSHOT}" NAME)
+        file(APPEND "${HELP_SCREENSHOTS_QRC}"
+            "<file alias=\"${SCREENSHOT_NAME}\">${SCREENSHOT}</file>\n")
+    endforeach()
+    file(APPEND "${HELP_SCREENSHOTS_QRC}" "</qresource>\n</RCC>\n")
+    target_sources(${PNAME} PRIVATE "${HELP_SCREENSHOTS_QRC}")
+endif()
 if(WIN32)
-    target_link_libraries(${PNAME} PRIVATE bcrypt winhttp)
+    target_link_libraries(${PNAME} PRIVATE bcrypt winhttp shell32)
 endif()
 target_sources(${PNAME} PRIVATE ${CMAKE_SOURCE_DIR}/desktopshortcut.cpp ${CMAKE_SOURCE_DIR}/desktopshortcut.h)
 
