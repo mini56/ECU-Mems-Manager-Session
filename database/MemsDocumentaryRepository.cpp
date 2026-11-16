@@ -1138,6 +1138,20 @@ QVariantList MemsDocumentaryRepository::groupedChoices(const QVariantList &hits)
     return groups;
 }
 
+QVariantMap MemsDocumentaryRepository::choiceForNumber(
+    const QVariantList &choices, const QString &response)
+{
+    const QString number=response.trimmed();
+    static const QRegularExpression integer(QStringLiteral("^[1-9][0-9]*$"));
+    if(!integer.match(number).hasMatch())
+        return {};
+    bool valid=false;
+    const int selected=number.toInt(&valid);
+    if(!valid || selected<1 || selected>choices.size())
+        return {};
+    return choices.at(selected-1).toMap();
+}
+
 QString MemsDocumentaryRepository::numberedMenu(
     const QString &question, const QVariantList &choices, bool french)
 {
