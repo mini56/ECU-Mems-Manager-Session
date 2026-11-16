@@ -611,6 +611,94 @@ int main(int argc,char** argv)
     if(!require(submenu.value(QStringLiteral("iaMemsGroupRows"))
                     .toList().size()==2,
                 "choosing a grouped heading opens its exact member list"))return 1;
+    // General corpus-invariant tests: conjunction searches are a union of
+    // independent component references, not a strict AND on a single PDF
+    // page. Check many pairs instead of hardcoding BIELLE/PISTON.
+    const QStringList crossSubjects={
+        QStringLiteral("rotule"),QStringLiteral("palier"),
+        QStringLiteral("poulie"),QStringLiteral("tendeur"),
+        QStringLiteral("charniere"),QStringLiteral("conduit")
+    };
+    for(int i=0;i<crossSubjects.size();++i){
+        const QString component=crossSubjects.at(i);
+        for(int next=i+1;next<crossSubjects.size();++next){
+            const QString other=crossSubjects.at(next);
+            const QString query=component+QStringLiteral(" et ")+other;
+            const QVariantList hits=repository.search(query,100,true,
+                                                        QStringLiteral("fr"));
+            const QVariantList relevant=MemsDocumentaryRepository::relevantChoices(
+                query,hits);
+            bool hasFirst=false,hasSecond=false;
+            for(const QVariant &entry:relevant){
+                const QString title=entry.toMap().value(QStringLiteral("title"))
+                    .toString().toLower();
+                hasFirst |= title.contains(component);
+                hasSecond |= title.contains(other);
+            }
+            if(!require(hasFirst && hasSecond,
+                "compound subjects must retrieve each independent component"))return 1;
+        }
+        // Variants cannot be required in every workshop title; unqualified
+        // sources remain searchable but never claim applicability to MPi/SPi.
+        for(const QString &variant:{QStringLiteral("spi"),QStringLiteral("mpi")}){
+            const QString query=component+QLatin1Char(' ')+variant;
+            const QStringList terms=MemsDocumentaryRepository::subjectTerms(query);
+            if(!require(terms.size()==1 && terms.first()==component,
+                "vehicle variant is a qualifier, not a required FTS token"))return 1;
+            const QVariantList hits=repository.search(query,100,true,
+                                                        QStringLiteral("fr"));
+            const QVariantList relevant=MemsDocumentaryRepository::relevantChoices(
+                query,hits);
+            if(!require(relevant.size()==2,
+                "variant search must retain real generic component operations"))return 1;
+            for(const QVariant &entry:relevant)
+                if(!require(entry.toMap().value(
+                       QStringLiteral("iaMemsVariantUnverified")).toBool(),
+                       "generic source must not claim an unproven vehicle variant"))return 1;
+        }
+    }
+    // A printed PDF table may become a giant single-line extract, with
+    // thousands of dot leaders. Show only matching technical evidence and
+    // remove layout leaders. Keep original numbers and units untouched.
+    QVariantMap technicalMention;
+    technicalMention.insert(QStringLiteral("source_key"),
+        QStringLiteral("rave-fr:RCL0193FRE:source-specification"));
+    technicalMention.insert(QStringLiteral("document_id"),
+        QStringLiteral("RCL0193FRE"));
+    technicalMention.insert(QStringLiteral("source_page"),38);
+    technicalMention.insert(QStringLiteral("title"),
+        QStringLiteral("Réglages moteur SPi boîte manuelle"));
+    technicalMention.insert(QStringLiteral("entry_type"),QStringLiteral("reference"));
+    technicalMention.insert(QStringLiteral("source_status"),
+        QStringLiteral("source_checked"));
+    const QString filler=QStringLiteral(
+        "Caractéristiques générales: cylindrée 1275 cm3 . . . . . . . . "
+        "Allumage et réglages moteur . . . . . . . . . . . . ");
+    const QString tableText=filler.repeated(10)+QStringLiteral(
+        "Injecteur/régulateur de pression de carburant "
+        ". . . . . . . JZX 3300 . . . . . . . "
+        "Pression d'alimentation 1,0 bar ± 0,2 bar . . . . . . . ")+
+        filler.repeated(10);
+    technicalMention.insert(QStringLiteral("content"),QStringLiteral(
+        "document : RCL0193FRE\nlangue : français\npage physique : 38\n\n")
+        +tableText);
+    const QVariantList matching=MemsDocumentaryRepository::relevantChoices(
+        QStringLiteral("injecteur spi"),QVariantList{technicalMention});
+    if(!require(matching.size()==1 && matching.first().toMap().value(
+                    QStringLiteral("iaMemsMentionOnly")).toBool(),
+                "source mention must be found in long source text"))return 1;
+    const QString formatted=MemsDocumentaryRepository::answerFromHits(
+        QVariantList{matching.first()});
+    if(!require(formatted.contains(QStringLiteral("JZX 3300")) &&
+                formatted.contains(QStringLiteral("1,0 bar ± 0,2 bar")) &&
+                formatted.contains(QStringLiteral("RCL0193FRE, page 38")),
+                "technical values and source page must survive table cleanup"))return 1;
+    if(!require(!formatted.contains(QStringLiteral(". . . .")) &&
+                formatted.size()<950,
+                "dot leaders and entire unrelated specification page must not appear"))return 1;
+    if(!require(technicalMention.value(QStringLiteral("content")).toString()
+                    .contains(QStringLiteral(". . . .")),
+                "cleaning must not modify the manufacturer source stored in SQLite"))return 1;
     std::puts("MEMS_NATIVE_FRENCH_INTENT_AND_OPERATION_TEST_PASS");
     return 0;
 }
