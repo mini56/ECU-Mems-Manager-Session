@@ -727,6 +727,29 @@ void IaMemsService::askWithLibrary(const QString &question)
             const QVariantMap chosen = roverChoices.at(selected - 1).toMap();
             const QString originalQuestion =
                 property("iaMemsRoverMenuQuestion").toString().trimmed();
+            // Identical headings may designate several real source rows.
+            // Open a second menu rather than silently choosing the first or
+            // dropping the other manufacturer references.
+            const QVariantList members=chosen.value(
+                QStringLiteral("iaMemsGroupRows")).toList();
+            if (!members.isEmpty()) {
+                QVariantList subChoices;
+                for(const QVariant &member:members){
+                    QVariantMap source=member.toMap();
+                    source.remove(QStringLiteral("iaMemsGroupRows"));
+                    source.insert(QStringLiteral("iaMemsGroupChild"),true);
+                    subChoices.append(source);
+                }
+                setProperty("iaMemsRoverMenuRows",subChoices);
+                setProperty("iaMemsRoverMenuQuestion",originalQuestion);
+                m_pendingGrounding.clear();
+                emit responseReady(MemsDocumentaryRepository::numberedMenu(
+                    originalQuestion,subChoices,
+                    I18n::language().startsWith(QStringLiteral("fr"),
+                                                Qt::CaseInsensitive)));
+                emit statusChanged();
+                return;
+            }
             setProperty("iaMemsRoverMenuRows", QVariant());
             setProperty("iaMemsRoverMenuQuestion", QVariant());
             MemsDocumentaryRepository documentary;
@@ -846,6 +869,7 @@ void IaMemsService::askWithLibrary(const QString &question)
             if (!operation.isEmpty() && matchingOperationChoices.size() == 1) {
                 const QVariantMap row = matchingOperationChoices.first().toMap();
                 if (!row.value(QStringLiteral("iaMemsMentionOnly")).toBool() &&
+                    !row.value(QStringLiteral("iaMemsGroupRows")).isValid() &&
                     row.value(QStringLiteral("entry_type")).toString()
                     == QStringLiteral("procedure")) {
                     QStringList pages;
@@ -874,9 +898,9 @@ void IaMemsService::askWithLibrary(const QString &question)
 
             // A specific request that lacks an exact title still receives
             // a truthful list of everything available on the subject.
-            const QVariantList offers = (!operation.isEmpty() &&
-                                         !matchingOperationChoices.isEmpty())
-                ? matchingOperationChoices : choices;
+            const QVariantList offers = MemsDocumentaryRepository::groupedChoices(
+                (!operation.isEmpty() && !matchingOperationChoices.isEmpty())
+                    ? matchingOperationChoices : choices);
             QString menu = MemsDocumentaryRepository::numberedMenu(
                 trimmed, offers, french);
             if (!operation.isEmpty() && matchingOperationChoices.isEmpty())
