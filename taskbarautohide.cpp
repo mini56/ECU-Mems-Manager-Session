@@ -79,8 +79,9 @@ void recoverPreviousSession()
     // already running process.
     if(processStillRunning(processId) && processId!=GetCurrentProcessId())
         return;
-    if(currentState()==1)
-        setState(record.value(kWasHidden,false).toBool());
+    if(currentState()==1 &&
+       !setState(record.value(kWasHidden,false).toBool()))
+        return; // retain marker for a later recovery attempt
     clearSavedState(record);
 #endif
 }
