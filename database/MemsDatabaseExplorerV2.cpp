@@ -222,6 +222,7 @@ public:
         // when no documentary index or pack is installed.
         Q_UNUSED(existingIndexReady);
         compactHeader();
+        configureUpdateButton();
         configureFilter();
         configureResults();
         configureDetail();
@@ -299,20 +300,38 @@ private:
         m_scopeCompact->setStyleSheet(QStringLiteral("color:#aeb9c2;background:transparent;border:0;font-weight:600;"));
         m_scopeCompact->setMaximumWidth(470);
         horizontal->addWidget(m_scopeCompact);
-        m_updateButton=new QPushButton(row);
+        layout->insertWidget(index,row);
+    }
+
+    void configureUpdateButton()
+    {
+        // Database updates belong to the database status/footer bar, directly
+        // after "Mise à jour en ligne". Only this button opens the existing
+        // encrypted language-pack update dialog.
+        QFrame *footer=m_browser->findChild<QFrame*>(
+            QStringLiteral("memsDatabaseFooter"));
+        QLabel *updateTitle=footer?footer->findChild<QLabel*>(
+            QStringLiteral("memsDatabaseUpdateTitle")):nullptr;
+        QHBoxLayout *footerLayout=footer
+            ?qobject_cast<QHBoxLayout*>(footer->layout()):nullptr;
+        if(!footer || !updateTitle || !footerLayout)
+            return;
+
+        m_updateButton=new QPushButton(footer);
         m_updateButton->setObjectName(QStringLiteral("documentaryUpdateButton"));
-        m_updateButton->setMinimumHeight(31);
-        m_updateButton->setMaximumWidth(225);
+        m_updateButton->setMinimumHeight(26);
+        m_updateButton->setMaximumHeight(31);
+        m_updateButton->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
         m_updateButton->setStyleSheet(QStringLiteral(
             "QPushButton{background:#0e141a;color:#ff9828;border:1px solid #ff7a00;"
             "border-radius:6px;padding:4px 10px;font-weight:700;}"
             "QPushButton:hover{background:#1a2630;}"));
-        horizontal->addWidget(m_updateButton);
+        footerLayout->insertWidget(footerLayout->indexOf(updateTitle)+1,
+                                   m_updateButton);
         connect(m_updateButton,&QPushButton::clicked,this,[this](){
             MemsDocumentaryUpdateDialog dialog(I18n::language(),m_browser.data());
             dialog.exec();
         });
-        layout->insertWidget(index,row);
     }
 
     void configureFilter()
@@ -498,12 +517,12 @@ private:
         }
         if(m_updateButton) {
             const QString language=I18n::language().left(2).toLower();
-            QString label=QStringLiteral("Download database update");
-            if(language==QStringLiteral("fr")) label=QStringLiteral("Mise à jour de la base");
-            else if(language==QStringLiteral("es")) label=QStringLiteral("Actualizar base de datos");
-            else if(language==QStringLiteral("it")) label=QStringLiteral("Aggiorna banca dati");
-            else if(language==QStringLiteral("pt")) label=QStringLiteral("Atualizar base de dados");
-            else if(language==QStringLiteral("de")) label=QStringLiteral("Datenbank aktualisieren");
+            QString label=QStringLiteral("Check for database updates");
+            if(language==QStringLiteral("fr")) label=QStringLiteral("Rechercher une mise à jour");
+            else if(language==QStringLiteral("es")) label=QStringLiteral("Buscar actualizaciones");
+            else if(language==QStringLiteral("it")) label=QStringLiteral("Cerca aggiornamenti");
+            else if(language==QStringLiteral("pt")) label=QStringLiteral("Procurar atualizações");
+            else if(language==QStringLiteral("de")) label=QStringLiteral("Nach Updates suchen");
             m_updateButton->setText(label);
         }
         if(m_search) m_search->setPlaceholderText(I18n::text(7217));
