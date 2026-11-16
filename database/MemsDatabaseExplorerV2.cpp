@@ -293,13 +293,17 @@ private:
         QHBoxLayout *horizontal=new QHBoxLayout(row);
         horizontal->setContentsMargins(0,0,0,0);
         horizontal->setSpacing(8);
-        horizontal->addWidget(title);
+        horizontal->addWidget(title,0);
         horizontal->addStretch(1);
         m_scopeCompact=new QLabel(row);
+        m_scopeCompact->setObjectName(QStringLiteral("memsDatabaseScopeSummary"));
         m_scopeCompact->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
-        m_scopeCompact->setStyleSheet(QStringLiteral("color:#aeb9c2;background:transparent;border:0;font-weight:600;"));
-        m_scopeCompact->setMaximumWidth(470);
-        horizontal->addWidget(m_scopeCompact);
+        m_scopeCompact->setWordWrap(true);
+        m_scopeCompact->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
+        m_scopeCompact->setMinimumWidth(0);
+        m_scopeCompact->setStyleSheet(QStringLiteral(
+            "color:#aeb9c2;background:transparent;border:0;font-weight:600;"));
+        horizontal->addWidget(m_scopeCompact,1);
         layout->insertWidget(index,row);
     }
 
@@ -513,7 +517,10 @@ private:
     void retranslate()
     {
         if(m_scopeCompact){
-            m_scopeCompact->setText(I18n::text(7162)+QStringLiteral("  ")+I18n::text(7163)+QStringLiteral("  ")+I18n::text(7164)+QStringLiteral("  ")+I18n::text(7165)+QStringLiteral("  ")+I18n::text(7166)+QStringLiteral("     ")+I18n::text(7260));
+            m_scopeCompact->setText(I18n::text(7163)+QStringLiteral(" · ")+
+                I18n::text(7164)+QStringLiteral(" · ")+I18n::text(7165)+
+                QStringLiteral(" · ")+I18n::text(7166)+QStringLiteral("   |   ")+
+                I18n::text(7260));
         }
         if(m_updateButton) {
             const QString language=I18n::language().left(2).toLower();
