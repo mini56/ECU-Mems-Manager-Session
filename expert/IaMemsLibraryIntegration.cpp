@@ -1,6 +1,7 @@
 #include "IaMemsService.h"
 
 #include "IaMemsConversationRouting.h"
+#include "IaMemsEcuReferenceRouting.h"
 #include "IaMemsLibraryBridge.h"
 #include "IaResponseLogic.h"
 #include "LocalAiClient.h"
@@ -840,6 +841,91 @@ void IaMemsService::askWithLibrary(const QString &question)
     const IaResponseLogic::Intent liveIntent = IaResponseLogic::classify(trimmed);
     const bool requestsLiveEcuData = liveIntent != IaResponseLogic::Intent::None;
     const bool softwareHelpRequest = !softwareAnswer(trimmed).trimmed().isEmpty();
+    // Positively identified ECU references are looked up in the ECU
+    // reference catalogue (and, if present, in verified expert facts).
+    // Critically this is NOT a broad keyword classifier: ordinary workshop
+    // parts, their numbered menus, RAVE citations, wiring, diagnostics,
+    // telemetry and software help remain on their existing paths.
+    const QString ecuCode=IaMemsEcuReferenceRouting::referenceFromQuestion(trimmed);
+    if(!resolvedDocumentary && !ecuCode.isEmpty() &&
+       !explicitDocumentaryRequest && !diagnosticRequest &&
+       !requestsLiveEcuData && !softwareHelpRequest){
+        clearStructuredMenuState(this);
+        setProperty("iaMemsRoverMenuRows",QVariant());
+        setProperty("iaMemsRoverMenuQuestion",QVariant());
+
+        MemsReferenceDatabase references;
+        const bool available=references.open();
+        QVariantMap exact;
+        if(available){
+            exact=references.ecu(ecuCode);
+            if(exact.isEmpty()){
+                // Search may find aliases and mentions in fitment data,
+                // but only an EXACT part_number is an identified ECU.
+                // Never turn a fuzzy match into a proved identification.
+                for(const QVariant &item:references.searchEcus(ecuCode,QString(),50)){
+                    const QVariantMap row=item.toMap();
+                    if(row.value(QStringLiteral("part_number")).toString()
+                          .compare(ecuCode,Qt::CaseInsensitive)==0){
+                        exact=references.ecu(row.value(
+                            QStringLiteral("part_number")).toString());
+                        break;
+                    }
+                }
+            }
+        }
+        QString answer;
+        if(!exact.isEmpty()){
+            const QString part=exact.value(QStringLiteral("part_number")).toString();
+            answer=IaMemsEcuReferenceRouting::exactEcuSummary(
+                ecuCode,exact,references.fitments(part),references.files(part));
+        }
+
+        // The existing read-only expert knowledge may additionally contain
+        // verified statements about an ECU firmware/part code even when the
+        // target ECU catalogue does not hold that exact reference.
+        if(m_knowledgeReady && m_reader.isOpen()){
+            QStringList facts;
+            const QList<ExpertFact> known=m_reader.facts(ExpertContext{});
+            for(const ExpertFact &fact:known){
+                const bool sameFirmware=fact.firmware.trimmed()
+                    .compare(ecuCode,Qt::CaseInsensitive)==0;
+                const bool sameKey=IaMemsEcuReferenceRouting::exactCodeMention(
+                    fact.factKey,ecuCode);
+                const bool directStatement=IaMemsEcuReferenceRouting::exactCodeMention(
+                    fact.statement,ecuCode);
+                const bool directTopic=IaMemsEcuReferenceRouting::exactCodeMention(
+                    fact.topic,ecuCode);
+                if(!sameFirmware && !sameKey && !directStatement && !directTopic)
+                    continue;
+                if(fact.statement.trimmed().isEmpty())continue;
+                QString item=QStringLiteral("• %1").arg(fact.statement.trimmed());
+                if(!fact.sourceKey.trimmed().isEmpty())
+                    item+=QStringLiteral(" (source : %1)").arg(fact.sourceKey.trimmed());
+                if(!fact.verificationLevel.trimmed().isEmpty())
+                    item+=QStringLiteral(" [preuve : %1]").arg(
+                        fact.verificationLevel.trimmed());
+                if(!facts.contains(item))facts.append(item);
+                if(facts.size()>=5)break;
+            }
+            if(!facts.isEmpty()){
+                if(!answer.isEmpty())answer+=QStringLiteral("\n\n");
+                answer+=QStringLiteral(
+                    "Informations supplémentaires de la base experte :\n")+
+                    facts.join(QLatin1Char('\n'));
+            }
+        }
+        if(answer.isEmpty())
+            answer=IaMemsEcuReferenceRouting::notFound(ecuCode,available);
+        setProperty("iaMemsLastLibraryQuestion",trimmed);
+        setProperty("iaMemsLastLibraryEvidence",answer);
+        setProperty("iaMemsLastLibraryLocked",true);
+        m_pendingGrounding.clear();
+        emit responseReady(answer);
+        emit statusChanged();
+        return;
+    }
+
     if (MemsDocumentaryRepository::isPackInstalled() &&
         (explicitDocumentaryRequest ||
          (!diagnosticRequest && !requestsLiveEcuData && !softwareHelpRequest))) {
