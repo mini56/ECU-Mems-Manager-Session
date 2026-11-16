@@ -36,6 +36,10 @@ public:
     // Identical headings are grouped without discarding any original row.
     // A chosen group opens its preserved source rows as a second menu.
     static QVariantList groupedChoices(const QVariantList &hits);
+    // Resolve a displayed one-based menu number against the exact rows
+    // shown, without searching or guessing a documentary reference.
+    static QVariantMap choiceForNumber(const QVariantList &choices,
+                                       const QString &response);
     static QString answerFromHits(const QVariantList &hits);
     // Reconstitue toutes les étapes et exigences liées à l'opération exacte,
     // dans l'ordre constructeur. Renvoie toutes les pages illustrées utiles.
