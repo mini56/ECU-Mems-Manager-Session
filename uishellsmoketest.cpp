@@ -231,12 +231,28 @@ bool verifyUi(MainWindow &window)
         QStringLiteral("taskbarAutoHideCheckbox")):nullptr;
     QLabel *explanation=options?options->findChild<QLabel*>(
         QStringLiteral("taskbarAutoHideExplanation")):nullptr;
-    ok=check(autoHide && !autoHide->isChecked() && explanation &&
-             explanation->isVisibleTo(options)==false &&
-             explanation->text().contains(QStringLiteral(
-                 "tout Windows")) &&
-             explanation->text().contains(QStringLiteral("restaur")),
-             "Taskbar option must default off and explain desktop-wide change") && ok;
+    ok=check(autoHide && explanation,
+             "Taskbar auto-hide control and explanation must exist") && ok;
+    if(autoHide && explanation && options){
+        // A child can be visible *relative to its own hidden parent* in Qt;
+        // isVisibleTo(options)==false was the wrong assertion. Open the
+        // dialog and check the actual user-facing explanation.
+        const bool defaultDisabled=!autoHide->isChecked();
+        const bool explainSystemWide=explanation->text().contains(
+            QStringLiteral("tout Windows"));
+        const bool explainRestore=explanation->text().contains(
+            QStringLiteral("restaur"));
+        options->show();
+        QCoreApplication::processEvents();
+        const bool readable=explanation->isVisibleTo(options);
+        options->hide();
+        ok=check(defaultDisabled,
+                 "Taskbar auto-hide must be unchecked by default") && ok;
+        ok=check(explainSystemWide && explainRestore,
+                 "Taskbar explanation must describe Windows-wide change and recovery") && ok;
+        ok=check(readable,
+                 "Taskbar explanation must be shown when the Options dialog opens") && ok;
+    }
 
     QFrame *sidebar=window.findChild<QFrame*>(
         QStringLiteral("darkSidebar"));
