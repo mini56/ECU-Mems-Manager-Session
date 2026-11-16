@@ -1,6 +1,8 @@
 #include "uishellsmoketest.h"
 
 #include "mainwindow.h"
+#include "helpviewer.h"
+#include "optionsdialog.h"
 #include "summarytab.h"
 #include "i18n.h"
 #include "database/DatabaseManager.h"
@@ -18,6 +20,8 @@
 #include <QPushButton>
 #include <QToolButton>
 #include <QLabel>
+#include <QCheckBox>
+#include <QTextBrowser>
 #include <QHeaderView>
 #include <QTableWidget>
 #include <QtMath>
@@ -183,6 +187,56 @@ bool verifyUi(MainWindow &window)
     ok=check(window.findChildren<QPushButton*>(
                 QStringLiteral("documentaryUpdateButton")).size()==1,
              "Duplicate database update action detected") && ok;
+
+    // The database page now belongs to the actual document workspace:
+    // no redundant six statistics cards or obsolete "disabled" message.
+    for(int key : {7168,7169,7170,7171,7172,7173}){
+        bool found=false;
+        for(QLabel *item : window.findChildren<QLabel*>())
+            found |= item->property("i18nKey").toInt()==key &&
+                     item->property("i18nKey").isValid();
+        ok=check(!found,
+                 "Redundant database metric cards are still constructed") && ok;
+    }
+    ok=check(window.findChild<QLabel*>(
+                 QStringLiteral("memsDatabaseUpdateState"))==nullptr,
+             "Obsolete disabled database update status remains") && ok;
+    QLabel *headerScope=window.findChild<QLabel*>(
+        QStringLiteral("memsDatabaseScopeSummary"));
+    ok=check(headerScope && headerScope->wordWrap() &&
+             headerScope->text().contains(QStringLiteral("MEMS 1.9")),
+             "Database heading must show full system list without clipping") && ok;
+
+    // The revised help loads real bundled HTML into an offline dark Qt dialog.
+    // It must contain the update instructions and a navigable section index.
+    HelpViewer manual(QStringLiteral("SESSION UI TEST"),&window);
+    QListWidget *chapters=manual.findChild<QListWidget*>(
+        QStringLiteral("memsHelpNavigation"));
+    QTextBrowser *helpBody=manual.findChild<QTextBrowser*>(
+        QStringLiteral("memsHelpContent"));
+    ok=check(chapters && chapters->count()>=24,
+             "Help must provide an offline chapter navigation") && ok;
+    ok=check(helpBody &&
+             helpBody->toPlainText().contains(QStringLiteral(
+                 "Rechercher une mise à jour")) &&
+             helpBody->toPlainText().contains(QStringLiteral(
+                 "Masquer automatiquement la barre des tâches")),
+             "Help must document database updates and optional taskbar behaviour") && ok;
+    ok=check(manual.minimumWidth()>=850 &&
+             manual.styleSheet().contains(QStringLiteral("#090e13")),
+             "Help dialog must be larger and use the professional dark theme") && ok;
+
+    OptionsDialog *options=window.findChild<OptionsDialog*>();
+    QCheckBox *autoHide=options?options->findChild<QCheckBox*>(
+        QStringLiteral("taskbarAutoHideCheckbox")):nullptr;
+    QLabel *explanation=options?options->findChild<QLabel*>(
+        QStringLiteral("taskbarAutoHideExplanation")):nullptr;
+    ok=check(autoHide && !autoHide->isChecked() && explanation &&
+             explanation->isVisibleTo(options)==false &&
+             explanation->text().contains(QStringLiteral(
+                 "tout Windows")) &&
+             explanation->text().contains(QStringLiteral("restaur")),
+             "Taskbar option must default off and explain desktop-wide change") && ok;
 
     QFrame *sidebar=window.findChild<QFrame*>(
         QStringLiteral("darkSidebar"));
