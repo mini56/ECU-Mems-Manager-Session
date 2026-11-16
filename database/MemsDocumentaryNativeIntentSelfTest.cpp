@@ -1,4 +1,5 @@
 #include "MemsDocumentaryRepository.h"
+#include "../expert/IaMemsConversationRouting.h"
 #include <QCoreApplication>
 #include <QDir>
 #include <QSettings>
@@ -134,6 +135,55 @@ int main(int argc,char** argv)
             QSqlQuery query(db);
             if(!require(query.exec(sql),"fixture schema and data"))return 1;
         }
+        // Property-style coverage: insert several arbitrary subjects with
+        // two operations and one indirect mention. No engine code branches
+        // on any of these example words.
+        const QStringList genericParts={
+            QStringLiteral("rotule"), QStringLiteral("palier"),
+            QStringLiteral("poulie"), QStringLiteral("tendeur"),
+            QStringLiteral("charniere"), QStringLiteral("conduit")
+        };
+        QSqlQuery genericInsert(db);
+        genericInsert.prepare(QStringLiteral(
+            "INSERT INTO documentary_entries VALUES(?,?,?,?,?,?,?,?,?,?)"));
+        for(int p=0;p<genericParts.size();++p){
+            const QString component=genericParts.at(p);
+            for(int operation=0;operation<2;++operation){
+                const QString action=operation==0
+                    ?QStringLiteral("dépose"):QStringLiteral("repose");
+                const QString id=QStringLiteral("generic-%1-%2").arg(p).arg(operation);
+                genericInsert.addBindValue(QStringLiteral("RCL0193FRE"));
+                genericInsert.addBindValue(QStringLiteral("v1"));
+                genericInsert.addBindValue(id);
+                genericInsert.addBindValue(QStringLiteral("procedure"));
+                genericInsert.addBindValue(400+p);
+                genericInsert.addBindValue(QStringLiteral("%1 - %2")
+                    .arg(component.toUpper(),action));
+                genericInsert.addBindValue(QStringLiteral("Consignes vérifiées pour %1 %2.")
+                    .arg(component,action));
+                genericInsert.addBindValue(QStringLiteral("source_checked"));
+                genericInsert.addBindValue(QStringLiteral("mems_procedure"));
+                genericInsert.addBindValue(QStringLiteral("{}"));
+                if(!require(genericInsert.exec(),"insert generic workshop operation"))return 1;
+            }
+            genericInsert.addBindValue(QStringLiteral("RCL0193FRE"));
+            genericInsert.addBindValue(QStringLiteral("v1"));
+            genericInsert.addBindValue(QStringLiteral("generic-mention-%1").arg(p));
+            genericInsert.addBindValue(QStringLiteral("step"));
+            genericInsert.addBindValue(450+p);
+            genericInsert.addBindValue(QStringLiteral("AUTRE ENSEMBLE - étape"));
+            genericInsert.addBindValue(QStringLiteral(
+                "Le composant %1 est mentionné dans une procédure différente.")
+                    .arg(component));
+            genericInsert.addBindValue(QStringLiteral("source_checked"));
+            genericInsert.addBindValue(QStringLiteral("mems_procedure_step"));
+            genericInsert.addBindValue(QStringLiteral("{}"));
+            if(!require(genericInsert.exec(),"insert generic indirect mention"))return 1;
+        }
+        QSqlQuery rebuild(db);
+        if(!require(rebuild.exec(QStringLiteral(
+             "INSERT INTO documentary_fts(documentary_fts) VALUES('rebuild')")),
+             "rebuild generic FTS corpus"))return 1;
         db.close();
         db=QSqlDatabase();
     }
@@ -356,6 +406,117 @@ int main(int argc,char** argv)
                 !switchAnswer.contains(QStringLiteral("\nFREINS\nREPARATIONS")),
                 "trailing PDF running headings must be trimmed"))return 1;
 
+    // Generic invariants (not per-keyword exceptions):
+    // 1. Every named request replaces context. Only an operation-only followup
+    //    is attached to the currently selected component.
+    const QStringList arbitrarySubjects={
+        QStringLiteral("rotule"),QStringLiteral("palier"),
+        QStringLiteral("poulie"),QStringLiteral("tendeur"),
+        QStringLiteral("charniere"),QStringLiteral("conduit")
+    };
+    const QStringList operationWords={
+        QStringLiteral("dépose"),QStringLiteral("repose"),
+        QStringLiteral("réparation"),QStringLiteral("contrôle"),
+        QStringLiteral("réglage"),QStringLiteral("purge"),
+        QStringLiteral("remplacement"),QStringLiteral("révision")
+    };
+    for(const QString &oldTopic:arbitrarySubjects){
+        for(const QString &newTopic:arbitrarySubjects){
+            if(newTopic==oldTopic)
+                continue;
+            if(!require(IaMemsConversationRouting::contextualWorkshopQuestion(
+                    oldTopic,newTopic)==newTopic,
+                "any new named component replaces the previous subject"))return 1;
+            if(!require(IaMemsConversationRouting::contextualWorkshopQuestion(
+                    oldTopic,newTopic+QStringLiteral(" dépose"))
+                        ==newTopic+QStringLiteral(" dépose"),
+                "named workshop requests never inherit the previous topic"))return 1;
+        }
+        for(const QString &action:operationWords){
+            if(!require(IaMemsConversationRouting::contextualWorkshopQuestion(
+                    oldTopic,action)==oldTopic+QLatin1Char(' ')+action,
+                "all bare workshop operations preserve the current subject"))return 1;
+        }
+        // 2. The database search retrieves varied operations, and title
+        //    relevance never elevates an unrelated source-text mention.
+        const QVariantList searchHits=repository.search(oldTopic,100,true,
+                                                         QStringLiteral("fr"));
+        const QVariantList chosen=MemsDocumentaryRepository::relevantChoices(
+            oldTopic,searchHits);
+        if(!require(chosen.size()==2,
+                    "each arbitrary component retains its real operation titles"))return 1;
+        for(const QVariant &value:chosen){
+            const QVariantMap row=value.toMap();
+            if(!require(row.value(QStringLiteral("title")).toString().toLower()
+                              .contains(oldTopic) &&
+                        !row.value(QStringLiteral("iaMemsMentionOnly")).toBool(),
+                "direct procedure titles outrank incidental source mentions"))return 1;
+        }
+        // 3. With no directly named operation, source mentions are still
+        //    retrievable and clearly marked, including indexed step entries.
+        QVariantList indirectOnly;
+        for(const QVariant &value:searchHits)
+            if(value.toMap().value(QStringLiteral("entry_type")).toString()
+               ==QStringLiteral("step"))
+                indirectOnly.append(value);
+        const QVariantList indirect=MemsDocumentaryRepository::relevantChoices(
+            oldTopic,indirectOnly);
+        if(!require(!indirect.isEmpty() &&
+                    indirect.first().toMap().value(
+                        QStringLiteral("iaMemsMentionOnly")).toBool(),
+                "indirect workshop step is a labelled mention, not a procedure"))return 1;
+        const QString mentionAnswer=MemsDocumentaryRepository::answerFromHits(
+            QVariantList{indirect.first()});
+        if(!require(mentionAnswer.contains(QStringLiteral("page")) &&
+                    mentionAnswer.contains(QStringLiteral("pas d'une procédure")),
+                "indirect source evidence retains page without inventing an operation"))return 1;
+
+        // 4. Duplicate display headings collapse in the first menu, while
+        //    every independent documentary source remains selectable.
+        QVariantList duplicates;
+        for(int index=0;index<5;++index){
+            QVariantMap item=chosen.first().toMap();
+            item.insert(QStringLiteral("source_key"),
+                QStringLiteral("synthetic:%1:%2").arg(oldTopic).arg(index));
+            item.insert(QStringLiteral("source_page"),600+index);
+            duplicates.append(item);
+        }
+        duplicates.append(chosen.last());
+        const QVariantList grouped=MemsDocumentaryRepository::groupedChoices(
+            duplicates);
+        if(!require(grouped.size()==2 &&
+                    grouped.first().toMap().value(
+                        QStringLiteral("iaMemsGroupRows")).toList().size()==5,
+                "repeated headings group without discarding distinct source rows"))return 1;
+        const QVariantList members=grouped.first().toMap()
+            .value(QStringLiteral("iaMemsGroupRows")).toList();
+        QSet<QString> retained;
+        for(const QVariant &member:members)
+            retained.insert(member.toMap().value(QStringLiteral("source_key")).toString());
+        if(!require(retained.size()==5,
+                    "grouped references preserve all original document identities"))return 1;
+        const QString groupedMenu=MemsDocumentaryRepository::numberedMenu(
+            oldTopic,grouped,true);
+        if(!require(groupedMenu.contains(QStringLiteral("5 références")) &&
+                    groupedMenu.contains(QStringLiteral("1. ")) &&
+                    groupedMenu.contains(QStringLiteral("2. ")),
+                "lossless groups are clearly identified in the numbered menu"))return 1;
+    }
+    // 5. Source identifiers must not leak as technical field names, while
+    //    the raw source remains unchanged for the selected row.
+    QVariantMap technical;
+    technical.insert(QStringLiteral("title"),QStringLiteral(
+        "torque_moteur_support_de_volant_boulons torque"));
+    technical.insert(QStringLiteral("source_key"),QStringLiteral("immutable-source-key"));
+    technical.insert(QStringLiteral("entry_type"),QStringLiteral("technical_value"));
+    const QString technicalMenu=MemsDocumentaryRepository::numberedMenu(
+        QStringLiteral("composant"),QVariantList{technical},true);
+    if(!require(technicalMenu.contains(QStringLiteral("Couple de serrage")) &&
+                !technicalMenu.contains(QStringLiteral("torque_")) &&
+                !technicalMenu.contains(QStringLiteral("_de_")) &&
+                technical.value(QStringLiteral("title")).toString().startsWith(
+                    QStringLiteral("torque_")),
+                "technical slug is formatted only for display, source left intact"))return 1;
     std::puts("MEMS_NATIVE_FRENCH_INTENT_AND_OPERATION_TEST_PASS");
     return 0;
 }
