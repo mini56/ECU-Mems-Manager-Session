@@ -190,9 +190,15 @@ bool verifyUi(MainWindow &window)
         QStringLiteral("darkSidebarToggle"));
     ok=check(sidebar && toggle,
              "Native sidebar and collapse control missing") && ok;
+    // Verify BEFORE clicking any tab. SESSION 151 used to start with a
+    // narrower menu and only expand on the first navigation event.
     const int expandedWidth=sidebar ? sidebar->width() : 0;
-    ok=check(expandedWidth>=208 && expandedWidth<=252,
-             "Expanded navigation must have one stable readable width") && ok;
+    ok=check(!sidebar || !sidebar->property("collapsed").toBool(),
+             "Sidebar must start expanded, without any click") && ok;
+    ok=check(tabs->currentIndex()==0 && navigation->currentRow()==0,
+             "The initial visible page and selection must both be Overview") && ok;
+    ok=check(expandedWidth==236 && navigation->width()==236,
+             "Startup sidebar width must already match its canonical 236px width") && ok;
 
     // A switch must work from both the sidebar and the underlying tab widget.
     // No test clicks ECU connection, actuator, reset or session buttons.
@@ -208,9 +214,9 @@ bool verifyUi(MainWindow &window)
                  navigation->currentItem()->text()==tabs->tabText(i),
                  "Visible page and highlighted sidebar entry differ") && ok;
         if(sidebar)
-            ok=check(sidebar->width()==expandedWidth &&
-                     navigation->width()==expandedWidth,
-                     "Switching pages must not shrink the expanded sidebar") && ok;
+            ok=check(sidebar->width()==236 &&
+                     navigation->width()==236,
+                     "Every page must preserve the original 236px menu width") && ok;
     }
     for (int i=13;i>=0;i--){
         tabs->setCurrentIndex(i);
