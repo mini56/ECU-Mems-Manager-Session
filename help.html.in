@@ -4,44 +4,55 @@
 <meta charset="utf-8">
 <title>@PROJECTNAME@ — Guide utilisateur complet</title>
 <style>
-body{font-family:"Segoe UI",Arial,sans-serif;background:#fff;color:#1f2430;margin:24px;line-height:1.45}
-h1{color:#1f66e6;border-bottom:2px solid #d6ddea;padding-bottom:6px}
-h2{color:#14479e;margin-top:26px}
-h3{color:#14479e;margin-top:18px}
-table{border-collapse:collapse;width:100%;margin:12px 0}th,td{border:1px solid #d6ddea;padding:7px;text-align:left}
-th{background:#1f66e6;color:#fff}.warn{background:#fff6e8;border:1px solid #f0c987;padding:12px}
-code{background:#f2f3f5;padding:1px 4px}
+body{font-family:"Segoe UI",Arial,sans-serif;background:#0e171d;color:#e3ebf1;margin:17px;line-height:1.56;font-size:12pt}
+h1{color:#ff9828;border-bottom:2px solid #ff7a00;padding-bottom:13px;margin-top:3px;font-size:23pt}
+h2{color:#ffad58;background:#17242c;border-left:3px solid #ff7a00;padding:11px;margin-top:25px;font-size:16pt}
+h3{color:#ffae58;margin-top:15px;font-size:13pt}
+p,li{color:#e3ebf1;margin-bottom:11px}
+b,strong{color:#f6f9fc}
+table{border-collapse:collapse;width:100%;margin:13px 0}
+th,td{border:1px solid #344854;padding:9px;text-align:left}
+th{background:#263843;color:#ffad58}
+td{background:#121e25;color:#e3ebf1}
+.warn{background:#342317;border:1px solid #b06b1d;color:#ffe7cc;padding:13px}
+.tip{background:#172a24;border:1px solid #3f7763;color:#ddf3e9;padding:12px}
+.card{background:#17232b;border:1px solid #354852;padding:13px}
+code{background:#26313b;color:#ffd79b;padding:3px}
+a{color:#ffae52;text-decoration:none}
+small{color:#aebcc5}
 </style>
 </head>
 <body>
 <h1>ECU MEMS Manager — Guide utilisateur</h1>
 <p><b>Version @APP_VERSION@</b> — Logiciel de diagnostic pour calculateurs Rover MEMS.</p>
 
+<div class="card"><p><b>UN GUIDE CLAIR, SANS CONNEXION INTERNET</b></p><p>Utilisez la navigation à gauche pour rejoindre une rubrique. Toutes les informations de ce guide sont intégrées au programme. Les images constructeur restent accessibles dans la Base de données et dans IA MEMS lorsque le pack correspondant est installé.</p></div>
+
 <div class="warn"><b>Sécurité :</b> les tests d’actionneurs peuvent commander pompes, ventilateurs, électrovannes, injecteurs et éléments d’allumage. N’effectuez ces tests que lorsque le véhicule est sécurisé et que vous comprenez les conséquences de la commande choisie.</div>
 
-<h2>1. Connexion</h2>
+<h2 id="chapter-1">1. Connexion</h2>
 <p>Branchez l’interface de diagnostic compatible au véhicule et sélectionnez le port série approprié dans <b>Options → Modifier les réglages</b>. Mettez le contact puis cliquez sur <b>Connecter</b>. Les indicateurs de communication affichent l’état de la liaison. Utilisez <b>Déconnecter</b> avant de terminer volontairement une session.</p>
 <p>Si le contact est coupé et que la communication disparaît, le logiciel quitte proprement la boucle d’acquisition et peut reprendre la connexion lorsque l’ECU redevient disponible.</p>
 
-<h2>2. Onglet Aperçu</h2>
+<h2 id="chapter-2">2. Onglet Aperçu</h2>
 <p>L’onglet Aperçu est affiché au démarrage. Il présente les principales mesures ECU en direct sous forme de cadrans et d’indicateurs : régime moteur, pression collecteur, températures liquide de refroidissement et air d’admission, tension batterie, papillon, lambda, ralenti et allumage.</p>
 <p>L’affichage reste responsive. Le thème sombre conserve les zones d’alerte rouges et les zones nominales vertes tout en adaptant les cadrans et les textes au fond sombre.</p>
 
-<h2>3. Onglet Injection</h2>
+<h2 id="chapter-3">3. Onglet Injection</h2>
 <p>L’onglet Injection regroupe les mesures d’injection acquises par le mode de lecture prévu pour ces données : <b>temps d’injection final</b>, <b>temps d’injection de base</b>, <b>correction transitoire</b> et <b>état transitoire</b>.</p>
 <p>Ces valeurs utilisent la même acquisition dédiée afin d’éviter de multiplier inutilement les modes de lecture ECU. IA MEMS observe ces données lorsqu’elles sont déjà disponibles ; elle ne déclenche pas un polling supplémentaire de sa propre initiative.</p>
 
-<h2>4. Onglet Réglage</h2>
+<h2 id="chapter-4">4. Onglet Réglage</h2>
 <p>L’onglet Réglage contient les ajustements de service disponibles, notamment les corrections liées au ralenti, au carburant ou à l’allumage selon l’ECU. Les bulles d’aide expliquent le rôle et les risques des réglages.</p>
 <p>La correction de ralenti chaud utilisée pour le décodage de 7D14-15 suit la valeur réellement présente dans le réglage ECU ; elle n’est pas remplacée par une constante arbitraire.</p>
 
-<h2>5. Onglet Erreurs</h2>
+<h2 id="chapter-5">5. Onglet Erreurs</h2>
 <p>Cet onglet affiche les informations de défaut ECU, les anomalies enregistrées et les états associés. Les défauts doivent être lus et compris avant d’être effacés. Certains compteurs ou états peuvent nécessiter une réinitialisation complète de l’ECU avant de revenir à leur valeur initiale.</p>
 
-<h2>6. Onglet Actionneurs</h2>
+<h2 id="chapter-6">6. Onglet Actionneurs</h2>
 <p>Utilisez cet onglet pour exécuter les tests d’actionneurs supportés par l’ECU. Les fonctions disponibles dépendent du calculateur et de l’état du protocole. N’exécutez pas de test injecteur, allumage ou chauffage sans avoir sécurisé le véhicule.</p>
 
-<h2>7. Toutes les mesures</h2>
+<h2 id="chapter-7">7. Toutes les mesures</h2>
 <p>L’onglet <b>Toutes les mesures</b> présente les paramètres détaillés et leur aide, avec la valeur reçue de l’ECU et la valeur interprétée lorsque le décodage est connu.</p>
 <table>
 <tr><th>Paramètre</th><th>Aide</th><th>Valeur ECU reçue</th><th>Valeur interprétée</th></tr>
@@ -49,43 +60,43 @@ code{background:#f2f3f5;padding:1px 4px}
 </table>
 <p>Les champs non documentés restent visibles sans inventer de conversion.</p>
 
-<h2>8. Toutes les données</h2>
+<h2 id="chapter-8">8. Toutes les données</h2>
 <p>Cette vue détaillée expose les champs MEMS bruts et décodés. Elle est utile pour comparer les octets du protocole avec les mesures interprétées.</p>
 
-<h2>9. ECU / ROSCO</h2>
+<h2 id="chapter-9">9. ECU / ROSCO</h2>
 <p>L’onglet ECU / ROSCO expose les commandes de lecture et de session prises en charge, notamment D0, D1, D2, F0 et les commandes de session F2 à F5. Les échanges TX/RX sont affichés en hexadécimal. La recodification ECU D3 reste volontairement désactivée.</p>
 
-<h2>10. Diagnostic automatique</h2>
+<h2 id="chapter-10">10. Diagnostic automatique</h2>
 <p>Le panneau de diagnostic automatique contrôle les valeurs ECU courantes et signale les valeurs normales, avertissements et anomalies. Il peut capturer une référence et produire un rapport. Le temps de charge bobine est notamment contrôlé selon la plage utilisée par l’application.</p>
 
-<h2>11. Analyse des journaux</h2>
+<h2 id="chapter-11">11. Analyse des journaux</h2>
 <p>L’onglet Analyse peut lire les journaux de diagnostic CSV/TXT pris en charge, afficher les canaux sélectionnés et superposer leurs courbes. Utilisez la liste des canaux pour choisir les mesures à comparer dans le temps.</p>
 
-<h2>12. IA MEMS</h2>
+<h2 id="chapter-12">12. IA MEMS</h2>
 <p>L’onglet <b>IA MEMS</b> réunit le dialogue en langage naturel, les mesures ECU déjà acquises, leur historique, le moteur expert et la base de connaissances MEMS.</p>
 <p>Le moteur expert distingue les observations, les hypothèses, les informations externes et leur niveau de preuve. Une pièce ne doit pas être condamnée sur une seule mesure. Lorsque les données sont insuffisantes ou contradictoires, IA MEMS doit l’indiquer au lieu d’inventer une conclusion.</p>
 <p>Le modèle conversationnel fonctionne localement avec les fichiers fournis dans le package. Il ne démarre que lorsque l’onglet IA MEMS est réellement ouvert, afin de ne pas consommer inutilement mémoire et processeur pendant l’utilisation normale du logiciel. Il n’envoie aucune commande ECU supplémentaire : il observe les données déjà acquises par MEMS Manager.</p>
 
-<h2>13. Captures</h2>
+<h2 id="chapter-13">13. Captures</h2>
 <p><b>Capture</b> enregistre une image de la fenêtre du programme dans le dossier <code>captures</code>. <b>Voir les captures</b> ouvre le visualiseur intégré pour prévisualiser, ouvrir/agrandir ou supprimer une capture. La suppression demande confirmation.</p>
 
-<h2>14. Bulles d’aide</h2>
+<h2 id="chapter-14">14. Bulles d’aide</h2>
 <p>Lorsqu’un commentaire contextuel est disponible, ECU MEMS Manager utilise la bulle d’aide intégrée au programme. Son apparence ne dépend pas de la version de Windows utilisée.</p>
 
-<h2>15. Options</h2>
+<h2 id="chapter-15">15. Options</h2>
 <p>Les Options regroupent le port série, les unités de température, le thème, la langue et les réglages d’intégration au bureau. La création et le maintien du raccourci Bureau peuvent également être activés.</p>
 
-<h2>16. Thèmes</h2>
+<h2 id="chapter-16">16. Thèmes</h2>
 <p><b>Clair :</b> interface et cadrans clairs.</p>
 <p><b>Sombre :</b> interface sombre et cadrans sombres avec textes, graduations et aiguilles contrastés. Les tableaux sont adaptés afin de conserver une bonne lisibilité.</p>
 
-<h2>17. Langues</h2>
+<h2 id="chapter-17">17. Langues</h2>
 <p>L’interface prend en charge le français, l’anglais, l’espagnol, l’italien, le portugais et l’allemand. La langue choisie est enregistrée dans les réglages de l’application.</p>
 
-<h2>18. Familles ECU prises en charge</h2>
+<h2 id="chapter-18">18. Familles ECU prises en charge</h2>
 <p>La base et les fonctions de diagnostic de ce projet couvrent les familles Rover MEMS <b>1.2, 1.3, 1.6 et 1.9</b>. Les fonctions réellement disponibles pendant une session dépendent du calculateur, du véhicule et du protocole concerné.</p>
 
-<h2>19. Conseils de diagnostic de base</h2>
+<h2 id="chapter-19">19. Conseils de diagnostic de base</h2>
 <table>
 <tr><th>Symptôme</th><th>Contrôles</th></tr>
 <tr><td>Pas de communication</td><td>Contact, port série correct, câble de diagnostic, alimentation et masses ECU.</td></tr>
@@ -95,7 +106,32 @@ code{background:#f2f3f5;padding:1px 4px}
 <tr><td>Temps bobine anormal</td><td>Tension batterie, circuit primaire, bobine et câblage.</td></tr>
 </table>
 
-<h2>20. Fermeture de l’application</h2>
+<h2 id="chapter-20">20. Fermeture de l’application</h2>
 <p>L’application arrête les activités de reconnexion automatique pendant sa fermeture afin qu’une perte de communication ECU ne puisse pas empêcher la fermeture normale de la fenêtre.</p>
+<h2 id="chapter-21">21. Base de données documentaire</h2>
+<p>La page <b>Base de données</b> permet de rechercher des références ECU, des commandes, des véhicules et les documents techniques disponibles. La recherche et le filtre de génération sont placés au-dessus de la liste des résultats. À droite, la fiche sélectionnée présente les informations et les pages constructeur associées.</p>
+<p>Les bases documentaires sont <b>séparées du programme</b>. Un pack peut contenir plusieurs documents PDF et leurs index de recherche : les futures mises à jour documentaires n'exigent pas de reconstruire le Setup de SESSION. Les données du calculateur et les bases ECU restent séparées.</p>
+<div class="tip"><b>À retenir :</b> un document absent de la base installée ne doit pas être inventé. L'IA MEMS affiche uniquement les sources pertinentes retrouvées et signale les limites des transcriptions.</div>
+
+<h2 id="chapter-22">22. Rechercher et installer une mise à jour documentaire</h2>
+<p>Ouvrez la page <b>Base de données</b>. Dans son bandeau inférieur, à côté de <b>Mise à jour en ligne</b>, cliquez sur <b>Rechercher une mise à jour</b>. Cette action ouvre la fenêtre dédiée aux packs documentaires.</p>
+<table><tr><th>Étape</th><th>Action</th></tr>
+<tr><td>1. Vérification</td><td>Le programme consulte le catalogue de mise à jour en ligne. Une connexion Internet est nécessaire pour vérifier les nouvelles offres.</td></tr>
+<tr><td>2. Choix</td><td>La proposition concerne la langue du pack documentaire. Le catalogue peut ne proposer aucune nouvelle version.</td></tr>
+<tr><td>3. Téléchargement</td><td>Si un pack est disponible, le téléchargement sécurisé vérifie son intégrité SHA-256 avant installation.</td></tr>
+<tr><td>4. Installation</td><td>Saisissez le mot de passe du pack sécurisé lorsque la fenêtre le demande. L'installateur contrôle la structure SQLite, la provenance et les références des pages.</td></tr>
+<tr><td>5. Utilisation</td><td>Après validation, le contenu est consultable depuis la Base de données et IA MEMS, sans envoyer de commande au calculateur.</td></tr>
+</table>
+<p>Un pack chiffré déjà téléchargé peut également être installé depuis le bouton <b>Installer un pack sécurisé local</b> de cette même fenêtre. En cas d'erreur de réseau, de mot de passe ou d'intégrité, l'installation est refusée et la base précédente est conservée.</p>
+<div class="warn"><b>Important :</b> un contrôle de mise à jour ne garantit pas la disponibilité immédiate d'un nouveau pack. N'utilisez pas un PDF provenant d'une autre motorisation ou d'une autre langue comme preuve d'applicabilité.</div>
+
+<h2 id="chapter-23">23. Affichage et barre des tâches Windows</h2>
+<p>Dans <b>Options → Affichage</b>, la case <b>Masquer automatiquement la barre des tâches Windows</b> peut libérer de la hauteur pour les cadrans et les tableaux. Cette option est <b>désactivée par défaut</b>.</p>
+<p>Lorsque vous l'activez, le programme demande à Windows de masquer sa barre des tâches. Descendez la souris jusqu'au bord de l'écran correspondant à la barre pour la faire apparaître ; éloignez la souris pour la masquer. Le comportement précis dépend des paramètres et de la version de Windows.</p>
+<p>Ce réglage touche temporairement <b>Windows dans son ensemble</b>, pas seulement la fenêtre du logiciel. À la fermeture normale, SESSION restaure le réglage précédent. En cas de fermeture anormale, un processus de surveillance peut rétablir le réglage, et la prochaine ouverture effectue aussi un contrôle de récupération. Si Windows refuse le changement, l'option est signalée comme non appliquée.</p>
+
+<h2 id="chapter-24">24. Illustrations et pages constructeur</h2>
+<p>Le guide peut intégrer des captures d'écran validées lors de prochaines mises à jour du programme. Les images affichées dans la Base de données et IA MEMS proviennent, quant à elles, des documents constructeur présents dans la base installée. Cliquez sur <b>voir en grand format</b> pour contrôler les détails des pages, des schémas et des tableaux.</p>
+
 </body>
 </html>
