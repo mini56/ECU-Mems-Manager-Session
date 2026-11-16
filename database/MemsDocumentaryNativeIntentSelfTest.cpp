@@ -517,6 +517,100 @@ int main(int argc,char** argv)
                 technical.value(QStringLiteral("title")).toString().startsWith(
                     QStringLiteral("torque_")),
                 "technical slug is formatted only for display, source left intact"))return 1;
+    // General page-layout invariants across varied component names and
+    // step counts. This tests the rendering contract rather than adding
+    // per-component special cases to the production parser.
+    for(const QString &component:arbitrarySubjects){
+        QVariantMap page;
+        page.insert(QStringLiteral("source_key"),QStringLiteral(
+            "rave-fr:RCL0193FRE:format-test"));
+        page.insert(QStringLiteral("document_id"),QStringLiteral("RCL0193FRE"));
+        page.insert(QStringLiteral("source_page"),180);
+        page.insert(QStringLiteral("source_table"),
+                    QStringLiteral("rover_fr_mems_knowledge_item"));
+        page.insert(QStringLiteral("source_status"),QStringLiteral("source_checked"));
+        page.insert(QStringLiteral("title"),component.toUpper());
+        const QString original=QStringLiteral(
+            "document : RCL0193FRE\nlangue : français\n"
+            "page physique : 180\n\n"
+            "Opération de réparation N° - 33.10.04.99\n"
+            "Dépose\n"
+            "1. Déposer le premier ensemble\n"
+            "situé dans le compartiment moteur.\n"
+            "2. Dégager le boîtier de son support de fixation\n"
+            "du module électronique.\n"
+            "ATTENTION: Ne pas endommager les fils\n"
+            "et les connecteurs pendant l'opération.\n"
+            "MOTEUR\n10\nREPARATIONS\n"
+            "3. Contrôler la fixation et conserver\n"
+            "le couple indiqué à 9 N.m.\n"
+            "4. Remonter la pièce.\n"
+            "EMBRAYAGE");
+        page.insert(QStringLiteral("content"),original);
+        const QString answer=MemsDocumentaryRepository::answerFromHits(
+            QVariantList{page});
+        if(!require(answer.contains(QStringLiteral(
+                            "2. Dégager le boîtier de son support de fixation "
+                            "du module électronique.")) &&
+                    answer.contains(QStringLiteral(
+                            "1. Déposer le premier ensemble situé dans le "
+                            "compartiment moteur.")),
+                    "any printed PDF wrap must join inside its original step"))return 1;
+        if(!require(answer.contains(QStringLiteral(
+                           "ATTENTION: Ne pas endommager les fils "
+                           "et les connecteurs pendant l'opération.")) &&
+                    answer.contains(QStringLiteral(
+                           "3. Contrôler la fixation et conserver "
+                           "le couple indiqué à 9 N.m.")),
+                    "precaution and torque values remain whole and unmodified"))return 1;
+        if(!require(!answer.contains(QStringLiteral("MOTEUR\n")) &&
+                    !answer.contains(QStringLiteral("\nREPARATIONS\n")) &&
+                    !answer.contains(QStringLiteral("\nEMBRAYAGE\n")),
+                    "mixed-order page heading and new chapter must not leak"))return 1;
+        if(!require(answer.contains(QStringLiteral("\n2. ")) &&
+                    answer.contains(QStringLiteral("\n3. ")) &&
+                    answer.contains(QStringLiteral("\n4. ")) &&
+                    !answer.contains(QStringLiteral("fixation\n"
+                                                    "du module")),
+                    "each numbered operation remains distinct and no visual wrap survives"))return 1;
+        if(!require(page.value(QStringLiteral("content")).toString()==original &&
+                    answer.contains(QStringLiteral("RCL0193FRE, page 180")),
+                    "display reflow preserves raw manufacturer text and provenance"))return 1;
+    }
+    // Menu selection is one-based and always references the rows displayed,
+    // including submenu entries under repeated headings.
+    QVariantList genericMenu;
+    for(int n=0;n<17;++n){
+        QVariantMap row;
+        row.insert(QStringLiteral("source_key"),QStringLiteral("doc:%1").arg(n));
+        row.insert(QStringLiteral("source_page"),n+100);
+        row.insert(QStringLiteral("title"),QStringLiteral("Composant %1").arg(n));
+        genericMenu.append(row);
+    }
+    for(int n=1;n<=genericMenu.size();++n){
+        const QVariantMap selected=MemsDocumentaryRepository::choiceForNumber(
+            genericMenu,QString::number(n));
+        if(!require(selected.value(QStringLiteral("source_key")).toString()
+                    ==QStringLiteral("doc:%1").arg(n-1),
+                    "menu number always resolves to its exact source row"))return 1;
+    }
+    for(const QString &invalid:{
+        QStringLiteral("0"),QStringLiteral("-1"),QStringLiteral("18"),
+        QStringLiteral("1x"),QStringLiteral("999999999999999999"),
+        QStringLiteral(""),QStringLiteral("depose")}){
+        if(!require(MemsDocumentaryRepository::choiceForNumber(
+                        genericMenu,invalid).isEmpty(),
+                    "invalid selection cannot open another document"))return 1;
+    }
+    const QVariantList repeated=MemsDocumentaryRepository::groupedChoices(
+        QVariantList{genericMenu.at(0),genericMenu.at(0),
+                     genericMenu.at(1)});
+    if(!require(repeated.size()==2,"grouping keeps distinct entries"))return 1;
+    const QVariantMap submenu=MemsDocumentaryRepository::choiceForNumber(
+        repeated,QStringLiteral("1"));
+    if(!require(submenu.value(QStringLiteral("iaMemsGroupRows"))
+                    .toList().size()==2,
+                "choosing a grouped heading opens its exact member list"))return 1;
     std::puts("MEMS_NATIVE_FRENCH_INTENT_AND_OPERATION_TEST_PASS");
     return 0;
 }
