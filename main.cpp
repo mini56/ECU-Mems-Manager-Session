@@ -29,6 +29,7 @@
 #include "i18n.h"
 #include "singleinstance.h"
 #include "uishellsmoketest.h"
+#include "taskbarautohide.h"
 
 namespace
 {
@@ -279,6 +280,18 @@ QSplashScreen *createStartupSplash()
 
 int main(int argc, char *argv[])
 {
+    // The private crash-recovery worker runs with NO QApplication, UI, ECU,
+    // network or single-instance manager. It observes only its parent
+    // process and the taskbar setting explicitly authorised by the user.
+    if(argc>1 && QString::fromLocal8Bit(argv[1])
+                  ==QStringLiteral("--taskbar-restore-watchdog")){
+        if(argc!=4)return 2;
+        bool validPid=false,validToken=false;
+        const quint32 pid=QString::fromLocal8Bit(argv[2]).toUInt(&validPid);
+        const quint64 token=QString::fromLocal8Bit(argv[3]).toULongLong(&validToken);
+        return validPid && validToken
+            ? TaskbarAutoHide::monitorParent(pid,token) : 2;
+    }
     // Diagnostic trace only for the noninteractive Windows CI smoke command.
     // Write before QApplication: absence of this line means the process never reached main().
     bool smokeRequested = false;
@@ -304,6 +317,11 @@ int main(int argc, char *argv[])
     if (app.arguments().contains(QStringLiteral("--session-ui-smoke-test")))
         return runUiShellSmokeTest(app);
     installSingleInstanceManager(&app);
+    // Recover any interrupted session before reapplying the user's current
+    // preference. This is independent of the installed documentary packs.
+    TaskbarAutoHide::recoverPreviousSession();
+    QObject::connect(&app,&QCoreApplication::aboutToQuit,
+                     [](){TaskbarAutoHide::restore();});
     // Preserve this storage-related internal identifier on upgrades.
     QApplication::setApplicationName("ECU Mems Manager");
     QApplication::setApplicationDisplayName(QStringLiteral("ECU MEMS Manager SESSION"));
@@ -474,6 +492,18 @@ int main(int argc, char *argv[])
     g_splashProgressCallback = nullptr;
 
     window.showMaximized();
+    // Defaults off. An already hidden taskbar belongs to Windows and is
+    // never forcibly unhidden by the application.
+    const bool taskbarRequested=languageSettings.value(
+        QStringLiteral("Settings/TaskbarAutoHide"),false).toBool();
+    if(taskbarRequested && !TaskbarAutoHide::apply(true)){
+        languageSettings.setValue(QStringLiteral("Settings/TaskbarAutoHide"),false);
+        languageSettings.sync();
+        QMessageBox::warning(&window,
+            QStringLiteral("Barre des tâches Windows"),
+            QStringLiteral("Windows n'a pas accepté le masquage automatique. "
+                "Cette option a été désactivée sans modifier vos autres réglages."));
+    }
     const int result = app.exec();
     database.close();
     return result;
