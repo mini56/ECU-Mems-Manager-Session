@@ -1223,62 +1223,137 @@ static QString workshopText(const QVariantMap &row)
 static QString readableWorkshopExcerpt(const QString &source)
 {
     const QStringList lines=source.split(QLatin1Char('\n'),Qt::KeepEmptyParts);
-    static const QRegularExpression pageNumber(QStringLiteral("^\\d{1,3}$"));
-    static const QRegularExpression stepNumber(QStringLiteral("^\\d{1,3}[.)]\\s+"));
-    const auto isPageNumber=[](const QString &text){
-        return pageNumber.match(text.trimmed()).hasMatch();
+    static const QRegularExpression printedPage(QStringLiteral("^\\d{1,3}$"));
+    static const QRegularExpression numberedStep(QStringLiteral("^\\d{1,3}[.)]\\s+\\S"));
+    const auto isPage=[](const QString &line){
+        return printedPage.match(line.trimmed()).hasMatch();
     };
-    const auto isStep=[](const QString &text){
-        return stepNumber.match(text.trimmed()).hasMatch();
+    const auto isStep=[](const QString &line){
+        return numberedStep.match(line.trimmed()).hasMatch();
     };
-    const auto isRunningHeading=[](const QString &text){
-        const QString clean=text.trimmed();
-        if(clean.size()<4 || clean.size()>80 || clean!=clean.toUpper())
+    const auto isHeader=[](const QString &line){
+        const QString text=line.trimmed();
+        if(text.size()<4 || text.size()>80 || text!=text.toUpper())
             return false;
         bool hasLetter=false;
-        for(const QChar ch:clean){
-            if(ch.isLetter())
-                hasLetter=true;
+        for(const QChar ch:text){
+            if(ch.isLetter())hasLetter=true;
             else if(!ch.isSpace() && !ch.isDigit() &&
                     ch!=QLatin1Char('-') && ch!=QLatin1Char('/'))
                 return false;
         }
         return hasLetter;
     };
+    const auto isWorkshopPhase=[](const QString &line){
+        static const QSet<QString> phases={
+            QStringLiteral("depose"),QStringLiteral("repose"),
+            QStringLiteral("inspection"),QStringLiteral("controle"),
+            QStringLiteral("reglage"),QStringLiteral("reparation"),
+            QStringLiteral("purge"),QStringLiteral("essai"),
+            QStringLiteral("remplacement"),QStringLiteral("demontage"),
+            QStringLiteral("remontage")
+        };
+        return phases.contains(normalized(line));
+    };
     QStringList output;
     bool hasInstruction=false;
     for(int i=0;i<lines.size();++i){
         const QString line=lines.at(i).trimmed();
-        // A running header can also precede the first paragraph, without
-        // any numbered step: "SYSTEME DE GESTION MOTEUR / DESCRIPTION ET
-        // FONCTIONNEMENT / 7" is a page header, not IAT guidance.
-        if(i+2<lines.size() &&
-           isRunningHeading(lines.at(i)) &&
-           isRunningHeading(lines.at(i+1)) &&
-           isPageNumber(lines.at(i+2)) &&
-           (!hasInstruction || (i+3<lines.size() && isStep(lines.at(i+3))))){
-            i+=2;
-            continue;
+        // A running PDF header is two capitalized headings plus a printed
+        // page number, in any order. Page layout can be "MOTEUR / 10 /
+        // REPARATIONS" or "MOTEUR / REPARATIONS / 10". Remove the entire
+        // triple, but ONLY when it starts a page or precedes a new step.
+        if(i+2<lines.size()){
+            int headers=0,pages=0;
+            for(int k=i;k<i+3;++k){
+                headers+=isHeader(lines.at(k)) ? 1 : 0;
+                pages+=isPage(lines.at(k)) ? 1 : 0;
+            }
+            const bool nextStep=i+3<lines.size() && isStep(lines.at(i+3));
+            if(headers==2 && pages==1 && (!hasInstruction || nextStep)){
+                i+=2;
+                continue;
+            }
         }
-        // A PDF may end an operation with two repeated running headings
-        // but no printed page number. Do not attach these to the final step.
+        // Two running headings at the end are layout, not a next operation.
         if(hasInstruction && i+2==lines.size() &&
-           isRunningHeading(lines.at(i)) &&
-           isRunningHeading(lines.at(i+1)))
+           isHeader(lines.at(i)) && isHeader(lines.at(i+1)) &&
+           !isWorkshopPhase(lines.at(i)))
             break;
-        // E.g. "12 / ENSEMBLE DE SERVOCOMMANDE" after the last brake
-        // step: the page number plus a new all-caps chapter heading
-        // identifies the start of the next unrelated source section.
+        // A new chapter title after a page number belongs to the next
+        // section; never incorporate it into the current procedure.
         if(hasInstruction && i+1<lines.size() &&
-           isPageNumber(lines.at(i)) &&
-           isRunningHeading(lines.at(i+1))){
+           isPage(lines.at(i)) && isHeader(lines.at(i+1)))
             break;
-        }
+        // The final single uppercase chapter heading (e.g. "EMBRAYAGE")
+        // is not part of the preceding numbered operation.
+        if(hasInstruction && i+1==lines.size() && isHeader(line) &&
+           !isWorkshopPhase(line))
+            break;
         output.append(lines.at(i));
         if(isStep(line))
             hasInstruction=true;
     }
     return output.join(QLatin1Char('\n')).trimmed();
+}
+
+// Only an IA display transform. Original source_text, operation steps,
+// pagination and PDF images remain unchanged in the installed SQLite.
+// Hard line breaks from PDF column extraction are joined within a paragraph
+// or numbered instruction; real structure starts a new line.
+static QString readableWorkshopParagraphs(const QString &excerpt)
+{
+    const QStringList lines=excerpt.split(QLatin1Char('\n'),Qt::KeepEmptyParts);
+    static const QRegularExpression stepStart(
+        QStringLiteral("^\\d{1,3}[.)]\\s+\\S"));
+    static const QRegularExpression safetyStart(
+        QStringLiteral("^(AVERTISSEMENT|ATTENTION|REMARQUE|IMPORTANT|NOTE)\\s*[:：]"),
+        QRegularExpression::CaseInsensitiveOption);
+    static const QRegularExpression operationNumber(
+        QStringLiteral("^(?:Opération de réparation|Service Repair No\\.)\\b"),
+        QRegularExpression::CaseInsensitiveOption);
+    static const QRegularExpression numericValue(
+        QStringLiteral("^[+-]?\\d+(?:[.,]\\d+)?$"));
+    static const QSet<QString> phaseTitles={
+        QStringLiteral("depose"),QStringLiteral("repose"),
+        QStringLiteral("inspection"),QStringLiteral("controle"),
+        QStringLiteral("reglage"),QStringLiteral("reparation"),
+        QStringLiteral("purge"),QStringLiteral("essai"),
+        QStringLiteral("remplacement"),QStringLiteral("demontage"),
+        QStringLiteral("remontage")
+    };
+    QStringList paragraphs;
+    QString current;
+    const auto flush=[&paragraphs,&current](){
+        if(!current.isEmpty()){
+            paragraphs.append(current);
+            current.clear();
+        }
+    };
+    for(const QString &rawLine:lines){
+        const QString line=rawLine.trimmed();
+        if(line.isEmpty()){
+            flush();
+            continue;
+        }
+        const bool startsNew=stepStart.match(line).hasMatch() ||
+            safetyStart.match(line).hasMatch() ||
+            operationNumber.match(line).hasMatch() ||
+            phaseTitles.contains(normalized(line)) ||
+            numericValue.match(line).hasMatch();
+        if(startsNew)
+            flush();
+        if(current.isEmpty())
+            current=line;
+        else
+            current+=QLatin1Char(' ')+line;
+        // A standalone number may be a technical value, not a page header:
+        // preserve its boundaries until the next source row.
+        if(numericValue.match(line).hasMatch())
+            flush();
+    }
+    flush();
+    return paragraphs.join(QLatin1Char('\n'));
 }
 
 // Conserve uniquement les faits textuels lisibles. Les marqueurs techniques
@@ -1330,7 +1405,8 @@ static int documentaryTitleHits(const QString &title,
 static QString documentaryTopicExcerpt(const QVariantMap &hit,
                                        const QStringList &terms)
 {
-    const QString source=readableWorkshopExcerpt(workshopText(hit));
+    const QString source=readableWorkshopParagraphs(
+        readableWorkshopExcerpt(workshopText(hit)));
     const QStringList lines=source.split(QLatin1Char('\n'));
     QStringList excerpts;
     for(int i=0;i<lines.size();++i){
@@ -1660,7 +1736,7 @@ QString MemsDocumentaryRepository::procedureAnswer(
             }
             // Some source transcriptions already include the printed step number.
             // Display it only once without changing the original stored text.
-            QString instruction=item.text;
+            QString instruction=readableWorkshopParagraphs(item.text);
             const QRegularExpression printedNumber(QStringLiteral("^\\s*\\d+\\s*[.)]\\s*"));
             instruction.remove(printedNumber);
             QString line=QStringLiteral("%1. %2")
@@ -1841,7 +1917,7 @@ QString MemsDocumentaryRepository::procedureAnswer(
             answer << name+QLatin1Char(':');
             lastPhase=step.phase;
         }
-        QString instruction=step.text;
+        QString instruction=readableWorkshopParagraphs(step.text);
         instruction.remove(QRegularExpression(QStringLiteral("^\\s*\\d+\\s*[.)]\\s*")));
         QString line=QStringLiteral("%1. %2")
             .arg(step.order>0 ? step.order : i+1).arg(instruction);
@@ -1912,7 +1988,8 @@ QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
                 sourceFields.at(1) : QStringLiteral("Rover");
             const int page=item.value(QStringLiteral("source_page")).toInt();
             const QString title=item.value(QStringLiteral("title")).toString().simplified();
-            QString body=readableWorkshopExcerpt(workshopText(item));
+            QString body=readableWorkshopParagraphs(
+                readableWorkshopExcerpt(workshopText(item)));
             if(item.value(QStringLiteral("source_status")).toString()
                   ==QStringLiteral("review_required") ||
                sourceTable.endsWith(QStringLiteral("_page_ocr"))){
