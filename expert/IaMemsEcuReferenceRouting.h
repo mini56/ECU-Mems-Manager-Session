@@ -83,6 +83,26 @@ inline QString referenceFromQuestion(const QString &question)
     return reference;
 }
 
+// Known ECU/firmware namespaces do not depend on a particular code.
+// A code outside these namespaces can still qualify through an EXACT match
+// in ecu_target, never through a fuzzy manual/OCR hit.
+inline bool recognizedEcuNamespace(const QString &code)
+{
+    const QString upper=code.trimmed().toUpper();
+    return upper.startsWith(QStringLiteral("MNE")) ||
+           upper.startsWith(QStringLiteral("MKC")) ||
+           upper.startsWith(QStringLiteral("NNN")) ||
+           upper.startsWith(QStringLiteral("AANMP"));
+}
+
+inline bool explicitEcuIdentityIntent(const QString &question)
+{
+    const QString upper=question.toUpper();
+    static const QRegularExpression identityWords(
+        QStringLiteral("\\b(?:ECU|CALCULATEUR|FIRMWARE)\\b"));
+    return identityWords.match(upper).hasMatch();
+}
+
 inline bool exactCodeMention(const QString &text,const QString &code)
 {
     if(code.isEmpty())return false;
