@@ -738,8 +738,11 @@ int main(int argc,char** argv)
                 sourceRows<<QStringLiteral("%1 . . . . . . . %2")
                             .arg(label,value);
         }
+        // A flattened scan still needs a detectable row delimiter.
+        // With no separator whatsoever, labels cannot be reconstructed
+        // without guessing where one technical value ends.
         const QString separator=(variant<3)
-            ?QStringLiteral("\n"):QStringLiteral(" ");
+            ?QStringLiteral("\n"):QStringLiteral(" . . . . . . . . ");
         const QString original=QStringLiteral(
             "document : RCL0193FRE\nlangue : français\npage physique : %1\n\n")
                 .arg(38+variant)+sourceRows.join(separator);
