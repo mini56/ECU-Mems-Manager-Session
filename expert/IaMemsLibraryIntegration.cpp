@@ -694,26 +694,19 @@ void IaMemsService::askWithLibrary(const QString &question)
     setProperty("iaMemsLastDocumentaryImagePath", QVariant());
     setProperty("iaMemsLastDocumentaryImagePaths", QVariant());
 
-    // "Culasse" suivi de "dépose" est une question contextuelle : conserver
-    // le composant de la première intervention, pas imposer un menu numéroté.
-    const QString followUp=IaMemsConversationRouting::normalize(trimmed);
+    // Only a single operation word can refine the previous technical subject.
+    // New named searches always replace it, even when previous documents
+    // happen to mention the new word.
     const QString currentComponent=property("iaMemsActiveDocumentaryComponent").toString();
-    static const QSet<QString> operationFollowUps={
-        QStringLiteral("depose"),QStringLiteral("repose"),
-        QStringLiteral("serrage"),QStringLiteral("couple"),
-        QStringLiteral("demontage"),QStringLiteral("remontage"),
-        QStringLiteral("reparation"),QStringLiteral("revision"),
-        QStringLiteral("controle"),QStringLiteral("verification"),
-        QStringLiteral("reglage"), QStringLiteral("remplacement"),
-        QStringLiteral("purge"), QStringLiteral("diagnostic"),
-        QStringLiteral("entretien"), QStringLiteral("schema")
-    };
-    const bool isNumericSelection =
+    const bool isNumericSelection=
         QRegularExpression(QStringLiteral("^[0-9]+$")).match(trimmed).hasMatch();
-    if (!currentComponent.isEmpty() && operationFollowUps.contains(followUp))
-        trimmed = currentComponent + QLatin1Char(' ') + trimmed;
-    else if (!operationFollowUps.contains(followUp) && !isNumericSelection)
-        setProperty("iaMemsActiveDocumentaryComponent", QVariant());
+    const bool followUpOperation=IaMemsConversationRouting::isBareWorkshopOperation(trimmed);
+    if (!isNumericSelection && !resolvedDocumentary) {
+        trimmed=IaMemsConversationRouting::contextualWorkshopQuestion(
+            currentComponent,trimmed);
+        if (!followUpOperation)
+            setProperty("iaMemsActiveDocumentaryComponent",QVariant());
+    }
 
     // When the Rover catalogue is mounted, a numbered reply selects the
     // exact stored source row rather than starting a new, unrelated search.
@@ -764,23 +757,6 @@ void IaMemsService::askWithLibrary(const QString &question)
             emitLocalizedDocument(evidence);
             emit statusChanged();
             return;
-        }
-        // A new phrase may refine the menu subject ("frein" -> "maitre cylindre")
-        // only if it appears in one of the currently offered operations.
-        const QStringList refinement = MemsDocumentaryRepository::subjectTerms(trimmed);
-        const bool isRefinement = !refinement.isEmpty() &&
-            !currentComponent.isEmpty() && !operationFollowUps.contains(followUp);
-        if (isRefinement) {
-            bool existsInMenu = false;
-            for (const QVariant &choice : roverChoices) {
-                if (!MemsDocumentaryRepository::relevantChoices(
-                        trimmed, QVariantList{choice}).isEmpty()) {
-                    existsInMenu = true;
-                    break;
-                }
-            }
-            if (existsInMenu)
-                trimmed = currentComponent + QLatin1Char(' ') + trimmed;
         }
         setProperty("iaMemsRoverMenuRows", QVariant());
         setProperty("iaMemsRoverMenuQuestion", QVariant());
@@ -850,11 +826,9 @@ void IaMemsService::askWithLibrary(const QString &question)
             if (!choices.isEmpty()) {
                 // Keep the subject, so a later "reparation" or "reglage"
                 // refines this component instead of starting a new topic.
-                QString activeSubject = trimmed;
-                if (!operation.isEmpty()) {
-                    const QStringList subjectWords = MemsDocumentaryRepository::subjectTerms(trimmed);
-                    activeSubject = subjectWords.join(QLatin1Char(' '));
-                }
+                const QString activeSubject=
+                    MemsDocumentaryRepository::subjectTerms(trimmed)
+                        .join(QLatin1Char(' '));
                 if (!activeSubject.trimmed().isEmpty())
                     setProperty("iaMemsActiveDocumentaryComponent", activeSubject);
             }
