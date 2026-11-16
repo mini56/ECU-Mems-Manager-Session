@@ -24,6 +24,46 @@ inline QString normalize(QString text)
     return result.simplified();
 }
 
+
+// Workshop context is retained ONLY for an isolated operation word.
+// Any named part (including a new part with similar terms in the previous
+// result list) starts a fresh search: never concatenate two user subjects.
+inline bool isBareWorkshopOperation(const QString &question)
+{
+    const QStringList words=normalize(question).split(
+        QRegularExpression(QStringLiteral("[^\\p{L}\\p{N}]+")),
+        Qt::SkipEmptyParts);
+    if(words.size()!=1)
+        return false;
+    static const QSet<QString> operations={
+        QStringLiteral("depose"),QStringLiteral("deposer"),
+        QStringLiteral("repose"),QStringLiteral("reposer"),
+        QStringLiteral("demontage"),QStringLiteral("demonter"),
+        QStringLiteral("remontage"),QStringLiteral("remonter"),
+        QStringLiteral("reparation"),QStringLiteral("reparer"),
+        QStringLiteral("revision"),QStringLiteral("controle"),
+        QStringLiteral("controler"),QStringLiteral("verification"),
+        QStringLiteral("verifier"),QStringLiteral("reglage"),
+        QStringLiteral("regler"),QStringLiteral("remplacement"),
+        QStringLiteral("remplacer"),QStringLiteral("purge"),
+        QStringLiteral("purger"),QStringLiteral("serrage"),
+        QStringLiteral("couple"),QStringLiteral("diagnostic"),
+        QStringLiteral("entretien"),QStringLiteral("schema"),
+        QStringLiteral("inspection")
+    };
+    return operations.contains(words.first());
+}
+
+inline QString contextualWorkshopQuestion(const QString &currentSubject,
+                                          const QString &question)
+{
+    const QString requested=question.trimmed();
+    const QString subject=currentSubject.trimmed();
+    if(subject.isEmpty() || !isBareWorkshopOperation(requested))
+        return requested;
+    return subject+QLatin1Char(' ')+requested;
+}
+
 inline bool containsAny(const QString &text, const QStringList &terms)
 {
     for (const QString &term : terms) {
