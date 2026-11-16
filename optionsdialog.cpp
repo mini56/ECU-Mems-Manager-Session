@@ -2,6 +2,8 @@
 #include "optionsdialog.h"
 #include "serialadapterdetector.h"
 #include "desktopshortcut.h"
+#include "taskbarautohide.h"
+#include <QMessageBox>
 #include <QIcon>
 #include <QPalette>
 #include <QColor>
@@ -211,6 +213,45 @@ void OptionsDialog::setupWidgets()
   m_grid->addWidget(m_languageBox, row++, 1);
 
   m_grid->addWidget(m_desktopShortcutBox, row++, 0, 1, 2);
+
+  // The Windows taskbar is a system-wide setting, so the explanation is
+  // permanently visible beside the user's explicit opt-in.
+  const bool french=m_language==QStringLiteral("fr");
+  QLabel *displayTitle=new QLabel(french
+      ?QStringLiteral("AFFICHAGE — BARRE DES TÂCHES WINDOWS")
+      :QStringLiteral("DISPLAY — WINDOWS TASKBAR"),this);
+  displayTitle->setStyleSheet(QStringLiteral(
+      "color:#ff9828;font-size:12px;font-weight:700;"));
+  m_grid->addWidget(displayTitle,row++,0,1,2);
+
+  m_taskbarAutoHideBox=new QCheckBox(french
+      ?QStringLiteral("Masquer automatiquement la barre des tâches Windows")
+      :QStringLiteral("Automatically hide the Windows taskbar"),this);
+  m_taskbarAutoHideBox->setObjectName(QStringLiteral("taskbarAutoHideCheckbox"));
+  m_taskbarAutoHideBox->setChecked(m_taskbarAutoHide);
+  m_taskbarAutoHideBox->setStyleSheet(QStringLiteral(
+      "color:#ecf1f5;background:transparent;font-weight:600;"));
+  m_grid->addWidget(m_taskbarAutoHideBox,row++,0,1,2);
+
+  m_taskbarExplanation=new QLabel(french
+      ?QStringLiteral("Ce choix modifie temporairement le réglage de la barre des "
+          "tâches pour tout Windows, et pas seulement ce logiciel. "
+          "Déplacez la souris vers le bord de l'écran pour la faire apparaître. "
+          "L'état précédent est restauré à la fermeture ; en cas d'arrêt "
+          "anormal, une surveillance et une vérification au prochain démarrage "
+          "tentent aussi de le rétablir. Désactivé par défaut.")
+      :QStringLiteral("This temporarily changes the taskbar setting for the "
+          "entire Windows desktop, not just this program. Move your pointer to "
+          "the screen edge to reveal it. The former setting is restored on "
+          "exit; a separate monitor and next-start check can recover it after "
+          "an unexpected exit. Off by default."),this);
+  m_taskbarExplanation->setObjectName(QStringLiteral("taskbarAutoHideExplanation"));
+  m_taskbarExplanation->setWordWrap(true);
+  m_taskbarExplanation->setMinimumWidth(440);
+  m_taskbarExplanation->setStyleSheet(QStringLiteral(
+      "QLabel{color:#e9d6ba;background:#27201a;border:1px solid #795028;"
+      "border-radius:5px;padding:10px;font-size:11px;}"));
+  m_grid->addWidget(m_taskbarExplanation,row++,0,1,2);
   
 /*   m_grid->addWidget(m_lambdaScaleLabel, row, 0);  
   m_grid->addWidget(m_lambdaScaleBox, row++, 1); */
@@ -261,6 +302,23 @@ void OptionsDialog::accept()
   m_languageChanged = (m_language != newLanguage);
   m_language = newLanguage;
   m_desktopShortcut = m_desktopShortcutBox->isChecked();
+
+  const bool requestedAutoHide=m_taskbarAutoHideBox->isChecked();
+  if(!TaskbarAutoHide::apply(requestedAutoHide)){
+      QMessageBox::warning(this,
+          m_language==QStringLiteral("fr")
+              ?QStringLiteral("Barre des tâches Windows")
+              :QStringLiteral("Windows taskbar"),
+          m_language==QStringLiteral("fr")
+              ?QStringLiteral("Windows n'a pas accepté le masquage automatique "
+                  "ou la restauration du réglage précédent. "
+                  "Aucune nouvelle préférence n'a été enregistrée.")
+              :QStringLiteral("Windows could not apply the automatic-hide "
+                  "setting or restore the prior preference. "
+                  "No new preference was saved."));
+      return;
+  }
+  m_taskbarAutoHide=requestedAutoHide;
   m_themeChanged = (m_theme != newTheme);
   m_theme = newTheme;
 
@@ -294,6 +352,7 @@ void OptionsDialog::readSettings()
   if (!supportedLanguages.contains(m_language)) m_language = "fr";
   m_languageChanged = false;
   m_desktopShortcut = settings.value(m_settingDesktopShortcut, false).toBool();
+  m_taskbarAutoHide = settings.value(QStringLiteral("TaskbarAutoHide"), false).toBool();
 
   settings.endGroup();
 }
@@ -313,6 +372,7 @@ void OptionsDialog::writeSettings()
   settings.setValue(m_settingLanguage, m_language);
   settings.setValue("LanguageConfigured", true);
   settings.setValue(m_settingDesktopShortcut, m_desktopShortcut);
+  settings.setValue(QStringLiteral("TaskbarAutoHide"), m_taskbarAutoHide);
 
   settings.endGroup();
 }
