@@ -130,6 +130,24 @@ QString requestedWorkshopOperation(const QString &question)
     return QString();
 }
 
+// Preserve the last explicitly named technical subject, including its
+// engine variant, even when the current installed corpus has no matching
+// heading. A later bare "depose" must NEVER revive an older SPi request.
+QString documentaryComponentForContext(const QString &question)
+{
+    QStringList words=MemsDocumentaryRepository::subjectTerms(question);
+    if(words.isEmpty())return QString();
+    const QStringList tokens=IaMemsConversationRouting::normalize(question)
+        .split(QRegularExpression(QStringLiteral("[^\\p{L}\\p{N}]+")),
+               Qt::SkipEmptyParts);
+    for(const QString &qualifier:{QStringLiteral("spi"),QStringLiteral("mpi"),
+                                 QStringLiteral("monopoint"),QStringLiteral("multipoint")}){
+        if(tokens.contains(qualifier) && !words.contains(qualifier))
+            words.append(qualifier);
+    }
+    return words.join(QLatin1Char(' '));
+}
+
 bool workshopOperationMatches(const QString &title, const QString &operation)
 {
     if (operation.isEmpty())
@@ -711,7 +729,8 @@ void IaMemsService::askWithLibrary(const QString &question)
         trimmed=IaMemsConversationRouting::contextualWorkshopQuestion(
             currentComponent,trimmed);
         if (!followUpOperation)
-            setProperty("iaMemsActiveDocumentaryComponent",QVariant());
+            setProperty("iaMemsActiveDocumentaryComponent",
+                        documentaryComponentForContext(trimmed));
     }
 
     // When the Rover catalogue is mounted, a numbered reply selects the
@@ -785,6 +804,11 @@ void IaMemsService::askWithLibrary(const QString &question)
             if(evidence.isEmpty())
                 evidence=MemsDocumentaryRepository::answerFromHits(
                     QVariantList{chosen});
+            if(chosen.value(QStringLiteral("iaMemsVariantUnverified")).toBool())
+                evidence=QStringLiteral(
+                    "La variante moteur demandée n'est pas confirmée par le "
+                    "titre de cette source. Vérifier sa compatibilité avant "
+                    "toute intervention.\\n\\n")+evidence;
             if(!linkedPages.isEmpty())
                 setProperty("iaMemsLastDocumentaryImagePaths",linkedPages);
             setProperty("iaMemsLastDocumentaryImagePath",
@@ -869,9 +893,7 @@ void IaMemsService::askWithLibrary(const QString &question)
             if (!choices.isEmpty()) {
                 // Keep the subject, so a later "reparation" or "reglage"
                 // refines this component instead of starting a new topic.
-                const QString activeSubject=
-                    MemsDocumentaryRepository::subjectTerms(trimmed)
-                        .join(QLatin1Char(' '));
+                const QString activeSubject=documentaryComponentForContext(trimmed);
                 if (!activeSubject.trimmed().isEmpty())
                     setProperty("iaMemsActiveDocumentaryComponent", activeSubject);
             }
@@ -889,6 +911,7 @@ void IaMemsService::askWithLibrary(const QString &question)
             if (!operation.isEmpty() && matchingOperationChoices.size() == 1) {
                 const QVariantMap row = matchingOperationChoices.first().toMap();
                 if (!row.value(QStringLiteral("iaMemsMentionOnly")).toBool() &&
+                    !row.value(QStringLiteral("iaMemsVariantUnverified")).toBool() &&
                     !row.value(QStringLiteral("iaMemsGroupRows")).isValid() &&
                     row.value(QStringLiteral("entry_type")).toString()
                     == QStringLiteral("procedure")) {
@@ -1074,6 +1097,22 @@ void IaMemsService::askWithLibrary(const QString &question)
                 }
             }
         }
+    }
+
+    // The installed French workshop corpus is authoritative for component
+    // questions. If no FR source matched, do not silently substitute an old
+    // English step from the legacy Pack001 library.
+    if (MemsDocumentaryRepository::isPackInstalled() &&
+        !diagnosticRequest && !requestsLiveEcuData && !softwareHelpRequest &&
+        !MemsDocumentaryRepository::subjectTerms(trimmed).isEmpty()) {
+        m_pendingGrounding.clear();
+        emit responseReady(QStringLiteral(
+            "Aucune rubrique suffisamment pertinente n'a été retrouvée "
+            "dans la base documentaire installée pour « %1 ». "
+            "Je ne remplace pas cette recherche par un extrait anglais "
+            "d'une ancienne bibliothèque.").arg(trimmed));
+        emit statusChanged();
+        return;
     }
 
     const IaMemsLibraryGrounding libraryGrounding =
