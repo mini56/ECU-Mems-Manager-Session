@@ -179,10 +179,12 @@ static void applySidebarState(QMainWindow *w)
         item->setSizeHint(QSize(0,rowHeight));
     }
 
-    const int expanded=qBound(198,longest+78,252);
+    // One owner for sidebar width: neither responsive resizing nor page
+    // navigation may impose a competing width on the navigation list.
+    const int expanded=qBound(208,longest+78,252);
     const int width=collapsed?58:expanded;
-    sidebar->setMinimumWidth(width); sidebar->setMaximumWidth(width);
-    nav->setMinimumWidth(width); nav->setMaximumWidth(width);
+    sidebar->setFixedWidth(width);
+    nav->setFixedWidth(width);
     nav->setIconSize(QSize(22,22));
     nav->setSpacing(0);
     nav->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -527,6 +529,16 @@ static void fitNavigationRows(QListWidget *nav)
 {
     if (!nav || nav->count() <= 0)
         return;
+
+    // Once the sidebar exists, its canonical layout owns both widths and
+    // row heights. The pre-sidebar bootstrap calculation is only used while
+    // the native shell is being constructed.
+    if(QMainWindow *window=qobject_cast<QMainWindow*>(nav->window())){
+        if(window->findChild<QFrame*>(QStringLiteral("darkSidebar"))){
+            applySidebarState(window);
+            return;
+        }
+    }
 
     const int viewportHeight = nav->viewport() ? nav->viewport()->height() : nav->height();
     if (viewportHeight <= 0)
@@ -960,16 +972,8 @@ static void applyResponsive(QMainWindow *window)
         const int side=qBound(15,qRound(20.0*s),24); bad->setFixedSize(side,side);
     }
 
-    if(QListWidget *nav=window->findChild<QListWidget*>(QStringLiteral("uiRebuildNav"))) {
-        const QSize a=window->findChild<QWidget*>(QStringLiteral("uiRebuildWorkspace"))?window->findChild<QWidget*>(QStringLiteral("uiRebuildWorkspace"))->size():(window->centralWidget()?window->centralWidget()->size():window->size());
-        const int navW=qBound(142,qRound(a.width()*0.12),214);
-        const int rowH=qBound(27,qRound(34.0*s),40);
-        const int pad=qBound(8,qRound(13.0*s),16);
-        nav->setFixedWidth(navW);
-        nav->setStyleSheet(QStringLiteral("#uiRebuildNav{background:#0d1318;color:#c7d0d6;border:0;border-right:1px solid %1;padding:5px 0;}#uiRebuildNav::item{min-height:%2px;padding:2px %3px;border-left:3px solid transparent;font-weight:650;}#uiRebuildNav::item:hover{background:#161d23;color:white;}#uiRebuildNav::item:selected{background:#1c211f;color:%4;border-left:3px solid %5;}QToolTip{color:#ffffff;}")
-            .arg(QString::fromLatin1(kBorder)).arg(rowH).arg(pad).arg(QString::fromLatin1(kOrange2)).arg(QString::fromLatin1(kOrange)));
-    }
-
+    // Navigation dimensions and appearance are set exclusively by
+    // applySidebarState(), not by responsive page layout.
     if(QFrame *status=window->findChild<QFrame*>(QStringLiteral("uiRebuildStatus")))
         status->setFixedHeight(qBound(29,qRound(35.0*s),40));
 
@@ -983,8 +987,6 @@ static void applyResponsive(QMainWindow *window)
             scroll->widget()->setMaximumWidth(QWIDGETSIZE_MAX);
         }
     }
-    if(window->findChild<QFrame*>(QStringLiteral("darkSidebar")))
-        applySidebarState(window);
     if(QListWidget *nav=window->findChild<QListWidget*>(QStringLiteral("uiRebuildNav")))
         fitNavigationRows(nav);
     fitOverviewPage(window->findChild<QWidget*>(QStringLiteral("overview_tab")));
