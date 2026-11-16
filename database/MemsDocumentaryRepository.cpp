@@ -1434,20 +1434,59 @@ static int documentaryTitleHits(const QString &title,
 // to IA MEMS is cleaned; SQLite and PDF page remain untouched.
 static QString readableReferenceLayout(QString text)
 {
+    // In the manufacturer's PDF the dotted leaders delimit individual
+    // specification cells. Replacing them by an em dash alone used to
+    // concatenate the entire engine settings table into one unreadable
+    // sentence. Rebuild display rows without altering the stored source
+    // text, values, units or the linked PDF.
     static const QRegularExpression leaders(
         QStringLiteral("(?:[ \\t]*\\.[ \\t]*){4,}"));
-    text.replace(leaders,QStringLiteral(" — "));
-    static const QRegularExpression repeatedSpaces(QStringLiteral("[ \\t]{2,}"));
-    text.replace(repeatedSpaces,QStringLiteral(" "));
-    return text.trimmed();
+    static const QRegularExpression spaces(QStringLiteral("[ \\t]{2,}"));
+    static const QRegularExpression valueOnly(
+        QStringLiteral("^(?:[+\\-]?\\d|[A-Z]{2,7}[ \\-]?\\d)"));
+    static const QRegularExpression numberedStep(
+        QStringLiteral("^\\d{1,3}[.)]\\s+\\S"));
+    text.remove(QLatin1Char('\r'));
+    QStringList rows;
+    for(const QString &rawLine:text.split(QLatin1Char('\n'),Qt::KeepEmptyParts)){
+        const QString line=rawLine.trimmed();
+        if(line.isEmpty()){
+            if(!rows.isEmpty() && !rows.last().isEmpty())
+                rows.append(QString());
+            continue;
+        }
+        // Each sequence of dotted leaders is a potential column or row
+        // boundary. When the next cell is an unambiguous numeric value or
+        // reference code, keep it with its parameter; otherwise begin a
+        // new readable row. This is vocabulary-independent.
+        for(const QString &field:line.split(leaders,Qt::SkipEmptyParts)){
+            QString cell=field.trimmed();
+            cell.replace(spaces,QStringLiteral(" "));
+            if(cell.isEmpty())
+                continue;
+            const bool looksLikeValue=valueOnly.match(cell).hasMatch() &&
+                !numberedStep.match(cell).hasMatch();
+            if(looksLikeValue && !rows.isEmpty() && !rows.last().isEmpty()){
+                rows.last()+=QStringLiteral(" : ")+cell;
+            }else{
+                rows.append(cell);
+            }
+        }
+    }
+    while(!rows.isEmpty() && rows.last().isEmpty())
+        rows.removeLast();
+    return rows.join(QLatin1Char('\n')).trimmed();
 }
 
 static QString documentaryTopicExcerpt(const QVariantMap &hit,
                                        const QStringList &terms,
                                        bool separateSubjects=false)
 {
-    const QString source=readableWorkshopParagraphs(
-        readableWorkshopExcerpt(workshopText(hit)));
+    const QString plainSource=readableWorkshopExcerpt(workshopText(hit));
+    const QString source=hit.value(QStringLiteral("entry_type")).toString()
+        ==QStringLiteral("reference")
+        ? readableReferenceLayout(plainSource)
+        : readableWorkshopParagraphs(plainSource);
     const QStringList lines=source.split(QLatin1Char('\n'));
     QStringList excerpts;
     for(int i=0;i<lines.size();++i){
@@ -2094,11 +2133,13 @@ QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
                 sourceFields.at(1) : QStringLiteral("Rover");
             const int page=item.value(QStringLiteral("source_page")).toInt();
             const QString title=item.value(QStringLiteral("title")).toString().simplified();
-            QString body=readableWorkshopParagraphs(
-                readableWorkshopExcerpt(workshopText(item)));
-            if(item.value(QStringLiteral("entry_type")).toString()
-               ==QStringLiteral("reference"))
-                body=readableReferenceLayout(body);
+            const QString source=readableWorkshopExcerpt(workshopText(item));
+            const bool technicalReference=
+                item.value(QStringLiteral("entry_type")).toString()
+                ==QStringLiteral("reference");
+            QString body=technicalReference
+                ?readableReferenceLayout(source)
+                :readableWorkshopParagraphs(source);
             if(item.value(QStringLiteral("source_status")).toString()
                   ==QStringLiteral("review_required") ||
                sourceTable.endsWith(QStringLiteral("_page_ocr"))){
