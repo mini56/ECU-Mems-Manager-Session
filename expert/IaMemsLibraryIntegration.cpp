@@ -890,26 +890,47 @@ void IaMemsService::askWithLibrary(const QString &question)
         // target ECU catalogue does not hold that exact reference.
         if(m_knowledgeReady && m_reader.isOpen()){
             QStringList facts;
-            const QList<ExpertFact> known=m_reader.facts(ExpertContext{});
-            for(const ExpertFact &fact:known){
-                const bool sameFirmware=fact.firmware.trimmed()
-                    .compare(ecuCode,Qt::CaseInsensitive)==0;
-                const bool sameKey=IaMemsEcuReferenceRouting::exactCodeMention(
-                    fact.factKey,ecuCode);
-                const bool directStatement=IaMemsEcuReferenceRouting::exactCodeMention(
-                    fact.statement,ecuCode);
-                const bool directTopic=IaMemsEcuReferenceRouting::exactCodeMention(
-                    fact.topic,ecuCode);
-                if(!sameFirmware && !sameKey && !directStatement && !directTopic)
-                    continue;
-                if(fact.statement.trimmed().isEmpty())continue;
-                QString item=QStringLiteral("• %1").arg(fact.statement.trimmed());
-                if(!fact.sourceKey.trimmed().isEmpty())
-                    item+=QStringLiteral(" (source : %1)").arg(fact.sourceKey.trimmed());
-                if(!fact.verificationLevel.trimmed().isEmpty())
-                    item+=QStringLiteral(" [preuve : %1]").arg(
-                        fact.verificationLevel.trimmed());
-                if(!facts.contains(item))facts.append(item);
+            // ExpertKnowledgeReader intentionally filters by family/firmware.
+            // An empty context hides scoped facts. Check all supported MEMS
+            // families, but accept ONLY statements containing this exact code
+            // (or an identical firmware key) and show each source/proof.
+            QStringList families;
+            if(!m_context.family.trimmed().isEmpty())
+                families<<m_context.family.trimmed();
+            for(const QString &family:{QStringLiteral("1.2"),
+                QStringLiteral("1.3"),QStringLiteral("1.6"),
+                QStringLiteral("1.9")}){
+                if(!families.contains(family))families<<family;
+            }
+            for(const QString &family:families){
+                ExpertContext searchContext;
+                searchContext.family=family;
+                searchContext.firmware=ecuCode;
+                const QList<ExpertFact> known=m_reader.facts(searchContext);
+                for(const ExpertFact &fact:known){
+                    const bool sameFirmware=fact.firmware.trimmed()
+                        .compare(ecuCode,Qt::CaseInsensitive)==0;
+                    const bool sameKey=IaMemsEcuReferenceRouting::exactCodeMention(
+                        fact.factKey,ecuCode);
+                    const bool directStatement=IaMemsEcuReferenceRouting::exactCodeMention(
+                        fact.statement,ecuCode);
+                    const bool directTopic=IaMemsEcuReferenceRouting::exactCodeMention(
+                        fact.topic,ecuCode);
+                    if(!sameFirmware && !sameKey && !directStatement && !directTopic)
+                        continue;
+                    if(fact.statement.trimmed().isEmpty())continue;
+                    QString item=QStringLiteral("• %1").arg(fact.statement.trimmed());
+                    if(!fact.family.trimmed().isEmpty() &&
+                       fact.family.trimmed()!=QStringLiteral("*"))
+                        item+=QStringLiteral(" [famille : %1]").arg(fact.family.trimmed());
+                    if(!fact.sourceKey.trimmed().isEmpty())
+                        item+=QStringLiteral(" (source : %1)").arg(fact.sourceKey.trimmed());
+                    if(!fact.verificationLevel.trimmed().isEmpty())
+                        item+=QStringLiteral(" [preuve : %1]").arg(
+                            fact.verificationLevel.trimmed());
+                    if(!facts.contains(item))facts.append(item);
+                    if(facts.size()>=5)break;
+                }
                 if(facts.size()>=5)break;
             }
             if(!facts.isEmpty()){
