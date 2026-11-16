@@ -14,6 +14,9 @@
 #include <QEvent>
 #include <QFrame>
 #include <QListWidget>
+#include <QLayout>
+#include <QPushButton>
+#include <QToolButton>
 #include <QLabel>
 #include <QHeaderView>
 #include <QTableWidget>
@@ -156,6 +159,41 @@ bool verifyUi(MainWindow &window)
     if (!tabs || !navigation || tabs->count()!=14 || navigation->count()!=14)
         return false;
 
+    // The update action is a footer control, immediately after the footer
+    // label. There must be only one button and no header duplicate.
+    QFrame *databaseFooter=window.findChild<QFrame*>(
+        QStringLiteral("memsDatabaseFooter"));
+    QLabel *updateTitle=window.findChild<QLabel*>(
+        QStringLiteral("memsDatabaseUpdateTitle"));
+    QPushButton *databaseUpdate=window.findChild<QPushButton*>(
+        QStringLiteral("documentaryUpdateButton"));
+    ok=check(databaseFooter && updateTitle && databaseUpdate,
+             "Database update action must be present in footer") && ok;
+    if(databaseFooter && updateTitle && databaseUpdate){
+        QLayout *footerLayout=databaseFooter->layout();
+        ok=check(databaseUpdate->parentWidget()==databaseFooter &&
+                 footerLayout &&
+                 footerLayout->indexOf(databaseUpdate)==
+                    footerLayout->indexOf(updateTitle)+1,
+                 "Update button must follow database footer title") && ok;
+        ok=check(databaseUpdate->text()==QStringLiteral(
+                     "Rechercher une mise à jour"),
+                 "French update button label is incorrect") && ok;
+    }
+    ok=check(window.findChildren<QPushButton*>(
+                QStringLiteral("documentaryUpdateButton")).size()==1,
+             "Duplicate database update action detected") && ok;
+
+    QFrame *sidebar=window.findChild<QFrame*>(
+        QStringLiteral("darkSidebar"));
+    QToolButton *toggle=window.findChild<QToolButton*>(
+        QStringLiteral("darkSidebarToggle"));
+    ok=check(sidebar && toggle,
+             "Native sidebar and collapse control missing") && ok;
+    const int expandedWidth=sidebar ? sidebar->width() : 0;
+    ok=check(expandedWidth>=208 && expandedWidth<=252,
+             "Expanded navigation must have one stable readable width") && ok;
+
     // A switch must work from both the sidebar and the underlying tab widget.
     // No test clicks ECU connection, actuator, reset or session buttons.
     for (int i=0;i<14;i++){
@@ -165,11 +203,22 @@ bool verifyUi(MainWindow &window)
         navigation->setCurrentRow(i);
         QCoreApplication::processEvents();
         ok=check(tabs->currentIndex()==i,"Sidebar to page navigation mismatch") && ok;
+        ok=check(navigation->currentRow()==tabs->currentIndex() &&
+                 navigation->currentItem() &&
+                 navigation->currentItem()->text()==tabs->tabText(i),
+                 "Visible page and highlighted sidebar entry differ") && ok;
+        if(sidebar)
+            ok=check(sidebar->width()==expandedWidth &&
+                     navigation->width()==expandedWidth,
+                     "Switching pages must not shrink the expanded sidebar") && ok;
     }
     for (int i=13;i>=0;i--){
         tabs->setCurrentIndex(i);
         QCoreApplication::processEvents();
         ok=check(navigation->currentRow()==i,"Page to sidebar navigation mismatch") && ok;
+        if(sidebar)
+            ok=check(sidebar->width()==expandedWidth,
+                     "Page change must preserve sidebar width") && ok;
     }
 
     ok=check(window.findChild<QWidget*>(QStringLiteral("memsDatabaseBrowser"))!=nullptr,
@@ -185,6 +234,22 @@ bool verifyUi(MainWindow &window)
         ok=check(injector->property("maximum").toDouble()==5.0,
                  "Normal-frame injection dwell must use the 0-5ms scale") && ok;
 
+    if(toggle && sidebar){
+        toggle->click();
+        QCoreApplication::processEvents();
+        ok=check(sidebar->width()==58 && sidebar->property("collapsed").toBool(),
+                 "Collapse must produce the single canonical icon width") && ok;
+        tabs->setCurrentIndex(6);
+        QCoreApplication::processEvents();
+        ok=check(sidebar->width()==58,
+                 "Changing pages must not unexpectedly expand the sidebar") && ok;
+        toggle->click();
+        QCoreApplication::processEvents();
+        ok=check(sidebar->width()==expandedWidth &&
+                 !sidebar->property("collapsed").toBool(),
+                 "Expand must restore the original sidebar width") && ok;
+    }
+
     for (const QSize size : {QSize(1024,700),QSize(1200,768),QSize(1280,800),QSize(1366,768),QSize(1920,1080)}){
         window.resize(size);
         QCoreApplication::processEvents();
@@ -192,6 +257,10 @@ bool verifyUi(MainWindow &window)
                  "Page count changed on resize") && ok;
         ok=check(tabs->currentIndex()==navigation->currentRow(),
                  "Navigation desynchronized on resize") && ok;
+        if(sidebar)
+            ok=check(sidebar->width()==expandedWidth &&
+                     navigation->width()==expandedWidth,
+                     "Resizing must not impose a competing sidebar width") && ok;
     }
 
     if (I18n::load(QStringLiteral("en"))){
