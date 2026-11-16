@@ -44,7 +44,20 @@ inline QString referenceFromQuestion(const QString &question)
     // when *all* remaining words identify the search, not an intervention.
     // This prevents intercepting "dépose ...", "branchement ...",
     // "diagnostic ...", compound component questions, etc.
-    const QStringList words=trimmed.toUpper().split(
+    // French accents and the SAIT-ON spelling are normal linguistic
+    // variation. Only the identifier itself is kept case-insensitive.
+    QString phrase;
+    for(const QChar ch:trimmed.normalized(
+            QString::NormalizationForm_D).toUpper()){
+        const QChar::Category cat=ch.category();
+        if(cat!=QChar::Mark_NonSpacing &&
+           cat!=QChar::Mark_SpacingCombining &&
+           cat!=QChar::Mark_Enclosing)
+            phrase.append(ch);
+    }
+    phrase.replace(QRegularExpression(
+        QStringLiteral("(?<=[A-Z])-(?=[A-Z])")),QStringLiteral(" "));
+    const QStringList words=phrase.split(
         QRegularExpression(QStringLiteral("[^\\p{L}\\p{N}-]+")),
         Qt::SkipEmptyParts);
     if(words.size()<2 || words.size()>12)
