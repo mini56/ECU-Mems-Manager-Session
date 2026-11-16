@@ -4,44 +4,55 @@
 <meta charset="utf-8">
 <title>@PROJECTNAME@ — Complete User Guide</title>
 <style>
-body{font-family:"Segoe UI",Arial,sans-serif;background:#fff;color:#1f2430;margin:24px;line-height:1.45}
-h1{color:#1f66e6;border-bottom:2px solid #d6ddea;padding-bottom:6px}
-h2{color:#14479e;margin-top:26px}
-h3{color:#14479e;margin-top:18px}
-table{border-collapse:collapse;width:100%;margin:12px 0}th,td{border:1px solid #d6ddea;padding:7px;text-align:left}
-th{background:#1f66e6;color:#fff}.warn{background:#fff6e8;border:1px solid #f0c987;padding:12px}
-code{background:#f2f3f5;padding:1px 4px}
+body{font-family:"Segoe UI",Arial,sans-serif;background:#0e171d;color:#e3ebf1;margin:17px;line-height:1.56;font-size:12pt}
+h1{color:#ff9828;border-bottom:2px solid #ff7a00;padding-bottom:13px;margin-top:3px;font-size:23pt}
+h2{color:#ffad58;background:#17242c;border-left:3px solid #ff7a00;padding:11px;margin-top:25px;font-size:16pt}
+h3{color:#ffae58;margin-top:15px;font-size:13pt}
+p,li{color:#e3ebf1;margin-bottom:11px}
+b,strong{color:#f6f9fc}
+table{border-collapse:collapse;width:100%;margin:13px 0}
+th,td{border:1px solid #344854;padding:9px;text-align:left}
+th{background:#263843;color:#ffad58}
+td{background:#121e25;color:#e3ebf1}
+.warn{background:#342317;border:1px solid #b06b1d;color:#ffe7cc;padding:13px}
+.tip{background:#172a24;border:1px solid #3f7763;color:#ddf3e9;padding:12px}
+.card{background:#17232b;border:1px solid #354852;padding:13px}
+code{background:#26313b;color:#ffd79b;padding:3px}
+a{color:#ffae52;text-decoration:none}
+small{color:#aebcc5}
 </style>
 </head>
 <body>
 <h1>ECU MEMS Manager — User Guide</h1>
 <p><b>Version @APP_VERSION@</b> — Diagnostic software for Rover MEMS ECUs.</p>
 
+<div class="card"><p><b>A PRACTICAL OFFLINE GUIDE</b></p><p>Use the navigation panel to open a topic. The guide is bundled with the program and works without an Internet connection. Manufacturer page images can be consulted in the database and IA MEMS when the relevant documentary pack is installed.</p></div>
+
 <div class="warn"><b>Safety:</b> actuator tests can operate pumps, fans, valves, injectors and ignition components. Perform tests only when the vehicle is secured and you understand the consequences of the selected command.</div>
 
-<h2>1. Connection</h2>
+<h2 id="chapter-1">1. Connection</h2>
 <p>Connect the supported diagnostic interface to the vehicle and select the correct serial port in <b>Options → Edit settings</b>. Switch the ignition on, then press <b>Connect</b>. The communication indicators show the current connection state. Use <b>Disconnect</b> before intentionally ending a session.</p>
 <p>If the vehicle ignition is switched off and communication is lost, the software leaves the polling loop cleanly and can reconnect when communication becomes available again.</p>
 
-<h2>2. Overview tab</h2>
+<h2 id="chapter-2">2. Overview tab</h2>
 <p>The Overview tab is the default tab shown at startup. It provides the main live gauges and status indicators for quick diagnosis: engine speed, manifold pressure, coolant and intake temperatures, battery voltage, throttle information, lambda information, idle control and ignition values.</p>
 <p>The interface remains responsive. The dark theme preserves red warning areas and green nominal areas while adapting gauges and text to the dark background.</p>
 
-<h2>3. Injection tab</h2>
+<h2 id="chapter-3">3. Injection tab</h2>
 <p>The Injection tab groups the injection values acquired through the dedicated reading mode: <b>final injection time</b>, <b>base injection time</b>, <b>transient correction</b> and <b>transient state</b>.</p>
 <p>These values share the same dedicated acquisition path to avoid unnecessary ECU reading-mode changes. IA MEMS observes them when they are already available; it does not start an additional ECU polling loop on its own.</p>
 
-<h2>4. Settings tab</h2>
+<h2 id="chapter-4">4. Settings tab</h2>
 <p>The Settings tab contains service adjustments such as idle, fuel and ignition-related corrections. Tooltips explain the purpose and risks of each adjustment.</p>
 <p>The hot-idle correction used for decoding field 7D14-15 follows the value actually present in the ECU adjustment; it is not replaced by an arbitrary constant.</p>
 
-<h2>5. Errors tab</h2>
+<h2 id="chapter-5">5. Errors tab</h2>
 <p>This tab displays ECU fault information, recorded anomalies and status checks. Faults should be read and understood before they are cleared. Some counters or status fields may require a complete ECU reset before they return to their default state.</p>
 
-<h2>6. Actuators tab</h2>
+<h2 id="chapter-6">6. Actuators tab</h2>
 <p>Use this tab to test supported actuators. Available functions depend on the ECU and protocol state. Do not run injector, ignition or heater tests unless the vehicle is in a safe condition.</p>
 
-<h2>7. All measurements</h2>
+<h2 id="chapter-7">7. All measurements</h2>
 <p>The <b>All measurements</b> tab shows detailed parameters and their help text, together with the raw ECU value and the interpreted value when decoding is known.</p>
 <table>
 <tr><th>Parameter</th><th>Help</th><th>ECU received value</th><th>Interpreted value</th></tr>
@@ -49,43 +60,43 @@ code{background:#f2f3f5;padding:1px 4px}
 </table>
 <p>Undocumented fields remain visible without inventing a conversion.</p>
 
-<h2>8. All data</h2>
+<h2 id="chapter-8">8. All data</h2>
 <p>This detailed view exposes raw and decoded MEMS fields. It is useful when comparing protocol bytes with interpreted measurements.</p>
 
-<h2>9. ECU / ROSCO</h2>
+<h2 id="chapter-9">9. ECU / ROSCO</h2>
 <p>The ECU / ROSCO tab exposes supported read and session commands such as D0, D1, D2, F0 and session commands F2–F5. TX/RX data is displayed in hexadecimal. D3 ECU recoding remains intentionally disabled.</p>
 
-<h2>10. Automatic diagnostics</h2>
+<h2 id="chapter-10">10. Automatic diagnostics</h2>
 <p>The automatic diagnostic panel evaluates current ECU values and reports normal values, warnings and anomalies. It can capture a reference and export a report. Coil charge time is checked against the expected range used by this application.</p>
 
-<h2>11. Log analysis</h2>
+<h2 id="chapter-11">11. Log analysis</h2>
 <p>The Analysis tab can read supported CSV/TXT diagnostic logs, display selected channels and overlay curves. Use the channel list to choose which measurements are displayed and compare their evolution over time.</p>
 
-<h2>12. IA MEMS</h2>
+<h2 id="chapter-12">12. IA MEMS</h2>
 <p>The <b>IA MEMS</b> tab combines natural-language dialogue, ECU measurements already acquired by the application, their history, the expert engine and the MEMS knowledge database.</p>
 <p>The expert engine distinguishes observations, hypotheses, external information and confidence/provenance levels. A component must not be condemned from a single reading. When information is insufficient or contradictory, IA MEMS must say so instead of inventing a conclusion.</p>
 <p>The conversational model runs locally from the files supplied with the package. It starts only when the IA MEMS tab is actually opened, avoiding unnecessary memory and CPU use during normal operation. It sends no extra ECU command: it only observes data already acquired by MEMS Manager.</p>
 
-<h2>13. Snapshots</h2>
+<h2 id="chapter-13">13. Snapshots</h2>
 <p><b>Snapshot</b> saves an image of the current program window in the <code>captures</code> folder. <b>View captures</b> opens the integrated capture viewer, where you can preview, open/enlarge or delete a selected capture. Deletion requires confirmation.</p>
 
-<h2>14. Tooltips and help bubble</h2>
+<h2 id="chapter-14">14. Tooltips and help bubble</h2>
 <p>Wherever contextual help is available, ECU MEMS Manager uses the embedded help-bubble graphic. Its appearance does not depend on the Windows version or computer.</p>
 
-<h2>15. Options</h2>
+<h2 id="chapter-15">15. Options</h2>
 <p>Options include the serial device, temperature units, interface theme, language and Desktop-shortcut settings. The Desktop shortcut can be created and maintained automatically.</p>
 
-<h2>16. Themes</h2>
+<h2 id="chapter-16">16. Themes</h2>
 <p><b>Light:</b> light interface and gauge faces.</p>
 <p><b>Dark:</b> dark interface and gauge faces with high-contrast text, graduations and needles. Tables are also adapted for readability.</p>
 
-<h2>17. Language</h2>
+<h2 id="chapter-17">17. Language</h2>
 <p>The interface supports French, English, Spanish, Italian, Portuguese and German. The selected language is stored in the application settings.</p>
 
-<h2>18. Supported ECU families</h2>
+<h2 id="chapter-18">18. Supported ECU families</h2>
 <p>The project database and diagnostic paths cover Rover MEMS <b>1.2, 1.3, 1.6 and 1.9</b>. Features available during a session depend on the ECU, vehicle configuration and protocol in use.</p>
 
-<h2>19. Basic diagnostic guidance</h2>
+<h2 id="chapter-19">19. Basic diagnostic guidance</h2>
 <table>
 <tr><th>Symptom</th><th>Checks</th></tr>
 <tr><td>No communication</td><td>Ignition, correct serial port, diagnostic cable, ECU power and grounds.</td></tr>
@@ -95,7 +106,28 @@ code{background:#f2f3f5;padding:1px 4px}
 <tr><td>Abnormal coil charge time</td><td>Battery voltage, primary circuit, coil and wiring.</td></tr>
 </table>
 
-<h2>20. Closing the application</h2>
+<h2 id="chapter-20">20. Closing the application</h2>
 <p>The application stops automatic reconnect activity during shutdown so a lost ECU connection cannot prevent the window from closing normally.</p>
+
+<h2 id="chapter-21">21. Documentary database</h2>
+<p>The <b>Database</b> page searches ECU references, vehicles, commands and available technical documents. Search and generation filters appear above the results; selected manufacturer pages and evidence are displayed in the right-hand detail pane.</p>
+<p>Documentary packs are <b>independent of the installed program</b>. New PDFs and searchable indexes can be installed without rebuilding the SESSION executable.</p>
+
+<h2 id="chapter-22">22. Check for documentary updates</h2>
+<p>Open <b>Database</b> and click <b>Check for database updates</b> in the bottom status bar, next to the online-update label. This opens the documentary pack manager.</p>
+<table><tr><th>Stage</th><th>What happens</th></tr>
+<tr><td>Check</td><td>The update catalogue is checked online; a network connection is required.</td></tr>
+<tr><td>Download</td><td>If an eligible pack is published for the language, the download is verified with SHA-256.</td></tr>
+<tr><td>Install</td><td>Enter the secure pack password. The installer verifies the database, indexed pages and source provenance.</td></tr>
+<tr><td>Use</td><td>Approved sources become available in Database and IA MEMS, independently of ECU commands.</td></tr></table>
+<p>Use <b>Install local encrypted pack</b> to load an already downloaded pack. If verification fails, the previously installed database is preserved. Not every catalogue check will find an available update.</p>
+
+<h2 id="chapter-23">23. Windows taskbar display</h2>
+<p>The optional <b>Automatically hide the Windows taskbar</b> setting in Options → Display is off by default. Enabling it changes the Windows taskbar behaviour for the whole desktop while SESSION runs. Move the pointer to the corresponding edge to reveal the bar.</p>
+<p>SESSION restores the previous setting when it exits normally. A separate monitor can restore it after an unexpected exit, with a further recovery check at the next launch. Windows policy may prevent the operation; the program will report the failure.</p>
+
+<h2 id="chapter-24">24. Illustrations and manufacturer pages</h2>
+<p>Validated screenshots can be integrated in future software builds. Manufacturer illustrations are drawn from the installed documentary pack and can be opened at full size from Database or IA MEMS.</p>
+
 </body>
 </html>
