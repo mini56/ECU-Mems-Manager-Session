@@ -1,0 +1,49 @@
+name: "SESSION 154 - IA MEMS - qualificatifs moteur, tableaux et variantes"
+on:
+  push:
+    branches: [fix-ia-documentary-scopes-session-154-20261116]
+    paths:
+      - 'expert/IaMemsLibraryIntegration.cpp'
+      - 'database/MemsDocumentaryRepository.cpp'
+      - 'database/MemsDocumentaryRepository.h'
+      - 'database/MemsDocumentaryNativeIntentSelfTest.cpp'
+      - 'expert/IaMemsConversationRouting.h'
+      - '.github/workflows/session-154-ia-documentary-regression.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test-topic-relevance:
+    name: Vérifier sujets multiples, SPi MPi et tableaux techniques
+    runs-on: windows-2025
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Installer Qt 5.15.2 MSVC
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python -m pip install --disable-pip-version-check 'aqtinstall==3.3.0'
+          if($LASTEXITCODE -ne 0){throw 'QT_INSTALLER_FAILED'}
+          $sevenZip=(Get-Command 7z.exe -ErrorAction Stop).Source
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external $sevenZip
+          if($LASTEXITCODE -ne 0){throw 'QT_INSTALL_FAILED'}
+      - name: Compiler le lecteur documentaire source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          cmake -S . -B build-ia-154 -A x64 -DCMAKE_PREFIX_PATH='C:/Qt/5.15.2/msvc2019_64' -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF
+          if($LASTEXITCODE -ne 0){throw 'CMAKE_FAILED'}
+          cmake --build build-ia-154 --config Release --target mems_documentary_native_intent_selftest --parallel
+          if($LASTEXITCODE -ne 0){throw 'SELFTEST_COMPILE_FAILED'}
+      - name: Tester recherches et provenance de bout en bout
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $bin=(Resolve-Path build-ia-154/Release).Path
+          $qt='C:\Qt\5.15.2\msvc2019_64'
+          & "$qt/bin/windeployqt.exe" --release --no-translations --dir $bin "$bin/mems_documentary_native_intent_selftest.exe"
+          if($LASTEXITCODE -ne 0){throw 'QT_DEPLOY_FAILED'}
+          & "$bin/mems_documentary_native_intent_selftest.exe"
+          if($LASTEXITCODE -ne 0){throw 'DOCUMENTARY_TOPIC_REGRESSION'}
+          Write-Host 'SESSION_154_GENERIC_SCOPE_TABLE_REGRESSION_PASS'
