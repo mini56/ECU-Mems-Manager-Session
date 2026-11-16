@@ -244,9 +244,9 @@ void MemsDatabaseBrowser::buildUi()
     dv->addLayout(detailViewport,1);
     split->addWidget(listCard); split->addWidget(detailCard); split->setStretchFactor(0,3); split->setStretchFactor(1,4); root->addWidget(split,1);
 
-    QFrame *footer=card(this); QHBoxLayout *fv=new QHBoxLayout(footer); fv->setContentsMargins(9,4,9,4);
-    m_updateTitle=makeLabel(7255,footer); QFont uf=m_updateTitle->font(); uf.setBold(true); m_updateTitle->setFont(uf); m_updateTitle->setStyleSheet(QStringLiteral("color:#ff9828;background:transparent;border:0;"));
-    m_updateState=makeLabel(7256,footer); m_updateState->setStyleSheet(QStringLiteral("color:#8f9aa4;background:transparent;border:0;"));
+    QFrame *footer=card(this); footer->setObjectName(QStringLiteral("memsDatabaseFooter")); QHBoxLayout *fv=new QHBoxLayout(footer); fv->setContentsMargins(9,4,9,4);
+    m_updateTitle=makeLabel(7255,footer); m_updateTitle->setObjectName(QStringLiteral("memsDatabaseUpdateTitle")); QFont uf=m_updateTitle->font(); uf.setBold(true); m_updateTitle->setFont(uf); m_updateTitle->setStyleSheet(QStringLiteral("color:#ff9828;background:transparent;border:0;"));
+    m_updateState=makeLabel(7256,footer); m_updateState->setObjectName(QStringLiteral("memsDatabaseUpdateState")); m_updateState->setStyleSheet(QStringLiteral("color:#8f9aa4;background:transparent;border:0;"));
     QLabel *readOnly=makeLabel(7231,footer); readOnly->setStyleSheet(QStringLiteral("color:#86d17a;background:transparent;border:0;"));
     fv->addWidget(m_updateTitle); fv->addWidget(m_updateState); fv->addStretch(1); fv->addWidget(readOnly); root->addWidget(footer);
 
