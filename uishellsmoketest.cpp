@@ -199,6 +199,34 @@ bool verifyUi(MainWindow &window)
              "The initial visible page and selection must both be Overview") && ok;
     ok=check(expandedWidth==236 && navigation->width()==236,
              "Startup sidebar width must already match its canonical 236px width") && ok;
+    // The historical failure was VERTICAL spacing, not sidebar width.
+    // The first frame must have its final row height before any tab click.
+    const int startupRowHeight=navigation->item(0)->sizeHint().height();
+    ok=check(startupRowHeight>=27 && startupRowHeight<=35,
+             "Startup rows are too compact before first page click") && ok;
+    ok=check(navigation->selectedItems().size()==1 &&
+             navigation->selectedItems().first()==navigation->item(0),
+             "Overview must be visually selected at startup") && ok;
+    // Simulate the reported maximized Windows view BEFORE any navigation.
+    // On a full-height window, all menu entries must already use the
+    // spacious layout seen after clicking a page (35px).
+    window.resize(1920,1080);
+    QCoreApplication::processEvents();
+    const int fullHeightBeforeClick=navigation->item(0)->sizeHint().height();
+    ok=check(fullHeightBeforeClick==35,
+             "Full-height menu must have its final 35px rows before clicking") && ok;
+    navigation->setCurrentRow(6);
+    QCoreApplication::processEvents();
+    ok=check(navigation->item(0)->sizeHint().height()==fullHeightBeforeClick,
+             "First page click must not change menu row spacing") && ok;
+    ok=check(tabs->currentIndex()==6 &&
+             navigation->selectedItems().size()==1 &&
+             navigation->selectedItems().first()==navigation->item(6),
+             "IA MEMS must be the one highlighted tab after selecting it") && ok;
+    // Restore the normal test geometry and initial tab for the general tour.
+    window.resize(1280,768);
+    tabs->setCurrentIndex(0);
+    QCoreApplication::processEvents();
 
     // A switch must work from both the sidebar and the underlying tab widget.
     // No test clicks ECU connection, actuator, reset or session buttons.
@@ -211,8 +239,12 @@ bool verifyUi(MainWindow &window)
         ok=check(tabs->currentIndex()==i,"Sidebar to page navigation mismatch") && ok;
         ok=check(navigation->currentRow()==tabs->currentIndex() &&
                  navigation->currentItem() &&
-                 navigation->currentItem()->text()==tabs->tabText(i),
-                 "Visible page and highlighted sidebar entry differ") && ok;
+                 navigation->currentItem()->text()==tabs->tabText(i) &&
+                 navigation->selectedItems().size()==1 &&
+                 navigation->selectedItems().first()==navigation->item(i),
+                 "Displayed page must be the ONLY visually highlighted sidebar row") && ok;
+        ok=check(navigation->item(0)->sizeHint().height()==startupRowHeight,
+                 "Page click must not change row spacing at the same window height") && ok;
         if(sidebar)
             ok=check(sidebar->width()==236 &&
                      navigation->width()==236,
@@ -221,7 +253,10 @@ bool verifyUi(MainWindow &window)
     for (int i=13;i>=0;i--){
         tabs->setCurrentIndex(i);
         QCoreApplication::processEvents();
-        ok=check(navigation->currentRow()==i,"Page to sidebar navigation mismatch") && ok;
+        ok=check(navigation->currentRow()==i &&
+                 navigation->selectedItems().size()==1 &&
+                 navigation->selectedItems().first()==navigation->item(i),
+                 "Programmatic page change must also update the visual selection") && ok;
         if(sidebar)
             ok=check(sidebar->width()==expandedWidth,
                      "Page change must preserve sidebar width") && ok;
@@ -261,8 +296,11 @@ bool verifyUi(MainWindow &window)
         QCoreApplication::processEvents();
         ok=check(tabs->count()==14 && navigation->count()==14,
                  "Page count changed on resize") && ok;
-        ok=check(tabs->currentIndex()==navigation->currentRow(),
-                 "Navigation desynchronized on resize") && ok;
+        ok=check(tabs->currentIndex()==navigation->currentRow() &&
+                 navigation->selectedItems().size()==1 &&
+                 navigation->selectedItems().first()==
+                    navigation->item(tabs->currentIndex()),
+                 "Navigation visual selection desynchronized on resize") && ok;
         if(sidebar)
             ok=check(sidebar->width()==expandedWidth &&
                      navigation->width()==expandedWidth,
