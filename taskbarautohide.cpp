@@ -19,12 +19,7 @@ const QString kOwner=QStringLiteral("TaskbarSession/OwnerPid");
 const QString kToken=QStringLiteral("TaskbarSession/Token");
 bool gEnabled=false;
 bool gOwnsChange=false;
-quint64 gToken=0;
 
-QSettings settings()
-{
-    return QSettings(QSettings::IniFormat,QSettings::UserScope,PROJECTNAME);
-}
 void clearSavedState(QSettings &record)
 {
     record.remove(QStringLiteral("TaskbarSession"));
@@ -76,7 +71,7 @@ namespace TaskbarAutoHide {
 void recoverPreviousSession()
 {
 #ifdef Q_OS_WIN
-    QSettings record=settings();
+    QSettings record(QSettings::IniFormat,QSettings::UserScope,PROJECTNAME);
     if(!record.value(kPending,false).toBool())
         return;
     const quint32 processId=record.value(kOwner).toUInt();
@@ -99,7 +94,7 @@ bool apply(bool requested)
         return true;
     if(!requested){
         if(gOwnsChange){
-            QSettings record=settings();
+            QSettings record(QSettings::IniFormat,QSettings::UserScope,PROJECTNAME);
             if(currentState()==1 &&
                 !setState(record.value(kWasHidden,false).toBool()))
                 return false;
@@ -107,7 +102,6 @@ bool apply(bool requested)
         }
         gEnabled=false;
         gOwnsChange=false;
-        gToken=0;
         return true;
     }
 
@@ -120,7 +114,7 @@ bool apply(bool requested)
         gEnabled=true;
         return true;
     }
-    QSettings record=settings();
+    QSettings record(QSettings::IniFormat,QSettings::UserScope,PROJECTNAME);
     const quint32 pid=GetCurrentProcessId();
     const quint64 token=static_cast<quint64>(QDateTime::currentMSecsSinceEpoch());
     record.setValue(kPending,true);
@@ -150,7 +144,6 @@ bool apply(bool requested)
     }
     gEnabled=true;
     gOwnsChange=true;
-    gToken=token;
     return true;
 #endif
 }
@@ -174,7 +167,7 @@ int monitorParent(quint32 parentProcessId,quint64 token)
         WaitForSingleObject(parent,INFINITE);
         CloseHandle(parent);
     }
-    QSettings record=settings();
+    QSettings record(QSettings::IniFormat,QSettings::UserScope,PROJECTNAME);
     const bool matching=record.value(kPending,false).toBool() &&
         record.value(kOwner).toUInt()==parentProcessId &&
         record.value(kToken).toString()==QString::number(token);
