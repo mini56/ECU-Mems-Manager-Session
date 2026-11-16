@@ -850,10 +850,6 @@ void IaMemsService::askWithLibrary(const QString &question)
     if(!resolvedDocumentary && !ecuCode.isEmpty() &&
        !explicitDocumentaryRequest && !diagnosticRequest &&
        !requestsLiveEcuData && !softwareHelpRequest){
-        clearStructuredMenuState(this);
-        setProperty("iaMemsRoverMenuRows",QVariant());
-        setProperty("iaMemsRoverMenuQuestion",QVariant());
-
         MemsReferenceDatabase references;
         const bool available=references.open();
         QVariantMap exact;
@@ -874,6 +870,14 @@ void IaMemsService::askWithLibrary(const QString &question)
                 }
             }
         }
+        const bool isEcuIdentity=
+            !exact.isEmpty() ||
+            IaMemsEcuReferenceRouting::recognizedEcuNamespace(ecuCode) ||
+            IaMemsEcuReferenceRouting::explicitEcuIdentityIntent(trimmed);
+        if(isEcuIdentity){
+        clearStructuredMenuState(this);
+        setProperty("iaMemsRoverMenuRows",QVariant());
+        setProperty("iaMemsRoverMenuQuestion",QVariant());
         QString answer;
         if(!exact.isEmpty()){
             const QString part=exact.value(QStringLiteral("part_number")).toString();
@@ -924,6 +928,10 @@ void IaMemsService::askWithLibrary(const QString &question)
         emit responseReady(answer);
         emit statusChanged();
         return;
+        }
+        // A manual identifier (e.g. a RAVE publication number) does not
+        // become an ECU part number just because it contains letters and
+        // digits; preserve the existing documentary answer path.
     }
 
     if (MemsDocumentaryRepository::isPackInstalled() &&
