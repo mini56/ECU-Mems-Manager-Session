@@ -65,7 +65,7 @@ DiagnosticPanel::DiagnosticPanel(QWidget *parent) : QWidget(parent)
     m_checks->setWordWrap(false);
     m_checks->verticalHeader()->setVisible(false);
     // The diagnostic table owns its readability, without a late UI patch.
-    ApplicationTheme::setDarkStyle(m_checks, m_checks->styleSheet()+QStringLiteral(
+    ApplicationTheme::appendDarkStyle(m_checks, QStringLiteral(
         "QTableWidget{color:#ffffff;}"
         "QTableWidget:disabled{color:#ffffff;}"
         "QTableWidget::item{color:#ffffff;}"

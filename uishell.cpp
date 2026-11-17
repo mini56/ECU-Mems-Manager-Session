@@ -153,7 +153,7 @@ static void applySidebarState(QMainWindow *w)
             b->setText(collapsed?QString():original);
             if(collapsed) {
                 b->setMinimumWidth(38); b->setMaximumWidth(38);
-                ApplicationTheme::setDarkStyle(b, b->styleSheet()+QStringLiteral("QPushButton{text-align:center;padding:3px;}"));
+                ApplicationTheme::appendDarkStyle(b, QStringLiteral("QPushButton{text-align:center;padding:3px;}"));
             } else {
                 b->setMinimumWidth(0); b->setMaximumWidth(QWIDGETSIZE_MAX);
             }

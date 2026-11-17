@@ -122,7 +122,7 @@ static void makeTablesReadable(QMainWindow *w)
         pal.setColor(QPalette::Disabled,QPalette::Base,QColor(ApplicationTheme::isDark() ? "#081016" : "#f1f2f5"));
         t->setPalette(pal);
         if(!t->property("darkReadableStyled").toBool()) {
-            ApplicationTheme::setDarkStyle(t, t->styleSheet()+disabledQss);
+            ApplicationTheme::appendDarkStyle(t, disabledQss);
             t->setProperty("darkReadableStyled",true);
         }
     }
@@ -133,7 +133,7 @@ static void makeTablesReadable(QMainWindow *w)
         pal.setColor(QPalette::Disabled,QPalette::Base,QColor(ApplicationTheme::isDark() ? "#081016" : "#f1f2f5"));
         t->setPalette(pal);
         if(!t->property("darkReadableStyled").toBool()) {
-            ApplicationTheme::setDarkStyle(t, t->styleSheet()+disabledQss);
+            ApplicationTheme::appendDarkStyle(t, disabledQss);
             t->setProperty("darkReadableStyled",true);
         }
     }

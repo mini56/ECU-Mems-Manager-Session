@@ -68,6 +68,13 @@ inline void setDarkStyle(QWidget *widget, const QString &darkStyle)
     widget->setProperty("ecuOwnedDarkStyle", darkStyle);
     widget->setStyleSheet(isDark() ? darkStyle : QString());
 }
+inline void appendDarkStyle(QWidget *widget, const QString &additionalStyle)
+{
+    if (!widget) return;
+    const QVariant previous = widget->property("ecuOwnedDarkStyle");
+    const QString original = previous.isValid() ? previous.toString() : widget->styleSheet();
+    setDarkStyle(widget, original + additionalStyle);
+}
 inline void refreshWidgetStyles(QWidget *root)
 {
     if (!root) return;

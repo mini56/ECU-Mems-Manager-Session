@@ -85,7 +85,7 @@ SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)
         "QTableWidget:disabled{color:#ffffff;}"
         "QTableWidget::item{color:#ffffff;}"
         "QTableWidget::item:disabled{color:#ffffff;}");
-      ApplicationTheme::setDarkStyle(tables[i], tables[i]->styleSheet()+whiteRule);
+      ApplicationTheme::appendDarkStyle(tables[i], whiteRule);
     if (QTableWidgetItem *head=tables[i]->horizontalHeaderItem(2)) {
       QString value=head->text();
       if (!value.contains(QLatin1Char('\n'))) {
