@@ -45,6 +45,7 @@
 #include "applicationvisualstyle.h"
 #include "rawpage.h"
 #include "uishell.h"
+#include "styles.h"
 #include "summarytab.h"
 
 namespace {
@@ -117,7 +118,7 @@ static void styleSidebarButton(QPushButton *b,const QString &kind)
     b->setIconSize(QSize(18,18));
     b->setMinimumHeight(28);
     b->setMaximumHeight(30);
-    b->setStyleSheet(QStringLiteral(
+    ApplicationTheme::setDarkStyle(b, QStringLiteral(
         "QPushButton{background:#111920;color:#e7edf0;border:1px solid #33414b;border-radius:5px;padding:3px 8px;text-align:left;font-weight:700;}"
         "QPushButton:hover{background:#1b252c;border-color:#ff7a00;color:#fff;}"
         "QPushButton:pressed{background:#090f14;}"
@@ -152,7 +153,7 @@ static void applySidebarState(QMainWindow *w)
             b->setText(collapsed?QString():original);
             if(collapsed) {
                 b->setMinimumWidth(38); b->setMaximumWidth(38);
-                b->setStyleSheet(b->styleSheet()+QStringLiteral("QPushButton{text-align:center;padding:3px;}"));
+                ApplicationTheme::setDarkStyle(b, b->styleSheet()+QStringLiteral("QPushButton{text-align:center;padding:3px;}"));
             } else {
                 b->setMinimumWidth(0); b->setMaximumWidth(QWIDGETSIZE_MAX);
             }
@@ -192,7 +193,7 @@ static void applySidebarState(QMainWindow *w)
     nav->setSpacing(0);
     nav->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     nav->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    nav->setStyleSheet(QStringLiteral(
+    ApplicationTheme::setDarkStyle(nav, QStringLiteral(
         "#uiRebuildNav{background:#080e13;color:#cbd4da;border:0;padding:2px 0;}"
         "#uiRebuildNav::item{padding:3px %1px;border-left:3px solid transparent;border-bottom:1px solid #121a20;}"
         "#uiRebuildNav::item:hover{background:#151f26;color:#fff;}"
@@ -215,7 +216,7 @@ static void ensureSidebar(QMainWindow *w)
         sidebar->setObjectName(QStringLiteral("darkSidebar"));
         sidebar->setProperty("collapsed",false);
         sidebar->setAttribute(Qt::WA_StyledBackground,true);
-        sidebar->setStyleSheet(QStringLiteral("#darkSidebar{background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #070c11,stop:1 #0c141a);border:0;border-right:1px solid #2a3540;}"));
+        ApplicationTheme::setDarkStyle(sidebar, QStringLiteral("#darkSidebar{background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #070c11,stop:1 #0c141a);border:0;border-right:1px solid #2a3540;}"));
         sideLayout=new QVBoxLayout(sidebar);
         sideLayout->setContentsMargins(0,4,0,5);
         sideLayout->setSpacing(3);
@@ -223,7 +224,7 @@ static void ensureSidebar(QMainWindow *w)
         QToolButton *toggle=new QToolButton(sidebar);
         toggle->setObjectName(QStringLiteral("darkSidebarToggle"));
         toggle->setAutoRaise(false);
-        toggle->setStyleSheet(QStringLiteral(
+        ApplicationTheme::setDarkStyle(toggle, QStringLiteral(
             "QToolButton{background:#101820;color:#e7edf0;border:0;border-left:3px solid transparent;padding:4px 11px;text-align:left;font-weight:700;}"
             "QToolButton:hover{background:#182229;color:#ffad5c;border-left:3px solid #ff7a00;}"));
         sideLayout->addWidget(toggle);
@@ -235,14 +236,14 @@ static void ensureSidebar(QMainWindow *w)
         QFrame *utils=new QFrame(sidebar);
         utils->setObjectName(QStringLiteral("darkSidebarUtilities"));
         utils->setAttribute(Qt::WA_StyledBackground,true);
-        utils->setStyleSheet(QStringLiteral("#darkSidebarUtilities{background:#0b1217;border-top:1px solid #27333c;}"));
+        ApplicationTheme::setDarkStyle(utils, QStringLiteral("#darkSidebarUtilities{background:#0b1217;border-top:1px solid #27333c;}"));
         QVBoxLayout *uv=new QVBoxLayout(utils);
         uv->setContentsMargins(8,4,8,4);
         uv->setSpacing(4);
         QLabel *ut=new QLabel(I18n::text(7100),utils);
         ut->setObjectName(QStringLiteral("darkUtilitiesTitle"));
         QFont uf=ut->font(); uf.setBold(true); uf.setPointSizeF(qMax<qreal>(7.0,uf.pointSizeF()-1.0)); ut->setFont(uf);
-        ut->setStyleSheet(QStringLiteral("color:#ff9828;background:transparent;border:0;padding:0 2px 1px 2px;"));
+        ApplicationTheme::setDarkStyle(ut, QStringLiteral("color:#ff9828;background:transparent;border:0;padding:0 2px 1px 2px;"));
         uv->addWidget(ut);
         sideLayout->addWidget(utils,0);
 
@@ -274,7 +275,7 @@ static void ensureSidebar(QMainWindow *w)
         file->setParent(utils);
         file->setMinimumHeight(27); file->setMaximumHeight(29);
         file->setMinimumWidth(0); file->setMaximumWidth(QWIDGETSIZE_MAX);
-        file->setStyleSheet(QStringLiteral("QLineEdit{background:#071016;color:#e2e9ed;border:1px solid #34434e;border-radius:5px;padding:3px 7px;}QLineEdit:focus{border-color:#ff7a00;}"));
+        ApplicationTheme::setDarkStyle(file, QStringLiteral("QLineEdit{background:#071016;color:#e2e9ed;border:1px solid #34434e;border-radius:5px;padding:3px 7px;}QLineEdit:focus{border-color:#ff7a00;}"));
         if(uv->indexOf(file)<0) uv->addWidget(file);
     }
     if(start) { start->setParent(utils); styleSidebarButton(start,QStringLiteral("record")); if(uv->indexOf(start)<0) uv->addWidget(start); }
@@ -479,7 +480,7 @@ static void buildDatabasePage(QWidget *database)
     database->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
     database->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     database->setAttribute(Qt::WA_StyledBackground,true);
-    database->setStyleSheet(QStringLiteral("#database_tab{background:#090e13;}"));
+    ApplicationTheme::setDarkStyle(database, QStringLiteral("#database_tab{background:#090e13;}"));
 
     QVBoxLayout *root = qobject_cast<QVBoxLayout*>(database->layout());
     if (!root)
@@ -755,7 +756,7 @@ static QFrame *makeCard(QWidget *parent, const QString &objectName)
     QFrame *card = new QFrame(parent);
     card->setObjectName(objectName);
     card->setAttribute(Qt::WA_StyledBackground, true);
-    card->setStyleSheet(QStringLiteral("#%1{background:%2;border:1px solid %3;border-radius:5px;}")
+    ApplicationTheme::setDarkStyle(card, QStringLiteral("#%1{background:%2;border:1px solid %3;border-radius:5px;}")
                         .arg(objectName, QString::fromLatin1(kPanel), QString::fromLatin1(kBorder)));
     return card;
 }
@@ -768,10 +769,10 @@ static QFrame *makePageHeader(QWidget *parent, const QString &title, int index)
     v->setSpacing(1);
     QLabel *t = new QLabel(title.toUpper(), hero);
     QFont tf=t->font(); tf.setBold(true); tf.setPointSizeF(10.5); t->setFont(tf);
-    t->setStyleSheet(QStringLiteral("color:%1;background:transparent;border:0;").arg(QString::fromLatin1(kOrange2)));
+    ApplicationTheme::setDarkStyle(t, QStringLiteral("color:%1;background:transparent;border:0;").arg(QString::fromLatin1(kOrange2)));
     QLabel *s = new QLabel(subtitleForIndex(index), hero);
     QFont sf=s->font(); sf.setPointSizeF(7.6); sf.setLetterSpacing(QFont::AbsoluteSpacing,.45); s->setFont(sf);
-    s->setStyleSheet(QStringLiteral("color:%1;background:transparent;border:0;").arg(QString::fromLatin1(kMuted)));
+    ApplicationTheme::setDarkStyle(s, QStringLiteral("color:%1;background:transparent;border:0;").arg(QString::fromLatin1(kMuted)));
     v->addWidget(t); v->addWidget(s);
     return hero;
 }
@@ -872,24 +873,24 @@ static QFrame *buildHeader(QMainWindow *window, QWidget *legacy)
     if (!connectButton || !disconnectButton || !ecu || !comm) return nullptr;
     QFrame *header=new QFrame(window->centralWidget());
     header->setObjectName(QStringLiteral("uiRebuildHeader")); header->setAttribute(Qt::WA_StyledBackground,true);
-    header->setStyleSheet(QStringLiteral("#uiRebuildHeader{background:#080d12;border:0;border-bottom:1px solid %1;}#uiRebuildHeader QLabel{background:transparent;border:0;}#m_connectButton{background:%2;color:#11161a;border:1px solid %3;font-weight:800;}#m_disconnectButton{background:#b52323;color:white;border:1px solid #d83a3a;font-weight:800;}#m_connectButton:disabled,#m_disconnectButton:disabled{background:#171e24;color:#5f6972;border-color:#29323a;}").arg(QString::fromLatin1(kBorder),QString::fromLatin1(kOrange),QString::fromLatin1(kOrange2)));
+    ApplicationTheme::setDarkStyle(header, QStringLiteral("#uiRebuildHeader{background:#080d12;border:0;border-bottom:1px solid %1;}#uiRebuildHeader QLabel{background:transparent;border:0;}#m_connectButton{background:%2;color:#11161a;border:1px solid %3;font-weight:800;}#m_disconnectButton{background:#b52323;color:white;border:1px solid #d83a3a;font-weight:800;}#m_connectButton:disabled,#m_disconnectButton:disabled{background:#171e24;color:#5f6972;border-color:#29323a;}").arg(QString::fromLatin1(kBorder),QString::fromLatin1(kOrange),QString::fromLatin1(kOrange2)));
     QHBoxLayout *h=new QHBoxLayout(header); h->setContentsMargins(12,5,10,5); h->setSpacing(8);
     QLabel *logo=new QLabel(header); logo->setObjectName(QStringLiteral("uiRebuildLogo")); QPixmap p(QStringLiteral(":/icons/key.png")); if(!p.isNull())logo->setPixmap(p.scaled(34,34,Qt::KeepAspectRatio,Qt::SmoothTransformation)); logo->setAlignment(Qt::AlignCenter); h->addWidget(logo);
     QVBoxLayout *brandV=new QVBoxLayout; brandV->setContentsMargins(0,0,0,0); brandV->setSpacing(0);
-    QLabel *brand=new QLabel(QStringLiteral("ECU MEMS\nMANAGER SESSION"),header); brand->setObjectName(QStringLiteral("uiRebuildBrand")); QFont bf=brand->font(); bf.setBold(true); bf.setPointSizeF(9.0); brand->setFont(bf); brand->setStyleSheet(QStringLiteral("color:#f5f7f8;letter-spacing:.5px;"));
-    QLabel *ver=new QLabel(QStringLiteral("v%1.%2.%3").arg(VER_MAJOR).arg(VER_MINOR).arg(VER_PATCH),header); ver->setStyleSheet(QStringLiteral("color:%1;font-weight:700;").arg(QString::fromLatin1(kOrange2))); brandV->addWidget(brand); brandV->addWidget(ver); h->addLayout(brandV);
-    QFrame *sep=new QFrame(header); sep->setFrameShape(QFrame::VLine); sep->setStyleSheet(QStringLiteral("background:%1;max-width:1px;").arg(QString::fromLatin1(kBorder))); h->addWidget(sep);
-    ecu->setParent(header); ecu->setStyleSheet(QStringLiteral("color:#dfe4e8;font-weight:700;padding:0 8px;")); h->addWidget(ecu);
+    QLabel *brand=new QLabel(QStringLiteral("ECU MEMS\nMANAGER SESSION"),header); brand->setObjectName(QStringLiteral("uiRebuildBrand")); QFont bf=brand->font(); bf.setBold(true); bf.setPointSizeF(9.0); brand->setFont(bf); ApplicationTheme::setDarkStyle(brand, QStringLiteral("color:#f5f7f8;letter-spacing:.5px;"));
+    QLabel *ver=new QLabel(QStringLiteral("v%1.%2.%3").arg(VER_MAJOR).arg(VER_MINOR).arg(VER_PATCH),header); ApplicationTheme::setDarkStyle(ver, QStringLiteral("color:%1;font-weight:700;").arg(QString::fromLatin1(kOrange2))); brandV->addWidget(brand); brandV->addWidget(ver); h->addLayout(brandV);
+    QFrame *sep=new QFrame(header); sep->setFrameShape(QFrame::VLine); ApplicationTheme::setDarkStyle(sep, QStringLiteral("background:%1;max-width:1px;").arg(QString::fromLatin1(kBorder))); h->addWidget(sep);
+    ecu->setParent(header); ApplicationTheme::setDarkStyle(ecu, QStringLiteral("color:#dfe4e8;font-weight:700;padding:0 8px;")); h->addWidget(ecu);
     h->addStretch(1);
-    QWidget *commBox=new QWidget(header); QHBoxLayout *ch=new QHBoxLayout(commBox); ch->setContentsMargins(0,0,0,0); ch->setSpacing(5); comm->setParent(commBox); comm->setStyleSheet(QStringLiteral("color:#cbd3d9;font-weight:700;")); ch->addWidget(comm); if(good){good->setParent(commBox);ch->addWidget(good);} if(bad){bad->setParent(commBox);ch->addWidget(bad);} h->addWidget(commBox);
+    QWidget *commBox=new QWidget(header); QHBoxLayout *ch=new QHBoxLayout(commBox); ch->setContentsMargins(0,0,0,0); ch->setSpacing(5); comm->setParent(commBox); ApplicationTheme::setDarkStyle(comm, QStringLiteral("color:#cbd3d9;font-weight:700;")); ch->addWidget(comm); if(good){good->setParent(commBox);ch->addWidget(good);} if(bad){bad->setParent(commBox);ch->addWidget(bad);} h->addWidget(commBox);
     // Connection buttons are styled once in their original header construction.
     const QString connectionButtonStyle = QStringLiteral(
         "QPushButton{background:#ff7a00;color:#11161a;border:1px solid #ff9828;border-radius:3px;padding:6px 11px;font-weight:800;}"
         "QPushButton:hover{background:#ff9828;}"
         "QPushButton:pressed{background:#d96500;}"
         "QPushButton:disabled{background:#171e24;color:#5f6972;border-color:#29323a;}");
-    connectButton->setStyleSheet(connectionButtonStyle);
-    disconnectButton->setStyleSheet(connectionButtonStyle);
+    ApplicationTheme::setDarkStyle(connectButton, connectionButtonStyle);
+    ApplicationTheme::setDarkStyle(disconnectButton, connectionButtonStyle);
     connectButton->setParent(header); disconnectButton->setParent(header); h->addWidget(connectButton); h->addWidget(disconnectButton);
     legacy->hide(); legacy->setMaximumSize(0,0); return header;
 }
@@ -899,7 +900,7 @@ static QFrame *buildBottomStatus(QMainWindow *window)
     QFrame *bar=new QFrame(window->centralWidget());
     bar->setObjectName(QStringLiteral("uiRebuildStatus"));
     bar->setAttribute(Qt::WA_StyledBackground,true);
-    bar->setStyleSheet(QStringLiteral("#uiRebuildStatus{background:#080d12;border-top:1px solid %1;}#uiRebuildStatus QLabel{background:transparent;border-right:1px solid %1;color:#c9d1d7;padding:0 10px;}").arg(QString::fromLatin1(kBorder)));
+    ApplicationTheme::setDarkStyle(bar, QStringLiteral("#uiRebuildStatus{background:#080d12;border-top:1px solid %1;}#uiRebuildStatus QLabel{background:transparent;border-right:1px solid %1;color:#c9d1d7;padding:0 10px;}").arg(QString::fromLatin1(kBorder)));
 
     QHBoxLayout *h=new QHBoxLayout(bar);
     h->setContentsMargins(0,0,0,0);
@@ -930,7 +931,7 @@ static QFrame *buildBottomStatus(QMainWindow *window)
         label->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
         label->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
     }
-    mode->setStyleSheet(QStringLiteral("color:#8d99a3;background:transparent;border-right:1px solid %1;padding:0 10px;font-weight:700;").arg(QString::fromLatin1(kBorder)));
+    ApplicationTheme::setDarkStyle(mode, QStringLiteral("color:#8d99a3;background:transparent;border-right:1px solid %1;padding:0 10px;font-weight:700;").arg(QString::fromLatin1(kBorder)));
 
     h->addWidget(file,3);
     h->addWidget(mode,2);
@@ -1034,14 +1035,14 @@ static void applyResponsive(QMainWindow *window)
 
     static void rebuild(QMainWindow *window,QWidget *central,QVBoxLayout *root,QTabWidget *tabs,QWidget *legacy)
     {
-        qApp->setStyleSheet(globalStyle()); central->setAttribute(Qt::WA_StyledBackground,true); central->setStyleSheet(QStringLiteral("background:%1;").arg(QString::fromLatin1(kBg)));
+        qApp->setStyleSheet(ApplicationTheme::isDark() ? globalStyle() : STYLE_LIGHT); central->setAttribute(Qt::WA_StyledBackground,true); ApplicationTheme::setDarkStyle(central, QStringLiteral("background:%1;").arg(QString::fromLatin1(kBg)));
         if(QFrame *header=buildHeader(window,legacy))root->insertWidget(0,header);
         const int oldIndex=root->indexOf(tabs);if(oldIndex>=0)root->removeWidget(tabs);
-        QFrame *workspace=new QFrame(central);workspace->setObjectName(QStringLiteral("uiRebuildWorkspace"));workspace->setAttribute(Qt::WA_StyledBackground,true);workspace->setStyleSheet(QStringLiteral("#uiRebuildWorkspace{background:%1;border:0;}").arg(QString::fromLatin1(kBg)));QHBoxLayout *wh=new QHBoxLayout(workspace);wh->setContentsMargins(0,0,0,0);wh->setSpacing(0);
+        QFrame *workspace=new QFrame(central);workspace->setObjectName(QStringLiteral("uiRebuildWorkspace"));workspace->setAttribute(Qt::WA_StyledBackground,true);ApplicationTheme::setDarkStyle(workspace, QStringLiteral("#uiRebuildWorkspace{background:%1;border:0;}").arg(QString::fromLatin1(kBg)));QHBoxLayout *wh=new QHBoxLayout(workspace);wh->setContentsMargins(0,0,0,0);wh->setSpacing(0);
         QListWidget *nav=new QListWidget(workspace);nav->setObjectName(QStringLiteral("uiRebuildNav"));nav->setFocusPolicy(Qt::NoFocus);nav->setSelectionMode(QAbstractItemView::SingleSelection);nav->setUniformItemSizes(true);nav->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         // The official 14 entries are created once by applyDeterministicNavigation().
         tabs->tabBar()->hide();
-        tabs->setStyleSheet(QStringLiteral("QTabWidget::pane{border:0;background:%1;}").arg(QString::fromLatin1(kBg)));
+        ApplicationTheme::setDarkStyle(tabs, QStringLiteral("QTabWidget::pane{border:0;background:%1;}").arg(QString::fromLatin1(kBg)));
         wh->addWidget(nav);wh->addWidget(tabs,1);root->insertWidget(oldIndex<0?1:oldIndex,workspace,1);
         for(int i=0;i<tabs->count();++i){QWidget *page=realPage(tabs->widget(i));if(!page)continue;if(QScrollArea *scroll=qobject_cast<QScrollArea*>(tabs->widget(i))){scroll->setWidgetResizable(true);scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);page->setMinimumSize(0,0);}const QString title=titleForIndex(tabs,i);if(!usesDedicatedLayout(page,i))composeGenericPage(page,title,i);}
         if(!applyDeterministicNavigation(qobject_cast<MainWindow*>(window)))
@@ -1092,4 +1093,12 @@ void retranslateUiShell(QMainWindow *window)
     if (window && window->property("uiShellReady").toBool() &&
         window->property("deterministicNavigationApplied").toBool())
         applyDeterministicNavigation(qobject_cast<MainWindow*>(window));
+}
+
+void refreshUiShellTheme(QMainWindow *window)
+{
+    if (!window) return;
+    qApp->setStyleSheet(ApplicationTheme::isDark() ? globalStyle() : STYLE_LIGHT);
+    applyApplicationVisualStyle(window);
+    ApplicationTheme::refreshWidgetStyles(window);
 }

@@ -30,15 +30,15 @@ static QFrame *card(QWidget *parent,const QString &name,const QString &title)
     QFrame *c=new QFrame(parent);
     c->setObjectName(name);
     c->setAttribute(Qt::WA_StyledBackground,true);
-    c->setStyleSheet(QStringLiteral("#%1{background:#10161c;border:1px solid #29343e;border-radius:5px;}").arg(name));
+    ApplicationTheme::setDarkStyle(c, QStringLiteral("#%1{background:#10161c;border:1px solid #29343e;border-radius:5px;}").arg(name));
     QVBoxLayout *v=new QVBoxLayout(c);
     v->setContentsMargins(14,12,14,14);
     v->setSpacing(8);
     QLabel *t=new QLabel(title,c);
     QFont f=t->font();f.setBold(true);f.setPointSizeF(9.5);t->setFont(f);
-    t->setStyleSheet(QStringLiteral("color:#ff9828;background:transparent;border:0;"));
+    ApplicationTheme::setDarkStyle(t, QStringLiteral("color:#ff9828;background:transparent;border:0;"));
     v->addWidget(t);
-    QFrame *line=new QFrame(c);line->setFrameShape(QFrame::HLine);line->setStyleSheet(QStringLiteral("background:#29343e;border:0;max-height:1px;"));v->addWidget(line);
+    QFrame *line=new QFrame(c);line->setFrameShape(QFrame::HLine);ApplicationTheme::setDarkStyle(line, QStringLiteral("background:#29343e;border:0;max-height:1px;"));v->addWidget(line);
     return c;
 }
 
@@ -310,7 +310,7 @@ static void rebuildLivePanel(QMainWindow *w,QFrame *bottom)
     QFrame *signalPanel=new QFrame(bottom);
     signalPanel->setObjectName(QStringLiteral("errorsCompactSignals"));
     signalPanel->setAttribute(Qt::WA_StyledBackground,true);
-    signalPanel->setStyleSheet(QStringLiteral("#errorsCompactSignals{background:#0b1116;border:1px solid #27323b;border-radius:4px;}"));
+    ApplicationTheme::setDarkStyle(signalPanel, QStringLiteral("#errorsCompactSignals{background:#0b1116;border:1px solid #27323b;border-radius:4px;}"));
     signalPanel->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     QVBoxLayout *sv=new QVBoxLayout(signalPanel);
     sv->setContentsMargins(10,7,10,8);
@@ -618,7 +618,7 @@ static void composeInteractive(QMainWindow *window)
             label->setText(document.toPlainText().trimmed());
         }
         label->setFont(DataPageTypography::body(label->font()));
-        label->setStyleSheet(QStringLiteral(
+        ApplicationTheme::setDarkStyle(label, QStringLiteral(
             "color:#ffffff;background:transparent;border:0;font-weight:400;"));
         label->setWordWrap(true);
         label->setMinimumSize(0,0);
@@ -631,7 +631,7 @@ static void composeInteractive(QMainWindow *window)
     // Preserve the original text and purpose of the 0x0F field.
     if(QLineEdit *note=page->findChild<QLineEdit*>(QStringLiteral("lineEdit_2"))){
         note->setFont(DataPageTypography::body(note->font()));
-        note->setStyleSheet(QStringLiteral(
+        ApplicationTheme::setDarkStyle(note, QStringLiteral(
             "QLineEdit{font-weight:400;color:#ffffff;background:transparent;"
             "border:0;padding:0 2px;}"));
         note->setMinimumWidth(0);
@@ -653,7 +653,7 @@ static void composeInteractive(QMainWindow *window)
             warning->setText(document.toPlainText().trimmed());
         }
         warning->setFont(DataPageTypography::body(warning->font()));
-        warning->setStyleSheet(QStringLiteral(
+        ApplicationTheme::setDarkStyle(warning, QStringLiteral(
             "color:#ff3535;background:transparent;border:0;font-weight:400;"));
         warning->setWordWrap(true);
         warning->setMinimumSize(0,0);

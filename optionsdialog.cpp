@@ -15,7 +15,7 @@
 
 namespace {
 
-static void applyDarkNativeTitleBar(QWidget *widget)
+static void applyNativeTitleBarForTheme(QWidget *widget, bool darkTheme)
 {
 #ifdef Q_OS_WIN
   if (!widget)
@@ -31,7 +31,7 @@ static void applyDarkNativeTitleBar(QWidget *widget)
       GetProcAddress(dwmApi, "DwmSetWindowAttribute"));
   if (setAttribute)
   {
-    const BOOL dark = TRUE;
+    const BOOL dark = darkTheme ? TRUE : FALSE;
     const DWORD attributes[] = {20, 19};
     for (DWORD attribute : attributes)
     {
@@ -43,6 +43,7 @@ static void applyDarkNativeTitleBar(QWidget *widget)
   FreeLibrary(dwmApi);
 #else
   Q_UNUSED(widget);
+  Q_UNUSED(darkTheme);
 #endif
 }
 
@@ -56,19 +57,42 @@ m_serialDeviceChanged(false),
 m_settingsGroupName("Settings"), m_settingSerialDev("SerialDevice"), m_settingTemperatureUnits("TemperatureUnits"), m_settingLambdaScale("LambdaScale"), m_settingTheme("Theme"), m_settingLanguage("Language"), m_settingDesktopShortcut("DesktopShortcut")
 {
   this->setWindowTitle(title);
-  QPalette dialogPalette = palette();
-  dialogPalette.setColor(QPalette::Window, QColor(QStringLiteral("#090e13")));
-  dialogPalette.setColor(QPalette::WindowText, QColor(QStringLiteral("#e7ecef")));
-  setPalette(dialogPalette);
-  setAutoFillBackground(true);
   readSettings();
   setupWidgets();
-  applyDarkNativeTitleBar(this);
+  applyVisualTheme();
+}
+
+void OptionsDialog::applyVisualTheme()
+{
+  const bool darkTheme = m_theme == QStringLiteral("dark");
+  QPalette dialogPalette = palette();
+  dialogPalette.setColor(QPalette::Window, QColor(darkTheme ? "#090e13" : "#ffffff"));
+  dialogPalette.setColor(QPalette::WindowText, QColor(darkTheme ? "#e7ecef" : "#1f2430"));
+  setPalette(dialogPalette);
+  setAutoFillBackground(true);
+  if (m_desktopShortcutBox)
+    m_desktopShortcutBox->setStyleSheet(darkTheme
+      ? QStringLiteral("QCheckBox{color:#e7ecef;background:transparent;} QCheckBox:disabled{color:#aeb7bf;}")
+      : QStringLiteral("QCheckBox{color:#1f2430;background:transparent;} QCheckBox:disabled{color:#89919a;}"));
+  if (m_taskbarAutoHideBox)
+    m_taskbarAutoHideBox->setStyleSheet(darkTheme
+      ? QStringLiteral("QCheckBox{color:#ecf1f5;background:transparent;font-weight:600;}")
+      : QStringLiteral("QCheckBox{color:#1f2430;background:transparent;font-weight:600;}"));
+  if (m_taskbarExplanation)
+    m_taskbarExplanation->setStyleSheet(darkTheme
+      ? QStringLiteral("QLabel{color:#e9d6ba;background:#27201a;border:1px solid #795028;border-radius:5px;padding:10px;font-size:11px;}")
+      : QStringLiteral("QLabel{color:#473522;background:#fff8ef;border:1px solid #d8ae74;border-radius:5px;padding:10px;font-size:11px;}"));
+  if (QLabel *displayTitle = findChild<QLabel*>(QStringLiteral("taskbarDisplayTitle")))
+    displayTitle->setStyleSheet(darkTheme
+      ? QStringLiteral("color:#ff9828;font-size:12px;font-weight:700;")
+      : QStringLiteral("color:#9d4900;font-size:12px;font-weight:700;"));
+  applyNativeTitleBarForTheme(this, darkTheme);
 }
 
 void OptionsDialog::showEvent(QShowEvent *event)
 {
   QDialog::showEvent(event);
+  applyVisualTheme();
 
   // The ECU worker can spend several seconds in a MEMS 1.9 slow
   // initialisation. Do not allow the shared serial-device name to be changed
@@ -172,7 +196,7 @@ void OptionsDialog::setupWidgets()
 
   m_themeBox->setEditable(false);
   m_themeBox->addItem(I18n::text(6104) /* EN: Light */, "light");
-  m_themeBox->addItem(QStringLiteral("StyleDark"), "dark");
+  m_themeBox->addItem(I18n::text(6105) /* EN: Dark */, "dark");
   m_themeBox->setCurrentIndex(m_theme == "dark" || m_theme == "Sombre" ? 1 : 0);
 
   m_languageLabel = new QLabel(I18n::text(6106) /* EN: Language: */, this);
@@ -191,7 +215,6 @@ void OptionsDialog::setupWidgets()
   m_desktopShortcutBox = new QCheckBox(
       I18n::text(6107) /* EN: Create and maintain a Desktop shortcut */, this);
   m_desktopShortcutBox->setChecked(m_desktopShortcut);
-  m_desktopShortcutBox->setStyleSheet(QStringLiteral("QCheckBox{color:#e7ecef;background:transparent;} QCheckBox:disabled{color:#aeb7bf;}"));
   m_desktopShortcutBox->setToolTip(
       I18n::text(6108) /* EN: The shortcut is created immediately after confirmation. If it is deleted, the software will automatically recreate it at the next startup. */);
   
@@ -220,8 +243,7 @@ void OptionsDialog::setupWidgets()
   QLabel *displayTitle=new QLabel(french
       ?QStringLiteral("AFFICHAGE — BARRE DES TÂCHES WINDOWS")
       :QStringLiteral("DISPLAY — WINDOWS TASKBAR"),this);
-  displayTitle->setStyleSheet(QStringLiteral(
-      "color:#ff9828;font-size:12px;font-weight:700;"));
+  displayTitle->setObjectName(QStringLiteral("taskbarDisplayTitle"));
   m_grid->addWidget(displayTitle,row++,0,1,2);
 
   m_taskbarAutoHideBox=new QCheckBox(french
@@ -229,8 +251,6 @@ void OptionsDialog::setupWidgets()
       :QStringLiteral("Automatically hide the Windows taskbar"),this);
   m_taskbarAutoHideBox->setObjectName(QStringLiteral("taskbarAutoHideCheckbox"));
   m_taskbarAutoHideBox->setChecked(m_taskbarAutoHide);
-  m_taskbarAutoHideBox->setStyleSheet(QStringLiteral(
-      "color:#ecf1f5;background:transparent;font-weight:600;"));
   m_grid->addWidget(m_taskbarAutoHideBox,row++,0,1,2);
 
   m_taskbarExplanation=new QLabel(french
@@ -248,9 +268,6 @@ void OptionsDialog::setupWidgets()
   m_taskbarExplanation->setObjectName(QStringLiteral("taskbarAutoHideExplanation"));
   m_taskbarExplanation->setWordWrap(true);
   m_taskbarExplanation->setMinimumWidth(440);
-  m_taskbarExplanation->setStyleSheet(QStringLiteral(
-      "QLabel{color:#e9d6ba;background:#27201a;border:1px solid #795028;"
-      "border-radius:5px;padding:10px;font-size:11px;}"));
   m_grid->addWidget(m_taskbarExplanation,row++,0,1,2);
   
 /*   m_grid->addWidget(m_lambdaScaleLabel, row, 0);  

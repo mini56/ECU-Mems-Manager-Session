@@ -73,7 +73,7 @@ void fitRawDataPage(QWidget *page)
             label->setMinimumHeight(textHeight+1);
             label->setMaximumHeight(QWIDGETSIZE_MAX);
             label->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Expanding);
-            label->setStyleSheet(header
+            ApplicationTheme::setDarkStyle(label, header
                 ? QStringLiteral("color:#ff9828;background:transparent;border:0;font-weight:700;")
                 : QStringLiteral("color:#ffffff;background:transparent;border:0;font-weight:400;"));
         }

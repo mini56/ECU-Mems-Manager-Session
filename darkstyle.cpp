@@ -100,17 +100,17 @@ static void stylePages(QMainWindow *w)
         for(QFrame *f:page->findChildren<QFrame*>()){
             const QString n=f->objectName();
             if(n.startsWith(QStringLiteral("strictHero_"))||n.startsWith(QStringLiteral("uiRebuildHero_"))||n==QStringLiteral("overviewHeading"))
-                f->setStyleSheet(QStringLiteral("QFrame{background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #19232b,stop:.68 #11191f,stop:1 #0a1116);border:1px solid #303d47;border-left:3px solid #ff7a00;border-radius:7px;}QLabel{background:transparent;border:0;color:#f0f4f6;}"));
+                ApplicationTheme::setDarkStyle(f, QStringLiteral("QFrame{background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #19232b,stop:.68 #11191f,stop:1 #0a1116);border:1px solid #303d47;border-left:3px solid #ff7a00;border-radius:7px;}QLabel{background:transparent;border:0;color:#f0f4f6;}"));
             else if(n==QStringLiteral("settingsMetrics")||n==QStringLiteral("settingsStates")||n==QStringLiteral("settingsAdjust")||n==QStringLiteral("errorsStored")||n==QStringLiteral("errorsLive")||n==QStringLiteral("actuatorListCard")||n==QStringLiteral("actuatorIacCard"))
-                f->setStyleSheet(card);
+                ApplicationTheme::setDarkStyle(f, card);
         }
-        for(QGroupBox *g:page->findChildren<QGroupBox*>()) g->setStyleSheet(QStringLiteral("QGroupBox{background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #141d24,stop:1 #0a1116);color:#e7edf0;border:1px solid #2d3943;border-radius:7px;margin-top:15px;font-weight:700;}QGroupBox::title{subcontrol-origin:margin;left:12px;padding:0 6px;color:#ffa149;}"));
+        for(QGroupBox *g:page->findChildren<QGroupBox*>()) ApplicationTheme::setDarkStyle(g, QStringLiteral("QGroupBox{background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #141d24,stop:1 #0a1116);color:#e7edf0;border:1px solid #2d3943;border-radius:7px;margin-top:15px;font-weight:700;}QGroupBox::title{subcontrol-origin:margin;left:12px;padding:0 6px;color:#ffa149;}"));
     }
 }
 
 static void makeTablesReadable(QMainWindow *w)
 {
-    const QColor disabledText("#91a1ab");
+    const QColor disabledText(ApplicationTheme::isDark() ? "#91a1ab" : "#636c75");
     const QString disabledQss=QStringLiteral(
         "QTableView:disabled,QTableWidget:disabled{color:#91a1ab;background:#081016;}"
         "QTableView::item:disabled,QTableWidget::item:disabled{color:#7f909b;background:#081016;}"
@@ -119,10 +119,10 @@ static void makeTablesReadable(QMainWindow *w)
         QPalette pal=t->palette();
         pal.setColor(QPalette::Disabled,QPalette::Text,disabledText);
         pal.setColor(QPalette::Disabled,QPalette::WindowText,disabledText);
-        pal.setColor(QPalette::Disabled,QPalette::Base,QColor("#081016"));
+        pal.setColor(QPalette::Disabled,QPalette::Base,QColor(ApplicationTheme::isDark() ? "#081016" : "#f1f2f5"));
         t->setPalette(pal);
         if(!t->property("darkReadableStyled").toBool()) {
-            t->setStyleSheet(t->styleSheet()+disabledQss);
+            ApplicationTheme::setDarkStyle(t, t->styleSheet()+disabledQss);
             t->setProperty("darkReadableStyled",true);
         }
     }
@@ -130,10 +130,10 @@ static void makeTablesReadable(QMainWindow *w)
         QPalette pal=t->palette();
         pal.setColor(QPalette::Disabled,QPalette::Text,disabledText);
         pal.setColor(QPalette::Disabled,QPalette::WindowText,disabledText);
-        pal.setColor(QPalette::Disabled,QPalette::Base,QColor("#081016"));
+        pal.setColor(QPalette::Disabled,QPalette::Base,QColor(ApplicationTheme::isDark() ? "#081016" : "#f1f2f5"));
         t->setPalette(pal);
         if(!t->property("darkReadableStyled").toBool()) {
-            t->setStyleSheet(t->styleSheet()+disabledQss);
+            ApplicationTheme::setDarkStyle(t, t->styleSheet()+disabledQss);
             t->setProperty("darkReadableStyled",true);
         }
     }
@@ -153,7 +153,7 @@ static void styleScrollBars(QMainWindow *w)
         "QScrollBar::handle:horizontal:hover{background:#52616b;}"
         "QScrollBar::add-line:horizontal,QScrollBar::sub-line:horizontal{width:0;}"
         "QScrollBar::add-page:horizontal,QScrollBar::sub-page:horizontal{background:transparent;}" );
-    for(QScrollBar *bar:w->findChildren<QScrollBar*>()) bar->setStyleSheet(qss);
+    for(QScrollBar *bar:w->findChildren<QScrollBar*>()) ApplicationTheme::setDarkStyle(bar, qss);
 }
 
 static void styleTables(QMainWindow *w)
@@ -170,7 +170,7 @@ static void styleTables(QMainWindow *w)
         for (QWidget *parent=t->parentWidget(); parent; parent=parent->parentWidget())
           if (parent->inherits("SummaryTab")) { isSummary=true; break; }
         if (isSummary) continue;
-        t->setStyleSheet(qss);t->setAlternatingRowColors(true);t->setShowGrid(false);t->setMinimumSize(0,0);t->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
+        ApplicationTheme::setDarkStyle(t, qss);t->setAlternatingRowColors(true);t->setShowGrid(false);t->setMinimumSize(0,0);t->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
         if(t->verticalHeader()) t->verticalHeader()->setVisible(false);
         if(t->horizontalHeader()){t->horizontalHeader()->setStretchLastSection(true);t->horizontalHeader()->setMinimumHeight(qMax(28,t->fontMetrics().height()+13));}
     }
@@ -186,14 +186,14 @@ static void styleControls(QMainWindow *w)
         // black/orange style, which must not be replaced by global styling.
         if(b->objectName()==QStringLiteral("m_clearFaultsButton") ||
            b->objectName()==QStringLiteral("m_clearRecordedAnomalies")) continue;
-        b->setStyleSheet(button);b->setMinimumHeight(qMax(27,b->fontMetrics().height()+12));
+        ApplicationTheme::setDarkStyle(b, button);b->setMinimumHeight(qMax(27,b->fontMetrics().height()+12));
     }
     const QString edit=QStringLiteral("background:#071016;color:#e2e9ed;border:1px solid #34434e;border-radius:5px;padding:4px 7px;selection-background-color:#754016;");
-    for(QLineEdit *e:w->findChildren<QLineEdit*>()) e->setStyleSheet(edit);
-    for(QComboBox *c:w->findChildren<QComboBox*>()) c->setStyleSheet(QStringLiteral("QComboBox{%1;padding-right:20px;}QComboBox QAbstractItemView{background:#0b1217;color:#e4ebef;border:1px solid #34434e;selection-background-color:#3a2918;}").arg(edit));
-    for(QPlainTextEdit *e:w->findChildren<QPlainTextEdit*>()) e->setStyleSheet(QStringLiteral("background:#071016;color:#dfe7eb;border:1px solid #2d3943;border-radius:6px;padding:7px;selection-background-color:#754016;"));
-    for(QTextEdit *e:w->findChildren<QTextEdit*>()) e->setStyleSheet(QStringLiteral("background:#071016;color:#dfe7eb;border:1px solid #2d3943;border-radius:6px;padding:7px;selection-background-color:#754016;"));
-    for(QCheckBox *c:w->findChildren<QCheckBox*>()) c->setStyleSheet(QStringLiteral("QCheckBox{color:#dce4e8;spacing:6px;background:transparent;}QCheckBox::indicator{width:13px;height:13px;border:1px solid #53616c;background:#081015;}QCheckBox::indicator:checked{background:#ff7a00;border-color:#ff9a32;}"));
+    for(QLineEdit *e:w->findChildren<QLineEdit*>()) ApplicationTheme::setDarkStyle(e, edit);
+    for(QComboBox *c:w->findChildren<QComboBox*>()) ApplicationTheme::setDarkStyle(c, QStringLiteral("QComboBox{%1;padding-right:20px;}QComboBox QAbstractItemView{background:#0b1217;color:#e4ebef;border:1px solid #34434e;selection-background-color:#3a2918;}").arg(edit));
+    for(QPlainTextEdit *e:w->findChildren<QPlainTextEdit*>()) ApplicationTheme::setDarkStyle(e, QStringLiteral("background:#071016;color:#dfe7eb;border:1px solid #2d3943;border-radius:6px;padding:7px;selection-background-color:#754016;"));
+    for(QTextEdit *e:w->findChildren<QTextEdit*>()) ApplicationTheme::setDarkStyle(e, QStringLiteral("background:#071016;color:#dfe7eb;border:1px solid #2d3943;border-radius:6px;padding:7px;selection-background-color:#754016;"));
+    for(QCheckBox *c:w->findChildren<QCheckBox*>()) ApplicationTheme::setDarkStyle(c, QStringLiteral("QCheckBox{color:#dce4e8;spacing:6px;background:transparent;}QCheckBox::indicator{width:13px;height:13px;border:1px solid #53616c;background:#081015;}QCheckBox::indicator:checked{background:#ff7a00;border-color:#ff9a32;}"));
 }
 
 static void styleAnalysis(QMainWindow *w)
@@ -201,33 +201,33 @@ static void styleAnalysis(QMainWindow *w)
     QWidget *analysis=nullptr;
     for(QWidget *x:w->findChildren<QWidget*>()) if(cls(x)==QStringLiteral("AnalysisTab")){analysis=x;break;}
     if(!analysis) return;
-    if(QWidget *top=analysis->findChild<QWidget*>(QStringLiteral("analysisTopBar"))) top->setStyleSheet(QStringLiteral("#analysisTopBar{background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #182129,stop:1 #0c1419);border:1px solid #2d3943;border-left:3px solid #ff7a00;border-radius:7px;}"));
+    if(QWidget *top=analysis->findChild<QWidget*>(QStringLiteral("analysisTopBar"))) ApplicationTheme::setDarkStyle(top, QStringLiteral("#analysisTopBar{background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #182129,stop:1 #0c1419);border:1px solid #2d3943;border-left:3px solid #ff7a00;border-radius:7px;}"));
     if(QWidget *right=analysis->findChild<QWidget*>(QStringLiteral("analysisRightPanel"))){
         const int target=qBound(180,qRound(analysis->width()*0.19),285);
         right->setMinimumWidth(target);right->setMaximumWidth(target);
-        right->setStyleSheet(QStringLiteral("#analysisRightPanel{background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #141d24,stop:1 #091116);border:1px solid #2d3943;border-radius:7px;}"));
+        ApplicationTheme::setDarkStyle(right, QStringLiteral("#analysisRightPanel{background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #141d24,stop:1 #091116);border:1px solid #2d3943;border-radius:7px;}"));
     }
 }
 
 static void styleChrome(QMainWindow *w)
 {
-    if(QMenuBar *bar=w->menuBar()) bar->setStyleSheet(QStringLiteral("QMenuBar{background:#080d12;color:#cfd7dc;border-bottom:1px solid #27323b;padding:2px;}QMenuBar::item{background:transparent;padding:4px 8px;}QMenuBar::item:selected{background:#182129;color:#fff;}"));
-    for(QMenu *m:w->findChildren<QMenu*>()) m->setStyleSheet(QStringLiteral("QMenu{background:#0d141a;color:#dce4e8;border:1px solid #33404a;padding:4px;}QMenu::item{padding:6px 22px 6px 10px;}QMenu::item:selected{background:#302217;color:#ffad5c;}QMenu::separator{height:1px;background:#2b3741;margin:4px 7px;}"));
+    if(QMenuBar *bar=w->menuBar()) ApplicationTheme::setDarkStyle(bar, QStringLiteral("QMenuBar{background:#080d12;color:#cfd7dc;border-bottom:1px solid #27323b;padding:2px;}QMenuBar::item{background:transparent;padding:4px 8px;}QMenuBar::item:selected{background:#182129;color:#fff;}"));
+    for(QMenu *m:w->findChildren<QMenu*>()) ApplicationTheme::setDarkStyle(m, QStringLiteral("QMenu{background:#0d141a;color:#dce4e8;border:1px solid #33404a;padding:4px;}QMenu::item{padding:6px 22px 6px 10px;}QMenu::item:selected{background:#302217;color:#ffad5c;}QMenu::separator{height:1px;background:#2b3741;margin:4px 7px;}"));
 
     QFrame *header=w->findChild<QFrame*>(QStringLiteral("uiRebuildHeader"));
     if(header){
-        header->setStyleSheet(QStringLiteral("#uiRebuildHeader{background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #070c11,stop:.55 #0b1217,stop:1 #11171c);border:0;border-bottom:1px solid #2c3842;}#uiRebuildHeader QLabel{background:transparent;border:0;color:#dbe3e7;}#m_ecuIdLabel{background:#0e171d;border:1px solid #30404b;border-radius:5px;padding:5px 10px;color:#f3f6f7;font-weight:700;}#m_communicationsStatusLabel{color:#dce4e8;font-weight:700;padding:0 5px;}#m_connectButton{background:#ff7a00;color:#101419;border:1px solid #ff9a32;border-radius:5px;padding:6px 14px;font-weight:800;}#m_connectButton:hover{background:#ff8d1f;}#m_disconnectButton{background:#151d23;color:#c7d0d6;border:1px solid #35414b;border-radius:5px;padding:6px 14px;font-weight:800;}#m_disconnectButton:hover{border-color:#c95b4f;color:#fff;}#m_connectButton:disabled,#m_disconnectButton:disabled{background:#151c21;color:#5f6a72;border-color:#263139;}"));
+        ApplicationTheme::setDarkStyle(header, QStringLiteral("#uiRebuildHeader{background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #070c11,stop:.55 #0b1217,stop:1 #11171c);border:0;border-bottom:1px solid #2c3842;}#uiRebuildHeader QLabel{background:transparent;border:0;color:#dbe3e7;}#m_ecuIdLabel{background:#0e171d;border:1px solid #30404b;border-radius:5px;padding:5px 10px;color:#f3f6f7;font-weight:700;}#m_communicationsStatusLabel{color:#dce4e8;font-weight:700;padding:0 5px;}#m_connectButton{background:#ff7a00;color:#101419;border:1px solid #ff9a32;border-radius:5px;padding:6px 14px;font-weight:800;}#m_connectButton:hover{background:#ff8d1f;}#m_disconnectButton{background:#151d23;color:#c7d0d6;border:1px solid #35414b;border-radius:5px;padding:6px 14px;font-weight:800;}#m_disconnectButton:hover{border-color:#c95b4f;color:#fff;}#m_connectButton:disabled,#m_disconnectButton:disabled{background:#151c21;color:#5f6a72;border-color:#263139;}"));
         if(QHBoxLayout *h=qobject_cast<QHBoxLayout*>(header->layout())){h->setContentsMargins(12,6,10,6);h->setSpacing(8);}
     }
 
     QFrame *status=w->findChild<QFrame*>(QStringLiteral("uiRebuildStatus"));
     if(status) {
         status->setMinimumHeight(29); status->setMaximumHeight(34);
-        status->setStyleSheet(QStringLiteral("#uiRebuildStatus{background:#070c11;border-top:1px solid #293640;}#uiRebuildStatus QLabel{background:transparent;color:#cbd4da;border-right:1px solid #25313a;padding:0 9px;}"));
+        ApplicationTheme::setDarkStyle(status, QStringLiteral("#uiRebuildStatus{background:#070c11;border-top:1px solid #293640;}#uiRebuildStatus QLabel{background:transparent;color:#cbd4da;border-right:1px solid #25313a;padding:0 9px;}"));
     }
     if(QStatusBar *native=w?w->statusBar():nullptr) {
         native->setSizeGripEnabled(false);
-        native->setStyleSheet(QStringLiteral("QStatusBar{background:#070c11;color:#cbd4da;border-top:1px solid #293640;padding:1px 6px;}QStatusBar::item{border:0;}"));
+        ApplicationTheme::setDarkStyle(native, QStringLiteral("QStatusBar{background:#070c11;color:#cbd4da;border-top:1px solid #293640;padding:1px 6px;}QStatusBar::item{border:0;}"));
         native->setMaximumHeight(22);
     }
 }

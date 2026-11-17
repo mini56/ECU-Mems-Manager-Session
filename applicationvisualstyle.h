@@ -1,6 +1,9 @@
 #ifndef APPLICATIONVISUALSTYLE_H
 #define APPLICATIONVISUALSTYLE_H
 #include <QFont>
+#include <QApplication>
+#include <QVariant>
+#include <QWidget>
 #include <QFontMetricsF>
 #include <QStringList>
 
@@ -51,6 +54,33 @@ inline QFont header(const QFont &base)
     return font;
 }
 }
+// A widget's owner defines its dark appearance; light mode inherits the
+// application palette instead. The original dark rule is retained for live
+// theme changes, without building a second overlay stylesheet.
+namespace ApplicationTheme {
+inline bool isDark()
+{
+    return qApp && qApp->property("ecuDarkTheme").toBool();
+}
+inline void setDarkStyle(QWidget *widget, const QString &darkStyle)
+{
+    if (!widget) return;
+    widget->setProperty("ecuOwnedDarkStyle", darkStyle);
+    widget->setStyleSheet(isDark() ? darkStyle : QString());
+}
+inline void refreshWidgetStyles(QWidget *root)
+{
+    if (!root) return;
+    const auto refresh = [](QWidget *widget) {
+        const QVariant darkStyle = widget->property("ecuOwnedDarkStyle");
+        if (darkStyle.isValid())
+            widget->setStyleSheet(isDark() ? darkStyle.toString() : QString());
+    };
+    refresh(root);
+    for (QWidget *child : root->findChildren<QWidget*>()) refresh(child);
+}
+}
+
 // Native UI owns visual style application and responsive card arrangement.
 void applyApplicationVisualStyle(QMainWindow *window);
 void resizeApplicationVisualStyle(QMainWindow *window);

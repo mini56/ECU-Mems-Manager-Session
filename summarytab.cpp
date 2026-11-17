@@ -85,7 +85,7 @@ SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)
         "QTableWidget:disabled{color:#ffffff;}"
         "QTableWidget::item{color:#ffffff;}"
         "QTableWidget::item:disabled{color:#ffffff;}");
-      tables[i]->setStyleSheet(tables[i]->styleSheet()+whiteRule);
+      ApplicationTheme::setDarkStyle(tables[i], tables[i]->styleSheet()+whiteRule);
     if (QTableWidgetItem *head=tables[i]->horizontalHeaderItem(2)) {
       QString value=head->text();
       if (!value.contains(QLatin1Char('\n'))) {
@@ -97,7 +97,7 @@ SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)
     }
     if (QTableWidgetItem *head=tables[i]->horizontalHeaderItem(3))
       head->setTextAlignment(Qt::AlignCenter);
-    tables[i]->horizontalHeader()->setStyleSheet(QStringLiteral(
+    ApplicationTheme::setDarkStyle(tables[i]->horizontalHeader(), QStringLiteral(
       "QHeaderView::section{background:#141c23;color:#ff9828;border:0;"
       "border-right:1px solid #29343e;border-bottom:2px solid #ff7a00;"
       "padding:4px 5px;font-weight:700;}"));

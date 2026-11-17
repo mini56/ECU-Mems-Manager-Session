@@ -427,7 +427,7 @@ static void buildOverviewCards(QMainWindow *w,QWidget *overview)
         overview->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
         overview->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
         overview->setAttribute(Qt::WA_StyledBackground,true);
-        overview->setStyleSheet(QStringLiteral("#overview_tab{background:#090e13;}"));
+        ApplicationTheme::setDarkStyle(overview, QStringLiteral("#overview_tab{background:#090e13;}"));
 
         QVBoxLayout *root=new QVBoxLayout(overview);
         root->setContentsMargins(8,6,8,6);
@@ -437,7 +437,7 @@ static void buildOverviewCards(QMainWindow *w,QWidget *overview)
         QFrame *heading=new QFrame(overview);
         heading->setObjectName(QStringLiteral("overviewHeading"));
         heading->setAttribute(Qt::WA_StyledBackground,true);
-        heading->setStyleSheet(QStringLiteral("#overviewHeading{background:#10161c;border:1px solid #29343e;border-radius:4px;}"));
+        ApplicationTheme::setDarkStyle(heading, QStringLiteral("#overviewHeading{background:#10161c;border:1px solid #29343e;border-radius:4px;}"));
         heading->setMinimumHeight(34);
         heading->setMaximumHeight(44);
         heading->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
@@ -451,13 +451,13 @@ static void buildOverviewCards(QMainWindow *w,QWidget *overview)
         tf.setBold(true);
         tf.setPointSizeF(9.5);
         title->setFont(tf);
-        title->setStyleSheet(QStringLiteral("color:#ff9828;background:transparent;"));
+        ApplicationTheme::setDarkStyle(title, QStringLiteral("color:#ff9828;background:transparent;"));
 
         QLabel *sub=new QLabel(I18n::text(7146),heading);
         QFont sf=sub->font();
         sf.setPointSizeF(6.8);
         sub->setFont(sf);
-        sub->setStyleSheet(QStringLiteral("color:#83909a;background:transparent;"));
+        ApplicationTheme::setDarkStyle(sub, QStringLiteral("color:#83909a;background:transparent;"));
 
         hv->addWidget(title);
         hv->addWidget(sub);

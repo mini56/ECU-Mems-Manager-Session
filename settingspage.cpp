@@ -250,7 +250,7 @@ static void styleLcd(QLCDNumber *lcd)
     lcd->setDigitCount(4);
     lcd->setSmallDecimalPoint(true);
     lcd->setFixedSize(86,32);
-    lcd->setStyleSheet(QStringLiteral("QLCDNumber{background:#080e13;color:#ff8a00;border:1px solid #34414b;border-radius:3px;}"));
+    ApplicationTheme::setDarkStyle(lcd, QStringLiteral("QLCDNumber{background:#080e13;color:#ff8a00;border:1px solid #34414b;border-radius:3px;}"));
     lcd->show();
 }
 
@@ -262,14 +262,14 @@ static void installPositiveLcdSign(QLCDNumber *lcd)
     sign->setObjectName(QStringLiteral("ignitionAdjustmentPositiveSign"));
     sign->setAttribute(Qt::WA_TransparentForMouseEvents,true);
     sign->setGeometry(5,1,14,22);
-    sign->setStyleSheet(QStringLiteral("background:transparent;border:0;"));
+    ApplicationTheme::setDarkStyle(sign, QStringLiteral("background:transparent;border:0;"));
 
     QFrame *horizontal=new QFrame(sign);
     horizontal->setGeometry(1,10,12,2);
-    horizontal->setStyleSheet(QStringLiteral("background:#ff8a00;border:0;"));
+    ApplicationTheme::setDarkStyle(horizontal, QStringLiteral("background:#ff8a00;border:0;"));
     QFrame *vertical=new QFrame(sign);
     vertical->setGeometry(6,5,2,12);
-    vertical->setStyleSheet(QStringLiteral("background:#ff8a00;border:0;"));
+    ApplicationTheme::setDarkStyle(vertical, QStringLiteral("background:#ff8a00;border:0;"));
 
     sign->hide();
     QTimer *timer=new QTimer(sign);
@@ -403,7 +403,7 @@ static void rebuildAdjustArea(QWidget *page,QFrame *adjust)
     titleFont.setBold(true);
     titleFont.setPointSizeF(9.0);
     title->setFont(titleFont);
-    title->setStyleSheet(QStringLiteral("color:#ff9828;background:transparent;border:0;"));
+    ApplicationTheme::setDarkStyle(title, QStringLiteral("color:#ff9828;background:transparent;border:0;"));
     header->addWidget(title);
     header->addStretch(1);
     layout->addLayout(header);
@@ -411,7 +411,7 @@ static void rebuildAdjustArea(QWidget *page,QFrame *adjust)
     QFrame *line=new QFrame(adjust);
     line->setFrameShape(QFrame::HLine);
     line->setFixedHeight(1);
-    line->setStyleSheet(QStringLiteral("background:#29343e;border:0;max-height:1px;"));
+    ApplicationTheme::setDarkStyle(line, QStringLiteral("background:#29343e;border:0;max-height:1px;"));
     layout->addWidget(line);
 
     QWidget *form=new QWidget(adjust);
@@ -448,7 +448,7 @@ static void rebuildAdjustArea(QWidget *page,QFrame *adjust)
             rows[row].label->setMinimumWidth(210);
             rows[row].label->setMaximumWidth(240);
             rows[row].label->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
-            rows[row].label->setStyleSheet(QStringLiteral("color:#e6ecef;background:transparent;border:0;"));
+            rows[row].ApplicationTheme::setDarkStyle(label, QStringLiteral("color:#e6ecef;background:transparent;border:0;"));
             rows[row].label->show();
             grid->addWidget(rows[row].label,row,0);
         }
@@ -470,7 +470,7 @@ static void rebuildAdjustArea(QWidget *page,QFrame *adjust)
         unitLabel->setFont(unitFont);
         unitLabel->setFixedWidth(38);
         unitLabel->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
-        unitLabel->setStyleSheet(QStringLiteral("color:#d8dfe3;background:transparent;border:0;"));
+        ApplicationTheme::setDarkStyle(unitLabel, QStringLiteral("color:#d8dfe3;background:transparent;border:0;"));
         grid->addWidget(unitLabel,row,3);
         if(rows[row].plus) {
             rows[row].plus->setParent(form);
@@ -544,7 +544,7 @@ static void prepareSettingsGauge(QWidget *gauge,bool precision)
     gauge->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
     gauge->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     gauge->setAttribute(Qt::WA_StyledBackground,true);
-    gauge->setStyleSheet(QStringLiteral(
+    ApplicationTheme::setDarkStyle(gauge, QStringLiteral(
         "background:#080d11;border:1px solid #34414a;border-radius:5px;"));
     gauge->show();
 }
@@ -591,7 +591,7 @@ static void compactAdjustForm(QWidget *page,QFrame *adjust)
     if(form) {
         form->setMaximumWidth(760);
         form->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
-        form->setStyleSheet(QStringLiteral("background:transparent;border:0;"));
+        ApplicationTheme::setDarkStyle(form, QStringLiteral("background:transparent;border:0;"));
 
         if(QGridLayout *grid=qobject_cast<QGridLayout*>(form->layout())) {
             grid->setContentsMargins(0,0,0,0);
@@ -639,7 +639,7 @@ static void compactAdjustForm(QWidget *page,QFrame *adjust)
         QFont font=note->font();
         font.setPointSizeF(8.0);
         note->setFont(font);
-        note->setStyleSheet(QStringLiteral(
+        ApplicationTheme::setDarkStyle(note, QStringLiteral(
             "QLineEdit{background:transparent;color:#b8c1c7;"
             "border:0;padding:0 2px;}"));
     }
@@ -736,16 +736,16 @@ static QFrame *settingsScaffoldCard(QWidget *parent,const QString &name,const QS
     QFrame *c=new QFrame(parent);
     c->setObjectName(name);
     c->setAttribute(Qt::WA_StyledBackground,true);
-    c->setStyleSheet(QStringLiteral("#%1{background:#10161c;border:1px solid #29343e;border-radius:5px;}").arg(name));
+    ApplicationTheme::setDarkStyle(c, QStringLiteral("#%1{background:#10161c;border:1px solid #29343e;border-radius:5px;}").arg(name));
     QVBoxLayout *v=new QVBoxLayout(c);
     v->setContentsMargins(14,12,14,14);
     v->setSpacing(8);
     QLabel *t=new QLabel(title,c);
     QFont font=t->font();font.setBold(true);font.setPointSizeF(9.5);t->setFont(font);
-    t->setStyleSheet(QStringLiteral("color:#ff9828;background:transparent;border:0;"));
+    ApplicationTheme::setDarkStyle(t, QStringLiteral("color:#ff9828;background:transparent;border:0;"));
     v->addWidget(t);
     QFrame *line=new QFrame(c);line->setFrameShape(QFrame::HLine);
-    line->setStyleSheet(QStringLiteral("background:#29343e;border:0;max-height:1px;"));
+    ApplicationTheme::setDarkStyle(line, QStringLiteral("background:#29343e;border:0;max-height:1px;"));
     v->addWidget(line);
     return c;
 }
@@ -807,9 +807,9 @@ static void buildSettingsScaffold(QMainWindow *window)
     QWidget *gauges[]={idleErr,rpm,trim,advance,lambda};
     const int titleKeys[]={7139,1011,7140,7141,7142};
     for(int i=0;i<5;i++){
-        QFrame *box=new QFrame(metrics);box->setStyleSheet(QStringLiteral("background:#0b1116;border:1px solid #27323b;border-radius:4px;"));
+        QFrame *box=new QFrame(metrics);ApplicationTheme::setDarkStyle(box, QStringLiteral("background:#0b1116;border:1px solid #27323b;border-radius:4px;"));
         QVBoxLayout *bv=new QVBoxLayout(box);bv->setContentsMargins(6,6,6,6);bv->setSpacing(3);
-        QLabel *tl=new QLabel(I18n::text(titleKeys[i]),box);QFont tf=tl->font();tf.setBold(true);tf.setPointSizeF(7.2);tl->setFont(tf);tl->setAlignment(Qt::AlignCenter);tl->setStyleSheet(QStringLiteral("color:#cfd6dc;background:transparent;border:0;"));bv->addWidget(tl);
+        QLabel *tl=new QLabel(I18n::text(titleKeys[i]),box);QFont tf=tl->font();tf.setBold(true);tf.setPointSizeF(7.2);tl->setFont(tf);tl->setAlignment(Qt::AlignCenter);ApplicationTheme::setDarkStyle(tl, QStringLiteral("color:#cfd6dc;background:transparent;border:0;"));bv->addWidget(tl);
         if(gauges[i]){gauges[i]->setParent(box);gauges[i]->setMinimumHeight(80);gauges[i]->setMaximumHeight(130);gauges[i]->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);gauges[i]->show();bv->addWidget(gauges[i],1);}
         mg->addWidget(box,i<3?0:1,i<3?i:i-3);
     }
@@ -831,7 +831,7 @@ static void buildSettingsScaffold(QMainWindow *window)
     for(int r=0;r<4;r++){
         if(rows[r].l){rows[r].l->setParent(adjust);rows[r].l->show();ag->addWidget(rows[r].l,r,0);}
         if(rows[r].minus){rows[r].minus->setParent(adjust);rows[r].minus->show();ag->addWidget(rows[r].minus,r,1);}
-        if(rows[r].lcd){rows[r].lcd->setParent(adjust);rows[r].lcd->setSegmentStyle(QLCDNumber::Flat);rows[r].lcd->setStyleSheet(QStringLiteral("background:#0a1117;color:#ff9828;border:1px solid #303c46;"));rows[r].lcd->setMinimumWidth(64);rows[r].lcd->show();ag->addWidget(rows[r].lcd,r,2);}
+        if(rows[r].lcd){rows[r].lcd->setParent(adjust);rows[r].lcd->setSegmentStyle(QLCDNumber::Flat);rows[r].ApplicationTheme::setDarkStyle(lcd, QStringLiteral("background:#0a1117;color:#ff9828;border:1px solid #303c46;"));rows[r].lcd->setMinimumWidth(64);rows[r].lcd->show();ag->addWidget(rows[r].lcd,r,2);}
         if(rows[r].plus){rows[r].plus->setParent(adjust);rows[r].plus->show();ag->addWidget(rows[r].plus,r,3);}
     }
     if(note){note->setParent(adjust);note->setReadOnly(true);note->show();ag->addWidget(note,4,0,1,4);}

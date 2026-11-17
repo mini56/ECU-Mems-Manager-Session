@@ -1388,9 +1388,8 @@ void MainWindow::onEditOptionsClicked()
     if (m_options->getThemeChanged())
     {
       qApp->setProperty("ecuDarkTheme", m_options->getTheme() == "dark");
-      qApp->setStyleSheet(m_options->getTheme() == "dark" ? STYLE_DARK : STYLE_LIGHT);
+      refreshUiShellTheme(this);
       applyNativeTitleBar(this, m_options->getTheme() == "dark");
-      applyApplicationVisualStyle(this);
       const QList<WidgetWithBackground*> meters = findChildren<WidgetWithBackground*>();
       for (WidgetWithBackground *meter : meters)
         meter->updateWithBackground();
