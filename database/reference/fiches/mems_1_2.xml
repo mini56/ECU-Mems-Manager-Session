@@ -1,0 +1,814 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fiche>
+  
+
+  <titre>MEMS 1.2</titre>
+  
+
+  <sous-titre>Modular Engine Management System 1.2 — première version de production, principalement SPi non catalysée</sous-titre>
+  
+
+  <section titre="IDENTIFICATION &amp; DESCRIPTION">
+    
+
+    <p>MEMS 1.2 est la première version de production de Rover MEMS. La documentation Rover indique qu’elle a été conçue pour les moteurs non catalysés. RoverMEMS et Andrew Revill la situent principalement sur les toutes premières applications SPi autour de 1991.</p>
+    
+
+    <p>CONNECTEUR ECU : un seul connecteur 36 voies — CONFIRMÉ.</p>
+    
+
+    <p>IDENTIFICATION PHYSIQUE : boîtier à couvercle lisse, X sur le dessous et raccord de dépression dans un angle — description RoverMEMS.</p>
+    
+
+    <note>Une donnée n’est marquée « Confirmée » que lorsqu’une source spécifique à la famille MEMS 1.2 ou à son interface l’établit. Les affectations ou couleurs provenant de tableaux MEMS génériques, de MEMS 1.6/1.9 ou de faisceaux Mini SPi plus tardifs sont conservées mais portent « À vérifier suivant modèle du véhicule ».</note>
+    
+
+  </section>
+  
+
+  <section titre="APPLICATIONS VÉHICULES">
+    
+
+    <p>Applications principales documentées : très premières Rover/Mini/Rover SPi sans catalyseur, autour de 1991.</p>
+    
+
+    <note>Les références ECU exactes et l’affectation par modèle/marché doivent être recoupées avec le numéro de calculateur et le faisceau du véhicule : À vérifier suivant modèle du véhicule.</note>
+    
+
+  </section>
+  
+
+  <section titre="PRISE DIAGNOSTIC ROSCO — 3 BROCHES">
+    
+
+    <p>MEMS 1.2 utilise normalement une prise de diagnostic Rover / ROSCO 3 broches. Côté câble, Colin Bourassa documente un boîtier TE Connectivity / AMP 172201 ; le plan constructeur AMP fourni indique comme contrepartie 172202.</p>
+    
+
+    <p>PROTOCOLE : ROSCO — liaison série TTL — 9600 bauds — 8 bits — aucune parité — 1 bit d’arrêt.</p>
+    
+
+    <table>
+      
+
+      <ligne>
+        <cellule>BROCHE PRISE</cellule>
+        <cellule>FONCTION</cellule>
+        <cellule>ECU</cellule>
+        <cellule>COULEUR TROUVÉE</cellule>
+        <cellule>STATUT</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>1</cellule>
+        <cellule>Masse signal</cellule>
+        <cellule>Andrew Revill : ECU pin 14 ; certains faisceaux Mini SPi documentés ramènent la masse diagnostic par le retour capteurs pin 30</cellule>
+        <cellule>
+          <rect fill="#df6fa7"/>
+          <rect fill="#111111"/>
+          Rose / Noir sur Mini SPi documentée
+        </cellule>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>2</cellule>
+        <cellule>ECU Data Out → PC Data In (Rx PC)</cellule>
+        <cellule>ECU pin 10</cellule>
+        <cellule>
+          <rect fill="#eeeeee"/>
+          <rect fill="#ffd23f"/>
+          Blanc / Jaune
+        </cellule>
+        <cellule>Confirmée (fonction) — À vérifier suivant modèle du véhicule (couleur)</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>3</cellule>
+        <cellule>PC Data Out → ECU Data In (Tx PC)</cellule>
+        <cellule>ECU pin 15</cellule>
+        <cellule>
+          <rect fill="#111111"/>
+          <rect fill="#4caf63"/>
+          Noir / Vert
+        </cellule>
+        <cellule>Confirmée (fonction) — À vérifier suivant modèle du véhicule (couleur)</cellule>
+      </ligne>
+      
+
+    </table>
+    
+
+    <note>Sur les véhicules possédant un module de sécurité/immobilisation, une seconde prise de même famille peut être présente. Colin Bourassa indique que sur Mini SPi la prise moteur est beige/crème et la prise sécurité est verte. Ne pas confondre les deux.</note>
+    
+
+  </section>
+  
+
+  <section titre="PROTOCOLE &amp; CAPACITÉS DIAGNOSTIC">
+    
+
+    <p>RoverMEMS confirme pour MEMS 1.2 : 9600 bauds, 8N1, Tx et Rx séparés plus masse signal.</p>
+    
+
+    <p>La trame de données 0x80 est partagée entre MEMS 1.2 / 1.3 / 1.6 / 1.9 ; sa première donnée indique la longueur réelle de la trame.</p>
+    
+
+    <p>RoverMEMS indique que les MEMS 1.2 à connecteur unique ne répondent pas à la trame 0x7D. Cette particularité doit être respectée : l’absence de 0x7D ne doit pas être traitée comme une perte de communication.</p>
+    
+
+    <p>Andrew Revill documente pour la famille MEMS 1.2 : lecture/sauvegarde ROM complète, données en direct, défauts en direct, tableau de bord, statut/appairage immobilisateur, effacement adaptations et réglages de service.</p>
+    
+
+    <note>La présence physique d’un immobilisateur sur un véhicule MEMS 1.2 ancien dépend du véhicule et du marché : À vérifier suivant modèle du véhicule.</note>
+    
+
+  </section>
+  
+
+  <section titre="TRAME DE DONNÉES 0x80 — CHAMPS DOCUMENTÉS">
+    
+
+    <table>
+      
+
+      <ligne>
+        <cellule>OFFSET</cellule>
+        <cellule>DONNÉE</cellule>
+        <cellule>DÉCODAGE / NOTE</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>0x00</cellule>
+        <cellule>Longueur de trame</cellule>
+        <cellule>Longueur réelle incluant cet octet</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>0x01-0x02</cellule>
+        <cellule>Régime moteur</cellule>
+        <cellule>RPM 16 bits</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>0x03</cellule>
+        <cellule>Température liquide</cellule>
+        <cellule>°C avec offset +55 et bouclage 8 bits</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>0x04</cellule>
+        <cellule>Température ambiante calculée</cellule>
+        <cellule>°C avec offset +55</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>0x05</cellule>
+        <cellule>Température air admission</cellule>
+        <cellule>°C avec offset +55</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>0x06</cellule>
+        <cellule>Température carburant</cellule>
+        <cellule>Non supportée sur Mini SPi ; souvent 0xFF</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>0x07</cellule>
+        <cellule>MAP</cellule>
+        <cellule>kPa</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>0x08</cellule>
+        <cellule>Tension batterie</cellule>
+        <cellule>0,1 V / LSB</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>0x09</cellule>
+        <cellule>Tension TPS</cellule>
+        <cellule>0,02 V / LSB</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>0x0A</cellule>
+        <cellule>Contact ralenti</cellule>
+        <cellule>bit 4 = papillon fermé</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>0x0B</cellule>
+        <cellule>Champ bits</cellule>
+        <cellule>Fonction incomplètement documentée</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>0x0C</cellule>
+        <cellule>Park/Neutral / entrée équipement</cellule>
+        <cellule>0 = fermé ; fonction suivant application</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>0x0D</cellule>
+        <cellule>Défauts</cellule>
+        <cellule>bit0 CTS, bit1 IAT ; autres bits suivant application</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>0x0E</cellule>
+        <cellule>Défauts</cellule>
+        <cellule>bit1 pompe carburant, bit7 TPS ; autres bits suivant application</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>0x0F</cellule>
+        <cellule>Consigne ralenti</cellule>
+        <cellule>environ 6,1 × valeur selon documentation actuelle</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>0x10</cellule>
+        <cellule>Position ralenti à chaud</cellule>
+        <cellule>pas / fonction en cours de recoupement</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>0x11</cellule>
+        <cellule>Inconnu</cellule>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>0x12</cellule>
+        <cellule>Position moteur de ralenti</cellule>
+        <cellule>sur Mini SPi : 0 fermé, ~180 ouvert</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>0x13-0x14</cellule>
+        <cellule>Écart régime ralenti</cellule>
+        <cellule>16 bits</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>0x15</cellule>
+        <cellule>Offset avance allumage</cellule>
+        <cellule>champ documenté, interprétation à recouper</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>0x16</cellule>
+        <cellule>Avance allumage</cellule>
+        <cellule>0,5° / LSB avec offset documenté</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>0x17-0x18</cellule>
+        <cellule>Temps de charge bobine</cellule>
+        <cellule>champ 16 bits, 0,002 ms / LSB selon documentation Colin/RoverMEMS</cellule>
+      </ligne>
+      
+
+    </table>
+    
+
+  </section>
+  
+
+  <section titre="BROCHAGE ECU — CONNECTEUR UNIQUE 36 VOIES">
+    
+
+    <note>IMPORTANT : le connecteur 36 voies est confirmé pour MEMS 1.2. En revanche, aucune source publique trouvée ne fournit à ce stade un tableau 36 voies complet, spécifiquement MEMS 1.2, avec toutes les couleurs. Le tableau ci-dessous conserve les fonctions MEMS publiées et toutes les couleurs réellement retrouvées dans des faisceaux MEMS/Mini SPi ; toute ligne non spécifique à 1.2 est explicitement marquée « À vérifier suivant modèle du véhicule ».</note>
+    
+
+    <table>
+      
+
+      <ligne>
+        <broche>BROCHE</broche>
+        <fonction>FONCTION</fonction>
+        <couleur>COULEUR DU FIL TROUVÉE</couleur>
+        <cellule>STATUT</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>1</broche>
+        <fonction>Commande injecteur / ligne injecteur SPi (pin 1 utilisé avec pin 24 sur Mini SPi plus tardive)</fonction>
+        <couleur>
+          <rect fill="#ffd23f"/>
+          <rect fill="#111111"/>
+          Jaune / Noir
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>2</broche>
+        <fonction>Moteur pas à pas — phase 2 / phase B selon application</fonction>
+        <couleur>
+          <rect fill="#df6fa7"/>
+          <rect fill="#4d86d9"/>
+          Rose / Bleu (couleur relevée sur MEMS 1.9 ; à recouper pour 1.2)
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>3</broche>
+        <fonction>Moteur pas à pas — phase 1 / phase A selon application</fonction>
+        <couleur>
+          <rect fill="#ff8a22"/>
+          <rect fill="#7f8790"/>
+          Orange / Gris (couleur relevée sur MEMS 1.9 ; à recouper pour 1.2)
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>4</broche>
+        <fonction>Commande masse du relais principal</fonction>
+        <couleur>
+          <rect fill="#eeeeee"/>
+          <rect fill="#df6fa7"/>
+          Blanc / Rose
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>5</broche>
+        <fonction>Non utilisé dans le tableau MEMS générique ; affectation éventuelle suivant véhicule</fonction>
+        <couleur>—</couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>6</broche>
+        <fonction>Non utilisé sur le tableau MEMS générique ancien ; certaines générations l’emploient pour commande ventilateur</fonction>
+        <couleur>
+          <rect fill="#4d86d9"/>
+          <rect fill="#7f8790"/>
+          Bleu / Gris sur certaines MEMS ultérieures
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>7</broche>
+        <fonction>Fonction générique : signal sonde lambda ; MEMS 1.2 standard est non-catalysé</fonction>
+        <couleur>
+          <rect fill="#7f8790"/>
+          Gris sur MEMS ultérieures
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>8</broche>
+        <fonction>Signal potentiomètre papillon (TPS)</fonction>
+        <couleur>
+          <rect fill="#ffd23f"/>
+          <rect fill="#4caf63"/>
+          Jaune / Vert
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>9</broche>
+        <fonction>Alimentation / référence TPS +5 V</fonction>
+        <couleur>
+          <rect fill="#ffd23f"/>
+          <rect fill="#8b5cc7"/>
+          Jaune / Violet
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>10</broche>
+        <fonction>Sortie diagnostic ECU vers outil (ROSCO)</fonction>
+        <couleur>
+          <rect fill="#eeeeee"/>
+          <rect fill="#ffd23f"/>
+          Blanc / Jaune sur Mini SPi documentée
+        </couleur>
+        <cellule>Confirmée (fonction) — À vérifier suivant modèle du véhicule (couleur)</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>11</broche>
+        <fonction>Alimentation / détection après contact</fonction>
+        <couleur>
+          <rect fill="#eeeeee"/>
+          Blanc
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>12</broche>
+        <fonction>Non utilisé dans le tableau MEMS générique</fonction>
+        <couleur>—</couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>13</broche>
+        <fonction>Non utilisé dans le tableau MEMS générique ; peut varier avec sécurité/équipement</fonction>
+        <couleur>—</couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>14</broche>
+        <fonction>Masse ECU ; Andrew Revill l’indique aussi comme masse du câble ROSCO en raccordement direct</fonction>
+        <couleur>
+          <rect fill="#111111"/>
+          Noir / masse — couleur exacte 1.2 à recouper
+        </couleur>
+        <cellule>Confirmée (fonction masse) — À vérifier suivant modèle du véhicule (faisceau)</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>15</broche>
+        <fonction>Entrée diagnostic outil vers ECU (ROSCO)</fonction>
+        <couleur>
+          <rect fill="#111111"/>
+          <rect fill="#4caf63"/>
+          Noir / Vert sur Mini SPi documentée
+        </couleur>
+        <cellule>Confirmée (fonction) — À vérifier suivant modèle du véhicule (couleur)</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>16</broche>
+        <fonction>Sonde température air d’admission (IAT / ATS)</fonction>
+        <couleur>
+          <rect fill="#4caf63"/>
+          <rect fill="#111111"/>
+          Vert / Noir
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>17</broche>
+        <fonction>Entrée capteur de cliquetis (KS) sur applications qui en sont équipées</fonction>
+        <couleur>
+          <rect fill="#4caf63"/>
+          <rect fill="#d94b4b"/>
+          Vert / Rouge sur certaines MEMS ultérieures
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>18</broche>
+        <fonction>Retour sonde lambda sur applications catalysées ; normalement absent du MEMS 1.2 non-catalysé</fonction>
+        <couleur>
+          <rect fill="#8bcf7c"/>
+          <rect fill="#7f8790"/>
+          Vert clair / Gris sur MEMS ultérieures
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>19</broche>
+        <fonction>Commande relais embrayage compresseur A/C si équipé</fonction>
+        <couleur>
+          <rect fill="#4d86d9"/>
+          <rect fill="#111111"/>
+          Bleu / Noir sur certaines MEMS ultérieures
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>20</broche>
+        <fonction>Commande masse relais pompe à carburant</fonction>
+        <couleur>
+          <rect fill="#111111"/>
+          <rect fill="#8b5cc7"/>
+          Noir / Violet
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>21</broche>
+        <fonction>Commande électrovanne purge canister (CFSV / EVAP) si équipée</fonction>
+        <couleur>
+          <rect fill="#ffd23f"/>
+          <rect fill="#ff8a22"/>
+          Jaune / Orange sur MEMS ultérieures
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>22</broche>
+        <fonction>Moteur pas à pas — phase 3 / phase C</fonction>
+        <couleur>
+          <rect fill="#ff8a22"/>
+          <rect fill="#4caf63"/>
+          Orange / Vert sur MEMS ultérieures
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>23</broche>
+        <fonction>Fonction générique MEMS : commande injecteur cylindre 2 ; normalement non utilisée comme telle sur SPi</fonction>
+        <couleur>
+          <rect fill="#ffd23f"/>
+          <rect fill="#d94b4b"/>
+          Jaune / Rouge sur MEMS MPI ultérieures
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>24</broche>
+        <fonction>Commande injecteur / seconde ligne du seul injecteur SPi sur Mini SPi documentée</fonction>
+        <couleur>
+          <rect fill="#ffd23f"/>
+          <rect fill="#4caf63"/>
+          Jaune / Vert ou Jaune / Marron suivant faisceau rapporté
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>25</broche>
+        <fonction>Commande bobine d’allumage</fonction>
+        <couleur>
+          <rect fill="#eeeeee"/>
+          <rect fill="#111111"/>
+          Blanc / Noir
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>26</broche>
+        <fonction>Fonction générique MEMS : commande injecteur cylindre 3 ; normalement non utilisée comme telle sur SPi</fonction>
+        <couleur>
+          <rect fill="#ffd23f"/>
+          <rect fill="#eeeeee"/>
+          Jaune / Blanc sur faisceaux MEMS génériques
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>27</broche>
+        <fonction>Moteur pas à pas — phase 4 / phase D</fonction>
+        <couleur>
+          <rect fill="#ff8a22"/>
+          <rect fill="#4d86d9"/>
+          Orange / Bleu sur MEMS ultérieures
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>28</broche>
+        <fonction>Alimentation ECU depuis relais principal</fonction>
+        <couleur>
+          <rect fill="#8b5a32"/>
+          <rect fill="#df6fa7"/>
+          Marron / Rose
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>29</broche>
+        <fonction>Masse ECU / blindage selon application</fonction>
+        <couleur>
+          <rect fill="#111111"/>
+          Noir
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>30</broche>
+        <fonction>Retour masse capteurs ; sur Mini SPi documentée : commun CTS/IAT/TPS et diagnostic</fonction>
+        <couleur>
+          <rect fill="#df6fa7"/>
+          <rect fill="#111111"/>
+          Rose / Noir
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>31</broche>
+        <fonction>Capteur vilebrequin (CKP/CAS) — voie 1</fonction>
+        <couleur>
+          <rect fill="#4d86d9"/>
+          <rect fill="#8b5cc7"/>
+          Bleu / Violet
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>32</broche>
+        <fonction>Capteur vilebrequin (CKP/CAS) — voie 2</fonction>
+        <couleur>
+          <rect fill="#eeeeee"/>
+          <rect fill="#4d86d9"/>
+          Blanc / Bleu
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>33</broche>
+        <fonction>Sonde température liquide de refroidissement (CTS/ECT)</fonction>
+        <couleur>
+          <rect fill="#df6fa7"/>
+          <rect fill="#4caf63"/>
+          Rose / Vert
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>34</broche>
+        <fonction>Fonction générique : température carburant / température compartiment selon application ; non supportée sur Mini SPi dans la trame 0x80</fonction>
+        <couleur>
+          <rect fill="#7f8790"/>
+          <rect fill="#eeeeee"/>
+          Gris / Blanc sur certaines MEMS ultérieures
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>35</broche>
+        <fonction>Entrée pression / demande climatisation si équipée</fonction>
+        <couleur>
+          <rect fill="#4d86d9"/>
+          <rect fill="#d94b4b"/>
+          Bleu / Rouge sur certaines MEMS ultérieures
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <broche>36</broche>
+        <fonction>Commande relais chauffage sonde lambda sur applications catalysées ; MEMS 1.2 standard non-catalysé</fonction>
+        <couleur>
+          <rect fill="#111111"/>
+          <rect fill="#4caf63"/>
+          Noir / Vert sur MEMS ultérieures
+        </couleur>
+        <cellule>À vérifier suivant modèle du véhicule</cellule>
+      </ligne>
+      
+
+    </table>
+    
+
+  </section>
+  
+
+  <section titre="DÉFAUTS / DTC DOCUMENTÉS DANS LA TRAME 0x80">
+    
+
+    <table>
+      
+
+      <ligne>
+        <cellule>CODE</cellule>
+        <cellule>DESCRIPTION</cellule>
+        <cellule>STATUT</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>1</cellule>
+        <cellule>Circuit sonde température liquide (CTS/ECT)</cellule>
+        <cellule>Confirmée pour Mini SPi dans la documentation protocole ; à recouper pour chaque calculateur MEMS 1.2</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>2</cellule>
+        <cellule>Circuit sonde température air admission (ATS/IAT)</cellule>
+        <cellule>Confirmée pour Mini SPi dans la documentation protocole ; à recouper pour chaque calculateur MEMS 1.2</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>10</cellule>
+        <cellule>Circuit pompe à carburant</cellule>
+        <cellule>Confirmée pour Mini SPi dans la documentation protocole ; à recouper pour chaque calculateur MEMS 1.2</cellule>
+      </ligne>
+      
+
+      <ligne>
+        <cellule>16</cellule>
+        <cellule>Circuit potentiomètre papillon (TPS)</cellule>
+        <cellule>Confirmée pour Mini SPi dans la documentation protocole ; à recouper pour chaque calculateur MEMS 1.2</cellule>
+      </ligne>
+      
+
+    </table>
+    
+
+  </section>
+  
+
+  <section titre="SOURCES DE RÉFÉRENCE UTILISÉES">
+    
+
+    <p>Rover Mini Specifications / chapitre Rover MEMS : identification MEMS 1.2, connecteur unique 36 voies, tableau MEMS 36/18 voies générique.</p>
+    
+
+    <p>RoverMEMS (James Portman) : identification MEMS 1.2, 9600 8N1, trame 0x80, absence 0x7D sur 1.2 single-plug, capacités diagnostic.</p>
+    
+
+    <p>Andrew Revill / MEMS Mapper : ROSCO, câble 3 broches, correspondance prise → ECU pins 14 / 10 / 15, capacités de la famille 1.2.</p>
+    
+
+    <p>Colin Bourassa : TE Connectivity 172201, numérotation de la prise et couleurs observées de la prise diagnostic Mini SPi.</p>
+    
+
+    <p>Plan constructeur AMP 172201 fourni par l’utilisateur : géométrie mécanique et contrepartie 172202.</p>
+    
+
+    <p>Sources MEMS/Mini SPi complémentaires : couleurs de fils et variantes conservées uniquement avec le statut « À vérifier suivant modèle du véhicule ».</p>
+    
+
+  </section>
+  
+
+</fiche>
