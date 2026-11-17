@@ -7,7 +7,7 @@ on:
   push:
     branches: [fix-real-light-theme-session-159-20261117]
     paths:
-      - '.github/CI_SETUP_RUN_REQUEST.txt'
+      - '.github/CI_SESSION_159_XML_RUN_REQUEST.txt'
 permissions:
   contents: read
 concurrency:
