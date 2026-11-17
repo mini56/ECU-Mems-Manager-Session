@@ -9,7 +9,7 @@ QWidget {
     background-color: #ffffff;
     color: #1f2430;
     font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-    font-size: 9pt;
+    /* Widget-level approved font sizes remain authoritative. */
 }
 QMainWindow, QDialog {
     background-color: #ffffff;
