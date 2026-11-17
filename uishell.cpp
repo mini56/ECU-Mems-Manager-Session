@@ -39,6 +39,7 @@
 #include "diagnosticpanel.h"
 #include "iamemstab.h"
 #include "mems19testtab.h"
+#include "usbcablediagnostictab.h"
 #include "overviewpage.h"
 #include "ecupages.h"
 #include "settingspage.h"
@@ -311,7 +312,7 @@ static QWidget *realPage(QWidget *tab)
     return tab;
 }
 
-static const int kFinalTabCount = 14;
+static const int kFinalTabCount = 15;
 
 struct TabSpec
 {
@@ -333,7 +334,8 @@ static const TabSpec kTabs[kFinalTabCount] = {
     {"raw",          5001},
     {"database",     7152},
     {"interactive",  6002},
-    {"mems19_test", 19000}
+    {"mems19_test", 19000},
+    {"usb_cable",    0}
 };
 
 static QString translatedTitle(int rank)
@@ -341,6 +343,8 @@ static QString translatedTitle(int rank)
     if (rank < 0 || rank >= kFinalTabCount)
         return QString();
 
+    if (rank == 14)
+        return QLocale().language() == QLocale::French ? QStringLiteral("Test câble USB") : QStringLiteral("USB cable test");
     QString title = I18n::text(kTabs[rank].translationKey).trimmed();
     if (rank == 6 && (title.isEmpty() || title.startsWith(QLatin1Char('['))))
         title = QStringLiteral("IA MEMS");
@@ -468,6 +472,7 @@ static int rankForTab(QWidget *tab)
     if (name == QStringLiteral("database_tab")) return 11;
     if (name == QStringLiteral("ECU")) return 12;
     if (name == QStringLiteral("mems19_test_tab")) return 13;
+    if (name == QStringLiteral("usb_cable_diagnostic_tab")) return 14;
 
     if (qobject_cast<DiagnosticPanel*>(page)) return 5;
     if (qobject_cast<AnalysisTab*>(page)) return 7;
@@ -543,6 +548,12 @@ static void ensureDynamicPages(MainWindow *window, QTabWidget *tabs)
         Mems19TestTab *test = new Mems19TestTab(window->memsInterface(), tabs);
         test->setObjectName(QStringLiteral("mems19_test_tab"));
         tabs->addTab(test, translatedTitle(13));
+    }
+
+    if (!findTabByRank(tabs, 14))
+    {
+        UsbCableDiagnosticTab *diagnostic = new UsbCableDiagnosticTab(tabs);
+        tabs->addTab(diagnostic, translatedTitle(14));
     }
 }
 
