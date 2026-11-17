@@ -1,0 +1,3 @@
+SESSION 159 — compilation unique du Setup Windows pour essai de l’onglet Test câble USB FTDI/CH340.
+Source : mini56/Detection-port-usb ; contrôle facultatif, aucune commande ECU.
+Contrôle : Setup installé et smoke test des 15 pages en thèmes clair/sombre.
