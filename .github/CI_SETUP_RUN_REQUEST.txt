@@ -1,4 +1,4 @@
-SESSION 158 - single requested Windows test build
-Prepared source commit: 95f9068a98ccc3129d699a571d4e94fa12446a7f
-Changes: light/dark theme, central RPM tr/min placement.
-Only change this file when explicitly requesting another build.
+SESSION 158 - single requested Windows test build after verified source corrections
+Prepared source commit: 358f384584d02419e08265a5d303f81dcdf47c3b
+Changes: light/dark native sidebar, real measurement header typography test, central RPM tr/min placement.
+Trigger: one Setup validation run. Ordinary source changes do not trigger builds.
