@@ -283,7 +283,7 @@ jobs:
           if(-not $compiler){throw 'INNO_COMPILER_MISSING'}
           $iss=@'
           #define MyAppName "ECU MEMS Manager SESSION"
-          #define MyAppVersion "1.1.57"
+          #define MyAppVersion "1.1.58"
           [Setup]
           AppId={{BC7FAF73-5BCF-49FC-8513-9D9C7B08F133}
           AppName={#MyAppName}
