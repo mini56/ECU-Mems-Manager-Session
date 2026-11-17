@@ -1,4 +1,5 @@
-SESSION 158 - single requested Windows test build after verified source corrections
-Prepared source commit: 358f384584d02419e08265a5d303f81dcdf47c3b
-Changes: light/dark native sidebar, real measurement header typography test, central RPM tr/min placement.
-Trigger: one Setup validation run. Ordinary source changes do not trigger builds.
+SESSION 158 - one requested Windows Setup validation following completed source fixes
+Prepared source commit: 93554e4990745f81feabf78f585e24dee9009fa0
+Validate actual displayed light/dark theme and 10pt Segoe UI bold measurement table headers on all three tables.
+Central RPM tr/min relocation retained.
+Trigger only this explicit build request; ordinary source edits do not trigger builds.
