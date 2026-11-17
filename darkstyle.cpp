@@ -4,6 +4,7 @@
 #include "applicationvisualstyle.h"
 #include "uishell.h"
 #include "summarytab.h"
+#include "rawpage.h"
 #include "styles.h"
 #include <QComboBox>
 #include <QFontMetrics>
@@ -387,6 +388,7 @@ void applyApplicationVisualStyle(QMainWindow *window)
     refreshUiShellTheme(window);
     if(SummaryTab *summary=window->findChild<SummaryTab*>())
         summary->applyVisualTheme(dark);
+    applyRawDataVisualTheme(window->findChild<QWidget*>(QStringLiteral("raw")),dark);
 }
 
 void resizeApplicationVisualStyle(QMainWindow *window)

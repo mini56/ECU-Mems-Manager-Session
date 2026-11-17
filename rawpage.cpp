@@ -1,5 +1,6 @@
 #include "rawpage.h"
 #include "applicationvisualstyle.h"
+#include <QApplication>
 #include <QFont>
 #include <QFontMetrics>
 #include <QGridLayout>
@@ -9,6 +10,27 @@
 #include <QSizePolicy>
 #include <QWidget>
 #include <QtMath>
+
+// The raw 7D/80 page owns its text colours in both themes. The grid
+// layout and typography do not change when the theme is switched.
+void applyRawDataVisualTheme(QWidget *page,bool dark)
+{
+    if(!page) return;
+    for(const char *id:{"raw_1","raw_2"}) {
+        QWidget *block=page->findChild<QWidget*>(QString::fromLatin1(id));
+        if(!block) continue;
+        for(QLabel *label:block->findChildren<QLabel*>()) {
+            const QString name=label->objectName();
+            const bool header=name.startsWith(QStringLiteral("header_")) ||
+                              name.startsWith(QStringLiteral("Aheader_"));
+            label->setStyleSheet(header
+                ?QStringLiteral("color:#ff9828;background:transparent;border:0;font-weight:700;")
+                :(dark
+                    ?QStringLiteral("color:#ffffff;background:transparent;border:0;font-weight:400;")
+                    :QStringLiteral("color:#202936;background:transparent;border:0;font-weight:400;")));
+        }
+    }
+}
 
 // The native raw-data page owns both 7D and 80 grids.  Their geometry is
 // determined by one layout, not by the fixed coordinates in the legacy .ui.
@@ -73,9 +95,7 @@ void fitRawDataPage(QWidget *page)
             label->setMinimumHeight(textHeight+1);
             label->setMaximumHeight(QWIDGETSIZE_MAX);
             label->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Expanding);
-            label->setStyleSheet(header
-                ? QStringLiteral("color:#ff9828;background:transparent;border:0;font-weight:700;")
-                : QStringLiteral("color:#ffffff;background:transparent;border:0;font-weight:400;"));
         }
     }
+    applyRawDataVisualTheme(page,qApp && qApp->property("ecuDarkTheme").toBool());
 }

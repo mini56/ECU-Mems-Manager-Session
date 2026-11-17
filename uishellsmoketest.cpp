@@ -403,6 +403,29 @@ bool verifyUi(MainWindow &window)
         qApp->setStyleSheet(dark?STYLE_DARK:STYLE_LIGHT);
         applyApplicationVisualStyle(&window);
         QCoreApplication::processEvents();
+        // The raw 7D/80 page must never show white data on a white surface.
+        // Verify both sets of labels across light -> dark -> light switches.
+        if(QWidget *raw=window.findChild<QWidget*>(QStringLiteral("raw"))){
+            bool coloursOk=true;
+            int dataLabels=0;
+            for(const char *id:{"raw_1","raw_2"}){
+                QWidget *block=raw->findChild<QWidget*>(QString::fromLatin1(id));
+                if(!block){coloursOk=false;continue;}
+                for(QLabel *label:block->findChildren<QLabel*>()){
+                    const QString name=label->objectName();
+                    const bool header=name.startsWith(QStringLiteral("header_")) ||
+                                      name.startsWith(QStringLiteral("Aheader_"));
+                    const QString expected=header
+                        ?QStringLiteral("color:#ff9828;")
+                        :(dark?QStringLiteral("color:#ffffff;")
+                              :QStringLiteral("color:#202936;"));
+                    if(!label->styleSheet().contains(expected)) coloursOk=false;
+                    if(!header)++dataLabels;
+                }
+            }
+            ok=check(coloursOk && dataLabels>=10,
+                 "Raw 7D/80 text must remain readable in both themes") && ok;
+        }
         const QString global=qApp->styleSheet();
         ok=check(dark
                 ?global.contains(QStringLiteral("#1e2128"))
