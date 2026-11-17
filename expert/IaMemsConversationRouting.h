@@ -90,18 +90,28 @@ inline bool containsWord(const QString &text, const QString &word)
 
 inline bool isDocumentationQuestion(const QString &question)
 {
-    const QString text = normalize(question);
-    return containsAny(text, {
-        QStringLiteral("broche"), QStringLiteral("brochage"), QStringLiteral("pinout"),
-        QStringLiteral("connecteur"), QStringLiteral("cablage"), QStringLiteral("wiring"),
-        QStringLiteral("couleur de fil"), QStringLiteral("couleur du fil"),
-        QStringLiteral("couleur des fils"), QStringLiteral("couleur fil"),
-        QStringLiteral("wire color"), QStringLiteral("wire colour"),
-        QStringLiteral("schema"), QStringLiteral("diagramme"),
-        QStringLiteral("documentation"), QStringLiteral("document technique"),
-        QStringLiteral("fiche xml"), QStringLiteral(".xml"), QStringLiteral(" xml"),
-        QStringLiteral("procedure"), QStringLiteral("couple de serrage"),
-        QStringLiteral("couple serrage"), QStringLiteral("torque")
+    const QString text=normalize(question);
+    // A bare supported generation is a request for its complete ECU sheet.
+    // Preserve workshop-procedure routing for other questions.
+    const bool directSheet=QRegularExpression(QStringLiteral(
+        "^(?:ecu\\s+)?mems\\s*1[.\\s]*[2369]$")).match(text).hasMatch();
+    return directSheet || containsAny(text, {
+        QStringLiteral("broche"),QStringLiteral("brochage"),QStringLiteral("pinout"),
+        QStringLiteral("connecteur"),QStringLiteral("cablage"),QStringLiteral("wiring"),
+        QStringLiteral("couleur de fil"),QStringLiteral("couleur du fil"),
+        QStringLiteral("couleur des fils"),QStringLiteral("couleur fil"),
+        QStringLiteral("wire color"),QStringLiteral("wire colour"),
+        QStringLiteral("schema"),QStringLiteral("diagramme"),
+        QStringLiteral("documentation"),QStringLiteral("document technique"),
+        QStringLiteral("fiche technique"),QStringLiteral("fiche xml"),
+        QStringLiteral(".xml"),QStringLiteral(" xml"),
+        QStringLiteral("protocole mems"),QStringLiteral("protocole du mems"),
+        QStringLiteral("vehicule compatible"),QStringLiteral("vehicules compatibles"),
+        QStringLiteral("quelle voiture"),QStringLiteral("quelles voitures"),
+        QStringLiteral("monte sur"),QStringLiteral("montage mems"),
+        QStringLiteral("reference constructeur"),
+        QStringLiteral("procedure"),QStringLiteral("couple de serrage"),
+        QStringLiteral("couple serrage"),QStringLiteral("torque")
     });
 }
 
@@ -146,12 +156,20 @@ inline QString requestedGeneration(const QString &question)
 
 inline bool isReferenceSheetRequest(const QString &question)
 {
-    if (requestedGeneration(question).isEmpty())
+    if(requestedGeneration(question).isEmpty())
         return false;
-    const QString text = normalize(question);
+    const QString text=normalize(question);
+    if(QRegularExpression(QStringLiteral(
+        "^(?:ecu\\s+)?mems\\s*1[.\\s]*[2369]$")).match(text).hasMatch())
+        return true;
     return containsAny(text, {
-        QStringLiteral("documentation"), QStringLiteral("fiche xml"),
-        QStringLiteral(".xml"), QStringLiteral(" xml")
+        QStringLiteral("documentation"),QStringLiteral("fiche xml"),
+        QStringLiteral("fiche technique"),QStringLiteral(".xml"),QStringLiteral(" xml"),
+        QStringLiteral("protocole"),QStringLiteral("brochage"),
+        QStringLiteral("connecteur"),QStringLiteral("couleur"),
+        QStringLiteral("quelle voiture"),QStringLiteral("quelles voitures"),
+        QStringLiteral("vehicule"),QStringLiteral("compatible"),
+        QStringLiteral("monte sur"),QStringLiteral("reference constructeur")
     });
 }
 
