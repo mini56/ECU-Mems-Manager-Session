@@ -43,6 +43,7 @@
 #include "ecupages.h"
 #include "settingspage.h"
 #include "applicationvisualstyle.h"
+#include "styles.h"
 #include "rawpage.h"
 #include "uishell.h"
 #include "summarytab.h"
@@ -192,12 +193,20 @@ static void applySidebarState(QMainWindow *w)
     nav->setSpacing(0);
     nav->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     nav->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    nav->setStyleSheet(QStringLiteral(
-        "#uiRebuildNav{background:#080e13;color:#cbd4da;border:0;padding:2px 0;}"
-        "#uiRebuildNav::item{padding:3px %1px;border-left:3px solid transparent;border-bottom:1px solid #121a20;}"
-        "#uiRebuildNav::item:hover{background:#151f26;color:#fff;}"
-        "#uiRebuildNav::item:selected{background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #332417,stop:1 #161d21);color:#ffad5c;border-left:3px solid #ff7a00;font-weight:700;}"
-    ).arg(collapsed?12:11));
+    const bool dark=qApp && qApp->property("ecuDarkTheme").toBool();
+    nav->setStyleSheet(dark
+        ?QStringLiteral(
+            "#uiRebuildNav{background:#080e13;color:#cbd4da;border:0;padding:2px 0;}"
+            "#uiRebuildNav::item{padding:3px %1px;border-left:3px solid transparent;border-bottom:1px solid #121a20;}"
+            "#uiRebuildNav::item:hover{background:#151f26;color:#fff;}"
+            "#uiRebuildNav::item:selected{background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #332417,stop:1 #161d21);color:#ffad5c;border-left:3px solid #ff7a00;font-weight:700;}"
+        ).arg(collapsed?12:11)
+        :QStringLiteral(
+            "#uiRebuildNav{background:#f5f7fa;color:#263342;border:0;padding:2px 0;}"
+            "#uiRebuildNav::item{padding:3px %1px;border-left:3px solid transparent;border-bottom:1px solid #e2e9ef;}"
+            "#uiRebuildNav::item:hover{background:#e7edf5;color:#202936;}"
+            "#uiRebuildNav::item:selected{background:#fff0dd;color:#a95100;border-left:3px solid #f07800;font-weight:700;}"
+        ).arg(collapsed?12:11));
 }
 
 static void ensureSidebar(QMainWindow *w)
@@ -1034,7 +1043,13 @@ static void applyResponsive(QMainWindow *window)
 
     static void rebuild(QMainWindow *window,QWidget *central,QVBoxLayout *root,QTabWidget *tabs,QWidget *legacy)
     {
-        qApp->setStyleSheet(globalStyle()); central->setAttribute(Qt::WA_StyledBackground,true); central->setStyleSheet(QStringLiteral("background:%1;").arg(QString::fromLatin1(kBg)));
+        // The shell is the owner of its palette. Never overwrite the
+        // saved light choice with the dark-only global stylesheet.
+        const bool dark=qApp->property("ecuDarkTheme").toBool();
+        qApp->setStyleSheet(dark?globalStyle():STYLE_LIGHT);
+        central->setAttribute(Qt::WA_StyledBackground,true);
+        central->setStyleSheet(dark?QStringLiteral("background:%1;").arg(
+            QString::fromLatin1(kBg)):QStringLiteral("background:#ffffff;"));
         if(QFrame *header=buildHeader(window,legacy))root->insertWidget(0,header);
         const int oldIndex=root->indexOf(tabs);if(oldIndex>=0)root->removeWidget(tabs);
         QFrame *workspace=new QFrame(central);workspace->setObjectName(QStringLiteral("uiRebuildWorkspace"));workspace->setAttribute(Qt::WA_StyledBackground,true);workspace->setStyleSheet(QStringLiteral("#uiRebuildWorkspace{background:%1;border:0;}").arg(QString::fromLatin1(kBg)));QHBoxLayout *wh=new QHBoxLayout(workspace);wh->setContentsMargins(0,0,0,0);wh->setSpacing(0);
