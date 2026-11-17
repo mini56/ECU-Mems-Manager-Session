@@ -87,6 +87,7 @@ private:
     const QString m_settingLanguage;
     const QString m_settingDesktopShortcut;
 
+    void updateAppearance(bool dark);
     void setupWidgets();
     void readSettings();
     void writeSettings();
