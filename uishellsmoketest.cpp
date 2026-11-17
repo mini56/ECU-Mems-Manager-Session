@@ -9,6 +9,8 @@
 #include "i18n.h"
 #include "database/DatabaseManager.h"
 #include "database/MemsReferenceDatabase.h"
+#include "database/MemsReferenceSheetRenderer.h"
+#include "expert/IaMemsConversationRouting.h"
 #include "database/MemsReferencePackageRefresh.h"
 #include "database/MemsReferenceLanguageSync.h"
 #include "database/MemsGlobalSearchIndex.h"
@@ -167,6 +169,45 @@ bool verifyUi(MainWindow &window)
     };
 
     bool ok=true;
+    // Installed Setup must contain the user's four unmodified technical XMLs.
+    // Test the actual Qt reader output, not only XML file existence.
+    MemsReferenceDatabase sheetDatabase;
+    const bool referenceReady=sheetDatabase.open();
+    ok=check(referenceReady,"Reference sheets database not opened") && ok;
+    if(referenceReady){
+        for(const QString &generation:{
+                QStringLiteral("1.2"),QStringLiteral("1.3"),
+                QStringLiteral("1.6"),QStringLiteral("1.9")}){
+            QString base=QStringLiteral("mems_")+generation;
+            base.replace(QLatin1Char('.'),QLatin1Char('_'));
+            const QString original=QCoreApplication::applicationDirPath()+
+                QStringLiteral("/database/reference/fiches/")+base+QStringLiteral(".xml");
+            QFile source(original);
+            QFile cache(sheetDatabase.generationXmlPath(QStringLiteral("MEMS ")+generation));
+            const bool same=source.open(QIODevice::ReadOnly) &&
+                cache.open(QIODevice::ReadOnly) &&
+                source.readAll()==cache.readAll();
+            ok=check(same,"Installed original XML missing or changed") && ok;
+            if(!same) continue;
+            const QString html=MemsReferenceSheetRenderer::renderFile(
+                cache.fileName(),QStringLiteral("XML invalide"));
+            QTextBrowser actualReader;
+            actualReader.setHtml(html);
+            const QString visible=actualReader.toPlainText();
+            const bool complete=visible.contains(QStringLiteral("MEMS ")+generation) &&
+                visible.contains(QStringLiteral("PROTOCOLE"),Qt::CaseInsensitive) &&
+                visible.contains(QStringLiteral("VÉHICULES"),Qt::CaseInsensitive) &&
+                visible.contains(QStringLiteral("BROCHAGE"),Qt::CaseInsensitive) &&
+                html.contains(QStringLiteral("<table>")) &&
+                html.contains(QStringLiteral("COULEUR"),Qt::CaseInsensitive);
+            ok=check(complete,"Technical XML content not displayed in Qt reader") && ok;
+        }
+    }
+    ok=check(IaMemsConversationRouting::isReferenceSheetRequest(
+        QStringLiteral("fiche technique MEMS 1.9")) &&
+        IaMemsConversationRouting::isDocumentationQuestion(QStringLiteral("MEMS 1.2")),
+        "IA MEMS sheet routing is missing") && ok;
+
     QTabWidget *tabs=window.findChild<QTabWidget*>(QStringLiteral("Tab_main"));
     QListWidget *navigation=window.findChild<QListWidget*>(QStringLiteral("uiRebuildNav"));
     ok=check(window.property("uiShellReady").toBool(),"Native shell not constructed") && ok;
