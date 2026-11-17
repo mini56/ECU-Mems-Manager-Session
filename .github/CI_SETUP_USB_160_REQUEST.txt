@@ -1,0 +1,3 @@
+SESSION 160 — Demande unique de compilation Windows.
+Inclut la quinzième page Test câble USB FT232/CH340 et le nouveau texte IA MEMS « FICHE XML ECU MEMS 1.3 ».
+Contrôler la compilation, l’installation réelle et le test de navigation des 15 pages. Aucune autre correction applicative.
