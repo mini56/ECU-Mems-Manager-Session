@@ -200,7 +200,7 @@ IaMemsTab::IaMemsTab(MainWindow *mainWindow, QWidget *parent)
     m_question = new QLineEdit(this);
     m_question->setObjectName(QStringLiteral("iaMemsQuestion"));
     m_question->setPlaceholderText(QStringLiteral(
-        "Posez une question : Qu'est-ce que tu vois d'anormal ? Mon avance est-elle normale ? Que sait-on sur AANMP002 ?"));
+        "Posez une question : Qu'est-ce que tu vois d'anormal ? Mon avance est-elle normale ? FICHE XML ECU MEMS 1.3"));
     m_question->setClearButtonEnabled(true);
     input->addWidget(m_question, 1);
 
