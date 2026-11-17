@@ -2,6 +2,12 @@ name: "SESSION 158 - Theme Clair et Sombre - restauration sans regression - Setu
 run-name: SESSION 158 - Theme Clair Sombre et menu stable - ${{ github.sha }}
 on:
   workflow_dispatch:
+  # Only an explicit update to this dedicated request marker may trigger a build.
+  # Ordinary source edits do not consume GitHub Actions compilation minutes.
+  push:
+    branches: [fix-real-light-theme-session-158-20261117]
+    paths:
+      - '.github/CI_SETUP_RUN_REQUEST.txt'
 permissions:
   contents: read
 concurrency:
