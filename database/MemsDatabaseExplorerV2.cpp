@@ -128,46 +128,22 @@ QString htmlStyle()
 
 QString diagramHtml(const QString &generation)
 {
-    const QString base=QStringLiteral("mems_%1").arg(QString(generationFromText(generation)).replace(QLatin1Char('.'), QLatin1Char('_')));
-    const QString root=QCoreApplication::applicationDirPath()+QStringLiteral("/database/reference/images/");
-    QStringList files;
-    QStringList captions;
-    if(base==QStringLiteral("mems_1_2")){
-        files << QStringLiteral("mems_1_2_ecu_connector.svg") << QStringLiteral("rover_rosco_3pin_black.svg");
-        captions << QStringLiteral("Connecteur ECU MEMS 1.2 — 36 voies") << QStringLiteral("Prise diagnostic Rover / ROSCO — 3 broches");
-    }else if(base==QStringLiteral("mems_1_3")){
-        files << QStringLiteral("mems_1_3_ecu_connectors.svg") << QStringLiteral("rover_rosco_3pin_black.svg");
-        captions << QStringLiteral("Connecteurs ECU MEMS 1.3 — 36 + 18 voies") << QStringLiteral("Prise diagnostic Rover / ROSCO — 3 broches");
-    }else if(base==QStringLiteral("mems_1_6")){
-        files << QStringLiteral("mems_1_6_ecu_connector.svg") << QStringLiteral("rover_rosco_3pin_black.svg");
-        captions << QStringLiteral("Connecteur ECU MEMS 1.6 — 36 voies ; variante 36 + 18 selon véhicule") << QStringLiteral("Prise diagnostic Rover / ROSCO — 3 broches");
-    }else if(base==QStringLiteral("mems_1_9")){
-        files << QStringLiteral("mems_1_9_ecu_connector.svg") << QStringLiteral("mems_1_9_obd_16pin.svg");
-        captions << QStringLiteral("Connecteur ECU MEMS 1.9 — 36 voies") << QStringLiteral("Prise diagnostic MEMS 1.9 — 16 broches type J1962 / OBD");
-    }
-    QString html;
-    for(int i=0;i<files.size();++i){
-        const QString filePath=root+files.at(i);
-        if(!QFileInfo::exists(filePath)) continue;
-        const QString url=QUrl::fromLocalFile(filePath).toString().toHtmlEscaped();
-        const QString caption=captions.value(i).toHtmlEscaped();
-        html+=QStringLiteral("<div class='diagram'><img src='%1'><p class='muted'>%2</p></div>").arg(url,caption);
-    }
-    return html;
+    // A QTextBrowser without an SVG image handler displayed the old 1600x900
+    // connector diagrams as oversized empty rectangles. Link instead to the
+    // installed, fully detailed XML sheet in the SAME program.
+    const QString token=generationFromText(generation);
+    if(token.isEmpty()) return QString();
+    return QStringLiteral(
+        "<p><a href='mems-sheet:%1'>%2 — MEMS %1 (brochage et couleurs des fils)</a></p>")
+        .arg(token,I18n::text(7325).toHtmlEscaped());
 }
 
 QString renderXml(const QString &path)
 {
-    // Common XML renderer is used by both the browser and the indexed explorer.
-    QString html = MemsReferenceSheetRenderer::renderFile(path,I18n::text(7232));
-    const QString diagrams = diagramHtml(QFileInfo(path).completeBaseName());
-    if(!diagrams.isEmpty()){
-        const QString styleEnd=QStringLiteral("</style>");
-        const int pos=html.indexOf(styleEnd);
-        if(pos>=0) html.insert(pos+styleEnd.size(),diagrams);
-        else html.prepend(diagrams);
-    }
-    return html;
+    // Render the complete source sheet immediately: vehicle applications,
+    // protocol, ECU pinout and actual two-tone wire colours appear at the top.
+    // No oversized unsupported SVG is inserted ahead of the source content.
+    return MemsReferenceSheetRenderer::renderFile(path,I18n::text(7232));
 }
 
 QString xmlPath(const QString &generation)
@@ -408,6 +384,13 @@ private:
 
     void openResultLink(const QUrl &url)
     {
+        if(url.scheme()==QStringLiteral("mems-sheet")){
+            const QString token=url.path();
+            if(token==QStringLiteral("1.2") || token==QStringLiteral("1.3") ||
+               token==QStringLiteral("1.6") || token==QStringLiteral("1.9"))
+                openXmlDialog(token);
+            return;
+        }
         if(url.isLocalFile()){
             // Les images françaises téléchargées sont confinées au dossier
             // 'images' de la base documentaire sélectionnée. Rien d'autre
@@ -685,6 +668,32 @@ private:
         if(m_debounce) m_debounce->stop();
         const QString raw=m_search?m_search->text().trimmed():QString();
         const QString category=filterCategory();
+        // An explicit generation or sheet query means ONE complete fiche,
+        // not 140 unrelated protocol/index records. Advanced search remains
+        // unchanged for qualified terms and category filters.
+        const QRegularExpression sheetQuery(QStringLiteral(
+            "^(?:ecu\\s+)?(?:fiche\\s+(?:xml\\s+|technique\\s+|complete\\s+)?)?mems\\s*1\\s+([2369])$"));
+        const QRegularExpressionMatch sheetMatch=sheetQuery.match(normalized(raw));
+        if(category.isEmpty() && sheetMatch.hasMatch()){
+            const QString wanted=QStringLiteral("1.")+sheetMatch.captured(1);
+            const QString path=xmlPath(wanted);
+            if(QFileInfo::exists(path)){
+                QVariantMap sheet;
+                sheet.insert(QStringLiteral("title"),I18n::text(7325)+QStringLiteral(" — MEMS ")+wanted);
+                sheet.insert(QStringLiteral("generation"),wanted);
+                sheet.insert(QStringLiteral("category"),QStringLiteral("documentation"));
+                sheet.insert(QStringLiteral("source_table"),QStringLiteral("xml_documentation"));
+                sheet.insert(QStringLiteral("source_key"),wanted);
+                sheet.insert(QStringLiteral("content"),QStringLiteral("MEMS ")+wanted);
+                QVector<QVariantMap> items;
+                items.append(sheet);
+                populate(items);
+                if(m_count) m_count->setText(I18n::text(7324).arg(QStringLiteral("1")));
+                m_results->selectRow(0);
+                showSelectedResult();
+                return;
+            }
+        }
         QString generation=filterGeneration();
         if(generation.isEmpty()) generation=generationFromText(raw);
 
@@ -850,9 +859,9 @@ private:
         updateDocumentControls();
     }
 
-    void openXmlDialog()
+    void openXmlDialog(const QString &requestedGeneration=QString())
     {
-        const QString generation=currentGeneration();
+        const QString generation=requestedGeneration.isEmpty()?currentGeneration():requestedGeneration;
         const QString path=xmlPath(generation);
         if(path.isEmpty()||!QFileInfo::exists(path)) return;
         QDialog dialog(m_browser);
