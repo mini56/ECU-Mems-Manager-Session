@@ -24,6 +24,8 @@
 #include <QLabel>
 #include <QCheckBox>
 #include <QComboBox>
+#include <QImage>
+#include <QPixmap>
 #include <QTextBrowser>
 #include <QHeaderView>
 #include <QTableWidget>
@@ -407,6 +409,21 @@ bool verifyUi(MainWindow &window)
                             QStringLiteral("#070c11"))
                        :sidebarShell->styleSheet().isEmpty()),
                  "Native sidebar must follow the light/dark theme") && ok;
+        // Do not accept a mere setting/stylesheet string change: render
+        // an actual sidebar pixel. This catches the SESSION 157 failure
+        // where "Clair" was stored but the UI remained black.
+        if(sidebarShell && sidebarShell->height()>150){
+            const QImage drawn=sidebarShell->grab().toImage();
+            const QPoint point(qMax(5,drawn.width()-15),
+                               qBound(80,drawn.height()/2,drawn.height()-80));
+            const QColor color=drawn.pixelColor(point);
+            const bool actualLight=color.red()>150 &&
+                                  color.green()>150 && color.blue()>150;
+            const bool actualDark=color.red()<110 &&
+                                 color.green()<110 && color.blue()<110;
+            ok=check(dark?actualDark:actualLight,
+                     "Rendered menu surface must be light or dark, not merely a saved theme preference") && ok;
+        }
         ok=check(tabs->count()==14 && navigation->count()==14 &&
                  navigation->width()==originalWidth &&
                  navigation->item(0)->sizeHint().height()==originalRow &&
