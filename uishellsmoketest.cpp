@@ -3,6 +3,8 @@
 #include "mainwindow.h"
 #include "helpviewer.h"
 #include "optionsdialog.h"
+#include "styles.h"
+#include "applicationvisualstyle.h"
 #include "summarytab.h"
 #include "i18n.h"
 #include "database/DatabaseManager.h"
@@ -21,6 +23,7 @@
 #include <QToolButton>
 #include <QLabel>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QTextBrowser>
 #include <QHeaderView>
 #include <QTableWidget>
@@ -223,8 +226,10 @@ bool verifyUi(MainWindow &window)
                  "Masquer automatiquement la barre des tâches")),
              "Help must document database updates and optional taskbar behaviour") && ok;
     ok=check(manual.minimumWidth()>=850 &&
-             manual.styleSheet().contains(QStringLiteral("#090e13")),
-             "Help dialog must be larger and use the professional dark theme") && ok;
+             manual.styleSheet().contains(
+                qApp->property("ecuDarkTheme").toBool()
+                    ?QStringLiteral("#090e13"):QStringLiteral("#ffffff")),
+             "Help dialog must be larger and follow the selected theme") && ok;
 
     OptionsDialog *options=window.findChild<OptionsDialog*>();
     QCheckBox *autoHide=options?options->findChild<QCheckBox*>(
@@ -377,6 +382,79 @@ bool verifyUi(MainWindow &window)
                      "Resizing must not impose a competing sidebar width") && ok;
     }
 
+    // SESSION 157 let the dark-only rebuild override the saved "Clair"
+    // choice at startup. Test a real two-way theme switch on the native
+    // 14-page shell, with its original geometry and selection intact.
+    const bool initialDark=qApp->property("ecuDarkTheme").toBool();
+    const int originalTab=tabs->currentIndex();
+    const int originalWidth=navigation->width();
+    const int originalRow=navigation->item(0)->sizeHint().height();
+    for(const bool dark:{false,true,false}){
+        qApp->setProperty("ecuDarkTheme",dark);
+        qApp->setStyleSheet(dark?STYLE_DARK:STYLE_LIGHT);
+        applyApplicationVisualStyle(&window);
+        QCoreApplication::processEvents();
+        const QString global=qApp->styleSheet();
+        ok=check(dark
+                ?global.contains(QStringLiteral("#1e2128"))
+                :global.contains(QStringLiteral("#darkSidebar")) &&
+                 global.contains(QStringLiteral("background:#f5f7fa")),
+             "Global theme must actually change between white/light and dark") && ok;
+        const QFrame *sidebarShell=window.findChild<QFrame*>(
+            QStringLiteral("darkSidebar"));
+        ok=check(sidebarShell &&
+                 (dark?sidebarShell->styleSheet().contains(
+                            QStringLiteral("#070c11"))
+                       :sidebarShell->styleSheet().isEmpty()),
+                 "Native sidebar must follow the light/dark theme") && ok;
+        ok=check(tabs->count()==14 && navigation->count()==14 &&
+                 navigation->width()==originalWidth &&
+                 navigation->item(0)->sizeHint().height()==originalRow &&
+                 tabs->currentIndex()==originalTab &&
+                 navigation->currentRow()==originalTab &&
+                 navigation->selectedItems().size()==1 &&
+                 navigation->selectedItems().first()==
+                     navigation->item(originalTab),
+                 "Theme changes must not disturb 14 pages, sidebar geometry or selection") && ok;
+
+        manual.show();
+        QCoreApplication::processEvents();
+        ok=check(manual.styleSheet().contains(dark
+                        ?QStringLiteral("#090e13")
+                        :QStringLiteral("#ffffff")) &&
+                 manual.findChild<QListWidget*>(
+                     QStringLiteral("memsHelpNavigation"))->count()>=24,
+                 "Help window, chapters and title-bar theme must remain coherent") && ok;
+        manual.hide();
+    }
+    qApp->setProperty("ecuDarkTheme",initialDark);
+    qApp->setStyleSheet(initialDark?STYLE_DARK:STYLE_LIGHT);
+    applyApplicationVisualStyle(&window);
+    QCoreApplication::processEvents();
+
+    // Also test the Options dialog itself, without accepting or writing
+    // any preference. A visual preview cannot change the stored setting.
+    if(options){
+        QComboBox *theme=options->findChild<QComboBox*>(
+            QStringLiteral("themeSelection"));
+        ok=check(theme && theme->findData(QStringLiteral("light"))>=0 &&
+                 theme->findData(QStringLiteral("dark"))>=0,
+                 "Options must expose both real light and dark selections") && ok;
+        if(theme){
+            const int originalIndex=theme->currentIndex();
+            for(const bool dark:{true,false}){
+                theme->setCurrentIndex(theme->findData(
+                    dark?QStringLiteral("dark"):QStringLiteral("light")));
+                QCoreApplication::processEvents();
+                ok=check(options->styleSheet().contains(dark
+                        ?QStringLiteral("#090e13")
+                        :QStringLiteral("#ffffff")),
+                        "Options dialog must preview white/light and dark reliably") && ok;
+            }
+            theme->setCurrentIndex(originalIndex);
+        }
+    }
+
     if (I18n::load(QStringLiteral("en"))){
         QEvent languageChange(QEvent::LanguageChange);
         QCoreApplication::sendEvent(&window,&languageChange);
@@ -391,7 +469,8 @@ bool verifyUi(MainWindow &window)
     }
 
     if (ok) qInfo().noquote() << "SESSION_UI_SMOKE_PASS 14 native pages, bidirectional navigation, "
-                               "five window sizes, approved visual style, English language, MEMS/Settings/ROSCO, dwell 0-5ms";
+                               "five window sizes, light/dark theme switching, Help and Options, "
+                               "approved visual style, English language, MEMS/Settings/ROSCO, dwell 0-5ms";
     return ok;
 }
 
