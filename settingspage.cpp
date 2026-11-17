@@ -220,7 +220,9 @@ protected:
         unitFont.setPointSizeF(large?9.2:7.6);
         p.setFont(unitFont);
         p.setPen(QColor("#d4dbe0"));
-        p.drawText(QRectF(c.x()-(large?55:36),c.y()+(large?83:45),large?110:72,large?17:13),Qt::AlignCenter,m_unit);
+        // The central RPM unit sits below the digital value, with a visible gap.
+        // Keep the smaller gauges at their approved positions.
+        p.drawText(QRectF(c.x()-(large?55:36),c.y()+(large?100:45),large?110:72,large?17:13),Qt::AlignCenter,m_unit);
     }
 
 private:
