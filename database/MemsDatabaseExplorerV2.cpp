@@ -1,4 +1,5 @@
 #include "MemsGlobalSearchIndex.h"
+#include "MemsDocumentaryRepository.h"
 #include "MemsDatabaseExplorerV2.h"
 #include "MemsDatabaseUniversalAccess.h"
 #include "MemsReferenceSheetRenderer.h"
@@ -213,8 +214,10 @@ public:
         locateResultCount();
         if(!m_search||!m_filter||!m_results||!m_detail) return;
 
-        if(!MemsGlobalSearchIndex::ensureBuilt()) return;
-        if(!openIndex()) return;
+        const bool existingIndexReady=MemsGlobalSearchIndex::ensureBuilt() && openIndex();
+        // Do not suppress the documentary page when the legacy index fails:
+        // the shared 482-page repository can still be queried independently.
+        if(!existingIndexReady && !MemsDocumentaryRepository::isPackInstalled()) return;
 
         compactHeader();
         configureFilter();
@@ -482,7 +485,10 @@ private:
         }
         if(m_pdfButton){
             connect(m_pdfButton,&QPushButton::clicked,this,[this](){
-                const QString path=pdfPath(currentGeneration());
+                const QString source=selectedResult().value(QStringLiteral("source_table")).toString();
+                const QString path=source.startsWith(QStringLiteral("rover_"))
+                    ? MemsDocumentaryRepository::originalPdfPath()
+                    : pdfPath(currentGeneration());
                 if(!path.isEmpty()&&QFileInfo::exists(path)) QDesktopServices::openUrl(QUrl::fromLocalFile(path));
             });
         }
@@ -550,6 +556,16 @@ private:
     QVariantList executeQuery(const QString &text,const QString &category,const QString &generation,int limit) const
     {
         QVariantList rows;
+        const bool documentaryInstalled=MemsDocumentaryRepository::isPackInstalled();
+        if(documentaryInstalled && generation.isEmpty() &&
+           (category.isEmpty() || category==QStringLiteral("documentation"))){
+            MemsDocumentaryRepository corpus;
+            if(corpus.open()) rows=corpus.search(text,limit,true);
+        }
+        // A mounted corpus is the single documentary source. Never add old
+        // Pack001/reference documentary rows beside it as competing evidence.
+        if(documentaryInstalled && category==QStringLiteral("documentation"))
+            return rows;
         if(!m_index.isOpen()) return rows;
         const QString cleaned=removeGeneration(text,generation);
         const QString fts=ftsExpression(cleaned);
@@ -586,6 +602,9 @@ private:
             QVariantMap row;
             const QSqlRecord record=query.record();
             for(int i=0;i<record.count();++i) row.insert(record.fieldName(i),query.value(i));
+            if(documentaryInstalled &&
+               row.value(QStringLiteral("category")).toString()==QStringLiteral("documentation"))
+                continue;
             rows.append(row);
         }
         return rows;
@@ -593,7 +612,11 @@ private:
 
     QVariantList fetchRows(const QString &raw,const QString &category,const QString &generation) const
     {
-        return executeQuery(raw,category,generation,category.isEmpty()?140:220);
+        // The documentary view must be able to browse all currently detected
+        // procedures (238 candidates), not silently truncate to the first 30.
+        const int limit=category==QStringLiteral("documentation")?300:
+                        (category.isEmpty()?140:220);
+        return executeQuery(raw,category,generation,limit);
     }
 
     QVector<QVariantMap> cleanAndSort(const QVariantList &fetched,const QString &requestedCategory) const
@@ -673,7 +696,13 @@ private:
         updateSuggestions(raw,rows);
 
         if(rows.isEmpty()){
-            m_detail->setHtml(htmlStyle()+QStringLiteral("<h1>%1</h1><p class='muted'>%2</p>").arg(I18n::text(7216).toHtmlEscaped(),I18n::text(7328).toHtmlEscaped()));
+            QString missing=I18n::text(7328);
+            if(MemsDocumentaryRepository::isPackInstalled() &&
+               category==QStringLiteral("documentation")){
+                MemsDocumentaryRepository corpus;
+                if(!corpus.open()) missing=corpus.lastError();
+            }
+            m_detail->setHtml(htmlStyle()+QStringLiteral("<h1>%1</h1><p class='muted'>%2</p>").arg(I18n::text(7216).toHtmlEscaped(),missing.toHtmlEscaped()));
             updateDocumentControls();forceDetailScroll();
         }else{
             m_results->selectRow(0);
@@ -747,7 +776,9 @@ private:
             m_currentGenerationLabel->setText(label.isEmpty()?QStringLiteral("—"):label);
         }
         const QString xml=xmlPath(generation);
-        const QString pdf=pdfPath(generation);
+        const QString source=selectedResult().value(QStringLiteral("source_table")).toString();
+        const QString pdf=source.startsWith(QStringLiteral("rover_"))
+            ? MemsDocumentaryRepository::originalPdfPath() : pdfPath(generation);
         if(m_sheetButton) m_sheetButton->setEnabled(!xml.isEmpty()&&QFileInfo::exists(xml));
         if(m_pdfButton){
             const bool available=!pdf.isEmpty()&&QFileInfo::exists(pdf);
