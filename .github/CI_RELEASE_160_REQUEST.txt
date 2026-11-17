@@ -1,0 +1,3 @@
+Publication de la Release officielle SESSION 160 à partir du run GitHub Actions #44144170646 (SUCCESS).
+Commit bcf8cce96bf52d9d59d92f3398babb847ad8094f. Artefact ECU-MEMS-Manager-SESSION-160-USB-FTDI-CH340-TEST.
+Ne pas recompiler, seulement télécharger le Setup testé, calculer SHA-256 et créer la Release 160.
