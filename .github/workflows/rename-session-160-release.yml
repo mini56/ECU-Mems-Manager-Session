@@ -1,0 +1,36 @@
+name: "Harmoniser le nom officiel de la Release SESSION 160"
+on:
+  push:
+    branches:
+      - feature/usb-cable-diagnostic-session-20261117
+    paths:
+      - .github/CI_RENAME_RELEASE_160_REQUEST.txt
+permissions:
+  contents: write
+jobs:
+  harmoniser-nom:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Renommer titre et fichiers de la Release 160
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo="mini56/ECU-Mems-Manager-Session"
+          tag="mems-session-build-160"
+          release_id=$(gh api "repos/$repo/releases/tags/$tag" --jq '.id')
+          gh api --method PATCH "repos/$repo/releases/$release_id" \
+            -f name="ECU-Mems-Manager-Session - Version 160" \
+            --silent
+          old="ECU-MEMS-Manager-SESSION-160-Setup.exe"
+          new="ECU-Mems-Manager-Session-160-Setup.exe"
+          asset_id=$(gh api "repos/$repo/releases/$release_id/assets" --jq ".[] | select(.name==\"$old\" or .name==\"$new\") | .id" | head -n 1)
+          if [[ -z "$asset_id" ]]; then
+            echo "Setup 160 introuvable" >&2
+            exit 1
+          fi
+          gh api --method PATCH "repos/$repo/releases/assets/$asset_id" \
+            -f name="$new" --silent
+          echo "RELEASE_160_OFFICIAL_NAME_AND_SETUP_OK"
