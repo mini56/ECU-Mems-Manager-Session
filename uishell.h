@@ -5,4 +5,5 @@ class QMainWindow;
 void buildUiShell(QMainWindow *window);
 void resizeUiShell(QMainWindow *window);
 void retranslateUiShell(QMainWindow *window);
+void refreshUiShellTheme(QMainWindow *window);
 #endif

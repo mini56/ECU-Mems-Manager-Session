@@ -107,8 +107,11 @@ bool verifyApprovedVisualRules(MainWindow &window)
         for(QTableWidget *table:tables){
             ok=check(tenPointSegoe(table->font()) && !table->font().bold(),
                      "Measurement body typography changed") && ok;
-            ok=check(table->horizontalHeader()->styleSheet().contains(QStringLiteral("font-weight:700")) &&
-                     table->horizontalHeaderItem(0)!=nullptr,
+            // Check the actual approved 10pt bold font, not a dark-only
+            // inline stylesheet that the light theme intentionally clears.
+            QHeaderView *header=table->horizontalHeader();
+            ok=check(header && tenPointSegoe(header->font()) &&
+                     header->font().bold() && table->horizontalHeaderItem(0)!=nullptr,
                      "Measurement header typography changed") && ok;
             ok=check(table->columnCount()==4,"Measurement column count changed") && ok;
         }
@@ -407,7 +410,8 @@ bool verifyUi(MainWindow &window)
         ok=check(sidebarShell &&
                  (dark?sidebarShell->styleSheet().contains(
                             QStringLiteral("#070c11"))
-                       :sidebarShell->styleSheet().isEmpty()),
+                       :sidebarShell->styleSheet().contains(
+                            QStringLiteral("#f5f7fa"))),
                  "Native sidebar must follow the light/dark theme") && ok;
         // Do not accept a mere setting/stylesheet string change: render
         // an actual sidebar pixel. This catches the SESSION 157 failure
@@ -421,6 +425,11 @@ bool verifyUi(MainWindow &window)
                                   color.green()>150 && color.blue()>150;
             const bool actualDark=color.red()<110 &&
                                  color.green()<110 && color.blue()<110;
+            if(!(dark?actualDark:actualLight))
+                logSmoke(QStringLiteral("Sidebar pixel mismatch: dark=%1 rgb=(%2,%3,%4) alpha=%5 at %6,%7 size=%8x%9")
+                    .arg(dark).arg(color.red()).arg(color.green()).arg(color.blue())
+                    .arg(color.alpha()).arg(point.x()).arg(point.y())
+                    .arg(drawn.width()).arg(drawn.height()));
             ok=check(dark?actualDark:actualLight,
                      "Rendered menu surface must be light or dark, not merely a saved theme preference") && ok;
         }

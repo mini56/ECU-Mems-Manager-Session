@@ -2,6 +2,7 @@
 #include <QApplication>
 #include <QVariant>
 #include "applicationvisualstyle.h"
+#include "uishell.h"
 #include "styles.h"
 #include <QComboBox>
 #include <QFontMetrics>
@@ -382,6 +383,7 @@ void applyApplicationVisualStyle(QMainWindow *window)
         reflowOverview(window);
         applyLightVisualStyle(window);
     }
+    refreshUiShellTheme(window);
 }
 
 void resizeApplicationVisualStyle(QMainWindow *window)

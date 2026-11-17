@@ -135,6 +135,16 @@ static void applySidebarState(QMainWindow *w)
     QFrame *utils=sidebar->findChild<QFrame*>(QStringLiteral("darkSidebarUtilities"));
     QToolButton *toggle=sidebar->findChild<QToolButton*>(QStringLiteral("darkSidebarToggle"));
 
+    // Theme ownership belongs to this native sidebar, not to a global late patch.
+    // Apply matching frame and navigation surfaces on startup and each theme switch.
+    const bool dark=qApp && qApp->property("ecuDarkTheme").toBool();
+    sidebar->setStyleSheet(dark
+        ?QStringLiteral("#darkSidebar{background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #070c11,stop:1 #0c141a);border:0;border-right:1px solid #2a3540;}")
+        :QStringLiteral("#darkSidebar{background:#f5f7fa;border:0;border-right:1px solid #d5dee7;}"));
+    if(utils) utils->setStyleSheet(dark
+        ?QStringLiteral("#darkSidebarUtilities{background:#0b1217;border-top:1px solid #27333c;}")
+        :QStringLiteral("#darkSidebarUtilities{background:#f1f4f8;border-top:1px solid #d4dce4;}"));
+
     if(toggle) {
         toggle->setIcon(utilityIcon(collapsed?QStringLiteral("expand"):QStringLiteral("collapse")));
         toggle->setIconSize(QSize(19,19));
@@ -193,7 +203,6 @@ static void applySidebarState(QMainWindow *w)
     nav->setSpacing(0);
     nav->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     nav->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    const bool dark=qApp && qApp->property("ecuDarkTheme").toBool();
     nav->setStyleSheet(dark
         ?QStringLiteral(
             "#uiRebuildNav{background:#080e13;color:#cbd4da;border:0;padding:2px 0;}"
@@ -1107,4 +1116,11 @@ void retranslateUiShell(QMainWindow *window)
     if (window && window->property("uiShellReady").toBool() &&
         window->property("deterministicNavigationApplied").toBool())
         applyDeterministicNavigation(qobject_cast<MainWindow*>(window));
+}
+
+void refreshUiShellTheme(QMainWindow *window)
+{
+    // Reapply the original sidebar owners after application-level theme changes.
+    // Does not rebuild pages, replace controls, or change ECU state.
+    if(window) applySidebarState(window);
 }
