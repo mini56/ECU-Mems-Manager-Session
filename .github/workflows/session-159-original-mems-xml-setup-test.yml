@@ -1,11 +1,11 @@
 name: "SESSION 159 - Fiches XML MEMS originales integrees - Setup Windows"
-run-name: SESSION 159 - Theme Clair Sombre et menu stable - ${{ github.sha }}
+run-name: SESSION 159 - Fiches XML originales, quatre generations - ${{ github.sha }}
 on:
   workflow_dispatch:
   # Only an explicit update to this dedicated request marker may trigger a build.
   # Ordinary source edits do not consume GitHub Actions compilation minutes.
   push:
-    branches: [fix-real-light-theme-session-159-20261117]
+    branches: [fix-original-mems-xml-fiches-20261117]
     paths:
       - '.github/CI_SESSION_159_XML_RUN_REQUEST.txt'
 permissions:
