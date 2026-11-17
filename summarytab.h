@@ -25,6 +25,7 @@ class SummaryTab : public QWidget
 public:
     explicit SummaryTab(QWidget *parent = 0);
     void updateData(mems_data *data);
+    void applyVisualTheme(bool dark);
 
 protected:
     void resizeEvent(QResizeEvent *event) override;

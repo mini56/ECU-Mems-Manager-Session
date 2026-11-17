@@ -3,6 +3,7 @@
 #include <QVariant>
 #include "applicationvisualstyle.h"
 #include "uishell.h"
+#include "summarytab.h"
 #include "styles.h"
 #include <QComboBox>
 #include <QFontMetrics>
@@ -384,6 +385,8 @@ void applyApplicationVisualStyle(QMainWindow *window)
         applyLightVisualStyle(window);
     }
     refreshUiShellTheme(window);
+    if(SummaryTab *summary=window->findChild<SummaryTab*>())
+        summary->applyVisualTheme(dark);
 }
 
 void resizeApplicationVisualStyle(QMainWindow *window)

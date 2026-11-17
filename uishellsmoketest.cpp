@@ -110,9 +110,13 @@ bool verifyApprovedVisualRules(MainWindow &window)
             // Check the actual approved 10pt bold font, not a dark-only
             // inline stylesheet that the light theme intentionally clears.
             QHeaderView *header=table->horizontalHeader();
-            ok=check(header && tenPointSegoe(header->font()) &&
-                     header->font().bold() && table->horizontalHeaderItem(0)!=nullptr,
-                     "Measurement header typography changed") && ok;
+            const bool validHeader=header && tenPointSegoe(header->font()) &&
+                     header->font().bold() && table->horizontalHeaderItem(0)!=nullptr;
+            if(!validHeader && header)
+                logSmoke(QStringLiteral("Measurement header: family=%1 pointSize=%2 weight=%3 bold=%4")
+                    .arg(header->font().family()).arg(header->font().pointSizeF())
+                    .arg(header->font().weight()).arg(header->font().bold()));
+            ok=check(validHeader,"Measurement header typography changed") && ok;
             ok=check(table->columnCount()==4,"Measurement column count changed") && ok;
         }
     }

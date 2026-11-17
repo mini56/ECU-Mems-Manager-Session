@@ -1,5 +1,6 @@
 #include "summarytab.h"
 #include "applicationvisualstyle.h"
+#include <QApplication>
 #include <QHeaderView>
 #include <QFontMetrics>
 #include <QIcon>
@@ -61,9 +62,7 @@ SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)
   QTableWidget *tables[3] = { m_table0, m_table1, m_table2 };
   for (int i = 0; i < 3; i++)
   {
-    tables[i]->setFont(DataPageTypography::body(tables[i]->font()));
-    tables[i]->horizontalHeader()->setFont(
-        DataPageTypography::header(tables[i]->horizontalHeader()->font()));
+    // Typography and colours are owned by applyVisualTheme() below.
     tables[i]->setHorizontalHeaderLabels(QStringList()
         << I18n::text(6600) /* EN: Parameter */ << "" << I18n::text(6601) /* EN: ECU received */ << I18n::text(6602) /* EN: Interpreted */);
     tables[i]->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
@@ -79,13 +78,6 @@ SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)
     tables[i]->setAlternatingRowColors(true);
     tables[i]->setShowGrid(false);
     tables[i]->setIconSize(QSize(24,18));
-      // Native readability: no delayed application-wide style filter.
-      const QString whiteRule=QStringLiteral(
-        "QTableWidget{color:#ffffff;font-weight:400;}"
-        "QTableWidget:disabled{color:#ffffff;}"
-        "QTableWidget::item{color:#ffffff;}"
-        "QTableWidget::item:disabled{color:#ffffff;}");
-      tables[i]->setStyleSheet(tables[i]->styleSheet()+whiteRule);
     if (QTableWidgetItem *head=tables[i]->horizontalHeaderItem(2)) {
       QString value=head->text();
       if (!value.contains(QLatin1Char('\n'))) {
@@ -97,10 +89,6 @@ SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)
     }
     if (QTableWidgetItem *head=tables[i]->horizontalHeaderItem(3))
       head->setTextAlignment(Qt::AlignCenter);
-    tables[i]->horizontalHeader()->setStyleSheet(QStringLiteral(
-      "QHeaderView::section{background:#141c23;color:#ff9828;border:0;"
-      "border-right:1px solid #29343e;border-bottom:2px solid #ff7a00;"
-      "padding:4px 5px;font-weight:700;}"));
     layout->addWidget(tables[i]);
   }
 
@@ -207,12 +195,46 @@ SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)
   setTooltip(m_rowIgnitionAdvance2,
     I18n::text(6707) /* EN: MEMS ECU function intended to compensate for certain conditions over the vehicle's life (low-octane fuel, engine wear) by slightly advancing ignition at idle. */);
 
+  applyVisualTheme(qApp && qApp->property("ecuDarkTheme").toBool());
   for (QTableWidget *table : {m_table0,m_table1,m_table2})
     sizeSummaryTable(table);
   QTimer::singleShot(0,this,[this]() {
     for (QTableWidget *table : {m_table0,m_table1,m_table2})
       sizeSummaryTable(table);
   });
+}
+
+void SummaryTab::applyVisualTheme(bool dark)
+{
+  // Each of these three tables owns its approved 10 pt Segoe UI typography.
+  // Reapply it after the application palette changes, as Qt may repolish
+  // header widgets when the global stylesheet is replaced.
+  const QString bodyStyle=dark
+    ?QStringLiteral("QTableWidget{color:#ffffff;font-weight:400;}"
+                    "QTableWidget:disabled{color:#ffffff;}"
+                    "QTableWidget::item{color:#ffffff;}"
+                    "QTableWidget::item:disabled{color:#ffffff;}")
+    :QStringLiteral("QTableWidget{color:#202936;font-weight:400;}"
+                    "QTableWidget:disabled{color:#536172;}"
+                    "QTableWidget::item{color:#202936;}"
+                    "QTableWidget::item:disabled{color:#536172;}");
+  const QString headerStyle=dark
+    ?QStringLiteral(
+        "QHeaderView{font-family:\"Segoe UI\";font-size:10pt;font-weight:700;}"
+        "QHeaderView::section{background:#141c23;color:#ff9828;border:0;"
+        "border-right:1px solid #29343e;border-bottom:2px solid #ff7a00;"
+        "padding:4px 5px;font-weight:700;}")
+    :QStringLiteral(
+        "QHeaderView{font-family:\"Segoe UI\";font-size:10pt;font-weight:700;}"
+        "QHeaderView::section{background:#edf2f6;color:#283748;border:0;"
+        "border-bottom:1px solid #cbd5df;padding:5px 7px;font-weight:700;}");
+  for(QTableWidget *table:{m_table0,m_table1,m_table2}){
+    table->setStyleSheet(bodyStyle);
+    table->setFont(DataPageTypography::body(table->font()));
+    QHeaderView *header=table->horizontalHeader();
+    header->setStyleSheet(headerStyle);
+    header->setFont(DataPageTypography::header(table->font()));
+  }
 }
 
 void SummaryTab::resizeEvent(QResizeEvent *event)
@@ -237,9 +259,7 @@ int SummaryTab::addRow(const QString &name)
   table->setItem(localRow, 1, new QTableWidgetItem(""));
   table->setItem(localRow, 2, new QTableWidgetItem("--"));
   table->setItem(localRow, 3, new QTableWidgetItem("--"));
-  for (int col=0; col<4; ++col)
-    if (QTableWidgetItem *item=table->item(localRow,col))
-      item->setData(Qt::ForegroundRole, QColor(QStringLiteral("#ffffff")));
+  // Item text follows the active dark/light palette, never fixed white.
   for (int col=1; col<4; ++col)
     if (QTableWidgetItem *item=table->item(localRow,col))
       item->setTextAlignment(Qt::AlignCenter);
