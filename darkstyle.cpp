@@ -1,4 +1,6 @@
 #include <QCheckBox>
+#include <QApplication>
+#include <QVariant>
 #include "applicationvisualstyle.h"
 #include <QComboBox>
 #include <QFontMetrics>
@@ -246,9 +248,144 @@ static void apply(QMainWindow *w)
 
 } // namespace
 
+// The historical dark-only shell installs widget-local stylesheets.
+// A global STYLE_LIGHT used to be overridden by those styles, so selecting
+// "Clair" never changed the actual user interface. This is now the single
+// theme owner: capture the native dark styles once, let the light palette
+// style all surface/controls, and restore the untouched originals on dark.
+// Gauge paint routines are untouched and all 14 layouts remain identical.
+namespace {
+constexpr const char *kNativeWidgetStyle="ecuOriginalNativeStyle158";
+
+static QString lightShellStyle()
+{
+    return QStringLiteral(R"STYLE(
+QMainWindow,QWidget#uiRebuildWorkspace,QWidget#overview_tab,QWidget#database_tab,
+QWidget#raw,QWidget#ia_mems_tab,QWidget#ECU,
+QTabWidget#Tab_main,QTabWidget::pane,
+QFrame#darkSidebar,QFrame#darkSidebarUtilities,QFrame#uiRebuildHeader,
+QFrame#uiRebuildStatus,QFrame#overviewHeading,QFrame#memsDatabaseFooter,
+QFrame#memsDatabaseBrowser,QFrame#uiRebuildWorkspace{
+    background:#ffffff;color:#202936;border-color:#d4dce4;
+}
+QFrame#darkSidebar{background:#f5f7fa;border:0;border-right:1px solid #d5dee7;}
+QFrame#darkSidebarUtilities{background:#f1f4f8;border:0;border-top:1px solid #d4dce4;}
+QFrame#uiRebuildHeader{background:#ffffff;border:0;border-bottom:1px solid #d6dee6;}
+QFrame#uiRebuildStatus{background:#f5f7fa;border:0;border-top:1px solid #d6dee6;}
+QFrame#overviewHeading{background:#f6f8fb;border:1px solid #dce3eb;border-left:3px solid #f07800;border-radius:5px;}
+QFrame#uiRebuildHero_0,QFrame[uiHero="true"]{background:#f7f9fb;border:1px solid #d7e0e9;border-left:3px solid #f07800;}
+QLabel,QCheckBox,QRadioButton{color:#202936;background:transparent;}
+QLabel#darkUtilitiesTitle,QLabel#memsHelpHeading{color:#b35d00;}
+QLabel#uiRebuildBrand{color:#202936;font-weight:700;}
+QLabel#memsDatabaseUpdateTitle{color:#a75700;font-weight:700;}
+QListWidget#uiRebuildNav{
+    background:#f5f7fa;color:#202936;border:0;padding:2px 0;outline:0;
+}
+QListWidget#uiRebuildNav::item{
+    background:transparent;color:#263342;
+    padding:3px 11px;border:0;border-left:3px solid transparent;
+    border-bottom:1px solid #e5ebf1;
+}
+QListWidget#uiRebuildNav::item:hover{background:#e8eef5;color:#1d2937;}
+QListWidget#uiRebuildNav::item:selected{
+    background:#fff0df;color:#ae5200;border-left:3px solid #ef7c00;font-weight:700;
+}
+QMenuBar{background:#ffffff;color:#202936;border-bottom:1px solid #d7e0e9;}
+QMenuBar::item:selected{background:#e7edf5;color:#202936;}
+QMenu{background:#ffffff;color:#202936;border:1px solid #cbd6e0;}
+QMenu::item:selected{background:#ffead4;color:#9a4b00;}
+QStatusBar{background:#f5f7fa;color:#263342;border-top:1px solid #d4dee7;}
+QStatusBar QLabel{color:#263342;background:transparent;}
+QGroupBox{background:#f7f9fb;color:#202936;border:1px solid #d9e1e9;border-radius:6px;margin-top:15px;font-weight:700;}
+QGroupBox::title{subcontrol-origin:margin;left:12px;padding:0 6px;color:#a95800;}
+QFrame#settingsMetrics,QFrame#settingsStates,QFrame#settingsAdjust,
+QFrame#errorsStored,QFrame#errorsLive,QFrame#actuatorListCard,
+QFrame#actuatorIacCard{
+    background:#f8fafc;border:1px solid #d8e0e8;border-radius:6px;
+}
+QTableView,QTableWidget,QTreeWidget,QListView,QTextEdit,QPlainTextEdit,QTextBrowser{
+    background:#ffffff;alternate-background-color:#f5f7fa;color:#202936;
+    border:1px solid #cad5df;border-radius:4px;
+}
+QHeaderView::section{
+    background:#edf2f6;color:#283748;border:0;border-bottom:1px solid #cbd5df;
+    padding:5px 7px;font-weight:700;
+}
+QLineEdit,QComboBox,QSpinBox,QDoubleSpinBox{
+    background:#ffffff;color:#202936;border:1px solid #c6d1db;
+    border-radius:4px;padding:4px 7px;
+}
+QComboBox QAbstractItemView{background:#ffffff;color:#202936;selection-background-color:#fbdabd;}
+QPushButton,QToolButton{
+    background:#f3f6f9;color:#263442;border:1px solid #bfcbd7;
+    border-radius:5px;padding:5px 10px;font-weight:650;
+}
+QPushButton:hover,QToolButton:hover{background:#e6edf5;border-color:#e88019;}
+QPushButton:disabled,QToolButton:disabled{background:#f3f5f8;color:#9ca8b5;border-color:#d6dce2;}
+QPushButton#m_connectButton{background:#f07800;color:#ffffff;border:1px solid #cd6500;font-weight:800;}
+QPushButton#m_disconnectButton{background:#f4f5f7;color:#374452;border:1px solid #c8d3de;font-weight:800;}
+QPushButton#m_clearFaultsButton,QPushButton#m_clearRecordedAnomalies{
+    background:#101419;color:#ff9900;border:1px solid #ff8800;
+}
+QScrollBar:vertical{background:#edf1f5;width:10px;margin:0;border:0;}
+QScrollBar::handle:vertical{background:#aab9c8;border-radius:4px;min-height:28px;}
+QScrollBar:horizontal{background:#edf1f5;height:10px;margin:0;border:0;}
+QScrollBar::handle:horizontal{background:#aab9c8;border-radius:4px;min-width:28px;}
+QScrollBar::add-line,QScrollBar::sub-line{width:0;height:0;}
+)STYLE");
+}
+
+static void restoreDarkNativeStyles(QMainWindow *window)
+{
+    QList<QWidget*> widgets=window->findChildren<QWidget*>();
+    widgets.prepend(window);
+    for(QWidget *widget:widgets){
+        if(!widget)continue;
+        const QVariant saved=widget->property(kNativeWidgetStyle);
+        if(saved.isValid()){
+            widget->setStyleSheet(saved.toString());
+            widget->setProperty(kNativeWidgetStyle,QVariant());
+        }
+    }
+}
+
+static void applyLightVisualStyle(QMainWindow *window)
+{
+    // All local dark styles are snapshots from the actual source widgets,
+    // not guessed replacements. Restoring dark does not recreate pages,
+    // change gauge geometry or interrupt an ECU connection.
+    QList<QWidget*> widgets=window->findChildren<QWidget*>();
+    widgets.prepend(window);
+    for(QWidget *widget:widgets){
+        if(!widget)continue;
+        if(widget->inherits("QMenu") || widget->inherits("QToolTip"))
+            continue;
+        if(!widget->property(kNativeWidgetStyle).isValid())
+            widget->setProperty(kNativeWidgetStyle,widget->styleSheet());
+        if(!widget->styleSheet().isEmpty())
+            widget->setStyleSheet(QString());
+    }
+    if(qApp)
+        qApp->setStyleSheet(QStringLiteral(
+            // Light belongs to the established stylesheet API as well as
+            // to the rebuilt 14-page shell.
+            "QWidget{background:#ffffff;color:#202936;"
+            "font-family:'Segoe UI';}"
+        ) + lightShellStyle());
+}
+}
+
 void applyApplicationVisualStyle(QMainWindow *window)
 {
-    apply(window);
+    if(!window)return;
+    const bool dark=qApp && qApp->property("ecuDarkTheme").toBool();
+    if(dark){
+        restoreDarkNativeStyles(window);
+        apply(window);
+    }else{
+        reflowOverview(window);
+        applyLightVisualStyle(window);
+    }
 }
 
 void resizeApplicationVisualStyle(QMainWindow *window)
@@ -256,5 +393,6 @@ void resizeApplicationVisualStyle(QMainWindow *window)
     if (!window)
         return;
     reflowOverview(window);
-    styleAnalysis(window);
+    if(qApp && qApp->property("ecuDarkTheme").toBool())
+        styleAnalysis(window);
 }
