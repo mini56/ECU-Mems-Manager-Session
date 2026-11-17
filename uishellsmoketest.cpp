@@ -170,9 +170,9 @@ bool verifyUi(MainWindow &window)
     QTabWidget *tabs=window.findChild<QTabWidget*>(QStringLiteral("Tab_main"));
     QListWidget *navigation=window.findChild<QListWidget*>(QStringLiteral("uiRebuildNav"));
     ok=check(window.property("uiShellReady").toBool(),"Native shell not constructed") && ok;
-    ok=check(tabs && tabs->count()==14,"Official 14 pages are not present") && ok;
-    ok=check(navigation && navigation->count()==14,"Sidebar does not contain the 14 official entries") && ok;
-    if (!tabs || !navigation || tabs->count()!=14 || navigation->count()!=14)
+    ok=check(tabs && tabs->count()==15,"Official 15 pages are not present") && ok;
+    ok=check(navigation && navigation->count()==15,"Sidebar does not contain the 15 official entries") && ok;
+    if (!tabs || !navigation || tabs->count()!=15 || navigation->count()!=15)
         return false;
 
     // The update action is a footer control, immediately after the footer
@@ -314,7 +314,7 @@ bool verifyUi(MainWindow &window)
 
     // A switch must work from both the sidebar and the underlying tab widget.
     // No test clicks ECU connection, actuator, reset or session buttons.
-    for (int i=0;i<14;i++){
+    for (int i=0;i<15;i++){
         QWidget *page=actualPage(tabs->widget(i));
         ok=check(page!=nullptr,"Missing page widget") && ok;
         ok=check(!tabs->tabText(i).trimmed().isEmpty(),"Missing translated page title") && ok;
@@ -378,7 +378,7 @@ bool verifyUi(MainWindow &window)
     for (const QSize size : {QSize(1024,700),QSize(1200,768),QSize(1280,800),QSize(1366,768),QSize(1920,1080)}){
         window.resize(size);
         QCoreApplication::processEvents();
-        ok=check(tabs->count()==14 && navigation->count()==14,
+        ok=check(tabs->count()==15 && navigation->count()==15,
                  "Page count changed on resize") && ok;
         ok=check(tabs->currentIndex()==navigation->currentRow() &&
                  navigation->selectedItems().size()==1 &&
@@ -393,7 +393,7 @@ bool verifyUi(MainWindow &window)
 
     // SESSION 157 let the dark-only rebuild override the saved "Clair"
     // choice at startup. Test a real two-way theme switch on the native
-    // 14-page shell, with its original geometry and selection intact.
+    // 15-page shell, with its original geometry and selection intact.
     const bool initialDark=qApp->property("ecuDarkTheme").toBool();
     const int originalTab=tabs->currentIndex();
     const int originalWidth=navigation->width();
@@ -460,7 +460,7 @@ bool verifyUi(MainWindow &window)
             ok=check(dark?actualDark:actualLight,
                      "Rendered menu surface must be light or dark, not merely a saved theme preference") && ok;
         }
-        ok=check(tabs->count()==14 && navigation->count()==14 &&
+        ok=check(tabs->count()==15 && navigation->count()==15 &&
                  navigation->width()==originalWidth &&
                  navigation->item(0)->sizeHint().height()==originalRow &&
                  tabs->currentIndex()==originalTab &&
@@ -468,7 +468,7 @@ bool verifyUi(MainWindow &window)
                  navigation->selectedItems().size()==1 &&
                  navigation->selectedItems().first()==
                      navigation->item(originalTab),
-                 "Theme changes must not disturb 14 pages, sidebar geometry or selection") && ok;
+                 "Theme changes must not disturb 15 pages, sidebar geometry or selection") && ok;
 
         manual.show();
         QCoreApplication::processEvents();
@@ -512,16 +512,16 @@ bool verifyUi(MainWindow &window)
         QEvent languageChange(QEvent::LanguageChange);
         QCoreApplication::sendEvent(&window,&languageChange);
         QCoreApplication::processEvents();
-        ok=check(tabs->count()==14 && navigation->count()==14,
+        ok=check(tabs->count()==15 && navigation->count()==15,
                  "Language change modified the official page count") && ok;
-        for (int i=0;i<14;i++)
+        for (int i=0;i<15;i++)
             ok=check(navigation->item(i)->text()==tabs->tabText(i),
                      "Sidebar and page translations disagree") && ok;
     } else {
         ok=check(false,"English translation catalog is unavailable") && ok;
     }
 
-    if (ok) qInfo().noquote() << "SESSION_UI_SMOKE_PASS 14 native pages, bidirectional navigation, "
+    if (ok) qInfo().noquote() << "SESSION_UI_SMOKE_PASS 15 native pages, bidirectional navigation, "
                                "five window sizes, light/dark theme switching, Help and Options, "
                                "approved visual style, English language, MEMS/Settings/ROSCO, dwell 0-5ms";
     return ok;
