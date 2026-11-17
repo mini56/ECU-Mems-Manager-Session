@@ -26,6 +26,7 @@ private slots:
     void onAnchorClicked(const QUrl &url);
 
 private:
+    void updateAppearance(bool dark);
     void loadDocument();
 
     QVBoxLayout *m_vbox=nullptr;
