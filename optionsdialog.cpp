@@ -7,46 +7,9 @@
 #include <QIcon>
 #include <QPalette>
 #include <QColor>
-#ifdef Q_OS_WIN
-#include <windows.h>
-#endif
+#include "nativewindowstyle.h"
 #include "i18n.h"
 #define tr I18n::text
-
-namespace {
-
-static void applyDarkNativeTitleBar(QWidget *widget)
-{
-#ifdef Q_OS_WIN
-  if (!widget)
-    return;
-
-  HWND hwnd = reinterpret_cast<HWND>(widget->winId());
-  HMODULE dwmApi = LoadLibraryW(L"dwmapi.dll");
-  if (!dwmApi)
-    return;
-
-  typedef HRESULT (WINAPI *DwmSetWindowAttributeFn)(HWND, DWORD, LPCVOID, DWORD);
-  DwmSetWindowAttributeFn setAttribute = reinterpret_cast<DwmSetWindowAttributeFn>(
-      GetProcAddress(dwmApi, "DwmSetWindowAttribute"));
-  if (setAttribute)
-  {
-    const BOOL dark = TRUE;
-    const DWORD attributes[] = {20, 19};
-    for (DWORD attribute : attributes)
-    {
-      if (SUCCEEDED(setAttribute(hwnd, attribute, &dark, sizeof(dark))))
-        break;
-    }
-  }
-
-  FreeLibrary(dwmApi);
-#else
-  Q_UNUSED(widget);
-#endif
-}
-
-}
 
 /**
  * Constructor; sets up the options-dialog UI and sets settings-file field names.
@@ -56,19 +19,22 @@ m_serialDeviceChanged(false),
 m_settingsGroupName("Settings"), m_settingSerialDev("SerialDevice"), m_settingTemperatureUnits("TemperatureUnits"), m_settingLambdaScale("LambdaScale"), m_settingTheme("Theme"), m_settingLanguage("Language"), m_settingDesktopShortcut("DesktopShortcut")
 {
   this->setWindowTitle(title);
-  QPalette dialogPalette = palette();
-  dialogPalette.setColor(QPalette::Window, QColor(QStringLiteral("#090e13")));
-  dialogPalette.setColor(QPalette::WindowText, QColor(QStringLiteral("#e7ecef")));
-  setPalette(dialogPalette);
-  setAutoFillBackground(true);
   readSettings();
   setupWidgets();
-  applyDarkNativeTitleBar(this);
+  setAutoFillBackground(true);
+  updateAppearance(m_theme==QStringLiteral("dark"));
+  // Preview only the settings window while the user chooses. The whole
+  // application changes only after OK; Cancel leaves its theme untouched.
+  connect(m_themeBox,QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this,[this](int){updateAppearance(
+              m_themeBox->currentData().toString()==QStringLiteral("dark"));});
 }
 
 void OptionsDialog::showEvent(QShowEvent *event)
 {
   QDialog::showEvent(event);
+  updateAppearance(m_themeBox &&
+       m_themeBox->currentData().toString()==QStringLiteral("dark"));
 
   // The ECU worker can spend several seconds in a MEMS 1.9 slow
   // initialisation. Do not allow the shared serial-device name to be changed
@@ -80,6 +46,56 @@ void OptionsDialog::showEvent(QShowEvent *event)
     m_serialDeviceLabel->setEnabled(!connectionInProgress);
   if (m_serialDeviceBox)
     m_serialDeviceBox->setEnabled(!connectionInProgress);
+}
+
+void OptionsDialog::updateAppearance(bool dark)
+{
+    // The Options dialog must follow the selected theme, including its
+    // native Windows title bar. This replaces the old dark-only palette.
+    QPalette p=palette();
+    const QColor bg(dark?QStringLiteral("#090e13"):QStringLiteral("#ffffff"));
+    const QColor fg(dark?QStringLiteral("#e7ecef"):QStringLiteral("#202936"));
+    p.setColor(QPalette::Window,bg);
+    p.setColor(QPalette::WindowText,fg);
+    p.setColor(QPalette::Text,fg);
+    p.setColor(QPalette::ButtonText,fg);
+    p.setColor(QPalette::Base,QColor(dark?QStringLiteral("#121c24")
+                                          :QStringLiteral("#f7f9fc")));
+    setPalette(p);
+    setStyleSheet(dark
+        ?QStringLiteral(
+            "QDialog{background:#090e13;color:#e7ecef;}"
+            "QLabel{color:#e7ecef;background:transparent;}"
+            "QLineEdit,QComboBox{background:#131d25;color:#edf2f5;"
+            "border:1px solid #3a4954;border-radius:4px;padding:4px;}"
+            "QPushButton{background:#18232b;color:#edf2f5;"
+            "border:1px solid #3b4b58;border-radius:5px;padding:6px;}"
+            "QPushButton:hover{border-color:#ff8a00;}")
+        :QStringLiteral(
+            "QDialog{background:#ffffff;color:#202936;}"
+            "QLabel{color:#202936;background:transparent;}"
+            "QLineEdit,QComboBox{background:#ffffff;color:#202936;"
+            "border:1px solid #c6d1dd;border-radius:4px;padding:4px;}"
+            "QPushButton{background:#f0f4f8;color:#202936;"
+            "border:1px solid #bfcbd7;border-radius:5px;padding:6px;}"
+            "QPushButton:hover{border-color:#f07800;}"));
+    if(m_desktopShortcutBox)
+        m_desktopShortcutBox->setStyleSheet(QStringLiteral(
+            "QCheckBox{color:%1;background:transparent;}")
+                .arg(dark?QStringLiteral("#e7ecef"):QStringLiteral("#202936")));
+    if(m_taskbarAutoHideBox)
+        m_taskbarAutoHideBox->setStyleSheet(QStringLiteral(
+            "QCheckBox{color:%1;background:transparent;font-weight:600;}")
+                .arg(dark?QStringLiteral("#edf2f5"):QStringLiteral("#202936")));
+    if(m_taskbarExplanation)
+        m_taskbarExplanation->setStyleSheet(dark
+            ?QStringLiteral(
+                "QLabel{color:#e9d6ba;background:#27201a;"
+                "border:1px solid #795028;border-radius:5px;padding:10px;}")
+            :QStringLiteral(
+                "QLabel{color:#553b19;background:#fff3df;"
+                "border:1px solid #e7c18d;border-radius:5px;padding:10px;}"));
+    applyNativeTitleBar(this,dark);
 }
 
 /**
