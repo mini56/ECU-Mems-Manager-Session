@@ -6,6 +6,7 @@
 #include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
+#include <QSaveFile>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -282,12 +283,41 @@ bool expandReferenceSheets(const QString &sourceRoot,const QString &cacheRoot)
 {
     const QString fichesRoot=sourceRoot+QStringLiteral("/fiches");
     QDir dir(fichesRoot);
-    if(!dir.exists()) return true;
-    const QStringList files=dir.entryList(QStringList()<<QStringLiteral("*.qz64"),QDir::Files,QDir::Name);
-    for(const QString &fileName:files){
+    if(!dir.exists()) return false;
+
+    const QString destinationRoot=cacheRoot+QStringLiteral("/fiches/");
+    if(!QDir().mkpath(destinationRoot)) return false;
+
+    // Exact XML files provided by the user are the canonical documentation.
+    // Copy changed source bytes atomically, even when an older compressed
+    // version was already unpacked in AppLocalDataLocation.
+    const QStringList originals=dir.entryList(
+        QStringList()<<QStringLiteral("mems_*.xml"),QDir::Files,QDir::Name);
+    for(const QString &fileName:originals){
+        QFile input(dir.filePath(fileName));
+        if(!input.open(QIODevice::ReadOnly)) return false;
+        const QByteArray bytes=input.readAll();
+        if(bytes.isEmpty()) return false;
+        const QString destination=destinationRoot+fileName;
+        QFile existing(destination);
+        if(existing.open(QIODevice::ReadOnly) && existing.readAll()==bytes)
+            continue;
+        QSaveFile output(destination);
+        if(!output.open(QIODevice::WriteOnly)) return false;
+        if(output.write(bytes)!=bytes.size() || !output.commit())
+            return false;
+    }
+
+    // Existing translated packs remain available; do not let a compressed
+    // derivative replace the complete, original user XML.
+    const QStringList compressed=dir.entryList(
+        QStringList()<<QStringLiteral("*.qz64"),QDir::Files,QDir::Name);
+    for(const QString &fileName:compressed){
         QString destinationName=fileName;
         destinationName.chop(QStringLiteral(".qz64").size());
-        if(!expandQz64(dir.filePath(fileName),cacheRoot+QStringLiteral("/fiches/")+destinationName))
+        if(QFileInfo::exists(dir.filePath(destinationName)))
+            continue;
+        if(!expandQz64(dir.filePath(fileName),destinationRoot+destinationName))
             return false;
     }
     return true;
