@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/css" href="style.css"?>
+ <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+        <StackPanel Spacing="20" Padding="20">
+<fiche><titre>MEMS 1.6</titre>
+<sous-titre>Modular Engine Management System 1.6 (Single Point Injection)</sous-titre>
+<section titre="DESCRIPTION &amp; RÉFÉRENCES"><p>Calculateur d'injection monopoint (SPI) équipant les Mini classiques, Metro, Maestro et Montego. Système simple à injecteur unique dans le corps du papillon. Utilise le protocole ROSCO propriétaire de Rover via prise ronde 3 broches.</p>
+<p>RÉF. CONSTRUCTEUR : MNE10078 / MNE10089 / MNE10092 / MKC104290 / MKC103070</p>
+</section>
+<section titre="VÉHICULES COMPATIBLES">
+<p>Mini Cooper 1275 SPi — 1991-1996 — A-Series 1275cc<br/>Mini Mayfair SPi — 1991-1996 — A-Series 1275cc<br/>Rover Metro 1.4 SPi — 1990-1994 — K-Series 1396cc<br/>Maestro / Montego SPi — 1990-1994 — S-Series</p></section>
+<section titre="PROTOCOLE DE COMMUNICATION">
+<p>NOM : ROSCO (Rover Service Communication)</p>
+<p>COUCHE PHYSIQUE : TTL 0V/5V bidirectionnel (2 fils séparés Tx/Rx)</p>
+<p>VITESSE : 9600 bps — FORMAT DONNÉES : 8 bits données, sans parité, 1 bit stop (8N1)</p>
+<p>ADRESSE ECU : N/A (protocole propriétaire)</p>
+<p>SÉQUENCE DE RÉVEIL : Séquence propriétaire ROSCO</p>
+<p>OUTILS COMPATIBLES : MEMSDiag, MemsFCR, Rovacom (câble ROSCO USB), MEMS-Rosco Interface</p>
+<note>Protocole antérieur à l'OBD. Nécessite un câble spécifique ROSCO (USB-Serial + convertisseur TTL). NON compatible avec un câble KKL VAG standard.</note>
+</section>
+<section titre="BROCHAGE PRISE DE DIAGNOSTIC — PRISE RONDE 3 BROCHES (ROSCO)">
+<p>LOCALISATION : Sous le capot, à côté du calculateur, dans un boîtier plastique noir</p>
+<table>
+<ligne>
+<broche>BROCHE</broche>
+<fonction>FONCTION</fonction>
+<couleur>COULEUR DU FIL</couleur>
+</ligne>
+<ligne>
+<broche>1</broche>
+<fonction>Masse (Signal Ground)</fonction>
+<couleur>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="14" viewBox="0 0 24 14" aria-label="couleur">
+<rect width="24" height="14" fill="#f2a5bc"/><path d="M24 0H0v14z" fill="#050505"/><rect x=".5" y=".5" width="23" height="13" fill="none" stroke="#aaa"/></svg><texte>Rose / Noir</texte></couleur></ligne><ligne><broche>2</broche><fonction>Rx — ECU → PC (data out ECU)</fonction><couleur><svg xmlns="http://www.w3.org/2000/svg" width="24" height="14" viewBox="0 0 24 14" aria-label="couleur"><rect width="24" height="14" fill="#fff"/><path d="M24 0H0v14z" fill="#ffe000"/><rect x=".5" y=".5" width="23" height="13" fill="none" stroke="#aaa"/></svg>
+<texte>Blanc / Jaune</texte>
+</couleur>
+</ligne>
+<ligne>
+<broche>3</broche>
+<fonction>Tx — PC → ECU (data in ECU)</fonction>
+<couleur>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="14" viewBox="0 0 24 14" aria-label="couleur">
+<rect width="24" height="14" fill="#050505"/>
+<path d="M24 0H0v14z" fill="#00a52b"/>
+<rect x=".5" y=".5" width="23" height="13" fill="none" stroke="#aaa"/>
+</svg>
+<texte>Noir / Vert</texte>
+</couleur>
+</ligne>
+</table>
+</section>
+<section titre="BROCHAGE CÔTÉ ECU — CONNECTEUR ECU 25 BROCHES (SPI MINI)">
+<p>Broches principales du connecteur harnais ECU pour Mini SPi 1275.</p>
+<table>
+<ligne>
+<broche>BROCHE</broche>
+<fonction>FONCTION</fonction>
+<couleur>COULEUR DU FIL</couleur>
+</ligne>
+<ligne>
+<broche>1</broche>
+<fonction>+12V alimentation permanente batterie</fonction>
+<couleur>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="14" viewBox="0 0 24 14" aria-label="couleur">
+<rect width="24" height="14" fill="#fff"/>
+<path d="M24 0H0v14z" fill="#a8e8f5"/>
+<rect x=".5" y=".5" width="23" height="13" fill="none" stroke="#aaa"/>
+</svg>
+<texte>Blanc / Bleu clair</texte>
+</couleur>
+</ligne>
+<ligne>
+<broche>2</broche>
+<fonction>Masse ECU (Ground)</fonction>
+<couleur>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="14" viewBox="0 0 24 14" aria-label="couleur">
+<rect width="24" height="14" fill="#050505"/><path d="M24 0H0v14z" fill="#050505"/>
+<rect x=".5" y=".5" width="23" height="13" fill="none" stroke="#aaa"/>
+</svg>
+<texte>Noir</texte>
+</couleur>
+</ligne>
+<ligne>
+<broche>3</broche>
+<fonction>Signal capteur régime moteur (CKP +)</fonction>
+<couleur><svg xmlns="http://www.w3.org/2000/svg" width="24" height="14" viewBox="0 0 24 14" aria-label="couleur">
+<rect width="24" height="14" fill="#00a52b"/>
+<path d="M24 0H0v14z" fill="#fff"/>
+<rect x=".5" y=".5" width="23" height="13" fill="none" stroke="#aaa"/>
+</svg>
+<texte>Vert / Blanc</texte>
+</couleur>
+</ligne>
+<ligne>
+<broche>4</broche>
+<fonction>Signal capteur régime moteur (CKP -)</fonction>
+<couleur><svg xmlns="http://www.w3.org/2000/svg" width="24" height="14" viewBox="0 0 24 14" aria-label="couleur">
+<rect width="24" height="14" fill="#050505"/>
+<path d="M24 0H0v14z" fill="#fff"/>
+<rect x=".5" y=".5" width="23" height="13" fill="none" stroke="#aaa"/>
+</svg>
+<texte>Noir / Blanc</texte>
+</couleur>
+</ligne>
+<ligne>
+<broche>5</broche>
+<fonction>Sonde température eau (ECT)</fonction>
+<couleur>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="14" viewBox="0 0 24 14" aria-label="couleur">
+<rect width="24" height="14" fill="#00a52b"/>
+<path d="M24 0H0v14z" fill="#ffe000"/>
+<rect x=".5" y=".5" width="23" height="13" fill="none" stroke="#aaa"/>
+</svg>
+<texte>Vert / Jaune</texte>
+</couleur>
+</ligne>
+<ligne>
+<broche>6</broche>
+<fonction>Sonde température air (IAT)</fonction>
+<couleur>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="14" viewBox="0 0 24 14" aria-label="couleur">
+<rect width="24" height="14" fill="#00a52b"/>
+<path d="M24 0H0v14z" fill="#ed2224"/>
+<rect x=".5" y=".5" width="23" height="13" fill="none" stroke="#aaa"/>
+</svg>
+<texte>Vert / Rouge</texte>
+</couleur>
+</ligne>
+<ligne>
+<broche>7</broche>
+<fonction>Capteur position papillon (TPS signal)</fonction>
+<couleur><svg xmlns="http://www.w3.org/2000/svg" width="24" height="14" viewBox="0 0 24 14" aria-label="couleur">
+<rect width="24" height="14" fill="#ffe000"/>
+<path d="M24 0H0v14z" fill="#00a52b"/><rect x=".5" y=".5" width="23" height="13" fill="none" stroke="#aaa"/>
+</svg>
+<texte>Jaune / Vert</texte>
+</couleur>
+</ligne>
+<ligne>
+<broche>8</broche>
+<fonction>Alimentation +5V capteurs (TPS/MAP)</fonction>
+<couleur>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="14" viewBox="0 0 24 14" aria-label="couleur">
+<rect width="24" height="14" fill="#ed2224"/>
+<path d="M24 0H0v14z" fill="#fff"/>
+<rect x=".5" y=".5" width="23" height="13" fill="none" stroke="#aaa"/>
+</svg>
+<texte>Rouge / Blanc</texte>
+</couleur>
+</ligne>
+<ligne>
+<broche>9</broche>
+<fonction>Masse capteurs</fonction>
+<couleur>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="14" viewBox="0 0 24 14" aria-label="couleur">
+<rect width="24" height="14" fill="#050505"/>
+<path d="M24 0H0v14z" fill="#00a52b"/>
+<rect x=".5" y=".5" width="23" height="13" fill="none" stroke="#aaa"/>
+</svg>
+<texte>Noir / Vert</texte>
+</couleur>
+</ligne>
+<ligne>
+<broche>10</broche>
+<fonction>Sonde lambda (O2)</fonction>
+<couleur>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="14" viewBox="0 0 24 14" aria-label="couleur">
+<rect width="24" height="14" fill="#999"/>
+<path d="M24 0H0v14z" fill="#999"/>
+<rect x=".5" y=".5" width="23" height="13" fill="none" stroke="#aaa"/>
+</svg>
+<texte>Gris</texte>
+</couleur>
+</ligne>
+<ligne>
+<broche>11</broche>
+<fonction>Commande injecteur SPI (Injector drive)</fonction>
+<couleur><svg xmlns="http://www.w3.org/2000/svg" width="24" height="14" viewBox="0 0 24 14" aria-label="couleur">
+<rect width="24" height="14" fill="#f2a5bc"/><path d="M24 0H0v14z" fill="#050505"/>
+<rect x=".5" y=".5" width="23" height="13" fill="none" stroke="#aaa"/>
+</svg>
+<texte>Rose / Noir</texte>
+</couleur>
+</ligne>
+<ligne>
+<broche>12</broche>
+<fonction>Commande bobine allumage</fonction>
+<couleur>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="14" viewBox="0 0 24 14" aria-label="couleur">
+<rect width="24" height="14" fill="#fff"/>
+<path d="M24 0H0v14z" fill="#050505"/>
+<rect x=".5" y=".5" width="23" height="13" fill="none" stroke="#aaa"/>
+</svg>
+<texte>Blanc / Noir</texte>
+</couleur>
+</ligne>
+<ligne>
+<broche>13</broche>
+<fonction>Moteur pas à pas ralenti — phase A</fonction>
+<couleur>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="14" viewBox="0 0 24 14" aria-label="couleur">
+<rect width="24" height="14" fill="#1769e8"/>
+<path d="M24 0H0v14z" fill="#fff"/>
+<rect x=".5" y=".5" width="23" height="13" fill="none" stroke="#aaa"/>
+</svg>
+<texte>Bleu / Blanc</texte>
+</couleur>
+</ligne>
+<ligne>
+<broche>14</broche>
+<fonction>Moteur pas à pas ralenti — phase B</fonction>
+<couleur>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="14" viewBox="0 0 24 14" aria-label="couleur">
+<rect width="24" height="14" fill="#1769e8"/>
+<path d="M24 0H0v14z" fill="#ed2224"/>
+<rect x=".5" y=".5" width="23" height="13" fill="none" stroke="#aaa"/>
+</svg>
+<texte>Bleu / Rouge</texte>
+</couleur>
+</ligne>
+<ligne>
+<broche>15</broche>
+<fonction>Moteur pas à pas ralenti — phase C</fonction>
+<couleur>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="14" viewBox="0 0 24 14" aria-label="couleur">
+<rect width="24" height="14" fill="#1769e8"/><path d="M24 0H0v14z" fill="#ffe000"/>
+<rect x=".5" y=".5" width="23" height="13" fill="none" stroke="#aaa"/>
+</svg>
+<texte>Bleu / Jaune</texte>
+</couleur>
+</ligne>
+<ligne>
+<broche>16</broche>
+<fonction>Moteur pas à pas ralenti — phase D</fonction>
+<couleur>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="14" viewBox="0 0 24 14" aria-label="couleur">
+<rect width="24" height="14" fill="#1769e8"/>
+<path d="M24 0H0v14z" fill="#00a52b"/>
+<rect x=".5" y=".5" width="23" height="13" fill="none" stroke="#aaa"/>
+</svg>
+<texte>Bleu / Vert</texte>
+</couleur>
+</ligne>
+<ligne>
+<broche>17</broche>
+<fonction>Ligne diagnostic K (Tx ROSCO)</fonction>
+<couleur>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="14" viewBox="0 0 24 14" aria-label="couleur">
+<rect width="24" height="14" fill="#050505"/>
+<path d="M24 0H0v14z" fill="#00a52b"/>
+<rect x=".5" y=".5" width="23" height="13" fill="none" stroke="#aaa"/>
+</svg>
+<texte>Noir / Vert</texte>
+</couleur>
+</ligne>
+<ligne>
+<broche>18</broche>
+<fonction>Ligne diagnostic K (Rx ROSCO)</fonction>
+<couleur>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="14" viewBox="0 0 24 14" aria-label="couleur">
+<rect width="24" height="14" fill="#fff"/>
+<path d="M24 0H0v14z" fill="#ffe000"/>
+<rect x=".5" y=".5" width="23" height="13" fill="none" stroke="#aaa"/>
+</svg>
+<texte>Blanc / Jaune</texte>
+</couleur>
+</ligne>
+<ligne>
+<broche>19</broche>
+<fonction>Relais pompe à essence (commande)</fonction>
+<couleur>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="14" viewBox="0 0 24 14" aria-label="couleur">
+<rect width="24" height="14" fill="#fff"/>
+<path d="M24 0H0v14z" fill="#8b4a20"/>
+<rect x=".5" y=".5" width="23" height="13" fill="none" stroke="#aaa"/>
+</svg>
+<texte>Blanc / Marron</texte>
+</couleur>
+</ligne>
+<ligne>
+<broche>20</broche>
+<fonction>Compte-tours (tachymètre)</fonction>
+<couleur>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="14" viewBox="0 0 24 14" aria-label="couleur">
+<rect width="24" height="14" fill="#050505"/>
+<path d="M24 0H0v14z" fill="#fff"/>
+<rect x=".5" y=".5" width="23" height="13" fill="none" stroke="#aaa"/>
+</svg>
+<texte>Noir / Blanc</texte>
+</couleur>
+</ligne>
+<ligne>
+<broche>21</broche>
+<fonction>Contact démarreur / +12V après contact</fonction>
+<couleur>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="14" viewBox="0 0 24 14" aria-label="couleur">
+<rect width="24" height="14" fill="#fff"/>
+<path d="M24 0H0v14z" fill="#fff"/>
+<rect x=".5" y=".5" width="23" height="13" fill="none" stroke="#aaa"/>
+</svg>
+<texte>Blanc</texte>
+</couleur>
+</ligne>
+<ligne>
+<broche>22</broche>
+<fonction>Relais principal (commande masse)</fonction>
+<couleur><svg xmlns="http://www.w3.org/2000/svg" width="24" height="14" viewBox="0 0 24 14" aria-label="couleur">
+<rect width="24" height="14" fill="#fff"/>
+<path d="M24 0H0v14z" fill="#f2a5bc"/><rect x=".5" y=".5" width="23" height="13" fill="none" stroke="#aaa"/>
+</svg>
+<texte>Blanc / Rose</texte>
+</couleur>
+</ligne>
+<ligne>
+<broche>23</broche>
+<fonction>Immobiliseur / antidémarrage codé</fonction>
+<couleur>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="14" viewBox="0 0 24 14" aria-label="couleur">
+<rect width="24" height="14" fill="#8b4a20"/>
+<path d="M24 0H0v14z" fill="#fff"/><rect x=".5" y=".5" width="23" height="13" fill="none" stroke="#aaa"/>
+</svg>
+<texte>Marron / Blanc</texte>
+</couleur>
+</ligne>
+<ligne>
+<broche>24</broche>
+<fonction>Relais ventilateur refroidissement</fonction>
+<couleur>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="14" viewBox="0 0 24 14" aria-label="couleur">
+<rect width="24" height="14" fill="#00a52b"/>
+<path d="M24 0H0v14z" fill="#8b4a20"/>
+<rect x=".5" y=".5" width="23" height="13" fill="none" stroke="#aaa"/>
+</svg>
+<texte>Vert / Marron</texte>
+</couleur>
+</ligne>
+<ligne>
+<broche>25</broche>
+<fonction>Signal climatisation (A/C request)</fonction>
+<couleur>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="14" viewBox="0 0 24 14" aria-label="couleur">
+<rect width="24" height="14" fill="#00a52b"/>
+<path d="M24 0H0v14z" fill="#9d35c7"/><rect x=".5" y=".5" width="23" height="13" fill="none" stroke="#aaa"/>
+</svg>
+<texte>Vert / Violet</texte>
+</couleur>
+</ligne>
+</table>
+</section>
+<section titre="SOURCES DOCUMENTAIRES">
+<p>rovermems.com/mems-1.6<br/>colinbourassa.github.io/car_stuff/mems_interface/<br/>memsdiag.blogspot.com<br/>andrewrevill.co.uk/MEMSToolsIndex.htm</p>
+</section>
+</fiche>
+ </StackPanel>
+    </ScrollViewer>
