@@ -2,6 +2,7 @@
 
 #include "i18n.h"
 #include "nativewindowstyle.h"
+#include <QApplication>
 #include <QDesktopServices>
 #include <QFile>
 #include <QGuiApplication>
@@ -23,19 +24,7 @@ HelpViewer::HelpViewer(const QString &title,QWidget *parent)
     setWindowFlags(windowFlags() | Qt::WindowMaximizeButtonHint |
                    Qt::WindowMinimizeButtonHint);
     setMinimumSize(850,590);
-    setStyleSheet(QStringLiteral(
-        "#memsProfessionalHelp{background:#090e13;color:#e6edf2;}"
-        "QLabel{color:#e6edf2;background:transparent;}"
-        "QListWidget{background:#101920;color:#d6e0e7;border:1px solid #2e414b;"
-        "border-radius:6px;font-size:12px;padding:6px;outline:0;}"
-        "QListWidget::item{padding:9px 10px;border-bottom:1px solid #23323c;}"
-        "QListWidget::item:selected{background:#302418;color:#ffaf60;"
-        "border-left:3px solid #ff8200;font-weight:700;}"
-        "QTextBrowser{background:#0e171d;color:#e4ebf1;border:1px solid #30424c;"
-        "border-radius:6px;padding:16px;selection-background-color:#5b361a;}"
-        "QPushButton{background:#17232c;color:#f0f4f6;border:1px solid #40525e;"
-        "border-radius:5px;padding:8px 20px;font-weight:700;}"
-        "QPushButton:hover{border-color:#ff8c27;color:#ffaf60;}"));
+
 
     QScreen *screen=QGuiApplication::primaryScreen();
     const QSize available=screen?screen->availableGeometry().size():QSize(1366,768);
@@ -51,15 +40,14 @@ HelpViewer::HelpViewer(const QString &title,QWidget *parent)
     heading->setText(QStringLiteral("ECU MEMS Manager    |    %1").arg(
         I18n::language().startsWith(QStringLiteral("fr"),Qt::CaseInsensitive)
         ?QStringLiteral("GUIDE UTILISATEUR"):QStringLiteral("USER GUIDE")));
-    heading->setStyleSheet(QStringLiteral(
-        "color:#ff9828;font-size:19px;font-weight:700;"));
+
     m_vbox->addWidget(heading);
 
     QLabel *subtitle=new QLabel(this);
     subtitle->setText(I18n::language().startsWith(QStringLiteral("fr"),Qt::CaseInsensitive)
         ?QStringLiteral("Guide intégré · documentation hors ligne · recherche par rubrique")
         :QStringLiteral("Built-in guide · offline documentation · section navigation"));
-    subtitle->setStyleSheet(QStringLiteral("color:#9fafbc;font-size:12px;"));
+    subtitle->setObjectName(QStringLiteral("memsHelpSubtitle"));
     m_vbox->addWidget(subtitle);
 
     QSplitter *body=new QSplitter(Qt::Horizontal,this);
@@ -107,8 +95,45 @@ HelpViewer::HelpViewer(const QString &title,QWidget *parent)
     footer->addWidget(m_closeButton);
     m_vbox->addLayout(footer);
 
+    const bool dark=qApp && qApp->property("ecuDarkTheme").toBool();
+    updateAppearance(dark);
     loadDocument();
-    applyNativeTitleBar(this,true);
+    applyNativeTitleBar(this,dark);
+}
+
+void HelpViewer::updateAppearance(bool dark)
+{
+    setStyleSheet(dark
+        ?QStringLiteral(
+            "#memsProfessionalHelp{background:#090e13;color:#e6edf2;}"
+            "#memsHelpHeading{color:#ff9828;font-size:19px;font-weight:700;}"
+            "#memsHelpSubtitle{color:#9fafbc;font-size:12px;}"
+            "QLabel{color:#e6edf2;background:transparent;}"
+            "QListWidget{background:#101920;color:#d6e0e7;border:1px solid #2e414b;"
+            "border-radius:6px;font-size:12px;padding:6px;outline:0;}"
+            "QListWidget::item{padding:9px 10px;border-bottom:1px solid #23323c;}"
+            "QListWidget::item:selected{background:#302418;color:#ffaf60;"
+            "border-left:3px solid #ff8200;font-weight:700;}"
+            "QTextBrowser{background:#0e171d;color:#e4ebf1;border:1px solid #30424c;"
+            "border-radius:6px;padding:16px;selection-background-color:#5b361a;}"
+            "QPushButton{background:#17232c;color:#f0f4f6;border:1px solid #40525e;"
+            "border-radius:5px;padding:8px 20px;font-weight:700;}"
+            "QPushButton:hover{border-color:#ff8c27;color:#ffaf60;}")
+        :QStringLiteral(
+            "#memsProfessionalHelp{background:#ffffff;color:#202936;}"
+            "#memsHelpHeading{color:#b65c00;font-size:19px;font-weight:700;}"
+            "#memsHelpSubtitle{color:#677685;font-size:12px;}"
+            "QLabel{color:#202936;background:transparent;}"
+            "QListWidget{background:#f5f7fa;color:#202936;border:1px solid #cbd6e0;"
+            "border-radius:6px;font-size:12px;padding:6px;outline:0;}"
+            "QListWidget::item{padding:9px 10px;border-bottom:1px solid #e1e8ef;}"
+            "QListWidget::item:selected{background:#fff0df;color:#a45100;"
+            "border-left:3px solid #f07800;font-weight:700;}"
+            "QTextBrowser{background:#ffffff;color:#202936;border:1px solid #cbd6e0;"
+            "border-radius:6px;padding:16px;selection-background-color:#ffe0bb;}"
+            "QPushButton{background:#f0f4f8;color:#202936;border:1px solid #c0ccd8;"
+            "border-radius:5px;padding:8px 20px;font-weight:700;}"
+            "QPushButton:hover{border-color:#f07800;color:#a45100;}"));
 }
 
 void HelpViewer::loadDocument()
@@ -125,8 +150,37 @@ void HelpViewer::loadDocument()
             :QStringLiteral("The installed help guide is unavailable."));
         return;
     }
-    const QString html=QString::fromUtf8(document.readAll());
+    QString html=QString::fromUtf8(document.readAll());
+    const bool dark=qApp && qApp->property("ecuDarkTheme").toBool();
+    if(!dark){
+        // Retain the exact offline guide content and chapter anchors.
+        // Only its presentation changes to the real white/black theme.
+        const int begin=html.indexOf(QStringLiteral("<style>"));
+        const int end=html.indexOf(QStringLiteral("</style>"),begin);
+        if(begin>=0 && end>begin){
+            const QString css=QStringLiteral(R"HTML(<style>
+body{font-family:"Segoe UI",Arial,sans-serif;background:#ffffff;color:#202936;margin:17px;line-height:1.56;font-size:12pt}
+h1{color:#ac5900;border-bottom:2px solid #ef7c00;padding-bottom:13px;margin-top:3px;font-size:23pt}
+h2{color:#a95100;background:#f5f8fb;border-left:3px solid #f07800;padding:11px;margin-top:25px;font-size:16pt}
+h3{color:#a95100;margin-top:15px;font-size:13pt}
+p,li{color:#202936;margin-bottom:11px}
+b,strong{color:#182230}
+table{border-collapse:collapse;width:100%;margin:13px 0}
+th,td{border:1px solid #c8d5e0;padding:9px;text-align:left}
+th{background:#edf2f7;color:#8c4700}
+td{background:#ffffff;color:#202936}
+.warn{background:#fff2df;border:1px solid #ddb475;color:#513515;padding:13px}
+.tip{background:#edf8f2;border:1px solid #92c5a9;color:#204934;padding:12px}
+.card{background:#f6f8fb;border:1px solid #d6dfe8;padding:13px}
+code{background:#edf2f6;color:#8c4b08;padding:3px}
+a{color:#a65500;text-decoration:none}
+small{color:#647483}
+</style>)HTML");
+            html.replace(begin,end+QStringLiteral("</style>").size()-begin,css);
+        }
+    }
     m_viewer->setHtml(html);
+    m_navigation->clear();
 
     // A single source of truth for chapter titles: the HTML bundled into
     // the Setup. New chapters therefore automatically appear in navigation.
@@ -148,7 +202,10 @@ void HelpViewer::loadDocument()
 void HelpViewer::showEvent(QShowEvent *event)
 {
     QDialog::showEvent(event);
-    applyNativeTitleBar(this,true);
+    const bool dark=qApp && qApp->property("ecuDarkTheme").toBool();
+    updateAppearance(dark);
+    loadDocument();
+    applyNativeTitleBar(this,dark);
 }
 
 void HelpViewer::onCloseClicked()
