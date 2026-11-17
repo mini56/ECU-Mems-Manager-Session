@@ -115,6 +115,7 @@ void OptionsDialog::setupWidgets()
 
   m_themeLabel = new QLabel(I18n::text(6102) /* EN: Interface theme: */, this);
   m_themeBox = new QComboBox(this);
+  m_themeBox->setObjectName(QStringLiteral("themeSelection"));
   
 /*   m_lambdaScaleLabel = new QLabel("Lambda sensor scale:", this);
   m_lambdaScaleBox = new QComboBox(this); */
