@@ -1,0 +1,80 @@
+name: "Publier la Release officielle SESSION 160"
+run-name: "Publier SESSION 160 depuis le Setup valide du run 44144170646"
+on:
+  push:
+    branches:
+      - feature/usb-cable-diagnostic-session-20261117
+    paths:
+      - .github/CI_RELEASE_160_REQUEST.txt
+permissions:
+  actions: read
+  contents: write
+concurrency:
+  group: publish-mems-session-160
+  cancel-in-progress: false
+jobs:
+  publish-release:
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - name: Recuperer le Setup de la compilation 160 reussie
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $repo = 'mini56/ECU-Mems-Manager-Session'
+          $runId = '44144170646'
+          $sourceSha = 'bcf8cce96bf52d9d59d92f3398babb847ad8094f'
+          $run = gh api "repos/$repo/actions/runs/$runId" | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $run.status -ne 'completed' -or $run.conclusion -ne 'success' -or $run.head_sha -ne $sourceSha) {
+            throw 'SESSION_160_SOURCE_RUN_NOT_VERIFIED'
+          }
+          $artifactName = 'ECU-MEMS-Manager-SESSION-160-USB-FTDI-CH340-TEST'
+          gh run download $runId --repo $repo --name $artifactName --dir 'release-input'
+          if ($LASTEXITCODE -ne 0) { throw 'SESSION_160_ARTIFACT_DOWNLOAD_FAILED' }
+          $setups = @(Get-ChildItem 'release-input' -Recurse -File -Filter '*.exe' | Where-Object { $_.Name -match 'Setup' })
+          if ($setups.Count -ne 1) { throw "SESSION_160_EXPECTED_ONE_SETUP_GOT_$($setups.Count)" }
+          $setup = $setups[0]
+          if ($setup.Length -lt 100MB) { throw 'SESSION_160_SETUP_TOO_SMALL' }
+          $out = Join-Path $PWD 'release-package'
+          New-Item -ItemType Directory -Force $out | Out-Null
+          $destination = Join-Path $out 'ECU-MEMS-Manager-SESSION-160-Setup.exe'
+          Copy-Item $setup.FullName $destination -Force
+          $sha = (Get-FileHash $destination -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$sha  ECU-MEMS-Manager-SESSION-160-Setup.exe" | Set-Content (Join-Path $out 'SESSION-160-Setup.sha256') -Encoding ascii
+          Write-Host "VERIFIED_SOURCE_RUN=$runId"
+          Write-Host "VERIFIED_SOURCE_COMMIT=$sourceSha"
+          Write-Host "SESSION_160_SETUP_SHA256=$sha"
+      - name: Publier la Release 160 sans recompilation
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $repo = 'mini56/ECU-Mems-Manager-Session'
+          $tag = 'mems-session-build-160'
+          $target = 'bcf8cce96bf52d9d59d92f3398babb847ad8094f'
+          gh release view $tag --repo $repo *> $null
+          if ($LASTEXITCODE -eq 0) {
+            throw 'SESSION_160_RELEASE_ALREADY_EXISTS_CHECK_MANUALLY'
+          }
+          @'
+          ECU MEMS Manager SESSION 160 — Setup Windows x64.
+
+          Version de test validee en CI (run #44144170646, commit bcf8cce96bf52d9d59d92f3398babb847ad8094f).
+
+          Modifications :
+          - Nouvel onglet independant « Test câble USB » : détection FTDI FT232, CH340/CH341 et autres adaptateurs série, liste COM, détection de branchement sur 15 secondes, contrôle facultatif d'ouverture du port.
+          - IA MEMS : remplacement de l'exemple « Que sait-on sur AANMP002 ? » par « FICHE XML ECU MEMS 1.3 ».
+          - Navigation de 15 pages, avec maintien des 14 pages antérieures.
+
+          Le test du câble ne vérifie pas la conformité électrique K-Line ni le dialogue avec le calculateur. Connexion ECU existante inchangée.
+
+          Vérification : compilation, installation Windows et contrôle automatique des pages réussis. Les tests sur ECU et câble physique restent à réaliser.
+
+          Fichiers : Setup Windows et empreinte SHA-256.
+          '@ | Set-Content 'release-notes-160.md' -Encoding utf8
+          gh release create $tag 'release-package/ECU-MEMS-Manager-SESSION-160-Setup.exe' 'release-package/SESSION-160-Setup.sha256' --repo $repo --target $target --title 'ECU MEMS Manager SESSION - BUILD 160' --notes-file 'release-notes-160.md' --latest
+          if ($LASTEXITCODE -ne 0) { throw 'SESSION_160_RELEASE_PUBLICATION_FAILED' }
+          Write-Host 'SESSION_160_RELEASE_PUBLISHED'
