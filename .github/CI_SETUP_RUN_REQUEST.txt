@@ -1,5 +1,5 @@
-SESSION 158 - one requested Windows Setup validation following completed source fixes
-Prepared source commit: 93554e4990745f81feabf78f585e24dee9009fa0
-Validate actual displayed light/dark theme and 10pt Segoe UI bold measurement table headers on all three tables.
-Central RPM tr/min relocation retained.
-Trigger only this explicit build request; ordinary source edits do not trigger builds.
+SESSION 158 - one Windows Setup build for raw 7D/80 theme text readability
+Source commit: 27b18c98f9f6bc665cb2de3378d73caa3abb509b
+On light background, data text is dark; on dark background, data text is white. Header text remains orange.
+UI smoke includes light -> dark -> light verification for both raw-data grids.
+Other code changes do not start builds. Run requested once for this completed source correction.
