@@ -180,14 +180,26 @@ jobs:
           Copy-Item build-session-159/Release/ecu_mems_manager.exe "$dist/ecu_mems_manager.exe" -Force
           Copy-Item build-session-159/Release/ecu_mems_uninstaller.exe "$dist/ecu_mems_uninstaller.exe" -Force
           Copy-Item build-session-159/librosco-x64/Release/mems_manager_x64.dll "$dist/mems_manager_x64.dll" -Force
-          # Never inherit stale reference sheets or translations from BUILD117.
+          # Merge the current compiled resources into the stable BUILD117
+          # distribution. Never delete generated runtime-only assets such as
+          # runtime_visual_catalog.json that are not tracked in source Git.
+          # Robocopy /E overwrites matching current files while preserving
+          # older runtime assets that are still required by ECU diagnostics.
           $compiledBin=(Resolve-Path build-session-159/Release).Path
+          $catalog=Join-Path $dist 'database/reference/runtime_visual_catalog.json'
+          if(-not(Test-Path $catalog)){throw 'BASE_RUNTIME_VISUAL_CATALOG_MISSING'}
+          $catalogHash=(Get-FileHash $catalog -Algorithm SHA256).Hash
           foreach($folder in @('database/reference','translations')){
             $source=Join-Path $compiledBin $folder
             $target=Join-Path $dist $folder
             if(-not(Test-Path $source)){throw "LATEST_BUILD_RESOURCE_MISSING $folder"}
-            if(Test-Path $target){Remove-Item $target -Recurse -Force}
-            Copy-Item $source $target -Recurse -Force
+            New-Item -ItemType Directory -Force $target | Out-Null
+            & robocopy.exe $source $target /E /R:2 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
+            if($LASTEXITCODE -ge 8){throw "LATEST_BUILD_RESOURCE_COPY_FAILED $folder"}
+          }
+          if(-not(Test-Path $catalog)){throw 'RUNTIME_VISUAL_CATALOG_LOST'}
+          if((Get-FileHash $catalog -Algorithm SHA256).Hash -ne $catalogHash){
+            throw 'RUNTIME_VISUAL_CATALOG_MODIFIED'
           }
           foreach($generation in @('1_2','1_3','1_6','1_9')){
             $relative="database/reference/fiches/mems_$generation.xml"
