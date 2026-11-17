@@ -402,7 +402,7 @@ bool verifyUi(MainWindow &window)
                 :global.contains(QStringLiteral("#darkSidebar")) &&
                  global.contains(QStringLiteral("background:#f5f7fa")),
              "Global theme must actually change between white/light and dark") && ok;
-        const QFrame *sidebarShell=window.findChild<QFrame*>(
+        QFrame *sidebarShell=window.findChild<QFrame*>(
             QStringLiteral("darkSidebar"));
         ok=check(sidebarShell &&
                  (dark?sidebarShell->styleSheet().contains(
