@@ -2,6 +2,7 @@
 #include <QApplication>
 #include <QVariant>
 #include "applicationvisualstyle.h"
+#include "styles.h"
 #include <QComboBox>
 #include <QFontMetrics>
 #include <QFrame>
@@ -366,12 +367,7 @@ static void applyLightVisualStyle(QMainWindow *window)
             widget->setStyleSheet(QString());
     }
     if(qApp)
-        qApp->setStyleSheet(QStringLiteral(
-            // Light belongs to the established stylesheet API as well as
-            // to the rebuilt 14-page shell.
-            "QWidget{background:#ffffff;color:#202936;"
-            "font-family:'Segoe UI';}"
-        ) + lightShellStyle());
+        qApp->setStyleSheet(STYLE_LIGHT + lightShellStyle());
 }
 }
 
