@@ -107,20 +107,26 @@ inline QString textColorSwatches(const QString &text)
 inline QString renderElementContent(const ElementContent &content)
 {
     QString html;
-    if (!content.fills.isEmpty())
-        html += QStringLiteral("<span class='wirebox'>");
-    for (const QString &fill : content.fills) {
-        html += QStringLiteral("<span class='wire' style='color:%1'>&#9632;</span>")
-                    .arg(fill.toHtmlEscaped());
+    // XML source colours (including the two individual SVG fills of a
+    // two-tone wire) must remain visually distinct in QTextBrowser.
+    // QTextDocument cannot paint the original inline SVG elements. Display
+    // each of their actual fill colours, on a neutral contrasted backing,
+    // without losing the source's written colour name.
+    if (!content.fills.isEmpty()) {
+        html += QStringLiteral("<span style='background-color:#98a5ae;'>");
+        for (const QString &fill : content.fills) {
+            html += QStringLiteral("<span style='color:%1;font-size:15pt;'>&#9632;</span>")
+                        .arg(fill.toHtmlEscaped());
+        }
+        html += QStringLiteral("</span>&nbsp;");
+    } else {
+        html += textColorSwatches(content.text);
     }
-    if (!content.fills.isEmpty())
-        html += QStringLiteral("</span>");
-    if(content.fills.isEmpty()) html+=textColorSwatches(content.text);
-    QString text = content.text.simplified().toHtmlEscaped();
-    if (!text.isEmpty()) {
+    const QString sourceText = content.text.simplified().toHtmlEscaped();
+    if (!sourceText.isEmpty()) {
         if (!html.isEmpty())
             html += QStringLiteral("&nbsp;");
-        html += text;
+        html += sourceText;
     }
     return html.isEmpty() ? QStringLiteral("—") : html;
 }
