@@ -5,6 +5,7 @@
 #include <QComboBox>
 #include <QDateTime>
 #include <QGridLayout>
+#include <QHeaderView>
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QLabel>
