@@ -298,8 +298,8 @@ int main(int argc,char** argv)
         QVariantList{pistonTopics.first()});
     if(!require(pistonAnswer.contains(QStringLiteral("pistons")) &&
                 pistonAnswer.contains(QStringLiteral("page 251")) &&
-                pistonAnswer.contains(QStringLiteral("pas d'une procédure")),
-                "piston mention selection must preserve source, excerpt and scope"))return 1;
+                !pistonAnswer.contains(QStringLiteral("pas d'une procédure")),
+                "piston mention returns source text and page without injected warning"))return 1;
 
     // Regression: the IAT is a different topic even though its heading
     // incidentally includes the word "injecteurs".
@@ -468,8 +468,8 @@ int main(int argc,char** argv)
         const QString mentionAnswer=MemsDocumentaryRepository::answerFromHits(
             QVariantList{indirect.first()});
         if(!require(mentionAnswer.contains(QStringLiteral("page")) &&
-                    mentionAnswer.contains(QStringLiteral("pas d'une procédure")),
-                "indirect source evidence retains page without inventing an operation"))return 1;
+                    !mentionAnswer.contains(QStringLiteral("pas d'une procédure")),
+                "indirect source evidence retains page without injected warning"))return 1;
 
         // 4. Duplicate display headings collapse in the first menu, while
         //    every independent documentary source remains selectable.

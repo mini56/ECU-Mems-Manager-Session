@@ -6,6 +6,7 @@ on:
   # Validate mandatory visible scrolling (Qt AlwaysOn): thumb color is not a release requirement.
   # Ordinary source edits do not consume GitHub Actions compilation minutes.
   # SESSION 165 UI audit: keep translated image labels without restricting pack filenames.
+  # SESSION 165 native intent test: reference excerpt is shown without an injected warning.
   push:
     branches: [fix-documentary-additive-session-161-20261118]
     paths:
