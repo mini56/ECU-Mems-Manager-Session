@@ -46,7 +46,7 @@ jobs:
           if($smoke -notmatch 'Analysis vertical scrollbar must be visibly orange and 17px wide' -or $smoke -notmatch 'Analysis bottom signals or bottom graph not reachable'){throw 'ANALYSIS_TWO_SCROLL_REAL_UI_TEST_MISSING'}
           $srcStyle=Get-Content analysistab_impl_part1.inc -Raw
           $srcPlots=Get-Content analysistab_impl_part2.inc -Raw
-          if($srcStyle -notmatch 'configureAnalysisVisibleScroll' -or $srcPlots -notmatch 'configureAnalysisVisibleScroll\(m_stackScrollArea\)'){throw 'VISIBLE_PLOT_SCROLL_MISSING'}
+          if($srcStyle -notmatch 'configureAnalysisVisibleScroll' -or $srcPlots -notmatch 'configureAnalysisVisibleScroll\(m_stackScrollArea\)' -or $srcStyle -notmatch 'vertical->setVisible\(true\)'){throw 'VISIBLE_PLOT_SCROLL_MISSING'}
           Write-Host 'SESSION_164_BOTH_SCROLLS_SOURCE_TEST_READY'
           if((Get-Content database/MemsDatabaseExplorerV2.cpp -Raw) -notmatch 'documentaryUpdateButton'){throw 'DOCUMENTARY_UPDATE_BUTTON_MISSING'}
           if((Get-Content database/MemsDocumentaryRepository.cpp -Raw) -match 'QStringLiteral\("database/documentary/rover_482.sqlite"\)'){throw 'ROVER_STILL_HARDCODED_IN_RUNTIME'}
