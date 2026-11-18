@@ -6,6 +6,7 @@
 #include "styles.h"
 #include "applicationvisualstyle.h"
 #include "summarytab.h"
+#include "analysistab.h"
 #include "i18n.h"
 #include "database/DatabaseManager.h"
 #include "database/MemsReferenceDatabase.h"
@@ -31,6 +32,7 @@
 #include <QTableWidget>
 #include <QtMath>
 #include <QScrollArea>
+#include <QScrollBar>
 #include <QStandardPaths>
 #include <QTabWidget>
 #include <QTimer>
@@ -533,6 +535,46 @@ bool verifyUi(MainWindow &window)
             ok=check(tabs->tabText(i)==I18n::text(officialTitleKeys[i]),
                      "Page title does not match selected SESSION language") && ok;
         }
+    }
+
+    // Regression for the Analysis "Available channels" panel: all ~50
+    // diagnostic signals must be reachable, without scrolling the controls.
+    {
+        AnalysisTab scrollSample;
+        scrollSample.resize(1024,640);
+        scrollSample.setDiagnosticLiveAvailable(true);
+        scrollSample.selectDiagnosticLive(false);
+        scrollSample.show();
+        QCoreApplication::processEvents();
+        QCoreApplication::processEvents();
+
+        QScrollArea *channels=scrollSample.findChild<QScrollArea*>(
+            QStringLiteral("analysisChannelsScroll"));
+        QPushButton *overlay=scrollSample.findChild<QPushButton*>(
+            QStringLiteral("analysisOverlayButton"));
+        ok=check(channels && overlay,
+                 "Analysis channels scrollbar or fixed overlay button missing") && ok;
+        if(channels && overlay){
+            QScrollBar *bar=channels->verticalScrollBar();
+            ok=check(channels->verticalScrollBarPolicy()==Qt::ScrollBarAlwaysOn,
+                     "Analysis channels vertical scrollbar must be visible") && ok;
+            ok=check(channels->horizontalScrollBarPolicy()==Qt::ScrollBarAlwaysOff,
+                     "Analysis channel names must not scroll horizontally") && ok;
+            ok=check(bar && bar->maximum()>0,
+                     "Analysis channels must have a nonzero vertical scroll range") && ok;
+            if(bar && bar->maximum()>0){
+                const int bottom=bar->maximum();
+                const int overlayY=overlay->mapTo(&scrollSample,QPoint(0,0)).y();
+                bar->setValue(bottom);
+                QCoreApplication::processEvents();
+                ok=check(bar->value()==bottom,
+                         "Last Analysis channel cannot be reached by scrolling") && ok;
+                ok=check(overlay->mapTo(&scrollSample,QPoint(0,0)).y()==overlayY,
+                         "Analysis footer buttons must stay fixed when channels scroll") && ok;
+                bar->setValue(0);
+            }
+        }
+        scrollSample.close();
     }
 
     if (ok) qInfo().noquote() << "SESSION_UI_SMOKE_PASS 15 native pages, bidirectional navigation, "
