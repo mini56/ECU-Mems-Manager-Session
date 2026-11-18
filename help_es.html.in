@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>@PROJECTNAME@ — Guía de usuario</title>
+<style>
+body{font-family:"Segoe UI",Arial,sans-serif;background:#0e171d;color:#e3ebf1;margin:17px;line-height:1.56;font-size:12pt}
+h1{color:#ff9828;border-bottom:2px solid #ff7a00;padding-bottom:13px;margin-top:3px;font-size:23pt}
+h2{color:#ffad58;background:#17242c;border-left:3px solid #ff7a00;padding:11px;margin-top:25px;font-size:16pt}
+h3{color:#ffae58;margin-top:15px;font-size:13pt}
+p,li{color:#e3ebf1;margin-bottom:11px}
+b,strong{color:#f6f9fc}
+table{border-collapse:collapse;width:100%;margin:13px 0}
+th,td{border:1px solid #344854;padding:9px;text-align:left}
+th{background:#263843;color:#ffad58}
+td{background:#121e25;color:#e3ebf1}
+.warn{background:#342317;border:1px solid #b06b1d;color:#ffe7cc;padding:13px}
+.tip{background:#172a24;border:1px solid #3f7763;color:#ddf3e9;padding:12px}
+.card{background:#17232b;border:1px solid #354852;padding:13px}
+code{background:#26313b;color:#ffd79b;padding:3px}
+a{color:#ffae52;text-decoration:none}
+small{color:#aebcc5}
+</style>
+</head>
+<body>
+<h1>ECU MEMS Manager — Guía de usuario</h1>
+<p><b>Versión @APP_VERSION@</b> — Programa de diagnóstico para ECU Rover MEMS.</p>
+<div class="card"><b>GUÍA INTEGRADA SIN CONEXIÓN</b><p>Seleccione un tema en el panel de navegación. La guía está incluida en el programa y funciona sin Internet.</p></div>
+<div class="warn"><b>Seguridad:</b> las pruebas de actuadores pueden activar bombas, ventiladores, válvulas, inyectores y elementos de encendido. Realice estas pruebas solo con el vehículo asegurado y después de comprender las consecuencias.</div>
+<h2 id="chapter-1">1. Conexión</h2>
+<p>Conecte una interfaz de diagnóstico compatible al vehículo y seleccione el puerto serie correcto en Opciones → Modificar ajustes. Ponga el contacto y pulse Conectar. Los indicadores muestran el estado de comunicación. Pulse Desconectar para terminar la sesión. Si se pierde la comunicación al quitar el contacto, el programa detiene la consulta y puede volver a conectar.</p>
+
+<h2 id="chapter-2">2. Pestaña Vista general</h2>
+<p>Es la pantalla inicial. Muestra indicadores en directo del régimen, presión del colector, temperaturas, tensión de batería, mariposa, sonda lambda, ralentí y encendido. Los colores de advertencia se mantienen en el tema oscuro.</p>
+
+<h2 id="chapter-3">3. Pestaña Inyección</h2>
+<p>Esta pestaña reúne el tiempo de inyección final, el tiempo base, la corrección transitoria y su estado, mediante el modo de lectura específico. IA MEMS observa las mediciones existentes, pero no abre otra consulta ECU.</p>
+
+<h2 id="chapter-4">4. Pestaña Ajustes</h2>
+<p>Permite los ajustes de servicio relacionados con ralentí, combustible y encendido según la ECU. Consulte las ayudas y los riesgos antes de modificar valores. La corrección del ralentí caliente para 7D14-15 usa el ajuste real de la ECU y no una constante inventada.</p>
+
+<h2 id="chapter-5">5. Pestaña Errores</h2>
+<p>Muestra averías ECU, anomalías memorizadas e indicadores de estado. Lea y comprenda los errores antes de borrarlos. Algunos contadores necesitan un reinicio completo de la ECU para volver al estado inicial.</p>
+
+<h2 id="chapter-6">6. Pestaña Actuadores</h2>
+<p>Ejecute únicamente las pruebas admitidas por el protocolo. Las pruebas de inyectores, encendido o calentadores pueden activar componentes del vehículo. Asegure el vehículo antes de cualquier ensayo.</p>
+
+<h2 id="chapter-7">7. Todas las mediciones</h2>
+<p>Presenta los parámetros detallados, la ayuda, el valor bruto recibido y la interpretación cuando se conoce. Por ejemplo, 138 puede corresponder a 13,8 V para una medición de batería documentada. No se inventan conversiones para campos desconocidos.</p>
+
+<h2 id="chapter-8">8. Todos los datos</h2>
+<p>Muestra los campos MEMS brutos y decodificados. Resulta útil para comparar los bytes del protocolo con las mediciones interpretadas.</p>
+
+<h2 id="chapter-9">9. ECU / ROSCO</h2>
+<p>Permite consultar comandos de lectura D0, D1, D2 y F0 y los comandos de sesión F2 a F5. Muestra los intercambios TX/RX en hexadecimal. La recodificación D3 permanece deshabilitada deliberadamente.</p>
+
+<h2 id="chapter-10">10. Diagnóstico automático</h2>
+<p>Evalúa las mediciones ECU actuales y diferencia estados normales, avisos y anomalías. Permite guardar una referencia y exportar un informe. También comprueba el tiempo de carga de la bobina.</p>
+
+<h2 id="chapter-11">11. Análisis de registros</h2>
+<p>Abre registros CSV/TXT compatibles, muestra canales seleccionados y superpone curvas para comparar su evolución temporal.</p>
+
+<h2 id="chapter-12">12. IA MEMS</h2>
+<p>El asistente combina preguntas en lenguaje natural con medidas ECU ya adquiridas, el motor experto y la base MEMS. Distingue observaciones, hipótesis, fuentes y niveles de confianza. No condene un componente por una sola lectura. El modelo funciona localmente, se activa al abrir su pestaña y no envía comandos ECU adicionales.</p>
+
+<h2 id="chapter-13">13. Capturas de pantalla</h2>
+<p>Captura guarda una imagen de la ventana en la carpeta captures. Ver capturas permite previsualizar, ampliar o eliminar una imagen tras confirmar la eliminación.</p>
+
+<h2 id="chapter-14">14. Ayuda contextual</h2>
+<p>Cuando existe ayuda contextual, el programa muestra una burbuja de ayuda integrada cuyo aspecto no depende de la versión de Windows.</p>
+
+<h2 id="chapter-15">15. Opciones</h2>
+<p>Permite seleccionar interfaz serie, unidades de temperatura, tema, idioma y acceso directo del escritorio. El programa puede mantener el acceso directo automáticamente.</p>
+
+<h2 id="chapter-16">16. Temas</h2>
+<p>Claro utiliza fondos y relojes claros. Oscuro utiliza fondos oscuros y texto, agujas y tablas de alto contraste, conservando la legibilidad de las advertencias.</p>
+
+<h2 id="chapter-17">17. Idioma</h2>
+<p>La interfaz admite francés, inglés, español, italiano, portugués y alemán. La elección se guarda en los ajustes de SESSION.</p>
+
+<h2 id="chapter-18">18. Familias ECU admitidas</h2>
+<p>La base y las funciones de diagnóstico abarcan Rover MEMS 1.2, 1.3, 1.6 y 1.9. Las funciones disponibles dependen de la ECU, el vehículo y el protocolo.</p>
+
+<h2 id="chapter-19">19. Guía básica de diagnóstico</h2>
+<p>Sin comunicación: comprobar contacto, puerto, cable, alimentación y masas de la ECU. MAP anómalo: comprobar manguera de vacío, colector y sensor. Ralentí inestable: revisar interruptor, IAC, fugas, temperatura y correcciones de combustible. Fallo lambda: comprobar calentamiento, cableado, tensión y bucle cerrado. Bobina: comprobar batería, primario y conexiones.</p>
+
+<h2 id="chapter-20">20. Cierre del programa</h2>
+<p>El programa interrumpe los intentos automáticos de reconexión durante el cierre para evitar bloqueos por pérdida de comunicación.</p>
+
+<h2 id="chapter-21">21. Base documental</h2>
+<p>Busca referencias ECU, vehículos, comandos y documentación técnica. Filtros y resultados permiten localizar fichas y páginas del fabricante. Los paquetes documentales se instalan independientemente del ejecutable SESSION.</p>
+
+<h2 id="chapter-22">22. Actualizaciones documentales</h2>
+<p>Desde Base de datos, pulse Buscar actualizaciones de bases. El gestor consulta el catálogo en línea, descarga paquetes publicados y verifica SHA-256. La instalación exige la contraseña del paquete cifrado y valida SQLite, imágenes y procedencia. También puede instalar un paquete cifrado local. Ante un error, se conserva la base anterior.</p>
+
+<h2 id="chapter-23">23. Barra de tareas de Windows</h2>
+<p>La opción Ocultar automáticamente la barra de tareas de Windows está desactivada por defecto. Si se activa, afecta al escritorio mientras SESSION está abierto. El programa restaura el ajuste al cerrar y cuenta con comprobaciones de recuperación después de un cierre inesperado. La política de Windows puede impedir el cambio.</p>
+
+<h2 id="chapter-24">24. Ilustraciones y páginas del fabricante</h2>
+<p>Las capturas verificadas pueden integrarse en futuras versiones. Las imágenes del fabricante proceden del paquete documental instalado y se pueden ampliar desde Base de datos o IA MEMS.</p>
+</body>
+</html>
