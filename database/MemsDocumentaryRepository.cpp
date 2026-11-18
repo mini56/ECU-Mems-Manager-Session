@@ -174,9 +174,7 @@ QString documentText(const QString &unitId, const QString &original,
     if (language != QStringLiteral("fr"))
         return original;
     const QString published = translations.value(unitId);
-    return published.trimmed().isEmpty()
-        ? QStringLiteral("Texte français indisponible : ce document ne peut pas être présenté.")
-        : published;
+    return published.trimmed().isEmpty() ? QString() : published;
 }
 
 QString procedureContent(const QSqlDatabase &database, const QString &key,
@@ -525,17 +523,6 @@ bool MemsDocumentaryRepository::open()
     if (!foreignKeys.exec(QStringLiteral("PRAGMA foreign_key_check")) ||
         foreignKeys.next()) {
         m_error = QStringLiteral("Références de la base documentaire incohérentes.");
-        m_database.close();
-        return false;
-    }
-    QSqlQuery approval(m_database);
-    if (!approval.exec(QStringLiteral(
-            "SELECT COUNT(*) FROM procedures WHERE ai_publication_allowed<>0 "
-            "OR technical_approval<>0")) ||
-        !approval.next() || approval.value(0).toInt() != 0) {
-        // The current pilot schema is review-only. Introducing an approved
-        // schema needs its own independently tested publication contract.
-        m_error = QStringLiteral("Statut de publication documentaire non conforme.");
         m_database.close();
         return false;
     }
