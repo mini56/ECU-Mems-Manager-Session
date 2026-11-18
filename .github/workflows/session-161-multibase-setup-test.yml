@@ -12,7 +12,7 @@ permissions:
   contents: read
 concurrency:
   group: session-documentary-161-update-test
-  cancel-in-progress: false
+  cancel-in-progress: true
 env:
   MEMS_BUILD_NUMBER: '161'
   ORT_GENAI_VERSION: '0.14.0'
@@ -263,7 +263,7 @@ jobs:
           if(-not $compiler){throw 'INNO_COMPILER_MISSING'}
           $iss=@'
           #define MyAppName "ECU MEMS Manager SESSION"
-          #define MyAppVersion "1.1.58"
+          #define MyAppVersion "1.1.61"
           [Setup]
           AppId={{BC7FAF73-5BCF-49FC-8513-9D9C7B08F133}
           AppName={#MyAppName}
