@@ -86,5 +86,17 @@
   "16503": "An Fenster anpassen",
   "16504": "BENUTZERHANDBUCH",
   "16505": "Integrierte Hilfe · Offline-Dokumentation · Themenübersicht",
-  "16506": "Das Benutzerhandbuch ist in dieser Installation nicht verfügbar."
+  "16506": "Das Benutzerhandbuch ist in dieser Installation nicht verfügbar.",
+  "16600": "Datenbank bereit",
+  "16601": "Datenbank nicht verfügbar",
+  "16602": "Datenbank nicht geladen",
+  "16603": "lokale KI nicht gestartet",
+  "16604": "lokale KI-Engine fehlt",
+  "16605": "lokales KI-Modell fehlt",
+  "16606": "lokale KI startet",
+  "16607": "lokale KI bereit",
+  "16608": "lokale KI antwortet",
+  "16609": "Fehler der lokalen KI",
+  "16610": "Fehler der lokalen KI: %1",
+  "16611": "lokale KI"
 }
