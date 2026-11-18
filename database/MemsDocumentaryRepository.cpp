@@ -753,9 +753,9 @@ QVariantList MemsDocumentaryRepository::searchLocal(const QString &question,
                 ? QStringLiteral("français") : QStringLiteral("anglais");
             const QString content=QStringLiteral(
                 "document : %1\nlangue : %2\npage physique : %3\n"
-                "type : %4\nstatut de vérification : %5\n\n%6")
+                "type : %4\n\n%5")
                 .arg(doc).arg(localeName).arg(page).arg(type)
-                .arg(status).arg(sourceText);
+                .arg(sourceText);
             QVariantMap hit=makeRow(
                 QStringLiteral("rave-%1:%2:%3").arg(selectedLanguage,doc,id),
                 title,content,
@@ -1271,8 +1271,9 @@ QString MemsDocumentaryRepository::numberedMenu(
 static QString workshopText(const QVariantMap &row)
 {
     QString raw=row.value(QStringLiteral("content")).toString();
-    if(raw.contains(QStringLiteral("\n\n")))
-        raw=raw.section(QStringLiteral("\n\n"),1);
+    const int headerEnd=raw.indexOf(QStringLiteral("\n\n"));
+    if(headerEnd>=0)
+        raw=raw.mid(headerEnd+2);
     QStringList facts;
     QStringList supplementary;
     for(const QString &record : raw.split(QLatin1Char('\n'))){

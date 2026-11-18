@@ -396,8 +396,8 @@ int main(int argc, char **argv)
                    "unknown query cannot fabricate an answer"))
             return 1;
     }
-    // Les 20 pages scannées AKM7169FRE sont originales en français ;
-    // l'OCR non révisé ne peut pas devenir une procédure de réparation IA.
+    // Même une entrée documentaire non révisée doit restituer tout son texte
+    // d'origine, sans masquer les paragraphes ni modifier les données SQLite.
     {
         QVariantMap scan;
         scan.insert(QStringLiteral("source_key"),
@@ -410,15 +410,17 @@ int main(int argc, char **argv)
                     QStringLiteral(
                         "document : AKM7169FRE\npage physique : 12"
                         "\nstatut de vérification : review_required"
-                        "\n\n[TRANSCRIPTION OCR NON VÉRIFIÉE] "
-                        "INSTRUCTION TECHNIQUE FICTIVE 999 Nm."));
+                        "\n\nTRANSCRIPTION DE LA PAGE CONSTRUCTEUR 12."
+                        "\n\nSECONDE PARTIE DE LA PAGE CONSTRUCTEUR 12."));
         const QString safe=MemsDocumentaryRepository::answerFromHits(
             QVariantList{scan});
         if (!check(safe.contains(QStringLiteral("AKM7169FRE")) &&
-                   safe.contains(QStringLiteral("OCR de repérage non validé")) &&
-                   !safe.contains(QStringLiteral("INSTRUCTION TECHNIQUE FICTIVE")) &&
+                   safe.contains(QStringLiteral("TRANSCRIPTION DE LA PAGE CONSTRUCTEUR 12")) &&
+                   safe.contains(QStringLiteral("SECONDE PARTIE DE LA PAGE CONSTRUCTEUR 12")) &&
+                   !safe.contains(QStringLiteral("review_required")) &&
+                   !safe.contains(QStringLiteral("Source documentaire retrouvée")) &&
                    !safe.contains(QStringLiteral("RCL0193FRE")),
-                   "never turn unreviewed French scan into IA repair instructions"))
+                   "native French source must preserve all text without hidden-status labels"))
             return 1;
     }
     // An incomplete schema must fail closed, not fall back to another pack.

@@ -73,6 +73,22 @@ int main(int argc,char **argv)
                    "new document provenance retained") ||
            !expect(!MemsDocumentaryRepository::imagePathForHit(newHit).isEmpty(),
                    "image from independent SQLite resolves")) return 1;
+        QVariantMap unreviewed=newHit;
+        unreviewed.insert(QStringLiteral("source_status"),
+                          QStringLiteral("review_required"));
+        unreviewed.insert(QStringLiteral("content"),QStringLiteral(
+            "document : AKM7169_VOLUME1_TEST\nlangue : français\n"
+            "page physique : 1\nstatut de vérification : review_required"
+            "\n\nPremier paragraphe documentaire en français."
+            "\n\nDeuxième paragraphe documentaire en français."));
+        const QString explanation=MemsDocumentaryRepository::answerFromHits(
+            QVariantList{unreviewed});
+        if(!expect(explanation.contains(QStringLiteral("Premier paragraphe")) &&
+                   explanation.contains(QStringLiteral("Deuxième paragraphe")) &&
+                   !explanation.contains(QStringLiteral("review_required")) &&
+                   !explanation.contains(QStringLiteral("Source documentaire retrouvée")),
+                   "review flag cannot hide manufacturer paragraphs in IA"))
+            return 1;
     }
     if(!expect(digest(legacy)==originalHash,"reader never changed original")) return 1;
     std::puts("DOCUMENTARY_MULTI_DATABASE_REAL_INSTALL_AND_SEARCH_PASS");
