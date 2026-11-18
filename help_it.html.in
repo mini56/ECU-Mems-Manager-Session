@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="it">
+<head><meta charset="utf-8"><title>@PROJECTNAME@ — Guida utente</title>
+<style>
+body{font-family:"Segoe UI",Arial,sans-serif;background:#0e171d;color:#e3ebf1;margin:17px;line-height:1.56;font-size:12pt}
+h1{color:#ff9828;border-bottom:2px solid #ff7a00;padding-bottom:13px;margin-top:3px;font-size:23pt}
+h2{color:#ffad58;background:#17242c;border-left:3px solid #ff7a00;padding:11px;margin-top:25px;font-size:16pt}
+h3{color:#ffae58;margin-top:15px;font-size:13pt}
+p,li{color:#e3ebf1;margin-bottom:11px}
+b,strong{color:#f6f9fc}
+table{border-collapse:collapse;width:100%;margin:13px 0}
+th,td{border:1px solid #344854;padding:9px;text-align:left}
+th{background:#263843;color:#ffad58}
+td{background:#121e25;color:#e3ebf1}
+.warn{background:#342317;border:1px solid #b06b1d;color:#ffe7cc;padding:13px}
+.tip{background:#172a24;border:1px solid #3f7763;color:#ddf3e9;padding:12px}
+.card{background:#17232b;border:1px solid #354852;padding:13px}
+code{background:#26313b;color:#ffd79b;padding:3px}
+a{color:#ffae52;text-decoration:none}
+small{color:#aebcc5}
+</style></head>
+<body>
+<h1>ECU MEMS Manager — Guida utente</h1>
+<p><b>Versione @APP_VERSION@</b> — Software diagnostico per centraline Rover MEMS.</p>
+<div class="card"><b>GUIDA OFFLINE INTEGRATA</b><p>Selezionare un argomento nella navigazione. La guida funziona senza Internet.</p></div>
+<div class="warn"><b>Sicurezza:</b> le prove degli attuatori possono attivare pompe, ventole, valvole, iniettori e componenti dell'accensione. Eseguire test solo con il veicolo in sicurezza e dopo aver valutato le conseguenze.</div>
+<h2 id="chapter-1">1. Connessione</h2>
+<p>Collegare un'interfaccia diagnostica compatibile e scegliere la porta seriale corretta in Opzioni → Modifica impostazioni. Accendere il quadro e premere Connetti. Gli indicatori mostrano lo stato. Usare Disconnetti per terminare la sessione. Se si perde il collegamento quando si spegne il quadro, il programma interrompe correttamente l'acquisizione e può riconnettersi.</p>
+
+<h2 id="chapter-2">2. Scheda Panoramica</h2>
+<p>La schermata iniziale mostra i valori in tempo reale di regime, pressione collettore, temperature, tensione batteria, farfalla, lambda, minimo e accensione. Le aree di avviso rimangono riconoscibili nel tema scuro.</p>
+
+<h2 id="chapter-3">3. Scheda Iniezione</h2>
+<p>Raccoglie il tempo di iniezione finale, il tempo base, la correzione transitoria e il relativo stato mediante la lettura dedicata. IA MEMS osserva i dati già disponibili e non avvia un ulteriore ciclo di interrogazione ECU.</p>
+
+<h2 id="chapter-4">4. Scheda Impostazioni</h2>
+<p>Comprende le regolazioni di servizio legate a minimo, carburante e accensione, secondo la ECU. Consultare gli avvisi prima di modificare i valori. La correzione del minimo a caldo per 7D14-15 segue l'impostazione reale della ECU.</p>
+
+<h2 id="chapter-5">5. Scheda Errori</h2>
+<p>Visualizza guasti ECU, anomalie registrate e stati. Leggere e comprendere i guasti prima di cancellarli. Alcuni contatori richiedono un riavvio completo della ECU.</p>
+
+<h2 id="chapter-6">6. Scheda Attuatori</h2>
+<p>Eseguire solo le prove supportate dal protocollo. Test di iniettori, accensione o riscaldatori possono attivare componenti del veicolo. Assicurare il veicolo prima delle prove.</p>
+
+<h2 id="chapter-7">7. Tutte le misure</h2>
+<p>Mostra parametri dettagliati, descrizioni, valori ECU grezzi e valori interpretati quando la decodifica è documentata. Per esempio, 138 può significare 13,8 V per una lettura batteria specifica. Nessuna conversione viene inventata per campi sconosciuti.</p>
+
+<h2 id="chapter-8">8. Tutti i dati</h2>
+<p>Visualizza i campi MEMS grezzi e decodificati per confrontare byte di protocollo e misurazioni interpretate.</p>
+
+<h2 id="chapter-9">9. ECU / ROSCO</h2>
+<p>Espone le letture D0, D1, D2 e F0 e i comandi di sessione F2–F5. Mostra gli scambi TX/RX in esadecimale. La ricodifica D3 resta deliberatamente disabilitata.</p>
+
+<h2 id="chapter-10">10. Diagnostica automatica</h2>
+<p>Esamina i valori ECU correnti distinguendo stato normale, avviso e anomalia. Può registrare un riferimento ed esportare un rapporto. Controlla anche il tempo di carica della bobina.</p>
+
+<h2 id="chapter-11">11. Analisi dei registri</h2>
+<p>Importa registri CSV/TXT compatibili, visualizza i canali selezionati e sovrappone le curve per confrontare l'andamento nel tempo.</p>
+
+<h2 id="chapter-12">12. IA MEMS</h2>
+<p>L'assistente combina domande in linguaggio naturale, misure ECU già acquisite, motore esperto e database MEMS. Distingue osservazioni, ipotesi, fonti e grado di affidabilità. Un solo valore non basta per condannare un componente. Il modello funziona localmente, si attiva aprendo la scheda e non invia comandi ECU aggiuntivi.</p>
+
+<h2 id="chapter-13">13. Catture schermo</h2>
+<p>Cattura salva un'immagine della finestra nella cartella captures. Visualizza catture permette di vedere, ingrandire o eliminare un'immagine previa conferma.</p>
+
+<h2 id="chapter-14">14. Aiuto contestuale</h2>
+<p>Quando disponibile, l'aiuto contestuale usa la grafica della bolla integrata, indipendente dalla versione di Windows.</p>
+
+<h2 id="chapter-15">15. Opzioni</h2>
+<p>Le opzioni includono porta seriale, unità di temperatura, tema, lingua e collegamento sul desktop. Il collegamento può essere mantenuto automaticamente.</p>
+
+<h2 id="chapter-16">16. Temi</h2>
+<p>Chiaro usa sfondi e strumenti chiari. Scuro usa sfondi scuri e scritte, lancette e tabelle ad alto contrasto, mantenendo leggibili gli avvisi.</p>
+
+<h2 id="chapter-17">17. Lingua</h2>
+<p>L'interfaccia supporta francese, inglese, spagnolo, italiano, portoghese e tedesco. La scelta viene salvata nelle impostazioni SESSION.</p>
+
+<h2 id="chapter-18">18. Famiglie ECU supportate</h2>
+<p>Il database e i percorsi diagnostici includono Rover MEMS 1.2, 1.3, 1.6 e 1.9. Le funzioni disponibili dipendono da ECU, veicolo e protocollo.</p>
+
+<h2 id="chapter-19">19. Guida diagnostica di base</h2>
+<p>Nessuna comunicazione: controllare quadro, porta, cavo, alimentazione e masse ECU. MAP anomalo: verificare tubo depressione, collettore e sensore. Minimo instabile: verificare interruttore, IAC, perdite d'aria, temperatura e correzioni carburante. Guasto lambda: controllare riscaldamento, cablaggio, tensione e ciclo chiuso. Bobina: controllare batteria, circuito primario e cablaggio.</p>
+
+<h2 id="chapter-20">20. Chiusura del programma</h2>
+<p>Alla chiusura il programma interrompe i tentativi automatici di riconnessione per evitare blocchi dopo la perdita del collegamento ECU.</p>
+
+<h2 id="chapter-21">21. Database documentale</h2>
+<p>La pagina Database ricerca riferimenti ECU, veicoli, comandi e documenti tecnici. Filtri e risultati permettono di consultare schede e pagine del costruttore. I pacchetti documentali sono indipendenti dall'eseguibile SESSION.</p>
+
+<h2 id="chapter-22">22. Aggiornamenti documentali</h2>
+<p>Da Database selezionare Controlla aggiornamenti database. Il gestore consulta il catalogo online, scarica i pacchetti disponibili e verifica SHA-256. L'installazione richiede la password del pacchetto cifrato e controlla SQLite, immagini e provenienza. È possibile installare anche un pacchetto cifrato locale. Se la verifica fallisce, il database precedente è conservato.</p>
+
+<h2 id="chapter-23">23. Barra delle applicazioni di Windows</h2>
+<p>L'opzione Nascondi automaticamente la barra delle applicazioni di Windows è disattivata per impostazione predefinita. Se attivata, modifica il desktop mentre SESSION è aperto. Il programma ripristina l'impostazione alla chiusura e dispone di controlli di recupero dopo un arresto inatteso. Le politiche Windows possono impedirlo.</p>
+
+<h2 id="chapter-24">24. Illustrazioni del costruttore</h2>
+<p>Le catture verificate possono essere aggiunte alle versioni future. Le immagini del costruttore provengono dai pacchetti documentali installati e si possono ingrandire da Database o IA MEMS.</p>
+</body></html>
