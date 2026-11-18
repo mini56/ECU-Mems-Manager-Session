@@ -1,7 +1,7 @@
 {
+  "6468": "Sélectionnez une source de données ou chargez un fichier CSV / TXT.",
   "7122": "Dwell : %1 ms",
   "7147": "Temps bobine (Dwell)",
-  "6468": "Sélectionnez une source de données ou chargez un fichier CSV / TXT.",
   "7900": "Injection",
   "7901": "Injection finale (ms)",
   "7902": "Base injection (ms)",
@@ -9,7 +9,7 @@
   "7904": "État transitoire",
   "7905": "Historique injection finale — 2 minutes",
   "7906": "Données injection (valeurs brutes)",
-  "7907": "Diagnostique",
+  "7907": "Diagnostic",
   "7908": "Injection",
   "7909": "Mode lecture : %1",
   "7910": "Diagnostic ECU (7D/80)",
