@@ -1,4 +1,5 @@
 #include "IaMemsService.h"
+#include "../i18n.h"
 
 #include "IaResponseLogic.h"
 #include "IaMemsConversationRouting.h"
@@ -528,11 +529,11 @@ QString IaMemsService::statusText() const
 {
     QStringList parts;
     if (m_knowledgeReady)
-        parts << QStringLiteral("base prête");
+        parts << I18n::text(16600);
     else if (m_knowledgeAttempted)
-        parts << QStringLiteral("base indisponible");
+        parts << I18n::text(16601);
     else
-        parts << QStringLiteral("base non chargée");
+        parts << I18n::text(16602);
 
     if (!m_context.family.isEmpty())
         parts << QStringLiteral("MEMS %1").arg(m_context.family);
