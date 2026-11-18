@@ -2,6 +2,7 @@
 #define MEMSDOCUMENTARYREPOSITORY_H
 
 #include <QSqlDatabase>
+#include <QList>
 #include <QString>
 #include <QStringList>
 #include <QVariantList>
@@ -13,7 +14,7 @@
 class MemsDocumentaryRepository
 {
 public:
-    MemsDocumentaryRepository();
+    explicit MemsDocumentaryRepository(const QString &databaseFile = QString());
     ~MemsDocumentaryRepository();
     MemsDocumentaryRepository(const MemsDocumentaryRepository &) = delete;
     MemsDocumentaryRepository &operator=(const MemsDocumentaryRepository &) = delete;
@@ -51,6 +52,11 @@ public:
                                 bool french);
 
 private:
+    QVariantList searchLocal(const QString &question, int maximum,
+                             bool allowOcrDiscovery, const QString &language) const;
+    void openExtraReaders();
+    QString m_explicitPath;
+    QList<MemsDocumentaryRepository *> m_additionalReaders;
     QSqlDatabase m_database;
     QString m_connectionName;
     QString m_error;
