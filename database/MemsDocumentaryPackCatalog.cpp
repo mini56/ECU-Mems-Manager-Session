@@ -80,8 +80,12 @@ QStringList MemsDocumentaryPackCatalog::installedDatabasePaths(const QString &la
     if(!packRoot.exists())
         return paths;
     const QString databaseName=QFileInfo(legacy).fileName();
+    const QRegularExpression packIdentity(QStringLiteral("^[0-9a-f]{20}$"));
     for(const QString &directory : packRoot.entryList(QDir::Dirs|QDir::NoDotAndDotDot,
                                                       QDir::Name)){
+        // Never read .backup-UUID or .incoming-UUID directories as live packs.
+        if(!packIdentity.match(directory).hasMatch())
+            continue;
         const QString candidate=packRoot.filePath(directory+QLatin1Char('/')+databaseName);
         const QFileInfo info(candidate);
         if(info.isFile() && !info.isSymLink())
