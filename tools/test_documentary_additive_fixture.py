@@ -38,7 +38,7 @@ def prepare(folder: Path, docs: tuple[tuple[str, str], ...]) -> None:
                 (identifier,revision,filename,hashlib.sha256(raw).hexdigest(),len(raw))
             )
             db.execute(
-                "INSERT INTO documentary_entries VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO documentary_entries VALUES(?,?,?,?,?,?,?,?,?,?)",
                 (identifier,revision,"REFERENCE-1","reference",1,title,
                  "Description francophone synthetique de "+title,
                  "source_checked","synthetic_ci",json.dumps({"ci":True},ensure_ascii=False))
