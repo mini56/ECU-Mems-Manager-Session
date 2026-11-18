@@ -195,7 +195,7 @@ QString documentaryModelQuestion(const QString &question,
         "Rubrique sélectionnée : %2\n\n"
         "Réponds directement en français à la question à partir des faits structurés fournis séparément par MEMS Manager. "
         "Organise la réponse dans l'ordre utile. N'invente rien et n'ajoute aucune information extérieure. "
-        "Si plusieurs étapes sont fournies, conserve leur ordre et les avertissements nécessaires. "
+        "Si plusieurs étapes sont fournies, conserve leur ordre. "
         "N'affiche pas les identifiants internes, la provenance, les clés techniques ni le niveau de preuve, "
         "sauf demande explicite de l'utilisateur.")
         .arg(question.trimmed(), subject.trimmed().isEmpty() ? question.trimmed() : subject.trimmed());
@@ -805,11 +805,6 @@ void IaMemsService::askWithLibrary(const QString &question)
             if(evidence.isEmpty())
                 evidence=MemsDocumentaryRepository::answerFromHits(
                     QVariantList{chosen});
-            if(chosen.value(QStringLiteral("iaMemsVariantUnverified")).toBool())
-                evidence=QStringLiteral(
-                    "La variante moteur demandée n'est pas confirmée par le "
-                    "titre de cette source. Vérifier sa compatibilité avant "
-                    "toute intervention.\n\n")+evidence;
             if(!linkedPages.isEmpty())
                 setProperty("iaMemsLastDocumentaryImagePaths",linkedPages);
             setProperty("iaMemsLastDocumentaryImagePath",
@@ -976,8 +971,7 @@ void IaMemsService::askWithLibrary(const QString &question)
         if (!documentary.open()) {
             m_pendingGrounding.clear();
             emit responseReady(QStringLiteral(
-                "Base documentaire Rover indisponible : %1. "
-                "Aucune autre base ne sera utilisée comme remplacement silencieux.")
+                "Base documentaire indisponible : %1.")
                 .arg(documentary.lastError()));
             emit statusChanged();
             return;
@@ -1036,7 +1030,6 @@ void IaMemsService::askWithLibrary(const QString &question)
             if (!operation.isEmpty() && matchingOperationChoices.size() == 1) {
                 const QVariantMap row = matchingOperationChoices.first().toMap();
                 if (!row.value(QStringLiteral("iaMemsMentionOnly")).toBool() &&
-                    !row.value(QStringLiteral("iaMemsVariantUnverified")).toBool() &&
                     !row.value(QStringLiteral("iaMemsGroupRows")).isValid() &&
                     row.value(QStringLiteral("entry_type")).toString()
                     == QStringLiteral("procedure")) {
@@ -1057,9 +1050,7 @@ void IaMemsService::askWithLibrary(const QString &question)
             if (choices.isEmpty()) {
                 m_pendingGrounding.clear();
                 emit responseReady(QStringLiteral(
-                    "Des termes de la demande figurent dans les documents, mais "
-                    "aucune rubrique suffisamment précise ne correspond au sujet « %1 ». "
-                    "Je ne propose pas de procédure hors sujet.").arg(trimmed));
+                    "Aucune rubrique correspondante pour « %1 ».").arg(trimmed));
                 emit statusChanged();
                 return;
             }
@@ -1071,11 +1062,6 @@ void IaMemsService::askWithLibrary(const QString &question)
                     ? matchingOperationChoices : choices);
             QString menu = MemsDocumentaryRepository::numberedMenu(
                 trimmed, offers, french);
-            if (!operation.isEmpty() && matchingOperationChoices.isEmpty())
-                menu.prepend(QStringLiteral(
-                    "Je n'ai pas trouvé de rubrique nommée « %1 » pour ce sujet. "
-                    "Voici les informations réellement disponibles :\n")
-                    .arg(operation));
             setProperty("iaMemsRoverMenuRows", offers);
             setProperty("iaMemsRoverMenuQuestion", trimmed);
             setProperty("iaMemsLastLibraryQuestion", trimmed);
@@ -1093,9 +1079,7 @@ void IaMemsService::askWithLibrary(const QString &question)
         if (documentaryIntent) {
             m_pendingGrounding.clear();
             emit responseReady(QStringLiteral(
-                "Aucune information correspondante n'a été retrouvée dans "
-                "la base documentaire Rover installée. Je ne vais pas inventer une "
-                "procédure, un couple de serrage ou un schéma."));
+                "Aucune information correspondante dans la base documentaire installée."));
             emit statusChanged();
             return;
         }
@@ -1113,7 +1097,7 @@ void IaMemsService::askWithLibrary(const QString &question)
         if (evidence.isEmpty()) {
             m_pendingGrounding.clear();
             emit responseReady(QStringLiteral(
-                "La rubrique documentaire a été sélectionnée, mais son contenu structuré est vide. Je ne vais pas élargir automatiquement la recherche à un autre sujet."));
+                "Aucun texte disponible pour cette rubrique."));
             emit statusChanged();
             return;
         }
@@ -1162,9 +1146,7 @@ void IaMemsService::askWithLibrary(const QString &question)
                     ? pendingLabels.at(selected - 1) : choice.label;
                 m_pendingGrounding.clear();
                 emit responseReady(QStringLiteral(
-                    "Je n'ai pas de contenu documentaire structuré pour « %1 ». "
-                    "Cette rubrique existe mais son contenu n'a pas encore été extrait.")
-                    .arg(emptySubject));
+                    "Aucun texte disponible pour cette rubrique."));
                 emit statusChanged();
                 return;
             }
@@ -1232,10 +1214,7 @@ void IaMemsService::askWithLibrary(const QString &question)
         !MemsDocumentaryRepository::subjectTerms(trimmed).isEmpty()) {
         m_pendingGrounding.clear();
         emit responseReady(QStringLiteral(
-            "Aucune rubrique suffisamment pertinente n'a été retrouvée "
-            "dans la base documentaire installée pour « %1 ». "
-            "Je ne remplace pas cette recherche par un extrait anglais "
-            "d'une ancienne bibliothèque.").arg(trimmed));
+            "Aucune rubrique trouvée pour « %1 ».").arg(trimmed));
         emit statusChanged();
         return;
     }
