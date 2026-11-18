@@ -1,0 +1,22 @@
+{
+  "16200": "Teste do cabo USB",
+  "16201": "Verificação opcional das interfaces USB/série. A ligação à ECU continua direta e inalterada.",
+  "16202": "Interfaces detetadas",
+  "16203": "Porta",
+  "16204": "Chip / adaptador",
+  "16205": "VID / PID",
+  "16206": "Descrição",
+  "16207": "Atualizar",
+  "16208": "Monitorizar uma ligação (15 s)",
+  "16209": "Testar a abertura da porta",
+  "16210": "Esta verificação identifica o adaptador e apenas testa a abertura da porta COM. Não verifica a cablagem interna nem a comunicação com uma ECU. Desligue primeiro a ECU se a porta já estiver ocupada.",
+  "16211": "Não foi detetada nenhuma nova porta COM durante 15 segundos.",
+  "16212": "Monitorização: faltam %1 s. Ligue o cabo.",
+  "16213": "Monitorização em curso: ligue o cabo.",
+  "16214": "Selecione uma porta COM da lista.",
+  "16215": "Porta %1: abertura e fecho bem-sucedidos. A comunicação com a ECU não foi testada.",
+  "16216": "Porta %1: não é possível abrir a porta (%2). Pode estar ocupada ou faltar o controlador.",
+  "16217": "Modelo desconhecido",
+  "16218": "Nova porta detetada: %1 — %2",
+  "16219": "Selecione uma interface ou inicie uma monitorização de 15 s."
+}
