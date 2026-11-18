@@ -232,10 +232,47 @@ QString installSource(const QString &source,const QString &code)
     QStringList images;
     if(!metadataValid(input.absoluteFilePath(),code,&error,&images))
         return error;
-    const QString installed=MemsDocumentaryPackCatalog::installedDatabasePath(code);
-    if(installed.isEmpty())
+    const QString legacy=MemsDocumentaryPackCatalog::installedDatabasePath(code);
+    if(legacy.isEmpty())
         return QStringLiteral("Emplacement documentaire Windows indisponible.");
-    const QFileInfo installedInfo(installed);
+    // Additional manufacturer documents are installed independently.
+    // A stable source identity directs updates to the matching pack only.
+    QString target=legacy;
+    if(QFileInfo(legacy).exists() ||
+       !MemsDocumentaryPackCatalog::installedDatabasePaths(code).isEmpty()){
+        const QString connection=QStringLiteral("DOCUMENTARY_ID_%1").arg(
+            QUuid::createUuid().toString(QUuid::WithoutBraces));
+        QByteArray identity;
+        bool opened=false;
+        {
+            QSqlDatabase db=QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),connection);
+            db.setConnectOptions(QStringLiteral("QSQLITE_OPEN_READONLY"));
+            db.setDatabaseName(source);
+            opened=db.open();
+            if(opened){
+                QSqlQuery sources(db);
+                if(sources.exec(QStringLiteral(
+                    "SELECT document_id,source_revision FROM documentary_documents "
+                    "ORDER BY document_id,source_revision"))){
+                    while(sources.next()){
+                        identity+=sources.value(0).toString().toUtf8();
+                        identity+=':';
+                        identity+=sources.value(1).toString().toUtf8();
+                        identity+='\\n';
+                    }
+                }
+                db.close();
+            }
+        }
+        QSqlDatabase::removeDatabase(connection);
+        if(!opened || identity.isEmpty())
+            return QStringLiteral("Identité des documents absente.");
+        const QString folder=QString::fromLatin1(
+            QCryptographicHash::hash(identity,QCryptographicHash::Sha256).toHex().left(20));
+        target=QDir(QFileInfo(legacy).absolutePath()).filePath(
+            QStringLiteral("packs/")+folder+QLatin1Char('/')+QFileInfo(legacy).fileName());
+    }
+    const QFileInfo installedInfo(target);
     const QFileInfo destinationInfo(installedInfo.absolutePath());
     if(!QDir().mkpath(destinationInfo.absolutePath()))
         return QStringLiteral("Impossible de créer le dossier documentaire.");
