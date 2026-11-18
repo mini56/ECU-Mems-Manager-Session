@@ -86,5 +86,17 @@
   "16503": "Ajuster",
   "16504": "GUIDE UTILISATEUR",
   "16505": "Guide intégré · documentation hors ligne · recherche par rubrique",
-  "16506": "Guide indisponible dans cette installation."
+  "16506": "Guide indisponible dans cette installation.",
+  "16600": "base prête",
+  "16601": "base indisponible",
+  "16602": "base non chargée",
+  "16603": "IA locale non démarrée",
+  "16604": "moteur IA local absent",
+  "16605": "modèle IA local absent",
+  "16606": "IA locale en démarrage",
+  "16607": "IA locale prête",
+  "16608": "IA locale en réponse",
+  "16609": "erreur IA locale",
+  "16610": "erreur IA locale : %1",
+  "16611": "IA locale"
 }
