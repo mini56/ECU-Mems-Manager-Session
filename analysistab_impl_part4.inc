@@ -1,6 +1,12 @@
         cb->setChecked(checked);connect(cb,&QCheckBox::toggled,this,&AnalysisTab::onCheckboxToggled);m_checkboxLayout->addWidget(cb);m_checkboxes.append(cb);
     }
-    if(stretch)m_checkboxLayout->addItem(stretch);else m_checkboxLayout->addStretch();updateChartVisibility();
+    if(stretch)m_checkboxLayout->addItem(stretch);else m_checkboxLayout->addStretch();
+    // Notify QScrollArea of the new minimum content height after a CSV load
+    // or a switch between the diagnostic and injection channel lists.
+    m_checkboxLayout->invalidate();
+    m_checkboxContainer->updateGeometry();
+    m_checkboxScrollArea->verticalScrollBar()->setValue(0);
+    updateChartVisibility();
 }
 
 void AnalysisTab::onCheckboxToggled(bool checked)
