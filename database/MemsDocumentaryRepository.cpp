@@ -2270,7 +2270,6 @@ QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
             if(sections.size()>=maximum)
                 break;
             const QVariantMap item=value.toMap();
-            const QString sourceTable=item.value(QStringLiteral("source_table")).toString();
             const QString key=item.value(QStringLiteral("source_key")).toString();
             const QStringList sourceFields=key.split(QLatin1Char(':'));
             const QString document=sourceFields.size()>=3 ?
@@ -2284,13 +2283,6 @@ QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
             QString body=technicalReference
                 ?readableReferenceLayout(source)
                 :readableWorkshopParagraphs(source);
-            if(item.value(QStringLiteral("source_status")).toString()
-                  ==QStringLiteral("review_required") ||
-               sourceTable.endsWith(QStringLiteral("_page_ocr"))){
-                // L'index est consultable dans Base de données. L'IA ne publie
-                // aucune consigne extraite mais non relue, quelle que soit la langue.
-                body.clear();
-            }
             if(!body.isEmpty() && !informativeWorkshopText(body))
                 continue;
             if(body.isEmpty() && title.isEmpty())
