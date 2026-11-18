@@ -9,7 +9,30 @@
     right->addWidget(m_diagnosticLiveButton);
     right->addWidget(m_injectionLiveButton);
     QLabel *channels=new QLabel(I18n::text(6447),rightPanel);channels->setObjectName(QStringLiteral("analysisParametersTitle"));right->addWidget(channels);
-    m_checkboxScrollArea=new QScrollArea(rightPanel);m_checkboxScrollArea->setWidgetResizable(true);m_checkboxContainer=new QWidget();m_checkboxLayout=new QVBoxLayout(m_checkboxContainer);m_checkboxLayout->setContentsMargins(4,4,4,4);m_checkboxLayout->addStretch();m_checkboxScrollArea->setWidget(m_checkboxContainer);right->addWidget(m_checkboxScrollArea,1);
+    // Only the channels list scrolls: the title, file controls and the
+    // selection/overlay buttons stay fixed in the right-hand panel.
+    m_checkboxScrollArea=new QScrollArea(rightPanel);
+    m_checkboxScrollArea->setObjectName(QStringLiteral("analysisChannelsScroll"));
+    m_checkboxScrollArea->setFrameShape(QFrame::NoFrame);
+    m_checkboxScrollArea->setWidgetResizable(true);
+    m_checkboxScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_checkboxScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    m_checkboxScrollArea->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Ignored);
+    m_checkboxScrollArea->setMinimumSize(0,0);
+    m_checkboxScrollArea->setFocusPolicy(Qt::StrongFocus);
+    m_checkboxScrollArea->verticalScrollBar()->setSingleStep(28);
+
+    m_checkboxContainer=new QWidget();
+    m_checkboxContainer->setObjectName(QStringLiteral("analysisChannelsContent"));
+    m_checkboxLayout=new QVBoxLayout(m_checkboxContainer);
+    m_checkboxLayout->setContentsMargins(4,4,4,4);
+    m_checkboxLayout->setSpacing(2);
+    // Without a minimum-size constraint a resizable QScrollArea can fit its
+    // content into the viewport and hide rows without producing a scroll range.
+    m_checkboxLayout->setSizeConstraint(QLayout::SetMinAndMaxSize);
+    m_checkboxLayout->addStretch();
+    m_checkboxScrollArea->setWidget(m_checkboxContainer);
+    right->addWidget(m_checkboxScrollArea,1);
     QLabel *tools=new QLabel(I18n::text(7100),rightPanel);tools->setObjectName(QStringLiteral("analysisToolsTitle"));right->addWidget(tools);
     QHBoxLayout *selectRow=new QHBoxLayout();selectRow->setSpacing(5);selectRow->addWidget(m_selectAllButton);selectRow->addWidget(m_selectNoneButton);right->addLayout(selectRow);right->addWidget(m_overlayButton);
     mainRow->addWidget(rightPanel,0);
