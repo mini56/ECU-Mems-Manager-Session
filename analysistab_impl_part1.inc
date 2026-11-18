@@ -25,6 +25,32 @@ namespace {
 
 // Original AnalysisTab owns styling and resizing: no application-wide filter.
 static void fitAnalysisModernSizing(QWidget *tab);
+
+// Qt's dark application-wide scrollbar palette left the scroll tracks practically
+// invisible on the actual Analysis page. Give EACH of its two scrolling regions
+// a distinct, always-visible thumb. Do not alter other pages or the page zoom.
+static void configureAnalysisVisibleScroll(QScrollArea *area)
+{
+    if (!area) return;
+    area->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    area->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    QScrollBar *bar=area->verticalScrollBar();
+    bar->setFixedWidth(17);
+    bar->setSingleStep(36);
+    bar->setPageStep(qMax(80,area->viewport()->height()-36));
+    bar->setStyleSheet(QStringLiteral(
+        "QScrollBar:vertical{background:#192733;border:1px solid #526575;"
+        "border-radius:3px;width:17px;margin:0px;}"
+        "QScrollBar::handle:vertical{background:#ff8a1c;"
+        "border:1px solid #ffc078;border-radius:4px;"
+        "min-height:48px;margin:2px;}"
+        "QScrollBar::handle:vertical:hover{background:#ffb45f;}"
+        "QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical"
+        "{height:0px;border:0;background:#192733;}"
+        "QScrollBar::add-page:vertical,QScrollBar::sub-page:vertical"
+        "{background:#192733;}"
+    ));
+}
     static qreal analysisUiScale(QWidget *tab)
     {
         QWidget *top = tab ? tab->window() : nullptr;
@@ -57,9 +83,7 @@ static void fitAnalysisModernSizing(QWidget *tab);
             "QScrollArea{background:#0d1218;border:0;}"
             "QScrollArea>QWidget>QWidget{background:#0d1218;}"
             "QCheckBox{spacing:6px;padding:2px 1px;color:#dce2e7;background:transparent;}"
-            "QScrollBar:vertical{background:#0c1116;width:8px;margin:1px;}"
-            "QScrollBar::handle:vertical{background:#384550;border-radius:1px;min-height:24px;}"
-            "QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical{height:0;}"
+            // Scrollbar widgets have their own high-contrast, 17px style.
         ));
 
         const QList<QScrollArea*> scrollAreas = tab->findChildren<QScrollArea*>();
@@ -67,6 +91,9 @@ static void fitAnalysisModernSizing(QWidget *tab);
         {
             scroll->setFrameShape(QFrame::NoFrame);
             scroll->setWidgetResizable(true);
+            if (scroll->objectName()==QStringLiteral("analysisChannelsScroll") ||
+                scroll->objectName()==QStringLiteral("analysisStackScroll"))
+                configureAnalysisVisibleScroll(scroll);
             if (scroll->viewport())
             {
                 scroll->viewport()->setAutoFillBackground(false);
