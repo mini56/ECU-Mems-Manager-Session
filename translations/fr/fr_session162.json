@@ -1,0 +1,22 @@
+{
+  "16200": "Test câble USB",
+  "16201": "Contrôle facultatif des interfaces USB / série. La connexion ECU reste directe et inchangée.",
+  "16202": "Interfaces détectées",
+  "16203": "Port",
+  "16204": "Puce / adaptateur",
+  "16205": "VID / PID",
+  "16206": "Description",
+  "16207": "Actualiser",
+  "16208": "Surveiller un branchement (15 s)",
+  "16209": "Tester l'ouverture du port",
+  "16210": "Ce contrôle identifie l'adaptateur et teste uniquement l'ouverture du port COM. Il ne vérifie ni le câblage interne ni la communication avec un ECU. Déconnectez d'abord le calculateur si le port est déjà utilisé.",
+  "16211": "Aucun nouveau port COM détecté pendant 15 secondes.",
+  "16212": "Surveillance : encore %1 s. Branchez le câble.",
+  "16213": "Surveillance en cours : branchez votre câble.",
+  "16214": "Sélectionnez un port COM dans la liste.",
+  "16215": "Port %1 : ouverture et fermeture réussies. La communication ECU n'a pas été testée.",
+  "16216": "Port %1 : impossible d'ouvrir le port (%2). Il peut déjà être utilisé ou le pilote peut être absent.",
+  "16217": "Modèle inconnu",
+  "16218": "Nouveau port détecté : %1 — %2",
+  "16219": "Sélectionnez une interface ou lancez une surveillance de 15 s."
+}
