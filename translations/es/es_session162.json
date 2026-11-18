@@ -79,5 +79,12 @@
   "16421": "ECU conectada",
   "16422": "ECU desconectada",
   "16423": "Página %1 — ampliar (zoom)",
-  "16424": "Páginas del fabricante relacionadas con esta operación:"
+  "16424": "Páginas del fabricante relacionadas con esta operación:",
+  "16500": "Página del fabricante",
+  "16501": "No se puede leer la imagen:\n%1",
+  "16502": "Página del fabricante — %1",
+  "16503": "Ajustar a la ventana",
+  "16504": "GUÍA DE USUARIO",
+  "16505": "Guía integrada · documentación sin conexión · búsqueda por temas",
+  "16506": "La guía de ayuda no está disponible en esta instalación."
 }
