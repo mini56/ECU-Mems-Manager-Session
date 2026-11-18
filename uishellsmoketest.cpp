@@ -508,22 +508,36 @@ bool verifyUi(MainWindow &window)
         }
     }
 
-    if (I18n::load(QStringLiteral("en"))){
+    // Native six-language visual regression: all 15 page titles follow the
+    // selected SESSION language, not the Windows system locale.
+    const int officialTitleKeys[15] = {
+        1001,7900,2001,4001,3001,7013,7940,7018,7017,7012,
+        5001,7152,6002,19000,16200
+    };
+    for (const QString &language : {
+             QStringLiteral("en"),QStringLiteral("es"),
+             QStringLiteral("it"),QStringLiteral("pt"),
+             QStringLiteral("de"),QStringLiteral("fr")}) {
+        if (!I18n::load(language)) {
+            ok=check(false,"Six-language translation catalog unavailable") && ok;
+            continue;
+        }
         QEvent languageChange(QEvent::LanguageChange);
         QCoreApplication::sendEvent(&window,&languageChange);
         QCoreApplication::processEvents();
         ok=check(tabs->count()==15 && navigation->count()==15,
-                 "Language change modified the official page count") && ok;
-        for (int i=0;i<15;i++)
+                 "Language changed the official 15-page count") && ok;
+        for (int i=0;i<15;i++) {
             ok=check(navigation->item(i)->text()==tabs->tabText(i),
-                     "Sidebar and page translations disagree") && ok;
-    } else {
-        ok=check(false,"English translation catalog is unavailable") && ok;
+                     "Sidebar and page titles disagree in selected language") && ok;
+            ok=check(tabs->tabText(i)==I18n::text(officialTitleKeys[i]),
+                     "Page title does not match selected SESSION language") && ok;
+        }
     }
 
     if (ok) qInfo().noquote() << "SESSION_UI_SMOKE_PASS 15 native pages, bidirectional navigation, "
                                "five window sizes, light/dark theme switching, Help and Options, "
-                               "approved visual style, English language, MEMS/Settings/ROSCO, dwell 0-5ms";
+                               "approved visual style, all six interface languages, MEMS/Settings/ROSCO, dwell 0-5ms";
     return ok;
 }
 
