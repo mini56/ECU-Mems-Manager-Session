@@ -363,6 +363,11 @@ QString MemsDocumentaryRepository::originalPdfPath()
 
 bool MemsDocumentaryRepository::isPackInstalled()
 {
+#ifdef MEMS_DOCUMENTARY_SELFTEST
+    const QString overridePath=qEnvironmentVariable("MEMS_DOCUMENTARY_DB").trimmed();
+    if(!overridePath.isEmpty())
+        return QFileInfo(QDir::cleanPath(overridePath)).isFile();
+#endif
     return !MemsDocumentaryPackCatalog::installedDatabasePaths(
         MemsDocumentaryPackCatalog::selectedLanguage()).isEmpty();
 }
