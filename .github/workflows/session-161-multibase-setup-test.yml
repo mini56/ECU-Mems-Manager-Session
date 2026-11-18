@@ -80,14 +80,12 @@ jobs:
             $stem="microsoft.ml.onnxruntimegenai.$env:ORT_GENAI_VERSION"
             $root="https://api.nuget.org/v3-flatcontainer/microsoft.ml.onnxruntimegenai/$env:ORT_GENAI_VERSION"
             $package=Join-Path $env:RUNNER_TEMP "$stem.nupkg"
-            $sha=Join-Path $env:RUNNER_TEMP "$stem.nupkg.sha512"
             curl.exe -L --fail --retry 2 --retry-delay 2 -o $package "$root/$stem.nupkg"
             if($LASTEXITCODE -ne 0){throw 'ONNX_NUGET_DOWNLOAD_FAILED'}
-            curl.exe -L --fail --retry 2 --retry-delay 2 -o $sha "$root/$stem.nupkg.sha512"
-            if($LASTEXITCODE -ne 0){throw 'ONNX_NUGET_DIGEST_FAILED'}
-            $expected=(Get-Content $sha -Raw).Trim()
-            $actual=[Convert]::ToBase64String([System.Security.Cryptography.SHA512]::HashData([System.IO.File]::ReadAllBytes($package)))
-            if($actual -cne $expected){throw 'ONNX_NUGET_SHA512_MISMATCH'}
+            dotnet nuget verify "$package" --all --verbosity normal
+            if($LASTEXITCODE -ne 0){throw 'ONNX_NUGET_SIGNATURE_CHECK_FAILED'}
+            # Verify Microsoft-signed package instead of the nonexistent NuGet .sha512 endpoint.
+            Write-Host 'ONNX_NUGET_SIGNATURE_VERIFIED'
             $zip=Join-Path $env:RUNNER_TEMP 'onnx-genai-nuget-0140.zip'
             Copy-Item $package $zip -Force
             Expand-Archive $zip $folder -Force
