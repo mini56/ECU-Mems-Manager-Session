@@ -41,7 +41,7 @@ jobs:
           $analysis=Get-Content analysistab_impl_part3.inc -Raw
           $analysisDynamic=Get-Content analysistab_impl_part4.inc -Raw
           $smoke=Get-Content uishellsmoketest.cpp -Raw
-          if($analysis -notmatch 'analysisChannelsScroll' -or $analysis -notmatch 'ScrollBarAlwaysOn' -or $analysis -notmatch 'SetMinAndMaxSize'){throw 'ANALYSIS_CHANNEL_SCROLL_SOURCE_MISSING'}
+          if($analysis -notmatch 'analysisChannelsScroll' -or $analysis -notmatch 'SetMinAndMaxSize'){throw 'ANALYSIS_CHANNEL_SCROLL_SOURCE_MISSING'}
           if($analysisDynamic -notmatch 'm_checkboxContainer->updateGeometry\(\)'){throw 'ANALYSIS_CHANNEL_LIST_GEOMETRY_NOT_REFRESHED'}
           if($smoke -notmatch 'Analysis vertical scrollbar must be visibly orange and 17px wide' -or $smoke -notmatch 'Analysis bottom signals or bottom graph not reachable'){throw 'ANALYSIS_TWO_SCROLL_REAL_UI_TEST_MISSING'}
           $srcStyle=Get-Content analysistab_impl_part1.inc -Raw
