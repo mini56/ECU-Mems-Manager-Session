@@ -98,5 +98,19 @@
   "16608": "lokale KI antwortet",
   "16609": "Fehler der lokalen KI",
   "16610": "Fehler der lokalen KI: %1",
-  "16611": "lokale KI"
+  "16611": "lokale KI",
+  "16700": "Dokumentationsthema: %1",
+  "16701": "Herstellerverfahren: %1",
+  "16702": "Verfahrenstyp: %1",
+  "16703": "Dokumentation: Seite %1",
+  "16704": "Dokumentation: Seiten %1 bis %2",
+  "16705": "• Schritt %1: %2",
+  "16706": " — Bedingung: %1",
+  "16707": "\nWarnungen / Hinweise:",
+  "16708": "Ref. %1",
+  "16709": "\nAnforderungen / Spezifikationen:",
+  "16710": " — Verfahren %1",
+  "16711": "Ich habe mehrere Themen zu „%1“ gefunden. Welches suchen Sie?",
+  "16712": "\nAntworten Sie mit einer Nummer oder geben Sie ein neues Thema für eine weitere Suche ein.",
+  "16713": "Das gewählte Thema existiert, sein strukturierter Inhalt konnte jedoch nicht gelesen werden. Ich ersetze es nicht durch eine ungenaue Suche."
 }
