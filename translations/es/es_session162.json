@@ -86,5 +86,17 @@
   "16503": "Ajustar a la ventana",
   "16504": "GUÍA DE USUARIO",
   "16505": "Guía integrada · documentación sin conexión · búsqueda por temas",
-  "16506": "La guía de ayuda no está disponible en esta instalación."
+  "16506": "La guía de ayuda no está disponible en esta instalación.",
+  "16600": "base preparada",
+  "16601": "base no disponible",
+  "16602": "base sin cargar",
+  "16603": "IA local no iniciada",
+  "16604": "motor de IA local ausente",
+  "16605": "modelo de IA local ausente",
+  "16606": "IA local iniciándose",
+  "16607": "IA local preparada",
+  "16608": "IA local respondiendo",
+  "16609": "error de IA local",
+  "16610": "error de IA local: %1",
+  "16611": "IA local"
 }
