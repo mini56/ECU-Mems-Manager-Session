@@ -258,7 +258,7 @@ QString installSource(const QString &source,const QString &code)
                         identity+=sources.value(0).toString().toUtf8();
                         identity+=':';
                         identity+=sources.value(1).toString().toUtf8();
-                        identity+='\\n';
+                        identity+=char(10);
                     }
                 }
                 db.close();
