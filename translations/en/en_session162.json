@@ -1,0 +1,22 @@
+{
+  "16200": "USB cable test",
+  "16201": "Optional USB/serial interface check. Normal ECU connection remains unchanged.",
+  "16202": "Detected interfaces",
+  "16203": "Port",
+  "16204": "Chip / adapter",
+  "16205": "VID / PID",
+  "16206": "Description",
+  "16207": "Refresh",
+  "16208": "Watch for connection (15 s)",
+  "16209": "Test opening the port",
+  "16210": "This check identifies the adapter and only tests opening its COM port. It does not check the internal cable wiring or communication with an ECU. Disconnect the ECU first if the port is busy.",
+  "16211": "No new COM port detected during 15 seconds.",
+  "16212": "Watching: %1 s remaining. Plug in the cable.",
+  "16213": "Watching: plug in your cable.",
+  "16214": "Select a COM port from the list.",
+  "16215": "Port %1: opened and closed successfully. ECU communication was not tested.",
+  "16216": "Port %1: cannot open port (%2). It may be in use or the driver may be missing.",
+  "16217": "Unknown model",
+  "16218": "New port detected: %1 — %2",
+  "16219": "Select an interface or start a 15-second watch."
+}
