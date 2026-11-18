@@ -398,11 +398,11 @@ public:
         const QString title = operation.value(0).toString().trimmed();
         const QString opNo = operation.value(1).toString().trimmed();
         const QString opKind = operation.value(2).toString().trimmed();
-        output << QStringLiteral("Sujet documentaire : %1").arg(title.isEmpty() ? choice.label : title);
+        output << I18n::text(16700).arg(title.isEmpty() ? choice.label : title);
         if (!opNo.isEmpty())
-            output << QStringLiteral("Opération constructeur : %1").arg(opNo);
+            output << I18n::text(16701).arg(opNo);
         if (!opKind.isEmpty())
-            output << QStringLiteral("Type d'opération : %1").arg(opKind);
+            output << I18n::text(16702).arg(opKind);
 
         QSqlQuery pages(m_database);
         pages.prepare(QStringLiteral(
@@ -419,8 +419,8 @@ public:
             const int first = pages.value(0).toInt();
             const int last = pages.value(1).toInt();
             output << (first == last
-                       ? QStringLiteral("Étendue documentaire : page %1").arg(first)
-                       : QStringLiteral("Étendue documentaire : pages %1 à %2").arg(first).arg(last));
+                       ? I18n::text(16703).arg(first)
+                       : I18n::text(16704).arg(first).arg(last));
         }
 
         QSqlQuery phases(m_database);
@@ -454,9 +454,9 @@ public:
                             continue;
                         QString line = manufacturerStep.isEmpty()
                             ? QStringLiteral("• %1").arg(instruction)
-                            : QStringLiteral("• Étape %1 : %2").arg(manufacturerStep, instruction);
+                            : I18n::text(16705).arg(manufacturerStep, instruction);
                         if (!condition.isEmpty())
-                            line += QStringLiteral(" — condition : %1").arg(condition);
+                            line += I18n::text(16706).arg(condition);
                         output << line;
                     }
                 }
@@ -479,7 +479,7 @@ public:
                                         : QStringLiteral("• %1 : %2").arg(kind, text));
             }
             if (!rows.isEmpty()) {
-                output << QStringLiteral("\nAvertissements / remarques :");
+                output << I18n::text(16707);
                 output.append(rows);
             }
         }
@@ -502,12 +502,12 @@ public:
                 QStringList fields;
                 if (!type.isEmpty()) fields << type;
                 if (!text.isEmpty()) fields << text;
-                if (!part.isEmpty()) fields << QStringLiteral("réf. %1").arg(part);
+                if (!part.isEmpty()) fields << I18n::text(16708).arg(part);
                 if (!quantity.isEmpty()) fields << QStringLiteral("%1 %2").arg(quantity, unit).trimmed();
                 rows << QStringLiteral("• %1").arg(fields.join(QStringLiteral(" — ")));
             }
             if (!rows.isEmpty()) {
-                output << QStringLiteral("\nExigences / spécifications :");
+                output << I18n::text(16709);
                 output.append(rows);
             }
         }
@@ -536,7 +536,7 @@ QString displayChoiceLabel(const DocumentaryChoice &choice)
     if (choice.entityKind == QStringLiteral("operation")
         && !choice.operationNumber.isEmpty()
         && !normalizedDocumentary(label).contains(normalizedDocumentary(choice.operationNumber))) {
-        label += QStringLiteral(" — opération %1").arg(choice.operationNumber);
+        label += I18n::text(16710).arg(choice.operationNumber);
     }
     return label;
 }
@@ -609,11 +609,11 @@ private:
         m_originalQuestion = originalQuestion;
         m_question->clear();
 
-        QString prompt = QStringLiteral("J'ai trouvé plusieurs rubriques correspondant à « %1 ». Laquelle recherchez-vous ?")
+        QString prompt = I18n::text(16711)
                              .arg(subject);
         for (int i = 0; i < choices.size(); ++i)
             prompt += QStringLiteral("\n%1. %2").arg(i + 1).arg(displayChoiceLabel(choices.at(i)));
-        prompt += QStringLiteral("\nRépondez par le numéro, ou écrivez un autre sujet pour relancer une recherche.");
+        prompt += I18n::text(16712);
         appendDocumentaryTranscript(m_transcript, QStringLiteral("IA MEMS"), prompt);
         m_question->setFocus();
     }
@@ -648,7 +648,7 @@ private:
         const QString evidence = reader.evidenceForOperation(choice);
         if (evidence.trimmed().isEmpty()) {
             appendDocumentaryTranscript(m_transcript, QStringLiteral("IA MEMS"),
-                QStringLiteral("La rubrique sélectionnée existe, mais son contenu structuré n'a pas pu être lu. Je ne vais pas remplacer cette sélection par une autre recherche approximative."));
+                I18n::text(16713));
             clearPending();
             return;
         }
@@ -681,7 +681,7 @@ private:
             return;
         }
 
-        appendDocumentaryTranscript(m_transcript, QStringLiteral("Vous"), raw);
+        appendDocumentaryTranscript(m_transcript, I18n::text(16415), raw);
 
         const QStringList terms = meaningfulDocumentaryTerms(raw);
         if (terms.size() == 1 && choices.first().entityKind == QStringLiteral("section")) {
@@ -710,7 +710,7 @@ private:
 
     void handlePendingSelection(const QString &raw)
     {
-        appendDocumentaryTranscript(m_transcript, QStringLiteral("Vous"), raw);
+        appendDocumentaryTranscript(m_transcript, I18n::text(16415), raw);
         bool ok = false;
         const int selected = raw.toInt(&ok);
         if (ok && selected >= 1 && selected <= m_pendingChoices.size()) {
