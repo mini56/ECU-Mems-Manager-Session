@@ -19,7 +19,7 @@
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
-#include <QLocale>
+#include "i18n.h"
 
 class UsbCableDiagnosticTab final : public QWidget
 {
@@ -28,27 +28,22 @@ public:
         : QWidget(parent)
     {
         setObjectName(QStringLiteral("usb_cable_diagnostic_tab"));
-        const bool french = QLocale().language() == QLocale::French;
-        auto txt = [french](const char *fr, const char *en) {
-            return QString::fromUtf8(french ? fr : en);
-        };
+
         QVBoxLayout *root = new QVBoxLayout(this);
         root->setContentsMargins(18, 15, 18, 15);
         root->setSpacing(12);
 
-        QLabel *intro = new QLabel(txt(
-            "Contrôle facultatif des interfaces USB / série. La connexion ECU reste directe et inchangée.",
-            "Optional USB/serial interface check. Normal ECU connection remains unchanged."), this);
+        QLabel *intro = new QLabel(I18n::text(16201), this);
         intro->setWordWrap(true);
         root->addWidget(intro);
 
-        QGroupBox *devicesBox = new QGroupBox(txt("Interfaces détectées", "Detected interfaces"), this);
+        QGroupBox *devicesBox = new QGroupBox(I18n::text(16202), this);
         QVBoxLayout *devicesLayout = new QVBoxLayout(devicesBox);
         table_ = new QTableWidget(0, 4, devicesBox);
         table_->setObjectName(QStringLiteral("usbCableDetectedPorts"));
         table_->setHorizontalHeaderLabels({
-            txt("Port", "Port"), txt("Puce / adaptateur", "Chip / adapter"),
-            txt("VID / PID", "VID / PID"), txt("Description", "Description")});
+            I18n::text(16203), I18n::text(16204),
+            I18n::text(16205), I18n::text(16206)});
         table_->setSelectionBehavior(QAbstractItemView::SelectRows);
         table_->setSelectionMode(QAbstractItemView::SingleSelection);
         table_->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -59,9 +54,9 @@ public:
         root->addWidget(devicesBox, 1);
 
         QHBoxLayout *actions = new QHBoxLayout;
-        refresh_ = new QPushButton(txt("Actualiser", "Refresh"), this);
-        monitor_ = new QPushButton(txt("Surveiller un branchement (15 s)", "Watch for connection (15 s)"), this);
-        test_ = new QPushButton(txt("Tester l'ouverture du port", "Test opening the port"), this);
+        refresh_ = new QPushButton(I18n::text(16207), this);
+        monitor_ = new QPushButton(I18n::text(16208), this);
+        test_ = new QPushButton(I18n::text(16209), this);
         actions->addWidget(refresh_);
         actions->addWidget(monitor_);
         actions->addWidget(test_);
@@ -73,13 +68,7 @@ public:
         status_->setWordWrap(true);
         root->addWidget(status_);
 
-        QLabel *warning = new QLabel(txt(
-            "Ce contrôle identifie l'adaptateur et teste uniquement l'ouverture du port COM. "
-            "Il ne vérifie ni le câblage interne ni la communication avec un ECU. "
-            "Déconnectez d'abord le calculateur si le port est déjà utilisé.",
-            "This check identifies the adapter and only tests opening its COM port. "
-            "It does not check the internal cable wiring or communication with an ECU. "
-            "Disconnect the ECU first if the port is busy."), this);
+        QLabel *warning = new QLabel(I18n::text(16210), this);
         warning->setWordWrap(true);
         root->addWidget(warning);
 
@@ -91,12 +80,10 @@ public:
                 tick_.stop();
                 monitor_->setEnabled(true);
                 if (!newPortDetected_)
-                    status_->setText(localText("Aucun nouveau port COM détecté pendant 15 secondes.",
-                                              "No new COM port detected during 15 seconds."));
+                    status_->setText(I18n::text(16211));
             } else if (!newPortDetected_) {
                 const int seconds = int((15000 - remaining + 999) / 1000);
-                status_->setText(localText("Surveillance : encore %1 s. Branchez le câble.",
-                                           "Watching: %1 s remaining. Plug in the cable.").arg(seconds));
+                status_->setText(I18n::text(16212).arg(seconds));
             }
         });
         connect(refresh_, &QPushButton::clicked, this, [this]() {
@@ -112,15 +99,13 @@ public:
             startedAt_ = QDateTime::currentMSecsSinceEpoch();
             newPortDetected_ = false;
             monitor_->setEnabled(false);
-            status_->setText(localText("Surveillance en cours : branchez votre câble.",
-                                       "Watching: plug in your cable."));
+            status_->setText(I18n::text(16213));
             tick_.start();
         });
         connect(test_, &QPushButton::clicked, this, [this]() {
             const int row = table_->currentRow();
             if (row < 0 || !table_->item(row, 0)) {
-                status_->setText(localText("Sélectionnez un port COM dans la liste.",
-                                           "Select a COM port from the list."));
+                status_->setText(I18n::text(16214));
                 return;
             }
             const QString portName = table_->item(row, 0)->text();
@@ -133,15 +118,9 @@ public:
             serial.setFlowControl(QSerialPort::NoFlowControl);
             if (serial.open(QIODevice::ReadWrite)) {
                 serial.close();
-                status_->setText(localText("Port %1 : ouverture et fermeture réussies. "
-                                           "La communication ECU n'a pas été testée.",
-                                           "Port %1: opened and closed successfully. "
-                                           "ECU communication was not tested.").arg(portName));
+                status_->setText(I18n::text(16215).arg(portName));
             } else {
-                status_->setText(localText("Port %1 : impossible d'ouvrir le port (%2). "
-                                           "Il peut déjà être utilisé ou le pilote peut être absent.",
-                                           "Port %1: cannot open port (%2). "
-                                           "It may be in use or the driver may be missing.")
+                status_->setText(I18n::text(16216)
                                  .arg(portName, serial.errorString()));
             }
         });
@@ -149,10 +128,7 @@ public:
     }
 
 private:
-    static QString localText(const char *fr, const char *en)
-    {
-        return QString::fromUtf8(QLocale().language() == QLocale::French ? fr : en);
-    }
+
 
     static QString chipName(const QSerialPortInfo &port)
     {
@@ -176,7 +152,7 @@ private:
         if (desc.contains(QStringLiteral("prolific")) || desc.contains(QStringLiteral("pl2303"))) return QStringLiteral("Prolific PL2303");
         if (desc.contains(QStringLiteral("ch340")) || desc.contains(QStringLiteral("ch341")) || desc.contains(QStringLiteral("wch"))) return QStringLiteral("CH340 / CH341");
         if (desc.contains(QStringLiteral("cp210")) || desc.contains(QStringLiteral("silicon labs"))) return QStringLiteral("Silicon Labs CP210x");
-        return localText("Modèle inconnu", "Unknown model");
+        return I18n::text(16217);
     }
 
     void refreshPorts()
@@ -199,8 +175,7 @@ private:
             if (port.portName() == selected) selectedRow = row;
             if (tick_.isActive() && !initialPorts_.contains(port.portName()) && !newPortDetected_) {
                 newPortDetected_ = true;
-                status_->setText(localText("Nouveau port détecté : %1 — %2",
-                                           "New port detected: %1 — %2")
+                status_->setText(I18n::text(16218)
                                  .arg(port.portName(), chipName(port)));
                 selectedRow = row;
                 tick_.stop();
@@ -210,8 +185,7 @@ private:
         if (selectedRow >= 0) table_->selectRow(selectedRow);
         else table_->clearSelection();
         if (!tick_.isActive() && !newPortDetected_ && startedAt_ == 0)
-            status_->setText(localText("Sélectionnez une interface ou lancez une surveillance de 15 s.",
-                                       "Select an interface or start a 15-second watch."));
+            status_->setText(I18n::text(16219));
     }
 
     QTableWidget *table_ = nullptr;
