@@ -827,6 +827,16 @@ void IaMemsService::askWithLibrary(const QString &question)
         setProperty("iaMemsRoverMenuQuestion", QVariant());
     }
 
+    if(isNumericSelection && !resolvedDocumentary &&
+       !currentComponent.trimmed().isEmpty()){
+        m_pendingGrounding.clear();
+        emit responseReady(QStringLiteral(
+            "Ce numéro ne correspond à aucune source affichée. "
+            "Relance une recherche documentaire."));
+        emit statusChanged();
+        return;
+    }
+
     updateContextFromQuestion(trimmed);
 
     // Live ECU diagnosis remains on the measurement/expert route unless

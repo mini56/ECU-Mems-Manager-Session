@@ -8,6 +8,7 @@
 #include "expert/IaMemsService.h"
 #include "expert/IaMemsDocumentaryPipeline.h"
 #include "database/MemsDocumentaryRepository.h"
+#include "database/MemsDocumentaryPackCatalog.h"
 #include "database/MemsDocumentaryImageViewer.h"
 #include "database/MemsReferenceDatabase.h"
 #include "database/MemsReferenceSheetRenderer.h"
@@ -143,13 +144,6 @@ IaMemsTab::IaMemsTab(MainWindow *mainWindow, QWidget *parent)
         if(!url.isLocalFile()) return;
         const QString selected=QFileInfo(url.toLocalFile()).canonicalFilePath();
         if(selected.isEmpty() || !m_offeredDocumentaryImagePaths.contains(selected))
-            return;
-        const QString documentaryRoot=QFileInfo(
-            MemsDocumentaryRepository::databasePath()).absolutePath();
-        const QString imageRoot=QFileInfo(QDir(documentaryRoot).filePath(
-            QStringLiteral("images"))).canonicalFilePath();
-        if(imageRoot.isEmpty() ||
-           !selected.startsWith(imageRoot+QLatin1Char('/'),Qt::CaseInsensitive))
             return;
         MemsDocumentaryImageViewer::show(this,selected);
     });
@@ -651,36 +645,41 @@ void IaMemsTab::onServiceResponse(const QString &text)
         }
         m_service->setProperty("iaMemsLastDocumentaryImagePaths",QVariant());
         m_service->setProperty("iaMemsLastDocumentaryImagePath",QVariant());
-        const QString imageRoot=QFileInfo(QDir(QFileInfo(
-            MemsDocumentaryRepository::databasePath()).absolutePath())
-            .filePath(QStringLiteral("images"))).canonicalFilePath();
-        const QRegularExpression imageName(QStringLiteral(
-            "^[A-Z0-9_-]{1,60}_PDF_([0-9]{3})\\.png$"),
-            QRegularExpression::CaseInsensitiveOption);
+        QStringList imageRoots;
+        for(const QString &database :
+            MemsDocumentaryPackCatalog::installedDatabasePaths(
+                MemsDocumentaryPackCatalog::selectedLanguage())){
+            const QString imageRoot=QFileInfo(QDir(QFileInfo(database)
+                .absolutePath()).filePath(QStringLiteral("images"))).canonicalFilePath();
+            if(!imageRoot.isEmpty())
+                imageRoots.append(imageRoot);
+        }
         QStringList html;
-        int shown=0;
         for(const QString &candidate:offered){
             const QFileInfo file(candidate);
             const QString canonical=file.canonicalFilePath();
-            const QRegularExpressionMatch match=imageName.match(file.fileName());
-            if(canonical.isEmpty() || imageRoot.isEmpty() ||
-               !file.isFile() || file.isSymLink() ||
-               !canonical.startsWith(imageRoot+QLatin1Char('/'),
-                                     Qt::CaseInsensitive) ||
-               !match.hasMatch() ||
-               m_offeredDocumentaryImagePaths.contains(canonical) ||
-               shown>=12)
+            if(canonical.isEmpty() || !file.isFile() || file.isSymLink() ||
+               m_offeredDocumentaryImagePaths.contains(canonical))
+                continue;
+            bool insideInstalledPack=false;
+            for(const QString &imageRoot:imageRoots){
+                if(canonical.startsWith(imageRoot+QLatin1Char('/'),
+                                        Qt::CaseInsensitive)){
+                    insideInstalledPack=true;
+                    break;
+                }
+            }
+            if(!insideInstalledPack)
                 continue;
             m_offeredDocumentaryImagePaths.insert(canonical);
             const QString imageUrl=QUrl::fromLocalFile(canonical)
                 .toString(QUrl::FullyEncoded).toHtmlEscaped();
-            const int page=match.captured(1).toInt();
+            const QString imageLabel=file.fileName().toHtmlEscaped();
             html.append(QStringLiteral(
                 "<td style='vertical-align:top;padding:5px;'>"
-                "<a href='%1'><b>%3</b><br>"
+                "<a href='%1'><b>%2</b><br>"
                 "<img src='%1' width='330'></a></td>")
-                .arg(imageUrl).arg(page).arg(I18n::text(16423).arg(page).toHtmlEscaped()));
-            ++shown;
+                .arg(imageUrl,imageLabel));
         }
         if(!html.isEmpty()){
             QString grid=QStringLiteral(

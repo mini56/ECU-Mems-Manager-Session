@@ -755,7 +755,7 @@ QVariantList MemsDocumentaryRepository::searchLocal(const QString &question,
                 "document : %1\nlangue : %2\npage physique : %3\n"
                 "type : %4\nstatut de vérification : %5\n\n%6")
                 .arg(doc).arg(localeName).arg(page).arg(type)
-                .arg(status).arg(sourceText.left(10000));
+                .arg(status).arg(sourceText);
             QVariantMap hit=makeRow(
                 QStringLiteral("rave-%1:%2:%3").arg(selectedLanguage,doc,id),
                 title,content,
@@ -2241,21 +2241,11 @@ QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
             QStringLiteral("Mention de « %1 » dans la documentation :").arg(subject),
             selected.value(QStringLiteral("title")).toString()
         };
-        const QString status=selected.value(QStringLiteral("source_status")).toString();
-        if(status==QStringLiteral("source_checked") ||
-           status==QStringLiteral("technical_reviewed"))
-            answer<<readableReferenceLayout(
-                selected.value(QStringLiteral("iaMemsMentionExcerpt")).toString());
-        else
-            answer<<QStringLiteral(
-                "Cette transcription n'est pas vérifiée : consulter l'image "
-                "du constructeur. Aucune procédure n'est déduite de cette mention.");
+        answer<<readableReferenceLayout(
+            selected.value(QStringLiteral("iaMemsMentionExcerpt")).toString());
         if(!document.isEmpty())
             answer<<QStringLiteral("Source constructeur : %1%2").arg(document,
                 page>0?QStringLiteral(", page %1").arg(page):QString());
-        answer<<QStringLiteral(
-            "Il s'agit d'une mention dans un document, pas d'une procédure "
-            "spécifiquement consacrée à ce composant.");
         return answer.join(QLatin1Char('\n'));
     }
     const QString nativeKey=hits.first().toMap()
@@ -2287,7 +2277,9 @@ QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
                 continue;
             if(body.isEmpty() && title.isEmpty())
                 continue;
-            const QString signature=body.left(250).toCaseFolded();
+            const QString signature=QStringLiteral("%1|%2|%3|%4")
+                .arg(document,title.toCaseFolded()).arg(page)
+                .arg(body.left(250).toCaseFolded());
             if(seen.contains(signature))
                 continue;
             seen.insert(signature);

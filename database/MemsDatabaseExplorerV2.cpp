@@ -412,17 +412,10 @@ private:
             // Les images françaises téléchargées sont confinées au dossier
             // 'images' de la base documentaire sélectionnée. Rien d'autre
             // dans AppData ou sur le système ne peut s'ouvrir par ce lien.
-            const QString documentaryRoot=QFileInfo(
-                MemsDocumentaryRepository::databasePath()).absolutePath();
-            const QString imageRoot=QFileInfo(
-                QDir(documentaryRoot).filePath(QStringLiteral("images")))
-                .canonicalFilePath();
             const QString selected=QFileInfo(url.toLocalFile()).canonicalFilePath();
-            if(!imageRoot.isEmpty() &&
-               selected.startsWith(imageRoot+QLatin1Char('/'),Qt::CaseInsensitive) &&
-               QRegularExpression(QStringLiteral("^[A-Z0-9_-]{1,60}_PDF_[0-9]{3}\\.png$"),
-                                  QRegularExpression::CaseInsensitiveOption)
-                   .match(QFileInfo(selected).fileName()).hasMatch()){
+            const QString trusted=MemsDocumentaryRepository::imagePathForHit(
+                selectedResult());
+            if(!selected.isEmpty() && selected==trusted){
                 openReferenceImage(selected);
                 return;
             }
@@ -741,6 +734,7 @@ private:
             titleItem->setData(Qt::UserRole+12,row.value(QStringLiteral("source_key")));
             titleItem->setData(Qt::UserRole+13,row.value(QStringLiteral("content")));
             titleItem->setData(Qt::UserRole+14,generation);
+            titleItem->setData(Qt::UserRole+15,row);
             if(category==QStringLiteral("ecu") && row.value(QStringLiteral("source_table")).toString()==QStringLiteral("ecu_target"))
                 titleItem->setData(Qt::UserRole,title);
             QFont font=titleItem->font();font.setBold(category==QStringLiteral("ecu")||category==QStringLiteral("dtc"));titleItem->setFont(font);
@@ -758,6 +752,9 @@ private:
         if(!m_results||m_results->currentRow()<0) return row;
         QTableWidgetItem *item=m_results->item(m_results->currentRow(),0);
         if(!item) return row;
+        const QVariantMap complete=item->data(Qt::UserRole+15).toMap();
+        if(!complete.isEmpty())
+            return complete;
         row.insert(QStringLiteral("title"),item->text());
         row.insert(QStringLiteral("category"),item->data(Qt::UserRole+10));
         row.insert(QStringLiteral("source_table"),item->data(Qt::UserRole+11));
