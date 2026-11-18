@@ -30,7 +30,8 @@ def prepare(folder: Path, docs: tuple[tuple[str, str], ...]) -> None:
                 "INSERT INTO documentary_pages VALUES(?,?,1,1,'source_linked')",
                 (identifier,revision)
             )
-            filename=f"images/{identifier}_PDF_001.png"
+            filename=(f"images/akm7169_{identifier.lower()}_p0001.jpg"
+                      if "AKM7169" in identifier else f"images/{identifier}_PDF_001.png")
             raw=(b"TEST-SYNTHETIC-IMAGE-" + identifier.encode())
             (folder/filename).write_bytes(raw)
             db.execute(
