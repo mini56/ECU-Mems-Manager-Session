@@ -1,12 +1,12 @@
-name: "SESSION 165 - IA MEMS et pages documentaires - Setup Windows"
-run-name: SESSION 165 - IA MEMS ET PAGES DOCUMENTAIRES - ${{ github.sha }}
+name: "SESSION 166 - IA MEMS et pages documentaires - Setup Windows"
+run-name: SESSION 166 - IA MEMS ET PAGES DOCUMENTAIRES - ${{ github.sha }}
 on:
   workflow_dispatch:
   # Only an explicit update to this dedicated request marker may trigger a build.
   # Validate mandatory visible scrolling (Qt AlwaysOn): thumb color is not a release requirement.
   # Ordinary source edits do not consume GitHub Actions compilation minutes.
-  # SESSION 165 UI audit: keep translated image labels without restricting pack filenames.
-  # SESSION 165 native intent test: reference excerpt is shown without an injected warning.
+  # SESSION 166 UI audit: keep translated image labels without restricting pack filenames.
+  # SESSION 166 native intent test: reference excerpt is shown without an injected warning.
   push:
     branches: [fix-documentary-additive-session-161-20261118]
     paths:
@@ -14,10 +14,10 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: session-documentary-165-update-test
+  group: session-documentary-166-update-test
   cancel-in-progress: true
 env:
-  MEMS_BUILD_NUMBER: '165'
+  MEMS_BUILD_NUMBER: '166'
   ORT_GENAI_VERSION: '0.14.0'
   ORT_GENAI_WIN_X64_SHA256: '8a303e52dc7be8fb2a5331929af451a25ac59774102d7fd09ef673adc85c5ebf'
   BASE_RELEASE_TAG: 'mems-build117-candidate-39395038798'
@@ -39,8 +39,8 @@ jobs:
           python tools/validate_source_architecture.py
           if($LASTEXITCODE -ne 0){throw 'SOURCE_ARCHITECTURE_NOT_CLEAN'}
           python tools/audit_session_ui_i18n.py
-          if($LASTEXITCODE -ne 0){throw 'SESSION_165_SIX_LANGUAGE_UI_AUDIT_FAILED'}
-          Write-Host 'SESSION_165_SIX_LANGUAGE_KEYS_AND_GUIDES_VALIDATED'
+          if($LASTEXITCODE -ne 0){throw 'SESSION_166_SIX_LANGUAGE_UI_AUDIT_FAILED'}
+          Write-Host 'SESSION_166_SIX_LANGUAGE_KEYS_AND_GUIDES_VALIDATED'
           $analysis=Get-Content analysistab_impl_part3.inc -Raw
           $analysisDynamic=Get-Content analysistab_impl_part4.inc -Raw
           $smoke=Get-Content uishellsmoketest.cpp -Raw
@@ -50,7 +50,7 @@ jobs:
           $srcStyle=Get-Content analysistab_impl_part1.inc -Raw
           $srcPlots=Get-Content analysistab_impl_part2.inc -Raw
           if($srcStyle -notmatch 'configureAnalysisVisibleScroll' -or $srcPlots -notmatch 'configureAnalysisVisibleScroll\(m_stackScrollArea\)' -or $srcStyle -notmatch 'area->setVerticalScrollBarPolicy\(Qt::ScrollBarAlwaysOn\)'){throw 'VISIBLE_PLOT_SCROLL_MISSING'}
-          Write-Host 'SESSION_165_BOTH_SCROLLS_SOURCE_TEST_READY'
+          Write-Host 'SESSION_166_BOTH_SCROLLS_SOURCE_TEST_READY'
           if((Get-Content database/MemsDatabaseExplorerV2.cpp -Raw) -notmatch 'documentaryUpdateButton'){throw 'DOCUMENTARY_UPDATE_BUTTON_MISSING'}
           if((Get-Content database/MemsDocumentaryRepository.cpp -Raw) -match 'QStringLiteral\("database/documentary/rover_482.sqlite"\)'){throw 'ROVER_STILL_HARDCODED_IN_RUNTIME'}
           if((Get-Content CMakeLists.txt -Raw) -notmatch 'MemsDocumentaryUpdateDialog.cpp'){throw 'UPDATE_DIALOG_NOT_COMPILED'}
@@ -63,7 +63,7 @@ jobs:
           $catalog=Get-Content database/MemsDocumentaryPackCatalog.cpp -Raw
           $installer=Get-Content database/MemsDocumentaryLocalInstaller.cpp -Raw
           if($reader -notmatch 'SELECT relative_path,asset_sha256,asset_bytes' -or $reader -notmatch 'installedDatabasePaths' -or $catalog -notmatch 'installedDatabasePaths' -or $installer -notmatch 'documentIds'){throw 'MULTIBASE_CODE_MISSING'}
-          Write-Host 'SESSION_165_MULTIBASE_SOURCE_PASS'
+          Write-Host 'SESSION_166_MULTIBASE_SOURCE_PASS'
           Write-Host 'SESSION_SOURCE_DOCUMENTARY_UPDATE_ISOLATION_PASS'
       - name: Installer Python
         uses: actions/setup-python@v5
@@ -124,23 +124,23 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
-          cmake -S . -B build-session-165 -A x64 -DCMAKE_PREFIX_PATH='C:/Qt/5.15.2/msvc2019_64' -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF -DMEMS_USE_ONNX_GENAI=ON "-DORT_GENAI_INCLUDE_DIR=$env:ORT_GENAI_INCLUDE_DIR" "-DORT_GENAI_LIBRARY=$env:ORT_GENAI_LIBRARY"
+          cmake -S . -B build-session-166 -A x64 -DCMAKE_PREFIX_PATH='C:/Qt/5.15.2/msvc2019_64' -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF -DMEMS_USE_ONNX_GENAI=ON "-DORT_GENAI_INCLUDE_DIR=$env:ORT_GENAI_INCLUDE_DIR" "-DORT_GENAI_LIBRARY=$env:ORT_GENAI_LIBRARY"
           if($LASTEXITCODE -ne 0){throw 'CMAKE_SESSION_CONFIG_FAILED'}
-          cmake --build build-session-165 --config Release --target ecu_mems_manager ecu_mems_uninstaller mems_documentary_update_selftest mems_documentary_selftest mems_documentary_multilingual_selftest mems_documentary_native_intent_selftest mems_documentary_encrypted_selftest mems_documentary_encrypted_install_selftest mems_ecu_reference_routing_selftest --parallel
+          cmake --build build-session-166 --config Release --target ecu_mems_manager ecu_mems_uninstaller mems_documentary_update_selftest mems_documentary_selftest mems_documentary_multilingual_selftest mems_documentary_native_intent_selftest mems_documentary_encrypted_selftest mems_documentary_encrypted_install_selftest mems_ecu_reference_routing_selftest --parallel
           if($LASTEXITCODE -ne 0){throw 'CMAKE_SESSION_COMPILATION_FAILED'}
-          if(-not(Test-Path build-session-165/Release/ecu_mems_manager.exe)){throw 'SESSION_EXE_MISSING'}
-          $bin=(Resolve-Path build-session-165/Release).Path
+          if(-not(Test-Path build-session-166/Release/ecu_mems_manager.exe)){throw 'SESSION_EXE_MISSING'}
+          $bin=(Resolve-Path build-session-166/Release).Path
           $env:PATH="C:\Qt\5.15.2\msvc2019_64\bin;$bin;$env:PATH"
           & "$bin/mems_ecu_reference_routing_selftest.exe"
           if($LASTEXITCODE -ne 0){throw 'ECU_REFERENCE_ROUTING_NON_REGRESSION_FAILED'}
-          Write-Host 'SESSION_165_ECU_ROUTING_AND_EXISTING_IA_INTENT_NON_REGRESSION_PASS'
-          Write-Host 'SESSION_165_COMPILE_PASS'
+          Write-Host 'SESSION_166_ECU_ROUTING_AND_EXISTING_IA_INTENT_NON_REGRESSION_PASS'
+          Write-Host 'SESSION_166_COMPILE_PASS'
       - name: Tester le catalogue de mises a jour sans connexion ni base Rover
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
           $qt='C:\Qt\5.15.2\msvc2019_64'
-          $bin=(Resolve-Path build-session-165/Release).Path
+          $bin=(Resolve-Path build-session-166/Release).Path
           & "$qt/bin/windeployqt.exe" --release --compiler-runtime --no-translations --dir $bin "$bin/mems_documentary_update_selftest.exe"
           if($LASTEXITCODE -ne 0){throw 'UPDATE_QT_DEPLOY_FAILED'}
           & "$bin/mems_documentary_update_selftest.exe"
@@ -152,7 +152,7 @@ jobs:
           python -m pip install --disable-pip-version-check 'cryptography>=42,<47' pymupdf
           if($LASTEXITCODE -ne 0){throw 'DOCUMENTARY_PDF_AES_DEPS_FAILED'}
           $qt='C:\Qt\5.15.2\msvc2019_64'
-          $bin=(Resolve-Path build-session-165/Release).Path
+          $bin=(Resolve-Path build-session-166/Release).Path
           python tools/test_documentary_encrypted_fixture.py --output "$bin"
           if($LASTEXITCODE -ne 0){throw 'ENCRYPTED_TEST_FIXTURE_FAILED'}
           & "$qt/bin/windeployqt.exe" --release --compiler-runtime --no-translations --dir $bin "$bin/mems_documentary_encrypted_selftest.exe"
@@ -180,7 +180,7 @@ jobs:
           report2=append_pdf(first,pdf2,"fr",second)
           assert report1["document_count"]==1
           assert report2["document_count"]==2
-          print("SESSION_165_TWO_PDF_CUMULATIVE_LANGUAGE_DB_READY")
+          print("SESSION_166_TWO_PDF_CUMULATIVE_LANGUAGE_DB_READY")
           '@ | python -
           if($LASTEXITCODE -ne 0){throw 'TWO_DOCUMENTARY_PDF_IMPORTS_FAILED'}
           @'
@@ -205,32 +205,32 @@ jobs:
           if($LASTEXITCODE -ne 0){throw 'FR_EN_SHARED_READER_FAILURE'}
           & "$bin/mems_documentary_native_intent_selftest.exe"
           if($LASTEXITCODE -ne 0){throw 'OLD_FR_DOCUMENTARY_REGRESSION'}
-          Write-Host 'SESSION_165_ADD_DOC_ENCRYPT_INSTALL_AND_FR_EN_READER_PASS'
+          Write-Host 'SESSION_166_ADD_DOC_ENCRYPT_INSTALL_AND_FR_EN_READER_PASS'
       - name: Recuperer la distribution existante avec IA et ECU inchanges
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference='Stop'
-          New-Item -ItemType Directory -Force download-base,dist-session-165 | Out-Null
+          New-Item -ItemType Directory -Force download-base,dist-session-166 | Out-Null
           gh release download $env:BASE_RELEASE_TAG --pattern $env:BASE_ARCHIVE_NAME --dir download-base
           if($LASTEXITCODE -ne 0){throw 'RUNTIME_DOWNLOAD_FAILED'}
           $archive=Join-Path download-base $env:BASE_ARCHIVE_NAME
           if((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:BASE_ARCHIVE_SHA256){throw 'RUNTIME_BASE_SHA_MISMATCH'}
-          tar.exe -xzf $archive -C dist-session-165
+          tar.exe -xzf $archive -C dist-session-166
           if($LASTEXITCODE -ne 0){throw 'RUNTIME_EXTRACT_FAILED'}
-          if(-not(Test-Path dist-session-165/ecu_mems_manager.exe)){throw 'RUNTIME_LAYOUT_INVALID'}
+          if(-not(Test-Path dist-session-166/ecu_mems_manager.exe)){throw 'RUNTIME_LAYOUT_INVALID'}
       - name: Assembler sans nouvelle base documentaire, conserver les bases ECU et expertes
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
-          $dist=(Resolve-Path dist-session-165).Path
-          Copy-Item build-session-165/Release/ecu_mems_manager.exe "$dist/ecu_mems_manager.exe" -Force
-          Copy-Item build-session-165/Release/ecu_mems_uninstaller.exe "$dist/ecu_mems_uninstaller.exe" -Force
-          Copy-Item build-session-165/librosco-x64/Release/mems_manager_x64.dll "$dist/mems_manager_x64.dll" -Force
+          $dist=(Resolve-Path dist-session-166).Path
+          Copy-Item build-session-166/Release/ecu_mems_manager.exe "$dist/ecu_mems_manager.exe" -Force
+          Copy-Item build-session-166/Release/ecu_mems_uninstaller.exe "$dist/ecu_mems_uninstaller.exe" -Force
+          Copy-Item build-session-166/librosco-x64/Release/mems_manager_x64.dll "$dist/mems_manager_x64.dll" -Force
           # Do not reuse the obsolete language catalogues from the BUILD117 base distribution.
           # The final Setup must contain the six freshly built SESSION translation folders.
-          $compiledTranslations=Join-Path (Resolve-Path build-session-165/Release).Path 'translations'
+          $compiledTranslations=Join-Path (Resolve-Path build-session-166/Release).Path 'translations'
           if(-not(Test-Path $compiledTranslations)){throw 'SIX_LANGUAGE_BUILD_CATALOGUES_MISSING'}
           $distTranslations=Join-Path $dist 'translations'
           New-Item -ItemType Directory -Force $distTranslations | Out-Null
@@ -244,7 +244,7 @@ jobs:
               throw "TRANSLATION_DISTRIBUTION_SHA_MISMATCH_$lang"
             }
           }
-          Write-Host 'SESSION_165_ALL_SIX_TRANSLATION_PACKAGES_COPIED_AND_SHA_VERIFIED'
+          Write-Host 'SESSION_166_ALL_SIX_TRANSLATION_PACKAGES_COPIED_AND_SHA_VERIFIED'
           $documentary=Join-Path $dist 'database/documentary'
           if(Test-Path $documentary){Remove-Item $documentary -Recurse -Force}
           foreach($suffix in @('','-wal','-shm','-journal')){
@@ -267,12 +267,12 @@ jobs:
           }
           if(Test-Path $documentary){throw 'ROVER_SQLITE_SHIPPED'}
           if(Test-Path (Join-Path $dist 'database/ecu_mems_manager.sqlite')){throw 'USER_DB_SHIPPED'}
-          Write-Host 'SESSION_165_NO_ROVER_DB_DIAGNOSTIC_DATA_PRESERVED'
+          Write-Host 'SESSION_166_NO_ROVER_DB_DIAGNOSTIC_DATA_PRESERVED'
       - name: Controler les fonctions ECU et base experte
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
-          $env:DIST_ROOT=(Resolve-Path dist-session-165).Path
+          $env:DIST_ROOT=(Resolve-Path dist-session-166).Path
           @'
           import os,pefile,sqlite3
           from pathlib import Path
@@ -286,10 +286,10 @@ jobs:
           with sqlite3.connect(root/'MEMSLibrary_Pack_001'/'knowledge.sqlite') as con:
               assert con.execute('pragma integrity_check').fetchone()[0]=='ok'
               assert con.execute('select count(*) from ravemems_document').fetchone()[0]==47
-          print('SESSION_165_X64_ECU_AI_AND_DOCUMENTARY_SEPARATION_PASS')
+          print('SESSION_166_X64_ECU_AI_AND_DOCUMENTARY_SEPARATION_PASS')
           '@ | python -
           if($LASTEXITCODE -ne 0){throw 'PACKAGE_ECU_REGRESSION'}
-      - name: Creer un vrai Setup Windows pour SESSION 165
+      - name: Creer un vrai Setup Windows pour SESSION 166
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
@@ -308,8 +308,8 @@ jobs:
           DefaultDirName={autopf}\ECU MEMS Manager SESSION
           DefaultGroupName=ECU MEMS Manager SESSION
           UsePreviousGroup=no
-          OutputDir=setup-session-165
-          OutputBaseFilename=ECU MEMS Manager SESSION 165 Setup
+          OutputDir=setup-session-166
+          OutputBaseFilename=ECU MEMS Manager SESSION 166 Setup
           Compression=lzma2
           SolidCompression=yes
           WizardStyle=modern
@@ -327,7 +327,7 @@ jobs:
           Name: "portuguese"; MessagesFile: "compiler:Languages\Portuguese.isl"
           Name: "german"; MessagesFile: "compiler:Languages\German.isl"
           [Files]
-          Source: "dist-session-165\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+          Source: "dist-session-166\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
           [INI]
           Filename: "{app}\session-install-language.ini"; Section: "Installation"; Key: "Language"; String: "fr"; Languages: french
           Filename: "{app}\session-install-language.ini"; Section: "Installation"; Key: "Language"; String: "en"; Languages: english
@@ -339,29 +339,29 @@ jobs:
           Name: "{group}\ECU MEMS Manager SESSION"; Filename: "{app}\ecu_mems_manager.exe"
           Name: "{autodesktop}\ECU MEMS Manager SESSION"; Filename: "{app}\ecu_mems_manager.exe"; IconFilename: "{app}\ecu_mems_manager.exe"
           '@
-          $iss | Set-Content setup-session-165.iss -Encoding utf8
-          & $compiler.FullName setup-session-165.iss
+          $iss | Set-Content setup-session-166.iss -Encoding utf8
+          & $compiler.FullName setup-session-166.iss
           if($LASTEXITCODE -ne 0){throw 'INNO_BUILD_FAILED'}
-          $setup=Get-ChildItem setup-session-165 -File -Filter '*.exe' | Select-Object -First 1
+          $setup=Get-ChildItem setup-session-166 -File -Filter '*.exe' | Select-Object -First 1
           if(-not $setup -or $setup.Length -lt 100MB){throw 'SETUP_TOO_SMALL_OR_MISSING'}
-          Write-Host "SESSION_165_SETUP_SHA256=$((Get-FileHash $setup.FullName -Algorithm SHA256).Hash)"
+          Write-Host "SESSION_166_SETUP_SHA256=$((Get-FileHash $setup.FullName -Algorithm SHA256).Hash)"
       - name: Installer et demarrer reellement sous Windows sans base RAVE
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
-          $setup=Get-ChildItem setup-session-165 -File -Filter '*.exe' | Select-Object -First 1
-          $folder=Join-Path $env:RUNNER_TEMP 'SESSION_165_INSTALLED'
+          $setup=Get-ChildItem setup-session-166 -File -Filter '*.exe' | Select-Object -First 1
+          $folder=Join-Path $env:RUNNER_TEMP 'SESSION_166_INSTALLED'
           if(Test-Path $folder){Remove-Item $folder -Recurse -Force}
           $install=Start-Process -FilePath $setup.FullName -ArgumentList '/LANG=french','/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',"/DIR=$folder" -Wait -PassThru
           if($install.ExitCode -ne 0){throw "SETUP_INSTALL_EXIT_$($install.ExitCode)"}
           if(-not(Test-Path "$folder/ecu_mems_manager.exe")){throw 'INSTALLED_EXE_MISSING'}
           foreach($lang in @('fr','en','es','it','pt','de')){
             $catalog=Join-Path $folder "translations/$lang/${lang}_session162.json"
-            $origin=Join-Path (Resolve-Path build-session-165/Release).Path "translations/$lang/${lang}_session162.json"
+            $origin=Join-Path (Resolve-Path build-session-166/Release).Path "translations/$lang/${lang}_session162.json"
             if(-not(Test-Path $catalog)){throw "INSTALLED_TRANSLATION_MISSING_$lang"}
             if((Get-FileHash $origin -Algorithm SHA256).Hash -ne (Get-FileHash $catalog -Algorithm SHA256).Hash){throw "INSTALLED_TRANSLATION_SHA_MISMATCH_$lang"}
           }
-          Write-Host 'SESSION_165_SIX_LANGUAGE_INSTALLED_SETUP_CATALOGUES_VERIFIED'
+          Write-Host 'SESSION_166_SIX_LANGUAGE_INSTALLED_SETUP_CATALOGUES_VERIFIED'
           if(Test-Path "$folder/database/documentary"){throw 'DOCUMENTARY_SQLITE_INSIDE_SETUP'}
           if(Test-Path "$folder/database/ecu_mems_manager.sqlite"){throw 'USER_DATABASE_IN_SETUP'}
           foreach($file in @('MEMSLibrary.dll','MEMSLibrary_Pack_001/knowledge.sqlite','database/reference/runtime_visual_catalog.json','mems_manager_x64.dll')){
@@ -374,13 +374,13 @@ jobs:
           $instance.Refresh()
           if($instance.HasExited){throw "INSTALLED_APP_EARLY_EXIT_$($instance.ExitCode)"}
           Stop-Process -Id $instance.Id -Force
-          Write-Host 'SESSION_165_REAL_WINDOWS_INSTALL_START_AND_NO_DOCUMENTARY_DB_OK'
+          Write-Host 'SESSION_166_REAL_WINDOWS_INSTALL_START_AND_NO_DOCUMENTARY_DB_OK'
       - name: Tester les 15 pages et le bouton de MAJ du Setup installe sans ecran
         shell: pwsh
         timeout-minutes: 9
         run: |
           $ErrorActionPreference='Stop'
-          $folder=Join-Path $env:RUNNER_TEMP 'SESSION_165_INSTALLED'
+          $folder=Join-Path $env:RUNNER_TEMP 'SESSION_166_INSTALLED'
           $exe=Join-Path $folder 'ecu_mems_manager.exe'
           if(-not(Test-Path $exe)){throw 'INSTALLED_UI_SMOKE_EXE_MISSING'}
           $env:QT_QPA_PLATFORM='offscreen'
@@ -407,7 +407,7 @@ jobs:
             throw 'INSTALLED_UI_SMOKE_TIMEOUT_300S'
           }
           if($process.ExitCode -ne 0){throw "INSTALLED_UI_SMOKE_FAILED_$($process.ExitCode)"}
-          Write-Host 'SESSION_165_INSTALLED_UI_SIDEBAR_DATABASE_MENU_SMOKE_PASS'
+          Write-Host 'SESSION_166_INSTALLED_UI_SIDEBAR_DATABASE_MENU_SMOKE_PASS'
       - name: Verifier le transport HTTPS natif est dans la source et l'executable
         shell: pwsh
         run: |
@@ -416,44 +416,44 @@ jobs:
           $dialog=Get-Content database/MemsDocumentaryUpdateDialog.cpp -Raw
           if($cmake -notmatch 'MemsDocumentaryWindowsTransport.cpp'){throw 'NATIVE_TRANSPORT_NOT_COMPILED'}
           if($dialog -notmatch 'checkManifestWindows\(' -or $dialog -notmatch 'downloadPackWindows\('){throw 'NATIVE_TRANSPORT_NOT_CONNECTED_TO_DIALOG'}
-          if($env:MEMS_BUILD_NUMBER -ne '165'){throw 'WRONG_BUILD_NUMBER'}
-          Write-Host 'SESSION_165_NATIVE_WINDOWS_HTTPS_TRANSPORT_INTEGRATED'
-      - name: Publier le Setup 165 directement dans la Release sans quota artefacts
+          if($env:MEMS_BUILD_NUMBER -ne '166'){throw 'WRONG_BUILD_NUMBER'}
+          Write-Host 'SESSION_166_NATIVE_WINDOWS_HTTPS_TRANSPORT_INTEGRATED'
+      - name: Publier le Setup 166 directement dans la Release sans quota artefacts
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference='Stop'
-          $tag='mems-session-build-165'
-          $setup=Get-ChildItem setup-session-165 -File -Filter '*.exe' | Select-Object -First 1
-          if(-not $setup -or $setup.Length -lt 100MB){throw 'SESSION_165_SETUP_MISSING_OR_TOO_SMALL'}
-          if($env:MEMS_BUILD_NUMBER -ne '165'){throw 'WRONG_RELEASE_VERSION'}
-          $asset='ECU-Mems-Manager-Session-165-Setup.exe'
+          $tag='mems-session-build-166'
+          $setup=Get-ChildItem setup-session-166 -File -Filter '*.exe' | Select-Object -First 1
+          if(-not $setup -or $setup.Length -lt 100MB){throw 'SESSION_166_SETUP_MISSING_OR_TOO_SMALL'}
+          if($env:MEMS_BUILD_NUMBER -ne '166'){throw 'WRONG_RELEASE_VERSION'}
+          $asset='ECU-Mems-Manager-Session-166-Setup.exe'
           $source=$setup.FullName
           $final=Join-Path $setup.DirectoryName $asset
           if($source -ne $final){Copy-Item -LiteralPath $source -Destination $final -Force}
           $hash=(Get-FileHash -LiteralPath $final -Algorithm SHA256).Hash.ToLowerInvariant()
-          $hashFile=Join-Path $setup.DirectoryName 'SESSION-165-Setup.sha256'
+          $hashFile=Join-Path $setup.DirectoryName 'SESSION-166-Setup.sha256'
           "$hash  $asset" | Set-Content -LiteralPath $hashFile -Encoding ascii
           $notes=@'
-          ECU MEMS Manager SESSION 165 - corrections IA MEMS et Base de données
+          ECU MEMS Manager SESSION 166 - corrections IA MEMS et Base de données
 
-          - Restitution du texte documentaire présent dans les bases françaises, sans suppression des notices indexées.
-          - Affichage et ouverture des images authentifiées dans les packs additionnels.
-          - Conservation de la provenance SQLite, de la révision et de la page source dans la Base de données.
-          - Refus des numéros de menu expirés pour éviter une rubrique sans rapport.
-          - Conservation des bases installées et des corrections de défilement des pages Analyse.
+          - Retrait des avertissements et commentaires ajoutés automatiquement aux réponses de l'IA MEMS.
+          - Restitution des transcriptions et étapes d'origine, y compris les extraits auparavant masqués par statut documentaire.
+          - Affichage des images constructeur dans les bases documentaires supplémentaires.
+          - Conservation de la provenance constructeur et du contrôle de validité des packs.
+          - Aucun changement aux bases installées ni aux corrections des pages Analyse.
           - Le Setup ne contient ni bases personnelles ni pack constructeur : les packs s'installent séparément.
           - Setup Windows x64 compilé, installé et testé dans GitHub Actions avant publication.
           '@
           # This workflow is the sole publisher; never fall back to the GitHub Actions
           # artifact service, whose storage quota blocked the previous successful build.
           gh release view $tag --json id --jq .id 1>$null 2>$null
-          if($LASTEXITCODE -eq 0){throw 'SESSION_165_RELEASE_ALREADY_EXISTS_NO_OVERWRITE'}
-          gh release create $tag $final $hashFile --target $env:GITHUB_SHA --title 'ECU-Mems-Manager-Session - Version 165' --notes $notes --latest
-          if($LASTEXITCODE -ne 0){throw 'SESSION_165_RELEASE_CREATE_OR_ASSET_UPLOAD_FAILED'}
+          if($LASTEXITCODE -eq 0){throw 'SESSION_166_RELEASE_ALREADY_EXISTS_NO_OVERWRITE'}
+          gh release create $tag $final $hashFile --target $env:GITHUB_SHA --title 'ECU-Mems-Manager-Session - Version 166' --notes $notes --latest
+          if($LASTEXITCODE -ne 0){throw 'SESSION_166_RELEASE_CREATE_OR_ASSET_UPLOAD_FAILED'}
           $assets=gh release view $tag --json assets --jq '.assets[].name'
-          if($LASTEXITCODE -ne 0 -or -not ($assets -contains $asset) -or -not ($assets -contains 'SESSION-165-Setup.sha256')){
-            throw 'SESSION_165_RELEASE_ASSET_VERIFICATION_FAILED'
+          if($LASTEXITCODE -ne 0 -or -not ($assets -contains $asset) -or -not ($assets -contains 'SESSION-166-Setup.sha256')){
+            throw 'SESSION_166_RELEASE_ASSET_VERIFICATION_FAILED'
           }
-          Write-Host "SESSION_165_SETUP_RELEASE_PUBLISHED SHA256=$hash"
+          Write-Host "SESSION_166_SETUP_RELEASE_PUBLISHED SHA256=$hash"
