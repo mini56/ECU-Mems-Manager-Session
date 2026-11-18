@@ -15,5 +15,9 @@
     <qresource prefix="/help">
         <file>help.html</file>
         <file>help_en.html</file>
+        <file>help_es.html</file>
+        <file>help_it.html</file>
+        <file>help_pt.html</file>
+        <file>help_de.html</file>
     </qresource>
 </RCC>
