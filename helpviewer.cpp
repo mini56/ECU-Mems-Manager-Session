@@ -14,7 +14,6 @@
 #include <QSplitter>
 #include <QTextDocumentFragment>
 #include <QTextDocument>
-#include <QSettings>
 
 HelpViewer::HelpViewer(const QString &title,QWidget *parent)
     :QDialog(parent)
@@ -37,16 +36,12 @@ HelpViewer::HelpViewer(const QString &title,QWidget *parent)
 
     QLabel *heading=new QLabel(this);
     heading->setObjectName(QStringLiteral("memsHelpHeading"));
-    heading->setText(QStringLiteral("ECU MEMS Manager    |    %1").arg(
-        I18n::language().startsWith(QStringLiteral("fr"),Qt::CaseInsensitive)
-        ?QStringLiteral("GUIDE UTILISATEUR"):QStringLiteral("USER GUIDE")));
+    heading->setText(QStringLiteral("ECU MEMS Manager    |    %1").arg(I18n::text(16504)));
 
     m_vbox->addWidget(heading);
 
     QLabel *subtitle=new QLabel(this);
-    subtitle->setText(I18n::language().startsWith(QStringLiteral("fr"),Qt::CaseInsensitive)
-        ?QStringLiteral("Guide intégré · documentation hors ligne · recherche par rubrique")
-        :QStringLiteral("Built-in guide · offline documentation · section navigation"));
+    subtitle->setText(I18n::text(16505));
     subtitle->setObjectName(QStringLiteral("memsHelpSubtitle"));
     m_vbox->addWidget(subtitle);
 
@@ -138,16 +133,23 @@ void HelpViewer::updateAppearance(bool dark)
 
 void HelpViewer::loadDocument()
 {
-    QSettings settings(QSettings::IniFormat,QSettings::UserScope,PROJECTNAME);
-    const QString lang=settings.value(QStringLiteral("Settings/Language"),
-                                      QStringLiteral("fr")).toString().left(2);
-    QFile document(lang==QStringLiteral("fr")
-        ?QStringLiteral(":/help/help.html")
-        :QStringLiteral(":/help/help_en.html"));
+    // The same SESSION language drives menu labels, the guide title, and
+    // the offline HTML content. Never infer it from the Windows locale.
+    const QString lang=I18n::language().left(2).toLower();
+    QString resource=QStringLiteral(":/help/help_en.html");
+    if(lang==QStringLiteral("fr"))
+        resource=QStringLiteral(":/help/help.html");
+    else if(lang==QStringLiteral("es"))
+        resource=QStringLiteral(":/help/help_es.html");
+    else if(lang==QStringLiteral("it"))
+        resource=QStringLiteral(":/help/help_it.html");
+    else if(lang==QStringLiteral("pt"))
+        resource=QStringLiteral(":/help/help_pt.html");
+    else if(lang==QStringLiteral("de"))
+        resource=QStringLiteral(":/help/help_de.html");
+    QFile document(resource);
     if(!document.open(QIODevice::ReadOnly)){
-        m_viewer->setPlainText(lang==QStringLiteral("fr")
-            ?QStringLiteral("Guide indisponible dans cette installation.")
-            :QStringLiteral("The installed help guide is unavailable."));
+        m_viewer->setPlainText(I18n::text(16506));
         return;
     }
     QString html=QString::fromUtf8(document.readAll());
