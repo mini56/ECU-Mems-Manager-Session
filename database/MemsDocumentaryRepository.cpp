@@ -2289,11 +2289,11 @@ QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
                sourceTable.endsWith(QStringLiteral("_page_ocr"))){
                 // L'index est consultable dans Base de données. L'IA ne publie
                 // aucune consigne extraite mais non relue, quelle que soit la langue.
-                body=QStringLiteral(
-                    "Source documentaire retrouvée, transcription technique non validée : "
-                    "consulter la page constructeur avant toute intervention.");
+                body.clear();
             }
-            if(!informativeWorkshopText(body))
+            if(!body.isEmpty() && !informativeWorkshopText(body))
+                continue;
+            if(body.isEmpty() && title.isEmpty())
                 continue;
             const QString signature=body.left(250).toCaseFolded();
             if(seen.contains(signature))
@@ -2317,11 +2317,7 @@ QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
                 "suffisamment explicite ne répond à la demande. "
                 "Consulte la page constructeur correspondante, sans déduire de valeur absente.");
         }
-        QString answer=sections.join(QStringLiteral("\n\n"));
-        answer+=QStringLiteral(
-            "\n\nVérifier que cette information correspond au véhicule "
-            "et à la page constructeur avant toute intervention.");
-        return answer;
+        return sections.join(QStringLiteral("\n\n"));
     }
     {
         paragraphs << QStringLiteral(
