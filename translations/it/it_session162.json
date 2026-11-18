@@ -98,5 +98,19 @@
   "16608": "IA locale in risposta",
   "16609": "errore IA locale",
   "16610": "errore IA locale: %1",
-  "16611": "IA locale"
+  "16611": "IA locale",
+  "16700": "Argomento documentale: %1",
+  "16701": "Operazione del costruttore: %1",
+  "16702": "Tipo di operazione: %1",
+  "16703": "Documentazione: pagina %1",
+  "16704": "Documentazione: pagine da %1 a %2",
+  "16705": "• Passaggio %1: %2",
+  "16706": " — condizione: %1",
+  "16707": "\nAvvertenze / note:",
+  "16708": "rif. %1",
+  "16709": "\nRequisiti / specifiche:",
+  "16710": " — operazione %1",
+  "16711": "Ho trovato più argomenti relativi a «%1». Quale cerchi?",
+  "16712": "\nRispondi con un numero oppure inserisci un altro argomento per una nuova ricerca.",
+  "16713": "L'argomento selezionato esiste, ma non è stato possibile leggere il contenuto strutturato. Non lo sostituirò con una ricerca approssimativa."
 }
