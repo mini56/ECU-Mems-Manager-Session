@@ -9,7 +9,7 @@ on:
     paths:
       - '.github/workflows/session-161-multibase-setup-test.yml'
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: session-documentary-161-update-test
   cancel-in-progress: true
@@ -378,11 +378,40 @@ jobs:
           if($dialog -notmatch 'checkManifestWindows\(' -or $dialog -notmatch 'downloadPackWindows\('){throw 'NATIVE_TRANSPORT_NOT_CONNECTED_TO_DIALOG'}
           if($env:MEMS_BUILD_NUMBER -ne '161'){throw 'WRONG_BUILD_NUMBER'}
           Write-Host 'SESSION_161_NATIVE_WINDOWS_HTTPS_TRANSPORT_INTEGRATED'
-      - name: Mettre le Setup de test a disposition
-        uses: actions/upload-artifact@v4
-        with:
-          name: ECU-MEMS-Manager-SESSION-161-MULTIBASE-SETUP-TEST
-          path: setup-session-161/*.exe
-          retention-days: 7
-          compression-level: 0
-          if-no-files-found: error
+      - name: Publier le Setup 161 directement dans la Release sans quota artefacts
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $tag='mems-session-build-161'
+          $setup=Get-ChildItem setup-session-161 -File -Filter '*.exe' | Select-Object -First 1
+          if(-not $setup -or $setup.Length -lt 100MB){throw 'SESSION_161_SETUP_MISSING_OR_TOO_SMALL'}
+          if($env:MEMS_BUILD_NUMBER -ne '161'){throw 'WRONG_RELEASE_VERSION'}
+          $asset='ECU-Mems-Manager-Session-161-Setup.exe'
+          $source=$setup.FullName
+          $final=Join-Path $setup.DirectoryName $asset
+          if($source -ne $final){Copy-Item -LiteralPath $source -Destination $final -Force}
+          $hash=(Get-FileHash -LiteralPath $final -Algorithm SHA256).Hash.ToLowerInvariant()
+          $hashFile=Join-Path $setup.DirectoryName 'SESSION-161-Setup.sha256'
+          "$hash  $asset" | Set-Content -LiteralPath $hashFile -Encoding ascii
+          $notes=@'
+          ECU MEMS Manager SESSION 161 - bases documentaires indépendantes
+
+          - Conserve toutes les bases déjà installées : aucun remplacement de la base française lors de l'ajout d'un nouveau pack.
+          - Lecteur et recherche : plusieurs bases documentaires d'une même langue, images résolues depuis les métadonnées vérifiées.
+          - Évolue depuis SESSION 160, avec les mêmes fonctions ECU, interface et IA.
+          - Le Setup ne contient ni bases personnelles ni pack constructeur ; les packs documentaires s'installent séparément via leur mise à jour sécurisée.
+          - Setup Windows x64 compilé, installé et testé dans GitHub Actions avant publication.
+          '@
+          # This workflow is the sole publisher; never fall back to the GitHub Actions
+          # artifact service, whose storage quota blocked the previous successful build.
+          gh release view $tag --json id --jq .id 1>$null 2>$null
+          if($LASTEXITCODE -eq 0){throw 'SESSION_161_RELEASE_ALREADY_EXISTS_NO_OVERWRITE'}
+          gh release create $tag $final $hashFile --target $env:GITHUB_SHA --title 'ECU-Mems-Manager-Session - Version 161' --notes $notes --latest
+          if($LASTEXITCODE -ne 0){throw 'SESSION_161_RELEASE_CREATE_OR_ASSET_UPLOAD_FAILED'}
+          $assets=gh release view $tag --json assets --jq '.assets[].name'
+          if($LASTEXITCODE -ne 0 -or -not ($assets -contains $asset) -or -not ($assets -contains 'SESSION-161-Setup.sha256')){
+            throw 'SESSION_161_RELEASE_ASSET_VERIFICATION_FAILED'
+          }
+          Write-Host "SESSION_161_SETUP_RELEASE_PUBLISHED SHA256=$hash"
