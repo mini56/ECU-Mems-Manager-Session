@@ -776,19 +776,8 @@ QVariantList MemsDocumentaryRepository::searchLocal(const QString &question,
     const QString requestedLanguage = language.left(2).toLower();
     const QString locale = requestedLanguage == QStringLiteral("fr")
         ? QStringLiteral("fr") : QStringLiteral("en");
-    if (locale == QStringLiteral("fr") && !m_frenchComplete) {
-        result.append(makeRow(
-            QStringLiteral("rover-fr-translation-not-published"),
-            QStringLiteral("Documentation Rover — traduction française en préparation"),
-            QStringLiteral(
-                "La traduction française intégrale de ce manuel n'est pas encore "
-                "terminée et vérifiée. Aucune procédure anglaise n'est mélangée "
-                "à cette consultation française. Le PDF constructeur original "
-                "reste conservé séparément."),
-            QStringLiteral("rover_translation_status"),
-            QStringLiteral("FR_NOT_PUBLISHED")));
+    if (locale == QStringLiteral("fr") && !m_frenchComplete)
         return result;
-    }
     // A shared, read-only lookup of translations imported into the
     // SAME SQLite as the immutable Rover manufacturer data.
     QHash<QString, QString> translatedText;
@@ -988,8 +977,7 @@ QVariantList MemsDocumentaryRepository::searchLocal(const QString &question,
                 "SELECT candidate_id,original_page,source_region,"
                 "candidate_manufacturer_repair_number,candidate_title,"
                 "repair_number_format_status,source_status "
-                "FROM extracted_procedure_candidates "
-                "WHERE source_status='REVIEW_REQUIRED' AND approved_for_ai=0"))) {
+                "FROM extracted_procedure_candidates"))) {
             QVector<Candidate> found;
             while (detected.next()) {
                 const QString key = detected.value(0).toString();
@@ -1063,7 +1051,7 @@ QVariantList MemsDocumentaryRepository::searchLocal(const QString &question,
                     key, QStringLiteral("%1 — %2 (p. %3)")
                         .arg(number,displayTitle).arg(physicalPage),
                     content,QStringLiteral("rover_procedure_candidate"),
-                    QStringLiteral("REVIEW_REQUIRED"))});
+                    detected.value(6).toString())});
             }
             std::sort(found.begin(),found.end(),
                 [](const Candidate &left,const Candidate &right){
