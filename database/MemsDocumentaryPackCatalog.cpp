@@ -1,6 +1,7 @@
 #include "MemsDocumentaryPackCatalog.h"
 
 #include <QDir>
+#include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -64,6 +65,29 @@ QString MemsDocumentaryPackCatalog::installedDatabasePath(const QString &languag
     const QString code = normalizedLanguage(language);
     return QDir(root).filePath(
         QStringLiteral("documentary/bases/%1/mems_documentary_%1.sqlite").arg(code));
+}
+
+QStringList MemsDocumentaryPackCatalog::installedDatabasePaths(const QString &language)
+{
+    QStringList paths;
+    const QString legacy=installedDatabasePath(language);
+    if(legacy.isEmpty())
+        return paths;
+    if(QFileInfo(legacy).isFile())
+        paths.append(legacy);
+    const QDir packRoot(QDir(QFileInfo(legacy).absolutePath()).filePath(
+        QStringLiteral("packs")));
+    if(!packRoot.exists())
+        return paths;
+    const QString databaseName=QFileInfo(legacy).fileName();
+    for(const QString &directory : packRoot.entryList(QDir::Dirs|QDir::NoDotAndDotDot,
+                                                      QDir::Name)){
+        const QString candidate=packRoot.filePath(directory+QLatin1Char('/')+databaseName);
+        const QFileInfo info(candidate);
+        if(info.isFile() && !info.isSymLink())
+            paths.append(info.absoluteFilePath());
+    }
+    return paths;
 }
 
 MemsDocumentaryOffer MemsDocumentaryPackCatalog::parseManifest(
