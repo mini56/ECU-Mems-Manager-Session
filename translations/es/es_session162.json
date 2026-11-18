@@ -98,5 +98,19 @@
   "16608": "IA local respondiendo",
   "16609": "error de IA local",
   "16610": "error de IA local: %1",
-  "16611": "IA local"
+  "16611": "IA local",
+  "16700": "Tema documental: %1",
+  "16701": "Operación del fabricante: %1",
+  "16702": "Tipo de operación: %1",
+  "16703": "Documentación: página %1",
+  "16704": "Documentación: páginas %1 a %2",
+  "16705": "• Paso %1: %2",
+  "16706": " — condición: %1",
+  "16707": "\nAdvertencias / notas:",
+  "16708": "ref. %1",
+  "16709": "\nRequisitos / especificaciones:",
+  "16710": " — operación %1",
+  "16711": "He encontrado varios temas relacionados con «%1». ¿Cuál busca?",
+  "16712": "\nResponda con el número o escriba otro tema para iniciar una búsqueda.",
+  "16713": "El tema seleccionado existe, pero no se puede leer su contenido estructurado. No lo sustituiré por una búsqueda aproximada."
 }
