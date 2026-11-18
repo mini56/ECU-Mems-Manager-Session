@@ -600,8 +600,25 @@ bool verifyUi(MainWindow &window)
                          plots->isVisibleTo(&window),
                          "Analysis channels or plots not visible in actual window") && ok;
                 for(QScrollBar *bar:{channelBar,plotBar}){
-                    ok=check(bar && bar->isVisibleTo(&window) && bar->width()>=15 &&
-                             bar->styleSheet().contains(QStringLiteral("#ff8a1c")),
+                    const QString which=bar==channelBar
+                        ?QStringLiteral("channels"):QStringLiteral("plots");
+                    const bool visible=bar && bar->isVisibleTo(&window);
+                    const bool hasOrange=bar &&
+                        bar->styleSheet().contains(QStringLiteral("#ff8a1c"));
+                    const QString diagnostics=QStringLiteral(
+                        "Analysis %1: visible=%2, width=%3, max=%4, "
+                        "policy=%5, orange=%6, parentVisible=%7")
+                        .arg(which)
+                        .arg(visible)
+                        .arg(bar?bar->width():-1)
+                        .arg(bar?bar->maximum():-1)
+                        .arg(bar==channelBar?int(channels->verticalScrollBarPolicy()):
+                             int(plots->verticalScrollBarPolicy()))
+                        .arg(hasOrange)
+                        .arg(bar&&bar->parentWidget()?
+                             bar->parentWidget()->isVisibleTo(&window):false);
+                    logSmoke(diagnostics);
+                    ok=check(visible && bar->width()>=15 && hasOrange,
                              "Analysis vertical scrollbar must be visibly orange and 17px wide") && ok;
                     ok=check(bar && bar->maximum()>0,
                              "Analysis scroll area has no reachable hidden content") && ok;
