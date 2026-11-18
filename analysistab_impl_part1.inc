@@ -50,6 +50,19 @@ static void configureAnalysisVisibleScroll(QScrollArea *area)
         "QScrollBar::add-page:vertical,QScrollBar::sub-page:vertical"
         "{background:#192733;}"
     ));
+    // QAbstractScrollArea may leave its scrollbars hidden after reparenting
+    // during the native Analysis UI rebuild. Refresh the scrollbar after the
+    // layout is in place rather than relying on the AlwaysOn policy alone.
+    bar->setVisible(true);
+    area->updateGeometry();
+    QTimer::singleShot(0,area,[area](){
+        if (!area || !area->verticalScrollBar()) return;
+        area->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+        QScrollBar *vertical=area->verticalScrollBar();
+        vertical->setVisible(true);
+        vertical->updateGeometry();
+        vertical->update();
+    });
 }
     static qreal analysisUiScale(QWidget *tab)
     {
