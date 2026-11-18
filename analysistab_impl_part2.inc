@@ -118,5 +118,21 @@ AnalysisTab::AnalysisTab(QWidget *parent)
 
     QHBoxLayout *mainRow=new QHBoxLayout();mainRow->setContentsMargins(0,0,0,0);mainRow->setSpacing(6);root->addLayout(mainRow,1);
 
-    m_stackScrollArea=new QScrollArea(this);m_stackScrollArea->setObjectName(QStringLiteral("analysisStackScroll"));m_stackScrollArea->setWidgetResizable(true);
-    m_stackContainer=new QWidget();m_stackLayout=new QVBoxLayout(m_stackContainer);m_stackLayout->setContentsMargins(4,4,4,4);m_stackLayout->setSpacing(6);m_stackLayout->addStretch();m_stackScrollArea->setWidget(m_stackContainer);
+    // The plots must scroll INSIDE the page when many signals are selected.
+    // A resizable viewport with a content-constrained layout preserves the
+    // charts' minimum heights rather than cutting the last chart off-screen.
+    m_stackScrollArea=new QScrollArea(this);
+    m_stackScrollArea->setObjectName(QStringLiteral("analysisStackScroll"));
+    m_stackScrollArea->setFrameShape(QFrame::NoFrame);
+    m_stackScrollArea->setWidgetResizable(true);
+    m_stackScrollArea->setMinimumSize(0,0);
+    m_stackScrollArea->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Ignored);
+    configureAnalysisVisibleScroll(m_stackScrollArea);
+    m_stackContainer=new QWidget();
+    m_stackContainer->setObjectName(QStringLiteral("analysisPlotsContent"));
+    m_stackLayout=new QVBoxLayout(m_stackContainer);
+    m_stackLayout->setContentsMargins(4,4,4,4);
+    m_stackLayout->setSpacing(6);
+    m_stackLayout->setSizeConstraint(QLayout::SetMinAndMaxSize);
+    m_stackLayout->addStretch();
+    m_stackScrollArea->setWidget(m_stackContainer);
