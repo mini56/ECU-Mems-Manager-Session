@@ -344,7 +344,7 @@ static QString translatedTitle(int rank)
         return QString();
 
     if (rank == 14)
-        return QLocale().language() == QLocale::French ? QStringLiteral("Test câble USB") : QStringLiteral("USB cable test");
+        return I18n::text(16200);
     QString title = I18n::text(kTabs[rank].translationKey).trimmed();
     if (rank == 6 && (title.isEmpty() || title.startsWith(QLatin1Char('['))))
         title = QStringLiteral("IA MEMS");
