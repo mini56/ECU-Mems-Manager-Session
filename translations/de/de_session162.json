@@ -1,0 +1,22 @@
+{
+  "16200": "USB-Kabeltest",
+  "16201": "Optionale Prüfung der USB-/Seriell-Schnittstellen. Die ECU-Verbindung bleibt direkt und unverändert.",
+  "16202": "Erkannte Schnittstellen",
+  "16203": "Port",
+  "16204": "Chip / Adapter",
+  "16205": "VID / PID",
+  "16206": "Beschreibung",
+  "16207": "Aktualisieren",
+  "16208": "Verbindung überwachen (15 s)",
+  "16209": "Öffnen des Ports testen",
+  "16210": "Diese Prüfung erkennt den Adapter und testet ausschließlich das Öffnen seines COM-Ports. Weder die interne Verkabelung noch die Kommunikation mit einem Steuergerät werden geprüft. Trennen Sie zuerst das Steuergerät, wenn der Port belegt ist.",
+  "16211": "Innerhalb von 15 Sekunden wurde kein neuer COM-Port erkannt.",
+  "16212": "Überwachung: noch %1 s. Kabel anschließen.",
+  "16213": "Überwachung läuft: Kabel anschließen.",
+  "16214": "Wählen Sie einen COM-Port aus der Liste.",
+  "16215": "Port %1: erfolgreich geöffnet und geschlossen. Die ECU-Kommunikation wurde nicht getestet.",
+  "16216": "Port %1: Port kann nicht geöffnet werden (%2). Er wird möglicherweise verwendet oder der Treiber fehlt.",
+  "16217": "Unbekanntes Modell",
+  "16218": "Neuer Port erkannt: %1 — %2",
+  "16219": "Wählen Sie eine Schnittstelle oder starten Sie eine 15-Sekunden-Überwachung."
+}
