@@ -79,5 +79,12 @@
   "16421": "ECU connected",
   "16422": "ECU disconnected",
   "16423": "Page %1 — view full size (zoom)",
-  "16424": "Manufacturer pages associated with this operation:"
+  "16424": "Manufacturer pages associated with this operation:",
+  "16500": "Manufacturer page",
+  "16501": "Unable to read image:\n%1",
+  "16502": "Manufacturer page — %1",
+  "16503": "Fit to window",
+  "16504": "USER GUIDE",
+  "16505": "Built-in guide · offline documentation · browse by topic",
+  "16506": "The installed help guide is unavailable."
 }
