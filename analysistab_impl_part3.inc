@@ -15,12 +15,10 @@
     m_checkboxScrollArea->setObjectName(QStringLiteral("analysisChannelsScroll"));
     m_checkboxScrollArea->setFrameShape(QFrame::NoFrame);
     m_checkboxScrollArea->setWidgetResizable(true);
-    m_checkboxScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    m_checkboxScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     m_checkboxScrollArea->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Ignored);
     m_checkboxScrollArea->setMinimumSize(0,0);
     m_checkboxScrollArea->setFocusPolicy(Qt::StrongFocus);
-    m_checkboxScrollArea->verticalScrollBar()->setSingleStep(28);
+    configureAnalysisVisibleScroll(m_checkboxScrollArea);
 
     m_checkboxContainer=new QWidget();
     m_checkboxContainer->setObjectName(QStringLiteral("analysisChannelsContent"));
