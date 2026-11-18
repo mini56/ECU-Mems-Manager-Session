@@ -1,0 +1,22 @@
+{
+  "16200": "Prueba del cable USB",
+  "16201": "Comprobación opcional de interfaces USB/serie. La conexión con la ECU permanece directa y sin cambios.",
+  "16202": "Interfaces detectadas",
+  "16203": "Puerto",
+  "16204": "Chip / adaptador",
+  "16205": "VID / PID",
+  "16206": "Descripción",
+  "16207": "Actualizar",
+  "16208": "Supervisar una conexión (15 s)",
+  "16209": "Probar la apertura del puerto",
+  "16210": "Esta comprobación identifica el adaptador y solo prueba la apertura de su puerto COM. No comprueba el cableado interno ni la comunicación con una ECU. Desconecte primero la ECU si el puerto ya está ocupado.",
+  "16211": "No se ha detectado ningún puerto COM nuevo durante 15 segundos.",
+  "16212": "Supervisión: quedan %1 s. Conecte el cable.",
+  "16213": "Supervisión en curso: conecte el cable.",
+  "16214": "Seleccione un puerto COM de la lista.",
+  "16215": "Puerto %1: abierto y cerrado correctamente. No se ha probado la comunicación con la ECU.",
+  "16216": "Puerto %1: no se puede abrir el puerto (%2). Puede estar ocupado o faltar el controlador.",
+  "16217": "Modelo desconocido",
+  "16218": "Puerto nuevo detectado: %1 — %2",
+  "16219": "Seleccione una interfaz o inicie una supervisión de 15 s."
+}
