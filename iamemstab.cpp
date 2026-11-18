@@ -674,7 +674,13 @@ void IaMemsTab::onServiceResponse(const QString &text)
             m_offeredDocumentaryImagePaths.insert(canonical);
             const QString imageUrl=QUrl::fromLocalFile(canonical)
                 .toString(QUrl::FullyEncoded).toHtmlEscaped();
-            const QString imageLabel=file.fileName().toHtmlEscaped();
+            const QRegularExpression pageSuffix(
+                QStringLiteral("_PDF_([0-9]+)\\.[^.]+$"),
+                QRegularExpression::CaseInsensitiveOption);
+            const QRegularExpressionMatch match=pageSuffix.match(file.fileName());
+            const QString imageLabel=(match.hasMatch()
+                ? I18n::text(16423).arg(match.captured(1).toInt())
+                : file.fileName()).toHtmlEscaped();
             html.append(QStringLiteral(
                 "<td style='vertical-align:top;padding:5px;'>"
                 "<a href='%1'><b>%2</b><br>"
