@@ -1017,7 +1017,13 @@ static void applyResponsive(QMainWindow *window)
     for(QScrollArea *scroll:scrolls){
         scroll->setWidgetResizable(true);
         scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        // Les deux listes de la page Analyse doivent rester défilantes.
+        // Ne pas appliquer la règle générale "sans scroll" à leurs QScrollArea.
+        const QString scrollName=scroll->objectName();
+        const bool analysisScroll=(scrollName==QStringLiteral("analysisChannelsScroll") ||
+                                   scrollName==QStringLiteral("analysisStackScroll"));
+        scroll->setVerticalScrollBarPolicy(analysisScroll ? Qt::ScrollBarAlwaysOn
+                                                          : Qt::ScrollBarAlwaysOff);
         if(scroll->widget()){
             scroll->widget()->setMinimumWidth(0);
             scroll->widget()->setMaximumWidth(QWIDGETSIZE_MAX);
