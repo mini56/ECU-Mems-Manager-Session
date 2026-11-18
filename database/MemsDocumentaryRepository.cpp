@@ -316,14 +316,17 @@ QVariantMap makeRow(const QString &key, const QString &title,
 
 } // namespace
 
-MemsDocumentaryRepository::MemsDocumentaryRepository()
-    : m_connectionName(QStringLiteral("MEMS_DOCUMENTARY_%1")
+MemsDocumentaryRepository::MemsDocumentaryRepository(const QString &databaseFile)
+    : m_explicitPath(databaseFile),
+      m_connectionName(QStringLiteral("MEMS_DOCUMENTARY_%1")
           .arg(QUuid::createUuid().toString(QUuid::WithoutBraces)))
 {
 }
 
 MemsDocumentaryRepository::~MemsDocumentaryRepository()
 {
+    qDeleteAll(m_additionalReaders);
+    m_additionalReaders.clear();
     if (!m_database.isValid())
         return;
     if (m_database.isOpen())
@@ -358,7 +361,8 @@ QString MemsDocumentaryRepository::originalPdfPath()
 
 bool MemsDocumentaryRepository::isPackInstalled()
 {
-    return QFileInfo::exists(databasePath());
+    return !MemsDocumentaryPackCatalog::installedDatabasePaths(
+        MemsDocumentaryPackCatalog::selectedLanguage()).isEmpty();
 }
 
 bool MemsDocumentaryRepository::open()
@@ -368,7 +372,12 @@ bool MemsDocumentaryRepository::open()
     m_error.clear();
     m_frenchComplete = false;
     m_nativeDocumentary = false;
-    const QFileInfo file(databasePath());
+    const QStringList locations=MemsDocumentaryPackCatalog::installedDatabasePaths(
+        MemsDocumentaryPackCatalog::selectedLanguage());
+    const QFileInfo file(m_explicitPath.isEmpty()
+        ? (QFileInfo::exists(databasePath()) ? databasePath()
+           : (locations.isEmpty() ? databasePath() : locations.first()))
+        : m_explicitPath);
     if (!file.isFile()) {
         m_error = QStringLiteral("Base documentaire Rover absente.");
         return false;
@@ -457,6 +466,7 @@ bool MemsDocumentaryRepository::open()
                 "Références documentaires incohérentes."));
         m_nativeDocumentary = true;
         m_frenchComplete = MemsDocumentaryPackCatalog::selectedLanguage()==QStringLiteral("fr");
+        openExtraReaders();
         return true;
     }
 
@@ -575,7 +585,58 @@ bool MemsDocumentaryRepository::open()
     const qlonglong expected = frenchPublication.value(0).toLongLong();
     const qlonglong approved = frenchPublication.value(1).toLongLong();
     m_frenchComplete = expected > 0 && expected == approved;
+    openExtraReaders();
     return true;
+}
+
+void MemsDocumentaryRepository::openExtraReaders()
+{
+    if(!m_explicitPath.isEmpty())
+        return; // Children never recursively enumerate installed packs.
+    const QStringList paths=MemsDocumentaryPackCatalog::installedDatabasePaths(
+        MemsDocumentaryPackCatalog::selectedLanguage());
+    for(const QString &path:paths){
+        if(QFileInfo(path).absoluteFilePath()==QFileInfo(m_database.databaseName()).absoluteFilePath())
+            continue;
+        auto *reader=new MemsDocumentaryRepository(path);
+        if(reader->open())
+            m_additionalReaders.append(reader);
+        else
+            delete reader; // A damaged extra cannot prevent the historical DB opening.
+    }
+}
+
+QVariantList MemsDocumentaryRepository::search(
+    const QString &question,int maximum,bool allowOcrDiscovery,
+    const QString &language) const
+{
+    maximum=qBound(1,maximum,100);
+    QVariantList combined=searchLocal(question,maximum,allowOcrDiscovery,language);
+    for(const auto *reader:m_additionalReaders)
+        combined.append(reader->searchLocal(question,maximum,allowOcrDiscovery,language));
+    // Stable source identity: two packs may include exactly the same document.
+    QSet<QString> encountered;
+    QVariantList unique;
+    for(const QVariant &value:combined){
+        const QVariantMap hit=value.toMap();
+        const QString identity=hit.value(QStringLiteral("document_id")).toString()
+            +QLatin1Char('/')+hit.value(QStringLiteral("entry_id")).toString()
+            +QLatin1Char('/')+hit.value(QStringLiteral("source_key")).toString();
+        if(encountered.contains(identity))
+            continue;
+        encountered.insert(identity);
+        unique.append(value);
+    }
+    const QStringList subject=nativeSubjectTerms(question);
+    const QString operation=nativeOperation(question);
+    if(!subject.isEmpty()){
+        std::stable_sort(unique.begin(),unique.end(),
+            [&subject,&operation](const QVariant &a,const QVariant &b){
+                return nativeRelevance(a.toMap(),subject,operation)>
+                       nativeRelevance(b.toMap(),subject,operation);
+            });
+    }
+    return unique.mid(0,maximum);
 }
 
 bool MemsDocumentaryRepository::isOpen() const
@@ -588,7 +649,7 @@ QString MemsDocumentaryRepository::lastError() const
     return m_error;
 }
 
-QVariantList MemsDocumentaryRepository::search(const QString &question,
+QVariantList MemsDocumentaryRepository::searchLocal(const QString &question,
                                                 int maximum, bool allowOcrDiscovery,
                                                 const QString &language) const
 {
@@ -692,6 +753,7 @@ QVariantList MemsDocumentaryRepository::search(const QString &question,
                 QStringLiteral("rave-%1:%2:%3").arg(selectedLanguage,doc,id),
                 title,content,
                 QStringLiteral("rover_%1_%2").arg(selectedLanguage,table),status);
+            hit.insert(QStringLiteral("documentary_database_path"),m_database.databaseName());
             hit.insert(QStringLiteral("document_id"),doc);
             hit.insert(QStringLiteral("entry_id"),id);
             hit.insert(QStringLiteral("source_page"),
@@ -1709,7 +1771,12 @@ QString MemsDocumentaryRepository::imagePathForHit(const QVariantMap &hit)
     }
     if(page<=0 || page>50000)
         return QString();
-    const QString root=QFileInfo(databasePath()).absolutePath();
+    QString verified=databasePath();
+    const QString requested=hit.value(QStringLiteral("documentary_database_path")).toString();
+    if(!requested.isEmpty() && MemsDocumentaryPackCatalog::installedDatabasePaths(
+            MemsDocumentaryPackCatalog::selectedLanguage()).contains(requested))
+        verified=requested;
+    const QString root=QFileInfo(verified).absolutePath();
     const QString imageRoot=QFileInfo(
         QDir(root).filePath(QStringLiteral("images"))).canonicalFilePath();
     if(imageRoot.isEmpty())
@@ -1736,6 +1803,11 @@ QString MemsDocumentaryRepository::procedureAnswer(
 {
     if(imagePaths)
         imagePaths->clear();
+    const QString chosen=hit.value(QStringLiteral("documentary_database_path")).toString();
+    for(const auto *reader:m_additionalReaders){
+        if(!chosen.isEmpty() && chosen==reader->m_database.databaseName())
+            return reader->procedureAnswer(hit,imagePaths);
+    }
     if(!isOpen() || !m_nativeDocumentary ||
        hit.value(QStringLiteral("entry_type")).toString()!=QStringLiteral("procedure"))
         return QString();
