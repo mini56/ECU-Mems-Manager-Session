@@ -1,4 +1,5 @@
 #include "MemsDocumentaryImageViewer.h"
+#include "../i18n.h"
 
 #include <QColor>
 #include <QDialog>
@@ -18,13 +19,13 @@ void MemsDocumentaryImageViewer::show(QWidget *parent,const QString &path)
 {
     const QPixmap original(path);
     if(original.isNull()){
-        QMessageBox::warning(parent,QStringLiteral("Page constructeur"),
-                             QStringLiteral("Impossible de lire l'image :\n%1").arg(path));
+        QMessageBox::warning(parent,I18n::text(16500),
+                             I18n::text(16501).arg(path));
         return;
     }
     QDialog dialog(parent);
     dialog.setObjectName(QStringLiteral("memsDocumentaryImageViewer"));
-    dialog.setWindowTitle(QStringLiteral("Page constructeur — %1")
+    dialog.setWindowTitle(I18n::text(16502)
                           .arg(QFileInfo(path).fileName()));
     dialog.resize(1000,740);
     QVBoxLayout *layout=new QVBoxLayout(&dialog);
@@ -34,7 +35,7 @@ void MemsDocumentaryImageViewer::show(QWidget *parent,const QString &path)
     QHBoxLayout *actions=new QHBoxLayout;
     QPushButton *smaller=new QPushButton(QStringLiteral("−"),&dialog);
     QPushButton *bigger=new QPushButton(QStringLiteral("+"),&dialog);
-    QPushButton *fit=new QPushButton(QStringLiteral("Ajuster"),&dialog);
+    QPushButton *fit=new QPushButton(I18n::text(16503),&dialog);
     QPushButton *actual=new QPushButton(QStringLiteral("100 %"),&dialog);
     actions->addWidget(new QLabel(QFileInfo(path).fileName(),&dialog));
     actions->addStretch(1);
