@@ -86,5 +86,17 @@
   "16503": "Adatta alla finestra",
   "16504": "GUIDA UTENTE",
   "16505": "Guida integrata · documentazione offline · ricerca per argomento",
-  "16506": "La guida non è disponibile in questa installazione."
+  "16506": "La guida non è disponibile in questa installazione.",
+  "16600": "database pronto",
+  "16601": "database non disponibile",
+  "16602": "database non caricato",
+  "16603": "IA locale non avviata",
+  "16604": "motore IA locale assente",
+  "16605": "modello IA locale assente",
+  "16606": "IA locale in avvio",
+  "16607": "IA locale pronta",
+  "16608": "IA locale in risposta",
+  "16609": "errore IA locale",
+  "16610": "errore IA locale: %1",
+  "16611": "IA locale"
 }
