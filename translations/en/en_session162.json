@@ -98,5 +98,19 @@
   "16608": "local AI responding",
   "16609": "local AI error",
   "16610": "local AI error: %1",
-  "16611": "local AI"
+  "16611": "local AI",
+  "16700": "Documentary topic: %1",
+  "16701": "Manufacturer operation: %1",
+  "16702": "Operation type: %1",
+  "16703": "Documentation: page %1",
+  "16704": "Documentation: pages %1 to %2",
+  "16705": "• Step %1: %2",
+  "16706": " — condition: %1",
+  "16707": "\nWarnings / notes:",
+  "16708": "ref. %1",
+  "16709": "\nRequirements / specifications:",
+  "16710": " — operation %1",
+  "16711": "I found several topics matching “%1”. Which one are you looking for?",
+  "16712": "\nReply with a number, or enter another topic to start a new search.",
+  "16713": "The selected topic exists, but its structured content could not be read. I will not replace it with an approximate search."
 }
