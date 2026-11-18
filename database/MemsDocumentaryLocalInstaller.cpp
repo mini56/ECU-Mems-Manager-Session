@@ -381,8 +381,9 @@ QString MemsDocumentaryLocalInstaller::installZip(
         QStringLiteral("-Command"),
         QStringLiteral(
             "$ErrorActionPreference='Stop'; "
-            "Expand-Archive -LiteralPath $env:MEMS_DOC_ARCHIVE "
-            "-DestinationPath $env:MEMS_DOC_TARGET -Force")});
+            "Add-Type -AssemblyName System.IO.Compression.FileSystem; "
+            "[System.IO.Compression.ZipFile]::ExtractToDirectory("
+            "$env:MEMS_DOC_ARCHIVE,$env:MEMS_DOC_TARGET)")});
     if(!process.waitForStarted(10000) || !process.waitForFinished(180000) ||
        process.exitStatus()!=QProcess::NormalExit || process.exitCode()!=0)
         return QStringLiteral("Extraction ZIP refusée ; aucune base modifiée.");

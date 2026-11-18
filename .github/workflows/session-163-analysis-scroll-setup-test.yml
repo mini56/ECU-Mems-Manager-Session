@@ -7,6 +7,7 @@ on:
   # Ordinary source edits do not consume GitHub Actions compilation minutes.
   # SESSION 166 UI audit: keep translated image labels without restricting pack filenames.
   # SESSION 166 native intent test: reference excerpt is shown without an injected warning.
+  # SESSION 166: use Windows .NET ZIP extraction after authenticated decryption.
   push:
     branches: [fix-documentary-additive-session-161-20261118]
     paths:
