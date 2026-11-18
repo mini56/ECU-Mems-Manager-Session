@@ -159,7 +159,18 @@ static void styleScrollBars(QMainWindow *w)
         "QScrollBar::handle:horizontal:hover{background:#52616b;}"
         "QScrollBar::add-line:horizontal,QScrollBar::sub-line:horizontal{width:0;}"
         "QScrollBar::add-page:horizontal,QScrollBar::sub-page:horizontal{background:transparent;}" );
-    for(QScrollBar *bar:w->findChildren<QScrollBar*>()) bar->setStyleSheet(qss);
+    // Conserver les styles explicites des deux ascenseurs d'Analyse.
+    // Sinon ce style global remplace leurs poignées orange à chaque redessin.
+    const QScrollArea *channels=w->findChild<QScrollArea*>(
+        QStringLiteral("analysisChannelsScroll"));
+    const QScrollArea *plots=w->findChild<QScrollArea*>(
+        QStringLiteral("analysisStackScroll"));
+    const QScrollBar *channelsBar=channels?channels->verticalScrollBar():nullptr;
+    const QScrollBar *plotsBar=plots?plots->verticalScrollBar():nullptr;
+    for(QScrollBar *bar:w->findChildren<QScrollBar*>()) {
+        if(bar==channelsBar || bar==plotsBar) continue;
+        bar->setStyleSheet(qss);
+    }
 }
 
 static void styleTables(QMainWindow *w)
