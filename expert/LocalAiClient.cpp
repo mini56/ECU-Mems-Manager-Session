@@ -1,4 +1,5 @@
 #include "LocalAiClient.h"
+#include "../i18n.h"
 #include "IaMemsConversationRouting.h"
 #include "i18n.h"
 
@@ -854,17 +855,17 @@ void LocalAiClient::setState(State state, const QString &error)
 QString LocalAiClient::statusText() const
 {
     switch (m_state) {
-    case NotStarted: return QStringLiteral("IA locale non démarrée");
-    case MissingRuntime: return QStringLiteral("moteur IA local absent");
-    case MissingModel: return QStringLiteral("modèle IA local absent");
-    case Starting: return QStringLiteral("IA locale en démarrage");
-    case Ready: return QStringLiteral("IA locale prête");
-    case Busy: return QStringLiteral("IA locale en réponse");
+    case NotStarted: return I18n::text(16603);
+    case MissingRuntime: return I18n::text(16604);
+    case MissingModel: return I18n::text(16605);
+    case Starting: return I18n::text(16606);
+    case Ready: return I18n::text(16607);
+    case Busy: return I18n::text(16608);
     case Error:
-        if (m_lastError.isEmpty()) return QStringLiteral("erreur IA locale");
-        return QStringLiteral("erreur IA locale : %1").arg(m_lastError.simplified().left(140));
+        if (m_lastError.isEmpty()) return I18n::text(16609);
+        return I18n::text(16610).arg(m_lastError.simplified().left(140));
     }
-    return QStringLiteral("IA locale");
+    return I18n::text(16611);
 }
 
 QString LocalAiClient::systemPrompt() const
