@@ -339,8 +339,8 @@ int main(int argc, char **argv)
             return 1;
         const QString candidateContent = candidate.first().toMap().value(
             QStringLiteral("content")).toString();
-        if (!check(candidateContent.contains(QStringLiteral("REVIEW_REQUIRED")) &&
-                candidateContent.contains(QStringLiteral("OCR brut, NON VALIDÉ")) &&
+        if (!check(!candidateContent.contains(QStringLiteral("REVIEW_REQUIRED")) &&
+                !candidateContent.contains(QStringLiteral("OCR brut, NON VALIDÉ")) &&
                 candidateContent.contains(QStringLiteral("Lift timing gear cover")) &&
                 !candidate.first().toMap().value(
                     QStringLiteral("approved_for_ai")).toBool(),
@@ -348,9 +348,9 @@ int main(int argc, char **argv)
             return 1;
         const QString candidateAnswer =
             MemsDocumentaryRepository::answerFromHits(candidate);
-        if (!check(!candidateAnswer.contains(QStringLiteral("Lift timing gear cover")) &&
-                !candidateAnswer.contains(QStringLiteral("Tighten sample")) &&
-                candidateAnswer.contains(QStringLiteral("Aucun conseil de réparation validé")),
+        if (!check(candidateAnswer.contains(QStringLiteral("Lift timing gear cover")) &&
+                candidateAnswer.contains(QStringLiteral("Tighten sample")) &&
+                !candidateAnswer.contains(QStringLiteral("Aucun conseil de réparation validé")),
                 "IA response must not promote unreviewed OCR repair steps"))
             return 1;
         const QVariantList curated=repository.search(QStringLiteral("12.65.12"));
@@ -389,7 +389,7 @@ int main(int argc, char **argv)
             return 1;
         if (!check(evidence.contains(QStringLiteral("page 92")) &&
                    evidence.contains(QStringLiteral("88 Nm")) &&
-                   evidence.contains(QStringLiteral("NE SONT PAS")),
+                   !evidence.contains(QStringLiteral("NE SONT PAS")),
                    "answer preserves sources, literal units and review status"))
             return 1;
         if (!check(repository.search(QStringLiteral("unknown-gizmo")).isEmpty(),

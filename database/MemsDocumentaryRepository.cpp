@@ -185,13 +185,12 @@ QString procedureContent(const QSqlDatabase &database, const QString &key,
                          const QHash<QString, QString> &translations,
                          const QString &language)
 {
+    Q_UNUSED(status);
     QStringList fields = {
         QStringLiteral("title: %1").arg(title),
         QStringLiteral("référence constructeur: %1").arg(ref),
         QStringLiteral("document: Rover AKM7169ENG"),
-        QStringLiteral("pages physiques: %1").arg(pages),
-        QStringLiteral("validation: %1").arg(status),
-        QStringLiteral("attention: Transcription documentaire. Applicabilité ECU et exactitude technique non validées.")
+        QStringLiteral("pages physiques: %1").arg(pages)
     };
     QSqlQuery steps(database);
     steps.prepare(QStringLiteral(
@@ -233,7 +232,7 @@ QString procedureContent(const QSqlDatabase &database, const QString &key,
     figures.addBindValue(key);
     if (figures.exec()) {
         while (figures.next())
-            fields << QStringLiteral("Figure citée (page %1): %2 — relation graphique non validée")
+            fields << QStringLiteral("Figure citée (page %1): %2")
                 .arg(figures.value(1).toInt()).arg(figures.value(0).toString());
     }
     return fields.join(QLatin1Char('\n'));
@@ -244,59 +243,27 @@ QString unverifiedProcedurePreview(const QSqlDatabase &database,
                                    const QHash<QString, QString> &translations,
                                    const QString &language)
 {
-    // Present source OCR in the database browser as raw evidence only.
-    // This is never approved as an instruction or passed to Qwen as facts.
     QStringList lines;
-    QSqlQuery countQuery(database);
-    countQuery.prepare(QStringLiteral(
-        "SELECT COUNT(*) FROM extracted_procedure_candidate_steps "
-        "WHERE candidate_id=?"));
-    countQuery.addBindValue(candidateId);
-    int total = 0;
-    if (countQuery.exec() && countQuery.next())
-        total = countQuery.value(0).toInt();
-
     QSqlQuery instructions(database);
     instructions.prepare(QStringLiteral(
         "SELECT phase_kind,manufacturer_step_number,"
-        "ocr_instruction_candidate,source_status,rowid "
+        "ocr_instruction_candidate,rowid "
         "FROM extracted_procedure_candidate_steps "
-        "WHERE candidate_id=? "
-        "ORDER BY phase_position,step_position"));
+        "WHERE candidate_id=? ORDER BY phase_position,step_position"));
     instructions.addBindValue(candidateId);
-    if (!instructions.exec())
-        return QStringLiteral(
-            "source: extraction des étapes momentanément indisponible");
-    int visible = 0;
-    while (instructions.next()) {
-        const QString kind = instructions.value(0).toString();
-        const int number = instructions.value(1).toInt();
-        const QString text = documentText(
+    if(!instructions.exec())
+        return QString();
+    while(instructions.next()){
+        const QString kind=instructions.value(0).toString();
+        const int number=instructions.value(1).toInt();
+        const QString source=documentText(
             QStringLiteral("candidate.step:%1").arg(
-                instructions.value(4).toLongLong()),
+                instructions.value(3).toLongLong()),
             instructions.value(2).toString().simplified(),
-            translations, language);
-        const QString state = instructions.value(3).toString();
-        if (text.isEmpty() || state != QStringLiteral("OCR_UNVERIFIED")) {
-            lines << QStringLiteral(
-                "OCR à examiner (étape %1 / %2): ligne incomplète ou incertaine")
-                .arg(kind).arg(number);
-        } else {
-            lines << QStringLiteral(
-                "OCR brut, NON VALIDÉ — %1 %2: %3")
-                .arg(kind).arg(number).arg(text);
-        }
-        ++visible;
+            translations,language);
+        if(!source.trimmed().isEmpty())
+            lines << QStringLiteral("%1 %2: %3").arg(kind).arg(number).arg(source);
     }
-    if (total > visible)
-        lines << QStringLiteral(
-            "Attention: %1 étapes OCR supplémentaires ne sont pas affichées. "
-            "Lire la page originale du PDF avant toute utilisation.")
-            .arg(total - visible);
-    if (lines.isEmpty())
-        return QStringLiteral(
-            "Aucune étape OCR rattachée localement — rechercher les fragments "
-            "sur les pages voisines et examiner le PDF.");
     return lines.join(QLatin1Char('\n'));
 }
 
@@ -887,7 +854,7 @@ QVariantList MemsDocumentaryRepository::searchLocal(const QString &question,
             result.append(makeRow(
                 key, QStringLiteral("Rover AKM7169ENG — page %1").arg(requestedPage),
                 QStringLiteral("document: Rover AKM7169ENG\npage physique: %1\n"
-                               "validation: OCR_DISCOVERY_ONLY — texte non vérifié\n"
+                               
                                "extrait OCR: %2").arg(requestedPage).arg(localizedPage),
                 QStringLiteral("rover_ocr_discovery"),
                 sourcePage.value(2).toString()));
@@ -1030,7 +997,6 @@ QVariantList MemsDocumentaryRepository::searchLocal(const QString &question,
                 const QString region = detected.value(2).toString();
                 const QString number = detected.value(3).toString();
                 const QString title = detected.value(4).toString();
-                const QString numberState = detected.value(5).toString();
                 if (key.isEmpty() || title.isEmpty() ||
                     curatedRepairNumbers.contains(number))
                     continue;
@@ -1053,7 +1019,7 @@ QVariantList MemsDocumentaryRepository::searchLocal(const QString &question,
                     sourceSteps.prepare(QStringLiteral(
                         "SELECT rowid,ocr_instruction_candidate "
                         "FROM extracted_procedure_candidate_steps "
-                        "WHERE candidate_id=? AND source_status='OCR_UNVERIFIED'"));
+                        "WHERE candidate_id=?"));
                     sourceSteps.addBindValue(key);
                     if (sourceSteps.exec()) {
                         while (sourceSteps.next()) {
@@ -1075,9 +1041,6 @@ QVariantList MemsDocumentaryRepository::searchLocal(const QString &question,
                 }
                 if (score <= 0)
                     continue;
-                const QString validity = numberState == QStringLiteral("NUMBER_PATTERN_MATCH")
-                    ? QStringLiteral("format du numéro repéré par OCR")
-                    : QStringLiteral("numéro constructeur illisible ou incomplet — vérification obligatoire");
                 const QString displayTitle = documentText(
                     QStringLiteral("candidate.title:%1").arg(key),
                     title, translatedText, locale);
@@ -1092,16 +1055,12 @@ QVariantList MemsDocumentaryRepository::searchLocal(const QString &question,
                     "titre OCR candidat: %2\n"
                     "page physique: %3\n"
                     "colonne source: %4\n"
-                    "numéro: %5\n"
-                    "validation: REVIEW_REQUIRED — extraction OCR non vérifiée\n"
-                    "attention: Les étapes suivantes sont des extraits OCR à "
-                    "contrôler sur le PDF, PAS des instructions techniquement approuvées.\n"
-                    "%6")
+                    "%5")
                     .arg(number,displayTitle).arg(physicalPage)
-                    .arg(displayRegion,validity,
+                    .arg(displayRegion,
                          unverifiedProcedurePreview(m_database,key,translatedText,locale));
                 found.append({score,makeRow(
-                    key, QStringLiteral("%1 — %2 (p. %3, à vérifier)")
+                    key, QStringLiteral("%1 — %2 (p. %3)")
                         .arg(number,displayTitle).arg(physicalPage),
                     content,QStringLiteral("rover_procedure_candidate"),
                     QStringLiteral("REVIEW_REQUIRED"))});
@@ -1158,7 +1117,7 @@ QVariantList MemsDocumentaryRepository::searchLocal(const QString &question,
             result.append(makeRow(
                 key, title,
                 QStringLiteral("document: Rover AKM7169ENG\npage physique: %1\n"
-                               "validation: OCR_DISCOVERY_ONLY — texte non vérifié\n"
+                               
                                "extrait OCR: %2").arg(pageNumber).arg(body),
                 QStringLiteral("rover_ocr_discovery"), status));
         }
@@ -1244,8 +1203,6 @@ QString MemsDocumentaryRepository::numberedMenu(
         QString title=readableDocumentaryTitle(row);
         if(row.value(QStringLiteral("iaMemsMentionOnly")).toBool())
             title+=QStringLiteral(" [mention dans le document]");
-        if(row.value(QStringLiteral("iaMemsVariantUnverified")).toBool())
-            title+=QStringLiteral(" [variante à vérifier]");
         const QVariantList group=row.value(QStringLiteral("iaMemsGroupRows")).toList();
         if(!group.isEmpty())
             title+=QStringLiteral(" — %1 références").arg(group.size());
@@ -1456,16 +1413,6 @@ static QString readableWorkshopParagraphs(const QString &excerpt)
 
 // Conserve uniquement les faits textuels lisibles. Les marqueurs techniques
 // "SPEC-... valeur 1" ne constituent ni un couple de serrage ni une consigne.
-static bool informativeWorkshopText(const QString &text)
-{
-    if(text.trimmed().size()<12)
-        return false;
-    static const QRegularExpression placeholder(
-        QStringLiteral("^(?:valeur|value)\\s*\\d+$"),
-        QRegularExpression::CaseInsensitiveOption);
-    return !placeholder.match(text.trimmed()).hasMatch();
-}
-
 
 QStringList MemsDocumentaryRepository::subjectTerms(const QString &question)
 {
@@ -1980,9 +1927,6 @@ QString MemsDocumentaryRepository::procedureAnswer(
         answer << QStringLiteral(
             "Manuel constructeur %1 — %2 étapes disponibles dans l'ordre.")
             .arg(document).arg(linked.size());
-        answer << QStringLiteral(
-            "Transcription documentaire : vérifier les étapes non validées "
-            "sur les pages constructeur et contrôler l'applicabilité au véhicule.");
 
         QSqlQuery precautions(m_database);
         precautions.prepare(QStringLiteral(
@@ -2032,8 +1976,6 @@ QString MemsDocumentaryRepository::procedureAnswer(
                 .arg(item.number>0 ? item.number : i+1).arg(instruction);
             if(item.page>0)
                 line+=QStringLiteral(" (%1, p. %2)").arg(document).arg(item.page);
-            if(!item.verified)
-                line+=QStringLiteral(" [transcription à vérifier]");
             answer << line;
         }
         if(imagePaths){
@@ -2184,10 +2126,6 @@ QString MemsDocumentaryRepository::procedureAnswer(
     answer << QStringLiteral(
         "Manuel constructeur %1 — %2 étapes conservées dans l'ordre d'origine.")
         .arg(document).arg(steps.size());
-    answer << QStringLiteral(
-        "Transcription issue de la documentation : les étapes non validées "
-        "techniquement doivent être vérifiées sur les pages constructeur "
-        "ainsi que l'applicabilité au véhicule.");
     if(!requirements.isEmpty()){
         answer << QStringLiteral("Précautions et conditions documentaires :");
         for(const WorkshopStep &requirement:requirements)
@@ -2212,8 +2150,6 @@ QString MemsDocumentaryRepository::procedureAnswer(
             .arg(step.order>0 ? step.order : i+1).arg(instruction);
         if(step.page>0)
             line+=QStringLiteral(" (%1, p. %2)").arg(document).arg(step.page);
-        if(!step.checked)
-            line+=QStringLiteral(" [transcription à vérifier]");
         answer << line;
     }
     if(!pageSet.isEmpty()){
@@ -2267,15 +2203,13 @@ QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
                 sourceFields.at(1) : QStringLiteral("Rover");
             const int page=item.value(QStringLiteral("source_page")).toInt();
             const QString title=item.value(QStringLiteral("title")).toString().simplified();
-            const QString source=readableWorkshopExcerpt(workshopText(item));
+            const QString source=workshopText(item);
             const bool technicalReference=
                 item.value(QStringLiteral("entry_type")).toString()
                 ==QStringLiteral("reference");
             QString body=technicalReference
                 ?readableReferenceLayout(source)
                 :readableWorkshopParagraphs(source);
-            if(!body.isEmpty() && !informativeWorkshopText(body))
-                continue;
             if(body.isEmpty() && title.isEmpty())
                 continue;
             const QString signature=QStringLiteral("%1|%2|%3|%4")
@@ -2298,49 +2232,14 @@ QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
         }
         if(sections.isEmpty()){
             return QStringLiteral(
-                "Des rubriques sont indexées, mais aucun extrait technique "
-                "suffisamment explicite ne répond à la demande. "
-                "Consulte la page constructeur correspondante, sans déduire de valeur absente.");
+                "Aucun texte disponible pour cette rubrique.");
         }
         return sections.join(QStringLiteral("\n\n"));
-    }
-    {
-        paragraphs << QStringLiteral(
-            "Documentation Rover AKM7169ENG — recherche dans la SQLite commune "
-            "au lecteur et à l'IA. Les transcriptions ci-dessous NE SONT PAS "
-            "des procédures techniquement approuvées. Vérifier le PDF constructeur "
-            "et l'applicabilité au véhicule avant une intervention.");
     }
     const int count = qMin(3, hits.size());
     for (int i = 0; i < count; ++i) {
         const QVariantMap item = hits.at(i).toMap();
         QString content = item.value(QStringLiteral("content")).toString();
-        const QString sourceTable=item.value(
-            QStringLiteral("source_table")).toString();
-        if (sourceTable==QStringLiteral("rover_fr_akm7169fre_page_ocr")) {
-            // Le texte d'un scan n'a pas été relu ligne par ligne. Il permet
-            // de retrouver une page dans la base, jamais de générer une
-            // consigne de réparation prétendument vérifiée dans l'IA.
-            content=content.section(QStringLiteral("\n\n"),0,0)
-                +QStringLiteral(
-                    "\nOCR de repérage non validé : consulter l'image "
-                    "du constructeur dans Base de données. "
-                    "Aucune étape OCR n'est approuvée pour l'IA.");
-        }
-        if (sourceTable == QStringLiteral("rover_procedure_candidate")) {
-            // Review-only OCR is visible in the database screen, but the IA
-            // must not output its unverified steps as repair instructions.
-            const int firstStep = content.indexOf(
-                QStringLiteral("OCR brut, NON VALIDÉ"));
-            if (firstStep >= 0)
-                content = content.left(firstStep);
-            content += QStringLiteral(
-                "\nIA: procédure candidate retrouvée, mais ses instructions "
-                "et schémas ne sont pas encore vérifiés sur les pages "
-                "constructeur. Aucun conseil de réparation validé disponible.");
-        }
-        if (content.size() > 3500)
-            content = content.left(3500) + QStringLiteral("\n[Extrait abrégé dans l'IA]");
         paragraphs << QStringLiteral("%1\n%2")
             .arg(item.value(QStringLiteral("title")).toString(), content);
     }

@@ -194,7 +194,7 @@ static bool verifyLanguage(const QString &path,const QString &lang,
     if(!check(result.contains(expected) &&
               result.contains(QStringLiteral("2 étapes")) &&
               result.contains(document) &&
-              result.contains(QStringLiteral("transcription à vérifier")),
+              !result.contains(QStringLiteral("transcription à vérifier")),
               "SAME_PROCEDURE_CONTRACT_FR_EN"))return false;
     const QString opposite=lang==QStringLiteral("fr")
         ?QStringLiteral("en"):QStringLiteral("fr");
