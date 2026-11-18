@@ -41,6 +41,7 @@
 #include <QFile>
 #include <QDir>
 #include <QDateTime>
+#include <QTemporaryFile>
 
 namespace {
 
@@ -537,44 +538,87 @@ bool verifyUi(MainWindow &window)
         }
     }
 
-    // Regression for the Analysis "Available channels" panel: all ~50
-    // diagnostic signals must be reachable, without scrolling the controls.
+    // Test the actual installed MainWindow Analysis page, NOT a separate
+    // AnalysisTab widget. Load a synthetic CSV with more channels than fit,
+    // then force enough graphs to exceed the available viewport height.
+    // The previous regression only tested scrollbar policy, not visibility.
     {
-        AnalysisTab scrollSample;
-        scrollSample.resize(1024,640);
-        scrollSample.setDiagnosticLiveAvailable(true);
-        scrollSample.selectDiagnosticLive(false);
-        scrollSample.show();
+        tabs->setCurrentIndex(7);
         QCoreApplication::processEvents();
         QCoreApplication::processEvents();
-
-        QScrollArea *channels=scrollSample.findChild<QScrollArea*>(
-            QStringLiteral("analysisChannelsScroll"));
-        QPushButton *overlay=scrollSample.findChild<QPushButton*>(
-            QStringLiteral("analysisOverlayButton"));
-        ok=check(channels && overlay,
-                 "Analysis channels scrollbar or fixed overlay button missing") && ok;
-        if(channels && overlay){
-            QScrollBar *bar=channels->verticalScrollBar();
-            ok=check(channels->verticalScrollBarPolicy()==Qt::ScrollBarAlwaysOn,
-                     "Analysis channels vertical scrollbar must be visible") && ok;
-            ok=check(channels->horizontalScrollBarPolicy()==Qt::ScrollBarAlwaysOff,
-                     "Analysis channel names must not scroll horizontally") && ok;
-            ok=check(bar && bar->maximum()>0,
-                     "Analysis channels must have a nonzero vertical scroll range") && ok;
-            if(bar && bar->maximum()>0){
-                const int bottom=bar->maximum();
-                const int overlayY=overlay->mapTo(&scrollSample,QPoint(0,0)).y();
-                bar->setValue(bottom);
+        QWidget *analysisPage=tabs->widget(7);
+        AnalysisTab *analysis=qobject_cast<AnalysisTab*>(analysisPage);
+        if (!analysis && analysisPage)
+            analysis=analysisPage->findChild<AnalysisTab*>();
+        ok=check(analysis!=nullptr,
+                 "Installed Analysis page not found inside native window") && ok;
+        if (analysis){
+            QTemporaryFile sample(QDir::tempPath()+
+                                  QStringLiteral("/session-analysis-XXXXXX.csv"));
+            const bool fileReady=sample.open();
+            ok=check(fileReady,"Synthetic Analysis CSV could not be created") && ok;
+            if (fileReady){
+                QByteArray header("time");
+                for(int column=0;column<36;++column)
+                    header.append(",synthetic_signal_").append(QByteArray::number(column));
+                sample.write("# Smoke test only, no candidate or ECU data\n");
+                sample.write(header+"\n");
+                for(int row=0;row<40;++row){
+                    QByteArray line=QStringLiteral("00:00:%1")
+                        .arg(row,2,10,QChar('0')).toLatin1();
+                    for(int column=0;column<36;++column)
+                        line.append(',').append(QByteArray::number(row+column));
+                    sample.write(line+"\n");
+                }
+                sample.flush();
+                sample.close();
+                analysis->loadFile(sample.fileName());
                 QCoreApplication::processEvents();
-                ok=check(bar->value()==bottom,
-                         "Last Analysis channel cannot be reached by scrolling") && ok;
-                ok=check(overlay->mapTo(&scrollSample,QPoint(0,0)).y()==overlayY,
-                         "Analysis footer buttons must stay fixed when channels scroll") && ok;
-                bar->setValue(0);
+                QCoreApplication::processEvents();
+            }
+
+            QScrollArea *channels=analysis->findChild<QScrollArea*>(
+                QStringLiteral("analysisChannelsScroll"));
+            QScrollArea *plots=analysis->findChild<QScrollArea*>(
+                QStringLiteral("analysisStackScroll"));
+            QPushButton *overlay=analysis->findChild<QPushButton*>(
+                QStringLiteral("analysisOverlayButton"));
+            ok=check(channels && plots && overlay,
+                     "Analysis scroll areas or footer controls missing") && ok;
+            if(channels && plots && overlay){
+                QScrollBar *channelBar=channels->verticalScrollBar();
+                QScrollBar *plotBar=plots->verticalScrollBar();
+                const QList<QCheckBox*> channelBoxes=analysis->findChildren<QCheckBox*>();
+                ok=check(channelBoxes.count()>=36,
+                         "Loaded CSV channels were not created") && ok;
+                for(int i=0;i<qMin(9,channelBoxes.count());++i)
+                    channelBoxes.at(i)->setChecked(true);
+                QCoreApplication::processEvents();
+                QCoreApplication::processEvents();
+
+                ok=check(channels->isVisibleTo(&window) &&
+                         plots->isVisibleTo(&window),
+                         "Analysis channels or plots not visible in actual window") && ok;
+                for(QScrollBar *bar:{channelBar,plotBar}){
+                    ok=check(bar && bar->isVisibleTo(&window) && bar->width()>=15 &&
+                             bar->styleSheet().contains(QStringLiteral("#ff8a1c")),
+                             "Analysis vertical scrollbar must be visibly orange and 17px wide") && ok;
+                    ok=check(bar && bar->maximum()>0,
+                             "Analysis scroll area has no reachable hidden content") && ok;
+                }
+                if(channelBar && plotBar && channelBar->maximum()>0 && plotBar->maximum()>0){
+                    const int fixedFooterY=overlay->mapTo(&window,QPoint(0,0)).y();
+                    channelBar->setValue(channelBar->maximum());
+                    plotBar->setValue(plotBar->maximum());
+                    QCoreApplication::processEvents();
+                    ok=check(channelBar->value()==channelBar->maximum() &&
+                             plotBar->value()==plotBar->maximum(),
+                             "Analysis bottom signals or bottom graph not reachable") && ok;
+                    ok=check(overlay->mapTo(&window,QPoint(0,0)).y()==fixedFooterY,
+                             "Analysis footer moves while scrolling channels or graphs") && ok;
+                }
             }
         }
-        scrollSample.close();
     }
 
     if (ok) qInfo().noquote() << "SESSION_UI_SMOKE_PASS 15 native pages, bidirectional navigation, "
