@@ -98,5 +98,19 @@
   "16608": "IA locale en réponse",
   "16609": "erreur IA locale",
   "16610": "erreur IA locale : %1",
-  "16611": "IA locale"
+  "16611": "IA locale",
+  "16700": "Sujet documentaire : %1",
+  "16701": "Opération constructeur : %1",
+  "16702": "Type d'opération : %1",
+  "16703": "Étendue documentaire : page %1",
+  "16704": "Étendue documentaire : pages %1 à %2",
+  "16705": "• Étape %1 : %2",
+  "16706": " — condition : %1",
+  "16707": "\nAvertissements / remarques :",
+  "16708": "réf. %1",
+  "16709": "\nExigences / spécifications :",
+  "16710": " — opération %1",
+  "16711": "J'ai trouvé plusieurs rubriques correspondant à « %1 ». Laquelle recherchez-vous ?",
+  "16712": "\nRépondez par le numéro, ou écrivez un autre sujet pour relancer une recherche.",
+  "16713": "La rubrique sélectionnée existe, mais son contenu structuré n'a pas pu être lu. Je ne vais pas remplacer cette sélection par une autre recherche approximative."
 }
