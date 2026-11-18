@@ -79,5 +79,12 @@
   "16421": "ECU verbunden",
   "16422": "ECU nicht verbunden",
   "16423": "Seite %1 — groß anzeigen (Zoom)",
-  "16424": "Zugehörige Herstellerseiten für diesen Vorgang:"
+  "16424": "Zugehörige Herstellerseiten für diesen Vorgang:",
+  "16500": "Herstellerseite",
+  "16501": "Bild kann nicht gelesen werden:\n%1",
+  "16502": "Herstellerseite — %1",
+  "16503": "An Fenster anpassen",
+  "16504": "BENUTZERHANDBUCH",
+  "16505": "Integrierte Hilfe · Offline-Dokumentation · Themenübersicht",
+  "16506": "Das Benutzerhandbuch ist in dieser Installation nicht verfügbar."
 }
