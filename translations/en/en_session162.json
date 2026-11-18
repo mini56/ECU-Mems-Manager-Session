@@ -86,5 +86,17 @@
   "16503": "Fit to window",
   "16504": "USER GUIDE",
   "16505": "Built-in guide · offline documentation · browse by topic",
-  "16506": "The installed help guide is unavailable."
+  "16506": "The installed help guide is unavailable.",
+  "16600": "database ready",
+  "16601": "database unavailable",
+  "16602": "database not loaded",
+  "16603": "local AI not started",
+  "16604": "local AI engine missing",
+  "16605": "local AI model missing",
+  "16606": "local AI starting",
+  "16607": "local AI ready",
+  "16608": "local AI responding",
+  "16609": "local AI error",
+  "16610": "local AI error: %1",
+  "16611": "local AI"
 }
