@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt"><head><meta charset="utf-8"><title>@PROJECTNAME@ — Guia do utilizador</title><style>
+body{font-family:"Segoe UI",Arial,sans-serif;background:#0e171d;color:#e3ebf1;margin:17px;line-height:1.56;font-size:12pt}
+h1{color:#ff9828;border-bottom:2px solid #ff7a00;padding-bottom:13px;margin-top:3px;font-size:23pt}
+h2{color:#ffad58;background:#17242c;border-left:3px solid #ff7a00;padding:11px;margin-top:25px;font-size:16pt}
+h3{color:#ffae58;margin-top:15px;font-size:13pt}
+p,li{color:#e3ebf1;margin-bottom:11px}
+b,strong{color:#f6f9fc}
+table{border-collapse:collapse;width:100%;margin:13px 0}
+th,td{border:1px solid #344854;padding:9px;text-align:left}
+th{background:#263843;color:#ffad58}
+td{background:#121e25;color:#e3ebf1}
+.warn{background:#342317;border:1px solid #b06b1d;color:#ffe7cc;padding:13px}
+.tip{background:#172a24;border:1px solid #3f7763;color:#ddf3e9;padding:12px}
+.card{background:#17232b;border:1px solid #354852;padding:13px}
+code{background:#26313b;color:#ffd79b;padding:3px}
+a{color:#ffae52;text-decoration:none}
+small{color:#aebcc5}
+</style></head>
+<body>
+<h1>ECU MEMS Manager — Guia do utilizador</h1>
+<p><b>Versão @APP_VERSION@</b> — Diagnóstico de centralinas Rover MEMS.</p>
+<div class="card"><b>GUIA OFFLINE INTEGRADO</b><p>Escolha um tema na navegação. Este guia está incluído no programa e funciona sem Internet.</p></div>
+<div class="warn"><b>Segurança:</b> os testes de atuadores podem acionar bombas, ventoinhas, válvulas, injetores e componentes da ignição. Faça-os apenas com o veículo em segurança e conhecendo os efeitos da operação.</div>
+<h2 id="chapter-1">1. Ligação</h2>
+<p>Ligue uma interface de diagnóstico compatível ao veículo e escolha a porta série em Opções → Editar definições. Ligue a ignição e prima Ligar. Os indicadores mostram o estado da comunicação. Prima Desligar para terminar a sessão. Quando a ignição é desligada, o programa interrompe a leitura de forma segura e pode voltar a ligar.</p>
+
+<h2 id="chapter-2">2. Separador Visão geral</h2>
+<p>É a página inicial. Mostra conta-rotações e indicadores em tempo real de pressão no coletor, temperaturas, tensão da bateria, borboleta, lambda, ralenti e ignição. Os avisos conservam as cores no tema escuro.</p>
+
+<h2 id="chapter-3">3. Separador Injeção</h2>
+<p>Agrupa o tempo de injeção final, tempo base, correção transitória e estado transitório obtidos no modo de leitura dedicado. A IA MEMS observa as medições existentes sem iniciar outra consulta ECU.</p>
+
+<h2 id="chapter-4">4. Separador Definições</h2>
+<p>Contém ajustes de serviço para ralenti, combustível e ignição, consoante a ECU. Consulte as ajudas e os riscos antes de alterar valores. A correção de ralenti quente para 7D14-15 usa o ajuste real da ECU.</p>
+
+<h2 id="chapter-5">5. Separador Erros</h2>
+<p>Apresenta avarias ECU, anomalias registadas e estados associados. Leia e compreenda os erros antes de os apagar. Alguns contadores necessitam de reinicialização completa da ECU.</p>
+
+<h2 id="chapter-6">6. Separador Atuadores</h2>
+<p>Use apenas os testes de atuadores suportados. Ensaios de injetores, ignição ou aquecimento podem ativar componentes. Coloque sempre o veículo em condições de segurança.</p>
+
+<h2 id="chapter-7">7. Todas as medições</h2>
+<p>Apresenta parâmetros, explicações, valores ECU recebidos e interpretações quando são conhecidas. Por exemplo, 138 pode corresponder a 13,8 V numa leitura documentada da bateria. Não são inventadas conversões de campos desconhecidos.</p>
+
+<h2 id="chapter-8">8. Todos os dados</h2>
+<p>Mostra campos MEMS brutos e descodificados para comparar os dados do protocolo com as medições interpretadas.</p>
+
+<h2 id="chapter-9">9. ECU / ROSCO</h2>
+<p>Permite ler D0, D1, D2 e F0 e utilizar os comandos de sessão F2–F5. Apresenta TX/RX em hexadecimal. A recodificação ECU D3 mantém-se desativada.</p>
+
+<h2 id="chapter-10">10. Diagnóstico automático</h2>
+<p>Avalia as medições ECU e indica valores normais, avisos e anomalias. Pode guardar uma referência e exportar um relatório. Verifica também o tempo de carga da bobina.</p>
+
+<h2 id="chapter-11">11. Análise de registos</h2>
+<p>Importa registos CSV/TXT compatíveis, apresenta os canais escolhidos e sobrepõe curvas para comparar a sua evolução.</p>
+
+<h2 id="chapter-12">12. IA MEMS</h2>
+<p>A IA MEMS combina perguntas em linguagem natural, medições ECU já recolhidas, motor especializado e base MEMS. Distingue observações, hipóteses, fontes e níveis de confiança. Uma leitura isolada não basta para condenar um componente. O modelo funciona localmente, é ativado ao abrir o separador e não envia comandos ECU adicionais.</p>
+
+<h2 id="chapter-13">13. Capturas de ecrã</h2>
+<p>Captura guarda uma imagem da janela na pasta captures. Ver capturas permite pré-visualizar, ampliar ou apagar imagens após confirmação.</p>
+
+<h2 id="chapter-14">14. Ajuda contextual</h2>
+<p>Quando existe ajuda contextual, o programa utiliza a imagem da bolha de ajuda integrada, independentemente da versão do Windows.</p>
+
+<h2 id="chapter-15">15. Opções</h2>
+<p>As opções incluem porta série, unidades de temperatura, tema, idioma e atalho no ambiente de trabalho. O atalho pode ser criado e mantido automaticamente.</p>
+
+<h2 id="chapter-16">16. Temas</h2>
+<p>Claro utiliza fundo e mostradores claros. Escuro utiliza fundo escuro com texto, agulhas e tabelas de alto contraste, mantendo os avisos legíveis.</p>
+
+<h2 id="chapter-17">17. Idioma</h2>
+<p>A interface suporta francês, inglês, espanhol, italiano, português e alemão. O idioma selecionado fica guardado nas definições de SESSION.</p>
+
+<h2 id="chapter-18">18. Famílias ECU suportadas</h2>
+<p>A base e as funções de diagnóstico abrangem Rover MEMS 1.2, 1.3, 1.6 e 1.9. As funções disponíveis dependem da ECU, veículo e protocolo.</p>
+
+<h2 id="chapter-19">19. Orientações de diagnóstico</h2>
+<p>Sem comunicação: verificar ignição, porta, cabo, alimentação e massas ECU. MAP anormal: verificar tubo de vácuo, coletor e sensor. Ralenti instável: verificar interruptor, IAC, fugas, temperatura e correções de combustível. Avaria lambda: verificar aquecimento, fios, tensão e circuito fechado. Bobina: verificar bateria, circuito primário e fios.</p>
+
+<h2 id="chapter-20">20. Encerrar o programa</h2>
+<p>O programa interrompe as tentativas automáticas de reconexão ao fechar, evitando bloqueios quando a ECU fica indisponível.</p>
+
+<h2 id="chapter-21">21. Base documental</h2>
+<p>A página Base de dados pesquisa referências ECU, veículos, comandos e documentação técnica. Os filtros permitem localizar fichas e páginas do fabricante. Os pacotes documentais são independentes do executável SESSION.</p>
+
+<h2 id="chapter-22">22. Atualizações documentais</h2>
+<p>Na Base de dados, prima Procurar atualizações. O gestor consulta o catálogo online, transfere pacotes disponíveis e verifica SHA-256. A instalação exige a palavra-passe do pacote cifrado e verifica SQLite, imagens e origem. Também é possível instalar um pacote cifrado local. Se houver falha, a base anterior é mantida.</p>
+
+<h2 id="chapter-23">23. Barra de tarefas do Windows</h2>
+<p>A opção Ocultar automaticamente a barra de tarefas do Windows vem desativada. Se for ativada, altera o comportamento do ambiente de trabalho enquanto SESSION está aberto. O programa repõe a definição ao sair e tem verificações de recuperação após um fecho inesperado. As políticas do Windows podem impedir a alteração.</p>
+
+<h2 id="chapter-24">24. Ilustrações do fabricante</h2>
+<p>As capturas verificadas podem ser integradas em versões futuras. As imagens do fabricante vêm do pacote documental instalado e podem ser ampliadas na Base de dados ou IA MEMS.</p>
+</body></html>
