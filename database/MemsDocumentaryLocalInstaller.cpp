@@ -232,12 +232,80 @@ QString installSource(const QString &source,const QString &code)
     QStringList images;
     if(!metadataValid(input.absoluteFilePath(),code,&error,&images))
         return error;
-    const QString installed=MemsDocumentaryPackCatalog::installedDatabasePath(code);
-    if(installed.isEmpty())
+    const QString legacy=MemsDocumentaryPackCatalog::installedDatabasePath(code);
+    if(legacy.isEmpty())
         return QStringLiteral("Emplacement documentaire Windows indisponible.");
-    const QFileInfo installedInfo(installed);
+    // Every newly installed source follows the same SQLite v1 contract.
+    // Document IDs (not revisions) define a stable collection identity:
+    // installing an update replaces ONLY that collection, with a backup.
+    const auto documentIds=[](const QString &sqlite)->QStringList{
+        const QString connection=QStringLiteral("DOCUMENTARY_IDS_%1").arg(
+            QUuid::createUuid().toString(QUuid::WithoutBraces));
+        QStringList ids;
+        {
+            QSqlDatabase db=QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),connection);
+            db.setConnectOptions(QStringLiteral("QSQLITE_OPEN_READONLY"));
+            db.setDatabaseName(sqlite);
+            if(db.open()){
+                QSqlQuery rows(db);
+                if(rows.exec(QStringLiteral(
+                    "SELECT DISTINCT document_id FROM documentary_documents "
+                    "ORDER BY document_id"))){
+                    while(rows.next())
+                        ids.append(rows.value(0).toString());
+                }
+                db.close();
+            }
+        }
+        QSqlDatabase::removeDatabase(connection);
+        return ids;
+    };
+    const QStringList incomingIds=documentIds(source);
+    const QStringList installedPaths=MemsDocumentaryPackCatalog::installedDatabasePaths(code);
+    QString target;
+    if(incomingIds.isEmpty()){
+        // The historical 482-page English pack has a legacy schema.
+        // It is accepted ONLY as a single legacy English installation.
+        if(code!=QStringLiteral("en") || installedPaths.size()>1 ||
+           (installedPaths.size()==1 && installedPaths.first()!=legacy))
+            return QStringLiteral("Pack documentaire sans identifiants du schéma commun.");
+        target=legacy;
+    }else{
+        for(const QString &existing:installedPaths){
+            const QStringList existingIds=documentIds(existing);
+            bool overlap=false;
+            for(const QString &doc:incomingIds)
+                if(existingIds.contains(doc)){
+                    overlap=true;
+                    break;
+                }
+            if(!overlap)
+                continue;
+            if(existingIds!=incomingIds)
+                return QStringLiteral(
+                    "Installation annulée : un document existe déjà dans "
+                    "une autre collection. Aucun ancien manuel n'est remplacé.");
+            if(!target.isEmpty())
+                return QStringLiteral("Doublon de collection documentaire installée.");
+            target=existing;
+        }
+        if(target.isEmpty()){
+            if(installedPaths.isEmpty()){
+                target=legacy;
+            }else{
+                const QByteArray stableIds=incomingIds.join(QLatin1Char('\n')).toUtf8();
+                const QString folder=QString::fromLatin1(
+                    QCryptographicHash::hash(stableIds,QCryptographicHash::Sha256)
+                        .toHex().left(20));
+                target=QDir(QFileInfo(legacy).absolutePath()).filePath(
+                    QStringLiteral("packs/")+folder+QLatin1Char('/')
+                    +QFileInfo(legacy).fileName());
+            }
+        }
+    }
+    const QFileInfo installedInfo(target);
     const QFileInfo destinationInfo(installedInfo.absolutePath());
-    if(!QDir().mkpath(destinationInfo.absolutePath()))
+    if(!QDir().mkpath(QFileInfo(destinationInfo.absolutePath()).absolutePath()))
         return QStringLiteral("Impossible de créer le dossier documentaire.");
     const QString stamp=QUuid::createUuid().toString(QUuid::WithoutBraces);
     const QString destination=installedInfo.absolutePath();

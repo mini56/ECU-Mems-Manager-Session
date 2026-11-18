@@ -1,0 +1,67 @@
+name: DOCUMENTARY - additive multi-base compatibility
+on:
+  push:
+    branches: [fix-documentary-additive-session-161-20261118]
+    paths:
+      - 'database/MemsDocumentaryRepository.*'
+      - 'database/MemsDocumentaryLocalInstaller.*'
+      - 'database/MemsDocumentaryPackCatalog.*'
+      - 'tools/test_documentary_offline_installer.cpp'
+      - '.github/workflows/documentary-additive-multibase-ci.yml'
+      - 'tools/test_documentary_additive_*'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: documentary-multibase-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  compile-documentary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Qt5 for native syntax validation
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends g++ pkg-config qtbase5-dev libqt5sql5-sqlite
+      - name: Compile actual source files with warnings
+        run: |
+          set -euo pipefail
+          for source in database/MemsDocumentaryPackCatalog.cpp database/MemsDocumentaryLocalInstaller.cpp database/MemsDocumentaryRepository.cpp tools/test_documentary_offline_installer.cpp; do
+            echo "CHECK $source"
+            extra=""
+            if [ "$source" = "tools/test_documentary_offline_installer.cpp" ]; then extra="-DMEMS_DOCUMENTARY_INSTALL_SELFTEST=1"; fi
+            g++ -std=c++17 -Wall -Wextra -Werror -fPIC -fsyntax-only -I. $extra $(pkg-config --cflags Qt5Core Qt5Widgets Qt5Sql Qt5Network) "$source"
+          done
+      - name: Verify source additions never delete preexisting language collection
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          installer=Path("database/MemsDocumentaryLocalInstaller.cpp").read_text()
+          reader=Path("database/MemsDocumentaryRepository.cpp").read_text()
+          catalog=Path("database/MemsDocumentaryPackCatalog.cpp").read_text()
+          assert 'QStringLiteral("packs/")' in installer
+          assert 'installedDatabasePaths' in installer
+          assert 'installedDatabasePaths' in catalog
+          assert 'reader->searchLocal' in reader
+          assert 'reader->procedureAnswer' in reader
+          assert 'DOCUMENTARY_ADDITIVE_MULTIBASE_INSTALL_PASS' in Path("tools/test_documentary_offline_installer.cpp").read_text()
+          print("MULTIBASE_SOURCE_CONTRACT_PASS")
+          PY
+      - name: Generate synthetic independent SQLite source packs
+        run: |
+          python3 tools/test_documentary_additive_fixture.py /tmp/session-additive-fixtures
+      - name: Build and run actual installer and multi-source reader
+        run: |
+          set -euo pipefail
+          g++ -std=c++17 -Wall -Wextra -fPIC -I. \
+            -DMEMS_DOCUMENTARY_INSTALL_SELFTEST=1 \
+            tools/test_documentary_additive_reader.cpp \
+            database/MemsDocumentaryRepository.cpp \
+            database/MemsDocumentaryLocalInstaller.cpp \
+            database/MemsDocumentaryEncryptedPack.cpp \
+            database/MemsDocumentaryPackCatalog.cpp \
+            -o /tmp/session_additive_test \
+            $(pkg-config --cflags --libs Qt5Core Qt5Sql Qt5Network)
+          /tmp/session_additive_test /tmp/session-additive-fixtures

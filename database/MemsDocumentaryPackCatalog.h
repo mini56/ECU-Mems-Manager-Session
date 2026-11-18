@@ -3,6 +3,7 @@
 
 #include <QByteArray>
 #include <QString>
+#include <QStringList>
 
 // The public update catalogue is descriptive.  No document is installed,
 // decrypted or given diagnostic authority merely because it appears here.
@@ -22,6 +23,8 @@ public:
     static QString manifestUrl();
     static QString selectedLanguage();
     static QString installedDatabasePath(const QString &language);
+    // Legacy base stays at its existing path; extra packs are independent.
+    static QStringList installedDatabasePaths(const QString &language);
     static MemsDocumentaryOffer parseManifest(const QByteArray &json,
                                               const QString &language);
 };
