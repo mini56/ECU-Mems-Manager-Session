@@ -43,6 +43,14 @@ def prepare(folder: Path, docs: tuple[tuple[str, str], ...]) -> None:
                  "Description francophone synthetique de "+title,
                  "source_checked","synthetic_ci",json.dumps({"ci":True},ensure_ascii=False))
             )
+            db.execute(
+                "INSERT INTO documentary_import_history("
+                "document_id,source_revision,source_sha256,source_pages,"
+                "import_kind,imported_utc,previous_snapshot_sha256,"
+                "entries_at_import,procedures_at_import,steps_at_import,images_at_import)"
+                " VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+                (identifier,revision,digest,1,"source_build",None,None,1,0,0,1)
+            )
         db.commit()
         result=validate_source_snapshot(db,"fr")
         assert result["document_count"]==len(docs)
