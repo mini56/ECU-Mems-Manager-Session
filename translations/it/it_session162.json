@@ -1,0 +1,22 @@
+{
+  "16200": "Test cavo USB",
+  "16201": "Controllo facoltativo delle interfacce USB/seriali. Il collegamento alla ECU rimane diretto e invariato.",
+  "16202": "Interfacce rilevate",
+  "16203": "Porta",
+  "16204": "Chip / adattatore",
+  "16205": "VID / PID",
+  "16206": "Descrizione",
+  "16207": "Aggiorna",
+  "16208": "Monitora un collegamento (15 s)",
+  "16209": "Prova l'apertura della porta",
+  "16210": "Questo controllo identifica l'adattatore e verifica solo l'apertura della porta COM. Non controlla il cablaggio interno né la comunicazione con una ECU. Scollegare prima la ECU se la porta è già occupata.",
+  "16211": "Nessuna nuova porta COM rilevata entro 15 secondi.",
+  "16212": "Monitoraggio: ancora %1 s. Collegare il cavo.",
+  "16213": "Monitoraggio in corso: collegare il cavo.",
+  "16214": "Selezionare una porta COM dall'elenco.",
+  "16215": "Porta %1: apertura e chiusura riuscite. La comunicazione con la ECU non è stata verificata.",
+  "16216": "Porta %1: impossibile aprire la porta (%2). Potrebbe essere occupata o mancare il driver.",
+  "16217": "Modello sconosciuto",
+  "16218": "Nuova porta rilevata: %1 — %2",
+  "16219": "Selezionare un'interfaccia o avviare un monitoraggio di 15 s."
+}
