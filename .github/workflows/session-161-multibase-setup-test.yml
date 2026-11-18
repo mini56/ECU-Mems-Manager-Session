@@ -92,9 +92,12 @@ jobs:
             Write-Host 'ONNX_NUGET_0140_VERIFIED'
           }
           $header=Get-ChildItem $folder -Recurse -File -Filter ort_genai_c.h | Select-Object -First 1
-          # NuGet carries ARM64 and x64 import libs. Pick x64 explicitly.
+          # Require x64 import library. The same Microsoft NuGet contains ARM64 too.
           $lib=Get-ChildItem $folder -Recurse -File -Filter onnxruntime-genai.lib |
-            Where-Object {$_.FullName -match '[\\/]win-x64[\\/]native[\\/]onnxruntime-genai\.lib
+            Where-Object {$_.FullName.Contains('win-x64') -and -not $_.FullName.Contains('win-arm64')} |
+            Select-Object -First 1
+          if(-not $lib){throw 'ONNX_WIN_X64_IMPORT_LIBRARY_NOT_FOUND'}
+          Write-Host "ONNX_GENAI_X64_LIBRARY=$($lib.FullName)"
           if(-not $header -or -not $lib){
             Get-ChildItem $folder -Recurse -File | Where-Object {$_.Name -match '(genai|ort_genai)'} | Select-Object -First 35 FullName | Format-Table
             throw 'ONNX_CPP_HEADER_OR_LIB_MISSING_DO_NOT_DISABLE_AI'
