@@ -281,7 +281,7 @@ QString installSource(const QString &source,const QString &code)
                 }
             if(!overlap)
                 continue;
-            if(existingIds!=incomingIds)
+            if(existingIds.join(QLatin1Char('\n'))!=incomingIds.join(QLatin1Char('\n')))
                 return QStringLiteral(
                     "Installation annulée : un document existe déjà dans "
                     "une autre collection. Aucun ancien manuel n'est remplacé.");
