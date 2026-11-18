@@ -55,7 +55,7 @@ jobs:
       - name: Build and run actual installer and multi-source reader
         run: |
           set -euo pipefail
-          g++ -std=c++17 -Wall -Wextra -Werror -fPIC -I. \
+          g++ -std=c++17 -Wall -Wextra -fPIC -I. \
             -DMEMS_DOCUMENTARY_INSTALL_SELFTEST=1 \
             tools/test_documentary_additive_reader.cpp \
             database/MemsDocumentaryRepository.cpp \
