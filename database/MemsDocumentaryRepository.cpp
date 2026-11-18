@@ -2191,7 +2191,7 @@ QString MemsDocumentaryRepository::answerFromHits(const QVariantList &hits)
                 sourceFields.at(1) : QStringLiteral("Rover");
             const int page=item.value(QStringLiteral("source_page")).toInt();
             const QString title=item.value(QStringLiteral("title")).toString().simplified();
-            const QString source=workshopText(item);
+            const QString source=readableWorkshopExcerpt(workshopText(item));
             const bool technicalReference=
                 item.value(QStringLiteral("entry_type")).toString()
                 ==QStringLiteral("reference");
