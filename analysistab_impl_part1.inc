@@ -599,71 +599,41 @@ static void configureNativeAnalysis(QWidget *analysis)
     QWidget *rightPanel=analysis->findChild<QWidget*>(QStringLiteral("analysisRightPanel"));
     QLabel *fileLabel=nullptr;
 
-    if(!topBar || !rightPanel) {
-        QWidget *legacy=nullptr;
-        const QList<QWidget*> direct=analysis->findChildren<QWidget*>(QString(),Qt::FindDirectChildrenOnly);
-        for(QWidget *c:direct) {
-            if(!c || qobject_cast<QScrollArea*>(c)) continue;
-            if(c->findChildren<QPushButton*>().size()>=4 && c->findChild<QScrollArea*>()) { legacy=c; break; }
-        }
+    // AnalysisTab constructs its own native right panel in its constructor.
+    // Keep that SAME panel and its channel scroll area in place. The old
+    // "legacy reconstruction" was mistakenly triggered merely because the
+    // top bar had not yet been created: it hid the existing right panel,
+    // reparented the scroll view and left the scroll view itself hidden.
+    if (rightPanel && !topBar) {
         QVBoxLayout *root=qobject_cast<QVBoxLayout*>(analysis->layout());
-        QHBoxLayout *mainRow=nullptr;
-        if(root) for(int i=0;i<root->count();++i) if(QLayout *l=root->itemAt(i)->layout()) { mainRow=qobject_cast<QHBoxLayout*>(l); if(mainRow) break; }
-        if(legacy && root && mainRow) {
-            QList<QPushButton*> buttons=legacy->findChildren<QPushButton*>();
-            QPushButton *load=nullptr,*all=nullptr,*none=nullptr,*overlay=nullptr;
-            for(QPushButton *b:buttons) {
-                if(b->isCheckable()) { overlay=b; continue; }
-                if(!load && (b->text().contains(QStringLiteral("CSV"),Qt::CaseInsensitive)||b->text().contains(QStringLiteral("TXT"),Qt::CaseInsensitive))) { load=b; continue; }
-            }
-            if(!load && !buttons.isEmpty()) load=buttons.first();
-            for(QPushButton *b:buttons) {
-                if(b==load || b==overlay) continue;
-                if(!all) all=b; else if(!none) none=b;
-            }
-
-            QLabel *channelsLabel=nullptr;
-            for(QLabel *l:legacy->findChildren<QLabel*>(QString(),Qt::FindDirectChildrenOnly)) {
-                if(l->wordWrap() && !fileLabel) fileLabel=l;
-                else if(!channelsLabel) channelsLabel=l;
-            }
-            QScrollArea *parameters=legacy->findChild<QScrollArea*>();
-
+        QVBoxLayout *right=qobject_cast<QVBoxLayout*>(rightPanel->layout());
+        QPushButton *load=analysis->findChild<QPushButton*>(
+            QStringLiteral("analysisLoadButton"));
+        fileLabel=analysis->findChild<QLabel*>(
+            QStringLiteral("analysisFileLabel"));
+        if (root && right && load && fileLabel) {
             topBar=new QWidget(analysis);
             topBar->setObjectName(QStringLiteral("analysisTopBar"));
             topBar->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
-            QHBoxLayout *top=new QHBoxLayout(topBar); top->setContentsMargins(8,5,8,5); top->setSpacing(7);
-            if(load) { load->setParent(topBar); top->addWidget(load); }
-            if(fileLabel) { fileLabel->setParent(topBar); fileLabel->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred); top->addWidget(fileLabel,1); }
+            QHBoxLayout *top=new QHBoxLayout(topBar);
+            top->setContentsMargins(8,5,8,5);
+            top->setSpacing(7);
+            right->removeWidget(load);
+            right->removeWidget(fileLabel);
+            load->setParent(topBar);
+            fileLabel->setParent(topBar);
+            fileLabel->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
+            top->addWidget(load);
+            top->addWidget(fileLabel,1);
             root->insertWidget(0,topBar);
-
-            rightPanel=new QWidget(analysis);
-            rightPanel->setObjectName(QStringLiteral("analysisRightPanel"));
-            rightPanel->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Expanding);
-            QVBoxLayout *right=new QVBoxLayout(rightPanel); right->setContentsMargins(9,9,9,9); right->setSpacing(7);
-            if(channelsLabel) {
-                channelsLabel->setParent(rightPanel); channelsLabel->setStyleSheet(QStringLiteral("color:#ff9828;font-weight:800;padding:2px 0 5px 0;border-bottom:1px solid #2c3842;")); right->addWidget(channelsLabel);
-            } else {
-                QLabel *title=new QLabel(I18n::text(6447),rightPanel); title->setStyleSheet(QStringLiteral("color:#ff9828;font-weight:800;padding:2px 0 5px 0;border-bottom:1px solid #2c3842;")); right->addWidget(title);
-            }
-            if(parameters) {
-                parameters->setParent(rightPanel); parameters->setWidgetResizable(true);
-                configureAnalysisVisibleScroll(parameters); right->addWidget(parameters,1);
-            }
-            QHBoxLayout *select=new QHBoxLayout; select->setSpacing(5);
-            if(all) { all->setParent(rightPanel); select->addWidget(all); }
-            if(none) { none->setParent(rightPanel); select->addWidget(none); }
-            right->addLayout(select);
-            if(overlay) { overlay->setParent(rightPanel); overlay->setMinimumWidth(0); overlay->setMaximumWidth(QWIDGETSIZE_MAX); overlay->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred); right->addWidget(overlay); }
-
-            mainRow->removeWidget(legacy); legacy->hide(); legacy->setMaximumWidth(0);
-            mainRow->addWidget(rightPanel,0);
-            for(int i=0;i<mainRow->count();++i) mainRow->setStretch(i,i==mainRow->count()-1?0:1);
+            topBar->show();
+            load->show();
+            fileLabel->show();
             analysis->setProperty("finalAnalysisLayout",true);
         }
-    } else {
-        const QList<QLabel*> labels=topBar->findChildren<QLabel*>();
-        if(!labels.isEmpty()) fileLabel=labels.first();
+    } else if (topBar) {
+        fileLabel=analysis->findChild<QLabel*>(
+            QStringLiteral("analysisFileLabel"));
     }
 
     if(!topBar || !rightPanel) return;
