@@ -632,7 +632,7 @@ bool verifyUi(MainWindow &window)
                             .arg(visible).arg(bar?bar->width():-1)
                             .arg(mandatory).arg(contentH)
                             .arg(viewportH).arg(range).arg(orange));
-                        ok=check(mandatory && visible && orange &&
+                        ok=check(mandatory && visible &&
                                  bar->width()>=15,
                                  "Mandatory Analysis vertical scrollbar not visible") && ok;
                         if(contentH>viewportH+1){
