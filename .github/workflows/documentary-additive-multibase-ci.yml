@@ -8,6 +8,7 @@ on:
       - 'database/MemsDocumentaryPackCatalog.*'
       - 'tools/test_documentary_offline_installer.cpp'
       - '.github/workflows/documentary-additive-multibase-ci.yml'
+      - 'tools/test_documentary_additive_*'
   workflow_dispatch:
 permissions:
   contents: read
@@ -48,3 +49,19 @@ jobs:
           assert 'DOCUMENTARY_ADDITIVE_MULTIBASE_INSTALL_PASS' in Path("tools/test_documentary_offline_installer.cpp").read_text()
           print("MULTIBASE_SOURCE_CONTRACT_PASS")
           PY
+      - name: Generate synthetic independent SQLite source packs
+        run: |
+          python3 tools/test_documentary_additive_fixture.py /tmp/session-additive-fixtures
+      - name: Build and run actual installer and multi-source reader
+        run: |
+          set -euo pipefail
+          g++ -std=c++17 -Wall -Wextra -Werror -fPIC -I. \
+            -DMEMS_DOCUMENTARY_INSTALL_SELFTEST=1 \
+            tools/test_documentary_additive_reader.cpp \
+            database/MemsDocumentaryRepository.cpp \
+            database/MemsDocumentaryLocalInstaller.cpp \
+            database/MemsDocumentaryEncryptedPack.cpp \
+            database/MemsDocumentaryPackCatalog.cpp \
+            -o /tmp/session_additive_test \
+            $(pkg-config --cflags --libs Qt5Core Qt5Sql Qt5Network)
+          /tmp/session_additive_test /tmp/session-additive-fixtures
