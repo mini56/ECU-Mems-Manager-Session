@@ -60,16 +60,19 @@ MemsDocumentaryUpdateDialog::MemsDocumentaryUpdateDialog(
         m_language != QStringLiteral("es") &&
         m_language != QStringLiteral("it") &&
         m_language != QStringLiteral("de"))
-        m_language = QStringLiteral("fr");ui(I18n::text(16300),
-                      QStringLiteral("Documentary database updates"))y database updates")));
+        m_language = QStringLiteral("fr");
+
+    setWindowTitle(ui(I18n::text(16300),
+                      QStringLiteral("Documentary database updates")));
     setObjectName(QStringLiteral("documentaryUpdateDialog"));
     setMinimumWidth(430);
     setModal(true);
     QVBoxLayout *layout = new QVBoxLayout(this);
     layout->setContentsMargins(18,18,18,16);
     layout->setSpacing(14);
-    QLabel *heading =ui(I18n::text(16301),
-           QStringLiteral("Documentary database: %1"))ntary database: %1")).arg(
+    QLabel *heading = new QLabel(
+        ui(I18n::text(16301),
+           QStringLiteral("Documentary database: %1")).arg(
                languageName(m_language)), this);
     heading->setWordWrap(true);
     heading->setStyleSheet(QStringLiteral(
@@ -90,17 +93,21 @@ MemsDocumentaryUpdateDialog::MemsDocumentaryUpdateDialog(
     layout->addWidget(m_progress);
 
     QHBoxLayout *actions = new QHBoxLayout;
-    m_check = new ui(I18n::text(16302),
-           QStringLiteral("Check for updates"))"Check for updates")), this);
+    m_check = new QPushButton(
+        ui(I18n::text(16302),
+           QStringLiteral("Check for updates")), this);
     m_check->setObjectName(QStringLiteral("documentaryCheckUpdate"));
-    m_download = new ui(I18n::text(16303),
-           QStringLiteral("Download database"))"Download database")), this);
+    m_download = new QPushButton(
+        ui(I18n::text(16303),
+           QStringLiteral("Download database")), this);
     m_download->setObjectName(QStringLiteral("documentaryDownloadUpdate"));
     m_download->setEnabled(false);
-    m_installLocal = new ui(I18n::text(16304),
-           QStringLiteral("Install local encrypted pack"))cal encrypted pack")),this);
+    m_installLocal = new QPushButton(
+        ui(I18n::text(16304),
+           QStringLiteral("Install local encrypted pack")),this);
     m_installLocal->setObjectName(QStringLiteral("documentaryInstallLocalEncrypted"));
-    QPushButton *close = new ui(I18n::text(16305), QStringLiteral("Close"))ringLiteral("Close")), this);
+    QPushButton *close = new QPushButton(
+        ui(I18n::text(16305), QStringLiteral("Close")), this);
     actions->addWidget(m_check);
     actions->addWidget(m_download);
     actions->addWidget(m_installLocal);
@@ -124,8 +131,6 @@ MemsDocumentaryUpdateDialog::~MemsDocumentaryUpdateDialog()
 
 QString MemsDocumentaryUpdateDialog::ui(const QString &fr, const QString &en) const
 {
-    // The first argument is a localized I18n string for FR, ES, IT, PT, DE.
-    // Keep the original English source as the validated EN fallback.
     return m_language == QStringLiteral("en") ? en : fr;
 }
 
@@ -152,8 +157,9 @@ void MemsDocumentaryUpdateDialog::checkManifest()
         return;
     m_offer = MemsDocumentaryOffer{};
     m_manifestBytes.clear();
-    setBusy(ui(I18n::text(16306),
-                 QStringLiteral("Checking GitHub for updates…"))itHub for updates…")));
+    setBusy(true);
+    setStatus(ui(I18n::text(16306),
+                 QStringLiteral("Checking GitHub for updates…")));
 
     QNetworkReply *reply = m_network.get(secureRequest(
         QUrl(MemsDocumentaryPackCatalog::manifestUrl())));
@@ -187,12 +193,12 @@ void MemsDocumentaryUpdateDialog::checkManifest()
             // sans prétendre qu'aucune base n'est publiée sur GitHub.
             const QString reason=QStringLiteral("HTTP %1 / %2")
                 .arg(httpStatus).arg(networkReason.left(180));
- ui(I18n::text(16307)
+            setStatus(ui(I18n::text(16307)
                     .arg(reason),
                 QStringLiteral(
                 "Unable to retrieve the update catalogue over HTTPS. "
                 "Details: %1. Installed databases are unchanged.")
-                    .arg(reason))        .arg(reason)));
+                    .arg(reason)));
         } else {
             showManifestResult(m_manifestBytes);
         }
@@ -205,16 +211,16 @@ void MemsDocumentaryUpdateDialog::showManifestResult(const QByteArray &data)
             m_offer = MemsDocumentaryPackCatalog::parseManifest(
                 data, m_language);
             if (!m_offer.error.isEmpty()) {
-     ui(I18n::text(16308),
+                setStatus(ui(I18n::text(16308),
                     QStringLiteral(
-                    "Invalid update manifest. Download refused.")) Download refused.")));
+                    "Invalid update manifest. Download refused.")));
             } else if (!m_offer.available) {
-     ui(I18n::text(16309).arg(
+                setStatus(ui(I18n::text(16309).arg(
                         languageName(m_language)),
                     QStringLiteral(
                     "No %1 documentary database is published yet. "
                     "ECU diagnostic and expert databases remain unchanged.").arg(
-                        languageName(m_language)))ageName(m_language))));
+                        languageName(m_language))));
             } else {
                 QSettings versionSettings(QSettings::IniFormat,
                     QSettings::UserScope,QStringLiteral("ECU_Mems_Manager"));
@@ -225,17 +231,17 @@ void MemsDocumentaryUpdateDialog::showManifestResult(const QByteArray &data)
                    QFileInfo::exists(MemsDocumentaryPackCatalog::installedDatabasePath(
                         m_language))){
                     m_offer.available=false;
-         ui(I18n::text(16310)
+                    setStatus(ui(I18n::text(16310)
                             .arg(languageName(m_language),savedVersion),
                         QStringLiteral(
                         "Documentary database %1 is up to date (version %2).")
-                            .arg(languageName(m_language),savedVersion))guage),savedVersion)));
-           ui(I18n::text(16311)
+                            .arg(languageName(m_language),savedVersion)));
+                }else setStatus(ui(I18n::text(16311)
                         .arg(m_offer.version),
                     QStringLiteral(
                     "Encrypted pack version %1 available. "
                     "Download verifies SHA-256 and installs after "
-                    "password and SQLite validation.").arg(m_offer.version))arg(m_offer.version)));
+                    "password and SQLite validation.").arg(m_offer.version)));
             }
 
 }
@@ -248,8 +254,9 @@ void MemsDocumentaryUpdateDialog::checkManifestWindows()
         return;
     m_offer=MemsDocumentaryOffer{};
     m_windowsTransportBusy=true;
-    setBusy(ui(I18n::text(16312),
-                 QStringLiteral("Connecting to GitHub using Windows HTTPS…"))ing Windows HTTPS…")));
+    setBusy(true);
+    setStatus(ui(I18n::text(16312),
+                 QStringLiteral("Connecting to GitHub using Windows HTTPS…")));
 
     const QString url=MemsDocumentaryPackCatalog::manifestUrl();
     auto result=QSharedPointer<MemsDocumentaryHttpResult>::create();
@@ -261,10 +268,10 @@ void MemsDocumentaryUpdateDialog::checkManifestWindows()
         if(result->ok()){
             showManifestResult(result->body);
         }else{
- ui(
+            setStatus(ui(
                 I18n::text(16313).arg(result->error),
                 QStringLiteral("Windows HTTPS failed: %1. "
-                               "Existing databases remain unchanged.").arg(result->error))).arg(result->error)));
+                               "Existing databases remain unchanged.").arg(result->error)));
         }
         setBusy(false);
     });
@@ -278,14 +285,16 @@ void MemsDocumentaryUpdateDialog::downloadPackWindows()
         return;
     const QString root=QStandardPaths::writableLocation(
         QStandardPaths::AppLocalDataLocation);
-    if(root.isEmpty()ui(I18n::text(16314),
-                     QStringLiteral("Local storage unavailable."))orage unavailable.")));
+    if(root.isEmpty()){
+        setStatus(ui(I18n::text(16314),
+                     QStringLiteral("Local storage unavailable.")));
         return;
     }
     const QString directory=QDir(root).filePath(
         QStringLiteral("documentary/downloads/%1").arg(m_language));
-    if(!QDir().mkpath(directory)ui(I18n::text(16315),
-                     QStringLiteral("Unable to create the package directory."))package directory.")));
+    if(!QDir().mkpath(directory)){
+        setStatus(ui(I18n::text(16315),
+                     QStringLiteral("Unable to create the package directory.")));
         return;
     }
     m_savedFilePath=QDir(directory).filePath(
@@ -298,9 +307,10 @@ void MemsDocumentaryUpdateDialog::downloadPackWindows()
     m_windowsTransportBusy=true;
     m_progress->setRange(0,0);
     m_progress->setVisible(true);
-    setBusy(ui(I18n::text(16316),
+    setBusy(true);
+    setStatus(ui(I18n::text(16316),
         QStringLiteral(
-        "Downloading with native Windows HTTPS and verifying SHA-256…"))verifying SHA-256…")));
+        "Downloading with native Windows HTTPS and verifying SHA-256…")));
 
     auto result=QSharedPointer<MemsDocumentaryHttpResult>::create();
     QThread *worker=QThread::create([result,url,destination,expectedHash](){
@@ -314,10 +324,10 @@ void MemsDocumentaryUpdateDialog::downloadPackWindows()
         if(result->ok()){
             installVerifiedDownloadedPackage();
         }else{
- ui(
+            setStatus(ui(
                 I18n::text(16317).arg(result->error),
                 QStringLiteral("Download rejected: %1. "
-                               "Installed database unchanged.").arg(result->error))).arg(result->error)));
+                               "Installed database unchanged.").arg(result->error)));
         }
         setBusy(false);
     });
@@ -336,14 +346,16 @@ void MemsDocumentaryUpdateDialog::startDownload()
         return;
     const QString root = QStandardPaths::writableLocation(
         QStandardPaths::AppLocalDataLocation);
-    if (root.isEmpty())ui(I18n::text(16318),
-                     QStringLiteral("Local download directory unavailable."))ctory unavailable.")));
+    if (root.isEmpty()) {
+        setStatus(ui(I18n::text(16318),
+                     QStringLiteral("Local download directory unavailable.")));
         return;
     }
     const QString dir = QDir(root).filePath(
         QStringLiteral("documentary/downloads/%1").arg(m_language));
-    if (!QDir().mkpath(dir))ui(I18n::text(16319),
-                     QStringLiteral("Cannot create the download directory."))ownload directory.")));
+    if (!QDir().mkpath(dir)) {
+        setStatus(ui(I18n::text(16319),
+                     QStringLiteral("Cannot create the download directory.")));
         return;
     }
     // Version and language were validated before any filesystem use.
@@ -352,16 +364,18 @@ void MemsDocumentaryUpdateDialog::startDownload()
             .arg(m_language, m_offer.version));
     m_target.reset(new QSaveFile(m_savedFilePath));
     if (!m_target->open(QIODevice::WriteOnly)) {
-        m_target.reset(ui(I18n::text(16320),
-                     QStringLiteral("Cannot write the pack on this computer.")) on this computer.")));
+        m_target.reset();
+        setStatus(ui(I18n::text(16320),
+                     QStringLiteral("Cannot write the pack on this computer.")));
         return;
     }
     m_sha.reset();
     m_progress->setRange(0,100);
     m_progress->setValue(0);
     m_progress->setVisible(true);
-    setBusy(ui(I18n::text(16321),
-                 QStringLiteral("Downloading and verifying SHA-256…"))verifying SHA-256…")));
+    setBusy(true);
+    setStatus(ui(I18n::text(16321),
+                 QStringLiteral("Downloading and verifying SHA-256…")));
 
     QNetworkReply *reply = m_network.get(secureRequest(QUrl(m_offer.releaseUrl)));
     m_reply = reply;
@@ -419,10 +433,11 @@ void MemsDocumentaryUpdateDialog::finishDownload(QNetworkReply *reply)
     m_progress->setVisible(false);
     if (success) {
         installVerifiedDownloadedPackage();
-    } elseui(
+    } else {
+        setStatus(ui(
             I18n::text(16322),
             QStringLiteral("Download rejected (network, file or SHA-256). "
-                           "Existing databases were not modified."))were not modified.")));
+                           "Existing databases were not modified.")));
     }
     setBusy(false);
 }
@@ -430,14 +445,16 @@ void MemsDocumentaryUpdateDialog::finishDownload(QNetworkReply *reply)
 void MemsDocumentaryUpdateDialog::installVerifiedDownloadedPackage()
 {
         bool accepted=false;
-        QString password=QInputDialog::getTeui(I18n::text(16323),
-                    QStringLiteral("Database installation authorization"))tion authorizaui(I18n::text(16324),
-               QStringLiteral("Password provided by the administrator:"))the administrator:")),
+        QString password=QInputDialog::getText(
+            this,ui(I18n::text(16323),
+                    QStringLiteral("Database installation authorization")),
+            ui(I18n::text(16324),
+               QStringLiteral("Password provided by the administrator:")),
             QLineEdit::Password,QString(),&accepted);
         if(!accepted || password.isEmpty()){
- ui(I18n::text(16325),
+            setStatus(ui(I18n::text(16325),
                 QStringLiteral(
-                "Verified download; installation cancelled. Database unchanged."))atabase unchanged.")));
+                "Verified download; installation cancelled. Database unchanged.")));
             setBusy(false);
             return;
         }
@@ -451,42 +468,48 @@ void MemsDocumentaryUpdateDialog::installVerifiedDownloadedPackage()
                 QStringLiteral("DocumentaryVersions/%1").arg(m_language),
                 m_offer.version);
             settings.sync();
- ui(I18n::text(16326)
+            setStatus(ui(I18n::text(16326)
                    .arg(languageName(m_language),m_offer.version),
                 QStringLiteral(
                 "Documentary database %1 version %2 installed. "
                 "Integrity, password, images and provenance verified. "
                 "Reopen the database screen.")
-                   .arg(languageName(m_language),m_offer.version))ge),m_offer.version)));
+                   .arg(languageName(m_language),m_offer.version)));
         }else{
             setStatus(error);
-            QMessageBox::warning(tui(I18n::text(16327),
-                   QStringLiteral("Update rejected"))l("Update rejected")),error);
+            QMessageBox::warning(this,
+                ui(I18n::text(16327),
+                   QStringLiteral("Update rejected")),error);
         }
 
 }
 
 void MemsDocumentaryUpdateDialog::installLocalEncrypted()
 {
-    const QString archive=QFileDialog::getOpenFiui(I18n::text(16328),
-                QStringLiteral("Choose the administrator-encrypted pack"))tor-encrypted pack")),
+    const QString archive=QFileDialog::getOpenFileName(
+        this,ui(I18n::text(16328),
+                QStringLiteral("Choose the administrator-encrypted pack")),
         QString(),QStringLiteral("Packs documentaires chiffrés (*.encrypted)"));
     if(archive.isEmpty())
         return;
     bool accepted=false;
-    QString password=QInputDialog::gui(I18n::text(16329),
-                QStringLiteral("Database installation authorization"))tion authoui(I18n::text(16330),
-           QStringLiteral("Password provided by the administrator:"))the administrator:")),
+    QString password=QInputDialog::getText(
+        this,ui(I18n::text(16329),
+                QStringLiteral("Database installation authorization")),
+        ui(I18n::text(16330),
+           QStringLiteral("Password provided by the administrator:")),
         QLineEdit::Password,QString(),&accepted);
     if(!accepted || password.isEmpty()){
-        password.fill(QChar(' ')ui(I18n::text(16331),
+        password.fill(QChar(' '));
+        setStatus(ui(I18n::text(16331),
             QStringLiteral(
-            "Installation cancelled: administrator password is required."))sword is required.")));
+            "Installation cancelled: administrator password is required.")));
         return;
     }
-    setBusy(ui(I18n::text(16332),
+    setBusy(true);
+    setStatus(ui(I18n::text(16332),
         QStringLiteral(
-        "Authenticating the package, then verifying SQLite and images…"))SQLite and images…")));
+        "Authenticating the package, then verifying SQLite and images…")));
     // Both online and offline delivery use the same AES-GCM gate. An
     // unencrypted ZIP must never be a supported installation shortcut.
     const QString error=MemsDocumentaryLocalInstaller::installEncrypted(
@@ -495,18 +518,20 @@ void MemsDocumentaryUpdateDialog::installLocalEncrypted()
     setBusy(false);
     if(!error.isEmpty()){
         setStatus(error);
-        QMessageBox::warniui(I18n::text(16333),
-               QStringLiteral("Package rejected"))("Package rejected")),error);
+        QMessageBox::warning(this,
+            ui(I18n::text(16333),
+               QStringLiteral("Package rejected")),error);
         return;
     }
-    cui(I18n::text(16334)
+    const QString message=ui(I18n::text(16334)
         .arg(languageName(m_language)),
         QStringLiteral(
         "Documentary database %1 installed and verified. "
         "Previous version retained as backup. "
         "Reopen the database screen to read new documents.")
-        .arg(languageName(m_language)))ageName(m_language)));
+        .arg(languageName(m_language)));
     setStatus(message);
-    QMessageBox::inforui(I18n::text(16335),
-           QStringLiteral("Database installed"))Database installed")),message);
+    QMessageBox::information(this,
+        ui(I18n::text(16335),
+           QStringLiteral("Database installed")),message);
 }
