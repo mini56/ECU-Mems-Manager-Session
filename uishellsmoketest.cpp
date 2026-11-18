@@ -596,44 +596,62 @@ bool verifyUi(MainWindow &window)
                 QCoreApplication::processEvents();
                 QCoreApplication::processEvents();
 
-                ok=check(channels->isVisibleTo(&window) &&
-                         plots->isVisibleTo(&window),
-                         "Analysis channels or plots not visible in actual window") && ok;
-                for(QScrollBar *bar:{channelBar,plotBar}){
-                    const QString which=bar==channelBar
-                        ?QStringLiteral("channels"):QStringLiteral("plots");
-                    const bool visible=bar && bar->isVisibleTo(&window);
-                    const bool hasOrange=bar &&
-                        bar->styleSheet().contains(QStringLiteral("#ff8a1c"));
-                    const QString diagnostics=QStringLiteral(
-                        "Analysis %1: visible=%2, width=%3, max=%4, "
-                        "policy=%5, orange=%6, parentVisible=%7")
-                        .arg(which)
-                        .arg(visible)
-                        .arg(bar?bar->width():-1)
-                        .arg(bar?bar->maximum():-1)
-                        .arg(bar==channelBar?int(channels->verticalScrollBarPolicy()):
-                             int(plots->verticalScrollBarPolicy()))
-                        .arg(hasOrange)
-                        .arg(bar&&bar->parentWidget()?
-                             bar->parentWidget()->isVisibleTo(&window):false);
-                    logSmoke(diagnostics);
-                    ok=check(visible && bar->width()>=15 && hasOrange,
-                             "Analysis vertical scrollbar must be visibly orange and 17px wide") && ok;
-                    ok=check(bar && bar->maximum()>0,
-                             "Analysis scroll area has no reachable hidden content") && ok;
-                }
-                if(channelBar && plotBar && channelBar->maximum()>0 && plotBar->maximum()>0){
-                    const int fixedFooterY=overlay->mapTo(&window,QPoint(0,0)).y();
-                    channelBar->setValue(channelBar->maximum());
-                    plotBar->setValue(plotBar->maximum());
+                // The vertical scrollbars are mandatory, independent of
+                // whether a particular monitor has space for every entry.
+                // Qt must calculate the scroll range from ACTUAL content
+                // height relative to the resized viewport, not a fixed pixel
+                // threshold tied to one screen resolution.
+                const QSize originalSize=window.size();
+                for(const QSize size : {QSize(1200,680),QSize(1366,768),
+                                        QSize(1920,1080)}){
+                    window.resize(size);
                     QCoreApplication::processEvents();
-                    ok=check(channelBar->value()==channelBar->maximum() &&
-                             plotBar->value()==plotBar->maximum(),
-                             "Analysis bottom signals or bottom graph not reachable") && ok;
-                    ok=check(overlay->mapTo(&window,QPoint(0,0)).y()==fixedFooterY,
-                             "Analysis footer moves while scrolling channels or graphs") && ok;
+                    QCoreApplication::processEvents();
+
+                    ok=check(channels->isVisibleTo(&window) &&
+                             plots->isVisibleTo(&window),
+                             "Real Analysis scroll areas hidden at window size") && ok;
+                    const int footerY=overlay->mapTo(&window,QPoint(0,0)).y();
+                    for(QScrollArea *area:{channels,plots}){
+                        QScrollBar *bar=area->verticalScrollBar();
+                        const bool visible=bar && bar->isVisibleTo(&window);
+                        const bool orange=bar && bar->styleSheet().contains(
+                            QStringLiteral("#ff8a1c"));
+                        const bool mandatory=area->verticalScrollBarPolicy()
+                            ==Qt::ScrollBarAlwaysOn;
+                        const int contentH=area->widget()?area->widget()->height():-1;
+                        const int viewportH=area->viewport()?area->viewport()->height():-1;
+                        const int range=bar?bar->maximum():-1;
+                        logSmoke(QStringLiteral(
+                            "Analysis size=%1x%2 area=%3 visible=%4 "
+                            "barWidth=%5 mandatory=%6 contentHeight=%7 "
+                            "viewportHeight=%8 max=%9 orange=%10")
+                            .arg(size.width()).arg(size.height())
+                            .arg(area==channels?QStringLiteral("channels"):
+                                                QStringLiteral("plots"))
+                            .arg(visible).arg(bar?bar->width():-1)
+                            .arg(mandatory).arg(contentH)
+                            .arg(viewportH).arg(range).arg(orange));
+                        ok=check(mandatory && visible && orange &&
+                                 bar->width()>=15,
+                                 "Mandatory Analysis vertical scrollbar not visible") && ok;
+                        if(contentH>viewportH+1){
+                            ok=check(range>0,
+                                "Analysis content exceeds viewport but cannot scroll") && ok;
+                        }
+                        if(bar && range>0){
+                            bar->setValue(range);
+                            QCoreApplication::processEvents();
+                            ok=check(bar->value()==range,
+                                "Bottom Analysis data not reachable by scrollbar") && ok;
+                            bar->setValue(0);
+                        }
+                    }
+                    ok=check(overlay->mapTo(&window,QPoint(0,0)).y()==footerY,
+                        "Analysis footer moved during scrollbar interaction") && ok;
                 }
+                window.resize(originalSize);
+                QCoreApplication::processEvents();
             }
         }
     }
