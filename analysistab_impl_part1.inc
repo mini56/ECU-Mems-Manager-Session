@@ -83,7 +83,6 @@ static void configureAnalysisVisibleScroll(QScrollArea *area)
             "QScrollArea{background:#0d1218;border:0;}"
             "QScrollArea>QWidget>QWidget{background:#0d1218;}"
             "QCheckBox{spacing:6px;padding:2px 1px;color:#dce2e7;background:transparent;}"
-            // Scrollbar widgets have their own high-contrast, 17px style.
         ));
 
         const QList<QScrollArea*> scrollAreas = tab->findChildren<QScrollArea*>();
@@ -635,7 +634,8 @@ static void configureNativeAnalysis(QWidget *analysis)
                 QLabel *title=new QLabel(I18n::text(6447),rightPanel); title->setStyleSheet(QStringLiteral("color:#ff9828;font-weight:800;padding:2px 0 5px 0;border-bottom:1px solid #2c3842;")); right->addWidget(title);
             }
             if(parameters) {
-                parameters->setParent(rightPanel); parameters->setWidgetResizable(true); parameters->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff); right->addWidget(parameters,1);
+                parameters->setParent(rightPanel); parameters->setWidgetResizable(true);
+                configureAnalysisVisibleScroll(parameters); right->addWidget(parameters,1);
             }
             QHBoxLayout *select=new QHBoxLayout; select->setSpacing(5);
             if(all) { all->setParent(rightPanel); select->addWidget(all); }
@@ -663,7 +663,8 @@ static void configureNativeAnalysis(QWidget *analysis)
     QScrollArea *stack=nullptr;
     for(QScrollArea *s:analysis->findChildren<QScrollArea*>(QString(),Qt::FindDirectChildrenOnly)) { stack=s; break; }
     if(stack && stack->widget()) {
-        stack->setFrameShape(QFrame::NoFrame); stack->setWidgetResizable(true); stack->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        stack->setFrameShape(QFrame::NoFrame); stack->setWidgetResizable(true);
+        configureAnalysisVisibleScroll(stack);
         QLabel *empty=stack->widget()->findChild<QLabel*>(QStringLiteral("analysisEmptyState"),Qt::FindDirectChildrenOnly);
         if(!empty) {
             empty=new QLabel(I18n::text(6443)+QStringLiteral("\n\n")+I18n::text(6442),stack->widget());
