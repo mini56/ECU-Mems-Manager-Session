@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="de"><head><meta charset="utf-8"><title>@PROJECTNAME@ — Benutzerhandbuch</title><style>
+body{font-family:"Segoe UI",Arial,sans-serif;background:#0e171d;color:#e3ebf1;margin:17px;line-height:1.56;font-size:12pt}
+h1{color:#ff9828;border-bottom:2px solid #ff7a00;padding-bottom:13px;margin-top:3px;font-size:23pt}
+h2{color:#ffad58;background:#17242c;border-left:3px solid #ff7a00;padding:11px;margin-top:25px;font-size:16pt}
+h3{color:#ffae58;margin-top:15px;font-size:13pt}
+p,li{color:#e3ebf1;margin-bottom:11px}
+b,strong{color:#f6f9fc}
+table{border-collapse:collapse;width:100%;margin:13px 0}
+th,td{border:1px solid #344854;padding:9px;text-align:left}
+th{background:#263843;color:#ffad58}
+td{background:#121e25;color:#e3ebf1}
+.warn{background:#342317;border:1px solid #b06b1d;color:#ffe7cc;padding:13px}
+.tip{background:#172a24;border:1px solid #3f7763;color:#ddf3e9;padding:12px}
+.card{background:#17232b;border:1px solid #354852;padding:13px}
+code{background:#26313b;color:#ffd79b;padding:3px}
+a{color:#ffae52;text-decoration:none}
+small{color:#aebcc5}
+</style></head>
+<body>
+<h1>ECU MEMS Manager — Benutzerhandbuch</h1>
+<p><b>Version @APP_VERSION@</b> — Diagnosesoftware für Rover MEMS-Steuergeräte.</p>
+<div class="card"><b>INTEGRIERTES OFFLINE-HANDBUCH</b><p>Wählen Sie links ein Thema. Dieses Handbuch ist Bestandteil des Programms und funktioniert ohne Internet.</p></div>
+<div class="warn"><b>Sicherheit:</b> Aktortests können Pumpen, Lüfter, Ventile, Einspritzventile und Zündungskomponenten aktivieren. Führen Sie Tests nur bei gesichertem Fahrzeug und mit Kenntnis ihrer Auswirkungen durch.</div>
+<h2 id="chapter-1">1. Verbindung</h2>
+<p>Schließen Sie eine geeignete Diagnoseschnittstelle an und wählen Sie unter Optionen → Einstellungen den richtigen seriellen Port. Schalten Sie die Zündung ein und klicken Sie auf Verbinden. Die Anzeigen melden den Verbindungsstatus. Mit Trennen beenden Sie die Sitzung. Bei ausgeschalteter Zündung beendet das Programm die Abfrage ordnungsgemäß und kann sich später neu verbinden.</p>
+
+<h2 id="chapter-2">2. Übersicht</h2>
+<p>Die Startseite zeigt Motordrehzahl, Saugrohrdruck, Temperaturen, Batteriespannung, Drosselklappe, Lambda, Leerlauf und Zündungswerte in Echtzeit. Warnfarben bleiben auch im dunklen Design sichtbar.</p>
+
+<h2 id="chapter-3">3. Einspritzung</h2>
+<p>Zeigt endgültige Einspritzzeit, Grundeinspritzzeit, Übergangskorrektur und Übergangszustand aus dem dafür vorgesehenen Lesemodus. IA MEMS beobachtet vorhandene Messwerte und startet keine zusätzliche ECU-Abfrage.</p>
+
+<h2 id="chapter-4">4. Einstellungen</h2>
+<p>Enthält je nach ECU Serviceeinstellungen für Leerlauf, Kraftstoff und Zündung. Lesen Sie Hinweise und Risiken, bevor Sie Werte ändern. Die Warmleerlaufkorrektur für 7D14-15 nutzt die tatsächliche ECU-Einstellung.</p>
+
+<h2 id="chapter-5">5. Fehler</h2>
+<p>Zeigt ECU-Fehler, gespeicherte Auffälligkeiten und Statusinformationen. Fehler erst lesen und verstehen, dann löschen. Einige Zähler benötigen einen vollständigen ECU-Neustart.</p>
+
+<h2 id="chapter-6">6. Aktoren</h2>
+<p>Nur unterstützte Aktortests verwenden. Tests von Einspritzventilen, Zündung oder Heizung können Fahrzeugkomponenten einschalten. Sichern Sie das Fahrzeug vor jeder Prüfung.</p>
+
+<h2 id="chapter-7">7. Alle Messwerte</h2>
+<p>Zeigt Parameter mit Hilfetext, empfangenem Rohwert und interpretiertem Wert, soweit die Umrechnung dokumentiert ist. Beispielsweise können 138 bei einer dokumentierten Batteriespannung 13,8 V bedeuten. Unbekannte Felder werden nicht erfunden.</p>
+
+<h2 id="chapter-8">8. Alle Daten</h2>
+<p>Zeigt rohe und dekodierte MEMS-Felder zum Vergleich von Protokollbytes und interpretierten Messwerten.</p>
+
+<h2 id="chapter-9">9. ECU / ROSCO</h2>
+<p>Bietet Lese- und Sitzungsbefehle wie D0, D1, D2, F0 sowie F2–F5. TX/RX-Daten werden hexadezimal angezeigt. Die ECU-Neucodierung D3 bleibt absichtlich deaktiviert.</p>
+
+<h2 id="chapter-10">10. Automatische Diagnose</h2>
+<p>Bewertet aktuelle ECU-Messwerte und unterscheidet Normalzustände, Warnungen und Abweichungen. Referenzaufnahmen und Berichtexporte sind möglich. Auch die Spulenladezeit wird geprüft.</p>
+
+<h2 id="chapter-11">11. Protokollanalyse</h2>
+<p>Öffnet unterstützte CSV/TXT-Messprotokolle, zeigt gewählte Kanäle und überlagert Kurven zum zeitlichen Vergleich.</p>
+
+<h2 id="chapter-12">12. IA MEMS</h2>
+<p>IA MEMS verbindet natürlichsprachige Fragen mit bereits erfassten ECU-Messwerten, Expertenlogik und der MEMS-Datenbank. Beobachtungen, Hypothesen, Quellen und Vertrauensgrade werden unterschieden. Eine einzelne Messung beweist keinen Bauteildefekt. Das Modell arbeitet lokal, wird erst beim Öffnen der Registerkarte aktiviert und sendet keine zusätzlichen ECU-Befehle.</p>
+
+<h2 id="chapter-13">13. Bildschirmaufnahmen</h2>
+<p>Mit Aufnahme speichern Sie ein Bild des Programmfensters im Ordner captures. Aufnahmen anzeigen ermöglicht Vorschau, Vergrößerung oder Löschen nach Bestätigung.</p>
+
+<h2 id="chapter-14">14. Kontexthilfe</h2>
+<p>Wo Kontexthilfe angeboten wird, verwendet die Software das integrierte Hilfeblasensymbol unabhängig von der Windows-Version.</p>
+
+<h2 id="chapter-15">15. Optionen</h2>
+<p>Optionen umfassen seriellen Port, Temperatureinheiten, Darstellung, Sprache und Desktop-Verknüpfung. Die Verknüpfung kann automatisch erstellt und gepflegt werden.</p>
+
+<h2 id="chapter-16">16. Darstellung</h2>
+<p>Hell verwendet helle Flächen und Instrumente. Dunkel verwendet dunkle Hintergründe mit kontrastreichen Beschriftungen, Zeigern und Tabellen. Warnungen bleiben gut sichtbar.</p>
+
+<h2 id="chapter-17">17. Sprache</h2>
+<p>Die Oberfläche unterstützt Französisch, Englisch, Spanisch, Italienisch, Portugiesisch und Deutsch. Die Auswahl wird in SESSION gespeichert.</p>
+
+<h2 id="chapter-18">18. Unterstützte ECU-Familien</h2>
+<p>Datenbank und Diagnosefunktionen unterstützen Rover MEMS 1.2, 1.3, 1.6 und 1.9. Der Funktionsumfang hängt von ECU, Fahrzeug und Protokoll ab.</p>
+
+<h2 id="chapter-19">19. Grundlegende Diagnosehinweise</h2>
+<p>Keine Verbindung: Zündung, Port, Kabel, ECU-Versorgung und Masse prüfen. MAP auffällig: Unterdruckschlauch, Saugrohr und Sensor prüfen. Unruhiger Leerlauf: Leerlaufschalter, IAC, Nebenluft, Temperatur und Kraftstoffkorrekturen prüfen. Lambdafehler: Heizung, Kabel, Spannung und Regelkreis prüfen. Spule: Batterie, Primärkreis und Kabel prüfen.</p>
+
+<h2 id="chapter-20">20. Programm schließen</h2>
+<p>Beim Beenden stoppt das Programm automatische Wiederverbindungsversuche, damit ein ECU-Verbindungsverlust das Schließen nicht blockiert.</p>
+
+<h2 id="chapter-21">21. Dokumentationsdatenbank</h2>
+<p>Die Datenbankseite durchsucht ECU-Referenzen, Fahrzeuge, Befehle und technische Unterlagen. Filter und Ergebnisse führen zu Datenblättern und Herstellerseiten. Dokumentationspakete werden unabhängig vom SESSION-Programm installiert.</p>
+
+<h2 id="chapter-22">22. Dokumentationsupdates</h2>
+<p>Öffnen Sie Datenbank und wählen Sie Nach Datenbankupdates suchen. Der Manager prüft den Online-Katalog, lädt verfügbare verschlüsselte Pakete herunter und kontrolliert SHA-256. Für die Installation sind das Paketpasswort und Prüfungen von SQLite, Bildern und Herkunft erforderlich. Lokale verschlüsselte Pakete können ebenfalls installiert werden. Bei Fehlern bleibt die alte Datenbank erhalten.</p>
+
+<h2 id="chapter-23">23. Windows-Taskleiste</h2>
+<p>Windows-Taskleiste automatisch ausblenden ist standardmäßig deaktiviert. Wenn aktiviert, betrifft dies die gesamte Windows-Arbeitsfläche während SESSION läuft. Beim normalen Schließen wird die Einstellung wiederhergestellt; nach einem unerwarteten Abbruch greifen Wiederherstellungsprüfungen. Windows-Richtlinien können Änderungen verhindern.</p>
+
+<h2 id="chapter-24">24. Herstellerabbildungen</h2>
+<p>Geprüfte Bildschirmaufnahmen können in zukünftige Versionen integriert werden. Herstellerbilder stammen aus dem installierten Dokumentationspaket und lassen sich in Datenbank oder IA MEMS vergrößern.</p>
+</body></html>
