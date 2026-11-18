@@ -3,7 +3,7 @@ run-name: SESSION 164 - ANALYSE DEUX SCROLLS - ${{ github.sha }}
 on:
   workflow_dispatch:
   # Only an explicit update to this dedicated request marker may trigger a build.
-  # Rebuild after fixing UIShell's global ScrollBarAlwaysOff and darkstyle's global QScrollBar override.
+  # Validate mandatory visible scrolling (Qt AlwaysOn): thumb color is not a release requirement.
   # Ordinary source edits do not consume GitHub Actions compilation minutes.
   push:
     branches: [fix-documentary-additive-session-161-20261118]
