@@ -52,6 +52,15 @@ int main(int argc,char **argv)
     if(!expect(paths.size()==2,"two separate SQLite databases exist") ||
        !expect(digest(legacy)==originalHash,"historical SQLite unchanged")) return 1;
 
+    // Reinstalling the SAME document set updates only its own folder.
+    if(!expect(MemsDocumentaryLocalInstaller::installDirectory(second,"fr").isEmpty(),
+               "same source collection can be upgraded") ||
+       !expect(MemsDocumentaryPackCatalog::installedDatabasePaths("fr").size()==2,
+               "upgrade cannot create a duplicate collection") ||
+       !expect(digest(legacy)==originalHash,
+               "second pack upgrade cannot alter historical collection"))
+        return 1;
+
     {
         MemsDocumentaryRepository reader;
         if(!expect(reader.open(),"multi-reader opens")) return 1;
