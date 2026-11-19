@@ -229,7 +229,7 @@ bool verifyUi(MainWindow &window)
     if(resultTable && resultTable->horizontalHeader()){
         QHeaderView *header=resultTable->horizontalHeader();
         ok=check(!header->stretchLastSection() &&
-                 header->sectionResizeMode(0)==QHeaderView::Stretch &&
+                 header->sectionResizeMode(0)==QHeaderView::Fixed &&
                  header->sectionResizeMode(1)==QHeaderView::Fixed &&
                  header->sectionResizeMode(2)==QHeaderView::Fixed &&
                  resultTable->columnCount()==3 &&
@@ -418,6 +418,10 @@ bool verifyUi(MainWindow &window)
                                       resultTable->columnWidth(2)==120;
             const bool resultGetsSpace=size.width()<1200 ||
                 resultTable->columnWidth(0)>resultTable->columnWidth(2);
+            logSmoke(QStringLiteral("Database columns at %1px: viewport=%2 Result=%3 Generation=%4 Type=%5")
+                .arg(size.width()).arg(resultTable->viewport()->width())
+                .arg(resultTable->columnWidth(0)).arg(resultTable->columnWidth(1))
+                .arg(resultTable->columnWidth(2)));
             ok=check(compactColumns && resultGetsSpace,
                      "Database displayed columns must keep Type 120 and expand Result") && ok;
         }
