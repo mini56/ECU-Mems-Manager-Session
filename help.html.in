@@ -122,6 +122,7 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-9">9. ECU / ROSCO</h2>
+<p><b>Bibliothèque de communication du projet :</b> ECU MEMS Manager SESSION utilise notre propre DLL native Windows 64 bits, <code>mems_manager_x64.dll</code>, créée pour le projet. Elle assure la communication série avec les calculateurs MEMS (connexion, initialisation, lecture des données et commandes de diagnostic prises en charge). Elle conserve une compatibilité avec les fonctions historiques ROSCO. Les calculs spécialisés de l'onglet <b>Injection</b> et certaines lectures RAM en Mode 4 sont réalisés par le code de SESSION, et non directement par la DLL.</p>
 <p>L’onglet ECU / ROSCO expose les commandes de lecture et de session prises en charge, notamment D0, D1, D2, F0 et les commandes de session F2 à F5. Les échanges TX/RX sont affichés en hexadécimal. La recodification ECU D3 reste volontairement désactivée.</p>
 
 
