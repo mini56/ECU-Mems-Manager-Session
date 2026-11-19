@@ -165,13 +165,10 @@ void MemsDatabaseBrowser::buildUi()
     m_results=new QTableWidget(listCard);
     // Identify the indexed results before the UI shell prepares table headers.
     m_results->setObjectName(QStringLiteral("memsDatabaseResults"));
+    // Column geometry belongs to the selected reader. The indexed reader
+    // uses three columns; only the legacy fallback uses five.
     m_results->setColumnCount(5);
     m_results->verticalHeader()->setVisible(false);
-    m_results->horizontalHeader()->setSectionResizeMode(0,QHeaderView::ResizeToContents);
-    m_results->horizontalHeader()->setSectionResizeMode(1,QHeaderView::ResizeToContents);
-    m_results->horizontalHeader()->setSectionResizeMode(2,QHeaderView::ResizeToContents);
-    m_results->horizontalHeader()->setSectionResizeMode(3,QHeaderView::Stretch);
-    m_results->horizontalHeader()->setSectionResizeMode(4,QHeaderView::ResizeToContents);
     m_results->setSelectionBehavior(QAbstractItemView::SelectRows); m_results->setSelectionMode(QAbstractItemView::SingleSelection);
     m_results->setEditTriggers(QAbstractItemView::NoEditTriggers); m_results->setAlternatingRowColors(true); m_results->setShowGrid(false);
     m_results->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
@@ -243,6 +240,15 @@ void MemsDatabaseBrowser::buildUi()
 
 void MemsDatabaseBrowser::activateLegacyBrowser()
 {
+    // Only the ECU-only fallback owns the historical five-column layout.
+    m_results->setColumnCount(5);
+    QHeaderView *header=m_results->horizontalHeader();
+    header->setStretchLastSection(false);
+    header->setSectionResizeMode(0,QHeaderView::ResizeToContents);
+    header->setSectionResizeMode(1,QHeaderView::ResizeToContents);
+    header->setSectionResizeMode(2,QHeaderView::ResizeToContents);
+    header->setSectionResizeMode(3,QHeaderView::Stretch);
+    header->setSectionResizeMode(4,QHeaderView::ResizeToContents);
     connect(m_search,&QLineEdit::textChanged,this,&MemsDatabaseBrowser::refreshResults);
     connect(m_generation,QOverload<int>::of(&QComboBox::currentIndexChanged),
             this,&MemsDatabaseBrowser::refreshResults);
