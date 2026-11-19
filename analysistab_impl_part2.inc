@@ -32,9 +32,11 @@ void ChartWidget::leaveEvent(QEvent *event){Q_UNUSED(event);m_hasCursor=false;up
 void ChartWidget::paintEvent(QPaintEvent *event)
 {
     Q_UNUSED(event);
-    QPainter p(this); p.setRenderHint(QPainter::Antialiasing); p.fillRect(rect(),QColor("#0d1218"));
+    QPainter p(this); p.setRenderHint(QPainter::Antialiasing);
+    const bool darkTheme=qApp && qApp->property("ecuDarkTheme").toBool();
+    p.fillRect(rect(),darkTheme?QColor("#0d1218"):QColor("#ffffff"));
     const QRect plot(45,12,qMax(1,width()-58),qMax(1,height()-38));
-    p.setPen(QPen(QColor("#233047"),1));
+    p.setPen(QPen((darkTheme?QColor("#233047"):QColor("#dae2e9")),1));
     for(int i=0;i<=4;++i){int y=plot.top()+plot.height()*i/4;p.drawLine(plot.left(),y,plot.right(),y);}
     for(int i=0;i<=10;++i){int x=plot.left()+plot.width()*i/10;p.drawLine(x,plot.top(),x,plot.bottom());}
     if(m_time.size()<2){drawEmptyMessage(p,plot,I18n::text(6468));return;}
@@ -52,11 +54,11 @@ void ChartWidget::paintEvent(QPaintEvent *event)
         p.setPen(QPen(m_colors[s%m_colors.size()],1.8));p.drawPolyline(poly);
     }
     if(!visibleCount)drawEmptyMessage(p,plot,I18n::text(6441));
-    p.setPen(QColor("#8a93a6"));
+    p.setPen((darkTheme?QColor("#8a93a6"):QColor("#425160")));
     for(int i=0;i<=5;++i){int x=plot.left()+plot.width()*i/5;double t=tMin+tSpan*i/5.0;p.drawText(QRect(x-32,plot.bottom()+4,64,18),Qt::AlignCenter,QString("%1 s").arg(t-tMax,0,'f',0));}
 
     if(m_hasCursor&&visibleCount&&m_cursorX>=plot.left()&&m_cursorX<=plot.right()){
-        p.setPen(QPen(QColor("#d6dce1"),1,Qt::DashLine));p.drawLine(m_cursorX,plot.top(),m_cursorX,plot.bottom());
+        p.setPen(QPen((darkTheme?QColor("#d6dce1"):QColor("#53616f")),1,Qt::DashLine));p.drawLine(m_cursorX,plot.top(),m_cursorX,plot.bottom());
         const double tAt=tMin+double(m_cursorX-plot.left())/qMax(1,plot.width())*tSpan;
         int idx=0;double best=1e99;for(int i=0;i<m_time.size();++i){double d=qAbs(m_time[i]-tAt);if(d<best){best=d;idx=i;}}
         int y=plot.top()+5;
