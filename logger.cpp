@@ -1,5 +1,6 @@
 #include <QDir>
 #include <QDateTime>
+#include <QStandardPaths>
 #include "logger.h"
 
 /**
@@ -7,9 +8,13 @@
  * well as log directory and log file extension.
  */
 Logger::Logger(MEMSInterface* memsiface):
-m_logExtension(".txt"), m_logDir("logs")
+m_logExtension(".txt")
 {
   m_mems = memsiface;
+  QString documents = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+  if (documents.isEmpty())
+    documents = QDir::homePath();
+  m_logDir = QDir(documents).filePath(QStringLiteral("ECU MEMS Manager/logs"));
 }
 
 /**
@@ -37,8 +42,8 @@ bool Logger::openLog(QString fileName)
 
   m_lastAttemptedLog = m_logDir + QDir::separator() + fileName + m_logExtension;
 
-  // if the 'logs' directory exists, or if we're able to create it...
-  if (!m_logFile.isOpen() && (QDir(m_logDir).exists() || QDir().mkdir(m_logDir)))
+  // Enregistre dans les Documents utilisateur, sans ecrire dans Program Files.
+  if (!m_logFile.isOpen() && QDir().mkpath(m_logDir))
   {
     // set the name of the log file and open it for writing
     bool alreadyExists = QFileInfo(m_lastAttemptedLog).exists();

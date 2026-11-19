@@ -139,7 +139,10 @@ void AnalysisTab::refreshLiveCharts()
 
 void AnalysisTab::onLoadFileClicked()
 {
-    const QString path=QFileDialog::getOpenFileName(this,I18n::text(6448),"logs",I18n::text(6449));
+    QString documents=QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    if(documents.isEmpty())documents=QDir::homePath();
+    const QString logDir=QDir(documents).filePath(QStringLiteral("ECU MEMS Manager/logs"));
+    const QString path=QFileDialog::getOpenFileName(this,I18n::text(6448),logDir,I18n::text(6449));
     if(!path.isEmpty())loadFile(path);
 }
 

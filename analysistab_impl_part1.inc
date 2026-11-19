@@ -5,6 +5,8 @@
 #include <QCheckBox>
 #include <QFile>
 #include <QFileDialog>
+#include <QDir>
+#include <QStandardPaths>
 #include <QFileInfo>
 #include <QFontMetrics>
 #include <QGridLayout>

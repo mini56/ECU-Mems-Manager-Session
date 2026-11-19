@@ -36,26 +36,16 @@ void MEMSInterface::resetProtocolContext()
 
 bool MEMSInterface::guardedMemsTestActuator(actuator_cmd cmd, uint8_t *data)
 {
-    if (property("injectionRamTestRunning").toBool() ||
-        property("mappedInjectionModeActive").toBool())
-        return false;
-
-    const quint8 command = static_cast<quint8>(cmd);
-    if (!MemsProtocolSafety::allowsMutation(ecuFamily(), diagnosticMode(), command))
+    // Les commandes historiques d'actionneurs exigent seulement une connexion ECU.
+    // La recherche d'une reference dans une base n'est pas un prerequis.
+    if (!m_initComplete || !mems_is_connected(&m_memsinfo))
         return false;
     return ::mems_test_actuator(&m_memsinfo, cmd, data);
 }
 
 bool MEMSInterface::guardedMemsMoveIac(uint8_t desiredPos)
 {
-    if (property("injectionRamTestRunning").toBool() ||
-        property("mappedInjectionModeActive").toBool())
-        return false;
-
-    // mems_move_iac() can send either FD or FE depending on the current IAC
-    // position, therefore both possible mutations must be legal first.
-    if (!MemsProtocolSafety::allowsMutation(ecuFamily(), diagnosticMode(), 0xFDu) ||
-        !MemsProtocolSafety::allowsMutation(ecuFamily(), diagnosticMode(), 0xFEu))
+    if (!m_initComplete || !mems_is_connected(&m_memsinfo))
         return false;
     return ::mems_move_iac(&m_memsinfo, desiredPos);
 }
