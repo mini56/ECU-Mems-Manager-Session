@@ -416,8 +416,11 @@ bool verifyUi(MainWindow &window)
         if(resultTable && resultTable->horizontalHeader()){
             const bool compactColumns=resultTable->columnWidth(1)==114 &&
                                       resultTable->columnWidth(2)==120;
-            const bool resultGetsSpace=size.width()<1200 ||
-                resultTable->columnWidth(0)>resultTable->columnWidth(2);
+            // The splitter can leave less than 234 px for the table at
+            // small window widths. In that case horizontal scrolling is
+            // expected: Result still gets every available pixel (min 40).
+            const int expectedResult=qMax(40,resultTable->viewport()->width()-114-120);
+            const bool resultGetsSpace=resultTable->columnWidth(0)==expectedResult;
             logSmoke(QStringLiteral("Database columns at %1px: viewport=%2 Result=%3 Generation=%4 Type=%5")
                 .arg(size.width()).arg(resultTable->viewport()->width())
                 .arg(resultTable->columnWidth(0)).arg(resultTable->columnWidth(1))
