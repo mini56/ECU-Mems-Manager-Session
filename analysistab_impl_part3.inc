@@ -174,7 +174,7 @@ void AnalysisTab::rebuildCheckboxes()
     QLayoutItem *stretch=nullptr;if(m_checkboxLayout->count()>0)stretch=m_checkboxLayout->takeAt(m_checkboxLayout->count()-1);
     for(int i=0;i<m_columnNames.size();++i){
         QCheckBox *cb=new QCheckBox(m_columnNames[i],m_checkboxContainer);const QColor c=m_colors[i%m_colors.size()];
-        cb->setStyleSheet(QString("QCheckBox{padding:3px 0;}QCheckBox::indicator{width:13px;height:13px;border:1px solid %1;border-radius:2px;background:#0b1015;}QCheckBox::indicator:checked{background:%1;}").arg(c.name()));
+        cb->setStyleSheet(QString((qApp && qApp->property("ecuDarkTheme").toBool()) ? "QCheckBox{padding:3px 0;}QCheckBox::indicator{width:13px;height:13px;border:1px solid %1;border-radius:2px;background:#0b1015;}QCheckBox::indicator:checked{background:%1;}" : "QCheckBox{padding:3px 0;}QCheckBox::indicator{width:13px;height:13px;border:1px solid %1;border-radius:2px;background:#ffffff;}QCheckBox::indicator:checked{background:%1;}").arg(c.name()));
         bool checked=false;
         if(m_liveSource==InjectionLiveSource)checked=(i<3);
         else checked=m_columnNames[i].contains(I18n::text(6458),Qt::CaseInsensitive)||m_columnNames[i].contains(I18n::text(6459),Qt::CaseInsensitive)||m_columnNames[i].contains(I18n::text(6460),Qt::CaseInsensitive);
