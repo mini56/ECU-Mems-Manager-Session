@@ -1,6 +1,6 @@
 # ECU MEMS Manager — chantier de lecture MEMS 1.9 / 2J / 3
 
-**Dernière mise à jour : 17 novembre 2026**  
+**Dernière mise à jour documentaire : 19 novembre 2026**  
 **Responsable du suivi : dossier GitHub ; les discussions ne font pas office d'historique.**  
 **Branche de recherche :** `research-mems2j-rovermems-protocol-20261117`  
 **Portée : lecture seule, sans effacement des défauts ni programmation.**
@@ -33,6 +33,7 @@ La présence d'un protocole dans une documentation, l'existence d'un code C++ et
 1. **[01 — Recherche sur les interfaces KKL et Windows](01_COMPATIBILITE_KKL_WINDOWS.md)** : premier thème demandé ; faits vérifiés, limites et sources.
 2. **[02 — Plan de tests des câbles et du transport](02_PLAN_VALIDATION_CABLE.md)** : critères de validation, journaux attendus, limites de sécurité.
 3. **[03 — Journal et étapes du développement](03_JOURNAL_ET_ETAPES.md)** : décisions, avancement et prochaines actions.
+4. **[09 — Décisions du 19/11/2026 : câbles USB et connexions MEMS 1.9/2J](09_DECISIONS_CABLES_USB_CONNEXION_19_2J_20261119.md)** : captures USB réelles (CH340 COM6, FTDI COM4), distinction câble/puce, initialisations, principe d'identification à la connexion, préservation des 15 pages et de ROSCO, travaux restant à valider.
 
 Étude préalable des trames : [PROTOCOLES_MEMS_19_2J_3_ROVERMEMS_2026-11-17.md](../PROTOCOLES_MEMS_19_2J_3_ROVERMEMS_2026-11-17.md).  
 État de recherche historique 1.2 à 1.9 : [ETAT_RECHERCHE.md](../ETAT_RECHERCHE.md) (daté août 2026 : ne pas changer rétroactivement ses décisions d'alors).
