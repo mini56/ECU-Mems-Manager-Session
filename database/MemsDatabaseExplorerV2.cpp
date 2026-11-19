@@ -99,33 +99,47 @@ QString generationFromText(const QString &raw)
 QString readableResultTitle(const QVariantMap &row)
 {
     const QString original=row.value(QStringLiteral("title")).toString().trimmed();
-    if(row.value(QStringLiteral("category")).toString()!=QStringLiteral("documentation"))
-        return original;
     const bool internal=original.startsWith(QStringLiteral("PROC-"),Qt::CaseInsensitive)
         || original.startsWith(QStringLiteral("SPEC-"),Qt::CaseInsensitive)
         || original.startsWith(QStringLiteral("KNOW-"),Qt::CaseInsensitive)
         || original.startsWith(QStringLiteral("torque_"),Qt::CaseInsensitive)
         || original.contains(QStringLiteral(" — étape "))
         || original.contains(QStringLiteral(" — valeur "));
-    if(!internal)
-        return original;
+    if(!internal)return original;
+
+    // This also applies to "Information technique" rows from the reference
+    // database: their indexed titles are often internal PROC-/torque_ keys.
+    // Display a manufacturer-provided label, never substitute a new key.
+    QHash<QString,QString> fields;
     const QString content=row.value(QStringLiteral("content")).toString();
-    const int headerEnd=content.indexOf(QStringLiteral("\n\n"));
-    const QString body=headerEnd>=0 ? content.mid(headerEnd+2) : content;
-    for(const QString &rawLine:body.split(QLatin1Char('\n'))){
-        QString line=rawLine.trimmed();
-        if(line.startsWith(QStringLiteral("source_text:"),Qt::CaseInsensitive))
-            line=line.mid(QStringLiteral("source_text:").size()).trimmed();
-        if(line.isEmpty() || line.startsWith(QStringLiteral("notes:"))
-           || line.startsWith(QStringLiteral("topic:"))
-           || line.startsWith(QStringLiteral("source_section:"))
-           || line.startsWith(QStringLiteral("document :"))
-           || line.startsWith(QStringLiteral("page physique :"))
-           || line.startsWith(QStringLiteral("type :")))
-            continue;
-        if(!line.isEmpty())
-            return line;
+    for(const QString &line:content.split(QLatin1Char('\n'))){
+        const int separator=line.indexOf(QLatin1Char(':'));
+        if(separator<=0)continue;
+        const QString key=line.left(separator).trimmed().toLower();
+        const QString value=line.mid(separator+1).trimmed();
+        if(!key.isEmpty() && !value.isEmpty())
+            fields.insert(key,value);
     }
+    const QStringList preferred={
+        QStringLiteral("title_source"),QStringLiteral("title_fr"),
+        QStringLiteral("procedure_title"),QStringLiteral("operation_title"),
+        QStringLiteral("subject_fr"),QStringLiteral("topic"),
+        QStringLiteral("subject"),QStringLiteral("source_text"),
+        QStringLiteral("source_section"),QStringLiteral("parameter"),
+        QStringLiteral("description"),QStringLiteral("statement"),
+        QStringLiteral("instruction_source"),QStringLiteral("procedure_text")
+    };
+    for(const QString &key:preferred){
+        const QString value=fields.value(key).trimmed();
+        if(value.isEmpty() || value==original ||
+           value.startsWith(QStringLiteral("PROC-"),Qt::CaseInsensitive) ||
+           value.startsWith(QStringLiteral("SPEC-"),Qt::CaseInsensitive) ||
+           value.startsWith(QStringLiteral("KNOW-"),Qt::CaseInsensitive) ||
+           value.startsWith(QStringLiteral("torque_"),Qt::CaseInsensitive))
+            continue;
+        return value.section(QLatin1Char('\n'),0,0).trimmed();
+    }
+
     if(original.startsWith(QStringLiteral("torque_"),Qt::CaseInsensitive)){
         QString name=original.mid(7);
         name.replace(QLatin1Char('_'),QLatin1Char(' '));
@@ -990,8 +1004,8 @@ private:
             const QString category=row.value(QStringLiteral("category")).toString();
             // Rover supplies the correctly localized title from the same
             // SQLite query used by IA MEMS. No word-substitution overlay.
-            const QString localized=
-                row.value(QStringLiteral("source_table")).toString().startsWith(
+            const QString localized=title!=row.value(QStringLiteral("title")).toString().trimmed()
+                || row.value(QStringLiteral("source_table")).toString().startsWith(
                     QStringLiteral("rover_"))
                 ? title
                 : MemsDatabaseContent::localizedTitle(
