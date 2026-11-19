@@ -823,12 +823,12 @@ static void prepareViewWidgets(QWidget *page)
 {
     for (QTableView *v : page->findChildren<QTableView*>()) {
         v->setAlternatingRowColors(true);
-        if (v->horizontalHeader()) { v->horizontalHeader()->setStretchLastSection(true); v->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft|Qt::AlignVCenter); }
+        if (v->horizontalHeader()) { v->horizontalHeader()->setStretchLastSection(v->objectName()!=QStringLiteral("memsDatabaseResults")); v->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft|Qt::AlignVCenter); }
         if (v->verticalHeader()) v->verticalHeader()->setVisible(false);
     }
     for (QTableWidget *v : page->findChildren<QTableWidget*>()) {
         v->setAlternatingRowColors(true); v->setShowGrid(false);
-        if (v->horizontalHeader()) { v->horizontalHeader()->setStretchLastSection(true); v->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft|Qt::AlignVCenter); }
+        if (v->horizontalHeader()) { v->horizontalHeader()->setStretchLastSection(v->objectName()!=QStringLiteral("memsDatabaseResults")); v->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft|Qt::AlignVCenter); }
         if (v->verticalHeader()) v->verticalHeader()->setVisible(false);
     }
 }
