@@ -181,7 +181,9 @@ protected:
             const qreal len=major?13.5:(medium?8.2:4.5);
             const QPointF po(qCos(a)*ro,qSin(a)*ro);
             const QPointF pi(qCos(a)*(ro-len),qSin(a)*(ro-len));
-            const QColor col=darkTheme?(major?QColor("#f4f6f7"):(medium?QColor("#b4bec5"):QColor("#707d85")):(major?QColor("#101820"):(medium?QColor("#344250"):QColor("#6c7781"));
+            const QColor col=darkTheme
+                ? (major?QColor("#f4f6f7"):(medium?QColor("#b4bec5"):QColor("#707d85")))
+                : (major?QColor("#101820"):(medium?QColor("#344250"):QColor("#6c7781")));
             p.setPen(QPen(col,major?1.55:(medium?1.0:.68),Qt::SolidLine,Qt::FlatCap));
             p.drawLine(pi,po);
         }
