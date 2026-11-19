@@ -27,6 +27,7 @@
 #include <QHeaderView>
 #include <QHBoxLayout>
 #include <QHash>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
