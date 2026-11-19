@@ -138,73 +138,64 @@ QString readableResultTitle(const QVariantMap &row)
     return original;
 }
 
-// Only explicit MEMS generations mentioned by the installed source are shown.
-// An unrelated workshop instruction (for example a brake repair) is not
-// assigned an ECU generation by the browser.
-QString explicitMemsGenerations(const QString &source,bool bareGeneration=false)
+// Vehicle year periods (e.g. 92-96) are not MEMS protocol versions.
+QString explicitVehicleYears(const QString &text)
 {
-    static const QRegularExpression tagged(
-        QStringLiteral("\\bMEMS[\\s_:\\-]*(1[\\.,_][2369])\\b"),
-        QRegularExpression::CaseInsensitiveOption);
-    static const QRegularExpression bare(
-        QStringLiteral("\\b(1[\\.,][2369])\\b"));
-    QSet<QString> matches;
-    QRegularExpressionMatchIterator it=tagged.globalMatch(source);
-    while(it.hasNext()){
-        QString version=it.next().captured(1);
-        version.replace(QLatin1Char(','),QLatin1Char('.'));
-        version.replace(QLatin1Char('_'),QLatin1Char('.'));
-        matches.insert(version);
-    }
-    if(bareGeneration){
-        it=bare.globalMatch(source);
-        while(it.hasNext()){
-            QString version=it.next().captured(1);
-            version.replace(QLatin1Char(','),QLatin1Char('.'));
-            matches.insert(version);
-        }
-    }
-    QStringList result;
-    for(const QString &version:{QStringLiteral("1.2"),QStringLiteral("1.3"),
-                                QStringLiteral("1.6"),QStringLiteral("1.9")})
-        if(matches.contains(version))result.append(version);
-    return result.join(QStringLiteral("/"));
+    static const QRegularExpression full(QStringLiteral(
+        "(?<![0-9])((?:19|20)[0-9]{2})[\\s_./–—-]+((?:19|20)[0-9]{2})(?![0-9])"));
+    static const QRegularExpression shortRange(QStringLiteral(
+        "(?<![0-9])([89][0-9]|0[0-9])[\\s_./–—-]+([89][0-9]|0[0-9])(?![0-9])"));
+    QRegularExpressionMatch m=full.match(text);
+    if(m.hasMatch())return m.captured(1).right(2)+QLatin1Char('-')+m.captured(2).right(2);
+    m=shortRange.match(text);
+    return m.hasMatch()?m.captured(1)+QLatin1Char('-')+m.captured(2):QString();
 }
 
-QString mergeGenerations(const QString &a,const QString &b)
+QString mergeYears(const QString &a,const QString &b)
 {
-    QStringList versions;
-    for(const QString &version:{QStringLiteral("1.2"),QStringLiteral("1.3"),
-                                QStringLiteral("1.6"),QStringLiteral("1.9")})
-        if(a.split(QLatin1Char('/')).contains(version) ||
-           b.split(QLatin1Char('/')).contains(version))
-            versions.append(version);
-    return versions.join(QStringLiteral("/"));
+    if(a.isEmpty())return b;
+    if(b.isEmpty() || a==b || a.split(QStringLiteral(" / ")).contains(b))return a;
+    return a+QStringLiteral(" / ")+b;
 }
 
-QString generationFromSourceJson(const QJsonObject &json)
+QString yearsFromSourceJson(const QJsonObject &json)
 {
-    QString result;
+    const auto value=[&json](const QString &key){
+        const QJsonValue v=json.value(key);
+        return v.isDouble()?QString::number(v.toInt()):v.toString().trimmed();
+    };
+    QString from=value(QStringLiteral("year_from")),to=value(QStringLiteral("year_to"));
+    if(from.isEmpty())from=value(QStringLiteral("year_start"));
+    if(to.isEmpty())to=value(QStringLiteral("year_end"));
+    if(from.isEmpty())from=value(QStringLiteral("model_year_from"));
+    if(to.isEmpty())to=value(QStringLiteral("model_year_to"));
+    if(!from.isEmpty() && !to.isEmpty()){
+        bool ok1=false,ok2=false;
+        const int y1=from.toInt(&ok1),y2=to.toInt(&ok2);
+        if(ok1 && ok2 && ((y1>=1980&&y1<=2040)||(y1>=80&&y1<=99)) &&
+           ((y2>=1980&&y2<=2040)||(y2>=80&&y2<=99)||
+            (y2>=0&&y2<=40&&to.size()==2)))
+            return QStringLiteral("%1-%2").arg(y1%100,2,10,QLatin1Char('0'))
+                   .arg(y2%100,2,10,QLatin1Char('0'));
+    }
     for(auto it=json.constBegin();it!=json.constEnd();++it){
         const QString key=it.key().toLower();
-        if(!(key.contains(QStringLiteral("generation")) ||
-             key.contains(QStringLiteral("mems")) ||
-             key.contains(QStringLiteral("ecu")) ||
-             key.contains(QStringLiteral("scope")) ||
-             key.contains(QStringLiteral("applicab")) ||
-             key.contains(QStringLiteral("variant"))))
+        if(!key.contains(QStringLiteral("year")) && !key.contains(QStringLiteral("annee")) &&
+           !key.contains(QStringLiteral("variant")) && !key.contains(QStringLiteral("model")) &&
+           !key.contains(QStringLiteral("scope")) && !key.contains(QStringLiteral("period")) &&
+           !key.contains(QStringLiteral("applicab")) && !key.contains(QStringLiteral("generation")))
             continue;
-        if(it.value().isString())
-            result=mergeGenerations(result,explicitMemsGenerations(
-                it.value().toString(),key.contains(QStringLiteral("generation"))));
-        else if(it.value().isArray()){
-            for(const QJsonValue &value:it.value().toArray())
-                if(value.isString())
-                    result=mergeGenerations(result,
-                        explicitMemsGenerations(value.toString()));
+        if(it.value().isString()){
+            const QString period=explicitVehicleYears(it.value().toString());
+            if(!period.isEmpty())return period;
         }
+        if(it.value().isArray())
+            for(const QJsonValue &part:it.value().toArray()){
+                const QString period=explicitVehicleYears(part.toString());
+                if(!period.isEmpty())return period;
+            }
     }
-    return result;
+    return QString();
 }
 
 QString jsonField(const QJsonObject &json,const char *name)
@@ -212,14 +203,14 @@ QString jsonField(const QJsonObject &json,const char *name)
     return json.value(QString::fromLatin1(name)).toString().trimmed();
 }
 
-void restoreDocumentaryGenerations(QVariantList *rows)
+void restoreDocumentaryYears(QVariantList *rows)
 {
     if(!rows)return;
     QHash<QString,QList<int>> byDatabase;
     for(int i=0;i<rows->size();++i){
         const QVariantMap row=rows->at(i).toMap();
         if(row.value(QStringLiteral("category")).toString()!=QStringLiteral("documentation") ||
-           !row.value(QStringLiteral("generation")).toString().trimmed().isEmpty())
+           !row.value(QStringLiteral("model_years")).toString().trimmed().isEmpty())
             continue;
         const QString path=row.value(QStringLiteral("documentary_database_path")).toString();
         if(!path.isEmpty() && QFileInfo(path).isFile())
@@ -233,6 +224,20 @@ void restoreDocumentaryGenerations(QVariantList *rows)
             db.setConnectOptions(QStringLiteral("QSQLITE_OPEN_READONLY"));
             db.setDatabaseName(database.key());
             if(db.open()){
+                QHash<QString,QString> documentYears;
+                QSqlQuery documents(db);
+                if(documents.exec(QStringLiteral(
+                    "SELECT document_id,edition_code,source_filename,extraction "
+                    "FROM documentary_documents"))){
+                    while(documents.next()){
+                        const QString period=explicitVehicleYears(
+                            documents.value(1).toString()+QLatin1Char(' ')+
+                            documents.value(2).toString()+QLatin1Char(' ')+
+                            documents.value(3).toString());
+                        if(!period.isEmpty())
+                            documentYears.insert(documents.value(0).toString(),period);
+                    }
+                }
                 QHash<QString,QString> generationsByScope;
                 QHash<QString,QStringList> scopesByKnowledge;
                 QHash<QString,QString> generationByKnowledge;
@@ -250,18 +255,18 @@ void restoreDocumentaryGenerations(QVariantList *rows)
                                 query.value(1).toByteArray()).object();
                             const QString scope=jsonField(info,"scope_key");
                             const QString knowledge=jsonField(info,"knowledge_key");
-                            const QString sourceGeneration=generationFromSourceJson(info);
+                            const QString sourceGeneration=yearsFromSourceJson(info);
                             if(table==QStringLiteral("mems_knowledge_scope") &&
                                !knowledge.isEmpty()){
                                 if(!scope.isEmpty() &&
                                    !scopesByKnowledge[knowledge].contains(scope))
                                     scopesByKnowledge[knowledge].append(scope);
-                                generationByKnowledge[knowledge]=mergeGenerations(
+                                generationByKnowledge[knowledge]=mergeYears(
                                     generationByKnowledge.value(knowledge),sourceGeneration);
                             }else if(table==QStringLiteral("mems_applicability_scope") ||
                                      table==QStringLiteral("mems_scope_constraint")){
                                 if(!scope.isEmpty())
-                                    generationsByScope[scope]=mergeGenerations(
+                                    generationsByScope[scope]=mergeYears(
                                         generationsByScope.value(scope),sourceGeneration);
                             }else if(table==QStringLiteral("mems_procedure")){
                                 const QString id=jsonField(info,"procedure_key");
@@ -288,24 +293,24 @@ void restoreDocumentaryGenerations(QVariantList *rows)
                             if(!query.exec() || !query.next())continue;
                             const QJsonObject entry=QJsonDocument::fromJson(
                                 query.value(0).toByteArray()).object();
-                            QString generation=generationFromSourceJson(entry);
+                            QString generation=yearsFromSourceJson(entry);
                             QString knowledge=jsonField(entry,"knowledge_key");
                             if(knowledge.isEmpty())
                                 knowledge=knowledgeByProcedure.value(jsonField(entry,"procedure_key"));
                             if(knowledge.isEmpty())
                                 knowledge=knowledgeBySpecification.value(jsonField(entry,"spec_key"));
                             if(!knowledge.isEmpty()){
-                                generation=mergeGenerations(generation,
+                                generation=mergeYears(generation,
                                     generationByKnowledge.value(knowledge));
                                 for(const QString &scope:scopesByKnowledge.value(knowledge))
-                                    generation=mergeGenerations(generation,
+                                    generation=mergeYears(generation,
                                         generationsByScope.value(scope));
                             }
                             if(generation.isEmpty())
-                                generation=explicitMemsGenerations(
-                                    row.value(QStringLiteral("content")).toString());
+                                generation=documentYears.value(
+                                    row.value(QStringLiteral("document_id")).toString());
                             if(!generation.isEmpty()){
-                                row.insert(QStringLiteral("generation"),generation);
+                                row.insert(QStringLiteral("model_years"),generation);
                                 (*rows)[i]=row;
                             }
                         }
@@ -619,14 +624,16 @@ private:
 
     void configureResults()
     {
+        m_results->setObjectName(QStringLiteral("memsDatabaseResults"));
         m_results->setColumnCount(5);
         m_results->setColumnHidden(3,true);
         m_results->setColumnHidden(4,true);
+        m_results->horizontalHeader()->setStretchLastSection(false);
         m_results->horizontalHeader()->setSectionResizeMode(0,QHeaderView::Stretch);
         m_results->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Fixed);
         m_results->horizontalHeader()->setSectionResizeMode(2,QHeaderView::Fixed);
-        m_results->setColumnWidth(1,95);
-        m_results->setColumnWidth(2,122);
+        m_results->setColumnWidth(1,105);
+        m_results->setColumnWidth(2,108);
         connect(m_results,&QTableWidget::itemSelectionChanged,this,[this](){showSelectedResult();});
     }
 
@@ -922,7 +929,7 @@ private:
         }
 
         QVariantList fetched=fetchRows(raw,category,generation);
-        restoreDocumentaryGenerations(&fetched);
+        restoreDocumentaryYears(&fetched);
         QVector<QVariantMap> rows=cleanAndSort(fetched,category);
         populate(rows);
         if(m_count) m_count->setText(I18n::text(7324).arg(QString::number(rows.size())));
@@ -973,7 +980,12 @@ private:
                 titleItem->setData(Qt::UserRole,title);
             QFont font=titleItem->font();font.setBold(category==QStringLiteral("ecu")||category==QStringLiteral("dtc"));titleItem->setFont(font);
             m_results->setItem(r,0,titleItem);
-            m_results->setItem(r,1,new QTableWidgetItem(generation.isEmpty()?QStringLiteral("—"):generation));
+            const QString period=category==QStringLiteral("documentation")
+                ?row.value(QStringLiteral("model_years")).toString():generation;
+            QTableWidgetItem *years=new QTableWidgetItem(
+                period.isEmpty()?QStringLiteral("—"):period);
+            years->setToolTip(period);
+            m_results->setItem(r,1,years);
             m_results->setItem(r,2,new QTableWidgetItem(categoryLabel(category)));
             m_results->setRowHeight(r,27);
         }
