@@ -88,6 +88,30 @@ QLabel *scopePill(int key,QWidget *parent)
     return label;
 }
 
+// The table owns its visible column geometry. No event filters or competing
+// resize rules are installed by the documentary reader.
+class MemsDatabaseResultsTable final : public QTableWidget
+{
+public:
+    explicit MemsDatabaseResultsTable(QWidget *parent) : QTableWidget(parent) {}
+
+protected:
+    bool viewportEvent(QEvent *event) override
+    {
+        const bool handled=QTableWidget::viewportEvent(event);
+        if(event && columnCount()==3 &&
+           (event->type()==QEvent::Resize || event->type()==QEvent::Show)){
+            constexpr int generationWidth=114;
+            constexpr int typeWidth=120;
+            const int resultWidth=qMax(40,viewport()->width()-generationWidth-typeWidth);
+            if(columnWidth(1)!=generationWidth)setColumnWidth(1,generationWidth);
+            if(columnWidth(2)!=typeWidth)setColumnWidth(2,typeWidth);
+            if(columnWidth(0)!=resultWidth)setColumnWidth(0,resultWidth);
+        }
+        return handled;
+    }
+};
+
 }
 
 MemsDatabaseBrowser::MemsDatabaseBrowser(QWidget *parent)
@@ -162,7 +186,7 @@ void MemsDatabaseBrowser::buildUi()
     split->setStyleSheet(QStringLiteral("QSplitter::handle{background:#090e13;}"));
 
     QFrame *listCard=card(split); QVBoxLayout *lv=new QVBoxLayout(listCard); lv->setContentsMargins(7,7,7,7);
-    m_results=new QTableWidget(listCard);
+    m_results=new MemsDatabaseResultsTable(listCard);
     // Identify the indexed results before the UI shell prepares table headers.
     m_results->setObjectName(QStringLiteral("memsDatabaseResults"));
     // Column geometry belongs to the selected reader. The indexed reader
