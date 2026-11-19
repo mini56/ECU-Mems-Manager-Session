@@ -548,8 +548,10 @@ static void prepareSettingsGauge(QWidget *gauge,bool precision)
     gauge->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
     gauge->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     gauge->setAttribute(Qt::WA_StyledBackground,true);
-    gauge->setStyleSheet(QStringLiteral(
-        "background:#080d11;border:1px solid #34414a;border-radius:5px;"));
+    const bool darkTheme=qApp && qApp->property("ecuDarkTheme").toBool();
+    gauge->setStyleSheet(darkTheme
+        ? QStringLiteral("background:#080d11;border:1px solid #34414a;border-radius:5px;")
+        : QStringLiteral("background:#ffffff;border:1px solid #cbd5df;border-radius:5px;"));
     gauge->show();
 }
 
@@ -643,9 +645,10 @@ static void compactAdjustForm(QWidget *page,QFrame *adjust)
         QFont font=note->font();
         font.setPointSizeF(8.0);
         note->setFont(font);
-        note->setStyleSheet(QStringLiteral(
-            "QLineEdit{background:transparent;color:#b8c1c7;"
-            "border:0;padding:0 2px;}"));
+        const bool darkTheme=qApp && qApp->property("ecuDarkTheme").toBool();
+        note->setStyleSheet(darkTheme
+            ? QStringLiteral("QLineEdit{background:transparent;color:#b8c1c7;border:0;padding:0 2px;}")
+            : QStringLiteral("QLineEdit{background:transparent;color:#253241;border:0;padding:0 2px;}"));
     }
 }
 
