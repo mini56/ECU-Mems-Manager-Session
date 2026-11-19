@@ -222,6 +222,21 @@ bool verifyUi(MainWindow &window)
              headerScope->text().contains(QStringLiteral("MEMS 1.9")),
              "Database heading must show full system list without clipping") && ok;
 
+    QTableWidget *resultTable=window.findChild<QTableWidget*>(
+        QStringLiteral("memsDatabaseResults"));
+    ok=check(resultTable && resultTable->horizontalHeader(),
+             "Database result columns not present") && ok;
+    if(resultTable && resultTable->horizontalHeader()){
+        QHeaderView *header=resultTable->horizontalHeader();
+        ok=check(!header->stretchLastSection() &&
+                 header->sectionResizeMode(0)==QHeaderView::Stretch &&
+                 header->sectionResizeMode(1)==QHeaderView::Fixed &&
+                 header->sectionResizeMode(2)==QHeaderView::Fixed &&
+                 resultTable->columnWidth(1)==105 &&
+                 resultTable->columnWidth(2)==108,
+                 "Database layout: Result must grow, Generation 105, Type 108") && ok;
+    }
+
     // The revised help loads real bundled HTML into an offline dark Qt dialog.
     // It must contain the update instructions and a navigable section index.
     HelpViewer manual(QStringLiteral("SESSION UI TEST"),&window);
