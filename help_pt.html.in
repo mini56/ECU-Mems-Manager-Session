@@ -25,41 +25,107 @@ small{color:#aebcc5}
 <h2 id="chapter-1">1. Ligação</h2>
 <p>Ligue uma interface de diagnóstico compatível ao veículo e escolha a porta série em Opções → Editar definições. Ligue a ignição e prima Ligar. Os indicadores mostram o estado da comunicação. Prima Desligar para terminar a sessão. Quando a ignição é desligada, o programa interrompe a leitura de forma segura e pode voltar a ligar.</p>
 
+
+<h2 id="chapter-usb">Teste do cabo USB — identificação do adaptador e da porta COM</h2>
+<p>Abra <b>Teste do cabo USB</b> na navegação lateral. A tabela apresenta a porta COM, a família do adaptador, os identificadores <b>VID/PID</b> e a descrição fornecida pelo Windows. Quando os dados estão disponíveis, são reconhecidos FTDI FT232, Prolific PL2303, CH340/CH341 e Silicon Labs CP210x.</p>
+<p><b>Atualizar</b> renova a lista. <b>Monitorizar ligação (15 s)</b> identifica uma nova porta ao ligar o cabo. <b>Testar abertura da porta</b> verifica apenas se o Windows permite abrir a porta selecionada; desligue primeiro a sessão ECU quando utiliza essa porta. O teste não envia comandos à ECU.</p>
+<p>Em <b>Opções</b>, selecione a porta COM correspondente. A lista acompanha alterações do número COM e permite introdução manual quando necessária.</p>
+<div class="tip"><b>Atenção à diferença:</b> detetar o adaptador, conseguir abrir a porta e <b>estabelecer a ligação ECU</b> são três verificações distintas. Apenas a última confirma a comunicação real com a centralina. O teste USB não verifica a cablagem interna.</div><p><b>Deteção do cabo USB</b></p>
+<p><img src=":/help/images/Capture d’écran (905).png" width="550"></p>
+
+
 <h2 id="chapter-2">2. Separador Visão geral</h2>
 <p>É a página inicial. Mostra conta-rotações e indicadores em tempo real de pressão no coletor, temperaturas, tensão da bateria, borboleta, lambda, ralenti e ignição. Os avisos conservam as cores no tema escuro.</p>
+
+
+<p>Os mostradores apresentam os valores recebidos e as unidades. Pequenos gráficos indicam aproximadamente dois minutos de histórico; o estado geral aparece num painel próprio.</p><p><b>Visão geral dos mostradores</b></p>
+<p><img src=":/help/images/Capture d’écran (901).png" width="550"></p>
+
 
 <h2 id="chapter-3">3. Separador Injeção</h2>
 <p>Agrupa o tempo de injeção final, tempo base, correção transitória e estado transitório obtidos no modo de leitura dedicado. A IA MEMS observa as medições existentes sem iniciar outra consulta ECU.</p>
 
+
+<p>O gráfico inferior acompanha o tempo de injeção final. O painel lateral apresenta firmware, valores RAM brutos e modo de leitura. A cartografia RAM é apenas de leitura quando suportada.</p><p><b>Injeção e gráfico</b></p>
+<p><img src=":/help/images/Capture d’écran (910).png" width="550"></p>
+
+
 <h2 id="chapter-4">4. Separador Definições</h2>
 <p>Contém ajustes de serviço para ralenti, combustível e ignição, consoante a ECU. Consulte as ajudas e os riscos antes de alterar valores. A correção de ralenti quente para 7D14-15 usa o ajuste real da ECU.</p>
+
+
+<p>O mostrador central indica a rotação do motor; os comandos inferiores permitem as regulações de ralenti, combustível e ignição suportadas pela ECU. Verifique os valores antes de os alterar.</p><p><b>Regulações da ECU</b></p>
+<p><img src=":/help/images/Capture d’écran (896).png" width="550"></p>
+
 
 <h2 id="chapter-5">5. Separador Erros</h2>
 <p>Apresenta avarias ECU, anomalias registadas e estados associados. Leia e compreenda os erros antes de os apagar. Alguns contadores necessitam de reinicialização completa da ECU.</p>
 
+
+<p>A secção superior apresenta erros memorizados e o respetivo botão para apagar. A inferior contém anomalias em tempo real, indicadores de estado e um comando separado. Uma linha visível não significa necessariamente uma avaria ativa.</p><p><b>Erros e anomalias em direto</b></p>
+<p><img src=":/help/images/Capture d’écran (897).png" width="550"></p>
+
+
 <h2 id="chapter-6">6. Separador Atuadores</h2>
 <p>Use apenas os testes de atuadores suportados. Ensaios de injetores, ignição ou aquecimento podem ativar componentes. Coloque sempre o veículo em condições de segurança.</p>
+
+
+<p>À esquerda estão os testes de atuadores; à direita, quando suportado, o controlo do motor passo a passo do ralenti. Existe também a função de reposição dos atuadores.</p><p><b>Testes de atuadores</b></p>
+<p><img src=":/help/images/Capture d’écran (907).png" width="550"></p>
+
 
 <h2 id="chapter-7">7. Todas as medições</h2>
 <p>Apresenta parâmetros, explicações, valores ECU recebidos e interpretações quando são conhecidas. Por exemplo, 138 pode corresponder a 13,8 V numa leitura documentada da bateria. Não são inventadas conversões de campos desconhecidos.</p>
 
+
+<p>A página utiliza as colunas Parâmetro, Recebido ECU e Interpretado. Na captura, por exemplo, 137 corresponde a 13,7 V da bateria. Os ícones de ajuda apresentam explicações de determinados parâmetros.</p><p><b>Todas as medições</b></p>
+<p><img src=":/help/images/Capture d’écran (899).png" width="550"></p>
+
+
 <h2 id="chapter-8">8. Todos os dados</h2>
 <p>Mostra campos MEMS brutos e descodificados para comparar os dados do protocolo com as medições interpretadas.</p>
+
+
+<p>As tabelas mostram posições e valores brutos das tramas 7D e 80, bem como interpretações documentadas. São úteis para verificar a descodificação.</p><p><b>Dados brutos e calculados</b></p>
+<p><img src=":/help/images/Capture d’écran (900).png" width="550"></p>
+
 
 <h2 id="chapter-9">9. ECU / ROSCO</h2>
 <p>Permite ler D0, D1, D2 e F0 e utilizar os comandos de sessão F2–F5. Apresenta TX/RX em hexadecimal. A recodificação ECU D3 mantém-se desativada.</p>
 
+
+<h2 id="chapter-interactive">Modo interativo — comandos avançados</h2><p>Esta página apresenta instruções para comandos interativos ROSCO. Destina-se a utilizadores que conhecem o protocolo e a porta série escolhida. Para medições normais, utilize <b>Ligar</b> e as páginas de diagnóstico.</p>
+<h2 id="chapter-ecu19">Teste ECU 1.9 — verificação de comunicação</h2><p>O teste ECU 1.9 executa uma sequência orientada de ligação, identificação e leitura. Apresenta respostas do protocolo, leitura da injeção, reposição do modo de diagnóstico e nova ligação. É possível iniciar, parar e abrir a pasta dos registos. Não substitui o teste do cabo USB.</p>
+
 <h2 id="chapter-10">10. Diagnóstico automático</h2>
 <p>Avalia as medições ECU e indica valores normais, avisos e anomalias. Pode guardar uma referência e exportar um relatório. Verifica também o tempo de carga da bobina.</p>
+
+
+<p>Cada verificação apresenta valor, estado e interpretação. Uma única anomalia exige confirmação adicional. Pode guardar referências e exportar o relatório.</p><p><b>Diagnóstico automático</b></p>
+<p><img src=":/help/images/Capture d’écran (898).png" width="550"></p>
+
 
 <h2 id="chapter-11">11. Análise de registos</h2>
 <p>Importa registos CSV/TXT compatíveis, apresenta os canais escolhidos e sobrepõe curvas para comparar a sua evolução.</p>
 
+
+<p>Carregue um registo CSV ou TXT e selecione os canais na lista com deslocamento. Pode selecionar tudo, desmarcar tudo ou sobrepor curvas.</p><p><b>Análise de registos</b></p>
+<p><img src=":/help/images/Capture d’écran (911).png" width="550"></p>
+
+
 <h2 id="chapter-12">12. IA MEMS</h2>
 <p>A IA MEMS combina perguntas em linguagem natural, medições ECU já recolhidas, motor especializado e base MEMS. Distingue observações, hipóteses, fontes e níveis de confiança. Uma leitura isolada não basta para condenar um componente. O modelo funciona localmente, é ativado ao abrir o separador e não envia comandos ECU adicionais.</p>
 
+
+<p>Pesquise um componente ou uma operação. Quando existe documentação instalada, IA MEMS pode apresentar passos numerados, referências e páginas do fabricante. Abra a página ampliada para verificar diagramas.</p><p><b>IA MEMS e procedimento</b></p>
+<p><img src=":/help/images/Capture d’écran (914).png" width="550"></p>
+
+
 <h2 id="chapter-13">13. Capturas de ecrã</h2>
 <p>Captura guarda uma imagem da janela na pasta captures. Ver capturas permite pré-visualizar, ampliar ou apagar imagens após confirmação.</p>
+
+
+<p>Na secção Ferramentas, <b>Gravação</b> inicia o registo de diagnóstico e <b>Parar</b> termina-o. <b>Captura instantânea</b> guarda uma imagem; <b>Ver capturas</b> permite consultar as imagens.</p>
 
 <h2 id="chapter-14">14. Ajuda contextual</h2>
 <p>Quando existe ajuda contextual, o programa utiliza a imagem da bolha de ajuda integrada, independentemente da versão do Windows.</p>
@@ -85,6 +151,11 @@ small{color:#aebcc5}
 <h2 id="chapter-21">21. Base documental</h2>
 <p>A página Base de dados pesquisa referências ECU, veículos, comandos e documentação técnica. Os filtros permitem localizar fichas e páginas do fabricante. Os pacotes documentais são independentes do executável SESSION.</p>
 
+
+<p>Introduza uma palavra na pesquisa, escolha uma geração se necessário e selecione um resultado. A ficha lateral mostra documento, idioma, página e ilustrações, com deslocamento próprio.</p><p><b>Base documental e página original</b></p>
+<p><img src=":/help/images/Capture d’écran (912).png" width="550"></p>
+
+
 <h2 id="chapter-22">22. Atualizações documentais</h2>
 <p>Na Base de dados, prima Procurar atualizações. O gestor consulta o catálogo online, transfere pacotes disponíveis e verifica SHA-256. A instalação exige a palavra-passe do pacote cifrado e verifica SQLite, imagens e origem. Também é possível instalar um pacote cifrado local. Se houver falha, a base anterior é mantida.</p>
 
@@ -92,5 +163,8 @@ small{color:#aebcc5}
 <p>A opção Ocultar automaticamente a barra de tarefas do Windows vem desativada. Se for ativada, altera o comportamento do ambiente de trabalho enquanto SESSION está aberto. O programa repõe a definição ao sair e tem verificações de recuperação após um fecho inesperado. As políticas do Windows podem impedir a alteração.</p>
 
 <h2 id="chapter-24">24. Ilustrações do fabricante</h2>
-<p>As capturas verificadas podem ser integradas em versões futuras. As imagens do fabricante vêm do pacote documental instalado e podem ser ampliadas na Base de dados ou IA MEMS.</p>
+<p>As 13 capturas deste guia estão integradas no instalador SESSION e são consultadas sem Internet. As imagens mostram a interface em francês; as instruções estão em português. Os desenhos do fabricante provêm dos pacotes documentais instalados.</p>
+<p><b>Arranque</b></p>
+<p><img src=":/help/images/Capture d’écran (915).png" width="550"></p>
+
 </body></html>
