@@ -220,5 +220,15 @@ small{color:#aebcc5}
 <p><img src=":/help/images/Capture d’écran (915).png" width="550"></p>
 
 
+<h3 id="credits-mems">Acknowledgements and Credits</h3>
+<p>ECU MEMS Manager SESSION builds upon years of research and software development by enthusiasts dedicated to Rover MEMS engine management systems.</p>
+<p><b>Special thanks to:</b></p>
+<ul>
+<li><b>Leopold Gunther — mems-rosco</b><p>For his work on MEMS ECU reading and diagnostic software.</p></li>
+<li><b>James Portman — rovermems.com</b><p>For his research into Rover MEMS protocols and the development of diagnostic tools.</p></li>
+<li><b>Colin Bourassa — memsgauge / memsreader</b><p>For his pioneering work on MEMS ECU communication and engine data visualisation.</p></li>
+</ul>
+<p>Their work and willingness to share knowledge have contributed to the development of MEMS diagnostic tools for the wider community.</p>
+
 </body>
 </html>
