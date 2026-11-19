@@ -192,14 +192,17 @@ QString yearsFromSourceJson(const QJsonObject &json)
     if(to.isEmpty())to=value(QStringLiteral("year_end"));
     if(from.isEmpty())from=value(QStringLiteral("model_year_from"));
     if(to.isEmpty())to=value(QStringLiteral("model_year_to"));
-    if(!from.isEmpty() && !to.isEmpty()){
+    if(!from.isEmpty()){
         bool ok1=false,ok2=false;
         const int y1=from.toInt(&ok1),y2=to.toInt(&ok2);
-        if(ok1 && ok2 && ((y1>=1980&&y1<=2040)||(y1>=80&&y1<=99)) &&
-           ((y2>=1980&&y2<=2040)||(y2>=80&&y2<=99)||
-            (y2>=0&&y2<=40&&to.size()==2)))
-            return QStringLiteral("%1-%2").arg(y1%100,2,10,QLatin1Char('0'))
-                   .arg(y2%100,2,10,QLatin1Char('0'));
+        if(ok1 && ((y1>=1980&&y1<=2040)||(y1>=80&&y1<=99))){
+            if(ok2 && ((y2>=1980&&y2<=2040)||(y2>=80&&y2<=99)||
+                        (y2>=0&&y2<=40&&to.size()==2)))
+                return QStringLiteral("%1-%2").arg(y1%100,2,10,QLatin1Char('0'))
+                       .arg(y2%100,2,10,QLatin1Char('0'));
+            if(to.isEmpty())
+                return QStringLiteral("%1+").arg(y1%100,2,10,QLatin1Char('0'));
+        }
     }
     for(auto it=json.constBegin();it!=json.constEnd();++it){
         const QString key=it.key().toLower();
@@ -211,6 +214,11 @@ QString yearsFromSourceJson(const QJsonObject &json)
         if(it.value().isString()){
             const QString period=explicitVehicleYears(it.value().toString());
             if(!period.isEmpty())return period;
+            static const QRegularExpression fromYear(QStringLiteral(
+                "(?<![0-9])((?:19|20)[0-9]{2})\\s*[-–—]\\s*>(?![0-9])"));
+            const QRegularExpressionMatch match=fromYear.match(it.value().toString());
+            if(match.hasMatch())
+                return match.captured(1).right(2)+QLatin1Char('+');
         }
         if(it.value().isArray())
             for(const QJsonValue &part:it.value().toArray()){
@@ -237,6 +245,7 @@ QString yearsFromIndexedSource(const QVariantMap &row)
            !key.contains(QStringLiteral("année")) &&
            !key.contains(QStringLiteral("period")) &&
            !key.contains(QStringLiteral("scope")) &&
+           !key.contains(QStringLiteral("variant")) &&
            !key.contains(QStringLiteral("model")) &&
            !key.contains(QStringLiteral("applicab")) &&
            !key.contains(QStringLiteral("generation")))
@@ -291,6 +300,16 @@ void restoreReferenceYears(QVariantList *rows)
             QHash<QString,QString> knowledgeByProcedure;
             QHash<QString,QString> knowledgeBySpecification;
 
+            QHash<QString,QString> startYearByVin;
+            QSet<QString> conflictingVinYears;
+            const auto vinSuffix=[](const QString &raw)->QString{
+                static const QRegularExpression suffix(QStringLiteral("([0-9]{5,8})$"));
+                const QRegularExpressionMatch match=suffix.match(raw.trimmed());
+                if(!match.hasMatch())return QString();
+                bool ok=false;
+                const qlonglong number=match.captured(1).toLongLong(&ok);
+                return ok?QString::number(number):QString();
+            };
             // All fields are read by their actual SQLite column names. Some
             // manuals store the years in scope text, others in year_from/to.
             const auto readTable=[&db](const QString &table,
@@ -308,11 +327,47 @@ void restoreReferenceYears(QVariantList *rows)
                     consume(source);
                 }
             };
+            readTable(QStringLiteral("ecu_fitment"),
+                      [&startYearByVin,&conflictingVinYears,&vinSuffix]
+                      (const QJsonObject &source){
+                if(jsonField(source,"model").compare(
+                       QStringLiteral("Mini"),Qt::CaseInsensitive)!=0)
+                    return;
+                const QString vin=vinSuffix(jsonField(source,"vin_from"));
+                if(vin.isEmpty())return;
+                QString year=jsonField(source,"year_from");
+                if(year.isEmpty()){
+                    static const QRegularExpression start(QStringLiteral(
+                        "(?<![0-9])((?:19|20)[0-9]{2})\\s*[-–—]\\s*>"));
+                    const QRegularExpressionMatch match=start.match(
+                        jsonField(source,"variant"));
+                    if(match.hasMatch())year=match.captured(1);
+                }
+                bool ok=false;
+                const int startYear=year.toInt(&ok);
+                if(!ok || startYear<1980 || startYear>2040)return;
+                const QString display=QStringLiteral("%1+").arg(
+                    startYear%100,2,10,QLatin1Char('0'));
+                if(conflictingVinYears.contains(vin))return;
+                if(startYearByVin.contains(vin) && startYearByVin.value(vin)!=display){
+                    startYearByVin.remove(vin);
+                    conflictingVinYears.insert(vin);
+                }else{
+                    startYearByVin.insert(vin,display);
+                }
+            });
             for(const QString &table:{QStringLiteral("mems_applicability_scope"),
                                       QStringLiteral("mems_scope_constraint")}){
-                readTable(table,[&yearsByScope](const QJsonObject &source){
+                readTable(table,[&yearsByScope,&startYearByVin,&vinSuffix](const QJsonObject &source){
                     const QString key=jsonField(source,"scope_key");
                     QString years=yearsFromSourceJson(source);
+                    if(years.isEmpty()){
+                        const QString vin=vinSuffix(jsonField(source,"vin_from"));
+                        if(!vin.isEmpty() &&
+                           jsonField(source,"model").compare(
+                               QStringLiteral("Mini"),Qt::CaseInsensitive)==0)
+                            years=startYearByVin.value(vin);
+                    }
                     if(years.isEmpty()){
                         for(auto it=source.constBegin();it!=source.constEnd();++it){
                             const QString candidate=explicitVehicleYears(it.value().toString());
