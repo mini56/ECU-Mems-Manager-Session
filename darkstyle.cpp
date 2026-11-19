@@ -5,6 +5,7 @@
 #include "uishell.h"
 #include "summarytab.h"
 #include "rawpage.h"
+#include "settingspage.h"
 #include "styles.h"
 #include <QComboBox>
 #include <QFontMetrics>
@@ -354,7 +355,13 @@ QPushButton:disabled,QToolButton:disabled{background:#f3f5f8;color:#9ca8b5;borde
 QPushButton#m_connectButton{background:#f07800;color:#ffffff;border:1px solid #cd6500;font-weight:800;}
 QPushButton#m_disconnectButton{background:#f4f5f7;color:#374452;border:1px solid #c8d3de;font-weight:800;}
 QPushButton#m_clearFaultsButton,QPushButton#m_clearRecordedAnomalies{
-    background:#101419;color:#ff9900;border:1px solid #ff8800;
+    background:#ffffff;color:#c26000;border:1px solid #ff8800;
+}
+QPushButton#m_clearFaultsButton:hover:enabled,QPushButton#m_clearRecordedAnomalies:hover:enabled{
+    background:#fff0e1;color:#a64d00;
+}
+QPushButton#m_clearFaultsButton:disabled,QPushButton#m_clearRecordedAnomalies:disabled{
+    background:#ffffff;color:#c26000;border:1px solid #ff8800;
 }
 QScrollBar:vertical{background:#edf1f5;width:10px;margin:0;border:0;}
 QScrollBar::handle:vertical{background:#aab9c8;border-radius:4px;min-height:28px;}
@@ -404,12 +411,18 @@ void applyApplicationVisualStyle(QMainWindow *window)
     if(!window)return;
     const bool dark=qApp && qApp->property("ecuDarkTheme").toBool();
     if(dark){
+        // Remove the previous application's light stylesheet before restoring
+        // the original dark widget styles. The switch is immediate; no restart.
+        if(qApp) qApp->setStyleSheet(STYLE_DARK);
         restoreDarkNativeStyles(window);
         apply(window);
     }else{
         reflowOverview(window);
         applyLightVisualStyle(window);
     }
+    // Gauge container colours must be updated with the theme. The same size
+    // routine is already used by the native page: no new overlay or widget.
+    fitSettingsPage(window);
     refreshUiShellTheme(window);
     if(SummaryTab *summary=window->findChild<SummaryTab*>())
         summary->applyVisualTheme(dark);
