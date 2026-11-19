@@ -172,7 +172,7 @@ void MemsDatabaseBrowser::buildUi()
     m_results->setEditTriggers(QAbstractItemView::NoEditTriggers); m_results->setAlternatingRowColors(true); m_results->setShowGrid(false);
     m_results->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     m_results->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    m_results->setStyleSheet(QStringLiteral("QTableWidget{background:#0a1117;color:#dce3e8;alternate-background-color:#0e151b;border:1px solid #27323b;outline:0;}QTableWidget::item{padding:4px;border:0;}QTableWidget::item:selected{background:#332414;color:#fff;}QHeaderView::section{background:#141c23;color:#ff9828;border:0;border-right:1px solid #29343e;border-bottom:2px solid #ff7a00;padding:5px;font-weight:700;}QTableWidget QScrollBar:vertical{background:#111a21;width:16px;margin:0;border-left:1px solid #53616c;}QTableWidget QScrollBar::handle:vertical{background:#7c8b96;min-height:38px;border:1px solid #a0abb3;border-radius:5px;margin:2px;}QTableWidget QScrollBar::handle:vertical:hover{background:#ff8a22;border-color:#ffad5c;}QTableWidget QScrollBar::add-line:vertical,QTableWidget QScrollBar::sub-line:vertical{height:0;}QTableWidget QScrollBar::add-page:vertical,QTableWidget QScrollBar::sub-page:vertical{background:#111a21;}"));
+    m_results->setStyleSheet(QStringLiteral("QTableWidget{background:#0a1117;color:#dce3e8;alternate-background-color:#0e151b;border:1px solid #27323b;outline:0;}QTableWidget::item{padding:4px;border:0;}QTableWidget::item:selected{background:#332414;color:#fff;}QHeaderView::section{background:#141c23;color:#ff9828;border:0;border-right:1px solid #29343e;border-bottom:2px solid #ff7a00;padding:5px;font-weight:700;}QTableWidget QScrollBar:vertical{background:#111a21;width:16px;margin:0;border-left:1px solid #53616c;}QTableWidget QScrollBar::handle:vertical{background:#ff8a22;min-height:38px;border:1px solid #ffb05a;border-radius:5px;margin:2px;}QTableWidget QScrollBar::handle:vertical:hover{background:#ffb05a;border-color:#ffb05a;}QTableWidget QScrollBar::add-line:vertical,QTableWidget QScrollBar::sub-line:vertical{height:0;}QTableWidget QScrollBar::add-page:vertical,QTableWidget QScrollBar::sub-page:vertical{background:#111a21;}"));
     lv->addWidget(m_results,1);
 
     QFrame *detailCard=card(split);
@@ -207,8 +207,8 @@ void MemsDatabaseBrowser::buildUi()
     documentScroll->setFixedWidth(18);
     documentScroll->setStyleSheet(QStringLiteral(
         "QScrollBar:vertical{background:#111a21;width:18px;margin:0;border-left:1px solid #53616c;}"
-        "QScrollBar::handle:vertical{background:#8897a5;min-height:38px;border:1px solid #b1bdc5;border-radius:4px;margin:2px;}"
-        "QScrollBar::handle:vertical:hover{background:#ff8a22;border-color:#ffad5c;}"
+        "QScrollBar::handle:vertical{background:#ff8a22;min-height:38px;border:1px solid #ffb05a;border-radius:4px;margin:2px;}"
+        "QScrollBar::handle:vertical:hover{background:#ffb05a;border-color:#ffb05a;}"
         "QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical{height:0;}"
         "QScrollBar::add-page:vertical,QScrollBar::sub-page:vertical{background:#111a21;}"));
     detailViewport->addWidget(documentScroll);

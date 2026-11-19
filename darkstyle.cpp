@@ -150,13 +150,13 @@ static void styleScrollBars(QMainWindow *w)
     if(!w) return;
     const QString qss=QStringLiteral(
         "QScrollBar:vertical{background:#070c11;width:9px;margin:0;border:0;}"
-        "QScrollBar::handle:vertical{background:#35434d;border-radius:4px;min-height:28px;}"
-        "QScrollBar::handle:vertical:hover{background:#52616b;}"
+        "QScrollBar::handle:vertical{background:#ff8a22;border-radius:4px;min-height:28px;}"
+        "QScrollBar::handle:vertical:hover{background:#ffb05a;}"
         "QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical{height:0;}"
         "QScrollBar::add-page:vertical,QScrollBar::sub-page:vertical{background:transparent;}"
         "QScrollBar:horizontal{background:#070c11;height:9px;margin:0;border:0;}"
-        "QScrollBar::handle:horizontal{background:#35434d;border-radius:4px;min-width:28px;}"
-        "QScrollBar::handle:horizontal:hover{background:#52616b;}"
+        "QScrollBar::handle:horizontal{background:#ff8a22;border-radius:4px;min-width:28px;}"
+        "QScrollBar::handle:horizontal:hover{background:#ffb05a;}"
         "QScrollBar::add-line:horizontal,QScrollBar::sub-line:horizontal{width:0;}"
         "QScrollBar::add-page:horizontal,QScrollBar::sub-page:horizontal{background:transparent;}" );
     // Conserver les styles explicites des deux ascenseurs d'Analyse.

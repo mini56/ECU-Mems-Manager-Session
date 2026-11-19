@@ -324,19 +324,19 @@ QScrollBar:vertical {
     width: 10px;
 }
 QScrollBar::handle:vertical {
-    background: #40465b;
+    background: #ff8a22;
     border-radius: 5px;
     min-height: 24px;
 }
 QScrollBar::handle:vertical:hover {
-    background: #565d70;
+    background: #ffb05a;
 }
 QScrollBar:horizontal {
     background: transparent;
     height: 10px;
 }
 QScrollBar::handle:horizontal {
-    background: #40465b;
+    background: #ff8a22;
     border-radius: 5px;
     min-width: 24px;
 }
