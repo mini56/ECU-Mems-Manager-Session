@@ -26,6 +26,9 @@
 #include <QFrame>
 #include <QHeaderView>
 #include <QHBoxLayout>
+#include <QHash>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMetaObject>
@@ -86,6 +89,232 @@ QString generationFromText(const QString &raw)
     if(n.contains(QStringLiteral("1 3"))) return QStringLiteral("1.3");
     if(n.contains(QStringLiteral("1 2"))) return QStringLiteral("1.2");
     return QString();
+}
+
+
+// The title of an indexed source row may be an internal procedure identifier.
+// Use the original manufacturer's visible text for the two panes, without
+// editing the source key, original title, stored text, page or image.
+QString readableResultTitle(const QVariantMap &row)
+{
+    const QString original=row.value(QStringLiteral("title")).toString().trimmed();
+    if(row.value(QStringLiteral("category")).toString()!=QStringLiteral("documentation"))
+        return original;
+    const bool internal=original.startsWith(QStringLiteral("PROC-"),Qt::CaseInsensitive)
+        || original.startsWith(QStringLiteral("SPEC-"),Qt::CaseInsensitive)
+        || original.startsWith(QStringLiteral("KNOW-"),Qt::CaseInsensitive)
+        || original.startsWith(QStringLiteral("torque_"),Qt::CaseInsensitive)
+        || original.contains(QStringLiteral(" — étape "))
+        || original.contains(QStringLiteral(" — valeur "));
+    if(!internal)
+        return original;
+    const QString content=row.value(QStringLiteral("content")).toString();
+    const int headerEnd=content.indexOf(QStringLiteral("\n\n"));
+    const QString body=headerEnd>=0 ? content.mid(headerEnd+2) : content;
+    for(const QString &rawLine:body.split(QLatin1Char('\n'))){
+        QString line=rawLine.trimmed();
+        if(line.startsWith(QStringLiteral("source_text:"),Qt::CaseInsensitive))
+            line=line.mid(QStringLiteral("source_text:").size()).trimmed();
+        if(line.isEmpty() || line.startsWith(QStringLiteral("notes:"))
+           || line.startsWith(QStringLiteral("topic:"))
+           || line.startsWith(QStringLiteral("source_section:"))
+           || line.startsWith(QStringLiteral("document :"))
+           || line.startsWith(QStringLiteral("page physique :"))
+           || line.startsWith(QStringLiteral("type :")))
+            continue;
+        if(!line.isEmpty())
+            return line;
+    }
+    if(original.startsWith(QStringLiteral("torque_"),Qt::CaseInsensitive)){
+        QString name=original.mid(7);
+        name.replace(QLatin1Char('_'),QLatin1Char(' '));
+        return QStringLiteral("Couple de serrage — %1").arg(name);
+    }
+    const QString document=row.value(QStringLiteral("document_id")).toString();
+    const int page=row.value(QStringLiteral("source_page")).toInt();
+    if(!document.isEmpty() && page>0)
+        return QStringLiteral("%1 — page %2").arg(document).arg(page);
+    return original;
+}
+
+// Only explicit MEMS generations mentioned by the installed source are shown.
+// An unrelated workshop instruction (for example a brake repair) is not
+// assigned an ECU generation by the browser.
+QString explicitMemsGenerations(const QString &source,bool bareGeneration=false)
+{
+    static const QRegularExpression tagged(
+        QStringLiteral("\\bMEMS[\\s_:\\-]*(1[\\.,_][2369])\\b"),
+        QRegularExpression::CaseInsensitiveOption);
+    static const QRegularExpression bare(
+        QStringLiteral("\\b(1[\\.,][2369])\\b"));
+    QSet<QString> matches;
+    QRegularExpressionMatchIterator it=tagged.globalMatch(source);
+    while(it.hasNext()){
+        QString version=it.next().captured(1);
+        version.replace(QLatin1Char(','),QLatin1Char('.'));
+        version.replace(QLatin1Char('_'),QLatin1Char('.'));
+        matches.insert(version);
+    }
+    if(bareGeneration){
+        it=bare.globalMatch(source);
+        while(it.hasNext()){
+            QString version=it.next().captured(1);
+            version.replace(QLatin1Char(','),QLatin1Char('.'));
+            matches.insert(version);
+        }
+    }
+    QStringList result;
+    for(const QString &version:{QStringLiteral("1.2"),QStringLiteral("1.3"),
+                                QStringLiteral("1.6"),QStringLiteral("1.9")})
+        if(matches.contains(version))result.append(version);
+    return result.join(QStringLiteral("/"));
+}
+
+QString mergeGenerations(const QString &a,const QString &b)
+{
+    QStringList versions;
+    for(const QString &version:{QStringLiteral("1.2"),QStringLiteral("1.3"),
+                                QStringLiteral("1.6"),QStringLiteral("1.9")})
+        if(a.split(QLatin1Char('/')).contains(version) ||
+           b.split(QLatin1Char('/')).contains(version))
+            versions.append(version);
+    return versions.join(QStringLiteral("/"));
+}
+
+QString generationFromSourceJson(const QJsonObject &json)
+{
+    QString result;
+    for(auto it=json.constBegin();it!=json.constEnd();++it){
+        const QString key=it.key().toLower();
+        if(!(key.contains(QStringLiteral("generation")) ||
+             key.contains(QStringLiteral("mems")) ||
+             key.contains(QStringLiteral("ecu")) ||
+             key.contains(QStringLiteral("scope")) ||
+             key.contains(QStringLiteral("applicab")) ||
+             key.contains(QStringLiteral("variant"))))
+            continue;
+        if(it.value().isString())
+            result=mergeGenerations(result,explicitMemsGenerations(
+                it.value().toString(),key.contains(QStringLiteral("generation"))));
+        else if(it.value().isArray()){
+            for(const QJsonValue &value:it.value().toArray())
+                if(value.isString())
+                    result=mergeGenerations(result,
+                        explicitMemsGenerations(value.toString()));
+        }
+    }
+    return result;
+}
+
+QString jsonField(const QJsonObject &json,const char *name)
+{
+    return json.value(QString::fromLatin1(name)).toString().trimmed();
+}
+
+void restoreDocumentaryGenerations(QVariantList *rows)
+{
+    if(!rows)return;
+    QHash<QString,QList<int>> byDatabase;
+    for(int i=0;i<rows->size();++i){
+        const QVariantMap row=rows->at(i).toMap();
+        if(row.value(QStringLiteral("category")).toString()!=QStringLiteral("documentation") ||
+           !row.value(QStringLiteral("generation")).toString().trimmed().isEmpty())
+            continue;
+        const QString path=row.value(QStringLiteral("documentary_database_path")).toString();
+        if(!path.isEmpty() && QFileInfo(path).isFile())
+            byDatabase[path].append(i);
+    }
+    for(auto database=byDatabase.constBegin();database!=byDatabase.constEnd();++database){
+        const QString connection=QStringLiteral("MEMS_DB_VIEW_%1").arg(
+            QUuid::createUuid().toString(QUuid::WithoutBraces));
+        {
+            QSqlDatabase db=QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),connection);
+            db.setConnectOptions(QStringLiteral("QSQLITE_OPEN_READONLY"));
+            db.setDatabaseName(database.key());
+            if(db.open()){
+                QHash<QString,QString> generationsByScope;
+                QHash<QString,QStringList> scopesByKnowledge;
+                QHash<QString,QString> generationByKnowledge;
+                QHash<QString,QString> knowledgeByProcedure;
+                QHash<QString,QString> knowledgeBySpecification;
+                {
+                    QSqlQuery query(db);
+                    if(query.exec(QStringLiteral(
+                        "SELECT table_name,row_json FROM documentary_source_rows "
+                        "WHERE table_name IN ('mems_knowledge_scope','mems_applicability_scope',"
+                        "'mems_scope_constraint','mems_procedure','mems_specification')"))){
+                        while(query.next()){
+                            const QString table=query.value(0).toString();
+                            const QJsonObject info=QJsonDocument::fromJson(
+                                query.value(1).toByteArray()).object();
+                            const QString scope=jsonField(info,"scope_key");
+                            const QString knowledge=jsonField(info,"knowledge_key");
+                            const QString sourceGeneration=generationFromSourceJson(info);
+                            if(table==QStringLiteral("mems_knowledge_scope") &&
+                               !knowledge.isEmpty()){
+                                if(!scope.isEmpty() &&
+                                   !scopesByKnowledge[knowledge].contains(scope))
+                                    scopesByKnowledge[knowledge].append(scope);
+                                generationByKnowledge[knowledge]=mergeGenerations(
+                                    generationByKnowledge.value(knowledge),sourceGeneration);
+                            }else if(table==QStringLiteral("mems_applicability_scope") ||
+                                     table==QStringLiteral("mems_scope_constraint")){
+                                if(!scope.isEmpty())
+                                    generationsByScope[scope]=mergeGenerations(
+                                        generationsByScope.value(scope),sourceGeneration);
+                            }else if(table==QStringLiteral("mems_procedure")){
+                                const QString id=jsonField(info,"procedure_key");
+                                if(!id.isEmpty() && !knowledge.isEmpty())
+                                    knowledgeByProcedure.insert(id,knowledge);
+                            }else if(table==QStringLiteral("mems_specification")){
+                                const QString id=jsonField(info,"spec_key");
+                                if(!id.isEmpty() && !knowledge.isEmpty())
+                                    knowledgeBySpecification.insert(id,knowledge);
+                            }
+                        }
+                    }
+                }
+                {
+                    QSqlQuery query(db);
+                    if(query.prepare(QStringLiteral(
+                        "SELECT raw_json FROM documentary_entries "
+                        "WHERE document_id=? AND source_revision=? AND entry_id=?"))){
+                        for(const int i:database.value()){
+                            QVariantMap row=rows->at(i).toMap();
+                            query.bindValue(0,row.value(QStringLiteral("document_id")));
+                            query.bindValue(1,row.value(QStringLiteral("source_revision")));
+                            query.bindValue(2,row.value(QStringLiteral("entry_id")));
+                            if(!query.exec() || !query.next())continue;
+                            const QJsonObject entry=QJsonDocument::fromJson(
+                                query.value(0).toByteArray()).object();
+                            QString generation=generationFromSourceJson(entry);
+                            QString knowledge=jsonField(entry,"knowledge_key");
+                            if(knowledge.isEmpty())
+                                knowledge=knowledgeByProcedure.value(jsonField(entry,"procedure_key"));
+                            if(knowledge.isEmpty())
+                                knowledge=knowledgeBySpecification.value(jsonField(entry,"spec_key"));
+                            if(!knowledge.isEmpty()){
+                                generation=mergeGenerations(generation,
+                                    generationByKnowledge.value(knowledge));
+                                for(const QString &scope:scopesByKnowledge.value(knowledge))
+                                    generation=mergeGenerations(generation,
+                                        generationsByScope.value(scope));
+                            }
+                            if(generation.isEmpty())
+                                generation=explicitMemsGenerations(
+                                    row.value(QStringLiteral("content")).toString());
+                            if(!generation.isEmpty()){
+                                row.insert(QStringLiteral("generation"),generation);
+                                (*rows)[i]=row;
+                            }
+                        }
+                    }
+                }
+                db.close();
+            }
+        }
+        QSqlDatabase::removeDatabase(connection);
+    }
 }
 
 QString removeGeneration(QString raw,const QString &generation)
@@ -393,8 +622,10 @@ private:
         m_results->setColumnHidden(3,true);
         m_results->setColumnHidden(4,true);
         m_results->horizontalHeader()->setSectionResizeMode(0,QHeaderView::Stretch);
-        m_results->horizontalHeader()->setSectionResizeMode(1,QHeaderView::ResizeToContents);
-        m_results->horizontalHeader()->setSectionResizeMode(2,QHeaderView::ResizeToContents);
+        m_results->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Fixed);
+        m_results->horizontalHeader()->setSectionResizeMode(2,QHeaderView::Fixed);
+        m_results->setColumnWidth(1,95);
+        m_results->setColumnWidth(2,122);
         connect(m_results,&QTableWidget::itemSelectionChanged,this,[this](){showSelectedResult();});
     }
 
@@ -689,7 +920,8 @@ private:
             return;
         }
 
-        const QVariantList fetched=fetchRows(raw,category,generation);
+        QVariantList fetched=fetchRows(raw,category,generation);
+        restoreDocumentaryGenerations(&fetched);
         QVector<QVariantMap> rows=cleanAndSort(fetched,category);
         populate(rows);
         if(m_count) m_count->setText(I18n::text(7324).arg(QString::number(rows.size())));
@@ -717,7 +949,7 @@ private:
         m_results->setRowCount(rows.size());
         for(int r=0;r<rows.size();++r){
             const QVariantMap &row=rows.at(r);
-            const QString title=row.value(QStringLiteral("title")).toString();
+            const QString title=readableResultTitle(row);
             const QString generation=row.value(QStringLiteral("generation")).toString();
             const QString category=row.value(QStringLiteral("category")).toString();
             // Rover supplies the correctly localized title from the same
@@ -729,6 +961,7 @@ private:
                 : MemsDatabaseContent::localizedTitle(
                     row.value(QStringLiteral("content")).toString(),title);
             QTableWidgetItem *titleItem=new QTableWidgetItem(localized);
+            titleItem->setToolTip(localized);
             titleItem->setData(Qt::UserRole+10,category);
             titleItem->setData(Qt::UserRole+11,row.value(QStringLiteral("source_table")));
             titleItem->setData(Qt::UserRole+12,row.value(QStringLiteral("source_key")));
@@ -823,7 +1056,7 @@ private:
             }
         }
 
-        const QString title=row.value(QStringLiteral("title")).toString();
+        const QString title=readableResultTitle(row);
         // Source and translations are assembled by the repository before UI
         // rendering. No Qwen generation or delayed translation in the page.
         const QString content=row.value(QStringLiteral("content")).toString();
