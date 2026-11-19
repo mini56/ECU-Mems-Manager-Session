@@ -174,6 +174,8 @@ small{color:#aebcc5}
 <li><b>Leopold Gunther — mems-rosco</b><p>Für seine Arbeit an Programmen zum Auslesen und zur Diagnose von MEMS-Steuergeräten.</p></li>
 <li><b>James Portman — rovermems.com</b><p>Für seine Forschung zu Rover-MEMS-Protokollen und die Entwicklung von Diagnosewerkzeugen.</p></li>
 <li><b>Colin Bourassa — memsgauge / memsreader</b><p>Für seine Pionierarbeit bei der Kommunikation mit MEMS-Steuergeräten und der Anzeige von Motordaten.</p></li>
+<li><b>Andrew Revill — MEMS Mapper / MEMSTools</b><p>Für seine Forschung zu Firmware, Kennfeldern und den verschiedenen Rover-MEMS-Steuergerätefamilien.</p></li>
+<li><b>haro78 — MEMSScan</b><p>Für die Entwicklung von MEMSScan, einem Diagnose- und Ausleseprogramm, das unter anderem auf MEMSGauge und MEMSrosco aufbaut.</p></li>
 </ul>
 <p>Ihre Arbeiten und ihr Wissenstransfer haben zur Entwicklung von Diagnosewerkzeugen für die MEMS-Gemeinschaft beigetragen.</p>
 
