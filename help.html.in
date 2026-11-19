@@ -26,7 +26,7 @@ small{color:#aebcc5}
 <h1>ECU MEMS Manager — Guide utilisateur</h1>
 <p><b>Version @APP_VERSION@</b> — Logiciel de diagnostic pour calculateurs Rover MEMS.</p>
 
-<div class="card"><p><b>UN GUIDE CLAIR, SANS CONNEXION INTERNET</b></p><p>Utilisez la navigation à gauche pour rejoindre une rubrique. Toutes les informations de ce guide sont intégrées au programme. Les images constructeur restent accessibles dans la Base de données et dans IA MEMS lorsque le pack correspondant est installé.</p></div>
+<div class="card"><p><b>UN GUIDE CLAIR, SANS CONNEXION INTERNET</b></p><p>Utilisez la navigation à gauche pour rejoindre une rubrique. Toutes les informations de ce guide sont intégrées au programme. Ce guide contient maintenant des captures d’écran du logiciel. Les explications correspondent aux fonctions visibles dans SESSION et restent accessibles hors ligne. Les images constructeur restent accessibles dans la Base de données et dans IA MEMS lorsque le pack correspondant est installé.</p></div>
 
 <div class="warn"><b>Sécurité :</b> les tests d’actionneurs peuvent commander pompes, ventilateurs, électrovannes, injecteurs et éléments d’allumage. N’effectuez ces tests que lorsque le véhicule est sécurisé et que vous comprenez les conséquences de la commande choisie.</div>
 
@@ -34,51 +34,133 @@ small{color:#aebcc5}
 <p>Branchez l’interface de diagnostic compatible au véhicule et sélectionnez le port série approprié dans <b>Options → Modifier les réglages</b>. Mettez le contact puis cliquez sur <b>Connecter</b>. Les indicateurs de communication affichent l’état de la liaison. Utilisez <b>Déconnecter</b> avant de terminer volontairement une session.</p>
 <p>Si le contact est coupé et que la communication disparaît, le logiciel quitte proprement la boucle d’acquisition et peut reprendre la connexion lorsque l’ECU redevient disponible.</p>
 
+
+<div class="tip"><b>Comment identifier le calculateur :</b> l'interface USB et le port COM sont reconnus par Windows, mais seule une <b>connexion ECU réellement réussie</b> valide le dialogue avec le calculateur. Après connexion, l'identifiant ECU et les données reçues permettent d'identifier la famille MEMS et les fonctions disponibles. Le test USB présenté ci-dessous n'envoie aucune commande au calculateur.</div>
+
+
+<h2 id="chapter-usb">Test câble USB — reconnaissance de l'adaptateur et du port COM</h2>
+<p>Ouvrez <b>Test câble USB</b> dans le menu de gauche. Le tableau présente les interfaces série détectées : numéro de port (COM3, COM4…), type d'adaptateur, identifiants <b>VID/PID</b> et description donnée par Windows. Selon le périphérique, le programme peut reconnaître FTDI FT232, Prolific PL2303, CH340/CH341 ou Silicon Labs CP210x.</p>
+<table><tr><th>Commande</th><th>Utilisation</th></tr>
+<tr><td><b>Actualiser</b></td><td>Relit la liste actuelle des ports et adaptateurs.</td></tr>
+<tr><td><b>Surveiller un branchement (15 s)</b></td><td>Démarrez la surveillance, puis branchez le câble USB : le nouveau port COM et sa famille apparaissent lorsqu'ils sont détectés.</td></tr>
+<tr><td><b>Tester l'ouverture du port</b></td><td>Sélectionnez une ligne du tableau puis lancez le test. Il vérifie uniquement que Windows autorise l'ouverture du port. Déconnectez d'abord SESSION de l'ECU si ce port est déjà utilisé.</td></tr></table>
+<p>Dans <b>Options → Modifier les réglages</b>, sélectionnez ensuite le port COM correspondant au câble. La liste propose les adaptateurs réellement détectés et peut prendre en compte un changement de numéro COM. Une saisie manuelle reste possible si nécessaire.</p>
+<div class="tip"><b>Trois contrôles différents :</b> câble détecté = adaptateur visible par Windows ; port ouvert = port série accessible ; <b>Connecter réussi</b> = communication effective avec le calculateur. Un test USB réussi ne certifie ni le câblage interne du câble ni la réponse de l'ECU.</div>
+<p><b>Capture — Test câble USB : FTDI FT232 détecté sur COM4 (exemple).</b></p>
+<p><img src=":/help/images/Capture d’écran (905).png" width="550"></p>
+
+
 <h2 id="chapter-2">2. Onglet Aperçu</h2>
 <p>L’onglet Aperçu est affiché au démarrage. Il présente les principales mesures ECU en direct sous forme de cadrans et d’indicateurs : régime moteur, pression collecteur, températures liquide de refroidissement et air d’admission, tension batterie, papillon, lambda, ralenti et allumage.</p>
 <p>L’affichage reste responsive. Le thème sombre conserve les zones d’alerte rouges et les zones nominales vertes tout en adaptant les cadrans et les textes au fond sombre.</p>
+
+
+<p>Chaque cadran affiche une valeur et son unité. Les courbes placées sous les cadrans présentent un historique court d'environ deux minutes ; l'état système est synthétisé dans la zone correspondante. Les valeurs sont des mesures reçues et interprétées, pas des consignes à appliquer.</p>
+<p><b>Capture — Aperçu : cadrans, historique et état système.</b></p>
+<p><img src=":/help/images/Capture d’écran (901).png" width="550"></p>
+
 
 <h2 id="chapter-3">3. Onglet Injection</h2>
 <p>L’onglet Injection regroupe les mesures d’injection acquises par le mode de lecture prévu pour ces données : <b>temps d’injection final</b>, <b>temps d’injection de base</b>, <b>correction transitoire</b> et <b>état transitoire</b>.</p>
 <p>Ces valeurs utilisent la même acquisition dédiée afin d’éviter de multiplier inutilement les modes de lecture ECU. IA MEMS observe ces données lorsqu’elles sont déjà disponibles ; elle ne déclenche pas un polling supplémentaire de sa propre initiative.</p>
 
+
+<p>Le graphique inférieur suit l'injection finale dans le temps. Le panneau de droite montre le firmware, les valeurs RAM brutes et le mode de lecture en cours. La cartographie RAM est consultée en <b>lecture seule</b> lorsque l'ECU et le protocole le permettent.</p>
+<p><b>Capture — Injection : quatre cadrans, courbe et données RAM.</b></p>
+<p><img src=":/help/images/Capture d’écran (910).png" width="550"></p>
+
+
 <h2 id="chapter-4">4. Onglet Réglage</h2>
 <p>L’onglet Réglage contient les ajustements de service disponibles, notamment les corrections liées au ralenti, au carburant ou à l’allumage selon l’ECU. Les bulles d’aide expliquent le rôle et les risques des réglages.</p>
 <p>La correction de ralenti chaud utilisée pour le décodage de 7D14-15 suit la valeur réellement présente dans le réglage ECU ; elle n’est pas remplacée par une constante arbitraire.</p>
 
+
+<p>Le grand cadran central indique le régime moteur. Les commandes situées au bas de la page permettent de modifier les corrections prévues par l'ECU ; prenez connaissance des valeurs affichées avant une action. Les indicateurs <b>Contact ralenti</b> et <b>Boucle fermée</b> fournissent un contexte supplémentaire.</p>
+<p><b>Capture — Réglages ECU : ralenti, carburant et avance à l'allumage.</b></p>
+<p><img src=":/help/images/Capture d’écran (896).png" width="550"></p>
+
+
 <h2 id="chapter-5">5. Onglet Erreurs</h2>
 <p>Cet onglet affiche les informations de défaut ECU, les anomalies enregistrées et les états associés. Les défauts doivent être lus et compris avant d’être effacés. Certains compteurs ou états peuvent nécessiter une réinitialisation complète de l’ECU avant de revenir à leur valeur initiale.</p>
+
+
+<p>La partie haute présente les <b>erreurs enregistrées</b> et le bouton correspondant pour les effacer. La partie basse regroupe les <b>anomalies et signaux en direct</b>, leur voyant d'état et une commande distincte d'effacement. La présence d'une ligne dans la liste ne signifie pas qu'un défaut est actif : lisez le voyant et l'état système.</p>
+<p><b>Capture — Erreurs enregistrées et anomalies en direct.</b></p>
+<p><img src=":/help/images/Capture d’écran (897).png" width="550"></p>
+
 
 <h2 id="chapter-6">6. Onglet Actionneurs</h2>
 <p>Utilisez cet onglet pour exécuter les tests d’actionneurs supportés par l’ECU. Les fonctions disponibles dépendent du calculateur et de l’état du protocole. N’exécutez pas de test injecteur, allumage ou chauffage sans avoir sécurisé le véhicule.</p>
 
+
+<p>La partie gauche réunit les tests de pompe, ventilateurs, électrovannes et autres organes prévus par le protocole. La partie droite permet, selon le calculateur, de déplacer le moteur pas-à-pas de ralenti avec le curseur et les commandes associées. Le bouton de réinitialisation des actionneurs est situé en bas de la liste.</p>
+<p><b>Capture — Tests d'actionneurs et moteur pas-à-pas de ralenti.</b></p>
+<p><img src=":/help/images/Capture d’écran (907).png" width="550"></p>
+
+
 <h2 id="chapter-7">7. Toutes les mesures</h2>
 <p>L’onglet <b>Toutes les mesures</b> présente les paramètres détaillés et leur aide, avec la valeur reçue de l’ECU et la valeur interprétée lorsque le décodage est connu.</p>
 <table>
-<tr><th>Paramètre</th><th>Aide</th><th>Valeur ECU reçue</th><th>Valeur interprétée</th></tr>
-<tr><td>Exemple : tension batterie</td><td>Bulle d’aide</td><td>138</td><td>13,8 V</td></tr>
+<tr><th>Paramètre</th><th>Reçu ECU</th><th>Interprété</th></tr>
+<tr><td>Exemple : tension batterie</td><td>137</td><td>13,7 V</td></tr>
 </table>
 <p>Les champs non documentés restent visibles sans inventer de conversion.</p>
+
+
+<p>La page juxtapose trois tableaux avec les colonnes <b>Paramètre</b>, <b>Reçu ECU</b> et <b>Interprété</b>. Le nombre brut peut être différent de la valeur physique calculée (par exemple 137 pour 13,7 V). Les petites icônes d'aide signalent les paramètres possédant une explication contextuelle.</p>
+<p><b>Capture — Toutes les mesures : valeurs reçues et décodées.</b></p>
+<p><img src=":/help/images/Capture d’écran (899).png" width="550"></p>
+
 
 <h2 id="chapter-8">8. Toutes les données</h2>
 <p>Cette vue détaillée expose les champs MEMS bruts et décodés. Elle est utile pour comparer les octets du protocole avec les mesures interprétées.</p>
 
+
+<p>Les deux tableaux montrent notamment les positions des trames de diagnostic <b>7D et 80</b>. La colonne Reçu contient les octets ou valeurs brutes ; Calculé présente leur interprétation lorsqu'elle est documentée. Cette page s'adresse surtout à la vérification technique du décodage.</p>
+<p><b>Capture — Toutes les données : position, description, reçu et calculé.</b></p>
+<p><img src=":/help/images/Capture d’écran (900).png" width="550"></p>
+
+
 <h2 id="chapter-9">9. ECU / ROSCO</h2>
 <p>L’onglet ECU / ROSCO expose les commandes de lecture et de session prises en charge, notamment D0, D1, D2, F0 et les commandes de session F2 à F5. Les échanges TX/RX sont affichés en hexadécimal. La recodification ECU D3 reste volontairement désactivée.</p>
+
+
+<h2 id="chapter-interactive">Mode interactif — commandes avancées</h2>
+<p>Cette page présente les indications de l'interface ROSCO et les commandes interactives disponibles. Elle est destinée à un usage technique : le choix du port série et la compréhension des commandes sont nécessaires avant d'envoyer quoi que ce soit à l'ECU. Pour lire les mesures usuelles, utilisez plutôt <b>Connecter</b> et les pages de diagnostic.</p>
+<h2 id="chapter-ecu19">Test ECU 1.9 — essais de communication</h2>
+<p>La page <b>Test ECU 1.9</b> propose un essai guidé de connexion, d'identification et de lecture. Elle affiche séparément l'état de la connexion, les réponses des commandes et des mesures, les étapes de lecture d'injection, la restauration du mode diagnostic et la reconnexion. Les événements sont consignés dans un journal ; les boutons permettent de démarrer, arrêter et ouvrir le dossier de résultats. Ce test est distinct de la simple reconnaissance du câble USB.</p>
 
 <h2 id="chapter-10">10. Diagnostic automatique</h2>
 <p>Le panneau de diagnostic automatique contrôle les valeurs ECU courantes et signale les valeurs normales, avertissements et anomalies. Il peut capturer une référence et produire un rapport. Le temps de charge bobine est notamment contrôlé selon la plage utilisée par l’application.</p>
 
+
+<p>Le tableau distingue pour chaque contrôle la valeur, l'état et l'interprétation ou action proposée. Une anomalie isolée doit être examinée en contexte. Les boutons <b>Capturer comme référence</b> et <b>Exporter le rapport</b> servent à conserver le résultat de l'analyse.</p>
+<p><b>Capture — Diagnostic automatique : contrôles et rapport.</b></p>
+<p><img src=":/help/images/Capture d’écran (898).png" width="550"></p>
+
+
 <h2 id="chapter-11">11. Analyse des journaux</h2>
 <p>L’onglet Analyse peut lire les journaux de diagnostic CSV/TXT pris en charge, afficher les canaux sélectionnés et superposer leurs courbes. Utilisez la liste des canaux pour choisir les mesures à comparer dans le temps.</p>
+
+
+<p>Chargez un journal <b>CSV ou TXT</b> avec le bouton supérieur. Dans <b>Voies disponibles</b>, cochez les paramètres à afficher ; la liste possède une barre de défilement. Utilisez <b>Tout cocher</b>, <b>Tout décocher</b> ou <b>Superposer les courbes</b> selon la comparaison souhaitée.</p>
+<p><b>Capture — Analyse : courbes d'un journal et choix des voies.</b></p>
+<p><img src=":/help/images/Capture d’écran (911).png" width="550"></p>
+
 
 <h2 id="chapter-12">12. IA MEMS</h2>
 <p>L’onglet <b>IA MEMS</b> réunit le dialogue en langage naturel, les mesures ECU déjà acquises, leur historique, le moteur expert et la base de connaissances MEMS.</p>
 <p>Le moteur expert distingue les observations, les hypothèses, les informations externes et leur niveau de preuve. Une pièce ne doit pas être condamnée sur une seule mesure. Lorsque les données sont insuffisantes ou contradictoires, IA MEMS doit l’indiquer au lieu d’inventer une conclusion.</p>
 <p>Le modèle conversationnel fonctionne localement avec les fichiers fournis dans le package. Il ne démarre que lorsque l’onglet IA MEMS est réellement ouvert, afin de ne pas consommer inutilement mémoire et processeur pendant l’utilisation normale du logiciel. Il n’envoie aucune commande ECU supplémentaire : il observe les données déjà acquises par MEMS Manager.</p>
 
+
+<p>Posez une question précise ou recherchez une opération (par exemple la dépose d'un alternateur). Lorsqu'une procédure est présente dans la base installée, l'IA peut afficher des étapes numérotées, des références de document et les pages constructeur associées. Utilisez le lien de grand format sur ces pages pour vérifier le détail des schémas. La réponse dépend des sources réellement installées et du véhicule concerné.</p>
+<p><b>Capture — IA MEMS : étapes de procédure et page constructeur associée.</b></p>
+<p><img src=":/help/images/Capture d’écran (914).png" width="550"></p>
+
+
 <h2 id="chapter-13">13. Captures</h2>
-<p><b>Capture</b> enregistre une image de la fenêtre du programme dans le dossier <code>captures</code>. <b>Voir les captures</b> ouvre le visualiseur intégré pour prévisualiser, ouvrir/agrandir ou supprimer une capture. La suppression demande confirmation.</p>
+<p>Dans la zone <b>Outils</b>, <b>Enregistrement</b> démarre l'enregistrement du diagnostic et <b>Arrêter</b> le termine. <b>Vue instantanée</b> crée une capture d'écran ; <b>Voir les captures</b> ouvre le visualiseur permettant de consulter, agrandir ou supprimer une image. La suppression demande confirmation. Le nom du journal apparaît dans la zone Outils et dans le bandeau inférieur.</p>
 
 <h2 id="chapter-14">14. Bulles d’aide</h2>
 <p>Lorsqu’un commentaire contextuel est disponible, ECU MEMS Manager utilise la bulle d’aide intégrée au programme. Son apparence ne dépend pas de la version de Windows utilisée.</p>
@@ -113,6 +195,12 @@ small{color:#aebcc5}
 <p>Les bases documentaires sont <b>séparées du programme</b>. Un pack peut contenir plusieurs documents PDF et leurs index de recherche : les futures mises à jour documentaires n'exigent pas de reconstruire le Setup de SESSION. Les données du calculateur et les bases ECU restent séparées.</p>
 <div class="tip"><b>À retenir :</b> un document absent de la base installée ne doit pas être inventé. L'IA MEMS affiche uniquement les sources pertinentes retrouvées et signale les limites des transcriptions.</div>
 
+
+<p>Saisissez un terme dans <b>Recherche dans la base</b>, puis sélectionnez éventuellement une génération et une ligne de résultats. Le volet <b>Fiche ECU</b> détaille la source, la langue, la page et l'illustration, avec un défilement indépendant. La colonne Génération permet de distinguer les documents disponibles ; le filtre Tout conserve l'ensemble des résultats.</p>
+<p><b>Capture — Base documentaire : recherche « FREIN », résultats et fiche constructeur.</b></p>
+<p><img src=":/help/images/Capture d’écran (912).png" width="550"></p>
+
+
 <h2 id="chapter-22">22. Rechercher et installer une mise à jour documentaire</h2>
 <p>Ouvrez la page <b>Base de données</b>. Dans son bandeau inférieur, à côté de <b>Mise à jour en ligne</b>, cliquez sur <b>Rechercher une mise à jour</b>. Cette action ouvre la fenêtre dédiée aux packs documentaires.</p>
 <table><tr><th>Étape</th><th>Action</th></tr>
@@ -131,7 +219,10 @@ small{color:#aebcc5}
 <p>Ce réglage touche temporairement <b>Windows dans son ensemble</b>, pas seulement la fenêtre du logiciel. À la fermeture normale, SESSION restaure le réglage précédent. En cas de fermeture anormale, un processus de surveillance peut rétablir le réglage, et la prochaine ouverture effectue aussi un contrôle de récupération. Si Windows refuse le changement, l'option est signalée comme non appliquée.</p>
 
 <h2 id="chapter-24">24. Illustrations et pages constructeur</h2>
-<p>Le guide peut intégrer des captures d'écran validées lors de prochaines mises à jour du programme. Les images affichées dans la Base de données et IA MEMS proviennent, quant à elles, des documents constructeur présents dans la base installée. Cliquez sur <b>voir en grand format</b> pour contrôler les détails des pages, des schémas et des tableaux.</p>
+<p>Les captures de ce guide proviennent de SESSION et illustrent les pages réellement présentes dans le programme. Elles sont <b>intégrées au Setup</b> : aucune connexion Internet n'est nécessaire pour les voir. La présentation peut évoluer entre deux versions. Les schémas constructeur de la Base de données et d'IA MEMS, eux, proviennent des packs documentaires installés ; utilisez <b>voir en grand format</b> pour examiner une page source.</p>
+<p><b>Capture — Écran de démarrage : progression du chargement et détection des ports série.</b></p>
+<p><img src=":/help/images/Capture d’écran (915).png" width="550"></p>
+
 
 </body>
 </html>
