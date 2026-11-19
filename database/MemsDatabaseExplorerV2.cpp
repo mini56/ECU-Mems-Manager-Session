@@ -129,7 +129,8 @@ QString readableResultTitle(const QVariantMap &row)
         QStringLiteral("subject"),QStringLiteral("source_text"),
         QStringLiteral("source_section"),QStringLiteral("parameter"),
         QStringLiteral("description"),QStringLiteral("statement"),
-        QStringLiteral("instruction_source"),QStringLiteral("procedure_text")
+        QStringLiteral("instruction_source"),QStringLiteral("instruction_text"),
+        QStringLiteral("step_text"),QStringLiteral("procedure_text")
     };
     for(const QString &key:preferred){
         const QString value=fields.value(key).trimmed();
@@ -142,6 +143,12 @@ QString readableResultTitle(const QVariantMap &row)
         return value.section(QLatin1Char('\n'),0,0).trimmed();
     }
 
+    const QString related=row.value(QStringLiteral("related_source_title")).toString().trimmed();
+    if(!related.isEmpty()){
+        if(original.startsWith(QStringLiteral("torque_"),Qt::CaseInsensitive))
+            return QStringLiteral("Couple de serrage — %1").arg(related);
+        return related;
+    }
     if(original.startsWith(QStringLiteral("torque_"),Qt::CaseInsensitive)){
         QString name=original.mid(7);
         name.replace(QLatin1Char('_'),QLatin1Char(' '));
@@ -253,16 +260,20 @@ QString jsonField(const QJsonObject &json,const char *name)
 void restoreReferenceYears(QVariantList *rows)
 {
     if(!rows)return;
-    bool needsYear=false;
+    bool needsSource=false;
     for(const QVariant &entry:*rows){
         const QVariantMap row=entry.toMap();
         if(row.value(QStringLiteral("category")).toString()!=QStringLiteral("documentation")
-           && yearsFromIndexedSource(row).isEmpty()){
-            needsYear=true;
+           && (yearsFromIndexedSource(row).isEmpty() ||
+               row.value(QStringLiteral("title")).toString().startsWith(
+                   QStringLiteral("PROC-"),Qt::CaseInsensitive) ||
+               row.value(QStringLiteral("title")).toString().startsWith(
+                   QStringLiteral("torque_"),Qt::CaseInsensitive))){
+            needsSource=true;
             break;
         }
     }
-    if(!needsYear)return;
+    if(!needsSource)return;
     MemsReferenceDatabase reference;
     if(!reference.open())return;
     const QString databasePath=reference.databasePath();
@@ -275,6 +286,7 @@ void restoreReferenceYears(QVariantList *rows)
         if(db.open()){
             QHash<QString,QString> yearsByScope;
             QHash<QString,QString> yearsByKnowledge;
+            QHash<QString,QString> titlesByKnowledge;
             QHash<QString,QStringList> scopesByKnowledge;
             QHash<QString,QString> knowledgeByProcedure;
             QHash<QString,QString> knowledgeBySpecification;
@@ -312,11 +324,17 @@ void restoreReferenceYears(QVariantList *rows)
                 });
             }
             readTable(QStringLiteral("mems_knowledge_item"),
-                      [&yearsByKnowledge](const QJsonObject &source){
+                      [&yearsByKnowledge,&titlesByKnowledge](const QJsonObject &source){
                 const QString key=jsonField(source,"knowledge_key");
+                if(key.isEmpty())return;
                 const QString years=yearsFromSourceJson(source);
-                if(!key.isEmpty() && !years.isEmpty())
+                if(!years.isEmpty())
                     yearsByKnowledge[key]=mergeYears(yearsByKnowledge.value(key),years);
+                QString title=jsonField(source,"title_source");
+                if(title.isEmpty())title=jsonField(source,"topic");
+                if(!title.isEmpty() &&
+                   !title.startsWith(QStringLiteral("PROC-"),Qt::CaseInsensitive))
+                    titlesByKnowledge.insert(key,title);
             });
             readTable(QStringLiteral("mems_knowledge_scope"),
                       [&scopesByKnowledge,&yearsByKnowledge](const QJsonObject &source){
@@ -345,8 +363,7 @@ void restoreReferenceYears(QVariantList *rows)
             });
             for(int i=0;i<rows->size();++i){
                 QVariantMap row=rows->at(i).toMap();
-                if(row.value(QStringLiteral("category")).toString()==QStringLiteral("documentation")
-                   || !yearsFromIndexedSource(row).isEmpty())
+                if(row.value(QStringLiteral("category")).toString()==QStringLiteral("documentation"))
                     continue;
                 QJsonObject fields;
                 const QString content=row.value(QStringLiteral("content")).toString();
@@ -368,10 +385,13 @@ void restoreReferenceYears(QVariantList *rows)
                 }else{
                     years=yearsByScope.value(jsonField(fields,"scope_key"));
                 }
-                if(!years.isEmpty()){
+                if(!years.isEmpty() && yearsFromIndexedSource(row).isEmpty())
                     row.insert(QStringLiteral("model_years"),years);
-                    (*rows)[i]=row;
-                }
+                if(!knowledge.isEmpty() &&
+                   !titlesByKnowledge.value(knowledge).isEmpty())
+                    row.insert(QStringLiteral("related_source_title"),
+                               titlesByKnowledge.value(knowledge));
+                (*rows)[i]=row;
             }
         }
         db.close();
