@@ -198,6 +198,34 @@ QString yearsFromSourceJson(const QJsonObject &json)
     return QString();
 }
 
+// Global indexed results store their original source fields as "name: value"
+// lines. Read the vehicle-year fields already present there, not the MEMS
+// protocol generation used for filtering.
+QString yearsFromIndexedSource(const QVariantMap &row)
+{
+    QJsonObject fields;
+    const QString content=row.value(QStringLiteral("content")).toString();
+    for(const QString &line:content.split(QLatin1Char('\n'))){
+        const int separator=line.indexOf(QLatin1Char(':'));
+        if(separator<1)continue;
+        const QString key=line.left(separator).trimmed().toLower();
+        if(!key.contains(QStringLiteral("year")) &&
+           !key.contains(QStringLiteral("annee")) &&
+           !key.contains(QStringLiteral("année")) &&
+           !key.contains(QStringLiteral("period")) &&
+           !key.contains(QStringLiteral("scope")) &&
+           !key.contains(QStringLiteral("model")) &&
+           !key.contains(QStringLiteral("applicab")) &&
+           !key.contains(QStringLiteral("generation")))
+            continue;
+        fields.insert(key,line.mid(separator+1).trimmed());
+    }
+    const QString value=yearsFromSourceJson(fields);
+    if(!value.isEmpty())return value;
+    // A dated reference title may give the period without a separate field.
+    return explicitVehicleYears(row.value(QStringLiteral("title")).toString());
+}
+
 QString jsonField(const QJsonObject &json,const char *name)
 {
     return json.value(QString::fromLatin1(name)).toString().trimmed();
@@ -624,16 +652,16 @@ private:
 
     void configureResults()
     {
-        m_results->setObjectName(QStringLiteral("memsDatabaseResults"));
-        m_results->setColumnCount(5);
-        m_results->setColumnHidden(3,true);
-        m_results->setColumnHidden(4,true);
-        m_results->horizontalHeader()->setStretchLastSection(false);
-        m_results->horizontalHeader()->setSectionResizeMode(0,QHeaderView::Stretch);
-        m_results->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Fixed);
-        m_results->horizontalHeader()->setSectionResizeMode(2,QHeaderView::Fixed);
-        m_results->setColumnWidth(1,105);
-        m_results->setColumnWidth(2,108);
+        // Three displayed fields only: hidden legacy columns must not
+        // stretch the last visible section ("Type").
+        m_results->setColumnCount(3);
+        QHeaderView *header=m_results->horizontalHeader();
+        header->setStretchLastSection(false);
+        header->setSectionResizeMode(0,QHeaderView::Stretch);
+        header->setSectionResizeMode(1,QHeaderView::Fixed);
+        header->setSectionResizeMode(2,QHeaderView::Fixed);
+        m_results->setColumnWidth(1,114);
+        m_results->setColumnWidth(2,82);
         connect(m_results,&QTableWidget::itemSelectionChanged,this,[this](){showSelectedResult();});
     }
 
@@ -980,8 +1008,8 @@ private:
                 titleItem->setData(Qt::UserRole,title);
             QFont font=titleItem->font();font.setBold(category==QStringLiteral("ecu")||category==QStringLiteral("dtc"));titleItem->setFont(font);
             m_results->setItem(r,0,titleItem);
-            const QString period=category==QStringLiteral("documentation")
-                ?row.value(QStringLiteral("model_years")).toString():generation;
+            QString period=row.value(QStringLiteral("model_years")).toString();
+            if(period.isEmpty())period=yearsFromIndexedSource(row);
             QTableWidgetItem *years=new QTableWidgetItem(
                 period.isEmpty()?QStringLiteral("—"):period);
             years->setToolTip(period);
