@@ -1,4 +1,5 @@
 #include <QFrame>
+#include <QApplication>
 #include <QFontMetrics>
 #include <QGridLayout>
 #include <QHBoxLayout>
@@ -68,6 +69,7 @@ protected:
         QPainter p(this);
         p.setRenderHint(QPainter::Antialiasing,true);
         p.setRenderHint(QPainter::TextAntialiasing,true);
+        const bool darkTheme=qApp && qApp->property("ecuDarkTheme").toBool();
 
         const bool large=(m_kind==EngineRpm);
         const qreal bw=large?310.0:176.0;
@@ -81,7 +83,7 @@ protected:
         const QString gaugeTitle=m_title.toUpper();
         const QFont titleFont=GaugeHeading::styledFont(p.font(),m_titleSize);
         p.setFont(titleFont);
-        p.setPen(kText);
+        p.setPen(darkTheme?kText:QColor("#101820"));
         p.drawText(QRectF(4,0,bw-8,20),Qt::AlignCenter,gaugeTitle);
 
         const QPointF c(bw/2.0,large?151.0:87.0);
@@ -91,18 +93,18 @@ protected:
         const qreal arcR=r-10.0;
 
         QRadialGradient bezel(c-QPointF(r*.18,r*.22),r*1.15);
-        bezel.setColorAt(0,QColor("#5b646b"));
-        bezel.setColorAt(.18,QColor("#2c343a"));
-        bezel.setColorAt(.58,QColor("#11181d"));
-        bezel.setColorAt(.86,QColor("#070b0e"));
-        bezel.setColorAt(1,QColor("#020304"));
-        p.setPen(QPen(QColor("#6c7479"),large?2.0:1.35));
+        bezel.setColorAt(0,darkTheme?QColor("#5b646b"):QColor("#f9fafb"));
+        bezel.setColorAt(.18,darkTheme?QColor("#2c343a"):QColor("#9fa9b3"));
+        bezel.setColorAt(.58,darkTheme?QColor("#11181d"):QColor("#eef1f4"));
+        bezel.setColorAt(.86,darkTheme?QColor("#070b0e"):QColor("#b0bac3"));
+        bezel.setColorAt(1,darkTheme?QColor("#020304"):QColor("#e9edf1"));
+        p.setPen(QPen(darkTheme?QColor("#6c7479"):QColor("#87939d"),large?2.0:1.35));
         p.setBrush(bezel);
         p.drawEllipse(c,r,r);
-        p.setPen(QPen(QColor("#11191e"),large?8.0:5.0));
-        p.setBrush(QColor("#05090c"));
+        p.setPen(QPen(darkTheme?QColor("#11191e"):QColor("#d5dce2"),large?8.0:5.0));
+        p.setBrush(darkTheme?QColor("#05090c"):QColor("#ffffff"));
         p.drawEllipse(c,r-6.0,r-6.0);
-        p.setPen(QPen(QColor("#3b474f"),large?1.5:1.0));
+        p.setPen(QPen(darkTheme?QColor("#3b474f"):QColor("#acb8c2"),large?1.5:1.0));
         p.setBrush(Qt::NoBrush);
         p.drawEllipse(c,r-12.0,r-12.0);
 
@@ -144,7 +146,7 @@ protected:
             const QPointF pt=pointFor(i/qreal(arcSteps),arcR);
             if(i==0) baseArc.moveTo(pt); else baseArc.lineTo(pt);
         }
-        p.setPen(QPen(QColor("#3a454d"),large?2.8:1.8,Qt::SolidLine,Qt::RoundCap));
+        p.setPen(QPen(darkTheme?QColor("#3a454d"):QColor("#9aa7b2"),large?2.8:1.8,Qt::SolidLine,Qt::RoundCap));
         p.drawPath(baseArc);
 
         if(m_kind==EngineRpm) {
@@ -166,7 +168,7 @@ protected:
             const qreal length=major?(large?15.0:9.0):(large?7.0:4.0);
             const QPointF po(qCos(angle)*outer,qSin(angle)*outer);
             const QPointF pi(qCos(angle)*(outer-length),qSin(angle)*(outer-length));
-            p.setPen(QPen(major?QColor("#f3f5f6"):QColor("#89949b"),major?(large?2.0:1.2):(large?1.0:.62),Qt::SolidLine,Qt::FlatCap));
+            p.setPen(QPen(darkTheme?(major?QColor("#f3f5f6"):QColor("#89949b")):(major?QColor("#101820"):QColor("#53606b")),major?(large?2.0:1.2):(large?1.0:.62),Qt::SolidLine,Qt::FlatCap));
             p.drawLine(pi,po);
         }
         p.restore();
@@ -175,7 +177,7 @@ protected:
         scaleFont.setBold(false);
         scaleFont.setPointSizeF(large?9.2:7.3);
         p.setFont(scaleFont);
-        p.setPen(QColor("#eef2f4"));
+        p.setPen(darkTheme?QColor("#eef2f4"):QColor("#101820"));
         const qreal labelR=r-(large?38.0:25.0);
         for(int i=0;i<=majorCount;i++) {
             const double fv=minv+(maxv-minv)*i/qreal(majorCount);
@@ -211,7 +213,7 @@ protected:
         valueFont.setBold(true);
         valueFont.setPointSizeF(large?23.0:14.5);
         p.setFont(valueFont);
-        p.setPen(QColor("#ffffff"));
+        p.setPen(darkTheme?QColor("#ffffff"):QColor("#101820"));
         const QString valueText=(qAbs(maxv-minv)<=50.0)?QString::number(value,'f',1):QString::number(value,'f',0);
         p.drawText(QRectF(c.x()-(large?62:40),c.y()+(large?58:26),large?124:80,large?32:22),Qt::AlignCenter,valueText);
 
@@ -219,7 +221,7 @@ protected:
         unitFont.setBold(true);
         unitFont.setPointSizeF(large?9.2:7.6);
         p.setFont(unitFont);
-        p.setPen(QColor("#d4dbe0"));
+        p.setPen(darkTheme?QColor("#d4dbe0"):QColor("#101820"));
         // The central RPM unit sits below the digital value, with a visible gap.
         // Keep the smaller gauges at their approved positions.
         p.drawText(QRectF(c.x()-(large?55:36),c.y()+(large?100:45),large?110:72,large?17:13),Qt::AlignCenter,m_unit);
