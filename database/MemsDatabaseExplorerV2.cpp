@@ -294,6 +294,9 @@ void restoreReferenceYears(QVariantList *rows)
         db.setDatabaseName(databasePath);
         if(db.open()){
             QHash<QString,QString> yearsByScope;
+            QHash<QString,QString> editionCoverage;
+            QHash<QString,QString> unresolvedEditionScopes;
+            QSet<QString> inconsistentEditionCoverage;
             QHash<QString,QString> yearsByKnowledge;
             QHash<QString,QString> titlesByKnowledge;
             QHash<QString,QStringList> scopesByKnowledge;
@@ -358,7 +361,9 @@ void restoreReferenceYears(QVariantList *rows)
             });
             for(const QString &table:{QStringLiteral("mems_applicability_scope"),
                                       QStringLiteral("mems_scope_constraint")}){
-                readTable(table,[&yearsByScope,&startYearByVin,&vinSuffix](const QJsonObject &source){
+                readTable(table,[&yearsByScope,&startYearByVin,&vinSuffix,
+                                &editionCoverage,&unresolvedEditionScopes,
+                                &inconsistentEditionCoverage](const QJsonObject &source){
                     const QString key=jsonField(source,"scope_key");
                     QString years=yearsFromSourceJson(source);
                     if(years.isEmpty()){
@@ -374,9 +379,39 @@ void restoreReferenceYears(QVariantList *rows)
                             if(!candidate.isEmpty()){years=candidate;break;}
                         }
                     }
-                    if(!key.isEmpty() && !years.isEmpty())
+                    if(key.isEmpty())return;
+                    if(!years.isEmpty())
                         yearsByScope[key]=mergeYears(yearsByScope.value(key),years);
+                    const QString edition=key.section(QLatin1Char('-'),1,1);
+                    const QString scopeText=jsonField(source,"source_scope_text");
+                    const QString scopeVin=vinSuffix(jsonField(source,"vin_from"));
+                    const bool manufacturerBaseline=key.contains(
+                        QStringLiteral("-MINI-VIN"),Qt::CaseInsensitive) &&
+                        scopeText.contains(QStringLiteral("depuis"),Qt::CaseInsensitive) &&
+                        !scopeVin.isEmpty() && years==startYearByVin.value(scopeVin);
+                    if(manufacturerBaseline && !inconsistentEditionCoverage.contains(edition)){
+                        if(editionCoverage.contains(edition) &&
+                           editionCoverage.value(edition)!=years){
+                            editionCoverage.remove(edition);
+                            inconsistentEditionCoverage.insert(edition);
+                        }else{
+                            editionCoverage.insert(edition,years);
+                        }
+                    }else if(years.isEmpty() && !edition.isEmpty() &&
+                             scopeText.contains(edition,Qt::CaseInsensitive) &&
+                             jsonField(source,"model").compare(
+                                 QStringLiteral("Mini"),Qt::CaseInsensitive)==0){
+                        unresolvedEditionScopes.insert(key,edition);
+                    }
                 });
+            }
+            // Manual-specific SPi sections inherit the explicitly established
+            // coverage of that same manufacturer edition, never another ECU.
+            for(auto it=unresolvedEditionScopes.constBegin();
+                it!=unresolvedEditionScopes.constEnd();++it){
+                if(!inconsistentEditionCoverage.contains(it.value()) &&
+                   editionCoverage.contains(it.value()))
+                    yearsByScope.insert(it.key(),editionCoverage.value(it.value()));
             }
             readTable(QStringLiteral("mems_knowledge_item"),
                       [&yearsByKnowledge,&titlesByKnowledge](const QJsonObject &source){
