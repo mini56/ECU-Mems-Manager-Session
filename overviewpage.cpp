@@ -59,6 +59,7 @@ protected:
         QPainter p(this);
         p.setRenderHint(QPainter::Antialiasing,true);
         p.setRenderHint(QPainter::TextAntialiasing,true);
+        const bool darkTheme=qApp && qApp->property("ecuDarkTheme").toBool();
 
         const qreal baseW=188.0;
         const qreal baseH=226.0;
@@ -67,16 +68,16 @@ protected:
         p.scale(s,s);
 
         const QRectF card(0,0,baseW,baseH);
-        p.setPen(QPen(QColor("#34414a"),1.0));
-        p.setBrush(QColor("#0c1217"));
+        p.setPen(QPen(darkTheme?QColor("#34414a"):QColor("#c4cdd5"),1.0));
+        p.setBrush(darkTheme?QColor("#0c1217"):QColor("#ffffff"));
         p.drawRoundedRect(card.adjusted(.5,.5,-.5,-.5),5.0,5.0);
 
         const QString gaugeTitle=m_title.toUpper();
         const QFont titleFont=GaugeHeading::styledFont(p.font(),m_titleSize);
         p.setFont(titleFont);
-        p.setPen(QColor("#edf2f4"));
+        p.setPen(darkTheme?QColor("#edf2f4"):QColor("#101820"));
         p.drawText(QRectF(6,5,176,18),Qt::AlignCenter,gaugeTitle);
-        p.setPen(QPen(QColor("#27333b"),1.0));
+        p.setPen(QPen(darkTheme?QColor("#27333b"):QColor("#cbd5de"),1.0));
         p.drawLine(QPointF(8,25),QPointF(180,25));
 
         double value=m_source?m_source->property("value").toDouble():0.0;
@@ -104,19 +105,19 @@ protected:
         const qreal arcR=r-10.5;
 
         QRadialGradient bezel(c-QPointF(16,19),r*1.22);
-        bezel.setColorAt(0,QColor("#56616a"));
-        bezel.setColorAt(.17,QColor("#252e35"));
-        bezel.setColorAt(.55,QColor("#10171c"));
-        bezel.setColorAt(.83,QColor("#060a0d"));
-        bezel.setColorAt(1,QColor("#020304"));
-        p.setPen(QPen(QColor("#66727a"),1.35));
+        bezel.setColorAt(0,darkTheme?QColor("#56616a"):QColor("#f9fafb"));
+        bezel.setColorAt(.17,darkTheme?QColor("#252e35"):QColor("#9fa9b3"));
+        bezel.setColorAt(.55,darkTheme?QColor("#10171c"):QColor("#eef1f4"));
+        bezel.setColorAt(.83,darkTheme?QColor("#060a0d"):QColor("#b0bac3"));
+        bezel.setColorAt(1,darkTheme?QColor("#020304"):QColor("#e9edf1"));
+        p.setPen(QPen(darkTheme?QColor("#66727a"):QColor("#87939d"),1.35));
         p.setBrush(bezel);
         p.drawEllipse(c,r,r);
 
-        p.setPen(QPen(QColor("#151d22"),5.8));
-        p.setBrush(QColor("#05090c"));
+        p.setPen(QPen(darkTheme?QColor("#151d22"):QColor("#d5dce2"),5.8));
+        p.setBrush(darkTheme?QColor("#05090c"):QColor("#ffffff"));
         p.drawEllipse(c,r-5.8,r-5.8);
-        p.setPen(QPen(QColor("#3d4a53"),1.2));
+        p.setPen(QPen(darkTheme?QColor("#3d4a53"):QColor("#acb8c2"),1.2));
         p.setBrush(Qt::NoBrush);
         p.drawEllipse(c,r-10.5,r-10.5);
 
@@ -145,7 +146,7 @@ protected:
             const QPointF pt=c+QPointF(qCos(a)*arcR,qSin(a)*arcR);
             if(i==0) baseArc.moveTo(pt); else baseArc.lineTo(pt);
         }
-        p.setPen(QPen(QColor("#38434a"),2.1,Qt::SolidLine,Qt::RoundCap));
+        p.setPen(QPen(darkTheme?QColor("#38434a"):QColor("#9aa7b2"),2.1,Qt::SolidLine,Qt::RoundCap));
         p.drawPath(baseArc);
 
         // Requested operating/warning ranges.
@@ -180,7 +181,7 @@ protected:
             const qreal len=major?13.5:(medium?8.2:4.5);
             const QPointF po(qCos(a)*ro,qSin(a)*ro);
             const QPointF pi(qCos(a)*(ro-len),qSin(a)*(ro-len));
-            const QColor col=major?QColor("#f4f6f7"):(medium?QColor("#b4bec5"):QColor("#707d85"));
+            const QColor col=darkTheme?(major?QColor("#f4f6f7"):(medium?QColor("#b4bec5"):QColor("#707d85")):(major?QColor("#101820"):(medium?QColor("#344250"):QColor("#6c7781"));
             p.setPen(QPen(col,major?1.55:(medium?1.0:.68),Qt::SolidLine,Qt::FlatCap));
             p.drawLine(pi,po);
         }
@@ -192,7 +193,7 @@ protected:
         scaleFont.setBold(true);
         scaleFont.setPointSizeF(rpmGauge?6.3:6.2);
         p.setFont(scaleFont);
-        p.setPen(QColor("#eef2f4"));
+        p.setPen(darkTheme?QColor("#eef2f4"):QColor("#101820"));
 
         const int labelCount=rpmGauge?8:4;
         for(int i=0;i<=labelCount;i++) {
@@ -243,7 +244,7 @@ protected:
         valueFont.setBold(true);
         valueFont.setPointSizeF(18.5);
         p.setFont(valueFont);
-        p.setPen(QColor("#ffffff"));
+        p.setPen(darkTheme?QColor("#ffffff"):QColor("#101820"));
         const bool oneDecimalValue=batteryGauge || advanceGauge ||
             (qAbs(value)<10.0 && qAbs(maxv-minv)<=40.0);
         const QString val=QString::number(value,'f',oneDecimalValue?1:0);
@@ -253,16 +254,16 @@ protected:
         unitFont.setBold(true);
         unitFont.setPointSizeF(7.7);
         p.setFont(unitFont);
-        p.setPen(QColor("#d0d8dc"));
+        p.setPen(darkTheme?QColor("#d0d8dc"):QColor("#101820"));
         p.drawText(QRectF(48,148,92,14),Qt::AlignCenter,m_unit);
 
         // Compact two-minute trace, leaving maximum height for the dial.
         const QRectF tr(8,192,172,25);
-        p.setPen(QPen(QColor("#2d3942"),.85));
-        p.setBrush(QColor("#070c10"));
+        p.setPen(QPen(darkTheme?QColor("#2d3942"):QColor("#cbd4dc"),.85));
+        p.setBrush(darkTheme?QColor("#070c10"):QColor("#ffffff"));
         p.drawRoundedRect(tr,3.0,3.0);
 
-        p.setPen(QPen(QColor("#192229"),.5));
+        p.setPen(QPen(darkTheme?QColor("#192229"):QColor("#d8e0e7"),.5));
         const qreal midY=tr.top()+tr.height()/2.0;
         p.drawLine(tr.left()+4,midY,tr.right()-4,midY);
         for(int i=1;i<6;i++) {
@@ -329,6 +330,7 @@ protected:
         QPainter p(this);
         p.setRenderHint(QPainter::Antialiasing,true);
         p.setRenderHint(QPainter::TextAntialiasing,true);
+        const bool darkTheme=qApp && qApp->property("ecuDarkTheme").toBool();
 
         const qreal baseW=188.0;
         const qreal baseH=226.0;
@@ -337,17 +339,17 @@ protected:
         p.scale(s,s);
 
         const QRectF card(0,0,baseW,baseH);
-        p.setPen(QPen(QColor("#34414a"),1.0));
-        p.setBrush(QColor("#0c1217"));
+        p.setPen(QPen(darkTheme?QColor("#34414a"):QColor("#c4cdd5"),1.0));
+        p.setBrush(darkTheme?QColor("#0c1217"):QColor("#ffffff"));
         p.drawRoundedRect(card.adjusted(.5,.5,-.5,-.5),5.0,5.0);
 
         QFont f=p.font();
         f.setBold(true);
         f.setPointSizeF(8.2);
         p.setFont(f);
-        p.setPen(QColor("#edf2f4"));
+        p.setPen(darkTheme?QColor("#edf2f4"):QColor("#101820"));
         p.drawText(QRectF(6,5,176,18),Qt::AlignCenter,I18n::text(7149));
-        p.setPen(QPen(QColor("#27333b"),1.0));
+        p.setPen(QPen(darkTheme?QColor("#27333b"):QColor("#cbd5de"),1.0));
         p.drawLine(QPointF(8,25),QPointF(180,25));
 
         const bool fault=m_source?m_source->property("checked").toBool():false;
@@ -383,7 +385,7 @@ protected:
         sub.setBold(false);
         sub.setPointSizeF(6.0);
         p.setFont(sub);
-        p.setPen(QColor("#8d99a3"));
+        p.setPen(darkTheme?QColor("#8d99a3"):QColor("#485767"));
         p.drawText(QRectF(14,190,160,24),Qt::AlignCenter|Qt::TextWordWrap,I18n::text(7145));
     }
 
