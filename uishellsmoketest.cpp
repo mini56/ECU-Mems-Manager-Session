@@ -234,8 +234,8 @@ bool verifyUi(MainWindow &window)
                  header->sectionResizeMode(2)==QHeaderView::Fixed &&
                  resultTable->columnCount()==3 &&
                  resultTable->columnWidth(1)==114 &&
-                 resultTable->columnWidth(2)==82,
-                 "Database layout: Result grows, Generation 114, Type 82") && ok;
+                 resultTable->columnWidth(2)==120,
+                 "Database layout: Result grows, Generation 114, Type 120") && ok;
     }
 
     // The revised help loads real bundled HTML into an offline dark Qt dialog.
@@ -408,6 +408,21 @@ bool verifyUi(MainWindow &window)
             ok=check(sidebar->width()==expandedWidth &&
                      navigation->width()==expandedWidth,
                      "Resizing must not impose a competing sidebar width") && ok;
+        // Verify real geometry with the Database tab visible after layout and
+        // resize, rather than merely inspecting section resize modes.
+        const int previousTab=tabs->currentIndex();
+        tabs->setCurrentIndex(11);
+        QCoreApplication::processEvents();
+        if(resultTable && resultTable->horizontalHeader()){
+            const bool compactColumns=resultTable->columnWidth(1)==114 &&
+                                      resultTable->columnWidth(2)==120;
+            const bool resultGetsSpace=size.width()<1200 ||
+                resultTable->columnWidth(0)>resultTable->columnWidth(2);
+            ok=check(compactColumns && resultGetsSpace,
+                     "Database displayed columns must keep Type 120 and expand Result") && ok;
+        }
+        tabs->setCurrentIndex(previousTab);
+        QCoreApplication::processEvents();
     }
 
     // SESSION 157 let the dark-only rebuild override the saved "Clair"
