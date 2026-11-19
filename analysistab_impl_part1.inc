@@ -1,6 +1,7 @@
 #include "analysistab.h"
 #include "i18n.h"
 
+#include <QApplication>
 #include <QButtonGroup>
 #include <QCheckBox>
 #include <QFile>
@@ -40,7 +41,7 @@ static void configureAnalysisVisibleScroll(QScrollArea *area)
     bar->setFixedWidth(17);
     bar->setSingleStep(36);
     bar->setPageStep(qMax(80,area->viewport()->height()-36));
-    bar->setStyleSheet(QStringLiteral(
+    bar->setStyleSheet((qApp && qApp->property("ecuDarkTheme").toBool()) ? QStringLiteral(
         "QScrollBar:vertical{background:#192733;border:1px solid #526575;"
         "border-radius:3px;width:17px;margin:0px;}"
         "QScrollBar::handle:vertical{background:#ff8a1c;"
@@ -74,7 +75,8 @@ static void configureAnalysisVisibleScroll(QScrollArea *area)
         tab->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
         tab->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         tab->setAttribute(Qt::WA_StyledBackground, true);
-        tab->setStyleSheet(QStringLiteral(
+        const bool darkTheme=qApp && qApp->property("ecuDarkTheme").toBool();
+        tab->setStyleSheet(darkTheme ? QStringLiteral(
             "AnalysisTab{background:#0b0f14;color:#dce2e7;}"
             "QWidget{color:#dce2e7;}"
             "QLabel{background:transparent;border:0;color:#dce2e7;}"
@@ -89,6 +91,21 @@ static void configureAnalysisVisibleScroll(QScrollArea *area)
             "QScrollArea{background:#0d1218;border:0;}"
             "QScrollArea>QWidget>QWidget{background:#0d1218;}"
             "QCheckBox{spacing:6px;padding:2px 1px;color:#dce2e7;background:transparent;}"
+        ) : QStringLiteral(
+            "AnalysisTab{background:#ffffff;color:#202936;}"
+            "QWidget{color:#202936;}"
+            "QLabel{background:transparent;border:0;color:#202936;}"
+            "#analysisRightPanel{background:#f8fafc;border:1px solid #ccd6df;border-radius:0;}"
+            "#analysisParametersTitle,#analysisToolsTitle{color:#a95400;font-weight:700;padding:3px 0;border-bottom:1px solid #d2dce4;}"
+            "#analysisFileLabel{color:#526273;font-style:italic;}"
+            "QPushButton{background:#f3f6f9;color:#263442;border:1px solid #bcc9d5;border-radius:2px;padding:4px 8px;font-weight:600;min-height:23px;}"
+            "QPushButton:hover{border-color:#ff8a1c;color:#202936;}"
+            "QPushButton:pressed{background:#e5ecf3;}"
+            "QPushButton:checked{background:#ff8a1c;color:#101419;border-color:#ff9b32;}"
+            "QPushButton:disabled{background:#f4f6f8;color:#95a2ae;border-color:#d6dee6;}"
+            "QScrollArea{background:#ffffff;border:0;}"
+            "QScrollArea>QWidget>QWidget{background:#ffffff;}"
+            "QCheckBox{spacing:6px;padding:2px 1px;color:#202936;background:transparent;}"
         ));
 
         const QList<QScrollArea*> scrollAreas = tab->findChildren<QScrollArea*>();
@@ -102,7 +119,7 @@ static void configureAnalysisVisibleScroll(QScrollArea *area)
             if (scroll->viewport())
             {
                 scroll->viewport()->setAutoFillBackground(false);
-                scroll->viewport()->setStyleSheet(QStringLiteral("background:#0d1218;"));
+                scroll->viewport()->setStyleSheet(darkTheme ? QStringLiteral("background:#0d1218;") : QStringLiteral("background:#ffffff;"));
             }
         }
 
@@ -265,7 +282,7 @@ static QVector<double> diagnosticValues(const mems_data *d)
 
 static void drawEmptyMessage(QPainter &p, const QRect &r, const QString &message)
 {
-    p.setPen(QColor("#8a93a6"));
+    p.setPen((qApp && qApp->property("ecuDarkTheme").toBool()) ? QColor("#8a93a6") : QColor("#475564"));
     p.drawText(r, Qt::AlignCenter | Qt::TextWordWrap, message);
 }
 
@@ -450,14 +467,15 @@ static void paintAnalysisChart(SingleChartWidget *chart)
 
     QPainter painter(chart);
     painter.setRenderHint(QPainter::Antialiasing);
-    painter.fillRect(chart->rect(), QColor(QStringLiteral("#0b1116")));
+    const bool darkTheme=qApp && qApp->property("ecuDarkTheme").toBool();
+    painter.fillRect(chart->rect(), (darkTheme?QColor("#0b1116"):QColor("#ffffff")));
 
     const QString &name = chart->chartName();
     const QColor &curveColor = chart->chartColor();
     const QVector<double> &time = chart->chartTime();
     const QVector<double> &values = chart->chartValues();
 
-    painter.setPen(QColor(QStringLiteral("#e7edf0")));
+    painter.setPen((darkTheme?QColor("#e7edf0"):QColor("#101820")));
     QFont titleFont = painter.font();
     titleFont.setBold(true);
     titleFont.setPointSize(9);
@@ -472,13 +490,13 @@ static void paintAnalysisChart(SingleChartWidget *chart)
                          chart->width() - leftMargin - rightMargin,
                          chart->height() - topMargin - bottomMargin);
 
-    painter.setPen(QPen(QColor(QStringLiteral("#35414b")), 1));
-    painter.setBrush(QColor(QStringLiteral("#151d23")));
+    painter.setPen(QPen((darkTheme?QColor("#35414b"):QColor("#bac6d0")), 1));
+    painter.setBrush((darkTheme?QColor("#151d23"):QColor("#ffffff")));
     painter.drawRect(plotRect);
 
     if (time.count() < 2 || values.count() < 2)
     {
-        painter.setPen(QColor(QStringLiteral("#aab5bd")));
+        painter.setPen((darkTheme?QColor("#aab5bd"):QColor("#344250")));
         painter.drawText(plotRect, Qt::AlignCenter, I18n::text(6440));
         return;
     }
@@ -504,10 +522,10 @@ static void paintAnalysisChart(SingleChartWidget *chart)
         const double fraction = (axis.maximum - value) / vSpan;
         const int y = plotRect.top() + qRound(plotRect.height() * fraction);
 
-        painter.setPen(QColor(QStringLiteral("#2a343d")));
+        painter.setPen((darkTheme?QColor("#2a343d"):QColor("#dbe3e9")));
         painter.drawLine(plotRect.left(), y, plotRect.right(), y);
 
-        painter.setPen(QColor(QStringLiteral("#aab5bd")));
+        painter.setPen((darkTheme?QColor("#aab5bd"):QColor("#344250")));
         painter.drawText(QRect(0, y - 8, leftMargin - 6, 16),
                          Qt::AlignRight | Qt::AlignVCenter,
                          QString::number(value, 'f', axis.decimals));
@@ -526,7 +544,7 @@ static void paintAnalysisChart(SingleChartWidget *chart)
     }
     painter.drawPolyline(poly);
 
-    painter.setPen(QColor(QStringLiteral("#aab5bd")));
+    painter.setPen((darkTheme?QColor("#aab5bd"):QColor("#344250")));
     for (int i = 0; i <= 5; ++i)
     {
         const double t = tMin + (tSpan * i) / 5.0;
@@ -540,7 +558,7 @@ static void paintAnalysisChart(SingleChartWidget *chart)
         chart->chartCursorX() <= plotRect.right())
     {
         const int cursorX = chart->chartCursorX();
-        painter.setPen(QPen(QColor(QStringLiteral("#7f8b94")), 1, Qt::DashLine));
+        painter.setPen(QPen((darkTheme?QColor("#7f8b94"):QColor("#526170")), 1, Qt::DashLine));
         painter.drawLine(cursorX, plotRect.top(), cursorX, plotRect.bottom());
 
         const double xFraction = double(cursorX - plotRect.left()) / double(plotRect.width());
@@ -567,8 +585,8 @@ static void paintAnalysisChart(SingleChartWidget *chart)
             if (boxX + textWidth > plotRect.right())
                 boxX = cursorX - 6 - textWidth;
 
-            painter.setPen(QPen(QColor(QStringLiteral("#3a4650")), 1));
-            painter.setBrush(QColor(QStringLiteral("#0a1015")));
+            painter.setPen(QPen((darkTheme?QColor("#3a4650"):QColor("#c4ced7")), 1));
+            painter.setBrush((darkTheme?QColor("#0a1015"):QColor("#ffffff")));
             painter.drawRect(boxX, plotRect.top() + 4, textWidth, 16);
             painter.setPen(curveColor);
             painter.drawText(QRect(boxX + 5, plotRect.top() + 4, textWidth - 5, 16),
@@ -630,8 +648,8 @@ static void configureNativeAnalysis(QWidget *analysis)
     }
 
     if(!topBar || !rightPanel) return;
-    topBar->setStyleSheet(QStringLiteral("#analysisTopBar{background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #18232b,stop:1 #0d151b);border:1px solid #2d3943;border-left:3px solid #ff7a00;border-radius:6px;}"));
-    rightPanel->setStyleSheet(QStringLiteral("#analysisRightPanel{background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #131c23,stop:1 #091116);border:1px solid #2d3943;border-radius:6px;}"));
+    topBar->setStyleSheet((qApp && qApp->property("ecuDarkTheme").toBool()) ? QStringLiteral("#analysisTopBar{background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #18232b,stop:1 #0d151b);border:1px solid #2d3943;border-left:3px solid #ff7a00;border-radius:6px;}") : QStringLiteral("#analysisTopBar{background:#f7f9fb;border:1px solid #cbd6df;border-left:3px solid #ff7a00;border-radius:6px;}"));
+    rightPanel->setStyleSheet((qApp && qApp->property("ecuDarkTheme").toBool()) ? QStringLiteral("#analysisRightPanel{background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #131c23,stop:1 #091116);border:1px solid #2d3943;border-radius:6px;}") : QStringLiteral("#analysisRightPanel{background:#f8fafc;border:1px solid #cbd6df;border-radius:6px;}"));
     topBar->setFixedHeight(qBound(34,analysis->height()/13,43));
     const int rightW=qBound(205,qRound(analysis->width()*0.21),300);
     rightPanel->setMinimumWidth(rightW); rightPanel->setMaximumWidth(rightW);
@@ -646,7 +664,7 @@ static void configureNativeAnalysis(QWidget *analysis)
             empty=new QLabel(I18n::text(6443)+QStringLiteral("\n\n")+I18n::text(6442),stack->widget());
             empty->setObjectName(QStringLiteral("analysisEmptyState"));
             empty->setAlignment(Qt::AlignCenter); empty->setWordWrap(true);
-            empty->setStyleSheet(QStringLiteral("color:#8f9da6;background:#0c141a;border:1px dashed #34424d;border-radius:8px;padding:28px;font-size:13px;"));
+            empty->setStyleSheet((qApp && qApp->property("ecuDarkTheme").toBool()) ? QStringLiteral("color:#8f9da6;background:#0c141a;border:1px dashed #34424d;border-radius:8px;padding:28px;font-size:13px;") : QStringLiteral("color:#475564;background:#ffffff;border:1px dashed #c3cfd9;border-radius:8px;padding:28px;font-size:13px;"));
             if(QVBoxLayout *vl=qobject_cast<QVBoxLayout*>(stack->widget()->layout())) vl->insertWidget(0,empty,1,Qt::AlignCenter);
         }
         updateAnalysisEmpty(analysis,fileLabel,empty);
