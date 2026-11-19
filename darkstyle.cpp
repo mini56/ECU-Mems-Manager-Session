@@ -288,6 +288,20 @@ QFrame#darkSidebarUtilities{background:#f1f4f8;border:0;border-top:1px solid #d4
 QFrame#uiRebuildHeader{background:#ffffff;border:0;border-bottom:1px solid #d6dee6;}
 QFrame#uiRebuildStatus{background:#f5f7fa;border:0;border-top:1px solid #d6dee6;}
 QFrame#overviewHeading{background:#f6f8fb;border:1px solid #dce3eb;border-left:3px solid #f07800;border-radius:5px;}
+QWidget#analysisTab,QWidget#analysisPlotsContent,QWidget#analysisChannelsContent,
+QWidget#injection_tab,QFrame#injectionRawPanel,
+QScrollArea#analysisStackScroll,QScrollArea#analysisChannelsScroll{
+    background:#ffffff;color:#202936;border-color:#d4dce4;
+}
+QWidget#analysisTopBar,QFrame#injectionHeading{
+    background:#f7f9fb;color:#202936;border:1px solid #d5dee6;border-left:3px solid #f07800;border-radius:5px;
+}
+QWidget#analysisRightPanel{
+    background:#f8fafc;color:#202936;border:1px solid #d5dee6;border-radius:5px;
+}
+QLabel#analysisEmptyState{
+    background:#ffffff;color:#475564;border:1px dashed #c3cfd9;border-radius:8px;padding:28px;
+}
 QFrame#uiRebuildHero_0,QFrame[uiHero="true"]{background:#f7f9fb;border:1px solid #d7e0e9;border-left:3px solid #f07800;}
 QLabel,QCheckBox,QRadioButton{color:#202936;background:transparent;}
 QLabel#darkUtilitiesTitle,QLabel#memsHelpHeading{color:#b35d00;}
@@ -400,6 +414,9 @@ void applyApplicationVisualStyle(QMainWindow *window)
     if(SummaryTab *summary=window->findChild<SummaryTab*>())
         summary->applyVisualTheme(dark);
     applyRawDataVisualTheme(window->findChild<QWidget*>(QStringLiteral("raw")),dark);
+    // Custom QPainter dials and graphs read ecuDarkTheme when they repaint.
+    // Refresh their existing widgets; do not rebuild pages or interrupt ECU I/O.
+    for(QWidget *widget:window->findChildren<QWidget*>())widget->update();
 }
 
 void resizeApplicationVisualStyle(QMainWindow *window)
