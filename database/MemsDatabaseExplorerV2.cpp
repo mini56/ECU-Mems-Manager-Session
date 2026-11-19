@@ -511,6 +511,29 @@ void restoreDocumentaryYears(QVariantList *rows)
             db.setConnectOptions(QStringLiteral("QSQLITE_OPEN_READONLY"));
             db.setDatabaseName(database.key());
             if(db.open()){
+                // A verified, additive metadata table is authoritative when
+                // present. Older installed databases stay fully compatible.
+                if(db.tables().contains(QStringLiteral("documentary_model_years"))){
+                    QSqlQuery verified(db);
+                    if(verified.prepare(QStringLiteral(
+                        "SELECT vehicle_years FROM documentary_model_years "
+                        "WHERE document_id=? AND source_revision=? AND entry_id=?"))){
+                        for(const int i:database.value()){
+                            QVariantMap row=rows->at(i).toMap();
+                            verified.bindValue(0,row.value(QStringLiteral("document_id")));
+                            verified.bindValue(1,row.value(QStringLiteral("source_revision")));
+                            verified.bindValue(2,row.value(QStringLiteral("entry_id")));
+                            if(verified.exec() && verified.next()){
+                                const QString period=verified.value(0).toString().trimmed();
+                                if(!period.isEmpty()){
+                                    row.insert(QStringLiteral("model_years"),period);
+                                    (*rows)[i]=row;
+                                }
+                            }
+                            verified.finish();
+                        }
+                    }
+                }
                 QHash<QString,QString> documentYears;
                 QSqlQuery documents(db);
                 if(documents.exec(QStringLiteral(
@@ -574,6 +597,8 @@ void restoreDocumentaryYears(QVariantList *rows)
                         "WHERE document_id=? AND source_revision=? AND entry_id=?"))){
                         for(const int i:database.value()){
                             QVariantMap row=rows->at(i).toMap();
+                            if(!row.value(QStringLiteral("model_years")).toString().trimmed().isEmpty())
+                                continue; // Never overwrite a verified period.
                             query.bindValue(0,row.value(QStringLiteral("document_id")));
                             query.bindValue(1,row.value(QStringLiteral("source_revision")));
                             query.bindValue(2,row.value(QStringLiteral("entry_id")));
