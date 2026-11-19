@@ -798,6 +798,9 @@ protected:
             if(event->type()==QEvent::LanguageChange)
                 QTimer::singleShot(30,this,[this](){retranslate();runSearch();});
         }
+        if(m_results && watched==m_results->viewport() && event &&
+           event->type()==QEvent::Resize)
+            layoutResultColumns();
         return QObject::eventFilter(watched,event);
     }
 
@@ -936,19 +939,32 @@ private:
 
     void configureResults()
     {
-        // The indexed browser alone owns these three columns. Clear every
-        // historical resize mode before assigning the two compact fields.
+        // The indexed browser alone owns these three columns. Do not use
+        // Stretch: Qt can redistribute sections while a small page is shown.
         m_results->setColumnCount(3);
         QHeaderView *header=m_results->horizontalHeader();
         header->setStretchLastSection(false);
         header->setSectionResizeMode(QHeaderView::Fixed);
-        header->setSectionResizeMode(0,QHeaderView::Stretch);
-        header->setSectionResizeMode(1,QHeaderView::Fixed);
-        header->setSectionResizeMode(2,QHeaderView::Fixed);
-        m_results->setColumnWidth(1,114);
-        // Keep the full "Documentation" label readable without wasting space.
-        m_results->setColumnWidth(2,120);
+        m_results->viewport()->installEventFilter(this);
+        layoutResultColumns();
         connect(m_results,&QTableWidget::itemSelectionChanged,this,[this](){showSelectedResult();});
+    }
+
+    void layoutResultColumns()
+    {
+        if(!m_results || m_results->columnCount()!=3) return;
+        // Stable widths even after Qt relayouts, theme changes or scrolling.
+        // Only Result grows; the two metadata columns never absorb free space.
+        constexpr int generationWidth=114;
+        constexpr int typeWidth=120;
+        const int viewportWidth=m_results->viewport()->width();
+        const int resultWidth=qMax(40,viewportWidth-generationWidth-typeWidth);
+        if(m_results->columnWidth(1)!=generationWidth)
+            m_results->setColumnWidth(1,generationWidth);
+        if(m_results->columnWidth(2)!=typeWidth)
+            m_results->setColumnWidth(2,typeWidth);
+        if(m_results->columnWidth(0)!=resultWidth)
+            m_results->setColumnWidth(0,resultWidth);
     }
 
     // Show a RAVE image inside the database page, not via an external
