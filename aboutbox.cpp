@@ -20,7 +20,14 @@ void AboutBox::showAbout(QWidget* parent)
         + QStringLiteral("<li>Rover MEMS 1.6</li>")
         + QStringLiteral("</ul>")
         + QStringLiteral("<p><b>") + I18n::text(6201) /* EN: Protocol: */ + QStringLiteral("</b> ROSCO</p>")
-        + QStringLiteral("<p><b>") + I18n::text(6202) /* EN: Development: */ + QStringLiteral("</b> Claude Lespagnol</p>");
+        + QStringLiteral("<p><b>") + I18n::text(6202) /* EN: Development: */ + QStringLiteral("</b> Claude Lespagnol</p>")
+        + QStringLiteral("<p><b>") + I18n::text(6204) /* EN: Special thanks to: */ + QStringLiteral("</b></p>")
+        + QStringLiteral("<ul>")
+        + QStringLiteral("<li>Leopold Gunther — mems-rosco</li>")
+        + QStringLiteral("<li>James Portman — rovermems.com</li>")
+        + QStringLiteral("<li>Colin Bourassa — memsgauge / memsreader</li>")
+        + QStringLiteral("</ul>")
+        + QStringLiteral("<p>") + I18n::text(6205) /* EN: Prior Rover MEMS research and diagnostic tools. */ + QStringLiteral("</p>");
 
     QMessageBox box(parent);
     box.setWindowTitle(I18n::text(6203) /* EN: About ECU Mems Manager */);
