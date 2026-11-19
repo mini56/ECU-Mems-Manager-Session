@@ -231,7 +231,7 @@ void MemsDatabaseBrowser::buildUi()
     documentScroll->setPageStep(documentInternal->pageStep());
     documentScroll->setSingleStep(documentInternal->singleStep());
     dv->addLayout(detailViewport,1);
-    split->addWidget(listCard); split->addWidget(detailCard); split->setStretchFactor(0,3); split->setStretchFactor(1,4); root->addWidget(split,1);
+    split->addWidget(listCard); split->addWidget(detailCard); split->setStretchFactor(0,2); split->setStretchFactor(1,1); split->setSizes(QList<int>{800,400}); root->addWidget(split,1);
 
     QFrame *footer=card(this); footer->setObjectName(QStringLiteral("memsDatabaseFooter")); QHBoxLayout *fv=new QHBoxLayout(footer); fv->setContentsMargins(9,4,9,4);
     m_updateTitle=makeLabel(7255,footer); m_updateTitle->setObjectName(QStringLiteral("memsDatabaseUpdateTitle")); QFont uf=m_updateTitle->font(); uf.setBold(true); m_updateTitle->setFont(uf); m_updateTitle->setStyleSheet(QStringLiteral("color:#ff9828;background:transparent;border:0;"));
