@@ -179,20 +179,21 @@ protected:
         QPainter p(this);
         p.setRenderHint(QPainter::Antialiasing,true);
         p.setRenderHint(QPainter::TextAntialiasing,true);
+        const bool darkTheme=qApp && qApp->property("ecuDarkTheme").toBool();
 
         const QRectF outer=QRectF(rect()).adjusted(.5,.5,-.5,-.5);
-        p.setPen(QPen(QColor("#34414a"),1.0));
-        p.setBrush(QColor("#0c1217"));
+        p.setPen(QPen(darkTheme?QColor("#34414a"):QColor("#c4cdd5"),1.0));
+        p.setBrush(darkTheme?QColor("#0c1217"):QColor("#ffffff"));
         p.drawRoundedRect(outer,5,5);
 
         QFont f=p.font();
         f.setBold(true);
         f.setPointSizeF(8.2);
         p.setFont(f);
-        p.setPen(QColor("#edf2f4"));
+        p.setPen(darkTheme?QColor("#edf2f4"):QColor("#101820"));
         p.drawText(QRectF(6,5,qMax(0,width()-12),18),Qt::AlignCenter,I18n::text(7149));
 
-        p.setPen(QPen(QColor("#27333b"),1.0));
+        p.setPen(QPen(darkTheme?QColor("#27333b"):QColor("#cbd5de"),1.0));
         p.drawLine(QPointF(8,25),QPointF(qMax(8,width()-8),25));
 
         // Same source, rule, colours and translated states as the Overview card.
@@ -233,7 +234,7 @@ protected:
         sub.setBold(false);
         sub.setPointSizeF(6.2);
         p.setFont(sub);
-        p.setPen(QColor("#8d99a3"));
+        p.setPen(darkTheme?QColor("#8d99a3"):QColor("#485767"));
         p.drawText(QRectF(8,qMax(30,height()-38),qMax(0,width()-16),30),
                    Qt::AlignCenter|Qt::TextWordWrap,I18n::text(7145));
     }
