@@ -936,16 +936,18 @@ private:
 
     void configureResults()
     {
-        // Three displayed fields only: hidden legacy columns must not
-        // stretch the last visible section ("Type").
+        // The indexed browser alone owns these three columns. Clear every
+        // historical resize mode before assigning the two compact fields.
         m_results->setColumnCount(3);
         QHeaderView *header=m_results->horizontalHeader();
         header->setStretchLastSection(false);
+        header->setSectionResizeMode(QHeaderView::Fixed);
         header->setSectionResizeMode(0,QHeaderView::Stretch);
         header->setSectionResizeMode(1,QHeaderView::Fixed);
         header->setSectionResizeMode(2,QHeaderView::Fixed);
         m_results->setColumnWidth(1,114);
-        m_results->setColumnWidth(2,82);
+        // Keep the full "Documentation" label readable without wasting space.
+        m_results->setColumnWidth(2,120);
         connect(m_results,&QTableWidget::itemSelectionChanged,this,[this](){showSelectedResult();});
     }
 
