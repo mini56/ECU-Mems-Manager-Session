@@ -52,6 +52,14 @@ static void configureAnalysisVisibleScroll(QScrollArea *area)
         "{height:0px;border:0;background:#192733;}"
         "QScrollBar::add-page:vertical,QScrollBar::sub-page:vertical"
         "{background:#192733;}"
+    ) : QStringLiteral(
+        "QScrollBar:vertical{background:#f0f3f6;border:1px solid #c9d3dc;"
+        "border-radius:3px;width:17px;margin:0px;}"
+        "QScrollBar::handle:vertical{background:#ff8a1c;"
+        "border:1px solid #d77813;border-radius:4px;min-height:48px;margin:2px;}"
+        "QScrollBar::handle:vertical:hover{background:#ffb45f;}"
+        "QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical{height:0px;border:0;background:#f0f3f6;}"
+        "QScrollBar::add-page:vertical,QScrollBar::sub-page:vertical{background:#f0f3f6;}"
     ));
     // Mandatory scrollbar on the REAL Analysis panel, at every window height.
     // Qt updates the scroll range automatically when the viewport is resized.
