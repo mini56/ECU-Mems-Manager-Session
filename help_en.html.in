@@ -26,7 +26,7 @@ small{color:#aebcc5}
 <h1>ECU MEMS Manager — User Guide</h1>
 <p><b>Version @APP_VERSION@</b> — Diagnostic software for Rover MEMS ECUs.</p>
 
-<div class="card"><p><b>A PRACTICAL OFFLINE GUIDE</b></p><p>Use the navigation panel to open a topic. The guide is bundled with the program and works without an Internet connection. Manufacturer page images can be consulted in the database and IA MEMS when the relevant documentary pack is installed.</p></div>
+<div class="card"><p><b>A PRACTICAL OFFLINE GUIDE</b></p><p>Use the navigation panel to open a topic. The guide is bundled with the program and works without an Internet connection. This guide now includes screenshots of SESSION. Instructions describe the features actually available in the application and remain accessible offline. Manufacturer page images can be consulted in the database and IA MEMS when the relevant documentary pack is installed.</p></div>
 
 <div class="warn"><b>Safety:</b> actuator tests can operate pumps, fans, valves, injectors and ignition components. Perform tests only when the vehicle is secured and you understand the consequences of the selected command.</div>
 
@@ -34,51 +34,133 @@ small{color:#aebcc5}
 <p>Connect the supported diagnostic interface to the vehicle and select the correct serial port in <b>Options → Edit settings</b>. Switch the ignition on, then press <b>Connect</b>. The communication indicators show the current connection state. Use <b>Disconnect</b> before intentionally ending a session.</p>
 <p>If the vehicle ignition is switched off and communication is lost, the software leaves the polling loop cleanly and can reconnect when communication becomes available again.</p>
 
+
+<div class="tip"><b>ECU identification:</b> Windows can identify the USB adapter and COM port, but only a <b>successful ECU connection</b> confirms communication with the controller. The ECU identifier and live data then help identify the MEMS family and available functions. The USB check below sends no ECU command.</div>
+
+
+<h2 id="chapter-usb">USB cable test — adapter and COM-port detection</h2>
+<p>Open <b>USB cable test</b> in the left navigation panel. The table lists serial interfaces detected by Windows: port number (COM3, COM4…), adapter/chip family, <b>VID/PID</b> identifiers and description. The application can recognise devices such as FTDI FT232, Prolific PL2303, CH340/CH341 and Silicon Labs CP210x when the information is available.</p>
+<table><tr><th>Control</th><th>What it does</th></tr>
+<tr><td><b>Refresh</b></td><td>Reads the currently detected adapters and ports again.</td></tr>
+<tr><td><b>Monitor connection (15 s)</b></td><td>Start monitoring, then plug in the USB cable. Any newly detected COM port and adapter family will be reported.</td></tr>
+<tr><td><b>Test opening the port</b></td><td>Select a table row and run the check. This only verifies whether Windows allows the serial port to be opened. Disconnect the ECU session first if the same port is in use.</td></tr></table>
+<p>Next, select the matching COM port in <b>Options → Edit settings</b>. The serial-port list uses adapters currently reported by Windows and can accommodate a changed COM number. Manual entry is still supported if required.</p>
+<div class="tip"><b>Three different checks:</b> detected adapter = visible in Windows; openable port = accessible serial connection; <b>successful Connect</b> = actual ECU communication. A successful USB test does not validate the cable's internal wiring or the ECU response.</div>
+<p><b>Screenshot — USB cable test showing an FTDI FT232 adapter on COM4 (example).</b></p>
+<p><img src=":/help/images/Capture d’écran (905).png" width="550"></p>
+
+
 <h2 id="chapter-2">2. Overview tab</h2>
 <p>The Overview tab is the default tab shown at startup. It provides the main live gauges and status indicators for quick diagnosis: engine speed, manifold pressure, coolant and intake temperatures, battery voltage, throttle information, lambda information, idle control and ignition values.</p>
 <p>The interface remains responsive. The dark theme preserves red warning areas and green nominal areas while adapting gauges and text to the dark background.</p>
+
+
+<p>Each gauge shows a measured value and its unit. The small graphs below the gauges show about two minutes of recent history; the system-status panel summarises current conditions. These are received/interpreted values, not recommended settings.</p>
+<p><b>Screenshot — Overview gauges, recent trends and system status.</b></p>
+<p><img src=":/help/images/Capture d’écran (901).png" width="550"></p>
+
 
 <h2 id="chapter-3">3. Injection tab</h2>
 <p>The Injection tab groups the injection values acquired through the dedicated reading mode: <b>final injection time</b>, <b>base injection time</b>, <b>transient correction</b> and <b>transient state</b>.</p>
 <p>These values share the same dedicated acquisition path to avoid unnecessary ECU reading-mode changes. IA MEMS observes them when they are already available; it does not start an additional ECU polling loop on its own.</p>
 
+
+<p>The lower chart tracks final injection time. The right-hand panel shows firmware information, raw RAM values and the active reading mode. The RAM mapping is available as <b>read-only</b> data when supported by the ECU and protocol.</p>
+<p><b>Screenshot — Injection: four gauges, time plot and RAM data.</b></p>
+<p><img src=":/help/images/Capture d’écran (910).png" width="550"></p>
+
+
 <h2 id="chapter-4">4. Settings tab</h2>
 <p>The Settings tab contains service adjustments such as idle, fuel and ignition-related corrections. Tooltips explain the purpose and risks of each adjustment.</p>
 <p>The hot-idle correction used for decoding field 7D14-15 follows the value actually present in the ECU adjustment; it is not replaced by an arbitrary constant.</p>
 
+
+<p>The large central dial shows engine speed. The lower controls adjust ECU-supported values, while the <b>idle contact</b> and <b>closed-loop</b> indications provide context. Review the displayed adjustment values before changing them.</p>
+<p><b>Screenshot — ECU settings: idle, fuel correction and ignition timing.</b></p>
+<p><img src=":/help/images/Capture d’écran (896).png" width="550"></p>
+
+
 <h2 id="chapter-5">5. Errors tab</h2>
 <p>This tab displays ECU fault information, recorded anomalies and status checks. Faults should be read and understood before they are cleared. Some counters or status fields may require a complete ECU reset before they return to their default state.</p>
+
+
+<p>The upper panel contains <b>stored faults</b> and a dedicated clear-faults button. The lower panel lists <b>live anomalies and signals</b>, their status indicators and a separate clear action. A listed fault name is not proof that it is currently active: check the indicator and system status.</p>
+<p><b>Screenshot — Stored faults and live anomalies.</b></p>
+<p><img src=":/help/images/Capture d’écran (897).png" width="550"></p>
+
 
 <h2 id="chapter-6">6. Actuators tab</h2>
 <p>Use this tab to test supported actuators. Available functions depend on the ECU and protocol state. Do not run injector, ignition or heater tests unless the vehicle is in a safe condition.</p>
 
+
+<p>The left panel groups tests for the pump, fans, valves and other protocol-supported actuators. The right panel provides idle stepper-motor position controls when supported by the ECU. A reset-actuators control is provided below the list.</p>
+<p><b>Screenshot — Actuator tests and idle stepper-motor controls.</b></p>
+<p><img src=":/help/images/Capture d’écran (907).png" width="550"></p>
+
+
 <h2 id="chapter-7">7. All measurements</h2>
 <p>The <b>All measurements</b> tab shows detailed parameters and their help text, together with the raw ECU value and the interpreted value when decoding is known.</p>
 <table>
-<tr><th>Parameter</th><th>Help</th><th>ECU received value</th><th>Interpreted value</th></tr>
-<tr><td>Example: battery voltage</td><td>Tooltip</td><td>138</td><td>13.8 V</td></tr>
+<tr><th>Parameter</th><th>ECU received</th><th>Interpreted</th></tr>
+<tr><td>Example: battery voltage</td><td>137</td><td>13.7 V</td></tr>
 </table>
 <p>Undocumented fields remain visible without inventing a conversion.</p>
+
+
+<p>Three side-by-side tables use <b>Parameter</b>, <b>ECU received</b> and <b>Interpreted</b> columns. Raw figures can differ from converted physical values (for example 137 becomes 13.7 V). Small help icons identify parameters with contextual explanations.</p>
+<p><b>Screenshot — All measurements: raw and interpreted values.</b></p>
+<p><img src=":/help/images/Capture d’écran (899).png" width="550"></p>
+
 
 <h2 id="chapter-8">8. All data</h2>
 <p>This detailed view exposes raw and decoded MEMS fields. It is useful when comparing protocol bytes with interpreted measurements.</p>
 
+
+<p>Two tables show, among other items, the field offsets for diagnostic frames <b>7D and 80</b>. The Received column shows raw data; Calculated shows a documented interpretation, where available. This view is particularly useful for checking low-level decoding.</p>
+<p><b>Screenshot — All data: offset, description, received and calculated.</b></p>
+<p><img src=":/help/images/Capture d’écran (900).png" width="550"></p>
+
+
 <h2 id="chapter-9">9. ECU / ROSCO</h2>
 <p>The ECU / ROSCO tab exposes supported read and session commands such as D0, D1, D2, F0 and session commands F2–F5. TX/RX data is displayed in hexadecimal. D3 ECU recoding remains intentionally disabled.</p>
+
+
+<h2 id="chapter-interactive">Interactive mode — advanced commands</h2>
+<p>This page provides the existing ROSCO interactive-command instructions. It is intended for technical use: know the selected serial interface and the meaning of a command before sending it to the ECU. For regular live measurements, use <b>Connect</b> and the diagnostic pages instead.</p>
+<h2 id="chapter-ecu19">ECU 1.9 test — communication checks</h2>
+<p>The <b>ECU 1.9 test</b> page offers a guided session covering connection, identification and ECU data reading. It reports connection status, command responses, injection-reading steps, restoration of diagnostic mode and reconnection separately. A log records the events; controls are available to start, stop and open the results folder. This is different from USB cable recognition.</p>
 
 <h2 id="chapter-10">10. Automatic diagnostics</h2>
 <p>The automatic diagnostic panel evaluates current ECU values and reports normal values, warnings and anomalies. It can capture a reference and export a report. Coil charge time is checked against the expected range used by this application.</p>
 
+
+<p>For each check, the table provides a value, status and interpretation or suggested investigation. A single abnormal reading should be assessed in context. <b>Capture as reference</b> and <b>Export report</b> preserve diagnostic observations.</p>
+<p><b>Screenshot — Automatic diagnostics: checks and report.</b></p>
+<p><img src=":/help/images/Capture d’écran (898).png" width="550"></p>
+
+
 <h2 id="chapter-11">11. Log analysis</h2>
 <p>The Analysis tab can read supported CSV/TXT diagnostic logs, display selected channels and overlay curves. Use the channel list to choose which measurements are displayed and compare their evolution over time.</p>
+
+
+<p>Load a <b>CSV or TXT</b> log using the top button. Select data channels in the scrollable <b>Available channels</b> list. Use <b>Select all</b>, <b>Clear all</b> or <b>Overlay curves</b> to compare measurements over time.</p>
+<p><b>Screenshot — Analysis: log curves and selectable channels.</b></p>
+<p><img src=":/help/images/Capture d’écran (911).png" width="550"></p>
+
 
 <h2 id="chapter-12">12. IA MEMS</h2>
 <p>The <b>IA MEMS</b> tab combines natural-language dialogue, ECU measurements already acquired by the application, their history, the expert engine and the MEMS knowledge database.</p>
 <p>The expert engine distinguishes observations, hypotheses, external information and confidence/provenance levels. A component must not be condemned from a single reading. When information is insufficient or contradictory, IA MEMS must say so instead of inventing a conclusion.</p>
 <p>The conversational model runs locally from the files supplied with the package. It starts only when the IA MEMS tab is actually opened, avoiding unnecessary memory and CPU use during normal operation. It sends no extra ECU command: it only observes data already acquired by MEMS Manager.</p>
 
+
+<p>Ask a specific question or search for an operation (such as alternator removal). If the installed documentation contains the procedure, IA MEMS can display numbered steps, document references and associated manufacturer pages. Open source pages at full size to check diagrams. The results depend on the installed sources and applicable vehicle.</p>
+<p><b>Screenshot — IA MEMS: procedure steps and manufacturer page.</b></p>
+<p><img src=":/help/images/Capture d’écran (914).png" width="550"></p>
+
+
 <h2 id="chapter-13">13. Snapshots</h2>
-<p><b>Snapshot</b> saves an image of the current program window in the <code>captures</code> folder. <b>View captures</b> opens the integrated capture viewer, where you can preview, open/enlarge or delete a selected capture. Deletion requires confirmation.</p>
+<p>In the <b>Tools</b> panel, <b>Record</b> starts diagnostic logging and <b>Stop</b> ends it. <b>Snapshot</b> captures an image of the window; <b>View captures</b> opens the viewer to inspect, enlarge or delete images. Deletion requires confirmation. The log file name appears in the Tools panel and lower status strip.</p>
 
 <h2 id="chapter-14">14. Tooltips and help bubble</h2>
 <p>Wherever contextual help is available, ECU MEMS Manager uses the embedded help-bubble graphic. Its appearance does not depend on the Windows version or computer.</p>
@@ -113,6 +195,12 @@ small{color:#aebcc5}
 <p>The <b>Database</b> page searches ECU references, vehicles, commands and available technical documents. Search and generation filters appear above the results; selected manufacturer pages and evidence are displayed in the right-hand detail pane.</p>
 <p>Documentary packs are <b>independent of the installed program</b>. New PDFs and searchable indexes can be installed without rebuilding the SESSION executable.</p>
 
+
+<p>Enter a keyword in <b>Search database</b>, then optionally choose a generation and select a result. The <b>ECU detail</b> pane shows its source document, language, page reference and image; it has independent scrolling. The Generation column helps identify relevant documentation; the All filter retains the complete result list.</p>
+<p><b>Screenshot — Documentary database: brake search, results and manufacturer source.</b></p>
+<p><img src=":/help/images/Capture d’écran (912).png" width="550"></p>
+
+
 <h2 id="chapter-22">22. Check for documentary updates</h2>
 <p>Open <b>Database</b> and click <b>Check for database updates</b> in the bottom status bar, next to the online-update label. This opens the documentary pack manager.</p>
 <table><tr><th>Stage</th><th>What happens</th></tr>
@@ -127,7 +215,10 @@ small{color:#aebcc5}
 <p>SESSION restores the previous setting when it exits normally. A separate monitor can restore it after an unexpected exit, with a further recovery check at the next launch. Windows policy may prevent the operation; the program will report the failure.</p>
 
 <h2 id="chapter-24">24. Illustrations and manufacturer pages</h2>
-<p>Validated screenshots can be integrated in future software builds. Manufacturer illustrations are drawn from the installed documentary pack and can be opened at full size from Database or IA MEMS.</p>
+<p>The screenshots in this guide come from the actual SESSION interface. They are <b>bundled into the Windows Setup</b> and require no Internet connection. Layout details may vary between software builds. Manufacturer diagrams shown in Database or IA MEMS come from installed documentary packs; use the full-size page command to review the original source. Screenshot controls shown here are in French, while the guide text is in English.</p>
+<p><b>Screenshot — Startup window: loading progress and serial-port detection.</b></p>
+<p><img src=":/help/images/Capture d’écran (915).png" width="550"></p>
+
 
 </body>
 </html>
