@@ -1,4 +1,5 @@
 #include "MemsGlobalSearchIndex.h"
+#include "MemsReferenceDatabase.h"
 #include "MemsDocumentaryRepository.h"
 #include "MemsDocumentaryImageViewer.h"
 #include "MemsDocumentaryUpdateDialog.h"
@@ -244,6 +245,139 @@ QString jsonField(const QJsonObject &json,const char *name)
 {
     return json.value(QString::fromLatin1(name)).toString().trimmed();
 }
+
+// Match indexed procedure and specification records to the vehicle-year
+// periods in their own original applicability scopes. Do not infer years from
+// the MEMS ECU protocol number or the date when a PDF was published.
+void restoreReferenceYears(QVariantList *rows)
+{
+    if(!rows)return;
+    bool needsYear=false;
+    for(const QVariant &entry:*rows){
+        const QVariantMap row=entry.toMap();
+        if(row.value(QStringLiteral("category")).toString()!=QStringLiteral("documentation")
+           && yearsFromIndexedSource(row).isEmpty()){
+            needsYear=true;
+            break;
+        }
+    }
+    if(!needsYear)return;
+    MemsReferenceDatabase reference;
+    if(!reference.open())return;
+    const QString databasePath=reference.databasePath();
+    const QString connection=QStringLiteral("MEMS_YEARS_%1").arg(
+        QUuid::createUuid().toString(QUuid::WithoutBraces));
+    {
+        QSqlDatabase db=QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),connection);
+        db.setConnectOptions(QStringLiteral("QSQLITE_OPEN_READONLY"));
+        db.setDatabaseName(databasePath);
+        if(db.open()){
+            QHash<QString,QString> yearsByScope;
+            QHash<QString,QString> yearsByKnowledge;
+            QHash<QString,QStringList> scopesByKnowledge;
+            QHash<QString,QString> knowledgeByProcedure;
+            QHash<QString,QString> knowledgeBySpecification;
+
+            // All fields are read by their actual SQLite column names. Some
+            // manuals store the years in scope text, others in year_from/to.
+            const auto readTable=[&db](const QString &table,
+                                      const std::function<void(const QJsonObject&)> &consume){
+                if(!db.tables().contains(table))return;
+                QSqlQuery query(db);
+                if(!query.exec(QStringLiteral("SELECT * FROM \"%1\"").arg(table)))
+                    return;
+                while(query.next()){
+                    const QSqlRecord record=query.record();
+                    QJsonObject source;
+                    for(int i=0;i<record.count();++i)
+                        source.insert(record.fieldName(i),
+                                      QJsonValue::fromVariant(query.value(i)));
+                    consume(source);
+                }
+            };
+            for(const QString &table:{QStringLiteral("mems_applicability_scope"),
+                                      QStringLiteral("mems_scope_constraint")}){
+                readTable(table,[&yearsByScope](const QJsonObject &source){
+                    const QString key=jsonField(source,"scope_key");
+                    QString years=yearsFromSourceJson(source);
+                    if(years.isEmpty()){
+                        for(auto it=source.constBegin();it!=source.constEnd();++it){
+                            const QString candidate=explicitVehicleYears(it.value().toString());
+                            if(!candidate.isEmpty()){years=candidate;break;}
+                        }
+                    }
+                    if(!key.isEmpty() && !years.isEmpty())
+                        yearsByScope[key]=mergeYears(yearsByScope.value(key),years);
+                });
+            }
+            readTable(QStringLiteral("mems_knowledge_item"),
+                      [&yearsByKnowledge](const QJsonObject &source){
+                const QString key=jsonField(source,"knowledge_key");
+                const QString years=yearsFromSourceJson(source);
+                if(!key.isEmpty() && !years.isEmpty())
+                    yearsByKnowledge[key]=mergeYears(yearsByKnowledge.value(key),years);
+            });
+            readTable(QStringLiteral("mems_knowledge_scope"),
+                      [&scopesByKnowledge,&yearsByKnowledge](const QJsonObject &source){
+                const QString key=jsonField(source,"knowledge_key");
+                const QString scope=jsonField(source,"scope_key");
+                if(key.isEmpty())return;
+                if(!scope.isEmpty() && !scopesByKnowledge[key].contains(scope))
+                    scopesByKnowledge[key].append(scope);
+                const QString years=yearsFromSourceJson(source);
+                if(!years.isEmpty())
+                    yearsByKnowledge[key]=mergeYears(yearsByKnowledge.value(key),years);
+            });
+            readTable(QStringLiteral("mems_procedure"),
+                      [&knowledgeByProcedure](const QJsonObject &source){
+                const QString id=jsonField(source,"procedure_key");
+                const QString key=jsonField(source,"knowledge_key");
+                if(!id.isEmpty() && !key.isEmpty())
+                    knowledgeByProcedure.insert(id,key);
+            });
+            readTable(QStringLiteral("mems_specification"),
+                      [&knowledgeBySpecification](const QJsonObject &source){
+                const QString id=jsonField(source,"spec_key");
+                const QString key=jsonField(source,"knowledge_key");
+                if(!id.isEmpty() && !key.isEmpty())
+                    knowledgeBySpecification.insert(id,key);
+            });
+            for(int i=0;i<rows->size();++i){
+                QVariantMap row=rows->at(i).toMap();
+                if(row.value(QStringLiteral("category")).toString()==QStringLiteral("documentation")
+                   || !yearsFromIndexedSource(row).isEmpty())
+                    continue;
+                QJsonObject fields;
+                const QString content=row.value(QStringLiteral("content")).toString();
+                for(const QString &line:content.split(QLatin1Char('\n'))){
+                    const int colon=line.indexOf(QLatin1Char(':'));
+                    if(colon<=0)continue;
+                    fields.insert(line.left(colon).trimmed().toLower(),
+                                  line.mid(colon+1).trimmed());
+                }
+                QString knowledge=jsonField(fields,"knowledge_key");
+                if(knowledge.isEmpty())
+                    knowledge=knowledgeByProcedure.value(jsonField(fields,"procedure_key"));
+                if(knowledge.isEmpty())
+                    knowledge=knowledgeBySpecification.value(jsonField(fields,"spec_key"));
+                QString years=yearsByKnowledge.value(knowledge);
+                if(!knowledge.isEmpty()){
+                    for(const QString &scope:scopesByKnowledge.value(knowledge))
+                        years=mergeYears(years,yearsByScope.value(scope));
+                }else{
+                    years=yearsByScope.value(jsonField(fields,"scope_key"));
+                }
+                if(!years.isEmpty()){
+                    row.insert(QStringLiteral("model_years"),years);
+                    (*rows)[i]=row;
+                }
+            }
+        }
+        db.close();
+    }
+    QSqlDatabase::removeDatabase(connection);
+}
+
 
 void restoreDocumentaryYears(QVariantList *rows)
 {
@@ -972,6 +1106,7 @@ private:
 
         QVariantList fetched=fetchRows(raw,category,generation);
         restoreDocumentaryYears(&fetched);
+        restoreReferenceYears(&fetched);
         QVector<QVariantMap> rows=cleanAndSort(fetched,category);
         populate(rows);
         if(m_count) m_count->setText(I18n::text(7324).arg(QString::number(rows.size())));
