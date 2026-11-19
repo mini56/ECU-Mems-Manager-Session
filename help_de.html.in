@@ -167,4 +167,14 @@ small{color:#aebcc5}
 <p><b>Startfenster</b></p>
 <p><img src=":/help/images/Capture d’écran (915).png" width="550"></p>
 
+<h3 id="credits-mems">Danksagung und Mitwirkende</h3>
+<p>ECU MEMS Manager SESSION baut auf jahrelanger Forschung und Softwareentwicklung rund um die Rover-MEMS-Motorsteuerungen auf.</p>
+<p><b>Besonderer Dank an:</b></p>
+<ul>
+<li><b>Leopold Gunther — mems-rosco</b><p>Für seine Arbeit an Programmen zum Auslesen und zur Diagnose von MEMS-Steuergeräten.</p></li>
+<li><b>James Portman — rovermems.com</b><p>Für seine Forschung zu Rover-MEMS-Protokollen und die Entwicklung von Diagnosewerkzeugen.</p></li>
+<li><b>Colin Bourassa — memsgauge / memsreader</b><p>Für seine Pionierarbeit bei der Kommunikation mit MEMS-Steuergeräten und der Anzeige von Motordaten.</p></li>
+</ul>
+<p>Ihre Arbeiten und ihr Wissenstransfer haben zur Entwicklung von Diagnosewerkzeugen für die MEMS-Gemeinschaft beigetragen.</p>
+
 </body></html>
