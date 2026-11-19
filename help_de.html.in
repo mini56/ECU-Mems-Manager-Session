@@ -25,41 +25,107 @@ small{color:#aebcc5}
 <h2 id="chapter-1">1. Verbindung</h2>
 <p>Schließen Sie eine geeignete Diagnoseschnittstelle an und wählen Sie unter Optionen → Einstellungen den richtigen seriellen Port. Schalten Sie die Zündung ein und klicken Sie auf Verbinden. Die Anzeigen melden den Verbindungsstatus. Mit Trennen beenden Sie die Sitzung. Bei ausgeschalteter Zündung beendet das Programm die Abfrage ordnungsgemäß und kann sich später neu verbinden.</p>
 
+
+<h2 id="chapter-usb">USB-Kabeltest — Adapter und COM-Anschluss erkennen</h2>
+<p>Öffnen Sie <b>USB-Kabeltest</b> in der linken Navigation. Die Tabelle zeigt den COM-Port, den Adaptertyp, <b>VID/PID</b> und die Windows-Gerätebeschreibung. Bei verfügbaren Geräteinformationen erkennt das Programm beispielsweise FTDI FT232, Prolific PL2303, CH340/CH341 und Silicon Labs CP210x.</p>
+<p><b>Aktualisieren</b> liest die Portliste erneut ein. <b>Anschluss überwachen (15 s)</b> meldet einen neu angeschlossenen Adapter. Mit <b>Portöffnung testen</b> wird nur geprüft, ob Windows den ausgewählten Anschluss öffnen kann. Trennen Sie zuvor die ECU-Sitzung, falls diese den Port verwendet. Der Test sendet keine ECU-Befehle.</p>
+<p>Wählen Sie danach unter <b>Optionen</b> den passenden COM-Port aus. Ändert Windows die Portnummer, wird der erkannte Adapter erneut angeboten. Die manuelle Eingabe bleibt möglich.</p>
+<div class="tip"><b>Drei unterschiedliche Prüfungen:</b> USB-Adapter erkannt, serieller Anschluss lässt sich öffnen und <b>ECU-Verbindung erfolgreich</b>. Nur die letzte Prüfung bestätigt die tatsächliche Kommunikation mit dem Steuergerät. Die interne Kabelverdrahtung wird nicht geprüft.</div><p><b>USB-Kabelerkennung</b></p>
+<p><img src=":/help/images/Capture d’écran (905).png" width="550"></p>
+
+
 <h2 id="chapter-2">2. Übersicht</h2>
 <p>Die Startseite zeigt Motordrehzahl, Saugrohrdruck, Temperaturen, Batteriespannung, Drosselklappe, Lambda, Leerlauf und Zündungswerte in Echtzeit. Warnfarben bleiben auch im dunklen Design sichtbar.</p>
+
+
+<p>Die Anzeigen zeigen Messwerte und Einheiten. Kleine Diagramme darunter stellen einen Verlauf von ungefähr zwei Minuten dar; ein separates Feld zeigt den Systemstatus.</p><p><b>Übersicht mit Messinstrumenten</b></p>
+<p><img src=":/help/images/Capture d’écran (901).png" width="550"></p>
+
 
 <h2 id="chapter-3">3. Einspritzung</h2>
 <p>Zeigt endgültige Einspritzzeit, Grundeinspritzzeit, Übergangskorrektur und Übergangszustand aus dem dafür vorgesehenen Lesemodus. IA MEMS beobachtet vorhandene Messwerte und startet keine zusätzliche ECU-Abfrage.</p>
 
+
+<p>Das untere Diagramm zeigt die Entwicklung der endgültigen Einspritzzeit. Rechts sind Firmware, rohe RAM-Werte und der Lesemodus zu sehen. Die RAM-Kennfeldansicht arbeitet, soweit unterstützt, nur lesend.</p><p><b>Einspritzung und Diagramm</b></p>
+<p><img src=":/help/images/Capture d’écran (910).png" width="550"></p>
+
+
 <h2 id="chapter-4">4. Einstellungen</h2>
 <p>Enthält je nach ECU Serviceeinstellungen für Leerlauf, Kraftstoff und Zündung. Lesen Sie Hinweise und Risiken, bevor Sie Werte ändern. Die Warmleerlaufkorrektur für 7D14-15 nutzt die tatsächliche ECU-Einstellung.</p>
+
+
+<p>Die große Anzeige zeigt die Motordrehzahl. Darunter befinden sich die vom Steuergerät unterstützten Leerlauf-, Kraftstoff- und Zündzeitpunkt-Einstellungen. Prüfen Sie die angezeigten Werte vor einer Änderung.</p><p><b>ECU-Einstellungen</b></p>
+<p><img src=":/help/images/Capture d’écran (896).png" width="550"></p>
+
 
 <h2 id="chapter-5">5. Fehler</h2>
 <p>Zeigt ECU-Fehler, gespeicherte Auffälligkeiten und Statusinformationen. Fehler erst lesen und verstehen, dann löschen. Einige Zähler benötigen einen vollständigen ECU-Neustart.</p>
 
+
+<p>Oben stehen gespeicherte Fehler mit eigener Löschfunktion. Unten finden sich Live-Anomalien, Statusanzeigen und eine getrennte Löschfunktion. Ein angezeigter Fehlername allein bedeutet noch keinen aktiven Fehler.</p><p><b>Gespeicherte Fehler und Live-Anomalien</b></p>
+<p><img src=":/help/images/Capture d’écran (897).png" width="550"></p>
+
+
 <h2 id="chapter-6">6. Aktoren</h2>
 <p>Nur unterstützte Aktortests verwenden. Tests von Einspritzventilen, Zündung oder Heizung können Fahrzeugkomponenten einschalten. Sichern Sie das Fahrzeug vor jeder Prüfung.</p>
+
+
+<p>Links sind die Aktorentests angeordnet. Rechts kann, sofern unterstützt, der Leerlauf-Schrittmotor bedient werden. Ein Befehl zum Zurücksetzen der Aktoren ist ebenfalls vorhanden.</p><p><b>Aktorentests</b></p>
+<p><img src=":/help/images/Capture d’écran (907).png" width="550"></p>
+
 
 <h2 id="chapter-7">7. Alle Messwerte</h2>
 <p>Zeigt Parameter mit Hilfetext, empfangenem Rohwert und interpretiertem Wert, soweit die Umrechnung dokumentiert ist. Beispielsweise können 138 bei einer dokumentierten Batteriespannung 13,8 V bedeuten. Unbekannte Felder werden nicht erfunden.</p>
 
+
+<p>Die tatsächliche Ansicht hat die Spalten Parameter, ECU-Empfangswert und Interpretiert. Beispielsweise entspricht der Rohwert 137 in der Abbildung 13,7 V Batteriespannung. Hilfesymbole geben ergänzende Erläuterungen.</p><p><b>Alle Messwerte</b></p>
+<p><img src=":/help/images/Capture d’écran (899).png" width="550"></p>
+
+
 <h2 id="chapter-8">8. Alle Daten</h2>
 <p>Zeigt rohe und dekodierte MEMS-Felder zum Vergleich von Protokollbytes und interpretierten Messwerten.</p>
+
+
+<p>Beide Tabellen zeigen Positionen und Rohwerte der Diagnoseframes 7D und 80 sowie dokumentierte Umrechnungen. Dies hilft bei der Kontrolle der Decodierung.</p><p><b>Rohdaten und Umrechnung</b></p>
+<p><img src=":/help/images/Capture d’écran (900).png" width="550"></p>
+
 
 <h2 id="chapter-9">9. ECU / ROSCO</h2>
 <p>Bietet Lese- und Sitzungsbefehle wie D0, D1, D2, F0 sowie F2–F5. TX/RX-Daten werden hexadezimal angezeigt. Die ECU-Neucodierung D3 bleibt absichtlich deaktiviert.</p>
 
+
+<h2 id="chapter-interactive">Interaktiver Modus — erweiterte Befehle</h2><p>Diese Seite zeigt Hinweise zur interaktiven ROSCO-Befehlsausführung. Sie richtet sich an Anwender, die das Protokoll und den seriellen Anschluss kennen. Für normale Messwertabfragen verwenden Sie <b>Verbinden</b> und die Diagnoseseiten.</p>
+<h2 id="chapter-ecu19">ECU-1.9-Test — Kommunikationsprüfung</h2><p>Der ECU-1.9-Test führt durch Verbindung, Identifikation und Datenabfrage. Er zeigt Protokollantworten, Einspritzungsmessungen, Wiederherstellung des Diagnosemodus und erneute Verbindung einzeln an. Prüfungen können gestartet und beendet, Protokolldateien geöffnet werden. Dies ist kein USB-Kabeltest.</p>
+
 <h2 id="chapter-10">10. Automatische Diagnose</h2>
 <p>Bewertet aktuelle ECU-Messwerte und unterscheidet Normalzustände, Warnungen und Abweichungen. Referenzaufnahmen und Berichtexporte sind möglich. Auch die Spulenladezeit wird geprüft.</p>
+
+
+<p>Die automatische Diagnose zeigt je Prüfung Wert, Zustand und Auswertung. Eine einzelne Auffälligkeit erfordert weitere Kontrollen. Referenzen können gespeichert und Berichte exportiert werden.</p><p><b>Automatische Diagnose</b></p>
+<p><img src=":/help/images/Capture d’écran (898).png" width="550"></p>
+
 
 <h2 id="chapter-11">11. Protokollanalyse</h2>
 <p>Öffnet unterstützte CSV/TXT-Messprotokolle, zeigt gewählte Kanäle und überlagert Kurven zum zeitlichen Vergleich.</p>
 
+
+<p>Laden Sie eine CSV- oder TXT-Protokolldatei und wählen Sie Kanäle aus der scrollbar angezeigten Liste. Alle auswählen, alle abwählen und Kurven überlagern stehen zur Verfügung.</p><p><b>Protokollanalyse</b></p>
+<p><img src=":/help/images/Capture d’écran (911).png" width="550"></p>
+
+
 <h2 id="chapter-12">12. IA MEMS</h2>
 <p>IA MEMS verbindet natürlichsprachige Fragen mit bereits erfassten ECU-Messwerten, Expertenlogik und der MEMS-Datenbank. Beobachtungen, Hypothesen, Quellen und Vertrauensgrade werden unterschieden. Eine einzelne Messung beweist keinen Bauteildefekt. Das Modell arbeitet lokal, wird erst beim Öffnen der Registerkarte aktiviert und sendet keine zusätzlichen ECU-Befehle.</p>
 
+
+<p>Suchen Sie nach einem Bauteil oder Arbeitsschritt. Wenn die Dokumentation installiert ist, kann IA MEMS nummerierte Schritte, Dokumentverweise und Herstellerseiten anzeigen. Prüfen Sie die Diagramme in der vergrößerten Originalansicht.</p><p><b>IA MEMS und Arbeitsschritte</b></p>
+<p><img src=":/help/images/Capture d’écran (914).png" width="550"></p>
+
+
 <h2 id="chapter-13">13. Bildschirmaufnahmen</h2>
 <p>Mit Aufnahme speichern Sie ein Bild des Programmfensters im Ordner captures. Aufnahmen anzeigen ermöglicht Vorschau, Vergrößerung oder Löschen nach Bestätigung.</p>
+
+
+<p>Im Bereich Werkzeuge startet <b>Aufzeichnen</b> eine Diagnoseprotokollierung und <b>Stopp</b> beendet sie. <b>Bildschirmfoto</b> speichert ein Fensterbild, <b>Aufnahmen anzeigen</b> öffnet die Bildübersicht.</p>
 
 <h2 id="chapter-14">14. Kontexthilfe</h2>
 <p>Wo Kontexthilfe angeboten wird, verwendet die Software das integrierte Hilfeblasensymbol unabhängig von der Windows-Version.</p>
@@ -85,6 +151,11 @@ small{color:#aebcc5}
 <h2 id="chapter-21">21. Dokumentationsdatenbank</h2>
 <p>Die Datenbankseite durchsucht ECU-Referenzen, Fahrzeuge, Befehle und technische Unterlagen. Filter und Ergebnisse führen zu Datenblättern und Herstellerseiten. Dokumentationspakete werden unabhängig vom SESSION-Programm installiert.</p>
 
+
+<p>Geben Sie einen Suchbegriff ein, wählen Sie bei Bedarf eine Generation und öffnen Sie einen Treffer. Die Detailansicht zeigt Dokument, Sprache, Quellseite und Abbildungen mit eigenem Bildlauf.</p><p><b>Datenbank und Herstellerdokument</b></p>
+<p><img src=":/help/images/Capture d’écran (912).png" width="550"></p>
+
+
 <h2 id="chapter-22">22. Dokumentationsupdates</h2>
 <p>Öffnen Sie Datenbank und wählen Sie Nach Datenbankupdates suchen. Der Manager prüft den Online-Katalog, lädt verfügbare verschlüsselte Pakete herunter und kontrolliert SHA-256. Für die Installation sind das Paketpasswort und Prüfungen von SQLite, Bildern und Herkunft erforderlich. Lokale verschlüsselte Pakete können ebenfalls installiert werden. Bei Fehlern bleibt die alte Datenbank erhalten.</p>
 
@@ -92,5 +163,8 @@ small{color:#aebcc5}
 <p>Windows-Taskleiste automatisch ausblenden ist standardmäßig deaktiviert. Wenn aktiviert, betrifft dies die gesamte Windows-Arbeitsfläche während SESSION läuft. Beim normalen Schließen wird die Einstellung wiederhergestellt; nach einem unerwarteten Abbruch greifen Wiederherstellungsprüfungen. Windows-Richtlinien können Änderungen verhindern.</p>
 
 <h2 id="chapter-24">24. Herstellerabbildungen</h2>
-<p>Geprüfte Bildschirmaufnahmen können in zukünftige Versionen integriert werden. Herstellerbilder stammen aus dem installierten Dokumentationspaket und lassen sich in Datenbank oder IA MEMS vergrößern.</p>
+<p>Alle 13 Bildschirmaufnahmen dieses Handbuchs sind im SESSION-Installationspaket enthalten und offline verfügbar. Die Abbildungen zeigen die französische Programmoberfläche; dieser Hilfetext ist auf Deutsch. Herstellerzeichnungen stammen aus den installierten Dokumentationspaketen.</p>
+<p><b>Startfenster</b></p>
+<p><img src=":/help/images/Capture d’écran (915).png" width="550"></p>
+
 </body></html>
