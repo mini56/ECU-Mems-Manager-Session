@@ -176,6 +176,8 @@ small{color:#aebcc5}
 <li><b>Leopold Gunther — mems-rosco</b><p>Per il lavoro sui programmi di lettura e diagnosi delle centraline MEMS.</p></li>
 <li><b>James Portman — rovermems.com</b><p>Per le ricerche sui protocolli Rover MEMS e lo sviluppo di strumenti diagnostici.</p></li>
 <li><b>Colin Bourassa — memsgauge / memsreader</b><p>Per il lavoro pionieristico sulla comunicazione con le centraline MEMS e sulla visualizzazione dei dati motore.</p></li>
+<li><b>Andrew Revill — MEMS Mapper / MEMSTools</b><p>Per le ricerche sui firmware, le mappe e le famiglie di centraline Rover MEMS.</p></li>
+<li><b>haro78 — MEMSScan</b><p>Per lo sviluppo di MEMSScan, programma di lettura e diagnosi basato anche su MEMSGauge e MEMSrosco.</p></li>
 </ul>
 <p>Le loro attività e la condivisione delle conoscenze hanno contribuito allo sviluppo degli strumenti diagnostici per la comunità MEMS.</p>
 
