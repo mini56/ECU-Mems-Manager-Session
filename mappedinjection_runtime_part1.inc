@@ -22,26 +22,30 @@ protected:
     void paintEvent(QPaintEvent*) override
     {
         QPainter p(this);p.setRenderHint(QPainter::Antialiasing,true);p.setRenderHint(QPainter::TextAntialiasing,true);
+        const bool darkTheme=qApp && qApp->property("ecuDarkTheme").toBool();
         const qreal baseW=188.0,baseH=210.0,s=qMin(width()/baseW,height()/baseH);
         p.translate((width()-baseW*s)/2.0,(height()-baseH*s)/2.0);p.scale(s,s);
-        p.setPen(QPen(QColor("#34414a"),1));p.setBrush(QColor("#0c1217"));p.drawRoundedRect(QRectF(.5,.5,187,209),5,5);
+        p.setPen(QPen(darkTheme?QColor("#34414a"):QColor("#c5cfd7"),1));p.setBrush(darkTheme?QColor("#0c1217"):QColor("#ffffff"));p.drawRoundedRect(QRectF(.5,.5,187,209),5,5);
         // All four Injection titles use the same font size, fitted together.
         const QFont tf=GaugeHeading::styledFont(p.font(),m_titlePointSize);
         const QString fullGaugeTitle=m_title.toUpper();
-        p.setFont(tf);p.setPen(QColor("#edf2f4"));
-        p.drawText(QRectF(6,5,176,20),Qt::AlignCenter,fullGaugeTitle);p.setPen(QColor("#27333b"));p.drawLine(QPointF(8,26),QPointF(180,26));
+        p.setFont(tf);p.setPen(darkTheme?QColor("#edf2f4"):QColor("#101820"));
+        p.drawText(QRectF(6,5,176,20),Qt::AlignCenter,fullGaugeTitle);p.setPen(darkTheme?QColor("#27333b"):QColor("#cbd5dd"));p.drawLine(QPointF(8,26),QPointF(180,26));
         const QPointF c(94,105);const qreal r=70,startDeg=135,sweepDeg=270;
-        p.setPen(QPen(QColor("#66727a"),1.2));p.setBrush(QColor("#060a0d"));p.drawEllipse(c,r,r);
-        p.setPen(QPen(QColor("#38434a"),2));p.setBrush(Qt::NoBrush);p.drawArc(QRectF(c.x()-58,c.y()-58,116,116),(-45)*16,270*16);
-        const int ticks=40;for(int i=0;i<=ticks;++i){const bool major=i%10==0;const qreal a=qDegreesToRadians(startDeg+sweepDeg*i/qreal(ticks));const QPointF o=c+QPointF(qCos(a)*(r-8),qSin(a)*(r-8));const QPointF in=c+QPointF(qCos(a)*(r-(major?20:14)),qSin(a)*(r-(major?20:14)));p.setPen(QPen(major?QColor("#f1f4f6"):QColor("#74818a"),major?1.4:.7));p.drawLine(in,o);}
-        QFont sf=p.font();sf.setBold(true);sf.setPointSizeF(6.1);p.setFont(sf);p.setPen(QColor("#eef2f4"));
+        QRadialGradient chrome(c-QPointF(12,16),r*1.25);
+        chrome.setColorAt(0,QColor("#f9fafb"));chrome.setColorAt(.22,QColor("#a1aab3"));chrome.setColorAt(.52,QColor("#eef1f4"));chrome.setColorAt(.83,QColor("#adb7c0"));chrome.setColorAt(1,QColor("#e5eaee"));
+        p.setPen(QPen(darkTheme?QColor("#66727a"):QColor("#8996a0"),1.2));p.setBrush(darkTheme?QBrush(QColor("#060a0d")):QBrush(chrome));p.drawEllipse(c,r,r);
+        if(!darkTheme){p.setPen(QPen(QColor("#cdd4da"),5.0));p.setBrush(Qt::white);p.drawEllipse(c,r-5.0,r-5.0);}
+        p.setPen(QPen(darkTheme?QColor("#38434a"):QColor("#a4afb9"),2));p.setBrush(Qt::NoBrush);p.drawArc(QRectF(c.x()-58,c.y()-58,116,116),(-45)*16,270*16);
+        const int ticks=40;for(int i=0;i<=ticks;++i){const bool major=i%10==0;const qreal a=qDegreesToRadians(startDeg+sweepDeg*i/qreal(ticks));const QPointF o=c+QPointF(qCos(a)*(r-8),qSin(a)*(r-8));const QPointF in=c+QPointF(qCos(a)*(r-(major?20:14)),qSin(a)*(r-(major?20:14)));p.setPen(QPen(darkTheme?(major?QColor("#f1f4f6"):QColor("#74818a")):(major?QColor("#101820"):QColor("#56636e")),major?1.4:.7));p.drawLine(in,o);}
+        QFont sf=p.font();sf.setBold(true);sf.setPointSizeF(6.1);p.setFont(sf);p.setPen(darkTheme?QColor("#eef2f4"):QColor("#101820"));
         for(int i=0;i<=4;++i){const double value=m_min+(m_max-m_min)*i/4.0;const qreal la=qDegreesToRadians(startDeg+sweepDeg*i/4.0);const QPointF pos=c+QPointF(qCos(la)*(r-31),qSin(la)*(r-31));QString txt;if(m_max<=6.0)txt=QString::number(value,'f',(qAbs(value-qRound(value))<.01)?0:1);else txt=QString::number(value,'f',0);p.drawText(QRectF(pos.x()-18,pos.y()-6,36,12),Qt::AlignCenter,txt);}
         const double span=qMax(0.0001,m_max-m_min);const double n=qBound(0.0,(m_value-m_min)/span,1.0);const qreal a=qDegreesToRadians(startDeg+sweepDeg*n);const QPointF d(qCos(a),qSin(a));const QPointF normal(-d.y(),d.x());
         QPainterPath needle;needle.moveTo(c+d*(r-14));needle.lineTo(c+normal*3.2);needle.lineTo(c-d*10);needle.lineTo(c-normal*3.2);needle.closeSubpath();p.setPen(Qt::NoPen);p.setBrush(QColor("#ff7417"));p.drawPath(needle);
         p.setBrush(QColor("#293239"));p.drawEllipse(c,6,6);
-        QFont vf=p.font();vf.setBold(true);vf.setPointSizeF(18);p.setFont(vf);p.setPen(Qt::white);
+        QFont vf=p.font();vf.setBold(true);vf.setPointSizeF(18);p.setFont(vf);p.setPen(darkTheme?QColor(Qt::white):QColor("#101820"));
         p.drawText(QRectF(40,130,108,28),Qt::AlignCenter,QString::number(m_value,'f',m_unit==QStringLiteral("ms")?2:0));
-        QFont uf=p.font();uf.setBold(true);uf.setPointSizeF(8);p.setFont(uf);p.setPen(QColor("#d0d8dc"));p.drawText(QRectF(45,157,98,16),Qt::AlignCenter,m_unit);
+        QFont uf=p.font();uf.setBold(true);uf.setPointSizeF(8);p.setFont(uf);p.setPen(darkTheme?QColor("#d0d8dc"):QColor("#101820"));p.drawText(QRectF(45,157,98,16),Qt::AlignCenter,m_unit);
     }
 private:
     QString m_title,m_unit;
@@ -57,12 +61,14 @@ public:
 protected:
     void paintEvent(QPaintEvent*) override
     {
-        QPainter p(this);p.setRenderHint(QPainter::Antialiasing,true);p.fillRect(rect(),QColor("#0c1217"));
-        QFont f=p.font();f.setBold(true);f.setPointSize(9);p.setFont(f);p.setPen(QColor("#edf2f4"));p.drawText(QRect(12,6,width()-24,20),Qt::AlignLeft|Qt::AlignVCenter,I18n::text(7905));
-        QRect plot(48,34,qMax(1,width()-62),qMax(1,height()-58));p.setPen(QPen(QColor("#26313b"),1));p.setBrush(QColor("#090e13"));p.drawRect(plot);
-        for(int i=0;i<=4;++i){int y=plot.top()+plot.height()*i/4;p.setPen(QColor("#233047"));p.drawLine(plot.left(),y,plot.right(),y);}
+        QPainter p(this);p.setRenderHint(QPainter::Antialiasing,true);
+        const bool darkTheme=qApp && qApp->property("ecuDarkTheme").toBool();
+        p.fillRect(rect(),darkTheme?QColor("#0c1217"):QColor("#ffffff"));
+        QFont f=p.font();f.setBold(true);f.setPointSize(9);p.setFont(f);p.setPen(darkTheme?QColor("#edf2f4"):QColor("#101820"));p.drawText(QRect(12,6,width()-24,20),Qt::AlignLeft|Qt::AlignVCenter,I18n::text(7905));
+        QRect plot(48,34,qMax(1,width()-62),qMax(1,height()-58));p.setPen(QPen(darkTheme?QColor("#26313b"):QColor("#bfcad4"),1));p.setBrush(darkTheme?QColor("#090e13"):QColor("#ffffff"));p.drawRect(plot);
+        for(int i=0;i<=4;++i){int y=plot.top()+plot.height()*i/4;p.setPen(darkTheme?QColor("#233047"):QColor("#dae2e9"));p.drawLine(plot.left(),y,plot.right(),y);}
         for(int i=0;i<=6;++i){int x=plot.left()+plot.width()*i/6;p.drawLine(x,plot.top(),x,plot.bottom());}
-        if(m_time.size()<2||m_values.size()<2){p.setPen(QColor("#8a93a6"));p.drawText(plot,Qt::AlignCenter,I18n::text(6440));return;}
+        if(m_time.size()<2||m_values.size()<2){p.setPen(darkTheme?QColor("#8a93a6"):QColor("#475564"));p.drawText(plot,Qt::AlignCenter,I18n::text(6440));return;}
         const double tMin=m_time.first(),tMax=m_time.last(),tSpan=qMax(.001,tMax-tMin);double vMin=m_values.first(),vMax=vMin;for(double v:m_values){vMin=qMin(vMin,v);vMax=qMax(vMax,v);}if(qAbs(vMax-vMin)<.01){vMin-=.5;vMax+=.5;}const double vm=(vMax-vMin)*.1;vMin=qMax(0.0,vMin-vm);vMax+=vm;const double vSpan=vMax-vMin;
         // Never invent a continuous slope across a period where no Injection
         // samples were received. Mode-4 normally samples far faster than this;
@@ -70,7 +76,7 @@ protected:
         const double maxContinuousGapSeconds=0.5;
         QPainterPath historyPath;const int n=qMin(m_time.size(),m_values.size());for(int i=0;i<n;++i){const QPointF point(plot.left()+(m_time[i]-tMin)/tSpan*plot.width(),plot.bottom()-(m_values[i]-vMin)/vSpan*plot.height());if(i==0||(m_time[i]-m_time[i-1])>maxContinuousGapSeconds)historyPath.moveTo(point);else historyPath.lineTo(point);}
         p.setPen(QPen(QColor("#ff7a00"),1.8));p.drawPath(historyPath);
-        QFont af=p.font();af.setBold(false);af.setPointSize(7);p.setFont(af);p.setPen(QColor("#9aa4ad"));
+        QFont af=p.font();af.setBold(false);af.setPointSize(7);p.setFont(af);p.setPen(darkTheme?QColor("#9aa4ad"):QColor("#344250"));
         for(int i=0;i<=4;++i){double v=vMax-vSpan*i/4.0;int y=plot.top()+plot.height()*i/4;p.drawText(QRect(0,y-8,43,16),Qt::AlignRight|Qt::AlignVCenter,QString::number(v,'f',2));}
         for(int i=0;i<=6;++i){int x=plot.left()+plot.width()*i/6;double t=tMin+tSpan*i/6.0;p.drawText(QRect(x-28,plot.bottom()+3,56,17),Qt::AlignCenter,QString("%1 s").arg(t-tMax,0,'f',0));}
     }
