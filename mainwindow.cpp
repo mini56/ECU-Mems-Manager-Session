@@ -1388,7 +1388,8 @@ void MainWindow::onEditOptionsClicked()
     if (m_options->getThemeChanged())
     {
       qApp->setProperty("ecuDarkTheme", m_options->getTheme() == "dark");
-      qApp->setStyleSheet(m_options->getTheme() == "dark" ? STYLE_DARK : STYLE_LIGHT);
+      // applyApplicationVisualStyle owns the global stylesheet and restores
+      // the previous native widget styles in the same switch.
       applyNativeTitleBar(this, m_options->getTheme() == "dark");
       applyApplicationVisualStyle(this);
       const QList<WidgetWithBackground*> meters = findChildren<WidgetWithBackground*>();
