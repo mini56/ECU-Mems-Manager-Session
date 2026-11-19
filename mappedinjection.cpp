@@ -20,6 +20,7 @@
 #include <QMetaObject>
 #include <QPainter>
 #include <QPainterPath>
+#include <QRadialGradient>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSettings>
