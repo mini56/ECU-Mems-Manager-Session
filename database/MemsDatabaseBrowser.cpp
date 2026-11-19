@@ -162,7 +162,11 @@ void MemsDatabaseBrowser::buildUi()
     split->setStyleSheet(QStringLiteral("QSplitter::handle{background:#090e13;}"));
 
     QFrame *listCard=card(split); QVBoxLayout *lv=new QVBoxLayout(listCard); lv->setContentsMargins(7,7,7,7);
-    m_results=new QTableWidget(listCard); m_results->setColumnCount(5); m_results->verticalHeader()->setVisible(false);
+    m_results=new QTableWidget(listCard);
+    // Identify the indexed results before the UI shell prepares table headers.
+    m_results->setObjectName(QStringLiteral("memsDatabaseResults"));
+    m_results->setColumnCount(5);
+    m_results->verticalHeader()->setVisible(false);
     m_results->horizontalHeader()->setSectionResizeMode(0,QHeaderView::ResizeToContents);
     m_results->horizontalHeader()->setSectionResizeMode(1,QHeaderView::ResizeToContents);
     m_results->horizontalHeader()->setSectionResizeMode(2,QHeaderView::ResizeToContents);
