@@ -26,6 +26,8 @@ void AboutBox::showAbout(QWidget* parent)
         + QStringLiteral("<li>Leopold Gunther — mems-rosco</li>")
         + QStringLiteral("<li>James Portman — rovermems.com</li>")
         + QStringLiteral("<li>Colin Bourassa — memsgauge / memsreader</li>")
+        + QStringLiteral("<li>Andrew Revill — MEMS Mapper / MEMSTools</li>")
+        + QStringLiteral("<li>haro78 — MEMSScan</li>")
         + QStringLiteral("</ul>")
         + QStringLiteral("<p>") + I18n::text(6205) /* EN: Prior Rover MEMS research and diagnostic tools. */ + QStringLiteral("</p>");
 
