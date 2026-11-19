@@ -737,6 +737,18 @@ QVariantList MemsDocumentaryRepository::searchLocal(const QString &question,
 #endif
             return result;
         }
+        // Optional manufacturer-verified model years. Older documentary packs
+        // without the additive table remain readable, with no guessed period.
+        const bool hasModelYears=m_database.tables().contains(
+            QStringLiteral("documentary_model_years"));
+        QSqlQuery modelYears(m_database);
+        if(hasModelYears){
+            if(!modelYears.prepare(QStringLiteral(
+                "SELECT vehicle_years FROM documentary_model_years "
+                "WHERE document_id=? AND source_revision=? AND entry_id=?"))){
+                return result;
+            }
+        }
         while (query.next()) {
             const QString doc = query.value(0).toString();
             const QString id = query.value(1).toString();
@@ -764,6 +776,17 @@ QVariantList MemsDocumentaryRepository::searchLocal(const QString &question,
             hit.insert(QStringLiteral("source_revision"),query.value(8).toString());
             hit.insert(QStringLiteral("document_id"),doc);
             hit.insert(QStringLiteral("entry_id"),id);
+            if(hasModelYears){
+                modelYears.bindValue(0,doc);
+                modelYears.bindValue(1,query.value(8).toString());
+                modelYears.bindValue(2,id);
+                if(modelYears.exec() && modelYears.next()){
+                    const QString verifiedYears=modelYears.value(0).toString().trimmed();
+                    if(!verifiedYears.isEmpty())
+                        hit.insert(QStringLiteral("generation"),verifiedYears);
+                }
+                modelYears.finish();
+            }
             hit.insert(QStringLiteral("source_page"),
                        query.value(4).isNull() ? 0 : query.value(4).toInt());
             hit.insert(QStringLiteral("entry_type"),type);
