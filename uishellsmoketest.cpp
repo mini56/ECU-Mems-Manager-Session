@@ -232,9 +232,10 @@ bool verifyUi(MainWindow &window)
                  header->sectionResizeMode(0)==QHeaderView::Stretch &&
                  header->sectionResizeMode(1)==QHeaderView::Fixed &&
                  header->sectionResizeMode(2)==QHeaderView::Fixed &&
-                 resultTable->columnWidth(1)==105 &&
-                 resultTable->columnWidth(2)==108,
-                 "Database layout: Result must grow, Generation 105, Type 108") && ok;
+                 resultTable->columnCount()==3 &&
+                 resultTable->columnWidth(1)==114 &&
+                 resultTable->columnWidth(2)==82,
+                 "Database layout: Result grows, Generation 114, Type 82") && ok;
     }
 
     // The revised help loads real bundled HTML into an offline dark Qt dialog.

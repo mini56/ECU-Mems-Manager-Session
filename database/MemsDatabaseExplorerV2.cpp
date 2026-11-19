@@ -52,6 +52,7 @@
 #include <QUuid>
 #include <QVBoxLayout>
 #include <QVariantMap>
+#include <functional>
 #include <QVector>
 #include <QXmlStreamReader>
 
