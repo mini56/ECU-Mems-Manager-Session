@@ -15,6 +15,10 @@
 #include "database/MemsGlobalSearchIndex.h"
 
 #include <QApplication>
+#include <QAction>
+#include <QDialog>
+#include <QSlider>
+#include <QUrl>
 #include <QCoreApplication>
 #include <QEvent>
 #include <QFrame>
@@ -257,6 +261,28 @@ bool verifyUi(MainWindow &window)
              helpBody->toPlainText().contains(QStringLiteral("MEMS 2J")) &&
              helpBody->toHtml().contains(QStringLiteral("qrc:/help/images/")),
              "Help must document MEMS 2J and link bundled images for zoom") && ok;
+    // Exercise the real bundled screenshot viewer, including interactive zoom.
+    const QUrl screenshot(QStringLiteral(
+        "qrc:/help/images/Capture%20d%E2%80%99%C3%A9cran%20(905).png"));
+    const bool invoked=QMetaObject::invokeMethod(
+        &manual,"onAnchorClicked",Qt::DirectConnection,Q_ARG(QUrl,screenshot));
+    QDialog *imageDialog=manual.findChild<QDialog*>(
+        QStringLiteral("memsHelpImageZoom"));
+    QSlider *imageZoom=imageDialog?imageDialog->findChild<QSlider*>(
+        QStringLiteral("memsHelpImageZoomSlider")):nullptr;
+    QLabel *expanded=imageDialog?imageDialog->findChild<QLabel*>(
+        QStringLiteral("memsHelpZoomedImage")):nullptr;
+    const bool imageOpened=invoked && imageDialog && imageZoom &&
+                           expanded && expanded->pixmap() &&
+                           !expanded->pixmap()->isNull();
+    int startingWidth=imageOpened?expanded->pixmap()->width():0;
+    if(imageZoom) imageZoom->setValue(200);
+    const bool zoomWorked=imageOpened && expanded->pixmap() &&
+        expanded->pixmap()->width()>=startingWidth &&
+        expanded->pixmap()->width()>550;
+    ok=check(imageOpened && zoomWorked,
+             "Help screenshot click must open a scalable offline image") && ok;
+    if(imageDialog)imageDialog->close();
     ok=check(window.findChild<QPushButton*>(
                  QStringLiteral("uiProgramUpdateButton")) &&
              window.findChild<QAction*>(
