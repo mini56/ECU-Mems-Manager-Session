@@ -101,7 +101,14 @@ small{color:#aebcc5}
 <h2 id="chapter-mems2j">MEMS 2J — automatische Verbindung und Diagnose</h2>
 <p>Schließen Sie ein kompatibles Diagnosekabel an das Steuergerät an, schalten Sie die Zündung ein und klicken Sie auf <b>Verbinden</b>. SESSION prüft die verfügbaren seriellen Schnittstellen und erkennt die Steuergerätefamilie anhand der tatsächlichen Antworten, ohne Kabelmarke oder Protokoll manuell auszuwählen.</p>
 <p>Nach Erkennung von <b>MEMS 2J</b> erscheinen verfügbare Werte auf den Seiten <b>Übersicht</b> und <b>Alle Messwerte</b>; gelesene Fehler stehen unter <b>Automatische Diagnose</b>. Nicht dokumentierte Werte bleiben Rohdaten. Einige Fehlercodes gelten speziell für den Mini MPi.</p>
-<p><b>Teststatus:</b> Leser und automatische Tests wurden mit SESSION 178 integriert; ein Test an einem echten MEMS-2J-Steuergerät steht noch aus. Lösch- oder Programmierfunktionen wurden nicht hinzugefügt.</p>
+<p><b>Teststatus:</b> Leser und automatische Tests wurden mit SESSION 178 integriert; ein Test an einem echten MEMS-2J-Steuergerät steht noch aus. Seit SESSION 184 ist das Löschen der Fehlercodes auf ausdrücklichen Benutzerwunsch möglich; Programmierung, Kalibrierung und Wegfahrsperrenfunktionen wurden nicht hinzugefügt.</p>
+
+<p><b>Fehlercodes beim MEMS 2J löschen:</b> Nach einer bestätigten Verbindung verwenden Sie die vorhandene Funktion zum Fehlerlöschen. SESSION sendet den MEMS-2J-Dienst <code>31 CB</code> und erwartet <code>71 CB</code>. Dabei wird der Fehlerspeicher verändert. Der Befehl wird niemals automatisch beim Verbinden ausgeführt. ROSCO-Einstell- und Aktorbefehle gelten nicht für MEMS 2J.</p>
+<h3>MEMS 3 — automatische Verbindung, Messwerte und Fehlercodes</h3>
+<p>Schließen Sie das passende Diagnosekabel an, schalten Sie die Zündung ein und klicken Sie wie gewohnt auf <b>Verbinden</b>. SESSION prüft den eigenen MEMS-3-Dialog mit <b>9.600 Baud, 8 Datenbits, gerader Parität und 1 Stoppbit (8E1)</b>. Die Anfragen verwenden <code>B8 13 F7</code> und eine XOR-Prüfsumme. Erst die tatsächliche ECU-Antwort bestätigt die Verbindung; eine manuelle Protokollauswahl ist nicht nötig.</p>
+<p>Bei erfolgreicher MEMS-3-Verbindung werden je nach Steuergerät Motordrehzahl, Kühlmittel-, Öl- und Ansauglufttemperatur, MAP, Drosselklappe, Lambda und Spulenzeiten angezeigt. Unklare Einheiten bleiben als Rohwerte erkennbar. Die Diagnose zeigt <b>16-Bit-Motorfehlercodes</b>, bekannte Zustände und empfangene Hexadezimaldaten.</p>
+<p><b>Fehlercodes beim MEMS 3 löschen:</b> Die vorhandene Löschfunktion sendet <code>14 00 00</code> und prüft die Bestätigung <code>54 00 00</code>. Dies geschieht nur auf Benutzerwunsch, nie bei der automatischen Erkennung oder Messung. Experimentelle Wegfahrsperren- und Kalibrierungsbefehle sind nicht aktiviert.</p>
+<p><b>Prüfstatus:</b> SESSION 184 enthält automatische Prüfungen der Telegramme und Decoder. Verbindungs- und Löschtests an echten MEMS-2J- und MEMS-3-Steuergeräten stehen noch aus. Das RC5-Airbagsteuergerät gehört nicht zur Motorsteuergerät-Erkennung.</p>
 
 <h2 id="chapter-10">10. Automatische Diagnose</h2>
 <p>Bewertet aktuelle ECU-Messwerte und unterscheidet Normalzustände, Warnungen und Abweichungen. Referenzaufnahmen und Berichtexporte sind möglich. Auch die Spulenladezeit wird geprüft.</p>
@@ -147,7 +154,7 @@ small{color:#aebcc5}
 <p>Die Oberfläche unterstützt Französisch, Englisch, Spanisch, Italienisch, Portugiesisch und Deutsch. Die Auswahl wird in SESSION gespeichert.</p>
 
 <h2 id="chapter-18">18. Unterstützte ECU-Familien</h2>
-<p>Datenbank und Diagnosefunktionen unterstützen Rover MEMS 1.2, 1.3, 1.6 und 1.9. Der Funktionsumfang hängt von ECU, Fahrzeug und Protokoll ab.</p>
+<p>SESSION unterstützt Rover MEMS <b>1.2, 1.3 und 1.6</b> über ROSCO, <b>MEMS 1.9</b> über K-Line-Initialisierung sowie <b>MEMS 2J und MEMS 3</b> über getrennte K-Line-Protokolle. Die Steuergerätefamilie wird anhand einer erfolgreichen Antwort nach <b>Verbinden</b> ermittelt. Messwerte und Befehle hängen von der tatsächlichen Verbindung ab; ROSCO-Einstellbefehle gelten nicht für MEMS 2J/3. Praxistests an echten Steuergeräten stehen aus.</p>
 
 <h2 id="chapter-19">19. Grundlegende Diagnosehinweise</h2>
 <p>Keine Verbindung: Zündung, Port, Kabel, ECU-Versorgung und Masse prüfen. MAP auffällig: Unterdruckschlauch, Saugrohr und Sensor prüfen. Unruhiger Leerlauf: Leerlaufschalter, IAC, Nebenluft, Temperatur und Kraftstoffkorrekturen prüfen. Lambdafehler: Heizung, Kabel, Spannung und Regelkreis prüfen. Spule: Batterie, Primärkreis und Kabel prüfen.</p>
