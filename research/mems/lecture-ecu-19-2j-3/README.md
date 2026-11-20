@@ -5,6 +5,14 @@ Le journal indique les commits réalisés, les fichiers modifiés, le statut des
 
 **Dépôt :** `mini56/ECU-Mems-Manager-Session`. **Branche unique :** `fix-documentary-additive-session-161-20261118`. Ne pas créer de branche de plus ou copier les changements d'une autre branche sans vérifier les diffs.
 
+## Référence exhaustive RoverMEMS Windows i386 (20/11/2026)
+
+- **[Rapport technique détaillé des séquences, dialogues, données et fonctions modifiant les ECU](14_RAPPORT_DETAILLE_ROVERMEMS_I386_TOUTES_SEQUENCES_20261120.md)** — couvre **1.2/1.3/1.6, 1.9, 2J, 3 et RC5 airbag/SRS**.
+- **[Catalogue JSON pour le futur développement](15_CATALOGUE_MACHINE_PROTOCOLS_ROVERMEMS_I386_20261120.json)** — profils, hexadécimal, mesures, commandes modifiantes, DTC et provenance.
+- **[Sources Go figées sur la révision de l'exécutable](rovermems-reference/i386-20230128/)** — distinctes des six anciennes sources déjà conservées ; GPLv3.
+
+Documentation uniquement : le runtime SESSION et la Release 182 ne sont pas modifiés. Les tests sur ECU réel restent nécessaires.
+
 ## Où trouver les éléments
 
 - [Journal de reprise et avancement réel](13_JOURNAL_DEVELOPPEMENT_MEMS19_PUIS_2J_20261120.md) — point d'entrée obligatoire.

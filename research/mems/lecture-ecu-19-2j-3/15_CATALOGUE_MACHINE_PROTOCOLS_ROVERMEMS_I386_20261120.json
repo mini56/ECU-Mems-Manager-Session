@@ -1,0 +1,1181 @@
+{
+  "schema": "ECU_MEMS_MANAGER_ROVERMEMS_PROTOCOL_REFERENCE_V1",
+  "created": "2026-11-20",
+  "runtime_integration": false,
+  "source": {
+    "upstream": "https://github.com/james-portman/rover-mems-agent",
+    "revision": "ed9ec4dd3181e60dcb7e4bcb340016fcb6bf20f3",
+    "licence": "GPLv3",
+    "snapshot_location": "research/mems/lecture-ecu-19-2j-3/rovermems-reference/i386-20230128/",
+    "executable": "rover-mems-windows-i386.exe",
+    "compiler": "go1.19.5/windows/386",
+    "binary_sha256": "0b7ac753299ec7feae6b1e2793ce7c994313ee8ffa58371476c8f9db08e6fb87",
+    "zip_sha256": "4283c2b10064246310314f0ab5cf4600b0977c932ffc64fbdba4c022f487824d"
+  },
+  "evidence": "Constantes et code source verifiés; réponse ECU non capturée sur calculateur réel",
+  "profiles": [
+    {
+      "family": "MEMS_1X",
+      "members": [
+        "1.2",
+        "1.3",
+        "1.6"
+      ],
+      "port": "9600 8N1",
+      "wake": "Aucun réveil lent explicite dans ecu-1x.go",
+      "sequence": [
+        [
+          "CA",
+          "CA"
+        ],
+        [
+          "75",
+          "75"
+        ],
+        [
+          "F4",
+          "F4 00"
+        ],
+        [
+          "D0",
+          "D0 + 4 octets identification"
+        ]
+      ],
+      "read_commands": [
+        [
+          "80",
+          "80 longueur + mesures/defauts"
+        ],
+        [
+          "7D",
+          "7D longueur + mesures; option non supportée par certains 1.2 ?"
+        ]
+      ],
+      "frames": "Commande 1 octet, echo local K-Line eventuel",
+      "symbols": [
+        {
+          "name": "ecu1xLastKlineByte",
+          "hex": "00"
+        },
+        {
+          "name": "ecu1xRequestClearFaults",
+          "hex": "CC"
+        },
+        {
+          "name": "ecu1xStartTestRpmGauge",
+          "hex": "6B"
+        },
+        {
+          "name": "ecu1xStartTestLambdaHeater",
+          "hex": "19"
+        },
+        {
+          "name": "ecu1xStopTestLambdaHeater",
+          "hex": "09"
+        },
+        {
+          "name": "ecu1xStartTestACClutch",
+          "hex": "13"
+        },
+        {
+          "name": "ecu1xStopTestACClutch",
+          "hex": "03"
+        },
+        {
+          "name": "ecu1xStartTestFuelPump",
+          "hex": "11"
+        },
+        {
+          "name": "ecu1xStopTestFuelPump",
+          "hex": "01"
+        },
+        {
+          "name": "ecu1xStartTestFan1",
+          "hex": "1D"
+        },
+        {
+          "name": "ecu1xStopTestFan1",
+          "hex": "0D"
+        },
+        {
+          "name": "ecu1xStartTestPurgeValve",
+          "hex": "18"
+        },
+        {
+          "name": "ecu1xStopTestPurgeValve",
+          "hex": "08"
+        },
+        {
+          "name": "ecu1xIncreaseIdleSpeed",
+          "hex": "91"
+        },
+        {
+          "name": "ecu1xDecreaseIdleSpeed",
+          "hex": "92"
+        },
+        {
+          "name": "ecu1xIncreaseIgnitionAdvanceOffset",
+          "hex": "93"
+        },
+        {
+          "name": "ecu1xDecreaseIgnitionAdvanceOffset",
+          "hex": "94"
+        },
+        {
+          "name": "ecu1xIncreaseFuelTrim1",
+          "hex": "79"
+        },
+        {
+          "name": "ecu1xDecreaseFuelTrim1",
+          "hex": "7A"
+        },
+        {
+          "name": "ecu1xIncreaseFuelTrim2",
+          "hex": "7B"
+        },
+        {
+          "name": "ecu1xDecreaseFuelTrim2",
+          "hex": "7C"
+        }
+      ],
+      "measure_fields": [
+        "rpm",
+        "coolant_temp",
+        "ambient_temp",
+        "intake_air_temp",
+        "fuel_rail_temp",
+        "map_sensor_kpa",
+        "battery_voltage",
+        "throttle_pot_voltage",
+        "idle_switch",
+        "park_or_neutral_switch",
+        "idle_setpoint",
+        "idle_hotdb",
+        "idle_valve_position",
+        "idle_speed_deviation",
+        "ignition_advance_offset",
+        "ignition_advance_raw",
+        "ignition_advance",
+        "coil_time_microseconds",
+        "ignition_switch",
+        "throttle_angle",
+        "air_fuel_ratio",
+        "lambda_heater_relay",
+        "secondary_trigger_sync",
+        "fan_1_control",
+        "fan_2_control",
+        "lambda_mv",
+        "lambda_sensor_frequency",
+        "lambda_sensor_duty_cycle",
+        "lambda_sensor_status",
+        "closed_loop",
+        "long_term_trim",
+        "short_term_trim_percent",
+        "carbon_can_purge_valve_duty_cycle",
+        "primary_trigger_sync",
+        "idle_base_position",
+        "idle_error",
+        "injector_1_4_driver",
+        "injector_2_3_driver",
+        "fault_engine_bay_vent_warning",
+        "engine_bay_vent_relay",
+        "hill_assist",
+        "cruise_control",
+        "crank_counter"
+      ],
+      "source_files": [
+        "ecu-1x.go",
+        "ecu-1x-shared.go"
+      ],
+      "note": "ROSCO historique deja present dans Manager; pas de remplacement"
+    },
+    {
+      "family": "MEMS_1_9",
+      "members": [
+        "1.9"
+      ],
+      "port": "9600 8N1",
+      "wake": "après repos 2000ms, adresse 0x16 sur K-Line a 5 bauds, 10 bits de 200ms",
+      "sequence": [
+        [
+          "16 a 5 bauds",
+          "55 76 83"
+        ],
+        [
+          "7C (complement de 83)",
+          "7C E9"
+        ],
+        [
+          "CA, 75, F4, D0 (échanges séparés)",
+          "D0 + 4 octets ID"
+        ]
+      ],
+      "read_commands": [
+        [
+          "80",
+          "mesures"
+        ],
+        [
+          "7D",
+          "mesures/etats"
+        ]
+      ],
+      "symbols": [
+        {
+          "name": "ecu19SpecificInitCommand",
+          "hex": "7C"
+        },
+        {
+          "name": "ecu19WokeResponse",
+          "hex": "55 76 83"
+        }
+      ],
+      "source_files": [
+        "ecu-19.go",
+        "ecu-1x-shared.go"
+      ],
+      "note": "Le Go tente initialement 1.x CA avant slow init, puis reutilise moteur de dialogue 1.x"
+    },
+    {
+      "family": "MEMS_2J",
+      "members": [
+        "2J"
+      ],
+      "port": "10400 8N1",
+      "wake": "repos 200ms, BREAK bas 25ms, repos 25+50ms",
+      "sequence": [
+        [
+          "81 13 F7 81 0C",
+          "payload C1 D5 8F"
+        ],
+        [
+          "10 A0",
+          "50"
+        ],
+        [
+          "27 01",
+          "67 01 + seed"
+        ],
+        [
+          "27 02 + cle",
+          "67 02"
+        ],
+        [
+          "3E",
+          "7E ou refus 7F 3E 10"
+        ],
+        [
+          "21 19",
+          "61 19 + DTC"
+        ]
+      ],
+      "frame": "[LEN_PAYLOAD][PAYLOAD][SUM mod 256 LEN+PAYLOAD], sauf trame de réveil spéciale",
+      "reads": [
+        {
+          "payload_tx": "21 00",
+          "payload_rx": "61 00",
+          "type": "data"
+        },
+        {
+          "payload_tx": "21 01",
+          "payload_rx": "61 01",
+          "type": "data"
+        },
+        {
+          "payload_tx": "21 02",
+          "payload_rx": "61 02",
+          "type": "data"
+        },
+        {
+          "payload_tx": "21 03",
+          "payload_rx": "61 03",
+          "type": "data"
+        },
+        {
+          "payload_tx": "21 05",
+          "payload_rx": "61 05",
+          "type": "data"
+        },
+        {
+          "payload_tx": "21 06",
+          "payload_rx": "61 06",
+          "type": "data"
+        },
+        {
+          "payload_tx": "21 07",
+          "payload_rx": "61 07",
+          "type": "data"
+        },
+        {
+          "payload_tx": "21 08",
+          "payload_rx": "61 08",
+          "type": "data"
+        },
+        {
+          "payload_tx": "21 09",
+          "payload_rx": "61 09",
+          "type": "data"
+        },
+        {
+          "payload_tx": "21 0A",
+          "payload_rx": "61 0A",
+          "type": "data"
+        },
+        {
+          "payload_tx": "21 0B",
+          "payload_rx": "61 0B",
+          "type": "data"
+        },
+        {
+          "payload_tx": "21 0C",
+          "payload_rx": "61 0C",
+          "type": "data"
+        },
+        {
+          "payload_tx": "21 0D",
+          "payload_rx": "61 0D",
+          "type": "data"
+        },
+        {
+          "payload_tx": "21 0F",
+          "payload_rx": "61 0F",
+          "type": "data"
+        },
+        {
+          "payload_tx": "21 10",
+          "payload_rx": "61 10",
+          "type": "data"
+        },
+        {
+          "payload_tx": "21 11",
+          "payload_rx": "61 11",
+          "type": "data"
+        },
+        {
+          "payload_tx": "21 12",
+          "payload_rx": "61 12",
+          "type": "data"
+        },
+        {
+          "payload_tx": "21 13",
+          "payload_rx": "61 13",
+          "type": "data"
+        },
+        {
+          "payload_tx": "21 19",
+          "payload_rx": "61 19",
+          "type": "DTC"
+        },
+        {
+          "payload_tx": "21 21",
+          "payload_rx": "61 21",
+          "type": "data"
+        },
+        {
+          "payload_tx": "21 25",
+          "payload_rx": "61 25",
+          "type": "data"
+        },
+        {
+          "payload_tx": "21 3A",
+          "payload_rx": "61 3A",
+          "type": "data"
+        }
+      ],
+      "negative": "7F service NRC; 0x78 response pending",
+      "symbols": [
+        {
+          "name": "twojInitCommand",
+          "hex": "81 13 F7 81 0C"
+        },
+        {
+          "name": "twojStartDiagnostic",
+          "hex": "10 A0"
+        },
+        {
+          "name": "twojRequestSeed",
+          "hex": "27 01"
+        },
+        {
+          "name": "twojSendKey",
+          "hex": "27 02"
+        },
+        {
+          "name": "twojPingCommand",
+          "hex": "3E"
+        },
+        {
+          "name": "twojClearFaultsCommand",
+          "hex": "31 CB 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00"
+        },
+        {
+          "name": "twojFaultsClearedResponse",
+          "hex": "71 CB"
+        },
+        {
+          "name": "twojLearnImmoCommand",
+          "hex": "31 D0 00 00 00 00 00 00 00 00"
+        },
+        {
+          "name": "twojResponseLearnImmoCommand",
+          "hex": "71 D0"
+        },
+        {
+          "name": "twojRead722Command",
+          "hex": "23 00 07 22 01"
+        },
+        {
+          "name": "twojRequestService13",
+          "hex": "13"
+        },
+        {
+          "name": "twojRequestService31_d5",
+          "hex": "31 D5"
+        },
+        {
+          "name": "twojRequestService33_d5",
+          "hex": "33 D5"
+        },
+        {
+          "name": "twojRequestService33_c0",
+          "hex": "33 C0"
+        },
+        {
+          "name": "twojRequestService33_c8",
+          "hex": "33 C8"
+        },
+        {
+          "name": "twojRequestService33_d2",
+          "hex": "33 D2"
+        },
+        {
+          "name": "twojRequestService33_d4",
+          "hex": "33 D4"
+        },
+        {
+          "name": "twojRequestService33_da",
+          "hex": "33 DA"
+        },
+        {
+          "name": "twojRequestService33_c1",
+          "hex": "33 C1"
+        },
+        {
+          "name": "twojRequestService33_d7",
+          "hex": "33 D7"
+        },
+        {
+          "name": "twojRequestData00",
+          "hex": "21 00"
+        },
+        {
+          "name": "twojRequestData01",
+          "hex": "21 01"
+        },
+        {
+          "name": "twojRequestData02",
+          "hex": "21 02"
+        },
+        {
+          "name": "twojRequestData03",
+          "hex": "21 03"
+        },
+        {
+          "name": "twojRequestData05",
+          "hex": "21 05"
+        },
+        {
+          "name": "twojRequestData06",
+          "hex": "21 06"
+        },
+        {
+          "name": "twojRequestData07",
+          "hex": "21 07"
+        },
+        {
+          "name": "twojRequestData08",
+          "hex": "21 08"
+        },
+        {
+          "name": "twojRequestData09",
+          "hex": "21 09"
+        },
+        {
+          "name": "twojRequestData0A",
+          "hex": "21 0A"
+        },
+        {
+          "name": "twojRequestData0B",
+          "hex": "21 0B"
+        },
+        {
+          "name": "twojRequestData0C",
+          "hex": "21 0C"
+        },
+        {
+          "name": "twojRequestData0D",
+          "hex": "21 0D"
+        },
+        {
+          "name": "twojRequestData0F",
+          "hex": "21 0F"
+        },
+        {
+          "name": "twojRequestData10",
+          "hex": "21 10"
+        },
+        {
+          "name": "twojRequestData11",
+          "hex": "21 11"
+        },
+        {
+          "name": "twojRequestData12",
+          "hex": "21 12"
+        },
+        {
+          "name": "twojRequestData13",
+          "hex": "21 13"
+        },
+        {
+          "name": "twojRequestFaultsCommand",
+          "hex": "21 19"
+        },
+        {
+          "name": "twojRequestData21",
+          "hex": "21 21"
+        },
+        {
+          "name": "twojRequestData25",
+          "hex": "21 25"
+        },
+        {
+          "name": "twojRequestData3A",
+          "hex": "21 3A"
+        },
+        {
+          "name": "twojWokeResponse",
+          "hex": "C1 D5 8F"
+        },
+        {
+          "name": "twojStartDiagResponse",
+          "hex": "50"
+        },
+        {
+          "name": "twojSeedResponse",
+          "hex": "67 01"
+        },
+        {
+          "name": "twojKeyAcceptResponse",
+          "hex": "67 02"
+        },
+        {
+          "name": "twojPongResponse",
+          "hex": "7E"
+        },
+        {
+          "name": "twojFaultsResponse",
+          "hex": "61 19"
+        },
+        {
+          "name": "twojResponseData00",
+          "hex": "61 00"
+        },
+        {
+          "name": "twojResponseData01",
+          "hex": "61 01"
+        },
+        {
+          "name": "twojResponseData02",
+          "hex": "61 02"
+        },
+        {
+          "name": "twojResponseData03",
+          "hex": "61 03"
+        },
+        {
+          "name": "twojResponseData05",
+          "hex": "61 05"
+        },
+        {
+          "name": "twojResponseData06",
+          "hex": "61 06"
+        },
+        {
+          "name": "twojResponseData07",
+          "hex": "61 07"
+        },
+        {
+          "name": "twojResponseData08",
+          "hex": "61 08"
+        },
+        {
+          "name": "twojResponseData09",
+          "hex": "61 09"
+        },
+        {
+          "name": "twojResponseData0A",
+          "hex": "61 0A"
+        },
+        {
+          "name": "twojResponseData0B",
+          "hex": "61 0B"
+        },
+        {
+          "name": "twojResponseData0C",
+          "hex": "61 0C"
+        },
+        {
+          "name": "twojResponseData0D",
+          "hex": "61 0D"
+        },
+        {
+          "name": "twojResponseData0F",
+          "hex": "61 0F"
+        },
+        {
+          "name": "twojResponseData10",
+          "hex": "61 10"
+        },
+        {
+          "name": "twojResponseData11",
+          "hex": "61 11"
+        },
+        {
+          "name": "twojResponseData12",
+          "hex": "61 12"
+        },
+        {
+          "name": "twojResponseData13",
+          "hex": "61 13"
+        },
+        {
+          "name": "twojResponseData21",
+          "hex": "61 21"
+        },
+        {
+          "name": "twojResponseData25",
+          "hex": "61 25"
+        },
+        {
+          "name": "twojResponseData3A",
+          "hex": "61 3A"
+        },
+        {
+          "name": "twojRefusePing",
+          "hex": "7F 3E 10"
+        }
+      ],
+      "measure_fields": [
+        "coolant_temp",
+        "oil_temp",
+        "intake_air_temp",
+        "fuel_temp",
+        "map_sensor_kpa",
+        "tps_degrees",
+        "rpm",
+        "fuelling_feedback_percent",
+        "o2_mv",
+        "estimate_air_fuel",
+        "coil_1_charge_time",
+        "coil_2_charge_time",
+        "injector_1_pw",
+        "injector_2_pw",
+        "injector_3_pw",
+        "injector_4_pw",
+        "vehicle_speed",
+        "throttle_switch",
+        "ignition",
+        "ac_button",
+        "battery_voltage",
+        "primary_trigger_sync",
+        "secondary_trigger_sync",
+        "idle_valve_pos",
+        "closed_loop",
+        "rpm_error",
+        "cam_percent",
+        "idle_timing_offset",
+        "idle_adjuster_rpm"
+      ],
+      "sources": [
+        "ecu-2j.go",
+        "ecu-2j-parse.go",
+        "ecu-2j-faults.go",
+        "ecu-auth.go"
+      ],
+      "note": "Fonctions 31 et 33 experimentales; defauts variante Mini MPI, tailles a verifier"
+    },
+    {
+      "family": "MEMS_3",
+      "members": [
+        "3"
+      ],
+      "port": "9600 8E1 parite PAIRE",
+      "wake": "commande initiale emballée dans trame MEMS3",
+      "sequence": [
+        [
+          "B8 13 F7 02 1A 9A DE",
+          "payload 5A 9A"
+        ],
+        [
+          "10 A0",
+          "50"
+        ],
+        [
+          "27 01",
+          "67 01 + seed"
+        ],
+        [
+          "27 02 + cle",
+          "67 02"
+        ],
+        [
+          "3E",
+          "7E"
+        ],
+        [
+          "18 00 00 00",
+          "58 + DTC"
+        ]
+      ],
+      "frame": "[B8 13 F7][LEN][PAYLOAD][XOR tous octets precedents]",
+      "reads": [
+        {
+          "payload_tx": "21 00",
+          "payload_rx": "61 00"
+        },
+        {
+          "payload_tx": "21 06",
+          "payload_rx": "61 06"
+        },
+        {
+          "payload_tx": "21 0A",
+          "payload_rx": "61 0A"
+        },
+        {
+          "payload_tx": "21 0B",
+          "payload_rx": "61 0B"
+        },
+        {
+          "payload_tx": "21 21",
+          "payload_rx": "61 21"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "ecu3RequestHeader",
+          "hex": "B8 13 F7"
+        },
+        {
+          "name": "ecu3InitCommand",
+          "hex": "1A 9A"
+        },
+        {
+          "name": "ecu3InitAccepted",
+          "hex": "5A 9A"
+        },
+        {
+          "name": "ecu3StartDiagnostic",
+          "hex": "10 A0"
+        },
+        {
+          "name": "ecu3StartDiagResponse",
+          "hex": "50"
+        },
+        {
+          "name": "ecu3RequestSeed",
+          "hex": "27 01"
+        },
+        {
+          "name": "ecu3SeedResponse",
+          "hex": "67 01"
+        },
+        {
+          "name": "ecu3SendKey",
+          "hex": "27 02"
+        },
+        {
+          "name": "ecu3KeyAcceptResponse",
+          "hex": "67 02"
+        },
+        {
+          "name": "ecu3PingCommand",
+          "hex": "3E"
+        },
+        {
+          "name": "ecu3PongResponse",
+          "hex": "7E"
+        },
+        {
+          "name": "ecu3ClearFaultsCommand",
+          "hex": "14 00 00"
+        },
+        {
+          "name": "ecu3FaultsClearedResponse",
+          "hex": "54 00 00"
+        },
+        {
+          "name": "ecu3RequestFaultsCommand",
+          "hex": "18 00 00 00"
+        },
+        {
+          "name": "ecu3ResponseFaults",
+          "hex": "58"
+        },
+        {
+          "name": "ecu3RequestData00",
+          "hex": "21 00"
+        },
+        {
+          "name": "ecu3RequestData06",
+          "hex": "21 06"
+        },
+        {
+          "name": "ecu3RequestData0A",
+          "hex": "21 0A"
+        },
+        {
+          "name": "ecu3RequestData0B",
+          "hex": "21 0B"
+        },
+        {
+          "name": "ecu3RequestData21",
+          "hex": "21 21"
+        },
+        {
+          "name": "ecu3ResponseData00",
+          "hex": "61 00"
+        },
+        {
+          "name": "ecu3ResponseData06",
+          "hex": "61 06"
+        },
+        {
+          "name": "ecu3ResponseData0A",
+          "hex": "61 0A"
+        },
+        {
+          "name": "ecu3ResponseData0B",
+          "hex": "61 0B"
+        },
+        {
+          "name": "ecu3ResponseData21",
+          "hex": "61 21"
+        }
+      ],
+      "measure_fields": [
+        "coolant_temp",
+        "oil_temp",
+        "intake_air_temp",
+        "map_sensor_kpa",
+        "throttle_mv",
+        "rpm",
+        "fuel_feedback_percent",
+        "lambda_mv",
+        "coil_1_time_uS",
+        "coil_2_time_uS",
+        "rpm_deviation"
+      ],
+      "source_files": [
+        "ecu-3.go",
+        "helpers.go",
+        "ecu-auth.go"
+      ],
+      "note": "Famille distincte, non ajoutee au dispatch Manager actuel"
+    },
+    {
+      "family": "RC5_SRS",
+      "members": [
+        "RC5"
+      ],
+      "system": "AIRBAG SRS, pas un calculateur moteur",
+      "port": "2400 8N1",
+      "wake": "repos 2000ms, BREAK actif 200ms, repos 400ms, actif 400ms, repos 400ms, actif 400ms, repos 200ms",
+      "sequence": [
+        [
+          "reponse au reveil",
+          "55 06 3B"
+        ],
+        [
+          "82 00 7D",
+          "C2 00 3D"
+        ]
+      ],
+      "reads": [
+        [
+          "82 33 4A",
+          "trame DTC sur 2 octets"
+        ]
+      ],
+      "symbols": [
+        {
+          "name": "rc5PingCommand",
+          "hex": "82 00 7D"
+        },
+        {
+          "name": "rc5RequestFaultsCommand",
+          "hex": "82 33 4A"
+        },
+        {
+          "name": "rc5ClearFaultsCommand",
+          "hex": "82 C3 BA"
+        },
+        {
+          "name": "rc5WokeResponse",
+          "hex": "55 06 3B"
+        },
+        {
+          "name": "rc5PongResponse",
+          "hex": "C2 00 3D"
+        },
+        {
+          "name": "rc5FaultsResponse",
+          "hex": "33"
+        },
+        {
+          "name": "rc5FaultsClearedResponse",
+          "hex": "C2 C3 7A"
+        }
+      ],
+      "dtc_map": [
+        {
+          "code": "0X150A",
+          "english": "Driver airbag shorted to battery positive"
+        },
+        {
+          "code": "0X150B",
+          "english": "Driver airbag shorted to battery negative"
+        },
+        {
+          "code": "0X150C",
+          "english": "Driver airbag high resistance"
+        },
+        {
+          "code": "0X150D",
+          "english": "Driver airbag low resistance"
+        },
+        {
+          "code": "0X150E",
+          "english": "Driver airbag squib circuit"
+        },
+        {
+          "code": "0X1512",
+          "english": "Passenger airbag squib short to battery positive"
+        },
+        {
+          "code": "0X1513",
+          "english": "Passenger airbag 1 short to battery negative"
+        },
+        {
+          "code": "0X1514",
+          "english": "Passenger airbag 1 high resistance"
+        },
+        {
+          "code": "0X1515",
+          "english": "Passenger airbag 1 low resistance"
+        },
+        {
+          "code": "0X1516",
+          "english": "Passenger airbag 1 squib circuit"
+        },
+        {
+          "code": "0X151A",
+          "english": "Pretensioner short to battery positive"
+        },
+        {
+          "code": "0X151B",
+          "english": "Pretensioner short to battery negative"
+        },
+        {
+          "code": "0X151C",
+          "english": "Passenger airbag 2 high resistance"
+        },
+        {
+          "code": "0X151D",
+          "english": "Passenger airbag 2 low resistance"
+        },
+        {
+          "code": "0X151E",
+          "english": "Passenger airbag 2 squib circuit"
+        },
+        {
+          "code": "0X1524",
+          "english": "Right pretensioner high resistance"
+        },
+        {
+          "code": "0X1525",
+          "english": "Right pretensioner low resistance"
+        },
+        {
+          "code": "0X1526",
+          "english": "Right pretensioner squib circuit"
+        },
+        {
+          "code": "0X152C",
+          "english": "Left pretensioner high resistance"
+        },
+        {
+          "code": "0X152D",
+          "english": "Left pretensioner low resistance"
+        },
+        {
+          "code": "0X152E",
+          "english": "Left pretensioner squib circuit"
+        },
+        {
+          "code": "0X160C",
+          "english": "SRS warning lamp short circuit"
+        },
+        {
+          "code": "0X160D",
+          "english": "SRS warning lamp open circuit"
+        },
+        {
+          "code": "0X160E",
+          "english": "SRS warning lamp driver"
+        },
+        {
+          "code": "0X250A",
+          "english": "(Historic) Driver airbag shorted to battery positive"
+        },
+        {
+          "code": "0X250B",
+          "english": "(Historic) Driver airbag shorted to battery negative"
+        },
+        {
+          "code": "0X250C",
+          "english": "(Historic) Driver airbag high resistance"
+        },
+        {
+          "code": "0X250D",
+          "english": "(Historic) Driver airbag low resistance"
+        },
+        {
+          "code": "0X250E",
+          "english": "(Historic) Driver airbag squib circuit"
+        },
+        {
+          "code": "0X2512",
+          "english": "(Historic) Passenger airbag squib short to battery positive"
+        },
+        {
+          "code": "0X2513",
+          "english": "(Historic) Passenger airbag 1 short to battery negative"
+        },
+        {
+          "code": "0X2514",
+          "english": "(Historic) Passenger airbag 1 high resistance"
+        },
+        {
+          "code": "0X2515",
+          "english": "(Historic) Passenger airbag 1 low resistance"
+        },
+        {
+          "code": "0X2516",
+          "english": "(Historic) Passenger airbag 1 squib circuit"
+        },
+        {
+          "code": "0X251A",
+          "english": "(Historic) Pretensioner short to battery positive"
+        },
+        {
+          "code": "0X251B",
+          "english": "(Historic) Pretensioner short to battery negative"
+        },
+        {
+          "code": "0X251C",
+          "english": "(Historic) Passenger airbag 2 high resistance"
+        },
+        {
+          "code": "0X251D",
+          "english": "(Historic) Passenger airbag 2 low resistance"
+        },
+        {
+          "code": "0X251E",
+          "english": "(Historic) Passenger airbag 2 squib circuit"
+        },
+        {
+          "code": "0X2524",
+          "english": "(Historic) Right pretensioner high resistance"
+        },
+        {
+          "code": "0X2525",
+          "english": "(Historic) Right pretensioner low resistance"
+        },
+        {
+          "code": "0X2526",
+          "english": "(Historic) Right pretensioner squib circuit"
+        },
+        {
+          "code": "0X252C",
+          "english": "(Historic) Left pretensioner high resistance"
+        },
+        {
+          "code": "0X252D",
+          "english": "(Historic) Left pretensioner low resistance"
+        },
+        {
+          "code": "0X252E",
+          "english": "(Historic) Left pretensioner squib circuit"
+        },
+        {
+          "code": "0X260C",
+          "english": "(Historic) SRS warning lamp short circuit"
+        },
+        {
+          "code": "0X260D",
+          "english": "(Historic) SRS warning lamp open circuit"
+        },
+        {
+          "code": "0X260E",
+          "english": "(Historic) SRS warning lamp driver"
+        },
+        {
+          "code": "0X0000",
+          "english": "0x0000 Unknown fault, power cycle and try again"
+        }
+      ],
+      "source_files": [
+        "ecu-rc5.go"
+      ],
+      "note": "Ne pas inclure dans identification automatique moteur"
+    }
+  ],
+  "synthetic_vectors": [
+    {
+      "family": "2J",
+      "payload": "10 A0",
+      "wire": "02 10 A0 B2"
+    },
+    {
+      "family": "2J",
+      "payload": "27 01",
+      "wire": "02 27 01 2A"
+    },
+    {
+      "family": "2J",
+      "payload": "21 09",
+      "wire": "02 21 09 2C"
+    },
+    {
+      "family": "2J",
+      "payload": "21 19",
+      "wire": "02 21 19 3C"
+    },
+    {
+      "family": "2J",
+      "payload": "C1 D5 8F",
+      "wire": "03 C1 D5 8F 28"
+    },
+    {
+      "family": "MEMS3",
+      "payload": "1A 9A",
+      "wire": "B8 13 F7 02 1A 9A DE"
+    }
+  ],
+  "remarks": [
+    "Exemples calcules sans ECU physique",
+    "Commandes de modifications archivées mais non activées",
+    "L'écho de câble n'identifie pas un ECU",
+    "Conserver les fonctions ROSCO déjà opérationnelles"
+  ]
+}
