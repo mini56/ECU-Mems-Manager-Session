@@ -147,6 +147,7 @@ private:
     bool m_initComplete;
     bool m_serviceLoopRunning;
     bool m_connectionAttemptActive;
+    bool m_kline19LocalEcho = false;  // Physical cable echo, detected during 0x7C/E9 wake-up.
     QAtomicInteger<int> m_disconnectRequested{0};
     QAtomicInteger<int> m_shutdownRequested{0};
     QAtomicInteger<int> m_connectedState{0};
@@ -160,7 +161,7 @@ private:
     bool openRoscoTransport();
     void sendRoscoReadCommand(quint8 command);
     bool tryRoscoConnect(const QString &devicePath);
-    bool performMems19Wakeup(const QString &qtPortName, QString *detail = nullptr);
+    bool performMems19Wakeup(const QString &devicePath, QString *detail = nullptr);
     bool actuatorOnOffDelayTest(actuator_cmd onCmd, actuator_cmd offCmd);
 
     void setEcuFamily(MemsEcuFamily family);
