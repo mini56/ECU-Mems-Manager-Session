@@ -39,10 +39,10 @@
     m_valuesTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
     m_valuesTable->horizontalHeader()->setDefaultSectionSize(155);
     m_valuesTable->horizontalHeader()->setStretchLastSection(false);
-    m_valuesTable->setColumnWidth(0,120);
     m_valuesModel=new AnalysisValuesTableModel(&m_time,&m_columns,&m_columnNames,
                      &m_originalTimeTexts,&m_originalColumnTexts,this);
     m_valuesTable->setModel(m_valuesModel);
+    m_valuesTable->setColumnWidth(0,120);
     m_leftStack->addWidget(m_valuesTable);
     left->addWidget(m_leftStack,1);
     mainRow->addWidget(leftPanel,1);
