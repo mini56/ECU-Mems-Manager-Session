@@ -134,7 +134,14 @@ small{color:#aebcc5}
 <h2 id="chapter-mems2j">MEMS 2J — connexion automatique et diagnostic</h2>
 <p>Branchez un câble de diagnostic compatible à l'ECU, mettez le contact et cliquez sur <b>CONNECTER</b>. SESSION essaie les interfaces série et reconnaît la famille du calculateur à partir de sa réponse, sans choix manuel de marque de câble ni de protocole.</p>
 <p>Une fois le <b>MEMS 2J</b> identifié, les mesures disponibles apparaissent dans les pages habituelles <b>Aperçu</b> et <b>Toutes les mesures</b>. Les défauts lus figurent dans <b>Diagnostic automatique</b>. Les valeurs non documentées restent brutes. Certains codes de défaut concernent spécifiquement la Mini MPi et ne doivent pas être appliqués sans vérification aux autres variantes.</p>
-<p><b>Validation :</b> la lecture et les tests automatiques ont été intégrés à SESSION 178 ; un essai sur un véritable calculateur MEMS 2J reste nécessaire. Ce lecteur ne crée pas de commande d'effacement ou de programmation.</p>
+<p><b>Validation :</b> la lecture et les tests automatiques ont été intégrés à SESSION 178 ; un essai sur un véritable calculateur MEMS 2J reste nécessaire. Depuis SESSION 184, l'effacement des défauts peut être demandé par l'utilisateur ; aucune fonction de programmation, de calibration ou d'antidémarrage n'est ajoutée.</p>
+
+<p><b>Effacer les défauts sur MEMS 2J :</b> après une connexion confirmée, utilisez la commande d'effacement des défauts déjà présente dans SESSION. Le programme envoie alors le service propre au MEMS 2J (<code>31 CB</code>) et attend sa réponse (<code>71 CB</code>). Cette opération modifie la mémoire des défauts et ne se lance jamais automatiquement lors de la connexion. Les réglages et les tests d'actionneurs ROSCO ne sont pas des commandes MEMS 2J.</p>
+<h3>MEMS 3 — connexion automatique, mesures et défauts</h3>
+<p>Connectez le câble de diagnostic compatible, mettez le contact puis cliquez sur <b>CONNECTER</b> comme pour les autres calculateurs. SESSION essaie le dialogue propre au <b>MEMS 3</b> à <b>9 600 bauds, 8 bits, parité paire, 1 bit d'arrêt (8E1)</b>, avec ses trames <code>B8 13 F7</code> et un contrôle XOR. Seules les réponses effectives du calculateur valident la connexion ; aucun réglage manuel du protocole n'est demandé.</p>
+<p>Lorsque le MEMS 3 répond, le programme affiche les mesures décodées disponibles : régime, températures liquide, huile et admission, pression MAP, papillon, lambda et temps de bobines. Les valeurs de signification incertaine restent indiquées comme brutes. Le panneau de diagnostic présente les défauts moteur <b>sur 16 bits</b> avec leur état lorsqu'il est connu, ainsi que les données hexadécimales reçues.</p>
+<p><b>Effacer les défauts sur MEMS 3 :</b> le bouton d'effacement existant transmet le service MEMS 3 <code>14 00 00</code> et vérifie la réponse <code>54 00 00</code>. L'effacement n'est effectué que sur demande de l'utilisateur ; il n'est jamais envoyé pendant la reconnaissance ou l'acquisition automatique. Les commandes d'antidémarrage, de calibration et les services expérimentaux ne sont pas intégrés.</p>
+<p><b>Validation matérielle :</b> SESSION 184 comporte des tests automatiques de trames et de décodage, mais les connexions et les commandes d'effacement MEMS 2J et MEMS 3 restent à vérifier sur des calculateurs réels. Le diagnostic airbag RC5 ne fait pas partie de la connexion moteur.</p>
 
 <h2 id="chapter-10">10. Diagnostic automatique</h2>
 <p>Le panneau de diagnostic automatique contrôle les valeurs ECU courantes et signale les valeurs normales, avertissements et anomalies. Il peut capturer une référence et produire un rapport. Le temps de charge bobine est notamment contrôlé selon la plage utilisée par l’application.</p>
@@ -183,7 +190,7 @@ small{color:#aebcc5}
 <p>L’interface prend en charge le français, l’anglais, l’espagnol, l’italien, le portugais et l’allemand. La langue choisie est enregistrée dans les réglages de l’application.</p>
 
 <h2 id="chapter-18">18. Familles ECU prises en charge</h2>
-<p>La base et les fonctions de diagnostic de ce projet couvrent les familles Rover MEMS <b>1.2, 1.3, 1.6 et 1.9</b>. Les fonctions réellement disponibles pendant une session dépendent du calculateur, du véhicule et du protocole concerné.</p>
+<p>SESSION prend en charge les dialogues des Rover MEMS <b>1.2, 1.3 et 1.6</b> (ROSCO), du <b>MEMS 1.9</b> (réveil K-Line), ainsi que des <b>MEMS 2J et MEMS 3</b> (protocoles K-Line distincts). Le choix se fait à partir d'une réponse du calculateur après <b>Connecter</b>. Les lectures et les commandes proposées dépendent de la famille et de la session réellement établies ; les protocoles 2J et 3 ne réutilisent pas les commandes de réglage ROSCO. Les essais matériels des nouveaux protocoles restent nécessaires.</p>
 
 <h2 id="chapter-19">19. Conseils de diagnostic de base</h2>
 <table>
