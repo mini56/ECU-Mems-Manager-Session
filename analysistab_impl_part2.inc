@@ -250,6 +250,10 @@ AnalysisTab::AnalysisTab(QWidget *parent)
     topRow->addWidget(fileControls,0,0,Qt::AlignVCenter);
     topRow->addWidget(viewControls,0,1,Qt::AlignCenter);
     topRow->addItem(new QSpacerItem(0,0,QSizePolicy::Expanding,QSizePolicy::Minimum),0,2);
+    // Mirror the left toolbar's minimum footprint on the right so the
+    // Curves/Columns group is centered in the available content width,
+    // not shifted sideways by the CSV file name.
+    topRow->setColumnMinimumWidth(2,qMin(fileControls->sizeHint().width(),320));
     topRow->setColumnStretch(0,1);
     topRow->setColumnStretch(2,1);
     root->addLayout(topRow,0);
