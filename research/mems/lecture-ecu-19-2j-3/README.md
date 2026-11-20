@@ -24,6 +24,9 @@ Documentation uniquement : le runtime SESSION et la Release 182 ne sont pas modi
 
 ## État de chantier au 20/11/2026
 
+> **Attention : état historique ci-dessous.** Les affirmations de ce bloc datant de l'étape initiale de développement (notamment « aucun pilote 2J » et « compilation non effectuée ») ont été dépassées par les builds suivants. Au **BUILD 182**, les chemins C++ MEMS 1.9 et **MEMS 2J** sont présents et les tests Windows ont réussi ; la réussite d'une connexion sur calculateur réel reste à confirmer. Le nouveau rapport 14 et le catalogue 15 ci-dessus constituent la référence documentaire des autres familles, dont **MEMS 3** ; ces documents ne les implémentent pas automatiquement.
+
+
 **MEMS 1.9** : connexion automatique selon le câble et réveil ISO9141 en C++ révisés, autotest indépendant ajouté, diagnostic de réveil relié au journal du test ECU 1.9. **Compilations et tests sur ECU non encore effectués pour ces commits.**
 
 **MEMS 2J** : recherche documentaire et six sources de référence conservées ; **aucun pilote 2J dans le code applicatif**.
