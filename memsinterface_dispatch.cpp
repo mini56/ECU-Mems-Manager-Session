@@ -8,6 +8,7 @@
 #include <QSerialPort>
 #include "serialadapterdetector.h"
 #include "mems19protocol.h"
+#include "mems2jprotocol.h"
 
 MemsEcuFamily MEMSInterface::ecuFamily() const
 {
@@ -430,6 +431,12 @@ bool MEMSInterface::connectToECU()
         SerialAdapterDetector::availableAdapters(configuredDevice);
 
     const auto resetFailedTransport=[this]() {
+        if (m_mems2j)
+        {
+            m_mems2j->close();
+            delete m_mems2j;
+            m_mems2j=nullptr;
+        }
         if (m_initComplete && mems_is_connected(&m_memsinfo))
             mems_disconnect(&m_memsinfo);
         m_connectedState.storeRelease(0);
@@ -509,6 +516,34 @@ bool MEMSInterface::connectToECU()
         return true;
     };
 
+    // 2J is an independent K-Line/KWP2000 session, identified by a real ECU
+    // diagnostic dialogue and a valid 21 09 reply; never by USB VID/PID.
+    const auto connectMems2J=[this, &cancelled](
+        const DetectedSerialAdapter &adapter) -> bool {
+        Mems2JProtocol::Session *session = new Mems2JProtocol::Session;
+        if (!session->connectTo(adapter.qtPortName, cancelled) || cancelled())
+        {
+            session->close();
+            delete session;
+            return false;
+        }
+        m_mems2j=session;
+        m_deviceName=adapter.devicePath;
+        {
+            QMutexLocker locker(&m_dataMutex);
+            m_mems2jValues=session->values();
+            m_mems2jFaults=session->faults();
+        }
+        m_connectedState.storeRelease(1);
+        setEcuFamily(MemsEcuFamily::Mems2J);
+        setDiagnosticMode(MemsDiagnosticMode::Normal);
+        emit ecuIdentityDetected(QStringLiteral("MEMS 2J"));
+        emit serialInterfaceDetected(adapter.portName,
+                                     adapter.adapterFamily,
+                                     QStringLiteral("MEMS 2J K-Line"));
+        return true;
+    };
+
     // Choose the first protocol attempt per physical USB cable rather than
     // trying ROSCO on every port before attempting MEMS 1.9 on any port.
     // VID:PID 1A86:7523 corresponds to the user's known CH340 KKL cable.
@@ -524,6 +559,10 @@ bool MEMSInterface::connectToECU()
 
         if (preferKLine)
         {
+            if (connectMems2J(adapter))
+                return true;
+            if (cancelled())
+                break;
             if (connectMems19(adapter))
                 return true;
             if (cancelled())
@@ -534,6 +573,10 @@ bool MEMSInterface::connectToECU()
         else
         {
             if (connectRosco(adapter))
+                return true;
+            if (cancelled())
+                break;
+            if (connectMems2J(adapter))
                 return true;
             if (cancelled())
                 break;
@@ -614,6 +657,12 @@ void MEMSInterface::onStartPollingRequest()
         const bool disconnect=m_disconnectRequested.loadAcquire()!=0;
         if (shutdown || disconnect)
         {
+            if (m_mems2j)
+            {
+                m_mems2j->close();
+                delete m_mems2j;
+                m_mems2j=nullptr;
+            }
             if (m_initComplete && mems_is_connected(&m_memsinfo))
                 mems_disconnect(&m_memsinfo);
             m_connectedState.storeRelease(0);

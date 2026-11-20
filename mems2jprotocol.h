@@ -230,7 +230,8 @@ public:
             exchange(QByteArray::fromHex("2701"),QByteArray::fromHex("6701"),900,cancelled,&reply) != Positive ||
             reply.size()<4)
         { close(); return false; }
-        const quint16 key = generateKey(u16(reply,2));
+        const quint16 seed = u16(reply,2);
+        const quint16 key = seed ? generateKey(seed) : 0;
         QByteArray sendKey = QByteArray::fromHex("2702");
         sendKey.append(char(key>>8)); sendKey.append(char(key&0xFFu));
         if (exchange(sendKey,QByteArray::fromHex("6702"),900,cancelled,&reply) != Positive)

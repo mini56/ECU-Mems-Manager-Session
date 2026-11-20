@@ -12,6 +12,7 @@
 #endif
 #include "memsinterface.h"
 #include "mems19protocol.h"
+#include "mems2jprotocol.h"
 
 /**
  * Constructor. Sets the serial device and measurement units.
@@ -31,6 +32,7 @@ QObject(parent), m_deviceName(device), m_stopPolling(false), m_shutdownThread(fa
  */
 MEMSInterface::~MEMSInterface()
 {
+  delete m_mems2j;
 }
 
 /**
@@ -198,6 +200,17 @@ mems_data* MEMSInterface::getData()
   return &snapshot;
 }
 
+QVariantMap MEMSInterface::mems2jValues() const
+{
+  QMutexLocker locker(&m_dataMutex);
+  return m_mems2jValues;
+}
+QStringList MEMSInterface::mems2jFaults() const
+{
+  QMutexLocker locker(&m_dataMutex);
+  return m_mems2jFaults;
+}
+
 /**
  * Responds to the parent thread being started by initializing the library
  * struct and emitting a signal indicating that the interface is ready.
@@ -229,7 +242,9 @@ void MEMSInterface::onParentThreadStarted()
  */
 void MEMSInterface::runServiceLoop()
 {
-  bool connected = mems_is_connected(&m_memsinfo);
+  bool connected = ecuFamily() == MemsEcuFamily::Mems2J
+      ? (m_mems2j && m_mems2j->isOpen())
+      : mems_is_connected(&m_memsinfo);
   m_connectedState.storeRelease(connected ? 1 : 0);
 
   m_serviceLoopRunning = true;
@@ -237,6 +252,31 @@ void MEMSInterface::runServiceLoop()
          m_disconnectRequested.loadAcquire() == 0 &&
          m_shutdownRequested.loadAcquire() == 0 && connected)
   {
+    if (ecuFamily() == MemsEcuFamily::Mems2J)
+    {
+      // Dedicated 2J session: never send ROSCO commands to a 2J ECU.
+      const bool ok = m_mems2j && m_mems2j->readCycle([this]() {
+        return m_disconnectRequested.loadAcquire()!=0 ||
+               m_shutdownRequested.loadAcquire()!=0;
+      });
+      if (!ok)
+      {
+        if (m_disconnectRequested.loadAcquire()==0 &&
+            m_shutdownRequested.loadAcquire()==0)
+          emit readError();
+        break;
+      }
+      {
+        QMutexLocker locker(&m_dataMutex);
+        m_mems2jValues=m_mems2j->values();
+        m_mems2jFaults=m_mems2j->faults();
+      }
+      emit readSuccess();
+      emit dataReady();
+      QCoreApplication::processEvents();
+      continue;
+    }
+
     // Never keep m_dataMutex locked while librosco performs serial I/O.
     // mems_read() can block waiting for the ECU; holding the mutex here would
     // make GUI-side getData() wait on the serial timeout and can freeze the
@@ -278,7 +318,13 @@ void MEMSInterface::runServiceLoop()
   }
   m_serviceLoopRunning = false;
 
-  if (connected)
+  if (m_mems2j)
+  {
+    m_mems2j->close();
+    delete m_mems2j;
+    m_mems2j=nullptr;
+  }
+  else if (connected)
   {
     mems_disconnect(&m_memsinfo);
   }

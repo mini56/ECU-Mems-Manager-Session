@@ -7,9 +7,13 @@
 #include <QByteArray>
 #include <QAtomicInteger>
 #include <QMutex>
+#include <QVariantMap>
+#include <QStringList>
 #include "rosco.h"
 #include "commonunits.h"
 #include "protocolcontext.h"
+
+namespace Mems2JProtocol { class Session; }
 
 class MEMSInterface : public QObject
 {
@@ -25,6 +29,8 @@ public:
     void disconnectFromECU();
     void requestShutdown();
     mems_data* getData();
+    QVariantMap mems2jValues() const;
+    QStringList mems2jFaults() const;
     librosco_version getVersion() { return mems_get_lib_version(); }
     void cancelRead();
     MemsEcuFamily ecuFamily() const;
@@ -123,6 +129,7 @@ signals:
     void protocolResponse(quint8 command, QByteArray response);
     void serialInterfaceDetected(QString portName, QString adapterFamily, QString protocolName);
     void mems19WakeupDiagnostic(QString portName, QString detail);
+    void ecuIdentityDetected(QString description);
     void injectionRamTestFinished(bool success,
                                   quint16 baseRaw,
                                   quint16 correctionRaw,
@@ -147,6 +154,9 @@ private:
     bool m_initComplete;
     bool m_serviceLoopRunning;
     bool m_connectionAttemptActive;
+    Mems2JProtocol::Session *m_mems2j = nullptr;
+    QVariantMap m_mems2jValues;
+    QStringList m_mems2jFaults;
     bool m_kline19LocalEcho = false;  // Physical cable echo, detected during 0x7C/E9 wake-up.
     QAtomicInteger<int> m_disconnectRequested{0};
     QAtomicInteger<int> m_shutdownRequested{0};

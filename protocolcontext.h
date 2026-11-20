@@ -7,7 +7,8 @@ enum class MemsEcuFamily : int
 {
     Unknown = 0,
     Rosco13_16 = 1,
-    Mems19 = 2
+    Mems19 = 2,
+    Mems2J = 3
 };
 
 enum class MemsDiagnosticMode : int
