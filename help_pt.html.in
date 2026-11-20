@@ -101,7 +101,14 @@ small{color:#aebcc5}
 <h2 id="chapter-mems2j">MEMS 2J — ligação e diagnóstico automáticos</h2>
 <p>Ligue um cabo de diagnóstico compatível à ECU, ative a ignição e clique em <b>Ligar</b>. SESSION verifica as interfaces série disponíveis e identifica a família pelas respostas reais da ECU, sem escolha manual da marca do cabo ou do protocolo.</p>
 <p>Depois de identificar o <b>MEMS 2J</b>, as medições disponíveis aparecem em <b>Visão geral</b> e <b>Todas as medições</b>; as avarias lidas surgem em <b>Diagnóstico automático</b>. Os valores não documentados mantêm-se em bruto. Alguns códigos são específicos do Mini MPi.</p>
-<p><b>Validação:</b> leitor e testes automáticos integrados desde SESSION 178; ainda é necessário testar com uma ECU MEMS 2J real. Não foram acrescentadas funções de apagamento ou programação.</p>
+<p><b>Validação:</b> leitor e testes automáticos integrados desde SESSION 178; ainda é necessário testar com uma ECU MEMS 2J real. Desde SESSION 184, o utilizador pode pedir expressamente o apagamento de avarias; não foram acrescentadas funções de programação, calibração ou imobilizador.</p>
+
+<p><b>Apagar avarias MEMS 2J:</b> depois de confirmar a ligação, utilize o comando existente para apagar códigos de avaria. SESSION envia o serviço MEMS 2J <code>31 CB</code> e verifica a resposta <code>71 CB</code>. Esta operação altera a memória de avarias e nunca é executada automaticamente na ligação. Os ajustes e atuadores ROSCO não se aplicam ao MEMS 2J.</p>
+<h3>MEMS 3 — ligação automática, medições e avarias</h3>
+<p>Ligue um cabo de diagnóstico compatível, ative a ignição e clique em <b>Ligar</b>. SESSION experimenta o protocolo próprio do <b>MEMS 3</b> a <b>9600 baud, 8 bits, paridade par e 1 bit de paragem (8E1)</b>, com tramas <code>B8 13 F7</code> e verificação XOR. Apenas a resposta efetiva da ECU confirma a ligação, sem escolha manual de protocolo.</p>
+<p>Com o MEMS 3 ligado, são apresentados os valores disponíveis de rotação, temperaturas do líquido, óleo e ar, MAP, borboleta, lambda e tempos das bobinas. Dados de unidade não confirmada permanecem brutos. A página de diagnóstico mostra <b>códigos de avaria do motor de 16 bits</b>, o respetivo estado conhecido e os dados hexadecimais recebidos.</p>
+<p><b>Apagar avarias MEMS 3:</b> o comando existente envia o serviço <code>14 00 00</code> e verifica a resposta <code>54 00 00</code>. A operação só ocorre a pedido do utilizador, nunca durante a identificação ou leitura automática. Não estão ativos comandos experimentais de imobilizador ou calibração.</p>
+<p><b>Validação:</b> SESSION 184 inclui testes automáticos das tramas e descodificação; faltam ainda testes de ligação e apagamento em ECU MEMS 2J e MEMS 3 reais. O airbag RC5 não faz parte da deteção da ECU do motor.</p>
 
 <h2 id="chapter-10">10. Diagnóstico automático</h2>
 <p>Avalia as medições ECU e indica valores normais, avisos e anomalias. Pode guardar uma referência e exportar um relatório. Verifica também o tempo de carga da bobina.</p>
@@ -147,7 +154,7 @@ small{color:#aebcc5}
 <p>A interface suporta francês, inglês, espanhol, italiano, português e alemão. O idioma selecionado fica guardado nas definições de SESSION.</p>
 
 <h2 id="chapter-18">18. Famílias ECU suportadas</h2>
-<p>A base e as funções de diagnóstico abrangem Rover MEMS 1.2, 1.3, 1.6 e 1.9. As funções disponíveis dependem da ECU, veículo e protocolo.</p>
+<p>SESSION suporta Rover MEMS <b>1.2, 1.3 e 1.6</b> via ROSCO, <b>MEMS 1.9</b> via inicialização K-Line e <b>MEMS 2J e MEMS 3</b> através de protocolos K-Line distintos. A família é identificada pelas respostas reais da ECU após premir <b>Ligar</b>. Medições e comandos dependem da sessão estabelecida; os ajustes ROSCO não são enviados ao MEMS 2J/3. Falta validar os novos leitores em ECU reais.</p>
 
 <h2 id="chapter-19">19. Orientações de diagnóstico</h2>
 <p>Sem comunicação: verificar ignição, porta, cabo, alimentação e massas ECU. MAP anormal: verificar tubo de vácuo, coletor e sensor. Ralenti instável: verificar interruptor, IAC, fugas, temperatura e correções de combustível. Avaria lambda: verificar aquecimento, fios, tensão e circuito fechado. Bobina: verificar bateria, circuito primário e fios.</p>
