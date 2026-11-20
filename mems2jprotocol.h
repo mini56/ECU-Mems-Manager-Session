@@ -293,6 +293,17 @@ public:
         return good>0;
     }
 
+    // RoverMEMS 2J routine 31 CB + 15 zero bytes; acknowledgement 71 CB.
+    // Never used during connection, only on explicit clear-fault request.
+    bool clearFaults(const std::function<bool()> &cancelled)
+    {
+        if (!isOpen() || cancelled()) return false;
+        QByteArray command=QByteArray::fromHex("31cb");
+        command.append(QByteArray(15,char(0)));
+        QByteArray reply;
+        return exchange(command,QByteArray::fromHex("71cb"),1000,cancelled,&reply)==Positive;
+    }
+
     QVariantMap values() const { return m_values; }
     QStringList faults() const { return m_faults; }
     bool isOpen() const { return m_ready && m_serial.isOpen(); }
