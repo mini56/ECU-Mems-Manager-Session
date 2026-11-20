@@ -139,7 +139,123 @@ bool MEMSInterface::tryRoscoConnect(const QString &devicePath)
     return connected;
 }
 
-bool MEMSInterface::performMems19Wakeup(const QString &qtPortName, QString *detail)
+bool MEMSInterface::performMems19Wakeup(const QString &devicePath, QString *detail)
+{
+#ifdef MEMS_NATIVE_KLINE_19
+    if (detail) detail->clear();
+    m_kline19LocalEcho = false;
+    const auto cancelled=[this]() {
+        return m_shutdownRequested.loadAcquire()!=0 || m_disconnectRequested.loadAcquire()!=0;
+    };
+    if (cancelled() || !m_initComplete)
+    {
+        if (detail) *detail = QStringLiteral("connection-cancelled");
+        return false;
+    }
+
+    // Open once via librosco, and retain this SAME handle after ISO 9141.
+    // Closing/reopening the COM port between E9 and CA can reset the K-Line
+    // interface and discard the ECU's newly initialized diagnostic session.
+    if (!mems_connect(&m_memsinfo, devicePath.toLocal8Bit().constData()))
+    {
+        if (detail) *detail = QStringLiteral("port-open-failed");
+        return false;
+    }
+    const HANDLE handle = m_memsinfo.sd;
+    const auto fail=[this, handle, detail](const QString &reason) -> bool {
+        ClearCommBreak(handle);
+        mems_disconnect(&m_memsinfo);
+        m_connectedState.storeRelease(0);
+        if (detail) *detail = reason;
+        return false;
+    };
+
+    PurgeComm(handle, PURGE_RXCLEAR | PURGE_TXCLEAR);
+    if (!ClearCommBreak(handle))
+        return fail(QStringLiteral("break-control-unavailable"));
+
+    // RoverMEMS 1.9: hold the bus idle for 2 s, then send 0x16 at
+    // five baud (start, LSB-first data, stop; 200 ms per bit).
+    QThread::msleep(2000);
+    if (cancelled())
+        return fail(QStringLiteral("connection-cancelled"));
+
+    QElapsedTimer bitClock;
+    bitClock.start();
+    for (int bit = 0; bit < Mems19Protocol::kSlowBitCount; ++bit)
+    {
+        if (cancelled())
+            return fail(QStringLiteral("connection-cancelled"));
+        const BOOL changed = Mems19Protocol::slowBitHigh(bit)
+            ? ClearCommBreak(handle) : SetCommBreak(handle);
+        if (!changed)
+            return fail(QStringLiteral("slow-init-break-control-failed"));
+
+        const qint64 deadline =
+            (bit + 1) * qint64(Mems19Protocol::kSlowBitDurationMs);
+        const qint64 remaining = deadline - bitClock.elapsed();
+        if (remaining > 0)
+            QThread::msleep(static_cast<unsigned long>(remaining));
+    }
+    if (!ClearCommBreak(handle))
+        return fail(QStringLiteral("break-clear-failed"));
+
+    // Read sync 55 + two key bytes, accepting partial USB delivery.
+    QByteArray reply;
+    QElapsedTimer timer;
+    timer.start();
+    quint8 invertedKey = 0;
+    bool gotKeys = false;
+    while (timer.elapsed() < 2000 && !gotKeys && !cancelled())
+    {
+        unsigned char byte = 0;
+        DWORD count = 0;
+        if (ReadFile(handle, &byte, 1, &count, NULL) && count == 1)
+        {
+            reply.append(char(byte));
+            gotKeys = Mems19Protocol::keyComplement(reply, &invertedKey);
+        }
+    }
+    if (cancelled())
+        return fail(QStringLiteral("connection-cancelled"));
+    if (!gotKeys)
+        return fail(QStringLiteral("no-iso9141-key-bytes"));
+
+    QThread::msleep(50);
+    const unsigned char ack = invertedKey;
+    DWORD written = 0;
+    if (!WriteFile(handle, &ack, 1, &written, NULL) || written != 1)
+        return fail(QStringLiteral("key-ack-write-failed"));
+
+    QByteArray confirmation;
+    timer.restart();
+    bool confirmed = false;
+    while (timer.elapsed() < 1600 && !confirmed && !cancelled())
+    {
+        unsigned char byte = 0;
+        DWORD count = 0;
+        if (ReadFile(handle, &byte, 1, &count, NULL) && count == 1)
+        {
+            confirmation.append(char(byte));
+            confirmed = Mems19Protocol::hasAddressConfirmation(confirmation);
+        }
+    }
+    if (cancelled())
+        return fail(QStringLiteral("connection-cancelled"));
+    if (!confirmed)
+        return fail(QStringLiteral("address-confirmation-missing"));
+
+    // If 0x7C is echoed before ECU confirmation E9, this KKL transceiver
+    // echoes local transmissions; every later diagnostic command will yield
+    // this extra byte before the ECU reply.
+    m_kline19LocalEcho = confirmation.contains(char(ack));
+    if (detail)
+        *detail = m_kline19LocalEcho
+            ? QStringLiteral("iso9141-mems19-wakeup-ok-echo")
+            : QStringLiteral("iso9141-mems19-wakeup-ok");
+    return true;
+#else
+    // Compatibility fallback for builds using an external legacy DLL.
 {
     if (detail) detail->clear();
 
@@ -159,7 +275,7 @@ bool MEMSInterface::performMems19Wakeup(const QString &qtPortName, QString *deta
     }
 
     QSerialPort port;
-    port.setPortName(qtPortName);
+    port.setPortName(SerialAdapterDetector::stripWindowsDevicePrefix(devicePath));
     port.setBaudRate(QSerialPort::Baud9600);
     port.setDataBits(QSerialPort::Data8);
     port.setParity(QSerialPort::NoParity);
@@ -299,6 +415,7 @@ bool MEMSInterface::performMems19Wakeup(const QString &qtPortName, QString *deta
     if (detail)
         *detail = QStringLiteral("iso9141-mems19-wakeup-ok");
     return true;
+#endif
 }
 
 bool MEMSInterface::connectToECU()
@@ -346,7 +463,7 @@ bool MEMSInterface::connectToECU()
     const auto connectMems19=[this, &cancelled, &resetFailedTransport](
         const DetectedSerialAdapter &adapter) -> bool {
         QString detail;
-        if (!performMems19Wakeup(adapter.qtPortName, &detail))
+        if (!performMems19Wakeup(adapter.devicePath, &detail))
         {
             emit mems19WakeupDiagnostic(adapter.portName, detail);
             return false;
@@ -354,6 +471,21 @@ bool MEMSInterface::connectToECU()
         emit mems19WakeupDiagnostic(adapter.portName, detail);
         if (cancelled())
             return false;
+#ifdef MEMS_NATIVE_KLINE_19
+        // K-Line uses the same ECU command family but has a second (local)
+        // echo on some adapters. Keep the port opened by the slow wake-up.
+        if (!mems_init_link_kline19(&m_memsinfo, m_d0_response_buffer,
+                                     m_kline19LocalEcho))
+        {
+            emit mems19WakeupDiagnostic(adapter.portName,
+                                       QStringLiteral("kline-ecu-init-failed"));
+            resetFailedTransport();
+            return false;
+        }
+        m_connectedState.storeRelease(1);
+        m_deviceName = adapter.devicePath;
+        emit gotEcuId(m_d0_response_buffer);
+#else
         if (!tryRoscoConnect(adapter.devicePath))
         {
             emit mems19WakeupDiagnostic(adapter.portName,
@@ -361,13 +493,14 @@ bool MEMSInterface::connectToECU()
             resetFailedTransport();
             return false;
         }
+#endif
         if (cancelled())
         {
             resetFailedTransport();
             return false;
         }
         emit mems19WakeupDiagnostic(adapter.portName,
-                                   QStringLiteral("iso9141-and-rosco-link-ok"));
+                                   QStringLiteral("iso9141-and-ecu-1x-link-ok"));
 
         setEcuFamily(MemsEcuFamily::Mems19);
         setDiagnosticMode(MemsDiagnosticMode::Normal);
