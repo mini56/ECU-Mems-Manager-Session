@@ -1616,10 +1616,14 @@ void MainWindow::onConnect()
   m_ui->m_commsBadLed->setChecked(false);
   m_ui->m_closedLoopLed->setChecked(false);
   m_ui->m_idleSwitchLed->setChecked(false);
-  // m_ui->m_clearFaultsButton->setEnabled(true);
-  // m_ui->m_clearRecordedAnomalies->setEnabled(true);
-  m_ui->m_resetAdjustmentsButton->setEnabled(true);
-  m_ui->m_resetECUButton->setEnabled(true);
+  // Explicit clear-fault is available for every *connected* family.
+  // MEMS 2J/3 have their own service; ROSCO reset/adjustment is not theirs.
+  const MemsEcuFamily family=m_mems->ecuFamily();
+  const bool roscoCommands=family==MemsEcuFamily::Rosco13_16 ||
+                           family==MemsEcuFamily::Mems19;
+  m_ui->m_clearFaultsButton->setEnabled(true);
+  m_ui->m_resetAdjustmentsButton->setEnabled(roscoCommands);
+  m_ui->m_resetECUButton->setEnabled(roscoCommands);
   refreshConnectionHeader();
 }
 
