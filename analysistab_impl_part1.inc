@@ -637,48 +637,32 @@ static void configureNativeAnalysis(QWidget *analysis)
 {
     if(!analysis) return;
 
+    // The AnalysisTab constructor owns the SINGLE header row. The former
+    // native styling pass created a second header and REPARENTED Load CSV/TXT
+    // out of the row, causing the exact 45px misalignment seen on Windows.
+    // This pass now styles and sizes the existing header only.
     QWidget *topBar=analysis->findChild<QWidget*>(QStringLiteral("analysisTopBar"));
     QWidget *rightPanel=analysis->findChild<QWidget*>(QStringLiteral("analysisRightPanel"));
-    QLabel *fileLabel=nullptr;
+    QLabel *fileLabel=analysis->findChild<QLabel*>(QStringLiteral("analysisFileLabel"));
+    if(!topBar || !rightPanel)return;
 
-    // AnalysisTab constructs its own native right panel in its constructor.
-    // Keep that SAME panel and its channel scroll area in place. The old
-    // "legacy reconstruction" was mistakenly triggered merely because the
-    // top bar had not yet been created: it hid the existing right panel,
-    // reparented the scroll view and left the scroll view itself hidden.
-    if (rightPanel && !topBar) {
-        QVBoxLayout *root=qobject_cast<QVBoxLayout*>(analysis->layout());
-        QVBoxLayout *right=qobject_cast<QVBoxLayout*>(rightPanel->layout());
-        QPushButton *load=analysis->findChild<QPushButton*>(
-            QStringLiteral("analysisLoadButton"));
-        fileLabel=analysis->findChild<QLabel*>(
-            QStringLiteral("analysisFileLabel"));
-        if (root && right && load && fileLabel) {
-            topBar=new QWidget(analysis);
-            topBar->setObjectName(QStringLiteral("analysisTopBar"));
-            topBar->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
-            QHBoxLayout *top=new QHBoxLayout(topBar);
-            top->setContentsMargins(8,5,8,5);
-            top->setSpacing(7);
-            right->removeWidget(load);
-            right->removeWidget(fileLabel);
-            load->setParent(topBar);
-            fileLabel->setParent(topBar);
-            fileLabel->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
-            top->addWidget(load);
-            top->addWidget(fileLabel,1);
-            root->insertWidget(0,topBar);
-            topBar->show();
-            load->show();
-            fileLabel->show();
-            analysis->setProperty("finalAnalysisLayout",true);
-        }
-    } else if (topBar) {
-        fileLabel=analysis->findChild<QLabel*>(
-            QStringLiteral("analysisFileLabel"));
+    QWidget *files=analysis->findChild<QWidget*>(QStringLiteral("analysisFileToolbar"));
+    QWidget *modes=analysis->findChild<QWidget*>(QStringLiteral("analysisViewModeControls"));
+    QPushButton *load=analysis->findChild<QPushButton*>(QStringLiteral("analysisLoadButton"));
+    if(files && modes && load && fileLabel){
+        // Reserve the same width to the right as the file controls take on
+        // the left. The maximum file-name width shrinks on 1200px screens,
+        // keeping the two mode buttons truly centred without overlay.
+        const int inner=analysis->width()-36;
+        const int modeWidth=modes->sizeHint().width();
+        const int fileWidth=qMax(85,(inner-modeWidth)/2-load->sizeHint().width()-20);
+        fileLabel->setWordWrap(false);
+        fileLabel->setMaximumWidth(qBound(85,fileWidth,260));
+        fileLabel->setToolTip(fileLabel->text());
+        if(QGridLayout *grid=qobject_cast<QGridLayout*>(topBar->layout()))
+            grid->setColumnMinimumWidth(2,files->sizeHint().width());
     }
 
-    if(!topBar || !rightPanel) return;
     topBar->setStyleSheet((qApp && qApp->property("ecuDarkTheme").toBool()) ? QStringLiteral("#analysisTopBar{background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #18232b,stop:1 #0d151b);border:1px solid #2d3943;border-left:3px solid #ff7a00;border-radius:6px;}") : QStringLiteral("#analysisTopBar{background:#f7f9fb;border:1px solid #cbd6df;border-left:3px solid #ff7a00;border-radius:6px;}"));
     rightPanel->setStyleSheet((qApp && qApp->property("ecuDarkTheme").toBool()) ? QStringLiteral("#analysisRightPanel{background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #131c23,stop:1 #091116);border:1px solid #2d3943;border-radius:6px;}") : QStringLiteral("#analysisRightPanel{background:#f8fafc;border:1px solid #cbd6df;border-radius:6px;}"));
     topBar->setFixedHeight(qBound(34,analysis->height()/13,43));

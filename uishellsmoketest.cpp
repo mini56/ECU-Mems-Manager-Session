@@ -798,6 +798,14 @@ bool verifyUi(MainWindow &window)
                     QStringLiteral("analysisLoadButton"));
                 QWidget *modeControls=analysis->findChild<QWidget*>(
                     QStringLiteral("analysisViewModeControls"));
+                QWidget *topBar=analysis->findChild<QWidget*>(
+                    QStringLiteral("analysisTopBar"));
+                QWidget *fileToolbar=analysis->findChild<QWidget*>(
+                    QStringLiteral("analysisFileToolbar"));
+                ok=check(topBar && fileToolbar &&
+                         fileToolbar->parentWidget()==topBar &&
+                         modeControls && modeControls->parentWidget()==topBar,
+                         "Native Analysis layout must keep load and modes in ONE top bar") && ok;
                 QLabel *modeHelp=analysis->findChild<QLabel*>(
                     QStringLiteral("analysisViewModeHelp"));
                 ok=check(curvesMode && loadFile && modeControls && modeHelp,

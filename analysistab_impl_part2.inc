@@ -225,7 +225,8 @@ AnalysisTab::AnalysisTab(QWidget *parent)
     m_loadButton->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Preferred);
     m_fileLabel->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
     m_fileLabel->setMinimumWidth(0);
-    m_fileLabel->setMaximumWidth(265);
+    m_fileLabel->setMaximumWidth(150);
+    m_fileLabel->setWordWrap(false);
     // Equal button heights and explicit vertical centering keep both modes
     // on exactly the same row as Load at every supported window size.
     for(QPushButton *button:{m_loadButton,m_curvesModeButton,m_viewModeButton})
@@ -251,8 +252,13 @@ AnalysisTab::AnalysisTab(QWidget *parent)
     viewHelp->setToolTip(I18n::text(18023));
     viewRow->addWidget(viewHelp);
 
-    QGridLayout *topRow=new QGridLayout();
-    topRow->setContentsMargins(0,0,0,0);
+    // The native layout/styling pass uses this SAME widget; it must never
+    // manufacture another top bar and remove the load button from this row.
+    QWidget *topBar=new QWidget(this);
+    topBar->setObjectName(QStringLiteral("analysisTopBar"));
+    topBar->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+    QGridLayout *topRow=new QGridLayout(topBar);
+    topRow->setContentsMargins(8,0,8,0);
     topRow->setHorizontalSpacing(0);
     topRow->addWidget(fileControls,0,0,Qt::AlignLeft|Qt::AlignVCenter);
     topRow->addWidget(viewControls,0,1,Qt::AlignCenter);
@@ -263,7 +269,7 @@ AnalysisTab::AnalysisTab(QWidget *parent)
     topRow->setColumnMinimumWidth(2,fileControls->sizeHint().width());
     topRow->setColumnStretch(0,1);
     topRow->setColumnStretch(2,1);
-    root->addLayout(topRow,0);
+    root->addWidget(topBar,0);
 
     QHBoxLayout *mainRow=new QHBoxLayout();mainRow->setContentsMargins(0,0,0,0);mainRow->setSpacing(6);root->addLayout(mainRow,1);
 
