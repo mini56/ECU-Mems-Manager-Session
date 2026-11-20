@@ -166,6 +166,15 @@ public:
             }
         });
 
+        // Reuse this page's existing event log to diagnose actual K-Line
+        // wake-up failures; no new dialog, settings, or ECU requirements.
+        connect(m_mems, &MEMSInterface::mems19WakeupDiagnostic, this,
+                [this](const QString &portName, const QString &detail) {
+            appendEvent(QStringLiteral("WAKEUP"),
+                        QStringLiteral("port=%1 status=%2").arg(portName, detail),
+                        true);
+        });
+
         connect(m_mems, &MEMSInterface::connected, this, [this]() {
             m_connected = true;
             appendEvent(QStringLiteral("CONNECTION"), QStringLiteral("connected"), true);
