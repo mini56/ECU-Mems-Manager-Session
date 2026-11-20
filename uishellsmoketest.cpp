@@ -245,7 +245,7 @@ bool verifyUi(MainWindow &window)
         QStringLiteral("memsHelpNavigation"));
     QTextBrowser *helpBody=manual.findChild<QTextBrowser*>(
         QStringLiteral("memsHelpContent"));
-    ok=check(chapters && chapters->count()>=24,
+    ok=check(chapters && chapters->count()>=29,
              "Help must provide an offline chapter navigation") && ok;
     ok=check(helpBody &&
              helpBody->toPlainText().contains(QStringLiteral(
@@ -253,6 +253,15 @@ bool verifyUi(MainWindow &window)
              helpBody->toPlainText().contains(QStringLiteral(
                  "Masquer automatiquement la barre des tâches")),
              "Help must document database updates and optional taskbar behaviour") && ok;
+    ok=check(helpBody &&
+             helpBody->toPlainText().contains(QStringLiteral("MEMS 2J")) &&
+             helpBody->toHtml().contains(QStringLiteral("qrc:/help/images/")),
+             "Help must document MEMS 2J and link bundled images for zoom") && ok;
+    ok=check(window.findChild<QPushButton*>(
+                 QStringLiteral("uiProgramUpdateButton")) &&
+             window.findChild<QAction*>(
+                 QStringLiteral("programUpdateCheckAction")),
+             "Program update badge and manual Help menu action missing") && ok;
     ok=check(manual.minimumWidth()>=850 &&
              manual.styleSheet().contains(
                 qApp->property("ecuDarkTheme").toBool()
