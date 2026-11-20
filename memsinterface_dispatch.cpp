@@ -256,7 +256,6 @@ bool MEMSInterface::performMems19Wakeup(const QString &devicePath, QString *deta
     return true;
 #else
     // Compatibility fallback for builds using an external legacy DLL.
-{
     if (detail) detail->clear();
 
     const auto cancelled=[this]() {
