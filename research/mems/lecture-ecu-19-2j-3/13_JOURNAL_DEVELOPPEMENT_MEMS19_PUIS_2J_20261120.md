@@ -123,6 +123,20 @@ Vérifications GitHub **en lecture seule** réalisées :
 - Il existe un **incident similaire reconnu par OpenAI Support le 16/11/2026** : https://community.openai.com/t/chatgpt-github-connector-file-creation-blocked-by-openai-safety-checks/1406652
 - Suite de reprise : relever la conclusion du run 44700639856, consulter ses étapes/logs ; si succès, enregistrer `mems-session-build-176`, nom du Setup, SHA256, vérification d'installation ; sinon enregistrer l'erreur exacte avant toute correction. Les essais sur un vrai ECU MEMS 1.9 demeurent à effectuer.
 
+## Décision de conception : sondes remplacées et fidélité des mesures (20/11/2026)
+
+**Décision confirmée par le responsable du projet :** une sonde remplacée, non conforme ou défectueuse peut fournir au calculateur une valeur différente de la réalité physique. Ce n'est **ni au calculateur ni à Manager de corriger arbitrairement la mesure ou de la dissimuler**. Manager doit restituer les informations effectivement fournies par le calculateur.
+
+**Règles de développement MEMS 1.9 et 2J :**
+
+- Afficher la valeur remontée par le calculateur sans filtrage de vraisemblance, correction fondée sur le type de sonde supposé, valeur de remplacement ou blocage ajouté à cause d'une éventuelle sonde changée.
+- Assurer uniquement l'exactitude **du protocole et du décodage logiciel** : réponse correspondant à la requête, positions d'octets, valeur brute, formule de conversion et unité lorsqu'elles sont documentées.
+- Si une unité ou un coefficient de conversion n'est pas établi pour une variante, le documenter et conserver la valeur brute lorsque possible, **sans fabriquer de mesure**.
+- Ne pas confondre « donnée techniquement transmise par le calculateur » et « valeur physiquement juste au regard du véhicule » : Manager est responsable de la première, pas du diagnostic de la sonde installée.
+- Une erreur de décodage prouvée dans Manager doit être corrigée à la source ; une valeur erronée déjà produite par la chaîne sonde/calculateur ne justifie **aucun verrou logiciel**.
+
+**Conséquence :** les mentions antérieures de « valeurs faussées par des sondes remplacées » ne sont **pas un obstacle** au développement, à la compilation ou à la lecture MEMS 1.9/2J. La validation technique porte sur les octets reçus, les calculs et la restitution fidèle.
+
 ## Points établis et limites
 
 - Le code actuel effectue déjà le réveil 1.9 avec l'adresse 0x16 à cinq bauds, synchronisation 55 + deux octets clés, complément du second octet et confirmation E9.
