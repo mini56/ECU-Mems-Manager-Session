@@ -42,6 +42,18 @@
 
 **Après reprise :** exécuter un seul build/cohérent des sources actuelles (le workflow SESSION 175 ne se déclenche pas sur de simples changements de source), vérifier l'exécution de `mems19_protocol_selftest` dans les logs, tester identification D0, requêtes D1/D2/F0 et mesures 80/7D. Puis poursuivre le pilote 2J indépendant à partir des documents 10/11/12. Si le build est rouge, corriger les sources incriminées et documenter le vrai message d'erreur.
 
+## Avancement additionnel — traçabilité des connexions 1.9
+
+| Commit | Fichier | Action |
+| --- | --- | --- |
+| [973ccc3](https://github.com/mini56/ECU-Mems-Manager-Session/commit/973ccc34fc974555d71e6a99974916388f7a8f92) | `memsinterface.h` | Nouveau signal de diagnostic de réveil (données textuelles du port et du statut, aucun changement de condition de connexion). |
+| [ee5a382](https://github.com/mini56/ECU-Mems-Manager-Session/commit/ee5a3823543716ea204771e33415cdfaae255790) | `memsinterface_dispatch.cpp` | Émission des détails déjà produits par `performMems19Wakeup()` et du résultat de reprise de session ROSCO. |
+| [28ed48f](https://github.com/mini56/ECU-Mems-Manager-Session/commit/28ed48f78b792d9083d7e09e4bf0551e5fc25b36) | `mems19testtab.h` | Ajout d'une ligne `WAKEUP` dans le **journal déjà existant** de l'onglet Test ECU 1.9 ; aucune nouvelle page. |
+
+**Statuts attendus dans les journaux** : `port-open-failed`, `break-control-unavailable`, `slow-init-break-control-failed`, `no-iso9141-key-bytes`, `key-ack-write-failed`, `address-confirmation-missing`, `iso9141-mems19-wakeup-ok`, `rosco-init-after-wakeup-failed`, `iso9141-and-rosco-link-ok`, et états d'annulation. Le message contient un **résultat d'essai**, pas une validation matérielle tant qu'il n'a pas été relevé lors d'un test réel.
+
+**Contrôles restants :** compiler, exécuter l'autotest C++ et le smoke test installé ; la chaîne ROSCO historique et les pages principales n'ont pas été changées. La version SESSION 175 possède un workflow de compilation déclenché uniquement par une modification explicite de son fichier dédié ; cette tâche n'a pas encore déclenché ce workflow pour éviter un run/version 175 hors contexte.
+
 ## Points établis et limites
 
 - Le code actuel effectue déjà le réveil 1.9 avec l'adresse 0x16 à cinq bauds, synchronisation 55 + deux octets clés, complément du second octet et confirmation E9.
