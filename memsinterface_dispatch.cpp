@@ -7,6 +7,7 @@
 #include <QVariant>
 #include <QSerialPort>
 #include "serialadapterdetector.h"
+#include "mems19protocol.h"
 
 MemsEcuFamily MEMSInterface::ecuFamily() const
 {
@@ -190,41 +191,31 @@ bool MEMSInterface::performMems19Wakeup(const QString &qtPortName, QString *deta
         port.close();
         return false;
     }
-    const quint8 address = 0x16u;
-
-    auto sendSlowBit = [&port,&cancelled](bool high) -> bool {
+    // Schedule all ten slow-init bits from one monotonic clock. Sleeping
+    // 200 ms independently after each USB BREAK call adds driver overhead
+    // to every bit and can cause cumulative timing drift on Windows.
+    QElapsedTimer bitClock;
+    bitClock.start();
+    const auto sendSlowBit=[&port, &cancelled, &bitClock](int index) -> bool {
         if (cancelled())
             return false;
-        // BREAK = active low, therefore a logical high means BREAK disabled.
-        if (!port.setBreakEnabled(!high))
+        if (!port.setBreakEnabled(!Mems19Protocol::slowBitHigh(index)))
             return false;
-        QThread::msleep(200);
+        const qint64 target =
+            (index + 1) * qint64(Mems19Protocol::kSlowBitDurationMs);
+        const qint64 remaining = target - bitClock.elapsed();
+        if (remaining > 0)
+            QThread::msleep(static_cast<unsigned long>(remaining));
         return !cancelled();
     };
 
-    if (!sendSlowBit(false))
+    for (int index = 0; index < Mems19Protocol::kSlowBitCount; ++index)
     {
-        if (detail) *detail = cancelled() ? cancelReason() : QStringLiteral("slow-init-start-failed");
-        port.setBreakEnabled(false);
-        port.close();
-        return false;
-    }
-
-    for (int bit = 0; bit < 8; ++bit)
-    {
-        const bool high = ((address >> bit) & 0x01u) != 0u;
-        if (!sendSlowBit(high))
-        {
-            if (detail) *detail = cancelled() ? cancelReason() : QStringLiteral("slow-init-data-failed");
-            port.setBreakEnabled(false);
-            port.close();
-            return false;
-        }
-    }
-
-    if (!sendSlowBit(true))
-    {
-        if (detail) *detail = cancelled() ? cancelReason() : QStringLiteral("slow-init-stop-failed");
+        if (sendSlowBit(index))
+            continue;
+        if (detail)
+            *detail = cancelled() ? cancelReason() :
+                QStringLiteral("slow-init-break-control-failed");
         port.setBreakEnabled(false);
         port.close();
         return false;
@@ -237,22 +228,16 @@ bool MEMSInterface::performMems19Wakeup(const QString &qtPortName, QString *deta
     QByteArray wakeReply;
     QElapsedTimer timer;
     timer.start();
-    int syncIndex = -1;
-    while (timer.elapsed() < 1600 && syncIndex < 0 && !cancelled())
+    quint8 complementedKey = 0;
+    bool receivedKeys = false;
+    while (timer.elapsed() < 1600 && !receivedKeys && !cancelled())
     {
         if (port.waitForReadyRead(120))
             wakeReply += port.readAll();
         else
             wakeReply += port.readAll();
-
-        for (int i = 0; i + 2 < wakeReply.size(); ++i)
-        {
-            if (quint8(wakeReply.at(i)) == 0x55u)
-            {
-                syncIndex = i;
-                break;
-            }
-        }
+        receivedKeys = Mems19Protocol::keyComplement(wakeReply,
+                                                    &complementedKey);
     }
 
     if (cancelled())
@@ -262,15 +247,14 @@ bool MEMSInterface::performMems19Wakeup(const QString &qtPortName, QString *deta
         return false;
     }
 
-    if (syncIndex < 0 || syncIndex + 2 >= wakeReply.size())
+    if (!receivedKeys)
     {
         if (detail) *detail = QStringLiteral("no-iso9141-key-bytes");
         port.close();
         return false;
     }
 
-    const quint8 keyByte2 = quint8(wakeReply.at(syncIndex + 2));
-    const char invertedKey = char(quint8(~keyByte2));
+    const char invertedKey = char(complementedKey);
     if (cancelled())
     {
         if (detail) *detail = cancelReason();
@@ -297,14 +281,7 @@ bool MEMSInterface::performMems19Wakeup(const QString &qtPortName, QString *deta
         else
             confirmation += port.readAll();
 
-        for (char c : confirmation)
-        {
-            if (quint8(c) == 0xE9u)
-            {
-                confirmed = true;
-                break;
-            }
-        }
+        confirmed = Mems19Protocol::hasAddressConfirmation(confirmation);
     }
 
     port.close();
@@ -403,9 +380,7 @@ bool MEMSInterface::connectToECU()
         if (cancelled())
             break;
 
-        const bool preferKLine =
-            adapter.hasVendorId && adapter.hasProductId &&
-            adapter.vendorId == 0x1A86u && adapter.productId == 0x7523u;
+        const bool preferKLine = SerialAdapterDetector::prefersKLineFirst(adapter);
 
         if (preferKLine)
         {
