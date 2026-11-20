@@ -71,7 +71,7 @@ configure_file("${CMAKE_SOURCE_DIR}/help_pt.html.in" "${CMAKE_SOURCE_DIR}/help_p
 configure_file("${CMAKE_SOURCE_DIR}/help_it.html.in" "${CMAKE_SOURCE_DIR}/help_it.html")
 configure_file("${CMAKE_SOURCE_DIR}/help_es.html.in" "${CMAKE_SOURCE_DIR}/help_es.html")
 set(SOURCES
-    main.cpp i18n.cpp i18n.h sessionprogramupdate.cpp sessionprogramupdate.h memsinterface.cpp memsinterface_dispatch.cpp memsinterface.h mems2jprotocol.h overviewramlive.cpp mappedinjection.cpp injectionramtest.cpp injectionramtestlogger.cpp memslogic.cpp database/DatabaseSeed.cpp
+    main.cpp i18n.cpp i18n.h sessionprogramupdate.cpp sessionprogramupdate.h memsinterface.cpp memsinterface_dispatch.cpp memsinterface.h mems2jprotocol.h mems3protocol.h overviewramlive.cpp mappedinjection.cpp injectionramtest.cpp injectionramtestlogger.cpp memslogic.cpp database/DatabaseSeed.cpp
     helpviewer.cpp taskbarautohide.cpp taskbarautohide.h logger.cpp serialdevenumerator.cpp splashprogress.cpp mainwindow.cpp aboutbox.cpp
     optionsdialog.cpp summarytab.cpp diagnosticpanel.cpp analysistab.cpp captureviewer.cpp captureviewer.h
     tooltipbubblemanager.cpp tooltipbubblemanager.h scr/ecu/ecumanager.cpp scr/ecu/ecumanager.h
@@ -160,6 +160,13 @@ target_link_libraries(mems2j_protocol_selftest PRIVATE Qt5::Core Qt5::SerialPort
 add_dependencies(${PNAME} mems2j_protocol_selftest)
 add_custom_command(TARGET ${PNAME} POST_BUILD
     COMMAND "$<TARGET_FILE:mems2j_protocol_selftest>")
+
+# Synthetic MEMS 3 XOR/8E1 packet and sensor/DTC checks, without a real ECU.
+add_executable(mems3_protocol_selftest mems3protocol_test.cpp mems3protocol.h)
+target_link_libraries(mems3_protocol_selftest PRIVATE Qt5::Core Qt5::SerialPort)
+add_dependencies(${PNAME} mems3_protocol_selftest)
+add_custom_command(TARGET ${PNAME} POST_BUILD
+    COMMAND "$<TARGET_FILE:mems3_protocol_selftest>")
 
 # Simulated MEMS 1.9 wake-up and cable-selection checks: no ECU required.
 add_executable(mems19_protocol_selftest
