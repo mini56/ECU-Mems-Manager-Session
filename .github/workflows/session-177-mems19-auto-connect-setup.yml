@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
   # Build and publish only when this dedicated workflow is committed.
   # Preserve old versions and run existing non-regression checks.
+  # Retry after matching native K-Line symbols in the existing app rosco.h.
   push:
     branches: [fix-documentary-additive-session-161-20261118]
     paths:
@@ -166,6 +167,9 @@ jobs:
           $interface=Get-Content memsinterface.cpp -Raw
           $protocol=Get-Content librosco-x64/protocol.c -Raw
           $exports=Get-Content librosco-x64/mems_manager_x64.def -Raw
+          $appHeader=Get-Content rosco.h -Raw
+          if($appHeader -notmatch 'mems_init_link_kline19' -or
+             $appHeader -notmatch 'mems_read_kline19'){throw 'MEMS19_APP_HEADER_KLINE_DECLARATIONS_MISSING'}
           if($dispatcher -notmatch 'mems_init_link_kline19' -or
              $dispatcher -notmatch 'mems_connect' -or
              $interface -notmatch 'mems_read_kline19' -or
