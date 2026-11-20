@@ -137,6 +137,15 @@ Vérifications GitHub **en lecture seule** réalisées :
 
 **Conséquence :** les mentions antérieures de « valeurs faussées par des sondes remplacées » ne sont **pas un obstacle** au développement, à la compilation ou à la lecture MEMS 1.9/2J. La validation technique porte sur les octets reçus, les calculs et la restitution fidèle.
 
+## BUILD 176 — échec du premier run et cause démontrée (20/11/2026)
+
+- **Run :** [44700639856](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/44700639856), commit `323632bf04bbc585e9ab512940a278b6ea3a1569`, conclusion **failure**.
+- **Étape rouge :** `Compiler SESSION et tests de mise a jour`.
+- **Fait vérifié dans les logs GitHub Actions** : `ecu_mems_manager.exe` s'est compilé ; `protocol_context_selftest.exe` a écrit `PASS protocol context safety policy`. Le nouveau `mems19_protocol_selftest.exe` s'est arrêté au lancement depuis `POST_BUILD`, erreur `MSB3073`, sortie **-1073741515** (`0xC0000135`, dépendance DLL introuvable).
+- **Cause dans le workflow 176 :** le `PATH` contenant `C:\Qt\5.15.2\msvc2019_64\bin` était configuré **après** `cmake --build`. Or le nouvel autotest utilise `Qt5::Core` et `Qt5::SerialPort` et s'exécute aussi **pendant** le `POST_BUILD` de l'exécutable, quand Qt n'est pas dans le chemin des DLL.
+- **Correction ciblée prévue :** déplacer l'ajout du dossier `Qt\bin` avant la commande `cmake --build` dans **le workflow 176 uniquement**, laisser intacts `CMakeLists.txt`, `mems19protocol_test.cpp`, les sources du programme et le workflow 175. Une seule mise à jour du workflow devrait déclencher un nouveau run 176 automatiquement.
+- **Critère :** constater la ligne `PASS MEMS 1.9 slow init, fragmented ISO9141, cable preference`, puis la compilation, l'installation, les tests et le Setup. Aucune prétention de validation ECU physique.
+
 ## Points établis et limites
 
 - Le code actuel effectue déjà le réveil 1.9 avec l'adresse 0x16 à cinq bauds, synchronisation 55 + deux octets clés, complément du second octet et confirmation E9.
