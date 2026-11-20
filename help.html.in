@@ -131,6 +131,11 @@ small{color:#aebcc5}
 <h2 id="chapter-ecu19">Test ECU 1.9 — essais de communication</h2>
 <p>La page <b>Test ECU 1.9</b> propose un essai guidé de connexion, d'identification et de lecture. Elle affiche séparément l'état de la connexion, les réponses des commandes et des mesures, les étapes de lecture d'injection, la restauration du mode diagnostic et la reconnexion. Les événements sont consignés dans un journal ; les boutons permettent de démarrer, arrêter et ouvrir le dossier de résultats. Ce test est distinct de la simple reconnaissance du câble USB.</p>
 
+<h2 id="chapter-mems2j">MEMS 2J — connexion automatique et diagnostic</h2>
+<p>Branchez un câble de diagnostic compatible à l'ECU, mettez le contact et cliquez sur <b>CONNECTER</b>. SESSION essaie les interfaces série et reconnaît la famille du calculateur à partir de sa réponse, sans choix manuel de marque de câble ni de protocole.</p>
+<p>Une fois le <b>MEMS 2J</b> identifié, les mesures disponibles apparaissent dans les pages habituelles <b>Aperçu</b> et <b>Toutes les mesures</b>. Les défauts lus figurent dans <b>Diagnostic automatique</b>. Les valeurs non documentées restent brutes. Certains codes de défaut concernent spécifiquement la Mini MPi et ne doivent pas être appliqués sans vérification aux autres variantes.</p>
+<p><b>Validation :</b> la lecture et les tests automatiques ont été intégrés à SESSION 178 ; un essai sur un véritable calculateur MEMS 2J reste nécessaire. Ce lecteur ne crée pas de commande d'effacement ou de programmation.</p>
+
 <h2 id="chapter-10">10. Diagnostic automatique</h2>
 <p>Le panneau de diagnostic automatique contrôle les valeurs ECU courantes et signale les valeurs normales, avertissements et anomalies. Il peut capturer une référence et produire un rapport. Le temps de charge bobine est notamment contrôlé selon la plage utilisée par l’application.</p>
 
@@ -213,6 +218,11 @@ small{color:#aebcc5}
 </table>
 <p>Un pack chiffré déjà téléchargé peut également être installé depuis le bouton <b>Installer un pack sécurisé local</b> de cette même fenêtre. En cas d'erreur de réseau, de mot de passe ou d'intégrité, l'installation est refusée et la base précédente est conservée.</p>
 <div class="warn"><b>Important :</b> un contrôle de mise à jour ne garantit pas la disponibilité immédiate d'un nouveau pack. N'utilisez pas un PDF provenant d'une autre motorisation ou d'une autre langue comme preuve d'applicabilité.</div>
+
+<h2 id="chapter-program-update">Mise à jour du programme SESSION</h2>
+<p>À l'ouverture, SESSION vérifie discrètement sur le dépôt public de MAJ si une nouvelle version du <b>programme</b> est disponible. Dans ce cas, un bouton orange apparaît près du numéro de version dans le bandeau supérieur. Il ouvre le téléchargement officiel du Setup Windows dans le navigateur : l'utilisateur reste maître de l'installation.</p>
+<p>Dans le menu <b>Aide → Rechercher une mise à jour du programme</b>, vous pouvez lancer cette vérification manuellement. Sans Internet, SESSION continue ses diagnostics sans avertissement automatique. La mise à jour des bases documentaires se fait séparément depuis la page Base de données.</p>
+<p><b>Agrandir les captures de l'Aide :</b> cliquez sur une image pour l'afficher en grand dans une fenêtre redimensionnable. Utilisez +, −, 100 % ou les barres de défilement. Les images restent disponibles hors ligne.</p>
 
 <h2 id="chapter-23">23. Affichage et barre des tâches Windows</h2>
 <p>Dans <b>Options → Affichage</b>, la case <b>Masquer automatiquement la barre des tâches Windows</b> peut libérer de la hauteur pour les cadrans et les tableaux. Cette option est <b>désactivée par défaut</b>.</p>
