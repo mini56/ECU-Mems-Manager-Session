@@ -134,7 +134,14 @@ small{color:#aebcc5}
 <h2 id="chapter-mems2j">MEMS 2J — automatic connection and diagnostics</h2>
 <p>Connect a compatible diagnostic cable to the ECU, switch on the ignition and click <b>CONNECT</b>. SESSION tries the available serial interfaces and identifies the ECU family from an actual response; no manual adapter-brand or protocol selection is needed.</p>
 <p>Once <b>MEMS 2J</b> is identified, available readings appear on the usual <b>Overview</b> and <b>All measurements</b> pages. Faults read from the ECU appear under <b>Automatic diagnostics</b>. Undocumented measurements remain raw. Some fault codes apply specifically to the Mini MPi and must not be assumed to apply to other variants.</p>
-<p><b>Validation:</b> the reader and automated tests were added in SESSION 178; a real MEMS 2J ECU connection and measurements still need to be tested. The reader does not add erase or programming commands.</p>
+<p><b>Validation:</b> the reader and automated tests were added in SESSION 178; a real MEMS 2J ECU connection and measurements still need to be tested. Since SESSION 184, users can explicitly request fault-code clearing; ECU programming, calibration and immobiliser functions are not added.</p>
+
+<p><b>Clearing MEMS 2J faults:</b> after a confirmed connection, use SESSION's existing clear-fault control. The program sends the MEMS 2J service (<code>31 CB</code>) and waits for its acknowledgement (<code>71 CB</code>). This operation changes the stored fault information and never runs automatically when connecting. Legacy ROSCO adjustment and actuator commands do not apply to MEMS 2J.</p>
+<h3>MEMS 3 — automatic connection, live data and fault codes</h3>
+<p>Connect a compatible diagnostic cable, switch on the ignition, then press <b>CONNECT</b> as usual. SESSION attempts the dedicated <b>MEMS 3</b> dialogue at <b>9,600 baud, 8 data bits, even parity, 1 stop bit (8E1)</b>, using <code>B8 13 F7</code> request frames and XOR checksums. Only actual ECU responses confirm the connection; no manual protocol choice is needed.</p>
+<p>Once a MEMS 3 ECU responds, SESSION displays the available decoded engine speed, coolant/oil/intake temperatures, MAP, throttle, lambda and coil times. Measurements without established units remain raw. The diagnostics page shows <b>16-bit engine fault codes</b>, their known status and the underlying hexadecimal data.</p>
+<p><b>Clearing MEMS 3 faults:</b> the existing clear-fault control sends the MEMS 3 service <code>14 00 00</code> and checks for <code>54 00 00</code>. This is a user-requested operation only; it is never issued during automatic detection or polling. Experimental immobiliser or calibration commands are not enabled.</p>
+<p><b>Hardware validation:</b> SESSION 184 includes automatic frame and decoder tests, but real-ECU connection and fault-clearing tests are still required for MEMS 2J and MEMS 3. The RC5 airbag controller is not part of engine ECU detection.</p>
 
 <h2 id="chapter-10">10. Automatic diagnostics</h2>
 <p>The automatic diagnostic panel evaluates current ECU values and reports normal values, warnings and anomalies. It can capture a reference and export a report. Coil charge time is checked against the expected range used by this application.</p>
@@ -183,7 +190,7 @@ small{color:#aebcc5}
 <p>The interface supports French, English, Spanish, Italian, Portuguese and German. The selected language is stored in the application settings.</p>
 
 <h2 id="chapter-18">18. Supported ECU families</h2>
-<p>The project database and diagnostic paths cover Rover MEMS <b>1.2, 1.3, 1.6 and 1.9</b>. Features available during a session depend on the ECU, vehicle configuration and protocol in use.</p>
+<p>SESSION supports Rover MEMS <b>1.2, 1.3 and 1.6</b> through ROSCO, <b>MEMS 1.9</b> through K-Line wake-up, and <b>MEMS 2J and MEMS 3</b> through their own K-Line protocols. The ECU family is determined from a successful response after pressing <b>Connect</b>. Available readings and commands depend on the actual ECU session; MEMS 2J/3 do not use legacy ROSCO adjustment commands. Physical ECU testing remains outstanding for the newer readers.</p>
 
 <h2 id="chapter-19">19. Basic diagnostic guidance</h2>
 <table>
