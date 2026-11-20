@@ -98,6 +98,11 @@ small{color:#aebcc5}
 <h2 id="chapter-interactive">Interaktiver Modus — erweiterte Befehle</h2><p>Diese Seite zeigt Hinweise zur interaktiven ROSCO-Befehlsausführung. Sie richtet sich an Anwender, die das Protokoll und den seriellen Anschluss kennen. Für normale Messwertabfragen verwenden Sie <b>Verbinden</b> und die Diagnoseseiten.</p>
 <h2 id="chapter-ecu19">ECU-1.9-Test — Kommunikationsprüfung</h2><p>Der ECU-1.9-Test führt durch Verbindung, Identifikation und Datenabfrage. Er zeigt Protokollantworten, Einspritzungsmessungen, Wiederherstellung des Diagnosemodus und erneute Verbindung einzeln an. Prüfungen können gestartet und beendet, Protokolldateien geöffnet werden. Dies ist kein USB-Kabeltest.</p>
 
+<h2 id="chapter-mems2j">MEMS 2J — automatische Verbindung und Diagnose</h2>
+<p>Schließen Sie ein kompatibles Diagnosekabel an das Steuergerät an, schalten Sie die Zündung ein und klicken Sie auf <b>Verbinden</b>. SESSION prüft die verfügbaren seriellen Schnittstellen und erkennt die Steuergerätefamilie anhand der tatsächlichen Antworten, ohne Kabelmarke oder Protokoll manuell auszuwählen.</p>
+<p>Nach Erkennung von <b>MEMS 2J</b> erscheinen verfügbare Werte auf den Seiten <b>Übersicht</b> und <b>Alle Messwerte</b>; gelesene Fehler stehen unter <b>Automatische Diagnose</b>. Nicht dokumentierte Werte bleiben Rohdaten. Einige Fehlercodes gelten speziell für den Mini MPi.</p>
+<p><b>Teststatus:</b> Leser und automatische Tests wurden mit SESSION 178 integriert; ein Test an einem echten MEMS-2J-Steuergerät steht noch aus. Lösch- oder Programmierfunktionen wurden nicht hinzugefügt.</p>
+
 <h2 id="chapter-10">10. Automatische Diagnose</h2>
 <p>Bewertet aktuelle ECU-Messwerte und unterscheidet Normalzustände, Warnungen und Abweichungen. Referenzaufnahmen und Berichtexporte sind möglich. Auch die Spulenladezeit wird geprüft.</p>
 
@@ -159,6 +164,11 @@ small{color:#aebcc5}
 
 <h2 id="chapter-22">22. Dokumentationsupdates</h2>
 <p>Öffnen Sie Datenbank und wählen Sie Nach Datenbankupdates suchen. Der Manager prüft den Online-Katalog, lädt verfügbare verschlüsselte Pakete herunter und kontrolliert SHA-256. Für die Installation sind das Paketpasswort und Prüfungen von SQLite, Bildern und Herkunft erforderlich. Lokale verschlüsselte Pakete können ebenfalls installiert werden. Bei Fehlern bleibt die alte Datenbank erhalten.</p>
+
+<h2 id="chapter-program-update">SESSION-Programmaktualisierungen</h2>
+<p>Beim Start prüft SESSION unauffällig das öffentliche Update-Repository. Ist eine neuere <b>Programmversion</b> verfügbar, erscheint oben neben der installierten Version eine orangefarbene Schaltfläche. Sie öffnet den offiziellen Windows-Setup-Download im Browser; die Installation wird vom Benutzer gestartet.</p>
+<p>Unter <b>Hilfe → Nach Programmupdates suchen</b> ist eine manuelle Prüfung möglich. Ohne Internet läuft die Diagnose normal weiter. Dokumentationsupdates werden weiterhin getrennt auf der Datenbankseite verwaltet.</p>
+<p><b>Hilfebilder vergrößern:</b> Klicken Sie auf ein Bildschirmfoto, um es in einem skalierbaren Fenster mit +, −, 100 % und Bildlaufleisten zu öffnen — auch offline.</p>
 
 <h2 id="chapter-23">23. Windows-Taskleiste</h2>
 <p>Windows-Taskleiste automatisch ausblenden ist standardmäßig deaktiviert. Wenn aktiviert, betrifft dies die gesamte Windows-Arbeitsfläche während SESSION läuft. Beim normalen Schließen wird die Einstellung wiederhergestellt; nach einem unerwarteten Abbruch greifen Wiederherstellungsprüfungen. Windows-Richtlinien können Änderungen verhindern.</p>
