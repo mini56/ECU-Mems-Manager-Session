@@ -173,6 +173,9 @@ jobs:
           $helpQrc=Get-Content 'build-session-176/mems-help-illustrations.qrc' -Raw -Encoding utf8
           if(([regex]::Matches($helpQrc,'<file alias=')).Count -ne 13){throw 'SESSION_176_HELP_QRC_MISSING_IMAGES'}
           Write-Host 'SESSION_176_HELP_IMAGES_EMBEDDED_PASS'
+          # mems19_protocol_selftest runs in the executable's CMake POST_BUILD.
+          # Qt DLLs must already be resolvable at this stage on Windows.
+          $env:PATH="C:\Qt\5.15.2\msvc2019_64\bin;$env:PATH"
           cmake --build build-session-176 --config Release --target ecu_mems_manager ecu_mems_uninstaller mems_documentary_update_selftest mems_documentary_selftest mems_documentary_multilingual_selftest mems_documentary_native_intent_selftest mems_documentary_encrypted_selftest mems_documentary_encrypted_install_selftest mems_ecu_reference_routing_selftest --parallel
           if($LASTEXITCODE -ne 0){throw 'CMAKE_SESSION_COMPILATION_FAILED'}
           if(-not(Test-Path build-session-176/Release/ecu_mems_manager.exe)){throw 'SESSION_EXE_MISSING'}
