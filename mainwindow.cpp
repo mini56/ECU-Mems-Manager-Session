@@ -991,14 +991,17 @@ void MainWindow::setAdjustmentsEnabled(bool enabled)
  */
 void MainWindow::onDataReady()
 {
-  if (m_mems->ecuFamily()==MemsEcuFamily::Mems2J)
+  if (m_mems->ecuFamily()==MemsEcuFamily::Mems2J ||
+      m_mems->ecuFamily()==MemsEcuFamily::Mems3)
   {
-    // 2J has distinct 0x21/0x61 units and fault flags: never reinterpret it
-    // as ROSCO 0x80/0x7D or enable legacy adjustment controls on its data.
+    // Each K-Line ECU has its own frame and decoder: neither uses ROSCO
+    // 0x80/0x7D, and legacy adjustments must never be sent to these ECUs.
+    const QString family=m_mems->ecuFamily()==MemsEcuFamily::Mems3
+        ? QStringLiteral("MEMS 3") : QStringLiteral("MEMS 2J");
     const QVariantMap values=m_mems->mems2jValues();
     const QStringList faults=m_mems->mems2jFaults();
-    m_summaryTab->update2JData(values);
-    if (m_diagnosticPanel) m_diagnosticPanel->update2JData(values,faults);
+    m_summaryTab->update2JData(values,family);
+    if (m_diagnosticPanel) m_diagnosticPanel->update2JData(values,faults,family);
     if (values.contains(QStringLiteral("rpm")))
     {
       m_ui->m_revCounter->setValue(values.value(QStringLiteral("rpm")).toDouble());
