@@ -15,6 +15,8 @@ EXPORTS
     mems_read
     mems_read_iac_position
     mems_read_raw
+    mems_init_link_kline19
+    mems_read_kline19
     mems_read_serial
     mems_reset_ECU
     mems_reset_adjustments
