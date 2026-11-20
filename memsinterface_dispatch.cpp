@@ -9,6 +9,7 @@
 #include "serialadapterdetector.h"
 #include "mems19protocol.h"
 #include "mems2jprotocol.h"
+#include "mems3protocol.h"
 
 MemsEcuFamily MEMSInterface::ecuFamily() const
 {
@@ -67,6 +68,16 @@ bool MEMSInterface::guardedClearFaults()
     if (property("injectionRamTestRunning").toBool() ||
         property("mappedInjectionModeActive").toBool())
         return false;
+    const auto cancelled=[this]() {
+        return m_shutdownRequested.loadAcquire()!=0 ||
+               m_disconnectRequested.loadAcquire()!=0;
+    };
+    // KWP-like MEMS 2J and MEMS 3 have their own framed clear-DTC service,
+    // never pass them to the one-byte historical ROSCO implementation.
+    if (ecuFamily()==MemsEcuFamily::Mems2J)
+        return m_mems2j && m_mems2j->clearFaults(cancelled);
+    if (ecuFamily()==MemsEcuFamily::Mems3)
+        return m_mems3 && m_mems3->clearFaults(cancelled);
     if (!MemsProtocolSafety::allowsMutation(ecuFamily(), diagnosticMode(), 0xCCu))
         return false;
     #ifdef MEMS_NATIVE_KLINE_19
@@ -462,6 +473,12 @@ bool MEMSInterface::connectToECU()
             delete m_mems2j;
             m_mems2j=nullptr;
         }
+        if (m_mems3)
+        {
+            m_mems3->close();
+            delete m_mems3;
+            m_mems3=nullptr;
+        }
         if (m_initComplete && mems_is_connected(&m_memsinfo))
             mems_disconnect(&m_memsinfo);
         m_connectedState.storeRelease(0);
@@ -571,6 +588,34 @@ bool MEMSInterface::connectToECU()
         return true;
     };
 
+    // MEMS 3 is not MEMS 2J: 9600 baud, 8E1 and B8/13/F7 XOR packets.
+    // Only its acknowledged diagnostic handshake identifies this family.
+    const auto connectMems3=[this, &cancelled](
+        const DetectedSerialAdapter &adapter) -> bool {
+        Mems3Protocol::Session *session=new Mems3Protocol::Session;
+        if (!session->connectTo(adapter.qtPortName,cancelled) || cancelled())
+        {
+            session->close();
+            delete session;
+            return false;
+        }
+        m_mems3=session;
+        m_deviceName=adapter.devicePath;
+        {
+            QMutexLocker locker(&m_dataMutex);
+            m_mems2jValues=session->values();
+            m_mems2jFaults=session->faults();
+        }
+        m_connectedState.storeRelease(1);
+        setEcuFamily(MemsEcuFamily::Mems3);
+        setDiagnosticMode(MemsDiagnosticMode::Normal);
+        emit ecuIdentityDetected(QStringLiteral("MEMS 3"));
+        emit serialInterfaceDetected(adapter.portName,
+                                     adapter.adapterFamily,
+                                     QStringLiteral("MEMS 3 K-Line"));
+        return true;
+    };
+
     // Choose the first protocol attempt per physical USB cable rather than
     // trying ROSCO on every port before attempting MEMS 1.9 on any port.
     // VID:PID 1A86:7523 corresponds to the user's known CH340 KKL cable.
@@ -590,6 +635,10 @@ bool MEMSInterface::connectToECU()
                 return true;
             if (cancelled())
                 break;
+            if (connectMems3(adapter))
+                return true;
+            if (cancelled())
+                break;
             if (connectMems19(adapter))
                 return true;
             if (cancelled())
@@ -604,6 +653,10 @@ bool MEMSInterface::connectToECU()
             if (cancelled())
                 break;
             if (connectMems2J(adapter))
+                return true;
+            if (cancelled())
+                break;
+            if (connectMems3(adapter))
                 return true;
             if (cancelled())
                 break;
@@ -689,6 +742,12 @@ void MEMSInterface::onStartPollingRequest()
                 m_mems2j->close();
                 delete m_mems2j;
                 m_mems2j=nullptr;
+            }
+            if (m_mems3)
+            {
+                m_mems3->close();
+                delete m_mems3;
+                m_mems3=nullptr;
             }
             if (m_initComplete && mems_is_connected(&m_memsinfo))
                 mems_disconnect(&m_memsinfo);
