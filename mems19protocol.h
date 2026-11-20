@@ -40,6 +40,18 @@ inline bool keyComplement(const QByteArray &stream, quint8 *complement)
     return false;
 }
 
+/* The K-Line cable can echo the transmitted command in addition to the ECU
+ * response. Strip only this optional cable-local echo; never strip payload. */
+inline QByteArray normalizedReply(const QByteArray &received, quint8 command,
+                                  bool cableEcho)
+{
+    if (cableEcho && received.size() > 1 &&
+        static_cast<quint8>(received.at(0)) == command &&
+        static_cast<quint8>(received.at(1)) == command)
+        return received.mid(1);
+    return received;
+}
+
 inline bool hasAddressConfirmation(const QByteArray &stream)
 {
     const quint8 expected = static_cast<quint8>(~kAddress); // 0xE9
