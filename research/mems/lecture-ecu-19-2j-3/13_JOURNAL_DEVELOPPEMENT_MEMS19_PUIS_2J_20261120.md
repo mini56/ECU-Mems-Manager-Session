@@ -284,3 +284,17 @@ La Release source a été publiée sur GitHub : [mems-session-build-177](https:/
 - [1284f75](https://github.com/mini56/ECU-Mems-Manager-Session/commit/1284f75c1f12880dff61654b8ca3972f07ca2e9a) : correction de la construction du rapport et lisibilité des valeurs dans la colonne existante.
 
 **État réel au moment de cette inscription : code 2J intégré dans la source, non compilé, non validé sur ECU.** Les tests de trame sont synthétiques. Le code utilisateur ROSCO et K-Line 1.9 est conservé. Le prochain lot est un **seul** workflow Windows dédié 178 (compilation, autotest 2J et non-régression, Setup installé). Vérifier explicitement le succès avant de publier ou transférer le Setup sur le site MAJ. Le calculateur réel et le câble devront ensuite valider les temporisations, les variantes, les mesures et les défauts.
+
+
+## MEMS 2J — résultat BUILD 178 et publication MAJ (20/11/2026)
+
+- Workflow Windows `SESSION 178` créé sur **la même branche**, commit [c06540d](https://github.com/mini56/ECU-Mems-Manager-Session/commit/c06540d862e5d83ac57e459c8145b9b932aaddc7).
+- **Un seul run de compilation** [44715841446](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/44715841446) : **SUCCESS**. Sources contrôlées sans patch ; compilation Qt/Windows x64, autotest de protocole MEMS 2J (vecteurs synthétiques), autotest MEMS 1.9 et non-régressions, bases et fichiers de langues contrôlés. Setup réel Windows installé, application démarrée, test des 15 pages **SUCCESS**.
+- Release source privée [mems-session-build-178](https://github.com/mini56/ECU-Mems-Manager-Session/releases/tag/mems-session-build-178) : Setup et SHA-256 publiés.
+- Workflow de transfert public sur dépôt `mini56/ECU-Mems-Manager-Session-MAJ` : commit [1819236](https://github.com/mini56/ECU-Mems-Manager-Session-MAJ/commit/1819236e37eb635554d4ea89203d91520c23f98f) ; run [44717425843](https://github.com/mini56/ECU-Mems-Manager-Session-MAJ/actions/runs/44717425843) **SUCCESS**. **Pas de recompilation** pendant le transfert.
+- Release MAJ publique [SESSION 178](https://github.com/mini56/ECU-Mems-Manager-Session-MAJ/releases/tag/mems-session-build-178) vérifiée : fichiers `ECU-Mems-Manager-Session-178-Setup.exe` et `SESSION-178-Setup.sha256`, notes FR puis EN.
+- Taille exacte du Setup : **449 404 915 octets** ; SHA-256 **`b453fb761067cf05dd0c2b1097eedaf13dad8754b17702aca05ae9f310bad8ce`**.
+- Manifeste du dépôt MAJ : `program.version=1.1.78`, URL du Setup et empreinte SHA-256 vérifiés ; bases documentaires non modifiées.
+- **Limite explicite :** réussite de la compilation/installation et tests synthétiques ne prouve pas la connexion à un MEMS 2J physique. Validation réelle du câble, du FAST INIT, des mesures et des défauts 2J à faire ; MEMS 1.9 aussi en attente de validation physique.
+
+**Bilan développement :** intégration logicielle et distribution BUILD 178 terminées ; test ECU physique restant.
