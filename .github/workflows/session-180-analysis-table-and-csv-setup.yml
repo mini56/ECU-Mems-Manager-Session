@@ -104,7 +104,7 @@ jobs:
           for lang in ('fr','en','es','it','pt','de'):
               guide=Path('help.html.in' if lang=='fr' else 'help_'+lang+'.html.in').read_text(encoding='utf-8')
               chapter=guide.split('<h2 id="chapter-11">',1)[1].split('<h2 id="chapter-12">',1)[0]
-              assert 'Colon' in chapter or 'colonn' in chapter or 'Spalten' in chapter, lang
+              assert any(word in chapter.lower() for word in ('colon','column','colunas','spalten')), lang
               translate=__import__('json').loads(Path('translations',lang,lang+'_analysis_table.json').read_text(encoding='utf-8'))
               assert all(isinstance(translate.get(str(k)),str) and translate[str(k)].strip() for k in range(18020,18024)),lang
           print('SESSION_180_ANALYSIS_LEFT_SWITCH_CSV_RIGHT_NAMES_6_HELP_PASS')
