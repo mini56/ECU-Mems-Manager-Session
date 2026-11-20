@@ -193,6 +193,31 @@ Manager doit, en interne :
 
 **Cette inscription est une exigence fonctionnelle, pas une validation du code 1.9 ni un essai sur calculateur réel.** Aucune compilation n'est demandée par cette note.
 
+## MEMS 1.9 — intégration complète côté sources (20/11/2026, précompilation)
+
+**Objet précis :** l'utilisateur branche un câble série/KKL compatible et son calculateur puis clique **une seule fois** sur `Connecter`. Aucun choix de génération, de protocole, de fabricant, de VID/PID, aucune page Test obligatoire. Le programme effectue les essais de protocoles selon les réponses reçues et utilise les pages de mesure normales.
+
+**État source réel, nouvelle série de commits sur la branche existante, sans branche supplémentaire :**
+
+- `librosco-x64/protocol.c` — [ee1b471](https://github.com/mini56/ECU-Mems-Manager-Session/commit/ee1b47192655fc1b6ef861ba864969261f6a0690) : fonctions K-Line `mems_init_link_kline19` et `mems_read_kline19`, utilisant la succession connue `CA 75 F4 00 D0 + quatre octets ID`, la séparation entre écho local éventuel et écho ECU, les commandes `80` / `7D` et la **longueur annoncée par les paquets**. Moteur de conversion `mems_data` commun réutilisé sans changer l'appel historique `mems_read()`.
+- `librosco-x64/rosco.h`, `mems_manager_x64.def` — commits [858c945](https://github.com/mini56/ECU-Mems-Manager-Session/commit/858c945abc774c4d505be6cbbfc897743954ba61), [7e37274](https://github.com/mini56/ECU-Mems-Manager-Session/commit/7e37274b2b634f8e28a8931cac3e7bc6c44bccdf) : deux symboles **ajoutés**, ABI historique 60 octets conservée.
+- `memsinterface_dispatch.cpp` — [3e6b38f](https://github.com/mini56/ECU-Mems-Manager-Session/commit/3e6b38f0026d2252500226c005408a9d204c4ebd), [346d8a7](https://github.com/mini56/ECU-Mems-Manager-Session/commit/346d8a716948b46e38db09c2bc51a30bd9951c0b) : un **seul port physique** ouvert pour le réveil ISO9141 `0x16` 5 bauds et la poursuite 9600 bauds, complément de clé `7C` typique / confirmation `E9`, détection des échos, puis initialisation ECU 1.x sur le même HANDLE. Repli ancien DLL maintenu sous `#else` ; ne pas confondre le câble KKL avec un protocole de diagnostic distinct.
+- `memsinterface.cpp`, `memsinterface.h` — [7f5442b](https://github.com/mini56/ECU-Mems-Manager-Session/commit/7f5442b4d6165e6eee14a5fb9d7b8708ccda0418), [2c7fc6a](https://github.com/mini56/ECU-Mems-Manager-Session/commit/2c7fc6a94fd7183aeb29436c3830f260d2b88ab8) : choix du lecteur K-Line **seulement lorsque la famille connectée est MEMS 1.9** ; autres familles passent toujours par `mems_read()` ; `D1/D2/F0` sans l'écho local supplémentaire.
+- `mems19protocol.h`, `mems19protocol_test.cpp` — [c06919f](https://github.com/mini56/ECU-Mems-Manager-Session/commit/c06919fc6fc4e813c907b926aefede5debe4fa36), [aad1172](https://github.com/mini56/ECU-Mems-Manager-Session/commit/aad117261c80312a0253fcdfe0b9d13d4bd81724) : autotests supplémentaires pour la normalisation de réponses K-Line, avec et sans écho.
+- `CMakeLists.txt`, `librosco-x64/abi_selftest.c` — [ae5ac92](https://github.com/mini56/ECU-Mems-Manager-Session/commit/ae5ac929fa34edef16154cdc7782fe2029e71edc), [d60b468](https://github.com/mini56/ECU-Mems-Manager-Session/commit/d60b468be6796c75daf5613c0a8ff464a6ca7769) : vérification ABI des symboles K-Line + structures legacy dans le POST_BUILD lors des compilations x64 utilisant la DLL native.
+
+**Principes de non-régression :** code des méthodes ROSCO `mems_connect`, `mems_init_link`, `mems_read_raw` inchangé ; mapping de valeurs partagé, ABI `mems_data` inchangée ; sélection du protocole fondée sur **réponse ECU et non interdiction de câble** ; mêmes pages, aucune donnée documentaire obligatoire, pas de verrou ajouté.
+
+**Limites réelles (ne pas inventer de validation)** :
+- Source écrite et cohérence des références contrôlées. **Pas encore compilée pour ce lot**, ne pas affirmer le succès du BUILD suivant sans son run.
+- Le maintien du HANDLE Windows, la capacité du BREAK à 5 bauds, les éventuels échos et délais sur un véritable câble KKL et MEMS 1.9 ne sont **pas testés physiquement**.
+- Les champs optionnels absents d'une trame plus courte n'ont pas de marqueur de disponibilité dans l'ABI historique `mems_data` : les portions sans octets sont initialisées à zéro ; cela doit être vérifié sur les trames de la variante réellement utilisée avant d'interpréter les champs facultatifs. Les longueurs de paquets réelles seront précieuses dans le journal de test.
+- Les autres fonctions (actionneurs, écritures de réglages) du transport K-Line ne sont **pas déclarées validées** par cette étape, dont l'objectif est le bouton `Connecter` et les lectures de valeurs/défauts.
+- Le code existe pour Windows x64 avec DLL source `MEMS_USE_BUNDLED_LIBROSCO_X64=ON`. Le chemin de compilation avec une DLL ROSCO externe reste compatible, mais ne bénéficie pas du transport K-Line natif.
+- L'essai sur un ECU physique est nécessaire pour affirmer : « connexion MEMS 1.9 réellement fonctionnelle ». Les autotests synthétiques ne sont pas un substitut.
+
+**Prochaine opération :** création d'un workflow BUILD 177 isolé (175 et 176 conservés), compilation du Setup Windows, tests MEMS 1.9 + ABI + non-régression. Enregistrer ici le run, le SHA, le résultat et la release, sans relancer inutilement plusieurs runs.
+
 ## Points établis et limites
 
 - Le code actuel effectue déjà le réveil 1.9 avec l'adresse 0x16 à cinq bauds, synchronisation 55 + deux octets clés, complément du second octet et confirmation E9.
