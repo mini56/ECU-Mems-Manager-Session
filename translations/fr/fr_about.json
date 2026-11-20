@@ -5,5 +5,6 @@
   "6203": "À propos de ECU Mems Manager",
   "6204": "Remerciements particuliers à :",
   "6205": "Pour leurs travaux antérieurs sur les outils de lecture et de diagnostic des calculateurs Rover MEMS.",
-  "6206": "à tester"
+  "6206": "à tester",
+  "6207": "MEMS 2J et MEMS 3 : lecture des mesures et des défauts moteur ; effacement des défauts uniquement sur demande. Les fonctions expérimentales de calibration et d'antidémarrage ne sont pas activées. Tests sur calculateur réel encore nécessaires."
 }
