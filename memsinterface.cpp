@@ -13,6 +13,7 @@
 #include "memsinterface.h"
 #include "mems19protocol.h"
 #include "mems2jprotocol.h"
+#include "mems3protocol.h"
 
 /**
  * Constructor. Sets the serial device and measurement units.
@@ -33,6 +34,7 @@ QObject(parent), m_deviceName(device), m_stopPolling(false), m_shutdownThread(fa
 MEMSInterface::~MEMSInterface()
 {
   delete m_mems2j;
+  delete m_mems3;
 }
 
 /**
@@ -40,21 +42,11 @@ MEMSInterface::~MEMSInterface()
  */
 void MEMSInterface::onFaultCodesClearRequested()
 {
-  if (m_initComplete && mems_is_connected(&m_memsinfo))
-  {
-    if (guardedClearFaults())
-    {
-      emit faultCodesClearSuccess();
-    }
-    else
-    {
-      emit errorSendingCommand();
-    }
-  }
-  else
-  {
-    emit notConnected();
-  }
+  // A live 2J/3 QSerialPort session is not a librosco handle.
+  // The user explicitly requested fault clearing; connection never does.
+  if (!isConnected()) { emit notConnected(); return; }
+  if (guardedClearFaults()) emit faultCodesClearSuccess();
+  else emit errorSendingCommand();
 }
 
 /**
@@ -242,9 +234,12 @@ void MEMSInterface::onParentThreadStarted()
  */
 void MEMSInterface::runServiceLoop()
 {
-  bool connected = ecuFamily() == MemsEcuFamily::Mems2J
+  const MemsEcuFamily family=ecuFamily();
+  bool connected = family==MemsEcuFamily::Mems2J
       ? (m_mems2j && m_mems2j->isOpen())
-      : mems_is_connected(&m_memsinfo);
+      : (family==MemsEcuFamily::Mems3
+             ? (m_mems3 && m_mems3->isOpen())
+             : mems_is_connected(&m_memsinfo));
   m_connectedState.storeRelease(connected ? 1 : 0);
 
   m_serviceLoopRunning = true;
@@ -252,13 +247,17 @@ void MEMSInterface::runServiceLoop()
          m_disconnectRequested.loadAcquire() == 0 &&
          m_shutdownRequested.loadAcquire() == 0 && connected)
   {
-    if (ecuFamily() == MemsEcuFamily::Mems2J)
+    if (ecuFamily()==MemsEcuFamily::Mems2J ||
+        ecuFamily()==MemsEcuFamily::Mems3)
     {
-      // Dedicated 2J session: never send ROSCO commands to a 2J ECU.
-      const bool ok = m_mems2j && m_mems2j->readCycle([this]() {
+      // Each non-ROSCO family owns its serial transport and packet decoder.
+      const auto cancelled=[this]() {
         return m_disconnectRequested.loadAcquire()!=0 ||
                m_shutdownRequested.loadAcquire()!=0;
-      });
+      };
+      const bool ok=(family==MemsEcuFamily::Mems2J)
+          ? (m_mems2j && m_mems2j->readCycle(cancelled))
+          : (m_mems3 && m_mems3->readCycle(cancelled));
       if (!ok)
       {
         if (m_disconnectRequested.loadAcquire()==0 &&
@@ -268,8 +267,10 @@ void MEMSInterface::runServiceLoop()
       }
       {
         QMutexLocker locker(&m_dataMutex);
-        m_mems2jValues=m_mems2j->values();
-        m_mems2jFaults=m_mems2j->faults();
+        m_mems2jValues=family==MemsEcuFamily::Mems2J
+            ? m_mems2j->values() : m_mems3->values();
+        m_mems2jFaults=family==MemsEcuFamily::Mems2J
+            ? m_mems2j->faults() : m_mems3->faults();
       }
       emit readSuccess();
       emit dataReady();
@@ -324,10 +325,15 @@ void MEMSInterface::runServiceLoop()
     delete m_mems2j;
     m_mems2j=nullptr;
   }
-  else if (connected)
+  if (m_mems3)
   {
-    mems_disconnect(&m_memsinfo);
+    m_mems3->close();
+    delete m_mems3;
+    m_mems3=nullptr;
   }
+  if (connected && (family==MemsEcuFamily::Rosco13_16 ||
+                    family==MemsEcuFamily::Mems19))
+    mems_disconnect(&m_memsinfo);
   m_connectedState.storeRelease(0);
   if (m_shutdownRequested.loadAcquire() == 0)
     m_disconnectRequested.storeRelease(0);
