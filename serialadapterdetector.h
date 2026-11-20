@@ -68,6 +68,15 @@ inline QString adapterFamily(const QSerialPortInfo &info)
     return QStringLiteral("Serial Port");
 }
 
+// Priority for the user's confirmed CH340 KKL cable (VID:PID 1A86:7523).
+// This is only a connection order preference, not proof of the connector type
+// for every device sharing this USB chipset, and never a connection lock.
+inline bool prefersKLineFirst(const DetectedSerialAdapter &adapter)
+{
+    return adapter.hasVendorId && adapter.hasProductId &&
+           adapter.vendorId == 0x1A86u && adapter.productId == 0x7523u;
+}
+
 inline QList<DetectedSerialAdapter> availableAdapters(const QString &preferredDevice = QString())
 {
     QList<DetectedSerialAdapter> result;
