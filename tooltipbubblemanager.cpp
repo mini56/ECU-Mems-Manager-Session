@@ -48,6 +48,14 @@ void TooltipBubbleManager::ensureBubble(QWidget *widget)
         if (bubble) bubble->hide();
         return;
     }
+    // The header's new-version button is already self-explanatory. An icon
+    // overlaid at its right edge obscured the version number on compact screens.
+    // Keep its normal hover help, but never paint a speech bubble on the button.
+    if (widget->objectName() == QStringLiteral("uiProgramUpdateButton"))
+    {
+        if (bubble) bubble->hide();
+        return;
+    }
     const bool bubbleLeft = widget->property("helpBubbleLeft").toBool();
 
     // Labels explicitly marked helpBubbleLeft always reserve the HELP column,

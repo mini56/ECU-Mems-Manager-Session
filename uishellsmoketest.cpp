@@ -295,6 +295,38 @@ bool verifyUi(MainWindow &window)
                     ?QStringLiteral("#090e13"):QStringLiteral("#ffffff")),
              "Help dialog must be larger and follow the selected theme") && ok;
 
+    // Header regression: the old help-bubble icon covered the last
+    // digits of the advertised version. Preserve the ordinary tooltip
+    // but do not overlay its text or remove space for the version.
+    QPushButton *updateBadge=window.findChild<QPushButton*>(
+        QStringLiteral("uiProgramUpdateButton"));
+    ok=check(updateBadge!=nullptr,
+             "Missing visible-header program update button") && ok;
+    if(updateBadge){
+        updateBadge->setText(QStringLiteral("Nouvelle version 1.1.181"));
+        updateBadge->setMinimumWidth(
+            updateBadge->fontMetrics().horizontalAdvance(updateBadge->text())+30);
+        updateBadge->show();
+        QCoreApplication::processEvents();
+        QLabel *bubble=updateBadge->findChild<QLabel*>(
+            QStringLiteral("_ecuHelpBubble"),Qt::FindDirectChildrenOnly);
+        ok=check((!bubble || !bubble->isVisible()) &&
+                 !updateBadge->toolTip().isEmpty() &&
+                 updateBadge->width()>=
+                    updateBadge->fontMetrics().horizontalAdvance(updateBadge->text())+30,
+                 "Update button version obscured by tooltip bubble or clipped") && ok;
+        updateBadge->hide();
+    }
+    // Dark and light have explicit independent foreground/background pairs.
+    // Test the genuine stylesheet text used by both application startup and
+    // rebuilt SESSION shell, without any theme-dependent hardcoded widget patch.
+    ok=check(STYLE_DARK.contains(QStringLiteral("background-color: #1b2731;")) &&
+             STYLE_DARK.contains(QStringLiteral("color: #f4f7fa;")) &&
+             STYLE_LIGHT.contains(QStringLiteral("background-color: #fff9f1;")) &&
+             STYLE_LIGHT.contains(QStringLiteral("color: #202936;")) &&
+             qApp->styleSheet().contains(QStringLiteral("QToolTip")),
+             "Tooltips must have legible contrasting colors in both themes") && ok;
+
     OptionsDialog *options=window.findChild<OptionsDialog*>();
     QCheckBox *autoHide=options?options->findChild<QCheckBox*>(
         QStringLiteral("taskbarAutoHideCheckbox")):nullptr;

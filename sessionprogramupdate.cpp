@@ -113,6 +113,11 @@ void SessionProgramUpdate::handleManifest(
         if(m_indicator){
             m_indicator->setText(I18n::text(17900).arg(version));
             m_indicator->setToolTip(I18n::text(17901));
+            // Preserve the entire semantic version at any supported DPI.
+            // Width comes from the current translated text, not a guessed
+            // fixed pixel value (and the bubble icon is disabled on this button).
+            m_indicator->setMinimumWidth(
+                m_indicator->fontMetrics().horizontalAdvance(m_indicator->text())+30);
             m_indicator->show();
         }
         if(interactive)tellUser(I18n::text(17905).arg(version));

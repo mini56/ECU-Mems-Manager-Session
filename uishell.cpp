@@ -778,6 +778,11 @@ static QString globalStyle()
         "QSlider::handle:horizontal{width:12px;margin:-4px 0;background:%6;border:1px solid %5;border-radius:6px;}"
         "QProgressBar{background:#0a1117;color:#dfe5e9;border:1px solid %3;border-radius:3px;text-align:center;}"
         "QProgressBar::chunk{background:%6;border-radius:2px;}"
+        // QToolTip is a separate top-level widget. Specify BOTH colors:
+        // on Windows the generic QWidget rule otherwise yielded black text
+        // against a dark tooltip background for multiple help bubbles.
+        "QToolTip{background-color:#1b2731;color:#f4f7fa;"
+        "border:1px solid #ff8a22;border-radius:4px;padding:5px 8px;}"
     ).arg(QString::fromLatin1(kBg), QString::fromLatin1(kText), QString::fromLatin1(kBorder), QString::fromLatin1(kPanel),
           QString::fromLatin1(kOrange2), QString::fromLatin1(kOrange));
 }
@@ -920,6 +925,7 @@ static QFrame *buildHeader(QMainWindow *window, QWidget *legacy)
         "border-radius:4px;padding:5px 9px;font-weight:700;}"
         "QPushButton:hover{background:#ffad4d;}"));
     programUpdate->setVisible(false);
+    programUpdate->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Preferred);
     h->addWidget(programUpdate);
     ecu->setParent(header); ecu->setStyleSheet(QStringLiteral("color:#dfe4e8;font-weight:700;padding:0 8px;")); h->addWidget(ecu);
     h->addStretch(1);
