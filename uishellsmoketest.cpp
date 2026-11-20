@@ -34,6 +34,7 @@
 #include <QTextBrowser>
 #include <QHeaderView>
 #include <QTableWidget>
+#include <QTableView>
 #include <QtMath>
 #include <QScrollArea>
 #include <QScrollBar>
@@ -725,6 +726,109 @@ bool verifyUi(MainWindow &window)
                 }
                 window.resize(originalSize);
                 QCoreApplication::processEvents();
+
+                // Verify the SAME installed Analysis page toggles only its
+                // left display. Channel selection remains on the right.
+                QPushButton *viewMode=analysis->findChild<QPushButton*>(
+                    QStringLiteral("analysisViewModeButton"));
+                QTableView *dataTable=analysis->findChild<QTableView*>(
+                    QStringLiteral("analysisValuesTable"));
+                QWidget *rightPanel=analysis->findChild<QWidget*>(
+                    QStringLiteral("analysisRightPanel"));
+                ok=check(viewMode && dataTable && rightPanel,
+                         "Analysis left curves/columns selector is missing") && ok;
+                if(viewMode && dataTable && rightPanel){
+                    int selected=0;
+                    for(QCheckBox *cb:channelBoxes){
+                        if(cb->isChecked())++selected;
+                        ok=check(!cb->text().trimmed().isEmpty() &&
+                                 cb->toolTip().contains(cb->text()),
+                            "Analysis right-side channel name or full-name tooltip missing") && ok;
+                    }
+                    viewMode->setChecked(true);
+                    QCoreApplication::processEvents();
+                    ok=check(dataTable->isVisibleTo(&window) &&
+                             !plots->isVisibleTo(&window) &&
+                             rightPanel->isVisibleTo(&window),
+                             "Analysis columns mode must replace only left-hand plots") && ok;
+                    ok=check(dataTable->model() &&
+                             dataTable->model()->rowCount()==40 &&
+                             dataTable->model()->columnCount()==selected+1,
+                             "CSV values table should show time and selected channels") && ok;
+                    if(dataTable->model() && selected>0){
+                        ok=check(dataTable->model()->headerData(
+                              1,Qt::Horizontal).toString()==
+                              channelBoxes.at(
+                                  [&channelBoxes](){
+                                      for(int i=0;i<channelBoxes.size();++i)
+                                          if(channelBoxes.at(i)->isChecked())return i;
+                                      return 0;
+                                  }())->text(),
+                            "Selected CSV channel name missing in table header") && ok;
+                    }
+                    for(const QSize size : {QSize(1200,680),QSize(1366,768),
+                                            QSize(1920,1080)}){
+                        window.resize(size);
+                        QCoreApplication::processEvents();
+                        ok=check(dataTable->isVisibleTo(&window) &&
+                                 rightPanel->isVisibleTo(&window),
+                                 "Columns table or right panel hidden after resize") && ok;
+                    }
+                    window.resize(originalSize);
+                    viewMode->setChecked(false);
+                    QCoreApplication::processEvents();
+                    ok=check(plots->isVisibleTo(&window) &&
+                             !dataTable->isVisibleTo(&window) &&
+                             rightPanel->isVisibleTo(&window),
+                             "Curve view not restored without changing right panel") && ok;
+
+                    // Conventional CSV: header on FIRST line, UTF-8 BOM,
+                    // quoted names, semicolon fields, French decimal comma.
+                    // The old reader blindly dropped line one and accepted
+                    // only comma delimiters, so user CSV channel names vanished.
+                    QTemporaryFile frenchCsv(QDir::tempPath()+
+                         QStringLiteral("/session-standard-csv-XXXXXX.csv"));
+                    const bool csvReady=frenchCsv.open();
+                    ok=check(csvReady,"Standard CSV test file unavailable") && ok;
+                    if(csvReady){
+                        frenchCsv.write(QByteArray::fromHex("efbbbf"));
+                        frenchCsv.write("Heure;\"Regime moteur\";\"Temperature eau\"\n");
+                        frenchCsv.write("12:00:00;1250;82,5\n");
+                        frenchCsv.write("12:00:01;1350;83,0\n");
+                        frenchCsv.flush();
+                        frenchCsv.close();
+                        analysis->loadFile(frenchCsv.fileName());
+                        QCoreApplication::processEvents();
+                        const QList<QCheckBox*> csvBoxes=
+                            analysis->findChildren<QCheckBox*>();
+                        ok=check(csvBoxes.size()==2 &&
+                                 csvBoxes.at(0)->text()==QStringLiteral("Regime moteur") &&
+                                 csvBoxes.at(1)->text()==QStringLiteral("Temperature eau") &&
+                                 csvBoxes.at(0)->toolTip().contains(
+                                    QStringLiteral("Regime moteur")),
+                                 "Semicolon CSV must display both complete right-side names") && ok;
+                        for(QCheckBox *cb:csvBoxes) cb->setChecked(true);
+                        viewMode->setChecked(true);
+                        QCoreApplication::processEvents();
+                        if(dataTable->model()){
+                            ok=check(dataTable->model()->columnCount()==3 &&
+                                     dataTable->model()->rowCount()==2 &&
+                                     dataTable->model()->headerData(
+                                          1,Qt::Horizontal).toString()==QStringLiteral("Regime moteur") &&
+                                     dataTable->model()->data(
+                                          dataTable->model()->index(0,0)).toString()==QStringLiteral("12:00:00") &&
+                                     dataTable->model()->data(
+                                          dataTable->model()->index(0,2)).toString()==QStringLiteral("82,5"),
+                                     "Standard CSV headings, time and exact decimal values not displayed") && ok;
+                        }
+                        ok=check(rightPanel->isVisibleTo(&window),
+                                 "Right-side channel selection changed in columns mode") && ok;
+                        viewMode->setChecked(false);
+                        QCoreApplication::processEvents();
+                        ok=check(plots->isVisibleTo(&window),
+                                 "Original curves lost after reading a standard CSV") && ok;
+                    }
+                }
             }
         }
     }
