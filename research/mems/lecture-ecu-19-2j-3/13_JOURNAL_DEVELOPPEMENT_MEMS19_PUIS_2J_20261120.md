@@ -96,6 +96,22 @@ La preuve attendue est un run GitHub Actions portant le numéro 176, son SHA sou
 - **Ne pas relancer le vieux workflow 175 tel quel** pour ce travail : son numéro est figé et la publication de la release 175 existante est protégée contre l'écrasement.
 - Après le build, inscrire ici l'URL GitHub Actions, son identifiant de run, son `head_sha`, le résultat final, le lien du Setup et SHA256. Les essais matériels 1.9 restent distincts.
 
+## Diagnostic du blocage de lancement BUILD 176 (20 novembre 2026)
+
+Le refus initial a été reproduit une fois lors de la tentative de modification de `.github/workflows/session-163-analysis-scroll-setup-test.yml`. **Message de l'outil : « Cet appel d’outil a été bloqué par les contrôles de sécurité d’OpenAI. Veuillez revérifier ce que vous envoyez. »** Aucun commit du workflow et aucun lancement de build ne résultent de cette tentative.
+
+Vérifications GitHub **en lecture seule** réalisées :
+- Compte `mini56` : autorisation **admin** pour le dépôt ; les écritures ordinaires sur la branche ont réussi.
+- Branche `fix-documentary-additive-session-161-20261118` : `protected: false`.
+- Dernier build GitHub Actions : **SESSION 175**, run `44582487431`, **success**, le 19/11, antérieur aux changements 1.9.
+- Le workflow présent sur la branche indique toujours `MEMS_BUILD_NUMBER: '175'` et contient `on.workflow_dispatch` ; `push.paths` ne surveille que son propre fichier.
+- Les outils GitHub accessibles dans cette conversation permettent de lire les runs et de modifier des fichiers ordinaires, mais n'exposent **pas** l'action GitHub Actions `workflow_dispatch` pour démarrer directement un nouveau build.
+- D'après [la documentation officielle GitHub](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/choosing-permissions-for-a-github-app), modifier un fichier `.github/workflows` nécessite la permission supplémentaire GitHub App **Workflows: write**. **L'autorisation effective de l'installation n'a pas pu être lue avec les outils disponibles** : impossible d'affirmer qu'elle manque. Le blocage observé est un refus local de l'outil, pas un `HTTP 403` remonté de GitHub.
+
+**Diagnostic : problème de capacité/autorisation du chemin d'action GitHub dans la conversation, pas une panne de compilation du code, ni du runner, ni une protection de branche.** Ne pas contourner par un autre chemin Git, ne pas relancer le 175, ne pas modifier manuellement tous les numéros 175. Pour reprendre proprement : rétablir une action autorisée pour modifier le workflow versionné ou déclencher le `workflow_dispatch` avec `build_number=176` dans un workflow qui prend réellement cette entrée ; puis contrôler l'ID du run et le SHA source avant de marquer `build 176 : réalisé`.
+
+**État : SESSION 176 réservé / NON LANCÉ / AUCUN SETUP.**
+
 ## Points établis et limites
 
 - Le code actuel effectue déjà le réveil 1.9 avec l'adresse 0x16 à cinq bauds, synchronisation 55 + deux octets clés, complément du second octet et confirmation E9.
