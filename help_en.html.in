@@ -131,6 +131,11 @@ small{color:#aebcc5}
 <h2 id="chapter-ecu19">ECU 1.9 test — communication checks</h2>
 <p>The <b>ECU 1.9 test</b> page offers a guided session covering connection, identification and ECU data reading. It reports connection status, command responses, injection-reading steps, restoration of diagnostic mode and reconnection separately. A log records the events; controls are available to start, stop and open the results folder. This is different from USB cable recognition.</p>
 
+<h2 id="chapter-mems2j">MEMS 2J — automatic connection and diagnostics</h2>
+<p>Connect a compatible diagnostic cable to the ECU, switch on the ignition and click <b>CONNECT</b>. SESSION tries the available serial interfaces and identifies the ECU family from an actual response; no manual adapter-brand or protocol selection is needed.</p>
+<p>Once <b>MEMS 2J</b> is identified, available readings appear on the usual <b>Overview</b> and <b>All measurements</b> pages. Faults read from the ECU appear under <b>Automatic diagnostics</b>. Undocumented measurements remain raw. Some fault codes apply specifically to the Mini MPi and must not be assumed to apply to other variants.</p>
+<p><b>Validation:</b> the reader and automated tests were added in SESSION 178; a real MEMS 2J ECU connection and measurements still need to be tested. The reader does not add erase or programming commands.</p>
+
 <h2 id="chapter-10">10. Automatic diagnostics</h2>
 <p>The automatic diagnostic panel evaluates current ECU values and reports normal values, warnings and anomalies. It can capture a reference and export a report. Coil charge time is checked against the expected range used by this application.</p>
 
@@ -210,6 +215,11 @@ small{color:#aebcc5}
 <tr><td>Install</td><td>Enter the secure pack password. The installer verifies the database, indexed pages and source provenance.</td></tr>
 <tr><td>Use</td><td>Approved sources become available in Database and IA MEMS, independently of ECU commands.</td></tr></table>
 <p>Use <b>Install local encrypted pack</b> to load an already downloaded pack. If verification fails, the previously installed database is preserved. Not every catalogue check will find an available update.</p>
+
+<h2 id="chapter-program-update">SESSION program updates</h2>
+<p>At startup, SESSION unobtrusively checks the public update repository for a newer <b>program version</b>. When one is available, an orange button appears next to the installed version in the top header. It opens the official Windows Setup download in your browser; installation remains under your control.</p>
+<p>Select <b>Help → Check for program updates</b> for a manual check. Without Internet, diagnostics continue without an automatic warning. Documentary database updates remain separate on the Database page.</p>
+<p><b>Enlarge Help images:</b> click a screenshot to open a resizable full-size view, using +, −, 100% and scrollbars. The pictures remain available offline.</p>
 
 <h2 id="chapter-23">23. Windows taskbar display</h2>
 <p>The optional <b>Automatically hide the Windows taskbar</b> setting in Options → Display is off by default. Enabling it changes the Windows taskbar behaviour for the whole desktop while SESSION runs. Move the pointer to the corresponding edge to reveal the bar.</p>
