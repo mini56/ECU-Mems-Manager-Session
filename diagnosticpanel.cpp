@@ -310,8 +310,7 @@ QString DiagnosticPanel::buildReport() const
             report << m_mems2jFaults;
         if (!m_2jReferenceTime.isEmpty())
             report << QStringLiteral("Référence enregistrée le : %1").arg(m_2jReferenceTime);
-        return report.join(QLatin1Char('
-'));
+        return report.join(QLatin1Char('\n'));
     }
 
     const mems_data &d = m_last;

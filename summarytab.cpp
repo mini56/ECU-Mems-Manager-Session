@@ -594,8 +594,10 @@ void SummaryTab::update2JData(const QVariantMap &values)
     {
       const QString value=QString::number(values.value(key).toDouble(),'f',
                           key==QStringLiteral("battery_v")?3:2);
+      // Keep the narrow values column legible; full units remain in tooltip.
+      const QString unit=QString::fromUtf8(f.unit);
       setValue(globalRow,QStringLiteral("--"),
-               QStringLiteral("%1 %2").arg(value,QString::fromUtf8(f.unit)));
+               unit.size()<=8 ? QStringLiteral("%1 %2").arg(value,unit) : value);
       if (QTableWidgetItem *item=table->item(row,3))
         item->setToolTip(QStringLiteral("21 xx : %1").arg(key));
     }
