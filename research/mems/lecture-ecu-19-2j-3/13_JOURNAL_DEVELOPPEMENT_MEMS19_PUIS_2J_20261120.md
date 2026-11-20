@@ -154,6 +154,17 @@ Vérifications GitHub **en lecture seule** réalisées :
 - **Statut à l'inscription : EN COURS**. Son résultat, les autotests, le Setup et la release doivent être confirmés par les étapes GitHub Actions, ne pas anticiper un succès.
 - Au prochain passage, noter la conclusion et la première erreur éventuelle des logs si rouge ; ne jamais lancer plusieurs compilations parallèles pour le même lot.
 
+## Fonction attendue du bouton Connecter avec un MEMS 1.9 (20/11/2026)
+
+**Demande du responsable du projet :** un calculateur MEMS 1.9 branché avec son câble KKL doit se connecter **directement avec le bouton habituel « Connecter »**, exactement comme les MEMS 1.2, 1.3 et 1.6, puis alimenter les écrans normaux de mesures et de défauts. La page « Test MEMS 1.9 » n'est pas une étape préalable ni un passage obligatoire : elle ne sert qu'au diagnostic.
+
+**État précis vérifié dans le code actuel :**
+- `MEMSInterface::connectToECU()` (`memsinterface_dispatch.cpp`) préfère `connectMems19()` pour le câble KKL CH340 reconnu.
+- `performMems19Wakeup()` essaie l'initialisation lente ISO 9141 5 bauds (`0x16`), l'échange des octets de synchronisation et la confirmation d'adresse.
+- **Après ce réveil, `connectMems19()` appelle `tryRoscoConnect()`, qui utilise `openRoscoTransport()` et `mems_init_link()` du `librosco-x64` historique** (échange `CA 75 F4 D0` puis lecture de trames `0x80` et `0x7D` à longueurs fixées). **L'acceptation de cette séquence par un MEMS 1.9 réel et la validité de ses lectures ne sont pas démontrées**.
+- La compilation Windows et les autotests simulés ne constituent pas une preuve de connexion physique ; ne jamais affirmer que le MEMS 1.9 est opérationnel sans essai sur ECU et confirmation des données.
+- **Chantier restant** : finaliser la communication puis les lectures natives nécessaires aux variantes 1.9, avec **le même bouton « Connecter » et les pages habituelles** ; ne pas introduire de blocage ni de changement dans les MEMS 1.2/1.3/1.6. Conserver la page de test comme outil facultatif, notamment pour produire des traces à partir des essais réels.
+
 ## Points établis et limites
 
 - Le code actuel effectue déjà le réveil 1.9 avec l'adresse 0x16 à cinq bauds, synchronisation 55 + deux octets clés, complément du second octet et confirmation E9.
