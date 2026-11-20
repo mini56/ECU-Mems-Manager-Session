@@ -145,6 +145,15 @@ add_dependencies(${PNAME} protocol_context_selftest)
 add_custom_command(TARGET ${PNAME} POST_BUILD
     COMMAND "$<TARGET_FILE:protocol_context_selftest>")
 
+# Simulated MEMS 1.9 wake-up and cable-selection checks: no ECU required.
+add_executable(mems19_protocol_selftest
+    mems19protocol_test.cpp mems19protocol.h serialadapterdetector.h)
+target_link_libraries(mems19_protocol_selftest PRIVATE Qt5::Core Qt5::SerialPort)
+add_dependencies(${PNAME} mems19_protocol_selftest)
+add_custom_command(TARGET ${PNAME} POST_BUILD
+    COMMAND "$<TARGET_FILE:mems19_protocol_selftest>")
+
+
 add_executable(ia_response_selftest
     expert/IaResponseLogicTest.cpp
     expert/IaResponseLogic.h)
