@@ -67,7 +67,6 @@ void AnalysisTab::syncTableColumns()
 void AnalysisTab::onViewModeToggled(bool columns)
 {
     if(!m_leftStack || !m_viewModeButton)return;
-    m_viewModeButton->setText(I18n::text(columns?18021:18020));
     m_leftStack->setCurrentIndex(columns?1:0);
     if(columns){
         syncTableColumns();

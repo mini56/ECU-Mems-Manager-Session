@@ -56,6 +56,13 @@ void TooltipBubbleManager::ensureBubble(QWidget *widget)
         if (bubble) bubble->hide();
         return;
     }
+    // The Analysis selector owns a standalone help icon outside both buttons.
+    // Never add a second icon or reserve margins inside this dedicated icon.
+    if (widget->objectName() == QStringLiteral("analysisViewModeHelp"))
+    {
+        if (bubble) bubble->hide();
+        return;
+    }
     const bool bubbleLeft = widget->property("helpBubbleLeft").toBool();
 
     // Labels explicitly marked helpBubbleLeft always reserve the HELP column,

@@ -140,7 +140,8 @@ private:
     QWidget *m_checkboxContainer;
     QVBoxLayout *m_checkboxLayout;
 
-    QPushButton *m_viewModeButton;
+    QPushButton *m_viewModeButton; // Columns, retained name for existing tests
+    QPushButton *m_curvesModeButton;
     QWidget *m_chartPanel;
     QStackedWidget *m_leftStack;
     QTableView *m_valuesTable;

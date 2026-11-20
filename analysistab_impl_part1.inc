@@ -26,6 +26,7 @@
 #include <QAbstractTableModel>
 #include <QStackedWidget>
 #include <QHeaderView>
+#include <QPixmap>
 #include <QtMath>
 #include <utility>
 

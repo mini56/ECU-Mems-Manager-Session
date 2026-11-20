@@ -16,12 +16,6 @@
     QVBoxLayout *left=new QVBoxLayout(leftPanel);
     left->setContentsMargins(0,0,0,0);
     left->setSpacing(5);
-    m_viewModeButton=new QPushButton(I18n::text(18020),leftPanel);
-    m_viewModeButton->setObjectName(QStringLiteral("analysisViewModeButton"));
-    m_viewModeButton->setCheckable(true);
-    m_viewModeButton->setToolTip(I18n::text(18023));
-    left->addWidget(m_viewModeButton,0,Qt::AlignLeft);
-
     m_leftStack=new QStackedWidget(leftPanel);
     m_leftStack->setObjectName(QStringLiteral("analysisLeftDisplay"));
     m_leftStack->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
@@ -50,8 +44,6 @@
 
     QWidget *rightPanel=new QWidget(this);rightPanel->setObjectName(QStringLiteral("analysisRightPanel"));rightPanel->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Expanding);
     QVBoxLayout *right=new QVBoxLayout(rightPanel);right->setContentsMargins(7,7,7,7);right->setSpacing(5);
-    right->addWidget(m_loadButton);
-    right->addWidget(m_fileLabel);
     right->addWidget(m_diagnosticLiveButton);
     right->addWidget(m_injectionLiveButton);
     QLabel *channels=new QLabel(I18n::text(6447),rightPanel);channels->setObjectName(QStringLiteral("analysisParametersTitle"));right->addWidget(channels);

@@ -763,13 +763,59 @@ bool verifyUi(MainWindow &window)
                 // left display. Channel selection remains on the right.
                 QPushButton *viewMode=analysis->findChild<QPushButton*>(
                     QStringLiteral("analysisViewModeButton"));
+                QPushButton *curvesMode=analysis->findChild<QPushButton*>(
+                    QStringLiteral("analysisCurvesModeButton"));
+                QPushButton *loadFile=analysis->findChild<QPushButton*>(
+                    QStringLiteral("analysisLoadButton"));
+                QWidget *modeControls=analysis->findChild<QWidget*>(
+                    QStringLiteral("analysisViewModeControls"));
+                QLabel *modeHelp=analysis->findChild<QLabel*>(
+                    QStringLiteral("analysisViewModeHelp"));
+                ok=check(curvesMode && loadFile && modeControls && modeHelp,
+                         "Two centred Analysis display buttons and external help icon missing") && ok;
+                if(curvesMode && loadFile && modeControls && modeHelp){
+                    const auto midY=[&window](QWidget *w){
+                        return w->mapTo(&window,QPoint(0,w->height()/2)).y();
+                    };
+                    ok=check(qAbs(midY(loadFile)-midY(curvesMode))<=4 &&
+                             qAbs(midY(loadFile)-midY(viewMode))<=4,
+                             "Analysis mode controls must share the load-file toolbar row") && ok;
+                    const QPoint helpPos=modeHelp->mapTo(modeControls,QPoint(0,0));
+                    const QPoint colPos=viewMode->mapTo(modeControls,
+                                                      QPoint(viewMode->width(),0));
+                    ok=check(helpPos.x()>=colPos.x() &&
+                             !modeHelp->toolTip().isEmpty() &&
+                             !viewMode->findChild<QLabel*>(
+                                 QStringLiteral("_ecuHelpBubble"),
+                                 Qt::FindDirectChildrenOnly) &&
+                             !curvesMode->findChild<QLabel*>(
+                                 QStringLiteral("_ecuHelpBubble"),
+                                 Qt::FindDirectChildrenOnly) &&
+                             !modeHelp->findChild<QLabel*>(
+                                 QStringLiteral("_ecuHelpBubble"),
+                                 Qt::FindDirectChildrenOnly),
+                             "Analysis help bubble must be AFTER buttons, not over their text") && ok;
+                    for(const QSize size : {QSize(1200,680),QSize(1366,768),
+                                            QSize(1920,1080)}){
+                        window.resize(size);
+                        QCoreApplication::processEvents();
+                        const int groupMiddle=modeControls->mapTo(
+                            analysis,QPoint(modeControls->width()/2,0)).x();
+                        ok=check(qAbs(groupMiddle-analysis->width()/2)<=100 &&
+                                 qAbs(midY(loadFile)-midY(curvesMode))<=4 &&
+                                 modeHelp->isVisibleTo(&window),
+                                 "Analysis curve/column toolbar off-center or clipped") && ok;
+                    }
+                    window.resize(originalSize);
+                    QCoreApplication::processEvents();
+                }
                 QTableView *dataTable=analysis->findChild<QTableView*>(
                     QStringLiteral("analysisValuesTable"));
                 QWidget *rightPanel=analysis->findChild<QWidget*>(
                     QStringLiteral("analysisRightPanel"));
-                ok=check(viewMode && dataTable && rightPanel,
+                ok=check(viewMode && curvesMode && dataTable && rightPanel,
                          "Analysis left curves/columns selector is missing") && ok;
-                if(viewMode && dataTable && rightPanel){
+                if(viewMode && curvesMode && dataTable && rightPanel){
                     int selected=0;
                     for(QCheckBox *cb:channelBoxes){
                         if(cb->isChecked())++selected;
@@ -807,7 +853,7 @@ bool verifyUi(MainWindow &window)
                                  "Columns table or right panel hidden after resize") && ok;
                     }
                     window.resize(originalSize);
-                    viewMode->setChecked(false);
+                    curvesMode->setChecked(true);
                     QCoreApplication::processEvents();
                     ok=check(plots->isVisibleTo(&window) &&
                              !dataTable->isVisibleTo(&window) &&
@@ -855,7 +901,7 @@ bool verifyUi(MainWindow &window)
                         }
                         ok=check(rightPanel->isVisibleTo(&window),
                                  "Right-side channel selection changed in columns mode") && ok;
-                        viewMode->setChecked(false);
+                        curvesMode->setChecked(true);
                         QCoreApplication::processEvents();
                         ok=check(plots->isVisibleTo(&window),
                                  "Original curves lost after reading a standard CSV") && ok;

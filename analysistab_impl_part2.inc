@@ -201,6 +201,58 @@ AnalysisTab::AnalysisTab(QWidget *parent)
     for(QPushButton *button:{m_loadButton,m_diagnosticLiveButton,m_injectionLiveButton})button->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
     m_liveButtonGroup=new QButtonGroup(this);m_liveButtonGroup->setExclusive(true);m_liveButtonGroup->addButton(m_diagnosticLiveButton);m_liveButtonGroup->addButton(m_injectionLiveButton);
 
+
+    // Full-width toolbar: load CSV/TXT on the left, the two display choices
+    // centred horizontally, and a separate help bubble AFTER both buttons.
+    // Only the left display changes; the right-hand channels panel is intact.
+    m_curvesModeButton=new QPushButton(I18n::text(18024),this);
+    m_curvesModeButton->setObjectName(QStringLiteral("analysisCurvesModeButton"));
+    m_curvesModeButton->setCheckable(true);
+    m_curvesModeButton->setChecked(true);
+    m_viewModeButton=new QPushButton(I18n::text(18025),this);
+    m_viewModeButton->setObjectName(QStringLiteral("analysisViewModeButton"));
+    m_viewModeButton->setCheckable(true);
+    QButtonGroup *modeGroup=new QButtonGroup(this);
+    modeGroup->setExclusive(true);
+    modeGroup->addButton(m_curvesModeButton);
+    modeGroup->addButton(m_viewModeButton);
+
+    QWidget *fileControls=new QWidget(this);
+    fileControls->setObjectName(QStringLiteral("analysisFileToolbar"));
+    QHBoxLayout *fileRow=new QHBoxLayout(fileControls);
+    fileRow->setContentsMargins(0,0,0,0);
+    fileRow->setSpacing(8);
+    m_loadButton->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Preferred);
+    m_fileLabel->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
+    m_fileLabel->setMinimumWidth(0);
+    fileRow->addWidget(m_loadButton);
+    fileRow->addWidget(m_fileLabel);
+
+    QWidget *viewControls=new QWidget(this);
+    viewControls->setObjectName(QStringLiteral("analysisViewModeControls"));
+    QHBoxLayout *viewRow=new QHBoxLayout(viewControls);
+    viewRow->setContentsMargins(0,0,0,0);
+    viewRow->setSpacing(6);
+    viewRow->addWidget(m_curvesModeButton);
+    viewRow->addWidget(m_viewModeButton);
+    QLabel *viewHelp=new QLabel(viewControls);
+    viewHelp->setObjectName(QStringLiteral("analysisViewModeHelp"));
+    viewHelp->setPixmap(QPixmap(QStringLiteral(":/icons/helpbubble.png")));
+    viewHelp->setScaledContents(true);
+    viewHelp->setFixedSize(24,18);
+    viewHelp->setToolTip(I18n::text(18023));
+    viewRow->addWidget(viewHelp);
+
+    QGridLayout *topRow=new QGridLayout();
+    topRow->setContentsMargins(0,0,0,0);
+    topRow->setHorizontalSpacing(0);
+    topRow->addWidget(fileControls,0,0,Qt::AlignVCenter);
+    topRow->addWidget(viewControls,0,1,Qt::AlignCenter);
+    topRow->addItem(new QSpacerItem(0,0,QSizePolicy::Expanding,QSizePolicy::Minimum),0,2);
+    topRow->setColumnStretch(0,1);
+    topRow->setColumnStretch(2,1);
+    root->addLayout(topRow,0);
+
     QHBoxLayout *mainRow=new QHBoxLayout();mainRow->setContentsMargins(0,0,0,0);mainRow->setSpacing(6);root->addLayout(mainRow,1);
 
     // The plots must scroll INSIDE the page when many signals are selected.
