@@ -298,3 +298,25 @@ La Release source a été publiée sur GitHub : [mems-session-build-177](https:/
 - **Limite explicite :** réussite de la compilation/installation et tests synthétiques ne prouve pas la connexion à un MEMS 2J physique. Validation réelle du câble, du FAST INIT, des mesures et des défauts 2J à faire ; MEMS 1.9 aussi en attente de validation physique.
 
 **Bilan développement :** intégration logicielle et distribution BUILD 178 terminées ; test ECU physique restant.
+
+
+## Priorités 1 puis 2 après SESSION 182 — corrections ciblées (20/11/2026)
+
+**Consigne de travail :** (1) corriger les fonctions sur les ECU déjà connectés, (2) fiabiliser le dialogue et les lectures MEMS 1.9/2J. **MEMS 3, nouvelles fonctions de modification, RC5 et autres chantiers reportés.** Une seule branche, aucun patch, aucune modification visuelle.
+
+**Priorité 1 — commit [61d70b9](https://github.com/mini56/ECU-Mems-Manager-Session/commit/61d70b988446106cd61b487daa9ae0c3ec09be83) :**
+- Le handshake `CA 75 F4 D0` réussi classe le transport en `Rosco13_16` même lorsque le sous-type exact 1.2/1.3/1.6 reste inconnu ; l'état `Unknown` bloquait `CC`, `0F`, `FA` malgré une véritable connexion.
+- Pour MEMS 1.9, les commandes **déjà présentes** de défaut/reset et tests existants sont acheminées par une fonction K-Line propre qui consomme, quand il existe, l'écho USB local en plus de l'écho ECU. Le même transport est appliqué au déplacement IAC déjà présent. Il n'y a aucune modification de `mems_send_command`, `mems_test_actuator` ou `mems_read` historiques.
+- Exports `mems_command_kline19` et `mems_move_iac_kline19` ajoutés à la DLL x64 **sans changement d'ABI des anciens symboles**. Headers C/C++, .def et autotest d'ABI actualisés.
+- `protocolcontext_test.cpp` complète les tests des commandes déjà présentes `CC/0F/FA` après connexion ROSCO/1.9 et préserve le refus d'une commande ROSCO sur un 2J ; aucune liste d'ECU ni base documentaire ajoutée comme condition.
+- **Aucun test matériel réalisé** : ne pas présumer que toutes les variantes acceptent les commandes; les octets de statut devront être observés sur ECU réel avant de déclarer un succès fonctionnel.
+
+**Priorité 2 — commit [ab46e75](https://github.com/mini56/ECU-Mems-Manager-Session/commit/ab46e750c1916dcebce0a2f54578a58f9a0ab889) :**
+- Le MEMS 2J est identifié après **une réelle réponse positive à la séquence de réveil/session/seed-key** ; la réponse optionnelle `21 09` est recueillie si disponible mais son refus n'annule plus le handshake réussi.
+- Suppression de la liste persistante `m_unavailable` qui écartait définitivement un identifiant après un simple refus. Les requêtes des autres capteurs continuent.
+- Ajout à la lecture tournante des paquets `21 00` et `21 06`, conservés **en hexadécimal brut** (aucune unité inventée), et autotests de construction des commandes, lecture de ces deux réponses.
+- Les séquences initiales 2J restent `10400 8N1, BREAK 200/25/75 ms, 81 13 F7 81 0C, 10 A0, 27 01, 27 02`. Les réponses négatives et les contrôles checksum restent en place.
+- Le réveil 1.9 reste `16` à 5 bauds avec complément de clé, et le pilote `80/7D` conserve les longueurs annoncées. Aucun ajout de pilote 3 ou de service de modification 2J.
+- **Les autotests ont été modifiés ; leur résultat n'est pas encore connu au moment de cet enregistrement.** Un build Windows/Setup dédié doit vérifier l'ensemble.
+
+**Prochain état à enregistrer après compilation :** run, commit, résultat des autotests `protocol_context_selftest`, `rosco_abi_selftest`, `mems19_protocol_selftest`, `mems2j_protocol_selftest`, test d'installation et Release. **Le résultat d'un build n'est pas un test sur calculateur réel.**
