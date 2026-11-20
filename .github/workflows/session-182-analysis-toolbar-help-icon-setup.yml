@@ -132,9 +132,11 @@ jobs:
           assert all(t in toolbar for t in ('analysisFileToolbar','analysisViewModeControls','analysisCurvesModeButton','analysisViewModeButton','analysisViewModeHelp'))
           assert 'right->addWidget(m_loadButton)' not in panels and 'right->addWidget(m_diagnosticLiveButton)' in panels
           assert 'QButtonGroup *modeGroup' in toolbar and 'modeGroup->setExclusive(true)' in toolbar
-          assert 'topRow->setColumnMinimumWidth(2,qMin(fileControls->sizeHint().width(),320))' in toolbar
+          assert 'topRow->setColumnMinimumWidth(2,fileControls->sizeHint().width())' in toolbar
           assert 'TooltipBubbleManager::helpBubblePixmap' in toolbar and 'TooltipBubbleManager::helpBubblePixmap' in themeStyle
           assert 'QColor(QStringLiteral("#ff8a1c"))' in bubble and 'painter.setPen(Qt::white)' in bubble
+          assert 'painter.setPen(QPen(Qt::white,1.6))' in bubble
+          assert 'button->setFixedHeight(36)' in toolbar
           assert 'analysisViewModeHelp' in bubble and 'QEvent::StyleChange' in bubble
           assert 'Two centred Analysis display buttons' in checkUI and 'Light Help bubble must be orange with white text' in checkUI
           print('SESSION_182_CENTRED_TWO_BUTTONS_ORANGE_WHITE_HELP_SIX_LANGUAGES_PASS')
