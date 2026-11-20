@@ -165,6 +165,18 @@ Vérifications GitHub **en lecture seule** réalisées :
 - La compilation Windows et les autotests simulés ne constituent pas une preuve de connexion physique ; ne jamais affirmer que le MEMS 1.9 est opérationnel sans essai sur ECU et confirmation des données.
 - **Chantier restant** : finaliser la communication puis les lectures natives nécessaires aux variantes 1.9, avec **le même bouton « Connecter » et les pages habituelles** ; ne pas introduire de blocage ni de changement dans les MEMS 1.2/1.3/1.6. Conserver la page de test comme outil facultatif, notamment pour produire des traces à partir des essais réels.
 
+## Clarification technique vérifiée — KKL et ROSCO sur MEMS 1.9
+
+**Source externe consultée et vérifiée :** [rovermems.com/mems-1.9/index.html](https://rovermems.com/mems-1.9/index.html), section « Technical information - diagnostic communication » ; [table des paquets et commandes](https://rovermems.com/diagnostics/technical/).
+
+**Correction explicite de l'analyse précédente :** la reprise de la procédure **ROSCO / MEMS 1.3-1.6 après le réveil K-Line du MEMS 1.9 est NORMALE et documentée**. Il était erroné de qualifier l'appel `tryRoscoConnect()` d'incohérence simplement parce qu'il est présent. Le câble KKL est une **interface physique K-Line**, pas un protocole de diagnostic distinct de ROSCO.
+
+**Séquence de référence** : adresse `0x16` à 5 bauds sur K-Line, réponse de synchronisation et acquittement ISO 9141, communication à `9600 8N1`, puis **séquence d'initialisation 1.3/1.6 et commandes de diagnostic similaires**, dont `0x80` / `0x7D`. Le code source actuel suit cette intention : `performMems19Wakeup()` puis `tryRoscoConnect()`.
+
+**Véritables points encore à vérifier**, sans réécrire ROSCO : (1) un câble KKL compatible doit permettre les opérations électriques de réveil 5 bauds, notamment BREAK ; ne pas limiter à un VID/PID ; (2) l'ECU doit supporter la fermeture/réouverture du port entre le réveil et le début de la communication ROSCO ; (3) longueurs de trames `0x80` / `0x7D` variables selon les calculateurs, alors que le décodeur x64 existant lit des tailles fixes ; (4) validation des valeurs réellement reçues et affichées. Aucun essai sur vrai 1.9 n'a encore été rapporté.
+
+**Décision :** **ne pas supprimer la reprise ROSCO après le réveil**, ne pas installer artificiellement un second décodeur incompatible ; ne changer le code qu'en présence d'une anomalie établie. Conserver le bouton « Connecter » unique et le test MEMS 1.9 facultatif. La mention antérieure d'« incohérence ROSCO » est expressément retirée par cette clarification.
+
 ## Points établis et limites
 
 - Le code actuel effectue déjà le réveil 1.9 avec l'adresse 0x16 à cinq bauds, synchronisation 55 + deux octets clés, complément du second octet et confirmation E9.
