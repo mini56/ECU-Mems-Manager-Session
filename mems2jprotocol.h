@@ -7,7 +7,6 @@
 #include <QByteArray>
 #include <QElapsedTimer>
 #include <QSerialPort>
-#include <QSet>
 #include <QStringList>
 #include <QThread>
 #include <QVariantMap>
@@ -144,6 +143,12 @@ inline bool decodeMeasurement(quint8 id, const QByteArray &p, QVariantMap *out)
     };
     switch (id)
     {
+    case 0x00: case 0x06:
+        // RoverMEMS knows these packets but does not assign proven units.
+        // Retain exact bytes instead of inventing sensor conversions.
+        out->insert(QStringLiteral("data_%1_raw").arg(id,2,16,QChar('0')).toUpper(),
+                    QString::fromLatin1(p.toHex(' ').toUpper()));
+        return true;
     case 0x01: case 0x02: case 0x03:
         if (p.size()<4) return false;
         set(id==0x01?"coolant_c":id==0x02?"oil_c":"intake_c",
@@ -237,12 +242,15 @@ public:
         if (exchange(sendKey,QByteArray::fromHex("6702"),900,cancelled,&reply) != Positive)
         { close(); return false; }
 
-        // Some 2J firmwares refuse tester-present; a real 21 09 reply proves
-        // the diagnostic session rather than imposing a new compatibility lock.
+        // The ECU has already confirmed wake-up, session, seed and key.
+        // Some 2J variants can reject an individual sensor such as 21 09;
+        // it must not invalidate a successfully established ECU session.
         exchange(QByteArray::fromHex("3e"),QByteArray::fromHex("7e"),350,cancelled,&reply);
-        if (exchange(QByteArray::fromHex("2109"),QByteArray::fromHex("6109"),900,cancelled,&reply)!=Positive ||
-            !decodeMeasurement(0x09,reply,&m_values))
-        { close(); return false; }
+        if (cancelled()) { close(); return false; }
+        if (exchange(QByteArray::fromHex("2109"),QByteArray::fromHex("6109"),
+                     900,cancelled,&reply) == Positive)
+            decodeMeasurement(0x09,reply,&m_values);
+        if (cancelled()) { close(); return false; }
         m_ready = true;
         return true;
     }
@@ -251,24 +259,24 @@ public:
     {
         if (!isOpen() || cancelled()) return false;
         static const quint8 primary[] = {0x01,0x03,0x07,0x08,0x0A,0x0F,0x10,0x12,0x13};
-        static const quint8 extra[] = {0x02,0x05,0x0B,0x0C,0x0D,0x11,0x21,0x25,0x3A};
+        static const quint8 extra[] = {0x00,0x02,0x05,0x06,0x0B,0x0C,0x0D,0x11,0x21,0x25,0x3A};
         QList<quint8> ids = {0x09,0x19};
         for (int i=0;i<4;++i)
-            ids.append(primary[(m_primaryPosition++)%9]);
-        ids.append(extra[(m_extraPosition++)%9]);
+            ids.append(primary[(m_primaryPosition++) % (sizeof(primary)/sizeof(primary[0]))]);
+        ids.append(extra[(m_extraPosition++) % (sizeof(extra)/sizeof(extra[0]))]);
         int good = 0;
         for (quint8 id : ids)
         {
             if (cancelled()) return false;
-            if (m_unavailable.contains(int(id))) continue;
             QByteArray payload;
             payload.append(char(0x21)); payload.append(char(id));
             QByteArray reply;
             const Status status = exchange(payload,payloadPrefix(id),400,cancelled,&reply);
             if (status == Negative)
             {
-                // One optional command refusal is never a failed ECU connection.
-                m_unavailable.insert(int(id));
+                // Do not blacklist a field for the entire ECU session.
+                // A temporary conditions-not-correct or security response
+                // may clear later; preserve every other working measurement.
                 continue;
             }
             if (status != Positive) continue;
@@ -293,7 +301,7 @@ public:
         m_ready = false;
         if (m_serial.isOpen()) m_serial.close();
         m_receive.clear(); m_lastSent.clear();
-        m_values.clear(); m_faults.clear(); m_unavailable.clear();
+        m_values.clear(); m_faults.clear();
         m_primaryPosition=0; m_extraPosition=0;
     }
 
@@ -365,7 +373,6 @@ private:
     QByteArray m_receive, m_lastSent;
     QVariantMap m_values;
     QStringList m_faults;
-    QSet<int> m_unavailable;
     int m_primaryPosition=0, m_extraPosition=0;
     bool m_ready=false;
 };

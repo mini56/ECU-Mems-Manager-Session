@@ -39,6 +39,16 @@ int main(int argc, char **argv)
                   v.value("rpm_error").toInt()==-32768,"signed 8000");
     ok &= require(!decodeMeasurement(0x10,QByteArray::fromHex("61103039"),&v),
                   "reject short optional payload");
+    ok &= require(decodeMeasurement(0x00,QByteArray::fromHex("6100aabb"),&v) &&
+                  v.value("DATA_00_RAW").toString()==QStringLiteral("61 00 AA BB"),
+                  "preserve undecoded 21 00 bytes");
+    ok &= require(decodeMeasurement(0x06,QByteArray::fromHex("61060102"),&v) &&
+                  v.value("DATA_06_RAW").toString()==QStringLiteral("61 06 01 02"),
+                  "preserve undecoded 21 06 bytes");
+    ok &= require(frame(QByteArray::fromHex("10a0"))==QByteArray::fromHex("0210a0b2"),
+                  "start diagnostic packet");
+    ok &= require(frame(QByteArray::fromHex("2701"))==QByteArray::fromHex("0227012a"),
+                  "seed request packet");
     ok &= require(generateKey(0x1234)==0x8247,"seed key 1234");
     ok &= require(generateKey(0xABCD)==0x85AF,"seed key ABCD");
     QByteArray faults(29,char(0));
