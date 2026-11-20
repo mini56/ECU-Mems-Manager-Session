@@ -347,11 +347,17 @@ bool MEMSInterface::connectToECU()
         const DetectedSerialAdapter &adapter) -> bool {
         QString detail;
         if (!performMems19Wakeup(adapter.qtPortName, &detail))
+        {
+            emit mems19WakeupDiagnostic(adapter.portName, detail);
             return false;
+        }
+        emit mems19WakeupDiagnostic(adapter.portName, detail);
         if (cancelled())
             return false;
         if (!tryRoscoConnect(adapter.devicePath))
         {
+            emit mems19WakeupDiagnostic(adapter.portName,
+                                       QStringLiteral("rosco-init-after-wakeup-failed"));
             resetFailedTransport();
             return false;
         }
@@ -360,6 +366,8 @@ bool MEMSInterface::connectToECU()
             resetFailedTransport();
             return false;
         }
+        emit mems19WakeupDiagnostic(adapter.portName,
+                                   QStringLiteral("iso9141-and-rosco-link-ok"));
 
         setEcuFamily(MemsEcuFamily::Mems19);
         setDiagnosticMode(MemsDiagnosticMode::Normal);
