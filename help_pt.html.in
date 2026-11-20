@@ -98,6 +98,11 @@ small{color:#aebcc5}
 <h2 id="chapter-interactive">Modo interativo — comandos avançados</h2><p>Esta página apresenta instruções para comandos interativos ROSCO. Destina-se a utilizadores que conhecem o protocolo e a porta série escolhida. Para medições normais, utilize <b>Ligar</b> e as páginas de diagnóstico.</p>
 <h2 id="chapter-ecu19">Teste ECU 1.9 — verificação de comunicação</h2><p>O teste ECU 1.9 executa uma sequência orientada de ligação, identificação e leitura. Apresenta respostas do protocolo, leitura da injeção, reposição do modo de diagnóstico e nova ligação. É possível iniciar, parar e abrir a pasta dos registos. Não substitui o teste do cabo USB.</p>
 
+<h2 id="chapter-mems2j">MEMS 2J — ligação e diagnóstico automáticos</h2>
+<p>Ligue um cabo de diagnóstico compatível à ECU, ative a ignição e clique em <b>Ligar</b>. SESSION verifica as interfaces série disponíveis e identifica a família pelas respostas reais da ECU, sem escolha manual da marca do cabo ou do protocolo.</p>
+<p>Depois de identificar o <b>MEMS 2J</b>, as medições disponíveis aparecem em <b>Visão geral</b> e <b>Todas as medições</b>; as avarias lidas surgem em <b>Diagnóstico automático</b>. Os valores não documentados mantêm-se em bruto. Alguns códigos são específicos do Mini MPi.</p>
+<p><b>Validação:</b> leitor e testes automáticos integrados desde SESSION 178; ainda é necessário testar com uma ECU MEMS 2J real. Não foram acrescentadas funções de apagamento ou programação.</p>
+
 <h2 id="chapter-10">10. Diagnóstico automático</h2>
 <p>Avalia as medições ECU e indica valores normais, avisos e anomalias. Pode guardar uma referência e exportar um relatório. Verifica também o tempo de carga da bobina.</p>
 
@@ -159,6 +164,11 @@ small{color:#aebcc5}
 
 <h2 id="chapter-22">22. Atualizações documentais</h2>
 <p>Na Base de dados, prima Procurar atualizações. O gestor consulta o catálogo online, transfere pacotes disponíveis e verifica SHA-256. A instalação exige a palavra-passe do pacote cifrado e verifica SQLite, imagens e origem. Também é possível instalar um pacote cifrado local. Se houver falha, a base anterior é mantida.</p>
+
+<h2 id="chapter-program-update">Atualizações do programa SESSION</h2>
+<p>No arranque, SESSION consulta discretamente o repositório público. Se estiver disponível uma versão mais recente do <b>programa</b>, surge um botão laranja junto da versão instalada no cabeçalho. Este botão abre no navegador a transferência oficial do Setup Windows; cabe ao utilizador decidir quando o instalar.</p>
+<p>Também é possível utilizar <b>Ajuda → Procurar atualizações do programa</b>. Sem Internet, os diagnósticos continuam normalmente. As atualizações documentais permanecem separadas na página Base de dados.</p>
+<p><b>Ampliar imagens:</b> clique numa captura para abrir numa janela redimensionável, usando +, −, 100 % e as barras de deslocamento, mesmo offline.</p>
 
 <h2 id="chapter-23">23. Barra de tarefas do Windows</h2>
 <p>A opção Ocultar automaticamente a barra de tarefas do Windows vem desativada. Se for ativada, altera o comportamento do ambiente de trabalho enquanto SESSION está aberto. O programa repõe a definição ao sair e tem verificações de recuperação após um fecho inesperado. As políticas do Windows podem impedir a alteração.</p>
