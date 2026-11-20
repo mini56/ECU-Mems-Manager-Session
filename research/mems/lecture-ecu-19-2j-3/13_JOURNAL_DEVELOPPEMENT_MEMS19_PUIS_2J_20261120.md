@@ -54,6 +54,24 @@
 
 **Contrôles restants :** compiler, exécuter l'autotest C++ et le smoke test installé ; la chaîne ROSCO historique et les pages principales n'ont pas été changées. La version SESSION 175 possède un workflow de compilation déclenché uniquement par une modification explicite de son fichier dédié ; cette tâche n'a pas encore déclenché ce workflow pour éviter un run/version 175 hors contexte.
 
+## Audit du chemin de lecture ROSCO existant — effectué sans changement de code
+
+Sources inspectées dans la même branche : `librosco-x64/setup.c`, `librosco-x64/protocol.c`, `librosco-x64/rosco.h`, `librosco-x64/README.md`.
+
+1. `mems_connect()` utilise le port série Windows **9600 bauds 8N1** ; `mems_init_link()` attend les échos des octets `CA`, `75`, `F4`, puis `D0` et lit **quatre octets d'identification**. Ce comportement correspond à la reprise du protocole 1.x après le réveil MEMS 1.9 décrite dans la référence RoverMEMS.
+2. `mems_read_raw()` demande `80`, lit **28 octets**, puis `7D`, lit **32 octets** ; `mems_read()` convertit ces deux structures en `mems_data` pour Manager. Le code existant vérifie que les deux blocs ont été entièrement reçus.
+3. La documentation Go `ecu-1x-shared.go` présente une lecture à **longueur annoncée** (variable selon le calculateur), alors que la DLL de compatibilité utilise **des tailles fixes**. Le dossier ne contient pas de capture confirmant que toutes les variantes réelles de **MEMS 1.9** renvoient toujours 28 et 32 octets. **Il s'agit d'un risque de compatibilité à examiner sur trames réelles**, pas d'une raison de modifier à l'aveugle le chemin historique 1.2/1.3/1.6.
+4. **Aucun changement apporté** à `librosco-x64/` ou au décodage historique. Les corrections d'affichage et de conversion d'unités restent hors de ce lot.
+
+### Critères pour déclarer le 1.9 « lecture validée »
+
+- Autotest compilé et exécuté sans ECU, logs montrant un PASS réel.
+- Simulation/smoke test installé sans régression.
+- Sur vrai MEMS 1.9 : journal `WAKEUP` montrant 55/clé/E9 et reprise ROSCO, ID D0 cohérent, réception complète de `80` et de `7D` avec **tailles enregistrées**.
+- Au moins des mesures réelles cohérentes et défauts lus ; puis contrôle ROSCO 1.2/1.3/1.6.
+
+On peut poursuivre le **développement sans attendre le véhicule** ; seule la qualification matérielle nécessite l'ECU.
+
 ## Points établis et limites
 
 - Le code actuel effectue déjà le réveil 1.9 avec l'adresse 0x16 à cinq bauds, synchronisation 55 + deux octets clés, complément du second octet et confirmation E9.
