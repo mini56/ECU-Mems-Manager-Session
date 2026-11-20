@@ -266,7 +266,7 @@ void DiagnosticPanel::captureReference()
     {
         m_2jReference=m_mems2jValues;
         m_2jReferenceTime=QDateTime::currentDateTime().toString(QStringLiteral("dd/MM/yyyy hh:mm:ss"));
-        update2JData(m_mems2jValues,m_mems2jFaults);
+        update2JData(m_mems2jValues,m_mems2jFaults,m_structuredEcuName);
         return;
     }
     if (!m_haveData) {
@@ -285,7 +285,7 @@ void DiagnosticPanel::clearReference()
     {
         m_2jReference.clear();
         m_2jReferenceTime.clear();
-        update2JData(m_mems2jValues,m_mems2jFaults);
+        update2JData(m_mems2jValues,m_mems2jFaults,m_structuredEcuName);
         return;
     }
     m_reference = Snapshot();
@@ -299,9 +299,11 @@ QString DiagnosticPanel::buildReport() const
     if (m_showing2J)
     {
         QStringList report;
-        report << QStringLiteral("ECU MEMS MANAGER — MEMS 2J, lecture K-Line")
+        report << QStringLiteral("ECU MEMS MANAGER — %1, lecture K-Line").arg(m_structuredEcuName)
                << QStringLiteral("Date : %1").arg(QDateTime::currentDateTime().toString(QStringLiteral("dd/MM/yyyy hh:mm:ss")))
-               << QStringLiteral("Défauts : cartographie Mini MPi indicative ; autres variantes à confirmer");
+               << (m_structuredEcuName==QStringLiteral("MEMS 2J")
+                  ? QStringLiteral("Defauts : cartographie Mini MPi indicative ; variantes a confirmer")
+                  : QStringLiteral("Defauts MEMS 3 : codes 16 bits, references RoverMEMS"));
         for (auto it=m_mems2jValues.cbegin();it!=m_mems2jValues.cend();++it)
             report << QStringLiteral("%1 : %2").arg(it.key(),it.value().toString());
         if (m_mems2jFaults.isEmpty())
@@ -356,19 +358,25 @@ void DiagnosticPanel::exportReport()
 }
 
 
-void DiagnosticPanel::update2JData(const QVariantMap &values, const QStringList &faults)
+void DiagnosticPanel::update2JData(const QVariantMap &values, const QStringList &faults,
+                                   const QString &family)
 {
     m_showing2J=true;
+    m_structuredEcuName=family;
     m_haveData=true;
     m_mems2jValues=values;
     m_mems2jFaults=faults;
     m_checks->setRowCount(0);
-    m_status->setText(QStringLiteral("MEMS 2J — %1").arg(
+    m_status->setText(QStringLiteral("%1 — %2").arg(family).arg(
         QDateTime::currentDateTime().toString(QStringLiteral("dd/MM/yyyy hh:mm:ss"))));
-    m_score->setText(QStringLiteral("Bits interprétés : %1").arg(faults.size()));
+    m_score->setText(QStringLiteral("%1 : %2")
+         .arg(family==QStringLiteral("MEMS 3")?QStringLiteral("Codes DTC"):
+                  QStringLiteral("Bits interprétés")).arg(faults.size()));
 
-    addCheck(QStringLiteral("Calculateur"),QStringLiteral("MEMS 2J"),
-             QStringLiteral("Connecté"),QStringLiteral("Session 10400 bauds, protocole 21/61"));
+    addCheck(QStringLiteral("Calculateur"),family,
+             QStringLiteral("Connecté"),family==QStringLiteral("MEMS 3")
+               ? QStringLiteral("Session 9600 8E1, B8/13/F7 et XOR")
+               : QStringLiteral("Session 10400 bauds, protocole 21/61"));
     for (auto it=values.cbegin();it!=values.cend();++it)
     {
         addCheck(it.key(),it.value().toString(),QStringLiteral("Lecture ECU"),
@@ -376,12 +384,16 @@ void DiagnosticPanel::update2JData(const QVariantMap &values, const QStringList 
                     ? QStringLiteral("Valeur brute — unité / interprétation non établie")
                     : QStringLiteral("Conversion documentée RoverMEMS ; à confirmer sur ECU réel"));
     }
-    addCheck(QStringLiteral("Défauts 21 19"),
+    addCheck(family==QStringLiteral("MEMS 3")?QStringLiteral("Defauts 18 00"):
+             QStringLiteral("Défauts 21 19"),
              values.value(QStringLiteral("faults_raw"),QStringLiteral("--")).toString(),
              QStringLiteral("Lecture brute"),
-             QStringLiteral("Cartographie documentée sur Mini MPi uniquement ; pas de codes Pxxxx inventés"));
+             family==QStringLiteral("MEMS 3")
+                ? QStringLiteral("Codes DTC source RoverMEMS, variantes a verifier")
+                : QStringLiteral("Cartographie documentée sur Mini MPi uniquement ; pas de codes Pxxxx inventés"));
     for (const QString &fault : faults)
-        addCheck(QStringLiteral("Bit MEMS 2J"),fault,
+        addCheck(family==QStringLiteral("MEMS 3")?QStringLiteral("DTC MEMS 3"):
+                 QStringLiteral("Bit MEMS 2J"),fault,
                  QStringLiteral("Signalé"),QStringLiteral("État et montage capteur à vérifier selon variante"));
     if (faults.isEmpty())
         addCheck(QStringLiteral("Bits de défaut"),QStringLiteral("Aucun bit reconnu"),
