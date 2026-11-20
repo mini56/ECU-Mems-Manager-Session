@@ -141,16 +141,17 @@ bool mems_read_raw(mems_info* info,
     return status;
 }
 
-bool mems_read(mems_info* info, mems_data* data)
+/* Decode both the historical 1.x frames and independently received K-Line
+ * frames through the same mapping. Existing mems_read() behaviour is intact. */
+static bool mems_decode_frames(const mems_data_frame_80* source80,
+                               const mems_data_frame_7d* source7d,
+                               mems_data* data)
 {
-    mems_data_frame_80 dframe80;
-    mems_data_frame_7d dframe7d;
-
-    if (!info || !data)
+    if (!source80 || !source7d || !data)
         return false;
 
-    if (!mems_read_raw(info, &dframe80, &dframe7d))
-        return false;
+    const mems_data_frame_80 dframe80 = *source80;
+    const mems_data_frame_7d dframe7d = *source7d;
 
     /* This mapping is reconstructed from the actual 49,672-byte DLL.
      * It deliberately preserves the Haro 60-byte raw-oriented structure:
@@ -230,6 +231,93 @@ bool mems_read(mems_info* info, mems_data* data)
         data->fault_codes |= (uint8_t)(1u << 3);
 
     return true;
+}
+
+bool mems_read(mems_info* info, mems_data* data)
+{
+    mems_data_frame_80 frame80;
+    mems_data_frame_7d frame7d;
+    if (!info || !data || !mems_read_raw(info, &frame80, &frame7d))
+        return false;
+    return mems_decode_frames(&frame80, &frame7d, data);
+}
+
+/* MEMS 1.9 runs the same 1.x command set over K-Line. The KKL hardware may
+ * echo our transmitted byte before the ECU echoes it again. Keep this path
+ * distinct from the historical three-pin ROSCO transport. */
+static bool mems19_send(mems_info* info, uint8_t command, bool local_echo)
+{
+    uint8_t received = 0;
+    if (mems_write_serial(info, &command, 1) != 1)
+        return false;
+    if (local_echo)
+    {
+        if (mems_read_serial(info, &received, 1) != 1 || received != command)
+            return false;
+    }
+    return mems_read_serial(info, &received, 1) == 1 && received == command;
+}
+
+bool mems_init_link_kline19(mems_info* info, uint8_t* ecu_id, bool local_echo)
+{
+    uint8_t status = 0xFF;
+    if (!info || !ecu_id || !mems_is_connected(info))
+        return false;
+    if (!mems19_send(info, 0xCA, local_echo) ||
+        !mems19_send(info, 0x75, local_echo) ||
+        !mems19_send(info, MEMS_Heartbeat, local_echo))
+        return false;
+    if (mems_read_serial(info, &status, 1) != 1 || status != 0x00)
+        return false;
+    if (!mems19_send(info, 0xD0, local_echo))
+        return false;
+    return mems_read_serial(info, ecu_id, 4) == 4;
+}
+
+/* First payload byte is its announced length, including that byte.
+ * Consume the actual announced length, never a hard-coded 28/32-byte read.
+ * Keep original frame structures zero-initialized for optional tail fields. */
+static bool mems19_packet(mems_info* info, uint8_t command,
+                          bool local_echo, void* output, size_t output_size,
+                          uint8_t minimum_length)
+{
+    uint8_t bytes[255];
+    uint8_t packet_length = 0;
+    if (!output || !mems19_send(info, command, local_echo) ||
+        mems_read_serial(info, &packet_length, 1) != 1 ||
+        packet_length < minimum_length)
+        return false;
+
+    memset(bytes, 0, sizeof(bytes));
+    bytes[0] = packet_length;
+    if (packet_length > 1 &&
+        mems_read_serial(info, bytes + 1, (uint16_t)(packet_length - 1)) !=
+            (int16_t)(packet_length - 1))
+        return false;
+
+    memset(output, 0, output_size);
+    memcpy(output, bytes, packet_length < output_size ?
+           packet_length : output_size);
+    return true;
+}
+
+bool mems_read_kline19(mems_info* info, mems_data* data, bool local_echo)
+{
+    mems_data_frame_80 frame80;
+    mems_data_frame_7d frame7d;
+    bool result = false;
+    if (!info || !data || !mems_is_connected(info) || !mems_lock(info))
+        return false;
+
+    /* 0x80 requires the two-byte RPM and basic fault fields. 0x7D requires
+     * at least the core sensor and fault fields. Shorter packets cannot be
+     * interpreted as valid measurements. Tail data is ECU-version-dependent. */
+    result = mems19_packet(info, MEMS_ReqData80, local_echo,
+                           &frame80, sizeof(frame80), 15) &&
+             mems19_packet(info, MEMS_ReqData7D, local_echo,
+                           &frame7d, sizeof(frame7d), 15);
+    mems_unlock(info);
+    return result && mems_decode_frames(&frame80, &frame7d, data);
 }
 
 bool mems_read_iac_position(mems_info* info, uint8_t* position)
