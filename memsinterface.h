@@ -122,6 +122,7 @@ signals:
     void interactive_mode();
     void protocolResponse(quint8 command, QByteArray response);
     void serialInterfaceDetected(QString portName, QString adapterFamily, QString protocolName);
+    void mems19WakeupDiagnostic(QString portName, QString detail);
     void injectionRamTestFinished(bool success,
                                   quint16 baseRaw,
                                   quint16 correctionRaw,
