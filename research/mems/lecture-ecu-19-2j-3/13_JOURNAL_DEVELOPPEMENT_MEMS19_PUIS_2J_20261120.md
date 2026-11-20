@@ -112,6 +112,17 @@ Vérifications GitHub **en lecture seule** réalisées :
 
 **État : SESSION 176 réservé / NON LANCÉ / AUCUN SETUP.**
 
+## Réouverture de l'accès et BUILD 176 réellement lancé (20/11/2026)
+
+- **Workflow dédié créé** : `.github/workflows/session-176-mems19-setup-test.yml` (le workflow 175 reste **inchangé**).
+- **Commit source déclencheur** : [323632bf04bbc585e9ab512940a278b6ea3a1569](https://github.com/mini56/ECU-Mems-Manager-Session/commit/323632bf04bbc585e9ab512940a278b6ea3a1569).
+- **BUILD SESSION 176** ; [run GitHub Actions n° 44700639856](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/44700639856), événement `push` déclenché automatiquement par l'enregistrement du nouveau workflow.
+- **État constaté lors de cette inscription : EN COURS**. Compiler, autotest, Setup Windows et publication de release sont soumis au résultat du run ; **ne pas assimiler « en cours » à « vert »**.
+- Autotest 1.9 appelé explicitement dans le workflow : `mems19_protocol_selftest.exe`. Le projet CMake inclut aussi la cible en dépendance de l'exécutable.
+- **Cause du blocage précédent** : refus intermittent du contrôle de sécurité de l'outil de connexion GitHub (« Cet appel d’outil a été bloqué par les contrôles de sécurité d’OpenAI ») ; la création normale du workflow distinct a finalement été acceptée **sans modification des autorisations GitHub ni du workflow 175**. Il n'est pas démontré qu'une autorisation avait changé.
+- Il existe un **incident similaire reconnu par OpenAI Support le 16/11/2026** : https://community.openai.com/t/chatgpt-github-connector-file-creation-blocked-by-openai-safety-checks/1406652
+- Suite de reprise : relever la conclusion du run 44700639856, consulter ses étapes/logs ; si succès, enregistrer `mems-session-build-176`, nom du Setup, SHA256, vérification d'installation ; sinon enregistrer l'erreur exacte avant toute correction. Les essais sur un vrai ECU MEMS 1.9 demeurent à effectuer.
+
 ## Points établis et limites
 
 - Le code actuel effectue déjà le réveil 1.9 avec l'adresse 0x16 à cinq bauds, synchronisation 55 + deux octets clés, complément du second octet et confirmation E9.
