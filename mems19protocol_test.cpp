@@ -71,6 +71,24 @@ int main()
     require(!SerialAdapterDetector::prefersKLineFirst(cable),
             "incomplete USB identity must not be assumed");
 
+    // K-Line cable echo must be removed without touching ECU data.
+    require(Mems19Protocol::normalizedReply(
+                QByteArray::fromHex("D1D1414243"), 0xD1u, true) ==
+                QByteArray::fromHex("D1414243"),
+            "K-Line local command echo should be removed");
+    require(Mems19Protocol::normalizedReply(
+                QByteArray::fromHex("D1414243"), 0xD1u, false) ==
+                QByteArray::fromHex("D1414243"),
+            "no-echo cable must preserve ECU response");
+    require(Mems19Protocol::normalizedReply(
+                QByteArray::fromHex("D1D1414243"), 0xD1u, false) ==
+                QByteArray::fromHex("D1D1414243"),
+            "disabled cable echo must not strip bytes");
+    require(Mems19Protocol::normalizedReply(
+                QByteArray::fromHex("D1"), 0xD1u, true) ==
+                QByteArray::fromHex("D1"),
+            "incomplete reply must remain unchanged");
+
     std::cout << "PASS MEMS 1.9 slow init, fragmented ISO9141, cable preference\n";
     return 0;
 }
