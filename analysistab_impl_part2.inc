@@ -225,16 +225,23 @@ AnalysisTab::AnalysisTab(QWidget *parent)
     m_loadButton->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Preferred);
     m_fileLabel->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
     m_fileLabel->setMinimumWidth(0);
-    fileRow->addWidget(m_loadButton);
-    fileRow->addWidget(m_fileLabel);
+    m_fileLabel->setMaximumWidth(265);
+    // Equal button heights and explicit vertical centering keep both modes
+    // on exactly the same row as Load at every supported window size.
+    for(QPushButton *button:{m_loadButton,m_curvesModeButton,m_viewModeButton})
+        button->setFixedHeight(36);
+    fileRow->addWidget(m_loadButton,0,Qt::AlignVCenter);
+    fileRow->addWidget(m_fileLabel,0,Qt::AlignVCenter);
+    fileControls->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Preferred);
 
     QWidget *viewControls=new QWidget(this);
     viewControls->setObjectName(QStringLiteral("analysisViewModeControls"));
     QHBoxLayout *viewRow=new QHBoxLayout(viewControls);
     viewRow->setContentsMargins(0,0,0,0);
     viewRow->setSpacing(6);
-    viewRow->addWidget(m_curvesModeButton);
-    viewRow->addWidget(m_viewModeButton);
+    viewRow->addWidget(m_curvesModeButton,0,Qt::AlignVCenter);
+    viewRow->addWidget(m_viewModeButton,0,Qt::AlignVCenter);
+    viewControls->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Preferred);
     QLabel *viewHelp=new QLabel(viewControls);
     viewHelp->setObjectName(QStringLiteral("analysisViewModeHelp"));
     viewHelp->setPixmap(TooltipBubbleManager::helpBubblePixmap(
@@ -247,13 +254,13 @@ AnalysisTab::AnalysisTab(QWidget *parent)
     QGridLayout *topRow=new QGridLayout();
     topRow->setContentsMargins(0,0,0,0);
     topRow->setHorizontalSpacing(0);
-    topRow->addWidget(fileControls,0,0,Qt::AlignVCenter);
+    topRow->addWidget(fileControls,0,0,Qt::AlignLeft|Qt::AlignVCenter);
     topRow->addWidget(viewControls,0,1,Qt::AlignCenter);
     topRow->addItem(new QSpacerItem(0,0,QSizePolicy::Expanding,QSizePolicy::Minimum),0,2);
     // Mirror the left toolbar's minimum footprint on the right so the
     // Curves/Columns group is centered in the available content width,
     // not shifted sideways by the CSV file name.
-    topRow->setColumnMinimumWidth(2,qMin(fileControls->sizeHint().width(),320));
+    topRow->setColumnMinimumWidth(2,fileControls->sizeHint().width());
     topRow->setColumnStretch(0,1);
     topRow->setColumnStretch(2,1);
     root->addLayout(topRow,0);

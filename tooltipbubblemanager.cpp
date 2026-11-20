@@ -36,11 +36,15 @@ QPixmap TooltipBubbleManager::helpBubblePixmap(bool darkTheme)
     bubble.closeSubpath();
     painter.setPen(Qt::NoPen);
     painter.fillPath(bubble,QColor(QStringLiteral("#ff8a1c")));
+    // A thin white contour ensures the icon remains visibly white/orange
+    // even when the host does not have the preferred UI font installed.
+    painter.setPen(QPen(Qt::white,1.6));
+    painter.drawPath(bubble);
 
     QFont textFont=painter.font();
     textFont.setFamily(QStringLiteral("Segoe UI"));
     textFont.setBold(true);
-    textFont.setPixelSize(16);
+    textFont.setPixelSize(14);
     painter.setFont(textFont);
     painter.setPen(Qt::white);
     painter.drawText(QRect(2,3,43,25),Qt::AlignCenter,QStringLiteral("HELP"));

@@ -334,6 +334,8 @@ bool verifyUi(MainWindow &window)
             if(pixel.red()>235 && pixel.green()>235 && pixel.blue()>235)++white;
             if(pixel.red()<65 && pixel.green()<65 && pixel.blue()<65)++black;
         }
+    logSmoke(QStringLiteral("Help icon pixels: orange=%1 white=%2 black=%3")
+             .arg(orange).arg(white).arg(black));
     ok=check(!lightHelp.isNull() && !darkHelp.isNull() &&
              orange>40 && white>10 && black==0,
              "Light Help bubble must be orange with white text, not black") && ok;
@@ -767,9 +769,15 @@ bool verifyUi(MainWindow &window)
                                 "Analysis content exceeds viewport but cannot scroll") && ok;
                         }
                         if(bar && range>0){
+                            // The first scroll can itself settle a pending
+                            // resizable-content layout. Use the CURRENT range,
+                            // not the stale pre-layout maximum.
                             bar->setValue(range);
                             QCoreApplication::processEvents();
-                            ok=check(bar->value()==range,
+                            bar->setValue(bar->maximum());
+                            QCoreApplication::processEvents();
+                            ok=check(bar->value()==bar->maximum() &&
+                                     bar->maximum()>0,
                                 "Bottom Analysis data not reachable by scrollbar") && ok;
                             bar->setValue(0);
                         }
@@ -798,6 +806,8 @@ bool verifyUi(MainWindow &window)
                     const auto midY=[&window](QWidget *w){
                         return w->mapTo(&window,QPoint(0,w->height()/2)).y();
                     };
+                    logSmoke(QStringLiteral("Analysis toolbar centers: load=%1 curves=%2 columns=%3")
+                        .arg(midY(loadFile)).arg(midY(curvesMode)).arg(midY(viewMode)));
                     ok=check(qAbs(midY(loadFile)-midY(curvesMode))<=4 &&
                              qAbs(midY(loadFile)-midY(viewMode))<=4,
                              "Analysis mode controls must share the load-file toolbar row") && ok;
@@ -823,6 +833,9 @@ bool verifyUi(MainWindow &window)
                         QCoreApplication::processEvents();
                         const int groupMiddle=modeControls->mapTo(
                             analysis,QPoint(modeControls->width()/2,0)).x();
+                        logSmoke(QStringLiteral("Analysis toolbar center at %1px: group=%2 content=%3 deltaY=%4")
+                            .arg(size.width()).arg(groupMiddle).arg(analysis->width())
+                            .arg(midY(loadFile)-midY(curvesMode)));
                         ok=check(qAbs(groupMiddle-analysis->width()/2)<=100 &&
                                  qAbs(midY(loadFile)-midY(curvesMode))<=4 &&
                                  modeHelp->isVisibleTo(&window),
