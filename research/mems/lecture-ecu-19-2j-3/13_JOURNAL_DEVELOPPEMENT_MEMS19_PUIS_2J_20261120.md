@@ -72,6 +72,18 @@ Sources inspectées dans la même branche : `librosco-x64/setup.c`, `librosco-x6
 
 On peut poursuivre le **développement sans attendre le véhicule** ; seule la qualification matérielle nécessite l'ECU.
 
+## Compilation prévue pour ce lot : **SESSION BUILD 176**
+
+**Numéro réservé le 20/11/2026 : 176**, après le build 175 publié le 19/11/2026. Build destiné aux commits du MEMS 1.9 :
+- priorité du câble USB et réveil ISO9141 à 5 bauds (`memsinterface_dispatch.cpp`, `serialadapterdetector.h`, `mems19protocol.h`) ;
+- autotest C++ sans ECU (`mems19protocol_test.cpp`), intégré à la compilation (`CMakeLists.txt`) ;
+- diagnostic `WAKEUP` affiché dans le journal de l'onglet MEMS 1.9 (`memsinterface.h`, `mems19testtab.h`).
+
+**Workflow dédié :** `.github/workflows/session-163-analysis-scroll-setup-test.yml` ; il est déclenché par une mise à jour de ce seul fichier, compile sous Windows x64, installe et contrôle le Setup, puis publie le Setup dans la release.
+
+**Au moment de cette inscription : build 176 PAS ENCORE DÉCLENCHÉ / PAS ENCORE VALIDÉ.** 
+La preuve attendue est un run GitHub Actions portant le numéro 176, son SHA source, les étapes de compilation/autotest, le résultat et, si vert, le Setup et son SHA256. Mettre à jour cette section avec le lien du run et son résultat. Aucun test sur calculateur réel n'est inclus dans le workflow.
+
 ## Points établis et limites
 
 - Le code actuel effectue déjà le réveil 1.9 avec l'adresse 0x16 à cinq bauds, synchronisation 55 + deux octets clés, complément du second octet et confirmation E9.
