@@ -63,6 +63,10 @@ int main()
             "MEMS1.9 connected ECU must permit its existing reset ECU command");
     require(!allowsMutation(MemsEcuFamily::Mems19, MemsDiagnosticMode::Normal, 0xF8),
             "MEMS1.9 unknown subtype must not silently expand command catalog");
+    require(!allowsMutation(MemsEcuFamily::Mems3, MemsDiagnosticMode::Normal, 0xCC),
+            "never send ROSCO clear command to MEMS 3");
+    require(!allowsGenericCommand(MemsEcuFamily::Mems3, MemsDiagnosticMode::Normal, 0xCC),
+            "MEMS3 has no ROSCO generic command path");
     require(!allowsMutation(MemsEcuFamily::Mems2J, MemsDiagnosticMode::Normal, 0xCC),
             "do not send ROSCO fault reset command to MEMS 2J");
     require(!allowsMutation(MemsEcuFamily::Unknown, MemsDiagnosticMode::Normal, 0x11),
