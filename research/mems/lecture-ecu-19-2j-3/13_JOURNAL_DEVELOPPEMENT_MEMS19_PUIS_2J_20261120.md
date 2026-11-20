@@ -320,3 +320,17 @@ La Release source a été publiée sur GitHub : [mems-session-build-177](https:/
 - **Les autotests ont été modifiés ; leur résultat n'est pas encore connu au moment de cet enregistrement.** Un build Windows/Setup dédié doit vérifier l'ensemble.
 
 **Prochain état à enregistrer après compilation :** run, commit, résultat des autotests `protocol_context_selftest`, `rosco_abi_selftest`, `mems19_protocol_selftest`, `mems2j_protocol_selftest`, test d'installation et Release. **Le résultat d'un build n'est pas un test sur calculateur réel.**
+
+
+## Résultat final des priorités 1 et 2 — BUILD SESSION 183 (20/11/2026)
+
+- **Sources corrigées sur la branche unique** : priorité 1 commit [61d70b9](https://github.com/mini56/ECU-Mems-Manager-Session/commit/61d70b988446106cd61b487daa9ae0c3ec09be83) ; priorité 2 commit [ab46e75](https://github.com/mini56/ECU-Mems-Manager-Session/commit/ab46e750c1916dcebce0a2f54578a58f9a0ab889).
+- **Build officiel 183** : [GitHub Actions 44781147539](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/44781147539), commit source `d0fa426fb02ac00f36f62676af0059552e9f201b`, **SUCCESS**. Un seul run de compilation nécessaire pour ce lot.
+- Tests réussis : architecture sans patch, contrôles source des deux priorités, compilation Windows Qt, tests synthétiques MEMS 1.9 et 2J, contexte protocolaire, ABI ROSCO native x64, mises à jour, vérifications bases/IA, assemblage du Setup, installation Windows réelle et **15 pages UI**, non-régression.
+- **Release source :** [mems-session-build-183](https://github.com/mini56/ECU-Mems-Manager-Session/releases/tag/mems-session-build-183), deux fichiers : `ECU-Mems-Manager-Session-183-Setup.exe` (449 518 845 octets) et `SESSION-183-Setup.sha256`.
+- **Transfert MAJ public :** [workflow 44783683158](https://github.com/mini56/ECU-Mems-Manager-Session-MAJ/actions/runs/44783683158), **SUCCESS**. [Release publique 183](https://github.com/mini56/ECU-Mems-Manager-Session-MAJ/releases/tag/mems-session-build-183) avec Setup et SHA, vérifiés.
+- **Manifeste MAJ :** `program.version=1.1.83`, `program.available=true`, URL de la Release publique 183, SHA-256 **`c7d77b61e406a6a9dc518e1236a1a115ef6be2b756296e9c224846ad3bd5d9ec`**. Les bases documentaires externes n'ont pas été remplacées.
+
+**Limite de preuve :** les tests automatisés vérifient les sources, l'ABI, les trames synthétiques, l'application Windows et l'installation. **Aucun calculateur physique MEMS 1.9 ou 2J n'a été branché** dans ce run : les réponses ECU et le fonctionnement physique des commandes de mutation restent à confirmer lors de tests matériels.
+
+**Portée strictement respectée :** priorité 1 + priorité 2 seulement ; **aucun pilote MEMS 3, aucune fonction nouvelle de mutation 2J, aucun chantier RC5**. ROSCO historique inchangé. Aucune branche supplémentaire et aucun patch provisoire.
