@@ -1,5 +1,6 @@
 #include "analysistab.h"
 #include "i18n.h"
+#include "tooltipbubblemanager.h"
 
 #include <QApplication>
 #include <QButtonGroup>
@@ -136,6 +137,10 @@ static void configureAnalysisVisibleScroll(QScrollArea *area)
                 scroll->viewport()->setStyleSheet(darkTheme ? QStringLiteral("background:#0d1218;") : QStringLiteral("background:#ffffff;"));
             }
         }
+
+        // Keep the standalone help icon consistent with the selected theme.
+        if(QLabel *help=tab->findChild<QLabel*>(QStringLiteral("analysisViewModeHelp")))
+            help->setPixmap(TooltipBubbleManager::helpBubblePixmap(darkTheme));
 
         // Only the left table is styled; existing right-side controls are unchanged.
         if (QTableView *table=tab->findChild<QTableView*>(QStringLiteral("analysisValuesTable"))) {

@@ -7,6 +7,7 @@
 #include "applicationvisualstyle.h"
 #include "summarytab.h"
 #include "analysistab.h"
+#include "tooltipbubblemanager.h"
 #include "i18n.h"
 #include "database/DatabaseManager.h"
 #include "database/MemsReferenceDatabase.h"
@@ -317,6 +318,26 @@ bool verifyUi(MainWindow &window)
                  "Update button version obscured by tooltip bubble or clipped") && ok;
         updateBadge->hide();
     }
+    // Light theme help icons must be ORANGE / WHITE, never black.
+    // Dark mode still uses its original icon resource.
+    const QPixmap lightHelp=TooltipBubbleManager::helpBubblePixmap(false);
+    const QPixmap darkHelp=TooltipBubbleManager::helpBubblePixmap(true);
+    int orange=0,white=0,black=0;
+    const QImage helpPixels=lightHelp.toImage().convertToFormat(
+        QImage::Format_ARGB32);
+    for(int y=0;y<helpPixels.height();++y)
+        for(int x=0;x<helpPixels.width();++x){
+            const QColor pixel=helpPixels.pixelColor(x,y);
+            if(pixel.alpha()<180)continue;
+            if(pixel.red()>220 && pixel.green()>85 && pixel.green()<190 &&
+               pixel.blue()<90)++orange;
+            if(pixel.red()>235 && pixel.green()>235 && pixel.blue()>235)++white;
+            if(pixel.red()<65 && pixel.green()<65 && pixel.blue()<65)++black;
+        }
+    ok=check(!lightHelp.isNull() && !darkHelp.isNull() &&
+             orange>40 && white>10 && black==0,
+             "Light Help bubble must be orange with white text, not black") && ok;
+
     // Dark and light have explicit independent foreground/background pairs.
     // Test the genuine stylesheet text used by both application startup and
     // rebuilt SESSION shell, without any theme-dependent hardcoded widget patch.
@@ -785,6 +806,7 @@ bool verifyUi(MainWindow &window)
                                                       QPoint(viewMode->width(),0));
                     ok=check(helpPos.x()>=colPos.x() &&
                              !modeHelp->toolTip().isEmpty() &&
+                             !modeHelp->pixmap()->isNull() &&
                              !viewMode->findChild<QLabel*>(
                                  QStringLiteral("_ecuHelpBubble"),
                                  Qt::FindDirectChildrenOnly) &&

@@ -2,6 +2,7 @@
 #define TOOLTIPBUBBLEMANAGER_H
 
 #include <QObject>
+#include <QPixmap>
 class QWidget;
 
 class TooltipBubbleManager : public QObject
@@ -10,6 +11,7 @@ class TooltipBubbleManager : public QObject
 public:
     explicit TooltipBubbleManager(QWidget *root);
     static void install(QWidget *root);
+    static QPixmap helpBubblePixmap(bool darkTheme);
 
 protected:
     bool eventFilter(QObject *watched, QEvent *event) override;

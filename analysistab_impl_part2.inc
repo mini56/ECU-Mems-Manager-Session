@@ -237,7 +237,8 @@ AnalysisTab::AnalysisTab(QWidget *parent)
     viewRow->addWidget(m_viewModeButton);
     QLabel *viewHelp=new QLabel(viewControls);
     viewHelp->setObjectName(QStringLiteral("analysisViewModeHelp"));
-    viewHelp->setPixmap(QPixmap(QStringLiteral(":/icons/helpbubble.png")));
+    viewHelp->setPixmap(TooltipBubbleManager::helpBubblePixmap(
+        qApp && qApp->property("ecuDarkTheme").toBool()));
     viewHelp->setScaledContents(true);
     viewHelp->setFixedSize(24,18);
     viewHelp->setToolTip(I18n::text(18023));
