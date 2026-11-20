@@ -246,7 +246,15 @@ void MEMSInterface::runServiceLoop()
       nextData = m_data;
     }
 
+    // The K-Line path reads the actual announced frame lengths and accounts
+    // for the adapter's optional local echo. Leave legacy ROSCO untouched.
+#ifdef MEMS_NATIVE_KLINE_19
+    const bool readOk = (ecuFamily() == MemsEcuFamily::Mems19)
+        ? mems_read_kline19(&m_memsinfo, &nextData, m_kline19LocalEcho)
+        : mems_read(&m_memsinfo, &nextData);
+#else
     const bool readOk = mems_read(&m_memsinfo, &nextData);
+#endif
 
     if (readOk)
     {
@@ -792,6 +800,14 @@ void MEMSInterface::sendRoscoReadCommand(quint8 command)
   }
 
   SetCommTimeouts(h, &oldTimeouts);
+
+  // Remove only the extra cable-local echo. Preserve the ECU response
+  // (command echo + payload) for D1, D2 and F0 and the existing test page.
+  if (ecuFamily() == MemsEcuFamily::Mems19 &&
+      m_kline19LocalEcho && response.size() > 1 &&
+      static_cast<quint8>(response.at(0)) == command &&
+      static_cast<quint8>(response.at(1)) == command)
+      response.remove(0, 1);
 #else
   int fd = m_memsinfo.sd;
   if (fd < 0)
