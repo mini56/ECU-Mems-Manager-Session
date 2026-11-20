@@ -94,6 +94,80 @@ void AnalysisTab::resizeEvent(QResizeEvent *event)
         });
 }
 
+// Lightweight read-only view over the SAME measurement arrays as the curves.
+// No duplicated time-series calculation and no per-cell widget allocations.
+class AnalysisValuesTableModel final : public QAbstractTableModel
+{
+public:
+    AnalysisValuesTableModel(const QVector<double> *time,
+                             const QVector<QVector<double>> *values,
+                             const QStringList *names,
+                             const QStringList *originalTime,
+                             const QVector<QStringList> *originalValues,
+                             QObject *parent)
+        : QAbstractTableModel(parent),m_time(time),m_values(values),m_names(names),
+          m_originalTime(originalTime),m_originalValues(originalValues) {}
+
+    int rowCount(const QModelIndex &parent=QModelIndex()) const override
+    {
+        return parent.isValid() || !m_time ? 0 : m_time->size();
+    }
+    int columnCount(const QModelIndex &parent=QModelIndex()) const override
+    {
+        return parent.isValid() ? 0 : 1+m_selected.size();
+    }
+    QVariant headerData(int section,Qt::Orientation orientation,int role) const override
+    {
+        if(orientation==Qt::Vertical && role==Qt::DisplayRole) return section+1;
+        if(orientation!=Qt::Horizontal || (role!=Qt::DisplayRole && role!=Qt::ToolTipRole))
+            return QVariant();
+        if(section==0) return I18n::text(18022);
+        const int selected=section-1;
+        if(selected<0 || selected>=m_selected.size() || !m_names)return QVariant();
+        const int source=m_selected.at(selected);
+        return source>=0 && source<m_names->size()?m_names->at(source):QVariant();
+    }
+    QVariant data(const QModelIndex &index,int role=Qt::DisplayRole) const override
+    {
+        if(!index.isValid() || !m_time || index.row()<0 ||
+           index.row()>=m_time->size())return QVariant();
+        if(role==Qt::TextAlignmentRole)
+            return int(Qt::AlignRight|Qt::AlignVCenter);
+        if(role!=Qt::DisplayRole && role!=Qt::ToolTipRole)return QVariant();
+        if(index.column()==0){
+            if(m_originalTime && index.row()<m_originalTime->size() &&
+               !m_originalTime->at(index.row()).isEmpty())
+                return m_originalTime->at(index.row());
+            return QString::number(m_time->at(index.row()),'f',2);
+        }
+        const int selected=index.column()-1;
+        if(selected<0 || selected>=m_selected.size())return QVariant();
+        const int source=m_selected.at(selected);
+        if(m_originalValues && source>=0 && source<m_originalValues->size() &&
+           index.row()<m_originalValues->at(source).size())
+            return m_originalValues->at(source).at(index.row());
+        if(!m_values || source<0 || source>=m_values->size() ||
+           index.row()>=m_values->at(source).size())return QVariant();
+        return QString::number(m_values->at(source).at(index.row()),'g',12);
+    }
+    void setSelectedChannels(const QVector<int> &selected)
+    {
+        if(m_selected==selected)return;
+        beginResetModel();m_selected=selected;endResetModel();
+    }
+    void dataUpdated()
+    {
+        beginResetModel();endResetModel();
+    }
+private:
+    const QVector<double> *m_time;
+    const QVector<QVector<double>> *m_values;
+    const QStringList *m_names;
+    const QStringList *m_originalTime;
+    const QVector<QStringList> *m_originalValues;
+    QVector<int> m_selected;
+};
+
 AnalysisTab::AnalysisTab(QWidget *parent)
     : QWidget(parent), m_overlayMode(false), m_liveSource(FileSource)
 {

@@ -7,12 +7,14 @@
     m_checkboxContainer->updateGeometry();
     m_checkboxScrollArea->verticalScrollBar()->setValue(0);
     updateChartVisibility();
+    syncTableColumns();
 }
 
 void AnalysisTab::onCheckboxToggled(bool checked)
 {
     QCheckBox *cb=qobject_cast<QCheckBox*>(sender());if(!cb)return;const int i=m_checkboxes.indexOf(cb);if(i<0)return;
     if(m_overlayMode)m_overlayChart->setVisible(i,checked);else if(checked)addStackedChart(i);else removeStackedChart(i);
+    syncTableColumns();
 }
 
 void AnalysisTab::addStackedChart(int index)
@@ -50,4 +52,25 @@ void AnalysisTab::onOverlayToggled(bool checked)
 void AnalysisTab::rebuildOverlayChart()
 {
     m_overlayChart->setData(m_time,m_columns,m_columnNames,m_colors);updateChartVisibility();
+}
+
+
+void AnalysisTab::syncTableColumns()
+{
+    if(!m_valuesModel)return;
+    QVector<int> selected;
+    for(int i=0;i<m_checkboxes.size();++i)
+        if(m_checkboxes.at(i)->isChecked())selected.append(i);
+    m_valuesModel->setSelectedChannels(selected);
+}
+
+void AnalysisTab::onViewModeToggled(bool columns)
+{
+    if(!m_leftStack || !m_viewModeButton)return;
+    m_viewModeButton->setText(I18n::text(columns?18021:18020));
+    m_leftStack->setCurrentIndex(columns?1:0);
+    if(columns){
+        syncTableColumns();
+        m_valuesModel->dataUpdated();
+    }
 }

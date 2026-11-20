@@ -22,6 +22,10 @@
 #include <QSignalBlocker>
 #include <QTime>
 #include <QTextStream>
+#include <QTableView>
+#include <QAbstractTableModel>
+#include <QStackedWidget>
+#include <QHeaderView>
 #include <QtMath>
 
 namespace {
@@ -131,6 +135,18 @@ static void configureAnalysisVisibleScroll(QScrollArea *area)
             }
         }
 
+        // Only the left table is styled; existing right-side controls are unchanged.
+        if (QTableView *table=tab->findChild<QTableView*>(QStringLiteral("analysisValuesTable"))) {
+            table->setStyleSheet(darkTheme ? QStringLiteral(
+                "QTableView{background:#0d151b;color:#e5edf2;alternate-background-color:#14212a;"
+                "gridline-color:#31414d;border:1px solid #31414d;selection-background-color:#68411f;}"
+                "QHeaderView::section{background:#1d2b36;color:#ffb05c;border:1px solid #344452;padding:5px;font-weight:700;}"
+            ) : QStringLiteral(
+                "QTableView{background:#ffffff;color:#202936;alternate-background-color:#f2f6f9;"
+                "gridline-color:#cbd6df;border:1px solid #cbd6df;selection-background-color:#ffe0bd;}"
+                "QHeaderView::section{background:#eaf0f5;color:#9b4d00;border:1px solid #cbd6df;padding:5px;font-weight:700;}"
+            ));
+        }
         fitAnalysisModernSizing(tab);
     }
 
@@ -662,8 +678,7 @@ static void configureNativeAnalysis(QWidget *analysis)
     const int rightW=qBound(205,qRound(analysis->width()*0.21),300);
     rightPanel->setMinimumWidth(rightW); rightPanel->setMaximumWidth(rightW);
 
-    QScrollArea *stack=nullptr;
-    for(QScrollArea *s:analysis->findChildren<QScrollArea*>(QString(),Qt::FindDirectChildrenOnly)) { stack=s; break; }
+    QScrollArea *stack=analysis->findChild<QScrollArea*>(QStringLiteral("analysisStackScroll"));
     if(stack && stack->widget()) {
         stack->setFrameShape(QFrame::NoFrame); stack->setWidgetResizable(true);
         configureAnalysisVisibleScroll(stack);

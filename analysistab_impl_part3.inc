@@ -1,6 +1,52 @@
-    mainRow->addWidget(m_stackScrollArea,1);
+    // One left-hand display: original graphs OR the selected-value table.
+    // The right-side channel selection panel below is retained as-is.
+    m_chartPanel=new QWidget(this);
+    m_chartPanel->setObjectName(QStringLiteral("analysisChartsPanel"));
+    QVBoxLayout *charts=new QVBoxLayout(m_chartPanel);
+    charts->setContentsMargins(0,0,0,0);
+    charts->setSpacing(0);
+    charts->addWidget(m_stackScrollArea,1);
+    m_overlayChart=new ChartWidget(m_chartPanel);
+    m_overlayChart->setObjectName(QStringLiteral("analysisOverlayChart"));
+    m_overlayChart->hide();
+    charts->addWidget(m_overlayChart,1);
 
-    m_overlayChart=new ChartWidget(this);m_overlayChart->setObjectName(QStringLiteral("analysisOverlayChart"));m_overlayChart->hide();mainRow->addWidget(m_overlayChart,1);
+    QWidget *leftPanel=new QWidget(this);
+    leftPanel->setObjectName(QStringLiteral("analysisLeftPanel"));
+    QVBoxLayout *left=new QVBoxLayout(leftPanel);
+    left->setContentsMargins(0,0,0,0);
+    left->setSpacing(5);
+    m_viewModeButton=new QPushButton(I18n::text(18020),leftPanel);
+    m_viewModeButton->setObjectName(QStringLiteral("analysisViewModeButton"));
+    m_viewModeButton->setCheckable(true);
+    m_viewModeButton->setToolTip(I18n::text(18023));
+    left->addWidget(m_viewModeButton,0,Qt::AlignLeft);
+
+    m_leftStack=new QStackedWidget(leftPanel);
+    m_leftStack->setObjectName(QStringLiteral("analysisLeftDisplay"));
+    m_leftStack->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    m_leftStack->addWidget(m_chartPanel);
+    m_valuesTable=new QTableView(leftPanel);
+    m_valuesTable->setObjectName(QStringLiteral("analysisValuesTable"));
+    m_valuesTable->setAlternatingRowColors(true);
+    m_valuesTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    m_valuesTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_valuesTable->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+    m_valuesTable->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+    m_valuesTable->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    m_valuesTable->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    m_valuesTable->verticalHeader()->setDefaultSectionSize(24);
+    m_valuesTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
+    m_valuesTable->horizontalHeader()->setDefaultSectionSize(155);
+    m_valuesTable->horizontalHeader()->setStretchLastSection(false);
+    m_valuesTable->setColumnWidth(0,120);
+    m_valuesModel=new AnalysisValuesTableModel(&m_time,&m_columns,&m_columnNames,
+                     &m_originalTimeTexts,&m_originalColumnTexts,this);
+    m_valuesTable->setModel(m_valuesModel);
+    m_leftStack->addWidget(m_valuesTable);
+    left->addWidget(m_leftStack,1);
+    mainRow->addWidget(leftPanel,1);
+    connect(m_viewModeButton,&QPushButton::toggled,this,&AnalysisTab::onViewModeToggled);
 
     QWidget *rightPanel=new QWidget(this);rightPanel->setObjectName(QStringLiteral("analysisRightPanel"));rightPanel->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Expanding);
     QVBoxLayout *right=new QVBoxLayout(rightPanel);right->setContentsMargins(7,7,7,7);right->setSpacing(5);
@@ -94,7 +140,9 @@ void AnalysisTab::onInjectionLiveClicked(){selectInjectionLive(true);}
 void AnalysisTab::prepareDiagnosticLive()
 {
     m_time.clear();m_columns.clear();m_columnNames.clear();
+    m_originalTimeTexts.clear();m_originalColumnTexts.clear();
     const QStringList raw=diagnosticRawNames();
+    m_rawColumnNames=raw;
     for(const QString &s:raw)m_columnNames<<friendlyColumnName(s);
     m_columns.resize(m_columnNames.size());m_liveClock.restart();rebuildCheckboxes();
 }
@@ -102,6 +150,7 @@ void AnalysisTab::prepareDiagnosticLive()
 void AnalysisTab::prepareInjectionLive()
 {
     m_time.clear();m_columns.clear();
+    m_originalTimeTexts.clear();m_originalColumnTexts.clear();m_rawColumnNames.clear();
     m_columnNames=QStringList()<<I18n::text(7901)<<I18n::text(7902)<<I18n::text(7903)<<I18n::text(7904)<<I18n::text(7920)<<I18n::text(7921);
     m_columns.resize(m_columnNames.size());m_liveClock.restart();rebuildCheckboxes();
 }
@@ -135,6 +184,7 @@ void AnalysisTab::refreshLiveCharts()
     m_overlayChart->setData(m_time,m_columns,m_columnNames,m_colors);
     for(auto it=m_stackedCharts.begin();it!=m_stackedCharts.end();++it){int i=it.key();if(i>=0&&i<m_columns.size())it.value()->setData(m_time,m_columns[i]);}
     updateChartVisibility();
+    if(m_viewModeButton->isChecked())m_valuesModel->dataUpdated();
 }
 
 void AnalysisTab::onLoadFileClicked()
@@ -148,23 +198,145 @@ void AnalysisTab::onLoadFileClicked()
 
 void AnalysisTab::loadFile(const QString &path){parseCsv(path);}
 
+// Parse normal CSV, quoted fields, French semicolon-separated exports and tabs.
+// The historic SESSION logger uses a separate ECU-identification line followed
+// by "#time,<channels>"; an ordinary CSV starts directly with its header.
+static QChar analysisCsvSeparator(const QString &line)
+{
+    int comma=0,semicolon=0,tab=0;
+    bool quoted=false;
+    for(int i=0;i<line.size();++i){
+        const QChar c=line.at(i);
+        if(c==QLatin1Char('"')){
+            if(quoted && i+1<line.size() && line.at(i+1)==QLatin1Char('"')){++i;continue;}
+            quoted=!quoted;
+        }else if(!quoted){
+            if(c==QLatin1Char(','))++comma;
+            else if(c==QLatin1Char(';'))++semicolon;
+            else if(c==QLatin1Char('\t'))++tab;
+        }
+    }
+    if(semicolon>comma && semicolon>=tab)return QLatin1Char(';');
+    if(tab>comma && tab>semicolon)return QLatin1Char('\t');
+    return QLatin1Char(',');
+}
+
+static QStringList analysisCsvFields(const QString &line,QChar delimiter)
+{
+    QStringList fields;
+    QString current;
+    bool quoted=false;
+    for(int i=0;i<line.size();++i){
+        const QChar c=line.at(i);
+        if(c==QLatin1Char('"')){
+            if(quoted && i+1<line.size() && line.at(i+1)==QLatin1Char('"')){
+                current.append(QLatin1Char('"'));++i;
+            }else quoted=!quoted;
+        }else if(c==delimiter && !quoted){
+            fields.append(current.trimmed());current.clear();
+        }else current.append(c);
+    }
+    fields.append(current.trimmed());
+    return fields;
+}
+
 void AnalysisTab::parseCsv(const QString &path)
 {
-    QFile file(path);if(!file.open(QFile::ReadOnly|QFile::Text)){QMessageBox::warning(this,I18n::text(6450),I18n::text(6451).arg(path));return;}
-    QTextStream stream(&file);if(!stream.atEnd())stream.readLine();
-    if(stream.atEnd()){QMessageBox::warning(this,I18n::text(6452),I18n::text(6453));return;}
-    QStringList headers=stream.readLine().split(',');if(!headers.isEmpty()&&headers[0].startsWith('#'))headers[0]=headers[0].mid(1);
-    const int columnCount=headers.size()-1;if(columnCount<=0){QMessageBox::warning(this,I18n::text(6454),I18n::text(6455));return;}
-    m_columnNames.clear();for(int i=1;i<headers.size();++i)m_columnNames<<friendlyColumnName(headers[i].trimmed());
-    m_time.clear();m_columns.clear();m_columns.resize(columnCount);QTime firstTime;int lines=0;
-    while(!stream.atEnd()){
-        const QString line=stream.readLine();if(line.trimmed().isEmpty())continue;const QStringList fields=line.split(',');if(fields.size()<2)continue;
-        QTime t=QTime::fromString(fields[0],"hh:mm:ss");double sec=lines;if(t.isValid()){if(!firstTime.isValid())firstTime=t;sec=firstTime.secsTo(t);if(sec<0)sec+=86400;}
-        m_time.append(sec);for(int c=0;c<columnCount;++c)m_columns[c].append(c+1<fields.size()?fields[c+1].trimmed().toDouble():0.0);++lines;
+    QFile file(path);
+    if(!file.open(QFile::ReadOnly|QFile::Text)){
+        QMessageBox::warning(this,I18n::text(6450),I18n::text(6451).arg(path));
+        return;
     }
-    file.close();if(!lines){QMessageBox::warning(this,I18n::text(6456),I18n::text(6457));return;}
-    m_liveSource=FileSource;setProperty("analysisSourceFile",QFileInfo(path).fileName());setLiveButtons(false,false);emit liveSourceRequested(false);
-    m_fileLabel->setText(QFileInfo(path).fileName()+QString(" (%1 points)").arg(lines));m_overlayChart->setData(m_time,m_columns,m_columnNames,m_colors);rebuildCheckboxes();
+    QTextStream stream(&file);
+    QStringList headers;
+    QChar separator=QLatin1Char(',');
+    // Ignore optional ECU identifier / comments but never discard the actual
+    // first CSV header. The old reader unconditionally skipped one line.
+    while(!stream.atEnd()){
+        QString line=stream.readLine().trimmed();
+        if(!line.isEmpty() && line.at(0)==QChar::ByteOrderMark)
+            line.remove(0,1);
+        if(line.isEmpty())continue;
+        if(line.startsWith(QLatin1Char('#'))){
+            const QString prefix=line.mid(1).trimmed().toLower();
+            if(!prefix.startsWith(QStringLiteral("time")) &&
+               !prefix.startsWith(QStringLiteral("temps")) &&
+               !prefix.startsWith(QStringLiteral("heure")) &&
+               !prefix.startsWith(QStringLiteral("date")))
+                continue;
+        }
+        separator=analysisCsvSeparator(line);
+        headers=analysisCsvFields(line,separator);
+        if(headers.size()>=2)break;
+        headers.clear();
+    }
+    if(headers.size()<2){
+        QMessageBox::warning(this,I18n::text(6454),I18n::text(6455));return;
+    }
+    if(!headers.isEmpty() && headers[0].startsWith(QLatin1Char('#')))
+        headers[0].remove(0,1);
+    const int count=headers.size()-1;
+    QStringList names,originalNames,timeTexts;
+    for(int i=1;i<headers.size();++i){
+        const QString raw=headers.at(i).trimmed();
+        originalNames.append(raw);
+        names.append(friendlyColumnName(raw.isEmpty()
+            ?QStringLiteral("Col %1").arg(i):raw));
+    }
+    QVector<double> times;
+    QVector<QVector<double>> values(count);
+    QVector<QStringList> originals(count);
+    QTime firstTime;
+    int lines=0;
+    while(!stream.atEnd()){
+        const QString line=stream.readLine();
+        if(line.trimmed().isEmpty() || line.trimmed().startsWith(QLatin1Char('#')))
+            continue;
+        const QStringList fields=analysisCsvFields(line,separator);
+        if(fields.size()<2)continue;
+        const QString first=fields.at(0).trimmed();
+        QTime t=QTime::fromString(first,QStringLiteral("hh:mm:ss"));
+        if(!t.isValid())t=QTime::fromString(first,QStringLiteral("hh:mm:ss.zzz"));
+        double sec=lines;
+        if(t.isValid()){
+            if(!firstTime.isValid())firstTime=t;
+            sec=firstTime.msecsTo(t)/1000.0;
+            if(sec<0)sec+=86400.0;
+        }
+        times.append(sec);
+        timeTexts.append(first);
+        for(int col=0;col<count;++col){
+            const QString original=col+1<fields.size()?fields.at(col+1).trimmed():QString();
+            originals[col].append(original);
+            bool numericOk=false;
+            double numeric=original.toDouble(&numericOk);
+            if(!numericOk && original.contains(QLatin1Char(','))){
+                QString normalized=original;normalized.replace(QLatin1Char(','),QLatin1Char('.'));
+                numeric=normalized.toDouble(&numericOk);
+            }
+            values[col].append(numericOk?numeric:0.0);
+        }
+        ++lines;
+    }
+    file.close();
+    if(!lines){
+        QMessageBox::warning(this,I18n::text(6456),I18n::text(6457));return;
+    }
+    m_time=std::move(times);
+    m_columns=std::move(values);
+    m_columnNames=names;
+    m_rawColumnNames=originalNames;
+    m_originalTimeTexts=timeTexts;
+    m_originalColumnTexts=std::move(originals);
+    m_liveSource=FileSource;
+    setProperty("analysisSourceFile",QFileInfo(path).fileName());
+    setLiveButtons(false,false);
+    emit liveSourceRequested(false);
+    m_fileLabel->setText(QFileInfo(path).fileName()+
+        QStringLiteral(" (%1 points)").arg(lines));
+    m_overlayChart->setData(m_time,m_columns,m_columnNames,m_colors);
+    rebuildCheckboxes();
+    m_valuesModel->dataUpdated();
 }
 
 void AnalysisTab::rebuildCheckboxes()
@@ -174,6 +346,13 @@ void AnalysisTab::rebuildCheckboxes()
     QLayoutItem *stretch=nullptr;if(m_checkboxLayout->count()>0)stretch=m_checkboxLayout->takeAt(m_checkboxLayout->count()-1);
     for(int i=0;i<m_columnNames.size();++i){
         QCheckBox *cb=new QCheckBox(m_columnNames[i],m_checkboxContainer);const QColor c=m_colors[i%m_colors.size()];
+        // Full name and original CSV identifier are readable on hover,
+        // without modifying the existing right-side layout or checkbox text.
+        const QString raw=i<m_rawColumnNames.size()?m_rawColumnNames[i]:QString();
+        cb->setToolTip(raw.isEmpty() || raw==m_columnNames[i]
+            ?m_columnNames[i]:(m_columnNames[i]+QStringLiteral("
+[")+raw+QStringLiteral("]")));
+        cb->setAccessibleName(m_columnNames[i]);
         cb->setStyleSheet(QString((qApp && qApp->property("ecuDarkTheme").toBool()) ? "QCheckBox{padding:3px 0;}QCheckBox::indicator{width:13px;height:13px;border:1px solid %1;border-radius:2px;background:#0b1015;}QCheckBox::indicator:checked{background:%1;}" : "QCheckBox{padding:3px 0;}QCheckBox::indicator{width:13px;height:13px;border:1px solid %1;border-radius:2px;background:#ffffff;}QCheckBox::indicator:checked{background:%1;}").arg(c.name()));
         bool checked=false;
         if(m_liveSource==InjectionLiveSource)checked=(i<3);

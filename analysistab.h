@@ -18,6 +18,9 @@
 #include "rosco.h"
 
 class QButtonGroup;
+class QTableView;
+class QStackedWidget;
+class AnalysisValuesTableModel;
 
 class SingleChartWidget : public QWidget
 {
@@ -116,6 +119,8 @@ private:
     void addStackedChart(int index);
     void removeStackedChart(int index);
     void rebuildOverlayChart();
+    void onViewModeToggled(bool columns);
+    void syncTableColumns();
     void prepareDiagnosticLive();
     void prepareInjectionLive();
     void appendLiveRow(const QVector<double> &values);
@@ -135,6 +140,11 @@ private:
     QWidget *m_checkboxContainer;
     QVBoxLayout *m_checkboxLayout;
 
+    QPushButton *m_viewModeButton;
+    QWidget *m_chartPanel;
+    QStackedWidget *m_leftStack;
+    QTableView *m_valuesTable;
+    AnalysisValuesTableModel *m_valuesModel;
     QScrollArea *m_stackScrollArea;
     QWidget *m_stackContainer;
     QVBoxLayout *m_stackLayout;
@@ -148,6 +158,9 @@ private:
     QVector<double> m_time;
     QVector<QVector<double> > m_columns;
     QStringList m_columnNames;
+    QStringList m_rawColumnNames;
+    QStringList m_originalTimeTexts;
+    QVector<QStringList> m_originalColumnTexts;
     QVector<QCheckBox*> m_checkboxes;
     QVector<QColor> m_colors;
 };
