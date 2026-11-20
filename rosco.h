@@ -275,6 +275,12 @@ void mems_disconnect(mems_info* info);
 bool mems_is_connected(mems_info* info);
 bool mems_read_raw(mems_info* info, mems_data_frame_80* frame80, mems_data_frame_7d* frame7d);
 bool mems_read(mems_info* info, mems_data* data);
+/* Additive Windows x64 K-Line 1.9 functions, only when the source-built
+ * library is selected. The historical ROSCO interface is unchanged. */
+#ifdef MEMS_NATIVE_KLINE_19
+bool mems_init_link_kline19(mems_info* info, uint8_t* ecu_id, bool local_echo);
+bool mems_read_kline19(mems_info* info, mems_data* data, bool local_echo);
+#endif
 bool mems_read_iac_position(mems_info* info, uint8_t* position);
 bool mems_move_iac(mems_info* info, uint8_t desired_pos);
 bool mems_test_actuator(mems_info* info, actuator_cmd cmd, uint8_t* data);
