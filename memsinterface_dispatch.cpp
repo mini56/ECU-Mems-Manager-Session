@@ -336,77 +336,94 @@ bool MEMSInterface::connectToECU()
     const QList<DetectedSerialAdapter> adapters =
         SerialAdapterDetector::availableAdapters(configuredDevice);
 
-    // First use the historical ROSCO path on every candidate. A successful
-    // transport handshake proves a normal session, but it does NOT by itself
-    // prove the ECU generation. Family therefore remains Unknown until an
-    // identification path can establish it from evidence.
-    for (const DetectedSerialAdapter &adapter : adapters)
-    {
-        if (cancelled())
-            break;
-
-        if (tryRoscoConnect(adapter.devicePath))
-        {
-            if (cancelled())
-            {
-                if (m_initComplete && mems_is_connected(&m_memsinfo))
-                    mems_disconnect(&m_memsinfo);
-                m_connectedState.storeRelease(0);
-                resetProtocolContext();
-                break;
-            }
-            setEcuFamily(MemsEcuFamily::Unknown);
-            setDiagnosticMode(MemsDiagnosticMode::Normal);
-            emit serialInterfaceDetected(adapter.portName,
-                                         adapter.adapterFamily,
-                                         QStringLiteral("ROSCO 1.3/1.6"));
-            return true;
-        }
+    const auto resetFailedTransport=[this]() {
         if (m_initComplete && mems_is_connected(&m_memsinfo))
-        {
             mems_disconnect(&m_memsinfo);
-            m_connectedState.storeRelease(0);
-            resetProtocolContext();
+        m_connectedState.storeRelease(0);
+        resetProtocolContext();
+    };
+
+    // Do not change the historical ROSCO handshake or its ECU data path.
+    const auto connectRosco=[this, &cancelled, &resetFailedTransport](
+        const DetectedSerialAdapter &adapter) -> bool {
+        if (!tryRoscoConnect(adapter.devicePath))
+        {
+            resetFailedTransport();
+            return false;
         }
-    }
-
-    // Nothing answered the normal path: try the MEMS 1.9 ISO-9141 slow wake-up.
-    // Only after a valid 0x55/key-byte handshake and 0xE9 address confirmation
-    // do we hand the already-awake ECU to the existing 9600-baud ROSCO init.
-    for (const DetectedSerialAdapter &adapter : adapters)
-    {
         if (cancelled())
-            break;
+        {
+            resetFailedTransport();
+            return false;
+        }
 
+        // A ROSCO handshake alone does not identify the exact ECU generation.
+        setEcuFamily(MemsEcuFamily::Unknown);
+        setDiagnosticMode(MemsDiagnosticMode::Normal);
+        emit serialInterfaceDetected(adapter.portName,
+                                     adapter.adapterFamily,
+                                     QStringLiteral("ROSCO 1.3/1.6"));
+        return true;
+    };
+
+    const auto connectMems19=[this, &cancelled, &resetFailedTransport](
+        const DetectedSerialAdapter &adapter) -> bool {
         QString detail;
         if (!performMems19Wakeup(adapter.qtPortName, &detail))
-            continue;
+            return false;
+        if (cancelled())
+            return false;
+        if (!tryRoscoConnect(adapter.devicePath))
+        {
+            resetFailedTransport();
+            return false;
+        }
+        if (cancelled())
+        {
+            resetFailedTransport();
+            return false;
+        }
 
+        setEcuFamily(MemsEcuFamily::Mems19);
+        setDiagnosticMode(MemsDiagnosticMode::Normal);
+        emit serialInterfaceDetected(adapter.portName,
+                                     adapter.adapterFamily,
+                                     QStringLiteral("MEMS 1.9 K-Line"));
+        return true;
+    };
+
+    // Choose the first protocol attempt per physical USB cable rather than
+    // trying ROSCO on every port before attempting MEMS 1.9 on any port.
+    // VID:PID 1A86:7523 corresponds to the user's known CH340 KKL cable.
+    // USB chip identifiers alone are not a universal connector identity:
+    // keep the other protocol as a fallback, not a new compatibility lock.
+    // The user's FTDI FT232 ROSCO cable keeps ROSCO as its first attempt.
+    for (const DetectedSerialAdapter &adapter : adapters)
+    {
         if (cancelled())
             break;
 
-        if (tryRoscoConnect(adapter.devicePath))
+        const bool preferKLine =
+            adapter.hasVendorId && adapter.hasProductId &&
+            adapter.vendorId == 0x1A86u && adapter.productId == 0x7523u;
+
+        if (preferKLine)
         {
+            if (connectMems19(adapter))
+                return true;
             if (cancelled())
-            {
-                if (m_initComplete && mems_is_connected(&m_memsinfo))
-                    mems_disconnect(&m_memsinfo);
-                m_connectedState.storeRelease(0);
-                resetProtocolContext();
                 break;
-            }
-            setEcuFamily(MemsEcuFamily::Mems19);
-            setDiagnosticMode(MemsDiagnosticMode::Normal);
-            emit serialInterfaceDetected(adapter.portName,
-                                         adapter.adapterFamily,
-                                         QStringLiteral("MEMS 1.9 K-Line"));
-            return true;
+            if (connectRosco(adapter))
+                return true;
         }
-        if (m_initComplete && mems_is_connected(&m_memsinfo))
+        else
         {
-            mems_disconnect(&m_memsinfo);
-            m_connectedState.storeRelease(0);
-            resetProtocolContext();
+            if (connectRosco(adapter))
+                return true;
+            if (cancelled())
+                break;
+            if (connectMems19(adapter))
+                return true;
         }
     }
 
