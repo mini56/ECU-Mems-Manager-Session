@@ -146,6 +146,14 @@ Vérifications GitHub **en lecture seule** réalisées :
 - **Correction ciblée prévue :** déplacer l'ajout du dossier `Qt\bin` avant la commande `cmake --build` dans **le workflow 176 uniquement**, laisser intacts `CMakeLists.txt`, `mems19protocol_test.cpp`, les sources du programme et le workflow 175. Une seule mise à jour du workflow devrait déclencher un nouveau run 176 automatiquement.
 - **Critère :** constater la ligne `PASS MEMS 1.9 slow init, fragmented ISO9141, cable preference`, puis la compilation, l'installation, les tests et le Setup. Aucune prétention de validation ECU physique.
 
+## BUILD 176 — correction CI et deuxième run réellement déclenché
+
+- **Correction apportée uniquement au workflow 176** : [commit 4037fae](https://github.com/mini56/ECU-Mems-Manager-Session/commit/4037faed8f22c1f7775483f695b035616b532bd9).
+- Ajout de `C:\Qt\5.15.2\msvc2019_64\bin` au `PATH` **avant `cmake --build`**, afin que `mems19_protocol_selftest.exe` trouve Qt lors de l'exécution `POST_BUILD`. Aucune modification de code ECU, CMake, du lecteur ROSCO ni du workflow 175.
+- **Deuxième run BUILD 176** : [44702028202](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/44702028202), head `4037faed8f22c1f7775483f695b035616b532bd9`, déclenché automatiquement par `push` du workflow dédié.
+- **Statut à l'inscription : EN COURS**. Son résultat, les autotests, le Setup et la release doivent être confirmés par les étapes GitHub Actions, ne pas anticiper un succès.
+- Au prochain passage, noter la conclusion et la première erreur éventuelle des logs si rouge ; ne jamais lancer plusieurs compilations parallèles pour le même lot.
+
 ## Points établis et limites
 
 - Le code actuel effectue déjà le réveil 1.9 avec l'adresse 0x16 à cinq bauds, synchronisation 55 + deux octets clés, complément du second octet et confirmation E9.
