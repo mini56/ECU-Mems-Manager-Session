@@ -268,3 +268,19 @@ La Release source a été publiée sur GitHub : [mems-session-build-177](https:/
 - [ ] Tests matériels des deux calculateurs et non-régression 1.2/1.3/1.6.
 
 **Ne jamais marquer « validé sur ECU » uniquement parce que GitHub Actions est vert.**
+
+
+## MEMS 2J — premier lot d'intégration dans SESSION (20/11/2026, avant compilation)
+
+**Demande maintenue :** câble + calculateur + bouton **Connecter** habituel. Aucune sélection de protocole, de famille ni de fabricant USB ; un seul dépôt et la branche `fix-documentary-additive-session-161-20261118`, aucun patch. Les documents 10 à 12 et les six sources Go conservées dans `rovermems-reference/` ont été relus. Le BUILD 177 1.9 est conservé ; aucune validation physique 2J ou 1.9 n'est inventée.
+
+**Commits créés sur la branche existante :**
+
+- [f64f13e](https://github.com/mini56/ECU-Mems-Manager-Session/commit/f64f13e482ec2c77b02ce1853c188423d869badb) : nouveau lecteur C++/Qt `mems2jprotocol.h`. Port K-Line 10400 8N1, Fast Init 25/25, initialisation `81 13 F7 81 0C`, session `10 A0`, échange `27 01` / `27 02` avec algorithme seed/key RoverMEMS, lecture 0x21, trames longueur/checksum, réponse 0x61, refus 0x7F, gestion des échos et paquets partiels. Pas de commandes de modification ECU.
+- [3328cf8](https://github.com/mini56/ECU-Mems-Manager-Session/commit/3328cf8e93718223d7e2263676687180c902d6f3) : autotest `mems2jprotocol_test.cpp`, vecteurs de trames, longueurs, checksums, température, MAP, tension, régime, conversion signée et masques de défaut.
+- [cb0a349](https://github.com/mini56/ECU-Mems-Manager-Session/commit/cb0a349cdc13770a11f82f0b40f88ff7e0037037) : cible autotest Qt5 ajoutée à `CMakeLists.txt` et exécutée au POST_BUILD.
+- [1c06c48](https://github.com/mini56/ECU-Mems-Manager-Session/commit/1c06c486038ed64823e062f0099005273ea9f56d) : branchement à `MEMSInterface::connectToECU()`, contrôle 2J via vraie réponse de régime, sélection uniquement sur réponse ECU (pas de liste VID/PID), lecture cyclique 2J dédiée, état de connexion et déconnexion via la boucle existante. Les fonctions ROSCO historiques et K-Line 1.9 ne sont pas modifiées. Correction de seed nul : la référence Go demande une clé nulle.
+- [af65b63](https://github.com/mini56/ECU-Mems-Manager-Session/commit/af65b639e97cd216fd8d0f3108ed868d4ac2e2f2) : sortie 2J dans les pages normales existantes `SummaryTab`, `DiagnosticPanel` et les cadrans `MainWindow`. Mesures 2J séparées des champs ROSCO 0x80/0x7D ; état des défauts documenté Mini MPi avec [12].bit2 ambigu explicite ; valeurs non recoupées affichées sans inventer d'unité. Pas de nouvelle page ni de protocole utilisateur à choisir.
+- [1284f75](https://github.com/mini56/ECU-Mems-Manager-Session/commit/1284f75c1f12880dff61654b8ca3972f07ca2e9a) : correction de la construction du rapport et lisibilité des valeurs dans la colonne existante.
+
+**État réel au moment de cette inscription : code 2J intégré dans la source, non compilé, non validé sur ECU.** Les tests de trame sont synthétiques. Le code utilisateur ROSCO et K-Line 1.9 est conservé. Le prochain lot est un **seul** workflow Windows dédié 178 (compilation, autotest 2J et non-régression, Setup installé). Vérifier explicitement le succès avant de publier ou transférer le Setup sur le site MAJ. Le calculateur réel et le câble devront ensuite valider les temporisations, les variantes, les mesures et les défauts.
