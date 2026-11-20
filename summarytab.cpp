@@ -514,12 +514,12 @@ void SummaryTab::updateData(mems_data *data)
 }
 
 
-void SummaryTab::update2JData(const QVariantMap &values)
+void SummaryTab::update2JData(const QVariantMap &values, const QString &family)
 {
   // MEMS 2J sends 0x21/0x61 measurements, not ROSCO 0x80/0x7D.
   // Reuse the existing three measurement tables without mixing the units.
   struct Field { const char *key; const char *label; const char *unit; };
-  static const Field fields[] = {
+  static const Field fields2J[] = {
     {"rpm","Régime moteur","tr/min"},
     {"coolant_c","Température liquide","°C"},
     {"intake_c","Température admission","°C"},
@@ -550,7 +550,25 @@ void SummaryTab::update2JData(const QVariantMap &values)
     {"cam_raw","VVC / cam (brut)","signification à confirmer"},
     {"faults_raw","Défauts 21 19 (hex.)","voir diagnostic"}
   };
-  const int count=int(sizeof(fields)/sizeof(fields[0]));
+  static const Field fields3[] = {
+    {"rpm","Regime moteur","tr/min"},
+    {"coolant_c","Temperature liquide","°C"},
+    {"oil_c","Temperature huile","°C"},
+    {"intake_c","Temperature admission","°C"},
+    {"map_kpa","Pression MAP","kPa"},
+    {"throttle_mv","Potentiometre papillon","mV"},
+    {"lambda_feedback_percent","Correction lambda","% (RoverMEMS)"},
+    {"lambda_mv","Sonde lambda amont","mV"},
+    {"coil1_us","Charge bobine 1","us"},
+    {"coil2_us","Charge bobine 2","us"},
+    {"rpm_deviation_raw","Ecart regime (brut)","unite inconnue"},
+    {"faults_raw","Defauts MEMS 3 (hex.)","voir diagnostic"}
+  };
+  const bool is3=family==QStringLiteral("MEMS 3");
+  const Field *fields=is3?fields3:fields2J;
+  const int count=is3
+      ? int(sizeof(fields3)/sizeof(fields3[0]))
+      : int(sizeof(fields2J)/sizeof(fields2J[0]));
   if (!m_showing2J)
   {
     m_savedRowLabels.clear(); m_savedRowTooltips.clear();
@@ -575,7 +593,7 @@ void SummaryTab::update2JData(const QVariantMap &values)
     if (QTableWidgetItem *item=table->item(row,0))
     {
       item->setText(QString::fromUtf8(f.label));
-      item->setToolTip(QStringLiteral("MEMS 2J — %1").arg(QString::fromUtf8(f.unit)));
+      item->setToolTip(QStringLiteral("%1 — %2").arg(family,QString::fromUtf8(f.unit)));
     }
     const QString key=QString::fromLatin1(f.key);
     if (!values.contains(key))
@@ -586,7 +604,8 @@ void SummaryTab::update2JData(const QVariantMap &values)
     if (key==QStringLiteral("faults_raw"))
     {
       const QString raw=values.value(key).toString();
-      setValue(globalRow,QStringLiteral("21 19"),QStringLiteral("Voir diagnostic"));
+      setValue(globalRow,is3?QStringLiteral("18 00"):QStringLiteral("21 19"),
+                QStringLiteral("Voir diagnostic"));
       if (QTableWidgetItem *item=table->item(row,3))
         item->setToolTip(raw);
     }
@@ -599,7 +618,7 @@ void SummaryTab::update2JData(const QVariantMap &values)
       setValue(globalRow,QStringLiteral("--"),
                unit.size()<=8 ? QStringLiteral("%1 %2").arg(value,unit) : value);
       if (QTableWidgetItem *item=table->item(row,3))
-        item->setToolTip(QStringLiteral("21 xx : %1").arg(key));
+        item->setToolTip(QStringLiteral("%1 : %2").arg(family,key));
     }
   }
 }
