@@ -84,6 +84,18 @@ On peut poursuivre le **développement sans attendre le véhicule** ; seule la q
 **Au moment de cette inscription : build 176 PAS ENCORE DÉCLENCHÉ / PAS ENCORE VALIDÉ.** 
 La preuve attendue est un run GitHub Actions portant le numéro 176, son SHA source, les étapes de compilation/autotest, le résultat et, si vert, le Setup et son SHA256. Mettre à jour cette section avec le lien du run et son résultat. Aucun test sur calculateur réel n'est inclus dans le workflow.
 
+## État du BUILD 176 — tentative du 20/11/2026
+
+- **Numéro retenu pour ce lot : SESSION 176.**
+- **Compilation : NON LANCÉE — pas de run Actions 176 et pas de Setup 176.**
+- Dernier Setup vérifié dans GitHub Actions : SESSION 175, run `44582487431`, terminé avec succès **avant les corrections MEMS 1.9**. Ce run ne prouve donc rien pour le lot actuel.
+- Sources à compiler : `mems19protocol.h`, `mems19protocol_test.cpp`, `serialadapterdetector.h`, `memsinterface_dispatch.cpp`, `memsinterface.h`, `mems19testtab.h`, `CMakeLists.txt` sur `fix-documentary-additive-session-161-20261118`.
+- Workflow prévu : `.github/workflows/session-163-analysis-scroll-setup-test.yml`. L'événement **push** ne se déclenche que si ce fichier de workflow change ; les simples commits de source et de documentation ne provoquent aucun build.
+- **Blocage constaté :** la tentative de mettre à jour le workflow pour basculer toutes les références du build 175 au 176 a été refusée par les contrôles d'accès du connecteur. Le fichier est resté inchangé (numéro `MEMS_BUILD_NUMBER: '175'`) et il n'y a eu **aucun déclenchement**.
+- **À faire pour la reprise :** obtenir un lancement autorisé du workflow Windows sur l'état courant de la branche avec numéro `176`, sorties `build-session-176`, `setup-session-176`, release `mems-session-build-176` et note de version 1.9 FR/EN. Vérifier dans le run le programme `mems19_protocol_selftest.exe`, la compilation du Setup et la réussite de l'installation avant de considérer le build 176 comme effectué.
+- **Ne pas relancer le vieux workflow 175 tel quel** pour ce travail : son numéro est figé et la publication de la release 175 existante est protégée contre l'écrasement.
+- Après le build, inscrire ici l'URL GitHub Actions, son identifiant de run, son `head_sha`, le résultat final, le lien du Setup et SHA256. Les essais matériels 1.9 restent distincts.
+
 ## Points établis et limites
 
 - Le code actuel effectue déjà le réveil 1.9 avec l'adresse 0x16 à cinq bauds, synchronisation 55 + deux octets clés, complément du second octet et confirmation E9.
