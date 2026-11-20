@@ -28,7 +28,8 @@ class SummaryTab : public QWidget
 public:
     explicit SummaryTab(QWidget *parent = 0);
     void updateData(mems_data *data);
-    void update2JData(const QVariantMap &values);
+    void update2JData(const QVariantMap &values,
+                      const QString &family = QStringLiteral("MEMS 2J"));
     void applyVisualTheme(bool dark);
 
 protected:
