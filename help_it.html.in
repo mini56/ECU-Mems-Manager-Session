@@ -100,6 +100,11 @@ small{color:#aebcc5}
 <h2 id="chapter-interactive">Modalità interattiva — comandi avanzati</h2><p>La pagina presenta le istruzioni per i comandi interattivi ROSCO. È destinata a chi conosce il protocollo e la porta selezionata. Per le letture correnti utilizzare <b>Connetti</b> e le normali pagine diagnostiche.</p>
 <h2 id="chapter-ecu19">Test ECU 1.9 — controlli di comunicazione</h2><p>Il test ECU 1.9 esegue una sequenza guidata di connessione, identificazione e letture. Mostra separatamente risposte del protocollo, acquisizione iniezione, ripristino della modalità diagnostica e riconnessione. Consente di avviare, interrompere e aprire la cartella dei registri. Non è il test del cavo USB.</p>
 
+<h2 id="chapter-mems2j">MEMS 2J — connessione e diagnosi automatiche</h2>
+<p>Collegare un cavo diagnostico compatibile alla centralina, inserire l'accensione e premere <b>Connetti</b>. SESSION verifica le interfacce seriali disponibili e riconosce la famiglia dalle risposte effettive della centralina, senza selezione manuale di cavo o protocollo.</p>
+<p>Quando viene identificata la famiglia <b>MEMS 2J</b>, i valori disponibili appaiono in <b>Panoramica</b> e <b>Tutte le misure</b>; i guasti letti compaiono in <b>Diagnostica automatica</b>. I valori non documentati rimangono grezzi. Alcuni codici sono specifici della Mini MPi.</p>
+<p><b>Verifica:</b> il lettore e i test automatici sono stati integrati in SESSION 178; occorre ancora provarli su una centralina MEMS 2J reale. Non sono state aggiunte funzioni di cancellazione o programmazione.</p>
+
 <h2 id="chapter-10">10. Diagnostica automatica</h2>
 <p>Esamina i valori ECU correnti distinguendo stato normale, avviso e anomalia. Può registrare un riferimento ed esportare un rapporto. Controlla anche il tempo di carica della bobina.</p>
 
@@ -161,6 +166,11 @@ small{color:#aebcc5}
 
 <h2 id="chapter-22">22. Aggiornamenti documentali</h2>
 <p>Da Database selezionare Controlla aggiornamenti database. Il gestore consulta il catalogo online, scarica i pacchetti disponibili e verifica SHA-256. L'installazione richiede la password del pacchetto cifrato e controlla SQLite, immagini e provenienza. È possibile installare anche un pacchetto cifrato locale. Se la verifica fallisce, il database precedente è conservato.</p>
+
+<h2 id="chapter-program-update">Aggiornamenti del programma SESSION</h2>
+<p>All'avvio SESSION controlla discretamente il repository pubblico. Se esiste una versione più recente del <b>programma</b>, appare un pulsante arancione accanto alla versione installata nell'intestazione. Premendolo si apre nel browser il download ufficiale del Setup Windows; l'utente decide quando installarlo.</p>
+<p>Utilizzare <b>Aiuto → Controlla aggiornamenti del programma</b> per una verifica manuale. Senza Internet la diagnosi continua normalmente. Gli aggiornamenti documentali sono separati nella pagina Database.</p>
+<p><b>Ingrandire le immagini:</b> fare clic su una schermata per aprirla in una finestra ridimensionabile, usando +, −, 100 % e le barre di scorrimento, anche offline.</p>
 
 <h2 id="chapter-23">23. Barra delle applicazioni di Windows</h2>
 <p>L'opzione Nascondi automaticamente la barra delle applicazioni di Windows è disattivata per impostazione predefinita. Se attivata, modifica il desktop mentre SESSION è aperto. Il programma ripristina l'impostazione alla chiusura e dispone di controlli di recupero dopo un arresto inatteso. Le politiche Windows possono impedirlo.</p>
