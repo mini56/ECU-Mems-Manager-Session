@@ -14,6 +14,7 @@
 #include "protocolcontext.h"
 
 namespace Mems2JProtocol { class Session; }
+namespace Mems3Protocol { class Session; }
 
 class MEMSInterface : public QObject
 {
@@ -155,6 +156,7 @@ private:
     bool m_serviceLoopRunning;
     bool m_connectionAttemptActive;
     Mems2JProtocol::Session *m_mems2j = nullptr;
+    Mems3Protocol::Session *m_mems3 = nullptr;
     QVariantMap m_mems2jValues;
     QStringList m_mems2jFaults;
     bool m_kline19LocalEcho = false;  // Physical cable echo, detected during 0x7C/E9 wake-up.
