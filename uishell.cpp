@@ -48,6 +48,7 @@
 #include "rawpage.h"
 #include "uishell.h"
 #include "summarytab.h"
+#include "sessionprogramupdate.h"
 
 namespace {
 
@@ -910,6 +911,16 @@ static QFrame *buildHeader(QMainWindow *window, QWidget *legacy)
     QLabel *brand=new QLabel(QStringLiteral("ECU MEMS\nMANAGER SESSION"),header); brand->setObjectName(QStringLiteral("uiRebuildBrand")); QFont bf=brand->font(); bf.setBold(true); bf.setPointSizeF(9.0); brand->setFont(bf); brand->setStyleSheet(QStringLiteral("color:#f5f7f8;letter-spacing:.5px;"));
     QLabel *ver=new QLabel(QStringLiteral("v%1.%2.%3").arg(VER_MAJOR).arg(VER_MINOR).arg(VER_PATCH),header); ver->setStyleSheet(QStringLiteral("color:%1;font-weight:700;").arg(QString::fromLatin1(kOrange2))); brandV->addWidget(brand); brandV->addWidget(ver); h->addLayout(brandV);
     QFrame *sep=new QFrame(header); sep->setFrameShape(QFrame::VLine); sep->setStyleSheet(QStringLiteral("background:%1;max-width:1px;").arg(QString::fromLatin1(kBorder))); h->addWidget(sep);
+    // Hidden until the official public manifest advertises a newer Setup.
+    QPushButton *programUpdate=new QPushButton(header);
+    programUpdate->setObjectName(QStringLiteral("uiProgramUpdateButton"));
+    programUpdate->setToolTip(I18n::text(17901));
+    programUpdate->setStyleSheet(QStringLiteral(
+        "QPushButton{background:#ff7a00;color:#11161a;border:1px solid #ff9828;"
+        "border-radius:4px;padding:5px 9px;font-weight:700;}"
+        "QPushButton:hover{background:#ffad4d;}"));
+    programUpdate->setVisible(false);
+    h->addWidget(programUpdate);
     ecu->setParent(header); ecu->setStyleSheet(QStringLiteral("color:#dfe4e8;font-weight:700;padding:0 8px;")); h->addWidget(ecu);
     h->addStretch(1);
     QWidget *commBox=new QWidget(header); QHBoxLayout *ch=new QHBoxLayout(commBox); ch->setContentsMargins(0,0,0,0); ch->setSpacing(5); comm->setParent(commBox); comm->setStyleSheet(QStringLiteral("color:#cbd3d9;font-weight:700;")); ch->addWidget(comm); if(good){good->setParent(commBox);ch->addWidget(good);} if(bad){bad->setParent(commBox);ch->addWidget(bad);} h->addWidget(commBox);
@@ -1122,6 +1133,7 @@ void buildUiShell(QMainWindow *window)
     window->setProperty("uiRebuildInstalled", true);
     rebuild(window, central, root, tabs, legacy);
     window->setProperty("uiShellReady", true);
+    new SessionProgramUpdate(window);
 }
 
 void resizeUiShell(QMainWindow *window)
