@@ -27,6 +27,7 @@
 #include <QStackedWidget>
 #include <QHeaderView>
 #include <QtMath>
+#include <utility>
 
 namespace {
 
