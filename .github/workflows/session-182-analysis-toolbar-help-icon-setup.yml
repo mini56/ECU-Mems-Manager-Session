@@ -133,6 +133,17 @@ jobs:
           assert 'right->addWidget(m_loadButton)' not in panels and 'right->addWidget(m_diagnosticLiveButton)' in panels
           assert 'QButtonGroup *modeGroup' in toolbar and 'modeGroup->setExclusive(true)' in toolbar
           assert 'topRow->setColumnMinimumWidth(2,fileControls->sizeHint().width())' in toolbar
+          # Prevent the previous native styling routine from moving the
+          # Load CSV control to a separate top bar (45px offset in CI).
+          native=Path('analysistab_impl_part1.inc').read_text(encoding='utf-8')
+          smoke=Path('uishellsmoketest.cpp').read_text(encoding='utf-8')
+          assert 'root->addWidget(topBar,0)' in toolbar
+          assert 'QGridLayout *topRow=new QGridLayout(topBar)' in toolbar
+          assert 'load->setParent(topBar)' not in native
+          assert 'root->insertWidget(0,topBar)' not in native
+          assert "analysisTopBar" in native and "analysisFileToolbar" in native
+          assert 'Native Analysis layout must keep load and modes in ONE top bar' in smoke
+          print('SESSION_182_SINGLE_NATIVE_ANALYSIS_HEADER_PASS')
           assert 'TooltipBubbleManager::helpBubblePixmap' in toolbar and 'TooltipBubbleManager::helpBubblePixmap' in themeStyle
           assert 'QColor(QStringLiteral("#ff8a1c"))' in bubble and 'painter.setPen(Qt::white)' in bubble
           assert 'painter.setPen(QPen(Qt::white,1.6))' in bubble
