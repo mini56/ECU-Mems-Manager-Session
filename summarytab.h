@@ -5,6 +5,9 @@
 #include <QTableWidget>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QVariantMap>
+#include <QVector>
+#include <QStringList>
 #include "rosco.h"
 
 /**
@@ -25,6 +28,7 @@ class SummaryTab : public QWidget
 public:
     explicit SummaryTab(QWidget *parent = 0);
     void updateData(mems_data *data);
+    void update2JData(const QVariantMap &values);
     void applyVisualTheme(bool dark);
 
 protected:
@@ -39,6 +43,9 @@ private:
     QTableWidget *m_table1;
     QTableWidget *m_table2;
     int m_rowCount;
+    bool m_showing2J = false;
+    QStringList m_savedRowLabels;
+    QStringList m_savedRowTooltips;
     int m_rowsPerTable;
 
     int m_rowEngineRpm, m_rowCoolantTemp, m_rowAmbientTemp, m_rowIntakeAirTemp, m_rowFuelTemp,

@@ -206,6 +206,11 @@ m_mems(0), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerD
   connect(m_mems, SIGNAL(interfaceThreadReady()), this, SLOT(onInterfaceThreadReady()));
   connect(m_mems, SIGNAL(notConnected()), this, SLOT(onNotConnected()));
   connect(m_mems, SIGNAL(gotEcuId(uint8_t *)), this, SLOT(onEcuIdReceived(uint8_t *)));
+  connect(m_mems, &MEMSInterface::ecuIdentityDetected, this,
+          [this](const QString &identity) {
+              m_ui->m_ecuIdLabel->setText(QStringLiteral("ECU : ") + identity);
+              if (m_diagnosticPanel) m_diagnosticPanel->setEcuId(QByteArray());
+          });
   connect(m_mems, SIGNAL(errorSendingCommand()), this, SLOT(onCommandError()));
   connect(this, SIGNAL(requestProtocolCommand(quint8)), m_mems, SLOT(onProtocolCommandRequested(quint8)));
   connect(m_mems, SIGNAL(protocolResponse(quint8,QByteArray)), this, SLOT(onProtocolResponse(quint8,QByteArray)));
@@ -986,6 +991,36 @@ void MainWindow::setAdjustmentsEnabled(bool enabled)
  */
 void MainWindow::onDataReady()
 {
+  if (m_mems->ecuFamily()==MemsEcuFamily::Mems2J)
+  {
+    // 2J has distinct 0x21/0x61 units and fault flags: never reinterpret it
+    // as ROSCO 0x80/0x7D or enable legacy adjustment controls on its data.
+    const QVariantMap values=m_mems->mems2jValues();
+    const QStringList faults=m_mems->mems2jFaults();
+    m_summaryTab->update2JData(values);
+    if (m_diagnosticPanel) m_diagnosticPanel->update2JData(values,faults);
+    if (values.contains(QStringLiteral("rpm")))
+    {
+      m_ui->m_revCounter->setValue(values.value(QStringLiteral("rpm")).toDouble());
+      m_ui->m_revCounter_exhaust->setValue(values.value(QStringLiteral("rpm")).toDouble());
+    }
+    if (values.contains(QStringLiteral("map_kpa")))
+      m_ui->m_mapGauge->setValue(values.value(QStringLiteral("map_kpa")).toDouble());
+    if (values.contains(QStringLiteral("battery_v")))
+      m_ui->m_battery->setValue(values.value(QStringLiteral("battery_v")).toDouble());
+    if (values.contains(QStringLiteral("coolant_c")))
+    {
+      double c=values.value(QStringLiteral("coolant_c")).toDouble();
+      m_ui->m_waterTempGauge->setValue(m_options->getTemperatureUnits()==Fahrenheit ? c*1.8+32.0 : c);
+    }
+    if (values.contains(QStringLiteral("intake_c")))
+    {
+      double c=values.value(QStringLiteral("intake_c")).toDouble();
+      m_ui->m_airTempGauge->setValue(m_options->getTemperatureUnits()==Fahrenheit ? c*1.8+32.0 : c);
+    }
+    m_ui->m_engine_error->setChecked(!faults.isEmpty());
+    return;
+  }
   mems_data* data = m_mems->getData();
   m_summaryTab->updateData(data);
   if (m_diagnosticPanel) m_diagnosticPanel->updateData(data);

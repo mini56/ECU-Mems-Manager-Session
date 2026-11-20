@@ -3,6 +3,8 @@
 
 #include <QWidget>
 #include <QString>
+#include <QStringList>
+#include <QVariantMap>
 #include "rosco.h"
 
 class QLabel;
@@ -16,6 +18,7 @@ class DiagnosticPanel : public QWidget
 public:
     explicit DiagnosticPanel(QWidget *parent = nullptr);
     void updateData(const mems_data *data);
+    void update2JData(const QVariantMap &values, const QStringList &faults);
     void setEcuId(const QByteArray &id);
 
 private slots:
@@ -40,6 +43,11 @@ private:
     Snapshot m_reference;
     mems_data m_last{};
     bool m_haveData = false;
+    bool m_showing2J = false;
+    QVariantMap m_mems2jValues;
+    QStringList m_mems2jFaults;
+    QVariantMap m_2jReference;
+    QString m_2jReferenceTime;
     QByteArray m_ecuId;
 
     void rebuild(const mems_data &d);

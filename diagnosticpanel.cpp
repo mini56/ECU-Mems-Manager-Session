@@ -99,6 +99,7 @@ void DiagnosticPanel::updateData(const mems_data *data)
 {
     if (!data)
         return;
+    m_showing2J=false;
     m_last = *data;
     m_haveData = true;
     rebuild(m_last);
@@ -261,6 +262,13 @@ void DiagnosticPanel::rebuild(const mems_data &d)
 
 void DiagnosticPanel::captureReference()
 {
+    if (m_showing2J)
+    {
+        m_2jReference=m_mems2jValues;
+        m_2jReferenceTime=QDateTime::currentDateTime().toString(QStringLiteral("dd/MM/yyyy hh:mm:ss"));
+        update2JData(m_mems2jValues,m_mems2jFaults);
+        return;
+    }
     if (!m_haveData) {
         QMessageBox::information(this, I18n::text(6876) /* EN: Diagnostics */, I18n::text(6877) /* EN: No ECU data available. */);
         return;
@@ -273,6 +281,13 @@ void DiagnosticPanel::captureReference()
 
 void DiagnosticPanel::clearReference()
 {
+    if (m_showing2J)
+    {
+        m_2jReference.clear();
+        m_2jReferenceTime.clear();
+        update2JData(m_mems2jValues,m_mems2jFaults);
+        return;
+    }
     m_reference = Snapshot();
     if (m_haveData) rebuild(m_last);
 }
@@ -281,6 +296,23 @@ QString DiagnosticPanel::buildReport() const
 {
     if (!m_haveData)
         return I18n::text(6878) /* EN: No ECU data available. */;
+    if (m_showing2J)
+    {
+        QStringList report;
+        report << QStringLiteral("ECU MEMS MANAGER — MEMS 2J, lecture K-Line")
+               << QStringLiteral("Date : %1").arg(QDateTime::currentDateTime().toString(QStringLiteral("dd/MM/yyyy hh:mm:ss")))
+               << QStringLiteral("Défauts : cartographie Mini MPi indicative ; autres variantes à confirmer");
+        for (auto it=m_mems2jValues.cbegin();it!=m_mems2jValues.cend();++it)
+            report << QStringLiteral("%1 : %2").arg(it.key(),it.value().toString());
+        if (m_mems2jFaults.isEmpty())
+            report << QStringLiteral("Aucun bit reconnu dans la cartographie Mini MPi.");
+        else
+            report << m_mems2jFaults;
+        if (!m_2jReferenceTime.isEmpty())
+            report << QStringLiteral("Référence enregistrée le : %1").arg(m_2jReferenceTime);
+        return report.join(QLatin1Char('
+'));
+    }
 
     const mems_data &d = m_last;
     QString text;
@@ -322,4 +354,41 @@ void DiagnosticPanel::exportReport()
     }
     file.write(m_report->toPlainText().toUtf8());
     file.close();
+}
+
+
+void DiagnosticPanel::update2JData(const QVariantMap &values, const QStringList &faults)
+{
+    m_showing2J=true;
+    m_haveData=true;
+    m_mems2jValues=values;
+    m_mems2jFaults=faults;
+    m_checks->setRowCount(0);
+    m_status->setText(QStringLiteral("MEMS 2J — %1").arg(
+        QDateTime::currentDateTime().toString(QStringLiteral("dd/MM/yyyy hh:mm:ss"))));
+    m_score->setText(QStringLiteral("Bits interprétés : %1").arg(faults.size()));
+
+    addCheck(QStringLiteral("Calculateur"),QStringLiteral("MEMS 2J"),
+             QStringLiteral("Connecté"),QStringLiteral("Session 10400 bauds, protocole 21/61"));
+    for (auto it=values.cbegin();it!=values.cend();++it)
+    {
+        addCheck(it.key(),it.value().toString(),QStringLiteral("Lecture ECU"),
+                 it.key().endsWith(QStringLiteral("_raw"))
+                    ? QStringLiteral("Valeur brute — unité / interprétation non établie")
+                    : QStringLiteral("Conversion documentée RoverMEMS ; à confirmer sur ECU réel"));
+    }
+    addCheck(QStringLiteral("Défauts 21 19"),
+             values.value(QStringLiteral("faults_raw"),QStringLiteral("--")).toString(),
+             QStringLiteral("Lecture brute"),
+             QStringLiteral("Cartographie documentée sur Mini MPi uniquement ; pas de codes Pxxxx inventés"));
+    for (const QString &fault : faults)
+        addCheck(QStringLiteral("Bit MEMS 2J"),fault,
+                 QStringLiteral("Signalé"),QStringLiteral("État et montage capteur à vérifier selon variante"));
+    if (faults.isEmpty())
+        addCheck(QStringLiteral("Bits de défaut"),QStringLiteral("Aucun bit reconnu"),
+                 QStringLiteral("Information"),QStringLiteral("Cela ne prouve pas qu'aucun défaut n'existe"));
+    if (!m_2jReferenceTime.isEmpty())
+        addCheck(QStringLiteral("Référence"),m_2jReferenceTime,
+                 QStringLiteral("Information"),QStringLiteral("Capture MEMS 2J enregistrée"));
+    m_report->setPlainText(buildReport());
 }

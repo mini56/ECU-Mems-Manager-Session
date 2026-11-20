@@ -302,6 +302,22 @@ void SummaryTab::setValue(int globalRow, const QString &rawText, const QString &
 void SummaryTab::updateData(mems_data *data)
 {
   if (!data) return;
+  if (m_showing2J)
+  {
+    for (int globalRow=0; globalRow<m_rowCount; ++globalRow)
+    {
+      QTableWidget *table=(globalRow/m_rowsPerTable==0)?m_table0:
+          (globalRow/m_rowsPerTable==1)?m_table1:m_table2;
+      const int row=globalRow%m_rowsPerTable;
+      table->setRowHidden(row,false);
+      if (QTableWidgetItem *item=table->item(row,0))
+      {
+        item->setText(m_savedRowLabels.value(globalRow));
+        item->setToolTip(m_savedRowTooltips.value(globalRow));
+      }
+    }
+    m_showing2J=false;
+  }
 
   // Colonne 1 : valeur reçue directement de l'ECU.
   // Colonne 2 : valeur interprétée selon les mêmes conversions que l'onglet
@@ -495,4 +511,93 @@ void SummaryTab::updateData(mems_data *data)
   setValue(m_rowDtc1,
            QString::number(data->dtc1),
            data->dtc1 != 0 ? I18n::text(6685) /* EN: FAULTS */ : I18n::text(6686) /* EN: no fault */);
+}
+
+
+void SummaryTab::update2JData(const QVariantMap &values)
+{
+  // MEMS 2J sends 0x21/0x61 measurements, not ROSCO 0x80/0x7D.
+  // Reuse the existing three measurement tables without mixing the units.
+  struct Field { const char *key; const char *label; const char *unit; };
+  static const Field fields[] = {
+    {"rpm","Régime moteur","tr/min"},
+    {"coolant_c","Température liquide","°C"},
+    {"intake_c","Température admission","°C"},
+    {"oil_c","Température huile","°C"},
+    {"map_kpa","Pression MAP","kPa"},
+    {"throttle_deg","Angle papillon","°"},
+    {"battery_v","Tension batterie","V"},
+    {"lambda_feedback_percent","Correction lambda","% (selon RoverMEMS)"},
+    {"lambda_o2_raw","Sonde lambda (brut)","unité à confirmer"},
+    {"fuel_raw","Carburant (brut)","unité inconnue"},
+    {"idle_steps","Position moteur ralenti","selon source, unité à vérifier"},
+    {"idle_target_rpm","Consigne ralenti","tr/min"},
+    {"idle_offset_raw10","Correction ralenti","unité à confirmer"},
+    {"rpm_error","Écart de régime","tr/min"},
+    {"speed_raw","Vitesse véhicule (brut)","unité inconnue"},
+    {"coil1_raw","Bobine 1 (brut)","unité inconnue"},
+    {"coil2_raw","Bobine 2 (brut)","unité inconnue"},
+    {"injector1_raw","Injection, champ 1 (brut)","unité inconnue"},
+    {"injector2_raw","Injection, champ 2 (brut)","unité inconnue"},
+    {"injector3_raw","Injection, champ 3 (brut)","unité inconnue"},
+    {"injector4_raw","Injection, champ 4 (brut)","unité inconnue"},
+    {"ignition_on","Contact","0/1"},
+    {"throttle_closed","Papillon fermé","0/1"},
+    {"ac_requested","Demande climatisation","0/1"},
+    {"primary_sync","Synchro primaire","0/1"},
+    {"secondary_sync","Synchro secondaire","0/1"},
+    {"closed_loop","Boucle fermée","0/1"},
+    {"cam_raw","VVC / cam (brut)","signification à confirmer"},
+    {"faults_raw","Défauts 21 19 (hex.)","voir diagnostic"}
+  };
+  const int count=int(sizeof(fields)/sizeof(fields[0]));
+  if (!m_showing2J)
+  {
+    m_savedRowLabels.clear(); m_savedRowTooltips.clear();
+    for (int globalRow=0; globalRow<m_rowCount; ++globalRow)
+    {
+      QTableWidget *table=(globalRow/m_rowsPerTable==0)?m_table0:
+          (globalRow/m_rowsPerTable==1)?m_table1:m_table2;
+      QTableWidgetItem *item=table->item(globalRow%m_rowsPerTable,0);
+      m_savedRowLabels.append(item?item->text():QString());
+      m_savedRowTooltips.append(item?item->toolTip():QString());
+    }
+    m_showing2J=true;
+  }
+  for (int globalRow=0;globalRow<m_rowCount;++globalRow)
+  {
+    QTableWidget *table=(globalRow/m_rowsPerTable==0)?m_table0:
+        (globalRow/m_rowsPerTable==1)?m_table1:m_table2;
+    const int row=globalRow%m_rowsPerTable;
+    table->setRowHidden(row,globalRow>=count);
+    if (globalRow>=count) continue;
+    const Field &f=fields[globalRow];
+    if (QTableWidgetItem *item=table->item(row,0))
+    {
+      item->setText(QString::fromUtf8(f.label));
+      item->setToolTip(QStringLiteral("MEMS 2J — %1").arg(QString::fromUtf8(f.unit)));
+    }
+    const QString key=QString::fromLatin1(f.key);
+    if (!values.contains(key))
+    {
+      setValue(globalRow,QStringLiteral("--"),QStringLiteral("--"));
+      continue;
+    }
+    if (key==QStringLiteral("faults_raw"))
+    {
+      const QString raw=values.value(key).toString();
+      setValue(globalRow,QStringLiteral("21 19"),QStringLiteral("Voir diagnostic"));
+      if (QTableWidgetItem *item=table->item(row,3))
+        item->setToolTip(raw);
+    }
+    else
+    {
+      const QString value=QString::number(values.value(key).toDouble(),'f',
+                          key==QStringLiteral("battery_v")?3:2);
+      setValue(globalRow,QStringLiteral("--"),
+               QStringLiteral("%1 %2").arg(value,QString::fromUtf8(f.unit)));
+      if (QTableWidgetItem *item=table->item(row,3))
+        item->setToolTip(QStringLiteral("21 xx : %1").arg(key));
+    }
+  }
 }
