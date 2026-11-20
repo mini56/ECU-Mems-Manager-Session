@@ -226,6 +226,14 @@ Manager doit, en interne :
 - Workflow : contrôle du chemin K-Line 1.9 et de l'existence de ROSCO historique, `mems19_protocol_selftest`, `rosco_abi_selftest` (code x64), tests déjà existants, création et tests du Setup installé, publication Release `mems-session-build-177` **uniquement si toutes les étapes sont vertes**.
 - Vérifications restantes : attendre le **résultat officiel GitHub Actions**, consigner succès ou première erreur exacte et nom de l'asset. La preuve d'exécution sur un véritable ECU MEMS 1.9 avec câble KKL n'existe pas tant qu'un essai physique n'a pas été réalisé.
 
+## BUILD 177 — premier run rouge : en-tête historique ROSCO du programme
+
+- [Run 44707263557](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/44707263557), commit `401579a3baf994b048d091a685f923362afcd55a`, **failure** dans « Compiler SESSION et tests de mise à jour ».
+- Extraits vérifiés des logs Windows MSVC : `memsinterface.cpp(254): C3861: mems_read_kline19 identifier not found` et `memsinterface_dispatch.cpp(476): C3861: mems_init_link_kline19 identifier not found` ; `C2737` sur `readOk` est une conséquence de la première erreur, pas un défaut de lecture ECU.
+- **Cause exacte** : les nouveaux symboles étaient déclarés dans `librosco-x64/rosco.h` (côté DLL native), mais `memsinterface.h` inclut le **fichier historique racine `rosco.h`**, qui n'avait pas ces déclarations. Ce n'est ni une erreur du calculateur, ni des permissions GitHub.
+- **Correction unique ciblée** : [commit 53258de](https://github.com/mini56/ECU-Mems-Manager-Session/commit/53258de1f53214e5e8e3b347632da4470f55889b), ajout des deux prototypes dans `rosco.h` sous `#ifdef MEMS_NATIVE_KLINE_19`, sans changer les déclarations existantes, l'ABI, les transports historiques ou les boutons.
+- Un nouveau run du **même BUILD 177** doit être déclenché après vérification des en-têtes, puis son résultat et la Release doivent être consignés ici. Ne pas déclarer BUILD 177 vert avant la réussite complète.
+
 ## Points établis et limites
 
 - Le code actuel effectue déjà le réveil 1.9 avec l'adresse 0x16 à cinq bauds, synchronisation 55 + deux octets clés, complément du second octet et confirmation E9.
