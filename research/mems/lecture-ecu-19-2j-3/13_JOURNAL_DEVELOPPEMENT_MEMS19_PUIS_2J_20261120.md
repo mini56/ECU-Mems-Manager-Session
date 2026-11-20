@@ -177,6 +177,22 @@ Vérifications GitHub **en lecture seule** réalisées :
 
 **Décision :** **ne pas supprimer la reprise ROSCO après le réveil**, ne pas installer artificiellement un second décodeur incompatible ; ne changer le code qu'en présence d'une anomalie établie. Conserver le bouton « Connecter » unique et le test MEMS 1.9 facultatif. La mention antérieure d'« incohérence ROSCO » est expressément retirée par cette clarification.
 
+## Règle utilisateur : bouton Connecter unique et câble automatique
+
+**Comportement exigé** : l'utilisateur branche un câble compatible au PC, le relie au calculateur et clique **une seule fois sur « Connecter »**. Il n'a pas à choisir le type de câble, l'identifiant USB, la famille MEMS ou le protocole.
+
+Manager doit, en interne :
+1. détecter les ports et les adaptateurs disponibles ;
+2. déterminer automatiquement **par essais de communication et réponses du calculateur** la voie fonctionnelle (les VID/PID, fabricants et descriptions ne sont que des indices, jamais des conditions d'acceptation) ;
+3. établir la liaison, identifier la famille du calculateur si le protocole le permet ;
+4. lire et afficher les valeurs et défauts renvoyés par le calculateur **dans les pages habituelles**.
+
+**Pas de liste restrictive de câbles**, pas de réglage utilisateur obligatoire, pas de passage par « Test MEMS 1.9 », qui reste facultatif. **Aucune régression** sur MEMS 1.2, 1.3 et 1.6. Manager doit restituer fidèlement les données reçues sans correction arbitraire fondée sur les sondes.
+
+**Précision d'implémentation** : Windows peut identifier la puce USB-série mais ne garantit pas à lui seul de savoir si son câble est KKL. La reconnaissance effective de la communication doit donc être basée sur les réponses ECU et non sur une marque ou un VID/PID. Ne pas présenter une simple préférence de priorité de protocole comme une reconnaissance garantie.
+
+**Cette inscription est une exigence fonctionnelle, pas une validation du code 1.9 ni un essai sur calculateur réel.** Aucune compilation n'est demandée par cette note.
+
 ## Points établis et limites
 
 - Le code actuel effectue déjà le réveil 1.9 avec l'adresse 0x16 à cinq bauds, synchronisation 55 + deux octets clés, complément du second octet et confirmation E9.
