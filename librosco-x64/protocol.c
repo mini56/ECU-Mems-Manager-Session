@@ -258,6 +258,49 @@ static bool mems19_send(mems_info* info, uint8_t command, bool local_echo)
     return mems_read_serial(info, &received, 1) == 1 && received == command;
 }
 
+/* Reuse the connected K-Line handle and consume exactly the local echo (when
+ * present), the ECU echo and then the command's one-byte reply. The legacy
+ * mems_send_command() remains unchanged for real ROSCO 1.x cables. */
+bool mems_command_kline19(mems_info* info, uint8_t command,
+                          bool local_echo, uint8_t* reply)
+{
+    uint8_t result = 0;
+    bool ok;
+    if (!info || !mems_is_connected(info) || !mems_lock(info))
+        return false;
+    ok = mems19_send(info, command, local_echo) &&
+         mems_read_serial(info, &result, 1) == 1;
+    if (ok && reply)
+        *reply = result;
+    mems_unlock(info);
+    return ok;
+}
+
+bool mems_move_iac_kline19(mems_info* info, uint8_t desired_pos,
+                           bool local_echo)
+{
+    uint8_t current = 0;
+    bool ok = false;
+    uint16_t attempts = 0;
+    actuator_cmd cmd;
+
+    if (!mems_command_kline19(info, MEMS_GetIACPosition, local_echo, &current))
+        return false;
+    if (desired_pos == current)
+        return true;
+    if (desired_pos > current && current >= IAC_MAXIMUM)
+        return false;
+
+    cmd = desired_pos > current ? MEMS_OpenIAC : MEMS_CloseIAC;
+    do
+    {
+        ok = mems_command_kline19(info, (uint8_t)cmd, local_echo, &current);
+        ++attempts;
+    }
+    while (ok && current != desired_pos && attempts < 300);
+    return ok && current == desired_pos;
+}
+
 bool mems_init_link_kline19(mems_info* info, uint8_t* ecu_id, bool local_echo)
 {
     uint8_t status = 0xFF;

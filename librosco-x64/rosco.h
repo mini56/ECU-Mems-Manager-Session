@@ -236,6 +236,8 @@ ROSCO_API bool mems_is_connected(mems_info* info);
 ROSCO_API bool mems_read_raw(mems_info* info, mems_data_frame_80* frame80, mems_data_frame_7d* frame7d);
 ROSCO_API bool mems_read(mems_info* info, mems_data* data);
 /* MEMS 1.9 K-Line only. Never invoked on legacy MEMS 1.2/1.3/1.6. */
+ROSCO_API bool mems_command_kline19(mems_info* info, uint8_t command, bool local_echo, uint8_t* reply);
+ROSCO_API bool mems_move_iac_kline19(mems_info* info, uint8_t desired_pos, bool local_echo);
 ROSCO_API bool mems_init_link_kline19(mems_info* info, uint8_t* ecu_id, bool local_echo);
 ROSCO_API bool mems_read_kline19(mems_info* info, mems_data* data, bool local_echo);
 ROSCO_API bool mems_read_iac_position(mems_info* info, uint8_t* position);

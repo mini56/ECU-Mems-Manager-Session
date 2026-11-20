@@ -50,7 +50,9 @@ int main(void)
     /* Additive MEMS 1.9 K-Line exports: no hardware needed, and the two
      * original init/read exports remain independently linked unchanged. */
     if (mems_init_link_kline19(NULL, NULL, false) ||
-        mems_read_kline19(NULL, NULL, false))
+        mems_read_kline19(NULL, NULL, false) ||
+        mems_command_kline19(NULL, 0xCC, false, NULL) ||
+        mems_move_iac_kline19(NULL, 0, false))
     {
         fprintf(stderr, "FAIL: K-Line functions accepted invalid session\n");
         ++failures;

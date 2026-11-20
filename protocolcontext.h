@@ -81,15 +81,20 @@ inline bool allowsMutation(MemsEcuFamily family,
                            MemsDiagnosticMode mode,
                            std::uint8_t command)
 {
-    // Mutating commands are fail-closed: merely reaching the legacy ROSCO
-    // transport does not prove the ECU generation. A proven family and normal
-    // diagnostic mode are both mandatory.
-    if (family != MemsEcuFamily::Rosco13_16 ||
-        mode != MemsDiagnosticMode::Normal)
+    // A completed ECU handshake selects the protocol family in connectToECU().
+    // No documentary lookup or exact ECU part number is required.
+    if (mode != MemsDiagnosticMode::Normal)
         return false;
 
-    // Injector command F7 is family-sensitive (SPi vs MPI/1.9) and remains
-    // blocked until the exact ECU subtype is known.
+    // MEMS 1.9 uses the same single-byte fault/reset commands but its K-Line
+    // transport must consume an optional extra local cable echo.
+    if (family == MemsEcuFamily::Mems19)
+        return command == 0xCCu || command == 0x0Fu || command == 0xFAu;
+
+    if (family != MemsEcuFamily::Rosco13_16)
+        return false;
+
+    // Injector commands are not sent without subtype-specific routing.
     if (command == 0xF7u || command == 0xEFu)
         return false;
 

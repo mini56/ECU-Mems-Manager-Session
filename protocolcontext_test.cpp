@@ -37,6 +37,12 @@ int main()
     require(!allowsGenericCommand(MemsEcuFamily::Rosco13_16, MemsDiagnosticMode::Normal, 0xF5),
             "generic F5 mode change must be refused");
 
+    require(allowsMutation(MemsEcuFamily::Rosco13_16, MemsDiagnosticMode::Normal, 0xCC),
+            "connected legacy ROSCO must permit existing clear fault control");
+    require(allowsMutation(MemsEcuFamily::Rosco13_16, MemsDiagnosticMode::Normal, 0x0F),
+            "connected legacy ROSCO must permit existing reset adjustment control");
+    require(allowsMutation(MemsEcuFamily::Rosco13_16, MemsDiagnosticMode::Normal, 0xFA),
+            "connected legacy ROSCO must permit existing ECU reset control");
     require(allowsMutation(MemsEcuFamily::Rosco13_16, MemsDiagnosticMode::Normal, 0xF8),
             "normal ROSCO coil test remains authorized by mode guard once family is proven");
     require(!allowsMutation(MemsEcuFamily::Rosco13_16, MemsDiagnosticMode::Mode4, 0xF8),
@@ -49,8 +55,16 @@ int main()
             "injector F7 must stay blocked until exact family subtype is proven");
     require(!allowsMutation(MemsEcuFamily::Rosco13_16, MemsDiagnosticMode::Normal, 0xEF),
             "MPI injector EF must stay blocked until exact family subtype is proven");
+    require(allowsMutation(MemsEcuFamily::Mems19, MemsDiagnosticMode::Normal, 0xCC),
+            "MEMS1.9 connected ECU must permit its existing fault clear command");
+    require(allowsMutation(MemsEcuFamily::Mems19, MemsDiagnosticMode::Normal, 0x0F),
+            "MEMS1.9 connected ECU must permit its existing reset adjustments command");
+    require(allowsMutation(MemsEcuFamily::Mems19, MemsDiagnosticMode::Normal, 0xFA),
+            "MEMS1.9 connected ECU must permit its existing reset ECU command");
     require(!allowsMutation(MemsEcuFamily::Mems19, MemsDiagnosticMode::Normal, 0xF8),
-            "MEMS1.9 mutations must fail closed until its family table is proven");
+            "MEMS1.9 unknown subtype must not silently expand command catalog");
+    require(!allowsMutation(MemsEcuFamily::Mems2J, MemsDiagnosticMode::Normal, 0xCC),
+            "do not send ROSCO fault reset command to MEMS 2J");
     require(!allowsMutation(MemsEcuFamily::Unknown, MemsDiagnosticMode::Normal, 0x11),
             "unknown family actuator command must fail closed");
     require(!allowsMutation(MemsEcuFamily::Rosco13_16, MemsDiagnosticMode::Transition, 0x11),

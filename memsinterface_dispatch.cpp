@@ -42,6 +42,11 @@ bool MEMSInterface::guardedMemsTestActuator(actuator_cmd cmd, uint8_t *data)
     // La recherche d'une reference dans une base n'est pas un prerequis.
     if (!m_initComplete || !mems_is_connected(&m_memsinfo))
         return false;
+#ifdef MEMS_NATIVE_KLINE_19
+    if (ecuFamily() == MemsEcuFamily::Mems19)
+        return ::mems_command_kline19(&m_memsinfo, quint8(cmd),
+                                       m_kline19LocalEcho, data);
+#endif
     return ::mems_test_actuator(&m_memsinfo, cmd, data);
 }
 
@@ -49,6 +54,11 @@ bool MEMSInterface::guardedMemsMoveIac(uint8_t desiredPos)
 {
     if (!m_initComplete || !mems_is_connected(&m_memsinfo))
         return false;
+#ifdef MEMS_NATIVE_KLINE_19
+    if (ecuFamily() == MemsEcuFamily::Mems19)
+        return ::mems_move_iac_kline19(&m_memsinfo, desiredPos,
+                                        m_kline19LocalEcho);
+#endif
     return ::mems_move_iac(&m_memsinfo, desiredPos);
 }
 
@@ -59,6 +69,11 @@ bool MEMSInterface::guardedClearFaults()
         return false;
     if (!MemsProtocolSafety::allowsMutation(ecuFamily(), diagnosticMode(), 0xCCu))
         return false;
+    #ifdef MEMS_NATIVE_KLINE_19
+    if (ecuFamily() == MemsEcuFamily::Mems19)
+        return ::mems_command_kline19(&m_memsinfo, 0xCCu,
+                                       m_kline19LocalEcho, nullptr);
+#endif
     return ::mems_clear_faults(&m_memsinfo);
 }
 
@@ -69,6 +84,11 @@ bool MEMSInterface::guardedResetAdjustments()
         return false;
     if (!MemsProtocolSafety::allowsMutation(ecuFamily(), diagnosticMode(), 0x0Fu))
         return false;
+    #ifdef MEMS_NATIVE_KLINE_19
+    if (ecuFamily() == MemsEcuFamily::Mems19)
+        return ::mems_command_kline19(&m_memsinfo, 0x0Fu,
+                                       m_kline19LocalEcho, nullptr);
+#endif
     return ::mems_reset_adjustments(&m_memsinfo);
 }
 
@@ -79,6 +99,11 @@ bool MEMSInterface::guardedResetEcu()
         return false;
     if (!MemsProtocolSafety::allowsMutation(ecuFamily(), diagnosticMode(), 0xFAu))
         return false;
+    #ifdef MEMS_NATIVE_KLINE_19
+    if (ecuFamily() == MemsEcuFamily::Mems19)
+        return ::mems_command_kline19(&m_memsinfo, 0xFAu,
+                                       m_kline19LocalEcho, nullptr);
+#endif
     return ::mems_reset_ECU(&m_memsinfo);
 }
 
@@ -457,8 +482,10 @@ bool MEMSInterface::connectToECU()
             return false;
         }
 
-        // A ROSCO handshake alone does not identify the exact ECU generation.
-        setEcuFamily(MemsEcuFamily::Unknown);
+        // The successful CA/75/F4/D0 dialogue proves the legacy ROSCO
+        // protocol family, even when its exact 1.2/1.3/1.6 subtype is unknown.
+        // Keeping Unknown here made existing fault/reset buttons unusable.
+        setEcuFamily(MemsEcuFamily::Rosco13_16);
         setDiagnosticMode(MemsDiagnosticMode::Normal);
         emit serialInterfaceDetected(adapter.portName,
                                      adapter.adapterFamily,

@@ -278,6 +278,8 @@ bool mems_read(mems_info* info, mems_data* data);
 /* Additive Windows x64 K-Line 1.9 functions, only when the source-built
  * library is selected. The historical ROSCO interface is unchanged. */
 #ifdef MEMS_NATIVE_KLINE_19
+bool mems_command_kline19(mems_info* info, uint8_t command, bool local_echo, uint8_t* reply);
+bool mems_move_iac_kline19(mems_info* info, uint8_t desired_pos, bool local_echo);
 bool mems_init_link_kline19(mems_info* info, uint8_t* ecu_id, bool local_echo);
 bool mems_read_kline19(mems_info* info, mems_data* data, bool local_echo);
 #endif
