@@ -125,7 +125,8 @@ public:
         const int selected=section-1;
         if(selected<0 || selected>=m_selected.size() || !m_names)return QVariant();
         const int source=m_selected.at(selected);
-        return source>=0 && source<m_names->size()?m_names->at(source):QVariant();
+        if(source>=0 && source<m_names->size())return m_names->at(source);
+        return QVariant();
     }
     QVariant data(const QModelIndex &index,int role=Qt::DisplayRole) const override
     {
