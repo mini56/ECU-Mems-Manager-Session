@@ -118,7 +118,7 @@ small{color:#aebcc5}
 
 
 <p>Caricare un registro CSV o TXT e selezionare i canali nella lista scorrevole. È possibile selezionare tutti i canali, deselezionarli e sovrapporre le curve.</p><p><b>Analisi dei registri</b></p>
-<p><b>Vista Curve / Colonne:</b> usare il pulsante <b>Vista: curve</b> nella parte alta del pannello sinistro di Analisi per passare a <b>Vista: colonne</b> e viceversa. Le curve esistenti restano invariate. Le colonne mostrano una riga per misura, l'ora e una colonna per ogni canale selezionato. Il pannello destro con i controlli rimane identico; selezionare un canale aggiorna la vista attiva. Passare sul nome per vedere il testo completo e l'identificatore originale. La tabella scorre in orizzontale e verticale. Sono supportati CSV/TXT con intestazioni, inclusi CSV separati da virgole o punto e virgola.</p>
+<p><b>Curve / Colonne:</b> sulla stessa riga di <b>Carica file CSV / TXT</b>, due pulsanti separati <b>Curve</b> e <b>Colonne</b> sono centrati orizzontalmente. Il pulsante attivo è arancione e l'icona di aiuto segue entrambi senza coprire il testo. Curve mantiene i grafici esistenti; Colonne visualizza l'ora e una colonna per ogni canale selezionato. La selezione dei canali e gli strumenti a destra non cambiano. Passare sul nome del canale per leggere la descrizione completa. La tabella scorre in entrambe le direzioni e supporta CSV/TXT con intestazioni, virgole e punti e virgola.</p>
 <p><img src=":/help/images/Capture d’écran (911).png" width="550"></p>
 
 

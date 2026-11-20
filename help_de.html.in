@@ -116,7 +116,7 @@ small{color:#aebcc5}
 
 
 <p>Laden Sie eine CSV- oder TXT-Protokolldatei und wählen Sie Kanäle aus der scrollbar angezeigten Liste. Alle auswählen, alle abwählen und Kurven überlagern stehen zur Verfügung.</p><p><b>Protokollanalyse</b></p>
-<p><b>Ansicht Kurven / Spalten:</b> Mit der Schaltfläche <b>Ansicht: Kurven</b> oben im linken Analysebereich wechseln Sie zu <b>Ansicht: Spalten</b> und zurück. Die bestehenden Kurvendiagramme bleiben erhalten. In der Tabelle steht eine Zeile pro Messwert mit Zeitangabe und einer Spalte pro ausgewähltem Kanal. Der rechte Bereich mit der Kanalauswahl bleibt unverändert. Das Aktivieren eines Kanals aktualisiert die aktive Ansicht. Der vollständige Name und die ursprüngliche Kennung erscheinen beim Überfahren mit der Maus. Die Tabelle ist horizontal und vertikal scrollbar. CSV/TXT mit Kopfzeilen, auch durch Kommas oder Semikolons getrennte CSV, werden unterstützt.</p>
+<p><b>Kurven / Spalten:</b> in derselben Zeile wie <b>CSV-/TXT-Datei laden</b> befinden sich zwei separate, horizontal zentrierte Schaltflächen <b>Kurven</b> und <b>Spalten</b>. Die aktive Schaltfläche ist orange; das Hilfesymbol folgt rechts daneben, ohne den Text zu verdecken. Kurven zeigt die bisherigen Diagramme; Spalten zeigt die Zeit und eine Spalte pro ausgewähltem Kanal. Die Kanalauswahl und Werkzeuge rechts bleiben unverändert. Der vollständige Name erscheint beim Überfahren des Kanals. Die Tabelle lässt sich in beide Richtungen scrollen und unterstützt CSV/TXT mit Kopfzeilen und Komma- oder Semikolon-Trennzeichen.</p>
 <p><img src=":/help/images/Capture d’écran (911).png" width="550"></p>
 
 
