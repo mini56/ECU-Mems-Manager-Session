@@ -15,7 +15,7 @@ int main(int argc,char **argv)
     ok&=check(frame(QByteArray::fromHex("1a9a"))==
               QByteArray::fromHex("b813f7021a9ade"),"8E1 MEMS3 wake frame");
     ok&=check(frame(QByteArray::fromHex("140000"))==
-              QByteArray::fromHex("b813f70314000059"),"clear faults frame");
+              QByteArray::fromHex("b813f7031400004b"),"clear faults frame");
     QByteArray payload;
     ok&=check(unpack(QByteArray::fromHex("000000025a9ac2"),&payload) &&
               payload==QByteArray::fromHex("5a9a"),"response framing and XOR");
@@ -26,7 +26,7 @@ int main(int argc,char **argv)
     ok&=check(!unpack(QByteArray::fromHex("000000ff"),&payload),
               "absurd frame length rejected");
     QVariantMap values;
-    ok&=check(decodeMeasurement(0x00,QByteArray::fromHex("61000b7400000b7400000b74"),&values)
+    ok&=check(decodeMeasurement(0x00,QByteArray::fromHex("61000b7200000b7200000b72"),&values)
               && values.value("coolant_c").toDouble()==20 &&
                  values.value("oil_c").toDouble()==20 &&
                  values.value("intake_c").toDouble()==20,
