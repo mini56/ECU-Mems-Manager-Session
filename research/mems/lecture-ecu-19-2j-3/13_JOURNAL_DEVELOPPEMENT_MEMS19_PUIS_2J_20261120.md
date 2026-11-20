@@ -218,6 +218,14 @@ Manager doit, en interne :
 
 **Prochaine opération :** création d'un workflow BUILD 177 isolé (175 et 176 conservés), compilation du Setup Windows, tests MEMS 1.9 + ABI + non-régression. Enregistrer ici le run, le SHA, le résultat et la release, sans relancer inutilement plusieurs runs.
 
+## BUILD SESSION 177 — compilation de la connexion automatique MEMS 1.9
+
+- Workflow dédié créé : `.github/workflows/session-177-mems19-auto-connect-setup.yml`; **BUILD 175 et BUILD 176 inchangés**.
+- Commit source déclenchant la compilation : `401579a3baf994b048d091a685f923362afcd55a`, publié sur `fix-documentary-additive-session-161-20261118`.
+- Run officiel : **[44707263557](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/44707263557)** (démarré à 09:01:58 UTC le 20 novembre 2026). **État à l'inscription : en cours**, pas de Setup 177 déclaré disponible.
+- Workflow : contrôle du chemin K-Line 1.9 et de l'existence de ROSCO historique, `mems19_protocol_selftest`, `rosco_abi_selftest` (code x64), tests déjà existants, création et tests du Setup installé, publication Release `mems-session-build-177` **uniquement si toutes les étapes sont vertes**.
+- Vérifications restantes : attendre le **résultat officiel GitHub Actions**, consigner succès ou première erreur exacte et nom de l'asset. La preuve d'exécution sur un véritable ECU MEMS 1.9 avec câble KKL n'existe pas tant qu'un essai physique n'a pas été réalisé.
+
 ## Points établis et limites
 
 - Le code actuel effectue déjà le réveil 1.9 avec l'adresse 0x16 à cinq bauds, synchronisation 55 + deux octets clés, complément du second octet et confirmation E9.
