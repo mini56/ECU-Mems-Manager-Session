@@ -103,7 +103,14 @@ small{color:#aebcc5}
 <h2 id="chapter-mems2j">MEMS 2J — connessione e diagnosi automatiche</h2>
 <p>Collegare un cavo diagnostico compatibile alla centralina, inserire l'accensione e premere <b>Connetti</b>. SESSION verifica le interfacce seriali disponibili e riconosce la famiglia dalle risposte effettive della centralina, senza selezione manuale di cavo o protocollo.</p>
 <p>Quando viene identificata la famiglia <b>MEMS 2J</b>, i valori disponibili appaiono in <b>Panoramica</b> e <b>Tutte le misure</b>; i guasti letti compaiono in <b>Diagnostica automatica</b>. I valori non documentati rimangono grezzi. Alcuni codici sono specifici della Mini MPi.</p>
-<p><b>Verifica:</b> il lettore e i test automatici sono stati integrati in SESSION 178; occorre ancora provarli su una centralina MEMS 2J reale. Non sono state aggiunte funzioni di cancellazione o programmazione.</p>
+<p><b>Verifica:</b> il lettore e i test automatici sono stati integrati in SESSION 178; occorre ancora provarli su una centralina MEMS 2J reale. Da SESSION 184 è disponibile la cancellazione dei guasti su richiesta esplicita dell'utente; non sono state aggiunte funzioni di programmazione, calibrazione o immobilizzatore.</p>
+
+<p><b>Cancellazione guasti MEMS 2J:</b> dopo il collegamento confermato, utilizzare il comando già presente per cancellare i guasti. SESSION invia il servizio MEMS 2J <code>31 CB</code> e verifica la risposta <code>71 CB</code>. L'operazione modifica la memoria guasti e non viene mai avviata automaticamente durante il collegamento. I comandi ROSCO di regolazione e degli attuatori non si applicano a MEMS 2J.</p>
+<h3>MEMS 3 — collegamento automatico, misure e guasti</h3>
+<p>Collegare il cavo diagnostico compatibile, inserire l'accensione e premere <b>Connetti</b>. SESSION prova il protocollo indipendente <b>MEMS 3</b> a <b>9600 baud, 8 bit, parità pari e 1 bit di stop (8E1)</b>, con trame <code>B8 13 F7</code> e checksum XOR. Solo la risposta effettiva della centralina conferma la connessione; non serve scegliere il protocollo.</p>
+<p>Con MEMS 3 collegato, il programma mostra i valori disponibili di regime, temperatura liquido, olio e aria, MAP, farfalla, lambda e tempi delle bobine. Le misure prive di unità confermata restano grezze. La diagnostica presenta i <b>codici guasto motore a 16 bit</b>, lo stato noto e i dati esadecimali ricevuti.</p>
+<p><b>Cancellazione guasti MEMS 3:</b> il comando esistente invia <code>14 00 00</code> e verifica la risposta <code>54 00 00</code>. Viene eseguito solo su richiesta dell'utente, mai durante il riconoscimento o l'acquisizione automatica. Non sono abilitati comandi sperimentali di immobilizzatore o calibrazione.</p>
+<p><b>Verifica:</b> SESSION 184 include test automatici di trame e decoder, ma collegamento e cancellazione su centraline MEMS 2J e MEMS 3 reali richiedono ancora prove. La centralina airbag RC5 non fa parte del riconoscimento motore.</p>
 
 <h2 id="chapter-10">10. Diagnostica automatica</h2>
 <p>Esamina i valori ECU correnti distinguendo stato normale, avviso e anomalia. Può registrare un riferimento ed esportare un rapporto. Controlla anche il tempo di carica della bobina.</p>
@@ -149,7 +156,7 @@ small{color:#aebcc5}
 <p>L'interfaccia supporta francese, inglese, spagnolo, italiano, portoghese e tedesco. La scelta viene salvata nelle impostazioni SESSION.</p>
 
 <h2 id="chapter-18">18. Famiglie ECU supportate</h2>
-<p>Il database e i percorsi diagnostici includono Rover MEMS 1.2, 1.3, 1.6 e 1.9. Le funzioni disponibili dipendono da ECU, veicolo e protocollo.</p>
+<p>SESSION supporta Rover MEMS <b>1.2, 1.3 e 1.6</b> tramite ROSCO, <b>MEMS 1.9</b> tramite inizializzazione K-Line e <b>MEMS 2J e MEMS 3</b> con protocolli K-Line distinti. Il riconoscimento dipende dalle risposte reali della centralina dopo <b>Connetti</b>. Le letture e i comandi disponibili dipendono dalla sessione stabilita; i comandi ROSCO di regolazione non si applicano a MEMS 2J/3. Restano da eseguire prove su centraline reali.</p>
 
 <h2 id="chapter-19">19. Guida diagnostica di base</h2>
 <p>Nessuna comunicazione: controllare quadro, porta, cavo, alimentazione e masse ECU. MAP anomalo: verificare tubo depressione, collettore e sensore. Minimo instabile: verificare interruttore, IAC, perdite d'aria, temperatura e correzioni carburante. Guasto lambda: controllare riscaldamento, cablaggio, tensione e ciclo chiuso. Bobina: controllare batteria, circuito primario e cablaggio.</p>
