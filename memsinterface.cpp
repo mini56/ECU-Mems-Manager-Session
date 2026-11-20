@@ -11,6 +11,7 @@
 #include <sys/select.h>
 #endif
 #include "memsinterface.h"
+#include "mems19protocol.h"
 
 /**
  * Constructor. Sets the serial device and measurement units.
@@ -803,11 +804,9 @@ void MEMSInterface::sendRoscoReadCommand(quint8 command)
 
   // Remove only the extra cable-local echo. Preserve the ECU response
   // (command echo + payload) for D1, D2 and F0 and the existing test page.
-  if (ecuFamily() == MemsEcuFamily::Mems19 &&
-      m_kline19LocalEcho && response.size() > 1 &&
-      static_cast<quint8>(response.at(0)) == command &&
-      static_cast<quint8>(response.at(1)) == command)
-      response.remove(0, 1);
+  if (ecuFamily() == MemsEcuFamily::Mems19)
+      response = Mems19Protocol::normalizedReply(response, command,
+                                                m_kline19LocalEcho);
 #else
   int fd = m_memsinfo.sd;
   if (fd < 0)
