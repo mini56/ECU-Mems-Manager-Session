@@ -234,6 +234,21 @@ Manager doit, en interne :
 - **Correction unique ciblée** : [commit 53258de](https://github.com/mini56/ECU-Mems-Manager-Session/commit/53258de1f53214e5e8e3b347632da4470f55889b), ajout des deux prototypes dans `rosco.h` sous `#ifdef MEMS_NATIVE_KLINE_19`, sans changer les déclarations existantes, l'ABI, les transports historiques ou les boutons.
 - Un nouveau run du **même BUILD 177** doit être déclenché après vérification des en-têtes, puis son résultat et la Release doivent être consignés ici. Ne pas déclarer BUILD 177 vert avant la réussite complète.
 
+## BUILD 177 — run final vert et transfert sur site MAJ (20 novembre 2026)
+
+**Compilation principale FINALISÉE.** Le premier run BUILD 177, [44707263557](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/44707263557), était rouge (C3861 : en-tête historique `rosco.h` manquant pour les nouveaux symboles, correction commit `53258de`). Le **second run**, [44708078591](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/44708078591), commit `e80e40b28156f62831f6da03ec5a78a8f071358d`, est terminé **SUCCESS** : compilation C++ x64, autotests MEMS19, ABI ROSCO source, test d'installation, 15 pages GUI, mises à jour, IA et contrôles de non-régression réussis.
+
+La Release source a été publiée sur GitHub : [mems-session-build-177](https://github.com/mini56/ECU-Mems-Manager-Session/releases/tag/mems-session-build-177). Assets effectivement vérifiés :
+- `ECU-Mems-Manager-Session-177-Setup.exe` (**449 481 395 octets**) ;
+- `SESSION-177-Setup.sha256` (**106 octets**).
+- Release publiée le 20/11/2026 à 09:21:12 UTC.
+
+**Transfert vers le dépôt de MAJ**, publication du programme public, sans bases constructeur :
+- Nouveau workflow dédié, sans modifier le transfert 175 historique : `mini56/ECU-Mems-Manager-Session-MAJ/.github/workflows/publish-session-177-from-session.yml`, commit `d60f4de853cb7ce2a398eb9841b9199a2b1e202c`.
+- Run MAJ [44710466044](https://github.com/mini56/ECU-Mems-Manager-Session-MAJ/actions/runs/44710466044) ; **EN COURS lors de l'inscription**. Le transfert vérifie `sha256sum --check`, taille du Setup, publie `mems-session-build-177` puis met à jour seulement `manifest.json.program.version` vers `1.1.77` avec URL et SHA256. Ne pas affirmer la publication MAJ avant `SUCCESS` et contrôle du manifeste sur GitHub.
+
+**Validation matérielle restant à effectuer :** sur un vrai MEMS 1.9, câble KKL compatible et bouton `Connecter` unique, confirmer la réponse du calculateur, la connexion, les mesures et défauts affichés. Aucun essai physique n'a été réalisé dans la CI ; le setup vert ne suffit pas à cette confirmation. Les chemins ROSCO 1.2/1.3/1.6 restent inchangés dans les sources, leurs tests automatiques sont passés.
+
 ## Points établis et limites
 
 - Le code actuel effectue déjà le réveil 1.9 avec l'adresse 0x16 à cinq bauds, synchronisation 55 + deux octets clés, complément du second octet et confirmation E9.
