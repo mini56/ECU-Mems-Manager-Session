@@ -105,6 +105,11 @@ add_executable(${PNAME} ${SOURCES})
 if(MEMS_USE_BUNDLED_LIBROSCO_X64)
     # The K-Line specific entrypoints exist only in the source-built x64 DLL.
     target_compile_definitions(${PNAME} PRIVATE MEMS_NATIVE_KLINE_19=1)
+    # Compile, link and execute the existing 60-byte ROSCO ABI check along
+    # with the additive K-Line symbol checks before distributing a Setup.
+    add_dependencies(${PNAME} rosco_abi_selftest)
+    add_custom_command(TARGET ${PNAME} POST_BUILD
+        COMMAND "$<TARGET_FILE:rosco_abi_selftest>")
 endif()
 
 # Screenshots supplied later under docs/aide/images are automatically
