@@ -350,8 +350,7 @@ void AnalysisTab::rebuildCheckboxes()
         // without modifying the existing right-side layout or checkbox text.
         const QString raw=i<m_rawColumnNames.size()?m_rawColumnNames[i]:QString();
         cb->setToolTip(raw.isEmpty() || raw==m_columnNames[i]
-            ?m_columnNames[i]:(m_columnNames[i]+QStringLiteral("
-[")+raw+QStringLiteral("]")));
+            ?m_columnNames[i]:(m_columnNames[i]+QStringLiteral("\n[")+raw+QStringLiteral("]")));
         cb->setAccessibleName(m_columnNames[i]);
         cb->setStyleSheet(QString((qApp && qApp->property("ecuDarkTheme").toBool()) ? "QCheckBox{padding:3px 0;}QCheckBox::indicator{width:13px;height:13px;border:1px solid %1;border-radius:2px;background:#0b1015;}QCheckBox::indicator:checked{background:%1;}" : "QCheckBox{padding:3px 0;}QCheckBox::indicator{width:13px;height:13px;border:1px solid %1;border-radius:2px;background:#ffffff;}QCheckBox::indicator:checked{background:%1;}").arg(c.name()));
         bool checked=false;
