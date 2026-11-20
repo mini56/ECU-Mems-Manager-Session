@@ -102,6 +102,10 @@ set(SOURCES
     settingspage.cpp settingspage.h
     singleinstance.cpp singleinstance.h nativewindowstyle.cpp nativewindowstyle.h)
 add_executable(${PNAME} ${SOURCES})
+if(MEMS_USE_BUNDLED_LIBROSCO_X64)
+    # The K-Line specific entrypoints exist only in the source-built x64 DLL.
+    target_compile_definitions(${PNAME} PRIVATE MEMS_NATIVE_KLINE_19=1)
+endif()
 
 # Screenshots supplied later under docs/aide/images are automatically
 # embedded as Qt resources in every Windows Setup, so the help stays offline.
