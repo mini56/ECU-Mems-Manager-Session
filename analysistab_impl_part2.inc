@@ -153,7 +153,15 @@ public:
     }
     void setSelectedChannels(const QVector<int> &selected)
     {
-        if(m_selected==selected)return;
+        // Qt 5.15's QVector<int>::operator== uses an obsolete stdext
+        // iterator on recent MSVC; compare elements without that overload.
+        bool unchanged=m_selected.size()==selected.size();
+        if(unchanged){
+            for(int i=0;i<selected.size();++i){
+                if(m_selected.at(i)!=selected.at(i)){unchanged=false;break;}
+            }
+        }
+        if(unchanged)return;
         beginResetModel();m_selected=selected;endResetModel();
     }
     void dataUpdated()
