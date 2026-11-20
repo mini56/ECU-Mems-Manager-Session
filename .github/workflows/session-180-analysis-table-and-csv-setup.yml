@@ -99,6 +99,7 @@ jobs:
           assert 'setToolTip' in main and 'setAccessibleName' in main
           assert 'syncTableColumns()' in curve and 'onViewModeToggled' in curve
           assert 'AnalysisValuesTableModel' in model and 'headerData' in model
+          assert 'm_selected==selected' not in model and 'm_selected.size()==selected.size()' in model
           assert 'Semicolon CSV must display both complete right-side names' in smoke
           assert 'Original curves lost after reading a standard CSV' in smoke
           for lang in ('fr','en','es','it','pt','de'):
