@@ -106,7 +106,14 @@ small{color:#aebcc5}
 <h2 id="chapter-mems2j">MEMS 2J — conexión y diagnóstico automáticos</h2>
 <p>Conecte un cable de diagnóstico compatible a la ECU, active el contacto y pulse <b>Conectar</b>. SESSION comprueba las interfaces serie disponibles e identifica la familia por la respuesta real de la ECU, sin seleccionar manualmente la marca del cable ni el protocolo.</p>
 <p>Al reconocer <b>MEMS 2J</b>, las mediciones disponibles aparecen en <b>Vista general</b> y <b>Todas las mediciones</b>; los fallos leídos aparecen en <b>Diagnóstico automático</b>. Los valores no documentados permanecen en bruto. Algunos códigos de fallo corresponden específicamente al Mini MPi.</p>
-<p><b>Validación:</b> el lector y sus pruebas automáticas se integraron en SESSION 178; aún falta comprobarlos con una ECU MEMS 2J real. No se añaden funciones de borrado ni de programación.</p>
+<p><b>Validación:</b> el lector y sus pruebas automáticas se integraron en SESSION 178; aún falta comprobarlos con una ECU MEMS 2J real. Desde SESSION 184, el usuario puede solicitar expresamente el borrado de fallos; no se han añadido funciones de programación, calibración ni inmovilizador.</p>
+
+<p><b>Borrado de fallos MEMS 2J:</b> tras establecer la conexión, utilice el botón existente para borrar los códigos de fallo. SESSION envía el servicio MEMS 2J <code>31 CB</code> y comprueba la respuesta <code>71 CB</code>. Esta operación modifica la memoria de fallos y nunca se ejecuta automáticamente al conectar. Los ajustes y actuadores de ROSCO no corresponden a MEMS 2J.</p>
+<h3>MEMS 3 — conexión automática, medidas y fallos</h3>
+<p>Conecte un cable de diagnóstico compatible, active el contacto y pulse <b>Conectar</b>. SESSION prueba el diálogo propio de <b>MEMS 3</b>, a <b>9600 baudios, 8 bits de datos, paridad par y 1 bit de parada (8E1)</b>, con tramas <code>B8 13 F7</code> y suma XOR. Solo las respuestas reales de la ECU confirman la conexión; no es necesario seleccionar el protocolo.</p>
+<p>Una vez reconocida la ECU MEMS 3, se muestran las medidas disponibles de régimen, temperaturas del refrigerante, aceite y aire, MAP, mariposa, lambda y tiempos de bobinas. Los datos cuya unidad no está establecida permanecen en bruto. El diagnóstico presenta los <b>códigos de fallo de motor de 16 bits</b>, su estado conocido y los datos hexadecimales.</p>
+<p><b>Borrado de fallos MEMS 3:</b> el botón existente envía el servicio <code>14 00 00</code> y comprueba la respuesta <code>54 00 00</code>. Se ejecuta únicamente por petición del usuario, nunca durante el reconocimiento o la lectura automáticos. Los comandos experimentales de calibración e inmovilizador no están habilitados.</p>
+<p><b>Validación:</b> SESSION 184 incluye pruebas automáticas de tramas y descodificación; todavía deben verificarse las conexiones y los borrados en ECU MEMS 2J y MEMS 3 reales. El módulo de airbag RC5 no forma parte de la detección de la ECU del motor.</p>
 
 <h2 id="chapter-10">10. Diagnóstico automático</h2>
 <p>Evalúa las mediciones ECU actuales y diferencia estados normales, avisos y anomalías. Permite guardar una referencia y exportar un informe. También comprueba el tiempo de carga de la bobina.</p>
@@ -152,7 +159,7 @@ small{color:#aebcc5}
 <p>La interfaz admite francés, inglés, español, italiano, portugués y alemán. La elección se guarda en los ajustes de SESSION.</p>
 
 <h2 id="chapter-18">18. Familias ECU admitidas</h2>
-<p>La base y las funciones de diagnóstico abarcan Rover MEMS 1.2, 1.3, 1.6 y 1.9. Las funciones disponibles dependen de la ECU, el vehículo y el protocolo.</p>
+<p>SESSION admite Rover MEMS <b>1.2, 1.3 y 1.6</b> mediante ROSCO, <b>MEMS 1.9</b> mediante inicialización K-Line y <b>MEMS 2J y MEMS 3</b> mediante protocolos K-Line independientes. La familia se identifica por la respuesta correcta de la ECU tras pulsar <b>Conectar</b>. Las medidas y operaciones dependen de la sesión establecida; los ajustes ROSCO no se envían a MEMS 2J/3. Quedan pendientes las pruebas con ECU reales.</p>
 
 <h2 id="chapter-19">19. Guía básica de diagnóstico</h2>
 <p>Sin comunicación: comprobar contacto, puerto, cable, alimentación y masas de la ECU. MAP anómalo: comprobar manguera de vacío, colector y sensor. Ralentí inestable: revisar interruptor, IAC, fugas, temperatura y correcciones de combustible. Fallo lambda: comprobar calentamiento, cableado, tensión y bucle cerrado. Bobina: comprobar batería, primario y conexiones.</p>
