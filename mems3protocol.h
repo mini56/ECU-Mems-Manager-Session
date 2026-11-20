@@ -124,8 +124,8 @@ inline QStringList decodeFaults(const QByteArray &p)
     for(int i=2;i+2<p.size();i+=3) {
         const quint16 id=word(p,i);
         faults.append(QStringLiteral("%1 : %2 (%3)")
-                      .arg(id,4,16,QChar('0')).toUpper()
-                      .arg(faultDescription(id),faultState(byte(p,i+2))));
+                      .arg(QStringLiteral("%1").arg(id,4,16,QChar('0')).toUpper(),
+                           faultDescription(id),faultState(byte(p,i+2))));
     }
     return faults;
 }
@@ -225,6 +225,13 @@ private:
         QElapsedTimer timer;timer.start();
         while(timer.elapsed()<timeout && !cancelled()) {
             while(!m_receive.isEmpty()) {
+                // Some K-Line adapters echo only the raw 1A 9A wake-up bytes.
+                if(command==QByteArray::fromHex("1a9a") &&
+                   m_receive.startsWith(QByteArray::fromHex("1a9a"))) {
+                    m_receive.remove(0,2);continue;
+                }
+                if(command==QByteArray::fromHex("1a9a") &&
+                   m_receive==QByteArray(1,char(0x1a))) break;
                 if(!m_lastSent.isEmpty() && m_receive.startsWith(m_lastSent)) {
                     m_receive.remove(0,m_lastSent.size());continue;
                 }
