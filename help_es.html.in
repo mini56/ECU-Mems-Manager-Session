@@ -121,6 +121,7 @@ small{color:#aebcc5}
 
 
 <p>Cargue un registro CSV o TXT y seleccione los canales en la lista desplazable. Los botones permiten seleccionar todos, desmarcarlos o superponer curvas para comparar mediciones.</p><p><b>Análisis de registros</b></p>
+<p><b>Vista Curvas / Columnas:</b> utilice el botón <b>Vista: curvas</b> situado arriba, en la parte izquierda de Análisis, para cambiar a <b>Vista: columnas</b> y viceversa. Las curvas actuales se conservan. Las columnas muestran una fila por medida, la hora y una columna por canal seleccionado. La parte derecha y sus controles no cambian; al marcar una vía se actualiza la vista activa. Pase el puntero por el nombre para ver el texto completo y su identificador. La tabla permite desplazamiento horizontal y vertical. Se admiten CSV/TXT con cabeceras, incluidos CSV separados por comas o punto y coma.</p>
 <p><img src=":/help/images/Capture d’écran (911).png" width="550"></p>
 
 

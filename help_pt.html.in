@@ -116,6 +116,7 @@ small{color:#aebcc5}
 
 
 <p>Carregue um registo CSV ou TXT e selecione os canais na lista com deslocamento. Pode selecionar tudo, desmarcar tudo ou sobrepor curvas.</p><p><b>Análise de registos</b></p>
+<p><b>Vista Curvas / Colunas:</b> utilize o botão <b>Vista: curvas</b> no topo da parte esquerda de Análise para mudar para <b>Vista: colunas</b>, e vice-versa. Os gráficos existentes são preservados. A tabela apresenta uma linha por medição, a hora e uma coluna por via selecionada. A parte direita e os seus comandos não mudam; selecionar uma via atualiza a vista ativa. Passe o ponteiro sobre o nome para ler a designação completa e o identificador original. A tabela tem deslocamento horizontal e vertical. São suportados CSV/TXT com cabeçalhos, incluindo CSV separados por vírgulas ou ponto e vírgula.</p>
 <p><img src=":/help/images/Capture d’écran (911).png" width="550"></p>
 
 

@@ -151,6 +151,7 @@ small{color:#aebcc5}
 
 <p>Load a <b>CSV or TXT</b> log using the top button. Select data channels in the scrollable <b>Available channels</b> list. Use <b>Select all</b>, <b>Clear all</b> or <b>Overlay curves</b> to compare measurements over time.</p>
 <p><b>Screenshot — Analysis: log curves and selectable channels.</b></p>
+<p><b>Curves / Columns view:</b> use the <b>View: curves</b> button at the top of the left analysis panel to switch to <b>View: columns</b>, and back again. Curves preserves the existing plots; Columns shows one row per sample, a time column and one column for each selected channel. The right panel and all channel-selection controls remain unchanged. Selecting a channel on the right updates either view; hover over its name to see the complete label and source identifier. The table scrolls horizontally and vertically. CSV/TXT files with headers, including comma- and semicolon-separated CSV, are supported.</p>
 <p><img src=":/help/images/Capture d’écran (911).png" width="550"></p>
 
 
