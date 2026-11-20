@@ -18,7 +18,8 @@ class DiagnosticPanel : public QWidget
 public:
     explicit DiagnosticPanel(QWidget *parent = nullptr);
     void updateData(const mems_data *data);
-    void update2JData(const QVariantMap &values, const QStringList &faults);
+    void update2JData(const QVariantMap &values, const QStringList &faults,
+                      const QString &family = QStringLiteral("MEMS 2J"));
     void setEcuId(const QByteArray &id);
 
 private slots:
@@ -44,6 +45,7 @@ private:
     mems_data m_last{};
     bool m_haveData = false;
     bool m_showing2J = false;
+    QString m_structuredEcuName = QStringLiteral("MEMS 2J");
     QVariantMap m_mems2jValues;
     QStringList m_mems2jFaults;
     QVariantMap m_2jReference;
