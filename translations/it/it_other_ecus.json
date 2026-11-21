@@ -86,5 +86,22 @@
   "16920": "Parametro",
   "16921": "Valore",
   "16922": "Traffico diagnostico TX/RX",
-  "16923": "Occorre un cavo Lucas 5AS adattato. I valori grezzi 00/80 non significano necessariamente aperto/chiuso."
+  "16923": "Occorre un cavo Lucas 5AS adattato. I valori grezzi 00/80 non significano necessariamente aperto/chiuso.",
+  "16924": "Test clacson",
+  "16925": "Test LED",
+  "16926": "Test emergenza",
+  "16927": "Comandi di test e arresto inviati. Risultato fisico non verificato.",
+  "16928": "Test interrotto o invio incompleto. Controllare lo stato delle uscite.",
+  "16929": "Conferma — test uscita Lucas 5AS",
+  "16930": "Il clacson può suonare. Manager lo attiva brevemente e invia un comando di arresto, ma l'arresto fisico non è garantito senza prova reale. Avviare?",
+  "16931": "Il LED immobilizer può accendersi. Manager lo attiva brevemente e invia un comando di arresto; l'arresto fisico non è ancora verificato. Avviare?",
+  "16932": "Le luci di emergenza possono accendersi sui 5AS dotati di questa uscita. Manager invia un comando di arresto dopo una breve attivazione; l'arresto fisico non è verificato. Avviare?",
+  "16933": "Avvia test",
+  "16934": "Annulla",
+  "16935": "Salva registro",
+  "16936": "Registro Lucas 5AS (*.log)",
+  "16937": "Registro salvato: %1",
+  "16938": "Impossibile salvare il registro",
+  "16940": "Monitoraggio in tempo reale",
+  "16941": "Ferma monitoraggio"
 }
