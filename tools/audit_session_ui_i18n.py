@@ -13,7 +13,7 @@ keys = (list(range(16200,16220))+list(range(16300,16336))+
         list(range(16600,16612))+list(range(16700,16714))+
         list(range(16801,16828))+[16831,16832,16833]+
         list(range(16840,16864))+[16880]+list(range(16890,16898))+
-        list(range(16900,16939))+list(range(16940,16960))+[6208])
+        list(range(16900,16939))+list(range(16940,16972))+[6208])
 errors = []
 def check(condition, message):
     if not condition: errors.append(message)
@@ -81,9 +81,12 @@ check(all(s in other for s in (
 check(all(x in other for x in
           ('lucas5asPlipControlButton','lucas5asPlipResetButton',
            'recordPlipSnapshot(fields)','m_5asLiveActive || m_plipMonitoring',
-           'lucas5asplipmonitor.h')) and
+           'lucas5asplipmonitor.h',
+           'lucas5asPlipLearnStartButton','lucas5asPlipLearnStopButton',
+           'QMetaObject::invokeMethod(m_5asWorker,"startFobLearning"',
+           'QMetaObject::invokeMethod(m_5asWorker,"finishFobLearning"')) and
       'lucas5as_plip_selftest' in cmake,
-      'PLIP monitor must share the 5AS transport and have a selftest')
+      'PLIP monitor and key learning must share the authenticated 5AS transport')
 for lang in langs:
     help_catalog = json.loads(read(f'translations/{lang}/{lang}_other_ecus.json'))
     for key in (16892,16894,16896):

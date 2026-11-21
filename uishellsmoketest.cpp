@@ -194,8 +194,8 @@ bool verifyUi(MainWindow &window)
     if(otherPage){
         // PLIP monitoring shares the 5AS worker, with no second ECU connection.
         const QList<QPushButton*> actions=otherPage->findChildren<QPushButton*>();
-        ok=check(actions.size()==17,
-                 "Four RC5, eight Lucas 5AS, two PLIP and three cable-help buttons required") && ok;
+        ok=check(actions.size()==19,
+                 "Four RC5, eight Lucas 5AS, four PLIP and three cable-help buttons required") && ok;
         const char *const ids[]={
             "rc5ConnectButton","rc5DisconnectButton",
             "rc5ReadFaultsButton","rc5ClearFaultsButton"
@@ -248,7 +248,16 @@ bool verifyUi(MainWindow &window)
                 QStringLiteral("lucas5asPlipResetButton"));
             QTableWidget *plipTable=otherPage->findChild<QTableWidget*>(
                 QStringLiteral("lucas5asPlipTable"));
-            ok=check(keysPanel->findChildren<QPushButton*>().size()==3 &&
+            QPushButton *learnStart=otherPage->findChild<QPushButton*>(
+                QStringLiteral("lucas5asPlipLearnStartButton"));
+            QPushButton *learnStop=otherPage->findChild<QPushButton*>(
+                QStringLiteral("lucas5asPlipLearnStopButton"));
+            QLabel *learningStatus=otherPage->findChild<QLabel*>(
+                QStringLiteral("lucas5asPlipLearningStatus"));
+            ok=check(keysPanel->findChildren<QPushButton*>().size()==5 &&
+                     learnStart && !learnStart->isEnabled() &&
+                     learnStop && !learnStop->isEnabled() &&
+                     learningStatus && learningStatus->text()==I18n::text(16962) &&
                      plipControl && plipControl->isEnabled() &&
                      plipReset && plipReset->isEnabled() &&
                      plipTable && plipTable->rowCount()==4 &&
@@ -874,7 +883,13 @@ bool verifyUi(MainWindow &window)
             QStringLiteral("lucas5asPlipTable"));
         QLabel *plipWarning=window.findChild<QLabel*>(
             QStringLiteral("lucas5asPlipWarning"));
-        ok=check(plipControl && plipControl->text()==I18n::text(16943) &&
+        QPushButton *learnStart=window.findChild<QPushButton*>(
+            QStringLiteral("lucas5asPlipLearnStartButton"));
+        QPushButton *learnStop=window.findChild<QPushButton*>(
+            QStringLiteral("lucas5asPlipLearnStopButton"));
+        ok=check(learnStart && learnStart->text()==I18n::text(16960) &&
+                 learnStop && learnStop->text()==I18n::text(16961) &&
+                 plipControl && plipControl->text()==I18n::text(16943) &&
                  plipReset && plipReset->text()==I18n::text(16945) &&
                  plipWarning && plipWarning->text()==I18n::text(16954) &&
                  plipTable && plipTable->horizontalHeaderItem(0) &&

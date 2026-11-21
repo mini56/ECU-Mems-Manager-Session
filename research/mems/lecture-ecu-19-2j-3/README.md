@@ -17,6 +17,10 @@ Documentation uniquement : le runtime SESSION et la Release 182 ne sont pas modi
 
 - **[Archive Andrew Revill : source et cadre d'utilisation](29_ARCHIVE_FIRMWARE_ANDREW_REVILL_REFERENCE_20261121.md)** — lien externe vers les fichiers de firmwares Rover. **Pas de copie binaire dans le dépôt, pas d'intégration dans le Setup ni de modification de Manager.**
 
+## Apprentissage PLIP Lucas 5AS (SESSION 192)
+
+- [Commandes documentées 5F/6F, confirmation obligatoire et limites des validations](30_LUCAS5AS_PLIP_APPRENTISSAGE_SESSION192_20261121.md). Les tests logiciels ne prouvent pas que des télécommandes ont été associées à un boîtier réel.
+
 ## Où trouver les éléments
 
 - [Journal de reprise et avancement réel](13_JOURNAL_DEVELOPPEMENT_MEMS19_PUIS_2J_20261120.md) — point d'entrée obligatoire.
