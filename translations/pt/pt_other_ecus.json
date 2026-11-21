@@ -86,5 +86,22 @@
   "16920": "Parâmetro",
   "16921": "Valor",
   "16922": "Tráfego de diagnóstico TX/RX",
-  "16923": "Requer cabo Lucas 5AS adaptado. Os valores brutos 00/80 não indicam necessariamente aberto/fechado."
+  "16923": "Requer cabo Lucas 5AS adaptado. Os valores brutos 00/80 não indicam necessariamente aberto/fechado.",
+  "16924": "Testar buzina",
+  "16925": "Testar LED",
+  "16926": "Testar emergência",
+  "16927": "Comandos de teste e paragem enviados. Resultado físico não verificado.",
+  "16928": "Teste interrompido ou envio incompleto. Verificar o estado das saídas.",
+  "16929": "Confirmação — teste de saída Lucas 5AS",
+  "16930": "A buzina do veículo pode soar. Manager ativa-a brevemente e envia um comando de paragem, mas a paragem física não pode ser garantida sem teste real. Iniciar?",
+  "16931": "O LED do imobilizador pode acender-se. Manager ativa-o brevemente e envia um comando de paragem; o efeito físico não foi verificado. Iniciar?",
+  "16932": "As luzes de emergência podem acender-se nos módulos 5AS equipados com esta saída. Manager ativa brevemente e envia um comando de paragem; a paragem física não foi verificada. Iniciar?",
+  "16933": "Iniciar teste",
+  "16934": "Cancelar",
+  "16935": "Guardar registo",
+  "16936": "Registo Lucas 5AS (*.log)",
+  "16937": "Registo guardado: %1",
+  "16938": "Não foi possível guardar o registo",
+  "16940": "Monitorização em direto",
+  "16941": "Parar monitorização"
 }
