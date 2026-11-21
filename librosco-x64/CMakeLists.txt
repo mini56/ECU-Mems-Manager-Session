@@ -54,3 +54,8 @@ add_executable(manager_dll_contract_selftest manager_dll_contract_selftest.cpp)
 target_compile_definitions(manager_dll_contract_selftest PRIVATE MEMS_NATIVE_KLINE_19=1)
 target_link_libraries(manager_dll_contract_selftest PRIVATE rosco)
 add_test(NAME manager_dll_contract_selftest COMMAND manager_dll_contract_selftest)
+
+# Simulated transport regression uses protocol.c unchanged with fake Win32
+# I/O solely inside this offline test executable. No real COM access possible.
+add_executable(serial_protocol_selftest serial_protocol_selftest.c)
+add_test(NAME serial_protocol_selftest COMMAND serial_protocol_selftest)
