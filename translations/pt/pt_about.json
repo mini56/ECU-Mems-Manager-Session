@@ -6,5 +6,6 @@
   "6204": "Agradecimentos especiais a:",
   "6205": "Pelos seus trabalhos anteriores em ferramentas de leitura e diagnóstico das unidades Rover MEMS.",
   "6206": "por testar",
-  "6207": "MEMS 2J e MEMS 3: leitura das medições e dos códigos de avaria do motor; apagamento de avarias apenas a pedido do utilizador. As funções experimentais de calibração e imobilizador não estão ativadas. Faltam testes em ECU reais."
+  "6207": "MEMS 2J e MEMS 3: leitura das medições e dos códigos de avaria do motor; apagamento de avarias apenas a pedido do utilizador. As funções experimentais de calibração e imobilizador não estão ativadas. Faltam testes em ECU reais.",
+  "6208": "Lucas 5AS (validação em módulo real pendente): identificação e estados em direto, testes breves de buzina, LED e luzes de emergência com confirmação prévia e registo de diagnóstico. Sem alterações EEPROM nem programação de comandos nesta versão."
 }
