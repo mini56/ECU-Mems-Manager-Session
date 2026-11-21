@@ -191,11 +191,11 @@ bool verifyUi(MainWindow &window)
     ok=check(otherPage && rc5Panel && immobiliserPanel && keysPanel,
              "Other ECUs must have three independent columns") && ok;
     if(otherPage){
-        // RC5 has exactly four real user actions; the other two workspaces
-        // remain passive placeholders with no diagnostic or key commands.
+        // RC5 retains exactly four diagnostic actions. The three additional
+        // buttons show offline cable information and never send ECU commands.
         const QList<QPushButton*> actions=otherPage->findChildren<QPushButton*>();
-        ok=check(actions.size()==4,
-                 "RC5 must expose exactly four actions, no 5AS or key buttons") && ok;
+        ok=check(actions.size()==7,
+                 "Four RC5 commands plus three cable help buttons required") && ok;
         const char *const ids[]={
             "rc5ConnectButton","rc5DisconnectButton",
             "rc5ReadFaultsButton","rc5ClearFaultsButton"
@@ -227,10 +227,24 @@ bool verifyUi(MainWindow &window)
                          panel->sizePolicy().horizontalPolicy()==QSizePolicy::Expanding,
                          "Module must occupy a flexible column") && ok;
         }
+        const char *const helpIds[]={
+            "rc5CableInfoButton","immobiliserCableInfoButton","keysCableInfoButton"
+        };
+        const QFrame *const helpPanels[]={rc5Panel,immobiliserPanel,keysPanel};
+        for(int i=0;i<3;++i){
+            const QFrame *panel=helpPanels[i];
+            QPushButton *help=otherPage->findChild<QPushButton*>(
+                QString::fromLatin1(helpIds[i]));
+            ok=check(help && help->isEnabled() && panel &&
+                     help->parentWidget()==panel &&
+                     panel->layout() &&
+                     panel->layout()->itemAt(panel->layout()->count()-1)->widget()==help,
+                     "Cable information button must be active at bottom of its own module") && ok;
+        }
         for(QFrame *panel:{immobiliserPanel,keysPanel})
             if(panel)
-                ok=check(panel->findChildren<QPushButton*>().isEmpty(),
-                         "Unfinished immobiliser and key columns must have no commands") && ok;
+                ok=check(panel->findChildren<QPushButton*>().size()==1,
+                         "Reserved ECU columns must contain cable help only") && ok;
     }
 
     // The update action is a footer control, immediately after the footer
@@ -750,6 +764,22 @@ bool verifyUi(MainWindow &window)
                 QString::fromLatin1(actionNames[i]));
             ok=check(button && button->text()==I18n::text(16805+i),
                      "RC5 button must follow the six selected languages") && ok;
+        }
+        const char *const cableIds[]={
+            "rc5CableInfoButton","immobiliserCableInfoButton",
+            "keysCableInfoButton"
+        };
+        for(int i=0;i<3;++i){
+            QPushButton *cable=window.findChild<QPushButton*>(
+                QString::fromLatin1(cableIds[i]));
+            ok=check(cable && cable->text()==I18n::text(16890),
+                     "Cable help button must match the selected language") && ok;
+            const QString help=I18n::text(16892+2*i);
+            ok=check(!I18n::text(16891+2*i).isEmpty() &&
+                     help.contains(QStringLiteral("<html>")) &&
+                     help.contains(QStringLiteral("</html>")) &&
+                     help.size()>350,
+                     "Offline cable documentation must be translated and substantive") && ok;
         }
         QTableWidget *rc5Table=window.findChild<QTableWidget*>(
             QStringLiteral("rc5FaultsTable"));
