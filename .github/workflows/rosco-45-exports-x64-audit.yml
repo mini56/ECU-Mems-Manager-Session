@@ -11,7 +11,7 @@ on:
       - '.github/workflows/rosco-45-exports-x64-audit.yml'
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   verification_dll:
     name: Construire la DLL seule et verifier 53 exports
@@ -56,14 +56,24 @@ jobs:
           if([BitConverter]::ToUInt16($bytes,$pe+4) -ne 0x8664){throw 'ROSCO DLL is not AMD64'}
           $sha=(Get-FileHash $dll -Algorithm SHA256).Hash.ToLowerInvariant()
           Write-Host "ROSCO_45_LEGACY_EXPORTS_PLUS_8_VERIFIED AMD64 sha256=$sha"
-      - name: Conserver le binaire de validation sans le publier dans Manager
-        uses: actions/upload-artifact@v4
-        with:
-          name: ROSCO-x64-45-originales-8-extensions-DLL-A-VALIDER
-          path: |
-            build-rosco-45/Release/mems_manager_x64.dll
-            build-rosco-45/Release/rosco_abi_selftest.exe
-            librosco-x64/rosco.h
-            librosco-x64/mems_manager_x64.def
-          if-no-files-found: error
-          retention-days: 7
+      - name: Conserver la DLL validee dans une Release BROUILLON privee
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $tag="rosco-dll-audit-$($env:GITHUB_SHA.Substring(0,12))"
+          $exe="build-rosco-45/Release/mems_manager_x64.dll"
+          $sha=(Get-FileHash $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          # DRAFT only, in this PRIVATE source repository, NEVER in public MAJ.
+          gh release create $tag `
+            "$exe#mems_manager_x64.dll" `
+            "librosco-x64/rosco.h#rosco.h" `
+            "librosco-x64/mems_manager_x64.def#mems_manager_x64.def" `
+            --repo $env:GITHUB_REPOSITORY `
+            --target $env:GITHUB_SHA `
+            --draft `
+            --title "ROSCO x64 - validation technique privee" `
+            --notes "DLL compilee et testee sans calculateur. SHA256: $sha. BROUILLON PRIVE uniquement. Aucun Setup ni mise a jour publique."
+          if($LASTEXITCODE -ne 0){throw 'Unable to store private DRAFT DLL'}
+          Write-Host 'ROSCO_PRIVATE_DRAFT_STORED; NEVER PUBLISHED TO MAJ'
