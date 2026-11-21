@@ -192,6 +192,18 @@ bool verifyUi(MainWindow &window)
     ok=check(otherPage && rc5Panel && immobiliserPanel && keysPanel,
              "Other ECUs must have three independent columns") && ok;
     if(otherPage){
+        // The three first rows of action buttons must share the same
+        // vertical anchor in each responsive module.
+        const char *const topAreaIds[]={
+            "rc5TopInfoArea","lucas5asTopInfoArea","plipTopInfoArea"
+        };
+        for(const char *name:topAreaIds){
+            QWidget *area=otherPage->findChild<QWidget*>(
+                QString::fromLatin1(name));
+            ok=check(area && area->minimumHeight()==52 &&
+                     area->sizePolicy().verticalPolicy()==QSizePolicy::Fixed,
+                     "Three other-ECU top action rows must align") && ok;
+        }
         // PLIP monitoring shares the 5AS worker, with no second ECU connection.
         const QList<QPushButton*> actions=otherPage->findChildren<QPushButton*>();
         ok=check(actions.size()==19,

@@ -491,12 +491,31 @@ private:
     }
 
 
+    // Same information area height across all three modules: their first
+    // action buttons must align despite a different number of status labels.
+    QVBoxLayout *addTopInfoArea(QVBoxLayout *root,QWidget *parent,
+                                const QString &name)
+    {
+        QWidget *area=new QWidget(parent);
+        area->setObjectName(name);
+        area->setMinimumHeight(52);
+        area->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+        QVBoxLayout *content=new QVBoxLayout(area);
+        content->setContentsMargins(0,0,0,0);
+        content->setSpacing(9);
+        root->addWidget(area);
+        return content;
+    }
+
     void createPlipPanel(QVBoxLayout *root,QWidget *parent)
     {
+        QVBoxLayout *top=addTopInfoArea(root,parent,
+                                       QStringLiteral("plipTopInfoArea"));
         m_plipIntro=new QLabel(parent);
         m_plipIntro->setObjectName(QStringLiteral("lucas5asPlipIntro"));
         m_plipIntro->setWordWrap(true);
-        root->addWidget(m_plipIntro);
+        top->addWidget(m_plipIntro);
+        top->addStretch(1);
 
         QHBoxLayout *commands=new QHBoxLayout;
         commands->setSpacing(5);
@@ -705,15 +724,18 @@ private:
 
     void createRc5Panel(QVBoxLayout *root,QWidget *parent)
     {
+        QVBoxLayout *top=addTopInfoArea(root,parent,
+                                       QStringLiteral("rc5TopInfoArea"));
         m_status=new QLabel(parent);
         m_status->setObjectName(QStringLiteral("rc5ConnectionStatus"));
         m_status->setWordWrap(true);
-        root->addWidget(m_status);
+        top->addWidget(m_status);
 
         m_portLabel=new QLabel(parent);
         m_portLabel->setObjectName(QStringLiteral("rc5PortStatus"));
         m_portLabel->setWordWrap(true);
-        root->addWidget(m_portLabel);
+        top->addWidget(m_portLabel);
+        top->addStretch(1);
 
         QGridLayout *commands=new QGridLayout;
         commands->setHorizontalSpacing(5);
@@ -770,15 +792,18 @@ private:
 
     void create5AsPanel(QVBoxLayout *root,QWidget *parent)
     {
+        QVBoxLayout *top=addTopInfoArea(root,parent,
+                                       QStringLiteral("lucas5asTopInfoArea"));
         m_5asStatus=new QLabel(parent);
         m_5asStatus->setObjectName(QStringLiteral("lucas5asConnectionStatus"));
         m_5asStatus->setWordWrap(true);
-        root->addWidget(m_5asStatus);
+        top->addWidget(m_5asStatus);
 
         m_5asPortLabel=new QLabel(parent);
         m_5asPortLabel->setObjectName(QStringLiteral("lucas5asPortStatus"));
         m_5asPortLabel->setWordWrap(true);
-        root->addWidget(m_5asPortLabel);
+        top->addWidget(m_5asPortLabel);
+        top->addStretch(1);
 
         QGridLayout *commands=new QGridLayout;
         commands->setHorizontalSpacing(5);
