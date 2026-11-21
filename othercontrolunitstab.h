@@ -685,6 +685,56 @@ private:
                                   Qt::QueuedConnection);
     }
 
+    void toggle5AsLive()
+    {
+        if(!m_5asConnected)return;
+        m_5asLiveActive=!m_5asLiveActive;
+        if(m_5asLiveActive){
+            m_5asLiveTimer->start();
+            if(!m_5asBusy)read5As();
+        }else m_5asLiveTimer->stop();
+        update5AsButtons();
+    }
+
+    void test5AsOutput(int output)
+    {
+        if(!m_5asConnected || m_5asBusy ||
+           (output!=8 && output!=9 && output!=13))return;
+        // This physical output may operate audible or visible vehicle
+        // equipment. Explain the consequence and require an affirmative
+        // choice BEFORE queueing any diagnostic test command.
+        const int warningKey=output==8?16930:(output==9?16931:16932);
+        QMessageBox confirmation(QMessageBox::Warning,I18n::text(16929),
+                                 I18n::text(warningKey),
+                                 QMessageBox::Ok|QMessageBox::Cancel,this);
+        confirmation.setDefaultButton(QMessageBox::Cancel);
+        confirmation.button(QMessageBox::Ok)->setText(I18n::text(16933));
+        confirmation.button(QMessageBox::Cancel)->setText(I18n::text(16934));
+        if(confirmation.exec()!=QMessageBox::Ok)return;
+        m_5asBusy=true;
+        update5AsButtons();
+        QMetaObject::invokeMethod(m_5asWorker,"pulseOutput",
+                                  Qt::QueuedConnection,Q_ARG(int,output));
+    }
+
+    void save5AsLog()
+    {
+        if(m_5asTrace->toPlainText().isEmpty())return;
+        const QString path=QFileDialog::getSaveFileName(
+            this,I18n::text(16935),QStringLiteral("Lucas5AS-Diagnostic.log"),
+            I18n::text(16936));
+        if(path.isEmpty())return;
+        QFile file(path);
+        const QByteArray content=m_5asTrace->toPlainText().toUtf8();
+        if(!file.open(QIODevice::WriteOnly|QIODevice::Truncate|QIODevice::Text) ||
+           file.write(content)!=content.size()){
+            set5AsStatus(16938);
+            return;
+        }
+        file.close();
+        set5AsStatus(16937,path);
+    }
+
     void setStatus(int key,const QString &arg=QString())
     {
         m_statusKey=key;
