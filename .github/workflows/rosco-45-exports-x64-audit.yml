@@ -28,13 +28,15 @@ jobs:
           @'
           from pathlib import Path
           t=Path('memsinterface_dispatch.cpp').read_text(encoding='utf8')
-          assert '0xAFu : 0xFAu' in t, 'ECU reset does not distinguish historical ROSCO from K-Line 1.9'
-          assert '0xFAu : 0x0Fu' in t, 'ADJ reset does not distinguish ROSCO from K-Line 1.9'
+          assert 'const quint8 command = 0xFAu;' in t, 'Manager legacy ECU reset 0xFA missing'
+          assert 'const quint8 command = 0x0Fu;' in t, 'Manager legacy adjustment reset 0x0F missing'
+          assert 'return ::mems_reset_ADJ(&m_memsinfo);' in t, 'Manager ECU reset must call 0xFA wrapper'
+          assert 'return ::mems_reset_EMI(&m_memsinfo);' in t, 'Manager adjustment reset must call 0x0F wrapper'
           assert '0x81u' in t and 'guardedSaveAdjustments' in t
           p=Path('protocolcontext.h').read_text(encoding='utf8')
           assert 'case 0xAFu' in p and 'case 0x7Bu: case 0x7Cu:' in p
           assert 'if (family == MemsEcuFamily::Mems19)' in p
-          print('ROSCO_ROUTING_SOURCE_PASS: AF/FA/0F/81 separated by ECU family')
+          print('MANAGER_LEGACY_ROUTING_SOURCE_PASS: ECU=FA ADJ=0F, K-Line independent')
           '@ | python -
           if($LASTEXITCODE -ne 0){throw 'ROSCO routing audit FAILED'}
       - name: Compiler mems_manager_x64.dll proprement
@@ -84,6 +86,15 @@ jobs:
           $builtDll=Get-ChildItem 'build-manager-dll/librosco-x64' -Recurse -File -Filter 'mems_manager_x64.dll' | Select-Object -First 1
           if(-not $builtDll){throw 'MANAGER_DLL_DEPENDENCY_MISSING'}
           Write-Host "MANAGER_COMPAT_BUILD_SUCCESS exe=$($app.FullName) dll=$($builtDll.FullName)"
+      - name: Comparer les DLL historiques reelles et les imports de Manager
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $original='build-rosco-45/leopold_original_x86.dll'
+          Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/LeopoldG/sources-mems-rosco/d34d8e0d088f0826fac0199f99150be678450fa2/librosco.dll' -OutFile $original
+          if(-not(Test-Path $original)){throw 'ORIGINAL_45_DLL_MISSING'}
+          python librosco-x64/audit_historical_dll_compat.py --old22 prebuilt-librosco/librosco.dll --old45 $original --new build-rosco-45/Release/mems_manager_x64.dll --manager build-manager-dll/Release/ecu_mems_manager.exe
+          if($LASTEXITCODE -ne 0){throw 'HISTORICAL_DLL_COMPARE_FAILED'}
       - name: Conserver la DLL validee dans une Release BROUILLON privee
         shell: pwsh
         env:

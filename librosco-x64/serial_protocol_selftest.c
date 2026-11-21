@@ -299,6 +299,73 @@ int main(void)
     CHECK(temperature_value_to_degrees_f(65) == 50);
     CHECK(temperature_value_to_degrees_f(0) == 137);
 
+
+    /* Exhaust the historical command wrappers on negative responses,
+     * not just the success path. No ECU or COM port is ever opened. */
+    for (i = 0; i < sizeof(commands) / sizeof(commands[0]); ++i) {
+        mock_reset();
+        g.bad_echo = true;
+        reply = 0xAA;
+        CHECK(!commands[i].operation(&info, &reply));
+        CHECK(g.sent_count == 1 && g.sent[0] == commands[i].command);
+        CHECK(reply == 0xAA);
+        mock_reset();
+        g.no_reply = true;
+        CHECK(!commands[i].operation(&info, &reply));
+        CHECK(g.sent_count == 1 && g.sent[0] == commands[i].command);
+    }
+    for (i = 0; i < sizeof(requests) / sizeof(requests[0]); ++i) {
+        mock_reset();
+        g.bad_echo = true;
+        CHECK(!requests[i].operation(&info));
+        CHECK(g.sent_count == 1 && g.sent[0] == requests[i].command);
+        mock_reset();
+        g.no_reply = true;
+        CHECK(!requests[i].operation(&info));
+        CHECK(g.sent_count == 1 && g.sent[0] == requests[i].command);
+    }
+    mock_reset();
+    g.bad_echo = true;
+    CHECK(!mems_init_link(&info, id));
+    mock_reset();
+    g.no_reply = true;
+    CHECK(!mems_init_link(&info, id));
+    mock_reset();
+    g.bad_echo = true;
+    CHECK(!mems_read_raw(&info, &frame80, &frame7d));
+    mock_reset();
+    g.local_echo = true;
+    g.bad_echo = true;
+    CHECK(!mems_command_kline19(&info, 0xCC, true, &reply));
+    mock_reset();
+    g.local_echo = true;
+    g.no_reply = true;
+    CHECK(!mems_read_kline19(&info, &data, true));
+    mock_reset();
+    g.local_echo = true;
+    g.short_frame_7d = true;
+    CHECK(!mems_read_kline19(&info, &data, true));
+    mock_reset();
+    CHECK(mems_move_iac(&info, 10));
+    CHECK(g.sent_count == 1 && g.sent[0] == 0xFB);
+    mock_reset();
+    CHECK(mems_move_iac_kline19(&info, 10, false));
+    CHECK(g.sent_count == 1 && g.sent[0] == 0xFB);
+    mock_reset();
+    g.connected = false;
+    CHECK(!mems_send_command(&info, 0xCC));
+    CHECK(!mems_init_link_kline19(&info, id, false));
+    CHECK(!mems_command_kline19(&info, 0xCC, false, &reply));
+    CHECK(!mems_read_kline19(&info, &data, false));
+    mock_reset();
+    CHECK(!mems_clear_faults(NULL));
+    CHECK(!mems_reset_ADJ(NULL));
+    CHECK(!mems_reset_EMI(NULL));
+    CHECK(!mems_reset_ECU(NULL));
+    CHECK(!mems_Save(NULL));
+    CHECK(!mems_read(NULL, &data));
+    CHECK(!mems_read(&info, NULL));
+
     if (failures) {
         fprintf(stderr, "SIMULATED_SERIAL_CONTRACT_FAIL: %d failed checks\n", failures);
         return 1;

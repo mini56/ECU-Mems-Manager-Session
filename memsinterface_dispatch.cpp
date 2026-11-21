@@ -109,9 +109,10 @@ bool MEMSInterface::guardedResetAdjustments()
     if (property("injectionRamTestRunning").toBool() ||
         property("mappedInjectionModeActive").toBool())
         return false;
-    // LeopoldG ROM-tested ROSCO: reset ADJ = FA. MEMS 1.9 retains its
-    // existing separately validated K-Line reset = 0F until real testing.
-    const quint8 command = ecuFamily()==MemsEcuFamily::Rosco13_16 ? 0xFAu : 0x0Fu;
+    // Preserve Manager's real pre-reconstruction x86 DLL behaviour:
+    // reset adjustments sends 0x0F on ROSCO, independently of LeopoldG's
+    // different 3.0.0 symbol naming. MEMS 1.9 already uses 0x0F.
+    const quint8 command = 0x0Fu;
     if (!MemsProtocolSafety::allowsMutation(ecuFamily(), diagnosticMode(), command))
         return false;
     #ifdef MEMS_NATIVE_KLINE_19
@@ -119,7 +120,7 @@ bool MEMSInterface::guardedResetAdjustments()
         return ::mems_command_kline19(&m_memsinfo, 0x0Fu,
                                        m_kline19LocalEcho, nullptr);
 #endif
-    return ::mems_reset_adjustments(&m_memsinfo);
+    return ::mems_reset_EMI(&m_memsinfo);
 }
 
 bool MEMSInterface::guardedResetEcu()
@@ -127,9 +128,10 @@ bool MEMSInterface::guardedResetEcu()
     if (property("injectionRamTestRunning").toBool() ||
         property("mappedInjectionModeActive").toBool())
         return false;
-    // Original ROSCO ECU reset = AF. MEMS 1.9 K-Line remains on its
-    // independent FA command: do not silently change its transport.
-    const quint8 command = ecuFamily()==MemsEcuFamily::Rosco13_16 ? 0xAFu : 0xFAu;
+    // Preserve Manager's real pre-reconstruction x86 DLL behaviour:
+    // reset ECU sends 0xFA on ROSCO, not LeopoldG 3.0.0's 0xAF.
+    // MEMS 1.9 already uses 0xFA and retains its independent transport.
+    const quint8 command = 0xFAu;
     if (!MemsProtocolSafety::allowsMutation(ecuFamily(), diagnosticMode(), command))
         return false;
     #ifdef MEMS_NATIVE_KLINE_19
@@ -137,7 +139,7 @@ bool MEMSInterface::guardedResetEcu()
         return ::mems_command_kline19(&m_memsinfo, 0xFAu,
                                        m_kline19LocalEcho, nullptr);
 #endif
-    return ::mems_reset_ECU(&m_memsinfo);
+    return ::mems_reset_ADJ(&m_memsinfo);
 }
 
 void MEMSInterface::onProtocolCommandRequested(quint8 command)
