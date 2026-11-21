@@ -72,6 +72,9 @@ jobs:
           $ErrorActionPreference='Stop'
           $qt='C:/Qt/5.15.2/msvc2019_64'
           if(-not (Test-Path "$qt/lib/cmake/Qt5/Qt5Config.cmake")) {throw 'Qt 5.15.2 absent du runner : compilation Manager non verifiee'}
+          # Existing application post-build tests load Qt DLLs from PATH.
+          $env:PATH="$qt/bin;$env:PATH"
+          $env:QT_QPA_PLATFORM='offscreen'
           cmake -S . -B build-manager-dll -A x64 "-DCMAKE_PREFIX_PATH=$qt" -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF -DMEMS_USE_ONNX_GENAI=OFF
           if($LASTEXITCODE -ne 0){throw 'MANAGER_CONFIGURE_WITH_NEW_DLL_FAILED'}
           cmake --build build-manager-dll --config Release --target ecu_mems_manager --parallel 4
