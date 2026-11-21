@@ -1,7 +1,7 @@
 #ifndef LUCAS5ASREADER_H
 #define LUCAS5ASREADER_H
 
-// SESSION 189 - isolated Lucas 5AS read-only diagnostic transport.
+// SESSION 190 - isolated Lucas 5AS diagnostic transport and output tests.
 // The 5AS uses a separate adapted KKL interface (OBD 3 TX / OBD 1 RX).
 // No EEPROM, immobiliser programming, PLIP learning or motor/RC5 commands.
 #include "lucas5asprotocol.h"
