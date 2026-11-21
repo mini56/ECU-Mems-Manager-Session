@@ -1,8 +1,8 @@
 #ifndef OTHERCONTROLUNITSTAB_H
 #define OTHERCONTROLUNITSTAB_H
 
-// SESSION 187: first of three independent workspaces is RC5 SRS diagnostics.
-// Immobiliser and key-programming columns remain intentionally unconnected.
+// SESSION 189: independent RC5 SRS and read-only Lucas 5AS workspaces.
+// Key programming remains reserved and does not send ECU commands.
 #include <QApplication>
 #include <QDialog>
 #include <QScreen>
@@ -13,6 +13,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMetaObject>
+#include <QPlainTextEdit>
 #include <QPushButton>
 #include <QResizeEvent>
 #include <QSerialPortInfo>
@@ -26,6 +27,7 @@
 #include <QWidget>
 #include "i18n.h"
 #include "rc5protocol.h"
+#include "lucas5asreader.h"
 #include "serialadapterdetector.h"
 
 class OtherControlUnitsTab final : public QWidget
@@ -83,6 +85,8 @@ public:
             m_dividers[i]=line;
             if(i==0)
                 createRc5Panel(layout,panel);
+            else if(i==1)
+                create5AsPanel(layout,panel);
             else {
                 layout->addStretch(1);
                 QLabel *placeholder=new QLabel(panel);
@@ -93,8 +97,8 @@ public:
                 layout->addStretch(2);
                 m_placeholders[i]=placeholder;
             }
-            // One read-only offline cable help at the bottom of every column.
-            // The reserved modules gain no connection or programming action.
+            // One independent offline cable help at the bottom of each column.
+            // The key-programming module remains reserved.
             QPushButton *cableHelp=new QPushButton(panel);
             cableHelp->setObjectName(QString::fromLatin1(helpIds[i]));
             cableHelp->setMinimumHeight(32);
@@ -175,9 +179,63 @@ public:
                          [this](){clearRc5();});
         m_rc5Thread.start();
 
+        // 5AS runs independently: no shared serial handle or RC5 commands.
+        m_5asWorker=new Lucas5AsWorker;
+        m_5asWorker->moveToThread(&m_5asThread);
+        QObject::connect(&m_5asThread,&QThread::finished,
+                         m_5asWorker,&QObject::deleteLater);
+        QObject::connect(m_5asWorker,&Lucas5AsWorker::probingPort,this,
+                         [this](const QString &port){
+            if(!m_5asBusy)return;
+            m_5asPort=port;
+            set5AsStatus(16900);
+            update5AsPort();
+        });
+        QObject::connect(m_5asWorker,&Lucas5AsWorker::connectionChanged,this,
+                         [this](bool connected,const QString &port){
+            m_5asBusy=false;
+            m_5asConnected=connected;
+            if(connected){
+                m_5asCancelRequested=false;
+                m_5asPort=port;
+                set5AsStatus(16901,port);
+            }else{
+                m_5asPort.clear();
+                m_5asFields.clear();
+                show5AsFields();
+                m_5asTrace->clear();
+                set5AsStatus(m_5asCancelRequested?16905:16902);
+                m_5asCancelRequested=false;
+            }
+            update5AsPort();
+            update5AsButtons();
+        });
+        QObject::connect(m_5asWorker,&Lucas5AsWorker::statusRead,this,
+                         [this](bool ok,const QVariantMap &fields,
+                                const QString &trace){
+            if(!m_5asConnected)return;
+            m_5asBusy=false;
+            if(ok){
+                m_5asFields=fields;
+                show5AsFields();
+                if(!trace.isEmpty())
+                    m_5asTrace->appendPlainText(trace.trimmed());
+                set5AsStatus(16907);
+            }else set5AsStatus(16904);
+            update5AsButtons();
+        });
+        QObject::connect(m_5asConnect,&QPushButton::clicked,
+                         this,[this](){connect5As();});
+        QObject::connect(m_5asDisconnect,&QPushButton::clicked,
+                         this,[this](){disconnect5As();});
+        QObject::connect(m_5asRead,&QPushButton::clicked,
+                         this,[this](){read5As();});
+        m_5asThread.start();
+
         retranslate();
         refreshTheme();
         updateButtons();
+        update5AsButtons();
     }
 
     ~OtherControlUnitsTab() override
@@ -185,6 +243,9 @@ public:
         if(m_worker)m_worker->requestCancel();
         m_rc5Thread.quit();
         m_rc5Thread.wait();
+        if(m_5asWorker)m_5asWorker->requestCancel();
+        m_5asThread.quit();
+        m_5asThread.wait();
     }
 
     void retranslate()
@@ -199,6 +260,16 @@ public:
         m_disconnect->setText(I18n::text(16806));
         m_read->setText(I18n::text(16807));
         m_clear->setText(I18n::text(16808));
+        m_5asConnect->setText(I18n::text(16805));
+        m_5asDisconnect->setText(I18n::text(16806));
+        m_5asRead->setText(I18n::text(16906));
+        m_5asTable->setHorizontalHeaderLabels({
+            I18n::text(16920),I18n::text(16921)
+        });
+        m_5asCableNote->setText(I18n::text(16923));
+        update5AsStatus();
+        update5AsPort();
+        show5AsFields();
         m_table->setHorizontalHeaderLabels({
             I18n::text(16820),I18n::text(16821),I18n::text(16822)
         });
@@ -229,10 +300,11 @@ public:
             m_dividers[i]->setStyleSheet(
                 QStringLiteral("background:%1;border:0;").arg(border));
         }
-        for(QLabel *label:{m_status,m_portLabel,m_rawLabel,m_cableNote})
+        for(QLabel *label:{m_status,m_portLabel,m_rawLabel,m_cableNote,
+                           m_5asStatus,m_5asPortLabel,m_5asCableNote})
             label->setStyleSheet(
                 QStringLiteral("color:%1;background:transparent;border:0;")
-                    .arg(label==m_status?foreground:muted));
+                    .arg(label==m_status || label==m_5asStatus?foreground:muted));
         const QString buttonStyle=QStringLiteral(
             "QPushButton{background:%1;color:%2;border:1px solid %2;"
             "border-radius:4px;padding:4px 3px;}"
@@ -242,16 +314,23 @@ public:
               highlight,
               dark?QStringLiteral("#19130a"):QStringLiteral("#fff0dd"),
               dark?QStringLiteral("#5d6870"):QStringLiteral("#aab4be"));
-        for(QPushButton *button:{m_connect,m_disconnect,m_read,m_clear})
+        for(QPushButton *button:{m_connect,m_disconnect,m_read,m_clear,
+                                  m_5asConnect,m_5asDisconnect,m_5asRead})
             button->setStyleSheet(buttonStyle);
         for(QPushButton *button:m_cableHelpButtons)
             button->setStyleSheet(buttonStyle);
-        m_table->setStyleSheet(
-            QStringLiteral("QTableWidget{background:%1;color:%2;"
-                           "gridline-color:%3;border:1px solid %3;}"
-                           "QHeaderView::section{background:%1;color:%4;"
-                           "border:0;border-bottom:1px solid %3;padding:3px;}")
-                .arg(surface,foreground,border,highlight));
+        const QString tableStyle=QStringLiteral(
+            "QTableWidget{background:%1;color:%2;"
+            "gridline-color:%3;border:1px solid %3;}"
+            "QHeaderView::section{background:%1;color:%4;"
+            "border:0;border-bottom:1px solid %3;padding:3px;}")
+                .arg(surface,foreground,border,highlight);
+        m_table->setStyleSheet(tableStyle);
+        m_5asTable->setStyleSheet(tableStyle);
+        m_5asTrace->setStyleSheet(QStringLiteral(
+            "QPlainTextEdit{background:%1;color:%2;"
+            "border:1px solid %3;border-radius:4px;}")
+            .arg(surface,foreground,border));
     }
 
 protected:
@@ -382,6 +461,157 @@ private:
         root->addWidget(m_cableNote);
     }
 
+    void create5AsPanel(QVBoxLayout *root,QWidget *parent)
+    {
+        m_5asStatus=new QLabel(parent);
+        m_5asStatus->setObjectName(QStringLiteral("lucas5asConnectionStatus"));
+        m_5asStatus->setWordWrap(true);
+        root->addWidget(m_5asStatus);
+
+        m_5asPortLabel=new QLabel(parent);
+        m_5asPortLabel->setObjectName(QStringLiteral("lucas5asPortStatus"));
+        m_5asPortLabel->setWordWrap(true);
+        root->addWidget(m_5asPortLabel);
+
+        QGridLayout *commands=new QGridLayout;
+        commands->setHorizontalSpacing(5);
+        commands->setVerticalSpacing(6);
+        m_5asConnect=new QPushButton(parent);
+        m_5asConnect->setObjectName(QStringLiteral("lucas5asConnectButton"));
+        m_5asDisconnect=new QPushButton(parent);
+        m_5asDisconnect->setObjectName(QStringLiteral("lucas5asDisconnectButton"));
+        m_5asRead=new QPushButton(parent);
+        m_5asRead->setObjectName(QStringLiteral("lucas5asReadStatusButton"));
+        for(QPushButton *button:{m_5asConnect,m_5asDisconnect,m_5asRead}){
+            button->setMinimumHeight(32);
+            button->setMinimumWidth(0);
+            button->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+        }
+        commands->addWidget(m_5asConnect,0,0);
+        commands->addWidget(m_5asDisconnect,0,1);
+        commands->addWidget(m_5asRead,1,0,1,2);
+        commands->setColumnStretch(0,1);
+        commands->setColumnStretch(1,1);
+        root->addLayout(commands);
+
+        m_5asTable=new QTableWidget(0,2,parent);
+        m_5asTable->setObjectName(QStringLiteral("lucas5asStatusTable"));
+        m_5asTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        m_5asTable->setSelectionMode(QAbstractItemView::SingleSelection);
+        m_5asTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+        m_5asTable->verticalHeader()->setVisible(false);
+        m_5asTable->horizontalHeader()->setSectionResizeMode(0,QHeaderView::Interactive);
+        m_5asTable->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Stretch);
+        m_5asTable->setColumnWidth(0,135);
+        m_5asTable->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+        m_5asTable->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+        m_5asTable->setMinimumHeight(165);
+        m_5asTable->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+        root->addWidget(m_5asTable,1);
+
+        m_5asTrace=new QPlainTextEdit(parent);
+        m_5asTrace->setObjectName(QStringLiteral("lucas5asDiagnosticLog"));
+        m_5asTrace->setReadOnly(true);
+        m_5asTrace->setMinimumHeight(72);
+        m_5asTrace->setMaximumHeight(103);
+        m_5asTrace->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+        root->addWidget(m_5asTrace);
+
+        m_5asCableNote=new QLabel(parent);
+        m_5asCableNote->setObjectName(QStringLiteral("lucas5asCableNote"));
+        m_5asCableNote->setWordWrap(true);
+        root->addWidget(m_5asCableNote);
+    }
+    void set5AsStatus(int key,const QString &arg=QString())
+    {
+        m_5asStatusKey=key;
+        m_5asStatusArg=arg;
+        update5AsStatus();
+    }
+    void update5AsStatus()
+    {
+        const QString text=I18n::text(m_5asStatusKey);
+        m_5asStatus->setText(
+            m_5asStatusArg.isEmpty()?text:text.arg(m_5asStatusArg));
+    }
+    void update5AsPort()
+    {
+        m_5asPortLabel->setText(m_5asPort.isEmpty()
+            ?QString():I18n::text(16823).arg(m_5asPort));
+    }
+    void update5AsButtons()
+    {
+        m_5asConnect->setEnabled(!m_5asConnected && !m_5asBusy);
+        m_5asDisconnect->setEnabled(m_5asConnected || m_5asBusy);
+        m_5asRead->setEnabled(m_5asConnected && !m_5asBusy);
+    }
+    void show5AsFields()
+    {
+        static const char *const fields[]={
+            "model","serial","ignition","doors","bonnet","possibleBoot",
+            "plip1","plip2","plip3","plip4"
+        };
+        const int rows=m_5asFields.isEmpty()?0:10;
+        m_5asTable->setRowCount(rows);
+        for(int row=0;row<rows;++row){
+            const QString label=I18n::text(16910+row);
+            const QString value=m_5asFields.value(
+                QString::fromLatin1(fields[row])).toString();
+            QTableWidgetItem *left=new QTableWidgetItem(label);
+            QTableWidgetItem *right=new QTableWidgetItem(value);
+            left->setToolTip(label);
+            right->setToolTip(value);
+            m_5asTable->setItem(row,0,left);
+            m_5asTable->setItem(row,1,right);
+        }
+    }
+    void connect5As()
+    {
+        if(m_5asBusy || m_5asConnected)return;
+        const QList<DetectedSerialAdapter> adapters=
+            SerialAdapterDetector::availableAdapters();
+        QStringList ports;
+        for(const DetectedSerialAdapter &adapter:adapters)
+            if(adapter.detectedBySystem && !adapter.qtPortName.isEmpty() &&
+               !ports.contains(adapter.qtPortName))
+                ports.append(adapter.qtPortName);
+        if(ports.isEmpty()){
+            set5AsStatus(16825);
+            return;
+        }
+        m_5asFields.clear();
+        m_5asPort.clear();
+        m_5asTrace->clear();
+        show5AsFields();
+        update5AsPort();
+        m_5asCancelRequested=false;
+        m_5asBusy=true;
+        m_5asWorker->allowRequests();
+        set5AsStatus(16900);
+        update5AsButtons();
+        QMetaObject::invokeMethod(m_5asWorker,"connectCandidates",
+                                  Qt::QueuedConnection,Q_ARG(QStringList,ports));
+    }
+    void disconnect5As()
+    {
+        if(!m_5asBusy && !m_5asConnected)return;
+        m_5asCancelRequested=true;
+        m_5asWorker->requestCancel();
+        m_5asBusy=true;
+        update5AsButtons();
+        QMetaObject::invokeMethod(m_5asWorker,"disconnectModule",
+                                  Qt::QueuedConnection);
+    }
+    void read5As()
+    {
+        if(!m_5asConnected || m_5asBusy)return;
+        m_5asBusy=true;
+        set5AsStatus(16903);
+        update5AsButtons();
+        QMetaObject::invokeMethod(m_5asWorker,"readStatus",
+                                  Qt::QueuedConnection);
+    }
+
     void setStatus(int key,const QString &arg=QString())
     {
         m_statusKey=key;
@@ -501,5 +731,23 @@ private:
     bool m_connected=false;
     bool m_busy=false;
     bool m_cancelRequested=false;
+
+    // Lucas 5AS owns its independent thread/serial port/diagnostic workspace.
+    QThread m_5asThread;
+    Lucas5AsWorker *m_5asWorker=nullptr;
+    QLabel *m_5asStatus=nullptr;
+    QLabel *m_5asPortLabel=nullptr;
+    QLabel *m_5asCableNote=nullptr;
+    QPushButton *m_5asConnect=nullptr;
+    QPushButton *m_5asDisconnect=nullptr;
+    QPushButton *m_5asRead=nullptr;
+    QTableWidget *m_5asTable=nullptr;
+    QPlainTextEdit *m_5asTrace=nullptr;
+    QVariantMap m_5asFields;
+    QString m_5asPort,m_5asStatusArg;
+    int m_5asStatusKey=16809;
+    bool m_5asConnected=false;
+    bool m_5asBusy=false;
+    bool m_5asCancelRequested=false;
 };
 #endif // OTHERCONTROLUNITSTAB_H
