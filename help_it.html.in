@@ -158,6 +158,8 @@ small{color:#aebcc5}
 <h2 id="chapter-18">18. Famiglie ECU supportate</h2>
 <p>SESSION supporta Rover MEMS <b>1.2, 1.3 e 1.6</b> tramite ROSCO, <b>MEMS 1.9</b> tramite inizializzazione K-Line e <b>MEMS 2J e MEMS 3</b> con protocolli K-Line distinti. Il riconoscimento dipende dalle risposte reali della centralina dopo <b>Connetti</b>. Le letture e i comandi disponibili dipendono dalla sessione stabilita; i comandi ROSCO di regolazione non si applicano a MEMS 2J/3. Restano da eseguire prove su centraline reali.</p>
 
+<div class="tip"><b>Immobilizer Lucas 5AS:</b> in <b>Altre centraline</b> premere <b>Connetti</b>, poi <b>Leggi stati</b> o <b>Monitoraggio in tempo reale</b>. I test di clacson, LED e luci di emergenza richiedono una conferma che ne spiega l'effetto. È possibile salvare il registro. I test reali sono da confermare; l'abbinamento telecomandi non è disponibile.</div>
+
 <h2 id="chapter-19">19. Guida diagnostica di base</h2>
 <p>Nessuna comunicazione: controllare quadro, porta, cavo, alimentazione e masse ECU. MAP anomalo: verificare tubo depressione, collettore e sensore. Minimo instabile: verificare interruttore, IAC, perdite d'aria, temperatura e correzioni carburante. Guasto lambda: controllare riscaldamento, cablaggio, tensione e ciclo chiuso. Bobina: controllare batteria, circuito primario e cablaggio.</p>
 
