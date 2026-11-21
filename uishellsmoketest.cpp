@@ -192,12 +192,10 @@ bool verifyUi(MainWindow &window)
     ok=check(otherPage && rc5Panel && immobiliserPanel && keysPanel,
              "Other ECUs must have three independent columns") && ok;
     if(otherPage){
-        // RC5 retains four independent actions. Lucas 5AS has eight actions,
-        // including three confirmed short physical output tests and log save.
-        // The three offline cable dialogs remain accessible.
+        // PLIP monitoring shares the 5AS worker, with no second ECU connection.
         const QList<QPushButton*> actions=otherPage->findChildren<QPushButton*>();
-        ok=check(actions.size()==15,
-                 "Four RC5, eight Lucas 5AS and three cable-help buttons required") && ok;
+        ok=check(actions.size()==17,
+                 "Four RC5, eight Lucas 5AS, two PLIP and three cable-help buttons required") && ok;
         const char *const ids[]={
             "rc5ConnectButton","rc5DisconnectButton",
             "rc5ReadFaultsButton","rc5ClearFaultsButton"
@@ -243,9 +241,21 @@ bool verifyUi(MainWindow &window)
                      panel->layout()->itemAt(panel->layout()->count()-1)->widget()==help,
                      "Cable information button must be active at bottom of its own module") && ok;
         }
-        if(keysPanel)
-            ok=check(keysPanel->findChildren<QPushButton*>().size()==1,
-                     "Reserved key programming may only show cable help") && ok;
+        if(keysPanel){
+            QPushButton *plipControl=otherPage->findChild<QPushButton*>(
+                QStringLiteral("lucas5asPlipControlButton"));
+            QPushButton *plipReset=otherPage->findChild<QPushButton*>(
+                QStringLiteral("lucas5asPlipResetButton"));
+            QTableWidget *plipTable=otherPage->findChild<QTableWidget*>(
+                QStringLiteral("lucas5asPlipTable"));
+            ok=check(keysPanel->findChildren<QPushButton*>().size()==3 &&
+                     plipControl && plipControl->isEnabled() &&
+                     plipReset && plipReset->isEnabled() &&
+                     plipTable && plipTable->rowCount()==4 &&
+                     plipTable->columnCount()==3 &&
+                     plipTable->verticalScrollBarPolicy()==Qt::ScrollBarAlwaysOn,
+                     "PLIP monitor starts idle with four raw slots and no ECU command") && ok;
+        }
         QPushButton *fiveConnect=otherPage->findChild<QPushButton*>(
             QStringLiteral("lucas5asConnectButton"));
         QPushButton *fiveDisconnect=otherPage->findChild<QPushButton*>(
@@ -856,6 +866,24 @@ bool verifyUi(MainWindow &window)
             ok=check(button && button->text()==I18n::text(extraKeys[i]),
                      "Lucas 5AS extra actions must follow six languages") && ok;
         }
+        QPushButton *plipControl=window.findChild<QPushButton*>(
+            QStringLiteral("lucas5asPlipControlButton"));
+        QPushButton *plipReset=window.findChild<QPushButton*>(
+            QStringLiteral("lucas5asPlipResetButton"));
+        QTableWidget *plipTable=window.findChild<QTableWidget*>(
+            QStringLiteral("lucas5asPlipTable"));
+        QLabel *plipWarning=window.findChild<QLabel*>(
+            QStringLiteral("lucas5asPlipWarning"));
+        ok=check(plipControl && plipControl->text()==I18n::text(16943) &&
+                 plipReset && plipReset->text()==I18n::text(16945) &&
+                 plipWarning && plipWarning->text()==I18n::text(16954) &&
+                 plipTable && plipTable->horizontalHeaderItem(0) &&
+                 plipTable->horizontalHeaderItem(0)->text()==I18n::text(16950) &&
+                 plipTable->horizontalHeaderItem(1) &&
+                 plipTable->horizontalHeaderItem(1)->text()==I18n::text(16951) &&
+                 plipTable->horizontalHeaderItem(2) &&
+                 plipTable->horizontalHeaderItem(2)->text()==I18n::text(16952),
+                 "PLIP interface and limitations translated in six languages") && ok;
         QTableWidget *fiveTable=window.findChild<QTableWidget*>(
             QStringLiteral("lucas5asStatusTable"));
         if(fiveTable)

@@ -13,7 +13,7 @@ keys = (list(range(16200,16220))+list(range(16300,16336))+
         list(range(16600,16612))+list(range(16700,16714))+
         list(range(16801,16828))+[16831,16832,16833]+
         list(range(16840,16864))+[16880]+list(range(16890,16898))+
-        list(range(16900,16939))+[16940,16941,6208])
+        list(range(16900,16939))+list(range(16940,16960))+[6208])
 errors = []
 def check(condition, message):
     if not condition: errors.append(message)
@@ -58,7 +58,7 @@ check('return I18n::text(16800);' in menu,'Other ECU tab not translated')
 other=read('othercontrolunitstab.h')
 check('class OtherControlUnitsTab' in other and
       'I18n::text(16801+i)' in other and
-      'I18n::text(16804)' in other and
+      'createPlipPanel(' in other and
       'rc5protocol.h' in other and
       'lucas5asreader.h' in other and
       'connect5As()' in other and
@@ -78,6 +78,12 @@ check(all(s in other for s in (
     'm_5asLiveTimer->setInterval(1000)',
     'QMetaObject::invokeMethod(m_5asWorker,"pulseOutput"')),
     'Lucas 5AS output tests must explain risks and require confirmation')
+check(all(x in other for x in
+          ('lucas5asPlipControlButton','lucas5asPlipResetButton',
+           'recordPlipSnapshot(fields)','m_5asLiveActive || m_plipMonitoring',
+           'lucas5asplipmonitor.h')) and
+      'lucas5as_plip_selftest' in cmake,
+      'PLIP monitor must share the 5AS transport and have a selftest')
 for lang in langs:
     help_catalog = json.loads(read(f'translations/{lang}/{lang}_other_ecus.json'))
     for key in (16892,16894,16896):

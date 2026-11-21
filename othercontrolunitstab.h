@@ -5,6 +5,7 @@
 // Output tests require an explicit warning confirmation; keys remain reserved.
 #include <QApplication>
 #include <QDialog>
+#include <QDateTime>
 #include <QFile>
 #include <QFileDialog>
 #include <QScreen>
@@ -32,6 +33,7 @@
 #include "i18n.h"
 #include "rc5protocol.h"
 #include "lucas5asreader.h"
+#include "lucas5asplipmonitor.h"
 #include "serialadapterdetector.h"
 
 class OtherControlUnitsTab final : public QWidget
@@ -91,18 +93,10 @@ public:
                 createRc5Panel(layout,panel);
             else if(i==1)
                 create5AsPanel(layout,panel);
-            else {
-                layout->addStretch(1);
-                QLabel *placeholder=new QLabel(panel);
-                placeholder->setObjectName(QStringLiteral("otherEcusReservedLabel"));
-                placeholder->setAlignment(Qt::AlignCenter);
-                placeholder->setWordWrap(true);
-                layout->addWidget(placeholder);
-                layout->addStretch(2);
-                m_placeholders[i]=placeholder;
-            }
-            // One independent offline cable help at the bottom of each column.
-            // The key-programming module remains reserved.
+            else
+                createPlipPanel(layout,panel);
+            // Offline cable help remains in each column; no key-learning
+            // command is part of the read-only PLIP monitor.
             QPushButton *cableHelp=new QPushButton(panel);
             cableHelp->setObjectName(QString::fromLatin1(helpIds[i]));
             cableHelp->setMinimumHeight(32);
@@ -203,7 +197,16 @@ public:
                 m_5asCancelRequested=false;
                 m_5asPort=port;
                 set5AsStatus(16901,port);
+                if(m_plipPendingConnect){
+                    m_plipPendingConnect=false;
+                    m_plipMonitoring=true;
+                    setPlipStatus(16948);
+                }
             }else{
+                const bool pending=m_plipPendingConnect;
+                m_plipPendingConnect=false;
+                m_plipMonitoring=false;
+                setPlipStatus(pending?16957:16946);
                 m_5asPort.clear();
                 m_5asFields.clear();
                 show5AsFields();
@@ -213,6 +216,7 @@ public:
                 m_5asCancelRequested=false;
             }
             update5AsPort();
+            sync5AsPolling();
             update5AsButtons();
         });
         QObject::connect(m_5asWorker,&Lucas5AsWorker::statusRead,this,
@@ -226,9 +230,14 @@ public:
                 if(!trace.isEmpty())
                     m_5asTrace->appendPlainText(trace.trimmed());
                 set5AsStatus(16907);
+                recordPlipSnapshot(fields);
             }else{
                 m_5asLiveActive=false;
-                if(m_5asLiveTimer)m_5asLiveTimer->stop();
+                if(m_plipMonitoring){
+                    m_plipMonitoring=false;
+                    setPlipStatus(16958);
+                }
+                sync5AsPolling();
                 set5AsStatus(16904);
             }
             update5AsButtons();
@@ -258,12 +267,17 @@ public:
                          this,[this](){test5AsOutput(13);});
         QObject::connect(m_5asSaveLog,&QPushButton::clicked,
                          this,[this](){save5AsLog();});
+        QObject::connect(m_plipControl,&QPushButton::clicked,this,
+                         [this](){togglePlipMonitoring();});
+        QObject::connect(m_plipReset,&QPushButton::clicked,this,
+                         [this](){resetPlipObservations();});
         m_5asLiveTimer=new QTimer(this);
         m_5asLiveTimer->setObjectName(QStringLiteral("lucas5asLiveTimer"));
         m_5asLiveTimer->setInterval(1000);
         QObject::connect(m_5asLiveTimer,&QTimer::timeout,this,
                          [this](){
-            if(m_5asLiveActive && m_5asConnected && !m_5asBusy)read5As();
+            if((m_5asLiveActive || m_plipMonitoring) &&
+               m_5asConnected && !m_5asBusy)read5As();
         });
         m_5asThread.start();
 
@@ -287,8 +301,6 @@ public:
     {
         for(int i=0;i<3;++i){
             m_headings[i]->setText(I18n::text(16801+i));
-            if(m_placeholders[i])
-                m_placeholders[i]->setText(I18n::text(16804));
             m_cableHelpButtons[i]->setText(I18n::text(16890));
         }
         m_connect->setText(I18n::text(16805));
@@ -303,6 +315,12 @@ public:
         m_5asLed->setText(I18n::text(16925));
         m_5asHazards->setText(I18n::text(16926));
         m_5asSaveLog->setText(I18n::text(16935));
+        m_plipIntro->setText(I18n::text(16942));
+        m_plipWarning->setText(I18n::text(16954));
+        m_plipReset->setText(I18n::text(16945));
+        setPlipStatus(m_plipStatusKey);
+        showPlipTable();
+        updatePlipButtons();
         m_5asTable->setHorizontalHeaderLabels({
             I18n::text(16920),I18n::text(16921)
         });
@@ -334,14 +352,12 @@ public:
                     .arg(m_panels[i]->objectName(),surface,border));
             m_headings[i]->setStyleSheet(
                 QStringLiteral("color:%1;background:transparent;border:0;").arg(highlight));
-            if(m_placeholders[i])
-                m_placeholders[i]->setStyleSheet(
-                    QStringLiteral("color:%1;background:transparent;border:0;").arg(muted));
             m_dividers[i]->setStyleSheet(
                 QStringLiteral("background:%1;border:0;").arg(border));
         }
         for(QLabel *label:{m_status,m_portLabel,m_rawLabel,m_cableNote,
-                           m_5asStatus,m_5asPortLabel,m_5asCableNote})
+                           m_5asStatus,m_5asPortLabel,m_5asCableNote,
+                           m_plipIntro,m_plipStatus,m_plipLastEvent,m_plipWarning})
             label->setStyleSheet(
                 QStringLiteral("color:%1;background:transparent;border:0;")
                     .arg(label==m_status || label==m_5asStatus?foreground:muted));
@@ -356,7 +372,8 @@ public:
               dark?QStringLiteral("#5d6870"):QStringLiteral("#aab4be"));
         for(QPushButton *button:{m_connect,m_disconnect,m_read,m_clear,
                                   m_5asConnect,m_5asDisconnect,m_5asRead,m_5asLive,
-                                   m_5asHorn,m_5asLed,m_5asHazards,m_5asSaveLog})
+                                   m_5asHorn,m_5asLed,m_5asHazards,m_5asSaveLog,
+                                   m_plipControl,m_plipReset})
             button->setStyleSheet(buttonStyle);
         for(QPushButton *button:m_cableHelpButtons)
             button->setStyleSheet(buttonStyle);
@@ -368,6 +385,7 @@ public:
                 .arg(surface,foreground,border,highlight);
         m_table->setStyleSheet(tableStyle);
         m_5asTable->setStyleSheet(tableStyle);
+        m_plipTable->setStyleSheet(tableStyle);
         m_5asTrace->setStyleSheet(QStringLiteral(
             "QPlainTextEdit{background:%1;color:%2;"
             "border:1px solid %3;border-radius:4px;}")
@@ -435,6 +453,153 @@ private:
         dialog.resize(qMax(320,qMin(760,screen.width()-60)),
                       qMax(300,qMin(570,screen.height()-70)));
         dialog.exec();
+    }
+
+
+    void createPlipPanel(QVBoxLayout *root,QWidget *parent)
+    {
+        m_plipIntro=new QLabel(parent);
+        m_plipIntro->setObjectName(QStringLiteral("lucas5asPlipIntro"));
+        m_plipIntro->setWordWrap(true);
+        root->addWidget(m_plipIntro);
+
+        QHBoxLayout *commands=new QHBoxLayout;
+        commands->setSpacing(5);
+        m_plipControl=new QPushButton(parent);
+        m_plipControl->setObjectName(QStringLiteral("lucas5asPlipControlButton"));
+        m_plipReset=new QPushButton(parent);
+        m_plipReset->setObjectName(QStringLiteral("lucas5asPlipResetButton"));
+        for(QPushButton *button:{m_plipControl,m_plipReset}){
+            button->setMinimumHeight(32);
+            button->setMinimumWidth(0);
+            button->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+            commands->addWidget(button,1);
+        }
+        root->addLayout(commands);
+
+        m_plipStatus=new QLabel(parent);
+        m_plipStatus->setObjectName(QStringLiteral("lucas5asPlipStatus"));
+        m_plipStatus->setWordWrap(true);
+        root->addWidget(m_plipStatus);
+
+        m_plipTable=new QTableWidget(4,3,parent);
+        m_plipTable->setObjectName(QStringLiteral("lucas5asPlipTable"));
+        m_plipTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        m_plipTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+        m_plipTable->setSelectionMode(QAbstractItemView::SingleSelection);
+        m_plipTable->verticalHeader()->setVisible(false);
+        m_plipTable->horizontalHeader()->setSectionResizeMode(0,QHeaderView::Fixed);
+        m_plipTable->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Stretch);
+        m_plipTable->horizontalHeader()->setSectionResizeMode(2,QHeaderView::Fixed);
+        m_plipTable->setColumnWidth(0,65);
+        m_plipTable->setColumnWidth(2,85);
+        m_plipTable->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+        m_plipTable->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+        m_plipTable->setMinimumHeight(165);
+        m_plipTable->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+        root->addWidget(m_plipTable,1);
+
+        m_plipLastEvent=new QLabel(parent);
+        m_plipLastEvent->setObjectName(QStringLiteral("lucas5asPlipLastEvent"));
+        m_plipLastEvent->setWordWrap(true);
+        root->addWidget(m_plipLastEvent);
+        m_plipWarning=new QLabel(parent);
+        m_plipWarning->setObjectName(QStringLiteral("lucas5asPlipWarning"));
+        m_plipWarning->setWordWrap(true);
+        root->addWidget(m_plipWarning);
+    }
+
+    void setPlipStatus(int key)
+    {
+        m_plipStatusKey=key;
+        m_plipStatus->setText(I18n::text(key));
+    }
+
+    void showPlipTable()
+    {
+        m_plipTable->setHorizontalHeaderLabels({
+            I18n::text(16950),I18n::text(16951),I18n::text(16952)
+        });
+        for(int i=0;i<4;++i){
+            const auto slot=m_plipTracker.slot(i);
+            const QStringList values={
+                I18n::text(16959).arg(i+1),
+                slot.available?slot.raw:I18n::text(16956),
+                QString::number(slot.changes)
+            };
+            for(int col=0;col<3;++col){
+                QTableWidgetItem *item=new QTableWidgetItem(values.at(col));
+                item->setToolTip(values.at(col));
+                m_plipTable->setItem(i,col,item);
+            }
+        }
+        m_plipLastEvent->setText(m_plipLastSlots.isEmpty()
+            ?I18n::text(16949)
+            :I18n::text(16953).arg(m_plipLastSlots,m_plipLastTime));
+    }
+
+    void updatePlipButtons()
+    {
+        m_plipControl->setText(I18n::text(m_plipMonitoring?16944:16943));
+        m_plipControl->setEnabled(m_plipMonitoring ||
+                                  (!m_plipPendingConnect && !m_5asBusy));
+        m_plipReset->setEnabled(!m_plipPendingConnect);
+    }
+
+    void sync5AsPolling()
+    {
+        if(!m_5asLiveTimer)return;
+        if(m_5asConnected && (m_5asLiveActive || m_plipMonitoring))
+            m_5asLiveTimer->start();
+        else
+            m_5asLiveTimer->stop();
+    }
+
+    void resetPlipObservations()
+    {
+        m_plipTracker.reset();
+        m_plipLastSlots.clear();
+        m_plipLastTime.clear();
+        showPlipTable();
+    }
+
+    void recordPlipSnapshot(const QVariantMap &fields)
+    {
+        if(!m_plipMonitoring)return;
+        const QVector<int> changed=m_plipTracker.observe(fields);
+        if(!changed.isEmpty()){
+            QStringList indices;
+            for(int slot:changed)indices.append(QString::number(slot));
+            m_plipLastSlots=indices.join(QStringLiteral(", "));
+            m_plipLastTime=QDateTime::currentDateTime().toString(
+                QStringLiteral("HH:mm:ss"));
+        }
+        showPlipTable();
+    }
+
+    void togglePlipMonitoring()
+    {
+        if(m_plipMonitoring){
+            m_plipMonitoring=false;
+            setPlipStatus(16955);
+            sync5AsPolling();
+            updatePlipButtons();
+            return;
+        }
+        if(m_plipPendingConnect || m_5asBusy)return;
+        resetPlipObservations();
+        if(!m_5asConnected){
+            m_plipPendingConnect=true;
+            setPlipStatus(16947);
+            updatePlipButtons();
+            connect5As(); // Exactly the same 5AS worker and serial port.
+            return;
+        }
+        m_plipMonitoring=true;
+        setPlipStatus(16948);
+        sync5AsPolling();
+        updatePlipButtons();
+        read5As();
     }
 
     void createRc5Panel(QVBoxLayout *root,QWidget *parent)
@@ -613,6 +778,7 @@ private:
         for(QPushButton *button:{m_5asHorn,m_5asLed,m_5asHazards})
             button->setEnabled(m_5asConnected && !m_5asBusy);
         m_5asSaveLog->setEnabled(!m_5asTrace->toPlainText().isEmpty());
+        updatePlipButtons();
     }
     void show5AsFields()
     {
@@ -646,6 +812,11 @@ private:
                 ports.append(adapter.qtPortName);
         if(ports.isEmpty()){
             set5AsStatus(16825);
+            if(m_plipPendingConnect){
+                m_plipPendingConnect=false;
+                setPlipStatus(16957);
+                updatePlipButtons();
+            }
             return;
         }
         m_5asFields.clear();
@@ -667,7 +838,10 @@ private:
     {
         if(!m_5asBusy && !m_5asConnected)return;
         m_5asLiveActive=false;
-        if(m_5asLiveTimer)m_5asLiveTimer->stop();
+        m_plipMonitoring=false;
+        m_plipPendingConnect=false;
+        setPlipStatus(16946);
+        sync5AsPolling();
         m_5asCancelRequested=true;
         m_5asWorker->requestCancel();
         m_5asBusy=true;
@@ -689,10 +863,8 @@ private:
     {
         if(!m_5asConnected)return;
         m_5asLiveActive=!m_5asLiveActive;
-        if(m_5asLiveActive){
-            m_5asLiveTimer->start();
-            if(!m_5asBusy)read5As();
-        }else m_5asLiveTimer->stop();
+        sync5AsPolling();
+        if(m_5asLiveActive && !m_5asBusy)read5As();
         update5AsButtons();
     }
 
@@ -834,7 +1006,6 @@ private:
 
     QFrame *m_panels[3]={nullptr,nullptr,nullptr};
     QLabel *m_headings[3]={nullptr,nullptr,nullptr};
-    QLabel *m_placeholders[3]={nullptr,nullptr,nullptr};
     QFrame *m_dividers[3]={nullptr,nullptr,nullptr};
     QPushButton *m_cableHelpButtons[3]={nullptr,nullptr,nullptr};
     QLabel *m_status=nullptr;
@@ -879,5 +1050,18 @@ private:
     bool m_5asBusy=false;
     bool m_5asCancelRequested=false;
     bool m_5asLiveActive=false;
+    // PLIP samples share the existing 5AS diagnostic worker. Never write keys.
+    Lucas5AsPlip::Monitor m_plipTracker;
+    QPushButton *m_plipControl=nullptr;
+    QPushButton *m_plipReset=nullptr;
+    QLabel *m_plipIntro=nullptr;
+    QLabel *m_plipStatus=nullptr;
+    QLabel *m_plipLastEvent=nullptr;
+    QLabel *m_plipWarning=nullptr;
+    QTableWidget *m_plipTable=nullptr;
+    QString m_plipLastSlots,m_plipLastTime;
+    int m_plipStatusKey=16946;
+    bool m_plipMonitoring=false;
+    bool m_plipPendingConnect=false;
 };
 #endif // OTHERCONTROLUNITSTAB_H
