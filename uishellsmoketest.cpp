@@ -191,11 +191,11 @@ bool verifyUi(MainWindow &window)
     ok=check(otherPage && rc5Panel && immobiliserPanel && keysPanel,
              "Other ECUs must have three independent columns") && ok;
     if(otherPage){
-        // RC5 retains exactly four diagnostic actions. The three additional
-        // buttons show offline cable information and never send ECU commands.
+        // RC5 retains four independent actions. Lucas 5AS has three
+        // read-only actions. Three offline cable dialogs remain accessible.
         const QList<QPushButton*> actions=otherPage->findChildren<QPushButton*>();
-        ok=check(actions.size()==7,
-                 "Four RC5 commands plus three cable help buttons required") && ok;
+        ok=check(actions.size()==10,
+                 "Four RC5, three Lucas 5AS and three cable-help buttons required") && ok;
         const char *const ids[]={
             "rc5ConnectButton","rc5DisconnectButton",
             "rc5ReadFaultsButton","rc5ClearFaultsButton"
@@ -241,10 +241,30 @@ bool verifyUi(MainWindow &window)
                      panel->layout()->itemAt(panel->layout()->count()-1)->widget()==help,
                      "Cable information button must be active at bottom of its own module") && ok;
         }
-        for(QFrame *panel:{immobiliserPanel,keysPanel})
-            if(panel)
-                ok=check(panel->findChildren<QPushButton*>().size()==1,
-                         "Reserved ECU columns must contain cable help only") && ok;
+        if(keysPanel)
+            ok=check(keysPanel->findChildren<QPushButton*>().size()==1,
+                     "Reserved key programming may only show cable help") && ok;
+        QPushButton *fiveConnect=otherPage->findChild<QPushButton*>(
+            QStringLiteral("lucas5asConnectButton"));
+        QPushButton *fiveDisconnect=otherPage->findChild<QPushButton*>(
+            QStringLiteral("lucas5asDisconnectButton"));
+        QPushButton *fiveRead=otherPage->findChild<QPushButton*>(
+            QStringLiteral("lucas5asReadStatusButton"));
+        QTableWidget *fiveTable=otherPage->findChild<QTableWidget*>(
+            QStringLiteral("lucas5asStatusTable"));
+        QPlainTextEdit *fiveLog=otherPage->findChild<QPlainTextEdit*>(
+            QStringLiteral("lucas5asDiagnosticLog"));
+        ok=check(fiveConnect && fiveConnect->isEnabled() &&
+                 fiveDisconnect && !fiveDisconnect->isEnabled() &&
+                 fiveRead && !fiveRead->isEnabled() &&
+                 fiveTable && fiveTable->columnCount()==2 &&
+                 fiveTable->rowCount()==0 &&
+                 fiveTable->verticalScrollBarPolicy()==Qt::ScrollBarAlwaysOn &&
+                 fiveLog && fiveLog->isReadOnly(),
+                 "Lucas 5AS starts disconnected, no automatic command, with a read-only log") && ok;
+        if(immobiliserPanel)
+            ok=check(immobiliserPanel->findChildren<QPushButton*>().size()==4,
+                     "Lucas 5AS owns only connect, disconnect, read and cable help") && ok;
 
         // Exercise the actual offline help in each module, not only its
         // translation string or existence. Auto-close the modal from the
@@ -796,6 +816,24 @@ bool verifyUi(MainWindow &window)
             "rc5CableInfoButton","immobiliserCableInfoButton",
             "keysCableInfoButton"
         };
+        QPushButton *fiveConnect=window.findChild<QPushButton*>(
+            QStringLiteral("lucas5asConnectButton"));
+        QPushButton *fiveDisconnect=window.findChild<QPushButton*>(
+            QStringLiteral("lucas5asDisconnectButton"));
+        QPushButton *fiveRead=window.findChild<QPushButton*>(
+            QStringLiteral("lucas5asReadStatusButton"));
+        ok=check(fiveConnect && fiveConnect->text()==I18n::text(16805) &&
+                 fiveDisconnect && fiveDisconnect->text()==I18n::text(16806) &&
+                 fiveRead && fiveRead->text()==I18n::text(16906),
+                 "Lucas 5AS diagnostic buttons must follow six languages") && ok;
+        QTableWidget *fiveTable=window.findChild<QTableWidget*>(
+            QStringLiteral("lucas5asStatusTable"));
+        if(fiveTable)
+            ok=check(fiveTable->horizontalHeaderItem(0) &&
+                     fiveTable->horizontalHeaderItem(0)->text()==I18n::text(16920) &&
+                     fiveTable->horizontalHeaderItem(1) &&
+                     fiveTable->horizontalHeaderItem(1)->text()==I18n::text(16921),
+                     "Lucas 5AS status columns must be translated") && ok;
         for(int i=0;i<3;++i){
             QPushButton *cable=window.findChild<QPushButton*>(
                 QString::fromLatin1(cableIds[i]));
