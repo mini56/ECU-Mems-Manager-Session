@@ -118,7 +118,7 @@ public:
             const bool sent=m_port.write(&octet,1)==1 &&
                             m_port.waitForBytesWritten(500);
             if(trace)
-                trace->append(QStringLiteral("TX @9600 %1 (%2)\\n")
+                trace->append(QStringLiteral("TX @9600 %1 (%2)\n")
                     .arg(qulonglong(command),2,16,QLatin1Char('0'))
                     .arg(sent?QStringLiteral("sent"):QStringLiteral("error")));
             return sent;
