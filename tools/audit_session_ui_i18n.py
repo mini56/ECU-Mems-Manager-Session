@@ -13,7 +13,7 @@ keys = (list(range(16200,16220))+list(range(16300,16336))+
         list(range(16600,16612))+list(range(16700,16714))+
         list(range(16801,16828))+[16831,16832,16833]+
         list(range(16840,16864))+[16880]+list(range(16890,16898))+
-        list(range(16900,16924)))
+        list(range(16900,16939))+[16940,16941,6208])
 errors = []
 def check(condition, message):
     if not condition: errors.append(message)
@@ -32,6 +32,10 @@ for lang in langs:
         check(bool(dictionary.get(str(key),'').strip()),f'{lang}: missing key {key}')
     help_name = {'fr':'help.html.in','en':'help_en.html.in'}.get(lang,f'help_{lang}.html.in')
     guide = read(help_name)
+    check('Lucas 5AS' in guide and
+          guide.count('Lucas 5AS') >= 1 and
+          'chapter-19' in guide,
+          f'{lang}: short Lucas 5AS guide missing')
     anchors = [int(x) for x in re.findall(r'<h2 id="chapter-(\d+)"',guide)]
     check(anchors == list(range(1,25)), f'{lang}: 24 guide chapters required')
     check(f'lang="{lang}"' in guide and '@APP_VERSION@' in guide,
@@ -66,7 +70,15 @@ check('class OtherControlUnitsTab' in other and
       'immobiliserCableInfoButton' in other and
       'keysCableInfoButton' in other and
       'showCableHelp(int index)' in other,
-      'RC5 and 5AS read-only diagnostic pages or cable help buttons missing')
+      'RC5 and 5AS diagnostic pages or cable help buttons missing')
+check(all(s in other for s in (
+    'lucas5asTestHornButton','lucas5asTestLedButton',
+    'lucas5asTestHazardsButton','lucas5asLiveStatusButton',
+    'lucas5asSaveLogButton','QMessageBox confirmation',
+    'confirmation.setDefaultButton(QMessageBox::Cancel)',
+    'm_5asLiveTimer->setInterval(1000)',
+    'QMetaObject::invokeMethod(m_5asWorker,"pulseOutput"')),
+    'Lucas 5AS output tests must explain risks and require confirmation')
 for lang in langs:
     help_catalog = json.loads(read(f'translations/{lang}/{lang}_other_ecus.json'))
     for key in (16892,16894,16896):
