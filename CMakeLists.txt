@@ -71,7 +71,7 @@ configure_file("${CMAKE_SOURCE_DIR}/help_pt.html.in" "${CMAKE_SOURCE_DIR}/help_p
 configure_file("${CMAKE_SOURCE_DIR}/help_it.html.in" "${CMAKE_SOURCE_DIR}/help_it.html")
 configure_file("${CMAKE_SOURCE_DIR}/help_es.html.in" "${CMAKE_SOURCE_DIR}/help_es.html")
 set(SOURCES
-    main.cpp i18n.cpp i18n.h sessionprogramupdate.cpp sessionprogramupdate.h memsinterface.cpp memsinterface_dispatch.cpp memsinterface.h mems2jprotocol.h mems3protocol.h rc5protocol.h othercontrolunitstab.h overviewramlive.cpp mappedinjection.cpp injectionramtest.cpp injectionramtestlogger.cpp memslogic.cpp database/DatabaseSeed.cpp
+    main.cpp i18n.cpp i18n.h sessionprogramupdate.cpp sessionprogramupdate.h memsinterface.cpp memsinterface_dispatch.cpp memsinterface.h mems2jprotocol.h mems3protocol.h rc5protocol.h lucas5asprotocol.h lucas5asreader.h othercontrolunitstab.h overviewramlive.cpp mappedinjection.cpp injectionramtest.cpp injectionramtestlogger.cpp memslogic.cpp database/DatabaseSeed.cpp
     helpviewer.cpp taskbarautohide.cpp taskbarautohide.h logger.cpp serialdevenumerator.cpp splashprogress.cpp mainwindow.cpp aboutbox.cpp
     optionsdialog.cpp summarytab.cpp diagnosticpanel.cpp analysistab.cpp captureviewer.cpp captureviewer.h
     tooltipbubblemanager.cpp tooltipbubblemanager.h scr/ecu/ecumanager.cpp scr/ecu/ecumanager.h
