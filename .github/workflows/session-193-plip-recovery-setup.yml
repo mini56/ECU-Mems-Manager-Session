@@ -2,13 +2,14 @@ name: "SESSION 193 - Fiabilisation PLIP 5AS - Setup Windows"
 run-name: SESSION 193 - FIABILISATION PLIP 5AS - ${{ github.sha }}
 on:
   workflow_dispatch:
-  # Build and publish only when this dedicated workflow is committed.
+  # Rebuild on dedicated workflow or Lucas 5AS protocol selftest corrections.
   # Preserve old versions and run existing non-regression checks.
   # Verify new MEMS 2J module and keep the BUILD 177 K-Line/ROSCO non-regression.
   push:
     branches: [fix-documentary-additive-session-161-20261118]
     paths:
       - '.github/workflows/session-193-plip-recovery-setup.yml'
+      - 'lucas5asprotocol_test.cpp'
 permissions:
   contents: write
 concurrency:
