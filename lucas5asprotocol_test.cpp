@@ -64,13 +64,13 @@ int main()
     // Simulated transport failures: no physical port or ECU is required.
     // Sending may have succeeded on the wire even when the driver timed out.
     FobLearningCycle cycle;
-    QVector<quint8> sentCommands;
+    QByteArray sentCommands;
     const auto transmitted=[&sentCommands](quint8 code){
-        sentCommands.append(code);
+        sentCommands.append(char(code));
         return true;
     };
     const auto timedOut=[&sentCommands](quint8 code){
-        sentCommands.append(code);
+        sentCommands.append(char(code));
         return false;
     };
     require(cycle.phase()==FobLearningCycle::Phase::Idle &&
@@ -80,31 +80,31 @@ int main()
             "STOP from idle must not transmit anything");
     require(cycle.begin(transmitted) &&
             cycle.phase()==FobLearningCycle::Phase::StartSent &&
-            sentCommands==QVector<quint8>{kStartFobLearning},
+            sentCommands==QByteArray(1,char(kStartFobLearning)),
             "Normal START transmits only 5F");
     require(!cycle.begin(transmitted) && sentCommands.size()==1,
             "Duplicate START is forbidden while a cycle is active");
     require(!cycle.finish(timedOut) &&
             cycle.phase()==FobLearningCycle::Phase::Uncertain &&
-            cycle.possiblyActive() && sentCommands.last()==kStopFobLearning,
+            cycle.possiblyActive() && sentCommands.at(sentCommands.size()-1)==char(kStopFobLearning),
             "Failed STOP stays uncertain and keeps a possible active cycle");
     require(!cycle.begin(transmitted) && sentCommands.size()==2,
             "An uncertain STOP must block new START without any transmission");
     require(cycle.finish(transmitted) && !cycle.possiblyActive() &&
-            sentCommands.last()==kStopFobLearning,
+            sentCommands.at(sentCommands.size()-1)==char(kStopFobLearning),
             "Retry STOP leaves learning idle only when host write succeeds");
     sentCommands.clear();
     require(!cycle.begin(timedOut) &&
             cycle.phase()==FobLearningCycle::Phase::Uncertain &&
             cycle.possiblyActive() &&
-            sentCommands==QVector<quint8>{kStartFobLearning},
+            sentCommands==QByteArray(1,char(kStartFobLearning)),
             "Failed START must retain uncertain state, even if write timed out");
     require(!cycle.begin(transmitted) && sentCommands.size()==1,
             "Uncertain START cannot silently retry and replace remote slots");
     require(!cycle.finish(timedOut) && cycle.possiblyActive(),
             "STOP timeout after uncertain START must remain uncertain");
     require(cycle.finish(transmitted) && !cycle.possiblyActive() &&
-            sentCommands.last()==kStopFobLearning,
+            sentCommands.at(sentCommands.size()-1)==char(kStopFobLearning),
             "STOP after uncertain START must be recoverable");
     sentCommands.clear();
     require(cycle.begin(transmitted) && cycle.possiblyActive(),
