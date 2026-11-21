@@ -55,6 +55,12 @@ int main()
             !outputTestCommands(8,&start,nullptr),
             "Output test cannot run without both start and stop");
 
+    // Documented PLIP learning commands: test pure constants only, no I/O.
+    require(kStartFobLearning==0x5Fu && kStopFobLearning==0x6Fu &&
+            kStartFobLearning!=kReadStatusCommand &&
+            kStopFobLearning!=kEndSessionCommand,
+            "PLIP learning command pair must stay distinct");
+
     // Synthetic example follows exactly the indices published by Portman.
     // These bytes are NOT a captured response from a vehicle.
     QByteArray raw(49,char(0));

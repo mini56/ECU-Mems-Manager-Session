@@ -1,9 +1,9 @@
 #ifndef LUCAS5ASREADER_H
 #define LUCAS5ASREADER_H
 
-// SESSION 190 - isolated Lucas 5AS diagnostic transport and output tests.
+// Independent Lucas 5AS diagnostics, output tests and confirmed PLIP learning.
 // The 5AS uses a separate adapted KKL interface (OBD 3 TX / OBD 1 RX).
-// No EEPROM, immobiliser programming, PLIP learning or motor/RC5 commands.
+// No EEPROM, ECU/immobiliser pairing or motor/RC5 commands.
 #include "lucas5asprotocol.h"
 
 #include <QByteArray>
@@ -26,8 +26,14 @@ public:
     using Cancelled=std::function<bool()>;
     ~Session(){close();}
     bool isOpen() const {return m_ready && m_port.isOpen();}
+    bool learningActive() const {return m_learningActive;}
     void close()
     {
+        // Request the documented 6F STOP on teardown if learning was started.
+        // Failure to transmit must not be presented as successful pairing.
+        if(m_learningActive && m_port.isOpen())
+            transmitLearningCommand(Lucas5AsProtocol::kStopFobLearning,nullptr);
+        m_learningActive=false;
         m_ready=false;
         if(m_port.isOpen()){
             m_port.setBreakEnabled(false);
@@ -98,7 +104,7 @@ public:
     bool readStatus(Lucas5AsProtocol::StatusPacket *result,
                     const Cancelled &cancelled,QString *trace)
     {
-        if(!isOpen() || cancelled())return false;
+        if(!isOpen() || cancelled() || m_learningActive)return false;
         return requestStatus(result,cancelled,trace);
     }
 
@@ -109,7 +115,7 @@ public:
     bool pulseOutput(int output,const Cancelled &cancelled,QString *trace)
     {
         quint8 start=0,stop=0;
-        if(!isOpen() || cancelled() ||
+        if(!isOpen() || cancelled() || m_learningActive ||
            !Lucas5AsProtocol::outputTestCommands(output,&start,&stop))
             return false;
         const auto send=[this,trace](quint8 command){
@@ -129,7 +135,43 @@ public:
         return started && completed && stopped;
     }
 
+    // Only after a full authenticated normal-mode connection, i.e.
+    // 55 83 76 handshake AND a valid 83 length-framed data reply.
+    // No acknowledgement of the 5F/6F operation has been established:
+    // return true solely when the USB serial transmission completed.
+    bool startFobLearning(QString *trace)
+    {
+        if(!isOpen() || m_learningActive)return false;
+        if(!transmitLearningCommand(Lucas5AsProtocol::kStartFobLearning,trace))
+            return false;
+        m_learningActive=true;
+        return true;
+    }
+    bool stopFobLearning(QString *trace)
+    {
+        if(!isOpen() || !m_learningActive)return false;
+        if(!transmitLearningCommand(Lucas5AsProtocol::kStopFobLearning,trace))
+            return false;
+        m_learningActive=false;
+        return true;
+    }
+
 private:
+    bool transmitLearningCommand(quint8 command,QString *trace)
+    {
+        if(!m_port.isOpen() ||
+           (command!=Lucas5AsProtocol::kStartFobLearning &&
+            command!=Lucas5AsProtocol::kStopFobLearning))return false;
+        const char byte=char(command);
+        const bool sent=m_port.write(&byte,1)==1 &&
+                        m_port.waitForBytesWritten(500);
+        if(trace)
+            trace->append(QStringLiteral("TX @9600 %1 PLIP (%2)\n")
+                .arg(qulonglong(command),2,16,QLatin1Char('0'))
+                .arg(sent?QStringLiteral("sent"):QStringLiteral("error")));
+        return sent;
+    }
+
     bool pause(int milliseconds,const Cancelled &cancelled)
     {
         int elapsed=0;
@@ -214,6 +256,7 @@ private:
     QSerialPort m_port; // Created and used exclusively on worker thread.
     QByteArray m_received;
     bool m_ready=false;
+    bool m_learningActive=false;
 };
 
 inline QVariantMap packetValues(const Lucas5AsProtocol::StatusPacket &p)
@@ -308,18 +351,38 @@ public slots:
             m_session->pulseOutput(output,cancelled,&trace);
         emit outputTested(ok,output,trace);
     }
+    void startFobLearning()
+    {
+        QString trace;
+        const bool ok=!m_cancel.load(std::memory_order_relaxed) &&
+            m_session && m_session->startFobLearning(&trace);
+        emit fobLearningChanged(ok,ok,trace);
+    }
+    void finishFobLearning()
+    {
+        QString trace;
+        const bool ok=m_session && m_session->stopFobLearning(&trace);
+        emit fobLearningChanged(false,ok,trace);
+    }
 
 signals:
     void probingPort(const QString &port);
     void connectionChanged(bool connected,const QString &port);
     void statusRead(bool ok,const QVariantMap &fields,const QString &trace);
     void outputTested(bool ok,int output,const QString &trace);
+    void fobLearningChanged(bool active,bool commandSent,
+                            const QString &trace);
 
 private:
     void closeSession()
     {
         if(m_session){
-            m_session->close();
+            if(m_session->learningActive()){
+                QString trace;
+                const bool stopped=m_session->stopFobLearning(&trace);
+                emit fobLearningChanged(false,stopped,trace);
+            }
+            m_session->close(); // Retry STOP on failure before port closes.
             m_session.reset();
         }
     }

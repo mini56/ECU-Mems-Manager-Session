@@ -1,11 +1,11 @@
 #ifndef LUCAS5ASPROTOCOL_H
 #define LUCAS5ASPROTOCOL_H
 
-// Lucas 5AS normal diagnostic mode: status reading and three known output tests.
+// Lucas 5AS normal diagnostics, output tests and confirmed PLIP learning.
 // Source: James Portman, rover-mems-documentation,
 // Immobiliser/5AS/diagnostics and configuring.md (SHA 79290af8887cdc1f069d4d86e6f613ccc9e4a978).
-// This header has NO serial I/O and CANNOT write EEPROM, learn fobs,
-// change alarm configuration, or program an immobiliser.
+// Pure protocol constants: no serial I/O, EEPROM or immobiliser writing.
+// Learning is never started automatically: the UI requires confirmation.
 #include <QByteArray>
 #include <QString>
 #include <QVector>
@@ -19,6 +19,9 @@ constexpr int kSlowBitDurationMs = 200;
 constexpr int kNormalBaud = 9600;
 constexpr quint8 kReadStatusCommand = 0x83u;
 constexpr quint8 kEndSessionCommand = 0xF6u;
+// RoverMEMS documented normal-mode remote learning procedure.
+constexpr quint8 kStartFobLearning = 0x5Fu;
+constexpr quint8 kStopFobLearning = 0x6Fu;
 
 // Documented NORMAL-mode 5AS output tests (RoverMEMS): 3x starts a
 // physical output, 2x stops it. Only the three *identified* outputs are
