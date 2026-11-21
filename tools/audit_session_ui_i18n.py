@@ -69,8 +69,18 @@ for lang in langs:
         help_text = help_catalog.get(str(key),'')
         check(help_text.startswith('<html><body>') and
               help_text.endswith('</body></html>') and
-              len(help_text)>350,
+              len(help_text)>900,
               f'{lang}: missing substantive offline cable text {key}')
+    rc5_help=help_catalog.get('16892','')
+    five_help=help_catalog.get('16894','')
+    keys_help=help_catalog.get('16896','')
+    check(all(fragment in rc5_help for fragment in ('7','13','KKL')),
+          f'{lang}: RC5 DIY OBD pin 7 to pin 13 instructions missing')
+    check(all(fragment in five_help for fragment in
+              ('FT232R','CH340G','FT_PROG','Invert RXD','15','16','1','3','7')),
+          f'{lang}: FTDI/CH340G and 5AS DIY cable instructions missing')
+    check(all(fragment in keys_help for fragment in ('Pektron','10AS','5AS')),
+          f'{lang}: PLIP DIY cable guidance or variants missing')
 sources = {
     'usbcablediagnostictab.h':range(16201,16220),
     'database/MemsDocumentaryUpdateDialog.cpp':range(16300,16336),
