@@ -33,6 +33,7 @@
 #include <QImage>
 #include <QPixmap>
 #include <QTextBrowser>
+#include <QPlainTextEdit>
 #include <QHeaderView>
 #include <QTableWidget>
 #include <QTableView>
