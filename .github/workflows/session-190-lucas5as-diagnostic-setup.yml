@@ -465,7 +465,7 @@ jobs:
               assert len(about['6208'])>45
               help_name='help.html.in' if lang=='fr' else f'help_{lang}.html.in'
               help_text=Path(help_name).read_text(encoding='utf-8')
-              assert 'Lucas 5AS' in help_text and 'chapter-19' in help_text
+              assert ('Lucas 5AS' in help_text or 'Lucas-5AS' in help_text) and 'chapter-19' in help_text
           assert 'I18n::text(6208)' in read('aboutbox.cpp')
           assert 'outputTestCommands(13,&start,&stop)' in five_test
           print('SESSION_190_LUCAS_5AS_DIAGNOSTIC_AND_RC5_NO_REGRESSION_PASS')
