@@ -7,10 +7,11 @@ from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
 langs = ('fr', 'en', 'es', 'it', 'pt', 'de')
-tabs = (1001,7900,2001,4001,3001,7013,7940,7018,7017,7012,5001,7152,6002,19000,16200)
+tabs = (1001,7900,2001,4001,3001,7013,7940,7018,7017,7012,5001,7152,6002,19000,16200,16800)
 keys = (list(range(16200,16220))+list(range(16300,16336))+
         list(range(16400,16425))+list(range(16500,16507))+
-        list(range(16600,16612))+list(range(16700,16714)))
+        list(range(16600,16612))+list(range(16700,16714))+
+        list(range(16801,16805)))
 errors = []
 def check(condition, message):
     if not condition: errors.append(message)
@@ -48,6 +49,12 @@ check('I18n::language().left(2).toLower()' in guide,'guide uses wrong language')
 usb,menu=map(read,('usbcablediagnostictab.h','uishell.cpp'))
 check('QLocale().language()' not in usb,'USB tied to Windows language')
 check('return I18n::text(16200);' in menu,'USB tab not translated')
+check('return I18n::text(16800);' in menu,'Other ECU tab not translated')
+other=read('othercontrolunitstab.h')
+check('class OtherControlUnitsTab' in other and
+      'I18n::text(16801 + i)' in other and
+      'I18n::text(16804)' in other,
+      'Three reserved ECU modules must have translated headings and status')
 sources = {
     'usbcablediagnostictab.h':range(16201,16220),
     'database/MemsDocumentaryUpdateDialog.cpp':range(16300,16336),
@@ -71,5 +78,5 @@ check('return m_language == QStringLiteral("en") ? en : fr;' in updater,
 if errors:
     for problem in errors: print('I18N_AUDIT_FAILED:',problem,file=sys.stderr)
     sys.exit(1)
-print('SESSION_UI_I18N_AUDIT_OK','languages=6','tabs=15',
+print('SESSION_UI_I18N_AUDIT_OK','languages=6','tabs=16',
       f'new_keys={len(keys)}','guide_chapters=24')
