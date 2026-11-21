@@ -161,6 +161,15 @@ add_dependencies(${PNAME} mems2j_protocol_selftest)
 add_custom_command(TARGET ${PNAME} POST_BUILD
     COMMAND "$<TARGET_FILE:mems2j_protocol_selftest>")
 
+# Pure Lucas 5AS normal-mode wake and read-only status decoder test.
+# Independent of ECU connection and of RC5, MEMS, ROSCO and key programming.
+add_executable(lucas5as_protocol_selftest
+    lucas5asprotocol_test.cpp lucas5asprotocol.h)
+target_link_libraries(lucas5as_protocol_selftest PRIVATE Qt5::Core)
+add_dependencies(${PNAME} lucas5as_protocol_selftest)
+add_custom_command(TARGET ${PNAME} POST_BUILD
+    COMMAND "$<TARGET_FILE:lucas5as_protocol_selftest>")
+
 # Synthetic RC5 SRS packet and complete/historic fault decoding, no ECU needed.
 add_executable(rc5_protocol_selftest rc5protocol_test.cpp rc5protocol.h)
 target_link_libraries(rc5_protocol_selftest PRIVATE Qt5::Core Qt5::SerialPort)
