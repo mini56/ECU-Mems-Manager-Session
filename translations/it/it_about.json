@@ -6,5 +6,6 @@
   "6204": "Ringraziamenti speciali a:",
   "6205": "Per i loro precedenti lavori sugli strumenti di lettura e diagnosi delle centraline Rover MEMS.",
   "6206": "da testare",
-  "6207": "MEMS 2J e MEMS 3: lettura delle misure e dei codici guasto motore; cancellazione dei guasti solo su richiesta dell'utente. Le funzioni sperimentali di calibrazione e immobilizzatore non sono abilitate. Restano necessarie prove su centraline reali."
+  "6207": "MEMS 2J e MEMS 3: lettura delle misure e dei codici guasto motore; cancellazione dei guasti solo su richiesta dell'utente. Le funzioni sperimentali di calibrazione e immobilizzatore non sono abilitate. Restano necessarie prove su centraline reali.",
+  "6208": "Lucas 5AS (prova su centralina reale ancora da effettuare): identificazione e stati in tempo reale, brevi test di clacson, LED e luci di emergenza con conferma preventiva e salvataggio del registro. Nessuna modifica EEPROM né abbinamento telecomandi in questa versione."
 }
