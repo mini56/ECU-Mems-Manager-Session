@@ -238,6 +238,8 @@ m_mems(0), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerD
   connect(this, SIGNAL(ptcRelayOn()), m_mems, SLOT(onPTCRelayOn()));
   connect(this, SIGNAL(ptcRelayOff()), m_mems, SLOT(onPTCRelayOff()));
   connect(this, SIGNAL(ResetAdjustmentsRequested()), m_mems, SLOT(onResetAdjustmentsRequested()));
+  connect(this, SIGNAL(SaveAdjustmentsRequested()), m_mems, SLOT(onSaveAdjustmentsRequested()));
+  connect(m_mems, SIGNAL(saveAdjustmentsResult(bool)), this, SLOT(onSaveAdjustmentsResult(bool)));
   connect(this, SIGNAL(ResetECURequested()), m_mems, SLOT(onResetECURequested()));
 
   connect(m_mems, SIGNAL(faultCodesClearSuccess()), this, SLOT(onFaultCodeClearComplete()));
@@ -979,6 +981,13 @@ void MainWindow::setAdjustmentsEnabled(bool enabled)
   m_ui->m_idle_speed_minusButton->setEnabled(enabled);
   m_ui->m_ignition_advance_minusButton->setEnabled(enabled);
   m_ui->m_ignition_advance_plusButton->setEnabled(enabled);
+  for(const char *name:{"settingsIacMinusButton","settingsIacPlusButton",
+                        "settingsSaveAdjustmentsButton"}) {
+    if(QPushButton *button=findChild<QPushButton*>(QString::fromLatin1(name)))
+      button->setEnabled(enabled &&
+          (QString::fromLatin1(name)!=QStringLiteral("settingsSaveAdjustmentsButton") ||
+           !m_saveAdjustmentsPending));
+  }
   m_ui->m_clearFaultsButton->setEnabled(enabled);
   m_ui->m_clearRecordedAnomalies->setEnabled(enabled);
   m_adjustmentsEnabled = enabled;
@@ -1044,6 +1053,8 @@ void MainWindow::onDataReady()
  setAdjustmentsEnabled(true);
 //  m_ui->m_throttlePotVolts->setText(QString::number(data->throttle_pot, 'f', 2) + "V");
  m_ui->m_idleBypassPosBar_2->setValue((float)corrected_iac / (float)IAC_MAXIMUM * 100);
+  if(QLCDNumber *lcd=findChild<QLCDNumber*>(QStringLiteral("settingsIacPositionLcd")))
+    lcd->display(corrected_iac);
  // m_ui->m_idle_base_pos->setValue(data->idle_base_pos);
 //  m_ui->m_iacPositionSteps->setText(QString::number(data->iac_position));
  m_ui->m_short_term_correction->setValue(data->short_term_fuel_trim - 100);
@@ -1633,6 +1644,9 @@ void MainWindow::onConnect()
  */
 void MainWindow::onDisconnect()
 {
+  m_settingsIacRiskAccepted=false;
+  m_saveAdjustmentsPending=false;
+  setAdjustmentsEnabled(false);
   setProperty("ecuConnectInProgress", false);
   m_ui->m_connectButton->setEnabled(true);
   m_ui->m_disconnectButton->setEnabled(false);
@@ -2077,6 +2091,58 @@ void MainWindow::onFaultCodeClearComplete()
 void MainWindow::onAdjustmentsResetComplete()
 {
   QMessageBox::information(this, I18n::text(7065) /* EN: Completed */, "Réglages réinitialisés avec succès.", QMessageBox::Ok);
+}
+
+// Save 0x81 is separate from resets; transmitted bytes do not prove
+// nonvolatile EEPROM persistence without an ECU power-cycle check.
+void MainWindow::onConfirmSaveAdjustments()
+{
+  if(m_saveAdjustmentsPending || isEcuDisconnected() ||
+     (m_mems->ecuFamily()!=MemsEcuFamily::Rosco13_16 &&
+      m_mems->ecuFamily()!=MemsEcuFamily::Mems19))
+    return;
+  QMessageBox confirm(QMessageBox::Warning,I18n::text(7157),I18n::text(7158),
+                      QMessageBox::Ok|QMessageBox::Cancel,this);
+  confirm.setDefaultButton(QMessageBox::Cancel);
+  if(confirm.exec()!=QMessageBox::Ok)return;
+  m_saveAdjustmentsPending=true;
+  if(QPushButton *save=findChild<QPushButton*>(QStringLiteral("settingsSaveAdjustmentsButton")))
+    save->setEnabled(false);
+  emit SaveAdjustmentsRequested();
+}
+
+void MainWindow::onSaveAdjustmentsResult(bool transmitted)
+{
+  m_saveAdjustmentsPending=false;
+  const bool connected=!isEcuDisconnected();
+  if(QPushButton *save=findChild<QPushButton*>(QStringLiteral("settingsSaveAdjustmentsButton")))
+    save->setEnabled(connected && m_adjustmentsEnabled);
+  if(!connected)return;
+  QMessageBox::information(this,I18n::text(7157),
+                           I18n::text(transmitted?7159:7160),QMessageBox::Ok);
+}
+
+bool MainWindow::confirmSettingsIacChange()
+{
+  if(isEcuDisconnected() || !m_adjustmentsEnabled)
+    return false;
+  if(m_settingsIacRiskAccepted)return true;
+  QMessageBox warning(QMessageBox::Warning,I18n::text(7161),I18n::text(7162),
+                      QMessageBox::Ok|QMessageBox::Cancel,this);
+  warning.setDefaultButton(QMessageBox::Cancel);
+  if(warning.exec()!=QMessageBox::Ok)return false;
+  m_settingsIacRiskAccepted=true;
+  return true;
+}
+
+void MainWindow::onSettingsIacPlus()
+{
+  if(confirmSettingsIacChange())emit OpenIAC();
+}
+
+void MainWindow::onSettingsIacMinus()
+{
+  if(confirmSettingsIacChange())emit CloseIAC();
 }
 
 void MainWindow::onConfirmResetAdjustments()

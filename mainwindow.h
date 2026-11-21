@@ -82,12 +82,17 @@ public slots:
 
     void onConfirmResetECU();
     void onConfirmResetAdjustments();
+    void onConfirmSaveAdjustments();
+    void onSaveAdjustmentsResult(bool transmitted);
+    void onSettingsIacPlus();
+    void onSettingsIacMinus();
 
 signals:
     void requestToStartPolling();
     void requestThreadShutdown();
 
     void ResetAdjustmentsRequested();
+    void SaveAdjustmentsRequested();
     void ResetECURequested();
 
     void fuelPumpTest();
@@ -194,6 +199,8 @@ private:
     bool m_actuatorTestsEnabled;
     bool m_actuatorsOffEnabled;
     bool m_adjustmentsEnabled;
+    bool m_saveAdjustmentsPending=false;
+    bool m_settingsIacRiskAccepted=false;
 
     QTextEdit *m_protocolOutput;
     QLabel *m_protocolModeLabel;
@@ -254,6 +261,7 @@ private slots:
     void setActuatorTestsEnabled(bool enabled);
     void setActuatorsOffEnabled(bool enabled);
     void setAdjustmentsEnabled(bool enabled);
+    bool confirmSettingsIacChange();
 
     void on_m_fuel_trim_plusButton_clicked();
     void on_m_fuel_trim_minusButton_clicked();
