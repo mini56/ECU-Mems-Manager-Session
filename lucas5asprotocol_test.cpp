@@ -39,6 +39,22 @@ int main()
     require(hasNormalWakeReply(QByteArray::fromHex("001C558376")),
             "Normal wake must survive local 0x1C echo");
 
+    // Normal-mode output test whitelist; no implicit EEPROM or PLIP write.
+    quint8 start=0,stop=0;
+    require(outputTestCommands(8,&start,&stop) && start==0x38u && stop==0x28u,
+            "Horn test must send documented start then stop");
+    require(outputTestCommands(9,&start,&stop) && start==0x39u && stop==0x29u,
+            "5AS LED test must send documented start then stop");
+    require(outputTestCommands(13,&start,&stop) && start==0x3Du && stop==0x2Du,
+            "Hazards test must send documented start then stop");
+    require(!outputTestCommands(7,&start,&stop) &&
+            !outputTestCommands(10,&start,&stop) &&
+            !outputTestCommands(15,&start,&stop),
+            "Unknown output test IDs must never be sent");
+    require(!outputTestCommands(8,nullptr,&stop) &&
+            !outputTestCommands(8,&start,nullptr),
+            "Output test cannot run without both start and stop");
+
     // Synthetic example follows exactly the indices published by Portman.
     // These bytes are NOT a captured response from a vehicle.
     QByteArray raw(49,char(0));
