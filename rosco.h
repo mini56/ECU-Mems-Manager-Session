@@ -39,8 +39,10 @@ enum mems_data_command
     MEMS_ClearFaults    = 0xCC,
     MEMS_Heartbeat      = 0xF4,
     MEMS_GetIACPosition = 0xFB,
-	MEMS_ResetAdj		= 0x0F,
-	MEMS_ResetECU		= 0xFA
+	MEMS_ResetAdj		= 0xFA, /* original 45-export reset: adaptations */
+	MEMS_ResetECU		= 0xAF, /* original 45-export reset: ECU */
+	MEMS_ResetEMI		= 0x0F, /* original 45-export reset: emissions */
+	MEMS_Save		= 0x81  /* original 45-export save command */
 };
 
 /**
@@ -80,6 +82,8 @@ enum mems_actuator_command
 	MEMS_AllActuatorsOff	= 0xF4,
      MEMS_FuelTrimPlus = 0x79,
      MEMS_FuelTrimMinus = 0x7A,
+     MEMS_FuelTrim2Plus = 0x7B, /* additional richness command; not injector firing */
+     MEMS_FuelTrim2Minus = 0x7C,
      MEMS_IdleDecayPlus = 0x89,
      MEMS_IdleDecayMinus = 0x8A,
      MEMS_IdleSpeedPlus = 0x91,
@@ -310,6 +314,21 @@ bool mems_Fan2_On(mems_info* info,uint8_t* data);
 bool mems_Fan2_Off(mems_info* info,uint8_t* data);
 bool mems_Boost_Valve_On(mems_info* info,uint8_t* data);
 bool mems_Boost_Valve_Off(mems_info* info,uint8_t* data);
+bool mems_CloseIAC(mems_info* info, uint8_t* reply);
+bool mems_OpenIAC(mems_info* info, uint8_t* reply);
+bool mems_Save(mems_info* info);
+bool mems_lock(mems_info* info);
+bool mems_openserial(mems_info* info, const char* device);
+int16_t mems_read_serial(mems_info* info, uint8_t* buffer, uint16_t quantity);
+bool mems_reset_ADJ(mems_info* info);
+bool mems_reset_EMI(mems_info* info);
+bool mems_send_command(mems_info* info, uint8_t command);
+void mems_unlock(mems_info* info);
+int16_t mems_write_serial(mems_info* info, uint8_t* buffer, uint16_t quantity);
+uint8_t temperature_value_to_degrees_f(uint8_t value);
+bool mems_save_adjustments(mems_info* info);
+bool mems_fuel_trim_2_plus(mems_info* info, uint8_t* reply);
+bool mems_fuel_trim_2_minus(mems_info* info, uint8_t* reply);
 librosco_version mems_get_lib_version();
 
 /* Closing brace for 'extern "C"' */

@@ -129,3 +129,15 @@ print("OK: truncated 0x7D frame is rejected")
 print("OK: clear/reset/heartbeat return real command result")
 print("OK: original AF/FA/0F/81 reset/save constants and second fuel trim")
 sys.exit(0)
+
+# Check the distinct header actually consumed by the C++ application.
+manager_header = (root.parent / "rosco.h").read_text(encoding="utf-8")
+for name, code in {"MEMS_ResetECU": "0xAF", "MEMS_ResetAdj": "0xFA",
+                   "MEMS_ResetEMI": "0x0F", "MEMS_Save": "0x81",
+                   "MEMS_FuelTrim2Plus": "0x7B", "MEMS_FuelTrim2Minus": "0x7C"}.items():
+    if not re.search(rf"\\b{re.escape(name)}\\s*=\\s*{re.escape(code)}\\b", manager_header):
+        raise SystemExit(f"FAIL Manager public header: {name} must be {code}")
+for exported in expected_exports + expected_extensions:
+    if not re.search(rf"\\b{re.escape(exported)}\\s*\\(", manager_header):
+        raise SystemExit(f"FAIL Manager public header is missing export declaration: {exported}")
+print("OK: Manager source header matches 45 original + 8 added DLL exports")

@@ -1,5 +1,5 @@
-name: ROSCO x64 - 45 historiques et correction de carburant
-run-name: ROSCO 45 fonctions originales + 8 extensions - ${{ github.sha }}
+name: DLL MEMS Manager x64 - compatibilite complete
+run-name: DLL MEMS Manager x64 - 53 exports + application - ${{ github.sha }}
 on:
   push:
     branches: [reconstruction-rosco-complete-45-fonctions-20261121]
@@ -8,15 +8,16 @@ on:
       - 'protocolcontext.h'
       - 'protocolcontext_test.cpp'
       - 'memsinterface_dispatch.cpp'
+      - 'rosco.h'
       - '.github/workflows/rosco-45-exports-x64-audit.yml'
   workflow_dispatch:
 permissions:
   contents: write
 jobs:
   verification_dll:
-    name: Construire la DLL seule et verifier 53 exports
+    name: Verifier la DLL et son integration dans Manager
     runs-on: windows-2022
-    timeout-minutes: 25
+    timeout-minutes: 100
     steps:
       - uses: actions/checkout@v4
       - name: Verifier les 45 fonctions, les octets et l'absence de reduction
@@ -56,13 +57,28 @@ jobs:
           if([BitConverter]::ToUInt16($bytes,$pe+4) -ne 0x8664){throw 'ROSCO DLL is not AMD64'}
           $sha=(Get-FileHash $dll -Algorithm SHA256).Hash.ToLowerInvariant()
           Write-Host "ROSCO_45_LEGACY_EXPORTS_PLUS_8_VERIFIED AMD64 sha256=$sha"
+      - name: Compiler ECU MEMS Manager avec notre DLL et le vrai header public
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $qt='C:/Qt/5.15.2/msvc2019_64'
+          if(-not (Test-Path "$qt/lib/cmake/Qt5/Qt5Config.cmake")) {throw 'Qt 5.15.2 absent du runner : compilation Manager non verifiee'}
+          cmake -S . -B build-manager-dll -A x64 "-DCMAKE_PREFIX_PATH=$qt" -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF -DMEMS_USE_ONNX_GENAI=OFF
+          if($LASTEXITCODE -ne 0){throw 'MANAGER_CONFIGURE_WITH_NEW_DLL_FAILED'}
+          cmake --build build-manager-dll --config Release --target ecu_mems_manager --parallel 4
+          if($LASTEXITCODE -ne 0){throw 'MANAGER_LINK_WITH_NEW_DLL_FAILED'}
+          $app=Get-ChildItem 'build-manager-dll' -Recurse -File -Filter 'ecu_mems_manager.exe' | Select-Object -First 1
+          if(-not $app){throw 'MANAGER_EXECUTABLE_MISSING'}
+          $builtDll=Get-ChildItem 'build-manager-dll/librosco-x64' -Recurse -File -Filter 'mems_manager_x64.dll' | Select-Object -First 1
+          if(-not $builtDll){throw 'MANAGER_DLL_DEPENDENCY_MISSING'}
+          Write-Host "MANAGER_COMPAT_BUILD_SUCCESS exe=$($app.FullName) dll=$($builtDll.FullName)"
       - name: Conserver la DLL validee dans une Release BROUILLON privee
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference='Stop'
-          $tag="rosco-dll-audit-$($env:GITHUB_SHA.Substring(0,12))"
+          $tag="mems-manager-x64-audit-$($env:GITHUB_SHA.Substring(0,12))"
           $exe="build-rosco-45/Release/mems_manager_x64.dll"
           $sha=(Get-FileHash $exe -Algorithm SHA256).Hash.ToLowerInvariant()
           # DRAFT only, in this PRIVATE source repository, NEVER in public MAJ.
@@ -73,7 +89,7 @@ jobs:
             --repo $env:GITHUB_REPOSITORY `
             --target $env:GITHUB_SHA `
             --draft `
-            --title "ROSCO x64 - validation technique privee" `
-            --notes "DLL compilee et testee sans calculateur. SHA256: $sha. BROUILLON PRIVE uniquement. Aucun Setup ni mise a jour publique."
+            --title "DLL MEMS Manager x64 - validation technique privee" `
+            --notes "Validation logicielle privee de la DLL x64 et de son integration a Manager. Aucune publication publique ni Setup."
           if($LASTEXITCODE -ne 0){throw 'Unable to store private DRAFT DLL'}
           Write-Host 'ROSCO_PRIVATE_DRAFT_STORED; NEVER PUBLISHED TO MAJ'

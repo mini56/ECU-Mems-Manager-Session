@@ -39,9 +39,9 @@ int main(void)
     ++failures;
 #endif
 
-    CHECK_EQ("librosco major", version.major, 0);
-    CHECK_EQ("librosco minor", version.minor, 1);
-    CHECK_EQ("librosco patch", version.patch, 12);
+    CHECK_EQ("librosco major", version.major, 3);
+    CHECK_EQ("librosco minor", version.minor, 0);
+    CHECK_EQ("librosco patch", version.patch, 0);
 
     CHECK_EQ("MEMS_ResetECU", MEMS_ResetECU, 0xAF);
     CHECK_EQ("MEMS_ResetAdj", MEMS_ResetAdj, 0xFA);

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(mems_manager_x64_compat LANGUAGES C)
+project(mems_manager_x64_compat LANGUAGES C CXX)
 
 if(NOT WIN32)
     message(FATAL_ERROR "This compatibility target currently validates the Windows MEMS Manager protocol DLL ABI only.")
@@ -20,9 +20,9 @@ add_library(rosco SHARED
 target_include_directories(rosco PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_compile_definitions(rosco PRIVATE
     ROSCO_BUILD_DLL
-    LIBROSCO_VER_MAJOR=0
-    LIBROSCO_VER_MINOR=1
-    LIBROSCO_VER_PATCH=12
+    LIBROSCO_VER_MAJOR=3
+    LIBROSCO_VER_MINOR=0
+    LIBROSCO_VER_PATCH=0
 )
 
 if(MSVC)
@@ -46,3 +46,11 @@ endif()
 
 enable_testing()
 add_test(NAME rosco_abi_selftest COMMAND rosco_abi_selftest)
+
+# Compile and link from the exact header consumed by ECU MEMS Manager,
+# not only from the internal DLL header. This catches missing declarations
+# and mismatched prototype/structure changes before any Setup is built.
+add_executable(manager_dll_contract_selftest manager_dll_contract_selftest.cpp)
+target_compile_definitions(manager_dll_contract_selftest PRIVATE MEMS_NATIVE_KLINE_19=1)
+target_link_libraries(manager_dll_contract_selftest PRIVATE rosco)
+add_test(NAME manager_dll_contract_selftest COMMAND manager_dll_contract_selftest)
