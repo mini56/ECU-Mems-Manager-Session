@@ -25,6 +25,10 @@ Documentation uniquement : le runtime SESSION et la Release 182 ne sont pas modi
 
 - [Andrew Revill : échantillon BIN 256 octets et pistes de recherche Lucas 10AS](32_ARCHIVE_LUCAS10AS_EEPROM_ANDREW_REVILL_20261121.md). Le format et la cartographie des données restent à vérifier ; aucune commande ou adaptation 5AS n'est automatiquement réutilisée.
 
+## Archive Lucas 8AS — référence externe (21/11/2026)
+
+- [Répertoire Andrew Revill : un fichier Lucas 8AS (256 octets), datation 1994 et limites d'interprétation](33_ARCHIVE_LUCAS8AS_ANDREW_REVILL_20261121.md). Distinct des Lucas 5AS et 10AS : protocole et structure mémoire à étudier séparément.
+
 ## Apprentissage PLIP Lucas 5AS (SESSION 192)
 
 - [Commandes documentées 5F/6F, confirmation obligatoire et limites des validations](30_LUCAS5AS_PLIP_APPRENTISSAGE_SESSION192_20261121.md). Les tests logiciels ne prouvent pas que des télécommandes ont été associées à un boîtier réel.
