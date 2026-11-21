@@ -4,6 +4,9 @@
 // SESSION 187: first of three independent workspaces is RC5 SRS diagnostics.
 // Immobiliser and key-programming columns remain intentionally unconnected.
 #include <QApplication>
+#include <QDialog>
+#include <QScreen>
+#include <QTextBrowser>
 #include <QFrame>
 #include <QGridLayout>
 #include <QHeaderView>
@@ -44,6 +47,10 @@ public:
         static const char *const titles[3]={
             "otherEcusAirbagTitle","otherEcusImmobiliserTitle",
             "otherEcusKeysTitle"
+        };
+        static const char *const helpIds[3]={
+            "rc5CableInfoButton","immobiliserCableInfoButton",
+            "keysCableInfoButton"
         };
 
         for(int i=0;i<3;++i){
@@ -86,6 +93,16 @@ public:
                 layout->addStretch(2);
                 m_placeholders[i]=placeholder;
             }
+            // One read-only offline cable help at the bottom of every column.
+            // The reserved modules gain no connection or programming action.
+            QPushButton *cableHelp=new QPushButton(panel);
+            cableHelp->setObjectName(QString::fromLatin1(helpIds[i]));
+            cableHelp->setMinimumHeight(32);
+            cableHelp->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+            layout->addWidget(cableHelp);
+            m_cableHelpButtons[i]=cableHelp;
+            QObject::connect(cableHelp,&QPushButton::clicked,this,
+                             [this,i](){showCableHelp(i);});
             columns->addWidget(panel,1);
         }
 
@@ -176,6 +193,7 @@ public:
             m_headings[i]->setText(I18n::text(16801+i));
             if(m_placeholders[i])
                 m_placeholders[i]->setText(I18n::text(16804));
+            m_cableHelpButtons[i]->setText(I18n::text(16890));
         }
         m_connect->setText(I18n::text(16805));
         m_disconnect->setText(I18n::text(16806));
@@ -226,6 +244,8 @@ public:
               dark?QStringLiteral("#5d6870"):QStringLiteral("#aab4be"));
         for(QPushButton *button:{m_connect,m_disconnect,m_read,m_clear})
             button->setStyleSheet(buttonStyle);
+        for(QPushButton *button:m_cableHelpButtons)
+            button->setStyleSheet(buttonStyle);
         m_table->setStyleSheet(
             QStringLiteral("QTableWidget{background:%1;color:%2;"
                            "gridline-color:%3;border:1px solid %3;}"
@@ -257,6 +277,46 @@ protected:
     }
 
 private:
+    void showCableHelp(int index)
+    {
+        if(index<0 || index>=3)return;
+        QDialog dialog(this);
+        dialog.setObjectName(QStringLiteral("otherEcusCableHelpDialog"));
+        dialog.setWindowTitle(I18n::text(16891+2*index));
+        QVBoxLayout *dialogLayout=new QVBoxLayout(&dialog);
+        dialogLayout->setContentsMargins(14,14,14,12);
+        dialogLayout->setSpacing(10);
+
+        // Local translation catalog: the help works without an internet
+        // connection, a detected COM port, or a connected ECU.
+        QTextBrowser *contents=new QTextBrowser(&dialog);
+        contents->setObjectName(QStringLiteral("otherEcusCableHelpContents"));
+        contents->setOpenExternalLinks(false);
+        contents->setHtml(I18n::text(16892+2*index));
+        const bool dark=qApp && qApp->property("ecuDarkTheme").toBool();
+        contents->setStyleSheet(QStringLiteral(
+            "QTextBrowser{background:%1;color:%2;"
+            "border:1px solid %3;border-radius:4px;padding:9px;}")
+            .arg(dark?QStringLiteral("#10161c"):QStringLiteral("#ffffff"),
+                 dark?QStringLiteral("#e7edf0"):QStringLiteral("#202936"),
+                 dark?QStringLiteral("#2d3943"):QStringLiteral("#d5dee7")));
+        dialogLayout->addWidget(contents,1);
+
+        QPushButton *closeButton=new QPushButton(I18n::text(16897),&dialog);
+        closeButton->setObjectName(QStringLiteral("otherEcusCableHelpClose"));
+        closeButton->setMinimumHeight(32);
+        QObject::connect(closeButton,&QPushButton::clicked,
+                         &dialog,&QDialog::accept);
+        dialogLayout->addWidget(closeButton,0,Qt::AlignRight);
+
+        const QRect screen=qApp && qApp->primaryScreen()
+            ? qApp->primaryScreen()->availableGeometry()
+            : QRect(0,0,1024,768);
+        dialog.resize(qMax(320,qMin(760,screen.width()-60)),
+                      qMax(300,qMin(570,screen.height()-70)));
+        dialog.exec();
+    }
+
     void createRc5Panel(QVBoxLayout *root,QWidget *parent)
     {
         m_status=new QLabel(parent);
@@ -423,6 +483,7 @@ private:
     QLabel *m_headings[3]={nullptr,nullptr,nullptr};
     QLabel *m_placeholders[3]={nullptr,nullptr,nullptr};
     QFrame *m_dividers[3]={nullptr,nullptr,nullptr};
+    QPushButton *m_cableHelpButtons[3]={nullptr,nullptr,nullptr};
     QLabel *m_status=nullptr;
     QLabel *m_portLabel=nullptr;
     QLabel *m_rawLabel=nullptr;
