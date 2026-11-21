@@ -19,6 +19,21 @@ constexpr int kSlowBitDurationMs = 200;
 constexpr int kNormalBaud = 9600;
 constexpr quint8 kReadStatusCommand = 0x83u;
 constexpr quint8 kEndSessionCommand = 0xF6u;
+
+// Documented NORMAL-mode 5AS output tests (RoverMEMS): 3x starts a
+// physical output, 2x stops it. Only the three *identified* outputs are
+// exposed. Unknown x0..x7, xA..xC, xE..xF are deliberately unavailable.
+enum class KnownOutput : quint8 {
+    Horn=8, ImmobiliserLed=9, Hazards=13
+};
+inline bool outputTestCommands(int output,quint8 *start,quint8 *stop)
+{
+    if(!start || !stop || (output!=8 && output!=9 && output!=13))
+        return false;
+    *start=static_cast<quint8>(0x30u|quint8(output));
+    *stop=static_cast<quint8>(0x20u|quint8(output));
+    return true;
+}
 constexpr int kMaxDocumentedPacketBytes = 127;
 
 // Ten ISO-style asynchronous bits, start=0, LSB-first data, stop=1.
