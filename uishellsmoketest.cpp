@@ -245,6 +245,33 @@ bool verifyUi(MainWindow &window)
             if(panel)
                 ok=check(panel->findChildren<QPushButton*>().size()==1,
                          "Reserved ECU columns must contain cable help only") && ok;
+
+        // Exercise the actual offline help in each module, not only its
+        // translation string or existence. Auto-close the modal from the
+        // local event loop; never open a COM port or talk to an ECU.
+        for(int i=0;i<3;++i){
+            QPushButton *help=otherPage->findChild<QPushButton*>(
+                QString::fromLatin1(helpIds[i]));
+            if(!help)continue;
+            bool opened=false;
+            QTimer::singleShot(0,&window,[&window,&opened,i](){
+                QDialog *dialog=window.findChild<QDialog*>(
+                    QStringLiteral("otherEcusCableHelpDialog"));
+                QTextBrowser *text=dialog
+                    ? dialog->findChild<QTextBrowser*>(
+                        QStringLiteral("otherEcusCableHelpContents")) : nullptr;
+                opened=dialog && dialog->isVisible() && text &&
+                    text->isReadOnly() &&
+                    dialog->windowTitle()==I18n::text(16891+2*i) &&
+                    text->toPlainText().size()>150 &&
+                    text->verticalScrollBar()!=nullptr;
+                if(dialog)dialog->accept();
+                else if(QWidget *modal=qApp->activeModalWidget())modal->close();
+            });
+            help->click();
+            ok=check(opened,
+                     "Cable help must open a scrollable translated offline dialog") && ok;
+        }
     }
 
     // The update action is a footer control, immediately after the footer
