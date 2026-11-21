@@ -7,5 +7,5 @@
   "6205": "Für ihre früheren Arbeiten an Lese- und Diagnosewerkzeugen für Rover-MEMS-Steuergeräte.",
   "6206": "noch zu testen",
   "6207": "MEMS 2J und MEMS 3: Messwerte und Motorfehlercodes lesen; Fehlerspeicher nur auf ausdrücklichen Benutzerwunsch löschen. Experimentelle Kalibrierungs- und Wegfahrsperrenfunktionen sind nicht aktiviert. Tests an echten Steuergeräten stehen noch aus.",
-  "6208": "Lucas 5AS (Prüfung am echten Steuergerät ausstehend): Identifikation und Live-Zustände, kurze Tests für Hupe, LED und Warnblinker mit Bestätigung sowie Diagnoseprotokoll. Keine EEPROM-Änderungen oder Fernbedienungsanlernung in dieser Version."
+  "6208": "Lucas 5AS: Live-Diagnose und Ausgangstests mit Bestätigung. Test am echten Steuergerät steht aus."
 }
