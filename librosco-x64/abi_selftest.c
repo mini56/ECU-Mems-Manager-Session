@@ -43,12 +43,21 @@ int main(void)
     CHECK_EQ("librosco minor", version.minor, 1);
     CHECK_EQ("librosco patch", version.patch, 12);
 
-    CHECK_EQ("MEMS_ResetECU", MEMS_ResetECU, 0xFA);
-    CHECK_EQ("MEMS_ResetAdj", MEMS_ResetAdj, 0x0F);
+    CHECK_EQ("MEMS_ResetECU", MEMS_ResetECU, 0xAF);
+    CHECK_EQ("MEMS_ResetAdj", MEMS_ResetAdj, 0xFA);
+    CHECK_EQ("MEMS_ResetEMI", MEMS_ResetEMI, 0x0F);
+    CHECK_EQ("MEMS_Save", MEMS_Save, 0x81);
+    CHECK_EQ("MEMS_FuelTrim2Plus", MEMS_FuelTrim2Plus, 0x7B);
+    CHECK_EQ("MEMS_FuelTrim2Minus", MEMS_FuelTrim2Minus, 0x7C);
+    CHECK_EQ("temperature value=55", temperature_value_to_degrees_f(55), 32);
+    CHECK_EQ("temperature value=65", temperature_value_to_degrees_f(65), 50);
+    CHECK_EQ("temperature wraps uint8",temperature_value_to_degrees_f(0), 137);
     CHECK_EQ("MEMS_ReqData80", MEMS_ReqData80, 0x80);
     CHECK_EQ("MEMS_ReqData7D", MEMS_ReqData7D, 0x7D);
     /* New export: must link and reject a missing transport. */
-    if (mems_save_adjustments(NULL)) {
+    if (mems_Save(NULL) || mems_reset_ADJ(NULL) ||
+        mems_reset_EMI(NULL) || mems_fuel_trim_2_plus(NULL,NULL) ||
+        mems_fuel_trim_2_minus(NULL,NULL) || mems_save_adjustments(NULL)) {
         fprintf(stderr,"FAIL: save accepted invalid session\n");
         ++failures;
     }

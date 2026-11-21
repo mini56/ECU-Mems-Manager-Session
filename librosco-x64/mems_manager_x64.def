@@ -1,29 +1,58 @@
 LIBRARY mems_manager_x64
+; Original LeopoldG 45 public symbols first, in ordinal order.
+; Additional Manager exports follow; preserve existing names without
+; mixing MEMS-1.9 K-Line with normal ROSCO commands.
 EXPORTS
-    mems_cleanup
-    mems_clear_faults
-    mems_connect
-    mems_disconnect
-    mems_get_lib_version
-    mems_heartbeat
-    mems_init
-    mems_init_link
-    mems_is_connected
-    mems_lock
-    mems_move_iac
-    mems_openserial
-    mems_read
-    mems_read_iac_position
-    mems_read_raw
-    mems_init_link_kline19
-    mems_read_kline19
-    mems_command_kline19
-    mems_move_iac_kline19
-    mems_read_serial
-    mems_reset_ECU
-    mems_reset_adjustments
-    mems_save_adjustments
-    mems_send_command
-    mems_test_actuator
-    mems_unlock
-    mems_write_serial
+    mems_Boost_Valve_Off @1
+    mems_Boost_Valve_On @2
+    mems_CloseIAC @3
+    mems_Fan1_Off @4
+    mems_Fan1_On @5
+    mems_Fan2_Off @6
+    mems_Fan2_On @7
+    mems_O2Heater_Off @8
+    mems_O2Heater_On @9
+    mems_OpenIAC @10
+    mems_Purge_Valve_Off @11
+    mems_Purge_Valve_On @12
+    mems_Save @13
+    mems_cleanup @14
+    mems_clear_faults @15
+    mems_connect @16
+    mems_disconnect @17
+    mems_fuel_trim_minus @18
+    mems_fuel_trim_plus @19
+    mems_get_lib_version @20
+    mems_heartbeat @21
+    mems_idle_decay_minus @22
+    mems_idle_decay_plus @23
+    mems_idle_speed_minus @24
+    mems_idle_speed_plus @25
+    mems_ignition_advance_minus @26
+    mems_ignition_advance_plus @27
+    mems_init @28
+    mems_init_link @29
+    mems_is_connected @30
+    mems_lock @31
+    mems_move_iac @32
+    mems_openserial @33
+    mems_read @34
+    mems_read_iac_position @35
+    mems_read_raw @36
+    mems_read_serial @37
+    mems_reset_ADJ @38
+    mems_reset_ECU @39
+    mems_reset_EMI @40
+    mems_send_command @41
+    mems_test_actuator @42
+    mems_unlock @43
+    mems_write_serial @44
+    temperature_value_to_degrees_f @45
+    mems_reset_adjustments @46
+    mems_save_adjustments @47
+    mems_init_link_kline19 @48
+    mems_read_kline19 @49
+    mems_command_kline19 @50
+    mems_move_iac_kline19 @51
+    mems_fuel_trim_2_plus @52
+    mems_fuel_trim_2_minus @53

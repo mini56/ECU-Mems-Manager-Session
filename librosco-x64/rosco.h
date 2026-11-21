@@ -37,8 +37,10 @@ enum mems_data_command
     MEMS_ClearFaults    = 0xCC,
     MEMS_Heartbeat      = 0xF4,
     MEMS_GetIACPosition = 0xFB,
-    MEMS_ResetAdj       = 0x0F,
-    MEMS_ResetECU       = 0xFA
+    MEMS_ResetAdj       = 0xFA, /* LeopoldG original mems_reset_ADJ */
+    MEMS_ResetECU       = 0xAF, /* LeopoldG original mems_reset_ECU */
+    MEMS_ResetEMI       = 0x0F, /* LeopoldG original mems_reset_EMI */
+    MEMS_Save           = 0x81  /* LeopoldG original mems_Save */
 };
 
 /* Command catalogue carried by the Haro/MEMS-Scan header.  The generic
@@ -75,6 +77,8 @@ enum mems_actuator_command
     MEMS_AllActuatorsOff        = 0xF4,
     MEMS_FuelTrimPlus           = 0x79,
     MEMS_FuelTrimMinus          = 0x7A,
+    MEMS_FuelTrim2Plus          = 0x7B,
+    MEMS_FuelTrim2Minus         = 0x7C,
     MEMS_IdleDecayPlus          = 0x89,
     MEMS_IdleDecayMinus         = 0x8A,
     MEMS_IdleSpeedPlus          = 0x91,
@@ -226,7 +230,12 @@ typedef struct
     HANDLE mutex;
 } mems_info;
 
-/* Original 22-symbol contract plus separately named additions. */
+/* Complete 45-symbol LeopoldG ROSCO contract, plus the distinct modern
+ * MEMS Manager and MEMS 1.9 extensions. The legacy x86 DLL declared its
+ * reset/Save functions without info in its third-party header, but their
+ * machine code dereferences the mems_info* argument. In native x64 all these
+ * calls receive the owning serial session pointer explicitly.
+ */
 ROSCO_API void mems_init(mems_info* info);
 ROSCO_API bool mems_init_link(mems_info* info, uint8_t* d0_response_buffer);
 ROSCO_API void mems_cleanup(mems_info* info);
@@ -245,9 +254,51 @@ ROSCO_API bool mems_move_iac(mems_info* info, uint8_t desired_pos);
 ROSCO_API bool mems_test_actuator(mems_info* info, actuator_cmd cmd, uint8_t* data);
 ROSCO_API bool mems_clear_faults(mems_info* info);
 ROSCO_API bool mems_reset_ECU(mems_info* info);
-ROSCO_API bool mems_reset_adjustments(mems_info* info);
+/* The original ROM-tested reset commands are NOT interchangeable:
+ * ADJ=FA, ECU=AF and EMI=0F, as read directly from LeopoldG's x86 DLL.
+ */
+ROSCO_API bool mems_reset_ADJ(mems_info* info);
+ROSCO_API bool mems_reset_EMI(mems_info* info);
+ROSCO_API bool mems_reset_adjustments(mems_info* info); /* modern alias -> ADJ */
 /* Verified original LeopoldG DLL: 0x81 followed by one reply byte. */
-ROSCO_API bool mems_save_adjustments(mems_info* info);
+ROSCO_API bool mems_Save(mems_info* info);             /* legacy name */
+ROSCO_API bool mems_save_adjustments(mems_info* info); /* modern alias */
+/* Legacy named one-byte tuning and actuator routines. Each is a real,
+ * callable function and uses the same echo/reply protocol as the original DLL.
+ * Do not send to an unidentified ECU, or during MODE4 programming.
+ */
+ROSCO_API bool mems_fuel_trim_plus(mems_info* info,uint8_t* reply);
+ROSCO_API bool mems_fuel_trim_minus(mems_info* info,uint8_t* reply);
+ROSCO_API bool mems_idle_decay_plus(mems_info* info,uint8_t* reply);
+ROSCO_API bool mems_idle_decay_minus(mems_info* info,uint8_t* reply);
+ROSCO_API bool mems_idle_speed_plus(mems_info* info,uint8_t* reply);
+ROSCO_API bool mems_idle_speed_minus(mems_info* info,uint8_t* reply);
+ROSCO_API bool mems_ignition_advance_plus(mems_info* info,uint8_t* reply);
+ROSCO_API bool mems_ignition_advance_minus(mems_info* info,uint8_t* reply);
+ROSCO_API bool mems_OpenIAC(mems_info* info,uint8_t* reply);
+ROSCO_API bool mems_CloseIAC(mems_info* info,uint8_t* reply);
+ROSCO_API bool mems_Purge_Valve_On(mems_info* info,uint8_t* reply);
+ROSCO_API bool mems_Purge_Valve_Off(mems_info* info,uint8_t* reply);
+ROSCO_API bool mems_O2Heater_On(mems_info* info,uint8_t* reply);
+ROSCO_API bool mems_O2Heater_Off(mems_info* info,uint8_t* reply);
+ROSCO_API bool mems_Boost_Valve_On(mems_info* info,uint8_t* reply);
+ROSCO_API bool mems_Boost_Valve_Off(mems_info* info,uint8_t* reply);
+ROSCO_API bool mems_Fan1_On(mems_info* info,uint8_t* reply);
+ROSCO_API bool mems_Fan1_Off(mems_info* info,uint8_t* reply);
+ROSCO_API bool mems_Fan2_On(mems_info* info,uint8_t* reply);
+ROSCO_API bool mems_Fan2_Off(mems_info* info,uint8_t* reply);
+
+/* Historical utility: documented x86 implementation is unsigned
+ * ((uint8_t)(raw - 55)) * 1.8 + 32, rounded toward zero, modulo 256. */
+ROSCO_API uint8_t temperature_value_to_degrees_f(uint8_t value);
+
+/* Explicitly ADDITIVE fuel correction channel 2, command 7B/7C.
+ * Not equivalent to injector firing/programming. 7C also participates
+ * in MEMS 1.9 wake-up; callers must use the verified normal ROSCO mode.
+ */
+ROSCO_API bool mems_fuel_trim_2_plus(mems_info* info,uint8_t* reply);
+ROSCO_API bool mems_fuel_trim_2_minus(mems_info* info,uint8_t* reply);
+
 ROSCO_API bool mems_heartbeat(mems_info* info);
 ROSCO_API librosco_version mems_get_lib_version(void);
 

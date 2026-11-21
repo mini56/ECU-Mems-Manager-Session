@@ -449,15 +449,28 @@ static bool send_command_with_one_byte_reply(mems_info* info, uint8_t cmd)
     return status;
 }
 
-/* Restored from LeopoldG's original librosco.dll (x86): mems_Save
- * exports ordinal 13 and transmits normal-mode 0x81, then consumes
- * one reply byte. A serial reply is not proof of nonvolatile persistence.
- * The application supplies the correct session pointer (the old third
- * party header declared mems_Save() without its mems_info argument).
+/* All four original commands were verified against the 63,161-byte
+ * LeopoldG x86 DLL. Returning true means a byte was received, not
+ * independently verified nonvolatile storage.
  */
+bool mems_Save(mems_info* info)
+{
+    return send_command_with_one_byte_reply(info, MEMS_Save);
+}
+
 bool mems_save_adjustments(mems_info* info)
 {
-    return send_command_with_one_byte_reply(info, 0x81u);
+    return mems_Save(info);
+}
+
+bool mems_reset_ADJ(mems_info* info)
+{
+    return send_command_with_one_byte_reply(info, MEMS_ResetAdj);
+}
+
+bool mems_reset_EMI(mems_info* info)
+{
+    return send_command_with_one_byte_reply(info, MEMS_ResetEMI);
 }
 
 bool mems_clear_faults(mems_info* info)
@@ -467,14 +480,68 @@ bool mems_clear_faults(mems_info* info)
 
 bool mems_reset_ECU(mems_info* info)
 {
-    /* Confirmed by direct disassembly of the current DLL. */
+    /* Original x86 mems_reset_ECU transmits AF, not the reduced DLL's FA. */
     return send_command_with_one_byte_reply(info, MEMS_ResetECU);
 }
 
 bool mems_reset_adjustments(mems_info* info)
 {
-    /* Confirmed by direct disassembly of the current DLL. */
-    return send_command_with_one_byte_reply(info, MEMS_ResetAdj);
+    /* Preserve Manager's function name, restore LeopoldG's ADJ meaning. */
+    return mems_reset_ADJ(info);
+}
+
+/* Exact legacy wrappers: existing actuator transport transmits the
+ * one-byte command, validates echo and receives the one-byte result.
+ * These exports restore original API names without duplicating serial I/O.
+ */
+#define ROSCO_LEGACY_WRAPPER(symbol, command) \
+    bool symbol(mems_info* info, uint8_t* reply) \
+    { \
+        return mems_test_actuator(info, command, reply); \
+    }
+
+ROSCO_LEGACY_WRAPPER(mems_fuel_trim_plus, MEMS_FuelTrimPlus)
+ROSCO_LEGACY_WRAPPER(mems_fuel_trim_minus, MEMS_FuelTrimMinus)
+ROSCO_LEGACY_WRAPPER(mems_idle_decay_plus, MEMS_IdleDecayPlus)
+ROSCO_LEGACY_WRAPPER(mems_idle_decay_minus, MEMS_IdleDecayMinus)
+ROSCO_LEGACY_WRAPPER(mems_idle_speed_plus, MEMS_IdleSpeedPlus)
+ROSCO_LEGACY_WRAPPER(mems_idle_speed_minus, MEMS_IdleSpeedMinus)
+ROSCO_LEGACY_WRAPPER(mems_ignition_advance_plus, MEMS_IgnitionAdvancePlus)
+ROSCO_LEGACY_WRAPPER(mems_ignition_advance_minus, MEMS_IgnitionAdvanceMinus)
+ROSCO_LEGACY_WRAPPER(mems_OpenIAC, MEMS_OpenIAC)
+ROSCO_LEGACY_WRAPPER(mems_CloseIAC, MEMS_CloseIAC)
+ROSCO_LEGACY_WRAPPER(mems_Purge_Valve_On, MEMS_PurgeValveOn)
+ROSCO_LEGACY_WRAPPER(mems_Purge_Valve_Off, MEMS_PurgeValveOff)
+ROSCO_LEGACY_WRAPPER(mems_O2Heater_On, MEMS_O2HeaterOn)
+ROSCO_LEGACY_WRAPPER(mems_O2Heater_Off, MEMS_O2HeaterOff)
+ROSCO_LEGACY_WRAPPER(mems_Boost_Valve_On, MEMS_BoostValveOn)
+ROSCO_LEGACY_WRAPPER(mems_Boost_Valve_Off, MEMS_BoostValveOff)
+ROSCO_LEGACY_WRAPPER(mems_Fan1_On, MEMS_Fan1On)
+ROSCO_LEGACY_WRAPPER(mems_Fan1_Off, MEMS_Fan1Off)
+ROSCO_LEGACY_WRAPPER(mems_Fan2_On, MEMS_Fan2On)
+ROSCO_LEGACY_WRAPPER(mems_Fan2_Off, MEMS_Fan2Off)
+#undef ROSCO_LEGACY_WRAPPER
+
+/* Additional fuel adaptation channel: NOT an injector pulse/fire command. */
+bool mems_fuel_trim_2_plus(mems_info* info,uint8_t* reply)
+{
+    return mems_test_actuator(info,MEMS_FuelTrim2Plus,reply);
+}
+bool mems_fuel_trim_2_minus(mems_info* info,uint8_t* reply)
+{
+    return mems_test_actuator(info,MEMS_FuelTrim2Minus,reply);
+}
+
+/* Reconstructed from the old DLL's x87 instructions / constants:
+ * raw is first converted by unsigned 8-bit subtraction of 55,
+ * then multiplied by 1.8, added to 32 and truncated toward zero.
+ * The x86 declaration returned one byte: retain that result exactly.
+ */
+uint8_t temperature_value_to_degrees_f(uint8_t value)
+{
+    const uint8_t shifted=(uint8_t)(value-55u);
+    const unsigned int rounded=(unsigned int)((double)shifted*1.8+32.0);
+    return (uint8_t)(rounded & 255u);
 }
 
 bool mems_heartbeat(mems_info* info)
