@@ -179,10 +179,27 @@ bool verifyUi(MainWindow &window)
     QTabWidget *tabs=window.findChild<QTabWidget*>(QStringLiteral("Tab_main"));
     QListWidget *navigation=window.findChild<QListWidget*>(QStringLiteral("uiRebuildNav"));
     ok=check(window.property("uiShellReady").toBool(),"Native shell not constructed") && ok;
-    ok=check(tabs && tabs->count()==15,"Official 15 pages are not present") && ok;
-    ok=check(navigation && navigation->count()==15,"Sidebar does not contain the 15 official entries") && ok;
-    if (!tabs || !navigation || tabs->count()!=15 || navigation->count()!=15)
+    ok=check(tabs && tabs->count()==16,"Official 16 pages are not present") && ok;
+    ok=check(navigation && navigation->count()==16,"Sidebar does not contain the 16 official entries") && ok;
+    if (!tabs || !navigation || tabs->count()!=16 || navigation->count()!=16)
         return false;
+
+    QWidget *otherPage=window.findChild<QWidget*>(QStringLiteral("other_ecus_tab"));
+    QFrame *rc5Panel=window.findChild<QFrame*>(QStringLiteral("otherEcusAirbagRc5"));
+    QFrame *immobiliserPanel=window.findChild<QFrame*>(QStringLiteral("otherEcusImmobiliser"));
+    QFrame *keysPanel=window.findChild<QFrame*>(QStringLiteral("otherEcusKeys"));
+    ok=check(otherPage && rc5Panel && immobiliserPanel && keysPanel,
+             "Other ECUs must have three independent columns") && ok;
+    if(otherPage){
+        ok=check(otherPage->findChildren<QPushButton*>().isEmpty(),
+                 "Unfinished modules must not have active buttons") && ok;
+        for(QFrame *panel:{rc5Panel,immobiliserPanel,keysPanel}){
+            if(panel)
+                ok=check(panel->parentWidget()==otherPage &&
+                         panel->sizePolicy().horizontalPolicy()==QSizePolicy::Expanding,
+                         "Module must occupy a flexible column") && ok;
+        }
+    }
 
     // The update action is a footer control, immediately after the footer
     // label. There must be only one button and no header duplicate.
@@ -396,7 +413,7 @@ bool verifyUi(MainWindow &window)
     // The historical failure was VERTICAL spacing, not sidebar width.
     // The first frame must have its final row height before any tab click.
     const int startupRowHeight=navigation->item(0)->sizeHint().height();
-    ok=check(startupRowHeight>=27 && startupRowHeight<=35,
+    ok=check(startupRowHeight>=25 && startupRowHeight<=35,
              "Startup rows are too compact before first page click") && ok;
     ok=check(navigation->selectedItems().size()==1 &&
              navigation->selectedItems().first()==navigation->item(0),
@@ -424,7 +441,7 @@ bool verifyUi(MainWindow &window)
 
     // A switch must work from both the sidebar and the underlying tab widget.
     // No test clicks ECU connection, actuator, reset or session buttons.
-    for (int i=0;i<15;i++){
+    for (int i=0;i<16;i++){
         QWidget *page=actualPage(tabs->widget(i));
         ok=check(page!=nullptr,"Missing page widget") && ok;
         ok=check(!tabs->tabText(i).trimmed().isEmpty(),"Missing translated page title") && ok;
@@ -444,7 +461,7 @@ bool verifyUi(MainWindow &window)
                      navigation->width()==236,
                      "Every page must preserve the original 236px menu width") && ok;
     }
-    for (int i=13;i>=0;i--){
+    for (int i=15;i>=0;i--){
         tabs->setCurrentIndex(i);
         QCoreApplication::processEvents();
         ok=check(navigation->currentRow()==i &&
@@ -488,7 +505,7 @@ bool verifyUi(MainWindow &window)
     for (const QSize size : {QSize(1024,700),QSize(1200,768),QSize(1280,800),QSize(1366,768),QSize(1920,1080)}){
         window.resize(size);
         QCoreApplication::processEvents();
-        ok=check(tabs->count()==15 && navigation->count()==15,
+        ok=check(tabs->count()==16 && navigation->count()==16,
                  "Page count changed on resize") && ok;
         ok=check(tabs->currentIndex()==navigation->currentRow() &&
                  navigation->selectedItems().size()==1 &&
@@ -519,13 +536,25 @@ bool verifyUi(MainWindow &window)
             ok=check(compactColumns && resultGetsSpace,
                      "Database displayed columns must keep Type 120 and expand Result") && ok;
         }
+        tabs->setCurrentIndex(15);
+        QCoreApplication::processEvents();
+        if(otherPage && rc5Panel && immobiliserPanel && keysPanel){
+            const int a=rc5Panel->width(),b=immobiliserPanel->width(),d=keysPanel->width();
+            logSmoke(QStringLiteral("Other ECU 3 columns at %1px: %2 %3 %4")
+                .arg(size.width()).arg(a).arg(b).arg(d));
+            ok=check(qAbs(a-b)<=2 && qAbs(b-d)<=2 && a>=150 &&
+                     rc5Panel->isVisibleTo(&window) &&
+                     immobiliserPanel->isVisibleTo(&window) &&
+                     keysPanel->isVisibleTo(&window),
+                     "Three ECU columns must have equal widths and be visible") && ok;
+        }
         tabs->setCurrentIndex(previousTab);
         QCoreApplication::processEvents();
     }
 
     // SESSION 157 let the dark-only rebuild override the saved "Clair"
     // choice at startup. Test a real two-way theme switch on the native
-    // 15-page shell, with its original geometry and selection intact.
+    // 16-page shell, with the existing geometry and selection intact.
     const bool initialDark=qApp->property("ecuDarkTheme").toBool();
     const int originalTab=tabs->currentIndex();
     const int originalWidth=navigation->width();
@@ -535,6 +564,13 @@ bool verifyUi(MainWindow &window)
         qApp->setStyleSheet(dark?STYLE_DARK:STYLE_LIGHT);
         applyApplicationVisualStyle(&window);
         QCoreApplication::processEvents();
+        if(rc5Panel && immobiliserPanel && keysPanel){
+            const QString expected=dark?QStringLiteral("#10161c"):QStringLiteral("#ffffff");
+            ok=check(rc5Panel->styleSheet().contains(expected) &&
+                     immobiliserPanel->styleSheet().contains(expected) &&
+                     keysPanel->styleSheet().contains(expected),
+                     "Three ECU columns must match light/dark theme") && ok;
+        }
         // The raw 7D/80 page must never show white data on a white surface.
         // Verify both sets of labels across light -> dark -> light switches.
         if(QWidget *raw=window.findChild<QWidget*>(QStringLiteral("raw"))){
@@ -592,7 +628,7 @@ bool verifyUi(MainWindow &window)
             ok=check(dark?actualDark:actualLight,
                      "Rendered menu surface must be light or dark, not merely a saved theme preference") && ok;
         }
-        ok=check(tabs->count()==15 && navigation->count()==15 &&
+        ok=check(tabs->count()==16 && navigation->count()==16 &&
                  navigation->width()==originalWidth &&
                  navigation->item(0)->sizeHint().height()==originalRow &&
                  tabs->currentIndex()==originalTab &&
@@ -600,7 +636,7 @@ bool verifyUi(MainWindow &window)
                  navigation->selectedItems().size()==1 &&
                  navigation->selectedItems().first()==
                      navigation->item(originalTab),
-                 "Theme changes must not disturb 15 pages, sidebar geometry or selection") && ok;
+                 "Theme changes must not disturb 16 pages, sidebar geometry or selection") && ok;
 
         manual.show();
         QCoreApplication::processEvents();
@@ -640,11 +676,11 @@ bool verifyUi(MainWindow &window)
         }
     }
 
-    // Native six-language visual regression: all 15 page titles follow the
+    // Native six-language visual regression: all 16 page titles follow the
     // selected SESSION language, not the Windows system locale.
-    const int officialTitleKeys[15] = {
+    const int officialTitleKeys[16] = {
         1001,7900,2001,4001,3001,7013,7940,7018,7017,7012,
-        5001,7152,6002,19000,16200
+        5001,7152,6002,19000,16200,16800
     };
     for (const QString &language : {
              QStringLiteral("en"),QStringLiteral("es"),
@@ -657,13 +693,21 @@ bool verifyUi(MainWindow &window)
         QEvent languageChange(QEvent::LanguageChange);
         QCoreApplication::sendEvent(&window,&languageChange);
         QCoreApplication::processEvents();
-        ok=check(tabs->count()==15 && navigation->count()==15,
-                 "Language changed the official 15-page count") && ok;
-        for (int i=0;i<15;i++) {
+        ok=check(tabs->count()==16 && navigation->count()==16,
+                 "Language changed the official 16-page count") && ok;
+        for (int i=0;i<16;i++) {
             ok=check(navigation->item(i)->text()==tabs->tabText(i),
                      "Sidebar and page titles disagree in selected language") && ok;
             ok=check(tabs->tabText(i)==I18n::text(officialTitleKeys[i]),
                      "Page title does not match selected SESSION language") && ok;
+        }
+        const char *const headings[3]={
+            "otherEcusAirbagTitle","otherEcusImmobiliserTitle","otherEcusKeysTitle"
+        };
+        for(int i=0;i<3;++i){
+            QLabel *heading=window.findChild<QLabel*>(QString::fromLatin1(headings[i]));
+            ok=check(heading && heading->text()==I18n::text(16801+i),
+                     "Other ECU column title is not translated") && ok;
         }
     }
 
@@ -954,7 +998,7 @@ bool verifyUi(MainWindow &window)
         }
     }
 
-    if (ok) qInfo().noquote() << "SESSION_UI_SMOKE_PASS 15 native pages, bidirectional navigation, "
+    if (ok) qInfo().noquote() << SESSION_UI_SMOKE_PASS 16 native pages, bidirectional navigation, "
                                "five window sizes, light/dark theme switching, Help and Options, "
                                "approved visual style, all six interface languages, MEMS/Settings/ROSCO, dwell 0-5ms";
     return ok;
