@@ -111,25 +111,30 @@ inline bool decodeStatus(const QByteArray &packet,StatusPacket *out)
     return true;
 }
 
-// Recover a complete length-framed response after a possible KKL 0x83
-// command echo or unrelated receive bytes. A truncated packet is NOT data.
+// Recover one complete length-framed reply after a limited, explicitly
+// recognised KKL command echo (0x83) or a zero lead-in. Do NOT scan arbitrary
+// payload bytes looking for a small fake "length": a truncated real packet
+// may contain such bytes at indices 16..19 (PLIP counters).
 inline bool extractStatus(const QByteArray &received,StatusPacket *out,
                           int *frameOffset=nullptr)
 {
     if(!out)return false;
-    for(int offset=0;offset+1<received.size();++offset){
-        const int n=octet(received,offset);
-        if(n<2 || n>kMaxDocumentedPacketBytes ||
-           n>received.size()-offset)
-            continue;
-        StatusPacket candidate;
-        if(!decodeStatus(received.mid(offset,n),&candidate))
-            continue;
-        if(frameOffset)*frameOffset=offset;
-        *out=candidate;
-        return true;
-    }
-    return false;
+    int offset=0;
+    while(offset<received.size() &&
+          (octet(received,offset)==0x00u ||
+           octet(received,offset)==kReadStatusCommand))
+        ++offset;
+    if(offset>=received.size())return false;
+    const int n=octet(received,offset);
+    if(n<2 || n>kMaxDocumentedPacketBytes ||
+       received.size()-offset<n)
+        return false;
+    StatusPacket candidate;
+    if(!decodeStatus(received.mid(offset,n),&candidate))
+        return false;
+    if(frameOffset)*frameOffset=offset;
+    *out=candidate;
+    return true;
 }
 
 } // namespace Lucas5AsProtocol
