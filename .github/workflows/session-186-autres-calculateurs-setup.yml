@@ -391,6 +391,7 @@ jobs:
           assert 'Other ECU column title is not translated' in smoke
           assert 'Three ECU columns must match light/dark theme' in smoke
           assert 'Unfinished modules must not have active buttons' in smoke
+          assert '<< "SESSION_UI_SMOKE_PASS 16 native pages' in smoke, 'UI SMOKE STRING LITERAL BROKEN'
           for name in ('otherEcusAirbagRc5','otherEcusImmobiliser','otherEcusKeys'):
               assert name in page, name
           assert 'QPushButton' not in page and 'QSerialPort' not in page
