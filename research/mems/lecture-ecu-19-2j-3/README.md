@@ -13,6 +13,10 @@ Le journal indique les commits réalisés, les fichiers modifiés, le statut des
 
 Documentation uniquement : le runtime SESSION et la Release 182 ne sont pas modifiés. Les tests sur ECU réel restent nécessaires.
 
+## Audit des réglages moteur ROSCO/MEMS (21/11/2026)
+
+- **[Comparer les cinq commandes du vieux MEMS-ROSCO aux quatre adaptations Manager, étudier la sauvegarde et les réglages supplémentaires](34_AUDIT_REGLAGES_ROSCO_ET_MEMS_20261121.md)**. Distinguer réglage d'adaptation, déplacement d'actionneur et commande mémoire. Audit documentaire uniquement, aucune écriture ECU et aucune recompilation.
+
 ## Bibliothèque de firmwares Andrew Revill — référence externe (21/11/2026)
 
 - **[Archive Andrew Revill : source et cadre d'utilisation](29_ARCHIVE_FIRMWARE_ANDREW_REVILL_REFERENCE_20261121.md)** — lien externe vers les fichiers de firmwares Rover. **Pas de copie binaire dans le dépôt, pas d'intégration dans le Setup ni de modification de Manager.**
