@@ -11,7 +11,8 @@ tabs = (1001,7900,2001,4001,3001,7013,7940,7018,7017,7012,5001,7152,6002,19000,1
 keys = (list(range(16200,16220))+list(range(16300,16336))+
         list(range(16400,16425))+list(range(16500,16507))+
         list(range(16600,16612))+list(range(16700,16714))+
-        list(range(16801,16805)))
+        list(range(16801,16828))+[16831,16832,16833]+
+        list(range(16840,16864))+[16880])
 errors = []
 def check(condition, message):
     if not condition: errors.append(message)
@@ -52,9 +53,12 @@ check('return I18n::text(16200);' in menu,'USB tab not translated')
 check('return I18n::text(16800);' in menu,'Other ECU tab not translated')
 other=read('othercontrolunitstab.h')
 check('class OtherControlUnitsTab' in other and
-      'I18n::text(16801 + i)' in other and
-      'I18n::text(16804)' in other,
-      'Three reserved ECU modules must have translated headings and status')
+      'I18n::text(16801+i)' in other and
+      'I18n::text(16804)' in other and
+      'rc5protocol.h' in other and
+      'connectRc5()' in other and
+      'clearRc5()' in other,
+      'RC5 diagnostic page and independent module translations missing')
 sources = {
     'usbcablediagnostictab.h':range(16201,16220),
     'database/MemsDocumentaryUpdateDialog.cpp':range(16300,16336),
