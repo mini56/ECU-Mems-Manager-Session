@@ -78,5 +78,7 @@
   "7076": "    [ASCII : %1]",
   "7077": "    [Statut sécurité reçu]",
   "7078": "    [Identification ECU reçue]",
-  "7079": "Changement de mode : la commande est envoyée uniquement sur demande. D3 (recodage) reste volontairement bloquée."
+  "7079": "Changement de mode : la commande est envoyée uniquement sur demande. D3 (recodage) reste volontairement bloquée.",
+  "7080": "Sauvegarder les modifications",
+  "7081": "Le calculateur a confirmé la commande de sauvegarde."
 }

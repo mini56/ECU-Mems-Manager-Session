@@ -493,6 +493,11 @@ static void rebuildAdjustArea(QWidget *page,QFrame *adjust)
     QHBoxLayout *resets=new QHBoxLayout;
     resets->setContentsMargins(0,0,0,0);
     resets->addStretch(1);
+    if (auto *save = page->findChild<QPushButton*>(QStringLiteral("m_saveAdjustmentsButton"))) {
+        save->setParent(adjust);
+        resets->addWidget(save);
+        save->show();
+    }
     if(resetAdj) {
         resetAdj->setParent(adjust);
         resetAdj->setMinimumHeight(36);

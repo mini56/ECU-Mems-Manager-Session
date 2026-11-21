@@ -78,5 +78,7 @@
   "7076": "    [ASCII: %1]",
   "7077": "    [Stato sicurezza ricevuto]",
   "7078": "    [Identificazione ECU ricevuta]",
-  "7079": "Cambio modalità: il comando viene inviato solo su richiesta. D3 (ricodifica ECU) rimane intenzionalmente disabilitato."
+  "7079": "Cambio modalità: il comando viene inviato solo su richiesta. D3 (ricodifica ECU) rimane intenzionalmente disabilitato.",
+  "7080": "Salva le modifiche",
+  "7081": "La centralina ha confermato il comando di salvataggio."
 }

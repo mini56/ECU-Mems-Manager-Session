@@ -78,5 +78,7 @@
   "7076": "    [ASCII: %1]",
   "7077": "    [Estado de seguridad recibido]",
   "7078": "    [Identificación de ECU recibida]",
-  "7079": "Cambio de modo: el comando se envía solo cuando se solicita. D3 (recodificación de ECU) permanece desactivado intencionadamente."
+  "7079": "Cambio de modo: el comando se envía solo cuando se solicita. D3 (recodificación de ECU) permanece desactivado intencionadamente.",
+  "7080": "Guardar los cambios",
+  "7081": "La ECU ha confirmado la orden de guardado."
 }

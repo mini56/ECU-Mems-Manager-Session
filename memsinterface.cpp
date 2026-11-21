@@ -49,6 +49,27 @@ void MEMSInterface::onFaultCodesClearRequested()
   else emit errorSendingCommand();
 }
 
+void MEMSInterface::onSaveAdjustmentsRequested()
+{
+    if (!isConnected()) {
+        emit notConnected();
+        return;
+    }
+
+    const MemsEcuFamily family = ecuFamily();
+    if (family != MemsEcuFamily::Rosco13_16 && family != MemsEcuFamily::Mems19) {
+        emit errorSendingCommand();
+        return;
+    }
+
+    constexpr auto saveAdjustments = static_cast<actuator_cmd>(0x81);
+    uint8_t reply = 0xff;
+    if (guardedMemsTestActuator(saveAdjustments, &reply) && reply == 0x00)
+        emit adjustmentsSaveAcknowledged();
+    else
+        emit errorSendingCommand();
+}
+
 /**
  * Resets all adjustments.
  */

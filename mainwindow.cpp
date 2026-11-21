@@ -496,6 +496,11 @@ void MainWindow::setupWidgets()
   connect(m_ui->m_stopLoggingButton, SIGNAL(clicked()), this, SLOT(onStopLogging()));
   connect(m_ui->m_clearFaultsButton, SIGNAL(clicked()), m_mems, SLOT(onFaultCodesClearRequested()));
   connect(m_ui->m_clearRecordedAnomalies, SIGNAL(clicked()), this, SLOT(clearRecordedAnomalies()));
+  connect(m_ui->m_saveAdjustmentsButton, &QPushButton::clicked,
+          m_mems, &MEMSInterface::onSaveAdjustmentsRequested);
+  connect(m_mems, &MEMSInterface::adjustmentsSaveAcknowledged, this, [this]() {
+      QMessageBox::information(this, I18n::text(7080), I18n::text(7081));
+  });
   connect(m_ui->m_resetAdjustmentsButton, SIGNAL(clicked()), this, SLOT(onConfirmResetAdjustments()));
   connect(m_ui->m_resetECUButton, SIGNAL(clicked()), this, SLOT(onConfirmResetECU()));
   connect(m_ui->m_testACRelayButton, SIGNAL(clicked()), this, SLOT(onTestACRelayClicked()));
@@ -1622,6 +1627,7 @@ void MainWindow::onConnect()
   const bool roscoCommands=family==MemsEcuFamily::Rosco13_16 ||
                            family==MemsEcuFamily::Mems19;
   m_ui->m_clearFaultsButton->setEnabled(true);
+  m_ui->m_saveAdjustmentsButton->setEnabled(roscoCommands);
   m_ui->m_resetAdjustmentsButton->setEnabled(roscoCommands);
   m_ui->m_resetECUButton->setEnabled(roscoCommands);
   refreshConnectionHeader();
@@ -1633,6 +1639,7 @@ void MainWindow::onConnect()
  */
 void MainWindow::onDisconnect()
 {
+  m_ui->m_saveAdjustmentsButton->setEnabled(false);
   setProperty("ecuConnectInProgress", false);
   m_ui->m_connectButton->setEnabled(true);
   m_ui->m_disconnectButton->setEnabled(false);

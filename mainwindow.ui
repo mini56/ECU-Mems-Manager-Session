@@ -1046,6 +1046,14 @@
        <string comment="EN: Reset ECU">@2027</string>
       </property>
      </widget>
+     <widget class="QPushButton" name="m_saveAdjustmentsButton">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="text">
+       <string comment="EN: Save changes">@7080</string>
+      </property>
+     </widget>
      <widget class="QPushButton" name="m_resetAdjustmentsButton">
       <property name="enabled">
        <bool>false</bool>

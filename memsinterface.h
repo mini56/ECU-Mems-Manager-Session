@@ -40,6 +40,7 @@ public:
 public slots:
     void onParentThreadStarted();
     void onFaultCodesClearRequested();
+    void onSaveAdjustmentsRequested();
     void onResetAdjustmentsRequested();
     void onResetECURequested();
     void onStartPollingRequest();
@@ -100,6 +101,7 @@ signals:
     void readError();
     void readSuccess();
     void faultCodesClearSuccess();
+    void adjustmentsSaveAcknowledged();
     void adjustmentsResetSuccess();
     void ECUResetSuccess();
     void failedToConnect(QString dev);
