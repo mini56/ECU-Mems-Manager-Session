@@ -192,6 +192,8 @@ small{color:#aebcc5}
 <h2 id="chapter-18">18. Familles ECU prises en charge</h2>
 <p>SESSION prend en charge les dialogues des Rover MEMS <b>1.2, 1.3 et 1.6</b> (ROSCO), du <b>MEMS 1.9</b> (réveil K-Line), ainsi que des <b>MEMS 2J et MEMS 3</b> (protocoles K-Line distincts). Le choix se fait à partir d'une réponse du calculateur après <b>Connecter</b>. Les lectures et les commandes proposées dépendent de la famille et de la session réellement établies ; les protocoles 2J et 3 ne réutilisent pas les commandes de réglage ROSCO. Les essais matériels des nouveaux protocoles restent nécessaires.</p>
 
+<div class="tip"><b>Lucas 5AS — antidémarrage :</b> dans <b>Autres calculateurs</b>, utilisez <b>Connecter</b>, puis <b>Lire les états</b> ou <b>Suivi en direct</b>. Le klaxon, le voyant et les feux de détresse peuvent être testés après une confirmation expliquant leur activation. <b>Enregistrer le journal</b> conserve les échanges. Ces tests restent à vérifier sur un boîtier réel ; la programmation des télécommandes n'est pas encore disponible.</div>
+
 <h2 id="chapter-19">19. Conseils de diagnostic de base</h2>
 <table>
 <tr><th>Symptôme</th><th>Contrôles</th></tr>
