@@ -195,8 +195,8 @@ inline QVariantMap packetValues(const Lucas5AsProtocol::StatusPacket &p)
     const auto rawBit=[](const Lucas5AsProtocol::SwitchField &field){
         return field.available
             ? QStringLiteral("0x%1")
-                  .arg(field.bit7High?0x80:0x00,2,16,QLatin1Char('0'))
-                  .toUpper()
+                  .arg(qulonglong(field.bit7High?0x80:0x00),2,16,
+                       QLatin1Char('0'))
             : QString();
     };
     data.insert(QStringLiteral("bonnet"),rawBit(p.bonnet));
@@ -210,8 +210,8 @@ inline QVariantMap packetValues(const Lucas5AsProtocol::StatusPacket &p)
         data.insert(QStringLiteral("plip%1").arg(n+1),
             n<p.fobCountersRaw.size()
                 ?QStringLiteral("0x%1")
-                    .arg(int(p.fobCountersRaw.at(n)),2,16,QLatin1Char('0'))
-                    .toUpper()
+                    .arg(qulonglong(p.fobCountersRaw.at(n)),2,16,
+                         QLatin1Char('0'))
                 :QString());
     return data;
 }
