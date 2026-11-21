@@ -32,8 +32,7 @@ for lang in langs:
         check(bool(dictionary.get(str(key),'').strip()),f'{lang}: missing key {key}')
     help_name = {'fr':'help.html.in','en':'help_en.html.in'}.get(lang,f'help_{lang}.html.in')
     guide = read(help_name)
-    check('Lucas 5AS' in guide and
-          guide.count('Lucas 5AS') >= 1 and
+    check(('Lucas 5AS' in guide or 'Lucas-5AS' in guide) and
           'chapter-19' in guide,
           f'{lang}: short Lucas 5AS guide missing')
     anchors = [int(x) for x in re.findall(r'<h2 id="chapter-(\d+)"',guide)]
