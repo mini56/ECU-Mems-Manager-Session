@@ -88,6 +88,22 @@ bool MEMSInterface::guardedClearFaults()
     return ::mems_clear_faults(&m_memsinfo);
 }
 
+bool MEMSInterface::guardedSaveAdjustments()
+{
+    if (m_shutdownRequested.loadAcquire() != 0 ||
+        m_disconnectRequested.loadAcquire() != 0 ||
+        property("injectionRamTestRunning").toBool() ||
+        property("mappedInjectionModeActive").toBool() ||
+        !MemsProtocolSafety::allowsMutation(ecuFamily(), diagnosticMode(), 0x81u))
+        return false;
+#ifdef MEMS_NATIVE_KLINE_19
+    if (ecuFamily()==MemsEcuFamily::Mems19)
+        return ::mems_command_kline19(&m_memsinfo,0x81u,
+                                       m_kline19LocalEcho,nullptr);
+#endif
+    return ::mems_save_adjustments(&m_memsinfo);
+}
+
 bool MEMSInterface::guardedResetAdjustments()
 {
     if (property("injectionRamTestRunning").toBool() ||

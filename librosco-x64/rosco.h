@@ -226,7 +226,7 @@ typedef struct
     HANDLE mutex;
 } mems_info;
 
-/* Exact 22-symbol contract exported by the historical DLL. */
+/* Original 22-symbol contract plus separately named additions. */
 ROSCO_API void mems_init(mems_info* info);
 ROSCO_API bool mems_init_link(mems_info* info, uint8_t* d0_response_buffer);
 ROSCO_API void mems_cleanup(mems_info* info);
@@ -246,6 +246,8 @@ ROSCO_API bool mems_test_actuator(mems_info* info, actuator_cmd cmd, uint8_t* da
 ROSCO_API bool mems_clear_faults(mems_info* info);
 ROSCO_API bool mems_reset_ECU(mems_info* info);
 ROSCO_API bool mems_reset_adjustments(mems_info* info);
+/* Verified original LeopoldG DLL: 0x81 followed by one reply byte. */
+ROSCO_API bool mems_save_adjustments(mems_info* info);
 ROSCO_API bool mems_heartbeat(mems_info* info);
 ROSCO_API librosco_version mems_get_lib_version(void);
 

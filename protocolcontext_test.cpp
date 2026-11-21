@@ -39,6 +39,15 @@ int main()
 
     require(allowsMutation(MemsEcuFamily::Rosco13_16, MemsDiagnosticMode::Normal, 0xCC),
             "connected legacy ROSCO must permit existing clear fault control");
+    require(allowsMutation(MemsEcuFamily::Rosco13_16, MemsDiagnosticMode::Normal, 0x81),
+            "original ROSCO normal-mode Save command must be available");
+    require(allowsMutation(MemsEcuFamily::Mems19, MemsDiagnosticMode::Normal, 0x81),
+            "MEMS 1.9 K-Line Save requires its own transport and normal mode");
+    require(!allowsMutation(MemsEcuFamily::Rosco13_16, MemsDiagnosticMode::Mode4, 0x81),
+            "never reinterpret normal-mode Save as calibration operation");
+    require(!allowsMutation(MemsEcuFamily::Mems2J, MemsDiagnosticMode::Normal, 0x81) &&
+            !allowsMutation(MemsEcuFamily::Mems3, MemsDiagnosticMode::Normal, 0x81),
+            "KWP 2J/3 must not receive a ROSCO Save byte");
     require(allowsMutation(MemsEcuFamily::Rosco13_16, MemsDiagnosticMode::Normal, 0x0F),
             "connected legacy ROSCO must permit existing reset adjustment control");
     require(allowsMutation(MemsEcuFamily::Rosco13_16, MemsDiagnosticMode::Normal, 0xFA),

@@ -53,6 +53,7 @@ inline bool isKnownLegacyMutation(std::uint8_t command)
 {
     switch (command)
     {
+    case 0x81u: // save adjustments, LeopoldG original DLL
     case 0xCCu: // clear faults
     case 0xFAu: // reset ECU - historical DLL semantics
     case 0x0Fu: // reset adjustments - historical DLL semantics
@@ -90,7 +91,7 @@ inline bool allowsMutation(MemsEcuFamily family,
     // MEMS 1.9 uses the same single-byte fault/reset commands but its K-Line
     // transport must consume an optional extra local cable echo.
     if (family == MemsEcuFamily::Mems19)
-        return command == 0xCCu || command == 0x0Fu || command == 0xFAu;
+        return command == 0xCCu || command == 0x0Fu || command == 0xFAu || command == 0x81u;
 
     if (family != MemsEcuFamily::Rosco13_16)
         return false;

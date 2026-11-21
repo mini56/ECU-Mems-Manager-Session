@@ -449,6 +449,17 @@ static bool send_command_with_one_byte_reply(mems_info* info, uint8_t cmd)
     return status;
 }
 
+/* Restored from LeopoldG's original librosco.dll (x86): mems_Save
+ * exports ordinal 13 and transmits normal-mode 0x81, then consumes
+ * one reply byte. A serial reply is not proof of nonvolatile persistence.
+ * The application supplies the correct session pointer (the old third
+ * party header declared mems_Save() without its mems_info argument).
+ */
+bool mems_save_adjustments(mems_info* info)
+{
+    return send_command_with_one_byte_reply(info, 0x81u);
+}
+
 bool mems_clear_faults(mems_info* info)
 {
     return send_command_with_one_byte_reply(info, MEMS_ClearFaults);

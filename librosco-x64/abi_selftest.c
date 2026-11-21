@@ -47,6 +47,11 @@ int main(void)
     CHECK_EQ("MEMS_ResetAdj", MEMS_ResetAdj, 0x0F);
     CHECK_EQ("MEMS_ReqData80", MEMS_ReqData80, 0x80);
     CHECK_EQ("MEMS_ReqData7D", MEMS_ReqData7D, 0x7D);
+    /* New export: must link and reject a missing transport. */
+    if (mems_save_adjustments(NULL)) {
+        fprintf(stderr,"FAIL: save accepted invalid session\n");
+        ++failures;
+    }
     /* Additive MEMS 1.9 K-Line exports: no hardware needed, and the two
      * original init/read exports remain independently linked unchanged. */
     if (mems_init_link_kline19(NULL, NULL, false) ||

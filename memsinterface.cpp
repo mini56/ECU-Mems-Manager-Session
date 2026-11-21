@@ -52,6 +52,15 @@ void MEMSInterface::onFaultCodesClearRequested()
 /**
  * Resets all adjustments.
  */
+void MEMSInterface::onSaveAdjustmentsRequested()
+{
+    if (!m_initComplete || !mems_is_connected(&m_memsinfo)) {
+        emit saveAdjustmentsResult(false);
+        return;
+    }
+    emit saveAdjustmentsResult(guardedSaveAdjustments());
+}
+
 void MEMSInterface::onResetAdjustmentsRequested()
 {
   if (m_initComplete && mems_is_connected(&m_memsinfo))

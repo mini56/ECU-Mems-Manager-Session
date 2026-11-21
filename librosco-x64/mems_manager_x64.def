@@ -22,6 +22,7 @@ EXPORTS
     mems_read_serial
     mems_reset_ECU
     mems_reset_adjustments
+    mems_save_adjustments
     mems_send_command
     mems_test_actuator
     mems_unlock

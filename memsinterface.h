@@ -41,6 +41,7 @@ public slots:
     void onParentThreadStarted();
     void onFaultCodesClearRequested();
     void onResetAdjustmentsRequested();
+    void onSaveAdjustmentsRequested();
     void onResetECURequested();
     void onStartPollingRequest();
     void onShutdownThreadRequest();
@@ -101,6 +102,7 @@ signals:
     void readSuccess();
     void faultCodesClearSuccess();
     void adjustmentsResetSuccess();
+    void saveAdjustmentsResult(bool sent);
     void ECUResetSuccess();
     void failedToConnect(QString dev);
     void interfaceThreadReady();
@@ -184,6 +186,7 @@ private:
     bool guardedMemsMoveIac(uint8_t desiredPos);
     bool guardedClearFaults();
     bool guardedResetAdjustments();
+    bool guardedSaveAdjustments();
     bool guardedResetEcu();
 };
 
