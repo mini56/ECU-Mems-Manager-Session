@@ -21,6 +21,10 @@ Documentation uniquement : le runtime SESSION et la Release 182 ne sont pas modi
 
 - [Répertoire Andrew Revill, variantes 97MY / 98MY / 02MY, étude et précautions](31_ARCHIVE_LUCAS5AS_EEPROM_ANDREW_REVILL_20261121.md). Conserver les BIN comme référence externe uniquement ; ne pas diffuser de données de clés ni de sécurité.
 
+## Archive Lucas 10AS — référence externe (21/11/2026)
+
+- [Andrew Revill : échantillon BIN 256 octets et pistes de recherche Lucas 10AS](32_ARCHIVE_LUCAS10AS_EEPROM_ANDREW_REVILL_20261121.md). Le format et la cartographie des données restent à vérifier ; aucune commande ou adaptation 5AS n'est automatiquement réutilisée.
+
 ## Apprentissage PLIP Lucas 5AS (SESSION 192)
 
 - [Commandes documentées 5F/6F, confirmation obligatoire et limites des validations](30_LUCAS5AS_PLIP_APPRENTISSAGE_SESSION192_20261121.md). Les tests logiciels ne prouvent pas que des télécommandes ont été associées à un boîtier réel.
