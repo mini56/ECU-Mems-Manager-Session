@@ -12,7 +12,8 @@ keys = (list(range(16200,16220))+list(range(16300,16336))+
         list(range(16400,16425))+list(range(16500,16507))+
         list(range(16600,16612))+list(range(16700,16714))+
         list(range(16801,16828))+[16831,16832,16833]+
-        list(range(16840,16864))+[16880]+list(range(16890,16898)))
+        list(range(16840,16864))+[16880]+list(range(16890,16898))+
+        list(range(16900,16924)))
 errors = []
 def check(condition, message):
     if not condition: errors.append(message)
@@ -56,13 +57,16 @@ check('class OtherControlUnitsTab' in other and
       'I18n::text(16801+i)' in other and
       'I18n::text(16804)' in other and
       'rc5protocol.h' in other and
+      'lucas5asreader.h' in other and
+      'connect5As()' in other and
+      'read5As()' in other and
       'connectRc5()' in other and
       'clearRc5()' in other and
       'rc5CableInfoButton' in other and
       'immobiliserCableInfoButton' in other and
       'keysCableInfoButton' in other and
       'showCableHelp(int index)' in other,
-      'RC5 diagnostic page and the three independent cable help buttons missing')
+      'RC5 and 5AS read-only diagnostic pages or cable help buttons missing')
 for lang in langs:
     help_catalog = json.loads(read(f'translations/{lang}/{lang}_other_ecus.json'))
     for key in (16892,16894,16896):
