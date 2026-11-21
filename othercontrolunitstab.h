@@ -523,17 +523,36 @@ private:
         m_5asDisconnect->setObjectName(QStringLiteral("lucas5asDisconnectButton"));
         m_5asRead=new QPushButton(parent);
         m_5asRead->setObjectName(QStringLiteral("lucas5asReadStatusButton"));
-        for(QPushButton *button:{m_5asConnect,m_5asDisconnect,m_5asRead}){
+        m_5asLive=new QPushButton(parent);
+        m_5asLive->setObjectName(QStringLiteral("lucas5asLiveStatusButton"));
+        for(QPushButton *button:{m_5asConnect,m_5asDisconnect,m_5asRead,m_5asLive}){
             button->setMinimumHeight(32);
             button->setMinimumWidth(0);
             button->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
         }
         commands->addWidget(m_5asConnect,0,0);
         commands->addWidget(m_5asDisconnect,0,1);
-        commands->addWidget(m_5asRead,1,0,1,2);
+        commands->addWidget(m_5asRead,1,0);
+        commands->addWidget(m_5asLive,1,1);
         commands->setColumnStretch(0,1);
         commands->setColumnStretch(1,1);
         root->addLayout(commands);
+
+        QHBoxLayout *outputTests=new QHBoxLayout;
+        outputTests->setSpacing(5);
+        m_5asHorn=new QPushButton(parent);
+        m_5asHorn->setObjectName(QStringLiteral("lucas5asTestHornButton"));
+        m_5asLed=new QPushButton(parent);
+        m_5asLed->setObjectName(QStringLiteral("lucas5asTestLedButton"));
+        m_5asHazards=new QPushButton(parent);
+        m_5asHazards->setObjectName(QStringLiteral("lucas5asTestHazardsButton"));
+        for(QPushButton *button:{m_5asHorn,m_5asLed,m_5asHazards}){
+            button->setMinimumWidth(0);
+            button->setMinimumHeight(32);
+            button->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+            outputTests->addWidget(button,1);
+        }
+        root->addLayout(outputTests);
 
         m_5asTable=new QTableWidget(0,2,parent);
         m_5asTable->setObjectName(QStringLiteral("lucas5asStatusTable"));
@@ -557,6 +576,10 @@ private:
         m_5asTrace->setMaximumHeight(103);
         m_5asTrace->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
         root->addWidget(m_5asTrace);
+        m_5asSaveLog=new QPushButton(parent);
+        m_5asSaveLog->setObjectName(QStringLiteral("lucas5asSaveLogButton"));
+        m_5asSaveLog->setMinimumHeight(30);
+        root->addWidget(m_5asSaveLog);
 
         m_5asCableNote=new QLabel(parent);
         m_5asCableNote->setObjectName(QStringLiteral("lucas5asCableNote"));
@@ -585,6 +608,11 @@ private:
         m_5asConnect->setEnabled(!m_5asConnected && !m_5asBusy);
         m_5asDisconnect->setEnabled(m_5asConnected || m_5asBusy);
         m_5asRead->setEnabled(m_5asConnected && !m_5asBusy);
+        m_5asLive->setEnabled(m_5asConnected);
+        m_5asLive->setText(I18n::text(m_5asLiveActive?16941:16940));
+        for(QPushButton *button:{m_5asHorn,m_5asLed,m_5asHazards})
+            button->setEnabled(m_5asConnected && !m_5asBusy);
+        m_5asSaveLog->setEnabled(!m_5asTrace->toPlainText().isEmpty());
     }
     void show5AsFields()
     {
@@ -622,6 +650,8 @@ private:
         }
         m_5asFields.clear();
         m_5asPort.clear();
+        m_5asLiveActive=false;
+        if(m_5asLiveTimer)m_5asLiveTimer->stop();
         m_5asTrace->clear();
         show5AsFields();
         update5AsPort();
@@ -636,6 +666,8 @@ private:
     void disconnect5As()
     {
         if(!m_5asBusy && !m_5asConnected)return;
+        m_5asLiveActive=false;
+        if(m_5asLiveTimer)m_5asLiveTimer->stop();
         m_5asCancelRequested=true;
         m_5asWorker->requestCancel();
         m_5asBusy=true;
