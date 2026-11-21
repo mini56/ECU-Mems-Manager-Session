@@ -40,6 +40,7 @@
 #include "iamemstab.h"
 #include "mems19testtab.h"
 #include "usbcablediagnostictab.h"
+#include "othercontrolunitstab.h"
 #include "overviewpage.h"
 #include "ecupages.h"
 #include "settingspage.h"
@@ -313,7 +314,7 @@ static QWidget *realPage(QWidget *tab)
     return tab;
 }
 
-static const int kFinalTabCount = 15;
+static const int kFinalTabCount = 16;
 
 struct TabSpec
 {
@@ -336,7 +337,8 @@ static const TabSpec kTabs[kFinalTabCount] = {
     {"database",     7152},
     {"interactive",  6002},
     {"mems19_test", 19000},
-    {"usb_cable",    0}
+    {"usb_cable",    0},
+    {"other_ecus",   16800}
 };
 
 static QString translatedTitle(int rank)
@@ -346,6 +348,8 @@ static QString translatedTitle(int rank)
 
     if (rank == 14)
         return I18n::text(16200);
+    if (rank == 15)
+        return I18n::text(16800);
     QString title = I18n::text(kTabs[rank].translationKey).trimmed();
     if (rank == 6 && (title.isEmpty() || title.startsWith(QLatin1Char('['))))
         title = QStringLiteral("IA MEMS");
@@ -427,6 +431,11 @@ static QIcon iconForRank(int rank)
         p.drawRoundedRect(QRectF(3,5,10,12),2,2); p.drawLine(13,9,18,9); p.drawLine(13,13,18,13); p.drawLine(18,7,18,15);
         p.drawLine(5,8,10,8); p.drawLine(5,11,10,11); p.drawLine(5,14,10,14);
         break;
+    case 15:
+        p.drawRoundedRect(QRectF(3,4,4.5,14),1,1);
+        p.drawRoundedRect(QRectF(8.75,4,4.5,14),1,1);
+        p.drawRoundedRect(QRectF(14.5,4,4.5,14),1,1);
+        break;
     default:
         p.drawEllipse(QPointF(11,11),7,7);
         break;
@@ -474,6 +483,7 @@ static int rankForTab(QWidget *tab)
     if (name == QStringLiteral("ECU")) return 12;
     if (name == QStringLiteral("mems19_test_tab")) return 13;
     if (name == QStringLiteral("usb_cable_diagnostic_tab")) return 14;
+    if (name == QStringLiteral("other_ecus_tab")) return 15;
 
     if (qobject_cast<DiagnosticPanel*>(page)) return 5;
     if (qobject_cast<AnalysisTab*>(page)) return 7;
@@ -556,6 +566,13 @@ static void ensureDynamicPages(MainWindow *window, QTabWidget *tabs)
         UsbCableDiagnosticTab *diagnostic = new UsbCableDiagnosticTab(tabs);
         tabs->addTab(diagnostic, translatedTitle(14));
     }
+    if (!findTabByRank(tabs, 15))
+    {
+        // Reserved layout only: the independent RC5, immobiliser and key
+        // protocols will be connected in later, separately reviewed work.
+        OtherControlUnitsTab *other = new OtherControlUnitsTab(tabs);
+        tabs->addTab(other, translatedTitle(15));
+    }
 }
 
 static void fitNavigationRows(QListWidget *nav)
@@ -577,7 +594,7 @@ static void fitNavigationRows(QListWidget *nav)
     if (viewportHeight <= 0)
         return;
 
-    // On smaller screens the original 14 rows can exceed the viewport by only
+    // On smaller screens all 16 rows can exceed the viewport by only
     // a few pixels. Compress the row height just enough to keep every official
     // tab visible; never solve this by scrolling the first tab out of view.
     const int rowHeight = qBound(21, viewportHeight / kFinalTabCount, 26);
@@ -1099,13 +1116,13 @@ static void applyResponsive(QMainWindow *window)
         const int oldIndex=root->indexOf(tabs);if(oldIndex>=0)root->removeWidget(tabs);
         QFrame *workspace=new QFrame(central);workspace->setObjectName(QStringLiteral("uiRebuildWorkspace"));workspace->setAttribute(Qt::WA_StyledBackground,true);workspace->setStyleSheet(QStringLiteral("#uiRebuildWorkspace{background:%1;border:0;}").arg(QString::fromLatin1(kBg)));QHBoxLayout *wh=new QHBoxLayout(workspace);wh->setContentsMargins(0,0,0,0);wh->setSpacing(0);
         QListWidget *nav=new QListWidget(workspace);nav->setObjectName(QStringLiteral("uiRebuildNav"));nav->setFocusPolicy(Qt::NoFocus);nav->setSelectionMode(QAbstractItemView::SingleSelection);nav->setUniformItemSizes(true);nav->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        // The official 14 entries are created once by applyDeterministicNavigation().
+        // The official 16 entries are created once by applyDeterministicNavigation().
         tabs->tabBar()->hide();
         tabs->setStyleSheet(QStringLiteral("QTabWidget::pane{border:0;background:%1;}").arg(QString::fromLatin1(kBg)));
         wh->addWidget(nav);wh->addWidget(tabs,1);root->insertWidget(oldIndex<0?1:oldIndex,workspace,1);
         for(int i=0;i<tabs->count();++i){QWidget *page=realPage(tabs->widget(i));if(!page)continue;if(QScrollArea *scroll=qobject_cast<QScrollArea*>(tabs->widget(i))){scroll->setWidgetResizable(true);scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);page->setMinimumSize(0,0);}const QString title=titleForIndex(tabs,i);if(!usesDedicatedLayout(page,i))composeGenericPage(page,title,i);}
         if(!applyDeterministicNavigation(qobject_cast<MainWindow*>(window)))
-            qWarning() << "SESSION official navigation could not initialize all 14 pages";
+            qWarning() << "SESSION official navigation could not initialize all 16 pages";
         buildOverviewPage(window);
         buildEcuControlPages(window);
         buildSettingsPage(window);
@@ -1152,12 +1169,21 @@ void retranslateUiShell(QMainWindow *window)
 {
     if (window && window->property("uiShellReady").toBool() &&
         window->property("deterministicNavigationApplied").toBool())
+    {
         applyDeterministicNavigation(qobject_cast<MainWindow*>(window));
+        if (QWidget *page = window->findChild<QWidget*>(QStringLiteral("other_ecus_tab")))
+            static_cast<OtherControlUnitsTab*>(page)->retranslate();
+    }
 }
 
 void refreshUiShellTheme(QMainWindow *window)
 {
     // Reapply the original sidebar owners after application-level theme changes.
     // Does not rebuild pages, replace controls, or change ECU state.
-    if(window) applySidebarState(window);
+    if (window)
+    {
+        applySidebarState(window);
+        if (QWidget *page = window->findChild<QWidget*>(QStringLiteral("other_ecus_tab")))
+            static_cast<OtherControlUnitsTab*>(page)->refreshTheme();
+    }
 }
