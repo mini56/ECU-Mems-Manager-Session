@@ -131,7 +131,7 @@
   "16966": "Cancelar",
   "16967": "Comando de inicio enviado. Con el contacto encendido, pulse BLOQUEAR repetidamente en cada mando (unas ocho veces). La bocina puede confirmar la recepción. Después pulse Finalizar.",
   "16968": "Comando de fin enviado. Pruebe cada mando en el vehículo: el envío no demuestra el emparejamiento.",
-  "16969": "Inicio fallido o transmisión incierta. Compruebe el 5AS; su estado no está garantizado.",
+  "16969": "El inicio es incierto: el 5AS puede haber recibido el comando pese al error serie. No vuelva a pulsar Iniciar. Pulse Finalizar para intentar salir del aprendizaje y compruebe el módulo.",
   "16970": "Fin fallido o transmisión incierta. Reintente Finalizar o desconecte para intentar detenerlo.",
   "16971": "Conexión interrumpida durante el aprendizaje. Compruebe los mandos y el 5AS."
 }

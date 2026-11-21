@@ -131,7 +131,7 @@
   "16966": "Annulla",
   "16967": "Comando di avvio inviato. Con il quadro acceso, premere ripetutamente BLOCCA su ogni telecomando (circa otto volte). Il clacson può confermare la ricezione. Poi scegliere Termina.",
   "16968": "Comando di arresto inviato. Provare ogni telecomando sul veicolo: l'invio non prova l'associazione.",
-  "16969": "Avvio fallito o trasmissione incerta. Controllare il 5AS; lo stato non è garantito.",
+  "16969": "L'avvio è incerto: il 5AS potrebbe aver ricevuto il comando nonostante l'errore seriale. Non premere di nuovo Avvia. Selezionare Termina per tentare di uscire dall'apprendimento e verificare il modulo.",
   "16970": "Arresto fallito o trasmissione incerta. Riprovare Termina oppure scollegare per tentare l'arresto.",
   "16971": "Connessione interrotta durante l'apprendimento. Controllare telecomandi e 5AS."
 }

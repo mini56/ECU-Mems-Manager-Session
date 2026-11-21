@@ -14,6 +14,12 @@ En mode apprentissage, le programme arrête le suivi automatique des données du
 
 La réponse affichée « commande envoyée » ne constitue **pas** une confirmation de l'apprentissage réel. La réception radio, le nombre de télécommandes effectivement enregistrées et la réussite du dialogue doivent être vérifiés avec un 5AS physique. Un échec de transmission de la commande de fin n'est pas traité comme un arrêt réussi.
 
+## Reprise en cas d'échec de communication (préparation SESSION 193)
+
+Un délai dépassé sur l'envoi de **5F** n'indique pas que le boîtier n'a rien reçu. Le transport conserve alors l'état **incertain**, désactive un second démarrage et laisse **Terminer** disponible pour envoyer **6F**. En cas d'échec de **6F**, cet état reste incertain, et une nouvelle tentative d'arrêt est possible. Une déconnexion tente à nouveau l'arrêt avant de fermer le port.
+
+Ces scénarios sont vérifiés dans l'autotest C++ du protocole avec un transport simulé : démarrage réussi, démarrage incertain, arrêt en échec, répétition de l'arrêt et remise à zéro locale seulement après fermeture de la liaison. La réussite d'un envoi n'est **jamais** assimilée à une confirmation radio ou EEPROM du 5AS.
+
 ## Non-régression et limites
 
 - Six langues pour les nouveaux textes et confirmation du risque.

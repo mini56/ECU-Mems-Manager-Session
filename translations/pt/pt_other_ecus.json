@@ -131,7 +131,7 @@
   "16966": "Cancelar",
   "16967": "Comando inicial enviado. Com a ignição ligada, prima TRANCAR repetidamente em cada comando (cerca de oito vezes). A buzina pode confirmar a receção. Depois selecione Terminar.",
   "16968": "Comando final enviado. Teste cada comando no veículo: o envio não confirma a associação.",
-  "16969": "Início falhou ou transmissão incerta. Verifique o 5AS; o estado não é garantido.",
+  "16969": "O início é incerto: o 5AS pode ter recebido o comando apesar do erro série. Não volte a premir Iniciar. Prima Terminar para tentar sair da aprendizagem e verifique o módulo.",
   "16970": "Fim falhou ou transmissão incerta. Repita Terminar ou desligue para tentar parar.",
   "16971": "Ligação interrompida durante a aprendizagem. Verifique os comandos e o 5AS."
 }

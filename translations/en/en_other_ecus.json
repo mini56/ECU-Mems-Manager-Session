@@ -131,7 +131,7 @@
   "16966": "Cancel",
   "16967": "Start command sent. With ignition on, press LOCK steadily on each remote (about eight times). A horn may confirm reception. Then select Finish.",
   "16968": "Stop command sent. Test every remote on the vehicle; transmission alone does not prove pairing.",
-  "16969": "Start failed or transmission uncertain. Verify the 5AS; its state is not guaranteed.",
+  "16969": "Start is uncertain: the 5AS may have received the command despite the serial error. Do not press Start again. Select Finish to try to exit learning, then check the module.",
   "16970": "Stop failed or transmission uncertain. Retry Finish or disconnect to attempt a stop.",
   "16971": "Disconnected during learning. Check the remotes and the 5AS state."
 }

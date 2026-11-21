@@ -131,7 +131,7 @@
   "16966": "Abbrechen",
   "16967": "Startbefehl gesendet. Bei eingeschalteter Zündung VERRIEGELN an jeder Fernbedienung regelmäßig drücken (etwa achtmal). Die Hupe kann den Empfang bestätigen. Danach Beenden wählen.",
   "16968": "Endbefehl gesendet. Jede Fernbedienung am Fahrzeug prüfen: Senden beweist kein erfolgreiches Anlernen.",
-  "16969": "Start fehlgeschlagen oder Übertragung ungewiss. 5AS prüfen; Zustand ist nicht bestätigt.",
+  "16969": "Start ungewiss: Der 5AS kann den Befehl trotz seriellen Fehlers empfangen haben. Starten nicht erneut drücken. Beenden wählen, um den Lernmodus zu verlassen, und das Steuergerät prüfen.",
   "16970": "Ende fehlgeschlagen oder Übertragung ungewiss. Beenden erneut versuchen oder zur Stop-Anforderung trennen.",
   "16971": "Verbindung während des Anlernens unterbrochen. Fernbedienungen und 5AS prüfen."
 }

@@ -131,7 +131,7 @@
   "16966": "Annuler",
   "16967": "Démarrage transmis. Contact mis, appuyez régulièrement sur VERROUILLER pour chaque PLIP (environ huit fois). Un avertisseur peut confirmer la réception. Cliquez ensuite sur Terminer.",
   "16968": "Commande de fin transmise. Testez chaque télécommande sur le véhicule : l'envoi ne prouve pas l'association.",
-  "16969": "Échec ou transmission incertaine au démarrage. Vérifiez le 5AS : son état n'est pas garanti.",
+  "16969": "Le démarrage est incertain : le 5AS peut avoir reçu la commande malgré l'erreur série. Ne relancez pas Démarrer. Cliquez sur Terminer pour tenter de quitter l'apprentissage, puis vérifiez le boîtier.",
   "16970": "Échec ou transmission incertaine à l'arrêt. Réessayez Terminer ou déconnectez pour tenter un arrêt.",
   "16971": "Connexion interrompue pendant l'apprentissage. Vérifiez les télécommandes et l'état du 5AS."
 }
