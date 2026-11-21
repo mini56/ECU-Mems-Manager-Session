@@ -86,5 +86,22 @@
   "16920": "Parámetro",
   "16921": "Valor",
   "16922": "Tráfico de diagnóstico TX/RX",
-  "16923": "Se requiere cable Lucas 5AS adaptado. Los valores 00/80 no indican necesariamente abierto/cerrado."
+  "16923": "Se requiere cable Lucas 5AS adaptado. Los valores 00/80 no indican necesariamente abierto/cerrado.",
+  "16924": "Probar claxon",
+  "16925": "Probar LED",
+  "16926": "Probar intermitentes",
+  "16927": "Comandos de prueba y parada enviados. Resultado físico sin verificar.",
+  "16928": "Prueba interrumpida o transmisión incompleta. Comprobar el estado de las salidas.",
+  "16929": "Confirmación — prueba de salida Lucas 5AS",
+  "16930": "El claxon puede sonar. Manager lo activa brevemente y envía una orden de parada, pero no se puede garantizar la parada física sin una prueba real. ¿Iniciar?",
+  "16931": "El LED del inmovilizador puede encenderse. Manager lo activa brevemente y envía una orden de parada; la parada física no está verificada. ¿Iniciar?",
+  "16932": "Los intermitentes de emergencia pueden encenderse si el 5AS incluye esta salida. Manager los activa brevemente y envía una orden de parada; la parada física no está verificada. ¿Iniciar?",
+  "16933": "Iniciar prueba",
+  "16934": "Cancelar",
+  "16935": "Guardar registro",
+  "16936": "Registro Lucas 5AS (*.log)",
+  "16937": "Registro guardado: %1",
+  "16938": "No se pudo guardar el registro",
+  "16940": "Seguimiento en directo",
+  "16941": "Detener seguimiento"
 }
