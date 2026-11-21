@@ -13,6 +13,10 @@ Le journal indique les commits réalisés, les fichiers modifiés, le statut des
 
 Documentation uniquement : le runtime SESSION et la Release 182 ne sont pas modifiés. Les tests sur ECU réel restent nécessaires.
 
+## Bibliothèque de firmwares Andrew Revill — référence externe (21/11/2026)
+
+- **[Archive Andrew Revill : source et cadre d'utilisation](29_ARCHIVE_FIRMWARE_ANDREW_REVILL_REFERENCE_20261121.md)** — lien externe vers les fichiers de firmwares Rover. **Pas de copie binaire dans le dépôt, pas d'intégration dans le Setup ni de modification de Manager.**
+
 ## Où trouver les éléments
 
 - [Journal de reprise et avancement réel](13_JOURNAL_DEVELOPPEMENT_MEMS19_PUIS_2J_20261120.md) — point d'entrée obligatoire.
