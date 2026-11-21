@@ -192,11 +192,12 @@ bool verifyUi(MainWindow &window)
     ok=check(otherPage && rc5Panel && immobiliserPanel && keysPanel,
              "Other ECUs must have three independent columns") && ok;
     if(otherPage){
-        // RC5 retains four independent actions. Lucas 5AS has three
-        // read-only actions. Three offline cable dialogs remain accessible.
+        // RC5 retains four independent actions. Lucas 5AS has eight actions,
+        // including three confirmed short physical output tests and log save.
+        // The three offline cable dialogs remain accessible.
         const QList<QPushButton*> actions=otherPage->findChildren<QPushButton*>();
-        ok=check(actions.size()==10,
-                 "Four RC5, three Lucas 5AS and three cable-help buttons required") && ok;
+        ok=check(actions.size()==15,
+                 "Four RC5, eight Lucas 5AS and three cable-help buttons required") && ok;
         const char *const ids[]={
             "rc5ConnectButton","rc5DisconnectButton",
             "rc5ReadFaultsButton","rc5ClearFaultsButton"
@@ -264,8 +265,24 @@ bool verifyUi(MainWindow &window)
                  fiveLog && fiveLog->isReadOnly(),
                  "Lucas 5AS starts disconnected, no automatic command, with a read-only log") && ok;
         if(immobiliserPanel)
-            ok=check(immobiliserPanel->findChildren<QPushButton*>().size()==4,
-                     "Lucas 5AS owns only connect, disconnect, read and cable help") && ok;
+            ok=check(immobiliserPanel->findChildren<QPushButton*>().size()==9,
+                     "Lucas 5AS needs eight diagnostic buttons and its cable help") && ok;
+        const char *const extraIds[]={
+            "lucas5asLiveStatusButton","lucas5asTestHornButton",
+            "lucas5asTestLedButton","lucas5asTestHazardsButton",
+            "lucas5asSaveLogButton"
+        };
+        for(const char *id:extraIds){
+            QPushButton *button=otherPage->findChild<QPushButton*>(
+                QString::fromLatin1(id));
+            ok=check(button && !button->isEnabled(),
+                     "Live/test/save commands must start disabled without ECU") && ok;
+        }
+        QTimer *liveTimer=otherPage->findChild<QTimer*>(
+            QStringLiteral("lucas5asLiveTimer"));
+        ok=check(liveTimer && !liveTimer->isActive() &&
+                 liveTimer->interval()==1000,
+                 "Lucas 5AS live monitoring must begin stopped") && ok;
 
         // Exercise the actual offline help in each module, not only its
         // translation string or existence. Auto-close the modal from the
@@ -827,6 +844,18 @@ bool verifyUi(MainWindow &window)
                  fiveDisconnect && fiveDisconnect->text()==I18n::text(16806) &&
                  fiveRead && fiveRead->text()==I18n::text(16906),
                  "Lucas 5AS diagnostic buttons must follow six languages") && ok;
+        const char *const extraIds[]={
+            "lucas5asLiveStatusButton","lucas5asTestHornButton",
+            "lucas5asTestLedButton","lucas5asTestHazardsButton",
+            "lucas5asSaveLogButton"
+        };
+        const int extraKeys[]={16940,16924,16925,16926,16935};
+        for(int i=0;i<5;++i){
+            QPushButton *button=window.findChild<QPushButton*>(
+                QString::fromLatin1(extraIds[i]));
+            ok=check(button && button->text()==I18n::text(extraKeys[i]),
+                     "Lucas 5AS extra actions must follow six languages") && ok;
+        }
         QTableWidget *fiveTable=window.findChild<QTableWidget*>(
             QStringLiteral("lucas5asStatusTable"));
         if(fiveTable)
