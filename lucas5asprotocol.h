@@ -1,7 +1,7 @@
 #ifndef LUCAS5ASPROTOCOL_H
 #define LUCAS5ASPROTOCOL_H
 
-// Lucas 5AS normal diagnostic mode: read-only protocol preparation.
+// Lucas 5AS normal diagnostic mode: status reading and three known output tests.
 // Source: James Portman, rover-mems-documentation,
 // Immobiliser/5AS/diagnostics and configuring.md (SHA 79290af8887cdc1f069d4d86e6f613ccc9e4a978).
 // This header has NO serial I/O and CANNOT write EEPROM, learn fobs,
