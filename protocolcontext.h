@@ -55,8 +55,9 @@ inline bool isKnownLegacyMutation(std::uint8_t command)
     {
     case 0x81u: // save adjustments, LeopoldG original DLL
     case 0xCCu: // clear faults
-    case 0xFAu: // reset ECU - historical DLL semantics
-    case 0x0Fu: // reset adjustments - historical DLL semantics
+    case 0xAFu: // original LeopoldG ECU reset
+    case 0xFAu: // original LeopoldG adjustment reset
+    case 0x0Fu: // original LeopoldG emissions reset
     case 0x11u: case 0x01u: // fuel pump
     case 0x12u: case 0x02u: // PTC
     case 0x13u: case 0x03u: // A/C
@@ -70,6 +71,7 @@ inline bool isKnownLegacyMutation(std::uint8_t command)
     case 0xFDu: case 0xFEu: // IAC step
     case 0xF4u:             // all actuators off / heartbeat in normal context
     case 0x79u: case 0x7Au: // fuel trim
+    case 0x7Bu: case 0x7Cu: // secondary fuel trim, normal ROSCO only
     case 0x89u: case 0x8Au: // idle decay
     case 0x91u: case 0x92u: // idle speed
     case 0x93u: case 0x94u: // ignition advance offset

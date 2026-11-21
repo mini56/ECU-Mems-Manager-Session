@@ -54,6 +54,82 @@ int main(void)
     CHECK_EQ("temperature wraps uint8",temperature_value_to_degrees_f(0), 137);
     CHECK_EQ("MEMS_ReqData80", MEMS_ReqData80, 0x80);
     CHECK_EQ("MEMS_ReqData7D", MEMS_ReqData7D, 0x7D);
+
+    /* Runtime proof: the built DLL must physically export all 45 legacy
+     * names and all eight distinct additive exports (not just .def text).
+     */
+    {
+        static const char* exports[]={
+        "mems_Boost_Valve_Off",
+        "mems_Boost_Valve_On",
+        "mems_CloseIAC",
+        "mems_Fan1_Off",
+        "mems_Fan1_On",
+        "mems_Fan2_Off",
+        "mems_Fan2_On",
+        "mems_O2Heater_Off",
+        "mems_O2Heater_On",
+        "mems_OpenIAC",
+        "mems_Purge_Valve_Off",
+        "mems_Purge_Valve_On",
+        "mems_Save",
+        "mems_cleanup",
+        "mems_clear_faults",
+        "mems_connect",
+        "mems_disconnect",
+        "mems_fuel_trim_minus",
+        "mems_fuel_trim_plus",
+        "mems_get_lib_version",
+        "mems_heartbeat",
+        "mems_idle_decay_minus",
+        "mems_idle_decay_plus",
+        "mems_idle_speed_minus",
+        "mems_idle_speed_plus",
+        "mems_ignition_advance_minus",
+        "mems_ignition_advance_plus",
+        "mems_init",
+        "mems_init_link",
+        "mems_is_connected",
+        "mems_lock",
+        "mems_move_iac",
+        "mems_openserial",
+        "mems_read",
+        "mems_read_iac_position",
+        "mems_read_raw",
+        "mems_read_serial",
+        "mems_reset_ADJ",
+        "mems_reset_ECU",
+        "mems_reset_EMI",
+        "mems_send_command",
+        "mems_test_actuator",
+        "mems_unlock",
+        "mems_write_serial",
+        "temperature_value_to_degrees_f",
+        "mems_reset_adjustments",
+        "mems_save_adjustments",
+        "mems_init_link_kline19",
+        "mems_read_kline19",
+        "mems_command_kline19",
+        "mems_move_iac_kline19",
+        "mems_fuel_trim_2_plus",
+        "mems_fuel_trim_2_minus"
+        };
+        HMODULE module=GetModuleHandleA("mems_manager_x64.dll");
+        size_t i=0;
+        if(!module){
+            fprintf(stderr,"FAIL: native mems_manager_x64.dll not loaded\n");
+            ++failures;
+        }else{
+            CHECK_EQ("historical and additive export total",
+                     sizeof(exports)/sizeof(exports[0]),53);
+            for(i=0;i<sizeof(exports)/sizeof(exports[0]);++i){
+                if(!GetProcAddress(module,exports[i])){
+                    fprintf(stderr,"FAIL: missing original/additive export %s\n",exports[i]);
+                    ++failures;
+                }
+            }
+        }
+    }
     /* New export: must link and reject a missing transport. */
     if (mems_Save(NULL) || mems_reset_ADJ(NULL) ||
         mems_reset_EMI(NULL) || mems_fuel_trim_2_plus(NULL,NULL) ||

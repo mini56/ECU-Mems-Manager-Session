@@ -49,9 +49,18 @@ int main()
             !allowsMutation(MemsEcuFamily::Mems3, MemsDiagnosticMode::Normal, 0x81),
             "KWP 2J/3 must not receive a ROSCO Save byte");
     require(allowsMutation(MemsEcuFamily::Rosco13_16, MemsDiagnosticMode::Normal, 0x0F),
-            "connected legacy ROSCO must permit existing reset adjustment control");
+            "original ROSCO emissions reset 0F must remain independently possible");
     require(allowsMutation(MemsEcuFamily::Rosco13_16, MemsDiagnosticMode::Normal, 0xFA),
-            "connected legacy ROSCO must permit existing ECU reset control");
+            "original ROSCO adjustment reset sends FA");
+    require(allowsMutation(MemsEcuFamily::Rosco13_16, MemsDiagnosticMode::Normal, 0xAF),
+            "original ROSCO ECU reset sends AF");
+    require(allowsMutation(MemsEcuFamily::Rosco13_16, MemsDiagnosticMode::Normal, 0x7B) &&
+            allowsMutation(MemsEcuFamily::Rosco13_16, MemsDiagnosticMode::Normal, 0x7C),
+            "secondary fuel correction is supported only as explicit ROSCO adjustment");
+    require(!allowsMutation(MemsEcuFamily::Mems19, MemsDiagnosticMode::Normal, 0x7C),
+            "never confuse K-Line 1.9 wake-up 7C with fuel correction");
+    require(!allowsMutation(MemsEcuFamily::Mems3, MemsDiagnosticMode::Normal, 0xAF),
+            "never send ROSCO reset to MEMS3");
     require(allowsMutation(MemsEcuFamily::Rosco13_16, MemsDiagnosticMode::Normal, 0xF8),
             "normal ROSCO coil test remains authorized by mode guard once family is proven");
     require(!allowsMutation(MemsEcuFamily::Rosco13_16, MemsDiagnosticMode::Mode4, 0xF8),

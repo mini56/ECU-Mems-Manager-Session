@@ -109,7 +109,10 @@ bool MEMSInterface::guardedResetAdjustments()
     if (property("injectionRamTestRunning").toBool() ||
         property("mappedInjectionModeActive").toBool())
         return false;
-    if (!MemsProtocolSafety::allowsMutation(ecuFamily(), diagnosticMode(), 0x0Fu))
+    // LeopoldG ROM-tested ROSCO: reset ADJ = FA. MEMS 1.9 retains its
+    // existing separately validated K-Line reset = 0F until real testing.
+    const quint8 command = ecuFamily()==MemsEcuFamily::Rosco13_16 ? 0xFAu : 0x0Fu;
+    if (!MemsProtocolSafety::allowsMutation(ecuFamily(), diagnosticMode(), command))
         return false;
     #ifdef MEMS_NATIVE_KLINE_19
     if (ecuFamily() == MemsEcuFamily::Mems19)
@@ -124,7 +127,10 @@ bool MEMSInterface::guardedResetEcu()
     if (property("injectionRamTestRunning").toBool() ||
         property("mappedInjectionModeActive").toBool())
         return false;
-    if (!MemsProtocolSafety::allowsMutation(ecuFamily(), diagnosticMode(), 0xFAu))
+    // Original ROSCO ECU reset = AF. MEMS 1.9 K-Line remains on its
+    // independent FA command: do not silently change its transport.
+    const quint8 command = ecuFamily()==MemsEcuFamily::Rosco13_16 ? 0xAFu : 0xFAu;
+    if (!MemsProtocolSafety::allowsMutation(ecuFamily(), diagnosticMode(), command))
         return false;
     #ifdef MEMS_NATIVE_KLINE_19
     if (ecuFamily() == MemsEcuFamily::Mems19)
