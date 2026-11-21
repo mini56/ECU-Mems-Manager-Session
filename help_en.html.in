@@ -192,6 +192,8 @@ small{color:#aebcc5}
 <h2 id="chapter-18">18. Supported ECU families</h2>
 <p>SESSION supports Rover MEMS <b>1.2, 1.3 and 1.6</b> through ROSCO, <b>MEMS 1.9</b> through K-Line wake-up, and <b>MEMS 2J and MEMS 3</b> through their own K-Line protocols. The ECU family is determined from a successful response after pressing <b>Connect</b>. Available readings and commands depend on the actual ECU session; MEMS 2J/3 do not use legacy ROSCO adjustment commands. Physical ECU testing remains outstanding for the newer readers.</p>
 
+<div class="tip"><b>Lucas 5AS immobiliser:</b> open <b>Other control units</b>, choose <b>Connect</b>, then <b>Read status</b> or <b>Live monitoring</b>. Horn, LED and hazard-light tests require confirmation explaining their effect. <b>Save diagnostic log</b> records the exchange. Physical testing is pending; remote pairing is not yet available.</div>
+
 <h2 id="chapter-19">19. Basic diagnostic guidance</h2>
 <table>
 <tr><th>Symptom</th><th>Checks</th></tr>
