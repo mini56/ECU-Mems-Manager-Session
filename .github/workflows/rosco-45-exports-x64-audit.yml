@@ -57,6 +57,15 @@ jobs:
           if([BitConverter]::ToUInt16($bytes,$pe+4) -ne 0x8664){throw 'ROSCO DLL is not AMD64'}
           $sha=(Get-FileHash $dll -Algorithm SHA256).Hash.ToLowerInvariant()
           Write-Host "ROSCO_45_LEGACY_EXPORTS_PLUS_8_VERIFIED AMD64 sha256=$sha"
+      - name: Installer les dependances Qt necessaires a la compilation du programme
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python -m pip install --disable-pip-version-check 'aqtinstall==3.3.0'
+          if($LASTEXITCODE -ne 0){throw 'QT_PREP_FAILED'}
+          $sevenZip=(Get-Command 7z.exe -ErrorAction Stop).Source
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external $sevenZip
+          if($LASTEXITCODE -ne 0){throw 'QT_DOWNLOAD_OR_INSTALL_FAILED'}
       - name: Compiler ECU MEMS Manager avec notre DLL et le vrai header public
         shell: pwsh
         run: |
