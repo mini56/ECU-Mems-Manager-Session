@@ -12,7 +12,7 @@ keys = (list(range(16200,16220))+list(range(16300,16336))+
         list(range(16400,16425))+list(range(16500,16507))+
         list(range(16600,16612))+list(range(16700,16714))+
         list(range(16801,16828))+[16831,16832,16833]+
-        list(range(16840,16864))+[16880])
+        list(range(16840,16864))+[16880]+list(range(16890,16898)))
 errors = []
 def check(condition, message):
     if not condition: errors.append(message)
@@ -57,8 +57,20 @@ check('class OtherControlUnitsTab' in other and
       'I18n::text(16804)' in other and
       'rc5protocol.h' in other and
       'connectRc5()' in other and
-      'clearRc5()' in other,
-      'RC5 diagnostic page and independent module translations missing')
+      'clearRc5()' in other and
+      'rc5CableInfoButton' in other and
+      'immobiliserCableInfoButton' in other and
+      'keysCableInfoButton' in other and
+      'showCableHelp(int index)' in other,
+      'RC5 diagnostic page and the three independent cable help buttons missing')
+for lang in langs:
+    help_catalog = json.loads(read(f'translations/{lang}/{lang}_other_ecus.json'))
+    for key in (16892,16894,16896):
+        help_text = help_catalog.get(str(key),'')
+        check(help_text.startswith('<html><body>') and
+              help_text.endswith('</body></html>') and
+              len(help_text)>350,
+              f'{lang}: missing substantive offline cable text {key}')
 sources = {
     'usbcablediagnostictab.h':range(16201,16220),
     'database/MemsDocumentaryUpdateDialog.cpp':range(16300,16336),
