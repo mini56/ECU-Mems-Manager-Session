@@ -689,6 +689,18 @@ bool verifyUi(MainWindow &window)
                      immobiliserPanel->isVisibleTo(&window) &&
                      keysPanel->isVisibleTo(&window),
                      "Three ECU columns must have equal widths and be visible") && ok;
+            // Test the real button positions for each of the five window sizes.
+            const auto actionY=[otherPage](const char *name){
+                const QPushButton *button=otherPage->findChild<QPushButton*>(
+                    QString::fromLatin1(name));
+                return button ? button->mapTo(otherPage,QPoint(0,0)).y() : -1;
+            };
+            const int rc5Y=actionY("rc5ConnectButton");
+            const int fiveY=actionY("lucas5asConnectButton");
+            const int plipY=actionY("lucas5asPlipControlButton");
+            ok=check(rc5Y>=0 && fiveY>=0 && plipY>=0 &&
+                     qAbs(rc5Y-fiveY)<=2 && qAbs(fiveY-plipY)<=2,
+                     "Three top ECU button rows must align at all window sizes") && ok;
         }
         tabs->setCurrentIndex(previousTab);
         QCoreApplication::processEvents();
