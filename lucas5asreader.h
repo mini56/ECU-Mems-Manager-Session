@@ -102,6 +102,33 @@ public:
         return requestStatus(result,cancelled,trace);
     }
 
+    // One bounded physical output test after an explicit UI confirmation.
+    // Always attempt the corresponding STOP, even after cancellation,
+    // a failed START transmission or a serial write timeout. Only NORMAL
+    // diagnostic-mode tests 8/9/13 are accepted; no EEPROM or PLIP command.
+    bool pulseOutput(int output,const Cancelled &cancelled,QString *trace)
+    {
+        quint8 start=0,stop=0;
+        if(!isOpen() || cancelled() ||
+           !Lucas5AsProtocol::outputTestCommands(output,&start,&stop))
+            return false;
+        const auto send=[this,trace](quint8 command){
+            if(!m_port.isOpen())return false;
+            const char octet=char(command);
+            const bool sent=m_port.write(&octet,1)==1 &&
+                            m_port.waitForBytesWritten(500);
+            if(trace)
+                trace->append(QStringLiteral("TX @9600 %1 (%2)\\n")
+                    .arg(qulonglong(command),2,16,QLatin1Char('0'))
+                    .arg(sent?QStringLiteral("sent"):QStringLiteral("error")));
+            return sent;
+        };
+        const bool started=send(start);
+        const bool completed=started && pause(900,cancelled);
+        const bool stopped=send(stop);
+        return started && completed && stopped;
+    }
+
 private:
     bool pause(int milliseconds,const Cancelled &cancelled)
     {
@@ -271,11 +298,22 @@ public slots:
             emit statusRead(true,Lucas5AsReader::packetValues(status),trace);
         else emit statusRead(false,QVariantMap(),QString());
     }
+    void pulseOutput(int output)
+    {
+        QString trace;
+        const auto cancelled=[this](){
+            return m_cancel.load(std::memory_order_relaxed);
+        };
+        const bool ok=m_session && m_session->isOpen() &&
+            m_session->pulseOutput(output,cancelled,&trace);
+        emit outputTested(ok,output,trace);
+    }
 
 signals:
     void probingPort(const QString &port);
     void connectionChanged(bool connected,const QString &port);
     void statusRead(bool ok,const QVariantMap &fields,const QString &trace);
+    void outputTested(bool ok,int output,const QString &trace);
 
 private:
     void closeSession()
