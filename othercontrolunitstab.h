@@ -269,8 +269,9 @@ public:
                 m_plipLearning=active;
                 setPlipLearningStatus(active?16967:16968);
             }else{
-                // A failed STOP is not a successful end to programming.
-                if(starting)m_plipLearning=false;
+                // START may have been received despite a serial timeout.
+                // Keep the STOP button available for an uncertain cycle.
+                m_plipLearning=active;
                 setPlipLearningStatus(starting?16969:16970);
             }
             m_5asBusy=false;

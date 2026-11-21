@@ -10,6 +10,7 @@
 #include <QString>
 #include <QVector>
 #include <QtGlobal>
+#include <functional>
 
 namespace Lucas5AsProtocol {
 
@@ -22,6 +23,41 @@ constexpr quint8 kEndSessionCommand = 0xF6u;
 // RoverMEMS documented normal-mode remote learning procedure.
 constexpr quint8 kStartFobLearning = 0x5Fu;
 constexpr quint8 kStopFobLearning = 0x6Fu;
+
+// Pure, testable PLIP-learning state machine. A failed serial write/timeout
+// may still have delivered a byte to the 5AS: NEVER assume learning is off.
+// "StartSent" means only that the host serial transmission completed; it
+// is not a confirmation from the immobiliser.
+class FobLearningCycle
+{
+public:
+    enum class Phase { Idle, StartSent, Uncertain };
+    Phase phase() const {return m_phase;}
+    bool possiblyActive() const {return m_phase!=Phase::Idle;}
+
+    bool begin(const std::function<bool(quint8)> &transmit)
+    {
+        if(possiblyActive())return false;
+        m_phase=Phase::Uncertain; // Set before I/O: failure is ambiguous.
+        if(!transmit(kStartFobLearning))return false;
+        m_phase=Phase::StartSent;
+        return true;
+    }
+    bool finish(const std::function<bool(quint8)> &transmit)
+    {
+        if(!possiblyActive())return false;
+        if(!transmit(kStopFobLearning)){
+            m_phase=Phase::Uncertain; // Keep STOP available for retry.
+            return false;
+        }
+        m_phase=Phase::Idle;
+        return true;
+    }
+    void forgetAfterPortClosed() {m_phase=Phase::Idle;}
+
+private:
+    Phase m_phase=Phase::Idle;
+};
 
 // Documented NORMAL-mode 5AS output tests (RoverMEMS): 3x starts a
 // physical output, 2x stops it. Only the three *identified* outputs are

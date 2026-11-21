@@ -61,6 +61,58 @@ int main()
             kStopFobLearning!=kEndSessionCommand,
             "PLIP learning command pair must stay distinct");
 
+    // Simulated transport failures: no physical port or ECU is required.
+    // Sending may have succeeded on the wire even when the driver timed out.
+    FobLearningCycle cycle;
+    QVector<quint8> sentCommands;
+    const auto transmitted=[&sentCommands](quint8 code){
+        sentCommands.append(code);
+        return true;
+    };
+    const auto timedOut=[&sentCommands](quint8 code){
+        sentCommands.append(code);
+        return false;
+    };
+    require(cycle.phase()==FobLearningCycle::Phase::Idle &&
+            !cycle.possiblyActive(),
+            "Learning must start idle without any ECU command");
+    require(!cycle.finish(transmitted) && sentCommands.isEmpty(),
+            "STOP from idle must not transmit anything");
+    require(cycle.begin(transmitted) &&
+            cycle.phase()==FobLearningCycle::Phase::StartSent &&
+            sentCommands==QVector<quint8>{kStartFobLearning},
+            "Normal START transmits only 5F");
+    require(!cycle.begin(transmitted) && sentCommands.size()==1,
+            "Duplicate START is forbidden while a cycle is active");
+    require(!cycle.finish(timedOut) &&
+            cycle.phase()==FobLearningCycle::Phase::Uncertain &&
+            cycle.possiblyActive() && sentCommands.last()==kStopFobLearning,
+            "Failed STOP stays uncertain and keeps a possible active cycle");
+    require(!cycle.begin(transmitted) && sentCommands.size()==2,
+            "An uncertain STOP must block new START without any transmission");
+    require(cycle.finish(transmitted) && !cycle.possiblyActive() &&
+            sentCommands.last()==kStopFobLearning,
+            "Retry STOP leaves learning idle only when host write succeeds");
+    sentCommands.clear();
+    require(!cycle.begin(timedOut) &&
+            cycle.phase()==FobLearningCycle::Phase::Uncertain &&
+            cycle.possiblyActive() &&
+            sentCommands==QVector<quint8>{kStartFobLearning},
+            "Failed START must retain uncertain state, even if write timed out");
+    require(!cycle.begin(transmitted) && sentCommands.size()==1,
+            "Uncertain START cannot silently retry and replace remote slots");
+    require(!cycle.finish(timedOut) && cycle.possiblyActive(),
+            "STOP timeout after uncertain START must remain uncertain");
+    require(cycle.finish(transmitted) && !cycle.possiblyActive() &&
+            sentCommands.last()==kStopFobLearning,
+            "STOP after uncertain START must be recoverable");
+    sentCommands.clear();
+    require(cycle.begin(transmitted) && cycle.possiblyActive(),
+            "A fresh cycle may begin after a transmitted STOP");
+    cycle.forgetAfterPortClosed();
+    require(!cycle.possiblyActive() && cycle.phase()==FobLearningCycle::Phase::Idle,
+            "After closing the physical port no active cycle may leak locally");
+
     // Synthetic example follows exactly the indices published by Portman.
     // These bytes are NOT a captured response from a vehicle.
     QByteArray raw(49,char(0));

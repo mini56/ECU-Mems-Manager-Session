@@ -26,14 +26,16 @@ public:
     using Cancelled=std::function<bool()>;
     ~Session(){close();}
     bool isOpen() const {return m_ready && m_port.isOpen();}
-    bool learningActive() const {return m_learningActive;}
+    bool learningActive() const {return m_learning.possiblyActive();}
     void close()
     {
-        // Request the documented 6F STOP on teardown if learning was started.
-        // Failure to transmit must not be presented as successful pairing.
-        if(m_learningActive && m_port.isOpen())
-            transmitLearningCommand(Lucas5AsProtocol::kStopFobLearning,nullptr);
-        m_learningActive=false;
+        // On disconnect retry 6F even if START or STOP was uncertain.
+        // The transport can report transmission, never ECU acceptance.
+        if(m_learning.possiblyActive() && m_port.isOpen())
+            m_learning.finish([this](quint8 code){
+                return transmitLearningCommand(code,nullptr);
+            });
+        m_learning.forgetAfterPortClosed();
         m_ready=false;
         if(m_port.isOpen()){
             m_port.setBreakEnabled(false);
@@ -104,7 +106,7 @@ public:
     bool readStatus(Lucas5AsProtocol::StatusPacket *result,
                     const Cancelled &cancelled,QString *trace)
     {
-        if(!isOpen() || cancelled() || m_learningActive)return false;
+        if(!isOpen() || cancelled() || m_learning.possiblyActive())return false;
         return requestStatus(result,cancelled,trace);
     }
 
@@ -115,7 +117,7 @@ public:
     bool pulseOutput(int output,const Cancelled &cancelled,QString *trace)
     {
         quint8 start=0,stop=0;
-        if(!isOpen() || cancelled() || m_learningActive ||
+        if(!isOpen() || cancelled() || m_learning.possiblyActive() ||
            !Lucas5AsProtocol::outputTestCommands(output,&start,&stop))
             return false;
         const auto send=[this,trace](quint8 command){
@@ -141,19 +143,17 @@ public:
     // return true solely when the USB serial transmission completed.
     bool startFobLearning(QString *trace)
     {
-        if(!isOpen() || m_learningActive)return false;
-        if(!transmitLearningCommand(Lucas5AsProtocol::kStartFobLearning,trace))
-            return false;
-        m_learningActive=true;
-        return true;
+        if(!isOpen())return false;
+        return m_learning.begin([this,trace](quint8 code){
+            return transmitLearningCommand(code,trace);
+        });
     }
     bool stopFobLearning(QString *trace)
     {
-        if(!isOpen() || !m_learningActive)return false;
-        if(!transmitLearningCommand(Lucas5AsProtocol::kStopFobLearning,trace))
-            return false;
-        m_learningActive=false;
-        return true;
+        if(!m_port.isOpen())return false;
+        return m_learning.finish([this,trace](quint8 code){
+            return transmitLearningCommand(code,trace);
+        });
     }
 
 private:
@@ -256,7 +256,7 @@ private:
     QSerialPort m_port; // Created and used exclusively on worker thread.
     QByteArray m_received;
     bool m_ready=false;
-    bool m_learningActive=false;
+    Lucas5AsProtocol::FobLearningCycle m_learning;
 };
 
 inline QVariantMap packetValues(const Lucas5AsProtocol::StatusPacket &p)
@@ -356,13 +356,15 @@ public slots:
         QString trace;
         const bool ok=!m_cancel.load(std::memory_order_relaxed) &&
             m_session && m_session->startFobLearning(&trace);
-        emit fobLearningChanged(ok,ok,trace);
+        emit fobLearningChanged(m_session && m_session->learningActive(),
+                                ok,trace);
     }
     void finishFobLearning()
     {
         QString trace;
         const bool ok=m_session && m_session->stopFobLearning(&trace);
-        emit fobLearningChanged(false,ok,trace);
+        emit fobLearningChanged(m_session && m_session->learningActive(),
+                                ok,trace);
     }
 
 signals:
@@ -380,9 +382,10 @@ private:
             if(m_session->learningActive()){
                 QString trace;
                 const bool stopped=m_session->stopFobLearning(&trace);
-                emit fobLearningChanged(false,stopped,trace);
+                emit fobLearningChanged(m_session->learningActive(),
+                                        stopped,trace);
             }
-            m_session->close(); // Retry STOP on failure before port closes.
+            m_session->close(); // If STOP failed, retry once before closing.
             m_session.reset();
         }
     }
