@@ -6,5 +6,6 @@
   "6204": "Special thanks to:",
   "6205": "For their earlier work on Rover MEMS ECU reading and diagnostic tools.",
   "6206": "to be tested",
-  "6207": "MEMS 2J and MEMS 3: live readings and engine fault codes; fault clearing only when requested by the user. Experimental calibration and immobiliser functions are not enabled. Real-ECU tests are still required."
+  "6207": "MEMS 2J and MEMS 3: live readings and engine fault codes; fault clearing only when requested by the user. Experimental calibration and immobiliser functions are not enabled. Real-ECU tests are still required.",
+  "6208": "Lucas 5AS (real hardware validation pending): identification and live status, short horn, LED and hazard-light tests with prior confirmation, plus diagnostic log saving. No EEPROM editing or remote pairing in this version."
 }
