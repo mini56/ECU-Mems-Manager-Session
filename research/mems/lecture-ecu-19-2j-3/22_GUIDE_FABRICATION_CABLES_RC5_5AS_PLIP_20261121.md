@@ -12,6 +12,26 @@ La ligne moteur MEMS 2J sur Mini MPI arrive à l'**OBD 7** ; le calculateur Airb
 
 Le montage ne concerne que la **ligne diagnostique**. Ne jamais toucher au câblage pyrotechnique des airbags/prétensionneurs.
 
+## 1 bis. Ne pas confondre le câble FTDI de MEMS 1.6 et celui du Lucas 5AS
+
+La mention **« FTDI FT232R » décrit le convertisseur USB–série, pas le câblage ni les niveaux électriques du câble complet**.
+
+| Équipement | Interface de diagnostic publiée | Contact véhicule |
+|---|---|---|
+| MEMS 1.6 moteur | Adaptateur **USB–TTL 5 V** (par exemple FTDI TTL-232R-5V), émission/réception logique directe et masse | **Prise moteur à trois broches** |
+| Lucas 5AS | Adaptateur **automobile KKL 409.1**, lignes K et L adaptées aux signaux autour de **0–12 V**, réception inversée | Sur modèles concernés à prise 16 voies : **OBD 3 (TX outil)** et **OBD 1 (RX outil)** après modification |
+| MEMS 1.9 / 2J moteur | KKL automobile sur ligne moteur, avec connecteur adapté au modèle | Prise diagnostic moteur ; souvent **OBD 7** pour la ligne K |
+
+**Conséquence essentielle : il ne suffit JAMAIS de cocher « Invert RXD » dans FT_PROG sur le câble MEMS 1.6 USB–TTL 5 V pour en faire un câble 5AS.** Il manquerait l'interface électronique automobile 12 V, la connexion des lignes K/L et le bon connecteur. Un câble basé sur FT232R peut exister dans chacune de ces catégories, mais leurs circuits et leurs usages sont différents.
+
+Pour un câble fabriqué maison, partir d'un **KKL automobile 409.1 compatible**, et non du seul adaptateur USB–TTL MEMS 1.6, puis effectuer les modifications vérifiées au chapitre 2.
+
+**Sources distinctes :**
+- Colin Bourassa, procédure MEMS 1.6, recommandation FTDI TTL-232R-5V et prise trois broches : https://colinbourassa.github.io/car_stuff/mems_interface/
+- Documentation MEMSdiag, MEMS 1.6 USB–TTL 5 V contre MEMS 1.9 câble KKL 12 V : https://memsdiag.blogspot.com/2015/01/memsdiag-what-is-memsdiag-memsdiag-is.html
+- Andrew Revill, classification des câbles 3 broches ROSCO et OBD KKL : https://andrewrevill.co.uk/MEMS3FamiliesSupported.htm
+- Andrew Revill, câble KKL 409.1 à adapter au 5AS : https://andrewrevill.co.uk/MEMS3LucasImmobiliserSupported.htm
+
 ## 2. Lucas 5AS : méthode KKL 409.1 documentée par Andrew Revill
 
 La fabrication d'un câble 5AS comporte **deux modifications indépendantes**, sans quoi le câble peut être reconnu comme COM mais ne pas dialoguer.
