@@ -1,10 +1,12 @@
 #ifndef OTHERCONTROLUNITSTAB_H
 #define OTHERCONTROLUNITSTAB_H
 
-// SESSION 189: independent RC5 SRS and read-only Lucas 5AS workspaces.
-// Key programming remains reserved and does not send ECU commands.
+// SESSION 190: independent RC5 SRS and Lucas 5AS diagnostic workspaces.
+// Output tests require an explicit warning confirmation; keys remain reserved.
 #include <QApplication>
 #include <QDialog>
+#include <QFile>
+#include <QFileDialog>
 #include <QScreen>
 #include <QTextBrowser>
 #include <QFrame>
@@ -13,6 +15,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMetaObject>
+#include <QMessageBox>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QResizeEvent>
@@ -22,6 +25,7 @@
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QThread>
+#include <QTimer>
 #include <QVariantList>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -203,7 +207,8 @@ public:
                 m_5asPort.clear();
                 m_5asFields.clear();
                 show5AsFields();
-                m_5asTrace->clear();
+                m_5asLiveActive=false;
+                if(m_5asLiveTimer)m_5asLiveTimer->stop();
                 set5AsStatus(m_5asCancelRequested?16905:16902);
                 m_5asCancelRequested=false;
             }
@@ -221,7 +226,20 @@ public:
                 if(!trace.isEmpty())
                     m_5asTrace->appendPlainText(trace.trimmed());
                 set5AsStatus(16907);
-            }else set5AsStatus(16904);
+            }else{
+                m_5asLiveActive=false;
+                if(m_5asLiveTimer)m_5asLiveTimer->stop();
+                set5AsStatus(16904);
+            }
+            update5AsButtons();
+        });
+        QObject::connect(m_5asWorker,&Lucas5AsWorker::outputTested,this,
+                         [this](bool ok,int output,const QString &trace){
+            Q_UNUSED(output)
+            if(!m_5asConnected)return;
+            m_5asBusy=false;
+            if(!trace.isEmpty())m_5asTrace->appendPlainText(trace.trimmed());
+            set5AsStatus(ok?16927:16928);
             update5AsButtons();
         });
         QObject::connect(m_5asConnect,&QPushButton::clicked,
@@ -230,6 +248,23 @@ public:
                          this,[this](){disconnect5As();});
         QObject::connect(m_5asRead,&QPushButton::clicked,
                          this,[this](){read5As();});
+        QObject::connect(m_5asLive,&QPushButton::clicked,
+                         this,[this](){toggle5AsLive();});
+        QObject::connect(m_5asHorn,&QPushButton::clicked,
+                         this,[this](){test5AsOutput(8);});
+        QObject::connect(m_5asLed,&QPushButton::clicked,
+                         this,[this](){test5AsOutput(9);});
+        QObject::connect(m_5asHazards,&QPushButton::clicked,
+                         this,[this](){test5AsOutput(13);});
+        QObject::connect(m_5asSaveLog,&QPushButton::clicked,
+                         this,[this](){save5AsLog();});
+        m_5asLiveTimer=new QTimer(this);
+        m_5asLiveTimer->setObjectName(QStringLiteral("lucas5asLiveTimer"));
+        m_5asLiveTimer->setInterval(1000);
+        QObject::connect(m_5asLiveTimer,&QTimer::timeout,this,
+                         [this](){
+            if(m_5asLiveActive && m_5asConnected && !m_5asBusy)read5As();
+        });
         m_5asThread.start();
 
         retranslate();
@@ -263,6 +298,11 @@ public:
         m_5asConnect->setText(I18n::text(16805));
         m_5asDisconnect->setText(I18n::text(16806));
         m_5asRead->setText(I18n::text(16906));
+        m_5asLive->setText(I18n::text(m_5asLiveActive?16941:16940));
+        m_5asHorn->setText(I18n::text(16924));
+        m_5asLed->setText(I18n::text(16925));
+        m_5asHazards->setText(I18n::text(16926));
+        m_5asSaveLog->setText(I18n::text(16935));
         m_5asTable->setHorizontalHeaderLabels({
             I18n::text(16920),I18n::text(16921)
         });
@@ -315,7 +355,8 @@ public:
               dark?QStringLiteral("#19130a"):QStringLiteral("#fff0dd"),
               dark?QStringLiteral("#5d6870"):QStringLiteral("#aab4be"));
         for(QPushButton *button:{m_connect,m_disconnect,m_read,m_clear,
-                                  m_5asConnect,m_5asDisconnect,m_5asRead})
+                                  m_5asConnect,m_5asDisconnect,m_5asRead,m_5asLive,
+                                   m_5asHorn,m_5asLed,m_5asHazards,m_5asSaveLog})
             button->setStyleSheet(buttonStyle);
         for(QPushButton *button:m_cableHelpButtons)
             button->setStyleSheet(buttonStyle);
@@ -741,6 +782,12 @@ private:
     QPushButton *m_5asConnect=nullptr;
     QPushButton *m_5asDisconnect=nullptr;
     QPushButton *m_5asRead=nullptr;
+    QPushButton *m_5asLive=nullptr;
+    QPushButton *m_5asHorn=nullptr;
+    QPushButton *m_5asLed=nullptr;
+    QPushButton *m_5asHazards=nullptr;
+    QPushButton *m_5asSaveLog=nullptr;
+    QTimer *m_5asLiveTimer=nullptr;
     QTableWidget *m_5asTable=nullptr;
     QPlainTextEdit *m_5asTrace=nullptr;
     QVariantMap m_5asFields;
@@ -749,5 +796,6 @@ private:
     bool m_5asConnected=false;
     bool m_5asBusy=false;
     bool m_5asCancelRequested=false;
+    bool m_5asLiveActive=false;
 };
 #endif // OTHERCONTROLUNITSTAB_H
