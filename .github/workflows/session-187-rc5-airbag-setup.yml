@@ -397,6 +397,8 @@ jobs:
                        'rc5ClearFaultsButton','rc5FaultsTable'):
               assert name in ui,name
           assert 'columns->addWidget(panel,1);' in ui
+          assert 'void resizeEvent(QResizeEvent *event) override' in ui, 'RC5_COLUMN_EQUAL_WIDTH_RESIZE_MISSING'
+          assert 'm_panels[i]->setFixedWidth(target);' in ui, 'RC5_COLUMN_EQUAL_WIDTH_CONSTRAINT_MISSING'
           assert 'm_worker->moveToThread(&m_rc5Thread)' in ui
           assert 'SerialAdapterDetector::availableAdapters()' in ui
           assert 'QMetaObject::invokeMethod(m_worker,"clearFaults"' in ui
