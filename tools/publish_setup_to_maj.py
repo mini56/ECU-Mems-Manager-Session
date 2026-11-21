@@ -72,7 +72,19 @@ def public_notes(number):
 
 
 def release_of(tag):
-    return api_get(f"{API}/releases/tags/{tag}", missing_ok=True)
+    # GitHub REST /releases/tags/{tag} returns 404 for existing drafts.
+    # Authenticated listing includes both published and draft releases.
+    release = api_get(f"{API}/releases/tags/{tag}", missing_ok=True)
+    if release is not None:
+        return release
+    for page in range(1, 11):
+        releases = api_get(f"{API}/releases?per_page=100&page={page}")
+        for item in releases:
+            if item.get("tag_name") == tag:
+                return item
+        if len(releases) < 100:
+            break
+    return None
 
 
 def ensure_public_release(tag, files, number):
