@@ -86,5 +86,22 @@
   "16920": "Paramètre",
   "16921": "Valeur",
   "16922": "Échanges diagnostic TX/RX",
-  "16923": "Câble Lucas 5AS adapté requis. Les valeurs 00/80 sont brutes, sans interprétation ouvert/fermé."
+  "16923": "Câble Lucas 5AS adapté requis. Les valeurs 00/80 sont brutes, sans interprétation ouvert/fermé.",
+  "16924": "Tester klaxon",
+  "16925": "Tester voyant",
+  "16926": "Tester feux",
+  "16927": "Ordres de test et d’arrêt envoyés. Résultat physique non vérifié.",
+  "16928": "Essai interrompu ou envoi incomplet. Vérifier l’état des sorties.",
+  "16929": "Confirmation — test de sortie Lucas 5AS",
+  "16930": "Le klaxon du véhicule peut retentir. Manager l’active brièvement puis envoie un ordre d’arrêt ; l’arrêt physique ne peut pas être garanti sans essai réel. Lancer ce test ?",
+  "16931": "Le voyant d’antidémarrage peut s’allumer. Manager l’active brièvement puis envoie un ordre d’arrêt ; l’arrêt physique ne peut pas être garanti sans essai réel. Lancer ce test ?",
+  "16932": "Les feux de détresse peuvent s’allumer, uniquement sur les boîtiers 5AS qui disposent de cette sortie. Manager envoie un ordre d’arrêt après une brève activation ; l’arrêt physique ne peut pas être garanti sans essai réel. Lancer ce test ?",
+  "16933": "Lancer le test",
+  "16934": "Annuler",
+  "16935": "Enregistrer le journal",
+  "16936": "Journal Lucas 5AS (*.log)",
+  "16937": "Journal enregistré : %1",
+  "16938": "Impossible d’enregistrer le journal",
+  "16940": "Suivi en direct",
+  "16941": "Arrêter le suivi"
 }
