@@ -177,7 +177,7 @@ jobs:
           $smoke=Get-Content uishellsmoketest.cpp -Raw
           if($analysis -notmatch 'analysisChannelsScroll' -or $analysis -notmatch 'SetMinAndMaxSize'){throw 'ANALYSIS_CHANNEL_SCROLL_SOURCE_MISSING'}
           if($analysisDynamic -notmatch 'm_checkboxContainer->updateGeometry\(\)'){throw 'ANALYSIS_CHANNEL_LIST_GEOMETRY_NOT_REFRESHED'}
-          if($smoke -notmatch 'Mandatory Analysis vertical scrollbar not visible' -or $smoke -notmatch 'Analysis content exceeds viewport but cannot scroll' -or $smoke -notmatch 'QSize\(1930,1080\)'){throw 'ANALYSIS_TWO_SCROLL_REAL_UI_TEST_MISSING'}
+          if($smoke -notmatch 'Mandatory Analysis vertical scrollbar not visible' -or $smoke -notmatch 'Analysis content exceeds viewport but cannot scroll' -or $smoke -notmatch 'QSize\(1920,1080\)'){throw 'ANALYSIS_TWO_SCROLL_REAL_UI_TEST_MISSING'}
           $srcStyle=Get-Content analysistab_impl_part1.inc -Raw
           $srcPlots=Get-Content analysistab_impl_part2.inc -Raw
           if($srcStyle -notmatch 'configureAnalysisVisibleScroll' -or $srcPlots -notmatch 'configureAnalysisVisibleScroll\(m_stackScrollArea\)' -or $srcStyle -notmatch 'area->setVerticalScrollBarPolicy\(Qt::ScrollBarAlwaysOn\)'){throw 'VISIBLE_PLOT_SCROLL_MISSING'}
