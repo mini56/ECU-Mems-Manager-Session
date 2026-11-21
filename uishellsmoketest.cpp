@@ -831,6 +831,13 @@ bool verifyUi(MainWindow &window)
             ok=check(tabs->tabText(i)==I18n::text(officialTitleKeys[i]),
                      "Page title does not match selected SESSION language") && ok;
         }
+        QWidget *adjust = window.findChild<QWidget*>(QStringLiteral("settingsAdjust"));
+        QPushButton *save = adjust ? adjust->findChild<QPushButton*>(
+            QStringLiteral("m_saveAdjustmentsButton")) : nullptr;
+        ok=check(save && save->isVisibleTo(adjust) && !save->isEnabled() &&
+                 save->text()==I18n::text(7080) && !save->text().startsWith(QLatin1Char('[')) &&
+                 !I18n::text(7081).startsWith(QLatin1Char('[')),
+                 "ECU settings save button must be translated and disabled offline") && ok;
         const char *const headings[3]={
             "otherEcusAirbagTitle","otherEcusImmobiliserTitle","otherEcusKeysTitle"
         };

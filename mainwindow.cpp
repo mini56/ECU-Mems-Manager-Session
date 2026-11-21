@@ -1520,8 +1520,11 @@ void MainWindow::resizeEvent(QResizeEvent* event)
 void MainWindow::changeEvent(QEvent* event)
 {
   QMainWindow::changeEvent(event);
-  if (event && event->type() == QEvent::LanguageChange)
+  if (event && event->type() == QEvent::LanguageChange) {
+    if (m_ui && m_ui->m_saveAdjustmentsButton)
+      m_ui->m_saveAdjustmentsButton->setText(I18n::text(7080));
     retranslateUiShell(this);
+  }
 }
 
 void MainWindow::closeEvent(QCloseEvent* event)

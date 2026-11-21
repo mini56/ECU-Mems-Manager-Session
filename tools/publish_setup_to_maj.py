@@ -93,14 +93,18 @@ def ensure_public_release(tag, files, number):
     note_file.write_text(notes, encoding="utf-8")
     release = release_of(tag)
     if release is None:
-        # Draft first: no empty or incomplete public Release is exposed.
-        run_gh("release", "create", tag, "--repo", PUBLIC,
-               "--draft", "--title",
+        # gh stages both assets before publishing. It tracks the draft by ID.
+        run_gh("release", "create", tag, *(str(file) for file in files),
+               "--repo", PUBLIC, "--latest", "--title",
                f"ECU MEMS Manager SESSION {number} - Setup Windows",
                "--notes-file", str(note_file))
-        release = release_of(tag)
-    if release is None:
-        raise RuntimeError("MAJ_RELEASE_CREATE_NOT_VISIBLE")
+        for attempt in range(10):
+            release = release_of(tag)
+            if release is not None:
+                break
+            time.sleep(3)
+        if release is None:
+            raise RuntimeError("MAJ_RELEASE_CREATE_NOT_VISIBLE")
 
     existing = {a["name"]: a for a in release.get("assets", [])}
     for file in files:
