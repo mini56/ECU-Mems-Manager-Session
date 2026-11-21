@@ -1,8 +1,8 @@
 #ifndef OTHERCONTROLUNITSTAB_H
 #define OTHERCONTROLUNITSTAB_H
 
-// SESSION 190: independent RC5 SRS and Lucas 5AS diagnostic workspaces.
-// Output tests require an explicit warning confirmation; keys remain reserved.
+// Independent RC5 SRS and Lucas 5AS diagnostics and PLIP learning.
+// No automatic programming: explicit warning confirmation is mandatory.
 #include <QApplication>
 #include <QDialog>
 #include <QDateTime>
@@ -207,6 +207,12 @@ public:
                 m_plipPendingConnect=false;
                 m_plipMonitoring=false;
                 setPlipStatus(pending?16957:16946);
+                if(m_plipLearning || m_plipLearningPending)
+                    setPlipLearningStatus(16971);
+                else
+                    setPlipLearningStatus(16962);
+                m_plipLearning=false;
+                m_plipLearningPending=false;
                 m_5asPort.clear();
                 m_5asFields.clear();
                 show5AsFields();
@@ -251,6 +257,25 @@ public:
             set5AsStatus(ok?16927:16928);
             update5AsButtons();
         });
+        QObject::connect(m_5asWorker,&Lucas5AsWorker::fobLearningChanged,this,
+                         [this](bool active,bool sent,const QString &trace){
+            if(!m_5asConnected)return;
+            const bool starting=m_plipLearningPending &&
+                                m_plipLearningActionStart;
+            m_plipLearningPending=false;
+            if(!trace.isEmpty())
+                m_5asTrace->appendPlainText(trace.trimmed());
+            if(sent){
+                m_plipLearning=active;
+                setPlipLearningStatus(active?16967:16968);
+            }else{
+                // A failed STOP is not a successful end to programming.
+                if(starting)m_plipLearning=false;
+                setPlipLearningStatus(starting?16969:16970);
+            }
+            m_5asBusy=false;
+            update5AsButtons();
+        });
         QObject::connect(m_5asConnect,&QPushButton::clicked,
                          this,[this](){connect5As();});
         QObject::connect(m_5asDisconnect,&QPushButton::clicked,
@@ -271,13 +296,17 @@ public:
                          [this](){togglePlipMonitoring();});
         QObject::connect(m_plipReset,&QPushButton::clicked,this,
                          [this](){resetPlipObservations();});
+        QObject::connect(m_plipLearnStart,&QPushButton::clicked,this,
+                         [this](){startPlipLearning();});
+        QObject::connect(m_plipLearnStop,&QPushButton::clicked,this,
+                         [this](){finishPlipLearning();});
         m_5asLiveTimer=new QTimer(this);
         m_5asLiveTimer->setObjectName(QStringLiteral("lucas5asLiveTimer"));
         m_5asLiveTimer->setInterval(1000);
         QObject::connect(m_5asLiveTimer,&QTimer::timeout,this,
                          [this](){
             if((m_5asLiveActive || m_plipMonitoring) &&
-               m_5asConnected && !m_5asBusy)read5As();
+               m_5asConnected && !m_5asBusy && !m_plipLearning)read5As();
         });
         m_5asThread.start();
 
@@ -318,6 +347,9 @@ public:
         m_plipIntro->setText(I18n::text(16942));
         m_plipWarning->setText(I18n::text(16954));
         m_plipReset->setText(I18n::text(16945));
+        m_plipLearnStart->setText(I18n::text(16960));
+        m_plipLearnStop->setText(I18n::text(16961));
+        setPlipLearningStatus(m_plipLearningStatusKey);
         setPlipStatus(m_plipStatusKey);
         showPlipTable();
         updatePlipButtons();
@@ -357,7 +389,8 @@ public:
         }
         for(QLabel *label:{m_status,m_portLabel,m_rawLabel,m_cableNote,
                            m_5asStatus,m_5asPortLabel,m_5asCableNote,
-                           m_plipIntro,m_plipStatus,m_plipLastEvent,m_plipWarning})
+                           m_plipIntro,m_plipStatus,m_plipLastEvent,m_plipWarning,
+                           m_plipLearningStatus})
             label->setStyleSheet(
                 QStringLiteral("color:%1;background:transparent;border:0;")
                     .arg(label==m_status || label==m_5asStatus?foreground:muted));
@@ -373,7 +406,8 @@ public:
         for(QPushButton *button:{m_connect,m_disconnect,m_read,m_clear,
                                   m_5asConnect,m_5asDisconnect,m_5asRead,m_5asLive,
                                    m_5asHorn,m_5asLed,m_5asHazards,m_5asSaveLog,
-                                   m_plipControl,m_plipReset})
+                                   m_plipControl,m_plipReset,
+                                   m_plipLearnStart,m_plipLearnStop})
             button->setStyleSheet(buttonStyle);
         for(QPushButton *button:m_cableHelpButtons)
             button->setStyleSheet(buttonStyle);
@@ -507,6 +541,31 @@ private:
         m_plipWarning->setObjectName(QStringLiteral("lucas5asPlipWarning"));
         m_plipWarning->setWordWrap(true);
         root->addWidget(m_plipWarning);
+
+        QHBoxLayout *learningControls=new QHBoxLayout;
+        learningControls->setSpacing(5);
+        m_plipLearnStart=new QPushButton(parent);
+        m_plipLearnStart->setObjectName(QStringLiteral("lucas5asPlipLearnStartButton"));
+        m_plipLearnStop=new QPushButton(parent);
+        m_plipLearnStop->setObjectName(QStringLiteral("lucas5asPlipLearnStopButton"));
+        for(QPushButton *button:{m_plipLearnStart,m_plipLearnStop}){
+            button->setMinimumHeight(32);
+            button->setMinimumWidth(0);
+            button->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+            learningControls->addWidget(button,1);
+        }
+        root->addLayout(learningControls);
+
+        m_plipLearningStatus=new QLabel(parent);
+        m_plipLearningStatus->setObjectName(QStringLiteral("lucas5asPlipLearningStatus"));
+        m_plipLearningStatus->setWordWrap(true);
+        root->addWidget(m_plipLearningStatus);
+    }
+
+    void setPlipLearningStatus(int key)
+    {
+        m_plipLearningStatusKey=key;
+        m_plipLearningStatus->setText(I18n::text(key));
     }
 
     void setPlipStatus(int key)
@@ -541,15 +600,21 @@ private:
     void updatePlipButtons()
     {
         m_plipControl->setText(I18n::text(m_plipMonitoring?16944:16943));
-        m_plipControl->setEnabled(m_plipMonitoring ||
-                                  (!m_plipPendingConnect && !m_5asBusy));
+        m_plipControl->setEnabled(!m_plipLearning &&
+                                  (m_plipMonitoring ||
+                                   (!m_plipPendingConnect && !m_5asBusy)));
         m_plipReset->setEnabled(!m_plipPendingConnect);
+        m_plipLearnStart->setEnabled(m_5asConnected && !m_5asBusy &&
+                                     !m_plipLearning && !m_plipLearningPending);
+        m_plipLearnStop->setEnabled(m_5asConnected && !m_5asBusy &&
+                                    m_plipLearning && !m_plipLearningPending);
     }
 
     void sync5AsPolling()
     {
         if(!m_5asLiveTimer)return;
-        if(m_5asConnected && (m_5asLiveActive || m_plipMonitoring))
+        if(m_5asConnected && !m_plipLearning &&
+           (m_5asLiveActive || m_plipMonitoring))
             m_5asLiveTimer->start();
         else
             m_5asLiveTimer->stop();
@@ -586,7 +651,7 @@ private:
             updatePlipButtons();
             return;
         }
-        if(m_plipPendingConnect || m_5asBusy)return;
+        if(m_plipPendingConnect || m_5asBusy || m_plipLearning)return;
         resetPlipObservations();
         if(!m_5asConnected){
             m_plipPendingConnect=true;
@@ -600,6 +665,41 @@ private:
         sync5AsPolling();
         updatePlipButtons();
         read5As();
+    }
+
+    void startPlipLearning()
+    {
+        if(!m_5asConnected || m_5asBusy || m_plipLearning ||
+           m_plipLearningPending)return;
+        // Explain that previous remotes may be lost and make Cancel default.
+        QMessageBox confirmation(QMessageBox::Warning,I18n::text(16964),
+                                 I18n::text(16963),
+                                 QMessageBox::Ok|QMessageBox::Cancel,this);
+        confirmation.setDefaultButton(QMessageBox::Cancel);
+        confirmation.button(QMessageBox::Ok)->setText(I18n::text(16965));
+        confirmation.button(QMessageBox::Cancel)->setText(I18n::text(16966));
+        if(confirmation.exec()!=QMessageBox::Ok)return;
+        m_5asLiveActive=false;
+        m_plipMonitoring=false;
+        sync5AsPolling();
+        m_plipLearningPending=true;
+        m_plipLearningActionStart=true;
+        m_5asBusy=true;
+        update5AsButtons();
+        QMetaObject::invokeMethod(m_5asWorker,"startFobLearning",
+                                  Qt::QueuedConnection);
+    }
+
+    void finishPlipLearning()
+    {
+        if(!m_5asConnected || m_5asBusy || !m_plipLearning ||
+           m_plipLearningPending)return;
+        m_plipLearningPending=true;
+        m_plipLearningActionStart=false;
+        m_5asBusy=true;
+        update5AsButtons();
+        QMetaObject::invokeMethod(m_5asWorker,"finishFobLearning",
+                                  Qt::QueuedConnection);
     }
 
     void createRc5Panel(QVBoxLayout *root,QWidget *parent)
@@ -772,11 +872,11 @@ private:
     {
         m_5asConnect->setEnabled(!m_5asConnected && !m_5asBusy);
         m_5asDisconnect->setEnabled(m_5asConnected || m_5asBusy);
-        m_5asRead->setEnabled(m_5asConnected && !m_5asBusy);
-        m_5asLive->setEnabled(m_5asConnected);
+        m_5asRead->setEnabled(m_5asConnected && !m_5asBusy && !m_plipLearning);
+        m_5asLive->setEnabled(m_5asConnected && !m_plipLearning);
         m_5asLive->setText(I18n::text(m_5asLiveActive?16941:16940));
         for(QPushButton *button:{m_5asHorn,m_5asLed,m_5asHazards})
-            button->setEnabled(m_5asConnected && !m_5asBusy);
+            button->setEnabled(m_5asConnected && !m_5asBusy && !m_plipLearning);
         m_5asSaveLog->setEnabled(!m_5asTrace->toPlainText().isEmpty());
         updatePlipButtons();
     }
@@ -851,7 +951,7 @@ private:
     }
     void read5As()
     {
-        if(!m_5asConnected || m_5asBusy)return;
+        if(!m_5asConnected || m_5asBusy || m_plipLearning)return;
         m_5asBusy=true;
         set5AsStatus(16903);
         update5AsButtons();
@@ -861,7 +961,7 @@ private:
 
     void toggle5AsLive()
     {
-        if(!m_5asConnected)return;
+        if(!m_5asConnected || m_plipLearning)return;
         m_5asLiveActive=!m_5asLiveActive;
         sync5AsPolling();
         if(m_5asLiveActive && !m_5asBusy)read5As();
@@ -870,7 +970,7 @@ private:
 
     void test5AsOutput(int output)
     {
-        if(!m_5asConnected || m_5asBusy ||
+        if(!m_5asConnected || m_5asBusy || m_plipLearning ||
            (output!=8 && output!=9 && output!=13))return;
         // This physical output may operate audible or visible vehicle
         // equipment. Explain the consequence and require an affirmative
@@ -1050,10 +1150,13 @@ private:
     bool m_5asBusy=false;
     bool m_5asCancelRequested=false;
     bool m_5asLiveActive=false;
-    // PLIP samples share the existing 5AS diagnostic worker. Never write keys.
+    // PLIP monitor and confirmed learning share the existing 5AS worker.
     Lucas5AsPlip::Monitor m_plipTracker;
     QPushButton *m_plipControl=nullptr;
     QPushButton *m_plipReset=nullptr;
+    QPushButton *m_plipLearnStart=nullptr;
+    QPushButton *m_plipLearnStop=nullptr;
+    QLabel *m_plipLearningStatus=nullptr;
     QLabel *m_plipIntro=nullptr;
     QLabel *m_plipStatus=nullptr;
     QLabel *m_plipLastEvent=nullptr;
@@ -1061,7 +1164,11 @@ private:
     QTableWidget *m_plipTable=nullptr;
     QString m_plipLastSlots,m_plipLastTime;
     int m_plipStatusKey=16946;
+    int m_plipLearningStatusKey=16962;
     bool m_plipMonitoring=false;
     bool m_plipPendingConnect=false;
+    bool m_plipLearning=false;
+    bool m_plipLearningPending=false;
+    bool m_plipLearningActionStart=false;
 };
 #endif // OTHERCONTROLUNITSTAB_H
