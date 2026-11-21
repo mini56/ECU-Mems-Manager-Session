@@ -161,6 +161,8 @@ small{color:#aebcc5}
 <h2 id="chapter-18">18. Familias ECU admitidas</h2>
 <p>SESSION admite Rover MEMS <b>1.2, 1.3 y 1.6</b> mediante ROSCO, <b>MEMS 1.9</b> mediante inicialización K-Line y <b>MEMS 2J y MEMS 3</b> mediante protocolos K-Line independientes. La familia se identifica por la respuesta correcta de la ECU tras pulsar <b>Conectar</b>. Las medidas y operaciones dependen de la sesión establecida; los ajustes ROSCO no se envían a MEMS 2J/3. Quedan pendientes las pruebas con ECU reales.</p>
 
+<div class="tip"><b>Inmovilizador Lucas 5AS:</b> en <b>Otros calculadores</b>, pulse <b>Conectar</b> y después <b>Leer estados</b> o <b>Seguimiento en directo</b>. Las pruebas del claxon, LED y luces de emergencia piden una confirmación que explica su efecto. Puede guardar el registro. Falta validar el hardware; la programación de mandos aún no está disponible.</div>
+
 <h2 id="chapter-19">19. Guía básica de diagnóstico</h2>
 <p>Sin comunicación: comprobar contacto, puerto, cable, alimentación y masas de la ECU. MAP anómalo: comprobar manguera de vacío, colector y sensor. Ralentí inestable: revisar interruptor, IAC, fugas, temperatura y correcciones de combustible. Fallo lambda: comprobar calentamiento, cableado, tensión y bucle cerrado. Bobina: comprobar batería, primario y conexiones.</p>
 
