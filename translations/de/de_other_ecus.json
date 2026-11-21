@@ -86,5 +86,22 @@
   "16920": "Parameter",
   "16921": "Wert",
   "16922": "Diagnoseverkehr TX/RX",
-  "16923": "Passendes Lucas-5AS-Kabel erforderlich. Rohwerte 00/80 bedeuten nicht automatisch offen/geschlossen."
+  "16923": "Passendes Lucas-5AS-Kabel erforderlich. Rohwerte 00/80 bedeuten nicht automatisch offen/geschlossen.",
+  "16924": "Hupe testen",
+  "16925": "LED testen",
+  "16926": "Warnblinker testen",
+  "16927": "Test- und Stoppbefehl gesendet. Wirkung am Fahrzeug nicht bestätigt.",
+  "16928": "Test unterbrochen oder Übertragung unvollständig. Ausgangszustand prüfen.",
+  "16929": "Bestätigung — Lucas-5AS-Ausgangstest",
+  "16930": "Die Fahrzeughupe kann ertönen. Manager aktiviert sie kurz und sendet anschließend einen Stoppbefehl; ohne Hardwaretest ist das Abschalten nicht garantiert. Test starten?",
+  "16931": "Die Wegfahrsperren-LED kann aufleuchten. Manager aktiviert sie kurz und sendet anschließend einen Stoppbefehl; das Abschalten ist nicht hardwaregeprüft. Test starten?",
+  "16932": "Die Warnblinkanlage kann bei 5AS-Geräten mit diesem Ausgang aufleuchten. Manager aktiviert sie kurz und sendet danach einen Stoppbefehl; das Abschalten ist nicht hardwaregeprüft. Test starten?",
+  "16933": "Test starten",
+  "16934": "Abbrechen",
+  "16935": "Diagnoseprotokoll speichern",
+  "16936": "Lucas-5AS-Protokoll (*.log)",
+  "16937": "Protokoll gespeichert: %1",
+  "16938": "Protokoll konnte nicht gespeichert werden",
+  "16940": "Live-Überwachung",
+  "16941": "Überwachung stoppen"
 }
