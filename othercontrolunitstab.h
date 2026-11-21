@@ -11,6 +11,7 @@
 #include <QLabel>
 #include <QMetaObject>
 #include <QPushButton>
+#include <QResizeEvent>
 #include <QSerialPortInfo>
 #include <QSizePolicy>
 #include <QString>
@@ -231,6 +232,28 @@ public:
                            "QHeaderView::section{background:%1;color:%4;"
                            "border:0;border-bottom:1px solid %3;padding:3px;}")
                 .arg(surface,foreground,border,highlight));
+    }
+
+protected:
+    void resizeEvent(QResizeEvent *event) override
+    {
+        QWidget::resizeEvent(event);
+        // The RC5 table has a much larger size hint than the two reserved
+        // workspaces. The original equal stretch alone did not create equal
+        // widths; assign exactly one third to each independent column.
+        QHBoxLayout *columns=qobject_cast<QHBoxLayout*>(layout());
+        if(!columns)return;
+        int left=0,top=0,right=0,bottom=0;
+        columns->getContentsMargins(&left,&top,&right,&bottom);
+        const int usable=qMax(0,width()-left-right-2*columns->spacing());
+        const int third=usable/3;
+        for(int i=0;i<3;++i){
+            if(!m_panels[i])continue;
+            const int target=third+(i==2?usable-3*third:0);
+            if(m_panels[i]->minimumWidth()!=target ||
+               m_panels[i]->maximumWidth()!=target)
+                m_panels[i]->setFixedWidth(target);
+        }
     }
 
 private:
