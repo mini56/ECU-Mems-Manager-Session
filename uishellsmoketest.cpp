@@ -998,7 +998,7 @@ bool verifyUi(MainWindow &window)
         }
     }
 
-    if (ok) qInfo().noquote() << SESSION_UI_SMOKE_PASS 16 native pages, bidirectional navigation, "
+    if (ok) qInfo().noquote() << "SESSION_UI_SMOKE_PASS 16 native pages, bidirectional navigation, "
                                "five window sizes, light/dark theme switching, Help and Options, "
                                "approved visual style, all six interface languages, MEMS/Settings/ROSCO, dwell 0-5ms";
     return ok;
