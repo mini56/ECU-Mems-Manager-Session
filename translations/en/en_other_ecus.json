@@ -86,5 +86,22 @@
   "16920": "Parameter",
   "16921": "Value",
   "16922": "Diagnostic TX/RX traffic",
-  "16923": "Compatible Lucas 5AS cable required. Raw 00/80 values do not imply open/closed."
+  "16923": "Compatible Lucas 5AS cable required. Raw 00/80 values do not imply open/closed.",
+  "16924": "Test horn",
+  "16925": "Test LED",
+  "16926": "Test hazards",
+  "16927": "Test and stop commands sent. Physical result unverified.",
+  "16928": "Test interrupted or transmission incomplete. Check output state.",
+  "16929": "Confirm — Lucas 5AS output test",
+  "16930": "The vehicle horn may sound. Manager briefly activates it and sends a stop command, but a physical stop cannot be guaranteed without hardware testing. Run this test?",
+  "16931": "The immobiliser LED may illuminate. Manager briefly activates it and sends a stop command, but a physical stop cannot be guaranteed without hardware testing. Run this test?",
+  "16932": "The hazard lights may flash on 5AS modules with this output. Manager briefly activates the output and then sends a stop command; the physical stop is not yet hardware-verified. Run this test?",
+  "16933": "Run test",
+  "16934": "Cancel",
+  "16935": "Save diagnostic log",
+  "16936": "Lucas 5AS log (*.log)",
+  "16937": "Log saved: %1",
+  "16938": "Cannot save log",
+  "16940": "Live monitoring",
+  "16941": "Stop monitoring"
 }
