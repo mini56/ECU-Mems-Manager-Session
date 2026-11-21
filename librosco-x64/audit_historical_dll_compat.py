@@ -19,12 +19,39 @@ ORIGINAL_22 = {
     "mems_heartbeat": 0xF4,
 }
 ORIGINAL_45 = {
-    "mems_reset_ECU": 0xAF,
-    "mems_reset_ADJ": 0xFA,
-    "mems_reset_EMI": 0x0F,
+    # All original one-byte named actuator/tuning commands, verified directly
+    # in the published LeopoldG x86 machine-code entrypoints, not the header.
+    "mems_Boost_Valve_Off": 0x0B,
+    "mems_Boost_Valve_On": 0x1B,
+    "mems_CloseIAC": 0xFE,
+    "mems_Fan1_Off": 0x0D,
+    "mems_Fan1_On": 0x1D,
+    "mems_Fan2_Off": 0x0E,
+    "mems_Fan2_On": 0x1E,
+    "mems_O2Heater_Off": 0x09,
+    "mems_O2Heater_On": 0x19,
+    "mems_OpenIAC": 0xFD,
+    "mems_Purge_Valve_Off": 0x08,
+    "mems_Purge_Valve_On": 0x18,
     "mems_Save": 0x81,
     "mems_clear_faults": 0xCC,
+    "mems_fuel_trim_minus": 0x7A,
+    "mems_fuel_trim_plus": 0x79,
     "mems_heartbeat": 0xF4,
+    "mems_idle_decay_minus": 0x8A,
+    "mems_idle_decay_plus": 0x89,
+    "mems_idle_speed_minus": 0x92,
+    "mems_idle_speed_plus": 0x91,
+    "mems_ignition_advance_minus": 0x94,
+    "mems_ignition_advance_plus": 0x93,
+    "mems_reset_ADJ": 0xFA,
+    "mems_reset_ECU": 0xAF,
+    "mems_reset_EMI": 0x0F,
+    "mems_move_iac": 0xFB,
+    "mems_read_iac_position": 0xFB,
+    "mems_read": 0x80,
+    "mems_read_raw": 0x80,
+    "mems_init_link": 0xCA,
 }
 
 
@@ -187,12 +214,23 @@ def main():
         "Manager STILL imports the old incompatible librosco.dll")
     dll_imports = manager.imports.get("mems_manager_x64.dll")
     assert dll_imports, "Manager executable does not import mems_manager_x64.dll"
-    assert all(kind == "name" for kind, _ in dll_imports), (
-        "Manager uses dangerous ordinal-only DLL imports")
-    imported_names = {name for _, name in dll_imports}
+    # MSVC may legitimately import by ordinal when linking to a .def file.
+    # The new x64 Manager is compiled against the new import library, so an
+    # ordinal is valid only if it resolves to the EXPECTED rebuilt export.
+    # Never compare an old 32-bit ordinal with a new x64 one numerically.
+    new_by_ordinal = {ordinal: name for name, (ordinal, _) in rebuilt.exports.items()}
+    assert_equal(len(new_by_ordinal), 53, "new DLL unique export ordinals")
+    resolved_imports = set()
+    for kind, value in dll_imports:
+        if kind == "name":
+            assert value in rebuilt.exports, f"Manager import name absent in DLL: {value}"
+            resolved_imports.add(value)
+        else:
+            assert value in new_by_ordinal, f"Manager imports unknown new DLL ordinal: {value}"
+            resolved_imports.add(new_by_ordinal[value])
     for symbol in ("mems_connect", "mems_init_link", "mems_read",
                    "mems_reset_ADJ", "mems_reset_EMI", "mems_disconnect"):
-        assert symbol in imported_names, f"Manager missing import {symbol}"
+        assert symbol in resolved_imports, f"Manager missing resolved import {symbol}"
 
     # The normal Manager UI must keep its own old semantics. The other 45
     # LeopoldG original names/commands remain exported in the DLL itself.
@@ -212,7 +250,7 @@ def main():
 
     print("HISTORICAL_DLL_BINARY_COMPARE_PASS: old Manager 22 exports, LeopoldG 45, new x64 53")
     print("HISTORICAL_COMMANDS_PASS: old Manager ECU=FA, adjustments=0F; LeopoldG ECU=AF, ADJ=FA, EMI=0F, Save=81")
-    print("MANAGER_IMPORTS_PASS: new DLL imports by name, no old 32-bit librosco.dll")
+    print("MANAGER_IMPORTS_PASS: new DLL imports resolve to correct names/ordinals, no x86 librosco.dll")
     print("MANAGER_COMMAND_ROUTING_PASS: original Manager semantics preserved for ROSCO and K-Line 1.9")
     print("NOTE: no real ECU was connected; write/reset behaviour is not verified on hardware")
 
