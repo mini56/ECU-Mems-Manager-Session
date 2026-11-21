@@ -7,5 +7,5 @@
   "6205": "Pour leurs travaux antérieurs sur les outils de lecture et de diagnostic des calculateurs Rover MEMS.",
   "6206": "à tester",
   "6207": "MEMS 2J et MEMS 3 : lecture des mesures et des défauts moteur ; effacement des défauts uniquement sur demande. Les fonctions expérimentales de calibration et d'antidémarrage ne sont pas activées. Tests sur calculateur réel encore nécessaires.",
-  "6208": "Lucas 5AS (essais sur boîtier réel à effectuer) : identification et états en direct, tests brefs du klaxon, du voyant et des feux de détresse avec confirmation préalable, enregistrement du journal. Aucune modification EEPROM ni programmation de télécommande dans cette version."
+  "6208": "Lucas 5AS : diagnostic en direct et tests de sorties avec confirmation. Validation sur boîtier réel à effectuer."
 }
