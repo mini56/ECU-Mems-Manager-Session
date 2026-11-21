@@ -191,14 +191,46 @@ bool verifyUi(MainWindow &window)
     ok=check(otherPage && rc5Panel && immobiliserPanel && keysPanel,
              "Other ECUs must have three independent columns") && ok;
     if(otherPage){
-        ok=check(otherPage->findChildren<QPushButton*>().isEmpty(),
-                 "Unfinished modules must not have active buttons") && ok;
+        // RC5 has exactly four real user actions; the other two workspaces
+        // remain passive placeholders with no diagnostic or key commands.
+        const QList<QPushButton*> actions=otherPage->findChildren<QPushButton*>();
+        ok=check(actions.size()==4,
+                 "RC5 must expose exactly four actions, no 5AS or key buttons") && ok;
+        const char *const ids[]={
+            "rc5ConnectButton","rc5DisconnectButton",
+            "rc5ReadFaultsButton","rc5ClearFaultsButton"
+        };
+        for(int i=0;i<4;++i)
+            ok=check(otherPage->findChild<QPushButton*>(QString::fromLatin1(ids[i]))
+                     !=nullptr,"Required RC5 action missing") && ok;
+        QPushButton *connectAction=otherPage->findChild<QPushButton*>(
+            QStringLiteral("rc5ConnectButton"));
+        QPushButton *disconnectAction=otherPage->findChild<QPushButton*>(
+            QStringLiteral("rc5DisconnectButton"));
+        QPushButton *readAction=otherPage->findChild<QPushButton*>(
+            QStringLiteral("rc5ReadFaultsButton"));
+        QPushButton *clearAction=otherPage->findChild<QPushButton*>(
+            QStringLiteral("rc5ClearFaultsButton"));
+        ok=check(connectAction && connectAction->isEnabled() &&
+                 disconnectAction && !disconnectAction->isEnabled() &&
+                 readAction && !readAction->isEnabled() &&
+                 clearAction && !clearAction->isEnabled(),
+                 "RC5 must start disconnected with no automatic ECU command") && ok;
+        QTableWidget *faultGrid=otherPage->findChild<QTableWidget*>(
+            QStringLiteral("rc5FaultsTable"));
+        ok=check(faultGrid && faultGrid->columnCount()==3 &&
+                 faultGrid->rowCount()==0,
+                 "RC5 DTC table must start empty with three columns") && ok;
         for(QFrame *panel:{rc5Panel,immobiliserPanel,keysPanel}){
             if(panel)
                 ok=check(panel->parentWidget()==otherPage &&
                          panel->sizePolicy().horizontalPolicy()==QSizePolicy::Expanding,
                          "Module must occupy a flexible column") && ok;
         }
+        for(QFrame *panel:{immobiliserPanel,keysPanel})
+            if(panel)
+                ok=check(panel->findChildren<QPushButton*>().isEmpty(),
+                         "Unfinished immobiliser and key columns must have no commands") && ok;
     }
 
     // The update action is a footer control, immediately after the footer
@@ -709,6 +741,24 @@ bool verifyUi(MainWindow &window)
             ok=check(heading && heading->text()==I18n::text(16801+i),
                      "Other ECU column title is not translated") && ok;
         }
+        const char *const actionNames[]={
+            "rc5ConnectButton","rc5DisconnectButton",
+            "rc5ReadFaultsButton","rc5ClearFaultsButton"
+        };
+        for(int i=0;i<4;++i){
+            QPushButton *button=window.findChild<QPushButton*>(
+                QString::fromLatin1(actionNames[i]));
+            ok=check(button && button->text()==I18n::text(16805+i),
+                     "RC5 button must follow the six selected languages") && ok;
+        }
+        QTableWidget *rc5Table=window.findChild<QTableWidget*>(
+            QStringLiteral("rc5FaultsTable"));
+        if(rc5Table)
+            for(int col=0;col<3;++col)
+                ok=check(rc5Table->horizontalHeaderItem(col) &&
+                         rc5Table->horizontalHeaderItem(col)->text()==
+                            I18n::text(16820+col),
+                         "RC5 DTC headings must follow selected language") && ok;
     }
 
     // Test the actual installed MainWindow Analysis page, NOT a separate
