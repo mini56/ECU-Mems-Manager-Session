@@ -156,6 +156,12 @@ class PE:
         # Both originals used the x86 instruction:
         # C7 44 24 04 xx 00 00 00 (mov dword [esp+4], command).
         first = self.data[start:start + 120]
+        # LeopoldG's link initializer loads its first byte CA with MOV byte
+        # (C6 44 24 3A CA), unlike its one-byte command wrappers (C7).
+        if symbol == "mems_init_link":
+            self.check(b"\xc6\x44\x24\x3a\xca" in first,
+                       "LeopoldG init must begin with 0xCA")
+            return 0xCA
         candidates = re.findall(rb"\xc7\x44\x24\x04(.)\x00\x00\x00", first)
         candidates = [v[0] for v in candidates if v[0] != 0xff]
         self.check(len(candidates) >= 1, f"{symbol} lacks x86 command immediate")
