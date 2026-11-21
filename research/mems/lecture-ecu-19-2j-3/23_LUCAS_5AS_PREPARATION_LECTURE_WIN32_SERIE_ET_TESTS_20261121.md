@@ -153,3 +153,15 @@ Implémentation à isoler dans une **session/worker Lucas 5AS**, avec QThread et
 - Aucune modification des bases documentaires ni des Releases publiques de mise à jour.
 
 **Conclusion :** le principe de réveil et le parseur de lecture normal sont identifiés et enregistrés, avec une base de tests à exécuter lors du prochain build. **L'étape suivante est le vrai transport série 5AS**, une fois son échange de confirmation recherché ou ses hypothèses explicitement soumises au test matériel.
+
+## Complément de recherche — Vérification directe de RoverMEMS après `55 83 76` (21/11/2026)
+
+Après consultation des deux sources publiées par James Portman :
+- **Documentation 5AS** : `https://github.com/james-portman/rover-mems-documentation/blob/master/Immobiliser/5AS/diagnostics%20and%20configuring.md`. Elle précise l'initialisation `1C`, la réponse `55 83 76`, la commande de lecture `83` et la fin de session `F6`, mais **ne décrit pas un acquittement PC obligatoire ni ses délais après les trois octets de réveil**.
+- **Nouveau dépôt découvert** : `https://github.com/james-portman/5as/blob/master/5as.py`. Ce script Python simule une **réponse côté boîtier 5AS**, et non une connexion client PC. Il attend deux caractères zéro associés à des BREAK, puis le code indique une pause de **309 ms**, un envoi `55`, **7 ms**, `83`, **7 ms**, `76`. Ensuite il se contente d'afficher les octets reçus, sans implémenter la suite du handshake ni une réponse à `83`.
+- **Limite du script** : `readint()` renvoie un entier via `int.from_bytes()`, mais la condition de détection compare cet entier à `b'\\x00'` (objet bytes). Ainsi, en Python 3, `0 == b'\\x00'` est faux : le script publié est **un brouillon non opérationnel tel quel** pour le réveil attendu. Il donne des indications de timing, **pas une preuve que le dialogue est complet**.
+- **Application web 5AS** : `https://rovermems.com/5as/application.html` expose des commandes et des champs en lecture, mais pas une transcription séquentielle chronométrée du protocole entre `55 83 76` et `83`.
+- Le dépôt `james-portman/rover-mems-agent` consulté ne contient pas de pilote hôte `ecu-5as.go`. Il publie les protocoles moteur et RC5.
+
+**Conclusion : RoverMEMS commente une partie de la suite (notamment la lecture `83`) mais les étapes intermédiaires et un éventuel acquittement restent non démontrés dans les sources ouvertes. Ne pas transformer par supposition le schéma ISO9141 du MEMS 1.9 en protocole 5AS validé.** Ce complément est uniquement documentaire : aucun changement de code, ni RUN.
+
