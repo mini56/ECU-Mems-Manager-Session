@@ -432,6 +432,26 @@ static void rebuildAdjustArea(QWidget *page,QFrame *adjust)
     grid->setColumnStretch(3,0);
     grid->setColumnStretch(4,0);
 
+    // The fifth control is an IAC motor adjustment, NOT a second actuator test
+    // implementation. It invokes the same one-step commands as Actionneurs.
+    QLabel *iacLabel=new QLabel(I18n::text(7153),form);
+    iacLabel->setObjectName(QStringLiteral("settingsIacPositionLabel"));
+    QPushButton *iacMinus=new QPushButton(I18n::text(7154),form);
+    iacMinus->setObjectName(QStringLiteral("settingsIacMinusButton"));
+    QPushButton *iacPlus=new QPushButton(I18n::text(7155),form);
+    iacPlus->setObjectName(QStringLiteral("settingsIacPlusButton"));
+    QLCDNumber *iacLcd=new QLCDNumber(form);
+    iacLcd->setObjectName(QStringLiteral("settingsIacPositionLcd"));
+    iacLcd->display(0);
+    iacMinus->setEnabled(false);
+    iacPlus->setEnabled(false);
+    QObject::connect(iacMinus,&QPushButton::clicked,page,[page](){
+        QMetaObject::invokeMethod(page->window(),"onSettingsIacMinus",Qt::DirectConnection);
+    });
+    QObject::connect(iacPlus,&QPushButton::clicked,page,[page](){
+        QMetaObject::invokeMethod(page->window(),"onSettingsIacPlus",Qt::DirectConnection);
+    });
+
     struct Row {
         QLabel *label;
         QPushButton *minus;
@@ -443,10 +463,11 @@ static void rebuildAdjustArea(QWidget *page,QFrame *adjust)
         {fuelLabel,fuelMinus,fuelLcd,"%",fuelPlus},
         {hotLabel,hotMinus,hotLcd,"pas",hotPlus},
         {rpmLabel,rpmMinus,rpmLcd,"pas",rpmPlus},
-        {ignLabel,ignMinus,ignLcd,"°",ignPlus}
+        {ignLabel,ignMinus,ignLcd,"°",ignPlus},
+        {iacLabel,iacMinus,iacLcd,"pas",iacPlus}
     };
 
-    for(int row=0;row<4;row++) {
+    for(int row=0;row<5;row++) {
         if(rows[row].label) {
             rows[row].label->setParent(form);
             rows[row].label->setMinimumWidth(210);
@@ -493,6 +514,16 @@ static void rebuildAdjustArea(QWidget *page,QFrame *adjust)
     QHBoxLayout *resets=new QHBoxLayout;
     resets->setContentsMargins(0,0,0,0);
     resets->addStretch(1);
+    // The original ROSCO 0x81 save command is separate from either reset.
+    QPushButton *save=new QPushButton(I18n::text(7156),adjust);
+    save->setObjectName(QStringLiteral("settingsSaveAdjustmentsButton"));
+    save->setMinimumHeight(34);
+    save->setMaximumHeight(38);
+    save->setEnabled(false);
+    resets->addWidget(save);
+    QObject::connect(save,&QPushButton::clicked,page,[page](){
+        QMetaObject::invokeMethod(page->window(),"onConfirmSaveAdjustments",Qt::DirectConnection);
+    });
     if(resetAdj) {
         resetAdj->setParent(adjust);
         resetAdj->setMinimumHeight(36);
@@ -570,7 +601,8 @@ static void applySettingsSizing(QWidget *page,QFrame *metrics,QFrame *adjust)
     metrics->setMaximumHeight(QWIDGETSIZE_MAX);
     metrics->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
 
-    // Four control rows remain compact; spare height belongs to the dials.
+    // Five control rows and their Save / reset controls keep their natural
+    // height. Qt gives all remaining space to the dials without scroll.
     const int controlsHeight=qMax(210,adjust->minimumSizeHint().height());
     adjust->setMinimumHeight(controlsHeight);
     adjust->setMaximumHeight(controlsHeight);
