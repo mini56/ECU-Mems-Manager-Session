@@ -156,6 +156,8 @@ small{color:#aebcc5}
 <h2 id="chapter-18">18. Unterstützte ECU-Familien</h2>
 <p>SESSION unterstützt Rover MEMS <b>1.2, 1.3 und 1.6</b> über ROSCO, <b>MEMS 1.9</b> über K-Line-Initialisierung sowie <b>MEMS 2J und MEMS 3</b> über getrennte K-Line-Protokolle. Die Steuergerätefamilie wird anhand einer erfolgreichen Antwort nach <b>Verbinden</b> ermittelt. Messwerte und Befehle hängen von der tatsächlichen Verbindung ab; ROSCO-Einstellbefehle gelten nicht für MEMS 2J/3. Praxistests an echten Steuergeräten stehen aus.</p>
 
+<div class="tip"><b>Lucas-5AS-Wegfahrsperre:</b> unter <b>Weitere Steuergeräte</b> zuerst <b>Verbinden</b>, danach <b>Status lesen</b> oder <b>Live-Überwachung</b> wählen. Tests für Hupe, LED und Warnblinker erfordern eine Bestätigung mit Erklärung. Das Diagnoseprotokoll kann gespeichert werden. Prüfung am echten Gerät steht aus; Fernbedienungen können noch nicht angelernt werden.</div>
+
 <h2 id="chapter-19">19. Grundlegende Diagnosehinweise</h2>
 <p>Keine Verbindung: Zündung, Port, Kabel, ECU-Versorgung und Masse prüfen. MAP auffällig: Unterdruckschlauch, Saugrohr und Sensor prüfen. Unruhiger Leerlauf: Leerlaufschalter, IAC, Nebenluft, Temperatur und Kraftstoffkorrekturen prüfen. Lambdafehler: Heizung, Kabel, Spannung und Regelkreis prüfen. Spule: Batterie, Primärkreis und Kabel prüfen.</p>
 
