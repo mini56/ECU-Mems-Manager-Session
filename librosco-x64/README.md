@@ -38,9 +38,14 @@ Pour contrôler **uniquement** la DLL, sans compiler le programme (résultat qui
 - **4/4 tests CTest validés**, dont l'ABI x64, le contrat d'en-tête Session 197, les trames série simulées et le catalogue protocolaire.
 - **91 exports physiques** avec noms et ordinaux attendus.
 - **Vraie copie de Session 197 compilée avec la nouvelle DLL**, éditions de liens réussies ; **15 imports** résolus et aucune importation de la DLL historique x86.
-- Les tests hors-ligne ne prouvent **ni le comportement réel de toutes les commandes sur les ECU**, ni le démarrage complet du Setup installé, ni l'absence de régressions fonctionnelles dans l'interface utilisateur. Aucune DLL en production ni programme installé n'a été remplacé.
+- **Test réel du programme en mode interface isolée, validé le 22/11/2026 : RUN VERT #45071552369** — [journal GitHub Actions](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/45071552369), commit `34e86cf604db98ee787e8d0cf41f9888b11b730f`.
+  - L'exécutable **Session 197 reconstruit avec notre DLL** a été lancé via son option existante `--session-ui-smoke-test`, en rendu Qt sans écran et dans un profil de test.
+  - `SESSION197_UI_SMOKE_WITH_NEW_DLL_PASS` et trace `Checks PASS` / `Qt event loop returned: 0` dans les logs du runner.
+  - Le test de l'application parcourt les **16 pages**, la navigation, les langues, les thèmes et plusieurs fonctionnalités d'interface / d'analyse hors ECU, y compris les tailles d'écran et la disposition « Autres calculateurs ».
+  - Ce run confirme également **4/4 CTest**, **91 exports**, **15 imports résolus** et liaison avec Session 197.
+- Les tests hors ligne ne prouvent **ni la lecture, la connexion et les effets réels des commandes sur ECU physique**, ni le fonctionnement d'un Setup **installé** avec cette DLL, ni chaque interaction non couverte par le scénario automatique. Aucune DLL en production ni programme installé n'a été remplacé.
 
-**Verdict limité mais réel :** compatibilité **de compilation, de liaison, d'ABI et de tests hors-ligne validée** avec Session 197. La validation sur ECU réel et de l'application installée restent distinctes.
+**Verdict :** compatibilité **de compilation, liaison, ABI et démarrage/test automatisé des 16 pages** validée avec Session 197 dans un environnement isolé. Le test sur ECU réel et celui du programme installé restent à effectuer avant une substitution de la DLL actuelle.
 
 **Règle de protection :** aucun fichier de Session 197, aucun Setup ou dépôt MAJ n'a été modifié. La compilation de test travaille uniquement sur une copie temporaire, sans toucher à la version installée. L'export historique `mems_interactive_mode` est déclaré dans l'en-tête 197 mais reste **non implémenté/non exporté** : il n'est pas appelé par le binaire 197 actuellement ; il ne doit pas être masqué par une fonction factice.
 
