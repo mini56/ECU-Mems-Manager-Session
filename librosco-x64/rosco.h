@@ -253,9 +253,11 @@ ROSCO_API bool mems_read_iac_position(mems_info* info, uint8_t* position);
 ROSCO_API bool mems_move_iac(mems_info* info, uint8_t desired_pos);
 ROSCO_API bool mems_test_actuator(mems_info* info, actuator_cmd cmd, uint8_t* data);
 ROSCO_API bool mems_clear_faults(mems_info* info);
-/* Historic Manager-22 DLL contract: ECU reset=0xFA, adjustments=0x0F.
- * LeopoldG-45 uses 0xAF for an identically named ECU reset. Do not
- * silently change the meaning of Manager's existing ABI.
+/* DECIDED Session contract: 0x0F resets user-adjustable settings,
+ * 0xFA clears computed/learned parameters (UI calls it "Reset ECU").
+ * These are distinct operations, not interchangeable. The separately
+ * named LeopoldG 0xAF action must never be used as a substitute.
+ * Keep all existing DLL names, signatures and ordinals unchanged.
  */
 ROSCO_API bool mems_reset_ECU(mems_info* info); /* Manager: 0xFA */
 ROSCO_API bool mems_reset_ADJ(mems_info* info); /* LeopoldG: 0xFA */
