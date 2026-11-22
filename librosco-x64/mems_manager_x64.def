@@ -57,3 +57,14 @@ EXPORTS
     mems_fuel_trim_2_plus @52
     mems_fuel_trim_2_minus @53
     mems_reset_ECU_leopold @54
+    mems_manager_family_supported @55
+    mems_manager_family_uses_kline19 @56
+    mems_manager_family_init_link @57
+    mems_manager_family_read @58
+    mems_manager_family_read_iac @59
+    mems_manager_family_move_iac @60
+    mems_manager_family_clear_faults @61
+    mems_manager_family_reset_adjustments @62
+    mems_manager_family_reset_ecu @63
+    mems_manager_family_save_adjustments @64
+    mems_manager_family_actuator @65
