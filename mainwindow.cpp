@@ -20,6 +20,7 @@
 #include "overviewramlive.h"
 #include "injectionramtestui.h"
 #include "nativewindowstyle.h"
+#include "sessioninformationmessage.h"
 #include "uishell.h"
 #include "applicationvisualstyle.h"
 #include "ui_mainwindow.h"
@@ -1528,7 +1529,7 @@ void MainWindow::onEditOptionsClicked()
 
     if (m_options->getLanguageChanged())
     {
-      QMessageBox::information(this, I18n::text(7048) /* EN: Language */,
+      SessionInformationMessage::information(this, I18n::text(7048) /* EN: Language */,
                                I18n::text(7049) /* EN: The language has been changed. The software will restart to apply the complete translation. */);
       QProcess::startDetached(QCoreApplication::applicationFilePath(), QCoreApplication::arguments());
       qApp->quit();

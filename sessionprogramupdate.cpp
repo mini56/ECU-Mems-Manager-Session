@@ -1,4 +1,5 @@
 #include "sessionprogramupdate.h"
+#include "sessioninformationmessage.h"
 #include "database/MemsDocumentaryWindowsTransport.h"
 #include "i18n.h"
 #include <QAction>
@@ -80,7 +81,7 @@ SessionProgramUpdate::SessionProgramUpdate(QMainWindow *window)
 }
 void SessionProgramUpdate::tellUser(const QString &message) const
 {
-    if(m_window) QMessageBox::information(
+    if(m_window) SessionInformationMessage::information(
         m_window,I18n::text(17903),message);
 }
 void SessionProgramUpdate::check(bool interactive)

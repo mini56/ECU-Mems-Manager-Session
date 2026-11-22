@@ -5,6 +5,7 @@
 #include "optionsdialog.h"
 #include "styles.h"
 #include "applicationvisualstyle.h"
+#include "sessioninformationmessage.h"
 #include "summarytab.h"
 #include "analysistab.h"
 #include "tooltipbubblemanager.h"
@@ -481,6 +482,38 @@ bool verifyUi(MainWindow &window)
                 qApp->property("ecuDarkTheme").toBool()
                     ?QStringLiteral("#090e13"):QStringLiteral("#ffffff")),
              "Help dialog must be larger and follow the selected theme") && ok;
+
+    // Both actual information-dialog entry points share one Qt visual style.
+    // Check both dark and light palettes without opening a modal window or
+    // triggering an update or language restart.
+    const bool priorInformationDialogTheme=qApp->property("ecuDarkTheme").toBool();
+    for(bool darkInformationDialog : {true,false}){
+        qApp->setProperty("ecuDarkTheme",darkInformationDialog);
+        QMessageBox dialog(QMessageBox::Information,QStringLiteral("Test"),
+                           QStringLiteral("Message"),QMessageBox::Ok,&window);
+        SessionInformationMessage::configure(dialog);
+        const QPixmap iconPixmap=dialog.iconPixmap();
+        int orange=0;
+        if(!iconPixmap.isNull()){
+            const QImage pixels=iconPixmap.toImage().convertToFormat(QImage::Format_ARGB32);
+            for(int y=0;y<pixels.height();++y)
+                for(int x=0;x<pixels.width();++x){
+                    const QColor pixel=pixels.pixelColor(x,y);
+                    if(pixel.alpha()>160 && pixel.red()>220 &&
+                       pixel.green()>90 && pixel.green()<190 &&
+                       pixel.blue()<100) ++orange;
+                }
+        }
+        ok=check(dialog.objectName()==QStringLiteral("sessionInformationMessageBox") &&
+                 dialog.standardButtons()==QMessageBox::Ok &&
+                 dialog.styleSheet().contains(darkInformationDialog
+                     ?QStringLiteral("background:#090e13")
+                     :QStringLiteral("background:#ffffff")) &&
+                 dialog.styleSheet().contains(QStringLiteral("QMessageBox QPushButton{background:#ff")) &&
+                 orange>24,
+                 "Language restart and program update dialogs must use orange Qt icon, button and themed title") && ok;
+    }
+    qApp->setProperty("ecuDarkTheme",priorInformationDialogTheme);
 
     // The actual Help-menu actions must use the native SESSION orange
     // outline icons in both themes, not blue/grey platform QStyle art.
