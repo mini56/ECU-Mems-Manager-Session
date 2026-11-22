@@ -478,9 +478,13 @@ bool mems_clear_faults(mems_info* info)
     return send_command_with_one_byte_reply(info, MEMS_ClearFaults);
 }
 
-/* Original Manager-22 DLL: reset ECU = FA, adjustments = 0F.
- * LeopoldG-45 used AF for a similarly named ECU reset.
- * Keep Manager's existing two ABI entrypoints stable.
+/* FIXED ECU-MEMS-MANAGER-SESSION FUNCTIONAL CONTRACT (2026-11-22):
+ * 0x0F = reset user-adjustable settings (Reset Adjustments).
+ * 0xFA = clear computed/learned ECU parameters (Reset ECU in Manager UI).
+ * These meanings were selected by the user and match the MemsFCR command
+ * mapping. NEVER silently swap them or interpret 0xFA as an ECU reboot.
+ * LeopoldG-45 called 0xAF "Reset ECU"; its distinct command is exported
+ * separately. Preserve the two existing Manager entrypoints and ABI.
  */
 bool mems_reset_ECU(mems_info* info)
 {
