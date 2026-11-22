@@ -90,3 +90,72 @@ La commande LeopoldG `AF` doit rester un export **distinct**, `mems_reset_ECU_le
 - Andrew Revill, service `11` ECU Reset dans l'implémentation ISO 14230 : https://andrewrevill.co.uk/MEMSMapperEU2.htm
 - Andrew Revill, procédure de réinitialisation via ISO 14230 avant retour au protocole Rover/BMW : https://andrewrevill.co.uk/MEMS3SupportNNN100682.htm
 - Andrew Revill, avertissement selon familles : commandes des ECU essence pouvant produire des effets nuisibles sur Td5 : https://andrewrevill.co.uk/MEMS3Td5Emulation.htm
+
+## 7. Enquête ciblée sur le code `0x0F` — sources recoupées le 22/11/2026
+
+**Constat essentiel :** il existe un emploi programmé et explicite de `0x0F` comme **Reset Adjustments**, mais les sources consultées ne contiennent pas de capture avant/après prouvant que cette commande remet effectivement toutes les valeurs prévues à leur défaut sur chaque variante.
+
+### A. Contrôle direct d'un autre logiciel : MemsFCR / Andrew Jackson
+
+L'application `andrewdjackson/memsfcr` (Windows/Mac, prise en charge MEMS 1.6/1.9) référence le moteur `github.com/andrewdjackson/rosco v1.6.3` dans son `go.mod`. C'est **l'implémentation effective**, pas seulement un intitulé de bouton.
+
+Dans `andrewdjackson/rosco/commands.go` :
+
+- `MEMSResetAdj = []byte{0x0F}` — commentaire de l'auteur « clear all adjustments ».
+- `MEMSResetECU = []byte{0xFA}` — commentaire « clear all computed and learnt settings ».
+- **Mais** le *tableau commenté dans ce même fichier* classe aussi `0x0F` dans `STOP Actuator Test` à la ligne « Variable valve timing » et `0x1F` en commande ON, une contradiction déjà présente dans ce projet.
+
+Dans `rosco_status.go`, `ResetAdjustments()` passe bien `MEMSResetAdj` à `updateECUState()`, qui utilise `EcuReader.SendAndReceive()`. Le serveur de `memsfcr/fcr/webserver_rosco_handlers.go` appelle cette fonction depuis `postECUClearAdjustments()`. Le navigateur appelle son API depuis `resources/js/memsfcr.js` (`sendReset('adjustments')`).
+
+Cette chaîne prouve **que le bouton Reset Adjustments émet `0x0F`** dans MemsFCR. Elle **ne prouve pas** l'effet matériel : `rosco_status_test.go` teste seulement que la fonction retourne sans erreur ; il ne relève pas les valeurs des ajustements après la commande. Son environnement `getFixtures()` peut être configuré avec un port série ou avec un simulateur « Memsulator » ; aucune trace matérielle avant/après concernant `0x0F` n'a été retrouvée. Ne pas décrire ces tests comme « exclusivement simulés » ou comme « validés sur ECU ».
+
+La documentation de MemsFCR distingue :
+- **Reset ECU** : remet à zéro les ajustements et valeurs apprises, y compris les corrections carburant court et long terme ;
+- **Reset Adjustments** : remet à zéro les changements manuels des réglages.
+
+L'auteur décrit donc deux opérations différentes, avec `0xFA` et `0x0F` respectivement. C'est une **corroboration documentaire et logicielle forte du choix actuel de Manager**, mais pas une démonstration physique exhaustive.
+
+Sources exactes :
+- https://github.com/andrewdjackson/rosco/blob/master/commands.go
+- https://github.com/andrewdjackson/rosco/blob/master/rosco_status.go
+- https://github.com/andrewdjackson/rosco/blob/master/rosco_status_test.go
+- https://github.com/andrewdjackson/rosco/blob/master/ecureader_mems_test.go
+- https://github.com/andrewdjackson/memsfcr/blob/master/go.mod
+- https://github.com/andrewdjackson/memsfcr/blob/master/fcr/webserver_rosco_handlers.go
+- https://memsfcr.co.uk/2020/06/02/profiling-and-fault-diagnosis/
+
+### B. RoverMEMS / James Portman : le conflit de tableau
+
+La page `https://rovermems.com/diagnostics/technical/` indique que sa liste « MEMS 1.3, 1.6, 1.9 Commands » est **encore en cours de clarification**. Elle liste `0x0F` comme OFF « Variable valve timing » et `0x1F` comme ON, **sans fournir de séquence de réponse constatée pour ces deux commandes**. Le même tableau donne explicitement `0xFA` pour « Clear all adaptations » avec réponse `FA 00`.
+
+Ce tableau ne démontre ni que `0x0F` réalise le même effet sur toutes les variantes, ni que la fonction Reset Adjustments des autres logiciels est forcément erronée. Il peut refléter une différence de famille/firmware ou un catalogue incomplet : **aucune de ces hypothèses n'est établie par la source**.
+
+Le programme Go `james-portman/rover-mems-agent`, dans `ecu-1x-shared.go`, traite `0xCC` comme effacement des défauts ; il **n'apporte pas de transaction avec vérification avant/après** pour `0x0F`.
+
+### C. LeopoldG / MEMS-ROSCO : troisième libellé, même octet
+
+Dans `LeopoldG/sources-mems-rosco/rosco.h` : `MEMS_Reset_EMI=0x0F`, `MEMS_Reset_ADJ=0xFA`, `MEMS_Reset_ECU=0xAF`. Dans `memsinterface.cpp`, le bouton « Reset Emission » déclenche `mems_reset_EMI()`. Les traductions anglaises/françaises `transfile_en.ts` et `transfile_fr.ts` appellent l'action « Reset Emission » / « Réinitialiser Emissions ». Il s'agit de **la nomenclature et des appels du logiciel**, non d'une preuve des valeurs effacées par l'ECU.
+
+En avril 2019, sur le forum MEMS Diagnostics, un utilisateur ayant testé le programme sur un **MKC101600 Rover 620Ti** signale des différences d'actionneurs et **demande précisément quelles commandes correspondent aux boutons de reset ECU et reset émissions**. Son message ne confirme pas les effets physiques de `0x0F` ; il souligne plutôt l'importance de la variante ECU, même quand une autre fonction du programme est opérationnelle :
+https://groups.google.com/g/mems-diagnostics/c/xXYEUSv4Yw4
+
+### D. Trois usages distincts d'un même octet selon le contexte
+
+- **ROSCO normal, applications MemsFCR/Manager** : `0x0F` **appelé** « reset adjustments ».
+- **ROSCO normal, tableau RoverMEMS** : `0x0F` **catalogué** comme arrêt VVT sur variantes concernées.
+- **Mode diagnostic 4** : `0x0F` appartient à la famille `0x00–0x7F` de **lecture mémoire par décalage** ; ce n'est pas du tout une commande de reset. Le bloc de lecture est choisi par `DC xx`.
+
+**Conclusion précise :** niveau **DOCUMENTÉ COMME COMMANDE RESET ADJUSTMENTS** dans plusieurs logiciels, mais **NON CERTIFIÉ COMME EFFET MATÉRIEL UNIVERSEL**. Le sens réel du `0x0F` dépend au minimum du **mode** et potentiellement de la variante ECU, qu'il faut déterminer.
+
+### E. Ce qui constituerait la preuve définitive sur une variante d'ECU
+
+Sans changer le programme ni envoyer de nouvelle commande lors de cet audit :
+
+1. Identifier exactement la famille, le firmware et le mode diagnostic avant toute opération.
+2. Relever les **réglages ajustables** (fuel trim manuel, idle decay, idle speed, ignition advance) avant l'envoi, et distinguer ces réglages des **valeurs adaptatives apprises**.
+3. Vérifier par source constructeur ou banc instrumenté que la commande `0x0F` modifie les **réglages ajustables uniquement** et ne commande pas un autre actionneur sur cette variante.
+4. Lors d'un essai contrôlé et autorisé, enregistrer l'émission `0F`, l'écho, l'acquittement et les quatre réglages **après** la commande, idéalement après un nouveau cycle de communication.
+5. Comparer séparément à `0xFA`, fonction documentée d'effacement des adaptations apprises ; ne pas exécuter les deux d'affilée dans la même vérification, sinon les effets seraient indiscernables.
+
+**Statut opérationnel :** conserver `0x0F` et sa signature **inchangés** pour compatibilité binaire Session ; **ne pas revendiquer un reset physiquement prouvé** avant confirmation par famille et firmware. Ne pas modifier Manager et ne pas ajouter de commande de remplacement à sa place.
+
