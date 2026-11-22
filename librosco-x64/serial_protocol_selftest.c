@@ -201,10 +201,11 @@ int main(void)
     const operation_plain requests[] = {
         {"clear_faults", mems_clear_faults, 0xCC},
         {"reset_ADJ", mems_reset_ADJ, 0xFA},
-        {"reset_ECU", mems_reset_ECU, 0xAF},
+        {"reset_ECU", mems_reset_ECU, 0xFA},
         {"reset_EMI", mems_reset_EMI, 0x0F},
         {"save", mems_Save, 0x81},
-        {"reset_adjustments_alias", mems_reset_adjustments, 0xFA},
+        {"reset_adjustments_alias", mems_reset_adjustments, 0x0F},
+        {"reset_ECU_leopold_explicit", mems_reset_ECU_leopold, 0xAF},
         {"save_adjustments_alias", mems_save_adjustments, 0x81},
         {"heartbeat", mems_heartbeat, 0xF4}
     };
@@ -362,6 +363,7 @@ int main(void)
     CHECK(!mems_reset_ADJ(NULL));
     CHECK(!mems_reset_EMI(NULL));
     CHECK(!mems_reset_ECU(NULL));
+    CHECK(!mems_reset_ECU_leopold(NULL));
     CHECK(!mems_Save(NULL));
     CHECK(!mems_read(NULL, &data));
     CHECK(!mems_read(&info, NULL));
@@ -371,7 +373,7 @@ int main(void)
         return 1;
     }
     printf("SIMULATED_SERIAL_CONTRACT_PASS: 20 historical setting/actuator commands + 2 additive; "
-           "8 clear/reset/save/heartbeat commands; normal & K-Line handshake, frame lengths, "
+           "9 clear/reset/save/heartbeat commands; normal & K-Line handshake, frame lengths, "
            "partial reads, IAC and negative responses\n");
     return 0;
 }
