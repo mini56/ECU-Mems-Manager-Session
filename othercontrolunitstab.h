@@ -499,6 +499,8 @@ private:
         root->addWidget(m_plipIntro);
 
         QHBoxLayout *commands=new QHBoxLayout;
+        // Align the PLIP buttons with the first RC5/5AS command row.
+        commands->setContentsMargins(0,25,0,0);
         commands->setSpacing(5);
         m_plipControl=new QPushButton(parent);
         m_plipControl->setObjectName(QStringLiteral("lucas5asPlipControlButton"));
