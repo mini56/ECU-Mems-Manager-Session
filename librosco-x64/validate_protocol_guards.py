@@ -190,10 +190,10 @@ print("OK: full 0x80 and 0x7D frame-length guards present")
 print("OK: truncated 0x7D frame is rejected")
 print("OK: clear/reset/heartbeat return real command result")
 print("OK: original AF/FA/0F/81 reset/save constants and second fuel trim")
-# Session 197 is the ABI authority.  dll-manager's parent application files
-# are older and MUST NOT be presented as a Session 197 compatibility check.
-reference197 = (root / "reference-session197" / "rosco.h").read_text(encoding="utf-8")
-manager_header = reference197
+# Session 200 is the ABI authority.  dll-manager's parent application files
+# are older and MUST NOT be presented as a Session 200 compatibility check.
+reference200 = (root / "reference-session200" / "rosco.h").read_text(encoding="utf-8")
+manager_header = reference200
 for name, code in {
     "MEMS_ResetECU": "0xFA",
     "MEMS_ResetAdj": "0x0F",
@@ -202,27 +202,27 @@ for name, code in {
     "MEMS_ReqData7D": "0x7D",
 }.items():
     if not re.search(rf"\b{re.escape(name)}\s*=\s*{re.escape(code)}\b", manager_header):
-        raise SystemExit(f"FAIL Session 197 public header: {name} must be {code}")
+        raise SystemExit(f"FAIL Session 200 public header: {name} must be {code}")
 
 manager_declarations = set(re.findall(
     r"\b(?:bool|void|librosco_version|uint8_t|int16_t)\s+(mems_\w+)\s*\(",
     manager_header))
 historical_declared_only = {"mems_interactive_mode"}
 if not historical_declared_only.issubset(manager_declarations):
-    raise SystemExit("FAIL: Session 197 interactive declaration unexpectedly changed")
+    raise SystemExit("FAIL: Session 200 interactive declaration unexpectedly changed")
 missing = (manager_declarations - historical_declared_only) - set(exports)
 if missing:
-    raise SystemExit(f"FAIL: Session 197 declared linked functions absent: {sorted(missing)}")
-print("OK: 38 linked declarations from actual Session 197 header are exported")
+    raise SystemExit(f"FAIL: Session 200 declared linked functions absent: {sorted(missing)}")
+print("OK: 38 linked declarations from actual Session 200 header are exported")
 print("TRACKED: mems_interactive_mode is declared, but not linked or implemented")
 
-# Only call the parent worktree 'Session 197' if it actually matches the
-# exact pinned Session 197 header.  A separate Windows smoke script builds
-# the real Session 197 commit in a throwaway worktree.
+# Only call the parent worktree 'Session 200' if it actually matches the
+# exact pinned Session 200 header.  A separate Windows smoke script builds
+# the real Session 200 commit in a throwaway worktree.
 parent_header_path = root.parent / "rosco.h"
 same_header = (parent_header_path.exists() and
                parent_header_path.read_text(encoding="utf-8").replace("\r\n", "\n") ==
-               reference197.replace("\r\n", "\n"))
+               reference200.replace("\r\n", "\n"))
 if same_header:
     session_dispatch = (root.parent / "memsinterface_dispatch.cpp").read_text(encoding="utf-8")
     for guard in (
@@ -232,11 +232,11 @@ if same_header:
         "::mems_reset_ECU(&m_memsinfo)",
     ):
         if guard not in session_dispatch:
-            raise SystemExit(f"FAIL Session 197 reset dispatch differs: {guard}")
-    print("OK: actual Session 197 dispatcher uses 0F=adjustable and FA=learned")
+            raise SystemExit(f"FAIL Session 200 reset dispatch differs: {guard}")
+    print("OK: actual Session 200 dispatcher uses 0F=adjustable and FA=learned")
 else:
-    print("NOTE: parent checkout is NOT Session 197; only the pinned Session 197 header was checked")
-    print("NOTE: run verify_session197_windows.ps1 to test the real Session 197 app")
+    print("NOTE: parent checkout is NOT Session 200; only the pinned Session 200 header was checked")
+    print("NOTE: run verify_session200_windows.ps1 to test the real Session 200 app")
 
 print("NOTE: static ABI/source checks do not prove a compiled DLL or ECU behavior")
 sys.exit(0)
