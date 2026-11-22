@@ -99,7 +99,44 @@ try {
         '--dll',$ManagerDll.FullName,'--manager',$AppBinary.FullName
     )
     Write-Host 'SESSION197_LINK_AND_PE_IMPORTS_PASS: the real Session 197 links to our new DLL'
-    Write-Host 'NOTE: No actual ECU test and no Manager installed-Setup/UI runtime test was performed.'
+
+    # Run Session 197's existing native UI smoke mode in the isolated worktree.
+    # No installer, production profile, active serial ports or ECU commands.
+    $WinDeployQt = Join-Path $QtPrefix 'bin/windeployqt.exe'
+    if (-not (Test-Path $WinDeployQt)) { throw "Qt runtime deployer missing: $WinDeployQt" }
+    Invoke-Checked $WinDeployQt @('--release','--compiler-runtime','--no-translations',
+                                 '--dir',$AppBinary.DirectoryName,$AppBinary.FullName)
+    $QtOffscreen = Join-Path $QtPrefix 'plugins/platforms/qoffscreen.dll'
+    if (-not (Test-Path $QtOffscreen)) { throw "Qt offscreen plugin missing: $QtOffscreen" }
+    $Platforms = Join-Path $AppBinary.DirectoryName 'platforms'
+    New-Item -ItemType Directory -Force $Platforms | Out-Null
+    Copy-Item -LiteralPath $QtOffscreen -Destination (Join-Path $Platforms 'qoffscreen.dll') -Force
+    $env:QT_QPA_PLATFORM = 'offscreen'
+    $env:QT_OPENGL = 'software'
+    $env:QT_PLUGIN_PATH = $AppBinary.DirectoryName
+    $env:QT_QPA_PLATFORM_PLUGIN_PATH = $Platforms
+    $env:PATH = $AppBinary.DirectoryName + ';' + $env:PATH
+    $Trace = Join-Path $AppBinary.DirectoryName 'session_ui_smoke_trace.log'
+    $Err = Join-Path $AppBinary.DirectoryName 'session_ui_smoke_stderr.log'
+    $Out = Join-Path $AppBinary.DirectoryName 'session_ui_smoke_stdout.log'
+    foreach ($p in @($Trace,$Err,$Out)) {
+        if (Test-Path $p) { Remove-Item -LiteralPath $p -Force }
+    }
+    $Ui = Start-Process -FilePath $AppBinary.FullName -WorkingDirectory $AppBinary.DirectoryName -ArgumentList '--session-ui-smoke-test' -RedirectStandardError $Err -RedirectStandardOutput $Out -PassThru
+    $Completed = $Ui.WaitForExit(300000)
+    foreach ($p in @($Trace,$Err,$Out)) {
+        Write-Host "SESSION197_UI_SMOKE_DIAGNOSTIC: $p"
+        if (Test-Path $p) { Get-Content -LiteralPath $p | Select-Object -Last 110 }
+        else { Write-Host 'Log not created' }
+    }
+    if (-not $Completed) {
+        Stop-Process -Id $Ui.Id -Force -ErrorAction SilentlyContinue
+        throw 'SESSION197_UI_SMOKE_TIMEOUT_300S'
+    }
+    if ($Ui.ExitCode -ne 0) { throw "SESSION197_UI_SMOKE_FAILED exit=$($Ui.ExitCode)" }
+    Write-Host 'SESSION197_UI_SMOKE_WITH_NEW_DLL_PASS'
+    Write-Host 'NOTE: no physical ECU was tested; no Setup installed or released.'
+
 }
 finally {
     if ($IsWorktree -and -not $KeepWorktree) {
