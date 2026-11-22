@@ -112,7 +112,8 @@ int main(void)
         "mems_command_kline19",
         "mems_move_iac_kline19",
         "mems_fuel_trim_2_plus",
-        "mems_fuel_trim_2_minus"
+        "mems_fuel_trim_2_minus",
+        "mems_reset_ECU_leopold"
         };
         HMODULE module=GetModuleHandleA("mems_manager_x64.dll");
         size_t i=0;
@@ -121,7 +122,7 @@ int main(void)
             ++failures;
         }else{
             CHECK_EQ("historical and additive export total",
-                     sizeof(exports)/sizeof(exports[0]),53);
+                     sizeof(exports)/sizeof(exports[0]),54);
             for(i=0;i<sizeof(exports)/sizeof(exports[0]);++i){
                 if(!GetProcAddress(module,exports[i])){
                     fprintf(stderr,"FAIL: missing original/additive export %s\n",exports[i]);
@@ -133,7 +134,8 @@ int main(void)
     /* New export: must link and reject a missing transport. */
     if (mems_Save(NULL) || mems_reset_ADJ(NULL) ||
         mems_reset_EMI(NULL) || mems_fuel_trim_2_plus(NULL,NULL) ||
-        mems_fuel_trim_2_minus(NULL,NULL) || mems_save_adjustments(NULL)) {
+        mems_fuel_trim_2_minus(NULL,NULL) || mems_save_adjustments(NULL) ||
+        mems_reset_ECU_leopold(NULL)) {
         fprintf(stderr,"FAIL: save accepted invalid session\n");
         ++failures;
     }
