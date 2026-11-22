@@ -9,6 +9,9 @@
 #include <QMainWindow>
 #include <QMenu>
 #include <QMessageBox>
+#include <QPainter>
+#include <QPen>
+#include <QPixmap>
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QThread>
@@ -26,6 +29,25 @@ bool officialSetup(const QUrl &url){
         !url.hasQuery() && url.path().startsWith(QStringLiteral(
            "/mini56/ECU-Mems-Manager-Session-MAJ/releases/download/")) &&
         url.path().endsWith(QStringLiteral("-Setup.exe"));
+}
+
+// Same thin orange outline as SESSION's Sommaire / About menu icons.
+// Presentation only; the release manifest check remains unchanged.
+QIcon programUpdateMenuIcon()
+{
+    QPixmap image(24,24);
+    image.fill(Qt::transparent);
+    QPainter painter(&image);
+    painter.setRenderHint(QPainter::Antialiasing,true);
+    painter.setPen(QPen(QColor(QStringLiteral("#ff8a1c")),1.8,
+                    Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin));
+    painter.setBrush(Qt::NoBrush);
+    painter.drawArc(QRectF(5.0,5.0,14.0,14.0),45*16,270*16);
+    // Arrowhead at the end of the circular refresh arrow.
+    painter.drawLine(QPointF(16.95,16.95),QPointF(16.95,12.9));
+    painter.drawLine(QPointF(16.95,16.95),QPointF(12.9,16.95));
+    painter.end();
+    return QIcon(image);
 }
 }
 SessionProgramUpdate::SessionProgramUpdate(QMainWindow *window)
@@ -45,6 +67,7 @@ SessionProgramUpdate::SessionProgramUpdate(QMainWindow *window)
            QStringLiteral("m_helpMenu"))){
         QAction *manual=new QAction(I18n::text(17902),this);
         manual->setObjectName(QStringLiteral("programUpdateCheckAction"));
+        manual->setIcon(programUpdateMenuIcon());
         if(QAction *about=window->findChild<QAction*>(
            QStringLiteral("m_helpAboutAction")))
             help->insertAction(about,manual);

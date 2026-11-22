@@ -458,6 +458,24 @@ bool verifyUi(MainWindow &window)
              window.findChild<QAction*>(
                  QStringLiteral("programUpdateCheckAction")),
              "Program update badge and manual Help menu action missing") && ok;
+    QAction *manualUpdateAction=window.findChild<QAction*>(
+        QStringLiteral("programUpdateCheckAction"));
+    ok=check(manualUpdateAction && !manualUpdateAction->icon().isNull(),
+             "Manual update menu action must have a SESSION-orange icon") && ok;
+    if(manualUpdateAction && !manualUpdateAction->icon().isNull()){
+        const QImage icon=manualUpdateAction->icon().pixmap(24,24).toImage()
+            .convertToFormat(QImage::Format_ARGB32);
+        int orange=0;
+        for(int y=0;y<icon.height();++y)
+            for(int x=0;x<icon.width();++x){
+                const QColor pixel=icon.pixelColor(x,y);
+                if(pixel.alpha()>160 && pixel.red()>220 &&
+                   pixel.green()>90 && pixel.green()<190 &&
+                   pixel.blue()<100) ++orange;
+            }
+        ok=check(orange>24,
+                 "Manual program update icon must use the orange SESSION outline style") && ok;
+    }
     ok=check(manual.minimumWidth()>=850 &&
              manual.styleSheet().contains(
                 qApp->property("ecuDarkTheme").toBool()
