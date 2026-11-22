@@ -5,7 +5,7 @@ on:
   push:
     branches: [fix-documentary-additive-session-161-20261118]
     paths:
-      - '.github/workflows/session-195-save-settings-setup.yml'
+      - '.github/workflows/session-195-ecu-rosco-notes-setup.yml'
 permissions:
   contents: write
 concurrency:
