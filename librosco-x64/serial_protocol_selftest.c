@@ -206,10 +206,10 @@ int main(void)
     const operation_plain requests[] = {
         {"clear_faults", mems_clear_faults, 0xCC},
         {"reset_ADJ", mems_reset_ADJ, 0xFA},
-        {"reset_ECU", mems_reset_ECU, 0xFA},
+        {"clear_computed_and_learned_params_Manager_reset_ECU", mems_reset_ECU, 0xFA},
         {"reset_EMI", mems_reset_EMI, 0x0F},
         {"save", mems_Save, 0x81},
-        {"reset_adjustments_alias", mems_reset_adjustments, 0x0F},
+        {"reset_user_adjustable_settings_Manager", mems_reset_adjustments, 0x0F},
         {"reset_ECU_leopold_explicit", mems_reset_ECU_leopold, 0xAF},
         {"save_adjustments_alias", mems_save_adjustments, 0x81},
         {"heartbeat", mems_heartbeat, 0xF4}
