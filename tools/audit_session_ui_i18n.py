@@ -10,7 +10,7 @@ langs = ('fr', 'en', 'es', 'it', 'pt', 'de')
 tabs = (1001,7900,2001,4001,3001,7013,7940,7018,7017,7012,5001,7152,6002,19000,16200,16800)
 keys = (list(range(16200,16220))+list(range(16300,16336))+
         list(range(16400,16425))+list(range(16500,16507))+
-        list(range(16600,16612))+list(range(16700,16714))+
+        list(range(16600,16613))+list(range(16700,16714))+
         list(range(16801,16828))+[16831,16832,16833]+
         list(range(16840,16864))+[16880]+list(range(16890,16898))+
         list(range(16900,16939))+list(range(16940,16972))+[6208])
@@ -121,6 +121,8 @@ for filename,range_ in sources.items():
         check(f'I18n::text({key})' in content or
               (filename=='iamemstab.cpp' and key==16415 and 'I18n::text(16415)' in content),
               f'{filename}: missing text {key}')
+check('emit systemMessage(I18n::text(16612));' in read('expert/IaMemsService.cpp'),
+      'IA MEMS knowledge-ready system message must use its translated key')
 updater=read('database/MemsDocumentaryUpdateDialog.cpp')
 check('new ui(' not in updater and ';ui(' not in updater,'updater corrupted')
 check('return m_language == QStringLiteral("en") ? en : fr;' in updater,

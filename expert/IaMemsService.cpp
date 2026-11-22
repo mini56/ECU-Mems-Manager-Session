@@ -454,7 +454,7 @@ void IaMemsService::openPackagedKnowledge()
     m_databasePath = path;
     m_knowledgeReady = true;
     m_engine.setKnowledgeReader(&m_reader);
-    emit systemMessage(QStringLiteral("Base de connaissances MEMS prête en lecture seule."));
+    emit systemMessage(I18n::text(16612));
     emit statusChanged();
 }
 
