@@ -4,6 +4,16 @@ Ce document n’est **pas** une simple liste des fonctions actuellement appelée
 
 La règle fondamentale est : **un même octet peut changer de signification selon la famille ECU et surtout selon le mode diagnostic.** Une future API x64 ne doit donc jamais transformer cette table en liste universelle de commandes sans contexte.
 
+## Décision fonctionnelle Session — 22 novembre 2026
+
+La correspondance choisie pour la DLL **compatible MEMS Manager Session** est arrêtée :
+
+- **`0x0F`** : **réinitialisation des réglages ajustables** (`mems_reset_adjustments`).
+- **`0xFA`** : **effacement des paramètres calculés et appris** (`mems_reset_ECU`, bouton historique « Reset ECU »).
+- **`0xAF`** : commande historique distincte de LeopoldG, accessible séparément, **jamais** utilisée pour remplacer `0xFA` dans Manager.
+
+Les mentions « conflit » plus bas documentent les différences d'étiquettes et de contexte dans les sources externes ; elles **ne changent pas le choix d'implémentation** de Session. Aucune commande n'est modifiée par cet enregistrement.
+
 ## Statuts utilisés
 
 - **BINAIRE CONFIRMÉ** : comportement observé directement dans la `librosco.dll` historique utilisée par ECU MEMS Manager.
