@@ -22,6 +22,10 @@ int main(void)
     {
         const uint8_t read_rpm[] = {0x02, 0x21, 0x09, 0x2C};
         const uint8_t wake2j[] = {0x03, 0xC1, 0xD5, 0x8F, 0x28};
+        const uint8_t positive[] = {0x61,0x09,0x0B,0xB8};
+        const uint8_t pending[] = {0x7F,0x21,0x78};
+        const uint8_t negative[] = {0x7F,0x21,0x31};
+        const uint8_t wrong_id[] = {0x61,0x08,0x0B,0xB8};
         CHECK(mems2j_make_read_request(0x09, packet, sizeof(packet), &n));
         CHECK(n == sizeof(read_rpm) && memcmp(packet,read_rpm,n)==0);
         CHECK(mems2j_frame_decode(packet,n,payload,sizeof(payload),&decoded));
@@ -43,18 +47,14 @@ int main(void)
         CHECK(mems2j_seed_key(0x1234)==0x8247);
         CHECK(mems2j_seed_key(0xABCD)==0x85AF);
         CHECK(mems2j_seed_key(0xFFFF)==0x8081);
-        CHECK(mems2j_response_status(
-                 (const uint8_t[]){0x61,0x09,0x0B,0xB8},4,
-                 0x21,0x61,0x09)==MEMS_RESPONSE_POSITIVE);
-        CHECK(mems2j_response_status(
-                 (const uint8_t[]){0x7F,0x21,0x78},3,
-                 0x21,0x61,0x09)==MEMS_RESPONSE_PENDING);
-        CHECK(mems2j_response_status(
-                 (const uint8_t[]){0x7F,0x21,0x31},3,
-                 0x21,0x61,0x09)==MEMS_RESPONSE_NEGATIVE);
-        CHECK(mems2j_response_status(
-                 (const uint8_t[]){0x61,0x08,0x0B,0xB8},4,
-                 0x21,0x61,0x09)==MEMS_RESPONSE_INVALID);
+        CHECK(mems2j_response_status(positive,sizeof(positive),
+              0x21,0x61,0x09)==MEMS_RESPONSE_POSITIVE);
+        CHECK(mems2j_response_status(pending,sizeof(pending),
+              0x21,0x61,0x09)==MEMS_RESPONSE_PENDING);
+        CHECK(mems2j_response_status(negative,sizeof(negative),
+              0x21,0x61,0x09)==MEMS_RESPONSE_NEGATIVE);
+        CHECK(mems2j_response_status(wrong_id,sizeof(wrong_id),
+              0x21,0x61,0x09)==MEMS_RESPONSE_INVALID);
     }
     {
         const uint8_t rpm[] = {0x61,0x09,0x0B,0xB8};
@@ -83,6 +83,7 @@ int main(void)
         const uint8_t wake_frame[] = {0xB8,0x13,0xF7,0x02,0x1A,0x9A,0xDE};
         const uint8_t measures[] = {0x61,0x06,0x27,0x10,0,0,0,0,4,0xD2,0x0D,0xAC};
         const uint8_t faults[] = {0x58,0x00,0x12,0x32,0x61,0x06,0x50,0x20};
+        const uint8_t pending3[] = {0x7F,0x21,0x78};
         CHECK(mems3_frame_encode(wake_payload,sizeof(wake_payload),
                                 packet,sizeof(packet),&n));
         CHECK(n==sizeof(wake_frame) && memcmp(packet,wake_frame,n)==0);
@@ -97,9 +98,8 @@ int main(void)
               values.metrics[1].value==1234 &&
               values.metrics[2].value==3500);
         CHECK(!mems3_decode_measurement(0x06,measures,9,&values));
-        CHECK(mems3_response_status(
-                  (const uint8_t[]){0x7F,0x21,0x78},3,0x21,0x61,0x06)==
-              MEMS_RESPONSE_PENDING);
+        CHECK(mems3_response_status(pending3,sizeof(pending3),
+              0x21,0x61,0x06)==MEMS_RESPONSE_PENDING);
         CHECK(mems3_fault_count(faults,sizeof(faults))==2);
         CHECK(mems3_fault_at(faults,sizeof(faults),1,&code,&state));
         CHECK(code==0x0650 && state==0x20);
