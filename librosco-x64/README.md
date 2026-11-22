@@ -11,6 +11,31 @@ L’ancienne bibliothèque historique reste distincte :
 
 Le sous-dossier conserve pour l’instant le nom historique `librosco-x64` et le header public `rosco.h` afin de limiter les régressions pendant la migration. Cela ne change pas le nom du nouveau binaire.
 
+## Compatibilité réelle avec MEMS Manager Session 197 — en cours de validation
+
+**Référence unique de l'application :** commit `9105d9838e3fd5f81feeb99c0481c454d5d6a5e4` (Session 197 verte), branche `fix-documentary-additive-session-161-20261118`.
+
+Attention : la racine de la branche `dll-manager` contient une version **antérieure** de certains fichiers Manager (`rosco.h`, `memsinterface_dispatch.cpp`, etc.). **Ne pas compiler la racine de `dll-manager` et appeler cela « compatible Session 197 ».** Les fichiers de Manager 197 ne doivent pas être remplacés dans le dépôt.
+
+Contenu du dossier DLL pour cette validation :
+
+- `reference-session197/rosco.h` : **copie binaire exacte** de l'en-tête public de Session 197 (Git blob `dd8d88048ce4e879ef728b6bcd72837730bec654`). Son ABI est contrôlé dans `manager_dll_contract_selftest.cpp` ; ce test n'utilise plus l'en-tête antérieur de `dll-manager`.
+- `validate_protocol_guards.py` : contrôle statique l'API et les commandes **Session 197** et signale explicitement si la racine de compilation n'est pas Session 197.
+- `verify_session197_windows.ps1` : récupère le **commit exact Session 197** dans un **worktree Git temporaire**, copie notre seul dossier `librosco-x64` dans cette zone jetable, exécute l'audit source, compile la DLL x64, exécute les tests CTest, compile l'exécutable Session 197 avec `MEMS_USE_BUNDLED_LIBROSCO_X64=ON`, puis vérifie l'édition des liens et les imports PE.
+- `validate_session197_binaries.py` : inspecte **les véritables binaires** Windows AMD64, 91 noms/ordinals d'exports et les imports du Manager 197 pour vérifier l'absence d'appel vers `librosco.dll` x86.
+
+Sur un poste Windows équipé de Visual Studio 2022 C++, de Git, de CMake, de Python et de Qt 5.15.2 MSVC2019 x64, depuis le dépôt `dll-manager` :
+
+```powershell
+pwsh -NoProfile -File .\librosco-x64\verify_session197_windows.ps1 -QtPrefix 'C:/Qt/5.15.2/msvc2019_64'
+```
+
+Pour contrôler **uniquement** la DLL, sans compiler le programme (résultat qui n'établit pas sa compatibilité réelle avec Manager) : ajouter `-DllOnly`.
+
+**État de cette livraison de sources :** la compilation Windows, CTest, la liaison avec Session 197 et le fonctionnement sur ECU **n'ont pas encore été exécutés** dans cette conversation. Un contrôle statique ou une déclaration de fonction exportée n'autorise pas à écrire « DLL compatible ».
+
+**Règle de protection :** aucun fichier de Session 197, aucun Setup ou dépôt MAJ n'a été modifié. La compilation de test travaille uniquement sur une copie temporaire, sans toucher à la version installée. L'export historique `mems_interactive_mode` est déclaré dans l'en-tête 197 mais reste **non implémenté/non exporté** : il n'est pas appelé par le binaire 197 actuellement ; il ne doit pas être masqué par une fonction factice.
+
 ## Correspondance fonctionnelle arrêtée pour Session — 22 novembre 2026
 
 **Décision définitive pour notre DLL**, confirmée par l'utilisateur et cohérente avec MemsFCR/Andrew Jackson :
