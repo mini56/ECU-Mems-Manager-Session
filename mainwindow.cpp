@@ -37,8 +37,6 @@
 #include <QScreen>
 #include <QStatusBar>
 #include <QGroupBox>
-#include <QPlainTextEdit>
-#include <QSettings>
 #include <QGridLayout>
 #include <QVBoxLayout>
 #include <QPushButton>
@@ -351,23 +349,7 @@ m_mems(0), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerD
   m_protocolOutput->setReadOnly(true);
   m_protocolOutput->setPlaceholderText(
       I18n::text(7011) /* EN: ROSCO responses will appear here in hexadecimal. */);
-  protocolLayout->addWidget(m_protocolOutput, 3);
-
-  // Same framed editor as the automatic diagnostic report, but editable.
-  // Notes are kept locally across program restarts.
-  QGroupBox *notesBox = new QGroupBox(I18n::text(18120) /* EN: Notes */, protocolTab);
-  notesBox->setObjectName(QStringLiteral("ecuRoscoNotesBox"));
-  QVBoxLayout *notesLayout = new QVBoxLayout(notesBox);
-  QPlainTextEdit *notesEditor = new QPlainTextEdit(notesBox);
-  notesEditor->setObjectName(QStringLiteral("ecuRoscoNotesEditor"));
-  QSettings notesSettings(QSettings::IniFormat, QSettings::UserScope, PROJECTNAME);
-  notesEditor->setPlainText(notesSettings.value(QStringLiteral("Rosco/Notes")).toString());
-  notesLayout->addWidget(notesEditor);
-  protocolLayout->addWidget(notesBox, 2);
-  connect(notesEditor, &QPlainTextEdit::textChanged, this, [notesEditor]() {
-    QSettings settings(QSettings::IniFormat, QSettings::UserScope, PROJECTNAME);
-    settings.setValue(QStringLiteral("Rosco/Notes"), notesEditor->toPlainText());
-  });
+  protocolLayout->addWidget(m_protocolOutput, 1);
 
   m_ui->Tab_main->addTab(protocolTab, I18n::text(7012) /* EN: ECU / ROSCO */);
 
@@ -1541,8 +1523,6 @@ void MainWindow::changeEvent(QEvent* event)
   if (event && event->type() == QEvent::LanguageChange) {
     if (m_ui && m_ui->m_saveAdjustmentsButton)
       m_ui->m_saveAdjustmentsButton->setText(I18n::text(7080));
-    if (QGroupBox *notesBox = findChild<QGroupBox*>(QStringLiteral("ecuRoscoNotesBox")))
-      notesBox->setTitle(I18n::text(18120));
     retranslateUiShell(this);
   }
 }

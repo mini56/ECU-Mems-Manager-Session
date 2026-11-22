@@ -4,7 +4,10 @@
 #include <QEvent>
 #include <QFrame>
 #include <QGridLayout>
+#include <QGroupBox>
 #include <QHBoxLayout>
+#include <QPlainTextEdit>
+#include <QSettings>
 #include <QLabel>
 #include <QLCDNumber>
 #include <QLineEdit>
@@ -674,7 +677,30 @@ static void composeInteractive(QMainWindow *window)
         button->show();
         layout->addWidget(button,0,Qt::AlignLeft);
     }
+    // Keep the original interactive command instructions and button intact.
+    // Add the editable report-style notepad below them, in their own page.
+    QGroupBox *notesBox = new QGroupBox(I18n::text(18120), page);
+    notesBox->setObjectName(QStringLiteral("interactiveNotesBox"));
+    notesBox->setMinimumHeight(170);
+    notesBox->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    QVBoxLayout *notesLayout = new QVBoxLayout(notesBox);
+    QPlainTextEdit *notesEditor = new QPlainTextEdit(notesBox);
+    notesEditor->setObjectName(QStringLiteral("interactiveNotesEditor"));
+    notesEditor->setReadOnly(false);
+    // Preserve any text entered in the misplaced 195 notepad, without
+    // changing or deleting its previous storage key.
+    QSettings notesSettings(QSettings::IniFormat,QSettings::UserScope,PROJECTNAME);
+    const QString currentNotesKey = QStringLiteral("Interactive/Notes");
+    const QString previousNotesKey = QStringLiteral("Rosco/Notes");
+    notesEditor->setPlainText(notesSettings.value(
+        notesSettings.contains(currentNotesKey) ? currentNotesKey : previousNotesKey).toString());
+    notesLayout->addWidget(notesEditor);
+    QObject::connect(notesEditor,&QPlainTextEdit::textChanged,page,[notesEditor]() {
+        QSettings settings(QSettings::IniFormat,QSettings::UserScope,PROJECTNAME);
+        settings.setValue(QStringLiteral("Interactive/Notes"),notesEditor->toPlainText());
+    });
     layout->addStretch(1);
+    layout->addWidget(notesBox,2);
 }
 
 void buildEcuControlPages(QMainWindow *window)

@@ -23,6 +23,7 @@
 #include <QCoreApplication>
 #include <QEvent>
 #include <QFrame>
+#include <QGroupBox>
 #include <QListWidget>
 #include <QLayout>
 #include <QPushButton>
@@ -33,6 +34,7 @@
 #include <QImage>
 #include <QPixmap>
 #include <QTextBrowser>
+#include <QTextEdit>
 #include <QPlainTextEdit>
 #include <QHeaderView>
 #include <QTableWidget>
@@ -162,6 +164,16 @@ bool verifyApprovedVisualRules(MainWindow &window)
             ok=check(label && label->wordWrap() && tenPointSegoe(label->font()),
                      "Interactive ECU text styling regressed") && ok;
         }
+        QGroupBox *notesBox=interactive->findChild<QGroupBox*>(
+            QStringLiteral("interactiveNotesBox"));
+        QPlainTextEdit *notesEditor=interactive->findChild<QPlainTextEdit*>(
+            QStringLiteral("interactiveNotesEditor"));
+        ok=check(notesBox && notesEditor &&
+                 notesBox->parentWidget()==interactive &&
+                 notesEditor->parentWidget()==notesBox &&
+                 !notesEditor->isReadOnly() &&
+                 notesBox->title()==I18n::text(18120),
+                 "Interactive notepad must be editable, translated and owned by Mode interactif") && ok;
     }
     return ok;
 }
@@ -184,6 +196,15 @@ bool verifyUi(MainWindow &window)
     ok=check(navigation && navigation->count()==16,"Sidebar does not contain the 16 official entries") && ok;
     if (!tabs || !navigation || tabs->count()!=16 || navigation->count()!=16)
         return false;
+
+    // The ECU / ROSCO owner is restored byte-for-byte to SESSION 194.
+    // In particular its single hexadecimal output must remain read-only,
+    // and the misplaced SESSION 195 notepad must no longer be here.
+    QWidget *roscoPage=actualPage(tabs->widget(9));
+    QTextEdit *roscoOutput=roscoPage?roscoPage->findChild<QTextEdit*>():nullptr;
+    ok=check(roscoPage && roscoOutput && roscoOutput->isReadOnly() &&
+             !roscoPage->findChild<QGroupBox*>(QStringLiteral("ecuRoscoNotesBox")),
+             "ECU ROSCO must retain the read-only SESSION 194 session panel") && ok;
 
     QWidget *otherPage=window.findChild<QWidget*>(QStringLiteral("other_ecus_tab"));
     QFrame *rc5Panel=window.findChild<QFrame*>(QStringLiteral("otherEcusAirbagRc5"));
