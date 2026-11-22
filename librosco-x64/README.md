@@ -32,7 +32,15 @@ pwsh -NoProfile -File .\librosco-x64\verify_session197_windows.ps1 -QtPrefix 'C:
 
 Pour contrôler **uniquement** la DLL, sans compiler le programme (résultat qui n'établit pas sa compatibilité réelle avec Manager) : ajouter `-DllOnly`.
 
-**État de cette livraison de sources :** la compilation Windows, CTest, la liaison avec Session 197 et le fonctionnement sur ECU **n'ont pas encore été exécutés** dans cette conversation. Un contrôle statique ou une déclaration de fonction exportée n'autorise pas à écrire « DLL compatible ».
+**Validation Windows x64 effectuée le 22/11/2026 : RUN VERT #45047497347** — [journal GitHub Actions](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/45047497347), commit source validé `f1bec15c6fa21836eb2b1555366eb03d93b6ab2d`.
+
+- `mems_manager_x64.dll` compilée avec **Visual Studio 2022**, architecture AMD64.
+- **4/4 tests CTest validés**, dont l'ABI x64, le contrat d'en-tête Session 197, les trames série simulées et le catalogue protocolaire.
+- **91 exports physiques** avec noms et ordinaux attendus.
+- **Vraie copie de Session 197 compilée avec la nouvelle DLL**, éditions de liens réussies ; **15 imports** résolus et aucune importation de la DLL historique x86.
+- Les tests hors-ligne ne prouvent **ni le comportement réel de toutes les commandes sur les ECU**, ni le démarrage complet du Setup installé, ni l'absence de régressions fonctionnelles dans l'interface utilisateur. Aucune DLL en production ni programme installé n'a été remplacé.
+
+**Verdict limité mais réel :** compatibilité **de compilation, de liaison, d'ABI et de tests hors-ligne validée** avec Session 197. La validation sur ECU réel et de l'application installée restent distinctes.
 
 **Règle de protection :** aucun fichier de Session 197, aucun Setup ou dépôt MAJ n'a été modifié. La compilation de test travaille uniquement sur une copie temporaire, sans toucher à la version installée. L'export historique `mems_interactive_mode` est déclaré dans l'en-tête 197 mais reste **non implémenté/non exporté** : il n'est pas appelé par le binaire 197 actuellement ; il ne doit pas être masqué par une fonction factice.
 
