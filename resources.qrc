@@ -3,6 +3,7 @@
         <file>key.png</file>
         <file>helpbubble.svg</file>
         <file>helpbubble.png</file>
+        <file>options_combo_chevron.png</file>
     </qresource>
     <qresource prefix="/flags">
         <file alias="fr.png">flags/fr.png</file>

@@ -51,6 +51,23 @@ for lang in ('es','it','pt','de'):
           f'{lang}: guide not bundled')
     check(f':/help/help_{lang}.html' in guide, f'{lang}: guide not loaded')
 check('I18n::language().left(2).toLower()' in guide,'guide uses wrong language')
+# The Options dialog must explicitly draw visible orange dropdown chevrons
+# in both selected themes, regardless of the OS' native Qt arrow color.
+options=read('optionsdialog.cpp')
+comboArrow='QComboBox::down-arrow{image:url(:/icons/options_combo_chevron.png);'
+check(options.count(comboArrow)==2,
+      'Options must display the same dropdown chevron in dark and light themes')
+check(all(name in options for name in
+          ('m_temperatureUnitsBox = new QComboBox',
+           'm_themeBox = new QComboBox',
+           'm_languageBox = new QComboBox',
+           'm_serialDeviceBox = new QComboBox')),
+      'Options dropdown selectors were removed')
+check('<file>options_combo_chevron.png</file>' in qrc,
+      'Orange Options dropdown icon is not embedded in Qt resources')
+chevron=root/'options_combo_chevron.png'
+check(chevron.is_file() and chevron.read_bytes().startswith(bytes.fromhex('89504e470d0a1a0a')),
+      'Orange Options dropdown PNG is missing or invalid')
 usb,menu=map(read,('usbcablediagnostictab.h','uishell.cpp'))
 check('QLocale().language()' not in usb,'USB tied to Windows language')
 check('return I18n::text(16200);' in menu,'USB tab not translated')

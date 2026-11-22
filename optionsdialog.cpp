@@ -68,6 +68,10 @@ void OptionsDialog::updateAppearance(bool dark)
             "QLabel{color:#e7ecef;background:transparent;}"
             "QLineEdit,QComboBox{background:#131d25;color:#edf2f5;"
             "border:1px solid #3a4954;border-radius:4px;padding:4px;}"
+            "QComboBox::drop-down{border:none;width:24px;"
+            "subcontrol-origin:padding;subcontrol-position:top right;}"
+            "QComboBox::down-arrow{image:url(:/icons/options_combo_chevron.png);"
+            "width:12px;height:8px;}"
             "QPushButton{background:#18232b;color:#edf2f5;"
             "border:1px solid #3b4b58;border-radius:5px;padding:6px;}"
             "QPushButton:hover{border-color:#ff8a00;}")
@@ -76,6 +80,10 @@ void OptionsDialog::updateAppearance(bool dark)
             "QLabel{color:#202936;background:transparent;}"
             "QLineEdit,QComboBox{background:#ffffff;color:#202936;"
             "border:1px solid #c6d1dd;border-radius:4px;padding:4px;}"
+            "QComboBox::drop-down{border:none;width:24px;"
+            "subcontrol-origin:padding;subcontrol-position:top right;}"
+            "QComboBox::down-arrow{image:url(:/icons/options_combo_chevron.png);"
+            "width:12px;height:8px;}"
             "QPushButton{background:#f0f4f8;color:#202936;"
             "border:1px solid #bfcbd7;border-radius:5px;padding:6px;}"
             "QPushButton:hover{border-color:#f07800;}"));
