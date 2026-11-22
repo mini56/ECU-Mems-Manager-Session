@@ -17,7 +17,7 @@ permissions:
 
 concurrency:
   group: dll-session197-isolated-validation
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   session197_dll_validation:
@@ -29,7 +29,15 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-          persist-credentials: false
+          persist-credentials: true
+
+      - name: S'assurer que la copie de Session 197 est accessible en lecture seule
+        shell: pwsh
+        run: |
+          git fetch --no-tags --depth=1 origin 9105d9838e3fd5f81feeb99c0481c454d5d6a5e4
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot fetch Session 197 read-only reference' }
+          git cat-file -e 9105d9838e3fd5f81feeb99c0481c454d5d6a5e4^{commit}
+          if ($LASTEXITCODE -ne 0) { throw 'Session 197 commit not present' }
 
       - name: Python pour les controles binaires
         uses: actions/setup-python@v5
