@@ -253,13 +253,15 @@ ROSCO_API bool mems_read_iac_position(mems_info* info, uint8_t* position);
 ROSCO_API bool mems_move_iac(mems_info* info, uint8_t desired_pos);
 ROSCO_API bool mems_test_actuator(mems_info* info, actuator_cmd cmd, uint8_t* data);
 ROSCO_API bool mems_clear_faults(mems_info* info);
-ROSCO_API bool mems_reset_ECU(mems_info* info);
-/* The original ROM-tested reset commands are NOT interchangeable:
- * ADJ=FA, ECU=AF and EMI=0F, as read directly from LeopoldG's x86 DLL.
+/* Historic Manager-22 DLL contract: ECU reset=0xFA, adjustments=0x0F.
+ * LeopoldG-45 uses 0xAF for an identically named ECU reset. Do not
+ * silently change the meaning of Manager's existing ABI.
  */
-ROSCO_API bool mems_reset_ADJ(mems_info* info);
-ROSCO_API bool mems_reset_EMI(mems_info* info);
-ROSCO_API bool mems_reset_adjustments(mems_info* info); /* modern alias -> ADJ */
+ROSCO_API bool mems_reset_ECU(mems_info* info); /* Manager: 0xFA */
+ROSCO_API bool mems_reset_ADJ(mems_info* info); /* LeopoldG: 0xFA */
+ROSCO_API bool mems_reset_EMI(mems_info* info); /* LeopoldG: 0x0F */
+ROSCO_API bool mems_reset_adjustments(mems_info* info); /* Manager: 0x0F */
+ROSCO_API bool mems_reset_ECU_leopold(mems_info* info); /* LeopoldG: 0xAF */
 /* Verified original LeopoldG DLL: 0x81 followed by one reply byte. */
 ROSCO_API bool mems_Save(mems_info* info);             /* legacy name */
 ROSCO_API bool mems_save_adjustments(mems_info* info); /* modern alias */
