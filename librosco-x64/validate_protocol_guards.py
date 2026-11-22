@@ -66,6 +66,25 @@ expected_extensions = [
     "mems_reset_ECU_leopold"
 ]
 
+expected_families = [
+    "mems_manager_family_supported", "mems_manager_family_uses_kline19",
+    "mems_manager_family_init_link", "mems_manager_family_read",
+    "mems_manager_family_read_iac", "mems_manager_family_move_iac",
+    "mems_manager_family_clear_faults",
+    "mems_manager_family_reset_adjustments",
+    "mems_manager_family_reset_ecu",
+    "mems_manager_family_save_adjustments",
+    "mems_manager_family_actuator"
+]
+expected_injection = [
+    "mems_manager_transient_parse_mode_reply",
+    "mems_manager_transient_is_aanmp002",
+    "mems_manager_transient_parse_data80",
+    "mems_manager_transient_parse_word_reply",
+    "mems_manager_transient_decode_pair",
+    "mems_manager_transient_compare_ticks"
+]
+
 exports = []
 in_exports = False
 for raw in definition.splitlines():
@@ -78,9 +97,9 @@ for raw in definition.splitlines():
     if in_exports:
         exports.append(line.split()[0])
 
-if exports != expected_exports + expected_extensions:
-    raise SystemExit(f"FAIL: original 45 + 8 additive exports changed: {exports}")
-if len(set(exports)) != 54:
+if exports != expected_exports + expected_extensions + expected_families + expected_injection:
+    raise SystemExit(f"FAIL: changed ABI or missing family/injection exports: {exports}")
+if len(set(exports)) != 71:
     raise SystemExit("FAIL: duplicate or missing symbols in ROSCO DLL")
 
 required_protocol_guards = [
@@ -126,9 +145,26 @@ for name, value in required_commands.items():
     if not re.search(pattern, header):
         raise SystemExit(f"FAIL historical command changed/missing: {name}={value}")
 
-print("OK: original 53 symbols plus distinct LeopoldG ECU reset = 54 exports")
+print("OK: 53 historical-compatible names + LeopoldG reset + 11 family + 6 injection = 71 exports")
 assert "mems_reset_ECU_leopold @54" in definition
 print("OK: Manager reset ECU=FA and adjustments=0F, explicit LeopoldG ECU=AF")
+assert exports[54:65] == expected_families
+assert exports[65:71] == expected_injection
+family_header = (root / "family.h").read_text(encoding="utf-8")
+family_source = (root / "family.c").read_text(encoding="utf-8")
+injection_header = (root / "transient_injection.h").read_text(encoding="utf-8")
+injection_source = (root / "transient_injection.c").read_text(encoding="utf-8")
+for name in expected_families:
+    if not re.search(rf"\b{re.escape(name)}\s*\(", family_header) or \
+       not re.search(rf"\b{re.escape(name)}\s*\(", family_source):
+        raise SystemExit(f"FAIL: missing family function: {name}")
+for name in expected_injection:
+    if not re.search(rf"\b{re.escape(name)}\s*\(", injection_header) or \
+       not re.search(rf"\b{re.escape(name)}\s*\(", injection_source):
+        raise SystemExit(f"FAIL: missing transient function: {name}")
+cmake = (root / "CMakeLists.txt").read_text(encoding="utf-8")
+assert "family.c" in cmake and "transient_injection.c" in cmake
+print("OK: family and AANMP002 modules exported and compiled within DLL only")
 print("OK: full 0x80 and 0x7D frame-length guards present")
 print("OK: truncated 0x7D frame is rejected")
 print("OK: clear/reset/heartbeat return real command result")
