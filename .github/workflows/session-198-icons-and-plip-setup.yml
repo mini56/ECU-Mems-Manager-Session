@@ -65,7 +65,7 @@ jobs:
           start=main.find('QWidget *protocolTab = new QWidget')
           stop=main.find('m_ui->Tab_main->addTab(protocolTab',start)
           assert start>=0 and stop>start, 'ROSCO_SESSION_SECTION_MISSING'
-          newline=main.find('\\n',stop)
+          newline=main.find('\n',stop)
           assert newline>stop, 'ROSCO_SESSION_END_MISSING'
           session194=main[start:newline]
           assert len(session194)==2634 and zlib.crc32(session194.encode('utf-8'))==3493573116, 'ROSCO_194_EXACT_SECTION_REGRESSION'
