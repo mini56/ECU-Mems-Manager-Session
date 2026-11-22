@@ -1,4 +1,6 @@
 #include "rosco.h"
+#include "family.h"
+#include "transient_injection.h"
 
 #include <stddef.h>
 #include <stdio.h>
@@ -113,7 +115,24 @@ int main(void)
         "mems_move_iac_kline19",
         "mems_fuel_trim_2_plus",
         "mems_fuel_trim_2_minus",
-        "mems_reset_ECU_leopold"
+        "mems_reset_ECU_leopold",
+        "mems_manager_family_supported",
+        "mems_manager_family_uses_kline19",
+        "mems_manager_family_init_link",
+        "mems_manager_family_read",
+        "mems_manager_family_read_iac",
+        "mems_manager_family_move_iac",
+        "mems_manager_family_clear_faults",
+        "mems_manager_family_reset_adjustments",
+        "mems_manager_family_reset_ecu",
+        "mems_manager_family_save_adjustments",
+        "mems_manager_family_actuator",
+        "mems_manager_transient_parse_mode_reply",
+        "mems_manager_transient_is_aanmp002",
+        "mems_manager_transient_parse_data80",
+        "mems_manager_transient_parse_word_reply",
+        "mems_manager_transient_decode_pair",
+        "mems_manager_transient_compare_ticks"
         };
         HMODULE module=GetModuleHandleA("mems_manager_x64.dll");
         size_t i=0;
@@ -122,7 +141,7 @@ int main(void)
             ++failures;
         }else{
             CHECK_EQ("historical and additive export total",
-                     sizeof(exports)/sizeof(exports[0]),54);
+                     sizeof(exports)/sizeof(exports[0]),71);
             for(i=0;i<sizeof(exports)/sizeof(exports[0]);++i){
                 if(!GetProcAddress(module,exports[i])){
                     fprintf(stderr,"FAIL: missing original/additive export %s\n",exports[i]);
