@@ -111,7 +111,7 @@ La documentation Rover MEMS montre une organisation importante : beaucoup de com
 | `FA` | la DLL historique : reset ECU ; Rover MEMS : clear all adaptations ; Leopold 3.0 : reset adjustments | **CONFLIT MAJEUR** |
 | `AF` | Leopold 3.0 : reset ECU | **SOURCE EXTERNE / CONFLIT** |
 
-Pour la compatibilité actuelle, les wrappers x64 reproduisent **la DLL réellement utilisée par ECU MEMS Manager** : `FA = mems_reset_ECU` et `0F = mems_reset_adjustments`. Cette décision est une règle de compatibilité, pas une affirmation que ces octets ont la même fonction sur toutes les familles/modes.
+La branche `dll-manager` reproduit les octets de la DLL historique Manager-22 pour les deux fonctions utilisées par le programme : `mems_reset_ECU = FA` et `mems_reset_adjustments = 0F`. Les fonctions LeopoldG `mems_reset_ADJ=FA` et `mems_reset_EMI=0F` restent distinctes. Le reset ECU LeopoldG `AF` est disponible dans une **nouvelle fonction séparée** : `mems_reset_ECU_leopold` (ordinal 54). Le nom `mems_reset_ECU` n'émet donc pas `AF` dans notre DLL destinée à Manager. Cette décision préserve la compatibilité des commandes de Manager sans modifier le programme ; elle ne prouve pas que chaque commande est acceptée sur toutes les familles/modes ECU.
 
 ## 6. Modes diagnostics
 
