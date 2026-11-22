@@ -557,6 +557,28 @@ bool verifyUi(MainWindow &window)
                  "Options settings and pin icons must be distinct orange drawings") && ok;
     }
 
+    // The same QAction handles Quit in every translated language.
+    // Recolor its actual Qt icon instead of changing the close behavior.
+    QAction *quitMenuAction=window.findChild<QAction*>(
+        QStringLiteral("m_exitAction"));
+    ok=check(quitMenuAction && !quitMenuAction->icon().isNull(),
+             "File Quit action must retain its Qt icon in every language") && ok;
+    if(quitMenuAction && !quitMenuAction->icon().isNull()){
+        const QImage quitImage=quitMenuAction->icon().pixmap(24,24).toImage()
+            .convertToFormat(QImage::Format_ARGB32);
+        int orange=0,wrongColor=0;
+        for(int y=0;y<quitImage.height();++y)
+            for(int x=0;x<quitImage.width();++x){
+                const QColor pixel=quitImage.pixelColor(x,y);
+                if(pixel.alpha()<180)continue;
+                if(pixel.red()>220 && pixel.green()>90 && pixel.green()<190 &&
+                   pixel.blue()<100)++orange;
+                else ++wrongColor;
+            }
+        ok=check(orange>24 && wrongColor==0,
+                 "File Quit Qt icon must be orange with no black or blue pixels") && ok;
+    }
+
     // Header regression: the old help-bubble icon covered the last
     // digits of the advertised version. Preserve the ordinary tooltip
     // but do not overlay its text or remove space for the version.

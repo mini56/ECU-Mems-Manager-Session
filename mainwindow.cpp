@@ -116,6 +116,24 @@ static QIcon sessionOptionsMenuIcon(bool alwaysOnTop)
     return QIcon(image);
 }
 
+// Preserve the native Qt close pictogram while matching the orange menu style.
+static QIcon sessionQuitMenuIcon(QStyle *style)
+{
+    QPixmap native=style->standardIcon(QStyle::SP_DialogCloseButton).pixmap(24,24);
+    if(native.isNull())
+        native=style->standardIcon(QStyle::SP_DialogCancelButton).pixmap(24,24);
+    if(native.isNull())
+        return QIcon();
+    QPixmap colored(native.size());
+    colored.fill(Qt::transparent);
+    QPainter painter(&colored);
+    painter.drawPixmap(0,0,native);
+    painter.setCompositionMode(QPainter::CompositionMode_SourceIn);
+    painter.fillRect(colored.rect(),QColor(QStringLiteral("#ff8a1c")));
+    painter.end();
+    return QIcon(colored);
+}
+
 struct ExitConfirmationText
 {
     QString title;
@@ -514,7 +532,7 @@ void MainWindow::setupWidgets()
   if (m_ui->horizontalLayoutecuconnect)
     m_ui->horizontalLayoutecuconnect->setContentsMargins(10, 0, 0, 0);
   // set menu and button icons
-  m_ui->m_exitAction->setIcon(style()->standardIcon(QStyle::SP_DialogCloseButton));
+  m_ui->m_exitAction->setIcon(sessionQuitMenuIcon(style()));
   m_ui->m_editSettingsAction->setIcon(sessionOptionsMenuIcon(false));
   m_ui->m_helpContentsAction->setIcon(sessionHelpMenuIcon(false));
   m_ui->m_helpAboutAction->setIcon(sessionHelpMenuIcon(true));
