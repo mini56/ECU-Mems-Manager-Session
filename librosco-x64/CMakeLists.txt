@@ -15,6 +15,7 @@ add_library(rosco SHARED
     setup.c
     protocol.c
     family.c
+    transient_injection.c
     mems_manager_x64.def
 )
 
