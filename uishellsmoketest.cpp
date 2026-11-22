@@ -464,6 +464,41 @@ bool verifyUi(MainWindow &window)
                     ?QStringLiteral("#090e13"):QStringLiteral("#ffffff")),
              "Help dialog must be larger and follow the selected theme") && ok;
 
+    // The actual Help-menu actions must use the native SESSION orange
+    // outline icons in both themes, not blue/grey platform QStyle art.
+    QAction *contentsAction=window.findChild<QAction*>(
+        QStringLiteral("m_helpContentsAction"));
+    QAction *aboutAction=window.findChild<QAction*>(
+        QStringLiteral("m_helpAboutAction"));
+    ok=check(contentsAction && aboutAction &&
+             !contentsAction->icon().isNull() && !aboutAction->icon().isNull(),
+             "Help and About actions must retain their actual menu icons") && ok;
+    if(contentsAction && aboutAction &&
+       !contentsAction->icon().isNull() && !aboutAction->icon().isNull()){
+        const QImage helpMenu=contentsAction->icon().pixmap(24,24).toImage().convertToFormat(QImage::Format_ARGB32);
+        const QImage aboutMenu=aboutAction->icon().pixmap(24,24).toImage().convertToFormat(QImage::Format_ARGB32);
+        auto orangePixels=[](const QImage &icon){
+            int orange=0;
+            for(int y=0;y<icon.height();++y)
+                for(int x=0;x<icon.width();++x){
+                    const QColor pixel=icon.pixelColor(x,y);
+                    if(pixel.alpha()>160 && pixel.red()>220 &&
+                       pixel.green()>90 && pixel.green()<190 &&
+                       pixel.blue()<100) ++orange;
+                }
+            return orange;
+        };
+        int changed=0;
+        if(helpMenu.size()==aboutMenu.size()){
+            for(int y=0;y<helpMenu.height();++y)
+                for(int x=0;x<helpMenu.width();++x)
+                    if(helpMenu.pixel(x,y)!=aboutMenu.pixel(x,y))++changed;
+        }
+        ok=check(orangePixels(helpMenu)>24 && orangePixels(aboutMenu)>24 &&
+                 changed>5,
+                 "Help / About menu icons must be distinct orange outline drawings") && ok;
+    }
+
     // Header regression: the old help-bubble icon covered the last
     // digits of the advertised version. Preserve the ordinary tooltip
     // but do not overlay its text or remove space for the version.

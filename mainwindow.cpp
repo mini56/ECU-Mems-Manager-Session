@@ -34,6 +34,9 @@
 #include <QDir>
 #include <QDateTime>
 #include <QPixmap>
+#include <QPainter>
+#include <QPainterPath>
+#include <QPen>
 #include <QScreen>
 #include <QStatusBar>
 #include <QGroupBox>
@@ -49,6 +52,35 @@
 #define tr I18n::text
 
 namespace {
+
+// The Help menu uses the same orange, thin-stroke vocabulary as the
+// navigation icons. Avoid platform-specific blue/grey QStyle icons.
+static QIcon sessionHelpMenuIcon(bool about)
+{
+    QPixmap image(24,24);
+    image.fill(Qt::transparent);
+    QPainter painter(&image);
+    painter.setRenderHint(QPainter::Antialiasing,true);
+    const QColor accent(QStringLiteral("#ff8a1c"));
+    painter.setPen(QPen(accent,1.8,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin));
+    painter.setBrush(Qt::NoBrush);
+    painter.drawEllipse(QRectF(3.5,3.5,17.0,17.0));
+    if(about){
+        painter.setBrush(accent);
+        painter.drawEllipse(QRectF(11.1,6.9,1.8,1.8));
+        painter.setBrush(Qt::NoBrush);
+        painter.drawLine(QPointF(12,10.8),QPointF(12,16.9));
+    }else{
+        QPainterPath question;
+        question.moveTo(8.9,8.6);
+        question.cubicTo(9.0,5.6,14.8,5.6,15.1,8.9);
+        question.cubicTo(15.3,11.4,12.0,11.5,12.0,14.1);
+        painter.drawPath(question);
+        painter.drawPoint(QPointF(12.0,17.0));
+    }
+    painter.end();
+    return QIcon(image);
+}
 
 struct ExitConfirmationText
 {
@@ -450,8 +482,8 @@ void MainWindow::setupWidgets()
   // set menu and button icons
   m_ui->m_exitAction->setIcon(style()->standardIcon(QStyle::SP_DialogCloseButton));
   m_ui->m_editSettingsAction->setIcon(style()->standardIcon(QStyle::SP_ComputerIcon));
-  m_ui->m_helpContentsAction->setIcon(style()->standardIcon(QStyle::SP_DialogHelpButton));
-  m_ui->m_helpAboutAction->setIcon(style()->standardIcon(QStyle::SP_MessageBoxInformation));
+  m_ui->m_helpContentsAction->setIcon(sessionHelpMenuIcon(false));
+  m_ui->m_helpAboutAction->setIcon(sessionHelpMenuIcon(true));
   m_ui->m_startLoggingButton->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
   m_ui->m_stopLoggingButton->setIcon(style()->standardIcon(QStyle::SP_MediaStop));
 
