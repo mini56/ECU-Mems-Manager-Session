@@ -1,5 +1,5 @@
 # Exclusively the DLL verification workflow. No Session build, Setup or MAJ
-# workflow is changed by this file. Test revision: WinSDK ReadRaw name fix.
+# workflow is changed by this file. Test revision: isolated Session197 UI smoke enabled.
 # The application is built only in a
 # disposable worktree pinned to the real Session 197 commit.
 name: DLL MEMS Manager x64 - validation isolee Session 197
