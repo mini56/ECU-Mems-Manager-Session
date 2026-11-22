@@ -62,7 +62,8 @@ expected_extensions = [
     "mems_command_kline19",
     "mems_move_iac_kline19",
     "mems_fuel_trim_2_plus",
-    "mems_fuel_trim_2_minus"
+    "mems_fuel_trim_2_minus",
+    "mems_reset_ECU_leopold"
 ]
 
 exports = []
@@ -79,7 +80,7 @@ for raw in definition.splitlines():
 
 if exports != expected_exports + expected_extensions:
     raise SystemExit(f"FAIL: original 45 + 8 additive exports changed: {exports}")
-if len(set(exports)) != 53:
+if len(set(exports)) != 54:
     raise SystemExit("FAIL: duplicate or missing symbols in ROSCO DLL")
 
 required_protocol_guards = [
@@ -90,6 +91,8 @@ required_protocol_guards = [
     "return send_command_with_one_byte_reply(info, MEMS_ResetAdj);",
     "return send_command_with_one_byte_reply(info, MEMS_ResetEMI);",
     "return send_command_with_one_byte_reply(info, MEMS_Save);",
+    "return mems_reset_ADJ(info); /* Manager legacy reset ECU: 0xFA */",
+    "return mems_reset_EMI(info); /* Manager legacy adjustments: 0x0F */",
     "ROSCO_LEGACY_WRAPPER(mems_fuel_trim_plus, MEMS_FuelTrimPlus)",
     "ROSCO_LEGACY_WRAPPER(mems_OpenIAC, MEMS_OpenIAC)",
     "ROSCO_LEGACY_WRAPPER(mems_Fan2_Off, MEMS_Fan2Off)",
@@ -123,7 +126,9 @@ for name, value in required_commands.items():
     if not re.search(pattern, header):
         raise SystemExit(f"FAIL historical command changed/missing: {name}={value}")
 
-print("OK: 45 LeopoldG ROM-tested exports + 8 extensions")
+print("OK: original 53 symbols plus distinct LeopoldG ECU reset = 54 exports")
+assert "mems_reset_ECU_leopold @54" in definition
+print("OK: Manager reset ECU=FA and adjustments=0F, explicit LeopoldG ECU=AF")
 print("OK: full 0x80 and 0x7D frame-length guards present")
 print("OK: truncated 0x7D frame is rejected")
 print("OK: clear/reset/heartbeat return real command result")
@@ -135,7 +140,9 @@ for name, code in {"MEMS_ResetECU": "0xAF", "MEMS_ResetAdj": "0xFA",
                    "MEMS_FuelTrim2Plus": "0x7B", "MEMS_FuelTrim2Minus": "0x7C"}.items():
     if not re.search(rf"\b{re.escape(name)}\s*=\s*{re.escape(code)}\b", manager_header):
         raise SystemExit(f"FAIL Manager public header: {name} must be {code}")
-for exported in expected_exports + expected_extensions:
+# The application source header is not changed by this DLL-only correction.
+# The 54th export is declared only in the DLL's public header.
+for exported in expected_exports + expected_extensions[:-1]:
     if not re.search(rf"\b{re.escape(exported)}\s*\(", manager_header):
         raise SystemExit(f"FAIL Manager public header is missing export declaration: {exported}")
 print("OK: Manager source header matches 45 original + 8 added DLL exports")
