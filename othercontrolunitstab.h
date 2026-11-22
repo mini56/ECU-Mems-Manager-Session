@@ -496,11 +496,11 @@ private:
         m_plipIntro=new QLabel(parent);
         m_plipIntro->setObjectName(QStringLiteral("lucas5asPlipIntro"));
         m_plipIntro->setWordWrap(true);
-        root->addWidget(m_plipIntro);
 
+        // First control row must not depend on whether a translated PLIP
+        // description wraps at the available column width.
         QHBoxLayout *commands=new QHBoxLayout;
-        // Match the top edge of the RC5 and 5AS first command rows.
-        commands->setContentsMargins(0,29,0,0);
+        commands->setContentsMargins(0,34,0,0);
         commands->setSpacing(5);
         m_plipControl=new QPushButton(parent);
         m_plipControl->setObjectName(QStringLiteral("lucas5asPlipControlButton"));
@@ -514,6 +514,9 @@ private:
         }
         root->addLayout(commands);
 
+        // Description remains fully visible and translated, but no longer
+        // pushes the first pair of buttons down on narrower windows.
+        root->addWidget(m_plipIntro);
         m_plipStatus=new QLabel(parent);
         m_plipStatus->setObjectName(QStringLiteral("lucas5asPlipStatus"));
         m_plipStatus->setWordWrap(true);

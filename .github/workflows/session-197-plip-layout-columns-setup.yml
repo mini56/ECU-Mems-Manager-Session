@@ -6,6 +6,8 @@ on:
     branches: [fix-documentary-additive-session-161-20261118]
     paths:
       - '.github/workflows/session-197-plip-layout-columns-setup.yml'
+      - 'othercontrolunitstab.h'
+      - 'uishellsmoketest.cpp'
 permissions:
   contents: write
 concurrency:
@@ -78,7 +80,8 @@ jobs:
           assert 'composeInteractive(window);' in interactive
           assert 'roscoOutput->isReadOnly()' in smoke and 'interactiveNotesEditor' in smoke
           keys=Path('othercontrolunitstab.h').read_text(encoding='utf-8')
-          assert 'commands->setContentsMargins(0,29,0,0);' in keys
+          assert 'commands->setContentsMargins(0,34,0,0);' in keys
+          assert keys.index('root->addLayout(commands);', keys.index('void createPlipPanel')) < keys.index('root->addWidget(m_plipIntro);', keys.index('void createPlipPanel'))
           assert 'm_plipTable->horizontalHeader()->setSectionResizeMode(0,QHeaderView::ResizeToContents)' in keys
           assert 'm_plipTable->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Stretch)' in keys
           assert 'm_plipTable->horizontalHeader()->setSectionResizeMode(2,QHeaderView::ResizeToContents)' in keys
