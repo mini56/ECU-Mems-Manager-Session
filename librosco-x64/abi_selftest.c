@@ -132,7 +132,27 @@ int main(void)
         "mems_manager_transient_parse_data80",
         "mems_manager_transient_parse_word_reply",
         "mems_manager_transient_decode_pair",
-        "mems_manager_transient_compare_ticks"
+        "mems_manager_transient_compare_ticks",
+        "mems2j_frame_encode",
+        "mems2j_frame_decode",
+        "mems2j_make_read_request",
+        "mems2j_make_clear_fault_request",
+        "mems2j_make_key_request",
+        "mems2j_seed_key",
+        "mems2j_response_status",
+        "mems2j_decode_measurement",
+        "mems2j_fault_bit",
+        "mems3_frame_encode",
+        "mems3_frame_decode",
+        "mems3_make_read_request",
+        "mems3_response_status",
+        "mems3_decode_measurement",
+        "mems3_fault_count",
+        "mems3_fault_at",
+        "mems_rc5_make_request",
+        "mems_rc5_validate_frame",
+        "mems_rc5_fault_count",
+        "mems_rc5_fault_at"
         };
         HMODULE module=GetModuleHandleA("mems_manager_x64.dll");
         size_t i=0;
@@ -141,7 +161,7 @@ int main(void)
             ++failures;
         }else{
             CHECK_EQ("historical and additive export total",
-                     sizeof(exports)/sizeof(exports[0]),71);
+                     sizeof(exports)/sizeof(exports[0]),91);
             for(i=0;i<sizeof(exports)/sizeof(exports[0]);++i){
                 if(!GetProcAddress(module,exports[i])){
                     fprintf(stderr,"FAIL: missing original/additive export %s\n",exports[i]);
