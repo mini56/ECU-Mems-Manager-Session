@@ -60,3 +60,33 @@ La commande LeopoldG `AF` doit rester un export **distinct**, `mems_reset_ECU_le
 - Audit binaire historique du chantier DLL : `librosco-x64/audit_historical_dll_compat.py`.
 
 **Statut final : vérification croisée documentaire et du code source. Ni commande de reset envoyée à un ECU ni modification du programme Session.**
+
+## 5. Protocole de preuve de l'effet ECU — ne pas confondre ACK et action
+
+**Principe : une trame acceptée ne suffit pas à établir l'effet attendu.** L'écho USB local, l'écho généré par l'ECU, un octet d'acquittement et la modification réelle d'un état sont quatre observations différentes.
+
+| Objectif souhaité | Action candidate | Source et niveau de preuve | Observation permettant de confirmer le résultat sur ECU réel | Ce que la DLL ne peut pas présumer |
+|---|---|---|---|---|
+| Effacer les adaptations apprises (ROSCO 1.3/1.6/1.9) | `FA` | RoverMEMS : « Clear all adaptations », réponse indiquée `FA 00` ; ancien Manager le nomme « Reset ECU » ; code octet confirmé | Relever les valeurs d'adaptation disponibles avant, exécuter la commande en conditions prévues par le constructeur, puis relever les mêmes valeurs après et vérifier le retour vers les valeurs initiales/attendues | Que `FA` provoque un redémarrage matériel ou que chaque variante possède les mêmes adaptations |
+| Redémarrer réellement un ECU ROSCO | `AF` | Commande nommée « Reset ECU » dans logiciel/DLL LeopoldG, mais **effet matériel indépendant non identifié** dans les sources examinées | Journal TX/RX avec code ECU/firmware identifié, éventuelle fin de session suivie de nouvelle initialisation, vérification du redémarrage et maintien des adaptations si distinctes | Qu'une fonction appelée reset fasse vraiment rebooter l'ECU, ou que `AF` fonctionne pour tous les modèles |
+| Remettre les ajustements à leur valeur par défaut | `0F` historiquement dans Manager | **Non validé** comme effacement d'adaptations : les références attribuent aussi `0F` à « Reset EMI » ou VVT OFF | D'abord identifier exactement la variante, le mode de diagnostic et la documentation de la commande ; ensuite seulement observer les données d'ajustement avant/après dans une procédure de banc maîtrisée | Que `0F` soit un reset ou un simple no-op sur la variante |
+| Désactiver VVT (si cet actionneur existe) | `0F` selon tableau RoverMEMS | Documenté dans la famille des commandes d'arrêt d'actionneur, sans preuve universelle ni réponse systématiquement publiée | Vérifier une réaction d'actionneur constatée sur une variante VVT qui prend en charge ce test ; rétablir le fonctionnement ensuite | Qu'un ECU sans VVT supporte la commande |
+| Fermer la session diagnostic | `F6` | Description RoverMEMS et observation de Colin Bourassa sur MEMS 1.6 : après F6, l'ECU n'envoie plus les trames normales avant réinitialisation du dialogue | Enregistrer l'arrêt des réponses utiles puis la réussite de CA/75/D0 pour une nouvelle session | Que le microcontrôleur ait réellement redémarré |
+| Reset ECU en MEMS KWP/ISO 14230 | **service `11` dans une trame valide**, pas octet ROSCO brut | Source d'Andrew Revill MEMS Mapper EU2/MEMS3 | Session KWP identifiée, requête complète autorisée, résultat positif ou rupture de session prévue, puis dialogue rétabli selon protocole | Que `11` soit utilisable à l'identique sur ROSCO/2J/3/TD5 |
+
+**Classification au 22/11/2026 :**
+- `FA` / **effacement adaptations** : **documentation fonctionnelle externe concordante**, mais *non revalidé sur ECU par le présent projet*.
+- `AF` / **reboot ECU** : **nom d'API et émission confirmés**, *effet moteur/ECU non établi indépendamment*.
+- `0F` / **effacement ajustements** : **non confirmé et conflit de sens majeur** ; ne pas le marquer « fonctionnel » sur la base du seul nom d'export.
+- `F6` / **fin session** : **effet expérimental documenté chez Colin Bourassa** pour MEMS 1.6, distinct d'un reboot.
+- `11` / **reset ISO 14230** : **service protocolaire documenté chez Andrew Revill**, propre à la session et à la famille ECU.
+
+**Règle de compatibilité pendant l'interdiction de modifier Manager :** la DLL candidate conserve sans changement `mems_reset_ECU=FA`, `mems_reset_adjustments=0F`, `mems_reset_ECU_leopold=AF`. Cette conservation préserve les appels et octets du programme installé, **sans valider les libellés des boutons**. Aucun envoi de commande nouvelle n'est autorisé par le seul audit documentaire. La substitution de la DLL en production reste conditionnée à des tests complets de compatibilité.
+
+## 6. Sources additionnelles relatives à l'effet constaté
+
+- Colin Bourassa, **Protocol**, essai sur banc après `F6` : https://colinbourassa.github.io/car_stuff/mems_interface/
+- RoverMEMS, tableau complet des commandes et mentions d'incertitude : https://rovermems.com/diagnostics/technical/
+- Andrew Revill, service `11` ECU Reset dans l'implémentation ISO 14230 : https://andrewrevill.co.uk/MEMSMapperEU2.htm
+- Andrew Revill, procédure de réinitialisation via ISO 14230 avant retour au protocole Rover/BMW : https://andrewrevill.co.uk/MEMS3SupportNNN100682.htm
+- Andrew Revill, avertissement selon familles : commandes des ECU essence pouvant produire des effets nuisibles sur Td5 : https://andrewrevill.co.uk/MEMS3Td5Emulation.htm
