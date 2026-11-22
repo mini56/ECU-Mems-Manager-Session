@@ -74,3 +74,23 @@ EXPORTS
     mems_manager_transient_parse_word_reply @69
     mems_manager_transient_decode_pair @70
     mems_manager_transient_compare_ticks @71
+    mems2j_frame_encode @72
+    mems2j_frame_decode @73
+    mems2j_make_read_request @74
+    mems2j_make_clear_fault_request @75
+    mems2j_make_key_request @76
+    mems2j_seed_key @77
+    mems2j_response_status @78
+    mems2j_decode_measurement @79
+    mems2j_fault_bit @80
+    mems3_frame_encode @81
+    mems3_frame_decode @82
+    mems3_make_read_request @83
+    mems3_response_status @84
+    mems3_decode_measurement @85
+    mems3_fault_count @86
+    mems3_fault_at @87
+    mems_rc5_make_request @88
+    mems_rc5_validate_frame @89
+    mems_rc5_fault_count @90
+    mems_rc5_fault_at @91
