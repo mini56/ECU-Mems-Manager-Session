@@ -80,7 +80,7 @@ jobs:
           assert 'composeInteractive(window);' in interactive
           assert 'roscoOutput->isReadOnly()' in smoke and 'interactiveNotesEditor' in smoke
           keys=Path('othercontrolunitstab.h').read_text(encoding='utf-8')
-          assert 'commands->setContentsMargins(0,34,0,0);' in keys
+          assert 'commands->setContentsMargins(0,55,0,0);' in keys
           assert keys.index('root->addLayout(commands);', keys.index('void createPlipPanel')) < keys.index('root->addWidget(m_plipIntro);', keys.index('void createPlipPanel'))
           assert 'm_plipTable->horizontalHeader()->setSectionResizeMode(0,QHeaderView::ResizeToContents)' in keys
           assert 'm_plipTable->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Stretch)' in keys

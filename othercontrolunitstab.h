@@ -500,7 +500,7 @@ private:
         // First control row must not depend on whether a translated PLIP
         // description wraps at the available column width.
         QHBoxLayout *commands=new QHBoxLayout;
-        commands->setContentsMargins(0,34,0,0);
+        commands->setContentsMargins(0,55,0,0);
         commands->setSpacing(5);
         m_plipControl=new QPushButton(parent);
         m_plipControl->setObjectName(QStringLiteral("lucas5asPlipControlButton"));
