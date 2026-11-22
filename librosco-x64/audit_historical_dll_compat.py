@@ -236,29 +236,28 @@ def main():
             assert value in new_by_ordinal, f"Manager imports unknown new DLL ordinal: {value}"
             resolved_imports.add(new_by_ordinal[value])
     for symbol in ("mems_connect", "mems_init_link", "mems_read",
-                   "mems_reset_ADJ", "mems_reset_EMI", "mems_disconnect"):
+                   "mems_reset_ECU", "mems_reset_adjustments", "mems_disconnect"):
         assert symbol in resolved_imports, f"Manager missing resolved import {symbol}"
 
-    # The normal Manager UI must keep its own old semantics. The other 45
-    # LeopoldG original names/commands remain exported in the DLL itself.
+    # Session196 really uses mems_reset_adjustments=0F and mems_reset_ECU=FA.
+    # LeopoldG uses the same FA/0F bytes under different NAMES.
+    # The actual installed header/dispatcher is authoritative for ABI compatibility.
     source = Path("memsinterface_dispatch.cpp").read_text(encoding="utf-8")
     adjustment = source.split("bool MEMSInterface::guardedResetAdjustments()", 1)[1].split(
         "bool MEMSInterface::guardedResetEcu()", 1)[0]
     ecu = source.split("bool MEMSInterface::guardedResetEcu()", 1)[1].split(
         "void MEMSInterface::onProtocolCommandRequested", 1)[0]
-    assert "const quint8 command = 0x0Fu;" in adjustment
-    assert "return ::mems_reset_EMI(&m_memsinfo);" in adjustment
+    assert "MemsProtocolSafety::allowsMutation(ecuFamily(), diagnosticMode(), 0x0Fu)" in adjustment
+    assert "return ::mems_reset_adjustments(&m_memsinfo);" in adjustment
     assert "mems_command_kline19(&m_memsinfo, 0x0Fu" in adjustment
-    assert "const quint8 command = 0xFAu;" in ecu
-    assert "return ::mems_reset_ADJ(&m_memsinfo);" in ecu
+    assert "MemsProtocolSafety::allowsMutation(ecuFamily(), diagnosticMode(), 0xFAu)" in ecu
+    assert "return ::mems_reset_ECU(&m_memsinfo);" in ecu
     assert "mems_command_kline19(&m_memsinfo, 0xFAu" in ecu
-    assert "MemsProtocolSafety::allowsMutation" in adjustment
-    assert "MemsProtocolSafety::allowsMutation" in ecu
 
     print("HISTORICAL_DLL_BINARY_COMPARE_PASS: old Manager 22 exports, LeopoldG 45, new x64 91 (family, transient-injection and 2J/3/RC5 codec extensions)")
     print("HISTORICAL_COMMANDS_PASS: old Manager ECU=FA, adjustments=0F; LeopoldG ECU=AF, ADJ=FA, EMI=0F, Save=81")
     print("MANAGER_IMPORTS_PASS: new DLL imports resolve to correct names/ordinals, no x86 librosco.dll")
-    print("MANAGER_COMMAND_ROUTING_PASS: original Manager semantics preserved for ROSCO and K-Line 1.9")
+    print("MANAGER_COMMAND_ROUTING_PASS: Session196 byte contract FA ECU / 0F adjustments preserved (physical meanings not proved)")
     print("NOTE: no real ECU was connected; write/reset behaviour is not verified on hardware")
 
 
