@@ -74,6 +74,7 @@ jobs:
           assert code.index('protocolLayout->addWidget(m_protocolOutput, 3)') < code.index('protocolLayout->addWidget(notesBox, 2)')
           keys=Path('othercontrolunitstab.h').read_text(encoding='utf-8')
           assert 'commands->setContentsMargins(0,25,0,0);' in keys, 'PLIP_BUTTON_ALIGNMENT_REGRESSION'
+          assert 'root->addSpacing(17);' in keys, 'PLIP_LEARNING_BUTTON_ALIGNMENT_REGRESSION'
           for language in ('fr','en','es','it','pt','de'):
               catalog=Path('translations',language,f'{language}_ecu_rosco_notes.json')
               value=json.loads(catalog.read_text(encoding='utf-8')).get('18120')

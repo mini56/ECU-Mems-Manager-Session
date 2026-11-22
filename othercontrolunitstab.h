@@ -558,6 +558,8 @@ private:
             learningControls->addWidget(button,1);
         }
         root->addLayout(learningControls);
+        // Keep the learning controls level with the 5AS journal button.
+        root->addSpacing(17);
 
         m_plipLearningStatus=new QLabel(parent);
         m_plipLearningStatus->setObjectName(QStringLiteral("lucas5asPlipLearningStatus"));
