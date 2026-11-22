@@ -21,7 +21,15 @@ L'environnement de validation crée une copie temporaire et isolée de **Session
 - `manager_dll_contract_selftest.cpp`, `validate_protocol_guards.py` et `validate_session200_binaries.py` : contrat ABI, signatures, 91 exports et imports réels de Session 200.
 - `verify_session200_windows.ps1` : compilation DLL x64, tests CTest, compilation de la vraie Session 200 avec notre DLL, inspection des PE et exécution du test de démarrage des 16 pages existant dans Session 200, sans ECU et sans installation.
 
-**Statut :** validation 200 à relancer. Les résultats des tests 197 ci-dessous sont conservés uniquement comme historique ; ils ne suffisent pas à démontrer la compatibilité avec la dernière version. Les tests sur ECU réel et sur le Setup installé restent indispensables avant remplacement de la DLL actuelle.
+**Résultat effectif du 22/11/2026 : RUN VERT #45072564428**, [journal de la validation DLL / Session 200](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/45072564428), commit testé `91974c9b243bfdf519ce251c32176a8aa2b4d7aa`.
+
+- **DLL Windows x64 compilée** ; **4/4 tests CTest réussis**.
+- **91 exports physiques** conformes (noms et ordinaux) ; **15 imports Manager** correctement résolus, sans `librosco.dll` x86.
+- **Véritable Session 200 compilée et liée** avec notre nouvelle DLL.
+- **Session 200 réellement démarrée en mode test Qt hors-écran**, vérification automatique des **16 pages**, navigation, thèmes, langues et fonctions d'interface : `SESSION200_UI_SMOKE_WITH_NEW_DLL_PASS`, `Checks PASS`, fermeture code `0`.
+- La validation a utilisé exclusivement un **worktree Git éphémère**. Aucune source du programme Session 200, aucun workflow du programme, aucune Release, aucun Setup installé et aucun calculateur physique n'ont été modifiés.
+
+**Limites :** la connexion réelle à un ECU, les lectures sur véhicule, les réglages sur matériel et le fonctionnement d'un **Setup installé** avec cette DLL ne sont **pas encore certifiés**. Les résultats des runs 197 ci-dessous sont conservés comme historique ; l'unique référence actuelle est **Session 200**.
 
 ---
 
