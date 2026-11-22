@@ -36,8 +36,8 @@ jobs:
         run: |
           git fetch --no-tags --depth=1 origin 9105d9838e3fd5f81feeb99c0481c454d5d6a5e4
           if ($LASTEXITCODE -ne 0) { throw 'Cannot fetch Session 197 read-only reference' }
-          git cat-file -e 9105d9838e3fd5f81feeb99c0481c454d5d6a5e4^{commit}
-          if ($LASTEXITCODE -ne 0) { throw 'Session 197 commit not present' }
+          # The SHA fetch above already verifies that Session 197 is accessible.
+          # Avoid PowerShell interpreting Git's ^{commit} suffix.
 
       - name: Python pour les controles binaires
         uses: actions/setup-python@v5
