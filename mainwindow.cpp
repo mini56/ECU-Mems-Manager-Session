@@ -82,6 +82,40 @@ static QIcon sessionHelpMenuIcon(bool about)
     return QIcon(image);
 }
 
+// Options-menu pictograms share the Help menu's orange stroke and transparent
+// background. They are drawn locally, without platform-native QStyle icons.
+static QIcon sessionOptionsMenuIcon(bool alwaysOnTop)
+{
+    QPixmap image(24,24);
+    image.fill(Qt::transparent);
+    QPainter painter(&image);
+    painter.setRenderHint(QPainter::Antialiasing,true);
+    const QColor accent(QStringLiteral("#ff8a1c"));
+    painter.setPen(QPen(accent,1.8,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin));
+    painter.setBrush(Qt::NoBrush);
+    if(alwaysOnTop){
+        // A pushpin for the existing "always on top" toggle.
+        painter.drawRoundedRect(QRectF(7.5,4.5,9.0,4.0),1.2,1.2);
+        painter.drawLine(QPointF(9.0,8.5),QPointF(8.0,13.5));
+        painter.drawLine(QPointF(15.0,8.5),QPointF(16.0,13.5));
+        painter.drawLine(QPointF(6.5,13.5),QPointF(17.5,13.5));
+        painter.drawLine(QPointF(12.0,13.5),QPointF(12.0,20.0));
+    }else{
+        // A simple gear, legible at the menu's native 16px icon size.
+        painter.drawEllipse(QRectF(6.3,6.3,11.4,11.4));
+        painter.drawEllipse(QRectF(9.6,9.6,4.8,4.8));
+        constexpr qreal pi=3.14159265358979323846;
+        for(int i=0;i<8;++i){
+            const qreal angle=i*pi/4.0;
+            painter.drawLine(
+                QPointF(12.0+6.4*std::cos(angle),12.0+6.4*std::sin(angle)),
+                QPointF(12.0+9.4*std::cos(angle),12.0+9.4*std::sin(angle)));
+        }
+    }
+    painter.end();
+    return QIcon(image);
+}
+
 struct ExitConfirmationText
 {
     QString title;
@@ -481,7 +515,7 @@ void MainWindow::setupWidgets()
     m_ui->horizontalLayoutecuconnect->setContentsMargins(10, 0, 0, 0);
   // set menu and button icons
   m_ui->m_exitAction->setIcon(style()->standardIcon(QStyle::SP_DialogCloseButton));
-  m_ui->m_editSettingsAction->setIcon(style()->standardIcon(QStyle::SP_ComputerIcon));
+  m_ui->m_editSettingsAction->setIcon(sessionOptionsMenuIcon(false));
   m_ui->m_helpContentsAction->setIcon(sessionHelpMenuIcon(false));
   m_ui->m_helpAboutAction->setIcon(sessionHelpMenuIcon(true));
   m_ui->m_startLoggingButton->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
@@ -489,6 +523,8 @@ void MainWindow::setupWidgets()
 
   // Ajout de l'option "Toujours au premier plan" dans le menu Options
   QAction *alwaysOnTopAction = new QAction(I18n::text(7014) /* EN: Always on top */, this);
+  alwaysOnTopAction->setObjectName(QStringLiteral("sessionAlwaysOnTopAction"));
+  alwaysOnTopAction->setIcon(sessionOptionsMenuIcon(true));
   alwaysOnTopAction->setCheckable(true);
   alwaysOnTopAction->setChecked(false);
   m_ui->m_optionsMenu->addAction(alwaysOnTopAction);

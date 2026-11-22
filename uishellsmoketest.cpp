@@ -499,6 +499,46 @@ bool verifyUi(MainWindow &window)
                  "Help / About menu icons must be distinct orange outline drawings") && ok;
     }
 
+    // Both Options commands must have distinct SESSION-orange pictograms.
+    // This checks their actual QAction icons without triggering or modifying
+    // the existing parameter dialog and Always-on-top toggle.
+    QAction *settingsMenuAction=window.findChild<QAction*>(
+        QStringLiteral("m_editSettingsAction"));
+    QAction *alwaysOnTopMenuAction=window.findChild<QAction*>(
+        QStringLiteral("sessionAlwaysOnTopAction"));
+    ok=check(settingsMenuAction && alwaysOnTopMenuAction &&
+             !settingsMenuAction->icon().isNull() &&
+             !alwaysOnTopMenuAction->icon().isNull() &&
+             alwaysOnTopMenuAction->isCheckable(),
+             "Options settings and Always-on-top must have orange icons with original toggle") && ok;
+    if(settingsMenuAction && alwaysOnTopMenuAction &&
+       !settingsMenuAction->icon().isNull() && !alwaysOnTopMenuAction->icon().isNull()){
+        const QImage settingsIcon=settingsMenuAction->icon().pixmap(24,24).toImage()
+            .convertToFormat(QImage::Format_ARGB32);
+        const QImage pinIcon=alwaysOnTopMenuAction->icon().pixmap(24,24).toImage()
+            .convertToFormat(QImage::Format_ARGB32);
+        auto countAccent=[](const QImage &picture){
+            int count=0;
+            for(int y=0;y<picture.height();++y)
+                for(int x=0;x<picture.width();++x){
+                    const QColor pixel=picture.pixelColor(x,y);
+                    if(pixel.alpha()>160 && pixel.red()>220 &&
+                       pixel.green()>90 && pixel.green()<190 &&
+                       pixel.blue()<100) ++count;
+                }
+            return count;
+        };
+        int different=0;
+        if(settingsIcon.size()==pinIcon.size()){
+            for(int y=0;y<settingsIcon.height();++y)
+                for(int x=0;x<settingsIcon.width();++x)
+                    if(settingsIcon.pixel(x,y)!=pinIcon.pixel(x,y))++different;
+        }
+        ok=check(countAccent(settingsIcon)>24 && countAccent(pinIcon)>24 &&
+                 different>5,
+                 "Options settings and pin icons must be distinct orange drawings") && ok;
+    }
+
     // Header regression: the old help-bubble icon covered the last
     // digits of the advertised version. Preserve the ordinary tooltip
     // but do not overlay its text or remove space for the version.
