@@ -1,9 +1,9 @@
 # Exclusively the DLL verification workflow. No Session build, Setup or MAJ
-# workflow is changed by this file. Test revision: isolated Session197 UI smoke enabled.
+# workflow is changed by this file. Test revision: isolated Session200 UI smoke enabled.
 # The application is built only in a
-# disposable worktree pinned to the real Session 197 commit.
-name: DLL MEMS Manager x64 - validation isolee Session 197
-run-name: Test DLL / Session 197 / ${{ github.sha }}
+# disposable worktree pinned to the real Session 200 commit.
+name: DLL MEMS Manager x64 - validation isolee Session 200
+run-name: Test DLL / Session 200 / ${{ github.sha }}
 on:
   # An edit to THIS workflow starts ONE CI validation on dll-manager.
   # Ordinary program development on the Session branch never triggers it.
@@ -17,12 +17,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: dll-session197-isolated-validation
+  group: dll-session200-isolated-validation
   cancel-in-progress: true
 
 jobs:
-  session197_dll_validation:
-    name: Compiler la DLL et verifier la liaison avec Session 197
+  session200_dll_validation:
+    name: Compiler la DLL et verifier la liaison avec Session 200
     runs-on: windows-2022
     timeout-minutes: 100
     steps:
@@ -32,12 +32,12 @@ jobs:
           fetch-depth: 1
           persist-credentials: true
 
-      - name: S'assurer que la copie de Session 197 est accessible en lecture seule
+      - name: S'assurer que la copie de Session 200 est accessible en lecture seule
         shell: pwsh
         run: |
-          git fetch --no-tags --depth=1 origin 9105d9838e3fd5f81feeb99c0481c454d5d6a5e4
-          if ($LASTEXITCODE -ne 0) { throw 'Cannot fetch Session 197 read-only reference' }
-          # The SHA fetch above already verifies that Session 197 is accessible.
+          git fetch --no-tags --depth=1 origin 3737dffa3e30e0b9167bda34fa661958b757cd28
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot fetch Session 200 read-only reference' }
+          # The SHA fetch above already verifies that Session 200 is accessible.
           # Avoid PowerShell interpreting Git's ^{commit} suffix.
 
       - name: Python pour les controles binaires
@@ -45,7 +45,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Installer Qt 5.15.2 MSVC x64 pour compiler la copie jetable de Session 197
+      - name: Installer Qt 5.15.2 MSVC x64 pour compiler la copie jetable de Session 200
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -55,15 +55,15 @@ jobs:
           python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external $sevenZip
           if ($LASTEXITCODE -ne 0) { throw 'Qt 5.15.2 installation failed' }
 
-      - name: Compiler / tester DLL x64 et vraie copie Session 197 (aucune installation)
+      - name: Compiler / tester DLL x64 et vraie copie Session 200 (aucune installation)
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          & '.\librosco-x64\verify_session197_windows.ps1' -QtPrefix 'C:/Qt/5.15.2/msvc2019_64'
-          if ($LASTEXITCODE -ne 0) { throw 'Session 197 DLL compatibility validation failed' }
+          & '.\librosco-x64\verify_session200_windows.ps1' -QtPrefix 'C:/Qt/5.15.2/msvc2019_64'
+          if ($LASTEXITCODE -ne 0) { throw 'Session 200 DLL compatibility validation failed' }
 
       - name: Resultat de verification
         shell: pwsh
         run: |
-          Write-Host 'CI_SESSION197_DLL_CHECK_FINISHED: no Setup, no release, no ECU commands, no Session source modifications'
+          Write-Host 'CI_SESSION200_DLL_CHECK_FINISHED: no Setup, no release, no ECU commands, no Session source modifications'
           Write-Host 'DLL compatibility for installed programs and physical ECUs requires separate runtime validation.'
