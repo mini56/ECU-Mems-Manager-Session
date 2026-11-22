@@ -32,8 +32,8 @@ try {
 
     $SessionHeader = Join-Path $TempPath 'rosco.h'
     $ReferenceHeader = Join-Path $ScriptFolder 'reference-session197/rosco.h'
-    $Actual = [IO.File]::ReadAllText($SessionHeader) -replace "\r\n?", "\n"
-    $Reference = [IO.File]::ReadAllText($ReferenceHeader) -replace "\r\n?", "\n"
+    $Actual = [IO.File]::ReadAllText($SessionHeader) -replace '\r\n?', ([string][char]10)
+    $Reference = [IO.File]::ReadAllText($ReferenceHeader) -replace '\r\n?', ([string][char]10)
     if ($Actual -cne $Reference) {
         throw 'Session 197 reference header is not identical to the pinned 197 source.'
     }
