@@ -86,6 +86,14 @@ try {
     if (-not $AppBinary -or -not $ManagerDll) {
         throw 'Cannot locate compiled Session197 application or its bundled DLL.'
     }
+    # The DLL is normally built in a different CMake subdirectory than the
+    # Manager EXE. Stage it next to the EXE in the throwaway test folder,
+    # rather than mistakenly claiming the installed Session 197 uses it.
+    $StagedDll = Join-Path $AppBinary.DirectoryName 'mems_manager_x64.dll'
+    Copy-Item -LiteralPath $ManagerDll.FullName -Destination $StagedDll -Force
+    if (-not (Test-Path $StagedDll)) {
+        throw 'Cannot stage the DLL next to the temporary Session197 executable.'
+    }
     Invoke-Checked 'python' @(
         (Join-Path $TemporaryDllFolder 'validate_session197_binaries.py'),
         '--dll',$ManagerDll.FullName,'--manager',$AppBinary.FullName
