@@ -802,8 +802,11 @@ bool verifyUi(MainWindow &window)
                 const int resetY=reset?reset->mapTo(otherPage,QPoint(0,0)).y():-4000;
                 logSmoke(QStringLiteral("Other ECU first controls at %1px: RC5=%2 5AS=%3 PLIP=%4 reset=%5")
                     .arg(size.width()).arg(rc5Y).arg(fiveY).arg(plipY).arg(resetY));
+                // Visual review of installed 197 requested a further 4px downward
+                // adjustment for PLIP, while RC5/5AS remain unchanged.
                 ok=check(rc5 && five && plip && reset &&
-                         qAbs(rc5Y-fiveY)<=1 && qAbs(fiveY-plipY)<=1 && plipY==resetY,
+                         qAbs(rc5Y-fiveY)<=1 &&
+                         qAbs((plipY-fiveY)-4)<=1 && plipY==resetY,
                          "Top six ECU buttons must share exactly the same horizontal row") && ok;
             }
             QTableWidget *plipTable=otherPage->findChild<QTableWidget*>(QStringLiteral("lucas5asPlipTable"));
