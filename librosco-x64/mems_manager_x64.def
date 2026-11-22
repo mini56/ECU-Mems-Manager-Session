@@ -56,3 +56,4 @@ EXPORTS
     mems_move_iac_kline19 @51
     mems_fuel_trim_2_plus @52
     mems_fuel_trim_2_minus @53
+    mems_reset_ECU_leopold @54
