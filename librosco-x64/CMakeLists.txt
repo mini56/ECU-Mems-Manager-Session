@@ -14,6 +14,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 add_library(rosco SHARED
     setup.c
     protocol.c
+    family.c
     mems_manager_x64.def
 )
 
