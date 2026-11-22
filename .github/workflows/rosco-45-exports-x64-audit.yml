@@ -1,118 +1,60 @@
-name: DLL MEMS Manager x64 - compatibilite complete
-run-name: DLL MEMS Manager x64 - 53 exports + application - ${{ github.sha }}
+# Exclusively the DLL verification workflow. No Session build, Setup or MAJ
+# workflow is changed by this file. The application is built only in a
+# disposable worktree pinned to the real Session 197 commit.
+name: DLL MEMS Manager x64 - validation isolee Session 197
+run-name: Test DLL / Session 197 / ${{ github.sha }}
 on:
+  # An edit to THIS workflow starts ONE CI validation on dll-manager.
+  # Ordinary program development on the Session branch never triggers it.
   push:
-    branches: [reconstruction-rosco-complete-45-fonctions-20261121]
+    branches: [dll-manager]
     paths:
-      - 'librosco-x64/**'
-      - 'protocolcontext.h'
-      - 'protocolcontext_test.cpp'
-      - 'memsinterface_dispatch.cpp'
-      - 'rosco.h'
       - '.github/workflows/rosco-45-exports-x64-audit.yml'
   workflow_dispatch:
+
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: dll-session197-isolated-validation
+  cancel-in-progress: false
+
 jobs:
-  verification_dll:
-    name: Verifier la DLL et son integration dans Manager
+  session197_dll_validation:
+    name: Compiler la DLL et verifier la liaison avec Session 197
     runs-on: windows-2022
     timeout-minutes: 100
     steps:
-      - uses: actions/checkout@v4
-      - name: Verifier les 45 fonctions, les octets et l'absence de reduction
+      - name: Recuperer uniquement la branche DLL
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Python pour les controles binaires
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Installer Qt 5.15.2 MSVC x64 pour compiler la copie jetable de Session 197
         shell: pwsh
         run: |
-          python librosco-x64/validate_protocol_guards.py
-          if($LASTEXITCODE -ne 0){throw 'ROSCO source audit FAILED'}
-          @'
-          from pathlib import Path
-          t=Path('memsinterface_dispatch.cpp').read_text(encoding='utf8')
-          assert 'const quint8 command = 0xFAu;' in t, 'Manager legacy ECU reset 0xFA missing'
-          assert 'const quint8 command = 0x0Fu;' in t, 'Manager legacy adjustment reset 0x0F missing'
-          assert 'return ::mems_reset_ADJ(&m_memsinfo);' in t, 'Manager ECU reset must call 0xFA wrapper'
-          assert 'return ::mems_reset_EMI(&m_memsinfo);' in t, 'Manager adjustment reset must call 0x0F wrapper'
-          assert '0x81u' in t and 'guardedSaveAdjustments' in t
-          p=Path('protocolcontext.h').read_text(encoding='utf8')
-          assert 'case 0xAFu' in p and 'case 0x7Bu: case 0x7Cu:' in p
-          assert 'if (family == MemsEcuFamily::Mems19)' in p
-          print('MANAGER_LEGACY_ROUTING_SOURCE_PASS: ECU=FA ADJ=0F, K-Line independent')
-          '@ | python -
-          if($LASTEXITCODE -ne 0){throw 'ROSCO routing audit FAILED'}
-      - name: Compiler mems_manager_x64.dll proprement
-        shell: pwsh
-        run: |
-          cmake -S librosco-x64 -B build-rosco-45 -A x64 -DCMAKE_BUILD_TYPE=Release
-          if($LASTEXITCODE -ne 0){throw 'ROSCO x64 CMake configure FAILED'}
-          cmake --build build-rosco-45 --config Release --parallel
-          if($LASTEXITCODE -ne 0){throw 'ROSCO x64 compile FAILED'}
-      - name: Tester la DLL construite et tous ses exports reels
-        shell: pwsh
-        run: |
-          ctest --test-dir build-rosco-45 -C Release --output-on-failure
-          if($LASTEXITCODE -ne 0){throw 'ROSCO DLL runtime self-test FAILED'}
-          $dll='build-rosco-45/Release/mems_manager_x64.dll'
-          if(-not(Test-Path $dll)){throw 'ROSCO DLL output missing'}
-          $bytes=[IO.File]::ReadAllBytes((Resolve-Path $dll).Path)
-          if($bytes[0] -ne 77 -or $bytes[1] -ne 90){throw 'ROSCO DLL is not PE'}
-          $pe=[BitConverter]::ToInt32($bytes,0x3c)
-          if([BitConverter]::ToUInt16($bytes,$pe+4) -ne 0x8664){throw 'ROSCO DLL is not AMD64'}
-          $sha=(Get-FileHash $dll -Algorithm SHA256).Hash.ToLowerInvariant()
-          Write-Host "ROSCO_45_LEGACY_EXPORTS_PLUS_8_VERIFIED AMD64 sha256=$sha"
-      - name: Installer les dependances Qt necessaires a la compilation du programme
-        shell: pwsh
-        run: |
-          $ErrorActionPreference='Stop'
-          python -m pip install --disable-pip-version-check 'aqtinstall==3.3.0'
-          if($LASTEXITCODE -ne 0){throw 'QT_PREP_FAILED'}
-          $sevenZip=(Get-Command 7z.exe -ErrorAction Stop).Source
+          $ErrorActionPreference = 'Stop'
+          python -m pip install --disable-pip-version-check aqtinstall==3.3.0
+          if ($LASTEXITCODE -ne 0) { throw 'aqtinstall installation failed' }
+          $sevenZip = (Get-Command 7z.exe -ErrorAction Stop).Source
           python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external $sevenZip
-          if($LASTEXITCODE -ne 0){throw 'QT_DOWNLOAD_OR_INSTALL_FAILED'}
-      - name: Compiler ECU MEMS Manager avec notre DLL et le vrai header public
+          if ($LASTEXITCODE -ne 0) { throw 'Qt 5.15.2 installation failed' }
+
+      - name: Compiler / tester DLL x64 et vraie copie Session 197 (aucune installation)
         shell: pwsh
         run: |
-          $ErrorActionPreference='Stop'
-          $qt='C:/Qt/5.15.2/msvc2019_64'
-          if(-not (Test-Path "$qt/lib/cmake/Qt5/Qt5Config.cmake")) {throw 'Qt 5.15.2 absent du runner : compilation Manager non verifiee'}
-          # Existing application post-build tests load Qt DLLs from PATH.
-          $env:PATH="$qt/bin;$env:PATH"
-          $env:QT_QPA_PLATFORM='offscreen'
-          cmake -S . -B build-manager-dll -A x64 "-DCMAKE_PREFIX_PATH=$qt" -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF -DMEMS_USE_ONNX_GENAI=OFF
-          if($LASTEXITCODE -ne 0){throw 'MANAGER_CONFIGURE_WITH_NEW_DLL_FAILED'}
-          cmake --build build-manager-dll --config Release --target ecu_mems_manager --parallel 4
-          if($LASTEXITCODE -ne 0){throw 'MANAGER_LINK_WITH_NEW_DLL_FAILED'}
-          $app=Get-ChildItem 'build-manager-dll' -Recurse -File -Filter 'ecu_mems_manager.exe' | Select-Object -First 1
-          if(-not $app){throw 'MANAGER_EXECUTABLE_MISSING'}
-          $builtDll=Get-ChildItem 'build-manager-dll/librosco-x64' -Recurse -File -Filter 'mems_manager_x64.dll' | Select-Object -First 1
-          if(-not $builtDll){throw 'MANAGER_DLL_DEPENDENCY_MISSING'}
-          Write-Host "MANAGER_COMPAT_BUILD_SUCCESS exe=$($app.FullName) dll=$($builtDll.FullName)"
-      - name: Comparer les DLL historiques reelles et les imports de Manager
+          $ErrorActionPreference = 'Stop'
+          & '.\librosco-x64\verify_session197_windows.ps1' -QtPrefix 'C:/Qt/5.15.2/msvc2019_64'
+          if ($LASTEXITCODE -ne 0) { throw 'Session 197 DLL compatibility validation failed' }
+
+      - name: Resultat de verification
         shell: pwsh
         run: |
-          $ErrorActionPreference='Stop'
-          $original='build-rosco-45/leopold_original_x86.dll'
-          Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/LeopoldG/sources-mems-rosco/d34d8e0d088f0826fac0199f99150be678450fa2/librosco.dll' -OutFile $original
-          if(-not(Test-Path $original)){throw 'ORIGINAL_45_DLL_MISSING'}
-          python librosco-x64/audit_historical_dll_compat.py --old22 prebuilt-librosco/librosco.dll --old45 $original --new build-rosco-45/Release/mems_manager_x64.dll --manager build-manager-dll/Release/ecu_mems_manager.exe
-          if($LASTEXITCODE -ne 0){throw 'HISTORICAL_DLL_COMPARE_FAILED'}
-      - name: Conserver la DLL validee dans une Release BROUILLON privee
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          $ErrorActionPreference='Stop'
-          $tag="mems-manager-x64-audit-$($env:GITHUB_SHA.Substring(0,12))"
-          $exe="build-rosco-45/Release/mems_manager_x64.dll"
-          $sha=(Get-FileHash $exe -Algorithm SHA256).Hash.ToLowerInvariant()
-          # DRAFT only, in this PRIVATE source repository, NEVER in public MAJ.
-          gh release create $tag `
-            "$exe#mems_manager_x64.dll" `
-            "librosco-x64/rosco.h#rosco.h" `
-            "librosco-x64/mems_manager_x64.def#mems_manager_x64.def" `
-            --repo $env:GITHUB_REPOSITORY `
-            --target $env:GITHUB_SHA `
-            --draft `
-            --title "DLL MEMS Manager x64 - validation technique privee" `
-            --notes "Validation logicielle privee de la DLL x64 et de son integration a Manager. Aucune publication publique ni Setup."
-          if($LASTEXITCODE -ne 0){throw 'Unable to store private DRAFT DLL'}
-          Write-Host 'ROSCO_PRIVATE_DRAFT_STORED; NEVER PUBLISHED TO MAJ'
+          Write-Host 'CI_SESSION197_DLL_CHECK_FINISHED: no Setup, no release, no ECU commands, no Session source modifications'
+          Write-Host 'DLL compatibility for installed programs and physical ECUs requires separate runtime validation.'
