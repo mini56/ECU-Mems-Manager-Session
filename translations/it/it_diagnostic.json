@@ -49,13 +49,13 @@
   "6847": "Correzione elevata: controllare perdite d'aria, pressione/alimentazione carburante, iniezione o misura lambda prima di modificare le impostazioni.",
   "6848": "Le correzioni non mostrano deviazioni significative secondo questo criterio indicativo.",
   "6849": "NON VALUTATO",
-  "6850": "Misura visualizzata. Il controllo 1,9–3,1 ms viene applicato automaticamente solo quando la tensione batteria è prossima a 14 V.",
+  "6850": "Misura visualizzata senza valutazione: il controllo indicativo richiede batteria tra 13,5 e 14,5 V e motore in funzione.",
   "6851": "OK",
-  "6852": "Il tempo di carica bobina è nell'intervallo 1,9–3,1 ms a circa 14 V.",
-  "6853": "anomalia",
-  "6854": "Tempo di carica bobina troppo alto a circa 14 V: controllare prima circuito primario bobina, bobina e cablaggio.",
+  "6852": "Tempo di carica nell'intervallo indicativo di 2,0–3,5 ms, con batteria vicina a 14 V.",
+  "6853": "POSSIBILE ANOMALIA",
+  "6854": "Tempo di carica superiore a 4,0 ms a circa 14 V: possibile problema del circuito primario. Controllare misura, alimentazione, collegamenti e bobina prima di concludere che sia guasta.",
   "6855": "DA MONITORARE",
-  "6856": "Tempo di carica bobina inferiore a 1,9 ms a circa 14 V: controllare misura, alimentazione e circuito di comando prima di trarre conclusioni.",
+  "6856": "Tempo di carica inferiore a 2,0 ms a circa 14 V: controllare misura, alimentazione e circuito di comando prima di trarre conclusioni.",
   "6857": "Tempo di carica bobina",
   "6858": "%1 ms  | batteria %2 V",
   "6859": "Errore minimo a caldo",
@@ -96,5 +96,6 @@
   "6894": "Rapporto di testo (*.txt)",
   "6895": "Diagnostica",
   "6896": "Impossibile scrivere il rapporto.",
-  "6897": "Decodifica: (7D14-15 grezzo - 32768) - correzione della posizione minimo a caldo. La correzione segue il valore configurato nella scheda Impostazioni; non è codificata in modo fisso. Il valore indicativo è coerente quando rimane vicino a zero."
+  "6897": "Decodifica: (7D14-15 grezzo - 32768) - correzione della posizione minimo a caldo. La correzione segue il valore configurato nella scheda Impostazioni; non è codificata in modo fisso. Il valore indicativo è coerente quando rimane vicino a zero.",
+"18121":"Tempo di carica superiore a 3,5 ms e fino a 4,0 ms a circa 14 V: monitorare. Controllare misura e circuito primario se persiste.","18122":"Motore fermo: misura visualizzata solo per informazione, senza diagnosi automatica della bobina."
 }

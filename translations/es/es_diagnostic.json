@@ -49,13 +49,13 @@
   "6847": "Corrección elevada: compruebe fugas de aire, presión/alimentación de combustible, inyección o medición lambda antes de modificar los ajustes.",
   "6848": "Las correcciones no muestran una desviación significativa según este criterio indicativo.",
   "6849": "NO EVALUADO",
-  "6850": "Se muestra la medición. La comprobación de 1,9–3,1 ms solo se aplica automáticamente cuando la tensión de la batería está próxima a 14 V.",
+  "6850": "Medición mostrada sin evaluación: el control indicativo requiere batería entre 13,5 y 14,5 V y motor en marcha.",
   "6851": "OK",
-  "6852": "El tiempo de carga de la bobina está dentro del rango de 1,9–3,1 ms a unos 14 V.",
-  "6853": "anomalía",
-  "6854": "Tiempo de carga de bobina demasiado alto a unos 14 V: compruebe primero el circuito primario de la bobina, la bobina y el cableado.",
+  "6852": "Tiempo de carga dentro del rango indicativo de 2,0 a 3,5 ms, con la batería cerca de 14 V.",
+  "6853": "POSIBLE ANOMALÍA",
+  "6854": "Tiempo de carga superior a 4,0 ms cerca de 14 V: posible fallo del circuito primario. Compruebe medición, alimentación, conexiones y bobina antes de concluir que está averiada.",
   "6855": "VIGILAR",
-  "6856": "Tiempo de carga de bobina inferior a 1,9 ms a unos 14 V: compruebe la medición, la alimentación y el circuito de mando antes de sacar conclusiones.",
+  "6856": "Tiempo de carga inferior a 2,0 ms cerca de 14 V: compruebe medición, alimentación y circuito de mando antes de sacar conclusiones.",
   "6857": "Tiempo de carga de bobina",
   "6858": "%1 ms  | batería %2 V",
   "6859": "Error de ralentí en caliente",
@@ -96,5 +96,6 @@
   "6894": "Informe de texto (*.txt)",
   "6895": "Diagnóstico",
   "6896": "No se puede escribir el informe.",
-  "6897": "Decodificación: (7D14-15 bruto - 32768) - corrección de la posición de ralentí en caliente. La corrección sigue el valor configurado en la pestaña Ajustes; no está codificada de forma fija. El valor indicativo es coherente cuando permanece próximo a cero."
+  "6897": "Decodificación: (7D14-15 bruto - 32768) - corrección de la posición de ralentí en caliente. La corrección sigue el valor configurado en la pestaña Ajustes; no está codificada de forma fija. El valor indicativo es coherente cuando permanece próximo a cero.",
+"18121":"Tiempo de carga superior a 3,5 ms y hasta 4,0 ms cerca de 14 V: vigilar. Compruebe medición y circuito primario si persiste.","18122":"Motor parado: medición mostrada solo como información, sin diagnóstico automático de la bobina."
 }

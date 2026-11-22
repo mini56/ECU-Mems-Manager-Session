@@ -194,27 +194,33 @@ void DiagnosticPanel::rebuild(const mems_data &d)
                        : I18n::text(6848) /* EN: Corrections show no significant deviation according to this indicative criterion. */);
     if (trimWatch) ++warnings;
 
-    // Temps de charge de la bobine : contrôle spécifique demandé pour
-    // une tension batterie proche de 14 V. Hors de cette tension, le
-    // logiciel affiche la mesure mais ne porte pas de jugement automatique.
+    // Vérification indicative MEMS 1.3/1.6 : moteur tournant, tension
+    // entre 13,5 et 14,5 V. Une durée isolée ne prouve pas une panne de bobine.
     const double coilTime = static_cast<double>(d.coil_time) * 0.002;
     const bool batteryNear14 = battery >= 13.5 && battery <= 14.5;
-    const bool coilOk = coilTime >= 1.9 && coilTime <= 3.1;
+    const bool coilOk = coilTime >= 2.0 && coilTime <= 3.5;
     QString coilState;
     QString coilAdvice;
-    if (!batteryNear14) {
+    if (d.engine_rpm == 0) {
         coilState = I18n::text(6849) /* EN: NOT EVALUATED */;
-        coilAdvice = I18n::text(6850) /* EN: Measurement displayed. The 1.9–3.1 ms check is applied automatically only when battery voltage is close to 14 V. */;
+        coilAdvice = I18n::text(18122) /* EN: Engine stopped; no automatic coil diagnosis. */;
+    } else if (!batteryNear14) {
+        coilState = I18n::text(6849) /* EN: NOT EVALUATED */;
+        coilAdvice = I18n::text(6850) /* EN: Reference check requires 13.5–14.5 V. */;
     } else if (coilOk) {
         coilState = I18n::text(6851) /* EN: OK */;
-        coilAdvice = I18n::text(6852) /* EN: Coil charge time is within the 1.9–3.1 ms range at about 14 V. */;
-    } else if (coilTime > 3.1) {
-        coilState = I18n::text(6853) /* EN: anomaly */;
-        coilAdvice = I18n::text(6854) /* EN: Coil charge time too high at about 14 V: first check the coil primary circuit, coil and wiring. */;
+        coilAdvice = I18n::text(6852) /* EN: Indicative 2.0–3.5 ms range. */;
+    } else if (coilTime > 4.0) {
+        coilState = I18n::text(6853) /* EN: POSSIBLE ANOMALY */;
+        coilAdvice = I18n::text(6854) /* EN: Over 4.0 ms: verify the primary circuit; not proof of a bad coil. */;
         ++issues;
+    } else if (coilTime > 3.5) {
+        coilState = I18n::text(6855) /* EN: WATCH */;
+        coilAdvice = I18n::text(18121) /* EN: Over 3.5 to 4.0 ms: monitor. */;
+        ++warnings;
     } else {
-        coilState = I18n::text(6855) /* EN: SURVEILLER */;
-        coilAdvice = I18n::text(6856) /* EN: Coil charge time below 1.9 ms at about 14 V: check the measurement, supply and control circuit before drawing a conclusion. */;
+        coilState = I18n::text(6855) /* EN: WATCH */;
+        coilAdvice = I18n::text(6856) /* EN: Below 2.0 ms: verify the reading and supply. */;
         ++warnings;
     }
     addCheck(I18n::text(6857) /* EN: Coil charge time */, I18n::text(6858) /* EN: %1 ms  | battery %2 V */.arg(coilTime, 0, 'f', 2).arg(battery, 0, 'f', 1),
