@@ -478,16 +478,26 @@ bool mems_clear_faults(mems_info* info)
     return send_command_with_one_byte_reply(info, MEMS_ClearFaults);
 }
 
+/* Original Manager-22 DLL: reset ECU = FA, adjustments = 0F.
+ * LeopoldG-45 used AF for a similarly named ECU reset.
+ * Keep Manager's existing two ABI entrypoints stable.
+ */
 bool mems_reset_ECU(mems_info* info)
 {
-    /* Original x86 mems_reset_ECU transmits AF, not the reduced DLL's FA. */
-    return send_command_with_one_byte_reply(info, MEMS_ResetECU);
+    return mems_reset_ADJ(info); /* Manager legacy reset ECU: 0xFA */
 }
 
 bool mems_reset_adjustments(mems_info* info)
 {
-    /* Preserve Manager's function name, restore LeopoldG's ADJ meaning. */
-    return mems_reset_ADJ(info);
+    return mems_reset_EMI(info); /* Manager legacy adjustments: 0x0F */
+}
+
+/* An explicit, additive entrypoint for the distinct LeopoldG ECU=AF command.
+ * It is never substituted silently for Manager's existing reset action.
+ */
+bool mems_reset_ECU_leopold(mems_info* info)
+{
+    return send_command_with_one_byte_reply(info, MEMS_ResetECU);
 }
 
 /* Exact legacy wrappers: existing actuator transport transmits the
