@@ -698,6 +698,31 @@ bool verifyUi(MainWindow &window)
                      immobiliserPanel->isVisibleTo(&window) &&
                      keysPanel->isVisibleTo(&window),
                      "Three ECU columns must have equal widths and be visible") && ok;
+            if(size.width()>=1366){
+                QPushButton *rc5=otherPage->findChild<QPushButton*>(QStringLiteral("rc5ConnectButton"));
+                QPushButton *five=otherPage->findChild<QPushButton*>(QStringLiteral("lucas5asConnectButton"));
+                QPushButton *plip=otherPage->findChild<QPushButton*>(QStringLiteral("lucas5asPlipControlButton"));
+                QPushButton *reset=otherPage->findChild<QPushButton*>(QStringLiteral("lucas5asPlipResetButton"));
+                const int rc5Y=rc5?rc5->mapTo(otherPage,QPoint(0,0)).y():-1000;
+                const int fiveY=five?five->mapTo(otherPage,QPoint(0,0)).y():-2000;
+                const int plipY=plip?plip->mapTo(otherPage,QPoint(0,0)).y():-3000;
+                const int resetY=reset?reset->mapTo(otherPage,QPoint(0,0)).y():-4000;
+                logSmoke(QStringLiteral("Other ECU first controls at %1px: RC5=%2 5AS=%3 PLIP=%4 reset=%5")
+                    .arg(size.width()).arg(rc5Y).arg(fiveY).arg(plipY).arg(resetY));
+                ok=check(rc5 && five && plip && reset &&
+                         qAbs(rc5Y-fiveY)<=1 && qAbs(fiveY-plipY)<=1 && plipY==resetY,
+                         "Top six ECU buttons must share exactly the same horizontal row") && ok;
+            }
+            QTableWidget *plipTable=otherPage->findChild<QTableWidget*>(QStringLiteral("lucas5asPlipTable"));
+            QHeaderView *plipHeader=plipTable?plipTable->horizontalHeader():nullptr;
+            const int firstHeaderNeeded=plipHeader
+                ? plipHeader->fontMetrics().horizontalAdvance(I18n::text(16950))+6 : -1;
+            ok=check(plipHeader &&
+                     plipHeader->sectionResizeMode(0)==QHeaderView::ResizeToContents &&
+                     plipHeader->sectionResizeMode(1)==QHeaderView::Stretch &&
+                     plipHeader->sectionResizeMode(2)==QHeaderView::ResizeToContents &&
+                     plipTable->columnWidth(0)>=firstHeaderNeeded,
+                     "PLIP Emplacement heading must be fully visible; byte column uses remaining width") && ok;
         }
         tabs->setCurrentIndex(previousTab);
         QCoreApplication::processEvents();

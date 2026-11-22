@@ -499,8 +499,8 @@ private:
         root->addWidget(m_plipIntro);
 
         QHBoxLayout *commands=new QHBoxLayout;
-        // Align the PLIP buttons with the first RC5/5AS command row.
-        commands->setContentsMargins(0,25,0,0);
+        // Match the top edge of the RC5 and 5AS first command rows.
+        commands->setContentsMargins(0,29,0,0);
         commands->setSpacing(5);
         m_plipControl=new QPushButton(parent);
         m_plipControl->setObjectName(QStringLiteral("lucas5asPlipControlButton"));
@@ -525,11 +525,12 @@ private:
         m_plipTable->setSelectionBehavior(QAbstractItemView::SelectRows);
         m_plipTable->setSelectionMode(QAbstractItemView::SingleSelection);
         m_plipTable->verticalHeader()->setVisible(false);
-        m_plipTable->horizontalHeader()->setSectionResizeMode(0,QHeaderView::Fixed);
+        // Size the outer columns from translated headings and row contents.
+        // Only the raw-byte column consumes remaining width, avoiding clipped
+        // "Emplacement" in French and corresponding labels in other languages.
+        m_plipTable->horizontalHeader()->setSectionResizeMode(0,QHeaderView::ResizeToContents);
         m_plipTable->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Stretch);
-        m_plipTable->horizontalHeader()->setSectionResizeMode(2,QHeaderView::Fixed);
-        m_plipTable->setColumnWidth(0,65);
-        m_plipTable->setColumnWidth(2,85);
+        m_plipTable->horizontalHeader()->setSectionResizeMode(2,QHeaderView::ResizeToContents);
         m_plipTable->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
         m_plipTable->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
         m_plipTable->setMinimumHeight(165);
