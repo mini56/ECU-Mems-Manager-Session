@@ -85,6 +85,18 @@ expected_injection = [
     "mems_manager_transient_compare_ticks"
 ]
 
+expected_protocol_catalogue = [
+    "mems2j_frame_encode", "mems2j_frame_decode",
+    "mems2j_make_read_request", "mems2j_make_clear_fault_request",
+    "mems2j_make_key_request", "mems2j_seed_key",
+    "mems2j_response_status", "mems2j_decode_measurement",
+    "mems2j_fault_bit", "mems3_frame_encode", "mems3_frame_decode",
+    "mems3_make_read_request", "mems3_response_status",
+    "mems3_decode_measurement", "mems3_fault_count", "mems3_fault_at",
+    "mems_rc5_make_request", "mems_rc5_validate_frame",
+    "mems_rc5_fault_count", "mems_rc5_fault_at"
+]
+
 exports = []
 in_exports = False
 for raw in definition.splitlines():
@@ -97,9 +109,9 @@ for raw in definition.splitlines():
     if in_exports:
         exports.append(line.split()[0])
 
-if exports != expected_exports + expected_extensions + expected_families + expected_injection:
-    raise SystemExit(f"FAIL: changed ABI or missing family/injection exports: {exports}")
-if len(set(exports)) != 71:
+if exports != expected_exports + expected_extensions + expected_families + expected_injection + expected_protocol_catalogue:
+    raise SystemExit(f"FAIL: changed ABI or missing family/injection/codec exports: {exports}")
+if len(set(exports)) != 91:
     raise SystemExit("FAIL: duplicate or missing symbols in ROSCO DLL")
 
 required_protocol_guards = [
@@ -145,11 +157,18 @@ for name, value in required_commands.items():
     if not re.search(pattern, header):
         raise SystemExit(f"FAIL historical command changed/missing: {name}={value}")
 
-print("OK: 53 historical-compatible names + LeopoldG reset + 11 family + 6 injection = 71 exports")
+print("OK: 53 historical-compatible names + explicit reset + 11 families + 6 injection + 20 protocol functions = 91")
 assert "mems_reset_ECU_leopold @54" in definition
 print("OK: Manager reset ECU=FA and adjustments=0F, explicit LeopoldG ECU=AF")
 assert exports[54:65] == expected_families
 assert exports[65:71] == expected_injection
+assert exports[71:91] == expected_protocol_catalogue
+catalogue_header = (root / "protocol_catalogue.h").read_text(encoding="utf-8")
+catalogue_source = (root / "protocol_catalogue.c").read_text(encoding="utf-8")
+for name in expected_protocol_catalogue:
+    if not re.search(rf"\b{re.escape(name)}\s*\(", catalogue_header) or \
+       not re.search(rf"\b{re.escape(name)}\s*\(", catalogue_source):
+        raise SystemExit(f"FAIL: missing protocol function {name}")
 family_header = (root / "family.h").read_text(encoding="utf-8")
 family_source = (root / "family.c").read_text(encoding="utf-8")
 injection_header = (root / "transient_injection.h").read_text(encoding="utf-8")
@@ -164,6 +183,8 @@ for name in expected_injection:
         raise SystemExit(f"FAIL: missing transient function: {name}")
 cmake = (root / "CMakeLists.txt").read_text(encoding="utf-8")
 assert "family.c" in cmake and "transient_injection.c" in cmake
+assert "protocol_catalogue.c" in cmake
+assert "protocol_catalogue_selftest.c" in cmake
 print("OK: family and AANMP002 modules exported and compiled within DLL only")
 print("OK: full 0x80 and 0x7D frame-length guards present")
 print("OK: truncated 0x7D frame is rejected")
