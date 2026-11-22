@@ -16,6 +16,7 @@ add_library(rosco SHARED
     protocol.c
     family.c
     transient_injection.c
+    protocol_catalogue.c
     mems_manager_x64.def
 )
 
@@ -61,3 +62,7 @@ add_test(NAME manager_dll_contract_selftest COMMAND manager_dll_contract_selftes
 # I/O solely inside this offline test executable. No real COM access possible.
 add_executable(serial_protocol_selftest serial_protocol_selftest.c)
 add_test(NAME serial_protocol_selftest COMMAND serial_protocol_selftest)
+
+# Protocol-only C tests never open COM ports or talk to real ECUs.
+add_executable(protocol_catalogue_selftest protocol_catalogue_selftest.c protocol_catalogue.c)
+add_test(NAME protocol_catalogue_selftest COMMAND protocol_catalogue_selftest)
