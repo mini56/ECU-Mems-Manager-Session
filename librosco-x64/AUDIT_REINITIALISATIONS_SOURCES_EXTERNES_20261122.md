@@ -4,6 +4,17 @@
 **Périmètre :** `mems_manager_x64.dll` sur la branche `dll-manager`. **Aucun fichier de MEMS Manager Session n'est à modifier dans ce chantier.**  
 **Nature des preuves :** codes source publiés, code source Session 196, ancienne DLL de Manager auditée en binaire, DLL LeopoldG auditée en binaire et documentation des auteurs. **Aucune exécution sur calculateur réel n'a été effectuée lors de cet audit.**
 
+## Décision arrêtée par le responsable du projet — 22/11/2026
+
+**Référence d'implémentation pour la DLL `mems_manager_x64.dll`, compatible MEMS Manager Session :**
+
+- `MEMSResetAdj = 0x0F` : **réinitialisation des réglages ajustables**.
+- `MEMSResetECU = 0xFA` : **effacement des paramètres calculés et appris**.
+
+Ces deux actions distinctes sont désormais le **contrat fonctionnel retenu** : le nom d'une commande dans une autre DLL ne peut pas inverser leurs effets. L'interface historique de Session garde ses exports existants : `mems_reset_adjustments` transmet `0x0F`, `mems_reset_ECU` transmet `0xFA`. **Aucun fichier de Manager n'est modifié.**
+
+Le tableau comparatif ci-dessous est conservé pour l'historique des recherches. Les libellés divergents des autres projets ne sont **pas** des instructions pour changer la correspondance fixée. Les validations de compatibilité et de comportement restent à tester sur la DLL compilée et sur les familles de calculateurs concernées, sans remettre en question les valeurs que le projet a retenues.
+
 ## 1. Tableau de correspondance réel
 
 | Source | Commande / appel | Désignation dans cette source | Ce qui est réellement établi | À ne pas déduire |
