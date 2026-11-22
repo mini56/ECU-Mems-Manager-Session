@@ -68,3 +68,9 @@ EXPORTS
     mems_manager_family_reset_ecu @63
     mems_manager_family_save_adjustments @64
     mems_manager_family_actuator @65
+    mems_manager_transient_parse_mode_reply @66
+    mems_manager_transient_is_aanmp002 @67
+    mems_manager_transient_parse_data80 @68
+    mems_manager_transient_parse_word_reply @69
+    mems_manager_transient_decode_pair @70
+    mems_manager_transient_compare_ticks @71
