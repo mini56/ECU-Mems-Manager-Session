@@ -1,5 +1,6 @@
 # Exclusively the DLL verification workflow. No Session build, Setup or MAJ
-# workflow is changed by this file. The application is built only in a
+# workflow is changed by this file. Test revision: WinSDK ReadRaw name fix.
+# The application is built only in a
 # disposable worktree pinned to the real Session 197 commit.
 name: DLL MEMS Manager x64 - validation isolee Session 197
 run-name: Test DLL / Session 197 / ${{ github.sha }}
