@@ -199,7 +199,8 @@ def main():
     assert_equal(manager.machine, 0x8664, "Manager executable must be AMD64")
     assert_equal(len(old22.exports), 22, "Manager original export count")
     assert_equal(len(old45.exports), 45, "LeopoldG export count")
-    assert_equal(len(rebuilt.exports), 53, "new DLL export count")
+    assert_equal(len(rebuilt.exports), 54, "new DLL export count")
+    assert_equal(rebuilt.exports["mems_reset_ECU_leopold"][0], 54, "explicit LeopoldG ECU reset ordinal")
 
     for name, code in ORIGINAL_22.items():
         assert_equal(old22.command(name), code, f"real Manager DLL {name}")
@@ -225,7 +226,7 @@ def main():
     # ordinal is valid only if it resolves to the EXPECTED rebuilt export.
     # Never compare an old 32-bit ordinal with a new x64 one numerically.
     new_by_ordinal = {ordinal: name for name, (ordinal, _) in rebuilt.exports.items()}
-    assert_equal(len(new_by_ordinal), 53, "new DLL unique export ordinals")
+    assert_equal(len(new_by_ordinal), 54, "new DLL unique export ordinals")
     resolved_imports = set()
     for kind, value in dll_imports:
         if kind == "name":
@@ -254,7 +255,7 @@ def main():
     assert "MemsProtocolSafety::allowsMutation" in adjustment
     assert "MemsProtocolSafety::allowsMutation" in ecu
 
-    print("HISTORICAL_DLL_BINARY_COMPARE_PASS: old Manager 22 exports, LeopoldG 45, new x64 53")
+    print("HISTORICAL_DLL_BINARY_COMPARE_PASS: old Manager 22 exports, LeopoldG 45, new x64 54 (one explicit LeopoldG reset)")
     print("HISTORICAL_COMMANDS_PASS: old Manager ECU=FA, adjustments=0F; LeopoldG ECU=AF, ADJ=FA, EMI=0F, Save=81")
     print("MANAGER_IMPORTS_PASS: new DLL imports resolve to correct names/ordinals, no x86 librosco.dll")
     print("MANAGER_COMMAND_ROUTING_PASS: original Manager semantics preserved for ROSCO and K-Line 1.9")
