@@ -11,13 +11,26 @@ L’ancienne bibliothèque historique reste distincte :
 
 Le sous-dossier conserve pour l’instant le nom historique `librosco-x64` et le header public `rosco.h` afin de limiter les régressions pendant la migration. Cela ne change pas le nom du nouveau binaire.
 
+## Correspondance fonctionnelle arrêtée pour Session — 22 novembre 2026
+
+**Décision définitive pour notre DLL**, confirmée par l'utilisateur et cohérente avec MemsFCR/Andrew Jackson :
+
+| Action demandée | Octet de commande | Export conservé par MEMS Manager Session |
+|---|---|---|
+| Réinitialisation des **réglages ajustables** (Reset Adjustments) | **`0x0F`** | `mems_reset_adjustments` |
+| Effacement des **paramètres calculés et appris** (Reset ECU dans l'interface) | **`0xFA`** | `mems_reset_ECU` |
+
+Les noms hérités d'autres DLL ne modifient **jamais** cette correspondance. L'export séparé `mems_reset_ECU_leopold` utilise toujours `0xAF` mais **n'est pas substitué** à la commande Manager `0xFA`.
+
+Cette décision fixe le comportement attendu de la DLL compatible Session. Aucun fichier de Manager, aucun ordinal, aucune trame envoyée par les deux fonctions existantes n'est changé. Les références historiques contradictoires demeurent consignées uniquement pour traçabilité.
+
 ## Reconstruction complète LeopoldG (branche isolée, 21/11/2026)
 
 **Référence prioritaire :** `LeopoldG/sources-mems-rosco/librosco.dll`, binaire PE32 de 63 161 octets, **45 fonctions exportées**, comparées directement à sa table d'exports et à ses commandes machine. Cette version est distincte de l'ancienne DLL de référence Manager à 22 exports.
 
 - **45/45 noms historiques recréés**, ordinals 1–45 conservés. La commande derrière `mems_reset_ECU` garde volontairement la valeur historique de Manager (FA), non celle de LeopoldG (AF). Les 20 actions précédemment regroupées utilisent une fonction individuelle qui appelle la même primitive de dialogue/écho/réponse.
 - **Conflit binaire vérifié :** Manager-22 utilise `mems_reset_ECU=FA` et `mems_reset_adjustments=0F`. LeopoldG-45 utilise `mems_reset_ADJ=FA`, `mems_reset_ECU=AF`, `mems_reset_EMI=0F` et `mems_Save=81`. La nouvelle DLL conserve la signification de Manager pour les fonctions déjà utilisées, et propose `mems_reset_ECU_leopold=AF` comme fonction supplémentaire explicitement nommée. Le bouton de reset existant pour les familles ROSCO doit respecter ces valeurs ; les chemins MEMS 1.9 K-Line conservent leurs propres commandes historiques `0F/FA` dans Manager, sans substitution.
-- **8 exports modernes préservés ou ajoutés :** `mems_reset_adjustments` (alias vers ADJ originale), `mems_save_adjustments` (alias vers Save original), 4 transports MEMS 1.9, et 2 fonctions de correction secondaire de richesse `7B/7C`. **État de la branche `dll-manager` : 91 exports (53 historiques/étendus, 1 reset LeopoldG distinct, 11 fonctions par famille, 6 fonctions d'analyse AANMP002, 20 fonctions de trames/mesures/défauts MEMS 2J, MEMS 3 et RC5).** La fonction de réinitialisation ECU LeopoldG originale est désormais `mems_reset_ECU_leopold`; cela empêche sa confusion avec la fonction `mems_reset_ECU` déjà utilisée par Manager.
+- **8 exports modernes préservés ou ajoutés :** `mems_reset_adjustments` (alias vers la commande 0x0F des réglages ajustables, via `mems_reset_EMI`), `mems_save_adjustments` (alias vers Save original), 4 transports MEMS 1.9, et 2 fonctions de correction secondaire de richesse `7B/7C`. **État de la branche `dll-manager` : 91 exports (53 historiques/étendus, 1 reset LeopoldG distinct, 11 fonctions par famille, 6 fonctions d'analyse AANMP002, 20 fonctions de trames/mesures/défauts MEMS 2J, MEMS 3 et RC5).** La fonction de réinitialisation ECU LeopoldG originale est désormais `mems_reset_ECU_leopold`; cela empêche sa confusion avec la fonction `mems_reset_ECU` déjà utilisée par Manager.
 - **Correction de carburant secondaire :** `mems_fuel_trim_2_plus` / `mems_fuel_trim_2_minus`. Cette adaptation n'est PAS une commande d'activation des injecteurs ; une valeur distincte n'est pas garantie sur toutes les variantes. Les commandes ne sont pas raccordées à une action automatique de l'interface. Sur MEMS 1.9, `7C` est également utilisé à l'initialisation : ne jamais utiliser la correction secondaire sur une famille/mode non confirmés.
 - **Conversion température °F** de la DLL d'origine récupérée à partir du code x87 : décalage non signé sur 8 bits par 55, multiplication 1,8, ajout 32 et troncature modulo 256.
 - **Aucun échange ECU** pendant les tests automatisés. Le workflow `.github/workflows/rosco-45-exports-x64-audit.yml` compile exclusivement la DLL Windows x64, vérifie la présence physique des 53 noms avec `GetProcAddress`, le code AMD64, les constantes et l'ABI, puis conserve le binaire en artefact **non publié dans Manager**.
