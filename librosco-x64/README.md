@@ -11,6 +11,20 @@ L’ancienne bibliothèque historique reste distincte :
 
 Le sous-dossier conserve pour l’instant le nom historique `librosco-x64` et le header public `rosco.h` afin de limiter les régressions pendant la migration. Cela ne change pas le nom du nouveau binaire.
 
+## Référence des tests active — SESSION 200 (22 novembre 2026)
+
+**Référence unique actuelle : version 200**, tag publié `mems-session-build-200`, commit `3737dffa3e30e0b9167bda34fa661958b757cd28`, run officiel n° 45061468323 : succès. **Les tests de la DLL ne doivent plus prendre Session 197 comme cible.**
+
+L'environnement de validation crée une copie temporaire et isolée de **Session 200**, sans changer Manager, ses workflows, son Setup installé ni le site MAJ.
+
+- `reference-session200/rosco.h` : en-tête exact de Session 200, Git blob `dd8d88048ce4e879ef728b6bcd72837730bec654`, identique à l'en-tête de 197.
+- `manager_dll_contract_selftest.cpp`, `validate_protocol_guards.py` et `validate_session200_binaries.py` : contrat ABI, signatures, 91 exports et imports réels de Session 200.
+- `verify_session200_windows.ps1` : compilation DLL x64, tests CTest, compilation de la vraie Session 200 avec notre DLL, inspection des PE et exécution du test de démarrage des 16 pages existant dans Session 200, sans ECU et sans installation.
+
+**Statut :** validation 200 à relancer. Les résultats des tests 197 ci-dessous sont conservés uniquement comme historique ; ils ne suffisent pas à démontrer la compatibilité avec la dernière version. Les tests sur ECU réel et sur le Setup installé restent indispensables avant remplacement de la DLL actuelle.
+
+---
+
 ## Compatibilité réelle avec MEMS Manager Session 197 — en cours de validation
 
 **Référence unique de l'application :** commit `9105d9838e3fd5f81feeb99c0481c454d5d6a5e4` (Session 197 verte), branche `fix-documentary-additive-session-161-20261118`.
