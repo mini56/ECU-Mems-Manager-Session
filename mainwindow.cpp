@@ -952,7 +952,11 @@ void MainWindow::onEcuIdReceived(uint8_t* id)
   m_ui->m_ecuIdLabel->setText(QString(idString));
   if(id) {
     const QString hexId=QString::fromLatin1(QByteArray((const char*)id,4).toHex().toUpper());
-    EcuCommunicationLog::identify(QStringLiteral("MEMS-1.3-1.6"),hexId);
+    // This exact AANM identifier is documented on the tested MEMS 1.6 ECU.
+    // Do not invent a subtype for other historical ROSCO IDs.
+    EcuCommunicationLog::identify(
+        hexId==QStringLiteral("41414E4D")
+            ?QStringLiteral("MEMS-1.6"):QStringLiteral("MEMS-1.3-1.6"),hexId);
   }
   if (m_diagnosticPanel && id)
     m_diagnosticPanel->setEcuId(QByteArray(reinterpret_cast<const char*>(id), 4));
@@ -1722,9 +1726,7 @@ void MainWindow::onConnect()
   // Explicit clear-fault is available for every *connected* family.
   // MEMS 2J/3 have their own service; ROSCO reset/adjustment is not theirs.
   const MemsEcuFamily family=m_mems->ecuFamily();
-  if(family==MemsEcuFamily::Rosco13_16)
-    EcuCommunicationLog::identify(QStringLiteral("MEMS-1.3-1.6"));
-  else if(family==MemsEcuFamily::Mems19)
+  if(family==MemsEcuFamily::Mems19)
     EcuCommunicationLog::identify(QStringLiteral("MEMS-1.9"));
   else if(family==MemsEcuFamily::Mems2J)
     EcuCommunicationLog::identify(QStringLiteral("MEMS-2J"));
@@ -1815,6 +1817,7 @@ void MainWindow::onDisconnect()
  */
 void MainWindow::onReadError()
 {
+  EcuCommunicationLog::note(QStringLiteral("ERREUR_LECTURE"));
   setProperty("ecuConnectInProgress", false);
   m_ui->m_commsGoodLed->setChecked(false);
   m_ui->m_commsBadLed->setChecked(true);
@@ -2182,6 +2185,7 @@ void MainWindow::onMoveIACComplete()
 
 void MainWindow::onCommandError()
 {
+  EcuCommunicationLog::note(QStringLiteral("ERREUR_COMMANDE"));
   QMessageBox::warning(this, I18n::text(7063) /* EN: Error */, "Erreur lors de l'envoi de la commande.", QMessageBox::Ok);
 }
 
