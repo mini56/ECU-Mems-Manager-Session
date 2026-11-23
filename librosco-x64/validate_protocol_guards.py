@@ -97,6 +97,18 @@ expected_protocol_catalogue = [
     "mems_rc5_fault_count", "mems_rc5_fault_at"
 ]
 
+expected_lucas5as = [
+    "mems_manager_lucas5as_slow_bit_high",
+    "mems_manager_lucas5as_has_normal_wake",
+    "mems_manager_lucas5as_decode_status",
+    "mems_manager_lucas5as_extract_status",
+    "mems_manager_lucas5as_output_test_commands",
+    "mems_manager_lucas5as_open_normal",
+    "mems_manager_lucas5as_initial_status",
+    "mems_manager_lucas5as_read_status",
+    "mems_manager_lucas5as_close",
+]
+
 exports = []
 in_exports = False
 for raw in definition.splitlines():
@@ -109,9 +121,9 @@ for raw in definition.splitlines():
     if in_exports:
         exports.append(line.split()[0])
 
-if exports != expected_exports + expected_extensions + expected_families + expected_injection + expected_protocol_catalogue:
+if exports != expected_exports + expected_extensions + expected_families + expected_injection + expected_protocol_catalogue + expected_lucas5as:
     raise SystemExit(f"FAIL: changed ABI or missing family/injection/codec exports: {exports}")
-if len(set(exports)) != 91:
+if len(set(exports)) != 100:
     raise SystemExit("FAIL: duplicate or missing symbols in ROSCO DLL")
 
 required_protocol_guards = [
@@ -157,12 +169,13 @@ for name, value in required_commands.items():
     if not re.search(pattern, header):
         raise SystemExit(f"FAIL historical command changed/missing: {name}={value}")
 
-print("OK: 53 historical-compatible names + explicit reset + 11 families + 6 injection + 20 protocol functions = 91")
+print("OK: 91 original exports preserved plus 9 Lucas 5AS = 100")
 assert "mems_reset_ECU_leopold @54" in definition
 print("OK: Manager reset ECU=FA and adjustments=0F, explicit LeopoldG ECU=AF")
 assert exports[54:65] == expected_families
 assert exports[65:71] == expected_injection
 assert exports[71:91] == expected_protocol_catalogue
+assert exports[91:100] == expected_lucas5as
 catalogue_header = (root / "protocol_catalogue.h").read_text(encoding="utf-8")
 catalogue_source = (root / "protocol_catalogue.c").read_text(encoding="utf-8")
 for name in expected_protocol_catalogue:
@@ -185,14 +198,28 @@ cmake = (root / "CMakeLists.txt").read_text(encoding="utf-8")
 assert "family.c" in cmake and "transient_injection.c" in cmake
 assert "protocol_catalogue.c" in cmake
 assert "protocol_catalogue_selftest.c" in cmake
+lucas_header = (root / "lucas5as.h").read_text(encoding="utf-8")
+lucas_codec = (root / "lucas5as_codec.c").read_text(encoding="utf-8")
+lucas_session = (root / "lucas5as_session.c").read_text(encoding="utf-8")
+for name in expected_lucas5as:
+    if not re.search(rf"\b{re.escape(name)}\s*\(", lucas_header):
+        raise SystemExit(f"FAIL: Lucas5AS header missing {name}")
+    source = lucas_session if name.endswith(("_open_normal", "_initial_status", "_read_status", "_close")) else lucas_codec
+    if not re.search(rf"\b{re.escape(name)}\s*\(", source):
+        raise SystemExit(f"FAIL: Lucas5AS implementation missing {name}")
+for required in ("lucas5as_codec.c", "lucas5as_session.c",
+                 "lucas5as_protocol_selftest", "lucas5as_session_selftest"):
+    if required not in cmake:
+        raise SystemExit(f"FAIL: Lucas5AS CMake missing {required}")
+print("OK: 9 Lucas5AS read-only API exports and two offline CTests")
 print("OK: family and AANMP002 modules exported and compiled within DLL only")
 print("OK: full 0x80 and 0x7D frame-length guards present")
 print("OK: truncated 0x7D frame is rejected")
 print("OK: clear/reset/heartbeat return real command result")
 print("OK: original AF/FA/0F/81 reset/save constants and second fuel trim")
-# Session 200 is the ABI authority.  dll-manager's parent application files
-# are older and MUST NOT be presented as a Session 200 compatibility check.
-reference200 = (root / "reference-session200" / "rosco.h").read_text(encoding="utf-8")
+# Session 205 is the ABI authority.  dll-manager's parent application files
+# are older and MUST NOT be presented as a Session 205 compatibility check.
+reference200 = (root / "reference-session205" / "rosco.h").read_text(encoding="utf-8")
 manager_header = reference200
 for name, code in {
     "MEMS_ResetECU": "0xFA",
@@ -202,23 +229,23 @@ for name, code in {
     "MEMS_ReqData7D": "0x7D",
 }.items():
     if not re.search(rf"\b{re.escape(name)}\s*=\s*{re.escape(code)}\b", manager_header):
-        raise SystemExit(f"FAIL Session 200 public header: {name} must be {code}")
+        raise SystemExit(f"FAIL Session 205 public header: {name} must be {code}")
 
 manager_declarations = set(re.findall(
     r"\b(?:bool|void|librosco_version|uint8_t|int16_t)\s+(mems_\w+)\s*\(",
     manager_header))
 historical_declared_only = {"mems_interactive_mode"}
 if not historical_declared_only.issubset(manager_declarations):
-    raise SystemExit("FAIL: Session 200 interactive declaration unexpectedly changed")
+    raise SystemExit("FAIL: Session 205 interactive declaration unexpectedly changed")
 missing = (manager_declarations - historical_declared_only) - set(exports)
 if missing:
-    raise SystemExit(f"FAIL: Session 200 declared linked functions absent: {sorted(missing)}")
-print("OK: 38 linked declarations from actual Session 200 header are exported")
+    raise SystemExit(f"FAIL: Session 205 declared linked functions absent: {sorted(missing)}")
+print("OK: 38 linked declarations from actual Session 205 header are exported")
 print("TRACKED: mems_interactive_mode is declared, but not linked or implemented")
 
-# Only call the parent worktree 'Session 200' if it actually matches the
-# exact pinned Session 200 header.  A separate Windows smoke script builds
-# the real Session 200 commit in a throwaway worktree.
+# Only call the parent worktree 'Session 205' if it actually matches the
+# exact pinned Session 205 header.  A separate Windows smoke script builds
+# the real Session 205 commit in a throwaway worktree.
 parent_header_path = root.parent / "rosco.h"
 same_header = (parent_header_path.exists() and
                parent_header_path.read_text(encoding="utf-8").replace("\r\n", "\n") ==
@@ -232,11 +259,11 @@ if same_header:
         "::mems_reset_ECU(&m_memsinfo)",
     ):
         if guard not in session_dispatch:
-            raise SystemExit(f"FAIL Session 200 reset dispatch differs: {guard}")
-    print("OK: actual Session 200 dispatcher uses 0F=adjustable and FA=learned")
+            raise SystemExit(f"FAIL Session 205 reset dispatch differs: {guard}")
+    print("OK: actual Session 205 dispatcher uses 0F=adjustable and FA=learned")
 else:
-    print("NOTE: parent checkout is NOT Session 200; only the pinned Session 200 header was checked")
-    print("NOTE: run verify_session200_windows.ps1 to test the real Session 200 app")
+    print("NOTE: parent checkout is NOT Session 205; only the pinned Session 205 header was checked")
+    print("NOTE: run verify_session205_windows.ps1 to test the real Session 205 app")
 
 print("NOTE: static ABI/source checks do not prove a compiled DLL or ECU behavior")
 sys.exit(0)
