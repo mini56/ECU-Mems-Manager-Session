@@ -11,6 +11,20 @@ L’ancienne bibliothèque historique reste distincte :
 
 Le sous-dossier conserve pour l’instant le nom historique `librosco-x64` et le header public `rosco.h` afin de limiter les régressions pendant la migration. Cela ne change pas le nom du nouveau binaire.
 
+## Référence ACTIVE : SESSION 205 — ajout Lucas 5AS dans la DLL
+
+La cible de compatibilité est **le véritable exécutable et le Setup publiés de SESSION 205**, commit `b5cd9b61bbaed6251f17559885481b1bd03f4380`, **pas** SESSION 200. Son en-tête ROSCO est identique à celui de SESSION 200 mais ses binaires et son Setup doivent être testés séparément.
+
+**Lot DLL en cours de validation : 100 exports déclarés (91 historiques inchangés + 9 Lucas 5AS en lecture seule).** Le code et les tests sont conservés uniquement sur `dll-manager`. Le programme Manager n'est **jamais modifié** : le build de vérification le compile dans un répertoire Windows temporaire et extrait un Setup de test indépendant.
+
+- [Journal précis des neuf fonctions créées, des limites et des runs](JOURNAL_DEVELOPPEMENT_DLL_SESSION205_20261123.md)
+- [Run de validation complète SESSION 205 n° 45240083756](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/45240083756) — verdict final à lire dans ses journaux.
+- Les essais sur ECU physique, la programmation et les fonctions non encore transférées ne sont **pas** couverts par la compatibilité binaire.
+
+**Les résultats de SESSION 200 conservés plus bas sont uniquement l'historique.**
+
+---
+
 ## Inventaire des fonctions ECU et préparation du moteur DLL — 23/11/2026
 
 - **[Rapport d'inventaire ECU complet du corpus disponible (SESSION 200 / DLL)](INVENTAIRE_EXHAUSTIF_ECU_DLL_SESSION200_20261123.md)** : toutes les fonctions ECU identifiées dans les sources actuelles, les archives et les recherches examinées, avec statuts `DLL / Manager / recherche / non confirmé`, écarts de couverture, conflits protocolaires et feuille de route.
