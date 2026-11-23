@@ -70,6 +70,7 @@ Base reconstruite du package #533 :
 | Date | Sujet | Source | Comparaison base/code | Statut | Décision |
 |---|---|---|---|---|---|
 | 2026-08-17 | Reprise après build #534 | Checkpoint dépôt + règles permanentes | État recadré | DEJA_PRESENT | Continuer sans réimporter les résultats déjà consignés |
+| 2026-11-23 | Protocole MEMS 1.6 SPi — [Colin Bourassa](COLIN_BOURASSA_MEMS16_PROTOCOL_COMPARE_20261123.md) | Article / code x64 / cartographie ROSCO | Trames et commandes largement déjà présentes ; précisions D0 et temps bobine ; conflit lambda 0,5/5 mV | PRECISION / CONFLIT / A_VERIFIER | Archiver les écarts, ne modifier ni programme ni diagnostic avant recoupement |
 
 ## Prochaine action exacte
 

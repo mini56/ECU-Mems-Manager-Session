@@ -213,6 +213,7 @@ La primitive bas niveau `mems_send_command()` est volontairement conservée dans
 - DLL historique réelle `prebuilt-librosco/librosco.dll`, désassemblée et auditée dans la branche `RAPPORT` ;
 - header Haro/MEMS-Scan identique au header actuel ECU MEMS Manager ;
 - Colin Bourassa `librosco` 0.1.12 ;
+- [Audit complémentaire de l'article MEMS 1.6 de Colin Bourassa](../research/mems/COLIN_BOURASSA_MEMS16_PROTOCOL_COMPARE_20261123.md) : exemples D0, câble TTL 5 V, différence F4, conflit lambda et temps bobine, sans modification du protocole.
 - LeopoldG `Source-librosco` 3.0.0 et dépôts MEMS-ROSCO ;
 - James Portman `rover-mems-agent`, notamment `ecu-1x-shared.go` et `ecu-19.go` ;
 - Rover MEMS Technical Info : `https://rovermems.com/diagnostics/technical/`.
