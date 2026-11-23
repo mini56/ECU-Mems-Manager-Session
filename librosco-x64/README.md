@@ -11,11 +11,25 @@ L’ancienne bibliothèque historique reste distincte :
 
 Le sous-dossier conserve pour l’instant le nom historique `librosco-x64` et le header public `rosco.h` afin de limiter les régressions pendant la migration. Cela ne change pas le nom du nouveau binaire.
 
-## Référence ACTIVE : SESSION 205 — ajout Lucas 5AS dans la DLL
+## Référence ACTIVE : SESSION 205 — 105 exports DLL validés, MEMS 1.9 ajouté
+
+**Nouvelle DLL native x64 : 105 fonctions exportées.** Les **91 exports historiques** et les **9 nouveaux exports Lucas 5AS** conservent strictement leurs numéros et signatures. Le lot MEMS 1.9 a ajouté **5 exports (101 à 105)** sans modifier Manager.
+
+- [Journal technique du réveil ISO 9141 à 5 bauds et de la connexion MEMS 1.9](JOURNAL_DEVELOPPEMENT_DLL_MEMS19_SESSION205_20261123.md).
+- [**Run VERT n° 45246024037 avec la vraie Session 205**](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/45246024037) : **8/8 tests réussis, 105 exports exacts, 15 imports Manager résolus**, démarrage du vrai programme et validation de ses 16 pages, **vrai Setup 205 vérifié**, Setup d'essai indépendant créé/installé/testé/désinstallé avec notre nouvelle DLL. Aucun Setup ni changement du programme publié.
+- **Limite :** aucune validation du nouveau réveil MEMS 1.9 sur un véritable ECU ; la compatibilité prouvée concerne les vérifications automatisées et les simulations de transport série. **La DLL complète reste en développement.**
+
+Les tests sur la version 205 utilisent son commit de référence `b5cd9b61bbaed6251f17559885481b1bd03f4380`, sans modifier ses sources ni sa Release.
+
+---
+
+### Historique du lot Lucas 5AS — 100 exports
+
+## Référence antérieure : SESSION 205 — ajout Lucas 5AS dans la DLL
 
 La cible de compatibilité est **le véritable exécutable et le Setup publiés de SESSION 205**, commit `b5cd9b61bbaed6251f17559885481b1bd03f4380`, **pas** SESSION 200. Son en-tête ROSCO est identique à celui de SESSION 200 mais ses binaires et son Setup doivent être testés séparément.
 
-**Lot DLL en cours de validation : 100 exports déclarés (91 historiques inchangés + 9 Lucas 5AS en lecture seule).** Le code et les tests sont conservés uniquement sur `dll-manager`. Le programme Manager n'est **jamais modifié** : le build de vérification le compile dans un répertoire Windows temporaire et extrait un Setup de test indépendant.
+**Lot Lucas 5AS validé précédemment : 100 exports déclarés (91 historiques inchangés + 9 Lucas 5AS en lecture seule).** Le code et les tests sont conservés uniquement sur `dll-manager`. Le programme Manager n'est **jamais modifié** : le build de vérification le compile dans un répertoire Windows temporaire et extrait un Setup de test indépendant.
 
 - [Journal précis des neuf fonctions créées, des limites et des runs](JOURNAL_DEVELOPPEMENT_DLL_SESSION205_20261123.md)
 - [**Run VERT de validation complète SESSION 205 n° 45240083756**](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/45240083756) : **6/6 CTests**, **100 exports exacts**, **15 imports réels du Manager résolus**, **test des 16 pages du véritable EXE 205**, **Setup 205 officiel vérifié**, création/installation/test/désinstallation d'un **Setup d'essai indépendant** avec notre nouvelle DLL. **Aucune publication de Release/MAJ, aucune modification de Session 205.**
