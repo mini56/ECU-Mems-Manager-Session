@@ -11,6 +11,15 @@ L’ancienne bibliothèque historique reste distincte :
 
 Le sous-dossier conserve pour l’instant le nom historique `librosco-x64` et le header public `rosco.h` afin de limiter les régressions pendant la migration. Cela ne change pas le nom du nouveau binaire.
 
+## Inventaire des fonctions ECU et préparation du moteur DLL — 23/11/2026
+
+- **[Rapport d'inventaire ECU complet du corpus disponible (SESSION 200 / DLL)](INVENTAIRE_EXHAUSTIF_ECU_DLL_SESSION200_20261123.md)** : toutes les fonctions ECU identifiées dans les sources actuelles, les archives et les recherches examinées, avec statuts `DLL / Manager / recherche / non confirmé`, écarts de couverture, conflits protocolaires et feuille de route.
+- **[Matrice de contrôle de 91 exports + déclaration non implémentée](MATRICE_91_EXPORTS_ET_CONTRAT_SESSION200_20261123.csv)** : suivi vérifiable des noms, ordinaux, signatures déclarées et preuves CI.
+
+**Ce lot est exclusivement documentaire :** aucune modification du programme SESSION 200, de ses workflows de publication ni du code de la DLL ; aucun nouveau Setup, aucune Release ni aucun run déclenché.
+
+---
+
 ## Référence des tests active — SESSION 200 (22 novembre 2026)
 
 **Référence unique actuelle : version 200**, tag publié `mems-session-build-200`, commit `3737dffa3e30e0b9167bda34fa661958b757cd28`, run officiel n° 45061468323 : succès. **Les tests de la DLL ne doivent plus prendre Session 197 comme cible.**
