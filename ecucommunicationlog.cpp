@@ -76,7 +76,10 @@ void EcuCommunicationLog::finish(){
     const QString base=startStamp+QLatin1Char('_')+safe(familyName)
         +(ecuIdentifier.isEmpty()?QString():QStringLiteral("_")+safe(ecuIdentifier))
         +QStringLiteral("_Communications_ECU");
-    const QString target=unique(dir,base);
+    // A failed/unidentified attempt already has its final name: never
+    // rename it to a suffixed duplicate merely because it exists.
+    const QString natural=dir.filePath(base+QStringLiteral(".txt"));
+    const QString target=natural==activePath?activePath:unique(dir,base);
     if(activePath!=target)QFile::rename(activePath,target);
     activePath.clear();familyName.clear();ecuIdentifier.clear();
 }
