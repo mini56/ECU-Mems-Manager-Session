@@ -112,3 +112,14 @@ EXPORTS
     mems_manager_mems19_has_address_confirmation @103
     mems_manager_mems19_wakeup @104
     mems_manager_mems19_connect_identify @105
+
+; Full native MEMS 2J diagnostic K-Line session, no Manager integration.
+    mems_manager_mems2j_connect @106
+    mems_manager_mems2j_read_measurement @107
+    mems_manager_mems2j_read_faults @108
+    mems_manager_mems2j_clear_faults @109
+    mems_manager_mems2j_keepalive @110
+    mems_manager_mems2j_read_cycle @111
+    mems_manager_mems2j_last_transaction @112
+    mems_manager_mems2j_is_open @113
+    mems_manager_mems2j_close @114
