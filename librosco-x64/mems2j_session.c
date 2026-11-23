@@ -442,9 +442,13 @@ bool mems_manager_mems2j_read_measurement(
     mems_codec_measurements decoded;
     size_t n=0;
     uint8_t response[MEMS_CODEC_MAX_PAYLOAD];
+    if (!raw || !written || capacity<2u) {
+        set_result(s,MEMS_MANAGER_2J_INVALID_ARGUMENT,0,0);
+        return false; /* Invalid output cannot trigger a wire transaction. */
+    }
     if (!read_id(s,id,response,sizeof(response),&n,400u))
         return false;
-    if (!raw || !written || capacity<n) {
+    if (capacity<n) {
         set_result(s,MEMS_MANAGER_2J_INVALID_ARGUMENT,0,s->last_duration);
         return false;
     }
