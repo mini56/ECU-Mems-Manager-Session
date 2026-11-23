@@ -8,6 +8,9 @@ on:
       - '.github/workflows/session-202-communications-setup.yml'
       - 'othercontrolunitstab.h'
       - 'uishellsmoketest.cpp'
+      - 'ECUCommunicationLogSelfTest.cpp'
+      - 'ecucommunicationlog.cpp'
+      - 'ecucommunicationtraceio.h'
 permissions:
   contents: write
 concurrency:
