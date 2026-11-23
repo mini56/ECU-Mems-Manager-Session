@@ -11,6 +11,8 @@ on:
       - 'ECUCommunicationLogSelfTest.cpp'
       - 'ecucommunicationlog.cpp'
       - 'ecucommunicationtraceio.h'
+      - 'analysistab_impl_part1.inc'
+      - 'analysistab_impl_part3.inc'
 permissions:
   contents: write
 concurrency:
