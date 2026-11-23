@@ -109,6 +109,14 @@ expected_lucas5as = [
     "mems_manager_lucas5as_close",
 ]
 
+expected_mems19_wakeup = [
+    "mems_manager_mems19_slow_bit_high",
+    "mems_manager_mems19_key_complement",
+    "mems_manager_mems19_has_address_confirmation",
+    "mems_manager_mems19_wakeup",
+    "mems_manager_mems19_connect_identify",
+]
+
 exports = []
 in_exports = False
 for raw in definition.splitlines():
@@ -121,9 +129,9 @@ for raw in definition.splitlines():
     if in_exports:
         exports.append(line.split()[0])
 
-if exports != expected_exports + expected_extensions + expected_families + expected_injection + expected_protocol_catalogue + expected_lucas5as:
+if exports != expected_exports + expected_extensions + expected_families + expected_injection + expected_protocol_catalogue + expected_lucas5as + expected_mems19_wakeup:
     raise SystemExit(f"FAIL: changed ABI or missing family/injection/codec exports: {exports}")
-if len(set(exports)) != 100:
+if len(set(exports)) != 105:
     raise SystemExit("FAIL: duplicate or missing symbols in ROSCO DLL")
 
 required_protocol_guards = [
@@ -169,13 +177,14 @@ for name, value in required_commands.items():
     if not re.search(pattern, header):
         raise SystemExit(f"FAIL historical command changed/missing: {name}={value}")
 
-print("OK: 91 original exports preserved plus 9 Lucas 5AS = 100")
+print("OK: 91 original + 9 Lucas 5AS + 5 new MEMS1.9 = 105 exports")
 assert "mems_reset_ECU_leopold @54" in definition
 print("OK: Manager reset ECU=FA and adjustments=0F, explicit LeopoldG ECU=AF")
 assert exports[54:65] == expected_families
 assert exports[65:71] == expected_injection
 assert exports[71:91] == expected_protocol_catalogue
 assert exports[91:100] == expected_lucas5as
+assert exports[100:105] == expected_mems19_wakeup
 catalogue_header = (root / "protocol_catalogue.h").read_text(encoding="utf-8")
 catalogue_source = (root / "protocol_catalogue.c").read_text(encoding="utf-8")
 for name in expected_protocol_catalogue:
@@ -212,6 +221,28 @@ for required in ("lucas5as_codec.c", "lucas5as_session.c",
     if required not in cmake:
         raise SystemExit(f"FAIL: Lucas5AS CMake missing {required}")
 print("OK: 9 Lucas5AS read-only API exports and two offline CTests")
+
+mems19_header = (root / "mems19_wakeup.h").read_text(encoding="utf-8")
+mems19_codec = (root / "mems19_wakeup_codec.c").read_text(encoding="utf-8")
+mems19_source = (root / "mems19_wakeup.c").read_text(encoding="utf-8")
+for name in expected_mems19_wakeup:
+    if not re.search(rf"\b{re.escape(name)}\s*\(", mems19_header):
+        raise SystemExit(f"FAIL: missing MEMS1.9 ABI declaration: {name}")
+    source = mems19_codec if name.endswith((
+        "_slow_bit_high", "_key_complement",
+        "_has_address_confirmation")) else mems19_source
+    if not re.search(rf"\b{re.escape(name)}\s*\(", source):
+        raise SystemExit(f"FAIL: MEMS1.9 implementation missing: {name}")
+for required in ("mems19_wakeup_codec.c", "mems19_wakeup.c",
+                 "dll_mems19_wakeup_codec_selftest",
+                 "dll_mems19_wakeup_selftest"):
+    if required not in cmake:
+        raise SystemExit(f"FAIL: MEMS1.9 CMake not integrated: {required}")
+for forbidden in ("#include <Qt", "#include <QSerialPort"):
+    if forbidden in mems19_source or forbidden in mems19_codec:
+        raise SystemExit("FAIL: DLL MEMS1.9 module must not depend on Qt")
+print("OK: 5 new native MEMS 1.9 ABI functions; same-handle wakeup with offline tests")
+
 print("OK: family and AANMP002 modules exported and compiled within DLL only")
 print("OK: full 0x80 and 0x7D frame-length guards present")
 print("OK: truncated 0x7D frame is rejected")
