@@ -179,7 +179,7 @@ Filename: "{app}\session-install-language.ini"; Section: "Installation"; Key: "L
     Write-Host 'SESSION200_ISOLATED_SETUP_INSTALLED_16PAGE_UI_PASS'
 
     Uninstall-Inno $tested
-    if(Test-Path -LiteralPath $installedExe -or Test-Path -LiteralPath $installedDll) {
+    if((Test-Path -LiteralPath $installedExe) -or (Test-Path -LiteralPath $installedDll)) {
         throw 'Test Setup uninstall failed: executable/DLL still present'
     }
     Write-Host 'SESSION200_ISOLATED_SETUP_UNINSTALL_PASS'
