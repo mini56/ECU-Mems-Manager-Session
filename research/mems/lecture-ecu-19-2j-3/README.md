@@ -13,6 +13,10 @@ Le journal indique les commits réalisés, les fichiers modifiés, le statut des
 
 Documentation uniquement : le runtime SESSION et la Release 182 ne sont pas modifiés. Les tests sur ECU réel restent nécessaires.
 
+## Bancs d'essai MEMS — deux pages Andrew Revill (23/11/2026)
+
+- **[Rapport 34 — Banc minimal MEMS et interface ECU/antidémarrage](34_BANCS_ESSAI_MEMS_ANDREW_REVILL_REFERENCES_20261123.md)** — conserve les **deux pages sources** et les **quatre liens originaux vers les schémas** (MEMS 3, MEMS 2J, MEMS 1.9 et TD5). Le banc plus complet ajoute antidémarrage, indicateurs et simulation vilebrequin/arbre à cames. **Aucun schéma minimal MEMS 1.6 n'est présenté** : ne pas transposer ces brochages à la voiture MEMS 1.6.
+
 ## Bibliothèque de firmwares Andrew Revill — référence externe (21/11/2026)
 
 - **[Archive Andrew Revill : source et cadre d'utilisation](29_ARCHIVE_FIRMWARE_ANDREW_REVILL_REFERENCE_20261121.md)** — lien externe vers les fichiers de firmwares Rover. **Pas de copie binaire dans le dépôt, pas d'intégration dans le Setup ni de modification de Manager.**
