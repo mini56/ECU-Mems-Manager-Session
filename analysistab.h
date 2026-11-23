@@ -6,6 +6,8 @@
 #include <QStringList>
 #include <QColor>
 #include <QCheckBox>
+#include <QComboBox>
+#include <QPlainTextEdit>
 #include <QScrollArea>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -19,8 +21,6 @@
 
 class QButtonGroup;
 class QTableView;
-class QComboBox;
-class QPlainTextEdit;
 class QStackedWidget;
 class AnalysisValuesTableModel;
 
