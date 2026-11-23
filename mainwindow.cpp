@@ -29,6 +29,7 @@
 #include "tooltipbubblemanager.h"
 #include "analogwidgets/widgetwithbackground.h"
 #include "analysistab.h"
+#include "ecucommunicationlog.h"
 #include "summarytab.h"
 #include <qapplication.h>
 #include <QLCDNumber>
@@ -293,6 +294,7 @@ m_mems(0), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerD
   connect(m_mems, SIGNAL(gotEcuId(uint8_t *)), this, SLOT(onEcuIdReceived(uint8_t *)));
   connect(m_mems, &MEMSInterface::ecuIdentityDetected, this,
           [this](const QString &identity) {
+              EcuCommunicationLog::identify(identity);
               m_ui->m_ecuIdLabel->setText(QStringLiteral("ECU : ") + identity);
               if (m_diagnosticPanel) m_diagnosticPanel->setEcuId(QByteArray());
           });
@@ -909,6 +911,7 @@ void MainWindow::onConnectClicked()
   if (m_closing || property("ecuConnectInProgress").toBool())
     return;
 
+  EcuCommunicationLog::beginAttempt(); // Before any serial handshake.
   setProperty("ecuConnectInProgress", true);
   m_ui->m_connectButton->setEnabled(false);
   m_autoReconnectEnabled = true;
@@ -947,6 +950,10 @@ void MainWindow::onEcuIdReceived(uint8_t* id)
 
   sprintf(idString, "ID ECU : %02X %02X %02X %02X", id[0], id[1], id[2], id[3]);
   m_ui->m_ecuIdLabel->setText(QString(idString));
+  if(id) {
+    const QString hexId=QString::fromLatin1(QByteArray((const char*)id,4).toHex().toUpper());
+    EcuCommunicationLog::identify(QStringLiteral("MEMS-1.3-1.6"),hexId);
+  }
   if (m_diagnosticPanel && id)
     m_diagnosticPanel->setEcuId(QByteArray(reinterpret_cast<const char*>(id), 4));
 }
@@ -1637,6 +1644,7 @@ void MainWindow::closeEvent(QCloseEvent* event)
     m_memsThread->quit();
     m_memsThread->wait();
   }
+  EcuCommunicationLog::finish();
 
   event->accept();
 }
@@ -1714,6 +1722,14 @@ void MainWindow::onConnect()
   // Explicit clear-fault is available for every *connected* family.
   // MEMS 2J/3 have their own service; ROSCO reset/adjustment is not theirs.
   const MemsEcuFamily family=m_mems->ecuFamily();
+  if(family==MemsEcuFamily::Rosco13_16)
+    EcuCommunicationLog::identify(QStringLiteral("MEMS-1.3-1.6"));
+  else if(family==MemsEcuFamily::Mems19)
+    EcuCommunicationLog::identify(QStringLiteral("MEMS-1.9"));
+  else if(family==MemsEcuFamily::Mems2J)
+    EcuCommunicationLog::identify(QStringLiteral("MEMS-2J"));
+  else if(family==MemsEcuFamily::Mems3)
+    EcuCommunicationLog::identify(QStringLiteral("MEMS-3"));
   const bool roscoCommands=family==MemsEcuFamily::Rosco13_16 ||
                            family==MemsEcuFamily::Mems19;
   m_ui->m_clearFaultsButton->setEnabled(true);
@@ -1729,6 +1745,7 @@ void MainWindow::onConnect()
  */
 void MainWindow::onDisconnect()
 {
+  EcuCommunicationLog::finish();
   m_ui->m_saveAdjustmentsButton->setEnabled(false);
   setProperty("ecuConnectInProgress", false);
   m_ui->m_connectButton->setEnabled(true);
@@ -1965,6 +1982,8 @@ void MainWindow::onHelpContentsClicked()
  */
 void MainWindow::onFailedToConnect(QString dev)
 {
+  EcuCommunicationLog::note(QStringLiteral("ECHEC_CONNEXION %1").arg(dev));
+  EcuCommunicationLog::finish();
   setProperty("ecuConnectInProgress", false);
   if (!m_closing)
     m_ui->m_connectButton->setEnabled(true);

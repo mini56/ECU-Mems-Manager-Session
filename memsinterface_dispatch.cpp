@@ -1,6 +1,7 @@
 // MEMS protocol dispatcher: mode/family negotiation and guarded commands.
 // The low-level transport is compiled independently from memsinterface.cpp.
 #include "memsinterface.h"
+#include "ecucommunicationtraceio.h"
 
 #include <QElapsedTimer>
 #include <QThread>
@@ -211,6 +212,7 @@ bool MEMSInterface::performMems19Wakeup(const QString &devicePath, QString *deta
     if (!ClearCommBreak(handle))
         return fail(QStringLiteral("break-control-unavailable"));
 
+    { const uint8_t addr=0x16; ecu_trace_bytes("TX-5BAUD",&addr,1); }
     // RoverMEMS 1.9: hold the bus idle for 2 s, then send 0x16 at
     // five baud (start, LSB-first data, stop; 200 ms per bit).
     QThread::msleep(2000);
@@ -247,7 +249,7 @@ bool MEMSInterface::performMems19Wakeup(const QString &devicePath, QString *deta
     {
         unsigned char byte = 0;
         DWORD count = 0;
-        if (ReadFile(handle, &byte, 1, &count, NULL) && count == 1)
+        if (ecu_trace_read_file(handle, &byte, 1, &count, NULL) && count == 1)
         {
             reply.append(char(byte));
             gotKeys = Mems19Protocol::keyComplement(reply, &invertedKey);
@@ -261,7 +263,7 @@ bool MEMSInterface::performMems19Wakeup(const QString &devicePath, QString *deta
     QThread::msleep(50);
     const unsigned char ack = invertedKey;
     DWORD written = 0;
-    if (!WriteFile(handle, &ack, 1, &written, NULL) || written != 1)
+    if (!ecu_trace_write_file(handle, &ack, 1, &written, NULL) || written != 1)
         return fail(QStringLiteral("key-ack-write-failed"));
 
     QByteArray confirmation;
@@ -271,7 +273,7 @@ bool MEMSInterface::performMems19Wakeup(const QString &devicePath, QString *deta
     {
         unsigned char byte = 0;
         DWORD count = 0;
-        if (ReadFile(handle, &byte, 1, &count, NULL) && count == 1)
+        if (ecu_trace_read_file(handle, &byte, 1, &count, NULL) && count == 1)
         {
             confirmation.append(char(byte));
             confirmed = Mems19Protocol::hasAddressConfirmation(confirmation);
@@ -373,6 +375,7 @@ bool MEMSInterface::performMems19Wakeup(const QString &devicePath, QString *deta
         return false;
     }
     port.setBreakEnabled(false);
+    { const uint8_t addr=0x16; ecu_trace_bytes("TX-5BAUD",&addr,1); }
 
     // ECU reply is ISO 9141 sync + two key bytes. Typical MEMS 1.9 is
     // 55 76 83. Do not hard-code the key bytes: accept the 0x55 sync and
@@ -385,9 +388,9 @@ bool MEMSInterface::performMems19Wakeup(const QString &devicePath, QString *deta
     while (timer.elapsed() < 1600 && !receivedKeys && !cancelled())
     {
         if (port.waitForReadyRead(120))
-            wakeReply += port.readAll();
+            { const QByteArray rx=port.readAll(); ecu_trace_bytes("RX",(const uint8_t*)rx.constData(),(size_t)rx.size()); wakeReply += rx; }
         else
-            wakeReply += port.readAll();
+            { const QByteArray rx=port.readAll(); ecu_trace_bytes("RX",(const uint8_t*)rx.constData(),(size_t)rx.size()); wakeReply += rx; }
         receivedKeys = Mems19Protocol::keyComplement(wakeReply,
                                                     &complementedKey);
     }
@@ -413,7 +416,9 @@ bool MEMSInterface::performMems19Wakeup(const QString &devicePath, QString *deta
         port.close();
         return false;
     }
-    if (port.write(&invertedKey, 1) != 1 || !port.waitForBytesWritten(400))
+    const qint64 keyWritten=port.write(&invertedKey,1);
+    if(keyWritten>0)ecu_trace_bytes("TX",(const uint8_t*)&invertedKey,(size_t)keyWritten);
+    if(keyWritten!=1 || !port.waitForBytesWritten(400))
     {
         if (detail) *detail = cancelled() ? cancelReason() : QStringLiteral("key-ack-write-failed");
         port.close();
@@ -429,9 +434,9 @@ bool MEMSInterface::performMems19Wakeup(const QString &devicePath, QString *deta
     while (timer.elapsed() < 1200 && !confirmed && !cancelled())
     {
         if (port.waitForReadyRead(100))
-            confirmation += port.readAll();
+            { const QByteArray rx=port.readAll(); ecu_trace_bytes("RX",(const uint8_t*)rx.constData(),(size_t)rx.size()); confirmation += rx; }
         else
-            confirmation += port.readAll();
+            { const QByteArray rx=port.readAll(); ecu_trace_bytes("RX",(const uint8_t*)rx.constData(),(size_t)rx.size()); confirmation += rx; }
 
         confirmed = Mems19Protocol::hasAddressConfirmation(confirmation);
     }

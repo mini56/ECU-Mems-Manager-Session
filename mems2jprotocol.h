@@ -7,6 +7,7 @@
 #include <QByteArray>
 #include <QElapsedTimer>
 #include <QSerialPort>
+#include "ecucommunicationtraceio.h"
 #include <QStringList>
 #include <QThread>
 #include <QVariantMap>
@@ -226,7 +227,7 @@ public:
         QThread::msleep(75); // 25 ms high + 50 ms extra from archived RoverMEMS
         if (cancelled()) { close(); return false; }
         m_lastSent = QByteArray::fromHex("8113f7810c");
-        if (m_serial.write(m_lastSent) != m_lastSent.size() ||
+        if (traceWrite(m_lastSent) != m_lastSent.size() ||
             !m_serial.waitForBytesWritten(400))
         { close(); return false; }
         QByteArray reply;
@@ -317,6 +318,18 @@ public:
     }
 
 private:
+    qint64 traceWrite(const QByteArray &bytes)
+    {
+        const qint64 n=m_serial.write(bytes);
+        if(n>0)ecu_trace_bytes("TX",(const uint8_t*)bytes.constData(),(size_t)n);
+        return n;
+    }
+    QByteArray traceReadAll()
+    {
+        const QByteArray result=m_serial.readAll();
+        if(!result.isEmpty())ecu_trace_bytes("RX",(const uint8_t*)result.constData(),(size_t)result.size());
+        return result;
+    }
     enum Status { Timeout, Positive, Negative };
     static QByteArray payloadPrefix(quint8 id)
     {
@@ -329,7 +342,7 @@ private:
     {
         m_lastSent=frame(command);
         if (m_lastSent.isEmpty() ||
-            m_serial.write(m_lastSent)!=m_lastSent.size() ||
+            traceWrite(m_lastSent)!=m_lastSent.size() ||
             !m_serial.waitForBytesWritten(400))
             return Timeout;
         return receive(positive,byte(command,0),timeout,cancelled,reply);
@@ -372,7 +385,7 @@ private:
             const int remaining=timeout-int(timer.elapsed());
             if (remaining<=0) break;
             m_serial.waitForReadyRead(qMin(60,remaining));
-            m_receive.append(m_serial.readAll());
+            m_receive.append(traceReadAll());
             if (!m_serial.isOpen() || m_serial.error()==QSerialPort::ResourceError ||
                 m_serial.error()==QSerialPort::DeviceNotFoundError)
                 break;

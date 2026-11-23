@@ -7,6 +7,7 @@
 #include <QByteArray>
 #include <QElapsedTimer>
 #include <QSerialPort>
+#include "ecucommunicationtraceio.h"
 #include <QStringList>
 #include <QVariantMap>
 #include <QtGlobal>
@@ -214,13 +215,25 @@ public:
     }
 
 private:
+    qint64 traceWrite(const QByteArray &bytes)
+    {
+        const qint64 n=m_serial.write(bytes);
+        if(n>0)ecu_trace_bytes("TX",(const uint8_t*)bytes.constData(),(size_t)n);
+        return n;
+    }
+    QByteArray traceReadAll()
+    {
+        const QByteArray result=m_serial.readAll();
+        if(!result.isEmpty())ecu_trace_bytes("RX",(const uint8_t*)result.constData(),(size_t)result.size());
+        return result;
+    }
     enum Status { Timeout,Positive,Negative };
     Status exchange(const QByteArray &command,const QByteArray &expected,
                     int timeout,const std::function<bool()> &cancelled,QByteArray *reply)
     {
         m_lastSent=frame(command);
         if(m_lastSent.isEmpty() ||
-           m_serial.write(m_lastSent)!=m_lastSent.size() ||
+           traceWrite(m_lastSent)!=m_lastSent.size() ||
            !m_serial.waitForBytesWritten(400))return Timeout;
         QElapsedTimer timer;timer.start();
         while(timer.elapsed()<timeout && !cancelled()) {
@@ -260,7 +273,7 @@ private:
             const int remaining=timeout-int(timer.elapsed());
             if(remaining<=0)break;
             m_serial.waitForReadyRead(qMin(60,remaining));
-            m_receive.append(m_serial.readAll());
+            m_receive.append(traceReadAll());
             if(!m_serial.isOpen() ||
                m_serial.error()==QSerialPort::ResourceError ||
                m_serial.error()==QSerialPort::DeviceNotFoundError)break;

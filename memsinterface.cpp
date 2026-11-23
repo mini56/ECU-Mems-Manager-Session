@@ -11,6 +11,7 @@
 #include <sys/select.h>
 #endif
 #include "memsinterface.h"
+#include "ecucommunicationtraceio.h"
 #include "mems19protocol.h"
 #include "mems2jprotocol.h"
 #include "mems3protocol.h"
@@ -847,7 +848,7 @@ void MEMSInterface::sendRoscoReadCommand(quint8 command)
 
   DWORD written = 0;
   unsigned char tx = command;
-  if (!WriteFile(h, &tx, 1, &written, NULL) || written != 1)
+  if (!ecu_trace_write_file(h, &tx, 1, &written, NULL) || written != 1)
   {
     SetCommTimeouts(h, &oldTimeouts);
     emit errorSendingCommand();
@@ -862,7 +863,7 @@ void MEMSInterface::sendRoscoReadCommand(quint8 command)
   {
     unsigned char b = 0;
     DWORD n = 0;
-    if (ReadFile(h, &b, 1, &n, NULL) && n == 1)
+    if (ecu_trace_read_file(h, &b, 1, &n, NULL) && n == 1)
     {
       response.append(char(b));
       timer.restart();

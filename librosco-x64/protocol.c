@@ -1,4 +1,5 @@
 #include "rosco.h"
+#include "../ecucommunicationtraceio.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -16,6 +17,7 @@ int16_t mems_read_serial(mems_info* info, uint8_t* buffer, uint16_t quantity)
         const DWORD remaining = (DWORD)(quantity - total);
         if (ReadFile(info->sd, buffer + total, remaining, &got, NULL) != TRUE || got == 0)
             break;
+        ecu_trace_bytes("RX",buffer + total,(size_t)got);
         total = (uint16_t)(total + (uint16_t)got);
     }
 
@@ -34,8 +36,11 @@ int16_t mems_write_serial(mems_info* info, uint8_t* buffer, uint16_t quantity)
 
     if (WriteFile(info->sd, buffer, (DWORD)quantity, &written, NULL) == TRUE &&
         written == (DWORD)quantity)
+    {
+        ecu_trace_bytes("TX",buffer,(size_t)written);
         return (int16_t)written;
-
+    }
+    if(written)ecu_trace_bytes("TX",buffer,(size_t)written);
     return -1;
 }
 
