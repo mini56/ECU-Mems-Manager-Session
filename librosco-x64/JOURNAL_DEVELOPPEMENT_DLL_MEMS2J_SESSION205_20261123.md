@@ -38,7 +38,18 @@
 - **Test Win32 simulé** : toutes les fonctions série externes de `mems2j_session.c` sont remplacées par des simulations **dans l'exécutable de test uniquement**. Simulation de 10400 8N1, BREAK, trames entrantes fragmentées, écho présent/absent, seed/key `0x1234 → 0x8247`, réponse pending, refus, timeout, invalidité, annulation, lecture `21 19`, commande `31 CB`, rotations et traces TX/RX. **Aucun port COM réel ni calculateur réel n'est ouvert** par ce test.
 - **Conservation du protocole existant** : le codec `protocol_catalogue.c` et ses tests restent ceux du lot précédent.
 - **Run de validation dédiée** : [GitHub Actions n° 45251694520](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/45251694520), commit `80ee676bff463276c20291cd62af5b1b87b4014c`.
-- **Conditions de validation finale** : compilation x64, succès de tous les CTests, exactement **114 exports et leurs ordinaux**, résolution des imports du **véritable Manager 205**, puis installation/démarrage/16 pages/désinstallation d'un **Setup de test indépendant fondé sur la Release officielle 205**. Le statut doit être renseigné d'après les journaux, pas supposé.
+- **Résultat final — VERT, prouvé par les journaux du run 45251694520** :
+  - `DLL_BUILD_AND_CTEST_PASS` : **9/9 tests Windows x64 réussis**, y compris le nouveau `dll_mems2j_session_selftest`.
+  - `SESSION205_BINARY_COMPAT_PASS` : AMD64, **114 exports PE exacts** avec ordinaux, **15 imports Manager 205 résolus**.
+  - `SESSION205_LINK_AND_PE_IMPORTS_PASS` : compilation et liaison de la véritable source officielle du programme 205 dans un worktree jetable.
+  - `SESSION205_UI_SMOKE_WITH_NEW_DLL_PASS` : vrai programme Session 205, **16 pages**, `Checks PASS` et Qt sortie 0.
+  - `SESSION205_OFFICIAL_RELEASE_SETUP_SHA256_PASS` : **vrai Setup 205 publié**, SHA256 vérifié.
+  - `SESSION205_ORIGINAL_RELEASE_EXE_NEW_DLL_ABI_PASS` : l'EXE de la Release officielle accepte la nouvelle DLL.
+  - `SESSION205_INDEPENDENT_NEW_DLL_SETUP_BUILD_PASS` : Setup de **test uniquement**, AppId indépendant et non publié.
+  - `SESSION205_INSTALLED_EXE_AND_NEW_DLL_SHA256_ABI_PASS` : installation séparée, intégrité EXE officiel et nouvelle DLL.
+  - `SESSION205_ISOLATED_SETUP_INSTALLED_16PAGE_UI_PASS` et `SESSION205_ISOLATED_SETUP_UNINSTALL_PASS` : test des 16 pages du programme effectivement installé puis désinstallation.
+  - **`SESSION205_NEW_DLL_COMPLETE_SETUP_TEST_PASS`** : validation logicielle du lot achevée.
+- **Limite de la preuve** : les séquences MEMS 2J ont été testées avec un faux port Win32 et une simulation d'ECU, **aucune ECU physique n'a été connectée**, aucune confirmation de modification sur véhicule. La compatibilité binaire ne garantit pas encore les timings d'un câble réel. Aucune Release ni MAJ officielle n'a été créée.
 
 ## Prochaines étapes
 
