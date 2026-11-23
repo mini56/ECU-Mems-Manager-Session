@@ -21,6 +21,7 @@ add_library(rosco SHARED
     lucas5as_session.c
     mems19_wakeup_codec.c
     mems19_wakeup.c
+    mems2j_session.c
     mems_manager_x64.def
 )
 
@@ -90,3 +91,9 @@ add_test(NAME dll_mems19_wakeup_codec_selftest COMMAND dll_mems19_wakeup_codec_s
 
 add_executable(dll_mems19_wakeup_selftest mems19_wakeup_selftest.c mems19_wakeup_codec.c)
 add_test(NAME dll_mems19_wakeup_selftest COMMAND dll_mems19_wakeup_selftest)
+
+# Native MEMS 2J K-Line authenticated diagnostic session. The transport
+# selftest includes the real source with Win32 COM and clock intercepted;
+# the compiled executable cannot access any physical serial port or ECU.
+add_executable(dll_mems2j_session_selftest mems2j_session_selftest.c protocol_catalogue.c)
+add_test(NAME dll_mems2j_session_selftest COMMAND dll_mems2j_session_selftest)
