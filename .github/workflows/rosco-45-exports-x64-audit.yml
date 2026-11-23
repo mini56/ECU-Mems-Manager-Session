@@ -1,5 +1,5 @@
 # Exclusively the DLL verification workflow. No Session build, Setup or MAJ
-# workflow is changed by this file. Test revision: isolated Session200 UI smoke enabled.
+# workflow is changed by this file. Test revision: independent Session200 Setup install + uninstall smoke.
 # The application is built only in a
 # disposable worktree pinned to the real Session 200 commit.
 name: DLL MEMS Manager x64 - validation isolee Session 200
@@ -24,7 +24,7 @@ jobs:
   session200_dll_validation:
     name: Compiler la DLL et verifier la liaison avec Session 200
     runs-on: windows-2022
-    timeout-minutes: 100
+    timeout-minutes: 110
     steps:
       - name: Recuperer uniquement la branche DLL
         uses: actions/checkout@v4
@@ -55,15 +55,24 @@ jobs:
           python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external $sevenZip
           if ($LASTEXITCODE -ne 0) { throw 'Qt 5.15.2 installation failed' }
 
-      - name: Compiler / tester DLL x64 et vraie copie Session 200 (aucune installation)
+      - name: Installer Inno Setup 6 UNIQUEMENT sur le runner de test
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          & '.\librosco-x64\verify_session200_windows.ps1' -QtPrefix 'C:/Qt/5.15.2/msvc2019_64'
-          if ($LASTEXITCODE -ne 0) { throw 'Session 200 DLL compatibility validation failed' }
+          choco install innosetup -y --no-progress --limit-output
+          if ($LASTEXITCODE -ne 0) { throw 'Inno Setup compiler installation failed' }
+
+      - name: Verifier DLL et vraie Session 200 puis installer/desinstaller le Setup independant
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & '.\librosco-x64\verify_session200_windows.ps1' -QtPrefix 'C:/Qt/5.15.2/msvc2019_64' -SetupSmoke
+          if ($LASTEXITCODE -ne 0) { throw 'Session 200 isolated DLL Setup compatibility validation failed' }
 
       - name: Resultat de verification
         shell: pwsh
         run: |
-          Write-Host 'CI_SESSION200_DLL_CHECK_FINISHED: no Setup, no release, no ECU commands, no Session source modifications'
+          Write-Host 'CI_SESSION200_DLL_CHECK_FINISHED: independent Setup built, installed and removed ONLY on hosted runner; NO release, NO ECU, NO Session source modifications'
           Write-Host 'DLL compatibility for installed programs and physical ECUs requires separate runtime validation.'
