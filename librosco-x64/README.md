@@ -11,7 +11,21 @@ L’ancienne bibliothèque historique reste distincte :
 
 Le sous-dossier conserve pour l’instant le nom historique `librosco-x64` et le header public `rosco.h` afin de limiter les régressions pendant la migration. Cela ne change pas le nom du nouveau binaire.
 
-## Référence ACTIVE : SESSION 205 — 105 exports DLL validés, MEMS 1.9 ajouté
+## Référence ACTIVE : SESSION 205 — 114 exports DLL VALIDÉS, MEMS 2J ajouté
+
+**DLL native x64 compilée : 114 exports réels.** Les **105 premiers noms/signatures/ordinaux** sont conservés sans changement. Le lot suivant ajoute **9 fonctions de session MEMS 2J (ordinals 106 à 114)**, toujours **sans modification de Manager 205**.
+
+- [Journal d'intégration MEMS 2J, commandes, transactions, traçage TX/RX et limites](JOURNAL_DEVELOPPEMENT_DLL_MEMS2J_SESSION205_20261123.md).
+- [**Run Windows VERT n° 45251694520, copie de la vraie Session 205**](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/45251694520) : **9/9 tests CTest réussis**, **114/114 exports et ordinaux PE x64 corrects**, **15 imports réels Manager résolus** ; vérification des 16 pages de l'EXE 205 ; véritable Setup officiel 205 vérifié SHA256, puis Setup de test avec AppId séparé **créé/installé/testé/désinstallé**. Aucune Release et aucune MAJ.
+- Cette validation prouve la **compatibilité logicielle et le périmètre automatisé couvert**. Les ECU MEMS 2J et MEMS 1.9 physiques n'ont pas été branchés pendant ces essais : **aucun résultat matériel n'est revendiqué**. La DLL reste à compléter (MEMS 3, RC5, 5AS, auto-détection et autres fonctions inventoriées).
+
+**Référence officielle de l'EXE : Session 205, commit `b5cd9b61bbaed6251f17559885481b1bd03f4380`, et Setup publié. Le programme lui-même n'a pas été modifié.**
+
+---
+
+### Historique : lot MEMS 1.9 — 105 exports
+
+## Référence précédente : SESSION 205 — 105 exports DLL validés, MEMS 1.9 ajouté
 
 **Nouvelle DLL native x64 : 105 fonctions exportées.** Les **91 exports historiques** et les **9 nouveaux exports Lucas 5AS** conservent strictement leurs numéros et signatures. Le lot MEMS 1.9 a ajouté **5 exports (101 à 105)** sans modifier Manager.
 
