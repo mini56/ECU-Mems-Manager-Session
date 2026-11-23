@@ -102,6 +102,7 @@ signals:
     void readSuccess();
     void faultCodesClearSuccess();
     void adjustmentsSaveAcknowledged();
+    void adjustmentsSaveDiagnostic(QString detail);
     void adjustmentsResetSuccess();
     void ECUResetSuccess();
     void failedToConnect(QString dev);

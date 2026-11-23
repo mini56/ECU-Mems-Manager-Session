@@ -587,6 +587,11 @@ void MainWindow::setupWidgets()
   connect(m_ui->m_clearRecordedAnomalies, SIGNAL(clicked()), this, SLOT(clearRecordedAnomalies()));
   connect(m_ui->m_saveAdjustmentsButton, &QPushButton::clicked,
           m_mems, &MEMSInterface::onSaveAdjustmentsRequested);
+  // Record the outcome and elapsed time on the GUI thread, where the
+  // communications journal is managed; never turn a missing ACK into a
+  // misleading modal error.
+  connect(m_mems, &MEMSInterface::adjustmentsSaveDiagnostic, this,
+          [](const QString &detail) { EcuCommunicationLog::note(detail); });
   connect(m_mems, &MEMSInterface::adjustmentsSaveAcknowledged, this, [this]() {
       QMessageBox::information(this, I18n::text(7080), I18n::text(7081));
   });

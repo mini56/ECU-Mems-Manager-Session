@@ -63,12 +63,61 @@ void MEMSInterface::onSaveAdjustmentsRequested()
         return;
     }
 
+    // Preserve the proven ECU command. The MEMS 1.9 K-Line path remains
+    // unchanged; this longer confirmation wait concerns only ROSCO 1.3/1.6.
     constexpr auto saveAdjustments = static_cast<actuator_cmd>(0x81);
     uint8_t reply = 0xff;
-    if (guardedMemsTestActuator(saveAdjustments, &reply) && reply == 0x00)
+    if (family == MemsEcuFamily::Mems19) {
+        if (guardedMemsTestActuator(saveAdjustments, &reply) && reply == 0x00)
+            emit adjustmentsSaveAcknowledged();
+        else
+            emit errorSendingCommand();
+        return;
+    }
+
+    // runServiceLoop() executes this slot through its worker-thread event
+    // pump. While this synchronous transaction is running, no new 0x80/0x7D
+    // measurement request can consume the late reply to 0x81.
+#ifdef WIN32
+    const HANDLE port = m_memsinfo.sd;
+    COMMTIMEOUTS previousTimeouts = {};
+    bool extended = false;
+    if (port != nullptr && port != INVALID_HANDLE_VALUE &&
+        GetCommTimeouts(port, &previousTimeouts)) {
+        COMMTIMEOUTS saveTimeouts = previousTimeouts;
+        // The observed 0x00 arrived about 145 ms after TX 0x81; the normal
+        // 100 ms timeout is too short. Change the read only for this command.
+        saveTimeouts.ReadTotalTimeoutMultiplier = 0;
+        saveTimeouts.ReadTotalTimeoutConstant = 700;
+        extended = SetCommTimeouts(port, &saveTimeouts) != FALSE;
+    }
+#endif
+
+    QElapsedTimer transactionTimer;
+    transactionTimer.start();
+    const bool received = guardedMemsTestActuator(saveAdjustments, &reply);
+    const qint64 durationMs = transactionTimer.elapsed();
+
+#ifdef WIN32
+    // Always restore the original serial timings before polling resumes.
+    if (extended && !SetCommTimeouts(port, &previousTimeouts))
+        emit adjustmentsSaveDiagnostic(QStringLiteral("SAVE81_RESTAURATION_TIMEOUT_ECHEC"));
+#endif
+
+    if (received && reply == 0x00) {
+        emit adjustmentsSaveDiagnostic(
+            QStringLiteral("SAVE81_ACK_00_DUREE_TRANSACTION_MS=%1").arg(durationMs));
         emit adjustmentsSaveAcknowledged();
-    else
-        emit errorSendingCommand();
+    } else {
+        const QString response = received
+            ? QStringLiteral("%1").arg(reply, 2, 16, QLatin1Char('0')).toUpper()
+            : QStringLiteral("ABSENTE");
+        // No false modal 'command failed': missing ACK does not prove that
+        // the ECU did not save. The raw TX/RX trace remains the authority.
+        emit adjustmentsSaveDiagnostic(
+            QStringLiteral("SAVE81_CONFIRMATION_NON_RECUE_DUREE_TRANSACTION_MS=%1_REPONSE=%2")
+                .arg(durationMs).arg(response));
+    }
 }
 
 /**
