@@ -5,7 +5,8 @@
 param(
     [string]$QtPrefix = 'C:/Qt/5.15.2/msvc2019_64',
     [switch]$DllOnly,
-    [switch]$KeepWorktree
+    [switch]$KeepWorktree,
+    [switch]$SetupSmoke
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -135,7 +136,13 @@ try {
     }
     if ($Ui.ExitCode -ne 0) { throw "SESSION200_UI_SMOKE_FAILED exit=$($Ui.ExitCode)" }
     Write-Host 'SESSION200_UI_SMOKE_WITH_NEW_DLL_PASS'
-    Write-Host 'NOTE: no physical ECU was tested; no Setup installed or released.'
+    if ($SetupSmoke) {
+        # Real published Session 200 files + new DLL; isolated test-only Inno
+        # AppId, on disposable GitHub-hosted runner, no release or MAJ.
+        & (Join-Path $TemporaryDllFolder 'test_session200_setup_windows.ps1') -NewDll $ManagerDll.FullName -BinaryAuditor (Join-Path $TemporaryDllFolder 'validate_session200_binaries.py') -QtPrefix $QtPrefix
+        if ($LASTEXITCODE -ne 0) { throw 'Independent Session200 Setup test returned an error' }
+    }
+    Write-Host 'NOTE: no physical ECU was tested; no Setup published or installed on a user machine.'
 
 }
 finally {
