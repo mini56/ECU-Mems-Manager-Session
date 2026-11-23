@@ -105,3 +105,10 @@ EXPORTS
     mems_manager_lucas5as_initial_status @98
     mems_manager_lucas5as_read_status @99
     mems_manager_lucas5as_close @100
+
+; Independent, native MEMS 1.9 K-Line slow wake / ECU ID; additive only.
+    mems_manager_mems19_slow_bit_high @101
+    mems_manager_mems19_key_complement @102
+    mems_manager_mems19_has_address_confirmation @103
+    mems_manager_mems19_wakeup @104
+    mems_manager_mems19_connect_identify @105
