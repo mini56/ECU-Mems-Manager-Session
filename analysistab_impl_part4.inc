@@ -69,6 +69,10 @@ void AnalysisTab::onViewModeToggled(bool columns)
     Q_UNUSED(columns);
     if(!m_leftStack || !m_viewModeButton)return;
     const bool communications=m_communicationsModeButton && m_communicationsModeButton->isChecked();
+    // CSV/TXT measurements belong only to Curves and Columns. Hide their
+    // loader while browsing raw ECU communication logs: one open button per mode.
+    if(QWidget *fileToolbar=findChild<QWidget*>(QStringLiteral("analysisFileToolbar")))
+        fileToolbar->setVisible(!communications);
     const bool table=!communications && m_viewModeButton->isChecked();
     m_leftStack->setCurrentIndex(communications?2:(table?1:0));
     if(table){

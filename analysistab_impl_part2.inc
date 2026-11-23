@@ -262,6 +262,9 @@ AnalysisTab::AnalysisTab(QWidget *parent)
     // Mirror the left toolbar's minimum footprint on the right so the
     // Curves/Columns group is centered in the available content width,
     // not shifted sideways by the CSV file name.
+    // Reserve the same space on both sides even when the measurements
+    // importer is hidden in Communications mode: keep the view buttons centred.
+    topRow->setColumnMinimumWidth(0,fileControls->sizeHint().width());
     topRow->setColumnMinimumWidth(2,fileControls->sizeHint().width());
     topRow->setColumnStretch(0,1);
     topRow->setColumnStretch(2,1);
