@@ -13,6 +13,10 @@ Le journal indique les commits réalisés, les fichiers modifiés, le statut des
 
 Documentation uniquement : le runtime SESSION et la Release 182 ne sont pas modifiés. Les tests sur ECU réel restent nécessaires.
 
+## Comparaison K-Line / ROSCO — Colin Bourassa (23/11/2026)
+
+- **[Relevé documentaire des protocoles automobiles](../COLIN_BOURASSA_PROTOCOLS_KLINE_VS_ROSCO_20261123.md)** — article du 23/02/2024 : KWP-71, FIAT-9141 et Marelli 1AF, différences électriques K-Line/ROSCO, démarrage lent, clés et maintien de session. Les exemples de ces autres protocoles ne sont **pas** des commandes MEMS 1.9/2J/3. Aucune modification logicielle ni compilation.
+
 ## Bancs d'essai MEMS — deux pages Andrew Revill (23/11/2026)
 
 - **[Rapport 34 — Banc minimal MEMS et interface ECU/antidémarrage](34_BANCS_ESSAI_MEMS_ANDREW_REVILL_REFERENCES_20261123.md)** — conserve les **deux pages sources** et les **quatre liens originaux vers les schémas** (MEMS 3, MEMS 2J, MEMS 1.9 et TD5). Le banc plus complet ajoute antidémarrage, indicateurs et simulation vilebrequin/arbre à cames. **Aucun schéma minimal MEMS 1.6 n'est présenté** : ne pas transposer ces brochages à la voiture MEMS 1.6.
