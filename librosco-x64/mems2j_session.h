@@ -58,7 +58,8 @@ typedef void (*mems_manager_mems2j_trace_fn)(
 ROSCO_API bool mems_manager_mems2j_connect(
     const char *device_path, mems_manager_mems2j_session **out_session,
     mems_manager_mems2j_cancel_fn cancelled,
-    mems_manager_mems2j_trace_fn trace, void *user);
+    mems_manager_mems2j_trace_fn trace, void *user,
+    mems_manager_mems2j_result *failure_reason);
 
 /* Positive 61 ID reply stored losslessly; codec measurement is OPTIONAL.
  * Some known IDs, including 0x00 and 0x06, remain raw-only (not invented).
