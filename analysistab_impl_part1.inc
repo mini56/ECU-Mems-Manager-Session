@@ -7,6 +7,7 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QPlainTextEdit>
+#include <QAbstractScrollArea>
 #include <QFile>
 #include <QFileDialog>
 #include <QDir>
@@ -41,13 +42,13 @@ namespace {
 static void fitAnalysisModernSizing(QWidget *tab);
 
 // Qt's dark application-wide scrollbar palette left the scroll tracks practically
-// invisible on the actual Analysis page. Give EACH of its two scrolling regions
+// invisible on the actual Analysis page. Give each scrolling region
 // a distinct, always-visible thumb. Do not alter other pages or the page zoom.
-static void configureAnalysisVisibleScroll(QScrollArea *area)
+static void configureAnalysisVisibleScroll(QAbstractScrollArea *area, Qt::ScrollBarPolicy horizontalPolicy=Qt::ScrollBarAlwaysOff)
 {
     if (!area) return;
     area->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-    area->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    area->setHorizontalScrollBarPolicy(horizontalPolicy);
     QScrollBar *bar=area->verticalScrollBar();
     bar->setFixedWidth(17);
     bar->setSingleStep(36);
@@ -141,6 +142,11 @@ static void configureAnalysisVisibleScroll(QScrollArea *area)
                 scroll->viewport()->setStyleSheet(darkTheme ? QStringLiteral("background:#0d1218;") : QStringLiteral("background:#ffffff;"));
             }
         }
+
+        // The TX/RX reader has its own scroll range and needs the same visible
+        // orange vertical thumb as the existing Analysis scrolling panels.
+        if (QPlainTextEdit *communication=tab->findChild<QPlainTextEdit*>(QStringLiteral("analysisCommunicationText")))
+            configureAnalysisVisibleScroll(communication,Qt::ScrollBarAsNeeded);
 
         // Only the left table is styled; existing right-side controls are unchanged.
         if (QTableView *table=tab->findChild<QTableView*>(QStringLiteral("analysisValuesTable"))) {

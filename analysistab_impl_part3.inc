@@ -59,6 +59,7 @@
     m_communicationText->setLineWrapMode(QPlainTextEdit::NoWrap);
     m_communicationText->setPlaceholderText(I18n::text(18028));
     m_communicationText->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+    configureAnalysisVisibleScroll(m_communicationText,Qt::ScrollBarAsNeeded);
     communicationLayout->addWidget(m_communicationText,1);
     m_leftStack->addWidget(communicationPanel);
     left->addWidget(m_leftStack,1);
