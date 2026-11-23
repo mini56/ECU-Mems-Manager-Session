@@ -7,5 +7,6 @@
   "6105": "Dunkel",
   "6106": "Sprache:",
   "6107": "Desktop-Verknüpfung erstellen und beibehalten",
-  "6108": "Die Verknüpfung wird unmittelbar nach der Bestätigung erstellt. Wird sie gelöscht, erstellt die Software sie beim nächsten Start automatisch neu."
+  "6108": "Die Verknüpfung wird unmittelbar nach der Bestätigung erstellt. Wird sie gelöscht, erstellt die Software sie beim nächsten Start automatisch neu.",
+  "6109": "COM-Anschluss und USB-Seriell-Adapter werden automatisch erkannt; die manuelle Eingabe bleibt möglich."
 }

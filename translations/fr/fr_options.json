@@ -7,5 +7,6 @@
   "6105": "Sombre",
   "6106": "Langue :",
   "6107": "Créer et maintenir un raccourci sur le Bureau",
-  "6108": "Le raccourci est créé immédiatement après validation. S'il est supprimé, le logiciel le recréera automatiquement au prochain démarrage."
+  "6108": "Le raccourci est créé immédiatement après validation. S'il est supprimé, le logiciel le recréera automatiquement au prochain démarrage.",
+  "6109": "Le port COM et l'adaptateur série USB sont détectés automatiquement ; la saisie manuelle reste possible."
 }

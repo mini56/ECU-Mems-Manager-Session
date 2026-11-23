@@ -202,8 +202,8 @@ AnalysisTab::AnalysisTab(QWidget *parent)
     m_liveButtonGroup=new QButtonGroup(this);m_liveButtonGroup->setExclusive(true);m_liveButtonGroup->addButton(m_diagnosticLiveButton);m_liveButtonGroup->addButton(m_injectionLiveButton);
 
 
-    // Full-width toolbar: load CSV/TXT on the left, the two display choices
-    // centred horizontally, and a separate help bubble AFTER both buttons.
+    // Full-width toolbar: CSV/TXT loading at left and the two display choices
+    // centred; these self-explanatory controls need no extra HELP bubble.
     // Only the left display changes; the right-hand channels panel is intact.
     m_curvesModeButton=new QPushButton(I18n::text(18024),this);
     m_curvesModeButton->setObjectName(QStringLiteral("analysisCurvesModeButton"));
@@ -243,15 +243,6 @@ AnalysisTab::AnalysisTab(QWidget *parent)
     viewRow->addWidget(m_curvesModeButton,0,Qt::AlignVCenter);
     viewRow->addWidget(m_viewModeButton,0,Qt::AlignVCenter);
     viewControls->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Preferred);
-    QLabel *viewHelp=new QLabel(viewControls);
-    viewHelp->setObjectName(QStringLiteral("analysisViewModeHelp"));
-    viewHelp->setPixmap(TooltipBubbleManager::helpBubblePixmap(
-        qApp && qApp->property("ecuDarkTheme").toBool()));
-    viewHelp->setScaledContents(true);
-    viewHelp->setFixedSize(24,18);
-    viewHelp->setToolTip(I18n::text(18023));
-    viewRow->addWidget(viewHelp);
-
     // The native layout/styling pass uses this SAME widget; it must never
     // manufacture another top bar and remove the load button from this row.
     QWidget *topBar=new QWidget(this);

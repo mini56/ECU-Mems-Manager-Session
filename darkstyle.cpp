@@ -20,6 +20,7 @@
 #include <QMainWindow>
 #include <QPalette>
 #include <QScrollBar>
+#include <QSlider>
 #include <QStatusBar>
 #include <QMenu>
 #include <QMenuBar>
@@ -424,6 +425,22 @@ void applyApplicationVisualStyle(QMainWindow *window)
     // routine is already used by the native page: no new overlay or widget.
     fitSettingsPage(window);
     refreshUiShellTheme(window);
+    // Source-owned style for the real actuator stepper slider. Reapply after
+    // each dark/light switch so Qt's native blue handle never resurfaces.
+    if(QSlider *stepper=window->findChild<QSlider*>(
+           QStringLiteral("m_iacPositionSlider"))){
+        stepper->setStyleSheet(dark ? QStringLiteral(
+            "QSlider::groove:horizontal{height:5px;background:#293741;border-radius:2px;}"
+            "QSlider::handle:horizontal{background:#ff8a1c;border:1px solid #ffc078;"
+            "width:14px;margin:-5px 0;border-radius:7px;}"
+            "QSlider::sub-page:horizontal{background:#ff8a1c;border-radius:2px;}"
+        ) : QStringLiteral(
+            "QSlider::groove:horizontal{height:5px;background:#cbd5df;border-radius:2px;}"
+            "QSlider::handle:horizontal{background:#ff8a1c;border:1px solid #b85c00;"
+            "width:14px;margin:-5px 0;border-radius:7px;}"
+            "QSlider::sub-page:horizontal{background:#ff8a1c;border-radius:2px;}"
+        ));
+    }
     if(SummaryTab *summary=window->findChild<SummaryTab*>())
         summary->applyVisualTheme(dark);
     applyRawDataVisualTheme(window->findChild<QWidget*>(QStringLiteral("raw")),dark);

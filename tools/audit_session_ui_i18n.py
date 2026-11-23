@@ -13,7 +13,7 @@ keys = (list(range(16200,16220))+list(range(16300,16336))+
         list(range(16600,16613))+list(range(16700,16714))+
         list(range(16801,16828))+[16831,16832,16833]+
         list(range(16840,16864))+[16880]+list(range(16890,16898))+
-        list(range(16900,16939))+list(range(16940,16972))+[6208])
+        list(range(16900,16939))+list(range(16940,16972))+[6208,6109])
 errors = []
 def check(condition, message):
     if not condition: errors.append(message)
@@ -54,6 +54,22 @@ check('I18n::language().left(2).toLower()' in guide,'guide uses wrong language')
 # The Options dialog must explicitly draw visible orange dropdown chevrons
 # in both selected themes, regardless of the OS' native Qt arrow color.
 options=read('optionsdialog.cpp')
+check('m_serialDeviceBox->setToolTip(I18n::text(6109));' in options,
+      'Serial COM help must use the selected language')
+analysis1=read('analysistab_impl_part1.inc')
+analysis2=read('analysistab_impl_part2.inc')
+check('fileLabel->setToolTip(QString());' in analysis1,
+      'CSV/TXT filename HELP bubble must be suppressed')
+check('analysisViewModeHelp' not in analysis1 and
+      'analysisViewModeHelp' not in analysis2,
+      'Redundant Curves/Columns HELP bubble still constructed')
+dialog=read('sessioninformationmessage.h')
+check('painter.drawLine(QPointF(16.0,15.0),QPointF(16.0,23.0));' in dialog,
+      'Program update info icon needs visible letter i')
+stepper=read('darkstyle.cpp')
+check('m_iacPositionSlider' in stepper and
+      stepper.count('QSlider::handle:horizontal{background:#ff8a1c')==2,
+      'Actuator slider must stay orange in both themes')
 comboArrow='QComboBox::down-arrow{image:url(:/icons/options_combo_chevron.png);'
 check(options.count(comboArrow)==2,
       'Options must display the same dropdown chevron in dark and light themes')

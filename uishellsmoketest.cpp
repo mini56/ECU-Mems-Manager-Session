@@ -155,6 +155,16 @@ bool verifyApprovedVisualRules(MainWindow &window)
                  "Actuator state indicator was reduced") && ok;
     }
 
+    // Verify the real actuator stepper slider, not a decorative or duplicate
+    // element. Preserve the original movement range and ECU signal wiring.
+    QSlider *stepperSlider=window.findChild<QSlider*>(
+        QStringLiteral("m_iacPositionSlider"));
+    ok=check(stepperSlider &&
+             stepperSlider->styleSheet().contains(QStringLiteral(
+                 "QSlider::handle:horizontal{background:#ff8a1c")) &&
+             stepperSlider->minimum()==0 && stepperSlider->maximum()==4,
+             "Actuator stepper slider has the orange handle and original range") && ok;
+
     // The interactive ECU labels must wrap rather than clip.
     QWidget *interactive=window.findChild<QWidget*>(QStringLiteral("ECU"));
     ok=check(interactive && interactive->layout(),"Interactive page layout missing") && ok;
@@ -504,14 +514,21 @@ bool verifyUi(MainWindow &window)
                        pixel.blue()<100) ++orange;
                 }
         }
+        const QColor interior=iconPixmap.isNull()
+            ?QColor(255,255,255,255)
+            :iconPixmap.toImage().pixelColor(10,16);
+        const QColor letter=iconPixmap.isNull()
+            ?QColor(0,0,0,0)
+            :iconPixmap.toImage().pixelColor(16,19);
         ok=check(dialog.objectName()==QStringLiteral("sessionInformationMessageBox") &&
+                 interior.alpha()<64 && letter.alpha()>160 &&
                  dialog.standardButtons()==QMessageBox::Ok &&
                  dialog.styleSheet().contains(darkInformationDialog
                      ?QStringLiteral("background:#090e13")
                      :QStringLiteral("background:#ffffff")) &&
                  dialog.styleSheet().contains(QStringLiteral("QMessageBox QPushButton{background:#ff")) &&
                  orange>24,
-                 "Language restart and program update dialogs must use orange Qt icon, button and themed title") && ok;
+                 "Language restart and program update dialogs must display a visible orange information letter, button and themed title") && ok;
     }
     qApp->setProperty("ecuDarkTheme",priorInformationDialogTheme);
 
@@ -1274,9 +1291,10 @@ bool verifyUi(MainWindow &window)
                          "Native Analysis layout must keep load and modes in ONE top bar") && ok;
                 QLabel *modeHelp=analysis->findChild<QLabel*>(
                     QStringLiteral("analysisViewModeHelp"));
-                ok=check(curvesMode && loadFile && modeControls && modeHelp,
-                         "Two centred Analysis display buttons and external help icon missing") && ok;
-                if(curvesMode && loadFile && modeControls && modeHelp){
+                ok=check(curvesMode && viewMode && loadFile &&
+                         modeControls && !modeHelp,
+                         "Two centred Analysis display buttons must have no redundant HELP icon") && ok;
+                if(curvesMode && viewMode && loadFile && modeControls && !modeHelp){
                     const auto midY=[&window](QWidget *w){
                         return w->mapTo(&window,QPoint(0,w->height()/2)).y();
                     };
@@ -1285,22 +1303,22 @@ bool verifyUi(MainWindow &window)
                     ok=check(qAbs(midY(loadFile)-midY(curvesMode))<=4 &&
                              qAbs(midY(loadFile)-midY(viewMode))<=4,
                              "Analysis mode controls must share the load-file toolbar row") && ok;
-                    const QPoint helpPos=modeHelp->mapTo(modeControls,QPoint(0,0));
-                    const QPoint colPos=viewMode->mapTo(modeControls,
-                                                      QPoint(viewMode->width(),0));
-                    ok=check(helpPos.x()>=colPos.x() &&
-                             !modeHelp->toolTip().isEmpty() &&
-                             !modeHelp->pixmap()->isNull() &&
+                    QLabel *filename=analysis->findChild<QLabel*>(
+                        QStringLiteral("analysisFileLabel"));
+                    ok=check(filename && filename->toolTip().isEmpty() &&
+                             !filename->findChild<QLabel*>(
+                                 QStringLiteral("_ecuHelpBubble"),
+                                 Qt::FindDirectChildrenOnly) &&
+                             !loadFile->findChild<QLabel*>(
+                                 QStringLiteral("_ecuHelpBubble"),
+                                 Qt::FindDirectChildrenOnly) &&
                              !viewMode->findChild<QLabel*>(
                                  QStringLiteral("_ecuHelpBubble"),
                                  Qt::FindDirectChildrenOnly) &&
                              !curvesMode->findChild<QLabel*>(
                                  QStringLiteral("_ecuHelpBubble"),
-                                 Qt::FindDirectChildrenOnly) &&
-                             !modeHelp->findChild<QLabel*>(
-                                 QStringLiteral("_ecuHelpBubble"),
                                  Qt::FindDirectChildrenOnly),
-                             "Analysis help bubble must be AFTER buttons, not over their text") && ok;
+                             "Analysis CSV/TXT and Curves/Columns must not display HELP bubbles") && ok;
                     for(const QSize size : {QSize(1200,680),QSize(1366,768),
                                             QSize(1920,1080)}){
                         window.resize(size);
@@ -1312,7 +1330,7 @@ bool verifyUi(MainWindow &window)
                             .arg(midY(loadFile)-midY(curvesMode)));
                         ok=check(qAbs(groupMiddle-analysis->width()/2)<=100 &&
                                  qAbs(midY(loadFile)-midY(curvesMode))<=4 &&
-                                 modeHelp->isVisibleTo(&window),
+                                 !modeHelp,
                                  "Analysis curve/column toolbar off-center or clipped") && ok;
                     }
                     window.resize(originalSize);

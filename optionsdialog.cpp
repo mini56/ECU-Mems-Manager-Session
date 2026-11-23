@@ -186,7 +186,7 @@ void OptionsDialog::setupWidgets()
   m_serialDeviceBox->setEditable(true);
   m_serialDeviceBox->setMinimumWidth(330);
   m_serialDeviceBox->setMinimumHeight(30);
-  m_serialDeviceBox->setToolTip(QStringLiteral("COM port and USB serial adapter are detected automatically; manual entry remains available."));
+  m_serialDeviceBox->setToolTip(I18n::text(6109));
   if (m_serialDeviceBox->lineEdit())
     m_serialDeviceBox->lineEdit()->setMinimumHeight(22);
 

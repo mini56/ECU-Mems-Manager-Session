@@ -6,6 +6,7 @@
 #include <QColor>
 #include <QMessageBox>
 #include <QPainter>
+#include <QPen>
 #include <QPalette>
 #include <QPixmap>
 #include <QPushButton>
@@ -48,19 +49,24 @@ inline void configure(QMessageBox &box)
             "QMessageBox QPushButton:hover{background:#ffad55;}"
             "QMessageBox QPushButton:pressed{background:#d96500;}"));
 
-    // Reuse the native Qt information glyph, recolored in SESSION orange.
-    const QPixmap native = box.style()
-        ->standardIcon(QStyle::SP_MessageBoxInformation).pixmap(32, 32);
-    if (!native.isNull()) {
-        QPixmap colored(native.size());
-        colored.fill(Qt::transparent);
-        QPainter painter(&colored);
-        painter.drawPixmap(0, 0, native);
-        painter.setCompositionMode(QPainter::CompositionMode_SourceIn);
-        painter.fillRect(colored.rect(), QColor(QStringLiteral("#ff8a1c")));
-        painter.end();
-        box.setIconPixmap(colored);
-    }
+    // Flat recoloring of the native Qt information icon erased its white
+    // "i" on Windows, leaving a solid orange disk. Draw a proper outlined
+    // information symbol in the same SESSION orange instead.
+    QPixmap information(32,32);
+    information.fill(Qt::transparent);
+    QPainter painter(&information);
+    painter.setRenderHint(QPainter::Antialiasing,true);
+    const QColor accent(QStringLiteral("#ff8a1c"));
+    painter.setBrush(Qt::NoBrush);
+    painter.setPen(QPen(accent,2.3,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin));
+    painter.drawEllipse(QRectF(3.4,3.4,25.2,25.2));
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(accent);
+    painter.drawEllipse(QRectF(14.6,8.7,2.8,2.8));
+    painter.setPen(QPen(accent,2.6,Qt::SolidLine,Qt::RoundCap));
+    painter.drawLine(QPointF(16.0,15.0),QPointF(16.0,23.0));
+    painter.end();
+    box.setIconPixmap(information);
 
     // Sets the native DWM dark title bar on supported Windows versions.
     // The helper already handles unsupported Windows/other platforms.

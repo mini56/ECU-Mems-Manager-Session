@@ -7,5 +7,6 @@
   "6105": "Scuro",
   "6106": "Lingua:",
   "6107": "Crea e mantieni un collegamento sul desktop",
-  "6108": "Il collegamento viene creato immediatamente dopo la conferma. Se viene eliminato, il software lo ricreerà automaticamente al successivo avvio."
+  "6108": "Il collegamento viene creato immediatamente dopo la conferma. Se viene eliminato, il software lo ricreerà automaticamente al successivo avvio.",
+  "6109": "La porta COM e l'adattatore seriale USB vengono rilevati automaticamente; è possibile anche inserirli manualmente."
 }

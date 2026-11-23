@@ -138,10 +138,6 @@ static void configureAnalysisVisibleScroll(QScrollArea *area)
             }
         }
 
-        // Keep the standalone help icon consistent with the selected theme.
-        if(QLabel *help=tab->findChild<QLabel*>(QStringLiteral("analysisViewModeHelp")))
-            help->setPixmap(TooltipBubbleManager::helpBubblePixmap(darkTheme));
-
         // Only the left table is styled; existing right-side controls are unchanged.
         if (QTableView *table=tab->findChild<QTableView*>(QStringLiteral("analysisValuesTable"))) {
             table->setStyleSheet(darkTheme ? QStringLiteral(
@@ -658,7 +654,8 @@ static void configureNativeAnalysis(QWidget *analysis)
         const int fileWidth=qMax(85,(inner-modeWidth)/2-load->sizeHint().width()-20);
         fileLabel->setWordWrap(false);
         fileLabel->setMaximumWidth(qBound(85,fileWidth,260));
-        fileLabel->setToolTip(fileLabel->text());
+        // The filename is already visible; suppress its redundant HELP bubble.
+        fileLabel->setToolTip(QString());
         if(QGridLayout *grid=qobject_cast<QGridLayout*>(topBar->layout()))
             grid->setColumnMinimumWidth(2,files->sizeHint().width());
     }
