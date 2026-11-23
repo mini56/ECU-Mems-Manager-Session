@@ -31,6 +31,10 @@
 4. **Câble / brochage** : comparer les références et orientation de la prise C549 aux fiches de câblage MEMS 1.6 du projet, sans assimiler prise ECU et prise antidémarrage.
 5. **Masques DTC et F6** : documenter les limites Mini SPi avant d'envisager une règle logicielle générale.
 
+## Suite de l'étude — 23/11/2026
+
+Voir le [recoupement consacré à la lambda et au temps de bobine](VERIFICATION_LAMBDA_BOBINE_CONVERSIONS_20261123.md). La tension `7D:06 ×5 mV` est très probable mais le conflit avec `×0,5` reste à vérifier sur ECU réel ; le temps bobine `80:17–18 ×0,002 ms` est confirmé et déjà correctement décodé. Aucun seuil constructeur de panne `>4 ms` n'a été établi.
+
 ## Décision de conservation
 
 **Archivage documentaire uniquement.** Ce relevé ne valide pas le fonctionnement sur calculateur réel et n'autorise **aucune modification** de la DLL, du protocole ROSCO, des seuils de diagnostic, des bases chiffrées ou du Setup. Les points déjà présents ne sont pas réimportés comme nouveautés. Les conflits restent explicitement non résolus.

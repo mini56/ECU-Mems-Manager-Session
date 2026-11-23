@@ -53,6 +53,10 @@ Contrôle de source dans `othercontrolunitstab.h` : le commit du run 195 a insé
 
 Le run **SESSION 195** déclaré vert correspond au commit **`f0767179dab6f6b0504d808bda2bc75890c30e2c`**. La modification des seuils bobine date du commit **`e1822a9a47a4743bf16c4afc39dce1e212c788ee`**, **postérieur**. Il serait faux de dire que le run vert 195 teste cette modification. **Pas de nouvelle compilation ou publication demandée ici.**
 
+## Recherche complémentaire — 23/11/2026
+
+[Rapport de vérification des conversions lambda et bobine](VERIFICATION_LAMBDA_BOBINE_CONVERSIONS_20261123.md) : `0x7D:06 ×5 mV` fortement étayé contre `×0,5 mV` (conflit documentaire encore ouvert sans trace ECU) ; `0x80:17–18 ×0,002 ms` confirmé et **déjà correctement implémenté** dans le diagnostic et le cadran. À 14 V, MemsFCR décrit environ 2–3 ms ; le manuel MEMS MPi/SPi indique environ 3,0–3,5 ms. **`>4,0 ms` n'est pas un seuil constructeur démontré de bobine défaillante**, malgré son classement logiciel en anomalie possible. **Aucun changement aux seuils ou au programme dans cette étude.**
+
 ## Conditions obligatoires avant toute correction future
 
 - Confirmer avec l'utilisateur l'erreur sérieuse signalée ; ne pas la supposer résolue par cet audit.

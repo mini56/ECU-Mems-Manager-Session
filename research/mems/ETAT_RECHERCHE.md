@@ -71,6 +71,7 @@ Base reconstruite du package #533 :
 |---|---|---|---|---|---|
 | 2026-08-17 | Reprise après build #534 | Checkpoint dépôt + règles permanentes | État recadré | DEJA_PRESENT | Continuer sans réimporter les résultats déjà consignés |
 | 2026-11-23 | Protocole MEMS 1.6 SPi — [Colin Bourassa](COLIN_BOURASSA_MEMS16_PROTOCOL_COMPARE_20261123.md) | Article / code x64 / cartographie ROSCO | Trames et commandes largement déjà présentes ; précisions D0 et temps bobine ; conflit lambda 0,5/5 mV | PRECISION / CONFLIT / A_VERIFIER | Archiver les écarts, ne modifier ni programme ni diagnostic avant recoupement |
+| 2026-11-23 | [Recoupement lambda et bobine](VERIFICATION_LAMBDA_BOBINE_CONVERSIONS_20261123.md) | Colin Bourassa / MemsFCR / RoverMEMS Go / Rover MEMS MPi-SPi | Lambda ×5 mV très probable, ×0,5 conservé comme conflit ; bobine ×0,002 ms déjà correcte ; seuil >4 ms non homologué | PRECISION / CONFLIT / A_VERIFIER | Documentation uniquement ; validation avec valeurs ECU réelles avant correction |
 
 ## Prochaine action exacte
 
