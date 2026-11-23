@@ -66,10 +66,46 @@ void AnalysisTab::syncTableColumns()
 
 void AnalysisTab::onViewModeToggled(bool columns)
 {
+    Q_UNUSED(columns);
     if(!m_leftStack || !m_viewModeButton)return;
-    m_leftStack->setCurrentIndex(columns?1:0);
-    if(columns){
+    const bool communications=m_communicationsModeButton && m_communicationsModeButton->isChecked();
+    const bool table=!communications && m_viewModeButton->isChecked();
+    m_leftStack->setCurrentIndex(communications?2:(table?1:0));
+    if(table){
         syncTableColumns();
         m_valuesModel->dataUpdated();
     }
+}
+
+void AnalysisTab::refreshCommunicationFiles()
+{
+    if(!m_communicationFiles)return;
+    QString docs=QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    if(docs.isEmpty())docs=QDir::homePath();
+    const QDir dir(QDir(docs).filePath(QStringLiteral("ECU MEMS Manager/logs")));
+    const QString oldPath=m_communicationFiles->currentData().toString();
+    const QStringList files=dir.entryList(
+        QStringList()<<QStringLiteral("*_Communications_ECU*.txt"),
+        QDir::Files,QDir::Time);
+    QSignalBlocker blocker(m_communicationFiles);
+    m_communicationFiles->clear();
+    for(const QString &name:files)
+        m_communicationFiles->addItem(name,dir.filePath(name));
+    int index=m_communicationFiles->findData(oldPath);
+    if(index<0)index=files.isEmpty()?-1:0;
+    if(index>=0){
+        m_communicationFiles->setCurrentIndex(index);
+        showCommunicationFile(m_communicationFiles->itemData(index).toString());
+    }else m_communicationText->setPlainText(I18n::text(18028));
+}
+
+void AnalysisTab::showCommunicationFile(const QString &path)
+{
+    QFile file(path);
+    if(!file.open(QIODevice::ReadOnly|QIODevice::Text)){
+        m_communicationText->setPlainText(I18n::text(6451).arg(path));
+        return;
+    }
+    m_communicationText->setPlainText(QString::fromUtf8(file.readAll()));
+    m_communicationText->moveCursor(QTextCursor::Start);
 }

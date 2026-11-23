@@ -19,6 +19,8 @@
 
 class QButtonGroup;
 class QTableView;
+class QComboBox;
+class QPlainTextEdit;
 class QStackedWidget;
 class AnalysisValuesTableModel;
 
@@ -120,6 +122,8 @@ private:
     void removeStackedChart(int index);
     void rebuildOverlayChart();
     void onViewModeToggled(bool columns);
+    void refreshCommunicationFiles();
+    void showCommunicationFile(const QString &path);
     void syncTableColumns();
     void prepareDiagnosticLive();
     void prepareInjectionLive();
@@ -142,6 +146,10 @@ private:
 
     QPushButton *m_viewModeButton; // Columns, retained name for existing tests
     QPushButton *m_curvesModeButton;
+    QPushButton *m_communicationsModeButton;
+    QPushButton *m_communicationOpenButton;
+    QComboBox *m_communicationFiles;
+    QPlainTextEdit *m_communicationText;
     QWidget *m_chartPanel;
     QStackedWidget *m_leftStack;
     QTableView *m_valuesTable;

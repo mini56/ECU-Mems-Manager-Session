@@ -212,10 +212,14 @@ AnalysisTab::AnalysisTab(QWidget *parent)
     m_viewModeButton=new QPushButton(I18n::text(18025),this);
     m_viewModeButton->setObjectName(QStringLiteral("analysisViewModeButton"));
     m_viewModeButton->setCheckable(true);
+    m_communicationsModeButton=new QPushButton(I18n::text(18026),this);
+    m_communicationsModeButton->setObjectName(QStringLiteral("analysisCommunicationsModeButton"));
+    m_communicationsModeButton->setCheckable(true);
     QButtonGroup *modeGroup=new QButtonGroup(this);
     modeGroup->setExclusive(true);
     modeGroup->addButton(m_curvesModeButton);
     modeGroup->addButton(m_viewModeButton);
+    modeGroup->addButton(m_communicationsModeButton);
 
     QWidget *fileControls=new QWidget(this);
     fileControls->setObjectName(QStringLiteral("analysisFileToolbar"));
@@ -229,7 +233,7 @@ AnalysisTab::AnalysisTab(QWidget *parent)
     m_fileLabel->setWordWrap(false);
     // Equal button heights and explicit vertical centering keep both modes
     // on exactly the same row as Load at every supported window size.
-    for(QPushButton *button:{m_loadButton,m_curvesModeButton,m_viewModeButton})
+    for(QPushButton *button:{m_loadButton,m_curvesModeButton,m_viewModeButton,m_communicationsModeButton})
         button->setFixedHeight(36);
     fileRow->addWidget(m_loadButton,0,Qt::AlignVCenter);
     fileRow->addWidget(m_fileLabel,0,Qt::AlignVCenter);
@@ -242,6 +246,7 @@ AnalysisTab::AnalysisTab(QWidget *parent)
     viewRow->setSpacing(6);
     viewRow->addWidget(m_curvesModeButton,0,Qt::AlignVCenter);
     viewRow->addWidget(m_viewModeButton,0,Qt::AlignVCenter);
+    viewRow->addWidget(m_communicationsModeButton,0,Qt::AlignVCenter);
     viewControls->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Preferred);
     // The native layout/styling pass uses this SAME widget; it must never
     // manufacture another top bar and remove the load button from this row.

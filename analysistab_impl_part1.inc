@@ -11,6 +11,8 @@
 #include <QStandardPaths>
 #include <QFileInfo>
 #include <QFontMetrics>
+#include <QFontDatabase>
+#include <QTextCursor>
 #include <QGridLayout>
 #include <QMessageBox>
 #include <QPainter>

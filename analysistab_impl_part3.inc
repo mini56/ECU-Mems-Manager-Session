@@ -38,9 +38,51 @@
     m_valuesTable->setModel(m_valuesModel);
     m_valuesTable->setColumnWidth(0,120);
     m_leftStack->addWidget(m_valuesTable);
+    // Third independent view: historic raw TX/RX sessions. Measurements stay
+    // in the original curves/columns pages and their importer is unchanged.
+    QWidget *communicationPanel=new QWidget(leftPanel);
+    communicationPanel->setObjectName(QStringLiteral("analysisCommunicationPanel"));
+    QVBoxLayout *communicationLayout=new QVBoxLayout(communicationPanel);
+    communicationLayout->setContentsMargins(4,4,4,4);
+    QHBoxLayout *communicationToolbar=new QHBoxLayout;
+    m_communicationFiles=new QComboBox(communicationPanel);
+    m_communicationFiles->setObjectName(QStringLiteral("analysisCommunicationFileList"));
+    m_communicationFiles->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+    m_communicationOpenButton=new QPushButton(I18n::text(18027),communicationPanel);
+    m_communicationOpenButton->setObjectName(QStringLiteral("analysisCommunicationOpenButton"));
+    communicationToolbar->addWidget(m_communicationFiles,1);
+    communicationToolbar->addWidget(m_communicationOpenButton);
+    communicationLayout->addLayout(communicationToolbar);
+    m_communicationText=new QPlainTextEdit(communicationPanel);
+    m_communicationText->setObjectName(QStringLiteral("analysisCommunicationText"));
+    m_communicationText->setReadOnly(true);
+    m_communicationText->setLineWrapMode(QPlainTextEdit::NoWrap);
+    m_communicationText->setPlaceholderText(I18n::text(18028));
+    m_communicationText->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+    communicationLayout->addWidget(m_communicationText,1);
+    m_leftStack->addWidget(communicationPanel);
     left->addWidget(m_leftStack,1);
     mainRow->addWidget(leftPanel,1);
     connect(m_viewModeButton,&QPushButton::toggled,this,&AnalysisTab::onViewModeToggled);
+    connect(m_curvesModeButton,&QPushButton::clicked,this,[this](){
+        onViewModeToggled(false);
+    });
+    connect(m_communicationsModeButton,&QPushButton::clicked,this,[this](){
+        refreshCommunicationFiles();
+        onViewModeToggled(false);
+    });
+    connect(m_communicationFiles,QOverload<int>::of(&QComboBox::activated),
+            this,[this](int index){
+        if(index>=0)showCommunicationFile(m_communicationFiles->itemData(index).toString());
+    });
+    connect(m_communicationOpenButton,&QPushButton::clicked,this,[this](){
+        QString docs=QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+        if(docs.isEmpty())docs=QDir::homePath();
+        const QString directory=QDir(docs).filePath(QStringLiteral("ECU MEMS Manager/logs"));
+        const QString file=QFileDialog::getOpenFileName(this,I18n::text(18029),directory,
+                               QStringLiteral("Communications ECU (*.txt);;Tous les fichiers (*.*)"));
+        if(!file.isEmpty())showCommunicationFile(file);
+    });
 
     QWidget *rightPanel=new QWidget(this);rightPanel->setObjectName(QStringLiteral("analysisRightPanel"));rightPanel->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Expanding);
     QVBoxLayout *right=new QVBoxLayout(rightPanel);right->setContentsMargins(7,7,7,7);right->setSpacing(5);
