@@ -61,7 +61,11 @@ static bool pause_until(ULONGLONG target)
 {
     /* One clock for all 10 cells avoids accumulating scheduling drift. */
     while (GetTickCount64() < target) {
-        const ULONGLONG remaining = target - GetTickCount64();
+        const ULONGLONG now = GetTickCount64();
+        ULONGLONG remaining;
+        if (now >= target)
+            break;
+        remaining = target - now;
         Sleep((DWORD)(remaining < 20u ? remaining : 20u));
     }
     return true;
@@ -164,7 +168,6 @@ bool mems_manager_lucas5as_open_normal(
     const char *device_path, mems_manager_lucas5as_session **session)
 {
     mems_manager_lucas5as_session *opened;
-    DWORD ignored;
     if (!session || !device_path || !device_path[0])
         return false;
     *session = NULL;
@@ -192,7 +195,6 @@ bool mems_manager_lucas5as_open_normal(
         goto fail;
     opened->connected = true;
     *session = opened;
-    (void)ignored;
     return true;
 
 fail:
