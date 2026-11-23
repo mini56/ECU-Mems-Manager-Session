@@ -2,7 +2,7 @@
 # workflow is changed by this file. Test revision: independent Session205 Setup install + uninstall smoke.
 # The application is built only in a
 # disposable worktree pinned to the real Session 205 commit.
-name: DLL MEMS Manager x64 - validation isolee Session 205 / Lucas5AS
+name: DLL MEMS Manager x64 - validation Session 205 / MEMS19
 run-name: Test DLL / Session 205 / ${{ github.sha }}
 on:
   # An edit to THIS workflow starts ONE CI validation on dll-manager.
