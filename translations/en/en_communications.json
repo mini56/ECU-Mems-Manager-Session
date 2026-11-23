@@ -2,5 +2,6 @@
   "18026": "Communications",
   "18027": "Open file…",
   "18028": "No ECU communication log available.",
-  "18029": "Open ECU communication log"
+  "18029": "Open ECU communication log",
+  "18030": "ECU communications (*.txt);;All files (*.*)"
 }

@@ -80,7 +80,7 @@
         if(docs.isEmpty())docs=QDir::homePath();
         const QString directory=QDir(docs).filePath(QStringLiteral("ECU MEMS Manager/logs"));
         const QString file=QFileDialog::getOpenFileName(this,I18n::text(18029),directory,
-                               QStringLiteral("Communications ECU (*.txt);;Tous les fichiers (*.*)"));
+                               I18n::text(18030));
         if(!file.isEmpty())showCommunicationFile(file);
     });
 
