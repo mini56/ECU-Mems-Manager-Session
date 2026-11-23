@@ -5,6 +5,8 @@
 #include <QApplication>
 #include <QButtonGroup>
 #include <QCheckBox>
+#include <QComboBox>
+#include <QPlainTextEdit>
 #include <QFile>
 #include <QFileDialog>
 #include <QDir>

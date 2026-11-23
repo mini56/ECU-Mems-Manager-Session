@@ -35,6 +35,8 @@ jobs:
           @'
           from pathlib import Path
           import json
+          headers=Path('analysistab_impl_part1.inc').read_text(encoding='utf-8')
+          assert '#include <QComboBox>' in headers and '#include <QPlainTextEdit>' in headers
           a=Path('analysistab_impl_part2.inc').read_text(encoding='utf-8')
           b=Path('analysistab_impl_part3.inc').read_text(encoding='utf-8')
           c=Path('analysistab_impl_part4.inc').read_text(encoding='utf-8')
@@ -54,7 +56,7 @@ jobs:
           for lang in ('fr','en','de','es','it','pt'):
               p=Path('translations',lang,lang+'_communications.json')
               d=json.loads(p.read_text(encoding='utf-8'))
-              assert all(d.get(str(i),'').strip() for i in range(18026,18030)),lang
+              assert all(d.get(str(i),'').strip() for i in range(18026,18031)),lang
           assert 'm_logExtension(".txt")' in Path('logger.cpp').read_text(encoding='utf-8')
           print('SESSION_202_COMMUNICATIONS_SOURCE_6_LANGUAGES_PRECHECK_PASS')
           '@ | python -
