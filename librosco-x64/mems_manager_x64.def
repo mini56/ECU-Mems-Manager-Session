@@ -94,3 +94,14 @@ EXPORTS
     mems_rc5_validate_frame @89
     mems_rc5_fault_count @90
     mems_rc5_fault_at @91
+
+; Independent Lucas 5AS NORMAL diagnostics (ADD ONLY, no Manager 205 calls yet).
+    mems_manager_lucas5as_slow_bit_high @92
+    mems_manager_lucas5as_has_normal_wake @93
+    mems_manager_lucas5as_decode_status @94
+    mems_manager_lucas5as_extract_status @95
+    mems_manager_lucas5as_output_test_commands @96
+    mems_manager_lucas5as_open_normal @97
+    mems_manager_lucas5as_initial_status @98
+    mems_manager_lucas5as_read_status @99
+    mems_manager_lucas5as_close @100
