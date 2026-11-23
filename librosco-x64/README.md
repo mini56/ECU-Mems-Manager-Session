@@ -29,7 +29,22 @@ L'environnement de validation crée une copie temporaire et isolée de **Session
 - **Session 200 réellement démarrée en mode test Qt hors-écran**, vérification automatique des **16 pages**, navigation, thèmes, langues et fonctions d'interface : `SESSION200_UI_SMOKE_WITH_NEW_DLL_PASS`, `Checks PASS`, fermeture code `0`.
 - La validation a utilisé exclusivement un **worktree Git éphémère**. Aucune source du programme Session 200, aucun workflow du programme, aucune Release, aucun Setup installé et aucun calculateur physique n'ont été modifiés.
 
-**Limites :** la connexion réelle à un ECU, les lectures sur véhicule, les réglages sur matériel et le fonctionnement d'un **Setup installé** avec cette DLL ne sont **pas encore certifiés**. Les résultats des runs 197 ci-dessous sont conservés comme historique ; l'unique référence actuelle est **Session 200**.
+**Validation du véritable Setup avec notre DLL : RUN VERT #45134425955, 23/11/2026** — [journal Windows / installation et désinstallation](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/45134425955). Workflow de validation dédié, commit `12fb64ff74fc9861dd56e5154955cf490f8e3f41`.
+
+Cette étape a utilisé le **Setup officiel de Session 200 effectivement publié** (`ECU-Mems-Manager-Session-200-Setup.exe`), dont le SHA256 a été vérifié avec le fichier publié `SESSION-200-Setup.sha256`. L'installateur officiel a été extrait sur un **runner GitHub Windows éphémère**. Le fichier `ecu_mems_manager.exe` original et toutes les dépendances distribuées ont été conservés ; **seule `mems_manager_x64.dll` a été remplacée dans la copie temporaire**. Un **nouveau Setup Inno Setup de test** a été créé avec **AppId différent**, installation par utilisateur, aucun raccourci, aucune publication et aucune interaction avec le PC utilisateur.
+
+Contrôles réels du Setup isolé :
+
+- **4/4 CTest DLL réussis**, 91 exports (noms/ordinals) conformes, 15 imports de l'exécutable Session 200 résolus.
+- `SESSION200_OFFICIAL_RELEASE_SETUP_SHA256_PASS` : téléchargement vérifié du **vrai Setup 200 publié**.
+- `SESSION200_ORIGINAL_RELEASE_EXE_NEW_DLL_ABI_PASS` : le binaire **officiel publié** est compatible au niveau des imports avec la **nouvelle DLL**, sans recompilation du programme.
+- `SESSION200_INDEPENDENT_NEW_DLL_SETUP_BUILD_PASS` : un **vrai Setup de test** a été compilé. Son SHA256 de journal est `9744E43FEF97E6DA7EE0BADA36796AD06A57943A6DAC43D5ACCF6B6D3382737C` (pas de publication ni d'artefact utilisateur).
+- `SESSION200_INSTALLED_EXE_AND_NEW_DLL_SHA256_ABI_PASS` : après **installation effective**, l'exécutable installé est **identique octet pour octet à l'exécutable officiel 200**, et la DLL installée est identique à notre DLL recompilée.
+- `SESSION200_ISOLATED_SETUP_INSTALLED_16PAGE_UI_PASS` : démarrage et **test intégré des 16 pages**, navigation, contrôles UI, thèmes, langues, analyse, `Checks PASS` et sortie normale.
+- `SESSION200_ISOLATED_SETUP_UNINSTALL_PASS` : désinstallation de la copie test, présence des fichiers exe/DLL de test contrôlée comme absente après suppression.
+- `SESSION200_NEW_DLL_COMPLETE_SETUP_TEST_PASS` : validation globale verte, **sans toucher aux sources, workflows, Release ou installateur officiel Session 200**.
+
+**Verdict et limites :** **compatibilité du Setup de test installé avec notre nouvelle DLL validée sur Windows hébergé**. Aucun ECU physique n'était connecté : les connexions réelles, les lectures, les effets des commandes sur calculateurs et les configurations matérielles non couvertes restent à vérifier **avant toute substitution de DLL sur un poste utilisateur**. Les résultats historiques sur Session 197 restent archivés ci-dessous ; la référence active est **Session 200**.
 
 ---
 
