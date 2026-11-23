@@ -48,6 +48,14 @@ if(MEMS_USE_BUNDLED_LIBROSCO_X64)
     add_subdirectory(librosco-x64)
 endif()
 
+# Native ECU trace selftest: no ECU, no COM device and no actuator command.
+if(WIN32)
+    add_executable(ecu_communication_log_selftest
+        ECUCommunicationLogSelfTest.cpp ecucommunicationlog.cpp)
+    target_link_libraries(ecu_communication_log_selftest PRIVATE Qt5::Core)
+    add_test(NAME ecu_communication_log_selftest COMMAND ecu_communication_log_selftest)
+endif()
+
 option(MEMS_USE_ONNX_GENAI "Use native ONNX Runtime GenAI for IA MEMS" OFF)
 set(ORT_GENAI_INCLUDE_DIR "" CACHE PATH "Directory containing ort_genai_c.h")
 set(ORT_GENAI_LIBRARY "" CACHE FILEPATH "ONNX Runtime GenAI import library")
