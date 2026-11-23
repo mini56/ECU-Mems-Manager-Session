@@ -12,7 +12,7 @@ namespace {
 QString activePath,startStamp,familyName,ecuIdentifier;
 QString safe(QString s){
     s=s.trimmed();
-    for(QChar &c:s)if(!c.isLetterOrNumber()&&c!=QLatin1Char('-')&&c!=QLatin1Char('_'))
+    for(QChar &c:s)if(!c.isLetterOrNumber()&&c!=QLatin1Char('-')&&c!=QLatin1Char('_')&&c!=QLatin1Char('.'))
         c=QLatin1Char('-');
     return s.left(80);
 }
