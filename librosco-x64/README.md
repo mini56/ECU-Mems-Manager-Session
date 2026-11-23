@@ -18,7 +18,7 @@ La cible de compatibilité est **le véritable exécutable et le Setup publiés 
 **Lot DLL en cours de validation : 100 exports déclarés (91 historiques inchangés + 9 Lucas 5AS en lecture seule).** Le code et les tests sont conservés uniquement sur `dll-manager`. Le programme Manager n'est **jamais modifié** : le build de vérification le compile dans un répertoire Windows temporaire et extrait un Setup de test indépendant.
 
 - [Journal précis des neuf fonctions créées, des limites et des runs](JOURNAL_DEVELOPPEMENT_DLL_SESSION205_20261123.md)
-- [Run de validation complète SESSION 205 n° 45240083756](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/45240083756) — verdict final à lire dans ses journaux.
+- [**Run VERT de validation complète SESSION 205 n° 45240083756**](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/45240083756) : **6/6 CTests**, **100 exports exacts**, **15 imports réels du Manager résolus**, **test des 16 pages du véritable EXE 205**, **Setup 205 officiel vérifié**, création/installation/test/désinstallation d'un **Setup d'essai indépendant** avec notre nouvelle DLL. **Aucune publication de Release/MAJ, aucune modification de Session 205.**
 - Les essais sur ECU physique, la programmation et les fonctions non encore transférées ne sont **pas** couverts par la compatibilité binaire.
 
 **Les résultats de SESSION 200 conservés plus bas sont uniquement l'historique.**
