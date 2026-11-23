@@ -1,11 +1,11 @@
 /* ABI contract compiled against the EXACT immutable source header used by
- * MEMS Manager Session 200, SHA dd8d88048ce4e879ef728b6bcd72837730bec654.
+ * MEMS Manager Session 205, SHA dd8d88048ce4e879ef728b6bcd72837730bec654.
  * This avoids mistakenly testing the older Manager sources in dll-manager.
  * New DLL-only exports are tested separately by abi_selftest.c.
  * These assertions intentionally use Manager's 0xFA/0x0F constants,
  * never the different names/semantics from the LeopoldG DLL.
  */
-#include "reference-session200/rosco.h"
+#include "reference-session205/rosco.h"
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>
@@ -81,7 +81,7 @@ VERIFY_CPP_ABI(mems_Boost_Valve_On,NameReply);
 VERIFY_CPP_ABI(mems_Boost_Valve_Off,NameReply);
 VERIFY_CPP_ABI(mems_get_lib_version,Version);
 
-/* 'mems_interactive_mode' is declared in the Session 200 Manager header,
+/* 'mems_interactive_mode' is declared in the Session 205 Manager header,
  * but the Session 196 interactive button does not invoke it, and it was not
  * among the candidate DLL's first 91 exports. Keep it tracked separately;
  * never claim it is already exported or tested.
@@ -95,6 +95,6 @@ int main()
         std::fprintf(stderr,"Manager DLL version mismatch\n");
         return 1;
     }
-    std::puts("MANAGER_200_DLL_HEADER_PASS: structs, reset byte mapping, declared signatures");
+    std::puts("MANAGER_205_DLL_HEADER_PASS: structs, reset byte mapping, declared signatures");
     return 0;
 }
