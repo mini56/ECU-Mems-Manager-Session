@@ -117,6 +117,18 @@ expected_mems19_wakeup = [
     "mems_manager_mems19_connect_identify",
 ]
 
+expected_mems2j_session = [
+    "mems_manager_mems2j_connect",
+    "mems_manager_mems2j_read_measurement",
+    "mems_manager_mems2j_read_faults",
+    "mems_manager_mems2j_clear_faults",
+    "mems_manager_mems2j_keepalive",
+    "mems_manager_mems2j_read_cycle",
+    "mems_manager_mems2j_last_transaction",
+    "mems_manager_mems2j_is_open",
+    "mems_manager_mems2j_close",
+]
+
 exports = []
 in_exports = False
 for raw in definition.splitlines():
@@ -129,9 +141,9 @@ for raw in definition.splitlines():
     if in_exports:
         exports.append(line.split()[0])
 
-if exports != expected_exports + expected_extensions + expected_families + expected_injection + expected_protocol_catalogue + expected_lucas5as + expected_mems19_wakeup:
+if exports != expected_exports + expected_extensions + expected_families + expected_injection + expected_protocol_catalogue + expected_lucas5as + expected_mems19_wakeup + expected_mems2j_session:
     raise SystemExit(f"FAIL: changed ABI or missing family/injection/codec exports: {exports}")
-if len(set(exports)) != 105:
+if len(set(exports)) != 114:
     raise SystemExit("FAIL: duplicate or missing symbols in ROSCO DLL")
 
 required_protocol_guards = [
@@ -177,7 +189,7 @@ for name, value in required_commands.items():
     if not re.search(pattern, header):
         raise SystemExit(f"FAIL historical command changed/missing: {name}={value}")
 
-print("OK: 91 original + 9 Lucas 5AS + 5 new MEMS1.9 = 105 exports")
+print("OK: 91 original + 9 Lucas 5AS + 5 MEMS1.9 + 9 native MEMS2J = 114 exports")
 assert "mems_reset_ECU_leopold @54" in definition
 print("OK: Manager reset ECU=FA and adjustments=0F, explicit LeopoldG ECU=AF")
 assert exports[54:65] == expected_families
@@ -185,6 +197,7 @@ assert exports[65:71] == expected_injection
 assert exports[71:91] == expected_protocol_catalogue
 assert exports[91:100] == expected_lucas5as
 assert exports[100:105] == expected_mems19_wakeup
+assert exports[105:114] == expected_mems2j_session
 catalogue_header = (root / "protocol_catalogue.h").read_text(encoding="utf-8")
 catalogue_source = (root / "protocol_catalogue.c").read_text(encoding="utf-8")
 for name in expected_protocol_catalogue:
@@ -242,6 +255,26 @@ for forbidden in ("#include <Qt", "#include <QSerialPort"):
     if forbidden in mems19_source or forbidden in mems19_codec:
         raise SystemExit("FAIL: DLL MEMS1.9 module must not depend on Qt")
 print("OK: 5 new native MEMS 1.9 ABI functions; same-handle wakeup with offline tests")
+
+mems2j_header=(root / "mems2j_session.h").read_text(encoding="utf-8")
+mems2j_source=(root / "mems2j_session.c").read_text(encoding="utf-8")
+mems2j_test=(root / "mems2j_session_selftest.c").read_text(encoding="utf-8")
+for name in expected_mems2j_session:
+    if not re.search(rf"\b{re.escape(name)}\s*\(",mems2j_header):
+        raise SystemExit(f"FAIL MEMS2J C ABI declaration missing: {name}")
+    if not re.search(rf"\b{re.escape(name)}\s*\(",mems2j_source):
+        raise SystemExit(f"FAIL MEMS2J compiled implementation missing: {name}")
+for required in ("mems2j_session.c", "dll_mems2j_session_selftest",
+                 "mems2j_session_selftest.c"):
+    if required not in cmake:
+        raise SystemExit(f"FAIL MEMS2J CMake missing: {required}")
+for forbidden in ("#include <Qt", "#include <QSerialPort"):
+    if forbidden in mems2j_header or forbidden in mems2j_source:
+        raise SystemExit("FAIL MEMS2J DLL layer depends on Qt")
+if '31 CB + 15x00' not in mems2j_source or '0x81,0x13,0xF7,0x81,0x0C' not in mems2j_source:
+    raise SystemExit("FAIL MEMS2J wake/clear provenance missing")
+print("OK: nine native MEMS2J session APIs, offline serial test and zero Qt dependency")
+
 
 print("OK: family and AANMP002 modules exported and compiled within DLL only")
 print("OK: full 0x80 and 0x7D frame-length guards present")
