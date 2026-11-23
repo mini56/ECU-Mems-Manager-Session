@@ -43,15 +43,30 @@ isolée sur un runner GitHub Actions.
 - Annulation par rappel optionnel, vérifiée pendant les longues attentes.
 - **Non validé matériel** : les contraintes des pilotes USB et de la K-Line sur véhicule ne sont pas déduites des tests fictifs.
 
-## Validation prévue et en cours
+## Validation complète — RUN VERT
 
-[Run GitHub n° 45246024037](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/45246024037), commit `8dcb88ec994a94ac001e4991b9d19a2ab29ff579`.
+[Run GitHub n° 45246024037 — VERT](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/45246024037), commit `8dcb88ec994a94ac001e4991b9d19a2ab29ff579`. Journaux Windows examinés en intégralité : **8/8 CTest réussis**, aucune erreur de build ni de test.
 
-**État à compléter par les logs : tests compilés, nombre de CTests, 105 exports, imports Manager 205, UI 16 pages, véritable Setup 205 installé en copie isolée puis désinstallé.** Ne pas interpréter un statut en cours comme une réussite.
+| Vérification attestée par les journaux | Résultat |
+|---|---|
+| Tests historiques et nouveaux (codec et transport 1.9 simulé) | **100 % — 8/8** |
+| Exports PE32+ AMD64 du nouveau `mems_manager_x64.dll` | **105 noms/ordinaux exacts** |
+| Imports réellement présents dans le vrai binaire Manager Session 205 | **15/15 résolus** |
+| Lien de l'exécutable source du vrai Session 205 vers la nouvelle DLL | `SESSION205_LINK_AND_PE_IMPORTS_PASS` |
+| Démarrage du programme Session 205 en copie éphémère, 16 pages testées | `SESSION205_UI_SMOKE_WITH_NEW_DLL_PASS`, `Checks PASS`, Qt 0 |
+| Vérification du SHA256 du Setup officiel de Session 205 téléchargé | `SESSION205_OFFICIAL_RELEASE_SETUP_SHA256_PASS` |
+| Liaison binaire de l'exécutable OFFICIEL réellement distribué avec la nouvelle DLL | `SESSION205_ORIGINAL_RELEASE_EXE_NEW_DLL_ABI_PASS` |
+| Création d'un Setup INNO d'essai avec un AppId indépendant | `SESSION205_INDEPENDENT_NEW_DLL_SETUP_BUILD_PASS` |
+| Installation effective de ce Setup et SHA256 de l'exécutable et DLL vérifiés | `SESSION205_INSTALLED_EXE_AND_NEW_DLL_SHA256_ABI_PASS` |
+| Test des 16 pages du programme réellement installé par le Setup isolé | `SESSION205_ISOLATED_SETUP_INSTALLED_16PAGE_UI_PASS` |
+| Désinstallation du Setup temporaire | `SESSION205_ISOLATED_SETUP_UNINSTALL_PASS` |
+| Verdict complet | **`SESSION205_NEW_DLL_COMPLETE_SETUP_TEST_PASS`** |
 
-Le workflow de la DLL seul cible le commit officiel `b5cd9b61...`, avec `validate_session205_binaries.py` actualisé à **105 noms/ordinaux physiques**. Les 15 imports du binaire Manager seront recomptés directement sur le vrai PE 205. **Aucune Release ni publication MAJ**.
+**Limite essentielle :** le résultat VERT **prouve la compatibilité ABI/liaison, l'installation et le fonctionnement des pages testées**, pas la totalité du matériel ECU. Les séquences 5 bauds, ACK et identification ont été **simulées**, pas essayées sur un véritable calculateur. Les 105 exports ne sont pas 105 fonctions toutes essayées matériellement.
 
-## Étape suivante après validation
+Le workflow de la DLL seul cible le commit officiel `b5cd9b61...`, sans modifier ni publier Session 205. **Aucune Release, aucun MAJ et aucune installation sur le PC utilisateur**.
+
+## Suite du développement
 
 Poursuivre le moteur ECU par les sessions MEMS 2J/3 et le transport commun,
 sans modifier Manager. Les nouvelles fonctions doivent toujours passer les
