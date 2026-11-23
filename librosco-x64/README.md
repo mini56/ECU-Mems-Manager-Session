@@ -15,6 +15,7 @@ Le sous-dossier conserve pour l’instant le nom historique `librosco-x64` et le
 
 - **[Rapport d'inventaire ECU complet du corpus disponible (SESSION 200 / DLL)](INVENTAIRE_EXHAUSTIF_ECU_DLL_SESSION200_20261123.md)** : toutes les fonctions ECU identifiées dans les sources actuelles, les archives et les recherches examinées, avec statuts `DLL / Manager / recherche / non confirmé`, écarts de couverture, conflits protocolaires et feuille de route.
 - **[Matrice de contrôle de 91 exports + déclaration non implémentée](MATRICE_91_EXPORTS_ET_CONTRAT_SESSION200_20261123.csv)** : suivi vérifiable des noms, ordinaux, signatures déclarées et preuves CI.
+- **[Chiffrage nominatif de 84 nouvelles fonctions ECU proposées](CHIFFRAGE_84_FONCTIONS_DLL_SESSION200_20261123.md)** : répartition par famille, 84 noms distincts, statuts Manager/recherche ; total prévisionnel de 175 exports avec les 91 existants, sous réserve de conception détaillée.
 
 **Ce lot est exclusivement documentaire :** aucune modification du programme SESSION 200, de ses workflows de publication ni du code de la DLL ; aucun nouveau Setup, aucune Release ni aucun run déclenché.
 
