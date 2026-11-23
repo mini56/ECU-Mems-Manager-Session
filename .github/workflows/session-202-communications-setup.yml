@@ -37,6 +37,8 @@ jobs:
           import json
           headers=Path('analysistab_impl_part1.inc').read_text(encoding='utf-8')
           assert '#include <QComboBox>' in headers and '#include <QPlainTextEdit>' in headers
+          header=Path('analysistab.h').read_text(encoding='utf-8')
+          assert '#include <QComboBox>' in header and '#include <QPlainTextEdit>' in header
           a=Path('analysistab_impl_part2.inc').read_text(encoding='utf-8')
           b=Path('analysistab_impl_part3.inc').read_text(encoding='utf-8')
           c=Path('analysistab_impl_part4.inc').read_text(encoding='utf-8')
